@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	7.8 (Berkeley) %G%
+ *	@(#)time.h	7.9 (Berkeley) %G%
  */
 
 #ifndef _SYS_TIME_H_
@@ -67,10 +67,10 @@ struct	itimerval {
  * Getkerninfo clock information structure
  */
 struct clockinfo {
-	int hz;		/* clock frequency */
-	int tick;	/* micro-seconds per hz tick */
-	int phz;	/* alternate clock frequency */
-	int profhz;	/* profiling clock frequency */
+	int	hz;		/* clock frequency */
+	int	tick;		/* micro-seconds per hz tick */
+	int	stathz;		/* statistics clock frequency */
+	int	profhz;		/* profiling clock frequency */
 };
 
 #ifndef KERNEL
