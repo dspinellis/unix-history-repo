@@ -1,4 +1,4 @@
-/*	kern_synch.c	3.9	%H%	*/
+/*	kern_synch.c	3.10	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -31,7 +31,7 @@ sleep(chan, pri)
 caddr_t chan;
 {
 	register struct proc *rp, **hp;
-	register s, h;
+	register s;
 
 	rp = u.u_procp;
 	s = spl6();
@@ -63,6 +63,7 @@ caddr_t chan;
 		if(ISSIG(rp))
 			goto psig;
 	} else {
+		rp->p_stat = SSLEEP;
 		(void) spl0();
 		swtch();
 	}
@@ -163,7 +164,7 @@ restart:
 	for (q = h; p = *q; ) {
 		if (p->p_rlink || p->p_stat != SSLEEP && p->p_stat != SSTOP)
 			panic("wakeup");
-		if (p->p_wchan==chan && p->p_stat!=SZOMB) {
+		if (p->p_wchan==chan) {
 			p->p_wchan = 0;
 			*q = p->p_link;
 			p->p_slptime = 0;
@@ -214,7 +215,6 @@ rqinit()
 setrun(p)
 register struct proc *p;
 {
-	register caddr_t w;
 	register s;
 
 	s = spl6();
@@ -227,12 +227,12 @@ register struct proc *p;
 	default:
 		panic("setrun");
 
+	case SSTOP:
 	case SSLEEP:
 		unsleep(p);		/* e.g. when sending signals */
 		break;
 
 	case SIDL:
-	case SSTOP:
 		break;
 	}
 	p->p_stat = SRUN;

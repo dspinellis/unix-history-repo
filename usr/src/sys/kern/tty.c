@@ -1,4 +1,4 @@
-/*	tty.c	3.5	%H%	*/
+/*	tty.c	3.6	%H%	*/
 
 /*
  * general TTY subroutines
@@ -83,7 +83,8 @@ register struct tty *tp;
 	if(pp->p_pgrp == 0) {
 		u.u_ttyp = tp;
 		u.u_ttyd = dev;
-		tp->t_pgrp = pp->p_pid;
+		if (tp->t_pgrp == 0)
+			tp->t_pgrp = pp->p_pid;
 		pp->p_pgrp = tp->t_pgrp;
 	}
 	tp->t_state &= ~WOPEN;
@@ -107,8 +108,8 @@ register struct tty *tp;
 	tp->t_erase = CERASE;
 	tp->t_kill = CKILL;
 /* begin local */
-	tlun.t_suspc = 0377;
-	tlun.t_dstopc = 0377;
+	tlun.t_suspc = CTRL(z);
+	tlun.t_dsuspc = CTRL(y);
 	tlun.t_rprntc = CTRL(r);
 	tlun.t_flushc = CTRL(o);
 	tlun.t_werasc = CTRL(w);
@@ -458,7 +459,7 @@ register struct tty *tp;
 		;
 	tp->t_delct = 0;
 	tp->t_rocount = 0;		/* local */
-	tp->t_lstate = 0;	/* reset */
+	tp->t_lstate = 0;
 	splx(s);
 }
 
