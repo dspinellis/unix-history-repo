@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rexec.c	4.7 83/08/17";
+static char sccsid[] = "@(#)rexec.c	4.8 83/08/18";
 #endif
 
 #include <sys/types.h>
@@ -44,7 +44,7 @@ retry:
 	sin.sin_family = hp->h_addrtype;
 	sin.sin_port = rport;
 	bcopy(hp->h_addr, (caddr_t)&sin.sin_addr, hp->h_length);
-	if (connect(s, &sin) < 0) {
+	if (connect(s, &sin, sizeof(sin)) < 0) {
 		if (errno == ECONNREFUSED && timo <= 16) {
 			(void) close(s);
 			sleep(timo);
