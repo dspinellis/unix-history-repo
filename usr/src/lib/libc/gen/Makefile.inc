@@ -11,10 +11,10 @@ SRCS+=	alarm.c assert.c clock.c closedir.c confstr.c crypt.c ctermid.c \
 	getusershell.c glob.c initgroups.c isatty.c isinf.c \
 	nice.c nlist.c opendir.c pause.c popen.c psignal.c pwcache.c \
 	raise.c readdir.c rewinddir.c scandir.c seekdir.c sethostname.c \
-	setjmperr.c setmode.c siginterrupt.c siglist.c signal.c sigsetops.c \
-	sleep.c sysconf.c sysctl.c syslog.c telldir.c termios.c time.c \
-	times.c timezone.c ttyname.c ttyslot.c ualarm.c unvis.c usleep.c \
-	utime.c valloc.c vis.c wait.c wait3.c waitpid.c
+	setjmperr.c setmode.c siginterrupt.c siglist.c signal.c sigsetjmp.c \
+	sigsetops.c sleep.c sysconf.c sysctl.c syslog.c telldir.c termios.c \
+	time.c times.c timezone.c ttyname.c ttyslot.c ualarm.c unvis.c \
+	usleep.c utime.c valloc.c vis.c wait.c wait3.c waitpid.c
 
 # machine-dependent gen sources
 .include "${.CURDIR}/${MACHINE}/gen/Makefile.inc"
@@ -72,7 +72,8 @@ MLINKS+=psignal.3 sys_siglist.3
 MLINKS+=pwcache.3 user_from_uid.3 pwcache.3 group_from_gid.3
 MLINKS+=scandir.3 alphasort.3
 MLINKS+=setjmp.3 _longjmp.3 setjmp.3 _setjmp.3 setjmp.3 longjmp.3 \
-	setjmp.3 longjmperr.3 setjmp.3 longjmperror.3
+	setjmp.3 longjmperr.3 setjmp.3 longjmperror.3 \
+	setjmp.3 sigsetjmp.3 setjmp.3 siglongjmp.3
 MLINKS+=setmode.3 getmode.3
 MLINKS+=sigsetops.3 sigemptyset.3 sigsetops.3 sigfillset.3 \
 	sigsetops.3 sigaddset.3 sigsetops.3 sigdelset.3 \
