@@ -1,4 +1,4 @@
-/* in_cksum.c 1.6 81/10/26 */
+/* in_cksum.c 1.6 81/10/28 */
 
 #include <sys/types.h>
 #include "../bbnnet/net.h"
@@ -30,7 +30,7 @@ COUNT(CKSUM);
 		w = (u_short *)((int)m + m->m_off);
 		if (mlen == -1) {
 			sum += *(u_char *)w << 8;
-			w = (unsigned short *)((char *)w + 1);
+			w = (u_short *)((char *)w + 1);
 			mlen = m->m_len - 1;
 			len--;
 		} else
@@ -65,7 +65,7 @@ COUNT(CKSUM);
 			break;
 		for (;;) {
 			if (m == 0) {
-				printf("cksum: out of data");
+				printf("cksum: out of data\n");
 				goto done;
 			}
 			if (m->m_len)
@@ -74,5 +74,8 @@ COUNT(CKSUM);
 		}
 	}
 done:
-	return(~(sum + (sum >> 16)) & 0xffff);
+	/* add together high and low parts of sum and carry to get cksum */
+	{ asm("ashl $-16,r8,r0; addw2 r0,r8; adwc $0,r8");
+	  asm("mcoml r8,r8; movzwl r8,r8"); }
+	return (sum);
 }
