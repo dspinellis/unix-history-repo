@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 1.11 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.12 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -309,18 +309,10 @@ struct {
 #define NEXTERN 0001	/* flag used to mark external funcs and procs */
 #endif
 
-    /*
-     *	magic values for forvar -> value[ NL_FORV ]
-     *	value[ NL_FORV ] stores in its low byte
-     *	the nl_flags byte of the loop variable.
-     *	the top byte is another bunch of flags
-     *	FORBOUND 	means it is a loop variable
-     *	LOOPVAR		means it is a loop variable but it is not yet allocated
-     *	TEMPBOUND	means it is a loop variable and it is in a temporary.
-     */
-#define	LOOPVAR		00400
-#define	TEMPBOUND	01000
-#define	FORBOUND	( LOOPVAR | TEMPBOUND )
+/*
+ * used to mark value[ NL_FORV ] for loop variables
+ */
+#define	FORVAR		1
 
 /*
  * Definition of the commonly used "value" fields.
@@ -338,7 +330,6 @@ struct {
 #define NL_GOLEV 2
 #define NL_GOLINE 3
 #define NL_FORV 1
-#define NL_SOFFS 4
 
 #define	NL_FLDSZ 1
 #define	NL_VARNT 2
