@@ -1,51 +1,49 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)tty.1	6.3 (Berkeley) %G%
+.\"     @(#)tty.1	6.3 (Berkeley) %G%
 .\"
-.TH TTY 1 ""
-.AT 3
-.SH NAME
-tty \- return user's terminal name
-.SH SYNOPSIS
-.B tty
-[ -s ]
-.SH DESCRIPTION
+.Dd 
+.Dt TTY 1
+.Os
+.Sh NAME
+.Nm tty
+.Nd return user's terminal name
+.Sh SYNOPSIS
+.Nm tty
+.Op Fl s
+.Sh DESCRIPTION
 The
-.I tty
+.Nm tty
 utility writes the name of the terminal attached to standard input
 to standard output.
 The name that is written is the string returned by
-.IR ttyname (3).
+.Xr ttyname 3 .
 If the standard input is not a terminal, the message ``not a tty''
 is written.
 The options are as follows:
-.TP
--s
+.Bl -tag -width Ds
+.It Fl s
 Don't write the terminal name; only the exit status is affected
 when this option is specified.
 The
-.I -s
-option is deprecated in favor of the ``test -t 0'' command.
-.PP
-.I Tty
+.Fl s
+option is deprecated in favor of the
+.Dq Li "test -t 0"
+command.
+.El
+.Pp
+.Nm Tty
 exits 0 if the standard input is a terminal, 1 if the standard input is
 not a terminal, and >1 if an error occurs.
-.SH SEE\ ALSO
-test(1), ttyname(3)
-.SH STANDARDS
+.Sh SEE ALSO
+.Xr test 1 ,
+.Xr ttyname 3
+.Sh STANDARDS
 The
-.I tty
-function is expected to be POSIX 1003.2 compatible.
+.Nm tty
+function is expected to be
+.Tn POSIX
+1003.2 compatible.
