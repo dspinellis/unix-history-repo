@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumpmain.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumpmain.c	1.3 (Berkeley) %G%";
 #include "dump.h"
 
 int	notify = 0;	/* notify operator flag */
@@ -95,8 +95,12 @@ main(argc, argv)
 		break;
 
 	default:
-		printf("bad key '%c%'\n", arg[-1]);
+		fprintf(stderr, "bad key '%c%'\n", arg[-1]);
 		Exit(X_ABORT);
+	}
+	if(strcmp(tape, "-") == 0) {
+		pipeout++;
+		tape = "standard output";
 	}
 	if(argc > 1) {
 		argv++;
@@ -198,8 +202,10 @@ main(argc, argv)
 	msg("DUMP IS DONE\n");
 
 	putitime();
-	close(to);
-	rewind();
+	if (!pipeout) {
+		close(to);
+		rewind();
+	}
 	broadcast("DUMP IS DONE!\7\7\n");
 	Exit(X_FINOK);
 }
@@ -225,7 +231,7 @@ char *rawname(cp)
 	char *cp;
 {
 	static char rawbuf[32];
-	char *dp = rindex(cp, '/');
+	char *dp = (char *)rindex(cp, '/');
 
 	if (dp == 0)
 		return (0);
