@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.25 (Berkeley) 84/08/29";
+static char sccsid[] = "@(#)rwhod.c	4.26 (Berkeley) 84/09/04";
 #endif
 
 #include <sys/types.h>
@@ -73,7 +73,7 @@ main()
 {
 	struct sockaddr_in from;
 	char path[64];
-	int addr;
+	int addr, on = 1;
 	struct hostent *hp;
 
 	if (getuid()) {
@@ -126,7 +126,7 @@ main()
 		syslog(LOG_ERR, "socket: %m");
 		exit(1);
 	}
-	if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, 0, 0) < 0) {
+	if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, &on, sizeof (on)) < 0) {
 		syslog(LOG_ERR, "setsockopt SO_BROADCAST: %m");
 		exit(1);
 	}
