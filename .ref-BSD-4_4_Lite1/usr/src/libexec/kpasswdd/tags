@@ -1,7 +1,0 @@
-Mkpasswdd	kpasswdd.c	/^main()$/
-cleanup	kpasswdd.c	/^cleanup()$/
-des_clear_key	../../usr.bin/rlogin/des_rw.c	/^des_clear_key()$/
-des_read	../../usr.bin/rlogin/des_rw.c	/^des_read(fd, buf, len)$/
-des_set_key	../../usr.bin/rlogin/des_rw.c	/^des_set_key(inkey, insched)$/
-des_write	../../usr.bin/rlogin/des_rw.c	/^des_write(fd, buf, len)$/
-send_ack	kpasswdd.c	/^send_ack(remote, msg)$/

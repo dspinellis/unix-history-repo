@@ -1,4 +1,0 @@
-case $1 in
-  -*)	shift;;
-esac
-sed 's/.//g' $*

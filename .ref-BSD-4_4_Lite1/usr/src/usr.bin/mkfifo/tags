@@ -1,2 +1,0 @@
-Mmkfifo	mkfifo.c	/^main(argc, argv)$/
-usage	mkfifo.c	/^usage()$/

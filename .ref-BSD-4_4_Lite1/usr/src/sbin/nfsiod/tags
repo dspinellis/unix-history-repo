@@ -1,4 +1,0 @@
-Mnfsiod	nfsiod.c	/^main(argc, argv)$/
-nonfs	nfsiod.c	/^nonfs(signo)$/
-reapchild	nfsiod.c	/^reapchild(signo)$/
-usage	nfsiod.c	/^usage()$/

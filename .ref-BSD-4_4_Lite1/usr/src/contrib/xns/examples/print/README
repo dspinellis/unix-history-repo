@@ -1,8 +1,0 @@
-This directory contains several test clients, among them:
-	getprintstatus	inquires as to the printer status of a Xerox printer.
-			This currently uses a hardwired printer address.
-	printtest	a simple program which sends an Interpress file to 
-			a Xerox printer.  This currently uses a hardwired 
-			printer address.
-	xnsprint	a somewhat more complex program for sending an
-			Interpress file to a Xerox printer.

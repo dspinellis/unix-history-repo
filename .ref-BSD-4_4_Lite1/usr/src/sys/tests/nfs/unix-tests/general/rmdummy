@@ -1,7 +1,0 @@
-:
-#! /bin/sh
-#
-#       @(#)rmdummy	1.2 90/01/03 NFS Rev 2 testsuite
-#
-
-rm -rf dummy*
