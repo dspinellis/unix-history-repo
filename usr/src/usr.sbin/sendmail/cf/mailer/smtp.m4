@@ -12,7 +12,7 @@ POPDIVERT
 ###   SMTP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)smtp.m4	8.16 (Berkeley) %G%')
+VERSIONID(`@(#)smtp.m4	8.17 (Berkeley) %G%')
 
 Msmtp,		P=[IPC], F=CONCAT(mDFMuX, SMTP_MAILER_FLAGS), S=11/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), E=\r\n,
 		L=990, ifdef(`SMTP_MAILER_MAX', `M=SMTP_MAILER_MAX, ')A=IPC $h
@@ -82,8 +82,7 @@ R$+ < @ $* > $*		$@ $1 < @ $2 > $3		not UUCP form
 R< $&h ! > $- ! $+	$@ $2 < @ $1 .UUCP. >
 R< $&h ! > $-.$+ ! $+	$@ $3 < @ $1.$2 >
 R< $&h ! > $+		$@ $1 < @ $&h .UUCP. >
-R< $+ ! > $+		$: $1 ! $2 < @ $Y >
-R$+ < @ >		$: $1 < @ $j >			in case $Y undefined
+R< $+ ! > $+		$: $1 ! $2 < @ $j >
 R$+ < @ $+ : $+ >	$: $1 < @ $3 >			strip mailer: part')
 
 
