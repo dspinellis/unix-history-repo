@@ -1,6 +1,6 @@
-.\"	@(#)plot.1	5.1 (Berkeley) %G%
+.\"	@(#)plot.1	6.1 (Berkeley) %G%
 .\"
-.TH PLOT 1G  "18 January 1983"
+.TH PLOT 1G ""
 .AT 3
 .SH NAME
 plot \- graphics filters
@@ -29,8 +29,12 @@ Known
 .I terminals
 are:
 .TP
-.B 4014
-Tektronix 4014 storage scope.
+.B 4013
+Tektronix 4013 storage scope.
+.TP
+.BR 4014\  or\  tek
+Tektronix 4014 or 4015 storage scope with Enhanced Graphics Module.
+(Use 4013 for Tektronix 4014 or 4015 without the Enhanced Graphics Module).
 .TP
 .B 450
 DASI Hyterm 450 terminal (Diablo mechanism).
@@ -41,19 +45,42 @@ DASI 300 or GSI terminal (Diablo mechanism).
 .B 300S
 DASI 300S terminal (Diablo mechanism).
 .TP
+.B aed
+AED 512 color graphics terminal.
+.TP
+.BR bitgraph\  or\  bg
+BBN bitgraph graphics terminal.
+.TP
+.B crt
+Any crt terminal capable of running
+.IR vi (1).
+.TP
+.B dumb
+Dumb terminals without cursor addressing or line printers.
+.TP
+.B vt125
+DEC vt125 terminal.
+.TP
+.BR hp2648\  or\  hp\  or\  hp8
+Hewlett Packard 2648 graphics terminal.
+.TP
 .B ver
 Versatec D1200A printer-plotter.
-This version of
+.TP
+.B var
+Benson Varian printer-plotter.
+.IP
+These versions of
 .I plot
-places a scan-converted
-image in `/usr/tmp/raster' and sends the
-result directly to the plotter device rather than to
+use the
+.B \-g
+option of
+.IR lpr (1)
+to send the result directly to the plotter device rather than to
 the standard output.
-The optional argument causes a previously
-scan-converted file
-.I raster
-to be sent to the plotter.
 .SH FILES
+/usr/bin/t4013
+.br
 /usr/bin/tek
 .br
 /usr/bin/t450
@@ -62,11 +89,18 @@ to be sent to the plotter.
 .br
 /usr/bin/t300s
 .br
-/usr/bin/vplot
+/usr/bin/aedplot
 .br
-/usr/tmp/raster 
+/usr/bin/bgplot
+.br
+/usr/bin/crtplot
+.br
+/usr/bin/dumbplot
+.br
+/usr/bin/gigiplot
+.br
+/usr/bin/hpplot
+.br
+/usr/ucb/lpr
 .SH "SEE ALSO"
-plot(3X), plot(5)
-.SH BUGS
-There is no lockout protection
-for /usr/tmp/raster.
+plot(3X), plot(3F), plot(5), lpr(1)
