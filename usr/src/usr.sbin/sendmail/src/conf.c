@@ -1,9 +1,9 @@
 # include <stdio.h>
 # include <pwd.h>
-# include "dlvrmail.h"
+# include "postbox.h"
 
 /*
-**  CONF.C -- Delivermail Configuration Tables.
+**  CONF.C -- Postbox Configuration Tables.
 **
 **	Defines the configuration of this installation.
 **
@@ -52,7 +52,7 @@
 **				and possibly (but not necessarily) if
 **				the -f argument matches the real sender.
 **				The effect is that if the "-f" option
-**				is given to delivermail then it will be
+**				is given to postbox then it will be
 **				passed through (as arguments 1 & 2) to
 **				the mailer.
 **			   M_ROPT -- identical to M_FOPT, except uses
@@ -110,7 +110,7 @@
 **			entry contains:
 **			- a character that will trigger this entry.
 **			- an index into the Mailer table.
-**			- a word of flags, described in dlvrmail.h.
+**			- a word of flags, described in postbox.h.
 **			- an argument.  If we have P_MAP, it is the
 **			  character to turn the trigger character into.
 **			  If we have P_MOVE, it is the site to send it
@@ -130,7 +130,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.1	%G%";
+static char SccsId[] = "@(#)conf.c	3.2	%G%";
 
 
 bool	UseMsgId = FALSE;	/* don't put message id's in anywhere */
@@ -452,7 +452,7 @@ ttypath()
 	pathn[8] = i;
 
 	/* see if we have write permission */
-	if (stat(pathn, &stbuf) < 0 || !flagset(02, stbuf.st_mode))
+	if (stat(pathn, &stbuf) < 0 || !bitset(02, stbuf.st_mode))
 	{
 		errno = 0;
 		return (NULL);
@@ -580,7 +580,7 @@ ttypath()
 	}
 
 	/* see if we have write permission */
-	if (stat(pathn, &stbuf) < 0 || !flagset(02, stbuf.st_mode))
+	if (stat(pathn, &stbuf) < 0 || !bitset(02, stbuf.st_mode))
 	{
 		errno = 0;
 		return (NULL);
@@ -594,3 +594,32 @@ ttypath()
 	return (pathn);
 }
 # endif V6
+/*
+**  CHECKCOMPAT -- check for From and To person compatible.
+**
+**	This routine can be supplied on a per-installation basis
+**	to determine whether a person is allowed to send a message.
+**	This allows restriction of certain types of internet
+**	forwarding or registration of users.
+**
+**	If the hosts are found to be incompatible, an error
+**	message should be given using "usrerr" and FALSE should
+**	be returned.
+**
+**	Parameters:
+**		to -- the person being sent to.
+**
+**	Returns:
+**		TRUE -- ok to send.
+**		FALSE -- not ok.
+**
+**	Side Effects:
+**		none (unless you include the usrerr stuff)
+*/
+
+bool
+checkcompat(to)
+	register ADDRESS *to;
+{
+	return (TRUE);
+}

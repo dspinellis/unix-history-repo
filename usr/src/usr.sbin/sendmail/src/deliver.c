@@ -2,12 +2,12 @@
 # include <pwd.h>
 # include <signal.h>
 # include <ctype.h>
-# include "dlvrmail.h"
+# include "postbox.h"
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.1	%G%";
+static char SccsId[] = "@(#)deliver.c	3.2	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -52,7 +52,7 @@ static char SccsId[] = "@(#)deliver.c	3.1	%G%";
 */
 
 deliver(to, editfcn)
-	addrq *to;
+	ADDRESS *to;
 	int (*editfcn)();
 {
 	register struct mailer *m;
@@ -72,6 +72,7 @@ deliver(to, editfcn)
 	extern putmessage();
 	extern pipesig();
 	extern char *index();
+	extern bool checkcompat();
 
 	/*
 	**  Compute receiving mailer, host, and to addreses.
@@ -91,6 +92,13 @@ deliver(to, editfcn)
 # endif DEBUG
 
 	/*
+	**  Check to see that these people are allowed to talk to each other.
+	*/
+
+	if (!checkcompat(to))
+		return(giveresponse(EX_UNAVAILABLE, TRUE, m));
+
+	/*
 	**  Remove quote bits from user/host.
 	*/
 
@@ -104,7 +112,7 @@ deliver(to, editfcn)
 	**  Strip quote bits from names if the mailer wants it.
 	*/
 
-	if (flagset(M_STRIPQ, m->m_flags))
+	if (bitset(M_STRIPQ, m->m_flags))
 	{
 		stripquotes(user);
 		stripquotes(host);
@@ -144,7 +152,7 @@ deliver(to, editfcn)
 	**
 	**	>>>>>>>>>> This clause assumes that the local mailer
 	**	>> NOTE >> cannot do any further aliasing; that
-	**	>>>>>>>>>> function is subsumed by delivermail.
+	**	>>>>>>>>>> function is subsumed by postbox.
 	*/
 
 	if (m == &Mailer[0])
@@ -204,7 +212,7 @@ deliver(to, editfcn)
 		}
 		close(pvect[0]);
 		close(pvect[1]);
-		if (!flagset(M_RESTR, m->m_flags))
+		if (!bitset(M_RESTR, m->m_flags))
 			setuid(getuid());
 # ifndef VFORK
 		/*
@@ -284,7 +292,7 @@ deliver(to, editfcn)
 **		m -- the mailer descriptor for this mailer.
 **
 **	Returns:
-**		none.
+**		stat.
 **
 **	Side Effects:
 **		Errors may be incremented.
@@ -329,7 +337,7 @@ giveresponse(stat, force, m)
 		}
 		if (statmsg == NULL)
 			usrerr("unknown mailer response %d", stat);
-		else if (force || !flagset(M_QUIET, m->m_flags))
+		else if (force || !bitset(M_QUIET, m->m_flags))
 			usrerr("%s", statmsg);
 	}
 
@@ -390,7 +398,7 @@ putmessage(fp, m)
 
 	/* output date if needed by mailer */
 	p = hvalue("date");
-	if (flagset(M_NEEDDATE, m->m_flags) && p == NULL)
+	if (bitset(M_NEEDDATE, m->m_flags) && p == NULL)
 		p = arpadate(Date);
 	if (p != NULL)
 	{
@@ -400,7 +408,7 @@ putmessage(fp, m)
 
 	/* output from line if needed by mailer */
 	p = hvalue("from");
-	if (flagset(M_NEEDFROM, m->m_flags) && p == NULL)
+	if (bitset(M_NEEDFROM, m->m_flags) && p == NULL)
 	{
 		char frombuf[MAXLINE];
 		extern char *FullName;
@@ -421,7 +429,7 @@ putmessage(fp, m)
 
 	/* output message-id field if needed */
 	p = hvalue("message-id");
-	if (flagset(M_MSGID, m->m_flags) && p == NULL)
+	if (bitset(M_MSGID, m->m_flags) && p == NULL)
 		p = MsgId;
 	if (p != NULL)
 	{
@@ -432,7 +440,7 @@ putmessage(fp, m)
 	/* output any other header lines */
 	for (h = Header; h != NULL; h = h->h_link)
 	{
-		if (flagset(H_USED, h->h_flags))
+		if (bitset(H_USED, h->h_flags))
 			continue;
 		fprintf(fp, "%s: %s\n", capitalize(h->h_field), h->h_value);
 		h->h_flags |= H_USED;
@@ -500,8 +508,8 @@ sendto(list, copyf)
 	register char *p;
 	register char *q;
 	register char c;
-	addrq *a;
-	extern addrq *parse();
+	ADDRESS *a;
+	extern ADDRESS *parse();
 	bool more;
 
 	/* more keeps track of what the previous delimiter was */
@@ -518,7 +526,7 @@ sendto(list, copyf)
 			p++;
 
 		/* parse the address */
-		if ((a = parse(q, (addrq *) NULL, copyf)) == NULL)
+		if ((a = parse(q, (ADDRESS *) NULL, copyf)) == NULL)
 			continue;
 
 		/* arrange to send to this person */
@@ -553,13 +561,12 @@ sendto(list, copyf)
 */
 
 recipient(a, targetq)
-	register addrq *a;
-	addrq *targetq;
+	register ADDRESS *a;
+	ADDRESS *targetq;
 {
-	register addrq *q;
+	register ADDRESS *q;
 	register struct mailer *m;
 	register char **pvp;
-	extern char *xalloc();
 	extern bool forward();
 	extern int errno;
 	extern bool sameaddr();
@@ -684,9 +691,9 @@ buildargv(m, host, user, from)
 	*pvp++ = m->m_argv[0];
 
 	/* insert -f or -r flag as appropriate */
-	if (flagset(M_FOPT|M_ROPT, m->m_flags) && FromFlag)
+	if (bitset(M_FOPT|M_ROPT, m->m_flags) && FromFlag)
 	{
-		if (flagset(M_FOPT, m->m_flags))
+		if (bitset(M_FOPT, m->m_flags))
 			*pvp++ = "-f";
 		else
 			*pvp++ = "-r";
