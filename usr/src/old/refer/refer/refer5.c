@@ -166,9 +166,12 @@ char *flds[], *out;
 	int i, fnd = 0;
 
 	for(i = 0; i < nf; i++)
-		if (flds[i][1] == c && ++fnd >= seq) {
+		/* following if statement modified to cope with Q authors */
+		if ((flds[i][1] == c || (c == 'A' && flds[i][1] == 'Q'))
+		    && ++fnd >= seq) {
+			c = flds[i][1];
 			/* for titles use first word otherwise last */
-			if (c == 'T' || c == 'J') {
+			if (c == 'T' || c == 'J' || c == 'Q') {
 				p = flds[i]+3;
 				if (prefix("A ", p))
 					p += 2;
