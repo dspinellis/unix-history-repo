@@ -8,14 +8,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_vfsops.c	7.1 (Berkeley) %G%
+ *	@(#)umap_vfsops.c	7.2 (Berkeley) %G%
  *
  * @(#)null_vfsops.c       1.5 (Berkeley) 7/10/92
  */
 
 /*
  * Umap Layer
- * (See mount_umap(8) for a descritpion of this layer.)
+ * (See mount_umap(8) for a description of this layer.)
  */
 
 #include <sys/param.h>
@@ -26,7 +26,7 @@
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/malloc.h>
-#include <umapfs/umap.h>
+#include <miscfs/umapfs/umap.h>
 
 /*
  * Mount umap layer
