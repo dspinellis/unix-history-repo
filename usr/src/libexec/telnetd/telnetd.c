@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -35,7 +35,7 @@ static char sccsid[] = "@(#)telnetd.c	5.1 (Berkeley) %G%";
 #include <syslog.h>
 
 #define	BELL	'\07'
-#define BANNER	"\r\n\r\n4.2 BSD UNIX (%s)\r\n\r\r\n\r%s"
+#define BANNER	"\r\n\r\n4.3 BSD UNIX (%s)\r\n\r\r\n\r%s"
 
 char	hisopts[256];
 char	myopts[256];
@@ -585,26 +585,39 @@ cleanup()
 
 struct	utmp wtmp;
 char	wtmpf[]	= "/usr/adm/wtmp";
-char	utmp[] = "/etc/utmp";
-#define SCPYN(a, b)	strncpy(a, b, sizeof (a))
-#define SCMPN(a, b)	strncmp(a, b, sizeof (a))
+char	utmpf[] = "/etc/utmp";
+#define SCPYN(a, b)	strncpy(a, b, sizeof(a))
+#define SCMPN(a, b)	strncmp(a, b, sizeof(a))
 
 rmut()
 {
 	register f;
 	int found = 0;
+	struct utmp *u, *utmp;
+	int nutmp;
+	struct stat statbf;
 
-	f = open(utmp, O_RDWR);
+	f = open(utmpf, O_RDWR);
 	if (f >= 0) {
-		while(read(f, (char *)&wtmp, sizeof (wtmp)) == sizeof (wtmp)) {
-			if (SCMPN(wtmp.ut_line, line+5) || wtmp.ut_name[0]==0)
-				continue;
-			lseek(f, -(long)sizeof (wtmp), L_INCR);
-			SCPYN(wtmp.ut_name, "");
-			SCPYN(wtmp.ut_host, "");
-			time(&wtmp.ut_time);
-			write(f, (char *)&wtmp, sizeof (wtmp));
-			found++;
+		fstat(f, &statbf);
+		utmp = (struct utmp *)malloc(statbf.st_size);
+		if (!utmp)
+			syslog(LOG_ERR, "utmp malloc failed");
+		if (statbf.st_size && utmp) {
+			nutmp = read(f, utmp, statbf.st_size);
+			nutmp /= sizeof(struct utmp);
+		
+			for (u = utmp ; u < &utmp[nutmp] ; u++) {
+				if (SCMPN(u->ut_line, line+5) ||
+				    u->ut_name[0]==0)
+					continue;
+				lseek(f, ((long)u)-((long)utmp), L_SET);
+				SCPYN(u->ut_name, "");
+				SCPYN(u->ut_host, "");
+				time(&u->ut_time);
+				write(f, (char *)u, sizeof(wtmp));
+				found++;
+			}
 		}
 		close(f);
 	}
@@ -615,7 +628,7 @@ rmut()
 			SCPYN(wtmp.ut_name, "");
 			SCPYN(wtmp.ut_host, "");
 			time(&wtmp.ut_time);
-			write(f, (char *)&wtmp, sizeof (wtmp));
+			write(f, (char *)&wtmp, sizeof(wtmp));
 			close(f);
 		}
 	}
