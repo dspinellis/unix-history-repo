@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_vv.h	4.9 (Berkeley) %G%
+ *	@(#)if_vv.h	4.10 (Berkeley) %G%
  */
 
 /*
@@ -38,12 +38,8 @@ struct vv_header {
  * Other types are defined, but are proprietary.
  */
 #define	RING_IP		1
-#define	RING_IPTrailer	2	/* really, 3 = 512 bytes */
-				/*         4 = 1024 bytes */
-				/*         5 = 1536 bytes */
-				/* it's really very messed-up! */
-#define	RING_IPNTrailer	4	/* not a number, but a range */
-#define RING_ARP	3	/* the next three conflict with trailers */
+#define	RING_TRAILER	2	/* offset now in vh_info only */
+#define RING_ARP	3
 #define RING_HDLC	4
 #define RING_VAXDB	5
 #define RING_RINGWAY	6
