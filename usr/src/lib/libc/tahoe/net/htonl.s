@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)htonl.s	1.4 (Berkeley) %G%"
+	.asciz "@(#)htonl.s	5.1 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 /* netorder = htonl(hostorder) */
