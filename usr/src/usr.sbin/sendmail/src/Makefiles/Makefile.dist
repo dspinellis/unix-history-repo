@@ -5,7 +5,7 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#	@(#)Makefile.dist	8.4 (Berkeley) %G%
+#	@(#)Makefile.dist	8.5 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -27,6 +27,9 @@ ENVDEF=
 
 # include directories
 INCDIRS=-I/usr/sww/include/db
+
+# loader options
+LDOPTS=
 
 # library directories
 LIBDIRS=-L/usr/sww/lib
@@ -62,7 +65,7 @@ BINGRP=	kmem
 BINMODE=6555
 
 sendmail: ${OBJS}
-	${CC} -o sendmail ${OBJS} ${LIBDIRS} ${LIBS}
+	${CC} -o sendmail ${LDOPTS} ${OBJS} ${LIBDIRS} ${LIBS}
 
 aliases.0: aliases.5
 	nroff -h -mandoc aliases.5 > aliases.0
