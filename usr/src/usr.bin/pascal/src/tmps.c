@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)tmps.c 1.2 %G%";
+static char sccsid[] = "@(#)tmps.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)tmps.c 1.2 %G%";
  * All temporaries are allocated here, and this routines decides
  * where they are to be put.
  */
+#ifdef PC
 #ifdef VAX
 #    define MAXREGS 6
 #    define REGSIZ 4
@@ -28,6 +29,7 @@ static char sccsid[] = "@(#)tmps.c 1.2 %G%";
 #    define FIRSTREG 0
 #endif PDP11
 #endif VAX
+#endif PC
 
 /*
  * allocate runtime temporary variables
@@ -86,6 +88,7 @@ tmpfree(restore)
 	}
 }
 
+#ifdef PC
 #ifdef VAX
 /*
  * create a save mask for registers which have been used
@@ -104,3 +107,4 @@ savmask()
 	return mask;
 }
 #endif VAX
+#endif PC
