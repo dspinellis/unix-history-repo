@@ -3,12 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	7.16 (Berkeley) %G%
+ *	@(#)sys_process.c	7.17 (Berkeley) %G%
  */
 
 #define IPCREG
 #include "param.h"
-#include "user.h"
 #include "proc.h"
 #include "vnode.h"
 #include "seg.h"
@@ -17,8 +16,10 @@
 
 #include "machine/reg.h"
 #include "machine/psl.h"
+#include "vm/vm.h"
 #include "vm/vm_page.h"
-#include "vm/vm_prot.h"
+
+#include "user.h"
 
 /*
  * Priority for tracing
@@ -112,6 +113,7 @@ procxmt(p)
 	if (ipc.ip_lock != p->p_pid)
 		return (0);
 	p->p_slptime = 0;
+	u.u_kproc.kp_proc.p_regs = p->p_regs;	/* u.u_ar0 */
 	i = ipc.ip_req;
 	ipc.ip_req = 0;
 	switch (i) {
