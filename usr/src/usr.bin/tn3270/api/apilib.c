@@ -103,7 +103,7 @@ char *name;
  * Session Information Services
  */
 
-api_query_sesion_id(parms)
+api_query_session_id(parms)
 QuerySessionIdParms *parms;
 {
     if (api_issue(0x09, QUERY_SESSION_ID, 0x80, 0x20, 0,
@@ -121,10 +121,10 @@ QuerySessionIdParms *parms;
 }
 
 
-api_query_session_parms(parms)
+api_query_session_parameters(parms)
 QuerySessionParametersParms *parms;
 {
-    if (api_issue(0x09, QUERY_SESSION_PARMS, 0x80, 0x20, 0,
+    if (api_issue(0x09, QUERY_SESSION_PARAMETERS, 0x80, 0x20, 0,
 					gate_sessmgr, (char *)parms) == -1) {
 	api_fcn_errno = 0;
 	api_fcn_fcn_id = 0;
@@ -141,7 +141,7 @@ QuerySessionParametersParms *parms;
 api_query_session_cursor(parms)
 QuerySessionCursorParms *parms;
 {
-    if (api_issue(0x09, QUERY_SESSION_CURSOR, 0x80, 0x20, 0,
+    if (api_issue(0x09, QUERY_SESSION_CURSOR, 0x80, 0x20, 0xff,
 					gate_sessmgr, (char *)parms) == -1) {
 	api_fcn_errno = 0;
 	api_fcn_fcn_id = 0;
@@ -254,7 +254,7 @@ EnableInputParms *parms;
 api_copy_string(parms)
 CopyStringParms *parms;
 {
-    if (api_issue(0x09, COPY_STRING, 0x80, 0x20, 0,
+    if (api_issue(0x09, COPY_STRING, 0x80, 0x20, 0xff,
 					    gate_copy, (char *)parms) == -1) {
 	api_fcn_errno = 0;
 	api_fcn_fcn_id = 0;
@@ -275,7 +275,7 @@ CopyStringParms *parms;
 api_read_oia_group(parms)
 ReadOiaGroupParms *parms;
 {
-    if (api_issue(0x09, READ_OIA_GROUP, 0x80, 0x20, 0,
+    if (api_issue(0x09, READ_OIA_GROUP, 0x80, 0x20, 0xff,
 					    gate_oiam, (char *)parms) == -1) {
 	api_fcn_errno = 0;
 	api_fcn_fcn_id = 0;
