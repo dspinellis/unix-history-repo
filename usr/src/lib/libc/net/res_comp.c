@@ -1,12 +1,33 @@
-/*
+/*-
  * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
+ * -
+ * Portions Copyright (c) 1993 by Digital Equipment Corporation.
+ * 
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies, and that
+ * the name of Digital Equipment Corporation not be used in advertising or
+ * publicity pertaining to distribution of the document or software without
+ * specific, written prior permission.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
+ * CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+ * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+ * SOFTWARE.
+ * -
+ * --Copyright--
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_comp.c	6.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_comp.c	6.23 (Berkeley) %G%";
+static char rcsid[] = "$Id: res_comp.c,v 4.9.1.1 1993/05/02 22:43:03 vixie Rel $";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -15,7 +36,7 @@ static char sccsid[] = "@(#)res_comp.c	6.22 (Berkeley) %G%";
 #include <resolv.h>
 #include <stdio.h>
 
-static dn_find();
+static int dn_find();
 
 /*
  * Expand compressed domain name 'comp_dn' to full domain name.
@@ -213,7 +234,7 @@ __dn_skipname(comp_dn, eom)
  * dnptrs is the pointer to the first name on the list,
  * not the pointer to the start of the message.
  */
-static
+static int
 dn_find(exp_dn, msg, dnptrs, lastdnptr)
 	u_char *exp_dn, *msg;
 	u_char **dnptrs, **lastdnptr;
@@ -269,55 +290,40 @@ dn_find(exp_dn, msg, dnptrs, lastdnptr)
 
 u_short
 _getshort(msgp)
-	u_char *msgp;
+	register u_char *msgp;
 {
-	register u_char *p = (u_char *) msgp;
-#ifdef vax
-	/*
-	 * vax compiler doesn't put shorts in registers
-	 */
-	register u_long u;
-#else
-	register u_short u;
-#endif
+	register u_int16_t u;
 
-	u = *p++ << 8;
-	return ((u_short)(u | *p));
+	GETSHORT(u, msgp);
+	return (u);
 }
 
-u_long
+u_int32_t
 _getlong(msgp)
-	u_char *msgp;
+	register u_char *msgp;
 {
-	register u_char *p = (u_char *) msgp;
-	register u_long u;
+	register u_int32_t u;
 
-	u = *p++; u <<= 8;
-	u |= *p++; u <<= 8;
-	u |= *p++; u <<= 8;
-	return (u | *p);
+	GETLONG(u, msgp);
+	return (u);
 }
 
 void
-#ifdef __STDC__
+#if defined(__STDC__) || defined(__cplusplus)
 __putshort(register u_short s, register u_char *msgp)
 #else
 __putshort(s, msgp)
-	register u_short s;
+	register u_int16_t s;
 	register u_char *msgp;
 #endif
 {
-	msgp[1] = s;
-	msgp[0] = s >> 8;
+	PUTSHORT(s, msgp);
 }
 
 void
 __putlong(l, msgp)
-	register u_long l;
+	register u_int32_t l;
 	register u_char *msgp;
 {
-	msgp[3] = l;
-	msgp[2] = (l >>= 8);
-	msgp[1] = (l >>= 8);
-	msgp[0] = l >> 8;
+	PUTLONG(l, msgp);
 }

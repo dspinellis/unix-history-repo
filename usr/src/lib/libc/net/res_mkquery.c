@@ -1,12 +1,33 @@
-/*
+/*-
  * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
+ * -
+ * Portions Copyright (c) 1993 by Digital Equipment Corporation.
+ * 
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies, and that
+ * the name of Digital Equipment Corporation not be used in advertising or
+ * publicity pertaining to distribution of the document or software without
+ * specific, written prior permission.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
+ * CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+ * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+ * SOFTWARE.
+ * -
+ * --Copyright--
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_mkquery.c	6.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_mkquery.c	6.17 (Berkeley) %G%";
+static char rcsid[] = "$Id: res_mkquery.c,v 4.9.1.2 1993/05/17 10:00:01 vixie Exp $";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -20,25 +41,27 @@ static char sccsid[] = "@(#)res_mkquery.c	6.16 (Berkeley) %G%";
  * Form all types of queries.
  * Returns the size of the result or -1.
  */
-res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
+res_mkquery(op, dname, class, type, data, datalen, newrr_in, buf, buflen)
 	int op;			/* opcode of query */
 	const char *dname;		/* domain name */
 	int class, type;	/* class and type of query */
 	const char *data;		/* resource record data */
 	int datalen;		/* length of data */
-	const struct rrec *newrr;	/* new rr for modify or append */
+	const char *newrr_in;	/* new rr for modify or append */
 	char *buf;		/* buffer to put query */
 	int buflen;		/* size of buffer */
 {
 	register HEADER *hp;
 	register char *cp;
 	register int n;
+	struct rrec *newrr = (struct rrec *) newrr_in;
 	char *dnptrs[10], **dpp, **lastdnptr;
 
 #ifdef DEBUG
 	if (_res.options & RES_DEBUG)
-		printf("res_mkquery(%d, %s, %d, %d)\n", op, dname, class, type);
-#endif DEBUG
+		printf(";; res_mkquery(%d, %s, %d, %d)\n",
+		       op, dname, class, type);
+#endif
 	/*
 	 * Initialize header fields.
 	 */
@@ -70,9 +93,9 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 		cp += n;
 		buflen -= n;
 		__putshort(type, (u_char *)cp);
-		cp += sizeof(u_short);
+		cp += sizeof(u_int16_t);
 		__putshort(class, (u_char *)cp);
-		cp += sizeof(u_short);
+		cp += sizeof(u_int16_t);
 		hp->qdcount = htons(1);
 		if (op == QUERY || data == NULL)
 			break;
@@ -86,13 +109,13 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 		cp += n;
 		buflen -= n;
 		__putshort(T_NULL, (u_char *)cp);
-		cp += sizeof(u_short);
+		cp += sizeof(u_int16_t);
 		__putshort(class, (u_char *)cp);
-		cp += sizeof(u_short);
+		cp += sizeof(u_int16_t);
 		__putlong(0, (u_char *)cp);
-		cp += sizeof(u_long);
+		cp += sizeof(u_int32_t);
 		__putshort(0, (u_char *)cp);
-		cp += sizeof(u_short);
+		cp += sizeof(u_int16_t);
 		hp->arcount = htons(1);
 		break;
 
@@ -104,13 +127,13 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 			return (-1);
 		*cp++ = '\0';	/* no domain name */
 		__putshort(type, (u_char *)cp);
-		cp += sizeof(u_short);
+		cp += sizeof(u_int16_t);
 		__putshort(class, (u_char *)cp);
-		cp += sizeof(u_short);
+		cp += sizeof(u_int16_t);
 		__putlong(0, (u_char *)cp);
-		cp += sizeof(u_long);
+		cp += sizeof(u_int32_t);
 		__putshort(datalen, (u_char *)cp);
-		cp += sizeof(u_short);
+		cp += sizeof(u_int16_t);
 		if (datalen) {
 			bcopy(data, cp, datalen);
 			cp += datalen;
@@ -138,13 +161,13 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 			return (-1);
 		cp += n;
 		__putshort(type, cp);
-                cp += sizeof(u_short);
+                cp += sizeof(u_int16_t);
                 __putshort(class, cp);
-                cp += sizeof(u_short);
+                cp += sizeof(u_int16_t);
 		__putlong(0, cp);
-		cp += sizeof(u_long);
+		cp += sizeof(u_int32_t);
 		__putshort(datalen, cp);
-                cp += sizeof(u_short);
+                cp += sizeof(u_int16_t);
 		if (datalen) {
 			bcopy(data, cp, datalen);
 			cp += datalen;
@@ -161,13 +184,13 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 			return (-1);
 		cp += n;
 		__putshort(newrr->r_type, cp);
-                cp += sizeof(u_short);
+                cp += sizeof(u_int16_t);
                 __putshort(newrr->r_class, cp);
-                cp += sizeof(u_short);
+                cp += sizeof(u_int16_t);
 		__putlong(0, cp);
-		cp += sizeof(u_long);
+		cp += sizeof(u_int32_t);
 		__putshort(newrr->r_size, cp);
-                cp += sizeof(u_short);
+                cp += sizeof(u_int16_t);
 		if (newrr->r_size) {
 			bcopy(newrr->r_data, cp, newrr->r_size);
 			cp += newrr->r_size;
@@ -175,7 +198,7 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 		hp->ancount = htons(0);
 		break;
 
-#endif ALLOW_UPDATES
+#endif /* ALLOW_UPDATES */
 	}
 	return (cp - buf);
 }
