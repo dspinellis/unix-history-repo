@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.5.t	8.5 (Berkeley) %G%
+.\"	@(#)2.5.t	8.6 (Berkeley) %G%
 .\"
 .Sh 2 "Process debugging
 .Sh 3 "Traditional debugging
@@ -49,9 +49,6 @@ The debugger finds (or creates) the process that it wants to
 debug and then issues an attach command via the \fIctl\fP file.
 Further interaction can then be done with the process through
 the other files provided by the \fI/proc\fP filesystem.
-This interface has the benefit of being able to debug
-arbitrary processes on the system rather than just processes
-started by the debugger.
 .Sh 3 "Kernel tracing
 .LP
 Another facility for debugging programs is provided by the
@@ -66,7 +63,7 @@ char *tracefile; int ops, trpoints, pid;
 does kernel trace logging for the specified processes.
 The kernel operations that are traced include system calls,
 pathname translations, signal processing, and I/O.
-This facility can be particularly useful for debugging
+This facility can be particularly useful to debug
 programs for which you do not have the source.
 .\"
 .\" We currently do not document the vtrace call

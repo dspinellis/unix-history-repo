@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.4.t	8.4 (Berkeley) %G%
+.\"	@(#)1.4.t	8.5 (Berkeley) %G%
 .\"
 .Sh 2 "Timers
 .Sh 3 "Real time
@@ -41,7 +41,7 @@ struct timezone {
 };
 .TE
 .DE
-This timezone information is present only for historical reasons
+The timezone information is present only for historical reasons
 and is unused by the current system.
 .LP
 The precision of the system clock is hardware dependent.
@@ -130,12 +130,11 @@ see what value resulted.
 The
 .Fn alarm
 system call of earlier versions of UNIX is provided
-as a library routine using the ITIMER_REAL timer.  The process
-profiling facilities of earlier versions of UNIX
-remain because
-it is not always possible to guarantee
-the automatic restart of system calls after 
-receipt of a signal.
+as a library routine using the ITIMER_REAL timer.
+.PP
+The process profiling facilities of earlier versions of UNIX
+remain because it is not always possible to guarantee
+the automatic restart of system calls after receipt of a signal.
 The
 .Fn profil
 call arranges for the kernel to begin gathering
