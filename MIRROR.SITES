@@ -25,6 +25,9 @@ Germany		gil.physik.rwth-aachen.de:/pub/FreeBSD
 Hong Kong	ftp.cs.cuhk.hk:/pub/FreeBSD
 		<unknown>
 
+Israel		orgchem.weizmann.ac.il:/pub/FreeBSD
+		<serg@klara.weizmann.ac.il>
+
 Netherlands	ftp.nl.net:/pub/os/FreeBSD
 		<archive@nl.net>
 
@@ -34,8 +37,11 @@ Russia		ftp.kiae.su:/FreeBSD
 UK		src.doc.ic.ac.uk:/packages/FreeBSD
 		<unknown>
 
-USA		ftp.dsu.edu:/pub/FreeBSD
-		<ghelmer@alpha.dsu.edu>
+USA		gatekeeper.dec.com:/pub/BSD/FreeBSD
+		<hubbard@gatekeeper.dec.com>
+
+USA		freebsd.uml.edu:/FreeBSD
+		<oneill@cs.uml.edu>
 
 
-$Id: MIRROR.SITES,v 1.8 1994/03/14 19:20:45 rgrimes Exp $
+$Id: MIRROR.SITES,v 1.9 1994/04/18 00:28:35 rgrimes Exp $
