@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	4.15 (Berkeley) %G%";
 #endif
 
 /*
@@ -21,6 +21,13 @@ static char sccsid[] = "@(#)ftpd.c	4.14 (Berkeley) %G%";
 #include <errno.h>
 
 #include "ftp.h"
+
+/*
+ * File containing login names
+ * NOT to be used on this machine.
+ * Commonly used to disallow uucp.
+ */
+#define	FTPUSERS	"/etc/ftpusers"
 
 extern	int errno;
 extern	char *sys_errlist[];
@@ -710,4 +717,119 @@ dolog(sin)
 	t = time(0);
 	fprintf(stderr,"FTP: connection from %s at %s", remotehost, ctime(&t));
 	fflush(stderr);
+}
+
+/*
+ * Special version of popen which avoids
+ * call to shell.  This insures noone may 
+ * create a pipe to a hidden program as a side
+ * effect of a list or dir command.
+ */
+#define	tst(a,b)	(*mode == 'r'? (b) : (a))
+#define	RDR	0
+#define	WTR	1
+static	int popen_pid[5];
+
+static char *
+nextarg(cpp)
+	char *cpp;
+{
+	register char *cp = cpp;
+
+	if (cp == 0)
+		return (cp);
+	while (*cp && *cp != ' ' && *cp != '\t')
+		cp++;
+	if (*cp == ' ' || *cp == '\t') {
+		*cp++ = '\0';
+		while (*cp == ' ' || *cp == '\t')
+			cp++;
+	}
+	if (cp == cpp)
+		return ((char *)0);
+	return (cp);
+}
+
+FILE *
+popen(cmd, mode)
+	char *cmd, *mode;
+{
+	int p[2], ac;
+	register myside, hisside, pid;
+	char *av[10];
+	register char *cp;
+
+	if (pipe(p) < 0)
+		return (NULL);
+	cp = cmd, ac = 0;
+	do {
+		av[ac++] = cp;
+		cp = nextarg(cp);
+	} while (cp && *cp);
+	av[ac] = (char *)0;
+	myside = tst(p[WTR], p[RDR]);
+	hisside = tst(p[RDR], p[WTR]);
+	if ((pid = fork()) == 0) {
+		/* myside and hisside reverse roles in child */
+		close(myside);
+		dup2(hisside, tst(0, 1));
+		close(hisside);
+		execv(av[0], av);
+		_exit(1);
+	}
+	if (pid == -1)
+		return (NULL);
+	popen_pid[myside] = pid;
+	close(hisside);
+	return (fdopen(myside, mode));
+}
+
+pclose(ptr)
+	FILE *ptr;
+{
+	register f, r, (*hstat)(), (*istat)(), (*qstat)();
+	int status;
+
+	f = fileno(ptr);
+	fclose(ptr);
+	istat = signal(SIGINT, SIG_IGN);
+	qstat = signal(SIGQUIT, SIG_IGN);
+	hstat = signal(SIGHUP, SIG_IGN);
+	while ((r = wait(&status)) != popen_pid[f] && r != -1)
+		;
+	if (r == -1)
+		status = -1;
+	signal(SIGINT, istat);
+	signal(SIGQUIT, qstat);
+	signal(SIGHUP, hstat);
+	return (status);
+}
+
+/*
+ * Check user requesting login priviledges.
+ * Disallow anyone mentioned in the file FTPUSERS
+ * to allow people such as uucp to be avoided.
+ */
+checkuser(name)
+	register char *name;
+{
+	char line[BUFSIZ], *index();
+	FILE *fd;
+	int found = 0;
+
+	fd = fopen(FTPUSERS, "r");
+	if (fd == NULL)
+		return (1);
+	while (fgets(line, sizeof (line), fd) != NULL) {
+		register char *cp = index(line, '\n');
+
+		if (cp)
+			*cp = '\0';
+		if (strcmp(line, name) == 0) {
+			found++;
+			break;
+		}
+	}
+	fclose(fd);
+	return (!found);
 }
