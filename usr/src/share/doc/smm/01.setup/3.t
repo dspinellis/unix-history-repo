@@ -1,13 +1,12 @@
-.\" Copyright (c) 1980 Regents of the University of California.
+.\" Copyright (c) 1980,1986,1988 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)3.t	6.4 (Berkeley) %G%
+.\"	@(#)3.t	6.5 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
-.ds LH "Installing/Operating \*(4B
-.ds RH "Upgrading a 4.2BSD System
+.ds RH "Upgrading a 4.2BSD or \*(Ps System
 .ds CF \*(DY
 .LP
 .nr H1 3
@@ -16,44 +15,65 @@
 .LG
 .B
 .ce
-3. UPGRADING A 4.2BSD SYSTEM
+3. UPGRADING A 4.2BSD OR \*(Ps SYSTEM
 .sp 2
 .R
 .NL
 .PP
-Begin by reading the ``Bugs Fixes and Changes in \*(4B'' document to
+This section describes the procedure for upgrading a 4.2 or \*(Ps
+system to \*(4B.  This procedure may vary according to the version of
+the system running before conversion.
+If you are upgrading from 4.2BSD,
+begin by reading the ``Bugs Fixes and Changes in \*(4B'' document to
 see what has changed since the last time you bootstrapped the system.
 If you have local system modifications to the
 kernel to install, look at the document
 ``Changes to the Kernel in \*(4B'' to get an idea of how
 the system changes will affect your local modifications.
+.if \n(Th \{\
+If you are converting from a
+System V system, some of this section will still apply (in particular,
+the filesystem conversion).  However, many of the system configuration
+files are different, and the executable file formats are completely
+incompatible.
+.\}
 .PP
-If you are running 4.2BSD, upgrading your system
+If you are running 4.2BSD or \*(Ps, upgrading your system
 involves replacing your kernel and system utilities.
-Binaries compiled under 4.2BSD will work without recompilation
-under \*(4B, though they may run faster if they are relinked.
-The easiest way to convert to \*(4B
-(depending on your file system configuration)
-is to create new root and /usr file systems from the
-distribution tape on unused disk partitions,
-boot the new system, and then copy
-any local utilities from your old root and /usr
-file systems into the new ones.
-All user file systems and binaries can be retained unmodified,
-except that the new \fIfsck\fP should be run
-before they are mounted (see below).
+Binaries compiled under \*(Ps will work without recompilation
+under \*(4B, though they may run faster if they are recompiled.
+.if \n(Th \{\
+When converting from 4.2BSD, most local programs will have to be recompiled,
+as there are a number of incompatibilities between 4.3BSD
+and the vendor-supplied 4.2BSD.
+.\}
+.if \n(Vx \{\
+Binaries compiled under 4.2BSD will probably work without recompilation,
+but it is a good idea to recompile and relink because of the many changes
+in header files and libraries since 4.2BSD.
 4.1BSD binary images can also run unchanged under \*(4B
 but only when the system is configured to include the
 ``4.1BSD compatibility mode.''*
 .FS
 * With ``4.1BSD compatibility mode''
 system calls from 4.1BSD are either emulated or safely ignored.
-There are only two exceptions; programs that read directories or use
+There are only two exceptions: programs that read directories or use
 the old jobs library will not operate properly.  However, while 4.1BSD
 binaries will execute under \*(4B
 it is \fBSTRONGLY RECOMMENDED\fP that the programs be recompiled under
 the new system.
 .FE
+.\}
+.PP
+The easiest upgrade path from 4.2BSD or \*(Ps
+(depending on your file system configuration)
+is to build
+new root and \fI/usr\fP file systems on unused partitions,
+then copy or merge site specific files
+into their corresponding files on the new system.
+All user file systems can be retained unmodified,
+except that the new \fIfsck\fP should be run
+before they are mounted (see below).
 .PP
 Section 3.1 lists the files to be saved as part of the conversion process.
 Section 3.2 describes the bootstrap process.
@@ -63,19 +83,16 @@ aware of when converting from 4.2BSD to \*(4B.
 .NH 2
 Files to save
 .PP
-The easiest upgrade path from a 4.2BSD is to build
-new root and \fIusr\fP file systems on unused partitions,
-then copy or merge site specific files
-into their corresponding files on the new system.
 The following list enumerates the standard set of files you will want to
-save and suggests directories in which site specific files should be present.
+save and suggests directories in which site-specific files should be present.
 This list will likely be augmented with non-standard files you
 have added to your system.
 If you do not have enough space to create parallel
 file systems, you should create a \fItar\fP image of the
 following files before the new file systems are created.
-In addition, you should do a full dump before rebuilding the file system
-to guard against missing something the first time around.
+In addition, it is
+\fBSTRONGLY\fP advised that you do a full dump before rebuilding the file
+system to guard against missing something the first time around.
 .DS
 .TS
 l c l.
@@ -108,9 +125,9 @@ l c l.
 /etc/termcap	\(dd	for any local entries that may have been added
 /lib	\(dd	for any locally developed language processors
 /usr/dict/*	\(dd	for local additions to words and papers
-/usr/hosts/MAKEHOSTS	\(dg	for local changes
+/usr/hosts/MAKEHOSTS	*	for local changes
 /usr/include/*	\(dd	for local additions
-/usr/lib/aliases	\(dg	mail forwarding data base
+/usr/lib/aliases	\(dd	mail forwarding data base
 /usr/lib/crontab	*	cron daemon data base
 /usr/lib/font/*	\(dd	for locally developed font libraries
 /usr/lib/lib*.a	\(dg	for locally libraries
@@ -120,7 +137,7 @@ l c l.
 /usr/lib/term/*	\(dd	for locally developed nroff drive tables
 /usr/lib/tmac/*	\(dd	for locally developed troff/nroff macros
 /usr/lib/uucp/*	\(dg	for local uucp configuration files
-/usr/man/manl	\(dg	for manual pages for locally developed programs
+/usr/man/manl	*	for manual pages for locally developed programs
 /usr/msgs	\(dg	for current msgs
 /usr/spool/*	\(dg	for current mail, news, uucp files, etc.
 /usr/src/local	\(dg	for source for locally developed programs
@@ -129,67 +146,87 @@ l c l.
 /*/quotas	\(dg	file system quota files
 .TE
 .sp
-\(dg\|Files that can be used from 4.2BSD without change.
-\(dd\|Files that need local modifications merged into 4.3BSD files.
-*\|Files that require special work to merge and are discussed below.
+\(dg\|Files that can be used from 4.2BSD or \*(Ps without change.
+\(dd\|Files that need local modifications merged into \*(4B files.
+*\|Files that require special work to merge and are discussed
+in section 3.3.
 .DE
-.NH 3
+.NH 2
 Installing \*(4B
 .PP
+.if \n(Vx \{\
+\fBNote\fP: The \*(4B release contains only Tahoe filesystems and executable
+images.
+In order to bring up \*(4B on a VAX, it is necessary to extract the sources
+on a VAX, compile and install.
+Most of the files listed above are found in /usr/src/sys/vaxdist
+as well as in their standard locations on the distribution tape
+so that the root and /usr images need not be extracted from the tape.
+The following sections describe the procedure for installing \*(4B
+on the Tahoe.
+For a VAX system, the starting root and /usr filesystems can be created
+by building and installing executables using alternate filesystems.
+.\}
 The next step is to build a working \*(4B system.
 This can be done by following the steps in section 2 of
 this document for extracting the root and /usr file systems
 from the distribution tape onto unused disk partitions.
-If you have a running 4.2BSD system,
+If you have a running 4.2BSD or \*(Ps system,
 you can also do this by using
 .IR dd (1)
 to copy the \*(lqmini root\*(rq filesystem onto one disk partition,
-then use it to load the \*(4B root filesystem as as chapter 2.
+then use it to load the \*(4B root filesystem as in chapter 2.
 The root filesystem dump on the tape could also be extracted directly,
 although this will require an additional file system check after booting \*(4B
 to convert the new root filesystem.
 The exact procedure chosen will depend on the disk configuration
 and the number of suitable disk partitions that may be used.
 If there is insufficient space to load the new root and \fI/usr\fP
-filesystems before reusing the existing 4.2BSD partitions,
-it is strongly advised that you make and verify full dumps of each
-filesystem on magtape before beginning.
+filesystems before reusing the existing partitions,
+it is \fBSTRONGLY\fP advised that you make full dumps of each filesystem
+on magtape before beginning.
 It is also desirable to run file system checks
-of all filesystems to be converted to \*(4B before shutting down 4.2BSD.
-If you are running an older system, you will have to
+of all filesystems to be converted to \*(4B before shutting down.
+If you are running a system older than 4.2BSD, you will have to
 dump and restore your file systems; see section 2.1 for some hints.
 In either case, this is an excellent time to review your disk configuration
 for possible tuning of the layout.
-Section 4.3 is required reading.
+Section 4.2 and \fIconfig\fP(8) are required reading.
 .PP
 To ease the transition to new kernels,
-the 4.3BSD bootstrap routines now pass the identity of the boot device
+the 4.3BSD and \*(4B
+bootstrap routines pass the identity of the boot device
 through to the kernel.
 The kernel then uses that device as its root file system.
-Thus, for example, if you boot from \fI/dev/hp1a\fP, the kernel will use hp1a
-as its root file system.
-If \fI/dev/hp1b\fP is configured as a swap partition, 
+Thus, for example, if you boot from \fI/dev/\*(Dk1a\fP,
+the kernel will use \*(Dk1a as its root file system.
+If \fI/dev/\*(Dk1b\fP is configured as a swap partition, 
 it will be used as the initial swap area,
-otherwise the normal primary swap area (\fI/dev/hp0b\fP) will be used.
-The \*(4B bootstrap is backward compatible with 4.2BSD,
-so you can replace your 4.2BSD bootstrap if you use it
+otherwise the normal primary swap area (\fI/dev/\*(Dk0b\fP) will be used.
+The \*(4B bootstrap is backward compatible with 4.2BSD and \*(Ps,
+so you can replace your old bootstrap if you use it
 to boot your first \*(4B kernel.
 .PP
 Once you have extracted the \*(4B system and booted from it,
 you will have to build a kernel customized for your configuration.
 If you have any local device drivers,
 they will have to be incorporated into the new kernel.
-See section 4.2.3 and ``Building 4.3BSD UNIX Systems with Config.''
+See section 4.1.3 and ``Building 4.3BSD UNIX Systems with Config.''
 .PP
+If converting from 4.2BSD, \*(Ps, or the CCI 1.21 release, your old
+file systems must be converted.
+.if \n(Vx \{\
 The standard disk partitions in \*(4B are the same as those
-in 4.2BSD and 4.3BSD,
+in 4.2BSD and \*(Ps,
 except for those on the DEC UDA50; see section 4.3.2 for details.
-If you have changed the disk partition sizes, be sure to
-make the necessary changes to your new disk labels
-\fIbefore\fP trying to access any of your old file systems!
-After doing this if necessary, the remaining filesystems
-may be converted in place.
-This is done by using the \*(4B version of
+.\}
+If you've modified the partition
+sizes from the original BSD or CCI ones, and are not already using the
+\*(4B disk labels, you will have to modify the default disk partion
+tables in the kernel.  Make the necessary table changes and boot
+your custom kernel \fBBEFORE\fP trying to access any of your old
+file systems!  After doing this, if necessary, the remaining filesystems
+may be converted in place by running the \*(4B version of
 .IR fsck (8)
 on each filesystem and allowing it to make the necessary corrections.
 The new version of \fIfsck\fP is more
@@ -197,10 +234,22 @@ strict about the size of directories than the version supplied with 4.2BSD.
 Thus the first time that it is run on a 4.2BSD file system,
 it will produce messages of the form:
 .DS
+.if \n(Vx \{\
 \fBDIRECTORY ...: LENGTH\fP xx \fBNOT MULTIPLE OF 512 (ADJUSTED)\fP
+.\}
+.if \n(Th \{\
+\fBDIRECTORY ...: LENGTH\fP xx \fBNOT MULTIPLE OF 1024 (ADJUSTED)\fP
+.\}
 .DE
 Length ``xx'' will be the size of the directory;
-it will be expanded to the next multiple of 512 bytes.
+it will be expanded to the next multiple of
+.if \n(Vx \{\
+512
+.\}
+.if \n(Th \{\
+1024
+.\}
+bytes.
 The new \fIfsck\fP will also set default \fIinterleave\fP and
 \fInpsect\fP (number of physical sectors per track) values on older
 file systems, in which these fields were unused spares; this correction
@@ -212,19 +261,37 @@ will produce messages of the form:
 .FS
 * The defaults are to set \fIinterleave\fP to 1 and
 \fInpsect\fP to \fInsect\fP;
+.if \n(Vx \{\
 this is correct on many drives.
 Notable exceptions are the RM80 and RA81,
 where npsect should be set to
 one more than nsect.
 This affects only performance (and in the case
 of the RA81, at least, virtually unmeasurably).
+.\}
+.if \n(Th \{\
+this is correct on all drives supported on the CCI.
+.\}
 .FE
 File systems that have had their interleave and npsect values
 set will be diagnosed by the old \fIfsck\fP as having a bad superblock;
 the old \fIfsck\fP will run only if given an alternate superblock
-(\fIfsck \-b32\fP), in which case it will re-zero these fields.
+.if \n(Vx \{\
+(\fIfsck \-b32\fP),
+.\}
+.if \n(Th \{\
+(\fIfsck \-b16\fP),
+.\}
+in which case it will re-zero these fields.
 The \*(4B kernel will internally set these fields to their defaults
-if fsck has not done so; again, the \fI\-b32\fP option may be
+if fsck has not done so; again, the
+.if \n(Vx \{\
+\fI\-b32\fP
+.\}
+.if \n(Th \{\
+\fI\-b16\fP
+.\}
+option may be
 necessary for running the old \fIfsck\fP.
 .PP
 In addition, \*(4B removes several limits on file system sizes
@@ -244,12 +311,17 @@ A second \fIfsck \-c\fP, however, will
 reconvert the new format to the old if none of the static limits
 of the old file system format have been exceeded.
 The new file systems are otherwise
-compatible between 4.2BSD, 4.3BSD, and \*(4B,
+compatible between 4.2BSD, \*(Ps, and \*(4B,
 though running a \*(4B file system under older systems
 may cause more of the above
 messages to be generated the next time it is \fIfsck\fP'ed on \*(4B.
 .NH 2
+.if \n(Th \{\
 Merging your files from 4.2BSD into \*(4B
+.\}
+.if \n(Vx \{\
+Merging your files from 4.2 or 4.3BSD into \*(4B
+.\}
 .PP
 When your system is booting reliably and you have the \*(4B
 root and /usr file systems fully installed you will be ready
@@ -259,9 +331,9 @@ merging your old files into the new system.
 If you saved the files on a \fItar\fP tape, extract them
 into a scratch directory, say /usr/convert:
 .DS
-\fB#\fP mkdir /usr/convert
-\fB#\fP cd /usr/convert
-\fB#\fP tar x
+\fB#\fP \fImkdir /usr/convert\fP
+\fB#\fP \fIcd /usr/convert\fP
+\fB#\fP \fItar xp\fP
 .DE
 .PP
 The data files marked in the previous table with a dagger (\(dg)
@@ -279,9 +351,9 @@ particular attention and are discussed below.
 If you have any homegrown device drivers in /dev/MAKEDEV.local
 that use major device numbers reserved by the system you
 will have to modify the commands used to create the devices or alter
-the system device configuration tables in /sys/vax/conf.c.
+the system device configuration tables in /sys/\*(mC/conf.c.
 Otherwise /dev/MAKEDEV.local can be used without change
-from 4.2BSD.
+from 4.2 or \*(Ps.
 .PP
 System security changes require adding several new ``well-known'' groups 
 to /etc/group.
@@ -297,7 +369,7 @@ kmem	2
 sys	3
 tty	4
 operator	5
-staff	10
+bin	10
 .TE
 .DE
 Only users in the ``wheel'' group are permitted to \fIsu\fP to ``root''.
@@ -308,16 +380,21 @@ The special files that access kernel memory, /dev/kmem
 and /dev/mem, are made readable only by group ``kmem''.
 Standard system programs that require this access are
 made set-group-id to that group.
-The group ``sys'' is intended to control access to system sources,
-and other sources belong to group ``staff.''
+The group ``sys'' is intended to control access to kernel sources,
+and other sources belong to group ``bin.''
 Rather than make user's terminals writable by all users,
 they are now placed in group ``tty'' and made only group writable.
 Programs that should legitimately have access to write on user's terminals
-such as \fItalk\fP and \fIwrite\fP now run set-group-id to ``tty''.
+such as \fItalkd\fP and \fIwrite\fP now run set-group-id to ``tty''.
 The ``operator'' group controls access to disks.
 By default, disks are readable by group ``operator'',
 so that programs such as \fIdf\fP can access the file system
 information without being set-user-id to ``root''.
+The
+.IR shutdown (8)
+program is executable only by group operator
+and is setuid to root so that members of group operator may shut down
+the system without root access.
 .PP
 Several new users have also been added to the group of ``well-known'' users 
 in /etc/passwd.
@@ -330,6 +407,7 @@ _
 root	0
 daemon	1
 operator	2
+games	7
 uucp	66
 nobody	32767
 .TE
@@ -343,7 +421,8 @@ they can get read access to the disks.
 The ``uucp'' login has existed long before \*(4B,
 and is noted here just to provide a common user-id.
 The password entry ``nobody'' has been added to specify
-the user with least privilege.
+the user with least privilege.  The ``games'' user is a pseudo-user
+that controls access to game programs.
 .PP
 After installing your updated password file,
 you must run \fImkpasswd\fP\|(8) to create the \fIndbm\fP
@@ -356,8 +435,9 @@ The userid ``nobody'' is frequently useful for non-privileged programs.
 .PP
 Some of the commands previously in /etc/rc.local have been 
 moved to /etc/rc;
-several new functions are now handled by /etc/rc.local.
-You should look closely at the prototype version of /etc/rc.local
+several new functions are now handled by /etc/rc, /etc/netstart
+and /etc/rc.local.
+You should look closely at the prototype version of these files
 and read the manual pages for the commands contained in it
 before trying to merge your local copy.
 Note in particular that \fIifconfig\fP has had many changes,
@@ -410,40 +490,30 @@ If you are using the name server,
 your \fIsendmail\fP configuration file will need some minor
 updates to accommodate it.
 See the ``Sendmail Installation and Operation Guide'' and the sample
-\fIsendmail\fP configuration files in /usr/src/usr.lib/sendmail/nscf.
+\fIsendmail\fP configuration files in /usr/src/usr.lib/sendmail/cf.
 Be sure to regenerate your sendmail frozen configuration file after
-installation of your updated configuration file.
+installation of your updated configuration file with the command
+\fI/usr/lib/sendmail -bz\fP.
+The aliases file,
+/usr/lib/aliases has also been changed to add certain well-known addresses.
 .PP
 The spooling directories saved on tape may be restored in their
 eventual resting places without too much concern.  Be sure to
 use the `p' option to \fItar\fP so that files are recreated with the
 same file modes:
 .DS
-\fB#\fP cd /usr
-\fB#\fP tar xp msgs spool/mail spool/uucp spool/uucppublic spool/news
+\fB#\fP \fIcd /usr\fP
+\fB#\fP \fItar xp msgs spool/mail spool/uucp spool/uucppublic spool/news\fP
 .DE
 .PP
-The ownership and modes of two of these directories
-\fIat\fP now runs set-user-id ``daemon'' instead of root.
-Also, the uucp directory no longer needs to be publicly writable,
-as \fItip\fP reverts to priveleged status to remove its lock files.
-After copying your version of /usr/spool, you should do:
-.DS
-\fB#\fP chown \-R daemon /usr/spool/at
-\fB#\fP chown \-R uucp /usr/spool/uucp
-\fB#\fP chgrp \-R daemon /usr/spool/uucp
-\fB#\fP chmod \-R o\-w /usr/spool/uucp
-.DE
-.PP
-Whatever else is left is likely to be site specific or require
-careful scrutiny before placing in its eventual resting place.
-Refer to the documentation and source code 
-before arbitrarily overwriting a file.
+The following two sections contain additional notes concerning
+changes in \*(4B that affect the installation of local files;
+be sure to read them as well.
 .NH 2
 Hints on converting from 4.2BSD to \*(4B
 .PP
 This section summarizes the most significant changes between
-4.2BSD and \*(4B, particularly those that are likely to 
+4.2BSD and 4.3BSD, particularly those that are likely to 
 cause difficulty in doing the conversion.
 It does not include changes in the network;
 see chapter 5 for information on setting up the network.
@@ -504,7 +574,7 @@ and again contains the definitions for the C library time routines of
 The \fIcompact\fP and \fIuncompact\fP programs have been supplanted
 by the faster \fIcompress\fP.
 If your user population has \fIcompact\fPed files, you will want
-to install \fIuncompact\fP found in /usr/src/old/compact.
+to install \fIuncompact\fP from /usr/src/old/compact.
 .PP
 The configuration of the virtual memory limits has been simplified.
 A MAXDSIZ option, specified in bytes in the machine configuration file,
@@ -516,7 +586,97 @@ but can be raised up to MAXDSIZ with the \fIcsh limit\fP command.
 Some \*(4B binaries will not run with a 4.2BSD kernel because
 they take advantage of new functionality in \*(4B.
 One noticeable example of this problem is \fIcsh\fP.
+.if \n(Th \{\
+Also, most terminal \fIioctl\fP operations are incompatible
+between \*(4B and the vendor-supplied versions of 4.2BSD.
+.\}
 .PP
 If you want to use \fIps\fP after booting a new kernel,
 and before going multiuser, you must initialize its name list
 database by running \fIps \-U\fP.
+.NH 2
+Hints on converting from 4.3BSD to \*(4B
+.PP
+The largest visible change between 4.3BSD to \*(4B
+(other than the addition of support for the Tahoe processor)
+is the addition of support for disk labels.
+This facility allows each disk or disk pack to contain all geometry
+information about the disk and the partition layout for the disk.
+Disk labels are supported on all disk types on the Tahoe machines,
+and on hp and ra/rd disks on the VAX.
+See section 2.1.6 as well as
+.IR disklabel (8)
+and
+.IR disklabel (5).
+Installation of this facility requires use of the new kernel and device
+drivers, bootstraps and other standalone programs,
+/etc/disktab,
+.if \n(Vx \{\
+.IR bad144 (8V),
+.\}
+.IR newfs (8),
+and probably other programs.
+.PP
+The bootstrap programs have been fixed to work on MicroVAX IIs
+and VAXstation II's with QVSS (VS II) or QDSS (GPX) displays;
+the kernel includes support for these displays, courtesy of Digital
+Equipment Corp.
+In order to install the bootstrap on RD52/53/54 disks with
+.IR disklabel (8),
+the new /etc/disktab must be used,
+or the block 0 bootstrap must be explictly listed as /usr/mdec/rdboot
+(\fInot\fP raboot).
+.\}
+.PP
+The order in which daemons are started by /etc/rc and /etc/rc.local
+has changed, and network initialization has been split into /etc/netstart.
+Look at the prototype files, and modify /etc/rc.local as necessary;
+c.f. section 5.6.1.
+.PP
+\*(4B includes the Olson
+timezone implementation, which uses timezone and daylight-savings-time
+rules loaded from files in /etc/zoneinfo; see
+.IR ctime (3)
+and
+.IR tzfile (5).
+.PP
+The type of the
+.IR sprintf (3S)
+function has been changed from \fIchar *\fP in 4.2BSD and 4.3BSD
+to \fIint\fP as in the proposed ANSI C standard and in System V.
+Programers are discouraged from using the return value from
+.I sprintf
+until this change is ubiquitous.
+Fortunately, the previous return value from
+.I sprintf
+was essentially useless.
+.PP
+The ownership and modes of some of these directories have changed.
+The \fIat\fP programs now run set-user-id ``root'' instead of ``daemon.''
+Also, the uucp directory no longer needs to be publicly writable,
+as \fItip\fP reverts to privileged status to remove its lock files.
+After copying your version of /usr/spool, you should do:
+.DS
+\fB#\fP \fIchown \-R root /usr/spool/at\fP
+\fB#\fP \fIchown \-R uucp.daemon /usr/spool/uucp\fP
+\fB#\fP \fIchmod \-R o\-w /usr/spool/uucp\fP
+.DE
+.PP
+The MAKEHOSTS file has moved from /usr/hosts to /usr.
+.PP
+The source versions of the manual pages have been moved from
+/usr/man/man[1-8] to /usr/src/man, /usr/src/new/man, and /usr/src/local/man.
+Local manual pages should be moved into their respective source code
+directories, or into /usr/src/local/man/man[1-8], and Makefiles changed to
+install the formatted manual pages into /usr/local/man/cat[1-8].  The shell
+script /usr/man/manroff calls nroff with the standard manual arguments.  An 
+example of installing a manual page might be:
+.DS
+\fB#\fP \fI/usr/man/manroff example.2 > example.0\fP
+\fB#\fP \fIinstall -o bin -g bin -m 444 example.0 /usr/local/man/cat2\fP
+.DE
+.PP
+Whatever else is left is likely to be site specific or require
+careful scrutiny before placing in its eventual resting place.
+Refer to the documentation and source code 
+before arbitrarily overwriting a file.
