@@ -1,0 +1,27 @@
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ About Pod
+
+ Pod is an X-windows interface to the
+ Quipu  based  X.500  directory  service. It 
+ allows users to search  through and extract
+ information  from   a  worldwide  database.
+ 
+ The following  is  a  brief guide to
+ Pod's  functionality.  More  detailed  help
+ will  be  displayed  automatically  as  you
+ experiment.
+
+ Button      Action
+
+ <List>      List entries closest to the
+             'Current Directory Position.'
+
+ <Search>    Search for entries with value
+             entered in 'Search' dialog box.
+
+ <History>   List entries that have been
+ 	     visited before.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
