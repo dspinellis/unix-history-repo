@@ -19,17 +19,20 @@
 
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-SRCS=	ktrace.c kdump.c
-OBJS=
-MAN=
+SRCS=	ktrace.c kdump.c subr.c ioctl.c
+OBJS=	ktrace.o kdump.o subr.o	ioctl.o
+MAN=	ktrace.0 kdump.0
 
 all: ktrace kdump
 
-ktrace: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c
+ktrace: ${LIBC} subr.o
+	${CC} -o $@ ${CFLAGS} $@.c subr.o
 
-kdump: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c
+kdump: ${LIBC} ioctl.o subr.o
+	${CC} -o $@ ${CFLAGS} $@.c ioctl.o subr.o
+
+ioctl.c: mkioctls
+	./mkioctls > ioctl.c
 
 clean:
 	rm -f ${OBJS} core ktrace kdump
@@ -43,7 +46,7 @@ depend: ${SRCS}
 install: ${MAN}
 	install -s -o bin -g bin -m 755 ktrace ${DESTDIR}/usr/bin
 	install -s -o bin -g bin -m 755 kdump ${DESTDIR}/usr/bin
-	#install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+	: install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
