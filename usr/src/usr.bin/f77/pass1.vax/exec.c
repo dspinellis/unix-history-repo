@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exec.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -17,6 +17,19 @@ static char sccsid[] = "@(#)exec.c	5.4 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  * 
  * $Log:	exec.c,v $
+ * Revision 5.6  85/12/20  19:42:46  donn
+ * Change style of error reporting in last fix.
+ * 
+ * Revision 5.5  85/12/20  18:54:10  donn
+ * Complain about calls to things which aren't subroutines.
+ * 
+ * Revision 5.4  85/12/18  19:57:58  donn
+ * Assignment statements are executable statements -- advance the magic
+ * parser state to forbid DATA statements and statement functions.
+ * 
+ * Revision 5.3  85/11/25  00:23:49  donn
+ * 4.3 beta
+ * 
  * Revision 5.2  85/08/10  04:07:36  donn
  * Changed an error message to correct spelling and be more accurate.
  * From Jerry Berkman.
@@ -263,6 +276,7 @@ else
 		}
 	if(parstate < INDATA)
 		enddcl();
+	parstate = INEXEC;
 	if (optimflag)
 		optbuff (SKEQ, mkexpr(OPASSIGN, mklhs(lp), fixtype(rp)), 0, 0);
 	else
@@ -323,6 +337,17 @@ struct Labelblock *labels[ ];
 {
 register expptr p;
 
+if (name->vdcldone)
+	if (name->vclass != CLPROC && name->vclass != CLENTRY)
+		{
+		dclerr("call to non-subroutine", name);
+		return;
+		}
+	else if (name->vtype != TYSUBR)
+		{
+		dclerr("subroutine invocation of function", name);
+		return;
+		}
 settype(name, TYSUBR, ENULL);
 p = mkfunct( mkprim(name, args, CHNULL) );
 p->exprblock.vtype = p->exprblock.leftp->headblock.vtype = TYINT;
