@@ -1,4 +1,9 @@
-.\"	"@(#)bibdoc.ms	4.6	%G%";
+.\"	@(#)bibdoc.ms	6.1 (Berkeley) %G%
+.\"
+.EH 'USD:31-%''BIB \- A Program for Formatting Bibliographies'
+.OH 'BIB \- A Program for Formatting Bibliographies''USD:31-%'
+.nr LL 6.5i
+.nr LT 6.5i
 .TL
 \fBBIB \- A Program for Formatting Bibliographies\fP
 .AU
@@ -6,12 +11,12 @@ Timothy A. Budd
 .AI
 The University of Arizona
 Department of Computer Science
-Tucson, Arizona
-85721
+Tucson, Arizona 85721
 .PP
 \fIBib\fP is a program for collecting and formatting reference lists in
 documents.  It is a preprocessor to the nroff/troff typesetting systems,
-much like the tbl [.tbl.] and eqn [.eqn.] systems.  \fIBib\fP takes two
+(much like the \fItbl\fP [.tbl.] and \fIeqn\fP [.eqn.] programs) and an alternative
+to the \fIrefer\fP [.lesk refer.] bibliography program.  \fIBib\fP takes two
 inputs: a document to be formatted and a library of references.  Imprecise
 citations in the source document are replaced by more conventional
 citation strings, the appropriate references are selected from the reference
@@ -48,13 +53,14 @@ In [\&.kernig tools, kernig elements.], Kernighan and Plauger have ...
 Embedded newlines, tabs and extra blanks within the
 imprecise citation are ignored.
 .PP
-Judicious use of the K (keyword) field in references can simplify citations
+Judicious use of the K (keyword) field in references in the database
+can simplify citations
 considerably.  Also additional information can be placed into citations by
 surrounding text with curly braces.
 The additional information is inserted verbatim into the citation,
 e.g. [.dragon {,\ Chapter 6}.].
 Note that it may be desirable to use non-breakable spaces, in order that the
-citation not be split across a line boundary by \fItroff\fP.
+citation not be split across a line boundary by \fItroff\fP, for example:
 .2Q
 .PP
 For a description of LR parsing, see [\&.dragon {,\e\0Chapter 6}.] by Aho and Ullman.
@@ -88,7 +94,7 @@ Reference files are prepared for \fIbib\fP using \fIinvert\fP.
 By default \fIinvert\fP places an inverted index for the
 reference list in the file INDEX.  Unless the user specifies an
 alternative (see the \-p switch described below), this is the first file
-searched in attempting to locate a reference.  If the entry is not found
+searched by \fIbib\fP in attempting to locate a reference.  If the entry is not found
 in the user's file, a standard system-wide index is searched.  If the
 entry is still not found in the system file, a warning message is produced
 and a blank citation is generated.
@@ -96,7 +102,7 @@ and a blank citation is generated.
 The format for entries in the reference file is described more fully in
 the section `Reference File Formats'.
 This format is similar to that used by \fIrefer\fP
-[.lesk refer.] with the following exceptions:
+with the following exceptions:
 .IP 1.
 An F field, if present, overrides whatever citation string would otherwise
 be constructed.
@@ -111,7 +117,7 @@ Appendix 1 lists the currently recognized names.
 The program automatically abbreviates names, reverses names, and
 hyphenates strings of contiguous references, if requested.
 .IP 4.
-A reference can have more than one editor field, and editors names
+A reference can have more than one editor field, and editor's names
 can be abbreviated, reversed, and/or printed in cap/small caps style,
 independent of any processing done to authors names.
 .PP
@@ -148,7 +154,7 @@ same as stdsn, only using an open reference format (each major entry is on
 a new line\u1\d).
 .FS
 1. The open reference format is adapted from \fIA Handbook for Scholars\fP,
-by Mare-Claire van Leunen, published by Knopf, 1978.
+by Mary-Claire van Leunen, published by Knopf, 1978.
 .FE
 .IP opena
 same as stda, but using an open format.
@@ -192,7 +198,7 @@ can be placed in a \fItroff\fP comment.
 .QE
 .PP
 It is also possible to embed \fItroff\fP commands within a reference definition.
-See `abbreviations' in the section `Reference Format Designers
+See `abbreviations' in the section `Reference Format Designer's
 Guide' for an example.
 .PP
 In some styles (superscripts) periods and commas should precede the
@@ -215,11 +221,11 @@ B\s-2UDD\s+2.
 build citations according to the template \fIstr\fP.  See the reference
 format designer's guide for more information on templates.
 .IP \-ea
-abbreviate editors names
+abbreviate editors' names
 .IP \-ex
-places editors names in Caps-Small Caps style.  (see \-x )
+places editors' names in Caps-Small Caps style.  (see \-x )
 .IP \-er\fInum\fP
-reverse the first \fInum\fP editors names.  If \fInum\fP is omitted all editors
+reverse the first \fInum\fP editors' names.  If \fInum\fP is omitted all editors'
 names are reversed.
 .IP \-f
 instead of dumping references following the call on \&.[], dump each
@@ -254,21 +260,15 @@ sort references according to the template \fIstr\fP.
 .IP \-t\fItype\fP
 use the standard macros and switch settings to generate citations and references
 in the indicated style.
-.SH
-Acknowledgements
-.PP
-\fIbib\fP was inspired by \fIrefer\fP, written by M. Lesk.
-.[]
-.bp
 .de Ex
 .sp
 .QS
 .nf
 .ta 3m
 ..
-.ce 100
+.sp 1.0i
+.ce 
 \fBReference File Formats\fP
-.ce 0
 .sp
 .PP
 A reference file is a file containing any number of reference
@@ -387,7 +387,7 @@ are defined for most major journals.
 There are also string names for the months of the year, so that months
 can be abbreviated to the first three letters.
 Note also in this example the use of the K field to define a short
-name (hru), that can be used in searching for the reference.
+name (hru) that can be used in searching for the reference.
 .Ex
 %A	M. A. Harrison
 %A	W. L. Ruzzo
@@ -529,8 +529,8 @@ Recursive Programs Having Simple Errors
 %D	1980
 .QE
 .PP
-Some authors prefer to treat Masters and Bachelor theses similarly, although
-most references on style instruct say to treat a masters degree as an
+Some authors prefer to treat Master's and Bachelor theses similarly, although
+most references on style instruct say to treat a Master's degree as an
 article or as a report.
 .Ex
 %A	A. Snyder
@@ -556,9 +556,10 @@ will override whatever citation would otherwise be constructed.
 %T	User's Guide for the EXPER Mutation Analysis system
 %O	(Yale university, memo)
 .QE
-.bp
+.sp 1.0i
 .ce
-\fBReference Format Designers Guide\fP
+\fBReference Format Designer's Guide\fP
+.sp
 .PP
 This section need only be read by those users
 who wish to write their own formatting macro packages.
@@ -593,18 +594,18 @@ The A command controls how authors' names are to be formatted.  It can be
 followed by the following character sequences:
 .QS
 .IP A 8m
-Authors names are to be abbreviated.  (see \*(oqabbreviations\*(cq, below).
+Authors' names are to be abbreviated.  (see \*(oqabbreviations\*(cq, below).
 .IP R\fInum\fP
-The first \fInum\fP authors names are to be reversed.  If \fInum\fP is
-omitted, all authors names are reversed.
+The first \fInum\fP authors' names are to be reversed.  If \fInum\fP is
+omitted, all authors' names are reversed.
 .IP X
-Authors names are to be printed in Caps-Small Caps style.
+Authors' names are to be printed in Caps-Small Caps style.
 .QE
 .sp
 E
 .PP
 The E command is equivalent to the A command, except that it controls the
-formatting of editors names.
+formatting of editors' names.
 .sp
 F
 .PP
@@ -669,7 +670,7 @@ will also be generated.  See `Trailing characters', below.
 .sp
 X
 .PP
-Authors last names are to be printed in Caps/Small Caps
+Authors' last names are to be printed in Caps/Small Caps
 format (i.e., Budd becomes B\s-2UDD\s+2).
 .sp 2
 .PP
@@ -704,11 +705,11 @@ There is a simple naming convention for strings, registers and macros used
 by \fIbib\fP.  All strings, registers and macros are denoted by two character
 names containing either a left or right brace.  The following are general rules:
 .IP [x
-If x is alphnumeric, the string contains the value of a reference field.
+If x is alphanumeric, the string contains the value of a reference field.
 If x is nonalphanumeric, this is a formatting string preceding a citation.
 .IP ]x
 If x is alphanumeric, this is the final character from a reference field.
-If x is nonalphnumeric, the string is formatting information within a citation.
+If x is nonalphanumeric, the string is formatting information within a citation.
 .IP x[
 Strings in this format, where x is can be any character, are defined by the
 specific macro package in use and are not specified by \fIbib\fP.
@@ -727,7 +728,7 @@ by a field character, followed by an optional signed size.  The leading negative
 sign, if present, specifies the sort is to be in decreasing order, rather than
 increasing.  The field character indicates which field in the reference
 is to be compared.  The entire field is used, except in the case of the `A'
-field, in which case only the senior authors last name is used.
+field, in which case only the senior author's last name is used.
 A positive number following the field character indicates that only the first
 n characters are to be examined in the comparison.  The negative value indicates
 only the last \fIn\fP characters.  Thus, for example, the template AD\-2 indicates
@@ -748,11 +749,11 @@ exceptions:  The field name `1' refers to the number which
 represents the position of the reference in the reference list (after sorting).
 The field name `2' generates a three character sequence; If the
 paper being referenced has only one author, this is the first three characters
-of the authors last name.  For two author papers, this is the first two
+of the author's last name.  For two author papers, this is the first two
 characters of the senior author, followed by the first character of the second
 author.  For papers with three or more authors the first letter of the first
 three authors is used.
-The field name `3' is used to specify a format consisting of the authors
+The field name `3' is used to specify a format consisting of the authors'
 last names, or the senior author followed by the text `et al' if more than
 four authors are listed.  The fields `4' through `9' are reserved to be
 used to specify formats that cannot be produced using templates.  These
@@ -810,7 +811,7 @@ l l l.
 .SH
 Name Formatting
 .PP
-Authors (and editors) names can be abbreviated, reversed, and/or printed
+Authors' (and editors') names can be abbreviated, reversed, and/or printed
 in Caps-small Caps format.  In producing the string values for an author,
 formatting strings are inserted to give the macro writer greater flexibility
 in producing the final output.  Currently the following strings are used:
@@ -887,7 +888,7 @@ documents (usually `\ and\ '), and m] separates the last two authors
 in multi-author documents (either `\ and\ ' or `,\ and\ ').
 .PP
 If abbreviation is specified, the string a] is used to separate initials
-in the authors first name.
+in the author's first name.
 .PP
 The \fIbib\fP system provides minimal assistance in
 deciding format types.  For example note that the number register [P has
@@ -951,9 +952,7 @@ example).
 .KS
 .nf
 .sp
-#
 #  standard alphabetic format
-#
 SAD\-2
 C2D\-2
 I BMACLIB/bibinc.fullnames
@@ -990,11 +989,8 @@ D ACTA Acta Informatica
 D BIT B\e&IT
 D CACM Communications of the ACM
  ...
-#
 # months
-#
 D JAN January
-D FEB February
  ...
 D DEC December
 .sp
@@ -1005,7 +1001,6 @@ D DEC December
 .KS
 .nf
 .sp
- #
  #  standard end macros
  #
  .ds [ [
@@ -1070,10 +1065,17 @@ D DEC December
 \fBFigure 5\fP
 .sp
 .KE
+.SH
+Acknowledgements
+.PP
+\fIbib\fP was inspired by \fIrefer\fP, written by M. Lesk.
+.[]
 .rs
 .bp
 .SH
-APPENDIX
+APPENDIX 1
+.nr PS 9
+.nr VS 11
 .sp
 Standard Names
 .PP
@@ -1086,8 +1088,10 @@ to the date (%D), city(%C),
 and when the proceedings are published as a journal,
 the journal name (%J), volumn (%V) and number (%N).
 .sp
-.nf
-.ta 1i
+.TS
+expand;
+l s
+l l.
 \fBJournal Names\fP
 ACTA	Acta Informatica
 BIT	B\&IT
@@ -1119,7 +1123,12 @@ TOCS	ACM Transactions on Computer Systems
 TODS	ACM Transactions on Database Systems
 TOMS	ACM Transactions on Mathematical Software
 TOPLAS	ACM Transactions on Programming Languages and Systems
+.TE
 .sp
+.TS
+expand;
+l s
+l l.
 \fBConferences\fP
 ADA80	PROC of the ACM-SI\&GPLAN Symposium on the Ada Programming Language, SIGPLAN
 ASPLOS82	PROC of the SYMP on Architectural Support for Programming Languages and Operating Systems, SIGPLAN
@@ -1147,7 +1156,65 @@ SOSP	SYMP on Operating System Principles
 STOC	Annual ACM SYMP on Theory of Computing
 SYMP	Symposium
 WJCC	PROC Western Joint Computer CONF
+.TE
 .sp
+.TS
+expand;
+l s
+l l.
+\fBLonger place names\fP
+BTLHO	Bell Laboratories
+BTLMH	Bell Laboratories
+CMU	Carnegie-Mellon University
+CMUCS	Computer Science Department, Carnegie-Mellon University
+DG	Data General
+MITAI	MIT Artificial Intelligence Laboratory
+MITLCS	MIT Laboratory for Computer Science
+SUCS	Computer Science Department, Stanford University
+SUCSL	Computer Systems Lab., Stanford Electronics Lab., Dept. of Electrical Engineering and Computer Science
+SUEE	Department of Electrical Engineering, Stanford University
+TUM	Technische Universit\*:at M\*:unchen
+UCB	University of California, Berkeley
+UCBCS	Computer Science Division, EECS, UCB
+UCBERL	ERL, EECS, UCB
+.TE
+.2C
+.TS
+l s
+l l.
+\fBShort place names\fP
+CORP	Corporation
+CSD	Computer Science Department
+DCS	Department of Computer Science
+DEPT	Department
+DISS	Dissertation
+TR	Technical Report
+UATR	University of Arizona Technical Report
+UNIV	University
+ERL	Electronics Research Laboratory
+.TE
+.sp
+.TS
+l s
+l l.
+\fBMonths of the year\fP
+JAN	January
+FEB	February
+MAR	March
+APR	April
+MAY	May
+JUN	June
+JUL	July
+AUG	August
+SEP	September
+OCT	October
+NOV	November
+DEC	December
+.TE
+.sp
+.TS
+l s
+l l.
 \fBPublishers\fP
 ACADEMIC	Academic Press
 ACPRESS	Academic Press
@@ -1171,44 +1238,5 @@ SPRINGER	Springer Verlag
 SRA	Science Research Associates
 WILEY	John Wiley & Sons
 WINTH	Winthrop Publishers
-.sp
-\fBShort place names\fP
-CORP	Corporation
-CSD	Computer Science Department
-DCS	Department of Computer Science
-DEPT	Department
-DISS	Dissertation
-TR	Technical Report
-UATR	University of Arizona Technical Report
-UNIV	University
-ERL	Electronics Research Laboratory
-.sp
-\fBLonger place names\fP
-BTLHO	Bell Laboratories
-BTLMH	Bell Laboratories
-CMU	Carnegie-Mellon University
-CMUCS	Computer Science Department, Carnegie-Mellon University
-DG	Data General
-MITAI	MIT Artificial Intelligence Laboratory
-MITLCS	MIT Laboratory for Computer Science
-SUCS	Computer Science Department, Stanford University
-SUCSL	Computer Systems Lab., Stanford Electronics Lab., Dept. of Electrical Engineering and Computer Science
-SUEE	Department of Electrical Engineering, Stanford University
-TUM	Technische Universita\*`t Mu\*`nchen
-UCB	University of California, Berkeley
-UCBCS	Computer Science Division, EECS, UCB
-UCBERL	ERL, EECS, UCB
-.sp
-\fBMonths of the year\fP
-JAN	January
-FEB	February
-MAR	March
-APR	April
-MAY	May
-JUN	June
-JUL	July
-AUG	August
-SEP	September
-OCT	October
-NOV	November
-DEC	December
+.TE
+
