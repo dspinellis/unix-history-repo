@@ -1,8 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)hys.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)hys.c	4.8 (Berkeley) %G%";
 #endif
 
-#include "../condevs.h"
+#include "condevs.h"
 
 #ifdef USR2400
 #define DROPDTR

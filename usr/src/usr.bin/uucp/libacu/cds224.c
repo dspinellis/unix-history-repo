@@ -1,8 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)cds224.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cds224.c	1.3 (Berkeley) %G%";
 #endif !lint
 
-#include "../condevs.h"
+#include "condevs.h"
 
 /*
  *	conopn: establish dial-out connection through a Concord CDS 224.
@@ -21,7 +21,7 @@ struct Devices *dev;
 	int	i, ok, er = 0, delay;
 	extern errno;
 	char dcname[20];
-	char *tempbuf[20];
+	char tempbuf[20];
 
 	sprintf(dcname, "/dev/%s", dev->D_line);
 	if (setjmp(Sjbuf)) {

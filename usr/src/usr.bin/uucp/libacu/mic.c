@@ -1,8 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)mic.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mic.c	4.3 (Berkeley) %G%";
 #endif
 
-#include "../condevs.h"
+#include "condevs.h"
 #ifdef MICOM
 
 /*

@@ -1,8 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)vent.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)vent.c	4.4 (Berkeley) %G%";
 #endif
 
-#include "../condevs.h"
+#include "condevs.h"
 
 ventopn(telno, flds, dev)
 char *flds[], *telno;

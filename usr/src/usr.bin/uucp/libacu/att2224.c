@@ -1,8 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)att2224.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)att2224.c	1.3 (Berkeley) %G%";
 #endif
 
-#include "../condevs.h"
+#include "condevs.h"
 
 attopn(telno, flds, dev)
 char *telno, *flds[];

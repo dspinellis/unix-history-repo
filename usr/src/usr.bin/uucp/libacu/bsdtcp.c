@@ -1,8 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)bsdtcp.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)bsdtcp.c	4.5 (Berkeley) %G%";
 #endif
 
-#include "../condevs.h"
+#include "condevs.h"
 #include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -59,7 +59,7 @@ register char *flds[];
 	if (s < 0)
 		goto bad;
 #ifndef BSD2_9
-	if (bind(s, (char *)&hisctladdr, sizeof (hisctladdr), 0) < 0)
+	if (bind(s, (struct sockaddr *)&hisctladdr, sizeof (hisctladdr)) < 0)
 		goto bad;
 #endif BSD2_9
 	bcopy(hp->h_addr, (char *)&hisctladdr.sin_addr, hp->h_length);
@@ -67,7 +67,7 @@ register char *flds[];
 #ifdef BSD2_9
 	if (connect(s, (char *)&hisctladdr) < 0)
 #else BSD4_2
-	if (connect(s, (char *)&hisctladdr, sizeof (hisctladdr), 0) < 0)
+	if (connect(s, (struct sockaddr *)&hisctladdr, sizeof (hisctladdr)) < 0)
 #endif BSD4_2
 		goto bad;
 	alarm(0);

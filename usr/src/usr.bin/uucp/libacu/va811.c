@@ -1,8 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)va811.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)va811.c	4.3 (Berkeley) %G%";
 #endif
 
-#include "../condevs.h"
+#include "condevs.h"
 
 /*
  * Racal-Vadic VA811 dialer with 831 adaptor.
