@@ -12,7 +12,7 @@ typedef unsigned long _G_ino_t;
 typedef unsigned short _G_mode_t;
 typedef unsigned short _G_nlink_t;
 typedef long long _G_off_t;
-typedef short _G_pid_t;
+typedef long _G_pid_t;
 typedef int _G_ptrdiff_t;
 typedef unsigned int _G_sigset_t;
 typedef unsigned int _G_size_t;
