@@ -42,7 +42,11 @@ static char sccsid[] = "@(#)head.c	5.5 (Berkeley) 6/1/90";
 #endif /* not lint */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
+
+static void usage ();
+
 /*
  * head - give the first few lines of a stream or of each of a set of files
  *
@@ -56,19 +60,28 @@ main(argc, argv)
 	register int	ch, cnt;
 	int	firsttime, linecnt = 10;
 
-	if (argc > 1 && argv[1][0] == '-') {
-		if (!isdigit(argv[1][1])) {
-			fprintf(stderr, "head: illegal option -- %c\n", argv[1][1]);
-			goto usage;
-		}
+	/* handle obsolete -number syntax */
+	if (argc > 1 && argv[1][0] == '-' && isdigit(argv[1][1])) {
 		if ((linecnt = atoi(argv[1] + 1)) < 0) {
-usage:			fputs("usage: head [-line_count] [file ...]\n", stderr);
-			exit(1);
+			usage ();
 		}
-		--argc; ++argv;
+		argc--; argv++;
 	}
+
+	while ((ch = getopt (argc, argv, "n:")) != EOF)
+		switch (ch) {
+		case 'n':
+			if ((linecnt = atoi(optarg)) < 0)
+				usage ();
+			break;
+
+		default:
+			usage();	
+		}
+	argc -= optind, argv += optind;
+
 	/* setlinebuf(stdout); */
-	for (firsttime = 1, --argc, ++argv;; firsttime = 0) {
+	for (firsttime = 1; ; firsttime = 0) {
 		if (!*argv) {
 			if (!firsttime)
 				exit(0);
@@ -92,3 +105,12 @@ usage:			fputs("usage: head [-line_count] [file ...]\n", stderr);
 	}
 	/*NOTREACHED*/
 }
+
+
+static void
+usage ()
+{
+	fputs("usage: head [-n line_count] [file ...]\n", stderr);
+	exit(1);
+}
+

@@ -31,15 +31,15 @@
 .\"
 .\"	@(#)head.1	6.6 (Berkeley) 7/24/91
 .\"
-.Dd July 24, 1991
+.Dd July 14, 1993
 .Dt HEAD 1
-.Os BSD 3
+.Os
 .Sh NAME
 .Nm head
 .Nd give first few lines
 .Sh SYNOPSIS
 .Nm head
-.Op Fl Ns Ar count
+.Op Fl n Ar count
 .Op Ar
 .Sh DESCRIPTION
 This filter gives the first
@@ -51,6 +51,16 @@ is omitted it defaults to
 10.
 .Sh SEE ALSO
 .Xr tail 1
+.Sh STANDARDS
+The 
+.Nm head
+command is expected to be
+.St -p1003.2
+compliant.
+.Pp
+The historic command line syntax of 
+.Nm head
+is supported by this implementation.
 .Sh HISTORY
 The
 .Nm head
