@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)arff.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)arff.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -35,10 +35,10 @@ struct	rt_axent {
 
 struct rt_ent {
 	char	rt_pad;		/* unusued */
-	char	rt_stat;	/* type of entry, or end of seg */
+	u_char	rt_stat;	/* type of entry, or end of seg */
 	u_short	rt_name[3];	/* name, 3 words in rad50 form */
 	u_short	rt_len;		/* length of file */
-	char	rt_chan;	/* only used in temporary files */
+	u_char	rt_chan;	/* only used in temporary files */
 	char	rt_job;		/* only used in temporary files */
 	struct	rt_dat rt_date;	/* creation date */
 };
@@ -46,6 +46,7 @@ struct rt_ent {
 #define RT_TEMP		1
 #define RT_NULL		2
 #define RT_FILE		4
+#define RT_PFILE	(0200|RT_FILE)	/* protected file */
 #define RT_ESEG		8
 
 #define RT_BLOCK	512	/* block size */
@@ -258,6 +259,7 @@ rtls(de)
 		/* fall thru...*/
 
 	case RT_FILE:
+	case RT_PFILE:
 		if (!flag(v)) {
 			sunrad50(name, de->rt_name);
 			printf("%s\n", name);
@@ -308,6 +310,7 @@ xcmd()
 
 			case RT_TEMP:
 			case RT_FILE:
+			case RT_PFILE:
 				sunrad50(name,rt(de)->rt_name);
 				(void) rtx(name);
 
@@ -460,6 +463,7 @@ lookup(name)
 			switch(rt(de)->rt_stat) {
 
 			case RT_FILE:
+			case RT_PFILE:
 			case RT_TEMP:
 				if(samename(rname,rt(de)->rt_name)) {
 					result.count = rt(de)->rt_len * 512;
