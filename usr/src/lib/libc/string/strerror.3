@@ -2,26 +2,30 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)strerror.3	6.2 (Berkeley) %G%
+.\"	@(#)strerror.3	6.3 (Berkeley) %G%
 .\"
 .TH PERROR 3  ""
 .UC 4
 .SH NAME
-perror, sys_errlist, sys_nerr \- system error messages
+perror, strerror, sys_errlist, sys_nerr \- system error messages
 .SH SYNOPSIS
 .nf
 .B perror(string)
 .B char *string;
 .PP
-.B int sys_nerr;
-.B char *sys_errlist[];
+.B strerror(errnum)
+.B int errnum;
+.PP
+.B extern int errno, sys_nerr;
+.B extern char *sys_errlist[];
 .fi
 .SH DESCRIPTION
 .I Perror
 produces a short error message on the standard error file
 describing the last error encountered during a call
-to the system from a C program.  If \fIstring\fP is non-NULL,
-it is printed, followed by a colon, followed by a space,
+to the system from a C program.  If
+.I string
+is non-NULL, it is printed, followed by a colon, followed by a space,
 followed by the message and a new-line.  Otherwise, just the
 message and the new-line are printed.  Most usefully, the argument
 string is the name of the program which incurred the error.
@@ -32,16 +36,19 @@ The error number is taken from the external variable
 which is set when errors occur but not cleared when
 non-erroneous calls are made.
 .PP
-To simplify variant formatting of messages, the vector of message strings
-.I sys_errlist
-is provided;
-.I errno
-can be used as an index in this table to get the
-message string without the newline.
+To simplify variant formatting of messages, the
+.I strerror
+function returns a pointer to the error message string mapped
+to the error number
+.IR errnum .
+.PP
+The message strings can be accessed directly using the external
+character array
+.IR sys_errlist .
 .I Sys_nerr
-is the number of messages provided for in the table;
-it should be checked because new error codes may be added to the system before
-they are added to the table.
+is the total number of messages in the array.  The use of these
+variables is deprecated;
+.I strerror
+should be used instead.
 .SH "SEE ALSO"
-intro(2),
-psignal(3)
+intro(2)
