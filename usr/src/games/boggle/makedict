@@ -1,0 +1,1 @@
+sed -f sfile /usr/local/lib/w2a | uniq | comp >/usr/games/bogdict
