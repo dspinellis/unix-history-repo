@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)makemap.c	8.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)makemap.c	8.6.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
