@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)restore.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -414,7 +414,8 @@ nodeupdates(name, ino, type)
 	case INOFND|NAMEFND|MODECHG:
 	case NAMEFND|MODECHG:
 	case INOFND|MODECHG:
-		panic("[%s] %s: inconsistent state\n", keyval(key), name);
+		fprintf(stderr, "[%s] %s: inconsistent state\n", keyval(key),
+			name);
 		break;
 
 	/*
