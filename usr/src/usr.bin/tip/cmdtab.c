@@ -1,9 +1,9 @@
-/*	cmdtab.c	4.2	81/05/26	*/
+/*	cmdtab.c	4.3	81/05/31	*/
 #include "tip.h"
 
 extern int shell(), getfl(), sendfile(), chdirectory(),
 	finish(), help(), pipefile(), consh(), variable(),
-	cu_take(), cu_put(), dollar();
+	cu_take(), cu_put(), dollar(), genbrk();
 
 esctable_t etable[] =
 {
@@ -20,6 +20,7 @@ esctable_t etable[] =
 	{ '.',	NORM,	"exit from tip",		 finish },
 	{CTRL(d),NORM,	"exit from tip",		 finish },
 	{ 's',	NORM,	"set variable",			 variable },
-	{ '?',	NORM,	"get this summary",		 help},
+	{ '?',	NORM,	"get this summary",		 help },
+	{ '#',	NORM,	"send break",			 genbrk },
 	{ 0, 0, 0 }
 };

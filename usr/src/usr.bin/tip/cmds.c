@@ -1,4 +1,4 @@
-/*	cmds.c	4.1	81/05/09	*/
+/*	cmds.c	4.2	81/05/31	*/
 #include "tip.h"
 /*
  * tip
@@ -580,4 +580,29 @@ variable()
 		if (boolean(value(SCRIPT)))
 			setscript();
 	}
+}
+
+/*
+ * Send a break.
+ * If we can't do it directly (as on VMUNIX), then simulate it.
+ */
+genbrk()
+{
+#ifdef VMUNIX
+	ioctl(FD, TIOCSBRK, NULL);
+	sleep(1);
+	ioctl(FD, TIOCCBRK, NULL);
+#else
+	struct sgttyb ttbuf;
+	int sospeed;
+
+	ioctl(FD, TIOCGETP, &ttbuf);
+	sospeed = ttbuf.sg_ospeed;
+	ttbuf.sg_ospeed = B150;
+	ioctl(FD, TIOCSETP, &ttbuf);
+	write(FD, "\0\0\0\0\0\0\0\0\0\0", 10);
+	ttbuf.sg_ospeed = sospeed;
+	ioctl(FD, TIOCSETP, &ttbuf);
+	write(FD, "@", 1);
+#endif
 }
