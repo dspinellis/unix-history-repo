@@ -1,4 +1,4 @@
-/*	mba.c	1.2	%G%	*/
+/*	mba.c	1.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -14,6 +14,11 @@
 #define	MBAWCOM	0x30
 #define	MBARCOM	0x38
 #define	GO	01
+
+struct mba_info mbainfo[] = {
+	PHYSMBA0,
+	PHYSMBA1,
+};
 
 mbastart(io, adcr, func)
 register struct iob *io;
@@ -46,4 +51,13 @@ int *adcr;
 	else if (func == WRITE) {
 		*adcr = MBAWCOM | GO;
 	}
+}
+
+mbainit(mbanum)
+	int mbanum;
+{
+	register struct mba_regs *mbap = mbainfo[mbanum];
+
+	mbap->mba_cr = MBA_INIT;
+	mbaact |= 1<<mbanum;
 }
