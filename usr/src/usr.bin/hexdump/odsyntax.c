@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)odsyntax.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)odsyntax.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -23,71 +23,124 @@ oldsyntax(argc, argvp)
 	extern FS *fshead;
 	extern char *optarg;
 	extern int length, optind;
-	int ch;
+	int ch, first;
 	char **argv;
 
 	deprecated = 1;
+	first = 0;
 	argv = *argvp;
 	while ((ch = getopt(argc, argv, "aBbcDdeFfHhIiLlOoPpswvXx")) != EOF)
 		switch (ch) {
 		case 'a':
-			add("\"%07.7_Ao\n\"");
-			add("\"%07.7_ao  \" 16/1 \"%3_u \" \"\\n\"");
+			if (!first++) {
+				add("\"%07.7_Ao\n\"");
+				add("\"%07.7_ao  \"");
+			} else
+				add("\"         \"");
+			add("16/1 \"%3_u \" \"\\n\"");
 			break;
 		case 'B':
 		case 'o':
-			add("\"%07.7_Ao\n\"");
-			add("\"%07.7_ao  \" 8/2 \"%06o \" \"\\n\"");
+			if (!first++) {
+				add("\"%07.7_Ao\n\"");
+				add("\"%07.7_ao  \"");
+			} else
+				add("\"         \"");
+			add("8/2 \" %06o \" \"\\n\"");
 			break;
 		case 'b':
-			add("\"%07.7_Ao\n\"");
-			add("\"%07.7_ao  \" 16/1 \"%03o \" \"\\n\"");
+			if (!first++) {
+				add("\"%07.7_Ao\n\"");
+				add("\"%07.7_ao  \"");
+			} else
+				add("\"         \"");
+			add("16/1 \"%03o \" \"\\n\"");
 			break;
 		case 'c':
-			add("\"%07.7_Ao\n\"");
-			add("\"%07.7_ao  \" 16/1 \"%3_c \" \"\\n\"");
+			if (!first++) {
+				add("\"%07.7_Ao\n\"");
+				add("\"%07.7_ao  \"");
+			} else
+				add("\"         \"");
+			add("16/1 \"%3_c \" \"\\n\"");
 			break;
 		case 'd':
-			add("\"%07.7_Ao\n\"");
-			add("\"%07.7_ao  \" 8/2 \"%05u \" \"\\n\"");
+			if (!first++) {
+				add("\"%07.7_Ao\n\"");
+				add("\"%07.7_ao  \"");
+			} else
+				add("\"         \"");
+			add("8/2 \"  %05u \" \"\\n\"");
 			break;
 		case 'D':
-			add("\"%07.7_Ao\n\"");
-			add("\"%07.7_ao  \" 4/4 \"%010u \" \"\\n\"");
+			if (!first++) {
+				add("\"%07.7_Ao\n\"");
+				add("\"%07.7_ao  \"");
+			} else
+				add("\"         \"");
+			add("4/4 \"     %010u \" \"\\n\"");
 			break;
 		case 'e':		/* undocumented in od */
 		case 'F':
-			add("\"%07.7_Ao\n\"");
-			add("\"%07.7_ao  \" 2/8 \"%21.14e \" \"\\n\"");
+			if (!first++) {
+				add("\"%07.7_Ao\n\"");
+				add("\"%07.7_ao  \"");
+			} else
+				add("\"         \"");
+			add("2/8 \"          %21.14e \" \"\\n\"");
 			break;
 			
 		case 'f':
-			add("\"%07.7_Ao\n\"");
-			add("\"%07.7_ao  \" 4/4 \"%14.7e \" \"\\n\"");
+			if (!first++) {
+				add("\"%07.7_Ao\n\"");
+				add("\"%07.7_ao  \"");
+			} else
+				add("\"         \"");
+			add("4/4 \" %14.7e \" \"\\n\"");
 			break;
 		case 'H':
 		case 'X':
-			add("\"%07.7_Ao\n\"");
-			add("\"%07.7_ao  \" 4/4 \"%08x \" \"\\n\"");
+			if (!first++) {
+				add("\"%07.7_Ao\n\"");
+				add("\"%07.7_ao  \"");
+			} else
+				add("\"         \"");
+			add("4/4 \"       %08x \" \"\\n\"");
 			break;
 		case 'h':
 		case 'x':
-			add("\"%07.7_Ao\n\"");
-			add("\"%07.7_ao  \" 8/2 \"%04x \" \"\\n\"");
+			if (!first++) {
+				add("\"%07.7_Ao\n\"");
+				add("\"%07.7_ao  \"");
+			} else
+				add("\"         \"");
+			add("8/2 \"   %04x \" \"\\n\"");
 			break;
 		case 'I':
 		case 'L':
 		case 'l':
-			add("\"%07.7_Ao\n\"");
-			add("\"%07.7_ao  \" 4/4 \"%11d \" \"\\n\"");
+			if (!first++) {
+				add("\"%07.7_Ao\n\"");
+				add("\"%07.7_ao  \"");
+			} else
+				add("\"         \"");
+			add("4/4 \"    %11d \" \"\\n\"");
 			break;
 		case 'i':
-			add("\"%07.7_Ao\n\"");
-			add("\"%07.7_ao  \" 8/2 \"%6d \" \"\\n\"");
+			if (!first++) {
+				add("\"%07.7_Ao\n\"");
+				add("\"%07.7_ao  \"");
+			} else
+				add("\"         \"");
+			add("8/2 \" %6d \" \"\\n\"");
 			break;
 		case 'O':
-			add("\"%07.7_Ao\n\"");
-			add("\"%07.7_ao  \" 4/4 \"%011o \" \"\\n\"");
+			if (!first++) {
+				add("\"%07.7_Ao\n\"");
+				add("\"%07.7_ao  \"");
+			} else
+				add("\"         \"");
+			add("4/4 \"    %011o \" \"\\n\"");
 			break;
 		case 'v':
 			vflag = ALL;
