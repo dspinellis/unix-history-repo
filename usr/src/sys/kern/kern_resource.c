@@ -8,6 +8,7 @@
  */
 
 #include "param.h"
+#include "kernel.h"
 #include "resourcevar.h"
 #include "malloc.h"
 #include "proc.h"
@@ -311,16 +312,15 @@ calcru(p, up, sp, ip)
 	register struct timeval *sp;
 	register struct timeval *ip;
 {
-	register u_quad_t usec, st, ut, it, tot;
-	struct timeval rtime;
-	int s;
+	register u_quad_t u, st, ut, it, tot;
+	register u_long sec, usec;
+	register int s;
+	struct timeval tv;
 
-	/* Get a consistent picture, then do the computation. */
 	s = splstatclock();
 	st = p->p_sticks;
 	ut = p->p_uticks;
 	it = p->p_iticks;
-	rtime = p->p_rtime;
 	splx(s);
 
 	tot = st + ut + it;
@@ -331,15 +331,28 @@ calcru(p, up, sp, ip)
 			ip->tv_sec = ip->tv_usec = 0;
 		return;
 	}
-	usec = rtime.tv_sec * 1000000 + rtime.tv_usec;
-	st = (usec * st) / tot;
+
+	sec = p->p_rtime.tv_sec;
+	usec = p->p_rtime.tv_usec;
+	if (p == curproc) {
+		/*
+		 * Adjust for the current time slice.  This is actually fairly
+		 * important since the error here is on the order of a time
+		 * quantum, which is much greater than the sampling error.
+		 */
+		microtime(&tv);
+		sec += tv.tv_sec - runtime.tv_sec;
+		usec += tv.tv_usec - runtime.tv_usec;
+	}
+	u = sec * 1000000 + usec;
+	st = (u * st) / tot;
 	sp->tv_sec = st / 1000000;
 	sp->tv_usec = st % 1000000;
-	ut = (usec * ut) / tot;
+	ut = (u * ut) / tot;
 	up->tv_sec = ut / 1000000;
 	up->tv_usec = ut % 1000000;
 	if (ip != NULL) {
-		it = (usec * it) / tot;
+		it = (u * it) / tot;
 		ip->tv_sec = it / 1000000;
 		ip->tv_usec = it % 1000000;
 	}
@@ -358,11 +371,10 @@ getrusage(p, uap, retval)
 
 	switch (uap->who) {
 
-	case RUSAGE_SELF: {
+	case RUSAGE_SELF:
 		rup = &p->p_stats->p_ru;
-		calcru(p, &rup->ru_utime, rup->ru_stime, NULL);
+		calcru(p, &rup->ru_utime, &rup->ru_stime, NULL);
 		break;
-	}
 
 	case RUSAGE_CHILDREN:
 		rup = &p->p_stats->p_cru;
