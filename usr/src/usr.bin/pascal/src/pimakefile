@@ -3,9 +3,9 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)pimakefile	5.1 (Berkeley) %G%
+#	@(#)pimakefile	5.2 (Berkeley) %G%
 #
-SCCSID = "@(#)pimakefile 5.1 %G%"
+SCCSID = "@(#)pimakefile 5.2 %G%"
 
 INSTALLDIR = ${DESTDIR}/usr/ucb
 INSTALLNAME = ${INSTALLDIR}/pi
