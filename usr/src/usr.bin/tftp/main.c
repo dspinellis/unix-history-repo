@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -20,10 +20,9 @@ static char sccsid[] = "@(#)main.c	4.8 (Berkeley) %G%";
 
 #define	TIMEOUT		5		/* secs between rexmt's */
 
-struct	sockaddr_in sin;
+struct	sockaddr_in sin = { AF_INET };
 int	f;
 int	trace;
-int	verbose;
 int	connected;
 char	mode[32];
 char	line[200];
@@ -34,7 +33,7 @@ jmp_buf	toplevel;
 int	intr();
 struct	servent *sp;
 
-int	quit(), help(), setverbose(), settrace(), status();
+int	quit(), help(), settrace(), status();
 int	get(), put(), setpeer(), setmode(), setrexmt(), settimeout();
 
 #define HELPINDENT (sizeof("connect"))
@@ -45,7 +44,6 @@ struct cmd {
 	int	(*handler)();
 };
 
-char	vhelp[] = "toggle verbose mode";
 char	thelp[] = "toggle packet tracing";
 char	chelp[] = "connect to remote tftp";
 char	qhelp[] = "exit tftp";
@@ -63,7 +61,6 @@ struct cmd cmdtab[] = {
 	{ "put",	shelp,		put },
 	{ "get",	rhelp,		get },
 	{ "quit",	qhelp,		quit },
-	{ "verbose",	vhelp,		setverbose },
 	{ "trace",	thelp,		settrace },
 	{ "status",	sthelp,		status },
 	{ "rexmt",	xhelp,		setrexmt },
@@ -80,7 +77,6 @@ char	*rindex();
 main(argc, argv)
 	char *argv[];
 {
-	struct sockaddr_in sin;
 	int top;
 
 	sp = getservbyname("tftp", "udp");
@@ -93,13 +89,11 @@ main(argc, argv)
 		perror("tftp: socket");
 		exit(3);
 	}
-	bzero((char *)&sin, sizeof (sin));
-	sin.sin_family = AF_INET;
 	if (bind(f, &sin, sizeof (sin)) < 0) {
 		perror("tftp: bind");
 		exit(1);
 	}
-	strcpy(mode, "netascii");
+	strcpy(mode, "octet");
 	signal(SIGINT, intr);
 	if (argc > 1) {
 		if (setjmp(toplevel) != 0)
@@ -166,9 +160,9 @@ struct	modes {
 	char *m_name;
 	char *m_mode;
 } modes[] = {
-	{ "ascii",	"netascii" },
-	{ "binary",	"octect" },
-	{ "mail",	"mail" },
+	{ "binary",	"octet" },
+	{ "image",	"octet" },
+	{ "octet",	"octet" },
 	{ 0,		0 }
 };
 
@@ -259,7 +253,7 @@ put(argc, argv)
 			fprintf(stderr, "tftp: "); perror(cp);
 			return;
 		}
-		sendfile(fd, targ);
+		(void) sendfile(fd, targ);
 		return;
 	}
 	cp = index(targ, '\0'); 
@@ -271,7 +265,7 @@ put(argc, argv)
 			fprintf(stderr, "tftp: "); perror(argv[n]);
 			continue;
 		}
-		sendfile(fd, targ);
+		(void) sendfile(fd, targ);
 	}
 }
 
@@ -336,7 +330,7 @@ get(argc, argv)
 				fprintf(stderr, "tftp: "); perror(cp);
 				return;
 			}
-			recvfile(fd, src);
+			(void) recvfile(fd, src);
 			break;
 		}
 		cp = index(argv[argc - 1], '\0');
@@ -347,7 +341,7 @@ get(argc, argv)
 			fprintf(stderr, "tftp: "); perror(src);
 			continue;
 		}
-		recvfile(fd, src);
+		(void) recvfile(fd, src);
 	}
 }
 
@@ -416,8 +410,7 @@ status(argc, argv)
 		printf("Connected to %s.\n", hostname);
 	else
 		printf("Not connected.\n");
-	printf("Mode: %s Verbose: %s Tracing: %s\n", mode,
-		verbose ? "on" : "off", trace ? "on" : "off");
+	printf("Mode: %s Tracing: %s\n", mode, trace ? "on" : "off");
 	printf("Rexmt-interval: %d seconds, Max-timeout: %d seconds\n",
 		rexmtval, maxtimeout);
 }
@@ -564,32 +557,9 @@ help(argc, argv)
 	}
 }
 
-/*
- * Call routine with argc, argv set from args (terminated by 0).
- */
-/* VARARGS2 */
-call(routine, args)
-	int (*routine)();
-	int args;
-{
-	register int *argp;
-	register int argc;
-
-	for (argc = 0, argp = &args; *argp++ != 0; argc++)
-		;
-	(*routine)(argc, &args);
-}
-
 /*VARARGS*/
 settrace()
 {
 	trace = !trace;
 	printf("Packet tracing %s.\n", trace ? "on" : "off");
-}
-
-/*VARARGS*/
-setverbose()
-{
-	verbose = !verbose;
-	printf("Verbose mode %s.\n", verbose ? "on" : "off");
 }

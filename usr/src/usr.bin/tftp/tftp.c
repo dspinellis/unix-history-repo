@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tftp.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftp.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -9,20 +9,20 @@ static char sccsid[] = "@(#)tftp.c	4.7 (Berkeley) %G%";
 #include <sys/socket.h>
 
 #include <netinet/in.h>
-
+#include <arpa/inet.h>
 #include <arpa/tftp.h>
 
 #include <signal.h>
 #include <stdio.h>
 #include <errno.h>
 #include <setjmp.h>
+#include <netdb.h>
 
 extern	int errno;
 extern	struct sockaddr_in sin;
 extern	char mode[];
 int	f;
 int	trace;
-int	verbose;
 int	connected;
 char	buf[BUFSIZ];
 int	rexmtval;
@@ -51,10 +51,11 @@ sendfile(fd, name)
 {
 	register struct tftphdr *tp = (struct tftphdr *)buf;
 	register int block = 0, size, n, amount = 0;
-	struct sockaddr_in from;
+	struct sockaddr_in from, to;
 	time_t start = time(0), delta;
-	int fromlen;
+	int fromlen, aborted = 0;
 
+	to = sin;
 	signal(SIGALRM, timer);
 	do {
 		if (block == 0)
@@ -62,7 +63,7 @@ sendfile(fd, name)
 		else {
 			size = read(fd, tp->th_data, SEGSIZE);
 			if (size < 0) {
-				nak(errno + 100);
+				nak(&to, errno + 100);
 				break;
 			}
 			tp->th_opcode = htons((u_short)DATA);
@@ -71,13 +72,15 @@ sendfile(fd, name)
 		timeout = 0;
 		(void) setjmp(timeoutbuf);
 		if (trace)
-			tpacket("sent", tp, size + 4);
-		n = sendto(f, buf, size + 4, 0, (caddr_t)&sin, sizeof (sin));
+			tpacket("sent", &to, tp, size + 4);
+		n = sendto(f, buf, size + 4, 0, (caddr_t)&to, sizeof (to));
 		if (n != size + 4) {
 			perror("tftp: sendto");
-			goto abort;
+			aborted = 1;
+			goto done;
 		}
 		do {
+again:
 			alarm(rexmtval);
 			do {
 				fromlen = sizeof (from);
@@ -87,29 +90,42 @@ sendfile(fd, name)
 			alarm(0);
 			if (n < 0) {
 				perror("tftp: recvfrom");
-				goto abort;
+				aborted = 1;
+				goto done;
+			}
+			if (to.sin_addr.s_addr != from.sin_addr.s_addr) {
+				tpacket("discarded (wrong host)", &from, tp, n);
+				goto again;
+			}
+			if (to.sin_port = sin.sin_port)
+				to.sin_port = from.sin_port;
+			if (to.sin_port != from.sin_port) {
+				tpacket("discarded (wrong port)", &from, tp, n);
+				goto again;
 			}
 			if (trace)
-				tpacket("received", tp, n);
+				tpacket("received", &from, tp, n);
 			/* should verify packet came from server */
 			tp->th_opcode = ntohs(tp->th_opcode);
 			tp->th_block = ntohs(tp->th_block);
 			if (tp->th_opcode == ERROR) {
 				printf("Error code %d: %s\n", tp->th_code,
 					tp->th_msg);
-				goto abort;
+				aborted = 1;
+				goto done;
 			}
 		} while (tp->th_opcode != ACK && block != tp->th_block);
 		if (block > 0)
 			amount += size;
 		block++;
 	} while (size == SEGSIZE || block == 1);
-abort:
-	(void) close(fd);
-	if (amount > 0) {
+	if (!aborted && amount > 0) {
 		delta = time(0) - start;
 		printf("Sent %d bytes in %d seconds.\n", amount, delta);
 	}
+done:
+	(void) close(fd);
+	return (aborted);
 }
 
 /*
@@ -121,10 +137,11 @@ recvfile(fd, name)
 {
 	register struct tftphdr *tp = (struct tftphdr *)buf;
 	register int block = 1, n, size, amount = 0;
-	struct sockaddr_in from;
+	struct sockaddr_in from, to;
 	time_t start = time(0), delta;
-	int fromlen, firsttrip = 1;
+	int fromlen, firsttrip = 1, aborted = 0;
 
+	to = sin;
 	signal(SIGALRM, timer);
 	do {
 		if (firsttrip) {
@@ -139,51 +156,68 @@ recvfile(fd, name)
 		timeout = 0;
 		(void) setjmp(timeoutbuf);
 		if (trace)
-			tpacket("sent", tp, size);
-		if (sendto(f, buf, size, 0, (caddr_t)&sin,
-		    sizeof (sin)) != size) {
+			tpacket("sent", &to, tp, size);
+		if (sendto(f, buf, size, 0, (caddr_t)&to,
+		    sizeof (to)) != size) {
 			alarm(0);
 			perror("tftp: sendto");
-			goto abort;
+			aborted = 1;
+			goto done;
 		}
 		do {
+again:
 			alarm(rexmtval);
-			do
+			do {
+				fromlen = sizeof (from);
 				n = recvfrom(f, buf, sizeof (buf), 0,
 				    (caddr_t)&from, &fromlen);
-			while (n <= 0);
+			} while (n <= 0);
 			alarm(0);
 			if (n < 0) {
 				perror("tftp: recvfrom");
-				goto abort;
+				aborted = 1;
+				goto done;
+			}
+			if (to.sin_addr.s_addr != from.sin_addr.s_addr) {
+				tpacket("discarded (wrong host)", &from, tp, n);
+				goto again;
+			}
+			if (to.sin_port = sin.sin_port)
+				to.sin_port = from.sin_port;
+			if (to.sin_port != from.sin_port) {
+				tpacket("discarded (wrong port)", &from, tp, n);
+				goto again;
 			}
 			if (trace)
-				tpacket("received", tp, n);
-			/* should verify client address */
+				tpacket("received", &from, tp, n);
 			tp->th_opcode = ntohs(tp->th_opcode);
 			tp->th_block = ntohs(tp->th_block);
 			if (tp->th_opcode == ERROR) {
 				printf("Error code %d: %s\n", tp->th_code,
 					tp->th_msg);
-				goto abort;
+				aborted = 1;
+				goto done;
 			}
-		} while (tp->th_opcode != DATA && block != tp->th_block);
+		} while (tp->th_opcode != DATA && tp->th_block != block);
 		size = write(fd, tp->th_data, n - 4);
 		if (size < 0) {
-			nak(errno + 100);
-			break;
+			perror("tftp: write");
+			nak(&to, errno + 100);
+			aborted = 1;
+			goto done;
 		}
 		amount += size;
 	} while (size == SEGSIZE);
-abort:
+done:
 	tp->th_opcode = htons((u_short)ACK);
 	tp->th_block = htons((u_short)block);
-	(void) sendto(f, buf, 4, 0, &sin, sizeof (sin));
+	(void) sendto(f, buf, 4, 0, &to, sizeof (to));
 	(void) close(fd);
-	if (amount > 0) {
+	if (!aborted && amount > 0) {
 		delta = time(0) - start;
 		printf("Received %d bytes in %d seconds.\n", amount, delta);
 	}
+	return (aborted);
 }
 
 makerequest(request, name)
@@ -227,7 +261,8 @@ struct errmsg {
  * standard TFTP codes, or a UNIX errno
  * offset by 100.
  */
-nak(error)
+nak(to, error)
+	struct sockaddr_in *to;
 	int error;
 {
 	register struct tftphdr *tp;
@@ -246,12 +281,13 @@ nak(error)
 	strcpy(tp->th_msg, pe->e_msg);
 	length = strlen(pe->e_msg) + 4;
 	if (trace)
-		tpacket("sent", tp, length);
-	if (send(f, &sin, buf, length) != length)
-		perror("nak");
+		tpacket("sent", to, tp, length);
+	if (sendto(f, buf, length, 0, to, sizeof (*to)) != length)
+		perror("tftp: nak");
 }
 
-tpacket(s, tp, n)
+tpacket(s, sin, tp, n)
+	struct sockaddr_in *sin;
 	struct tftphdr *tp;
 	int n;
 {
@@ -261,10 +297,19 @@ tpacket(s, tp, n)
 	u_short op = ntohs(tp->th_opcode);
 	char *index();
 
+	printf("%s ", s);
+	if (sin) {
+		struct hostent *hp = gethostbyaddr(&sin->sin_addr,
+		     sizeof (sin->sin_addr), AF_INET);
+
+		printf("%s.%d ",
+		    hp == 0 ? inet_ntoa(sin->sin_addr) : hp->h_name,
+		    ntohs(sin->sin_port));
+	}
 	if (op < RRQ || op > ERROR)
-		printf("%s opcode=%x ", s, op);
+		printf("opcode=%x ", op);
 	else
-		printf("%s %s ", s, opcodes[op]);
+		printf("%s ", opcodes[op]);
 	switch (op) {
 
 	case RRQ:
