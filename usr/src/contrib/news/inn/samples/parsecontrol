@@ -1,0 +1,105 @@
+#! /bin/sh
+##  $Revision: 1.7 $
+##  Initial parsing of control messages.
+
+##  =()<. @<_PATH_SHELLVARS>@>()=
+. /var/spool/news/data/innshellvars
+WRITELOG=${NEWSBIN}/writelog
+
+AZ=ABCDEFGHIJKLMNOPQRSTUVWXYZ
+az=abcdefghijklmnopqrstuvwxyz
+FROM="`echo \"$1\" | tr ${AZ} ${az}`"
+REPLYTO="$2"
+case "$3" in
+"")
+    ARTICLE=/dev/null
+    ;;
+/*)
+    ARTICLE="$3"
+    ;;
+*)
+    ARTICLE="${SPOOL}/$3"
+    ;;
+esac
+PATHHOST="$4"
+
+umask 002
+TEMP=${TMPDIR}/ctl$$
+##  Avoid egrep bugs with empty or-patterns.
+test -z "${PROG}" && PROG=all
+${EGREP} "^(${PROG}|all):" <${CTLFILE} >${TEMP}
+
+##  Get any arguments.
+if grep "^Control:[ 	]*${PROG}" <${ARTICLE} >/dev/null 2>&1 ; then
+    set X `${SED} -n -e "s/^Control:[ 	]*${PROG}//p" -e '/^$/q' <${ARTICLE}`
+    shift
+else
+    if grep "^Subject:[ 	]*cmsg[ 	]*${PROG}" \
+		<${ARTICLE} >/dev/null 2>&1 ; then
+	set X `${SED} -n -e "s/^Subject:[ 	]*cmsg[ 	]*${PROG}//p" \
+		-e '/^$/q' <${ARTICLE}`
+	shift
+    else
+	rm -f ${TEMP}
+	${MAILCMD} -s "Bad header by ${FROM}" \
+		${NEWSMASTER} <${ARTICLE}
+	exit
+    fi
+fi
+
+ACTION=mail
+IFS=:
+exec <${TEMP}
+while read MESSAGE FROM_PAT NG_PAT ACT_PAT ; do
+    eval "case \"${FROM}\" in
+    ${FROM_PAT})
+	##  Got a match -- if newgroup/rmgroup, must also
+	##  match the newsgroup pattern.
+	case \"${PROG}\" in
+	newgroup|rmgroup)
+	    case \"$1\" in
+	    ${NG_PAT})
+		ACTION=${ACT_PAT}
+		;;
+	    esac
+	    ;;
+	*)
+	    ACTION=${ACT_PAT}
+	    ;;
+	esac
+    ;;
+    esac"
+done
+rm -f ${TEMP}
+IFS="`echo stn | tr stn ' \011\012'`"
+
+LOGFILE=mail
+case ${ACTION} in
+drop)
+    exit
+    ;;
+log)
+    echo "`date` Ignored ${PROG} ${ARTICLE} by ${FROM} (${PATHHOST})" 1>&2
+    exit
+    ;;
+log=*)
+    LOGFILE=`expr "${ACTION}" : 'log=[	 ]*\(.*\)'`
+    ACTION=logit
+    ;;
+doit=*)
+    LOGFILE=`expr "${ACTION}" : 'doit=[	 ]*\(.*\)'`
+    ACTION=doit
+    ;;
+esac
+
+case "${LOGFILE}" in
+"")
+    LOGFILE=/dev/null
+    ;;
+mail|/*)
+    ;;
+*)
+    LOGFILE=${MOST_LOGS}/${LOGFILE}.log
+    ;;
+esac
+export LOGFILE

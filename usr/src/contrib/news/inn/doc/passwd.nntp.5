@@ -1,0 +1,52 @@
+.\" $Revision: 1.11 $
+.TH PASSWD.NNTP 5
+.SH NAME
+passwd.nntp \- passwords for connecting to remote NNTP servers
+.SH DESCRIPTION
+The file
+.\" =()<.I @<_PATH_NNTPPASS>@>()=
+.I /var/spool/news/data/passwd.nntp
+contains host-name-password triplets for use when authenticating client
+programs to NNTP servers.
+This file is normally interpreted by the
+.IR NNTPsendpassword
+routine in
+.IR libinn (3).
+Blank lines and lines beginning with a number sign (``#'') are ignored.
+All other lines should consist of three or fields separated by colons:
+.RS
+.nf
+host:name:password
+host:name:password:style
+.fi
+.RE
+.PP
+The first field is the name of a host, and is matched in a case-insensitive
+manner.
+The second field is a user name, and the third is a password.
+The optional fourth field specifies the type of authentication to use.
+The default is ``authinfo'' which means that NNTP ``authinfo''
+commands are used to authenticate to the remote host.
+If either the username or password are empty, then the related command will
+not be sent.
+(The ``authinfo'' command is common extension to RFC 977.)
+.PP
+For example:
+.RS
+.nf
+##  UUNET needs a password, MIT doesn't.
+mit.edu:bbn::authinfo
+uunet.uu.net:bbn:yoyoma:authinfo
+.fi
+.RE
+.PP
+This file should not be world-readable.
+.SH HISTORY
+Written by Rich $alz <rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: passwd.nntp.5,v 1.11 1992/08/19 16:33:53 rsalz Exp $
+.SH "SEE ALSO"
+innd(8),
+libinn(3).

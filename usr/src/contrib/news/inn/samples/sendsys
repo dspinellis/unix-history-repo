@@ -1,0 +1,57 @@
+#! /bin/sh
+##  $Revision: 1.12 $
+##  Sendsys control-message handler
+
+PROG=sendsys
+##  Some shells don't pass in $* unless we explicitly pass it in here.
+##  =()<. @<_PATH_PARSECTL>@ "$@">()=
+. /var/spool/news/data/parsecontrol "$@"
+
+##  See if the poster should have given an argument.
+case "${ACTION}-$1" in
+doifarg-)
+    ACTION=mail
+    ;;
+doifarg-*)
+    ACTION=doit
+    ;;
+esac
+
+SUBJECT="Sendsys reply from `innconfval pathhost`"
+case ${ACTION} in
+mail)
+    export FROM MAILCMD SUBJECT ARTICLE
+    (
+	echo "${FROM} posted a sendsys requesting your newsfeeds file."
+	echo ''
+	echo 'To reply, do the following:'
+	echo "	${MAILCMD} -s \"${SUBJECT}\" ${FROM} <${NEWSFEEDS}"
+	echo ''
+	echo 'The full article was:'
+	cat ${ARTICLE}
+    ) | ${MAILCMD} -s "sendsys by ${FROM}" ${NEWSMASTER}
+    ;;
+logit)
+    ${WRITELOG} ${LOGFILE} "sendsys by ${FROM}; reply skipped" <${ARTICLE}
+    ;;
+doit)
+    case "$1" in
+    "")
+	${MAILCMD} -s "${SUBJECT}" ${REPLYTO} <${NEWSFEEDS}
+	${MAILCMD} -s "sendsys by ${FROM}; reply sent" ${NEWSMASTER} <${ARTICLE}
+	;;
+    *)
+	${AWK} "/^$1"'[/:\\]/,/[^\\]$/' ${NEWSFEEDS} >${TEMP}
+	trap 'rm -f ${TEMP} ; exit' 1 2 3 15
+	if [ -s ${TEMP} ] ;  then
+	    ${MAILCMD} -s "${SUBJECT} for $1" ${REPLYTO} <${TEMP}
+	    ${MAILCMD} -s "sendsys $1 by ${FROM}; reply sent" \
+		    ${NEWSMASTER} <${ARTICLE}
+	fi
+	rm -f ${TEMP}
+	;;
+    esac
+    ;;
+esac
+
+exit

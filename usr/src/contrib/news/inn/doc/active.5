@@ -1,0 +1,113 @@
+.\" $Revision: 1.10 $
+.TH ACTIVE 5
+.SH NAME
+active, active.times \- list of active Usenet newsgroups
+.SH DESCRIPTION
+The file
+.\" =()<.I @<_PATH_ACTIVE>@>()=
+.I /var/spool/news/data/active
+lists the newsgroups that the local site receives.
+Each newsgroup should be listed only once.
+Each line specifies one group; their order in the file does not matter.
+Within each newsgroup, articles are assigned unique names, which are
+monotonically increasing numbers.
+.PP
+If an article is posted to newsgroups not mentioned in this file, those
+newsgroups are ignored.
+If no valid newsgroups are specified, the article is
+.\" =()<.ie '@<WANT_TRASH>@'DONT' rejected.>()=
+.ie 'DONT'DONT' rejected.
+.el \{\
+filed into the newsgroup ``junk'' and only propagated to sites that receive
+the ``junk'' newsgroup.\}
+.PP
+Each line consists of four fields specified by a space:
+.RS
+.nf
+name himark lomark flags
+.fi
+.RE
+The first field is the name of the newsgroup.
+.\" =()<.if '@<MERGE_TO_GROUPS>@'DO' \{\>()=
+.if 'DONT'DO' \{\
+Newsgroups that start with the three characters ``to.'' are treated
+specially; see
+.IR innd (8).\}
+The second field is the highest article number that has been used in that
+newsgroup.
+The third field is the lowest article number in the group; this number
+is not guaranteed to be accurate, and should only be taken to be a hint.
+Note that because of article cancellations, there may be gaps in the
+numbering sequence.
+If the lowest article number is greater then the highest article number,
+then there are no articles in the newsgroup.
+In order to make it possible to update an entry in-place without rewriting
+the entire file, the second and third fields are padded out with leading
+zeros to make them a fixed width.
+.PP
+The fourth field can contain one of the following flags:
+.RS
+.nf
+.ta \w'=foo.bar   'u
+y	Local postings are allowed
+n	No local postings are allowed, only remote ones
+m	The group is moderated and all postings must be approved
+j	Articles in this group are not kept, but only passed on
+x	Articles cannot be posted to this newsgroup
+=foo.bar	Articles are locally filed into the ``foo.bar'' group
+.fi
+.RE
+.PP
+If a newsgroup has the ``j'' flag, then no articles will be filed into
+that newsgroup and local postings to that group should not be generated.
+If an article for such a newsgroup is received from a remote site, it
+will be filed into the ``junk'' newsgroup if it is not cross-posted.
+This is different from not having a newsgroup listed in the file because
+sites can subscribe to ``j'' newsgroups and the article will be propagated
+to them.
+.PP
+If the fourth field of a newsgroup starts with an equal sign, then
+the newsgroup is an alias.
+Articles can be posted to the group, but will be treated as if they
+were posted to the group named after the equal sign.
+The second and third fields are ignored.
+Note that the Newsgroup header is not modified
+(Alias groups are typically used during a transition, and are typically
+created with
+.IR ctlinnd (8)).
+An alias newsgroup should not point to another alias.
+.PP
+The file
+.\" =()<.I @<_PATH_ACTIVETIMES>@>()=
+.I /var/spool/news/data/active.times
+provides a chronological record of when newsgroups are created.
+This file is normally updated by
+.IR innd (8)
+whenever a
+.I ctlinnd
+\&``newgroup'' command is done.
+Each line consist of three fields:
+.RS
+.nf
+name time creator
+.fi
+.RE
+.PP
+The first field is the name of the newsgroup.
+The second field is the time it was created, expressed as the number of
+seconds since the epoch \(em
+.IR i.e. ,
+a
+.IR time_t ;
+see
+.IR gettimeofday (2).
+The third field is the electronic mail address of the person who
+created the group.
+.SH HISTORY
+Written by Rich $alz <rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: active.5,v 1.10 1993/01/29 16:42:32 rsalz Exp $
+.SH "SEE ALSO"
+ctlinnd(8), innd(8).

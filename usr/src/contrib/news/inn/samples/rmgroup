@@ -1,0 +1,75 @@
+#! /bin/sh
+##  $Revision: 1.16 $
+##  Rmgroup control-message handler
+
+PROG=rmgroup
+##  Some shells don't pass in $* unless we explicitly pass it in here.
+##  =()<. @<_PATH_PARSECTL>@ "$@">()=
+. /var/spool/news/data/parsecontrol "$@"
+
+case ${ACTION} in
+mail)
+    grep "^$1 " ${ACTIVE} >/dev/null 2>&1 || {
+	# Group doesn't exist
+	exit
+    }
+    P1=$1
+    export FROM P1 NEWSBIN ARTICLE
+    (
+	echo "${FROM} requested that ${P1} be removed."
+	echo 'To do this, type the following:'
+	echo "	${NEWSBIN}/ctlinnd rmgroup ${P1}"
+	echo ''
+	echo 'The full article was:'
+	cat ${ARTICLE}
+    ) | ${MAILCMD} -s "rmgroup $1 by ${FROM}" ${NEWSMASTER}
+    exit
+    ;;
+esac
+
+##  Make sure the article is approved and that the group exists.
+${SED} -e '/^$/q' <$ARTICLE >${TEMP}
+grep '^Approved:' <${TEMP} >/dev/null 2>&1 || {
+    ${WRITELOG} ${LOGFILE} "Unapproved rmgroup by ${FROM}" <${ARTICLE}
+    rm -f ${TEMP}
+    exit
+}
+rm -f ${TEMP}
+grep "^$1 " ${ACTIVE} >/dev/null 2>&1 || {
+    # Group doesn't exist
+    exit
+}
+
+case ${ACTION} in
+logit)
+    ${WRITELOG} ${LOGFILE} "rmgroup $1 by ${FROM} skipped" <${ARTICLE}
+    exit
+    ;;
+esac
+
+##  Do the work.
+ctlinnd -s rmgroup "$1"
+${WRITELOG} ${LOGFILE} "rmgroup $1 by ${FROM}" <${ARTICLE}
+
+##  We're sending to a file.
+LOCK=${LOCKS}/LOCK.newsgroups
+PID=$$
+TRY=0
+MAXTRY=60
+export LOCK MAXTRY PID LOGFILE TRY
+while [ ${TRY} -lt ${MAXTRY} ]; do
+    shlock -p ${PID} -f ${LOCK} && break
+    sleep 2
+    TRY=`expr ${TRY} + 1`
+done
+
+##  If we got the lock, update the file; otherwise, give up.
+test ${TRY} -lt ${MAXTRY} || {
+    echo "Newgroup cannot update newsgroups.  Locked by" `cat ${LOCK}` 1>&2
+    exit
+}
+
+${EGREP} -v "^$1[	]" <${NEWSGROUPS} >${TEMP}
+cat ${TEMP} >${NEWSGROUPS}
+rm ${TEMP} ${LOCK}
+exit

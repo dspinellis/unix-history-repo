@@ -1,0 +1,152 @@
+#! /bin/sh
+##  $Revision: 1.12 $
+##
+##  Script to add new newsgroups.
+
+##  =()<. @<_PATH_SHELLVARS>@>()=
+. /var/spool/news/data/innshellvars
+
+##  Defaults, edit as appropriate.  Also see where the date is set below.
+DISTRIBUTION=""
+ME=`whoami`
+WHERE=`${INNCONFVAL} fromhost`
+PROGNAME=`basename $0`
+
+case "${WHERE}" in
+*.*)
+    ;;
+*)
+    DOMAIN=`innconfval domain`
+    case "${DOMAIN}" in
+    "No value for*")
+	;;
+    *)
+	WHERE="${WHERE}.${DOMAIN}"
+	;;
+    esac
+esac
+
+##  Parse JCL.
+NODIST=true
+COPY=''
+WORD2=''
+TAG=''
+MORETODO=true
+while ${MORETODO} ; do
+    case X"$1" in
+    X-m)
+	MODADDR="$2"
+	WORD2=" moderated"
+	TAG=' (Moderated)'
+	shift
+	;;
+    X-c)
+	COPY=",$2"
+	shift
+	;;
+    X-c*)
+	COPY=",`expr "$1" : '-c\(.*\)'`"
+	;;
+    X-d)
+	DISTRIBUTION="$2"
+	NODIST=false
+	shift
+	;;
+    X-d*)
+	DISTRIBUTION=`expr "$1" : '-d\(.*\)'`
+	NODIST=false
+	;;
+    X--)
+	shift
+	MORETODO=false
+	;;
+    X-*)
+	echo "${PROGNAME}:  Unknown flag $1" 1>&2
+	exit 1
+	;;
+    *)
+	MORETODO=false
+	;;
+    esac
+    ${MORETODO} && shift
+done
+if ${NODIST} ; then
+    echo "Usage: ${PROGNAME} -d distrib [-m moderator] [-c copy] group" 1>&2
+    exit 1
+fi
+
+##  Process the argument, the group name.
+case "$#" in
+1)
+    GROUP="$1"
+    ;;
+*)
+    echo "Usage: ${PROGNAME} -d distrib [-m moderator] [-c copy] group" 1>&2
+    exit 1
+    ;;
+esac
+
+##  Set the article date.
+set `date`
+if [ $6 = "DST" ] ; then
+    DATE="$3 $2 $7 $4 $5"
+    YEAR=$7
+else
+    DATE="$3 $2 $6 $4 $5"
+    YEAR=$6
+fi
+NEWTIME="`echo $4 | tr -d :`"
+
+##  Write the article header.
+TEMP=${TMPDIR}/art$$
+cat >${TEMP} <<EOF
+Path: ${WHERE}!${ME}
+Date: ${DATE}
+From: ${ME}@${WHERE}
+Subject: cmsg newgroup ${GROUP}${WORD2}
+Control: newgroup ${GROUP}${WORD2}
+Newsgroups: ${GROUP}.ctl${COPY}
+Message-ID: <${ME}-${GROUP}-${3}-${2}-${YEAR}-${NEWTIME}-${5}@${WHERE}>
+Approved: ${ME}
+Distribution: ${DISTRIBUTION}
+
+EOF
+
+if [ -n "${WORD2}" ] ; then
+    cat >>${TEMP} <<EOF
+This is a moderated newsgroup.
+Local postings will be forwarded to ${MODADDR}.
+
+EOF
+fi
+
+##  Get the group description.
+test -t 0 && {
+    echo 'Enter a one-line description for the newsgroups file:'
+    read LINE
+    echo 'For your newsgroups file:' >>${TEMP}
+    echo "${GROUP}	${LINE}${TAG}" >>${TEMP}
+    echo "Enter description, terminated with EOF:"
+}
+cat >>${TEMP}
+
+##  Get next command.
+while : ; do
+    echo "Send, abort, or edit?  " | tr -d '\012'
+    read ANS
+    case "$ANS" in
+    e*)
+	${VISUAL-${EDITOR-vi}} ${TEMP}
+	;;
+    a*)
+	rm -f ${TEMP}
+	exit 1
+	;;
+    s*)
+	if ${RNEWS} ${TEMP} ; then
+	    rm -f ${TEMP}
+	    exit
+	fi
+	;;
+    esac
+done

@@ -1,0 +1,45 @@
+.\" $Revision: 1.3 $
+.TH OVERVIEW.FMT 5
+.SH NAME
+overview.fmt \- format of news overview database
+.SH DESCRIPTION
+The file
+.\" =()<.I @<_PATH_SCHEMA>@>()=
+.I /var/spool/news/data/overview.fmt
+specifies the organization of the news overview database.
+Blank lines and lines beginning with a number sign (``#'') are ignored.
+The order of lines in this file is important; it determines the order
+in which the fields will appear in the database.
+.PP
+Most lines will consist of an article header name, optionally
+followed by a colon.
+A trailing set of lines can have the word ``full'' appear after the
+colon; this indicates that the header should appear as well as its value.
+.PP
+If this file is changed, it is usually necessary to rebuild the
+existing overview database using
+.IR expireover (8)
+after removing all existing overview files.
+.PP
+The default file, show below, is compatible with Geoff Collyer's ``nov''
+package:
+.DS
+Subject:
+From:
+Date:
+Message-ID:
+References:
+Bytes:
+Lines:
+##  Some newsreaders get better performance if Xref is present
+#Xref:full
+.DE
+.SH HISTORY
+Written by Rich $alz <rsalz@uunet.uu.net> for InterNetNews.
+Intended to be compatible with the
+.I nov
+package written by Geoff Collyer <geoff@world.std.com>.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: overview.fmt.5,v 1.3 1993/03/18 21:03:47 rsalz Exp $

@@ -1,0 +1,62 @@
+#! /bin/sh
+##  $Revision: 1.6 $
+##  SH script to send IHAVE batches out.
+
+##  =()<. @<_PATH_SHELLVARS>@>()=
+. /var/spool/news/data/innshellvars
+
+PROGNAME=`basename $0`
+LOCK=${LOCKS}/LOCK.${PROGNAME}
+LOG=${MOST_LOGS}/${PROGNAME}.log
+
+## How many Message-ID's per message.
+PERMESSAGE=1000
+
+##  Start logging.
+test ! -f ${LOG} && touch ${LOG}
+chmod 0660 ${LOG}
+exec >>${LOG} 2>&1
+echo "${PROGNAME}: [$$] begin `date`"
+cd ${BATCH}
+
+##  Anyone else there?
+trap 'rm -f ${LOCK} ; exit 1' 1 2 3 15
+shlock -p $$ -f ${LOCK} || {
+    echo "${PROGNAME}: [$$] locked by [`cat ${LOCK}`]"
+    exit 0
+}
+
+##  Do the work.
+for SITE in $* ; do
+
+    ##  See if any data is ready for host.
+    BATCHFILE=${SITE}.ihave.batch
+    if [ -f ${SITE}.iwork ] ; then
+	cat ${SITE}.iwork >>${BATCHFILE}
+	rm -f ${SITE}.iwork
+    fi
+    mv ${SITE}.ihave ${SITE}.iwork
+    ctlinnd -s -t30 flush ${SITE}.ihave || continue
+    cat ${SITE}.iwork >>${BATCHFILE}
+    rm -f ${SITE}.iwork
+    echo "${PROGNAME}: [$$] begin ${SITE}"
+
+    ##  Write out the batchfile as a control message, in clumps.
+    export SITE PERMESSAGE BATCHFILE
+    while test -s ${BATCHFILE} ; do
+	(
+	    echo Newsgroups: to.${SITE}
+	    echo Control: ihave `innconfval pathhost`
+	    echo ''
+	    ${SED} -e ${PERMESSAGE}q <${BATCHFILE}
+	) | ${INEWS} -h
+	${SED} -e "1,${PERMESSAGE}d" <${BATCHFILE} >${BATCHFILE}.tmp
+	mv ${BATCHFILE}.tmp ${BATCHFILE}
+    done
+    echo "${PROGNAME}: [$$] end ${SITE}"
+done
+
+##  Remove the lock file.
+rm -f ${LOCK}
+
+exit
