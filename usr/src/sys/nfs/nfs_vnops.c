@@ -7,36 +7,38 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.71 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.72 (Berkeley) %G%
  */
 
 /*
  * vnode op calls for sun nfs version 2
  */
 
-#include "param.h"
-#include "proc.h"
-#include "kernel.h"
-#include "systm.h"
-#include "mount.h"
-#include "buf.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "conf.h"
-#include "namei.h"
-#include "vnode.h"
-#include "specdev.h"
-#include "fifo.h"
-#include "map.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
+#include <sys/mount.h>
+#include <sys/buf.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/conf.h>
+#include <sys/namei.h>
+#include <sys/vnode.h>
+#include <sys/specdev.h>
+#include <sys/fifo.h>
+#include <sys/map.h>
 
-#include "rpcv2.h"
-#include "nfsv2.h"
-#include "nfs.h"
-#include "nfsnode.h"
-#include "nfsmount.h"
-#include "xdr_subs.h"
-#include "nfsm_subs.h"
-#include "nqnfs.h"
+#include <vm/vm.h>
+
+#include <nfs/rpcv2.h>
+#include <nfs/nfsv2.h>
+#include <nfs/nfs.h>
+#include <nfs/nfsnode.h>
+#include <nfs/nfsmount.h>
+#include <nfs/xdr_subs.h>
+#include <nfs/nfsm_subs.h>
+#include <nfs/nqnfs.h>
 
 /* Defs */
 #define	TRUE	1
