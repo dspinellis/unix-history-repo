@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -170,11 +170,12 @@ bread(fcp, buf, blk, size)
 	if (lseek(fcp->rfdes, (long)dbtob(blk), 0) < 0)
 		rwerr("SEEK", blk);
 	errs = 0;
+	bzero(cp, size);
 	pfatal("THE FOLLOWING SECTORS COULD NOT BE READ:");
 	for (cp = buf, i = 0; i < size; i += DEV_BSIZE, cp += DEV_BSIZE) {
 		if (read(fcp->rfdes, cp, DEV_BSIZE) < 0) {
+			lseek(fcp->rfdes, (long)dbtob(blk) + i + DEV_BSIZE, 0);
 			printf(" %d,", blk + i / DEV_BSIZE);
-			bzero(cp, DEV_BSIZE);
 			errs++;
 		}
 	}
@@ -204,8 +205,10 @@ bwrite(fcp, buf, blk, size)
 		rwerr("SEEK", blk);
 	pfatal("THE FOLLOWING SECTORS COULD NOT BE WRITTEN:");
 	for (cp = buf, i = 0; i < size; i += DEV_BSIZE, cp += DEV_BSIZE)
-		if (write(fcp->wfdes, cp, DEV_BSIZE) < 0)
+		if (write(fcp->wfdes, cp, DEV_BSIZE) < 0) {
+			lseek(fcp->rfdes, (long)dbtob(blk) + i + DEV_BSIZE, 0);
 			printf(" %d,", blk + i / DEV_BSIZE);
+		}
 	printf("\n");
 	return;
 }
