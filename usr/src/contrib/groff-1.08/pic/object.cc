@@ -136,6 +136,12 @@ position::position(double a, double b) : x(a), y(b)
 {
 }
 
+/*
+ * XXX workaround for gcc 2.3.3 initializer bug.
+ * From: Chris Torek <torek@BSDI.COM>
+ */
+position &posref(position p) { return p; }
+
 
 int operator==(const position &a, const position &b)
 {
@@ -1028,8 +1034,12 @@ public:
   void print();
 };
 
+/*
+ * XXX call posref to gain reference to avoid g++ core dump.
+ * From: Chris Torek <torek@BSDI.COM>
+ */
 circle_object::circle_object(double diam)
-: ellipse_object(position(diam, diam))
+: ellipse_object(posref(position(diam, diam)))
 {
 }
 
