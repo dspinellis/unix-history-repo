@@ -3,32 +3,37 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)intro.5	6.3 (Berkeley) %G%
+.\"	@(#)intro.5	6.4 (Berkeley) %G%
 .\"
-.sh 1 "The Functions"
+.sh 1 "Character Output and Scrolling"
 .pp
-In the following definitions,
-.q \*m
-means that the
-.q function
-is really a
-.q #define
-macro with arguments.
-This means that it will not show up in stack traces in the debugger,
-or, in the case of such functions as
-.Fn addch ,
-it will show up as it's
-.Bq w
-counterpart.
-The arguments are given to show the order and type of each.
-Their names are not mandatory,
-just suggestive.
-.ta 11m,17m,25m,33m,41m,49m,57m,65m,73m
-.sh 2 "Output Functions"
-.so doc.I
-.sh 2 "Input Functions"
-.so doc.II
-.sh 2 "Miscellaneous Functions"
-.so doc.III
-.sh 2 Details
-.so doc.IV
+The character output policy deals with the following problems.  First,
+where is the location of the cursor after a character is printed, and 
+secondly, when does the screen scroll if scrolling is enabled.
+.pp
+In the normal case the chracters are output as expected, with the cursor 
+occupying the position of the next character to be output.  However, when the
+cursor is on the last column of the line, the cursor will remain on that 
+position after the last character on the line is output and will only assume
+the position on the next line when the next character (the first on the next
+line) is output.
+.pp
+Likewise, if scrolling is enabled, a scroll will be invoked only when the
+first character on he first line past the bottom line of the window is
+output.  If scrolling is not enabled the chracters will to be output to the
+bottom right corner of the window which is the cursor location.
+.pp
+This policy allows consistent behavior of the cursor at the boundary 
+conditions.  Furthermore, it prevents a scroll from happening before it is
+actually needed (the old package used to scroll when the bottom right position
+was output a character).  As a precendent, it models the 
+.i xterm
+character output conventions.
+
+
+
+
+
+
+
+
