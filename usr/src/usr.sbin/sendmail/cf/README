@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.11 (Berkeley) %G%
+		@(#)README	6.12 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -266,6 +266,11 @@ redirect	Reject all mail addressed to "address.REDIRECT" with
 		If this is set, you can alias people who have left
 		to their new address with ".REDIRECT" appended.
 nouucp		Don't do anything special with UUCP addresses at all.
+notsticky	By default, email sent to "user@local.host" are marked
+		as "sticky" -- that is, the local addresses aren't
+		matched against UDB and don't go through ruleset 5.
+		This features disables this treatment.  It would
+		normally be used on network gateway machines.
 
 Other FEATUREs should be defined, but I was trying to keep these
 config files fairly lean and mean.
