@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)calendar.c	4.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)calendar.c	4.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -164,7 +164,7 @@ isnow(endp)
 		day = v1;
 		/* if no recognizable month, assume just a day alone */
 		if (!(month = getfield(endp, &endp, &flags)))
-			month = tp->tm_mon;
+			month = tp->tm_mon + 1;
 	} else if (flags&F_ISMONTH) {
 		month = v1;
 		/* if no recognizable day, assume the first */
@@ -182,6 +182,7 @@ isnow(endp)
 			day = v2 ? v2 : 1;
 		}
 	}
+	/* ASSUME THIS SHIT WORKS... %^&%&^%^& */
 	day = cumdays[month] + day;
 
 	/* if today or today + offset days */
@@ -200,13 +201,16 @@ getfield(p, endp, flags)
 	int val;
 	char *start, savech;
 
+	for (; !isdigit(*p) && !isalpha(*p) && *p != '*'; ++p)
+		;
 	if (*p == '*') {			/* `*' is current month */
 		*flags |= F_ISMONTH;
-		return(tp->tm_mon);
+		*endp = p+1;
+		return(tp->tm_mon + 1);
 	}
 	if (isdigit(*p)) {
 		val = strtol(p, &p, 10);	/* if 0, it's failure */
-		for (; !isdigit(*p) && !isalpha(*p); ++p);
+		for (; !isdigit(*p) && !isalpha(*p) && *p != '*'; ++p);
 		*endp = p;
 		return(val);
 	}
@@ -219,7 +223,7 @@ getfield(p, endp, flags)
 		*flags |= F_ISDAY;
 	else
 		return(0);
-	for (*p = savech; !isdigit(*p) && !isalpha(*p); ++p);
+	for (*p = savech; !isdigit(*p) && !isalpha(*p) && *p != '*'; ++p);
 	*endp = p;
 	return(val);
 }
