@@ -1,57 +1,72 @@
-.\" Copyright (c) 1986,1990 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1986,1990, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"		@(#)uulog.1	6.4 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH UULOG 1 "%Q"
-.UC 6
-.SH NAME
-uulog \- display \s-1UUCP\s0 log files
-.SH SYNOPSIS
-.B uulog
-[
-.B \-s
-.I sys
-] [
-.B \-u
-.I user
-]
-.SH DESCRIPTION
-.I Uulog
-queries a log
-of 
-.IR uucp (1)
+.\"     @(#)uulog.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt UULOG 1
+.Os BSD 4.3
+.Sh NAME
+.Nm uulog
+.Nd display
+.Tn UUCP
+log entries
+.Sh SYNOPSIS
+.Nm uulog
+.Op Fl s Ar sys
+.Op Fl u Ar user
+.Sh DESCRIPTION
+The
+.Nm uulog
+program displays
+.Xr uucp 1
 and
-.IR uux (1)
-transactions in the file
-.B /var/spool/uucp/\s-1LOGFILE.\s0
-.PP
-The options command 
-.I uulog
-to print logging information:
-.TP 8
-.BI \-s sys\^
-Print information about work involving system
-.IR sys .
-.TP 8
-.BI \-u user\^
-Print information about work done for the specified
-.IR user .
-.SH FILES
-/var/spool/uucp/\s-1LOGFILE\s0
-.SH SEE ALSO
-uucp(1), uux(1).
-.SH NOTES
-Very early releases of \s-1UUCP\s0 used separate log files
-for each of the \s-1UUCP\s0 utilities;
-.I uulog
+.Xr uux 1
+log entries from the file
+.Pa /var/spool/uucp/LOGFILE .
+.Pp
+Options supported by
+.Nm uulog :
+.Bl -tag -width Ar
+.It Fl s Ar sys
+Display all entries logged which include the system named
+.Ar sys .
+.It Fl u Ar user
+Display only entries which include the user name
+.Ar user .
+.El
+.Sh FILES
+.Bl -tag -width /usr/spool/uucp/LOGFILEXx
+.It Pa /usr/spool/uucp/LOGFILE
+Logfile of all uucp events.
+.El
+.Sh SEE ALSO
+.Xr uucp 1 ,
+.Xr uux 1 .
+.Sh NOTES
+Very early releases of
+.Tn UUCP
+used separate log files
+for each of the
+.Tn UUCP
+utilities;
+.Nm uulog
 was used to merge the individual logs into a master file.
 This capability has not been necessary for some time and is
 no longer supported.
-.SH BUGS
-\s-1UUCP\s0's recording of which user issued a request is unreliable.
-.PP
-.I Uulog
+.Sh BUGS
+.Tn UUCP Ns 's
+recording of which user issued a request is unreliable.
+.Pp
+The
+.Nm uulog
+program
 is little more than an overspecialized version of
-.IR grep (1).
+.Xr grep 1 .
+.Sh HISTORY
+A
+.Nm
+command appeared in
+.At 32v .
