@@ -1,4 +1,4 @@
-/*	raw_imp.c	4.8	82/03/13	*/
+/*	raw_imp.c	4.9	82/03/28	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -16,13 +16,7 @@
  * Raw interface to IMP.
  */
 
-/*ARGSUSED*/
-rimp_ctlinput(m)
-	struct mbuf *m;
-{
-COUNT(RIMP_CTLINPUT);
-}
-
+struct	sockaddr_in rawimpaddr = { AF_IMPLINK };
 /*
  * Generate IMP leader and pass packet to impoutput.
  * The user must create a skeletal leader in order to
@@ -76,61 +70,13 @@ COUNT(RIMP_OUTPUT);
 	ip->il_network = sin->sin_addr.s_net;
 	ip->il_host = sin->sin_addr.s_host;
 	ip->il_imp = sin->sin_addr.s_imp;
-	ifp = if_ifonnetof(sin->sin_addr);
-	if (ifp == 0) {
-		ifp = if_gatewayfor(sin->sin_addr);
-		if (ifp == 0)
-			goto bad;
-	}
-	return (impoutput(ifp, m, PF_IMPLINK));
+	/* no routing here */
+	ifp = if_ifonnetof(ip->il_network);
+	if (ifp == 0)
+		goto bad;
+	return (impoutput(ifp, m, (struct sockaddr *)&rawimpaddr));
 
 bad:
 	m_freem(m);
 	return (0);
-}
-
-/*
- * Intercept operations required to
- * maintain interface pointer used on output.
- */
-rimp_usrreq(so, req, m, addr)
-	struct socket *so;
-	int req;
-	struct mbuf *m;
-	caddr_t addr;
-{
-	register struct rawcb *rp = sotorawcb(so);
-	register struct sockaddr_in *sin;
-	register struct ifnet *ifp;
-
-COUNT(RIMP_USRREQ);
-	if (rp == 0 && req != PRU_ATTACH)
-		return (EINVAL);
-
-	switch (req) {
-
-	/*
-	 * Verify address has an interface to go with it.
-	 */
-	case PRU_CONNECT:
-		if (rp->rcb_pcb)
-			return (EISCONN);
-		sin = (struct sockaddr_in *)addr;
-		ifp = if_ifonnetof(sin->sin_addr);
-		if (ifp == 0) {
-			ifp = if_gatewayfor(sin->sin_addr);
-			if (ifp == 0)
-				return (EADDRNOTAVAIL);	/* XXX */
-		}
-		rp->rcb_pcb = (caddr_t)ifp;
-		break;
-
-	case PRU_DISCONNECT:
-		rp->rcb_pcb = 0;
-		break;
-
-	case PRU_CONTROL:
-		return (EOPNOTSUPP);
-	}
-	return (raw_usrreq(so, req, m, addr));
 }

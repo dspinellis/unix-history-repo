@@ -1,4 +1,4 @@
-/*	raw_cb.c	4.5	82/03/13	*/
+/*	raw_cb.c	4.6	82/03/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,6 +10,7 @@
 #include "../net/in_systm.h"
 #include "../net/if.h"
 #include "../net/raw_cb.h"
+#include "../net/pup.h"
 #include "../errno.h"
 
 /*
@@ -17,7 +18,7 @@
  *
  * TODO:
  *	hash lookups by protocol family/protocol + address family
- *	take care of unique address problems per AF
+ *	take care of unique address problems per AF?
  *	redo address binding to allow wildcards
  */
 
@@ -31,9 +32,10 @@ raw_attach(so, addr)
 {
 	struct mbuf *m;
 	register struct rawcb *rp;
-	struct ifnet *ifp = ifnet;
 
 COUNT(RAW_ATTACH);
+	if (ifnet == 0)
+		return (EADDRNOTAVAIL);
 	/*
 	 * Should we verify address not already in use?
 	 * Some say yes, others no.
@@ -41,24 +43,37 @@ COUNT(RAW_ATTACH);
 	if (addr) switch (addr->sa_family) {
 
 	case AF_IMPLINK:
-	case AF_INET: {
-		register struct sockaddr_in *sin = (struct sockaddr_in *)addr;
-
-		if (ifnet && sin->sin_addr.s_addr == 0)
-			sin->sin_addr = ifnet->if_addr;
-		ifp = if_ifwithaddr(sin->sin_addr);
+	case AF_INET:
+		if (((struct sockaddr_in *)addr)->sin_addr.s_addr &&
+		    if_ifwithaddr(addr) == 0)
+			return (EADDRNOTAVAIL);
 		break;
-		}
 
-	case AF_PUP:
-		ifp = ifnet;
+#ifdef PUP
+	/*
+	 * Curious, we convert PUP address format to internet
+	 * to allow us to verify we're asking for an Ethernet
+	 * interface.  This is wrong, but things are heavily
+	 * oriented towards the internet addressing scheme, and
+	 * converting internet to PUP would be very expensive.
+	 */
+	case AF_PUP: {
+		struct sockaddr_pup *spup = (struct sockaddr_pup *)addr;
+		struct sockaddr_in inpup;
+
+		bzero((caddr_t)&inpup, sizeof(inpup));
+		inpup.sin_addr.s_net = spup->sp_net;
+		inpup.sin_addr.s_impno = spup->sp_host;
+		if (inpup.sin_addr.s_addr &&
+		    if_ifwithaddr((struct sockaddr *)&inpup) == 0)
+			return (EADDRNOTAVAIL);
 		break;
+	}
+#endif
 
 	default:
 		return (EAFNOSUPPORT);
 	}
-	if (ifp == 0)
-		return (EADDRNOTAVAIL);
 	m = m_getclr(M_DONTWAIT);
 	if (m == 0)
 		return (ENOBUFS);
@@ -71,7 +86,6 @@ COUNT(RAW_ATTACH);
 	insque(rp, &rawcb);
 	so->so_pcb = (caddr_t)rp;
 	rp->rcb_pcb = 0;
-
 	if (addr)
 		bcopy((caddr_t)addr, (caddr_t)&so->so_addr, sizeof(*addr));
 	return (0);
@@ -95,7 +109,7 @@ COUNT(RAW_DETACH);
 	so->so_pcb = 0;
 	sofree(so);
 	remque(rp);
-	m_freem(dtom(rp));
+	(void) m_freem(dtom(rp));
 }
 
 /*
@@ -119,6 +133,6 @@ raw_connaddr(rp, addr)
 	struct sockaddr *addr;
 {
 COUNT(RAW_CONNADDR);
-	bcopy((caddr_t)addr, (caddr_t)&rp->rcb_addr, sizeof(struct sockaddr));
+	bcopy((caddr_t)addr, (caddr_t)&rp->rcb_addr, sizeof(*addr));
 	rp->rcb_flags |= RAW_ADDR;
 }

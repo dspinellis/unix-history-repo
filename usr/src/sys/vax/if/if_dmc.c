@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.6	82/03/19	*/
+/*	if_dmc.c	4.7	82/03/28	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -41,7 +41,7 @@ u_short	dmcstd[] = { 0 };
 struct	uba_driver dmcdriver =
 	{ dmcprobe, 0, dmcattach, 0, dmcstd, "dmc", dmcinfo };
 
-#define	DMC_PF	0xff		/* 8 bits of protocol type in ui_flags */
+#define	DMC_AF	0xff		/* 8 bits of address type in ui_flags */
 #define	DMC_NET	0xff00		/* 8 bits of net number in ui_flags */
 
 /*
@@ -91,14 +91,14 @@ dmcprobe(reg)
 	for (i = 100000; i && (addr->bsel1 & DMC_RUN) == 0; i--)
 		;
 	if ((addr->bsel1 & DMC_RUN) == 0)
-		return(0);
+		return (0);
 	addr->bsel1 &= ~DMC_MCLR;
 	addr->bsel0 = DMC_RQI|DMC_IEI;
 	DELAY(100000);
 	addr->bsel1 = DMC_MCLR;
 	for (i = 100000; i && (addr->bsel1 & DMC_RUN) == 0; i--)
 		;
-	return(1);
+	return (1);
 }
 
 /*
@@ -110,14 +110,16 @@ dmcattach(ui)
 	register struct uba_device *ui;
 {
 	register struct dmc_softc *sc = &dmc_softc[ui->ui_unit];
+	register struct sockaddr_in *sin;
 
 	sc->sc_if.if_unit = ui->ui_unit;
 	sc->sc_if.if_name = "dmc";
 	sc->sc_if.if_mtu = DMCMTU;
 	sc->sc_if.if_net = (ui->ui_flags & DMC_NET) >> 8;
 	sc->sc_if.if_host[0] = 17;	/* random number */
-	sc->sc_if.if_addr =
-	    if_makeaddr(sc->sc_if.if_net, sc->sc_if.if_host[0]);
+	sin = (struct sockaddr_in *)&sc->sc_if.if_addr;
+	sin->sa_family = AF_INET;
+	sin->sin_addr = if_makeaddr(sc->sc_if.if_net, sc->sc_if.if_host[0]);
 	sc->sc_if.if_init = dmcinit;
 	sc->sc_if.if_output = dmcoutput;
 	sc->sc_if.if_ubareset = dmcreset;
@@ -161,6 +163,7 @@ dmcinit(unit)
 	if (if_ubainit(&sc->sc_ifuba, ui->ui_ubanum, 0,
 	    (int)btoc(DMCMTU)) == 0) {
 		printf("dmc%d: can't initialize\n", unit);
+		sc->sc_if.if_flags &= ~IFF_UP;
 		return;
 	}
 	addr = (struct dmcdevice *)ui->ui_addr;
@@ -172,6 +175,7 @@ dmcinit(unit)
 	base = sc->sc_ifuba.ifu_r.ifrw_info & 0x3ffff;
 	dmcload(sc, DMC_READ, base, ((base>>2)&DMC_XMEM)|DMCMTU);
 	printd("  first read queued, addr 0x%x\n", base);
+	sc->sc_if.if_flags |= IFF_UP;
 }
 
 /*
@@ -311,17 +315,17 @@ dmcxint(unit)
 				sc->sc_ifuba.ifu_r.ifrw_bdp);
 		len = arg & DMC_CCOUNT;
 		printd("  read done, len %d\n", len);
-		switch (ui->ui_flags & DMC_PF) {
+		switch (ui->ui_flags & DMC_AF) {
 #ifdef INET
-		case PF_INET:
+		case AF_INET:
 			schednetisr(NETISR_IP);
 			inq = &ipintrq;
 			break;
 #endif
 
 		default:
-			printf("dmc%d: unknown packet type %d\n", unit,
-			    ui->ui_flags & DMC_NET);
+			printf("dmc%d: unknown address type %d\n", unit,
+			    ui->ui_flags & DMC_AF);
 			goto setup;
 		}
 		m = if_rubaget(&sc->sc_ifuba, len, 0);
@@ -380,24 +384,24 @@ setup:
  * Just send the data, header was supplied by
  * upper level protocol routines.
  */
-dmcoutput(ifp, m, pf)
+dmcoutput(ifp, m, dst)
 	register struct ifnet *ifp;
 	register struct mbuf *m;
-	int pf;
+	struct sockaddr *dst;
 {
 	struct uba_device *ui = dmcinfo[ifp->if_unit];
 	int s;
 
 	printd("dmcoutput\n");
-	if (pf != (ui->ui_flags & DMC_PF)) {
-		printf("dmc%d: protocol %d not supported\n", ifp->if_unit, pf);
-		(void) m_freem(m);
+	if (dst->sa_family != (ui->ui_flags & DMC_AF)) {
+		printf("dmc%d: af%d not supported\n", ifp->if_unit, pf);
+		m_freem(m);
 		return (0);
 	}
 	s = splimp();
 	if (IF_QFULL(&ifp->if_snd)) {
 		IF_DROP(&ifp->if_snd);
-		(void) m_freem(m);
+		m_freem(m);
 		splx(s);
 		return (0);
 	}

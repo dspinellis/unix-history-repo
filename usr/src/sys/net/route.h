@@ -1,4 +1,4 @@
-/*	route.h	4.1	82/03/27	*/
+/*	route.h	4.2	82/03/28	*/
 
 /*
  * Structure of kernel resident routing
@@ -29,7 +29,7 @@ struct route {
 /*
  * Flags and host/network status.
  */
-#define	RTS_UP		0x1		/* route useable */
+#define	RTF_UP		0x1		/* route useable */
 #define	RTF_MUNGE	0x2		/* munge packet src address */
 
 #ifdef KERNEL
@@ -41,4 +41,6 @@ struct route {
  */
 #define	RTHASHSIZ	16
 struct mbuf *routehash[RTHASHSIZ];
+
+struct	rtentry *reroute();
 #endif

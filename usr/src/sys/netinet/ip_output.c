@@ -1,4 +1,4 @@
-/*	ip_output.c	1.26	82/03/15	*/
+/*	ip_output.c	1.27	82/03/28	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -10,15 +10,19 @@
 #include "../net/if.h"
 #include "../net/ip.h"
 #include "../net/ip_var.h"
+#include "../net/route.h"
 
-ip_output(m, opt, allowbroadcast)
+ip_output(m, opt, ro, allowbroadcast)
 	struct mbuf *m;
 	struct mbuf *opt;
+	struct route *ro;
 	int allowbroadcast;
 {
 	register struct ip *ip = mtod(m, struct ip *);
 	register struct ifnet *ifp;
 	int len, hlen = sizeof (struct ip), off;
+	struct sockaddr_in tempaddr;	/* temp kludge */
+	struct route iproute;
 
 COUNT(IP_OUTPUT);
 	if (opt)				/* XXX */
@@ -31,18 +35,37 @@ COUNT(IP_OUTPUT);
 	ip->ip_off &= IP_DF;
 	ip->ip_id = htons(ip_id++);
 
+#ifdef notdef
 	/*
 	 * Find interface for this packet.
 	 */
-	ifp = if_ifonnetof(ip->ip_dst);
-	if (ifp == 0) {
-		ifp = if_gatewayfor(ip->ip_dst);
-		if (ifp == 0)
+	if (ro == 0) {
+		ro = &iproute;
+		bzero((caddr_t)ro, sizeof (*ro));
+	}
+	if (ro->ro_rt == 0) {
+		ro->ro_dest.sin_addr = ip->ip_dst;
+		ro->ro_dest.sin_family = AF_INET;
+		route(ro);
+	}
+	if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0)
+		goto bad;
+#else
+	/* interim kludge before routing fallout */
+	ifp = if_ifonnetof(ip->ip_dst.s_net);
+	if (ifp == 0)
+		goto bad;
+	tempaddr.sin_family = AF_INET;
+	tempaddr.sin_addr = ip->ip_dst;
+#endif
+
+	if (!allowbroadcast && (ifp->if_flags & IFF_BROADCAST)) {
+		struct sockaddr_in *sin;
+
+		sin = (struct sockaddr_in *)&ifp->if_broadaddr;
+		if (sin->sin_addr.s_addr == ip->ip_dst.s_addr)
 			goto bad;
 	}
-	if (!allowbroadcast && ifp->if_broadaddr.s_addr != 0 &&
-	    ifp->if_broadaddr.s_addr == ip->ip_dst.s_addr)
-		goto bad;
 
 	/*
 	 * If small enough for interface, can just send directly.
@@ -54,7 +77,12 @@ COUNT(IP_OUTPUT);
 #endif
 		ip->ip_sum = 0;
 		ip->ip_sum = in_cksum(m, hlen);
-		return ((*ifp->if_output)(ifp, m, PF_INET));
+		return ((*ifp->if_output)(ifp, m,
+#ifdef notdef
+		  &ro->ro_rt->rt_dest));
+#else
+		  (struct sockaddr *)&tempaddr));
+#endif
 	}
 
 	/*
@@ -109,7 +137,12 @@ COUNT(IP_OUTPUT);
 #endif
 		mhip->ip_sum = 0;
 		mhip->ip_sum = in_cksum(mh, hlen);
-		if ((*ifp->if_output)(ifp, mh, PF_INET) == 0)
+		if ((*ifp->if_output)(ifp, mh,
+#ifdef notdef
+		  &ro->ro_rt->rt_dest) == 0)
+#else
+		  (struct sockaddr *)&tempaddr) == 0)
+#endif
 			goto bad;
 	}
 	m_freem(m);

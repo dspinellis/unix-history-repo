@@ -1,15 +1,23 @@
-/*	route.c	4.1	82/03/27	*/
+/*	route.c	4.2	82/03/28	*/
 
 #include "../h/param.h"
+#include "../h/systm.h"
+#include "../h/dir.h"
+#include "../h/user.h"
+#include "../h/proc.h"
+#include "../h/file.h"
+#include "../h/inode.h"
+#include "../h/buf.h"
 #include "../h/mbuf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
+#include "../h/ioctl.h"
 #include "../net/in.h"
 #include "../net/in_systm.h"
+#include "../net/if.h"
 #include "../net/af.h"
 #include "../net/route.h"
-#include <errno.h>
 
 /*
  * Packet routing routines.
@@ -24,12 +32,13 @@ route(ro)
 {
 	register struct rtentry *rt, *rtmin;
 	register struct mbuf *m;
+	register int key;
 	struct afhash h;
 	struct sockaddr *dst = &ro->ro_dst;
-	int af = dst->sa_family;
+	int af = dst->sa_family, doinghost;
 
 COUNT(ROUTE);
-	if (ro->ro_ifp)		/* ??? */
+	if (ro && ro->ro_rt && ro->ro_rt->rt_ifp)	/* ??? */
 		return;
 	(*afswitch[af].af_hash)(dst, &h);
 	m = routehash[h.afh_hosthash % RTHASHSIZ];
@@ -62,11 +71,10 @@ again:
 	}
 	if (doinghost) {
 		doinghost = 0;
-		m = routethash[h.afh_nethash % RTHASHSIZ];
+		m = routehash[h.afh_nethash % RTHASHSIZ];
 		key = h.afh_netkey;
 		goto again;
 	}
-	ro->ro_ifp = 0;
 	ro->ro_rt = 0;
 }
 
@@ -76,6 +84,7 @@ reroute(sa)
 {
 	register struct rtentry *rt;
 	register struct mbuf *m;
+	register int key;
 	struct afhash h;
 
 COUNT(REROUTE);
@@ -99,13 +108,13 @@ COUNT(REROUTE);
 rtcontrol(req, addr)
 	caddr_t addr;
 {
-	register struct rtreq rq;
+	register struct rtentry rq;
 	int x = splimp(), err = 0;
 
 COUNT(RTCONTROL);
 	if (suser())
 		goto bad;
-	if (copyin(addr, (caddr_t)&rq, sizeof(struct rtreq))) {
+	if (copyin(addr, (caddr_t)&rq, sizeof(struct rtentry))) {
 		u.u_error = EFAULT;
 		goto bad;
 	}
@@ -124,9 +133,10 @@ rtrequest(req, new)
 {
 	register struct rtentry *rt;
 	register struct mbuf *m, **mprev;
+	register int key;
 	struct sockaddr *sa = &new->rt_dst;
 	struct afhash h;
-	int af = sa->sa_family;
+	int af = sa->sa_family, doinghost;
 
 	(*afswitch[af].af_hash)(sa, &h);
 	mprev = &routehash[h.afh_hosthash % RTHASHSIZ];
@@ -138,7 +148,7 @@ again:
 		if (rt->rt_key != key)
 			continue;
 		if (doinghost) {
-			if (!equal(&rt->rt_dst, dst))
+			if (!equal(&rt->rt_dst, &new->rt_dst))
 				continue;
 		} else {
 			if (rt->rt_dst.sa_family != af)
@@ -156,7 +166,7 @@ again:
 	}
 
 	if (m == 0 && req != SIOCADDRT)
-		return (ESEARCH);
+		return (ESRCH);
 	switch (req) {
 
 	case SIOCDELRT:
@@ -169,7 +179,7 @@ again:
 	case SIOCCHGRT:
 		rt->rt_flags = new->rt_flags;
 		if (rt->rt_refcnt > 0)
-			return (EINUSE);
+			return (EBUSY);
 		if (!equal(&rt->rt_gateway, &new->rt_gateway))
 			goto newneighbor;
 		break;
