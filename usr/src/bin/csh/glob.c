@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)glob.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)glob.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -23,10 +23,10 @@ bool	noglob;
 bool	nonomatch;
 char	*entp;
 char	**sortbas;
-int	argcmp();
+int	sortscmp();
 
 #define sort()	qsort((char *)sortbas, &gargv[gargc] - sortbas, \
-		      sizeof(*sortbas), argcmp), sortbas = &gargv[gargc]
+		      sizeof(*sortbas), sortscmp), sortbas = &gargv[gargc]
 
 
 char **
@@ -112,8 +112,10 @@ acollect(as)
 		sort();
 }
 
-static
-argcmp(a1, a2)
+/*
+ * String compare for qsort.  Also used by filec code in sh.file.c.
+ */
+sortscmp(a1, a2)
 	char **a1, **a2;
 {
 
