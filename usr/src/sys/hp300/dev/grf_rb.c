@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf_rb.c 1.15 93/08/13$
  *
- *	@(#)grf_rb.c	8.2 (Berkeley) %G%
+ *	@(#)grf_rb.c	8.3 (Berkeley) %G%
  */
 
 #include "grf.h"
@@ -128,7 +128,7 @@ rb_mode(gp, cmd, data)
 	{
 		struct grf_fbinfo *fi = (struct grf_fbinfo *)data;
 		struct grfinfo *gi = &gp->g_display;
-		int i, j;
+		int i;
 
 		/* feed it what HP-UX expects */
 		fi->id = gi->gd_id;

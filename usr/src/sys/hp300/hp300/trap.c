@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.37 92/12/20$
  *
- *	@(#)trap.c	8.4 (Berkeley) %G%
+ *	@(#)trap.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -190,12 +190,11 @@ trap(type, code, v, frame)
 	register unsigned v;
 	struct frame frame;
 {
-	register int i;
-	unsigned ucode;
-	register struct proc *p;
-	u_quad_t sticks;
-	unsigned ncode;
 	extern char fswintr[];
+	register struct proc *p;
+	register int i;
+	u_int ucode;
+	u_quad_t sticks;
 
 	cnt.v_trap++;
 	p = curproc;
@@ -850,7 +849,7 @@ syscall(code, frame)
 	register caddr_t params;
 	register struct sysent *callp;
 	register struct proc *p;
-	int error, opc, numsys, s;
+	int error, opc, numsys;
 	u_int argsize;
 	struct args {
 		int i[8];
