@@ -1,0 +1,11 @@
+DEFS=" -DSTDC_HEADERS -DHAVE_UNISTD_H -DFTIME_MISSING"
+LIBS=""
+PROGS=" nice nohup"
+MAN=" nice.1 nohup.1"
+CC="gcc -O"
+INSTALL="/usr/local/bin/install -c"
+INSTALLDATA="/usr/local/bin/install -c -m 644"
+RANLIB="ranlib "
+LIBOBJS=" stime.o"
+ALLOCA=""
+
