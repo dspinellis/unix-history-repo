@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.105 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.106 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2103,27 +2103,24 @@ putbody(mci, e, separator)
 	**  Output the body of the message
 	*/
 
+	if (e->e_dfp == NULL && e->e_df != NULL)
+	{
+		e->e_dfp = fopen(e->e_df, "r");
+		if (e->e_dfp == NULL)
+			syserr("putbody: Cannot open %s for %s from %s",
+			e->e_df, e->e_to, e->e_from.q_paddr);
+	}
 	if (e->e_dfp == NULL)
 	{
-		if (e->e_df != NULL)
+		if (bitset(MCIF_INHEADER, mci->mci_flags))
 		{
-			e->e_dfp = fopen(e->e_df, "r");
-			if (e->e_dfp == NULL)
-				syserr("putbody: Cannot open %s for %s from %s",
-				e->e_df, e->e_to, e->e_from.q_paddr);
+			putline("", mci);
+			mci->mci_flags &= ~MCIF_INHEADER;
 		}
-		else
-		{
-			if (bitset(MCIF_INHEADER, mci->mci_flags))
-			{
-				putline("", mci);
-				mci->mci_flags &= ~MCIF_INHEADER;
-			}
-			putline("<<< No Message Collected >>>", mci);
-			goto endofmessage;
-		}
+		putline("<<< No Message Collected >>>", mci);
+		goto endofmessage;
 	}
-	if (e->e_dfp != NULL && e->e_dfino == (ino_t) 0)
+	if (e->e_dfino == (ino_t) 0)
 	{
 		struct stat stbuf;
 
