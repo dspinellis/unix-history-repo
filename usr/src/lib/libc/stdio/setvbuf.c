@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setvbuf.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)setvbuf.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -41,7 +41,7 @@ setvbuf(fp, buf, mode, size)
 	 * Free old buffer if it was from malloc().  Clear line and
 	 * non buffer flags, and clear malloc flag.
 	 */
-	(void) fflush(fp);
+	(void) __sflush(fp);
 	fp->_r = 0;
 	fp->_lbfsize = 0;
 	if (fp->_flags & __SMBF)
