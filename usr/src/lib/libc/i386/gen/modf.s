@@ -27,23 +27,15 @@ _modf:
 	pushl %ebp
 	movl %esp,%ebp
 	subl $16,%esp
-/APP
 	fnstcw -12(%ebp)
-/NO_APP
 	movw -12(%ebp),%dx
 	orw $3072,%dx
 	movw %dx,-16(%ebp)
-/APP
 	fldcw -16(%ebp)
-/NO_APP
 	fldl 8(%ebp)
-/APP
 	frndint
-/NO_APP
 	fstpl -8(%ebp)
-/APP
 	fldcw -12(%ebp)
-/NO_APP
 	movl 16(%ebp),%eax
 	movl -8(%ebp),%edx
 	movl -4(%ebp),%ecx
