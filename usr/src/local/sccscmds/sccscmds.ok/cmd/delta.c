@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)delta.c	4.1);
+SCCSID(@(#)delta.c	4.2);
 USXALLOC();
 
 char	Diffpgm[]	"/usr/local/bdiff";
@@ -503,7 +503,7 @@ register int *plinenum;
 		case 'd':
 			num_lines = highline - lowline + 1;
 			*type = DEL;
-			skipline(line,num_lines);
+			skiplines(line,num_lines);
 			break;
 
 		case 'a':
@@ -518,7 +518,7 @@ register int *plinenum;
 			linerange(p,&lowline,&highline);
 			chg_num = highline - lowline + 1;
 			*type = DEL;
-			skipline(line,num_lines);
+			skiplines(line,num_lines);
 			break;
 		}
 	}
