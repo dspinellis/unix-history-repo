@@ -1,0 +1,28 @@
+1.  In src/Makefile, add pop to SUBDIR, so it looks something like:
+
+    SUBDIR= tools uip submit deliver local phone pobox bboards pop smtp uucp
+
+
+2.  Link getbbent.o into the src/pop/ directory
+
+
+3.  In mmdftailor, add these lines
+
+MTBL	pop, file="pop", show="POP service"
+MCHN	pop, show="POP Delivery", que=pop, tbl=pop,
+	pgm=pop, mod=reg, ap=822, host="pop"
+
+
+4.   In the local domain table, add
+
+	pop:			pop.<locdomain>
+
+5.   Create the table for the POP channel, one line:
+	pop.<locdomain>		pop
+
+6.    Run dbmbuild
+
+7.    In your mmdf.start file, either add the pop channel to an
+      existing background deliver, or give it one of its own:
+
+	deliver -b -cpop &
