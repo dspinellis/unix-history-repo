@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)random.6	8.1 (Berkeley) %G%
+.\"     @(#)random.6	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RANDOM 6
@@ -14,13 +14,13 @@
 .Sh SYNOPSIS
 .Nm random
 .Op Fl er
-.Op Ar number
+.Op Ar denominator
 .Sh DESCRIPTION
 .Nm Random
 reads lines from the standard input and copies them to the standard
-output with a probability of 1/number.
+output with a probability of 1/denominator.
 The default value for
-.Ar number
+.Ar denominator
 is 2.
 .Pp
 The options are as follows:
@@ -32,7 +32,7 @@ option is specified,
 .Nm random
 does not read or write anything, and simply exits with a random
 exit value of 0 to
-.Ar number
+.Ar denominator
 \&- 1, inclusive.
 .It Fl r
 The
