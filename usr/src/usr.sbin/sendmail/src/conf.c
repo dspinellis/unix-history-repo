@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.78 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.79 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -602,6 +602,7 @@ init_md(argc, argv)
 #define LA_SUBR		4	/* call getloadavg */
 #define LA_MACH		5	/* MACH load averages (as on NeXT boxes) */
 #define LA_SHORT	6	/* read kmem for avenrun; interpret as short */
+#define LA_PROCSTR	7	/* read string ("1.17") from /proc/loadavg */
 
 /* do guesses based on general OS type */
 #ifndef LA_TYPE
@@ -801,6 +802,57 @@ getla()
 
 
 #else
+#if LA_TYPE == LA_PROC
+
+/*
+**  Read /proc/loadavg for the load average.  This is assumed to be
+**  in a format like "0.15 0.12 0.06".
+**
+**	Initially intended for Linux.  This has been in the kernel
+**	since at least 0.99.15.
+*/
+
+# ifndef _PATH_LOADAVG
+#  define _PATH_LOADAVG	"/proc/loadavg"
+# endif
+
+int
+getla()
+{
+	register double avenrun;
+	register int result;
+	static FILE *fp = NULL;
+
+	*avenrun = 0.0;
+
+	if (fp == NULL)
+	{
+		fp = fopen(_PATH_LOADAVG, "r");
+		if (fp == NULL) 
+		{
+			if (tTd(3, 2))
+				printf("getla: fopen(%s): %s\n",
+					_PATH_LOADAVG, errstring(errno));
+			return -1;
+		}
+	}
+	(void) rewind(fp);
+	result = fscanf(fp, "%lf", &avenrun);
+	if (result != 1)
+	{
+		if (tTd(3, 2))
+			printf("getla: fscanf() = %d: %s\n",
+				result, errstring(errno));
+		return -1;
+	}
+
+	if (tTd(3, 1))
+		printf("getla(): %.2f\n", avenrun);
+
+	return ((int) (avenrun + 0.5));
+}
+
+#else
 
 getla()
 {
@@ -809,6 +861,7 @@ getla()
 	return (0);
 }
 
+#endif
 #endif
 #endif
 #endif

@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.93 (Berkeley) %G%
+ *	@(#)conf.h	8.94 (Berkeley) %G%
  */
 
 /*
@@ -573,7 +573,7 @@ extern void		*malloc();
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
 # define GIDSET_T	gid_t	/* from <linux/types.h> */
 # ifndef LA_TYPE
-#  define LA_TYPE	LA_PROC
+#  define LA_TYPE	LA_PROCSTR
 # endif
 # define SFS_TYPE	SFS_VFS		/* use <sys/vfs.h> statfs() impl */
 # include <sys/sysmacros.h>
