@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)systm.h	7.9 (Berkeley) %G%
+ *	@(#)systm.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -46,7 +46,7 @@ struct	vnode *swapdev_vp;	/* vnode equivalent to above */
 dev_t	argdev;			/* device for argument lists */
 struct	vnode *argdev_vp;	/* vnode equivalent to above */
 
-#if defined(vax) || defined(tahoe) || defined(hp300)
+#if defined(vax) || defined(tahoe) || defined(hp300) || defined(i386)
 extern	int icode[];		/* user init code */
 extern	int szicode;		/* its size */
 #endif
