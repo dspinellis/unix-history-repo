@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	7.37 (Berkeley) %G%
+ *	@(#)sys_process.c	7.38 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -37,7 +37,7 @@
 struct {
 	int	ip_lock;
 	int	ip_req;
-	int	*ip_addr;
+	caddr_t	ip_addr;
 	int	ip_data;
 } ipc;
 
@@ -46,8 +46,8 @@ struct {
  */
 struct ptrace_args {
 	int	req;
-	int	pid;
-	int	*addr;
+	pid_t	pid;
+	caddr_t	addr;
 	int	data;
 };
 ptrace(curp, uap, retval)
