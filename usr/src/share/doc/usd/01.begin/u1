@@ -1,4 +1,4 @@
-.\"	@(#)u1	5.1 (Berkeley) %G%
+.\"	@(#)u1	6.1 (Berkeley) %G%
 .\"
 .nr PS 9
 .if t .nr VS 11
@@ -272,10 +272,16 @@ or the
 .UC RETURN
 may not cause a line feed
 or a return to the left margin.
-You can often fix this by logging out and logging back in.
+You can often fix this by logging out and logging back in.\(dg
+.FS
+\(dg In Berkeley Unix, the command "reset<control-j>"
+will often reset a terminal apparently in a strange state because a fullscreen
+editor crashed.
+.FE
+.FE
 Or you can read the description of the command
 .UL stty
-in section I of the manual.
+in section 1 of the manual.
 To get intelligent treatment of
 tab characters
 (which are much used in
@@ -310,7 +316,11 @@ So if you type badly, you can correct as you go:
 dd#atte##e
 .P2
 is the same as
-.UL date .
+.UL date .\(dd
+.FS
+\(dd Many installations set the erase character for display terminals to
+the delete or backspace key. "stty all" tells you what it actually is.
+.FE
 .PP
 The at-sign
 .UL @
@@ -367,11 +377,19 @@ typing the character
 .UC DEL '' ``
 (perhaps called ``delete'' or ``rubout'' on your terminal).
 The ``interrupt'' or ``break'' key found on most terminals
-can also be used.
+can also be used.\(dg
+.FS
+\(dg In Berkeley Unix, "control-c" is the usual way to stop programs. "stty all"
+tells you the value of your "intr" key.
+.FE
 In a few programs, like the text editor,
 .UC DEL
 stops whatever the program is doing but leaves you in that program.
-Hanging up the phone will stop most programs.
+Hanging up the phone will stop most programs.\(dd
+.FS
+\(dd If you use the c shell, programs running in the background continue 
+running even if you hang up.
+.FE
 .SH
 Logging Out
 .PP
@@ -380,7 +398,10 @@ You can also type
 .P1
 login
 .P2
-and let someone else use the terminal you were on.
+and let someone else use the terminal you were on.*
+.FS
+* "control-d" and "logout" are other alternatives.
+.FE
 It is usually not sufficient just to turn off the terminal.
 Most
 .UC UNIX
@@ -405,7 +426,11 @@ mail
 .P2
 Your mail will be printed,
 one message at a time,
-most recent message first.
+most recent message first.\(dd
+.FS
+\(dd The Berkeley mail program lists the headers of some number of unread pieces 
+of mail in the order of their receipt.
+.FE
 After each message,
 .UL mail
 waits for you to say what to do with it.
@@ -462,7 +487,14 @@ of the
 .IT Programmer's
 .IT Manual .)
 .SH
-Writing to other users
+Writing to other users\(dg
+.FS
+\(dg Although "write" works on Berkeley
+.UC UNIX,
+there is a much nicer way of communicating using display-terminals \(em
+"talk" splits the screen into two sections, and both of you can type 
+simultaneously (see talk(1)).
+.FE
 .PP
 At some point, 
 out of the blue will come a message
