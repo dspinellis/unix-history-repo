@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.46 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.47 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -29,8 +29,13 @@ extern u_long nextgennumber;
 /* Allocate a new inode. */
 /* ARGSUSED */
 int
-lfs_valloc (ap)
-	struct vop_valloc_args *ap;
+lfs_valloc(ap)
+	struct vop_valloc_args /* {
+		struct vnode *a_pvp;
+		int a_mode;
+		struct ucred *a_cred;
+		struct vnode **a_vpp;
+	} */ *ap;
 {
 	struct lfs *fs;
 	struct buf *bp;
@@ -101,6 +106,7 @@ printf("Extending ifile: blocks = %d size = %d\n", ip->i_blocks, ip->i_size);
 	if (error = lfs_vcreate(ap->a_pvp->v_mount, new_ino, &vp))
 		return (error);
 	*ap->a_vpp = vp;
+	vp->v_flag |= VDIROP;
 	ip = VTOI(vp);
 	VREF(ip->i_devvp);
 
@@ -148,7 +154,6 @@ lfs_vcreate(mp, ino, vpp)
 	/* Initialize the inode. */
 	MALLOC(ip, struct inode *, sizeof(struct inode), M_LFSNODE, M_WAITOK);
 	(*vpp)->v_data = ip;
-	(*vpp)->v_flag |= VDIROP;
 	ip->i_vnode = *vpp;
 	ip->i_devvp = ump->um_devvp;
 	ip->i_flag = 0;
@@ -169,8 +174,12 @@ lfs_vcreate(mp, ino, vpp)
 /* Free an inode. */
 /* ARGUSED */
 int
-lfs_vfree (ap)
-	struct vop_vfree_args *ap;
+lfs_vfree(ap)
+	struct vop_vfree_args /* {
+		struct vnode *a_pvp;
+		ino_t a_ino;
+		int a_mode;
+	} */ *ap;
 {
 	SEGUSE *sup;
 	struct buf *bp;
