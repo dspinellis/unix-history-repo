@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_io.c	7.3	%G%";
+static char *sccsid = "@(#)ex_io.c	7.4	%G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -753,7 +753,8 @@ source(fil, okfail)
 {
 	jmp_buf osetexit;
 	register int saveinp, ointty, oerrno;
-	char savepeekc, *saveglobp;
+	char *saveglobp;
+	short savepeekc;
 
 	signal(SIGINT, SIG_IGN);
 	saveinp = dup(0);
