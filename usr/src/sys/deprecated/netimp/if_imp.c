@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_imp.c	6.7 (Berkeley) %G%
+ *	@(#)if_imp.c	6.8 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -414,7 +414,7 @@ impintr()
 		imp_leader_to_addr(&impsrc.sin_addr, (struct imp_leader *)cp,
 		    ifp);
 		impproto.sp_protocol = cp->dl_link;
-		impdst.sin_addr = IA_SIN(ifp->if_addrlist->ifa_addr)->sin_addr;
+		impdst.sin_addr = IA_SIN(ifp->if_addrlist)->sin_addr;
 
 		switch (cp->dl_link) {
 
