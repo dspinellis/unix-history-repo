@@ -19,8 +19,8 @@ main(argc, argv)
 	int who = 0, prio, errs = 0;
 
 	argc--, argv++;
-	if (argc < 1) {
-		fprintf(stderr, "usage: renice priority [ who ... ]\n");
+	if (argc < 2) {
+		fprintf(stderr, "usage: renice priority who ...\n");
 		exit(1);
 	}
 	prio = atoi(*argv);
@@ -29,8 +29,6 @@ main(argc, argv)
 		prio = PRIO_MAX;
 	if (prio < PRIO_MIN)
 		prio = PRIO_MIN;
-	if (argc == 0)
-		exit(donice(which, 0, prio));
 	for (; argc > 0; argc--, argv++) {
 		if (strcmp(*argv, "-g") == 0) {
 			which = PRIO_PGRP;
