@@ -13,41 +13,35 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)lsearch.3	5.1 (Berkeley) %G%
+.\"	@(#)lsearch.3	5.2 (Berkeley) %G%
 .\"
 .TH LSEARCH 3 ""
 .UC 7
 .SH NAME
-lsearch, lfind, rlsearch, wlsearch \- linear searching routines
+lsearch, lfind, \- linear searching routines
 .SH SYNOPSIS
 .ft B
 .nf
-char *lsearch(key, base, nelp, width, compar)
-char *key, base;
-unsigned int *nelp, width;
-int (*compar)();
+char *
+lsearch(const void *key, const void *base,
+size_t *nelp, size_t width, 
+int (*compar) (void *, void *));
 .sp
-char *lfind(key, base, nelp, width, compar)
-char *key, base;
-unsigned int *nelp, width;
-int (*compar)();
-.sp
-char *rlsearch(fd, nelp, width)
-int fd;
-unsigned int *nelp, *width;
-.sp
-wlsearch(fd, base, nelp, width)
-int fd;
-char *base;
-unsigned int nelp, width;
+char *
+lfind(const void *key, const void *base,
+size_t *nelp, size_t width,
+int (*compar) (void *, void *));
 .ft R
 .SH DESCRIPTION
+.ft B
+This interface was obsolete before it was written.
+It is available from the compatibility library, libcompat.
+.ft R
+.PP
 The functions
 .IR lsearch ,
-.IR lfind ,
-.IR rlsearch ,
 and
-.I wlsearch
+.IR lfind
 provide basic linear searching functionality.
 .PP
 .I Base
@@ -59,9 +53,13 @@ is
 bytes long.
 .I Compar
 is a comparison routine which is used to compare two elements.
-It is called with two arguments that are pointers to the two elements
-to be compared and must return 0 if the elements are equal and non-zero
-otherwise.
+It is called with two arguments that point to the 
+.I key
+object and to an array member, in that order, and must return an integer
+less than, equal to, or greater than zero if the 
+.I key
+object is considered, respectively, to be less than, equal to, or greater
+than the array member.
 .PP
 .I Lsearch
 and
@@ -83,29 +81,5 @@ When an element is added to the array by
 the location referenced by the argument
 .I nelp
 is incremented by one.
-.PP
-.I Wlsearch
-writes the array pointed to by
-.I base
-to the file descriptor
-.IR fd ,
-preceded by a machine independent representation of the number
-of elements and the element width as
-.IR longs .
-A value of 0 is returned on success and -1 if an error occurs.
-.PP
-.I Rlsearch
-returns a pointer to a
-.IR malloc 'd
-array read from the file descriptor
-.IR fd ,
-as written by
-.IR wlsearch .
-The number of elements in the array and the width of each element is
-stored in the locations referenced by
-.I nelp
-and
-.IR width .
-NULL is returned if an error occurs.
 .SH "SEE ALSO"
 bsearch(3), hsearch(3), tsearch(3)

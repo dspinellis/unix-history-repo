@@ -19,7 +19,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)lsearch.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)lsearch.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -73,44 +73,4 @@ linear_base(key, base, nelp, width, compar, add_flag)
 	++*nelp;
 	bcopy(key, end, (int)width);
 	return(end);
-}
-
-char *
-rlsearch(fd, nelp, width)
-	int fd;
-	u_int *nelp, *width;
-{
-	register u_int len;
-	long val;
-	char *base, *malloc();
-
-	if (read(fd, (char *)&val, sizeof(long)) != sizeof(long))
-		return(NULL);
-	*nelp = (u_int)ntohl(val);
-	if (read(fd, (char *)&val, sizeof(long)) != sizeof(long))
-		return(NULL);
-	*width = (u_int)ntohl(val);
-
-	len = *nelp * *width;
-	if (!(base = malloc(len)))
-		return(NULL);
-	return(read(fd, base, len) == len ? base : NULL);
-}
-
-wlsearch(fd, base, nelp, width)
-	int fd;
-	char *base;
-	u_int nelp, width;
-{
-	long val;
-
-	val = htonl((long)nelp);
-	if (write(fd, (char *)&val, sizeof(long)) != sizeof(long))
-		return(-1);
-	val = htonl((long)width);
-	if (write(fd, (char *)&val, sizeof(long)) != sizeof(long))
-		return(-1);
-	if (write(fd, base, nelp * width) != nelp * width)
-		return(-1);
-	return(0);
 }
