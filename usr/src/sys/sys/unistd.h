@@ -14,18 +14,19 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)unistd.h	5.5 (Berkeley) %G%
+ *	@(#)unistd.h	5.6 (Berkeley) %G%
  */
 
 /* compile-time symbolic constants */
-#define	POSIX_JOB_CONTROL	/* implementation supports job control */
-#define	POSIX_SAVED_IDS		/* saved set-user-ID and set-group-ID */
-#define	POSIX_VERSION		198808L
+#define	_POSIX_JOB_CONTROL	/* implementation supports job control */
+/*#define	_POSIX_SAVED_IDS	/* saved set-user-ID and set-group-ID */
+#define	_POSIX_VERSION		198808L
 
 /* execution-time symbolic constants */
-#define	POSIX_CHOWN_RESTRICTED	/* chown requires appropriate privileges */
-#define	POSIX_NO_TRUNC		/* too-long path components generate errors */
-#define	POSIX_VDISABLE		/* may disable terminal special characters */
+#define	_POSIX_CHOWN_RESTRICTED	/* chown requires appropriate privileges */
+#define	_POSIX_NO_TRUNC		/* too-long path components generate errors */
+				/* may disable terminal special characters */
+#define	_POSIX_VDISABLE	((unsigned char)'\377')
 
 /* access function */
 #define	F_OK		0	/* test for existence of file */
