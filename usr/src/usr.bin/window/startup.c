@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)startup.c	3.3 83/08/18";
+static	char *sccsid = "@(#)startup.c	3.4 83/08/25";
 #endif
 
 #include "defs.h"
@@ -23,9 +23,9 @@ dodefault()
 	struct ww *w;
 	register r = wwnrow / 2 - 1;
 
-	if ((w = openwin(-1, r, wwncol, 1, 0)) == 0)
+	if ((w = openwin(-1, 1, 0, r, wwncol, nbufline)) == 0)
 		goto bad;
-	if (openwin(-1, wwnrow - r - 2, wwncol, r + 2, 0) == 0)
+	if (openwin(-1, r + 2, 0, wwnrow - r - 2, wwncol, nbufline) == 0)
 		goto bad;
 	(void) wwprintf(w, "Escape character is %s.\r\n", unctrl(escapec));
 	setselwin(w);

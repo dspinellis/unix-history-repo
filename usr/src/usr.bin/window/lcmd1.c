@@ -1,42 +1,33 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.4 83/08/22";
+static	char *sccsid = "@(#)lcmd1.c	3.5 83/08/25";
 #endif
 
 #include "defs.h"
-
-struct ww *openwin();
-struct ww *idtowin();
 
 l_window()
 {
 	register char **pp = argv;
 	register struct ww *w;
-	int col, row, ncol, nrow, id;
+	int col, row, ncol, nrow, id, nline;
 
 	if ((id = findid()) < 0) {
 		error("Too many windows.");
 		return;
 	}
-	if (**++pp == '*')
-		row = 1;
-	else
-		row = atoi(*pp);
-	if (**++pp == '*')
-		col = 0;
-	else
-		col = atoi(*pp);
-	if (**++pp == '*')
-		nrow = wwnrow - row;
-	else
-		nrow = atoi(*pp);
-	if (**++pp == '*')
-		ncol = wwncol - col;
-	else
-		ncol = atoi(*pp);
-	w = openwin(id, nrow, ncol, row, col);
+	row = **++pp == '*' ? 1 : atoi(*pp);
+	col = **++pp == '*' ? 0 : atoi(*pp);
+	nrow = **++pp == '*' ? wwnrow - row : atoi(*pp);
+	ncol = **++pp == '*' ? wwncol - col : atoi(*pp);
+	nline = *++pp == 0 ? nbufline : atoi(*pp);
+	w = openwin(id, row, col, nrow, ncol, nline);
 	if (w == 0)
-		error("Can't open window: row %d col %d, %d rows %d cols.",
-			row, col, nrow, ncol);
+		error("Can't open window: row %d col %d, %d rows %d cols %d lines.",
+			row, col, nrow, ncol, nline);
+}
+
+l_buffer()
+{
+	nbufline = atoi(argv[1]);
 }
 
 l_select()

@@ -1,5 +1,5 @@
 /*
- *	@(#)defs.h	3.2 83/08/18	
+ *	@(#)defs.h	3.3 83/08/25	
  */
 
 #include "ww.h"
@@ -28,15 +28,18 @@ struct ww *selwin;		/* the selected window */
 struct ww *cmdwin;		/* the command window */
 struct ww *framewin;		/* the window for framing */
 struct ww *boxwin;		/* the window for the box */
-struct ww *curwin;
+struct ww *curwin;		/* the current window */
 
-char *shell;
-char *shellname;
+char *shell;			/* the shell program */
+char *shellname;		/* the shell program name (for argv[0]) */
 
+int nbufline;			/* number of lines in the buffer */
+
+	/* flags */
 char quit;
 char terse;
 char debug;
-char escapec;
+char escapec;			/* escape character */
 
 struct ww *getwin();
 struct ww *openwin();

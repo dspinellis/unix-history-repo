@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.6 83/08/19";
+static	char *sccsid = "@(#)cmd1.c	3.7 83/08/25";
 #endif
 
 #include "defs.h"
@@ -69,7 +69,7 @@ c_window()
 	if (!terse)
 		(void) wwputs("\r\n", cmdwin);
 	wwcurtowin(cmdwin);
-	if (openwin(id, xrow-row+1, xcol-col+1, row, col) == 0)
+	if (openwin(id, row, col, xrow-row+1, xcol-col+1, nbufline) == 0)
 		error("Can't open window.");
 }
 
@@ -141,7 +141,7 @@ register int *row, *col, minrow, mincol;
 }
 
 struct ww *
-openwin(id, nrow, ncol, row, col)
+openwin(id, row, col, nrow, ncol, nline)
 int id, nrow, ncol, row, col;
 {
 	register struct ww *w;
@@ -150,7 +150,7 @@ int id, nrow, ncol, row, col;
 		return 0;
 	if (id < 0 && (id = findid()) < 0)
 		return 0;
-	if ((w = wwopen(WWO_PTY, nrow, ncol, row, col, 48)) == 0)
+	if ((w = wwopen(WWO_PTY, nrow, ncol, row, col, nline)) == 0)
 		return 0;
 	w->ww_id = id;
 	window[id] = w;
