@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	5.3 (Berkeley) %G%";
 #endif not lint
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/mbuf.h>
@@ -312,11 +312,22 @@ char *
 inetname(in)
 	struct in_addr in;
 {
-	char *cp = 0;
+	register char *cp;
 	static char line[50];
 	struct hostent *hp;
 	struct netent *np;
+	static char domain[MAXHOSTNAMELEN + 1];
+	static int first = 1;
 
+	if (first && !nflag) {
+		first = 0;
+		if (gethostname(domain, MAXHOSTNAMELEN) == 0 &&
+		    (cp = index(domain, '.')))
+			(void) strcpy(domain, cp + 1);
+		else
+			domain[0] = 0;
+	}
+	cp = 0;
 	if (!nflag && in.s_addr != INADDR_ANY) {
 		int net = inet_netof(in);
 		int lna = inet_lnaof(in);
@@ -328,8 +339,12 @@ inetname(in)
 		}
 		if (cp == 0) {
 			hp = gethostbyaddr(&in, sizeof (in), AF_INET);
-			if (hp)
+			if (hp) {
+				if ((cp = index(hp->h_name, '.')) &&
+				    !strcmp(cp + 1, domain))
+					*cp = 0;
 				cp = hp->h_name;
+			}
 		}
 	}
 	if (in.s_addr == INADDR_ANY)
