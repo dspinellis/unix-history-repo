@@ -25,7 +25,7 @@ beforeinstall:
 		install -c -m 644 $$j ${DESTDIR}/usr/include/g++/sys/$$j; \
 	done)
 	@echo installing includes from g++-include/gen
-	@(cd g++-include/gen ; for j in *.P; do \
+	@(cd g++-include/gen ; for j in *.*P; do \
 		cmp -s $$j ${DESTDIR}/usr/include/g++/gen/$$j || \
 		install -c -m 644 $$j ${DESTDIR}/usr/include/g++/gen/$$j; \
 	done)
