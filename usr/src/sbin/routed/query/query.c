@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)query.c	4.6 %G%";
+static char sccsid[] = "@(#)query.c	4.7 %G%";
 #endif
 
 #include <sys/param.h>
@@ -15,7 +15,9 @@ static char sccsid[] = "@(#)query.c	4.6 %G%";
 #define	WTIME	5		/* Time to wait for responses */
 
 int	s;
+int	timedout, timeout();
 char	packet[MAXPACKETSIZE];
+extern int errno;
 
 main(argc, argv)
 	int argc;
@@ -49,11 +51,16 @@ main(argc, argv)
 	 */
 	bits = 1 << s;
 	bzero(&notime, sizeof(notime));
-	while (count > 0 || select(20, &bits, 0, 0, &notime) > 0) {
+	signal(SIGALRM, timeout);
+	alarm(WTIME);
+	while ((count > 0 && !timedout) ||
+	    select(20, &bits, 0, 0, &notime) > 0) {
 		cc = recvfrom(s, packet, sizeof (packet), 0,
 		  &from, &fromlen);
 		if (cc <= 0) {
 			if (cc < 0) {
+				if (errno == EINTR)
+					continue;
 				perror("recvfrom");
 				(void) close(s);
 				exit(1);
@@ -106,6 +113,7 @@ rip_input(from, size)
 	register struct rip *msg = (struct rip *)packet;
 	struct netinfo *n;
 	char *name;
+	int lna, net, subnet;
 	struct hostent *hp;
 	struct netent *np;
 
@@ -127,13 +135,31 @@ rip_input(from, size)
 			n->rip_metric = ntohl(n->rip_metric);
 		}
 		sin = (struct sockaddr_in *)&n->rip_dst;
-		if (inet_lnaof(sin->sin_addr) == INADDR_ANY) {
-			np = getnetbyaddr(inet_netof(sin->sin_addr), AF_INET);
-			name = np ? np->n_name : "???";
+		net = inet_netof(sin->sin_addr);
+		subnet = inet_subnetof(sin->sin_addr);
+		lna = inet_lnaof(sin->sin_addr);
+		name = "???";
+		if (lna == INADDR_ANY) {
+			np = getnetbyaddr(net, AF_INET);
+			if (np)
+				name = np->n_name;
+			else if (net == 0)
+				name = "default";
+		} else if ((subnet != net) && ((lna & 0xff) == 0) &&
+		    (np = getnetbyaddr(subnet, AF_INET))) {
+			struct in_addr subnaddr, inet_makeaddr();
+
+			subnaddr = inet_makeaddr(subnet, INADDR_ANY);
+			if (bcmp(&sin->sin_addr, &subnaddr, sizeof(subnaddr)) == 0)
+				name = np->n_name;
+			else
+				goto host;
 		} else {
+host:
 			hp = gethostbyaddr(&sin->sin_addr,
-				sizeof (struct in_addr), AF_INET);
-			name = hp ? hp->h_name : "???";
+			    sizeof (struct in_addr), AF_INET);
+			if (hp)
+				name = hp->h_name;
 		}
 		printf("\t%s(%s), metric %d\n", name,
 			inet_ntoa(sin->sin_addr), n->rip_metric);
@@ -144,4 +170,32 @@ rip_input(from, size)
 timeout()
 {
 	timedout = 1;
+}
+
+/*
+ * Return the possible subnetwork number from an internet address.
+ * If the address is of the form of a subnet address (most significant
+ * bit of the host part is set), believe the subnet exists.
+ * Otherwise, return the network number.
+ * SHOULD FIND OUT WHETHER THIS IS A LOCAL NETWORK BEFORE LOOKING
+ * INSIDE OF THE HOST PART.  We can only believe this if we have other
+ * information (e.g., we can find a name for this number).
+ */
+inet_subnetof(in)
+	struct in_addr in;
+{
+	register u_long i = ntohl(in.s_addr);
+
+	if (IN_CLASSA(i)) {
+		if (IN_SUBNETA(i))
+			return ((i & IN_CLASSA_SUBNET) >> IN_CLASSA_SUBNSHIFT);
+		else
+			return ((i & IN_CLASSA_NET) >> IN_CLASSA_NSHIFT);
+	} else if (IN_CLASSB(i)) {
+		if (IN_SUBNETB(i))
+			return ((i & IN_CLASSB_SUBNET) >> IN_CLASSB_SUBNSHIFT);
+		else
+			return ((i & IN_CLASSB_NET) >> IN_CLASSB_NSHIFT);
+	} else
+		return ((i & IN_CLASSC_NET) >> IN_CLASSC_NSHIFT);
 }
