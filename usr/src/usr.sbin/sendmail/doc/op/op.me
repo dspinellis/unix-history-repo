@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.30 (Berkeley) %G%
+.\"	@(#)op.me	6.31 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.30
+Version 6.31
 .sp
 For Sendmail Version 6.45
 .)l
@@ -5309,6 +5309,17 @@ Generalized keyed files is an idea taken directly from
 They can be useful on large sites.
 .pp
 R6 also understands YP.
+.sh 2 "Multi-Word Classes"
+.pp
+Classes can now be multiple words.
+For example,
+.(b
+CShofmann.CS.Berkeley.EDU
+.)b
+allows you to match the entire string
+.q hofmann.CS.Berkeley.EDU
+using the single construct
+.q $=S .
 .sh 2 "Parsing Bug Fixes"
 .pp
 A number of small bugs having to do with things like
@@ -5873,7 +5884,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.30
+.\"Version 6.31
 .\".ce 0
 .pn 2
 .bp
