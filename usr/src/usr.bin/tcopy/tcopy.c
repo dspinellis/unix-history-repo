@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tcopy.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tcopy.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)tcopy.c	5.4 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/mtio.h>
+#include <sys/errno.h>
 
 #define MAXREC	(64 * 1024)
 #define NOCOUNT	(-2)
@@ -38,6 +39,7 @@ long	size, tsize;
 int	nfile;
 int	lastread;
 int	copy;
+extern	int errno;
 
 main(argc, argv)
 char **argv;
@@ -93,7 +95,8 @@ usage:
 	for (;;) {
 		nread = read(inp, buff, maxblk);
 		if (nread == -1) {
-			if (guesslen && maxblk > MAXREC / 2) {
+			if (errno == EINVAL && guesslen &&
+			    maxblk > MAXREC / 2) {
 				maxblk -= 1024;
 				continue;
 			}
