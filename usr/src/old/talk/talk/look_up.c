@@ -7,7 +7,7 @@
 /* from "@(#)look_up.c	5.1 (Berkeley) 6/6/85"; */
 
 #ifndef lint
-static char sccsid[] = "@(#)look_up.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)look_up.c	6.2 (Berkeley) %G%";
 #endif not lint
 
 #include "talk_ctl.h"
@@ -32,6 +32,7 @@ check_local()
 	current_state = "Waiting to connect with caller";
 again:
 	swapresponse(&response);
+	response.addr.sin_family = AF_INET;
 	if (connect(sockt, &response.addr, sizeof(response.addr)) != -1)
 		return (1);
 	if (errno == EINTR)
