@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hilvar.h 1.1 89/08/22$
+ * from: Utah $Hdr: hilvar.h 1.1 90/07/09$
  *
- *	@(#)hilvar.h	7.1 (Berkeley) %G%
+ *	@(#)hilvar.h	7.2 (Berkeley) %G%
  */
 
 #ifndef TRUE
