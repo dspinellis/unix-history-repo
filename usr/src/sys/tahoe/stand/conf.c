@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)conf.c	1.5 (Berkeley) %G%
+ *	@(#)conf.c	1.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,13 +19,12 @@
 
 extern int	nullsys(), nodev(), noioctl();
 
-int	udstrategy(), udopen();
 int	vdstrategy(), vdopen();
 int	hdstrategy(), hdopen();
 int	cystrategy(), cyopen(), cyclose();
 
 struct devsw devsw[] = {
-	{ "ud",	udstrategy,	udopen,	nullsys, noioctl },  /* 0 = ud */
+	{ "ud",	nodev,		nodev,	nullsys, noioctl },  /* 0 = ud */
 	{ "dk",	vdstrategy,	vdopen,	nullsys, noioctl },  /* 1 = ht */
 	{ "hd",	hdstrategy,	hdopen,	nullsys, noioctl },  /* 2 = hd */
 #ifdef notdef
