@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -110,7 +110,7 @@ printjob()
 	struct queue **queue;
 	register int i, nitems;
 	off_t pidoff;
-	int count = 0;
+	int errcnt, count = 0;
 
 	init();					/* set up capabilities */
 	(void) write(1, "", 1);			/* ack that daemon is started */
@@ -183,6 +183,7 @@ again:
 		q = *qp++;
 		if (stat(q->q_name, &stb) < 0)
 			continue;
+		errcnt = 0;
 	restart:
 		(void) lseek(lfd, pidoff, 0);
 		(void) sprintf(line, "%s\n", q->q_name);
@@ -213,7 +214,8 @@ again:
 		}
 		if (i == OK)		/* file ok and printed */
 			count++;
-		else if (i == REPRINT) { /* try reprinting the job */
+		else if (i == REPRINT && ++errcnt < 5) {
+			/* try reprinting the job */
 			syslog(LOG_INFO, "restarting %s", printer);
 			if (ofilter > 0) {
 				kill(ofilter, SIGCONT);	/* to be sure */
@@ -227,6 +229,17 @@ again:
 				syslog(LOG_WARNING, "%s: %s: %m", printer, LO);
 			openpr();		/* try to reopen printer */
 			goto restart;
+		} else {
+			syslog(LOG_WARNING, "%s: job could not be %s (%s)", printer,
+				remote ? "sent to remote host" : "printed", q->q_name);
+			if (i == REPRINT) {
+				/* insure we don't attempt this job again */
+				(void) unlink(q->q_name);
+				q->q_name[0] = 'd';
+				(void) unlink(q->q_name);
+				if (logname[0])
+					sendmail(logname, FATALERR);
+			}
 		}
 	}
 	free((char *) queue);
@@ -302,6 +315,7 @@ printit(file)
 	 *		H -- "host name" of machine where lpr was done
 	 *              P -- "person" user's login name
 	 *              I -- "indent" amount to indent output
+	 *		R -- laser dpi "resolution"
 	 *              f -- "file name" name of text file to print
 	 *		l -- "file name" text file with control chars
 	 *		p -- "file name" text file to print with pr(1)
@@ -416,6 +430,7 @@ printit(file)
 		case 'N':
 		case 'U':
 		case 'M':
+		case 'R':
 			continue;
 		}
 
@@ -594,6 +609,13 @@ print(format, file)
 			printer, format);
 		return(ERROR);
 	}
+	if (prog == NULL) {
+		(void) close(fi);
+		syslog(LOG_ERR,
+		   "%s: no filter found in printcap for format character '%c'",
+		   printer, format);
+		return(ERROR);
+	}
 	if ((av[0] = rindex(prog, '/')) != NULL)
 		av[0]++;
 	else
@@ -612,8 +634,9 @@ print(format, file)
 			;
 		if (status.w_stopval != WSTOPPED) {
 			(void) close(fi);
-			syslog(LOG_WARNING, "%s: output filter died (%d)",
-				printer, status.w_retcode);
+			syslog(LOG_WARNING,
+				"%s: output filter died (retcode=%d termsig=%d)",
+				printer, status.w_retcode, status.w_termsig);
 			return(REPRINT);
 		}
 		stopped++;
@@ -656,7 +679,7 @@ start:
 	}
 
 	if (!WIFEXITED(status)) {
-		syslog(LOG_WARNING, "%s: Daemon filter '%c' terminated (%d)",
+		syslog(LOG_WARNING, "%s: filter '%c' terminated (termsig=%d)",
 			printer, format, status.w_termsig);
 		return(ERROR);
 	}
@@ -666,11 +689,12 @@ start:
 		return(OK);
 	case 1:
 		return(REPRINT);
-	default:
-		syslog(LOG_WARNING, "%s: Daemon filter '%c' exited (%d)",
-			printer, format, status.w_retcode);
 	case 2:
 		return(ERROR);
+	default:
+		syslog(LOG_WARNING, "%s: filter '%c' exited (retcode=%d)",
+			printer, format, status.w_retcode);
+		return(FILTERERR);
 	}
 }
 
@@ -996,7 +1020,9 @@ sendmail(user, bombed)
 	} else if (s > 0) {				/* parent */
 		dup2(p[1], 1);
 		printf("To: %s@%s\n", user, fromhost);
-		printf("Subject: printer job\n\n");
+		printf("Subject: %s printer job \"%s\"\n", printer,
+			*jobname ? jobname : "<unknown>");
+		printf("Reply-To: root@%s\n\n", host);
 		printf("Your printer job ");
 		if (*jobname)
 			printf("(%s) ", jobname);
@@ -1014,10 +1040,10 @@ sendmail(user, bombed)
 		case FILTERERR:
 			if (stat(tempfile, &stb) < 0 || stb.st_size == 0 ||
 			    (fp = fopen(tempfile, "r")) == NULL) {
-				printf("\nwas printed but had some errors\n");
+				printf("\nhad some errors and may not have printed\n");
 				break;
 			}
-			printf("\nwas printed but had the following errors:\n");
+			printf("\nhad the following errors and may not have printed:\n");
 			while ((i = getc(fp)) != EOF)
 				putchar(i);
 			(void) fclose(fp);
