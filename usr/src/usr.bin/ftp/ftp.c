@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -45,14 +45,13 @@ struct	sockaddr_in data_addr;
 int	data = -1;
 int	abrtflag = 0;
 int	ptflag = 0;
-int	connected;
 struct	sockaddr_in myctladdr;
 uid_t	getuid();
 sig_t	lostpeer();
 off_t	restart_point = 0;
 
 extern char *strerror();
-extern int errno;
+extern int connected, errno;
 
 FILE	*cin, *cout;
 FILE	*dataconn();
@@ -150,7 +149,7 @@ hookup(host, port)
 	{
 	int on = 1;
 
-	if (setsockopt(s, SOL_SOCKET, SO_OOBINLINE, &on, sizeof(on))
+	if (setsockopt(s, SOL_SOCKET, SO_OOBINLINE, (char *)&on, sizeof(on))
 		< 0 && debug) {
 			perror("ftp: setsockopt");
 		}
@@ -225,7 +224,7 @@ login(host)
 	return (1);
 }
 
-sig_t
+void
 cmdabort()
 {
 	extern jmp_buf ptabort;
@@ -244,7 +243,8 @@ va_dcl
 	va_list ap;
 	char *fmt;
 	int r;
-	sig_t (*oldintr)(), cmdabort();
+	sig_t oldintr;
+	void cmdabort();
 
 	abrtflag = 0;
 	if (debug) {
@@ -290,9 +290,10 @@ getreply(expecteof)
 	register int dig;
 	register char *cp;
 	int originalcode = 0, continuation = 0;
-	sig_t (*oldintr)(), cmdabort();
+	sig_t oldintr;
 	int pflag = 0;
 	char *pt = pasv;
+	void cmdabort();
 
 	oldintr = signal(SIGINT, cmdabort);
 	for (;;) {
@@ -398,6 +399,7 @@ empty(mask, sec)
 
 jmp_buf	sendabort;
 
+void
 abortsend()
 {
 
@@ -414,16 +416,15 @@ sendrequest(cmd, local, remote, printnames)
 	char *cmd, *local, *remote;
 	int printnames;
 {
-	FILE *fin, *dout = 0, *popen();
-	int (*closefunc)(), pclose(), fclose();
-	sig_t (*oldintr)(), (*oldintp)();
-	int abortsend();
-	char buf[BUFSIZ], *bufp;
-	long bytes = 0, hashbytes = HASHBYTES;
-	register int c, d;
 	struct stat st;
 	struct timeval start, stop;
-	char *mode;
+	register int c, d;
+	FILE *fin, *dout = 0, *popen();
+	int (*closefunc)(), pclose(), fclose();
+	sig_t oldintr, oldintp;
+	long bytes = 0, hashbytes = HASHBYTES;
+	char *lmode, buf[BUFSIZ], *bufp;
+	void abortsend();
 
 	if (verbose && printnames) {
 		if (local && *local != '-')
@@ -440,7 +441,7 @@ sendrequest(cmd, local, remote, printnames)
 	closefunc = NULL;
 	oldintr = NULL;
 	oldintp = NULL;
-	mode = "w";
+	lmode = "w";
 	if (setjmp(sendabort)) {
 		while (cpend) {
 			(void) getreply(0);
@@ -519,7 +520,7 @@ sendrequest(cmd, local, remote, printnames)
 			return;
 		}
 		restart_point = 0;
-		mode = "r+w";
+		lmode = "r+w";
 	}
 	if (remote) {
 		if (command("%s %s", cmd, remote) != PRELIM) {
@@ -539,7 +540,7 @@ sendrequest(cmd, local, remote, printnames)
 				(*closefunc)(fin);
 			return;
 		}
-	dout = dataconn(mode);
+	dout = dataconn(lmode);
 	if (dout == NULL)
 		goto abort;
 	(void) gettimeofday(&start, (struct timezone *)0);
@@ -652,7 +653,7 @@ abort:
 
 jmp_buf	recvabort;
 
-sig_t
+void
 abortrecv()
 {
 
@@ -663,12 +664,12 @@ abortrecv()
 	longjmp(recvabort, 1);
 }
 
-recvrequest(cmd, local, remote, mode, printnames)
-	char *cmd, *local, *remote, *mode;
+recvrequest(cmd, local, remote, lmode, printnames)
+	char *cmd, *local, *remote, *lmode;
 {
 	FILE *fout, *din = 0, *popen();
 	int (*closefunc)(), pclose(), fclose();
-	sig_t (*oldintr)(), (*oldintp)(), abortrecv();
+	sig_t oldintr, oldintp;
 	int is_retr, tcrflag, bare_lfs = 0;
 	char *gunique();
 	static int bufsize;
@@ -677,7 +678,9 @@ recvrequest(cmd, local, remote, mode, printnames)
 	register int c, d;
 	struct timeval start, stop;
 	struct stat st;
-	extern char *malloc();
+	off_t lseek();
+	void abortrecv();
+	char *malloc();
 
 	is_retr = strcmp(cmd, "RETR") == 0;
 	if (is_retr && verbose && printnames) {
@@ -793,7 +796,7 @@ recvrequest(cmd, local, remote, mode, printnames)
 		}
 		closefunc = pclose;
 	} else {
-		fout = fopen(local, mode);
+		fout = fopen(local, lmode);
 		if (fout == NULL) {
 			fprintf(stderr, "local: %s: %s\n", local,
 				strerror(errno));
@@ -862,16 +865,15 @@ recvrequest(cmd, local, remote, mode, printnames)
 
 	case TYPE_A:
 		if (restart_point) {
-			register int i, n, c;
+			register int i, n, ch;
 
 			if (fseek(fout, 0L, L_SET) < 0)
 				goto done;
 			n = restart_point;
-			i = 0;
-			while (i++ < n) {
-				if ((c=getc(fout)) == EOF)
+			for (i = 0; i++ < n;) {
+				if ((ch = getc(fout)) == EOF)
 					goto done;
-				if (c == '\n')
+				if (ch == '\n')
 					i++;
 			}
 			if (fseek(fout, 0L, L_INCR) < 0) {
@@ -971,12 +973,9 @@ abort:
 }
 
 /*
- * Need to start a listen on the data channel
- * before we send the command, otherwise the
- * server's connect may fail.
+ * Need to start a listen on the data channel before we send the command,
+ * otherwise the server's connect may fail.
  */
-int sendport;
-
 initconn()
 {
 	register char *p, *a;
@@ -1041,8 +1040,8 @@ bad:
 }
 
 FILE *
-dataconn(mode)
-	char *mode;
+dataconn(lmode)
+	char *lmode;
 {
 	struct sockaddr_in from;
 	int s, fromlen = sizeof (from);
@@ -1055,7 +1054,7 @@ dataconn(mode)
 	}
 	(void) close(data);
 	data = s;
-	return (fdopen(data, mode));
+	return (fdopen(data, lmode));
 }
 
 ptransfer(direction, bytes, t0, t1)
@@ -1096,7 +1095,7 @@ tvsub(tdiff, t1, t0)
 		tdiff->tv_sec--, tdiff->tv_usec += 1000000;
 }
 
-sig_t
+void
 psabort()
 {
 	extern int abrtflag;
@@ -1108,7 +1107,7 @@ pswitch(flag)
 	int flag;
 {
 	extern int proxy, abrtflag;
-	sig_t (*oldintr)();
+	sig_t oldintr;
 	static struct comvars {
 		int connect;
 		char name[MAXHOSTNAMELEN];
@@ -1200,7 +1199,7 @@ pswitch(flag)
 jmp_buf ptabort;
 int ptabflg;
 
-sig_t
+void
 abortpt()
 {
 	printf("\n");
@@ -1214,11 +1213,12 @@ abortpt()
 proxtrans(cmd, local, remote)
 	char *cmd, *local, *remote;
 {
-	sig_t (*oldintr)(), abortpt();
+	sig_t oldintr;
 	int secndflag = 0, prox_type, nfnd;
 	extern jmp_buf ptabort;
 	char *cmd2;
 	struct fd_set mask;
+	void abortpt();
 
 	if (strcmp(cmd, "RETR"))
 		cmd2 = "RETR";
