@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.23 (Berkeley) %G%
+#	@(#)Makefile	5.24 (Berkeley) %G%
 
 SUBDIR=	apply ar at banner basename bc bdes biff cal calendar cap_mkdb \
 	checknr chflags chpass cksum col colcrt colrm column comm compress \
@@ -13,19 +13,19 @@ SUBDIR=	apply ar at banner basename bc bdes biff cal calendar cap_mkdb \
 	split strings strip struct su talk tcopy tee telnet tftp \
 	time tip tn3270 touch tput tr true tset tsort tty ul uname unexpand \
 	unifdef uniq units unvis users uucp uudecode uuencode vacation \
-	vgrind vis vmstat w wall wc what whereis who whois window write \
+	vgrind vis w wall wc what whereis who whois window write \
 	xargs xinstall xsend xstr yacc yes
 
 # Cmp, look and tail all use mmap, so new-VM only.
 # F77 and pascal are VAX/Tahoe only.
 .if	${MACHINE} == "hp300"
-SUBDIR+=cmp ktrace ld look systat tail
+SUBDIR+=cmp ktrace ld look systat tail vmstat
 .elif	${MACHINE} == "i386"
-SUBDIR+=cmp ktrace ld look systat tail
+SUBDIR+=cmp ktrace ld look systat tail vmstat
 .elif	${MACHINE} == "luna68k"
-SUBDIR+=cmp ktrace ld look systat tail
+SUBDIR+=cmp ktrace ld look systat tail vmstat
 .elif	${MACHINE} == "sparc"
-SUBDIR+=cmp ktrace ld look tail
+SUBDIR+=cmp ktrace ld look tail vmstat.sparc
 .elif	${MACHINE} == "tahoe"
 SUBDIR+=pascal
 .elif	${MACHINE} == "vax"
