@@ -35,22 +35,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_machdep.c	7.3 (Berkeley) 5/13/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00154
- * --------------------         -----   ----------------------
- *
- * 20 Apr 93	Bruce Evans		New npx-0.5 code
- *
- */
-
-/*
+ *	from: @(#)vm_machdep.c	7.3 (Berkeley) 5/13/91
  *	Utah $Hdr: vm_machdep.c 1.16.1.1 89/06/23$
+ *	$Id$
  */
-static char rcsid[] = "$Header: /usr/bill/working/sys/i386/i386/RCS/vm_machdep.c,v 1.2 92/01/21 14:22:17 william Exp $";
 
+#include "npx.h"
 #include "param.h"
 #include "systm.h"
 #include "proc.h"
@@ -105,8 +95,15 @@ cpu_fork(p1, p2)
 	vm_map_pageable(&p2->p_vmspace->vm_map, addr, addr+NBPG, FALSE);
 	for (i=0; i < UPAGES; i++)
 		pmap_enter(&p2->p_vmspace->vm_pmap, kstack+i*NBPG,
-			pmap_extract(kernel_pmap, ((int)p2->p_addr)+i*NBPG), VM_PROT_READ, 1);
-
+			   pmap_extract(kernel_pmap, ((int)p2->p_addr)+i*NBPG),
+			   /*
+			    * The user area has to be mapped writable because
+			    * it contains the kernel stack (when CR0_WP is on
+			    * on a 486 there is no user-read/kernel-write
+			    * mode).  It is protected from user mode access
+			    * by the segment limits.
+			    */
+			   VM_PROT_READ|VM_PROT_WRITE, TRUE);
 	pmap_activate(&p2->p_vmspace->vm_pmap, &up->u_pcb);
 
 	/*
@@ -139,14 +136,15 @@ cpu_fork(p1, p2)
  * a special case].
  */
 struct proc *swtch_to_inactive();
+volatile void
 cpu_exit(p)
 	register struct proc *p;
 {
 	static struct pcb nullpcb;	/* pcb to overwrite on last swtch */
 
-#ifdef NPX
+#if NNPX > 0
 	npxexit(p);
-#endif
+#endif	/* NNPX */
 
 	/* move to inactive space and stack, passing arg accross */
 	p = swtch_to_inactive(p);
@@ -161,15 +159,22 @@ cpu_exit(p)
 	/* NOTREACHED */
 }
 #else
+void
 cpu_exit(p)
 	register struct proc *p;
 {
 	
-#ifdef NPX
+#if NNPX > 0
 	npxexit(p);
-#endif
+#endif	/* NNPX */
 	splclock();
 	swtch();
+	/* 
+	 * This is to shutup the compiler, and if swtch() failed I suppose
+	 * this would be a good thing.  This keeps gcc happy because panic
+	 * is a volatile void function as well.
+	 */
+	panic("cpu_exit");
 }
 
 cpu_wait(p) struct proc *p; {
@@ -293,8 +298,8 @@ kernacc(addr, count, rw)
 	for (pde += ix; cnt; cnt--, pde++)
 		if (pde->pd_v == 0)
 			return(0);
-	ix = btop(addr-0xfe000000);
-	cnt = btop(addr-0xfe000000+count+NBPG-1);
+	ix = btop(addr-KERNBASE);
+	cnt = btop(addr-KERNBASE+count+NBPG-1);
 	if (cnt > (int)&Syssize)
 		return(0);
 	cnt -= ix;

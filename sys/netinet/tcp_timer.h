@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tcp_timer.h	7.8 (Berkeley) 6/28/90
+ *	from: @(#)tcp_timer.h	7.8 (Berkeley) 6/28/90
+ *	$Id$
  */
 
 /*

@@ -32,7 +32,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exp.c	5.6 (Berkeley) 10/9/90";
+static char sccsid[] = "@(#)exp.c	5.7 (Berkeley) 12/2/92";
 #endif /* not lint */
 
 /* EXP(X)
@@ -140,6 +140,51 @@ double x;
 			c= x - z*(p1+z*(p2+z*(p3+z*(p4+z*p5))));
 			return  scalb(1.0+(hi-(lo-(x*c)/(2.0-c))),k);
 
+		}
+		/* end of x > lntiny */
+
+		else 
+		     /* exp(-big#) underflows to zero */
+		     if(finite(x))  return(scalb(1.0,-5000));
+
+		     /* exp(-INF) is zero */
+		     else return(0.0);
+	}
+	/* end of x < lnhuge */
+
+	else 
+	/* exp(INF) is INF, exp(+big#) overflows to INF */
+	    return( finite(x) ?  scalb(1.0,5000)  : x);
+}
+
+/* returns exp(r = x + c) for |c| < |x| with no overlap.  */
+
+double exp__D(x, c)
+double x, c;
+{
+	double  z,hi,lo, t;
+	int k;
+
+#if !defined(vax)&&!defined(tahoe)
+	if (x!=x) return(x);	/* x is NaN */
+#endif	/* !defined(vax)&&!defined(tahoe) */
+	if ( x <= lnhuge ) {
+		if ( x >= lntiny ) {
+
+		    /* argument reduction : x --> x - k*ln2 */
+			z = invln2*x;
+			k = z + copysign(.5, x);
+
+		    /* express (x+c)-k*ln2 as hi-lo and let x=hi-lo rounded */
+
+			hi=(x-k*ln2hi);			/* Exact. */
+			x= hi - (lo = k*ln2lo-c);
+		    /* return 2^k*[1+x+x*c/(2+c)]  */
+			z=x*x;
+			c= x - z*(p1+z*(p2+z*(p3+z*(p4+z*p5))));
+			c = (x*c)/(2.0-c);
+
+			return  scalb(1.+(hi-(lo - c)), k);
 		}
 		/* end of x > lntiny */
 

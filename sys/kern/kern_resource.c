@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)kern_resource.c	7.13 (Berkeley) 5/9/91
+ *	from: @(#)kern_resource.c	7.13 (Berkeley) 5/9/91
+ *	$Id: kern_resource.c,v 1.5 1993/10/16 15:24:26 rgrimes Exp $
  */
 
 #include "param.h"
@@ -44,12 +45,14 @@
  * Resource controls and accounting.
  */
 
+struct getpriority_args {
+	int	which;
+	int	who;
+};
+
 getpriority(curp, uap, retval)
 	struct proc *curp;
-	register struct args {
-		int	which;
-		int	who;
-	} *uap;
+	register struct getpriority_args *uap;
 	int *retval;
 {
 	register struct proc *p;
@@ -100,14 +103,16 @@ getpriority(curp, uap, retval)
 	return (0);
 }
 
+struct setpriority_args {
+	int	which;
+	int	who;
+	int	prio;
+};
+
 /* ARGSUSED */
 setpriority(curp, uap, retval)
 	struct proc *curp;
-	register struct args {
-		int	which;
-		int	who;
-		int	prio;
-	} *uap;
+	register struct setpriority_args *uap;
 	int *retval;
 {
 	register struct proc *p;
@@ -179,18 +184,20 @@ donice(curp, chgp, n)
 	return (0);
 }
 
+struct setrlimit_args {
+	u_int	which;
+	struct	rlimit *lim;
+};
+
 /* ARGSUSED */
 setrlimit(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		u_int	which;
-		struct	rlimit *lim;
-	} *uap;
+	register struct setrlimit_args *uap;
 	int *retval;
 {
 	struct rlimit alim;
 	register struct rlimit *alimp;
-	extern unsigned maxdmap;
+	extern int maxfdescs;
 	int error;
 
 	if (uap->which >= RLIM_NLIMITS)
@@ -211,17 +218,23 @@ setrlimit(p, uap, retval)
 	switch (uap->which) {
 
 	case RLIMIT_DATA:
-		if (alim.rlim_cur > maxdmap)
-			alim.rlim_cur = maxdmap;
-		if (alim.rlim_max > maxdmap)
-			alim.rlim_max = maxdmap;
+		if (alim.rlim_cur > MAXDSIZ)
+			alim.rlim_cur = MAXDSIZ;
+		if (alim.rlim_max > MAXDSIZ)
+			alim.rlim_max = MAXDSIZ;
 		break;
 
+	case RLIMIT_OFILE:
+		if (alim.rlim_cur > maxfdescs)
+			alim.rlim_cur = maxfdescs;
+		if (alim.rlim_max > maxfdescs)
+			alim.rlim_max = maxfdescs;
+		break;
 	case RLIMIT_STACK:
-		if (alim.rlim_cur > maxdmap)
-			alim.rlim_cur = maxdmap;
-		if (alim.rlim_max > maxdmap)
-			alim.rlim_max = maxdmap;
+		if (alim.rlim_cur > MAXSSIZ)
+			alim.rlim_cur = MAXSSIZ;
+		if (alim.rlim_max > MAXSSIZ)
+			alim.rlim_max = MAXSSIZ;
 		/*
 		 * Stack is allocated to the max at exec time with only
 		 * "rlim_cur" bytes accessible.  If stack limit is going
@@ -254,13 +267,15 @@ setrlimit(p, uap, retval)
 	return (0);
 }
 
+struct getrlimit_args {
+	u_int	which;
+	struct	rlimit *rlp;
+};
+
 /* ARGSUSED */
 getrlimit(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		u_int	which;
-		struct	rlimit *rlp;
-	} *uap;
+	register struct getrlimit_args *uap;
 	int *retval;
 {
 
@@ -270,13 +285,15 @@ getrlimit(p, uap, retval)
 	    sizeof (struct rlimit)));
 }
 
+struct getrusage_args {
+	int	who;
+	struct	rusage *rusage;
+};
+
 /* ARGSUSED */
 getrusage(p, uap, retval)
 	register struct proc *p;
-	register struct args {
-		int	who;
-		struct	rusage *rusage;
-	} *uap;
+	register struct getrusage_args *uap;
 	int *retval;
 {
 	register struct rusage *rup;
@@ -316,7 +333,7 @@ ruadd(ru, ru2)
 	if (ru->ru_maxrss < ru2->ru_maxrss)
 		ru->ru_maxrss = ru2->ru_maxrss;
 	ip = &ru->ru_first; ip2 = &ru2->ru_first;
-	for (i = &ru->ru_last - &ru->ru_first; i > 0; i--)
+	for (i = &ru->ru_last - &ru->ru_first; i >= 0; i--)	/* Yuval fix */
 		*ip++ += *ip2++;
 }
 

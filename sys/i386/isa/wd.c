@@ -33,29 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	from:@(#)wd.c	7.2 (Berkeley) 5/9/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         6       00155
- * --------------------         -----   ----------------------
- *
- * 17 Sep 92	Frank Maclachlan	Fixed I/O error reporting on raw device
- * 31 Jul 92	Christoph Robitschko	Fixed second disk recognition,
- *					bzero of malloced memory for warm
- *					boot problem.
- * 19 Aug 92    Frank Maclachlan	Fixed bug when first sector of a
- *					multisector read is in bad144 table.
- * 17 Jan 93	B. Evans & A.Chernov	Fixed bugs from previous patches,
- *					driver initialization, and cylinder
- *					boundary conditions.
- * 28 Mar 93	Charles Hannum		Add missing splx calls.
- * 20 Apr 93	Terry Lee		Always report disk errors
- * 20 Apr 93	Brett Lymn		Change infinite while loops to
- *					timeouts
- * 17 May 93	Rodney W. Grimes	Fixed all 1000000 to use WDCTIMEOUT,
- *					and increased to 1000000*10 for new
- *					intr-0.1 code.
+ *	from: @(#)wd.c	7.2 (Berkeley) 5/9/91
+ *	$Id$
  */
 
 /* TODO:peel out buffer at low ipl, speed improvement */
@@ -76,6 +55,7 @@
 #include "uio.h"
 #include "malloc.h"
 #include "machine/cpu.h"
+#include "i386/isa/isa.h"
 #include "i386/isa/isa_device.h"
 #include "i386/isa/icu.h"
 #include "i386/isa/wdreg.h"
@@ -154,12 +134,12 @@ struct	isa_driver wddriver = {
 	wdprobe, wdattach, "wd",
 };
 
-void wdustart(struct disk *);
-void wdstart();
-int wdcommand(struct disk *, int);
-int wdcontrol(struct buf *);
-int wdsetctlr(dev_t, struct disk *);
-int wdgetctlr(int, struct disk *);
+static void wdustart(struct disk *);
+static void wdstart();
+static int wdcommand(struct disk *, int);
+static int wdcontrol(struct buf *);
+static int wdsetctlr(dev_t, struct disk *);
+static int wdgetctlr(int, struct disk *);
 
 /*
  * Probe for controller.
@@ -200,7 +180,7 @@ wdprobe(struct isa_device *dvp)
 
 	(void) inb(wdc+wd_error);	/* XXX! */
 	outb(wdc+wd_ctlr, WDCTL_4BIT);
-	return (1);
+	return (IO_WDCSIZE);
 
 nodevice:
 	free(du, M_TEMP);
@@ -231,7 +211,7 @@ wdattach(struct isa_device *dvp)
 		if(wdgetctlr(unit, du) == 0)  {
 			int i, blank;
 			char c;
-			printf(" %d:<", unit);
+			printf("wd%d: unit %d type ", unit, unit);
 			for (i = blank = 0 ; i < sizeof(du->dk_params.wdp_model); i++) {
 				char c = du->dk_params.wdp_model[i];
 
@@ -246,13 +226,8 @@ wdattach(struct isa_device *dvp)
 				else
 					printf("%c", c);
 			}
-			printf(">");
+			printf("\n");
 			du->dk_unit = unit;
-		}
-		else {
-			/* old ST506 controller */
-			printf(" %d:<wdgetctlr failed, assuming OK>",
-			       unit);
 		}
 	}
 	return(1);
@@ -423,7 +398,14 @@ loop:
 	 */
 	if ((du->dk_flags & (DKFL_SINGLE|DKFL_BADSECT))		/* 19 Aug 92*/
 		== (DKFL_SINGLE|DKFL_BADSECT))
-	    for (bt_ptr = du->dk_bad.bt_bad; bt_ptr->bt_cyl != -1; bt_ptr++) {
+	    /* XXX
+	     * BAD144END was done to clean up some old bad code that was
+	     * attempting to compare a u_short to -1.  This makes the compilers
+	     * happy and clearly shows what is going on.
+	     * rgrimes 93/06/17
+	     */
+#define BAD144END (u_short)(-1)
+	    for (bt_ptr = du->dk_bad.bt_bad; bt_ptr->bt_cyl != BAD144END; bt_ptr++) {
 		if (bt_ptr->bt_cyl > cylin)
 			/* Sorted list, and we passed our cylinder. quit. */
 			break;
@@ -626,22 +608,19 @@ wdintr(struct intrframe wdif)
 			if (++wdtab.b_errcnt < RETRIES) {
 				wdtab.b_active = 0;
 			} else {
-				if((du->dk_flags&DKFL_QUIET) == 0) {
-					diskerr(bp, "wd", "hard error",
-						LOG_PRINTF, du->dk_skip,
-						&du->dk_dd);
+				diskerr(bp, "wd", "hard error", LOG_PRINTF,
+					du->dk_skip, &du->dk_dd);
 #ifdef WDDEBUG
-					printf( "status %b error %b\n",
-						status, WDCS_BITS,
-						inb(wdc+wd_error), WDERR_BITS);
+				printf( "status %b error %b\n",
+					status, WDCS_BITS,
+					inb(wdc+wd_error), WDERR_BITS);
 #endif
-				}
 				bp->b_error = EIO;	/* 17 Sep 92*/
 				bp->b_flags |= B_ERROR;	/* flag the error */
 			}
-		} else if((du->dk_flags&DKFL_QUIET) == 0) {
-				diskerr(bp, "wd", "soft ecc", 0,
-					du->dk_skip, &du->dk_dd);
+		} else {
+			diskerr(bp, "wd", "soft ecc", 0,
+				du->dk_skip, &du->dk_dd);
 		}
 	}
 outt:
@@ -671,7 +650,7 @@ outt:
 	if (wdtab.b_active) {
 		if ((bp->b_flags & B_ERROR) == 0) {
 			du->dk_skip++;		/* Add to successful sectors. */
-			if (wdtab.b_errcnt && (du->dk_flags & DKFL_QUIET) == 0)
+			if (wdtab.b_errcnt)
 				diskerr(bp, "wd", "soft error", 0,
 					du->dk_skip, &du->dk_dd);
 			wdtab.b_errcnt = 0;
@@ -752,17 +731,15 @@ wdopen(dev_t dev, int flags, int fmt, struct proc *p)
 		du->dk_dd.d_secpercyl = 17*8;
 		du->dk_state = WANTOPEN;
 		du->dk_unit = unit;
-		du->dk_flags &= ~DKFL_QUIET;
 
 		/* read label using "c" partition */
 		if (msg = readdisklabel(makewddev(major(dev), wdunit(dev), WDRAW),
 				wdstrategy, &du->dk_dd, du->dk_dospartitions,
 				&du->dk_bad, 0)) {
-			if((du->dk_flags&DKFL_QUIET) == 0) {
-				log(LOG_WARNING, "wd%d: cannot find label (%s)\n",
-					unit, msg);
+			log(LOG_WARNING, "wd%d: cannot find label (%s)\n",
+				unit, msg);
+			if (part != WDRAW)
 				error = EINVAL;		/* XXX needs translation */
-			}
 			goto done;
 		} else {
 
@@ -868,12 +845,9 @@ wdcontrol(register struct buf *bp)
 
 	case RECAL:
 		if ((stat = inb(wdc+wd_status)) & WDCS_ERR) {
-			if ((du->dk_flags & DKFL_QUIET) == 0) {
-				printf("wd%d: recal", du->dk_unit);
-				printf(": status %b error %b\n",
-					stat, WDCS_BITS, inb(wdc+wd_error),
-					WDERR_BITS);
-			}
+			printf("wd%d: recal", du->dk_unit);
+			printf(": status %b error %b\n", stat, WDCS_BITS,
+				inb(wdc+wd_error), WDERR_BITS);
 			if (++wdtab.b_errcnt < RETRIES) {
 				du->dk_state = WANTOPEN;
 				goto tryagainrecal;
@@ -899,9 +873,8 @@ wdcontrol(register struct buf *bp)
 	/* NOTREACHED */
 
 badopen:
-	if ((du->dk_flags & DKFL_QUIET) == 0) 
-		printf(": status %b error %b\n",
-			stat, WDCS_BITS, inb(wdc + wd_error), WDERR_BITS);
+	printf(": status %b error %b\n", stat, WDCS_BITS,
+		inb(wdc + wd_error), WDERR_BITS);
 	bp->b_flags |= B_ERROR;
 	return(1);
 }
@@ -989,10 +962,26 @@ wdgetctlr(int u, struct disk *du) {
 		splx(x);
 		return(stat);
 	}
+	/*
+	 * If WDCC_READP fails then we might have an old ST506 type drive
+	 * so we try a seek to 0; if that passes then the
+	 * drive is there but it's OLD AND KRUSTY
+	 */
 	if (stat & WDCS_ERR) {
-	  	stat = inb(wdc+wd_error);
+		stat = wdcommand(du, WDCC_RESTORE | WD_STEP);
+		if (stat & WDCS_ERR) {
+	  		stat = inb(wdc+wd_error);
+			splx(x);
+			return(stat);
+		}
+
+		strncpy(du->dk_dd.d_typename, "ST506",
+			sizeof du->dk_dd.d_typename);
+		strncpy(du->dk_params.wdp_model, "Unknown Type",
+			sizeof du->dk_params.wdp_model);
+		du->dk_dd.d_type = DTYPE_ST506;
 		splx(x);
-		return(stat);
+		return(0);
 	}
 
 	/* obtain parameters */
@@ -1177,7 +1166,7 @@ wdformat(struct buf *bp)
 int
 wdsize(dev_t dev)
 {
-	int unit = wdunit(dev), part = wdpart(dev), val;
+	int unit = wdunit(dev), part = wdpart(dev), val = 0;
 	struct disk *du;
 
 	if (unit >= _NWD)	/* 31 Jul 92*/

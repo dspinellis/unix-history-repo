@@ -322,6 +322,8 @@ main(argc, argv)
 			attime(&ep->utmp.ut_time));
 		if (ep->idle >= 36 * 60)
 			printf(" %ddays ", (ep->idle + 12 * 60) / (24 * 60));
+		else if (ep->idle == 0)
+			printf("     - ");
 		else
 			prttime(ep->idle, " ");
 		printf("%.*s\n", argwidth, ep->args);

@@ -30,16 +30,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)kern_subr.c	7.7 (Berkeley) 4/15/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00081
- * --------------------         -----   ----------------------
- *
- * 07 Feb 93	Julian Elischer		Moverd strcmp here where it belongs
+ *	from: @(#)kern_subr.c	7.7 (Berkeley) 4/15/91
+ *	$Id$
  */
-static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/kern_subr.c,v 1.3 92/01/21 21:29:28 william Exp $";
 
 #include "param.h"
 #include "systm.h"

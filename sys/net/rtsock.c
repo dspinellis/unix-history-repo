@@ -30,10 +30,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)rtsock.c	7.18 (Berkeley) 6/27/91
+ *	from: @(#)rtsock.c	7.18 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 #include "param.h"
+#include "systm.h"
 #include "mbuf.h"
 #include "proc.h"
 #include "socket.h"

@@ -120,6 +120,8 @@ Do not allow set-user-identifier or set-group-identifier bits to take effect.
 Do not interpret character or block special devices on the file system.
 This options is useful for a server that has file systems containing
 special devices for architectures other than its own.
+.It nocore
+Do not create core files on the file system.
 .It synchronous
 All
 .Tn I/O
@@ -271,9 +273,8 @@ Active special devices continue to work,
 but all other files return errors if further accesses are attempted.
 The root file system cannot be forcibly unmounted.
 .It Fl a
-All of the file systems described in
-.Xr fstab
-are unmounted.
+All of the file systems currently mounted (except the root file
+system) are unmouted.
 .It Fl t
 Is used to indicate the actions should only be taken on
 filesystems of the specified type.

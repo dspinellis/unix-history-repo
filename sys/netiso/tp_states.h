@@ -1,5 +1,8 @@
-/* $Header$ */
-/* $Source$ */
+/*
+ *	from: unknown
+ *	$Id$
+ */
+
 #define ST_ERROR 0x0
 #define TP_CLOSED 0x1
 #define TP_CRSENT 0x2

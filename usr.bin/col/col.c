@@ -101,6 +101,9 @@ int no_backspaces;		/* if not to output any backspaces */
 	if (putchar(ch) == EOF) \
 		wrerr();
 
+/* next tabstop after col */
+#define TABSTOP(col,ts)  ((col) + (ts) - (col) % (ts))
+
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -424,10 +427,17 @@ flush_line(l)
 			if (compress_spaces && nspace > 1) {
 				int ntabs;
 
+				while ((ntabs = TABSTOP(last_col, 8)) <= this_col) {
+					PUTC('\t');
+					last_col = ntabs;
+				}
+				nspace = this_col - last_col;
+/*
 				ntabs = this_col / 8 - last_col / 8;
 				nspace -= ntabs * 8;
 				while (--ntabs >= 0)
 					PUTC('\t');
+*/
 			}
 			while (--nspace >= 0)
 				PUTC(' ');

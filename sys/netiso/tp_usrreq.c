@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_usrreq.c	7.17 (Berkeley) 6/27/91
+ *	from: @(#)tp_usrreq.c	7.17 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,11 +60,9 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /* 
  * ARGO TP
- *
- * $Header: tp_usrreq.c,v 5.4 88/11/18 17:29:18 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_usrreq.c,v $
  *
  * tp_usrreq(), the fellow that gets called from most of the socket code.
  * Pretty straighforward.

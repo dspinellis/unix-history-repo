@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)if_types.h	7.3 (Berkeley) 6/28/90
+ *	from: @(#)if_types.h	7.3 (Berkeley) 6/28/90
+ *	$Id$
  */
 
 
@@ -62,3 +63,4 @@
 #define	IFT_XETHER	0x1a		/* obsolete 3MB experimental ethernet */
 #define	IFT_NSIP	0x1b		/* XNS over IP */
 #define	IFT_SLIP	0x1c		/* IP over generic TTY */
+#define	IFT_PPP		0x1d		/* PPP over generic TTY */

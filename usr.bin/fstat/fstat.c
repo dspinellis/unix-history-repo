@@ -48,13 +48,6 @@ static char sccsid[] = "@(#)fstat.c	5.32 (Berkeley) 6/17/91";
 #include <sys/time.h>
 #include <sys/proc.h>
 #include <sys/user.h>
-#ifdef SPPWAIT
-#define NEWVM
-#endif
-#ifndef NEWVM
-#include <machine/pte.h>
-#include <sys/vmmac.h>
-#endif
 #include <sys/stat.h>
 #include <sys/vnode.h>
 #include <sys/socket.h>
@@ -112,12 +105,6 @@ struct  filestat {
 	dev_t	rdev;
 };
 
-#ifdef notdef
-struct nlist nl[] = {
-	{ "" },
-};
-#endif
-
 int 	fsflg,	/* show files on same filesystem as file(s) argument */
 	pflg,	/* show files open by a particular pid */
 	uflg;	/* show files open by a particular (effective) user */
@@ -129,6 +116,7 @@ int	vflg;	/* display errors in locating kernel data objects etc... */
 
 struct file **ofiles;	/* buffer of pointers to file structures */
 int maxfiles;
+
 #define ALLOC_OFILES(d)	\
 	if ((d) > maxfiles) { \
 		free(ofiles); \
@@ -161,6 +149,7 @@ main(argc, argv)
 
 	arg = 0;
 	what = KINFO_PROC_ALL;
+
 	while ((ch = getopt(argc, argv, "fnp:u:vNM")) != EOF)
 		switch((char)ch) {
 		case 'f':
@@ -227,22 +216,19 @@ main(argc, argv)
 		fprintf(stderr, "fstat: %s\n", kvm_geterr());
 		exit(1);
 	}
-#ifdef notdef
-	if (kvm_nlist(nl) != 0) {
-		fprintf(stderr, "fstat: no namelist: %s\n", kvm_geterr());
-		exit(1);
-	}
-#endif
+
 	if (kvm_getprocs(what, arg) == -1) {
 		fprintf(stderr, "fstat: %s\n", kvm_geterr());
 		exit(1);
 	}
+
 	if (nflg)
 		printf("%s",
 "USER     CMD          PID   FD  DEV    INUM       MODE SZ|DV");
 	else
 		printf("%s",
 "USER     CMD          PID   FD MOUNT      INUM MODE         SZ|DV");
+
 	if (checkfile && fsflg == 0)
 		printf(" NAME\n");
 	else
@@ -253,6 +239,7 @@ main(argc, argv)
 			continue;
 		dofiles(p);
 	}
+
 	exit(0);
 }
 
@@ -287,100 +274,68 @@ dofiles(p)
 {
 	int i, last;
 	struct file file;
-#ifdef NEWVM
 	struct filedesc0 filed0;
 #define	filed	filed0.fd_fd
 	struct eproc *ep;
-#else
-	struct filedesc filed;
-#endif
-
 	extern char *user_from_uid();
-#ifndef NEWVM
-	struct vnode *xvptr;
-#endif
 
-#ifdef NEWVM
 	ep = kvm_geteproc(p);
 	Uname = user_from_uid(ep->e_ucred.cr_uid, 0);
-#else
-	Uname = user_from_uid(p->p_uid, 0);
-#endif
 	Pid = p->p_pid;
 	Comm = p->p_comm;
 
 	if (p->p_fd == NULL)
 		return;
-#ifdef NEWVM
+
 	if (!KVM_READ(p->p_fd, &filed0, sizeof (filed0))) {
 		dprintf(stderr, "can't read filedesc at %x for pid %d\n",
 			p->p_fd, Pid);
 		return;
 	}
-#else
-	if (!KVM_READ(p->p_fd, &filed, sizeof (filed))) {
-		dprintf(stderr, "can't read filedesc at %x for pid %d\n",
-			p->p_fd, Pid);
-		return;
-	}
-#endif
+
 	/*
 	 * root directory vnode, if one
 	 */
 	if (filed.fd_rdir)
 		vtrans(filed.fd_rdir, RDIR);
-#ifndef NEWVM
-	/*
-	 * text vnode
-	 */
-	if (p->p_textp && 
-	    KVM_READ(&(p->p_textp->x_vptr), &xvptr, sizeof (struct vnode *)) &&
-	    xvptr != NULL)
-		vtrans(xvptr, TEXT);
-#endif
+
 	/*
 	 * current working directory vnode
 	 */
 	vtrans(filed.fd_cdir, CDIR);
+
 	/*
 	 * ktrace vnode, if one
 	 */
 	if (p->p_tracep)
 		vtrans(p->p_tracep, TRACE);
+
 	/*
 	 * open files
 	 */
 #define FPSIZE	(sizeof (struct file *))
-	ALLOC_OFILES(filed.fd_lastfile);
-#ifdef NEWVM
+	ALLOC_OFILES(filed.fd_lastfile + 1);
 	if (filed.fd_nfiles > NDFILE) {
 		if (!KVM_READ(filed.fd_ofiles, ofiles,
-		    filed.fd_lastfile * FPSIZE)) {
+		    (filed.fd_lastfile + 1) * FPSIZE)) {
 			dprintf(stderr,
 			    "can't read file structures at %x for pid %d\n",
 			    filed.fd_ofiles, Pid);
 			return;
 		}
 	} else
-		bcopy(filed0.fd_dfiles, ofiles, filed.fd_lastfile * FPSIZE);
-#else
-	bcopy(filed.fd_ofile, ofiles, MIN(filed.fd_lastfile, NDFILE) * FPSIZE);
-	last = filed.fd_lastfile;
-	if ((last > NDFILE) && !KVM_READ(filed.fd_moreofiles, &ofiles[NDFILE],
-	    (last - NDFILE) * FPSIZE)) {
-		dprintf(stderr, "can't read rest of files at %x for pid %d\n",
-			filed.fd_moreofiles, Pid);
-		return;
-	}
-#endif
+		bcopy(filed0.fd_dfiles, ofiles, (filed.fd_lastfile + 1) * FPSIZE);
+
 	for (i = 0; i <= filed.fd_lastfile; i++) {
 		if (ofiles[i] == NULL)
 			continue;
+
 		if (!KVM_READ(ofiles[i], &file, sizeof (struct file))) {
 			dprintf(stderr, "can't read file %d at %x for pid %d\n",
 				i, ofiles[i], Pid);
 			continue;
 		}
+
 		if (file.f_type == DTYPE_VNODE)
 			vtrans((struct vnode *)file.f_data, i);
 		else if (file.f_type == DTYPE_SOCKET && checkfile == 0)
@@ -405,11 +360,13 @@ vtrans(vp, i)
 	char *badtype, *filename, *getmnton();
 
 	filename = badtype = NULL;
+
 	if (!KVM_READ(vp, &vn, sizeof (struct vnode))) {
 		dprintf(stderr, "can't read vnode at %x for pid %d\n",
 			vp, Pid);
 		return;
 	}
+
 	if (vn.v_type == VNON || vn.v_tag == VT_NON)
 		badtype = "none";
 	else if (vn.v_type == VBAD)
@@ -431,13 +388,15 @@ vtrans(vp, i)
 			break;;
 		}
 	}
+
 	if (checkfile) {
 		int fsmatch = 0;
 		register DEVS *d;
 
 		if (badtype)
 			return;
-		for (d = devs; d != NULL; d = d->next)
+
+		for (d = devs; d != NULL; d = d->next) {
 			if (d->fsid == fst.fsid) {
 				fsmatch = 1;
 				if (d->ino == fst.fileid) {
@@ -445,14 +404,19 @@ vtrans(vp, i)
 					break;
 				}
 			}
+		}
+
 		if (fsmatch == 0 || (filename == NULL && fsflg == 0))
 			return;
 	}
+
 	PREFIX(i);
+
 	if (badtype) {
 		(void)printf(" -         -  %10s    -\n", badtype);
 		return;
 	}
+
 	if (nflg)
 		(void)printf(" %2d,%-2d", major(fst.fsid), minor(fst.fsid));
 	else
@@ -461,7 +425,9 @@ vtrans(vp, i)
 		(void)sprintf(mode, "%o", fst.mode);
 	else
 		strmode(fst.mode, mode);
+
 	(void)printf(" %6d %10s", fst.fileid, mode);
+
 	switch (vn.v_type) {
 	case VBLK:
 	case VCHR: {
@@ -477,6 +443,7 @@ vtrans(vp, i)
 	default:
 		printf(" %6d", fst.size);
 	}
+
 	if (filename && !fsflg)
 		printf(" %s", filename);
 		
@@ -510,6 +477,7 @@ nfs_filestat(vp, fsp)
 	fsp->size = np->n_size;
 	fsp->rdev = np->n_vattr.va_rdev;
 	mode = (mode_t)np->n_vattr.va_mode;
+
 	switch (vp->v_type) {
 	case VREG:
 		mode |= S_IFREG;
@@ -533,6 +501,7 @@ nfs_filestat(vp, fsp)
 		mode |= S_IFIFO;
 		break;
 	};
+
 	fsp->mode = mode;
 }
 
@@ -552,18 +521,22 @@ getmnton(m)
 	for (mt = mhead; mt != NULL; mt = mt->next)
 		if (m == mt->m)
 			return (mt->mntonname);
+
 	if (!KVM_READ(m, &mount, sizeof(struct mount))) {
 		fprintf(stderr, "can't read mount table at %x\n", m);
 		return (NULL);
 	}
+
 	if ((mt = malloc(sizeof (struct mtab))) == NULL) {
 		fprintf(stderr, "fstat: %s\n", strerror(errno));
 		exit(1);
 	}
+
 	mt->m = m;
 	bcopy(&mount.mnt_stat.f_mntonname[0], &mt->mntonname[0], MNAMELEN);
 	mt->next = mhead;
 	mhead = mt;
+
 	return (mt->mntonname);
 }
 
@@ -721,6 +694,7 @@ getinetproto(number)
 		printf(" %d", number);
 		return;
 	}
+
 	printf(" %s", cp);
 }
 
@@ -735,10 +709,12 @@ getfname(filename)
 		    filename);
 		return(0);
 	}
+
 	if ((cur = malloc(sizeof(DEVS))) == NULL) {
 		fprintf(stderr, "fstat: %s\n", strerror(errno));
 		exit(1);
 	}
+
 	cur->next = devs;
 	devs = cur;
 

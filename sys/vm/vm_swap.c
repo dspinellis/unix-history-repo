@@ -30,9 +30,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_swap.c	7.18 (Berkeley) 5/6/91
+ *	from: @(#)vm_swap.c	7.18 (Berkeley) 5/6/91
+ *	$Id$
  */
-static char rcsid[] = "$Header: /usr/bill/working/sys/vm/RCS/vm_swap.c,v 1.3 92/01/21 21:58:25 william Exp $";
 
 #include "param.h"
 #include "systm.h"
@@ -167,12 +167,15 @@ swstrategy(bp)
  * which must be in the swdevsw.  Return EBUSY
  * if already swapping on this device.
  */
+
+struct swapon_args {
+	char	*name;
+};
+
 /* ARGSUSED */
 swapon(p, uap, retval)
 	struct proc *p;
-	struct args {
-		char	*name;
-	} *uap;
+	struct swapon_args *uap;
 	int *retval;
 {
 	register struct vnode *vp;
@@ -207,9 +210,8 @@ swapon(p, uap, retval)
 				return (EBUSY);
 			}
 			sp->sw_vp = vp;
-			printf("adding swap: ");
 			if (error = swfree(p, sp - swdevt)) {
-				printf("failed! (unchanged)\n");
+				printf("swap failed! (unchanged)\n");
 				vrele(vp);
 				return (error);
 			}

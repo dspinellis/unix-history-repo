@@ -77,6 +77,10 @@ getcwd(pt, size)
 			errno = EINVAL;
 			return((char *)NULL);
 		}
+		if (size == 1) {
+			errno = ERANGE;
+			return((char *)NULL);
+		}
 		ept = pt + size;
 	} else {
 		if (!(pt = (char *)malloc(ptsize = 1024 - 4)))
@@ -185,7 +189,7 @@ getcwd(pt, size)
 		 * Check for length of the current name, preceding slash,
 		 * leading slash.
 		 */
-		if (bpt - pt <= dp->d_namlen + (first ? 1 : 2)) {
+		if (bpt - pt < dp->d_namlen + (first ? 1 : 2)) {
 			size_t len, off;
 
 			if (!ptsize) {

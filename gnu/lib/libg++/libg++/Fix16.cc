@@ -4,22 +4,17 @@ Copyright (C) 1988 Free Software Foundation
     written by Kurt Baudendistel (gt-eedsp!baud@gatech.edu)
     adapted for libg++ by Doug Lea (dl@rocky.oswego.edu)
 
-This file is part of GNU CC.
-
-GNU CC is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU CC General Public
-License for full details.
-
-Everyone is granted permission to copy, modify and redistribute
-GNU CC, but only under the conditions described in the
-GNU CC General Public License.   A copy of this license is
-supposed to have been given to you along with GNU CC so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  
+This file is part of the GNU C++ Library.  This library is free
+software; you can redistribute it and/or modify it under the terms of
+the GNU Library General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your
+option) any later version.  This library is distributed in the hope
+that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.  See the GNU Library General Public License for more details.
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 //
@@ -74,7 +69,7 @@ long Fix32::assign(double d)
 }
 
 
-Fix32 operator * (Fix32& a, Fix32& b)
+Fix32 operator * (const Fix32& a, const Fix32& b)
 {
 // break a and b into lo and hi parts, and do a multiple-precision
 // multiply, with rounding
@@ -97,7 +92,7 @@ Fix32 operator * (Fix32& a, Fix32& b)
   return Fix32(p);
 }
 
-Fix16 operator / (Fix16& a, Fix16& b)
+Fix16 operator / (const Fix16& a, const Fix16& b)
 {
   short q;
   int apos = (a.m >= 0);
@@ -119,7 +114,7 @@ Fix16 operator / (Fix16& a, Fix16& b)
   return Fix16(q);
 }
 
-Fix32 operator / (Fix32& a, Fix32& b)
+Fix32 operator / (const Fix32& a, const Fix32& b)
 {
   long q;
   int apos = (a.m >= 0);
@@ -138,7 +133,7 @@ Fix32 operator / (Fix32& a, Fix32& b)
 
     for (int i = 32; i > 0; i--)
     {
-	if (r > lb) {
+	if ((unsigned)(r) > lb) {
 	    q = (q << 1) | 1;
 	    r -= lb;
 	}
@@ -155,22 +150,22 @@ Fix32 operator / (Fix32& a, Fix32& b)
 
 // error handling
 
-void Fix16::overflow(short& i)
+void Fix16::overflow(short& i) const
 {
   (*Fix16_overflow_handler)(i);
 }
 
-void Fix32::overflow(long& i)
+void Fix32::overflow(long& i) const
 {
   (*Fix32_overflow_handler)(i);
 }
 
-void Fix16::range_error(short& i)
+void Fix16::range_error(short& i) const
 {
   (*Fix16_range_error_handler)(i);
 }
 
-void Fix32::range_error(long& i)
+void Fix32::range_error(long& i) const
 {
   (*Fix32_range_error_handler)(i);
 }

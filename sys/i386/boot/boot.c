@@ -1,6 +1,4 @@
 /*
- * Ported to boot 386BSD by Julian Elischer (julian@tfs.com) Sept 1992
- *
  * Mach Operating System
  * Copyright (c) 1992, 1991 Carnegie Mellon University
  * All Rights Reserved.
@@ -25,28 +23,10 @@
  * any improvements or extensions that they make and grant Carnegie Mellon
  * the rights to redistribute these changes.
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00159
- * --------------------         -----   ----------------------
- *
- * 23 May 93	Rodney W. Grimes	Added pad to kernel size for structs
- *					allocated by locore.s
+ *	from: Mach, [92/04/03  16:51:14  rvb]
+ *	$Id: boot.c,v 1.7 1993/10/15 12:33:03 rgrimes Exp $
  */
 
-/*
- * HISTORY
- * $Log:	boot.c,v $
- * Revision 2.2  92/04/04  11:34:37  rpd
- * 	Change date in banner.
- * 	[92/04/03  16:51:14  rvb]
- * 
- * 	Fix Intel Copyright as per B. Davies authorization.
- * 	[92/04/03            rvb]
- * 	From 2.5 version.
- * 	[92/03/30            mg32]
- * 
- */
 
 /*
   Copyright 1988, 1989, 1990, 1991, 1992 
@@ -76,13 +56,12 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <a.out.h>
 #include <sys/reboot.h>
 
-
 struct exec head;
 int argv[10], esym;
 char *name;
 char *names[] = {
-	"/386bsd", "/386bsd.old",
-	"/vmunix", "/vmunix.old"
+	"/386bsd", "/o386bsd", "/386bsd.old",
+	"/vmunix", "/ovmunix", "/vmunix.old"
 };
 #define NUMNAMES	(sizeof(names)/sizeof(char *))
 
@@ -91,11 +70,14 @@ boot(drive)
 int drive;
 {
 	int loadflags, currname = 0;
-	printf("\n>> 386bsd BOOT @ 0x%x: %d/%d k of memory  [20/9/92]\n",
+	char *t;
+		
+	printf("\n>> FreeBSD BOOT @ 0x%x: %d/%d k of memory  [%s]\n",
 		ouraddr,
 		argv[7] = memsize(0),
-		argv[8] = memsize(1));
-	printf("use options hd(1,...... to boot sd0 when wd0 is also installed\n");
+		argv[8] = memsize(1),
+		"$Revision: 1.7 $");
+	printf("use hd(1,a)/386bsd to boot sd0 when wd0 is also installed\n");
 	gateA20();
 loadstart:
 	/***************************************************************\
@@ -126,6 +108,7 @@ loadprog(howto)
 {
 	long int startaddr;
 	long int addr;	/* physical address.. not directly useable */
+	long int addr0;
 	int i;
 	static int (*x_entry)() = 0;
 	unsigned char	tmpbuf[4096]; /* we need to load the first 4k here */
@@ -133,18 +116,18 @@ loadprog(howto)
 	argv[3] = 0;
 	argv[4] = 0;
 	read(&head, sizeof(head));
-	if (head.a_magic == 0413 )
-	{
-		poff = 4096;
-	}
-	else
-	{
+	if ( N_BADMAG(head)) {
 		printf("Invalid format!\n");
 		return;
 	}
 
+	poff = N_TXTOFF(head);
+	/*if(poff==0)
+		poff = 32;*/
+
 	startaddr = (int)head.a_entry;
-	addr = (startaddr & 0x00f00000); /* some MEG boundary */
+	addr = (startaddr & 0x00ffffff); /* some MEG boundary */
+	addr0 = addr;
 	printf("Booting %s(%d,%c)%s @ 0x%x\n"
 			, devs[maj]
 			, unit
@@ -158,22 +141,14 @@ loadprog(howto)
 			printf("kernel will not fit below loader\n");
 			return;
 		}
-		/*
-		 * The +28672 is for memory allocated by locore.s that must
-		 * fit in the bss!
-		 */
-		if((addr + head.a_text + head.a_data + head.a_bss + 28672) > 0xa0000)
+		if((addr + head.a_text + head.a_data + head.a_bss) > 0xa0000)
 		{
 			printf("kernel too big, won't fit in 640K with bss\n");
 			printf("Only hope is to link the kernel for > 1MB\n");
 			return;
 		}
-		if((addr + head.a_text + head.a_data + head.a_bss) > ouraddr)
-		{
-			printf("loader overlaps bss, kernel must bzero\n");
-		}
 	}
-	printf("text=0x%x", head.a_text);
+	printf("text=0x%x ", head.a_text);
 	/********************************************************/
 	/* LOAD THE TEXT SEGMENT				*/
 	/* don't clobber the first 4k yet (BIOS NEEDS IT) 	*/
@@ -189,7 +164,7 @@ loadprog(howto)
 	while (addr & CLOFSET)
                 *(char *)addr++ = 0;
 
-	printf(" data=0x%x", head.a_data);
+	printf("data=0x%x ", head.a_data);
 	xread(addr, head.a_data);
 	addr += head.a_data;
 
@@ -197,7 +172,7 @@ loadprog(howto)
 	/* Skip over the uninitialised data			*/
 	/* (but clear it)					*/
 	/********************************************************/
-	printf(" bss=0x%x", head.a_bss);
+	printf("bss=0x%x ", head.a_bss);
 	if( (addr < ouraddr) && ((addr + head.a_bss) > ouraddr))
 	{
 		pbzero(addr,ouraddr - (int)addr);
@@ -220,7 +195,7 @@ loadprog(howto)
 		/********************************************************/
 		/* READ in the symbol table				*/
 		/********************************************************/
-		printf(" symbols=[+0x%x", head.a_syms);
+		printf("symbols=[+0x%x", head.a_syms);
 		xread(addr, head.a_syms);
 		addr += head.a_syms;
 	
@@ -237,7 +212,7 @@ loadprog(howto)
 		/********************************************************/
 		/* and that many bytes of (debug symbols?)		*/
 		/********************************************************/
-		printf("+0x%x]", i);
+		printf("+0x%x] ", i);
 		xread(addr, i);
 		addr += i;
 	}
@@ -247,7 +222,7 @@ loadprog(howto)
 	/********************************************************/
 
 	argv[4] = ((addr+sizeof(int)-1))&~(sizeof(int)-1);
-	printf(" total=0x%x",argv[4]);
+	printf("total=0x%x ",argv[4]);
 
 
 	/*
@@ -264,8 +239,19 @@ loadprog(howto)
 	switch(maj)
 	{
 	case 2:
-		printf("\n\nInsert file system floppy \n");
-		getchar();
+		printf("\n\nInsert file system floppy in drive A or B\n");
+		printf("Press 'A', 'B' or any other key for the default ");
+		printf("%c: ", unit+'A');
+		i = getchar();
+		switch (i) {
+			case '0': case 'A': case 'a':
+				unit = 0;
+				break;
+			case '1': case 'B': case 'b':
+				unit = 1;
+				break;
+		}
+		printf("\n");
 		break;
 	case 4:
 		break;
@@ -278,8 +264,10 @@ loadprog(howto)
 	/****************************************************************/
 	/* copy that first page and overwrite any BIOS variables	*/
 	/****************************************************************/
-	printf(" entry point=0x%x \n" ,((int)startaddr) & 0xffffff);
-	pcpy(tmpbuf, 0, 4096);
+	printf("entry point=0x%x\n" ,((int)startaddr) & 0xffffff);
+	/* Under no circumstances overwrite precious BIOS variables! */
+	pcpy(tmpbuf, addr0, 0x400);
+	pcpy(tmpbuf + 0x500, addr0 + 0x500, 4096 - 0x500);
 	startprog(((int)startaddr & 0xffffff),argv);
 }
 
@@ -318,6 +306,7 @@ getbootdev(howto)
 					*ptr++ = 0;
 			}
 		}
-	}
+	} else
+		printf("\n");
 }
 

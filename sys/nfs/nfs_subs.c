@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nfs_subs.c	7.41 (Berkeley) 5/15/91
+ *	From:	@(#)nfs_subs.c	7.41 (Berkeley) 5/15/91
+ *	$Id$
  */
 
 /*
@@ -51,6 +52,9 @@
 #include "vnode.h"
 #include "namei.h"
 #include "mbuf.h"
+#ifdef	PROTOTYPESDONE
+#include "vm/vnode_pager.h"
+#endif	/*PROTOTYPESDONE*/
 
 #include "../ufs/quota.h"
 #include "../ufs/inode.h"
@@ -184,6 +188,7 @@ struct mbuf *nfsm_reqh(prog, vers, procid, cred, hsiz, bpos, mb, retxid)
 /*
  * copies mbuf chain to the uio scatter/gather list
  */
+int
 nfsm_mbuftouio(mrep, uiop, siz, dpos)
 	struct mbuf **mrep;
 	register struct uio *uiop;
@@ -258,6 +263,7 @@ nfsm_mbuftouio(mrep, uiop, siz, dpos)
 /*
  * copies a uio scatter/gather list to an mbuf chain...
  */
+int
 nfsm_uiotombuf(uiop, mq, siz, bpos)
 	register struct uio *uiop;
 	struct mbuf **mq;
@@ -343,6 +349,7 @@ nfsm_uiotombuf(uiop, mq, siz, bpos)
  * This is used by the macros nfsm_disect and nfsm_disecton for tough
  * cases. (The macros use the vars. dpos and dpos2)
  */
+int
 nfsm_disct(mdp, dposp, siz, left, updateflg, cp2)
 	struct mbuf **mdp;
 	caddr_t *dposp;
@@ -411,6 +418,7 @@ nfsm_disct(mdp, dposp, siz, left, updateflg, cp2)
 /*
  * Advance the position in the mbuf chain.
  */
+int
 nfs_adv(mdp, dposp, offs, left)
 	struct mbuf **mdp;
 	caddr_t *dposp;
@@ -437,6 +445,7 @@ nfs_adv(mdp, dposp, offs, left)
 /*
  * Copy a string into mbufs for the hard cases...
  */
+int
 nfsm_strtmbuf(mb, bpos, cp, siz)
 	struct mbuf **mb;
 	char **bpos;
@@ -502,6 +511,7 @@ nfsm_strtmbuf(mb, bpos, cp, siz)
 /*
  * Called once to initialize data structures...
  */
+void
 nfs_init()
 {
 	register int i;
@@ -596,6 +606,7 @@ static char *nfs_unixauth(cr)
  * Iff vap not NULL
  *    copy the attributes to *vaper
  */
+int
 nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	struct vnode **vpp;
 	struct mbuf **mdp;
@@ -715,6 +726,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
  * If the cache is valid, copy contents to *vap and return 0
  * otherwise return an error
  */
+int
 nfs_getattrcache(vp, vap)
 	register struct vnode *vp;
 	struct vattr *vap;
@@ -740,6 +752,7 @@ nfs_getattrcache(vp, vap)
 /*
  * Set up nameidata for a namei() call and do it
  */
+int
 nfs_namei(ndp, fhp, len, mdp, dposp, p)
 	register struct nameidata *ndp;
 	fhandle_t *fhp;
@@ -847,6 +860,7 @@ out:
  * A fiddled version of m_adj() that ensures null fill to a long
  * boundary and only trims off the back end
  */
+void
 nfsm_adj(mp, len, nul)
 	struct mbuf *mp;
 	register int len;
@@ -912,6 +926,7 @@ nfsm_adj(mp, len, nul)
  *	- if not lockflag unlock it with VOP_UNLOCK()
  *	- if cred->cr_uid == 0 set it to m_exroot
  */
+int
 nfsrv_fhtovp(fhp, lockflag, vpp, cred)
 	fhandle_t *fhp;
 	int lockflag;

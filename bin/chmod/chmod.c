@@ -38,30 +38,36 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chmod.c	5.19 (Berkeley) 3/12/91";
+static char sccsid[] = "@(#)chmod.c	5.21 (Berkeley) 1/27/92";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include <fts.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-extern int errno;
 int retval;
 
+void err __P((const char *, ...));
+void error __P((char *));
+void usage __P((void));
+
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern int optind;
 	register FTS *fts;
 	register FTSENT *p;
 	register int oct, omode;
-	register char *mode;
-	mode_t *set, *setmode();
 	struct stat sb;
+	mode_t *set;
 	int ch, fflag, rflag;
+	char *ep, *mode;
 
 	fflag = rflag = 0;
 	while ((ch = getopt(argc, argv, "Rfrwx")) != EOF)
@@ -89,23 +95,21 @@ done:	argv += optind;
 
 	mode = *argv;
 	if (*mode >= '0' && *mode <= '7') {
-		omode = (int)strtol(mode, (char **)NULL, 8);
+		omode = (int)strtol(mode, &ep, 8);
+		if (omode < 0 || *ep)
+			err("invalid file mode: %s", mode);
 		oct = 1;
 	} else {
-		if (!(set = setmode(mode))) {
-			(void)fprintf(stderr, "chmod: invalid file mode.\n");
-			exit(1);
-		}
+		if (!(set = setmode(mode)))
+			err("invalid file mode: %s", mode);
 		oct = 0;
 	}
 
 	retval = 0;
 	if (rflag) {
-		if (!(fts = fts_open(++argv,
-		    oct ? FTS_NOSTAT|FTS_PHYSICAL : FTS_PHYSICAL, 0))) {
-			(void)fprintf(stderr, "chmod: %s.\n", strerror(errno));
-			exit(1);
-		}
+		if ((fts = fts_open(++argv,
+		    oct ? FTS_NOSTAT|FTS_PHYSICAL : FTS_PHYSICAL, 0)) == NULL)
+			err("%s", strerror(errno));
 		while (p = fts_read(fts))
 			switch(p->fts_info) {
 			case FTS_D:
@@ -113,12 +117,10 @@ done:	argv += optind;
 			case FTS_DNR:
 			case FTS_ERR:
 			case FTS_NS:
-				(void)fprintf(stderr, "chmod: %s: %s.\n",
-				    p->fts_path, strerror(errno));
-				exit(1);
+				err("%s: %s", p->fts_path, strerror(errno));
 			default:
 				if (chmod(p->fts_accpath, oct ? omode :
-				    getmode(set, p->fts_statb.st_mode)) &&
+				    getmode(set, p->fts_statp->st_mode)) &&
 				    !fflag)
 					error(p->fts_path);
 				break;
@@ -137,15 +139,46 @@ done:	argv += optind;
 	exit(retval);
 }
 
+void
 error(name)
 	char *name;
 {
-	(void)fprintf(stderr, "chmod: %s: %s.\n", name, strerror(errno));
+	(void)fprintf(stderr, "chmod: %s: %s\n", name, strerror(errno));
 	retval = 1;
 }
 
+void
 usage()
 {
-	(void)fprintf(stderr, "chmod: chmod [-R] mode file ...\n");
+	(void)fprintf(stderr, "usage: chmod [-R] mode file ...\n");
 	exit(1);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "chmod: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
 }

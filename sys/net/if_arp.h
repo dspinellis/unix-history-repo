@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)if_arp.h	7.4 (Berkeley) 6/28/90
+ *	from: @(#)if_arp.h	7.4 (Berkeley) 6/28/90
+ *	$Id$
  */
 
 /*

@@ -1,16 +1,27 @@
-#	@(#)Makefile	6.4 (Berkeley) 2/21/91
+#	From: @(#)Makefile	6.4 (Berkeley) 2/21/91
+#	$Id: Makefile,v 1.4 1993/08/27 23:37:06 rgrimes Exp $
 
-PROG=		cpp
+PROG=		gcpp
 BINDIR=		/usr/libexec
 SRCS=		cccp.c cexp.y version.c
-CFLAGS+=	-g -I. -I$(.CURDIR) -I$(.CURDIR)/../common \
+MAN1=		gcpp.1
+CFLAGS+=	-I. -I$(.CURDIR) -I$(.CURDIR)/../lib \
 		-DGCC_INCLUDE_DIR=\"\" \
 		-DGPLUSPLUS_INCLUDE_DIR=\"/usr/include/g++\"
 YFLAGS=
-.PATH:		$(.CURDIR)/../common
+
+MLINKS=	gcpp.1 cpp.1
+
+.PATH:		$(.CURDIR)/../lib
 
 afterinstall:
 	install -c -o $(BINOWN) -g $(BINGRP) -m $(BINMODE) \
-		$(.CURDIR)/usr.bin.cpp.sh $(DESTDIR)/usr/bin/cpp
+		$(.CURDIR)/usr.bin.cpp.sh $(DESTDIR)/usr/bin/gcpp
+	@/bin/rm -rf $(DESTDIR)/usr/bin/cpp
+	@cd $(DESTDIR)/usr/bin; ln -s gcpp cpp
+	@echo $(DESTDIR)/usr/bin/cpp -\> $(DESTDIR)/usr/bin/gcpp
+	@/bin/rm -rf $(DESTDIR)$(BINDIR)/cpp
+	@cd $(DESTDIR)$(BINDIR); ln -s gcpp cpp
+	@echo $(DESTDIR)$(BINDIR)/cpp -\> $(DESTDIR)$(BINDIR)/gcpp
 
 .include <bsd.prog.mk>

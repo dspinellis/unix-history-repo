@@ -1,739 +1,611 @@
-/* join - join lines of two files on a common field
-   Copyright (C) 1991 Free Software Foundation, Inc.
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Steve Hayman of Indiana University, Michiro Hikida and David
+ * Goodenough.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
-   any later version.
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+#ifndef lint
+static char sccsid[] = "@(#)join.c	5.1 (Berkeley) 11/18/91";
+#endif /* not lint */
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-
-   Written by Mike Haertel, mike@gnu.ai.mit.edu. */
-
-#define _GNU_SOURCE
-#include <ctype.h>
-#ifndef isblank
-#define isblank(c) ((c) == ' ' || (c) == '\t')
-#endif
-#include <stdio.h>
 #include <sys/types.h>
-#include "getopt.h"
-#include <sys/stat.h>
-#include <unistd.h>
-#include <string.h>
 #include <errno.h>
-/*#include <stdlib.h>*/
-#include <fcntl.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 
-#ifdef isascii
-#define ISSPACE(c) (isascii(c) && isspace(c))
-#define ISDIGIT(c) (isascii(c) && isdigit(c))
+/*
+ * There's a structure per input file which encapsulates the state of the
+ * file.  We repeatedly read lines from each file until we've read in all
+ * the consecutive lines from the file with a common join field.  Then we
+ * compare the set of lines with an equivalent set from the other file.
+ */
+typedef struct {
+	char *line;		/* line */
+	u_long linealloc;	/* line allocated count */
+	char **fields;		/* line field(s) */
+	u_long fieldcnt;	/* line field(s) count */
+	u_long fieldalloc;	/* line field(s) allocated count */
+} LINE;
+
+typedef struct {
+	FILE *fp;		/* file descriptor */
+	u_long joinf;		/* join field (-1, -2, -j) */
+	int unpair;		/* output unpairable lines (-a) */
+	int number;		/* 1 for file 1, 2 for file 2 */
+
+	LINE *set;		/* set of lines with same field */
+	u_long pushback;	/* line on the stack */
+	u_long setcnt;		/* set count */
+	u_long setalloc;	/* set allocated count */
+} INPUT;
+INPUT input1 = { NULL, 0, 0, 1, NULL, -1, 0, 0, },
+      input2 = { NULL, 0, 0, 1, NULL, -1, 0, 0, };
+
+typedef struct {
+	u_long	fileno;		/* file number */
+	u_long	fieldno;	/* field number */
+} OLIST;
+OLIST *olist;			/* output field list */
+u_long olistcnt;		/* output field list count */
+u_long olistalloc;		/* output field allocated count */
+
+int joinout = 1;		/* show lines with matched join fields (-v) */
+int needsep;			/* need separator character */
+int showusage = 1;		/* show usage for usage err() calls */
+int spans = 1;			/* span multiple delimiters (-t) */
+char *empty;			/* empty field replacement string (-e) */
+char *tabchar = " \t";		/* delimiter characters (-t) */
+
+int  cmp __P((LINE *, u_long, LINE *, u_long));
+void enomem __P((void));
+void err __P((const char *, ...));
+void fieldarg __P((char *));
+void joinlines __P((INPUT *, INPUT *));
+void obsolete __P((char **));
+void outfield __P((LINE *, u_long));
+void outoneline __P((INPUT *, LINE *));
+void outtwoline __P((INPUT *, LINE *, INPUT *, LINE *));
+void slurp __P((INPUT *));
+void usage __P((void));
+
+int
+main(argc, argv)
+	int argc;
+	char *argv[];
+{
+	register INPUT *F1, *F2;
+	int aflag, ch, cval, vflag;
+	char *end;
+
+	F1 = &input1;
+	F2 = &input2;
+
+	aflag = vflag = 0;
+	obsolete(argv);
+	while ((ch = getopt(argc, argv, "\01a:e:j:1:2:o:t:v:")) != EOF) {
+		switch (ch) {
+		case '\01':
+			aflag = 1;
+			F1->unpair = F2->unpair = 1;
+			break;
+		case '1':
+			if ((F1->joinf = strtol(optarg, &end, 10)) < 1)
+				err("-1 option field number less than 1");
+			if (*end)
+				err("illegal field number -- %s", optarg);
+			--F1->joinf;
+			break;
+		case '2':
+			if ((F2->joinf = strtol(optarg, &end, 10)) < 1)
+				err("-2 option field number less than 1");
+			if (*end)
+				err("illegal field number -- %s", optarg);
+			--F2->joinf;
+			break;
+		case 'a':
+			aflag = 1;
+			switch(strtol(optarg, &end, 10)) {
+			case 1:
+				F1->unpair = 1;
+				break;
+			case 2:
+				F2->unpair = 1;
+				break;
+			default:
+				err("-a option file number not 1 or 2");
+				break;
+			}
+			if (*end)
+				err("illegal file number -- %s", optarg);
+			break;
+		case 'e':
+			empty = optarg;
+			break;
+		case 'j':
+			if ((F1->joinf = F2->joinf =
+			    strtol(optarg, &end, 10)) < 1)
+				err("-j option field number less than 1");
+			if (*end)
+				err("illegal field number -- %s", optarg);
+			--F1->joinf;
+			--F2->joinf;
+			break;
+		case 'o':
+			fieldarg(optarg);
+			break;
+		case 't':
+			spans = 0;
+			if (strlen(tabchar = optarg) != 1)
+				err("illegal tab character specification");
+			break;
+		case 'v':
+			vflag = 1;
+			joinout = 0;
+			switch(strtol(optarg, &end, 10)) {
+			case 1:
+				F1->unpair = 1;
+				break;
+			case 2:
+				F2->unpair = 1;
+				break;
+			default:
+				err("-v option file number not 1 or 2");
+				break;
+			}
+			if (*end)
+				err("illegal file number -- %s", optarg);
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	}
+	argc -= optind;
+	argv += optind;
+
+	if (aflag && vflag)
+		err("-a and -v options mutually exclusive");
+
+	if (argc != 2)
+		usage();
+	showusage = 0;
+
+	/* Open the files; "-" means stdin. */
+	if (!strcmp(*argv, "-"))
+		F1->fp = stdin;
+	else if ((F1->fp = fopen(*argv, "r")) == NULL)
+		err("%s: %s", *argv, strerror(errno));
+	++argv;
+	if (!strcmp(*argv, "-"))
+		F2->fp = stdin;
+	else if ((F2->fp = fopen(*argv, "r")) == NULL)
+		err("%s: %s", *argv, strerror(errno));
+	if (F1->fp == stdin && F2->fp == stdin)
+		err("only one input file may be stdin");
+
+	slurp(F1);
+	slurp(F2);
+	while (F1->setcnt && F2->setcnt) {
+		cval = cmp(F1->set, F1->joinf, F2->set, F2->joinf);
+		if (cval == 0) {
+			/* Oh joy, oh rapture, oh beauty divine! */
+			if (joinout)
+				joinlines(F1, F2);
+			slurp(F1);
+			slurp(F2);
+		} else if (cval < 0) {
+			/* File 1 takes the lead... */
+			if (F1->unpair)
+				joinlines(F1, NULL);
+			slurp(F1);
+		} else {
+			/* File 2 takes the lead... */
+			if (F2->unpair)
+				joinlines(F2, NULL);
+			slurp(F2);
+		}
+	}
+
+	/*
+	 * Now that one of the files is used up, optionally output any
+	 * remaining lines from the other file.
+	 */
+	if (F1->unpair)
+		while (F1->setcnt) {
+			joinlines(F1, NULL);
+			slurp(F1);
+		}
+	if (F2->unpair)
+		while (F2->setcnt) {
+			joinlines(F2, NULL);
+			slurp(F2);
+		}
+	exit(0);
+}
+
+void
+slurp(F)
+	INPUT *F;
+{
+	register LINE *lp, *lastlp;
+	LINE tmp;
+	size_t len;
+	int cnt;
+	char *bp, *fieldp, *token;
+
+	/*
+	 * Read all of the lines from an input file that have the same
+	 * join field.
+	 */
+	F->setcnt = 0;
+	for (lastlp = NULL;; ++F->setcnt, lastlp = lp) {
+		/*
+		 * If we're out of space to hold line structures, allocate
+		 * more.  Initialize the structure so that we know that this
+		 * is new space.
+		 */
+		if (F->setcnt == F->setalloc) {
+			cnt = F->setalloc;
+			F->setalloc += 100;
+			if ((F->set = realloc(F->set,
+			    F->setalloc * sizeof(LINE))) == NULL)
+				enomem();
+			bzero(F->set + cnt, 100 * sizeof(LINE *));
+		}
+			
+		/*
+		 * Get any pushed back line, else get the next line.  Allocate
+		 * space as necessary.  If taking the line from the stack swap
+		 * the two structures so that we don't lose the allocated space.
+		 * This could be avoided by doing another level of indirection,
+		 * but it's probably okay as is.
+		 */
+		lp = &F->set[F->setcnt];
+		if (F->pushback != -1) {
+			tmp = F->set[F->setcnt];
+			F->set[F->setcnt] = F->set[F->pushback];
+			F->set[F->pushback] = tmp;
+			F->pushback = -1;
+			continue;
+		}
+		if ((bp = fgetline(F->fp, &len)) == NULL)
+			return;
+		if (lp->linealloc <= len) {
+			lp->linealloc += 100;
+			if ((lp->line = realloc(lp->line,
+			    lp->linealloc * sizeof(char))) == NULL)
+				enomem();
+		}
+		bcopy(bp, lp->line, len);
+
+		/* Split the line into fields, allocate space as necessary. */
+		token = bp;
+		lp->fieldcnt = 0;
+		while ((fieldp = strsep(&token, tabchar)) != NULL) {
+			if (spans && *fieldp == '\0')
+				continue;
+			if (lp->fieldcnt == lp->fieldalloc) {
+				lp->fieldalloc += 100;
+				if ((lp->fields = realloc(lp->fields,
+				    lp->fieldalloc * sizeof(char *))) == NULL)
+					enomem();
+			}
+			lp->fields[lp->fieldcnt++] = fieldp;
+		}
+
+		/* See if the join field value has changed. */
+		if (lastlp != NULL && cmp(lp, F->joinf, lastlp, F->joinf)) {
+			F->pushback = F->setcnt;
+			break;
+		}
+	}
+}
+
+int
+cmp(lp1, fieldno1, lp2, fieldno2)
+	LINE *lp1, *lp2;
+	u_long fieldno1, fieldno2;
+{
+	if (lp1->fieldcnt < fieldno1)
+		return (lp2->fieldcnt < fieldno2 ? 0 : 1);
+	if (lp2->fieldcnt < fieldno2)
+		return (-1);
+	return (strcmp(lp1->fields[fieldno1], lp2->fields[fieldno2]));
+}
+
+void
+joinlines(F1, F2)
+	register INPUT *F1, *F2;
+{
+	register int cnt1, cnt2;
+
+	/*
+	 * Output the results of a join comparison.  The output may be from
+	 * either file 1 or file 2 (in which case the first argument is the
+	 * file from which to output) or from both.
+	 */
+	if (F2 == NULL) {
+		for (cnt1 = 0; cnt1 < F1->setcnt; ++cnt1)
+			outoneline(F1, &F1->set[cnt1]);
+		return;
+	}
+	for (cnt1 = 0; cnt1 < F1->setcnt; ++cnt1)
+		for (cnt2 = 0; cnt2 < F2->setcnt; ++cnt2)
+			outtwoline(F1, &F1->set[cnt1], F2, &F2->set[cnt2]);
+}
+
+void
+outoneline(F, lp)
+	INPUT *F;
+	register LINE *lp;
+{
+	register int cnt;
+
+	/*
+	 * Output a single line from one of the files, according to the
+	 * join rules.  This happens when we are writing unmatched single
+	 * lines.  Output empty fields in the right places.
+	 */
+	if (olist)
+		for (cnt = 0; cnt < olistcnt; ++cnt) {
+			if (olist[cnt].fileno == F->number)
+				outfield(lp, olist[cnt].fieldno);
+		}
+	else
+		for (cnt = 0; cnt < lp->fieldcnt; ++cnt)
+			outfield(lp, cnt);
+	(void)printf("\n");
+	if (ferror(stdout))
+		err("stdout: %s", strerror(errno));
+	needsep = 0;
+}
+
+void
+outtwoline(F1, lp1, F2, lp2)
+	register INPUT *F1, *F2;
+	register LINE *lp1, *lp2;
+{
+	register int cnt;
+
+	/* Output a pair of lines according to the join list (if any). */
+	if (olist)
+		for (cnt = 0; cnt < olistcnt; ++cnt)
+			if (olist[cnt].fileno == 1)
+				outfield(lp1, olist[cnt].fieldno);
+			else /* if (olist[cnt].fileno == 2) */
+				outfield(lp2, olist[cnt].fieldno);
+	else {
+		/*
+		 * Output the join field, then the remaining fields from F1
+		 * and F2.
+		 */
+		outfield(lp1, F1->joinf);
+		for (cnt = 0; cnt < lp1->fieldcnt; ++cnt)
+			if (F1->joinf != cnt)
+				outfield(lp1, cnt);
+		for (cnt = 0; cnt < lp2->fieldcnt; ++cnt)
+			if (F2->joinf != cnt)
+				outfield(lp2, cnt);
+	}
+	(void)printf("\n");
+	if (ferror(stdout))
+		err("stdout: %s", strerror(errno));
+	needsep = 0;
+}
+
+void
+outfield(lp, fieldno)
+	LINE *lp;
+	u_long fieldno;
+{
+	if (needsep++)
+		(void)printf("%c", *tabchar);
+	if (!ferror(stdout))
+		if (lp->fieldcnt < fieldno) {
+			if (empty != NULL)
+				(void)printf("%s", empty);
+		} else {
+			if (*lp->fields[fieldno] == '\0')
+				return;
+			(void)printf("%s", lp->fields[fieldno]);
+		}
+	if (ferror(stdout))
+		err("stdout: %s", strerror(errno));
+}
+
+/*
+ * Convert an output list argument "2.1, 1.3, 2.4" into an array of output
+ * fields.
+ */
+void
+fieldarg(option)
+	char *option;
+{
+	u_long fieldno;
+	char *end, *token;
+
+	while ((token = strsep(&option, " \t")) != NULL) {
+		if (*token == '\0')
+			continue;
+		if (token[0] != '1' && token[0] != '2' || token[1] != '.')
+			err("malformed -o option field");
+		fieldno = strtol(token + 2, &end, 10);
+		if (*end)
+			err("malformed -o option field");
+		if (fieldno == 0)
+			err("field numbers are 1 based");
+		if (olistcnt == olistalloc) {
+			olistalloc += 50;
+			if ((olist = realloc(olist,
+			    olistalloc * sizeof(OLIST))) == NULL)
+				enomem();
+		}
+		olist[olistcnt].fileno = token[0] - '0';
+		olist[olistcnt].fieldno = fieldno - 1;
+		++olistcnt;
+	}
+}
+
+void
+obsolete(argv)
+	char **argv;
+{
+	int len;
+	char **p, *ap, *t;
+
+	while (ap = *++argv) {
+		/* Return if "--". */
+		if (ap[0] == '-' && ap[1] == '-')
+			return;
+		switch (ap[1]) {
+		case 'a':
+			/* 
+			 * The original join allowed "-a", which meant the
+			 * same as -a1 plus -a2.  POSIX 1003.2, Draft 11.2
+			 * only specifies this as "-a 1" and "a -2", so we
+			 * have to use another option flag, one that is
+			 * unlikely to ever be used or accidentally entered
+			 * on the command line.  (Well, we could reallocate
+			 * the argv array, but that hardly seems worthwhile.)
+			 */
+			if (ap[2] == '\0')
+				ap[1] = '\01';
+			break;
+		case 'j':
+			/*
+			 * The original join allowed "-j[12] arg" and "-j arg".
+			 * Convert the former to "-[12] arg".  Don't convert
+			 * the latter since getopt(3) can handle it.
+			 */
+			switch(ap[2]) {
+			case '1':
+				if (ap[3] != '\0')
+					goto jbad;
+				ap[1] = '1';
+				ap[2] = '\0';
+				break;
+			case '2':
+				if (ap[3] != '\0')
+					goto jbad;
+				ap[1] = '2';
+				ap[2] = '\0';
+				break;
+			case '\0':
+				break;
+			default:
+jbad:				err("illegal option -- %s", ap);
+				usage();
+			}
+			break;
+		case 'o':
+			/*
+			 * The original join allowed "-o arg arg".  Convert to
+			 * "-o arg -o arg".
+			 */
+			if (ap[2] != '\0')
+				break;
+			for (p = argv + 2; *p; ++p) {
+				if (p[0][0] != '1' && p[0][0] != '2' ||
+				    p[0][1] != '.')
+					break;
+				len = strlen(*p);
+				if (len - 2 != strspn(*p + 2, "0123456789"))
+					break;
+				if ((t = malloc(len + 3)) == NULL)
+					enomem();
+				t[0] = '-';
+				t[1] = 'o';
+				bcopy(*p, t + 2, len + 1);
+				*p = t;
+			}
+			argv = p - 1;
+			break;
+		}
+	}
+}
+
+void
+enomem()
+{
+	showusage = 0;
+	err("%s", strerror(errno));
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr, "%s%s\n",
+	    "usage: join [-a fileno | -v fileno ] [-e string] [-1 field] ",
+	    "[-2 field]\n            [-o list] [-t char] file1 file2");
+	exit(1);
+}
+
+#if __STDC__
+#include <stdarg.h>
 #else
-#define ISSPACE(c) isspace(c)
-#define ISDIGIT(c) isdigit(c)
+#include <varargs.h>
 #endif
 
-void error (int, int, char *, ...);
-static void usage ();
-
-#define min(A, B) ((A) < (B) ? (A) : (B))
-
-/* An element of the list describing the format of each
-   output line. */
-struct outlist
-{
-  int file;			/* File to take field from (1 or 2). */
-  int field;			/* Field number to print. */
-  struct outlist *next;
-};
-
-/* A field of a line. */
-struct field
-{
-  char *beg;			/* First character in field. */
-  char *lim;			/* Character after last character in field. */
-};
-
-/* A line read from an input file.  Newlines are not stored. */
-struct line
-{
-  char *beg;			/* First character in line. */
-  char *lim;			/* Character after last character in line. */
-  int nfields;			/* Number of elements in `fields'. */
-  struct field *fields;
-};
-
-/* One or more consecutive lines read from a file that all have the
-   same join field value. */
-struct seq
-{
-  int count;			/* Elements used in `lines'. */
-  int alloc;			/* Elements allocated in `lines'. */
-  struct line *lines;
-};
-
-/* If nonzero, print unpairable lines in file 1 or 2. */
-static int print_unpairables_1, print_unpairables_2;
-
-/* If nonzero, print pairable lines. */
-static int print_pairables;
-
-/* Empty output field filler. */
-static char *empty_filler;
-
-/* Field to join on. */
-static int join_field_1, join_field_2;
-
-/* List of fields to print. */
-struct outlist *outlist;
-
-/* Last element in `outlist', where a new element can be added. */
-struct outlist *outlist_end;
-
-/* Tab character separating fields; if this is NUL fields are separated
-   by any nonempty string of white space, otherwise by exactly one
-   tab character. */
-static char tab;
-
-/* The name this program was run with. */
-char *program_name;
-
-/* Fill in the `fields' structure in LINE. */
-
-static void
-xfields (line)
-     struct line *line;
-{
-  static int nfields = 2;
-  int i;
-  register char *ptr, *lim;
-
-  line->fields = (struct field *) malloc (nfields * sizeof (struct field));
-
-  ptr = line->beg;
-  lim = line->lim;
-
-  for (i = 0; ptr < lim; ++i)
-    {
-      if (i == nfields)
-	{
-	  nfields *= 2;
-	  line->fields = (struct field *)
-	    realloc ((char *) line->fields, nfields * sizeof (struct field));
-	}
-      if (tab)
-	{
-	  line->fields[i].beg = ptr;
-	  while (ptr < lim && *ptr != tab)
-	    ++ptr;
-	  line->fields[i].lim = ptr;
-	  if (ptr < lim)
-	    ++ptr;
-	}
-      else
-	{
-	  line->fields[i].beg = ptr;
-	  while (ptr < lim && !ISSPACE (*ptr))
-	    ++ptr;
-	  line->fields[i].lim = ptr;
-	  while (ptr < lim && ISSPACE (*ptr))
-	    ++ptr;
-	}
-    }
-
-  line->nfields = i;
-}
-
-/* Read a line from FP into LINE and split it into fields.
-   Return 0 if EOF, 1 otherwise. */
-
-static int
-get_line (fp, line)
-     FILE *fp;
-     struct line *line;
-{
-  static int linesize = 80;
-  int c, i;
-  char *ptr;
-
-  if (feof (fp))
-    return 0;
-
-  ptr = malloc (linesize);
-
-  for (i = 0; (c = getc (fp)) != EOF && c != '\n'; ++i)
-    {
-      if (i == linesize)
-	{
-	  linesize *= 2;
-	  ptr = realloc (ptr, linesize);
-	}
-      ptr[i] = c;
-    }
-
-  if (c == EOF && i == 0)
-    {
-      free (ptr);
-      return 0;
-    }
-
-  line->beg = ptr;
-  line->lim = line->beg + i;
-  xfields (line);
-  return 1;
-}
-
-static void
-freeline (line)
-     struct line *line;
-{
-  free ((char *) line->fields);
-  free (line->beg);
-}
-
-static void
-initseq (seq)
-     struct seq *seq;
-{
-  seq->count = 0;
-  seq->alloc = 1;
-  seq->lines = (struct line *) malloc (seq->alloc * sizeof (struct line));
-}
-
-/* Read a line from FP and add it to SEQ.  Return 0 if EOF, 1 otherwise. */
-
-static int
-getseq (fp, seq)
-     FILE *fp;
-     struct seq *seq;
-{
-  if (seq->count == seq->alloc)
-    {
-      seq->alloc *= 2;
-      seq->lines = (struct line *)
-	realloc ((char *) seq->lines, seq->alloc * sizeof (struct line));
-    }
-
-  if (get_line (fp, &seq->lines[seq->count]))
-    {
-      ++seq->count;
-      return 1;
-    }
-  return 0;
-}
-
-static void
-delseq (seq)
-     struct seq *seq;
-{
-  free ((char *) seq->lines);
-}
-
-/* Return <0 if the join field in LINE1 compares less than the one in LINE2;
-   >0 if it compares greater; 0 if it compares equal. */
-
-static int
-keycmp (line1, line2)
-     struct line *line1;
-     struct line *line2;
-{
-  char *beg1, *beg2;		/* Start of field to compare in each file. */
-  int len1, len2;		/* Length of fields to compare. */
-  int diff;
-
-  if (join_field_1 < line1->nfields)
-    {
-      beg1 = line1->fields[join_field_1].beg;
-      len1 = line1->fields[join_field_1].lim
-	- line1->fields[join_field_1].beg;
-    }
-  else
-    {
-      beg1 = NULL;
-      len1 = 0;
-    }
-
-  if (join_field_2 < line2->nfields)
-    {
-      beg2 = line2->fields[join_field_2].beg;
-      len2 = line2->fields[join_field_2].lim
-	- line2->fields[join_field_2].beg;
-    }
-  else
-    {
-      beg2 = NULL;
-      len2 = 0;
-    }
-
-  if (len1 == 0)
-    return len2 == 0 ? 0 : -1;
-  if (len2 == 0)
-    return 1;
-  diff = memcmp (beg1, beg2, min (len1, len2));
-  if (diff)
-    return diff;
-  return len1 - len2;
-}
-
-/* Print field N of LINE if it exists and is nonempty, otherwise
-   `empty_filler' if it is nonempty. */
-
-static void
-prfield (n, line)
-     int n;
-     struct line *line;
-{
-  int len;
-
-  if (n < line->nfields)
-    {
-      len = line->fields[n].lim - line->fields[n].beg;
-      if (len)
-	fwrite (line->fields[n].beg, 1, len, stdout);
-      else if (empty_filler)
-	fputs (empty_filler, stdout);
-    }
-  else if (empty_filler)
-    fputs (empty_filler, stdout);
-}
-
-/* Print LINE, with its fields separated by `tab'. */
-
-static void
-prline (line)
-     struct line *line;
-{
-  int i;
-
-  for (i = 0; i < line->nfields; ++i)
-    {
-      prfield (i, line);
-      if (i == line->nfields - 1)
-	putchar ('\n');
-      else
-	putchar (tab ? tab : ' ');
-    }
-}
-
-/* Print the join of LINE1 and LINE2. */
-
-static void
-prjoin (line1, line2)
-     struct line *line1;
-     struct line *line2;
-{
-  if (outlist)
-    {
-      struct outlist *o;
-
-      prfield (outlist->field - 1, outlist->file == 1 ? line1 : line2);
-      for (o = outlist->next; o; o = o->next)
-	{
-	  putchar (tab ? tab : ' ');
-	  prfield (o->field - 1, o->file == 1 ? line1 : line2);
-	}
-      putchar ('\n');
-    }
-  else
-    {
-      int i;
-
-      prfield (join_field_1, line1);
-      for (i = 0; i < join_field_1 && i < line1->nfields; ++i)
-	{
-	  putchar (tab ? tab : ' ');
-	  prfield (i, line1);
-	}
-      for (i = join_field_1 + 1; i < line1->nfields; ++i)
-	{
-	  putchar (tab ? tab : ' ');
-	  prfield (i, line1);
-	}
-
-      for (i = 0; i < join_field_2 && i < line2->nfields; ++i)
-	{
-	  putchar (tab ? tab : ' ');
-	  prfield (i, line2);
-	}
-      for (i = join_field_2 + 1; i < line2->nfields; ++i)
-	{
-	  putchar (tab ? tab : ' ');
-	  prfield (i, line2);
-	}
-      putchar ('\n');
-    }
-}
-
-/* Print the join of the files in FP1 and FP2. */
-
-static void
-join (fp1, fp2)
-     FILE *fp1;
-     FILE *fp2;
-{
-  struct seq seq1, seq2;
-  struct line line;
-  int diff, i, j, eof1, eof2;
-
-  /* Read the first line of each file. */
-  initseq (&seq1);
-  getseq (fp1, &seq1);
-  initseq (&seq2);
-  getseq (fp2, &seq2);
-
-  while (seq1.count && seq2.count)
-    {
-      diff = keycmp (&seq1.lines[0], &seq2.lines[0]);
-      if (diff < 0)
-	{
-	  if (print_unpairables_1)
-	    prline (&seq1.lines[0]);
-	  freeline (&seq1.lines[0]);
-	  seq1.count = 0;
-	  getseq (fp1, &seq1);
-	  continue;
-	}
-      if (diff > 0)
-	{
-	  if (print_unpairables_2)
-	    prline (&seq2.lines[0]);
-	  freeline (&seq2.lines[0]);
-	  seq2.count = 0;
-	  getseq (fp2, &seq2);
-	  continue;
-	}
-
-      /* Keep reading lines from file1 as long as they continue to
-	 match the current line from file2. */
-      eof1 = 0;
-      do
-	if (!getseq (fp1, &seq1))
-	  {
-	    eof1 = 1;
-	    ++seq1.count;
-	    break;
-	  }
-      while (!keycmp (&seq1.lines[seq1.count - 1], &seq2.lines[0]));
-
-      /* Keep reading lines from file2 as long as they continue to
-	 match the current line from file1. */
-      eof2 = 0;
-      do
-	if (!getseq (fp2, &seq2))
-	  {
-	    eof2 = 1;
-	    ++seq2.count;
-	    break;
-	  }
-      while (!keycmp (&seq1.lines[0], &seq2.lines[seq2.count - 1]));
-
-      if (print_pairables)
-	{
-	  for (i = 0; i < seq1.count - 1; ++i)
-	    for (j = 0; j < seq2.count - 1; ++j)
-	      prjoin (&seq1.lines[i], &seq2.lines[j]);
-	}
-
-      for (i = 0; i < seq1.count - 1; ++i)
-	freeline (&seq1.lines[i]);
-      if (!eof1)
-	{
-	  seq1.lines[0] = seq1.lines[seq1.count - 1];
-	  seq1.count = 1;
-	}
-      else
-	seq1.count = 0;
-
-      for (i = 0; i < seq2.count - 1; ++i)
-	freeline (&seq2.lines[i]);
-      if (!eof2)
-	{
-	  seq2.lines[0] = seq2.lines[seq2.count - 1];
-	  seq2.count = 1;
-	}
-      else
-	seq2.count = 0;
-    }
-
-  if (print_unpairables_1 && seq1.count)
-    {
-      prline (&seq1.lines[0]);
-      freeline (&seq1.lines[0]);
-      while (get_line (fp1, &line))
-	{
-	  prline (&line);
-	  freeline (&line);
-	}
-    }
-
-  if (print_unpairables_2 && seq2.count)
-    {
-      prline (&seq2.lines[0]);
-      freeline (&seq2.lines[0]);
-      while (get_line (fp2, &line))
-	{
-	  prline (&line);
-	  freeline (&line);
-	}
-    }
-
-  delseq (&seq1);
-  delseq (&seq2);
-}
-
-/* Add a field spec for field FIELD of file FILE to `outlist' and return 1,
-   unless either argument is invalid; then just return 0. */
-
-static int
-add_field (file, field)
-     int file;
-     int field;
-{
-  struct outlist *o;
-
-  if (file < 1 || file > 2 || field < 1)
-    return 0;
-  o = (struct outlist *) malloc (sizeof (struct outlist));
-  o->file = file;
-  o->field = field;
-  o->next = NULL;
-
-  /* Add to the end of the list so the fields are in the right order. */
-  if (outlist == NULL)
-    outlist = o;
-  else
-    outlist_end->next = o;
-  outlist_end = o;
-
-  return 1;
-}
-
-/* Add the comma or blank separated field spec(s) in STR to `outlist'.
-   Return the number of fields added. */
-
-static int
-add_field_list (str)
-     char *str;
-{
-  int added = 0;
-  int file = -1, field = -1;
-  int dot_found = 0;
-
-  for (; *str; str++)
-    {
-      if (*str == ',' || isblank (*str))
-	{
-	  added += add_field (file, field);
-	  file = field = -1;
-	  dot_found = 0;
-	}
-      else if (*str == '.')
-	dot_found = 1;
-      else if (ISDIGIT (*str))
-	{
-	  if (!dot_found)
-	    {
-	      if (file == -1)
-		file = 0;
-	      file = file * 10 + *str - '0';
-	    }
-	  else
-	    {
-	      if (field == -1)
-		field = 0;
-	      field = field * 10 + *str - '0';
-	    }
-	}
-      else
-	return 0;
-    }
-
-  added += add_field (file, field);
-  return added;
-}
-
-/* When using getopt_long_only, no long option can start with
-   a character that is a short option. */
-static struct option longopts[] =
-{
-  {"j", 1, NULL, 'j'},
-  {"j1", 1, NULL, '1'},
-  {"j2", 1, NULL, '2'},
-  {NULL, 0, NULL, 0}
-};
-
 void
-main (argc, argv)
-     int argc;
-     char *argv[];
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
 {
-  char *names[2];
-  FILE *fp1, *fp2;
-  int optc, prev_optc = 0, nfiles, val;
-
-  program_name = argv[0];
-  nfiles = 0;
-  print_pairables = 1;
-
-  while ((optc = getopt_long_only (argc, argv, "-a:e:1:2:o:t:v:", longopts,
-				   (int *) 0)) != EOF)
-    {
-      switch (optc)
-	{
-	case 'a':
-	  val = atoi (optarg);
-	  if (val == 1)
-	    print_unpairables_1 = 1;
-	  else if (val == 2)
-	    print_unpairables_2 = 1;
-	  else
-	    error (2, 0, "invalid file number for `-a'");
-	  break;
-
-	case 'e':
-	  empty_filler = optarg;
-	  break;
-
-	case '1':
-	  val = atoi (optarg);
-	  if (val <= 0)
-	    error (2, 0, "invalid field number for `-1'");
-	  join_field_1 = val - 1;
-	  break;
-
-	case '2':
-	  val = atoi (optarg);
-	  if (val <= 0)
-	    error (2, 0, "invalid field number for `-2'");
-	  join_field_2 = val - 1;
-	  break;
-
-	case 'j':
-	  val = atoi (optarg);
-	  if (val <= 0)
-	    error (2, 0, "invalid field number for `-j'");
-	  join_field_1 = join_field_2 = val - 1;
-	  break;
-
-	case 'o':
-	  if (add_field_list (optarg) == 0)
-	    error (2, 0, "invalid field list for `-o'");
-	  break;
-
-	case 't':
-	  tab = *optarg;
-	  break;
-
-	case 'v':
-	  val = atoi (optarg);
-	  if (val == 1)
-	    print_unpairables_1 = 1;
-	  else if (val == 2)
-	    print_unpairables_2 = 1;
-	  else
-	    error (2, 0, "invalid file number for `-v'");
-	  print_pairables = 0;
-	  break;
-
-	case 1:			/* Non-option argument. */
-	  if (prev_optc == 'o')
-	    {
-	      /* Might be continuation of args to -o. */
-	      if (add_field_list (optarg) > 0)
-		continue;	/* Don't change `prev_optc'. */
-	    }
-
-	  if (nfiles > 1)
-	    usage ();
-	  names[nfiles++] = optarg;
-	  break;
-
-	case '?':
-	  usage ();
-	}
-      prev_optc = optc;
-    }
-  
-  if (nfiles != 2)
-    usage ();
-
-  fp1 = strcmp (names[0], "-") ? fopen (names[0], "r") : stdin;
-  if (!fp1)
-    error (1, errno, "%s", names[0]);
-  fp2 = strcmp (names[1], "-") ? fopen (names[1], "r") : stdin;
-  if (!fp2)
-    error (1, errno, "%s", names[1]);
-  if (fp1 == fp2)
-    error (1, errno, "both files cannot be standard input");
-  join (fp1, fp2);
-
-  if ((fp1 == stdin || fp2 == stdin) && fclose (stdin) == EOF)
-    error (1, errno, "-");
-  if (ferror (stdout) || fclose (stdout) == EOF)
-    error (1, 0, "write error");
-
-  exit (0);
-}
-
-static void
-usage ()
-{
-  fprintf (stderr, "\
-Usage: %s [-a 1|2] [-v 1|2] [-e empty-string] [-o field-list...] [-t char]\n\
-       [-j[1|2] field] [-1 field] [-2 field] file1 file2\n",
-	   program_name);
-  exit (1);
-}
-
-/* error.c -- error handler for noninteractive utilities
-   Copyright (C) 1990, 1991 Free Software Foundation, Inc.
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
-   any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
-
-/* David MacKenzie */
-
-
-#include <stdarg.h>
-#define VA_START(args, lastarg) va_start(args, lastarg)
-
-/* Print the program name and error message MESSAGE, which is a printf-style
-   format string with optional args.
-   If ERRNUM is nonzero, print its corresponding system error message.
-   Exit with status STATUS if it is nonzero. */
-/* VARARGS */
-void
-error (int status, int errnum, char *message, ...)
-{
-  extern char *program_name;
-  va_list args;
-
-  fprintf (stderr, "%s: ", program_name);
-  va_start (args, message);
-  vfprintf (stderr, message, args);
-  va_end (args);
-  if (errnum)
-    fprintf (stderr, ": %s", strerror (errnum));
-  putc ('\n', stderr);
-  fflush (stderr);
-  if (status)
-    exit (status);
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "join: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	if (showusage)
+		usage();
+	exit(1);
+	/* NOTREACHED */
 }

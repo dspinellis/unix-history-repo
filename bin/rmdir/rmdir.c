@@ -45,22 +45,85 @@ static char sccsid[] = "@(#)rmdir.c	5.3 (Berkeley) 5/31/90";
  * Remove directory
  */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
 	int errors;
+	int ch;
+	int delete_parent_directories = 0;
 
-	if (argc < 2) {
-		fprintf(stderr, "usage: rmdir directory ...\n");
-		exit(1);
-	}
-	for (errors = 0; *++argv;)
-		if (rmdir(*argv) < 0) {
-			fprintf(stderr, "rmdir: ");
-			perror(*argv);
-			errors = 1;
+	while ((ch = getopt (argc, argv, "p")) != EOF) {
+		switch (ch) {
+		case 'p':
+			delete_parent_directories = 1;
+			break;
+		case '?':
+		default:
+			usage();
+			/* NOTREACHED */
 		}
+	}
+
+	if (!*(argv += optind)) {
+		usage ();
+		/* NOTREACHED */
+	}
+
+	for (errors = 0; *argv; argv++) {
+		if (!delete_parent_directories) {
+			if (rmdir(*argv) < 0) {
+				fprintf(stderr, "rmdir: %s: %s\n", 
+					*argv, strerror(errno));
+				errors = 1;
+			} 
+		} else {
+			if (rmdirp(*argv) < 0) {
+				errors = 1;
+			}
+		}
+	}
+
 	exit(errors);
+}
+
+int
+rmdirp (char *path)
+{
+	char *slash;
+
+	/* point slash at last slash */
+	slash = strrchr (path, '/');
+
+	while (slash != NULL) {
+		if (rmdir (path) < 0) {
+			fprintf(stderr, "rmdir: %s: %s\n", 
+				path, strerror(errno));
+			return -1;
+		}
+
+		/* skip trailing slash characters */
+		while (slash > path && *slash == '/')
+			slash--;
+
+		*++slash = '\0';
+		slash = strrchr (path, '/');
+	}
+
+	if (rmdir (path) < 0) {
+		fprintf(stderr, "rmdir: %s: %s\n", path, strerror(errno));
+		return -1;
+	}
+
+	return 0;
+}
+
+usage()
+{
+	fprintf(stderr, "usage: rmdir [-p] directory ...\n");
+	exit(1);
 }

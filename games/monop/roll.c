@@ -41,7 +41,7 @@ static char sccsid[] = "@(#)roll.c	5.5 (Berkeley) 6/1/90";
 
 # define	reg	register
 
-# if !defined(vax) && !defined(tahoe)
+# if !defined(vax) && !defined(tahoe) && !defined(i386)
 # define	MAXRAND	32767L
 
 roll(ndie, nsides)

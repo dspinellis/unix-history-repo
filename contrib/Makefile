@@ -1,6 +1,6 @@
 #	@(#)Makefile	0.1 (RGrimes) 4/7/93
 
-SUBDIR=	gzip tcpdump
+SUBDIR=	tcpdump
 
 # Not ported: isode
 

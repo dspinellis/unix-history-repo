@@ -33,15 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ufs_lockf.c	7.7 (Berkeley) 7/2/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00169
- * --------------------         -----   ----------------------
- *
- * 04 Jun 93	Paul Kranenburg		Fix dangling pointer in lockf struct
- *
+ *	from: @(#)ufs_lockf.c	7.7 (Berkeley) 7/2/91
+ *	$Id: ufs_lockf.c,v 1.4 1993/10/20 07:31:39 davidg Exp $
  */
 
 #include "param.h"
@@ -56,6 +49,96 @@
 #include "lockf.h"
 #include "quota.h"
 #include "inode.h"
+
+
+
+/*
+ * Advisory record locking support
+ */
+lf_advlock(head, size, id, op, fl, flags)
+	struct lockf **head;
+	u_long size;
+	caddr_t id;
+	int op;
+	register struct flock *fl;
+	int flags;
+{
+	register struct lockf *lock;
+	off_t start, end;
+	int error;
+
+	/*
+	 * Avoid the common case of unlocking when inode has no locks.
+	 */
+	if (*head == (struct lockf *)0) {
+		if (op != F_SETLK) {
+			fl->l_type = F_UNLCK;
+			return (0);
+		}
+	}
+
+	/*
+	 * Convert the flock structure into a start and end.
+	 */
+	switch (fl->l_whence) {
+
+	case SEEK_SET:
+	case SEEK_CUR:
+		/*
+		 * Caller is responsible for adding any necessary offset
+		 * when SEEK_CUR is used.
+		 */
+		start = fl->l_start;
+		break;
+
+	case SEEK_END:
+		start = size + fl->l_start;
+		break;
+
+	default:
+		return (EINVAL);
+	}
+	if (start < 0)
+		return (EINVAL);
+	if (fl->l_len == 0)
+		end = -1;
+	else
+		end = start + fl->l_len - 1;
+	/*
+	 * Create the lockf structure
+	 */
+	MALLOC(lock, struct lockf *, sizeof *lock, M_LOCKF, M_WAITOK);
+	lock->lf_start = start;
+	lock->lf_end = end;
+	lock->lf_id = id;
+	lock->lf_head = head;
+	lock->lf_type = fl->l_type;
+	lock->lf_next = (struct lockf *)0;
+	lock->lf_block = (struct lockf *)0;
+	lock->lf_flags = flags;
+	/*
+	 * Do the requested operation.
+	 */
+	switch(op) {
+	case F_SETLK:
+		return (lf_setlock(lock));
+
+	case F_UNLCK:
+		error = lf_clearlock(lock);
+		FREE(lock, M_LOCKF);
+		return (error);
+
+	case F_GETLK:
+		error = lf_getlock(lock, fl);
+		FREE(lock, M_LOCKF);
+		return (error);
+	
+	default:
+		free(lock, M_LOCKF);
+		return (EINVAL);
+	}
+	/* NOTREACHED */
+}
 
 /*
  * This variable controls the maximum number of processes that will
@@ -78,7 +161,7 @@ lf_setlock(lock)
 	register struct lockf *lock;
 {
 	register struct lockf *block;
-	struct inode *ip = lock->lf_inode;
+	struct lockf **head = lock->lf_head;
 	struct lockf **prev, *overlap, *ltmp;
 	static char lockstr[] = "lockf";
 	int ovcase, priority, needtolink, error;
@@ -164,6 +247,7 @@ lf_setlock(lock)
 #endif /* LOCKF_DEBUG */
 		if (error = tsleep((caddr_t)lock, priority, lockstr, 0)) {
 
+#ifdef PK_LOCKF_FIX /* Paul Kranenburg's lockf fix (buggy!) */
 			/* Don't leave a dangling pointer in block list */
 			if (lf_getblock(lock) == block) {
 				struct lockf	**prev;
@@ -179,6 +263,13 @@ lf_setlock(lock)
 				}
 			}
 			free(lock, M_LOCKF);
+#else /* Mark Tinguely's fix instead */
+			(void) lf_clearlock(lock);
+			return (error);
+#endif
+#if 0 /* ...and this is the original code -DLG */
+			free(lock, M_LOCKF);
+#endif
 			return (error);
 		}
 	}
@@ -190,8 +281,8 @@ lf_setlock(lock)
 	 * Skip over locks owned by other processes.
 	 * Handle any locks that overlap and are owned by ourselves.
 	 */
-	prev = &ip->i_lockf;
-	block = ip->i_lockf;
+	prev = head;
+	block = *head;
 	needtolink = 1;
 	for (;;) {
 		if (ovcase = lf_findoverlap(block, lock, SELF, &prev, &overlap))
@@ -314,8 +405,8 @@ lf_setlock(lock)
 lf_clearlock(unlock)
 	register struct lockf *unlock;
 {
-	struct inode *ip = unlock->lf_inode;
-	register struct lockf *lf = ip->i_lockf;
+	struct lockf **head = unlock->lf_head;
+	register struct lockf *lf = *head;
 	struct lockf *overlap, **prev;
 	int ovcase;
 
@@ -327,7 +418,7 @@ lf_clearlock(unlock)
 	if (lockf_debug & 1)
 		lf_print("lf_clearlock", unlock);
 #endif /* LOCKF_DEBUG */
-	prev = &ip->i_lockf;
+	prev = head;
 	while (ovcase = lf_findoverlap(lf, unlock, SELF, &prev, &overlap)) {
 		/*
 		 * Wakeup the list of locks to be retried.
@@ -417,10 +508,10 @@ struct lockf *
 lf_getblock(lock)
 	register struct lockf *lock;
 {
-	struct lockf **prev, *overlap, *lf = lock->lf_inode->i_lockf;
+	struct lockf **prev, *overlap, *lf = *(lock->lf_head);
 	int ovcase;
 
-	prev = &lock->lf_inode->i_lockf;
+	prev = lock->lf_head;
 	while (ovcase = lf_findoverlap(lf, lock, OTHERS, &prev, &overlap)) {
 		/*
 		 * We've found an overlap, see if it blocks us
@@ -515,7 +606,7 @@ lf_findoverlap(lf, lock, type, prev, overlap)
 			return (2);
 		}
 		if (start <= lf->lf_start &&
-		           (end == -1 ||
+			   (end == -1 ||
 			   (lf->lf_end != -1 && end >= lf->lf_end))) {
 			/* Case 3 */
 #ifdef LOCKF_DEBUG
@@ -628,21 +719,21 @@ lf_split(lock1, lock2)
 lf_wakelock(listhead)
 	struct lockf *listhead;
 {
-        register struct lockf *blocklist, *wakelock;
+	register struct lockf *blocklist, *wakelock;
 
 	blocklist = listhead->lf_block;
 	listhead->lf_block = NOLOCKF;
-        while (blocklist != NOLOCKF) {
-                wakelock = blocklist;
-                blocklist = blocklist->lf_block;
+	while (blocklist != NOLOCKF) {
+		wakelock = blocklist;
+		blocklist = blocklist->lf_block;
 		wakelock->lf_block = NOLOCKF;
 		wakelock->lf_next = NOLOCKF;
 #ifdef LOCKF_DEBUG
 		if (lockf_debug & 2)
 			lf_print("lf_wakelock: awakening", wakelock);
 #endif /* LOCKF_DEBUG */
-                wakeup((caddr_t)wakelock);
-        }
+		wakeup((caddr_t)wakelock);
+	}
 }
 
 #ifdef LOCKF_DEBUG

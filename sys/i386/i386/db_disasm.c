@@ -22,31 +22,8 @@
  * 
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
- */
-/*
- * HISTORY
- * $Log: db_disasm.c,v $
- * Revision 1.1  1992/03/25  21:42:01  pace
- * Initial revision
  *
- * Revision 2.3  91/02/05  17:11:03  mrt
- * 	Changed to new Mach copyright
- * 	[91/02/01  17:31:03  mrt]
- * 
- * Revision 2.2  90/08/27  21:55:56  dbg
- * 	Fix register operand for move to/from control/test/debug
- * 	register instructions.  Add i486 instructions.
- * 	[90/08/27            dbg]
- * 
- * 	Import db_sym.h.  Print instruction displacements in
- * 	current radix (signed).  Change calling sequence of
- * 	db_disasm.
- * 	[90/08/21            dbg]
- * 	Fix includes.
- * 	[90/08/08            dbg]
- * 	Created.
- * 	[90/07/25            dbg]
- * 
+ *	$Id$
  */
 
 /*
@@ -719,8 +696,8 @@ struct inst db_inst_table[256] = {
 /*a9*/	{ "test",  FALSE, LONG,  op2(I, A),   0 },
 /*aa*/	{ "stos",  FALSE, BYTE,  op1(DI),     0 },
 /*ab*/	{ "stos",  FALSE, LONG,  op1(DI),     0 },
-/*ac*/	{ "ldos",  FALSE, BYTE,  op1(SI),     0 },
-/*ad*/	{ "ldos",  FALSE, LONG,  op1(SI),     0 },
+/*ac*/	{ "lods",  FALSE, BYTE,  op1(SI),     0 },
+/*ad*/	{ "lods",  FALSE, LONG,  op1(SI),     0 },
 /*ae*/	{ "scas",  FALSE, BYTE,  op1(SI),     0 },
 /*af*/	{ "scas",  FALSE, LONG,  op1(SI),     0 },
 

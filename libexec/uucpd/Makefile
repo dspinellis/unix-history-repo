@@ -3,4 +3,9 @@
 PROG=	uucpd
 NOMAN=	noman
 
+.if exists(/usr/lib/libcrypt.a)
+DPADD+= ${LIBCRYPT}
+LDADD+= -lcrypt
+.endif
+
 .include <bsd.prog.mk>

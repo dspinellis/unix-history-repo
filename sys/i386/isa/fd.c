@@ -34,48 +34,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)fd.c	7.4 (Berkeley) 5/25/91
+ *	from:	@(#)fd.c	7.4 (Berkeley) 5/25/91
+ *	$Id: fd.c,v 1.5 1993/09/15 23:27:45 rgrimes Exp $
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00153
- * --------------------         -----   ----------------------
- *
- * 20 Apr 93	Julian Elischer		Heavily re worked, see notes below
- * 
- * Largely rewritten to handle multiple controllers and drives
- * By Julian Elischer, Sun Apr  4 16:34:33 WST 1993
- */
-char	rev[] = "$Revision: 1.10 $";
-/*
- * $Header: /usr/src/sys.386bsd/i386/isa/RCS/fd.c,v 1.10 93/04/13 16:53:29 root Exp $
- */
-/*
- * $Log:	fd.c,v $
- * Revision 1.10  93/04/13  16:53:29  root
- * make sure turning off a drive motor doesn't deselect another
- * drive active at the time.
- * Also added a pointer from the fd_data to it's fd_type.
- * 
- * Revision 1.9  93/04/13  15:31:02  root
- * make all seeks go through DOSEEK state so are sure of being done right.
- * 
- * Revision 1.8  93/04/12  21:20:13  root
- * only check if old fd is the one we are working on if there IS
- * an old fd pointer. (in fdstate())
- * 
- * Revision 1.7  93/04/11  17:05:35  root
- * cleanup timeouts etc.
- * also fix bug to select teh correct drive when running > 1 drive
- * at a time.
- * 
- * Revision 1.6  93/04/05  00:48:45  root
- * change a timeout and add version to banner message
- * 
- * Revision 1.5  93/04/04  16:39:08  root
- * first working version.. some floppy controllers don't seem to
- * like 2 int. status inquiries in a row.
- * 
  */
 
 #include "fd.h"
@@ -87,8 +48,10 @@ char	rev[] = "$Revision: 1.10 $";
 #include "conf.h"
 #include "file.h"
 #include "ioctl.h"
+#include "disklabel.h"
 #include "buf.h"
 #include "uio.h"
+#include "syslog.h"
 #include "i386/isa/isa.h"
 #include "i386/isa/isa_device.h"
 #include "i386/isa/fdreg.h"
@@ -282,8 +245,11 @@ struct isa_device *dev;
 	   fdu++,fdsu++)
 	{
 		/* is there a unit? */
-		if ((fdt & 0xf0) == RTCFDT_NONE)
+		if ((fdt & 0xf0) == RTCFDT_NONE) {
+#define NO_TYPE NUMTYPES
+			fd_data[fdu].type = NO_TYPE;
 			continue;
+		}
 
 #ifdef notyet
 		/* select it */
@@ -304,22 +270,16 @@ struct isa_device *dev;
 		fd_data[fdu].track = -2;
 		fd_data[fdu].fdc = fdc;
 		fd_data[fdu].fdsu = fdsu;
-		/* yes, announce it */
-		if (!hdr)
-			printf(" drives ");
-		else
-			printf(", ");
-		printf("%d: ", fdu);
-
+		printf("fd%d: unit %d type ", fdcu, fdu);
 		
 		if ((fdt & 0xf0) == RTCFDT_12M) {
-			printf("1.2M");
+			printf("1.2MB 5.25in\n");
 			fd_data[fdu].type = 1;
 			fd_data[fdu].ft = fd_types + 1;
 			
 		}
 		if ((fdt & 0xf0) == RTCFDT_144M) {
-			printf("1.44M");
+			printf("1.44MB 3.5in\n");
 			fd_data[fdu].type = 0;
 			fd_data[fdu].ft = fd_types + 0;
 		}
@@ -329,7 +289,6 @@ struct isa_device *dev;
 		hdr = 1;
 	}
 
-	printf(" %s ",rev);
 	/* Set transfer to 500kbps */
 	outb(fdc->baseport+fdctl,0); /*XXX*/
 }
@@ -400,7 +359,10 @@ bad:
 /*                            motor control stuff                           */
 /*		remember to not deselect the drive we're working on         */
 /****************************************************************************/
-set_motor(fdcu_t fdcu, fdu_t fdu, int reset)
+set_motor(fdcu, fdu, reset)
+	fdcu_t fdcu;
+	fdu_t fdu;
+	int reset;
 {
 	int m0,m1;
 	int selunit;
@@ -427,24 +389,35 @@ set_motor(fdcu_t fdcu, fdu_t fdu, int reset)
 		| (m1 ? FDO_MOEN1 : 0)));
 }
 
-fd_turnoff(fdu_t fdu)
+fd_turnoff(fdu)
+	fdu_t fdu;
 {
+	int	s;
+
 	fd_p fd = fd_data + fdu;
+	s = splbio();
 	fd->flags &= ~FD_MOTOR;
 	set_motor(fd->fdc->fdcu,fd->fdsu,0);
+	splx(s);
 }
 
-fd_motor_on(fdu_t fdu)
+fd_motor_on(fdu)
+	fdu_t fdu;
 {
+	int	s;
+
 	fd_p fd = fd_data + fdu;
+	s = splbio();
 	fd->flags &= ~FD_MOTOR_WAIT;
 	if((fd->fdc->fd == fd) && (fd->fdc->state == MOTORWAIT))
 	{
-		fd_pseudointr(fd->fdc->fdcu);
+		fdintr(fd->fdc->fdcu);
 	}
+	splx(s);
 }
 
-fd_turnon(fdu_t fdu) 
+fd_turnon(fdu) 
+	fdu_t fdu;
 {
 	fd_p fd = fd_data + fdu;
 	if(!(fd->flags & FD_MOTOR))
@@ -455,7 +428,8 @@ fd_turnon(fdu_t fdu)
 	}
 }
 
-fd_turnon1(fdu_t fdu) 
+fd_turnon1(fdu) 
+	fdu_t fdu;
 {
 	fd_p fd = fd_data + fdu;
 	fd->flags |= FD_MOTOR;
@@ -466,7 +440,8 @@ fd_turnon1(fdu_t fdu)
 /*                             fdc in/out                                   */
 /****************************************************************************/
 int
-in_fdc(fdcu_t fdcu)
+in_fdc(fdcu)
+	fdcu_t fdcu;
 {
 	int baseport = fdc_data[fdcu].baseport;
 	int i, j = 100000;
@@ -484,20 +459,29 @@ in_fdc(fdcu_t fdcu)
 #endif
 }
 
-out_fdc(fdcu_t fdcu,int x)
+out_fdc(fdcu, x)
+	fdcu_t fdcu;
+	int x;
 {
 	int baseport = fdc_data[fdcu].baseport;
-	int i = 100000;
+	int i;
 
+	/* Check that the direction bit is set */
+	i = 100000;
 	while ((inb(baseport+fdsts) & NE7_DIO) && i-- > 0);
+	if (i <= 0) return (-1);	/* Floppy timed out */
+
+	/* Check that the floppy controller is ready for a command */
+	i = 100000;
 	while ((inb(baseport+fdsts) & NE7_RQM) == 0 && i-- > 0);
-	if (i <= 0) return (-1);
+	if (i <= 0) return (-1);	/* Floppy timed out */
+
+	/* Send the command and return */
 	outb(baseport+fddata,x);
 	TRACE1("[0x%x->fddata]",x);
 	return (0);
 }
 
-static fdopenf;
 /****************************************************************************/
 /*                           fdopen/fdclose                                 */
 /****************************************************************************/
@@ -510,7 +494,7 @@ Fdopen(dev, flags)
 	int s;
 
 	/* check bounds */
-	if (fdu >= NFD) return(ENXIO);
+	if (fdu >= NFD || fd_data[fdu].type == NO_TYPE) return(ENXIO);
 	/*if (type >= NUMTYPES) return(ENXIO);*/
 	fd_data[fdu].flags |= FD_OPEN;
 
@@ -535,7 +519,8 @@ fdclose(dev, flags)
 * If the controller is already busy, we need do nothing, as it	*
 * will pick up our work when the present work completes		*
 \***************************************************************/
-fdstart(fdcu_t fdcu)
+fdstart(fdcu)
+	fdcu_t fdcu;
 {
 	register struct buf *dp,*bp;
 	int s;
@@ -549,13 +534,16 @@ fdstart(fdcu_t fdcu)
 	splx(s);
 }
 
-fd_timeout(fdcu_t fdcu)
+fd_timeout(fdcu)
+	fdcu_t fdcu;
 {
 	fdu_t fdu = fdc_data[fdcu].fdu;
 	int st0, st3, cyl;
 	struct buf *dp,*bp;
+	int	s;
 
 	dp = &fdc_data[fdcu].head;
+	s = splbio();
 	bp = dp->b_actf;
 
 	out_fdc(fdcu,NE7CMD_SENSED);
@@ -587,11 +575,13 @@ fd_timeout(fdcu_t fdcu)
 		fdc_data[fdcu].fdu = -1;
 		fdc_data[fdcu].state = DEVIDLE;
 	}
-	fd_pseudointr(fdcu);
+	fdintr(fdcu);
+	splx(s);
 }
 
 /* just ensure it has the right spl */
-fd_pseudointr(fdcu_t fdcu)
+fd_pseudointr(fdcu)
+	fdcu_t fdcu;
 {
 	int	s;
 	s = splbio();
@@ -604,7 +594,8 @@ fd_pseudointr(fdcu_t fdcu)
 * keep calling the state machine until it returns a 0			*
 * ALWAYS called at SPLBIO 						*
 \***********************************************************************/
-fdintr(fdcu_t fdcu)
+fdintr(fdcu)
+	fdcu_t fdcu;
 {
 	fdc_p fdc = fdc_data + fdcu;
 	while(fdstate(fdcu, fdc));
@@ -614,7 +605,9 @@ fdintr(fdcu_t fdcu)
 * The controller state machine.						*
 * if it returns a non zero value, it should be called again immediatly	*
 \***********************************************************************/
-int fdstate(fdcu_t fdcu, fdc_p fdc)
+int fdstate(fdcu, fdc)
+	fdcu_t fdcu;
+	fdc_p fdc;
 {
 	int read,head,trac,sec,i,s,sectrac,cyl,st0;
 	unsigned long blknum;
@@ -696,8 +689,10 @@ int fdstate(fdcu_t fdcu, fdc_p fdc)
 		out_fdc(fdcu,bp->b_cylin * fd->ft->steptrac);
 		fd->track = -2;
 		fdc->state = SEEKWAIT;
+		timeout(fd_timeout,fdcu,2 * hz);
 		return(0);	/* will return later */
 	case SEEKWAIT:
+		untimeout(fd_timeout,fdcu);
 		/* allow heads to settle */
 		timeout(fd_pseudointr,fdcu,hz/50);
 		fdc->state = SEEKCOMPLETE;
@@ -853,7 +848,8 @@ int fdstate(fdcu_t fdcu, fdc_p fdc)
 	return(1); /* Come back immediatly to new state */
 }
 
-retrier(fdcu_t fdcu)
+retrier(fdcu)
+	fdcu_t fdcu;
 {
 	fdc_p fdc = fdc_data + fdcu;
 	register struct buf *dp,*bp;
@@ -876,13 +872,13 @@ retrier(fdcu_t fdcu)
 		break;
 	default:
 		{
-			printf("fd%d: hard error (ST0 %b ",
-				 fdc->fdu, fdc->status[0], NE7_ST0BITS);
+			diskerr(bp, "fd", "hard error", LOG_PRINTF,
+				fdc->fd->skip, (struct disklabel *)NULL);
+			printf(" (ST0 %b ", fdc->status[0], NE7_ST0BITS);
 			printf(" ST1 %b ", fdc->status[1], NE7_ST1BITS);
 			printf(" ST2 %b ", fdc->status[2], NE7_ST2BITS);
-			printf(" ST3 %b ", fdc->status[3], NE7_ST3BITS);
 			printf("cyl %d hd %d sec %d)\n",
-				 fdc->status[4], fdc->status[5], fdc->status[6]);
+			       fdc->status[3], fdc->status[4], fdc->status[5]);
 		}
 		bp->b_flags |= B_ERROR;
 		bp->b_error = EIO;
@@ -893,11 +889,89 @@ retrier(fdcu_t fdcu)
 		fdc->state = FINDWORK;
 		fdc->fd = (fd_p) 0;
 		fdc->fdu = -1;
+		/* XXX abort current command, if any.  */
 		return(1);
 	}
 	fdc->retry++;
 	return(1);
 }
 
-#endif
+/*
+ * fdioctl() from jc@irbs.UUCP (John Capo)
+ * i386/i386/conf.c needs to have fdioctl() declared and remove the line that
+ * defines fdioctl to be enxio.
+ *
+ * TODO: Reformat.
+ *       Think about allocating buffer off stack.
+ *       Don't pass uncast 0's and NULL's to read/write/setdisklabel().
+ *       Watch out for NetBSD's different *disklabel() interface.
+ */
 
+int
+fdioctl (dev, cmd, addr, flag)
+dev_t dev;
+int cmd;
+caddr_t addr;
+int flag;
+{
+    struct fd_type *fdt;
+    struct disklabel *dl;
+    char buffer[DEV_BSIZE];
+    int error;
+
+    error = 0;
+
+    switch (cmd)
+    {
+    case DIOCGDINFO:
+        bzero(buffer, sizeof (buffer));
+        dl = (struct disklabel *)buffer;
+        dl->d_secsize = FDBLK;
+        fdt = fd_data[FDUNIT(minor(dev))].ft;
+        dl->d_secpercyl = fdt->size / fdt->tracks;
+        dl->d_type = DTYPE_FLOPPY;
+
+        if (readdisklabel(dev, fdstrategy, dl, NULL, 0, 0) == NULL)
+            error = 0;
+        else
+            error = EINVAL;
+
+        *(struct disklabel *)addr = *dl;
+        break;
+
+    case DIOCSDINFO:
+
+        if ((flag & FWRITE) == 0)
+            error = EBADF;
+
+        break;
+
+    case DIOCWLABEL:
+        if ((flag & FWRITE) == 0)
+            error = EBADF;
+
+        break;
+
+    case DIOCWDINFO:
+        if ((flag & FWRITE) == 0)
+        {
+            error = EBADF;
+            break;
+        }
+
+        dl = (struct disklabel *)addr;
+
+        if (error = setdisklabel ((struct disklabel *)buffer, dl, 0, NULL))
+            break;
+
+        error = writedisklabel(dev, fdstrategy, (struct disklabel *)buffer, NULL);
+        break;
+
+     default:
+        error = EINVAL;
+        break;
+    }
+    return (error);
+}
+
+#endif

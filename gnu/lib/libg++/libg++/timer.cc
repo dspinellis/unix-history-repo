@@ -1,30 +1,24 @@
 /* 
-Copyright (C) 1990 Free Software Foundation
+Copyright (C) 1990, 1992 Free Software Foundation
     written by Doug Lea (dl@rocky.oswego.edu)
 
-This file is part of GNU CC.
-
-GNU CC is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU CC General Public
-License for full details.
-
-Everyone is granted permission to copy, modify and redistribute
-GNU CC, but only under the conditions described in the
-GNU CC General Public License.   A copy of this license is
-supposed to have been given to you along with GNU CC so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  
+This file is part of the GNU C++ Library.  This library is free
+software; you can redistribute it and/or modify it under the terms of
+the GNU Library General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your
+option) any later version.  This library is distributed in the hope
+that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.  See the GNU Library General Public License for more details.
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 #ifdef __GNUG__
 #pragma implementation
 #endif
 #include <builtin.h>
-#include <sys/resource.h>
 
 // Timing functions from Doug Schmidt...
 
@@ -36,17 +30,15 @@ and this notice must be preserved on all copies.
 
 #if 1
 
-#if defined(USG)
-extern "C" {
-#include <sys/types.h>
+#include <_G_config.h>
+#include <osfcn.h>
+#if !_G_HAVE_SYS_RESOURCE || !defined(RUSAGE_SELF)
+#define USE_TIMES
 #include <sys/param.h>
 #include <sys/times.h>
-}
-#else
-#include <osfcn.h>
+#if !defined (HZ) && defined(CLK_TCK)
+#define HZ CLK_TCK
 #endif
-
-#if defined(USG)
 static struct tms Old_Time;
 static struct tms New_Time;
 #else
@@ -58,7 +50,7 @@ static int    Timer_Set = 0;
 double start_timer()
 {
    Timer_Set = 1;
-#if defined(USG)
+#ifdef USE_TIMES
    times(&Old_Time);
    return((double) Old_Time.tms_utime / HZ);
 #else
@@ -78,13 +70,13 @@ double return_elapsed_time(double Last_Time)
    }   
    else {
     /* get process time */
-#if defined(USG)
+#ifdef USE_TIMES
       times(&New_Time);
 #else
       getrusage(RUSAGE_SELF,&New_Time);
 #endif
       if (Last_Time == 0.0) {
-#if defined(USG)
+#ifdef USE_TIMES
 	 return((double) (New_Time.tms_utime - Old_Time.tms_utime) / HZ);
 #else
          return((New_Time.ru_utime.tv_sec - Old_Time.ru_utime.tv_sec) + 
@@ -93,7 +85,7 @@ double return_elapsed_time(double Last_Time)
 #endif
       }
       else {
-#if defined(USG)
+#ifdef USE_TIMES
 	 return((double) New_Time.tms_utime / HZ - Last_Time);
 #else
          return((New_Time.ru_utime.tv_sec + 

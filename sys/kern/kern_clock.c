@@ -30,15 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)kern_clock.c	7.16 (Berkeley) 5/9/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00158
- * --------------------         -----   ----------------------
- *
- * 08 Apr 93	Poul-Henning Kamp	Add support for dcfclock
- * 25 Apr 93	Bruce Evans		Support new interrupt code (intr-0.1)
+ *	from: @(#)kern_clock.c	7.16 (Berkeley) 5/9/91
+ *	$Id: kern_clock.c,v 1.4 1993/10/19 09:05:51 davidg Exp $
  */
 
 #include "param.h"
@@ -50,6 +43,9 @@
 #include "resourcevar.h"
 
 #include "machine/cpu.h"
+
+#include "resource.h"
+#include "vm/vm.h"
 
 #ifdef GPROF
 #include "gprof.h"
@@ -101,6 +97,8 @@ hardclock(frame)
 	register struct callout *p1;
 	register struct proc *p = curproc;
 	register struct pstats *pstats;
+	register struct rusage *ru;
+	register struct vmspace *vm;
 	register int s;
 	int needsoft = 0;
 	extern int tickdelta;
@@ -156,6 +154,18 @@ hardclock(frame)
 		 */
 		if (p)
 			BUMPTIME(&p->p_stime, tick);
+	}
+
+	/* bump the resource usage of integral space use */
+	if (p && pstats && (ru = &pstats->p_ru) && (vm = p->p_vmspace)) {
+		ru->ru_ixrss += vm->vm_tsize * NBPG / 1024;
+		ru->ru_idrss += vm->vm_dsize * NBPG / 1024;
+		ru->ru_isrss += vm->vm_ssize * NBPG / 1024;
+		if ((vm->vm_pmap.pm_stats.resident_count * NBPG / 1024) >
+		    ru->ru_maxrss) {
+			ru->ru_maxrss =
+			    vm->vm_pmap.pm_stats.resident_count * NBPG / 1024;
+		}
 	}
 
 	/*

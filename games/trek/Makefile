@@ -9,7 +9,7 @@ SRCS=	abandon.c attack.c autover.c capture.c check_out.c checkcond.c \
 	ranf.c rest.c schedule.c score.c setup.c setwarp.c \
 	shield.c snova.c srscan.c systemname.c torped.c utility.c \
 	visual.c warp.c win.c cgetc.c
-MAN6=	trek.0
+MAN6=	trek.6
 DPADD=	${LIBM}
 LDADD=	-lm
 HIDEGAME=hidegame

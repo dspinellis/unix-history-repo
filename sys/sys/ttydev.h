@@ -30,15 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ttydev.h	7.8 (Berkeley) 5/9/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00150
- * --------------------         -----   ----------------------
- *
- * 22 Apr 93	David Greenman		support for 57600 and 115200 baud
- *
+ *	from: @(#)ttydev.h	7.8 (Berkeley) 5/9/91
+ *	$Id$
  */
 
 /* COMPATABILITY HEADER FILE */

@@ -9794,7 +9794,11 @@ start_function (declspecs, declarator, raises, pre_parsed_p)
       if (!ctype && DECL_FRIEND_P (decl1))
 	{
 	  ctype = TREE_TYPE (TREE_CHAIN (decl1));
-	  if (TREE_CODE (ctype) != RECORD_TYPE)
+
+	  /* CTYPE could be null here if we're dealing with a template;
+	     for example, `inline friend float foo()' inside a template
+	     will have no CTYPE set.  */
+	  if (ctype && TREE_CODE (ctype) != RECORD_TYPE)
 	    ctype = NULL_TREE;
 	  else
 	    doing_friend = 1;
@@ -10854,13 +10858,6 @@ finish_function (lineno, call_poplevel)
       poplevel (0, 0, 0);
     }
 
-  /* Must mark the RESULT_DECL as being in this function.  */
-  DECL_CONTEXT (DECL_RESULT (fndecl)) = DECL_INITIAL (fndecl);
-
-  /* Obey `register' declarations if `setjmp' is called in this fn.  */
-  if (flag_traditional && current_function_calls_setjmp)
-    setjmp_protect (DECL_INITIAL (fndecl));
-
   if (cleanup_label)
     /* Emit label at beginning of cleanup code for parameters.  */
     emit_label (cleanup_label);
@@ -10926,6 +10923,13 @@ finish_function (lineno, call_poplevel)
   if (current_binding_level->parm_flag != 1)
     my_friendly_abort (122);
   poplevel (1, 0, 1);
+
+  /* Must mark the RESULT_DECL as being in this function.  */
+  DECL_CONTEXT (DECL_RESULT (fndecl)) = DECL_INITIAL (fndecl);
+
+  /* Obey `register' declarations if `setjmp' is called in this fn.  */
+  if (flag_traditional && current_function_calls_setjmp)
+    setjmp_protect (DECL_INITIAL (fndecl));
 
   /* Set the BLOCK_SUPERCONTEXT of the outermost function scope to point
      to the FUNCTION_DECL node itself.  */

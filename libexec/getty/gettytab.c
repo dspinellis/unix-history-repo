@@ -45,9 +45,9 @@ static char sccsid[] = "@(#)gettytab.c	5.5 (Berkeley) 2/25/91";
 
 static	char *tbuf;
 int	hopcount;	/* detect infinite loops in termcap, init 0 */
-char	*skip();
+static	char	*skip();
 char	*getstr();
-char	*decode();
+static	char	*decode();
 
 /*
  * Get an entry for terminal name in buffer bp,

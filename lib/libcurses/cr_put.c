@@ -180,6 +180,7 @@ plod(cnt)
 {
 	register int i, j, k;
 	register int soutcol, soutline;
+	chtype ch;
 
 	plodcnt = plodflg = cnt;
 	soutcol = outcol;
@@ -373,9 +374,9 @@ dontcr:
 			if (plodflg)	/* avoid a complex calculation */
 				plodcnt--;
 			else {
-				i = curscr->_y[outline][outcol];
-				if ((i&_STANDOUT) == (curscr->_flags&_STANDOUT))
-					_putchar(i & 0177);
+				ch = curscr->_y[outline][outcol];
+				if ((ch&_STANDOUT) == (curscr->_flags&_STANDOUT))
+					_putchar(ch);
 				else
 					goto nondes;
 			}

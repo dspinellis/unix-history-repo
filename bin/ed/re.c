@@ -64,14 +64,11 @@ optpat()
 	char delim;
 	int n;
 
-	if ((delim = *ibufp) == '\n') {
-		if (!exp) sprintf(errmsg, "no previous pattern");
-		return exp;
-	} else if (delim == ' ' || *++ibufp == '\n') {
+	if ((delim = *ibufp) == ' ') {
 		sprintf(errmsg, "invalid pattern delimiter");
 		return NULL;
-	} else if (*ibufp == delim) {
-		sprintf(errmsg, "no previous pattern");
+	} else if (delim == '\n' || *++ibufp == '\n' || *ibufp == delim) {
+		if (!exp) sprintf(errmsg, "no previous pattern");
 		return exp;
 	} else if ((exps = getlhs(delim)) == NULL)
 		return NULL;
@@ -84,16 +81,10 @@ optpat()
 		return NULL;
 	}
 	patlock = 0;
-#ifdef GNU_REGEX
-	/* initialize pattern buffer */
-	exp->buffer = NULL;
-	exp->allocated = 0L;
-	exp->fastmap = 0;		/* not used by GNU regex after 0.12 */
-	exp->translate = 0;
-#endif
 	if (n = regcomp(exp, exps, 0)) {
 		regerror(n, exp, errmsg, sizeof errmsg);
-		return NULL;
+		free(exp);
+		return exp = NULL;
 	}
 	return exp;
 }

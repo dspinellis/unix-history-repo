@@ -34,6 +34,8 @@
  * SUCH DAMAGE.
  *
  *	@(#)nodes.c.pat	5.2 (Berkeley) 3/8/91
+ *
+ *	/b/source/CVS/src/bin/sh/nodes.c.pat,v 1.3 1993/03/23 00:28:55 cgd Exp
  */
 
 /*

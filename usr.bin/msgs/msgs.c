@@ -374,7 +374,6 @@ int argc; char *argv[];
 	}
 	if (clean)
 		exit(0);
-
 	/*
 	 * prepare to display messages
 	 */
@@ -382,27 +381,29 @@ int argc; char *argv[];
 	use_pager = use_pager && totty;
 
 	sprintf(fname, "%s/%s", getenv("HOME"), MSGSRC);
-	msgsrc = fopen(fname, "r");
+	msgsrc = fopen(fname, "r+");
 	if (msgsrc) {
 		newrc = NO;
-		fscanf(msgsrc, "%d\n", &nextmsg);
-		fclose(msgsrc);
-		if (nextmsg > lastmsg+1) {
+		if (1 != fscanf(msgsrc, "%d\n", &nextmsg) ||
+		    nextmsg > lastmsg+1) {
 			printf("Warning: bounds have been reset (%d, %d)\n",
-				firstmsg, lastmsg);
+			firstmsg, lastmsg);
 			truncate(fname, (off_t)0);
 			newrc = YES;
 		}
 		else if (!rcfirst)
 			rcfirst = nextmsg - rcback;
 	}
-	else
+	else {
+		msgsrc = fopen(fname, "w+");
 		newrc = YES;
-	msgsrc = fopen(fname, "a");
+	}
+
 	if (msgsrc == NULL) {
 		perror(fname);
 		exit(errno);
 	}
+
 	if (rcfirst) {
 		if (rcfirst > lastmsg+1) {
 			printf("Warning: the last message is number %d.\n",

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)kern_exit.c	7.35 (Berkeley) 6/27/91
+ *	from: @(#)kern_exit.c	7.35 (Berkeley) 6/27/91
+ *	$Id: kern_exit.c,v 1.8 1993/10/16 15:24:15 rgrimes Exp $
  */
 
 #include "param.h"
@@ -61,16 +62,19 @@
 /*
  * Exit system call: pass back caller's arg
  */
+
+struct rexit_args {
+	int	rval;
+};
 /* ARGSUSED */
+void
 rexit(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	rval;
-	} *uap;
+	struct rexit_args *uap;
 	int *retval;
 {
 
-	exit(p, W_EXITCODE(uap->rval, 0));
+	kexit(p, W_EXITCODE(uap->rval, 0));
 	/* NOTREACHED */
 }
 
@@ -80,13 +84,17 @@ rexit(p, uap, retval)
  * and parent's lists.  Save exit status and rusage for wait().
  * Check for child processes and orphan them.
  */
-exit(p, rv)
+void
+kexit(p, rv)
 	register struct proc *p;
 	int rv;
 {
 	register struct proc *q, *nq;
 	register struct proc **pp;
 	int s;
+
+	acct(p);	/* MT - do  process accounting -- must be done before
+			   address space is released */
 
 #ifdef PGINPROF
 	vmsizmon();
@@ -251,15 +259,18 @@ done:
 }
 
 #ifdef COMPAT_43
+
+struct owait_args {
+	int	pid;
+	int	*status;
+	int	options;
+	struct	rusage *rusage;
+	int	compat;
+};
+
 owait(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	pid;
-		int	*status;
-		int	options;
-		struct	rusage *rusage;
-		int	compat;
-	} *uap;
+	register struct owait_args *uap;
 	int *retval;
 {
 
@@ -271,15 +282,17 @@ owait(p, uap, retval)
 	return (wait1(p, uap, retval));
 }
 
+struct wait4_args {
+	int	pid;
+	int	*status;
+	int	options;
+	struct	rusage *rusage;
+	int	compat;
+};
+
 wait4(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	pid;
-		int	*status;
-		int	options;
-		struct	rusage *rusage;
-		int	compat;
-	} *uap;
+	struct wait4_args *uap;
 	int *retval;
 {
 
@@ -295,17 +308,20 @@ wait4(p, uap, retval)
  * stopped under trace, or (optionally) stopped by a signal.
  * Pass back status and deallocate exited child's proc structure.
  */
+
+struct wait1_args {
+	int	pid;
+	int	*status;
+	int	options;
+	struct	rusage *rusage;
+#ifdef COMPAT_43
+	int compat;
+#endif
+};
+
 wait1(q, uap, retval)
 	register struct proc *q;
-	register struct args {
-		int	pid;
-		int	*status;
-		int	options;
-		struct	rusage *rusage;
-#ifdef COMPAT_43
-		int compat;
-#endif
-	} *uap;
+	register struct wait1_args *uap;
 	int retval[];
 {
 	register int nfound;

@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)mail.h	5.1 (Berkeley) 3/7/91
+ *	from: @(#)mail.h	5.1 (Berkeley) 3/7/91
+ *	mail.h,v 1.4 1993/08/01 18:58:25 mycroft Exp
  */
 
 #ifdef __STDC__

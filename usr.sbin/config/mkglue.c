@@ -29,22 +29,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00158
- * --------------------         -----   ----------------------
- *
- * 26 Mar 93	Rodney W. Grimes	Added interrupt counters for vmstat,
- * 					also false and stray counter names.
- * 26 Apr 93	Bruce Evans		Support for intr-0.1
- * 17 May 93	Rodney W. Grimes	Changed id_num to be unique.  Misc
- *					other changes to make intr-0.1 work
- *					with GENERICISA.
- *					Interrupt counter names are now built
- *					using BUILD_VECTORS, no longer output
- *					by mkglue.c
- *
  */
 
 #ifndef lint

@@ -45,6 +45,8 @@ ENTRY(syscall)
 	pop	%eax	/* syscall number */
 	push	%ecx
 	LCALL(7,0)
+	push	%ecx	/* need to push a word to keep stack frame intact
+			   upon return; the word must be the return address. */
 	jb	1f
 	ret
 1:

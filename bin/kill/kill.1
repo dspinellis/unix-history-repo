@@ -42,6 +42,13 @@
 .Nd terminate or signal a process
 .Sh SYNOPSIS
 .Nm kill
+.Op Fl s Ar signal_name 
+.Ar pid
+\&...
+.Nm kill
+.Fl l
+.Op Ar exit_status
+.Nm kill
 .Op Fl signal_name
 .Ar pid
 \&...
@@ -49,8 +56,6 @@
 .Op Fl signal_number
 .Ar pid
 \&...
-.Nm kill
-.Op Fl l
 .Sh DESCRIPTION
 The kill utility sends the
 .Dv TERM
@@ -62,15 +67,18 @@ Only the super-user may send signals to other users' processes.
 The options are as follows:
 .Pp
 .Bl -tag -width Ds
-.It Fl l
-List the signal names.
+.It Fl l Op Ar exit_status
+If no operand is given, list the signal names; otherwise, write 
+the signal name corresponding to
+.Ar exit_status .
+.It Fl s Ar signal_name
+A symbolic signal name specifying the signal to be sent instead of the
+default
+.Dv TERM .
 .It Fl signal_name
 A symbolic signal name specifying the signal to be sent instead of the
 default
 .Dv TERM .
-The
-.Fl l
-option displays the signal names.
 .It Fl signal_number
 A non-negative decimal integer, specifying the signal to be sent instead
 of the default
@@ -80,8 +88,7 @@ of the default
 Some of the more commonly used signals:
 .Bd -ragged -offset indent -compact
 .Bl -column XXX TERM
-.It -1	-1	(broadcast to all processes, super-user only)
-.It 0	0	(sh(1) only, signals all members of process group)
+.It 1	HUP	(hang up)
 .It 2	INT	(interupt)
 .It 3	QUIT	(quit)
 .It 6	ABRT	(abort)
@@ -106,6 +113,12 @@ for details.
 .Xr ps 1 ,
 .Xr kill 2 ,
 .Xr sigvec 2
+.Sh STANDARDS
+The 
+.Nm kill
+function is expected to be 
+.St -p1003.2
+compatible.
 .Sh HISTORY
 A
 .Nm kill

@@ -2,22 +2,17 @@
 Copyright (C) 1988 Free Software Foundation
     written by Doug Lea (dl@rocky.oswego.edu)
 
-This file is part of GNU CC.
-
-GNU CC is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU CC General Public
-License for full details.
-
-Everyone is granted permission to copy, modify and redistribute
-GNU CC, but only under the conditions described in the
-GNU CC General Public License.   A copy of this license is
-supposed to have been given to you along with GNU CC so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  
+This file is part of the GNU C++ Library.  This library is free
+software; you can redistribute it and/or modify it under the terms of
+the GNU Library General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your
+option) any later version.  This library is distributed in the hope
+that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.  See the GNU Library General Public License for more details.
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 #ifdef __GNUG__
@@ -27,10 +22,10 @@ and this notice must be preserved on all copies.
 #include <std.h>
 #include <math.h>
 #include <values.h>
+#include <builtin.h>
+#include <float.h>
 
-
-
-volatile void Rational::error(const char* msg) const
+void Rational::error(const char* msg) const
 {
   (*lib_error_handler)("Rational", msg);
 }
@@ -193,7 +188,7 @@ Integer trunc(const Rational& x)
 
 Rational pow(const Rational& x, const Integer& y)
 {
-  long yy = long(y);
+  long yy = y.as_long();
   return pow(x, yy);
 }               
 
@@ -221,14 +216,14 @@ Integer floor(const Rational& x) return q
 {
   Integer r;
   divide(x.num, x.den, q, r);
-  if (sign(x.num) < 0 && sign(r) != 0) q--;
+  if (sign(x.num) < 0 && sign(r) != 0) --q;
 }
 
 Integer ceil(const Rational& x) return q
 {
   Integer  r;
   divide(x.num, x.den, q, r);
-  if (sign(x.num) >= 0 && sign(r) != 0) q++;
+  if (sign(x.num) >= 0 && sign(r) != 0) ++q;
 }
 
 Integer round(const Rational& x) return q
@@ -239,9 +234,9 @@ Integer round(const Rational& x) return q
   if (ucompare(r, x.den) >= 0)
   {
     if (sign(x.num) >= 0)
-      q++;
+      ++q;
     else
-      q--;
+      --q;
   }
 }
 
@@ -296,7 +291,7 @@ Integer floor(const Rational& x)
   Integer q;
   Integer r;
   divide(x.num, x.den, q, r);
-  if (sign(x.num) < 0 && sign(r) != 0) q--;
+  if (sign(x.num) < 0 && sign(r) != 0) --q;
   return q;
 }
 
@@ -305,7 +300,7 @@ Integer ceil(const Rational& x)
   Integer q;
   Integer  r;
   divide(x.num, x.den, q, r);
-  if (sign(x.num) >= 0 && sign(r) != 0) q++;
+  if (sign(x.num) >= 0 && sign(r) != 0) ++q;
   return q;
 }
 
@@ -318,9 +313,9 @@ Integer round(const Rational& x)
   if (ucompare(r, x.den) >= 0)
   {
     if (sign(x.num) >= 0)
-      q++;
+      ++q;
     else
-      q--;
+      --q;
   }
   return q;
 }
@@ -351,43 +346,70 @@ Rational pow(const Rational& x, long y)
 
 ostream& operator << (ostream& s, const Rational& y)
 {
-  if (y.den == 1)
-    s << Itoa(y.num);
+  if (y.denominator() == 1L)
+    s << y.numerator();
   else
   {
-    s << Itoa(y.num);
+    s << y.numerator();
     s << "/";
-    s << Itoa(y.den);
+    s << y.denominator();
   }
   return s;
 }
 
 istream& operator >> (istream& s, Rational& y)
 {
-  s >> y.num;
-  if (s)
+#ifdef _OLD_STREAMS
+  if (!s.good())
+  {
+    return s;
+  }
+#else
+  if (!s.ipfx(0))
+  {
+    s.clear(ios::failbit|s.rdstate()); // Redundant if using GNU iostreams.
+    return s;
+  }
+#endif
+  Integer n = 0;
+  Integer d = 1;
+  if (s >> n)
   {
     char ch = 0;
     s.get(ch);
     if (ch == '/')
     {
-      s >> y.den;
-      y.normalize();
+      s >> d;
     }
     else
     {
-      s.unget(ch);
-      y.den = 1;
+      s.putback(ch);
     }
   }
+  y = Rational(n, d);
   return s;
 }
 
 int Rational::OK() const
 {
   int v = num.OK() && den.OK(); // have valid num and denom
-  v &= sign(den) > 0;           // denominator positive;
-  v &=  ucompare(gcd(num, den), _Int_One) == 0; // relatively prime
+  if (v)
+    {
+      v &= sign(den) > 0;           // denominator positive;
+      v &=  ucompare(gcd(num, den), _Int_One) == 0; // relatively prime
+    }
   if (!v) error("invariant failure");
   return v;
+}
+
+int
+Rational::fits_in_float() const
+{
+    return Rational (FLT_MIN) <= *this && *this <= Rational (FLT_MAX);
+}
+
+int
+Rational::fits_in_double() const
+{
+    return Rational (DBL_MIN) <= *this && *this <= Rational (DBL_MAX);
 }

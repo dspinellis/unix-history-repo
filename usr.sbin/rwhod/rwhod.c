@@ -67,7 +67,7 @@ static char sccsid[] = "@(#)rwhod.c	5.20 (Berkeley) 3/2/91";
  */
 #define AL_INTERVAL (3 * 60)
 
-struct	sockaddr_in sin;
+struct	sockaddr_in s_in;
 
 char	myname[MAXHOSTNAMELEN];
 
@@ -155,9 +155,9 @@ main()
 		syslog(LOG_ERR, "setsockopt SO_BROADCAST: %m");
 		exit(1);
 	}
-	sin.sin_family = AF_INET;
-	sin.sin_port = sp->s_port;
-	if (bind(s, (struct sockaddr *)&sin, sizeof (sin)) < 0) {
+	s_in.sin_family = AF_INET;
+	s_in.sin_port = sp->s_port;
+	if (bind(s, (struct sockaddr *)&s_in, sizeof (s_in)) < 0) {
 		syslog(LOG_ERR, "bind: %m");
 		exit(1);
 	}
@@ -382,7 +382,7 @@ configure(s)
 	char buf[BUFSIZ], *cp, *cplim;
 	struct ifconf ifc;
 	struct ifreq ifreq, *ifr;
-	struct sockaddr_in *sin;
+	struct sockaddr_in *s_in;
 	register struct neighbor *np;
 
 	ifc.ifc_len = sizeof (buf);
@@ -458,8 +458,8 @@ configure(s)
 			  np->n_addr, np->n_addrlen);
 		}
 		/* gag, wish we could get rid of Internet dependencies */
-		sin = (struct sockaddr_in *)np->n_addr;
-		sin->sin_port = sp->s_port;
+		s_in = (struct sockaddr_in *)np->n_addr;
+		s_in->sin_port = sp->s_port;
 		np->n_next = neighbors;
 		neighbors = np;
 	}
@@ -476,10 +476,10 @@ sendto(s, buf, cc, flags, to, tolen)
 {
 	register struct whod *w = (struct whod *)buf;
 	register struct whoent *we;
-	struct sockaddr_in *sin = (struct sockaddr_in *)to;
+	struct sockaddr_in *s_in = (struct sockaddr_in *)to;
 	char *interval();
 
-	printf("sendto %x.%d\n", ntohl(sin->sin_addr), ntohs(sin->sin_port));
+	printf("sendto %x.%d\n", ntohl(s_in->sin_addr), ntohs(s_in->sin_port));
 	printf("hostname %s %s\n", w->wd_hostname,
 	   interval(ntohl(w->wd_sendtime) - ntohl(w->wd_boottime), "  up"));
 	printf("load %4.2f, %4.2f, %4.2f\n",

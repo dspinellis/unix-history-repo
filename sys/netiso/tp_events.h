@@ -1,5 +1,8 @@
-/* $Header$ */
-/* $Source$ */
+/*
+ *	from: unknown
+ *	$Id$
+ */
+
 struct tp_event {
 	int ev_number;
 	 struct timeval e_time; 

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)syslimits.h	7.4 (Berkeley) 2/4/91
+ *	from: @(#)syslimits.h	7.4 (Berkeley) 2/4/91
+ *	$Id$
  */
 
 #define	ARG_MAX		20480	/* max bytes for an exec function */

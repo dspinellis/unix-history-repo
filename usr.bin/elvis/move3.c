@@ -21,7 +21,7 @@ static char	prev_key;	/* sought cvhar from previous [fFtT] */
 MARK	m__ch(m, cnt, cmd)
 	MARK	m;	/* current position */
 	long	cnt;
-	char	cmd;	/* command: either ',' or ';' */
+	int	cmd;	/* command: either ',' or ';' */
 {
 	MARK	(*tmp)();
 
@@ -52,7 +52,7 @@ MARK	m__ch(m, cnt, cmd)
 MARK	m_fch(m, cnt, key)
 	MARK	m;	/* where to search from */
 	long	cnt;
-	char	key;	/* what to search for */
+	int	key;	/* what to search for */
 {
 	REG char	*text;
 
@@ -83,7 +83,7 @@ MARK	m_fch(m, cnt, key)
 MARK	m_Fch(m, cnt, key)
 	MARK	m;	/* where to search from */
 	long	cnt;
-	char	key;	/* what to search for */
+	int	key;	/* what to search for */
 {
 	REG char	*text;
 
@@ -114,50 +114,32 @@ MARK	m_Fch(m, cnt, key)
 MARK	m_tch(m, cnt, key)
 	MARK	m;	/* where to search from */
 	long	cnt;
-	char	key;	/* what to search for */
+	int	key;	/* what to search for */
 {
-	/* skip the adjacent char */
-	pfetch(markline(m));
-	if (plen <= markidx(m))
-	{
-		return MARK_UNSET;
-	}
-	m++;
-
 	m = m_fch(m, cnt, key);
-	if (m == MARK_UNSET)
+	if (m != MARK_UNSET)
 	{
-		return MARK_UNSET;
+		prevfwdfn = m_tch;
+		prevrevfn = m_Tch;
+		m--;
 	}
-
-	prevfwdfn = m_tch;
-	prevrevfn = m_Tch;
-
-	return m - 1;
+	return m;
 }
 
 /* move backward within this line almost to previous occurrence of key */
 MARK	m_Tch(m, cnt, key)
 	MARK	m;	/* where to search from */
 	long	cnt;
-	char	key;	/* what to search for */
+	int	key;	/* what to search for */
 {
-	/* skip the adjacent char */
-	if (markidx(m) == 0)
-	{
-		return MARK_UNSET;
-	}
-	m--;
-
 	m = m_Fch(m, cnt, key);
 	if (m == MARK_UNSET)
 	{
-		return MARK_UNSET;
+		prevfwdfn = m_Tch;
+		prevrevfn = m_tch;
+		m++;
 	}
 
-	prevfwdfn = m_Tch;
-	prevrevfn = m_tch;
-
-	return m + 1;
+	return m;
 }
 #endif

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1983 Eric P. Allman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)stab.c	5.7 (Berkeley) 6/1/90";
+static char sccsid[] = "@(#)stab.c	8.1 (Berkeley) 6/7/93";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -132,4 +132,35 @@ stab(name, type, op)
 	*ps = s;
 
 	return (s);
+}
+/*
+**  STABAPPLY -- apply function to all stab entries
+**
+**	Parameters:
+**		func -- the function to apply.  It will be given one
+**			parameter (the stab entry).
+**		arg -- an arbitrary argument, passed to func.
+**
+**	Returns:
+**		none.
+*/
+
+void
+stabapply(func, arg)
+	void (*func)__P((STAB *, int));
+	int arg;
+{
+	register STAB **shead;
+	register STAB *s;
+
+	for (shead = SymTab; shead < &SymTab[STABSIZE]; shead++)
+	{
+		for (s = *shead; s != NULL; s = s->s_next)
+		{
+			if (tTd(38, 90))
+				printf("stabapply: trying %d/%s\n",
+					s->s_type, s->s_name);
+			func(s, arg);
+		}
+	}
 }

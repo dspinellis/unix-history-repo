@@ -30,12 +30,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)kern_ktrace.c	7.15 (Berkeley) 6/21/91
+ *	from: @(#)kern_ktrace.c	7.15 (Berkeley) 6/21/91
+ *	$Id$
  */
 
 #ifdef KTRACE
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "file.h"
 #include "namei.h"
@@ -171,15 +173,18 @@ ktrpsig(vp, sig, action, mask, code)
 /*
  * ktrace system call
  */
+
+struct ktrace_args {
+	char	*fname;
+	int	ops;
+	int	facs;
+	int	pid;
+};
+
 /* ARGSUSED */
 ktrace(curp, uap, retval)
 	struct proc *curp;
-	register struct args {
-		char	*fname;
-		int	ops;
-		int	facs;
-		int	pid;
-	} *uap;
+	register struct ktrace_args *uap;
 	int *retval;
 {
 	register struct vnode *vp = NULL;

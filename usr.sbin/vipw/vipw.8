@@ -65,7 +65,7 @@ the edit session.
 Once the information has been verified,
 .Nm vipw
 uses
-.Xr mkpasswd 8
+.Xr pwd_mkdb 8
 to update the user database.  This is run in the background, and,
 at very large sites could take several minutes.  Until this update
 is completed, the password file is unavailable for other updates
@@ -85,7 +85,7 @@ will be invoked instead of the default editor
 .Xr passwd 1 ,
 .Xr passwd 5 ,
 .Xr adduser 8 ,
-.Xr mkpasswd 8
+.Xr pwd_mkdb 8
 .Sh HISTORY
 The
 .Nm

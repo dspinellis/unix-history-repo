@@ -33,9 +33,9 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"     @(#)scanf.3	6.11 (Berkeley) 6/29/91
+.\"     @(#)scanf.3	6.14 (Berkeley) 1/8/93
 .\"
-.Dd June 29, 1991
+.Dd January 8, 1993
 .Dt SCANF 3
 .Os
 .Sh NAME
@@ -393,6 +393,7 @@ the number of conversions which were successfully completed is returned.
 .Sh SEE ALSO
 .Xr strtol 3 ,
 .Xr strtoul 3 ,
+.Xr strtod 3 ,
 .Xr getc 3 ,
 .Xr printf 3
 .Sh STANDARDS
@@ -418,3 +419,12 @@ and
 conversions is unfortunate.
 .Pp
 All of the backwards compatibility formats will be removed in the future.
+.Pp
+Numerical strings are truncated to 512 characters; for example,
+.Cm %f
+and
+.Cm %d
+are implicitly
+.Cm %512f
+and
+.Cm %512d .

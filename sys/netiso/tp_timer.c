@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_timer.c	7.5 (Berkeley) 5/6/91
+ *	from: @(#)tp_timer.c	7.5 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,11 +60,9 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /* 
  * ARGO TP
- *
- * $Header: tp_timer.c,v 5.2 88/11/18 17:29:07 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_timer.c,v $
  *
  * Contains all the timer code.  
  * There are two sources of calls to these routines:
@@ -83,6 +82,7 @@ SOFTWARE.
  */
 
 #include "param.h"
+#include "systm.h"
 #include "types.h"
 #include "time.h"
 #include "malloc.h"

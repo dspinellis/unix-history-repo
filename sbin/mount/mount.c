@@ -419,6 +419,8 @@ prmount(spec, name, flags)
 		PR("nosuid");
 	if (flags & MNT_NODEV)
 		PR("nodev");
+	if (flags & MNT_NOCORE)
+		PR("nocore");
 	if (flags & MNT_SYNCHRONOUS)
 		PR("synchronous");
 	if (flags & MNT_QUOTA)
@@ -502,6 +504,13 @@ getstdopts(options, flagp)
 				*flagp |= MNT_NODEV;
 			else
 				*flagp &= ~MNT_NODEV;
+			continue;
+		}
+		if (!strcasecmp(opt, "core")) {
+			if (negative)
+				*flagp |= MNT_NOCORE;
+			else
+				*flagp &= ~MNT_NOCORE;
 			continue;
 		}
 		if (!strcasecmp(opt, "synchronous")) {

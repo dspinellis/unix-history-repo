@@ -1,45 +1,4 @@
-.\" Copyright (c) 1991 The Regents of the University of California.
-.\" All rights reserved.
-.\"
-.\" new copyright; att/bsd/shared
-.\" This code is derived from software contributed to Berkeley by
-.\" Vern Paxson of Lawrence Berkeley Laboratory.
-.\"
-.\" The United States Government has rights in this work pursuant
-.\" to contract no. DE-AC03-76SF00098 between the United States
-.\" Department of Energy and the University of California.
-.\"
-.\" Redistribution and use in source and binary forms, with or without
-.\" modification, are permitted provided that the following conditions
-.\" are met:
-.\" 1. Redistributions of source code must retain the above copyright
-.\"    notice, this list of conditions and the following disclaimer.
-.\" 2. Redistributions in binary form must reproduce the above copyright
-.\"    notice, this list of conditions and the following disclaimer in the
-.\"    documentation and/or other materials provided with the distribution.
-.\" 3. All advertising materials mentioning features or use of this software
-.\"    must display the following acknowledgement:
-.\"	This product includes software developed by the University of
-.\"	California, Berkeley and its contributors.
-.\" 4. Neither the name of the University nor the names of its contributors
-.\"    may be used to endorse or promote products derived from this software
-.\"    without specific prior written permission.
-.\"
-.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
-.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
-.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-.\" SUCH DAMAGE.
-.\"
-.\"	@(#)flexdoc.1	5.2 (Berkeley) 4/12/91
-.\"
-.TH FLEX 1 "April 12, 1991"
+.TH FLEX 1 "26 May 1990" "Version 2.3"
 .SH NAME
 flex - fast lexical analyzer generator
 .SH SYNOPSIS
@@ -146,7 +105,7 @@ A somewhat more complicated example:
                 }
 
     {DIGIT}+"."{DIGIT}*        {
-                printf( "A float: %s (%d)\\n", yytext,
+                printf( "A float: %s (%g)\\n", yytext,
                         atof( yytext ) );
                 }
 
@@ -827,7 +786,10 @@ section of the input file):
     %{
     #undef YY_INPUT
     #define YY_INPUT(buf,result,max_size) \\
-        result = ((buf[0] = getchar()) == EOF) ? YY_NULL : 1;
+        { \\
+        int c = getchar(); \\
+        result = (c == EOF) ? YY_NULL : (buf[0] = c, 1); \\
+        }
     %}
 
 .fi
@@ -2082,6 +2044,99 @@ is fully compatible with
 .I lex
 with the following exceptions:
 .IP -
+The undocumented
+.I lex
+scanner internal variable
+.B yylineno
+is not supported.  It is difficult to support this option efficiently,
+since it requires examining every character scanned and reexamining
+the characters when the scanner backs up.
+Things get more complicated when the end of buffer or file is reached or a
+NUL is scanned (since the scan must then be restarted with the proper line
+number count), or the user uses the yyless(), unput(), or REJECT actions,
+or the multiple input buffer functions.
+.IP
+The fix is to add rules which, upon seeing a newline, increment
+yylineno.  This is usually an easy process, though it can be a drag if some
+of the patterns can match multiple newlines along with other characters.
+.IP
+yylineno is not part of the POSIX draft.
+.IP -
+The
+.B input()
+routine is not redefinable, though it may be called to read characters
+following whatever has been matched by a rule.  If
+.B input()
+encounters an end-of-file the normal
+.B yywrap()
+processing is done.  A ``real'' end-of-file is returned by
+.B input()
+as
+.I EOF.
+.IP
+Input is instead controlled by redefining the
+.B YY_INPUT
+macro.
+.IP
+The
+.I flex
+restriction that
+.B input()
+cannot be redefined is in accordance with the POSIX draft, but
+.B YY_INPUT
+has not yet been accepted into the draft (and probably won't; it looks
+like the draft will simply not specify any way of controlling the
+scanner's input other than by making an initial assignment to
+.I yyin).
+.IP -
+.I flex
+scanners do not use stdio for input.  Because of this, when writing an
+interactive scanner one must explicitly call fflush() on the
+stream associated with the terminal after writing out a prompt.
+With
+.I lex
+such writes are automatically flushed since
+.I lex
+scanners use
+.B getchar()
+for their input.  Also, when writing interactive scanners with
+.I flex,
+the
+.B -I
+flag must be used.
+.IP -
+.I flex
+scanners are not as reentrant as
+.I lex
+scanners.  In particular, if you have an interactive scanner and
+an interrupt handler which long-jumps out of the scanner, and
+the scanner is subsequently called again, you may get the following
+message:
+.nf
+
+    fatal flex scanner internal error--end of buffer missed
+
+.fi
+To reenter the scanner, first use
+.nf
+
+    yyrestart( yyin );
+
+.fi
+.IP -
+.B output()
+is not supported.
+Output from the
+.B ECHO
+macro is done to the file-pointer
+.I yyout
+(default
+.I stdout).
+.IP
+The POSIX draft mentions that an
+.B output()
+routine exists but currently gives no details as to what it does.
+.IP -
 .I lex
 does not support exclusive start conditions (%x), though they
 are in the current POSIX draft.
@@ -2125,49 +2180,6 @@ one must use "[^\\]]".  The latter works with
 .I lex,
 too.
 .IP -
-The undocumented
-.I lex
-scanner internal variable
-.B yylineno
-is not supported.  (The variable is not part of the POSIX draft.)
-.IP -
-The
-.B input()
-routine is not redefinable, though it may be called to read characters
-following whatever has been matched by a rule.  If
-.B input()
-encounters an end-of-file the normal
-.B yywrap()
-processing is done.  A ``real'' end-of-file is returned by
-.B input()
-as
-.I EOF.
-.IP
-Input is instead controlled by redefining the
-.B YY_INPUT
-macro.
-.IP
-The
-.I flex
-restriction that
-.B input()
-cannot be redefined is in accordance with the POSIX draft, but
-.B YY_INPUT
-has not yet been accepted into the draft.
-.IP -
-.B output()
-is not supported.
-Output from the
-.B ECHO
-macro is done to the file-pointer
-.I yyout
-(default
-.I stdout).
-.IP
-The POSIX draft mentions that an
-.B output()
-routine exists but currently gives no details as to what it does.
-.IP -
 The
 .I lex
 .B %r
@@ -2179,7 +2191,7 @@ If you are providing your own yywrap() routine, you must include a
 the "#undef" will have to be enclosed in %{}'s.
 .IP
 The POSIX draft
-specifies that yywrap() is a function and this is unlikely to change; so
+specifies that yywrap() is a function and this is very unlikely to change; so
 .I flex users are warned
 that
 .B yywrap()
@@ -2345,7 +2357,7 @@ any of its rules.
 a scanner rule matched a string long enough to overflow the
 scanner's internal input buffer (16K bytes by default - controlled by
 .B YY_BUF_SIZE
-in "flex.skel".  Note that to redefine this macro, you must first
+in "lex.skel".  Note that to redefine this macro, you must first
 .B #undefine
 it).
 .LP
@@ -2353,6 +2365,17 @@ it).
 Your scanner specification includes recognizing 8-bit characters and
 you did not specify the -8 flag (and your site has not installed flex
 with -8 as the default).
+.LP
+.I
+fatal flex scanner internal error--end of buffer missed -
+This can occur in an scanner which is reentered after a long-jump
+has jumped out (or over) the scanner's activation frame.  Before
+reentering the scanner, use:
+.nf
+
+    yyrestart( yyin );
+
+.fi
 .LP
 .I too many %t classes! -
 You managed to put every single character into its own %t class.
@@ -2375,7 +2398,7 @@ Jacobson.  The implementation was done by Kevin Gong and Vern Paxson.
 Thanks to the many
 .I flex
 beta-testers, feedbackers, and contributors, especially Casey
-Leedom, benson@odi.com,
+Leedom, benson@odi.com, Keith Bostic,
 Frederic Brehm, Nick Christopher, Jason Coughlin,
 Scott David Daniels, Leo Eskin,
 Chris Faylor, Eric Goldman, Eric
@@ -2412,12 +2435,13 @@ Send comments to:
 .nf
 
      Vern Paxson
-     Computer Science Department
-     4126 Upson Hall
-     Cornell University
-     Ithaca, NY 14853-7501
+     Computer Systems Engineering
+     Bldg. 46A, Room 1123
+     Lawrence Berkeley Laboratory
+     University of California
+     Berkeley, CA 94720
 
-     vern@cs.cornell.edu
-     decvax!cornell!vern
+     vern@ee.lbl.gov
+     ucbvax!ee.lbl.gov!vern
 
 .fi

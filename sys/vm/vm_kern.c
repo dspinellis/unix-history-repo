@@ -33,9 +33,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_kern.c	7.4 (Berkeley) 5/7/91
- *
- *
+ *	from: @(#)vm_kern.c	7.4 (Berkeley) 5/7/91
+ *	$Id$
+ */
+
+/*
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
  *
@@ -61,13 +63,6 @@
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00134
- * --------------------         -----   ----------------------
- *
- * 08 Apr 93	Andrew Herbert		Better messages for kmem_alloc panics
- *		John Dyson		Add vm_map_simplify's to reduce frags
  */
 
 /*
@@ -75,6 +70,7 @@
  */
 
 #include "param.h"
+#include "syslog.h"
 
 #include "vm.h"
 #include "vm_page.h"
@@ -382,7 +378,8 @@ kmem_malloc(map, size, canwait)
 			if (map == kmem_map)
 				panic("kmem_malloc: kmem_map too small");
 			else if (map == mb_map)
-				printf("kmem_malloc: mb_map too small (can't wait)\n");
+				log(LOG_WARNING,
+					"kmem_malloc: mb_map too small (can't wait)\n");
 		}
 		return 0;
 	}

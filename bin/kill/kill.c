@@ -49,12 +49,12 @@ static char sccsid[] = "@(#)kill.c	5.3 (Berkeley) 7/1/91";
 #include <ctype.h>
 
 static char *signals[] = {
-	"hup", "int", "quit", "ill", "trap", "iot",		/*  1 - 6  */
-	"emt", "fpe", "kill", "bus", "segv", "sys",		/*  7 - 12 */
-	"pipe", "alrm",  "term", "urg", "stop", "tstp",		/* 13 - 18 */
-	"cont", "chld", "ttin", "ttou", "io", "xcpu",		/* 19 - 24 */
-	"xfsz", "vtalrm", "prof", "winch", "info", "usr1",	/* 25 - 30 */
-	"usr2", NULL,						/* 31 - 32 */
+	"HUP", "INT", "QUIT", "ILL", "TRAP", "ABRT",		/*  1 - 6  */
+	"EMT", "FPE", "KILL", "BUS", "SEGV", "SYS",		/*  7 - 12 */
+	"PIPE", "ALRM", "TERM", "URG", "STOP", "TSTP",		/* 13 - 18 */
+	"CONT", "CHLD", "TTIN", "TTOU", "IO", "XCPU",		/* 19 - 24 */
+	"XFSZ", "VTALRM", "PROF", "WINCH", "INFO", "USR1",	/* 25 - 30 */
+	"USR2", NULL,						/* 31 - 32 */
 };
 
 main(argc, argv)
@@ -68,24 +68,60 @@ main(argc, argv)
 	if (argc < 2)
 		usage();
 
-	if (!strcmp(*++argv, "-l")) {
-		printsig(stdout);
-		exit(0);
-	}
-
 	numsig = SIGTERM;
-	if (**argv == '-') {
+	argc--, argv++;
+	if (strcmp(*argv, "-l") == 0) {
+		if (argc > 2) {
+			usage ();
+			/* NOTREACHED */
+		}
+		if (argc == 2) {
+			argv++;
+			if (isdigit(**argv)) {
+				numsig = strtol(*argv, &ep, 10);
+				if (*argv && !*ep) {
+					if (numsig > 0 && numsig < NSIG) {
+						printsig (numsig);
+						exit (0);
+					}
+
+					numsig -= 128;
+					if (numsig > 0 && numsig < NSIG) {
+						printsig (numsig);
+						exit (0);
+					}
+				}
+				(void)fprintf(stderr,
+				    "kill: illegal signal number %s\n", *argv);
+				exit(1);
+			}
+			usage ();
+			/* NOTREACHED */
+		}
+		printsignals(stdout);
+		exit(0);
+	} else if (strcmp(*argv, "-s") == 0) {
+		if (argc < 2) {
+			(void)fprintf(stderr,
+				"kill: option requires an argument -- s\n");
+			usage();
+		}
+		argc--,argv++;
+		if (strcmp (*argv, "0") == 0) {
+			numsig = 0;
+		} else {
+			if ((numsig = signame_to_signum (*argv)) < 0) {
+				nosig(*argv);
+				/* NOTREACHED */
+			}
+		}
+		argc--,argv++;
+	} else if (**argv == '-') {
 		++*argv;
 		if (isalpha(**argv)) {
-			if (!strncasecmp(*argv, "sig", 3))
-				*argv += 3;
-			for (p = signals;; ++p) {
-				if (!*p)
-					nosig(*argv);
-				if (!strcasecmp(*p, *argv)) {
-					numsig = p - signals + 1;
-					break;
-				}
+			if ((numsig = signame_to_signum (*argv)) < 0) {
+				nosig(*argv);
+				/* NOTREACHED */
 			}
 		} else if (isdigit(**argv)) {
 			numsig = strtol(*argv, &ep, 10);
@@ -94,11 +130,13 @@ main(argc, argv)
 				    "kill: illegal signal number %s\n", *argv);
 				exit(1);
 			}
-			if (numsig <= 0 || numsig > NSIG)
+			if (numsig <= 0 || numsig >= NSIG) {
 				nosig(*argv);
+				/* NOTREACHED */
+			}
 		} else
 			nosig(*argv);
-		++argv;
+		argc--,argv++;
 	}
 
 	if (!*argv)
@@ -120,30 +158,67 @@ main(argc, argv)
 	exit(errors);
 }
 
+int
+signame_to_signum (sig)
+	char *sig;
+{
+	char **p;
+
+	if (!strncasecmp(sig, "sig", 3))
+		sig += 3;
+	for (p = signals; *p; ++p) {
+		if (!strcasecmp(*p, sig)) {
+			return p - signals + 1;
+		}
+	}
+	return -1;
+}
+
 nosig(name)
 	char *name;
 {
 	(void)fprintf(stderr,
 	    "kill: unknown signal %s; valid signals:\n", name);
-	printsig(stderr);
+	printsignals(stderr);
 	exit(1);
 }
 
-printsig(fp)
+printsig(sig)
+	int sig;
+{
+	printf ("%s\n", signals[sig - 1]);
+}
+
+printsignals(fp)
 	FILE *fp;
 {
-	register char **p;
+	register char **p = signals;;
 
-	for (p = signals; *p; ++p) {
-		(void)fprintf(fp, "%s ", *p);
-		if ((p - signals) == NSIG / 2 - 1)
-			(void)fprintf(fp, "\n");
+	/* From POSIX 1003.2, Draft 11.2: 
+		When the -l option is specified, the symbolic name of each
+	   signal shall be written in the following format:
+		"%s%c", <signal_name>, <separator>
+           where the <signal_name> is in uppercase, without the SIG prefix,
+	   and the <separator> shall either be a <newline> or a <space>.
+	   For the last signal written, <separator> shall be a <newline> */
+
+	/* This looses if the signals array is empty; But, since it
+	   will "never happen", there is no need to add wrap this 
+	   in a conditional that will always succeed. */
+	(void)fprintf(fp, "%s", *p);
+	
+	for (++p ; *p; ++p) {
+		(void)fprintf(fp, " %s", *p);
 	}
 	(void)fprintf(fp, "\n");
 }
 
 usage()
 {
-	(void)fprintf(stderr, "usage: kill [-l] [-sig] pid ...\n");
+	(void)fprintf(stderr, "usage: kill [-s signal_name] pid ...\n");
+	(void)fprintf(stderr, "       kill -l [exit_status]\n");
+	(void)fprintf(stderr, "obsolete usage:\n");
+	(void)fprintf(stderr, "       kill -signal_name pid ...\n");
+	(void)fprintf(stderr, "       kill -signal_number pid ...\n");
 	exit(1);
 }

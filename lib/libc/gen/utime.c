@@ -32,7 +32,8 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)utime.c	5.4 (Berkeley) 2/23/91";
+/*static char sccsid[] = "from: @(#)utime.c	5.4 (Berkeley) 2/23/91";*/
+static char rcsid[] = "$Id: utime.c,v 1.3 1993/08/13 23:58:50 jtc Exp $";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/time.h>
@@ -45,8 +46,12 @@ utime(path, times)
 {
 	struct timeval tv[2];
 
-	tv[0].tv_sec = times->actime;
-	tv[1].tv_sec = times->modtime;
-	tv[0].tv_usec = tv[1].tv_usec = 0;
-	return(utimes(path, tv));
+	if (times == (struct utimbuf *) NULL) {
+		return(utimes(path, (struct timeval *) NULL));
+	} else {
+		tv[0].tv_sec = times->actime;
+		tv[1].tv_sec = times->modtime;
+		tv[0].tv_usec = tv[1].tv_usec = 0;
+		return(utimes(path, tv));
+	}
 }

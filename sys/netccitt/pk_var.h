@@ -35,7 +35,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)pk_var.h	7.11 (Berkeley) 5/29/91
+ *	from: @(#)pk_var.h	7.11 (Berkeley) 5/29/91
+ *	$Id$
  */
 
 

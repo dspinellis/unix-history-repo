@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ufs_disksubr.c	7.16 (Berkeley) 5/4/91
+ *	from: @(#)ufs_disksubr.c	7.16 (Berkeley) 5/4/91
+ *	$Id$
  */
 
 #include "param.h"
@@ -556,7 +557,7 @@ diskerr(bp, dname, what, pri, blkdone, lp)
 	register struct disklabel *lp;
 {
 	int unit = dkunit(bp->b_dev), part = dkpart(bp->b_dev);
-	register void (*pr) __P((const char *, ...));
+	register int (*pr) __P((const char *, ...));
 	char partname = 'a' + part;
 	int sn;
 
@@ -588,4 +589,5 @@ diskerr(bp, dname, what, pri, blkdone, lp)
 		sn %= lp->d_secpercyl;
 		(*pr)(" tn %d sn %d)", sn / lp->d_nsectors, sn % lp->d_nsectors);
 	}
+	(*pr)("\n");
 }

@@ -136,6 +136,12 @@ MARK m_scroll(m, cnt, key)
 	int	key;	/* keystroke that causes this movement */
 {
 	MARK	tmp;	/* a temporary mark, used as arg to redraw() */
+#ifndef CRUNCH
+	int	savenearscroll;
+
+	savenearscroll = *o_nearscroll;
+	*o_nearscroll = LINES;
+#endif
 
 	/* adjust cnt, and maybe *o_scroll, depending of key */
 	switch (key)
@@ -207,5 +213,8 @@ MARK m_scroll(m, cnt, key)
 		break;
 	}
 
+#ifndef CRUNCH
+	*o_nearscroll = savenearscroll;
+#endif
 	return m;
 }

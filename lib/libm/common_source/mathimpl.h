@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)mathimpl.h	5.4 (Berkeley) 3/5/91
+ *	@(#)mathimpl.h	5.5 (Berkeley) 12/2/92
  */
 
 #include <sys/cdefs.h>
@@ -93,3 +93,6 @@
 extern double	exp__E();
 extern double	log__L();
 
+struct Double {double a, b;};
+double exp__D __P((double, double));
+struct Double log__D __P((double));

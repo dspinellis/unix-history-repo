@@ -2,22 +2,17 @@
 Copyright (C) 1988 Free Software Foundation
     written by Doug Lea (dl@rocky.oswego.edu)
 
-This file is part of GNU CC.
-
-GNU CC is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU CC General Public
-License for full details.
-
-Everyone is granted permission to copy, modify and redistribute
-GNU CC, but only under the conditions described in the
-GNU CC General Public License.   A copy of this license is
-supposed to have been given to you along with GNU CC so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  
+This file is part of the GNU C++ Library.  This library is free
+software; you can redistribute it and/or modify it under the terms of
+the GNU Library General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your
+option) any later version.  This library is distributed in the hope
+that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.  See the GNU Library General Public License for more details.
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 /* 
@@ -29,12 +24,15 @@ and this notice must be preserved on all copies.
 #endif
 #include <BitSet.h>
 #include <std.h>
-#include <values.h>
+#include <limits.h>
 #include <Obstack.h>
 #include <AllocRing.h>
 #include <new.h>
+#include <builtin.h>
+#include <string.h>
+#include <strstream.h>
 
-volatile void BitSet::error(const char* msg) const
+void BitSet::error(const char* msg) const
 {
   (*lib_error_handler)("BitSet", msg);
 }
@@ -44,7 +42,7 @@ volatile void BitSet::error(const char* msg) const
 BitSetRep  _nilBitSetRep = { 0, 1, 0, {0} }; // nil BitSets point here
 
 #define ONES               ((unsigned short)(~0L))
-#define MAXBitSetRep_SIZE  ((1 << (SHORTBITS - 1)) - 1)
+#define MAXBitSetRep_SIZE  ((1 << (sizeof(short)*CHAR_BIT - 1)) - 1)
 #define MINBitSetRep_SIZE  16
 
 #ifndef MALLOC_MIN_OVERHEAD
@@ -80,15 +78,15 @@ inline static BitSetRep* BSnew(int newlen)
     (*lib_error_handler)("BitSet", "Requested length out of range");
     
   BitSetRep* rep = (BitSetRep *) new char[allocsiz];
-  bzero(rep, allocsiz);
+  memset(rep, 0, allocsiz);
   rep->sz = (allocsiz - sizeof(BitSetRep) + sizeof(short)) / sizeof(short);
   return rep;
 }
 
-BitSetRep* BitSetalloc(BitSetRep* old, const unsigned short* src, int srclen, 
+BitSetRep* BitSetalloc(BitSetRep* old, const unsigned short* src, int srclen,
                 int newvirt, int newlen)
 {
-  if (old == &_nilBitSetRep) old = 0; 
+  if (old == &_nilBitSetRep) old = 0;
   BitSetRep* rep;
   if (old == 0 || newlen >= old->sz)
     rep = BSnew(newlen);
@@ -99,8 +97,10 @@ BitSetRep* BitSetalloc(BitSetRep* old, const unsigned short* src, int srclen,
   rep->virt = newvirt;
 
   if (srclen != 0 && src != rep->s)
-    bcopy(src, rep->s, srclen * sizeof(short));
-
+    memcpy(rep->s, src, srclen * sizeof(short));
+  // BUG fix: extend virtual bit! 20 Oct 1992 Kevin Karplus
+  if (rep->virt)
+      memset(&rep->s[srclen], ONES, (newlen - srclen) * sizeof(short));
   if (old != rep && old != 0) delete old;
   return rep;
 }
@@ -116,8 +116,11 @@ BitSetRep* BitSetresize(BitSetRep* old, int newlen)
   else if (newlen >= old->sz)
   {
     rep = BSnew(newlen);
-    bcopy(old->s, rep->s, old->len * sizeof(short));
+    memcpy(rep->s, old->s, old->len * sizeof(short));
     rep->virt = old->virt;
+    // BUG fix: extend virtual bit!  20 Oct 1992 Kevin Karplus
+    if (rep->virt)
+	memset(&rep->s[old->len], ONES, (newlen - old->len) * sizeof(short));
     delete old;
   }
   else
@@ -156,7 +159,7 @@ BitSetRep* BitSetcopy(BitSetRep* old, const BitSetRep* src)
     else
       rep = old;
 
-    bcopy(src->s, rep->s, newlen * sizeof(short));
+    memcpy(rep->s, src->s, newlen * sizeof(short));
     rep->len = newlen;
     rep->virt = src->virt;
   }
@@ -180,11 +183,32 @@ inline static void trim(BitSetRep* rep)
 
 int operator == (const BitSet& x, const BitSet& y)
 {
-  return x.rep->len == y.rep->len && x.rep->virt == y.rep->virt &&
-    bcmp((void*)x.rep->s, (void*)y.rep->s, 
-         x.rep->len * sizeof(short)) == 0;
-}
+  if (x.rep->virt != y.rep->virt)
+    return 0;
+  int xl = x.rep->len;
+  int yl = y.rep->len;
 
+  unsigned short* xs = x.rep->s;
+  unsigned short* ys = y.rep->s;
+  if (xl<=yl)
+    {
+      if (memcmp((void*)xs, (void*)ys, xl * sizeof(short)))
+  	return 0;
+      for (register int i=xl; i<yl; i++)
+        if (ys[i])
+	  return 0;
+      return 1;
+    }
+  else
+    {
+      if (memcmp((void*)xs, (void*)ys, yl * sizeof(short)))
+  	return 0;
+      for (register int i=yl; i<xl; i++)
+        if (xs[i]) 
+	  return 0;
+      return 1;
+    }
+}
 
 int operator <= (const BitSet& x, const BitSet& y)
 {
@@ -427,6 +451,12 @@ void BitSet::set(int p)
   rep->s[index] |= (1 << pos);
 }
 
+void BitSet::clear()
+{
+  if (rep->len > 0) memset(rep->s, 0, rep->sz * sizeof(short));
+  rep->len = rep->virt = 0;
+}
+
 void BitSet::clear(int p)
 {
   if (p < 0) error("Illegal bit index");
@@ -657,7 +687,7 @@ int BitSet::next(int p, int b) const
   }
 }
 
-int BitSet::previous(int p, int b) const
+int BitSet::prev(int p, int b) const
 {
   if (--p < 0)
     return -1;
@@ -740,7 +770,7 @@ int BitSet::last(int b) const
   if (b == rep->virt)
     return -1;
   else
-    return previous((rep->len) * BITSETBITS, b);
+    return prev((rep->len) * BITSETBITS, b);
 }
 
 
@@ -749,50 +779,12 @@ extern AllocRing _libgxx_fmtq;
 const char* BitSettoa(const BitSet& x, char f, char t, char star)
 {
   trim(x.rep);
-
   int wrksiz = (x.rep->len + 1) * BITSETBITS + 2;
   char* fmtbase = (char *) _libgxx_fmtq.alloc(wrksiz);
-  char* fmt = fmtbase;
-
-  const unsigned short* s = x.rep->s;
-  const unsigned short* top = &(s[x.rep->len - 1]);
-
-  while (s < top)
-  {
-    unsigned short a = *s++;
-    for (int j = 0; j < BITSETBITS; ++j)
-    {
-      *fmt++ = (a & 1)? t : f;
-      a >>= 1;
-    }
-  }
-
-  if (!x.rep->virt)
-  {
-    unsigned short a = *s;
-    for (int j = 0; j < BITSETBITS && a != 0; ++j)
-    {
-      *fmt++ = (a & 1)? t : f;
-      a >>= 1;
-    }
-    *fmt++ = f;
-  }
-  else
-  {
-    unsigned short a = *s;
-    unsigned short mask = ONES;
-    unsigned short himask = (1 << (BITSETBITS - 1)) - 1;
-    for (int j = 0; j < BITSETBITS && a != mask; ++j)
-    {
-      *fmt++ = (a & 1)? t : f;
-      a = (a >> 1) & himask;
-      mask = (mask >> 1) & himask;
-    }
-    *fmt++ = t;
-  }
-
-  *fmt++ = star;
-  *fmt++ = 0;
+  ostrstream stream(fmtbase, wrksiz);
+  
+  x.printon(stream, f, t, star);
+  stream << ends;
   return fmtbase;
 }
 
@@ -941,7 +933,60 @@ BitSet atoBitSet(const char* s, char f, char t, char star)
 
 ostream& operator << (ostream& s, const BitSet& x)
 {
-  return s << BitSettoa(x);
+  if (s.opfx())
+    x.printon(s);
+  return s;
+}
+
+void BitSet::printon(ostream& os, char f, char t, char star) const
+// FIXME:  Does not respect s.width()!
+{
+  trim(rep);
+  register streambuf* sb = os.rdbuf();
+  const unsigned short* s = rep->s;
+  const unsigned short* top = &(s[rep->len - 1]);
+
+  while (s < top)
+  {
+    unsigned short a = *s++;
+    for (int j = 0; j < BITSETBITS; ++j)
+    {
+      sb->sputc((a & 1)? t : f);
+      a >>= 1;
+    }
+  }
+
+  if (!rep->virt)
+  {
+    unsigned short a = *s;
+    if (rep->len != 0)
+    {
+      for (int j = 0; j < BITSETBITS && a != 0; ++j)
+      {
+        sb->sputc((a & 1)? t : f);
+        a >>= 1;
+      }
+    }
+    sb->sputc(f);
+  }
+  else
+  {
+    unsigned short a = *s;
+    unsigned short mask = ONES;
+    unsigned short himask = (1 << (BITSETBITS - 1)) - 1;
+    if (rep->len != 0)
+    {
+      for (int j = 0; j < BITSETBITS && a != mask; ++j)
+      {
+        sb->sputc((a & 1)? t : f);
+        a = (a >> 1) & himask;
+        mask = (mask >> 1) & himask;
+      }
+    }
+    sb->sputc(t);
+  }
+
+  sb->sputc(star);
 }
 
 int BitSet::OK() const

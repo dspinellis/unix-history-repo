@@ -28,8 +28,8 @@ static struct _DIG
 } *digs;
 
 char digraph(key1, key2)
-	char	key1;	/* the underlying character */
-	char	key2;	/* the second character */
+	int	key1;	/* the underlying character */
+	int	key2;	/* the second character */
 {
 	int		newkey;
 	REG struct _DIG	*dp;
@@ -158,7 +158,7 @@ void do_digraph(bang, extra)
 			prev->next = dp->next;
 		else
 			digs = dp->next;
-		free(dp);
+		_free_(dp);
 		return;
 	}
 
@@ -211,11 +211,11 @@ void savedigs(fd)
  * chunk of text with typed-in text.  It returns the MARK of the last character
  * that the user typed in.
  */
-MARK input(from, to, when, above)
+MARK input(from, to, when, delta)
 	MARK	from;	/* where to start inserting text */
 	MARK	to;	/* extent of text to delete */
 	int	when;	/* either WHEN_VIINP or WHEN_VIREP */
-	int	above;	/* boolean: take indentation from lower line? */
+	int	delta;	/* 1 to take indent from lower line, -1 for upper, 0 for none */
 {
 	char	key[2];	/* key char followed by '\0' char */
 	char	*build;	/* used in building a newline+indent string */
@@ -287,8 +287,8 @@ MARK input(from, to, when, above)
 
 		/* handle autoindent of the first line, maybe */
 		cursor = from;
-		m = (above ? (cursor + BLKSIZE) : (cursor - BLKSIZE));
-		if (*o_autoindent && markidx(m) == 0
+		m = cursor + MARK_AT_LINE(delta);
+		if (delta != 0 && *o_autoindent && markidx(m) == 0
 		 && markline(m) >= 1L && markline(m) <= nlines)
 		{
 			/* Only autoindent blank lines. */
@@ -307,7 +307,7 @@ MARK input(from, to, when, above)
 				{
 					*build = '\0';
 					add(cursor, tmpblk.c);
-					cursor += (build - tmpblk.c);
+					cursor += (int)(build - tmpblk.c);
 					if (cursor > to)
 						to = cursor;
 				}
@@ -329,7 +329,7 @@ MARK input(from, to, when, above)
 			build = ptext;
 			if (pline == markline(from))
 				build += markidx(from);
-			for (scan = ptext + markidx(cursor); --scan >= build && isalnum(*scan); )
+			for (scan = ptext + markidx(cursor); --scan >= build && !isspace(*scan); )
 			{
 			}
 			scan++;
@@ -338,7 +338,7 @@ MARK input(from, to, when, above)
 			key[0] = getkey(when);
 #endif
 #ifndef NO_VISIBLE
-			if (key[0] != '\0' && V_from != MARK_UNSET)
+			if (key[0] != ctrl('O') && V_from != MARK_UNSET)
 			{
 				msg("Can't modify text during a selection");
 				beep();
@@ -375,10 +375,11 @@ MARK input(from, to, when, above)
 			 * warpmargin, then change the last whitespace
 			 * characters on line into a newline
 			 */
-			if (*o_wrapmargin != 0)
+			if (*o_wrapmargin)
 			{
 				pfetch(markline(cursor));
-				if (idx2col(cursor, ptext, TRUE) > COLS - (*o_wrapmargin & 0xff))
+				if (plen == idx2col(cursor, ptext, TRUE)
+				 && plen > COLS - (*o_wrapmargin & 0xff))
 				{
 					build = tmpblk.c;
 					*build++ = '\n';
@@ -401,11 +402,15 @@ MARK input(from, to, when, above)
 							continue;
 
 						/*break up line, and we do autoindent if needed*/
-						change(m + (scan - ptext), m + (scan - ptext) + 1, tmpblk.c);
-						cursor = (cursor & ~(BLKSIZE - 1))
-							+ BLKSIZE
-							+ strlen(tmpblk.c) - 1
-							+ plen - (scan - ptext) - 1;
+						change(m + (int)(scan - ptext), m + (int)(scan - ptext) + 1, tmpblk.c);
+
+						/* NOTE: for some reason, MSC 5.10 doesn't
+						 * like for these lines to be combined!!!
+						 */
+						cursor = (cursor & ~(BLKSIZE - 1));
+						cursor += BLKSIZE;
+						cursor += strlen(tmpblk.c) - 1;
+						cursor += plen - (int)(scan - ptext) - 1;
 
 						/*remove trailing spaces on previous line*/
 						pfetch(markline(m));
@@ -416,7 +421,7 @@ MARK input(from, to, when, above)
 							if (*scan != ' ' && *scan != '\t')
 								break;
 						}
-						delete(m + (scan-ptext) + 1, m + plen);
+						delete(m + (int)(scan - ptext) + 1, m + plen);
 
 						break;
 					}
@@ -559,7 +564,7 @@ MARK input(from, to, when, above)
 					V_from = MARK_UNSET;
 					ChangeText
 					{
-						m = from = to = cursor = paste(cursor, (*key == 'p'), FALSE);
+						m = paste(cursor, (*key == 'p'), FALSE);
 					}
 					break;
 # endif /* !NO_VISIBLE */
@@ -569,8 +574,8 @@ MARK input(from, to, when, above)
 				/* adjust the moved cursor */
 				if (m != cursor)
 				{
-					m = adjmove(cursor, m, (*key == 'j' || *key == 'k' ? 0x20 : 0));
-					if (*key == '$' || (*key == 'l' && m <= cursor))
+					m = adjmove(cursor, m, (*key == 'j' || *key == 'k' ? NCOL|FINL : FINL));
+					if (plen && (*key == '$' || (*key == 'l' && m <= cursor)))
 					{
 						m++;
 					}
@@ -696,11 +701,21 @@ MARK input(from, to, when, above)
 					}
 
 					/* remove indent from this line, if blank */
-					if ((scan - ptext) >= markidx(cursor) && plen > 0)
+					if ((int)(scan - ptext) >= markidx(cursor) && plen > 0)
 					{
 						to = cursor &= ~(BLKSIZE - 1);
-						delete(cursor, cursor + plen);
+						delete(cursor, cursor + (int)(scan - ptext));
 					}
+
+#if 0
+					/* advance "to" past whitespace at the cursor */
+					if (to >= cursor)
+					{
+						for (scan = ptext + markidx(cursor), to = cursor; *scan == ' ' || *scan == '\t'; scan++, to++)
+						{
+						}
+					}
+#endif
 				}
 				*build = 0;
 				if (cursor >= to && when != WHEN_VIREP)
@@ -727,7 +742,11 @@ MARK input(from, to, when, above)
 				{
 					cutname('.');
 				}
-				to = cursor = paste(cursor, FALSE, TRUE) + 1L;
+				m = paste(cursor, FALSE, TRUE);
+				if (m != MARK_UNSET)
+				{
+					to = cursor = m + 1L;
+				}
 				break;
 
 			  case ctrl('V'):

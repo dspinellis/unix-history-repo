@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Cimarron D. Taylor of the University of California, Berkeley.
@@ -35,16 +35,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	5.3 (Berkeley) 5/25/91";
+static char sccsid[] = "@(#)find.c	8.1 (Berkeley) 6/6/93";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/errno.h>
+
+#include <err.h>
+#include <errno.h>
 #include <fts.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include "find.h"
 
 /*
@@ -57,8 +60,6 @@ find_formplan(argv)
 	char **argv;
 {
 	PLAN *plan, *tail, *new;
-	PLAN *c_print(), *find_create(), *not_squish(), *or_squish();
-	PLAN *paren_squish();
 
 	/*
 	 * for each argument in the command line, determine what kind of node
@@ -76,7 +77,7 @@ find_formplan(argv)
 	 * by c_name() with an argument of foo and `-->' represents the
 	 * plan->next pointer.
 	 */
-	for (plan = NULL; *argv;) {
+	for (plan = tail = NULL; *argv;) {
 		if (!(new = find_create(&argv)))
 			continue;
 		if (plan == NULL)
@@ -129,7 +130,7 @@ find_formplan(argv)
 	plan = paren_squish(plan);		/* ()'s */
 	plan = not_squish(plan);		/* !'s */
 	plan = or_squish(plan);			/* -o's */
-	return(plan);
+	return (plan);
 }
  
 FTS *tree;			/* pointer to top of FTS hierarchy */
@@ -148,7 +149,7 @@ find_execute(plan, paths)
 	PLAN *p;
     
 	if (!(tree = fts_open(paths, ftsoptions, (int (*)())NULL)))
-		err("ftsopen: %s", strerror(errno));
+		err(1, "ftsopen");
 
 	while (entry = fts_read(tree)) {
 		switch(entry->fts_info) {
@@ -163,21 +164,14 @@ find_execute(plan, paths)
 		case FTS_DNR:
 		case FTS_ERR:
 		case FTS_NS:
-			(void)fprintf(stderr, "find: %s: %s\n", 
-			    entry->fts_path, strerror(errno));
+			(void)fflush(stdout);
+			warn("%s", entry->fts_path);
 			continue;
-		case FTS_SL:
-			if (entry->fts_level == FTS_ROOTLEVEL) {
-				(void)fts_set(tree, entry, FTS_FOLLOW);
-				continue;
-			}
-			break;
 		}
-
 #define	BADCH	" \t\n\\'\""
 		if (isxargs && strpbrk(entry->fts_path, BADCH)) {
-			(void)fprintf(stderr,
-			    "find: illegal path: %s\n", entry->fts_path);
+			(void)fflush(stdout);
+			warnx("%s: illegal path", entry->fts_path);
 			continue;
 		}
 		 

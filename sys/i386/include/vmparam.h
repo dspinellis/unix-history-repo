@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vmparam.h	5.9 (Berkeley) 5/12/91
+ *	from: @(#)vmparam.h	5.9 (Berkeley) 5/12/91
+ *	$Id$
  */
 
 
@@ -63,7 +64,7 @@
  */
 #define	MAXTSIZ		(6*1024*1024)		/* max text size */
 #ifndef DFLDSIZ
-#define	DFLDSIZ		(6*1024*1024)		/* initial data size limit */
+#define	DFLDSIZ		(16*1024*1024)		/* initial data size limit */
 #endif
 #ifndef MAXDSIZ
 #define	MAXDSIZ		(32*1024*1024)		/* max data size */
@@ -72,7 +73,7 @@
 #define	DFLSSIZ		(512*1024)		/* initial stack size limit */
 #endif
 #ifndef	MAXSSIZ
-#define	MAXSSIZ		MAXDSIZ			/* max stack size */
+#define	MAXSSIZ		(8*1024*1024)		/* max stack size */
 #endif
 
 /*
@@ -89,6 +90,13 @@
  */
 #define	SYSPTSIZE 	(2*NPTEPG)
 #define	USRPTSIZE 	(2*NPTEPG)
+
+/*
+ * Size of the Shared Memory Pages page table.
+ */
+#ifndef	SHMMAXPGS
+#define	SHMMAXPGS	512		/* XXX until we have more kmap space */
+#endif
 
 /*
  * Size of User Raw I/O map
@@ -212,11 +220,8 @@
 
 /* virtual sizes (bytes) for various kernel submaps */
 #define VM_MBUF_SIZE		(NMBCLUSTERS*MCLBYTES)
-#define VM_KMEM_SIZE		(NKMEMCLUSTERS*CLBYTES)
+#define VM_KMEM_SIZE		(16 * 1024 * 1024)
 #define VM_PHYS_SIZE		(USRIOSIZE*CLBYTES)
-
-/* # of kernel PT pages (initial only, can grow dynamically) */
-#define VM_KERNEL_PT_PAGES	((vm_size_t)2)		/* XXX: SYSPTSIZE */
 
 /* pcb base */
 #define	pcbb(p)		((u_int)(p)->p_addr)

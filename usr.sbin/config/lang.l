@@ -78,6 +78,7 @@ struct kt {
 	{ "major",	MAJOR },
 	{ "makeoptions", MAKEOPTIONS },
 	{ "master",	MASTER },
+	{ "maxfdescs",	MAXFDESCS },
 	{ "maxusers",	MAXUSERS },
 	{ "minor",	MINOR },
 #if MACHINE_I386

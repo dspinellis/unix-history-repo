@@ -437,7 +437,7 @@ static struct compiler default_compilers[] =
 {
   {".c", "@c"},
   {"@c",
-   "cpp -lang-c %{nostdinc*} %{C} %{v} %{A*} %{I*} %{P} %I\
+   "gcpp -lang-c %{nostdinc*} %{C} %{v} %{A*} %{I*} %{P} %I\
 	%{C:%{!E:%eGNU C does not support -C without using -E}}\
 	%{M} %{MM} %{MD:-MD %b.d} %{MMD:-MMD %b.d}\
         -undef -D__GNUC__=2 %{ansi:-trigraphs -$ -D__STRICT_ANSI__}\
@@ -446,7 +446,7 @@ static struct compiler default_compilers[] =
         %{traditional-cpp:-traditional}\
 	%{g*} %{W*} %{w} %{pedantic*} %{H} %{d*} %C %{D*} %{U*} %{i*}\
         %i %{!M:%{!MM:%{!E:%{!pipe:%g.i}}}}%{E:%W{o*}}%{M:%W{o*}}%{MM:%W{o*}} |\n",
-   "%{!M:%{!MM:%{!E:cc1 %{!pipe:%g.i} %1 \
+   "%{!M:%{!MM:%{!E:gcc1 %{!pipe:%g.i} %1 \
 		   %{!Q:-quiet} -dumpbase %b.c %{d*} %{m*} %{a}\
 		   %{g*} %{O*} %{W*} %{w} %{pedantic*} %{ansi} \
 		   %{traditional} %{v:-version} %{pg:-p} %{p} %{f*}\
@@ -457,7 +457,7 @@ static struct compiler default_compilers[] =
 		      %{c:%W{o*}%{!o*:-o %w%b.o}}%{!c:-o %d%w%u.o}\
                       %{!pipe:%g.s} %A\n }}}}"},
   {"-",
-   "%{E:cpp -lang-c %{nostdinc*} %{C} %{v} %{A*} %{I*} %{P} %I\
+   "%{E:gcpp -lang-c %{nostdinc*} %{C} %{v} %{A*} %{I*} %{P} %I\
 	%{C:%{!E:%eGNU C does not support -C without using -E}}\
 	%{M} %{MM} %{MD:-MD %b.d} %{MMD:-MMD %b.d}\
         -undef -D__GNUC__=2 %{ansi:-trigraphs -$ -D__STRICT_ANSI__}\
@@ -469,7 +469,7 @@ static struct compiler default_compilers[] =
     %{!E:%e-E required when input is from standard input}"},
   {".m", "@objective-c"},
   {"@objective-c",
-   "cpp -lang-objc %{nostdinc*} %{C} %{v} %{A*} %{I*} %{P} %I\
+   "gcpp -lang-objc %{nostdinc*} %{C} %{v} %{A*} %{I*} %{P} %I\
 	%{C:%{!E:%eGNU C does not support -C without using -E}}\
 	%{M} %{MM} %{MD:-MD %b.d} %{MMD:-MMD %b.d}\
         -undef -D__OBJC__ -D__GNUC__=2 %{ansi:-trigraphs -$ -D__STRICT_ANSI__}\
@@ -478,7 +478,7 @@ static struct compiler default_compilers[] =
         %{traditional-cpp:-traditional}\
 	%{g*} %{W*} %{w} %{pedantic*} %{H} %{d*} %C %{D*} %{U*} %{i*}\
         %i %{!M:%{!MM:%{!E:%{!pipe:%g.i}}}}%{E:%W{o*}}%{M:%W{o*}}%{MM:%W{o*}} |\n",
-   "%{!M:%{!MM:%{!E:cc1obj %{!pipe:%g.i} %1 \
+   "%{!M:%{!MM:%{!E:gcc1obj %{!pipe:%g.i} %1 \
 		   %{!Q:-quiet} -dumpbase %b.m %{d*} %{m*} %{a}\
 		   %{g*} %{O*} %{W*} %{w} %{pedantic*} %{ansi} \
 		   %{traditional} %{v:-version} %{pg:-p} %{p} %{f*} \
@@ -492,7 +492,7 @@ static struct compiler default_compilers[] =
   {".h", "@c-header"},
   {"@c-header",
    "%{!E:%eCompilation of header file requested} \
-    cpp %{nostdinc*} %{C} %{v} %{A*} %{I*} %{P} %I\
+    gcpp %{nostdinc*} %{C} %{v} %{A*} %{I*} %{P} %I\
 	%{C:%{!E:%eGNU C does not support -C without using -E}}\
 	 %{M} %{MM} %{MD:-MD %b.d} %{MMD:-MMD %b.d} \
         -undef -D__GNUC__=2 %{ansi:-trigraphs -$ -D__STRICT_ANSI__}\
@@ -505,7 +505,7 @@ static struct compiler default_compilers[] =
   {".cxx", "@c++"},
   {".C", "@c++"},
   {"@c++",
-   "cpp -lang-c++ %{nostdinc*} %{C} %{v} %{A*} %{I*} %{P} %I\
+   "gcpp -lang-c++ %{nostdinc*} %{C} %{v} %{A*} %{I*} %{P} %I\
 	%{C:%{!E:%eGNU C++ does not support -C without using -E}}\
 	%{M} %{MM} %{MD:-MD %b.d} %{MMD:-MMD %b.d} \
 	-undef -D__GNUC__=2 -D__GNUG__=2 -D__cplusplus \
@@ -514,7 +514,7 @@ static struct compiler default_compilers[] =
         %{traditional-cpp:-traditional} %{trigraphs}\
 	%{g*} %{W*} %{w} %{pedantic*} %{H} %{d*} %C %{D*} %{U*} %{i*}\
         %i %{!M:%{!MM:%{!E:%{!pipe:%g.i}}}}%{E:%W{o*}}%{M:%W{o*}}%{MM:%W{o*}} |\n",
-   "%{!M:%{!MM:%{!E:cc1plus %{!pipe:%g.i} %1 %2\
+   "%{!M:%{!MM:%{!E:gcc1plus %{!pipe:%g.i} %1 %2\
 		   %{!Q:-quiet} -dumpbase %b.cc %{d*} %{m*} %{a}\
 		   %{g*} %{O*} %{W*} %{w} %{pedantic*} %{ansi} %{traditional}\
 		   %{v:-version} %{pg:-p} %{p} %{f*} %{+e*}\
@@ -526,7 +526,7 @@ static struct compiler default_compilers[] =
                       %{!pipe:%g.s} %A\n }}}}"},
   {".i", "@cpp-output"},
   {"@cpp-output",
-   "cc1 %i %1 %{!Q:-quiet} %{d*} %{m*} %{a}\
+   "gcc1 %i %1 %{!Q:-quiet} %{d*} %{m*} %{a}\
 	%{g*} %{O*} %{W*} %{w} %{pedantic*} %{ansi} %{traditional}\
 	%{v:-version} %{pg:-p} %{p} %{f*}\
 	%{aux-info*}\
@@ -536,7 +536,7 @@ static struct compiler default_compilers[] =
             %{c:%W{o*}%{!o*:-o %w%b.o}}%{!c:-o %d%w%u.o} %{!pipe:%g.s} %A\n }"},
   {".ii", "@c++-cpp-output"},
   {"@c++-cpp-output",
-   "cc1plus %i %1 %2 %{!Q:-quiet} %{d*} %{m*} %{a}\
+   "gcc1plus %i %1 %2 %{!Q:-quiet} %{d*} %{m*} %{a}\
 	    %{g*} %{O*} %{W*} %{w} %{pedantic*} %{ansi} %{traditional}\
 	    %{v:-version} %{pg:-p} %{p} %{f*} %{+e*}\
 	    %{aux-info*}\
@@ -551,7 +551,7 @@ static struct compiler default_compilers[] =
             %{c:%W{o*}%{!o*:-o %w%b.o}}%{!c:-o %d%w%u.o} %i %A\n }"},
   {".S", "@assembler-with-cpp"},
   {"@assembler-with-cpp",
-   "cpp -lang-asm %{nostdinc*} %{C} %{v} %{A*} %{I*} %{P} %I\
+   "gcpp -lang-asm %{nostdinc*} %{C} %{v} %{A*} %{I*} %{P} %I\
 	%{C:%{!E:%eGNU C does not support -C without using -E}}\
 	%{M} %{MM} %{MD:-MD %b.d} %{MMD:-MMD %b.d} %{trigraphs} \
         -undef -$ %{!undef:%p %P} -D__ASSEMBLER__ \
@@ -731,6 +731,10 @@ translate_options (argcp, argvp)
 	    {
 	      int optlen = strlen (option_map[j].name);
 	      int complen = strlen (argv[i]);
+	      char *arginfo = option_map[j].arg_info;
+
+	      if (arginfo == 0)
+		arginfo = "";
 	      if (complen > optlen)
 		complen = optlen;
 	      if (!strncmp (argv[i], option_map[j].name, complen))
@@ -745,18 +749,18 @@ translate_options (argcp, argvp)
 			arg = argv[i] + optlen + 1;
 		      /* If this mapping allows extra text at end of name,
 			 accept that as "argument".  */
-		      else if (index (option_map[j].arg_info, '*') != 0)
+		      else if (index (arginfo, '*') != 0)
 			arg = argv[i] + optlen;
 		      /* Otherwise, extra text at end means mismatch.
 			 Try other mappings.  */
 		      else
 			continue;
 		    }
-		  else if (index (option_map[j].arg_info, '*') != 0)
+		  else if (index (arginfo, '*') != 0)
 		    error ("Incomplete `%s' option", option_map[j].name);
 
 		  /* Handle arguments.  */
-		  if (index (option_map[j].arg_info, 'o') != 0)
+		  if (index (arginfo, 'o') != 0)
 		    {
 		      if (arg == 0)
 			{
@@ -766,7 +770,7 @@ translate_options (argcp, argvp)
 			  arg = argv[++i];
 			}
 		    }
-		  else if (index (option_map[j].arg_info, 'a') == 0)
+		  else if (index (arginfo, 'a') == 0)
 		    {
 		      if (arg != 0)
 			error ("Extraneous argument to `%s' option",
@@ -775,7 +779,7 @@ translate_options (argcp, argvp)
 		    }
 
 		  /* Store the translation as one argv elt or as two.  */
-		  if (arg != 0 && index (option_map[j].arg_info, 'j') != 0)
+		  if (arg != 0 && index (arginfo, 'j') != 0)
 		    newv[newindex++] = concat (option_map[j].equivalent,
 					       arg, "");
 		  else if (arg != 0)
@@ -1125,17 +1129,17 @@ static char *gcc_exec_prefix;
 #endif
 
 #ifndef STANDARD_EXEC_PREFIX
-#define STANDARD_EXEC_PREFIX "/usr/local/lib/gcc-lib/"
+#define STANDARD_EXEC_PREFIX "/usr/libexec/"
 #endif /* !defined STANDARD_EXEC_PREFIX */
 
 static char *standard_exec_prefix = STANDARD_EXEC_PREFIX;
-static char *standard_exec_prefix_1 = "/usr/lib/gcc/";
+static char *standard_exec_prefix_1 = "";
 #ifdef MD_EXEC_PREFIX
 static char *md_exec_prefix = MD_EXEC_PREFIX;
 #endif
 
 #ifndef STANDARD_STARTFILE_PREFIX
-#define STANDARD_STARTFILE_PREFIX "/usr/local/lib/"
+#define STANDARD_STARTFILE_PREFIX "/usr/lib/"
 #endif /* !defined STANDARD_STARTFILE_PREFIX */
 
 #ifdef MD_STARTFILE_PREFIX

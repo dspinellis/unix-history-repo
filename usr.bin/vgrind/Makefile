@@ -2,8 +2,8 @@
 
 PROG=	vfontedpr
 SRCS=	regexp.c vfontedpr.c vgrindefs.c
-MAN1=	vgrind.0
-MAN5=	vgrindefs.0
+MAN1=	vgrind.1
+MAN5=	vgrindefs.5
 BINDIR=	/usr/libexec
 
 beforeinstall:

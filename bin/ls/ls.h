@@ -34,6 +34,8 @@
  * SUCH DAMAGE.
  *
  *	@(#)ls.h	5.11 (Berkeley) 7/22/90
+ *
+ *	$Header: /b/source/CVS/src/bin/ls/ls.h,v 1.3 1993/03/23 00:26:09 cgd Exp $
  */
 
 typedef struct _lsstruct {

@@ -27,7 +27,7 @@ For string options, you may enclose the new value in quotes.
 .ta 1.9i 2.4i 3.8i
 .ps +2
 \fBNAMES	TYPE	DEFAULT	MEANING\fP
-.ps
+.ps -2
 autoindent, ai	Bool	noai	auto-indent during input
 autoprint, ap	Bool	ap	in EX, print the current line
 autotab, at	Bool	at	auto-indent allowed to use tabs?
@@ -57,7 +57,9 @@ make, mk	Str	mk="make"	name of the "make" program
 mesg, ms	Bool	ms	allow messages from other users?
 modelines, ml	Bool	noml	are modelines processed?
 more, more	Bool	more	pause between messages?
+nearscroll, ns	Num	ns=15	when to scroll vs. redraw
 novice, nov	Bool	nonovice	set options for ease of use
+number, nu	Bool	nonumber	show line numbers
 paragraphs, para	Str	para="PPppIPLPQP"	names of "paragraph" nroff cmd
 prompt, pr	Bool	pr	show ':' prompt in \fIex\fR mode
 readonly, ro	Bool	noro	prevent overwriting of orig file
@@ -74,6 +76,8 @@ sidescroll, ss	Num	ss=8	amount of sideways scrolling
 sync, sy	Bool	nosy	call sync() often
 tabstop, ts	Num	ts=8	width of tab characters
 taglength, tl	Num	tl=0	significant chars in tag name
+tags, tag	Str	tags="tags" list of tags files
+tagstack, tgs	Bool	tgs	enable tagstack?
 term, te	Str	te="$TERM"	name of the termcap entry
 terse, tr	Bool	notr	give shorter error messages
 timeout, to	Bool	to	distinguish <esc> from <arrow>?
@@ -324,8 +328,25 @@ so you can place the "ex:yowza:" in a comment:
 Normally these lines are ignored, for security reasons,
 but if you have "set modelines" in your .exrc file
 then "yowza" is executed.
+.IP "nearscroll, ns"
+The line that contains the cursor will always be on the screen.
+If you move the cursor to a line that isn't on the screen,
+then elvis will either scroll
+(if the cursor's line is nearly on the screen already)
+or redraw the screen completely with the cursor's line centered
+(if the cursor line is \fInot\fR near the screen already).
+.IP
+This option allows you to control elvis' idea of "near".
+A value of 15 is typical.
+A value of 1 would cause elvis to scroll no more that one line.
+A value of 0 disables scrolling.
 .IP "novice, nov"
 The command ":set novice" is equivelent to ":set nomagic report=1 showmode".
+.IP "number, nu"
+The "number" option causes \*E to display line numbers at the start of
+each line.
+The numbers are not actually part of the text; when the file is written out,
+it will be written without line numbers.
 .IP "paragraphs, pa"
 The { and } commands move the cursor forward or backward in increments
 of one paragraph.
@@ -466,6 +487,21 @@ As a special case, ":set taglength=0" means that all characters of a tag's
 name must match.
 .IP
 Note: some configurations of \*E don't support this option.
+.IP "tags, tag"
+If your version of elvis is compiled with -DINTERNAL_TAGS,
+then this is a space-delimited list of tags files.
+When you tell elvis to look up a tag,
+it searches though each file in turn until it finds the tag.
+.IP
+If your version of elvis is compiled without -DINTERNAL_TAGS,
+then you can achieve the same effect via an environment variable called
+TAGPATH.
+TAGPATH's value is a colon-delimited list of file or directory names.
+(For some operating systems, including MS-DOS, the list is delimited by
+semicolons instead of colons.)
+.IP "tagstack"
+This option allows you to disable the tagstack.
+I can't think of any reason why you would want to do that.
 .IP "term, te"
 This read-only option shows the name of the termcap entry that
 \*E is using for your terminal.

@@ -31,16 +31,10 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)sys_process.c	7.22 (Berkeley) 5/11/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00137
- * --------------------         -----   ----------------------
- *
- * 04 Sep 92	Paul Kranenburg		Fixed copy-on-write checking for pages
- *					other than anonymous (text pages, etc.)
- * 08 Apr 93	Bruce Evans		Several VM system fixes
+ *	$Id$
  */
+
+#include <stddef.h>
 
 #define IPCREG
 #include "param.h"
@@ -49,6 +43,7 @@
 #include "buf.h"
 #include "ptrace.h"
 
+#include "machine/eflags.h"
 #include "machine/reg.h"
 #include "machine/psl.h"
 #include "vm/vm.h"
@@ -105,14 +100,17 @@ struct {
 /*
  * Process debugging system call.
  */
+
+struct ptrace_args {
+	int	req;
+	int	pid;
+	int	*addr;
+	int	data;
+};
+
 ptrace(curp, uap, retval)
 	struct proc *curp;
-	register struct args {
-		int	req;
-		int	pid;
-		int	*addr;
-		int	data;
-	} *uap;
+	register struct ptrace_args *uap;
 	int *retval;
 {
 	struct proc *p;
@@ -264,6 +262,10 @@ procxmt(p)
 	register struct proc *p;
 {
 	int i, *xreg, rv = 0;
+#ifdef i386
+	int new_eflags, old_cs, old_ds, old_es, old_ss, old_eflags;
+	int *regs;
+#endif
 
 	/* Are we still being traced? */
 	if ((p->p_flag & STRC) == 0)
@@ -307,6 +309,8 @@ procxmt(p)
 			/*
 			 * XXX - the useracc check is stronger than the vm
 			 * checks because the user page tables are in the map.
+			 * Anyway, most of this can be removed now that COW
+			 * works.
 			 */
 			if (!useracc(ipc.addr, sizeof(ipc.data), B_READ) ||
 			    vm_region(&p->p_vmspace->vm_map, &addr, &size,
@@ -333,11 +337,92 @@ procxmt(p)
 	}
 
 	case PT_WRITE_U:
+#ifdef i386
+		regs = p->p_regs;
+		/*
+		 * XXX - privileged kernel state is scattered all over the
+		 * user area.  Only allow write access to areas known to
+		 * be safe.
+		 */
+#define	GO_IF_SAFE(min, size) \
+		if ((u_int)ipc.addr >= (min) \
+		    && (u_int)ipc.addr <= (min) + (size) - sizeof(int)) \
+			goto pt_write_u
+		/*
+		 * Allow writing entire FPU state.
+		 */
+		GO_IF_SAFE(offsetof(struct user, u_pcb)
+			   + offsetof(struct pcb, pcb_savefpu),
+			   sizeof(struct save87));
+		/*
+		 * Allow writing ordinary registers.  Changes to segment
+		 * registers and to some bits in %eflags will be silently
+		 * ignored.  Such changes ought to be an error.
+		 */
+/*
+ * XXX - there is no define for the base of the user area except USRSTACK.
+ * XXX - USRSTACK is not the base of the user stack.  It is the base of the
+ * user area.
+ */
+#define	USER_OFF(va)	((u_int)(va) - USRSTACK)
+		GO_IF_SAFE(USER_OFF(regs),
+			   (curpcb->pcb_flags & FM_TRAP ? tSS + 1 : sSS + 1)
+			   * sizeof *regs);
+		ipc.error = EFAULT;
+		break;
+#else
 		if ((u_int)ipc.addr > UPAGES * NBPG - sizeof(int)) {
 			ipc.error = EFAULT;
 			break;
 		}
+#endif
+	pt_write_u:
+#ifdef i386
+		if (curpcb->pcb_flags & FM_TRAP) {
+			old_cs = regs[tCS];
+			old_ds = regs[tES];
+			old_es = regs[tES];
+			old_ss = regs[tSS];
+			old_eflags = regs[tEFLAGS];
+		} else {
+			old_cs = regs[sCS];
+			old_ss = regs[sSS];
+			old_eflags = regs[sEFLAGS];
+		}
+#endif
 		*(int *)((u_int)p->p_addr + (u_int)ipc.addr) = ipc.data;
+#ifdef i386
+		/*
+		 * Don't allow segment registers to change (although they can
+		 * be changed directly to certain values).
+		 * Don't allow privileged bits in %eflags to change.  Users
+		 * have privilege to change TF and NT although although they
+		 * usually shouldn't.
+		 * XXX - fix PT_SETREGS.
+		 * XXX - simplify.  Maybe copy through a temporary struct.
+		 * Watch out for problems when ipc.addr is not a multiple
+		 * of the register size.
+		 */
+#define EFL_UNPRIVILEGED (EFL_CF | EFL_PF | EFL_AF | EFL_ZF | EFL_SF \
+			  | EFL_TF | EFL_DF | EFL_OF | EFL_NT)
+		if (curpcb->pcb_flags & FM_TRAP) {
+			regs[tCS] = old_cs;
+			regs[tDS] = old_ds;
+			regs[tES] = old_es;
+			regs[tSS] = old_es;
+			new_eflags = regs[tEFLAGS];
+			regs[tEFLAGS]
+				= (new_eflags & EFL_UNPRIVILEGED)
+				  | (old_eflags & ~EFL_UNPRIVILEGED);
+		} else {
+			regs[sCS] = old_cs;
+			regs[sSS] = old_ss;
+			new_eflags = regs[sEFLAGS];
+			regs[sEFLAGS]
+				= (new_eflags & EFL_UNPRIVILEGED)
+				  | (old_eflags & ~EFL_UNPRIVILEGED);
+		}
+#endif
 		break;
 
 	case PT_CONTINUE:
@@ -418,7 +503,7 @@ procxmt(p)
 	wakeup((caddr_t)&ipc);
 
 	if (rv == 2)
-		exit(p, 0); 	/*???*/
+		kexit(p, 0); 	/*???*/
 
 	return rv;
 }
@@ -426,15 +511,18 @@ procxmt(p)
 /*
  * Enable process profiling system call.
  */
+
+struct profil_args {
+	short	*bufbase;	/* base of data buffer */
+	unsigned bufsize;	/* size of data buffer */
+	unsigned pcoffset;	/* pc offset (for subtraction) */
+	unsigned pcscale;	/* scaling factor for offset pc */
+};
+
 /* ARGSUSED */
 profil(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		short	*bufbase;	/* base of data buffer */
-		unsigned bufsize;	/* size of data buffer */
-		unsigned pcoffset;	/* pc offset (for subtraction) */
-		unsigned pcscale;	/* scaling factor for offset pc */
-	} *uap;
+	register struct profil_args *uap;
 	int *retval;
 {
 	/* from looking at man pages, and include files, looks like

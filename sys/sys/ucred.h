@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ucred.h	7.5 (Berkeley) 2/5/91
+ *	from: @(#)ucred.h	7.5 (Berkeley) 2/5/91
+ *	$Id$
  */
 
 #ifndef _UCRED_H_

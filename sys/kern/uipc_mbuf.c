@@ -30,17 +30,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)uipc_mbuf.c	7.19 (Berkeley) 4/20/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00009
- * --------------------         -----   ----------------------
- *
- * 31 Aug 92	Wolfgang Solfrank	Fixed mbuf allocation code
+ *	from: @(#)uipc_mbuf.c	7.19 (Berkeley) 4/20/91
+ *	$Id$
  */
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "malloc.h"
 #define MBTYPES

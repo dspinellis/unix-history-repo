@@ -3,7 +3,7 @@
 PROG=	lpd
 CFLAGS+=-I${.CURDIR}/../common_source
 LDADD=	-lutil
-MAN8=	lpd.0
+MAN8=	lpd.8
 SRCS=	lpd.c printjob.c recvjob.c displayq.c rmjob.c startdaemon.c \
 	lpdchar.c common.c printcap.c
 .PATH:	${.CURDIR}/../common_source

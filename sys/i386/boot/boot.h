@@ -1,6 +1,4 @@
 /*
- * Ported to boot 386BSD by Julian Elischer (julian@tfs.com) Sept 1992
- *
  * Mach Operating System
  * Copyright (c) 1992, 1991 Carnegie Mellon University
  * All Rights Reserved.
@@ -24,15 +22,9 @@
  * 
  * any improvements or extensions that they make and grant Carnegie Mellon
  * the rights to redistribute these changes.
- */
-
-/*
- * HISTORY
- * $Log:	boot.h,v $
- * Revision 2.2  92/04/04  11:35:03  rpd
- * 	Fabricated from 3.0 bootstrap.  But too many things are global.
- * 	[92/03/30            mg32]
- * 
+ *
+ *	from: Mach, Revision 2.2  92/04/04  11:35:03  rpd
+ *	$Id$
  */
 
 #include <sys/types.h>

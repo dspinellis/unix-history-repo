@@ -4,10 +4,8 @@
 .include "${.CURDIR}/../Makefile.inc"
 .endif
 
-.SUFFIXES: .out .o .c .y .l .s .8 .7 .6 .5 .4 .3 .2 .1 .0
-
-.8.0 .7.0 .6.0 .5.0 .4.0 .3.0 .2.0 .1.0:
-	nroff -mandoc ${.IMPSRC} > ${.TARGET}
+#.SUFFIXES: .out .o .c .cc .cxx .C .y .l .s
+.SUFFIXES: .out .o .c .y .l .s
 
 CFLAGS+=${COPTS}
 
@@ -20,9 +18,12 @@ BINMODE?=	555
 LIBCRT0?=	/usr/lib/crt0.o
 LIBC?=		/usr/lib/libc.a
 LIBCOMPAT?=	/usr/lib/libcompat.a
+LIBCRYPT?=	/usr/lib/libcrypt.a
 LIBCURSES?=	/usr/lib/libcurses.a
 LIBDBM?=	/usr/lib/libdbm.a
 LIBDES?=	/usr/lib/libdes.a
+LIBGNUMALLOC?=	/usr/lib/libgnumalloc.a
+LIBGNUREGEX?=	/usr/lib/libgnuregex.a
 LIBL?=		/usr/lib/libl.a
 LIBKDB?=	/usr/lib/libkdb.a
 LIBKRB?=	/usr/lib/libkrb.a
@@ -31,7 +32,9 @@ LIBMP?=		/usr/lib/libmp.a
 LIBPC?=		/usr/lib/libpc.a
 LIBPLOT?=	/usr/lib/libplot.a
 LIBRESOLV?=	/usr/lib/libresolv.a
-LIBRPC?=	/usr/lib/sunrpc.a
+LIBRPC?=	/usr/lib/librpc.a
+LIBRPCSVC?=	/usr/lib/librpcsvc.a
+LIBTELNET?=	/usr/lib/libtelnet.a
 LIBTERM?=	/usr/lib/libterm.a
 LIBUTIL?=	/usr/lib/libutil.a
 
@@ -41,21 +44,28 @@ CLEANFILES+=strings
 	${CC} -E ${CFLAGS} ${.IMPSRC} | xstr -c -
 	@${CC} ${CFLAGS} -c x.c -o ${.TARGET}
 	@rm -f x.c
+
+#.cc.o .cxx.o .C.o:
+#	${CXX} -E ${CXXFLAGS} ${.IMPSRC} | xstr -c -
+#	@mv -f x.c x.cc
+#	@${CXX} ${CXXFLAGS} -c x.cc -o ${.TARGET}
+
 .endif
 
 .if defined(PROG)
 .if defined(SRCS)
 
-OBJS+=  ${SRCS:R:S/$/.o/g}
+DPSRCS+= ${SRCS:M*.h}
+OBJS+=  ${SRCS:N*.h:R:S/$/.o/g}
 
 .if defined(LDONLY)
 
-${PROG}: ${LIBCRT0} ${LIBC} ${OBJS} ${DPADD} 
+${PROG}: ${LIBCRT0} ${LIBC} ${DPSRCS} ${OBJS} ${DPADD} 
 	${LD} ${LDFLAGS} -o ${.TARGET} ${LIBCRT0} ${OBJS} ${LIBC} ${LDADD}
 
 .else defined(LDONLY)
 
-${PROG}: ${OBJS} ${LIBC} ${DPADD}
+${PROG}: ${DPSRCS} ${OBJS} ${LIBC} ${DPADD}
 	${CC} ${LDFLAGS} -o ${.TARGET} ${OBJS} ${LDADD}
 
 .endif
@@ -64,8 +74,8 @@ ${PROG}: ${OBJS} ${LIBC} ${DPADD}
 
 SRCS= ${PROG}.c
 
-${PROG}: ${SRCS} ${LIBC} ${DPADD}
-	${CC} ${CFLAGS} -o ${.TARGET} ${.CURDIR}/${SRCS} ${LDADD}
+${PROG}: ${DPSRCS} ${SRCS} ${LIBC} ${DPADD}
+	${CC} ${LDFLAGS} ${CFLAGS} -o ${.TARGET} ${.CURDIR}/${SRCS} ${LDADD}
 
 MKDEP=	-p
 
@@ -74,10 +84,9 @@ MKDEP=	-p
 .if	!defined(MAN1) && !defined(MAN2) && !defined(MAN3) && \
 	!defined(MAN4) && !defined(MAN5) && !defined(MAN6) && \
 	!defined(MAN7) && !defined(MAN8) && !defined(NOMAN)
-MAN1=	${PROG}.0
+MAN1=	${PROG}.1
 .endif
 .endif
-MANALL=	${MAN1} ${MAN2} ${MAN3} ${MAN4} ${MAN5} ${MAN6} ${MAN7} ${MAN8}
 
 _PROGSUBDIR: .USE
 .if defined(SUBDIR) && !empty(SUBDIR)
@@ -93,26 +102,34 @@ _PROGSUBDIR: .USE
 .endif
 
 .MAIN: all
-all: ${PROG} ${MANALL} _PROGSUBDIR
+all: ${PROG} _PROGSUBDIR
 
 .if !target(clean)
 clean: _PROGSUBDIR
-	rm -f a.out [Ee]rrs mklog core ${PROG} ${OBJS} ${CLEANFILES} ${MANALL}
+	rm -f a.out [Ee]rrs mklog ${PROG} ${OBJS} ${CLEANFILES} 
 .endif
 
 .if !target(cleandir)
 cleandir: _PROGSUBDIR
-	rm -f a.out [Ee]rrs mklog core ${PROG} ${OBJS} ${CLEANFILES} \
-	      ${MANALL} ${.CURDIR}/tags .depend
+	rm -f a.out [Ee]rrs mklog ${PROG} ${OBJS} ${CLEANFILES}
+	rm -f ${.CURDIR}/tags .depend
 	cd ${.CURDIR}; rm -rf obj;
 .endif
 
 # some of the rules involve .h sources, so remove them from mkdep line
 .if !target(depend)
 depend: .depend _PROGSUBDIR
-.depend: ${SRCS}
+.depend: ${DPSRCS} ${SRCS}
 .if defined(PROG)
-	mkdep ${MKDEP} ${CFLAGS:M-[ID]*} ${.ALLSRC:M*.c}
+	rm -f .depend
+	files="${.ALLSRC:M*.c}"; \
+	if [ "$$files" != "" ]; then \
+	  mkdep -a ${MKDEP} ${CFLAGS:M-[ID]*} $$files; \
+	fi
+#	files="${.ALLSRC:M*.cc} ${.ALLSRC:M*.C} ${.ALLSRC:M*.cxx}"; \
+#	if [ "$$files" != "  " ]; then \
+#	  mkdep -a ${MKDEP} -+ ${CXXFLAGS:M-[ID]*} $$files; \
+#	fi
 .endif
 .endif
 
@@ -146,9 +163,12 @@ realinstall: _PROGSUBDIR
 	done; true
 .endif
 
-install: maninstall
-maninstall: afterinstall
+install: afterinstall
+.if !defined(NOMAN)
+afterinstall: realinstall maninstall
+.else
 afterinstall: realinstall
+.endif
 realinstall: beforeinstall
 .endif
 
@@ -185,4 +205,6 @@ tags: ${SRCS} _PROGSUBDIR
 
 .if !defined(NOMAN)
 .include <bsd.man.mk>
+.elif !target(maninstall)
+maninstall:
 .endif

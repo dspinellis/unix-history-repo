@@ -73,6 +73,7 @@ typedef struct _dirdesc {
 	char	*dd_buf;	/* data buffer */
 	int	dd_len;		/* size of data buffer */
 	long	dd_seek;	/* magic cookie returned by getdirentries */
+	void	*dd_ddloc;	/* Linked list of ddloc structs for telldir/seekdir */
 } DIR;
 
 #define	dirfd(dirp)	((dirp)->dd_fd)

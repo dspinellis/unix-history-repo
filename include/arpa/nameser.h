@@ -36,6 +36,8 @@
 #ifndef _NAMESER_H_
 #define	_NAMESER_H_
 
+#include <machine/endian.h>
+
 /*
  * Define constants based on rfc883
  */
@@ -106,6 +108,7 @@
 #define T_UID		101		/* user ID */
 #define T_GID		102		/* group ID */
 #define T_UNSPEC	103		/* Unspecified format (binary data) */
+#define T_UNSPECA	104		/* Unspecified format (ASCII) */
 	/* Query type values which do not appear in resource records */
 #define T_AXFR		252		/* transfer zone of authority */
 #define T_MAILB		253		/* transfer mailbox records */
@@ -131,27 +134,6 @@
 #define CONV_BADCKSUM -3
 #define CONV_BADBUFLEN -4
 
-#ifndef BYTE_ORDER
-#define	LITTLE_ENDIAN	1234	/* least-significant byte first (vax) */
-#define	BIG_ENDIAN	4321	/* most-significant byte first (IBM, net) */
-#define	PDP_ENDIAN	3412	/* LSB first in word, MSW first in long (pdp) */
-
-#if defined(vax) || defined(ns32000) || defined(sun386) || defined(MIPSEL) || \
-    defined(BIT_ZERO_ON_RIGHT)
-#define BYTE_ORDER	LITTLE_ENDIAN
-
-#endif
-#if defined(sel) || defined(pyr) || defined(mc68000) || defined(sparc) || \
-    defined(is68k) || defined(tahoe) || defined(ibm032) || defined(ibm370) || \
-    defined(MIPSEB) || defined (BIT_ZERO_ON_LEFT)
-#define BYTE_ORDER	BIG_ENDIAN
-#endif
-#endif /* BYTE_ORDER */
-
-#ifndef BYTE_ORDER
-	/* you must determine what the correct bit order is for your compiler */
-	UNDEFINED_BIT_ORDER;
-#endif
 /*
  * Structure for query header, the order of the fields is machine and
  * compiler dependent, in our case, the bits within a byte are assignd 

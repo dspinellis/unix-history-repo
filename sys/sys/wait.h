@@ -30,8 +30,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)wait.h	7.17 (Berkeley) 6/19/91
+ *	from: @(#)wait.h	7.17 (Berkeley) 6/19/91
+ *	$Id$
  */
+
+#ifndef _SYS_WAIT_H_
+#define _SYS_WAIT_H_
 
 /*
  * This file holds definitions relevent to the wait4 system call
@@ -156,3 +160,4 @@ pid_t	wait4 __P((pid_t, int *, int, struct rusage *));
 #endif
 __END_DECLS
 #endif
+#endif	/* _SYS_WAIT_H_ */

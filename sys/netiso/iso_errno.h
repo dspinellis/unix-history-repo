@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)iso_errno.h	7.5 (Berkeley) 5/6/91
+ *	from: @(#)iso_errno.h	7.5 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************

@@ -45,11 +45,22 @@ static char sccsid[] = "@(#)crt0.c	5.7 (Berkeley) 7/3/91";
  *	ebp, which points to the base of the kernel calling frame.
  */
 
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+
 char	**environ = (char **)0;
+static char empty[1];
+char *__progname = empty;
 int	errno = 0;
 
 asm(".text");
 asm(".long 0xc000c000");
+#if 1 /* more needed for alignment on i486/gcc-2.3.3 */
+asm(".long 0xc000c000");
+asm(".long 0xc000c000");
+asm(".long 0xc000c000");
+#endif
 
 extern	unsigned char	etext;
 extern	unsigned char	eprol asm ("eprol");
@@ -90,6 +101,12 @@ asm("eprol:");
 	atexit(_mcleanup);
 	monstartup(&eprol, &etext);
 #endif MCRT0
+        errno = 0;
+        if (argv[0])
+                if ((__progname = strrchr(argv[0], '/')) == NULL)
+                        __progname = argv[0];
+                else
+                        ++__progname;
 	exit(main(kfp->kargc, argv, environ));
 }
 

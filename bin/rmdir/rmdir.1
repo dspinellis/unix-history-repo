@@ -34,7 +34,6 @@
 .\"
 .\"     @(#)rmdir.1	6.5 (Berkeley) 6/27/91
 .\"
-.Vx
 .Dd June 27, 1991
 .Dt RMDIR 1
 .Os
@@ -58,33 +57,36 @@ must be specified first so the parent directory
 is empty when
 .Nm rmdir
 tries to remove it.
-.\" .Pp
-.\" The following option is available:
-.\" .Tw Ds
-.\" .Tp Fl p
-.\" Each
-.\" .Ar directory
-.\" argument is treated as a pathname of which all
-.\" components will be removed, if they are empty,
-.\" starting with the last most component.
-.\" (See
-.\" .Xr rm 1
-.\" for fully non-discriminant recursive removal).
+.Pp
+The following option is available:
+.Bl -tag -width Ds
+.It Fl p
+Each
+.Ar directory
+argument is treated as a pathname of which all
+components will be removed, if they are empty,
+starting with the last most component.
+(See
+.Xr rm 1
+for fully non-discriminant recursive removal).
+.El
 .Pp
 The
 .Nm rmdir
 utility exits with one of the following values:
-.Tw Ds
-.Tp Li \&0
+.Bl -tag -width Ds
+.It Li \&0
 Each directory entry specified by a dir operand
 referred to an empty directory and was removed
 successfully.
-.Tp Li \&>\&0
+.It Li \&>\&0
 An error occurred.
-.Tp
+.El
 .Sh SEE ALSO
 .Xr rm 1
 .Sh STANDARDS
 The
 .Nm rmdir
-function is expected to be POSIX 1003.2 compatible.
+utility is expected to be 
+.St -p1003.2 
+compatible.

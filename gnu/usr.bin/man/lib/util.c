@@ -19,6 +19,7 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 #ifdef STDC_HEADERS
 #include <stdlib.h>
@@ -137,14 +138,12 @@ do_system_command (command)
   else
     status = system (command);
 
-  /*
-   * Ultrix returns 127 for failure.  Is this normal?
-   */
-  if (status == 127)
-    {
-      gripe_system_command (status);
-      return 0;
-    }
+  if (WIFSIGNALED(status))
+    return 0;
+  else if (WEXITSTATUS(status)) {
+    gripe_system_command (status);
+    return 0;
+  }
   else
     return 1;
 }

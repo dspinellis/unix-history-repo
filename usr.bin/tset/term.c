@@ -32,7 +32,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)term.c	5.1 (Berkeley) 12/22/91";
+static char sccsid[] = "@(#)term.c	5.5 (Berkeley) 5/11/92";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -59,7 +59,7 @@ get_termcap_entry(userarg, tcapbufp)
 {
 	struct ttyent *t;
 	int rval;
-	char *base, *ttype, *ttypath;
+	char *p, *ttype, *ttypath;
 
 	if (userarg) {
 		ttype = userarg;
@@ -72,11 +72,11 @@ get_termcap_entry(userarg, tcapbufp)
 
 	/* Try ttyname(3); check for dialup or other mapping. */
 	if (ttypath = ttyname(STDERR_FILENO)) {
-		if (base = rindex(ttypath, '/'))
-			++base;
+		if (p = rindex(ttypath, '/'))
+			++p;
 		else
-			base = ttypath;
-		if ((t = getttynam(base))) {
+			p = ttypath;
+		if ((t = getttynam(p))) {
 			ttype = t->ty_type;
 			goto map;
 		}
@@ -88,18 +88,22 @@ get_termcap_entry(userarg, tcapbufp)
 map:	ttype = mapped(ttype);
 
 	/*
-	 * Remove TERMCAP from the environment so we get a real entry from
-	 * /etc/termcap.  This prevents us from being fooled by out of date
-	 * stuff in the environment.
+	 * If not a path, remove TERMCAP from the environment so we get a
+	 * real entry from /etc/termcap.  This prevents us from being fooled
+	 * by out of date stuff in the environment.
 	 */
-found:	unsetenv("TERMCAP");
+found:	if ((p = getenv("TERMCAP")) != NULL && *p != '/')
+		unsetenv("TERMCAP");
 
 	/*
 	 * ttype now contains a pointer to the type of the terminal.
 	 * If the first character is '?', ask the user.
 	 */
 	if (ttype[0] == '?')
-		ttype = askuser(ttype + 1);
+		if (ttype[1] != '\0')
+			ttype = askuser(ttype + 1);
+		else
+			ttype = askuser(NULL);
 
 	/* Find the termcap entry.  If it doesn't exist, ask the user. */
 	while ((rval = tgetent(tbuf, ttype)) == 0) {
@@ -121,6 +125,11 @@ askuser(dflt)
 	static char answer[256];
 	char *p;
 
+	/* We can get recalled; if so, don't continue uselessly. */
+	if (feof(stdin) || ferror(stdin)) {
+		(void)fprintf(stderr, "\n");
+		exit(1);
+	}
 	for (;;) {
 		if (dflt)
 			(void)fprintf(stderr, "Terminal type? [%s] ", dflt);
@@ -128,11 +137,19 @@ askuser(dflt)
 			(void)fprintf(stderr, "Terminal type? ");
 		(void)fflush(stderr);
 
-		if (fgets(answer, sizeof(answer), stdin) == NULL)
-			continue;
+		if (fgets(answer, sizeof(answer), stdin) == NULL) {
+			if (dflt == NULL) {
+				(void)fprintf(stderr, "\n");
+				exit(1);
+			}
+			return (dflt);
+		}
 
 		if (p = index(answer, '\n'))
 			*p = '\0';
-		return (answer[0] ? answer : dflt);
+		if (answer[0])
+			return (answer);
+		if (dflt != NULL)
+			return (dflt);
 	}
 }

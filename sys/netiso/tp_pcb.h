@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_pcb.h	7.9 (Berkeley) 5/6/91
+ *	from: @(#)tp_pcb.h	7.9 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,13 +60,10 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /* 
  * ARGO TP
  *
- * $Header: tp_pcb.h,v 5.2 88/11/18 17:09:32 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_pcb.h,v $
- *
- * 
  * This file defines the transport protocol control block (tpcb).
  * and a bunch of #define values that are used in the tpcb.
  */

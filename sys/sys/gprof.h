@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)gprof.h	7.2 (Berkeley) 2/15/91
+ *	from: @(#)gprof.h	7.2 (Berkeley) 2/15/91
+ *	$Id$
  */
 
 struct phdr {

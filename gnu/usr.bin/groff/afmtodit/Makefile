@@ -1,4 +1,4 @@
-MAN1=		afmtodit.0
+MAN1=		afmtodit.1
 
 afterinstall:
 	install -c -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \

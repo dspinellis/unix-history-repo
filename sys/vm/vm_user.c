@@ -33,9 +33,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_user.c	7.3 (Berkeley) 4/21/91
- *
- *
+ *	from: @(#)vm_user.c	7.3 (Berkeley) 4/21/91
+ *	$Id$
+ */
+
+/*
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
  *
@@ -80,15 +82,18 @@ simple_lock_data_t	vm_alloc_lock;	/* XXX */
  * BSD style syscall interfaces to MACH calls
  * All return MACH return values.
  */
+
+struct svm_allocate_args {
+	vm_map_t map;
+	vm_offset_t *addr;
+	vm_size_t size;
+	boolean_t anywhere;
+};
+
 /* ARGSUSED */
 svm_allocate(p, uap, retval)
 	struct proc *p;
-	struct args {
-		vm_map_t map;
-		vm_offset_t *addr;
-		vm_size_t size;
-		boolean_t anywhere;
-	} *uap;
+	struct svm_allocate_args *uap;
 	int *retval;
 {
 	vm_offset_t addr;
@@ -107,14 +112,16 @@ svm_allocate(p, uap, retval)
 	return((int)rv);
 }
 
+struct svm_deallocate_args {
+	vm_map_t map;
+	vm_offset_t addr;
+	vm_size_t size;
+};
+
 /* ARGSUSED */
 svm_deallocate(p, uap, retval)
 	struct proc *p;
-	struct args {
-		vm_map_t map;
-		vm_offset_t addr;
-		vm_size_t size;
-	} *uap;
+	struct svm_deallocate_args *uap;
 	int *retval;
 {
 	int rv;
@@ -124,15 +131,17 @@ svm_deallocate(p, uap, retval)
 	return((int)rv);
 }
 
+struct svm_inherit_args {
+	vm_map_t map;
+	vm_offset_t addr;
+	vm_size_t size;
+	vm_inherit_t inherit;
+};
+
 /* ARGSUSED */
 svm_inherit(p, uap, retval)
 	struct proc *p;
-	struct args {
-		vm_map_t map;
-		vm_offset_t addr;
-		vm_size_t size;
-		vm_inherit_t inherit;
-	} *uap;
+	struct svm_inherit_args *uap;
 	int *retval;
 {
 	int rv;
@@ -142,16 +151,18 @@ svm_inherit(p, uap, retval)
 	return((int)rv);
 }
 
+struct svm_protect_args {
+	vm_map_t map;
+	vm_offset_t addr;
+	vm_size_t size;
+	boolean_t setmax;
+	vm_prot_t prot;
+};
+
 /* ARGSUSED */
 svm_protect(p, uap, retval)
 	struct proc *p;
-	struct args {
-		vm_map_t map;
-		vm_offset_t addr;
-		vm_size_t size;
-		boolean_t setmax;
-		vm_prot_t prot;
-	} *uap;
+	struct svm_protect_args *uap;
 	int *retval;
 {
 	int rv;

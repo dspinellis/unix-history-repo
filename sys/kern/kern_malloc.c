@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)kern_malloc.c	7.25 (Berkeley) 5/8/91
+ *	from: @(#)kern_malloc.c	7.25 (Berkeley) 5/8/91
+ *	$Id: kern_malloc.c,v 1.2 1993/10/16 15:24:21 rgrimes Exp $
  */
 
 #include "param.h"
@@ -228,13 +229,10 @@ kmeminit()
 	register long indx;
 	int npg;
 
-#if	((MAXALLOCSAVE & (MAXALLOCSAVE - 1)) != 0)
-		ERROR!_kmeminit:_MAXALLOCSAVE_not_power_of_2
-#endif
 #if	(MAXALLOCSAVE > MINALLOCSIZE * 32768)
 		ERROR!_kmeminit:_MAXALLOCSAVE_too_big
 #endif
-#if	(MAXALLOCSAVE < CLBYTES)
+#if	(MAXALLOCSAVE < CLBYTES-1)
 		ERROR!_kmeminit:_MAXALLOCSAVE_too_small
 #endif
 	npg = VM_KMEM_SIZE/ NBPG;

@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)errmsg.h	5.1 (Berkeley) 3/7/91
+ *	from: @(#)errmsg.h	5.1 (Berkeley) 3/7/91
+ *	errmsg.h,v 1.4 1993/08/01 18:58:33 mycroft Exp
  */
 
 #define E_OPEN 01

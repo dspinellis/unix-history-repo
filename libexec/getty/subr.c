@@ -186,6 +186,8 @@ setflags(n)
 		f |= ODDP;
 	else if (EP)
 		f |= EVENP;
+	if (NP)
+		f |= PASS8;
 
 	if (UC)
 		f |= LCASE;

@@ -33,9 +33,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_map.c	7.3 (Berkeley) 4/21/91
- *
- *
+ *	from: @(#)vm_map.c	7.3 (Berkeley) 4/21/91
+ *	$Id$
+ */
+
+/*
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
  *
@@ -60,20 +62,15 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00137
- * --------------------         -----   ----------------------
- *
- * 08 Apr 93	Yuval Yarom		Several VM system fixes
  */
 
 /*
  *	Virtual memory mapping module.
  */
 
+#include "ddb.h"
 #include "param.h"
+#include "systm.h"
 #include "malloc.h"
 #include "vm.h"
 #include "vm_page.h"
@@ -2410,6 +2407,7 @@ void vm_map_simplify(map, start)
 	vm_map_unlock(map);
 }
 
+#if defined(DEBUG) || (NDDB > 0)
 /*
  *	vm_map_print:	[ debug ]
  */
@@ -2479,3 +2477,4 @@ void vm_map_print(map, full)
 	}
 	indent -= 2;
 }
+#endif /* defined(DEBUG) || (NDDB > 0) */

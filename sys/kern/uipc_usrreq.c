@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)uipc_usrreq.c	7.26 (Berkeley) 6/3/91
+ *	from:	@(#)uipc_usrreq.c	7.26 (Berkeley) 6/3/91
+ *	$Id: uipc_usrreq.c,v 1.3 1993/09/14 04:26:40 rgrimes Exp $
  */
 
 #include "param.h"
@@ -359,8 +360,17 @@ unp_detach(unp)
 	unp->unp_socket->so_pcb = 0;
 	m_freem(unp->unp_addr);
 	(void) m_free(dtom(unp));
-	if (unp_rights)
+	if (unp_rights) {
+		/*
+		 * Normally the receive buffer is flushed later,
+		 * in sofree, but if our receive buffer holds references
+		 * to descriptors that are now garbage, we will dispose
+		 * of those descriptor references after the garbage collector
+		 * gets them (resulting in a "panic: closef: count < 0").
+		 */
+		sorflush(unp->unp_socket);
 		unp_gc();
+	}
 }
 
 unp_bind(unp, nam, p)
@@ -591,7 +601,7 @@ unp_externalize(rights)
 	int newfds = (cm->cmsg_len - sizeof(*cm)) / sizeof (int);
 	int f;
 
-	if (fdavail(p, newfds)) {
+	if (!fdavail(p, newfds)) {
 		for (i = 0; i < newfds; i++) {
 			fp = *rp;
 			unp_discard(fp);
@@ -761,6 +771,8 @@ unp_discard(fp)
 	struct file *fp;
 {
 
+	if (fp->f_msgcount == 0)
+		return;
 	fp->f_msgcount--;
 	unp_rights--;
 	(void) closef(fp, curproc);

@@ -30,15 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)termios.h	7.22 (Berkeley) 5/7/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00150
- * --------------------         -----   ----------------------
- *
- * 22 Apr 93	David Greenman		support for 57600 and 115200 baud
- *
+ *	from: @(#)termios.h	7.22 (Berkeley) 5/7/91
+ *	$Id$
  */
 
 /*
@@ -84,9 +77,9 @@
 #define VTIME		17	/* !ICANON */
 #ifndef _POSIX_SOURCE
 #define VSTATUS		18	/* ICANON */
+#endif
 /*			19	   spare 2 */
 #define	NCCS		20
-#endif
 
 #define _POSIX_VDISABLE	((unsigned char)'\377')
 

@@ -52,6 +52,9 @@ static char sccsid[] = "@(#)mt.c	5.6 (Berkeley) 6/6/91";
 #include <stdio.h>
 #include <ctype.h>
 
+#define MTERA           -1
+#define MTRET           -2
+
 #define	equal(s1,s2)	(strcmp(s1, s2) == 0)
 
 struct commands {
@@ -69,6 +72,8 @@ struct commands {
 	{ "offline",	MTOFFL,	1 },
 	{ "rewoffl",	MTOFFL,	1 },
 	{ "status",	MTNOP,	1 },
+	{ "erase",      MTERA,  0 },
+	{ "retension",  MTRET,  1 },
 	{ 0 }
 };
 
@@ -92,22 +97,46 @@ main(argc, argv)
 		if ((tape = getenv("TAPE")) == NULL)
 			tape = DEFTAPE;
 	if (argc < 2) {
-		fprintf(stderr, "usage: mt [ -f device ] command [ count ]\n");
+usage:          fprintf(stderr, "Usage:\n");
+		fprintf(stderr, "\tmt [ -f device ] command [ count ]\n");
+		fprintf(stderr, "Commands:\n");
+		fprintf(stderr, "\teof, weof - write tape mmrk\n");
+		fprintf(stderr, "\tfsf       - seek forward for tape mark\n");
+		fprintf(stderr, "\tbsf       - seek backward for tape mark\n");
+		fprintf(stderr, "\tfsr       - seek record forward\n");
+		fprintf(stderr, "\tbsr       - seek record backward\n");
+		fprintf(stderr, "\trewind    - rewind the tape\n");
+		fprintf(stderr, "\toffline   - rewind and unload the tape\n");
+		fprintf(stderr, "\tstatus    - get tape status\n");
+		fprintf(stderr, "\terase     - erase the tape\n");
+		fprintf(stderr, "\tretension - retension the tape\n");
 		exit(1);
 	}
 	cp = argv[1];
 	for (comp = com; comp->c_name != NULL; comp++)
 		if (strncmp(cp, comp->c_name, strlen(cp)) == 0)
 			break;
-	if (comp->c_name == NULL) {
-		fprintf(stderr, "mt: don't grok \"%s\"\n", cp);
-		exit(1);
-	}
+	if (! comp->c_name)
+		goto usage;
 	if ((mtfd = open(tape, comp->c_ronly ? O_RDONLY : O_RDWR)) < 0) {
 		perror(tape);
 		exit(1);
 	}
-	if (comp->c_code != MTNOP) {
+	switch (comp->c_code) {
+	case MTERA:
+		command(comp->c_code, "erase");
+		break;
+	case MTRET:
+		command(comp->c_code, "retension");
+		break;
+	case MTNOP:
+		if (ioctl(mtfd, MTIOCGET, (char *)&mt_status) < 0) {
+			perror("mt");
+			exit(2);
+		}
+		status(&mt_status);
+		break;
+	default:
 		mt_com.mt_op = comp->c_code;
 		mt_com.mt_count = (argc > 2 ? atoi(argv[2]) : 1);
 		if (mt_com.mt_count < 0) {
@@ -120,12 +149,7 @@ main(argc, argv)
 			perror("failed");
 			exit(2);
 		}
-	} else {
-		if (ioctl(mtfd, MTIOCGET, (char *)&mt_status) < 0) {
-			perror("mt");
-			exit(2);
-		}
-		status(&mt_status);
+		break;
 	}
 }
 
@@ -148,6 +172,10 @@ main(argc, argv)
 #include <tahoe/vba/cyreg.h>
 #endif
 
+#ifdef __386BSD__
+#include <sys/../i386/isa/wtreg.h>
+#endif
+
 struct tape_desc {
 	short	t_type;		/* type of magtape device */
 	char	*t_name;	/* printing name */
@@ -168,8 +196,30 @@ struct tape_desc {
 #ifdef tahoe
 	{ MT_ISCY,	"cipher",	CYS_BITS,	CYCW_BITS },
 #endif
+#ifdef __386BSD__
+#ifdef WTDS_BITS
+	{ MT_ISVIPER1,  "Archive",      WTDS_BITS,      WTER_BITS },
+	{ 0x11,         "Wangtek",      WTDS_BITS,      WTER_BITS },
+#endif
+#endif
 	{ 0 }
 };
+
+/*
+ * Start erase or retension operation
+ */
+
+command(op, opname)
+	char *opname;
+{
+#ifdef WTQICMD
+	if (ioctl(mtfd, WTQICMD, op==MTERA ? QIC_ERASE : QIC_RETENS) >= 0)
+		return;
+	perror(opname);
+#else
+	fprintf(stderr, "%s %s: operation not supported\n", tape, opname);
+#endif
+}
 
 /*
  * Interpret the status buffer returned

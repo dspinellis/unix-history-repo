@@ -78,7 +78,7 @@ struct keytab {
 struct	ortentry route;
 union	sockunion {
 	struct	sockaddr sa;
-	struct	sockaddr_in sin;
+	struct	sockaddr_in s_in;
 #ifdef notdef
 	struct	sockaddr_ns sns;
 	struct	sockaddr_iso siso;
@@ -98,7 +98,7 @@ int	s;
 int	forcehost, forcenet, doflush, nflag, af, qflag, tflag, Cflag, keyword();
 int	iflag, verbose, aflen = sizeof (struct sockaddr_in);
 int	locking, lockrest, debugonly;
-struct	sockaddr_in sin = { sizeof(sin), AF_INET };
+struct	sockaddr_in s_in = { sizeof(s_in), AF_INET };
 struct	rt_metrics rt_metrics;
 u_long  rtm_inits;
 struct	in_addr inet_makeaddr();
@@ -671,7 +671,7 @@ newroute(argc, argv)
 			break;
 		if (af == AF_INET && hp && hp->h_addr_list[1]) {
 			hp->h_addr_list++;
-			bcopy(hp->h_addr_list[0], (caddr_t)&so_dst.sin.sin_addr,
+			bcopy(hp->h_addr_list[0], (caddr_t)&so_dst.s_in.sin_addr,
 			    hp->h_length);
 		} else
 			break;
@@ -706,9 +706,9 @@ newroute(argc, argv)
 }
 
 void
-inet_makenetandmask(net, sin)
+inet_makenetandmask(net, s_in)
 	u_long net;
-	register struct sockaddr_in *sin;
+	register struct sockaddr_in *s_in;
 {
 	u_long addr, mask = 0;
 	register char *cp;
@@ -736,15 +736,15 @@ inet_makenetandmask(net, sin)
 		else
 			mask = -1;
 	}
-	sin->sin_addr.s_addr = htonl(addr);
-	sin = &so_mask.sin;
-	sin->sin_addr.s_addr = htonl(mask);
-	sin->sin_len = 0;
-	sin->sin_family = 0;
-	cp = (char *)(&sin->sin_addr + 1);
-	while (*--cp == 0 && cp > (char *)sin)
+	s_in->sin_addr.s_addr = htonl(addr);
+	s_in = &so_mask.s_in;
+	s_in->sin_addr.s_addr = htonl(mask);
+	s_in->sin_len = 0;
+	s_in->sin_family = 0;
+	cp = (char *)(&s_in->sin_addr + 1);
+	while (*--cp == 0 && cp > (char *)s_in)
 		;
-	sin->sin_len = 1 + cp - (char *)sin;
+	s_in->sin_len = 1 + cp - (char *)s_in;
 }
 
 /*
@@ -812,13 +812,13 @@ getaddr(which, s, hpp)
 	*hpp = NULL;
 	if (((val = inet_addr(s)) != -1) &&
 	    (which != RTA_DST || forcenet == 0)) {
-		su->sin.sin_addr.s_addr = val;
-		if (inet_lnaof(su->sin.sin_addr) != INADDR_ANY)
+		su->s_in.sin_addr.s_addr = val;
+		if (inet_lnaof(su->s_in.sin_addr) != INADDR_ANY)
 			return (1);
 		else {
 			val = ntohl(val);
 		out:	if (which == RTA_DST)
-				inet_makenetandmask(val, &su->sin);
+				inet_makenetandmask(val, &su->s_in);
 			return (0);
 		}
 	}
@@ -834,8 +834,8 @@ getaddr(which, s, hpp)
 	hp = gethostbyname(s);
 	if (hp) {
 		*hpp = hp;
-		su->sin.sin_family = hp->h_addrtype;
-		bcopy(hp->h_addr, (char *)&su->sin.sin_addr, hp->h_length);
+		su->s_in.sin_family = hp->h_addrtype;
+		bcopy(hp->h_addr, (char *)&su->s_in.sin_addr, hp->h_length);
 		return (1);
 	}
 	(void) fprintf(stderr, "%s: bad value\n", s);
@@ -1198,7 +1198,7 @@ sodump(su, which)
 #endif
 	case AF_INET:
 		(void) printf("%s: inet %s; ",
-		    which, inet_ntoa(su->sin.sin_addr));
+		    which, inet_ntoa(su->s_in.sin_addr));
 		break;
 #ifdef notdef
 	case AF_NS:

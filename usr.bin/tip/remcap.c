@@ -78,9 +78,9 @@ char	*RM;
 
 static	char *tbuf;
 static	int hopcount;	/* detect infinite loops in termcap, init 0 */
-char	*tskip();
+static	char *tskip();
 char	*tgetstr();
-char	*tdecode();
+static	char *tdecode();
 char	*getenv();
 static	char *remotefile;
 

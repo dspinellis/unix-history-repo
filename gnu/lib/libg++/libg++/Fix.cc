@@ -1,3 +1,20 @@
+// This may look like C code, but it is really -*- C++ -*-
+/*
+Copyright (C) 1989 Free Software Foundation
+    written by Doug Lea (dl@rocky.oswego.edu)
+
+This file is part of the GNU C++ Library.  This library is free
+software; you can redistribute it and/or modify it under the terms of
+the GNU Library General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your
+option) any later version.  This library is distributed in the hope
+that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.  See the GNU Library General Public License for more details.
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+*/
 //
 // Fix.cc : variable length fixed point data type class functions
 //
@@ -9,6 +26,7 @@
 #include <std.h>
 #include <Obstack.h>
 #include <AllocRing.h>
+#include <strstream.h>
 
 // default parameters
 
@@ -71,7 +89,7 @@ static inline _Fix _new_Fix(uint16 len)
   if (siz <= 0) siz = 1;
   unsigned int allocsiz = (sizeof(_Frep) + (siz - 1) * sizeof(uint16));
   _Fix z = (_Fix)(new char[allocsiz]);
-  bzero(z, allocsiz);
+  memset(z, 0, allocsiz);
   z->len = len;
   z->siz = siz;
   z->ref = 1;
@@ -83,7 +101,7 @@ _Fix new_Fix(uint16 len)
   return _new_Fix(len);
 }
 
-_Fix new_Fix(uint16 len, _Fix x)
+_Fix new_Fix(uint16 len, const _Fix x)
 {
   _Fix z = _new_Fix(len);
   return copy(x,z);
@@ -121,7 +139,7 @@ _Fix new_Fix(uint16 len, double d)
 
 // convert to a double 
 
-double value(Fix& x)
+double value(const Fix& x)
 { 
   double d = 0.0;
   for ( int i=x.rep->siz-1; i >= 0; i-- )
@@ -140,7 +158,8 @@ Integer mantissa(Fix& x)
   Integer a = 1, b=1;
   for ( int i=0; i < x.rep->siz; i++ )
   {
-    a = (a << 16) + x.rep->s[i];
+    a <<= 16;
+    a += x.rep->s[i];
     b <<= 16;
   }
   return a-b;
@@ -163,7 +182,7 @@ inline static int docmpz(uint16* x, int siz)
   return 0;
 }
 
-int compare(_Fix x, _Fix y)
+int compare(const _Fix x, const _Fix y)
 {
   if ( x->siz == y->siz )
     return docmp(x->s, y->s, x->siz);
@@ -274,7 +293,7 @@ _Fix multiply(_Fix x, _Fix y, _Fix r)
 	b += r->s[k];
         r->s[k] = b;
       }
-      if ( k < r->siz + 1 )
+      if ( k < (int)r->siz + 1 )
         carry = (a >> 15) + (b >> 16);
     }
     r->s[i] = carry;
@@ -327,7 +346,7 @@ _Fix divide(_Fix x, _Fix y, _Fix q, _Fix r)
   if ( !compare(y) )
     (*Fix_range_error_handler)("division -- division by zero");
   else if ( compare(x,y) >= 0 )
-    if ( compare(x,y) == 0 && xsign ^ ysign != 0 )
+    if ( compare(x,y) == 0 && (xsign ^ ysign) != 0 )
     {
       copy(&_Frep_m1,q);
       copy(&_Frep_0,r);
@@ -434,18 +453,29 @@ Fix atoF(const char* a, int len)
 
 extern AllocRing _libgxx_fmtq;
 
+void Fix::printon(ostream& s, int width) const
+{
+  char format[20];
+  double val = value(*this);
+  int old_precision = s.precision(width-3);
+  long old_flags = s.setf(ios::fixed, ios::fixed|ios::scientific);
+  if (val >= 0)
+      s << ' ';
+  s.width(width-2);
+  s << val;
+  s.precision(old_precision);
+  s.flags(old_flags);
+}
+
 char* Ftoa(Fix& x, int width)
 {
   int wrksiz = width + 2;
-  char *s = (char *) _libgxx_fmtq.alloc(wrksiz);
-  char format[100];
-  double val = value(x);
-  if (val < 0)
-    sprintf(format,"%%%d.%dlf",width-2,width-3);
-  else
-    sprintf(format," %%%d.%dlf",width-2,width-3);
-  sprintf(s,format,val);
-  return s;
+  char *fmtbase = (char *) _libgxx_fmtq.alloc(wrksiz);
+  ostrstream stream(fmtbase, wrksiz);
+  
+  x.printon(stream, width);
+  stream << ends;
+  return fmtbase;
 }
 
 extern Obstack _libgxx_io_ob;
@@ -458,18 +488,18 @@ Fix Fix::operator %= (int y)
 istream& operator >> (istream& s, Fix& y)
 {
   int got_one = 0;
-  if (!s.readable())
+  if (!s.ipfx(0))
   {
-    s.set(_bad);
+    s.clear(ios::failbit|s.rdstate()); // Redundant if using GNU iostreams.
     return s;
   }
 
   char sign = 0, point = 0;
   char ch;
-  s >> WS;
+  s >> ws;
   if (!s.good())
   {
-    s.set(_bad);
+    s.clear(ios::failbit|s.rdstate());
     return s;
   }
   while (s.get(ch))
@@ -504,9 +534,9 @@ istream& operator >> (istream& s, Fix& y)
   }
   char * p = (char*)(_libgxx_io_ob.finish(0));
   if (s.good())
-    s.unget(ch);
+    s.putback(ch);
   if (!got_one)
-    s.error();
+    s.clear(ios::failbit|s.rdstate());
   else
     y = atoF(p);
   _libgxx_io_ob.free(p);
@@ -518,7 +548,16 @@ void show(Fix& x)
   cout << "len = " << x.rep->len << "\n";
   cout << "siz = " << x.rep->siz << "\n";
   cout << "ref = " << x.rep->ref << "\n";
-  cout << "man = " << Itoa(mantissa(x),16,4*x.rep->siz) << "\n";
+  cout << "man = ";
+#ifdef _OLD_STREAMS
+  cout << Itoa(mantissa(x),16,4*x.rep->siz);
+#else
+  int old_flags = cout.setf(ios::hex, ios::hex|ios::dec|ios::oct);
+  cout.width(4*x.rep->siz);
+  cout << mantissa(x);
+  cout.setf(old_flags, ios::hex|ios::dec|ios::oct);
+#endif
+  cout << "\n";
   cout << "val = " << value(x) << "\n";
 }
 
@@ -551,24 +590,24 @@ void Fix_overflow_saturate(_Fix& r) {
   else
   {
     r->s[0] = 0x7fff;
-    for ( int i=1; i < r->siz; i++ )
+    for ( int i = 1; i < (int)r->siz; i++ )
       r->s[i] = 0xffff;
     mask(r);
   }
 }
 
-void Fix_overflow_wrap(_Fix& r) {}
+void Fix_overflow_wrap(_Fix&) {}
 
 void Fix_overflow_warning_saturate(_Fix& r) {
   Fix_overflow_warning(r);
   Fix_overflow_saturate(r);
 }
 
-void Fix_overflow_warning(_Fix& r) {
+void Fix_overflow_warning(_Fix&) {
   cerr << "Fix: overflow warning\n"; 
 }
 
-void Fix_overflow_error(_Fix& r) {
+void Fix_overflow_error(_Fix&) {
   cerr << "Fix: overflow error\n"; 
   abort();
 }

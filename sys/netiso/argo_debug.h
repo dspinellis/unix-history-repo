@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)argo_debug.h	7.4 (Berkeley) 5/6/91
+ *	from: @(#)argo_debug.h	7.4 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /*****************************************************************
@@ -58,10 +59,6 @@ SOFTWARE.
 
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
- */
-/* 
- * $Header: argo_debug.h,v 4.6 88/07/19 15:53:40 hagens Exp $
- * $Source: /usr/argo/sys/netiso/RCS/argo_debug.h,v $
  */
 
 #ifndef __ARGO_DEBUG__

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)clnp_raw.c	7.8 (Berkeley) 5/6/91
+ *	from: @(#)clnp_raw.c	7.8 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,8 +60,6 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: clnp_raw.c,v 4.2 88/06/29 14:58:56 hagens Exp $ */
-/* $Source: /usr/argo/sys/netiso/RCS/clnp_raw.c,v $ */
 
 #include "param.h"
 #include "mbuf.h"

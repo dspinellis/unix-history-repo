@@ -30,15 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vnode.h	7.39 (Berkeley) 6/27/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00129
- * --------------------         -----   ----------------------
- *
- * 02 Apr 93	Paul Popelka		Added support for PCFS
- *
+ *	from: @(#)vnode.h	7.39 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 #ifndef KERNEL
@@ -61,7 +54,7 @@ enum vtype 	{ VNON, VREG, VDIR, VBLK, VCHR, VLNK, VSOCK, VFIFO, VBAD };
  * These are for the benefit of external programs only (e.g., pstat)
  * and should NEVER be inspected inside the kernel.
  */
-enum vtagtype	{ VT_NON, VT_UFS, VT_NFS, VT_MFS, VT_PCFS };
+enum vtagtype	{ VT_NON, VT_UFS, VT_NFS, VT_MFS, VT_PCFS, VT_ISOFS };
 
 /*
  * This defines the maximum size of the private data area

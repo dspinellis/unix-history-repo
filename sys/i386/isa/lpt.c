@@ -45,22 +45,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00164
- * --------------------         -----   ----------------------
- *
- * 06 Apr 93	Eric Haug		Fixed comments and includes. [Ed: I did
- *					not include the unit-1 thing, that is a
- *					DOSism, fixed the config file instead]
- * 06 Apr 93	Rodney W. Grimes	A real probe routine, may even cause on
- *					interrupt if a printer is attached.
- *
- * 01 Jun 93	Rodney W. Grimes	Made lpflag uniq now is lptflag
- *					Added timeout loop to lpt_port_test.
- *					lpt_port_test should move to a common
- *					routine..
- *
+ *	from: unknown origin, 386BSD 0.1
+ *	$Id$
  */
 
 /*
@@ -97,12 +83,13 @@
 int lptflag = 1;
 #endif
 
-int lptout();
+void lptout();
 #ifdef DEBUG
 int lptflag = 1;
 #endif
 
-int 	lptprobe(), lptattach(), lptintr();
+int 	lptprobe(), lptattach();
+void	lptintr();
 
 struct	isa_driver lptdriver = {
 	lptprobe, lptattach, "lpt"
@@ -143,7 +130,10 @@ struct lpt_softc {
  * Internal routine to lptprobe to do port tests of one byte value
  */
 int
-lpt_port_test(short port, u_char data, u_char mask)
+lpt_port_test(port, data, mask)
+	short port;
+	u_char data;
+	u_char mask;
 	{
 	int	temp, timeout;
 
@@ -182,8 +172,9 @@ lpt_port_test(short port, u_char data, u_char mask)
  */
 
 int
-lptprobe(struct isa_device *dvp)
-	{
+lptprobe(dvp)
+	struct isa_device *dvp;
+{
 	int	status;
 	short	port;
 	u_char	data;
@@ -227,6 +218,7 @@ lptprobe(struct isa_device *dvp)
 	return (status);
 	}
 
+int
 lptattach(isdp)
 	struct isa_device *isdp;
 {
@@ -242,17 +234,23 @@ lptattach(isdp)
  * lptopen -- reset the printer, then wait until it's selected and not busy.
  */
 
+int
 lptopen(dev, flag)
 	dev_t dev;
 	int flag;
 {
-	struct lpt_softc *sc = lpt_sc + LPTUNIT(minor(dev));
+	struct lpt_softc *sc;
 	int s;
 	int trys, port;
+	u_int unit = LPTUNIT(minor(dev));
+
+	if (unit >= NLPT)
+		return (ENXIO);
+	sc = lpt_sc + unit;
 
 	if (sc->sc_state) {
 lprintf("lp: still open\n") ;
-printf("still open %x\n", sc->sc_state);
+lprintf("still open %x\n", sc->sc_state);
 		return(EBUSY);
 	} else	sc->sc_state |= INIT;
 
@@ -278,7 +276,7 @@ lprintf("lp flags 0x%x\n", sc->sc_flags);
 		if (trys++ >= LPINITRDY*4) {
 			splx(s);
 			sc->sc_state = 0;
-printf ("status %x\n", inb(port+lpt_status) );
+lprintf ("status %x\n", inb(port+lpt_status) );
 			return (EBUSY);
 		}
 
@@ -310,6 +308,7 @@ lprintf("opened.\n");
 	return(0);
 }
 
+void
 lptout (sc)
 	struct lpt_softc *sc;
 {	int pl;
@@ -339,7 +338,9 @@ lprintf ("T %x ", inb(sc->sc_port+lpt_status));
  * lptclose -- close the device, free the local line buffer.
  */
 
+int
 lptclose(dev, flag)
+	dev_t dev;
 	int flag;
 {
 	struct lpt_softc *sc = lpt_sc + LPTUNIT(minor(dev));
@@ -365,6 +366,7 @@ lprintf("closed.\n");
  * putc to get the chars moved to the output queue.
  */
 
+int
 lptwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
@@ -398,7 +400,9 @@ lprintf("W ");
  * ready to accept another char.
  */
 
+void
 lptintr(unit)
+	int unit;
 {
 	struct lpt_softc *sc = lpt_sc + unit;
 	int port = sc->sc_port,sts;
@@ -433,7 +437,11 @@ lprintf("sts %x ", sts);
 }
 
 int
-lptioctl(dev_t dev, int cmd, caddr_t data, int flag)
+lptioctl(dev, cmd, data, flag)
+	dev_t dev;
+	int cmd;
+	caddr_t data;
+	int flag;
 {
 	int	error;
 

@@ -35,7 +35,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)error.c	5.1 (Berkeley) 3/7/91";
+/*static char sccsid[] = "from: @(#)error.c	5.1 (Berkeley) 3/7/91";*/
+static char rcsid[] = "error.c,v 1.4 1993/08/01 18:58:19 mycroft Exp";
 #endif /* not lint */
 
 /*
@@ -204,7 +205,7 @@ STATIC const struct errname errormsg[] = {
 #endif
 	ENOMEM, ALL,	"not enough memory",
 #ifdef ENOLINK
-	ENOLINK, ALL,	"remote access failed"
+	ENOLINK, ALL,	"remote access failed",
 #endif
 #ifdef EMULTIHOP
 	EMULTIHOP, ALL,	"remote access failed",

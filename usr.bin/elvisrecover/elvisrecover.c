@@ -14,6 +14,10 @@
 #include "config.h"
 #include "vi.h"
 
+void recover P_((char *, char *));
+void main P_((int, char **));
+
+
 void recover(basename, outname)
 	char	*basename;	/* the name of the file to recover */
 	char	*outname;	/* the name of the file to write to */
@@ -164,6 +168,7 @@ void recover(basename, outname)
 #endif
 }
 
+void
 main(argc, argv)
 	int	argc;
 	char	**argv;
@@ -172,7 +177,7 @@ main(argc, argv)
 	if (argc > 3)
 	{
 		fprintf(stderr, "usage: %s [preserved_file [recovery_file]]\n", argv[0]);
-		exit(1);
+		exit(2);
 	}
 
 	/* recover the requested file, or list recoverable files */

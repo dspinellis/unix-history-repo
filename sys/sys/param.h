@@ -30,10 +30,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)param.h	7.23 (Berkeley) 5/6/91
+ *	from: @(#)param.h	7.23 (Berkeley) 5/6/91
+ *	$Id: param.h,v 1.2 1993/10/08 20:59:38 rgrimes Exp $
  */
 
-#define	__386BSDREL__	0.1	/* Release 0.1 */
+#ifndef _SYS_PARAM_H_
+#define _SYS_PARAM_H_
+
 #define	BSD	199103	 /* CSRG: March, 1991 system version (year & month) */
 #define BSD4_3	1
 #define BSD4_4	0.5
@@ -56,7 +59,7 @@
 #include <sys/syslimits.h>
 
 #define	MAXCOMLEN	16		/* max command name remembered */
-#define	MAXINTERP	32		/* max interpreter file name length */
+#define	MAXINTERP	64		/* max interpreter file name length */
 #define	MAXLOGNAME	12		/* max login name length */
 #define	MAXUPRC		CHILD_MAX	/* max simultaneous processes */
 #define	NCARGS		ARG_MAX		/* max bytes for an exec function */
@@ -199,7 +202,7 @@
  * MAXALLOCSIZE must be a power of two.
  */
 #define MINBUCKET	4		/* 4 => min allocation of 16 bytes */
-#define MAXALLOCSAVE	(2 * CLBYTES)
+#define MAXALLOCSAVE	(CLBYTES-1)
 
 /*
  * Scale factor for scaled integers used to count %cpu time and load avgs.
@@ -214,3 +217,5 @@
  */
 #define	FSHIFT	11		/* bits to right of fixed binary point */
 #define FSCALE	(1<<FSHIFT)
+
+#endif /* !_SYS_PARAM_H_ */

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)fcntl.h	5.14 (Berkeley) 7/1/91
+ *	from: @(#)fcntl.h	5.14 (Berkeley) 7/1/91
+ *	$Id$
  */
 
 #ifndef _FCNTL_H_

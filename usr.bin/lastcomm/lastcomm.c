@@ -211,7 +211,8 @@ setupdevs()
 	while (dp = readdir(fd)) {
 		if (dp->d_ino == 0)
 			continue;
-		if (dp->d_name[0] != 't' && strcmp(dp->d_name, "console"))
+		if (dp->d_name[0] != 't' && strcmp(dp->d_name, "console")
+					 && strcmp(dp->d_name, "vga"))
 			continue;
 		(void)strncpy(hashtab->dev_name, dp->d_name, UT_LINESIZE);
 		hashtab->dev_name[UT_LINESIZE] = 0;

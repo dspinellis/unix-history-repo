@@ -33,9 +33,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_glue.c	7.8 (Berkeley) 5/15/91
- *
- *
+ *	from: @(#)vm_glue.c	7.8 (Berkeley) 5/15/91
+ *	$Id: vm_glue.c,v 1.8 1993/10/16 16:20:25 rgrimes Exp $
+ */
+
+/*
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
  * 
@@ -58,16 +60,9 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00137
- * --------------------         -----   ----------------------
- *
- * 08 Apr 93	Bruce Evans		Several VM system fixes
  */
-static char rcsid[] = "$Header: /usr/bill/working/sys/vm/RCS/vm_glue.c,v 1.2 92/01/21 21:58:21 william Exp $";
 
+#include "ddb.h"
 #include "param.h"
 #include "systm.h"
 #include "proc.h"
@@ -80,7 +75,6 @@ static char rcsid[] = "$Header: /usr/bill/working/sys/vm/RCS/vm_glue.c,v 1.2 92/
 #include "vm_kern.h"
 
 int	avefree = 0;		/* XXX */
-unsigned maxdmap = MAXDSIZ;	/* XXX */
 int	readbuffers = 0;	/* XXX allow kgdb to read kernel buffer pool */
 
 kernacc(addr, len, rw)
@@ -92,7 +86,7 @@ kernacc(addr, len, rw)
 	vm_prot_t prot = rw == B_READ ? VM_PROT_READ : VM_PROT_WRITE;
 
 	saddr = trunc_page(addr);
-	eaddr = round_page(addr+len-1);
+	eaddr = round_page(addr+len);
 	rv = vm_map_check_protection(kernel_map, saddr, eaddr, prot);
 	/*
 	 * XXX there are still some things (e.g. the buffer cache) that
@@ -127,13 +121,13 @@ useracc(addr, len, rw)
 	 * only used (as an end address) in trap.c.  Use it as an end
 	 * address here too.
 	 */
-	if ((vm_offset_t) addr >= VM_MAXUSER_ADDRESS + UPAGES * NBPG
-	    || (vm_offset_t) addr + len > VM_MAXUSER_ADDRESS + UPAGES * NBPG
+	if ((vm_offset_t) addr >= VM_MAXUSER_ADDRESS
+	    || (vm_offset_t) addr + len > VM_MAXUSER_ADDRESS
 	    || (vm_offset_t) addr + len <= (vm_offset_t) addr)
 		return (FALSE);
 
 	rv = vm_map_check_protection(&curproc->p_vmspace->vm_map,
-	    trunc_page(addr), round_page(addr+len-1), prot);
+	    trunc_page(addr), round_page(addr+len), prot);
 	return(rv == TRUE);
 }
 
@@ -150,7 +144,7 @@ chgkprot(addr, len, rw)
 	vm_prot_t prot = rw == B_READ ? VM_PROT_READ : VM_PROT_WRITE;
 
 	vm_map_protect(kernel_map, trunc_page(addr),
-		       round_page(addr+len-1), prot, FALSE);
+		       round_page(addr+len), prot, FALSE);
 }
 #endif
 
@@ -159,7 +153,7 @@ vslock(addr, len)
 	u_int	len;
 {
 	vm_map_pageable(&curproc->p_vmspace->vm_map, trunc_page(addr),
-			round_page(addr+len-1), FALSE);
+			round_page(addr+len), FALSE);
 }
 
 vsunlock(addr, len, dirtied)
@@ -171,7 +165,7 @@ vsunlock(addr, len, dirtied)
 	dirtied++;
 #endif	lint
 	vm_map_pageable(&curproc->p_vmspace->vm_map, trunc_page(addr),
-			round_page(addr+len-1), TRUE);
+			round_page(addr+len), TRUE);
 }
 
 /*
@@ -457,6 +451,7 @@ swapout(p)
 #endif
 	size = round_page(ctob(UPAGES));
 	addr = (vm_offset_t) p->p_addr;
+	p->p_stats->p_ru.ru_nswap++ ;		/* record in resource stats */
 #ifdef notyet
 #ifdef hp300
 	/*
@@ -544,6 +539,7 @@ thread_wakeup(event)
  * DEBUG stuff
  */
 
+#if defined(DEBUG) || (NDDB > 0)
 int indent = 0;
 
 /*ARGSUSED2*/
@@ -561,3 +557,4 @@ iprintf(a, b, c, d, e, f, g, h)
 		printf(" ");
 	printf(a, b, c, d, e, f, g, h);
 }
+#endif	/* defined(DEBUG) || (NDDB > 0) */

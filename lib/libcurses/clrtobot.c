@@ -45,7 +45,7 @@ wclrtobot(win)
 reg WINDOW	*win; {
 
 	reg int		y;
-	reg char	*sp, *end, *maxx;
+	reg chtype      *sp, *end, *maxx;
 	reg int		startx, minx;
 
 	startx = win->_curx;

@@ -35,16 +35,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * from: Utah $Hdr: vm_mmap.c 1.3 90/01/21$
- *
- *	@(#)vm_mmap.c	7.5 (Berkeley) 6/28/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00137
- * --------------------         -----   ----------------------
- *
- * 08 Apr 93	Yuval Yarom		Several VM system fixes
+ *	from: Utah $Hdr: vm_mmap.c 1.3 90/01/21$
+ *	from: @(#)vm_mmap.c	7.5 (Berkeley) 6/28/91
+ *	$Id$
  */
 
 /*
@@ -84,25 +77,29 @@ getpagesize(p, uap, retval)
 	return (0);
 }
 
+struct sbrk_args {
+	int	incr;
+};
+
 /* ARGSUSED */
 sbrk(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	incr;
-	} *uap;
+	struct sbrk_args *uap;
 	int *retval;
 {
 
 	/* Not yet implemented */
 	return (EOPNOTSUPP);
 }
+
+struct sstk_args {
+	int	incr;
+};
 
 /* ARGSUSED */
 sstk(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	incr;
-	} *uap;
+	struct sstk_args *uap;
 	int *retval;
 {
 
@@ -110,16 +107,18 @@ sstk(p, uap, retval)
 	return (EOPNOTSUPP);
 }
 
+struct smmap_args {
+	caddr_t	addr;
+	int	len;
+	int	prot;
+	int	flags;
+	int	fd;
+	off_t	pos;
+};
+
 smmap(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		caddr_t	addr;
-		int	len;
-		int	prot;
-		int	flags;
-		int	fd;
-		off_t	pos;
-	} *uap;
+	register struct smmap_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -127,9 +126,11 @@ smmap(p, uap, retval)
 	struct vnode *vp;
 	vm_offset_t addr;
 	vm_size_t size;
+	vm_prot_t maxprot;
 	vm_prot_t prot;
 	caddr_t handle;
 	int mtype, error;
+	int flags = uap->flags;
 
 #ifdef DEBUG
 	if (mmapdebug & MDB_FOLLOW)
@@ -140,7 +141,7 @@ smmap(p, uap, retval)
 	/*
 	 * Make sure one of the sharing types is specified
 	 */
-	mtype = uap->flags & MAP_TYPE;
+	mtype = flags & MAP_TYPE;
 	switch (mtype) {
 	case MAP_FILE:
 	case MAP_ANON:
@@ -153,7 +154,7 @@ smmap(p, uap, retval)
 	 * Size is implicitly rounded to a page boundary.
 	 */
 	addr = (vm_offset_t) uap->addr;
-	if ((uap->flags & MAP_FIXED) && (addr & page_mask) || uap->len < 0)
+	if ((flags & MAP_FIXED) && (addr & page_mask) || uap->len < 0)
 		return(EINVAL);
 	size = (vm_size_t) round_page(uap->len);
 	if ((uap->flags & MAP_FIXED) && (addr + size > VM_MAXUSER_ADDRESS))
@@ -165,7 +166,7 @@ smmap(p, uap, retval)
 	 * There should really be a pmap call to determine a reasonable
 	 * location.
 	 */
-	if (addr == 0 && (uap->flags & MAP_FIXED) == 0)
+	if (addr == 0 && (flags & MAP_FIXED) == 0)
 		addr = round_page(p->p_vmspace->vm_daddr + MAXDSIZ);
 	/*
 	 * Mapping file or named anonymous, get fp for validation
@@ -194,14 +195,29 @@ smmap(p, uap, retval)
 		 * if mapping is shared.
 		 */
 		if ((uap->prot & PROT_READ) && (fp->f_flag & FREAD) == 0 ||
-		    ((uap->flags & MAP_SHARED) &&
+		    ((flags & MAP_SHARED) &&
 		     (uap->prot & PROT_WRITE) && (fp->f_flag & FWRITE) == 0))
 			return(EACCES);
 		handle = (caddr_t)vp;
-	} else if (uap->fd != -1)
+		/*
+		 * PATCH GVR 25-03-93
+		 * Map protections to MACH style
+		 */
+		if(uap->flags & MAP_SHARED) {
+			maxprot = VM_PROT_EXECUTE;
+			if (fp->f_flag & FREAD)
+				maxprot |= VM_PROT_READ;
+			if (fp->f_flag & FWRITE)
+				maxprot |= VM_PROT_WRITE;
+		} else
+			maxprot = VM_PROT_ALL;
+	} else if (uap->fd != -1) {
+		maxprot = VM_PROT_ALL;
 		handle = (caddr_t)fp;
-	else
+	} else {
+		maxprot = VM_PROT_ALL;
 		handle = NULL;
+	}
 	/*
 	 * Map protections to MACH style
 	 */
@@ -213,19 +229,21 @@ smmap(p, uap, retval)
 	if (uap->prot & PROT_EXEC)
 		prot |= VM_PROT_EXECUTE;
 
-	error = vm_mmap(&p->p_vmspace->vm_map, &addr, size, prot,
-			uap->flags, handle, (vm_offset_t)uap->pos);
+	error = vm_mmap(&p->p_vmspace->vm_map, &addr, size, prot, maxprot,
+			flags, handle, (vm_offset_t)uap->pos);
 	if (error == 0)
 		*retval = (int) addr;
 	return(error);
 }
 
+struct msync_args {
+	caddr_t	addr;
+	int	len;
+};
+
 msync(p, uap, retval)
 	struct proc *p;
-	struct args {
-		caddr_t	addr;
-		int	len;
-	} *uap;
+	struct msync_args *uap;
 	int *retval;
 {
 	vm_offset_t addr, objoff, oaddr;
@@ -292,12 +310,14 @@ msync(p, uap, retval)
 	return(0);
 }
 
+struct munmap_args {
+	caddr_t	addr;
+	int	len;
+};
+
 munmap(p, uap, retval)
 	register struct proc *p;
-	register struct args {
-		caddr_t	addr;
-		int	len;
-	} *uap;
+	register struct munmap_args *uap;
 	int *retval;
 {
 	vm_offset_t addr;
@@ -339,13 +359,15 @@ munmapfd(p, fd)
 	p->p_fd->fd_ofileflags[fd] &= ~UF_MAPPED;
 }
 
+struct mprotect_args {
+	caddr_t	addr;
+	int	len;
+	int	prot;
+};
+
 mprotect(p, uap, retval)
 	struct proc *p;
-	struct args {
-		caddr_t	addr;
-		int	len;
-		int	prot;
-	} *uap;
+	struct mprotect_args *uap;
 	int *retval;
 {
 	vm_offset_t addr;
@@ -383,14 +405,16 @@ mprotect(p, uap, retval)
 	return (EINVAL);
 }
 
+struct madvise_args {
+	caddr_t	addr;
+	int	len;
+	int	behav;
+};
+
 /* ARGSUSED */
 madvise(p, uap, retval)
 	struct proc *p;
-	struct args {
-		caddr_t	addr;
-		int	len;
-		int	behav;
-	} *uap;
+	struct madvise_args *uap;
 	int *retval;
 {
 
@@ -398,14 +422,16 @@ madvise(p, uap, retval)
 	return (EOPNOTSUPP);
 }
 
+struct mincore_args {
+	caddr_t	addr;
+	int	len;
+	char	*vec;
+};
+
 /* ARGSUSED */
 mincore(p, uap, retval)
 	struct proc *p;
-	struct args {
-		caddr_t	addr;
-		int	len;
-		char	*vec;
-	} *uap;
+	struct mincore_args *uap;
 	int *retval;
 {
 
@@ -420,11 +446,12 @@ mincore(p, uap, retval)
  *	MAP_FILE: a vnode pointer
  *	MAP_ANON: NULL or a file pointer
  */
-vm_mmap(map, addr, size, prot, flags, handle, foff)
+vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 	register vm_map_t map;
 	register vm_offset_t *addr;
 	register vm_size_t size;
 	vm_prot_t prot;
+	vm_prot_t maxprot;
 	register int flags;
 	caddr_t handle;		/* XXX should be vp */
 	vm_offset_t foff;
@@ -458,7 +485,7 @@ vm_mmap(map, addr, size, prot, flags, handle, foff)
 		vp = (struct vnode *)handle;
 		if (vp->v_type == VCHR) {
 			type = PG_DEVICE;
-			handle = (caddr_t)vp->v_rdev;
+			handle = (caddr_t)vp;
 		} else
 			type = PG_VNODE;
 	}
@@ -643,10 +670,22 @@ vm_mmap(map, addr, size, prot, flags, handle, foff)
 	 * entirely correct.  Maybe the maximum protection should be based
 	 * on the object permissions where it makes sense (e.g. a vnode).
 	 *
-	 * Changed my mind: leave max prot at VM_PROT_ALL.
+	 * XXX Changed my mind: leave max prot at VM_PROT_ALL.
+	 * PATCH GVR 25-03-93:
+	 * Changed again: indeed set maximum protection based on
+	 * object permissions.
 	 */
-	if (prot != VM_PROT_ALL) {
 		rv = vm_map_protect(map, *addr, *addr+size, prot, FALSE);
+		if (rv != KERN_SUCCESS) {
+			(void) vm_deallocate(map, *addr, size);
+			goto out;
+		}
+	/*
+	 * We only need to set max_protection in case it's
+	 * unequal to its default, which is VM_PROT_DEFAULT.
+	 */
+	if(maxprot != VM_PROT_DEFAULT) {
+		rv = vm_map_protect(map, *addr, *addr+size, maxprot, TRUE);
 		if (rv != KERN_SUCCESS) {
 			(void) vm_deallocate(map, *addr, size);
 			goto out;

@@ -163,11 +163,7 @@ main(argc, argv)
 		/* if target requires a password, verify it */
 		if (*pwd->pw_passwd) {
 			p = getpass("Password:");
-#ifdef DES
 			if (strcmp(pwd->pw_passwd, crypt(p, pwd->pw_passwd))) {
-#else
-			if (strcmp(pwd->pw_passwd, p)) {
-#endif
 				fprintf(stderr, "Sorry\n");
 				syslog(LOG_AUTH|LOG_WARNING,
 					"BAD SU %s to %s%s", username,

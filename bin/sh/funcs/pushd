@@ -33,6 +33,8 @@
 # SUCH DAMAGE.
 #
 #	@(#)pushd	5.1 (Berkeley) 3/7/91
+#
+#	/b/source/CVS/src/bin/sh/funcs/pushd,v 1.3 1993/03/23 00:29:58 cgd Exp
 
 # pushd, popd, and dirs --- written by Chris Bertin
 # Pixel Computer Inc. ...!wjh12!pixel!pixutl!chris

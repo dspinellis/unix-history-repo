@@ -1,5 +1,5 @@
-.ds V 1.5j-betatest
-.if t .ds E E\s-2LVIS\s+2
+.ds V 1.7
+.if t .ds E E\s'-2'LVIS\s'0'
 .if n .ds E Elvis
 .\"
 .\" usage: .Go <section#> <title>

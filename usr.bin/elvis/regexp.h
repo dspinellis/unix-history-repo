@@ -18,4 +18,4 @@ typedef struct regexp {
 extern regexp *regcomp();
 extern int regexec();
 extern void regsub();
-extern void regerror();
+extern void regerr();

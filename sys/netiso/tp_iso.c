@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_iso.c	7.11 (Berkeley) 5/6/91
+ *	from: @(#)tp_iso.c	7.11 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,10 +60,9 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /* 
  * ARGO TP
- * $Header: /var/src/sys/netiso/RCS/tp_iso.c,v 5.1 89/02/09 16:20:51 hagens Exp $
- * $Source: /var/src/sys/netiso/RCS/tp_iso.c,v $
  *
  * Here is where you find the iso-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff
@@ -87,6 +87,7 @@ SOFTWARE.
 #ifdef ISO
 
 #include "param.h"
+#include "systm.h"
 #include "socket.h"
 #include "socketvar.h"
 #include "domain.h"

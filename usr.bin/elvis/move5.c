@@ -36,7 +36,7 @@ MARK	m_fword(m, cnt, cmd, prevkey)
 	 */
 	if (cnt == 1L && prevkey == 'c' && isspace(*text))
 	{
-		return m + 1L;
+		return m;
 	}
 #endif
 

@@ -1,14 +1,6 @@
-/* vector.s */
 /*
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00167
- * --------------------         -----   ----------------------
- *
- * 04 Jun 93	Bruce Evans		Fixed irq_num vs id_num for multiple
- *					devices configed on the same irq with
- *					respect to ipending.  
- *
+ *	from: vector.s, 386BSD 0.1 unknown origin
+ *	$Id$
  */
 
 #include "i386/isa/icu.h"
@@ -284,12 +276,12 @@ _intrcnt_stray:	.space	4	/* total count of stray interrupts */
 _intrcnt_actv:	.space	NR_REAL_INT_HANDLERS * 4	/* active interrupts */
 	.globl	_intrcnt_pend
 _intrcnt_pend:	.space	NR_REAL_INT_HANDLERS * 4	/* pending interrupts */
+	.globl	_eintrcnt
+_eintrcnt:			/* used by vmstat to calc size of table */
 	.globl	_intrcnt_spl
 _intrcnt_spl:	.space	32 * 4	/* XXX 32 should not be hard coded ? */
 	.globl	_intrcnt_show
 _intrcnt_show:	.space	8 * 4	/* XXX 16 should not be hard coded ? */
-	.globl	_eintrcnt
-_eintrcnt:			/* used by vmstat to calc size of table */
 
 /*
  * Build the interrupt name table for vmstat
@@ -325,6 +317,7 @@ _intrnames:
 	.asciz	"name pend"
 
 	BUILD_VECTORS
+_eintrnames:
 
 /*
  * now the spl names
@@ -338,7 +331,8 @@ _intrnames:
 	.asciz	"netisr_ip"
 	.asciz	"netisr_imp"
 	.asciz	"netisr_ns"
-	.asciz	"softclock"
+	.asciz	"netisr_iso"
+	.asciz	"softclock"		/* 10 */
 	.asciz	"trap"
 	.asciz	"doreti_exit2"
 	.asciz	"splbio"
@@ -348,17 +342,16 @@ _intrnames:
 	.asciz	"splnet"
 	.asciz	"splsoftclock"
 	.asciz	"spltty"
-	.asciz	"spl0"
+	.asciz	"spl0"			/* 20 */
 	.asciz	"netisr_raw2"
 	.asciz	"netisr_ip2"
+	.asciz	"netisr_imp2"
+	.asciz	"netisr_ns2"
+	.asciz	"netisr_iso2"
 	.asciz	"splx"
 	.asciz	"splx!0"
 	.asciz	"unpend_V"
-	.asciz	"spl25"		/* spl25-spl31 are spares */
-	.asciz	"spl26"
-	.asciz	"spl27"
-	.asciz	"spl28"
-	.asciz	"spl29"
+	.asciz	"spl29"		/* spl29-spl31 are spares */
 	.asciz	"spl30"
 	.asciz	"spl31"
 /*
@@ -373,4 +366,3 @@ _intrnames:
 	.asciz	"mask6"
 	.asciz	"mask7"
 	
-_eintrnames:

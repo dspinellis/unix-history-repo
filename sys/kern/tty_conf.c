@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tty_conf.c	7.6 (Berkeley) 5/9/91
+ *	from: @(#)tty_conf.c	7.6 (Berkeley) 5/9/91
+ *	$Id$
  */
 
 #include "param.h"
@@ -55,6 +56,11 @@ int	tbopen(),tbclose(),tbread(),tbinput(),tbioctl();
 #if NSL > 0
 int	slopen(),slclose(),slinput(),sltioctl(),slstart();
 #endif
+#include "ppp.h"
+#if NPPP > 0
+int	pppopen(),pppclose(),pppread(),pppwrite(),pppinput();
+int	ppptioctl(),pppstart(),pppselect();
+#endif
 
 
 struct	linesw linesw[] =
@@ -77,6 +83,13 @@ struct	linesw linesw[] =
 #if NSL > 0
 	slopen, slclose, enodev, enodev, sltioctl,
 	slinput, enodev, nullop, slstart, nullmodem,	/* 4- SLIPDISC */
+#else
+	enodev, enodev, enodev, enodev, enodev,
+	enodev, enodev, enodev, enodev, enodev,
+#endif
+#if NPPP > 0
+	pppopen, pppclose, pppread, pppwrite, ppptioctl,
+	pppinput, enodev, nullop, pppstart, ttymodem,	/* 5- PPPDISC */
 #else
 	enodev, enodev, enodev, enodev, enodev,
 	enodev, enodev, enodev, enodev, enodev,

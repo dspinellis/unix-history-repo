@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)kern_sig.c	7.35 (Berkeley) 6/28/91
+ *	from: @(#)kern_sig.c	7.35 (Berkeley) 6/28/91
+ *	$Id$
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -39,6 +40,8 @@
 #include "resourcevar.h"
 #include "namei.h"
 #include "vnode.h"
+#include "mount.h"
+#include "filedesc.h"
 #include "proc.h"
 #include "systm.h"
 #include "timeb.h"
@@ -67,14 +70,16 @@
 	    (pc)->pc_ucred->cr_uid == (q)->p_ucred->cr_uid || \
 	    ((signo) == SIGCONT && (q)->p_session == (p)->p_session))
 
+struct sigaction_args {
+	int	signo;
+	struct	sigaction *nsa;
+	struct	sigaction *osa;
+};
+
 /* ARGSUSED */
 sigaction(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	signo;
-		struct	sigaction *nsa;
-		struct	sigaction *osa;
-	} *uap;
+	register struct sigaction_args *uap;
 	int *retval;
 {
 	struct sigaction vec;
@@ -218,12 +223,15 @@ execsigs(p)
  * and return old mask as return value;
  * the library stub does the rest.
  */
+
+struct sigprocmask_args {
+	int	how;
+	sigset_t mask;
+};
+
 sigprocmask(p, uap, retval)
 	register struct proc *p;
-	struct args {
-		int	how;
-		sigset_t mask;
-	} *uap;
+	struct sigprocmask_args *uap;
 	int *retval;
 {
 	int error = 0;
@@ -267,14 +275,17 @@ sigpending(p, uap, retval)
 /*
  * Generalized interface signal handler, 4.3-compatible.
  */
+
+struct osigvec_args {
+	int	signo;
+	struct	sigvec *nsv;
+	struct	sigvec *osv;
+};
+
 /* ARGSUSED */
 osigvec(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	signo;
-		struct	sigvec *nsv;
-		struct	sigvec *osv;
-	} *uap;
+	register struct osigvec_args *uap;
 	int *retval;
 {
 	struct sigvec vec;
@@ -312,11 +323,13 @@ osigvec(p, uap, retval)
 	return (0);
 }
 
+struct osigblock_args {
+	int	mask;
+};
+
 osigblock(p, uap, retval)
 	register struct proc *p;
-	struct args {
-		int	mask;
-	} *uap;
+	struct osigblock_args *uap;
 	int *retval;
 {
 
@@ -327,11 +340,13 @@ osigblock(p, uap, retval)
 	return (0);
 }
 
+struct osigsetmask_args {
+	int	mask;
+};
+
 osigsetmask(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	mask;
-	} *uap;
+	struct osigsetmask_args *uap;
 	int *retval;
 {
 
@@ -348,12 +363,15 @@ osigsetmask(p, uap, retval)
  * in the meantime.  Note nonstandard calling convention:
  * libc stub passes mask, not pointer, to save a copyin.
  */
+
+struct sigsuspend_args {
+	sigset_t mask;
+};
+
 /* ARGSUSED */
 sigsuspend(p, uap, retval)
 	register struct proc *p;
-	struct args {
-		sigset_t mask;
-	} *uap;
+	struct sigsuspend_args *uap;
 	int *retval;
 {
 	register struct sigacts *ps = p->p_sigacts;
@@ -373,13 +391,15 @@ sigsuspend(p, uap, retval)
 	return (EINTR);
 }
 
+struct sigstack_args {
+	struct	sigstack *nss;
+	struct	sigstack *oss;
+};
+
 /* ARGSUSED */
 sigstack(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		struct	sigstack *nss;
-		struct	sigstack *oss;
-	} *uap;
+	register struct sigstack_args *uap;
 	int *retval;
 {
 	struct sigstack ss;
@@ -394,13 +414,15 @@ sigstack(p, uap, retval)
 	return (error);
 }
 
+struct kill_args {
+	int	pid;
+	int	signo;
+};
+
 /* ARGSUSED */
 kill(cp, uap, retval)
 	register struct proc *cp;
-	register struct args {
-		int	pid;
-		int	signo;
-	} *uap;
+	register struct kill_args *uap;
 	int *retval;
 {
 	register struct proc *p;
@@ -431,13 +453,16 @@ kill(cp, uap, retval)
 }
 
 #ifdef COMPAT_43
+
+struct okillpg_args {
+	int	pgid;
+	int	signo;
+};
+
 /* ARGSUSED */
 okillpg(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	pgid;
-		int	signo;
-	} *uap;
+	register struct okillpg_args *uap;
 	int *retval;
 {
 
@@ -998,14 +1023,19 @@ sigexit(p, sig)
 		if (coredump(p) == 0)
 			sig |= WCOREFLAG;
 	}
-	exit(p, W_EXITCODE(0, sig));
+	kexit(p, W_EXITCODE(0, sig));
 	/* NOTREACHED */
 }
 
 /*
  * Create a core dump.
- * The file name is "core.progname".
- * Core dumps are not created if the process is setuid.
+ * The file name is "progname.core".
+ * Core dumps are not created if:
+ *	the process is setuid,
+ *	we are on a filesystem mounted with MNT_NOCORE,
+ *	a file already exists and is not a core file,
+ *		or was not produced from the same program,
+ *	the link count to the corefile is > 1.
  */
 coredump(p)
 	register struct proc *p;
@@ -1015,9 +1045,9 @@ coredump(p)
 	register struct ucred *cred = pcred->pc_ucred;
 	register struct vmspace *vm = p->p_vmspace;
 	struct vattr vattr;
-	int error, error1;
+	int error, error1, exists;
 	struct nameidata nd;
-	char name[MAXCOMLEN+6];	/* core.progname */
+	char name[MAXCOMLEN+6];	/* progname.core */
 
 	if (pcred->p_svuid != pcred->p_ruid ||
 	    pcred->p_svgid != pcred->p_rgid)
@@ -1025,16 +1055,38 @@ coredump(p)
 	if (ctob(UPAGES + vm->vm_dsize + vm->vm_ssize) >=
 	    p->p_rlimit[RLIMIT_CORE].rlim_cur)
 		return (EFAULT);
-	sprintf(name, "core.%s", p->p_comm);
+	if (p->p_fd->fd_cdir->v_mount->mnt_flag & MNT_NOCORE)
+		return (EFAULT);
+
+	sprintf(name, "%s.core", p->p_comm);
 	nd.ni_dirp = name;
 	nd.ni_segflg = UIO_SYSSPACE;
-	if (error = vn_open(&nd, p, O_CREAT|FWRITE, 0644))
+	if ((error = vn_open(&nd, p, FWRITE, 0644)) == 0)
+		exists = 1;
+	else
+		exists = 0;
+	if (error == ENOENT)
+		error = vn_open(&nd, p, O_CREAT | FWRITE, 0644);
+	if (error)
 		return (error);
 	vp = nd.ni_vp;
 	if (vp->v_type != VREG || VOP_GETATTR(vp, &vattr, cred, p) ||
 	    vattr.va_nlink != 1) {
 		error = EFAULT;
 		goto out;
+	}
+	if (exists) {	/* if file already exists, look if it's a coredump */
+	    struct user	userbuf;	/* XXX */
+	    error = vn_rdwr(UIO_READ, vp, (caddr_t)&userbuf, sizeof(userbuf),
+		(off_t)0, UIO_SYSSPACE, IO_NODELOCKED|IO_UNIT, cred,
+		(int *)NULL, p);
+	    if (error || (vattr.va_size != ctob(UPAGES + 
+			userbuf.u_kproc.kp_eproc.e_vm.vm_dsize +
+			userbuf.u_kproc.kp_eproc.e_vm.vm_ssize)) ||
+			strcmp(p->p_comm, userbuf.u_kproc.kp_proc.p_comm)) {
+		error = EFAULT;
+		goto out;
+		}
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_size = 0;

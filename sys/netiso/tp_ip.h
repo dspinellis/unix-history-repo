@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_ip.h	7.3 (Berkeley) 5/6/91
+ *	from: @(#)tp_ip.h	7.3 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,11 +60,9 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /* 
  * ARGO TP
- *
- * $Header: tp_ip.h,v 5.1 88/10/12 12:19:47 root Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_ip.h,v $
  *
  * internet IP-dependent structures and include files
  *

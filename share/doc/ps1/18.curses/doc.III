@@ -114,7 +114,7 @@ and
 .Fd winch win \*m
 WINDOW	*win;
 .De
-Returns the character at the current \*(y
+Returns the character at the current \*y
 on the given window.
 This does not make any changes to the window.
 .Ds

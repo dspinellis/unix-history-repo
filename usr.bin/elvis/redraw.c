@@ -19,6 +19,11 @@
 
 #include "config.h"
 #include "vi.h"
+#ifdef CRUNCH
+# define NEAR	LINES
+#else
+# define NEAR	(*o_nearscroll&0xff)
+#endif
 
 /* This variable contains the line number that smartdrawtext() knows best */
 static long smartlno;
@@ -367,7 +372,7 @@ static void drawtext(text, lno, clr)
 	/* show the line number, if necessary */
 	if (*o_number)
 	{
-		sprintf(numstr, "%6ld |", lno);
+		sprintf(numstr, "%6ld  ", lno);
 		qaddstr(numstr);
 	}
 
@@ -494,7 +499,7 @@ static void drawtext(text, lno, clr)
 			{
 				qaddch(' ');
 				col++;
-			} while (col < i);
+			} while (col < i && col < limitcol);
 		}
 		else
 #endif /* !NO_VISIBLE */
@@ -522,11 +527,16 @@ static void drawtext(text, lno, clr)
 					{
 						qaddch(' ');
 						col++;
-					} while (col < i);
+					} while (col < i && col < limitcol);
 				}
 			}
 			else /* tab ending after screen? next line! */
 			{
+#ifdef CRUNCH
+				/* needed at least when scrolling the screen right  -nox */
+				if (clr && col < limitcol)
+					clrtoeol();
+#endif
 				col = limitcol;
 				if (has_AM)
 				{
@@ -798,7 +808,7 @@ static void smartdrawtext(text, lno, showit)
 		/* show the line number, if necessary */
 		if (*o_number)
 		{
-			sprintf(numstr, "%6ld |", lno);
+			sprintf(numstr, "%6ld  ", lno);
 			qaddstr(numstr);
 		}
 
@@ -980,7 +990,7 @@ void redraw(curs, inputting)
 			smartdrawtext(text, l, (chgs != changes));
 		}
 	}
-	else if (l < topline && l > topline - LINES && (has_SR || has_AL))
+	else if (l < topline && l >= topline - NEAR && (has_SR || has_AL))
 	{
 		/* near top - scroll down */
 		if (!mustredraw)
@@ -1012,7 +1022,7 @@ void redraw(curs, inputting)
 			redrawrange(0L, INFINITY, INFINITY);
 		}
 	}
-	else if (l > topline && l < botline + LINES)
+	else if (l > topline && l <= botline + NEAR)
 	{
 		/* near bottom -- scroll up */
 		if (!mustredraw)
@@ -1038,12 +1048,13 @@ void redraw(curs, inputting)
 	else
 	{
 		/* distant line - center it & force a redraw */
-		topline = l - (LINES / 2) - 1;
+		topline = l - (LINES - 1) / 2;
 		if (topline < 1)
 		{
 			topline = 1;
 		}
 		redrawrange(0L, INFINITY, INFINITY);
+		smartlno = 0L;
 		changes++;
 	}
 

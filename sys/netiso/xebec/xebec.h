@@ -1,5 +1,7 @@
-/* $Header: xebec.h,v 2.1 88/09/19 12:56:35 nhall Exp $ */
-/* $Source: /var/home/tadl/src/argo/xebec/RCS/xebec.h,v $ */
+/*
+ *	from: xebec.h,v 2.1 88/09/19 12:56:35 nhall Exp
+ *	$Id$
+ */
 
 union llattrib {
 	struct {

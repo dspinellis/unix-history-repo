@@ -2,22 +2,17 @@
 Copyright (C) 1988 Free Software Foundation
     written by Doug Lea (dl@rocky.oswego.edu)
 
-This file is part of GNU CC.
-
-GNU CC is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU CC General Public
-License for full details.
-
-Everyone is granted permission to copy, modify and redistribute
-GNU CC, but only under the conditions described in the
-GNU CC General Public License.   A copy of this license is
-supposed to have been given to you along with GNU CC so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  
+This file is part of the GNU C++ Library.  This library is free
+software; you can redistribute it and/or modify it under the terms of
+the GNU Library General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your
+option) any later version.  This library is distributed in the hope
+that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.  See the GNU Library General Public License for more details.
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 /* 
@@ -29,12 +24,14 @@ and this notice must be preserved on all copies.
 #endif
 #include <BitString.h>
 #include <std.h>
-#include <values.h>
+#include <limits.h>
 #include <Obstack.h>
 #include <AllocRing.h>
 #include <new.h>
+#include <builtin.h>
+#include <strstream.h>
 
-volatile void BitString::error(const char* msg) const
+void BitString::error(const char* msg) const
 {
   (*lib_error_handler)("BitString", msg);
 }
@@ -46,7 +43,7 @@ BitStrRep    _nilBitStrRep = {  0, 1, {0} };
 BitString _nil_BitString;
 
 #define MINBitStrRep_SIZE  8
-#define MAXBitStrRep_SIZE  ((1 << (SHORTBITS - 1)) - 1)
+#define MAXBitStrRep_SIZE  ((1 << (sizeof(short)*CHAR_BIT - 1)) - 1)
 
 #ifndef MALLOC_MIN_OVERHEAD
 #define MALLOC_MIN_OVERHEAD    4
@@ -151,7 +148,7 @@ static inline void bit_copy(const unsigned short* ss, unsigned short* ds,
   if (ss != ds)
   {
     int n = (unsigned)(nbits) / BITSTRBITS;
-    if (n > 0) bcopy((void*)ss, (void*)ds, n * sizeof(short));
+    if (n > 0) memmove((void*)ds, (const void*)ss, n * sizeof(short));
     unsigned short m = ONES << (nbits & (BITSTRBITS - 1));
     ds[n] = (ss[n] & ~m) | (ds[n] & m);
   }
@@ -162,7 +159,7 @@ static inline void bit_copy(const unsigned short* ss, unsigned short* ds,
 static inline void bit_clear(unsigned short* ds, int nbits)
 {
   int n = (unsigned)(nbits) / BITSTRBITS;
-  if (n > 0) bzero((void*)ds, n * sizeof(short));
+  if (n > 0) memset((void*)ds, 0, n * sizeof(short));
   ds[n] &= ONES << (nbits & (BITSTRBITS - 1));
 }
 
@@ -299,7 +296,7 @@ inline static BitStrRep* BSnew(int newlen)
     (*lib_error_handler)("BitString", "Requested length out of range");
     
   BitStrRep* rep = (BitStrRep *) new char[allocsiz];
-  bzero(rep, allocsiz);
+  memset(rep, 0, allocsiz);
   rep->sz = (allocsiz - sizeof(BitStrRep) + sizeof(short)) / sizeof(short);
   return rep;
 }
@@ -339,7 +336,7 @@ BitStrRep* BStr_resize(BitStrRep* old, int newlen)
   else if (news > old->sz)
   {
     rep = BSnew(newlen);
-    bcopy(old->s, rep->s, BitStr_len(old->len) * sizeof(short));
+    memcpy(rep->s, old->s, BitStr_len(old->len) * sizeof(short));
     delete old;
   }
   else
@@ -376,7 +373,7 @@ BitStrRep* BStr_copy(BitStrRep* old, const BitStrRep* src)
     else
       rep = old;
     
-    bcopy(src->s, rep->s, news * sizeof(short));
+    memcpy(rep->s, src->s, news * sizeof(short));
     rep->len = newlen;
   }
   check_last(rep);
@@ -387,7 +384,7 @@ BitStrRep* BStr_copy(BitStrRep* old, const BitStrRep* src)
 int operator == (const BitString& x, const BitString& y)
 {
   return x.rep->len == y.rep->len && 
-    bcmp((void*)x.rep->s, (void*)y.rep->s, 
+    memcmp((void*)x.rep->s, (void*)y.rep->s, 
          BitStr_len(x.rep->len) * sizeof(short)) == 0;
 }
 
@@ -747,14 +744,14 @@ BitStrRep* lshift(const BitStrRep* x, int s, BitStrRep* r)
 void BitString::set(int p)
 {
   if (p < 0) error("Illegal bit index");
-  if (p >= rep->len) rep = BStr_resize(rep, p + 1);
+  if ((unsigned)(p) >= rep->len) rep = BStr_resize(rep, p + 1);
   rep->s[BitStr_index(p)] |= (1 << (BitStr_pos(p)));
 }
 
 void BitString::assign(int p, unsigned int bit)
 {
   if (p < 0) error("Illegal bit index");
-  if (p >= rep->len) rep = BStr_resize(rep, p + 1);
+  if ((unsigned)(p) >= rep->len) rep = BStr_resize(rep, p + 1);
   if (bit)
     rep->s[BitStr_index(p)] |= (1 << (BitStr_pos(p)));
   else
@@ -764,7 +761,7 @@ void BitString::assign(int p, unsigned int bit)
 void BitString::clear(int p)
 {
   if (p < 0) error("Illegal bit index");
-  if (p >= rep->len) rep = BStr_resize(rep, p + 1);
+  if ((unsigned)(p) >= rep->len) rep = BStr_resize(rep, p + 1);
   rep->s[BitStr_index(p)] &= ~(1 << (BitStr_pos(p)));
 }
 
@@ -786,7 +783,7 @@ void BitString::set()
 void BitString::invert(int p)
 {
   if (p < 0) error("Illegal bit index");
-  if (p >= rep->len) rep = BStr_resize(rep, p + 1);
+  if ((unsigned)(p) >= rep->len) rep = BStr_resize(rep, p + 1);
   rep->s[BitStr_index(p)] ^= (1 << (BitStr_pos(p)));
 }
 
@@ -795,7 +792,7 @@ void BitString::invert(int p)
 void BitString::set(int from, int to)
 {
   if (from < 0 || from > to) error("Illegal bit index");
-  if (to >= rep->len) rep = BStr_resize(rep, to+1);
+  if ((unsigned)(to) >= rep->len) rep = BStr_resize(rep, to+1);
 
   int ind1 = BitStr_index(from);
   int pos1 = BitStr_pos(from);
@@ -819,7 +816,7 @@ void BitString::set(int from, int to)
 void BitString::clear(int from, int to)
 {
   if (from < 0 || from > to) error("Illegal bit index");
-  if (to >= rep->len) rep = BStr_resize(rep, to+1);
+  if ((unsigned)(to) >= rep->len) rep = BStr_resize(rep, to+1);
 
   int ind1 = BitStr_index(from);
   int pos1 = BitStr_pos(from);
@@ -843,7 +840,7 @@ void BitString::clear(int from, int to)
 void BitString::invert(int from, int to)
 {
   if (from < 0 || from > to) error("Illegal bit index");
-  if (to >= rep->len) rep = BStr_resize(rep, to+1);
+  if ((unsigned)(to) >= rep->len) rep = BStr_resize(rep, to+1);
 
   int ind1 = BitStr_index(from);
   int pos1 = BitStr_pos(from);
@@ -870,14 +867,14 @@ void BitString::invert(int from, int to)
 
 int BitString::test(int from, int to) const
 {
-  if (from < 0 || from > to || from >= rep->len) return 0;
+  if (from < 0 || from > to || (unsigned)(from) >= rep->len) return 0;
   
   int ind1 = BitStr_index(from);
   int pos1 = BitStr_pos(from);
   int ind2 = BitStr_index(to);
   int pos2 = BitStr_pos(to);
   
-  if (to >= rep->len)
+  if ((unsigned)(to) >= rep->len)
   {
     ind2 = BitStr_index(rep->len - 1);
     pos2 = BitStr_pos(rep->len - 1);
@@ -905,7 +902,7 @@ int BitString::test(int from, int to) const
 
 int BitString::next(int p, unsigned int b) const
 {
-  if (++p >= rep->len)
+  if ((unsigned)(++p) >= rep->len)
     return -1;
 
   int ind = BitStr_index(p);
@@ -981,7 +978,7 @@ int BitString::next(int p, unsigned int b) const
   }
 }
 
-int BitString::previous(int p, unsigned int b) const
+int BitString::prev(int p, unsigned int b) const
 {
   if (--p < 0)
     return -1;
@@ -991,7 +988,7 @@ int BitString::previous(int p, unsigned int b) const
 
   const unsigned short* s = rep->s;
 
-  if (p >= rep->len)
+  if ((unsigned)(p) >= rep->len)
   {
     ind = BitStr_index(rep->len - 1);
     pos = BitStr_pos(rep->len - 1);
@@ -1407,7 +1404,7 @@ void BitSubString::operator = (const BitString& y)
   if (&S == &_nil_BitString) return;
   BitStrRep* targ = S.rep;
 
-  int ylen = y.rep->len;
+  unsigned int ylen = y.rep->len;
   int sl = targ->len - len + ylen;
 
   if (y.rep == targ || ylen > len)
@@ -1435,12 +1432,12 @@ void BitSubString::operator = (const BitSubString& y)
 {
   if (&S == &_nil_BitString) return;
   BitStrRep* targ = S.rep;
-
+  
   if (len == 0 || pos >= targ->len)
     return;
-
+  
   int sl = targ->len - len + y.len;
-
+  
   if (y.S.rep == targ || y.len > len)
   {
     BitStrRep* oldtarg = targ;
@@ -1544,7 +1541,7 @@ BitString common_prefix(const BitString& x, const BitString& y, int startpos)
   unsigned int  xl = x.rep->len;
   unsigned int  yl = y.rep->len;
 
-  int startx, starty;
+  unsigned int startx, starty;
   if (startpos < 0)
   {
     startx = xl + startpos;
@@ -1553,16 +1550,16 @@ BitString common_prefix(const BitString& x, const BitString& y, int startpos)
   else
     startx = starty = startpos;
 
-  if (startx < 0 || startx >= xl || starty < 0 || starty >= yl)
+  if (startx >= xl || starty >= yl)
     return;
 
   const unsigned short* xs = &(x.rep->s[BitStr_index(startx)]);
   unsigned short a = *xs++;
-  int xp = startx;
+  unsigned int xp = startx;
 
   const unsigned short* ys = &(y.rep->s[BitStr_index(starty)]);
   unsigned short b = *ys++;
-  int yp = starty;
+  unsigned int yp = starty;
 
   for(; xp < xl && yp < yl; ++xp, ++yp)
   {
@@ -1585,7 +1582,7 @@ BitString common_suffix(const BitString& x, const BitString& y, int startpos)
   unsigned int  xl = x.rep->len;
   unsigned int  yl = y.rep->len;
 
-  int startx, starty;
+  unsigned int startx, starty;
   if (startpos < 0)
   {
     startx = xl + startpos;
@@ -1594,7 +1591,7 @@ BitString common_suffix(const BitString& x, const BitString& y, int startpos)
   else
     startx = starty = startpos;
 
-  if (startx < 0 || startx >= xl || starty < 0 || starty >= yl)
+  if (startx >= xl || starty >= yl)
     return;
 
   const unsigned short* xs = &(x.rep->s[BitStr_index(startx)]);
@@ -1974,32 +1971,37 @@ BitPattern atoBitPattern(const char* s, char f,char t,char x)
 
 extern AllocRing _libgxx_fmtq;
 
-const char* BitStringtoa(const BitString& x, char f, char t)
+void BitString::printon(ostream& os, char f, char t) const
 {
-  int wrksiz = x.length() + 2;
-  char* fmtbase = (char *) _libgxx_fmtq.alloc(wrksiz);
-  char* fmt = fmtbase;
-  unsigned int  xl = x.rep->len;
-  const unsigned short* s = x.rep->s;
+  unsigned int  xl = rep->len;
+  const unsigned short* ptr = rep->s;
+  register streambuf *sb = os.rdbuf();
   unsigned short a = 0;
 
   for (unsigned int  i = 0; i < xl; ++i)
   {
     if (i % BITSTRBITS == 0)
-      a = *s++;
-    *fmt++ = (a & 1)? t : f;
+      a = *ptr++;
+    sb->sputc((a & 1)? t : f);
     a >>= 1;
   }
-
-  *fmt = 0;
-
+}
+const char* BitStringtoa(const BitString& x, char f, char t)
+{
+  int wrksiz = x.length() + 2;
+  char* fmtbase = (char *) _libgxx_fmtq.alloc(wrksiz);
+  ostrstream stream(fmtbase, wrksiz);
+  
+  x.printon(stream, f, t);
+  stream << ends;
   return fmtbase;
 }
 
-
 ostream& operator << (ostream& s, const BitString& x)
 {
-  return s << BitStringtoa(x);
+  if (s.opfx())
+    x.printon(s);
+  return s;
 }
 
 const char* BitPatterntoa(const BitPattern& p, char f,char t,char x)
@@ -2010,10 +2012,22 @@ const char* BitPatterntoa(const BitPattern& p, char f,char t,char x)
 
   int wrksiz = l + 2;
   char* fmtbase = (char *) _libgxx_fmtq.alloc(wrksiz);
-  char* fmt = fmtbase;
+  ostrstream stream(fmtbase, wrksiz);
+  
+  p.printon(stream, f, t, x);
+  stream << ends;
+  return fmtbase;
+}
 
-  const unsigned short* ps = p.pattern.rep->s;
-  const unsigned short* ms = p.mask.rep->s;
+void BitPattern::printon(ostream& s, char f,char t,char x) const
+{
+  unsigned int  pl = pattern.rep->len;
+  unsigned int  ml = mask.rep->len;
+  unsigned int  l = (pl <= ml)? pl : ml;
+  register streambuf *sb = s.rdbuf();
+
+  const unsigned short* ps = pattern.rep->s;
+  const unsigned short* ms = mask.rep->s;
   unsigned short a = 0;
   unsigned short m = 0;
 
@@ -2025,21 +2039,19 @@ const char* BitPatterntoa(const BitPattern& p, char f,char t,char x)
       m = *ms++;
     }
     if (m & 1)
-      *fmt++ =(a & 1)? t : f;
+      sb->sputc((a & 1)? t : f);
     else
-      *fmt++ = x;
+      sb->sputc(x);
     a >>= 1;
     m >>= 1;
   }
-
-  *fmt = 0;
-  return fmtbase;
 }
-
 
 ostream& operator << (ostream& s, const BitPattern& x)
 {
-  return s << BitPatterntoa(x);
+  if (s.opfx())
+    x.printon(s);
+  return s;
 }
 
 
@@ -2054,7 +2066,6 @@ int BitString::OK() const
 int BitSubString::OK() const
 {
   int v = S.OK();               // valid BitString
-  v &= pos >= 0 && len >= 0;    // valid indices
   v &= pos + len <= S.rep->len; // within bounds of targ
   if (!v) S.error("BitSubString invariant failure");
   return v;

@@ -31,22 +31,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tty.c	7.44 (Berkeley) 5/28/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         3       00163
- * --------------------         -----   ----------------------
- *
- * 11 Dec 92	Williams Jolitz		Fixed tty handling
- * 28 Nov 1991	Warren Toomey		Cleaned up the use of COMPAT_43
- *					in the 386BSD kernel.	 
- * 27 May 93	Bruce Evans		Sign Ext fix for TIOCSTI from the net
- *					Kludge to hook in RTS/CTS flow control
- *					Avoid sleeping on lbolt, it slows down
- *					output unnecessarily.
+ *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
+ *	$Id$
  */
-static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/tty.c,v 1.3 92/01/21 21:31:11 william Exp $";
 
 #include "param.h"
 #include "systm.h"
@@ -219,7 +206,7 @@ ttyflush(tp, rw)
 		flushq(&tp->t_raw);
 		tp->t_rocount = 0;
 		tp->t_rocol = 0;
-		tp->t_state &= ~TS_LOCAL;
+		tp->t_state &= ~(TS_LOCAL|TS_TBLOCK);	/* XXX - should be TS_RTSBLOCK */
 		ttwakeup(tp);
 	}
 	if (rw & FWRITE) {
@@ -250,19 +237,18 @@ ttyblock(tp)
 	x = rawcc + cancc;
 	if (rawcc > TTYHOG) {
 		ttyflush(tp, FREAD|FWRITE);
-		tp->t_state &= ~TS_TBLOCK;
 	}
 	/*
 	 * Block further input iff:
 	 * Current input > threshold AND input is available to user program
 	 */
 	if (x >= TTYHOG/2 && (tp->t_state & TS_TBLOCK) == 0 &&
-	    ((tp->t_lflag&ICANON) == 0) || (cancc > 0) &&
-	    tp->t_cc[VSTOP] != _POSIX_VDISABLE) {
-		if (putc(tp->t_cc[VSTOP], &tp->t_out) == 0) {
-			tp->t_state |= TS_TBLOCK;
-			ttstart(tp);
+	    ((tp->t_lflag&ICANON) == 0) || (cancc > 0)) {
+		if (tp->t_cc[VSTOP] != _POSIX_VDISABLE) {
+		    putc(tp->t_cc[VSTOP], &tp->t_out);
 		}
+		tp->t_state |= TS_TBLOCK;	/* XXX - should be TS_RTSBLOCK? */
+		ttstart(tp);
 	}
 }
 
@@ -316,6 +302,7 @@ ttioctl(tp, com, data, flag)
 	case TIOCSETA:
 	case TIOCSETAW:
 	case TIOCSETAF:
+	case TIOCSTAT:
 #ifdef COMPAT_43
 	case TIOCSETP:
 	case TIOCSETN:
@@ -513,6 +500,14 @@ ttioctl(tp, com, data, flag)
 		splx(s);
 		break;
 	}
+
+	/*
+	 * Give load average stats if requested (tcsh uses raw mode
+	 * and directly sends the ioctl() to the tty driver)
+	 */
+	case TIOCSTAT:
+		ttyinfo(tp);
+		break;
 
 	/*
 	 * Set controlling terminal.
@@ -1699,13 +1694,18 @@ ttyecho(c, tp)
 	register c;
 	register struct tty *tp;
 {
-	if ((tp->t_state&TS_CNTTB) == 0)
+	if ((tp->t_state & TS_CNTTB) == 0)
 		tp->t_lflag &= ~FLUSHO;
-	if (((tp->t_lflag&ECHO) == 0 &&
-	    ((tp->t_lflag&ECHONL) == 0 || c == '\n')) || (tp->t_lflag&EXTPROC))
+	if (tp->t_lflag & EXTPROC)
 		return;
-	if (tp->t_lflag&ECHOCTL) {
-		if ((c&TTY_CHARMASK) <= 037 && c != '\t' && c != '\n' ||
+	if ((tp->t_lflag & ECHO) == 0) {
+		if ((tp->t_lflag & ECHONL) == 0)
+			return;
+		else if  (c != '\n')
+			return;
+	}
+	if (tp->t_lflag & ECHOCTL) {
+		if ((c & TTY_CHARMASK) <= 037 && c != '\t' && c != '\n' ||
 		    c == 0177) {
 			(void) ttyoutput('^', tp);
 			c &= TTY_CHARMASK;

@@ -35,7 +35,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)pk_usrreq.c	7.16 (Berkeley) 6/27/91
+ *	from: @(#)pk_usrreq.c	7.16 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 #include "param.h"
@@ -54,6 +55,16 @@
 #include "x25.h"
 #include "pk.h"
 #include "pk_var.h"
+
+/*
+ * forward references
+ */
+
+static
+old_to_new (struct mbuf *m);
+
+static
+new_to_old (struct mbuf *m);
 
 /*
  * 

@@ -36,6 +36,7 @@
 
 #ifndef lint
 static char sccsid[] = "@(#)print.c	5.24 (Berkeley) 10/19/90";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/bin/ls/print.c,v 1.2 1993/06/29 02:59:33 nate Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -210,6 +211,9 @@ printtype(mode)
 		return(1);
 	case S_IFSOCK:
 		(void)putchar('=');
+		return(1);
+	case S_IFIFO:
+		(void)putchar('|');
 		return(1);
 	}
 	if (mode & (S_IXUSR | S_IXGRP | S_IXOTH)) {

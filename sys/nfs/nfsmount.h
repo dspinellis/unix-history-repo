@@ -33,8 +33,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nfsmount.h	7.7 (Berkeley) 4/16/91
+ *	From:	@(#)nfsmount.h	7.7 (Berkeley) 4/16/91
+ *	$Id$
  */
+
+#ifndef __h_nfsmount
+#define __h_nfsmount 1
 
 /*
  * Mount structure.
@@ -115,3 +119,5 @@ int	nfs_vptofh __P((
 		struct vnode *vp,
 		struct fid *fhp));
 int	nfs_init __P(());
+
+#endif /* __h_nfsmount */

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)clnp_timer.c	7.5 (Berkeley) 5/6/91
+ *	from: @(#)clnp_timer.c	7.5 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,8 +60,6 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: clnp_timer.c,v 4.2 88/06/29 14:59:05 hagens Exp $ */
-/* $Source: /usr/argo/sys/netiso/RCS/clnp_timer.c,v $ */
 
 #include "param.h"
 #include "mbuf.h"

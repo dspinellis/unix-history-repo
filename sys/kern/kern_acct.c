@@ -31,6 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_acct.c	7.18 (Berkeley) 5/11/91
+ *	$Id: kern_acct.c,v 1.4 1993/10/19 01:07:21 nate Exp $
  */
 
 #include "param.h"
@@ -48,14 +49,17 @@
 #include "acct.h"
 #include "syslog.h"
 
+#include "vm/vm.h"
+#include "vm/vm_param.h"
+
 /*
  * Values associated with enabling and disabling accounting
  */
 int	acctsuspend = 2;	/* stop accounting when < 2% free space left */
 int	acctresume = 4;		/* resume when free space risen to > 4% */
 struct	timeval chk = { 15, 0 };/* frequency to check space for accounting */
-struct  vnode *acctp;		/* file to which to do accounting */
-struct  vnode *savacctp;	/* file to which to do accounting when space */
+struct  vnode *acctp = NULL;	/* file to which to do accounting */
+struct  vnode *savacctp = NULL;	/* file to which to do accounting when space */
 
 /*
  * Enable or disable process accounting.
@@ -68,19 +72,89 @@ struct  vnode *savacctp;	/* file to which to do accounting when space */
  * accounting has been suspended, and freespace rises above acctresume,
  * accounting is resumed.
  */
+
+/* Mark Tinguely (tinguely@plains.NoDak.edu) 8/10/93 */
+
+struct sysacct_args {
+	char	*fname;
+};
+
 /* ARGSUSED */
 sysacct(p, uap, retval)
 	struct proc *p;
-	struct args {
-		char	*fname;
-	} *uap;
+	struct sysacct_args *uap;
 	int *retval;
 {
 
+	register struct nameidata *ndp;
+	struct nameidata nd;
+	struct vattr attr;
+	int rv, acctwatch();
+
+	if (p->p_ucred->cr_uid != 0)
+		return(EPERM);		/* must be root */
+
 	/*
-	 * Body deleted.
+	 * Step 1. turn off accounting (if on). exit if fname is nil
 	 */
-	return (ENOSYS);
+
+	rv = 0;				/* just in case nothing is open */
+	if (acctp != NULL) {
+		rv = vn_close(acctp, FWRITE, p->p_ucred, p);
+		untimeout(acctwatch, (caddr_t) &chk);	/* turn off disk check */
+		acctp = NULL;
+	}
+	else if (savacctp != NULL ) {
+		rv = vn_close(savacctp, FWRITE, p->p_ucred, p);
+		untimeout(acctwatch, (caddr_t) &chk);	/* turn off disk check */
+		savacctp = NULL;
+	}
+	
+	if (uap->fname == NULL)		/* accounting stopping complete */
+		return(rv);
+
+	/*
+	 * Step 2. open accounting filename for writing.
+	 */
+
+	nd.ni_segflg = UIO_USERSPACE;
+	nd.ni_dirp = uap->fname;
+
+	/* is it there? */
+	if (rv = vn_open(&nd, p, FWRITE, 0))
+		return (rv);
+
+	/* Step 2. Check the attributes on accounting file */
+	rv = VOP_GETATTR(nd.ni_vp, &attr, p->p_ucred, p);
+	if (rv)
+		goto acct_fail;
+
+	/* is filesystem writable, do I have permission to write and is
+	 * a regular file?
+	 */
+        if (nd.ni_vp->v_mount->mnt_flag & MNT_RDONLY) {
+		rv = EROFS;	/* to be consistant with man page */
+		goto acct_fail;
+	}
+
+	if ((VOP_ACCESS(nd.ni_vp, VWRITE, p->p_ucred, p)) ||
+	    (attr.va_type != VREG)) {
+		rv = EACCES;	/* permission denied error */
+		goto acct_fail;
+	}
+
+	/* Step 3. Save the accounting file vnode, schedule freespace watch. */
+
+	acctp  = nd.ni_vp;
+	savacctp = NULL;
+	acctwatch(&chk);		/* look for full system */
+	VOP_UNLOCK(acctp);
+	return(0);		/* end successfully */
+
+acct_fail:
+
+	vn_close(nd.ni_vp, FWRITE, p->p_ucred, p);
+	return(rv);
 }
 
 /*
@@ -116,12 +190,93 @@ acctwatch(resettime)
  * This routine calculates an accounting record for a process and,
  * if accounting is enabled, writes it to the accounting file.
  */
+
+/* Mark Tinguely (tinguely@plains.NoDak.edu) 8/10/93 */
+
 acct(p)
 	register struct proc *p;
 {
 
-	/*
-	 * Body deleted.
-	 */
-	return;
+	struct acct acct;
+	struct rusage *r;
+	int rv;
+	long i;
+	u_int cnt;
+	char *c;
+	comp_t int2comp();
+
+
+	if (acctp == NULL)	/* accounting not turned on */
+		return;
+
+	/* Step 1. Get command name (remove path if necessary) */
+
+	strncpy(acct.ac_comm, p->p_comm, sizeof(acct.ac_comm));
+
+	/* Step 2. Get rest of information */
+
+	acct.ac_utime = int2comp((unsigned) p->p_utime.tv_sec * 1000000 + p->p_utime.tv_usec);
+	acct.ac_stime = int2comp((unsigned) p->p_stime.tv_sec * 1000000 + p->p_stime.tv_usec);
+	acct.ac_btime = p->p_stats->p_start.tv_sec;
+			/* elapse time = current - start */
+	i = (time.tv_sec - p->p_stats->p_start.tv_sec) * 1000000 +
+	    (time.tv_usec - p->p_stats->p_start.tv_usec);
+	acct.ac_etime = int2comp((unsigned) i);
+
+	acct.ac_uid = p->p_cred->p_ruid;
+	acct.ac_gid = p->p_cred->p_rgid;
+
+	r = &p->p_stats->p_ru;
+	if (i = (p->p_utime.tv_sec + p->p_stime.tv_sec) * hz +
+	        (p->p_utime.tv_usec + p->p_stime.tv_usec) / tick)
+		acct.ac_mem = (r->ru_ixrss + r->ru_idrss + r->ru_isrss) / i;
+	else
+		acct.ac_mem = 0;
+	acct.ac_io = int2comp((unsigned) (r->ru_inblock + r->ru_oublock) * 1000000);
+
+	if ((p->p_flag & SCTTY) && p->p_pgrp->pg_session->s_ttyp)
+		acct.ac_tty = p->p_pgrp->pg_session->s_ttyp->t_dev;
+	else
+		acct.ac_tty = NODEV;
+	acct.ac_flag = p->p_acflag;
+
+	/* Step 3. Write record to file */
+
+
+	rv = vn_rdwr(UIO_WRITE, acctp, (caddr_t) &acct, sizeof (acct), 
+	    (off_t)0, UIO_SYSSPACE, IO_APPEND|IO_UNIT, p->p_ucred, (int *) NULL,
+	    p);
+}
+
+/*  int2comp converts from ticks in a microsecond to ticks in 1/AHZ second
+ * 
+ * comp_t is a psuedo-floating point number with 13 bits of
+ * mantissa and 3 bits of base 8 exponent and has resolution
+ * of 1/AHZ seconds.
+ *
+ * notice I already converted the incoming values into microseconds
+ * I need to convert back into AHZ ticks.
+ */
+
+/* Mark Tinguely (tinguely@plains.NoDak.edu) 8/10/93 */
+
+
+#define RES 13
+#define EXP 3
+#define MAXFRACT 1<<RES
+
+comp_t
+int2comp(mantissa)
+unsigned int mantissa;
+{
+	comp_t exp=0;
+
+	mantissa = mantissa * AHZ / 1000000;	/* convert back to AHZ ticks */
+	while (mantissa > MAXFRACT) {
+		mantissa >>= EXP;	/* base 8 exponent */
+		exp++;
+	}
+	exp <<= RES;		/* move the exponent */
+	exp += mantissa;	/* add on the manissa */
+	return (exp);
 }

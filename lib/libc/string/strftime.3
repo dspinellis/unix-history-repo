@@ -63,7 +63,7 @@ string consists of zero or more conversion specifications and
 ordinary characters.
 All ordinary characters are copied directly into the buffer.
 A conversion specification consists of a percent sign
-.Dq Ql %
+.Ql %
 and one other character.
 .Pp
 No more than
@@ -81,41 +81,36 @@ Each conversion specification is replaced by the characters as
 follows which are then copied into the buffer.
 .Bl -tag -width "xxxx"
 .It Cm \&%A
-is replaced by the full weekday name.
+is replaced by the locale's full weekday name.
 .It Cm %a
-is replaced by the abbreviated weekday name, where the abbreviation
-is the first three characters.
+is replaced by the locale's abbreviated weekday name.
 .It Cm \&%B
-is replaced by the full month name.
-.It Cm %b  or  %h
-is replaced by the abbreviated month name, where the abbreviation is
-the first three characters.
+is replaced by the locale's full month name.
+.It Cm \&%b No or Cm \&%h
+is replaced by the locale's abbreviated month name.
 .It Cm \&%C
-is equivalent to
-.Dq Li %a %b %e %H:%M:%S %Y
-(the format produced by
-.Xr asctime 3 .
-.It Cm %c
-is equivalent to
-.Dq Li %m/%d/%y .
+is replaced by the century (a year divided by 100 and truncated to an integer)
+as a decimal number (00-99).
+.It Cm \&%c
+is replaced by the locale's appropriate date and time representation.
 .It Cm \&%D
-is replaced by the date in the format
-.Dq Ql mm/dd/yy .
-.It Cm %d
+is replaced by the date in the format 
+.Dq Li %m/%d/%y .
+.It Cm \&%d
 is replaced by the day of the month as a decimal number (01-31).
-.It Cm %e
-is replaced by the day of month as a decimal number (1-31); single
-digits are preceded by a blank.
+.It Cm \&%e
+is replaced by the day of month as a decimal number (1-31);
+single digits are preceded by a blank.
 .It Cm \&%H
 is replaced by the hour (24-hour clock) as a decimal number (00-23).
 .It Cm \&%I
 is replaced by the hour (12-hour clock) as a decimal number (01-12).
-.It Cm %j
+.It Cm \&%j
 is replaced by the day of the year as a decimal number (001-366).
-.It Cm %k
+.It Cm \&%k
 is replaced by the hour (24-hour clock) as a decimal number (0-23);
 single digits are preceded by a blank.
-.It Cm %l
+.It Cm \&%l
 is replaced by the hour (12-hour clock) as a decimal number (1-12);
 single digits are preceded by a blank.
 .It Cm \&%M
@@ -125,42 +120,50 @@ is replaced by the month as a decimal number (01-12).
 .It Cm %n
 is replaced by a newline.
 .It Cm %p
-is replaced by either
+is replaced by the locale's equivalent of either 
 .Dq Tn AM
 or
-.Dq Tn PM
-as appropriate.
+.Dq Tn PM .
 .It Cm \&%R
-is equivalent to
-.Dq Li %H:%M
-.It Cm %r
-is equivalent to
-.Dq Li %I:%M:%S %p .
-.It Cm %t
+is replaced by the time in the format
+.Dq Li %H:%M .
+.It Cm \&%r
+is replaced by the locale's representation of 12-hour clock time 
+using AM/PM notation.
+.It Cm \&%T
+is replaced by the time in the format
+.Dq Li %H:%M:%S .
+.It Cm \&%t
 is replaced by a tab.
 .It Cm \&%S
 is replaced by the second as a decimal number (00-60).
 .It Cm %s
 is replaced by the number of seconds since the Epoch, UCT (see
 .Xr mktime 3 ) .
-.It Cm \&%T No or Cm \&%X
-is equivalent to
-.Dq Li %H:%M:%S .
 .It Cm \&%U
 is replaced by the week number of the year (Sunday as the first day of
 the week) as a decimal number (00-53).
+.It Cm \&%u
+is replaced by the weekday (Monday as the first day of the week)
+as a decimal number (1-7).
+.It Cm \&%V
+is replaced by the week number of the year (Monday as the first day of
+the week) as a decimal number (01-53).  If the week containing January
+1 has four or more days in the new year, then it is week 1; otherwise
+it is week 53 of the previous year, and the next week is week 1.
 .It Cm \&%W
 is replaced by the week number of the year (Monday as the first day of
 the week) as a decimal number (00-53).
-.It Cm %w
+.It Cm \&%w
 is replaced by the weekday (Sunday as the first day of the week)
 as a decimal number (0-6).
-.It Cm %x
-is equivalent to
-.Dq Li %m/%d/%y %H:%M:%S .
+.It Cm \&%X
+is replaced by the locale's appropriate date representation.
+.It Cm \&%x
+is replaced by the locale's appropriate time representation.
 .It Cm \&%Y
 is replaced by the year with century as a decimal number.
-.It Cm %y
+.It Cm \&%y
 is replaced by the year without century as a decimal number (00-99).
 .It Cm \&%Z
 is replaced by the time zone name.
@@ -180,7 +183,21 @@ function
 conforms to
 .St -ansiC .
 The
-.Ql %s
-conversion specification is an extension.
+.Ql \&%C ,
+.Ql \&%D ,
+.Ql \&%e ,
+.Ql \&%h ,
+.Ql \&%k ,
+.Ql \&%l , 
+.Ql \&%n ,
+.Ql \&%r ,
+.Ql \&%R ,
+.Ql \&%s .
+.Ql \&%t , 
+.Ql \&%T , 
+.Ql \&%u ,
+and
+.Ql \&%V
+conversion specifications are extensions.
 .Sh BUGS
 There is no conversion specification for the phase of the moon.

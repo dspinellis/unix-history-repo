@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_subr.c	7.9 (Berkeley) 6/27/91
+ *	from: @(#)tp_subr.c	7.9 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,11 +60,9 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /* 
  * ARGO TP
- *
- * $Header: tp_subr.c,v 5.3 88/11/18 17:28:43 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_subr.c,v $
  *
  * The main work of data transfer is done here.
  * These routines are called from tp.trans.
@@ -75,6 +74,7 @@ SOFTWARE.
  */
 
 #include "param.h"
+#include "systm.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"

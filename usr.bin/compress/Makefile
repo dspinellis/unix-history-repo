@@ -6,8 +6,7 @@ USERMEM=4194304
 
 PROG=	compress
 CFLAGS+=-DBSD4_2 -DSACREDMEM=256000 -DUSERMEM=${USERMEM}
-LINKS=	${BINDIR}/compress ${BINDIR}/uncompress \
-	${BINDIR}/compress ${BINDIR}/zcat
-MLINKS=	compress.1 uncompress.1 compress.1 zcat.1
+LINKS=	${BINDIR}/compress ${BINDIR}/uncompress
+MLINKS=	compress.1 uncompress.1
 
 .include <bsd.prog.mk>

@@ -1,57 +1,18 @@
-/* UNFINISHED CONVERSION TO 386BSD -wfj */
-
-/* if_tun.c - tunnel interface module & driver */
-
 /*
  * Copyright (c) 1988, Julian Onions. 
  *
  * This source may be freely distributed, however I would be interested
  * in any changes that are made.
+ *
+ *	from: Revision 1.13  88/07/11  08:28:51  jpo
+ *	from: 90/02/06 15:03 - Fixed a bug in where
+ *				TIOCGPGRP and TIOCSPGRP were mixed up
+ *	$Id$
  */
 
-/*
- * 90/02/06 15:03 - Fixed a bug in where TIOCGPGRP and TIOCSPGRP were
- * mixed up. Anders Klemets - klemets@sics.se
- *
- * $Header: if_tun.c,v 1.13 88/07/11 08:28:51 jpo Exp $
- * 
- * $Log:        if_tun.c,v $
- * Revision 1.13  88/07/11  08:28:51  jpo
- * Some tidying up
- * 
- * Revision 1.12  87/12/10  09:16:29  jpo
- * Decided the vax/mtpr was unnecessay.
- * 
- * Revision 1.11  87/12/10  09:10:36  jpo
- * Fixed some minor things & 1 major bug.
- * 
- * Revision 1.10  87/11/04  14:27:41  jpo
- * A few sanity checks added.
- * 
- * Revision 1.9  87/11/04  14:13:45  jpo
- * Added some ioctls for non-blocking & async I/O
- * 
- * Revision 1.8  87/10/19  10:28:14  jpo
- * Another touch up (sigh)
- * 
- * Revision 1.7  87/10/19  10:25:48  jpo
- * Touch up.
- * 
- * Revision 1.6  87/10/19  09:15:14  jpo
- * Touch up.
- * 
- * Revision 1.5  87/10/19  08:34:51  jpo
- * General clean up - plus sun specific fixes
- * 
- * Revision 1.4  87/10/16  17:10:12  jpo
- * Purged all ioctl read/writes and non-standard routing stuff.
- *
- * Revision 1.3  87/10/05  11:57:09  jpo
- * More debugging - in error mainly.
- * 
- * Revision 1.2  87/10/04  18:29:45  jpo
- * Select & read/write working.
- */
+/* if_tun.c - tunnel interface module & driver */
+
+/* UNFINISHED CONVERSION TO 386BSD -wfj */
 
 #include "tun.h"
 #if NTUN > 0

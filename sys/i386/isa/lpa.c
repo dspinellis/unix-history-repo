@@ -45,30 +45,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00164
- * --------------------         -----   ----------------------
- *
- * 01 June 93	Rodney W. Grimes	Made lpflag uniq now is lpaflag
- *					Added timeout loop to lpa_port_test.
- *					lpa_port_test should move to a common
- *					routine..
- *
+ *	$Id$
  */
 
 /*
- * Device Driver for AT parallel printer port
- * Written by William Jolitz 12/18/90
- * Modified to run without interrupts
- * 92-08-19  Wolfgang Stanglmeier  <wolf@dentaro.GUN.de>
- * Slight cleanup and reorganization, try to handle restarted syscalls
- * 92-09-08  Andy Valencia <jtk@netcom.com>
- * 93-04-08  Rodney W. Grimes <rgrimes@agora.rain.com>
- * Converted to driver name lpa, shares lptreg.h with lpt.c, fixed probe
- * so that it returns IO_LPTSIZE.  Added dummy lpaioctl.  Added my new
- * probe code from lpt.c, as the one in here was crud.
+ * Device Driver for AT parallel printer port, without using interrupts
  */
 
 #include "lpa.h"
@@ -129,8 +110,8 @@ struct   isa_driver lpadriver = {lpaprobe, lpaattach, "lpa"};
 */
 #define   TIMEOUT   (hz*16)   /* Timeout while open device */
 #define   LONG      (hz* 1)   /* Timesteps while open      */
-
-#define   MAX_SPIN  255       /* max loop counter for busy wait */
+#define   MAX_SLEEP (hz*5)    /* Timeout while waiting for device ready */
+#define   MAX_SPIN  20        /* Max delay for device ready in usecs */
 
 struct lpa_softc {
 	char	*sc_cp;		/* current data to print	*/
@@ -140,7 +121,6 @@ struct lpa_softc {
 	short	sc_ctrl;	/* printer status port		*/
 	u_char	sc_flags;	/* flags (open and internal)	*/
 	u_char	sc_unit;	/* unit-number			*/
-	u_char	sc_smax;	/* current max busy loop cnt	*/
 	char			/* buffer for data		*/
 	 *sc_inbuf;
 } lpa_sc[NLPA];
@@ -306,7 +286,7 @@ lpaopen(dev, flag)
 		}
 
 		/* sleep a moment */
-		if ((err = tsleep (sc, LPPRI, "lpa: open", LONG)) !=
+		if ((err = tsleep (sc, LPPRI, "lpaopen", LONG)) !=
 				EWOULDBLOCK) {
 			sc->sc_flags = 0;
 			return (EBUSY);
@@ -337,36 +317,40 @@ pushbytes(sc)
 		ch = *(sc->sc_cp);
 		sc->sc_cp += 1;
 		sc->sc_count -= 1;
-		outb(sc->sc_data, ch);
 
-		/* Busy wait for printer ready .. */
-		spin = tic = 0;
-		while (NOT_READY()) {
-			if (++spin >= sc->sc_smax) {
+              /*
+               * Wait for printer ready.
+               * Loop 20 usecs testing BUSY bit, then sleep
+               * for exponentially increasing timeout. (vak)
+               */
+              for (spin=0; NOT_READY() && spin<MAX_SPIN; ++spin)
+                      DELAY(1);
+              if (spin >= MAX_SPIN) {
+                      tic = 0;
+                      while (NOT_READY()) {
 				/*
 				 * Now sleep, every cycle a
 				 * little longer ..
 				 */
 				tic = tic + tic + 1;
-				err = tsleep(sc, LPPRI, "lpa: write", tic);
+                                /*
+                                 * But no more than 10 seconds. (vak)
+                                 */
+                                if (tic > MAX_SLEEP)
+                                        tic = MAX_SLEEP;
+                                err = tsleep(sc, LPPRI, "lpawrite", tic);
 				if (err != EWOULDBLOCK) {
 					return (err);
 				}
 			}
 		}
 
+                /* output data */
+		outb(sc->sc_data, ch);
 		/* strobe */
 		outb(sc->sc_ctrl, LPC_NINIT|LPC_SEL|LPC_STB);
 		outb(sc->sc_ctrl, LPC_NINIT|LPC_SEL);
 
-		/* Adapt busy-wait length... */
-		if (spin >= sc->sc_smax) { /* was sleep wait */
-			if (sc->sc_smax<MAX_SPIN)
-				sc->sc_smax++;
-		}
-		if (spin*2 < sc->sc_smax) {
-			sc->sc_smax--;
-		}
 	}
 	return(0);
 }

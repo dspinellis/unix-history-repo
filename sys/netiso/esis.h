@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)esis.h	7.4 (Berkeley) 5/6/91
+ *	from: @(#)esis.h	7.4 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -58,10 +59,6 @@ SOFTWARE.
 
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
- */
-/*
- *	$Header: esis.h,v 4.7 88/09/15 11:24:18 hagens Exp $
- *	$Source: /usr/argo/sys/netiso/RCS/esis.h,v $
  */
 
 #ifndef BYTE_ORDER

@@ -29,9 +29,9 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"	@(#)tset.1	6.10 (Berkeley) 12/24/91
+.\"	@(#)tset.1	6.11 (Berkeley) 12/28/91
 .\"
-.Dd December 24, 1991
+.Dd December 28, 1991
 .Dt TSET 1
 .Os BSD 4
 .Sh NAME
@@ -39,7 +39,7 @@
 .Nd terminal initialization
 .Sh SYNOPSIS
 .Nm tset
-.Op Fl IQrs
+.Op Fl IQrSs
 .Op Fl
 .Op Fl e Ar ch
 .Op Fl i Ar ch
@@ -48,7 +48,7 @@
 .Op Ar terminal
 .br
 .Nm reset
-.Op Fl IQrs
+.Op Fl IQrSs
 .Op Fl
 .Op Fl e Ar ch
 .Op Fl i Ar ch
@@ -130,16 +130,20 @@ Set the line kill character to
 .It Fl m
 Specify a mapping from a port type to a terminal.
 See below for more information.
+.It Fl Q
+Don't display any values for the erase, interrupt and line kill characters.
 .It Fl r
 Print the terminal type to the standard error output.
+.It Fl S
+Print the terminal type and the termcap entry to the standard output.
+See the section below on setting the environment for details.
 .It Fl s
 Print the sequence of shell commands to initialize the environment variables
 .Ev TERM
 and
 .Ev TERMCAP
 to the standard output.
-.It Fl Q
-Don't display any values for the erase, interrupt and line kill characters.
+See the section below on setting the environment for details.
 .El
 .Pp
 The arguments for the
@@ -154,22 +158,40 @@ notation, i.e. control-h may be specified as
 or
 .Dq Li ^h .
 .Sh SETTING THE ENVIRONMENT
-It is often desirable to set the terminal type and information about the
-terminal's capabilities in the shell's environment.
-This is done with the
+It is often desirable to enter the terminal type and information about
+the terminal's capabilities into the shell's environment.
+This is done using the
+.Fl S
+and
 .Fl s
-option; when this option is specified, the commands to enter the information
-into the shell's environment are output to the standard output.
+options.
+.Pp
+When the
+.Fl S
+option is specified, the terminal type and the termcap entry are written
+to the standard output, separated by a space and without a terminating
+newline.
+This can be assigned to an array by
+.Nm csh
+and
+.Nm ksh
+users and then used like any other shell array.
+.Pp
+When the
+.Fl s
+option is specified, the commands to enter the information into the
+shell's environment are written to the standard output.
 If the
 .Ev SHELL
-environmental variable ends in ``csh'', the output commands are for the
-.Xr csh 1 ,
+environmental variable ends in ``csh'', the commands are for the
+.Nm csh ,
 otherwise, they are for
-.Xr sh 1 .
-Note, the output commands for the
+.Xr sh .
+Note, the
 .Nm csh
-set and unset the shell variable
-.Dq noglob .
+commands set and unset the shell variable
+.Dq noglob ,
+leaving it unset.
 The following line in the
 .Pa .login
 or
@@ -177,6 +199,20 @@ or
 files will initialize the environment correctly:
 .Bd -literal -offset indent
 eval \`tset -s options ... \`
+.Ed
+.Pp
+To demonstrate a simple use of the
+.Fl S
+option, the following lines in the
+.Pa .login
+file have an equivalent effect:
+.Bd -literal -offset indent
+set noglob
+set term=(`tset -S options ...`)
+setenv TERM $term[1]
+setenv TERMCAP "$term[2]"
+unset term
+unset noglob
 .Ed
 .Sh TERMINAL TYPE MAPPING
 When the terminal is not hardwired into the system (or the current system
@@ -244,7 +280,7 @@ If the port type and baud rate match the mapping, the terminal type specified
 in the mapping replaces the current type.
 If more than one mapping is specified, the first applicable mapping is used.
 .Pp
-For example, consider the following:
+For example, consider the following mapping:
 .Dq Li dialup>9600:vt100 .
 The port type is
 .Dq Li dialup ,
@@ -315,7 +351,6 @@ The
 .Fl A ,
 .Fl E ,
 .Fl h ,
-.Fl S ,
 .Fl u
 and
 .Fl v

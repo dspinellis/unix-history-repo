@@ -3,7 +3,7 @@
 PROG=	monop
 SRCS=	monop.c cards.c execute.c getinp.c houses.c jail.c misc.c morg.c \
 	print.c prop.c rent.c roll.c spec.c trade.c
-MAN6=	monop.0
+MAN6=	monop.6
 HIDEGAME=hidegame
 CLEANFILES+=initdeck cards.pck
 
@@ -16,7 +16,7 @@ initdeck: initdeck.c
 	${CC} ${CFLAGS} -o ${.TARGET} ${.CURDIR}/initdeck.c
 
 beforeinstall:
-	install -o ${BINOWN} -g ${BINGRP} -m 444 cards.pck \
+	install ${COPY} -o ${BINOWN} -g ${BINGRP} -m 444 cards.pck \
 	    ${DESTDIR}/usr/share/games
 
 .include <bsd.prog.mk>

@@ -143,7 +143,7 @@ The
 is one of
 .B standard
 or
-.BR optional .
+.B optional .
 Files marked as standard are included in all system configurations.
 Optional file specifications include a list of one or more system
 options that together require the inclusion of this module.

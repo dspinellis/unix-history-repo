@@ -23,33 +23,9 @@
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         4       00083
- * --------------------         -----   ----------------------
- *
- * 14 Mar 93	Chris G. Demetriou	Fixed so that tab is not output,
- *					use spaces instead.
+ *	$Id$
  */
-/*
- * HISTORY
- * $Log: db_output.c,v $
- * Revision 1.1  1992/03/25  21:45:18  pace
- * Initial revision
- *
- * Revision 2.3  91/02/05  17:06:45  mrt
- * 	Changed to new Mach copyright
- * 	[91/01/31  16:18:41  mrt]
- * 
- * Revision 2.2  90/08/27  21:51:25  dbg
- * 	Put extra features of db_doprnt in _doprnt.
- * 	[90/08/20            dbg]
- * 	Reduce lint.
- * 	[90/08/07            dbg]
- * 	Created.
- * 	[90/07/25            dbg]
- * 
- */
+
 /*
  * 	Author: David B. Golub, Carnegie Mellon University
  *	Date:	7/90
@@ -60,6 +36,7 @@
  */
 
 #include "param.h"
+#include "systm.h"
 #include <machine/stdarg.h>
 
 /*
@@ -157,16 +134,6 @@ db_print_position()
 }
 
 /*
- * End line if too long.
- */
-void
-db_end_line()
-{
-	if (db_output_position >= db_max_width)
-	    db_printf("\n");
-}
-
-/*
  * Printing
  */
 extern int	db_radix;
@@ -189,6 +156,16 @@ kdbprintf(char *fmt, ...)
 	va_start(listp, fmt);
 	db_printf_guts (fmt, listp);
 	va_end(listp);
+}
+
+/*
+ * End line if too long.
+ */
+void
+db_end_line()
+{
+	if (db_output_position >= db_max_width)
+	    db_printf("\n");
 }
 
 /*

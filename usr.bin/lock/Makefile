@@ -4,4 +4,9 @@ PROG=	lock
 BINOWN= root
 BINMODE=4555
 
+.if exists(/usr/lib/libcrypt.a)
+DPADD+= ${LIBCRYPT}
+LDADD+= -lcrypt
+.endif
+
 .include <bsd.prog.mk>

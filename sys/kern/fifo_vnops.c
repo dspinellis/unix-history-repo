@@ -30,18 +30,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)fifo_vnops.c	7.7 (Berkeley) 4/15/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00141
- * --------------------         -----   ----------------------
- *
- * 20 Apr 93	Jay Fenlason	1. fi_{readers|fi_writers} of fifoinfo init to 0
- *				2. fifo_open() was calling tsleep() without
- *				unlocking the inode of the fifo
+ *	from: @(#)fifo_vnops.c	7.7 (Berkeley) 4/15/91
+ *	$Id$
  */
 
+#ifdef	FIFO
 #include "param.h"
 #include "time.h"
 #include "namei.h"
@@ -262,7 +255,7 @@ fifo_write(vp, uio, ioflag, cred)
 	if (ioflag & IO_NDELAY)
 		wso->so_state |= SS_NBIO;
 	VOP_UNLOCK(vp);
-	error = sosend(wso, (struct mbuf *)0, uio, 0, (struct mbuf *)0);
+	error = sosend(wso, (struct mbuf *)0, uio, 0, (struct mbuf *)0, 0);
 	VOP_LOCK(vp);
 	if (ioflag & IO_NDELAY)
 		wso->so_state &= ~SS_NBIO;
@@ -436,3 +429,4 @@ fifo_badop()
 	panic("fifo_badop called");
 	/* NOTREACHED */
 }
+#endif	/*FIFO*/

@@ -14,7 +14,7 @@ SRCS=	char.c cmd.c cmd1.c cmd2.c cmd3.c cmd4.c cmd5.c cmd6.c cmd7.c \
 	wwopen.c wwprintf.c wwpty.c wwputc.c wwputs.c wwredraw.c \
 	wwredrawwin.c wwrint.c wwscroll.c wwsize.c wwspawn.c wwsuspend.c \
 	wwtty.c wwunframe.c wwupdate.c wwwrite.c xx.c xxflush.c compress.c
-MAN=	window.0
+MAN1=	window.1
 DPADD=	${LIBTERMCAP}
 LDADD=	-ltermcap
 

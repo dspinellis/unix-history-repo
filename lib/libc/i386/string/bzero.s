@@ -1,9 +1,6 @@
-/*-
- * Copyright (c) 1990 The Regents of the University of California.
+/*
+ * Copyright (c) 1993 Winning Strategies, Inc.
  * All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * William Jolitz.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -15,39 +12,75 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *      This product includes software developed by Winning Strategies, Inc.
+ * 4. The name of the author may not be used to endorse or promote products
+ *    derived from this software withough specific prior written permission
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *	$Id: bzero.s,v 1.6 1993/08/16 17:06:29 jtc Exp $
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)bzero.s	5.1 (Berkeley) 4/23/90"
-#endif /* LIBC_SCCS and not lint */
+#if defined(LIBC_RCS) && !defined(lint)
+        .asciz "$Id: bzero.s,v 1.6 1993/08/16 17:06:29 jtc Exp $"
+#endif /* LIBC_RCS and not lint */
 
-/* bzero (base,cnt) */
+#include "DEFS.h"
 
-	.globl _bzero
-_bzero:
+/*
+ * bzero (void *b, size_t len)
+ *	write len zero bytes to the string b.
+ *
+ * Written by:
+ *	J.T. Conklin (jtc@wimsey.com), Winning Strategies, Inc.
+ */
+
+ENTRY(bzero)
 	pushl	%edi
-	movl	8(%esp),%edi
-	movl	12(%esp),%ecx
-	movb	$0x00,%al
-	cld
+	pushl	%ebx
+	movl	12(%esp),%edi
+	movl	16(%esp),%ecx
+
+	cld				/* set fill direction forward */
+	xorl	%eax,%eax		/* set fill data to 0 */
+
+	/*
+	 * if the string is too short, it's really not worth the overhead
+	 * of aligning to word boundries, etc.  So we jump to a plain 
+	 * unaligned set.
+	 */
+	cmpl	$0x0f,%ecx
+	jle	L1
+
+	movl	%edi,%edx		/* compute misalignment */
+	negl	%edx
+	andl	$3,%edx
+	movl	%ecx,%ebx
+	subl	%edx,%ebx
+
+	movl	%edx,%ecx		/* zero until word aligned */
 	rep
 	stosb
+
+	movl	%ebx,%ecx		/* zero by words */
+	shrl	$2,%ecx
+	rep
+	stosl
+
+	movl	%ebx,%ecx
+	andl	$3,%ecx			/* zero remainder by bytes */
+L1:	rep
+	stosb
+
+	popl	%ebx
 	popl	%edi
 	ret

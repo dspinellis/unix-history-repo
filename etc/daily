@@ -50,13 +50,13 @@ if [ -f /etc/news.expire ]; then
 	/etc/news.expire
 fi
 
-echo ""
-echo "Purging accounting records:"
-mv /var/account/acct.2 /var/account/acct.3
-mv /var/account/acct.1 /var/account/acct.2
-mv /var/account/acct.0 /var/account/acct.1
-cp /var/account/acct /var/account/acct.0
-sa -s > /dev/null
+#echo ""
+#echo "Purging accounting records:"
+#mv /var/account/acct.2 /var/account/acct.3
+#mv /var/account/acct.1 /var/account/acct.2
+#mv /var/account/acct.0 /var/account/acct.1
+#cp /var/account/acct /var/account/acct.0
+#sa -s > /dev/null
 
 echo ""
 echo "Backup passwd and group files:"
@@ -126,7 +126,7 @@ mailq
 if [ -d /var/spool/uucp ]; then
 	echo ""
 	echo "uucp:"
-	uusnap
+	uustat -a
 fi
 
 echo ""
@@ -145,4 +145,4 @@ if [ -f /etc/Distfile ]; then
 	rdist -f /etc/Distfile
 fi
 
-sh /etc/security | mail -s "daily insecurity output" root
+sh /etc/security 2>&1 | mail -s "daily insecurity output" root

@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)init.h	5.1 (Berkeley) 3/7/91
+ *	from: @(#)init.h	5.1 (Berkeley) 3/7/91
+ *	init.h,v 1.4 1993/08/01 18:58:28 mycroft Exp
  */
 
 #ifdef __STDC__

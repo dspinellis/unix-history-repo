@@ -1,6 +1,4 @@
 /* 
- * Ported to Boot 386BSD by Julian Elsicher (julian@tfs.com) Sept. 1992
- *
  * Mach Operating System
  * Copyright (c) 1991,1990,1989 Carnegie Mellon University
  * All Rights Reserved.
@@ -24,53 +22,10 @@
  * 
  * any improvements or extensions that they make and grant Carnegie Mellon
  * the rights to redistribute these changes.
- */
-/* 
- * HISTORY
- * $Log:	asm.h,v $
- * Revision 2.7  92/02/29  15:33:41  rpd
- * 	Added ENTRY2.
- * 	[92/02/28            rpd]
- * 
- * Revision 2.6  92/02/19  15:07:52  elf
- * 	Changed #if __STDC__ to #ifdef __STDC__
- * 	[92/01/16            jvh]
- * 
- * Revision 2.5  91/05/14  16:02:45  mrt
- * 	Correcting copyright
- * 
- * Revision 2.4  91/02/05  17:10:42  mrt
- * 	Changed to new Mach copyright
- * 	[91/02/01  17:30:29  mrt]
- * 
- * Revision 2.3  90/12/20  16:35:27  jeffreyh
- * 	changes for __STDC__
- * 	[90/12/06            jeffreyh]
- * 
- * Revision 2.2  90/05/03  15:24:12  dbg
- * 	First checkin.
- * 
  *
- * 	Typo on ENTRY if gprof
- * 	[90/03/29            rvb]
- * 
- * 	fix SVC for "ifdef wheeze" [kupfer]
- * 	Fix the GPROF definitions.
- * 	ENTRY(x) gets profiled iffdef GPROF.
- * 	Entry(x) (and DATA(x)) is NEVER profiled.
- * 	MCOUNT can be used by asm that intends to build a frame,
- * 	after the frame is built.
- *	[90/02/26            rvb]
- *
- * 	Add #define addr16 .byte 0x67
- * 	[90/02/09            rvb]
- * 	Added LBi, SVC and ENTRY
- * 	[89/11/10  09:51:33  rvb]
- * 
- * 	New a.out and coff compatible .s files.
- * 	[89/10/16            rvb]
+ *	from: Mach, Revision 2.7  92/02/29  15:33:41  rpd
+ *	$Id$
  */
-
 
 #define S_ARG0	 4(%esp)
 #define S_ARG1	 8(%esp)
@@ -139,11 +94,8 @@
 
 #endif	wheeze
 
+#define addr32	.byte 0x67
 #define data32	.byte 0x66
-#define data16	.byte 0x66
-#define addr16	.byte 0x67
-
-
 
 #ifdef GPROF
 #ifdef	__STDC__

@@ -1,8 +1,12 @@
-/* [expediant "port" of linux 8087 emulator to 386BSD, with apologies -wfj] */
 /*
  * linux/kernel/math/math_emulate.c
  *
  * (C) 1991 Linus Torvalds
+ *
+ * [expediant "port" of linux 8087 emulator to 386BSD, with apologies -wfj]
+ *
+ *	from: 386BSD 0.1
+ *	$Id$
  */
 
 /*
@@ -30,15 +34,6 @@
  * to 80-bit temporary reals, and do with them as they please. I wanted to
  * hide most of the 387-specific things here.
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00060
- * --------------------         -----   ----------------------
- *
- * 19 Sep 92	Ishii Masahiro		Fix 0x1fd instruction
- *		kym@bingsuns.cc.binghamton.edu		Fix fscale
- * 28 Nov 92	Poul-Henning Kamp	Reduce kernel size if you have
- *					a 387 or 486 chip
  */
 
 #include "machine/cpu.h"
@@ -78,10 +73,6 @@ put_fs_long(unsigned long val, unsigned long *adr) { (void)suword(adr,val); }
 
 math_emulate(struct trapframe * info)
 {
-#if defined(i486) || defined(i387)
-	panic("math_emulate(), shouldn't happen with -Di486 or -Di387");
-}
-#else
 	unsigned short code;
 	temp_real tmp;
 	char * address;
@@ -625,7 +616,7 @@ char * ea(struct trapframe * info, unsigned short code)
 		I387.fos = 0x17;
 		return (char *) offset;
 	}
-	tmp = & (long)REG(rm);
+	tmp = (long *) &REG(rm);
 	switch (mod) {
 		case 0: offset = 0; break;
 		case 1:
@@ -963,8 +954,6 @@ void fmul(const temp_real * src1, const temp_real * src2, temp_real * result)
 /*
  * temporary real division routine.
  */
-
-#include "i386/i386/math_emu.h"
 
 static void shift_left(int * c)
 {
@@ -1484,4 +1473,3 @@ void int_to_real(const temp_int * a, temp_real * b)
 			:"0" (b->a),"1" (b->b));
 	}
 }
-#endif /* defined(i486) || defined(i387) */

@@ -12,29 +12,17 @@
  * on the understanding that TFS is not responsible for the correct
  * functioning of this software in any circumstances.
  *
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00149
- * --------------------         -----   ----------------------
- *
- * 16 Feb 93	Julian Elischer		ADDED for SCSI system
- * 23 May 93	Rodney W. Grimes	ADDED Pioneer DRM-600 cd changer
- */
-
-/*
  * Ported to run under 386BSD by Julian Elischer (julian@tfs.com) Sept 1992
+ *
+ *	$Id: scsiconf.c,v 1.5 1993/08/28 03:08:53 rgrimes Exp $
  */
 
-/*
-$Log:
-*
-*/
 #include <sys/types.h>
 #include "st.h"
 #include "sd.h"
 #include "ch.h"
 #include "cd.h"
+#include "sg.h"
 
 #ifdef	MACH
 #include <i386/machparam.h>
@@ -178,9 +166,10 @@ struct	scsi_switch	*scsi_switch;
 
 #ifdef	SCSI_DELAY
 #if 	SCSI_DELAY > 2
-	printf("waiting for scsi devices to settle\n");
+	printf("%s%d waiting for scsi devices to settle\n",
+		scsi_switch->name, unit);
 #else	SCSI_DELAY > 2
-#define	SCSI_DELAY 15
+#define	SCSI_DELAY 2
 #endif	SCSI_DELAY > 2
 #else
 #define SCSI_DELAY 2
@@ -201,6 +190,7 @@ struct	scsi_switch	*scsi_switch;
 			predef = scsi_get_predef(scsibus
 						,targ
 						,lun
+						,scsi_switch
 						,&maybe_more);
 			bestmatch = scsi_probedev(unit
 						,targ
@@ -243,12 +233,12 @@ struct	scsi_switch	*scsi_switch;
 		}
 		targ++;
 	}
-#if NGENSCSI > 0
+#if NSG > 0
 	/***************************************************************\
 	* If available hook up the generic scsi driver, letting it	*
 	* know which target is US. (i.e. illegal or at least special)	*
 	\***************************************************************/
-	genscsi_attach(unit,scsi_addr,0,scsi_switch);
+	sg_attach(unit,scsi_addr,scsi_switch);
 #endif
 	scsibus++;	/* next time we are on the NEXT scsi bus */
 }
@@ -257,8 +247,9 @@ struct	scsi_switch	*scsi_switch;
 * given a target and lu, check if there is a	*
 * predefined device for that address		*
 \***********************************************/
-struct	predefined	*scsi_get_predef(unit,target,lu,maybe_more)
+struct	predefined	*scsi_get_predef(unit,target,lu,scsi_switch,maybe_more)
 int	unit,target,lu,*maybe_more;
+struct	scsi_switch *scsi_switch;
 {
 	int upto,numents;
 
@@ -273,7 +264,9 @@ int	unit,target,lu,*maybe_more;
 		if(pd[upto].lu != lu)
 			continue;
 		
-		printf("  dev%d,lu%d: %s - PRECONFIGURED -\n"
+		printf("%s%d targ %d lun %d: <%s> - PRECONFIGURED -\n"
+			,scsi_switch->name
+			,unit
 			,target
 			,lu
 			,pd[upto].devname);
@@ -345,19 +338,10 @@ int *maybe_more;
 		desc[12]);
 	}
 
-	type = inqbuf.device_type;
-	qualifier = inqbuf.device_qualifier;
-	remov = inqbuf.removable;
+	type = inqbuf.device & SID_TYPE;
+	qualifier = inqbuf.device & SID_QUAL;
+	remov = inqbuf.dev_qual2 & SID_REMOVABLE;
 
-	/* Check for a non-existent unit.  If the device is returning
-	 * this much, then we must set the flag that has
-	 * the searcher keep looking on other luns.
-	 */
-	if (qualifier == 3 && type == T_NODEVICE)
-	{
-		*maybe_more = 1;
-		return (struct scsidevs *)0;
-	}
 
 	/* Any device qualifier that has
 	 * the top bit set (qualifier&4 != 0) is vendor specific and
@@ -366,20 +350,31 @@ int *maybe_more;
 
 	switch(qualifier)
 	{
-		case 0:
+	case SID_QUAL_LU_OK:
 		qtype="";
 		break;
-		case 1:
+
+	case SID_QUAL_LU_OFFLINE:
 		qtype=", Unit not Connected!";
 		break;
-		case 2:
+
+	case SID_QUAL_RSVD:
 		qtype=", Reserved Peripheral Qualifier!";
-		break;
-		case 3:
-		qtype=", The Target can't support this Unit!";
+		*maybe_more = 1;
+		return (struct scsidevs *)0;
 		break;
 
-		default:
+	case SID_QUAL_BAD_LU:
+		/*
+		 * Check for a non-existent unit.  If the device is returning
+	 	 * this much, then we must set the flag that has
+	 	 * the searcher keep looking on other luns.
+	 	 */
+		qtype=", The Target can't support this Unit!";
+		*maybe_more = 1;
+		return (struct scsidevs *)0;
+
+	default:
 		dtype="vendor specific";
 		qtype="";
 		*maybe_more = 1;
@@ -387,48 +382,53 @@ int *maybe_more;
 	}
 
 	if (dtype == 0)
+	{
 		switch(type)
 		{
-			case T_DIRECT:
-				dtype="direct";
-				break;
-			case T_SEQUENTIAL:
-				dtype="sequential";
-				break;
-			case T_PRINTER:
-				dtype="printer";
-				break;
-			case T_PROCESSOR:
-				dtype="processor";
-				break;
-			case T_READONLY:
-				dtype="readonly";
-				break;
-			case T_WORM:
-				dtype="worm";
-				break;
-			case T_SCANNER:
-				dtype="scanner";
-				break;
-			case T_OPTICAL:
-				dtype="optical";
-				break;
-			case T_CHANGER:
-				dtype="changer";
-				break;
-			case T_COMM:
-				dtype="communication";
-				break;
-			default:
-				dtype="unknown";
-				break;
+		case T_DIRECT:
+			dtype="direct";
+			break;
+		case T_SEQUENTIAL:
+			dtype="sequential";
+			break;
+		case T_PRINTER:
+			dtype="printer";
+			break;
+		case T_PROCESSOR:
+			dtype="processor";
+			break;
+		case T_READONLY:
+			dtype="readonly";
+			break;
+		case T_WORM:
+			dtype="worm";
+			break;
+		case T_SCANNER:
+			dtype="scanner";
+			break;
+		case T_OPTICAL:
+			dtype="optical";
+			break;
+		case T_CHANGER:
+			dtype="changer";
+			break;
+		case T_COMM:
+			dtype="communication";
+			break;
+		case T_NODEVICE:
+			*maybe_more = 1;
+			return (struct scsidevs *)0;
+		default:
+			dtype="unknown";
+			break;
 		}
 
+	}
 	/***********************************************\
 	* Then if it's advanced enough, more detailed	*
 	* information					*
 	\***********************************************/
-	if(inqbuf.ansii_version > 0) 
+	if((inqbuf.version & SID_ANSII) > 0) 
 	{
 		if ((len = inqbuf.additional_length 
 				+ ( (char *)inqbuf.unused
@@ -451,23 +451,42 @@ int *maybe_more;
 		strncpy(model,"unknown",16);
 		strncpy(version,"????",4);
 	}
-	printf("  dev%d,lu%d: type %d:%d(%s%s),%s '%s%s%s' scsi%d\n"
+	printf("%s%d targ %d lun %d: type %d(%s) %s SCSI%d\n"
+		,scsi_switch->name
+		,unit
 		,target
 		,lu
-		,qualifier,type
-		,dtype,qtype
+		,type
+		,dtype
 		,remov?"removable":"fixed"
+		,inqbuf.version & SID_ANSII
+	);
+	printf("%s%d targ %d lun %d: <%s%s%s>\n"
+		,scsi_switch->name
+		,unit
+		,target
+		,lu
 		,manu
 		,model
 		,version
-		,inqbuf.ansii_version
 	);
+	if(qtype[0])
+	{
+		printf("%s%d targ %d lun %d: qualifier %d(%s)\n"
+		,scsi_switch->name
+		,unit
+		,target
+		,lu
+		,qualifier
+		,qtype
+	);
+	}
 	/***********************************************\
 	* Try make as good a match as possible with	*
 	* available sub drivers	 			*
 	\***********************************************/
 	bestmatch = (selectdev(unit,target,lu,&scsi_switch,
-		qualifier,type,remov,manu,model,version));
+		qualifier,type,remov?T_REMOV:T_FIXED,manu,model,version));
 	if((bestmatch) && (bestmatch->flags & SC_MORE_LUS))
 	{
 		*maybe_more = 1;
@@ -492,7 +511,7 @@ char	*manu,*model,*rev;
 	struct	scsidevs	*bestmatch = (struct scsidevs *)0;
 	struct	scsidevs	*thisentry = knowndevs;
 
-	type |= (qualifier << 5);
+	type |= qualifier;	/* why? */
 
 	thisentry--;
 	while( count++ < numents)
@@ -611,9 +630,10 @@ retry:	scsi_xfer.error=0;
 		* correct response.					*
 		*( especially exabytes)					*
 		\*******************************************************/
-			if(scsi_xfer.sense.error_class == 7 )
+			if(((scsi_xfer.sense.error_code & SSD_ERRCODE) == 0x70 )
+			||((scsi_xfer.sense.error_code & SSD_ERRCODE) == 0x71 ))
 			{
-				key = scsi_xfer.sense.ext.extended.sense_key ;
+				key = scsi_xfer.sense.ext.extended.flags & SSD_KEY ;
 				switch(key)
 				{ 
 				case	2:	/* not ready BUT PRESENT! */
@@ -696,8 +716,8 @@ retry:	scsi_xfer.error=0;
 		* correct response.					*
 		*( especially exabytes)					*
 		\*******************************************************/
-			if((scsi_xfer.sense.error_class == 7 )
-			 && (scsi_xfer.sense.ext.extended.sense_key == 6))
+			if(((scsi_xfer.sense.error_code & SSD_ERRCODE) == 0x70 )
+			 && ((scsi_xfer.sense.ext.extended.flags & SSD_KEY) == 6))
 			{ /* it's changed so it's there */
 				spinwait(1000);
 				{

@@ -1,18 +1,11 @@
-#	%W% (Berkeley) %G%
+# Makefile for g++ library genclass test
 
-BINDIR=	/usr/bin
+NOMAN=	noman
 
-MAN1=	genclass.0
-
-all genclass: ${MAN1}
-
-clean depend lint tags:
-
-cleandir:
-	rm -f ${MAN1}
-
-beforeinstall:
-	install -c -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
-	    ${.CURDIR}/genclass.sh ${DESTDIR}${BINDIR}/genclass
+afterinstall:
+	sed -e '/^PROTODIR/s_PROTODIR.*_PROTODIR=${DESTDIR}/usr/include/g++/gen_;' $(.CURDIR)/genclass.sh > $(DESTDIR)$(BINDIR)/genclass
+	chown ${BINOWN}.${BINGRP} $(DESTDIR)$(BINDIR)/genclass
+	chmod ${BINMODE} $(DESTDIR)$(BINDIR)/genclass
 
 .include <bsd.prog.mk>
+.include "../../../usr.bin/Makefile.inc"

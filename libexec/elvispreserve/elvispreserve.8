@@ -33,14 +33,14 @@ if your operating system normally supports mail.
 .SH FILES
 .IP /tmp/elv*
 The temporary file that \fIelvis\fP was using when it died.
-.IP /usr/preserve/p*
+.IP /var/preserve/p*
 The text that is preserved by \fIelvispreserve\fP.
-.IP /usr/preserve/Index
+.IP /var/preserve/Index
 A text file which lists the names of all preserved files, and the names
-of the /usr/preserve/p* files which contain their preserved text.
+of the /var/preserve/p* files which contain their preserved text.
 .SH BUGS
 .PP
-Due to the permissions on the /usr/preserve directory, on UNIX systems
+Due to the permissions on the /var/preserve directory, on UNIX systems
 \fIelvispreserve\fP must be run as superuser.
 This is accomplished by making the \fIelvispreserve\fP executable be owned by "root"
 and turning on its "set user id" bit.

@@ -32,7 +32,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.45 (Berkeley) 2/24/91";
+static char sccsid[] = "@(#)gethostnamadr.c	6.48 (Berkeley) 1/10/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -50,6 +50,18 @@ static char sccsid[] = "@(#)gethostnamadr.c	6.45 (Berkeley) 2/24/91";
 #define	MAXALIASES	35
 #define	MAXADDRS	35
 
+#define _PATH_HOSTCONF	"/etc/host.conf"
+
+#define SERVICE_NONE	0
+#define SERVICE_BIND	1
+#define SERVICE_HOSTS	2
+#define SERVICE_NIS	3
+#define SERVICE_MAX	3
+
+static int service_order[SERVICE_MAX + 1];
+static int service_done = 0;
+
+
 static char *h_addr_ptrs[MAXADDRS + 1];
 
 static struct hostent host;
@@ -61,6 +73,7 @@ static char hostaddr[MAXADDRS];
 static char *host_addrs[2];
 static int stayopen = 0;
 char *strpbrk();
+struct hostent *_getnishost();
 
 #if PACKETSZ > 1024
 #define	MAXPACKET	PACKETSZ
@@ -79,6 +92,37 @@ typedef union {
 } align;
 
 int h_errno;
+extern errno;
+
+static void
+init_services()
+{
+	char *cp, buf[BUFSIZ];
+	register int cc = 0;
+	FILE *fd;
+
+	if ((fd = (FILE *)fopen(_PATH_HOSTCONF, "r")) == NULL) {
+				/* make some assumptions */
+		service_order[0] = SERVICE_BIND;
+		service_order[1] = SERVICE_HOSTS;
+		service_order[2] = SERVICE_NONE;
+	} else {
+		while (fgets(buf, BUFSIZ, fd) != NULL && cc < SERVICE_MAX) {
+			if ((cp = rindex(buf, '\n')) != NULL)
+				*cp = '\0';
+			if (buf[0] == '#')
+				continue;
+			if (!strcmp(buf, "bind"))
+				service_order[cc++] = SERVICE_BIND;
+			else if (!strcmp(buf, "hosts"))
+				service_order[cc++] = SERVICE_HOSTS;
+			else if (!strcmp(buf, "nis"))
+				service_order[cc++] = SERVICE_NIS;
+		}
+		service_order[cc] = SERVICE_NONE;
+	}
+	service_done = 1;
+}
 
 static struct hostent *
 getanswer(answer, anslen, iquery)
@@ -162,10 +206,8 @@ getanswer(answer, anslen, iquery)
 		if (iquery && type == T_PTR) {
 			if ((n = dn_expand((u_char *)answer->buf,
 			    (u_char *)eom, (u_char *)cp, (u_char *)bp,
-			    buflen)) < 0) {
-				cp += n;
-				continue;
-			}
+			    buflen)) < 0)
+				break;
 			cp += n;
 			host.h_name = bp;
 			return(&host);
@@ -228,10 +270,12 @@ getanswer(answer, anslen, iquery)
 
 struct hostent *
 gethostbyname(name)
-	char *name;
+	const char *name;
 {
 	querybuf buf;
-	register char *cp;
+	register int cc;
+	register const char *cp;
+	register struct hostent *hp;
 	int n;
 	extern struct hostent *_gethtbyname();
 
@@ -247,15 +291,13 @@ gethostbyname(name)
 				/*
 				 * All-numeric, no dot at the end.
 				 * Fake up a hostent as if we'd actually
-				 * done a lookup.  What if someone types
-				 * 255.255.255.255?  The test below will
-				 * succeed spuriously... ???
+				 * done a lookup.
 				 */
-				if ((host_addr.s_addr = inet_addr(name)) == -1) {
+				if (!inet_aton(name, &host_addr)) {
 					h_errno = HOST_NOT_FOUND;
 					return((struct hostent *) NULL);
 				}
-				host.h_name = name;
+				host.h_name = (char *)name;
 				host.h_aliases = host_aliases;
 				host_aliases[0] = NULL;
 				host.h_addrtype = AF_INET;
@@ -273,17 +315,37 @@ gethostbyname(name)
 				break;
 		}
 
-	if ((n = res_search(name, C_IN, T_A, buf.buf, sizeof(buf))) < 0) {
+	if (!service_done)
+		init_services();
+
+	for (cc = 0; service_order[cc] != SERVICE_NONE &&
+	     cc <= SERVICE_MAX; cc++) {
+		switch (service_order[cc]) {
+		case SERVICE_BIND:
+			if ((n = res_search(name, C_IN, T_A,
+					    buf.buf, sizeof(buf))) < 0) {
 #ifdef DEBUG
-		if (_res.options & RES_DEBUG)
-			printf("res_search failed\n");
+				if (_res.options & RES_DEBUG)
+					printf("res_search failed\n");
 #endif
-		if (errno == ECONNREFUSED)
-			return (_gethtbyname(name));
-		else
-			return ((struct hostent *) NULL);
+			}
+			hp = getanswer(&buf, n, 0);
+			if (hp)
+				return hp;
+			break;
+		case SERVICE_HOSTS:
+			hp = _gethtbyname(name);
+			if (hp)
+				return hp;
+			break;
+		case SERVICE_NIS:
+			hp = _getnishost(name, "hosts.byname");
+			if (hp)
+				return hp;
+			break;
+		}
 	}
-	return (getanswer(&buf, n, 0));
+	return ((struct hostent *) NULL);
 }
 
 struct hostent *
@@ -292,6 +354,7 @@ gethostbyaddr(addr, len, type)
 	int len, type;
 {
 	int n;
+	register int cc;
 	querybuf buf;
 	register struct hostent *hp;
 	char qbuf[MAXDNAME];
@@ -304,28 +367,54 @@ gethostbyaddr(addr, len, type)
 		((unsigned)addr[2] & 0xff),
 		((unsigned)addr[1] & 0xff),
 		((unsigned)addr[0] & 0xff));
-	n = res_query(qbuf, C_IN, T_PTR, (char *)&buf, sizeof(buf));
-	if (n < 0) {
+		if (!service_done)
+	  init_services();
+
+	cc = 0;
+	while (service_order[cc] != SERVICE_NONE) {
+	        switch (service_order[cc]) {
+		case SERVICE_BIND:
+			(void)sprintf(qbuf, "%u.%u.%u.%u.in-addr.arpa",
+				      ((unsigned)addr[3] & 0xff),
+				      ((unsigned)addr[2] & 0xff),
+				      ((unsigned)addr[1] & 0xff),
+				      ((unsigned)addr[0] & 0xff));
+			n = res_query(qbuf, C_IN, T_PTR, (char *)&buf,
+				      sizeof(buf));
+			if (n < 0) {
 #ifdef DEBUG
-		if (_res.options & RES_DEBUG)
-			printf("res_query failed\n");
+				if (_res.options & RES_DEBUG)
+					printf("res_query failed\n");
 #endif
-		if (errno == ECONNREFUSED)
-			return (_gethtbyaddr(addr, len, type));
-		return ((struct hostent *) NULL);
-	}
-	hp = getanswer(&buf, n, 1);
-	if (hp == NULL)
-		return ((struct hostent *) NULL);
-	hp->h_addrtype = type;
-	hp->h_length = len;
-	h_addr_ptrs[0] = (char *)&host_addr;
-	h_addr_ptrs[1] = (char *)0;
-	host_addr = *(struct in_addr *)addr;
+				break;
+			}
+			hp = getanswer(&buf, n, 1);
+			if (hp) {
+				hp->h_addrtype = type;
+				hp->h_length = len;
+				h_addr_ptrs[0] = (char *)&host_addr;
+				h_addr_ptrs[1] = (char *)0;
+				host_addr = *(struct in_addr *)addr;
 #if BSD < 43 && !defined(h_addr)	/* new-style hostent structure */
-	hp->h_addr = h_addr_ptrs[0];
+				hp->h_addr = h_addr_ptrs[0];
 #endif
-	return(hp);
+				return(hp);
+			}
+			break;
+		case SERVICE_HOSTS:
+			hp = _gethtbyaddr(addr, len, type);
+			if (hp)
+				return hp;
+			break;
+		case SERVICE_NIS:
+			hp = _getnishost(addr, "hosts.byaddr");
+			if (hp)
+				return hp;
+			break;
+		}
+		cc++;
+	}
+	return ((struct hostent *)NULL);
 }
 
 _sethtent(f)
@@ -430,4 +519,59 @@ _gethtbyaddr(addr, len, type)
 			break;
 	_endhtent();
 	return (p);
+}
+
+struct hostent *
+_getnishost(name, map)
+	char *name, *map;
+{
+	register char *cp, *dp, **q;
+	char *result;
+	int resultlen;
+	struct hostent h;
+	static char *domain = (char *)NULL;
+
+	if (domain == (char *)NULL)
+#ifdef YP
+		if (yp_get_default_domain (&domain))
+#endif
+			return ((struct hostent *)NULL);
+
+#ifdef YP
+	if (yp_match(domain, map, name, strlen(name), &result, &resultlen))
+		return ((struct hostent *)NULL);
+#endif
+
+	if (cp = index(result, '\n'))
+		*cp = '\0';
+
+	cp = strpbrk(result, " \t");
+	*cp++ = '\0';
+#if BSD >= 43 || defined(h_addr)	/* new-style hostent structure */
+	h.h_addr_list = host_addrs;
+#endif
+	h.h_addr = hostaddr;
+	*((u_long *)h.h_addr) = inet_addr(result);
+	h.h_length = sizeof(u_long);
+	h.h_addrtype = AF_INET;
+	while (*cp == ' ' || *cp == '\t')
+		cp++;
+	h.h_name = cp;
+	q = h.h_aliases = host_aliases;
+	cp = strpbrk(cp, " \t");
+	if (cp != NULL)
+		*cp++ = '\0';
+	while (cp && *cp) {
+		if (*cp == ' ' || *cp == '\t') {
+			cp++;
+			continue;
+		}
+		if (q < &host_aliases[MAXALIASES - 1])
+			*q++ = cp;
+		cp = strpbrk(cp, " \t");
+		if (cp != NULL)
+			*cp++ = '\0';
+	}
+	*q = NULL;
+	return (&h);
 }

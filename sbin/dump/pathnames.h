@@ -31,6 +31,8 @@
  * SUCH DAMAGE.
  *
  *	@(#)pathnames.h	5.6 (Berkeley) 2/28/91
+ *
+ *	$Header: /b/source/CVS/src/sbin/dump/pathnames.h,v 1.3 1993/03/23 00:27:20 cgd Exp $
  */
 
 #include <paths.h>

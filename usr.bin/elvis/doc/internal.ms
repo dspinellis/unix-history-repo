@@ -134,7 +134,7 @@ the screen is redrawn by a function called \fBredraw()\fR.
 This function is called in the getkey() function before each keystroke is
 read in, if necessary.
 .PP
-Redraw() write to the screen via a package which looks like the "curses"
+Redraw() writes to the screen via a package which looks like the "curses"
 library, but isn't.
 It is actually much simpler.
 Most curses operations are implemented as macros which copy characters

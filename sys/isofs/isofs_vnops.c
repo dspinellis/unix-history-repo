@@ -1,12 +1,5 @@
 /*
- *
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00040
- * --------------------         -----   ----------------------
- *
- * 10 Aug 92	Scott Burris		Fixed "delete from CD-ROM" bug
+ *	$Id: isofs_vnops.c,v 1.5 1993/07/19 13:40:10 cgd Exp $
  */
 #include "param.h"
 #include "systm.h"
@@ -27,6 +20,7 @@
 
 #include "iso.h"
 #include "isofs_node.h"
+#include "iso_rrip.h"
 
 /*
  * Open called.
@@ -80,61 +74,25 @@ isofs_getattr(vp, vap, cred, p)
 	struct proc *p;
 {
 	register struct iso_node *ip = VTOI(vp);
-	int year, month, day, hour ,minute, second, tz;
-	int crtime, days;
 	int i;
-
-	year = ip->iso_time[0] - 70;
-	month = ip->iso_time[1];
-	day = ip->iso_time[2];
-	hour = ip->iso_time[3];
-	minute = ip->iso_time[4];
-	second = ip->iso_time[5];
-	tz = ip->iso_time[6];
-	
-	if (year < 0) {
-		crtime = 0;
-	} else {
-		int monlen[12] = {31,28,31,30,31,30,31,31,30,31,30,31};
-		days = year * 365;
-		if (year > 2)
-			days += (year+2) / 4;
-		for (i = 1; i < month; i++)
-			days += monlen[i-1];
-		if (((year+2) % 4) == 0 && month > 2)
-			days++;
-		days += day - 1;
-		crtime = ((((days * 24) + hour) * 60 + minute) * 60)
-			+ second;
-
-		/* sign extend */
-		if (tz & 0x80)
-			tz |= (-1 << 8);
-
-		/* timezone offset is unreliable on some disks */
-		if (-48 <= tz && tz <= 52)
-			crtime += tz * 15 * 60;
-	}
 
 	vap->va_fsid = ip->i_dev;
 	vap->va_fileid = ip->i_number;
-	vap->va_mode = VREAD|VEXEC;
-	vap->va_mode |= (vap->va_mode >> 3) | (vap->va_mode >> 6);
 	if (vp->v_type == VDIR)
 		vap->va_nlink = 2;
 	else
 		vap->va_nlink = 1;
-	vap->va_uid = 0;
-	vap->va_gid = 0;
+
+	vap->va_mode = ip->inode.iso_mode;
+	vap->va_uid  = ip->inode.iso_uid;
+	vap->va_gid  = ip->inode.iso_gid;
+	vap->va_atime= ip->inode.iso_atime;
+	vap->va_mtime= ip->inode.iso_mtime;
+	vap->va_ctime= ip->inode.iso_ctime;
+
 	vap->va_rdev = 0;
 	vap->va_size = ip->i_size;
 	vap->va_size_rsv = 0;
-	vap->va_atime.tv_sec = crtime;
-	vap->va_atime.tv_usec = 0;
-	vap->va_mtime.tv_sec = crtime;
-	vap->va_mtime.tv_usec = 0;
-	vap->va_ctime.tv_sec = crtime;
-	vap->va_ctime.tv_usec = 0;
 	vap->va_flags = 0;
 	vap->va_gen = 1;
 	vap->va_blocksize = ip->i_mnt->logical_block_size;
@@ -284,6 +242,7 @@ isofs_readdir(vp, uio, cred, eofflagp)
 	struct buf *bp = NULL;
 	int i;
 	int end_flag = 0;
+	ISO_RRIP_ANALYZE ana;
 
 	ip = VTOI (vp);
 	imp = ip->i_mnt;
@@ -344,20 +303,33 @@ isofs_readdir(vp, uio, cred, eofflagp)
 			/* illegal entry, stop */
 			break;
 
-		/*bcopy (ep->name, dirent.d_name, dirent.d_namlen);*/
-		isofntrans(ep->name, dirent.d_namlen,
-			dirent.d_name, &dirent.d_namlen);
-		if (dirent.d_namlen == 1) {
-			switch (dirent.d_name[0]) {
+		/*
+		 *
+		 */
+		switch (ep->name[0]) {
 			case 0:
 				dirent.d_name[0] = '.';
+				dirent.d_namlen = 1;
 				break;
 			case 1:
 				dirent.d_name[0] = '.';
 				dirent.d_name[1] = '.';
 				dirent.d_namlen = 2;
-			}
+				break;
+			default:
+				switch ( imp->iso_ftype ) {
+					case ISO_FTYPE_RRIP:
+						isofs_rrip_getname( ep, dirent.d_name, &dirent.d_namlen );
+					break;
+					case ISO_FTYPE_9660:
+						isofntrans(ep->name, dirent.d_namlen, dirent.d_name, &dirent.d_namlen);
+					break;
+					default:
+					break;
+				}
+				break;
 		}
+
 		dirent.d_name[dirent.d_namlen] = 0;
 		dirent.d_reclen = DIRSIZ (&dirent);
 
@@ -382,6 +354,91 @@ isofs_readdir(vp, uio, cred, eofflagp)
 	uio->uio_offset = iso_offset;
 
 	return (error);
+}
+
+/*
+ * Return target name of a symbolic link
+ */
+typedef struct iso_directory_record ISODIR;
+typedef struct iso_node             ISONODE;
+typedef struct iso_mnt              ISOMNT;
+int isofs_readlink(vp, uio, cred)
+struct vnode *vp;
+struct uio   *uio;
+struct ucred *cred;
+{
+        ISONODE *ip;
+        ISODIR  *dirp;                   
+        ISOMNT  *imp;
+        struct  buf *bp;
+        int     symlen;
+        int     error;
+        char    symname[NAME_MAX];
+
+        ip  = VTOI( vp );
+        imp = ip->i_mnt;
+        /*
+         * Get parents directory record block that this inode included.
+         */
+        error = bread(  imp->im_devvp,
+                        (daddr_t)(( ip->iso_parent_ext + (ip->iso_parent >> 11 ) )
+                        * imp->im_bsize / DEV_BSIZE ),
+                        imp->im_bsize,
+                        NOCRED,
+                        &bp );
+        if ( error ) {
+                return( EINVAL );
+        }
+
+        /*
+         * Setup the directory pointer for this inode
+         */
+
+        dirp = (ISODIR *)(bp->b_un.b_addr + ( ip->iso_parent & 0x7ff ) );
+#ifdef DEBUG
+        printf("lbn=%d[base=%d,off=%d,bsize=%d,DEV_BSIZE=%d], dirp= %08x, b_addr=%08x, offset=%08x(%08x)\n",
+                                (daddr_t)(( ip->iso_parent_ext + (ip->iso_parent >> 12 ) ) * imp->im_bsize / DEV_BSIZE ),
+                                ip->iso_parent_ext,
+                                (ip->iso_parent >> 11 ),
+                                imp->im_bsize,
+                                DEV_BSIZE,
+                                dirp,
+                                bp->b_un.b_addr,
+                                ip->iso_parent,
+                                ip->iso_parent & 0x7ff );
+#endif
+
+        /*
+         * Just make sure, we have a right one....
+         *   1: Check not cross boundary on block
+         *   2: Check number of inode
+         */
+        if ( (ip->iso_parent & 0x7ff) + isonum_711( dirp->length ) >=
+                                                imp->im_bsize )         {
+                brelse ( bp );
+                return( EINVAL );
+        }
+        if ( isonum_733(dirp->extent) != ip->i_number ) {
+                brelse ( bp );
+                return( EINVAL );
+        }
+
+        /*
+         * Ok, we just gathering a Symbolick name in SL record.
+         */
+        if ( isofs_rrip_getsymname( vp, dirp, symname, &symlen ) == 0 ) {
+                brelse ( bp );
+                return( EINVAL );
+        }
+        /*
+         * Don't forget before you leave from home ;-)
+         */
+        brelse( bp );
+
+        /*
+         * return with the Symbolick name to caller's.
+         */
+        return ( uiomove( symname, symlen, uio ) );
 }
 
 /*
@@ -472,7 +529,7 @@ isofs_strategy(bp)
 isofs_print(vp)
 	struct vnode *vp;
 {
-	printf ("isoprint\n");
+	printf ("tag VT_ISOFS, isofs vnode\n");
 }
 
 extern int enodev ();
@@ -503,7 +560,7 @@ struct vnodeops isofs_vnodeops = {
 	(void *)enodev,		/* rmdir */
 	(void *)enodev,		/* symlink */
 	isofs_readdir,		/* readdir */
-	(void *)enodev,		/* readlink */
+	isofs_readlink,		/* readlink */
 	isofs_abortop,		/* abortop */
 	isofs_inactive,		/* inactive */
 	isofs_reclaim,		/* reclaim */
@@ -515,5 +572,3 @@ struct vnodeops isofs_vnodeops = {
 	isofs_islocked,		/* islocked */
 	(void *)enodev,		/* advlock */
 };
-
-

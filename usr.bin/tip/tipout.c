@@ -132,7 +132,7 @@ tipout()
 		cnt = read(FD, buf, BUFSIZ);
 		if (cnt <= 0) {
 			/* lost carrier */
-			if (cnt < 0 && errno == EIO) {
+			if ((cnt < 0 && errno == EIO) || (cnt == 0)) {
 				sigblock(sigmask(SIGTERM));
 				intTERM();
 				/*NOTREACHED*/

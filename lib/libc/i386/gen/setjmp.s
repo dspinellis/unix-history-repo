@@ -36,6 +36,7 @@
 
 #if defined(LIBC_SCCS) && !defined(lint)
 	.asciz "@(#)setjmp.s	5.1 (Berkeley) 4/23/90"
+	.align	2,0x90
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -44,7 +45,7 @@
  *	longjmp(a,v)
  * will generate a "return(v)" from the last call to
  *	setjmp(a)
- * by restoring registers from the stack.
+ * by restoring registers from the environment 'a'.
  * The previous signal state is restored.
  */
 
@@ -63,13 +64,14 @@ ENTRY(setjmp)
 	movl	%esi,16(%ecx)
 	movl	%edi,20(%ecx)
 	movl	%eax,24(%ecx)
-	movl	$0,%eax
+	fnstcw	28(%ecx)
+	xorl	%eax,%eax
 	ret
 
 ENTRY(longjmp)
 	movl	4(%esp),%edx
 	pushl	24(%edx)
-	call	_sigsetmask
+	call	_sigsetmask	/* XXX this is not reentrant */
 	popl	%eax
 	movl	4(%esp),%edx
 	movl	8(%esp),%eax
@@ -79,8 +81,10 @@ ENTRY(longjmp)
 	movl	12(%edx),%ebp
 	movl	16(%edx),%esi
 	movl	20(%edx),%edi
-	cmpl	$0,%eax
-	jne	1f
-	movl	$1,%eax
+	fninit
+	fldcw	28(%edx)
+	testl	%eax,%eax
+	jnz	1f
+	incl	%eax
 1:	movl	%ecx,0(%esp)
 	ret

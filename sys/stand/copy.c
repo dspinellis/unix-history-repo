@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)copy.c	7.7 (Berkeley) 5/21/91
+ *	from: @(#)copy.c	7.7 (Berkeley) 5/21/91
+ *	$Id$
  */
 
 #define	BSIZE	10240

@@ -215,7 +215,7 @@ again:
 			if (strncmp(dialer_buf, "CONNECT",
 				    sizeof("CONNECT")-1) != 0)
 				break;
-			for (bm = baud_msg ; bm ; bm++)
+			for (bm = baud_msg ; bm->msg ; bm++)
 				if (strcmp(bm->msg,
 				    dialer_buf+sizeof("CONNECT")-1) == 0) {
 					if (ioctl(FD, TIOCGETP, &sb) < 0) {

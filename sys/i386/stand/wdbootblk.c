@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)wdbootblk.c	7.1 (Berkeley) 4/28/91
+ *	from: @(#)wdbootblk.c	7.1 (Berkeley) 4/28/91
+ *	$Id$
  */
 
 /*

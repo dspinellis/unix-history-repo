@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)iso_chksum.c	7.5 (Berkeley) 5/6/91
+ *	from: @(#)iso_chksum.c	7.5 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,10 +60,8 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /* 
- * $Header: iso_chksum.c,v 4.7 88/07/29 15:31:26 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/iso_chksum.c,v $
- *
  * ISO CHECKSUM
  *
  * The checksum generation and check routines are here.
@@ -85,6 +84,7 @@ SOFTWARE.
 #ifdef ISO
 #include "argo_debug.h"
 #include "param.h"
+#include "systm.h"
 #include "mbuf.h"
 #endif ISO
 

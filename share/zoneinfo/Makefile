@@ -95,15 +95,21 @@ REDO=		right_only
 #	-DCMUCS
 # to the end of the "CFLAGS=" line
 
+.if exists(${.CURDIR}/obj)
+OBJ=obj
+.else
+OBJ=.
+.endif
+
 .PATH:	${.CURDIR}/datfiles
 CFLAGS=	-DTM_GMTOFF=tm_gmtoff -DTM_ZONE=tm_zone
 PROG=	zic
-MAN5=	tzfile.0
+MAN5=	tzfile.5
 
 SRCS=	zic.c scheck.c ialloc.c
 
 YDATA=	africa antarctica asia australasia europe northamerica \
-	southamerica pacificnew etcetera factory
+	southamerica pacificnew russia etcetera factory
 NDATA=	systemv
 #SDATA=	solar87 solar88 solar89
 TDATA=	${YDATA} ${NDATA} ${SDATA}
@@ -112,17 +118,17 @@ USNO=	usno1988 usno1989
 
 posix_only: ${TDATA}
 	(cd ${.CURDIR}/datfiles; \
-	    ../obj/zic -d ${TZDIR} -L /dev/null ${TDATA})
+	    ../${OBJ}/zic -d ${TZDIR} -L /dev/null ${TDATA})
 
 right_only: leapseconds ${TDATA}
 	(cd ${.CURDIR}/datfiles; \
-	    ../obj/zic -d ${TZDIR} -L leapseconds ${TDATA})
+	    ../${OBJ}/zic -d ${TZDIR} -L leapseconds ${TDATA})
 
 other_two: leapseconds ${TDATA}
-	(cd ${.CURDIR}/datfiles;
-	    ../obj/zic -d ${TZDIR}/posix -L /dev/null ${TDATA})
 	(cd ${.CURDIR}/datfiles; \
-	    ../obj/zic -d ${TZDIR}/right -L leapseconds ${TDATA})
+	    ../${OBJ}/zic -d ${TZDIR}/posix -L /dev/null ${TDATA})
+	(cd ${.CURDIR}/datfiles; \
+	    ../${OBJ}/zic -d ${TZDIR}/right -L leapseconds ${TDATA})
 
 posix_right: posix_only other_two
 
@@ -130,9 +136,10 @@ right_posix: right_only other_two
 
 install: maninstall ${DATA} ${REDO}
 	(cd ${.CURDIR}/datfiles; \
-	    ../obj/zic -d ${TZDIR} -p ${POSIXRULES})
-	install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
-	    ${TZDIR}/${LOCALTIME} ${DESTDIR}/etc/localtime
+	    ../${OBJ}/zic -d ${TZDIR} -p ${POSIXRULES})
+	if [ ! -f ${DESTDIR}/etc/localtime ]; then \
+	    ln -s /usr/share/zoneinfo/${LOCALTIME} ${DESTDIR}/etc/localtime ; \
+	fi
 	chown -R ${BINOWN}.${BINGRP} ${TZDIR}
 	chmod -R a-w ${TZDIR}
 

@@ -1,7 +1,3 @@
-/* @(#)getrpcport.c	2.1 88/07/29 4.0 RPCSRC */
-#if !defined(lint) && defined(SCCSIDS)
-static  char sccsid[] = "@(#)getrpcport.c 1.3 87/08/11 SMI";
-#endif
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
  * unrestricted use provided that this legend is included on all tape
@@ -30,6 +26,12 @@ static  char sccsid[] = "@(#)getrpcport.c 1.3 87/08/11 SMI";
  * 2550 Garcia Avenue
  * Mountain View, California  94043
  */
+
+#if defined(LIBC_SCCS) && !defined(lint)
+/*static char *sccsid = "from: @(#)getrpcport.c 1.3 87/08/11 SMI";*/
+/*static char *sccsid = "from: @(#)getrpcport.c	2.1 88/07/29 4.0 RPCSRC";*/
+static char *rcsid = "$Id: getrpcport.c,v 1.3 1993/08/26 00:53:24 jtc Exp $";
+#endif
 
 /*
  * Copyright (c) 1985 by Sun Microsystems, Inc.

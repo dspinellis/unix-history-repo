@@ -1,9 +1,9 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * James W. Williams of the University of Maryland.
+ * James W. Williams of NASA Goddard Space Flight Center.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,13 +35,13 @@
  */
 
 #ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
- All rights reserved.\n";
+static char copyright[] =
+"@(#) Copyright (c) 1991, 1993\n\
+	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cksum.c	5.3 (Berkeley) 4/4/91";
+static char sccsid[] = "@(#)cksum.c	8.1 (Berkeley) 6/6/93";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
@@ -54,6 +54,9 @@ static char sccsid[] = "@(#)cksum.c	5.3 (Berkeley) 4/4/91";
 #include <string.h>
 #include "extern.h"
 
+void usage __P((void));
+
+int
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -90,21 +93,21 @@ main(argc, argv)
 	argv += optind;
 
 	fd = STDIN_FILENO;
-	fn = "stdin";
+	fn = NULL;
 	rval = 0;
 	do {
 		if (*argv) {
 			fn = *argv++;
 			if ((fd = open(fn, O_RDONLY, 0)) < 0) {
-				(void)fprintf(stderr,
-				    "cksum: %s: %s\n", fn, strerror(errno));
+				(void)fprintf(stderr, "cksum: %s: %s\n",
+				    fn, strerror(errno));
 				rval = 1;
 				continue;
 			}
 		}
 		if (cfncn(fd, &val, &len)) {
-			(void)fprintf(stderr,
-			    "cksum: %s: %s\n", fn, strerror(errno));
+			(void)fprintf(stderr, "cksum: %s: %s\n",
+			    fn ? fn : "stdin", strerror(errno));
 			rval = 1;
 		} else
 			pfncn(fn, val, len);
@@ -113,6 +116,7 @@ main(argc, argv)
 	exit(rval);
 }
 
+void
 usage()
 {
 	(void)fprintf(stderr, "usage: cksum [-o 1 | 2] [file ...]\n");

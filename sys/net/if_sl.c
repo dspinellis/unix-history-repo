@@ -30,15 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)if_sl.c	7.22 (Berkeley) 4/20/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00112
- * --------------------         -----   ----------------------
- *
- * 30 Aug 92    Poul-Henning Kamp       Stabilize SLIP on lossy lines/UARTS
- * 14 Mar 93    David Greenman		Upgrade bpf to match tcpdump 2.2.1
+ *	from: @(#)if_sl.c	7.22 (Berkeley) 4/20/91
+ *	$Id$
  */
 
 /*
@@ -72,13 +65,14 @@
  * interrupts and network activity; thus, splimp must be >= spltty.
  */
 
-/* $Header: /usr/bill/working/sys/net/RCS/if_sl.c,v 1.2 92/01/15 17:36:38 william Exp $ */
+/* $Header: /a/cvs/386BSD/src/sys/net/if_sl.c,v 1.3 1993/09/07 16:01:08 rgrimes Exp $ */
 /* from if_sl.c,v 1.11 84/10/04 12:54:47 rick Exp */
 
 #include "sl.h"
 #if NSL > 0
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "mbuf.h"
 #include "buf.h"
@@ -375,9 +369,10 @@ sloutput(ifp, m, dst)
 		m_freem(m);
 		return (ENETDOWN);	/* sort of */
 	}
-	if ((sc->sc_ttyp->t_state & TS_CARR_ON) == 0) {
+	if (((sc->sc_ttyp->t_state & TS_CARR_ON) == 0)
+	    && ((sc->sc_ttyp->t_cflag & CLOCAL) == 0)) {
 		m_freem(m);
-		return (EHOSTUNREACH);
+		return (ENETDOWN);
 	}
 	ifq = &sc->sc_if.if_snd;
 	if ((ip = mtod(m, struct ip *))->ip_p == IPPROTO_TCP) {
@@ -429,15 +424,14 @@ slstart(tp)
 
 	for (;;) {
 		/*
-		 * If there is more in the output queue, just send it now.
+		 * Call output process whether or not there is any output.
 		 * We are being called in lieu of ttstart and must do what
 		 * it would.
 		 */
-		if (RB_LEN(&tp->t_out) != 0) {
-			(*tp->t_oproc)(tp);
-			if (RB_LEN(&tp->t_out) > SLIP_HIWAT)
-				return;
-		}
+		(*tp->t_oproc)(tp);
+		if (RB_LEN(&tp->t_out) > SLIP_HIWAT)
+			return;
+
 		/*
 		 * This happens briefly when the line shuts down.
 		 */
@@ -452,7 +446,7 @@ slstart(tp)
 		 * of RBSZ in tty.h also has to be upped to be at least
 		 * SLMTU*2.
 		 */
-		if (RBSZ - RB_LEN(&tp->t_out) < 2 * SLMTU + 2)
+		if (min(RBSZ, 4 * SLMTU + 4) - RB_LEN(&tp->t_out) < 2 * SLMTU + 2)
 			return;
 
 		/*
@@ -651,7 +645,9 @@ slinput(c, tp)
 	sc = (struct sl_softc *)tp->t_sc;
 	if (sc == NULL)
 		return;
-	if (c & TTY_ERRORMASK || !(tp->t_state & TS_CARR_ON)) {	/* XXX */
+	if ((c & TTY_ERRORMASK) || (((tp->t_state & TS_CARR_ON) == 0)
+	    && ((tp->t_cflag & CLOCAL) == 0))) {
+		/* XXX */
 		sc->sc_flags |= SC_ERROR;
 		return;
 	}

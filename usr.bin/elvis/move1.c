@@ -17,7 +17,7 @@
 MARK	m_updnto(m, cnt, cmd)
 	MARK	m;	/* movement is relative to this mark */
 	long	cnt;	/* a numeric argument */
-	char	cmd;	/* the command character */
+	int	cmd;	/* the command character */
 {
 	DEFAULT(cmd == 'G' ? nlines : 1L);
 
@@ -245,6 +245,10 @@ MARK	m_sentence(m, cnt, cmd)
 {
 	REG char	*text;
 	REG long	l;
+#ifndef CRUNCH
+	/* figure out where the paragraph boundary is */
+	MARK		pp = m_paragraph(m, 1L, cmd=='(' ? '{' : '}');
+#endif
 
 	DEFAULT(1);
 
@@ -277,9 +281,9 @@ MARK	m_sentence(m, cnt, cmd)
 				/* move forward, wrap at end of line */
 				if (!text[0])
 				{
-					if (l >= nlines)
+					if (l == nlines)
 					{
-						return MARK_UNSET;
+						goto BreakBreak;
 					}
 					l++;
 					pfetch(l);
@@ -297,9 +301,9 @@ MARK	m_sentence(m, cnt, cmd)
 				{
 					do
 					{
-						if (l <= 1)
+						if (l == 1L)
 						{
-							return MARK_FIRST;
+							goto BreakBreak;
 						}
 						l--;
 						pfetch(l);
@@ -313,12 +317,25 @@ MARK	m_sentence(m, cnt, cmd)
 			}
 		} while (!isperiod(text));
 	}
+BreakBreak:
 
 	/* construct a mark for this location */
 	m = buildmark(text);
 
 	/* move forward to the first word of the next sentence */
 	m = m_fword(m, 1L, 'w', '\0');
+	if (m == MARK_UNSET)
+	{
+		m = MARK_EOF;
+	}
+
+#ifndef CRUNCH
+	/* don't cross the paragraph boundary */
+	if (pp && ((cmd=='(') ? (m<pp) : (m>pp)))
+	{
+		m = pp;
+	}
+#endif
 
 	return m;
 }
@@ -334,11 +351,15 @@ MARK	m_paragraph(m, cnt, cmd)
 	long	l, ol;	/* current line number, original line number */
 	int	dir;	/* -1 if we're moving up, or 1 if down */
 	char	col0;	/* character to expect in column 0 */
+	long	limit;	/* line where searching must stop */
 #ifndef NO_SENTENCE
 # define SENTENCE(x)	(x)
 	char	*list;	/* either o_sections or o_paragraph */
 #else
 # define SENTENCE(x)
+#endif
+#ifndef CRUNCH
+	MARK	ss;
 #endif
 
 	DEFAULT(1);
@@ -350,12 +371,26 @@ MARK	m_paragraph(m, cnt, cmd)
 		dir = -1;
 		col0 = '\0';
 		SENTENCE(list = o_paragraphs); 
+#ifndef CRUNCH
+		ss = m_paragraph(m, 1L, '<');
+		if (ss)
+			limit = markline(ss);
+		else
+#endif
+			limit = 1L;
 		break;
 
 	  case '}':
 		dir = 1;
 		col0 = '\0';
 		SENTENCE(list = o_paragraphs); 
+#ifndef CRUNCH
+		ss = m_paragraph(m, 1L, '>');
+		if (ss)
+			limit = markline(ss);
+		else
+#endif
+			limit = nlines;
 		break;
 
 	  case '[':
@@ -363,9 +398,12 @@ MARK	m_paragraph(m, cnt, cmd)
 		{
 			return MARK_UNSET;
 		}
+		/* fall through... */
+	  case '<':
 		dir = -1;
 		col0 = '{';
 		SENTENCE(list = o_sections); 
+		limit = 1L;
 		break;
 
 	  case ']':
@@ -373,18 +411,21 @@ MARK	m_paragraph(m, cnt, cmd)
 		{
 			return MARK_UNSET;
 		}
+		/* fall through... */
+	  case '>':
 		dir = 1;
 		col0 = '{';
 		SENTENCE(list = o_sections); 
+		limit = nlines;
 		break;
 	}
 	ol = l = markline(m);
 
 	/* for each paragraph that we want to travel through... */
-	while (l > 0 && l <= nlines && cnt-- > 0)
+	while (l != limit && cnt-- > 0)
 	{
 		/* skip blank lines between paragraphs */
-		while (l > 0 && l <= nlines && col0 == *(text = fetchline(l)))
+		while (l != limit && col0 == *(text = fetchline(l)))
 		{
 			l += dir;
 		}
@@ -407,22 +448,14 @@ MARK	m_paragraph(m, cnt, cmd)
 			}
 #endif
 			l += dir;
-		} while (l > 0 && l <= nlines && col0 != *(text = fetchline(l)));
+		} while (l != limit && col0 != *(text = fetchline(l)));
 BreakBreak:	;
 	}
 
-	if (l > nlines)
-	{
-		m = MARK_LAST;
-	}
-	else if (l <= 0)
-	{
-		m = MARK_FIRST;
-	}
-	else
-	{
-		m = MARK_AT_LINE(l);
-	}
+	m = MARK_AT_LINE(l);
+#ifdef DEBUG2
+	debout("m_paragraph() returning %ld.%d\n", markline(m), markidx(m));
+#endif
 	return m;
 }
 

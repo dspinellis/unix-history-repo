@@ -5,4 +5,10 @@ SRCS=	rlogin.c
 BINOWN=	root
 BINMODE=4555
 
+.if exists(/usr/lib/libcrypt.a)
+#CFLAGS+=-DCRYPT -DKERBEROS
+DPADD+= ${LIBCRYPT} #${LIBKRB}
+LDADD+= -lcrypt #-lkrb
+.endif
+
 .include <bsd.prog.mk>

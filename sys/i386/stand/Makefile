@@ -1,14 +1,5 @@
 #	from: @(#)Makefile	7.9 (Berkeley) 5/8/91
-#
-# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
-# --------------------         -----   ----------------------
-# CURRENT PATCH LEVEL:         1       00088
-# --------------------         -----   ----------------------
-#
-# 23 Oct 92	Joerg Lohse		added rule to compile 'trimhd'
-#					(trimhd = 'dd bs=1 skip=32')
-# 10 Mar 93	Rodney W. Grimes	Fixed DESTDIR and STANDIR so
-#					that make install works correctly
+#	$Id$
 #
 
 DESTDIR=/usr

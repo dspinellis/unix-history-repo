@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)clnp_debug.c	7.8 (Berkeley) 5/27/91
+ *	from: @(#)clnp_debug.c	7.8 (Berkeley) 5/27/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,8 +60,6 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: clnp_debug.c,v 4.2 88/06/29 14:58:34 hagens Exp $ */
-/* $Source: /usr/argo/sys/netargo/RCS/clnp_debug.c,v $ */
 
 #include "types.h"
 #include "param.h"

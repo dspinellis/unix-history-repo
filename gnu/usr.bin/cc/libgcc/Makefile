@@ -1,5 +1,5 @@
 LIB=	gcc
-CFLAGS=		-I../common
+CC=	gcc
 
 SRCS= _mulsi3.c _udivsi3.c _divsi3.c _umodsi3.c _modsi3.c \
    _lshrsi3.c _lshlsi3.c _ashrsi3.c _ashlsi3.c \
@@ -48,7 +48,7 @@ libgcc1:
 	for name in $(LIB1FUNCS); \
         do \
 	echo $${name}; \
-	gcc -E -I../common -DL$${name} libgcc1.c | \
+	gcc -E -I../lib -DL$${name} libgcc1.c | \
 	sed -f clean.sed >$${name}.c; \
 	done
 
@@ -57,6 +57,6 @@ libgcc2:
 	for name in $(LIB2FUNCS); \
         do \
 	echo $${name}; \
-	gcc -E -I../common -DL$${name} libgcc2.c | \
+	gcc -E -I../lib -DL$${name} libgcc2.c | \
 	sed -f clean.sed >$${name}.c; \
 	done

@@ -8,12 +8,9 @@
  * Copyright (c) Ian F. Darwin, 1987.
  * Written by Ian F. Darwin.
  *
- * This software is not subject to any license of the American Telephone
- * and Telegraph Company or of the Regents of the University of California.
+ * See LEGAL.NOTICE
  *
- * Permission is granted to anyone to use this software for any purpose on
- * any computer system, and to alter it and redistribute it freely, subject
- * to the terms in the accompanying LEGAL.NOTICE file.
+ * names.h,v 1.2 1993/06/10 00:38:14 jtc Exp
  */
 
 /* these types are used to index the table 'types': keep em in sync! */
@@ -27,7 +24,7 @@
 #define	L_MAIL	7		/* Electronic mail */
 #define	L_NEWS	8		/* Usenet Netnews */
 
-char *types[] = {
+static char *types[] = {
 	"c program text",
 	"fortran program text",
 	"make commands text" ,
@@ -40,7 +37,7 @@ char *types[] = {
 	"can't happen error on names.h/types",
 	0};
 
-struct names {
+static struct names {
 	char *name;
 	short type;
 } names[] = {
@@ -88,5 +85,6 @@ struct names {
 	{"Newsgroups:",	L_NEWS},
 	{"Path:",	L_NEWS},
 	{"Organization:",L_NEWS},
-	0};
+	{0}
+	};
 #define NNAMES ((sizeof(names)/sizeof(struct names)) - 1)

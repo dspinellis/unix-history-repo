@@ -9,6 +9,7 @@ DPADD+=		$(LIBGROFF) $(LIBMATH)
 tmacdir?=	/usr/share/tmac
 
 CLEANFILES+=	majorminor.cc
+
 majorminor.cc: $(.CURDIR)/../VERSION
 	@echo Making $@
 	@-rm -f $@

@@ -45,9 +45,8 @@ static char sccsid[] = "@(#)delch.c	5.4 (Berkeley) 6/1/90";
 wdelch(win)
 reg WINDOW	*win; {
 
-	reg char	*temp1, *temp2;
-	reg char	*end;
-	reg int		lch;
+	reg chtype      *temp1, *temp2;
+	reg chtype      *end;
 
 	end = &win->_y[win->_cury][win->_maxx - 1];
 	temp1 = &win->_y[win->_cury][win->_curx];

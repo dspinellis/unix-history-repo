@@ -30,8 +30,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)stat.h	7.11 (Berkeley) 3/3/91
+ *	from: @(#)stat.h	7.11 (Berkeley) 3/3/91
+ *	$Id$
  */
+
+#ifndef _SYS_STAT_H_
+#define _SYS_STAT_H_
 
 struct stat
 {
@@ -126,3 +130,4 @@ int	lstat __P((const char *, struct stat *));
 #endif /* not POSIX */
 __END_DECLS
 #endif
+#endif	/* _SYS_STAT_H_ */

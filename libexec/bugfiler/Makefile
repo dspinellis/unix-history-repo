@@ -1,13 +1,13 @@
-#	@(#)Makefile	5.17 (Berkeley) 5/24/90
-# Fixed to use bsd.coe.montana.edu as a bugs host - rgrimes 4/04/93
+#	from: @(#)Makefile	5.17 (Berkeley) 5/24/90
+#	$Id$
 
 PROG=	bugfiler
-CFLAGS+=-I${.CURDIR} -D"BUGS_HOME \"owner-386bsd_bugs@bsd.coe.montana.edu\""
+CFLAGS+=-I${.CURDIR} -DBUGS_HOME=\"owner-FreeBSD-bugfiler@freefall.cdrom.com\"
 SRCS=	bugfiler.c error.c gethead.c process.c redist.c reply.c
 BINOWN=	root
 BINMODE=4555
-MAN1=	sendbug.0
-MAN8=	bugfiler.0
+MAN1=	sendbug.1
+MAN8=	bugfiler.8
 
 beforeinstall:
 	install -c -o bin -g ${BINGRP} -m 555 \

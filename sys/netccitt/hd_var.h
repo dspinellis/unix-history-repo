@@ -35,7 +35,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)hd_var.h	7.4 (Berkeley) 5/29/91
+ *	from: @(#)hd_var.h	7.4 (Berkeley) 5/29/91
+ *	$Id$
  */
 
 /*

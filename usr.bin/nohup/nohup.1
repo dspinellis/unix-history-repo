@@ -42,7 +42,7 @@
 .Nd invoke a command immune to hangups
 .Sh SYNOPSIS
 .Nm nohup
-.Ar command
+.Ar utility
 .Op Ar arg ...
 .Sh DESCRIPTION
 The
@@ -53,20 +53,13 @@ with
 its arguments
 and at this time sets the signal
 .Dv SIGHUP
-to be ignored. The signal
-.Dv SIGQUIT
-may also be set
-to be ignored.
+to be ignored. 
 If the standard output is a terminal, the standard output is
 appended to the file
 .Pa nohup.out
 in the current directory.
 If standard error is a terminal, it is directed to the same place
 as the standard output.
-.Pp
-.Nm Nohup
-exits 1 if an error occurs, otherwise the exit status is that of
-.Ar command  .
 .Sh ENVIRONMENT
 The following variable is utilized by
 .Nm nohup .
@@ -80,6 +73,26 @@ utility uses the directory named by
 .Ev HOME
 to create the file.
 .El
+.Sh DIAGNOSTICS
+The
+.Nm nohup
+utility shall exit with one of the following values:
+.Bl -tag -width Ds 
+.It 126
+The
+.Ar utility
+was found but could not be invoked.
+.It 127
+The
+.Ar utility
+could not be found or an error occured in 
+.Nm nohup.
+.El
+.Pp
+Otherwise, the exit status of 
+.Nm nohup
+shall be that of 
+.Ar utility .
 .Sh SEE ALSO
 .Xr signal 3
 .Sh STANDARDS

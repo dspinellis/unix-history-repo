@@ -448,11 +448,7 @@ pass(passwd)
 			salt = "xx";
 		else
 			salt = pw->pw_passwd;
-#ifdef DES
 		xpasswd = crypt(passwd, salt);
-#else
-		xpasswd = passwd;
-#endif
 		/* The strcmp does not catch null passwords! */
 		if (pw == NULL || *pw->pw_passwd == '\0' ||
 		    strcmp(xpasswd, pw->pw_passwd)) {

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)if_eon.c	7.16 (Berkeley) 6/27/91
+ *	from: @(#)if_eon.c	7.16 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,10 +60,8 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /*
- * $Header: if_eon.c,v 1.4 88/07/19 15:53:59 hagens Exp $ 
- * $Source: /usr/argo/sys/netiso/RCS/if_eon.c,v $ 
- *
  *	EON rfc 
  *  Layer between IP and CLNL
  *

@@ -1,23 +1,18 @@
 /* 
-Copyright (C) 1989 Free Software Foundation
+Copyright (C) 1989, 1992 Free Software Foundation
     written by Eric Newton (newton@rocky.oswego.edu)
 
-This file is part of GNU CC.
-
-GNU CC is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU CC General Public
-License for full details.
-
-Everyone is granted permission to copy, modify and redistribute
-GNU CC, but only under the conditions described in the
-GNU CC General Public License.   A copy of this license is
-supposed to have been given to you along with GNU CC so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  
+This file is part of the GNU C++ Library.  This library is free
+software; you can redistribute it and/or modify it under the terms of
+the GNU Library General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your
+option) any later version.  This library is distributed in the hope
+that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.  See the GNU Library General Public License for more details.
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 #ifdef __GNUG__
 #pragma implementation
@@ -26,14 +21,40 @@ and this notice must be preserved on all copies.
 #include <stdarg.h>
 #include <builtin.h>
 #include <values.h>
+#ifndef _OLD_STREAMS
+#include <strstream.h>
+//#include <ioprivate.h>
+#endif
+// Include CurseW.h and/or curses.h *after* iostream includes,
+// because curses.h defines a clear macro that conflicts with iostream. Sigh.
 #include <CursesW.h>
 
-extern "C" int _sscans(WINDOW*, const char*, va_list);
+#if _G_HAVE_CURSES
+
+int CursesWindow::count = 0;
 
 /*
  * C++ interface to curses library.
  *
  */
+
+#if !defined(_IO_MAGIC) && !defined(HAVE_VSCANF) &&!defined vsscanf
+extern "C" int _doscan(FILE *, const char*, va_list args);
+
+static int vsscanf(char *buf, const char * fmt, va_list args)
+{
+  FILE b;
+#ifdef _IOSTRG
+  b._flag = _IOREAD|_IOSTRG;
+#else
+  b._flag = _IOREAD;
+#endif
+  b._base = (unsigned char*)buf;
+  b._ptr = (unsigned char*)buf;
+  b._cnt = BUFSIZ;
+  return _doscan(&b, fmt, args);
+}
+#endif
 
 /*
  * varargs functions are handled conservatively:
@@ -46,28 +67,21 @@ int CursesWindow::scanw(const char * fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
-#if 1 /* bsd */
-  int result = _sscans(w, fmt, args);
-#else
 #ifdef VMS
   int result = wscanw(w , fmt , args);
-#else
+#else /* NOT VMS */
   char buf[BUFSIZ];
   int result = wgetstr(w, buf);
   if (result == OK) {
-#ifndef HAVE_VSCANF
-      FILE b;
-      b._flag = _IOREAD|_IOSTRG;
-      b._base = buf;
-      b._ptr = buf;
-      b._cnt = BUFSIZ;
-      result = _doscan(&b, fmt, args);
+
+#ifdef _IO_MAGIC /* GNU iostreams */
+    strstreambuf ss(buf, BUFSIZ);
+    result = ss.vscan(fmt, args);
 #else
-      result = vsscanf(buf, fmt, args);
-#endif
+    result = vsscanf(buf, fmt, args);
 #endif
   }
-#endif
+#endif /* !VMS */
   va_end(args);
   return result;
 }
@@ -76,34 +90,24 @@ int CursesWindow::mvscanw(int y, int x, const char * fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
-#ifndef VMS
   char buf[BUFSIZ];
   int result = wmove(w, y, x);
   if (result == OK)
-#if 1 /* bsd */
-  result = _sscans(w, fmt, args);
-#else
 #ifdef VMS
   result=wscanw(w , fmt , args);
-#else
-  {
+#else /* !VMS */
+ {
     result = wgetstr(w, buf);
     if (result == OK) {
-#ifndef HAVE_VSCANF
-	FILE b;
-	b._flag = _IOREAD|_IOSTRG;
-	b._base = buf;
-	b._ptr = buf;
-	b._cnt = BUFSIZ;
-	result = _doscan(&b, fmt, args);
+#ifdef _IO_MAGIC /* GNU iostreams */
+    strstreambuf ss(buf, BUFSIZ);
+    result = ss.vscan(fmt, args);
 #else
-	result = vsscanf(buf, fmt, args);
+    result = vsscanf(buf, fmt, args);
 #endif
-#endif
-    }
   }
-#endif
-#endif
+  }
+#endif /* !VMS */
   va_end(args);
   return result;
 }
@@ -113,16 +117,7 @@ int CursesWindow::printw(const char * fmt, ...)
   va_list args;
   va_start(args, fmt);
   char buf[BUFSIZ];
-#ifndef HAVE_VPRINTF
-  FILE b;
-  b._flag = _IOWRT|_IOSTRG;
-  b._ptr = buf;
-  b._cnt = BUFSIZ;
-  _doprnt(fmt, args, &b);
-  putc('\0', &b);
-#else
   vsprintf(buf, fmt, args);
-#endif
   va_end(args);
   return waddstr(w, buf);
 }
@@ -132,20 +127,11 @@ int CursesWindow::mvprintw(int y, int x, const char * fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
-  char buf[BUFSIZ];
   int result = wmove(w, y, x);
   if (result == OK)
   {
-#ifndef HAVE_VPRINTF
-    FILE b;
-    b._flag = _IOWRT|_IOSTRG;
-    b._ptr = buf;
-    b._cnt = BUFSIZ;
-    _doprnt(fmt, args, &b);
-    putc('\0', &b);
-#else
+    char buf[BUFSIZ];
     vsprintf(buf, fmt, args);
-#endif
     result = waddstr(w, buf);
   }
   va_end(args);
@@ -265,3 +251,5 @@ CursesWindow::~CursesWindow()
     (*lib_error_handler)("CursesWindow", "Too many windows destroyed");
   }
 }
+
+#endif /* _G_HAVE_CURSES */

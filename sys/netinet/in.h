@@ -30,8 +30,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)in.h	7.11 (Berkeley) 4/20/91
+ *	from: @(#)in.h	7.11 (Berkeley) 4/20/91
+ *	$Id$
  */
+
+#ifndef _NETINET_IN_H_
+#define _NETINET_IN_H_
 
 /*
  * Constants and structures defined by the internet system,
@@ -149,3 +153,5 @@ struct ip_opts {
 struct	in_addr in_makeaddr();
 u_long	in_netof(), in_lnaof();
 #endif
+
+#endif	/* _NETINET_IN_H_ */

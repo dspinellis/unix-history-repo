@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)signal.h	7.16 (Berkeley) 3/17/91
+ *	from: @(#)signal.h	7.16 (Berkeley) 3/17/91
+ *	$Id$
  */
 
 #ifndef	_SIGNAL_H_
@@ -185,7 +186,7 @@ struct	sigcontext {
  */
 #define sigmask(m)	(1 << ((m)-1))
 
-#define	BADSIG		((__sighandler_t) -1)
+#define	SIG_ERR		((__sighandler_t) -1)
 #endif	/* _POSIX_SOURCE */
   
 #define	SIG_DFL		((__sighandler_t) 0)

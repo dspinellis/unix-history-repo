@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tcp_output.c	7.22 (Berkeley) 8/31/90
+ *	from: @(#)tcp_output.c	7.22 (Berkeley) 8/31/90
+ *	$Id$
  */
 
 #include "param.h"

@@ -1,23 +1,4 @@
 /*
- * HISTORY
- * $Log: scsi_disk.h,v $
- * Revision 1.2  1992/10/13  03:14:21  julian
- * added the load-eject field in 'start/stop' for removable devices.
- *
- * Revision 1.1  1992/09/26  22:11:29  julian
- * Initial revision
- *
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00098
- * --------------------         -----   ----------------------
- *
- * 16 Feb 93	Julian Elischer		ADDED for SCSI system
- * 
- */
-
-/*
  * SCSI interface description
  */
 
@@ -63,10 +44,9 @@
  * on the understanding that TFS is not responsible for the correct
  * functioning of this software in any circumstances.
  *
- */
-
-/*
  * Ported to run under 386BSD by Julian Elischer (julian@tfs.com) Sept 1992
+ *
+ *	$Id$
  */
 
 /*
@@ -77,73 +57,58 @@
 struct scsi_reassign_blocks
 {
 	u_char	op_code;
-	u_char	:5;
-	u_char	lun:3;	
+	u_char	byte2;
 	u_char	unused[3];
-	u_char	link:1;
-	u_char	flag:1;
-	u_char	:6;
+	u_char	control;
 };
 
 struct scsi_rw
 {
 	u_char	op_code;
-	u_char	addr_2:5;	/* Most significant */
-	u_char	lun:3;
+	u_char	addr_2;		/* Most significant */
+#define	SRW_TOPADDR	0x1F	/* only 5 bits here */
 	u_char	addr_1;
 	u_char	addr_0;		/* least significant */
 	u_char	length;
-	u_char	link:1;
-	u_char	flag:1;
-	u_char	:6;
+	u_char	control;
 };
 
 struct scsi_rw_big
 {
 	u_char	op_code;
-	u_char	rel_addr:1;
-	u_char	:4;	/* Most significant */
-	u_char	lun:3;
-	u_char	addr_3;
+	u_char	byte2;
+#define	SRWB_RELADDR	0x01
+	u_char	addr_3;		/* Most significant */
 	u_char	addr_2;
 	u_char	addr_1;
 	u_char	addr_0;		/* least significant */
 	u_char	reserved;;
 	u_char	length2;
 	u_char	length1;
-	u_char	link:1;
-	u_char	flag:1;
-	u_char	:4;
-	u_char	vendor:2;
+	u_char	control;
 };
 
 struct scsi_read_capacity
 {
 	u_char	op_code;
-	u_char	:5;
-	u_char	lun:3;
+	u_char	byte2;
 	u_char	addr_3;	/* Most Significant */
 	u_char	addr_2;
 	u_char	addr_1;
 	u_char	addr_0;	/* Least Significant */
 	u_char	unused[3];
-	u_char	link:1;
-	u_char	flag:1;
-	u_char	:6;	
+	u_char	control;
 };
 
 struct scsi_start_stop
 {
 	u_char	op_code;
-	u_char	:5;
-	u_char	lun:3;
+	u_char	byte2;
 	u_char	unused[2];
-	u_char	start:1;
-	u_char	loej:1;
-	u_char	:6;
-	u_char	link:1;
-	u_char	flag:1;
-	u_char	:6;
+	u_char	how;
+#define	SSS_START		0x01
+#define	SSS_LOEJ		0x02
+	u_char	control;
 };
 
 
@@ -194,8 +159,8 @@ struct scsi_reassign_blocks_data
 union	disk_pages /* this is the structure copied from osf */
 {
 	struct page_disk_format {
-	   u_char pg_code:6;	/* page code (should be 3)	      */
-	   u_char :2;		
+	   u_char pg_code;	/* page code (should be 3)	      */
+#define	DISK_PGCODE	0x3F	/* only 6 bits valid */
 	   u_char pg_length;	/* page length (should be 0x16)	      */
 	   u_char trk_z_1;	/* tracks per zone (MSB)	      */
 	   u_char trk_z_0;	/* tracks per zone (LSB)	      */
@@ -215,17 +180,16 @@ union	disk_pages /* this is the structure copied from osf */
 	   u_char trk_skew_0;	/* track skew factor (LSB)	      */
 	   u_char cyl_skew_1;	/* cylinder skew (MSB)		      */
 	   u_char cyl_skew_0;	/* cylinder skew (LSB)		      */
-	   u_char reserved1:4;
-	   u_char surf:1;
-	   u_char rmb:1;
-	   u_char hsec:1;
-	   u_char ssec:1;
+	   u_char flags;	/* various */
+#define		DISK_FMT_SURF	0x10
+#define		DISK_FMT_RMB	0x20
+#define		DISK_FMT_HSEC	0x40
+#define		DISK_FMT_SSEC	0x80
 	   u_char reserved2;
 	   u_char reserved3;
 	} disk_format;
 	struct page_rigid_geometry {
-	   u_char pg_code:7;	/* page code (should be 4)	      */
-	   u_char mbone:1;	/* must be one			      */
+	   u_char pg_code;	/* page code (should be 4)	      */
 	   u_char pg_length;	/* page length (should be 0x16)	      */
 	   u_char ncyl_2;	/* number of cylinders (MSB)	      */
 	   u_char ncyl_1;	/* number of cylinders 		      */

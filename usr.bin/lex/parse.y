@@ -1,58 +1,47 @@
+
 /* parse.y - parser for flex input */
 
 %token CHAR NUMBER SECTEND SCDECL XSCDECL WHITESPACE NAME PREVCCL EOF_OP
 
 %{
-
 /*-
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Vern Paxson of Lawrence Berkeley Laboratory.
+ * Vern Paxson.
  * 
  * The United States Government has rights in this work pursuant
  * to contract no. DE-AC03-76SF00098 between the United States
  * Department of Energy and the University of California.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ * Redistribution and use in source and binary forms are permitted provided
+ * that: (1) source distributions retain this entire copyright notice and
+ * comment, and (2) distributions including binaries display the following
+ * acknowledgement:  ``This product includes software developed by the
+ * University of California, Berkeley and its contributors'' in the
+ * documentation or other materials provided with the distribution and in
+ * all advertising materials mentioning features or use of this software.
+ * Neither the name of the University nor the names of its contributors may
+ * be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.y	5.2 (Berkeley) 6/18/90";
-#endif /* not lint */
+static char rcsid[] =
+    "@(#) $Header: /usr/fsys/odin/a/vern/flex/RCS/parse.y,v 2.7 90/06/27 23:48:31 vern Exp $ (LBL)";
+#endif
 
 #include "flexdef.h"
 
 int pat, scnum, eps, headcnt, trailcnt, anyccl, lastchar, i, actvp, rulelen;
 int trlcontxt, xcluflg, cclsorted, varlength, variable_trail_rule;
 Char clower();
+void build_eof_action();
+void yyerror();
 
 static int madeany = false;  /* whether we've made the '.' character class */
 int previous_continued_action;	/* whether the previous rule's action was '|' */
@@ -346,13 +335,25 @@ rule            :  re2 re
 			    headcnt = 0;
 			    }
 
+			if ( varlength && headcnt == 0 )
+			    {
+			    /* again, see the comment in the rule for "re2 re"
+			     * above
+			     */
+			    add_accept( $1, num_rules | YY_TRAILING_HEAD_MASK );
+			    variable_trail_rule = true;
+			    }
+
+			else
+			    {
+			    if ( ! varlength )
+				headcnt = rulelen;
+
+			    ++rulelen;
+			    trailcnt = 1;
+			    }
+
 			trlcontxt = true;
-
-			if ( ! varlength )
-			    headcnt = rulelen;
-
-			++rulelen;
-			trailcnt = 1;
 
 			eps = mkstate( SYM_EPSILON );
 			$$ = link_machines( $1,
@@ -456,7 +457,15 @@ singleton       :  singleton '*'
 			else
 			    {
 			    if ( $3 == 0 )
-				$$ = mkopt( mkrep( $1, $3, $5 ) );
+				{
+				if ( $5 <= 0 )
+				    {
+				    synerr( "bad iteration values" );
+				    $$ = $1;
+				    }
+				else
+				    $$ = mkopt( mkrep( $1, 1, $5 ) );
+				}
 			    else
 				$$ = mkrep( $1, $3, $5 );
 			    }

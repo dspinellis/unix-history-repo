@@ -29,15 +29,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00096
- * --------------------         -----   ----------------------
- *
- * 29 Jun 92	Chris G. Demetriou	Fix Version number update
- * 15 Feb 93	Julian Elischer		allow comments (leading #) in
- *					files and files.i386
  */
 
 #ifndef lint
@@ -54,6 +45,8 @@ static char sccsid[] = "@(#)mkmakefile.c	5.33 (Berkeley) 7/1/91";
 #include <ctype.h>
 #include "y.tab.h"
 #include "config.h"
+
+#define DEF_MAXFDESCS	2048
 
 #define next_word(fp, wd) \
 	{ register char *word = get_word(fp); \
@@ -183,6 +176,10 @@ makefile()
 		up = &users[MACHINE_VAX-1];
 	} else
 		up = &users[machine-1];
+	if (maxfdescs == 0) {
+		printf("maxfdescs not specified; %d assumed\n", DEF_MAXFDESCS);
+		maxfdescs = DEF_MAXFDESCS;
+	}
 	if (maxusers == 0) {
 		printf("maxusers not specified; %d assumed\n", up->u_default);
 		maxusers = up->u_default;
@@ -191,8 +188,11 @@ makefile()
 		maxusers = up->u_min;
 	} else if (maxusers > up->u_max)
 		printf("warning: maxusers > %d (%d)\n", up->u_max, maxusers);
-	fprintf(ofp, "PARAM=-DTIMEZONE=%d -DDST=%d -DMAXUSERS=%d\n",
-	    zone, dst, maxusers);
+	fprintf(ofp, "PARAM=-DTIMEZONE=%d -DDST=%d -DMAXUSERS=%d -DMAXFDESCS=%d\n",
+	    zone, dst, maxusers, maxfdescs);
+	if (loadaddress != -1) {
+		fprintf(ofp, "LOAD_ADDRESS=%X\n", loadaddress);
+	}
 	for (op = mkopt; op; op = op->op_next)
 		fprintf(ofp, "%s=%s\n", op->op_name, op->op_value);
 	if (debugging)
@@ -596,7 +596,7 @@ do_systemspec(f, fl, first)
 
 	fprintf(f, "%s: ${SYSTEM_DEP} swap%s.o", fl->f_needs, fl->f_fn);
 	if (first)						/* 29 Jun 92*/
-		fprintf(f, " newvers");
+		fprintf(f, " vers.o");
 	fprintf(f, "\n\t${SYSTEM_LD_HEAD}\n");
 	fprintf(f, "\t${SYSTEM_LD} swap%s.o\n", fl->f_fn);
 	fprintf(f, "\t${SYSTEM_LD_TAIL}\n\n");

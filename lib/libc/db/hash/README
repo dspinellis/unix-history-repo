@@ -1,44 +1,6 @@
-#	@(#)README	5.3 (Berkeley) 2/22/91
+#	@(#)README	8.1 (Berkeley) 6/4/93
 
 This package implements a superset of the hsearch and dbm/ndbm libraries.
-
-Contents:
-
-Hashing Package:
-	dynahash.c
-	page.c
-	buf.c
-	big.c
-	hfunc.c
-	log2.c
-
-	hash.h
-	page.h
-	db.h
-
-Backward Compatibility Routines:
-	ndbm.c
-	ndbm.h
-	hsearch.c
-	search.h
-
-Misc:
-	byte_order.c
-
-Compatibility routines:
-	mkstemp.c
-
-	ansi.h
-	bsd.h
-	cdefs.h
-	endian.h
-	posix.h
-	unistd.h
-
-DIFFS:
-	These are diffs since the date of the file (i.e. a file labeled
-	DIFFS.2.12 are the diffs since the 2.12 version on arpa).  The
-	date of the DIFF file indicates when those diffs were installed.
 
 Test Programs:
 	All test programs which need key/data pairs expect them entered
@@ -82,30 +44,11 @@ Test Programs:
 
 NOTES:
 
-If you are not running a 4.3BSD-Reno or later system, you may need to use
-some of the compatibility files provided.  The files are as follows:
-
-	mkstemp.c	Mkstemp/mktemp library routine.
-
-	ansi.h		Map bcopy and friends to memcpy and friends.
-	bsd.h		Map various new BSD things to old things.
-	cdefs.h		Handle the function prototypes in other include files.
-	endian.h	Handle byte ordering.  Be sure to set BYTE_ORDER in
-			endian.h appropriately for your machine.  If you don't
-			know what "endian" your machine is, compile
-			byte_order.c and run it.  It should tell you.
-	posix.h		Map various POSIX 1003.1 things to old-style things.
-	unistd.h	POSIX 1003.1 definitions.
-
-If you are not running on the current BSD release (4.3BSD-Reno+), you will
-need to include bsd.h in hash.h.  Depending on what system you are running
-on, you will need to add the other compatibility h files in hash.h.
-
 The file search.h is provided for using the hsearch compatible interface
 on BSD systems.  On System V derived systems, search.h should appear in 
 /usr/include.
 
-The man page db.3 explains the interface to the hashing system.
+The man page ../man/db.3 explains the interface to the hashing system.
 The file hash.ps is a postscript copy of a paper explaining
 the history, implementation, and performance of the hash package.
 

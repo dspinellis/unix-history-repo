@@ -55,7 +55,7 @@ devname(dev, type)
 	DBT data, key;
 
 	if (!db && !failure &&
-	    !(db = hash_open(_PATH_DEVDB, O_RDONLY, 0, NULL))) {
+	    !(db = dbopen(_PATH_DEVDB, O_RDONLY, 0, DB_HASH, NULL))) {
 		(void)fprintf(stderr,
 		    "warning: no device database %s\n", _PATH_DEVDB);
 		failure = 1;

@@ -30,14 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vfs_lookup.c	7.32 (Berkeley) 5/21/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00006
- * --------------------         -----   ----------------------
- *
- * 17 Aug 92	Christoph Robitschko	Fixed parent of chroot panic
+ *	from: @(#)vfs_lookup.c	7.32 (Berkeley) 5/21/91
+ *	$Id$
  */
 
 #include "param.h"

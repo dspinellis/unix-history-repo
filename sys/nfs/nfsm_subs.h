@@ -33,8 +33,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nfsm_subs.h	7.11 (Berkeley) 4/16/91
+ *	From:	@(#)nfsm_subs.h	7.11 (Berkeley) 4/16/91
+ *	$Id$
  */
+
+#ifndef __h_nfsm_subs
+#define __h_nfsm_subs 1
 
 /*
  * These macros do strange and peculiar things to mbuf chains for
@@ -299,3 +303,18 @@ extern struct mbuf *nfsm_reqh();
 	fp->fa_ctime.tv_sec = txdr_unsigned(vap->va_ctime.tv_sec); \
 	fp->fa_ctime.tv_usec = txdr_unsigned(vap->va_gen)
 
+/* These are here to provide prototypes for everything in the NFS system.
+ * Added 8.6.-93, Garrett A. Wollman, University of Vermont. */
+struct nfsmount;
+
+void nfs_updatetimer __P((struct nfsmount *));
+void nfs_backofftimer __P((struct nfsmount *));
+int nfs_sigintr __P((struct proc *));
+void nfs_msg __P((struct proc *, const char *, const char *));
+void nfs_solock __P((int *));
+void nfs_sounlock __P((int *));
+int nfs_netaddr_match __P((struct mbuf *, struct mbuf *));
+int nfs_badnam __P((struct mbuf *, struct mbuf *, struct mbuf *));
+
+
+#endif /* __h_nfsm_subs */

@@ -30,9 +30,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)kern_descrip.c	7.28 (Berkeley) 6/25/91
+ *	from: @(#)kern_descrip.c	7.28 (Berkeley) 6/25/91
+ *	$Id$
  */
-static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/kern_descrip.c,v 1.2 92/01/21 21:29:09 william Exp $";
 
 #include "param.h"
 #include "systm.h"
@@ -55,6 +55,7 @@ static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/kern_descrip.c,v 
  */
 struct file *filehead;	/* head of list of open files */
 int nfiles;		/* actual number of open files */
+extern int maxfdescs;	/* maximum number of file descriptors to a process */
 
 /*
  * System calls on descriptors.
@@ -73,12 +74,15 @@ getdtablesize(p, uap, retval)
 /*
  * Duplicate a file descriptor.
  */
+
+struct dup_args {
+	int     i;
+};
+
 /* ARGSUSED */
 dup(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	i;
-	} *uap;
+	struct dup_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -107,13 +111,16 @@ dup(p, uap, retval)
 /*
  * Duplicate a file descriptor to a particular value.
  */
+
+struct dup2_args {
+	u_int	from;
+	u_int	to;
+};
+
 /* ARGSUSED */
 dup2(p, uap, retval)
 	struct proc *p;
-	struct args {
-		u_int	from;
-		u_int	to;
-	} *uap;
+	struct dup2_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -123,7 +130,8 @@ dup2(p, uap, retval)
 
 	if (old >= fdp->fd_nfiles ||
 	    (fp = fdp->fd_ofiles[old]) == NULL ||
-	    new >= p->p_rlimit[RLIMIT_OFILE].rlim_cur)
+	    new >= p->p_rlimit[RLIMIT_OFILE].rlim_cur ||
+	    new >= maxfdescs)
 		return (EBADF);
 	*retval = new;
 	if (old == new)
@@ -152,14 +160,17 @@ dup2(p, uap, retval)
 /*
  * The file control system call.
  */
+
+struct fcntl_args {
+	int	fd;
+	int	cmd;
+	int	arg;
+};
+
 /* ARGSUSED */
 fcntl(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fd;
-		int	cmd;
-		int	arg;
-	} *uap;
+	register struct fcntl_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -175,7 +186,8 @@ fcntl(p, uap, retval)
 	pop = &fdp->fd_ofileflags[uap->fd];
 	switch(uap->cmd) {
 	case F_DUPFD:
-		if ((unsigned)uap->arg >= p->p_rlimit[RLIMIT_OFILE].rlim_cur)
+		if ((unsigned)uap->arg >= p->p_rlimit[RLIMIT_OFILE].rlim_cur ||
+		    ((unsigned)uap->arg >= maxfdescs))
 			return (EINVAL);
 		if (error = fdalloc(p, uap->arg, &i))
 			return (error);
@@ -301,11 +313,13 @@ fcntl(p, uap, retval)
  * Close a file descriptor.
  */
 /* ARGSUSED */
+struct close_args {
+	int	fd;
+};
+
 close(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	fd;
-	} *uap;
+	struct close_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -331,13 +345,16 @@ close(p, uap, retval)
 /*
  * Return status information about a file descriptor.
  */
+
+struct fstat_args {
+	int	fd;
+	struct	stat *sb;
+};
+
 /* ARGSUSED */
 fstat(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fd;
-		struct	stat *sb;
-	} *uap;
+	register struct fstat_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -690,13 +707,15 @@ closef(fp, p)
  * the entire file (l_whence = SEEK_SET, l_start = 0, l_len = 0).
  */
 
+struct flock_args {
+	int	fd;
+	int	how;
+};
+
 /* ARGSUSED */
 flock(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fd;
-		int	how;
-	} *uap;
+	register struct flock_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;

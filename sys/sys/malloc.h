@@ -30,15 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)malloc.h	7.25 (Berkeley) 5/15/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00129
- * --------------------         -----   ----------------------
- *
- * 02 Apr 93	Paul Popelka		Added support for PCFS
- *
+ *	from: @(#)malloc.h	7.25 (Berkeley) 5/15/91
+ *	$Id$
  */
 
 #ifndef _MALLOC_H_
@@ -98,6 +91,7 @@
 #define	M_LOCKF		40	/* Byte-range locking structures */
 #define	M_PROC		41	/* Proc structures */
 #define	M_SUBPROC	42	/* Proc sub-structures */
+#define M_ISOFSMNT      48	/* isofs mount structures */
 #define	M_TEMP		49	/* misc temporary data buffers */
 #define	M_PCFSMNT	50	/* PCFS mount structure */
 #define	M_PCFSFAT	51	/* PCFS fat table */
@@ -147,7 +141,8 @@
 	"lockf",	/* 40 M_LOCKF */ \
 	"proc",		/* 41 M_PROC */ \
 	"subproc",	/* 42 M_PROC */ \
-	0, 0, 0, 0, 0, 0, \
+	0, 0, 0, 0, 0, \
+	"isofs mount",  /* 48 M_ISOFSMNT */ \
 	"temp",		/* 49 M_TEMP */ \
 	"PCFS mount",	/* 50 M_PCFSMNT */ \
 	"PCFS fat",	/* 51 M_PCFSFAT */ \

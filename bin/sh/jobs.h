@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)jobs.h	5.1 (Berkeley) 3/7/91
+ *	from: @(#)jobs.h	5.1 (Berkeley) 3/7/91
+ *	jobs.h,v 1.4 1993/08/01 18:58:26 mycroft Exp
  */
 
 /* Mode argument to forkshell.  Don't change FORK_FG or FORK_BG. */

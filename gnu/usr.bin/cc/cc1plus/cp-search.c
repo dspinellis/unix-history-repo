@@ -1642,6 +1642,8 @@ is_subobject_of_p (parent, binfo)
   for (i = 0; i < n_baselinks; i++)
     {
       tree base_binfo = TREE_VEC_ELT (binfos, i);
+      if (TREE_VIA_VIRTUAL (base_binfo))
+	base_binfo = TYPE_BINFO (BINFO_TYPE (base_binfo));
       if (is_subobject_of_p (parent, base_binfo))
 	return 1;
     }
@@ -1681,7 +1683,8 @@ lookup_fnfields_here (type, name)
   fndecls = TREE_VEC_ELT (CLASSTYPE_METHOD_VEC (type), index);
   while (fndecls)
     {
-      if (DECL_CLASS_CONTEXT (fndecls) == type)
+      if (TYPE_MAIN_VARIANT (DECL_CLASS_CONTEXT (fndecls))
+	  == TYPE_MAIN_VARIANT (type))
 	return index;
       fndecls = TREE_CHAIN (fndecls);
     }
@@ -1702,10 +1705,10 @@ lookup_field (xbasetype, name, protect, want_type)
      int protect, want_type;
 {
   int head = 0, tail = 0;
-  tree rval, rval_binfo = NULL_TREE;
+  tree rval, rval_binfo = NULL_TREE, rval_binfo_h;
   tree type, basetype_chain, basetype_path;
   enum visibility_type this_v = visibility_default;
-  tree entry, binfo;
+  tree entry, binfo, binfo_h;
   enum visibility_type own_visibility = visibility_default;
   int vbase_name_p = VBASE_NAME_P (name);
 
@@ -1715,6 +1718,13 @@ lookup_field (xbasetype, name, protect, want_type)
      members.  It is used for ambiguity checking and the hidden
      checks.  Whereas rval is only set if a proper (not hidden)
      non-function member is found.  */
+
+  /* rval_binfo_h and binfo_h are binfo values used when we perform the
+     hiding checks, as virtual base classes may not be shared.  The strategy
+     is we always go into the the binfo hierarchy owned by TYPE_BINFO of
+     virtual base classes, as we cross virtual base class lines.  This way
+     we know that binfo of a virtual base class will always == itself when
+     found along any line.  (mrs)  */
 
   /* Things for memoization.  */
   char *errstr = 0;
@@ -1765,7 +1775,10 @@ lookup_field (xbasetype, name, protect, want_type)
 
   rval = lookup_field_1 (type, name);
   if (rval || lookup_fnfields_here (type, name)>=0)
-    rval_binfo = basetype_path;
+    {
+      rval_binfo = basetype_path;
+      rval_binfo_h = rval_binfo;
+    }
 
   if (rval && TREE_CODE (rval) != TYPE_DECL && want_type)
     rval = NULL_TREE;
@@ -1825,6 +1838,7 @@ lookup_field (xbasetype, name, protect, want_type)
   BINFO_VIA_PUBLIC (basetype_path) = 1;
   BINFO_INHERITANCE_CHAIN (basetype_path) = NULL_TREE;
   binfo = basetype_path;
+  binfo_h = binfo;
 
   while (1)
     {
@@ -1845,6 +1859,14 @@ lookup_field (xbasetype, name, protect, want_type)
 	      TREE_VIA_PUBLIC (btypes) = TREE_VIA_PUBLIC (base_binfo);
 	      TREE_VIA_PROTECTED (btypes) = TREE_VIA_PROTECTED (base_binfo);
 	      TREE_VIA_VIRTUAL (btypes) = TREE_VIA_VIRTUAL (base_binfo);
+	      if (TREE_VIA_VIRTUAL (base_binfo))
+		btypes = tree_cons (NULL_TREE,
+				    TYPE_BINFO (BINFO_TYPE (TREE_VEC_ELT (BINFO_BASETYPES (binfo_h), i))),
+				    btypes);
+	      else
+		btypes = tree_cons (NULL_TREE,
+				    TREE_VEC_ELT (BINFO_BASETYPES (binfo_h), i),
+				    btypes);
 	      obstack_ptr_grow (&search_obstack, btypes);
 	      tail += 1;
 	      if (tail >= search_stack->limit)
@@ -1857,6 +1879,8 @@ lookup_field (xbasetype, name, protect, want_type)
 	break;
 
       basetype_chain = search_stack->first[head++];
+      binfo_h = TREE_VALUE (basetype_chain);
+      basetype_chain = TREE_CHAIN (basetype_chain);
       basetype_path = TREE_VALUE (basetype_chain);
       if (TREE_CHAIN (basetype_chain))
 	BINFO_INHERITANCE_CHAIN (basetype_path) = TREE_VALUE (TREE_CHAIN (basetype_chain));
@@ -1874,12 +1898,12 @@ lookup_field (xbasetype, name, protect, want_type)
 
       if (nval || lookup_fnfields_here (type, name)>=0)
 	{
-	  if (rval_binfo && hides (rval_binfo, binfo))
+	  if (rval_binfo && hides (rval_binfo_h, binfo_h))
 	    {
 	      /* This is ok, the member found is in rval_binfo, not
 		 here (binfo). */
 	    }
-	  else if (rval_binfo==NULL_TREE || hides (binfo, rval_binfo))
+	  else if (rval_binfo==NULL_TREE || hides (binfo_h, rval_binfo_h))
 	    {
 	      /* This is ok, the member found is here (binfo), not in
 		 rval_binfo. */
@@ -1898,6 +1922,7 @@ lookup_field (xbasetype, name, protect, want_type)
 		  rval = NULL_TREE;
 		}
 	      rval_binfo = binfo;
+	      rval_binfo_h = binfo_h;
 	    }
 	  else
 	    {
@@ -1936,14 +1961,14 @@ lookup_field (xbasetype, name, protect, want_type)
 	    enum visibility_type new_v;
 
 	    if (this_v != visibility_default)
-	      new_v = compute_visibility (TREE_VALUE (*tp), rval);
+	      new_v = compute_visibility (TREE_VALUE (TREE_CHAIN (*tp)), rval);
 	    if (this_v != visibility_default && new_v != this_v)
 	      {
 		errstr = "conflicting visibilities to member `%s'";
 		this_v = visibility_default;
 	      }
 	    own_visibility = new_v;
-	    CLEAR_BINFO_FIELDS_MARKED (TREE_VALUE (*tp));
+	    CLEAR_BINFO_FIELDS_MARKED (TREE_VALUE (TREE_CHAIN (*tp)));
 	    tp += 1;
 	  }
       }
@@ -1951,7 +1976,7 @@ lookup_field (xbasetype, name, protect, want_type)
       {
 	while (tp < search_tail)
 	  {
-	    CLEAR_BINFO_FIELDS_MARKED (TREE_VALUE (*tp));
+	    CLEAR_BINFO_FIELDS_MARKED (TREE_VALUE (TREE_CHAIN (*tp)));
 	    tp += 1;
 	  }
       }
@@ -2120,8 +2145,8 @@ lookup_fnfields (basetype_path, name, complain)
      int complain;
 {
   int head = 0, tail = 0;
-  tree type, rval, rval_binfo = NULL_TREE, rvals = NULL_TREE;
-  tree entry, binfo, basetype_chain;
+  tree type, rval, rval_binfo = NULL_TREE, rvals = NULL_TREE, rval_binfo_h;
+  tree entry, binfo, basetype_chain, binfo_h;
   int find_all = 0;
 
   /* rval_binfo is the binfo associated with the found member, note,
@@ -2130,6 +2155,13 @@ lookup_fnfields (basetype_path, name, complain)
      members.  It is used for ambiguity checking and the hidden
      checks.  Whereas rval is only set if a proper (not hidden)
      function member is found.  */
+
+  /* rval_binfo_h and binfo_h are binfo values used when we perform the
+     hiding checks, as virtual base classes may not be shared.  The strategy
+     is we always go into the the binfo hierarchy owned by TYPE_BINFO of
+     virtual base classes, as we cross virtual base class lines.  This way
+     we know that binfo of a virtual base class will always == itself when
+     found along any line.  (mrs)  */
 
   /* For now, don't try this.  */
   int protect = complain;
@@ -2148,6 +2180,7 @@ lookup_fnfields (basetype_path, name, complain)
     }
 
   binfo = basetype_path;
+  binfo_h = binfo;
   type = BINFO_TYPE (basetype_path);
 
   /* The memoization code is in need of maintenance. */
@@ -2212,7 +2245,10 @@ lookup_fnfields (basetype_path, name, complain)
 
   index = lookup_fnfields_here (type, name);
   if (index >= 0 || lookup_field_1 (type, name))
-    rval_binfo = basetype_path;
+    {
+      rval_binfo = basetype_path;
+      rval_binfo_h = rval_binfo;
+    }
 
   if (index >= 0)
     {
@@ -2245,6 +2281,7 @@ lookup_fnfields (basetype_path, name, complain)
   BINFO_VIA_PUBLIC (basetype_path) = 1;
   BINFO_INHERITANCE_CHAIN (basetype_path) = NULL_TREE;
   binfo = basetype_path;
+  binfo_h = binfo;
 
   while (1)
     {
@@ -2265,6 +2302,14 @@ lookup_fnfields (basetype_path, name, complain)
 	      TREE_VIA_PUBLIC (btypes) = TREE_VIA_PUBLIC (base_binfo);
 	      TREE_VIA_PROTECTED (btypes) = TREE_VIA_PROTECTED (base_binfo);
 	      TREE_VIA_VIRTUAL (btypes) = TREE_VIA_VIRTUAL (base_binfo);
+	      if (TREE_VIA_VIRTUAL (base_binfo))
+		btypes = tree_cons (NULL_TREE,
+				    TYPE_BINFO (BINFO_TYPE (TREE_VEC_ELT (BINFO_BASETYPES (binfo_h), i))),
+				    btypes);
+	      else
+		btypes = tree_cons (NULL_TREE,
+				    TREE_VEC_ELT (BINFO_BASETYPES (binfo_h), i),
+				    btypes);
 	      obstack_ptr_grow (&search_obstack, btypes);
 	      tail += 1;
 	      if (tail >= search_stack->limit)
@@ -2277,6 +2322,8 @@ lookup_fnfields (basetype_path, name, complain)
 	break;
 
       basetype_chain = search_stack->first[head++];
+      binfo_h = TREE_VALUE (basetype_chain);
+      basetype_chain = TREE_CHAIN (basetype_chain);
       basetype_path = TREE_VALUE (basetype_chain);
       if (TREE_CHAIN (basetype_chain))
 	BINFO_INHERITANCE_CHAIN (basetype_path) = TREE_VALUE (TREE_CHAIN (basetype_chain));
@@ -2294,12 +2341,12 @@ lookup_fnfields (basetype_path, name, complain)
 
       if (index >= 0 || (lookup_field_1 (type, name)!=NULL_TREE && !find_all))
 	{
-	  if (rval_binfo && !find_all && hides (rval_binfo, binfo))
+	  if (rval_binfo && !find_all && hides (rval_binfo_h, binfo_h))
 	    {
 	      /* This is ok, the member found is in rval_binfo, not
 		 here (binfo). */
 	    }
-	  else if (rval_binfo==NULL_TREE || find_all || hides (binfo, rval_binfo))
+	  else if (rval_binfo==NULL_TREE || find_all || hides (binfo_h, rval_binfo_h))
 	    {
 	      /* This is ok, the member found is here (binfo), not in
 		 rval_binfo. */
@@ -2320,6 +2367,7 @@ lookup_fnfields (basetype_path, name, complain)
 		  rvals = NULL_TREE;
 		}
 	      rval_binfo = binfo;
+	      rval_binfo_h = binfo_h;
 	    }
 	  else
 	    {
@@ -2336,7 +2384,7 @@ lookup_fnfields (basetype_path, name, complain)
 
     while (tp < search_tail)
       {
-	CLEAR_BINFO_FIELDS_MARKED (TREE_VALUE (*tp));
+	CLEAR_BINFO_FIELDS_MARKED (TREE_VALUE (TREE_CHAIN (*tp)));
 	tp += 1;
       }
   }

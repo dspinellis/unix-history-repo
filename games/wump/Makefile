@@ -1,7 +1,7 @@
 #	@(#)Makefile	5.4 (Berkeley) 5/11/90
 
 PROG=	wump
-MAN6=	wump.0
+MAN6=	wump.6
 HIDEGAME=hidegame
 
 beforeinstall:

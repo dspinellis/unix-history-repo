@@ -30,17 +30,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)init_main.c	7.41 (Berkeley) 5/15/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00162
- * --------------------         -----   ----------------------
- *
- * 26 May 93	Holger Veit		Remove hard coded escapes
- *		Rodney W. Grimes	Added two more \n to clean up output
+ *	from: @(#)init_main.c	7.41 (Berkeley) 5/15/91
+ *	$Id$
  */
-static char rcsid[] = "$Header: /usr/src/sys.386bsd/kern/RCS/init_main.c,v 1.3 92/01/21 21:28:49 william Exp Locker: root $";
 
 #include "param.h"
 #include "filedesc.h"
@@ -57,6 +49,7 @@ static char rcsid[] = "$Header: /usr/src/sys.386bsd/kern/RCS/init_main.c,v 1.3 9
 #include "protosw.h"
 #include "reboot.h"
 #include "user.h"
+#include "utsname.h"
 
 #include "ufs/quota.h"
 
@@ -64,12 +57,13 @@ static char rcsid[] = "$Header: /usr/src/sys.386bsd/kern/RCS/init_main.c,v 1.3 9
 
 #include "vm/vm.h"
 
-char	copyright1[] =
-"386BSD Release 0.1 by William and Lynne Jolitz.";
-char	copyright2[] =
+char	copyright[] =
 "Copyright (c) 1989,1990,1991,1992 William F. Jolitz. All rights reserved.\n\
-Based in part on work by the 386BSD User Community and the\n\
-BSD Networking Software, Release 2 by UCB EECS Department.\n";
+Copyright (c) 1982,1986,1989,1991 The Regents of the University\n\
+of California.  All rights reserved.\n\n";
+
+/* For uname() */
+struct utsname utsname;
 
 /*
  * Components of process 0;
@@ -92,6 +86,10 @@ extern	int (*mountroot)();
 struct	vnode *rootvp, *swapdev_vp;
 int	boothowto;
 
+#if __GNUC__ >= 2
+__main() {}
+#endif
+
 /*
  * System startup; initialize the world, create process 0,
  * mount root filesystem, and fork to create init and pagedaemon.
@@ -105,6 +103,7 @@ main()
 	register struct proc *p;
 	register struct filedesc0 *fdp;
 	int s, rval[2];
+	char *cp;
 
 	/*
 	 * Initialize curproc before any possible traps/probes
@@ -119,15 +118,7 @@ main()
 	startrtclock();
 	consinit();
 
-	/* -hv- 22 Apr 93 corrects a hack which prevents proper handling
-	 * of different terminal emulators
-	 * plain ESC codes in the kernel other than in the console part
-	 * should be a NO-NO! Fixed in pccons.c/co_vga.c
-	 */
-	cons_highlight();
-	printf(copyright1);
-	cons_normal();
-	printf("\n[0.1.%s]\n%s\n", version+9,copyright2);
+	printf("%s", copyright);
 
 	vm_mem_init();
 	kmeminit();
@@ -236,6 +227,10 @@ main()
 #if NSL > 0
 	slattach();			/* XXX */
 #endif
+#include "ppp.h"
+#if NPPP > 0
+	pppattach();			/* XXX */
+#endif
 #include "loop.h"
 #if NLOOP > 0
 	loattach();			/* XXX */
@@ -280,6 +275,30 @@ main()
 	 * to verify the time from the file system.
 	 */
 	boottime = p->p_stats->p_start = time;
+
+	/*
+	 * Setup version number for uname syscall
+	 * XXX probably should go elsewhere.
+	 */
+	bzero(utsname.sysname, sizeof(utsname.sysname));
+	for (cp = version, i= 0;
+	     *cp && *cp != ' ' && i <= sizeof(utsname.sysname);
+	     )
+	  utsname.sysname[i++] = *cp++;
+	bzero(utsname.release, sizeof(utsname.release));
+	for (cp++, i= 0; *cp && *cp != ' ' && i <= sizeof(utsname.release);)
+	  utsname.release[i++] = *cp++;
+	bzero(utsname.version, sizeof(utsname.version));
+	for (; *cp != '('; cp++);
+	for (cp++, i= 0; *cp && *cp != ')' && i <= sizeof(utsname.version);)
+	  utsname.version[i++] = *cp++;
+	for (; *cp != '#'; cp++);
+	if(i <= sizeof(utsname.version))
+	  utsname.version[i++] = '#';
+	for (cp++; *cp && *cp != ':' && i <= sizeof(utsname.version);)
+	  utsname.version[i++] = *cp++;
+	strncpy(utsname.machine, MACHINE, sizeof(utsname.machine));
+	utsname.machine[sizeof(utsname.machine)-1] = '\0';
 
 	/*
 	 * make init process

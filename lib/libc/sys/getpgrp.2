@@ -38,14 +38,12 @@
 .Nm getpgrp
 .Nd get process group
 .Sh SYNOPSIS
+.Fd #include <unistd.h>
 .Ft pid_t
-.Fn getpgrp "int pid"
+.Fn getpgrp "void"
 .Sh DESCRIPTION
-The process group of the specified process is returned by
+The process group of the current process is returned by
 .Fn getpgrp .
-If
-.Fa pid
-is zero, the call applies to the current process.
 .Pp
 Process groups are used for distribution of signals, and
 by terminals to arbitrate requests for their input: processes
@@ -75,3 +73,16 @@ The
 .Nm
 function call appeared in
 .Bx 4.0 .
+.Sh STANDARDS
+The
+.Fn getpgrp
+function conforms to IEEE Std 1003.1-1988
+.Pq Dq Tn POSIX .
+.Sh COMPATABILITY
+This version of
+.Fn getpgrp
+differs from past Berkeley versions by not taking a
+.Fa "pid_t pid"
+argument.
+This incompatibility is required by
+.St -p1003.1-88 .

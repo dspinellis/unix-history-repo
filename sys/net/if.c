@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)if.c	7.14 (Berkeley) 4/20/91
+ *	from: @(#)if.c	7.14 (Berkeley) 4/20/91
+ *	$Id$
  */
 
 #include "param.h"
@@ -118,12 +119,14 @@ if_attach(ifp)
 		}
 		ifnet_addrs = q;
 	}
+#if defined(INET) && NETHER > 0
 	/* XXX -- Temporary fix before changing 10 ethernet drivers */
 	if (ifp->if_output == ether_output) {
 		ifp->if_type = IFT_ETHER;
 		ifp->if_addrlen = 6;
 		ifp->if_hdrlen = 14;
 	}
+#endif
 	/*
 	 * create a Link Level name for this device
 	 */
@@ -482,6 +485,15 @@ ifioctl(so, cmd, data, p)
 		if (error = suser(p->p_ucred, &p->p_acflag))
 			return (error);
 		ifp->if_metric = ifr->ifr_metric;
+		break;
+
+	case SIOCSIFMTU:
+	case SIOCGIFMTU:
+	case SIOCSIFASYNCMAP:
+	case SIOCGIFASYNCMAP:
+		if (!ifp->if_ioctl)
+			return (EOPNOTSUPP);
+		return ((*ifp->if_ioctl)(ifp, cmd, data));
 		break;
 
 	default:

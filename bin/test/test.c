@@ -1,757 +1,574 @@
-/*
- * GNU test program (ksb and mjb)
+/*-
+ * Copyright (c) 1992 The Regents of the University of California.
+ * All rights reserved.
  *
- * Modified to run with the GNU shell Apr 25, 1988 by bfox.
+ * This code is derived from software contributed to Berkeley by
+ * Kenneth Almquist.
  *
- *???	-G	file is owned by same gid; the effective gid is checked
- * Chet Ramey, CWRU 3/23/89
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- * Fixed a BSD dependency (_doprnt()) in the port to AIX 2.2
- * Chet Ramey, CWRU 5/3/89
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
-/* Copyright (C) 1987,1989 Free Software Foundation, Inc.
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1992 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
 
-This file is part of GNU Bash, the Bourne Again SHell.
-
-Bash is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free
-Software Foundation; either version 1, or (at your option) any later
-version.
-
-Bash is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-for more details.
-
-You should have received a copy of the GNU General Public License along
-with Bash; see the file COPYING.  If not, write to the Free Software
-Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
-
-#include <stdio.h>
-#include <varargs.h>
-
-#ifndef SONY
-#include <fcntl.h>
-#endif
+#ifndef lint
+static char sccsid[] = "@(#)test.c	5.4 (Berkeley) 2/12/93";
+#endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/file.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
-#ifndef R_OK
-#define R_OK 4
-#define W_OK 2
-#define X_OK 1
-#define F_OK 0
-#endif
+#include "operators.h"
 
-#ifndef lint
-static char *rcsid = "$Id: gtest.c,v 1.10 88/07/02 13:34:45 afb Exp Locker: afb $";
-#endif
+#define	STACKSIZE	12
+#define	NESTINCR	16
 
-/* The following few defines control the truth and false output of each stage.
-   TRUE and FALSE are what we use to compute the final output value.
-   SHELL_BOOLEAN is the form which returns truth or falseness in shell terms.
-   TRUTH_OR is how to do logical or with TRUE and FALSE.
-   TRUTH_AND is how to do logical and with TRUE and FALSE..
-   Default is TRUE = 1, FALSE = 0, TRUTH_OR = a | b, TRUTH_AND = a & b,
-    SHELL_BOOLEAN = (!value). */
-#define TRUE 1
-#define FALSE 0
-#define SHELL_BOOLEAN(value) (!(value))
-#define TRUTH_OR(a, b) ((a) | (b))
-#define TRUTH_AND(a, b) ((a) & (b))
+/* data types */
+#define	STRING	0
+#define	INTEGER	1
+#define	BOOLEAN	2
 
+#define	IS_BANG(s) (s[0] == '!' && s[1] == '\0')
 
-/* Define STANDALONE to get the /bin/test version.  Otherwise, we are
-   making this for the shell. */
-/* #define STANDALONE */
+/*
+ * This structure hold a value.  The type keyword specifies the type of
+ * the value, and the union u holds the value.  The value of a boolean
+ * is stored in u.num (1 = TRUE, 0 = FALSE).
+ */
+struct value {
+	int type;
+	union {
+		char *string;
+		long num;
+	} u;
+};
 
-#ifdef STANDALONE
-#define test_exit(val) exit (val)
+struct operator {
+	short op;		/* Which operator. */
+	short pri;		/* Priority of operator. */
+};
+
+struct filestat {
+	char *name;		/* Name of file. */
+	int rcode;		/* Return code from stat. */
+	struct stat stat;	/* Status info on file. */
+};
+
+static void	err __P((const char *, ...));
+static int	expr_is_false __P((struct value *));
+static void	expr_operator __P((int, struct value *, struct filestat *));
+static long	chk_atol __P((char *));
+static int	lookup_op __P((char *, char *const *));
+static void	overflow __P((void));
+static int	posix_binary_op __P((char **));
+static int	posix_unary_op __P((char **));
+static void	syntax __P((void));
+
+int
+main(argc, argv)
+	int argc;
+	char *argv[];
+{
+	struct operator opstack[STACKSIZE];
+	struct operator *opsp;
+	struct value valstack[STACKSIZE + 1];
+	struct value *valsp;
+	struct filestat fs;
+	char  c, **ap, *opname, *p;
+	int binary, nest, op, pri, ret_val, skipping;
+
+	if ((p = argv[0]) == NULL) {
+		err("test: argc is zero.\n");
+		exit(2);
+	}
+
+	if (*p != '\0' && p[strlen(p) - 1] == '[') {
+		if (strcmp(argv[--argc], "]"))
+			err("missing ]");
+		argv[argc] = NULL;
+	}
+	ap = argv + 1;
+	fs.name = NULL;
+
+	/*
+	 * Test(1) implements an inherently ambiguous grammer.  In order to
+	 * assure some degree of consistency, we special case the POSIX 1003.2
+	 * requirements to assure correct evaluation for POSIX scripts.  The
+	 * following special cases comply with POSIX P1003.2/D11.2 Section
+	 * 4.62.4.
+	 */
+	switch(argc - 1) {
+	case 0:				/* % test */
+		return (1);
+		break;
+	case 1:				/* % test arg */
+		/* MIPS machine returns NULL of '[ ]' is called. */
+		return (argv[1] == 0 || *argv[1] == '\0') ? 1 : 0;
+		break;
+	case 2:				/* % test op arg */
+		opname = argv[1];
+		if (IS_BANG(opname))
+			return (*argv[2] == '\0') ? 0 : 1;
+		else {
+			ret_val = posix_unary_op(&argv[1]);
+			if (ret_val >= 0)
+				return (ret_val);
+		}
+		break;
+	case 3:				/* % test arg1 op arg2 */
+		if (IS_BANG(argv[1])) {
+			ret_val = posix_unary_op(&argv[1]);
+			if (ret_val >= 0)
+				return (!ret_val);
+		} else if (lookup_op(argv[2], andor_op) < 0) {
+			ret_val = posix_binary_op(&argv[1]);
+			if (ret_val >= 0)
+				return (ret_val);
+		}
+		break;
+	case 4:				/* % test ! arg1 op arg2 */
+		if (IS_BANG(argv[1]) && lookup_op(argv[3], andor_op) < 0) {
+			ret_val = posix_binary_op(&argv[2]);
+			if (ret_val >= 0)
+				return (!ret_val);
+		}
+		break;
+	default:
+		break;
+	}
+
+	/*
+	 * We use operator precedence parsing, evaluating the expression as
+	 * we parse it.  Parentheses are handled by bumping up the priority
+	 * of operators using the variable "nest."  We use the variable
+	 * "skipping" to turn off evaluation temporarily for the short
+	 * circuit boolean operators.  (It is important do the short circuit
+	 * evaluation because under NFS a stat operation can take infinitely
+	 * long.)
+	 */
+	opsp = opstack + STACKSIZE;
+	valsp = valstack;
+	nest = skipping = 0;
+	if (*ap == NULL) {
+		valstack[0].type = BOOLEAN;
+		valstack[0].u.num = 0;
+		goto done;
+	}
+	for (;;) {
+		opname = *ap++;
+		if (opname == NULL)
+			syntax();
+		if (opname[0] == '(' && opname[1] == '\0') {
+			nest += NESTINCR;
+			continue;
+		} else if (*ap && (op = lookup_op(opname, unary_op)) >= 0) {
+			if (opsp == &opstack[0])
+				overflow();
+			--opsp;
+			opsp->op = op;
+			opsp->pri = op_priority[op] + nest;
+			continue;
+		} else {
+			valsp->type = STRING;
+			valsp->u.string = opname;
+			valsp++;
+		}
+		for (;;) {
+			opname = *ap++;
+			if (opname == NULL) {
+				if (nest != 0)
+					syntax();
+				pri = 0;
+				break;
+			}
+			if (opname[0] != ')' || opname[1] != '\0') {
+				if ((op = lookup_op(opname, binary_op)) < 0)
+					syntax();
+				op += FIRST_BINARY_OP;
+				pri = op_priority[op] + nest;
+				break;
+			}
+			if ((nest -= NESTINCR) < 0)
+				syntax();
+		}
+		while (opsp < &opstack[STACKSIZE] && opsp->pri >= pri) {
+			binary = opsp->op;
+			for (;;) {
+				valsp--;
+				c = op_argflag[opsp->op];
+				if (c == OP_INT) {
+					if (valsp->type == STRING)
+						valsp->u.num =
+						    chk_atol(valsp->u.string);
+					valsp->type = INTEGER;
+				} else if (c >= OP_STRING) {	
+					            /* OP_STRING or OP_FILE */
+					if (valsp->type == INTEGER) {
+						if ((p = malloc(32)) == NULL)
+							err("%s",
+							    strerror(errno));
+#ifdef SHELL
+						fmtstr(p, 32, "%d", 
+						    valsp->u.num);
 #else
-#include <setjmp.h>
-jmp_buf test_exit_buf;
-int test_error_return = 0;
-#define test_exit(val) test_error_return = val, longjmp (test_exit_buf, 1)
-#endif /* STANDALONE */
-
-#ifdef SYSV
-int sys_v = 1;
-#else
-int sys_v = 0;
+						(void)sprintf(p,
+						    "%d", valsp->u.num);
 #endif
+						valsp->u.string = p;
+					} else if (valsp->type == BOOLEAN) {
+						if (valsp->u.num)
+							valsp->u.string = 
+						            "true";
+						else
+							valsp->u.string = "";
+					}
+					valsp->type = STRING;
+					if (c == OP_FILE && (fs.name == NULL ||
+					    strcmp(fs.name, valsp->u.string))) {
+						fs.name = valsp->u.string;
+						fs.rcode = 
+						    stat(valsp->u.string, 
+                                                    &fs.stat);
+					}
+				}
+				if (binary < FIRST_BINARY_OP)
+					break;
+				binary = 0;
+			}
+			if (!skipping)
+				expr_operator(opsp->op, valsp, &fs);
+			else if (opsp->op == AND1 || opsp->op == OR1)
+				skipping--;
+			valsp++;		/* push value */
+			opsp++;			/* pop operator */
+		}
+		if (opname == NULL)
+			break;
+		if (opsp == &opstack[0])
+			overflow();
+		if (op == AND1 || op == AND2) {
+			op = AND1;
+			if (skipping || expr_is_false(valsp - 1))
+				skipping++;
+		}
+		if (op == OR1 || op == OR2) {
+			op = OR1;
+			if (skipping || !expr_is_false(valsp - 1))
+				skipping++;
+		}
+		opsp--;
+		opsp->op = op;
+		opsp->pri = pri;
+	}
+done:	return (expr_is_false(&valstack[0]));
+}
 
-static int pos;			/* position in list			*/
-static int argc;		/* number of args from command line	*/
-static char **argv;		/* the argument list			*/
+static int
+expr_is_false(val)
+	struct value *val;
+{
+	if (val->type == STRING) {
+		if (val->u.string[0] == '\0')
+			return (1);
+	} else {		/* INTEGER or BOOLEAN */
+		if (val->u.num == 0)
+			return (1);
+	}
+	return (0);
+}
+
+
+/*
+ * Execute an operator.  Op is the operator.  Sp is the stack pointer;
+ * sp[0] refers to the first operand, sp[1] refers to the second operand
+ * (if any), and the result is placed in sp[0].  The operands are converted
+ * to the type expected by the operator before expr_operator is called.
+ * Fs is a pointer to a structure which holds the value of the last call
+ * to stat, to avoid repeated stat calls on the same file.
+ */
+static void
+expr_operator(op, sp, fs)
+	int op;
+	struct value *sp;
+	struct filestat *fs;
+{
+	int i;
+
+	switch (op) {
+	case NOT:
+		sp->u.num = expr_is_false(sp);
+		sp->type = BOOLEAN;
+		break;
+	case ISEXIST:
+		if (fs == NULL || fs->rcode == -1)
+			goto false;
+		else
+			goto true;
+	case ISREAD:
+		i = S_IROTH;
+		goto permission;
+	case ISWRITE:
+		i = S_IWOTH;
+		goto permission;
+	case ISEXEC:
+		i = S_IXOTH;
+permission:	if (fs->stat.st_uid == geteuid())
+			i <<= 6;
+		else if (fs->stat.st_gid == getegid())
+			i <<= 3;
+		goto filebit;	/* true if (stat.st_mode & i) != 0 */
+	case ISFILE:
+		i = S_IFREG;
+		goto filetype;
+	case ISDIR:
+		i = S_IFDIR;
+		goto filetype;
+	case ISCHAR:
+		i = S_IFCHR;
+		goto filetype;
+	case ISBLOCK:
+		i = S_IFBLK;
+		goto filetype;
+	case ISFIFO:
+		i = S_IFIFO;
+		goto filetype;
+filetype:	if ((fs->stat.st_mode & S_IFMT) == i && fs->rcode >= 0)
+true:			sp->u.num = 1;
+		else
+false:			sp->u.num = 0;
+		sp->type = BOOLEAN;
+		break;
+	case ISSETUID:
+		i = S_ISUID;
+		goto filebit;
+	case ISSETGID:
+		i = S_ISGID;
+		goto filebit;
+	case ISSTICKY:
+		i = S_ISVTX;
+filebit:	if (fs->stat.st_mode & i && fs->rcode >= 0)
+			goto true;
+		goto false;
+	case ISSIZE:
+		sp->u.num = fs->rcode >= 0 ? fs->stat.st_size : 0L;
+		sp->type = INTEGER;
+		break;
+	case ISTTY:
+		sp->u.num = isatty(sp->u.num);
+		sp->type = BOOLEAN;
+		break;
+	case NULSTR:
+		if (sp->u.string[0] == '\0')
+			goto true;
+		goto false;
+	case STRLEN:
+		sp->u.num = strlen(sp->u.string);
+		sp->type = INTEGER;
+		break;
+	case OR1:
+	case AND1:
+		/*
+		 * These operators are mostly handled by the parser.  If we
+		 * get here it means that both operands were evaluated, so
+		 * the value is the value of the second operand.
+		 */
+		*sp = *(sp + 1);
+		break;
+	case STREQ:
+	case STRNE:
+		i = 0;
+		if (!strcmp(sp->u.string, (sp + 1)->u.string))
+			i++;
+		if (op == STRNE)
+			i = 1 - i;
+		sp->u.num = i;
+		sp->type = BOOLEAN;
+		break;
+	case EQ:
+		if (sp->u.num == (sp + 1)->u.num)
+			goto true;
+		goto false;
+	case NE:
+		if (sp->u.num != (sp + 1)->u.num)
+			goto true;
+		goto false;
+	case GT:
+		if (sp->u.num > (sp + 1)->u.num)
+			goto true;
+		goto false;
+	case LT:
+		if (sp->u.num < (sp + 1)->u.num)
+			goto true;
+		goto false;
+	case LE:
+		if (sp->u.num <= (sp + 1)->u.num)
+			goto true;
+		goto false;
+	case GE:
+		if (sp->u.num >= (sp + 1)->u.num)
+			goto true;
+		goto false;
+
+	}
+}
+
+static int
+lookup_op(name, table)
+	char   *name;
+	char   *const * table;
+{
+	register char *const * tp;
+	register char const *p;
+	char c;
+
+	c = name[1];
+	for (tp = table; (p = *tp) != NULL; tp++)
+		if (p[1] == c && !strcmp(p, name))
+			return (tp - table);
+	return (-1);
+}
+
+static int
+posix_unary_op(argv)
+	char **argv;
+{
+	struct filestat fs;
+	struct value valp;
+	int op, c;
+	char *opname;
+
+	opname = *argv;
+	if ((op = lookup_op(opname, unary_op)) < 0)
+		return (-1);
+	c = op_argflag[op];
+	opname = argv[1];
+	valp.u.string = opname;
+	if (c == OP_FILE) {
+		fs.name = opname;
+		fs.rcode = stat(opname, &fs.stat);
+	} else if (c != OP_STRING)
+		return (-1);
+
+	expr_operator(op, &valp, &fs);
+	return (valp.u.num == 0);
+}
+
+static int
+posix_binary_op(argv)
+	char  **argv;
+{
+	struct value v[2];
+	int op, c;
+	char *opname;
+
+	opname = argv[1];
+	if ((op = lookup_op(opname, binary_op)) < 0)
+		return (-1);
+	op += FIRST_BINARY_OP;
+	c = op_argflag[op];
+
+	if (c == OP_INT) {
+		v[0].u.num = chk_atol(argv[0]);
+		v[1].u.num = chk_atol(argv[2]);
+	} else {
+		v[0].u.string = argv[0];
+		v[1].u.string = argv[2];
+	}
+	expr_operator(op, v, NULL);
+	return (v[0].u.num == 0);
+}
+
+/*
+ * Integer type checking.
+ */
+static long 
+chk_atol(v)
+	char *v;
+{
+	char *p;
+	long r;
+
+	errno = 0;
+	r = strtol(v, &p, 10);
+	if (errno != 0)
+		err("\"%s\" -- out of range.", v);
+	while (isspace(*p))
+		p++;
+	if (*p != '\0')
+		err("illegal operand \"%s\" -- expected integer.", v);
+	return (r);
+}
 
 static void
-test_syntax_error (format, arg)
-     char *format, *arg;
+syntax()
 {
-  (void) fprintf (stderr, "%s: ", argv[0]);
-  (void) fprintf (stderr, format, arg);
-  test_exit (SHELL_BOOLEAN (FALSE));
+	err("syntax error");
 }
 
-test_io_error (name)
-     char *name;
-{
-  extern int errno;
-  int old_errno = errno;
-  fprintf (stderr, "%s: ", argv[0]);
-  errno = old_errno;
-  perror (name);
-  test_exit (SHELL_BOOLEAN (FALSE));
-}
-
-/*
- * advance - increment our position in the argument list.  Check that
- *	we're not past the end of the argument list.  This check is
- *	supressed if the argument is FALSE.  made a macro for efficiency.
- */
-#ifndef lint
-#define advance(f)	(++pos, f && (pos < argc ? 0 : beyond()))
-#endif
-
-#if !defined(advance)
-static int
-advance (f)
-     int f;
-{
-  ++pos;
-  if (f && pos >= argc)
-    beyond ();
-}
-
-#endif
-
-#define unary_advance() (advance (1),++pos)
-
-/*
- * beyond - call when we're beyond the end of the argument list (an
- *	error condition)
- */
-static int
-beyond ()
-{
-  test_syntax_error ("argument expected\n", (char *)NULL);
-}
-
-/*
- * int_expt_err - when an integer argument was expected, but something else
- * 	was found.
- */
 static void
-int_expt_err (pch)
-     char *pch;
+overflow()
 {
-  test_syntax_error ("integer expression expected %s\n", pch);
+	err("expression is too complex");
 }
 
-/*
- * isint - is the argument whose position in the argument vector is 'm' an
- * 	integer? Convert it for me too, returning it's value in 'pl'.
- */
-static int
-isint (m, pl)
-     int m;
-     long *pl;
-{
-  extern long atol ();
-  register char *pch;
-
-  pch = argv[m];
-
-  /* Skip leading whitespace characters. */
-  while (*pch == '\t' || *pch == ' ')
-    pch++;
-
-  /* accept negative numbers but not '-' alone */
-  if ('-' == *pch)
-    if ('\000' == *++pch)
-      return 0;
-
-  while ('\000' != *pch)
-    {
-      switch (*pch)
-	{
-	case '0':
-	case '1':
-	case '2':
-	case '3':
-	case '4':
-	case '5':
-	case '6':
-	case '7':
-	case '8':
-	case '9':
-	  break;
-	default:
-	  return (FALSE);
-	}
-      ++pch;
-    }
-  *pl = atol (argv[m]);
-  return (TRUE);
-}
-
-/*
- * age_of - find the age of the given file.  Return YES or NO depending
- *	on whether the file exists, and if it does, fill in the age with
- *	the modify time.
- */
-static int
-age_of (posit, age)
-     int posit;
-     long *age;
-{
-  struct stat stat_buf;
-
-  if (stat (argv[posit], &stat_buf) < 0)
-    {
-      return (FALSE);
-    }
-  *age = stat_buf.st_mtime;
-  return (TRUE);
-}
-
-/*
- * term - parse a term and return 1 or 0 depending on whether the term
- *	evaluates to true or false, respectively.
- *
- * term ::=
- *	'-'('h'|'d'|'f'|'r'|'s'|'w'|'c'|'b'|'p'|'u'|'g'|'k') filename
- *	'-'('L'|'x') filename
- * 	'-t' [ int ]
- *	'-'('z'|'n') string
- *	string
- *	string ('!='|'=') string
- *	<int> '-'(eq|ne|le|lt|ge|gt) <int>
- *	file '-'(nt|ot|ef) file
- *	'(' <expr> ')'
- * int ::=
- *	'-l' string
- *	positive and negative integers
- */
-static int
-term ()
-{
-  int expr ();
-  auto struct stat stat_buf, stat_spare;
-  auto long int l, r;
-  auto int l_is_l, r_is_l; /* are the left and right integer
-			    * expressions of the form '-l string'?
-			    */
-  auto int value, fd;
-
-  if (pos >= argc)
-    beyond ();
-
-  /* Deal with leading "not". */
-  if (pos < argc && '!' == argv[pos][0] && '\000' == argv[pos][1])
-    {
-      advance (1);
-
-      /* This has to be rewritten to handle the TRUTH and FALSE stuff. */
-      return (!term ());
-    }
-  
-  if ('(' == argv[pos][0] && '\000' == argv[pos][1])
-    {
-      advance (1);
-      value = expr ();
-      if (')' != argv[pos][0] || '\000' != argv[pos][1])
-	test_syntax_error ("argument expected, found %s\n", argv[pos]);
-      advance (0);
-      return (TRUE == (value));
-    }
-  /* are there enough arguments left that this could be dyadic? */
-  if (pos + 3 <= argc)
-    {
-      register int op;
-      if ('-' == argv[pos][0] && 'l' == argv[pos][1] &&
-	  '\000' == argv[pos][2])
-	{
-	  l_is_l = 1;
-	  op = pos + 2;
-	  advance (0);
-	}
-      else
-	{
-	  l_is_l = 0;
-	  op = pos + 1;
-	}
-      if ('-' == argv[op + 1][0] && 'l' == argv[op + 1][1]
-	  && '\000' == argv[op + 1][2])
-	{
-	  r_is_l = 1;
-	  advance (0);
-	}
-      else
-	r_is_l = 0;
-
-      if ('-' == argv[op][0])
-	{
-	  /* check for eq, nt, and stuff */
-	  switch (argv[op][1])
-	    {
-	    default:
-	      break;
-	    case 'l':
-	      if ('t' == argv[op][2] && '\000' == argv[op][3])
-		{
-		  /* lt */
-		  if (l_is_l)
-		    l = strlen (argv[op - 1]);
-		  else
-		    {
-		      if (!isint (op - 1, &l))
-			int_expt_err ("before -lt");
-		    }
-
-		  if (r_is_l)
-		    r = strlen (argv[op + 2]);
-		  else
-		    {
-		      if (!isint (op + 1, &r))
-			int_expt_err ("after -lt");
-		    }
-		  pos += 3;
-		  return (TRUE == (l < r));
-		}
-
-	      if ('e' == argv[op][2] && '\000' == argv[op][3])
-		{
-		  /* le */
-		  if (l_is_l)
-		    l = strlen (argv[op - 1]);
-		  else
-		    {
-		      if (!isint (op - 1, &l))
-			int_expt_err ("before -le");
-		    }
-		  if (r_is_l)
-		    r = strlen (argv[op + 2]);
-		  else
-		    {
-		      if (!isint (op + 1, &r))
-			int_expt_err ("after -le");
-		    }
-		  pos += 3;
-		  return (TRUE == (l <= r));
-		}
-	      break;
-
-	    case 'g':
-
-	      if ('t' == argv[op][2] && '\000' == argv[op][3])
-		{
-		  /* gt integer greater than */
-		  if (l_is_l)
-		    l = strlen (argv[op - 1]);
-		  else
-		    {
-		      if (!isint (op - 1, &l))
-			int_expt_err ("before -gt");
-		    }
-		  if (r_is_l)
-		    r = strlen (argv[op + 2]);
-		  else
-		    {
-		      if (!isint (op + 1, &r))
-			int_expt_err ("after -gt");
-		    }
-		  pos += 3;
-		  return (TRUE == (l > r));
-		}
-
-	      if ('e' == argv[op][2] && '\000' == argv[op][3])
-		{
-		  /* ge - integer greater than or equal to */
-		  if (l_is_l)
-		    l = strlen (argv[op - 1]);
-		  else
-		    {
-		      if (!isint (op - 1, &l))
-			int_expt_err ("before -ge");
-		    }
-		  if (r_is_l)
-		    r = strlen (argv[op + 2]);
-		  else
-		    {
-		      if (!isint (op + 1, &r))
-			int_expt_err ("after -ge");
-		    }
-		  pos += 3;
-		  return (TRUE == (l >= r));
-		}
-	      break;
-
-	    case 'n':
-	      if ('t' == argv[op][2] && '\000' == argv[op][3])
-		{
-		  /* nt - newer than */
-		  pos += 3;
-		  if (l_is_l || r_is_l)
-		    test_syntax_error ("-nt does not accept -l\n",
-				       (char *)NULL);
-		  if (age_of (op - 1, &l) && age_of (op + 1, &r))
-		    return (TRUE == (l > r));
-		  else
-		    return (FALSE);
-		}
-
-	      if ('e' == argv[op][2] && '\000' == argv[op][3])
-		{
-		  /* ne - integer not equal */
-		  if (l_is_l)
-		    l = strlen (argv[op - 1]);
-		  else
-		    {
-		      if (!isint (op - 1, &l))
-			int_expt_err ("before -ne");
-		    }
-		  if (r_is_l)
-		    r = strlen (argv[op + 2]);
-		  else
-		    {
-		      if (!isint (op + 1, &r))
-			int_expt_err ("after -ne");
-		    }
-		  pos += 3;
-		  return (TRUE == (l != r));
-		}
-	      break;
-
-	    case 'e':
-	      if ('q' == argv[op][2] && '\000' == argv[op][3])
-		{
-		  /* eq - integer equal */
-		  if (l_is_l)
-		    l = strlen (argv[op - 1]);
-		  else
-		    {
-		      if (!isint (op - 1, &l))
-			int_expt_err ("before -eq");
-		    }
-		  if (r_is_l)
-		    r = strlen (argv[op + 2]);
-		  else
-		    {
-		      if (!isint (op + 1, &r))
-			int_expt_err ("after -eq");
-		    }
-		  pos += 3;
-		  return (TRUE == (l == r));
-		}
-
-	      if ('f' == argv[op][2] && '\000' == argv[op][3])
-		{
-		  /* ef - hard link? */
-		  pos += 3;
-		  if (l_is_l || r_is_l)
-		    test_syntax_error ("-ef does not accept -l\n",
-				       (char *)NULL);
-		  if (stat (argv[op - 1], &stat_buf) < 0)
-		    return (FALSE);
-		  if (stat (argv[op + 1], &stat_spare) < 0)
-		    return (FALSE);
-		  return (TRUE ==
-			  (stat_buf.st_dev == stat_spare.st_dev &&
-			   stat_buf.st_ino == stat_spare.st_ino));
-		}
-	      break;
-
-	    case 'o':
-	      if ('t' == argv[op][2] && '\000' == argv[op][3])
-		{
-		  /* ot - older than */
-		  pos += 3;
-		  if (l_is_l || r_is_l)
-		    test_syntax_error ("-nt does not accept -l\n",
-				       (char *)NULL);
-		  if (age_of (op - 1, &l) && age_of (op + 1, &r))
-		    return (TRUE == (l < r));
-		  return (FALSE);
-		}
-	      break;
-	    }
-	}
-
-      if ('=' == argv[op][0] && '\000' == argv[op][1])
-	{
-	  value = (0 == strcmp (argv[pos], argv[pos + 2]));
-	  pos += 3;
-	  return (TRUE == value);
-	}
-      if ('!' == argv[op][0] && '=' == argv[op][1] && '\000' == argv[op][2])
-	{
-	  value = 0 != strcmp (argv[pos], argv[pos + 2]);
-	  pos += 3;
-	  return (TRUE == value);
-	}
-    }
-
-  /* Might be a switch type argument */
-  if ('-' == argv[pos][0] && '\000' == argv[pos][2] /* && pos < argc-1 */ )
-    {
-      switch (argv[pos][1])
-	{
-	default:
-	  break;
-
-	  /* All of the following unary operators use unary_advance (), which
-	     checks to make sure that there is an argument, and then advances
-	     pos right past it.  This means that pos - 1 is the location of the
-	     argument. */
-
-	case 'r':		/* file is readable? */
-	  unary_advance ();
-	  value = -1 != access (argv[pos - 1], R_OK);
-	  return (TRUE == value);
-
-	case 'w':		/* File is writeable? */
-	  unary_advance ();
-	  value = -1 != access (argv[pos - 1], W_OK);
-	  return (TRUE == value);
-
-	case 'x':		/* File is executable? */
-	  unary_advance ();
-	  value = -1 != access (argv[pos - 1], X_OK);
-	  return (TRUE == value);
-
-	case 'O':		/* File is owned by you? */
-	  unary_advance ();
-	  if (stat (argv[pos - 1], &stat_buf) < 0)
-	    return (FALSE);
-
-	  return (TRUE == (geteuid () == stat_buf.st_uid));
-
-	case 'f':		/* File is a file? */
-	  unary_advance ();
-	  if (stat (argv[pos - 1], &stat_buf) < 0)
-	    return (FALSE);
-
-	  /*
-	   * Under SYSV, -f is true if the given file exists
-	   * and is a regular file.  Other places, this checks
-	   * to see if the given file is not a directory.
-	   */
-	  if (sys_v)
-	    return (TRUE == ((S_IFREG == (stat_buf.st_mode & S_IFMT)) ||
-			     (0 == (stat_buf.st_mode & S_IFMT))));
-	  else
-	    return (TRUE == (S_IFDIR != (stat_buf.st_mode & S_IFMT)));
-
-	case 'd':		/* File is a directory? */
-	  unary_advance ();
-	  if (stat (argv[pos - 1], &stat_buf) < 0)
-	    return (FALSE);
-
-	  return (TRUE == (S_IFDIR == (stat_buf.st_mode & S_IFMT)));
-
-	case 's':		/* File has something in it? */
-	  unary_advance ();
-	  if (stat (argv[pos - 1], &stat_buf) < 0)
-	    return (FALSE);
-
-	  return (TRUE == (stat_buf.st_size > (off_t) 0));
-
-#ifdef S_IFSOCK
-	case 'S':		/* File is a socket? */
-	  unary_advance ();
-	  if (stat (argv[pos - 1], &stat_buf) < 0)
-	    return (FALSE);
-
-	  return (TRUE == (S_IFSOCK == (stat_buf.st_mode & S_IFMT)));
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
 #endif
 
-	case 'c': /* File is character special? */
-	  unary_advance ();
-	  if (stat (argv[pos - 1], &stat_buf) < 0)
-	    return (FALSE);
-
-	  return (TRUE == (S_IFCHR == (stat_buf.st_mode & S_IFMT)));
-
-	case 'b':		/* File is block special? */
-	  unary_advance ();
-	  if (stat (argv[pos - 1], &stat_buf) < 0)
-	    return (FALSE);
-
-	  return (TRUE == (S_IFBLK == (stat_buf.st_mode & S_IFMT)));
-
-	case 'p':		/* File is a named pipe? */
-	  unary_advance ();
-#ifndef S_IFIFO
-	  return (FALSE);
+void
+#if __STDC__
+err(const char *fmt, ...)
 #else
-	  if (stat (argv[pos - 1], &stat_buf) < 0)
-	    return (FALSE);
-	  return (TRUE == (S_IFIFO == (stat_buf.st_mode & S_IFMT)));
-#endif /* S_IFIFO */
-
-	case 'L':		/* Same as -h  */
-	  /*FALLTHROUGH*/
-
-	case 'h':		/* File is a symbolic link? */
-	  unary_advance ();
-#ifndef S_IFLNK
-	  return (FALSE);
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
 #else
-	  if (lstat (argv[pos - 1], &stat_buf) < 0)
-	    return (FALSE);
-
-	  return (TRUE == (S_IFLNK == (stat_buf.st_mode & S_IFMT)));
-#endif /* S_IFLNK */
-
-	case 'u':		/* File is setuid? */
-	  unary_advance ();
-	  if (stat (argv[pos - 1], &stat_buf) < 0)
-	    return (FALSE);
-
-	  return (TRUE == (0 != (stat_buf.st_mode & S_ISUID)));
-
-	case 'g':		/* File is setgid? */
-	  unary_advance ();
-	  if (stat (argv[pos - 1], &stat_buf) < 0)
-	    return (FALSE);
-
-	  return (TRUE == (0 != (stat_buf.st_mode & S_ISGID)));
-
-	case 'k':		/* File has sticky bit set? */
-	  unary_advance ();
-	  if (stat (argv[pos - 1], &stat_buf) < 0)
-	    return (FALSE);
-	  return (TRUE == (0 != (stat_buf.st_mode & S_ISVTX)));
-
-	case 't':		/* File (fd) is a terminal?  (fd) defaults to stdout. */
-	  advance (0);
-	  if (pos < argc && isint (pos, &r))
-	    {
-	      advance (0);
-	      return (TRUE == (isatty ((int) r)));
-	    }
-	  return (TRUE == (isatty (1)));
-
-	case 'n':		/* True if arg has some length. */
-	  unary_advance ();
-	  return (TRUE == (0 != strlen (argv[pos - 1])));
-	  break;
-
-	case 'z':		/* True if arg has no length. */
-	  unary_advance ();
-	  return (TRUE == (0 == strlen (argv[pos - 1])));
-	}
-    }
-  value = 0 != strlen (argv[pos]);
-  advance (0);
-  return value;
-}
-
-/*
- * and:
- *	and '-a' term
- *	term
- */
-static int
-and ()
-{
-  auto int value;
-
-  value = term ();
-  while (pos < argc && '-' == argv[pos][0] && 'a' == argv[pos][1] && '\000' == argv[pos][2])
-    {
-      advance (0);
-      value = TRUTH_AND (value, term ());
-    }
-  return (TRUE == value);
-}
-
-/*
- * or:
- *	or '-o' and
- *	and
- */
-static int
-or ()
-{
-  auto int value;
-
-  value = and ();
-  while (pos < argc && '-' == argv[pos][0] && 'o' == argv[pos][1] && '\000' == argv[pos][2])
-    {
-      advance (0);
-      value = TRUTH_OR (value, and ());
-    }
-  return (TRUE == value);
-}
-
-/*
- * expr:
- *	or
- */
-int
-expr ()
-{
-  auto int value;
-
-  if (pos >= argc)
-    beyond ();
-
-  value = FALSE;
-
-  return value ^ or ();		/* Same with this. */
-}
-
-/*
- * [:
- *	'[' expr ']'
- * test:
- *	test expr
- */
-int
-#ifdef STANDALONE
-main (margc, margv)
-#else
-test_command (margc, margv)
-#endif /* STANDALONE */
-     int margc;
-     char **margv;
-{
-  auto int value;
-  int expr ();
-#ifndef STANDALONE
-  int code = setjmp (test_exit_buf);
-
-  if (code)
-    return (test_error_return);
-#endif /* STANDALONE */
-
-  argv = margv;
-
-  if (margv[0] && strcmp (margv[0], "[") == 0)
-    {
-      --margc;
-
-      if (margc < 2)
-	test_exit (SHELL_BOOLEAN (FALSE));
-
-      if (margv[margc] && strcmp (margv[margc], "]") != 0)
-	test_syntax_error ("missing `]'\n", (char *)NULL);
-    }
-
-  argc = margc;
-  pos = 1;
-
-  if (pos >= argc)
-    test_exit (SHELL_BOOLEAN (FALSE));
-
-  value = expr ();
-  if (pos != argc)
-    test_syntax_error ("too many arguments\n", (char *)NULL);
-
-  test_exit (SHELL_BOOLEAN (value));
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "test: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(2);
+	/* NOTREACHED */
 }

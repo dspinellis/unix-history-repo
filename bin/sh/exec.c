@@ -35,7 +35,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exec.c	5.2 (Berkeley) 3/13/91";
+/*static char sccsid[] = "from: @(#)exec.c	5.2 (Berkeley) 3/13/91";*/
+static char rcsid[] = "exec.c,v 1.5 1993/08/01 18:58:17 mycroft Exp";
 #endif /* not lint */
 
 /*
@@ -67,7 +68,17 @@ static char sccsid[] = "@(#)exec.c	5.2 (Berkeley) 3/13/91";
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
+#ifdef _POSIX_VERSION
+#define _POSIX_SOURCE		/* try to find NGROUPS_MAX */
+#include <limits.h>
+#endif
 #include <errno.h>
+#ifdef  BSD
+#undef BSD      /* temporary, already defined in <sys/param.h> */
+#include <sys/param.h>
+#include <unistd.h>
+#endif
 
 
 #define CMDTABLESIZE 31		/* should be prime */
@@ -92,6 +103,7 @@ STATIC int builtinloc = -1;		/* index in path of %builtin, or -1 */
 STATIC void tryexec(char *, char **, char **);
 STATIC void execinterp(char **, char **);
 STATIC void printentry(struct tblentry *);
+STATIC int in_group(int gid);
 STATIC void clearcmdentry(int);
 STATIC struct tblentry *cmdlookup(char *, int);
 STATIC void delete_cmd_entry(void);
@@ -99,6 +111,7 @@ STATIC void delete_cmd_entry(void);
 STATIC void tryexec();
 STATIC void execinterp();
 STATIC void printentry();
+STATIC int in_group();
 STATIC void clearcmdentry();
 STATIC struct tblentry *cmdlookup();
 STATIC void delete_cmd_entry();
@@ -479,16 +492,38 @@ loop:
 			stunalloc(fullname);
 			goto success;
 		}
-		if (statb.st_uid == geteuid()) {
+		/* XXX this is almost as bogus as using access() */
+		if (geteuid() == 0) {
+			if ((statb.st_mode & 0111) == 0)
+				goto loop;
+		} else if (statb.st_uid == geteuid()) {
 			if ((statb.st_mode & 0100) == 0)
 				goto loop;
-		} else if (statb.st_gid == getegid()) {
+		} else if (in_group(statb.st_gid)) {
 			if ((statb.st_mode & 010) == 0)
 				goto loop;
 		} else {
-			if ((statb.st_mode & 01) == 0)
+			if ((statb.st_mode & 01) == 0) {
+#ifdef  BSD
+				if ((statb.st_mode & 010) == 0)
+					goto loop;
+				/* Are you in this group too? */
+				{
+					int group_list[NGROUPS];
+					int ngroups, i;
+
+					ngroups = getgroups(NGROUPS, group_list);
+					for (i = 0; i < ngroups; i++)
+						if (statb.st_gid == group_list[i])
+							goto Found;
+				}
+#endif
 				goto loop;
+			}
 		}
+#ifdef  BSD
+	Found:
+#endif
 		TRACE(("searchexec \"%s\" returns \"%s\"\n", name, fullname));
 		INTOFF;
 		cmdp = cmdlookup(name, 1);
@@ -510,6 +545,47 @@ success:
 	cmdp->rehash = 0;
 	entry->cmdtype = cmdp->cmdtype;
 	entry->u = cmdp->param;
+}
+
+
+
+STATIC int
+in_group(gid)
+	int gid;
+	{
+#ifdef _POSIX_VERSION
+#ifdef __STDC__
+	/*
+	 * This bogus declararation is to force an error when
+	 * someone fixes getgroups().
+	 */
+	extern int getgroups(int ngroups, int *group_list);
+#endif
+#if NGROUPS_MAX != 0
+	int group_list[NGROUPS_MAX];
+#else
+#undef NGROUPS_MAX
+	size_t NGROUPS_MAX = sysconf(_SC_NGROUPS_MAX);
+	int *group_list = ckmalloc(NGROUPS_MAX);
+#endif
+	int i;
+	int ngroups;
+
+	ngroups = getgroups(NGROUPS_MAX, group_list);
+	for (i = 0; i < ngroups; i++)
+		if (gid == group_list[i]) {
+#ifndef NGROUPS_MAX
+			ckfree(group_list);
+#endif
+			return 1;
+		}
+#ifndef NGROUPS_MAX
+	ckfree(group_list);
+#endif
+	return 0;
+#else /* ndef _POSIX_VERSION */
+	return gid == getegid();
+#endif /* _POSIX_VERSION */
 }
 
 

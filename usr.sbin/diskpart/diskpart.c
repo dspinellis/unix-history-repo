@@ -123,7 +123,7 @@ main(argc, argv)
 	argc--, argv++;
 	if (argc < 1) {
 		fprintf(stderr,
-		    "usage: disktab [ -p ] [ -d ] [ -s size ] disk-type\n");
+		    "usage: diskpart [ -p ] [ -d ] [ -s size ] disk-type\n");
 		exit(1);
 	}
 	if (argc > 0 && strcmp(*argv, "-p") == 0) {

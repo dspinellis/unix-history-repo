@@ -2028,6 +2028,7 @@ pushdecl (x)
 		      DECL_INITIAL (x) = (current_function_decl == oldglobal
 					  ? 0 : DECL_INITIAL (oldglobal));
 		      DECL_SAVED_INSNS (x) = DECL_SAVED_INSNS (oldglobal);
+		      DECL_FRAME_SIZE (x) = DECL_FRAME_SIZE (oldglobal);
 		      DECL_ARGUMENTS (x) = DECL_ARGUMENTS (oldglobal);
 		      DECL_RESULT (x) = DECL_RESULT (oldglobal);
 		      TREE_ASM_WRITTEN (x) = TREE_ASM_WRITTEN (oldglobal);
@@ -3518,7 +3519,10 @@ finish_decl (decl, init, asmspec_tree)
 
   /* ??? After 2.3, test (init != 0) instead of TREE_CODE.  */
   if (!(TREE_CODE (decl) == FUNCTION_DECL && DECL_INLINE (decl))
-      && temporary && TREE_PERMANENT (decl))
+      && temporary && TREE_PERMANENT (decl)
+      /* DECL_INITIAL is not defined in PARM_DECLs, since it shares
+	 space with DECL_ARG_TYPE.  */
+      && TREE_CODE (decl) != PARM_DECL)
     {
       /* We need to remember that this array HAD an initialization,
 	 but discard the actual temporary nodes,
@@ -4453,13 +4457,16 @@ grokdeclarator (declarator, declspecs, decl_context, initialized)
 	   When there is a prototype, this is overridden later.  */
 
 	DECL_ARG_TYPE (decl) = type;
-	main_type = TYPE_MAIN_VARIANT (type);
+	main_type = (type == error_mark_node
+		     ? error_mark_node
+		     : TYPE_MAIN_VARIANT (type));
 	if (main_type == float_type_node)
 	  DECL_ARG_TYPE (decl) = double_type_node;
 	/* Don't use TYPE_PRECISION to decide whether to promote,
 	   because we should convert short if it's the same size as int,
 	   but we should not convert long if it's the same size as int.  */
-	else if (C_PROMOTING_INTEGER_TYPE_P (main_type))
+	else if (TREE_CODE (main_type) != ERROR_MARK
+		 && C_PROMOTING_INTEGER_TYPE_P (main_type))
 	  {
 	    if (TYPE_PRECISION (type) == TYPE_PRECISION (integer_type_node)
 		&& TREE_UNSIGNED (type))

@@ -552,7 +552,7 @@ to return a stream socket in with a privileged port number:
 .DS
 int lport = IPPORT_RESERVED \- 1;
 int s;
-...
+\&...
 s = rresvport(&lport);
 if (s < 0) {
 	if (errno == EAGAIN)

@@ -38,7 +38,7 @@ pwd_mkdb \- generate the password databases
 .SH SYNOPSIS
 .nf
 .ft B
-pwd_mkdb [ \-p ] file
+pwd_mkdb [ \-p ] [ \-d directory ] file
 .SH DESCRIPTION
 .I Pwd_mkdb
 creates
@@ -56,6 +56,9 @@ The options are as follows:
 .TP
 \-p
 Create a Version 7 style password file and install it into ``/etc/password''.
+.TP
+\-d
+Store databases into specified destination directory instead of ``/etc''.
 .PP
 The two databases differ in that the secure version contains the user's 
 encrypted password and the insecure version has an asterisk (``*'')

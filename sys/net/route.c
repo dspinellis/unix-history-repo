@@ -30,15 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)route.c	7.22 (Berkeley) 6/27/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00095
- * --------------------         -----   ----------------------
- *
- * 27 Feb 93    Charles Hannum & ???	Proper initialization of *rt
- *
+ *	from: @(#)route.c	7.22 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 #include "param.h"

@@ -30,17 +30,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)sio.c	7.5 (Berkeley) 5/16/91
- *
- * 27 May 93	Bruce Evans		From com-0.2 package, fast interrupt
- *					com port driver.
- * 27 May 93	Guido van Rooij		Ported in Chris Demetriou's BIDIR
- *					code, add multiport support.
- * 27 May 93	Rodney W. Grimes	I then renamed it to sio.c for putting
- *					into the patch kit.  Added in sioselect
- *					from com.c.  Added port 4 support.
+ *	from: @(#)com.c	7.5 (Berkeley) 5/16/91
+ *	$Id$
  */
-static char rcsid[] = "$Header: /usr/bill/working/sys/i386/isa/RCS/com.c,v 1.2 92/01/21 14:34:11 william Exp $";
 
 #include "sio.h"
 #if NSIO > 0
@@ -269,6 +261,7 @@ static	int	sioprobe	__P((struct isa_device *dev));
 static	void	compoll		__P((void));
 static	int	comstart	__P((struct tty *tp));
 static	void	comwakeup	__P((void));
+static	int	tiocm2mcr	__P((int));
 
 /* table and macro for fast conversion from a unit number to its com struct */
 static	struct com_s	*p_com_addr[NSIO];
@@ -351,7 +344,7 @@ sioprobe(dev)
 		already_init = TRUE;
 	}
 	iobase = dev->id_iobase;
-	result = 1;
+	result = IO_COMSIZE;
 
 	/*
 	 * We don't want to get actual interrupts, just masked ones.
@@ -376,7 +369,6 @@ sioprobe(dev)
 	if (   inb(iobase + com_cfcr) != CFCR_8BITS
 	    || inb(iobase + com_ier) != IER_ETXRDY
 	    || inb(iobase + com_mcr) != MCR_IENABLE
-	    || !isa_irq_pending(dev)
 	    || (inb(iobase + com_iir) & IIR_IMASK) != IIR_TXRDY
 	    || isa_irq_pending(dev)
 	    || (inb(iobase + com_iir) & IIR_IMASK) != IIR_NOPEND)
@@ -465,8 +457,13 @@ sioattach(isdp)
 	outb(iobase + com_scr, 0x5a);
 	scr2 = inb(iobase + com_scr);
 	outb(iobase + com_scr, scr);
+	printf("sio%d: type", unit);
+#ifdef COM_MULTIPORT
+	if (0);
+#else
 	if (scr1 != 0xa5 || scr2 != 0x5a)
 		printf(" <8250>");
+#endif
 	else {
 		outb(iobase + com_fifo, FIFO_ENABLE | FIFO_TRIGGER_14);
 		DELAY(100);
@@ -507,6 +504,7 @@ sioattach(isdp)
 	else
 		com->multiport = FALSE;
 #endif /* COM_MULTIPORT */
+	printf("\n");
 
 #ifdef KGDB
 	if (kgdb_dev == makedev(commajor, unit)) {
@@ -639,7 +637,7 @@ bidir_open_top:
 
 				    /* if not active, turn DTR & RTS off */
 				    if (!com->active)
-					(void) commctl(com, MCR_DTR | MCR_RTS, DMBIC);
+					(void) commctl(com, MCR_DTR, DMBIC);
 
 				    /* if there was an error, take off. */
 				    if (error != 0) {
@@ -668,13 +666,11 @@ bidir_open_top:
 			 * since those are only relevant for logins.  It's
 			 * important to have echo off initially so that the
 			 * line doesn't start blathering before the echo flag
-			 * can be turned off.  It's useful to have clocal on
-			 * initially so that "stty changed-defaults </dev/comx"
-			 * doesn't hang waiting for carrier.
+			 * can be turned off.
 			 */
 			tp->t_iflag = 0;
 			tp->t_oflag = 0;
-			tp->t_cflag = CREAD | CS8 | CLOCAL;
+			tp->t_cflag = CREAD | CS8 | HUPCL;
 			tp->t_lflag = 0;
 			tp->t_ispeed = tp->t_ospeed = comdefaultrate;
 		}
@@ -783,7 +779,7 @@ comhardclose(com)
 	tp = com->tp;
 	if (tp->t_cflag & HUPCL || tp->t_state & TS_WOPEN
 	    || !(tp->t_state & TS_ISOPEN))
-		(void) commctl(com, 0, DMSET);
+		(void) commctl(com, MCR_RTS, DMSET);
 #ifdef COM_BIDIR
 	com->active = com->active_in = com->active_out = FALSE;
 	com->softDCD = FALSE;
@@ -975,6 +971,15 @@ comintr1(struct com_s *com)
 	}
 }
 
+static int
+tiocm2mcr(data)
+	int data;
+{
+	register m = 0;
+	if (data & TIOCM_DTR) m |= MCR_DTR;
+	if (data & TIOCM_RTS) m |= MCR_RTS;
+	return m;
+}
 int
 sioioctl(dev, cmd, data, flag, p)
 	dev_t		dev;
@@ -1008,22 +1013,34 @@ sioioctl(dev, cmd, data, flag, p)
 		outb(iobase + com_cfcr, com->cfcr_image &= ~CFCR_SBREAK);
 		break;
 	case TIOCSDTR:
-		(void) commctl(com, MCR_DTR | MCR_RTS, DMBIS);
+		(void) commctl(com, MCR_DTR, DMBIS);
 		break;
 	case TIOCCDTR:
-		(void) commctl(com, MCR_DTR | MCR_RTS, DMBIC);
+		(void) commctl(com, MCR_DTR, DMBIC);
 		break;
 	case TIOCMSET:
-		(void) commctl(com, *(int *)data, DMSET);
+		(void) commctl(com, tiocm2mcr(*(int *)data), DMSET);
 		break;
 	case TIOCMBIS:
-		(void) commctl(com, *(int *)data, DMBIS);
+		(void) commctl(com, tiocm2mcr(*(int *)data), DMBIS);
 		break;
 	case TIOCMBIC:
-		(void) commctl(com, *(int *)data, DMBIC);
+		(void) commctl(com, tiocm2mcr(*(int *)data), DMBIC);
 		break;
 	case TIOCMGET:
-		*(int *)data = commctl(com, 0, DMGET);
+		{
+			register int bits = 0, mode;
+
+			mode = commctl(com, 0, DMGET);
+			if (inb(com->iobase+com_ier)) bits |= TIOCM_LE; /* XXX */
+			if (mode & MSR_DCD) bits |= TIOCM_CD;
+			if (mode & MSR_CTS) bits |= TIOCM_CTS;
+			if (mode & MSR_DSR) bits |= TIOCM_DSR;
+			if (mode & (MCR_DTR<<8)) bits |= TIOCM_DTR;
+			if (mode & (MCR_RTS<<8)) bits |= TIOCM_RTS;
+			if (mode & (MSR_RI|MSR_TERI)) bits |= TIOCM_RI;
+			*(int *)data = bits;
+		}
 		break;
 #ifdef COM_BIDIR
 	case TIOCMSBIDIR:
@@ -1162,7 +1179,7 @@ repeat:
 					disable_intr();
 					outb(com->modem_ctl_port,
 					     com->mcr_image
-					     &= ~(MCR_DTR | MCR_RTS));
+					     &= ~MCR_DTR);
 					enable_intr();
 				}
 			}
@@ -1297,7 +1314,7 @@ comparam(tp, t)
 	iobase = com->iobase;
 	s = spltty();
 	if (divisor == 0) {
-		(void) commctl(com, 0, DMSET);	/* hang up line */
+		(void) commctl(com, MCR_RTS, DMSET);	/* hang up line */
 		splx(s);
 		return (0);
 	}
@@ -1404,8 +1421,10 @@ comstart(tp)
 			outb(com->modem_ctl_port, com->mcr_image &= ~MCR_RTS);
 	}
 	else {
-		if (!(com->mcr_image & MCR_RTS) && com->iptr < com->ihighwater)
+		if (!(com->mcr_image & MCR_RTS) && com->iptr < com->ihighwater) {
+			tp->t_state &= ~TS_RTSBLOCK;
 			outb(com->modem_ctl_port, com->mcr_image |= MCR_RTS);
+		}
 	}
 	enable_intr();
 	if (tp->t_state & (TS_TIMEOUT | TS_TTSTOP))
@@ -1493,7 +1512,7 @@ commctl(com, bits, how)
 			     com->mcr_image &= ~(bits & ~MCR_IENABLE));
 		break;
 	case DMGET:
-		bits = com->prev_modem_status;
+		bits = com->prev_modem_status | (com->mcr_image << 8);
 		break;
 	}
 	enable_intr();

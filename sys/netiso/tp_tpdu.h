@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_tpdu.h	7.4 (Berkeley) 5/6/91
+ *	from: @(#)tp_tpdu.h	7.4 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,11 +60,9 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /* 
  * ARGO TP
- *
- * $Header: tp_tpdu.h,v 4.4 88/07/26 16:45:40 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_tpdu.h,v $
  *
  * This ghastly set of macros makes it possible to
  * refer to tpdu structures without going mad.

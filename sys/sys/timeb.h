@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)timeb.h	7.2 (Berkeley) 5/5/91
+ *	from: @(#)timeb.h	7.2 (Berkeley) 5/5/91
+ *	$Id$
  */
 
 /* The ftime(2) system call structure -- deprecated. */

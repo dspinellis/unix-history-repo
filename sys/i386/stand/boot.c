@@ -32,16 +32,15 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *	
+ *	from: @(#)boot.c	7.3 (Berkeley) 5/4/91
+ *	$Id$
  */
 
 #ifdef lint
 char copyright[] =
 "@(#) Copyright (c) 1990 The Regents of the University of California.\n\
  All rights reserved.\n";
-#endif /* not lint */
-
-#ifdef lint
-static char sccsid[] = "from:@(#)boot.c	7.3 (Berkeley) 5/4/91";
 #endif /* not lint */
 
 #include "param.h"

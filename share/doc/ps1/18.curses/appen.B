@@ -47,7 +47,7 @@ The WINDOW structure is defined as follows:
 .so win_st.gr
 .)l
 .pp
-.Vn \*_cury \\*
+.Vn \*_cury \**
 .(f
 \**
 All variables not normally accessed directly by the user

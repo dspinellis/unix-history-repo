@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)memalloc.h	5.1 (Berkeley) 3/7/91
+ *	from: @(#)memalloc.h	5.1 (Berkeley) 3/7/91
+ *	memalloc.h,v 1.4 1993/08/01 18:58:23 mycroft Exp
  */
 
 struct stackmark {

@@ -29,17 +29,11 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00032
- * --------------------         -----   ----------------------
- *
- * 05 Aug 92	David Greenman		Fix kernel namelist db create/use
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nlist.c	5.4 (Berkeley) 4/27/91";
+/*static char sccsid[] = "from: @(#)nlist.c	5.4 (Berkeley) 4/27/91";*/
+static char rcsid[] = "$Id";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -146,7 +140,7 @@ create_knlist(name, db)
 			rel_off = nbuf.n_value & ~KERNBASE;
 #endif
 #ifdef i386
-			rel_off = ((nbuf.n_value & ~KERNBASE) + CLBYTES);
+			rel_off = nbuf.n_value - ebuf.a_entry + CLBYTES;
 #endif
 			/*
 			 * When loaded, data is rounded to next page cluster
@@ -197,6 +191,6 @@ badfmt(p)
 	char *p;
 {
 	(void)fprintf(stderr,
-	    "symorder: %s: %s: %s\n", kfile, p, strerror(EFTYPE));
+	    "kvm_mkdb: %s: %s: %s\n", kfile, p, strerror(EFTYPE));
 	exit(1);
 }

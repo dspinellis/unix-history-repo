@@ -1,6 +1,4 @@
 /*
- * Ported to boot 386BSD by Julian Elischer (julian@tfs.com) Sept 1992
- *
  * Mach Operating System
  * Copyright (c) 1992, 1991 Carnegie Mellon University
  * All Rights Reserved.
@@ -24,23 +22,9 @@
  * 
  * any improvements or extensions that they make and grant Carnegie Mellon
  * the rights to redistribute these changes.
- */
-
-/*
- * HISTORY
- * $Log:	disk.c,v $
- * Revision 2.2  92/04/04  11:35:49  rpd
- * 	Fabricated from 3.0 bootstrap and 2.5 boot disk.c:
- * 	with support for scsi
- * 	[92/03/30            mg32]
- * 
- */
-
-/*
- * 9/20/92
- * Peng-Toh Sim.  sim@cory.berkeley.edu
- * Added bad144 support under 386bsd for wd's
- * So, bad block remapping is done when loading the kernel.
+ *
+ *	from: Mach, Revision 2.2  92/04/04  11:35:49  rpd
+ *	$Id$
  */
 
 #include "boot.h"
@@ -174,14 +158,44 @@ devread()
 	}
 }
 
+#define I_ADDR		((void *) 0)	/* XXX where all reads go */
+
+/* Read ahead buffer large enough for one track on a 1440K floppy.  For
+ * reading from floppies, the bootstrap has to be loaded on a 64K boundary
+ * to ensure that this buffer doesn't cross a 64K DMA boundary.
+ */
+#define RA_SECTORS	18
+static char ra_buf[RA_SECTORS * BPS];
+static int ra_end;
+static int ra_first;
+
 Bread(dosdev,sector)
      int dosdev,sector;
 {
-	int cyl = sector/spc, head = (sector%spc)/spt, secnum = sector%spt;
-	while (biosread(dosdev, cyl,head,secnum))
+	if (sector < ra_first || sector >= ra_end)
 	{
-		printf("Error: C:%d H:%d S:%d\n",cyl,head,secnum);
+		int cyl, head, sec, nsec;
+
+		cyl = sector/spc;
+		head = (sector % spc) / spt;
+		sec = sector % spt;
+		nsec = spt - sec;
+		if (nsec > RA_SECTORS)
+			nsec = RA_SECTORS;
+		twiddle();
+		if (biosread(dosdev, cyl, head, sec, nsec, ra_buf) != 0)
+		{
+		    nsec = 1;
+		    twiddle();
+		    while (biosread(dosdev, cyl, head, sec, nsec, ra_buf) != 0) {
+			printf("Error: C:%d H:%d S:%d\n", cyl, head, sec);
+			twiddle();
+		    }
+		}
+		ra_first = sector;
+		ra_end = sector + nsec;
 	}
+	bcopy(ra_buf + (sector - ra_first) * BPS, I_ADDR, BPS);
 }
 
 badsect(dosdev, sector)

@@ -11,14 +11,14 @@
 #
 # To bootstrap lex, cp initscan.c to scan.c and run make.
 
-PROG=	lex
-CFLAGS+=-I. -I${.CURDIR}
-LFLAGS=	-is8
-SRCS=	ccl.c dfa.c ecs.c gen.c main.c misc.c nfa.c parse.c sym.c tblcmp.c \
-	yylex.c
-OBJS+=	scan.o
-SUBDIR=	lib
-CLEANFILES+=parse.c parse.h scan.c y.tab.h
+PROG=		lex
+SRCS=		ccl.c dfa.c ecs.c gen.c main.c misc.c nfa.c parse.c sym.c \
+		tblcmp.c yylex.c
+OBJS+=		scan.o
+LFLAGS=		-is8
+SUBDIR=		lib
+CFLAGS+=	-I. -I${.CURDIR}
+CLEANFILES+=	parse.c parse.h scan.c y.tab.h
 
 parse.h parse.c:
 	${YACC} -d ${.IMPSRC}

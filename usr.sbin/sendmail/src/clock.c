@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1983 Eric P. Allman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,11 +33,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)clock.c	5.10 (Berkeley) 3/4/91";
+static char sccsid[] = "@(#)clock.c	8.2 (Berkeley) 7/13/93";
 #endif /* not lint */
 
 # include "sendmail.h"
 # include <signal.h>
+
+# ifndef sigmask
+#  define sigmask(s)	(1 << ((s) - 1))
+# endif
 
 /*
 **  SETEVENT -- set an event to happen at a specific time.
@@ -71,7 +75,7 @@ setevent(intvl, func, arg)
 
 	if (intvl <= 0)
 	{
-		syserr("setevent: intvl=%ld\n", intvl);
+		syserr("554 setevent: intvl=%ld\n", intvl);
 		return (NULL);
 	}
 
@@ -162,6 +166,9 @@ tick()
 	register time_t now;
 	register EVENT *ev;
 	int mypid = getpid();
+#ifdef SIG_UNBLOCK
+	sigset_t ss;
+#endif
 
 	(void) signal(SIGALRM, SIG_IGN);
 	(void) alarm(0);
@@ -186,10 +193,17 @@ tick()
 
 		/* we must be careful in here because ev_func may not return */
 		(void) signal(SIGALRM, tick);
+#ifdef SIG_UNBLOCK
+		/* unblock SIGALRM signal */
+		sigemptyset(&ss);
+		sigaddset(&ss, SIGALRM);
+		sigprocmask(SIG_UNBLOCK, &ss, NULL);
+#else
 #ifdef SIGVTALRM
 		/* reset 4.2bsd signal mask to allow future alarms */
 		(void) sigsetmask(sigblock(0) & ~sigmask(SIGALRM));
-#endif SIGVTALRM
+#endif /* SIGVTALRM */
+#endif /* SIG_UNBLOCK */
 
 		f = ev->ev_func;
 		arg = ev->ev_arg;
@@ -231,6 +245,7 @@ tick()
 
 static bool	SleepDone;
 
+unsigned int
 sleep(intvl)
 	unsigned int intvl;
 {

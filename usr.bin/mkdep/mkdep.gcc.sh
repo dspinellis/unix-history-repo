@@ -55,7 +55,7 @@ while :
 		# the -p flag produces "program: program.c" style dependencies
 		# so .o's don't get produced
 		-p)
-			SED='s;\.o;;'
+			SED='s;\.o ; ;'
 			shift ;;
 		*)
 			break ;;
@@ -71,7 +71,7 @@ TMP=/tmp/mkdep$$
 
 trap 'rm -f $TMP ; exit 1' 1 2 3 13 15
 
-cpp -M $* > $TMP
+cpp -M $* | sed "$SED" > $TMP
 
 if [ $? != 0 ]; then
 	echo 'mkdep: compile failed.'

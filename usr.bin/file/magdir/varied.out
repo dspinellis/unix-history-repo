@@ -1,26 +1,5 @@
 #	Herewith many of the object file formats used by USG systems.
-#	The `versions' should be un-commented if they work for you.
-0	short		0570		SysV executable
->12	long		>0		not stripped
-#>22	short		>0		- version %ld
-0	short		0575		SysV pure executable
->12	long		>0		not stripped
-#>22	short		>0		- version %ld
-0	short		0502		basic-16 executable
->12	long		>0		not stripped
-0	short		0503		basic-16 executable (TV)
->12	long		>0		not stripped
-0	short		0510		x86 executable
->12	long		>0		not stripped
-0	short		0511		x86 executable (TV)
->12	long		>0		not stripped
-0	short		0550		3b20 executable
->12	long		>0		not stripped
-0	short		0551		3b20 executable (TV)
->12	long		>0		not stripped
-0	short		0560		WE32000 executable
->12	long		>0		not stripped
-0	short		0561		WE32000 executable (TV)
->12	long		>0		not stripped
+#	Most have been moved to files for a particular processor,
+#	and deleted if they duplicate other entries.
+#
 0	short		0610		Perkin-Elmer executable
-

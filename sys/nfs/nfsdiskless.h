@@ -33,8 +33,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nfsdiskless.h	7.1 (Berkeley) 3/4/91
+ *	From:	@(#)nfsdiskless.h	7.1 (Berkeley) 3/4/91
+ *	$Id$
  */
+
+#ifndef __h_nfsdiskless
+#define __h_nfsdiskless 1
 
 /*
  * Structure that must be initialized for a diskless nfs client.
@@ -56,3 +60,5 @@ struct nfs_diskless {
 	struct sockaddr	root_saddr;	/* Address of root server */
 	char		*root_hostnam;	/* Host name for mount pt */
 };
+
+#endif /* __h_nfsdiskless */

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)mfs_vfsops.c	7.19 (Berkeley) 4/16/91
+ *	from: @(#)mfs_vfsops.c	7.19 (Berkeley) 4/16/91
+ *	$Id$
  */
 
 #include "param.h"
@@ -131,6 +132,7 @@ mfs_mount(mp, path, data, ndp, p)
 	bzero(fs->fs_fsmnt + size, sizeof(fs->fs_fsmnt) - size);
 	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
 		MNAMELEN);
+	mp->mnt_stat.f_mntonname[MNAMELEN-1] = '\0';
 	(void) copyinstr(args.name, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
 		&size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);

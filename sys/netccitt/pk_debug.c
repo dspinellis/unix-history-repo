@@ -35,7 +35,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)pk_debug.c	7.7 (Berkeley) 5/9/91
+ *	from: @(#)pk_debug.c	7.7 (Berkeley) 5/9/91
+ *	$Id$
  */
 
 #include "param.h"

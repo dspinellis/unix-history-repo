@@ -1,161 +1,101 @@
-############################################################
+divert(-1)
 #
-#  Sendmail
-#  Copyright (c) 1983  Eric P. Allman
-#  Berkeley, California
+# Copyright (c) 1983 Eric P. Allman
+# Copyright (c) 1988, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
-#  Copyright (c) 1983 Regents of the University of California.
-#  All rights reserved.  The Berkeley software License Agreement
-#  specifies the terms and conditions for redistribution.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. All advertising materials mentioning features or use of this software
+#    must display the following acknowledgement:
+#	This product includes software developed by the University of
+#	California, Berkeley and its contributors.
+# 4. Neither the name of the University nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
 #
-#	@(#)ucbvax.mc	1.39 (Berkeley) 1/3/89
+# THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
 #
-sinclude(buildinfo)dnl
-#
-############################################################
-############################################################
-#####
-#####		SENDMAIL CONFIGURATION FILE
-#####
-#####	This one is the big daddy.  There is no "upstairs"
-#####	to bounce a message to -- except perhaps the arpanet.
-#####
-#####
-############################################################
-############################################################
 
+include(`../m4/cf.m4')
+VERSIONID(`@(#)ucbvax.mc	8.1 (Berkeley) 6/7/93')
+OSTYPE(bsd4.3)
+DOMAIN(cs.hidden)
+FEATURE(notsticky)
+MAILER(local)
+MAILER(smtp)
+MAILER(uucp)
+undefine(`UUCP_RELAY')dnl
+DDBerkeley.EDU
 
+# names for which we act as a local forwarding agent
+CF CS
+FF/etc/sendmail.cw
 
-######################
-###   local info   ###
-######################
+# local UUCP connections, and our local uucp name
+SITECONFIG(uucp.ucbvax, ucbvax, U)
 
-# internet hostnames
-Cwucbvax vax k UCB-VAX Berkeley UCB-C70 UCB
+# remote UUCP connections, and the machine they are on
+SITECONFIG(uucp.ucbarpa, ucbarpa.Berkeley.EDU, W)
 
-# UUCP hostnames
-DUucbvax
-CUucbvax 
+SITECONFIG(uucp.cogsci, cogsci.Berkeley.EDU, X)
 
-# local UUCP connections
-include(../sitedep/uucp.ucbvax.m4)dnl
+LOCAL_RULE_3
+# map old UUCP names into Internet names
+UUCPSMTP(bellcore,	bellcore.com)
+UUCPSMTP(decvax,	decvax.dec.com)
+UUCPSMTP(decwrl,	decwrl.dec.com)
+UUCPSMTP(hplabs,	hplabs.hp.com)
+UUCPSMTP(lbl-csam,	lbl-csam.arpa)
+UUCPSMTP(pur-ee,	ecn.purdue.edu)
+UUCPSMTP(purdue,	purdue.edu)
+UUCPSMTP(research,	research.att.com)
+UUCPSMTP(sdcarl,	sdcarl.ucsd.edu)
+UUCPSMTP(sdcsvax,	sdcsvax.ucsd.edu)
+UUCPSMTP(ssyx,		ssyx.ucsc.edu)
+UUCPSMTP(sun,		sun.com)
+UUCPSMTP(ucdavis,	ucdavis.ucdavis.edu)
+UUCPSMTP(ucivax,	ics.uci.edu)
+UUCPSMTP(ucla-cs,	cs.ucla.edu)
+UUCPSMTP(ucla-se,	seas.ucla.edu)
+UUCPSMTP(ucsbcsl,	ucsbcsl.ucsb.edu)
+UUCPSMTP(ucscc,		c.ucsc.edu)
+UUCPSMTP(ucsd,		ucsd.edu)
+UUCPSMTP(ucsfcgl,	cgl.ucsf.edu)
+UUCPSMTP(unmvax,	unmvax.cs.unm.edu)
+UUCPSMTP(uwvax,		spool.cs.wisc.edu)
 
-# UUCP connections on ucbarpa
-DWucbarpa.Berkeley.EDU
-define(`CV', CW)dnl
-include(../sitedep/uucp.ucbarpa.m4)dnl
-undefine(`CV')dnl
+LOCAL_RULE_0
 
-# UUCP connections on ucbcad
-DXcad.Berkeley.EDU
-define(`CV', CX)dnl
-include(../sitedep/uucp.cad.m4)dnl
-undefine(`CV')dnl
+# make sure we handle the local domain as absolute
+R$* <  @ $* $D > $*		$: $1 < @ $2 $D . > $3
 
-# UUCP connections on cogsci
-DYcogsci.Berkeley.EDU
-define(`CV', CY)dnl
-include(../sitedep/uucp.cogsci.m4)dnl
-undefine(`CV')dnl
+# handle names we forward for as though they were local, so we will use UDB
+R< @ $=F . $D . > : $*		$@ $>7 $2		@here:... -> ...
+R< @ $D . > : $*		$@ $>7 $1		@here:... -> ...
+R$* $=O $* < @ $=F . $D . >	$@ $>7 $1 $2 $3		...@here -> ...
+R$* $=O $* < @ $D . >		$@ $>7 $1 $2 $3		...@here -> ...
 
-# known uucp connections with a smart uucp
-CMdecvax
+R$* < @ $=F . $D . >		$#local $: $1		use UDB
 
-# we have full sendmail support here
-Oa
-
-#############################
-###   Setup Information   ###
-#############################
-
-include(../m4/nsmacros.m4)
-include(../m4/nsclasses.m4)
-include(../sitedep/nicregistered.m4)
-include(../m4/version.m4)
-include(../m4/boilerplate.m4)
-
-###########################
-###   Rewriting Rules   ###
-###########################
-
-include(../m4/prewriterule.m4)
-include(../m4/postwriterule.m4)
-
-# addition to Post-rewrite Rule
-R$+%$=w@$=w.EDU		$1@$w			u%UCB@UCB.edu => u@UCB.berk.edu
-R$+%$=w@$=w.$=w.EDU	$1@$w			u%UCB@UCB.berk.edu => u@UCB
-
-include(../m4/rule3.m4)
-include(../m4/rule5.m4)
-
-###################
-###   Mailers   ###
-###################
-
-include(../m4/localm.m4)
-define(`m4UUCP',TRUE)
-include(../m4/suucpm.m4)
-include(../m4/uucpm.m4)
-include(../m4/smtpuucpm.m4)
-include(../m4/nstcpm.m4)
-include(../m4/nstcpldm.m4)
-
-#####################
-###   Rule Zero   ###
-#####################
-
-include(../m4/rule0.m4)
-
-################################################
-###  Machine dependent part of ruleset zero  ###
-################################################
-
-# resolve SMTP UUCP connections
-include(../sitedep/smtpuucp.ucbvax.m4)
-
-# resolve local UUCP links
-R<@$=V.UUCP>:$+		$#uucp$@$1$:$1:$2		@host.UUCP: ...
-R$+<@$=V.UUCP>		$#uucp$@$2$:$1			user@host.UUCP
-
-# resolve explicit arpanet names (to avoid with machine name "arpa" below)
-R$*<@$*$-.ARPA>$*	$#tcp$@$3.ARPA$:$1<@$2$3.ARPA>$4	user@domain.ARPA
-
-# resolve fake top level domains by forwarding to other hosts
-include(../m4/fake_domains.m4)
-
-# resolve non-local UUCP links
-R$*<@$=W.UUCP>$*	$#tcpld$@$W$:$1<@$2.UUCP>$3	user@host.UUCP
-R$*<@$=X.UUCP>$*	$#tcpld$@$X$:$1<@$2.UUCP>$3	user@host.UUCP
-R$*<@$=Y.UUCP>$*	$#tcpld$@$Y$:$1<@$2.UUCP>$3	user@host.UUCP
-
-# this uucp stuff is wrong for domain uucp addresses
-# - we should pass the whole "host.domain" to uucp so it can
-#   find the best route.  But that depends on a uucp router
-#   which doesn't exist here yet, so for now, we'll settle for
-#   trying to route to the domain (pretending its a host).
-#   Suitable L.sys entries can make this work.  If it doesn't
-#   then returned mail will just say "dom unknown", which is true ..
-
-# resolve smart UUCP links
-R<@$=M.$-.UUCP>:$+	$#suucp$@$2$:@$1.$2.UUCP:$3	@host.domain.UUCP: ...
-R<@$=M.UUCP>:$+		$#suucp$@$1$:$2			@host.UUCP: ...
-R$+<@$=M.$-.UUCP>	$#suucp$@$3$:$1@$2.$3.UUCP	user@host.domain.UUCP
-R$+<@$=M.UUCP>		$#suucp$@$2$:$1			user@host.UUCP
-
-# local domain sites
-R$*<@$*.$D>$*		$#tcpld$@$2.$D$:$1<@$2.$D>$3	user@host.our.domain
-R$*<@$->$*		$#tcpld$@$2.$D$:$1<@$2.$D>$3	user@host
-R$*<@$-.UUCP>$*		$#tcpld$@$2.$D$:$1<@$2.$D>$3	user@host.UUCP
-
-# other non-local names will be kicked upstairs
-R$*<@$+>$*		$#tcp$@$2$:$1<@$2>$3		user@some.where
-
-# remaining names must be local
-R$+			$#local$:$1			everything else
-
-########################################
-###  Host dependent address cleanup  ###
-########################################
-
-S8
-R$*$=U!$+@$+		$3@$4				drop uucp forward
+# handle local UUCP connections in the Berkeley.EDU domain
+R$+<@cnmat.$D . >		$#uucp$@cnmat$:$1
+R$+<@cnmat.CS.$D . >		$#uucp$@cnmat$:$1
+R$+<@craig.$D . >		$#uucp$@craig$:$1
+R$+<@craig.CS.$D . >		$#uucp$@craig$:$1

@@ -1,7 +1,7 @@
 #	@(#)Makefile	5.6 (Berkeley) 6/27/91
 
 PROG=	route
-MAN8=	route.0
+MAN8=	route.8
 SRCS=	route.c
 #SRCS=	route.c ccitt_addr.c
 CFLAGS+=-I.

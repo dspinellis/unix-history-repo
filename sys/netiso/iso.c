@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)iso.c	7.14 (Berkeley) 6/27/91
+ *	from: @(#)iso.c	7.14 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,15 +60,14 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /*
- * $Header: iso.c,v 4.11 88/09/19 14:58:35 root Exp $ 
- * $Source: /usr/argo/sys/netiso/RCS/iso.c,v $ 
- *
  * iso.c: miscellaneous routines to support the iso address family
  */
 
 #include "types.h"
 #include "param.h"
+#include "systm.h"
 #include "ioctl.h"
 #include "mbuf.h"
 #include "domain.h"

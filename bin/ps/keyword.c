@@ -112,7 +112,7 @@ VAR var[] = {
 	{"msgrcv", "MSGRCV", NULL, USER, rvar, 4, ROFF(ru_msgrcv), LONG, "d"},
 	{"msgsnd", "MSGSND", NULL, USER, rvar, 4, ROFF(ru_msgsnd), LONG, "d"},
 	{"ni", "", "nice"},
-	{"nice", "NI", NULL, 0, pvar, 2, POFF(p_nice), CHAR, "d"},
+	{"nice", "NI", NULL, 0, pvar, 3, POFF(p_nice), CHAR, "d"},
 	{"nivcsw", "NIVCSW", NULL, USER, rvar, 5, ROFF(ru_nivcsw), LONG, "d"},
 	{"nsignals", "", "nsigs"},
 	{"nsigs", "NSIGS", NULL, USER, rvar, 4, ROFF(ru_nsignals), LONG, "d"},

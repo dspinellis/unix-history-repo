@@ -38,11 +38,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strip.c	5.7 (Berkeley) 5/26/91";
+/*static char sccsid[] = "from: @(#)strip.c	5.8 (Berkeley) 11/6/91";*/
+static char rcsid[] = "$Id: strip.c,v 1.6 1993/09/07 16:12:15 brezak Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <a.out.h>
@@ -54,13 +56,15 @@ static char sccsid[] = "@(#)strip.c	5.7 (Berkeley) 5/26/91";
 typedef struct exec EXEC;
 typedef struct nlist NLIST;
 
+#define	strx	n_un.n_strx
+
 void err __P((const char *fmt, ...));
 void s_stab __P((const char *, int, EXEC *));
 void s_sym __P((const char *, int, EXEC *));
 void usage __P((void));
 
-int eval;
-
+int xflag = 0;
+        
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -72,8 +76,11 @@ main(argc, argv)
 	char *fn;
 
 	sfcn = s_sym;
-	while ((ch = getopt(argc, argv, "d")) != EOF)
+	while ((ch = getopt(argc, argv, "dx")) != EOF)
 		switch(ch) {
+                case 'x':
+                        xflag = 1;
+                        /*FALLTHROUGH*/
 		case 'd':
 			sfcn = s_stab;
 			break;
@@ -98,7 +105,7 @@ main(argc, argv)
 		if (close(fd))
 			err("%s: %s", fn, strerror(errno));
 	}
-	exit(eval);
+	exit(0);
 }
 
 void
@@ -107,7 +114,6 @@ s_sym(fn, fd, ep)
 	int fd;
 	register EXEC *ep;
 {
-	static int pagesize = -1;
 	register off_t fsize;
 
 	/* If no symbols or data/text relocation info, quit. */
@@ -119,11 +125,7 @@ s_sym(fn, fd, ep)
 	 * and NMAGIC formats have the text/data immediately following the
 	 * header.  ZMAGIC format wastes the rest of of header page.
 	 */
-	if (ep->a_magic == ZMAGIC)
-		fsize = pagesize == -1 ? (pagesize = getpagesize()) : pagesize;
-	else
-		fsize = sizeof(EXEC);
-	fsize += ep->a_text + ep->a_data;
+	fsize = N_RELOFF(*ep);
 
 	/* Set symbol size and relocation info values to 0. */
 	ep->a_syms = ep->a_trsize = ep->a_drsize = 0;
@@ -141,117 +143,84 @@ s_stab(fn, fd, ep)
 	int fd;
 	EXEC *ep;
 {
+	register int cnt, len, nsymcnt;
+	register char *nstr, *nstrbase, *p, *strbase;
+	register NLIST *sym, *nsym;
 	struct stat sb;
-	register NLIST *bsym2, *sym1, *sym2;
-	register u_long nsym1, nsym2;
-	register char *p, *bstr2, *str1, *str2;
-	register int len, symlen;
-	off_t fsize;
-	int nb;
-	char *bp;
+	NLIST *symbase;
 
 	/* Quit if no symbols. */
 	if (ep->a_syms == 0)
 		return;
 
-	bsym2 = NULL;
-	bp = bstr2 = NULL;
-
-	/* Read the file into memory.			XXX mmap */
-	if (fstat(fd, &sb))
-		goto syserr;
-	if ((bp = malloc(sb.st_size)) == NULL)
-		goto syserr;
-	if (lseek(fd, 0L, SEEK_SET) == -1)
-		goto syserr;
-	if ((nb = read(fd, bp, (int)sb.st_size)) == -1)
-		goto syserr;
-	if (nb != sb.st_size) {
-		errno = EIO;
-		goto syserr;
-	}
+	/* Map the file. */
+	if (fstat(fd, &sb) ||
+	    (ep = (EXEC *)mmap(NULL, sb.st_size, PROT_READ | PROT_WRITE,
+	    MAP_FILE | MAP_SHARED, fd, (off_t)0)) == (EXEC *)-1)
+		err("%s: %s", fn, strerror(errno));
 
 	/*
-	 * Allocate space for new symbol and string tables.  Allocate before
-	 * reading the symbol tables so we can do it all in a single pass.
-	 * This loses if there weren't any symbols to strip, but that's life.
+	 * Initialize old and new symbol pointers.  They both point to the
+	 * beginning of the symbol table in memory, since we're deleting
+	 * entries.
 	 */
-	sym1 = (NLIST *)(bp + N_SYMOFF(*ep));
-	if ((bsym2 = sym2 = malloc((u_int)ep->a_syms)) == NULL) {
+	sym = nsym = symbase = (NLIST *)((char *)ep + N_SYMOFF(*ep));
+
+	/*
+	 * Allocate space for the new string table, initialize old and
+	 * new string pointers.  Handle the extra long at the beginning
+	 * of the string table.
+	 */
+	strbase = (char *)ep + N_STROFF(*ep);
+	if ((nstrbase = malloc((u_int)*(u_long *)strbase)) == NULL)
 		err("%s", strerror(errno));
-		goto mem;
-	}
-	str1 = bp + N_STROFF(*ep);
-	if ((bstr2 = malloc((u_int)*(u_long *)str1)) == NULL) {
-		err("%s", strerror(errno));
-		goto mem;
-	}
-	str2 = bstr2 + sizeof(u_long);
-	symlen = sizeof(u_long);
+	nstr = nstrbase + sizeof(u_long);
 
 	/*
 	 * Read through the symbol table.  For each non-debugging symbol,
-	 * copy it into the new symbol and string tables.  Keep track of
-	 * how many symbols are copied and the length of the new string
-	 * table.
+	 * copy it and save its string in the new string table.  Keep
+	 * track of the number of symbols.
 	 */
-#define	strx	n_un.n_strx
-	nsym2 = 0;
-	for (nsym1 = ep->a_syms / sizeof(NLIST); nsym1--; ++sym1)
-		if (!(sym1->n_type & N_STAB) && sym1->strx) {
-			*sym2 = *sym1;
-			sym2->strx = str2 - bstr2;
-			p = str1 + sym1->strx;
+	for (cnt = ep->a_syms / sizeof(NLIST); cnt--; ++sym)
+		if (!(sym->n_type & N_STAB) && sym->strx) {
+			*nsym = *sym;
+			nsym->strx = nstr - nstrbase;
+			p = strbase + sym->strx;
+                        if (xflag && 
+                            (!(sym->n_type & N_EXT) ||
+                             (sym->n_type & ~N_EXT) == N_FN ||
+                             strcmp(p, "gcc_compiled.") == 0 ||
+                             strcmp(p, "gcc2_compiled.") == 0 ||
+                             strcmp(p, "___gnu_compiled_c") == 0)) {
+                                continue;
+                        }
 			len = strlen(p) + 1;
-			bcopy(p, str2, len);
-			symlen += len;
-			str2 += len;
-			++sym2;
-			++nsym2;
+			bcopy(p, nstr, len);
+			nstr += len;
+			++nsym;
 		}
 
-	/* If no debugging symbols, quit. */
-	if (!nsym2)
-		goto mem;
-
 	/* Fill in new symbol table size. */
-	ep->a_syms = nsym2 * sizeof(NLIST);
-
-	/* Write out the header. */
-	if (lseek(fd, 0L, SEEK_SET) == -1 ||
-	    write(fd, ep, sizeof(EXEC)) != sizeof(EXEC))
-		goto syserr;
-
-	/* Write out the symbol table. */
-	if (lseek(fd, N_SYMOFF(*ep), SEEK_SET) == -1 ||
-	    write(fd, bsym2, ep->a_syms) != ep->a_syms)
-		goto syserr;
+	ep->a_syms = (nsym - symbase) * sizeof(NLIST);
 
 	/* Fill in the new size of the string table. */
-	*(u_long *)bstr2 = symlen;
+	*(u_long *)nstrbase = len = nstr - nstrbase;
 
-	/* Write out the string table. */
-	if (write(fd, bstr2, symlen) != symlen)
-		goto syserr;
+	/*
+	 * Copy the new string table into place.  Nsym should be pointing
+	 * at the address past the last symbol entry.
+	 */
+	bcopy(nstrbase, (void *)nsym, len);
 
 	/* Truncate to the current length. */
-	if ((fsize = lseek(fd, 0L, SEEK_CUR)) == -1)
-		goto syserr;
-	if (ftruncate(fd, fsize))
-syserr:		err("%s: %s", fn, strerror(errno));
-
-mem:	if (bp)
-		free(bp);
-	if (bstr2)
-		free(bstr2);
-	if (bsym2)
-		free(bsym2);
+	if (ftruncate(fd, (char *)nsym + len - (char *)ep))
+		err("%s: %s", fn, strerror(errno));
+	munmap((caddr_t)ep, sb.st_size);
 }
 
 void
 usage()
 {
-
 	(void)fprintf(stderr, "usage: strip [-d] file ...\n");
 	exit(1);
 }
@@ -281,5 +250,5 @@ err(fmt, va_alist)
 	(void)vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	(void)fprintf(stderr, "\n");
-	eval = 1;
+	exit(1);
 }

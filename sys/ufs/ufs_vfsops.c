@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ufs_vfsops.c	7.56 (Berkeley) 6/28/91
+ *	from: @(#)ufs_vfsops.c	7.56 (Berkeley) 6/28/91
+ *	$Id$
  */
 
 #include "param.h"
@@ -207,6 +208,7 @@ ufs_mount(mp, path, data, ndp, p)
 	bzero(fs->fs_fsmnt + size, sizeof(fs->fs_fsmnt) - size);
 	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
 	    MNAMELEN);
+	mp->mnt_stat.f_mntonname[MNAMELEN-1] = '\0';
 	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1, 
 	    &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
@@ -457,7 +459,7 @@ ufs_quotactl(mp, cmds, uid, arg, p)
 #ifndef QUOTA
 	return (EOPNOTSUPP);
 #else
-	if (uid == -1)
+	if (uid == (uid_t)(-1))
 		uid = p->p_cred->p_ruid;
 	cmd = cmds >> SUBCMDSHIFT;
 

@@ -30,11 +30,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)cltp_usrreq.c	7.6 (Berkeley) 6/27/91
+ *	from: @(#)cltp_usrreq.c	7.6 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 #ifndef CLTPOVAL_SRC /* XXX -- till files gets changed */
 #include "param.h"
+#include "systm.h"
 #include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"

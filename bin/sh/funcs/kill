@@ -33,6 +33,8 @@
 # SUCH DAMAGE.
 #
 #	@(#)kill	5.1 (Berkeley) 3/7/91
+#
+#	/b/source/CVS/src/bin/sh/funcs/kill,v 1.3 1993/03/23 00:29:49 cgd Exp
 
 # Convert job names to process ids and then run /bin/kill.
 

@@ -27,6 +27,8 @@
 #				writes on local side
 #	BUFSIZ			buffer sizing from stdio, must be fed
 #				explicitly to remcap.c if not 1024
+#	PULSE_DIAL		use pulse dialing instead of touch-tone
+#	ATX5			basic responses w/BUSY signal detection
 
 PROG=	tip
 CFLAGS+=-I${.CURDIR} -DV831 -DVENTEL -DHAYES -DCOURIER -DDEFBR=2400 \
@@ -35,8 +37,8 @@ CFLAGS+=-I${.CURDIR} -DV831 -DVENTEL -DHAYES -DCOURIER -DDEFBR=2400 \
 BINOWN=	uucp
 BINGRP=	dialer
 BINMODE=4510
-LINKS=	${BINDIR}/tip ${BINDIR}/cu
-MLINKS=	tip.1 cu.1
+#LINKS=	${BINDIR}/tip ${BINDIR}/cu
+#MLINKS=	tip.1 cu.1
 SRCS=	acu.c acutab.c cmds.c cmdtab.c cu.c hunt.c log.c partab.c remcap.c \
 	remote.c tip.c tipout.c uucplock.c value.c vars.c biz22.c courier.c \
 	df.c dn11.c hayes.c v3451.c v831.c ventel.c

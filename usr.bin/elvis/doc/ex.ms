@@ -10,14 +10,14 @@
 .\"
 .de Cm
 .if "\\$1"0" \t\\$2\t\\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
-.if "\\$1"1" \s-2[line]\s+2\t\\$2\t\\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
-.if "\\$1"2" \s-2[line][,line]\s+2\t\\$2\t\\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.if "\\$1"1" \s'-2'[line]\s'+2'\t\\$2\t\\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.if "\\$1"2" \s'-2'[line][,line]\s'+2'\t\\$2\t\\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
 ..
 .if t .ds Q ``
 .if t .ds U ''
 .if n .ds Q "
 .if n .ds U "
-\s+2LINES	COMMAND	ARGUMENTS\s-2
+\s'+2'LINES	COMMAND	ARGUMENTS\s'-2'
 .Cm 0 ab[br] [short] [expanded form]
 .Cm 1 a[ppend][!]
 .Cm 0 ar[gs] [files]
@@ -438,9 +438,9 @@ In visual command mode,
 hitting `*' will do this, too.
 .PP
 You can also create an "errlist" file from outside of \*E,
-and use "\*E -m" to start elvis and have the cursor moved to the
+and use "elvis -m" to start \*E and have the cursor moved to the
 first error.
-Note that you don't need to supply a filename with "\*E -m" because
+Note that you don't need to supply a filename with "elvis -m" because
 the error messages always say which source file an error is in.
 .PP
 Note:

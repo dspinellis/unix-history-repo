@@ -45,17 +45,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00042
- * --------------------         -----   ----------------------
- *
- * 24 Apr 92	Martin Renters		Fix NFS read request hang
- * 20 Aug 92	David Greenman		Fix getnewbuf() 2xAllocation
+ *	$Id: vfs__bio.c,v 1.6 1993/10/16 15:25:16 rgrimes Exp $
  */
-static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/vfs__bio.c,v 1.2 92/01/21 21:30:08 william Exp $";
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "vnode.h"
 #include "buf.h"
@@ -65,7 +59,7 @@ static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/vfs__bio.c,v 1.2 
 #include "vm/vm.h"
 #include "resourcevar.h"
 
-struct buf *getnewbuf(int);
+static struct buf *getnewbuf(int);
 extern	vm_map_t buffer_map;
 
 /*
@@ -118,6 +112,8 @@ bread(struct vnode *vp, daddr_t blkno, int size, struct ucred *cred,
 
 	/* if not found in cache, do some I/O */
 	if ((bp->b_flags & B_CACHE) == 0 || (bp->b_flags & B_INVAL) != 0) {
+		if (curproc && curproc->p_stats)	/* count block I/O */
+			curproc->p_stats->p_ru.ru_inblock++;
 		bp->b_flags |= B_READ;
 		bp->b_flags &= ~(B_DONE|B_ERROR|B_INVAL);
 		if (cred != NOCRED) crhold(cred);		/* 25 Apr 92*/
@@ -145,6 +141,8 @@ breada(struct vnode *vp, daddr_t blkno, int size, daddr_t rablkno, int rabsize,
 
 	/* if not found in cache, do some I/O */
 	if ((bp->b_flags & B_CACHE) == 0 || (bp->b_flags & B_INVAL) != 0) {
+		if (curproc && curproc->p_stats)	/* count block I/O */
+			curproc->p_stats->p_ru.ru_inblock++;
 		bp->b_flags |= B_READ;
 		bp->b_flags &= ~(B_DONE|B_ERROR|B_INVAL);
 		if (cred != NOCRED) crhold(cred);		/* 25 Apr 92*/
@@ -157,6 +155,8 @@ breada(struct vnode *vp, daddr_t blkno, int size, daddr_t rablkno, int rabsize,
 
 	/* if not found in cache, do some I/O (overlapped with first) */
 	if ((rabp->b_flags & B_CACHE) == 0 || (rabp->b_flags & B_INVAL) != 0) {
+		if (curproc && curproc->p_stats)	/* count block I/O */
+			curproc->p_stats->p_ru.ru_inblock++;
 		rabp->b_flags |= B_READ | B_ASYNC;
 		rabp->b_flags &= ~(B_DONE|B_ERROR|B_INVAL);
 		if (cred != NOCRED) crhold(cred);		/* 25 Apr 92*/
@@ -196,6 +196,8 @@ bwrite(register struct buf *bp)
 		if(wasdelayed)
 			reassignbuf(bp, bp->b_vp);
 
+		if (curproc && curproc->p_stats)	/* count block I/O */
+			curproc->p_stats->p_ru.ru_oublock++;
 		bp->b_flags |= B_DIRTY;
 		bp->b_vp->v_numoutput++;
 		VOP_STRATEGY(bp);
@@ -225,6 +227,7 @@ bdwrite(register struct buf *bp)
 
 	if(bp->b_flags & B_INVAL) {
 		brelse(bp);
+		return;
 	}
 	if(bp->b_flags & B_TAPE) {
 		bwrite(bp);
@@ -259,6 +262,8 @@ bawrite(register struct buf *bp)
 		if(wasdelayed)
 			reassignbuf(bp, bp->b_vp);
 
+		if (curproc && curproc->p_stats)	/* count block I/O */
+			curproc->p_stats->p_ru.ru_oublock++;
 		bp->b_flags |= B_DIRTY | B_ASYNC;
 		bp->b_vp->v_numoutput++;
 		VOP_STRATEGY(bp);
@@ -396,6 +401,7 @@ fillin:
 	bp->b_blkno = bp->b_lblkno = 0;
 	bp->b_iodone = 0;
 	bp->b_error = 0;
+	bp->b_resid = 0;
 	bp->b_wcred = bp->b_rcred = NOCRED;
 	if (bp->b_bufsize != sz)
 		allocbuf(bp, sz);

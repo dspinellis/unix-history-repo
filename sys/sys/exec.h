@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)exec.h	7.5 (Berkeley) 2/15/91
+ *	from: @(#)exec.h	7.5 (Berkeley) 2/15/91
+ *	$Id$
  */
 
 #ifndef	_EXEC_H_
@@ -58,6 +59,7 @@ unsigned long	a_drsize;	/* data relocation size */
 #define	OMAGIC		0407	/* old impure format */
 #define	NMAGIC		0410	/* read-only text */
 #define	ZMAGIC		0413	/* demand load format */
+#define QMAGIC          0314    /* "compact" demand load format -- DEPRICATE */
 
 /* a_mid */
 #define	MID_ZERO	0	/* unknown - implementation dependent */

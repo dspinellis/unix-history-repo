@@ -30,15 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)mount.h	7.22 (Berkeley) 6/3/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00129
- * --------------------         -----   ----------------------
- *
- * 02 Apr 93	Paul Popelka		Added support for PCFS
- *
+ *	from: @(#)mount.h	7.22 (Berkeley) 6/3/91
+ *	$Id: mount.h,v 1.4 1993/10/16 17:17:14 rgrimes Exp $
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -114,6 +107,8 @@ struct mount {
 #define	MNT_NOEXEC	0x00000004	/* can't exec from filesystem */
 #define	MNT_NOSUID	0x00000008	/* don't honor setuid bits on fs */
 #define	MNT_NODEV	0x00000010	/* don't interpret special files */
+#define MNT_NOCORE	0x00000020	/* don't create core files */
+#define MNT_NORRIP	0x00000040	/* disable Rock Ridge Ext.*/
 
 /*
  * exported mount flags.

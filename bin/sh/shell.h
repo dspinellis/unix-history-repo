@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)shell.h	5.4 (Berkeley) 4/12/91
+ *	from: @(#)shell.h	5.4 (Berkeley) 4/12/91
+ *	shell.h,v 1.4 1993/08/01 18:58:35 mycroft Exp
  */
 
 /*

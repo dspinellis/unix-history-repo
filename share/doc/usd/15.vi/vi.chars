@@ -32,7 +32,7 @@
 .\"	@(#)vi.chars	6.3 (Berkeley) 4/17/91
 .\"
 .bd S 3
-..pn 21
+.pn 21
 .de iP
 .IP "\fB\\$1\fR" \\$2
 ..

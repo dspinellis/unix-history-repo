@@ -264,7 +264,7 @@ MARK v_overtype(m)
 	/* Normally, we input starting here, in replace mode */
 	ChangeText
 	{
-		end = input(m, m, WHEN_VIREP, FALSE);
+		end = input(m, m, WHEN_VIREP, 0);
 	}
 
 	/* if we ended on the same line we started on, then this
@@ -361,14 +361,13 @@ MARK v_insert(m, cnt, key)
 {
 	int	wasdot;
 	long	reps;
-	int	above;	/* boolean: new line going above old line? */
+	int	delta = 0;/* 1 to take autoindent from line below, -1 for above */
 
 	DEFAULT(1);
 
 	ChangeText
 	{
 		/* tweak the insertion point, based on command key */
-		above = FALSE;
 		switch (key)
 		{
 		  case 'i':
@@ -394,19 +393,20 @@ MARK v_insert(m, cnt, key)
 		  case 'O':
 			m &= ~(BLKSIZE - 1);
 			add(m, "\n");
-			above = TRUE;
+			delta = 1;
 			break;
 
 		  case 'o':
 			m = (m & ~(BLKSIZE - 1)) + BLKSIZE;
 			add(m, "\n");
+			delta = -1;
 			break;
 		}
 
 		/* insert the same text once or more */
 		for (reps = cnt, wasdot = doingdot; reps > 0; reps--, doingdot = TRUE)
 		{
-			m = input(m, m, WHEN_VIINP, above) + 1;
+			m = input(m, m, WHEN_VIINP, delta) + 1;
 		}
 		if (markidx(m) > 0)
 		{
@@ -455,7 +455,7 @@ MARK v_change(m, n)
 	ChangeText
 	{
 		cut(m, n);
-		m = input(m, n, WHEN_VIINP, FALSE);
+		m = input(m, n, WHEN_VIINP, 0);
 	}
 
 	return m;
@@ -479,7 +479,7 @@ MARK v_subst(m, cnt)
 	ChangeText
 	{
 		cut(m, m + cnt);
-		m = input(m, m + cnt, WHEN_VIINP, FALSE);
+		m = input(m, m + cnt, WHEN_VIINP, 0);
 	}
 	return m;
 }
@@ -964,12 +964,24 @@ MARK v_popup(m, n)
 		break;
 	}
 
-	/* arrange for the menu to be erased (except that "chg from kbd"
-	 * already erased it, and "save & exit" doesn't care)
+	/* arrange for the menu to be erased (except "save & exit" doesn't care)
 	 */
-	if (sel != 5 && sel != 9)
+	if (mode == MODE_VI)
 		redraw(MARK_UNSET, FALSE);
 
 	return m;
 }
 #endif /* undef NO_POPUP */
+
+#ifndef NO_TAGSTACK
+MARK v_pop(m, cnt, cmd)
+	MARK	m;	/* original cursor position (ignored) */
+	long	cnt;	/* number of levels to pop */
+	int	cmd;	/* command key -- ^T  (ignored) */
+{
+	DEFAULT(1L);
+	sprintf(tmpblk.c, "%ld", cnt);
+	cmd_pop(m, m, CMD_POP, FALSE, tmpblk.c);
+	return cursor;
+}
+#endif

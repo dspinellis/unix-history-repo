@@ -44,13 +44,12 @@ static char sccsid[] = "@(#)getstr.c	5.4 (Berkeley) 6/1/90";
 wgetstr(win,str)
 reg WINDOW	*win; 
 reg char	*str; {
+	int c;
 
-	while ((*str = wgetch(win)) != ERR && *str != '\n')
-		str++;
-	if (*str == ERR) {
+	while ((c = wgetch(win)) != ERR && c != EOF && c != '\n')
+		*str++ = c;
 		*str = '\0';
+	if (c == ERR)
 		return ERR;
-	}
-	*str = '\0';
 	return OK;
 }

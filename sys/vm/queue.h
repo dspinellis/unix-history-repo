@@ -34,8 +34,10 @@
  * SUCH DAMAGE.
  *
  *	@(#)queue.h	7.3 (Berkeley) 4/21/91
- *
- *
+ *	$Id$
+ */
+
+/*
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
  *

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1983 Eric P. Allman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)convtime.c	5.4 (Berkeley) 6/1/90";
+static char sccsid[] = "@(#)convtime.c	8.1 (Berkeley) 6/7/93";
 #endif /* not lint */
 
 # include <ctype.h>
@@ -53,6 +53,7 @@ static char sccsid[] = "@(#)convtime.c	5.4 (Berkeley) 6/1/90";
 **
 **	Parameters:
 **		p -- pointer to ascii time.
+**		units -- default units if none specified.
 **
 **	Returns:
 **		time in seconds.
@@ -62,8 +63,9 @@ static char sccsid[] = "@(#)convtime.c	5.4 (Berkeley) 6/1/90";
 */
 
 time_t
-convtime(p)
+convtime(p, units)
 	char *p;
+	char units;
 {
 	register time_t t, r;
 	register char c;
@@ -72,10 +74,13 @@ convtime(p)
 	while (*p != '\0')
 	{
 		t = 0;
-		while (isdigit(c = *p++))
+		while ((c = *p++) != '\0' && isascii(c) && isdigit(c))
 			t = t * 10 + (c - '0');
 		if (c == '\0')
+		{
+			c = units;
 			p--;
+		}
 		switch (c)
 		{
 		  case 'w':		/* weeks */

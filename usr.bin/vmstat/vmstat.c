@@ -745,7 +745,7 @@ cpustats()
 void
 dointr()
 {
-	register long *intrcnt, inttotal, uptime;
+	register unsigned long *intrcnt, inttotal, uptime;
 	register int nintr, inamlen;
 	register char *intrname;
 
@@ -760,17 +760,17 @@ dointr()
 	}
 	kread(X_INTRCNT, intrcnt, (size_t)nintr);
 	kread(X_INTRNAMES, intrname, (size_t)inamlen);
-	(void)printf("interrupt      total      rate\n");
+	(void)printf("%-12s %10s %8s\n", "interrupt", "count", "rate");
 	inttotal = 0;
 	nintr /= sizeof(long);
 	while (--nintr >= 0) {
 		if (*intrcnt)
-			(void)printf("%-12s %8ld %8ld\n", intrname,
+			(void)printf("%-12s %10lu %8lu\n", intrname,
 			    *intrcnt, *intrcnt / uptime);
 		intrname += strlen(intrname) + 1;
 		inttotal += *intrcnt++;
 	}
-	(void)printf("Total        %8ld %8ld\n", inttotal, inttotal / uptime);
+	(void)printf("%-12s %10lu %8lu\n", "Total", inttotal, inttotal / uptime);
 }
 
 /*
@@ -807,11 +807,11 @@ domem()
 	kread(X_KMEMSTAT, kmemstats, sizeof(kmemstats));
 	(void)printf("\nMemory statistics by type\n");
 	(void)printf(
-"      Type  In Use  MemUse   HighUse  Limit Requests  TypeLimit KernLimit\n");
+"       Type  In Use   MemUse   HighUse  Limit Requests  TypeLimit KernLimit\n");
 	for (i = 0, ks = &kmemstats[0]; i < M_LAST; i++, ks++) {
 		if (ks->ks_calls == 0)
 			continue;
-		(void)printf("%10s %6ld %7ldK %8ldK %5ldK %8ld %6u %9u\n",
+		(void)printf("%11s %7ld %7ldK %8ldK %5ldK %8ld %6u %9u\n",
 		    kmemnames[i] ? kmemnames[i] : "undefined",
 		    ks->ks_inuse, (ks->ks_memuse + 1023) / 1024,
 		    (ks->ks_maxused + 1023) / 1024,

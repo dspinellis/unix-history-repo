@@ -33,9 +33,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_fault.c	7.6 (Berkeley) 5/7/91
- *
- *
+ *	from: @(#)vm_fault.c	7.6 (Berkeley) 5/7/91
+ *	$Id$
+ */
+
+/*
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
  *
@@ -61,8 +63,6 @@
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
  */
-
-static char rcsid[] = "$Header: /usr/bill/working/sys/vm/RCS/vm_fault.c,v 1.2 92/01/21 21:58:17 william Exp $";
 
 /*
  *	Page fault handling module.
@@ -528,6 +528,7 @@ thread_wakeup(&vm_pages_needed); /* XXX */
 			 */
 
 			vm_page_lock_queues();
+			vm_page_activate(m);
 			vm_page_deactivate(m);
 			pmap_page_protect(VM_PAGE_TO_PHYS(m), VM_PROT_NONE);
 			vm_page_unlock_queues();

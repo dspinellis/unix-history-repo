@@ -1,19 +1,21 @@
-.Go 10 "TERMCAP"
+.Go 11 "TERMCAP"
 .PP
 \*E uses fairly standard termcap fields for most things.
-I invented the cursor shape names
+I invented the cursor shape names and some of the function key names,
 but other than that there should be few surprises.
 .SH
 Required numeric fields
 .if n .ul 0
 .ID
+.ta 12n
 :co#:	number of columns on the screen (chars per line)
 :li#:	number of lines on the screen
 .DE
 .SH
 Required string fields
-.ID
 .if n .ul 0
+.ID
+.ta 12n
 :ce=:	clear to end-of-line
 :cl=:	home the cursor & clear the screen
 :cm=:	move the cursor to a given row/column
@@ -23,6 +25,7 @@ Required string fields
 Boolean fields
 .if n .ul 0
 .ID
+.ta 12n
 :am:	auto margins - wrap when char is written in last column?
 :xn:	brain-damaged auto margins - newline ignored after wrap
 :pt:	physical tabs?
@@ -31,6 +34,7 @@ Boolean fields
 Optional string fields
 .if n .ul 0
 .ID
+.ta 12n
 :al=:	insert a blank row on the screen
 :dl=:	delete a row from the screen
 :cd=:	clear to end of display
@@ -40,15 +44,16 @@ Optional string fields
 :dc=:	delete a character
 :sr=:	scroll reverse (insert row at top of screen)
 :vb=:	visible bell
+:ks=:	keypad enable
+:ke=:	keypad disable
 :ti=:	terminal initialization string, to start full-screen mode
 :te=:	terminal termination, to end full-screen mode
-:ks=:	enables the cursor keypad
-:ke=:	disables the cursor keypad
 .DE
 .SH
 Optional strings received from the keyboard
 .if n .ul 0
 .ID
+.ta 12n
 :kd=:	sequence sent by the <down arrow> key
 :kl=:	sequence sent by the <left arrow> key
 :kr=:	sequence sent by the <right arrow> key
@@ -73,6 +78,7 @@ so an IBM PC keyboard may be described using those names instead.
 Optional strings sent by function keys
 .if n .ul 0
 .ID
+.ta 20n
 :k1=:...:k9=:k0=:	codes sent by <F1> through <F10> keys
 :s1=:...:s9=:s0=:	codes sent by <Shift F1> ... <Shift F10>
 :c1=:...:c9=:c0=:	codes sent by <Ctrl F1> ... <Ctrl F10>
@@ -85,10 +91,13 @@ the <F10> key, but \*E doesn't support that.
 .PP
 Also, the :s1=:..., :c1=:..., and :a1=:... codes are very non-standard.
 The terminfo library doesn't support them.
+Consequently, if you're using the terminfo library then you might as well
+add -DNO_SHIFT_FKEY to your CFLAGS setting.
 .SH
 Optional fields that describe character attributes
 .if n .ul 0
 .ID
+.ta 12n
 :so=:se=:	start/end standout mode (We don't care about :sg#:)
 :us=:ue=:	start/end underlined mode
 :md=:me=:	start/end boldface mode
@@ -102,6 +111,7 @@ The :cQ=: string is used by \*E immediately before exiting to undo
 the effects of the other cursor shape strings.
 If :cQ=: is not given, then all other cursor shape strings are ignored.
 .ID
+.ta 12n
 :cQ=:	normal cursor
 :cX=:	cursor used for reading EX command
 :cV=:	cursor used for reading VI commands
@@ -112,6 +122,7 @@ If :cQ=: is not given, then all other cursor shape strings are ignored.
 If the capabilities above aren't given, then \*E will try to use the
 following values instead.
 .ID
+.ta 12n
 :ve=:	normal cursor, used as :cQ=:cX=:cI=:cR=:
 :vs=:	gaudy cursor, used as :cV=:
 .DE
@@ -119,23 +130,17 @@ following values instead.
 An example
 .PP
 Here's the termcap entry I use on my Minix-ST system.
-Some of the fields in it have nothing to do with \*E.
-Some can only work on my system;
-I have modified my kernel's screen driver.
 .sp
 .LD
-.ne 14
-mx|minix|minixst|ansi:\\
-	:is=\\E[0~:co#80:li#25:bs:pt:\\
-	:cm=\\E[%i%d;%dH:up=\\E[A:do=^J:nd=\\E[C:sr=\\EM:\\
-	:cd=\\E[J:ce=\\E[K:cl=\\E[H\\E[J:\\
-	:al=\\E[L:dl=\\E[M:ic=\\E[@:dc=\\E[P:im=:ei=:\\
-	:so=\\E[7m:se=\\E[m:us=\\E[4m:ue=\\E[m:\\
-	:md=\\E[1m:me=\\E[m:as=\\E[1;3m:ae=\\E[m:\\
-	:ku=\\E[A:kd=\\E[B:kr=\\E[C:kl=\\E[D:\\
-	:k1=\\E[1~:k2=\\E[2~:k3=\\E[3~:k4=\\E[4~:k5=\\E[5~:\\
-	:k6=\\E[6~:k7=\\E[17~:k8=\\E[18~:k9=\\E[19~:k0=\\E[20~:\\
-	:kU=\\E[36~:kQ=\\E[32~:kH=\\E[28~:\\
-	:GV=3:GH=D:G1=?:G2=Z:G3=@:G4=Y:GC=E:GL=4:GR=C:GU=A:GD=B:\\
-	:cQ=\\E[k:cX=\\E[2;0k:cV=\\E[16;0k:cI=\\E[k:cR=\\E[16;20k:
+.ne 10
+mx|minix|minixst|ansi:\e
+	:is=\eE[0~:co#80:li#25:bs:pt:\e
+	:cm=\eE[%i%d;%dH:up=\eE[A:do=^J:nd=\eE[C:sr=\eEM:\e
+	:cd=\eE[J:ce=\eE[K:cl=\eE[H\eE[J:\e
+	:al=\eE[L:dl=\eE[M:ic=\eE[@:dc=\eE[P:im=:ei=:\e
+	:so=\eE[7m:se=\eE[m:us=\eE[4m:ue=\eE[m:\e
+	:md=\eE[1m:me=\eE[m:as=\eE[1;3m:ae=\eE[m:\e
+	:ku=\eE[A:kd=\eE[B:kr=\eE[C:kl=\eE[D:\e
+	:k1=\eE[1~:k2=\eE[2~:k3=\eE[3~:k4=\eE[4~:k5=\eE[5~:\e
+	:k6=\eE[6~:k7=\eE[17~:k8=\eE[18~:k9=\eE[19~:k0=\eE[20~:
 .DE

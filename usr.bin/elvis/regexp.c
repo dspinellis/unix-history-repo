@@ -33,10 +33,69 @@
 #include "config.h"
 #include "ctype.h"
 #include "vi.h"
-#include "regexp.h"
+#ifdef REGEX
+# include <regex.h>
+#else
+# include "regexp.h"
+#endif
 
 
+#ifdef REGEX
+extern int patlock;		/* from cmd_substitute() module */
 
+static regex_t	*previous = NULL;	/* the previous regexp, used when null regexp is given */
+
+regex_t *
+optpat(s)
+	char *s;
+{
+	static char *neuter();
+
+	int n;
+	if (*s == '\0') {
+		if (!previous) regerr("RE error: no previous pattern");
+		return previous;
+	} else if (previous && !patlock)
+		regfree(previous);
+	else if ((previous = (regex_t *) malloc(sizeof(regex_t))) == NULL) {
+		regerr("RE error: out of memory");
+		return previous;
+	}
+	patlock = 0;
+	if (n = regcomp(previous, *o_magic ? s : neuter(s), 
+	    *o_ignorecase ? REG_ICASE : 0)) {
+		regerr("RE error: %d", n);
+		free(previous);
+		return previous = NULL;
+	}
+	return previous;
+}
+
+/* escape BRE meta-characters in a string */
+static char *
+neuter(s)
+	char *s;
+{
+	static char *hd = NULL;
+
+	char *t;
+	int n = strlen(s);
+
+	free(hd);
+	if ((hd = t = (char *) malloc(n + n + 1)) == NULL)
+		return NULL;
+	if (*s == '^')
+		*t++ = *s++;
+	while (*s) {
+		if (*s == '.' || *s == '\\' || *s == '[' || *s == '*')
+			*t++ = '\\';
+		*t++ = *s++;
+	}
+	*t = '\0';
+	return hd;
+}
+
+#else
 static char	*previous;	/* the previous regexp, used when null regexp is given */
 
 
@@ -78,7 +137,7 @@ static char	*retext;	/* points to the text being compiled */
 
 /* error-handling stuff */
 jmp_buf	errorhandler;
-#define FAIL(why)	regerror(why); longjmp(errorhandler, 1)
+#define FAIL(why)	regerr(why); longjmp(errorhandler, 1)
 
 
 
@@ -92,6 +151,8 @@ static char *makeclass(text, bmap)
 	REG int		i;
 	int		complement = 0;
 
+
+	checkmem();
 
 	/* zero the bitmap */
 	for (i = 0; bmap && i < 32; i++)
@@ -119,7 +180,7 @@ static char *makeclass(text, bmap)
 			}
 
 			/* add each character in the span to the bitmap */
-			for (i = text[0]; bmap && i <= text[2]; i++)
+			for (i = UCHAR(text[0]); bmap && (unsigned)i <= UCHAR(text[2]); i++)
 			{
 				bmap[i >> 3] |= (1 << (i & 7));
 			}
@@ -133,7 +194,7 @@ static char *makeclass(text, bmap)
 			i = *text++;
 			if (bmap)
 			{
-				bmap[i >> 3] |= (1 << (i & 7));
+				bmap[UCHAR(i) >> 3] |= (1 << (UCHAR(i) & 7));
 			}
 		}
 	}
@@ -153,6 +214,8 @@ static char *makeclass(text, bmap)
 		}
 	}
 
+	checkmem();
+
 	return text;
 }
 
@@ -171,6 +234,10 @@ static int gettoken(sptr, re)
 	int	c;
 
 	c = **sptr;
+	if (!c)
+	{
+		return c;
+	}
 	++*sptr;
 	if (c == '\\')
 	{
@@ -353,21 +420,30 @@ regexp *regcomp(exp)
 	int		token;
 	int		peek;
 	char		*build;
+#if __STDC__
+    volatile
+#endif
 	regexp		*re;
 #ifndef CRUNCH
 	int		from;
 	int		to;
 	int		digit;
 #endif
+#ifdef DEBUG
+	int		calced;
+#endif
 
+
+	checkmem();
 
 	/* prepare for error handling */
 	re = (regexp *)0;
 	if (setjmp(errorhandler))
 	{
+		checkmem();
 		if (re)
 		{
-			free(re);
+			_free_(re);
 		}
 		return (regexp *)0;
 	}
@@ -384,20 +460,26 @@ regexp *regcomp(exp)
 	else /* non-empty regexp given, so remember it */
 	{
 		if (previous)
-			free(previous);
+			_free_(previous);
 		previous = (char *)malloc((unsigned)(strlen(exp) + 1));
 		if (previous)
 			strcpy(previous, exp);
 	}
 
 	/* allocate memory */
+	checkmem();
 	class_cnt = 0;
 	start_cnt = 1;
 	end_sp = 0;
 	retext = exp;
+#ifdef DEBUG
+	calced = calcsize(exp);
+	size = calced + sizeof(regexp);
+#else
 	size = calcsize(exp) + sizeof(regexp) + 10; /* !!! 10 bytes for slop */
+#endif
 #ifdef lint
-	re = ((regexp *)0) + size;
+	re = (regexp *)0;
 #else
 	re = (regexp *)malloc((unsigned)size);
 #endif
@@ -405,6 +487,7 @@ regexp *regcomp(exp)
 	{
 		FAIL("Not enough memory for this RE");
 	}
+	checkmem();
 
 	/* compile it */
 	build = &re->program[1 + 32 * class_cnt];
@@ -541,6 +624,7 @@ regexp *regcomp(exp)
 			*build++ = token;
 		}
 	}
+	checkmem();
 
 	/* end it with a \) which MUST MATCH the opening \( */
 	ADD_META(build, M_END(0));
@@ -549,6 +633,15 @@ regexp *regcomp(exp)
 		FAIL("Not enough \\)s");
 	}
 
+#ifdef DEBUG
+	if ((int)(build - re->program) != calced)
+	{
+		msg("regcomp error: calced=%d, actual=%d", calced, (int)(build - re->program));
+		getkey(0);
+	}
+#endif
+
+	checkmem();
 	return re;
 }
 
@@ -577,7 +670,7 @@ int match1(re, ch, token)
 	}
 	else if (IS_CLASS(token))
 	{
-		if (re->program[1 + 32 * (token - M_CLASS(0)) + (ch >> 3)] & (1 << (ch & 7)))
+		if (re->program[1 + 32 * (token - M_CLASS(0)) + (UCHAR(ch) >> 3)] & (1 << (UCHAR(ch) & 7)))
 			return 0;
 	}
 	else if (ch == token || *o_ignorecase && tolower(ch) == tolower(token))
@@ -733,6 +826,8 @@ int regexec(re, str, bol)
 	int	len;	/* length of the string */
 	REG char	*here;
 
+	checkmem();
+
 	/* if must start at the beginning of a line, and this isn't, then fail */
 	if (re->bol && !bol)
 	{
@@ -780,6 +875,7 @@ int regexec(re, str, bol)
 	}
 
 	/* if we didn't fail, then we must have succeeded */
+	checkmem();
 	return 1;
 }
 
@@ -802,7 +898,7 @@ regexp *regcomp(exp)
 #endif
 	if (!re)
 	{
-		regerror("Could not malloc a regexp structure");
+		regerr("Could not malloc a regexp structure");
 		return (regexp *)0;
 	}
 
@@ -852,7 +948,7 @@ regexp *regcomp(exp)
 			}
 			else
 			{
-				regerror("extra \\ at end of regular expression");
+				regerr("extra \\ at end of regular expression");
 			}
 			break;
 
@@ -932,3 +1028,4 @@ int regexec(prog, string, bolflag)
 	return rc == 1;
 }
 #endif
+#endif /* !REGEX */

@@ -32,18 +32,11 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00168
- * --------------------         -----   ----------------------
- *
- * 04 Jun 93	Jim Wilson		Seven (7) fixes for misc bugs
- *
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parser.c	5.3 (Berkeley) 4/12/91";
+/*static char sccsid[] = "from: @(#)parser.c	5.3 (Berkeley) 4/12/91";*/
+static char rcsid[] = "parser.c,v 1.8 1993/08/01 18:58:02 mycroft Exp";
 #endif /* not lint */
 
 #include "shell.h"
@@ -638,7 +631,7 @@ readtoken() {
 		 * check for keywords
 		 */
 		if (t == TWORD && !quoteflag) {
-			register char **pp;
+			register char *const *pp;
 
 			for (pp = parsekwd; *pp; pp++) {
 				if (**pp == *wordtext && equal(*pp, wordtext)) {
@@ -1083,7 +1076,7 @@ parsebackq: {
 			ckfree(str);
 		parsebackquote = 0;
 		handler = savehandler;
-		longjmp(handler, 1);
+		longjmp(handler->loc, 1);
 	}
 	INTOFF;
 	str = NULL;
@@ -1132,9 +1125,12 @@ parsebackq: {
 	if (!oldstyle && (readtoken() != TRP))
 		synexpect(TRP);
 	(*nlpp)->n = n;
-	/* Start reading from old file again.  */
-	if (oldstyle)
+	/* Start reading from old file again, and clear tokpushback since
+	   any pushed back token from the string is no longer relevant.  */
+	if (oldstyle) {
 		popfile();
+		tokpushback = 0;
+	}
 	while (stackblocksize() <= savelen)
 		growstackblock();
 	STARTSTACKSTR(out);
@@ -1186,7 +1182,7 @@ attyline() {
 		if (exception == EXERROR)
 			out2str("\033]D\n");
 		handler = savehandler;
-		longjmp(handler, 1);
+		longjmp(handler->loc, 1);
 	}
 	savehandler = handler;
 	handler = &jmploc;

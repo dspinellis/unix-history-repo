@@ -135,6 +135,7 @@ args:	argc -= optind;
 
 		if (!strncmp(*argv, "gfmt1", sizeof("gfmt1") - 1)) {
 			gread(&i.t, *argv + sizeof("gfmt1") - 1);
+			i.set = 1;
 			continue;
 		}
 

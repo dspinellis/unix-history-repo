@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)mystring.h	5.1 (Berkeley) 3/7/91
+ *	from: @(#)mystring.h	5.1 (Berkeley) 3/7/91
+ *	mystring.h,v 1.4 1993/08/01 18:58:39 mycroft Exp
  */
 
 #ifndef SYSV

@@ -33,9 +33,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_page.c	7.4 (Berkeley) 5/7/91
- *
- *
+ *	from: @(#)vm_page.c	7.4 (Berkeley) 5/7/91
+ *	$Id$
+ */
+
+/*
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
  *
@@ -60,17 +62,6 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         3       00147
- * --------------------         -----   ----------------------
- *
- * 22 Jan 93	Paul Mackerras		Fixed bug where pages got lost
- * 08 Apr 93	Yuval Yarom		Several VM system fixes
- * 20 Apr 93	Paul Kranenburg		Detect and prevent kernel deadlocks in
- *					VM system
- *
  */
 
 /*

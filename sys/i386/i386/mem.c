@@ -36,8 +36,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * from: Utah $Hdr: mem.c 1.13 89/10/08$
- *	@(#)mem.c	7.2 (Berkeley) 5/9/91
+ *	from: Utah $Hdr: mem.c 1.13 89/10/08$
+ *	from: @(#)mem.c	7.2 (Berkeley) 5/9/91
+ *	$Id$
  */
 
 /*
@@ -50,8 +51,10 @@
 #include "systm.h"
 #include "uio.h"
 #include "malloc.h"
+#include "proc.h"
 
 #include "machine/cpu.h"
+#include "machine/psl.h"
 
 #include "vm/vm_param.h"
 #include "vm/lock.h"
@@ -60,6 +63,42 @@
 #include "vm/vm_prot.h"
 
 extern        char *vmmap;            /* poor name! */
+/*ARGSUSED*/
+mmclose(dev, uio, flags)
+	dev_t dev;
+	struct uio *uio;
+	int flags;
+{
+	struct syscframe *fp;
+
+	switch (minor(dev)) {
+	case 14:
+		fp = (struct syscframe *)curproc->p_regs;
+		fp->sf_eflags &= ~PSL_IOPL;
+		break;
+	default:
+		break;
+	}
+	return(0);
+}
+/*ARGSUSED*/
+mmopen(dev, uio, flags)
+	dev_t dev;
+	struct uio *uio;
+	int flags;
+{
+	struct syscframe *fp;
+
+	switch (minor(dev)) {
+	case 14:
+		fp = (struct syscframe *)curproc->p_regs;
+		fp->sf_eflags |= PSL_IOPL;
+		break;
+	default:
+		break;
+	}
+	return(0);
+}
 /*ARGSUSED*/
 mmrw(dev, uio, flags)
 	dev_t dev;

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ns_output.c	7.8 (Berkeley) 12/16/90
+ *	from: @(#)ns_output.c	7.8 (Berkeley) 12/16/90
+ *	$Id$
  */
 
 #include "param.h"

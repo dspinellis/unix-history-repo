@@ -1,17 +1,15 @@
-.include "../Makefile.inc"
+#       @(#)Makefile    5.6 (Berkeley) 6/23/90
 
-all:	makewhatis
+NOMAN=	noman
+CLEANFILES= makewhatis
 
-obj depend rcsfreeze all:
-	@echo -n
+beforeinstall: makewhatis
+	install -c -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
+	     ${.CURDIR}/makewhatis.sh ${DESTDIR}${BINDIR}/makewhatis
 
-cleandir: clean
-
-clean:
-	@rm -f makewhatis
-
-install:
-	install -c -o bin -g bin -m 444 makewhatis /usr/bin
+.include <bsd.prog.mk>
 
 makewhatis: makewhatis.sh
-	sed -e 's/%sections%/ "1", "n", "l", "6", "8", "2", "3", "4", "5", "7", "p", "o", NULL/' makewhatis.sh > makewhatis
+	sed -e 's/%sections%/ "1", "n", "l", "6", "8", "2", "3", "4", "5", "7", "p", "o", NULL/' \
+	   ${.CURDIR}/makewhatis.sh > makewhatis
+

@@ -32,7 +32,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.19 (Berkeley) 7/26/91";
+/*static char sccsid[] = "from: @(#)dir.c	5.19 (Berkeley) 7/26/91";*/
+static char rcsid[] = "$Id$";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -41,6 +42,7 @@ static char sccsid[] = "@(#)dir.c	5.19 (Berkeley) 7/26/91";
 #define KERNEL
 #include <ufs/dir.h>
 #undef KERNEL
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include "fsck.h"
@@ -127,20 +129,27 @@ fsck_readdir(idesc)
 {
 	register struct direct *dp, *ndp;
 	register struct bufarea *bp;
-	long size, blksiz, fix;
+	long blksiz, new_id_filesize;
+	int fix, new_id_loc, new_reclen, orig_id_loc, size;
 
 	blksiz = idesc->id_numfrags * sblock.fs_fsize;
 	bp = getdirblk(idesc->id_blkno, blksiz);
+	orig_id_loc = idesc->id_loc;
 	if (idesc->id_loc % DIRBLKSIZ == 0 && idesc->id_filesize > 0 &&
 	    idesc->id_loc < blksiz) {
 		dp = (struct direct *)(bp->b_un.b_buf + idesc->id_loc);
 		if (dircheck(idesc, dp))
 			goto dpok;
-		idesc->id_loc += DIRBLKSIZ;
-		idesc->id_filesize -= DIRBLKSIZ;
+		/*
+		 * See below about recursion.
+		 */
+		new_id_loc = idesc->id_loc + DIRBLKSIZ;
+		new_id_filesize = idesc->id_filesize - DIRBLKSIZ;
 		fix = dofix(idesc, "DIRECTORY CORRUPTED");
+		idesc->id_loc = new_id_loc;
+		idesc->id_filesize = new_id_filesize;
 		bp = getdirblk(idesc->id_blkno, blksiz);
-		dp = (struct direct *)(bp->b_un.b_buf + idesc->id_loc);
+		dp = (struct direct *)(bp->b_un.b_buf + orig_id_loc);
 		dp->d_reclen = DIRBLKSIZ;
 		dp->d_ino = 0;
 		dp->d_namlen = 0;
@@ -161,12 +170,23 @@ dpok:
 	if (idesc->id_loc < blksiz && idesc->id_filesize > 0 &&
 	    dircheck(idesc, ndp) == 0) {
 		size = DIRBLKSIZ - (idesc->id_loc % DIRBLKSIZ);
-		idesc->id_loc += size;
-		idesc->id_filesize -= size;
+		/*
+		 * dofix() may recurse here.  Don't let it cause multiple
+		 * fixups.
+		 */
+		new_id_loc = idesc->id_loc + size;
+		new_id_filesize = idesc->id_filesize - size;
+		new_reclen = dp->d_reclen + size;
 		fix = dofix(idesc, "DIRECTORY CORRUPTED");
+		idesc->id_loc = new_id_loc;
+		idesc->id_filesize = new_id_filesize;
+		/*
+		 * dofix() calls fsck_readdir() and getdirblk() discards
+		 * the lock on bp so bp may now be invalid.
+		 */
 		bp = getdirblk(idesc->id_blkno, blksiz);
-		dp = (struct direct *)(bp->b_un.b_buf + idesc->id_loc);
-		dp->d_reclen += size;
+		dp = (struct direct *)(bp->b_un.b_buf + orig_id_loc);
+		dp->d_reclen = new_reclen;
 		if (fix)
 			dirty(bp);
 	}
@@ -185,8 +205,10 @@ dircheck(idesc, dp)
 	register char *cp;
 	int spaceleft;
 
-	size = DIRSIZ(dp);
 	spaceleft = DIRBLKSIZ - (idesc->id_loc % DIRBLKSIZ);
+	if (spaceleft < offsetof(struct direct, d_name))
+		return (0);	/* dp is bad; don't use it */
+	size = DIRSIZ(dp);
 	if (dp->d_ino < maxino &&
 	    dp->d_reclen != 0 &&
 	    dp->d_reclen <= spaceleft &&

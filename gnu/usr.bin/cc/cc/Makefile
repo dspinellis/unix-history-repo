@@ -2,14 +2,15 @@
 
 PROG=           gcc
 SRCS=           gcc.c version.c obstack.c
-MAN1=		gcc.0 g++.0
+MAN1=		gcc.1 g++.1
 BINDIR=		/usr/bin
-CFLAGS+=        -I$(.CURDIR) -I$(.CURDIR)/../common
-.PATH:          $(.CURDIR)/../common 
-
+CFLAGS+=        -I$(.CURDIR) -I$(.CURDIR)/../lib
+.PATH:          $(.CURDIR)/../lib 
 
 afterinstall:
-	-rm -f $(DESTDIR)$(BINDIR)/gcc
-	cd $(DESTDIR)$(BINDIR); ln -s cc gcc
+	install -c -o $(BINOWN) -g $(BINGRP) -m $(BINMODE) \
+		$(.CURDIR)/g++.script $(DESTDIR)/usr/bin/g++
+	rm -f $(DESTDIR)$(BINDIR)/cc
+	cd $(DESTDIR)$(BINDIR); ln -s gcc cc
 
 .include <bsd.prog.mk>

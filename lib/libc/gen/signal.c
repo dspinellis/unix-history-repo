@@ -55,6 +55,6 @@ signal(s, a)
 	if (!sigismember(&_sigintr, s))
 		sa.sa_flags |= SA_RESTART;
 	if (sigaction(s, &sa, &osa) < 0)
-		return (BADSIG);
+		return (SIG_ERR);
 	return (osa.sa_handler);
 }

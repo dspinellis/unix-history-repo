@@ -1,3 +1,7 @@
+/*
+ * 	$Id: isofs_bmap.c,v 1.2 1993/05/20 03:30:44 cgd Exp $
+ */
+
 #include "param.h"
 #include "namei.h"
 #include "buf.h"

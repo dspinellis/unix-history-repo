@@ -61,7 +61,7 @@ static char sccsid[] = "@(#)main.c	5.10 (Berkeley) 3/1/91";
 
 #define	TIMEOUT		5		/* secs between rexmt's */
 
-struct	sockaddr_in sin;
+struct	sockaddr_in s_in;
 int	f;
 short   port;
 int	trace;
@@ -127,7 +127,7 @@ char	*rindex();
 main(argc, argv)
 	char *argv[];
 {
-	struct sockaddr_in sin;
+	struct sockaddr_in s_in;
 	int top;
 
 	sp = getservbyname("tftp", "udp");
@@ -140,9 +140,9 @@ main(argc, argv)
 		perror("tftp: socket");
 		exit(3);
 	}
-	bzero((char *)&sin, sizeof (sin));
-	sin.sin_family = AF_INET;
-	if (bind(f, (struct sockaddr *)&sin, sizeof (sin)) < 0) {
+	bzero((char *)&s_in, sizeof (s_in));
+	s_in.sin_family = AF_INET;
+	if (bind(f, (struct sockaddr *)&s_in, sizeof (s_in)) < 0) {
 		perror("tftp: bind");
 		exit(1);
 	}
@@ -180,13 +180,13 @@ setpeer(argc, argv)
 	}
 	host = gethostbyname(argv[1]);
 	if (host) {
-		sin.sin_family = host->h_addrtype;
-		bcopy(host->h_addr, &sin.sin_addr, host->h_length);
+		s_in.sin_family = host->h_addrtype;
+		bcopy(host->h_addr, &s_in.sin_addr, host->h_length);
 		strcpy(hostname, host->h_name);
 	} else {
-		sin.sin_family = AF_INET;
-		sin.sin_addr.s_addr = inet_addr(argv[1]);
-		if (sin.sin_addr.s_addr == -1) {
+		s_in.sin_family = AF_INET;
+		s_in.sin_addr.s_addr = inet_addr(argv[1]);
+		if (s_in.sin_addr.s_addr == -1) {
 			connected = 0;
 			printf("%s: unknown host\n", argv[1]);
 			return;
@@ -312,8 +312,8 @@ put(argc, argv)
 			herror((char *)NULL);
 			return;
 		}
-		bcopy(hp->h_addr, (caddr_t)&sin.sin_addr, hp->h_length);
-		sin.sin_family = hp->h_addrtype;
+		bcopy(hp->h_addr, (caddr_t)&s_in.sin_addr, hp->h_length);
+		s_in.sin_family = hp->h_addrtype;
 		connected = 1;
 		strcpy(hostname, hp->h_name);
 	}
@@ -331,7 +331,7 @@ put(argc, argv)
 		if (verbose)
 			printf("putting %s to %s:%s [%s]\n",
 				cp, hostname, targ, mode);
-		sin.sin_port = port;
+		s_in.sin_port = port;
 		sendfile(fd, targ, mode);
 		return;
 	}
@@ -349,7 +349,7 @@ put(argc, argv)
 		if (verbose)
 			printf("putting %s to %s:%s [%s]\n",
 				argv[n], hostname, targ, mode);
-		sin.sin_port = port;
+		s_in.sin_port = port;
 		sendfile(fd, targ, mode);
 	}
 }
@@ -405,8 +405,8 @@ get(argc, argv)
 				herror((char *)NULL);
 				continue;
 			}
-			bcopy(hp->h_addr, (caddr_t)&sin.sin_addr, hp->h_length);
-			sin.sin_family = hp->h_addrtype;
+			bcopy(hp->h_addr, (caddr_t)&s_in.sin_addr, hp->h_length);
+			s_in.sin_family = hp->h_addrtype;
 			connected = 1;
 			strcpy(hostname, hp->h_name);
 		}
@@ -420,7 +420,7 @@ get(argc, argv)
 			if (verbose)
 				printf("getting from %s:%s to %s [%s]\n",
 					hostname, src, cp, mode);
-			sin.sin_port = port;
+			s_in.sin_port = port;
 			recvfile(fd, src, mode);
 			break;
 		}
@@ -433,7 +433,7 @@ get(argc, argv)
 		if (verbose)
 			printf("getting from %s:%s to %s [%s]\n",
 				hostname, src, cp, mode);
-		sin.sin_port = port;
+		s_in.sin_port = port;
 		recvfile(fd, src, mode);
 	}
 }

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)iso_var.h	7.5 (Berkeley) 5/6/91
+ *	from: @(#)iso_var.h	7.5 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -58,9 +59,6 @@ SOFTWARE.
 
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
- */
-/* $Header: iso_var.h,v 4.2 88/06/29 15:00:08 hagens Exp $
- * $Source: /usr/argo/sys/netiso/RCS/iso_var.h,v $
  */
 
 /*

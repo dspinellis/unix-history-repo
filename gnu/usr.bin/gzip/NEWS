@@ -1,5 +1,68 @@
-Current Version: 1.1.1
+Current Version: 1.2.4.
 See the file ChangeLog for the details of all changes.
+
+Major changes from 1.2.3 to 1.2.4
+* By default, do not restore file name and timestamp from those saved
+  inside the .gz file (behave as 'compress'). Added the --name option
+  to force name and timestamp restoration.
+* Accept - as synonym for stdin.
+* Use manlinks=so or ln to support either hard links or .so in man pages
+* Accept foo.gz~ in zdiff.
+* Added support for Windows NT
+* Handle ENAMETOOLONG for strict Posix systems
+* Use --recursive instead of --recurse to comply with Webster and
+  the GNU stdandard.
+* Allow installation of shell scripts with a g prefix: make G=g install
+* Install by default zcat as gzcat if gzcat already exists in path.
+* Let zmore behave as more when invoked without parameters (give help)
+* Let gzip --list reject files not in gzip format even with --force.
+* Don't complain about non gzip files for options -rt or -rl.
+* Added advice in INSTALL for several systems.
+
+Major changes from 1.2.2 to 1.2.3
+* Don't display the output name when decompressing except with --verbose.
+* Remove usage of alloca in getopt.c and all makefiles.
+* Added the zfile shell script in subdirectory sample.
+* Moved the list of compiler bugs from README to INSTALL.
+* Added vms/Readme.vms.
+
+Major changes from 1.2.1 to 1.2.2
+* Fix a compilation error on Sun with cc (worked with gcc).
+
+Major changes from 1.2 to 1.2.1
+* Let zmore act as more if the data is not gzipped.
+* made gzexe more secure (don't rely on PATH).
+* By default, display output name only when the name was actually truncated.
+
+Major changes from 1.1.2 to 1.2
+* Added the --list option to display the file characteristics.
+* Added the --no-name option: do not save or restore original filename
+  Save the original name by default.
+* Allow gunzip --suffix "" to attempt decompression on any file
+  regardless of its extension if an original name is present.
+* Add support for the SCO compress -H format.
+* gzip --fast now compresses faster (speed close to that of compress)
+  with degraded compression ratio (but still better than compress).
+  Default level changed to -6 (acts exactly as previous level -5) to
+  be a better indication of its placement in the speed/ratio range.
+* Use smart name truncation: 123456789012.c -> 123456789.c.gz
+   instead of 12345678901.gz
+* With --force, let zcat pass non gzip'ed data unchanged (zcat == cat)
+* Added the zgrep shell script.
+* Made sub.c useful for 16 bit sound, 24 bit images, etc..
+* Supress warnings about suffix for gunzip -r, except with --verbose.
+* On MSDOS, use .gz extension when possible (files without extension)
+* Moved the sample programs to a subdirectory sample.
+* Added a "Special targets" section in INSTALL.
+
+Major changes from 1.1.1 to 1.1.2.
+* Fix serious bug for VMS (-gz not removed when decompressing).
+* Allow suffix other than .gz in znew.
+* Do not display compression ratio when decompressing stdin.
+* In zmore.in, work around brain damaged stty -g (Ultrix).
+* Display a correct compression ratio for .Z files.
+* Added .z to .gz renaming script in INTALL.
+* Allow setting CFLAGS in configure.
 
 Major changes from 1.1 to 1.1.1.
 * Fix serious bug in vms.c (affects Vax/VMS only).

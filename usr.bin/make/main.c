@@ -35,12 +35,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00015
- * --------------------         -----   ----------------------
- *
- * 17 Mar 92	John Woods		Fix "make - make" bug
  */
 
 #ifndef lint
@@ -119,7 +113,8 @@ static Boolean		jobsRunning;	/* TRUE if the jobs might be running */
 
 static Boolean		ReadMakefile();
 
-static char *curdir;			/* if chdir'd for an architecture */
+static char *curdir;			/* pathname of dir where make ran */
+static int obj_is_elsewhere;		/* if chdir'd for an architecture */
 
 /*-
  * MainParseArgs --
@@ -364,18 +359,15 @@ main(argc, argv)
 	 */
 	if (!(path = getenv("MAKEOBJDIR")))
 		path = _PATH_OBJDIR;
+	curdir = emalloc((u_int)MAXPATHLEN + 1);
+	if (!getwd(curdir)) {
+		(void)fprintf(stderr, "make: %s.\n", curdir);
+		exit(2);
+	}
 	if (!lstat(path, &sb)) {
-		if (S_ISDIR(sb.st_mode))
-			curdir = "..";
-		else {
-			curdir = emalloc((u_int)MAXPATHLEN + 1);
-			if (!getwd(curdir)) {
-				(void)fprintf(stderr, "make: %s.\n", curdir);
-				exit(2);
-			}
-		}
+		obj_is_elsewhere = 1;
 		if (chdir(path)) {
-			(void)fprintf(stderr, "make: %s: %s.\n",
+			(void)fprintf(stderr, "make: fatal: %s exists, but I can't chdir to it: %s.\n",
 			    path, strerror(errno));
 			exit(2);
 		}
@@ -410,11 +402,9 @@ main(argc, argv)
 	Var_Init();		/* As well as the lists of variables for
 				 * parsing arguments */
 
-	if (curdir) {
+	if (obj_is_elsewhere)
 		Dir_AddDir(dirSearchPath, curdir);
-		Var_Set(".CURDIR", curdir, VAR_GLOBAL);
-	} else
-		Var_Set(".CURDIR", ".", VAR_GLOBAL);
+	Var_Set(".CURDIR", curdir, VAR_GLOBAL);
 
 	/*
 	 * Initialize various variables.
@@ -610,7 +600,7 @@ ReadMakefile(fname)
 		if (stream = fopen(fname, "r"))
 			goto found;
 		/* if we've chdir'd, rebuild the path name */
-		if (curdir && *fname != '/') {
+		if (obj_is_elsewhere && *fname != '/') {
 			(void)sprintf(path, "%s/%s", curdir, fname);
 			if (stream = fopen(path, "r")) {
 				fname = path;

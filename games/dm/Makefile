@@ -2,8 +2,9 @@
 
 # -DLOG		log games
 PROG=	dm
-MAN8=	dm.0
-MAN5=	dm.conf.0
+MAN8=	dm.8
+MAN5=	dm.conf.5
+BINOWN=	games
 BINGRP=	kmem
 BINMODE=6555
 DPADD=	${LIBUTIL}

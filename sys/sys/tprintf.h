@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tprintf.h	7.2 (Berkeley) 5/4/91
+ *	from: @(#)tprintf.h	7.2 (Berkeley) 5/4/91
+ *	$Id$
  */
 
 typedef struct session *tpr_t;

@@ -29,7 +29,8 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"	@(#)win_st.c	6.3 (Berkeley) 4/17/91
+.\"	from: @(#)win_st.c	6.3 (Berkeley) 4/17/91
+.\"	win_st.c,v 1.2 1993/08/01 18:23:13 mycroft Exp
 .\"
 # define	WINDOW	struct _win_st
 

@@ -33,8 +33,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)xdr_subs.h	7.3 (Berkeley) 6/28/90
+ *	From:	@(#)xdr_subs.h	7.3 (Berkeley) 6/28/90
+ *	$Id$
  */
+
+#ifndef __h_xdr_subs
+#define __h_xdr_subs 1
 
 /*
  * Macros used for conversion to/from xdr representation by nfs...
@@ -55,3 +59,5 @@
 				((struct timeval *)(t))->tv_usec=htonl( \
 				((struct timeval *)(f))->tv_usec);}
 
+
+#endif /* __h_xdr_subs */

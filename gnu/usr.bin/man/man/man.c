@@ -16,6 +16,7 @@
 
 #define MAN_MAIN
 
+#include <sys/types.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
@@ -104,6 +105,13 @@ static char args[] = "M:P:S:adfhkp:w?";
 #endif
 #endif
 
+#ifdef SETREUID
+uid_t ruid;
+uid_t euid;
+uid_t rgid;
+uid_t egid;
+#endif
+
 int
 main (argc, argv)
      int argc;
@@ -137,6 +145,15 @@ main (argc, argv)
       if (tmp != NULL)
 	gripe_no_name (tmp);
     }
+
+#ifdef SETREUID
+  ruid = getuid();
+  rgid = getgid();
+  euid = geteuid();
+  egid = getegid();
+  setreuid(-1, ruid);
+  setregid(-1, rgid);
+#endif
 
   while (optind < argc)
     {
@@ -399,7 +416,7 @@ man_getopt (argc, argv)
 #ifdef ALT_SYSTEMS
       if (alt_system)
 	{
-	  char buf[BUFSIZ];
+	  char buf[FILENAME_MAX];
 
 	  if (debug)
 	    fprintf (stderr, "Alternate system `%s' specified\n",
@@ -564,7 +581,7 @@ glob_for_file (path, section, name, cat)
      register char *name;
      register int cat;
 {
-  char pathname[BUFSIZ];
+  char pathname[FILENAME_MAX];
   char **gf;
 
   if (cat)
@@ -586,6 +603,16 @@ glob_for_file (path, section, name, cat)
 
       gf = glob_filename (pathname);
     }
+  if ((gf == (char **) -1 || *gf == NULL) && isdigit (*section))
+    {
+      if (cat)
+	sprintf (pathname, "%s/cat%s/%s.0*", path, section, name);
+      else
+	sprintf (pathname, "%s/man%s/%s.0*", path, section, name);
+      if (debug)
+	fprintf (stderr, "globbing %s\n", pathname);
+      gf = glob_filename (pathname);
+    }
   return gf;
 }
 
@@ -602,7 +629,7 @@ make_name (path, section, name, cat)
 {
   register int i = 0;
   static char *names[3];
-  char buf[BUFSIZ];
+  char buf[FILENAME_MAX];
 
   if (cat)
     sprintf (buf, "%s/cat%s/%s.%s", path, section, name, section);
@@ -679,7 +706,7 @@ display_cat_file (file)
      register char *file;
 {
   register int found;
-  char command[BUFSIZ];
+  char command[FILENAME_MAX];
 
   found = 0;
 
@@ -714,9 +741,10 @@ ultimate_source (name, path)
      char *name;
      char *path;
 {
+  static  char buf[BUFSIZ];
+  static  char ult[FILENAME_MAX];
+
   FILE *fp;
-  char buf[BUFSIZ];
-  char ult[BUFSIZ];
   char *beg;
   char *end;
 
@@ -919,7 +947,7 @@ make_roff_command (file)
 
   if ((fp = fopen (file, "r")) != NULL)
     {
-      cp = &line[0];
+      cp = line;
       fgets (line, 100, fp);
       if (*cp++ == '\'' && *cp++ == '\\' && *cp++ == '"' && *cp++ == ' ')
 	{
@@ -1023,34 +1051,53 @@ make_cat_file (path, man_file, cat_file)
   int mode;
   FILE *fp;
   char *roff_command;
-  char command[BUFSIZ];
+  char command[FILENAME_MAX];
+  char temp[FILENAME_MAX];
 
-  if ((fp = fopen (cat_file, "w")) != NULL)
+  sprintf(temp, "%s.tmp", cat_file);
+  if ((fp = fopen (temp, "w")) != NULL)
     {
       fclose (fp);
-      unlink (cat_file);
+      unlink (temp);
 
-      roff_command = make_roff_command (man_file, 0);
+      roff_command = make_roff_command (man_file);
       if (roff_command == NULL)
 	return 0;
       else
 #ifdef DO_COMPRESS
 	sprintf (command, "(cd %s ; %s | %s > %s)", path,
-		 roff_command, COMPRESSOR, cat_file);
+		 roff_command, COMPRESSOR, temp);
 #else
         sprintf (command, "(cd %s ; %s > %s)", path,
-		 roff_command, cat_file);
+		 roff_command, temp);
 #endif
       /*
        * Don't let the user interrupt the system () call and screw up
        * the formmatted man page if we're not done yet.
        */
-      signal (SIGINT, SIG_IGN);
-
-      fprintf (stderr, "Formatting page, please wait...\n");
+      fprintf (stderr, "Formatting page, please wait...");
+      fflush(stderr);
 
       status = do_system_command (command);
 
+      if (!status) {
+	fprintf(stderr, "Failed.\n");
+	unlink(temp);
+	exit(1);
+      }
+      else {
+        if (rename(temp, cat_file) == -1) {
+		/* FS might be sticky */
+		sprintf(command, "cp %s %s", temp, cat_file);
+		if (system(command))
+			fprintf(stderr,
+				"\nHmm!  Can't seem to rename %s to %s, check permissions on man dir!\n",
+				temp, cat_file);
+		unlink(temp);
+		return 0;
+	}
+      }
+      fprintf(stderr, "Done.\n");
       if (status == 1)
 	{
 	  mode = CATMODE;
@@ -1060,7 +1107,6 @@ make_cat_file (path, man_file, cat_file)
 	    fprintf (stderr, "mode of %s is now %o\n", cat_file, mode);
 	}
 
-      signal (SIGINT, SIG_DFL);
 
       return 1;
     }
@@ -1090,7 +1136,7 @@ format_and_display (path, man_file, cat_file)
   int status;
   register int found;
   char *roff_command;
-  char command[BUFSIZ];
+  char command[FILENAME_MAX];
 
   found = 0;
 
@@ -1099,7 +1145,7 @@ format_and_display (path, man_file, cat_file)
   
   if (troff)
     {
-      roff_command = make_roff_command (man_file, 1);
+      roff_command = make_roff_command (man_file);
       if (roff_command == NULL)
 	return 0;
       else
@@ -1125,7 +1171,28 @@ format_and_display (path, man_file, cat_file)
 	    }
 	  else
 	    {
+
+#ifdef SETREUID
+	      setreuid(-1, euid);
+	      setregid(-1, egid);
+#endif
+
 	      found = make_cat_file (path, man_file, cat_file);
+
+#ifdef SETREUID
+	      setreuid(-1, ruid);
+	      setregid(-1, rgid);
+
+	      if (!found)
+	        {
+		  /* Try again as real user - see note below.
+		     By running with 
+		       effective group (user) ID == real group (user) ID
+		     except for the call above, I believe the problems
+		     of reading private man pages is avoided.  */
+		  found = make_cat_file (path, man_file, cat_file);
+	        }
+#endif
 #ifdef SECURE_MAN_UID
 	      if (!found)
 		{
@@ -1158,7 +1225,7 @@ format_and_display (path, man_file, cat_file)
 		   * Couldn't create cat file.  Just format it and
 		   * display it through the pager. 
 		   */
-		  roff_command = make_roff_command (man_file, 0);
+		  roff_command = make_roff_command (man_file);
 		  if (roff_command == NULL)
 		    return 0;
 		  else

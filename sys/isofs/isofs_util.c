@@ -1,3 +1,7 @@
+/*
+ *	$Id: isofs_util.c,v 1.3 1993/07/19 13:40:08 cgd Exp $
+ */
+
 int
 isonum_711 (p)
 char *p;
@@ -46,7 +50,7 @@ char *p;
 
 int
 isonum_731 (p)
-char *p;
+unsigned char *p;
 {
 	return ((p[0] & 0xff)
 		| ((p[1] & 0xff) << 8)
@@ -56,7 +60,7 @@ char *p;
 
 int
 isonum_732 (p)
-char *p;
+unsigned char *p;
 {
 	return (((p[0] & 0xff) << 24)
 		| ((p[1] & 0xff) << 16)
@@ -66,7 +70,7 @@ char *p;
 
 int
 isonum_733 (p)
-char *p;
+unsigned char *p;
 {
 	int i;
 

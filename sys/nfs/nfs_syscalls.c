@@ -33,15 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nfs_syscalls.c	7.26 (Berkeley) 4/16/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00053
- * --------------------         -----   ----------------------
- *
- * 08 Sep 92    Rick "gopher I"         Fix "reserved port" bug, fixed for
- *                                              AIX3.2 NFS clients
+ *	From:	@(#)nfs_syscalls.c	7.26 (Berkeley) 4/16/91
+ *	$Id$
  */
 
 #include "param.h"
@@ -109,13 +102,17 @@ static int compressreply[NFS_NPROCS] = {
 /*
  * Get file handle system call
  */
+
+struct getfh_args {
+	char	*fname;
+	fhandle_t *fhp;
+};
+
 /* ARGSUSED */
+int
 getfh(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		char	*fname;
-		fhandle_t *fhp;
-	} *uap;
+	register struct getfh_args *uap;
 	int *retval;
 {
 	register struct nameidata *ndp;
@@ -150,16 +147,20 @@ getfh(p, uap, retval)
  * Nfs server psuedo system call for the nfsd's
  * Never returns unless it fails or gets killed
  */
+
+struct nfssvc_args {
+	int s;
+	caddr_t mskval;
+	int msklen;
+	caddr_t mtchval;
+	int mtchlen;
+};
+
 /* ARGSUSED */
+int
 nfssvc(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int s;
-		caddr_t mskval;
-		int msklen;
-		caddr_t mtchval;
-		int mtchlen;
-	} *uap;
+	register struct nfssvc_args *uap;
 	int *retval;
 {
 	register struct mbuf *m;
@@ -318,6 +319,7 @@ bad:
  * Never returns unless it fails or gets killed
  */
 /* ARGSUSED */
+int
 async_daemon(p, uap, retval)
 	struct proc *p;
 	struct args *uap;

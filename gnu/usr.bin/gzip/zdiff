@@ -1,4 +1,5 @@
 #!/bin/sh
+# sh is buggy on RS/6000 AIX 3.2. Replace above line with #!/bin/ksh
 
 # Zcmp and zdiff are used to invoke the cmp or the  diff  pro-
 # gram  on compressed files.  All options specified are passed
@@ -8,6 +9,7 @@
 # necessary) and fed to cmp or diff.  The exit status from cmp
 # or diff is preserved.
 
+PATH="/usr/local/bin:$PATH"; export PATH
 prog=`echo $0 | sed 's|.*/||'`
 case "$prog" in
   *cmp) comp=${CMP-cmp}   ;;
@@ -40,21 +42,21 @@ if test $# -eq 1; then
 
 elif test $# -eq 2; then
 	case "$1" in
-        *[-.]gz | *[-.][zZ] | *.t[ga]z)
+        *[-.]gz* | *[-.][zZ] | *.t[ga]z)
                 case "$2" in
-	        *[-.]gz | *[-.][zZ] | *.t[ga]z)
-			F=`echo "$2" | sed 's|.*/||;s|[-.][zZtga]*$||'`
-                        gzip -cd "$2" > /tmp/"$F".$$
-                        gzip -cd "$1" | $comp $OPTIONS - /tmp/"$F".$$
+	        *[-.]gz* | *[-.][zZ] | *.t[ga]z)
+			F=`echo "$2" | sed 's|.*/||;s|[-.][zZtga]*||'`
+                        gzip -cdfq "$2" > /tmp/"$F".$$
+                        gzip -cdfq "$1" | $comp $OPTIONS - /tmp/"$F".$$
                         STAT="$?"
 			/bin/rm -f /tmp/"$F".$$;;
 
-                *)      gzip -cd "$1" | $comp $OPTIONS - "$2"
+                *)      gzip -cdfq "$1" | $comp $OPTIONS - "$2"
                         STAT="$?";;
                 esac;;
         *)      case "$2" in
-	        *[-.]gz | *[-.][zZ] | *.t[ga]z)
-                        gzip -cd "$2" | $comp $OPTIONS "$1" -
+	        *[-.]gz* | *[-.][zZ] | *.t[ga]z)
+                        gzip -cdfq "$2" | $comp $OPTIONS "$1" -
                         STAT="$?";;
                 *)      $comp $OPTIONS "$1" "$2"
                         STAT="$?";;

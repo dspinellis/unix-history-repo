@@ -1,8 +1,8 @@
-/* $Header$ */
-/* $Source$ */
-#ifndef lint
-static char *rcsid = "$Header/**/$";
-#endif lint
+/*
+ *	from: unknown
+ *	$Id$
+ */
+
 #define _XEBEC_PG static
 
 #include "tp_states.h"
@@ -16,6 +16,7 @@ static struct act_ent {
 
 /*	%W% (Berkeley) %G% */
 #include "param.h"
+#include "systm.h"
 #include "socket.h"
 #include "socketvar.h"
 #include "protosw.h"

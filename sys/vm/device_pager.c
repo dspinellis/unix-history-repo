@@ -35,7 +35,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)device_pager.c	7.2 (Berkeley) 4/20/91
+ *	from: @(#)device_pager.c	7.2 (Berkeley) 4/20/91
+ *	$Id$
  */
 
 /*
@@ -54,6 +55,8 @@
 #include "vm_page.h"
 #include "vm_kern.h"
 #include "device_pager.h"
+#include "vnode.h"
+#include "specdev.h"
 
 queue_head_t	dev_pager_list;	/* list of managed devices */
 
@@ -110,7 +113,7 @@ dev_pager_alloc(handle, size, prot)
 		 * Validation.  Make sure this device can be mapped
 		 * and that range to map is acceptible to device.
 		 */
-		dev = (dev_t)handle;
+		dev = ((struct vnode *) handle)->v_rdev;
 		mapfunc = cdevsw[major(dev)].d_mmap;
 		if (!mapfunc || mapfunc == enodev || mapfunc == nullop)
 			return(NULL);

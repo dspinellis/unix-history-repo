@@ -33,8 +33,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nfsrvcache.h	7.3 (Berkeley) 6/28/90
+ *	From:	@(#)nfsrvcache.h	7.3 (Berkeley) 6/28/90
+ *	$Id$
  */
+
+#ifndef __h_nfsrvcache
+#define __h_nfsrvcache 1
 
 /*
  * Definitions for the server recent request cache
@@ -91,3 +95,5 @@ struct nfsrvcache {
 /* Delay time after completion that request is dropped */
 #define	RC_DELAY	2		/* seconds */
 
+
+#endif /* __h_nfsrvcache */

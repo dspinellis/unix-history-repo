@@ -1,52 +1,32 @@
-/*
- * Copyright (c) 1989 The Regents of the University of California.
- * All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * Ozan Yigit.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
- *	@(#)mdef.h	5.6 (Berkeley) 2/26/91
- */
+/*  Header : mdef.h
+    Author : Ozan Yigit
+    Updated: 4 May 1992
+*/
+#ifndef	MACRTYPE
 
-/*
- * mdef.h
- * Facility: m4 macro processor
- * by: oz
- */
+#ifndef unix
+#define unix 0
+#endif 
 
-/*
- *
- * m4 constants..
- *
- */
+#ifndef vms
+#define vms 0
+#endif
+
+#include <stdio.h>
+#include <signal.h>
+
+#ifdef	__STDC__
+#include <string.h>
+#else
+#ifdef	VOID
+#define void	int
+#endif
+extern	int	strlen();
+extern	int	strcmp();
+extern	void	memcpy();
+#endif
+
+/*  m4 constants */
  
 #define MACRTYPE        1
 #define DEFITYPE        2
@@ -81,18 +61,22 @@
 #define SYSVTYPE        31
 #define EXITTYPE        32
 #define DEFNTYPE        33
- 
+#define LINETYPE	34
+#define TRIMTYPE	35
+#define TLITTYPE	36
+#define	DEFQTYPE	37		/* defquote */
+#define QUTRTYPE	38		/* quoter thus defined */
+
 #define STATIC          128
 
-/*
- * m4 special characters
- */
+/* m4 special characters */
  
 #define ARGFLAG         '$'
 #define LPAREN          '('
 #define RPAREN          ')'
 #define LQUOTE          '`'
 #define RQUOTE          '\''
+#define	VQUOTE		('V'&(' '- 1))
 #define COMMA           ','
 #define SCOMMT          '#'
 #define ECOMMT          '\n'
@@ -104,44 +88,45 @@
 #define EOS             (char) 0
 #define MAXINP          10              /* maximum include files   */
 #define MAXOUT          10              /* maximum # of diversions */
-#define MAXSTR          512             /* maximum size of string  */
+#ifdef	SMALL
+#define MAXSTR           512            /* maximum size of string  */
 #define BUFSIZE         4096            /* size of pushback buffer */
 #define STACKMAX        1024            /* size of call stack      */
 #define STRSPMAX        4096            /* size of string space    */
+#define HASHSIZE         199            /* maximum size of hashtab */
+#else
+#define MAXSTR          1024            /* maximum size of string  */
+#define BUFSIZE         8192            /* size of pushback buffer */
+#define STACKMAX        2048            /* size of call stack      */
+#define STRSPMAX        8192            /* size of string space    */
+#define HASHSIZE         509            /* maximum size of hashtab */
+#endif
 #define MAXTOK          MAXSTR          /* maximum chars in a tokn */
-#define HASHSIZE        199             /* maximum size of hashtab */
  
 #define ALL             1
 #define TOP             0
  
 #define TRUE            1
 #define FALSE           0
-#define cycle           for(;;)
 
-/*
- * m4 data structures
- */
+/* m4 data structures */
  
 typedef struct ndblock *ndptr;
  
-struct ndblock {                /* hastable structure         */
+struct ndblock                  /* hashtable structure        */
+    {
         char    *name;          /* entry name..               */
         char    *defn;          /* definition..               */
         int     type;           /* type of the entry..        */
         ndptr   nxtptr;         /* link to next entry..       */
-};
+    };
  
 #define nil     ((ndptr) 0)
  
-struct keyblk {
-        char    *knam;          /* keyword name */
-        int     ktyp;           /* keyword type */
-};
-
-typedef union {			/* stack structure */
-	int	sfra;		/* frame entry  */
+typedef union			/* stack structure */
+    {	int	sfra;		/* frame entry  */
 	char 	*sstr;		/* string entry */
-} stae;
+    } stae;
 
 /*
  * macros for readibility and/or speed
@@ -151,7 +136,7 @@ typedef union {			/* stack structure */
  *      pushf() - push a call frame entry onto stack
  *      pushs() - push a string pointer onto stack
  */
-#define gpbc() 	 (bp > buf) ? *--bp : getc(infile[ilevel])
+#define gpbc() 	 bp == bb ? getc(infile[ilevel]) : *--bp
 #define min(x,y) ((x > y) ? y : x)
 #define pushf(x) if (sp < STACKMAX) mstack[++sp].sfra = (x)
 #define pushs(x) if (sp < STACKMAX) mstack[++sp].sstr = (x)
@@ -184,3 +169,5 @@ typedef union {			/* stack structure */
 #define PREVEP	(mstack[fp+3].sstr)
 #define PREVSP	(fp-3)
 #define PREVFP	(mstack[fp-2].sfra)
+
+#endif

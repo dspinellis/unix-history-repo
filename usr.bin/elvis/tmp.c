@@ -5,13 +5,6 @@
  *	14407 SW Teal Blvd. #C
  *	Beaverton, OR 97005
  *	kirkenda@cs.pdx.edu
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00041
- * --------------------         -----   ----------------------
- *
- *  12 Aug 92	Bob Wilcox		Fixed named yank buffer problem
  */
 
 
@@ -153,11 +146,15 @@ int tmpstart(filename)
 				  ((getuid() >> 16) == 0 ? S_IOWRITE | S_IWRITE :
 				  ((statb.st_gid != (getuid() >> 16) ? S_IOWRITE : S_IWRITE)))))
 #endif
-#if AMIGA || MSDOS || (TOS && defined(__GNUC__))
+#if AMIGA || MSDOS
 			if (*o_readonly || !(statb.st_mode & S_IWRITE))
 #endif
-#if TOS && !defined(__GNUC__)
+#if TOS
+# ifdef __GNUC__ 
+			if (*o_readonly || !(statb.st_mode & S_IWRITE))
+# else
 			if (*o_readonly || (statb.st_mode & S_IJRON))
+# endif
 #endif
 #if ANY_UNIX
 			if (*o_readonly || !(statb.st_mode &
@@ -185,25 +182,36 @@ int tmpstart(filename)
 	}
 
 	/* make a name for the tmp file */
-	tmpnum++;
-#if MSDOS || TOS
-	/* MS-Dos doesn't allow multiple slashes, but supports drives
-	 * with current directories.
-	 * This relies on TMPNAME beginning with "%s\\"!!!!
-	 */
-	strcpy(tmpname, o_directory);
-	if ((i = strlen(tmpname)) && !strchr(":/\\", tmpname[i-1]))
-		tmpname[i++]=SLASH;
-	sprintf(tmpname+i, TMPNAME+3, getpid(), tmpnum);
-#else
-	sprintf(tmpname, TMPNAME, o_directory, getpid(), tmpnum);
-#endif
-
-	/* make sure nobody else is editing the same file */
-	if (access(tmpname, 0) == 0)
+	do
 	{
-		FAIL("Temp file \"%s\" already exists?", tmpname);
-	}
+		tmpnum++;
+#if MSDOS || TOS
+		/* MS-Dos doesn't allow multiple slashes, but supports drives
+		 * with current directories.
+		 * This relies on TMPNAME beginning with "%s\\"!!!!
+		 */
+		strcpy(tmpname, o_directory);
+		if ((i = strlen(tmpname)) && !strchr(":/\\", tmpname[i-1]))
+			tmpname[i++]=SLASH;
+		sprintf(tmpname+i, TMPNAME+3, getpid(), tmpnum);
+#else
+		sprintf(tmpname, TMPNAME, o_directory, getpid(), tmpnum);
+#endif
+	} while (access(tmpname, 0) == 0);
+
+	/* !!! RACE CONDITION HERE - some other process with the same PID could
+	 * create the temp file between the access() call and the creat() call.
+	 * This could happen in a couple of ways:
+	 * - different workstation may share the same temp dir via NFS.  Each
+	 *   workstation could have a process with the same number.
+	 * - The DOS version may be running multiple times on the same physical
+	 *   machine in different virtual machines.  The DOS pid number will
+	 *   be the same on all virtual machines.
+	 *
+	 * This race condition could be fixed by replacing access(tmpname, 0)
+	 * with open(tmpname, O_CREAT|O_EXCL, 0600), if we could only be sure
+	 * that open() *always* used modern UNIX semantics.
+	 */
 
 	/* create the temp file */
 #if ANY_UNIX
@@ -219,8 +227,11 @@ int tmpstart(filename)
 	}
 
 	/* allocate space for the header in the file */
-	write(tmpfd, hdr.c, (unsigned)BLKSIZE);
-	write(tmpfd, tmpblk.c, (unsigned)BLKSIZE);
+	if (write(tmpfd, hdr.c, (unsigned)BLKSIZE) < BLKSIZE
+	 || write(tmpfd, tmpblk.c, (unsigned)BLKSIZE) < BLKSIZE)
+	{
+		FAIL("Error writing headers to \"%s\"", tmpname);
+	}
 
 #ifndef NO_RECYCLE
 	/* initialize the block allocator */
@@ -292,7 +303,7 @@ int tmpstart(filename)
 					this->c[j++] = 0x80;
 				}
 #ifndef CRUNCH
-				else if (*o_beautify && this->c[k] < ' ' && this->c[k] > 0)
+				else if (*o_beautify && this->c[k] < ' ' && this->c[k] >= 1)
 				{
 					if (this->c[k] == '\t'
 					 || this->c[k] == '\n'
@@ -345,6 +356,10 @@ int tmpstart(filename)
 			}
 
 			/* allocate next buffer */
+			if (i >= MAXBLKS - 2)
+			{
+				FAIL("File too big.  Limit is approx %ld kbytes.", MAXBLKS * BLKSIZE / 1024L);
+			}
 			next = blkget(++i);
 
 			/* move fragmentary last line to next buffer */
@@ -475,11 +490,7 @@ int tmpsave(filename, bang)
 	}
 
 	/* can't rewrite a READONLY file */
-#if AMIGA
 	if (!strcmp(filename, origname) && tstflag(file, READONLY) && !bang)
-#else
-	if (!strcmp(filename, origname) && *o_readonly && !bang)
-#endif
 	{
 		msg("\"%s\" [READONLY] -- NOT WRITTEN", filename);
 		return FALSE;
@@ -552,6 +563,10 @@ int tmpsave(filename, bang)
 	/* reset the "modified" flag, but not the "undoable" flag */
 	clrflag(file, MODIFIED);
 	significant = FALSE;
+	if (!strcmp(origname, filename))
+	{
+		exitcode &= ~1;
+	}
 
 	/* report lines & characters */
 #if MSDOS || TOS
@@ -601,11 +616,6 @@ int tmpabort(bang)
 	blkinit();
 	nlines = 0;
 	initflags();
-#ifdef BROKEN_YANK_BUFFERS				/* 12 Aug 92*/
-	close(tmpfd);
-	tmpfd = -1;
-	unlink(tmpname);
-#endif	/* BROKEN_YANK_BUFFERS*/
 	return TRUE;
 }
 
@@ -652,6 +662,7 @@ sync()
  * to store the arguments to a command, so we can't use it here.  Instead,
  * we'll borrow the buffer that is used for "shift-U".
  */
+int
 storename(name)
 	char	*name;	/* the name of the file - normally origname */
 {
@@ -669,7 +680,11 @@ storename(name)
 		U_text[1] = 127;
 	}
 #ifndef CRUNCH
+# if TOS || MINT || MSDOS || AMIGA
+	else if (*name != '/' && *name != '\\' && !(*name && name[1] == ':'))
+# else
 	else if (*name != SLASH)
+# endif
 	{
 		/* get the directory name */
 		ptr = getcwd(U_text, BLKSIZE);
@@ -696,7 +711,10 @@ storename(name)
 	{
 		/* write the name out to second block of the temp file */
 		lseek(tmpfd, (long)BLKSIZE, 0);
-		write(tmpfd, U_text, (unsigned)BLKSIZE);
+		if (write(tmpfd, U_text, (unsigned)BLKSIZE) < BLKSIZE)
+		{
+			FAIL("Error stuffing name \"%s\" into temp file", U_text);
+		}
 	}
 	return 0;
 }
@@ -706,7 +724,7 @@ storename(name)
 /* This function handles deadly signals.  It restores sanity to the terminal
  * preserves the current temp file, and deletes any old temp files.
  */
-int deathtrap(sig)
+SIGTYPE deathtrap(sig)
 	int	sig;	/* the deadly signal that we caught */
 {
 	char	*why;
@@ -730,8 +748,10 @@ int deathtrap(sig)
 #  ifdef SIGBUS
 	  case SIGBUS:	why = "-Elvis had a bus error";			break;
 #  endif
-#  if defined(SIGSEGV) && !defined(TOS)
+#  ifdef SIGSEGV
+#   if !TOS
 	  case SIGSEGV:	why = "-Elvis had a segmentation violation";	break;
+#   endif
 #  endif
 #  ifdef SIGSYS
 	  case SIGSYS:	why = "-Elvis munged a system call";		break;

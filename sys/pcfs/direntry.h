@@ -15,8 +15,7 @@
  *
  *  October 1992
  *
- *	$Header: /usr/src/CVS/sys/pcfs/direntry.h,v 1.1.2.1 1993/02/07 21:57:12 friedl Exp $
- *
+ *	$Id$
  */
 
 /*

@@ -36,8 +36,8 @@ static char sccsid[] = "@(#)iso.c	5.6 (Berkeley) 4/27/91";
 #endif /* not lint */
 
 /*
- * $Header: iso.c,v 3.3 88/12/08 14:44:49 hagens Exp $
- * $Source: /usr/argo/src/ucb/netstat/RCS/iso.c,v $
+ * $Header: /a/cvs/386BSD/src/usr.bin/netstat/iso.c,v 1.1.1.1 1993/06/12 14:47:55 rgrimes Exp $
+ * $Source: /a/cvs/386BSD/src/usr.bin/netstat/iso.c,v $
  */
 /*******************************************************************************
 	          Copyright IBM Corporation 1987
@@ -210,7 +210,9 @@ iso_protopr(off, name)
 	int istp = (strcmp(name, "tp") == 0);
 
 	if (off == 0) {
+		/*
 		printf("%s control block: symbol not in namelist\n", name);
+		*/
 		return;
 	}
 	kget(off, cb);
@@ -401,7 +403,9 @@ x25_protopr(off, name)
 	struct x25_pcb xpcb;
 
 	if (off == 0) {
+		/*
 		printf("%s control block: symbol not in namelist\n", name);
+		*/
 		return;
 	}
 	kvm_read(off, &xpcb, sizeof (struct x25_pcb));

@@ -31,22 +31,16 @@
  * SUCH DAMAGE.
  *
  *	@(#)math.h	5.8 (Berkeley) 4/2/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00086
- * --------------------         -----   ----------------------
- *
- * 27 Feb 93    Handel/da Silva/Poirot  Adjust value for HUGE_VAL
  */
 
 #ifndef	_MATH_H_
 #define	_MATH_H_
 
-#if defined(vax) || defined(tahoe)		/* DBL_MAX from float.h */
+#if defined(vax) || defined(tahoe)	/* DBL_MAX from float.h */
 #define	HUGE_VAL	1.701411834604692294E+38
 #else
-#define	HUGE_VAL	1.797693134862315E+308	/* IEEE: positive infinity */
+extern char __infinity[];		/* bytes for IEEE754 +Infinity */
+#define HUGE_VAL (*(double *) __infinity)
 #endif
 
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)

@@ -42,19 +42,29 @@
 .Nd make fifos
 .Sh SYNOPSIS
 .Nm mkfifo
-.Op Fl p
+.Op Fl m Ar mode
 .Ar fifo_name  ...
 .Sh DESCRIPTION
 .Nm Mkfifo
 creates the fifos requested, in the order specified,
 using mode
-.Li \&0777 .
+.Li \&0666 
+modified by the current
+.Xr umask 2 .
 .Pp
-Options available are:
+The options are as follows:
 .Bl -tag -width Ds
-.It Fl p
-Create intermediate directories as required.  If this option is not
-specified, the full path prefix of each operand must already exist.
+.It Fl m
+Set the file permission bits of newly-created directories to
+.Ar mode .
+The mode is specified as in 
+.Xr chmod 1 .
+In symbolic mode strings, the 
+.Dq + 
+and 
+.Dq -
+operators are interpreted relative to an assumed initial mode of 
+.Dq a=rw
 .El
 .Pp
 .Nm Mkfifo
@@ -63,18 +73,16 @@ requires write permission in the parent directory.
 .Nm Mkfifo
 exits 0 if successful, and >0 if an error occurred.
 .Sh STANDARDS
-.Nm Mkfifo is
+The
+.Nm Mkfifo 
+command is expected to be
 .St -p1003.2
-compliant.
-.Pp
-This manual page derived from the
-.St p1003.2
-manual page.
+compatible.
 .Sh SEE ALSO
 .Xr mkdir 1 ,
 .Xr rm 1
 .Sh HISTORY
 The
-.Nm
+.Nm mkfifo
 command is
 .Ud

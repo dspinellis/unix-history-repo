@@ -1,7 +1,4 @@
 #
-# Ported to boot 386BSD by Julian Elischer (julian@tfs.com)
-# September 1992
-#
 # Permission to use, copy, modify and distribute this software and its
 # documentation is hereby granted, provided that both the copyright
 # notice and this permission notice appear in all copies of the
@@ -22,54 +19,39 @@
 # any improvements or extensions that they make and grant Carnegie Mellon
 # the rights to redistribute these changes.
 #
-#
-# HISTORY
-# $Log: Makefile,v $
-# Revision 2.2	92/04/04  11:33:46  rpd
-#	Fabricated for MACH 3.0
-#	[92/03/30	     mg32]
-#
-# Thu Sep 10 22:40:23 PDT 1992
-# Ported to 386BSD by Julian Elischer
-# julian@tfs.com
+#	from: Mach, Revision 2.2	92/04/04  11:33:46  rpd
+#	$Id$
 #
 
-CFLAGS	= -O -DDO_BAD144
+wd0:
+	dd if=boot of=biosboot count=1
+	dd if=boot of=bootbios skip=1
+	disklabel -r -w wd0 nec5655 newboot biosboot bootbios
+	rm biosboot bootbios
+
+NOPROG=	noprog
+NOMAN=	noman
+
+CFLAGS	= -O -DDO_BAD144 -I${.CURDIR}
 LIBS= -lc
-INC= -I../..
+INC= -I${.CURDIR}/../..
 
-# start.o should be first, table.o should be second
+# start.o should be first
 OBJS = start.o table.o boot2.o boot.o asm.o bios.o io.o disk.o sys.o
 
-.SUFFIXES: .s .c .o
+.SUFFIXES: .S .c .o
 
-# These are wierd because we don't want separate code and data segments.. ok?
 .c.o:
-	@echo $(CC) -c $(CFLAGS) $(INC) $*.c
-	-@trap "/bin/rm -f $*.i $*.s; exit 0" 0 1 2 3 10 15; \
-	$(CC)  $(CFLAGS) $(INC) -S $<;	\
-	if [ $$? != 0 ]; then :; else \
-		sed -f boot.sed $*.s > $*.i;	\
-		$(AS) $*.i -o $@; \
-	fi
+	$(CC)  $(CFLAGS) $(INC) -c $<
 
-.s.o:
-	@echo $(AS) -o $*.o $<
-	-@trap "/bin/rm -f $*.i X$*.c; exit 0" 0 1 2 3 10 15; \
-	/bin/rm -f X$*.c;	\
-	ln $*.s X$*.c;	\
-	$(CC) -E $(CFLAGS) X$*.c > $*.i;	\
-	if [ $$? != 0 ]; then :;	\
-	else \
-		$(AS) $*.i -o $@;	\
-	fi
+.S.o:
+	$(CC)  $(CFLAGS) -c $<
 
-
-boot: boot.sed $(OBJS)
+boot: $(OBJS)
 	$(LD) -N -T 0 -o boot $(OBJS) $(LIBS)
 	cp boot boot.sym
 	@strip boot
-	@./rmaouthdr boot boot.tmp
+	@sh ${.CURDIR}/rmaouthdr boot boot.tmp
 	@mv -f boot.tmp boot
 	@ls -l boot
 
@@ -105,27 +87,17 @@ sd:	/usr/mdec/bootsd /usr/mdec/sdboot
 wd:	/usr/mdec/bootwd /usr/mdec/wdboot
 fd:	/usr/mdec/bootfd /usr/mdec/fdboot
 
-#wd0:	/usr/mdec/bootwd /usr/mdec/wdboot
-#	disklabel -r -w wd0 julian julian5 /usr/mdec/wdboot /usr/mdec/bootwd
-#
+all: biosboot bootbios
 
-sd0:	/usr/mdec/bootsd /usr/mdec/sdboot
-	disklabel -r -w sd0 XT-8760 scsitest /usr/mdec/sdboot /usr/mdec/bootsd
+fd0:
+	dd if=boot of=biosboot count=1
+	dd if=boot of=bootbios skip=1
+	disklabel -r -w fd0 floppy bootflpy biosboot bootbios
+	rm biosboot bootbios
 
+install: wd sd fd
 
-#fd0:	/usr/mdec/bootfd /usr/mdec/fdboot
-#	disklabel -r -w fd0 floppy5 bootflpy /usr/mdec/fdboot /usr/mdec/bootfd
-#
-
-install: wd sd 
-# you should use the old floppy booter, it's MUCH faster
-# This one works but it's too slow.
-# besides how many kernels can you fit on a floppy?
-# only use this one if you want to boot a kernel
-# from a hard disk 2 when you've trashed hard disk 1
-#install: wd sd fd
-
-clean:
+clean cleandir:
 	/bin/rm -f *.o *.d boot bootbios biosboot boot.sym
 
-
+.include <bsd.prog.mk>

@@ -42,7 +42,7 @@
 .Ar hostname
 .Nm arp
 .Fl a
-.Op Ar vmunix
+.Op Ar 386bsd
 .Op Ar kmem
 .Nm arp
 .Fl d Ar hostname
@@ -75,9 +75,9 @@ entries by reading the table
 from the file
 .Ar kmem
 (default /dev/kmem) based on the kernel file 
-.Ar vmunix
+.Ar 386bsd
 (default
-.Pa /vmunix ) .
+.Pa /386bsd ) .
 .It Fl d
 A super-user may delete an entry for the host called
 .Ar hostname

@@ -1,3 +1,29 @@
+/*
+ * Isolan AT 4141-0 Ethernet driver header file
+ * Isolink 4110 
+ *
+ * By Paul Richards 
+ *
+ * Copyright (C) 1993, Paul Richards. This software may be used, modified,
+ *   copied, distributed, and sold, in both source and binary form provided
+ *   that the above copyright and these terms are retained. Under no
+ *   circumstances is the author responsible for the proper functioning
+ *   of this software, nor does the author assume any responsibility
+ *   for damages incurred with its use.
+ *
+ *	$Id: if_isreg.h,v 1.2 1993/10/16 13:45:55 rgrimes Exp $
+ */
+
+/*
+ * Initialize multicast address hashing registers to accept
+ * all multicasts (only used when in promiscuous mode)
+ */
+#if NBPFILTER > 0
+#define MULTI_INIT_ADDR 0xff
+#else
+#define MULTI_INIT_ADDR 0
+#endif
+
 /* Declarations specific to this driver */
 #define NTBUF 2
 #define TLEN 1

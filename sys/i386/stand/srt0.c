@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)srt0.c	5.3 (Berkeley) 4/28/91
+ *	from: @(#)srt0.c	5.3 (Berkeley) 4/28/91
+ *	$Id$
  */
 
 /*

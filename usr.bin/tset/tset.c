@@ -38,10 +38,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tset.c	5.19 (Berkeley) 12/24/91";
+static char sccsid[] = "@(#)tset.c	5.22 (Berkeley) 2/11/93";
 #endif /* not lint */
 
 #include <sys/types.h>
+#include <sys/ioctl.h>
 #include <termios.h>
 #include <errno.h>
 #include <unistd.h>
@@ -57,16 +58,10 @@ void	usage __P((void));
 
 struct termios mode, oldmode;
 
-int	dosetenv;		/* output TERMCAP strings */
 int	erasechar;		/* new erase character */
 int	intrchar;		/* new interrupt character */
 int	isreset;		/* invoked as reset */
 int	killchar;		/* new kill character */
-int	noinit;			/* don't output initialization string */
-int	noset;			/* only report term type */
-int	quiet;			/* don't display ctrl key settings */
-int	showterm;		/* display term on stderr */
-
 int	lines, columns;		/* window size */
 
 int
@@ -77,7 +72,7 @@ main(argc, argv)
 #ifdef TIOCGWINSZ
 	struct winsize win;
 #endif
-	int ch, csh, usingupper;
+	int ch, noinit, noset, quiet, Sflag, sflag, showterm, usingupper;
 	char savech, *p, *t, *tcapbuf, *ttype;
 
 	if (tcgetattr(STDERR_FILENO, &mode) < 0)
@@ -97,9 +92,10 @@ main(argc, argv)
 	}
 
 	obsolete(argv);
-	while ((ch = getopt(argc, argv, "-a:d:e:Ii:k:m:np:Qrs")) != EOF) {
+	noinit = noset = quiet = Sflag = sflag = showterm = 0;
+	while ((ch = getopt(argc, argv, "-a:d:e:Ii:k:m:np:QSrs")) != EOF) {
 		switch (ch) {
-		case '-':		/* OBSOLETE: display term only */
+		case '-':		/* display term only */
 			noset = 1;
 			break;
 		case 'a':		/* OBSOLETE: map identifier to type */
@@ -113,7 +109,7 @@ main(argc, argv)
 			    optarg[1] == '?' ? '\177' : CTRL(optarg[1]) :
 			    optarg[0];
 			break;
-		case 'I':		/* no initialization */
+		case 'I':		/* no initialization strings */
 			noinit = 1;
 			break;
 		case 'i':		/* interrupt character */
@@ -134,14 +130,17 @@ main(argc, argv)
 		case 'p':		/* OBSOLETE: map identifier to type */
 			add_mapping("plugboard", optarg);
 			break;
-		case 'Q':		/* be quiet */
+		case 'Q':		/* don't output control key settings */
 			quiet = 1;
+			break;
+		case 'S':		/* output TERM/TERMCAP strings */
+			Sflag = 1;
 			break;
 		case 'r':		/* display term on stderr */
 			showterm = 1;
 			break;
-		case 's':		/* print commands to set environment */
-			dosetenv = 1;
+		case 's':		/* output TERM/TERMCAP strings */
+			sflag = 1;
 			break;
 		case '?':
 		default:
@@ -181,15 +180,10 @@ main(argc, argv)
 			tcsetattr(STDERR_FILENO, TCSADRAIN, &mode);
 	}
 
-	/*
-	 * The termcap file generally has a two-character name first in each
-	 * entry followed by more descriptive names.  If we ended up with the
-	 * first one, we switch to the second one for setting or reporting
-	 * information.
-	 */
-	p = strpbrk(tcapbuf, "|:");
-	if (p && *p != ':' && !strncmp(ttype, tcapbuf, p - tcapbuf)) {
-		t = ++p;
+	/* Get the terminal name from the entry. */
+	p = tcapbuf;
+	if (p != NULL && *p != ':') {
+		t = p;
 		if (p = strpbrk(p, "|:")) {
 			savech = *p;
 			*p = '\0';
@@ -215,24 +209,29 @@ main(argc, argv)
 		}
 	}
 
-	if (!dosetenv)
-		exit(0);
+	if (Sflag) {
+		(void)printf("%s ", ttype);
+		wrtermcap(tcapbuf);
+	}
 
-	/*
-	 * Figure out what shell we're using.  A hack, we look for a $SHELL
-	 * ending in "csh".
-	 */
-	csh = (p = getenv("SHELL")) && !strcmp(p + strlen(p) - 3, "csh");
-	if (csh)
-		(void)printf("set noglob;\nsetenv TERM %s;\nsetenv TERMCAP '",
-		    ttype);
-	else
-		(void)printf("TERM=%s;\nTERMCAP='", ttype);
-	wrtermcap(tcapbuf);
-	if (csh)
-		(void)printf("';\nunset noglob;\n");
-	else
-		(void)printf("';\nexport TERMCAP TERM;\n");
+	if (sflag) {
+		/*
+		 * Figure out what shell we're using.  A hack, we look for an
+		 * environmental variable SHELL ending in "csh".
+		 */
+		if ((p = getenv("SHELL")) &&
+		    !strcmp(p + strlen(p) - 3, "csh")) {
+			p = "set noglob;\nsetenv TERM %s;\nsetenv TERMCAP '";
+			t = "';\nunset noglob;\n";
+		} else {
+			p = "TERM=%s;\nTERMCAP='";
+			t = "';\nexport TERMCAP TERM;\n";
+		}
+		(void)printf(p, ttype);
+		wrtermcap(tcapbuf);
+		(void)printf(t);
+	}
+
 	exit(0);
 }
 
@@ -299,6 +298,6 @@ void
 usage()
 {
 	(void)fprintf(stderr,
-"usage: tset [-IQrs] [-] [-e ch] [-i ch] [-k ch] [-m mapping] [terminal]\n");
+"usage: tset [-IQrSs] [-] [-e ch] [-i ch] [-k ch] [-m mapping] [terminal]\n");
 	exit(1);
 }

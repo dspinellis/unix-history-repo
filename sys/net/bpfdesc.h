@@ -35,16 +35,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)bpfdesc.h	7.1 (Berkeley) 5/7/91
- *
- * @(#) $Header: bpfdesc.h,v 1.10 92/02/24 21:28:24 mccanne Exp $ (LBL)
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00112
- * --------------------         -----   ----------------------
- *
- * 14 Mar 93    David Greenman		Upgrade bpf to match tcpdump 2.2.1
+ *	from: @(#)bpfdesc.h	7.1 (Berkeley) 5/7/91
+ *	$Id$
  */
 
 /*

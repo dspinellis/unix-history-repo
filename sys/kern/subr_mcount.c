@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)subr_mcount.c	7.10 (Berkeley) 5/7/91
+ *	from: @(#)subr_mcount.c	7.10 (Berkeley) 5/7/91
+ *	$Id$
  */
 
 #ifdef GPROF
@@ -148,23 +149,26 @@ mcount()
 	asm("movl a6@(4),%0" : "=r" (selfpc));
 	asm("movl a6@(0)@(4),%0" : "=r" (frompcindex));
 #endif
+#if defined(i386)
+        /*
+         * selfpc = pc pushed by mcount call
+         */
+        asm("movl 4(%%ebp),%0" : "=r" (selfpc));
+        /*
+         * frompcindex = pc pushed by jsr into self.
+         * in GCC, the caller's stack frame has already been built, so we
+         * have to chase the base pointer to find caller's raddr.
+         */
+        asm("movl (%%ebp),%0" : "=r" (frompcindex));
+        frompcindex = ((unsigned short **)frompcindex)[1];
+#endif /* i386 */
 #else
 #if defined(vax)
 	asm("	movl (sp), r11");	/* selfpc = ... (jsb frame) */
 	asm("	movl 16(fp), r10");	/* frompcindex =     (calls frame) */
 #endif
 #if defined(i386)
-	/*
-	 * selfpc = pc pushed by mcount call
-	 */
-	asm("movl 4(%%ebp),%0" : "=r" (selfpc));
-	/*
-	 * frompcindex = pc pushed by jsr into self.
-	 * in GCC, the caller's stack frame has already been built, so we
-	 * have to chase the base pointer to find caller's raddr.
-	 */
-	asm("movl (%%ebp),%0" : "=r" (frompcindex));
-	frompcindex = ((unsigned short **)frompcindex)[1];
+	Fix Me!!
 #endif /* i386 */
 #if defined(tahoe)
 	asm("	movl -8(fp),r12");	/* selfpc = callf frame */

@@ -35,7 +35,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)shm.h	7.2 (Berkeley) 2/5/91
+ *	from: @(#)shm.h	7.2 (Berkeley) 2/5/91
+ *	$Id$
  */
 
 /*
@@ -89,6 +90,22 @@ struct	shminfo {
 #ifdef KERNEL
 struct	shmid_ds	*shmsegs;
 struct	shminfo		shminfo;
+#endif
+
+#ifndef KERNEL
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+
+int shmsys __P((int, ...));
+
+void *shmat  __P((int, void *, int));
+int shmget __P((key_t, int, int));
+int shmctl __P((int, int, void *));
+int shmdt  __P((void *));
+
+__END_DECLS
+
 #endif
 
 #endif /* !_SHM_H_ */

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tcp_debug.h	7.4 (Berkeley) 6/28/90
+ *	from: @(#)tcp_debug.h	7.4 (Berkeley) 6/28/90
+ *	$Id$
  */
 
 struct	tcp_debug {

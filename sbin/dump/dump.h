@@ -31,6 +31,8 @@
  * SUCH DAMAGE.
  *
  *	@(#)dump.h	5.16 (Berkeley) 5/29/91
+ *
+ *	$Header: /b/source/CVS/src/sbin/dump/dump.h,v 1.3 1993/03/23 00:27:03 cgd Exp $
  */
 
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))

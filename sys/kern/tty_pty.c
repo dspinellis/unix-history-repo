@@ -30,24 +30,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tty_pty.c	7.21 (Berkeley) 5/30/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         5       00094
- * --------------------         -----   ----------------------
- *
- * 11 Dec 92	Williams Jolitz		Fixed tty handling
- *
- * 28 Nov 1991	Warren Toomey		Cleaned up the use of COMPAT_43
- *					in the 386BSD kernel.	 
- * 6 Oct 1992	Holger Veit		Fixed 'hanging console' bug
- * 11 Jan 93	Julian Elischer		Fixes multiple processes on one
- *					pty bug
- * 27 Feb 93	Charles Hannum		Proper return values for ptsclose()
- *					and ptcclose()
+ *	from: @(#)tty_pty.c	7.21 (Berkeley) 5/30/91
+ *	$Id$
  */
-static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/tty_pty.c,v 1.3 92/01/21 21:31:23 william Exp $";
 
 /*
  * Pseudo-teletype Driver
@@ -483,7 +468,7 @@ again:
 		while (uio->uio_resid > 0 && RB_LEN(&tp->t_can) < TTYHOG - 1) {
 			if (cc == 0) {
 				cc = min(uio->uio_resid, BUFSIZ);
-				cc = min(cc, TTYHOG - 1 - RB_CONTIGPUT(&tp->t_can));
+				cc = min(cc, RB_CONTIGPUT(&tp->t_can));
 				cp = locbuf;
 				error = uiomove((caddr_t)cp, cc, uio);
 				if (error)
@@ -655,8 +640,9 @@ ptyioctl(dev, cmd, data, flag)
 			return(0);
 		}
 	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
-	if (error < 0)
-		 error = ttioctl(tp, cmd, data, flag);
+	if (error >= 0)
+	    return (error);
+	error = ttioctl(tp, cmd, data, flag);
 	/*
 	 * Since we use the tty queues internally,
 	 * pty's can't be switched to disciplines which overwrite

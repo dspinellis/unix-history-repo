@@ -31,19 +31,22 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	$Id: bcopy.s,v 1.2 1993/08/16 18:40:24 jtc Exp $
  */
 
 #if defined(LIBC_RCS) && !defined(lint)
-	.asciz "$ID$"
+	.asciz "$Id: bcopy.s,v 1.2 1993/08/16 18:40:24 jtc Exp $"
 #endif /* LIBC_RCS and not lint */
+
+#include "DEFS.h"
 
 	/*
 	 * (ov)bcopy (src,dst,cnt)
 	 *  ws@tools.de     (Wolfgang Solfrank, TooLs GmbH) +49-228-985800
 	 */
 
-	.globl	_bcopy
-_bcopy:
+ENTRY(bcopy)
 	pushl	%esi
 	pushl	%edi
 	movl	12(%esp),%esi
@@ -61,7 +64,6 @@ _bcopy:
 	movsb
 	popl	%edi
 	popl	%esi
-	xorl	%eax,%eax
 	ret
 1:
 	addl	%ecx,%edi	/* copy backwards. */
@@ -80,6 +82,5 @@ _bcopy:
 	movsl
 	popl	%edi
 	popl	%esi
-	xorl	%eax,%eax
 	cld
 	ret

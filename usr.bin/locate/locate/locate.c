@@ -74,6 +74,8 @@ static char sccsid[] = "@(#)locate.c	5.2 (Berkeley) 6/1/90";
 #include <sys/param.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
+#include <fnmatch.h>
 #include "locate.h"
 #include "pathnames.h"
 
@@ -103,7 +105,7 @@ fastfind(pathpart)
 	register char *p, *s;
 	register int c;
 	int count, found, globflag;
-	char *cutoff, *patend, *q, *index(), *patprep();
+	char *cutoff, *patend, *q, *patprep();
 	char bigram1[NBG], bigram2[NBG], path[MAXPATHLEN];
 
 	for (c = 0, p = bigram1, s = bigram2; c < NBG; c++)
@@ -135,7 +137,7 @@ fastfind(pathpart)
 				if (*p == NULL) {	/* fast match success */
 					found = 1;
 					if (!globflag ||
-					    fnmatch(pathpart, path, FNM_QUOTE))
+					    !fnmatch(pathpart, path, 0))
 						(void)printf("%s\n", path);
 					break;
 				}

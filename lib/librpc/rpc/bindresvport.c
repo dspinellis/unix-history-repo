@@ -1,4 +1,3 @@
-static  char sccsid[] = "@(#)bindresvport.c	2.2 88/07/29 4.0 RPCSRC 1.8 88/02/08 SMI";
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
  * unrestricted use provided that this legend is included on all tape
@@ -27,6 +26,12 @@ static  char sccsid[] = "@(#)bindresvport.c	2.2 88/07/29 4.0 RPCSRC 1.8 88/02/08
  * 2550 Garcia Avenue
  * Mountain View, California  94043
  */
+
+#if defined(LIBC_SCCS) && !defined(lint)
+/*static char *sccsid = "from: @(#)bindresvport.c 1.8 88/02/08 SMI";*/
+/*static char *sccsid = "from: @(#)bindresvport.c	2.2 88/07/29 4.0 RPCSRC";*/
+static char *rcsid = "$Id: bindresvport.c,v 1.3 1993/08/26 00:53:14 jtc Exp $";
+#endif
 
 /*
  * Copyright (c) 1987 by Sun Microsystems, Inc.

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)if_ether.c	7.13 (Berkeley) 10/31/90
+ *	from: @(#)if_ether.c	7.13 (Berkeley) 10/31/90
+ *	$Id$
  */
 
 /*
@@ -241,8 +242,10 @@ arpresolve(ac, m, destip, desten, usetrailers)
 	}
 	at->at_timer = 0;		/* restart the timer */
 	if (at->at_flags & ATF_COM) {	/* entry IS complete */
-		bcopy((caddr_t)at->at_enaddr, (caddr_t)desten,
-		    sizeof(at->at_enaddr));
+
+		*(int *) desten = *(int *) at->at_enaddr;
+		((short *) desten)[2] = ((short *) at->at_enaddr)[2];
+
 		if (at->at_flags & ATF_USETRAILERS)
 			*usetrailers = 1;
 		splx(s);

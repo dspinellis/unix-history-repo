@@ -2,22 +2,17 @@
 Copyright (C) 1988 Free Software Foundation
     written by Doug Lea (dl@rocky.oswego.edu)
 
-This file is part of GNU CC.
-
-GNU CC is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU CC General Public
-License for full details.
-
-Everyone is granted permission to copy, modify and redistribute
-GNU CC, but only under the conditions described in the
-GNU CC General Public License.   A copy of this license is
-supposed to have been given to you along with GNU CC so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  
+This file is part of the GNU C++ Library.  This library is free
+software; you can redistribute it and/or modify it under the terms of
+the GNU Library General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your
+option) any later version.  This library is distributed in the hope
+that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.  See the GNU Library General Public License for more details.
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 /*
@@ -36,18 +31,29 @@ and this notice must be preserved on all copies.
 #include <Integer.h>
 #include <std.h>
 #include <ctype.h>
+#include <float.h>
+#include <limits.h>
 #include <math.h>
-#include <values.h>
 #include <Obstack.h>
 #include <AllocRing.h>
 #include <new.h>
+#include <builtin.h>
+
+#ifndef HUGE_VAL
+#ifdef HUGE
+#define HUGE_VAL HUGE
+#else
+#define HUGE_VAL DBL_MAX
+#endif
+#endif
+
 /*
  Sizes of shifts for multiple-precision arithmetic.
  These should not be changed unless Integer representation
  as unsigned shorts is changed in the implementation files.
 */
 
-#define I_SHIFT         SHORTBITS
+#define I_SHIFT         (sizeof(short) * CHAR_BIT)
 #define I_RADIX         ((unsigned long)(1L << I_SHIFT))
 #define I_MAXNUM        ((unsigned long)((I_RADIX - 1)))
 #define I_MINNUM        ((unsigned long)(I_RADIX >> 1))
@@ -55,8 +61,8 @@ and this notice must be preserved on all copies.
 #define I_NEGATIVE      0
 
 /* All routines assume SHORT_PER_LONG > 1 */
-#define SHORT_PER_LONG  ((LONGBITS + SHORTBITS - 1) / SHORTBITS)
-#define CHAR_PER_LONG   ((LONGBITS + CHARBITS - 1) / CHARBITS)
+#define SHORT_PER_LONG  ((unsigned)(((sizeof(long) + sizeof(short) - 1) / sizeof(short))))
+#define CHAR_PER_LONG   ((unsigned)sizeof(long))
 
 /*
   minimum and maximum sizes for an IntRep
@@ -68,6 +74,10 @@ and this notice must be preserved on all copies.
 #ifndef MALLOC_MIN_OVERHEAD
 #define MALLOC_MIN_OVERHEAD 4
 #endif
+
+IntRep _ZeroRep = {1, 0, 1, {0}};
+IntRep _OneRep = {1, 0, 1, {1}};
+IntRep _MinusOneRep = {1, 0, 0, {1}};
 
 
 // utilities to extract and transfer bits 
@@ -180,7 +190,7 @@ IntRep* Ialloc(IntRep* old, const unsigned short* src, int srclen, int newsgn,
   scpy(src, rep->s, srclen);
   Iclear_from(rep, srclen);
 
-  if (old != rep && old != 0) delete old;
+  if (old != rep && old != 0 && !STATIC_IntRep(old)) delete old;
   return rep;
 }
 
@@ -191,7 +201,7 @@ IntRep* Icalloc(IntRep* old, int newlen)
   IntRep* rep;
   if (old == 0 || newlen > old->sz)
   {
-    if (old != 0) delete old;
+    if (old != 0 && !STATIC_IntRep(old)) delete old;
     rep = Inew(newlen);
   }
   else
@@ -224,7 +234,7 @@ IntRep* Iresize(IntRep* old, int newlen)
       rep = Inew(newlen);
       scpy(old->s, rep->s, oldlen);
       rep->sgn = old->sgn;
-      delete old;
+      if (!STATIC_IntRep(old)) delete old;
     }
     else
       rep = old;
@@ -260,7 +270,7 @@ IntRep* Icopy(IntRep* old, const IntRep* src)
     int newlen = src->len;
     if (old == 0 || newlen > old->sz)
     {
-      if (old != 0) delete old;
+      if (old != 0 && !STATIC_IntRep(old)) delete old;
       rep = Inew(newlen);
     }
     else
@@ -279,73 +289,68 @@ IntRep* Icopy(IntRep* old, const IntRep* src)
 
 IntRep* Icopy_long(IntRep* old, long x)
 {
+  int newsgn = (x >= 0);
+  IntRep* rep = Icopy_ulong(old, newsgn ? x : -x);
+  rep->sgn = newsgn;
+  return rep;
+}
+
+IntRep* Icopy_ulong(IntRep* old, unsigned long x)
+{
   unsigned short src[SHORT_PER_LONG];
-  unsigned long u;
-  int newsgn;
-  if (newsgn = (x >= 0))
-    u = x;
-  else
-    u = -x;
   
   unsigned short srclen = 0;
-  while (u != 0)
+  while (x != 0)
   {
-    src[srclen++] = extract(u);
-    u = down(u);
+    src[srclen++] = extract(x);
+    x = down(x);
   }
 
   IntRep* rep;
   if (old == 0 || srclen > old->sz)
   {
-    if (old != 0) delete old;
+    if (old != 0 && !STATIC_IntRep(old)) delete old;
     rep = Inew(srclen);
   }
   else
     rep = old;
 
   rep->len = srclen;
-  rep->sgn = newsgn;
+  rep->sgn = I_POSITIVE;
 
   scpy(src, rep->s, srclen);
 
   return rep;
-
 }
 
 // special case for zero -- it's worth it!
 
 IntRep* Icopy_zero(IntRep* old)
 {
-  IntRep* rep;
-  if (old == 0)
-    rep = Inew(0);
-  else
-    rep = old;
+  if (old == 0 || STATIC_IntRep(old))
+    return &_ZeroRep;
 
-  rep->len = 0;
-  rep->sgn = I_POSITIVE;
+  old->len = 0;
+  old->sgn = I_POSITIVE;
 
-  return rep;
+  return old;
 }
 
 // special case for 1 or -1
 
 IntRep* Icopy_one(IntRep* old, int newsgn)
 {
-  IntRep* rep;
   if (old == 0 || 1 > old->sz)
   {
-    if (old != 0) delete old;
-    rep = Inew(1);
+    if (old != 0 && !STATIC_IntRep(old)) delete old;
+    return newsgn==I_NEGATIVE ? &_MinusOneRep : &_OneRep;
   }
-  else
-    rep = old;
 
-  rep->sgn = newsgn;
-  rep->len = 1;
-  rep->s[0] = 1;
+  old->sgn = newsgn;
+  old->len = 1;
+  old->s[0] = 1;
 
-  return rep;
+  return old;
 }
 
 // convert to a legal two's complement long if possible
@@ -353,11 +358,11 @@ IntRep* Icopy_one(IntRep* old, int newsgn)
 
 long Itolong(const IntRep* rep)
 { 
-  if (rep->len > SHORT_PER_LONG)
-    return (rep->sgn == I_POSITIVE) ? MAXLONG : MINLONG;
+  if ((unsigned)(rep->len) > (unsigned)(SHORT_PER_LONG))
+    return (rep->sgn == I_POSITIVE) ? LONG_MAX : LONG_MIN;
   else if (rep->len == 0)
     return 0;
-  else if (rep->len < SHORT_PER_LONG)
+  else if ((unsigned)(rep->len) < (unsigned)(SHORT_PER_LONG))
   {
     unsigned long a = rep->s[rep->len-1];
     if (SHORT_PER_LONG > 2) // normally optimized out
@@ -371,7 +376,7 @@ long Itolong(const IntRep* rep)
   {
     unsigned long a = rep->s[SHORT_PER_LONG - 1];
     if (a >= I_MINNUM)
-      return (rep->sgn == I_POSITIVE) ? MAXLONG : MINLONG;
+      return (rep->sgn == I_POSITIVE) ? LONG_MAX : LONG_MIN;
     else
     {
       a = up(a) | rep->s[SHORT_PER_LONG - 2];
@@ -386,20 +391,20 @@ long Itolong(const IntRep* rep)
 }
 
 // test whether op long() will work.
-// careful about asymmetry between MINLONG & MAXLONG
+// careful about asymmetry between LONG_MIN & LONG_MAX
 
 int Iislong(const IntRep* rep)
 {
-  int l = rep->len;
+  unsigned int l = rep->len;
   if (l < SHORT_PER_LONG)
     return 1;
   else if (l > SHORT_PER_LONG)
     return 0;
-  else if (rep->s[SHORT_PER_LONG - 1] < I_MINNUM)
+  else if ((unsigned)(rep->s[SHORT_PER_LONG - 1]) < (unsigned)(I_MINNUM))
     return 1;
   else if (rep->sgn == I_NEGATIVE && rep->s[SHORT_PER_LONG - 1] == I_MINNUM)
   {
-    for (int i = 0; i < SHORT_PER_LONG - 1; ++i)
+    for (unsigned int i = 0; i < SHORT_PER_LONG - 1; ++i)
       if (rep->s[i] != 0)
         return 0;
     return 1;
@@ -413,14 +418,14 @@ int Iislong(const IntRep* rep)
 double Itodouble(const IntRep* rep)
 { 
   double d = 0.0;
-  double bound = HUGE / 2.0;
+  double bound = DBL_MAX / 2.0;
   for (int i = rep->len - 1; i >= 0; --i)
   {
     unsigned short a = I_RADIX >> 1;
     while (a != 0)
     {
       if (d >= bound)
-        return (rep->sgn == I_NEGATIVE) ? -HUGE : HUGE;
+        return (rep->sgn == I_NEGATIVE) ? -HUGE_VAL : HUGE_VAL;
       d *= 2.0;
       if (rep->s[i] & a)
         d += 1.0;
@@ -440,7 +445,7 @@ double Itodouble(const IntRep* rep)
 int Iisdouble(const IntRep* rep)
 {
   double d = 0.0;
-  double bound = HUGE / 2.0;
+  double bound = DBL_MAX / 2.0;
   for (int i = rep->len - 1; i >= 0; --i)
   {
     unsigned short a = I_RADIX >> 1;
@@ -463,26 +468,26 @@ double ratio(const Integer& num, const Integer& den)
 {
   Integer q, r;
   divide(num, den, q, r);
-  double d1 = double(q);
+  double d1 = q.as_double();
  
-  if (d1 == HUGE || d1 == -HUGE || sign(r) == 0)
+  if (d1 >= DBL_MAX || d1 <= -DBL_MAX || sign(r) == 0)
     return d1;
   else      // use as much precision as available for fractional part
   {
     double  d2 = 0.0;
     double  d3 = 0.0; 
-    double bound = HUGE / 2.0;
     int cont = 1;
     for (int i = den.rep->len - 1; i >= 0 && cont; --i)
     {
       unsigned short a = I_RADIX >> 1;
       while (a != 0)
       {
-        if (d2 >= bound)
+        if (d2 + 1.0 == d2) // out of precision when we get here
         {
           cont = 0;
           break;
         }
+
         d2 *= 2.0;
         if (den.rep->s[i] & a)
           d2 += 1.0;
@@ -493,6 +498,7 @@ double ratio(const Integer& num, const Integer& den)
           if (r.rep->s[i] & a)
             d3 += 1.0;
         }
+
         a >>= 1;
       }
     }
@@ -566,9 +572,9 @@ int compare(const IntRep* x, long  y)
         if (diff == 0)
           diff = docmp(x->s, tmp, xl);
       }
+      if (xsgn == I_NEGATIVE)
+	diff = -diff;
     }
-    if (xsgn == I_NEGATIVE)
-      diff = -diff;
     return diff;
   }
 }
@@ -1236,8 +1242,8 @@ IntRep* div(const IntRep* x, const IntRep* y, IntRep* q)
     q = Icalloc(q, ql);
     do_divide(r->s, yy->s, yl, q->s, ql);
 
-    if (yy != y) delete yy;
-    delete r;
+    if (yy != y && !STATIC_IntRep(yy)) delete yy;
+    if (!STATIC_IntRep(r)) delete r;
   }
   q->sgn = samesign;
   Icheck(q);
@@ -1304,7 +1310,7 @@ IntRep* div(const IntRep* x, long y, IntRep* q)
     q = Icalloc(q, ql);
     do_divide(r->s, ys, yl, q->s, ql);
 
-    delete r;
+    if (!STATIC_IntRep(r)) delete r;
   }
   q->sgn = samesign;
   Icheck(q);
@@ -1386,7 +1392,7 @@ void divide(const Integer& Ix, long y, Integer& Iq, long& rem)
     }
     Icheck(r);
     rem = Itolong(r);
-    delete r;
+    if (!STATIC_IntRep(r)) delete r;
   }
   rem = abs(rem);
   if (xsgn == I_NEGATIVE) rem = -rem;
@@ -1455,7 +1461,7 @@ void divide(const Integer& Ix, const Integer& Iy, Integer& Iq, Integer& Ir)
     q = Icalloc(q, ql);
     do_divide(r->s, yy->s, yl, q->s, ql);
 
-    if (yy != y) delete yy;
+    if (yy != y && !STATIC_IntRep(yy)) delete yy;
     if (prescale != 1)
     {
       Icheck(r);
@@ -1509,7 +1515,7 @@ IntRep* mod(const IntRep* x, const IntRep* y, IntRep* r)
       
     do_divide(r->s, yy->s, yl, 0, xl - yl + 1);
 
-    if (yy != y) delete yy;
+    if (yy != y && !STATIC_IntRep(yy)) delete yy;
 
     if (prescale != 1)
     {
@@ -1810,19 +1816,15 @@ IntRep*  compl(const IntRep* src, IntRep* r)
   return r;
 }
 
-void setbit(Integer& x, long b)
+void (setbit)(Integer& x, long b)
 {
   if (b >= 0)
   {
     int bw = (unsigned long)b / I_SHIFT;
     int sw = (unsigned long)b % I_SHIFT;
-    if (x.rep == 0)
-      x.rep = Icalloc(0, bw + 1);
-    else if (x.rep->len < bw)
-    {
-      int xl = x.rep->len;
+    int xl = x.rep ? x.rep->len : 0;
+    if (xl <= bw)
       x.rep = Iresize(x.rep, calc_len(xl, bw+1, 0));
-    }
     x.rep->s[bw] |= (1 << sw);
     Icheck(x.rep);
   }
@@ -1831,17 +1833,16 @@ void setbit(Integer& x, long b)
 void clearbit(Integer& x, long b)
 {
   if (b >= 0)
-  {
-    int bw = (unsigned long)b / I_SHIFT;
-    int sw = (unsigned long)b % I_SHIFT;
-    if (x.rep == 0)
-      x.rep = Icalloc(0, bw + 1);
-    else if (x.rep->len < bw)
     {
-      int xl = x.rep->len;
-      x.rep = Iresize(x.rep, calc_len(xl, bw+1, 0));
-    }
-    x.rep->s[bw] &= ~(1 << sw);
+      if (x.rep == 0)
+	x.rep = &_ZeroRep;
+      else
+	{
+	  int bw = (unsigned long)b / I_SHIFT;
+	  int sw = (unsigned long)b % I_SHIFT;
+	  if (x.rep->len > bw)
+	    x.rep->s[bw] &= ~(1 << sw);
+	}
     Icheck(x.rep);
   }
 }
@@ -1949,8 +1950,8 @@ IntRep* gcd(const IntRep* x, const IntRep* y)
       t = add(t, 0, u, 0, t);
     }
   }
-  delete t;
-  delete v;
+  if (!STATIC_IntRep(t)) delete t;
+  if (!STATIC_IntRep(v)) delete v;
   if (k != 0) u = lshift(u, k, u);
   return u;
 }
@@ -2008,7 +2009,7 @@ IntRep* power(const IntRep* x, long y, IntRep* r)
       else
         b = multiply(b, b, b);
     }
-    delete b;
+    if (!STATIC_IntRep(b)) delete b;
   }
   r->sgn = sgn;
   Icheck(r);
@@ -2151,9 +2152,48 @@ extern AllocRing _libgxx_fmtq;
 
 char* Itoa(const IntRep* x, int base, int width)
 {
-  int wrksiz = (x->len + 1) * I_SHIFT / lg(base) + 2 + width;
-  char* fmtbase = (char *) _libgxx_fmtq.alloc(wrksiz);
-  char* e = fmtbase + wrksiz - 1;
+  int fmtlen = (x->len + 1) * I_SHIFT / lg(base) + 4 + width;
+  char* fmtbase = (char *) _libgxx_fmtq.alloc(fmtlen);
+  char* f = cvtItoa(x, fmtbase, fmtlen, base, 0, width, 0, ' ', 'X', 0);
+  return f;
+}
+
+ostream& operator << (ostream& s, const Integer& y)
+{
+#ifdef _OLD_STREAMS
+  return s << Itoa(y.rep);
+#else
+  if (s.opfx())
+    {
+      int base = (s.flags() & ios::oct) ? 8 : (s.flags() & ios::hex) ? 16 : 10;
+      int width = s.width();
+      y.printon(s, base, width);
+    }
+  return s;
+#endif
+}
+
+void Integer::printon(ostream& s, int base /* =10 */, int width /* =0 */) const
+{
+  int align_right = !(s.flags() & ios::left);
+  int showpos = s.flags() & ios::showpos;
+  int showbase = s.flags() & ios::showbase;
+  char fillchar = s.fill();
+  char Xcase = (s.flags() & ios::uppercase)? 'X' : 'x';
+  const IntRep* x = rep;
+  int fmtlen = (x->len + 1) * I_SHIFT / lg(base) + 4 + width;
+  char* fmtbase = new char[fmtlen];
+  char* f = cvtItoa(x, fmtbase, fmtlen, base, showbase, width, align_right,
+		    fillchar, Xcase, showpos);
+  s.write(f, fmtlen);
+  delete fmtbase;
+}
+
+char*  cvtItoa(const IntRep* x, char* fmt, int& fmtlen, int base, int showbase,
+              int width, int align_right, char fillchar, char Xcase, 
+              int showpos)
+{
+  char* e = fmt + fmtlen - 1;
   char* s = e;
   *--s = 0;
 
@@ -2192,7 +2232,7 @@ char* Itoa(const IntRep* x, int base, int width)
             ch += '0';
           *--s = ch;
         }
-        delete z;
+	if (!STATIC_IntRep(z)) delete z;
         break;
       }
       else
@@ -2211,11 +2251,33 @@ char* Itoa(const IntRep* x, int base, int width)
     }
   }
 
+  if (base == 8 && showbase) 
+    *--s = '0';
+  else if (base == 16 && showbase) 
+  { 
+    *--s = Xcase; 
+    *--s = '0'; 
+  }
   if (x->sgn == I_NEGATIVE) *--s = '-';
+  else if (showpos) *--s = '+';
   int w = e - s - 1;
-  while (w++ < width)
-    *--s = ' ';
-  return s;
+  if (!align_right || w >= width)
+  {
+    while (w++ < width)
+      *--s = fillchar;
+    fmtlen = e - s - 1;
+    return s;
+  }
+  else
+  {
+    char* p = fmt;
+    int gap = s - p;
+    for (char* t = s; *t != 0; ++t, ++p) *p = *t;
+    while (w++ < width) *p++ = fillchar;
+    *p = 0;
+    fmtlen = p - fmt;
+    return fmt;
+  }
 }
 
 char* dec(const Integer& x, int width)
@@ -2235,24 +2297,36 @@ char* hex(const Integer& x, int width)
 
 istream& operator >> (istream& s, Integer& y)
 {
-//#ifndef VMS		// is this really needed?  I think not.
-  if (!s.readable())
+#ifdef _OLD_STREAMS
+  if (!s.good())
+    return s;
+#else
+  if (!s.ipfx(0))
   {
-    s.set(_bad);
+    s.clear(ios::failbit|s.rdstate());
     return s;
   }
-//#endif
+#endif
+  s >> ws;
+  if (!s.good())
+  {
+    s.clear(ios::failbit|s.rdstate());
+    return s;
+  }
+  
+#ifdef _OLD_STREAMS
+  int know_base = 0;
+  int base = 10;
+#else
+  int know_base = s.flags() & (ios::oct | ios::hex | ios::dec);
+  int base = (s.flags() & ios::oct) ? 8 : (s.flags() & ios::hex) ? 16 : 10;
+#endif
 
   int got_one = 0;
   char sgn = 0;
   char ch;
   y.rep = Icopy_zero(y.rep);
-  s >> WS;
-  if (!s.good())
-  {
-    s.set(_bad);
-    return s;
-  }
+
   while (s.get(ch))
   {
     if (ch == '-')
@@ -2262,20 +2336,61 @@ istream& operator >> (istream& s, Integer& y)
       else
         break;
     }
-    else if (ch >= '0' && ch <= '9')
+    else if (!know_base & !got_one && ch == '0')
+      base = 8, got_one = 1;
+    else if (!know_base & !got_one && base == 8 && (ch == 'X' || ch == 'x'))
+      base = 16;
+    else if (base == 8)
     {
-      long digit = ch - '0';
-      y *= 10;
-      y += digit;
-      got_one = 1;
+      if (ch >= '0' && ch <= '7')
+      {
+        long digit = ch - '0';
+        y <<= 3;
+        y += digit;
+        got_one = 1;
+      }
+      else
+        break;
+    }
+    else if (base == 16)
+    {
+      long digit;
+      if (ch >= '0' && ch <= '9')
+        digit = ch - '0';
+      else if (ch >= 'A' && ch <= 'F')
+        digit = ch - 'A' + 10;
+      else if (ch >= 'a' && ch <= 'f')
+        digit = ch - 'a' + 10;
+      else
+        digit = base;
+      if (digit < base)
+      {
+        y <<= 4;
+        y += digit;
+        got_one = 1;
+      }
+      else
+        break;
+    }
+    else if (base == 10)
+    {
+      if (ch >= '0' && ch <= '9')
+      {
+        long digit = ch - '0';
+        y *= 10;
+        y += digit;
+        got_one = 1;
+      }
+      else
+        break;
     }
     else
-      break;
+      abort(); // can't happen for now
   }
   if (s.good())
-    s.unget(ch);
+    s.putback(ch);
   if (!got_one)
-    s.set(_bad);
+    s.clear(ios::failbit|s.rdstate());
 
   if (sgn == '-')
     y.negate();
@@ -2285,19 +2400,23 @@ istream& operator >> (istream& s, Integer& y)
 
 int Integer::OK() const
 {
-  int v = rep != 0;             // have a rep
-  int l = rep->len;
-  int s = rep->sgn;
-  v &= l <= rep->sz;            // length with bounds
-  v &= s == 0 || s == 1;        // legal sign
-  Icheck(rep);                  // and correctly adjusted
-  v &= rep->len == l;
-  v &= rep->sgn == s;
-  if (!v) error("invariant failure");
-  return v;
+  if (rep != 0)
+    {
+      int l = rep->len;
+      int s = rep->sgn;
+      int v = l <= rep->sz || STATIC_IntRep(rep);    // length within bounds
+      v &= s == 0 || s == 1;        // legal sign
+      Icheck(rep);                  // and correctly adjusted
+      v &= rep->len == l;
+      v &= rep->sgn == s;
+      if (v)
+	  return v;
+    }
+  error("invariant failure");
+  return 0;
 }
 
-volatile void Integer::error(const char* msg) const
+void Integer::error(const char* msg) const
 {
   (*lib_error_handler)("Integer", msg);
 }

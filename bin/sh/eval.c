@@ -35,7 +35,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)eval.c	5.3 (Berkeley) 4/12/91";
+/*static char sccsid[] = "from: @(#)eval.c	5.3 (Berkeley) 4/12/91";*/
+static char rcsid[] = "eval.c,v 1.5 1993/08/01 18:58:18 mycroft Exp";
 #endif /* not lint */
 
 /*
@@ -899,6 +900,9 @@ returncmd(argc, argv)  char **argv; {
 	return ret;
 }
 
+falsecmd(argc, argv)  char **argv; {
+	return 1;
+}
 
 truecmd(argc, argv)  char **argv; {
 	return 0;

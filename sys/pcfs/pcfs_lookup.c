@@ -15,11 +15,11 @@
  *
  *  October 1992
  *
- *	$Header: /usr/src/CVS/sys/pcfs/pcfs_lookup.c,v 1.1.2.2 1993/02/07 21:57:22 friedl Exp $
- *
+ *	$Id: pcfs_lookup.c,v 1.3 1993/10/16 19:29:35 rgrimes Exp $
  */
 
 #include "param.h"
+#include "systm.h"
 #include "namei.h"
 #include "buf.h"
 #include "vnode.h"
@@ -113,7 +113,7 @@ printf("pcfs_lookup(): vdp %08x, dp %08x, Attr %02x\n",
 		if (error == ENOENT)
 			return error;
 #ifdef PARANOID
-		if (vdp == ndp->ni_rdir  &&  ndp->ni_isdotdot)
+		if (vdp == ndp->ni_rootdir  &&  ndp->ni_isdotdot)
 			panic("pcfs_lookup: .. thru root");
 #endif /* PARANOID */
 		pdp = dp;

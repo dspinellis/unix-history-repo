@@ -31,19 +31,23 @@ static char  *license_msg[] = {
  * Outputs:
  *        file.gz:   compressed file with same mode, owner, and utimes
  *     or stdout with -c option or if stdin used as input.
- * If the OS does not support file names with multiple dots (MSDOS, VMS) or
- * if the output file name had to be truncated, the original name is kept
+ * If the output file name had to be truncated, the original name is kept
  * in the compressed file.
  * On MSDOS, file.tmp -> file.tmz. On VMS, file.tmp -> file.tmp-gz.
+ *
+ * Using gz on MSDOS would create too many file name conflicts. For
+ * example, foo.txt -> foo.tgz (.tgz must be reserved as shorthand for
+ * tar.gz). Similarly, foo.dir and foo.doc would both be mapped to foo.dgz.
+ * I also considered 12345678.txt -> 12345txt.gz but this truncates the name
+ * too heavily. There is no ideal solution given the MSDOS 8+3 limitation. 
  *
  * For the meaning of all compilation flags, see comments in Makefile.in.
  */
 
-#ifndef lint
-static char rcsid[] = "$Id: gzip.c,v 0.19 1993/06/01 14:21:46 jloup Exp $";
+#ifdef RCSID
+static char rcsid[] = "$Id: gzip.c,v 0.24 1993/06/24 10:52:07 jloup Exp $";
 #endif
 
-#include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <signal.h>
@@ -57,6 +61,12 @@ static char rcsid[] = "$Id: gzip.c,v 0.19 1993/06/01 14:21:46 jloup Exp $";
 #include "getopt.h"
 
 		/* configuration */
+
+#ifdef NO_TIME_H
+#  include <sys/time.h>
+#else
+#  include <time.h>
+#endif
 
 #ifndef NO_FCNTL_H
 #  include <fcntl.h>
@@ -157,8 +167,21 @@ typedef RETSIGTYPE (*sig_type) OF((int));
 #  define MAX_PATH_LEN   1024 /* max pathname length */
 #endif
 
-#define MAX_HEADER_LEN   16
-/* max length of a compressed file header, fixed part only */
+#ifndef SEEK_END
+#  define SEEK_END 2
+#endif
+
+#ifdef NO_OFF_T
+  typedef long off_t;
+  off_t lseek OF((int fd, off_t offset, int whence));
+#endif
+
+/* Separator for file name parts (see shorten_name()) */
+#ifdef NO_MULTIPLE_DOTS
+#  define PART_SEP "-"
+#else
+#  define PART_SEP "."
+#endif
 
 		/* global buffers */
 
@@ -179,7 +202,10 @@ int ascii = 0;        /* convert end-of-lines to local OS conventions */
 int to_stdout = 0;    /* output to stdout (-c) */
 int decompress = 0;   /* decompress (-d) */
 int force = 0;        /* don't ask questions, compress links (-f) */
+int no_name = -1;     /* don't save or restore the original file name */
+int no_time = -1;     /* don't save or restore the original file time */
 int recursive = 0;    /* recurse through directories (-r) */
+int list = 0;         /* list the file contents (-l) */
 int verbose = 0;      /* be verbose (-v) */
 int quiet = 0;        /* be very quiet (-q) */
 int do_lzw = 0;       /* generate output compatible with old compress (-Z) */
@@ -188,12 +214,12 @@ int foreground;       /* set if program run in foreground */
 char *progname;       /* program name */
 int maxbits = BITS;   /* max bits per code for LZW */
 int method = DEFLATED;/* compression method */
-int level = 5;        /* compression level */
+int level = 6;        /* compression level */
 int exit_code = OK;   /* program exit code */
 int save_orig_name;   /* set if original name must be saved */
 int last_member;      /* set for .zip and .Z files */
 int part_nb;          /* number of parts in .gz file */
-ulg time_stamp;       /* original time stamp (modification time) */
+long time_stamp;      /* original time stamp (modification time) */
 long ifile_size;      /* input file size, -1 for devices (debug only) */
 char *env;            /* contents of GZIP env variable */
 char **args = NULL;   /* argv pointer if GZIP env variable defined */
@@ -202,6 +228,8 @@ int  z_len;           /* strlen(z_suffix) */
 
 long bytes_in;             /* number of input bytes */
 long bytes_out;            /* number of output bytes */
+long total_in = 0;         /* input bytes for all files */
+long total_out = 0;        /* output bytes for all files */
 char ifname[MAX_PATH_LEN]; /* input file name */
 char ofname[MAX_PATH_LEN]; /* output file name */
 int  remove_ofname = 0;	   /* remove output file on error */
@@ -224,13 +252,16 @@ struct option longopts[] =
     {"force",      0, 0, 'f'}, /* force overwrite of output file */
     {"help",       0, 0, 'h'}, /* give help */
  /* {"pkzip",      0, 0, 'k'},    force output in pkzip format */
- /* {"list",       0, 0, 'l'},    list .gz file contents */
+    {"list",       0, 0, 'l'}, /* list .gz file contents */
     {"license",    0, 0, 'L'}, /* display software license */
+    {"no-name",    0, 0, 'n'}, /* don't save or restore original name & time */
+    {"name",       0, 0, 'N'}, /* save or restore original name & time */
     {"quiet",      0, 0, 'q'}, /* quiet mode */
     {"silent",     0, 0, 'q'}, /* quiet mode */
-    {"recurse",    0, 0, 'r'}, /* recurse through directories */
+    {"recursive",  0, 0, 'r'}, /* recurse through directories */
     {"suffix",     1, 0, 'S'}, /* use given suffix instead of .gz */
     {"test",       0, 0, 't'}, /* test compressed file integrity */
+    {"no-time",    0, 0, 'T'}, /* don't save or restore the time stamp */
     {"verbose",    0, 0, 'v'}, /* verbose mode */
     {"version",    0, 0, 'V'}, /* display version number */
     {"fast",       0, 0, '1'}, /* compress faster */
@@ -255,22 +286,28 @@ local int  get_istat    OF((char *iname, struct stat *sbuf));
 local int  make_ofname  OF((void));
 local int  same_file    OF((struct stat *stat1, struct stat *stat2));
 local int name_too_long OF((char *name, struct stat *statb));
+local void shorten_name  OF((char *name));
 local int  get_method   OF((int in));
+local void do_list      OF((int ifd, int method));
 local int  check_ofname OF((void));
-local void reset_times  OF((char *name, struct stat *statb));
 local void copy_stat    OF((struct stat *ifstat));
-local void treat_dir    OF((char *dir));
 local void do_exit      OF((int exitcode));
       int main          OF((int argc, char **argv));
-
 int (*work) OF((int infile, int outfile)) = zip; /* function to call */
+
+#ifndef NO_DIR
+local void treat_dir    OF((char *dir));
+#endif
+#ifndef NO_UTIME
+local void reset_times  OF((char *name, struct stat *statb));
+#endif
 
 #define strequ(s1, s2) (strcmp((s1),(s2)) == 0)
 
 /* ======================================================================== */
 local void usage()
 {
-    fprintf(stderr, "usage: %s [-%scdfhL%stvV19] [-S suffix] [file ...]\n",
+    fprintf(stderr, "usage: %s [-%scdfhlLnN%stvV19] [-S suffix] [file ...]\n",
 	    progname,
 #if O_BINARY
 	    "a",
@@ -298,17 +335,19 @@ local void help()
  " -f --force       force overwrite of output file and compress links",
  " -h --help        give this help",
 /* -k --pkzip       force output in pkzip format */
-/* -l --list        list .gz file contents */
+ " -l --list        list compressed file contents",
  " -L --license     display software license",
+#ifdef UNDOCUMENTED
+ " -m --no-time     do not save or restore the original modification time",
+ " -M --time        save or restore the original modification time",
+#endif
+ " -n --no-name     do not save or restore the original name and time stamp",
+ " -N --name        save or restore the original name and time stamp",
  " -q --quiet       suppress all warnings",
 #ifndef NO_DIR
- " -r --recurse     recurse through directories",
+ " -r --recursive   operate recursively on directories",
 #endif
-#ifdef MAX_EXT_CHARS
- " -S --suffix .gz  use suffix .gz instead of .z",
-#else
- " -S --suffix .z   use suffix .z instead of .gz",
-#endif
+ " -S .suf  --suffix .suf     use suffix .suf on compressed files",
  " -t --test        test compressed file integrity",
  " -v --verbose     verbose mode",
  " -V --version     display version number",
@@ -386,7 +425,7 @@ int main (argc, argv)
     int argc;
     char **argv;
 {
-    int file_count = 0; /* number of files to precess */
+    int file_count;     /* number of files to precess */
     int proglen;        /* length of progname */
     int optc;           /* current option */
 
@@ -406,13 +445,17 @@ int main (argc, argv)
 
     foreground = signal(SIGINT, SIG_IGN) != SIG_IGN;
     if (foreground) {
-	signal (SIGINT, (sig_type)abort_gzip);
+	(void) signal (SIGINT, (sig_type)abort_gzip);
     }
 #ifdef SIGTERM
-    signal(SIGTERM, (sig_type)abort_gzip);
+    if (signal(SIGTERM, SIG_IGN) != SIG_IGN) {
+	(void) signal(SIGTERM, (sig_type)abort_gzip);
+    }
 #endif
 #ifdef SIGHUP
-    signal(SIGHUP,  (sig_type)abort_gzip);
+    if (signal(SIGHUP, SIG_IGN) != SIG_IGN) {
+	(void) signal(SIGHUP,  (sig_type)abort_gzip);
+    }
 #endif
 
 #ifndef GNU_STANDARD
@@ -435,7 +478,7 @@ int main (argc, argv)
     strncpy(z_suffix, Z_SUFFIX, sizeof(z_suffix)-1);
     z_len = strlen(z_suffix);
 
-    while ((optc = getopt_long (argc, argv, "ab:cdfhLqrS:tvVZ123456789",
+    while ((optc = getopt_long (argc, argv, "ab:cdfhH?lLmMnNqrS:tvVZ123456789",
 				longopts, (int *)0)) != EOF) {
 	switch (optc) {
         case 'a':
@@ -451,8 +494,18 @@ int main (argc, argv)
 	    force++; break;
 	case 'h': case 'H': case '?':
 	    help(); do_exit(OK); break;
+	case 'l':
+	    list = decompress = to_stdout = 1; break;
 	case 'L':
 	    license(); do_exit(OK); break;
+	case 'm': /* undocumented, may change later */
+	    no_time = 1; break;
+	case 'M': /* undocumented, may change later */
+	    no_time = 0; break;
+	case 'n':
+	    no_name = no_time = 1; break;
+	case 'N':
+	    no_name = no_time = 0; break;
 	case 'q':
 	    quiet = 1; verbose = 0; break;
 	case 'r':
@@ -468,11 +521,6 @@ int main (argc, argv)
             if (*optarg == '.') optarg++;
 #endif
             z_len = strlen(optarg);
-            if (z_len == 0 || z_len > MAX_SUFFIX) {
-                fprintf(stderr, "%s: incorrect suffix '%s'\n",
-                        progname, optarg);
-                do_exit(ERROR);
-            }
             strcpy(z_suffix, optarg);
             break;
 	case 't':
@@ -502,6 +550,12 @@ int main (argc, argv)
 	}
     } /* loop on all arguments */
 
+    /* By default, save name and timestamp on compression but do not
+     * restore them on decompression.
+     */
+    if (no_time < 0) no_time = decompress;
+    if (no_name < 0) no_name = decompress;
+
     file_count = argc - optind;
 
 #if O_BINARY
@@ -511,6 +565,11 @@ int main (argc, argv)
 		progname);
     }
 #endif
+    if ((z_len == 0 && !decompress) || z_len > MAX_SUFFIX) {
+        fprintf(stderr, "%s: incorrect suffix '%s'\n",
+                progname, optarg);
+        do_exit(ERROR);
+    }
     if (do_lzw && !decompress) work = lzw;
 
     /* Allocate all global buffers (for DYN_ALLOC option) */
@@ -527,7 +586,7 @@ int main (argc, argv)
 
     /* And get to work */
     if (file_count != 0) {
-	if (to_stdout && !test && (!decompress || !ascii)) {
+	if (to_stdout && !test && !list && (!decompress || !ascii)) {
 	    SET_BINARY_MODE(fileno(stdout));
 	}
         while (optind < argc) {
@@ -535,6 +594,9 @@ int main (argc, argv)
 	}
     } else {  /* Standard input */
 	treat_stdin();
+    }
+    if (list && !quiet && file_count > 1) {
+	do_list(-1, -1); /* print totals */
     }
     do_exit(exit_code);
     return exit_code; /* just to avoid lint warning */
@@ -545,7 +607,8 @@ int main (argc, argv)
  */
 local void treat_stdin()
 {
-    if (!force && isatty(fileno((FILE *)(decompress ? stdin : stdout)))) {
+    if (!force && !list &&
+	isatty(fileno((FILE *)(decompress ? stdin : stdout)))) {
 	/* Do not send compressed data to the terminal or read it from
 	 * the terminal. We get here when user invoked the program
 	 * without parameters, so be helpful. According to the GNU standards:
@@ -569,29 +632,26 @@ local void treat_stdin()
     if (decompress || !ascii) {
 	SET_BINARY_MODE(fileno(stdin));
     }
-    if (!test && (!decompress || !ascii)) {
+    if (!test && !list && (!decompress || !ascii)) {
 	SET_BINARY_MODE(fileno(stdout));
     }
     strcpy(ifname, "stdin");
     strcpy(ofname, "stdout");
 
     /* Get the time stamp on the input file. */
-#ifdef NO_STDIN_FSTAT
-    time_stamp = 0; /* time unknown */
-#else
-    if (fstat(fileno(stdin), &istat) != 0) {
-	error("fstat(stdin)");
+    time_stamp = 0; /* time unknown by default */
+
+#ifndef NO_STDIN_FSTAT
+    if (list || !no_time) {
+	if (fstat(fileno(stdin), &istat) != 0) {
+	    error("fstat(stdin)");
+	}
+# ifdef NO_PIPE_TIMESTAMP
+	if (S_ISREG(istat.st_mode))
+# endif
+	    time_stamp = istat.st_mtime;
+#endif /* NO_STDIN_FSTAT */
     }
-    /* If you do not wish to save the time stamp when input comes from a pipe,
-     * compile with -DNO_PIPE_TIMESTAMP.
-     */
-#ifdef NO_PIPE_TIMESTAMP
-    if (!S_ISREG(istat.st_mode))
-	time_stamp = 0;
-    else
-#endif
-	time_stamp = istat.st_mtime;
-#endif
     ifile_size = -1L; /* convention for unknown size */
 
     clear_bufs(); /* clear input and output buffers */
@@ -603,6 +663,10 @@ local void treat_stdin()
 	if (method < 0) {
 	    do_exit(exit_code); /* error message already emitted */
 	}
+    }
+    if (list) {
+        do_list(ifd, method);
+        return;
     }
 
     /* Actually do the compression/decompression. Loop over zipped members.
@@ -620,14 +684,17 @@ local void treat_stdin()
 
     if (verbose) {
 	if (test) {
-	    fprintf(stderr, " OK");
+	    fprintf(stderr, " OK\n");
 
-	} else if (decompress) {
-	    display_ratio(bytes_out-(bytes_in-header_bytes), bytes_out);
+	} else if (!decompress) {
+	    display_ratio(bytes_in-(bytes_out-header_bytes), bytes_in, stderr);
+	    fprintf(stderr, "\n");
+#ifdef DISPLAY_STDIN_RATIO
 	} else {
-	    display_ratio(bytes_in-(bytes_out-header_bytes), bytes_in);
+	    display_ratio(bytes_out-(bytes_in-header_bytes), bytes_out,stderr);
+	    fprintf(stderr, "\n");
+#endif
 	}
-	fprintf(stderr, "\n");
     }
 }
 
@@ -637,6 +704,14 @@ local void treat_stdin()
 local void treat_file(iname)
     char *iname;
 {
+    /* Accept "-" as synonym for stdin */
+    if (strequ(iname, "-")) {
+	int cflag = to_stdout;
+	treat_stdin();
+	to_stdout = cflag;
+	return;
+    }
+
     /* Check if the input file is present, set ifname and istat: */
     if (get_istat(iname, &istat) != OK) return;
 
@@ -648,7 +723,9 @@ local void treat_file(iname)
 	    st = istat;
 	    treat_dir(iname);
 	    /* Warning: ifname is now garbage */
+#  ifndef NO_UTIME
 	    reset_times (iname, &st);
+#  endif
 	} else
 #endif
 	WARN((stderr,"%s: %s is a directory -- ignored\n", progname, ifname));
@@ -668,10 +745,12 @@ local void treat_file(iname)
     }
 
     ifile_size = istat.st_size;
-    time_stamp = istat.st_mtime;
+    time_stamp = no_time && !list ? 0 : istat.st_mtime;
 
-    /* Generate output file name */
-    if (to_stdout) {
+    /* Generate output file name. For -r and (-t or -l), skip files
+     * without a valid gzip suffix (check done in make_ofname).
+     */
+    if (to_stdout && !list && !test) {
 	strcpy(ofname, "stdout");
 
     } else if (make_ofname() != OK) {
@@ -700,6 +779,11 @@ local void treat_file(iname)
 	    return;               /* error message already emitted */
 	}
     }
+    if (list) {
+        do_list(ifd, method);
+        close(ifd);
+        return;
+    }
 
     /* If compressing to a file, check if ofname is not ambiguous
      * because the operating system truncates names. Otherwise, generate
@@ -711,11 +795,14 @@ local void treat_file(iname)
     } else {
 	if (create_outfile() != OK) return;
 
-	if (save_orig_name && !verbose && !quiet) {
+	if (!decompress && save_orig_name && !verbose && !quiet) {
 	    fprintf(stderr, "%s: %s compressed to %s\n",
 		    progname, ifname, ofname);
 	}
     }
+    /* Keep the name even if not truncated except with --no-name: */
+    if (!save_orig_name) save_orig_name = !no_name;
+
     if (verbose) {
 	fprintf(stderr, "%s:\t%s", ifname, (int)strlen(ifname) >= 15 ? 
 		"" : ((int)strlen(ifname) >= 7 ? "\t" : "\t\t"));
@@ -749,9 +836,9 @@ local void treat_file(iname)
 	if (test) {
 	    fprintf(stderr, " OK");
 	} else if (decompress) {
-	    display_ratio(bytes_out-(bytes_in-header_bytes), bytes_out);
+	    display_ratio(bytes_out-(bytes_in-header_bytes), bytes_out,stderr);
 	} else {
-	    display_ratio(bytes_in-(bytes_out-header_bytes), bytes_in);
+	    display_ratio(bytes_in-(bytes_out-header_bytes), bytes_in, stderr);
 	}
 	if (!test && !to_stdout) {
 	    fprintf(stderr, " -- replaced with %s", ofname);
@@ -768,6 +855,7 @@ local void treat_file(iname)
  * Create the output file. Return OK or ERROR.
  * Try several times if necessary to avoid truncating the z_suffix. For
  * example, do not create a compressed file of name "1234567890123."
+ * Sets save_orig_name to true if the file name has been truncated.
  * IN assertions: the input file has already been open (ifd is set) and
  *   ofname has already been updated if there was an original name.
  * OUT assertions: ifd and ofd are closed in case of error.
@@ -775,15 +863,13 @@ local void treat_file(iname)
 local int create_outfile()
 {
     struct stat	ostat; /* stat for ofname */
-    int len;
     int flags = O_WRONLY | O_CREAT | O_EXCL | O_BINARY;
 
     if (ascii && decompress) {
 	flags &= ~O_BINARY; /* force ascii text mode */
     }
     for (;;) {
-        len = strlen(ofname);
-        if (len == 0 || ofname[len] == PATH_SEP) break;
+	/* Make sure that ofname is not an existing file */
 	if (check_ofname() != OK) {
 	    close(ifd);
 	    return ERROR;
@@ -799,7 +885,11 @@ local int create_outfile()
 	}
 
 	/* Check for name truncation on new file (1234567890123.gz) */
+#ifdef NO_FSTAT
+	if (stat(ofname, &ostat) != 0) {
+#else
 	if (fstat(ofd, &ostat) != 0) {
+#endif
 	    fprintf(stderr, "%s: ", progname);
 	    perror(ofname);
 	    close(ifd); close(ofd);
@@ -814,25 +904,16 @@ local int create_outfile()
 	    WARN((stderr, "%s: %s: warning, name truncated\n",
 		  progname, ofname));
 	    return OK;
-	} else {
+	}
+	close(ofd);
+	unlink(ofname);
 #ifdef NO_MULTIPLE_DOTS
-	    /* Should never happen, see check_ofname() */
-	    fprintf(stderr, "%s: %s: name too long\n", progname, ofname);
-	    do_exit(ERROR);
-#else
-	    close(ofd);
-	    unlink(ofname);
-	    save_orig_name = 1;
-	    strcpy(ofname+strlen(ofname)-z_len-1, z_suffix);
-            /* 123456789012.gz -> 12345678901.gz */
+	/* Should never happen, see check_ofname() */
+	fprintf(stderr, "%s: %s: name too long\n", progname, ofname);
+	do_exit(ERROR);
 #endif
-	} /* decompress ? */
-    } /* while non null name */
-
-    close(ifd);
-    fprintf(stderr, "%s: %s: name too long\n", progname, ofname);
-    exit_code = ERROR;
-    return ERROR;
+	shorten_name(ofname);
+    }
 }
 
 /* ========================================================================
@@ -861,6 +942,8 @@ local int do_stat(name, sbuf)
  * also accepted suffixes. For Unix, we do not want to accept any
  * .??z suffix as indicating a compressed file; some people use .xyz
  * to denote volume data.
+ *   On systems allowing multiple versions of the same file (such as VMS),
+ * this function removes any version suffix in the given name.
  */
 local char *get_suffix(name)
     char *name;
@@ -877,19 +960,19 @@ local char *get_suffix(name)
 
     if (strequ(z_suffix, "z")) suf++; /* check long suffixes first */
 
+#ifdef SUFFIX_SEP
+    /* strip a version number from the file name */
+    {
+	char *v = strrchr(name, SUFFIX_SEP);
+ 	if (v != NULL) *v = '\0';
+    }
+#endif
     nlen = strlen(name);
     if (nlen <= MAX_SUFFIX+2) {
         strcpy(suffix, name);
     } else {
         strcpy(suffix, name+nlen-MAX_SUFFIX-2);
     }
-#ifdef SUFFIX_SEP
-    /* strip a version number from the file name */
-    {
-	char *v = strrchr(suffix, SUFFIX_SEP);
-	if (v != NULL) *v = '\0', nlen = v - name;
-    }
-#endif
     strlwr(suffix);
     slen = strlen(suffix);
     do {
@@ -933,7 +1016,8 @@ local int get_istat(iname, sbuf)
 	exit_code = ERROR;
 	return ERROR;
     }
-    /* file.ext doesn't exist, try adding a suffix.
+    /* file.ext doesn't exist, try adding a suffix (after removing any
+     * version number for VMS).
      */
     s = get_suffix(ifname);
     if (s != NULL) {
@@ -941,10 +1025,6 @@ local int get_istat(iname, sbuf)
 	exit_code = ERROR;
 	return ERROR;
     }
-#ifdef SUFFIX_SEP
-    /* strip a version number from the input file name */
-    if ((s = strrchr(ifname, SUFFIX_SEP)) != NULL) *s = '\0';
-#endif
 #ifdef NO_MULTIPLE_DOTS
     dot = strrchr(ifname, '.');
     if (dot == NULL) {
@@ -987,20 +1067,28 @@ local int get_istat(iname, sbuf)
 
 /* ========================================================================
  * Generate ofname given ifname. Return OK, or WARNING if file must be skipped.
- * Initializes save_orig_name.
- * IN assertion: this function is not called if to_stdout is true.
+ * Sets save_orig_name to true if the file name has been truncated.
  */
 local int make_ofname()
 {
     char *suff;            /* ofname z suffix */
 
     strcpy(ofname, ifname);
+    /* strip a version number if any and get the gzip suffix if present: */
     suff = get_suffix(ofname);
 
     if (decompress) {
 	if (suff == NULL) {
-	    WARN((stderr,"%s: %s: unknown suffix -- ignored\n",
-		  progname, ifname));
+	    /* Whith -t or -l, try all files (even without .gz suffix)
+	     * except with -r (behave as with just -dr).
+             */
+            if (!recursive && (list || test)) return OK;
+
+	    /* Avoid annoying messages with -r */
+	    if (verbose || (!recursive && !quiet)) {
+		WARN((stderr,"%s: %s: unknown suffix -- ignored\n",
+		      progname, ifname));
+	    }
 	    return WARNING;
 	}
 	/* Make a special case for .tgz and .taz: */
@@ -1008,7 +1096,7 @@ local int make_ofname()
 	if (strequ(suff, ".tgz") || strequ(suff, ".taz")) {
 	    strcpy(suff, ".tar");
 	} else {
-	    *suff = '\0'; /* strip z suffix and optional version number */
+	    *suff = '\0'; /* strip the z suffix */
 	}
         /* ofname might be changed later if infile contains an original name */
 
@@ -1023,16 +1111,15 @@ local int make_ofname()
     } else {
         save_orig_name = 0;
 
-#ifdef SUFFIX_SEP
-	/* strip a version number from the file name */
-	if ((suff = strrchr(ofname, SUFFIX_SEP)) != NULL) *suff = '\0';
-#endif
-
 #ifdef NO_MULTIPLE_DOTS
 	suff = strrchr(ofname, '.');
 	if (suff == NULL) {
             strcat(ofname, ".");
 #  ifdef MAX_EXT_CHARS
+	    if (strequ(z_suffix, "z")) {
+		strcat(ofname, "gz"); /* enough room */
+		return OK;
+	    }
         /* On the Atari and some versions of MSDOS, name_too_long()
          * does not work correctly because of a bug in stat(). So we
          * must truncate here.
@@ -1055,6 +1142,7 @@ local int make_ofname()
  * original name was given and to_stdout is not set.
  * Return the compression method, -1 for error, -2 for warning.
  * Set inptr to the offset of the next byte to be processed.
+ * Updates time_stamp if there is one and --no-time is not used.
  * This function may be called repeatedly for an input file consisting
  * of several contiguous gzip'ed members.
  * IN assertions: there is at least one remaining compressed member.
@@ -1063,13 +1151,21 @@ local int make_ofname()
 local int get_method(in)
     int in;        /* input file descriptor */
 {
-    uch flags;
+    uch flags;     /* compression flags */
     char magic[2]; /* magic header */
+    ulg stamp;     /* time stamp */
 
-    magic[0] = (char)get_byte();
-    magic[1] = (char)get_byte();
-
-    time_stamp = istat.st_mtime; /* may be modified later for some methods */
+    /* If --force and --stdout, zcat == cat, so do not complain about
+     * premature end of file: use try_byte instead of get_byte.
+     */
+    if (force && to_stdout) {
+	magic[0] = (char)try_byte();
+	magic[1] = (char)try_byte();
+	/* If try_byte returned EOF, magic[1] == 0xff */
+    } else {
+	magic[0] = (char)get_byte();
+	magic[1] = (char)get_byte();
+    }
     method = -1;                 /* unknown yet */
     part_nb++;                   /* number of parts in gzip file */
     header_bytes = 0;
@@ -1079,8 +1175,15 @@ local int get_method(in)
     if (memcmp(magic, GZIP_MAGIC, 2) == 0
         || memcmp(magic, OLD_GZIP_MAGIC, 2) == 0) {
 
-	work = unzip;
 	method = (int)get_byte();
+	if (method != DEFLATED) {
+	    fprintf(stderr,
+		    "%s: %s: unknown method %d -- get newer version of gzip\n",
+		    progname, ifname, method);
+	    exit_code = ERROR;
+	    return -1;
+	}
+	work = unzip;
 	flags  = (uch)get_byte();
 
 	if ((flags & ENCRYPTED) != 0) {
@@ -1104,10 +1207,11 @@ local int get_method(in)
 	    exit_code = ERROR;
 	    if (force <= 1) return -1;
 	}
-	time_stamp  = (ulg)get_byte();
-	time_stamp |= ((ulg)get_byte()) << 8;
-	time_stamp |= ((ulg)get_byte()) << 16;
-	time_stamp |= ((ulg)get_byte()) << 24;
+	stamp  = (ulg)get_byte();
+	stamp |= ((ulg)get_byte()) << 8;
+	stamp |= ((ulg)get_byte()) << 16;
+	stamp |= ((ulg)get_byte()) << 24;
+	if (stamp != 0 && !no_time) time_stamp = stamp;
 
 	(void)get_byte();  /* Ignore extra flags for the moment */
 	(void)get_byte();  /* Ignore OS type for the moment */
@@ -1132,13 +1236,14 @@ local int get_method(in)
 
 	/* Get original file name if it was truncated */
 	if ((flags & ORIG_NAME) != 0) {
-	    if (to_stdout || part_nb > 1) {
+	    if (no_name || (to_stdout && !list) || part_nb > 1) {
 		/* Discard the old name */
 		char c; /* dummy used for NeXTstep 3.0 cc optimizer bug */
-		while ((c=get_byte()) != 0) c++;
+		do {c=get_byte();} while (c != 0);
 	    } else {
 		/* Copy the base name. Keep a directory prefix intact. */
-		char *p = basename(ofname);
+                char *p = basename(ofname);
+                char *base = p;
 		for (;;) {
 		    *p = (char)get_char();
 		    if (*p++ == '\0') break;
@@ -1146,8 +1251,13 @@ local int get_method(in)
 			error("corrupted input -- file name too large");
 		    }
 		}
-	    } /* to_stdout */
-	} /* orig_name */
+                /* If necessary, adapt the name to local OS conventions: */
+                if (!list) {
+                   MAKE_LEGAL_NAME(base);
+		   if (base) list=0; /* avoid warning about unused variable */
+                }
+	    } /* no_name || to_stdout */
+	} /* ORIG_NAME */
 
 	/* Discard file comment if any */
 	if ((flags & COMMENT) != 0) {
@@ -1171,21 +1281,123 @@ local int get_method(in)
     } else if (memcmp(magic, PACK_MAGIC, 2) == 0) {
 	work = unpack;
 	method = PACKED;
+
     } else if (memcmp(magic, LZW_MAGIC, 2) == 0) {
 	work = unlzw;
 	method = COMPRESSED;
 	last_member = 1;
+
+    } else if (memcmp(magic, LZH_MAGIC, 2) == 0) {
+	work = unlzh;
+	method = LZHED;
+	last_member = 1;
+
+    } else if (force && to_stdout && !list) { /* pass input unchanged */
+	method = STORED;
+	work = copy;
+        inptr = 0;
+	last_member = 1;
     }
     if (method >= 0) return method;
+
     if (part_nb == 1) {
 	fprintf(stderr, "\n%s: %s: not in gzip format\n", progname, ifname);
 	exit_code = ERROR;
 	return -1;
     } else {
-	WARN((stderr, "\n%s: %s: trailing garbage ignored\n",
+	WARN((stderr, "\n%s: %s: decompression OK, trailing garbage ignored\n",
 	      progname, ifname));
 	return -2;
     }
+}
+
+/* ========================================================================
+ * Display the characteristics of the compressed file.
+ * If the given method is < 0, display the accumulated totals.
+ * IN assertions: time_stamp, header_bytes and ifile_size are initialized.
+ */
+local void do_list(ifd, method)
+    int ifd;     /* input file descriptor */
+    int method;  /* compression method */
+{
+    ulg crc;  /* original crc */
+    static int first_time = 1;
+    static char* methods[MAX_METHODS] = {
+        "store",  /* 0 */
+        "compr",  /* 1 */
+        "pack ",  /* 2 */
+        "lzh  ",  /* 3 */
+        "", "", "", "", /* 4 to 7 reserved */
+        "defla"}; /* 8 */
+    char *date;
+
+    if (first_time && method >= 0) {
+	first_time = 0;
+	if (verbose)  {
+	    printf("method  crc     date  time  ");
+	}
+	if (!quiet) {
+	    printf("compressed  uncompr. ratio uncompressed_name\n");
+	}
+    } else if (method < 0) {
+	if (total_in <= 0 || total_out <= 0) return;
+	if (verbose) {
+	    printf("                            %9lu %9lu ",
+		   total_in, total_out);
+	} else if (!quiet) {
+	    printf("%9ld %9ld ", total_in, total_out);
+	}
+	display_ratio(total_out-(total_in-header_bytes), total_out, stdout);
+	/* header_bytes is not meaningful but used to ensure the same
+	 * ratio if there is a single file.
+	 */
+	printf(" (totals)\n");
+	return;
+    }
+    crc = (ulg)~0; /* unknown */
+    bytes_out = -1L;
+    bytes_in = ifile_size;
+
+#if RECORD_IO == 0
+    if (method == DEFLATED && !last_member) {
+        /* Get the crc and uncompressed size for gzip'ed (not zip'ed) files.
+         * If the lseek fails, we could use read() to get to the end, but
+         * --list is used to get quick results.
+         * Use "gunzip < foo.gz | wc -c" to get the uncompressed size if
+         * you are not concerned about speed.
+         */
+        bytes_in = (long)lseek(ifd, (off_t)(-8), SEEK_END);
+        if (bytes_in != -1L) {
+            uch buf[8];
+            bytes_in += 8L;
+            if (read(ifd, (char*)buf, sizeof(buf)) != sizeof(buf)) {
+                read_error();
+            }
+            crc       = LG(buf);
+	    bytes_out = LG(buf+4);
+	}
+    }
+#endif /* RECORD_IO */
+    date = ctime((time_t*)&time_stamp) + 4; /* skip the day of the week */
+    date[12] = '\0';               /* suppress the 1/100sec and the year */
+    if (verbose) {
+        printf("%5s %08lx %11s ", methods[method], crc, date);
+    }
+    printf("%9ld %9ld ", bytes_in, bytes_out);
+    if (bytes_in  == -1L) {
+	total_in = -1L;
+	bytes_in = bytes_out = header_bytes = 0;
+    } else if (total_in >= 0) {
+	total_in  += bytes_in;
+    }
+    if (bytes_out == -1L) {
+	total_out = -1L;
+	bytes_in = bytes_out = header_bytes = 0;
+    } else if (total_out >= 0) {
+	total_out += bytes_out;
+    }
+    display_ratio(bytes_out-(bytes_in-header_bytes), bytes_out, stdout);
+    printf(" %s\n", ofname);
 }
 
 /* ========================================================================
@@ -1232,6 +1444,67 @@ local int name_too_long(name, statb)
 }
 
 /* ========================================================================
+ * Shorten the given name by one character, or replace a .tar extension
+ * with .tgz. Truncate the last part of the name which is longer than
+ * MIN_PART characters: 1234.678.012.gz -> 123.678.012.gz. If the name
+ * has only parts shorter than MIN_PART truncate the longest part.
+ * For decompression, just remove the last character of the name.
+ *
+ * IN assertion: for compression, the suffix of the given name is z_suffix.
+ */
+local void shorten_name(name)
+    char *name;
+{
+    int len;                 /* length of name without z_suffix */
+    char *trunc = NULL;      /* character to be truncated */
+    int plen;                /* current part length */
+    int min_part = MIN_PART; /* current minimum part length */
+    char *p;
+
+    len = strlen(name);
+    if (decompress) {
+	if (len <= 1) error("name too short");
+	name[len-1] = '\0';
+	return;
+    }
+    p = get_suffix(name);
+    if (p == NULL) error("can't recover suffix\n");
+    *p = '\0';
+    save_orig_name = 1;
+
+    /* compress 1234567890.tar to 1234567890.tgz */
+    if (len > 4 && strequ(p-4, ".tar")) {
+	strcpy(p-4, ".tgz");
+	return;
+    }
+    /* Try keeping short extensions intact:
+     * 1234.678.012.gz -> 123.678.012.gz
+     */
+    do {
+	p = strrchr(name, PATH_SEP);
+	p = p ? p+1 : name;
+	while (*p) {
+	    plen = strcspn(p, PART_SEP);
+	    p += plen;
+	    if (plen > min_part) trunc = p-1;
+	    if (*p) p++;
+	}
+    } while (trunc == NULL && --min_part != 0);
+
+    if (trunc != NULL) {
+	do {
+	    trunc[0] = trunc[1];
+	} while (*trunc++);
+	trunc--;
+    } else {
+	trunc = strrchr(name, PART_SEP[0]);
+	if (trunc == NULL) error("internal error in shorten_name");
+	if (trunc[1] == '\0') trunc--; /* force truncation */
+    }
+    strcpy(trunc, z_suffix);
+}
+
+/* ========================================================================
  * If compressing to a file, check if ofname is not ambiguous
  * because the operating system truncates names. Otherwise, generate
  * a new ofname and save the original name in the compressed file.
@@ -1247,29 +1520,40 @@ local int name_too_long(name, statb)
  */
 local int check_ofname()
 {
-    int s = strlen(ofname);
     struct stat	ostat; /* stat for ofname */
 
-    if (stat(ofname, &ostat) != 0) return 0;
-
-    /* Check for name truncation on existing file: */
-#ifdef NO_MULTIPLE_DOTS
-    if (!decompress && name_too_long(ofname, &ostat)) {
+#ifdef ENAMETOOLONG
+    /* Check for strictly conforming Posix systems (which return ENAMETOOLONG
+     * instead of silently truncating filenames).
+     */
+    errno = 0;
+    while (stat(ofname, &ostat) != 0) {
+        if (errno != ENAMETOOLONG) return 0; /* ofname does not exist */
+	shorten_name(ofname);
+    }
 #else
-    if (!decompress && s > 8 && name_too_long(ofname, &ostat)) {
+    if (stat(ofname, &ostat) != 0) return 0;
 #endif
-	save_orig_name = 1;
-	strcpy(ofname+s-z_len-1, z_suffix);  /* f.ext.gz -> f.ex.gz  */
-
+    /* Check for name truncation on existing file. Do this even on systems
+     * defining ENAMETOOLONG, because on most systems the strict Posix
+     * behavior is disabled by default (silent name truncation allowed).
+     */
+    if (!decompress && name_too_long(ofname, &ostat)) {
+	shorten_name(ofname);
 	if (stat(ofname, &ostat) != 0) return 0;
-    } /* !decompress && name_too_long */
+    }
 
     /* Check that the input and output files are different (could be
      * the same by name truncation or links).
      */
     if (same_file(&istat, &ostat)) {
-	fprintf(stderr, "%s: %s and %s are the same file\n",
-		progname, ifname, ofname);
+	if (strequ(ifname, ofname)) {
+	    fprintf(stderr, "%s: %s: cannot %scompress onto itself\n",
+		    progname, ifname, decompress ? "de" : "");
+	} else {
+	    fprintf(stderr, "%s: %s and %s are the same file\n",
+		    progname, ifname, ofname);
+	}
 	exit_code = ERROR;
 	return ERROR;
     }
@@ -1300,6 +1584,7 @@ local int check_ofname()
 }
 
 
+#ifndef NO_UTIME
 /* ========================================================================
  * Set the access and modification times from the given stat buffer.
  */
@@ -1307,7 +1592,6 @@ local void reset_times (name, statb)
     char *name;
     struct stat *statb;
 {
-#ifndef NO_UTIME
     struct utimbuf	timep;
 
     /* Copy the time stamp */
@@ -1319,10 +1603,8 @@ local void reset_times (name, statb)
 	WARN((stderr, "%s: ", progname));
 	if (!quiet) perror(ofname);
     }
-#else
-    name = name; statb = statb; /* avoid warnings */
-#endif
 }
+#endif
 
 
 /* ========================================================================
@@ -1335,7 +1617,7 @@ local void copy_stat(ifstat)
 #ifndef NO_UTIME
     if (decompress && time_stamp != 0 && ifstat->st_mtime != time_stamp) {
 	ifstat->st_mtime = time_stamp;
-	if (verbose) {
+	if (verbose > 1) {
 	    fprintf(stderr, "%s: time stamp restored\n", ofname);
 	}
     }
@@ -1430,6 +1712,10 @@ local void treat_dir(dir)
 local void do_exit(exitcode)
     int exitcode;
 {
+    static int in_exit = 0;
+
+    if (in_exit) exit(exitcode);
+    in_exit = 1;
     if (env != NULL)  free(env),  env  = NULL;
     if (args != NULL) free((char*)args), args = NULL;
     FREE(inbuf);

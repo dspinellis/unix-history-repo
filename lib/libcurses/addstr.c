@@ -43,10 +43,17 @@ static char sccsid[] = "@(#)addstr.c	5.5 (Berkeley) 6/1/90";
  */
 waddstr(win,str)
 reg WINDOW	*win; 
-reg char	*str;
+char        *str;
 {
+	chtype c;
+	reg char *s;
 # ifdef DEBUG
 	fprintf(outf, "WADDSTR(\"%s\")\n", str);
 # endif
-	return waddbytes(win, str, strlen(str));
+	for (s = str; *s;) {
+		c = (unsigned char) *s++;
+		if (_waddbytes(win, &c, 1) == ERR)
+			return ERR;
+	}
+	return OK;
 }

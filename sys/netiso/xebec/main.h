@@ -1,5 +1,7 @@
-/* $Header: main.h,v 2.1 88/09/19 12:56:24 nhall Exp $ */
-/* $Source: /var/home/tadl/src/argo/xebec/RCS/main.h,v $ */
+/*
+ *	from: main.h,v 2.1 88/09/19 12:56:24 nhall Exp
+ *	$Id$
+ */
 
 #define TRUE 1
 #define FALSE 0

@@ -35,9 +35,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
- *
- *	@(#)sysv_shm.c	7.15 (Berkeley) 5/13/91
+ *	from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
+ *	from: @(#)sysv_shm.c	7.15 (Berkeley) 5/13/91
+ *	$Id$
  */
 
 /*
@@ -105,11 +105,14 @@ shminit()
 /*
  * Entry point for all SHM calls
  */
+
+struct shmsys_args {
+	u_int which;
+};
+
 shmsys(p, uap, retval)
 	struct proc *p;
-	struct args {
-		u_int which;
-	} *uap;
+	struct shmsys_args *uap;
 	int *retval;
 {
 
@@ -121,13 +124,16 @@ shmsys(p, uap, retval)
 /*
  * Get a shared memory segment
  */
+
+struct shmget_args {
+	key_t key;
+	int size;
+	int shmflg;
+};
+
 shmget(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		key_t key;
-		int size;
-		int shmflg;
-	} *uap;
+	register struct shmget_args *uap;
 	int *retval;
 {
 	register struct shmid_ds *shp;
@@ -179,7 +185,7 @@ shmget(p, uap, retval)
 		shmh->shmh_kva = 0;
 		shmh->shmh_id = (caddr_t)(0xc0000000|rval);	/* XXX */
 		error = vm_mmap(shm_map, &shmh->shmh_kva, ctob(size),
-				VM_PROT_ALL, MAP_ANON, shmh->shmh_id, 0);
+				VM_PROT_ALL, VM_PROT_DEFAULT, MAP_ANON, shmh->shmh_id, 0);
 		if (error) {
 			free((caddr_t)shmh, M_SHM);
 			shp->shm_perm.mode = 0;
@@ -214,14 +220,17 @@ shmget(p, uap, retval)
 /*
  * Shared memory control
  */
+
+struct shmctl_args {
+	int shmid;
+	int cmd;
+	caddr_t buf;
+};
+
 /* ARGSUSED */
 shmctl(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int shmid;
-		int cmd;
-		caddr_t buf;
-	} *uap;
+	register struct shmctl_args *uap;
 	int *retval;
 {
 	register struct shmid_ds *shp;
@@ -283,13 +292,16 @@ shmctl(p, uap, retval)
 /*
  * Attach to shared memory segment.
  */
+
+struct shmat_args {
+	int	shmid;
+	caddr_t	shmaddr;
+	int	shmflg;
+};
+
 shmat(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	shmid;
-		caddr_t	shmaddr;
-		int	shmflg;
-	} *uap;
+	register struct shmat_args *uap;
 	int *retval;
 {
 	register struct shmid_ds *shp;
@@ -345,7 +357,7 @@ shmat(p, uap, retval)
 		flags |= MAP_FIXED;
 	else
 		uva = (caddr_t)0x1000000;	/* XXX */
-	error = vm_mmap(&p->p_vmspace->vm_map, &uva, (vm_size_t)size, prot,
+	error = vm_mmap(&p->p_vmspace->vm_map, &uva, (vm_size_t)size, prot, VM_PROT_DEFAULT,
 	    flags, ((struct shmhandle *)shp->shm_handle)->shmh_id, 0);
 	if (error)
 		return(error);
@@ -364,12 +376,15 @@ shmat(p, uap, retval)
 /*
  * Detach from shared memory segment.
  */
+
+struct shmdt_args {
+	caddr_t	shmaddr;
+};
+
 /* ARGSUSED */
 shmdt(p, uap, retval)
 	struct proc *p;
-	struct args {
-		caddr_t	shmaddr;
-	} *uap;
+	struct shmdt_args *uap;
 	int *retval;
 {
 	register struct shmdesc *shmd;

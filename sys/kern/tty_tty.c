@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tty_tty.c	7.15 (Berkeley) 5/28/91
+ *	from: @(#)tty_tty.c	7.15 (Berkeley) 5/28/91
+ *	$Id$
  */
 
 /*

@@ -1,6 +1,3 @@
-#if !defined(lint) && defined(SCCSIDS)
-static char sccsid[] = "@(#)svc_auth.c	2.1 88/08/07 4.0 RPCSRC; from 1.19 87/08/11 Copyr 1984 Sun Micro";
-#endif
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
  * unrestricted use provided that this legend is included on all tape
@@ -29,6 +26,12 @@ static char sccsid[] = "@(#)svc_auth.c	2.1 88/08/07 4.0 RPCSRC; from 1.19 87/08/
  * 2550 Garcia Avenue
  * Mountain View, California  94043
  */
+
+#if defined(LIBC_SCCS) && !defined(lint)
+/*static char *sccsid = "from: @(#)svc_auth.c 1.19 87/08/11 Copyr 1984 Sun Micro";*/
+/*static char *sccsid = "from: @(#)svc_auth.c	2.1 88/08/07 4.0 RPCSRC";*/
+static char *rcsid = "$Id: svc_auth.c,v 1.3 1993/08/26 00:53:38 jtc Exp $";
+#endif
 
 /*
  * svc_auth_nodes.c, Server-side rpc authenticator interface,

@@ -45,20 +45,36 @@ static char sccsid[] = "@(#)mkfifo.c	5.3 (Berkeley) 6/1/90";
 #include <sys/stat.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+extern void *setmode();
+extern mode_t getmode();
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int errno, optind;
-	int ch, exitval, pflag;
+	int ch, exitval;
+	void * set;
+	mode_t mode;
 
-	pflag = 0;
-	while ((ch = getopt(argc, argv, "p")) != EOF)
+	/* The default mode is the value of the bitwise inclusive or of
+	   S_IRUSR, S_IWUSR, S_IRGRP, S_IWGRP, S_IROTH, and S_IWOTH
+	   modified by the file creation mask */
+	mode = 0666 & ~umask(0);
+
+	while ((ch = getopt(argc, argv, "m:")) != EOF)
 		switch(ch) {
-		case 'p':
-			pflag = 1;
+		case 'm':
+			if (!(set = setmode(optarg))) {
+				(void)fprintf(stderr, "mkfifo: invalid file mode.\n");
+				exit(1);
+			}
+			/* In symbolic mode strings, the + and - operators are
+			   interpreted relative to an assumed initial mode of
+			   a=rw. */
+			mode = getmode (set, 0666);
 			break;
 		case '?':
 		default:
@@ -69,42 +85,17 @@ main(argc, argv)
 		usage();
 
 	for (exitval = 0; *argv; ++argv) {
-		if (pflag && build(*argv)) {
-			exitval |= 1;
-			continue;
-		}
-		if (mkfifo(*argv, 0777) < 0) {
+		if (mkfifo(*argv, mode) < 0) {
 			(void)fprintf(stderr, "mkfifo: %s: %s\n",
 			    *argv, strerror(errno));
-			exitval |= 1;
+			exitval = 1;
 		}
 	}
 	exit(exitval);
 }
 
-build(path)
-	char *path;
-{
-	register char *p;
-	struct stat sb;
-
-	for (p = path; *p; p++) {
-		if (*p  != '/')
-			continue;
-		if (stat(path, &sb)) {
-			if (errno != ENOENT || mkdir(path, 0777) < 0) {
-				(void)fprintf(stderr, "mkdir: %s: %s\n",
-				    path, strerror(errno));
-				return(1);
-			}
-		}
-		*p = '/';
-	}
-	return(0);
-}
-
 usage()
 {
-	(void)fprintf(stderr, "usage: mkfifo [-p] fifoname ...\n");
+	(void)fprintf(stderr, "usage: mkfifo [-m mode] fifoname ...\n");
 	exit(1);
 }

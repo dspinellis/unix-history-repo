@@ -31,16 +31,16 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"     @(#)fnmatch.3	5.3 (Berkeley) 4/19/91
+.\"     @(#)fnmatch.3	5.4 (Berkeley) 6/28/92
 .\"
-.Dd April 19, 1991
+.Dd June 28, 1992
 .Dt FNMATCH 3
 .Os
 .Sh NAME
 .Nm fnmatch
 .Nd match filename or pathname
 .Sh SYNOPSIS
-.Fd #include <unistd.h>
+.Fd #include <fnmatch.h>
 .Ft int
 .Fn fnmatch "const char *pattern" "const char *string" "int flags"
 .Sh DESCRIPTION
@@ -66,33 +66,45 @@ is the bitwise inclusive
 .Tn OR
 of any of the following
 constants, which are defined in the include file
-.Pa unistd.h .
+.Pa fnmatch.h .
 .Bl -tag -width FNM_PATHNAME
+.It Dv FNM_NOESCAPE
+Normally, every occurrence of a backslash
+.Pq Ql \e
+followed by a character in
+.Fa pattern
+is replaced by that character.
+This is done to negate any special meaning for the character.
+If the
+.Dv FNM_NOESCAPE
+flag is set, a backslash character is treated as an ordinary character.
 .It Dv FNM_PATHNAME
 Slash characters in
 .Fa string
 must be explicitly matched by slashes in
 .Fa pattern .
 If this flag is not set, then slashes are treated as regular characters.
-.It Dv FNM_QUOTE
-Every occurrence of a backslash
-.Pq Ql \e
-followed by a character in
-.Fa pattern
-is replaced by that character.
-This is done to negate any special meaning for the character.
+.It Dv FNM_PERIOD
+Leading periods in strings match periods in patterns.
+The definition of ``leading'' is related to the specification of
+.Dv FNM_PATHNAME.
+A period is always ``leading'' if it is the first character in
+.Ar string .
+Additionally, if
+.Dv FNM_PATHNAME
+is set,
+a period is ``leading'' if it immediately follows a slash.
+.Em "This flag is not currently implemented."
 .El
 .Sh RETURN VALUES
-If
+The
+.Fn fnmatch
+function returns zero if
 .Fa string
 matches the pattern specified by
 .Fa pattern ,
-then
-.Fn fnmatch
-returns zero.
-Otherwise,
-.Fn fnmatch
-returns nonzero.
+otherwise, it returns the value
+.Dv FNM_NOMATCH .
 .Sh SEE ALSO
 .Xr sh 1 ,
 .Xr glob 3 ,
@@ -104,7 +116,12 @@ The
 function is
 .Ud .
 .Sh BUGS
-Quotes and slashes in range patterns are not handled correctly.
+Quotes and slashes in range patterns are not handled correctly by
+this implementation.
+.Pp
+The
+.Dv FNM_PERIOD
+flag is not implemented.
 .Pp
 The pattern
 .Ql *

@@ -44,5 +44,5 @@ fgetpos(fp, pos)
 	FILE *fp;
 	fpos_t *pos;
 {
-	return((*pos = ftell(fp)) != (fpos_t)-1);
+      return(((*pos = ftell(fp)) != (fpos_t)-1) ? 0:-1);
 }

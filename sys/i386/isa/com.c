@@ -30,19 +30,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)com.c	7.5 (Berkeley) 5/16/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         4       00079
- * --------------------         -----   ----------------------
- *
- * 23 Sep 92	Rodney W. Grimes	Fix SILO overflow on 16550 UARTS
- * 30 Aug 92	Poul-Henning Kamp	Stabilize SLIP on lossy lines/UARTS
- * 09 Aug 92	Christoph Robitschko	Correct minor number on com ports
- * 10 Feb 93	Jordan K. Hubbard	Added select code
+ *	from: @(#)com.c	7.5 (Berkeley) 5/16/91
+ *	$Id$
  */
-static char rcsid[] = "$Header: /usr/bill/working/sys/i386/isa/RCS/com.c,v 1.2 92/01/21 14:34:11 william Exp $";
 
 #include "com.h"
 #if NCOM > 0
@@ -62,6 +52,7 @@ static char rcsid[] = "$Header: /usr/bill/working/sys/i386/isa/RCS/com.c,v 1.2 9
 #include "kernel.h"
 #include "syslog.h"
 
+#include "i386/isa/isa.h"
 #include "i386/isa/isa_device.h"
 #include "i386/isa/comreg.h"
 #include "i386/isa/ic/ns16550.h"
@@ -128,7 +119,7 @@ struct isa_device *dev;
 	outb(dev->id_iobase+com_iir, 0);
 	DELAY(100);
 	if ((inb(dev->id_iobase+com_iir) & 0x38) == 0)
-		return(1);
+		return(IO_COMSIZE);
 	return(0);
 }
 
@@ -153,7 +144,7 @@ struct isa_device *isdp;
 	DELAY(100);
 	if ((inb(port+com_iir) & IIR_FIFO_MASK) == IIR_FIFO_MASK) {
 		com_hasfifo |= 1 << unit;
-		printf(" fifo");
+		printf("com%d: fifo\n", unit);
 	}
 
 	outb(port+com_ier, 0);
@@ -401,7 +392,7 @@ commint(unit, com)
 			outb(com+com_mcr,
 				inb(com+com_mcr) & ~(MCR_DTR | MCR_RTS) | MCR_IENABLE);
 	} else if ((stat & MSR_DCTS) && (tp->t_state & TS_ISOPEN) &&
-		   (tp->t_flags & CRTSCTS)) {
+		   (tp->t_cflag & CRTSCTS)) {
 		/* the line is up and we want to do rts/cts flow control */
 		if (stat & MSR_CTS) {
 			tp->t_state &=~ TS_TTSTOP;

@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)asm.h	5.5 (Berkeley) 5/7/91
+ *	from: @(#)asm.h	5.5 (Berkeley) 5/7/91
+ *	$Id$
  */
 
 #ifdef PROF

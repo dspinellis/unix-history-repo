@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)param.c	7.20 (Berkeley) 6/27/91
+ *	from: @(#)param.c	7.20 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 #include "sys/param.h"
@@ -56,7 +57,7 @@
  * the kernel; it should be modified there to suit local taste
  * if necessary.
  *
- * Compiled with -DHZ=xx -DTIMEZONE=x -DDST=x -DMAXUSERS=xx
+ * Compiled with -DHZ=xx -DTIMEZONE=x -DDST=x -DMAXUSERS=xx -DMAXFDESCS=xx
  */
 
 #ifndef HZ
@@ -71,6 +72,7 @@ int	maxproc = NPROC;
 #define	NTEXT (80 + NPROC / 8)			/* actually the object cache */
 #define	NVNODE (NPROC + NTEXT + 100)
 long	desiredvnodes = NVNODE;
+int	maxfdescs = MAXFDESCS;
 int	maxfiles = 3 * (NPROC + MAXUSERS) + 80;
 int	ncallout = 16 + NPROC;
 int	nclist = 60 + 12 * MAXUSERS;

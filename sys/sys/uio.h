@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)uio.h	7.8 (Berkeley) 4/15/91
+ *	from: @(#)uio.h	7.8 (Berkeley) 4/15/91
+ *	$Id$
  */
 
 #ifndef _UIO_H_

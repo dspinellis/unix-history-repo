@@ -30,19 +30,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tty.h	7.10 (Berkeley) 6/26/91
- * $Header: /usr/bill/working/sys/sys/RCS/tty.h,v 1.3 92/01/21 21:51:49 william Exp $
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00061
- * --------------------         -----   ----------------------
- *
- * 18 Aug 92	Stephen McKay		Fixed RB_LEN macro
- * 11 Dec 92	Williams Jolitz		Fixed tty handling
- * --------------------         -----   ----------------------
- *
+ *	from: @(#)tty.h	7.10 (Berkeley) 6/26/91
+ *	$Id$
  */
+
+#ifndef _SYS_TTY_H_
+#define _SYS_TTY_H_
 
 #include <sys/termios.h>
 
@@ -208,3 +201,5 @@ struct speedtab {
 /* symbolic sleep message strings */
 extern	 char ttyin[], ttyout[], ttopen[], ttclos[], ttybg[], ttybuf[];
 #endif
+
+#endif	/* _SYS_TTY_H_ */

@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nfs_srvcache.c	7.11 (Berkeley) 4/16/91
+ *	From:	@(#)nfs_srvcache.c	7.11 (Berkeley) 4/16/91
+ *	$Id$
  */
 
 /*
@@ -71,7 +72,8 @@ union rhead {
 } rhead[NFSRCHSZ];
 
 static struct nfsrvcache nfsrvcachehead;
-static struct nfsrvcache nfsrvcache[NFSRVCACHESIZ];
+/* static struct nfsrvcache nfsrvcache[NFSRVCACHESIZ]; */
+static struct nfsrvcache *nfsrvcache;
 
 #define TRUE	1
 #define	FALSE	0
@@ -125,12 +127,17 @@ static int repliesstatus[NFS_NPROCS] = {
 /*
  * Initialize the server request cache list
  */
+void
 nfsrv_initcache()
 {
 	register int i;
-	register struct nfsrvcache *rp = nfsrvcache;
+	register struct nfsrvcache *rp;
 	register struct nfsrvcache *hp = &nfsrvcachehead;
 	register union  rhead *rh = rhead;
+
+	MALLOC(nfsrvcache, struct nfsrvcache *,
+	       NFSRVCACHESIZ * sizeof *nfsrvcache, M_CACHE, M_WAITOK);
+	rp = nfsrvcache;
 
 	for (i = NFSRCHSZ; --i >= 0; rh++) {
 		rh->rh_head[0] = rh;
@@ -164,6 +171,7 @@ nfsrv_initcache()
  *   return DOIT
  * Update/add new request at end of lru list
  */
+int
 nfsrv_getcache(nam, xid, proc, repp)
 	struct mbuf *nam;
 	u_long xid;
@@ -175,6 +183,8 @@ nfsrv_getcache(nam, xid, proc, repp)
 	struct mbuf *mb;
 	caddr_t bpos;
 	int ret;
+
+	if(!nfsrvcache) nfsrv_initcache();
 
 	rh = &rhead[NFSRCHASH(xid)];
 loop:
@@ -245,6 +255,7 @@ loop:
 /*
  * Update a request cache entry after the rpc has been done
  */
+void
 nfsrv_updatecache(nam, xid, proc, repvalid, repstat, repmbuf)
 	struct mbuf *nam;
 	u_long xid;
@@ -255,6 +266,8 @@ nfsrv_updatecache(nam, xid, proc, repvalid, repstat, repmbuf)
 {
 	register struct nfsrvcache *rp;
 	register union	rhead *rh;
+
+	if(!nfsrvcache) nfsrv_initcache();
 
 	rh = &rhead[NFSRCHASH(xid)];
 loop:

@@ -45,6 +45,8 @@ static char sccsid[] = "@(#)unix.c	5.11 (Berkeley) 7/1/91";
 #include <sys/mbuf.h>
 #include <sys/un.h>
 #include <sys/unpcb.h>
+#include <sys/time.h>
+#include <sys/proc.h>
 #define KERNEL
 struct uio;
 #include <sys/file.h>

@@ -1,5 +1,8 @@
-/* $Header: llscan.c,v 2.2 88/09/19 12:55:06 nhall Exp $ */
-/* $Source: /var/home/tadl/src/argo/xebec/RCS/llscan.c,v $ */
+/*
+ *	from: llscan.c,v 2.2 88/09/19 12:55:06 nhall Exp
+ *	$Id$
+ */
+
 /*
  * ************************* NOTICE *******************************
  * This code is in the public domain.  It cannot be copyrighted.

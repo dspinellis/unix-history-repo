@@ -33,29 +33,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)conf.c	5.8 (Berkeley) 5/12/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         5       00160
- * --------------------         -----   ----------------------
- *
- * 10 Feb 93	Jordan K. Hubbard	Added select entry for com driver
- * 10 Feb 93    Julian Elischer		Add empty table entries
- *					so we can allocate numbers
- * 15 Feb 93    Julian Elischer		Add basic SCSI device entries
- * 16 Feb 93    Julian Elischer		add entries for scsi media changer
- * 01 Mar 93	Jordan K. Hubbard	Reserve major numbers for codrv, fd, bpf
- * 10 Mar 83	Rodney W. Grimes	General clean up of the above patches
- * 06 Apr 93	Rodney W. Grimes	Fixed NLPT for LPA driver case, added
- *					spkr, dcfclock
- * 23 Apr 93	Holger Veit		added codrv
- * 25 May 93	Bruce Evans		New fast interrupt serial driver (sio)
- * 		Gene Stark		Xten power controller info added (tw)
- *		Rick Macklem		Bus mouse driver (mse)
- *
+ *	from: @(#)conf.c	5.8 (Berkeley) 5/12/91
+ *	$Id: conf.c,v 1.11 1993/10/23 10:49:24 jkh Exp $
  */
-static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/i386/RCS/conf.c,v 1.2 92/01/21 14:21:57 william Exp Locker: toor $";
 
 #include "param.h"
 #include "systm.h"
@@ -80,25 +60,10 @@ int	wddump(),wdsize();
 #define	wdsize		NULL
 #endif
 
-#include "as.h"
-#if NAS > 0
-int	asopen(),asclose(),asstrategy(),asioctl();
-int	/*asdump(),*/assize();
-#define	asdump		enxio
-#else
-#define	asopen		enxio
-#define	asclose		enxio
-#define	asstrategy	enxio
-#define	asioctl		enxio
-#define	asdump		enxio
-#define	assize		NULL
-#endif
-
 #include "sd.h"
 #if NSD > 0
 int	sdopen(),sdclose(),sdstrategy(),sdioctl();
-int	/*sddump(),*/sdsize();
-#define	sddump		enxio
+int	sddump(),sdsize();
 #else
 #define	sdopen		enxio
 #define	sdclose		enxio
@@ -137,6 +102,20 @@ int	/*cddump(),*/cdsize();
 #define	cdsize		NULL
 #endif
 
+#include "mcd.h"
+#if NMCD > 0
+int	mcdopen(),mcdclose(),mcdstrategy(),mcdioctl();
+int	/*mcddump(),*/mcdsize();
+#define	mcddump		enxio
+#else
+#define	mcdopen		enxio
+#define	mcdclose	enxio
+#define	mcdstrategy	enxio
+#define	mcdioctl	enxio
+#define	mcddump		enxio
+#define	mcdsize		NULL
+#endif
+
 #include "ch.h"
 #if NCH > 0
 int	chopen(),chclose(),chioctl();
@@ -144,6 +123,20 @@ int	chopen(),chclose(),chioctl();
 #define	chopen		enxio
 #define	chclose		enxio
 #define	chioctl		enxio
+#endif
+
+#include "sg.h"
+#if NSG > 0
+int	sgopen(),sgclose(),sgioctl(),sgstrategy();
+#define	sgdump		enxio
+#define	sgsize		NULL
+#else
+#define	sgopen		enxio
+#define	sgclose		enxio
+#define	sgstrategy	enxio
+#define	sgioctl		enxio
+#define	sgdump		enxio
+#define	sgsize		NULL
 #endif
 
 #include "wt.h"
@@ -161,8 +154,7 @@ int	wtdump(),wtsize();
 
 #include "fd.h"
 #if NFD > 0
-int	Fdopen(),fdclose(),fdstrategy();
-#define	fdioctl		enxio
+int	Fdopen(),fdclose(),fdstrategy(),fdioctl();
 #define	fddump		enxio
 #define	fdsize		NULL
 #else
@@ -186,17 +178,14 @@ struct bdevsw	bdevsw[] =
 	  fddump,	fdsize,		NULL },
 	{ wtopen,	wtclose,	wtstrategy,	wtioctl,	/*3*/
 	  wtdump,	wtsize,		B_TAPE },
-#if NSD > 0
 	{ sdopen,	sdclose,	sdstrategy,	sdioctl,	/*4*/
 	  sddump,	sdsize,		NULL },
-#else NSD > 0
-	{ asopen,	asclose,	asstrategy,	asioctl,	/*4*/
-	  asdump,	assize,		NULL },
-#endif NSD > 0
 	{ stopen,	stclose,	ststrategy,	stioctl,	/*5*/
 	  stdump,	stsize,		NULL },
 	{ cdopen,	cdclose,	cdstrategy,	cdioctl,	/*6*/
 	  cddump,	cdsize,		NULL },
+	{ mcdopen,	mcdclose,	mcdstrategy,	mcdioctl,	/*7*/
+	  mcddump,	mcdsize,	NULL },
 /*
  * If you need a bdev major number, please contact the 386bsd patchkit
  * coordinator by sending mail to "patches@cs.montana.edu". 
@@ -212,7 +201,7 @@ extern	struct tty pccons;
 
 int	cttyopen(), cttyread(), cttywrite(), cttyioctl(), cttyselect();
 
-int 	mmrw();
+int 	mmopen(), mmclose(), mmrw();
 #define	mmselect	seltrue
 
 #include "pty.h"
@@ -266,19 +255,6 @@ int	lptopen(),lptclose(),lptwrite(),lptioctl();
 #define	lptioctl	enxio
 #endif
 
-#include "co.h"
-#if NCO > 0
-int	coopen(),coclose(),coread(),coioctl(),coselect(),comap();
-#define pcmmap		comap
-#else
-#define coopen		enxio
-#define coclose		enxio
-#define coread		enxio
-#define coioctl		enxio
-#define coselect	enxio
-#define comap		enxio
-#endif
-
 #include "tw.h"
 #if NTW > 0
 int	twopen(),twclose(),twread(),twwrite(),twselect();
@@ -288,6 +264,32 @@ int	twopen(),twclose(),twread(),twwrite(),twselect();
 #define twread		enxio
 #define twwrite		enxio
 #define twselect	enxio
+#endif
+
+#include "sb.h"                 /* Sound Blaster */
+#if     NSB > 0
+int     sbopen(), sbclose(), sbioctl(), sbread(), sbwrite();
+int     sbselect();
+#else
+#define sbopen         enxio
+#define sbclose        enxio
+#define sbioctl        enxio
+#define sbread         enxio
+#define sbwrite        enxio
+#define sbselect       seltrue
+#endif
+
+#include "snd.h"                 /* General Sound Driver */
+#if     NSND > 0
+int     sndopen(), sndclose(), sndioctl(), sndread(), sndwrite();
+int     sndselect();
+#else
+#define sndopen         enxio
+#define sndclose        enxio
+#define sndioctl        enxio
+#define sndread         enxio
+#define sndwrite        enxio
+#define sndselect       seltrue
 #endif
 
 int	fdopen();
@@ -371,9 +373,9 @@ struct cdevsw	cdevsw[] =
 	{ cttyopen,	nullop,		cttyread,	cttywrite,	/*1*/
 	  cttyioctl,	nullop,		nullop,		NULL,	/* tty */
 	  cttyselect,	enodev,		NULL },
-        { nullop,       nullop,         mmrw,           mmrw,           /*2*/
-          enodev,       nullop,         nullop,         NULL,	/* memory */
-          mmselect,     enodev,         NULL },
+	{ mmopen,	mmclose,	mmrw,		mmrw,		/*2*/
+	  enodev,	nullop,		nullop,		NULL,	/* memory */
+	  mmselect,	enodev,		NULL },
 	{ wdopen,	wdclose,	rawread,	rawwrite,	/*3*/
 	  wdioctl,	enodev,		nullop,		NULL,	/* wd */
 	  seltrue,	enodev,		wdstrategy },
@@ -404,15 +406,9 @@ struct cdevsw	cdevsw[] =
 	{ pcopen,	pcclose,	pcread,		pcwrite,	/*12*/
 	  pcioctl,	nullop,		nullop,		&pccons, /* pc */
 	  ttselect,	pcmmap,		NULL },
-#if	NSD > 0
 	{ sdopen,	sdclose,	rawread,	rawwrite,	/*13*/
 	  sdioctl,	enodev,		nullop,		NULL,	/* sd */
 	  seltrue,	enodev,		sdstrategy },
-#else	NSD > 0
-	{ asopen,	asclose,	rawread,	rawwrite,	/*13*/
-	  asioctl,	enodev,		nullop,		NULL,	/* as */
-	  seltrue,	enodev,		asstrategy },
-#endif	NSD > 0
 	{ stopen,	stclose,	rawread,	rawwrite,	/*14*/
 	  stioctl,	enodev,		nullop,		NULL,	/* st */
 	  seltrue,	enodev,		ststrategy },
@@ -425,18 +421,18 @@ struct cdevsw	cdevsw[] =
 	{ chopen,	chclose,	enxio,		enxio,		/*17*/
 	  chioctl,	enxio,		enxio,		NULL,	/* ch */
 	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*18*/
-	  enxio,	enxio,		enxio,		NULL,	/* scsi generic */
-	  enxio,	enxio,		enxio },
+	{ sgopen,	sgclose,	enodev,		enodev,		/*18*/
+	  sgioctl,	enodev,		nullop,		NULL,	/* scsi 'generic' */
+	  seltrue,	enodev,		sgstrategy },
 	{ twopen,	twclose,	twread,		twwrite,	/*19*/
 	  enodev,	nullop,		nullop,		NULL,	/* tw */
 	  twselect,	enodev,		enodev },
-	{ enxio,	enxio,		enxio,		enxio,		/*20*/
-	  enxio,	enxio,		enxio,		NULL,	/* soundblaster?*/
-	  enxio,	enxio,		enxio },
-	{ coopen,	coclose,	coread,		enxio,		/*21*/
-	  coioctl,	nullop,		nullop,		NULL,	/* co */
-	  coselect,	comap,		NULL },
+	{ sbopen,	sbclose,	sbread,		sbwrite,	/*20*/
+	  sbioctl,	enodev,		enodev,		NULL,	/* soundblaster*/
+	  sbselect,	enodev,		NULL },
+	{ enodev,	enodev,		enodev,		enodev,		/*21*/
+	  enodev,	enodev,		nullop,		NULL,	/* psm */
+	  enodev,	enodev,		enodev },
 	{ fdopen,	enxio,		enxio,		enxio,		/*22*/
 	  enxio,	enxio,		enxio,		NULL,	/* fd (!=Fd) */
 	  enxio,	enxio,		enxio },
@@ -458,9 +454,15 @@ struct cdevsw	cdevsw[] =
 	{ sioopen,	sioclose,	sioread,	siowrite,	/*28*/
 	  sioioctl,	siostop,	sioreset,	sio_tty, /* sio */
 	  sioselect,	enodev,		NULL },
+	{ mcdopen,	mcdclose,	rawread,	enodev,		/*29*/
+	  mcdioctl,	enodev,		nullop,		NULL,	/* mitsumi cd */
+	  seltrue,	enodev,		mcdstrategy },
+	{ sndopen,	sndclose,	sndread,	sndwrite,	/*30*/
+  	  sndioctl,	enodev,		enodev,		NULL,	/* sound driver */
+  	  sndselect,	enodev,		NULL },
 /*
- * If you need a cdev major number, please contact the 386bsd patchkit 
- * coordinator by sending mail to "patches@cs.montana.edu".
+ * If you need a cdev major number, please contact the FreeBSD team
+ * by sending mail to `freebsd-hackers@freefall.cdrom.com'.
  * If you assign one yourself it may then conflict with someone else.
  */
 };

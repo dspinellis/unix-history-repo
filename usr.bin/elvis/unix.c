@@ -79,6 +79,9 @@ int ttyread(buf, len, time)
 		  case -1:	/* assume we got an EINTR because of SIGWINCH */
 			if (*o_lines != LINES || *o_columns != COLS)
 			{
+#ifndef CRUNCH
+				*o_nearscroll = 
+#endif
 				*o_lines = LINES;
 				*o_columns = COLS;
 #ifndef CRUNCH
@@ -106,10 +109,10 @@ int ttyread(buf, len, time)
 }
 # else
 
-# if M_SYSV
-/* For System-V or Coherent, we use VMIN/VTIME to implement the timeout.
- * For no timeout, VMIN should be 1 and VTIME should be 0; for timeout,
- * VMIN should be 0 and VTIME should be the timeout value.
+# if UNIXV || COH_386
+/* For System-V, we use VMIN/VTIME to implement the timeout.  For no timeout,
+ * VMIN should be 1 and VTIME should be 0; for timeout, VMIN should be 0 and
+ * VTIME should be the timeout value.
  */
 #  include <termio.h>
 int ttyread(buf, len, time)
@@ -135,7 +138,7 @@ int ttyread(buf, len, time)
 	ioctl(0, TCSETA, &tio);
 
 	/* Perform the read.  Loop if EINTR error happens */
-	while ((bytes = read(0, buf, len)) < 0)
+	while ((bytes = read(0, buf, (unsigned)len)) < 0)
 	{
 		/* probably EINTR error because a SIGWINCH was received */
 		if (*o_lines != LINES || *o_columns != COLS)
@@ -145,6 +148,7 @@ int ttyread(buf, len, time)
 #ifndef CRUNCH
 			if (!wset)
 			{
+				*o_nearscroll = LINES;
 				*o_window = LINES - 1;
 			}
 #endif
@@ -178,7 +182,7 @@ int ttyread(buf, len, time)
 static jmp_buf env;
 
 /*ARGSUSED*/
-int dummy(signo)
+SIGTYPE dummy(signo)
 	int	signo;
 {
 	longjmp(env, 1);
@@ -189,17 +193,13 @@ int ttyread(buf, len, time)
 	int	time;	/* maximum time to allow for reading */
 {
 	/* arrange for timeout */
-#if __GNUC__
-	signal(SIGALRM, (void (*)()) dummy);
-#else
 	signal(SIGALRM, dummy);
-#endif
 	alarm(time);
 
 	/* perform the blocking read */
 	if (setjmp(env) == 0)
 	{
-		len = read(0, buf, len);
+		len = read(0, buf, (unsigned)len);
 	}
 	else /* I guess we timed out */
 	{
@@ -216,7 +216,7 @@ int ttyread(buf, len, time)
 	return len;
 }
 
-# endif /* !(M_SYSV || COHERENT) */
+# endif /* M_SYSV */
 # endif /* !BSD */
 
 #endif /* ANY_UNIX */

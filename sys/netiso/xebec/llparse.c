@@ -1,5 +1,8 @@
-/* $Header: llparse.c,v 2.2 88/09/19 12:54:59 nhall Exp $ */
-/* $Source: /var/home/tadl/src/argo/xebec/RCS/llparse.c,v $ */
+/*
+ *	from: llparse.c,v 2.2 88/09/19 12:54:59 nhall Exp
+ *	$Id$
+ */
+
 /*
  * ************************* NOTICE *******************************
  * This code is in the public domain.  It cannot be copyrighted.

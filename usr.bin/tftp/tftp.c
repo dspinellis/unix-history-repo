@@ -55,7 +55,7 @@ static char sccsid[] = "@(#)tftp.c	5.10 (Berkeley) 3/1/91";
 
 extern	int errno;
 
-extern  struct sockaddr_in sin;         /* filled in by main */
+extern  struct sockaddr_in s_in;         /* filled in by main */
 extern  int     f;                      /* the opened socket */
 extern  int     trace;
 extern  int     verbose;
@@ -122,7 +122,7 @@ send_data:
 		if (trace)
 			tpacket("sent", dp, size + 4);
 		n = sendto(f, dp, size + 4, 0,
-		    (struct sockaddr *)&sin, sizeof (sin));
+		    (struct sockaddr *)&s_in, sizeof (s_in));
 		if (n != size + 4) {
 			perror("tftp: sendto");
 			goto abort;
@@ -140,7 +140,7 @@ send_data:
 				perror("tftp: recvfrom");
 				goto abort;
 			}
-			sin.sin_port = from.sin_port;   /* added */
+			s_in.sin_port = from.sin_port;   /* added */
 			if (trace)
 				tpacket("received", ap, n);
 			/* should verify packet came from server */
@@ -220,8 +220,8 @@ recvfile(fd, name, mode)
 send_ack:
 		if (trace)
 			tpacket("sent", ap, size);
-		if (sendto(f, ackbuf, size, 0, (struct sockaddr *)&sin,
-		    sizeof (sin)) != size) {
+		if (sendto(f, ackbuf, size, 0, (struct sockaddr *)&s_in,
+		    sizeof (s_in)) != size) {
 			alarm(0);
 			perror("tftp: sendto");
 			goto abort;
@@ -239,7 +239,7 @@ send_ack:
 				perror("tftp: recvfrom");
 				goto abort;
 			}
-			sin.sin_port = from.sin_port;   /* added */
+			s_in.sin_port = from.sin_port;   /* added */
 			if (trace)
 				tpacket("received", dp, n);
 			/* should verify client address */
@@ -279,7 +279,7 @@ send_ack:
 abort:                                          /* ok to ack, since user */
 	ap->th_opcode = htons((u_short)ACK);    /* has seen err msg */
 	ap->th_block = htons((u_short)block);
-	(void) sendto(f, ackbuf, 4, 0, (struct sockaddr *)&sin, sizeof (sin));
+	(void) sendto(f, ackbuf, 4, 0, (struct sockaddr *)&s_in, sizeof (s_in));
 	write_behind(file, convert);            /* flush last buffer */
 	fclose(file);
 	stopclock();
@@ -348,8 +348,8 @@ nak(error)
 	length = strlen(pe->e_msg) + 4;
 	if (trace)
 		tpacket("sent", tp, length);
-	if (sendto(f, ackbuf, length, 0, (struct sockaddr *)&sin,
-	    sizeof (sin)) != length)
+	if (sendto(f, ackbuf, length, 0, (struct sockaddr *)&s_in,
+	    sizeof (s_in)) != length)
 		perror("nak");
 }
 

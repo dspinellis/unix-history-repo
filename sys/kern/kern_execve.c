@@ -50,20 +50,7 @@
  * Significant limitations and lack of compatiblity with POSIX are
  * present with this version, to make its basic operation more clear.
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         6       00165
- * --------------------         -----   ----------------------
- *
- * 05 Aug 92	Paul Kranenburg		Fixed #! as a magic number
- * 29 Jul 92	Mark Tinguely		Fixed execute permission enforcement
- * 15 Aug 92    Terry Lambert           Fixed CMOS RAM size bug
- * 12 Dec 92	Julians Elischer	Place argc into user address space
- *					correctly
- * 10 Apr 93	Yoval Yarom		Fix for busy text on executables
- * 20 Apr 93	markie			Stop execution of a file open for write
- *		Rodney W. Grimes	Fix date on Yoval Yarom's patch
- * 01 Jun 93	Chris Demetriou		Completed markie's patch for VTEXT busy
+ *	$Id: kern_execve.c,v 1.7 1993/10/19 00:58:51 nate Exp $
  */
 
 #include "param.h"
@@ -75,6 +62,7 @@
 #include "namei.h"
 #include "vnode.h"
 #include "file.h"
+#include "acct.h"
 #include "exec.h"
 #include "stat.h"
 #include "wait.h"
@@ -95,14 +83,16 @@ extern int dostacklimits;
  * execve() system call.
  */
 
+struct execve_args {
+	char	*fname;
+	char	**argp;
+	char	**envp;
+};
+
 /* ARGSUSED */
 execve(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		char	*fname;
-		char	**argp;
-		char	**envp;
-	} *uap;
+	register struct execve_args *uap;
 	int *retval;
 {
 	register struct nameidata *ndp;
@@ -110,11 +100,13 @@ execve(p, uap, retval)
 	char **argbuf, **argbufp, *stringbuf, *stringbufp;
 	char **vectp, *ep;
 	int needsenv, limitonargs, stringlen, addr, size, len,
-		rv, amt, argc, tsize, dsize, bsize, cnt, foff;
+		rv, amt, argc, tsize, dsize, bsize, cnt, file_offset,
+		virtual_offset;
 	struct vattr attr;
 	struct vmspace *vs;
 	caddr_t newframe;
 	char shellname[MAXINTERP];			/* 05 Aug 92*/
+ 	char *shellargs;
 	union {
 		char	ex_shell[MAXINTERP];	/* #! and interpreter name */
 		struct	exec ex_hdr;
@@ -184,45 +176,85 @@ again:							/* 05 Aug 92*/
 		goto exec_fail;
 	}
 		
+#define SHELLMAGIC	0x2123 /* #! */
 
-	/* ... that we recognize? */
-	rv = ENOEXEC;
-	if (exdata.ex_hdr.a_magic != ZMAGIC) {
-		char *cp, *sp;
-
-		if (exdata.ex_shell[0] != '#' ||
-		    exdata.ex_shell[1] != '!' || indir) {
-			rv = ENOEXEC;
-			goto exec_fail;
+	switch (exdata.ex_hdr.a_magic) {
+	case ZMAGIC:
+		virtual_offset = 0;
+		if (exdata.ex_hdr.a_text) {
+			file_offset = NBPG;
+		} else {
+			/* Bill's "screwball mode" */
+			file_offset = 0;
 		}
-		for (cp = &exdata.ex_shell[2];; ++cp) {
-			if (cp >= &exdata.ex_shell[MAXINTERP]) {
+		break;
+	case QMAGIC:
+		virtual_offset = NBPG;
+		file_offset = 0;
+		break;
+	default:
+		if ((exdata.ex_hdr.a_magic & 0xffff) != SHELLMAGIC) {
+			/* NetBSD compatibility */
+			switch (ntohl(exdata.ex_hdr.a_magic) & 0xffff) {
+			case ZMAGIC:
+			case QMAGIC:
+				virtual_offset = NBPG;
+				file_offset = 0;
+				break;
+			default:
 				rv = ENOEXEC;
 				goto exec_fail;
 			}
-			if (*cp == '\n') {
-				*cp = '\0';
-				break;
+		} else {
+			char *cp, *sp;
+
+			if (indir) {
+				rv = ENOEXEC;
+				goto exec_fail;
 			}
-			if (*cp == '\t')
-				*cp = ' ';
+			for (cp = &exdata.ex_shell[2];; ++cp) {
+				if (cp >= &exdata.ex_shell[MAXINTERP]) {
+					rv = ENOEXEC;
+					goto exec_fail;
+				}
+				if (*cp == '\n') {
+					*cp = '\0';
+					break;
+				}
+				if (*cp == '\t')
+					*cp = ' ';
+			}
+			cp = &exdata.ex_shell[2]; /* get shell interpreter name */
+			while (*cp == ' ')
+				cp++;
+
+			sp = shellname;
+			while (*cp && *cp != ' ')
+				*sp++ = *cp++;
+			*sp = '\0';
+
+ 			/* copy the args in the #! line */
+ 			while (*cp == ' ')
+ 			  cp++;
+ 			if (*cp) {
+ 			    sp++;
+ 			    shellargs = sp;
+ 			    while (*cp)
+ 			      *sp++ = *cp++;
+ 			    *sp = '\0';
+ 			} else {
+ 			    shellargs = 0;
+ 			}
+
+			indir = 1;              /* indicate this is a script file */
+			vput(ndp->ni_vp);
+			FREE(ndp->ni_pnbuf, M_NAMEI);
+
+			ndp->ni_dirp = shellname;       /* find shell interpreter */
+			ndp->ni_segflg = UIO_SYSSPACE;
+			goto again;
 		}
-		cp = &exdata.ex_shell[2];       /* get shell interpreter name */
-		while (*cp == ' ')
-			cp++;
-
-		sp = shellname;
-		while (*cp && *cp != ' ')
-			*sp++ = *cp++;
-		*sp = '\0';
-
-		indir = 1;              /* indicate this is a script file */
-		vput(ndp->ni_vp);
-		FREE(ndp->ni_pnbuf, M_NAMEI);
-
-		ndp->ni_dirp = shellname;       /* find shell interpreter */
-		ndp->ni_segflg = UIO_SYSSPACE;
-		goto again;
+			/* NOT REACHED */
 	}
 
 	/* sanity check  "ain't not such thing as a sanity clause" -groucho */
@@ -289,7 +321,7 @@ again:							/* 05 Aug 92*/
 	/* first, do (shell name if any then) args */
 	if (indir)  {
 		ep = shellname;
-twice:
+thrice:
 		if (ep) {
 			/* did we outgrow initial argbuf, if so, die */
 			if (argbufp >= (char **)stringbuf) {
@@ -309,11 +341,17 @@ twice:
 			limitonargs -= stringlen;
 		}
 
+		if (shellargs) {
+		    ep = shellargs;
+		    shellargs = 0;
+		    goto thrice;
+		}
+
 		if (indir) {
 			indir = 0;
 			/* orginal executable is 1st argument with scripts */
 			ep = uap->fname;
-			goto twice;
+			goto thrice;
 		}
 		/* terminate in case no more args to script */
 		suword(argbufp, 0);
@@ -407,39 +445,35 @@ dont_bother:
 	}
 
 	/* build a new address space */
-	addr = 0;
 
-	/* screwball mode -- special case of 413 to save space for floppy */
-	if (exdata.ex_hdr.a_text == 0) {
-		foff = tsize = 0;
-		exdata.ex_hdr.a_data += exdata.ex_hdr.a_text;
-	} else {
-		tsize = roundup(exdata.ex_hdr.a_text, NBPG);
-		foff = NBPG;
-	}
 
-	/* treat text and data in terms of integral page size */
+
+	/* treat text, data, and bss in terms of integral page size */
+	tsize = roundup(exdata.ex_hdr.a_text, NBPG);
 	dsize = roundup(exdata.ex_hdr.a_data, NBPG);
-	bsize = roundup(exdata.ex_hdr.a_bss + dsize, NBPG);
-	bsize -= dsize;
+	bsize = roundup(exdata.ex_hdr.a_bss, NBPG);
 
-	/* map text & data in file, as being "paged in" on demand */
-	rv = vm_mmap(&vs->vm_map, &addr, tsize+dsize, VM_PROT_ALL,
-		MAP_FILE|MAP_COPY|MAP_FIXED, (caddr_t)ndp->ni_vp, foff);
+	addr = virtual_offset;
+
+	/* map text as being read/execute only and demand paged */
+	rv = vm_mmap(&vs->vm_map, &addr, tsize, VM_PROT_READ|VM_PROT_EXECUTE,
+		VM_PROT_DEFAULT, MAP_FILE|MAP_PRIVATE|MAP_FIXED,
+		(caddr_t)ndp->ni_vp, file_offset);
 	if (rv)
 		goto exec_abort;
 
-	/* mark pages r/w data, r/o text */
-	if (tsize) {
-		addr = 0;
-		rv = vm_protect(&vs->vm_map, addr, tsize, FALSE,
-			VM_PROT_READ|VM_PROT_EXECUTE);
-		if (rv)
-			goto exec_abort;
-	}
+	addr = virtual_offset + tsize;
+
+	/* map data as being read/write and demand paged */
+	rv = vm_mmap(&vs->vm_map, &addr, dsize,
+		VM_PROT_READ | VM_PROT_WRITE | (tsize ? 0 : VM_PROT_EXECUTE),
+		VM_PROT_DEFAULT, MAP_FILE|MAP_PRIVATE|MAP_FIXED,
+		(caddr_t)ndp->ni_vp, file_offset + tsize);
+	if (rv)
+		goto exec_abort;
 
 	/* create anonymous memory region for bss */
-	addr = dsize + tsize;
+	addr = virtual_offset + tsize + dsize;
 	rv = vm_allocate(&vs->vm_map, &addr, bsize, FALSE);
 	if (rv)
 		goto exec_abort;
@@ -451,8 +485,8 @@ dont_bother:
 	/* touchup process information -- vm system is unfinished! */
 	vs->vm_tsize = tsize/NBPG;		/* text size (pages) XXX */
 	vs->vm_dsize = (dsize+bsize)/NBPG;	/* data size (pages) XXX */
-	vs->vm_taddr = 0;		/* user virtual address of text XXX */
-	vs->vm_daddr = (caddr_t)tsize;	/* user virtual address of data XXX */
+	vs->vm_taddr = (caddr_t) virtual_offset; /* virtual address of text */
+	vs->vm_daddr = (caddr_t) virtual_offset + tsize; /* virtual address of data */
 	vs->vm_maxsaddr = newframe;	/* user VA at max stack growth XXX */
 	vs->vm_ssize =  ((unsigned)vs->vm_maxsaddr + MAXSSIZ
 		- (unsigned)argbuf)/ NBPG + 1; /* stack size (pages) */
@@ -498,6 +532,7 @@ dont_bother:
 	   can be set before the program "runs" */
 	if (p->p_flag & STRC)
 		psignal(p, SIGTRAP);
+	p->p_acflag &= ~AFORK;		/* remove fork, but no exec flag */
 
 	return (0);
 
@@ -517,7 +552,7 @@ exec_abort:
 	vm_deallocate(&vs->vm_map, newframe, MAXSSIZ);
 	vput(ndp->ni_vp);
 	FREE(ndp->ni_pnbuf, M_NAMEI);
-	exit(p, W_EXITCODE(0, SIGABRT));
+	kexit(p, W_EXITCODE(0, SIGABRT));
 
 	/* NOTREACHED */
 	return(0);

@@ -2,22 +2,17 @@
 Copyright (C) 1988 Free Software Foundation
     written by Doug Lea (dl@rocky.oswego.edu)
 
-This file is part of GNU CC.
-
-GNU CC is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU CC General Public
-License for full details.
-
-Everyone is granted permission to copy, modify and redistribute
-GNU CC, but only under the conditions described in the
-GNU CC General Public License.   A copy of this license is
-supposed to have been given to you along with GNU CC so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  
+This file is part of the GNU C++ Library.  This library is free
+software; you can redistribute it and/or modify it under the terms of
+the GNU Library General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your
+option) any later version.  This library is distributed in the hope
+that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.  See the GNU Library General Public License for more details.
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 /* 
@@ -30,16 +25,22 @@ and this notice must be preserved on all copies.
 #include <String.h>
 #include <std.h>
 #include <ctype.h>
-#include <values.h>
+#include <limits.h>
 #include <new.h>
+#include <builtin.h>
 
 // extern "C" {
 #include <regex.h>
 // }
 
-volatile void String::error(const char* msg) const
+void String::error(const char* msg) const
 {
-  (void)((*lib_error_handler)("String", msg));
+  (*lib_error_handler)("String", msg);
+}
+
+String::operator const char*() const
+{ 
+  return (const char*)chars();
 }
 
 //  globals
@@ -108,7 +109,7 @@ inline static int slen(const char* t) // inline  strlen
 
 // minimum & maximum representable rep size
 
-#define MAXStrRep_SIZE   ((1 << (SHORTBITS - 1)) - 1)
+#define MAXStrRep_SIZE   ((1 << (sizeof(short) * CHAR_BIT - 1)) - 1)
 #define MINStrRep_SIZE   16
 
 #ifndef MALLOC_MIN_OVERHEAD
@@ -255,7 +256,7 @@ StrRep* Scat(StrRep* old, const char* s, int srclen, const char* t, int tlen,
   if (old == &_nilStrRep) old = 0;
   if (srclen < 0) srclen = slen(s);
   if (tlen < 0) tlen = slen(t);
-  if (ulen < 0) tlen = slen(u);
+  if (ulen < 0) ulen = slen(u);
   int newlen = srclen + tlen + ulen;
   StrRep* rep;
   if (old == 0 || newlen > old->sz || 
@@ -670,7 +671,7 @@ int String::_gsub(const Regex& pat, const char* r, int rl)
 
 void String::del(int pos, int len)
 {
-  if (pos < 0 || len <= 0 || pos + len > length()) return;
+  if (pos < 0 || len <= 0 || (unsigned)(pos + len) > length()) return;
   int nlen = length() - len;
   int first = pos + len;
   ncopy0(&(rep->s[first]), &(rep->s[pos]), length() - first);
@@ -1194,21 +1195,16 @@ String common_suffix(const String& x, const String& y, int startpos)
 
 istream& operator>>(istream& s, String& x)
 {
-  if (!s.readable())
+  if (!s.ipfx(0) || (!(s.flags() & ios::skipws) && !ws(s)))
   {
-    s.set(_bad);
+    s.clear(ios::failbit|s.rdstate()); // Redundant if using GNU iostreams.
     return s;
   }
-  char ch;
+  int ch;
   int i = 0;
   x.rep = Sresize(x.rep, 20);
-  s >> WS;
-  if (!s.good())
-  {
-    s.set(_bad);
-    return s;
-  }
-  while (s.get(ch))
+  register streambuf *sb = s.rdbuf();
+  while ((ch = sb->sbumpc()) != EOF)
   {
     if (isspace(ch))
       break;
@@ -1218,21 +1214,22 @@ istream& operator>>(istream& s, String& x)
   }
   x.rep->s[i] = 0;
   x.rep->len = i;
-  s.failif(i == 0);
+  int new_state = s.rdstate();
+  if (i == 0) new_state |= ios::failbit;
+  if (ch == EOF) new_state |= ios::eofbit;
+  s.clear(new_state);
   return s;
 }
 
 int readline(istream& s, String& x, char terminator, int discard)
 {
-  if (!s.readable())
-  {
-    s.set(_bad);
+  if (!s.ipfx(0))
     return 0;
-  }
-  char ch;
+  int ch;
   int i = 0;
   x.rep = Sresize(x.rep, 80);
-  while (s.get(ch))
+  register streambuf *sb = s.rdbuf();
+  while ((ch = sb->sbumpc()) != EOF)
   {
     if (ch != terminator || !discard)
     {
@@ -1245,6 +1242,7 @@ int readline(istream& s, String& x, char terminator, int discard)
   }
   x.rep->s[i] = 0;
   x.rep->len = i;
+  if (ch == EOF) s.clear(ios::eofbit|s.rdstate());
   return i;
 }
 
@@ -1263,7 +1261,7 @@ ostream& operator<<(ostream& s, const SubString& x)
 int String::freq(const SubString& y) const
 {
   int found = 0;
-  for (int i = 0; i < length(); i++) 
+  for (unsigned int i = 0; i < length(); i++) 
     if (match(i,length(),0,y.chars(), y.length())>= 0) found++;
   return(found);
 }
@@ -1271,7 +1269,7 @@ int String::freq(const SubString& y) const
 int String::freq(const String& y) const
 {
   int found = 0;
-  for (int i = 0; i < length(); i++) 
+  for (unsigned int i = 0; i < length(); i++) 
     if (match(i,length(),0,y.chars(),y.length()) >= 0) found++;
   return(found);
 }
@@ -1279,14 +1277,15 @@ int String::freq(const String& y) const
 int String::freq(const char* t) const
 {
   int found = 0;
-  for (int i = 0; i < length(); i++) if (match(i,length(),0,t) >= 0) found++;
+  for (unsigned int i = 0; i < length(); i++) 
+    if (match(i,length(),0,t) >= 0) found++;
   return(found);
 }
 
 int String::freq(char c) const
 {
   int found = 0;
-  for (int i = 0; i < length(); i++) 
+  for (unsigned int i = 0; i < length(); i++) 
     if (match(i,length(),0,&c,1) >= 0) found++;
   return(found);
 }
@@ -1294,16 +1293,16 @@ int String::freq(char c) const
 
 int String::OK() const
 {
-  int v = rep != 0;             // have a rep
-  v &= rep->len <= rep->sz;     // string within bounds
-  v &= rep->s[rep->len] == 0;   // null-terminated
-  if (!v) error("invariant failure");
-  return v;
+  if (rep == 0             // don't have a rep
+    || rep->len > rep->sz     // string oustide bounds
+    || rep->s[rep->len] != 0)   // not null-terminated
+      error("invariant failure");
+  return 1;
 }
 
 int SubString::OK() const
 {
-  int v = S != 0;               // have a String;
+  int v = S != (const char*)0; // have a String;
   v &= S.OK();                 // that is legal
   v &= pos + len >= S.rep->len;// pos and len within bounds
   if (!v) S.error("SubString invariant failure");

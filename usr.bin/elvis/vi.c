@@ -73,7 +73,11 @@ static struct keystru
 /* ^Q  not defined	*/	{NO_FUNC,	NO_ARGS,	NO_FLAGS},
 /* ^R  redraw screen	*/	{v_redraw,	NO_ARGS,	NO_FLAGS|VIZ},
 /* ^S  not defined	*/	{NO_FUNC,	NO_ARGS,	NO_FLAGS},
+#ifndef NO_TAGSTACK
+/* ^T  pop tagstack	*/	{v_pop,		CURSOR,		NO_FLAGS},
+#else
 /* ^T  not defined	*/	{NO_FUNC,	NO_ARGS,	NO_FLAGS},
+#endif
 /* ^U  scroll up 1/2page*/	{m_scroll,	CURSOR,		NCOL|VIZ},
 /* ^V  not defined	*/	{NO_FUNC,	NO_ARGS,	NO_FLAGS},
 /* ^W  not defined	*/	{NO_FUNC,	NO_ARGS,	NO_FLAGS},
@@ -87,7 +91,7 @@ static struct keystru
 /* ESC not defined	*/	{NO_FUNC,	NO_ARGS,	NO_FLAGS},
 /* ^\  not defined	*/	{NO_FUNC,	NO_ARGS,	NO_FLAGS},
 /* ^]  keyword is tag	*/	{v_tag,		KEYWORD,	NO_FLAGS},
-/* ^^  previous file	*/	{v_switch,	CURSOR,		NO_FLAGS},
+/* ^^  previous file	*/	{v_switch,	CURSOR,		FRNT},
 /* ^_  not defined	*/	{NO_FUNC,	NO_ARGS,	NO_FLAGS},
 /* SPC move right,like l*/	{m_right,	CURSOR,		MVMT|INCL|VIZ},
 /*  !  run thru filter	*/	{v_filter,	CURSOR_MOVED,	FRNT|LNMD|INCL|VIZ},
@@ -168,7 +172,7 @@ static struct keystru
 #endif
 /*  L  move to last row	*/	{m_row,		CURSOR,		MVMT|LNMD|FRNT|VIZ|INCL},
 /*  M  move to mid row	*/	{m_row,		CURSOR,		MVMT|LNMD|FRNT|VIZ|INCL},
-/*  N  reverse prev srch*/	{m_Nsrch,	CURSOR,		MVMT|NREL|VIZ},
+/*  N  reverse prev srch*/	{m_nsrch,	CURSOR,		MVMT|NREL|VIZ},
 /*  O  insert above line*/	{v_insert,	CURSOR,		SDOT},
 /*  P  paste before	*/	{v_paste,	CURSOR,		SDOT},
 /*  Q  quit to EX mode	*/	{v_quit,	NO_ARGS,	NO_FLAGS},
@@ -185,7 +189,7 @@ static struct keystru
 #else
 /*  V  not defined	*/	{NO_FUNC,	NO_ARGS,	NO_FLAGS},
 #endif
-/*  W  move forward Word*/	{m_fword,	CURSOR,		MVMT|INCL|VIZ},
+/*  W  move forward Word*/	{m_fword,	CURSOR,		MVMT|INCL|NWRP|VIZ},
 /*  X  delete to left	*/	{v_xchar,	CURSOR,		SDOT},
 /*  Y  yank text	*/	{v_yank,	CURSOR_MOVED,	NCOL},
 /*  Z  save file & exit	*/	{v_xit,		CURSOR_CNT_KEY,	NO_FLAGS},
@@ -233,13 +237,13 @@ static struct keystru
 #else
 /*  v  not defined	*/	{NO_FUNC,	NO_ARGS,	NO_FLAGS},
 #endif
-/*  w  move fwd word	*/	{m_fword,	CURSOR,		MVMT|INCL|VIZ},
+/*  w  move fwd word	*/	{m_fword,	CURSOR,		MVMT|INCL|NWRP|VIZ},
 /*  x  delete character	*/	{v_xchar,	CURSOR,		SDOT},
 /*  y  yank text	*/	{v_yank,	CURSOR_MOVED,	NCOL|VIZ},
 /*  z  adjust scrn row	*/	{m_z, 		CURSOR_CNT_KEY,	NCOL|VIZ},
-/*  {  back paragraph	*/	{m_paragraph,	CURSOR,		MVMT|LNMD|VIZ},
+/*  {  back paragraph	*/	{m_paragraph,	CURSOR,		MVMT|VIZ},
 /*  |  move to column	*/	{m_tocol,	CURSOR,		MVMT|NREL|VIZ},
-/*  }  fwd paragraph	*/	{m_paragraph,	CURSOR,		MVMT|LNMD|VIZ},
+/*  }  fwd paragraph	*/	{m_paragraph,	CURSOR,		MVMT|VIZ},
 /*  ~  upper/lowercase	*/	{v_ulcase,	CURSOR,		SDOT},
 /* DEL not defined	*/	{NO_FUNC,	NO_ARGS,	NO_FLAGS}
 };
@@ -316,6 +320,9 @@ void vi()
 				key = getkey(WHEN_VICMD);
 			} while (key < 0 || key > 127);
 		}
+#ifdef DEBUG2
+		debout("\nkey='%c'\n", key);
+#endif
 
 		/* Convert a doubled-up operator such as "dd" into "d_" */
 		if (prevkey && key == prevkey)
@@ -551,7 +558,8 @@ void vi()
 		  	do
 		  	{	
 				text[0] = key;
-				if (vgets(key, text + 1, sizeof text - 1) >= 0)
+				text[1] = '\0';
+				if (doingdot || vgets(key, text + 1, sizeof text - 1) >= 0)
 				{
 					/* reassure user that <CR> was hit */
 					qaddch('\r');
@@ -583,16 +591,25 @@ void vi()
 		}
 
 		/* now move the cursor, as appropriate */
-		if (keyptr->args == CURSOR_MOVED)
+		if (prevkey && ((keyptr->flags & MVMT)
+#ifndef NO_VISIBLE
+					       || V_from
+#endif
+				) && count == 0L)
+		{
+			/* movements used as targets are less strict */
+			tcurs = adjmove(cursor, tcurs, (int)(keyptr->flags | force_flags));
+		}
+		else if (keyptr->args == CURSOR_MOVED)
 		{
 			/* the < and > keys have FRNT,
 			 * but it shouldn't be applied yet
 			 */
-			tcurs = adjmove(cursor, tcurs, 0);
+			tcurs = adjmove(cursor, tcurs, FINL);
 		}
 		else
 		{
-			tcurs = adjmove(cursor, tcurs, (int)keyptr->flags | force_flags);
+			tcurs = adjmove(cursor, tcurs, (int)(keyptr->flags | force_flags | FINL));
 		}
 
 		/* was that the end of a d/c/y/</>/! command? */
@@ -629,7 +646,7 @@ void vi()
 			 * to the front of a line.  Instead, they should take
 			 * us only to the end of the preceding line.
 			 */
-			if ((keyptr->flags & (MVMT|NREL|LNMD|FRNT|INCL)) == MVMT
+			if ((keyptr->flags & NWRP) == NWRP
 			  && markline(range) < markline(tcurs)
 			  && (markline(tcurs) > nlines || tcurs == m_front(tcurs, 0L)))
 			{
@@ -660,8 +677,8 @@ void vi()
 			tcurs = (*vikeys[prevkey].func)(range, tcurs);
 			if (mode == MODE_VI)
 			{
-				(void)adjmove(cursor, cursor, 0);
-				cursor = adjmove(cursor, tcurs, (int)vikeys[prevkey].flags);
+				(void)adjmove(cursor, cursor, FINL);
+				cursor = adjmove(cursor, tcurs, (int)(vikeys[prevkey].flags | FINL));
 			}
 
 			/* cleanup */
@@ -688,6 +705,9 @@ MARK adjmove(old, new, flags)
 	REG char	*text;	/* used to scan through the line's text */
 	REG int		i;
 
+#ifdef DEBUG2
+	debout("adjmove(%ld.%d, %ld.%d, 0x%x)\n", markline(old), markidx(old), markline(new), markidx(new), flags);
+#endif
 #ifdef DEBUG
 	watch();
 #endif
@@ -695,8 +715,12 @@ MARK adjmove(old, new, flags)
 	/* if the command failed, bag it! */
 	if (new == MARK_UNSET)
 	{
-		beep();
-		return old;
+		if (flags & FINL)
+		{
+			beep();
+			return old;
+		}
+		return new;
 	}
 
 	/* if this is a non-relative movement, set the '' mark */
@@ -712,6 +736,10 @@ MARK adjmove(old, new, flags)
 	}
 	else if (markline(new) > nlines)
 	{
+		if (!(flags & FINL))
+		{
+			return MARK_EOF;
+		}
 		new = MARK_LAST;
 	}
 

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)syslog.h	7.20 (Berkeley) 2/23/91
+ *	from: @(#)syslog.h	7.20 (Berkeley) 2/23/91
+ *	$Id$
  */
 
 #define	_PATH_LOG	"/dev/log"

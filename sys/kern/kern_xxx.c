@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)kern_xxx.c	7.17 (Berkeley) 4/20/91
+ *	from: @(#)kern_xxx.c	7.17 (Berkeley) 4/20/91
+ *	$Id: kern_xxx.c,v 1.4 1993/10/16 15:24:35 rgrimes Exp $
  */
 
 #include "param.h"
@@ -38,6 +39,7 @@
 #include "kernel.h"
 #include "proc.h"
 #include "reboot.h"
+#include "utsname.h"
 
 /* ARGSUSED */
 gethostid(p, uap, retval)
@@ -50,12 +52,14 @@ gethostid(p, uap, retval)
 	return (0);
 }
 
+struct sethostid_args {
+	long	hostid;
+};
+
 /* ARGSUSED */
 sethostid(p, uap, retval)
 	struct proc *p;
-	struct args {
-		long	hostid;
-	} *uap;
+	struct sethostid_args *uap;
 	int *retval;
 {
 	int error;
@@ -66,13 +70,15 @@ sethostid(p, uap, retval)
 	return (0);
 }
 
+struct gethostname_args {
+	char	*hostname;
+	u_int	len;
+};
+
 /* ARGSUSED */
 gethostname(p, uap, retval)
 	struct proc *p;
-	struct args {
-		char	*hostname;
-		u_int	len;
-	} *uap;
+	struct gethostname_args *uap;
 	int *retval;
 {
 
@@ -81,13 +87,15 @@ gethostname(p, uap, retval)
 	return (copyout((caddr_t)hostname, (caddr_t)uap->hostname, uap->len));
 }
 
+struct sethostname_args {
+	char	*hostname;
+	u_int	len;
+};
+
 /* ARGSUSED */
 sethostname(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		char	*hostname;
-		u_int	len;
-	} *uap;
+	register struct sethostname_args *uap;
 	int *retval;
 {
 	int error;
@@ -102,12 +110,72 @@ sethostname(p, uap, retval)
 	return (error);
 }
 
+struct getdomainname_args {
+        char    *domainname;
+        u_int   len;
+};
+
+/* ARGSUSED */
+int
+getdomainname(p, uap, retval)
+        struct proc *p;
+        struct getdomainname_args *uap;
+        int *retval;
+{
+	if (uap->len > domainnamelen + 1)
+		uap->len = domainnamelen + 1;
+	return (copyout((caddr_t)domainname, (caddr_t)uap->domainname, uap->len));
+}
+
+struct setdomainname_args {
+        char    *domainname;
+        u_int   len;
+};
+
+/* ARGSUSED */
+int
+setdomainname(p, uap, retval)
+        struct proc *p;
+        struct setdomainname_args *uap;
+        int *retval;
+{
+        int error;
+
+        if (error = suser(p->p_ucred, &p->p_acflag))
+                return (error);
+        if (uap->len > sizeof (domainname) - 1)
+                return EINVAL;
+        domainnamelen = uap->len;
+        error = copyin((caddr_t)uap->domainname, domainname, uap->len);
+        domainname[domainnamelen] = 0;
+        return (error);
+}
+
+struct uname_args {
+        struct utsname  *name;
+};
+
+/* ARGSUSED */
+int
+uname(p, uap, retval)
+	struct proc *p;
+	struct uname_args *uap;
+	int *retval;
+{
+	bcopy(hostname, utsname.nodename, sizeof(utsname.nodename));
+	utsname.nodename[sizeof(utsname.nodename)-1] = '\0';
+	return (copyout((caddr_t)&utsname, (caddr_t)uap->name,
+		sizeof(struct utsname)));
+}
+
+struct reboot_args {
+	int	opt;
+};
+
 /* ARGSUSED */
 reboot(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	opt;
-	} *uap;
+	struct reboot_args *uap;
 	int *retval;
 {
 	int error;

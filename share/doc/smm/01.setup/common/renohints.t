@@ -503,7 +503,7 @@ including the standard \*(Bs rules in its Makefile makes the
 .Pn obj
 links in the current directory and recursively in the normal subdirectories.)
 We have one
-.PN /usr/obj
+.Pn /usr/obj
 hierarchy on the local system, and another on each
 system that shares the source filesystem.
 .NH 2
@@ -596,8 +596,8 @@ is used to create a job-control session consisting of a single process
 group with one member, the caller, which becomes a session leader.
 Only a session leader may acquire a controlling terminal.
 This is done explicitly via a
-.Sm TIOCSCTTY
-.FN ioctl
+.SM TIOCSCTTY
+.Fn ioctl
 call, not implicitly by an
 .Fn open
 call.
@@ -727,7 +727,7 @@ structures also require modification; a definition of an
 .I osockaddr
 structure is provided for this purpose.
 Finally, programs that use the
-.Sm SIOCGIFCONF
+.SM SIOCGIFCONF
 ioctl to get a complete list of interface addresses
 need to check the
 .I sa_len

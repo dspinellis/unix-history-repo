@@ -4,6 +4,8 @@
  * @(#)tar.h 1.20 86/10/29	Public Domain.
  *
  * Created 25 August 1985 by John Gilmore, ihnp4!hoptoad!gnu.
+ *
+ * tar.h,v 1.2 1993/06/10 00:38:20 jtc Exp # checkin only
  */
 
 /*

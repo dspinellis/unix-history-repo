@@ -169,9 +169,11 @@ makech(win, wy)
 reg WINDOW	*win;
 short		wy;
 {
-	reg char	*nsp, *csp, *ce;
+	reg chtype      *nsp, *csp, *ce;
 	reg short	wx, lch, y;
 	reg int		nlsp, clsp;	/* last space in lines		*/
+	char *ce_tcap;
+	static chtype blank[] = {' ','\0'};
 
 	wx = win->_firstch[wy] - win->_ch_off;
 	if (wx >= win->_maxx)
@@ -186,7 +188,7 @@ short		wy;
 	y = wy + win->_begy;
 
 	if (curwin)
-		csp = " ";
+		csp = blank;
 	else
 		csp = &curscr->_y[wy + win->_begy][wx + win->_begx];
 
@@ -199,9 +201,9 @@ short		wy;
 	}
 
 	if (!curwin)
-		ce = CE;
+		ce_tcap = CE;
 	else
-		ce = NULL;
+		ce_tcap = NULL;
 
 	while (wx <= lch) {
 		if (*nsp != *csp) {
@@ -212,7 +214,7 @@ short		wy;
 			ly = y;
 			lx = wx + win->_begx;
 			while (*nsp != *csp && wx <= lch) {
-				if (ce != NULL && wx >= nlsp && *nsp == ' ') {
+				if (ce_tcap != NULL && wx >= nlsp && *nsp == ' ') {
 					/*
 					 * check for clear to end-of-line
 					 */
@@ -235,7 +237,7 @@ short		wy;
 							*csp++ = ' ';
 						return OK;
 					}
-					ce = NULL;
+					ce_tcap = NULL;
 				}
 				/*
 				 * enter/exit standout mode as appropriate
@@ -260,9 +262,9 @@ short		wy;
 							curscr->_flags &= ~_STANDOUT;
 						    }
 					    if (!curwin)
-						_putchar((*csp = *nsp) & 0177);
+						_putchar((*csp = *nsp));
 					    else
-						_putchar(*nsp & 0177);
+						_putchar(*nsp);
 					    if (win->_flags&_FULLWIN && !curwin)
 						scroll(curscr);
 					    ly = win->_begy+win->_cury;
@@ -274,12 +276,12 @@ short		wy;
 					    return ERR;
 					}
 				if (!curwin)
-					_putchar((*csp++ = *nsp) & 0177);
+					_putchar((*csp++ = *nsp));
 				else
-					_putchar(*nsp & 0177);
+					_putchar(*nsp);
 # ifdef FULLDEBUG
 				fprintf(outf,
-					"MAKECH:putchar(%c)\n", *nsp & 0177);
+					"MAKECH:putchar(%c)\n", *nsp);
 # endif
 				if (UC && (*nsp & _STANDOUT)) {
 					_putchar('\b');

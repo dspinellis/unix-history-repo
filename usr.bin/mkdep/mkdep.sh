@@ -55,7 +55,7 @@ while :
 		# the -p flag produces "program: program.c" style dependencies
 		# so .o's don't get produced
 		-p)
-			SED='s;\.o;;'
+			SED='s;\.o ; ;'
 			shift ;;
 		*)
 			break ;;

@@ -30,21 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tty_compat.c	7.10 (Berkeley) 5/9/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00163
- * --------------------         -----   ----------------------
- *
- * 22 Apr 93	David Greenman		support for 57600 and 115200 baud
- * 27 May 93	Andrew A. Chernov	Make more compatible with POSIX
- * 27 May 93	Bruce Evans		The work David did above was replaced
- *					by Bruces work plus some more stuff.
- *					(Chernov's fixes from the net edited
- *					by Bruce)
- *		Guido van Rooij		Fix a bug caused by Bruces patches.
- *
+ *	from: @(#)tty_compat.c	7.10 (Berkeley) 5/9/91
+ *	$Id$
  */
 
 /* 

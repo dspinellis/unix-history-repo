@@ -32,7 +32,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)set.c	5.2 (Berkeley) 12/24/91";
+static char sccsid[] = "@(#)set.c	5.3 (Berkeley) 12/1/92";
 #endif /* not lint */
 
 #include <termios.h>

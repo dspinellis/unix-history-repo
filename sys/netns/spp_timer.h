@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)spp_timer.h	7.3 (Berkeley) 6/28/90
+ *	from: @(#)spp_timer.h	7.3 (Berkeley) 6/28/90
+ *	$Id$
  */
 
 /*

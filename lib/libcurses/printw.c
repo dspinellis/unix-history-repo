@@ -111,7 +111,7 @@ _winwrite(cookie, buf, n)
 	register int c = n;
 
 	while (--c >= 0) {
-		if (waddch(win, *buf++) == ERR)
+		if (waddch(win, (unsigned char) *buf++) == ERR)
 			return (-1);
 	}
 	return n;

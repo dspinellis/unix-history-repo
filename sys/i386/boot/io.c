@@ -1,6 +1,4 @@
 /*
- * Ported to boot 386BSD by Julian Elischer (julian@tfs.com) Sept 1992
- *
  * Mach Operating System
  * Copyright (c) 1992, 1991 Carnegie Mellon University
  * All Rights Reserved.
@@ -24,18 +22,9 @@
  * 
  * any improvements or extensions that they make and grant Carnegie Mellon
  * the rights to redistribute these changes.
- */
-
-/*
- * HISTORY
- * $Log:	io.c,v $
- * Revision 2.2  92/04/04  11:35:57  rpd
- * 	Fixed for IBM L40's A20 initialization.
- * 	[92/03/30            rvb]
- * 
- * 	Created.
- * 	[92/03/30            mg32]
- * 
+ *
+ *	from: Mach, Revision 2.2  92/04/04  11:35:57  rpd
+ *	$Id$
  */
 
 #include <i386/include/pio.h>
@@ -82,6 +71,8 @@ printf(format,data)
 {
 	int *dataptr = &data;
 	char c;
+
+	reset_twiddle();
 	while (c = *format++)
 		if (c != '%')
 			putchar(c);
@@ -186,4 +177,26 @@ int len;
 {
 	while (len-- > 0)
 		*to++ = *from++;
+}
+
+static int tw_on;
+static int tw_pos;
+static char tw_chars[] = "|/-\\";
+
+reset_twiddle()
+{
+	if (tw_on)
+		putchar('\b');
+	tw_on = 0;
+	tw_pos = 0;
+}
+
+twiddle()
+{
+	if (tw_on)
+		putchar('\b');
+	else
+		tw_on = 1;
+	putchar(tw_chars[tw_pos++]);
+	tw_pos %= (sizeof(tw_chars) - 1);
 }

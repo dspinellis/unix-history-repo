@@ -30,14 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)sys_generic.c	7.30 (Berkeley) 5/30/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00061
- * --------------------         -----   ----------------------
- *
- * 11 Dec 92	Williams Jolitz		Fixed tty handling
+ *	from: @(#)sys_generic.c	7.30 (Berkeley) 5/30/91
+ *	$Id$
  */
 
 #include "param.h"
@@ -55,17 +49,19 @@
 #include "ktrace.h"
 #endif
 
+struct read_args {
+	int	fdes;
+	char	*cbuf;
+	unsigned count;
+};
+
 /*
  * Read system call.
  */
 /* ARGSUSED */
 read(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fdes;
-		char	*cbuf;
-		unsigned count;
-	} *uap;
+	register struct read_args *uap;
 	int *retval;
 {
 	register struct file *fp;
@@ -113,14 +109,17 @@ read(p, uap, retval)
 /*
  * Scatter read system call.
  */
+
+struct readv_args {
+	int	fdes;
+	struct	iovec *iovp;
+	unsigned iovcnt;
+};
+
 /* ARGSUSED */
 readv(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fdes;
-		struct	iovec *iovp;
-		unsigned iovcnt;
-	} *uap;
+	register struct readv_args *uap;
 	int *retval;
 {
 	register struct file *fp;
@@ -201,13 +200,16 @@ done:
 /*
  * Write system call
  */
+
+struct write_args {
+	int	fdes;
+	char	*cbuf;
+	unsigned count;
+};
+
 write(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fdes;
-		char	*cbuf;
-		unsigned count;
-	} *uap;
+	register struct write_args *uap;
 	int *retval;
 {
 	register struct file *fp;
@@ -259,13 +261,16 @@ write(p, uap, retval)
 /*
  * Gather write system call
  */
+
+struct writev_args {
+	int	fdes;
+	struct	iovec *iovp;
+	unsigned iovcnt;
+};
+
 writev(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fdes;
-		struct	iovec *iovp;
-		unsigned iovcnt;
-	} *uap;
+	register struct writev_args *uap;
 	int *retval;
 {
 	register struct file *fp;
@@ -349,14 +354,17 @@ done:
 /*
  * Ioctl system call
  */
+
+struct ioctl_args {
+	int	fdes;
+	int	cmd;
+	caddr_t	cmarg;
+};
+
 /* ARGSUSED */
 ioctl(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fdes;
-		int	cmd;
-		caddr_t	cmarg;
-	} *uap;
+	register struct ioctl_args *uap;
 	int *retval;
 {
 	register struct file *fp;
@@ -485,18 +493,22 @@ int	selwait, nselcoll;
 /*
  * Select system call.
  */
-select(p, uap, retval)
-	register struct proc *p;
-	register struct args {
-		int	nd;
+
+struct select_args {
+		u_int	nd;
 		fd_set	*in, *ou, *ex;
 		struct	timeval *tv;
-	} *uap;
+};
+
+select(p, uap, retval)
+	register struct proc *p;
+	register struct select_args *uap;
 	int *retval;
 {
 	fd_set ibits[3], obits[3];
 	struct timeval atv;
-	int s, ncoll, ni, error = 0, timo;
+	int s, ncoll, error = 0, timo;
+	u_int ni;
 
 	bzero((caddr_t)ibits, sizeof(ibits));
 	bzero((caddr_t)obits, sizeof(obits));

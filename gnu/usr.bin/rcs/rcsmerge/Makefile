@@ -1,7 +1,8 @@
-PROG= rcsmerge
-
+PROG=	rcsmerge
 SRCS=	rcsmerge.c 
-LDADD=	-L${.CURDIR}/../lib/obj -lrcs
 CFLAGS+= -I${.CURDIR}/../lib
+LDADD=	${LIBRCS}
+DPADD=	${LIBRCS}
 
+.include "../../Makefile.inc"
 .include <bsd.prog.mk>

@@ -4,6 +4,8 @@
  * v1.1 by Eric S. Raymond (esr@snark.thyrsus.com) Feb 1990
  *      modified for 386bsd by Andrew A. Chernov <ache@astral.msk.su>
  *      386bsd only clean version, all SYSV stuff removed
+ *
+ *	$Id$
  */
 
 #ifndef _SPKR_H_
@@ -26,4 +28,3 @@ typedef struct
 tone_t;
 
 #endif /* _SPKR_H_ */
-/* spkr.h ends here */
