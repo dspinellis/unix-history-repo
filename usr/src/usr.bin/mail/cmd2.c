@@ -9,7 +9,7 @@
  * More user commands.
  */
 
-static char *SccsId = "@(#)cmd2.c	2.8 %G%";
+static char *SccsId = "@(#)cmd2.c	2.9 %G%";
 
 /*
  * If any arguments were given, go to the next applicable argument
@@ -489,7 +489,7 @@ igshow()
 		printf("No fields currently being ignored.\n");
 		return(0);
 	}
-	ring = (char **) alloca((count + 1) * sizeof (char *));
+	ring = (char **) salloc((count + 1) * sizeof (char *));
 	ap = ring;
 	for (h = 0; h < HSHSIZE; h++)
 		for (igp = ignore[h]; igp != 0; igp = igp->i_link)
