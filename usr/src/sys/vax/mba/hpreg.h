@@ -1,4 +1,4 @@
-/*	hpreg.h	4.6	81/03/09	*/
+/*	hpreg.h	4.7	81/03/17	*/
 
 struct hpdevice
 {
@@ -14,8 +14,10 @@ struct hpdevice
 	int	hpof;		/* offset register */
 	int	hpdc;		/* desired cylinder address register */
 	int	hpcc;		/* current cylinder */
+/* on an rp drive, mr2 is called er2 and er2 is called er3 */
+/* we use rm terminology here */
+	int	hpmr2;		/* maintenance register 2 */
 	int	hper2;		/* error register 2 */
-	int	hper3;		/* error register 3 */
 	int	hpec1;		/* burst error bit position */
 	int	hpec2;		/* burst error bit pattern */
 };
