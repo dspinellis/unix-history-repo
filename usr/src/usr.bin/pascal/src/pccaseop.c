@@ -1,6 +1,6 @@
-/* Copyright (c) 1979 Regents of the University of California */
+/* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pccaseop.c 1.1 %G%";
+static	char sccsid[] = "@(#)pccaseop.c 1.2 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -12,193 +12,315 @@ static	char sccsid[] = "@(#)pccaseop.c 1.1 %G%";
 #include "objfmt.h"
 #include "pcops.h"
 #include "pc.h"
+
     /*
+     *	structure for a case: 
+     *	    its constant label, line number (for errors), and location label.
+     */
+struct ct {
+    long	cconst;
+    int		cline;
+    int		clabel;
+};
+
+    /*
+     *	the P2FORCE operator puts its operand into a register.
+     *	these to keep from thinking of it as r0 all over.
+     */
+#define	FORCENAME	"r0"
+#define	FORCENUMBER	0
+
+    /*
+     *	given a tree for a case statement, generate code for it.
+     *	this computes the expression into a register,
+     *	puts down the code for each of the cases,
+     *	and then decides how to do the case switching.
      *	tcase	[0]	T_CASE
      *		[1]	lineof "case"
      *		[2]	expression
-     *		[3]	list of cased statements
+     *		[3]	list of cased statements:
      *			cstat	[0]	T_CSTAT
      *				[1]	lineof ":"
-     *				[2]	constant list
+     *				[2]	list of constant labels
      *				[3]	statement
      */
-
-struct ct {
-    long	clong;
-    int		cline;
-};
-
 pccaseop( tcase )
     int	*tcase;
-    {
-	struct nl	*exprtype;
-	struct nl	*rangetype;
-	long		low;
-	long		high;
-	long		exproff;
-	long		exprctype;
-	long		count;
-	long		*cstatlp;
-	long		*cstatp;
-	struct ct	*ctab;
-	long		endlabel;
-	long		nextlabel;
-	long		firsttime;
-	long		*casep;
-	long		i;
-	long		nr;
-	long		goc;
+{
+    struct nl	*exprtype;
+    struct nl	*rangetype;
+    long	low;
+    long	high;
+    long	exprctype;
+    long	swlabel;
+    long	endlabel;
+    long	label;
+    long	count;
+    long	*cstatlp;
+    long	*cstatp;
+    long	*casep;
+    struct ct	*ctab;
+    struct ct	*ctp;
+    long	i;
+    long	nr;
+    long	goc;
+    int		casecmp();
 
-	goc = gocnt;
-	    /*
-	     *	find out the type of the case expression
-	     */
-	line = tcase[1];
-	codeoff();
-	exprtype = rvalue( (int *) tcase[2] , NIL  , RREQ );
-	codeon();
-	if ( exprtype != NIL ) {
-	    if ( isnta( exprtype , "bcsi" ) ) {
-		error("Case selectors cannot be %ss" , nameof( exprtype ) );
+    goc = gocnt;
+	/*
+	 *  find out the type of the case expression
+	 *  even if the expression has errors (exprtype == NIL), continue.
+	 */
+    line = tcase[1];
+    exprtype = rvalue( (int *) tcase[2] , NIL  , RREQ );
+    if ( exprtype != NIL ) {
+	if ( isnta( exprtype , "bcsi" ) ) {
+	    error("Case selectors cannot be %ss" , nameof( exprtype ) );
+	    exprtype = NIL;
+	} else {
+	    if ( exprtype -> class != RANGE ) {
+		rangetype = exprtype -> type;
+	    } else {
+		rangetype = exprtype;
+	    }
+	    if ( rangetype == NIL ) {
 		exprtype = NIL;
 	    } else {
-		if ( exprtype -> class != RANGE ) {
-		    rangetype = exprtype -> type;
-		} else {
-		    rangetype = exprtype;
-		}
-		if ( rangetype == NIL ) {
-		    exprtype = NIL;
-		} else {
-		    low = rangetype -> range[0];
-		    high = rangetype -> range[1];
-		}
+		low = rangetype -> range[0];
+		high = rangetype -> range[1];
 	    }
-	}
-	if ( exprtype != NIL ) {
-		/*
-		 * allocate temporary for case expression
-		 */
-	    sizes[cbn].om_off -= sizeof( long );
-	    exproff = sizes[cbn].om_off;
-	    putlbracket( ftnno , -sizes[cbn].om_off );
-	    if ( sizes[cbn].om_off < sizes[cbn].om_max ) {
-		sizes[cbn].om_max = sizes[cbn].om_off;
-	    }
-		/*
-		 * compute and save the expression
-		 */
-	    exprctype = p2type( exprtype );
-	    putRV( 0 , cbn , exproff , P2INT );
-	    rvalue( (int *) tcase[2] , NIL  , RREQ );
-	    putop( P2ASSIGN , exprctype );
-	    putdot( filename , line );
-	}
-	    /*
-	     *	count the number of cases
-	     *	and allocate table for cases and lines
-	     */
-	count = 0;
-	for ( cstatlp = tcase[3] ; cstatlp != NIL ; cstatlp = cstatlp[2] ) {
-	    cstatp = cstatlp[1];
-	    if ( cstatp == NIL ) {
-		continue;
-	    }
-	    for ( casep = cstatp[2] ; casep != NIL ; casep = casep[2] ) {
-		count++;
-	    }
-	}
-	ctab = (struct ct *) malloc( count * sizeof( struct ct ) );
-	if ( ctab == (struct ct *) -1 ) {
-	    error("Ran out of memory (case)");
-	    pexit( DIED );
-	}
-	    /*
-	     * generate code for each case
-	     */
-	endlabel = getlab();
-	nextlabel = getlab();
-	count = 0;
-	nr = 1;
-	for ( cstatlp = tcase[3] ; cstatlp != NIL ; cstatlp = cstatlp[2] ) {
-	    cstatp = cstatlp[1];
-	    if ( cstatp == NIL ) {
-		continue;
-	    }
-	    line = cstatp[1];
-	    putlab( nextlabel );
-	    nextlabel = getlab();
-		/*
-		 * if it's not any of these, then go to next
-		 */
-	    firsttime = 1;
-	    for ( casep = cstatp[2] ; casep != NIL ; casep = casep[2] ) {
-		gconst( casep[1] );
-		if( exprtype == NIL || con.ctype == NIL ) {
-		    continue;
-		}
-		if ( incompat( con.ctype , exprtype , NIL ) ) {
-		    cerror("Case label type clashed with case selector expression type");
-		    continue;
-		}
-		if ( con.crval < low || con.crval > high ) {
-		    error("Case label out of range");
-		    continue;
-		}
-		ctab[ count ].clong = con.crval;
-		ctab[ count ].cline = line;
-		    /*
-		     *	check for duplicates
-		     */
-		for ( i = 0 ; i < count ; i++ ) {
-		    if ( ctab[ i ].clong == con.crval ) {
-			error("Multiply defined label in case, lines %d and %d"
-				, ctab[ i ].cline , line );
-		    }
-		}
-		putRV( 0 , cbn , exproff , exprctype , 0 );
-		putleaf( P2ICON , ctab[ count ].clong , 0 , exprctype , 0 );
-		putop( P2EQ , exprctype );
-		if ( ! firsttime ) {
-			/*
-			 * note the use of !! to get short circuiting
-			 */
-		    putop( P2OROR , P2CHAR );
-		}
-		firsttime = 0;
-	    }
-	    putleaf( P2ICON , nextlabel , 0 , P2INT , 0 );
-	    putop( P2CBRANCH , P2INT );
-	    putdot( filename , line );
-		/*
-		 * if we get here, we must be in this case
-		 */
-	    putcnt();
-	    level++;
-	    statement( cstatp[3] );
-	    nr &= noreach;
-	    noreach = 0;
-	    putjbr( endlabel );
-	    level--;
-	    if (gotos[cbn]) {
-		    ungoto();
-	    }
-	}
-	    /*
-	     *	default action is to call error
-	     */
-	putlab( nextlabel );
-	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_ERROR" );
-	putleaf( P2ICON , ECASE , 0 , P2INT , 0 );
-	putRV( 0 , cbn , exproff , P2INT );
-	putop( P2LISTOP , P2INT );
-	putop( P2CALL , P2INT );
-	putdot( filename , line );
-	putlab( endlabel );
-	noreach = nr;
-	if ( goc != gocnt ) {
-		putcnt();
 	}
     }
+    if ( exprtype != NIL ) {
+	    /*
+	     *	put expression into a register
+	     *	save its c-type and jump to the code to do the switch.
+	     */
+	putop( P2FORCE , P2INT );
+	putdot( filename , line );
+	exprctype = p2type( exprtype );
+	swlabel = getlab();
+	putjbr( swlabel );
+    }
+	/*
+	 *  count the number of cases
+	 *  and allocate table for cases, lines, and labels
+	 *  default case goes in ctab[0].
+	 */
+    count = 1;
+    for ( cstatlp = tcase[3] ; cstatlp != NIL ; cstatlp = cstatlp[2] ) {
+	cstatp = cstatlp[1];
+	if ( cstatp == NIL ) {
+	    continue;
+	}
+	for ( casep = cstatp[2] ; casep != NIL ; casep = casep[2] ) {
+	    count++;
+	}
+    }
+	/*
+	 */
+    ctab = (struct ct *) malloc( count * sizeof( struct ct ) );
+    if ( ctab == (struct ct *) 0 ) {
+	error("Ran out of memory (case)");
+	pexit( DIED );
+    }
+	/*
+	 *  pick up default label and label for after case statement.
+	 */
+    ctab[0].clabel = getlab();
+    endlabel = getlab();
+	/*
+	 *  generate code for each case
+	 *  filling in ctab for each.
+	 *  nr is for error if no case falls out bottom.
+	 */
+    nr = 1;
+    count = 0;
+    for ( cstatlp = tcase[3] ; cstatlp != NIL ; cstatlp = cstatlp[2] ) {
+	cstatp = cstatlp[1];
+	if ( cstatp == NIL ) {
+	    continue;
+	}
+	line = cstatp[1];
+	label = getlab();
+	for ( casep = cstatp[2] ; casep != NIL ; casep = casep[2] ) {
+	    gconst( casep[1] );
+	    if( exprtype == NIL || con.ctype == NIL ) {
+		continue;
+	    }
+	    if ( incompat( con.ctype , exprtype , NIL ) ) {
+		cerror("Case label type clashed with case selector expression type");
+		continue;
+	    }
+	    if ( con.crval < low || con.crval > high ) {
+		error("Case label out of range");
+		continue;
+	    }
+	    count++;
+	    ctab[ count ].cconst = con.crval;
+	    ctab[ count ].cline = line;
+	    ctab[ count ].clabel = label;
+	}
+	    /*
+	     *	put out the statement
+	     */
+	putlab( label );
+	putcnt();
+	level++;
+	statement( cstatp[3] );
+	nr &= noreach;
+	noreach = 0;
+	level--;
+	if (gotos[cbn]) {
+		ungoto();
+	}
+	putjbr( endlabel );
+    }
+	/*
+	 *	default action is to call error
+	 */
+    putlab( ctab[0].clabel );
+    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_ERROR" );
+    putleaf( P2ICON , ECASE , 0 , P2INT , 0 );
+    putleaf( P2REG , FORCENUMBER , 0 , P2INT , 0 );
+    putop( P2LISTOP , P2INT );
+    putop( P2CALL , P2INT );
+    putdot( filename , line );
+	/*
+	 *  sort the cases
+	 */
+    qsort( &ctab[1] , count , sizeof (struct ct) , casecmp );
+	/*
+	 *  check for duplicates
+	 */
+    for ( ctp = &ctab[1] ; ctp < &ctab[ count ] ; ctp++ ) {
+	if ( ctp[0].cconst == ctp[1].cconst ) {
+	    error("Muliply defined label in case, lines %d and %d" ,
+		    ctp[0].cline , ctp[1].cline );
+	}
+    }
+	/*
+	 *  choose a switch algorithm and implement it:
+	 *	direct switch	>= 1/3 full and >= 4 cases.
+	 *	binary switch	not direct switch and > 8 cases.
+	 *	ifthenelse	not direct or binary switch.
+	 */
+    putlab( swlabel );
+    if ( ctab[ count ].cconst - ctab[1].cconst < 3 * count && count >= 4 ) {
+	directsw( ctab , count );
+    } else if ( count > 8 ) {
+	binarysw( ctab , count );
+    } else {
+	itesw( ctab , count );
+    }
+    putlab( endlabel );
+    noreach = nr;
+    if ( goc != gocnt ) {
+	    putcnt();
+    }
+}
 
+    /*
+     *	direct switch
+     */
+directsw( ctab , count )
+    struct ct	*ctab;
+    int		count;
+{
+    int		fromlabel = getlab();
+    long	i;
+    long	j;
+
+    putprintf( "	casel	%s,$%d,$%d" , 0 , FORCENAME ,
+	    ctab[1].cconst , ctab[ count ].cconst - ctab[1].cconst );
+    putlab( fromlabel );
+    i = 1;
+    j = ctab[1].cconst;
+    while ( i <= count ) {
+	if ( j == ctab[ i ].cconst ) {
+	    putprintf( "	.word	" , 1 );
+	    putprintf( PREFIXFORMAT , 1 , LABELPREFIX , ctab[ i ].clabel );
+	    putprintf( "-" , 1 );
+	    putprintf( PREFIXFORMAT , 0 , LABELPREFIX , fromlabel );
+	    i++;
+	} else {
+	    putprintf( "	.word	" , 1 );
+	    putprintf( PREFIXFORMAT , 1 , LABELPREFIX , ctab[ 0 ].clabel );
+	    putprintf( "-" , 1 );
+	    putprintf( PREFIXFORMAT , 0 , LABELPREFIX , fromlabel );
+	}
+	j++;
+    }
+    putjbr( ctab[0].clabel );
+}
+
+    /*
+     *	binary switch
+     *	special case out default label and start recursion.
+     */
+binarysw( ctab , count )
+    struct ct	*ctab;
+    int		count;
+{
+    
+    bsrecur( ctab[0].clabel , &ctab[0] , count );
+}
+
+    /*
+     *	recursive log( count ) search.
+     */
+bsrecur( deflabel , ctab , count )
+    int		deflabel;
+    struct ct	*ctab;
+    int		count;
+{
+
+    if ( count <= 0 ) {
+	putprintf( "	jbr	L%d" , 0 , deflabel );
+	return;
+    } else if ( count == 1 ) {
+	putprintf( "	cmpl	%s,$%d" , 0 , FORCENAME , ctab[1].cconst );
+	putprintf( "	jeql	L%d" , 0 , ctab[1].clabel );
+	putprintf( "	jbr	L%d" , 0 , deflabel );
+	return;
+    } else {
+	int	half = ( count + 1 ) / 2;
+	int	gtrlabel = getlab();
+
+	putprintf( "	cmpl	%s,$%d" , 0 , FORCENAME , ctab[ half ].cconst );
+	putprintf( "	jeql	L%d" , 0 , ctab[ half ].clabel );
+	putprintf( "	jgtr	L%d" , 0 , gtrlabel );
+	bsrecur( deflabel , &ctab[0] , half - 1 );
+	putprintf( "L%d:" , 0 , gtrlabel );
+	bsrecur( deflabel , &ctab[ half ] , count - half );
+	return;
+    }
+}
+
+itesw( ctab , count )
+    struct ct	*ctab;
+    int		count;
+{
+    int	i;
+
+    for ( i = 1 ; i <= count ; i++ ) {
+	putprintf( "	cmpl	%s,$%d" , 0 , FORCENAME , ctab[ i ].cconst );
+	putprintf( "	jeql	L%d" , 0 , ctab[ i ].clabel );
+    }
+    putprintf( "	jbr	L%d" , 0 , ctab[0].clabel );
+    return;
+}
+int
+casecmp( this , that )
+    struct ct 	*this;
+    struct ct 	*that;
+{
+    if ( this -> cconst < that -> cconst ) {
+	return -1;
+    } else if ( this -> cconst > that -> cconst ) {
+	return 1;
+    } else {
+	return 0;
+    }
+}
 #endif PC
