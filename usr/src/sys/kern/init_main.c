@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	7.4 (Berkeley) %G%
+ *	@(#)init_main.c	7.5 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -27,6 +27,7 @@
 #include "clist.h"
 #include "protosw.h"
 #include "quota.h"
+#include "reboot.h"
 #include "../machine/reg.h"
 #include "../machine/cpu.h"
 
@@ -61,15 +62,6 @@ main(firstaddr)
 	 * set up system process 0 (swapper)
 	 */
 	p = &proc[0];
-#if defined(tahoe)
-#ifndef lint
-#define	initkey(which, p, index) \
-    which/**/_cache[index] = 1, which/**/_cnt[index] = 1; \
-    p->p_/**/which = index;
-	initkey(ckey, p, MAXCKEY);
-	initkey(dkey, p, MAXDKEY);
-#endif
-#endif
 	p->p_p0br = u.u_pcb.pcb_p0br;
 	p->p_szpt = 1;
 	p->p_addr = uaddr(p);
@@ -141,7 +133,7 @@ main(firstaddr)
 	kmstartup();
 #endif
 
-	fs = mountfs(rootdev, 0, (struct inode *)0);
+	fs = mountfs(rootdev, boothowto & RB_RDONLY, (struct inode *)0);
 	if (fs == 0)
 		panic("iinit");
 	bcopy("/", fs->fs_fsmnt, 2);
@@ -165,9 +157,6 @@ main(firstaddr)
 	u.u_smap = zdmap;
 
 	enablertclock();		/* enable realtime clock interrupts */
-#if defined(tahoe)
-	clk_enable = 1;			/* enable clock interrupt */
-#endif
 	/*
 	 * make init process
 	 */
