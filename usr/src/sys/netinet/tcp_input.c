@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.61	82/03/15	*/
+/*	tcp_input.c	1.62	82/03/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -351,6 +351,7 @@ trimthenstep6:
 	 */
 	if (so->so_state & SS_USERGONE) {
 		tcp_close(tp);
+		tp = 0;
 		goto dropwithreset;
 	}
 
@@ -402,6 +403,7 @@ trimthenstep6:
 	 */
 	if (tiflags & TH_SYN) {
 		tcp_drop(tp, ECONNRESET);
+		tp = 0;
 		goto dropwithreset;
 	}
 
