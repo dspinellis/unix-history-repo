@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.14 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -347,6 +347,7 @@ rebuildaliases(map, automatic)
 	bool automatic;
 {
 	FILE *af;
+	bool nolock = FALSE;
 	void (*oldsigint)();
 
 	if (!bitset(MCF_REBUILDABLE, map->map_class->map_cflags))
@@ -355,20 +356,28 @@ rebuildaliases(map, automatic)
 	/* try to lock the source file */
 	if ((af = fopen(map->map_file, "r+")) == NULL)
 	{
-		int saveerr = errno;
+		if (errno != EACCES || automatic ||
+		    (af = fopen(map->map_file, "r")) == NULL)
+		{
+			int saveerr = errno;
 
-		if (tTd(27, 1))
-			printf("Can't open %s: %s\n",
-				map->map_file, errstring(saveerr));
-		if (!automatic)
-			message("newaliases: cannot open %s: %s",
-				map->map_file, errstring(saveerr));
-		errno = 0;
-		return;
+			if (tTd(27, 1))
+				printf("Can't open %s: %s\n",
+					map->map_file, errstring(saveerr));
+			if (!automatic)
+				message("newaliases: cannot open %s: %s",
+					map->map_file, errstring(saveerr));
+			errno = 0;
+			return;
+		}
+		nolock = TRUE;
+		message("warning: cannot lock %s: %s",
+			map->map_file, errstring(errno));
 	}
 
 	/* see if someone else is rebuilding the alias file */
-	if (!lockfile(fileno(af), map->map_file, NULL, LOCK_EX|LOCK_NB))
+	if (!nolock &&
+	    !lockfile(fileno(af), map->map_file, NULL, LOCK_EX|LOCK_NB))
 	{
 		/* yes, they are -- wait until done */
 		message("Alias file %s is already being rebuilt",
