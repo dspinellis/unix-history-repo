@@ -1,0 +1,39 @@
+I've come up with these instructions to make your life easier.
+if you screw up and break things, don't blame me...
+
+			Chris Demetriou
+			cgd@agate.berkeley.edu
+
+(1) get BSD crypt from uunet:bsd-sources/lib/libc/gen/crypt.c
+(2) put it in /usr/src/lib/libc/gen/crypt.c
+(3) fix line 512 so it says: return(NULL);
+(3) edit /usr/src/lib/libc/gen/Makefile.inc so that it includes compiles
+	crypt.c instead of crypt_dummy.c
+(4) cd /usr/src/lib/libc ; make
+	OR
+    cd /usr/src/lib/libc
+    make crypt.o
+    cd obj
+    ar -d /usr/lib/libc.a crypt_dummy.o
+    ar -r /usr/lib/libc.a crypt.o
+    ranlib /usr/lib/libc.a
+(5) add -DDES to the CFLAGS of the makefile for the following utilities
+	(either by adding -DDES to the CFLAGS line of the Makefile, if
+	such a line already exists, or adding a line which says
+	"CFLAGS+=-DDES" near the top of the Makefile).
+
+	/usr/src/libexec/ftpd
+	/usr/src/usr.bin/login
+	/usr/src/usr.bin/passwd
+	/usr/src/usr.bin/su
+	/usr/src/usr.bin/lock
+	/usr/src/usr.bin/rlogin
+
+(MAKE SURE THAT THE ROOT PASSWORD IS SOMETHING THAT WILL ALLOW YOU TO
+LOG IN AFTER YOU ENABLE ENCRYPTION.  MAKING IT TEMPORARILY BLANK WILL DO,
+AS WILL RUNNING THE VARIOUS "make install"s, THEN *IMMEDIATELY* RUNNING
+passwd AS ROOT.)
+
+(6) recompile and reinstall those utilities.
+
+now it'll be happy!
