@@ -22,9 +22,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.33 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.34 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.33 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.34 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -358,7 +358,7 @@ again:
 
 	/* connection ok, put it into canonical form */
 	*outfile = fdopen(s, "w");
-	*infile = fdopen(s, "r");
+	*infile = fdopen(dup(s), "r");
 
 	return (EX_OK);
 }

@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -607,6 +607,8 @@ sendoff(e, m, pvp, ctladdr)
 	putline("\n", mfile, m);
 	(*e->e_putbody)(mfile, m, e);
 	(void) fclose(mfile);
+	if (rfile != NULL)
+		(void) fclose(rfile);
 
 	i = endmailer(pid, pvp[0]);
 
@@ -920,7 +922,8 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	{
 		(void) close(rpvect[1]);
 		rfile = fdopen(rpvect[0], "r");
-	}
+	} else
+		rfile = NULL;
 
 	*pmfile = mfile;
 	*prfile = rfile;
