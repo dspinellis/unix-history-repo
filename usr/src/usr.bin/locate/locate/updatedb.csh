@@ -1,6 +1,6 @@
-#! /bin/sh
+#!/bin/csh -f
 #
-#	@(#)updatedb.csh	4.1	(Berkeley)	83/07/21
+#	@(#)updatedb.csh	4.2	(Berkeley)	83/07/21
 #
 set LIBDIR = /usr/lib/find	# for subprograms
 set FINDHONCHO = root		# for error messages
