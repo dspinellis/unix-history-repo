@@ -6,11 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disks.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)disks.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/buf.h>
+
 #include <nlist.h>
 #include <ctype.h>
 #include <paths.h>
@@ -22,7 +23,7 @@ static char sccsid[] = "@(#)disks.c	5.12 (Berkeley) %G%";
 static void dkselect __P((char *, int, int []));
 static int read_names __P((void));
 
-static struct nlist nlst[] = {
+static struct nlist nl[] = {
 #define	X_DK_NDRIVE	0
 	{ "_dk_ndrive" },
 #define	X_DK_WPMS	1
@@ -41,13 +42,18 @@ static struct nlist nlst[] = {
 #define	X_VBDINIT	(X_DK_WPMS+1)
 	{ "_vbdinit" },
 #endif
+#ifdef hp300
+#define X_HPDINIT       (X_DK_WPMS+1)
+        { "_hp_dinit" }, 
+#endif
 	{ "" },
 };
 
-int dk_ndrive;
-int *dk_select;
 float *dk_mspw;
+int dk_ndrive, *dk_select;
 char **dr_name;
+
+#include "names.c"					/* XXX */
 
 int
 dkinit()
@@ -60,11 +66,11 @@ dkinit()
 	if (once)
 		return(1);
 
-	if (kvm_nlist(kd, nlst)) {
-		nlisterr(nlst);
+	if (kvm_nlist(kd, nl)) {
+		nlisterr(nl);
 		return(0);
 	}
-	if (nlst[X_DK_NDRIVE].n_value == 0) {
+	if (nl[X_DK_NDRIVE].n_value == 0) {
 		error("dk_ndrive undefined in kernel");
 		return(0);
 	}
@@ -124,133 +130,6 @@ dkcmd(cmd, args)
 	}
 	return (0);
 }
-
-#define steal(where, var) \
-	KREAD(where, &var, sizeof var)
-
-#ifdef vax
-#include <vax/uba/ubavar.h>
-#include <vax/mba/mbavar.h>
-
-static int
-read_names()
-{
-	struct mba_device mdev;
-	struct mba_driver mdrv;
-	short two_char;
-	char *cp = (char *)&two_char;
-	struct uba_device udev;
-	struct uba_driver udrv;
-	register struct mba_device *mp;
-	register struct uba_device *up;
-
-	mp = (struct mba_device *)nlst[X_MBDINIT].n_value;
-	up = (struct uba_device *)nlst[X_UBDINIT].n_value;
-	if (mp == 0 && up == 0) {
-		error("Disk init info not in namelist\n");
-		return(0);
-	}
-	if (mp) for (;;) {
-		steal(mp++, mdev);
-		if (mdev.mi_driver == 0)
-			break;
-		if (mdev.mi_dk < 0 || mdev.mi_alive == 0)
-			continue;
-		steal(mdev.mi_driver, mdrv);
-		steal(mdrv.md_dname, two_char);
-		sprintf(dr_name[mdev.mi_dk], "%c%c%d",
-		    cp[0], cp[1], mdev.mi_unit);
-	}
-	if (up) for (;;) {
-		steal(up++, udev);
-		if (udev.ui_driver == 0)
-			break;
-		if (udev.ui_dk < 0 || udev.ui_alive == 0)
-			continue;
-		steal(udev.ui_driver, udrv);
-		steal(udrv.ud_dname, two_char);
-		sprintf(dr_name[udev.ui_dk], "%c%c%d",
-		    cp[0], cp[1], udev.ui_unit);
-	}
-	return(1);
-}
-#endif
-
-#ifdef sun
-#include <sundev/mbvar.h>
-
-static int
-read_names()
-{
-	static int once = 0;
-	struct mb_device mdev;
-	struct mb_driver mdrv;
-	short two_char;
-	char *cp = (char *) &two_char;
-	register struct mb_device *mp;
-
-	mp = (struct mb_device *)nlst[X_MBDINIT].n_value;
-	if (mp == 0) {
-		error("Disk init info not in namelist\n");
-		return(0);
-	}
-	for (;;) {
-		steal(mp++, mdev);
-		if (mdev.md_driver == 0)
-			break;
-		if (mdev.md_dk < 0 || mdev.md_alive == 0)
-			continue;
-		steal(mdev.md_driver, mdrv);
-		steal(mdrv.mdr_dname, two_char);
-		sprintf(dr_name[mdev.md_dk], "%c%c%d",
-		    cp[0], cp[1], mdev.md_unit);
-	}
-	return(1);
-}
-#endif
-
-#ifdef tahoe
-#include <tahoe/vba/vbavar.h>
-
-/*
- * Read the drive names out of kmem.
- */
-static int
-read_names()
-{
-	struct vba_device udev, *up;
-	struct vba_driver udrv;
-	short two_char;
-	char *cp = (char *)&two_char;
-
-	up = (struct vba_device *) nlst[X_VBDINIT].n_value;
-	if (up == 0) {
-		error("vmstat: Disk init info not in namelist\n");
-		return (0);
-	}
-	for (;;) {
-		steal(up++, udev);
-		if (udev.ui_driver == 0)
-			break;
-		if (udev.ui_dk < 0 || udev.ui_alive == 0)
-			continue;
-		steal(udev.ui_driver, udrv);
-		steal(udrv.ud_dname, two_char);
-		sprintf(dr_name[udev.ui_dk], "%c%c%d",
-		     cp[0], cp[1], udev.ui_unit);
-	}
-	return (1);
-}
-#endif
-
-#ifdef hp300
-static int
-read_names()
-{
-	/* XXX */
-	return (1);
-}
-#endif
 
 static void
 dkselect(args, truefalse, selections)
