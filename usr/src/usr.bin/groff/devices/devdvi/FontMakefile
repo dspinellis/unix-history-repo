@@ -1,0 +1,74 @@
+#Copyright (C) 1989, 1990, 1991 Free Software Foundation, Inc.
+#     Written by James Clark (jjc@jclark.uucp)
+#
+#This file is part of groff.
+#
+#groff is free software; you can redistribute it and/or modify it under
+#the terms of the GNU General Public License as published by the Free
+#Software Foundation; either version 1, or (at your option) any later
+#version.
+#
+#groff is distributed in the hope that it will be useful, but WITHOUT ANY
+#WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+#for more details.
+#
+#You should have received a copy of the GNU General Public License along
+#with groff; see the file LICENSE.  If not, write to the Free Software
+#Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+TFMDIR=tfm
+GFDIR=gf
+TFMTODIT=../tfmtodit
+FONTS=R I B BI CW MI S EX H HI HB
+SPECIALFLAG=-s
+
+all: $(FONTS)
+
+# R is special because it contains \(pl \(eq
+
+R: texr.map
+	$(TFMTODIT) $(SPECIALFLAG) -g $(GFDIR)/cmr10.300gf \
+	  $(TFMDIR)/cmr10.tfm texr.map $@
+
+# I is special because it contains \(Po
+
+I: texi.map
+	$(TFMTODIT) $(SPECIALFLAG) -g $(GFDIR)/cmti10.300gf \
+	  $(TFMDIR)/cmti10.tfm texi.map $@
+
+B: texb.map
+	$(TFMTODIT) -g $(GFDIR)/cmbx10.300gf \
+	  $(TFMDIR)/cmbx10.tfm texb.map $@
+
+BI: texi.map
+	$(TFMTODIT) -g $(GFDIR)/cmbxti10.300gf \
+	  $(TFMDIR)/cmbxti10.tfm texi.map $@
+
+# CW is special because it contains "
+
+CW: textt.map
+	$(TFMTODIT) $(SPECIALFLAG) $(TFMDIR)/cmtt10.tfm textt.map $@
+
+MI: texmi.map
+	$(TFMTODIT) $(SPECIALFLAG) -k 0177 $(TFMDIR)/cmmi10.tfm texmi.map $@
+
+S: texsy.map
+	$(TFMTODIT) $(SPECIALFLAG) -k 060 $(TFMDIR)/cmsy10.tfm texsy.map $@
+
+
+EX: texex.map
+	$(TFMTODIT) $(SPECIALFLAG) $(TFMDIR)/cmex10.tfm texex.map $@
+
+H: texr.map
+	$(TFMTODIT) -g $(GFDIR)/cmss10.300gf $(TFMDIR)/cmss10.tfm texb.map $@
+
+HB: texr.map
+	$(TFMTODIT) -g $(GFDIR)/cmssbx10.300gf \
+	  $(TFMDIR)/cmssbx10.tfm texb.map $@
+
+HI: texr.map
+	$(TFMTODIT) -g $(GFDIR)/cmssi10.300gf \
+	  $(TFMDIR)/cmssi10.tfm texb.map $@
+
+$(FONTS): $(TFMTODIT)
