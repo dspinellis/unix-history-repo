@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_input.c	6.5 (Berkeley) %G%
+ *	@(#)ns_input.c	6.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -44,13 +44,17 @@ struct ifqueue	nsintrq;
 int	nsqmaxlen = IFQ_MAXLEN;
 
 int	idpcksum = 1;
+long	ns_pexseq;
 
 ns_init()
 {
+	extern struct timeval time;
+
 	ns_broadhost = * (union ns_host *) allones;
 	nspcb.nsp_next = nspcb.nsp_prev = &nspcb;
 	nsrawpcb.nsp_next = nsrawpcb.nsp_prev = &nsrawpcb;
 	nsintrq.ifq_maxlen = nsqmaxlen;
+	ns_pexseq = time.tv_usec;
 }
 
 /*
@@ -130,6 +134,7 @@ next:
 		idp->idp_sum = 0;
 		if (i != (idp->idp_sum = ns_cksum(m,len))) {
 			idpstat.idps_badsum++;
+			idp->idp_sum = i;
 			if (ns_hosteqnh(ns_thishost, idp->idp_dna.x_host))
 				error = NS_ERR_BADSUM;
 			else
@@ -167,39 +172,25 @@ next:
 		idp_forward(idp);
 		goto next;
 	}
-
-	/*
-	 * Locate pcb for datagram.
-	 */
-	nsp = ns_pcblookup(&idp->idp_sna, idp->idp_dna.x_port, NS_WILDCARD);
-
+	if (oddpacketp) {
+		m_adj(m0, -1);
+	}
 
 	 /*
 	  * Switch out to protocol's input routine.
 	  */
 
-	nsintr_swtch++;
-	if (nsp) {
-		if (oddpacketp) {
-			m_adj(m0, -1);
-		}
-		switch (idp->idp_pt) {
+	switch (idp->idp_pt) {
 
-			case NSPROTO_SPP:
-				spp_input(m,nsp);
-				break;
+		case NSPROTO_SPP:
+			spp_input(m);
+			break;
 
-			case NSPROTO_ERROR:
-				ns_err_input(m);
-				break;
-			default:
-				idp_input(m,nsp);
-		}
-	} else {
-		/* don't send ERROR response for multicast packet */
-		if (idp->idp_dna.x_host.c_host[0] & 1)
-			goto bad;
-		ns_error(m, NS_ERR_NOSOCK, 0);
+		case NSPROTO_ERROR:
+			ns_err_input(m);
+			break;
+		default:
+			idp_input(m, 0);
 	}
 	goto next;
 
@@ -216,11 +207,15 @@ u_char nsctlerrmap[PRC_NCMDS] = {
 	0,		0,		0,		0
 };
 
+idp_donosocks = 1;
+
 idp_ctlinput(cmd, arg)
 	int cmd;
 	caddr_t arg;
 {
 	struct ns_addr *ns;
+	struct nspcb *nsp;
+	struct ns_errp *errp;
 	int idp_abort();
 	int type;
 
@@ -234,15 +229,22 @@ idp_ctlinput(cmd, arg)
 	else if (cmd == PRC_HOSTDEAD || cmd == PRC_HOSTUNREACH)
 		ns = (struct ns_addr *)arg;
 	else {
-		ns = &((struct ns_errp *)arg)->ns_err_idp.idp_dna;
-		type = ((struct ns_errp *)arg)->ns_err_num;
+		errp = (struct ns_errp *)arg;
+		ns = &errp->ns_err_idp.idp_dna;
+		type = errp->ns_err_num;
 		type = ntohs(type);
 	}
 	switch (type) {
 
 	case NS_ERR_UNREACH_HOST:
-	case NS_ERR_NOSOCK:
 		ns_pcbnotify(ns, (int)nsctlerrmap[cmd], idp_abort, 0);
+		break;
+
+	case NS_ERR_NOSOCK:
+		nsp = ns_pcblookup(ns, errp->ns_err_idp.idp_sna.x_port,
+			NS_WILDCARD);
+		if(nsp && idp_donosocks && ! ns_nullhost(nsp->nsp_faddr))
+			idp_drop(nsp, (int)nsctlerrmap[cmd]);
 	}
 }
 
