@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	4.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	4.24 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -65,8 +65,6 @@ char **argv;
 {
 	register i;
 
-	mktemp(lettmp);
-	unlink(lettmp);
 	my_name = getlogin();
 	if (my_name == NULL || *my_name == '\0') {
 		struct passwd *pwent;
@@ -80,8 +78,9 @@ char **argv;
 		done();
 	for (i=SIGHUP; i<=SIGTERM; i++)
 		setsig(i, delex);
-	tmpf = fopen(lettmp, "w+r");
-	if (tmpf == NULL)
+	i = mkstemp(lettmp);
+	tmpf = fdopen(i, "r+w");
+	if (i < 0 || tmpf == NULL)
 		panic("mail: %s: cannot open for writing", lettmp);
 	/*
 	 * This protects against others reading mail from temp file and
