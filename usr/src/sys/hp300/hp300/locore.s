@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.66 92/12/22$
  *
- *	@(#)locore.s	7.24 (Berkeley) %G%
+ *	@(#)locore.s	7.25 (Berkeley) %G%
  */
 
 /*
@@ -1333,25 +1333,24 @@ ENTRY(copyin)
 Lcieven:
 	movl	a1,d0
 	btst	#0,d0			| dest address odd?
-	jne	Lcibyte			| yes, must copy by bytes
+	jne	Lcibloop		| yes, must copy by bytes
 	movl	d2,d0			| no, get count
 	lsrl	#2,d0			| convert to longwords
-	jeq	Lcibyte			| no longwords, copy bytes
-	subql	#1,d0			| set up for dbf
+	jeq	Lcibloop		| no longwords, copy bytes
 Lcilloop:
 	movsl	a0@+,d1			| get a long
 	nop
 	movl	d1,a1@+			| put a long
-	dbf	d0,Lcilloop		| til done
+	subql	#1,d0
+	jne	Lcilloop		| til done
 	andl	#3,d2			| what remains
 	jeq	Lcidone			| all done
-Lcibyte:
-	subql	#1,d2			| set up for dbf
 Lcibloop:
 	movsb	a0@+,d1			| get a byte
 	nop
 	movb	d1,a1@+			| put a byte
-	dbf	d2,Lcibloop		| til done
+	subql	#1,d2
+	jne	Lcibloop		| til done
 Lcidone:
 	moveq	#0,d0			| success
 Lciexit:
@@ -1383,25 +1382,24 @@ ENTRY(copyout)
 Lcoeven:
 	movl	a1,d0
 	btst	#0,d0			| dest address odd?
-	jne	Lcobyte			| yes, must copy by bytes
+	jne	Lcobloop		| yes, must copy by bytes
 	movl	d2,d0			| no, get count
 	lsrl	#2,d0			| convert to longwords
-	jeq	Lcobyte			| no longwords, copy bytes
-	subql	#1,d0			| set up for dbf
+	jeq	Lcobloop		| no longwords, copy bytes
 Lcolloop:
 	movl	a0@+,d1			| get a long
 	movsl	d1,a1@+			| put a long
 	nop
-	dbf	d0,Lcolloop		| til done
+	subql	#1,d0
+	jne	Lcolloop		| til done
 	andl	#3,d2			| what remains
 	jeq	Lcodone			| all done
-Lcobyte:
-	subql	#1,d2			| set up for dbf
 Lcobloop:
 	movb	a0@+,d1			| get a byte
 	movsb	d1,a1@+			| put a byte
 	nop
-	dbf	d2,Lcobloop		| til done
+	subql	#1,d2
+	jne	Lcobloop		| til done
 Lcodone:
 	moveq	#0,d0			| success
 Lcoexit:
