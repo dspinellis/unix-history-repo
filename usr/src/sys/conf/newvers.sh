@@ -1,12 +1,11 @@
 #!/bin/sh -
 #
-# Copyright (c) 1984,1986,1990,1993 The Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1984, 1986, 1990, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)newvers.sh	8.1 (Berkeley) %G%
-#
+#	@(#)newvers.sh	7.8 (Berkeley) %G%
 
 if [ ! -r version ]
 then
