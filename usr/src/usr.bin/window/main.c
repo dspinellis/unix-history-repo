@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.6 83/08/25";
+static	char *sccsid = "@(#)main.c	3.7 83/08/26";
 #endif
 
 #include "defs.h"
@@ -17,6 +17,7 @@ char **argv;
 	register char *p;
 	char fflag = 0;
 	char dflag = 0;
+	char xflag = 0;
 	int wwchild();
 	int imask;
 	char *rindex();
@@ -45,6 +46,9 @@ char **argv;
 			case 'D':
 				debug++;
 				break;
+			case 'x':
+				xflag++;
+				break;
 			default:
 				usage();
 			}
@@ -63,10 +67,12 @@ char **argv;
 		fprintf("Can't do windows on this terminal.\n");
 		exit(1);
 	}
-	if (debug) {
+	if (debug)
 		wwnewtty.ww_tchars.t_quitc = wwoldtty.ww_tchars.t_quitc;
 		wwsettty(0, &wwnewtty);
 	}
+	if (debug || xflag)
+		(void) wwsettty(0, &wwnewtty);
 	if ((cmdwin = wwopen(WW_NONE, 0, 1, wwncol, 0, 0)) == 0) {
 		fflush(stdout);
 		fprintf(stderr, "Can't open command window.\r\n");
