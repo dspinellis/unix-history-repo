@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ccitt_proto.c	7.7 (Berkeley) %G%
+ *	@(#)ccitt_proto.c	7.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -28,10 +28,23 @@
 extern	struct domain ccittdomain;
 #define DOMAIN &ccittdomain
 
-int	hd_output (), hd_ctlinput (), hd_init (), hd_timer ();
-int	pk_usrreq (), pk_timer (), pk_init (), pk_ctloutput ();
+#ifdef LLC
+int	llc_output(), llc_ctlinput(), llc_init(), llc_timer();
+#endif
+#ifdef HDLC
+int	hd_output(), hd_ctlinput(), hd_init(), hd_timer();
+#endif
+int	pk_usrreq(), pk_timer(), pk_init(), pk_ctloutput();
+int	pk_input(), pk_ctlinput();
 
 struct protosw ccittsw[] = {
+#ifdef LLC
+ {	0,		DOMAIN,		IEEEPROTO_802LLC,0,
+	0,		llc_output,	llc_ctlinput,	0,
+	0,
+	llc_init,	0,	 	llc_timer,	0,
+ },
+#endif
 #ifdef HDLC
  {	0,		DOMAIN,		CCITTPROTO_HDLC,0,
 	0,		hd_output,	hd_ctlinput,	0,
@@ -40,7 +53,7 @@ struct protosw ccittsw[] = {
  },
 #endif
  {	SOCK_STREAM,	DOMAIN,		CCITTPROTO_X25,	PR_CONNREQUIRED|PR_ATOMIC|PR_WANTRCVD,
-	0,		0,		0,		pk_ctloutput,
+	pk_input,	0,		pk_ctlinput,	pk_ctloutput,
 	pk_usrreq,
 	pk_init,	0,		pk_timer,	0,
  }
