@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ether.h	7.3 (Berkeley) %G%
+ *	@(#)if_ether.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -85,7 +85,8 @@ struct	arptab {
 };
 
 #ifdef	KERNEL
-u_char etherbroadcastaddr[6];
+u_char	etherbroadcastaddr[6];
 struct	arptab *arptnew();
-char *ether_sprintf();
+int	ether_output(), ether_input();
+char	*ether_sprintf();
 #endif

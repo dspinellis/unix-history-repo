@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ether.c	7.8 (Berkeley) %G%
+ *	@(#)if_ether.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -134,6 +134,7 @@ arpwhohas(ac, addr)
 	   sizeof(ea->arp_spa));
 	bcopy((caddr_t)addr, (caddr_t)ea->arp_tpa, sizeof(ea->arp_tpa));
 	sa.sa_family = AF_UNSPEC;
+	sa.sa_len = sizeof(sa);
 	(*ac->ac_if.if_output)(&ac->ac_if, m, &sa);
 }
 
@@ -322,9 +323,9 @@ in_arpinput(ac, m)
 		goto out;
 	}
 	if (isaddr.s_addr == myaddr.s_addr) {
-		log(LOG_ERR, "%s: %s\n",
-			"duplicate IP address!! sent from ethernet address",
-			ether_sprintf(ea->arp_sha));
+		log(LOG_ERR,
+		   "duplicate IP address %x!! sent from ethernet address: %s\n",
+		   ntohl(isaddr.s_addr), ether_sprintf(ea->arp_sha));
 		itaddr = myaddr;
 		if (op == ARPOP_REQUEST)
 			goto reply;
@@ -421,6 +422,7 @@ reply:
 	    sizeof(eh->ether_dhost));
 	eh->ether_type = ETHERTYPE_ARP;
 	sa.sa_family = AF_UNSPEC;
+	sa.sa_len = sizeof(sa);
 	(*ac->ac_if.if_output)(&ac->ac_if, m, &sa);
 	if (mcopy) {
 		ea = mtod(mcopy, struct ether_arp *);
@@ -500,10 +502,21 @@ arpioctl(cmd, data)
 	register struct sockaddr_in *sin;
 	int s;
 
+	sin = (struct sockaddr_in *)&ar->arp_ha;
+#if defined(COMPAT_43) && BYTE_ORDER != BIG_ENDIAN
+	if (sin->sin_family == 0 && sin->sin_len < 16)
+		sin->sin_family = sin->sin_len;
+#endif
+	sin->sin_len = sizeof(ar->arp_ha);
+	sin = (struct sockaddr_in *)&ar->arp_pa;
+#if defined(COMPAT_43) && BYTE_ORDER != BIG_ENDIAN
+	if (sin->sin_family == 0 && sin->sin_len < 16)
+		sin->sin_family = sin->sin_len;
+#endif
+	sin->sin_len = sizeof(ar->arp_pa);
 	if (ar->arp_pa.sa_family != AF_INET ||
 	    ar->arp_ha.sa_family != AF_UNSPEC)
 		return (EAFNOSUPPORT);
-	sin = (struct sockaddr_in *)&ar->arp_pa;
 	s = splimp();
 	ARPTAB_LOOK(at, sin->sin_addr.s_addr);
 	if (at == NULL) {		/* not found */
@@ -551,8 +564,13 @@ arpioctl(cmd, data)
 		break;
 
 	case SIOCGARP:		/* get entry */
+	case OSIOCGARP:
 		bcopy((caddr_t)at->at_enaddr, (caddr_t)ar->arp_ha.sa_data,
 		    sizeof(at->at_enaddr));
+#ifdef COMPAT_43
+		if (cmd == OSIOCGARP)
+			*(u_short *)&ar->arp_ha = ar->arp_ha.sa_family;
+#endif
 		ar->arp_flags = at->at_flags;
 		break;
 	}
