@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: ite.c 1.1 90/07/09$
  *
- *	@(#)ite.c	7.7 (Berkeley) %G%
+ *	@(#)ite.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -83,7 +83,7 @@ struct  tty *kbd_tty = NULL;
 struct	tty ite_tty[NITE];
 struct  ite_softc ite_softc[NITE];
 
-int	itestart();
+void	itestart();
 extern	int ttrstrt();
 extern	struct tty *constty;
 
@@ -276,6 +276,7 @@ iteioctl(dev, cmd, addr, flag)
 	return (ENOTTY);
 }
 
+void
 itestart(tp)
 	register struct tty *tp;
 {
@@ -292,7 +293,7 @@ itestart(tp)
 	if (cc <= tp->t_lowat) {
 		if (tp->t_state & TS_ASLEEP) {
 			tp->t_state &= ~TS_ASLEEP;
-			wakeup(&tp->t_outq);
+			wakeup((caddr_t)&tp->t_outq);
 		}
 		if (tp->t_wsel) {
 			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
