@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.2	(Berkeley)	82/12/04
+#	@(#)Makefile	4.3	(Berkeley)	82/12/15
 #
 #	The system has two monitoring schemes, utilizing either ``prof''
 #	or ``gprof''. DFLMON determines the default profiler; mon.o
@@ -15,7 +15,7 @@ libc.a libc_p.a: csu sys gen stdio net
 	cd gen; make
 	cd stdio; make
 	cd net; make
-	mkdir tmp
+	-mkdir tmp
 	cd tmp; ar x ../sys/syslib
 	cd tmp; ar x ../gen/genlib
 	cd tmp; ar x ../stdio/stdiolib
