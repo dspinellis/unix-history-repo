@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -83,6 +83,7 @@ __rec_open(fname, flags, mode, openinfo)
 		t->bt_reof = 1;
 	} else
 		t->bt_reof = 0;
+	t->bt_rcursor = 0;
 
 	/*
 	 * In 4.4BSD stat(2) returns true for ISSOCK on pipes.  Until
