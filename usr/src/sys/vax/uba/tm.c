@@ -1,6 +1,7 @@
-/*	tm.c	4.34	81/04/09	*/
+/*	tm.c	4.35	81/04/14	*/
 
 #include "te.h"
+#include "ts.h"
 #if NTM > 0
 /*
  * TM11/TE10 tape driver
@@ -113,6 +114,15 @@ int	tmgapsdcnt;		/* DEBUG */
 #define	SCOM	3		/* sending control command */
 #define	SREW	4		/* sending a drive rewind */
 
+#if NTS > 0
+/*
+ * Kludge to get around fact that we don't really
+ * check if a ts is there... if there are both tm's and ts's
+ * declared in the system, then this driver sets havetm to 1
+ * if it finds a tm, and ts just pretends there isn't a ts.
+ */
+int	havetm = 0;
+#endif
 /*
  * Determine if there is a controller for
  * a tm at address reg.  Our goal is to make the
@@ -167,6 +177,9 @@ tmattach(ui)
 	struct uba_device *ui;
 {
 
+#if NTS > 0
+	havetm = 1;
+#endif
 	/*
 	 * Tetotm is used in TMUNIT to index the ctmbuf and rtmbuf
 	 * arrays given a te unit number.
