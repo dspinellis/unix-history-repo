@@ -4,7 +4,7 @@
 # include <sys/timeb.h>
 # endif
 
-static char SccsId[] = "@(#)arpadate.c	3.4	%G%";
+static char SccsId[] = "@(#)arpadate.c	3.5	%G%";
 
 /*
 **  ARPADATE -- Create date in ARPANET format
@@ -101,23 +101,6 @@ arpadate(ud)
 
 	q = b;
 
-	p = NULL;		/* Mon */
-	for (c = DowTab; c->old != NULL; c++)
-	{
-		if (strncmp(&ud[0], c->old, 3) == 0)
-		{
-			p = c->new;
-			break;
-		}
-	}
-	if (p != NULL)
-	{
-		while (*p != '\0')
-			*q++ = *p++;
-		*q++ = ',';
-		*q++ = ' ';
-	}
-
 	p = &ud[8];		/* 16 */
 	if (*p == ' ')
 		p++;
@@ -155,7 +138,7 @@ arpadate(ud)
 	*q++ = ' ';
 
 	p = &ud[11];		/* 01:03:52 */
-	for (i = 8; i > 0; i--)
+	for (i = 5; i > 0; i--)
 		*q++ = *p++;
 
 				/* -PST or -PDT */
@@ -187,6 +170,24 @@ arpadate(ud)
 		*q++ = *p++;
 		*q++ = *p++;
 		*q++ = *p++;
+	}
+
+	p = NULL;		/* Mon */
+	for (c = DowTab; c->old != NULL; c++)
+	{
+		if (strncmp(&ud[0], c->old, 3) == 0)
+		{
+			p = c->new;
+			break;
+		}
+	}
+	if (p != NULL)
+	{
+		*q++ = ' ';
+		*q++ = '(';
+		while (*p != '\0')
+			*q++ = *p++;
+		*q++ = ')';
 	}
 
 	*q = '\0';
