@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_descrip.c	7.4 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -68,24 +68,26 @@ dup2()
 		int	i, j;
 	} *uap = (struct a *) u.u_ap;
 	register struct file *fp;
+	int error;
 
 	if ((unsigned)uap->i >= NOFILE || (fp = u.u_ofile[uap->i]) == NULL)
 		RETURN (EBADF);
-	if (uap->j < 0 || uap->j >= NOFILE) {
-		u.u_error = EBADF;
-		return;
-	}
+	if (uap->j < 0 || uap->j >= NOFILE)
+		RETURN (EBADF);
 	u.u_r.r_val1 = uap->j;
 	if (uap->i == uap->j)
-		return;
+		RETURN (0);
 	if (u.u_ofile[uap->j]) {
 		if (u.u_pofile[uap->j] & UF_MAPPED)
 			munmapfd(uap->j);
-		closef(u.u_ofile[uap->j]);
-		if (u.u_error)
-			return;
+		error = closef(u.u_ofile[uap->j]);
 	}
 	dupit(uap->j, fp, u.u_pofile[uap->i] &~ UF_EXCLOSE);
+	/*
+	 * dup2() must succeed even though the close had an error.
+	 */
+	error = 0;		/* XXX */
+	RETURN (error);
 }
 
 dupit(fd, fp, flags)
@@ -245,8 +247,7 @@ close()
 	while (u.u_lastfile >= 0 && u.u_ofile[u.u_lastfile] == NULL)
 		u.u_lastfile--;
 	*pf = 0;
-	closef(fp);
-	/* WHAT IF u.u_error ? */
+	RETURN (closef(fp));
 }
 
 fstat()
@@ -358,18 +359,20 @@ slot:
 closef(fp)
 	register struct file *fp;
 {
+	int error;
 
 	if (fp == NULL)
-		return;
+		return (0);
 	if (fp->f_count > 1) {
 		fp->f_count--;
-		return;
+		return (0);
 	}
 	if (fp->f_count < 1)
 		panic("closef: count < 1");
-	(*fp->f_ops->fo_close)(fp);
+	error = (*fp->f_ops->fo_close)(fp);
 	crfree(fp->f_cred);
 	fp->f_count = 0;
+	return (error);
 }
 
 /*
