@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)clri.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)clri.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -37,7 +37,8 @@ main(argc, argv)
 	register struct dinode *ip;
 	register int fd;
 	struct dinode ibuf[MAXBSIZE / sizeof (struct dinode)];
-	long generation, offset, bsize;
+	long generation, bsize;
+	off_t offset;
 	int inonum;
 	char sblock[SBSIZE];
 
@@ -51,7 +52,7 @@ main(argc, argv)
 	/* get the superblock. */
 	if ((fd = open(fs, O_RDWR, 0)) < 0)
 		error();
-	if (lseek(fd, SBLOCK * DEV_BSIZE, SEEK_SET) < 0)
+	if (lseek(fd, (off_t)(SBLOCK * DEV_BSIZE), SEEK_SET) < 0)
 		error();
 	if (read(fd, sblock, sizeof(sblock)) != sizeof(sblock)) {
 		(void)fprintf(stderr,
@@ -98,7 +99,7 @@ main(argc, argv)
 		ip->di_gen = generation;
 
 		/* backup and write the block */
-		if (lseek(fd, -bsize, SEEK_CUR) < 0)
+		if (lseek(fd, (off_t)-bsize, SEEK_CUR) < 0)
 			error();
 		if (write(fd, (char *)ibuf, bsize) != bsize)
 			error();
