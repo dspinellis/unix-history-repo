@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cico.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cico.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -103,6 +103,12 @@ register char *argv[];
 		case 'd':
 			Spool = &argv[1][2];
 			break;
+#ifdef TCPNET
+		case 'v':
+			Unet = 1;
+			break;
+#endif TCPNET
+
 #ifdef PROTODEBUG
 		case 'E':
 			Errorrate = atoi(&argv[1][2]);

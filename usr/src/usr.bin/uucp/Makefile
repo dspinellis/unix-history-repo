@@ -1,4 +1,4 @@
-#	Makefile	5.5	83/07/18
+#	Makefile	5.6	84/08/30
 #
 # This version expects the 4.2BSD directory reading routines to
 # located in libc.a.  If they aren't, augment LIBS.  Also, LIBS
@@ -8,12 +8,12 @@
 # Common object files are assembled into a library {uulib.a}
 #
 ALL=	uucp uux uuxqt uucico uulog uuclean uuname uupoll uusnap \
-	uuencode uudecode uusend
+	uuencode uudecode uusend uucpd
 # Common object files placed in uulib.a
 COMMON=	anlwrk.o anyread.o assert.o cfgets.o chkpth.o \
 	cpmv.o expfile.o gename.o getargs.o getopt.o getprm.o \
 	getpw.o getpwinfo.o gio.o gnamef.o gnxseq.o gwd.o imsg.o \
-	index.o lastpart.o logent.o mailst.o pk0.o pk1.o prefix.o \
+	index.o lastpart.o logent.o mailst.o nio.o pk0.o pk1.o prefix.o \
 	sdmail.o setline.o shio.o subdir.o sysacct.o systat.o ulockf.o \
 	uucpname.o versys.o xqt.o uucpdefs.o
 DESTDIR=
@@ -73,6 +73,9 @@ uudecode: uudecode.o uulib.a
 uusend: uusend.o uulib.a
 	${CC} -o uusend ${LDFLAGS} uusend.o uulib.a
 
+uucpd:	uucpd.o
+	${CC} -o uucpd ${LDFLAGS} uucpd.o
+
 # Note: mode 700 on ${LIBDIR} would be safer.
 # Also,  L.sys etc should be 600.
 mkdirs:
@@ -130,6 +133,8 @@ install: all
 	install -s uudecode ${DESTDIR}/${BIN}/uudecode
 	install -s -m 6111 -o ${OWNER} -g ${GROUP} \
 		uusend ${DESTDIR}/${BIN}/uusend
+	install -s -m 100 -o ${OWNER} -g ${GROUP} \
+		uucpd ${DESTDIR}/${LIBDIR}/uucpd
 	rm -f ${DESTDIR}/${BIN}/ruusend
 	ln ${DESTDIR}/${BIN}/uusend ${DESTDIR}/${BIN}/ruusend
 
@@ -262,6 +267,9 @@ logent.o: /usr/include/sys/time.h
 logent.o: /usr/include/sgtty.h
 mailst.o: mailst.c
 mailst.o: uucp.h
+nio.o: nio.c
+nio.o: /usr/include/sys/param.h
+nio.o: uucp.h
 pk0.o: pk0.c
 pk0.o: /usr/include/stdio.h
 pk0.o: pk.p

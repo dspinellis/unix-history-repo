@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)expfile.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)expfile.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -20,7 +20,7 @@ char *file;
 {
 	register char *fpart, *p;
 	char user[20], *up;
-	char full[100];
+	char full[MAXFULLNAME];
 	int uid;
 
 	switch(file[0]) {
@@ -28,7 +28,7 @@ char *file;
 		return(1);
 	case '~':
 		for (fpart = file + 1, up = user; *fpart != '\0'
-			&& *fpart != '/'; fpart++)
+			&& *fpart != '/' && up < user+sizeof(user)-1; fpart++)
 				*up++ = *fpart;
 		*up = '\0';
 		/* ll1b.105, mn, Mark Nettleingham, defend against
@@ -43,9 +43,7 @@ char *file;
 		return(1);
 	default:
 		p = index(file, '/');
-		strcpy(full, Wrkdir);
-		strcat(full, "/");
-		strcat(full, file);
+		sprintf(full, "%s/%s", Wrkdir, file);
 		strcpy(file, full);
 		if (Wrkdir[0] == '\0')
 			return(FAIL);
