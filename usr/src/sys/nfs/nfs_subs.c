@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.68 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.69 (Berkeley) %G%
  */
 
 /*
@@ -889,11 +889,6 @@ nfs_namei(ndp, fhp, len, slp, nam, mdp, dposp, p)
 			error = EINVAL;
 			goto out;
 		}
-		if (*fromcp & 0200)
-			if ((*fromcp&0377) == ('/'|0200) || cnp->cn_nameiop != DELETE) {
-				error = EINVAL;
-				goto out;
-			}
 		cnp->cn_hash += (unsigned char)*fromcp;
 		*tocp++ = *fromcp++;
 		rem--;
