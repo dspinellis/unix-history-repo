@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.37 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.38 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -138,7 +138,6 @@ spec_read(vp, uio, ioflag, cred)
 	struct partinfo dpart;
 	register int n, on;
 	int error = 0;
-	extern int mem_no;
 
 #ifdef DIAGNOSTIC
 	if (uio->uio_rw != UIO_READ)
@@ -152,11 +151,6 @@ spec_read(vp, uio, ioflag, cred)
 	switch (vp->v_type) {
 
 	case VCHR:
-		/*
-		 * Negative offsets allowed only for /dev/kmem
-		 */
-		if (uio->uio_offset < 0 && major(vp->v_rdev) != mem_no)
-			return (EINVAL);
 		VOP_UNLOCK(vp);
 		error = (*cdevsw[major(vp->v_rdev)].d_read)
 			(vp->v_rdev, uio, ioflag);
@@ -220,7 +214,6 @@ spec_write(vp, uio, ioflag, cred)
 	struct partinfo dpart;
 	register int n, on;
 	int error = 0;
-	extern int mem_no;
 
 #ifdef DIAGNOSTIC
 	if (uio->uio_rw != UIO_WRITE)
@@ -232,11 +225,6 @@ spec_write(vp, uio, ioflag, cred)
 	switch (vp->v_type) {
 
 	case VCHR:
-		/*
-		 * Negative offsets allowed only for /dev/kmem
-		 */
-		if (uio->uio_offset < 0 && major(vp->v_rdev) != mem_no)
-			return (EINVAL);
 		VOP_UNLOCK(vp);
 		error = (*cdevsw[major(vp->v_rdev)].d_write)
 			(vp->v_rdev, uio, ioflag);
