@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: pcb.h 1.14 91/03/25$
  *
- *	@(#)pcb.h	7.5 (Berkeley) %G%
+ *	@(#)pcb.h	7.6 (Berkeley) %G%
  */
 
 #include <machine/frame.h>
@@ -39,3 +39,11 @@ struct pcb
 				/* note: does NOT imply SHPUX */
 #define PCB_CCBDATA	0x0100	/* copyback caching of data */
 #define PCB_CCBSTACK	0x0200	/* copyback caching of stack */
+
+/*
+ * The pcb is augmented with machine-dependent additional data for
+ * core dumps. For the hp300, there is nothing to add.
+ */
+struct md_coredump {
+	long	md_pad[8];
+};
