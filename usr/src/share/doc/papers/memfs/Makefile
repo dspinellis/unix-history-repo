@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.7 (Berkeley) %G%
+#	@(#)Makefile	1.8 (Berkeley) %G%
 
 DIR=	papers/memfs
 SRCS=	0.t 1.t
@@ -6,9 +6,8 @@ MACROS=	-ms
 REFER=	refer -n -e -l -s -p ref.bib
 EXTRA=	ref.bib A.t tmac.srefs
 CLEANFILES=ref.bib.i A.gt paper.t
-PRINTER=ps
 
-paper.${PRINTER}: paper.t
+paper.ps: paper.t
 	${ROFF} tmac.srefs paper.t > ${.TARGET}
 
 paper.t: ${SRCS} ref.bib.i A.gt
