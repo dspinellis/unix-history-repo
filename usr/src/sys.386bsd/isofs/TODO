@@ -1,0 +1,6 @@
+should understand "older", original High Sierra ("CDROM001") type
+should understand Rockridge
+should be called cdfs, as there are other ISO filesystem soon possible
+should have file handles implemented for use with NFS, etc
+should have name translation enabled by mount flag
+should run as a user process, and not take up kernel space (cdroms are slow)
