@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)space.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)space.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 extern float botx;

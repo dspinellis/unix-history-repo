@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)box.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)box.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 box(x0, y0, x1, y1)
