@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)files.c	4.14 (Berkeley) 86/10/13";
+static	char *sccsid = "@(#)files.c	4.15 (Berkeley) 87/05/05";
 #include <fcntl.h>
 
 /* UNIX DEPENDENT PROCEDURES */
@@ -223,7 +223,7 @@ if(endir==0)
 	dirpref = "";
 	filepat = pat;
 	cp = varptr("VPATH");
-	if (*cp->varval == 0) path = ".";
+	if (cp->varval == NULL) path = ".";
 	else {
 	       path = pth; 
 	       *path = '\0';
