@@ -1,4 +1,4 @@
-/*	@(#)mach.h	4.2	(Berkeley)	%G%	*/
+/*	@(#)mach.h	4.3	(Berkeley)	%G%	*/
 
 /* sccs id variable */
 static char *mach_h_sid = "@(#)mach.h	1.11";
@@ -48,7 +48,7 @@ DONTHOLDBIG	large (size > MAXDAYFILE ) jobs wont be held until night for
 SWAB		this machine has byte-ordering reversed from the DEC VAX 
 		and PDP-11 standard (the only current example is Onyx)
 The conditonal flags are first defined
-in "/usr/include/whoami.h" on the local machine.
+in "local.h" in this directory.
 
 For "normal" version 6 machines, there is a dummy machine
 definition for "VANILLA6" which indicates the v6 UNIX options.
@@ -59,7 +59,7 @@ definition for "VANILLA7" which indicates the v7 UNIX options.
 */
 /* be sure to include <stdio.h> before these defns */
 
-# include "whoami.h"
+# include "local.h"
 # include <sysexits.h>
 
 /* note NUID is only used in mmail.c */
@@ -127,55 +127,61 @@ definition for "VANILLA7" which indicates the v7 UNIX options.
 # endif NOSC
 
 # ifdef BERKELEY
-/* definitions for Berkeley */
+/* CFO - A */
 # ifdef A
 # define CCV7
 # define LOCAL 'a'
 # endif A
 
+/* CFO - B */
 # ifdef B
 # define CCV7
 # define LOCAL 'b'
 # endif B
 
+/* CFO - C */
 # ifdef C
 # define CCV7
 # define LOCAL 'c'
 # endif C
 
+/* CFO - D */
 # ifdef D
 # define CCV7
 # define LOCAL 'd'
 # endif D
 
+/* CFO - E */
 # ifdef E
 # define CCV7
 # define LOCAL 'e'
 # endif E
 
+/* CFO - F */
 # ifdef F
 # define CCV7
 # define LOCAL 'f'
 # endif F
 
+/* CFO - G */
 # ifdef G
 # define LOCAL 'g'
 # define NUID (501)
 # endif G
 
+/* CFO - Jade */
+# ifdef H
+# define LOCAL 'h'
+# define NUID (501)
+# endif H
+
+/* CSSG - ing70 */
 # ifdef ING70
-# define V6
-# define OLDTTY
-# define UID1CHAR
-# define PASSWDF
-# define DELIVERM
-# define MULTNAMS
-# define FREELPR
 # define LOCAL 'i'
 # define NUID (174)
-/* correct vers. 7 = LOCAL, NUID */
 # endif ING70
 
+/* Ingres Group - ucbingres */
 # ifdef INGVAX
 # define LOCAL 'j'
 # define NUID (37)
@@ -183,57 +189,51 @@ definition for "VANILLA7" which indicates the v7 UNIX options.
 # define DELIVERM
 # endif INGVAX
 
-# ifdef VIRUS
+/* CS network hub - ucbvax */
+# ifdef UCBVAX
 # define LOCAL 'k'
-# define NUID (-1)
-# endif VIRUS
-
-# ifdef IMAGE
-# define LOCAL 'm'
-# define NUID (120)
-# define MAXSENDQ 35
-# include <signal.h>
-/* on some v7 cory-derivative systems, this is defined AFTER this point
-   so you have to give the -l flag to the netdaemon, or remove it.
-   it is usually in /usr/include/sys/ioctl.h
-*/
-# undef NETLDISC
+# define NUID (35)
 # define DELIVERM
-# endif IMAGE
+# define MAXSENDQ 35
+# endif UCBVAX
 
+/* Brodersen - ucboz */
+# ifdef OZ
+# define LOCAL 'l'
+# define NUID (501)
+# endif OZ
+
+/* EE-Signal Proccessing - ucbmedea */
+# ifdef MEDEA
+# define LOCAL 'm'
+# define NUID (501)
+# endif MEDEA
+
+/* Fateman - ucbkim */
 # ifdef KIM
 # define LOCAL 'n'
-# define NUID (XXX)
+# define DELIVERM
+# define NUID (501)
 # endif KIM
 
+/* EECS-Research - ucbesvax */
 # ifdef ESVAX
 # define LOCAL 'o'
 # define NUID (67)
 # endif ESVAX
 
+/* Newton CAD - ucbcad */
 # ifdef CAD
 # define LOCAL 'p'
 # define NUID (67)
 # endif CAD
 
+/* currently unused */
 # ifdef Q
-# define V6
-# define CCV6
-# define OLDTTY
-# define FUID
-# define PASSWDF
-# define USRMAIL
-# define NOEUID
 # define LOCAL 'q'
-# define NOREMACCT
-# define MAXSENDQ
-# define NUID ((11 << 8) | 38)
-# define MAXSENDQ 35
-# define CRN
-# define MAGICCRN	"3700"		/* default CC crn */
-/* correct vers. 7 = LOCAL, NUID */
 # endif Q
 
+/* Fabry CSRG - ucbarpa */
 # ifdef ARPAVAX
 # define LOCAL 'r'
 # define NUID (501)
@@ -241,30 +241,27 @@ definition for "VANILLA7" which indicates the v7 UNIX options.
 # define MAXSENDQ 35
 # endif ARPAVAX
 
+/* CFO & SRC - SRC */
 # ifdef SRC
-# define V6
-# define OLDTTY
-# define FUID
-# define NOEUID
 # define LOCAL 's'
 # define NUID  38
-# define USRMAIL
-/* correct vers. 7 = LOCAL, NUID */
 # endif SRC
 
+/* Math/Stat Dept - MathStat */
 # ifdef MATHSTAT
 # define LOCAL 't'
-# define MAXSENDQ 35
-# define NUID (31)
-# include <signal.h>
-/* on some v7 cory-derivative systems, this is defined AFTER this point
-   so you have to give the -l flag to the netdaemon, or remove it.
-   it is usually in /usr/include/sys/ioctl.h
-*/
-# undef NETLDISC
-# define DELIVERM
+# define NUID (-1)
 # endif MATHSTAT
 
+/* Fabry CSRG - c70 */
+# ifdef C70
+# define LOCAL 'u'
+# define NUID (501)
+# define DELIVERM
+# define MAXSENDQ 35
+# endif C70
+
+/* CS Research - ucbernie */
 # ifdef CSVAX
 # define LOCAL 'v'
 # define NUID (501)
@@ -272,47 +269,39 @@ definition for "VANILLA7" which indicates the v7 UNIX options.
 # define MAXSENDQ 35
 # endif CSVAX
 
+/* Stat Dept - statvax */
+# ifdef STATVAX
+# define LOCAL 'w'
+# define NUID
+# endif STATVAX
+
+/* CS Research - Onyx */
 # ifdef ONYX
 # define LOCAL 'x'
 # define NUID (10)
 # define NOFP
 # define SWAB
-/* on the version 6 systems at Berkeley, the best versions of cc (e.g. ncc)
-   can't take this nested undef so you must delete it when compiling on
-   version 6 systems */
 # undef PARMLIST
 # define PARMLIST 20
+# define DELIVERM
 # endif ONYX
 
+/* EECS Dept - Cory */
 # ifdef CORY
 # define LOCAL 'y'
 # define NUID (10)
 # define MAXSENDQ 35
 # include <signal.h>
-/* on some v7 cory-derivative systems, this is defined AFTER this point
-   so you have to give the -l flag to the netdaemon, or remove it.
-   it is usually in /usr/include/sys/ioctl.h
-*/
 # undef NETLDISC
 # define DELIVERM
 # endif CORY
 
-# ifdef EECS40
-# define V6
-# define OLDTTY
-# define PASSWDF
-# define UID1CHAR
+/* EECS Dept Administrative - ucbear */
+# ifdef EARVAX
 # define LOCAL 'z'
 # define NUID ((1 << 8) | 104)
-# define NFREECMD
-# define NOFP
-/* this is necessary on 11/40's since the netdaemon is too
-   big without split I/D when parmlst is 2000
-   */
-# undef PARMLIST
-# define PARMLIST 50
-/* correct vers. 7 = LOCAL, NUID */
-# endif EECS40
+# define DELIVERM
+# endif EARVAX
 
 /* end of Berkeley definitions */
 # endif BERKELEY
