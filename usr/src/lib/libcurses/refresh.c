@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -14,8 +14,6 @@ static char sccsid[] = "@(#)refresh.c	5.41 (Berkeley) %G%";
 
 static int curwin;
 static short ly, lx;
-
-WINDOW *_win;
 
 static void	domvcur __P((int, int, int, int));
 static int	makech __P((WINDOW *, int));
@@ -40,7 +38,6 @@ wrefresh(win)
 	ly = curscr->cury;
 	lx = curscr->curx;
 	wy = 0;
-	_win = win;
 	curwin = (win == curscr);
 
 	if (!curwin)
@@ -90,6 +87,36 @@ wrefresh(win)
 			quickch(win);
 	}
 #endif
+
+#ifdef DEBUG
+{ int i, j;
+		__TRACE("#####################################\n");
+		for (i = 0; i < curscr->maxy; i++) {
+			__TRACE("C: %d:", i);
+			__TRACE(" 0x%x \n", curscr->lines[i]->hash);
+			for (j = 0; j < curscr->maxx; j++) 
+				__TRACE("%c", 
+			           curscr->lines[i]->line[j].ch);
+			__TRACE("\n");
+			for (j = 0; j < curscr->maxx; j++) 
+				__TRACE("%x", 
+			           curscr->lines[i]->line[j].attr);
+			__TRACE("\n");
+			__TRACE("W: %d:", i);
+			__TRACE(" 0x%x \n", win->lines[i]->hash);
+			__TRACE(" 0x%x ", win->lines[i]->flags);
+			for (j = 0; j < win->maxx; j++) 
+				__TRACE("%c", 
+			           win->lines[i]->line[j].ch);
+			__TRACE("\n");
+			for (j = 0; j < win->maxx; j++) 
+				__TRACE("%x", 
+			           win->lines[i]->line[j].attr);
+			__TRACE("\n");
+		}
+}
+#endif /* DEBUG */
+
 	for (wy = 0; wy < win->maxy; wy++) {
 #ifdef DEBUG
 		__TRACE("%d\t%d\t%d\n",
@@ -150,7 +177,6 @@ wrefresh(win)
 	}
 	retval = OK;
 
-	_win = NULL;
 	(void)fflush(stdout);
 	return (retval);
 }
@@ -214,7 +240,7 @@ makech(win, wy)
 			tputs(tgoto(CM, lx, ly), 0, __cputchar);
 		else {
 			tputs(HO, 0, __cputchar);
-			mvcur(0, 0, ly, lx);
+			__mvcur(0, 0, ly, lx, 1);
 		}
 	}
 	while (wx <= lch) {
@@ -362,7 +388,7 @@ domvcur(oy, ox, ny, nx)
 		curscr->flags &= ~__WSTANDOUT;
 	}
 
-	mvcur(oy, ox, ny, nx);
+	__mvcur(oy, ox, ny, nx, 1);
 }
 
 /*
@@ -495,8 +521,6 @@ quickch(win)
 			__TRACE("\n");
 		}
 #endif 
-	if (n != 0)
-		scrolln(win, starts, startw, curs, bot, top);
 	
 	/* So we don't have to call __hash() each time */
 	for (i = 0; i < win->maxx; i++) {
@@ -607,6 +631,8 @@ quickch(win)
 			__TRACE("\n");
 		}
 #endif
+	if (n != 0)
+		scrolln(win, starts, startw, curs, bot, top);
 }
 
 /*
@@ -624,7 +650,7 @@ scrolln(win, starts, startw, curs, bot, top)
 	n = starts - startw;
 
 	if (n > 0) {
-		mvcur(oy, ox, top, 0);
+		__mvcur(oy, ox, top, 0, 1);
 		/* Scroll up the block */
 		if (DL)
 			tputs(__tscroll(DL, n), 0, __cputchar);
@@ -635,22 +661,22 @@ scrolln(win, starts, startw, curs, bot, top)
 		/* 
 		 * Push down the bottom region.
 		 */
-		mvcur(top, 0, bot - n + 1, 0);
+		__mvcur(top, 0, bot - n + 1, 0, 1);
 		if (AL) 
 			tputs(__tscroll(AL, n), 0, __cputchar);
 		else
 			for(i = 0; i < n; i++)
 				tputs(al, 0, __cputchar);
-		mvcur(bot - n + 1, 0, oy, ox);
+		__mvcur(bot - n + 1, 0, oy, ox, 1);
 	} else {
 		/* Preserve the bottom lines */
-		mvcur(oy, ox, bot + n + 1, 0);	/* n < 0 */
+		__mvcur(oy, ox, bot + n + 1, 0, 1);	/* n < 0 */
 		if (DL)
 			tputs(__tscroll(DL, -n), 0, __cputchar);
 		else
 		       	for(i = n; i < 0; i++)
 				tputs(dl, 0, __cputchar);
-		mvcur(bot + n + 1, 0, top, 0);
+		__mvcur(bot + n + 1, 0, top, 0, 1);
 
 		/* Scroll the block down */
 		if (AL) 
@@ -658,7 +684,7 @@ scrolln(win, starts, startw, curs, bot, top)
 		else
 			for(i = n; i < 0; i++)
 				tputs(al, 0, __cputchar);
-		mvcur(top, 0, oy, ox);
+		__mvcur(top, 0, oy, ox, 1);
 	}		
 }
 
