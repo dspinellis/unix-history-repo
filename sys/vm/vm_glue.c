@@ -281,23 +281,24 @@ void
 vm_init_limits(p)
 	register struct proc *p;
 {
-	int tmp;
+	int rss_limit;
 
 	/*
 	 * Set up the initial limits on process VM.
-	 * Set the maximum resident set size to be all
-	 * of (reasonably) available memory.  This causes
-	 * any single, large process to start random page
-	 * replacement once it fills memory.
+	 * Set the maximum resident set size to be half
+	 * of (reasonably) available memory.  Since this
+	 * is a soft limit, it comes into effect only
+	 * when the system is out of memory - half of
+	 * main memory helps to favor smaller processes,
+	 * and reduces thrashing of the object cache.
 	 */
         p->p_rlimit[RLIMIT_STACK].rlim_cur = DFLSSIZ;
         p->p_rlimit[RLIMIT_STACK].rlim_max = MAXSSIZ;
         p->p_rlimit[RLIMIT_DATA].rlim_cur = DFLDSIZ;
         p->p_rlimit[RLIMIT_DATA].rlim_max = MAXDSIZ;
-	tmp = ((2 * vm_page_free_count) / 3) - 32;
-	if (vm_page_free_count < 512)
-		tmp = vm_page_free_count;
-	p->p_rlimit[RLIMIT_RSS].rlim_cur = ptoa(tmp);
+	/* limit the limit to no less than 128K */
+	rss_limit = max(vm_page_free_count / 2, 32);
+	p->p_rlimit[RLIMIT_RSS].rlim_cur = ptoa(rss_limit);
 	p->p_rlimit[RLIMIT_RSS].rlim_max = RLIM_INFINITY;
 }
 

@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_page.c,v 1.16 1994/04/14 07:50:22 davidg Exp $
+ *	$Id: vm_page.c,v 1.17 1994/04/20 07:07:14 davidg Exp $
  */
 
 /*
@@ -827,7 +827,7 @@ vm_page_activate(m)
 	queue_enter(&m->object->memq, m, vm_page_t, listq);
 	vm_page_active_count++;
 	/* m->act_count = 10; */
-	m->act_count = 10;
+	m->act_count = 1;
 
 	splx(spl);
 }
