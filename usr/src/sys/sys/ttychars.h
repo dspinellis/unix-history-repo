@@ -1,4 +1,4 @@
-/*	ttychars.h	4.4	83/05/27	*/
+/*	ttychars.h	4.5	83/06/20	*/
 
 /*
  * User visible structures and constants
@@ -26,9 +26,9 @@ struct ttychars {
 #define	CTRL(c)	('c'&037)
 
 /* default special characters */
-#define	CERASE	0177		/* DEL */
-#define	CKILL	CTRL(u)
-#define	CINTR	CTRL(c)
+#define	CERASE	'#'
+#define	CKILL	'@'
+#define	CINTR	0177		/* DEL, ^? */
 #define	CQUIT	034		/* FS, ^\ */
 #define	CSTART	CTRL(q)
 #define	CSTOP	CTRL(s)
