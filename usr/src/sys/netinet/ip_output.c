@@ -1,16 +1,16 @@
-/* ip_output.c 1.10 81/11/02 */
+/* ip_output.c 1.11 81/11/08 */
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
 #include "../h/mtpr.h"
 #include "../h/socket.h"
-#include "../inet/inet_cksum.h"
-#include "../inet/inet.h"
-#include "../inet/inet_systm.h"
-#include "../inet/imp.h"
-#include "../inet/inet_host.h"
-#include "../inet/ip.h"
-#include "../inet/tcp.h"
+#include "../net/inet_cksum.h"
+#include "../net/inet.h"
+#include "../net/inet_systm.h"
+#include "../net/imp.h"
+#include "../net/inet_host.h"
+#include "../net/ip.h"
+#include "../net/tcp.h"
 
 ip_output(mp)
 	struct mbuf *mp;

@@ -1,4 +1,4 @@
-/* in.h 4.1 81/11/07 */
+/* in.h 4.2 81/11/08 */
 
 /*
  * Constants and structures defined by the internet system,
@@ -8,6 +8,7 @@
 /*
  * Protocols
  */
+#define	IPPROTO_RAW		-1
 #define	IPPROTO_ICMP		1		/* control message protocol */
 #define	IPPROTO_GG		2		/* gateway^2 (deprecated) */
 #define	IPPROTO_TCP		6		/* tcp */
@@ -49,7 +50,7 @@
 /*
  * Internet address (old style... should be updated)
  */
-struct socket {			/* should be called inet_addr */
+struct ip_addr {
 	union {
 		struct { u_char s_b1,s_b2,s_b3,s_b4; } S_un_b;
 		struct { u_short s_w1,s_w2; } S_un_w;

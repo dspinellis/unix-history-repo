@@ -1,17 +1,20 @@
-/* tcp_output.c 4.9 81/11/04 */
+/* tcp_output.c 4.10 81/11/08 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/socket.h"
-#include "../inet/inet_cksum.h"
-#include "../inet/inet.h"
-#include "../inet/inet_host.h"
-#include "../inet/inet_systm.h"
-#include "../inet/imp.h"
-#include "../inet/ip.h"
-#include "../inet/tcp.h"
-#include "../inet/tcp_fsm.h"
+#include "../h/socketvar.h"
+#include "../net/inet_cksum.h"
+#include "../net/inet.h"
+#include "../net/inet_host.h"
+#include "../net/inet_systm.h"
+#include "../net/imp.h"
+#include "../net/ip.h"
+#include "../net/tcp.h"
+#include "../net/tcp_var.h"
+#include "../net/tcp_fsm.h"
+#include "/usr/include/errno.h"
 
 /*
  * Special routines to send control messages.
@@ -24,20 +27,21 @@ COUNT(TCP_SNDCTL);
         if (tcp_send(tp))
 		return (1);
 	tcp_sndnull(tp);
-	return(0);
+	return (0);
 }
 
 tcp_sndwin(tp)
 	struct tcb *tp;
 {
 	int ihave, hehas;
+	register struct socket *so = tp->t_socket;
 COUNT(TCP_SNDWIN);
 
 	if (tp->rcv_adv) {
-		ihave = tp->t_ucb->uc_rhiwat -
-		    (tp->t_ucb->uc_rcc + tp->seqcnt);
+		ihave = so->so_rcv.sb_hiwat -
+		    (so->so_rcv.sb_cc + tp->seqcnt);
 		hehas = tp->rcv_adv - tp->rcv_nxt;
-		if ((100*(ihave-hehas)/tp->t_ucb->uc_rhiwat) < 35)
+		if ((100*(ihave-hehas)/so->so_rcv.sb_hiwat) < 35)
 			return;
 	}
         if (tcp_send(tp))
@@ -78,7 +82,7 @@ COUNT(TCP_SNDRST);
 tcp_send(tp)
 	register struct tcb *tp;
 {
-	register struct ucb *up;
+	register struct socket *so;
 	register unsigned long last, wind;
 	struct mbuf *m;
 	int flags = 0, forced, sent;
@@ -86,7 +90,7 @@ tcp_send(tp)
 	int len;
 
 COUNT(TCP_SEND);
-	up = tp->t_ucb;
+	so = tp->t_socket;
 	tp->snd_lst = tp->snd_nxt;
 	forced = 0;
 	m = NULL;
@@ -95,7 +99,7 @@ COUNT(TCP_SEND);
 		tp->snd_lst++;
 	}
 	last = tp->snd_off;
-	for (m = up->uc_sbuf; m != NULL; m = m->m_next)
+	for (m = so->so_snd.sb_mb; m != NULL; m = m->m_next)
 		last += m->m_len;
 	if (tp->snd_nxt > last) {
 		if ((tp->tc_flags&TC_SND_FIN) &&
@@ -163,7 +167,7 @@ struct th *
 tcp_template(tp)
 	struct tcb *tp;
 {
-	register struct host *h = tp->t_ucb->uc_host;
+	register struct host *h = tp->t_host;
 	register struct mbuf *m;
 	register struct th *n;
 	register struct ip *ip;
@@ -234,14 +238,15 @@ COUNT(TCP_OUTPUT);
 	if (flags & TH_URG)
 		t->t_urp = htons(tp->snd_urp);
 	t->t_win =
-	    tp->t_ucb->uc_rhiwat - (tp->t_ucb->uc_rcc + tp->seqcnt);
+	    tp->t_socket->so_rcv.sb_hiwat -
+		(tp->t_socket->so_rcv.sb_cc + tp->seqcnt);
 	if (tp->rcv_nxt + t->t_win > tp->rcv_adv)
 		tp->rcv_adv = tp->rcv_nxt + t->t_win;
 	if (len)
 		t->t_len = htons(len + TCPSIZE);
 	t->t_win = htons(t->t_win);
 #ifdef TCPDEBUG
-	if ((tp->t_ucb->uc_flags & UDEBUG) || tcpconsdebug) {
+	if ((tp->t_socket->so_options & SO_DEBUG) || tcpconsdebug) {
 		t->t_seq = tp->snd_nxt;
 		t->t_ackno = tp->rcv_nxt;
 		tdb_setup(tp, t, INSEND, &tdb);
@@ -261,7 +266,7 @@ COUNT(TCP_OUTPUT);
 	ip->ip_off = 0;
 	ip->ip_ttl = MAXTTL;
 	i = ip_send(ip);
-	return(i);
+	return (i);
 }
 
 firstempty(tp)
@@ -270,7 +275,8 @@ firstempty(tp)
 	register struct th *p, *q;
 COUNT(FIRSTEMPTY);
 
-	if ((p = tp->t_rcv_next) == (struct th *)tp || tp->rcv_nxt < p->t_seq)
+	if ((p = tp->tcb_hd.seg_next) == (struct th *)tp ||
+	    tp->rcv_nxt < p->t_seq)
 		return (tp->rcv_nxt);
 	while ((q = p->t_next) != (struct th *)tp &&
 	    (t_end(p) + 1) == q->t_seq)
@@ -291,9 +297,9 @@ tcp_sndcopy(tp, start, end)
 COUNT(TCP_SNDCOPY);
 
 	if (start >= end)    
-		return(NULL);
+		return (NULL);
 	off = tp->snd_off;
-	m = tp->t_ucb->uc_sbuf;
+	m = tp->t_socket->so_snd.sb_mb;
 	while (m != NULL && start >= (off + m->m_len)) {
 		off += m->m_len;
 		m = m->m_next;
@@ -331,4 +337,9 @@ nospace:
 	printf("snd_copy: no space\n");
 	m_freem(top);
 	return (0);
+}
+
+tcp_fasttimo()
+{
+
 }

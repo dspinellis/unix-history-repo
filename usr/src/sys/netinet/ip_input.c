@@ -1,18 +1,28 @@
-/* ip_input.c 1.11 81/11/01 */
+/* ip_input.c 1.12 81/11/08 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/clock.h"
 #include "../h/mbuf.h"
-#include "../inet/inet_cksum.h"
-#include "../inet/inet.h"
-#include "../inet/inet_systm.h"
-#include "../inet/imp.h"
-#include "../inet/ip.h"			/* belongs before inet.h */
-#include "../inet/ip_icmp.h"
-#include "../inet/tcp.h"
+#include "../net/inet_cksum.h"
+#include "../net/inet.h"
+#include "../net/inet_systm.h"
+#include "../net/imp.h"
+#include "../net/ip.h"			/* belongs before inet.h */
+#include "../net/ip_icmp.h"
+#include "../net/tcp.h"
 
-int	nosum = 0;
+/*
+ * Ip initialization.
+ */
+ip_init()
+{
+
+	ipq.next = ipq.prev = &ipq;
+	ip_id = time & 0xffff;
+}
+
+int	ipcksum = 1;
 
 struct	ip *ip_reass();
 
@@ -49,7 +59,7 @@ COUNT(IP_INPUT);
 	if (ip->ip_sum) {
 		printf("ip_sum %x\n", ip->ip_sum);
 		netstat.ip_badsum++;
-		if (!nosum) {
+		if (ipcksum) {
 			m_freem(m);
 			return;
 		}
@@ -154,7 +164,7 @@ found:
 		break;
 
 	default:
-		raw_input(m);
+		ri_input(m);
 		break;
 	}
 }
@@ -339,22 +349,25 @@ COUNT(IP_DEQ);
  * if a timer expires on a reassembly
  * queue, discard it.
  */
-ip_timeo()
+ip_slowtimo()
 {
 	register struct ip *q;
 	register struct ipq *fp;
 	int s = splnet();
-COUNT(IP_TIMEO);
+COUNT(IP_SLOWTIMO);
 
 	for (fp = ipq.next; fp != &ipq; )
 		if (--fp->ipq_ttl == 0)
 			fp = ip_freef(fp);
 		else
 			fp = fp->next;
-	timeout(ip_timeo, 0, hz);
 	splx(s);
 }
 
+ip_drain()
+{
+
+}
 /*
  * Do option processing on a datagram,
  * possibly discarding it if bad options
@@ -365,7 +378,9 @@ ip_dooptions(ip)
 {
 	register u_char *cp;
 	int opt, optlen, cnt, s;
-	struct socket *sp;
+	struct ip_addr *sp;
+	register struct ip_timestamp *ipt;
+	int x;
 
 	cp = (u_char *)(ip + 1);
 	cnt = (ip->ip_hl << 2) - sizeof (struct ip);
@@ -384,12 +399,12 @@ ip_dooptions(ip)
 
 		case IPOPT_LSRR:
 		case IPOPT_SSRR:
-			if (cp[2] < 4 || cp[2] > optlen - 3)
+			if (cp[2] < 4 || cp[2] > optlen - (sizeof (long) - 1))
 				break;
-			sp = (struct socket *)(cp+cp[2]);
+			sp = (struct ip_addr *)(cp + cp[2]);
 			if (n_lhost.s_addr == *(u_long *)sp) {
 				if (opt == IPOPT_SSRR) {
-					/* make sure *sp directly accessible*/
+					/* MAKE SURE *SP DIRECTLY ACCESSIBLE */
 				}
 				ip->ip_dst = *sp;
 				*sp = n_lhost;
@@ -398,40 +413,39 @@ ip_dooptions(ip)
 			break;
 
 		case IPOPT_TS:
-			if (cp[2] < 5)
+			ipt = (struct ip_timestamp *)cp;
+			if (ipt->ipt_len < 5)
 				goto bad;
-			if (cp[2] > cp[1] - 3) {
-				if ((cp[3] & 0xf0) == 0xf0)
+			if (ipt->ipt_ptr > ipt->ipt_len - sizeof (long)) {
+				if (++ipt->ipt_oflw == 0)
 					goto bad;
-				cp[3] += 0x10;
 				break;
 			}
-			sp = (struct socket *)(cp+cp[2]);
-			switch (cp[3] & 0xf) {
+			sp = (struct ip_addr *)(cp+cp[2]);
+			switch (ipt->ipt_flg) {
 
 			case IPOPT_TS_TSONLY:
 				break;
 
 			case IPOPT_TS_TSANDADDR:
-				if (cp[2] > cp[1] - 7)
+				if (ipt->ipt_ptr + 8 > ipt->ipt_len)
 					goto bad;
+				*(struct ip_addr *)sp++ = n_lhost;
 				break;
 
 			case IPOPT_TS_PRESPEC:
 				if (*(u_long *)sp != n_lhost.s_addr)
 					break;
-				if (cp[2] > cp[1] - 7)
+				if (ipt->ipt_ptr + 8 > ipt->ipt_len)
 					goto bad;
-				cp[1] += 4;
+				ipt->ipt_ptr += 4;
 				break;
 
 			default:
 				goto bad;
 			}
-			s = spl6();
-			*(int *)sp = (time % SECDAY) * 1000 + (lbolt*1000/hz);
-			splx(s);
-			cp[1] += 4;
+			*(n_time *)sp = ip_time();
+			ipt->ipt_ptr += 4;
 		}
 	}
 	return (0);
@@ -459,33 +473,4 @@ COUNT(IP_OPT);
 	i = m->m_len - (sizeof (struct ip) + olen);
 	bcopy((caddr_t)ip+olen, (caddr_t)ip, i);
 	m->m_len -= i;
-}
-
-/* stubs */
-
-icmp_error(ip, error)
-{
-
-	m_freem(dtom(ip));
-}
-
-icmp_input(m)
-	struct mbuf *m;
-{
-
-	printf("icmp_input %x\n", m);
-}
-
-udp_input(m)
-	struct mbuf *m;
-{
-
-	printf("udp_input %x\n", m);
-}
-
-raw_input(m)
-	struct mbuf *m;
-{
-
-	printf("raw_input %x\n", m);
 }

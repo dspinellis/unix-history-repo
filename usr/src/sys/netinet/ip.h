@@ -1,4 +1,4 @@
-/* ip.h 1.5 81/10/29 */
+/* ip.h 1.6 81/11/08 */
 
 /*
  * Definitions for internet protocol version 4.
@@ -32,13 +32,13 @@ struct ip {
 	u_char	ip_p;			/* protocol */
 	u_short	ip_sum;			/* checksum */
 	union {
-		struct socket ip_s;	/* source address */
+		struct ip_addr ip_s;	/* source address */
 		struct ip *ip_nxt;	/* next fragment */
 	} I_sun;
 #define	ip_src	I_sun.ip_s
 #define	ip_next	I_sun.ip_nxt
 	union {
-		struct socket ip_d;	/* destination address */
+		struct ip_addr ip_d;	/* destination address */
 		struct ip *ip_prv;	/* prev fragment */
 	} I_dun;
 #define	ip_dst	I_dun.ip_d
@@ -79,7 +79,7 @@ struct	ip_timestamp {
 	union {
 		n_long	ipt_time[1];
 		struct	ipt_ta {
-			struct socket ipt_addr;
+			struct ip_addr ipt_addr;
 			n_long ipt_time;
 		} ipt_ta[1];
 	}
@@ -111,7 +111,7 @@ struct ipq {
 	u_char	ipq_p;			/* protocol of this fragment */
 	u_short	ipq_id;			/* sequence id for reassembly */
 	struct	ip *ipq_next,*ipq_prev;	/* to ip headers of fragments */
-	struct	socket ipq_src,ipq_dst;
+	struct	ip_addr ipq_src,ipq_dst;
 };
 
 /*

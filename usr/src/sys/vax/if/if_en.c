@@ -1,4 +1,4 @@
-/* if_en.c 4.5 81/11/07 */
+/* if_en.c 4.6 81/11/08 */
 
 #include "en.h"
 /*
@@ -8,11 +8,11 @@
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
-#include "../inet/inet.h"
-#include "../inet/inet_systm.h"
-#include "../inet/imp.h"
-#include "../inet/ip.h"
-#include "../inet/tcp.h"			/* ### */
+#include "../net/inet.h"
+#include "../net/inet_systm.h"
+#include "../net/imp.h"
+#include "../net/ip.h"
+#include "../net/tcp.h"			/* ### */
 #include "../h/map.h"
 #include "../h/pte.h"
 #include "../h/buf.h"
@@ -93,14 +93,14 @@ eninit(unit)
 		reenter = 1;
 		n = 10;
 		k = n<<1;
-		i = rmalloc(netmap, n*2);
+		i = rmalloc(mbmap, n*2);
 		if (i == 0)
 			panic("eninit");
 		j = i << 1;
 		cp = (char *)pftom(i);
-		if (memall(&Netmap[j], k, proc, CSYS) == 0)
+		if (memall(&Mbmap[j], k, proc, CSYS) == 0)
 			return (0);
-		vmaccess(&Netmap[j], (caddr_t)cp, k);
+		vmaccess(&Mbmap[j], (caddr_t)cp, k);
 		rpkt = (struct en_packet *)
 		    (cp + 1024 - sizeof (struct en_prefix));
 		xpkt = (struct en_packet *)
@@ -197,7 +197,7 @@ COUNT(ENSTART);
 			}
 			dp = mtod(m, char *);
 			if (((int)cp&0x3ff)==0 && ((int)dp&0x3ff)==0) {
-				struct pte *pte = &Netmap[mtopf(dp)*2];
+				struct pte *pte = &Mbmap[mtopf(dp)*2];
 				*(int *)enxmr = enwproto | pte++->pg_pfnum;
 				*(int *)(enxmr+1) = enwproto | pte->pg_pfnum;
 				enxswapd = enxswapnow = 1;
@@ -408,8 +408,8 @@ COUNT(ENRINT);
 			m->m_len = PGSIZE;
 			m->m_off = (int)p - (int)m;
 			if (((int)cp & 0x3ff) == 0) {
-				struct pte *cpte = &Netmap[mtopf(cp)*2];
-				struct pte *ppte = &Netmap[mtopf(p)*2];
+				struct pte *cpte = &Mbmap[mtopf(cp)*2];
+				struct pte *ppte = &Mbmap[mtopf(p)*2];
 				struct pte t;
 				enrswaps++;
 				t = *ppte; *ppte++ = *cpte; *cpte++ = t;
