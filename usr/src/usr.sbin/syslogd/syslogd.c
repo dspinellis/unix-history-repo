@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	4.11 (Berkeley) %G%";
 #endif
 
 /*
@@ -654,7 +654,7 @@ init()
 	 *	Anyone in this list is informed directly if s/he
 	 *	is logged in when a high priority message comes through.
 	 */
-	Sumask = mask(LOG_ALERT);
+	Sumask = mask(KERN_EMERG)|mask(LOG_EMERG);
 	for (i = 0; i < NSUSERS && fgets(cline, sizeof cline, cf) != NULL; i++) {
 		/* strip off newline */
 		p = index(cline, '\n');
