@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ethersubr.c	7.17 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -79,7 +79,7 @@ ether_output(ifp, m0, dst, rt0)
 			if (rt0 = rt = rtalloc1(dst, 1))
 				rt->rt_refcnt--;
 			else 
-				return (EHOSTUNREACH);
+				senderr(EHOSTUNREACH);
 		}
 		if (rt->rt_flags & RTF_GATEWAY) {
 			if (rt->rt_gwroute == 0)
@@ -88,13 +88,13 @@ ether_output(ifp, m0, dst, rt0)
 				rtfree(rt); rt = rt0;
 			lookup: rt->rt_gwroute = rtalloc1(rt->rt_gateway, 1);
 				if ((rt = rt->rt_gwroute) == 0)
-					return (EHOSTUNREACH);
+					senderr(EHOSTUNREACH);
 			}
 		}
 		if (rt->rt_flags & RTF_REJECT)
 			if (rt->rt_rmx.rmx_expire == 0 ||
 			    time.tv_sec < rt->rt_rmx.rmx_expire)
-				return (rt == rt0 ? EHOSTDOWN : EHOSTUNREACH);
+				senderr(rt == rt0 ? EHOSTDOWN : EHOSTUNREACH);
 	}
 	switch (dst->sa_family) {
 
