@@ -1,8 +1,8 @@
-#	@(#)Makefile	4.4	(Berkeley)	85/07/06
+#	@(#)Makefile	4.5	(Berkeley)	87/05/28
 #
 CFLAGS=-DCOPYCODE -DC2 -O
 LDFLAGS=
-ASDIR = /usr/src/bin/as
+ASDIR = /usr/src/bin/as/as.${MACHINE}
 
 SRCS = makefile c2.h c20.c c21.c c22.c
 
