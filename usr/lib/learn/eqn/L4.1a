@@ -1,0 +1,42 @@
+#once #create message
+.ND
+.EQ
+delim $$
+.EN
+.LP
+The next neqn word to learn is "over", which makes
+fractions like
+.EQ
+a+b over c
+.EN
+In fact that line was made by
+   .EQ
+   a+b over c
+   .EN
+To begin with an easy one, reproduce
+the equation below in the file "Example", then type
+ready.
+(To get $>=$, type ">=".)
+.pl 1
+#once #create Ref
+.LP
+.EQ
+x+1 over y+1 ~>=~ x over y
+.EN
+.pl 1
+#once #create Example
+.LP
+.EQ
+replace me
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$TERM %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log
+#next
+4.1b 10
+4.2a 5
