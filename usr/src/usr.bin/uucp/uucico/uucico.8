@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)uucico.8	6.4 (Berkeley) %G%
+.\"	@(#)uucico.8	6.5 (Berkeley) %G%
 .\"
 .TH UUCICO 8 ""
 .UC 6
@@ -28,7 +28,7 @@ uucico, uucpd \- transfer files queued by uucp or uux
 .BI \-t turnaround
 ]
 .PP
-.B /etc/uucpd
+.B uucpd
 .SH DESCRIPTION
 .I Uucico
 performs the actual work involved in transferring files between
@@ -45,7 +45,7 @@ The following options are available.
 .BI \-d spooldir
 Use
 .I spooldir
-as the spool directory. The default is /usr/spool/uucp.
+as the spool directory. The default is /var/spool/uucp.
 .TP 8
 .BI \-g grade
 Only send jobs of grade
@@ -100,7 +100,7 @@ output
 If
 .I stderr
 is unavailable, output is written to
-.RI /usr/spool/uucp/AUDIT/ system.
+.RI /var/spool/uucp/AUDIT/ system.
 When
 .I role
 is 0 (slave), debugging output is always written to the AUDIT
@@ -182,7 +182,7 @@ file must be created, with a login ``shell'' of
 For example:
 .PP
 .nf
-	nuucp:Password:6:1::/usr/spool/uucppublic:/usr/lib/uucp/uucico
+	nuucp:Password:6:1::/var/spool/uucppublic:/usr/lib/uucp/uucico
 .fi
 .PP
 The UID for UUCP remote logins is not critical, so long as it differs from
@@ -190,7 +190,7 @@ the UUCP Administrative login.
 The latter owns the UUCP files, and assigning
 this UID to a remote login would be an extreme security hazard. 
 .SH FILES
-.ta \w'/usr/spool/uucp/D.hostnameX/  'u
+.ta \w'/var/spool/uucp/D.hostnameX/  'u
 .nf
 /usr/lib/uucp/	UUCP internal files/utilities
 /usr/lib/uucp/L-devices	Local device descriptions
@@ -200,22 +200,22 @@ this UID to a remote login would be an extreme security hazard.
 /usr/lib/uucp/L.sys	Host connection specifications
 /usr/lib/uucp/USERFILE	Remote directory tree permissions list
 .PP
-/usr/spool/uucp/	Spool directory
-/usr/spool/uucp/AUDIT/*	Debugging audit trails
-/usr/spool/uucp/C./	Control files directory
-/usr/spool/uucp/D./	Incoming data file directory
-/usr/spool/uucp/D.hostname/	Outgoing data file directory
-/usr/spool/uucp/D.hostnameX/	Outgoing execution file directory
-/usr/spool/uucp/CORRUPT/	Place for corrupted C. and D. files
-/usr/spool/uucp/ERRLOG	UUCP internal error log
-/usr/spool/uucp/LOGFILE	UUCP system activity log
-/usr/spool/uucp/LCK/LCK..*	Device lock files
-/usr/spool/uucp/SYSLOG	File transfer statistics log
-/usr/spool/uucp/STST/*	System status files
-/usr/spool/uucp/TM./	File transfer temp directory
-/usr/spool/uucp/X./	Incoming execution file directory
+/var/spool/uucp/	Spool directory
+/var/spool/uucp/AUDIT/*	Debugging audit trails
+/var/spool/uucp/C./	Control files directory
+/var/spool/uucp/D./	Incoming data file directory
+/var/spool/uucp/D.hostname/	Outgoing data file directory
+/var/spool/uucp/D.hostnameX/	Outgoing execution file directory
+/var/spool/uucp/CORRUPT/	Place for corrupted C. and D. files
+/var/spool/uucp/ERRLOG	UUCP internal error log
+/var/spool/uucp/LOGFILE	UUCP system activity log
+/var/spool/uucp/LCK/LCK..*	Device lock files
+/var/spool/uucp/SYSLOG	File transfer statistics log
+/var/spool/uucp/STST/*	System status files
+/var/spool/uucp/TM./	File transfer temp directory
+/var/spool/uucp/X./	Incoming execution file directory
 .PP
-/usr/spool/uucppublic	Public access directory
+/var/spool/uucppublic	Public access directory
 .fi
 .SH SEE ALSO
 uucp(1), uuq(1), uux(1), L-devices(5), L-dialcodes(5), L.aliases(5),
