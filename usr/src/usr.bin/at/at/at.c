@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)at.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)at.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -86,14 +86,6 @@ struct datetypes {
 };
 
 /*
- * Months of the year.
- */
-char *months[13] = {
-	"jan", "feb", "mar", "apr", "may", "jun",
-	"jul", "aug", "sep", "oct", "nov", "dec", 0,
-};
-
-/*
  * A table of the number of days in each month of the year.
  *
  *	yeartable[0] -- normal year
@@ -144,7 +136,6 @@ char **argv;
 					   job using the Cshell */
 	int mailflag = 0;		/* send mail after a job has been run?*/
 	int standardin = 0;		/* are we reading from stardard input */
-	char *tmp;			/* scratch pointer */
 	char line[LINSIZ];		/* a line from input file */
 	char pwbuf[MAXPATHLEN];		/* the current working directory */
 	char *jobfile = "stdin";	/* file containing job to be run */
@@ -288,15 +279,11 @@ char **argv;
 	/*
 	 * Open the spoolfile for writing.
 	 */
-	if ((spoolfile = fopen(atfile, "w")) == NULL){
+	if ((c = open(atfile, O_WRONLY|O_CREAT|O_EXCL, 0400)) < 0 ||
+	    (spoolfile = fdopen(c, "w")) == NULL) {
 		perror(atfile);
 		exit(1);
 	}
-
-	/*
-	 * Make the file not world readable.
-	 */
-	fchmod(fileno(spoolfile), 0400);
 
 	/*
 	 * The protection mechanism works like this:
@@ -307,7 +294,7 @@ char **argv;
 	 * to simplify permission checking.  However, we fork first,
 	 * so that we can clean up if interrupted.
 	 */
-	signal(SIGINT, SIG_IGN);
+	(void)signal(SIGINT, SIG_IGN);
 	pid = fork();
 	if (pid == -1) {
 		perror("fork");
