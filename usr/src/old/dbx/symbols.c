@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)symbols.c 1.5 %G%";
+static char sccsid[] = "@(#)symbols.c 1.6 %G%";
 
 /*
  * Symbol management.
@@ -465,8 +465,10 @@ Symbol s;
 
 #define MINCHAR -128
 #define MAXCHAR 127
+#define MAXUCHAR 255
 #define MINSHORT -32768
 #define MAXSHORT 32767
+#define MAXUSHORT 65535L
 
 public Integer size(sym)
 Symbol sym;
@@ -484,9 +486,15 @@ Symbol sym;
 	    upper = t->symvalue.rangev.upper;
 	    if (upper == 0 and lower > 0) {		/* real */
 		r = lower;
-	    } else if (lower >= MINCHAR and upper <= MAXCHAR) {
+	    } else if (
+		(lower >= MINCHAR and upper <= MAXCHAR) or
+		(lower >= 0 and upper <= MAXUCHAR)
+	      ) {
 		r = sizeof(char);
-	    } else if (lower >= MINSHORT and upper <= MAXSHORT) {
+	    } else if (
+		(lower >= MINSHORT and upper <= MAXSHORT) or
+		(lower >= 0 and upper <= MAXUSHORT)
+	      ) {
 		r = sizeof(short);
 	    } else {
 		r = sizeof(long);
@@ -508,7 +516,7 @@ Symbol sym;
 	case VAR:
 	case FVAR:
 	    r = size(t->type);
-	    if (r < sizeof(Word)) {
+	    if (r < sizeof(Word) and isparam(t)) {
 		r = sizeof(Word);
 	    }
 	    break;
