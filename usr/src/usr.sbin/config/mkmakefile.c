@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -412,23 +412,34 @@ cont:
 do_cfiles(fp)
 	FILE *fp;
 {
-	register struct file_list *tp;
+	register struct file_list *tp, *fl;
 	register int lpos, len;
+	char swapname[32];
 
-	fprintf(fp, "CFILES=");
+	fputs("CFILES=", fp);
 	lpos = 8;
-	for (tp = ftab; tp != 0; tp = tp->f_next) {
-		if (tp->f_type == INVISIBLE)
-			continue;
-		if (tp->f_fn[strlen(tp->f_fn)-1] != 'c')
-			continue;
-		if ((len = 3 + strlen(tp->f_fn)) + lpos > 72) {
-			lpos = 8;
-			fprintf(fp, "\\\n\t");
+	for (tp = ftab; tp; tp = tp->f_next)
+		if (tp->f_type != INVISIBLE) {
+			len = strlen(tp->f_fn);
+			if (tp->f_fn[len - 1] != 'c')
+				continue;
+			if ((len = 3 + len) + lpos > 72) {
+				lpos = 8;
+				fputs("\\\n\t", fp);
+			}
+			fprintf(fp, "../%s ", tp->f_fn);
+			lpos += len + 1;
 		}
-		fprintf(fp, "../%s ", tp->f_fn);
-		lpos += len + 1;
-	}
+	for (fl = conf_list; fl; fl = fl->f_next)
+		if (fl->f_type == SYSTEMSPEC) {
+			sprintf(swapname, "swap%s.c", fl->f_fn);
+			if ((len = 3 + strlen(swapname)) + lpos > 72) {
+				lpos = 8;
+				fputs("\\\n\t", fp);
+			}
+			fprintf(fp, "../%s ", swapname);
+			lpos += len + 1;
+		}
 	if (lpos != 8)
 		putc('\n', fp);
 }
@@ -556,24 +567,17 @@ do_load(f)
 	register FILE *f;
 {
 	register struct file_list *fl;
-	int first = 1;
+	register int first;
 	struct file_list *do_systemspec();
 
-	fl = conf_list;
-	while (fl) {
-		if (fl->f_type != SYSTEMSPEC) {
-			fl = fl->f_next;
-			continue;
-		}
-		fl = do_systemspec(f, fl, first);
-		if (first)
-			first = 0;
-	}
-	fprintf(f, "all:");
-	for (fl = conf_list; fl != 0; fl = fl->f_next)
+	for (first = 1, fl = conf_list; fl; first = 0)
+		fl = fl->f_type == SYSTEMSPEC ?
+			do_systemspec(f, fl, first) : fl->f_next;
+	fputs("all:", f);
+	for (fl = conf_list; fl; fl = fl->f_next)
 		if (fl->f_type == SYSTEMSPEC)
 			fprintf(f, " %s", fl->f_needs);
-	fprintf(f, "\n");
+	putc('\n', f);
 }
 
 struct file_list *
