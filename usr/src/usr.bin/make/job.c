@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)job.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)job.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -71,11 +71,11 @@ static char sccsid[] = "@(#)job.c	5.16 (Berkeley) %G%";
  */
 
 #include "make.h"
-#include <sys/signal.h>
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <sys/time.h>
 #include <sys/wait.h>
+#include <signal.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <stdio.h>
