@@ -238,3 +238,9 @@ fdesc/fdesc_vfsops.c	optional fdesc
 fdesc/fdesc_vnops.c	optional fdesc
 portal/portal_vfsops.c	optional portal
 portal/portal_vnops.c	optional portal
+nullfs/null_vnops.c	optional nullfs
+nullfs/null_vfsops.c	optional nullfs
+nullfs/null_subr.c	optional nullfs
+umapfs/umap_vnops.c	optional umapfs
+umapfs/umap_vfsops.c	optional umapfs
+umapfs/umap_subr.c	optional umapfs
