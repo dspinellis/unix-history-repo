@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hash.h	8.1 (Berkeley) %G%
+ *	@(#)hash.h	8.2 (Berkeley) %G%
  */
 
 /* hash.h --
@@ -79,12 +79,12 @@ typedef struct Hash_Search {
 
 #define	Hash_Size(n)	(((n) + sizeof (int) - 1) / sizeof (int))
 
-Hash_Entry	*Hash_CreateEntry __P((Hash_Table *, char *, Boolean *));
-void		 Hash_DeleteEntry __P((Hash_Table *, Hash_Entry *));
-void		 Hash_DeleteTable __P((Hash_Table *));
-Hash_Entry	*Hash_EnumFirst __P((Hash_Table *, Hash_Search *));
-Hash_Entry	*Hash_EnumNext __P((Hash_Search *));
-Hash_Entry	*Hash_FindEntry __P((Hash_Table *, char *));
-void		 Hash_InitTable __P((Hash_Table *, int));
+void Hash_InitTable __P((Hash_Table *, int));
+void Hash_DeleteTable __P((Hash_Table *));
+Hash_Entry *Hash_FindEntry __P((Hash_Table *, char *));
+Hash_Entry *Hash_CreateEntry __P((Hash_Table *, char *, Boolean *));
+void Hash_DeleteEntry __P((Hash_Table *, Hash_Entry *));
+Hash_Entry *Hash_EnumFirst __P((Hash_Table *, Hash_Search *));
+Hash_Entry *Hash_EnumNext __P((Hash_Search *));
 
 #endif /* _HASH */

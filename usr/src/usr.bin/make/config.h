@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.h	8.1 (Berkeley) %G%
+ *	@(#)config.h	8.2 (Berkeley) %G%
  */
 
 #define	DEFSHELL	1			/* Bourne shell */
