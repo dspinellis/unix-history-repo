@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.6 (Berkeley) %G%
+#	@(#)Makefile.inc	5.7 (Berkeley) %G%
 
 # stdlib sources
 .PATH: ${.CURDIR}/${MACHINE}/stdlib ${.CURDIR}/stdlib
@@ -18,7 +18,7 @@ SRCS+=	abs.s atof.s
 SRCS+=	abs.s atof.s
 .endif
 
-MAN+3=	abort.0 abs.0 alloca.0 atexit.0 atof.0 atoi.0 atol.0 bsearch.0 \
+MAN3+=	abort.0 abs.0 alloca.0 atexit.0 atof.0 atoi.0 atol.0 bsearch.0 \
 	calloc.0 div.0 exit.0 free.0 getenv.0 getopt.0 labs.0 ldiv.0 \
 	malloc.0 memory.0 qsort.0 radixsort.0 rand.0 random.0 realloc.0 \
 	strtod.0 strtol.0 strtoul.0 system.0
