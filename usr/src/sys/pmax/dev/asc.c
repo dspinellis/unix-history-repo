@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)asc.c	7.6 (Berkeley) %G%
+ *	@(#)asc.c	7.7 (Berkeley) %G%
  */
 
 /* 
@@ -96,9 +96,6 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/dkstat.h>
-#include <sys/buf.h>
-#include <sys/conf.h>
 #include <sys/errno.h>
 
 #include <pmax/dev/device.h>
