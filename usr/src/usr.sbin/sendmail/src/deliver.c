@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.69		%G%);
+SCCSID(@(#)deliver.c	3.70		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -154,12 +154,20 @@ deliver(firstto, editfcn)
 		}
 	}
 
+	/*
+	**  If we have no substitution for the user name in the argument
+	**  list, we know that we must supply the names otherwise -- and
+	**  SMTP is the answer!!
+	*/
+
 	if (*mvp == NULL)
 	{
 		/* running SMTP */
 # ifdef SMTP
 		clever = TRUE;
 		*pvp = NULL;
+
+		/* send the initial SMTP protocol */
 		i = smtpinit(m, pv, (ADDRESS *) NULL);
 		giveresponse(i, TRUE, m);
 # ifdef QUEUE
@@ -170,6 +178,7 @@ deliver(firstto, editfcn)
 		}
 # endif QUEUE
 # else SMTP
+		/* oops!  we don't implement SMTP */
 		syserr("SMTP style mailer");
 		return (EX_SOFTWARE);
 # endif SMTP
@@ -554,6 +563,11 @@ endmailer(pid, name)
 	register int i;
 	auto int st;
 
+	/* in the IPC case there is nothing to wait for */
+	if (pid == 0)
+		return (EX_OK);
+
+	/* wait for the mailer process to die and collect status */
 	while ((i = wait(&st)) > 0 && i != pid)
 		continue;
 	if (i < 0)
@@ -561,12 +575,16 @@ endmailer(pid, name)
 		syserr("wait");
 		return (-1);
 	}
+
+	/* see if it died a horrid death */
 	if ((st & 0377) != 0)
 	{
 		syserr("%s: stat %o", name, st);
 		ExitStat = EX_UNAVAILABLE;
 		return (-1);
 	}
+
+	/* normal death -- return status */
 	i = (st >> 8) & 0377;
 	return (i);
 }
@@ -582,8 +600,9 @@ endmailer(pid, name)
 **		prfile -- pointer to rfile (from mailer) connection.
 **
 **	Returns:
-**		pid of mailer.
+**		pid of mailer ( > 0 ).
 **		-1 on error.
+**		zero on an IPC connection.
 **
 **	Side Effects:
 **		creates a mailer in a subprocess.
@@ -613,6 +632,29 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 # endif DEBUG
 	errno = 0;
 
+# ifdef DAEMON
+	/*
+	**  Deal with the special case of mail handled through an IPC
+	**  connection.
+	**	In this case we don't actually fork.  We must be
+	**	running SMTP for this to work.  We will return a
+	**	zero pid to indicate that we are running IPC.
+	*/
+
+	if (strcmp(m->m_mailer, "[IPC]") == 0)
+	{
+		register int i;
+
+		if (!clever)
+			syserr("non-clever IPC");
+		i = makeconnection(pvp[1], pmfile, prfile);
+		if (i != EX_OK)
+			return (-1);
+		else
+			return (0);
+	}
+# endif DAEMON
+
 	/* create a pipe to shove the mail through */
 	if (pipe(mpvect) < 0)
 	{
@@ -631,10 +673,16 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	}
 # endif SMTP
 
+	/*
+	**  Actually fork the mailer process.
+	**	DOFORK is clever about retrying.
+	*/
+
 	DOFORK(XFORK);
 	/* pid is set by DOFORK */
 	if (pid < 0)
 	{
+		/* failure */
 		syserr("Cannot fork");
 		(void) close(mpvect[0]);
 		(void) close(mpvect[1]);
@@ -714,7 +762,10 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		closelog();
 # endif LOG
 # endif VFORK
+
+		/* try to execute the mailer */
 		execv(m->m_mailer, pvp);
+
 		/* syserr fails because log is closed */
 		/* syserr("Cannot exec %s", m->m_mailer); */
 		printf("Cannot exec '%s' errno=%d\n", m->m_mailer, errno);
