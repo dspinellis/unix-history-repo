@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.62 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.63 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -889,30 +889,29 @@ include(fname, forwarding, ctladdr, sendq, aliaslevel, e)
 		uid = DefUid;
 		gid = DefGid;
 		uname = DefUser;
-		saveduid = -1;
 	}
 	else
 	{
 		uid = ca->q_uid;
 		gid = ca->q_gid;
 		uname = ca->q_user;
-#ifdef HASSETREUID
-		saveduid = geteuid();
-		savedgid = getegid();
-		if (saveduid == 0)
-		{
-			initgroups(uname, gid);
-			if (uid != 0)
-			{
-				if (setreuid(0, uid) < 0)
-					syserr("setreuid(0, %d) failure (real=%d, eff=%d)",
-						uid, getuid(), geteuid());
-				else
-					sfflags |= SFF_NOPATHCHECK;
-			}
-		}
-#endif                   
 	}
+#ifdef HASSETREUID
+	saveduid = geteuid();
+	savedgid = getegid();
+	if (saveduid == 0)
+	{
+		initgroups(uname, gid);
+		if (uid != 0)
+		{
+			if (setreuid(0, uid) < 0)
+				syserr("setreuid(0, %d) failure (real=%d, eff=%d)",
+					uid, getuid(), geteuid());
+			else
+				sfflags |= SFF_NOPATHCHECK;
+		}
+	}
+#endif                   
 
 	if (tTd(27, 9))
 		printf("include: new uid = %d/%d\n", getuid(), geteuid());
