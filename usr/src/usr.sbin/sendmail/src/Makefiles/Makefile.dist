@@ -7,17 +7,17 @@
 #
 #  This has been tested on Ultrix.
 #
-#	@(#)Makefile.dist	6.5 (Berkeley) %G%
+#	@(#)Makefile.dist	6.6 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
 O=	-O
 
-# define the database mechanism used for alias lookups:
+# define the database mechanisms available for map & alias lookups:
 #	-DNDBM -- use new DBM
 #	-DNEWDB -- use new Berkeley DB
-#	-DNDBM -DNEWDB -- use both new DBM and new Berkeley DB
 #	-DNDBM -DNEWDB -DYPCOMPAT -- use both plus YP compatility
+#	-DNIS -- include client NIS support
 # The really old (V7) DBM library is no longer supported.
 # If YPCOMPAT is defined and /var/yp/Makefile exists, sendmail will build
 #   both the NEWDB and DBM libraries (the DBM just for YP).
