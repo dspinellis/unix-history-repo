@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chgrp.1	6.1 (Berkeley) %G%
+.\"	@(#)chgrp.1	6.2 (Berkeley) %G%
 .\"
 .TH CHGRP 1 ""
 .UC 5
@@ -36,6 +36,8 @@ option is given,
 .I chgrp
 recursively descends its directory arguments
 setting the specified group-ID.
+When symbolic links are encountered, their group is changed,
+but they are not traversed.
 .SH FILES
 /etc/group
 .SH "SEE ALSO"

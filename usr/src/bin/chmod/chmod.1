@@ -1,4 +1,4 @@
-.\"	@(#)chmod.1	6.2 (Berkeley) %G%
+.\"	@(#)chmod.1	6.3 (Berkeley) %G%
 .\"
 .TH CHMOD 1 ""
 .AT 3
@@ -85,6 +85,8 @@ option is given,
 .I chmod
 recursively descends its directory arguments
 setting the mode for each file as described above.
+When symbolic links are encountered, their mode is not changed
+and they are not traversed.
 .PP
 If the
 .B \-f

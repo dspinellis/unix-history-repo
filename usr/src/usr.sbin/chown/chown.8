@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chown.8	6.1 (Berkeley) %G%
+.\"	@(#)chown.8	6.2 (Berkeley) %G%
 .\"
 .TH CHOWN 8 ""
 .UC 4
@@ -39,6 +39,8 @@ option is given,
 .I chown
 recursively descends its directory arguments
 setting the specified owner.
+When symbolic links are encountered, their ownership is changed,
+but they are not traversed.
 .SH FILES
 /etc/passwd
 .SH "SEE ALSO"
