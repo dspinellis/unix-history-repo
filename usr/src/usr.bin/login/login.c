@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1980,1987 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
@@ -11,13 +11,14 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.19 (Berkeley) %G%";
 #endif not lint
 
 /*
  * login [ name ]
- * login -r hostname (for rlogind)
- * login -h hostname (for telnetd, etc.)
+ * login -r hostname	(for rlogind)
+ * login -h hostname	(for telnetd, etc.)
+ * login -f name	(for pre-authenticated login: datakit, xterm, etc.)
  */
 
 #include <sys/param.h>
@@ -98,7 +99,7 @@ main(argc, argv)
 {
 	extern	char **environ;
 	register char *namep;
-	int pflag = 0, hflag = 0, t, f, c;
+	int pflag = 0, hflag = 0, fflag = 0, t, f, c;
 	int invalid, quietlog;
 	FILE *nlfd;
 	char *ttyn, *tty;
@@ -114,6 +115,7 @@ main(argc, argv)
 	/*
 	 * -p is used by getty to tell login not to destroy the environment
 	 * -r is used by rlogind to cause the autologin protocol;
+ 	 * -f is used to skip a second login authentication 
 	 * -h is used by other servers to pass the name of the
 	 * remote host to login so that it may be placed in utmp and wtmp
 	 */
@@ -121,8 +123,8 @@ main(argc, argv)
 	domain = index(me, '.');
 	while (argc > 1) {
 		if (strcmp(argv[1], "-r") == 0) {
-			if (rflag || hflag) {
-				printf("Only one of -r and -h allowed\n");
+			if (rflag || hflag || fflag) {
+				printf("Other options not allowed with -r\n");
 				exit(1);
 			}
 			rflag = 1;
@@ -134,15 +136,29 @@ main(argc, argv)
 			argv += 2;
 			continue;
 		}
-		if (strcmp(argv[1], "-h") == 0 && getuid() == 0) {
-			if (rflag || hflag) {
-				printf("Only one of -r and -h allowed\n");
+		if (strcmp(argv[1], "-h") == 0) {
+			if (getuid() == 0) {
+				if (rflag || hflag) {
+				    printf("Only one of -r and -h allowed\n");
+				    exit(1);
+				}
+				hflag = 1;
+				if ((p = index(argv[2], '.')) &&
+				    strcmp(p, domain) == 0)
+					*p = 0;
+				SCPYN(utmp.ut_host, argv[2]);
+			}
+			argc -= 2;
+			argv += 2;
+			continue;
+		}
+		if (strcmp(argv[1], "-f") == 0 && argc > 2) {
+			if (rflag) {
+				printf("Only one of -r and -f allowed\n");
 				exit(1);
 			}
-			hflag = 1;
-			if ((p = index(argv[2], '.')) && strcmp(p, domain) == 0)
-				*p = 0;
-			SCPYN(utmp.ut_host, argv[2]);
+			fflag = 1;
+			SCPYN(utmp.ut_name, argv[2]);
 			argc -= 2;
 			argv += 2;
 			continue;
@@ -188,7 +204,8 @@ main(argc, argv)
 	do {
 		ldisc = 0;
 		ioctl(0, TIOCSETD, &ldisc);
-		SCPYN(utmp.ut_name, "");
+		if (fflag == 0)
+			SCPYN(utmp.ut_name, "");
 		/*
 		 * Name specified, take it.
 		 */
@@ -209,12 +226,23 @@ main(argc, argv)
 			ldisc = NTTYDISC;
 			ioctl(0, TIOCSETD, &ldisc);
 		}
+		if (fflag) {
+			int uid = getuid();
+
+			if (uid != 0 && uid != pwd->pw_uid)
+				fflag = 0;
+			/*
+			 * Disallow automatic login for root.
+			 */
+			if (pwd->pw_uid == 0)
+				fflag = 0;
+		}
 		/*
 		 * If no remote login authentication and
 		 * a password exists for this user, prompt
 		 * for one and verify it.
 		 */
-		if (usererr == -1 && *pwd->pw_passwd != '\0') {
+		if (usererr == -1 && fflag == 0 && *pwd->pw_passwd != '\0') {
 			char *pp;
 
 			setpriority(PRIO_PROCESS, 0, -4);
@@ -252,13 +280,13 @@ main(argc, argv)
 			printf("Login incorrect\n");
 			if (++t >= 5) {
 				if (utmp.ut_host[0])
-					syslog(LOG_CRIT,
-					    "REPEATED LOGIN FAILURES ON %s FROM %.*s, %.*s",
+					syslog(LOG_ERR,
+			    "REPEATED LOGIN FAILURES ON %s FROM %.*s, %.*s",
 					    tty, HMAX, utmp.ut_host,
 					    NMAX, utmp.ut_name);
 				else
-					syslog(LOG_CRIT,
-					    "REPEATED LOGIN FAILURES ON %s, %.*s",
+					syslog(LOG_ERR,
+				    "REPEATED LOGIN FAILURES ON %s, %.*s",
 						tty, NMAX, utmp.ut_name);
 				ioctl(0, TIOCHPCL, (struct sgttyb *) 0);
 				close(0), close(1), close(2);
