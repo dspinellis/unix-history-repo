@@ -1,4 +1,4 @@
-/*	cgram.y	4.16	87/12/09	*/
+/*	cgram.y	4.17	87/12/09	*/
 
 /*
  * Grammar for the C compiler.
@@ -865,7 +865,7 @@ resetbc(mask){
 addcase(p) NODE *p; { /* add case to switch */
 
 	p = optim( p );  /* change enum to ints */
-	if( p->in.op != ICON ){
+	if( p->in.op != ICON || p->in.rval != NONAME ){
 		uerror( "non-constant case expression");
 		return;
 		}
