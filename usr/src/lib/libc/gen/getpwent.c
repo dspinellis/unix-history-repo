@@ -1,4 +1,4 @@
-/* @(#)getpwent.c	4.4 (Berkeley) 84/06/19 */
+/* @(#)getpwent.c	4.5 (Berkeley) 84/08/28 */
 #include <stdio.h>
 #include <pwd.h>
 #include <ndbm.h>
@@ -8,8 +8,8 @@ static char EMPTY[] = "";
 static FILE *pwf = NULL;
 static char line[BUFSIZ+1];
 static struct passwd passwd;
-extern DBM *_pw_db;
-extern int _pw_stayopen;
+DBM *_pw_db;
+int _pw_stayopen;
 
 setpwent()
 {
@@ -26,7 +26,7 @@ endpwent()
 		pwf = NULL;
 	}
 	if (_pw_db != (DBM *)0) {
-		ndbmclose(_pw_db);
+		dbm_close(_pw_db);
 		_pw_db = (DBM *)0;
 		_pw_stayopen = 0;
 	}
