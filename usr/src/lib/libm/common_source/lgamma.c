@@ -6,8 +6,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lgamma.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)lgamma.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
+
+/*
+ * Coded by Peter McIlroy, Nov 1992;
+ *
+ * The financial support of UUNET Communications Services is greatfully
+ * acknowledged.
+ */
 
 #include <math.h>
 #include <errno.h>
@@ -18,14 +25,17 @@ static char sccsid[] = "@(#)lgamma.c	5.8 (Berkeley) %G%";
  * Error:  x > 0 error < 1.3ulp.
  *	   x > 4, error < 1ulp.
  *	   x > 9, error < .6ulp.
- * 	   x < 0, all bets are off.
+ * 	   x < 0, all bets are off. (When G(x) ~ 1, log(G(x)) ~ 0)
  * Method:
  *	x > 6:
  *		Use the asymptotic expansion (Stirling's Formula)
  *	0 < x < 6:
- *		Use gamma(x+1) = x*gamma(x)
+ *		Use gamma(x+1) = x*gamma(x) for argument reduction.
  *		Use rational approximation in
  *		the range 1.2, 2.5
+ *		Two approximations are used, one centered at the
+ *		minimum to ensure monotonicity; one centered at 2
+ *		to maintain small relative error.
  *	x < 0:
  *		Use the reflection formula,
  *		G(1-x)G(x) = PI/sin(PI*x)
@@ -33,14 +43,15 @@ static char sccsid[] = "@(#)lgamma.c	5.8 (Berkeley) %G%";
  *	non-positive integer	returns +Inf.
  *	NaN			returns NaN
 */
+static int endian;
 #if defined(vax) || defined(tahoe)
+#define _IEEE		0
 /* double and float have same size exponent field */
-#define TRUNC(x) (double) (float) (x)
-#define _IEEE	0
+#define TRUNC(x)	x = (double) (float) (x)
 #else
-#define TRUNC(x) *(((int *) &x) + 1) &= 0xf8000000
-#define _IEEE	1
-#define infnan(x) (zero/zero)
+#define _IEEE		1
+#define TRUNC(x)	*(((int *) &x) + endian) &= 0xf8000000
+#define infnan(x)	0.0
 #endif
 
 extern double log1p(double);
@@ -50,7 +61,6 @@ static double neg_lgam(double);
 static double zero = 0.0, one = 1.0;
 int signgam;
 
-#define lns2pi	.418938533204672741780329736405
 #define UNDERFL (1e-1020 * 1e-1020)
 
 #define LEFT	(1.0 - (x0 + .25))
@@ -93,20 +103,24 @@ int signgam;
 /*
  * Stirling's Formula, adjusted for equal-ripple. x in [6,Inf].
 */
-#define pb0	.0833333333333333148296162562474
-#define pb1	-.00277777777774548123579378966497
-#define pb2	.000793650778754435631476282786423
-#define pb3	-.000595235082566672847950717262222
-#define pb4	.000841428560346653702135821806252
-#define pb5	-.00189773526463879200348872089421
-#define pb6	.00569394463439411649408050664078
-#define pb7	-.0144705562421428915453880392761
+#define lns2pi	.418938533204672741780329736405
+#define pb0	 8.33333333333333148296162562474e-02
+#define pb1	-2.77777777774548123579378966497e-03
+#define pb2	 7.93650778754435631476282786423e-04
+#define pb3	-5.95235082566672847950717262222e-04
+#define pb4	 8.41428560346653702135821806252e-04
+#define pb5	-1.89773526463879200348872089421e-03
+#define pb6	 5.69394463439411649408050664078e-03
+#define pb7	-1.44705562421428915453880392761e-02
 
 double
 lgamma(double x)
 {
 	double r;
+
 	signgam = 1;
+	endian = ((*(int *) &one)) ? 1 : 0;
+
 	if (!finite(x))
 		if (_IEEE)
 			return (x+x);
@@ -226,14 +240,26 @@ CONTINUE:
 	}
 }
 
-#define lpi_hi 1.1447298858494001638
-#define lpi_lo .0000000000000000102659511627078262
-/* Error: within 3.5 ulp for x < 171.  For large x, see lgamma. */
 static double
 neg_lgam(double x)
 {
+	int xi;
 	double y, z, one = 1.0, zero = 0.0;
+	extern double gamma();
 
+	/* avoid destructive cancellation as much as possible */
+	if (x > -170) {
+		xi = x;
+		if (xi == x)
+			if (_IEEE)
+				return(one/zero);
+			else
+				return(infnan(ERANGE));
+		y = gamma(x);
+		if (y < 0)
+			y = -y, signgam = -1;
+		return (log(y));
+	}
 	z = floor(x + .5);
 	if (z == x) {		/* convention: G(-(integer)) -> +Inf */
 		if (_IEEE)
@@ -250,11 +276,11 @@ neg_lgam(double x)
 		z = sin(M_PI*z);
 	else
 		z = cos(M_PI*(0.5-z));
-	z = -log(z*x/M_PI);
+	z = log(M_PI/(z*x));
 
 	if (x > 6. + RIGHT)
-		y -= large_lgam(x);
+		y = large_lgam(x);
 	else
-		y = -small_lgam (x);
-	return (y + z);
+		y = small_lgam (x);
+	return (z - y);
 }
