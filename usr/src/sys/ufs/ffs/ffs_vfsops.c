@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vfsops.c	7.15 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.16 (Berkeley) %G%
  */
 
 
@@ -427,7 +427,7 @@ ufs_sync(mp, waitfor)
 		    (ip->i_flag & (IMOD|IACC|IUPD|ICHG)) == 0)
 			continue;
 		ILOCK(ip);
-		ITOV(ip)->v_count++;
+		VREF(ITOV(ip));
 		error = iupdat(ip, &time, &time, waitfor == MNT_WAIT);
 		iput(ip);
 	}

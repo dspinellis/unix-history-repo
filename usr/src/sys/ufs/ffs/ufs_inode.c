@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_inode.c	7.8 (Berkeley) %G%
+ *	@(#)ufs_inode.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -145,7 +145,7 @@ loop:
 				ip->i_freeb = NULL;
 			}
 			ILOCK(ip);
-			vp->v_count++;
+			VREF(vp);
 			*ipp = ip;
 			return(0);
 		}
@@ -246,7 +246,7 @@ again:
 	 */
 	ip->i_fs = fs;
 	ip->i_devvp = VFSTOUFS(mntp)->um_devvp;
-	ip->i_devvp->v_count++;
+	VREF(ip->i_devvp);
 	/*
 	 * Initialize the associated vnode
 	 */
@@ -385,7 +385,7 @@ igrab(ip)
 		ip->i_freef = NULL;
 		ip->i_freeb = NULL;
 	}
-	vp->v_count++;
+	VREF(vp);
 	ILOCK(ip);
 }
 

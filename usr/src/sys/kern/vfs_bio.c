@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_bio.c	7.6 (Berkeley) %G%
+ *	@(#)vfs_bio.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -380,7 +380,7 @@ loop:
 	bremhash(bp);
 	if (bp->b_vp)
 		brelvp(bp);
-	vp->v_count++;
+	VREF(vp);
 	bp->b_vp = vp;
 	bp->b_dev = vp->v_rdev;
 #ifdef SECSIZE

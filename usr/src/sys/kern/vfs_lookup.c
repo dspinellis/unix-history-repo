@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_lookup.c	7.13 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -110,7 +110,7 @@ namei(ndp)
 	ndp->ni_ptr = ndp->ni_pnbuf;
 	ndp->ni_loopcnt = 0;
 	dp = ndp->ni_cdir;
-	dp->v_count++;
+	VREF(dp);
 #ifdef KTRACE
 	if (KTRPOINT(u.u_procp, KTR_NAMEI))
 		ktrnamei(u.u_procp->p_tracep, ndp->ni_pnbuf);
@@ -129,7 +129,7 @@ start:
 		}
 		if ((dp = ndp->ni_rdir) == NULL)
 			dp = rootdir;
-		dp->v_count++;
+		VREF(dp);
 	}
 	VOP_LOCK(dp);
 	ndp->ni_endoff = 0;
@@ -229,7 +229,7 @@ dirloop:
 		for (;;) {
 			if (dp == ndp->ni_rdir || dp == rootdir) {
 				ndp->ni_dvp = dp;
-				dp->v_count++;
+				VREF(dp);
 				goto nextname;
 			}
 			if ((dp->v_flag & VROOT) == 0)
@@ -238,7 +238,7 @@ dirloop:
 			dp = dp->v_mount->m_vnodecovered;
 			vput(tdp);
 			VOP_LOCK(dp);
-			dp->v_count++;
+			VREF(dp);
 		}
 	}
 
