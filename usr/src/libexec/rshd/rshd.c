@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	4.4 82/11/15";
+static char sccsid[] = "@(#)rshd.c	4.5 82/11/15";
 #endif
 
 #include <sys/ioctl.h>
@@ -70,7 +70,7 @@ main(argc, argv)
 		sin.sin_port = htons(port);
 		argc--, argv++;
 	}
-	f = socket(0, SOCK_STREAM, 0, 0);
+	f = socket(AF_INET, SOCK_STREAM, 0, 0);
 	if (f < 0) {
 		perror("rshd: socket");
 		exit(1);

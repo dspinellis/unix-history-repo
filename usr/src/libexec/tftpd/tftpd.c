@@ -1,4 +1,4 @@
-/*	tftpd.c	4.5	82/11/15	*/
+/*	tftpd.c	4.6	82/11/15	*/
 
 /*
  * Trivial file transfer protocol server.
@@ -57,7 +57,7 @@ main(argc, argv)
 	for (;;) {
 		int fromlen;
 
-		f = socket(0, SOCK_DGRAM, 0, 0);
+		f = socket(AF_INET, SOCK_DGRAM, 0, 0);
 		if (f < 0) {
 			perror("tftpd: socket");
 			close(f);
