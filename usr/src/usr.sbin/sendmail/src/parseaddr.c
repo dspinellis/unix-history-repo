@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.47		%G%);
+SCCSID(@(#)parseaddr.c	3.48		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -50,6 +50,7 @@ parse(addr, a, copyf)
 	register struct mailer *m;
 	extern char **prescan();
 	extern ADDRESS *buildaddr();
+	static char nbuf[MAXNAME];
 
 	/*
 	**  Initialize and prescan address.
@@ -67,8 +68,13 @@ parse(addr, a, copyf)
 
 	/*
 	**  Apply rewriting rules.
+	**	Ruleset 4 rewrites the address into a form that will
+	**		be reflected in the outgoing message.  It must
+	**		not resolve.
+	**	Ruleset 0 does basic parsing.  It must resolve.
 	*/
 
+	rewrite(pvp, 4);
 	rewrite(pvp, 0);
 
 	/*
@@ -100,7 +106,6 @@ parse(addr, a, copyf)
 		a->q_paddr = newstr(addr);
 	else
 		a->q_paddr = addr;
-
 	if (copyf >= 0)
 	{
 		if (a->q_host != NULL)
@@ -871,17 +876,32 @@ remotename(name, m, force)
 	char lbuf[MAXNAME];
 	extern char *macvalue();
 	char *oldf = macvalue('f');
-	char *oldx = macvalue('x');
 	char *oldg = macvalue('g');
 	extern char **prescan();
 	register char **pvp;
-	extern char *getxpart();
 	extern ADDRESS *buildaddr();
+	extern char *crackaddr();
+	char *fancy;
 
 # ifdef DEBUG
 	if (tTd(12, 1))
 		printf("remotename(%s)\n", name);
 # endif DEBUG
+
+	/*
+	**  First put this address into canonical form.
+	**	First turn it into a macro.
+	**	Then run it through ruleset 4.
+	*/
+
+	/* save away the extraneous pretty stuff */
+	fancy = crackaddr(name);
+
+	/* now run through ruleset four */
+	pvp = prescan(name, '\0');
+	if (pvp == NULL)
+		return (name);
+	rewrite(pvp, 4);
 
 	/*
 	**  See if this mailer wants the name to be rewritten.  There are
@@ -890,51 +910,36 @@ remotename(name, m, force)
 	**  sending to another host that runs sendmail.
 	*/
 
-	if (!bitset(M_RELRCPT, m->m_flags) && !force)
+	if (bitset(M_RELRCPT, m->m_flags) && !force)
 	{
-# ifdef DEBUG
-		if (tTd(12, 1))
-			printf("remotename [ditto]\n");
-# endif DEBUG
-		return (name);
+		/*
+		**  Do general rewriting of name.
+		**	This will also take care of doing global name
+		**	translation.
+		*/
+
+		rewrite(pvp, 1);
+		rewrite(pvp, 3);
+
+		/* make the name relative to the receiving mailer */
+		cataddr(pvp, lbuf, sizeof lbuf);
+		define('f', lbuf);
+		expand(m->m_from, buf, &buf[sizeof buf - 1], CurEnv);
+
+		/* rewrite to get rid of garbage we added in the expand above */
+		pvp = prescan(buf, '\0');
+		if (pvp == NULL)
+			return (name);
+		rewrite(pvp, 2);
 	}
-
-	/*
-	**  Do general rewriting of name.
-	**	This will also take care of doing global name translation.
-	*/
-
-	define('x', getxpart(name));
-	pvp = prescan(name, '\0');
-	if (pvp == NULL)
-		return (name);
-	rewrite(pvp, 1);
-	rewrite(pvp, 3);
-	if (**pvp == CANONNET)
-	{
-		/* oops... resolved to something */
-		return (name);
-	}
-	cataddr(pvp, lbuf, sizeof lbuf);
-
-	/* make the name relative to the receiving mailer */
-	define('f', lbuf);
-	expand(m->m_from, buf, &buf[sizeof buf - 1], CurEnv);
-
-	/* rewrite to get rid of garbage we added in the expand above */
-	pvp = prescan(buf, '\0');
-	if (pvp == NULL)
-		return (name);
-	rewrite(pvp, 2);
-	cataddr(pvp, lbuf, sizeof lbuf);
 
 	/* now add any comment info we had before back */
+	cataddr(pvp, lbuf, sizeof lbuf);
 	define('g', lbuf);
-	expand("$q", buf, &buf[sizeof buf - 1], CurEnv);
+	expand(fancy, buf, &buf[sizeof buf - 1], CurEnv);
 
 	define('f', oldf);
 	define('g', oldg);
-	define('x', oldx);
 
 # ifdef DEBUG
 	if (tTd(12, 1))

@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.28		%G%);
+SCCSID(@(#)headers.c	3.29		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -32,7 +32,7 @@ chompheader(line, def)
 	struct hdrinfo *hi;
 	u_long mopts;
 	extern u_long mfencode();
-	extern char *crackfrom();
+	extern char *crackaddr();
 	extern ADDRESS *sendto();
 
 # ifdef DEBUG
@@ -114,7 +114,7 @@ chompheader(line, def)
 	if (!def && strcmp(fname, "from") == 0)
 	{
 		/* turn it into a macro -- will be expanded later */
-		h->h_value = newstr(crackfrom(fvalue));
+		h->h_value = newstr(crackaddr(fvalue));
 		h->h_flags |= H_DEFAULT;
 	}
 	else
@@ -527,7 +527,7 @@ spechandling(p)
 	}
 }
 /*
-**  CRACKFROM -- parse the from line and turn it into a macro
+**  CRACKADDR -- parse an address and turn it into a macro
 **
 **	This doesn't actually parse the address -- it just extracts
 **	it and replaces it with "$g".  The parse is totally ad hoc
@@ -547,13 +547,13 @@ spechandling(p)
 **		7.    .... etc ....
 **
 **	Parameters:
-**		from -- the value part of the from line.
+**		addr -- the address to be cracked.
 **
 **	Returns:
 **		a pointer to the new version.
 **
 **	Side Effects:
-**		The $f and $x macros may be defined.
+**		none.
 **
 **	Warning:
 **		The return value is saved in local storage and should
@@ -561,8 +561,8 @@ spechandling(p)
 */
 
 char *
-crackfrom(from)
-	register char *from;
+crackaddr(addr)
+	register char *addr;
 {
 	register char *p;
 	register int i;
@@ -573,7 +573,7 @@ crackfrom(from)
 
 # ifdef DEBUG
 	if (tTd(33, 1))
-		printf("crackfrom(%s)\n", from);
+		printf("crackaddr(%s)\n", addr);
 # endif DEBUG
 
 	strcpy(buf, "");
@@ -584,17 +584,17 @@ crackfrom(from)
 	**  the address part, and the rest is the comment.
 	*/
 
-	p = index(from, '<');
+	p = index(addr, '<');
 	if (p != NULL)
 	{
-		/* copy the beginning of the from field to the buffer */
+		/* copy the beginning of the addr field to the buffer */
 		*p = '\0';
-		strcpy(buf, from);
+		strcpy(buf, addr);
 		strcat(buf, "<");
 		*p = '<';
 
 		/* find the matching right angle bracket */
-		from = ++p;
+		addr = ++p;
 		for (i = 0; *p != '\0'; p++)
 		{
 			switch (*p)
@@ -626,7 +626,7 @@ crackfrom(from)
 	**  to the extra stuff at the end of the line, if any.
 	*/
 
-	p = from;
+	p = addr;
 
 	/* now strip out comments */
 	bp = &buf[strlen(buf)];
@@ -684,7 +684,7 @@ crackfrom(from)
 
 # ifdef DEBUG
 	if (tTd(33, 1))
-		printf("crackfrom=>%s\n", buf);
+		printf("crackaddr=>%s\n", buf);
 # endif DEBUG
 
 	return (buf);
