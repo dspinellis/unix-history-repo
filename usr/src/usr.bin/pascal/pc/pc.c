@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)pc.c 3.22 %G%";
+static	char sccsid[] = "@(#)pc.c 3.23 %G%";
 
 #include <stdio.h>
 #include <signal.h>
@@ -152,10 +152,18 @@ main(argc, argv)
 		case 't':
 			i++;
 			if (i == argc) {
-				fprintf(stderr, "pc: -T but no directory\n");
+				fprintf(stderr, "pc: -t but no directory\n");
+				exit(1);
+			}
+			if (argp[2] != '\0') {
+				fprintf(stderr, "pc: bad -t option\n");
 				exit(1);
 			}
 			tmpdir = argv[i];
+			if (tmpdir[0] == '-') {
+				fprintf(stderr, "pc: bad -t option\n");
+				exit(1);
+			}
 			tflag = 1;
 			continue;
 		case 'O':
