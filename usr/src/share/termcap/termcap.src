@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.88 (Berkeley) %G%
+#	@(#)termcap.src	5.89 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -1891,11 +1891,7 @@ cf|c100-rv-s|concept-rv-s|concept100-rv-s|c100rvs|slow reverse concept 100:\
 # The vt100 uses rs and rf rather than is/ct/st because the tab settings
 # are in non-volatile memory and don't need to be reset upon login.
 # You can type "reset" to get them set.
-dp|vt100-np|vt100 with no padding (for psl games):\
-	:cl=\E[H\E[2J:sr=\EM:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
-	:md=\E[1m:mr=\E[7m:mb=\E[5m:me=\E[m:tc=vt100:
-d0|vt100|vt100-am|vt100am|dec-vt100|dec vt100:\
+d0|vt100|dec-vt100|vt100-am|vt100am|dec-vt100|dec vt100:\
 	:do=^J:co#80:li#24:cl=50\E[;H\E[2J:sf=2*\ED:\
 	:le=^H:bs:am:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:\
 	:ce=3\E[K:cd=50\E[J:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:\
@@ -1905,10 +1901,14 @@ d0|vt100|vt100-am|vt100am|dec-vt100|dec vt100:\
 	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:\
 	:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sr=2*\EM:vt#3:xn:\
 	:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:
-d1|vt100-nam|vt100nam|vt100 w/no am:\
+d1|vt100-nam|dec-vt100-nam|vt100nam|vt100 w/no am:\
 	:am@:xn@:\
 	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7l\E[?8h:ks=\E[?1h\E=:ke=\E[?1l\E>:\
 	:tc=vt100-am:
+dp|vt100-np|dec-vt100-np|vt100 with no padding (for psl games):\
+	:cl=\E[H\E[2J:sr=\EM:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
+	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
+	:md=\E[1m:mr=\E[7m:mb=\E[5m:me=\E[m:tc=vt100:
 d2|gt42|dec gt42:\
 	:do=^J:le=^H:bs:co#72:ns:li#40:os:
 #From ts@pc.ecn.purdue.edu (Thomas Ruschak)
@@ -1965,17 +1965,17 @@ df|dw4|decwriter IV:\
 dh|vt50h|dec vt50h:\
 	:do=^J:le=^H:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:cm=\EY%+ %+ :\
 	:co#80:li#12:nd=\EC:pt:sr=\EI:up=\EA:
-di|vt100-s|vt100 with status line at top:\
+di|vt100-s|dec-vt100-s|vt100 with status line at top:\
 	:li#23:i2=\E[2;24r\E[24;1H:cm@:ho=\E[H^J:cl=50\E[;H^J\E[0J:\
 	:hs:es:ts=\E7\E[1;%dH\E[1K:fs=\E8:tc=vt100-am:
-dj|vt100-s-bot|vt100 with status line at bottom:\
+dj|vt100-s-bot|dec-vt100-s-bot|vt100 with status line at bottom:\
 	:li#23:i2=\E[1;23r\E[23;1H:\
 	:hs:es:ts=\E7\E[24;%dH\E[1K:fs=\E8:tc=vt100-am:
-ds|vt100-nav|dec vt100 132 cols 14 lines (w/o advanced video option):\
+ds|vt100-nav|dec-vt100-nav|dec vt100 132 cols 14 lines (w/o advanced video option):\
 	:li#14:tc=vt100-w:
-dt|vt100-w|dec vt100 132 cols (w/advanced video):\
+dt|vt100-w|dec-vt100-w|dec vt100 132 cols (w/advanced video):\
 	:co#132:li#24:rs=\E>\E[?3h\E[?4l\E[?5l\E[?8h:tc=vt100-am:
-dv|vt100-w-nam|dec vt100 132 cols (w/advanced video), no am:\
+dv|vt100-w-nam|dec-vt100-w-nam|dec vt100 132 cols (w/advanced video), no am:\
 	:co#132:li#24:rs=\E>\E[?3h\E[?4l\E[?5l\E[?8h:vt@:tc=vt100-nam:
 d8|vt102|vt100 w/adv. video:\
 	:al=\E[1L:dl=\E[1M:im=\E[4h:ei=\E[4l:mi:dc=\E[1P:ku=\EOA:kd=\EOB:\
@@ -1992,7 +1992,7 @@ dy|vt102-obs|dec vt102:\
 	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:\
 	:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:sr=5\EM:vt#3:\
 	:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:vs=\E[?7l:ve=\E[?7h:
-dw|vt52|dec vt52:\
+dw|vt52|dec-vt52|dec vt52:\
 	:do=^J:le=^H:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:cm=\EY%+ %+ :co#80:li#24:\
 	:nd=\EC:pt:sr=\EI:up=\EA:ku=\EA:kd=\EB:kr=\EC:kl=\ED:kb=^H:
 # vt61 created by Roger Sacilotto  Massachusetts Computer Associates, Inc
@@ -2013,7 +2013,7 @@ dP|pro350|decpro|dec pro console:\
 	:ae=\EG:as=\EF:
 #
 # From: Bracy H. Elton  <elton@lll-crg>
-dl|vt200|vt220|vt200-js|vt220-js|dec vt200 series with jump scroll:\
+dl|vt200|vt220|dec-vt220|vt200-js|vt220-js|dec vt200 series with jump scroll:\
 	:im=\E[4h:ei=\E[4l:mi:dc=\E[P:dm=:ed=:al=\E[L:\
 	:cs=\E[%i%d;%dr:sf=\ED:sr=\EM:sb=\EM:\
 	:ce=\E[K:cl=\E[H\E[J:cd=\E[J:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
@@ -2022,15 +2022,15 @@ dl|vt200|vt220|vt200-js|vt220-js|dec vt200 series with jump scroll:\
 	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[1;24r\E[24;1H:\
 	:rs=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:\
 	:tc=vt100:
-dm|vt200-ss|vt220-ss|dec vt200 series with smooth scroll:\
+dm|vt200-ss|vt220-ss|dec-vt220-ss|dec vt200 series with smooth scroll:\
 	:is=\E>\E[?3l\E[?4h\E[?5l\E[?7h\E[?8h\E[1;24r\E[24;1H:\
 	:rs=\E>\E[?3l\E[?4h\E[?5l\E[?7h\E[?8h:\
 	:tc=vt200:
-dn|vt200-w|vt220-w|vt200-wj|vt220-wj|dec vt200 series; 132 col.; jump scroll:\
+dn|vt200-w|vt220-w|dec-vt220-w|vt200-wj|vt220-wj|dec vt200 series; 132 col.; jump scroll:\
 	:is=\E>\E[?3h\E[?4l\E[?5l\E[?7h\E[?8h\E[1;24r\E[24;1H:\
 	:rs=\E>\E[?3h\E[?4l\E[?5l\E[?7h\E[?8h:\
 	:co#132:tc=vt200:
-do|vt200-ws|vt220-ws|dec vt200 series; 132 col.; smooth scroll:\
+do|vt200-ws|vt220-ws|dec-vt220-ws|dec vt200 series; 132 col.; smooth scroll:\
 	:is=\E>\E[?3h\E[?4h\E[?5l\E[?7h\E[?8h\E[1;24r\E[24;1H:\
 	:rs=\E>\E[?3h\E[?4h\E[?5l\E[?7h\E[?8h:\
 	:co#132:tc=vt200:
