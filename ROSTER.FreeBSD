@@ -27,12 +27,15 @@ misc	= Misc user-land utility (contrib, other)
 prog	= User-land program
 lib	= User-land library
 doc	= Documentation
+contrib = Contributed
 
 Catagory		Person			Email addr
 ===============================================================================
 doc/FAQ                 FAQ Team                freebsd-faq@freefall.cdrom.com
 lib/libthread           Chris Provenzano        proven@mit.edu
 misc/manctl             Geoff Rehmet            csgr@cs.ru.ac.za
+misc/configit           Gary Clark II           gclarkii@freefall.cdrom.com
+misc/addit              Gary Clark II           gclarkii@freefall.cdrom.com
 ports/aXe               Jordan Hubbard          jkh@freefall.cdrom.com
 ports/archivers		Scott Mace		smace@freefall.cdrom.com
 ports/bash              Jordan Hubbard          jkh@freefall.cdrom.com
