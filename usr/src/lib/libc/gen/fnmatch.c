@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1989, 1993
+ * Copyright (c) 1989, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -9,11 +9,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fnmatch.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fnmatch.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
- * Function fnmatch() as proposed in POSIX 1003.2 B.6 (D11.2).
+ * Function fnmatch() as specified in POSIX 1003.2-1992, section B.6.
  * Compares a filename or pathname to a pattern.
  */
 
@@ -22,23 +22,30 @@ static char sccsid[] = "@(#)fnmatch.c	8.1 (Berkeley) %G%";
 
 #define	EOS	'\0'
 
-static const char *rangematch __P((const char *, int));
+static const char *rangematch __P((const char *, int, int));
 
+int
 fnmatch(pattern, string, flags)
-	register const char *pattern, *string;
+	const char *pattern, *string;
 	int flags;
 {
-	register char c;
-	char test;
+	const char *stringstart;
+	char c, test;
 
-	for (;;)
+	for (stringstart = string;;)
 		switch (c = *pattern++) {
 		case EOS:
 			return (*string == EOS ? 0 : FNM_NOMATCH);
 		case '?':
-			if ((test = *string++) == EOS ||
-			    test == '/' && flags & FNM_PATHNAME)
+			if (*string == EOS)
 				return (FNM_NOMATCH);
+			if (*string == '/' && (flags & FNM_PATHNAME))
+				return (FNM_NOMATCH);
+			if (*string == '.' && (flags & FNM_PERIOD) &&
+			    (string == stringstart ||
+			    ((flags & FNM_PATHNAME) && *(string - 1) == '/')))
+				return (FNM_NOMATCH);
+			++string;
 			break;
 		case '*':
 			c = *pattern;
@@ -46,22 +53,27 @@ fnmatch(pattern, string, flags)
 			while (c == '*')
 				c = *++pattern;
 
+			if (*string == '.' && (flags & FNM_PERIOD) &&
+			    (string == stringstart ||
+			    ((flags & FNM_PATHNAME) && *(string - 1) == '/')))
+				return (FNM_NOMATCH);
+
 			/* Optimize for pattern with * at end or before /. */
 			if (c == EOS)
 				if (flags & FNM_PATHNAME)
-					return (index(string, '/') == NULL ?
+					return (strchr(string, '/') == NULL ?
 					    0 : FNM_NOMATCH);
 				else
 					return (0);
 			else if (c == '/' && flags & FNM_PATHNAME) {
-				if ((string = index(string, '/')) == NULL)
+				if ((string = strchr(string, '/')) == NULL)
 					return (FNM_NOMATCH);
 				break;
 			}
 
 			/* General case, use recursion. */
 			while ((test = *string) != EOS) {
-				if (!fnmatch(pattern, string, flags))
+				if (!fnmatch(pattern, string, flags & ~FNM_PERIOD))
 					return (0);
 				if (test == '/' && flags & FNM_PATHNAME)
 					break;
@@ -69,11 +81,14 @@ fnmatch(pattern, string, flags)
 			}
 			return (FNM_NOMATCH);
 		case '[':
-			if ((test = *string++) == EOS ||
-			    test == '/' && flags & FNM_PATHNAME)
+			if (*string == EOS)
 				return (FNM_NOMATCH);
-			if ((pattern = rangematch(pattern, test)) == NULL)
+			if (*string == '/' && flags & FNM_PATHNAME)
 				return (FNM_NOMATCH);
+			if ((pattern =
+			    rangematch(pattern, *string, flags)) == NULL)
+				return (FNM_NOMATCH);
+			++string;
 			break;
 		case '\\':
 			if (!(flags & FNM_NOESCAPE)) {
@@ -81,9 +96,6 @@ fnmatch(pattern, string, flags)
 					c = '\\';
 					--pattern;
 				}
-				if (c != *string++)
-					return (FNM_NOMATCH);
-				break;
 			}
 			/* FALLTHROUGH */
 		default:
@@ -95,29 +107,38 @@ fnmatch(pattern, string, flags)
 }
 
 static const char *
-rangematch(pattern, test)
-	register const char *pattern;
-	register int test;
+rangematch(pattern, test, flags)
+	const char *pattern;
+	int test, flags;
 {
-	register char c, c2;
 	int negate, ok;
-
-	if (negate = (*pattern == '!'))
-		++pattern;
+	char c, c2;
 
 	/*
-	 * XXX
-	 * TO DO: quoting
+	 * A bracket expression starting with an unquoted circumflex
+	 * character produces unspecified results (IEEE 1003.2-1992,
+	 * 3.13.2).  This implementation treats it like '!', for
+	 * consistency with the regular expression syntax.
+	 * J.T. Conklin (conklin@ngai.kaleida.com)
 	 */
+	if (negate = (*pattern == '!' || *pattern == '^'))
+		++pattern;
+	
 	for (ok = 0; (c = *pattern++) != ']';) {
+		if (c == '\\' && !(flags & FNM_NOESCAPE))
+			c = *pattern++;
 		if (c == EOS)
-			return (NULL);		/* Illegal pattern. */
-		if (*pattern == '-' && (c2 = pattern[1]) != EOS && c2 != ']') {
+			return (NULL);
+		if (*pattern == '-' 
+		    && (c2 = *(pattern+1)) != EOS && c2 != ']') {
+			pattern += 2;
+			if (c2 == '\\' && !(flags & FNM_NOESCAPE))
+				c2 = *pattern++;
+			if (c2 == EOS)
+				return (NULL);
 			if (c <= test && test <= c2)
 				ok = 1;
-			pattern += 2;
-		}
-		else if (c == test)
+		} else if (c == test)
 			ok = 1;
 	}
 	return (ok == negate ? NULL : pattern);
