@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_input.c	6.20 (Berkeley) %G%
+ *	@(#)ip_input.c	6.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -824,17 +824,20 @@ ip_forward(ip, ifp)
 	struct mbuf *mcopy;
 	struct in_addr dest;
 
-#ifdef lint
 	dest.s_addr = 0;
-#endif
 	if (ipprintfs)
 		printf("forward: src %x dst %x ttl %x\n", ip->ip_src,
 			ip->ip_dst, ip->ip_ttl);
 	ip->ip_id = htons(ip->ip_id);
 	if (ipforwarding == 0 || in_interfaces <= 1) {
 		ipstat.ips_cantforward++;
+#ifdef GATEWAY
+		type = ICMP_UNREACH, code = ICMP_UNREACH_NET;
+		goto sendicmp;
+#else
 		m_freem(dtom(ip));
 		return;
+#endif
 	}
 	if (ip->ip_ttl < IPTTLDEC) {
 		type = ICMP_TIMXCEED, code = ICMP_TIMXCEED_INTRANS;
