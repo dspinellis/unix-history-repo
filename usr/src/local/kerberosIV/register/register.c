@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)register.c	1.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)register.c	1.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -26,7 +26,8 @@ static char sccsid[] = "@(#)register.c	1.7 (Berkeley) %G%";
 #include <stdio.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <krb.h>
+#include <kerberosIV/des.h>
+#include <kerberosIV/krb.h>
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/signal.h>
