@@ -1,4 +1,4 @@
-/*	dc.h	1.2	83/03/30	*/
+/*	dc.h	1.3	86/04/26	*/
 
 #define FATAL 0
 #define NFATAL 1
@@ -116,4 +116,3 @@ int	onintr();
 char	*malloc();
 char	*nalloc();
 char	*realloc();
-char	*dummy;
