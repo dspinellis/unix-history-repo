@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbtest.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbtest.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -365,24 +365,26 @@ setflags(s)
 		return (0);
 	if ((p = index(s, '\n')) != NULL)
 		*p = '\0';
-	if (!strcmp(s, "R_APPEND"))
-		return (R_APPEND);
 	if (!strcmp(s, "R_CURSOR"))
 		return (R_CURSOR);
+	if (!strcmp(s, "R_CURSORLOG"))
+		return (R_CURSORLOG);
+	if (!strcmp(s, "R_FIRST"))
+		return (R_FIRST);
 	if (!strcmp(s, "R_IAFTER"))
 		return (R_IAFTER);
 	if (!strcmp(s, "R_IBEFORE"))
 		return (R_IBEFORE);
-	if (!strcmp(s, "R_NOOVERWRITE"))
-		return (R_NOOVERWRITE);
-	if (!strcmp(s, "R_FIRST"))
-		return (R_FIRST);
 	if (!strcmp(s, "R_LAST"))
 		return (R_LAST);
 	if (!strcmp(s, "R_NEXT"))
 		return (R_NEXT);
+	if (!strcmp(s, "R_NOOVERWRITE"))
+		return (R_NOOVERWRITE);
 	if (!strcmp(s, "R_PREV"))
 		return (R_PREV);
+	if (!strcmp(s, "R_SETCURSOR"))
+		return (R_SETCURSOR);
 	err("line %lu: %s: unknown flag", lineno, s);
 	/* NOTREACHED */
 }
