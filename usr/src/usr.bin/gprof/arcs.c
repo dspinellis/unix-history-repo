@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)arcs.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)arcs.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "gprof.h"
@@ -105,7 +105,7 @@ doarcs()
 	parentp -> cyclehead = parentp;
 	parentp -> cnext = 0;
 	if ( cflag ) {
-	    findcalls( parentp , parentp -> value , (parentp+1) -> value );
+	    findcall( parentp , parentp -> value , (parentp+1) -> value );
 	}
     }
 	/*
