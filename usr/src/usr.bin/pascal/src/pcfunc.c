@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcfunc.c 1.8 %G%";
+static	char sccsid[] = "@(#)pcfunc.c 1.9 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -266,10 +266,17 @@ mathfunc:
 			return rettype;
 	    case O_ORD2:
 			p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
-			if (isa(p1, "bcis") || classify(p1) == TPTR) {
+			if (isa(p1, "bcis")) {
 				return (nl+T4INT);
 			}
-			error("ord's argument must be of scalar type or a pointer, not %s", nameof(p1));
+			if (classify(p1) == TPTR) {
+			    if (!opt('s')) {
+				return (nl+T4INT);
+			    }
+			    standard();
+			}
+			error("ord's argument must be of scalar type, not %s",
+				nameof(p1));
 			return (NIL);
 	    case O_SUCC2:
 	    case O_PRED2:

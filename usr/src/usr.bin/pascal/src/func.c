@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)func.c 1.8 %G%";
+static char sccsid[] = "@(#)func.c 1.9 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -165,10 +165,17 @@ funccod(r)
 			error("%s's argument must be an integer or real, not %s", p->symbol, nameof(p1));
 			return (NIL);
 		case O_ORD2:
-			if (isa(p1, "bcis") || classify(p1) == TPTR) {
+			if (isa(p1, "bcis")) {
 				return (nl+T4INT);
 			}
-			error("ord's argument must be of scalar type or a pointer, not %s", nameof(p1));
+			if (classify(p1) == TPTR) {
+			    if (!opt('s')) {
+				return (nl+T4INT);
+			    }
+			    standard();
+			}
+			error("ord's argument must be of scalar type, not %s",
+				nameof(p1));
 			return (NIL);
 		case O_SUCC2:
 		case O_PRED2:
