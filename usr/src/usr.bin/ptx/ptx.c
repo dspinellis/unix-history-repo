@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)ptx.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)ptx.c	4.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*	permuted title index
@@ -58,7 +58,7 @@ FILE *inptr = stdin;
 char *outfile;
 FILE *outptr = stdout;
 
-char *sortfile;	/* output of sort program */
+char sortfile[] = "/tmp/ptxsXXXXX";	/* output of sort program */
 char nofold[] = {'-', 'd', 't', TILDE, 0};
 char fold[] = {'-', 'd', 'f', 't', TILDE, 0};
 char *sortopt = nofold;
@@ -216,7 +216,7 @@ char **argv;
 
 	/* open output file for sorting */
 
-	sortfile = mktemp("/tmp/ptxsXXXXX");
+	mktemp(sortfile);
 	if((sortptr = fopen(sortfile, "w")) == NULL)
 		diag("Cannot open output for sorting:",sortfile);
 
@@ -245,8 +245,7 @@ char **argv;
 
 
 	getsort();
-	if(sortfile)
-		unlink(sortfile);
+	unlink(sortfile);
 	exit(0);
 }
 
@@ -500,8 +499,7 @@ char *strt, *end;
 onintr()
 {
 
-	if(sortfile)
-		unlink(sortfile);
+	unlink(sortfile);
 	exit(1);
 }
 
