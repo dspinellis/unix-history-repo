@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)com.c	7.4 (Berkeley) %G%
+ *	@(#)com.c	7.5 (Berkeley) %G%
  */
 
 #include "com.h"
@@ -200,8 +200,10 @@ comopen(dev, flag, mode, p)
 }
  
 /*ARGSUSED*/
-comclose(dev, flag)
+comclose(dev, flag, mode, p)
 	dev_t dev;
+	int flag, mode;
+	struct proc *p;
 {
 	register struct tty *tp;
 	register com;
@@ -210,7 +212,7 @@ comclose(dev, flag)
 	unit = UNIT(dev);
 	com = com_addr[unit];
 	tp = &com_tty[unit];
-	(*linesw[tp->t_line].l_close)(tp);
+	(*linesw[tp->t_line].l_close)(tp, flag);
 	outb(com+com_cfcr, inb(com+com_cfcr) & ~CFCR_SBREAK);
 #ifdef KGDB
 	/* do not disable interrupts if debugging */
