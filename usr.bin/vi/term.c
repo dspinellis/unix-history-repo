@@ -32,7 +32,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)term.c	8.40 (Berkeley) 1/8/94";
+static char sccsid[] = "@(#)term.c	8.41 (Berkeley) 1/23/94";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -629,7 +629,7 @@ term_key_ch(sp, val, chp)
 			*chp = kp->ch;
 			return (0);
 		}
-	return (1);
+	/* NOTREACHED */
 }
 
 /*

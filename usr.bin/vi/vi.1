@@ -29,9 +29,9 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"     @(#)vi.1	8.1 (Berkeley) 1/12/94
+.\"     @(#)vi.1	8.7 (Berkeley) 1/23/94
 .\"
-.Dd "January 12, 1994"
+.Dd "January 23, 1994"
 .Dt EX/VI 1
 .Os
 .Sh Name
@@ -62,7 +62,7 @@
 .Op Fl w Ar size
 .Op Fl x Ar aw
 .Sh DESCRIPTION
-.Nm Ex
+.Nm "Ex"
 is a line-oriented text editor.
 .Nm Vi
 is a screen oriented text editor, based on
@@ -72,7 +72,7 @@ is the same as using the
 .Fl R
 (read-only) option of
 .Nm vi .
-.Nm Ex
+.Nm "Ex"
 and
 .Nm vi
 are really different interfaces to the same program,
@@ -103,7 +103,7 @@ Useful for initial positioning in the file, but
 .Ar command
 is not limited to positioning commands.
 This is the POSIX 1003.2 interface for the historic
-.Dq +command
+.Dq "+command"
 syntax.
 .Nm Nex/nvi
 supports both the old and new syntax.
@@ -173,35 +173,35 @@ will edit any format file.
 Line lengths are limited by available memory,
 and file sizes are limited by available disk space.
 The command
-.Dq ^Vx[0-9A-Fa-f]* ,
+.Dq "^Vx[0-9A-Fa-f]* ,"
 in input mode, will insert any
 legal character value into the text.
 .It "Split screens"
 The command
-.Dq :sp[lit] [file ...]
+.Dq ":sp[lit] [file ...]"
 splits the screen in vi mode.
 The key
-.Dq ^W
+.Dq "^W"
 switches between the foreground screens,
 and the
-.Dq :resize count
+.Dq ":resize count"
 command can be used to grow or shrink any
 particular screen.
 .It "Background and foreground screens"
 The command
-.Dq :bg
+.Dq ":bg"
 backgrounds the current screen,
 and the command
-.Dq :fg [file]
+.Dq ":fg [file]"
 foregrounds the backgrounded screeen
 that is editing the specified file, or, by default, the first background
 screen on the queue.
 The command
-.Dq :di[splay] s[creens]
+.Dq ":di[splay] s[creens]"
 lists the background screens.
 .It "Shell screens"
 The command
-.Dq :sc[ript] [file ...]
+.Dq ":sc[ript] [file ...]"
 runs a shell in the screen.
 Editing is unchanged, with the exception that a <carriage-return>
 enters the current line (stripped of any prompt) as input to the
@@ -209,22 +209,22 @@ shell.
 .It "Tag stacks"
 Tags are now maintained in a stack.
 The command
-.Dq ^T
+.Dq "^T"
 returns to the previous tag location.
 The command
-.Dq :tagpop [number \| file]
+.Dq ":tagpop [number \| file]"
 returns to the most recent tag
 location by default, or, optionally to a specific tag number in the
 tag stack, or the most recent tag from the specified file.
 Use the command
-.Dq :di[splay] t[ags]
+.Dq ":di[splay] t[ags]"
 to view the tags stack.
 The command
-.Dq :tagtop
+.Dq ":tagtop"
 returns to the top of the tag stack.
 .It "New displays"
 The command
-.Dq :di[splay] b[uffers] \| s[creens] \| t[ags]
+.Dq ":di[splay] b[uffers] \| s[creens] \| t[ags]"
 can be
 used to display, respectively, the current cut buffers,
 the backgrounded screens, and the tags stack.
@@ -235,33 +235,33 @@ A '.' command immediately after a 'u' command continues either forward
 or backward depending on whether the 'u' command was an undo or a redo.
 .It "Usage information"
 The command
-.Dq :exu[sage [cmd]
+.Dq ":exu[sage [cmd]"
 and
-.Dq viu[sage] [key]
+.Dq "viu[sage] [key]"
 provide usage
 information for all of the ex and vi commands by default, or, optionally,
 for a specific command or key.
 .It "Extended regular expressions"
 The
-.Dq :set extended
+.Dq ":set extended"
 command treats search and other command regular
 expressions as extended (egrep(1) style) regular expressions.
 .It "Word search"
 The command
-.Dq ^A
+.Dq "^A"
 searches for the word referenced by the cursor.
 .It "Number increment"
 The command
-.Dq #
+.Dq "#"
 increments the number referenced by the cursor.
 .It "Previous file"
 The command
-.Dq :prev[ious][!]
+.Dq ":prev[ious][!]"
 edits the previous file from the
 argument list.
 .It "Left-Right scrolling"
 The command
-.Dq :set leftright
+.Dq ":set leftright"
 makes
 .Nm nvi
 do left-right screen scrolling, instead of the traditional
@@ -275,29 +275,29 @@ may recover any edit session.
 Edit sessions are backed by files in
 .Pa /var/tmp/vi.recover ,
 and are named
-.Dq vi.XXXX ,
+.Dq "vi.XXXX" ,
 where
-.Dq XXXX
+.Dq "XXXX"
 is a number related to the process id.
 When a file is first modified, a second file, which contains an
 email message for the user, is created, and is named
-.Dq recover.XXXX ,
+.Dq "recover.XXXX" ,
 where, again,
-.Dq XXXX
+.Dq "XXXX"
 is associated with the process id.
 Both files are removed at the end of a normal edit session,
 but will remain if the edit session is abnormally terminated
 or the user enters the ex/vi
-.Dq preserve
+.Dq "preserve"
 command.
 The use of the
 .Pa /var/tmp
 directory may be changed setting the option
-.Dq recdir
+.Dq "recdir"
 in the user's or system startup information.
 .Pp
 The recovery directory should have the
-.Dq sticky-bit
+.Dq "sticky-bit"
 set so that only the owners of files may remove them.
 If this is not possible on the system, then a pseudo-user should
 own the recovery directory.
@@ -310,23 +310,24 @@ In addition, it has all of the necessary email headers for sendmail.
 When the system is rebooted, all of the files in
 .Pa /var/tmp/vi.recover
 named
-.Dq recover.XXXX
+.Dq "recover.XXXX"
 should be sent by email,
 using the
 .Fl t
 flag of sendmail (or a similar mechanism in other mailers).
 A simple way to do this is to insert the following script into your
-rc.local file:
+rc.local (or other startup) file:
 .sp
 .ne 7v
 .Bd -literal -offset indent -compact
 # Recover nvi editor files.
 virecovery=/var/tmp/vi.recover/recover.*
-if [ $virecovery != /var/tmp/vi.recover/recover.\e* ]; then
+if [ "$virecovery" != "/var/tmp/vi.recover/recover.*" ]; then
 	echo 'Recovering vi editor sessions'
 	for i in $virecovery; do
 		sendmail -t < $i
 	done
+fi
 .Ed
 .Pp
 If
@@ -342,7 +343,7 @@ This man page is woefully incomplete.
 .Pp
 Many and varied.
 See the file
-.Pa nvi/docs/BUGS
+.Pa nvi/docs/bugs.current
 for a list of the known bugs in this version.
 .Sh FILES
 .Bl -tag -width XXXX/var/tmp/vi.recover -compact
@@ -358,26 +359,35 @@ Storage for recovery files.
 .Xr dbopen 3
 .sp
 The
-.Dq Vi Quick Reference
+.Dq "Vi Quick Reference"
 card.
 .sp
-.Dq An Introduction to Display Editing with Vi ,
+.Dq "An Introduction to Display Editing with Vi" ,
 found in the
-.Dq UNIX User's Manual Supplementary Documents .
+.Dq "UNIX User's Manual Supplementary Documents" .
 .sp
-.Dq Edit: A tutorial ,
+.Dq "Edit: A tutorial" ,
 found in the
-.Dq UNIX User's Manual Supplementary Documents .
+.Dq "UNIX User's Manual Supplementary Documents" .
 .sp
-.Dq Ex Reference Manual (Version 3.7) ,
+.Dq "Ex Reference Manual (Version 3.7)" ,
 found in the
-.Dq UNIX User's Manual Supplementary Documents .
+.Dq "UNIX User's Manual Supplementary Documents" .
+.Pp
+.Nm Nroff/troff
+source for the previous three documents are distributed with
+.Nm nex/nvi
+in the
+.Pa nvi/docs/USD.doc
+directory of the
+.Nm nex/nvi
+source code.
 .sp
 The files
-.Dq autowrite ,
-.Dq input ,
+.Dq "autowrite" ,
+.Dq "input" ,
 and
-.Dq quoting ,
+.Dq "quoting" ,
 found in the
 .Pa nvi/docs
 directory of the

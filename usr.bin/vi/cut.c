@@ -32,7 +32,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cut.c	8.19 (Berkeley) 1/11/94";
+static char sccsid[] = "@(#)cut.c	8.20 (Berkeley) 1/23/94";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -98,7 +98,8 @@ cut(sp, ep, cbp, namep, fm, tm, flags)
 	    LF_ISSET(CUT_LINEMODE) ? " LINE MODE" : "");
 #endif
 	if (cbp == NULL) {
-		if (LF_ISSET(CUT_DELETE) && fm->lno != tm->lno) {
+		if (LF_ISSET(CUT_DELETE) &&
+		    (LF_ISSET(CUT_LINEMODE) || fm->lno != tm->lno)) {
 			(void)cb_rotate(sp);
 			name = '1';
 			goto defcb;

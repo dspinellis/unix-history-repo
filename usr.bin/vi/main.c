@@ -38,7 +38,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.63 (Berkeley) 1/11/94";
+static char sccsid[] = "@(#)main.c	8.65 (Berkeley) 1/23/94";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -200,11 +200,16 @@ main(argc, argv)
 	if (snapshot)
 		F_SET(gp, G_SNAPSHOT);
 
-	/* Build and initialize the first/current screen. */
+	/*
+	 * Build and initialize the first/current screen.  This is a bit
+	 * tricky.  If an error is returned, we may or may not have a
+	 * screen structure.  If we have a screen structure, put it on a
+	 * display queue so that the error messages get displayed.
+	 */
 	if (screen_init(NULL, &sp, flags)) {
-		if (sp == NULL)
-			goto err2;
-		goto err1;
+		if (sp != NULL)
+			CIRCLEQ_INSERT_HEAD(&__global_list->dq, sp, q);
+		goto err;
 	}
 	sp->saved_vi_mode = saved_vi_mode;
 	CIRCLEQ_INSERT_HEAD(&__global_list->dq, sp, q);
@@ -220,13 +225,12 @@ main(argc, argv)
 	}
 
 	if (set_window_size(sp, 0, 0))	/* Set the window size. */
-		goto err1;
-
+		goto err;
 	if (opts_init(sp))		/* Options initialization. */
-		goto err1;
-	if (readonly)
+		goto err;
+	if (readonly)			/* Global read-only bit. */
 		O_SET(sp, O_READONLY);
-	if (silent) {
+	if (silent) {			/* Ex batch mode. */
 		O_CLR(sp, O_AUTOPRINT);
 		O_CLR(sp, O_PROMPT);
 		O_CLR(sp, O_VERBOSE);
@@ -238,7 +242,7 @@ main(argc, argv)
 		if (strtol(optarg, &p, 10) < 0 || *p)
 			errx(1, "illegal window size -- %s", optarg);
 		(void)snprintf(path, sizeof(path), "window=%s", optarg);
-		a.bp = path;
+		a.bp = (CHAR_T *)path;
 		a.len = strlen(path);
 		b.bp = NULL;
 		b.len = 0;
@@ -251,11 +255,11 @@ main(argc, argv)
 
 	/* Keymaps, special keys, must follow option initializations. */
 	if (term_init(sp))
-		goto err1;
+		goto err;
 
 #ifdef	DIGRAPHS
 	if (digraph_init(sp))		/* Digraph initialization. */
-		goto err1;
+		goto err;
 #endif
 
 	/*
@@ -280,7 +284,7 @@ main(argc, argv)
 		    (p = getenv("EXINIT")) != NULL)
 			if ((p = strdup(p)) == NULL) {
 				msgq(sp, M_SYSERR, NULL);
-				goto err1;
+				goto err;
 			} else {
 				(void)ex_icmd(sp, NULL, p, strlen(p));
 				free(p);
@@ -323,15 +327,15 @@ main(argc, argv)
 
 	/* Use a tag file or recovery file if specified. */
 	if (tag_f != NULL && ex_tagfirst(sp, tag_f))
-		goto err1;
+		goto err;
 	else if (rec_f != NULL && rcv_read(sp, rec_f))
-		goto err1;
+		goto err;
 
 	/* Append any remaining arguments as file names. */
 	if (*argv != NULL)
 		for (; *argv != NULL; ++argv)
 			if (file_add(sp, NULL, *argv, 0) == NULL)
-				goto err1;
+				goto err;
 
 	/*
 	 * If no recovery or tag file, get an EXF structure.
@@ -340,9 +344,9 @@ main(argc, argv)
 	if (tag_f == NULL && rec_f == NULL) {
 		if ((frp = file_first(sp)) == NULL &&
 		    (frp = file_add(sp, NULL, NULL, 1)) == NULL)
-			goto err1;
+			goto err;
 		if (file_init(sp, frp, NULL, 0))
-			goto err1;
+			goto err;
 	}
 
 	/* Set up the argument pointer. */
@@ -387,25 +391,25 @@ main(argc, argv)
 	if (excmdarg != NULL)
 		if (IN_EX_MODE(sp)) {
 			if (term_push(sp, excmdarg, strlen(excmdarg), 0, 0))
-				goto err1;
+				goto err;
 		} else if (IN_VI_MODE(sp)) {
 			if (term_push(sp, "\n", 1, 0, 0))
-				goto err1;
+				goto err;
 			if (term_push(sp, excmdarg, strlen(excmdarg), 0, 0))
-				goto err1;
+				goto err;
 			if (term_push(sp, ":", 1, 0, 0))
-				goto err1;
+				goto err;
 		}
 		
 	/* Vi reads from the terminal. */
 	if (!F_ISSET(gp, G_ISFROMTTY) && !F_ISSET(sp, S_EX)) {
 		msgq(sp, M_ERR, "Vi's standard input must be a terminal.");
-		goto err1;
+		goto err;
 	}
 
 	for (;;) {
 		if (sp->s_edit(sp, sp->ep))
-			goto err2;
+			goto err;
 
 		/*
 		 * Edit the next screen on the display queue, or, move
@@ -427,34 +431,29 @@ main(argc, argv)
 		switch (F_ISSET(sp, S_SCREENS)) {
 		case S_EX:
 			if (sex_screen_init(sp))
-				goto err2;
+				goto err;
 			break;
 		case S_VI_CURSES:
 			if (svi_screen_init(sp))
-				goto err2;
+				goto err;
 			break;
 		case S_VI_XAW:
 			if (xaw_screen_init(sp))
-				goto err2;
+				goto err;
 			break;
 		default:
 			abort();
 		}
 	}
 
-	/*
-	 * Two error paths.  The first means that something failed before
-	 * we called a screen routine.  Swap the message pointers between
-	 * the SCR and the GS, so messages get displayed.  The second is
-	 * something failed in a screen.  NOTE: sp may be GONE when the
-	 * screen returns, so only the gp can be trusted.
-	 */
 	eval = 0;
-	if (0) {
-err1:		gp->msgq.lh_first = sp->msgq.lh_first;
-err2:		eval = 1;
-	}
+	if (0)
+err:		eval = 1;
 
+	/*
+	 * NOTE: sp may be GONE when the screen returns, so only
+	 * the gp can be trusted.
+	 */
 	gs_end(gp);
 
 	/*
@@ -473,9 +472,8 @@ err2:		eval = 1;
 	 * other systems mess up characters typed after the quit command to
 	 * vi but before vi actually exits.
 	 */
-	if (F_ISSET(gp, G_ISFROMTTY) &&
-	    tcsetattr(STDIN_FILENO, TCSADRAIN, &gp->original_termios))
-		err(1, "tcsetattr");
+	if (F_ISSET(gp, G_ISFROMTTY))
+		(void)tcsetattr(STDIN_FILENO, TCSADRAIN, &gp->original_termios);
 	exit(eval);
 }
 

@@ -32,7 +32,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)svi_line.c	8.16 (Berkeley) 12/23/93";
+static char sccsid[] = "@(#)svi_line.c	8.18 (Berkeley) 1/22/94";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -200,6 +200,8 @@ svi_line(sp, ep, smp, yp, xp)
 		offset_in_line = smp->c_sboff;
 		offset_in_char = smp->c_scoff;
 		p = &p[offset_in_line];
+		if (skip_screens != 0)
+			cols_per_screen = sp->cols;
 	} else if (smp != HMAP &&
 	    SMAP_CACHE(tsmp = smp - 1) && tsmp->lno == smp->lno) {
 		if (tsmp->c_eclen != tsmp->c_ecsize) {
@@ -214,6 +216,8 @@ svi_line(sp, ep, smp, yp, xp)
 		smp->c_sboff = offset_in_line;
 		smp->c_scoff = offset_in_char;
 		p = &p[offset_in_line];
+		if (skip_screens != 0)
+			cols_per_screen = sp->cols;
 	} else {
 		offset_in_line = 0;
 		offset_in_char = 0;
@@ -382,7 +386,7 @@ svi_number(sp, ep)
 	SMAP *smp;
 	recno_t lno;
 	size_t oldy, oldx;
-	char *p, nbuf[10];
+	char *lp, *p, nbuf[10];
 
 	/*
 	 * Try and avoid getting the last line in the file, by getting the
@@ -397,8 +401,7 @@ svi_number(sp, ep)
 	 * The problem is that file_lline will lie, and tell us that the
 	 * info line is the last line in the file.
 	 */
-	if ((p = file_gline(sp, ep, TMAP->lno - 1, NULL)) != NULL)
-		lno = TMAP->lno + 1;
+	lp = file_gline(sp, ep, TMAP->lno + 1, NULL);
 
 	getyx(stdscr, oldy, oldx);
 	for (smp = HMAP; smp <= TMAP; ++smp) {
@@ -406,16 +409,9 @@ svi_number(sp, ep)
 			continue;
 		if (ISINFOLINE(sp, smp))
 			break;
-		if (smp->lno != 1)
-			if (p != NULL) {
-				if (smp->lno > lno)
-					break;
-			} else {
-				if ((p =
-				    file_gline(sp, ep, smp->lno, NULL)) == NULL)
-					break;
-				p = NULL;
-			}
+		if (smp->lno != 1 && lp == NULL &&
+		    (p = file_gline(sp, ep, smp->lno, NULL)) == NULL)
+			break;
 		MOVE(sp, smp - HMAP, 0);
 		(void)snprintf(nbuf, sizeof(nbuf), O_NUMBER_FMT, smp->lno);
 		ADDSTR(nbuf);
