@@ -3,9 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_de.c	6.10 (Berkeley) %G%
+ *	@(#)if_de.c	6.11 (Berkeley) %G%
  */
-
 #include "de.h"
 #if NDE > 0
 
@@ -59,8 +58,8 @@
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
 
-#define	NXMT	2	/* number of transmit buffers */
-#define	NRCV	4	/* number of receive buffers (must be > 1) */
+#define	NXMT	3	/* number of transmit buffers */
+#define	NRCV	7	/* number of receive buffers (must be > 1) */
 #define	NTOT	(NXMT + NRCV)
 
 int	dedebug = 0;
@@ -1033,10 +1032,17 @@ deioctl(ifp, cmd, data)
 #endif
 #ifdef NS
 		case AF_NS:
-			IA_SNS(ifa)->sns_addr.x_host =
-				* (union ns_host *)
+		    {
+			register struct ns_addr *ina = &(IA_SNS(ifa)->sns_addr);
+			
+			if (ns_nullhost(*ina)) {
+				ina->x_host = * (union ns_host *) 
 				     (de_softc[ifp->if_unit].ds_addr);
+			} else {
+				de_setaddr(ina->x_host.c_host,ifp->if_unit);
+			}
 			break;
+		    }
 #endif
 		}
 		break;
@@ -1047,4 +1053,31 @@ deioctl(ifp, cmd, data)
 	splx(s);
 	return (error);
 }
+
+/*
+ * set ethernet address for unit
+ */
+de_setaddr(physaddr, unit)
+u_char *physaddr;
+int unit;
+{
+	register struct de_softc *ds = &de_softc[unit];
+	register struct uba_device *ui = deinfo[unit];
+	register struct dedevice *addr= (struct dedevice *)ui->ui_addr;
+	int csr0;
+	
+	bcopy(physaddr, &ds->ds_pcbb.pcbb2, 6);
+	ds->ds_pcbb.pcbb0 = FC_WTPHYAD;
+	addr->pclow = CMD_GETCMD;
+	while ((addr->pcsr0 & PCSR0_INTR) == 0)
+			;
+	csr0 = addr->pcsr0;
+	addr->pchigh = csr0 >> 8;
+	if (csr0 & PCSR0_PCEI)
+		printf("de%d: wtphyad failed, csr0=%b csr1=%b\n", 
+		    ui->ui_unit, csr0, PCSR0_BITS, 
+		    addr->pcsr1, PCSR1_BITS);
+}
+
 #endif
+
