@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)csh.h	8.1 (Berkeley) %G%
+ *	@(#)csh.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -160,8 +160,8 @@ jmp_buf reslab;
 #define	setexit()	(setjmp(reslab))
 #define	reset()		longjmp(reslab, 1)
  /* Should use structure assignment here */
-#define	getexit(a)	bcopy((char *)reslab, ((char *)(a)), sizeof reslab)
-#define	resexit(a)	bcopy((char *)(a), (char *)reslab, sizeof reslab)
+#define	getexit(a)	memmove((a), reslab, sizeof reslab)
+#define	resexit(a)	memmove(reslab, (a), sizeof reslab)
 
 Char   *gointr;			/* Label for an onintr transfer */
 
