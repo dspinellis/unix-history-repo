@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpmv.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cpmv.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -10,9 +10,8 @@ static char sccsid[] = "@(#)cpmv.c	5.4 (Berkeley) %G%";
 /*
  *	copy f1 to f2
  *
- *	return - 0 ok  |  FAIL failed
+ *	return - SUCCESS | FAIL
  */
-
 xcp(f1, f2)
 char *f1, *f2;
 {
@@ -20,7 +19,7 @@ char *f1, *f2;
 	register int len;
 	register int fp1, fp2;
 	char *lastpart();
-	char full[100];
+	char full[MAXFULLNAME];
 	struct stat s;
 
 	if ((fp1 = open(subfile(f1), 0)) < 0)
@@ -51,17 +50,16 @@ char *f1, *f2;
 
 
 /*
- *	xmv(f1, f2)	move f1 to f2
- *	char * f1, *f2;
+ *	move f1 to f2
  *
  *	return  0 ok  |  FAIL failed
  */
-
 xmv(f1, f2)
 register char *f1, *f2;
 {
 	register int ret;
 
+	(void) unlink(subfile(f2));
 	if (link(subfile(f1), subfile(f2)) < 0) {
 		/*  copy file  */
 		ret = xcp(f1, f2);
@@ -69,6 +67,6 @@ register char *f1, *f2;
 			unlink(subfile(f1));
 		return ret;
 	}
-	unlink(subfile(f1));
+	(void) unlink(subfile(f1));
 	return 0;
 }
