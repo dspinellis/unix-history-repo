@@ -6,11 +6,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
-#include <sys/file.h>
+
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -19,6 +21,7 @@ static char sccsid[] = "@(#)parse.c	5.6 (Berkeley) %G%";
 
 FU *endfu;					/* format at end-of-data */
 
+void
 addfile(name)
 	char *name;
 {
@@ -27,10 +30,8 @@ addfile(name)
 	int ch;
 	char buf[2048 + 1];
 
-	if (!(fp = fopen(name, "r"))) {
-		(void)fprintf(stderr, "hexdump: can't read %s.\n", name);
-		exit(1);
-	}
+	if ((fp = fopen(name, "r")) == NULL)
+		err("%s: %s\n", name, strerror(errno));
 	while (fgets(buf, sizeof(buf), fp)) {
 		if (!(p = index(buf, '\n'))) {
 			(void)fprintf(stderr, "hexdump: line too long.\n");
@@ -46,6 +47,7 @@ addfile(name)
 	(void)fclose(fp);
 }
 
+void
 add(fmt)
 	char *fmt;
 {
@@ -53,11 +55,10 @@ add(fmt)
 	static FS **nextfs;
 	FS *tfs;
 	FU *tfu, **nextfu;
-	char *savep, *emalloc();
+	char *savep;
 
 	/* start new linked list of format units */
-	/* NOSTRICT */
-	tfs = (FS *)emalloc(sizeof(FS));
+	tfs = emalloc(sizeof(FS));
 	if (!fshead)
 		fshead = tfs;
 	else
@@ -73,8 +74,7 @@ add(fmt)
 			break;
 
 		/* allocate a new format unit and link it in */
-		/* NOSTRICT */
-		tfu = (FU *)emalloc(sizeof(FU));
+		tfu = emalloc(sizeof(FU));
 		*nextfu = tfu;
 		nextfu = &tfu->nextfu;
 		tfu->reps = 1;
@@ -121,6 +121,8 @@ add(fmt)
 }
 
 static char *spec = ".#-+ 0123456789";
+
+int
 size(fs)
 	FS *fs;
 {
@@ -171,9 +173,10 @@ size(fs)
 		}
 		cursize += bcnt * fu->reps;
 	}
-	return(cursize);
+	return (cursize);
 }
 
+void
 rewrite(fs)
 	FS *fs;
 {
@@ -181,26 +184,25 @@ rewrite(fs)
 	register PR *pr, **nextpr;
 	register FU *fu;
 	register char *p1, *p2;
-	char savech, *fmtp;
+	char savech, *fmtp, cs[3];
 	int nconv, prec;
 
 	for (fu = fs->nextfu; fu; fu = fu->nextfu) {
 		/*
-		 * break each format unit into print units; each
-		 * conversion character gets its own.
+		 * Break each format unit into print units; each conversion
+		 * character gets its own.
 		 */
 		for (nconv = 0, fmtp = fu->fmt; *fmtp; nextpr = &pr->nextpr) {
-			/* NOSTRICT */
-			pr = (PR *)emalloc(sizeof(PR));
+			pr = emalloc(sizeof(PR));
 			if (!fu->nextpr)
 				fu->nextpr = pr;
 			else
 				*nextpr = pr;
 
-			/* skip preceding text and up to the next % sign */
+			/* Skip preceding text and up to the next % sign. */
 			for (p1 = fmtp; *p1 && *p1 != '%'; ++p1);
 
-			/* only text in the string */
+			/* Only text in the string. */
 			if (!*p1) {
 				pr->fmt = fmtp;
 				pr->flags = F_TEXT;
@@ -208,33 +210,34 @@ rewrite(fs)
 			}
 
 			/*
-			 * get precision for %s -- if have a byte count, don't
+			 * Get precision for %s -- if have a byte count, don't
 			 * need it.
 			 */
 			if (fu->bcnt) {
 				sokay = USEBCNT;
-				/* skip to conversion character */
+				/* Skip to conversion character. */
 				for (++p1; index(spec, *p1); ++p1);
 			} else {
-				/* skip any special chars, field width */
+				/* Skip any special chars, field width. */
 				while (index(spec + 1, *++p1));
 				if (*p1 == '.' && isdigit(*++p1)) {
 					sokay = USEPREC;
 					prec = atoi(p1);
 					while (isdigit(*++p1));
-				}
-				else
+				} else
 					sokay = NOTOKAY;
 			}
 
-			p2 = p1 + 1;		/* set end pointer */
+			p2 = p1 + 1;		/* Set end pointer. */
+			cs[0] = *p1;		/* Set conversion string. */
+			cs[1] = '\0';
 
 			/*
-			 * figure out the byte count for each conversion;
+			 * Figure out the byte count for each conversion;
 			 * rewrite the format as necessary, set up blank-
 			 * padding for end of data.
 			 */
-			switch(*p1) {
+			switch(cs[0]) {
 			case 'c':
 				pr->flags = F_CHAR;
 				switch(fu->bcnt) {
@@ -248,26 +251,13 @@ rewrite(fs)
 				break;
 			case 'd': case 'i':
 				pr->flags = F_INT;
-				goto sw1;
-			case 'l':
-				++p2;
-				switch(p1[1]) {
-				case 'd': case 'i':
-					++p1;
-					pr->flags = F_INT;
-					goto sw1;
-				case 'o': case 'u': case 'x': case 'X':
-					++p1;
-					pr->flags = F_UINT;
-					goto sw1;
-				default:
-					p1[2] = '\0';
-					badconv(p1);
-				}
-				/* NOTREACHED */
+				goto isint;
 			case 'o': case 'u': case 'x': case 'X':
 				pr->flags = F_UINT;
-sw1:				switch(fu->bcnt) {
+isint:				cs[2] = '\0';
+				cs[1] = cs[0];
+				cs[0] = 'q';
+				switch(fu->bcnt) {
 				case 0: case 4:
 					pr->bcnt = 4;
 					break;
@@ -321,7 +311,9 @@ sw1:				switch(fu->bcnt) {
 					++p2;
 					switch(p1[2]) {
 					case 'd': case 'o': case'x':
-						*p1 = p1[2];
+						cs[0] = 'q';
+						cs[1] = p1[2];
+						cs[2] = '\0';
 						break;
 					default:
 						p1[3] = '\0';
@@ -330,16 +322,16 @@ sw1:				switch(fu->bcnt) {
 					break;
 				case 'c':
 					pr->flags = F_C;
-					/* *p1 = 'c';	set in conv_c */
-					goto sw2;
+					/* cs[0] = 'c';	set in conv_c */
+					goto isint2;
 				case 'p':
 					pr->flags = F_P;
-					*p1 = 'c';
-					goto sw2;
+					cs[0] = 'c';
+					goto isint2;
 				case 'u':
 					pr->flags = F_U;
-					/* *p1 = 'c';	set in conv_u */
-sw2:					switch(fu->bcnt) {
+					/* cs[0] = 'c';	set in conv_u */
+isint2:					switch(fu->bcnt) {
 					case 0: case 1:
 						pr->bcnt = 1;
 						break;
@@ -359,26 +351,24 @@ sw2:					switch(fu->bcnt) {
 			}
 
 			/*
-			 * copy to PR format string, set conversion character
+			 * Copy to PR format string, set conversion character
 			 * pointer, update original.
 			 */
 			savech = *p2;
-			p1[1] = '\0';
-			if (!(pr->fmt = strdup(fmtp)))
-				nomem();
+			p1[0] = '\0';
+			pr->fmt = emalloc(strlen(fmtp) + 2);
+			(void)strcpy(pr->fmt, fmtp);
+			(void)strcat(pr->fmt, cs);
 			*p2 = savech;
 			pr->cchar = pr->fmt + (p1 - fmtp);
 			fmtp = p2;
 
-			/* only one conversion character if byte count */
-			if (!(pr->flags&F_ADDRESS) && fu->bcnt && nconv++) {
-				(void)fprintf(stderr,
-				    "hexdump: byte count with multiple conversion characters.\n");
-				exit(1);
-			}
+			/* Only one conversion character if byte count. */
+			if (!(pr->flags&F_ADDRESS) && fu->bcnt && nconv++)
+	    err("byte count with multiple conversion characters");
 		}
 		/*
-		 * if format unit byte count not specified, figure it out
+		 * If format unit byte count not specified, figure it out
 		 * so can adjust rep count later.
 		 */
 		if (!fu->bcnt)
@@ -386,12 +376,12 @@ sw2:					switch(fu->bcnt) {
 				fu->bcnt += pr->bcnt;
 	}
 	/*
-	 * if the format string interprets any data at all, and it's
+	 * If the format string interprets any data at all, and it's
 	 * not the same as the blocksize, and its last format unit
 	 * interprets any data at all, and has no iteration count,
 	 * repeat it as necessary.
 	 *
-	 * if, rep count is greater than 1, no trailing whitespace
+	 * If, rep count is greater than 1, no trailing whitespace
 	 * gets output from the last iteration of the format unit.
 	 */
 	for (fu = fs->nextfu;; fu = fu->nextfu) {
@@ -410,9 +400,17 @@ sw2:					switch(fu->bcnt) {
 		if (!fu->nextfu)
 			break;
 	}
+#ifdef DEBUG
+	for (fu = fs->nextfu; fu; fu = fu->nextfu) {
+		(void)printf("fmt:");
+		for (pr = fu->nextpr; pr; pr = pr->nextpr)
+			(void)printf(" {%s}", pr->fmt);
+		(void)printf("\n");
+	}
+#endif
 }
 
-
+void
 escape(p1)
 	register char *p1;
 {
@@ -455,31 +453,29 @@ escape(p1)
 	}
 }
 
+void
 badcnt(s)
 	char *s;
 {
-	(void)fprintf(stderr,
-	    "hexdump: bad byte count for conversion character %s.\n", s);
-	exit(1);
+	err("%s: bad byte count", s);
 }
 
+void
 badsfmt()
 {
-	(void)fprintf(stderr,
-	    "hexdump: %%s requires a precision or a byte count.\n");
-	exit(1);
+	err("%%s: requires a precision or a byte count\n");
 }
 
+void
 badfmt(fmt)
 	char *fmt;
 {
-	(void)fprintf(stderr, "hexdump: bad format {%s}\n", fmt);
-	exit(1);
+	err("\"%s\": bad format\n", fmt);
 }
 
+void
 badconv(ch)
 	char *ch;
 {
-	(void)fprintf(stderr, "hexdump: bad conversion character %%%s.\n", ch);
-	exit(1);
+	err("%%%s: bad conversion character\n", ch);
 }

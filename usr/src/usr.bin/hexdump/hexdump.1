@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)hexdump.1	5.13 (Berkeley) %G%
+.\"	@(#)hexdump.1	5.14 (Berkeley) %G%
 .\"
 .Dd 
 .Dt HEXDUMP 1
@@ -150,8 +150,8 @@ character (unlike the
 .Xr fprintf 3
 default which prints the entire string if the precision is unspecified).
 .It
-The conversion characters ``h'', ``n'', and ``p'' are not
-supported.
+The conversion characters ``h'', ``l'', ``n'', ``p'' and ``q'' are
+not supported.
 .It
 The single character escape sequences
 described in the C standard are supported:
@@ -220,7 +220,7 @@ One byte counts only.
 .Li \&%d , \&%i , \&%o ,
 .Li \&%u , \&%X , \&%x 
 .Xc
-Four byte default, one and two byte counts supported.
+Four byte default, one, two and four byte counts supported.
 .It Xo
 .Li \&%E , \&%e , \&%f ,
 .Li \&%G , \&%g 

@@ -6,23 +6,26 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)hexsyntax.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)hexsyntax.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
+
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "hexdump.h"
 
 off_t skip;				/* bytes to skip */
 
+void
 newsyntax(argc, argvp)
 	int argc;
 	char ***argvp;
 {
 	extern enum _vflag vflag;
 	extern FS *fshead;
-	extern char *optarg;
-	extern int length, optind;
+	extern int length;
 	int ch;
 	char *p, **argv;
 
@@ -48,22 +51,16 @@ newsyntax(argc, argvp)
 			addfile(optarg);
 			break;
 		case 'n':
-			if ((length = atoi(optarg)) < 0) {
-				(void)fprintf(stderr,
-				    "hexdump: bad length value.\n");
-				exit(1);
-			}
+			if ((length = atoi(optarg)) < 0)
+				err("%s: bad length value", optarg);
 			break;
 		case 'o':
 			add("\"%07.7_Ax\n\"");
 			add("\"%07.7_ax \" 8/2 \" %06o \" \"\\n\"");
 			break;
 		case 's':
-			if ((skip = strtol(optarg, &p, 0)) < 0) {
-				(void)fprintf(stderr,
-				    "hexdump: bad skip value.\n");
-				exit(1);
-			}
+			if ((skip = strtol(optarg, &p, 0)) < 0)
+				err("%s: bad skip value", optarg);
 			switch(*p) {
 			case 'b':
 				skip *= 512;
@@ -85,7 +82,6 @@ newsyntax(argc, argvp)
 			break;
 		case '?':
 			usage();
-			exit(1);
 		}
 
 	if (!fshead) {
@@ -96,6 +92,7 @@ newsyntax(argc, argvp)
 	*argvp += optind;
 }
 
+void
 usage()
 {
 	(void)fprintf(stderr,
