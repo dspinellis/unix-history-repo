@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)tmpnam.3	5.8 (Berkeley) %G%
+.\"	@(#)tmpnam.3	5.9 (Berkeley) %G%
 .\"
 .TH COMPATS5 3 ""
 .UC 7
@@ -23,7 +23,7 @@ strcspn, strdup, strpbrk, strrchr, strspn, tempnam,
 tmpfile, tmpnam \- System V compatibility routines
 .SH SYNOPSIS
 .nf
-.B char *memccpy(from, to, ch, count)
+.B char *memccpy(to, from, ch, count)
 .B char *from, *to;
 .B int ch, count;
 .PP
@@ -35,7 +35,7 @@ tmpfile, tmpnam \- System V compatibility routines
 .B char *str1, *str2;
 .B int count;
 .PP
-.B char *memcpy(from, to, count)
+.B char *memcpy(to, from, count)
 .B char *from, to;
 .B int count;
 .PP
