@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)quotacheck.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotacheck.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -93,17 +93,17 @@ again:
 			"quotacheck [-v] filesys ...");
 		exit(1);
 	}
-	if (vflag) {
-		setpwent();
-		while ((pw = getpwent()) != 0) {
-			fup = lookup(pw->pw_uid);
-			if (fup == 0)
-				fup = adduid(pw->pw_uid);
-			strncpy(fup->fu_name, pw->pw_name,
-				sizeof(fup->fu_name));
-		}
-		endpwent();
+
+	setpwent();
+	while ((pw = getpwent()) != 0) {
+		fup = lookup(pw->pw_uid);
+		if (fup == 0)
+			fup = adduid(pw->pw_uid);
+		strncpy(fup->fu_name, pw->pw_name,
+			sizeof(fup->fu_name));
 	}
+	endpwent();
+
 	setfsent();
 	while ((fs = getfsent()) != NULL) {
 		if (aflag &&
@@ -114,7 +114,7 @@ again:
 		      oneof(fs->fs_spec, argv, argc)))
 			continue;
 		(void) sprintf(quotafile, "%s/%s", fs->fs_file, qfname);
-		errs += chkquota(fs->fs_spec, quotafile);
+		errs += chkquota(fs->fs_spec, fs->fs_file, quotafile);
 	}
 	endfsent();
 	for (i = 0; i < argc; i++)
@@ -124,8 +124,9 @@ again:
 	exit(errs);
 }
 
-chkquota(fsdev, qffile)
+chkquota(fsdev, fsfile, qffile)
 	char *fsdev;
+	char *fsfile;
 	char *qffile;
 {
 	register struct fileusage *fup;
@@ -141,7 +142,7 @@ chkquota(fsdev, qffile)
 
 	rawdisk = makerawname(fsdev);
 	if (vflag)
-		fprintf(stdout, "*** Check quotas for %s\n", rawdisk);
+		fprintf(stdout, "*** Check quotas for %s (%s)\n", rawdisk, fsfile);
 	fi = open(rawdisk, 0);
 	if (fi < 0) {
 		perror(rawdisk);
@@ -150,20 +151,27 @@ chkquota(fsdev, qffile)
 	qf = fopen(qffile, "r+");
 	if (qf == NULL) {
 		perror(qffile);
+		close(fi);
 		return (1);
 	}
 	if (fstat(fileno(qf), &statb) < 0) {
 		perror(qffile);
+		fclose(qf);
+		close(fi);
 		return (1);
 	}
 	quotadev = statb.st_dev;
 	if (stat(fsdev, &statb) < 0) {
 		perror(fsdev);
+		fclose(qf);
+		close(fi);
 		return (1);
 	}
 	if (quotadev != statb.st_rdev) {
 		fprintf(stderr, "%s dev (0x%x) mismatch %s dev (0x%x)\n",
 			qffile, quotadev, fsdev, statb.st_rdev);
+		fclose(qf);
+		close(fi);
 		return (1);
 	}
 	if (quota(Q_SYNC, 0, quotadev, 0) < 0 &&
@@ -181,6 +189,7 @@ chkquota(fsdev, qffile)
 			acct(ginode());
 	}
 	for (uid = 0; uid <= highuid; uid++) {
+		fseek(qf, (long)uid * sizeof(struct dqblk), 0);
 		i = fread(&dqbuf, sizeof(struct dqblk), 1, qf);
 		if (i == 0)
 			dqbuf = zerodqbuf;
@@ -191,9 +200,8 @@ chkquota(fsdev, qffile)
 			    !feof(qf)) {
 				dqbuf.dqb_curinodes = 0;
 				dqbuf.dqb_curblocks = 0;
-				fseek(qf, uid * sizeof(struct dqblk), 0);
+				fseek(qf, (long)uid * sizeof(struct dqblk), 0);
 				fwrite(&dqbuf, sizeof(struct dqblk), 1, qf);
-				fseek(qf, (uid + 1) * sizeof(struct dqblk), 0);
 			}
 			continue;
 		}
@@ -215,14 +223,16 @@ chkquota(fsdev, qffile)
 		}
 		dqbuf.dqb_curinodes = fup->fu_usage.du_curinodes;
 		dqbuf.dqb_curblocks = fup->fu_usage.du_curblocks;
-		fseek(qf, uid * sizeof(struct dqblk), 0);
+		fseek(qf, (long)uid * sizeof(struct dqblk), 0);
 		fwrite(&dqbuf, sizeof(struct dqblk), 1, qf);
-		fseek(qf, (uid + 1) * sizeof(struct dqblk), 0);
 		quota(Q_SETDUSE, uid, quotadev, &fup->fu_usage);
 		fup->fu_usage.du_curinodes = 0;
 		fup->fu_usage.du_curblocks = 0;
 	}
+	fflush(qf);
 	ftruncate(fileno(qf), (highuid + 1) * sizeof(struct dqblk));
+	fclose(qf);
+	close(fi);
 	return (0);
 }
 
@@ -303,6 +313,7 @@ adduid(uid)
 	u_short uid;
 {
 	struct fileusage *fup, **fhp;
+	extern char *calloc();
 
 	fup = lookup(uid);
 	if (fup != 0)
@@ -330,9 +341,11 @@ makerawname(name)
 	static char rawname[MAXPATHLEN];
 
 	strcpy(rawname, name);
-	cp = rindex(rawname, '/') + 1;
-	if (cp == (char *)1 || *cp == 'r')
+	cp = rindex(rawname, '/');
+	if (cp == NULL || cp[1] == 'r')
 		return (name);
+	else
+		cp++;
 	for (ch = 'r'; *cp != '\0'; ) {
 		tmp = *cp;
 		*cp++ = ch;
