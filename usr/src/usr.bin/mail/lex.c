@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	1.1 %G%";
+static char *SccsId = "@(#)lex.c	1.2 %G%";
 
 /*
  * Interpret user commands one by one.  If standard input is not a tty,
@@ -60,6 +60,7 @@ commands()
 
 		if (!rcvmode && !sourcing)
 			return;
+top:
 		if (prompt && !sourcing)
 			printf("_\r");
 		flush();
@@ -78,6 +79,10 @@ commands()
 				if (sourcing) {
 					unstack();
 					goto more;
+				}
+				if (value("ignoreeof") != NOSTR && prompt) {
+					printf("Use \"quit\" to quit.\n");
+					goto top;
 				}
 				if (!edit) {
 					signal(SIGINT, SIG_IGN);
