@@ -1130,8 +1130,6 @@ vm_map_pageable(map, start, end, new_pageable)
 {
 	register vm_map_entry_t	entry;
 	vm_map_entry_t		temp_entry;
-	register vm_offset_t	failed;
-	int			rv;
 
 	vm_map_lock(map);
 
@@ -1284,26 +1282,10 @@ vm_map_pageable(map, start, end, new_pageable)
 		    lock_write_to_read(&map->lock);
 		}
 
-		rv = 0;
 		entry = temp_entry;
 		while (entry != &map->header && entry->start < end) {
-		    /*
-		     * If vm_fault_wire fails for any page we need to
-		     * undo what has been done.  We decrement the wiring
-		     * count for those pages which have not yet been
-		     * wired (now) and unwire those that have (later).
-		     *
-		     * XXX this violates the locking protocol on the map,
-		     * needs to be fixed.
-		     */
-		    if (rv)
-			entry->wired_count--;
-		    else if (entry->wired_count == 1) {
-			rv = vm_fault_wire(map, entry->start, entry->end);
-			if (rv) {
-			    failed = entry->start;
-			    entry->wired_count--;
-		    }
+		    if (entry->wired_count == 1) {
+			vm_fault_wire(map, entry->start, entry->end);
 		    }
 		    entry = entry->next;
 		}
@@ -1313,11 +1295,6 @@ vm_map_pageable(map, start, end, new_pageable)
 		}
 		else {
 		    lock_clear_recursive(&map->lock);
-		}
-		if (rv) {
-		    vm_map_unlock(map);
-		    (void) vm_map_pageable(map, start, failed, TRUE);
-		    return(rv);
 		}
 	}
 
