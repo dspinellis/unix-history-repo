@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.6 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 # Makefile for i386 tags file
 
