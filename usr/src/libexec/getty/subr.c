@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)subr.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)subr.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -14,9 +14,11 @@ static char sccsid[] = "@(#)subr.c	5.10 (Berkeley) %G%";
  */
 #define USE_OLD_TTY
 #include <sgtty.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
+
 #include "gettytab.h"
+#include "extern.h"
 
 extern	struct sgttyb tmode;
 extern	struct tchars tc;
@@ -25,6 +27,7 @@ extern	struct ltchars ltc;
 /*
  * Get a table entry.
  */
+void
 gettable(name, buf, area)
 	char *name, *buf, *area;
 {
@@ -59,6 +62,7 @@ gettable(name, buf, area)
 	}
 }
 
+void
 gendefaults()
 {
 	register struct gettystrs *sp;
@@ -78,6 +82,7 @@ gendefaults()
 			fp->defalt = fp->invrt;
 }
 
+void
 setdefaults()
 {
 	register struct gettystrs *sp;
@@ -110,6 +115,7 @@ charvars[] = {
 	&ltc.t_werasc, &ltc.t_lnextc, 0
 };
 
+void
 setchars()
 {
 	register int i;
@@ -126,6 +132,7 @@ setchars()
 
 long
 setflags(n)
+	int n;
 {
 	register long f;
 
@@ -209,44 +216,45 @@ struct delayval {
  */
 
 struct delayval	crdelay[] = {
-	1,		CR1,
-	2,		CR2,
-	3,		CR3,
-	83,		CR1,
-	166,		CR2,
-	0,		CR3,
+	{ 1,		CR1 },
+	{ 2,		CR2 },
+	{ 3,		CR3 },
+	{ 83,		CR1 },
+	{ 166,		CR2 },
+	{ 0,		CR3 },
 };
 
 struct delayval nldelay[] = {
-	1,		NL1,		/* special, calculated */
-	2,		NL2,
-	3,		NL3,
-	100,		NL2,
-	0,		NL3,
+	{ 1,		NL1 },		/* special, calculated */
+	{ 2,		NL2 },
+	{ 3,		NL3 },
+	{ 100,		NL2 },
+	{ 0,		NL3 },
 };
 
 struct delayval	bsdelay[] = {
-	1,		BS1,
-	0,		0,
+	{ 1,		BS1 },
+	{ 0,		0 },
 };
 
 struct delayval	ffdelay[] = {
-	1,		FF1,
-	1750,		FF1,
-	0,		FF1,
+	{ 1,		FF1 },
+	{ 1750,		FF1 },
+	{ 0,		FF1 },
 };
 
 struct delayval	tbdelay[] = {
-	1,		TAB1,
-	2,		TAB2,
-	3,		XTABS,		/* this is expand tabs */
-	100,		TAB1,
-	0,		TAB2,
+	{ 1,		 TAB1 },
+	{ 2,		 TAB2 },
+	{ 3,		XTABS },	/* this is expand tabs */
+	{ 100,		 TAB1 },
+	{ 0,		 TAB2 },
 };
 
+int
 delaybits()
 {
-	register f;
+	register int f;
 
 	f  = adelay(CD, crdelay);
 	f |= adelay(ND, nldelay);
@@ -256,6 +264,7 @@ delaybits()
 	return (f);
 }
 
+int
 adelay(ms, dp)
 	register ms;
 	register struct delayval *dp;
@@ -269,6 +278,7 @@ adelay(ms, dp)
 
 char	editedhost[32];
 
+void
 edithost(pat)
 	register char *pat;
 {
@@ -312,28 +322,30 @@ struct speedtab {
 	int	speed;
 	int	uxname;
 } speedtab[] = {
-	50,	B50,
-	75,	B75,
-	110,	B110,
-	134,	B134,
-	150,	B150,
-	200,	B200,
-	300,	B300,
-	600,	B600,
-	1200,	B1200,
-	1800,	B1800,
-	2400,	B2400,
-	4800,	B4800,
-	9600,	B9600,
-	19200,	EXTA,
-	19,	EXTA,		/* for people who say 19.2K */
-	38400,	EXTB,
-	38,	EXTB,
-	7200,	EXTB,		/* alternative */
-	0
+	{ 50,	  B50 },
+	{ 75,	  B75 },
+	{ 110,	 B110 },
+	{ 134,	 B134 },
+	{ 150,	 B150 },
+	{ 200,	 B200 },
+	{ 300,	 B300 },
+	{ 600,	 B600 },
+	{ 1200,	B1200 },
+	{ 1800,	B1800 },
+	{ 2400,	B2400 },
+	{ 4800,	B4800 },
+	{ 9600,	B9600 },
+	{ 19200, EXTA },
+	{ 19,	 EXTA },	/* for people who say 19.2K */
+	{ 38400, EXTB },
+	{ 38,	 EXTB },
+	{ 7200,	 EXTB },	/* alternative */
+	{ 0 }
 };
 
+int
 speed(val)
+	int val;
 {
 	register struct speedtab *sp;
 
@@ -347,13 +359,13 @@ speed(val)
 	return (B300);		/* default in impossible cases */
 }
 
+void
 makeenv(env)
 	char *env[];
 {
 	static char termbuf[128] = "TERM=";
 	register char *p, *q;
 	register char **ep;
-	char *index();
 
 	ep = env;
 	if (TT && *TT) {
@@ -362,7 +374,7 @@ makeenv(env)
 	}
 	if (p = EV) {
 		q = p;
-		while (q = index(q, ',')) {
+		while (q = strchr(q, ',')) {
 			*q++ = '\0';
 			*ep++ = p;
 			p = q;
