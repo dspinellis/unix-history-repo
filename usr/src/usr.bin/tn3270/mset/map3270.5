@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)map3270.5	4.4 (Berkeley) %G%
+.\"	@(#)map3270.5	4.5 (Berkeley) %G%
 .\"
 .TH MAP3270 5  ""
 .UC 6
@@ -12,7 +12,7 @@ map3270 \- database for mapping ascii keystrokes into IBM 3270 keys
 .SH SYNOPSIS
 .B map3270
 .SH DESCRIPTION
-When emulating IBM-syle 3270 terminals under \s-UNIX\s0 (see \fItn3270\fR(1)),
+When emulating IBM-syle 3270 terminals under \s-1UNIX\s0 (see \fItn3270\fR(1)),
 a mapping must be performed between sequences of keys hit on
 a user's (ascii) keyboard, and the keys that are
 available on a 3270.  For example, a 3270 has a key labeled
@@ -232,12 +232,12 @@ user's environment and in /etc/map3270:
         # program attention keys
         pa1 = '^p1'; pa2 = '^p2'; pa3 = '^p3';
         # program function keys
-        pfk1 = '\E1'; pfk2 = '\E2'; pfk3 = '\E3'; pfk4 = '\E4';
-        pfk5 = '\E5'; pfk6 = '\E6'; pfk7 = '\E7'; pfk8 = '\E8';
-        pfk9 = '\E9'; pfk10 = '\E0'; pfk11 = '\E-'; pfk12 = '\E=';
-        pfk13 = '\E!'; pfk14 = '\E@'; pfk15 = '\E#'; pfk16 = '\E$';
-        pfk17 = '\E%'; pfk18 = '\E'; pfk19 = '\E&'; pfk20 = '\E*';
-        pfk21 = '\E('; pfk22 = '\E)'; pfk23 = '\E_'; pfk24 = '\E+';
+        pfk1 = '\eE1'; pfk2 = '\eE2'; pfk3 = '\eE3'; pfk4 = '\eE4';
+        pfk5 = '\eE5'; pfk6 = '\eE6'; pfk7 = '\eE7'; pfk8 = '\eE8';
+        pfk9 = '\eE9'; pfk10 = '\eE0'; pfk11 = '\eE-'; pfk12 = '\eE=';
+        pfk13 = '\eE!'; pfk14 = '\eE@'; pfk15 = '\eE#'; pfk16 = '\eE$';
+        pfk17 = '\eE%'; pfk18 = '\eE'; pfk19 = '\eE&'; pfk20 = '\eE*';
+        pfk21 = '\eE('; pfk22 = '\eE)'; pfk23 = '\eE_'; pfk24 = '\eE+';
         }
 .fi
 .SH "IBM 3270 KEY DEFINITONS FOR AN ABOVE DEFINITION"
