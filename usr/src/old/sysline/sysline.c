@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)sysline.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysline.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -236,7 +236,7 @@ char *username;
 char *ourtty;			/* keep track of what tty we're on */
 struct stat stbuf, mstbuf;	/* mstbuf for mail check only */
 unsigned delay = DEFDELAY;
-short uid;
+uid_t uid;
 double loadavg = 0.0;		/* current load average */
 int users = 0;
 
