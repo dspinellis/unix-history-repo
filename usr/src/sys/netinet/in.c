@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in.c	7.15 (Berkeley) %G%
+ *	@(#)in.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -346,7 +346,8 @@ in_control(so, cmd, data, ifp)
 		if (ia->ia_flags & IFA_ROUTE) {
 			ia->ia_ifa.ifa_dstaddr = (struct sockaddr *)&oldaddr;
 			rtinit(&(ia->ia_ifa), (int)RTM_DELETE, RTF_HOST);
-			ia->ia_ifa.ifa_dstaddr = (struct sockaddr *)&ia->ia_addr;
+			ia->ia_ifa.ifa_dstaddr =
+					(struct sockaddr *)&ia->ia_dstaddr;
 			rtinit(&(ia->ia_ifa), (int)RTM_ADD, RTF_HOST|RTF_UP);
 		}
 		break;
@@ -462,7 +463,7 @@ in_ifinit(ifp, ia, sin, scrub)
 {
 	register u_long i = ntohl(sin->sin_addr.s_addr);
 	struct sockaddr_in oldaddr;
-	int s = splimp(), error;
+	int s = splimp(), error, flags = RTF_UP;
 
 	oldaddr = ia->ia_addr;
 	ia->ia_addr = *sin;
@@ -476,6 +477,7 @@ in_ifinit(ifp, ia, sin, scrub)
 		ia->ia_addr = oldaddr;
 		return (error);
 	}
+	splx(s);
 	if (scrub) {
 		ia->ia_ifa.ifa_addr = (struct sockaddr *)&oldaddr;
 		in_ifscrub(ifp, ia);
@@ -505,27 +507,25 @@ in_ifinit(ifp, ia, sin, scrub)
 				break;
 			}
 	}
+	/*
+	 * Add route for the network.
+	 */
 	if (ifp->if_flags & IFF_BROADCAST) {
 		ia->ia_broadaddr.sin_addr = 
 			in_makeaddr(ia->ia_subnet, INADDR_BROADCAST);
 		ia->ia_netbroadcast.s_addr =
 		    htonl(ia->ia_net | (INADDR_BROADCAST &~ ia->ia_netmask));
-	}
-	/*
-	 * Add route for the network.
-	 */
-	if (ifp->if_flags & IFF_LOOPBACK) {
+	} else if (ifp->if_flags & IFF_LOOPBACK) {
 		ia->ia_ifa.ifa_dstaddr = ia->ia_ifa.ifa_addr;
-		rtinit(&(ia->ia_ifa), (int)RTM_ADD, RTF_HOST|RTF_UP);
-	} else if (ifp->if_flags & IFF_POINTOPOINT &&
-		 ia->ia_dstaddr.sin_family == AF_INET)
-		rtinit(&(ia->ia_ifa), (int)RTM_ADD, RTF_HOST|RTF_UP);
-	else {
-		rtinit(&(ia->ia_ifa), (int)RTM_ADD, RTF_UP);
+		flags |= RTF_HOST;
+	} else if (ifp->if_flags & IFF_POINTOPOINT) {
+		if (ia->ia_dstaddr.sin_family != AF_INET)
+			return (0);
+		flags |= RTF_HOST;
 	}
-	ia->ia_flags |= IFA_ROUTE;
-	splx(s);
-	return (0);
+	if ((error = rtinit(&(ia->ia_ifa), (int)RTM_ADD, flags)) == 0)
+		ia->ia_flags |= IFA_ROUTE;
+	return (error);
 }
 
 /*
