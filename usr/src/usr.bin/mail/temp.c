@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)temp.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)temp.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -39,17 +39,17 @@ tinit()
 	register char *cp;
 
 	strcpy(tempMail, _PATH_TMP);
-	mktemp(strcat(tempMail, "/RsXXXXXX"));
+	mktemp(strcat(tempMail, "RsXXXXXX"));
 	strcpy(tempResid, _PATH_TMP);
-	mktemp(strcat(tempResid, "/RqXXXXXX"));
+	mktemp(strcat(tempResid, "RqXXXXXX"));
 	strcpy(tempQuit, _PATH_TMP);
-	mktemp(strcat(tempQuit, "/RmXXXXXX"));
+	mktemp(strcat(tempQuit, "RmXXXXXX"));
 	strcpy(tempEdit, _PATH_TMP);
-	mktemp(strcat(tempEdit, "/ReXXXXXX"));
+	mktemp(strcat(tempEdit, "ReXXXXXX"));
 	strcpy(tempSet, _PATH_TMP);
-	mktemp(strcat(tempSet, "/RxXXXXXX"));
+	mktemp(strcat(tempSet, "RxXXXXXX"));
 	strcpy(tempMesg, _PATH_TMP);
-	mktemp(strcat(tempMesg, "/RxXXXXXX"));
+	mktemp(strcat(tempMesg, "RxXXXXXX"));
 
 	/*
 	 * It's okay to call savestr in here because main will
