@@ -11,11 +11,9 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: vm_machdep.c 1.21 91/04/06$
- * OMRON: $Id: vm_machdep.c,v 1.2 92/06/14 06:24:23 moti Exp $
+ * from: hp300/hp300/vm_machdep.c	7.14 (Berkeley) 12/27/92
  *
- * from: hp300/hp300/vm_machdep.c	7.12 (Berkeley) 6/5/92
- *
- *	@(#)vm_machdep.c	7.3 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -48,6 +46,9 @@ cpu_fork(p1, p2)
 	int offset;
 	extern caddr_t getsp();
 	extern char kstack[];
+
+	p2->p_md.md_regs = p1->p_md.md_regs;
+	p2->p_md.md_flags = (p1->p_md.md_flags & ~(MDP_AST|MDP_HPUXTRACE));
 
 	/*
 	 * Copy pcb and stack from proc p1 to p2. 
