@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mail5.nr	6.1 (Berkeley) %G%
+.\"	@(#)mail5.nr	6.2 (Berkeley) %G%
 .\"
 .bp
 .sh 1 "Additional features"
@@ -414,7 +414,7 @@ If
 .b ignore
 is executed with no arguments, it lists the current set of ignored fields.
 .ip \fBlist\fP
-List the vaild
+List the valid
 .i Mail
 commands.
 .. .ip \fBlocal\fP
