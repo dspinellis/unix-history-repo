@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	6.21 (Berkeley) %G%
+ *	@(#)hp.c	6.22 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -147,13 +147,22 @@ struct	size {
 	81312,	681,		/* F=cyl 681 thru 814 */
 	153664,	562,		/* G=cyl 562 thru 814 */
 	291346,	82,		/* H=cyl 82 thru 561 */
+}, fj2361_sizes[8] = {
+	15884,	0,		/* A=cyl 0 thru 12 */
+	66880,	13,		/* B=cyl 13 thru 65 */
+	1077760, 0,		/* C=cyl 0 thru 841 */
+	15884,	294,		/* D=cyl 294 thru 306 */
+	307200,	307,		/* E=cyl 307 thru 546 */
+	377408,	547,		/* F=cyl 547 thru 841 */
+	701248,	294,		/* G=cyl 294 thru 841 */
+	291346,	66,		/* H=cyl 66 thru 293 */
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
 /*
  * Table for converting Massbus drive types into
  * indices into the partition tables.  Slots are
- * left for those drives devined from other means
+ * left for those drives divined from other means
  * (e.g. SI, AMPEX, etc.).
  */
 short	hptypes[] = {
@@ -186,7 +195,9 @@ short	hptypes[] = {
 #define	HPDT_9300	13
 	-1,
 #define HPDT_RM02	14
-	MBDT_RM02,		/* beware, actually capricorn or eagle */
+	MBDT_RM02,		/* beware, actually mapped */
+#define HPDT_2361	15
+	-1,
 	0
 };
 struct	mba_device *hpinfo[NHP];
@@ -218,21 +229,23 @@ struct hpst {
 	short	sdist;		/* seek distance metric */
 	short	maxdist;	/* boundaries of non-searched area */
 	short	mindist;	/* preceding the target sector */
+	char	*name;		/* name of disk type */
 } hpst[] = {
-    { 32, 5,	32*5,	823,	rm03_sizes,	7, 4, 1 },	/* RM03 */
-    { 32, 19,	32*19,	823,	rm05_sizes,	7, 4, 1 },	/* RM05 */
-    { 22,19,	22*19,	815,	rp06_sizes,	7, 4, 1 },	/* RP06 */
-    { 31, 14, 	31*14,	559,	rm80_sizes,	7, 4, 1 },	/* RM80 */
-    { 22, 19,	22*19,	411,	rp05_sizes,	7, 4, 1 },	/* RP04 */
-    { 22, 19,	22*19,	411,	rp05_sizes,	7, 4, 1 },	/* RP05 */
-    { 50, 32,	50*32,	630,	rp07_sizes,    15, 8, 3 },	/* RP07 */
-    { 1, 1,	1,	1,	0,		0, 0, 0 },	/* ML11A */
-    { 1, 1,	1,	1,	0,		0, 0, 0 },	/* ML11B */
-    { 32, 40,	32*40,	843,	cdc9775_sizes,	7, 4, 1 },	/* 9775 */
-    { 32, 10,	32*10,	823,	cdc9730_sizes,	7, 4, 1 },	/* 9730 */
-    { 32, 16,	32*16,	1024,	capricorn_sizes,10,4, 3 },	/* Capricorn */
-    { 48, 20,	48*20,	842,	eagle_sizes,   15, 8, 3 },	/* EAGLE */
-    { 32, 19,	32*19,	815,	ampex_sizes,	7, 4, 1 },	/* 9300 */
+    { 32, 5,	32*5,	823,	rm03_sizes,	7, 4, 1, "RM03" },
+    { 32, 19,	32*19,	823,	rm05_sizes,	7, 4, 1, "RM05" },
+    { 22,19,	22*19,	815,	rp06_sizes,	7, 4, 1, "RP06"},
+    { 31, 14, 	31*14,	559,	rm80_sizes,	7, 4, 1, "RM80"},
+    { 22, 19,	22*19,	411,	rp05_sizes,	7, 4, 1, "RP04"},
+    { 22, 19,	22*19,	411,	rp05_sizes,	7, 4, 1, "RP05"},
+    { 50, 32,	50*32,	630,	rp07_sizes,    15, 8, 3, "RP07"},
+    { 1, 1,	1,	1,	0,		0, 0, 0, "ML11A"},
+    { 1, 1,	1,	1,	0,		0, 0, 0, "ML11B" },
+    { 32, 40,	32*40,	843,	cdc9775_sizes,	7, 4, 1, "9775" },
+    { 32, 10,	32*10,	823,	cdc9730_sizes,	7, 4, 1, "9730-160" },
+    { 32, 16,	32*16,	1024,	capricorn_sizes,10,4, 3, "capricorn" },
+    { 48, 20,	48*20,	842,	eagle_sizes,   15, 8, 3, "eagle" },
+    { 32, 19,	32*19,	815,	ampex_sizes,	7, 4, 1, "9300" },
+    { 64, 20,	64*20,	842,	fj2361_sizes,  15, 8, 3, "2361" },
 };
 
 u_char	hp_offset[16] = {
@@ -318,15 +331,9 @@ hpmaptype(mi)
 			type = HPDT_9730;
 			break;
 
-		/*
-		 * Beware, since the only SI controller we
-		 * have has a 9300 instead of a 9766, we map the
-		 * drive type into the 9300.  This means that
-		 * on a 9766 you lose the last 8 cylinders (argh).
-		 */
 		case SI9766:
-			printf("hp%d: 9300\n", mi->mi_unit);
-			type = HPDT_9300;
+			printf("hp%d: 9766\n", mi->mi_unit);
+			type = HPDT_RM05;
 			break;
 
 		case SI9762:
@@ -351,38 +358,37 @@ hpmaptype(mi)
 	 * EMULEX SC750 or SC780.  Poke the holding register.
 	 */
 	if (type == HPDT_RM02) {
-		int ntracks, nsectors;
+		int nsectors, ntracks, ncyl;
 
 		hpaddr->hpof = HPOF_FMT22;
 		mbclrattn(mi);
 		hpaddr->hpcs1 = HP_NOP;
 		hpaddr->hphr = HPHR_MAXTRAK;
 		ntracks = MASKREG(hpaddr->hphr) + 1;
-		if (ntracks == 16) {
-			printf("hp%d: capricorn\n", mi->mi_unit);
-			type = HPDT_CAPRICORN;
-			goto done;
-		}
-		if (ntracks == 19) {
-			printf("hp%d: 9300\n", mi->mi_unit);
-			type = HPDT_9300;
-			goto done;
-		}
+		DELAY(100);
 		hpaddr->hpcs1 = HP_NOP;
 		hpaddr->hphr = HPHR_MAXSECT;
 		nsectors = MASKREG(hpaddr->hphr) + 1;
-		if (ntracks == 20 && nsectors == 48) {
-			type = HPDT_EAGLE;
-			printf("hp%d: eagle\n", mi->mi_unit);
-			goto done;
+		DELAY(100);
+		hpaddr->hpcs1 = HP_NOP;
+		hpaddr->hphr = HPHR_MAXCYL;
+		ncyl = MASKREG(hpaddr->hphr) + 1;
+		for (type = 0; hptypes[type] != 0; type++)
+			if (hpst[type].nsect == nsectors &&
+			    hpst[type].ntrak == ntracks &&
+			    hpst[type].ncyl == ncyl)
+				break;
+
+		if (hptypes[type] == 0) {
+	printf("hp%d: %d sectors, %d tracks, %d cylinders: unknown device\n",
+				mi->mi_unit, nsectors, ntracks, ncyl);
+			type = HPDT_RM02;
 		}
-		printf("hp%d: ntracks %d, nsectors %d: unknown device\n",
-			mi->mi_unit, ntracks, nsectors);
-done:
+		printf("hp%d: %s\n", mi->mi_unit, hpst[type].name);
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 		mbclrattn(mi);		/* conservative */
 		return (type);
-	} 
+	}
 
 	/*
 	 * Map all ML11's to the same type.  Also calculate
