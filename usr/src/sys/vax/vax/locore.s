@@ -1,4 +1,4 @@
-/*	locore.s	6.19	84/09/04	*/
+/*	locore.s	6.20	84/09/08	*/
 
 #include "psl.h"
 #include "pte.h"
@@ -148,7 +148,7 @@ ubanorm:
 	bicl3	$3,(rUVEC),r1 
 	jmp	2(r1)				/* 2 skips ``pushr $0x3f'' */
 ubaerror:
-	incl _intrcnt+I_UBA[rUBA]
+	incl _intrcnt+I_UBA[rUBANUM]
 	PUSHR; calls $0,_ubaerror; POPR		/* ubaerror r/w's r0-r5 */
 	tstl rUVEC; jneq ubanorm		/* rUVEC contains result */
 	POPR
