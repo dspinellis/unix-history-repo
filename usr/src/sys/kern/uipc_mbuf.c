@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.25	81/12/23	*/
+/*	uipc_mbuf.c	1.26	82/01/19	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -38,7 +38,9 @@ m_clalloc(ncl, how)
 
 COUNT(M_CLALLOC);
 	npg = ncl * CLSIZE;
+	s = splimp();		/* careful: rmalloc isn't reentrant */
 	mbx = rmalloc(mbmap, npg);
+	splx(s);
 	if (mbx == 0)
 		return (0);
 	m = cltom(mbx / CLSIZE);
