@@ -1,0 +1,69 @@
+TTYS(5)                     BSD Programmer's Manual                    TTYS(5)
+
+NNAAMMEE
+     ttttyyss - terminal initialization information
+
+DDEESSCCRRIIPPTTIIOONN
+     The file ttttyyss contains information that is used by various routines to
+     initialize and control the use of terminal special files.  This informa-
+     tion is read with the getttyent(3) library routines.  There is one line
+     in the ttttyyss file per special device file.  Fields are separated by tabs
+     and/or spaces.  Fields comprised of more than one word should be enclosed
+     in double quotes (``"'').  Blank lines and comments may appear anywhere
+     in the file; comments are delimited by hash marks (``#'') and new lines.
+     Any unspecified fields will default to null.
+
+     The first field is the name of the terminal special file as it is found
+     in _/_d_e_v.
+
+     The second field of the file is the command to execute for the line, usu-
+     ally getty(8),  which initializes and opens the line, setting the speed,
+     waiting for a user name and executing the login(1) program.  It can be,
+     however, any desired command, for example the start up for a window sys-
+     tem terminal emulator or some other daemon process, and can contain mul-
+     tiple words if quoted.
+
+     The third field is the type of terminal usually connected to that tty
+     line, normally the one found in the termcap(5) data base file.  The envi-
+     ronment variable TERM is initialized with the value by either getty(8) or
+     login(1).
+
+     The remaining fields set flags in the _t_y___s_t_a_t_u_s entry (see getttyent(3))
+     or specify a window system process that init(8) will maintain for the
+     terminal line.
+
+     As flag values, the strings ``on'' and ``off'' specify that init should
+     (should not) execute the command given in the second field, while ``se-
+     cure'' (if ``on'' is also specified) allows users with a uid of 0 to lo-
+     gin on this line.  These flag fields should not be quoted.
+
+     The string ``window='' may be followed by a quoted command string which
+     init will execute _b_e_f_o_r_e starting the command specified by the second
+     field.
+
+EEXXAAMMPPLLEESS
+     # root login on console at 1200 baud
+     console "/usr/libexec/getty std.1200"   vt100   on secure
+     # dialup at 1200 baud, no root logins
+     ttyd0   "/usr/libexec/getty d1200"      dialup  on      # 555-1234
+     # Mike's terminal: hp2621
+     ttyh0   "/usr/libexec/getty std.9600"   hp2621-nl       on      # 457 Evans
+     # John's terminal: vt100
+     ttyh1   "/usr/libexec/getty std.9600"   vt100   on              # 459 Evans
+     # terminal emulate/window system
+     ttyv0   "/usr/new/xterm -L :0"          vs100   on window="/usr/new/Xvs100 0"
+     # Network pseudo ttys -- don't enable getty
+     ttyp0   none    network
+     ttyp1   none    network off
+
+FFIILLEESS
+     /etc/ttys
+
+SSEEEE AALLSSOO
+     login(1),  getttyent(3),  ttyslot(3),  gettytab(5),  termcap(5),
+     getty(8),  init(8)
+
+HHIISSTTOORRYY
+     A ttttyyss file appeared in Version 6 AT&T UNIX.
+
+4.4BSD                           June 4, 1993                                2

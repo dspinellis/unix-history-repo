@@ -1,0 +1,59 @@
+FINGERD(8)                BSD System Manager's Manual               FINGERD(8)
+
+NNAAMMEE
+     ffiinnggeerrdd - remote user information server
+
+SSYYNNOOPPSSIISS
+     ffiinnggeerrdd [--ss] [--ll] [--pp _f_i_l_e_n_a_m_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     FFiinnggeerrdd is a simple protocol based on _R_F_C_1_1_9_6 that provides an interface
+     to the Name and Finger programs at several network sites.  The program is
+     supposed to return a friendly, human-oriented status report on either the
+     system at the moment or a particular person in depth.  There is no re-
+     quired format and the protocol consists mostly of specifying a single
+     ``command line''.
+
+     FFiinnggeerrdd listens for TCP requests at port 79.  Once connected it reads a
+     single command line terminated by a <CRLF> which is passed to finger(1).
+     FFiinnggeerrdd closes its connections as soon as the output is finished.
+
+     If the line is null (i.e. just a <CRLF> is sent) then finger returns a
+     ``default'' report that lists all people logged into the system at that
+     moment.
+
+     If a user name is specified (e.g.  eric<CRLF>) then the response lists
+     more extended information for only that particular user, whether logged
+     in or not.  Allowable ``names'' in the command line include both ``login
+     names'' and ``user names''. If a name is ambiguous, all possible deriva-
+     tions are returned.
+
+     The following options may be passed to ffiinnggeerrdd as server program argu-
+     ments in _/_e_t_c_/_i_n_e_t_d_._c_o_n_f:
+
+     --ss      Enable secure mode.  Queries without a user name are rejected and
+             forwarding of queries to other remote hosts is denied.
+
+     --ll      Enable logging.  The name of the host originating the query is
+             reported via syslog(3) at LOG_NOTICE priority.
+
+     --pp      Use an alternate program as the local information provider.  The
+             default local program executed by ffiinnggeerrdd is finger(1).  By spec-
+             ifying a customized local server, this option allows a system
+             manager to have more control over what information is provided to
+             remote sites.
+
+SSEEEE AALLSSOO
+     finger(1)
+
+BBUUGGSS
+     Connecting directly to the server from a TIP or an equally narrow-minded
+     TELNET-protocol user program can result in meaningless attempts at option
+     negotiation being sent to the server, which will foul up the command line
+     interpretation.  FFiinnggeerrdd should be taught to filter out IAC's and perhaps
+     even respond negatively (IAC WON'T) to all option commands received.
+
+HHIISSTTOORRYY
+     The ffiinnggeerrdd command appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 4, 1993                                1
