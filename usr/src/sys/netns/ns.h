@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ns.h	7.4 (Berkeley) %G%
+ *	@(#)ns.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -95,7 +95,8 @@ struct ns_addr {
  * Socket address, Xerox style
  */
 struct sockaddr_ns {
-	u_short		sns_family;
+	u_char		sns_len;
+	u_char		sns_family;
 	struct ns_addr	sns_addr;
 	char		sns_zero[2];
 };

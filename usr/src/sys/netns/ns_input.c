@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ns_input.c	7.5 (Berkeley) %G%
+ *	@(#)ns_input.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -48,6 +48,7 @@ union ns_host	ns_zerohost;
 union ns_host	ns_broadhost;
 union ns_net	ns_zeronet;
 union ns_net	ns_broadnet;
+struct sockaddr_ns ns_netmask, ns_hostmask;
 
 static u_short allones[] = {-1, -1, -1};
 
@@ -70,6 +71,11 @@ ns_init()
 	nsrawpcb.nsp_next = nsrawpcb.nsp_prev = &nsrawpcb;
 	nsintrq.ifq_maxlen = nsqmaxlen;
 	ns_pexseq = time.tv_usec;
+	ns_netmask.sns_len = 6;
+	ns_netmask.sns_addr.x_net = ns_broadnet;
+	ns_hostmask.sns_len = 12;
+	ns_hostmask.sns_addr.x_net = ns_broadnet;
+	ns_hostmask.sns_addr.x_host = ns_broadhost;
 }
 
 /*
@@ -82,8 +88,6 @@ nsintr()
 	register struct idp *idp;
 	register struct mbuf *m;
 	register struct nspcb *nsp;
-	struct ifnet *ifp;
-	struct mbuf *m0;
 	register int i;
 	int len, s, error;
 	char oddpacketp;
@@ -247,7 +251,7 @@ idp_ctlinput(cmd, arg)
 	case PRC_HOSTDEAD:
 	case PRC_HOSTUNREACH:
 		sns = (struct sockaddr_ns *)arg;
-		if (sns->sns_family != AF_INET)
+		if (sns->sns_family != AF_NS)
 			return;
 		ns = &sns->sns_addr;
 		break;
@@ -412,6 +416,7 @@ struct route *ro;
 	bzero((caddr_t)ro, sizeof (*ro));
 	dst = (struct sockaddr_ns *)&ro->ro_dst;
 
+	dst->sns_len = sizeof(*dst);
 	dst->sns_family = AF_NS;
 	dst->sns_addr = *src;
 	dst->sns_addr.x_port = 0;
@@ -436,7 +441,7 @@ struct mbuf *m;
 struct ifnet *ifp;
 {
 	register struct nspcb *nsp;
-	register struct ifaddr *ia;
+	register struct ifaddr *ifa;
 	/*
 	 * Give any raw listeners a crack at the packet
 	 */
@@ -452,11 +457,10 @@ struct ifnet *ifp;
 			idp->idp_sna.x_net = ns_zeronet;
 			idp->idp_sna.x_host = ns_thishost;
 			if (ifp && (ifp->if_flags & IFF_POINTOPOINT))
-			    for(ia = ifp->if_addrlist; ia;
-						ia = ia->ifa_next) {
-				if (ia->ifa_addr.sa_family==AF_NS) {
-				    idp->idp_sna = 
-					satons_addr(ia->ifa_dstaddr);
+			    for(ifa = ifp->if_addrlist; ifa;
+						ifa = ifa->ifa_next) {
+				if (ifa->ifa_addr->sa_family==AF_NS) {
+				    idp->idp_sna = IA_SNS(ifa)->sns_addr;
 				    break;
 				}
 			    }

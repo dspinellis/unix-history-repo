@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ns_output.c	7.4 (Berkeley) %G%
+ *	@(#)ns_output.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -68,6 +68,7 @@ ns_output(m0, ro, flags)
 	dst = (struct sockaddr_ns *)&ro->ro_dst;
 	if (ro->ro_rt == 0) {
 		dst->sns_family = AF_NS;
+		dst->sns_len = sizeof (*dst);
 		dst->sns_addr = idp->idp_dna;
 		dst->sns_addr.x_port = 0;
 		/*
@@ -99,7 +100,7 @@ ns_output(m0, ro, flags)
 	}
 	ro->ro_rt->rt_use++;
 	if (ro->ro_rt->rt_flags & (RTF_GATEWAY|RTF_HOST))
-		dst = (struct sockaddr_ns *)&ro->ro_rt->rt_gateway;
+		dst = (struct sockaddr_ns *)ro->ro_rt->rt_gateway;
 gotif:
 
 	/*
@@ -134,7 +135,9 @@ bad:
 	}
 	m_freem(m0);
 done:
-	if (ro == &idproute && (flags & NS_ROUTETOIF) == 0 && ro->ro_rt)
+	if (ro == &idproute && (flags & NS_ROUTETOIF) == 0 && ro->ro_rt) {
 		RTFREE(ro->ro_rt);
+		ro->ro_rt = 0;
+	}
 	return (error);
 }

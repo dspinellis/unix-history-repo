@@ -14,11 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ns_error.c	7.6 (Berkeley) %G%
+ *	@(#)ns_error.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"
 #include "socket.h"
@@ -84,9 +85,9 @@ ns_error(om, type, param)
 	 * and nobody was there, just echo it.
 	 * (Yes, this is a wart!)
 	 */
-	if (type==NS_ERR_NOSOCK &&
-	    oip->idp_dna.x_port==htons(2) &&
-	    (type = ns_echo(oip)==0))
+	if (type == NS_ERR_NOSOCK &&
+	    oip->idp_dna.x_port == htons(2) &&
+	    (type = ns_echo(om))==0)
 		return;
 
 #ifdef NS_ERRPRINTFS
@@ -97,7 +98,7 @@ ns_error(om, type, param)
 	 * Don't Generate error packets in response to multicasts.
 	 */
 	if (oip->idp_dna.x_host.c_host[0] & 1)
-		goto free;
+		goto freeit;
 
 	ns_errstat.ns_es_error++;
 	/*
@@ -107,21 +108,21 @@ ns_error(om, type, param)
 	 */
 	if (oip->idp_len < sizeof(struct idp)) {
 		ns_errstat.ns_es_oldshort++;
-		goto free;
+		goto freeit;
 	}
 	if (oip->idp_pt == NSPROTO_ERROR) {
 		ns_errstat.ns_es_oldns_err++;
-		goto free;
+		goto freeit;
 	}
 
 	/*
 	 * First, formulate ns_err message
 	 */
-	m = m_get(M_DONTWAIT, MT_HEADER);
+	m = m_gethdr(M_DONTWAIT, MT_HEADER);
 	if (m == NULL)
-		goto free;
+		goto freeit;
 	m->m_len = sizeof(*ep);
-	m->m_off = MMAXOFF - m->m_len;
+	MH_ALIGN(m, m->m_len);
 	ep = mtod(m, struct ns_epidp *);
 	if ((u_int)type > NS_ERR_TOO_BIG)
 		panic("ns_err_error");
@@ -138,13 +139,13 @@ ns_error(om, type, param)
 	nip->idp_sna = oip->idp_dna;
 	if (idpcksum) {
 		nip->idp_sum = 0;
-		nip->idp_sum = ns_cksum(dtom(nip), sizeof(*ep));
+		nip->idp_sum = ns_cksum(m, sizeof(*ep));
 	} else 
 		nip->idp_sum = 0xffff;
-	(void) ns_output(dtom(nip), (struct route *)0, 0);
+	(void) ns_output(m, (struct route *)0, 0);
 
-free:
-	m_freem(dtom(oip));
+freeit:
+	m_freem(om);
 }
 
 ns_printhost(p)
@@ -184,7 +185,7 @@ ns_err_input(m)
 	}
 #endif
 	i = sizeof (struct ns_epidp);
- 	if ((m->m_off > MMAXOFF || m->m_len < i) &&
+ 	if (((m->m_flags & M_EXT) || m->m_len < i) &&
  		(m = m_pullup(m, i)) == 0)  {
 		ns_errstat.ns_es_tooshort++;
 		return;
@@ -252,15 +253,15 @@ ns_err_input(m)
 			idp_ctlinput(code, (caddr_t)ep);
 		}
 		
-		goto free;
+		goto freeit;
 
 	default:
 	badcode:
 		ns_errstat.ns_es_badcode++;
-		goto free;
+		goto freeit;
 
 	}
-free:
+freeit:
 	m_freem(m);
 }
 
@@ -277,10 +278,10 @@ nstime()
 }
 #endif
 
-ns_echo(idp)
-register struct idp *idp;
+ns_echo(m)
+struct mbuf *m;
 {
-	struct mbuf *m = dtom(idp);
+	register struct idp *idp = mtod(m, struct idp *);
 	register struct echo {
 	    struct idp	ec_idp;
 	    u_short		ec_op; /* Operation, 1 = request, 2 = reply */

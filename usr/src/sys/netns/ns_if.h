@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ns_if.h	7.3 (Berkeley) %G%
+ *	@(#)ns_if.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -26,21 +26,29 @@
 
 struct ns_ifaddr {
 	struct	ifaddr ia_ifa;		/* protocol-independent info */
-#define	ia_addr	ia_ifa.ifa_addr
-#define	ia_broadaddr	ia_ifa.ifa_broadaddr
-#define	ia_dstaddr	ia_ifa.ifa_dstaddr
 #define	ia_ifp		ia_ifa.ifa_ifp
-	union	ns_net	ia_net;		/* network number of interface */
+/*	union	ns_net	ia_net;		/* network number of interface */
+#define ia_net		ia_addr.sns_addr.x_net
 	int	ia_flags;
-	struct	ns_ifaddr *ia_next;	/* next in list of internet addresses */
+	struct	ns_ifaddr *ia_next;	/* next in list of xerox addresses */
+	struct	sockaddr_ns ia_addr;	/* reserve space for my address */
+	struct	sockaddr_ns ia_dstaddr;	/* space for my broadcast address */
+#define ia_broadaddr	ia_dstaddr
+	struct	sockaddr_ns ia_netmask;	/* space for my network mask */
 };
 
+struct	ns_aliasreq {
+	char	ifra_name[IFNAMSIZ];		/* if name, e.g. "en0" */
+	struct	sockaddr_ns ifra_addr;
+	struct	sockaddr_ns ifra_broadaddr;
+#define ifra_dstaddr ifra_broadaddr
+};
 /*
  * Given a pointer to an ns_ifaddr (ifaddr),
  * return a pointer to the addr as a sockadd_ns.
  */
 
-#define	IA_SNS(ia) ((struct sockaddr_ns *)(&((struct ns_ifaddr *)ia)->ia_addr))
+#define	IA_SNS(ia) (&(((struct ns_ifaddr *)(ia))->ia_addr))
 /*
  * ia_flags
  */
