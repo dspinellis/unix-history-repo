@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.1 (Berkeley) %G%
+.\"	@(#)op.me	6.2 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.1
+Version 6.2
 .sp
 For Sendmail Version 6.1
 .)l
@@ -2770,6 +2770,27 @@ and the
 exit status to be returned
 if the LHS matches.
 This mailer is only functional in ruleset zero.
+.pp
+The mailer named
+.q local
+.i must
+be defined in every configuration file.
+This is used to deliver local mail,
+and is treated specially in several ways.
+Additionally, three other mailers named
+.q prog ,
+.q *file* ,
+and
+.q *include*
+may be defined to tune the delivery of messages to programs,
+files,
+and :include: lists respectively.
+They default to:
+.(b
+Mprog, P=/bin/sh, F=lsD, A=sh \-c $u
+M*file*, F=lsDEu, A=NULL
+M*include*, F=su, A=NULL
+.)b
 .sh 3 "H \*- define header"
 .pp
 The format of the header lines that sendmail inserts into the message
@@ -5171,7 +5192,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.1
+.\"Version 6.2
 .\".ce 0
 .pn 2
 .bp
