@@ -5,7 +5,7 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.23 1994/05/07 11:54:38 gclarkii Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.24 1994/05/10 19:52:54 gclarkii Exp $
 
 All entries marked <CURRENT> are for FreeBSD-current.  All other entries
 are for both.
@@ -779,6 +779,14 @@ administering networking on FreeBSD is basically the same as on SunOS
 Use `ifconfig ed0' to see whether the ALTPHYS flag is set, and then
 use either `ifconfig ed0 altphys' if it was off, or `ifconfig ed0
 -altphys' if it was on.
+
+8.7:  I'm having problems with NFS to/from FreeBSD and my Wuffotronics
+      Workstation / generic NFS appliance, where should I look first?
+
+Certain PC network cards are better than others (to put it mildly) and
+can sometimes cause problems with network intensive operations, like
+NFS.  See /usr/src/contrib/FAQ/OTHER-FAQS/NFS for more information on this
+topic.
 
 
 9 Serial Communications
