@@ -1,4 +1,4 @@
-/*	ftp_var.h	4.5	83/06/19	*/
+/*	ftp_var.h	4.6	83/07/26	*/
 
 /*
  * FTP global variables.
@@ -17,7 +17,6 @@ int	interactive;		/* interactively prompt on m* cmds */
 int	debug;			/* debugging level */
 int	bell;			/* ring bell on cmd completion */
 int	doglob;			/* glob local file names */
-int	linger;			/* linger on close of data connections */
 int	autologin;		/* establish user account on connection */
 
 char	typename[32];		/* name of file transfer type */

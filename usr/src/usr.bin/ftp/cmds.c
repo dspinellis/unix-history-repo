@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -408,8 +408,8 @@ status(argc, argv)
 	printf("Verbose: %s; Bell: %s; Prompting: %s; Globbing: %s\n", 
 		onoff(verbose), onoff(bell), onoff(interactive),
 		onoff(doglob));
-	printf("Hash mark printing: %s; Use of PORT cmds: %s; Linger: %s\n",
-		onoff(hash), onoff(sendport), onoff(linger));
+	printf("Hash mark printing: %s; Use of PORT cmds: %s\n",
+		onoff(hash), onoff(sendport));
 }
 
 /*
@@ -518,26 +518,6 @@ setdebug(argc, argv)
 	else
 		options &= ~SO_DEBUG;
 	printf("Debugging %s (debug=%d).\n", onoff(debug), debug);
-}
-
-/*
- * Set linger on data connections on/off.
- */
-/*VARARGS*/
-setlinger(argc, argv)
-	char *argv[];
-{
-
-	if (argc == 1)
-		linger = !linger;
-	else
-		linger = atoi(argv[1]);
-	if (argc == 1 || linger == 0) {
-		printf("Linger on data connection close %s.\n", onoff(linger));
-		return;
-	}
-	printf("Will linger for %d seconds on close of data connections.\n",
-	   linger);
 }
 
 /*
