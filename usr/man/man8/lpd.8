@@ -1,0 +1,130 @@
+.TH LPD 8 "25 February 1983"
+.UC 4
+.ad
+.SH NAME
+lpd, lpdrestart \- line printer daemon, restart downed daemons at reboot time
+.SH SYNOPSIS
+.B /usr/lib/lpd printer
+.br
+.B /usr/lib/lpdrestart
+.SH DESCRIPTION
+.I Lpd
+is the line printer daemon (spool area handler) invoked by
+.IR lpr (1).
+It uses the printer name argument to determine
+the spooling directory, and other pertinent information.  The file
+.I lock
+in that directory is used to prevent multiple daemons from
+becoming active simultaneously, and to store information
+about the daemon process for
+.IR lpq (1)
+and
+.IR lprm (1). 
+After the daemon has succesfully set the lock, it scans the directory
+for files beginning with 
+.IR cf. 
+Lines in each
+.I cf
+file specify files to be printed or non-printing actions to be
+performed.  Each such line begins with a key character
+to specify what to do with the remainder of the line.
+.in +3
+.IP J
+Job Name.  String to be used for the job name on the burst page.
+.IP C
+Classification.  String to be used for the classification line
+on the burst page.
+.IP L
+Literal.  The line contains identification info from
+the password file and causes the banner page to be printed.
+.IP T
+Title.  String to be used as the title for
+.IR pr(1).
+.IP H
+Host Name.  Name of the machine where
+.I lpr
+was invoked.
+.IP P
+Person.  Login name of the person who invoked
+.I lpr.
+This is used to verify ownership by
+.I lprm.
+.IP M
+Send mail to the specified user when the current print job completes.
+.IP f
+Formatted File.  Name of a file to print which is already formatted.
+.IP l
+Like `f' but passes control characters and does not make page breaks.
+.IP p
+Name of a file to print using
+.IR pr (1)
+as a filter.
+.IP t
+Troff File.  The file contains
+.IR troff (1)
+output.
+.IP c
+Cifplot File. The file contains data produced by cifplot.
+.IP v
+Vplot File.  The file contains data produced by vplot.
+.IP 1
+Troff Font R. Name of the font file to use instead of the default.
+.IP 2
+Troff Font I. Name of the font file to use instead of the default.
+.IP 3
+Troff Font B. Name of the font file to use instead of the default.
+.IP 4
+Troff Font S. Name of the font file to use instead of the default.
+.IP I
+Indent.  The number of characters to indent the output by (in ascii).
+.IP U
+Unlink.  Name of file to remove upon completion of printing.
+.IP N
+File name.  The name of the file which is being printed, or a blank
+for the standard input (when 
+.I lpr
+is invoked in a pipeline).
+.in -5
+.PP
+Inability to open a file will result in a message being
+printed in the log file (normally the console). 
+.I lpd
+will try up to 20 times
+to reopen a file it expects to be there, after which it will
+skip the file to be printed.
+.PP
+.I Lpd
+uses
+.IR flock (2)
+to provide exclusive access to the lock file and to prevent multiple
+deamons from becoming active simultaneously. If the daemon should be killed
+or die unexpectedly, the lock file need not be removed.
+The lock file is maintained in a character format and contains two lines.
+The first is the process id of the daemon and the second is the control
+file name of the current job being printed.  The second line is updated to
+reflect the current status of
+.I lpd
+for the programs
+.IR lpq (1)
+and
+.IR lprm (1).
+.PP
+.I lpdrestart
+is normally placed in the
+.IR rc (8)
+file to automatically restart spooling daemons after a crash.
+It makes a single pass through the
+.IR printcap (5)
+file to find out about the existing printers.
+.SH FILES
+.nf
+.ta \w'/etc/printcap           'u
+/etc/printcap	printer description file
+/usr/spool/*	spool directories
+/dev/lp*	line printer devices
+.fi
+.SH "SEE ALSO"
+lpr(1),
+lpq(1),
+lprm(1),
+printcap(5)
