@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hil.c 1.33 89/12/22$
  *
- *	@(#)hil.c	7.1 (Berkeley) %G%
+ *	@(#)hil.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -51,6 +51,9 @@ int 	hildebug = 0;
 #define HDB_IDMODULE	0x20
 #define HDB_EVENTS	0x80
 #endif
+
+/* symbolic sleep message strings */
+char hilin[] = "hilin";
 
 hilinit()
 {
@@ -269,7 +272,10 @@ hilread(dev, uio)
 			return(EWOULDBLOCK);
 		}
 		dptr->hd_flags |= HIL_ASLEEP;
-		sleep((caddr_t)dptr, TTIPRI);
+		if (error = tsleep((caddr_t)dptr, TTIPRI | PCATCH, hilin, 0)) {
+			(void) spl0();
+			return (error);
+		}
 	}
 	(void) spl0();
 
