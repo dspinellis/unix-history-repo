@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in.h	7.1 (Berkeley) %G%
+ *	@(#)in.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -74,6 +74,9 @@ struct in_addr {
 
 #define	INADDR_ANY		(u_long)0x00000000
 #define	INADDR_BROADCAST	(u_long)0xffffffff	/* must be masked */
+#ifndef KERNEL
+#define	INADDR_NONE		0xffffffff		/* -1 return */
+#endif
 
 /*
  * Socket address, internet style.
@@ -89,21 +92,6 @@ struct sockaddr_in {
  * Options for use with [gs]etsockopt at the IP level.
  */
 #define	IP_OPTIONS	1		/* set/get IP per-packet options */
-
-#if !defined(vax) && !defined(ntohl) && !defined(lint)
-/*
- * Macros for number representation conversion.
- */
-#define	ntohl(x)	(x)
-#define	ntohs(x)	(x)
-#define	htonl(x)	(x)
-#define	htons(x)	(x)
-#endif
-
-#if !defined(ntohl) && (defined(vax) || defined(lint))
-u_short	ntohs(), htons();
-u_long	ntohl(), htonl();
-#endif
 
 #ifdef KERNEL
 extern	struct domain inetdomain;

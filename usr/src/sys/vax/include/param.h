@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.2 (Berkeley) %G%
+ *	@(#)param.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -19,6 +19,19 @@
 #define	BIG	4321		/* most-significant byte first */
 #define	PDP	3412		/* LSB first in word, MSW first in long (pdp) */
 #define	ENDIAN	LITTLE		/* byte order on vax */
+
+/*
+ * Macros for network/external number representation conversion.
+ */
+#if ENDIAN == BIG && !defined(lint)
+#define	ntohl(x)	(x)
+#define	ntohs(x)	(x)
+#define	htonl(x)	(x)
+#define	htons(x)	(x)
+#else
+u_short	ntohs(), htons();
+u_long	ntohl(), htonl();
+#endif
 
 #define	NBPG	512		/* bytes/page */
 #define	PGOFSET	(NBPG-1)	/* byte offset into page */
@@ -65,4 +78,4 @@ int	cpuspeed;
 #else KERNEL
 #define	DELAY(n)	{ register int N = (n); while (--N > 0); }
 #endif KERNEL
-#endif
+#endif ENDIAN

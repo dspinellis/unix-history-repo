@@ -1,4 +1,4 @@
-/*	param.h	1.4	86/11/03	*/
+/*	param.h	1.5	87/01/16	*/
 
 /*
  * Machine dependent constants for TAHOE.
@@ -13,6 +13,19 @@
 #define	BIG	4321		/* most-significant byte first */
 #define	PDP	3412		/* LSB first in word, MSW first in long (pdp) */
 #define	ENDIAN	BIG		/* byte order on tahoe */
+
+/*
+ * Macros for network/external number representation conversion.
+ */
+#if ENDIAN == BIG && !defined(lint)
+#define	ntohl(x)	(x)
+#define	ntohs(x)	(x)
+#define	htonl(x)	(x)
+#define	htons(x)	(x)
+#else
+u_short	ntohs(), htons();
+u_long	ntohl(), htonl();
+#endif
 
 #define	NBPG	1024		/* bytes/page */
 #define	PGOFSET	(NBPG-1)	/* byte offset into page */
