@@ -156,6 +156,15 @@ int isalnum __P((int)),
     isupper __P((int)),
     isxdigit __P((int));
 
+
+static int isblank(x) /* until 4.4 */
+     int x;
+{
+    if ((x == ' ') || (x== '\t')) return 1;
+    return 0;
+}
+
+
 typedef struct {
 	char *name;
 	int (*func) __P((int));
