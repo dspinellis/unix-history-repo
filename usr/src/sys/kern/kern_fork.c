@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	8.3 (Berkeley) %G%
+ *	@(#)kern_fork.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -183,6 +183,11 @@ again:
 	bcopy(p1->p_cred, p2->p_cred, sizeof(*p2->p_cred));
 	p2->p_cred->p_refcnt = 1;
 	crhold(p1->p_ucred);
+
+	/* bump references to the text vnode (for procfs) */
+	p2->p_textvp = p1->p_textvp;
+	if (p2->p_textvp)
+		VREF(p2->p_textvp);
 
 	p2->p_fd = fdcopy(p1);
 	/*
