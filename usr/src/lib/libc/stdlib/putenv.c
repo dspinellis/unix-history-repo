@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)putenv.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)putenv.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdlib.h>
@@ -16,17 +16,17 @@ int
 putenv(str)
 	const char *str;
 {
-	register char *p, *equal;
+	char *p, *equal;
 	int rval;
 
-	if (!(p = strdup(str)))
-		return(1);
-	if (!(equal = index(p, '='))) {
+	if ((p = strdup(str)) == NULL)
+		return (-1);
+	if ((equal = index(p, '=')) == NULL) {
 		(void)free(p);
-		return(1);
+		return (-1);
 	}
 	*equal = '\0';
 	rval = setenv(p, equal + 1, 1);
 	(void)free(p);
-	return(rval);
+	return (rval);
 }
