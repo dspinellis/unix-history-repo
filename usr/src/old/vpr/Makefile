@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.7	(Berkeley)	%G%
+#	@(#)Makefile	5.8	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=-O 
