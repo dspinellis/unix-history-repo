@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)deroff.c	4.5	(Berkeley)	84/12/18";
+static char sccsid[] = "@(#)deroff.c	4.6	(Berkeley)	87/09/28";
 #endif not lint
 
 #include <stdio.h>
@@ -922,6 +922,11 @@ domacro()
 }
 PS()
 {
+	for (C; c == ' ' || c == '\t'; C);
+	if (c == '<') {		/* ".PS < file" -- don't expect a .PE */
+		SKIP;
+		return(0);
+	}
 	if (!msflag) {
 		inpic();
 	} else {
