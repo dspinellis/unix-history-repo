@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.31	82/02/25	*/
+/*	uipc_socket.c	4.32	82/03/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -404,16 +404,14 @@ restart:
 	eor = 0;
 	do {
 		len = MIN(m->m_len, cnt);
-		if (len == m->m_len) {
-			eor = (int)m->m_act;
-			sbfree(&so->so_rcv, m);
-			so->so_rcv.sb_mb = m->m_next;
-		}
 		splx(s);
 		iomove(mtod(m, caddr_t), len, B_READ);
 		cnt -= len;
 		s = splnet();
 		if (len == m->m_len) {
+			eor = (int)m->m_act;
+			sbfree(&so->so_rcv, m);
+			so->so_rcv.sb_mb = m->m_next;
 			MFREE(m, n);
 		} else {
 			m->m_off += len;

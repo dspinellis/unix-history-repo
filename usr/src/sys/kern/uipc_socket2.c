@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.20	82/01/19	*/
+/*	uipc_socket2.c	4.21	82/03/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -260,14 +260,12 @@ sbappend(sb, m)
 	register struct mbuf *m;
 	register struct sockbuf *sb;
 {
-	register struct mbuf **np, *n;
+	register struct mbuf *n;
 
-	np = &sb->sb_mb;
-	n = 0;
-	while (*np) {
-		n = *np;
-		np = &n->m_next;
-	}
+	n = sb->sb_mb;
+	if (n)
+		while (n->m_next)
+			n = n->m_next;
 	while (m) {
 		if (m->m_len == 0 && (int)m->m_act == 0) {
 			m = m_free(m);
@@ -284,10 +282,13 @@ sbappend(sb, m)
 			continue;
 		}
 		sballoc(sb, m);
-		*np = m;
+		if (n == 0)
+			sb->sb_mb = m;
+		else
+			n->m_next = m;
 		n = m;
-		np = &n->m_next;
 		m = m->m_next;
+		n->m_next = 0;
 	}
 }
 
