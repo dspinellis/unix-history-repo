@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-	.asciz	"@(#)ffs.s	5.2 (Berkeley) %G%"
+	.asciz	"@(#)ffs.s	5.3 (Berkeley) %G%"
 #endif not lint
 
 /* bit = ffs(value) */
