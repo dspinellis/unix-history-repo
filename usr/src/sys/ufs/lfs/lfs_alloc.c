@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_alloc.c	7.9 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -309,11 +309,11 @@ ialloc(pip, ipref, mode, ipp)
 	if (ino == 0)
 		goto noinodes;
 	error = iget(pip, ino, ipp);
-	ip = *ipp;
 	if (error) {
 		ifree(pip, ino, 0);
 		return (error);
 	}
+	ip = *ipp;
 	if (ip->i_mode) {
 		printf("mode = 0%o, inum = %d, fs = %s\n",
 		    ip->i_mode, ip->i_number, fs->fs_fsmnt);
@@ -324,6 +324,12 @@ ialloc(pip, ipref, mode, ipp)
 		    fs->fs_fsmnt, ino, ip->i_blocks);
 		ip->i_blocks = 0;
 	}
+	/*
+	 * Set up a new generation number for this inode.
+	 */
+	if (++nextgennumber < (u_long)time.tv_sec)
+		nextgennumber = time.tv_sec;
+	ip->i_gen = nextgennumber;
 	return (0);
 noinodes:
 	fserr(fs, "out of inodes");
