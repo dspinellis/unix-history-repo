@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	4.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.24 (Berkeley) %G%";
 #endif
 
 /*
@@ -116,7 +116,7 @@ main(argc, argv)
 	setbuf(stdout, 0);
 	prompt = argv[0];
 	if (argc > 1 && !strcmp(argv[1], "-d"))
-		options = SO_DEBUG, argv++, argc--;
+		debug = SO_DEBUG, argv++, argc--;
 	if (argc != 1) {
 		if (setjmp(toplevel) != 0)
 			exit(0);
@@ -732,7 +732,7 @@ setdebug()
 	printf("%s turn on socket level debugging.\n",
 		debug ? "Will" : "Wont");
 	fflush(stdout);
-	if (debug && setsockopt(net, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+	if (debug && net > 0 && setsockopt(net, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
 		perror("setsockopt (SO_DEBUG)");
 }
 
