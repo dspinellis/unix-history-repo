@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mtio.h	7.7 (Berkeley) %G%
+ *	@(#)mtio.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -66,6 +66,8 @@ struct mtget {
 #define MT_ISPYTHON	0x0f		/* Archive Python (DAT) */
 #define MT_ISHPDAT	0x10		/* HP 35450A DAT drive */
 #define MT_ISMFOUR	0x11		/* M4 Data 1/2 9track drive */
+#define MT_ISTK50	0x12		/* DEC SCSI TK50 */
+#define MT_ISMT02	0x13		/* Emulex MT02 SCSI tape controller */
 
 /* mag tape io control commands */
 #define	MTIOCTOP	_IOW('m', 1, struct mtop)	/* do a mag tape op */
