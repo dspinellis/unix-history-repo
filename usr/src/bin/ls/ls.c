@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.44 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.45 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -208,7 +208,7 @@ main(argc, argv)
 		printfcn = printcol;
 
 	if (!argc) {
-		char dot[] = ".";	/* ANSI says it's not writable.*/
+		static char dot[] = ".";
 
 		argc = 1;
 		argv[0] = dot;
