@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ts.c	7.2 (Berkeley) %G%
+ *	@(#)ts.c	7.3 (Berkeley) %G%
  */
 
 #include "ts.h"
@@ -11,8 +11,11 @@
 /*
  * TS11 tape driver
  *
+ * NB: This driver takes advantage of the fact that there is only one
+ *	drive per controller.
+ *
  * TODO:
- *	write dump code
+ *	test dump code
  */
 #include "param.h"
 #include "systm.h"
@@ -62,13 +65,14 @@ struct	uba_ctlr *tsminfo[NTS];
 struct	uba_device *tsdinfo[NTS];
 struct buf	tsutab[NTS];
 u_short	tsstd[] = { 0772520, 0 };
-/*** PROBABLY DON'T NEED ALL THESE SINCE CONTROLLER == DRIVE ***/
+/* need all these even though controller == drive */
 struct	uba_driver zsdriver =
- { tsprobe, tsslave, tsattach, tsdgo, tsstd, "ts", tsdinfo, "zs", tsminfo, 0 };
+ { tsprobe, tsslave, tsattach, tsdgo, tsstd, "ts", tsdinfo, "zs", tsminfo };
 
 /* bits in minor device */
 #define	TSUNIT(dev)	(minor(dev)&03)
 #define	T_NOREWIND	04
+#define	T_1600BPI	010
 
 #define	INF	(daddr_t)1000000L
 
@@ -85,18 +89,21 @@ struct	uba_driver zsdriver =
  * 4. We remember the status registers after the last command, using
  *    then internally and returning them to the SENSE ioctl.
  */
+struct	ts_tsdata {		/* data shared with ts11 controller */
+	struct	ts_cmd t_cmd;	/* the command packet (must be first) */
+	struct	ts_sts t_sts;	/* status packet, for returned status */
+	struct	ts_char t_char;	/* characteristics packet */
+};
 struct	ts_softc {
 	char	sc_openf;	/* lock against multiple opens */
 	char	sc_lastiow;	/* last op was a write */
 	short	sc_resid;	/* copy of last bc */
 	daddr_t	sc_blkno;	/* block number, for block device tape */
 	daddr_t	sc_nxrec;	/* position of end of tape, if known */
-	struct	ts_cmd sc_cmd;	/* the command packet */
-	struct	ts_sts sc_sts;	/* status packet, for returned status */
-	struct	ts_char sc_char; /* characteristics packet */
-	struct	ts_softc *sc_ubaddr; /* Unibus address of ts_softc structure */
+	struct	ts_tsdata sc_ts;/* command and status packets */
+	struct	ts_tsdata *sc_ubaddr; /* Unibus address of tsdata structure */
 	u_short	sc_uba;		/* Unibus addr of cmd pkt for tsdb */
-	short	sc_mapped;	/* is ts_sfotc mapped in Unibus space? */
+	short	sc_density;	/* value |'ed into char_mode for TC13 density */
 	struct	tty *sc_ttyp;	/* record user's tty for errors */
 	int	sc_blks;	/* number of I/O operations since open */
 	int	sc_softerrs;	/* number of soft I/O errors since open */
@@ -117,30 +124,80 @@ struct	ts_softc {
  * device interrupt.
  */
 /*ARGSUSED*/
-tsprobe(reg)
+tsprobe(reg, ctlr, um)
 	caddr_t reg;
+	int ctlr;
+	struct uba_ctlr *um;
 {
 	register int br, cvec;		/* must be r11,r10; value-result */
+	register struct tsdevice *addr = (struct tsdevice *)reg;
+	register struct ts_softc *sc;
+	register int i;
+	int a;
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
 	tsintr(0);
 #endif
-	((struct tsdevice *)reg)->tssr = 0;
+	addr->tssr = 0;		/* initialize subsystem */
 	DELAY(100);
-	if ((((struct tsdevice *)reg)->tssr & TS_NBA) == 0)
-		return(0);
-	/* IT'S TOO HARD TO MAKE THIS THING INTERRUPT JUST TO FIND ITS VECTOR */
-	cvec = ((unsigned)reg) & 07 ? 0260 : 0224;
-	br = 0x15;
+	if ((addr->tssr & TS_NBA) == 0)
+		return (0);
+
+	/*
+	 * Make it interrupt.
+	 * TS_SETCHR|TS_IE alone refuses to interrupt for me.
+	 */
+	sc = &ts_softc[ctlr];
+	tsmap(sc, numuba, &a);
+	i = (int)&sc->sc_ubaddr->t_char;
+	sc->sc_ts.t_cmd.c_loba = i;
+	sc->sc_ts.t_cmd.c_hiba = (i >> 16) & 3;
+	sc->sc_ts.t_cmd.c_size = sizeof(struct ts_char);
+	sc->sc_ts.t_cmd.c_cmd = TS_ACK | TS_SETCHR;
+	sc->sc_ts.t_char.char_addr = (int)&sc->sc_ubaddr->t_sts;
+	sc->sc_ts.t_char.char_size = sizeof(struct ts_sts);
+	sc->sc_ts.t_char.char_mode = 0;	/* mode is unimportant */
+	addr->tsdb = sc->sc_uba;
+	DELAY(20000);
+	sc->sc_ts.t_cmd.c_cmd = TS_ACK | TS_CVC | TS_IE | TS_SENSE;
+	sc->sc_ts.t_cmd.c_repcnt = 1;
+	addr->tsdb = sc->sc_uba;
+	DELAY(20000);
+	/* should have interrupted by now */
+
+	if (cvec == 0 || cvec == 0x200)	/* no interrupt */
+		ubarelse(numuba, &a);
+
 	return (sizeof (struct tsdevice));
+}
+
+/*
+ * Map in the command, status, and characteristics packet.  We
+ * make them contiguous to keep overhead down.  This also sets
+ * sc_uba (which then never changes).
+ */
+tsmap(sc, uban, a)
+	register struct ts_softc *sc;
+	int uban, *a;
+{
+	register int i;
+
+	i = uballoc(uban, (caddr_t)&sc->sc_ts, sizeof(sc->sc_ts), 0);
+	if (a != NULL)
+		*a = i;
+	i = UBAI_ADDR(i);
+	sc->sc_ubaddr = (struct ts_tsdata *)i;
+	/*
+	 * Note that i == the Unibus address of the command packet,
+	 * and that it is a multiple of 4 (guaranteed by the compiler).
+	 */
+	sc->sc_uba = i + ((i >> 16) & 3);
 }
 
 /*
  * TS11 only supports one drive per controller;
  * check for ui_slave == 0.
- *
- * DO WE REALLY NEED THIS ROUTINE???
  */
 /*ARGSUSED*/
 tsslave(ui, reg)
@@ -148,55 +205,54 @@ tsslave(ui, reg)
 	caddr_t reg;
 {
 
-	if (ui->ui_slave)	/* non-zero slave not allowed */
-		return(0);
-	return (1);
+	return (ui->ui_slave == 0);	/* non-zero slave not allowed */
 }
 
 /*
  * Record attachment of the unit to the controller.
- *
- * SHOULD THIS ROUTINE DO ANYTHING???
  */
 /*ARGSUSED*/
 tsattach(ui)
 	struct uba_device *ui;
 {
 
+	/* void */
 }
 
 /*
  * Open the device.  Tapes are unique open
  * devices, so we refuse if it is already open.
- * We also check that a tape is available, and
- * don't block waiting here; if you want to wait
- * for a tape you should timeout in user code.
  */
 tsopen(dev, flag)
 	dev_t dev;
 	int flag;
 {
-	register int tsunit;
+	register int tsunit = TSUNIT(dev);
 	register struct uba_device *ui;
 	register struct ts_softc *sc;
 
-	tsunit = TSUNIT(dev);
-	if (tsunit>=NTS || (ui = tsdinfo[tsunit]) == 0 || ui->ui_alive == 0)
+	if (tsunit >= NTS || (ui = tsdinfo[tsunit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
-	if ((sc = &ts_softc[tsunit])->sc_openf)
+	if ((sc = &ts_softc[ui->ui_ctlr])->sc_openf)
 		return (EBUSY);
 	sc->sc_openf = 1;
-	if (tsinit(tsunit)) {
+	sc->sc_density = (minor(dev) & T_1600BPI) ? TS_NRZI : 0;
+	tscommand(dev, TS_SENSE, 1);
+	if (ctsbuf[tsunit].b_flags & B_ERROR)
+		/*
+		 * Try it again in case it went off-line
+		 */
+		tscommand(dev, TS_SENSE, 1);
+	if (tsinit(ui->ui_ctlr)) {
 		sc->sc_openf = 0;
 		return (ENXIO);
 	}
-	tscommand(dev, TS_SENSE, 1);
-	if ((sc->sc_sts.s_xs0&TS_ONL) == 0) {
+	if ((sc->sc_ts.t_sts.s_xs0&TS_ONL) == 0) {
 		sc->sc_openf = 0;
 		uprintf("ts%d: not online\n", tsunit);
 		return (EIO);
 	}
-	if ((flag&FWRITE) && (sc->sc_sts.s_xs0&TS_WLK)) {
+	if ((flag&FWRITE) && (sc->sc_ts.t_sts.s_xs0&TS_WLK)) {
 		sc->sc_openf = 0;
 		uprintf("ts%d: no write ring\n", tsunit);
 		return (EIO);
@@ -220,7 +276,7 @@ tsopen(dev, flag)
  */
 tsclose(dev, flag)
 	register dev_t dev;
-	register flag;
+	register int flag;
 {
 	register struct ts_softc *sc = &ts_softc[TSUNIT(dev)];
 
@@ -244,48 +300,28 @@ tsclose(dev, flag)
 }
 
 /*
- * Initialize the TS11.  Set up Unibus mapping for command
- * packets and set device characteristics.
+ * Initialize a TS11.  Set device characteristics.
  */
-tsinit(unit)
-	register int unit;
+tsinit(ctlr)
+	register int ctlr;
 {
-	register struct ts_softc *sc = &ts_softc[unit];
-	register struct uba_ctlr *um = tsminfo[unit];
+	register struct ts_softc *sc = &ts_softc[ctlr];
+	register struct uba_ctlr *um = tsminfo[ctlr];
 	register struct tsdevice *addr = (struct tsdevice *)um->um_addr;
 	register int i;
 
-	/*
-	 * Map the command and message packets into Unibus
-	 * address space.  We do all the command and message
-	 * packets at once to minimize the amount of Unibus
-	 * mapping necessary.
-	 */
-	if (sc->sc_mapped == 0) {
-		ctsbuf[unit].b_un.b_addr = (caddr_t)sc;
-		ctsbuf[unit].b_bcount = sizeof(*sc);
-		i = ubasetup(um->um_ubanum, &ctsbuf[unit], 0);
-		i &= 0777777;
-		sc->sc_ubaddr = (struct ts_softc *)i;
-		sc->sc_mapped++;
-	}
-	/*
-	 * Now initialize the TS11 controller.
-	 * Set the characteristics.
-	 */
-	if (addr->tssr & (TS_NBA|TS_OFL)) {
+	if (addr->tssr & (TS_NBA|TS_OFL) || sc->sc_ts.t_sts.s_xs0 & TS_BOT) {
 		addr->tssr = 0;		/* subsystem initialize */
 		tswait(addr);
-		i = (int)&sc->sc_ubaddr->sc_cmd;	/* Unibus addr of cmd */
-		sc->sc_uba = (u_short)(i + ((i>>16)&3));
-		sc->sc_char.char_addr = (int)&sc->sc_ubaddr->sc_sts;
-		sc->sc_char.char_size = sizeof(struct ts_sts);
-		sc->sc_char.char_mode = TS_ESS;
-		sc->sc_cmd.c_cmd = TS_ACK | TS_SETCHR;
-		i = (int)&sc->sc_ubaddr->sc_char;
-		sc->sc_cmd.c_loba = i;
-		sc->sc_cmd.c_hiba = (i>>16)&3;
-		sc->sc_cmd.c_size = sizeof(struct ts_char);
+		i = (int)&sc->sc_ubaddr->t_char;
+		sc->sc_ts.t_cmd.c_loba = i;
+		sc->sc_ts.t_cmd.c_hiba = (i >> 16) & 3;
+		sc->sc_ts.t_cmd.c_size = sizeof(struct ts_char);
+		sc->sc_ts.t_cmd.c_cmd = TS_ACK | TS_CVC | TS_SETCHR;
+		sc->sc_ts.t_char.char_addr = (int)&sc->sc_ubaddr->t_sts;
+		sc->sc_ts.t_char.char_size = sizeof(struct ts_sts);
+		sc->sc_ts.t_char.char_mode = TS_ESS | TS_EAI | TS_ERI |
+			/* TS_ENB | */ sc->sc_density;
 		addr->tsdb = sc->sc_uba;
 		tswait(addr);
 		if (addr->tssr & TS_NBA)
@@ -304,6 +340,7 @@ tscommand(dev, com, count)
 {
 	register struct buf *bp;
 	register int s;
+	int didsleep = 0;
 
 	bp = &ctsbuf[TSUNIT(dev)];
 	s = spl5();
@@ -316,9 +353,12 @@ tscommand(dev, com, count)
 			break;
 		bp->b_flags |= B_WANTED;
 		sleep((caddr_t)bp, PRIBIO);
+		didsleep = 1;
 	}
 	bp->b_flags = B_BUSY|B_READ;
 	splx(s);
+	if (didsleep)
+		(void) tsinit(tsdinfo[TSUNIT(dev)]->ui_ctlr);
 	bp->b_dev = dev;
 	bp->b_repcnt = count;
 	bp->b_command = com;
@@ -330,7 +370,7 @@ tscommand(dev, com, count)
 	 */
 	if (count == 0)
 		return;
-	iowait(bp);
+	biowait(bp);
 	if (bp->b_flags&B_WANTED)
 		wakeup((caddr_t)bp);
 	bp->b_flags &= B_ERROR;
@@ -342,18 +382,18 @@ tscommand(dev, com, count)
 tsstrategy(bp)
 	register struct buf *bp;
 {
-	int tsunit = TSUNIT(bp->b_dev);
+	register int tsunit = TSUNIT(bp->b_dev);
 	register struct uba_ctlr *um;
 	register struct buf *dp;
-	register int s;
+	int s;
 
 	/*
 	 * Put transfer at end of controller queue
 	 */
 	bp->av_forw = NULL;
 	um = tsdinfo[tsunit]->ui_mi;
-	s = spl5();
 	dp = &tsutab[tsunit];
+	s = spl5();
 	if (dp->b_actf == NULL)
 		dp->b_actf = bp;
 	else
@@ -378,9 +418,9 @@ tsstart(um)
 	register struct buf *bp;
 	register struct tsdevice *addr = (struct tsdevice *)um->um_addr;
 	register struct ts_softc *sc;
-	register struct ts_cmd *tc;
 	register struct uba_device *ui;
-	int tsunit, cmd;
+	register int tsunit;
+	int cmd;
 	daddr_t blkno;
 
 	/*
@@ -392,10 +432,9 @@ loop:
 	tsunit = TSUNIT(bp->b_dev);
 	ui = tsdinfo[tsunit];
 	sc = &ts_softc[tsunit];
-	tc = &sc->sc_cmd;
 	/*
 	 * Default is that last command was NOT a write command;
-	 * if we do a write command we will notice this in tsintr().
+	 * if we finish a write command we will notice this in tsintr().
 	 */
 	sc->sc_lastiow = 0;
 	if (sc->sc_openf < 0 || (addr->tssr&TS_OFL)) {
@@ -407,43 +446,51 @@ loop:
 		bp->b_flags |= B_ERROR;
 		goto next;
 	}
-	if (bp == &ctsbuf[TSUNIT(bp->b_dev)]) {
+	if (bp == &ctsbuf[tsunit]) {
 		/*
 		 * Execute control operation with the specified count.
 		 */
 		um->um_tab.b_active =
 		    bp->b_command == TS_REW ? SREW : SCOM;
-		tc->c_repcnt = bp->b_repcnt;
+		sc->sc_ts.t_cmd.c_repcnt = bp->b_repcnt;
 		goto dobpcmd;
 	}
 	/*
-	 * The following checks handle boundary cases for operation
-	 * on non-raw tapes.  On raw tapes the initialization of
-	 * sc->sc_nxrec by tsphys causes them to be skipped normally
-	 * (except in the case of retries).
+	 * For raw I/O, save the current block
+	 * number in case we have to retry.
 	 */
-	if (bdbtofsb(bp->b_blkno) > sc->sc_nxrec) {
+	if (bp == &rtsbuf[tsunit]) {
+		if (um->um_tab.b_errcnt == 0)
+			sc->sc_blkno = bdbtofsb(bp->b_blkno);
+	} else {
 		/*
-		 * Can't read past known end-of-file.
+		 * Handle boundary cases for operation
+		 * on non-raw tapes.
 		 */
-		bp->b_flags |= B_ERROR;
-		bp->b_error = ENXIO;
-		goto next;
+		if (bdbtofsb(bp->b_blkno) > sc->sc_nxrec) {
+			/*
+			 * Can't read past known end-of-file.
+			 */
+			bp->b_flags |= B_ERROR;
+			bp->b_error = ENXIO;
+			goto next;
+		}
+		if (bdbtofsb(bp->b_blkno) == sc->sc_nxrec &&
+		    bp->b_flags&B_READ) {
+			/*
+			 * Reading at end of file returns 0 bytes.
+			 */
+			bp->b_resid = bp->b_bcount;
+			clrbuf(bp);
+			goto next;
+		}
+		if ((bp->b_flags&B_READ) == 0)
+			/*
+			 * Writing sets EOF
+			 */
+			sc->sc_nxrec = bdbtofsb(bp->b_blkno) + 1;
 	}
-	if (bdbtofsb(bp->b_blkno) == sc->sc_nxrec &&
-	    bp->b_flags&B_READ) {
-		/*
-		 * Reading at end of file returns 0 bytes.
-		 */
-		bp->b_resid = bp->b_bcount;
-		clrbuf(bp);
-		goto next;
-	}
-	if ((bp->b_flags&B_READ) == 0)
-		/*
-		 * Writing sets EOF
-		 */
-		sc->sc_nxrec = bdbtofsb(bp->b_blkno) + 1;
+
 	/*
 	 * If the data transfer command is in the correct place,
 	 * set up all the registers except the csr, and give
@@ -451,7 +498,7 @@ loop:
 	 * wait for resources to start the i/o.
 	 */
 	if ((blkno = sc->sc_blkno) == bdbtofsb(bp->b_blkno)) {
-		tc->c_size = bp->b_bcount;
+		sc->sc_ts.t_cmd.c_size = bp->b_bcount;
 		if ((bp->b_flags&B_READ) == 0)
 			cmd = TS_WCOM;
 		else
@@ -459,7 +506,7 @@ loop:
 		if (um->um_tab.b_errcnt)
 			cmd |= TS_RETRY;
 		um->um_tab.b_active = SIO;
-		tc->c_cmd = TS_ACK | TS_CVC | TS_IE | cmd;
+		sc->sc_ts.t_cmd.c_cmd = TS_ACK | TS_CVC | TS_IE | cmd;
 		(void) ubago(ui);
 		return;
 	}
@@ -471,16 +518,16 @@ loop:
 	um->um_tab.b_active = SSEEK;
 	if (blkno < bdbtofsb(bp->b_blkno)) {
 		bp->b_command = TS_SFORW;
-		tc->c_repcnt = bdbtofsb(bp->b_blkno) - blkno;
+		sc->sc_ts.t_cmd.c_repcnt = bdbtofsb(bp->b_blkno) - blkno;
 	} else {
 		bp->b_command = TS_SREV;
-		tc->c_repcnt = blkno - bdbtofsb(bp->b_blkno);
+		sc->sc_ts.t_cmd.c_repcnt = blkno - bdbtofsb(bp->b_blkno);
 	}
 dobpcmd:
 	/*
 	 * Do the command in bp.
 	 */
-	tc->c_cmd = TS_ACK | TS_CVC | TS_IE | bp->b_command;
+	sc->sc_ts.t_cmd.c_cmd = TS_ACK | TS_CVC | TS_IE | bp->b_command;
 	addr->tsdb = sc->sc_uba;
 	return;
 
@@ -495,7 +542,7 @@ next:
 		ubadone(um);
 	um->um_tab.b_errcnt = 0;
 	um->um_tab.b_actf->b_actf = bp->av_forw;
-	iodone(bp);
+	biodone(bp);
 	goto loop;
 }
 
@@ -506,7 +553,6 @@ next:
 tsdgo(um)
 	register struct uba_ctlr *um;
 {
-	register struct tsdevice *addr = (struct tsdevice *)um->um_addr;
 	register struct ts_softc *sc = &ts_softc[um->um_ctlr];
 	register int i;
 
@@ -514,34 +560,34 @@ tsdgo(um)
 	 * The uba code uses byte-offset mode if using bdp;
 	 * mask off the low bit here.
 	 */
-	i = um->um_ubinfo & 0777777;
+	i = UBAI_ADDR(um->um_ubinfo);
 	if (UBAI_BDP(um->um_ubinfo))
 		i &= ~1;
-	sc->sc_cmd.c_loba = i;
-	sc->sc_cmd.c_hiba = (i>>16)&3;
-	addr->tsdb = sc->sc_uba;
+	sc->sc_ts.t_cmd.c_loba = i;
+	sc->sc_ts.t_cmd.c_hiba = (i >> 16) & 3;
+	((struct tsdevice *)um->um_addr)->tsdb = sc->sc_uba;
 }
 
 /*
  * Ts interrupt routine.
  */
 /*ARGSUSED*/
-tsintr(ts11)
-	int ts11;
+tsintr(tsunit)
+	register int tsunit;
 {
 	register struct buf *bp;
-	register struct uba_ctlr *um = tsminfo[ts11];
+	register struct uba_ctlr *um;
 	register struct tsdevice *addr;
 	register struct ts_softc *sc;
-	int tsunit;
-	register state;
+	register int state;
+
 #if VAX630
-	spl5();
+	(void) spl5();
 #endif
+	um = tsdinfo[tsunit]->ui_mi;
 	if ((bp = um->um_tab.b_actf->b_actf) == NULL)
 		return;
-	tsunit = TSUNIT(bp->b_dev);
-	addr = (struct tsdevice *)tsdinfo[tsunit]->ui_addr;
+	addr = (struct tsdevice *)um->um_addr;
 	/*
 	 * If last command was a rewind, and tape is still
 	 * rewinding, wait for the rewind complete interrupt.
@@ -556,11 +602,10 @@ tsintr(ts11)
 	/*
 	 * An operation completed... record status
 	 */
-	sc = &ts_softc[tsunit];
+	sc = &ts_softc[um->um_ctlr];
 	if ((bp->b_flags & B_READ) == 0)
 		sc->sc_lastiow = 1;
 	state = um->um_tab.b_active;
-	um->um_tab.b_active = 0;
 	/*
 	 * Check for errors.
 	 */
@@ -568,12 +613,18 @@ tsintr(ts11)
 		switch (addr->tssr & TS_TC) {
 		case TS_UNREC:		/* unrecoverable */
 		case TS_FATAL:		/* fatal error */
-		case TS_ATTN:		/* attention (shouldn't happen) */
 		case TS_RECNM:		/* recoverable, no motion */
+			break;
+		case TS_ATTN:		/* attention */
+			if (sc->sc_ts.t_sts.s_xs0 & TS_VCK) {
+				/* volume check - may have changed tapes */
+				bp->b_flags |= B_ERROR;
+				goto ignoreerr;
+			}
 			break;
 
 		case TS_SUCC:		/* success termination */
-			printf("ts%d: success\n", TSUNIT(minor(bp->b_dev)));
+			printf("ts%d: success\n", tsunit);
 			goto ignoreerr;
 
 		case TS_ALERT:		/* tape status alert */
@@ -581,28 +632,30 @@ tsintr(ts11)
 			 * If we hit the end of the tape file,
 			 * update our position.
 			 */
-			if (sc->sc_sts.s_xs0 & (TS_TMK|TS_EOT)) {
-				tsseteof(bp);		/* set blkno and nxrec */
-				state = SCOM;		/* force completion */
+			if (sc->sc_ts.t_sts.s_xs0 & (TS_TMK|TS_EOT)) {
+				tsseteof(bp);	/* set blkno and nxrec */
+				state = SCOM;	/* force completion */
 				/*
 				 * Stuff bc so it will be unstuffed correctly
 				 * later to get resid.
 				 */
-				sc->sc_sts.s_rbpcr = bp->b_bcount;
+				sc->sc_ts.t_sts.s_rbpcr = bp->b_bcount;
 				goto opdone;
 			}
 			/*
-			 * If we were reading raw tape and the record was too long
-			 * or too short, then we don't consider this an error.
+			 * If we were reading raw tape and the record was too
+			 * long or too short, we don't consider this an error.
 			 */
-			if (bp == &rtsbuf[TSUNIT(bp->b_dev)] && (bp->b_flags&B_READ) &&
-			    sc->sc_sts.s_xs0&(TS_RLS|TS_RLL))
+			if (bp == &rtsbuf[tsunit] && bp->b_flags&B_READ &&
+			    sc->sc_ts.t_sts.s_xs0&(TS_RLS|TS_RLL))
 				goto ignoreerr;
+			/* FALLTHROUGH */
+
 		case TS_RECOV:		/* recoverable, tape moved */
 			/*
 			 * If this was an i/o operation retry up to 8 times.
 			 */
-			if (state==SIO) {
+			if (state == SIO) {
 				if (++um->um_tab.b_errcnt < 7) {
 					ubadone(um);
 					goto opcont;
@@ -613,33 +666,34 @@ tsintr(ts11)
 				 * Non-i/o errors on non-raw tape
 				 * cause it to close.
 				 */
-				if (sc->sc_openf>0 && bp != &rtsbuf[TSUNIT(bp->b_dev)])
+				if (sc->sc_openf > 0 && bp != &rtsbuf[tsunit])
 					sc->sc_openf = -1;
 			}
 			break;
 
 		case TS_REJECT:		/* function reject */
-			if (state == SIO && sc->sc_sts.s_xs0 & TS_WLE)
+			if (state == SIO && sc->sc_ts.t_sts.s_xs0 & TS_WLE)
 				tprintf(sc->sc_ttyp, "ts%d: write locked\n",
-				    TSUNIT(bp->b_dev));
-			if ((sc->sc_sts.s_xs0 & TS_ONL) == 0)
+				    tsunit);
+			if ((sc->sc_ts.t_sts.s_xs0 & TS_ONL) == 0)
 				tprintf(sc->sc_ttyp, "ts%d: offline\n",
-				    TSUNIT(bp->b_dev));
+				    tsunit);
 			break;
 		}
 		/*
 		 * Couldn't recover error
 		 */
-		tprintf(sc->sc_ttyp, "ts%d: hard error bn%d xs0=%b",
-		    TSUNIT(bp->b_dev), bp->b_blkno, sc->sc_sts.s_xs0, TSXS0_BITS);
-		if (sc->sc_sts.s_xs1)
-			tprintf(sc->sc_ttyp, " xs1=%b", sc->sc_sts.s_xs1,
+		tprintf(sc->sc_ttyp, "ts%d: hard error bn%d tssr=%b xs0=%b",
+		    tsunit, bp->b_blkno, addr->tssr, TSSR_BITS,
+		    sc->sc_ts.t_sts.s_xs0, TSXS0_BITS);
+		if (sc->sc_ts.t_sts.s_xs1)
+			tprintf(sc->sc_ttyp, " xs1=%b", sc->sc_ts.t_sts.s_xs1,
 			    TSXS1_BITS);
-		if (sc->sc_sts.s_xs2)
-			tprintf(sc->sc_ttyp, " xs2=%b", sc->sc_sts.s_xs2,
+		if (sc->sc_ts.t_sts.s_xs2)
+			tprintf(sc->sc_ttyp, " xs2=%b", sc->sc_ts.t_sts.s_xs2,
 			    TSXS2_BITS);
-		if (sc->sc_sts.s_xs3)
-			tprintf(sc->sc_ttyp, " xs3=%b", sc->sc_sts.s_xs3,
+		if (sc->sc_ts.t_sts.s_xs3)
+			tprintf(sc->sc_ttyp, " xs3=%b", sc->sc_ts.t_sts.s_xs3,
 			    TSXS3_BITS);
 		tprintf(sc->sc_ttyp, "\n");
 		bp->b_flags |= B_ERROR;
@@ -665,17 +719,17 @@ ignoreerr:
 		/*
 		 * For forward/backward space record update current position.
 		 */
-		if (bp == &ctsbuf[TSUNIT(bp->b_dev)])
-		switch ((int)bp->b_command) {
+		if (bp == &ctsbuf[tsunit])
+			switch ((int)bp->b_command) {
 
-		case TS_SFORW:
-			sc->sc_blkno += bp->b_repcnt;
-			break;
+			case TS_SFORW:
+				sc->sc_blkno += bp->b_repcnt;
+				break;
 
-		case TS_SREV:
-			sc->sc_blkno -= bp->b_repcnt;
-			break;
-		}
+			case TS_SREV:
+				sc->sc_blkno -= bp->b_repcnt;
+				break;
+			}
 		goto opdone;
 
 	case SSEEK:
@@ -692,11 +746,13 @@ opdone:
 	 */
 	um->um_tab.b_errcnt = 0;
 	um->um_tab.b_actf->b_actf = bp->av_forw;
-	bp->b_resid = sc->sc_sts.s_rbpcr;
+	bp->b_resid = sc->sc_ts.t_sts.s_rbpcr;
 	ubadone(um);
-	iodone(bp);
-	if (um->um_tab.b_actf->b_actf == 0)
+	biodone(bp);
+	if (um->um_tab.b_actf->b_actf == 0) {
+		um->um_tab.b_active = 0;
 		return;
+	}
 opcont:
 	tsstart(um);
 }
@@ -705,16 +761,18 @@ tsseteof(bp)
 	register struct buf *bp;
 {
 	register int tsunit = TSUNIT(bp->b_dev);
-	register struct ts_softc *sc = &ts_softc[tsunit];
+	register struct ts_softc *sc = &ts_softc[tsdinfo[tsunit]->ui_ctlr];
 
-	if (bp == &ctsbuf[TSUNIT(bp->b_dev)]) {
+	if (bp == &ctsbuf[tsunit]) {
 		if (sc->sc_blkno > bdbtofsb(bp->b_blkno)) {
 			/* reversing */
-			sc->sc_nxrec = bdbtofsb(bp->b_blkno) - sc->sc_sts.s_rbpcr;
+			sc->sc_nxrec = bdbtofsb(bp->b_blkno) -
+				sc->sc_ts.t_sts.s_rbpcr;
 			sc->sc_blkno = sc->sc_nxrec;
 		} else {
 			/* spacing forward */
-			sc->sc_blkno = bdbtofsb(bp->b_blkno) + sc->sc_sts.s_rbpcr;
+			sc->sc_blkno = bdbtofsb(bp->b_blkno) +
+				sc->sc_ts.t_sts.s_rbpcr;
 			sc->sc_nxrec = sc->sc_blkno - 1;
 		}
 		return;
@@ -727,11 +785,7 @@ tsread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	int errno;
 
-	errno = tsphys(dev, uio);
-	if (errno)
-		return (errno);
 	return (physio(tsstrategy, &rtsbuf[TSUNIT(dev)], dev, B_READ, minphys, uio));
 }
 
@@ -739,35 +793,8 @@ tswrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	int errno;
 
-	errno = tsphys(dev, uio);
-	if (errno)
-		return (errno);
 	return (physio(tsstrategy, &rtsbuf[TSUNIT(dev)], dev, B_WRITE, minphys, uio));
-}
-
-/*
- * Check that a raw device exists.
- * If it does, set up sc_blkno and sc_nxrec
- * so that the tape will appear positioned correctly.
- */
-tsphys(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int tsunit = TSUNIT(dev);
-	register daddr_t a;
-	register struct ts_softc *sc;
-	register struct uba_device *ui;
-
-	if (tsunit >= NTS || (ui=tsdinfo[tsunit]) == 0 || ui->ui_alive == 0)
-		return (ENXIO);
-	sc = &ts_softc[tsunit];
-	a = bdbtofsb(uio->uio_offset >> 9);
-	sc->sc_blkno = a;
-	sc->sc_nxrec = a + 1;
-	return (0);
 }
 
 tsreset(uban)
@@ -776,11 +803,11 @@ tsreset(uban)
 	register struct uba_ctlr *um;
 	register struct uba_device *ui;
 	register struct buf *dp;
-	register ts11;
+	register int ts11, i;
 
 	for (ts11 = 0; ts11 < NTS; ts11++) {
 		if ((um = tsminfo[ts11]) == 0 || um->um_alive == 0 ||
-		   um->um_ubanum != uban)
+		    um->um_ubanum != uban)
 			continue;
 		printf(" ts%d", ts11);
 		um->um_tab.b_active = 0;
@@ -788,20 +815,22 @@ tsreset(uban)
 		if (ts_softc[ts11].sc_openf > 0)
 			ts_softc[ts11].sc_openf = -1;
 		if (um->um_ubinfo) {
-			printf("<%d>", (um->um_ubinfo>>28)&0xf);
+			printf("<%d>", UBAI_BDP(um->um_ubinfo));
 			um->um_ubinfo = 0;
 		}
-		if ((ui = tsdinfo[ts11]) && ui->ui_mi == um && ui->ui_alive) {
-			dp = &tsutab[ts11];
-			dp->b_active = 0;
-			dp->b_forw = 0;
-			if (um->um_tab.b_actf == NULL)
-				um->um_tab.b_actf = dp;
-			else
-				um->um_tab.b_actl->b_forw = dp;
-			um->um_tab.b_actl = dp;
+		/*
+		 * tsdinfo should be 1-to-1 with tsminfo, but someone
+		 * might have screwed up the config file:
+		 */
+		for (i = 0; i < NTS; i++) {
+			if ((ui = tsdinfo[i]) != NULL &&
+			    ui->ui_alive && ui->ui_mi == um) {
+				um->um_tab.b_actf = um->um_tab.b_actl =
+				    &tsutab[i];
+				break;
+			}
 		}
-		ts_softc[ts11].sc_mapped = 0;
+		tsmap(&ts_softc[ts11], uban, (int *)NULL);
 		(void) tsinit(ts11);
 		tsstart(um);
 	}
@@ -813,14 +842,14 @@ tsioctl(dev, cmd, data, flag)
 	dev_t dev;
 {
 	int tsunit = TSUNIT(dev);
-	register struct ts_softc *sc = &ts_softc[tsunit];
+	register struct ts_softc *sc = &ts_softc[tsdinfo[tsunit]->ui_ctlr];
 	register struct buf *bp = &ctsbuf[TSUNIT(dev)];
-	register callcount;
+	register int callcount;
 	int fcount;
 	struct mtop *mtop;
 	struct mtget *mtget;
 	/* we depend of the values and order of the MT codes here */
-	static tsops[] =
+	static int tsops[] =
 	 {TS_WEOF,TS_SFORWF,TS_SREVF,TS_SFORW,TS_SREV,TS_REW,TS_OFFL,TS_SENSE};
 
 	switch (cmd) {
@@ -855,7 +884,8 @@ tsioctl(dev, cmd, data, flag)
 			if ((mtop->mt_op == MTFSR || mtop->mt_op == MTBSR) &&
 			    bp->b_resid)
 				return (EIO);
-			if ((bp->b_flags&B_ERROR) || sc->sc_sts.s_xs0&TS_BOT)
+			if ((bp->b_flags&B_ERROR) ||
+			    sc->sc_ts.t_sts.s_xs0&TS_BOT)
 				break;
 		}
 		return (geterror(bp));
@@ -863,7 +893,7 @@ tsioctl(dev, cmd, data, flag)
 	case MTIOCGET:
 		mtget = (struct mtget *)data;
 		mtget->mt_dsreg = 0;
-		mtget->mt_erreg = sc->sc_sts.s_xs0;
+		mtget->mt_erreg = sc->sc_ts.t_sts.s_xs0;
 		mtget->mt_resid = sc->sc_resid;
 		mtget->mt_type = MT_ISTS;
 		break;
@@ -876,35 +906,81 @@ tsioctl(dev, cmd, data, flag)
 
 #define	DBSIZE	20
 
-tsdump()
+tsdump(dev)
+	dev_t dev;
 {
 	register struct uba_device *ui;
-	register struct uba_regs *up;
+	register struct uba_regs *uba;
 	register struct tsdevice *addr;
-	int blk, num;
-	int start;
+	register int i;
+	register struct pte *io;
+	int blk, num, unit, reg, start;
+	u_short db;
+	struct ts_tsdata *tc, *tc_ubaddr;
 
-	start = 0;
-	num = maxfree;
-#define	phys(a,b)	((b)((int)(a)&0x7fffffff))
-	if (tsdinfo[0] == 0)
+	unit = TSUNIT(dev);
+	if (unit >= NTS)
 		return (ENXIO);
-	ui = phys(tsdinfo[0], struct uba_device *);
-	up = phys(ui->ui_hd, struct uba_hd *)->uh_physuba;
-	ubainit(up);
-	DELAY(1000000);
+#define	phys(a,b)	((b)((int)(a)&0x7fffffff))
+	ui = phys(tsdinfo[unit], struct uba_device *);
+	if (ui->ui_alive == 0)
+		return (ENXIO);
+	uba = phys(ui->ui_hd, struct uba_hd *)->uh_physuba;
+	ubainit(uba);
 	addr = (struct tsdevice *)ui->ui_physaddr;
+
+	/* map a ts_tsdata structure */
+	tc = phys(&ts_softc[0].sc_ts, struct ts_tsdata *);
+	num = btoc(sizeof(struct ts_tsdata)) + 1;
+	io = &uba->uba_map[reg = NUBMREG - num];
+	for (i = 0; i < num; i++)
+		*(int *)io++ = UBAMR_MRV | (btop(tc) + i);
+	i = (((int)tc & PGOFSET) | (reg << 9));
+	tc_ubaddr = (struct ts_tsdata *)i;
+	db = i + ((i >> 16) & 3);
+
+	/* init the drive */
 	addr->tssr = 0;
 	tswait(addr);
-	while (num > 0) {
-		blk = num > DBSIZE ? DBSIZE : num;
-		tsdwrite(start, blk, addr, up);
-		start += blk;
-		num -= blk;
-	}
-	tseof(addr);
-	tseof(addr);
+	if ((addr->tssr & (TS_NBA|TS_OFL)) != TS_NBA)
+		return (EFAULT);
+
+	/* set characteristics */
+	i = (int)&tc_ubaddr->t_char;
+	tc->t_cmd.c_loba = i;
+	tc->t_cmd.c_hiba = (i >> 16) & 3;
+	tc->t_cmd.c_size = sizeof(struct ts_char);
+	tc->t_cmd.c_cmd = TS_ACK | TS_CVC | TS_SETCHR;
+	tc->t_char.char_addr = (int)&tc_ubaddr->t_sts;
+	tc->t_char.char_size = sizeof(struct ts_sts);
+	tc->t_char.char_mode = TS_ESS;
+	addr->tsdb = db;
 	tswait(addr);
+	if (addr->tssr & TS_NBA)
+		return (ENXIO);
+
+	/* dump */
+	tc->t_cmd.c_cmd = TS_ACK | TS_WCOM;
+	tc->t_cmd.c_repcnt = 1;
+	num = maxfree;
+	for (start = 0, num = maxfree; num > 0; start += blk, num -= blk) {
+		blk = num > DBSIZE ? DBSIZE : num;
+		io = uba->uba_map;
+		for (i = 0; i < blk; i++)
+			*(int *)io++ = UBAMR_MRV | (1 << UBAMR_DPSHIFT) |
+				(start + i);
+		*(int *)io = 0;
+		addr->tsdb = db;
+		tswait(addr);
+	}
+
+	/* eof */
+	tc->t_cmd.c_cmd = TS_WEOF;
+	addr->tsdb = db;
+	tswait(addr);
+	addr->tsdb = db;
+	tswait(addr);
+
 	if (addr->tssr&TS_SC)
 		return (EIO);
 	addr->tssr = 0;
@@ -912,44 +988,12 @@ tsdump()
 	return (0);
 }
 
-tsdwrite(dbuf, num, addr, up)
-	register int dbuf, num;
-	register struct tsdevice *addr;
-	struct uba_regs *up;
-{
-	register struct pte *io;
-	register int npf;
-
-	tswait(addr);
-	io = up->uba_map;
-	npf = num+1;
-	while (--npf != 0)
-		 *(int *)io++ = (dbuf++ | (1<<UBAMR_DPSHIFT) | UBAMR_MRV);
-	*(int *)io = 0;
-#ifdef notyet
-	addr->tsbc = -(num*NBPG);
-	addr->tsba = 0;
-	addr->tscs = TS_WCOM | TM_GO;
-#endif
-}
-
 tswait(addr)
 	register struct tsdevice *addr;
 {
-	register s;
 
-	do
-		s = addr->tssr;
-	while ((s & TS_SSR) == 0);
+	while ((addr->tssr & TS_SSR) == 0)
+		/* void */;
 }
 
-tseof(addr)
-	struct tsdevice *addr;
-{
-
-	tswait(addr);
-#ifdef notyet
-	addr->tscs = TS_WEOF | TM_GO;
-#endif
-}
-#endif
+#endif /* NTS > 0 */
