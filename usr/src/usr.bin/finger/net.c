@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)net.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)net.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -92,7 +92,8 @@ netfinger(name)
 	 * it isn't a space, we can simply set the 7th bit.  Every ASCII
 	 * character with bit 7 set is printable.
 	 */ 
-	if (fp = fdopen(s, "r"))
+	lastc = 0;
+	if ((fp = fdopen(s, "r")) != NULL)
 		while ((c = getc(fp)) != EOF) {
 			c &= 0x7f;
 			if (c == 0x0d) {

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sprint.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sprint.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)sprint.c	8.1 (Berkeley) %G%";
 #include <time.h>
 #include <tzfile.h>
 #include <db.h>
+#include <err.h>
 #include <pwd.h>
 #include <errno.h>
 #include <utmp.h>
@@ -32,6 +33,7 @@ sflag_print()
 	register WHERE *w;
 	register int sflag, r;
 	register char *p;
+	PERSON *tmp;
 	DBT data, key;
 
 	/*
@@ -54,10 +56,11 @@ sflag_print()
 	for (sflag = R_FIRST;; sflag = R_NEXT) {
 		r = (*db->seq)(db, &key, &data, sflag);
 		if (r == -1)
-			err("db seq: %s", strerror(errno));
+			err(1, "db seq");
 		if (r == 1)
 			break;
-		pn = *(PERSON **)data.data;
+		memcpy(&tmp, data.data, sizeof tmp);
+		pn = tmp;
 
 		for (w = pn->whead; w != NULL; w = w->next) {
 			(void)printf("%-*.*s %-*.*s ", UT_NAMESIZE, UT_NAMESIZE,
