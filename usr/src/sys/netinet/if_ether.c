@@ -1,4 +1,4 @@
-/*	if_ether.c	4.1	83/03/15	*/
+/*	if_ether.c	4.2	83/05/27	*/
 
 /*
  * Ethernet address resolution protocol.
@@ -10,6 +10,7 @@
 #include "../h/socket.h"
 #include "../h/time.h"
 #include "../h/kernel.h"
+#include "../h/errno.h"
 
 #include "../net/if.h"
 #include "../netinet/in.h"
@@ -84,13 +85,14 @@ arpattach(ac)
  */
 arptimer()
 {
-	register struct arpcom *ac;
 	register struct arptab *at;
 	register i;
 
-	timeout(arptimer, 0, hz);
+	timeout(arptimer, (caddr_t)0, hz);
 #ifdef notdef
 	if (++arpt_sanity > ARPT_SANITY) {
+		register struct arpcom *ac;
+
 		/*
 		 * Randomize sanity timer based on my host address.
 		 * Ask who has my own address;  if someone else replies,
@@ -130,23 +132,25 @@ arpwhohas(ac, addr)
 	struct sockaddr sa;
 
 	if ((m = m_get(M_DONTWAIT, MT_DATA)) == NULL)
-		return (1);
+		return (ENOBUFS);
 	m->m_len = sizeof *ea + sizeof *eh;
 	m->m_off = MMAXOFF - m->m_len;
 	ea = mtod(m, struct ether_arp *);
 	eh = (struct ether_header *)sa.sa_data;
-	bzero((caddr_t)ea, sizeof *ea);
-	bcopy(etherbroadcastaddr, eh->ether_dhost, sizeof etherbroadcastaddr);
+	bzero((caddr_t)ea, sizeof (*ea));
+	bcopy((caddr_t)etherbroadcastaddr, (caddr_t)eh->ether_dhost,
+	   sizeof (etherbroadcastaddr));
 	eh->ether_type = ETHERPUP_ARPTYPE;	/* if_output will swap */
 	ea->arp_hrd = htons(ARPHRD_ETHER);
 	ea->arp_pro = htons(ETHERPUP_IPTYPE);
 	ea->arp_hln = sizeof ea->arp_sha;	/* hardware address length */
 	ea->arp_pln = sizeof ea->arp_spa;	/* protocol address length */
 	ea->arp_op = htons(ARPOP_REQUEST);
-	bcopy(ac->ac_enaddr, ea->arp_sha, sizeof ea->arp_sha);
+	bcopy((caddr_t)ac->ac_enaddr, (caddr_t)ea->arp_sha,
+	   sizeof (ea->arp_sha));
 	bcopy((caddr_t)&((struct sockaddr_in *)&ac->ac_if.if_addr)->sin_addr,
-	    ea->arp_spa, sizeof ea->arp_spa);
-	bcopy((caddr_t)addr, ea->arp_tpa, sizeof ea->arp_tpa);
+	   (caddr_t)ea->arp_spa, sizeof (ea->arp_spa));
+	bcopy((caddr_t)addr, (caddr_t)ea->arp_tpa, sizeof (ea->arp_tpa));
 	sa.sa_family = AF_UNSPEC;
 	return ((*ac->ac_if.if_output)(&ac->ac_if, m, &sa));
 }
@@ -169,25 +173,24 @@ arpresolve(ac, m, destip, desten)
 	register u_char *desten;
 {
 	register struct arptab *at;
-	register i;
 	struct sockaddr_in sin;
 	int s, lna;
 
 	lna = in_lnaof(*destip);
 	if (lna == INADDR_ANY) {	/* broadcast address */
-		bcopy(etherbroadcastaddr, desten, sizeof etherbroadcastaddr);
+		bcopy((caddr_t)etherbroadcastaddr, (caddr_t)desten,
+		   sizeof (etherbroadcastaddr));
 		return (1);
 	}
 	if (destip->s_addr == ((struct sockaddr_in *)&ac->ac_if.if_addr)->
 	    sin_addr.s_addr) {			/* if for us, use lo driver */
 		sin.sin_family = AF_INET;
 		sin.sin_addr = *destip;
-		looutput(&loif, m, &sin);
-		return (0);
+		return (looutput(&loif, m, (struct sockaddr *)&sin));
 	}
 #ifdef OLDMAP
 	if (lna >= 1024) {
-		bcopy(ac->ac_enaddr, desten, 3);
+		bcopy((caddr_t)ac->ac_enaddr, (caddr_t)desten, 3);
 		desten[3] = (lna >> 16) & 0x7f;
 		desten[4] = (lna >> 8) & 0xff;
 		desten[5] = lna & 0xff;
@@ -205,7 +208,7 @@ arpresolve(ac, m, destip, desten)
 	}
 	at->at_timer = 0;		/* restart the timer */
 	if (at->at_flags & ATF_COM) {	/* entry IS complete */
-		bcopy(at->at_enaddr, desten, 6);
+		bcopy((caddr_t)at->at_enaddr, (caddr_t)desten, 6);
 		splx(s);
 		return (1);
 	}
@@ -230,6 +233,7 @@ arpresolve(ac, m, destip, desten)
  * Unimplemented at present, return 0 and assume that the host
  * will set his own IP address via the SIOCSIFADDR ioctl.
  */
+/*ARGSUSED*/
 struct in_addr
 arpmyaddr(ac)
 	register struct arpcom *ac;
@@ -266,7 +270,8 @@ arpinput(ac, m)
 		goto out;
 	isaddr.s_addr = ((struct in_addr *)ea->arp_spa)->s_addr;
 	itaddr.s_addr = ((struct in_addr *)ea->arp_tpa)->s_addr;
-	if (!bcmp(ea->arp_sha, ac->ac_enaddr, sizeof ac->ac_enaddr))
+	if (!bcmp((caddr_t)ea->arp_sha, (caddr_t)ac->ac_enaddr,
+	  sizeof (ac->ac_enaddr)))
 		goto out;	/* it's from me, ignore it. */
 	if (isaddr.s_addr == myaddr.s_addr) {
 		printf("duplicate IP address!! sent from ethernet address: ");
@@ -279,7 +284,8 @@ arpinput(ac, m)
 	}
 	ARPTAB_LOOK(at, isaddr.s_addr);
 	if (at) {
-		bcopy(ea->arp_sha, at->at_enaddr, sizeof ea->arp_sha);
+		bcopy((caddr_t)ea->arp_sha, (caddr_t)at->at_enaddr,
+		   sizeof (ea->arp_sha));
 		at->at_flags |= ATF_COM;
 		if (at->at_hold) {
 			mhold = at->at_hold;
@@ -294,19 +300,25 @@ arpinput(ac, m)
 		goto out;	/* if I am not the target */
 	if (at == 0) {		/* ensure we have a table entry */
 		at = arptnew(&isaddr);
-		bcopy(ea->arp_sha, at->at_enaddr, sizeof ea->arp_sha);
+		bcopy((caddr_t)ea->arp_sha, (caddr_t)at->at_enaddr,
+		   sizeof (ea->arp_sha));
 		at->at_flags |= ATF_COM;
 	}
 	if (ntohs(ea->arp_op) != ARPOP_REQUEST)
 		goto out;
 reply:
-	bcopy(ea->arp_sha, ea->arp_tha, sizeof ea->arp_sha);
-	bcopy(ea->arp_spa, ea->arp_tpa, sizeof ea->arp_spa);
-	bcopy(ac->ac_enaddr, ea->arp_sha, sizeof ea->arp_sha);
-	bcopy((caddr_t)&myaddr, ea->arp_spa, sizeof ea->arp_spa);
+	bcopy((caddr_t)ea->arp_sha, (caddr_t)ea->arp_tha,
+	   sizeof (ea->arp_sha));
+	bcopy((caddr_t)ea->arp_spa, (caddr_t)ea->arp_tpa,
+	   sizeof (ea->arp_spa));
+	bcopy((caddr_t)ac->ac_enaddr, (caddr_t)ea->arp_sha,
+	   sizeof (ea->arp_sha));
+	bcopy((caddr_t)&myaddr, (caddr_t)ea->arp_spa,
+	   sizeof (ea->arp_spa));
 	ea->arp_op = htons(ARPOP_REPLY);
 	eh = (struct ether_header *)sa.sa_data;
-	bcopy(ea->arp_tha, eh->ether_dhost, sizeof eh->ether_dhost);
+	bcopy((caddr_t)ea->arp_tha, (caddr_t)eh->ether_dhost,
+	   sizeof (eh->ether_dhost));
 	eh->ether_type = ETHERPUP_ARPTYPE;
 	sa.sa_family = AF_UNSPEC;
 	(*ac->ac_if.if_output)(&ac->ac_if, m, &sa);

@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.31	83/05/01	*/
+/*	ip_icmp.c	4.32	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -29,7 +29,7 @@ int	icmpprintfs = 0;
  */
 icmp_error(oip, type, code)
 	struct ip *oip;
-	u_int type, code;
+	int type, code;
 {
 	register unsigned oiplen = oip->ip_hl << 2;
 	register struct icmp *icp;
@@ -62,7 +62,7 @@ icmp_error(oip, type, code)
 	m->m_len = oiplen + 8 + ICMP_MINLEN;
 	m->m_off = MMAXOFF - m->m_len;
 	icp = mtod(m, struct icmp *);
-	if (type > ICMP_IREQREPLY)
+	if ((u_int)type > ICMP_IREQREPLY)
 		panic("icmp_error");
 	icmpstat.icps_outhist[type]++;
 	icp->icmp_type = type;
