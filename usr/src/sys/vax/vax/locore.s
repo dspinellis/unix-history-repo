@@ -1,4 +1,4 @@
-/*	locore.s	4.80	83/06/02	*/
+/*	locore.s	4.81	83/06/16	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -15,6 +15,7 @@
 
 #include "dh.h"
 #include "dz.h"
+#include "uu.h"
 #include "mba.h"
 
 	.set	HIGH,0x1f	# mask for total disable
@@ -206,7 +207,14 @@ SCBVEC(netintr):
 	rei
 #if defined(VAX750) || defined(VAX730)
 SCBVEC(consdin):
-	PUSHR; calls $0,_turintr; POPR; incl _cnt+V_INTR; rei
+	PUSHR;
+#if defined(VAX750) && !defined(MRSP)
+	jsb	tudma
+#endif
+	calls $0,_turintr;
+	POPR;
+	incl _cnt+V_INTR;
+	rei
 SCBVEC(consdout):
 	PUSHR; calls $0,_tuxintr; POPR; incl _cnt+V_INTR; rei
 #else
@@ -222,8 +230,8 @@ SCBVEC(consdout):
  *	r0 - controller number
  */
 	.align	1
-	.globl	_dzdma
-_dzdma:
+	.globl	dzdma
+dzdma:
 	mull2	$8*20,r0
 	movab	_dzpdma(r0),r3		# pdma structure base
 					# for this controller
@@ -253,6 +261,175 @@ dzpcall:
 	calls	$1,*(r0)		# call interrupt rtn
 	movl	(sp)+,r3
 	brb 	dzploop			# check for another line
+#endif
+
+#if NUU > 0 && defined(UUDMA)
+/*
+ * Pseudo DMA routine for tu58 (on DL11)
+ *	r0 - controller number
+ */
+	.align	1
+	.globl	uudma
+uudma:
+	movl	_uudinfo[r0],r2
+	movl	16(r2),r2		# r2 = uuaddr
+	mull3	$48,r0,r3
+	movab	_uu_softc(r3),r5	# r5 = uuc
+
+	cvtwl	2(r2),r1		# c = uuaddr->rdb
+	bbc	$15,r1,1f		# if (c & UUDB_ERROR)
+	movl	$13,16(r5)		#	uuc->tu_state = TUC_RCVERR;
+	rsb				#	let uurintr handle it
+1:
+	tstl	4(r5)			# if (uuc->tu_rcnt) {
+	beql	1f
+	movb	r1,*0(r5)		#	*uuc->tu_rbptr++ = r1
+	incl	(r5)
+	decl	4(r5)			#	if (--uuc->tu_rcnt)
+	beql	2f			#		done
+	tstl	(sp)+
+	POPR				# 	registers saved in ubglue.s
+	rei				# }
+2:
+	cmpl	16(r5),$8		# if (uuc->tu_state != TUS_GETH)
+	beql	2f			# 	let uurintr handle it
+1:
+	rsb
+2:
+	mull2	$14,r0			# sizeof(uudata[ctlr]) = 14
+	movab	_uudata(r0),r4		# data = &uudata[ctlr];
+	cmpb	$1,(r4)			# if (data->pk_flag != TUF_DATA)
+	bneq	1b
+#ifdef notdef
+	/* this is for command packets */
+	beql	1f			# 	r0 = uuc->tu_rbptr
+	movl	(r5),r0
+	brb	2f
+1:					# else
+#endif
+	movl	24(r5),r0		# 	r0 = uuc->tu_addr
+2:
+	movzbl	1(r4),r3		# counter to r3 (data->pk_count)
+	movzwl	(r4),r1			# first word of checksum (=header)
+	mfpr	$IPL,-(sp)		# s = spl5();
+	mtpr	$0x15,$IPL		# to keep disk interrupts out
+	clrw	(r2)			# disable receiver interrupts
+3:	bbc	$7,(r2),3b		# while ((uuaddr->rcs & UUCS_READY)==0);
+	cvtwb	2(r2),(r0)+		# *buffer = uuaddr->rdb & 0xff
+	sobgtr	r3,1f			# continue with next byte ...
+	addw2	2(r2),r1		# unless this was the last (odd count)
+	brb	2f
+
+1:	bbc	$7,(r2),1b		# while ((uuaddr->rcs & UUCS_READY)==0);
+	cvtwb	2(r2),(r0)+		# *buffer = uuaddr->rdb & 0xff
+	addw2	-2(r0),r1		# add to checksum..
+2:
+	adwc	$0,r1			# get the carry
+	sobgtr	r3,3b			# loop while r3 > 0
+/*
+ * We're ready to get the checksum
+ */
+1:	bbc	$7,(r2),1b		# while ((uuaddr->rcs & UUCS_READY)==0);
+	cvtwb	2(r2),12(r4)		# get first (lower) byte
+1:	bbc	$7,(r2),1b
+	cvtwb	2(r2),13(r4)		# ..and second
+	cmpw	12(r4),r1		# is checksum ok?
+	beql	1f
+	movl	$14,16(r5)		# uuc->tu_state = TUS_CHKERR
+	brb	2f			# exit
+1:
+	movl	$11,16(r5)		# uuc->tu_state = TUS_GET (ok)
+2:
+	movw	$0x40,(r2)		# enable receiver interrupts
+	mtpr	(sp)+,$IPL		# splx(s);
+	rsb				# continue processing in uurintr
+#endif
+
+#if defined(VAX750) && !defined(MRSP)
+/*
+ * Pseudo DMA routine for console tu58 
+ *   	    (without MRSP)
+ */
+	.align	1
+	.globl	tudma
+tudma:
+	movab	_tu,r5			# r5 = tu
+	tstl	4(r5)			# if (tu.tu_rcnt) {
+	beql	3f
+	mfpr	$CSRD,r1		# get data from tu58
+	movb	r1,*0(r5)		#	*tu.tu_rbptr++ = r1
+	incl	(r5)
+	decl	4(r5)			#	if (--tu.tu_rcnt)
+	beql	1f			#		done
+	tstl	(sp)+
+	POPR				# 	registers saved in ubglue.s
+	rei				# 	data handled, done
+1:					# }
+	cmpl	16(r5),$8		# if (tu.tu_state != TUS_GETH)
+	beql	2f			# 	let turintr handle it
+3:
+	rsb
+2:
+	movab	_tudata,r4		# r4 = tudata
+	cmpb	$1,(r4)			# if (tudata.pk_flag != TUF_DATA)
+	bneq	3b			# 	let turintr handle it
+1:					# else
+	movl	24(r5),r1		# get buffer pointer to r1
+	movzbl	1(r4),r3		# counter to r3
+	movzwl	(r4),r0			# first word of checksum (=header)
+	mtpr	$0,$CSRS		# disable receiver interrupts
+3:
+	bsbw	5f			# wait for next byte
+	mfpr	$CSRD,r5
+	movb	r5,(r1)+		# *buffer = rdb
+	sobgtr	r3,1f			# continue with next byte ...
+	mfpr	$CSRD,r2		# unless this was the last (odd count)
+	brb	2f
+
+1:	bsbw	5f			# wait for next byte
+	mfpr	$CSRD,r5
+	movb	r5,(r1)+		# *buffer = rdb
+	movzwl	-2(r1),r2		# get the last word back from memory
+2:
+	addw2	r2,r0			# add to checksum..
+	adwc	$0,r0			# get the carry
+	sobgtr	r3,3b			# loop while r3 > 0
+/*
+ * We're ready to get the checksum.
+ */
+	bsbw	5f
+	movab	_tudata,r4
+	mfpr	$CSRD,r5
+	movb	r5,12(r4)		# get first (lower) byte
+	bsbw	5f
+	mfpr	$CSRD,r5
+	movb	r5,13(r4)		# ..and second
+	movab	_tu,r5
+	cmpw	12(r4),r0		# is checksum ok?
+	beql	1f
+	movl	$14,16(r5)		# tu.tu_state = TUS_CHKERR
+	brb	2f			# exit
+1:
+	movl	$11,16(r5)		# tu.tu_state = TUS_GET
+2:
+	mtpr	$0x40,$CSRS		# enable receiver interrupts
+	rsb				# continue processing in turintr
+/*
+ * Loop until a new byte is ready from
+ * the tu58, make sure we don't loop forever
+ */
+5:
+	movl	$10000,r5		# loop max 10000 times
+1:
+	mfpr	$CSRS,r2
+	bbs	$7,r2,1f
+	sobgtr	r5,1b
+	movab	_tu,r5
+	movl	$13,16(r5)		# return TUS_RCVERR
+	tstl	(sp)+			# and let turintr handle it
+	mtpr	$0x40,$CSRS		# enable receiver interrupts
+1:
+	rsb
 #endif
 
 /*
