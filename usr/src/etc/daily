@@ -1,8 +1,8 @@
 #!/bin/sh -
 #
-#	@(#)daily	5.13 (Berkeley) %G%
+#	@(#)daily	5.14 (Berkeley) %G%
 #
-PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local
+PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin
 host=`hostname -s`
 echo "Subject: $host daily run output"
 bak=/var/backups
@@ -16,8 +16,7 @@ if [ -d /tmp ]; then
 	    >/dev/null 2>&1; }
 fi
 
-CLEANVARTMP=0
-if [ -d /var/tmp -a $CLEANVARTMP = 1 ]; then
+if [ -d /var/tmp -a "X$CLEANVARTMP" = X1 ]; then
 	cd /var/tmp && {
 	find . ! -name . -atime +7 -exec rm -f -- {} \;
 	find . ! -name . -type d -mtime +1 -exec rmdir -- {} \; \
@@ -94,12 +93,10 @@ if [ -f /etc/Distfile ]; then
 	fi
 fi
 
-ROOTBACKUP=0
-# If filesystem named /altroot is type ufs, on /dev/.* and mounted "xx",
+# If ROOTBACKUP is set to 1 in the environment, and
+# if filesystem named /altroot is type ufs, on /dev/* and mounted "xx",
 # use it as a backup root filesystem to be updated daily.
-[ ROOTBACKUP = 1 ] && {
-	echo ""
-	echo "Backing up root filesystem:"
+[ "X$ROOTBACKUP" = X1 ] && {
 	rootdev=`awk '$2 == "/" && $1 ~ /^\/dev\// && $3 == "ufs" && \
 	    $4 == "rw" \
 		 { print substr($1, 6) }' < /etc/fstab`
@@ -108,6 +105,8 @@ ROOTBACKUP=0
 		{ print substr($1, 6) }' < /etc/fstab`
 	[ X$rootdev != X -a X$rootbak != X ] && {
 		sync
+		echo ""
+		echo "Backing up root filesystem:"
 		echo "copying /dev/r$rootdev to /dev/r$rootbak"
 		dd if=/dev/r$rootdev of=/dev/r$rootbak bs=16b seek=1 skip=1 \
 			conv=noerror,sync
