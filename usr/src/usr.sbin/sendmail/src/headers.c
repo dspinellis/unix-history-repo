@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.20 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -293,7 +293,14 @@ eatheader(e, queuejob)
 	register char *p;
 	int hopcnt = 0;
 	char *msgid;
-	char msgidbuf[MAXNAME];
+	char buf[MAXLINE];
+
+	/*
+	**  Set up macros for possible expansion in headers.
+	*/
+
+	define('f', e->e_from.q_paddr, e);
+	define('g', e->e_from.q_paddr, e);
 
 	if (tTd(32, 1))
 		printf("----- collected header -----\n");
@@ -301,6 +308,18 @@ eatheader(e, queuejob)
 	for (h = e->e_header; h != NULL; h = h->h_link)
 	{
 		extern char *capitalize();
+
+		/* do early binding */
+		if (bitset(H_DEFAULT, h->h_flags) && h->h_value != NULL)
+		{
+			expand(h->h_value, buf, &buf[sizeof buf], e);
+			if (buf[0] != '\0')
+			{
+				free(h->h_value);
+				h->h_value = newstr(buf);
+				h->h_flags &= ~H_DEFAULT;
+			}
+		}
 
 		if (tTd(32, 1))
 			printf("%s: %s\n", capitalize(h->h_field), h->h_value);
@@ -323,12 +342,6 @@ eatheader(e, queuejob)
 		    strcmp(h->h_field, "message-id") == 0)
 		{
 			msgid = h->h_value;
-			if (bitset(H_DEFAULT, h->h_flags))
-			{
-				expand(msgid, msgidbuf,
-					&msgidbuf[sizeof msgidbuf], e);
-				msgid = msgidbuf;
-			}
 		}
 
 		/* see if this is a return-receipt header */
