@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	8.1 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.45 (Berkeley) %G%
  */
 
 /*
@@ -164,7 +164,7 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	size_t newlen;
 	struct proc *p;
 {
-	int error, level;
+	int error, level, inthostid;
 	extern char ostype[], osrelease[], version[];
 
 	/* all sysctl names at this level are terminal */
@@ -204,7 +204,10 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 			hostnamelen = newlen;
 		return (error);
 	case KERN_HOSTID:
-		return (sysctl_int(oldp, oldlenp, newp, newlen, &hostid));
+		inthostid = hostid;  /* XXX assumes sizeof long <= sizeof int */
+		error =  sysctl_int(oldp, oldlenp, newp, newlen, &inthostid);
+		hostid = inthostid;
+		return (error);
 	case KERN_CLOCKRATE:
 		return (sysctl_clockrate(oldp, oldlenp));
 	case KERN_BOOTTIME:
