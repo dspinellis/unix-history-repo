@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chflags.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)chflags.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -108,8 +108,6 @@ main(argc, argv)
 				continue;
 			fts_set(ftsp, p, FTS_SKIP);
 			break;
-		case FTS_DC:			/* Ignore. */
-			continue;
 		case FTS_DNR:			/* Warn, chflag, continue. */
 			errno = p->fts_errno;
 			warn("%s", p->fts_path);
