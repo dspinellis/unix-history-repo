@@ -14,10 +14,9 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)rtsock.c	7.7 (Berkeley) %G%
+ *	@(#)rtsock.c	7.8 (Berkeley) %G%
  */
 
-#ifndef RTF_UP
 #include "param.h"
 #include "mbuf.h"
 #include "user.h"
@@ -34,7 +33,6 @@
 #include "raw_cb.h"
 
 #include "machine/mtpr.h"
-#endif
 
 struct sockaddr route_dst = { 0, PF_ROUTE, };
 struct sockaddr route_src = { 0, PF_ROUTE, };
@@ -94,17 +92,15 @@ route_output(m, so)
 	register struct rt_msghdr *rtm = 0;
 	register struct rtentry *rt = 0;
 	struct rtentry *saved_nrt = 0;
-	struct sockaddr *dst = 0, *gate = 0, *netmask = 0, *author;
-	struct rt_metrics *rmm = 0;
-	caddr_t cp = 0;
+	struct sockaddr *dst = 0, *gate = 0, *netmask = 0, *genmask = 0;
+	caddr_t cp, lim;
 	int len, error = 0;
 
 #define senderr(e) { error = e; goto flush;}
-	if (m == 0)
+	if (m == 0 || m->m_len < sizeof(long))
 		return (ENOBUFS);
-	if (m->m_len < sizeof(long))
-		if ((m = m_pullup(m, sizeof(long))) == 0)
-			return (ENOBUFS);
+	if ((m = m_pullup(m, sizeof(long))) == 0)
+		return (ENOBUFS);
 	if ((m->m_flags & M_PKTHDR) == 0)
 		panic("route_output");
 	len = m->m_pkthdr.len;
@@ -115,27 +111,21 @@ route_output(m, so)
 	if (rtm == 0)
 		senderr(ENOBUFS);
 	m_copydata(m, 0, len, (caddr_t)rtm);
-	if (rtm->rtm_version != 1)
+	if (rtm->rtm_version != RTM_VERSION)
 		senderr(EPROTONOSUPPORT);
 	rtm->rtm_pid = u.u_procp->p_pid;
+	lim = len + (caddr_t) rtm;
 	cp = (caddr_t) (rtm + 1);
-#ifdef notyet
-	switch (rtm->rtm_type) {
-
-	case RTM_ADD: case RTM_CHANGE: case RTM_GET:
-		rmm = (struct rt_metrics *)cp ;
-		cp = (caddr_t) (rmm + 1);
-	}
-#endif
-	if (rtm->rtm_count > 0) {
+	if (rtm->rtm_addrs & RTA_DST) {
 		dst = (struct sockaddr *)cp;
 		cp += ROUNDUP(dst->sa_len);
-	}
-	if (rtm->rtm_count > 1)  {
+	} else
+		senderr(EINVAL);
+	if ((rtm->rtm_addrs & RTA_GATEWAY) && cp < lim)  {
 		gate = (struct sockaddr *)cp;
 		cp += ROUNDUP(gate->sa_len);
 	}
-	if (rtm->rtm_count > 2)  {
+	if ((rtm->rtm_addrs & RTA_NETMASK) && cp < lim)  {
 		netmask = (struct sockaddr *)cp;
 		if (*cp)
 			cp += ROUNDUP(netmask->sa_len);
@@ -143,16 +133,20 @@ route_output(m, so)
 			cp += sizeof(long);
 
 	}
-	if (rtm->rtm_count > 3)  {
-		author = (struct sockaddr *)cp;
+	if ((rtm->rtm_addrs & RTA_GENMASK) && cp < lim)  {
+		genmask = (struct sockaddr *)cp;
 	}
 	switch (rtm->rtm_type) {
 	case RTM_ADD:
+		if (gate == 0)
+			senderr(EINVAL);
 		error = rtrequest(RTM_ADD, dst, gate, netmask,
 					rtm->rtm_flags, &saved_nrt);
-		/* XXX -- add metrics !!! */
-		if (error == 0 && saved_nrt)
+		if (error == 0 && saved_nrt) {
+			rt_setmetrics(rtm->rtm_inits,
+				&rtm->rtm_rmx, &saved_nrt->rt_rmx);
 			saved_nrt->rt_refcnt--;
+		}
 		break;
 
 	case RTM_DELETE:
@@ -171,10 +165,16 @@ route_output(m, so)
 
 		case RTM_GET:
 			netmask = rt_mask(rt);
-			len = sizeof(*rtm) + ROUNDUP(rt_key(rt)->sa_len)
-					+ ROUNDUP(rt->rt_gateway->sa_len);
-			if (netmask)
+			len = sizeof(*rtm) + ROUNDUP(rt_key(rt)->sa_len);
+			rtm->rtm_addrs = RTA_DST;
+			if (rt->rt_gateway) {
+				len += ROUNDUP(rt->rt_gateway->sa_len);
+				rtm->rtm_addrs |= RTA_GATEWAY;
+			}
+			if (netmask) {
 				len += netmask->sa_len;
+				rtm->rtm_addrs |= RTA_NETMASK;
+			}
 			if (len > rtm->rtm_msglen) {
 				struct rt_msghdr *new_rtm;
 				R_Malloc(new_rtm, struct rt_msghdr *, len);
@@ -188,17 +188,17 @@ route_output(m, so)
 				Bcopy(&rt->rt_gateway, gate,
 						rt->rt_gateway->sa_len);
 				rtm->rtm_flags = rt->rt_flags;
-				rtm->rtm_count = 2;
 				if (netmask) {
 				    outmask = (struct sockaddr *)
 				       (ROUNDUP(netmask->sa_len)+(char *)gate);
 				    Bcopy(netmask, outmask, netmask->sa_len);
-				    rtm->rtm_count = 3;
 				}
 			}
 			break;
 
 		case RTM_CHANGE:
+			if (gate == 0)
+				senderr(EINVAL);
 			if (gate->sa_len > (len = rt->rt_gateway->sa_len))
 				senderr(EDQUOT);
 			if (rt->rt_ifa && rt->rt_ifa->ifa_rtrequest)
@@ -206,23 +206,16 @@ route_output(m, so)
 			Bcopy(gate, rt->rt_gateway, len);
 			rt->rt_gateway->sa_len = len;
 		
-#ifdef notdef
-#define metric(f, e) if (rtm->rtm_inits & (f)) rt->rt_m.e = rtm->e;
-			metric(RTM_RPIPE, rtm_recvpipe);
-			metric(RTM_SPIPE, rtm_sendpipe);
-			metric(RTM_SSTHRESH, rtm_ssthresh);
-			metric(RTM_RTT, rtm_rtt);
-			metric(RTM_RTTVAR, rtm_rttvar);
-			metric(RTM_HOPCOUNT, rtm_hopcount);
-			metric(RTM_MTU, rtm_mtu);
+			rt_setmetrics(rtm->rtm_inits,
+				&rtm->rtm_rmx, &rt->rt_rmx);
 			/*
 			 * Fall into
 			 */
-		case RTM_LOCKS:
-			rt->rt_locks |= (rtm->rtm_inits & rtm->rtm_locks);
-			rt->rt_locks &= ~(rtm->rtm_inits);
+		case RTM_LOCK:
+			rt->rt_rmx.rmx_locks |=
+				(rtm->rtm_inits & rtm->rtm_rmx.rmx_locks);
+			rt->rt_rmx.rmx_locks &= ~(rtm->rtm_inits);
 			break;
-#endif
 		}
 		goto cleanup;
 
@@ -247,6 +240,21 @@ cleanup:
 	route_proto.sp_protocol = dst->sa_family;
 	raw_input(m, &route_proto, &route_src, &route_dst);
 	return (error);
+}
+
+static rt_setmetrics(which, in, out)
+	u_long which;
+	register struct rt_metrics *in, *out;
+{
+#define metric(f, e) if (which & (f)) out->e = in->e;
+	metric(RTV_RPIPE, rmx_recvpipe);
+	metric(RTV_SPIPE, rmx_sendpipe);
+	metric(RTV_SSTHRESH, rmx_ssthresh);
+	metric(RTV_RTT, rmx_rtt);
+	metric(RTV_RTTVAR, rmx_rttvar);
+	metric(RTV_HOPCOUNT, rmx_hopcount);
+	metric(RTV_MTU, rmx_mtu);
+#undef metric
 }
 
 /*
@@ -326,9 +334,9 @@ struct sockaddr *gate, *mask, *src;
 	bzero((caddr_t)rtm, sizeof(*rtm)); /*XXX assumes sizeof(*rtm) < MHLEN*/
 	rtm->rtm_flags = RTF_DONE | flags;
 	rtm->rtm_msglen = len;
-	rtm->rtm_version = 1;
+	rtm->rtm_version = RTM_VERSION;
 	rtm->rtm_type = type;
-	rtm->rtm_count = 1;
+	rtm->rtm_addrs = RTA_DST;
 	if (type == RTM_OLDADD || type == RTM_OLDDEL) {
 		rtm->rtm_pid = u.u_procp->p_pid;
 	}
@@ -337,7 +345,7 @@ struct sockaddr *gate, *mask, *src;
 		dlen = ROUNDUP(gate->sa_len);
 		m_copyback(m, len ,  dlen, (caddr_t)gate);
 		len += dlen;
-		rtm->rtm_count++;
+		rtm->rtm_addrs |= RTA_GATEWAY;
 	}
 	if (mask) {
 		if (mask->sa_len)
@@ -346,13 +354,13 @@ struct sockaddr *gate, *mask, *src;
 			dlen = sizeof(long);
 		m_copyback(m, len ,  dlen, (caddr_t)mask);
 		len += dlen;
-		rtm->rtm_count++;
+		rtm->rtm_addrs |= RTA_NETMASK;
 	}
 	if (src) {
 		dlen = ROUNDUP(src->sa_len);
 		m_copyback(m, len ,  dlen, (caddr_t)src);
 		len += dlen;
-		rtm->rtm_count++;
+		rtm->rtm_addrs |= RTA_AUTHOR;
 	}
 	if (m->m_pkthdr.len != len) {
 		m_freem(m);
@@ -365,7 +373,6 @@ struct sockaddr *gate, *mask, *src;
 }
 
 #include "kinfo.h"
-static long zero_l = 0;
 struct walkarg {
 	int	w_op, w_arg;
 	int	w_given, w_needed;
@@ -392,43 +399,41 @@ rt_dumpentry(rn, w)
 
 	if (w->w_op == KINFO_RT_FLAGS && !(rt->rt_flags & w->w_arg))
 		continue;
+#define next(a, l) {size += (l); w->w_rtm.rtm_addrs |= (a); }
+	w->w_rtm.rtm_addrs = 0;
 	if (sa = rt_key(rt))
-		{size += ROUNDUP(sa->sa_len); count++;}
+		next(RTA_DST, ROUNDUP(sa->sa_len));
 	if (sa = rt->rt_gateway)
-		{size += ROUNDUP(sa->sa_len); count++;}
-	if (sa = rt_mask(rt)) {
-		size += sa->sa_len ? ROUNDUP(sa->sa_len) : sizeof(long);
-		count++;
-	}
+		next(RTA_GATEWAY, ROUNDUP(sa->sa_len));
+	if (sa = rt_mask(rt))
+		next(RTA_NETMASK,
+			sa->sa_len ? ROUNDUP(sa->sa_len) : sizeof(long));
 	if (sa = rt->rt_genmask)
-		{size += ROUNDUP(sa->sa_len); count++;}
+		next(RTA_GENMASK, ROUNDUP(sa->sa_len));
 	w->w_needed += size;
 	if (w->w_where == NULL || w->w_needed > 0)
 		continue;
 	w->w_rtm.rtm_msglen = size;
-	w->w_rtm.rtm_count = count;
 	w->w_rtm.rtm_flags = rt->rt_flags;
-
+	w->w_rtm.rtm_use = rt->rt_use;
+	w->w_rtm.rtm_rmx = rt->rt_rmx;
+	w->w_rtm.rtm_index = rt->rt_ifp->if_index;
+#undef next
+#define next(l) {n = (l); Bcopy(sa, cp, n); cp += n;}
 	if (size <= sizeof(w->w_m)) {
 		register caddr_t cp = (caddr_t)(w->w_m.m_sabuf);
-#define next(a, b) {n = (b); Bcopy((a), cp, n); cp += n;}
 		if (sa = rt_key(rt))
-			next(sa, ROUNDUP(sa->sa_len));
+			next(ROUNDUP(sa->sa_len));
 		if (sa = rt->rt_gateway)
-			next(sa, ROUNDUP(sa->sa_len));
-		if (sa = rt_mask(rt)) {
-			w->w_rtm.rtm_flags |= RTF_MASK;
-			if (sa->sa_len)
-				{next(sa, ROUNDUP(sa->sa_len));}
-			else
-				next((&zero_l), sizeof(zero_l));
-		}
+			next(ROUNDUP(sa->sa_len));
+		if (sa = rt_mask(rt))
+			next(sa->sa_len ? ROUNDUP(sa->sa_len) : sizeof(long));
 		if (sa = rt->rt_genmask)
-			next(sa, ROUNDUP(sa->sa_len));
+			next(ROUNDUP(sa->sa_len));
 #undef next
-#define next(a, b) {n = (b); \
-    if (error = copyout((caddr_t)(a), w->w_where, n)) return (error); \
-    w->w_where += n; }
+#define next(s, l) {n = (l); \
+    if (error = copyout((caddr_t)(s), w->w_where, n)) return (error); \
+    w->w_where += n;}
 
 		next(&w->w_m, size); /* Copy rtmsg and sockaddrs back */
 		continue;
@@ -438,12 +443,8 @@ rt_dumpentry(rn, w)
 		next(sa, ROUNDUP(sa->sa_len));
 	if (sa = rt->rt_gateway)
 		next(sa, ROUNDUP(sa->sa_len));
-	if (sa = rt_mask(rt)) {
-		if (sa->sa_len)
-			{next(sa, ROUNDUP(sa->sa_len));}
-		else
-			next(&zero_l, sizeof(zero_l));
-	}
+	if (sa = rt_mask(rt))
+		next(sa, sa->sa_len ? ROUNDUP(sa->sa_len) : sizeof(long));
 	if (sa = rt->rt_genmask)
 		next(sa, ROUNDUP(sa->sa_len));
     }
@@ -471,7 +472,7 @@ kinfo_rtable(op, where, given, arg, needed)
 	w.w_needed = 0 - w.w_given;
 	w.w_arg = arg;
 	w.w_op = op;
-	w.w_rtm.rtm_version = 1;
+	w.w_rtm.rtm_version = RTM_VERSION;
 	w.w_rtm.rtm_type = RTM_GET;
 
 	s = splnet();
