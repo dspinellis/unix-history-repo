@@ -1,5 +1,4 @@
-
-/* db1.c-
+/* @(#)db1.c	1.2	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -68,7 +67,7 @@ ELT *(*db) ;
     return(temp);
 } /* end CreateElt */
 
-
+
 DBDelete(element, db)
 ELT *element, *(*db);
 /*
@@ -95,7 +94,7 @@ ELT *element, *(*db);
     *temp = DBNextElt(element);
 }  /* end DBDelete */
 
-
+
 #define highval 10000               /* arbitrary value greater than any 
                                      * expected distance                */
 
@@ -154,7 +153,7 @@ ELT *(*element), *db;
     }  /* end while temp */;
 }  /* end Gravitate */
 
-
+
 DBSetGravitate(x1, y1, x2, y2, point, element, db)
 float x1, y1, *x2, *y2;
 POINT *(*point);
@@ -211,7 +210,7 @@ ELT *(*element), *db;
 }  /* end Gravitate */
 
 
-
+
 DBClearElt(elt)
 ELT *elt;
 /*
@@ -233,7 +232,7 @@ ELT *elt;
     free((char *) elt);
 }  /* end DBClearElt */
 
-
+
 ELT *DBRead(filename, orient, pos)
 char *filename;
 int *orient;
@@ -324,7 +323,7 @@ POINT *pos;
     return(elist);
 } /* end DBRead */
 
-
+
 DBBounded(elt, x1, y1, x2, y2)
 ELT *elt;
 float x1, y1, x2, y2;
