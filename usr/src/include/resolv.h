@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)resolv.h	5.10 (Berkeley) %G%
+ *	@(#)resolv.h	5.11 (Berkeley) %G%
  */
 
 /*
@@ -56,4 +56,18 @@ struct state {
 #define RES_DEFAULT	(RES_RECURSE | RES_DEFNAMES | RES_DNSRCH)
 
 extern struct state _res;
+
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+
+/* THESE SHOULD ALL BE PREFIXED WITH UNDERSCORES */
 extern char *p_cdname(), *p_rr(), *p_type(), *p_class(), *p_time();
+
+int	dn_comp __P((const char *, char *, int, char **, char **));
+int	dn_expand __P((const char *, const char *, const char *, char *, int));
+int	res_init __P((void));
+int	res_mkquery __P((int, const char *, int, int, const char *, int,
+		const struct rrec *, char *, int));
+int	res_send __P((const char *, int, char *, int));
+__END_DECLS
