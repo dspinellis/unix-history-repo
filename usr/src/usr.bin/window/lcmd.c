@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lcmd.c	3.21 %G%";
+static char sccsid[] = "@(#)lcmd.c	3.22 %G%";
 #endif
 
 #include "defs.h"
@@ -10,6 +10,7 @@ int l_alias();
 int l_close();
 int l_cursormodes();
 int l_debug();
+int l_echo();
 int l_escape();
 int l_foreground();
 int l_iostat();
@@ -30,6 +31,7 @@ int l_write();
 struct lcmd_arg arg_alias[];
 struct lcmd_arg arg_cursormodes[];
 struct lcmd_arg arg_debug[];
+struct lcmd_arg arg_echo[];
 struct lcmd_arg arg_escape[];
 struct lcmd_arg arg_foreground[];
 struct lcmd_arg arg_label[];
@@ -53,7 +55,8 @@ struct lcmd_tab lcmd_tab[] = {
 	"close",	2,	l_close,	arg_close,
 	"cursormodes",	2,	l_cursormodes,	arg_cursormodes,
 	"debug",	1,	l_debug,	arg_debug,
-	"escape",	1,	l_escape,	arg_escape,
+	"echo",		2,	l_echo,		arg_echo,
+	"escape",	2,	l_escape,	arg_escape,
 	"foreground",	1,	l_foreground,	arg_foreground,
 	"iostat",	1,	l_iostat,	arg_null,
 	"label",	2,	l_label,	arg_label,
