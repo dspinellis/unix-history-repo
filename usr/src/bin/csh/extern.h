@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.2 (Berkeley) %G%
+ *	@(#)extern.h	5.3 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -134,6 +134,9 @@ Char	**globall __P((Char **));
 void	  rscan __P((Char **, void (*)()));
 void	  tglob __P((Char **));
 void	  trim __P((Char **));
+#ifdef FILEC
+int	  sortscmp __P((Char **, Char **));
+#endif /* FILEC */
 
 /*
  * hist.c
