@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)conf.c	5.6 (Berkeley) %G%";
+static char	SccsId[] = "@(#)conf.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 # include <pwd.h>
@@ -143,6 +143,12 @@ setdefaults()
 	QueueFactor = 10000;
 	RefuseLA = 12;
 	SpaceSub = ' ';
+	WkRecipFact = 1000;
+	WkClassFact = 1800;
+	WkTimeFact = -600;
+	FileMode = 0644;
+	DefUid = 1;
+	DefGid = 1;
 }
 
 # ifdef V6

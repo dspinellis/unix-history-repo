@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)savemail.c	5.5 (Berkeley) %G%";
+static char	SccsId[] = "@(#)savemail.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 # include <pwd.h>
@@ -213,6 +213,12 @@ savemail(e)
 			{
 				if (e->e_errorqueue == NULL)
 					sendtolist(e->e_from.q_paddr,
+						(ADDRESS *) NULL,
+						&e->e_errorqueue);
+
+				/* deliver a cc: to the postmaster if desired */
+				if (PostMasterCopy != NULL)
+					sendtolist(PostMasterCopy,
 						(ADDRESS *) NULL,
 						&e->e_errorqueue);
 				q = e->e_errorqueue;

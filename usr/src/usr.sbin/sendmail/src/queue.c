@@ -17,12 +17,12 @@
 
 # ifndef QUEUE
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.11 (Berkeley) %G%	(no queueing)";
+static char	SccsId[] = "@(#)queue.c	5.12 (Berkeley) %G%	(no queueing)";
 # endif not lint
 # else QUEUE
 
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.11 (Berkeley) %G%";
+static char	SccsId[] = "@(#)queue.c	5.12 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -33,7 +33,6 @@ struct work
 {
 	char		*w_name;	/* name of control file */
 	long		w_pri;		/* priority of message, see below */
-	long		w_ctime;	/* creation time of message */
 	struct work	*w_next;	/* next in queue */
 };
 
@@ -363,7 +362,6 @@ orderq(doall)
 {
 	register struct direct *d;
 	register WORK *w;
-	register WORK **wp;		/* parent of w */
 	DIR *f;
 	register int i;
 	WORK wlist[WLSIZE+1];
@@ -437,10 +435,6 @@ orderq(doall)
 			  case 'P':
 				wlist[wn].w_pri = atol(&lbuf[1]);
 				break;
-
-			  case 'T':
-				wlist[wn].w_ctime = atol(&lbuf[1]);
-				break;
 			}
 		}
 		(void) fclose(cf);
@@ -465,16 +459,14 @@ orderq(doall)
 	**	Should be turning it into a list of envelopes here perhaps.
 	*/
 
-	wp = &WorkQ;
+	WorkQ = NULL;
 	for (i = min(wn, WLSIZE); --i >= 0; )
 	{
 		w = (WORK *) xalloc(sizeof *w);
 		w->w_name = wlist[i].w_name;
 		w->w_pri = wlist[i].w_pri;
-		w->w_ctime = wlist[i].w_ctime;
-		w->w_next = NULL;
-		*wp = w;
-		wp = &w->w_next;
+		w->w_next = WorkQ;
+		WorkQ = w;
 	}
 
 # ifdef DEBUG
@@ -495,9 +487,9 @@ orderq(doall)
 **		b -- the second argument.
 **
 **	Returns:
-**		1 if a < b
-**		0 if a == b
-**		-1 if a > b
+**		-1 if a < b
+**		 0 if a == b
+**		+1 if a > b
 **
 **	Side Effects:
 **		none.
@@ -507,15 +499,15 @@ workcmpf(a, b)
 	register WORK *a;
 	register WORK *b;
 {
-	long pa = a->w_pri + a->w_ctime;
-	long pb = b->w_pri + b->w_ctime;
+	long pa = a->w_pri;
+	long pb = b->w_pri;
 
 	if (pa == pb)
 		return (0);
 	else if (pa > pb)
-		return (-1);
-	else
 		return (1);
+	else
+		return (-1);
 }
 /*
 **  DOWORK -- do a work request.
@@ -714,10 +706,7 @@ readqf(e, full)
 			break;
 
 		  case 'P':		/* message priority */
-			e->e_msgpriority = atol(&buf[1]);
-
-			/* make sure that big things get sent eventually */
-			e->e_msgpriority -= WKTIMEFACT;
+			e->e_msgpriority = atol(&buf[1]) - WkTimeFact;
 			break;
 
 		  case '\0':		/* blank line; ignore */

@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)readcf.c	5.5 (Berkeley) %G%";
+static char	SccsId[] = "@(#)readcf.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
@@ -834,8 +834,20 @@ setoption(opt, val, sticky)
 		RefuseLA = atoi(val);
 		break;
 
-	  case 'z':		/* fork jobs during queue runs */
+	  case 'y':		/* work recipient factor */
+		WkRecipFact = atoi(val);
+		break;
+
+	  case 'Y':		/* fork jobs during queue runs */
 		ForkQueueRuns = atobool(val);
+		break;
+
+	  case 'z':		/* work message class factor */
+		WkClassFact = atoi(val);
+		break;
+
+	  case 'Z':		/* work time factor */
+		WkTimeFact = atoi(val);
 		break;
 
 	  default:
