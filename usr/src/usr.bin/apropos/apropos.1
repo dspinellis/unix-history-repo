@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)apropos.1	8.1 (Berkeley) %G%
+.\"	@(#)apropos.1	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt APROPOS 1
@@ -60,12 +60,12 @@ The supplied
 must be a colon
 .Dq \&:
 separated list of directories.
-These directories will be searched before the standard directories
+These directories will be searched before the standard directories,
 or the directories supplied with the
 .Fl M
 option or the
 .Ev MANPATH
-environment variable are searched.
+environment variable.
 .Sh ENVIRONMENT
 .Bl -tag -width MANPATH
 .It Ev MANPATH
