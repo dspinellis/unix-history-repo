@@ -1,4 +1,4 @@
-/*	proc.h	4.15	82/09/08	*/
+/*	proc.h	4.16	82/10/21	*/
 
 #include "mush.h"
 #include "mu_msg.h"
@@ -55,11 +55,14 @@ struct	proc {
 	struct	proc *p_cptr;	/* pointer to youngest living child */
 	struct	proc *p_osptr;	/* pointer to older sibling processes */
 	struct	proc *p_ysptr;	/* pointer to younger siblings */
+#ifdef QUOTA
 	struct	quota *p_quota;	/* quotas for this process (MUSH) */
+#endif
+#ifdef MUSH
 	mmsgbuf	p_mb;		/* pending message */
 	int	p_msgflgs;	/* message flags */
+#endif
 	struct	itimerval p_realtimer;
-	int	p_SSS[3];
 };
 
 #define	PIDHSZ		63
