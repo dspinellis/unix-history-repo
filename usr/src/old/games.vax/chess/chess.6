@@ -1,6 +1,6 @@
-.\"	@(#)chess.6	4.1 (Berkeley) %G%
+.\"	@(#)chess.6	5.1 (Berkeley) %G%
 .\"
-.TH CHESS 6 
+.TH CHESS 6  "28 July 1983"
 .AT 3
 .SH NAME
 chess \- the game of chess
@@ -11,20 +11,15 @@ chess \- the game of chess
 is a computer program that plays class D chess.
 Moves may be given either in standard (descriptive) notation
 or in algebraic notation.
-The symbol `+' is used to specify check;
-`o-o' and `o-o-o' specify castling.
-To play black, type `first';
-to print the board, type an empty line.
+The symbol `+' is used to specify check; `o-o' and `o-o-o' specify castling.
+To play black, type `first'; to print the board, type an empty line.
 .PP
-Each move is echoed in the appropriate notation followed by
-the program's reply.
+Each move is echoed in the appropriate notation followed by the program's reply.
 .SH FILES
-/usr/lib/book		opening `book'
+/usr/lib/chess		binary image to run in compatibility mode
 .SH DIAGNOSTICS
 The most cryptic diagnostic is `eh?' which
 means that the input was syntactically incorrect.
-.SH WARNING
-Over-use of this program
-will cause it to go away.
 .SH BUGS
-Pawns may be promoted only to queens.
+Pawns may be promoted only to queens.  The book of opening moves
+has disappeared.
