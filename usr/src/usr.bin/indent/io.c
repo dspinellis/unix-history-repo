@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)io.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)io.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "indent_globs.h"
@@ -244,11 +244,9 @@ inhibit_newline:
     ps.ind_level = ps.i_l_follow;
     ps.paren_level = ps.p_l_follow;
     paren_target = -ps.paren_indents[ps.paren_level - 1];
-    paren_target = (ps.paren_level > 0 ? -ps.paren_indents[ps.paren_level - 1]
-		    : 0);
     not_first_line = 1;
     return;
-};
+}
 
 compute_code_target()
 {
@@ -326,7 +324,7 @@ fill_buffer()
 		break;
     }
     buf_end = p;
-    if (p - in_buffer > 3 && p[-2] == '/' && p[-3] == '*') {
+    if (p[-2] == '/' && p[-3] == '*') {
 	if (in_buffer[3] == 'I' && strncmp(in_buffer, "/**INDENT**", 11) == 0)
 	    fill_buffer();	/* flush indent error message */
 	else {
@@ -374,7 +372,7 @@ fill_buffer()
 	while (*p++ != '\n');
     }
     return;
-};
+}
 
 /*
  * Copyright (C) 1976 by the Board of Trustees of the University of Illinois
@@ -427,7 +425,7 @@ pad_output(current, target)	/* writes tabs and blanks (if necessary) to
 	    putc(' ', output);	/* pad with final blanks */
     }
     return (target);
-};
+}
 
 /*
  * Copyright (C) 1976 by the Board of Trustees of the University of Illinois
@@ -475,7 +473,7 @@ count_spaces(current, buffer)
 	    cur = ((cur - 1) & tabmask) + tabsize + 1;
 	    break;
 
-	case '':		/* this is a backspace */
+	case 010:		/* backspace */
 	    --cur;
 	    break;
 
@@ -485,9 +483,10 @@ count_spaces(current, buffer)
 	}			/* end of switch */
     }				/* end of for loop */
     return (cur);
-};
+}
 
 int	found_err;
+/* VARARGS2 */
 diag(level, msg, a, b)
 {
     if (level)

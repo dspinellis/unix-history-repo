@@ -16,7 +16,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\" 
-.\"	@(#)indent.1	6.5 (Berkeley) %G%
+.\"	@(#)indent.1	6.6 (Berkeley) %G%
 .\"
 
 .TH INDENT 1 "
@@ -46,8 +46,8 @@ indent \- indent and format C program source
 [\ \fB\-l\fIn\fR\ ]
 [\ \fB\-lc\fIn\fR\ ]
 [\ \fB\-lp\fR\ |\ \fB\-nlp\fR\ ]
-[\ \fB\-pcs\fR\ |\ \fB\-npcs\fR\ ]
 [\ \fB\-npro\fR\ ]
+[\ \fB\-pcs\fR\ |\ \fB\-npcs\fR\ ]
 [\ \fB\-psl\fR\ |\ \fB\-npsl\fR\ ]
 [\ \fB\-sc\fR\ |\ \fB\-nsc\fR\ ]
 [\ \fB\-sob\fR\ |\ \fB\-nsob\fR\ ]
@@ -82,18 +82,18 @@ checks to make sure it is different from
 The options listed below control the formatting style imposed by
 .IR indent .
 .TP 15
-.BR \-bap , \-nbap
-If
-.B \-bap
-is specified, a blank line is forced after every procedure body.  Default:
-.B \-nbap.
-.TP 15
 .BR \-bad , \-nbad
 If
 .B \-bad
 is specified, a blank line is forced after every block of
 declarations.  Default:  
-.B \-nbad.
+.BR \-nbad .
+.TP 15
+.BR \-bap , \-nbap
+If
+.B \-bap
+is specified, a blank line is forced after every procedure body.  Default:
+.B \-nbap.
 .TP 15
 .BR \-bbb , \-nbbb
 If
@@ -159,13 +159,14 @@ Rather than like this:
 	/* this is a comment */
 .ft R
 .fi
-This only affects block comments, not comments to the right of code. The default is
-.B \-cdb .
+This only affects block comments, not comments to the right of
+code.  The default is
+.BR \-cdb .
 .TP 15
 .BI \-ce , \-nce
-Enables (disables) forcing `else's to cuddle up to the immediatly preceeding
+Enables (disables) forcing `else's to cuddle up to the immediately preceding
 `}'.  The default is
-.B \-ce .
+.BR \-ce .
 .TP 15
 .BI \-ci n
 Sets the continuation indent to be \fIn\fR.  Continuation
@@ -178,9 +179,9 @@ indicate the nesting, unless \fB\-lp\fR is in effect.
 Causes case labels to be indented
 .I n
 tab stops to the right of the containing \fBswitch\fR statement.
-\fB-cli0.5\fR causes case labels to be indented half a tab stop.  The
+\fB\-cli0.5\fR causes case labels to be indented half a tab stop.  The
 default is
-.B \-cli0 .
+.BR \-cli0 .
 .TP 15
 .BI \-d n
 Controls the placement of comments which are not to the
@@ -195,7 +196,7 @@ indentation below.
 .BI \-di n
 Specifies the indentation, in character positions, from a declaration keyword
 to the following identifier.  The default is
-.B \-di16 .
+.BR \-di16 .
 .if 0 \{.TP 15
 .BR \-dj , \-ndj
 .B \-dj
@@ -211,7 +212,7 @@ processing.  If it's enabled,
 .BR if "s"
 following
 .BR else "s"
-will have the same indendation as the preceeding
+will have the same indentation as the preceding
 .B if
 statement.\}
 .TP 15
@@ -227,20 +228,17 @@ The number of spaces for one indentation level.  The default is 4.
 .BI \-ip , \-nip
 Enables (disables) the indentation of parameter declarations from the left
 margin.  The default is
-.B \-ip .
+.BR \-ip .
 .TP 15
 .BI \-l n
 Maximum length of an output line.  The default is 75.
-.TP 15
-.B \-npro
-Causes the profile files, `./.indent.pro' and `~/.indent.pro', to be ignored.
 .TP 15
 .BI \-lp , \-nlp
 Lines up code surrounded by parenthesis in continuation lines.  If a line
 has a left paren which is not closed on that line, then continuation lines
 will be lined up to start at the character position just after the left
-paren.  For example, here is how a piece of continued code looks with -nlp
-in effect:
+paren.  For example, here is how a piece of continued code looks with
+\fB\-nlp\fR in effect:
 .ne 2
 .nf
 .ft L
@@ -249,36 +247,42 @@ in effect:
 .ft R
 .fi
 .ne 5
-With \fB-lp\fR in effect (the default) the code looks somewhat clearer:
+With \fB\-lp\fR in effect (the default) the code looks somewhat clearer:
 .nf
 .ft L
+.ta \w'    p1 = first_procedure('u
     p1 = first_procedure(second_procedure(p2, p3),
-                         third_procedure(p4, p5));
+	third_procedure(p4, p5));
 .ft R
 .fi
 .ne 5
-Inserting a couple more newlines we get:
+Inserting two more newlines we get:
 .nf
 .ft L
+.ta \w'    p1 = first_procedure('u +\w'second_procedure('u
     p1 = first_procedure(second_procedure(p2,
-                                          p3),
-                         third_procedure(p4,
-                                         p5));
+		p3),
+.ta \w'    p1 = first_procedure('u +\w'third_procedure('u
+	third_procedure(p4,
+		p5));
 .ft R
 .fi
 .TP 15
-.B \-pcs , \-npcs
-If true (\fB-pcs\fR) all procedure calls will have a space inserted between
-the name and the '('.  The default is 
-.B \-npcs
+.B \-npro
+Causes the profile files, `./.indent.pro' and `~/.indent.pro', to be ignored.
 .TP 15
-.B \-psl , \-npsl
-If true (\fB-psl\fR) the names of procedures being defined are placed in
+.BR \-pcs , \-npcs
+If true (\fB\-pcs\fR) all procedure calls will have a space inserted between
+the name and the `('.  The default is 
+.BR \-npcs .
+.TP 15
+.BR \-psl , \-npsl
+If true (\fB\-psl\fR) the names of procedures being defined are placed in
 column 1 \- their types, if any, will be left on the previous lines.  The
 default is 
-.B -psl
+.BR \-psl .
 .TP 15
-.BI \-sc , \-nsc
+.BR \-sc , \-nsc
 Enables (disables) the placement of asterisks (`*'s) at the left edge of all
 comments.
 .TP 15
@@ -287,7 +291,7 @@ If
 .B \-sob
 is specified, indent will swallow optional blank lines.  You can use this to
 get rid of blank lines after declarations.  Default:
-.B \-nsob
+.BR \-nsob .
 .TP 15
 .B \-st
 Causes
@@ -304,20 +308,20 @@ appear in your program that are defined by \fBtypedef\fRs \- nothing will be
 harmed if you miss a few, but the program won't be formatted as nicely as
 it should.  This sounds like a painful thing to have to do, but it's really
 a symptom of a problem in C: \fBtypedef\fR causes a syntactic change in the
-laguage and \fIindent\fR can't find all \fBtypedef\fRs.
+language and \fIindent\fR can't find all \fBtypedef\fRs.
 .TP 15
 .B \-troff
 Causes
 .B indent
 to format the program for processing by troff.  It will produce a fancy
 listing in much the same spirit as
-.BR vgrind.
+.BR vgrind .
 If the output file is not specified, the default is standard output,
 rather than formatting in place.
 .TP 15
 .BR \-v , \-nv
 .B \-v
-turns on `verbose' mode,
+turns on `verbose' mode;
 .B \-nv
 turns it off.  When in verbose mode,
 .I indent
@@ -330,7 +334,7 @@ You may set up your own `profile' of defaults to
 .I indent
 by creating a file called
 .BI . indent . pro
-in either your login directory or the current directory and including
+in your login directory and/or the current directory and including
 whatever switches you like.  A `.indent.pro' in the current directory takes
 precedence over the one in your login directory.  If
 .I indent
@@ -372,10 +376,10 @@ automatically extended in extreme cases.
 .B Preprocessor lines
 .LP
 In general, \fIindent\fR leaves preprocessor lines alone.  The only
-reformmatting that it will do is to straighten up trailing comments.  It
-leaves imbedded comments alone.  Conditional compilation
+reformatting that it will do is to straighten up trailing comments.  It
+leaves embedded comments alone.  Conditional compilation
 (\fB#ifdef...#endif\fR) is recognized and \fIindent\fR attempts to correctly
-compensate for the syntactic peculiarites introduced.
+compensate for the syntactic peculiarities introduced.
 .LP
 .B C syntax
 .LP
@@ -393,10 +397,11 @@ is handled properly.
 .br
 \&./.indent.pro	profile file
 .br
+~/.indent.pro	profile file
 .SH BUGS
 .I Indent
 has even more switches than \fIls\fR.
-
+.sp
 .ne 5
 A common mistake that often causes grief is typing:
 .nf

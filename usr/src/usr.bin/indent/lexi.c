@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lexi.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)lexi.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -30,7 +30,7 @@ static char sccsid[] = "@(#)lexi.c	5.11 (Berkeley) %G%";
 
 #include "indent_globs.h"
 #include "indent_codes.h"
-#include "ctype.h"
+#include <ctype.h>
 
 #define alphanum 1
 #define opchar 3
@@ -513,7 +513,7 @@ stop_lit:
     ps.last_u_d = unary_delim;
     *tok = '\0';		/* null terminate the token */
     return (code);
-};
+}
 
 /*
  * Add the given keyword to the keyword table, using val as the keyword type
