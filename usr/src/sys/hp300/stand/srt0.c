@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: srt0.c 1.12 91/04/25$
  *
- *	@(#)srt0.c	7.4 (Berkeley) %G%
+ *	@(#)srt0.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -176,7 +176,7 @@ _badaddr:
 	movl	#catchbad,BUSERR| plug in our handler
 	movl	sp@(4),a0	| address to probe
 	movw	a0@,d1		| do it
-	movl	__bsave,BUSERR	| if we got here, it didn't fault
+	movl	__bsave,BUSERR	| if we got here, it didn''t fault /* XXX cpp */
 	clrl	d0		| return that this was not a bad addr
 	rts
 
