@@ -1,9 +1,9 @@
-.\"	@(#)ctype.3	5.1 (Berkeley) %G%
+.\"	@(#)ctype.3	6.1 (Berkeley) %G%
 .\"
-.TH CTYPE 3  "25 February 1983"
+.TH CTYPE 3  ""
 .AT 3
 .SH NAME
-isalpha, isupper, islower, isdigit, isalnum, isspace, ispunct, isprint, iscntrl, isascii \- character classification macros
+isalpha, isupper, islower, isdigit, isxdigit, isalnum, isspace, ispunct, isprint, iscntrl, isascii \- character classification macros
 .SH SYNOPSIS
 .B #include <ctype.h>
 .PP
@@ -39,13 +39,17 @@ is a lower case letter
 .I c
 is a digit
 .TP
+.I isxdigit
+.I c
+is a hex digit
+.TP
 .I isalnum
 .I c
 is an alphanumeric character
 .TP
 .I isspace
 .I c
-is a space, tab, carriage return, newline, or formfeed
+is a space, tab, carriage return, newline, vertical tab, or formfeed
 .TP
 .I ispunct
 .I c
@@ -53,12 +57,12 @@ is a punctuation character (neither control nor alphanumeric)
 .TP
 .I isprint
 .I c
-is a printing character, code 040(8) (space) through 0176 (tilde)
+is a printing character, code 041(8) (exclamation point) through 0176 (tilde)
 .TP
 .I iscntrl
 .I c
 is a delete character (0177) or ordinary control character
-(less than 040).
+(less than 040 and not isspace(c)).
 .TP
 .I isascii
 .I c
