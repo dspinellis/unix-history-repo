@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux.h 1.30 93/06/28$
+ * from: Utah $Hdr: hpux.h 1.33 93/08/05$
  *
- *	@(#)hpux.h	8.1 (Berkeley) %G%
+ *	@(#)hpux.h	8.2 (Berkeley) %G%
  */
 
 #include <hp/hpux/hpux_exec.h>
@@ -56,6 +56,8 @@ struct hpuxsgttyb {
 #define	HPUXTIOCSPGRP	_IOW('T', 29, int)
 #define	HPUXTIOCGPGRP	_IOR('T', 30, int)
 #define HPUXTIOCCONS	_IO('t', 104)
+#define HPUXTIOCSWINSZ	_IOW('t', 106, struct winsize)
+#define HPUXTIOCGWINSZ	_IOR('t', 107, struct winsize)
 
 /* non-blocking IO--doesn't interfere with O_NDELAY */
 #define HPUXFIOSNBIO	_IOW('f', 126, int)
@@ -134,6 +136,7 @@ struct hpuxuser {
 };
 
 /* HP-UX compat file flags */
+#define HPUXNDELAY	00000004
 #define HPUXFCREAT	00000400
 #define	HPUXFTRUNC	00001000
 #define	HPUXFEXCL	00002000
@@ -144,6 +147,31 @@ struct hpuxuser {
 /* HP-UX only sysV shmctl() commands */
 #define SHM_LOCK	3	/* Lock segment in core */
 #define SHM_UNLOCK	4	/* Unlock segment */
+
+/* SHM stuff reflecting POSIX types */
+struct hpuxipc_perm {
+	long	uid;	/* owner's user id */
+	long	gid;	/* owner's group id */
+	long	cuid;	/* creator's user id */
+	long	cgid;	/* creator's group id */
+	u_short	mode;	/* access modes */
+	u_short	seq;	/* slot usage sequence number */
+	long	key;	/* key */
+};
+
+struct hpuxshmid_ds {
+	struct hpuxipc_perm shm_perm;	/* operation permission struct */
+	int		shm_segsz;	/* segment size (bytes) */
+	struct pte	*shm_ptbl;	/* ptr to associated page table */
+	long		shm_lpid;	/* pid of last shmop */
+	long		shm_cpid;	/* pid of creator */
+	u_short		shm_nattch;	/* current # attached */
+	u_short		shm_cnattch;	/* in memory # attached */
+	time_t		shm_atime;	/* last shmat time */
+	time_t		shm_dtime;	/* last shmdt time */
+	time_t		shm_ctime;	/* last change time */
+	/* actually longer */
+};
 
 /* HP-UX rtprio values */
 #define RTPRIO_MIN	0
@@ -201,3 +229,14 @@ struct hpuxsigaction {
 
 /* rlimit stuff */
 #define HPUXRLIMIT_NOFILE	6
+
+/*
+ * In BSD EAGAIN and EWOULDBLOCK are the same error code.
+ * However, for HP-UX we must split them out to seperate codes.
+ * The easiest way to do this was to check the return value of
+ * BSD routines which are known to return EAGAIN (but never
+ * EWOULDBLOCK) and change it to the pseudo-code OEAGAIN when
+ * we see it.  The error translation table will them map that
+ * code to the HP-UX EAGAIN value.
+ */
+#define OEAGAIN	82

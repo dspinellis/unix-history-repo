@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux_tty.c 1.13 93/06/30$
+ * from: Utah $Hdr: hpux_tty.c 1.14 93/08/05$
  *
- *	@(#)hpux_tty.c	8.1 (Berkeley) %G%
+ *	@(#)hpux_tty.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -39,16 +39,18 @@
 /*
  * Map BSD/POSIX style termios info to and from SYS5 style termio stuff.
  */
-hpuxtermio(fp, com, data, p)
-	struct file *fp;
+hpuxtermio(fd, com, data, p)
+	int fd;
 	caddr_t data;
 	struct proc *p;
 {
+	struct file *fp;
 	struct termios tios;
 	struct hpuxtermios htios;
 	int line, error, (*ioctlrout)();
 	int newi = 0;
 
+	fp = p->p_fd->fd_ofiles[fd];
 	ioctlrout = fp->f_ops->fo_ioctl;
 	switch (com) {
 	case HPUXTCGETATTR:
@@ -148,8 +150,24 @@ hpuxtermio(fp, com, data, p)
 		htios.c_cc[HPUXVEOL] = tios.c_cc[VEOL];
 		htios.c_cc[HPUXVEOL2] = tios.c_cc[VEOL2];
 		htios.c_cc[HPUXVSWTCH] = 0;
+#if 1
+		/*
+		 * XXX since VMIN and VTIME are not implemented,
+		 * we need to return something reasonable.
+		 * Otherwise a GETA/SETA combo would always put
+		 * the tty in non-blocking mode (since VMIN == VTIME == 0).
+		 */
+		if (fp->f_flag & FNONBLOCK) {
+			htios.c_cc[HPUXVMINS] = 0;
+			htios.c_cc[HPUXVTIMES] = 0;
+		} else {
+			htios.c_cc[HPUXVMINS] = 6;
+			htios.c_cc[HPUXVTIMES] = 1;
+		}
+#else
 		htios.c_cc[HPUXVMINS] = tios.c_cc[VMIN];
 		htios.c_cc[HPUXVTIMES] = tios.c_cc[VTIME];
+#endif
 		htios.c_cc[HPUXVSUSP] = tios.c_cc[VSUSP];
 		htios.c_cc[HPUXVSTART] = tios.c_cc[VSTART];
 		htios.c_cc[HPUXVSTOP] = tios.c_cc[VSTOP];
@@ -285,20 +303,38 @@ hpuxtermio(fp, com, data, p)
 						    (caddr_t)&line, p);
 			}
 			/*
-			 * Set non-blocking IO if VMIN == VTIME == 0.
-			 * Should handle the other cases as well.  It also
-			 * isn't correct to just turn it off as it could be
-			 * on as the result of a fcntl operation.
+			 * Set non-blocking IO if VMIN == VTIME == 0, clear
+			 * if not.  Should handle the other cases as well.
+			 * Note it isn't correct to just turn NBIO off like
+			 * we do as it could be on as the result of a fcntl
+			 * operation.
+			 *
 			 * XXX - wouldn't need to do this at all if VMIN/VTIME
 			 * were implemented.
 			 */
-			line = (htios.c_cc[HPUXVMIN] == 0 &&
-				htios.c_cc[HPUXVTIME] == 0);
-			if (line)
-				fp->f_flag |= FNONBLOCK;
-			else
-				fp->f_flag &= ~FNONBLOCK;
-			(void) (*ioctlrout)(fp, FIONBIO, (caddr_t)&line, p);
+			{
+				struct hpuxfcntl_args {
+					int fdes, cmd, arg;
+				} args;
+				int flags, nbio;
+
+				nbio = (htios.c_cc[HPUXVMINS] == 0 &&
+					htios.c_cc[HPUXVTIMES] == 0);
+				if (nbio && (fp->f_flag & FNONBLOCK) == 0 ||
+				    !nbio && (fp->f_flag & FNONBLOCK)) {
+					args.fdes = fd;
+					args.cmd = F_GETFL;
+					args.arg = 0;
+					(void) hpuxfcntl(p, &args, &flags);
+					if (nbio)
+						flags |= HPUXNDELAY;
+					else
+						flags &= ~HPUXNDELAY;
+					args.cmd = F_SETFL;
+					args.arg = flags;
+					(void) hpuxfcntl(p, &args, &flags);
+				}
+			}
 		}
 		break;
 
