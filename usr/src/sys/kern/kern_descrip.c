@@ -1,4 +1,4 @@
-/*	kern_descrip.c	6.3	83/11/18	*/
+/*	kern_descrip.c	6.4	84/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -55,9 +55,7 @@ dup()
 
 	if (uap->i &~ 077) { uap->i &= 077; dup2(); return; }	/* XXX */
 
-	fp = getf(uap->i);
-	if (fp == 0)
-		return;
+	GETF(fp, uap->i);
 	j = ufalloc(0);
 	if (j < 0)
 		return;
@@ -71,9 +69,7 @@ dup2()
 	} *uap = (struct a *) u.u_ap;
 	register struct file *fp;
 
-	fp = getf(uap->i);
-	if (fp == 0)
-		return;
+	GETF(fp, uap->i);
 	if (uap->j < 0 || uap->j >= NOFILE) {
 		u.u_error = EBADF;
 		return;
@@ -117,9 +113,7 @@ fcntl()
 	register char *pop;
 
 	uap = (struct a *)u.u_ap;
-	fp = getf(uap->fdes);
-	if (fp == NULL)
-		return;
+	GETF(fp, uap->fdes);
 	pop = &u.u_pofile[uap->fdes];
 	switch(uap->cmd) {
 	case F_DUPFD:
@@ -237,9 +231,7 @@ close()
 	register struct file *fp;
 	register u_char *pf;
 
-	fp = getf(uap->i);
-	if (fp == 0)
-		return;
+	GETF(fp, uap->i);
 	pf = (u_char *)&u.u_pofile[uap->i];
 	if (*pf & UF_MAPPED)
 		munmapfd(uap->i);
@@ -259,9 +251,7 @@ fstat()
 	struct stat ub;
 
 	uap = (struct a *)u.u_ap;
-	fp = getf(uap->fdes);
-	if (fp == 0)
-		return;
+	GETF(fp, uap->fdes);
 	switch (fp->f_type) {
 
 	case DTYPE_INODE:
@@ -398,9 +388,7 @@ flock()
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
 
-	fp = getf(uap->fd);
-	if (fp == NULL)
-		return;
+	GETF(fp, uap->fd);
 	if (fp->f_type != DTYPE_INODE) {
 		u.u_error = EOPNOTSUPP;
 		return;
