@@ -132,9 +132,9 @@ int interval = 1;		/* interval between packets */
 
 /* timing */
 int timing;			/* flag to do timing */
-long tmin = LONG_MAX;		/* minimum round trip time */
-long tmax;			/* maximum round trip time */
-u_long tsum;			/* sum of all times, for doing average */
+double tmin = 1000.0*(double)LONG_MAX;	/* minimum round trip time */
+double tmax;			/* maximum round trip time */
+double tsum;			/* sum of all times, for doing average */
 
 char *pr_addr();
 void catcher(), finish();
@@ -389,7 +389,7 @@ catcher()
 		alarm((u_int)interval);
 	else {
 		if (nreceived) {
-			waittime = 2 * tmax / 1000;
+			waittime = 2 * tmax / 1000000.0;
 			if (!waittime)
 				waittime = 1;
 		} else
@@ -464,7 +464,7 @@ pr_pack(buf, cc, from)
 	static char old_rr[MAX_IPOPTLEN];
 	struct ip *ip;
 	struct timeval tv, *tp;
-	long triptime;
+	double triptime;
 	int hlen, dupflag;
 
 	(void)gettimeofday(&tv, (struct timezone *)NULL);
@@ -494,7 +494,7 @@ pr_pack(buf, cc, from)
 			tp = (struct timeval *)icp->icmp_data;
 #endif
 			tvsub(&tv, tp);
-			triptime = tv.tv_sec * 1000 + (tv.tv_usec / 1000);
+			triptime = (double) (tv.tv_sec * 1000000 + tv.tv_usec);
 			tsum += triptime;
 			if (triptime < tmin)
 				tmin = triptime;
@@ -522,7 +522,7 @@ pr_pack(buf, cc, from)
 			   icp->icmp_seq);
 			(void)printf(" ttl=%d", ip->ip_ttl);
 			if (timing)
-				(void)printf(" time=%ld ms", triptime);
+				(void)printf(" time=%.3f ms", triptime/1000.0);
 			if (dupflag)
 				(void)printf(" (DUP!)");
 			/* check the data */
@@ -707,8 +707,8 @@ finish()
 			    ntransmitted));
 	(void)putchar('\n');
 	if (nreceived && timing)
-		(void)printf("round-trip min/avg/max = %ld/%lu/%ld ms\n",
-		    tmin, tsum / (nreceived + nrepeats), tmax);
+		(void)printf("round-trip min/avg/max = %.3f/%.3f/%.3f ms\n",
+		    tmin/1000.0, tsum/(nreceived + nrepeats)/1000.0, tmax/1000.0);
 	exit(0);
 }
 
