@@ -25,8 +25,10 @@ struct Font {		/* characteristics of a font */
 	unsigned char	specfont;	/* 1 == special font */
 	unsigned char	ligfont;	/* 1 == ligatures exist on this font */
 	unsigned char	spare1;		/* unused for now */
+#ifdef 0
 	unsigned char	fonttab;	/* 1 == use extra table for fontnumbers */
 	unsigned char	slant;		/* if set, slant font by slant degrees */
+#endif
 	unsigned char	namefont[10];	/* name of this font (e.g., "R" */
 	unsigned char	intname[10];	/* internal name (=number) on device, in ascii */
 };
