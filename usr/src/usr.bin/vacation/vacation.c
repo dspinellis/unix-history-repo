@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vacation.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)vacation.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -148,7 +148,8 @@ main(argc, argv)
 		(void)(db->close)(db);
 		sendmessage(pw->pw_name);
 	}
-	(void)(db->close)(db);
+	else
+		(void)(db->close)(db);
 	exit(0);
 	/* NOTREACHED */
 }
@@ -333,13 +334,42 @@ setreply()
 sendmessage(myname)
 	char *myname;
 {
-	if (!freopen(VMSG, "r", stdin)) {
+	FILE *mfp, *sfp;
+	int i;
+	int pvect[2];
+	char buf[MAXLINE];
+
+	mfp = fopen(VMSG, "r");
+	if (mfp == NULL) {
 		syslog(LOG_NOTICE, "vacation: no ~%s/%s file.\n", myname, VMSG);
 		exit(1);
 	}
-	execl(_PATH_SENDMAIL, "sendmail", "-f", myname, from, NULL);
-	syslog(LOG_ERR, "vacation: can't exec %s.\n", _PATH_SENDMAIL);
-	exit(1);
+	if (pipe(pvect) < 0) {
+		syslog(LOG_ERR, "vacation: pipe: %s", strerror(errno));
+		exit(1);
+	}
+	i = vfork();
+	if (i < 0) {
+		syslog(LOG_ERR, "vacation: fork: %s", strerror(errno));
+		exit(1);
+	}
+	if (i == 0) {
+		dup2(pvect[0], 0);
+		close(pvect[0]);
+		close(pvect[1]);
+		fclose(mfp);
+		execl(_PATH_SENDMAIL, "sendmail", "-f", myname, from, NULL);
+		syslog(LOG_ERR, "vacation: can't exec %s: %s",
+			_PATH_SENDMAIL, strerror(errno));
+		exit(1);
+	}
+	close(pvect[0]);
+	sfp = fdopen(pvect[1], "w");
+	fprintf(sfp, "To: %s\n", from);
+	while (fgets(buf, sizeof buf, mfp))
+		fputs(buf, sfp);
+	fclose(mfp);
+	fclose(sfp);
 }
 
 usage()
