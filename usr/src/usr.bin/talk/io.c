@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)io.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)io.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -107,8 +107,10 @@ p_error(string)
 message(string)
 	char *string;
 {
-
-	wmove(my_win.x_win, current_line%my_win.x_nlines, 0);
-	wprintw(my_win.x_win, "[%s]\n", string);
+	wmove(my_win.x_win, current_line % my_win.x_nlines, 0);
+	wprintw(my_win.x_win, "[%s]", string);
+	wclrtoeol(my_win.x_win);
+	current_line++;
+	wmove(my_win.x_win, current_line % my_win.x_nlines, 0);
 	wrefresh(my_win.x_win);
 }
