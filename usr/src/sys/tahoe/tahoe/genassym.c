@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)genassym.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)genassym.c	1.6 (Berkeley) %G%";
 #endif
 
 #include "../tahoe/pte.h"
@@ -59,11 +59,10 @@ main()
 	printf("#define\tPGSHIFT %d\n", PGSHIFT);
 	printf("#define\tUPAGES %d\n", UPAGES);
 	printf("#define\tCLSIZE %d\n", CLSIZE);
+	printf("#define\tMAXPHYS %d\n", MAXPHYS);
 	printf("#define\tSYSPTSIZE %d\n", SYSPTSIZE);
 	printf("#define\tUSRPTSIZE %d\n", USRPTSIZE);
 	printf("#define\tVBIOSIZE %d\n", VBIOSIZE);
-	printf("#define\tVBMEMSIZE %d\n", VBMEMSIZE);
-	printf("#define\tVBPTSIZE %d\n", VBPTSIZE);
 	printf("#define\tMSGBUFPTECNT %d\n", btoc(sizeof (struct msgbuf)));
 	printf("#define\tNMBCLUSTERS %d\n", NMBCLUSTERS);
 	printf("#define\tPCB_KSP %d\n", &pcb->pcb_ksp);
