@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -1134,15 +1134,15 @@ va_dcl
     typedef int (*intrtn_t)();
     intrtn_t routine;
     char *args[100];
-
     int argno = 0;
 
     va_start(ap);
     routine = (va_arg(ap, intrtn_t));
-    while (args[argno++] = va_arg(ap, char *))
+    while ((args[argno++] = va_arg(ap, char *)) != 0) {
 	;
+    }
     va_end(ap);
-    return (*routine)(argno, args);
+    return (*routine)(argno-1, args);
 }
 
 
