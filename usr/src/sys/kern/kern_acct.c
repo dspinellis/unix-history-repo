@@ -1,4 +1,4 @@
-/*	kern_acct.c	6.3	84/07/14	*/
+/*	kern_acct.c	6.4	84/07/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -106,7 +106,7 @@ acct()
 	ap->ac_gid = u.u_rgid;
 	t = ru->ru_stime;
 	timevaladd(&t, &ru->ru_utime);
-	if (i = t.tv_sec / hz + t.tv_usec / tick)
+	if (i = t.tv_sec * hz + t.tv_usec / tick)
 		ap->ac_mem = (ru->ru_ixrss+ru->ru_idrss+ru->ru_isrss) / i;
 	else
 		ap->ac_mem = 0;
