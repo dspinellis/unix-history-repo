@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)diff.1	8.1 (Berkeley) %G%
+.\"     @(#)diff.1	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DIFF 1
@@ -43,7 +43,7 @@ Output options (mutually exclusive):
 .Bl -tag -width Ds
 .It Fl c
 produces a diff with lines of context.
-The default is to present 3 lines of context and may be changed, e.g to 10, by
+The default is to present 3 lines of context and may be changed, e.g., to 10, by
 .Fl c10 .
 With
 .Fl c
@@ -56,7 +56,7 @@ The lines removed from
 are marked with `\(mi '; those added to
 .Ar file2
 are marked `+ '.  Lines which are changed from one
-file to the other are marked in both files with with `! '.
+file to the other are marked in both files with `! '.
 Changes which lie within <context> lines of each other are grouped
 together on output.  (This is a change from the previous ``diff -c''
 but the resulting output is usually much easier to interpret.)
@@ -75,7 +75,7 @@ from their state in
 to their state in
 .Ar dir2 .
 .It Fl f
-identical output of the
+identical output to that of the
 .Fl e
 flag, but in reverse order.  It cannot
 be digested by
@@ -133,7 +133,7 @@ Directory comparison options:
 .Bl -tag -width Ds
 .It Fl l
 long output format; each text file
-.Nm diff \'d
+.Nm diff Ns \'d
 is piped through
 .Xr pr  1
 to paginate it,
@@ -175,7 +175,7 @@ is applied to the non-directory file and the file contained in
 the directory file with a filename that is the same as the
 last component of the non-directory file.
 .Pp
-If either the
+If either
 .Ar file1
 or
 .Ar file2
@@ -312,6 +312,8 @@ option.
 .Xr comm 1 ,
 .Xr ed 1 ,
 .Xr diff3 1
+.br
+.ne 1i
 .Sh DIAGNOSTICS
 The
 .Nm diff
