@@ -1,9 +1,9 @@
 #
-#  Makefile for ISC UNIX.
+#  Makefile for ISC (SunSoft) UNIX.
 #
 #	Contributed by J.J. Bailey <jjb@jagware.bcc.com>
 #
-#	@(#)Makefile.ISC	8.1	(Berkeley)	%G%
+#	@(#)Makefile.ISC	8.2	(Berkeley)	%G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
