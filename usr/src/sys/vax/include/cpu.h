@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cpu.h	6.4 (Berkeley) %G%
+ *	@(#)cpu.h	6.5 (Berkeley) %G%
  */
 
 #ifndef LOCORE
@@ -55,9 +55,10 @@ union cpusid {
  */
 struct	percpu {
 	short	pc_cputype;		/* cpu type code */
+	short	pc_cpuspeed;		/* relative speed of cpu */
 	short	pc_nioa;		/* number of IO adaptors/SBI's */
 	caddr_t	*pc_ioaaddr;		/* phys addresses of IO adaptors */
-	int	pc_ioasize;		/* size of a IO adaptor */
+	int	pc_ioasize;		/* size of an IO adaptor */
 	short	*pc_ioatype;		/* io adaptor types if no cfg reg */
 };
 
