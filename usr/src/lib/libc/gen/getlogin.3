@@ -1,4 +1,4 @@
-.\"	@(#)getlogin.3	6.2 (Berkeley) %G%
+.\"	@(#)getlogin.3	6.3 (Berkeley) %G%
 .\"
 .TH GETLOGIN 3  ""
 .AT 3
@@ -9,7 +9,7 @@ getlogin \- get login name
 .SH DESCRIPTION
 .I Getlogin
 returns a pointer to the login name as found in
-.IR /etc/utmp .
+.IR /var/run/utmp .
 It may be used in conjunction with
 .I getpwnam
 to locate the correct password file entry when the same userid
@@ -19,7 +19,7 @@ If
 .I getlogin
 is called within a process that is not attached to a
 terminal, or if there is no entry in
-.I /etc/utmp
+.I /var/run/utmp
 for the process's terminal,
 .I getlogin
 returns a NULL pointer (0).
@@ -28,7 +28,7 @@ A reasonable procedure for determining the login name is to first call
 and if it fails, to call
 .IR getpwuid ( getuid ()).
 .SH FILES
-/etc/utmp
+/var/run/utmp
 .SH "SEE ALSO"
 getpwent(3), utmp(5), ttyslot(3)
 .SH DIAGNOSTICS
