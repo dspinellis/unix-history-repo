@@ -1,13 +1,13 @@
-/*	drtest.c	4.8	83/02/20	*/
+/*	drtest.c	4.9	83/03/01	*/
 
+/*
+ * Standalone program to test a disk and driver
+ * by reading the disk in CHUNK sector units.
+ */
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/fs.h"
 #include "saio.h"
-
-/* Standalone program to test a disk driver by reading every sector on
- * the disk in chunks of CHUNK.
- */
 
 #define CHUNK	32
 #define SECTSIZ	512
@@ -27,7 +27,7 @@ main()
 	if (*buf == 'y')
 		hc = 1;
 askunit:
-	printf("Enter disk name [ type(adapter,unit), e.g, hp(1,3) ] ? ");
+	printf("Enter disk name [type(adapter,unit), e.g, hp(1,3)] ? ");
 	gets(buf);
 	unit = (*(buf + 3) - '0')*8 + *(buf + 5) - '0';
 	diskname[0] = *buf;	
@@ -53,7 +53,7 @@ askunit:
 				printf("%d\r", x);
 			else {
 				printf(".");
-				if ((x + 1 % 25) == 0)
+				if (x && (x % 125) == 0)
 					printf(". %d\n", x);
 			}
 		}
