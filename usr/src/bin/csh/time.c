@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)time.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)time.c	4.5 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -45,19 +45,11 @@ donice(v)
 	register char *cp;
 
 	v++, cp = *v++;
-	if (cp == 0) {
-#ifndef V6
-		nice(20);
-		nice(-10);
-#endif
-		nice(4);
-	} else if (*v == 0 && any(cp[0], "+-")) {
-#ifndef V6
-		nice(20);
-		nice(-10);
-#endif
-		nice(getn(cp));
-	}
+	if (cp == 0)
+		(void) setpriority(PRIO_PROCESS, 0, 4);
+	else if (*v == 0 && any(cp[0], "+-"))
+		(void) setpriority(PRIO_PROCESS, 0, 
+		    getpriority(PRIO_PROCESS, 0) + getn(cp));
 }
 
 ruadd(ru, ru2)
