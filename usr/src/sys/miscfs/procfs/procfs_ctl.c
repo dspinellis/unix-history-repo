@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_ctl.c	8.3 (Berkeley) %G%
+ *	@(#)procfs_ctl.c	8.4 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_ctl.c,v 3.2 1993/12/15 09:40:17 jsp Exp $
@@ -24,7 +24,13 @@
 #include <sys/tty.h>
 #include <sys/resource.h>
 #include <sys/resourcevar.h>
+#include <sys/ptrace.h>
 #include <miscfs/procfs/procfs.h>
+
+#ifndef FIX_SSTEP
+#define FIX_SSTEP(p)
+#endif
+
 
 /*
  * True iff process (p) is in trace wait state
@@ -34,15 +40,6 @@
 	((p)->p_stat == SSTOP && \
 	 (p)->p_pptr == (curp) && \
 	 ((p)->p_flag & P_TRACED))
-
-#ifdef notdef
-#define FIX_SSTEP(p) { \
-		procfs_fix_sstep(p); \
-	} \
-}
-#else
-#define FIX_SSTEP(p)
-#endif
 
 #define PROCFS_CTL_ATTACH	1
 #define PROCFS_CTL_DETACH	2
@@ -180,7 +177,8 @@ procfs_control(curp, p, op)
 	 * Step.  Let the target process execute a single instruction.
 	 */
 	case PROCFS_CTL_STEP:
-		procfs_sstep(p);
+		if (error = procfs_sstep(p, 1))
+			return (error);
 		break;
 
 	/*

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_vfsops.c	8.4 (Berkeley) %G%
+ *	@(#)procfs_vfsops.c	8.5 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_vfsops.c,v 3.1 1993/12/15 09:40:17 jsp Exp $
@@ -96,24 +96,10 @@ procfs_root(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
 {
-	struct pfsnode *pfs;
-	struct vnode *vp;
-	int error;
 
-	error = procfs_allocvp(mp, &vp, (pid_t) 0, Proot);
-	if (error)
-		return (error);
-
-	vp->v_type = VDIR;
-	vp->v_flag = VROOT;
-	pfs = VTOPFS(vp);
-
-	*vpp = vp;
-	return (0);
+	return (procfs_allocvp(mp, vpp, 0, Proot));
 }
 
-/*
- */
 /* ARGSUSED */
 procfs_start(mp, flags, p)
 	struct mount *mp;
