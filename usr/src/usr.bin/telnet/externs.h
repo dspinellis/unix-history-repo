@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)externs.h	1.8 (Berkeley) %G%
+ *	@(#)externs.h	1.9 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -64,9 +64,16 @@ extern jmp_buf
     toplevel;		/* For error conditions. */
 
 extern void
+#if	!defined(NOT43)
     dosynch(),
+#endif	/* !defined(NOT43) */
     setconnmode(),
     setcommandmode();
+
+#if	defined(NOT43)
+extern int
+    dosynch();
+#endif	/* defined(NOT43) */
 
 extern char
     termEofChar,
