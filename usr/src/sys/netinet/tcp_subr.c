@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_subr.c	7.25 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.26 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -34,7 +34,6 @@
 #include <netinet/tcpip.h>
 
 /* patchable/settable parameters for tcp */
-int	tcp_ttl = TCP_TTL;
 int 	tcp_mssdflt = TCP_MSS;
 int 	tcp_rttdflt = TCPTV_SRTTDFLT / PR_SLOWHZ;
 int	tcp_do_rfc1323 = 1;
@@ -167,7 +166,7 @@ tcp_respond(tp, ti, m, ack, seq, flags)
 	ti->ti_sum = 0;
 	ti->ti_sum = in_cksum(m, tlen);
 	((struct ip *)ti)->ip_len = tlen;
-	((struct ip *)ti)->ip_ttl = tcp_ttl;
+	((struct ip *)ti)->ip_ttl = ip_defttl;
 	(void) ip_output(m, (struct mbuf *)0, ro, 0);
 }
 
@@ -204,7 +203,7 @@ tcp_newtcpcb(inp)
 	    TCPTV_MIN, TCPTV_REXMTMAX);
 	tp->snd_cwnd = TCP_MAXWIN << TCP_MAX_WINSHIFT;
 	tp->snd_ssthresh = TCP_MAXWIN << TCP_MAX_WINSHIFT;
-	inp->inp_ip.ip_ttl = tcp_ttl;
+	inp->inp_ip.ip_ttl = ip_defttl;
 	inp->inp_ppcb = (caddr_t)tp;
 	return (tp);
 }
