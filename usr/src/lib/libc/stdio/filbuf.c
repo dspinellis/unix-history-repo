@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)filbuf.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)filbuf.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include	<stdio.h>
@@ -18,8 +18,7 @@ register FILE *iop;
 {
 	int size;
 	struct stat stbuf;
-	static char *smallbuf;
-	static int nfiles;
+	extern char *_smallbuf;
 	char c;
 
 	if (iop->_flag & _IORW)
@@ -32,11 +31,7 @@ register FILE *iop;
 tryagain:
 	if (iop->_base==NULL) {
 		if (iop->_flag&_IONBF) {
-			if (nfiles <= 0)
-				nfiles = getdtablesize();
-			if (smallbuf == NULL)
-				smallbuf = malloc(nfiles * sizeof *smallbuf);
-			iop->_base = smallbuf ? &smallbuf[fileno(iop)] : &c;
+			iop->_base = _smallbuf ? &_smallbuf[fileno(iop)] : &c;
 			goto tryagain;
 		}
 		if (fstat(fileno(iop), &stbuf) < 0 || stbuf.st_blksize <= NULL)
