@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)clock.c	3.5		%G%);
+SCCSID(@(#)clock.c	3.6		%G%);
 
 /*
 **  SETEVENT -- set an event to happen at a specific time.
@@ -95,6 +95,7 @@ clrevent(ev)
 		return;
 
 	/* find the parent event */
+	signal(SIGALRM, SIG_IGN);
 	for (evp = &EventQueue; *evp != NULL; evp = &(*evp)->ev_link)
 	{
 		if (*evp == ev)
@@ -102,14 +103,11 @@ clrevent(ev)
 	}
 
 	/* now remove it */
-	if (*evp == NULL)
-	{
-		/* hmmmmm.... must have happened. */
-		return;
-	}
-
 	*evp = ev->ev_link;
 	free(ev);
+
+	/* restore clocks and pick up anything spare */
+	tick();
 }
 /*
 **  TICK -- take a clock tick
@@ -131,7 +129,7 @@ tick()
 	auto time_t now;
 	register EVENT *ev;
 
-	signal(SIGALRM, SIG_IGN);
+	signal(SIGALRM, tick);
 	(void) time(&now);
 
 # ifdef DEBUG
@@ -141,6 +139,8 @@ tick()
 
 	while (EventQueue != NULL && EventQueue->ev_time <= now)
 	{
+		int (*f)(), a;
+
 		/* process the event on the top of the queue */
 		ev = EventQueue;
 		EventQueue = EventQueue->ev_link;
@@ -149,15 +149,22 @@ tick()
 			printf("tick: ev=%x, func=%x, arg=%d\n", ev,
 				ev->ev_func, ev->ev_arg);
 # endif DEBUG
-		(*ev->ev_func)(ev->ev_arg);
+
+		/* we must be careful in here because ev_func may not return */
+		f = ev->ev_func;
+		a = ev->ev_arg;
 		free(ev);
+		if (EventQueue != NULL)
+		{
+			if (EventQueue->ev_time > now)
+				(void) alarm(EventQueue->ev_time - now);
+			else
+				(void) alarm(1);
+		}
+		(*f)(a);
+		(void) alarm(0);
 		(void) time(&now);
 	}
-
-	/* schedule the next clock tick */
-	signal(SIGALRM, tick);
-	if (EventQueue != NULL)
-		(void) alarm(EventQueue->ev_time - now);
 }
 /*
 **  SLEEP -- a version of sleep that works with this stuff

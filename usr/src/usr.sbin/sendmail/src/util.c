@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.26		%G%);
+SCCSID(@(#)util.c	3.27		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -609,9 +609,9 @@ sfgets(buf, siz, fp)
 	register char *p;
 	extern readtimeout();
 
-	ev = setevent(ReadTimeout, readtimeout, 0);
 	if (setjmp(TimeoFrame) != 0)
 		return (NULL);
+	ev = setevent(ReadTimeout, readtimeout, 0);
 	p = fgets(buf, siz, fp);
 	clrevent(ev);
 	return (p);
