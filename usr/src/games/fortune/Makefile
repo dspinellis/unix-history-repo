@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.3	(Berkeley)	%G%
+#	@(#)Makefile	1.4	(Berkeley)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -37,8 +37,8 @@ depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
 
 install: FRC
-	install -s -o bin -g bin -m 4711 fortune ${DESTDIR}/usr/games
-	install -o bin -g bin -m 600 fortunes.dat ${DESTDIR}/usr/games/lib
+	install -s -o games -g bin -m 4755 fortune ${DESTDIR}/usr/games
+	install -o games -g bin -m 600 fortunes.dat ${DESTDIR}/usr/games/lib
 
 lint: FRC
 	lint ${CFLAGS} fortune.c rnd.c
