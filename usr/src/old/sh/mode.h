@@ -1,4 +1,4 @@
-/*	mode.h	4.1	82/05/07	*/
+/*	mode.h	4.2	88/04/24	*/
 
 #
 /*
@@ -28,7 +28,7 @@ STRUCT blk	*BLKPTR;
 STRUCT fileblk	FILEBLK;
 STRUCT filehdr	FILEHDR;
 STRUCT fileblk	*FILE;
-STRUCT trenod	*TREPTR;
+UNION  trenod	*TREPTR;
 STRUCT forknod	*FORKPTR;
 STRUCT comnod	*COMPTR;
 STRUCT swnod	*SWPTR;
@@ -54,9 +54,10 @@ STRUCT sysnod	SYSTAB[];
  * into an Rvalue so two cheats
  * are necessary, one for each context.
  */
-union { int _cheat;};
-#define Lcheat(a)	((a)._cheat)
-#define Rcheat(a)	((int)(a))
+/* union { int _cheat;}; */
+/* #define Lcheat(a)	((a)._cheat) */
+#define Lcheat(a)	(*(int *)&(a))
+#define Rcheat(a)	( (int  ) (a))
 
 
 /* address puns for storage allocation */
@@ -114,12 +115,6 @@ struct filehdr {
 struct sysnod {
 	STRING	sysnam;
 	INT	sysval;
-};
-
-/* this node is a proforma for those that follow */
-struct trenod {
-	INT	tretyp;
-	IOPTR	treio;
 };
 
 /* dummy for access only */
@@ -207,3 +202,17 @@ struct ionod {
 #define	PARTYPE		(sizeof(struct parnod))
 #define	LSTTYPE		(sizeof(struct lstnod))
 #define	IOTYPE		(sizeof(struct ionod))
+
+/* this node is a proforma for those that precede it */
+union trenod {
+	INT	tretyp;
+	struct { INT dummyy; IOPTR treio;} treio;
+	struct forknod	forknod;
+	struct comnod	comnod;
+	struct ifnod	ifnod;
+	struct whnod	whnod;
+	struct fornod	fornod;
+	struct swnod	swnod;
+	struct lstnod	lstnod;
+	struct parnod	parnod;
+};

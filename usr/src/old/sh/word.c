@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)word.c	4.6 %G%";
+static char sccsid[] = "@(#)word.c	4.7 %G%";
 #endif
 
 #
@@ -22,6 +22,7 @@ word()
 {
 	REG CHAR	c, d;
 	REG CHAR	*argp=locstak()+BYTESPERWORD;
+	REG ARGPTR	ap;
 	INT		alpha=1;
 
 	wdnum=0; wdset=0;
@@ -50,15 +51,15 @@ word()
 				FI
 			FI
 		PER (c=nextc(0), !eofmeta(c)) DONE
-		argp=endstak(argp);
-		IF !letter(argp->argval[0]) THEN wdset=0 FI
+		ap=(ARGPTR)endstak(argp);
+		IF !letter(ap->argval[0]) THEN wdset=0 FI
 
 		peekc=c|MARK;
-		IF argp->argval[1]==0 ANDF (d=argp->argval[0], digit(d)) ANDF (c=='>' ORF c=='<')
+		IF ap->argval[1]==0 ANDF (d=ap->argval[0], digit(d)) ANDF (c=='>' ORF c=='<')
 		THEN	word(); wdnum=d-'0';
 		ELSE	/*check for reserved words*/
-			IF reserv==FALSE ORF (wdval=syslook(argp->argval,reserved))==0
-			THEN	wdarg=argp; wdval=0;
+			IF reserv==FALSE ORF (wdval=syslook(ap->argval,reserved))==0
+			THEN	wdarg=ap; wdval=0;
 			FI
 		FI
 

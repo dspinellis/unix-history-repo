@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmd.c	4.2 %G%";
+static char sccsid[] = "@(#)cmd.c	4.3 %G%";
 #endif
 
 #
@@ -39,7 +39,9 @@ TREPTR	makefork(flgs, i)
 	REG TREPTR	t;
 
 	t=getstak(FORKTYPE);
-	t->forktyp=flgs|TFORK; t->forktre=i; t->forkio=0;
+	t->forknod.forktyp=flgs|TFORK;
+	t->forknod.forktre=i;
+	t->forknod.forkio=0;
 	return(t);
 }
 
@@ -52,8 +54,9 @@ LOCAL TREPTR	makelist(type,i,r)
 	IF i==0 ORF r==0
 	THEN	synbad();
 	ELSE	t = getstak(LSTTYPE);
-		t->lsttyp = type;
-		t->lstlef = i; t->lstrit = r;
+		t->lstnod.lsttyp = type;
+		t->lstnod.lstlef = i;
+		t->lstnod.lstrit = r;
 	FI
 	return(t);
 }
@@ -207,10 +210,10 @@ LOCAL TREPTR	item(flag)
 		BEGIN
 		   t=getstak(SWTYPE);
 		   chkword();
-		   t->swarg=wdarg->argval;
+		   t->swnod.swarg=wdarg->argval;
 		   skipnl(); chksym(INSYM|BRSYM);
-		   t->swlst=syncase(wdval==INSYM?ESSYM:KTSYM);
-		   t->swtyp=TSW;
+		   t->swnod.swlst=syncase(wdval==INSYM?ESSYM:KTSYM);
+		   t->swnod.swtyp=TSW;
 		   break;
 		END
 
@@ -218,10 +221,10 @@ LOCAL TREPTR	item(flag)
 		BEGIN
 		   REG INT	w;
 		   t=getstak(IFTYPE);
-		   t->iftyp=TIF;
-		   t->iftre=cmd(THSYM,NLFLG);
-		   t->thtre=cmd(ELSYM|FISYM|EFSYM,NLFLG);
-		   t->eltre=((w=wdval)==ELSYM ? cmd(FISYM,NLFLG) : (w==EFSYM ? (wdval=IFSYM, item(0)) : 0));
+		   t->ifnod.iftyp=TIF;
+		   t->ifnod.iftre=cmd(THSYM,NLFLG);
+		   t->ifnod.thtre=cmd(ELSYM|FISYM|EFSYM,NLFLG);
+		   t->ifnod.eltre=((w=wdval)==ELSYM ? cmd(FISYM,NLFLG) : (w==EFSYM ? (wdval=IFSYM, item(0)) : 0));
 		   IF w==EFSYM THEN return(t) FI
 		   break;
 		END
@@ -229,20 +232,20 @@ LOCAL TREPTR	item(flag)
 	    case FORSYM:
 		BEGIN
 		   t=getstak(FORTYPE);
-		   t->fortyp=TFOR;
-		   t->forlst=0;
+		   t->fornod.fortyp=TFOR;
+		   t->fornod.forlst=0;
 		   chkword();
-		   t->fornam=wdarg->argval;
+		   t->fornod.fornam=wdarg->argval;
 		   IF skipnl()==INSYM
 		   THEN	chkword();
-			t->forlst=item(0);
+			t->fornod.forlst=item(0);
 			IF wdval!=NL ANDF wdval!=';'
 			THEN	synbad();
 			FI
 			chkpr(wdval); skipnl();
 		   FI
 		   chksym(DOSYM|BRSYM);
-		   t->fortre=cmd(wdval==DOSYM?ODSYM:KTSYM,NLFLG);
+		   t->fornod.fortre=cmd(wdval==DOSYM?ODSYM:KTSYM,NLFLG);
 		   break;
 		END
 
@@ -250,9 +253,9 @@ LOCAL TREPTR	item(flag)
 	    case UNSYM:
 		BEGIN
 		   t=getstak(WHTYPE);
-		   t->whtyp=(wdval==WHSYM ? TWH : TUN);
-		   t->whtre = cmd(DOSYM,NLFLG);
-		   t->dotre = cmd(ODSYM,NLFLG);
+		   t->whnod.whtyp=(wdval==WHSYM ? TWH : TUN);
+		   t->whnod.whtre = cmd(DOSYM,NLFLG);
+		   t->whnod.dotre = cmd(ODSYM,NLFLG);
 		   break;
 		END
 
@@ -282,8 +285,8 @@ LOCAL TREPTR	item(flag)
 		   REG ARGPTR	*argset=0;
 		   INT		keywd=1;
 		   t=getstak(COMTYPE);
-		   t->comio=io; /*initial io chain*/
-		   argtail = &(t->comarg);
+		   t->comnod.comio=io; /*initial io chain*/
+		   argtail = &(t->comnod.comarg);
 		   WHILE wdval==0
 		   DO	argp = wdarg;
 			IF wdset ANDF keywd
@@ -292,18 +295,18 @@ LOCAL TREPTR	item(flag)
 			FI
 			word();
 			IF flag
-			THEN t->comio=inout(t->comio);
+			THEN t->comnod.comio=inout(t->comnod.comio);
 			FI
 		   OD
 
-		   t->comtyp=TCOM; t->comset=argset; *argtail=0;
+		   t->comnod.comtyp=TCOM; t->comnod.comset=argset; *argtail=0;
 		   return(t);
 		END
 
 	ENDSW
 	reserv++; word();
 	IF io=inout(io)
-	THEN	t=makefork(0,t); t->treio=io;
+	THEN	t=makefork(0,t); t->treio.treio=io;
 	FI
 	return(t);
 }
