@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -258,7 +258,7 @@ initsys(e)
 	**	tucked away in the transcript).
 	*/
 
-	if (OpMode == MD_DAEMON && QueueRun)
+	if (OpMode == MD_DAEMON && QueueRun && e->e_xfp != NULL)
 		OutChannel = e->e_xfp;
 
 	/*
