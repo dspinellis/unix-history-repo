@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.52 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.53 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -1070,7 +1070,7 @@ sigexit(p, sig)
 		if (coredump(p) == 0)
 			sig |= WCOREFLAG;
 	}
-	exit(p, W_EXITCODE(0, sig));
+	exit1(p, W_EXITCODE(0, sig));
 	/* NOTREACHED */
 }
 
