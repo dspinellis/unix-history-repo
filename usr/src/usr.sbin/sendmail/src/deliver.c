@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.80 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.81 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1458,7 +1458,8 @@ markfailure(e, q, rcode)
 		    curtime() > e->e_ctime + TimeOuts.to_q_warning)
 		{
 			if (!bitset(EF_WARNING, e->e_flags) &&
-			    e->e_class >= 0)
+			    e->e_class >= 0 &&
+			    strcmp(e->e_from.q_paddr, "<>") != 0)
 			{
 				(void) sprintf(buf,
 					"warning: cannot send message for %s",
