@@ -10,9 +10,9 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)os-type	5.5 (Berkeley) %G%
+#	@(#)os-type	5.6 (Berkeley) %G%
 #
-# $Id: os-type,v 5.2.2.1 1992/02/09 15:11:23 jsp beta $
+# $Id: os-type,v 5.2.2.2 1992/05/31 16:45:46 jsp Exp $
 #
 
 #
@@ -28,7 +28,6 @@ case "`exec 2>/dev/null; head -2 /etc/motd`" in
 *"Sun UNIX 4.2 Release 3."*)	OS=sos3;;
 *"SunOS Release 4."*)		OS=sos4;;
 *"HP-UX on the HP"*)		OS=hpux;;
-*"Iris"*)			OS=irix;;
 *"Ultrix V2."*)			OS=u2_2;;
 *"Ultrix V3."*)			OS=u3_0;;
 *"Ultrix-32 V3."*)		OS=u3_0;;
@@ -58,6 +57,8 @@ case "`exec 2>/dev/null; head -2 /etc/motd`" in
 				echo "#	... inspecting File system ..." >&2
 				if [ -f /etc/comply ]; then
 					OS=utek
+				elif [ -d /usr/lib/methods -o -d /etc/methods ]; then
+					OS=aix3
 				elif [ -f /usr/bin/cat ]; then
 					OS=sos4
 				elif [ -f /etc/nd ]; then
@@ -77,14 +78,14 @@ case "`exec 2>/dev/null; head -2 /etc/motd`" in
 					OS=bsd44
 				elif [ -d /vrm ]; then
 					OS=aix2
-				elif [ -d /etc/aix ]; then
-					OS=aix3
 				elif [ -f /bin/pyr ] && /bin/pyr; then
 					OS=pyrOSx
 				elif [ -d /NextApps ]; then
 					OS=next
-				elif [ -f /usr/lib/libgl.a ]; then
-					OS=irix
+				elif [ -f /etc/gl/ucode ]; then
+					OS=irix3
+				elif [ -f /usr/gfx/ucode ]; then
+					OS=irix4
 				elif [ -f /stellix ]; then
 					OS=stellix
 				else

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-fpx4.h	5.4 (Berkeley) %G%
+ *	@(#)os-fpx4.h	5.5 (Berkeley) %G%
  *
- * $Id: os-fpx4.h,v 5.2.2.1 1992/02/09 15:10:19 jsp beta $
+ * $Id: os-fpx4.h,v 5.2.2.2 1992/05/31 16:39:34 jsp Exp $
  *
  * Celerity FPX 4.1/2 definitions for Amd (automounter)
  *      from Stephen Pope <scp@grizzly.acl.lanl.gov>
@@ -42,7 +42,9 @@
  * This is the implementation release number, not
  * the protocol revision number.
  */
-#define RPC_3
+#define	RPC_4
+#define	svc_fdset svc_fds
+#define	svc_getreqset(p) svc_getreq((*p).fds_bits[0])
 
 /*
  * Which version of the NFS interface are we using.

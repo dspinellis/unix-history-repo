@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)util.c	5.4 (Berkeley) %G%
+ *	@(#)util.c	5.5 (Berkeley) %G%
  *
- * $Id: util.c,v 5.2.2.1 1992/02/09 15:09:11 jsp beta $
+ * $Id: util.c,v 5.2.2.2 1992/03/07 17:52:06 jsp Exp $
  *
  */
 
@@ -96,7 +96,7 @@ int qc;
 		 * skip to split char
 		 */
 		while (*s && (ch == ' ' ? (isascii(*s) && isspace(*s)) : *s == ch))
-				s++;
+				*s++ = '\0';
 
 		/*
 		 * End of string?

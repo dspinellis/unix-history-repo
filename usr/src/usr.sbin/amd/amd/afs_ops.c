@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)afs_ops.c	5.4 (Berkeley) %G%
+ *	@(#)afs_ops.c	5.5 (Berkeley) %G%
  *
- * $Id: afs_ops.c,v 5.2.2.1 1992/02/09 15:08:11 jsp beta $
+ * $Id: afs_ops.c,v 5.2.2.4 1992/05/31 16:36:36 jsp Exp $
  *
  */
 
@@ -602,6 +602,8 @@ voidp closure;
 	 * Check for termination signal or exit status...
 	 */
 	if (rc || term) {
+		am_node *xmp;
+
 		if (term) {
 			/*
 			 * Not sure what to do for an error code.
@@ -626,8 +628,9 @@ voidp closure;
 		 */
 		amd_stats.d_merr++;
 		cp->ivec++;
+		xmp = cp->mp;
 		(void) afs_bgmount(cp, 0);
-		assign_error_mntfs(cp->mp);
+		assign_error_mntfs(xmp);
 	} else {
 		/*
 		 * The mount worked.
@@ -1225,6 +1228,10 @@ int op;
 			 * Check for a hung node
 			 */
 			if (FSRV_ISDOWN(mf->mf_server)) {
+#ifdef DEBUG
+				dlog("server hung");
+#endif /* DEBUG */
+				error = ap->am_error;
 				ap_hung = ap;
 				continue;
 			}
@@ -1411,24 +1418,19 @@ in_progrss:
 		dfl = rvec[0];
 
 		/*
-		 * Log error if there were other values
-		 */
-		if (rvec[1]) {
-#ifdef DEBUG
-			dlog("/defaults chopped into %s", dfl);
-#endif /* DEBUG */
-			plog(XLOG_USER, "More than a single value for /defaults in %s", mf->mf_info);
-		}
-
-		/*
-		 * Don't need info vector any more
-		 */
-		free((voidp) rvec);
-
-		/*
 		 * If there were any values at all...
 		 */
 		if (dfl) {
+			/*
+			 * Log error if there were other values
+			 */
+			if (rvec[1]) {
+#ifdef DEBUG
+				dlog("/defaults chopped into %s", dfl);
+#endif /* DEBUG */
+				plog(XLOG_USER, "More than a single value for /defaults in %s", mf->mf_info);
+			}
+
 			/*
 			 * Prepend to existing defaults if they exist,
 			 * otherwise just use these defaults.
@@ -1443,6 +1445,10 @@ in_progrss:
 			}
 		}
 		free(dflts);
+		/*
+		 * Don't need info vector any more
+		 */
+		free((voidp) rvec);
 	}
 
 	/*
@@ -1505,7 +1511,10 @@ in_progrss:
 		return new_mp;
 	}
 
-	assign_error_mntfs(cp->mp);
+	if (error && (cp->mp->am_mnt->mf_ops == &efs_ops))
+		cp->mp->am_error = error;
+
+	assign_error_mntfs(new_mp);
 
 	free(fname);
 
@@ -1567,6 +1576,21 @@ int count;
 #ifdef DEBUG
 		dlog("default search");
 #endif /* DEBUG */
+		/*
+		 * Check for enough room.  This is extremely
+		 * approximate but is more than enough space.
+		 * Really need 2 times:
+		 * 	4byte fileid
+		 * 	4byte cookie
+		 * 	4byte name length
+		 * 	4byte name
+		 * plus the dirlist structure
+		 */
+		if (count <
+			(2 * (2 * (sizeof(*ep) + sizeof("..") + 4)
+					+ sizeof(*dp))))
+			return EINVAL;
+
 		xp = next_nonerror_node(mp->am_child);
 		dp->entries = ep;
 
