@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ops.vax.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ops.vax.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: ops.c,v 1.5 84/12/26 10:41:07 linton Exp $";
@@ -278,34 +278,6 @@ typedef unsigned char VaxOpcode;
 #define O_ESCF 0xFF		/* ESCF to DIGITAL */
 
 /*
- * Opcode definitions.
- *
- * Much of this was taken from the assembler.
- */
-
-/*
- * Argument access types.
- */
-
-#define ACCA    0100    /* address only */
-#define ACCR    010	/* read */
-#define ACCW    020	/* write */
-#define ACCM    030	/* modify */
-#define ACCB    040	/* branch displacement */
-#define ACCI    050	/* variable field */
-
-/*
- * Argument lengths.
- */
-
-#define TYPB    0	/* byte */
-#define TYPW    01	/* word */
-#define TYPL    02	/* long */
-#define TYPQ    03	/* quad */
-#define TYPF    04	/* floating */
-#define TYPD    05	/* double floating */
-
-/*
  * Addressing modes.
  */
 
@@ -337,271 +309,30 @@ typedef unsigned char VaxOpcode;
 
 typedef struct {
     char *iname;
+    char format;
     char val;
     char numargs;
     char argtype[6];
 } Optab;
 
+#ifndef ASINSTRS
+#define ASINSTRS "../../bin/as/as.vax/instrs.h"
 #endif
 
+#ifndef ADBINSTRS
+#define ADBINSTRS "../../bin/adb/adb.vax/instrs.adb"
+#endif
+
+#define INSTTAB
+#include ASINSTRS
+
+#endif
+
+#define OP(name,eopcode,popdcode,nargs,a1,a2,a3,a4,a5,a6) {name,eopcode,popdcode,nargs,a1,a2,a3,a4,a5,a6}
+
 public Optab optab[] = {
-    {"halt", 0x00, 0, 0, 0, 0, 0, 0, 0}, 
-    {"nop", 0x01, 0, 0, 0, 0, 0, 0, 0}, 
-    {"rei", 0x02, 0, 0, 0, 0, 0, 0, 0}, 
-    {"bpt", 0x03, 0, 0, 0, 0, 0, 0, 0}, 
-    {"ret", 0x04, 0, 0, 0, 0, 0, 0, 0}, 
-    {"rsb", 0x05, 0, 0, 0, 0, 0, 0, 0}, 
-    {"ldpctx", 0x06, 0, 0, 0, 0, 0, 0, 0}, 
-    {"svpctx", 0x07, 0, 0, 0, 0, 0, 0, 0}, 
-    {"cvtps", 0x08, 4, ACCR+TYPW, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB, 0, 0}, 
-    {"cvtsp", 0x09, 4, ACCR+TYPW, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB, 0, 0}, 
-    {"index", 0x0a, 6, ACCR+TYPL, ACCR+TYPL, ACCR+TYPL, ACCR+TYPL, ACCR+TYPL, ACCW+TYPL}, 
-    {"crc", 0x0b, 4, ACCA+TYPB, ACCR+TYPL, ACCR+TYPW, ACCA+TYPB, 0, 0}, 
-    {"prober", 0x0c, 3, ACCR+TYPB, ACCR+TYPW, ACCA+TYPB, 0, 0, 0}, 
-    {"probew", 0x0d, 3, ACCR+TYPB, ACCR+TYPW, ACCA+TYPB, 0, 0, 0}, 
-    {"insque", 0x0e, 2, ACCA+TYPB, ACCA+TYPB, 0, 0, 0, 0}, 
-    {"remque", 0x0f, 2, ACCA+TYPB, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"bsbb", 0x10, 1, ACCB+TYPB, 0, 0, 0, 0, 0}, 
-    {"brb", 0x11, 1, ACCB+TYPB, 0, 0, 0, 0, 0}, 
-    {"bneq", 0x12, 1, ACCB+TYPB, 0, 0, 0, 0, 0}, 
-    {"beql", 0x13, 1, ACCB+TYPB, 0, 0, 0, 0, 0}, 
-    {"bgtr", 0x14, 1, ACCB+TYPB, 0, 0, 0, 0, 0}, 
-    {"bleq", 0x15, 1, ACCB+TYPB, 0, 0, 0, 0, 0}, 
-    {"jsb", 0x16, 1, ACCA+TYPB, 0, 0, 0, 0, 0}, 
-    {"jmp", 0x17, 1, ACCA+TYPB, 0, 0, 0, 0, 0}, 
-    {"bgeq", 0x18, 1, ACCB+TYPB, 0, 0, 0, 0, 0}, 
-    {"blss", 0x19, 1, ACCB+TYPB, 0, 0, 0, 0, 0}, 
-    {"bgtru", 0x1a, 1, ACCB+TYPB, 0, 0, 0, 0, 0}, 
-    {"blequ", 0x1b, 1, ACCB+TYPB, 0, 0, 0, 0, 0}, 
-    {"bvc", 0x1c, 1, ACCB+TYPB, 0, 0, 0, 0, 0}, 
-    {"bvs", 0x1d, 1, ACCB+TYPB, 0, 0, 0, 0, 0}, 
-    {"bcc", 0x1e, 1, ACCB+TYPB, 0, 0, 0, 0, 0}, 
-    {"bcs", 0x1f, 1, ACCB+TYPB, 0, 0, 0, 0, 0}, 
-    {"addp4", 0x20, 4, ACCR+TYPW, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB, 0, 0}, 
-    {"addp6", 0x21, 6, ACCR+TYPW, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB}, 
-    {"subp4", 0x22, 4, ACCR+TYPW, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB, 0, 0}, 
-    {"subp6", 0x23, 6, ACCR+TYPW, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB}, 
-    {"cvtpt", 0x24, 5, ACCR+TYPW, ACCA+TYPB, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB, 0}, 
-    {"mulp", 0x25, 6, ACCR+TYPW, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB}, 
-    {"cvttp", 0x26, 5, ACCR+TYPW, ACCA+TYPB, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB, 0}, 
-    {"divp", 0x27, 6, ACCR+TYPW, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB}, 
-    {"movc3", 0x28, 3, ACCR+TYPW, ACCA+TYPB, ACCA+TYPB, 0, 0, 0}, 
-    {"cmpc3", 0x29, 3, ACCR+TYPW, ACCA+TYPB, ACCA+TYPB, 0, 0, 0}, 
-    {"scanc", 0x2a, 4, ACCR+TYPW, ACCA+TYPB, ACCA+TYPB, ACCR+TYPB, 0, 0}, 
-    {"spanc", 0x2b, 4, ACCR+TYPW, ACCA+TYPB, ACCA+TYPB, ACCR+TYPB, 0, 0}, 
-    {"movc5", 0x2c, 5, ACCR+TYPW, ACCA+TYPB, ACCR+TYPB, ACCR+TYPW, ACCA+TYPB, 0}, 
-    {"cmpc5", 0x2d, 5, ACCR+TYPW, ACCA+TYPB, ACCR+TYPB, ACCR+TYPW, ACCA+TYPB, 0}, 
-    {"movtc", 0x2e, 6, ACCR+TYPW, ACCA+TYPB, ACCR+TYPB, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB}, 
-    {"movtuc", 0x2f, 6, ACCR+TYPW, ACCA+TYPB, ACCR+TYPB, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB}, 
-    {"bsbw", 0x30, 1, ACCB+TYPW, 0, 0, 0, 0, 0}, 
-    {"brw", 0x31, 1, ACCB+TYPW, 0, 0, 0, 0, 0}, 
-    {"cvtwl", 0x32, 2, ACCR+TYPW, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"cvtwb", 0x33, 2, ACCR+TYPW, ACCW+TYPB, 0, 0, 0, 0}, 
-    {"movp", 0x34, 3, ACCR+TYPW, ACCA+TYPB, ACCA+TYPB, 0, 0, 0}, 
-    {"cmpp3", 0x35, 3, ACCR+TYPW, ACCA+TYPB, ACCA+TYPB, 0, 0, 0}, 
-    {"cvtpl", 0x36, 3, ACCR+TYPW, ACCA+TYPB, ACCW+TYPL, 0, 0, 0}, 
-    {"cmpp4", 0x37, 4, ACCR+TYPW, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB, 0, 0}, 
-    {"editpc", 0x38, 4, ACCR+TYPW, ACCA+TYPB, ACCA+TYPB, ACCA+TYPB, 0, 0}, 
-    {"matchc", 0x39, 4, ACCR+TYPW, ACCA+TYPB, ACCR+TYPW, ACCA+TYPB, 0, 0}, 
-    {"locc", 0x3a, 3, ACCR+TYPB, ACCR+TYPW, ACCA+TYPB, 0, 0, 0}, 
-    {"skpc", 0x3b, 3, ACCR+TYPB, ACCR+TYPW, ACCA+TYPB, 0, 0, 0}, 
-    {"movzwl", 0x3c, 2, ACCR+TYPW, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"acbw", 0x3d, 4, ACCR+TYPW, ACCR+TYPW, ACCM+TYPW, ACCB+TYPW, 0, 0}, 
-    {"movaw", 0x3e, 2, ACCA+TYPW, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"pushaw", 0x3f, 1, ACCA+TYPW, 0, 0, 0, 0, 0}, 
-    {"addf2", 0x40, 2, ACCR+TYPF, ACCM+TYPF, 0, 0, 0, 0}, 
-    {"addf3", 0x41, 3, ACCR+TYPF, ACCR+TYPF, ACCW+TYPF, 0, 0, 0}, 
-    {"subf2", 0x42, 2, ACCR+TYPF, ACCM+TYPF, 0, 0, 0, 0}, 
-    {"subf3", 0x43, 3, ACCR+TYPF, ACCR+TYPF, ACCW+TYPF, 0, 0, 0}, 
-    {"mulf2", 0x44, 2, ACCR+TYPF, ACCM+TYPF, 0, 0, 0, 0}, 
-    {"mulf3", 0x45, 3, ACCR+TYPF, ACCR+TYPF, ACCW+TYPF, 0, 0, 0}, 
-    {"divf2", 0x46, 2, ACCR+TYPF, ACCM+TYPF, 0, 0, 0, 0}, 
-    {"divf3", 0x47, 3, ACCR+TYPF, ACCR+TYPF, ACCW+TYPF, 0, 0, 0}, 
-    {"cvtfb", 0x48, 2, ACCR+TYPF, ACCW+TYPB, 0, 0, 0, 0}, 
-    {"cvtfw", 0x49, 2, ACCR+TYPF, ACCW+TYPW, 0, 0, 0, 0}, 
-    {"cvtfl", 0x4a, 2, ACCR+TYPF, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"cvtrfl", 0x4b, 2, ACCR+TYPF, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"cvtbf", 0x4c, 2, ACCR+TYPB, ACCW+TYPB, 0, 0, 0, 0}, 
-    {"cvtwf", 0x4d, 2, ACCR+TYPW, ACCW+TYPF, 0, 0, 0, 0}, 
-    {"cvtlf", 0x4e, 2, ACCR+TYPL, ACCW+TYPF, 0, 0, 0, 0}, 
-    {"acbf", 0x4f, 4, ACCR+TYPF, ACCR+TYPF, ACCM+TYPF, ACCB+TYPW, 0, 0}, 
-    {"movf", 0x50, 2, ACCR+TYPF, ACCW+TYPF, 0, 0, 0, 0}, 
-    {"cmpf", 0x51, 2, ACCR+TYPF, ACCR+TYPF, 0, 0, 0, 0}, 
-    {"mnegf", 0x52, 2, ACCR+TYPF, ACCW+TYPF, 0, 0, 0, 0}, 
-    {"tstf", 0x53, 1, ACCR+TYPF, 0, 0, 0, 0, 0}, 
-    {"emodf", 0x54, 5, ACCR+TYPF, ACCR+TYPB, ACCR+TYPF, ACCW+TYPL, ACCW+TYPF, 0}, 
-    {"polyf", 0x55, 3, ACCR+TYPF, ACCR+TYPW, ACCA+TYPB, 0, 0, 0}, 
-    {"cvtfd", 0x56, 2, ACCR+TYPF, ACCW+TYPD, 0, 0, 0, 0}, 
-    {"dummy", 0x57, 0, 0, 0, 0, 0, 0, 0},
-    {"adawi", 0x58, 2, ACCR+TYPW, ACCM+TYPW, 0, 0, 0, 0}, 
-    {"dummy", 0x59, 0, 0, 0, 0, 0, 0, 0},
-    {"dummy", 0x5a, 0, 0, 0, 0, 0, 0, 0},
-    {"dummy", 0x5b, 0, 0, 0, 0, 0, 0, 0},
-    {"dummy", 0x5c, 0, 0, 0, 0, 0, 0, 0},
-    {"dummy", 0x5d, 0, 0, 0, 0, 0, 0, 0},
-    {"dummy", 0x5e, 0, 0, 0, 0, 0, 0, 0},
-    {"dummy", 0x5f, 0, 0, 0, 0, 0, 0, 0},
-    {"addd2", 0x60, 2, ACCR+TYPD, ACCM+TYPD, 0, 0, 0, 0}, 
-    {"addd3", 0x61, 3, ACCR+TYPD, ACCR+TYPD, ACCW+TYPD, 0, 0, 0}, 
-    {"subd2", 0x62, 2, ACCR+TYPD, ACCM+TYPD, 0, 0, 0, 0}, 
-    {"subd3", 0x63, 3, ACCR+TYPD, ACCR+TYPD, ACCW+TYPD, 0, 0, 0}, 
-    {"muld2", 0x64, 2, ACCR+TYPD, ACCM+TYPD, 0, 0, 0, 0}, 
-    {"muld3", 0x65, 3, ACCR+TYPD, ACCR+TYPD, ACCW+TYPD, 0, 0, 0}, 
-    {"divd2", 0x66, 2, ACCR+TYPD, ACCM+TYPD, 0, 0, 0, 0}, 
-    {"divd3", 0x67, 3, ACCR+TYPD, ACCR+TYPD, ACCR+TYPD, 0, 0, 0}, 
-    {"cvtdb", 0x68, 2, ACCR+TYPD, ACCW+TYPB, 0, 0, 0, 0}, 
-    {"cvtdw", 0x69, 2, ACCR+TYPD, ACCW+TYPW, 0, 0, 0, 0}, 
-    {"cvtdl", 0x6a, 2, ACCR+TYPD, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"cvtrdl", 0x6b, 2, ACCR+TYPD, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"cvtbd", 0x6c, 2, ACCR+TYPB, ACCW+TYPD, 0, 0, 0, 0}, 
-    {"cvtwd", 0x6d, 2, ACCR+TYPW, ACCW+TYPD, 0, 0, 0, 0}, 
-    {"cvtld", 0x6e, 2, ACCR+TYPL, ACCW+TYPD, 0, 0, 0, 0}, 
-    {"acbd", 0x6f, 4, ACCR+TYPD, ACCR+TYPD, ACCM+TYPD, ACCB+TYPW, 0, 0}, 
-    {"movd", 0x70, 2, ACCR+TYPD, ACCW+TYPD, 0, 0, 0, 0}, 
-    {"cmpd", 0x71, 2, ACCR+TYPD, ACCR+TYPD, 0, 0, 0, 0}, 
-    {"mnegd", 0x72, 2, ACCR+TYPD, ACCW+TYPD, 0, 0, 0, 0}, 
-    {"tstd", 0x73, 1, ACCR+TYPD, 0, 0, 0, 0, 0}, 
-    {"emodd", 0x74, 5, ACCR+TYPD, ACCR+TYPB, ACCR+TYPD, ACCW+TYPL, ACCW+TYPD, 0}, 
-    {"polyd", 0x75, 3, ACCR+TYPD, ACCR+TYPW, ACCA+TYPB, 0, 0, 0}, 
-    {"cvtdf", 0x76, 2, ACCR+TYPD, ACCW+TYPF, 0, 0, 0, 0}, 
-    {"dummy0x77", 0x77, 0, 0, 0, 0, 0, 0, 0},
-    {"ashl", 0x78, 3, ACCR+TYPB, ACCR+TYPL, ACCW+TYPL, 0, 0, 0}, 
-    {"ashq", 0x79, 3, ACCR+TYPB, ACCR+TYPQ, ACCW+TYPQ, 0, 0, 0}, 
-    {"emul", 0x7a, 4, ACCR+TYPL, ACCR+TYPL, ACCR+TYPL, ACCW+TYPQ, 0, 0}, 
-    {"ediv", 0x7b, 4, ACCR+TYPL, ACCR+TYPQ, ACCW+TYPL, ACCW+TYPL, 0, 0}, 
-    {"clrq", 0x7c, 1, ACCW+TYPD, 0, 0, 0, 0, 0}, 
-    {"movq", 0x7d, 2, ACCR+TYPQ, ACCW+TYPQ, 0, 0, 0, 0}, 
-    {"movaq", 0x7e, 2, ACCA+TYPQ, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"pushaq", 0x7f, 1, ACCA+TYPQ, 0, 0, 0, 0, 0}, 
-    {"addb2", 0x80, 2, ACCR+TYPB, ACCM+TYPB, 0, 0, 0, 0}, 
-    {"addb3", 0x81, 3, ACCR+TYPB, ACCR+TYPB, ACCW+TYPB, 0, 0, 0}, 
-    {"subb2", 0x82, 2, ACCR+TYPB, ACCM+TYPB, 0, 0, 0, 0}, 
-    {"subb3", 0x83, 3, ACCR+TYPB, ACCR+TYPB, ACCW+TYPB, 0, 0, 0}, 
-    {"mulb2", 0x84, 2, ACCR+TYPB, ACCM+TYPB, 0, 0, 0, 0}, 
-    {"mulb3", 0x85, 3, ACCR+TYPB, ACCR+TYPB, ACCW+TYPB, 0, 0, 0}, 
-    {"divb2", 0x86, 2, ACCR+TYPB, ACCM+TYPB, 0, 0, 0, 0}, 
-    {"divb3", 0x87, 3, ACCR+TYPB, ACCR+TYPB, ACCW+TYPB, 0, 0, 0}, 
-    {"bisb2", 0x88, 2, ACCR+TYPB, ACCM+TYPB, 0, 0, 0, 0}, 
-    {"bisb3", 0x89, 3, ACCR+TYPB, ACCR+TYPB, ACCW+TYPB, 0, 0, 0}, 
-    {"bicb2", 0x8a, 2, ACCR+TYPB, ACCM+TYPB, 0, 0, 0, 0}, 
-    {"bicb3", 0x8b, 3, ACCR+TYPB, ACCR+TYPB, ACCW+TYPB, 0, 0, 0}, 
-    {"xorb2", 0x8c, 2, ACCR+TYPB, ACCM+TYPB, 0, 0, 0, 0}, 
-    {"xorb3", 0x8d, 3, ACCR+TYPB, ACCR+TYPB, ACCW+TYPB, 0, 0, 0}, 
-    {"mnegb", 0x8e, 2, ACCR+TYPB, ACCW+TYPB, 0, 0, 0, 0}, 
-    {"caseb", 0x8f, 3, ACCR+TYPB, ACCR+TYPB, ACCR+TYPB, 0, 0, 0}, 
-    {"movb", 0x90, 2, ACCR+TYPB, ACCW+TYPB, 0, 0, 0, 0}, 
-    {"cmpb", 0x91, 2, ACCR+TYPB, ACCR+TYPB, 0, 0, 0, 0}, 
-    {"mcomb", 0x92, 2, ACCR+TYPB, ACCW+TYPB, 0, 0, 0, 0}, 
-    {"bitb", 0x93, 2, ACCR+TYPB, ACCR+TYPB, 0, 0, 0, 0}, 
-    {"clrb", 0x94, 1, ACCW+TYPB, 0, 0, 0, 0, 0}, 
-    {"tstb", 0x95, 1, ACCR+TYPB, 0, 0, 0, 0, 0}, 
-    {"incb", 0x96, 1, ACCM+TYPB, 0, 0, 0, 0, 0}, 
-    {"decb", 0x97, 1, ACCM+TYPB, 0, 0, 0, 0, 0}, 
-    {"cvtbl", 0x98, 2, ACCR+TYPB, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"cvtbw", 0x99, 2, ACCR+TYPB, ACCW+TYPW, 0, 0, 0, 0}, 
-    {"movzbl", 0x9a, 2, ACCR+TYPB, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"movzbw", 0x9b, 2, ACCR+TYPB, ACCW+TYPW, 0, 0, 0, 0}, 
-    {"rotl", 0x9c, 3, ACCR+TYPB, ACCR+TYPL, ACCW+TYPL, 0, 0, 0}, 
-    {"acbb", 0x9d, 4, ACCR+TYPB, ACCR+TYPB, ACCM+TYPB, ACCB+TYPW, 0, 0}, 
-    {"movab", 0x9e, 2, ACCA+TYPB, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"pushab", 0x9f, 1, ACCA+TYPB, 0, 0, 0, 0, 0}, 
-    {"addw2", 0xa0, 2, ACCR+TYPW, ACCM+TYPW, 0, 0, 0, 0}, 
-    {"addw3", 0xa1, 3, ACCR+TYPW, ACCR+TYPW, ACCW+TYPW, 0, 0, 0}, 
-    {"subw2", 0xa2, 2, ACCR+TYPW, ACCM+TYPW, 0, 0, 0, 0}, 
-    {"subw3", 0xa3, 3, ACCR+TYPW, ACCR+TYPW, ACCW+TYPW, 0, 0, 0}, 
-    {"mulw2", 0xa4, 2, ACCR+TYPW, ACCM+TYPW, 0, 0, 0, 0}, 
-    {"mulw3", 0xa5, 3, ACCR+TYPW, ACCR+TYPW, ACCW+TYPW, 0, 0, 0}, 
-    {"divw2", 0xa6, 2, ACCR+TYPW, ACCM+TYPW, 0, 0, 0, 0}, 
-    {"divw3", 0xa7, 3, ACCR+TYPW, ACCR+TYPW, ACCW+TYPW, 0, 0, 0}, 
-    {"bisw2", 0xa8, 2, ACCR+TYPW, ACCM+TYPW, 0, 0, 0, 0}, 
-    {"bisw3", 0xa9, 3, ACCR+TYPW, ACCR+TYPW, ACCW+TYPW, 0, 0, 0}, 
-    {"bicw2", 0xaa, 2, ACCR+TYPW, ACCM+TYPW, 0, 0, 0, 0}, 
-    {"bicw3", 0xab, 3, ACCR+TYPW, ACCR+TYPW, ACCW+TYPW, 0, 0, 0}, 
-    {"xorw2", 0xac, 2, ACCR+TYPW, ACCM+TYPW, 0, 0, 0, 0}, 
-    {"xorw3", 0xad, 3, ACCR+TYPW, ACCR+TYPW, ACCW+TYPW, 0, 0, 0}, 
-    {"mnegw", 0xae, 2, ACCR+TYPW, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"casew", 0xaf, 3, ACCR+TYPW, ACCR+TYPW, ACCR+TYPW, 0, 0, 0}, 
-    {"movw", 0xb0, 2, ACCR+TYPW, ACCW+TYPW, 0, 0, 0, 0}, 
-    {"cmpw", 0xb1, 2, ACCR+TYPW, ACCR+TYPW, 0, 0, 0, 0}, 
-    {"mcomw", 0xb2, 2, ACCR+TYPW, ACCW+TYPW, 0, 0, 0, 0}, 
-    {"bitw", 0xb3, 2, ACCR+TYPW, ACCR+TYPW, 0, 0, 0, 0}, 
-    {"clrw", 0xb4, 1, ACCW+TYPW, 0, 0, 0, 0, 0}, 
-    {"tstw", 0xb5, 1, ACCR+TYPW, 0, 0, 0, 0, 0}, 
-    {"incw", 0xb6, 1, ACCM+TYPW, 0, 0, 0, 0, 0}, 
-    {"decw", 0xb7, 1, ACCM+TYPW, 0, 0, 0, 0, 0}, 
-    {"bispsw", 0xb8, 1, ACCR+TYPW, 0, 0, 0, 0, 0}, 
-    {"bicpsw", 0xb9, 1, ACCR+TYPW, 0, 0, 0, 0, 0}, 
-    {"popr", 0xba, 1, ACCR+TYPW, 0, 0, 0, 0, 0}, 
-    {"pushr", 0xbb, 1, ACCR+TYPW, 0, 0, 0, 0, 0}, 
-    {"chmk", 0xbc, 1, ACCR+TYPW, 0, 0, 0, 0, 0}, 
-    {"chme", 0xbd, 1, ACCR+TYPW, 0, 0, 0, 0, 0}, 
-    {"chms", 0xbe, 1, ACCR+TYPW, 0, 0, 0, 0, 0}, 
-    {"chmu", 0xbf, 1, ACCR+TYPW, 0, 0, 0, 0, 0}, 
-    {"addl2", 0xc0, 2, ACCR+TYPL, ACCM+TYPL, 0, 0, 0, 0}, 
-    {"addl3", 0xc1, 3, ACCR+TYPL, ACCR+TYPL, ACCW+TYPL, 0, 0, 0}, 
-    {"subl2", 0xc2, 2, ACCR+TYPL, ACCM+TYPL, 0, 0, 0, 0}, 
-    {"subl3", 0xc3, 3, ACCR+TYPL, ACCR+TYPL, ACCW+TYPL, 0, 0, 0}, 
-    {"mull2", 0xc4, 2, ACCR+TYPL, ACCM+TYPL, 0, 0, 0, 0}, 
-    {"mull3", 0xc5, 3, ACCR+TYPL, ACCR+TYPL, ACCW+TYPL, 0, 0, 0}, 
-    {"divl2", 0xc6, 2, ACCR+TYPL, ACCM+TYPL, 0, 0, 0, 0}, 
-    {"divl3", 0xc7, 3, ACCR+TYPL, ACCR+TYPL, ACCW+TYPL, 0, 0, 0}, 
-    {"bisl2", 0xc8, 2, ACCR+TYPL, ACCM+TYPL, 0, 0, 0, 0}, 
-    {"bisl3", 0xc9, 3, ACCR+TYPL, ACCR+TYPL, ACCW+TYPL, 0, 0, 0}, 
-    {"bicl2", 0xca, 2, ACCR+TYPL, ACCM+TYPL, 0, 0, 0, 0}, 
-    {"bicl3", 0xcb, 3, ACCR+TYPL, ACCR+TYPL, ACCW+TYPL, 0, 0, 0}, 
-    {"xorl2", 0xcc, 2, ACCR+TYPL, ACCM+TYPL, 0, 0, 0, 0}, 
-    {"xorl3", 0xcd, 3, ACCR+TYPL, ACCR+TYPL, ACCW+TYPL, 0, 0, 0}, 
-    {"mnegl", 0xce, 2, ACCR+TYPL, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"casel", 0xcf, 3, ACCR+TYPL, ACCR+TYPL, ACCR+TYPL, 0, 0, 0}, 
-    {"movl", 0xd0, 2, ACCR+TYPL, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"cmpl", 0xd1, 2, ACCR+TYPL, ACCR+TYPL, 0, 0, 0, 0}, 
-    {"mcoml", 0xd2, 2, ACCR+TYPL, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"bitl", 0xd3, 2, ACCR+TYPL, ACCR+TYPL, 0, 0, 0, 0}, 
-    {"clrl", 0xd4, 1, ACCW+TYPL, 0, 0, 0, 0, 0}, 
-    {"tstl", 0xd5, 1, ACCR+TYPL, 0, 0, 0, 0, 0}, 
-    {"incl", 0xd6, 1, ACCM+TYPL, 0, 0, 0, 0, 0}, 
-    {"decl", 0xd7, 1, ACCM+TYPL, 0, 0, 0, 0, 0}, 
-    {"adwc", 0xd8, 2, ACCR+TYPL, ACCM+TYPL, 0, 0, 0, 0}, 
-    {"sbwc", 0xd9, 2, ACCR+TYPL, ACCM+TYPL, 0, 0, 0, 0}, 
-    {"mtpr", 0xda, 2, ACCR+TYPL, ACCR+TYPL, 0, 0, 0, 0}, 
-    {"mfpr", 0xdb, 2, ACCR+TYPL, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"movpsl", 0xdc, 1, ACCW+TYPL, 0, 0, 0, 0, 0}, 
-    {"pushl", 0xdd, 1, ACCR+TYPL, 0, 0, 0, 0, 0}, 
-    {"moval", 0xde, 2, ACCA+TYPL, ACCW+TYPL, 0, 0, 0, 0}, 
-    {"pushal", 0xdf, 1, ACCA+TYPL, 0, 0, 0, 0, 0}, 
-    {"bbs", 0xe0, 3, ACCR+TYPL, ACCR+TYPB, ACCB+TYPB, 0, 0, 0}, 
-    {"bbc", 0xe1, 3, ACCR+TYPL, ACCR+TYPB, ACCB+TYPB, 0, 0, 0}, 
-    {"bbss", 0xe2, 3, ACCR+TYPL, ACCR+TYPB, ACCB+TYPB, 0, 0, 0}, 
-    {"bbcs", 0xe3, 3, ACCR+TYPL, ACCR+TYPB, ACCB+TYPB, 0, 0, 0}, 
-    {"bbsc", 0xe4, 3, ACCR+TYPL, ACCR+TYPB, ACCB+TYPB, 0, 0, 0}, 
-    {"bbcc", 0xe5, 3, ACCR+TYPL, ACCR+TYPB, ACCB+TYPB, 0, 0, 0}, 
-    {"bbssi", 0xe6, 3, ACCR+TYPL, ACCR+TYPB, ACCB+TYPB, 0, 0, 0}, 
-    {"bbcci", 0xe7, 3, ACCR+TYPL, ACCR+TYPB, ACCB+TYPB, 0, 0, 0}, 
-    {"blbs", 0xe8, 2, ACCR+TYPL, ACCB+TYPB, 0, 0, 0, 0}, 
-    {"blbc", 0xe9, 2, ACCR+TYPL, ACCB+TYPB, 0, 0, 0, 0}, 
-    {"ffs", 0xea, 4, ACCR+TYPL, ACCR+TYPB, ACCR+TYPB, ACCW+TYPL, 0, 0}, 
-    {"ffc", 0xeb, 4, ACCR+TYPL, ACCR+TYPB, ACCR+TYPB, ACCW+TYPL, 0, 0}, 
-    {"cmpv", 0xec, 4, ACCR+TYPL, ACCR+TYPB, ACCR+TYPB, ACCR+TYPL, 0, 0}, 
-    {"cmpzv", 0xed, 4, ACCR+TYPL, ACCR+TYPB, ACCR+TYPB, ACCR+TYPL, 0, 0}, 
-    {"extv", 0xee, 4, ACCR+TYPL, ACCR+TYPB, ACCR+TYPB, ACCW+TYPL, 0, 0}, 
-    {"extzv", 0xef, 4, ACCR+TYPL, ACCR+TYPB, ACCR+TYPB, ACCW+TYPL, 0, 0}, 
-    {"insv", 0xf0, 4, ACCR+TYPL, ACCR+TYPL, ACCR+TYPB, ACCW+TYPB, 0, 0}, 
-    {"acbl", 0xf1, 4, ACCR+TYPL, ACCR+TYPL, ACCM+TYPL, ACCB+TYPW, 0, 0}, 
-    {"aoblss", 0xf2, 3, ACCR+TYPL, ACCM+TYPL, ACCB+TYPB, 0, 0, 0}, 
-    {"aobleq", 0xf3, 3, ACCR+TYPL, ACCM+TYPL, ACCB+TYPB, 0, 0, 0}, 
-    {"sobgeq", 0xf4, 2, ACCM+TYPL, ACCB+TYPB, 0, 0, 0, 0}, 
-    {"sobgtr", 0xf5, 2, ACCM+TYPL, ACCB+TYPB, 0, 0, 0, 0}, 
-    {"cvtlb", 0xf6, 2, ACCR+TYPL, ACCW+TYPB, 0, 0, 0, 0}, 
-    {"cvtlw", 0xf7, 2, ACCR+TYPL, ACCW+TYPW, 0, 0, 0, 0}, 
-    {"ashp", 0xf8, 6, ACCR+TYPB, ACCR+TYPW, ACCA+TYPB, ACCR+TYPB, ACCR+TYPW, ACCA+TYPB}, 
-    {"cvtlp", 0xf9, 3, ACCR+TYPL, ACCR+TYPW, ACCA+TYPB, 0, 0, 0}, 
-    {"callg", 0xfa, 2, ACCA+TYPB, ACCA+TYPB, 0, 0, 0, 0}, 
-    {"calls", 0xfb, 2, ACCR+TYPL, ACCA+TYPB, 0, 0, 0, 0}, 
-    {"xfc", 0xfc, 1, ACCI+TYPB, 0, 0, 0, 0, 0}, 
-    {"escd", 0xfd, 0, 0, 0, 0, 0, 0, 0}, 
-    {"esce", 0xfe, 0, 0, 0, 0, 0, 0, 0}, 
-    {"escf", 0xff, 0, 0, 0, 0, 0, 0, 0},
-};
+#include ADBINSTRS
+0};
 
 /*
  * Register names.
