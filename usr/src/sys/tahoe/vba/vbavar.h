@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vbavar.h	7.3 (Berkeley) %G%
+ *	@(#)vbavar.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -180,10 +180,10 @@ extern	struct	vba_device vbdinit[];
 
 /*
  * VERSAbus device address space is mapped by VMEMmap
- * into virtual address vmem[][].
+ * into virtual address vmem[].
  */
 extern	struct pte VMEMmap[];	/* vba device addr pte's */
-extern	caddr_t vmem;		/* vba device addr space */
+extern	char vmem[];		/* vba device addr space */
 u_long	vbasetup();
 #endif KERNEL
 #endif !LOCORE
