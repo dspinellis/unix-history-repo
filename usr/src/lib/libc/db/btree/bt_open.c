@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -257,6 +257,13 @@ bt_open(f, flags, mode, b)
 			return ((BTREE) NULL);
 		}
 
+		/* access method files are always close-on-exec */
+		if (fcntl(t->bt_s.bt_d.d_fd, F_SETFL, 1) == -1) {
+			(void) close(t->bt_s.bt_d.d_fd);
+			(void) free ((char *) t);
+			return ((BTREE) NULL);
+		}
+
 		/* get number of pages, page size if necessary */
 		(void) fstat(t->bt_s.bt_d.d_fd, &buf);
 		if (t->bt_psize == 0)
@@ -338,12 +345,13 @@ bt_get(tree, key, data, flag)
 
 	/* lookup */
 	item = _bt_search(t, key);
-	if (item == (BTITEM *) NULL)
-		return (RET_ERROR);
 
 	/* clear parent pointer stack */
 	while (_bt_pop(t) != P_NONE)
 		continue;
+
+	if (item == (BTITEM *) NULL)
+		return (RET_ERROR);
 
 	h = (BTHEADER *) t->bt_curpage;
 	data->size = 0;
@@ -406,8 +414,11 @@ bt_put(tree, key, data, flag)
 
 	if (VALIDITEM(t, item) && _bt_cmp(t, key->data, item->bti_index) == 0) {
 		if ((t->bt_flags & BTF_NODUPS) && flag == R_NOOVERWRITE) {
-			if (_bt_delone(t, item->bti_index) == RET_ERROR)
+			if (_bt_delone(t, item->bti_index) == RET_ERROR) {
+				while (_bt_pop(t) != P_NONE)
+					continue;
 				return (RET_ERROR);
+			}
 		}
 	}
 
@@ -452,6 +463,10 @@ bt_delete(tree, key, flags)
 	item = _bt_first(t, key);
 	h = t->bt_curpage;
 
+	/* don't need the descent stack for deletes */
+	while (_bt_pop(t) != P_NONE)
+		continue;
+
 	/* delete all matching keys */
 	for (;;) {
 		while (VALIDITEM(t, item)
@@ -478,10 +493,6 @@ bt_delete(tree, key, flags)
 		    || _bt_cmp(t, key->data, item->bti_index) != 0)
 			break;
 	}
-
-	/* clean up the parent stack */
-	while (_bt_pop(t) != P_NONE)
-		continue;
 
 	/* flush changes to disk */
 	if (ISDISK(t)) {

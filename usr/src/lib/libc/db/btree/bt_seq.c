@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_seq.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_seq.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -130,6 +130,10 @@ _bt_seqinit(t, key, flags)
 
 	/* okay, scan is initialized */
 	t->bt_flags |= BTF_SEQINIT;
+
+	/* don't need the descent stack anymore */
+	while (_bt_pop(t) != P_NONE)
+		continue;
 
 	if (c->c_index == NEXTINDEX(t->bt_curpage))
 		return (RET_SPECIAL);
