@@ -17,12 +17,14 @@ int mode;
 	register int fd;
 	register char *d;
 
-	d = alloca(size(name));
+	d = alloc(size(name));
 	copy(name,d);
 	if (!exists(dname(d))) {
+		free(d);
 		sprintf(Error,"directory `%s' nonexistent (ut1)",d);
 		fatal(Error);
 	}
+	free(d);
 	unlink(name);
 	if ((fd = creat(name,mode)) >= 0)
 		return(fd);
