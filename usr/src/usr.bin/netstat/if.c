@@ -13,6 +13,8 @@ static char sccsid[] = "@(#)if.c	4.6 84/11/20";
 extern	int kmem;
 extern	int tflag;
 extern	int nflag;
+extern	char *interface;
+extern	int unit;
 extern	char *routename();
 
 /*
@@ -53,6 +55,10 @@ intpr(interval, ifnetaddr)
 		klseek(kmem, (int)ifnet.if_name, 0);
 		read(kmem, name, 16);
 		name[15] = '\0';
+		ifnetaddr = (off_t) ifnet.if_next;
+		if (interface != 0 &&
+		    (strcmp(name, interface) != 0 || unit != ifnet.if_unit))
+			continue;
 		cp = index(name, '\0');
 		*cp++ = ifnet.if_unit + '0';
 		if ((ifnet.if_flags&IFF_UP) == 0)
@@ -70,7 +76,6 @@ intpr(interval, ifnetaddr)
 		if (tflag)
 			printf(" %-6d", ifnet.if_timer);
 		putchar('\n');
-		ifnetaddr = (off_t) ifnet.if_next;
 	}
 }
 
@@ -106,6 +111,7 @@ sidewaysintpr(interval, off)
 	lastif = iftot;
 	sum = iftot + MAXIF - 1;
 	total = sum - 1;
+	interesting = iftot;
 	for (off = firstifnet, ip = iftot; off;) {
 		char *cp;
 
@@ -114,6 +120,9 @@ sidewaysintpr(interval, off)
 		klseek(kmem, (int)ifnet.if_name, 0);
 		ip->ift_name[0] = '(';
 		read(kmem, ip->ift_name + 1, 15);
+		if (interface && strcmp(ip->ift_name + 1, interface) == 0 &&
+		    unit == ifnet.if_unit)
+			interesting = ip;
 		ip->ift_name[15] = '\0';
 		cp = index(ip->ift_name, '\0');
 		sprintf(cp, "%d)", ifnet.if_unit);
@@ -123,11 +132,10 @@ sidewaysintpr(interval, off)
 		off = (off_t) ifnet.if_next;
 	}
 	lastif = ip;
-	interesting = iftot;
 banner:
 	printf("    input   %-6.6s    output       ", interesting->ift_name);
 	if (lastif - iftot > 0)
-		printf("    input   (Total)    output       ");
+		printf("   input  (Total)    output       ");
 	for (ip = iftot; ip < iftot + MAXIF; ip++) {
 		ip->ift_ip = 0;
 		ip->ift_ie = 0;
