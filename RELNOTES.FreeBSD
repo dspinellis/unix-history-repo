@@ -69,6 +69,10 @@ DTC 3290 EISA SCSI controller in 1542 emulation mode.
 
 Ultra Store 14F and 34F.
 
+Seagate ST01/02 SCSI controllers.
+
+Future Domain 8xx/950 series SCSI controllers.
+
 With all supported SCSI controllers, full support is provided for
 SCSI-I & SCSI-II peripherals, including Disks, tape drives (including
 DAT) and CD ROM drives.  Note:  This and the mcd driver (Mitsumi CDROM
@@ -296,4 +300,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.31 1994/05/06 01:28:05 jkh Exp $
+$Id: RELNOTES.FreeBSD,v 1.32 1994/05/31 18:23:25 ache Exp $
