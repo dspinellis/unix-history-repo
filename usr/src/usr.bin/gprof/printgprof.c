@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)printgprof.c	1.12 (Berkeley) %G%";
+    static	char *sccsid = "@(#)printgprof.c	1.13 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -68,7 +68,7 @@ flatprofheader()
 {
     
     if ( bflag ) {
-	printblurb( "flat.blurb" );
+	printblurb( FLAT_BLURB );
     }
     printf( "%5.5s %7.7s %7.7s %7.7s %-8.8s\n" ,
 	    "%time" , "cumsecs" , "seconds" , "calls" , "name" );
@@ -96,7 +96,7 @@ gprofheader()
 {
 
     if ( bflag ) {
-	printblurb( "callg.blurb" );
+	printblurb( CALLG_BLURB );
     }
     printf( "\ngranularity: each sample hit covers %d byte(s)" ,
 	    (long) scale * sizeof(UNIT) );
@@ -626,14 +626,12 @@ arccmp( thisp , thatp )
 printblurb( blurbname )
     char	*blurbname;
 {
-    char	pathname[ BUFSIZ ];
     FILE	*blurbfile;
     int		input;
 
-    sprintf( pathname , "%s%s" , BLURBLIB , blurbname );
-    blurbfile = fopen( pathname , "r" );
+    blurbfile = fopen( blurbname , "r" );
     if ( blurbfile == NULL ) {
-	perror( pathname );
+	perror( blurbname );
 	return;
     }
     while ( ( input = getc( blurbfile ) ) != EOF ) {
