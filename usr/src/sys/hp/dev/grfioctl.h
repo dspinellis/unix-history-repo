@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grfioctl.h 1.1 90/07/09$
+ * from: Utah $Hdr: grfioctl.h 1.15 92/01/22$
  *
- *	@(#)grfioctl.h	7.2 (Berkeley) %G%
+ *	@(#)grfioctl.h	7.3 (Berkeley) %G%
  */
 
 struct	grfinfo {
@@ -35,6 +35,8 @@ struct	grfinfo {
 #define GRFBOBCAT	9
 #define	GRFCATSEYE	9
 #define GRFRBOX		10
+#define GRFFIREEYE	11
+#define GRFHYPERION	12
 #define GRFDAVINCI	14
 
 /*
@@ -77,7 +79,3 @@ struct	grf_slot {
 #define	GRFIOCOFF	_IO('G', 2)		/* turn graphics off */
 #define GRFIOCMAP	_IOWR('G', 5, int)	/* map in regs+framebuffer */
 #define GRFIOCUNMAP	_IOW('G', 6, int)	/* unmap regs+framebuffer */
-
-/* compat - for old grfinfo structure */
-struct ogrfinfo { char	oinfo[24]; };
-#define	OGRFIOCGINFO	_IOR('G', 0, struct ogrfinfo)

@@ -4,14 +4,20 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.15 (Berkeley) %G%
+ *	@(#)dca.c	7.16 (Berkeley) %G%
  */
 
 #include "dca.h"
 #if NDCA > 0
 /*
- *  98626/98644/internal serial interface
- *  uses National Semiconductor INS8250/NS16550AF UART
+ *  Driver for National Semiconductor INS8250/NS16550AF/WD16C552 UARTs.
+ *  Includes:
+ *	98626/98644/internal serial interface on hp300/hp400
+ *	internal serial ports on hp700
+ *
+ *  N.B. On the hp700, there is a "secret bit" with undocumented behavior.
+ *  The third bit of the Modem Control Register (MCR_IEN == 0x08) must be
+ *  set to enable interrupts.
  */
 #include "sys/param.h"
 #include "sys/systm.h"
@@ -24,10 +30,16 @@
 #include "sys/kernel.h"
 #include "sys/syslog.h"
 
-#include "device.h"
+#include "hp/dev/device.h"
 #include "dcareg.h"
+
 #include "machine/cpu.h"
-#include "../hp300/isr.h"
+#ifdef hp300
+#include "../../hp300/hp300/isr.h"
+#endif
+#ifdef hp700
+#include "machine/asp.h"
+#endif
 
 int	dcaprobe();
 struct	driver dcadriver = {
@@ -50,7 +62,9 @@ int	dcadefaultrate = TTYDEF_SPEED;
 int	dcamajor;
 struct	dcadevice *dca_addr[NDCA];
 struct	tty dca_tty[NDCA];
+#ifdef hp300
 struct	isr dcaisr[NDCA];
+#endif
 
 struct speedtab dcaspeedtab[] = {
 	0,	0,
@@ -72,7 +86,6 @@ struct speedtab dcaspeedtab[] = {
 	-1,	-1
 };
 
-extern	struct tty *constty;
 #ifdef KGDB
 #include "machine/remote-sl.h"
 
@@ -97,16 +110,20 @@ dcaprobe(hd)
 	register int unit;
 
 	dca = (struct dcadevice *)hd->hp_addr;
-	if (dca->dca_irid != DCAID0 &&
-	    dca->dca_irid != DCAREMID0 &&
-	    dca->dca_irid != DCAID1 &&
-	    dca->dca_irid != DCAREMID1)
+#ifdef hp300
+	if (dca->dca_id != DCAID0 &&
+	    dca->dca_id != DCAREMID0 &&
+	    dca->dca_id != DCAID1 &&
+	    dca->dca_id != DCAREMID1)
 		return (0);
+#endif
 	unit = hd->hp_unit;
 	if (unit == dcaconsole)
 		DELAY(100000);
-	dca->dca_irid = 0xFF;
+#ifdef hp300
+	dca->dca_reset = 0xFF;
 	DELAY(100);
+#endif
 
 	/* look for a NS 16550AF UART with FIFOs */
 	dca->dca_fifo = FIFO_ENABLE|FIFO_RCV_RST|FIFO_XMT_RST|FIFO_TRIGGER_14;
@@ -114,14 +131,17 @@ dcaprobe(hd)
 	if ((dca->dca_iir & IIR_FIFO_MASK) == IIR_FIFO_MASK)
 		dca_hasfifo |= 1 << unit;
 
+	dca_addr[unit] = dca;
+#ifdef hp300
 	hd->hp_ipl = DCAIPL(dca->dca_ic);
 	dcaisr[unit].isr_ipl = hd->hp_ipl;
 	dcaisr[unit].isr_arg = unit;
 	dcaisr[unit].isr_intr = dcaintr;
-	dca_addr[unit] = dca;
-	dca_active |= 1 << unit;
-	dcasoftCAR = hd->hp_flags;
 	isrlink(&dcaisr[unit]);
+#endif
+	dca_active |= 1 << unit;
+	if (hd->hp_flags)
+		dcasoftCAR |= (1 << unit);
 #ifdef KGDB
 	if (kgdb_dev == makedev(dcamajor, unit)) {
 		if (dcaconsole == unit)
@@ -141,7 +161,9 @@ dcaprobe(hd)
 		}
 	}
 #endif
+#ifdef hp300
 	dca->dca_ic = IC_IE;
+#endif
 	/*
 	 * Need to reset baud rate, etc. of next print so reset dcaconsinit.
 	 * Also make sure console is always "hardwired."
@@ -247,6 +269,7 @@ dcawrite(dev, uio, flag)
 {
 	int unit = UNIT(dev);
 	register struct tty *tp = &dca_tty[unit];
+	extern struct tty *constty;
  
 	/*
 	 * (XXX) We disallow virtual consoles if the physical console is
@@ -267,8 +290,10 @@ dcaintr(unit)
 	register struct tty *tp;
 
 	dca = dca_addr[unit];
-	if ((dca->dca_ic & IC_IR) == 0)
+#ifdef hp300
+	if ((dca->dca_ic & (IC_IR|IC_IE)) != (IC_IR|IC_IE))
 		return (0);
+#endif
 	while (1) {
 		code = dca->dca_iir;
 #ifdef DEBUG
@@ -377,7 +402,7 @@ dcamint(unit, dca)
 	register struct dcadevice *dca;
 {
 	register struct tty *tp;
-	register int stat;
+	register u_char stat;
 
 	tp = &dca_tty[unit];
 	stat = dca->dca_msr;
@@ -480,6 +505,9 @@ dcaparam(tp, t)
 
 	dca = dca_addr[unit];
 	dca->dca_ier = IER_ERXRDY | IER_ETXRDY | IER_ERLS | IER_EMSC;
+#ifdef hp700
+	dca->dca_mcr |= MCR_IEN;
+#endif
 	if (ospeed == 0) {
 		(void) dcamctl(unit, 0, DMSET);	/* hang up line */
 		return (0);
@@ -577,6 +605,20 @@ dcamctl(dev, bits, how)
 
 	unit = UNIT(dev);
 	dca = dca_addr[unit];
+#ifdef hp700
+	/*
+	 * Always make sure MCR_IEN is set (unless setting to 0)
+	 */
+#ifdef KGDB
+	if (how == DMSET && kgdb_dev == makedev(dcamajor, unit))
+		bits |= MCR_IEN;
+	else
+#endif
+	if (how == DMBIS || (how == DMSET && bits))
+		bits |= MCR_IEN;
+	else if (how == DMBIC)
+		bits &= ~MCR_IEN;
+#endif
 	s = spltty();
 	switch (how) {
 
@@ -603,7 +645,7 @@ dcamctl(dev, bits, how)
 /*
  * Following are all routines needed for DCA to act as console
  */
-#include "../hp300/cons.h"
+#include "hp/dev/cons.h"
 
 dcacnprobe(cp)
 	struct consdev *cp;
@@ -617,6 +659,7 @@ dcacnprobe(cp)
 
 	/* XXX: ick */
 	unit = CONUNIT;
+#ifdef hp300
 	dca_addr[CONUNIT] = (struct dcadevice *) sctova(CONSCODE);
 
 	/* make sure hardware exists */
@@ -624,11 +667,16 @@ dcacnprobe(cp)
 		cp->cn_pri = CN_DEAD;
 		return;
 	}
+#endif
+#ifdef hp700
+	dca_addr[CONUNIT] = CONPORT;
+#endif
 
 	/* initialize required fields */
 	cp->cn_dev = makedev(dcamajor, unit);
 	cp->cn_tp = &dca_tty[unit];
-	switch (dca_addr[unit]->dca_irid) {
+#ifdef hp300
+	switch (dca_addr[unit]->dca_id) {
 	case DCAID0:
 	case DCAID1:
 		cp->cn_pri = CN_NORMAL;
@@ -641,6 +689,10 @@ dcacnprobe(cp)
 		cp->cn_pri = CN_DEAD;
 		break;
 	}
+#endif
+#ifdef hp700
+	cp->cn_pri = CN_NORMAL;
+#endif
 	/*
 	 * If dcaconsole is initialized, raise our priority.
 	 */
@@ -674,16 +726,22 @@ dcainit(unit, rate)
 #endif
 	dca = dca_addr[unit];
 	s = splhigh();
-	dca->dca_irid = 0xFF;
+#ifdef hp300
+	dca->dca_reset = 0xFF;
 	DELAY(100);
 	dca->dca_ic = IC_IE;
+#endif
 	dca->dca_cfcr = CFCR_DLAB;
 	rate = ttspeedtab(rate, dcaspeedtab);
 	dca->dca_data = rate & 0xFF;
 	dca->dca_ier = rate >> 8;
 	dca->dca_cfcr = CFCR_8BITS;
 	dca->dca_ier = IER_ERXRDY | IER_ETXRDY;
+#ifdef hp700
+	dca->dca_mcr |= MCR_IEN;
+#endif
 	dca->dca_fifo = FIFO_ENABLE|FIFO_RCV_RST|FIFO_XMT_RST|FIFO_TRIGGER_14;
+	DELAY(100);
 	stat = dca->dca_iir;
 	splx(s);
 }
@@ -691,7 +749,7 @@ dcainit(unit, rate)
 dcacngetc(dev)
 {
 	register struct dcadevice *dca = dca_addr[UNIT(dev)];
-	short stat;
+	register u_char stat;
 	int c, s;
 
 #ifdef lint
@@ -715,7 +773,7 @@ dcacnputc(dev, c)
 {
 	register struct dcadevice *dca = dca_addr[UNIT(dev)];
 	register int timo;
-	short stat;
+	register u_char stat;
 	int s = splhigh();
 
 #ifdef lint
@@ -734,8 +792,13 @@ dcacnputc(dev, c)
 	timo = 1500000;
 	while (((stat = dca->dca_lsr) & LSR_TXRDY) == 0 && --timo)
 		;
-	/* clear any interrupts generated by this transmission */
-	stat = dca->dca_iir;
+	/*
+	 * If the "normal" interface was busy transfering a character
+	 * we must let our interrupt through to keep things moving.
+	 * Otherwise, we clear the interrupt that we have caused.
+	 */
+	if ((dca_tty[UNIT(dev)].t_state & TS_BUSY) == 0)
+		stat = dca->dca_iir;
 	splx(s);
 }
 #endif

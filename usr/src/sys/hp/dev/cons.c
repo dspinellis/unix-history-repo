@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: cons.c 1.1 90/07/09$
+ * from: Utah $Hdr: cons.c 1.7 92/01/21$
  *
- *	@(#)cons.c	7.6 (Berkeley) %G%
+ *	@(#)cons.c	7.7 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -25,35 +25,7 @@
 
 #include "cons.h"
 
-/* XXX - all this could be autoconfig()ed */
-#include "ite.h"
-#if NITE > 0
-int itecnprobe(), itecninit(), itecngetc(), itecnputc();
-#endif
-#include "dca.h"
-#if NDCA > 0
-int dcacnprobe(), dcacninit(), dcacngetc(), dcacnputc();
-#endif
-#include "dcm.h"
-#if NDCM > 0
-int dcmcnprobe(), dcmcninit(), dcmcngetc(), dcmcnputc();
-#endif
-
-struct	consdev constab[] = {
-#if NITE > 0
-	{ itecnprobe,	itecninit,	itecngetc,	itecnputc },
-#endif
-#if NDCA > 0
-	{ dcacnprobe,	dcacninit,	dcacngetc,	dcacnputc },
-#endif
-#if NDCM > 0
-	{ dcmcnprobe,	dcmcninit,	dcmcngetc,	dcmcnputc },
-#endif
-	{ 0 },
-};
-/* end XXX */
-
-struct	tty *constty = 0;	/* virtual console output device */
+struct	tty *constty;		/* virtual console output device */
 struct	consdev *cn_tab;	/* physical console device info */
 struct	tty *cn_tty;		/* XXX: console tty struct for tprintf */
 

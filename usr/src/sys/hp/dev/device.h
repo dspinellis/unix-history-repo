@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device.h	7.3 (Berkeley) %G%
+ *	@(#)device.h	7.4 (Berkeley) %G%
  */
 
 struct driver {
@@ -90,8 +90,10 @@ struct hp_hw {
 #define HW_ISDEV(hw,d)	(((hw)->hw_type & D_MASK) == (d))
 
 #ifdef KERNEL
+#ifdef hp300
 extern struct hp_hw sc_table[];
 extern struct hp_ctlr hp_cinit[];
 extern struct hp_device hp_dinit[];
 extern caddr_t sctova(), sctopa(), iomap();
+#endif
 #endif

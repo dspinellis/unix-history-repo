@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux.h 1.18 91/02/09$
+ * from: Utah $Hdr: hpux.h 1.19 92/01/20$
  *
- *	@(#)hpux.h	7.5 (Berkeley) %G%
+ *	@(#)hpux.h	7.6 (Berkeley) %G%
  */
 
 #include "hpux_exec.h"
@@ -184,3 +184,12 @@ struct hpuxsigaction {
 #define	HPUXSIG_BLOCK	0	/* block specified signal set */
 #define	HPUXSIG_UNBLOCK	1	/* unblock specified signal set */
 #define	HPUXSIG_SETMASK	2	/* set specified signal set */
+
+/* sysconf stuff */
+#define HPUX_SYSCONF_OPENMAX	4
+#define HPUX_SYSCONF_CPUTYPE	10001
+#define HPUX_SYSCONF_CPUM020	0x20C
+#define HPUX_SYSCONF_CPUM030	0x20D
+#define HPUX_SYSCONF_CPUM040	0x20E
+#define HPUX_SYSCONF_CPUPA10	0x20B
+#define HPUX_SYSCONF_CPUPA11	0x210
