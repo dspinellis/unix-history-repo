@@ -1,8 +1,0 @@
-Mcolumn	column.c	/^main(argc, argv)$/
-c_columnate	column.c	/^c_columnate()$/
-emalloc	column.c	/^emalloc(size)$/
-input	column.c	/^input(fp)$/
-maketbl	column.c	/^maketbl()$/
-print	column.c	/^print()$/
-r_columnate	column.c	/^r_columnate()$/
-usage	column.c	/^usage()$/

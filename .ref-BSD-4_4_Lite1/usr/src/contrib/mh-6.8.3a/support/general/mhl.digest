@@ -1,7 +1,0 @@
-width=80,overflowoffset=10
-leftadjust,compress,compwidth=9
-Date:formatfield="%<(nodate{text})%{text}%|%(tws{text})%>"
-From:
-Subject:
-:
-body:nocomponent,overflowoffset=0,noleftadjust,nocompress

@@ -1,5 +1,0 @@
-Mpmerge	pmerge.c	/^main(argc, argv)$/
-onintr	pmerge.c	/^onintr(unused)$/
-printout	pmerge.c	/^printout()$/
-quit	pmerge.c	/^quit(fp)$/
-split	pmerge.c	/^split(line)$/

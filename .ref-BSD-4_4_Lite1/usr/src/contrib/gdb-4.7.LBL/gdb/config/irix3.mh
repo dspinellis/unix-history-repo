@@ -1,9 +1,0 @@
-# Host: SGI Iris running irix 3.x
-XDEPFILES= 
-XM_FILE= xm-irix3.h
-NAT_FILE= nm-irix3.h
-NATDEPFILES= fork-child.o corelow.o infptrace.o inftarg.o mips-nat.o
-ALLOCA=alloca.o
-ALLOCA1=alloca.o
-MUNCH_DEFINE=-B
-XM_CLIBS=-lbsd

@@ -1,3 +1,0 @@
-int	ln.c	/^int (*linkf) __P((const char *, const char *));$/
-linkit	ln.c	/^linkit(target, source, isdir)$/
-usage	ln.c	/^usage()$/

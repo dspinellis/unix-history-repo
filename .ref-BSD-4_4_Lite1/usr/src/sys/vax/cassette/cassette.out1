@@ -1,6 +1,0 @@
-dd if=cassette of=/dev/uu1 bs=2k conv=sync
-44+1 records in
-45+0 records out
-dd if=../mdec/tuboot of=/dev/uu1 bs=512 count=2
-2+0 records in
-2+0 records out

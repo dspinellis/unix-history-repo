@@ -1,2 +1,0 @@
-Muupoll	uupoll.c	/^main(argc, argv)$/
-cleanup	uupoll.c	/^cleanup(code)$/

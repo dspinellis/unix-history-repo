@@ -1,3 +1,0 @@
-Mrmail	rmail.c	/^main(argc, argv)$/
-err	rmail.c	/^err(eval, fmt, va_alist)$/
-usage	rmail.c	/^usage()$/

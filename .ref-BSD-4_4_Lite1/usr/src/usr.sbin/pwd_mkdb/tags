@@ -1,8 +1,0 @@
-COMPACT	pwd_mkdb.c	/^#define	COMPACT(e)	t = e; while (*p++ = *t++);$/
-Mpwd_mkdb	pwd_mkdb.c	/^main(argc, argv)$/
-cleanup	pwd_mkdb.c	/^cleanup()$/
-error	pwd_mkdb.c	/^error(name)$/
-mv	pwd_mkdb.c	/^mv(from, to)$/
-pw_scan	pw_scan.c	/^pw_scan(bp, pw)$/
-scan	pwd_mkdb.c	/^scan(fp, pw)$/
-usage	pwd_mkdb.c	/^usage()$/

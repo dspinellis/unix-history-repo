@@ -1,9 +1,0 @@
-%4(msg)%<(cur)+%| %>%<{replied}-%?{encrypted}E%| %>\
-%(void(rclock{date}))\
-%<(gt 15768000)%03(month{date})%(void(year{date}))%02(modulo 100)\
-%?(gt 604800)%02(mday{date})%03(month{date})\
-%?(gt 86400) %(day{date}) %|\
-%02(hour{date}):%02(min{date})%>\
-%<{date} %|*%>\
-%<(mymbox{from})%<{to}To:%14(friendly{to})%>%>%<(zero)%17(friendly{from})%>  \
-%{subject}%<{body}<<%{body}%>

@@ -1,2 +1,0 @@
-HDEFINES=-DHOST_64_BIT="long long"
-CC=/usr/latest/bin/gcc -Wall -ansi

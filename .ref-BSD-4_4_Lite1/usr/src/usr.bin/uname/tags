@@ -1,2 +1,0 @@
-Muname	uname.c	/^main(argc, argv)$/
-usage	uname.c	/^usage()$/

@@ -1,8 +1,0 @@
-ebc_disp.o
-disp_asc.o
-dctype.o
-astosc.o
-asc_ebc.o
-apilib.o
-api_bsd.o
-api_exch.o

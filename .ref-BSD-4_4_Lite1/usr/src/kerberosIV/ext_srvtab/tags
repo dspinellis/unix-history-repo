@@ -1,5 +1,0 @@
-Die	ext_srvtab.c	/^Die()$/
-FWrite	ext_srvtab.c	/^FWrite(p, size, n, f)$/
-Mext_srvtab	ext_srvtab.c	/^main(argc, argv)$/
-StampOutSecrets	ext_srvtab.c	/^StampOutSecrets()$/
-usage	ext_srvtab.c	/^usage()$/

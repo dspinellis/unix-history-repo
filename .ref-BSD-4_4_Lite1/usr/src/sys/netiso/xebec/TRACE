@@ -1,3 +1,0 @@
-	IFTRACE(D_DRIVER)
-	tptrace(DRIVERTRACE,		a->a_newstate, p->tp_state, e->ev_number, a->a_action, 0);
-	ENDTRACE

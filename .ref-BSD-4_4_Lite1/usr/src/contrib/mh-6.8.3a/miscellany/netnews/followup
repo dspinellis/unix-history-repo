@@ -1,2 +1,0 @@
-#! /bin/sh
-sed -f /usr/local/lib/mh/followup.sed | /usr/lib/news/inews -h

@@ -1,5 +1,0 @@
-# Host: CCI or Harris Tahoe running BSD Unix
-XDEPFILES= infptrace.o inftarg.o fork-child.o coredep.o corelow.o
-REGEX=regex.o
-REGEX1=regex.o
-XM_FILE= xm-tahoe.h

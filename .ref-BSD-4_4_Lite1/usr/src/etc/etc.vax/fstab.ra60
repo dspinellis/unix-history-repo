@@ -1,3 +1,0 @@
-/dev/ra0a	/		ufs	rw 1 1
-/dev/ra0g	/mnt		ufs	rw 1 3
-/dev/ra0h	/usr		ufs	rw 1 2

@@ -1,4 +1,0 @@
-Msliplogin	sliplogin.c	/^main(argc, argv)$/
-findid	sliplogin.c	/^findid(name)$/
-hup_handler	sliplogin.c	/^hup_handler(s)$/
-sigstr	sliplogin.c	/^sigstr(s)$/

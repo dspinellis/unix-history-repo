@@ -1,6 +1,0 @@
-Mtcopy	tcopy.c	/^main(argc, argv)$/
-getspace	tcopy.c	/^getspace(blk)$/
-intr	tcopy.c	/^intr(signo)$/
-usage	tcopy.c	/^usage()$/
-verify	tcopy.c	/^verify(inp, outp, outb)$/
-writeop	tcopy.c	/^writeop(fd, type)$/

@@ -1,1 +1,0 @@
-/* Emacs ioctl emulation for VMS */

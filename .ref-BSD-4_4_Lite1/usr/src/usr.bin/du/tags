@@ -1,3 +1,0 @@
-Mdu	du.c	/^main(argc, argv)$/
-linkchk	du.c	/^linkchk(p)$/
-usage	du.c	/^usage()$/
