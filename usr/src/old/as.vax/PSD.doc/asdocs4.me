@@ -1,6 +1,6 @@
 .\"
 .\"	Copyright (c) 1982 Regents of the University of California
-.\"	@(#)asdocs4.me 1.8 %G%
+.\"	@(#)asdocs4.me 1.9 %G%
 .\"
 .EQ
 delim $$
@@ -252,8 +252,8 @@ limit	what
 _
 Arbitrary\**	Files to assemble
 BUFSIZ	Significant characters per name
-BUFSIZ	Characters per input line
-2048	Characters per string
+Arbitrary	Characters per input line
+Arbitrary	Characters per string
 Arbitrary	Symbols
 4	Text segments
 4	Data segments
@@ -317,3 +317,8 @@ will allow the peephole optimizer to produce much better
 loop optimizations,
 since it currently assumes the worst
 case about the size of the loop body.
+.pp
+The string temporary file is not put in memory when the -V flag is set.
+The string table in the generated a.out contains some strings
+and names that are never referenced from the symbol table;
+the loader removes these unreferenced strings, however.
