@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_conf.c	7.9 (Berkeley) %G%
+ *	@(#)vfs_conf.c	7.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -59,6 +59,27 @@ extern	struct vfsops nfs_vfsops;
 #define	NFS_VFSOPS	NULL
 #endif
 
+#ifdef LOFS
+extern	struct vfsops lofs_vfsops;
+#define	LOFS_VFSOPS	&lofs_vfsops
+#else
+#define	LOFS_VFSOPS	NULL
+#endif
+
+#ifdef FDESC
+extern	struct vfsops fdesc_vfsops;
+#define	FDESC_VFSOPS	&fdesc_vfsops
+#else
+#define	FDESC_VFSOPS	NULL
+#endif
+
+#ifdef PORTAL
+extern	struct vfsops portal_vfsops;
+#define	PORTAL_VFSOPS	&portal_vfsops
+#else
+#define	PORTAL_VFSOPS	NULL
+#endif
+
 struct vfsops *vfssw[] = {
 	NULL,			/* 0 = MOUNT_NONE */
 	UFS_VFSOPS,		/* 1 = MOUNT_UFS */
@@ -66,6 +87,9 @@ struct vfsops *vfssw[] = {
 	MFS_VFSOPS,		/* 3 = MOUNT_MFS */
 	NULL,			/* 4 = MOUNT_PC */
 	LFS_VFSOPS,		/* 5 = MOUNT_LFS */
+	LOFS_VFSOPS,		/* 6 = MOUNT_LOFS */
+	FDESC_VFSOPS,		/* 7 = MOUNT_FDESC */
+	PORTAL_VFSOPS,		/* 8 = MOUNT_PORTAL */
 };
 
 
