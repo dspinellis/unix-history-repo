@@ -1,4 +1,4 @@
-#	Makefile	1.6	85/01/17
+#	Makefile	1.7	85/01/18
 #
 TESTDIR = .
 FRC =
@@ -8,7 +8,7 @@ CFLAGS = ${O} -I. -I${M} -DASSTRINGS -DSTABDOT -DLCOMM -DBUFSTDERR -DFLEXNAMES \
 LDFLAGS = -g
 
 M=../mip
-all: comp fort
+all: comp scomp fort
 comp: rodata.o cgram.o xdefs.o scan.o pftn.o trees.o optim.o code.o local.o \
 	reader.o local2.o order.o match.o allo.o comm1.o table.o stab.o
 	$(CC) $(LDFLAGS) -z rodata.o cgram.o xdefs.o scan.o pftn.o trees.o \
@@ -57,14 +57,36 @@ match.o: $M/manifest $M/mfile2 mac2defs macdefs $M/match.c
 	$(CC) -c $(CFLAGS) -I$M -I. $M/match.c
 allo.o: $M/manifest $M/mfile2 mac2defs macdefs $M/allo.c
 	$(CC) -c $(CFLAGS) -I$M -I. $M/allo.c
-shrink:
-	rm *.o comp
-clean:
-	rm -f *.o comp fort cgram.c rodata.c
-lintall:
-	lint -hv -I. -I$M  cgram.c $M/xdefs.c $M/scan.c $M/pftn.c \
-		$M/trees.c $M/optim.c code.c local.c $M/reader.c \
-		local2.c order.c $M/match.c $M/allo.c $M/comm1.c table.c
+scomp: rodata.o cgram.o xdefs.o scan.o pftn.o strees.o optim.o code.o slocal.o \
+	reader.o slocal2.o sorder.o match.o sallo.o comm1.o stable.o stab.o
+	$(CC) $(LDFLAGS) -z rodata.o cgram.o xdefs.o scan.o pftn.o strees.o \
+		optim.o code.o slocal.o reader.o slocal2.o sorder.o match.o \
+		sallo.o comm1.o stable.o stab.o -o $(TESTDIR)/scomp
+strees.o: $M/manifest macdefs $M/mfile1 $M/trees.c
+	ln $M/trees.c strees.c
+	$(CC) -c $(CFLAGS) -I$M -I. -DSPRECC strees.c
+	rm strees.c
+slocal.o: $M/manifest $M/mfile2 mac2defs macdefs local.c
+	ln local.c slocal.c
+	$(CC) -c $(CFLAGS) -I$M -I. -DSPRECC slocal.c
+	rm slocal.c
+slocal2.o: $M/manifest $M/mfile2 mac2defs macdefs local2.c
+	ln local2.c slocal2.c
+	$(CC) -c $(CFLAGS) -I$M -I. -DSPRECC slocal2.c
+	rm slocal2.c
+sallo.o: $M/manifest $M/mfile2 mac2defs macdefs $M/allo.c
+	ln $M/allo.c sallo.c
+	$(CC) -c $(CFLAGS) -I$M -I. -DSPRECC sallo.c
+	rm sallo.c
+sorder.o: $M/manifest $M/mfile2 mac2defs macdefs order.c
+	ln order.c sorder.c
+	$(CC) -c $(CFLAGS) -I$M -I. -DSPRECC sorder.c
+	rm sorder.c
+stable.o: $M/manifest $M/mfile2 mac2defs macdefs table.c
+	$(CC) $(CFLAGS) -S -I$M -I. -DSPRECC table.c
+	sh ./:rofix table.s
+	$(AS) -o stable.o table.s
+	rm -f table.s
 fort: comp fort.o freader.o fallo.o fmatch.o ftable.o forder.o flocal2.o \
 	fcomm2.o
 	$(CC) -z $(CFLAGS) fort.o freader.o fallo.o fmatch.o ftable.o \
@@ -88,7 +110,14 @@ fcomm2.o: $M/common
 fort.o freader.o fallo.o fmatch.o ftable.o forder.o flocal2.o fcomm2.o: \
 	$M/mfile2 $M/manifest macdefs mac2defs
 install:	all
-	rm -f ${DESTDIR}/lib/ccom
-	cp comp ${DESTDIR}/lib/ccom
-	rm -f ${DESTDIR}/lib/f1
-	cp fort ${DESTDIR}/lib/f1
+	install comp ${DESTDIR}/lib/ccom
+	install scomp ${DESTDIR}/lib/sccom
+	install fort ${DESTDIR}/lib/f1
+shrink:
+	rm *.o comp scomp fort
+clean:
+	rm -f *.o comp fort cgram.c rodata.c
+lintall:
+	lint -hv -I. -I$M  cgram.c $M/xdefs.c $M/scan.c $M/pftn.c \
+		$M/trees.c $M/optim.c code.c local.c $M/reader.c \
+		local2.c order.c $M/match.c $M/allo.c $M/comm1.c table.c
