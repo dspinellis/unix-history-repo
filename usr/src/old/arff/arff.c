@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)arff.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)arff.c	4.2 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -108,10 +108,10 @@ char *argv[];
 		{
 #define SURE	"Are you sure you want to clobber the floppy?\n"
 			int tty;
-			char response[2];
+			char response[128];
 			tty = open("/dev/tty",2);
 			write(tty,SURE,sizeof(SURE));
-			read(tty,response,2);
+			read(tty,response,128);
 			if(*response!='y')
 				exit(50);
 			flag('c')++;
