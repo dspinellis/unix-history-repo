@@ -8,9 +8,9 @@ subsystem
 [
 .B \-r
 ] [
-.BI \-p path
-] [
 .BI \-d path
+] [
+.BI \-p path
 ] command [ flags ] [ args ]
 .SH DESCRIPTION
 .I Sccs
@@ -34,13 +34,8 @@ and
 .I args.
 Each
 argument
-is modified to be prepended
-with ``SCCS/s.''
-unless
-it specifies a directory
-or the final component
-of the pathname
-begins with ``s.''.
+is normally modified to be prepended
+with ``SCCS/s.''.
 .PP
 Flags to be interpreted by the
 .I sccs
@@ -72,7 +67,7 @@ and will not be editable.
 Equivalent to ``delget'' except that the
 ``get'' phase includes the ``\-e'' flag.
 This option is useful for making a ``checkpoint''
-of your current editting phase.
+of your current editing phase.
 .IP fix
 Must be followed by a
 .B \-r
@@ -87,7 +82,7 @@ it should be used carefully.
 Takes no arguments.
 This routine removes everything from the current directory
 that can be recreated from SCCS files.
-It will not remove any files being editted.
+It will not remove any files being edited.
 .IP unedit
 This is the opposite of an ``edit''
 or a ``get \-e''.
@@ -95,7 +90,7 @@ It should be used with extreme caution,
 since any changes you made since the get
 will be irretrievably lost.
 .IP info
-Gives a listing of all files being editted.
+Gives a listing of all files being edited.
 .IP check
 Like ``info''
 except that nothing is printed if nothing is being edited,
@@ -117,19 +112,23 @@ rather than as whatever effective user
 .I sccs
 is ``set user id'' to.
 The
+.B \-d
+flag gives a root directory for the
+.SM SCCS
+files.
+The default is the current directory.
+The
 .B \-p
 flag defines the pathname of the directory
-in which
+in which the
 .SM SCCS
-will be found;
+files will be found;
 ``SCCS'' is the default.
 The
-.B \-d
-flag gives a base directory
-for the pathname search;
-it differs from
 .B \-p
-in that the
+flag differs from the
+.B \-d
+flag in that the
 .B \-d
 argument is prepended to the entire pathname
 and the
@@ -161,7 +160,7 @@ These commands are always run as the real user.
 .in -0.5i
 .sp 0.3
 ..
-To get a file for editting,
+To get a file for editing,
 edit it,
 and produce a new delta:
 .BX
@@ -188,9 +187,6 @@ from an
 file if it does not already exist:
 .BX
 SRCS = <list of source files>
-OBJS = <list of object files>
-.sp 0.4
-$(OBJS): $(SRCS)
 .sp 0.4
 $(SRCS):
 	sccs get $(REL) $@
@@ -207,12 +203,12 @@ rmdel(SCCS),
 sccsdiff(SCCS),
 what(SCCS),
 .SH AUTHOR
-Eric Allman (ingres:eric)
+Eric Allman
 .SH DISCLAIMER
 Since it is not yet clear
 what this program should do,
 it should not be considered
 a stable program product.
 Please send any
-constructive suggestions
-to ingres:eric.
+comments & suggestions
+to csvax:eric.
