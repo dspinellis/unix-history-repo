@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)in.h	7.7 (Berkeley) %G%
+ *	@(#)in.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -114,7 +114,9 @@ struct sockaddr_in {
  * Options for use with [gs]etsockopt at the IP level.
  */
 #define	IP_OPTIONS	1		/* set/get IP per-packet options */
-#define	IP_HDRINCL	2		/* set/get IP per-packet options */
+#define	IP_HDRINCL	2		/* header is included with data */
+#define	IP_TOS		3		/* IP type of service and precedence */
+#define	IP_TTL		4		/* IP time to live */
 
 #ifdef KERNEL
 extern	struct domain inetdomain;
