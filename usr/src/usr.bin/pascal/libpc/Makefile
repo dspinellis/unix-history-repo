@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.23	(Berkeley)	%G%
+#	@(#)Makefile	1.24	(Berkeley)	%G%
 #
 CFLAGS=	-O
 CMDS=	ACTFILE.c ADDT.c ARGV.c ASRT.c ASRTS.c ATAN.c BUFF.c CARD.c \
@@ -16,7 +16,7 @@ CMDS=	ACTFILE.c ADDT.c ARGV.c ASRT.c ASRTS.c ATAN.c BUFF.c CARD.c \
 	RELSLT.c RELTGE.c RELTGT.c RELTLE.c RELTLT.c REMOVE.c RESET.c \
 	REWRITE.c ROUND.c RSNG4.c SCLCK.c SEED.c SIN.c SQRT.c STLIM.c \
 	SUBSC.c SUBSCZ.c SUBT.c SUCC.c TEOF.c TEOLN.c TIME.c TRUNC.c \
-	UNIT.c UNPACK.c WRITEC.c WRITEF.c WRITES.c WRITLN.c
+	UNIT.c UNPACK.c VWRITEF.c WRITEC.c WRITEF.c WRITES.c WRITLN.c
 SYS=	ERROR.c GETNAME.c IOSYNC.c PCEXIT.c PCLOSE.c PCSTART.c \
 	PFCLOSE.c PERROR.c PFLUSH.c PMFLUSH.c UNSYNC.c \
 	blkclr.c blkcpy.c
@@ -32,7 +32,7 @@ COBJS=	ACTFILE.o ADDT.o ARGV.o ASRT.o ASRTS.o ATAN.o BUFF.o CARD.o \
 	RELSLT.o RELTGE.o RELTGT.o RELTLE.o RELTLT.o REMOVE.o RESET.o\
 	REWRITE.o ROUND.o RSNG4.o SCLCK.o SEED.o SIN.o SQRT.o STLIM.o\
 	SUBSC.o SUBSCZ.o SUBT.o SUCC.o TEOF.o TEOLN.o TIME.o TRUNC.o\
-	UNIT.o UNPACK.o WRITEC.o WRITEF.o WRITES.o WRITLN.o
+	UNIT.o UNPACK.o VWRITEF.o WRITEC.o WRITEF.o WRITES.o WRITLN.o
 SYOBJ =	ERROR.o GETNAME.o IOSYNC.o PCEXIT.o PCLOSE.o PCSTART.o \
 	PFCLOSE.o PERROR.o PFLUSH.o PMFLUSH.o UNSYNC.o \
 	blkclr.o blkcpy.o
@@ -95,7 +95,7 @@ DATE.o: DATE.c
 DEFNAME.o: DEFNAME.c h00vars.h /usr/include/stdio.h whoami.h
 DFDISPOSE.o: DFDISPOSE.c h00vars.h /usr/include/stdio.h whoami.h libpc.h
 DISPOSE.o: DISPOSE.c h00vars.h /usr/include/stdio.h whoami.h
-EXCEPT.o: EXCEPT.c /usr/include/signal.h
+EXCEPT.o: EXCEPT.c /usr/include/signal.h /usr/include/machine/trap.h
 EXP.o: EXP.c /usr/include/math.h
 EXPO.o: EXPO.c
 FCALL.o: FCALL.c h00vars.h /usr/include/stdio.h whoami.h
@@ -156,19 +156,22 @@ TIME.o: TIME.c
 TRUNC.o: TRUNC.c
 UNIT.o: UNIT.c h00vars.h /usr/include/stdio.h whoami.h
 UNPACK.o: UNPACK.c
+VWRITEF.o: VWRITEF.c h00vars.h /usr/include/stdio.h whoami.h
 WRITEC.o: WRITEC.c h00vars.h /usr/include/stdio.h whoami.h
 WRITEF.o: WRITEF.c h00vars.h /usr/include/stdio.h whoami.h
 WRITES.o: WRITES.c h00vars.h /usr/include/stdio.h whoami.h
 WRITLN.o: WRITLN.c h00vars.h /usr/include/stdio.h whoami.h
 ERROR.o: ERROR.c /usr/include/stdio.h /usr/include/signal.h
+ERROR.o: /usr/include/machine/trap.h
 GETNAME.o: GETNAME.c h00vars.h /usr/include/stdio.h whoami.h libpc.h
 IOSYNC.o: IOSYNC.c h00vars.h /usr/include/stdio.h whoami.h
 PCEXIT.o: PCEXIT.c h00vars.h /usr/include/stdio.h whoami.h
 PCLOSE.o: PCLOSE.c h00vars.h /usr/include/stdio.h whoami.h libpc.h
-PCSTART.o: PCSTART.c /usr/include/signal.h h00vars.h /usr/include/stdio.h
-PCSTART.o: whoami.h libpc.h
+PCSTART.o: PCSTART.c /usr/include/signal.h /usr/include/machine/trap.h
+PCSTART.o: h00vars.h /usr/include/stdio.h whoami.h libpc.h
 PFCLOSE.o: PFCLOSE.c h00vars.h /usr/include/stdio.h whoami.h libpc.h
 PERROR.o: PERROR.c /usr/include/stdio.h /usr/include/signal.h
+PERROR.o: /usr/include/machine/trap.h
 PFLUSH.o: PFLUSH.c h00vars.h /usr/include/stdio.h whoami.h
 PMFLUSH.o: PMFLUSH.c h00vars.h /usr/include/stdio.h whoami.h
 UNSYNC.o: UNSYNC.c h00vars.h /usr/include/stdio.h whoami.h
