@@ -1,4 +1,5 @@
 # include <pwd.h>
+# include <sys/ioctl.h>
 # include "sendmail.h"
 
 /*
@@ -33,7 +34,7 @@
 
 
 
-SCCSID(@(#)conf.c	4.3		%G%);
+SCCSID(@(#)conf.c	4.4		%G%);
 
 
 
@@ -458,6 +459,8 @@ rlsesigs()
 /*
 **  GETLA -- get the current load average
 **
+**	This code stolen from la.c.
+**
 **	Parameters:
 **		none.
 **
@@ -489,6 +492,7 @@ getla()
 		kmem = open("/dev/kmem", 0);
 		if (kmem < 0)
 			return (-1);
+		(void) ioctl(kmem, FIOCLEX, 0);
 		nlist("/vmunix", Nl);
 		if (Nl[0].n_type == 0)
 			return (-1);
