@@ -1,0 +1,182 @@
+From reid@glacier.ARPA (Brian Reid) Sat Mar  8 14:46:58 1986
+Path: seismo!ut-sally!pyramid!decwrl!glacier!reid
+From: reid@glacier.ARPA (Brian Reid)
+Newsgroups: net.news.adm,net.news.group
+Subject: who reads USENET, anyhow? Worldwide survey.
+Message-ID: <5108@glacier.ARPA>
+Date: 8 Mar 86 19:46:58 GMT
+Organization: Stanford University, Computer Systems Lab
+Lines: 169
+Keywords: please run this program on your site
+
+
+I'm tired of speculation about how many people read USENET, and how big the
+audiences are. Here is a program that does a pretty good job of determining
+that information. Please install this program on your site, and run it with
+the -m option that will mail the results back to glacier. I will tally and
+total the results and post them.  We've been running this program at about
+20 sites in the San Francisco area for 6 months now, and the results are
+remarkably counterintuitive.
+
+This shell script is named "arbitron". Edit the "configuration information"
+to work at your site, then type
+	arbitron -m netsurvey@glacier.ARPA
+to mail the results to me. If you want to keep a copy of the results, type
+	arbitron -m "netsurvey@glacier myname"
+where "myname" is your login name.
+
+On Glacier, which is a Vax 750 with 250 user accounts, this program takes
+about 5 minutes to run on a lightly-loaded system.
+
+#! /bin/sh
+# arbitron -- this program produces rating sweeps for USENET.
+#
+# Usage: arbitron > filename	for local data
+#	 arbitron -p net.foo	to post to USENET
+#	 arbitron -m person	to mail results to an accumulator
+#
+# Run "arbitron -p" at the end of each month, which will post your site's
+# arbitron report.
+# To participate in the international monthly ratings sweeps, 
+# run "arbitron -m net-survey@glacier" every month. I combine the results
+# and post the information to net.news.
+#
+# The names of users reading individual groups are not posted to the network,
+# only the summary counts. Whether or not somebody reads a group is private
+# information.
+#
+# By Brian Reid, Stanford. 
+#	v1.2	September 18, 1985
+#	v1.3	March 8, 1986
+#
+# copied to a certain extent from the "subscribers"
+# script posted by Blonder, McCreery, and Herron. The awk script to format
+# the report was especially stolen from them.
+############################################################################
+# Configuration information:
+tmpdir=/tmp
+news=/usr/lib/news
+
+# For uucp, try {sun, pyramid, decwrl, hplabs, bellcore}!glacier
+summarypath="net-survey@glacier.ARPA"
+hostname=`hostname`
+PATH=$news:/usr/local/bin:/usr/ucb:/usr/bin:/bin
+############################################################################
+export PATH
+# ---------------------------------------------------------------------------
+trap "rm -f $tmpdir/arb.sel.$$ $tmpdir/arb.fmt.$$ $tmpdir/arb.tmp.$$" 0 1 2 15
+opt1=${1-0}
+case $opt1 in
+    -p) opt2=${2-ba.news.ratings};;
+    -m) opt2=${2-netsurvey@glacier};;
+esac
+set `date`
+dat="$2 $6"
+moption=0
+case $opt1 in
+    -p) destination="$news/inews -t Monthly arbitron ratings for $hostname ($dat) -n $opt2"
+         poption=1;;
+
+    -m)  destination="mail $opt2"
+	 moption=1;
+	 poption=1;;
+    *)   destination="cat"
+         poption=0
+esac
+################################
+# Here are several expressions, each of which figures out approximately how
+# many people use this machine. Comment out all but 1 of them; pick the one
+# you like best
+########## fast but usually returns too big a number
+lowUID=5
+highUID=999
+nusers=`awk -F: "BEGIN {N=0}\\$3>=$lowUID && \\$3<=$highUID{N=N+1}END{print N}" </etc/passwd`
+########## slow but accurate if /usr/adm/wtmp has enough data
+## wc is a Berkeley-ism, I think. We just want to count the lines in the
+## standard output of sort -u
+# set `last | colrm 9 | sort -u | wc`
+# nusers=$1
+################################
+cat > $tmpdir/arb.sel.$$ << 'CAT'
+/^net\..*: *[0-9].*$/	{ nn=split($0,n,":"); print n[1], n[2] }
+/^mod\..*: *[0-9].*$/	{ nn=split($0,n,":"); print n[1], n[2] }
+NF == 1	&& $1 ~ /^[a-z]*$/{ print $1 }
+CAT
+sed -e "s/POPTION/$poption/" -e "s/MOPTION/$moption/" -e "s/NUSERS/$nusers/" -e "s/HOSTNAME/$hostname/" > $tmpdir/arb.fmt.$$ << 'DOG'
+# makereport -- utility for "arbitron". Shamelessly copied from the
+# similar script distributed with "subscribers.sh" by Blonder, McCreery, and
+# Herron.
+# 
+BEGIN	{ rdrcount = 0 ; reader = "" ; grpcount = 0 ; realusers = 0}
+
+NF == 4	{		# 4 fields means it is a /usr/lib/news/active entry
+	  grpcount++
+	  grpname[grpcount] = $1
+	  grpnumber[$1] = grpcount
+	  grplast[grpcount] = $2
+	  grpfirst[grpcount] = $3
+	  grpcounts[grpcount] = 0
+	  grpreaders[grpcount] = ""
+	}
+			# 1 field means it's a user name
+NF == 1 { rdrcount++; rdrname[rdrcount] = $1; rdrnumber[$1] = rdrcount
+	  reader = $1}
+
+			# 2 fields means it's a .newsrc line
+NF == 2 { gnum = grpnumber[$1] 
+	  n1 = split($2, n2, "-")
+	  n3 = split(n2[n1], n4, ",")
+	  lastread = n4[n3]
+	  if (lastread >= grpfirst[gnum]) {
+		  grpcounts[gnum]++
+		  grpreaders[gnum] = (grpreaders[gnum] " " reader)
+		  if (realuser[rdrcount] == 0) {
+		      realuser[rdrcount]=1
+		      realusers++
+		  }
+	  }
+	} 
+
+END	{bigblanks = "                                                  "
+	 printf("9999 Host\t\t%s\n","HOSTNAME")
+	 printf("9998 Users\t\t%d\n",NUSERS)
+	 printf("9997 NetReaders\t%d\n",realusers)
+	 if (0 == MOPTION) printf("9996 \n9995 rdrs rating share traffic   M/R  newsgroup\n")
+	 for (i=0; i < grpcount; i++) {
+	    if (grpcounts[i] > 0) {
+		rating = (100*grpcounts[i])/NUSERS
+		share = (100*grpcounts[i])/realusers
+		traffic = grplast[i]-grpfirst[i]
+		if (grpcounts[i] != 0) ratio = traffic/grpcounts[i]
+		   else ratio = 0
+		if (0 == POPTION) {
+		    obuf = sprintf("%4d %5d %s", grpcounts[i], traffic, grpname[i])
+		    nf = split(grpreaders[i], rdrs, " ")
+		    obuf = substr ((obuf bigblanks),1,35)
+		    width = 35
+		    for (j=1; j <= nf; j++) {
+			    nwidth = length(rdrs[j])
+			    obuf = (obuf rdrs[j] " ")
+			    width = length(obuf)
+		    }
+		} else if (0 == MOPTION) {
+		    obuf = sprintf("%4d %5.1f%% %4d%%  %5d  %5.1f  %s", grpcounts[i], rating, share, traffic, ratio, grpname[i])
+		} else {
+		    obuf = sprintf("%d %s\n",grpcounts[i], grpname[i])
+		}
+		printf("%s\n",obuf)
+	    }
+	}
+    }
+DOG
+
+awk -F: '{printf "echo %s\negrep : %s/.newsrc\n",$1,$6}' \
+	</etc/passwd | sh 2>/dev/null | awk  -f $tmpdir/arb.sel.$$ >$tmpdir/arb.tmp.$$
+egrep '^net\.|^mod\.' $news/active | sort | \
+	awk -f $tmpdir/arb.fmt.$$ - $tmpdir/arb.tmp.$$ | sort -nr | \
+	sed -e 's/^999[0-9] //' | $destination
+-- 
+	Brian Reid	decwrl!glacier!reid
+	Stanford	reid@SU-Glacier.ARPA
+
+
