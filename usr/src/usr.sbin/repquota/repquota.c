@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)repquota.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)repquota.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -151,8 +151,7 @@ repquota(fsdev, fsfile, qffile)
 		fup = lookup(uid);
 		if (fup == 0)
 			continue;
-		if ((fup == 0 || fup->fu_name[0] == 0) &&
-		    fup->fu_dqblk.dqb_curinodes == 0 &&
+		if (fup->fu_dqblk.dqb_curinodes == 0 &&
 		    fup->fu_dqblk.dqb_curblocks == 0)
 			continue;
 		if (fup->fu_name[0] != '\0')
