@@ -1,0 +1,67 @@
+.\"	@(#)NISTreport.12.88	1.1	89/05/24
+.\" *troff -me
+.sp 2
+.ce 100
+\fB\s+2Interim Report on Operating Systems Research
+in the DASH and Berkeley UNIX Projects\s-2\fP
+.sp
+October 1, 1988 \- December 31, 1988
+.sp 2
+Susan L. Graham
+Domenico Ferrari
+David P. Anderson
+Marshall Kirk McKusick
+Michael J. Karels
+Keith Sklower
+.ce 0
+.sp 2
+.ce
+\fB\s+2DASH Project\s0\fP
+.pp
+Since September, 1988 the main research direction of the DASH project
+has been integrated multimedia network communication
+(i.e., the ability to redirect streams of digital audio/video
+between I/O devices, processes, hosts, and permanent storage).
+To this end, we designed an IPC abstraction called "channels" which
+(unlike datagrams and virtual circuits) has performance,
+reliability, and security parameters.
+This has spawned three research efforts:
+1) the design of a protocol hierarchy that uses channel parameters
+to eliminate or optimize protocol functions such as flow control,
+checksumming and encryption;
+2) the design of an OS kernel that uses channel parameters to optimally
+schedule local resources such as CPU time, buffers space, and network
+transmission order;
+3) the design of algorithms for implementing channels
+(channel establishment and packet switching) in large networks.
+.pp
+The implementation of the DASH kernel has progressed significantly.
+The major kernel components (virtual memory, network communication,
+multiprocessor deadline scheduling) are now working.
+The DASH kernel was ported to the Sequent Symmetry this fall.
+.sp 2
+.ce
+\fB\s+2Berkeley UNIX Project\s0\fP
+.pp
+During this period of time we finished implementing and testing a routing
+table lookup algorithm suggested by Van Jacobsen which may greatly speed
+up any system acting as a packet switch for CLNP packets.
+.pp
+We redesigned, implemented and tested a new interface for communicating
+routing information between a user level process and the kernel, by
+means of a special type of message based socket.
+.pp
+The results of the
+additional performance experiments done by
+Van Jacobson of the Lawrence Berkeley Laboratory,
+and several additional performance improvements 
+reported in the last quarter have been
+merged into the Berkeley TCP.
+.pp
+We are continuing our participation in the IEEE P1003 standardization
+efforts for portable operating systems, with particular attention to
+networking.
+We are continuing to convert the Berkeley UNIX system
+to comply with the P1003.1 (POSIX) standard.
+The POSIX terminal interface and job control mechanism are now
+fully operational, and are in daily use on our development system.
