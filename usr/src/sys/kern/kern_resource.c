@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_resource.c	7.2 (Berkeley) %G%
+ *	@(#)kern_resource.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -22,7 +22,7 @@ getpriority()
 		int	who;
 	} *uap = (struct a *)u.u_ap;
 	register struct proc *p;
-	int low = PRIO_MAX + 1;
+	register int low = PRIO_MAX + 1;
 
 	switch (uap->which) {
 
@@ -36,15 +36,19 @@ getpriority()
 		low = p->p_nice;
 		break;
 
-	case PRIO_PGRP:
+	case PRIO_PGRP: {
+		register struct pgrp *pg;
+
 		if (uap->who == 0)
-			uap->who = u.u_procp->p_pgrp;
-		for (p = allproc; p != NULL; p = p->p_nxt) {
-			if (p->p_pgrp == uap->who &&
-			    p->p_nice < low)
+			pg = u.u_procp->p_pgrp;
+		else if ((pg = pgfind(uap->who)) == NULL)
+			break;
+		for (p = pg->pg_mem; p != NULL; p = p->p_pgrpnxt) {
+			if (p->p_nice < low)
 				low = p->p_nice;
 		}
 		break;
+	}
 
 	case PRIO_USER:
 		if (uap->who == 0)
@@ -90,15 +94,19 @@ setpriority()
 		found++;
 		break;
 
-	case PRIO_PGRP:
+	case PRIO_PGRP: {
+		register struct pgrp *pg;
+		 
 		if (uap->who == 0)
-			uap->who = u.u_procp->p_pgrp;
-		for (p = allproc; p != NULL; p = p->p_nxt)
-			if (p->p_pgrp == uap->who) {
-				donice(p, uap->prio);
-				found++;
-			}
+			pg = u.u_procp->p_pgrp;
+		else if ((pg = pgfind(uap->who)) == NULL)
+			break;
+		for (p = pg->pg_mem; p != NULL; p = p->p_pgrpnxt) {
+			donice(p, uap->prio);
+			found++;
+		}
 		break;
+	}
 
 	case PRIO_USER:
 		if (uap->who == 0)

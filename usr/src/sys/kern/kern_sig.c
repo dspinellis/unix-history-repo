@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.3 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.4 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -230,7 +230,7 @@ kill()
 killpg()
 {
 	register struct a {
-		int	pgrp;
+		int	pgid;
 		int	signo;
 	} *uap = (struct a *)u.u_ap;
 
@@ -238,57 +238,90 @@ killpg()
 		u.u_error = EINVAL;
 		return;
 	}
-	u.u_error = killpg1(uap->signo, uap->pgrp, 0);
+	u.u_error = killpg1(uap->signo, uap->pgid, 0);
 }
 
 /* KILL CODE SHOULDNT KNOW ABOUT PROCESS INTERNALS !?! */
 
-killpg1(signo, pgrp, all)
-	int signo, pgrp, all;
+killpg1(signo, pgid, all)
+	int signo, pgid, all;
 {
 	register struct proc *p;
-	int f, error = 0;
+	struct pgrp *pgrp;
+	int f = 0, error = 0;
 
-	if (!all && pgrp == 0) {
-		/*
-		 * Zero process id means send to my process group.
+	
+	if (all)	
+		/* 
+		 * broadcast 
 		 */
-		pgrp = u.u_procp->p_pgrp;
-		if (pgrp == 0)
-			return (ESRCH);
-	}
-	for (f = 0, p = allproc; p != NULL; p = p->p_nxt) {
-		if ((p->p_pgrp != pgrp && !all) || p->p_ppid == 0 ||
-		    (p->p_flag&SSYS) || (all && p == u.u_procp))
-			continue;
-		if (u.u_uid != 0 && u.u_uid != p->p_uid &&
-		    (signo != SIGCONT || !inferior(p))) {
-			if (!all)
-				error = EPERM;
-			continue;
+		for (p = allproc; p != NULL; p = p->p_nxt) {
+			if (p->p_ppid == 0 || p->p_flag&SSYS || 
+			    p == u.u_procp ||
+			   (u.u_uid && u.u_uid != p->p_uid && 
+			   !(signo == SIGCONT && inferior(p))))
+				continue;
+			f++;
+			if (signo)
+				psignal(p, signo);
 		}
-		f++;
-		if (signo)
-			psignal(p, signo);
+	else {
+		if (pgid == 0)		
+			/* 
+			 * zero pgid means send to my process group.
+			 */
+			pgrp = u.u_procp->p_pgrp;
+		else {
+			pgrp = pgfind(pgid);
+			if (pgrp == NULL)
+				return(ESRCH);
+		}
+		if (!(pgrp->pg_jobc) && 
+		     (signo==SIGTTIN || signo==SIGTTOU || signo==SIGTSTP))
+			return(EPERM);
+		for (p = pgrp->pg_mem; p != NULL; p = p->p_pgrpnxt) {
+			if (p->p_ppid == 0 || p->p_flag&SSYS)
+				continue;
+			if (u.u_uid && u.u_uid != p->p_uid && 
+			   !(signo == SIGCONT && inferior(p))) {
+				error = EPERM;
+				continue;
+			}
+			f++;
+			if (signo)
+				psignal(p, signo);
+		}
 	}
 	return (error ? error : (f == 0 ? ESRCH : 0));
 }
 
 /*
  * Send the specified signal to
- * all processes with 'pgrp' as
+ * all processes with 'pgid' as
  * process group.
  */
-gsignal(pgrp, sig)
-	register int pgrp;
+gsignal(pgid, sig)
+{
+	register struct pgrp *pgrp;
+	register struct proc *p;
+
+	if (!pgid)
+		return;
+	if ((pgrp = pgfind(pgid)) == NULL)
+		return;
+	pgsignal(pgrp, sig);
+}
+
+pgsignal(pgrp, sig)
+	register struct pgrp *pgrp;
 {
 	register struct proc *p;
 
-	if (pgrp == 0)
+	if (!(pgrp->pg_jobc) && 
+	     (sig==SIGTTIN || sig==SIGTTOU || sig==SIGTSTP))
 		return;
-	for (p = allproc; p != NULL; p = p->p_nxt)
-		if (p->p_pgrp == pgrp)
-			psignal(p, sig);
+	for (p = pgrp->pg_mem; p != NULL; p = p->p_pgrpnxt)
+		psignal(p, sig);
 }
 
 /*
@@ -327,7 +360,6 @@ psignal(p, sig)
 			action = SIG_DFL;
 	}
 	if (sig) {
-		p->p_sig |= mask;
 		switch (sig) {
 
 		case SIGTERM:
@@ -344,13 +376,15 @@ psignal(p, sig)
 			p->p_sig &= ~stopsigmask;
 			break;
 
-		case SIGSTOP:
 		case SIGTSTP:
 		case SIGTTIN:
 		case SIGTTOU:
+			/*FALLTHROUGH*/
+		case SIGSTOP:
 			p->p_sig &= ~sigmask(SIGCONT);
 			break;
 		}
+		p->p_sig |= mask;
 	}
 	/*
 	 * Defer further processing for signals which are held.
@@ -388,16 +422,6 @@ psignal(p, sig)
 			 */
 			if (action != SIG_DFL)
 				goto run;
-			/*
-			 * Don't clog system with children of init
-			 * stopped from the keyboard.
-			 */
-			if (sig != SIGSTOP && p->p_pptr == &proc[1]) {
-				psignal(p, SIGKILL);
-				p->p_sig &= ~mask;
-				splx(s);
-				return;
-			}
 			/*
 			 * If a child in vfork(), stopping could
 			 * cause deadlock.
@@ -591,16 +615,6 @@ issig()
 			case SIGTSTP:
 			case SIGTTIN:
 			case SIGTTOU:
-				/*
-				 * Children of init aren't allowed to stop
-				 * on signals from the keyboard.
-				 */
-				if (p->p_pptr == &proc[1]) {
-					psignal(p, SIGKILL);
-					continue;
-				}
-				/* fall into ... */
-
 			case SIGSTOP:
 				if (p->p_flag&STRC)
 					continue;

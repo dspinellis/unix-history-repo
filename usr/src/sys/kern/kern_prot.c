@@ -41,13 +41,12 @@ getpgrp()
 	register struct proc *p;
 
 	if (uap->pid == 0)
-		uap->pid = u.u_procp->p_pid;
-	p = pfind(uap->pid);
-	if (p == 0) {
+		p = u.u_procp;
+	else if ((p = pfind(uap->pid)) == 0) {
 		u.u_error = ESRCH;
 		return;
 	}
-	u.u_r.r_val1 = p->p_pgrp;
+	u.u_r.r_val1 = p->p_pgrp->pg_id;
 }
 
 getuid()
@@ -91,27 +90,71 @@ getgroups()
 	u.u_r.r_val1 = uap->gidsetsize;
 }
 
+setsid()
+{
+	register struct proc *p = u.u_procp;
+
+	if ((p->p_pgid == p->p_pid) || pgfind(p->p_pid))
+		u.u_error = EPERM;
+	else {
+		pgmv(p, p->p_pid, 1);
+		u.u_r.r_val1 = p->p_pid;
+	}
+	return;
+}
+
+/*
+ * set process group
+ *
+ * if target pid != caller's pid
+ *	pid must be an inferior
+ *	pid must be in same session
+ *	pid can't have done an exec
+ *	there must exist a pid with pgid in same session 
+ * pid must not be session leader
+ */
 setpgrp()
 {
-	register struct proc *p;
 	register struct a {
 		int	pid;
-		int	pgrp;
+		int	pgid;
 	} *uap = (struct a *)u.u_ap;
+	register struct proc *p;
+	register struct pgrp *pgrp;
 
 	if (uap->pid == 0)
-		uap->pid = u.u_procp->p_pid;
-	p = pfind(uap->pid);
-	if (p == 0) {
+		p = u.u_procp;
+	else if ((p = pfind(uap->pid)) == 0 || !inferior(p)) {
 		u.u_error = ESRCH;
 		return;
 	}
-/* need better control mechanisms for process groups */
-	if (p->p_uid != u.u_uid && u.u_uid && !inferior(p)) {
+	else if (p != u.u_procp) { 
+		if (p->p_session != u.u_procp->p_session) {
+			u.u_error = EPERM;
+			return;
+		}
+		if (p->p_flag&SEXEC) {
+			u.u_error = EACCES;
+			return;
+		}
+	}
+	if (SESS_LEADER(p)) {
 		u.u_error = EPERM;
 		return;
 	}
-	p->p_pgrp = uap->pgrp;
+	if (uap->pgid == 0)
+		uap->pgid = p->p_pid;
+	else if ((uap->pgid != p->p_pid) &&
+		(((pgrp = pgfind(uap->pgid)) == 0) || 
+		   pgrp->pg_mem == NULL ||
+	           pgrp->pg_session != u.u_procp->p_session)) {
+		u.u_error = EPERM;
+		return;
+	}
+	/*
+	 * done checking, now doit
+	 */
+	pgmv(p, uap->pgid, 0);
 }
 
 setreuid()

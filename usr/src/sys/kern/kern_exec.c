@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exec.c	7.7 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.8 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -473,7 +473,7 @@ getxfile(ip, ep, nargc, uid, gid)
 		u.u_procp->p_flag &= ~(SVFDONE|SKEEP);
 	}
 	u.u_procp->p_flag &= ~(SPAGI|SSEQL|SUANOM|SOUSIG);
-	u.u_procp->p_flag |= pagi;
+	u.u_procp->p_flag |= pagi | SEXEC;
 	u.u_dmap = u.u_cdmap;
 	u.u_smap = u.u_csmap;
 	vgetvm(ts, ds, ss);
