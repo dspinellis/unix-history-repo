@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.h	8.1 (Berkeley) %G%
+ *	@(#)if.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -315,7 +315,7 @@ void	ifubareset __P((int));
 #endif
 int	ifconf __P((int, caddr_t));
 void	ifinit __P((void));
-int	ifioctl __P((struct socket *, int, caddr_t, struct proc *));
+int	ifioctl __P((struct socket *, u_long, caddr_t, struct proc *));
 int	ifpromisc __P((struct ifnet *, int));
 struct	ifnet *ifunit __P((char *));
 
@@ -329,7 +329,7 @@ struct	ifaddr *ifaof_ifpforaddr __P((struct sockaddr *, struct ifnet *));
 void	ifafree __P((struct ifaddr *));
 void	link_rtrequest __P((int, struct rtentry *, struct sockaddr *));
 
-int	loioctl __P((struct ifnet *, int, caddr_t));
+int	loioctl __P((struct ifnet *, u_long, caddr_t));
 void	loopattach __P((int));
 int	looutput __P((struct ifnet *,
 	   struct mbuf *, struct sockaddr *, struct rtentry *));

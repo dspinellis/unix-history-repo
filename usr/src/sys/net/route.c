@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.c	8.2.1.1 (Berkeley) %G%
+ *	@(#)route.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -248,7 +248,7 @@ out:
 */
 int
 rtioctl(req, data, p)
-	int req;
+	u_long req;
 	caddr_t data;
 	struct proc *p;
 {

@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)bpf.h	8.1 (Berkeley) %G%
+ *      @(#)bpf.h	8.2 (Berkeley) %G%
  *
  * @(#) $Header: bpf.h,v 1.24 91/10/27 21:22:32 mccanne Exp $ (LBL)
  */
@@ -210,7 +210,7 @@ int	 bpfopen __P((dev_t, int));
 int	 bpfclose __P((dev_t, int));
 int	 bpfread __P((dev_t, struct uio *));
 int	 bpfwrite __P((dev_t, struct uio *));
-int	 bpfioctl __P((dev_t, int, caddr_t, int));
+int	 bpfioctl __P((dev_t, u_long, caddr_t, int));
 int	 bpf_select __P((dev_t, int, struct proc *));
 void	 bpf_tap __P((caddr_t, u_char *, u_int));
 void	 bpf_mtap __P((caddr_t, struct mbuf *));
