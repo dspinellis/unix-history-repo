@@ -1,9 +1,8 @@
-@(#)	sendmail.hf	3.3	%G%
+@(#)	sendmail.hf	3.4	%G%
 smtp	Commands:
 smtp		HELO	MAIL	RCPT	DATA	RSET
 smtp		NOOP	QUIT	HELP	VRFY	EXPN
 smtp	For more info use "HELP <topic>".
-smtp
 smtp	To report bugs in the implementation contact eric@Berkeley.ARPA
 smtp	or eric@UCB-ARPA.ARPA.
 smtp	For local information contact postmaster at this site.
