@@ -1,4 +1,4 @@
-/*	machdep.c	6.5	84/03/22	*/
+/*	machdep.c	6.6	84/07/08	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -23,7 +23,6 @@
 #include "../h/cmap.h"
 #include "../h/mbuf.h"
 #include "../h/msgbuf.h"
-#include "../h/nami.h"
 #include "../h/quota.h"
 
 #include "../vax/frame.h"
