@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	7.1 (Berkeley) %G%
+ *	@(#)cpu.h	7.2 (Berkeley) %G%
  */
 
 #ifndef _CPU_H_
@@ -35,7 +35,7 @@
 #undef	NEED_BCMP		/* don't need bcmp function */
 #undef	NEED_STRLEN		/* don't need strlen function */
 
-#define	cpu_exec(p)	/* nothing */
+#define	cpu_exec(p)	(p->p_md.md_ss_addr = 0) /* init single step */
 #define	cpu_wait(p)	/* nothing */
 
 /*
@@ -101,18 +101,28 @@ union cpuprid {
 /*
  * MIPS CPU types (cp_imp).
  */
-#define	MIPS_R2000	2
+#define	MIPS_R2000	0x02
+#define	MIPS_R3000	0x03
+#define	MIPS_R4000	0x04
 
 /*
  * MIPS FPU types
  */
-#define	MIPS_R2010	3
+#define	MIPS_R2010	0x03
+#define	MIPS_R3010	0x04
+#define	MIPS_R4010	0x05
+
+struct intr_tab {
+	void	(*func)();	/* pointer to interrupt routine */
+	int	unit;		/* logical unit number */
+};
 
 #ifdef KERNEL
 union	cpuprid cpu;
 union	cpuprid fpu;
 u_int	machDataCacheSize;
 u_int	machInstCacheSize;
+extern	struct intr_tab intr_tab[];
 #endif
 
 /*

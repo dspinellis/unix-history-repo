@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machConst.h	7.1 (Berkeley) %G%
+ *	@(#)machConst.h	7.2 (Berkeley) %G%
  *
  * machConst.h --
  *
@@ -34,8 +34,17 @@
 
 #define MACH_KUSEG_ADDR			0x0
 #define MACH_CACHED_MEMORY_ADDR		0x80000000
-#define MACH_CACHED_FRAME_BUFFER_ADDR	0x8fc00000
 #define MACH_UNCACHED_MEMORY_ADDR	0xa0000000
+#define MACH_KSEG2_ADDR			0xc0000000
+
+#define	MACH_CACHED_TO_PHYS(x)	((unsigned)(x) & 0x1fffffff)
+#define	MACH_PHYS_TO_CACHED(x)	((unsigned)(x) | MACH_CACHED_MEMORY_ADDR)
+#define	MACH_UNCACHED_TO_PHYS(x) ((unsigned)(x) & 0x1fffffff)
+#define	MACH_PHYS_TO_UNCACHED(x) ((unsigned)(x) | MACH_UNCACHED_MEMORY_ADDR)
+
+#ifdef DS3100
+#define MACH_MAX_MEM_ADDR		0xa1800000
+#define MACH_CACHED_FRAME_BUFFER_ADDR	0x8fc00000
 #define MACH_UNCACHED_FRAME_BUFFER_ADDR	0xafc00000
 #define MACH_PLANE_MASK_ADDR		0xb0000000
 #define MACH_CURSOR_REG_ADDR		0xb1000000
@@ -49,8 +58,17 @@
 #define MACH_SERIAL_INTERFACE_ADDR	0xbc000000
 #define MACH_CLOCK_ADDR			0xbd000000
 #define MACH_SYS_CSR_ADDR		0xbe000000
-#define MACH_ROM_ADDR			0xbf000000
-#define MACH_KSEG2_ADDR			0xc0000000
+#endif
+
+#ifdef DS5000
+#define MACH_MAX_MEM_ADDR		0xbe000000
+#define MACH_RESERVED_ADDR		0xbfc80000
+#define MACH_CHKSYN_ADDR		0xbfd00000
+#define MACH_ERROR_ADDR			0xbfd80000
+#define MACH_SERIAL_INTERFACE_ADDR	0xbfe00000
+#define MACH_CLOCK_ADDR			0xbfe80000
+#define MACH_SYS_CSR_ADDR		0xbff00000
+#endif
 
 #define MACH_CODE_START			0x80030000
 
@@ -122,10 +140,30 @@
 /*
  * The system control status register.
  */
+#ifdef DS3100
 #define MACH_CSR_MONO		0x0800
 #define MACH_CSR_MEM_ERR	0x0400
 #define	MACH_CSR_VINT		0x0200
 #define	MACH_CSR_MBZ		0x9800
+#endif
+
+#ifdef DS5000
+#define	MACH_CSR_IOINT_MASK	0x000000FF
+#define MACH_CSR_BAUD38		0x00000100
+#define MACH_CSR_DIAGDN		0x00000200
+#define MACH_CSR_BNK32M		0x00000400
+#define MACH_CSR_TXDIS		0x00000800
+#define MACH_CSR_LEDIAG		0x00001000
+#define MACH_CSR_CORRECT	0x00002000
+#define MACH_CSR_ECCMD		0x0000C000
+#define MACH_CSR_IOINTEN_MASK	0x00FF0000
+#define	MACH_CSR_IOINTEN_SHIFT	16
+#define MACH_CSR_NRMMOD		0x01000000
+#define	MACH_CSR_REFEVEN	0x02000000
+#define	MACH_CSR_PRSVNVR	0x04000000
+#define	MACH_CSR_PSWARN		0x08000000
+#define	MACH_CSR_MBZ		0xFF000000
+#endif
 
 /*
  * The bits in the context register.
@@ -168,22 +206,24 @@
 /*
  * Values for the code field in a break instruction.
  */
-#define MACH_BREAK_CODE_FIELD	0x03ffffc0
-#define	MACH_BREAKPOINT_VAL	0
-#define MACH_SIG_RET_VAL	0x00010000
-#define MACH_SSTEP_VAL		0x00020000
-
-/*
- * Constants to differentiate between a breakpoint trap and all others.
- */
-#define MACH_OTHER_TRAP_TYPE	0
-#define MACH_BRKPT_TRAP		1
+#define MACH_BREAK_INSTR	0x0000000d
+#define MACH_BREAK_VAL_MASK	0x03ff0000
+#define MACH_BREAK_VAL_SHIFT	16
+#define MACH_BREAK_KDB_VAL	512
+#define MACH_BREAK_SSTEP_VAL	513
+#define MACH_BREAK_BRKPT_VAL	514
+#define MACH_BREAK_KDB		(MACH_BREAK_INSTR | \
+				(MACH_BREAK_KDB_VAL << MACH_BREAK_VAL_SHIFT))
+#define MACH_BREAK_SSTEP	(MACH_BREAK_INSTR | \
+				(MACH_BREAK_SSTEP_VAL << MACH_BREAK_VAL_SHIFT))
+#define MACH_BREAK_BRKPT	(MACH_BREAK_INSTR | \
+				(MACH_BREAK_BRKPT_VAL << MACH_BREAK_VAL_SHIFT))
 
 /*
  * Mininum and maximum cache sizes.
  */
 #define MACH_MIN_CACHE_SIZE	(16 * 1024)
-#define MACH_MAX_CACHE_SIZE	(64 * 1024)
+#define MACH_MAX_CACHE_SIZE	(256 * 1024)
 
 /*
  * The floating point version and status registers.

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dc7085cons.h	7.1 (Berkeley) %G%
+ *	@(#)dc7085cons.h	7.2 (Berkeley) %G%
  *
  * dc7085.h --
  *
@@ -74,6 +74,12 @@ typedef volatile struct dc7085regs {
 #define TCR_EN1			0x002
 #define TCR_EN0			0x001
 
+#ifdef DS5000
+#define TCR_RTS2		0x800
+#define TCR_RTS3		0x200
+#define TCR_DTR3		0x100
+#endif
+
 /*
  * Line parameter register bits.
  */
@@ -93,7 +99,13 @@ typedef volatile struct dc7085regs {
 #define	LPR_B4800	0x0C00
 #define LPR_B7200	0x0D00
 #define LPR_B9600	0x0E00
+#ifdef DS3100
 #define LPR_B19800	0x0F00
+#endif
+#ifdef DS5000
+#define LPR_B19200	0x0F00
+#define LPR_B38400	0x0F00
+#endif
 #define LPR_OPAR	0x0080
 #define LPR_PARENB	0x0040
 #define LPR_2_STOP	0x0020
@@ -106,6 +118,16 @@ typedef volatile struct dc7085regs {
  * Modem status register bits.
  */
 #define	MSR_DSR2	0x0200
+
+#ifdef DS5000
+#define	MSR_RI2		0x0800
+#define	MSR_CD2		0x0400
+#define	MSR_CTS2	0x0100
+#define	MSR_RI3		0x0008
+#define	MSR_CD3		0x0004
+#define	MSR_DSR3	0x0002
+#define	MSR_CTS3	0x0001
+#endif
 
 /*
  * The four serial ports.
