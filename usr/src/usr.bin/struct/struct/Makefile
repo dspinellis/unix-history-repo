@@ -1,5 +1,4 @@
-#
-#	@(#)Makefile	4.2	(Berkeley)	83/02/11
+#	Makefile	4.3	83/08/13
 #
 DESTDIR=
 CFLAGS=-O
@@ -57,7 +56,3 @@ y.tab.h: beauty.y
 lextab.o tree.o beauty.y: b.h
 
 y.tab.h:	beauty.c
-
-srcs: $(SRCS)
-$(SRCS):
-	sccs get $@
