@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)malloc.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)malloc.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -15,9 +15,8 @@ static char sccsid[] = "@(#)malloc.c	5.4 (Berkeley) %G%";
  * This is a very fast storage allocator.  It allocates blocks of a small 
  * number of different sizes, and keeps free lists of each size.  Blocks that
  * don't exactly fit are passed up to the next larger size.  In this 
- * implementation, the available sizes are 2^n-4 (or 2^n-12) bytes long.
- * This is designed for use in a program that uses vast quantities of memory,
- * but bombs when it runs out. 
+ * implementation, the available sizes are 2^n-4 (or 2^n-10) bytes long.
+ * This is designed for use in a virtual memory environment.
  */
 
 #include <sys/types.h>
@@ -29,21 +28,19 @@ static char sccsid[] = "@(#)malloc.c	5.4 (Berkeley) %G%";
  * contains a pointer to the next free block, and the bottom two bits must
  * be zero.  When in use, the first byte is set to MAGIC, and the second
  * byte is the size index.  The remaining bytes are for alignment.
- * If range checking is enabled and the size of the block fits
- * in two bytes, then the top two bytes hold the size of the requested block
- * plus the range checking words, and the header word MINUS ONE.
+ * If range checking is enabled then a second word holds the size of the
+ * requested block, less 1, rounded up to a multiple of sizeof(RMAGIC).
+ * The order of elements is critical: ov_magic must overlay the low order
+ * bits of ov_next, and ov_magic can not be a valid ov_next bit pattern.
  */
 union	overhead {
 	union	overhead *ov_next;	/* when free */
 	struct {
-#ifndef RCHECK
 		u_char	ovu_magic;	/* magic number */
 		u_char	ovu_index;	/* bucket # */
-#else
-		u_int	ovu_size;	/* actual block size */
-		u_char	ovu_magic;	/* magic number */
-		u_char	ovu_index;	/* bucket # */
+#ifdef RCHECK
 		u_short	ovu_rmagic;	/* range magic number */
+		u_int	ovu_size;	/* actual block size */
 #endif
 	} ovu;
 #define	ov_magic	ovu.ovu_magic
@@ -195,8 +192,12 @@ morecore(bucket)
 	 * 2^30 bytes on a VAX, I think) or for a negative arg.
 	 */
 	sz = 1 << (bucket + 3);
+#ifdef DEBUG
+	ASSERT(sz > 0);
+#else
 	if (sz <= 0)
 		return;
+#endif
 	if (sz < pagesz) {
 		amt = pagesz;
   		nblks = amt / sz;
@@ -240,7 +241,7 @@ free(cp)
 #endif
   	size = op->ov_index;
   	ASSERT(size < NBUCKETS);
-	op->ov_next = nextf[size];
+	op->ov_next = nextf[size];	/* also clobbers ov_magic */
   	nextf[size] = op;
 #ifdef MSTATS
   	nmalloc[size]--;
