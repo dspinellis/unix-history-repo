@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)config.h	5.2 (Berkeley) %G%
+ *	@(#)config.h	5.1 (Berkeley) 6/5/85
  */
 
     /*
@@ -22,7 +22,7 @@ extern char	*version;
      *	and the length of the path to it
      *	(in case of execution of pc0 as a.out)
      */
-extern char	err_file[];
+extern char	*err_file;
 extern int	err_pathlen;
 
     /*
@@ -30,7 +30,7 @@ extern int	err_pathlen;
      *	and the length of the path to it
      *	the null at the end is so pix can change it to pi'x' from pi.
      */
-extern char	how_file[];
+extern char	*how_file;
 extern int	how_pathlen;
 extern char	*px_header;
 extern char	*pi_comp;
