@@ -34,7 +34,7 @@
 
 
 
-SCCSID(@(#)conf.c	4.6		%G%);
+SCCSID(@(#)conf.c	4.7		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -325,6 +325,16 @@ username()
 			pw = getpwuid(getruid());
 			if (pw != NULL)
 				myname = pw->pw_name;
+		}
+		else {
+			register struct passwd *pw;
+			extern struct passwd *getpwuid();
+
+			pw = getpwnam(myname);
+			if(getuid() != pw->pw_uid) {
+				pw = getpwuid(getuid());
+				myname = pw->pw_name;
+			}
 		}
 		if (myname == NULL || myname[0] == '\0')
 		{
