@@ -1,19 +1,19 @@
 .\" Copyright (c) 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)dd.1	6.3 (Berkeley) %G%
+.\"     @(#)dd.1	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DD 1
-.Os BSD 4.4
+.Os
 .Sh NAME
 .Nm dd
 .Nd convert and copy a file
 .Sh SYNOPSIS
 .Nm dd
-.Op options \&...
+.Op options ...
 .Sh DESCRIPTION
 The
 .Nm
@@ -21,116 +21,100 @@ utility copies the specified input file to the specified
 output with possible conversions.
 .Pp
 The following options are available:
-.Tw Fl
-.Tc Ic if=
-.Ar file
-.Cx
+.Bl -tag -width of=file
+.It Cm if= Ns Ar file
 Input pathname; standard input is
 default.
-.Tc Ic of=
-.Ar file
-.Cx
+.It Cm of= Ns Ar file
 Output pathname; standard output is
 default.
-.Tc Ic ibs=
-.Ar n
-.Cx
+.It Cm ibs= Ns Ar n
 Input block size
 .Va n
 bytes (default is
 512 bytes).
-.Tc Ic obs=
-.Ar n
-.Cx
+.It Cm obs= Ns Ar n
 Output block size (default is 512 bytes).
-.Tc Ic bs=
-.Ar n
-.Cx
+.It Cm bs= Ns Ar n
 Set both input and output block size,
 superseding
-.Ic ibs
+.Cm ibs
 and
-.Ic obs .
-.Tc Ic cbs=
-.Ar n
-.Cx
+.Cm obs .
+.It Cm cbs= Ns Ar n
 Conversion buffer size
-.Tc Ic skip=
-.Ar n
-.Cx
+.It Cm skip= Ns Ar n
 Skip
 .Va n
 input blocks (each block is the
 size of
-.Ic ibs )
+.Cm ibs )
 before starting copy.
-.Tc Ic seek=
+.It Cm seek= Ns Ar n
+Seek
 .Ar n
-.Cx
-Seek n blocks (each block is the size of
+blocks (each block is the size of
 obs) from beginning of output file before
 copying.
-.Tc Ic count=
-.Ar n
-.Cx
+.It Cm count= Ns Ar n
 Copy only
 .Va n
 input blocks.
-.Tc Ic conv=
-.Ar value
-.Oo
-.Op \&, Ar value \&...
-.Cx
-.Oo
+.It Xo
+.Cm conv=
+.Ns Ar value Ns Op \&, Ar value \&...
+.Xc
 Where values are comma-separated symbols
 from the following list.
-.Tw Fl
-.Tp Ic block
+.Bl -tag -width unblock
+.It Ar block
 Convert variable length records to fixed
 length.
 Read characters into the
-.Ic cbs
+.Ar cbs
 buffer, delete a trailing <newline>, and
 pad to the length of the
-.Ic cbs
+.Ar cbs
 buffer with
 <space>s.
-.Ic block
+Both
+.Ar block
 and
-.Ic unblock
+.Ar unblock
 are mutually
 exclusive.
-.Tp Ic unblock
+.It Ar unblock
 Convert fixed length records to variable
 length.
 Read a number of characters
 equal to the size of the
-.Ic cbs
+.Ar cbs
 buffer,
 delete all trailing <blank>s, and append
 a <newline>.
-.Tp Ic lcase
+.It Ar lcase
 Map characters in the alpha character
 classification from class upper to the
 corresponding value in class lower.
-.Ic lcase
+Both
+.Ar lcase
 and
-.Ic ucase
+.Ar ucase
 are mutually exclusive.
-.Tp Ic ucase
+.It Ar ucase
 Map characters in the alpha character
 classification from class lower to the
 corresponding value in class upper.
-.Tp Ic swab
+.It Ar swab
 Swap every pair of bytes
-.Tp Ic noerror
+.It Ar noerror
 Do not stop processing on an error.
-.Tp Ic sync
+.It Ar sync
 Pad every input block to the size of
-.Ic ibs
+.Ar ibs
 buffer, appending <space> characters.
-.Tp
-.Tp
+.El
+.El
 .Pp
 Where sizes are specified, a decimal number of bytes is
 expected.
@@ -146,7 +130,7 @@ separated by
 to indicate a product.
 .Pp
 If the option
-.Ic if=
+.Cm if=
 is not specified, the standard input is used.
 .Pp
 The input files can be any file type and
@@ -157,14 +141,14 @@ blocks, full and partial counts, to the standard error.
 .Pp
 A partial block may be caused by a read or write operation
 transferring less than
-.Ic ibs
+.Cm ibs
 bytes.
 Only bytes read
 have conversions, as specified by the options, applied to
 them.
 .Pp
 For
-.Li SIGINT ,
+.Dv SIGINT ,
 the
 .Nm
 utility writes status information to
@@ -186,4 +170,6 @@ aborts the copy of the file.
 .Sh STANDARDS
 The
 .Nm
-function is expected to be POSIX 1003.2 compatible.
+utility is expected to be
+.St -p1003.2
+compatible.
