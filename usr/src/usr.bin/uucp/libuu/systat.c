@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)systat.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)systat.c	5.5	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -59,19 +59,19 @@ int type;
 	unlink(filename);
 #endif VMS
 	fp = fopen(filename, "w");
-	ASSERT(fp != NULL, "SYSTAT OPEN FAIL", filename, 0);
+	if (fp == NULL) {
+		syslog(LOG_ERR, "fopen(%s) failed: %m", filename);
+		cleanup(FAIL);
+	}
 	fprintf(fp, "%d %d %ld %ld %s %s\n", type, count, prestime, rtry, text, name);
 	fclose(fp);
-	return;
 }
 
-/***
- *	rmstat(name)	remove system status entry
- *	char *name;
+/*
+ *	remove system status entry
  *
  *	return codes:  none
  */
-
 rmstat(name)
 char *name;
 {
@@ -86,7 +86,6 @@ char *name;
  *
  *	return codes  0 - ok | >0 system status
  */
-
 callok(name)
 char *name;
 {
