@@ -1,4 +1,4 @@
-/*	conf.c	4.14	%G%	*/
+/*	conf.c	4.15	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -105,17 +105,6 @@ struct bdevsw	bdevsw[] =
 int	cnopen(),cnclose(),cnread(),cnwrite(),cnioctl();
 struct tty cons;
 
-#ifdef CHAOS
-int	chopen(),chclose(),chread(),chwrite(),chioctl(),chreset();
-#else
-#define	chopen	nodev
-#define	chclose	nodev
-#define	chread	nodev
-#define	chwrite	nodev
-#define	chioctl	nodev
-#define	chreset	nodev
-#endif
-
 #include "ct.h"
 #if NCT > 0
 int	ctopen(),ctclose(),ctwrite();
@@ -183,66 +172,6 @@ int	lpopen(),lpclose(),lpwrite(),lpioctl(),lpreset();
 #define	lpwrite		nodev
 #define	lpioctl		nodev
 #define	lpreset		nulldev
-#endif
-
-#include "pk.h"
-#if NPK == 0
-#define	pkopen	nodev
-#define	pkclose	nodev
-#define	pkread	nodev
-#define	pkwrite	nodev
-#define	pkioctl	nodev
-#define	pkrint	nodev
-#define	pkrend	nodev
-#define	pkxint	nodev
-#define	pkmodem	nodev
-#else
-int	pkopen(),pkclose(),pkread(),pkioctl();
-int	pkrint(),pkrend(),pkxint(),pkmodem();
-char	*pkwrite();
-#endif
-
-#include "tr.h"
-#if HAVTR==0
-#define	tropen	nodev
-#define	trclose	nodev
-#define	trread	nodev
-#define	trwrite	nodev
-#define	trioctl	nodev
-#define	trinput	nodev
-#define	trrend	nodev
-#define	trmeta	nodev
-#define	trxint	nodev
-#define	trmodem	nodev
-#else
-int	tropen(), trclose(), trread(), trioctl(), trinput();
-int	trrend(), trmeta(), trxint(), trmodem();
-char	*trwrite();
-#endif
-
-#include "tdk.h"
-#if NTDK == 0
-#define	dt_lopen	nodev
-#define	dt_lclose	nodev
-#define	dt_lread	nodev
-#define	dt_lwrite	nodev
-#define	dtlinput	nodev
-#define	dt_lrend	nodev
-#define	dt_lmeta	nodev
-#define	dt_lstart	nodev
-#else
-int	dt_lopen(), dt_lclose(), dt_lread(), dtlinput();
-int	dt_lrend(), dt_lmeta(), dt_lstart();
-char	*dt_lwrite();
-#endif
-
-#if NCHLINE == 0
-#define	ch_lopen	nodev
-#define	ch_lclose	nodev
-#define	ch_linput	nodev
-#define	ch_lstart	nodev
-#else
-int	ch_lopen(), ch_lclose(), ch_linput(), ch_lstart();
 #endif
 
 int	syopen(),syread(),sywrite(),syioctl();
@@ -334,18 +263,21 @@ struct cdevsw	cdevsw[] =
 	lpioctl,	nodev,		lpreset,	0,
 	tsopen,		tsclose,	tsread,		tswrite,	/*16*/
 	nodev,		nodev,		nulldev,	0,
-	dkopen,		dkclose,	dkread,		dkwrite,	/*17*/
-	dkioctl,	dkstop,		dkreset,	dkchans,
+	nodev,		nodev,		nodev,		nodev,		/*17*/
+	nodev,		nodev,		nulldev,	0,
 	ctopen,		ctclose,	nodev,		ctwrite,	/*18*/
-	nodev,		nodev,		nodev,		0,
-	chopen,		chclose,	chread,		chwrite,	/*19*/
-	chioctl,	nulldev,	chreset,	0,
-#define CHAOSDEV 19
+	nodev,		nodev,		nulldev,	0,
+	nodev,		nodev,		nodev,		nodev,		/*19*/
+	nodev,		nodev,		nulldev,	0,
 	ptsopen,	ptsclose,	ptsread,	ptswrite,	/*20*/
 	ptyioctl,	nodev,		nodev,		0,
 	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*21*/
 	ptyioctl,	nodev,		nodev,		0,
 	nodev,		nodev,		nodev,		nodev,		/*22*/
+	nodev,		nodev,		nodev,		0,
+	nodev,		nodev,		nodev,		nodev,		/*23*/
+	nodev,		nodev,		nodev,		0,
+	nodev,		nodev,		nodev,		nodev,		/*24*/
 	nodev,		nodev,		nodev,		0,
 /* 25-29 reserved to local sites */
 	0,	
@@ -367,20 +299,12 @@ struct	linesw linesw[] =
 	bkinput, nodev, nulldev, ttstart, nulldev,		/* 1 */
 	ntyopen, ntyclose, ntread, ntwrite, nullioctl,
 	ntyinput, ntyrend, nulldev, ttstart, nulldev,		/* 2 */
-	pkopen, pkclose, pkread, pkwrite, pkioctl,	
-	pkrint, pkrend, nulldev, pkxint, pkmodem,		/* 3 */
-	tropen, trclose, trread, trwrite, trioctl,
-	trinput, trrend, trmeta, trxint, trmodem,		/* 4 */
-	dt_lopen, dt_lclose, dt_lread, dt_lwrite, nullioctl,
-	dtlinput, dt_lrend, dt_lmeta, dt_lstart, nulldev, 	/* 5 */
-	ch_lopen, ch_lclose, nulldev, nulldev, nullioctl,
-	ch_linput, nulldev, nulldev, ch_lstart, nulldev, 	/* 6 */
 	mxopen, mxclose, mcread, mcwrite, mxioctl,
-	nulldev, nulldev, nulldev, nulldev, nulldev,		/* 7 */
+	nulldev, nulldev, nulldev, nulldev, nulldev,		/* 3 */
 	0
 };
  
-int	nldisp = 7;
+int	nldisp = 4;
  
 struct	buf	buf[NBUF];
 struct	file	file[NFILE];
@@ -407,7 +331,3 @@ int	mem_no = 3; 	/* major device number of memory special file */
 dev_t	swapdev = makedev(4, 0);
 
 extern struct user u;
-
-#ifdef	CHAOS
-int cdevpath = 1 << CHAOSDEV;
-#endif
