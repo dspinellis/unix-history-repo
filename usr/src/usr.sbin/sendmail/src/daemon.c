@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.58 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.59 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.58 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.59 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -178,10 +178,9 @@ getrequests()
 		}
 
 		/* arrange to (re)open the socket if necessary */
-		if (DaemonSocket < 0)
-			(void) opendaemonsocket(FALSE);
 		if (refusingconnections)
 		{
+			(void) opendaemonsocket(FALSE);
 			setproctitle("accepting connections");
 			refusingconnections = FALSE;
 		}
