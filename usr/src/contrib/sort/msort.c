@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1993 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Peter McIlroy.
@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)msort.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)msort.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sort.h"
