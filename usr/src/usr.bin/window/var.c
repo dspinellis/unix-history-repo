@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)var.c	3.3 84/01/12";
+static	char *sccsid = "@(#)var.c	3.4 84/01/13";
 #endif
 
 #include "value.h"
@@ -103,13 +103,14 @@ register char *name;
 	return p;
 }
 
-var_walk1(r, func)
+var_walk1(r, func, a)
 register struct var *r;
 int (*func)();
 {
 	if (r == 0)
-		return;
-	var_walk1(r->r_left, func);
-	(*func)(r);
-	var_walk1(r->r_right, func);
+		return 0;
+	if (var_walk1(r->r_left, func, a) < 0 || (*func)(a, r) < 0
+	    || var_walk1(r->r_right, func, a) < 0)
+		return -1;
+	return 0;
 }
