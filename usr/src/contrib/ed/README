@@ -1,41 +1,29 @@
-#	@(#)README	5.1 (Berkeley) %G%
+#	@(#)README	5.2 (Berkeley) %G%
 
 For compiling:
 	There are several flag options for compiling 'ed' into executable.
-All valid combinations for these flags are in the Makefile: choose the
-combination you want; the default is BSD and STDIO.
-
-A flag that you can add/subtract to/from any of the given combinations in
-the Makefile is -DNOTERMCAP. This will reduce the size of the executable a
-fair bit. This will cause ed to default to line length 78 for the 'l' commmand;
-normally it will get it through termcap routines.
 
 This table briefly describes the flags used in compilation:
 
-	BSD | POSIX *
+	BSD | POSIX
 		specifies over-riding behaviour in historical terms:
 		BSD=> BSD behaviour when confilicting with P1003.2,
-		POSIX=> as P1003.2 specified.
+		POSIX=> as P1003.2 specified when conflicting with BSD.
 
-	STDIO | DBI | MEMORY *
+	STDIO | DBI | MEMORY
 		specifies which method is to be used for the buffer.
                 Be sure to understand that there are trade-offs with
                 any of the methods:
 		STDIO=> standard I/O temp file,
-		DBI=> BSD recno database file,
+		DBI=> BSD recno database file (db(3)),
 		MEMORY=> ye olde silicon.
 
-	NOTERMCAP
-		Don't use the termcap routines to determine line length
-		of the current terminal for the 'l' command; default to
-		a 78 character line length. Reduces executable size.
-
-	* asterisk indicates that one _must_ be chosen to get a sensible
-	  compile.
+	One of each compile flag option _must_ be chosen to get a sensible
+	compile.
 
 One define not listed above, yet used as a flag, is RE_STARTEND. This
 is used to automagically check if you are using the real BSD RE interfaces.
-See regex(3) (BSD4.4) for a description of RE_STARTEND; an extension to
+See regex(3) (4.4BSD) for a description of RE_STARTEND; an extension to
 P1003.2 B.5. If you happen to be using another POSIX regex(3) this
 automatically taken care of; the old RE interfaces are unsupported.
 
@@ -49,4 +37,3 @@ to the user.
 Refer to the man page ed(1) for information about using `ed'.
 
 -Rodney
-8th/Aug./'92
