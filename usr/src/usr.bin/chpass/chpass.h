@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)chpass.h	8.2 (Berkeley) %G%
+ *	@(#)chpass.h	8.3 (Berkeley) %G%
  */
 
 struct passwd;
@@ -40,6 +40,5 @@ int	 p_login __P((char *, struct passwd *, ENTRY *));
 int	 p_passwd __P((char *, struct passwd *, ENTRY *));
 int	 p_shell __P((char *, struct passwd *, ENTRY *));
 int	 p_uid __P((char *, struct passwd *, ENTRY *));
-void	 pw_copy __P((int, int, struct passwd *));
 char    *ttoa __P((time_t));
 int	 verify __P((struct passwd *));
