@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_socket.c	7.5 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -437,25 +437,25 @@ restart:
 	sblock(&so->so_rcv);
 	s = splnet();
 
-#define	rcverr(errno)	{ error = errno; splx(s); goto release; }
 	if (so->so_rcv.sb_cc == 0) {
 		if (so->so_error) {
 			error = so->so_error;
 			so->so_error = 0;
-			splx(s);
 			goto release;
 		}
-		if (so->so_state & SS_CANTRCVMORE) {
-			splx(s);
+		if (so->so_state & SS_CANTRCVMORE)
 			goto release;
-		}
 		if ((so->so_state & SS_ISCONNECTED) == 0 &&
-		    (so->so_proto->pr_flags & PR_CONNREQUIRED))
-			rcverr(ENOTCONN);
+		    (so->so_proto->pr_flags & PR_CONNREQUIRED)) {
+			error = ENOTCONN;
+			goto release;
+		}
 		if (uio->uio_resid == 0)
 			goto release;
-		if (so->so_state & SS_NBIO)
-			rcverr(EWOULDBLOCK);
+		if (so->so_state & SS_NBIO) {
+			error = EWOULDBLOCK;
+			goto release;
+		}
 		sbunlock(&so->so_rcv);
 		sbwait(&so->so_rcv);
 		splx(s);
