@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -977,6 +977,14 @@ good:
 		i = qcvt.val[1];
 		qcvt.val[1] = qcvt.val[0];
 		qcvt.val[0] = i;
+	}
+	/*
+	 * If we are restoring a filesystem with old format inodes, 
+	 * copy the uid/gid to the new location.
+	 */
+	if ((buf->c_flags & DR_NEWINODEFMT) == 0) {
+		buf->c_dinode.di_uid = buf->c_dinode.di_ouid;
+		buf->c_dinode.di_gid = buf->c_dinode.di_ogid;
 	}
 
 	switch (buf->c_type) {
