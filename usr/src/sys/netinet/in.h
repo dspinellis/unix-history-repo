@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in.h	7.12 (Berkeley) %G%
+ *	@(#)in.h	7.13 (Berkeley) %G%
  */
 
 /*
@@ -26,6 +26,7 @@
 #define	IPPROTO_IDP		22		/* xns idp */
 #define	IPPROTO_TP		29 		/* tp-4 w/ class negotiation */
 #define	IPPROTO_EON		80		/* ISO cnlp */
+#define	IPPROTO_ENCAP		98		/* encapsulation header */
 
 #define	IPPROTO_RAW		255		/* raw IP packet */
 #define	IPPROTO_MAX		256
@@ -76,7 +77,7 @@ struct in_addr {
 #define	IN_CLASSD_HOST		0x0fffffff	/* routing needn't know.    */
 #define	IN_MULTICAST(i)		IN_CLASSD(i)
 
-#define	IN_EXPERIMENTAL(i)	(((long)(i) & 0xe0000000) == 0xe0000000)
+#define	IN_EXPERIMENTAL(i)	(((long)(i) & 0xf0000000) == 0xf0000000)
 #define	IN_BADCLASS(i)		(((long)(i) & 0xf0000000) == 0xf0000000)
 
 #define	INADDR_ANY		(u_long)0x00000000
@@ -120,11 +121,12 @@ struct ip_opts {
  */
 #define	IP_OPTIONS	1	/* buf/ip_opts; set/get IP per-packet options */
 
-#define	IP_MULTICAST_IF	2	/* set/get IP multicast interface */
-#define	IP_MULTICAST_TTL 3	/* set/get IP multicast timetolive */
-#define	IP_MULTICAST_LOOP 4	/* set/get IP multicast loopback */
-#define	IP_ADD_MEMBERSHIP 5	/* add	an IP group membership */
-#define	IP_DROP_MEMBERSHIP 6	/* drop an IP group membership */
+#define	IP_MULTICAST_IF		2 /* in_addr; set/get IP multicast interface */
+#define	IP_MULTICAST_TTL	3 /* u_char; set/get IP multicast timetolive */
+#define	IP_MULTICAST_LOOP	4 /* u_char; set/get IP multicast loopback */
+#define	IP_ADD_MEMBERSHIP	5 /* ip_mreq; add an IP group membership */
+#define	IP_DROP_MEMBERSHIP	6 /* ip_mreq; drop an IP group membership */
+
 
 #define	IP_HDRINCL	7	/* int; header is included with data (raw) */
 #define	IP_TOS		8	/* int; IP type of service and precedence */
