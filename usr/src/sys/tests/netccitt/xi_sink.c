@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xi_sink.c	7.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)xi_sink.c	7.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -43,8 +43,9 @@ struct  sockaddr_x25 faddr, laddr = { sizeof(laddr), AF_CCITT };
 struct  sockaddr_x25 *sx25 = &laddr;
 char **xenvp;
 
-long size, count = 10, forkp, confp, echop, mynamep, verbose = 1, playtag = 0;
-long records, intercept = 0, isode_mode;
+long size, count = 10, forkp, echop = 0, mynamep, verbose = 1, playtag = 0;
+long records, intercept = 0, confp;
+void savedata();
 
 char buf[2048];
 char your_it[] = "You're it!";
@@ -99,7 +100,7 @@ union {
 struct msghdr msghdr = {
 	name, sizeof(name),
 	iov, sizeof(iov)/sizeof(iov[1]),
-	control, sizeof control,
+	control, sizeof(control),
 	0 /* flags */
 };
 
@@ -140,15 +141,6 @@ tisink()
 		if (x == 0)  {
 		    long n, count = 0, cn, flags;
 		    records = 0;
-#ifdef ISODE_MODE
-		    if (isode_mode) {
-			static char fdbuf[10];
-			static char *nargv[4] =
-			    {"/usr/sbin/isod.tsap", fdbuf, "", 0};
-			sprintf(fdbuf, "Z%d", ns);
-			old_isod_main(3, nargv, xenvp);
-		    } else
-#endif
 		    for (;;) {
 			msghdr.msg_iovlen = 1;
 			msghdr.msg_controllen = sizeof(control);
@@ -171,16 +163,13 @@ tisink()
 				if (verbose)
 					dumpit("data:\n", readbuf, n);
 			}
-			if (echop) {
-				n = answerback(flags, n, ns);
-			}
+			if (echop)
+				savedata(n);
 			if (flags & MSG_EOR)
 				records++;
-			if (playtag && n == sizeof(your_it) && (flags & MSG_EOR)
-			    && bcmp(readbuf, your_it, n) == 0) {
-				printf("Answering back!!!!\n");
-				answerback(flags, n, ns);
-				answerback(flags, n, ns);
+			if (echop && (readbuf[0] & 0x80)) {
+				dbprintf("Answering back!!!!\n");
+				answerback(ns);
 			}
 			errno = 0;
 		    }
@@ -188,14 +177,38 @@ tisink()
 		myexit(0);
 	}
 }
-answerback(flags, n, ns)
+
+struct savebuf {
+	struct savebuf *s_next;
+	struct savebuf *s_prev;
+	int	s_n;
+	int	s_flags;
+} savebuf = {&savebuf, &savebuf};
+
+void
+savedata(n, flags)
+int n;
 {
+	register struct savebuf *s = (struct savebuf *)malloc(n + sizeof *s);
+	if (s == 0)
+		return;
+	insque(s, savebuf.s_prev);
+	s->s_n = n;
+	s->s_flags = flags;
+}
+
+answerback(ns)
+{
+	int n;
+	register struct savebuf *s = savebuf.s_next, *t;
 	msghdr.msg_controllen = 0;
 	msghdr.msg_iovlen = 1;
-	iov->iov_len = n;
-	n = sendmsg(ns, &msghdr, flags);
-	dbprintf("echoed %d\n", n);
-	return n;
+	while (s != &savebuf) {
+		iov->iov_len = s->s_n;
+		n = sendmsg(ns, &msghdr, s->s_flags);
+		dbprintf("echoed %d\n", n);
+		t = s; s = s->s_next; remque(t); free((char *)t);
+	}
 }
 
 dumpit(what, where, n)
