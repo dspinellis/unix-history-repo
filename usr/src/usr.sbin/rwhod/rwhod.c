@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -36,6 +36,7 @@ static char sccsid[] = "@(#)rwhod.c	5.21 (Berkeley) %G%";
 #include <syslog.h>
 #include <protocols/rwhod.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <paths.h>
 
 /*
@@ -77,7 +78,6 @@ int	s, utmpf, kmemf = -1;
 
 extern int errno;
 char	*strcpy(), *malloc();
-long	lseek();
 void	getkmem(), onalrm();
 struct	in_addr inet_makeaddr();
 
@@ -258,7 +258,7 @@ onalrm()
 				goto done;
 			}
 		}
-		(void) lseek(utmpf, (long)0, L_SET);
+		(void) lseek(utmpf, (off_t)0, L_SET);
 		cc = read(utmpf, (char *)utmp, stb.st_size);
 		if (cc < 0) {
 			fprintf(stderr, "rwhod: %s: %s\n",
@@ -343,7 +343,7 @@ loop:
 		syslog(LOG_ERR, "%s: %m", _PATH_KMEM);
 		exit(1);
 	}
-	(void) lseek(kmemf, (long)nl[NL_BOOTTIME].n_value, L_SET);
+	(void) lseek(kmemf, (off_t)nl[NL_BOOTTIME].n_value, L_SET);
 	(void) read(kmemf, (char *)&mywd.wd_boottime,
 	    sizeof (mywd.wd_boottime));
 	mywd.wd_boottime = htonl(mywd.wd_boottime);
