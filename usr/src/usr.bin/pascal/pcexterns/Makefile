@@ -1,26 +1,39 @@
-SCCSID = @(#)Makefile 1.15 %G%
+SCCSID = @(#)Makefile 1.16 %G%
 INSTALL = ${DESTDIR}/usr/ucb
 INSTALLIB = ${DESTDIR}/usr/lib
 SRCDIR=	../src
+PX_HEADER = px_header
 NM = nm -go
 RM = rm -f
 CFLAGS = -O -I${SRCDIR}
 
-all: pc pc2 pc3 pmerge pcexterns.o
+PROGS =	pc pix pmerge
+FILES =	pc2 pc3 pcexterns.o how_pc how_pi how_pix how_pxp
+
+all: pix px_header pc pc2 pc3 pmerge pcexterns.o
 
 install: all pxref.p
-	cp pc ${INSTALL}
-	cp how* pc2 pc3 pcexterns.o ${INSTALLIB}
+	dd if=px_header of=temp conv=sync
+	install temp ${INSTALLIB}/${PX_HEADER}
+	for i in ${PROGS}; do (install $$i ${INSTALL}/$$i ); done
+	for i in ${FILES}; do (install $$i ${INSTALLIB}/$$i ); done
 	cd ${INSTALLIB}; chmod 744 how* pcexterns.o ${PX_HEADER}
 	strip ${INSTALLIB}/pc2
 	strip ${INSTALLIB}/pc3
 	cd ${INSTALLIB}; chmod 555 pc2 pc3
-	cp pmerge ${INSTALL}/pmerge
-	-pc -w pxref.p -o ${INSTALL}/pxref
-	cd ${INSTALL} ; chmod 555 pmerge pxref pc 
+	-pc -w pxref.p
+	install a.out ${INSTALL}/pxref
+	cd ${INSTALL} ; chmod 555 pmerge pxref pc pix
+
+pix: pix.c config.o
+	${CC} ${CFLAGS} -o pix pix.c config.o
 
 pmerge: pmerge.c
 	${CC} ${CFLAGS} -o pmerge pmerge.c
+
+px_header: px_header.c ${SRCDIR}/objfmt.h config.o
+	${CC} ${CFLAGS} -o px_header px_header.c config.o -N
+	strip px_header
 
 pc2: pc2.c
 	${CC} ${CFLAGS} pc2.c -lpc -o tmp
@@ -39,19 +52,27 @@ pxref: pxref.p
 pc: pc.c
 	${CC} ${CFLAGS} -o pc pc.c
 
-LIBRARIES = /usr/lib/libpc.a /lib/libc.a /usr/lib/libm.a /usr/lib/libg.a
+LIBPC 	= /usr/lib/libpc.a
+LIBC	= /lib/libc.a
+LIBM	= /usr/lib/libm.a
+LIBG	= /usr/lib/libg.a
+D_LIBPC	= $(DESTDIR)$(LIBPC)
+D_LIBC	= $(DESTDIR)$(LIBC)
+D_LIBM	= $(DESTDIR)$(LIBM)
+D_LIBG	= $(DESTDIR)$(LIBG)
+LIBRARIES = $(D_LIBPC) $(D_LIBC) $(D_LIBM) $(D_LIBG)
 
 pcexterns.o: pcexterns.awk ${LIBRARIES}
-	${NM} /usr/lib/libpc.a \
+	( echo -n $(LIBPC):; ${NM} $(D_LIBPC) ) \
 		| awk -f pcexterns.awk \
 		| sort -t\" +1 -2 -u >pcexterns.s
-	${NM} /lib/libc.a \
+	( echo -n $(LIBC):; ${NM} $(D_LIBC) ) \
 		| awk -f pcexterns.awk \
 		| sort -t\" +1 -2 -u >>pcexterns.s
-	${NM} /usr/lib/libm.a \
+	( echo -n $(LIBM):; ${NM} $(D_LIBM) ) \
 		| awk -f pcexterns.awk \
 		| sort -t\" +1 -2 -u >>pcexterns.s
-	${NM} /usr/lib/libg.a \
+	( echo -n $(LIBG):; ${NM} $(D_LIBG) ) \
 		| awk -f pcexterns.awk \
 		| sort -t\" +1 -2 -u >>pcexterns.s
 	as pcexterns.s -o pcexterns.o
@@ -70,10 +91,10 @@ picture: ${SRCDIR}/OPnames.h ${SRCDIR}/pic.c
 	${RM} pic
 
 clean:
-	${RM} pxref pmerge pc pc2 pc3 \
+	${RM} pix px_header pxref pmerge pc pc2 pc3 \
 	pcexterns.s *.o errs opc opc.c pic pic.c picture
 
 print: picture
 	@pr READ_ME makefile picture
 	@ls -l | pr
-	@pr pmerge.c pxref.p pc.c pc2.c pc3.h pc3.c
+	@pr pix.c pmerge.c pxref.p pc.c pc2.c pc3.h pc3.c
