@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	4.2		%G%);
+SCCSID(@(#)savemail.c	4.3		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -93,7 +93,7 @@ savemail(e)
 		}
 		else
 		{
-			expand("$n", buf, &buf[sizeof buf - 1], e);
+			expand("\001n", buf, &buf[sizeof buf - 1], e);
 			printf("\r\nMessage from %s...\r\n", buf);
 			printf("Errors occurred while sending mail.\r\n");
 			if (e->e_xfp != NULL)
@@ -166,7 +166,7 @@ savemail(e)
 
 		/* we have a home directory; open dead.letter */
 		define('z', p, e);
-		expand("$z/dead.letter", buf, &buf[sizeof buf - 1], e);
+		expand("\001z/dead.letter", buf, &buf[sizeof buf - 1], e);
 		Verbose = TRUE;
 		message(Arpa_Info, "Saving message in %s", buf);
 		Verbose = oldverb;
@@ -230,7 +230,7 @@ returntosender(msg, sendbody)
 
 	ErrorMessage = msg;
 	SendBody = sendbody;
-	define('g', "$f", CurEnv);
+	define('g', "\001f", CurEnv);
 
 	/* fake up an address header for the from person */
 	bmove((char *) &CurEnv->e_from, (char *) &to_addr, sizeof to_addr);

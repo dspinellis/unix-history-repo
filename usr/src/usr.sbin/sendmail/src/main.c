@@ -4,7 +4,7 @@
 # include "sendmail.h"
 # include <sys/file.h>
 
-SCCSID(@(#)main.c	4.7		%G%);
+SCCSID(@(#)main.c	4.8		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -343,7 +343,7 @@ main(argc, argv, envp)
 
 	/* our name for SMTP codes */
 	(void) expand("$i", ibuf, &ibuf[sizeof ibuf - 1]);
-	expand("$j", jbuf, &jbuf[sizeof jbuf - 1], CurEnv);
+	expand("\001j", jbuf, &jbuf[sizeof jbuf - 1], CurEnv);
 	HostName = jbuf;
 
 	/* the indices of local and program mailers */

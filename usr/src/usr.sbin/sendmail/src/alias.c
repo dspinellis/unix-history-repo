@@ -5,9 +5,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	4.2		%G%	(with DBM));
+SCCSID(@(#)alias.c	4.3		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	4.2		%G%	(without DBM));
+SCCSID(@(#)alias.c	4.3		%G%	(without DBM));
 # endif DBM
 
 /*

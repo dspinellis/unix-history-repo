@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	4.5		%G%);
+SCCSID(@(#)deliver.c	4.6		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -134,7 +134,7 @@ deliver(firstto, editfcn)
 
 	for (mvp = m->m_argv; (p = *++mvp) != NULL; )
 	{
-		while ((p = index(p, '$')) != NULL)
+		while ((p = index(p, '\001')) != NULL)
 			if (*++p == 'u')
 				break;
 		if (p != NULL)
@@ -994,7 +994,7 @@ putmessage(fp, m, xdot)
 	struct mailer *m;
 	bool xdot;
 {
-	char *template = "$l\n";
+	char *template = "\001l\n";
 	char buf[BUFSIZ];
 
 	/*
@@ -1016,7 +1016,7 @@ putmessage(fp, m, xdot)
 			char *sys = macvalue('g');
 			char *bang = index(sys, '!');
 
-		expand("$g", buf, &buf[sizeof buf - 1], CurEnv);
+		expand("\001g", buf, &buf[sizeof buf - 1], CurEnv);
 		bang = index(buf, '!');
 			if (bang == NULL)
 				syserr("No ! in UUCP! (%s)", sys);
