@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.33 89/08/23$
  *
- *	@(#)hpux_compat.c	7.2 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -1319,7 +1319,7 @@ ohpuxutime()
 	if (u.u_error = namei(ndp))
 		return;
 	vp = ndp->ni_vp;
-	if (vp->v_mount->m_flag & M_RDONLY)
+	if (vp->v_mount->mnt_flag & MNT_RDONLY)
 		u.u_error = EROFS;
 	else
 		u.u_error = VOP_SETATTR(vp, &vattr, ndp->ni_cred);
