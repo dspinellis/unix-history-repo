@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vfsops.c	7.10 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -100,6 +100,7 @@ mfs_mount(mp, path, data, ndp)
 	mfsp->mfs_pid = u.u_procp->p_pid;
 	mfsp->mfs_buflist = (struct buf *)0;
 	if (error = mountfs(devvp, mp)) {
+		mfsp->mfs_buflist = (struct buf *)-1;
 		vrele(devvp);
 		return (error);
 	}
