@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.27	82/06/25	*/
+/*	vfs_syscalls.c	4.28	82/07/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,6 +11,10 @@
 #include "../h/buf.h"
 #include "../h/proc.h"
 #include "../h/inline.h"
+#ifdef EFS
+#include "../net/in.h"
+#include "../h/efs.h"
+#endif
 
 chdir()
 {
@@ -127,7 +131,11 @@ open1(ip, mode, trf)
 	fp->f_flag = mode&(FREAD|FWRITE);
 	i = u.u_r.r_val1;
 	fp->f_inode = ip;
+#ifdef EFS
+	openi(ip, mode&(FREAD|FWRITE), trf);
+#else
 	openi(ip, mode&(FREAD|FWRITE));
+#endif
 	if (u.u_error == 0)
 		return;
 	u.u_ofile[i] = NULL;
@@ -189,8 +197,10 @@ link()
 	ip = namei(uchar, 0, 1);    /* well, this routine is doomed anyhow */
 	if (ip == NULL)
 		return;
-	if ((ip->i_mode&IFMT)==IFDIR && !suser())
-		goto out1;
+	if ((ip->i_mode&IFMT)==IFDIR && !suser()) {
+		iput(ip);
+		return;
+	}
 	ip->i_nlink++;
 	ip->i_flag |= ICHG;
 	iupdat(ip, &time, &time, 1);
@@ -282,6 +292,26 @@ unlink()
 	pp = namei(uchar, 2, 0);
 	if(pp == NULL)
 		return;
+#ifdef EFS
+	/* divert to extended file system if off machine. */
+	if (efsinode(pp)) {
+		dev_t ndev = pp->i_rdev;
+
+		iput(pp);	/* avoid recursive hang on inode */
+		efsunlink(ndev);
+		if (u.u_error != EEXIST)
+			return;
+
+		/*
+		 * If a null pathname remainder, then do
+		 * the unlink locally after restoring state.
+		 */
+		u.u_error = 0;
+		u.u_dirp = (caddr_t)u.u_arg[0];
+		pp = namei(uchar, 2, 0);
+	}
+#endif
+
 	/*
 	 * Check for unlink(".")
 	 * to avoid hanging on the iget
@@ -371,8 +401,14 @@ seek()
 	}
 	if (uap->sbase == 1)
 		uap->off += fp->f_offset;
-	else if (uap->sbase == 2)
+	else if (uap->sbase == 2) {
+#ifdef EFS
+		struct inode *ip = fp->f_inode;
+		uap->off += efsinode(ip) ? efsfilesize(fp) : ip->i_size;
+#else
 		uap->off += fp->f_inode->i_size;
+#endif
+	}
 	fp->f_offset = uap->off;
 	u.u_r.r_off = uap->off;
 }
@@ -395,6 +431,19 @@ saccess()
 	u.u_uid = u.u_ruid;
 	u.u_gid = u.u_rgid;
 	ip = namei(uchar, 0, 1);
+#ifdef EFS
+	if (efsinode(ip)) {
+		dev_t ndev = ip->i_rdev;
+
+		iput(ip);
+		efssaccess(ndev);
+		if (u.u_error != EEXIST)
+			return;
+		u.u_error = 0;
+		u.u_dirp = (caddr_t)u.u_arg[0];
+		ip = namei(uchar, 0, 1);
+	}
+#endif
 	if (ip != NULL) {
 		if (uap->fmode&(IREAD>>6))
 			(void) access(ip, IREAD);
@@ -423,6 +472,12 @@ fstat()
 	fp = getf(uap->fdes);
 	if (fp == NULL)
 		return;
+#ifdef EFS
+	if (efsinode(fp->f_inode)) {
+		efsfstat(fp->f_inode->i_rdev, fp);
+		return;
+	}
+#endif
 	if (fp->f_flag & FSOCKET)
 		u.u_error = sostat(fp->f_socket, uap->sb);
 	else
@@ -444,6 +499,19 @@ stat()
 	ip = namei(uchar, 0, 1);
 	if (ip == NULL)
 		return;
+#ifdef EFS
+	if (efsinode(ip)) {
+		dev_t ndev = ip->i_rdev;
+
+		iput(ip);
+		efsstat(ndev);
+		if (u.u_error != EEXIST)
+			return;
+		u.u_error = 0;
+		u.u_dirp = (caddr_t)u.u_arg[0];
+		ip = namei(uchar, 0, 1);
+	}
+#endif
 	stat1(ip, uap->sb);
 	iput(ip);
 }
@@ -463,6 +531,19 @@ lstat()
 	ip = namei(uchar, 0, 0);
 	if (ip == NULL)
 		return;
+#ifdef EFS
+	if (efsinode(ip)) {
+		dev_t ndev = ip->i_rdev;
+
+		iput(ip);
+		efslstat(ndev);
+		if (u.u_error != EEXIST)
+			return;
+		u.u_error = 0;
+		u.u_dirp = (caddr_t)u.u_arg[0];
+		ip = namei(uchar, 0, 0);
+	}
+#endif
 	stat1(ip, uap->sb);
 	iput(ip);
 }
@@ -512,6 +593,20 @@ readlink()
 	ip = namei(uchar, 0, 0);
 	if (ip == NULL)
 		return;
+#ifdef EFS
+	if (efsinode(ip)) {
+		dev_t ndev = ip->i_rdev;
+
+		iput(ip);
+		efsreadlink(ndev);
+		if (u.u_error != EEXIST)
+			return;
+		u.u_error = 0;
+		u.u_dirp = (caddr_t)u.u_arg[0];
+		ip = namei(uchar, 0, 0);
+		return (0);
+	}
+#endif
 	if ((ip->i_mode&IFMT) != IFLNK) {
 		u.u_error = ENXIO;
 		goto out;
@@ -538,9 +633,27 @@ chmod()
 	uap = (struct a *)u.u_ap;
 	if ((ip = owner(1)) == NULL)
 		return;
+#ifdef EFS
+	if (efsinode(ip)) {
+		dev_t ndev = ip->i_rdev;
+
+		iput(ip);
+		efschmod(ndev);
+		if (u.u_error != EEXIST)
+			return;
+		u.u_error = 0;
+		u.u_dirp = (caddr_t)u.u_arg[0];
+		ip = owner(1);
+	}
+#endif
 	ip->i_mode &= ~07777;
-	if (u.u_uid)
+	if (u.u_uid) {
 		uap->fmode &= ~ISVTX;
+		if (ip->i_gid >= NGRPS ||
+		    (u.u_grps[ip->i_gid/(sizeof(int)*8)] &
+		     (1 << ip->i_gid%(sizeof(int)*8))) == 0)
+			uap->fmode &= ~ISGID;
+	}
 	ip->i_mode |= uap->fmode&07777;
 	ip->i_flag |= ICHG;
 	if (ip->i_flag&ITEXT && (ip->i_mode&ISVTX)==0)
@@ -560,8 +673,27 @@ chown()
 	uap = (struct a *)u.u_ap;
 	if (!suser() || (ip = owner(0)) == NULL)
 		return;
-	ip->i_uid = uap->uid;
-	ip->i_gid = uap->gid;
+#ifdef EFS
+	if (efsinode(ip)) {
+		dev_t ndev = ip->i_rdev;
+
+		iput(ip);
+		efschown(ndev);
+		if (u.u_error != EEXIST)
+			return;
+		u.u_error = 0;
+		u.u_dirp = (caddr_t)u.u_arg[0];
+		ip = owner(0);
+	}
+#endif
+	/*
+	 * keep uid/gid's in sane range - no err, so chown(file, uid, -1)
+	 * will do something useful
+	 */
+	if (uap->uid >= 0 && uap->uid <= 32767)	/* should have a const	*/
+		ip->i_uid = uap->uid;
+	if (uap->gid >= 0 && uap->gid <= 32767)	/* same here		*/
+		ip->i_gid = uap->gid;
 	ip->i_flag |= ICHG;
 	if (u.u_ruid != 0)
 		ip->i_mode &= ~(ISUID|ISGID);
@@ -587,6 +719,19 @@ utime()
 	if (copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof(tv))) {
 		u.u_error = EFAULT;
 	} else {
+#ifdef EFS
+		if (efsinode(ip)) {
+			dev_t ndev = ip->i_rdev;
+
+			iput(ip);
+			efsutime(ndev, uap->fname, tv);
+			if (u.u_error != EEXIST)
+				return;
+			u.u_error = 0;
+			u.u_dirp = (caddr_t)u.u_arg[0];
+			ip = owner(1);
+		}
+#endif
 		ip->i_flag |= IACC|IUPD|ICHG;
 		iupdat(ip, &tv[0], &tv[1], 0);
 	}
