@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lpass2.c	1.7	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lpass2.c	1.8	(Berkeley)	%G%";
 #endif lint
 
 # include "macdefs.h"
@@ -269,7 +269,7 @@ chkcompat(q) STAB *q; {
 					}
 				}
 			for( i=0,qq=q->symty.next; i<r.l.nargs; ++i,qq=qq->next){
-				if( chktype( &qq->t, &atyp[i] ) ){
+				if( chktype( &qq->t, &atyp[i], q->fno ) ){
 #ifndef FLEXNAMES
 					printf( "%.8s, arg. %d used inconsistently",
 #else
@@ -283,7 +283,7 @@ chkcompat(q) STAB *q; {
 		}
 
 	if( (q->decflag&(LDI|LIB|LUV|LST)) && r.l.decflag==LUV ){
-		if( chktype( &r.l.type, &q->symty.t ) ){
+		if( chktype( &r.l.type, &q->symty.t, q->fno ) ){
 #ifndef FLEXNAMES
 			printf( "%.8s value used inconsistently", q->name );
 #else
@@ -490,7 +490,7 @@ setuse(q) STAB *q; { /* check new type to ensure that it is used */
 		}
 	}
 
-chktype( pt1, pt2 ) register ATYPE *pt1, *pt2; {
+chktype( pt1, pt2, fno ) register ATYPE *pt1, *pt2; {
 	TWORD t;
 
 	/* check the two type words to see if they are compatible */
@@ -504,6 +504,12 @@ chktype( pt1, pt2 ) register ATYPE *pt1, *pt2; {
 		/* if -z then don't worry about undefined structures,
 		   as long as the names match */
 		if( zflag && (pt1->extra == 0 || pt2->extra == 0) ) return 0;
+		/* if -p and pt1 is "too big" and
+		** pt1 came from a llib-l file, we can't pass judgment on it.
+		*/
+		if ( pflag && pt1->extra > pt2->extra &&
+			strncmp(fnm[fno], "llib-l", 6) == 0)
+				return 0;
 		return pt1->extra != pt2->extra;
 		}
 
