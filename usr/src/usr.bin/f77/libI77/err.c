@@ -1,5 +1,5 @@
 /*
-char id_err[] = "@(#)err.c	1.2";
+char id_err[] = "@(#)err.c	1.3";
  *
  * file i/o error and initialization routines
  */
@@ -46,6 +46,7 @@ extern char *sys_errlist[];
 extern int sys_nerr;
 
 #include "f_errlist.h"
+int f_nerr = MAXERR - F_ER;
 
 
 fatal(n,s) char *s;
