@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)arff.c	4.15 (Berkeley) 83/07/02";
+static	char sccsid[] = "@(#)arff.c	4.16 (Berkeley) 83/07/10";
 #endif
 
 #include <sys/types.h>
@@ -7,6 +7,7 @@ static	char sccsid[] = "@(#)arff.c	4.15 (Berkeley) 83/07/02";
 #include <sys/time.h>
 #include <signal.h>
 #include <stdio.h>
+#include <sys/file.h>
 
 #define dbprintf printf
 
@@ -113,19 +114,7 @@ main(argc, argv)
 			flg[*cp-'a']++;
 			continue;
 		case 'c':
-			{
-#define SURE	"Are you sure you want to clobber the floppy?"
-				int tty;
-				char response[128];
-
-				tty = open("/dev/tty", 2);
-				write(tty, SURE, sizeof(SURE));
-				read(tty, response, sizeof(response));
-				if (*response != 'y')
-					exit(50);
-				flag(c)++;
-				close(tty);
-			}
+			flag(c)++;
 			dirdirty++;
 			continue;
 
@@ -354,6 +343,23 @@ rt_init()
 	if (initized)
 		return;
 	initized = 1;
+	if (flag(c)) {
+		struct stat sb;
+		char response[128];
+		int tty;
+
+		if (stat(defdev, &sb) >= 0 && (sb.st_mode & S_IFMT) == S_IFREG)
+			goto ignore;
+		tty = open("/dev/tty", O_RDWR);
+#define SURE	"Are you sure you want to clobber the floppy? "
+		write(tty, SURE, sizeof (SURE));
+		read(tty, response, sizeof (response));
+		if (*response != 'y')
+			exit(50);
+		close(tty);
+ignore:
+		;
+	}
 	if (flag(c) || flag(d) || flag(r))
 		mode = "r+";
 	else
