@@ -1,0 +1,5 @@
+procedure main()
+   while line := read() do
+      if match("stop",line) then break
+      else write(line)
+end
