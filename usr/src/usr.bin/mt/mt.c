@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mt.c	4.2 (Berkeley) 81/07/05";
+static	char *sccsid = "@(#)mt.c	4.3 (Berkeley) 81/07/05";
 
 /*
  * mt
