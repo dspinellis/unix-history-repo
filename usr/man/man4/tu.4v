@@ -1,0 +1,58 @@
+.TH TU 4V "9 February 1983"
+.UC 4
+.SH NAME
+tu \- VAX-11/730 TU58 console cassette interface
+.SH DESCRIPTION
+The
+.I tu
+interface provides access to the VAX 11/730 TU58 console
+cassettes.  It could, conceivably, also provide access to
+the VAX 11/750 TU58 console cassette, but due to flow control
+problems in the host-TU58 interface access to the 11/750
+console storage device is unreliable.
+.PP
+The interface supports only raw i/o to the TU58 cassettes.
+The devices are normally manipulated with the 
+.IR arff (8V)
+program using the `m' option.
+.PP
+The device driver is automatically configured when a
+system is configured to run on an 11/730 or 11/750.
+.SH FILES
+.B /dev/tu0
+.br
+.B /dev/tu1
+.SH "SEE ALSO"
+arff(8V)
+.SH DIAGNOSTICS
+.BR "tu: no bp, active %d" .
+A transmission complete interrupt was received with no outstanding
+i/o request.  This indicates a hardware problem.
+.PP
+.BR "neither data nor end: %o %o" .
+A response from the TU58 indicated neither data to be received
+nor completion of a control operation.  Usually seen when this
+driver is used on an 11/750.
+.PP
+.BR "tu protocol error, state=%s, op=%x, cnt=%d, block=%d" .
+The driver entered an illegal state.  The information printed
+indicates the illegal state, operation currently being executed,
+the i/o count, and the block number on the cassette.
+.PP
+.BR "tu receive state error, state=%s, byte=%x" .
+The driver entered an illegal state in the receiver finite
+state machine.  The state is shown along with the control
+byte of the received packet.
+.PP
+.BR "tu: read stalled" .
+The device did not respond to a read request after 400
+milliseconds.  This is very common when attempting to use
+the driver on an 11/750.
+.PP
+(to the user)
+.br
+.BR "tu%d: %d soft errors, %d chksum errors, %d hard errors" .
+This is printed on the user's terminal on closing the device.
+.SH BUGS
+There should be a useable version of this driver for the
+11/750.
