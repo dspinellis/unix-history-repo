@@ -1,0 +1,12 @@
+for i in common inet misc; do (cd $i; make -k); done
+cc -p -S -O getservent.c
+sed -f ../asm.sed getservent.s | as -o getservent.o
+rm -f getservent.s
+ld -X -r getservent.o
+mv a.out profiled/getservent.o
+cc -S -O -c getservent.c
+sed -f ../asm.sed getservent.s | as -o getservent.o
+rm -f getservent.s
+ld -x -r getservent.o
+mv a.out getservent.o
+for i in common inet misc; do (cd $i; ar cru ../netlib *.o;  ar cru ../netlib_p profiled/*.o); done
