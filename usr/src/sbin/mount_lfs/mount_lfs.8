@@ -1,0 +1,60 @@
+.\" Copyright (c) 1993 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)mount_lfs.8	5.1 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt MOUNT_LFS 8
+.Os BSD 4.4
+.Sh NAME
+.Nm mount_lfs
+.Nd mount a log-structured file system
+.Sh SYNOPSIS
+.Nm mount_lfs
+.Op Fl dns
+.Op Fl F fsoptions
+.Pa device
+.Pa mount_point
+.Sh DESCRIPTION
+The
+.Nm mount_lfs
+command attaches the log-structed file system
+residing on the device named by
+.Ar device
+to the global file system namespace.
+The file system is attached at the point
+specified by
+.Ar mount_point .
+This command is normally executed by
+.Xr mount 8
+at boot time.
+.Pp
+After the file system is mounted, if the
+.Fl n
+flag is not specified then the
+.Xr lfs_cleanerd 8
+program is invoked to clean the file system periodically.
+If the
+.Fl d
+or
+.Fl s
+flags are given to
+.Nm mount_lfs ,
+they are passed to the cleaner.
+.Sh SEE ALSO
+.Xr mount 2 ,
+.Xr unmount 2 ,
+.Xr fstab 5 ,
+.Xr lfs_cleanerd 8
+.Sh CAVEATS
+.Nm Mount_lfs
+can be run by hand if you wish to use
+the flags, and since the flags are useful
+mainly for debugging this doesn't make much
+of a difference in normal operation.
+.Sh HISTORY
+The
+.Nm sysconf
+function first appeared in 4.4BSD.
