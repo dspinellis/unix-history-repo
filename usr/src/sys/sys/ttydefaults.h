@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ttydefaults.h	1.2 (Berkeley) 10/18/88
+ *	@(#)ttydefaults.h	1.4 (Berkeley) %G%
  */
 
 /*
@@ -33,6 +33,7 @@
 #define	CFLUSHO 	CTRL('o')
 #define	CWERASE 	CTRL('w')
 #define	CREPRINT 	CTRL('r')
+#define CQUOTE		'\\'
 #define	CEOT		CEOF
 
 /* COMPAT_43 */
