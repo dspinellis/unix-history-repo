@@ -23,7 +23,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -118,6 +118,12 @@ main(argc, argv, envp)
 		(void) close(i);
 	errno = 0;
 
+#ifdef LOG_MAIL
+	openlog("sendmail", LOG_PID, LOG_MAIL);
+#else 
+	openlog("sendmail", LOG_PID);
+#endif 
+
 	/*
 	**  Set default values for variables.
 	**	These cannot be in initialized data space.
@@ -200,10 +206,6 @@ main(argc, argv, envp)
 	OpMode = MD_DELIVER;
 	MotherPid = getpid();
 	FullName = getenv("NAME");
-#ifdef LOG_MAIL
-#else 
-	openlog("sendmail", LOG_PID);
-#endif 
 	errno = 0;
 	from = NULL;
 
