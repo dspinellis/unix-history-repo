@@ -5,7 +5,7 @@
  */
 
 #ifdef LIBC_SCCS
-	.asciz	"@(#)setjmp.s	5.5 (Berkeley) %G%"
+	.asciz	"@(#)setjmp.s	5.6 (Berkeley) %G%"
 #endif LIBC_SCCS
 
 /*
@@ -61,28 +61,6 @@ loop:
 	ret				# pop another frame
 
 done:
-
-#ifndef NOCOMPAT
-/*
- * This code checks to see if it can use the new sigreturn.
- * If it finds that sigtramp is using the new system call,
- * it will also use it. Otherwise it uses the old system call
- * to preserve compatibility.
- */
-#include <vax/machparam.h>
-#define U (0x80000000-UPAGES*NBPG)
-#define PCB_SIGC 0x6c
-#define CHMKINS 7
-	cmpl	3f,U+PCB_SIGC+CHMKINS	# check to see how sigtramp returns
-	beql	4f			# sigtramp uses the new system call
-	pushl	r1			# must use the old signal return
-	chmk	$139			# restore previous context
-	jmp	*20(r1)			# done, return
-3:
-	chmk	$103			# the new system call for sigreturn
-4:
-#endif NOCOMPAT
-
 	pushl	r1			# pointer to sigcontext
 	calls	$1,_sigreturn		# restore previous context
 					# we should never return
