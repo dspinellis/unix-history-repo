@@ -493,13 +493,6 @@ vm_mmap(map, addr, size, prot, flags, handle, foff)
 			object = vm_object_lookup(pager);
 
 		/*
-		 * The object of unnamed anonymous regions was just created
-		 * find it for pager_cache.
-		 */
-		if (handle == NULL)
-			object = vm_object_lookup(pager);
-
-		/*
 		 * Don't cache anonymous objects.
 		 * Loses the reference gained by vm_pager_allocate.
 		 */
