@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.31 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -151,6 +151,7 @@ __bt_open(fname, flags, mode, openinfo)
 	dbp->internal = t;
 	dbp->close = __bt_close;
 	dbp->del = __bt_delete;
+	dbp->fd = __bt_fd;
 	dbp->get = __bt_get;
 	dbp->put = __bt_put;
 	dbp->seq = __bt_seq;
@@ -383,4 +384,19 @@ byteorder()
 	default:
 		return (0);
 	}
+}
+
+int
+__bt_fd(dbp)
+        const DB *dbp;
+{
+	BTREE *t;
+
+	t = dbp->internal;
+
+	if (ISSET(t, B_INMEM)) {
+		errno = ENOENT;
+		return (-1);
+	}
+	return (t->bt_fd);
 }
