@@ -120,7 +120,7 @@ FRC:
 tn3270:	telnet.o tn3270.a
 	${CC} ${CFLAGS} -o tn3270 telnet.o tn3270.a $(LIBCURSES) $(LIBTERM)
 
-mset:	mset.o tn3270.a
+mset:	mset.o keyboard/map3270.o
 	${CC} ${CFLAGS} -o mset mset.o keyboard/map3270.o $(LIBCURSES)
 
 telnet.o:	$(TNMAIN)
