@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vfsops.c	7.64 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.65 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -285,7 +285,7 @@ ufs_check_export(mp, ufhp, nam, vpp, exflagsp, credanonp)
 	}
 	ip = VTOI(nvp);
 	if (ip->i_mode == 0 || ip->i_gen != ufhp->ufid_gen) {
-		ufs_iput(ip);
+		vput(nvp);
 		*vpp = NULLVP;
 		return (ESTALE);
 	}
