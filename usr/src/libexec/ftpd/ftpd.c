@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	4.26 (Berkeley) %G%";
 #endif
 
 /*
@@ -759,7 +759,8 @@ dologout(status)
 		(void) write(wtmp, (char *)&utmp, sizeof (utmp));
 		(void) close(wtmp);
 	}
-	exit(status);
+	/* beware of flushing buffers after a SIGPIPE */
+	_exit(status);
 }
 
 /*
