@@ -1,4 +1,4 @@
-.\"	@(#)1.t	1.3	(Copyright 1989 M. K. McKusick)	89/02/23
+.\"	@(#)1.t	1.4	(Copyright 1989 M. K. McKusick)	89/02/23
 .NH
 Introduction
 .PP
@@ -18,7 +18,7 @@ This alternation allows timely releases, while providing for refinement,
 tuning, and correction of the new facilities.
 The timely followup of ``cleanup'' releases reflects the importance
 .SM CSRG
-places on providing a reliable and robust system upon which its
+places on providing a reliable and robust system on which its
 user community can depend.
 .PP
 The development of the Berkeley Software Distribution
