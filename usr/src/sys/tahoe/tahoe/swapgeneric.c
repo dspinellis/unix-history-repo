@@ -9,6 +9,7 @@
 #include "systm.h"
 #include "reboot.h"
 
+#include "../tahoe/cpu.h"
 #include "../tahoe/cp.h"
 #include "../tahoe/mtpr.h"
 #include "../tahoevba/vbavar.h"
@@ -45,7 +46,7 @@ setconf()
 	int unit, swaponroot = 0;
 
 	if (rootdev != NODEV)
-		goto noswap;
+		goto doswap;
 	if (boothowto & RB_ASKNAME) {
 		char name[128];
 retry:
@@ -88,6 +89,7 @@ bad:
 found:
 	gc->gc_root = makedev(major(gc->gc_root), unit*8);
 	rootdev = gc->gc_root;
+doswap:
 	swdevt[0].sw_dev = argdev = dumpdev =
 	    makedev(major(rootdev), minor(rootdev)+1);
 	/* swap size and dumplo set during autoconfigure */
