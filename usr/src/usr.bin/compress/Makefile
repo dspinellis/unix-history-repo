@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 #
 CFLAGS=	-O -DBSD4_2 -DSACREDMEM=256000 -DUSERMEM=`cat USERMEM` 
 LIBC=	/lib/libc.a
@@ -43,13 +43,15 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 compress ${DESTDIR}/usr/ucb/compress
-	rm -f ${DESTDIR}/usr/ucb/uncompress ${DESTDIR}/usr/ucb/zcat
-	ln ${DESTDIR}/usr/ucb/compress ${DESTDIR}/usr/ucb/uncompress
-	ln ${DESTDIR}/usr/ucb/compress ${DESTDIR}/usr/ucb/zcat
-	rm -f ${DESTDIR}/usr/man/cat1/uncompress.0 ${DESTDIR}/usr/man/cat1/zcat.0
+	install -s -o bin -g bin -m 755 compress ${DESTDIR}/usr/bin
+	rm -f ${DESTDIR}/usr/bin/uncompress ${DESTDIR}/usr/bin/zcat
+	ln ${DESTDIR}/usr/bin/compress ${DESTDIR}/usr/bin/uncompress
+	ln ${DESTDIR}/usr/bin/compress ${DESTDIR}/usr/bin/zcat
+	rm -f ${DESTDIR}/usr/man/cat1/uncompress.0 \
+	    ${DESTDIR}/usr/man/cat1/zcat.0
 	install -c -o bin -g bin -m 444 compress.0 ${DESTDIR}/usr/man/cat1
-	ln ${DESTDIR}/usr/man/cat1/compress.0 ${DESTDIR}/usr/man/cat1/uncompress.0
+	ln ${DESTDIR}/usr/man/cat1/compress.0 \
+	    ${DESTDIR}/usr/man/cat1/uncompress.0
 	ln ${DESTDIR}/usr/man/cat1/compress.0 ${DESTDIR}/usr/man/cat1/zcat.0
 
 lint: ${SRCS}

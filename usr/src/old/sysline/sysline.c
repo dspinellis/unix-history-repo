@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysline.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysline.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -72,7 +72,6 @@ static char sccsid[] = "@(#)sysline.c	5.12 (Berkeley) %G%";
 
 #define NETPREFIX "ucb"
 #define DEFDELAY 60		/* update status once per minute */
-#define MAILDIR "/usr/spool/mail"
 /*
  * if MAXLOAD is defined, then if the load average exceeded MAXLOAD
  * then the process table will not be scanned and the log in/out data
@@ -110,7 +109,6 @@ static char sccsid[] = "@(#)sysline.c	5.12 (Berkeley) %G%";
 #include <protocols/rwhod.h>
 
 #define	DOWN_THRESHOLD	(11 * 60)
-#define	RWHOLEADER	"/usr/spool/rwho/whod."
 
 struct remotehost {
 	char *rh_host;
@@ -118,6 +116,8 @@ struct remotehost {
 } remotehost[10];
 int nremotes = 0;
 #endif RWHO
+
+#include "pathnames.h"
 
 struct nlist nl[] = {
 #ifdef NEW_BOOTTIME
@@ -138,7 +138,7 @@ struct nlist nl[] = {
 };
 
 	/* stuff for the kernel */
-int kmem;			/* file descriptor for /dev/kmem */
+int kmem;			/* file descriptor for _PATH_KMEM */
 struct proc *proc, *procNPROC;
 int nproc;
 int procadr;
@@ -409,8 +409,8 @@ main(argc,argv)
 	strcpy1(strcpy1(whofilename2, home), "/.sysline");
 	strcpy1(strcpy1(lockfilename, home), "/.syslinelock");
 
-	if ((kmem = open("/dev/kmem",0)) < 0) {
-		fprintf(stderr, "Can't open kmem.\n");
+	if ((kmem = open(_PATH_KMEM,0)) < 0) {
+		fprintf(stderr, "Can't open %s\n", _PATH_KMEM);
 		exit(1);
 	}
 	readnamelist();
@@ -420,7 +420,7 @@ main(argc,argv)
 		if ((username = getenv("USER")) == 0)
 			mailcheck = 0;
 		else {
-			chdir(MAILDIR);
+			chdir(_PATH_MBOX);
 			if (stat(username, &mstbuf) >= 0)
 				mailsize = mstbuf.st_size;
 			else
@@ -459,11 +459,7 @@ readnamelist()
 {
 	time_t bootime, clock, nintv, time();
 
-#ifdef pdp11
-	nlist("/unix", nl);
-#else
-	nlist("/vmunix", nl);
-#endif
+	nlist(_PATH_UNIX, nl);
 	if (nl[0].n_value == 0) {
 		if (!quiet)
 			fprintf(stderr, "No namelist\n");
@@ -488,8 +484,8 @@ readutmp(nflag)
 	static off_t utmpsize;		/* ditto */
 	struct stat st;
 
-	if (ut < 0 && (ut = open("/etc/utmp", 0)) < 0) {
-		fprintf(stderr, "sysline: Can't open utmp.\n");
+	if (ut < 0 && (ut = open(_PATH_UTMP, 0)) < 0) {
+		fprintf(stderr, "sysline: Can't open %s.\n", _PATH_UTMP);
 		exit(1);
 	}
 	if (fstat(ut, &st) < 0 || st.st_mtime == lastmod)
@@ -1108,8 +1104,8 @@ clearbotl()
 		close(fd);
 	}
 #ifdef PROF
-	if (chdir("/usr/src/ucb/sysline") < 0)
-		(void) chdir("/tmp");
+	if (chdir(_PATH_SYSLINE) < 0)
+		(void) chdir(_PATH_TMP);
 #endif
 	exit(0);
 }
@@ -1265,9 +1261,9 @@ sysrup(hp)
 		/*
 		 * Try rwho hostname file, and if that fails try ucbhostname.
 		 */
-		(void) strcpy1(strcpy1(filename, RWHOLEADER), hp->rh_host);
+		(void) strcpy1(strcpy1(filename, _PATH_RWHO), hp->rh_host);
 		if ((hp->rh_file = open(filename, 0)) < 0) {
-			(void) strcpy1(strcpy1(strcpy1(filename, RWHOLEADER),
+			(void) strcpy1(strcpy1(strcpy1(filename, _PATH_RWHO),
 				NETPREFIX), hp->rh_host);
 			hp->rh_file = open(filename, 0);
 		}
