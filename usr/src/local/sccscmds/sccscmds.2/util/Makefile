@@ -1,6 +1,14 @@
-#	@(#)Makefile	1.3	(Berkeley)	85/05/03
+#	@(#)Makefile	1.4	(Berkeley)	85/05/04
 #
 CFLAGS = -O -w
+PWOBJS=	giveup.o lockit.o rename.o userdir.o \
+	username.o xalloc.o xcreat.o xlink.o xopen.o \
+	xpipe.o xunlink.o xmsg.o dname.o fatal.o setsig.o userexit.o \
+	clean.o syswrite.o alloca.o anystr.o bal.o cat.o imatch.o \
+	patoi.o patol.o repeat.o repl.o satoi.o sname.o substr.o trnslat.o \
+	verify.o any.o zeropad.o
+WROBJS=	write.o syswrite.o
+PW2OBJS=logname.o pexec.o
 
 all: libpw.a libwrt.a libPW.a
 	mv libpw.a libwrt.a libPW.a ..
@@ -10,36 +18,17 @@ all: libpw.a libwrt.a libPW.a
 
 install:
 
-libpw.a:	curdir.o giveup.o lockit.o rename.o userdir.o\
-	username.o xalloc.o xcreat.o xlink.o xopen.o \
-	xpipe.o xunlink.o xmsg.o dname.o fatal.o setsig.o userexit.o
+libpw.a: ${PWOBJS}
+	rm -f libpw.a
+	ar cr libpw.a ${PWOBJS}
 
-libpw.a:	clean.o syswrite.o alloca.o anystr.o bal.o cat.o imatch.o\
-	index.o move.o patoi.o \
-	patol.o repeat.o repl.o satoi.o sname.o substr.o trnslat.o \
-	verify.o any.o zero.o zeropad.o strend.o
+libwrt.a: ${WROBJS}
+	rm -f libwrt.a
+	ar cr libwrt.a ${WROBJS}
 
-libpw.a:
-	-rm -f libpw.a tmp.a
-	ar cr tmp.a curdir.o giveup.o lockit.o rename.o userdir.o\
-		username.o xalloc.o xcreat.o xlink.o xopen.o \
-		xpipe.o xunlink.o xmsg.o dname.o fatal.o setsig.o userexit.o
-	ar r tmp.a clean.o syswrite.o alloca.o anystr.o bal.o cat.o \
-		imatch.o index.o move.o patoi.o \
-		patol.o repeat.o repl.o satoi.o sname.o substr.o trnslat.o \
-		verify.o any.o zero.o zeropad.o strend.o
-	-chmod 644 tmp.a
-	mv tmp.a libpw.a
-
-libwrt.a:	write.o syswrite.o
-	-rm -f libwrt.a tmp.a
-	ar cr tmp.a write.o syswrite.o
-	-chmod 644 tmp.a
-	mv tmp.a libwrt.a
-
-
-libPW.a:	logname.o pexec.o
-	ar cr libPW.a logname.o pexec.o
+libPW.a: ${PW2OBJS}
+	rm -f libPW.a
+	ar cr libPW.a ${PW2OBJS}
 
 clean:
 	-rm -f *.o
