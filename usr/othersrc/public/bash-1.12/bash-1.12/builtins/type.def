@@ -1,0 +1,265 @@
+This file is type.def, from which is created type.c.
+It implements the builtin "type" in Bash.
+
+Copyright (C) 1987, 1989, 1991 Free Software Foundation, Inc.
+
+This file is part of GNU Bash, the Bourne Again SHell.
+
+Bash is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any later
+version.
+
+Bash is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with Bash; see the file COPYING.  If not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+$PRODUCES type.c
+
+$BUILTIN type
+$FUNCTION type_builtin
+$SHORT_DOC type [-all] [-type | -path] [name ...]
+For each NAME, indicate how it would be interpreted if used as a
+command name.
+
+If the -type flag is used, returns a single word which is one of
+`alias', `keyword', `function', `builtin', `file' or `', if NAME is an
+alias, shell reserved word, shell function, shell builtin, disk file,
+or unfound, respectively.
+
+If the -path flag is used, either returns the name of the disk file
+that would be exec'ed, or nothing if -type wouldn't return `file'.
+
+If the -all flag is used, displays all of the places that contain an
+executable named `file'.  This includes aliases and functions, if and
+only if the -path flag is not also used.
+$END
+
+#include <stdio.h>
+#include "../shell.h"
+
+#if defined (ALIAS)
+#include "../alias.h"
+#endif /* ALIAS */
+
+/* For each word in LIST, find out what the shell is going to do with
+   it as a simple command. i.e., which file would this shell use to
+   execve, or if it is a builtin command, or an alias.  Possible flag
+   arguments:
+	-type		Returns the "type" of the object, one of
+			`alias', `keyword', `function', `builtin',
+			or `file'.
+
+	-path		Returns the pathname of the file if -type is
+			a file.
+
+	-all		Returns all occurrences of words, whether they
+			be a filename in the path, alias, function,
+			or builtin.
+   Order of evaluation:
+	alias
+	keyword
+	function
+	builtin
+	file
+ */
+type_builtin (list)
+     WORD_LIST *list;
+{
+  int path_only, type_only, all;
+  int found_any, successful_finds;
+  char *command;
+
+  path_only = type_only = all = 0;
+  successful_finds = 0;
+
+  while (list && *(list->word->word) == '-')
+    {
+      char *flag = &(list->word->word[1]);
+
+      if ((strcmp (flag, "type") == 0) || (strcmp (flag, "t") == 0))
+	{
+	  type_only = 1;
+	  path_only = 0;
+	}
+      else if ((strcmp (flag, "path") == 0) || (strcmp (flag, "p") == 0))
+	{
+	  path_only = 1;
+	  type_only = 0;
+	}
+      else if ((strcmp (flag, "all") == 0) || (strcmp (flag, "a") == 0))
+	{
+	  all = 1;
+	}
+      else
+	{
+	  bad_option (flag);
+	  return (EXECUTION_FAILURE);
+	}
+      list = list->next;
+    }
+
+  while (list)
+    {
+      SHELL_VAR *func;
+      int found = 0;
+
+      command = list->word->word;
+      func = find_function (command);
+
+#if defined (ALIAS)
+      {
+	/* Command is an alias? */
+	ASSOC *alias = find_alias (command);
+
+	if (alias)
+	  {
+	    if (type_only)
+	      printf ("alias\n");
+	    else if (!path_only)
+	      printf ("%s is aliased to `%s'\n", command, alias->value);
+	    found++;
+	    if (!all)
+	      goto next_item;
+	  }
+      }
+#endif /* ALIAS */
+
+      /* Command is a shell reserved word? */
+      {
+	extern STRING_INT_ALIST word_token_alist[];
+	register int i;
+
+	for (i = 0; word_token_alist[i].word; i++)
+	  {
+	    if (strcmp (word_token_alist[i].word, command) == 0)
+	      {
+		if (type_only)
+		  printf ("keyword\n");
+		else if (!path_only)
+		  printf ("%s is a shell keyword\n", command);
+
+		found++;
+
+		if (!all)
+		  goto next_item;
+
+		break;
+	      }
+	  }
+      }
+
+      /* Command is a function? */
+      if (func)
+	{
+	  if (type_only)
+	    printf ("function\n");
+	  else if (!path_only)
+	    {
+#define PRETTY_PRINT_FUNC 1
+	      extern char *named_function_string ();
+	      char *result;
+
+	      printf ("%s is a function\n", command);
+
+	      /* We're blowing away THE_PRINTED_COMMAND here... */
+
+	      result = named_function_string (command,
+					(COMMAND *) function_cell (func),
+					PRETTY_PRINT_FUNC);
+	      printf ("%s\n", result);
+#undef PRETTY_PRINT_FUNC
+	    }
+	  found++;
+
+	  if (!all)
+	    goto next_item;
+	}
+
+      /* Command is a builtin? */
+      {
+	extern Function *find_shell_builtin ();
+	
+	if (find_shell_builtin (command))
+	  {
+	    if (type_only)
+	      printf ("builtin\n");
+	    else if (!path_only)
+	      printf ("%s is a shell builtin\n", command);
+
+	    found++;
+
+	    if (!all)
+	      goto next_item;
+	  }
+      }
+
+      /* Command is a disk file? */
+      {
+	extern char *user_command_matches ();
+	int found_file = 0;
+	char *full_path = (char *)NULL;
+
+	/* If the user isn't doing "-all", then we might care about
+	   whether the file is present in our hash table. */
+	if (!all)
+	  {
+	    extern char *find_hashed_filename ();
+
+	    if ((full_path = find_hashed_filename (command)) != (char *)NULL)
+	      {
+		if (type_only)
+		  printf ("file\n");
+		else if (path_only)
+		  printf ("%s\n", full_path);
+		else
+		  printf ("%s is hashed (%s)\n", command, full_path);
+
+		found++;
+
+		goto next_item;
+	      }
+	  }
+
+	while (full_path =
+	       user_command_matches (command, FS_EXEC_PREFERRED, found_file))
+	  {
+	    found_file++;
+
+	    found++;
+
+	    if (type_only)
+	      printf ("file\n");
+	    else if (path_only)
+	      printf ("%s\n", full_path);
+	    else
+	      printf ("%s is %s\n", command, full_path);
+
+	    free (full_path);
+	    full_path = (char *)NULL;
+
+	    if (!all)
+	      break;
+	  }
+      }
+
+      if (!found && !path_only && !type_only)
+	builtin_error ("%s: not found", command);
+
+    next_item:
+      successful_finds += found;
+      list = list->next;
+    }
+
+  fflush (stdout);
+
+  if (successful_finds != 0)
+    return (EXECUTION_SUCCESS);
+  else
+    return (EXECUTION_FAILURE);
+}
