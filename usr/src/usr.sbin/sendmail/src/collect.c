@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.14.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -42,7 +42,6 @@ maketemp(from)
 	bool ignrdot = smtpmode ? FALSE : IgnrDot;
 	char buf[MAXFIELD], buf2[MAXFIELD];
 	register char *workbuf, *freebuf;
-	register int workbuflen;
 	extern char *hvalue();
 	extern bool isheader(), flusheol();
 	extern char *index();
@@ -97,6 +96,11 @@ maketemp(from)
 	freebuf = buf2;		/* `freebuf' can be used for read-ahead */
 	for (;;)
 	{
+		char *curbuf;
+		int curbuffree;
+		register int curbuflen;
+		char *p;
+
 		/* first, see if the header is over */
 		if (!isheader(workbuf))
 		{
@@ -111,11 +115,16 @@ maketemp(from)
 		/* it's okay to toss '\n' now (flusheol() needed it) */
 		fixcrlf(workbuf, TRUE);
 
-		workbuflen = strlen(workbuf);
+		curbuf = workbuf;
+		curbuflen = strlen(curbuf);
+		curbuffree = MAXFIELD - curbuflen;
+		p = curbuf + curbuflen;
 
 		/* get the rest of this field */
 		for (;;)
 		{
+			int clen;
+
 			if (sfgets(freebuf, MAXFIELD, InChannel) == NULL)
 				goto readerr;
 
@@ -126,26 +135,30 @@ maketemp(from)
 			if (!flusheol(freebuf, InChannel))
 				goto readerr;
 
-			/* yes; append line to `workbuf' if there's room */
-			if (workbuflen < MAXFIELD-3)
+			fixcrlf(freebuf, TRUE);
+			clen = strlen(freebuf);
+
+			/* if insufficient room, dynamically allocate buffer */
+			if (clen >= curbuffree)
 			{
-				register char *p = workbuf + workbuflen;
-				register char *q = freebuf;
+				/* reallocate buffer */
+				int nbuflen = ((p - curbuf) + clen) * 2;
+				char *nbuf = xalloc(nbuflen);
 
-				/* we have room for more of this field */
-				fixcrlf(freebuf, TRUE);
-				*p++ = '\n';
-				workbuflen++;
-				while(*q != '\0' && workbuflen < MAXFIELD-1)
-				{
-					*p++ = *q++;
-					workbuflen++;
-				}
-				*p = '\0';
+				p = nbuf + (p - curbuf);
+				curbuffree = nbuflen - (p - workbuf) - clen;
+				bcopy(curbuf, nbuf, p - curbuf);
+				if (curbuf != buf && curbuf != buf2)
+					free(curbuf);
+				curbuf = nbuf;
 			}
+			bcopy(freebuf, p, clen);
+			p += clen;
+			curbuffree -= clen;
 		}
+		*p++ = '\0';
 
-		e->e_msgsize += workbuflen;
+		e->e_msgsize += curbuflen;
 
 		/*
 		**  The working buffer now becomes the free buffer, since
@@ -169,8 +182,15 @@ maketemp(from)
 		**  Snarf header away.
 		*/
 
-		if (bitset(H_EOH, chompheader(freebuf, FALSE, e)))
+		if (bitset(H_EOH, chompheader(curbuf, FALSE, e)))
 			break;
+
+		/*
+		**  If the buffer was dynamically allocated, free it.
+		*/
+
+		if (curbuf != buf && curbuf != buf2)
+			free(curbuf);
 	}
 
 	if (tTd(30, 1))
