@@ -1,7 +1,9 @@
 #! /bin/sh
 #
-#	@(#)mkdep.sh	5.3	(Berkeley)	%G%
+#	@(#)mkdep.sh	5.4	(Berkeley)	%G%
 #
+
+PATH=:/bin:/usr/bin:/usr/ucb
 
 if [ $# = 0 ] ; then
 	echo 'usage: mkdep [-p] [-f makefile] flags file ...'
@@ -29,11 +31,11 @@ fi
 
 TMP=/tmp/mkdep$$
 
-trap '/bin/rm -f $TMP ; exit 1' 1 2 3 13 15
+trap 'rm -f $TMP ; exit 1' 1 2 3 13 15
 
-cp Makefile Makefile.bak
+cp $MAKE ${MAKE}.bak
 
-sed -e '/DO NOT DELETE THIS LINE/,$d' < Makefile > $TMP
+sed -e '/DO NOT DELETE THIS LINE/,$d' < $MAKE > $TMP
 
 cat << _EOF_ >> $TMP
 # DO NOT DELETE THIS LINE -- mkdep uses it.
@@ -41,7 +43,7 @@ cat << _EOF_ >> $TMP
 
 _EOF_
 
-/bin/cc -M $* | /bin/sed -e "s; \./;;g" $SED | \
+cc -M $* | /bin/sed -e "s; \./;;g" $SED | \
 	awk ' { \
 		if ($1 != prev) { \
 			if (rec != "") \
@@ -63,6 +65,7 @@ cat << _EOF_ >> $TMP
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
 _EOF_
 
-mv $TMP Makefile
-rm -f Makefile.bak
+# copy to preserve permissions
+cp $TMP $MAKE
+rm -f ${MAKE}.bak $TMP
 exit 0
