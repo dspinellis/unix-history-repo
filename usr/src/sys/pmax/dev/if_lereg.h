@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_lereg.h	7.1 (Berkeley) %G%
+ *	@(#)if_lereg.h	7.2 (Berkeley) %G%
  */
 
 #define	LEMTU		1518
@@ -29,61 +29,74 @@ struct lereg1 {
 	short	pad1;
 };
 
+#ifdef DS3100
+#define LEPAD(x)	short x;
+#define LE_RAM_SIZE	0x10000
+
+typedef u_short	le_buf_t;
+#endif
+#ifdef DS5000
+#define LEPAD(x)
+#define LE_RAM_SIZE	0x20000
+
+typedef u_char	le_buf_t;
+#endif
+
 /*
- * Overlayed on 64Kbyte dual-port RAM.
+ * This structure is overlayed on the network dual-port RAM.
  * Currently 32 * 1518 receive plus 8 * 1518 transmit buffers plus
  * buffer descriptor rings.
  */
 struct lereg2 {
 	/* init block */		/* CHIP address */
 	u_short	ler2_mode;		/* +0x0000 */
-	short	pad0;
+	LEPAD(pad0)
 	u_short	ler2_padr0;		/* +0x0002 */
-	short	pad1;
+	LEPAD(pad1)
 	u_short	ler2_padr1;		/* +0x0004 */
-	short	pad2;
+	LEPAD(pad2)
 	u_short	ler2_padr2;		/* +0x0006 */
-	short	pad3;
+	LEPAD(pad3)
 	u_short	ler2_ladrf0;		/* +0x0008 */
-	short	pad4;
+	LEPAD(pad4)
 	u_short	ler2_ladrf1;		/* +0x000A */
-	short	pad5;
+	LEPAD(pad5)
 	u_short	ler2_ladrf2;		/* +0x000C */
-	short	pad6;
+	LEPAD(pad6)
 	u_short	ler2_ladrf3;		/* +0x000E */
-	short	pad7;
+	LEPAD(pad7)
 	u_short	ler2_rdra;		/* +0x0010 */
-	short	pad8;
+	LEPAD(pad8)
 	u_short	ler2_rlen;		/* +0x0012 */
-	short	pad9;
+	LEPAD(pad9)
 	u_short	ler2_tdra;		/* +0x0014 */
-	short	pad10;
+	LEPAD(pad10)
 	u_short	ler2_tlen;		/* +0x0016 */
-	short	pad11;
+	LEPAD(pad11)
 	/* receive message descriptors */
 	struct	lermd {			/* +0x0018 */
 		u_short	rmd0;
-		short	pad0;
+		LEPAD(pad0)
 		u_short	rmd1;
-		short	pad1;
+		LEPAD(pad1)
 		short	rmd2;
-		short	pad2;
+		LEPAD(pad2)
 		u_short	rmd3;
-		short	pad3;
+		LEPAD(pad3)
 	} ler2_rmd[LERBUF];
 	/* transmit message descriptors */
 	struct	letmd {			/* +0x0058 */
 		u_short	tmd0;
-		short	pad0;
+		LEPAD(pad0)
 		u_short	tmd1;
-		short	pad1;
+		LEPAD(pad1)
 		short	tmd2;
-		short	pad2;
+		LEPAD(pad2)
 		u_short	tmd3;
-		short	pad3;
+		LEPAD(pad3)
 	} ler2_tmd[LETBUF];
-	u_short	ler2_rbuf[LERBUF][LEMTU]; /* +0x0060 */
-	u_short	ler2_tbuf[LETBUF][LEMTU]; /* +0x2FD0 */
+	le_buf_t	ler2_rbuf[LERBUF][LEMTU]; /* +0x0060 */
+	le_buf_t	ler2_tbuf[LETBUF][LEMTU]; /* +0x2FD0 */
 };
 
 /*
