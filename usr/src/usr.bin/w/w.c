@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -32,6 +32,7 @@ static char sccsid[] = "@(#)w.c	5.6 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <machine/pte.h>
 #include <sys/vm.h>
+#include <sys/tty.h>
 
 #define NMAX sizeof(utmp.ut_name)
 #define LMAX sizeof(utmp.ut_line)
@@ -93,9 +94,10 @@ char	doing[520];		/* process attached to terminal */
 time_t	proctime;		/* cpu time of process in doing */
 double	avenrun[3];
 struct	proc *aproc;
+struct  tty ttyent;
 
 #define	DIV60(t)	((t+30)/60)    /* x/60 rounded */ 
-#define	TTYEQ		(tty == pr[i].w_tty && uid == pr[i].w_uid)
+#define	TTYEQ		(tty == pr[i].w_tty)
 #define IGINT		(1+3*1)		/* ignoring both SIGINT & SIGQUIT */
 
 char	*getargs();
@@ -199,8 +201,8 @@ main(argc, argv)
 		exit(1);
 	}
 
-	if (firstchar != 'u')
-		readpr();
+	if (firstchar != 'u')	/* if this program is not "uptime(1)" */
+		readpr();	/* then read in procs */
 
 	ut = fopen("/etc/utmp","r");
 	time(&now);
@@ -256,7 +258,7 @@ main(argc, argv)
 			printf(" %.2f", avenrun[i]);
 		}
 		printf("\n");
-		if (firstchar == 'u')
+		if (firstchar == 'u')	/* if this was uptime(1), finished */
 			exit(0);
 
 		/* Headers for rest of output */
@@ -475,6 +477,11 @@ prtat(time)
 /*
  * readpr finds and reads in the array pr, containing the interesting
  * parts of the proc and user tables for each live process.
+ * We only accept procs whos controlling tty has a pgrp equal to the
+ * pgrp of the proc.  This accurately defines the notion of the current
+ * process(s), but because of time skew, we always read in the tty struct
+ * after reading the proc, even though the same tty struct may have been
+ * read earlier on.
  */
 readpr()
 {
@@ -520,7 +527,8 @@ readpr()
 		lseek(kmem, (int)(aproc + pn), 0);
 		read(kmem, &mproc, sizeof mproc);
 		/* decide if it's an interesting process */
-		if (mproc.p_stat==0 || mproc.p_stat==SZOMB || mproc.p_pgrp==0)
+		if (mproc.p_stat==0 || mproc.p_stat==SZOMB 
+		    || mproc.p_stat==SSTOP || mproc.p_pgrp==0)
 			continue;
 		/* find & read in the user structure */
 		if ((mproc.p_flag & SLOAD) == 0) {
@@ -557,6 +565,13 @@ cont:
 		vstodb(0, CLSIZE, &up.u_smap, &db, 1);
 		pr[np].w_lastpg = dtob(db.db_base);
 		if (up.u_ttyp == NULL)
+			continue;
+
+		/* only include a process whose tty has a pgrp which matchs its own */
+		lseek(kmem, (long)up.u_ttyp, 0);
+		if (read(kmem, &ttyent, sizeof(ttyent)) != sizeof(ttyent))
+			continue;
+		if (ttyent.t_pgrp != mproc.p_pgrp)
 			continue;
 
 		/* save the interesting parts */
