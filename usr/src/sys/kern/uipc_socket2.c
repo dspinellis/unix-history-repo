@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	6.7	84/11/19	*/
+/*	uipc_socket2.c	6.7	84/11/21	*/
 
 #include "param.h"
 #include "systm.h"
@@ -355,7 +355,7 @@ sbreserve(sb, cc)
 	/* someday maybe this routine will fail... */
 	sb->sb_hiwat = cc;
 	/* * 2 implies names can be no more than 1 mbuf each */
-	sb->sb_mbmax = MAX(cc * 2, SB_MAX);
+	sb->sb_mbmax = MIN(cc * 2, SB_MAX);
 	return (1);
 }
 
@@ -602,6 +602,7 @@ sbdrop(sb, len)
 		m = mn;
 	}
 	while (m && m->m_len == 0) {
+		sbfree(sb, m);
 		MFREE(m, mn);
 		m = mn;
 	}
