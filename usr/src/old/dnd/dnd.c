@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)dnd.c	4.1 (Berkeley) %G%";
+static char *sccsid ="@(#)dnd.c	4.2 (Berkeley) %G%";
 /*
  * batch queue manager. by Greg Chesson.  Modified to be
  * a daemon managing requests to a multiple autodialers, by
@@ -51,8 +51,10 @@ char buf[512];
 	max = atoi(argv[1]);*/ max = 1;
 	if(fork())
 	    exit(0);
-	while(fork())
+	while(fork()) {
+	    sleep(10);
 	    wait(0);
+	}
 	strcpy(argv[0], "dnd-child");
 
 	xd = init();
@@ -62,6 +64,7 @@ char buf[512];
 	while( (cc=read(xd, buf, 512)) >= 0) {
 		unpack(buf, cc);
 	}
+	_exit(0);
 }
 
 short	noioctl = M_IOANS;
