@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.5 (Berkeley) %G%
+ *	@(#)locore.s	7.6 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -718,11 +718,11 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(alignmap	,alignutl	,1		)	/* XXX */
 	SYSMAP(msgbufmap,msgbuf		,MSGBUFPTECNT	)
 	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*CLSIZE+CLSIZE )
-	SYSMAP(camap	,cabase		,16*CLSIZE	)
+	SYSMAP(kmempt	,kmembase	,100*CLSIZE	)
 #ifdef	GPROF
 	SYSMAP(profmap	,profbase	,600*CLSIZE	)
 #endif
-	SYSMAP(ecamap	,calimit	,0		)
+	SYSMAP(ekmempt	,kmemlimit	,0		)
 
 	SYSMAP(UMBAbeg	,umbabeg	,0		)
 	SYSMAP(Nexmap	,nexus		,16*MAXNNEXUS	)

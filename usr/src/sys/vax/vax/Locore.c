@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)Locore.c	7.1 (Berkeley) %G%
+ *	@(#)Locore.c	7.2 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -212,18 +212,17 @@ struct	pte Mbmap[NMBCLUSTERS/CLSIZE];
 struct	mbuf mbutl[NMBCLUSTERS*CLBYTES/sizeof (struct mbuf)];
 struct	pte msgbufmap[CLSIZE];
 struct	msgbuf msgbuf;
-struct	pte camap[32];
+struct	pte kmempt[100];
 #ifdef VAX630
 struct	pte Clockmap[1];
 struct	cldevice cldevice;
 struct	pte Ka630map[1];
 struct	ka630cpu ka630cpu;
 #endif
-int	cabase, calimit;
+int	kmembase, kmemlimit;
 #ifdef unneeded
 char	caspace[32*NBPG];
 #endif
-int	calimit;
 
 /*ARGSUSED*/
 badaddr(addr, len) caddr_t addr; int len; { return (0); }
