@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -82,45 +82,50 @@ printcol(stats, num)
 	register int num;
 {
 	extern int termwidth;
-	int i;			/* subscript to stats */
-	int maxlen;		/* length of longest name string */
+	int row, col;
 	int colwidth;		/* width of a printing column */
 	int numcols;		/* number of columns */
-	int collength;		/* lines in longest column */
+	int numrows;		/* number of rows */
 	int base;		/* subscript for leftmost column */
-	int offset;		/* delta from base to next column */
 	int chcnt;		/* character count printed */
+	int newcnt;
+	int curcol;
 
-	maxlen = stats[0].lstat.st_flags;
+	colwidth = stats[0].lstat.st_flags;
 	if (f_inode)
-		maxlen += 6;
+		colwidth += 6;
 	if (f_size)
-		maxlen += 5;
+		colwidth += 5;
 	if (f_type)
-		maxlen += 1;
-#define	TAB	8
-	colwidth = maxlen + TAB + 1 & ~(TAB - 1);
-	numcols = (termwidth + colwidth - maxlen) / colwidth;
-	collength = (int)((float)num / (float)numcols + 0.999);
+		colwidth += 1;
+	colwidth += 3;
 
-	for (base = 0; base < collength; base++) {
-		for (offset = 0, i = 0; i < numcols; ++i, offset += collength) {
-			if (base + offset >= num)
+	numcols = termwidth / colwidth;
+	numrows = num / numcols;
+	if (num % numcols)
+		++numrows;
+
+#define	TAB	8
+	for (row = 0; row < numrows; ++row) {
+		curcol = colwidth;
+		chcnt = 0;
+		for (base = row, col = 0; col < numcols; ++col) {
+			chcnt += printaname(stats + base);
+			if ((base += numrows) >= num)
 				break;
-			chcnt = printaname(&stats[base + offset]);
-			if (base + offset + collength < num) {
-				while (chcnt + 8 < colwidth) {
-					(void)putchar('\t');
-					chcnt += 8;
+			for (;;) {
+				newcnt = (chcnt + TAB & ~(TAB - 1));
+				if (newcnt > curcol) {
+					break;
 				}
-				if (chcnt < colwidth)
-					(void)putchar('\t');
-				chcnt = (chcnt + 8) & ~0x7;
+				(void)putchar('\t');
+				chcnt = newcnt;
 			}
+			for (; chcnt < curcol; ++chcnt)
+				(void)putchar(' ');
+			curcol += colwidth;
 		}
-		if (base + offset < num)
-			(void)printaname(&stats[base + offset]);
-		(void)printf("\n");
+		putchar('\n');
 	}
 }
 
