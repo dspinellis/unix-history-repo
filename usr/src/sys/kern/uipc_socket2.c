@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket2.c	7.6 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -141,7 +141,7 @@ sonewconn(head)
 	so->so_state = head->so_state | SS_NOFDREF;
 	so->so_proto = head->so_proto;
 	so->so_timeo = head->so_timeo;
-	so->so_pgrp = head->so_pgrp;
+	so->so_pgid = head->so_pgid;
 	(void) soreserve(so, head->so_snd.sb_hiwat, head->so_rcv.sb_hiwat);
 	soqinsque(head, so, 0);
 	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH,
@@ -276,9 +276,9 @@ sowakeup(so, sb)
 		wakeup((caddr_t)&sb->sb_cc);
 	}
 	if (so->so_state & SS_ASYNC) {
-		if (so->so_pgrp < 0)
-			gsignal(-so->so_pgrp, SIGIO);
-		else if (so->so_pgrp > 0 && (p = pfind(so->so_pgrp)) != 0)
+		if (so->so_pgid < 0)
+			gsignal(-so->so_pgid, SIGIO);
+		else if (so->so_pgid > 0 && (p = pfind(so->so_pgid)) != 0)
 			psignal(p, SIGIO);
 	}
 }
