@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)route.c	7.5 (Berkeley) %G%
+ *	@(#)route.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -137,7 +137,7 @@ rtredirect(dst, gateway, flags, src)
 	rtalloc(&ro);
 	rt = ro.ro_rt;
 #define	equal(a1, a2) \
-	(bcmp((caddr_t)(a1), (caddr_t)(a2), sizeof(struct sockaddr)) == 0)
+  (bcmp((caddr_t)(a1), (caddr_t)(a2), ((struct sockaddr *)(a1))->sa_len) == 0)
 	/*
 	 * If the redirect isn't from our current router for this dst,
 	 * it's either old or wrong.  If it redirects us to ourselves,
@@ -228,6 +228,23 @@ rtrequest(req, entry)
 	struct ifaddr *ifa;
 	struct ifaddr *ifa_ifwithdstaddr();
 
+#ifdef COMPAT_43
+#if BYTE_ORDER != BIG_ENDIAN
+	if (entry->rt_dst.sa_family == 0 && entry->rt_dst.sa_len < 16) {
+		entry->rt_dst.sa_family = entry->rt_dst.sa_len;
+		entry->rt_dst.sa_len = 16;
+	}
+	if (entry->rt_gateway.sa_family == 0 && entry->rt_gateway.sa_len < 16) {
+		entry->rt_gateway.sa_family = entry->rt_gateway.sa_len;
+		entry->rt_gateway.sa_len = 16;
+	}
+#else
+	if (entry->rt_dst.sa_len == 0)
+		entry->rt_dst.sa_len = 16;
+	if (entry->rt_gateway.sa_len == 0)
+		entry->rt_gateway.sa_len = 16;
+#endif
+#endif
 	af = entry->rt_dst.sa_family;
 	if (af >= AF_MAX)
 		return (EAFNOSUPPORT);
