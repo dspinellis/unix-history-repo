@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)sys_generic.c	7.10 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -78,7 +78,7 @@ read()
 				u.u_eosys = RESTARTSYS;
 		}
 	} else
-		error = (*fp->f_ops->fo_read)(fp, &auio, u.u_cred);
+		error = (*fp->f_ops->fo_read)(fp, &auio, fp->f_cred);
 	cnt -= auio.uio_resid;
 #ifdef KTRACE
 	if (KTRPOINT(u.u_procp, KTR_GENIO))
@@ -155,7 +155,7 @@ readv()
 				u.u_eosys = RESTARTSYS;
 		}
 	} else
-		error = (*fp->f_ops->fo_read)(fp, &auio, u.u_cred);
+		error = (*fp->f_ops->fo_read)(fp, &auio, fp->f_cred);
 	cnt -= auio.uio_resid;
 #ifdef KTRACE
 	if (ktriov != NULL) {
@@ -217,7 +217,7 @@ write()
 				u.u_eosys = RESTARTSYS;
 		}
 	} else
-		error = (*fp->f_ops->fo_write)(fp, &auio, u.u_cred);
+		error = (*fp->f_ops->fo_write)(fp, &auio, fp->f_cred);
 	cnt -= auio.uio_resid;
 #ifdef KTRACE
 	if (KTRPOINT(u.u_procp, KTR_GENIO))
@@ -295,7 +295,7 @@ writev()
 				u.u_eosys = RESTARTSYS;
 		}
 	} else
-		error = (*fp->f_ops->fo_write)(fp, &auio, u.u_cred);
+		error = (*fp->f_ops->fo_write)(fp, &auio, fp->f_cred);
 	cnt -= auio.uio_resid;
 #ifdef KTRACE
 	if (ktriov != NULL) {
