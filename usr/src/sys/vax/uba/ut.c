@@ -1,4 +1,4 @@
-/*	ut.c	4.11	82/03/14	*/
+/*	ut.c	4.12	82/05/27	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -84,19 +84,12 @@ utprobe(reg)
 	br=0; cvec=br; br=cvec;
 	utintr(0);
 #endif
-#if notdef
 	/*
-	 * It appears the controller won't interrupt unless the
-	 * slave is off-line...this is as bad as the TS-11.
+	 * The SI documentation says you must set the RDY bit
+	 * (even though it's read-only) to force an interrupt.
 	 */
-	((struct utdevice *) reg)->utcs1 = UT_IE|UT_NOP|UT_GO;
+	((struct utdevice *) reg)->utcs1 = UT_IE|UT_NOP|UT_RDY;
 	DELAY(10000);
-	((struct utdevice *) reg)->utcs1 = UT_CLEAR|UT_GO;
-#else
-	br = 0x15;
-	cvec = 0164;
-	return(1);
-#endif
 }
 
 /*ARGSUSED*/
