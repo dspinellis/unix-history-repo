@@ -1,0 +1,54 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)stat.3	5.1 (Berkeley) %G%
+.\"
+.TH STAT 3F "18 July 1983"
+.UC 5
+.SH NAME
+stat, lstat, fstat \- get file status
+.SH SYNOPSIS
+.B integer function stat (name, statb)
+.br
+.B character*(*) name
+.br
+.B integer statb(12)
+.sp 1
+.B integer function lstat (name, statb)
+.br
+.B character*(*) name
+.br
+.B integer statb(12)
+.sp 1
+.B integer function fstat (lunit, statb)
+.br
+.B integer statb(12)
+.SH DESCRIPTION
+These routines return detailed information about a file.
+.I Stat
+and
+.I lstat
+return information about file
+.IR name ;
+.I fstat
+returns information about the file associated with fortran logical unit
+.I lunit.
+The order and meaning of the information returned in array
+.I statb
+is as described for the structure
+.I stat
+under
+.IR stat (2).
+The ``spare'' values are not included.
+.PP
+The value of either function will be zero if successful;
+an error code otherwise.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+stat(2), access(3F), perror(3F), time(3F)
+.SH BUGS
+Pathnames can be no longer than MAXPATHLEN as defined in
+.RI < sys/param.h >.
