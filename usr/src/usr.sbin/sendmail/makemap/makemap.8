@@ -1,0 +1,85 @@
+.\" Copyright (c) 1988, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)makemap.8	5.1 (Berkeley) %G%
+.\"
+.TH MAKEMAP 8 November\ 16,\ 1992
+.UC 6
+.sh NAME
+makemap \- create database maps for sendmail
+.SH SYNOPSIS
+.B makemap
+[
+\-N
+] [
+\-o
+] [
+\-r
+] [
+\-v
+]
+maptype mapname
+.SH DESCRIPTION
+.I Makemap
+creates the database maps used by the keyed map lookups in
+.IR sendmail (8).
+It reads input from the standard input
+and outputs them to the indicated
+.IR mapname .
+.PP
+Depending on how it is compiled,
+.I makemap
+handles up to three different database formats,
+selected using the
+.I maptype
+parameter.
+They may be
+.IP dbm
+DBM format maps.
+This requires the
+.IR ndbm (3)
+library.
+.IP btree
+B-Tree format maps.
+This requires the new Berkeley
+.IR db (3)
+library.
+.IP hash
+Hash format maps.
+This also requires the
+.IR db (3)
+library.
+.PP
+In all cases,
+.I makemap
+reads lines from the standard input consisting of two
+words separated by white space.
+The first is the database key,
+the second is the value.
+The value may contain
+``%\fIn\fP''
+strings to indicated parameter substitution.
+Literal parentheses should be doubled
+(``%%'').
+Blank lines and lines beginning with ``#'' are ignored.
+.SH FLAGS
+.IP \-N
+Include the null byte that terminates strings
+in the map.
+This must match the \-N flag in the sendmail.cf
+``K'' line.
+.IP \-o
+Append to an old file.
+This allows you to augment an existing file.
+.IP \-r
+Allow replacement of existing keys.
+Normally
+.I makemap
+complains if you repeat a key,
+and does not do the insert.
+.IP \-v
+Verbosely print what it is doing.
+.SH SEE ALSO
+sendmail(8)
