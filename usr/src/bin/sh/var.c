@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)var.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)var.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -75,7 +75,7 @@ const struct varinit varinit[] = {
 
 struct var *vartab[VTABSIZE];
 
-STATIC void unsetvar __P((char *));
+STATIC int unsetvar __P((char *));
 STATIC struct var **hashvar __P((char *));
 STATIC int varequal __P((char *, char *));
 
@@ -510,7 +510,7 @@ poplocalvars() {
 			bcopy(lvp->text, optval, sizeof optval);
 			ckfree(lvp->text);
 		} else if ((lvp->flags & (VUNSET|VSTRFIXED)) == VUNSET) {
-			unsetvar(vp->text);
+			(void)unsetvar(vp->text);
 		} else {
 			if ((vp->flags & VTEXTFIXED) == 0)
 				ckfree(vp->text);
@@ -541,12 +541,27 @@ setvarcmd(argc, argv)  char **argv; {
 
 unsetcmd(argc, argv)  char **argv; {
 	char **ap;
+	int i;
+	int flg_func = 0;
+	int flg_var = 0;
+	int ret = 0;
 
-	for (ap = argv + 1 ; *ap ; ap++) {
-		unsetfunc(*ap);
-		unsetvar(*ap);
+	while ((i = nextopt("vf")) != '\0') {
+		if (i == 'f')
+			flg_func = 1;
+		else
+			flg_var = 1;
 	}
-	return 0;
+	if (flg_func == 0 && flg_var == 0)
+		flg_var = 1;
+			
+	for (ap = argptr; *ap ; ap++) {
+		if (flg_func)
+			ret |= unsetfunc(*ap);
+		if (flg_var)
+			ret |= unsetvar(*ap);
+	}
+	return ret;
 }
 
 
@@ -554,7 +569,7 @@ unsetcmd(argc, argv)  char **argv; {
  * Unset the specified variable.
  */
 
-STATIC void
+STATIC int
 unsetvar(s)
 	char *s;
 	{
@@ -564,11 +579,11 @@ unsetvar(s)
 	vpp = hashvar(s);
 	for (vp = *vpp ; vp ; vpp = &vp->next, vp = *vpp) {
 		if (varequal(vp->text, s)) {
+			if (vp->flags & VREADONLY)
+				return (1);
 			INTOFF;
-			if (*(strchr(vp->text, '=') + 1) != '\0'
-			 || vp->flags & VREADONLY) {
+			if (*(strchr(vp->text, '=') + 1) != '\0')
 				setvar(s, nullstr, 0);
-			}
 			vp->flags &=~ VEXPORT;
 			vp->flags |= VUNSET;
 			if ((vp->flags & VSTRFIXED) == 0) {
@@ -578,9 +593,11 @@ unsetvar(s)
 				ckfree(vp);
 			}
 			INTON;
-			return;
+			return (0);
 		}
 	}
+
+	return (1);
 }
 
 
