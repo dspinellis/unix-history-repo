@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)net.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)net.c	4.2	(Berkeley)	%G%";
 
 /* sccs id variable */
 static char *net_sid = "@(#)net.c	1.8";
@@ -412,13 +412,14 @@ register struct header *phd;
 
 static struct stat x;
 static struct direct y;
-static FILE *file;
 static int off = -1;
 
 
 /* these three routines gwd, cat, ckroot and 
    data structures x, y, off, do a pwd to string name */
 #ifdef V6
+static FILE *file;
+
 gwd(name)
   register char *name; {
 	*name = 0;
@@ -459,12 +460,14 @@ ckroot(name)
 	return;
 	}
 #else
+static DIR *file;
 static struct stat xx;
 
 gwd(name)
   register char *name;  {
 	int rdev, rino;
 	register int i;
+	register struct direct *dp;
 
 	*name = 0;
 	stat("/", &x);
@@ -474,24 +477,25 @@ gwd(name)
 		stat(".", &x);
 		if (x.st_ino == rino && x.st_dev == rdev)
 			break;
-		if ((file = fopen("..", "r")) == NULL)
+		if ((file = opendir("..")) == NULL)
 			break;
-		fstat(fileno(file), &xx);
+		fstat(file->dd_fd, &xx);
 		chdir("..");
 		if (x.st_dev == xx.st_dev) {
 			if (x.st_ino == xx.st_ino)
 				break;
 			do
-				if (fread((char *)&y, 1, sizeof y, file) != sizeof y)
+				if ((dp = readdir(file)) == NULL)
 					break;
-			while (y.d_ino != x.st_ino);
+			while (dp->d_ino != x.st_ino);
 		}
 		else do {
-			if (fread((char *)&y, 1, sizeof y, file) != sizeof y)
+			if ((dp = readdir(file)) == NULL)
 				break;
-			stat(y.d_name, &xx);
+			stat(dp->d_name, &xx);
 		} while (xx.st_ino != x.st_ino || xx.st_dev != x.st_dev);
-		fclose(file);
+		blkcpy(dp, &y, DIRSIZ(dp));
+		closedir(file);
 		if (cat(name))
 			break;
 	}
@@ -540,4 +544,12 @@ isdirectory(fn)
 		if(strcmp(fn+i-3,"/..") == 0)ret = 1;
 	}
 	return(ret);
+}
+
+blkcpy(from, to, size)
+	register *from, *to;
+	register int size;
+{
+	while (size-- > 0)
+		*to++ = *from++;
 }

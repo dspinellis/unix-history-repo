@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)netrm.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)netrm.c	4.2	(Berkeley)	%G%";
 
 # include "defs.h"
 /* sccs id variable */
@@ -20,7 +20,6 @@ char	pathname[]=  	NETRMNAME;
 int hisuid, hisgid;
 static char visit[26];
 static struct stat statbuf;
-static struct direct dirbuf;
 
 main(argc,argv)
 char	*argv[];
@@ -60,25 +59,25 @@ char	*argv[];
 }
 static pdir(str)
   char *str; {
-	FILE *df;
-	df = fopen(str,"r");
+	DIR *df;
+	register struct direct *dp;
+	df = opendir(str);
 	if(df == NULL){
 		perror(str);
 		exit(EX_OSFILE);
 		}
-	while(fread(&dirbuf,1,sizeof dirbuf,df) == sizeof dirbuf){
-		if(dirbuf.d_ino == 0
-		|| dirbuf.d_name[0] != 'd'
-		|| dirbuf.d_name[1] != 'f'
-		|| stat(dirbuf.d_name,&statbuf) < 0)
+	while((dp = readdir(df)) != NULL){
+		if(dp->d_name[0] != 'd'
+		|| dp->d_name[1] != 'f'
+		|| stat(dp->d_name,&statbuf) < 0)
 			 continue;
 		if(guid(statbuf.st_uid,statbuf.st_gid) != hisuid)
 			continue;
 		/* kludge in file name */
-		dirbuf.d_name[3] = dirbuf.d_name[2];
-		rmfile(dirbuf.d_name+3);
+		dp->d_name[3] = dp->d_name[2];
+		rmfile(dp->d_name+3);
 		}
-	fclose(df);
+	closedir(df);
 	}
 rmfile(str)
   char *str;
