@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.2 (Berkeley) %G%
+ *	@(#)trap.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -226,10 +226,6 @@ syscall(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 	if (!USERMODE(locr0[PS]))
 		panic("syscall");
 	u.u_ar0 = locr0;
-	if (code == 139) {			/* 4.2 COMPATIBILTY XXX */
-		osigcleanup();			/* 4.2 COMPATIBILTY XXX */
-		goto done;			/* 4.2 COMPATIBILTY XXX */
-	}
 	params = (caddr_t)locr0[FP] + NBPW;
 	u.u_error = 0;
 /* BEGIN GROT */
