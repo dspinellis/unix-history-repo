@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)deliver.c	5.10.1.1 (Berkeley) %G%";
+static char	SccsId[] = "@(#)deliver.c	5.10.1.2 (Berkeley) %G%";
 #endif not lint
 
 # include <signal.h>
@@ -361,8 +361,30 @@ deliver(e, firstto)
 # ifdef SMTP
 	if (clever)
 	{
+# ifdef MXDOMAIN
+		expand("\001w", buf, &buf[sizeof buf - 1], e);
+		if ((nmx = getmxrr(host, mxhosts, MAXMXHOSTS, buf)) < 0)
+		{
+			/*
+			 * Map errors into standard values
+			 */
+			if (nmx == -1)
+				rcode = EX_TEMPFAIL;
+			else if (nmx == -3)
+				rcode = EX_NOHOST;
+			else
+				rcode = EX_UNAVAILABLE;
+		}
+		else
+			rcode = EX_OK;
+#else MXDOMAIN
+		nmx = 1;
+		mxhosts[0] = q->q_host;
+		rcode = EX_OK;
+#endif
 		/* send the initial SMTP protocol */
-		rcode = smtpinit(m, pv);
+		if (rcode == EX_OK)
+			rcode = smtpinit(m, pv);
 
 		if (rcode == EX_OK)
 		{
@@ -672,7 +694,6 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	FILE *mfile;
 	FILE *rfile;
 	extern FILE *fdopen();
-	char buf[MAXNAME];
 
 # ifdef DEBUG
 	if (tTd(11, 1))
@@ -724,9 +745,6 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		for (j = 0; j < nmx; j++)
 		{
 			CurHostName = mxhosts[j];
-			expand("\001j", buf, &buf[sizeof buf - 1], CurEnv);
-			if (sameword(CurHostName, buf))
-				break;
 #ifdef HOSTINFO
 		/* see if we have already determined that this host is fried */
 			st = stab(mxhosts[j], ST_HOST, ST_FIND);
@@ -1292,9 +1310,6 @@ sendall(e, mode)
 	register ADDRESS *q;
 	bool oldverbose;
 	int pid;
-	register char *p;
-	char user[MAXNAME];
-	char buf[MAXNAME];
 
 	/* determine actual delivery mode */
 	if (mode == SM_DEFAULT)
@@ -1385,7 +1400,6 @@ sendall(e, mode)
 	**  Run through the list and send everything.
 	*/
 
-restart:
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
 		if (mode == SM_VERIFY)
@@ -1395,28 +1409,7 @@ restart:
 				message(Arpa_Info, "deliverable");
 		}
 		else
-		{
-			if (strcmp(q->q_mailer->m_mailer, "[IPC]") == 0 &&
-			    !bitset(QDONTSEND, q->q_flags))
-			{
-				if ((nmx = getmxrr(q->q_host, mxhosts, MAXMXHOSTS)) < 0)
-				{
-					mxhosts[0] = q->q_host;
-					nmx = 1;
-				}
-				/* we get this mail */
-				expand("\001j", buf, &buf[sizeof buf - 1], e);
-				if (sameword(mxhosts[0], buf))
-				{
-					strcpy(user, q->q_user);
-					if (p = index(user, '@'))
-						*p = '\0';
-					sendtolist(user, q, &e->e_sendqueue);
-					goto restart;
-				}
-			}
 			(void) deliver(e, q);
-		}
 	}
 	Verbose = oldverbose;
 
