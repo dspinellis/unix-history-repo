@@ -2,7 +2,7 @@
 #
 # Make HP-UX style interfaces for graphics input/output devices
 #
-#	@(#)MAKEDEV.hpux	5.1 (Berkeley) %G%
+#	@(#)MAKEDEV.hpux	8.1 (Berkeley) %G%
 #
 ln=ln
 mknod=/etc/mknod
