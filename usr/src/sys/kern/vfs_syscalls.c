@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.90 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.91 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -557,11 +557,9 @@ open(p, uap, retval)
 	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname, p);
 	p->p_dupfd = -indx - 1;			/* XXX check for fdopen */
 	if (error = vn_open(&nd, fmode, cmode)) {
-		int dfd = p->p_dupfd;
-		p->p_dupfd = 0;
 		ffree(fp);
-		if ((error == ENODEV || error == ENXIO) && /* XXX from fdopen */
-		    dfd >= 0 &&
+		if ((error == ENODEV || error == ENXIO) &&
+		    p->p_dupfd >= 0 && 			/* XXX from fdopen */
 		    (error = dupfdopen(fdp, indx, p->p_dupfd,
 					fmode, error)) == 0) {
 			*retval = indx;
