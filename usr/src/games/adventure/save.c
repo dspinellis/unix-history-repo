@@ -6,7 +6,7 @@
  *      (but people that do that get what they deserve)
  */
 
-static char sccsid[] = "	save.c	4.1	82/05/11	";
+static char sccsid[] = "	save.c	4.2	86/11/17	";
 
 #include <a.out.h>
 int filesize;                    /* accessible to caller         */
@@ -54,6 +54,11 @@ char *cmdfile,*outfile;
 		    +  020000;             /* i.e. the next one up         */
 #endif
 #ifdef vax
+		    (header.a_text	   /* starts after text            */
+		    & 037777776000)        /* on an 1K boundary            */
+		    +        02000;        /* i.e. the next one up         */
+#endif
+#ifdef tahoe
 		    (header.a_text	   /* starts after text            */
 		    & 037777776000)        /* on an 1K boundary            */
 		    +        02000;        /* i.e. the next one up         */
