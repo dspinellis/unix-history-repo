@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -85,6 +85,7 @@ struct	servtab {
 	short	se_wait;		/* single threaded server */
 	short	se_checked;		/* looked at during merge */
 	char	*se_user;		/* user name to run as */
+	struct	biltin *se_bi;		/* if built-in, description */
 	char	*se_server;		/* server program */
 #define MAXARGV 5
 	char	*se_argv[MAXARGV+1];	/* program arguments */
@@ -93,17 +94,59 @@ struct	servtab {
 	struct	servtab *se_next;
 } *servtab;
 
-char	*CONFIG = "/etc/inetd.conf";
+int echo_stream(), discard_stream(), machtime_stream();
+int daytime_stream(), chargen_stream();
+int echo_dg(), discard_dg(), machtime_dg(), daytime_dg(), chargen_dg();
 
-main(argc, argv)
+struct biltin {
+	char	*bi_service;		/* internally provided service name */
+	int	bi_socktype;		/* type of socket supported */
+	short	bi_fork;		/* 1 if should fork before call */
+	short	bi_wait;		/* 1 if should wait for child */
+	int	(*bi_fn)();		/* function which performs it */
+} biltins[] = {
+	/* Echo received data */
+	"echo",		SOCK_STREAM,	1, 0,	echo_stream,
+	"echo",		SOCK_DGRAM,	0, 0,	echo_dg,
+
+	/* Internet /dev/null */
+	"discard",	SOCK_STREAM,	1, 0,	discard_stream,
+	"discard",	SOCK_DGRAM,	0, 0,	discard_dg,
+
+	/* Return 32 bit time since 1970 */
+	"time",		SOCK_STREAM,	0, 0,	machtime_stream,
+	"time",		SOCK_DGRAM,	0, 0,	machtime_dg,
+
+	/* Return human-readable time */
+	"daytime",	SOCK_STREAM,	0, 0,	daytime_stream,
+	"daytime",	SOCK_DGRAM,	0, 0,	daytime_dg,
+
+	/* Familiar character generator */
+	"chargen",	SOCK_STREAM,	1, 0,	chargen_stream,
+	"chargen",	SOCK_DGRAM,	0, 0,	chargen_dg,
+	0
+};
+
+#define NUMINT	(sizeof(intab) / sizeof(struct inent))
+char	*CONFIG = "/etc/inetd.conf";
+char	**Argv;
+char 	*LastArg;
+
+main(argc, argv, envp)
 	int argc;
-	char *argv[];
+	char *argv[], *envp[];
 {
 	register struct servtab *sep;
 	register struct passwd *pwd;
 	char *cp, buf[50];
 	int pid, i;
 
+	Argv = argv;
+	if (envp == 0 || *envp == 0)
+		envp = argv;
+	while (*envp)
+		envp++;
+	LastArg = envp[-1] + strlen(envp[-1]);
 	argc--, argv++;
 	while (argc > 0 && *argv[0] == '-') {
 		for (cp = &argv[0][1]; *cp; cp++) switch (*cp) {
@@ -176,7 +219,9 @@ nextopt:
 		} else
 			ctrl = sep->se_fd;
 		sigblock(sigmask(SIGCHLD)|sigmask(SIGHUP));
-		pid = fork();
+		pid = 0;
+		if (sep->se_bi == 0 || sep->se_bi->bi_fork)
+			pid = fork();
 		if (pid < 0) {
 			if (!sep->se_wait && sep->se_socktype == SOCK_STREAM)
 				close(ctrl);
@@ -197,25 +242,37 @@ nextopt:
 				close(tt);
 			}
 #endif
-			dup2(ctrl, 0); close(ctrl); dup2(0, 1); dup2(0, 2);
-			for (i = getdtablesize(); --i > 2; )
-				close(i);
-			if ((pwd = getpwnam(sep->se_user)) == NULL) {
-				syslog(LOG_ERR, "getpwnam: %s: No such user"
-					,sep->se_user);
-				exit(1);
+			if (sep->se_bi == 0 || sep->se_bi->bi_fork)
+				for (i = getdtablesize(); --i > 2; )
+					if (i != ctrl)
+						close(i);
+			if (sep->se_bi)
+				(*sep->se_bi->bi_fn)(ctrl, sep);
+			else {
+				dup2(ctrl, 0);
+				close(ctrl);
+				dup2(0, 1);
+				dup2(0, 2);
+				if ((pwd = getpwnam(sep->se_user)) == NULL) {
+					syslog(LOG_ERR,
+						"getpwnam: %s: No such user",
+						sep->se_user);
+					_exit(1);
+				}
+				if (pwd->pw_uid) {
+					(void) setgid(pwd->pw_gid);
+					initgroups(pwd->pw_name, pwd->pw_gid);
+					(void) setuid(pwd->pw_uid);
+				}
+				if (debug)
+					fprintf(stderr, "%d execl %s\n",
+					    getpid(), sep->se_server);
+				execv(sep->se_server, sep->se_argv);
+				if (sep->se_socktype != SOCK_STREAM)
+					recv(0, buf, sizeof (buf), 0);
+				syslog(LOG_ERR, "execv %s: %m", sep->se_server);
+				_exit(1);
 			}
-			(void) setgid(pwd->pw_gid);
-			initgroups(pwd->pw_name, pwd->pw_gid);
-			(void) setuid(pwd->pw_uid);
-			if (debug)
-				fprintf(stderr, "%d execl %s\n",
-				    getpid(), sep->se_server);
-			execv(sep->se_server, sep->se_argv);
-			if (sep->se_socktype != SOCK_STREAM)
-				recv(0, buf, sizeof (buf), 0);
-			syslog(LOG_ERR, "execv %s: %m", sep->se_server);
-			_exit(1);
 		}
 		if (!sep->se_wait && sep->se_socktype == SOCK_STREAM)
 			close(ctrl);
@@ -394,6 +451,7 @@ getconfigent()
 	char *cp, *arg;
 	int argc;
 
+more:
 	while ((cp = nextline(fconfig)) && *cp == '#')
 		;
 	if (cp == NULL)
@@ -417,6 +475,21 @@ getconfigent()
 	sep->se_wait = strcmp(arg, "wait") == 0;
 	sep->se_user = strdup(skip(&cp));
 	sep->se_server = strdup(skip(&cp));
+	if (strcmp(sep->se_server, "internal") == 0) {
+		register struct biltin *bi;
+
+		for (bi = biltins; bi->bi_service; bi++)
+			if (bi->bi_socktype == sep->se_socktype &&
+			    strcmp(bi->bi_service, sep->se_service) == 0)
+				break;
+		if (bi->bi_service == 0) {
+			syslog(LOG_ERR, "internal service %s unknown\n",
+				sep->se_service);
+			goto more;
+		}
+		sep->se_bi = bi;
+		sep->se_wait = bi->bi_wait;
+	}
 	argc = 0;
 	for (arg = skip(&cp); cp; arg = skip(&cp))
 		if (argc < MAXARGV)
@@ -501,4 +574,260 @@ strdup(cp)
 	}
 	strcpy(new, cp);
 	return (new);
+}
+
+setproctitle(a, s)
+	char *a;
+	int s;
+{
+	int size;
+	register char *cp;
+	struct sockaddr_in sin;
+	char buf[80];
+
+	cp = Argv[0];
+	size = sizeof(sin);
+	if (getpeername(s, &sin, &size) == 0)
+		sprintf(buf, "-%s [%s]", a, inet_ntoa(sin.sin_addr)); 
+	else
+		sprintf(buf, "-%s", a); 
+	strncpy(cp, buf, LastArg - cp);
+	cp += strlen(cp);
+	while (cp < LastArg)
+		*cp++ = ' ';
+}
+
+/*
+ * Internet services provided internally by inetd:
+ */
+
+/* ARGSUSED */
+echo_stream(s, sep)		/* Echo service -- echo data back */
+	int s;
+	struct servtab *sep;
+{
+	char buffer[BUFSIZ];
+	int i;
+
+	setproctitle("echo", s);
+	while ((i = read(s, buffer, sizeof(buffer))) > 0 &&
+	    write(s, buffer, i) > 0)
+		;
+	exit(0);
+}
+
+/* ARGSUSED */
+echo_dg(s, sep)			/* Echo service -- echo data back */
+	int s;
+	struct servtab *sep;
+{
+	char buffer[BUFSIZ];
+	int i, size;
+	struct sockaddr sa;
+
+	size = sizeof(sa);
+	if ((i = recvfrom(s, buffer, sizeof(buffer), 0, &sa, &size)) < 0)
+		return;
+	(void) sendto(s, buffer, i, 0, &sa, sizeof(sa));
+}
+
+/* ARGSUSED */
+discard_stream(s, sep)		/* Discard service -- ignore data */
+	int s;
+	struct servtab *sep;
+{
+	char buffer[BUFSIZ];
+
+	setproctitle("discard", s);
+	while (1) {
+		while (read(s, buffer, sizeof(buffer)) > 0)
+			;
+		if (errno != EINTR)
+			break;
+	}
+	exit(0);
+}
+
+/* ARGSUSED */
+discard_dg(s, sep)		/* Discard service -- ignore data */
+	int s;
+	struct servtab *sep;
+{
+	char buffer[BUFSIZ];
+
+	(void) read(s, buffer, sizeof(buffer));
+}
+
+#include <ctype.h>
+#define LINESIZ 72
+char ring[128];
+char *endring;
+
+initring()
+{
+	register int i;
+
+	endring = ring;
+
+	for (i = 0; i <= 128; ++i)
+		if (isprint(i))
+			*endring++ = i;
+}
+
+/* ARGSUSED */
+chargen_stream(s, sep)		/* Character generator */
+	int s;
+	struct servtab *sep;
+{
+	char text[LINESIZ+2];
+	register int i;
+	register char *rp, *rs, *dp;
+
+	setproctitle("discard", s);
+	if (endring == 0)
+		initring();
+
+	for (rs = ring; ; ++rs) {
+		if (rs >= endring)
+			rs = ring;
+		rp = rs;
+		dp = text;
+		i = MIN(LINESIZ, endring - rp);
+		bcopy(rp, dp, i);
+		dp += i;
+		if ((rp += i) >= endring)
+			rp = ring;
+		if (i < LINESIZ) {
+			i = LINESIZ - i;
+			bcopy(rp, dp, i);
+			dp += i;
+			if ((rp += i) >= endring)
+				rp = ring;
+		}
+		*dp++ = '\r';
+		*dp++ = '\n';
+
+		if (write(s, text, dp - text) != dp - text)
+			break;
+	}
+	exit(0);
+}
+
+/* ARGSUSED */
+chargen_dg(s, sep)		/* Character generator */
+	int s;
+	struct servtab *sep;
+{
+	char text[LINESIZ+2];
+	register int i;
+	register char *rp;
+	static char *rs = ring;
+	struct sockaddr sa;
+	int size;
+
+	if (endring == 0)
+		initring();
+
+	size = sizeof(sa);
+	if (recvfrom(s, text, sizeof(text), 0, &sa, &size) < 0)
+		return;
+	rp = rs;
+	if (rs++ >= endring)
+		rs = ring;
+	i = MIN(LINESIZ - 2, endring - rp);
+	bcopy(rp, text, i);
+	if ((rp += i) >= endring)
+		rp = ring;
+	if (i < LINESIZ - 2) {
+		bcopy(rp, text, i);
+		if ((rp += i) >= endring)
+			rp = ring;
+	}
+	text[LINESIZ - 2] = '\r';
+	text[LINESIZ - 1] = '\n';
+
+	(void) sendto(s, text, sizeof(text), 0, &sa, sizeof(sa));
+}
+
+/*
+ * Return a machine readable date and time, in the form of the
+ * number of seconds since midnight, Jan 1, 1900.  Since gettimeofday
+ * returns the number of seconds since midnight, Jan 1, 1970,
+ * we must add 2208988800 seconds to this figure to make up for
+ * some seventy years Bell Labs was asleep.
+ */
+#include <sys/time.h>
+
+long
+machtime()
+{
+	struct timeval tv;
+
+	if (gettimeofday(&tv, 0) < 0) {
+		fprintf(stderr, "Unable to get time of day\n");
+		return;
+	}
+	return (htonl((long)tv.tv_sec + 2208988800));
+}
+
+/* ARGSUSED */
+machtime_stream(s, sep)
+	int s;
+	struct servtab *sep;
+{
+	long result;
+
+	result = machtime();
+	(void) write(s, (char *) &result, sizeof(result));
+}
+
+/* ARGSUSED */
+machtime_dg(s, sep)
+	int s;
+	struct servtab *sep;
+{
+	long result;
+	struct sockaddr sa;
+	int size;
+
+	size = sizeof(sa);
+	if (recvfrom(s, &result, sizeof(result), 0, &sa, &size) < 0)
+		return;
+	result = machtime();
+	(void) sendto(s, (char *) &result, sizeof(result), 0, &sa, sizeof(sa));
+}
+
+/* ARGSUSED */
+daytime_stream(s, sep)		/* Return human-readable time of day */
+	int s;
+	struct servtab *sep;
+{
+	char buffer[256];
+	time_t time(), clock;
+	char *ctime();
+
+	clock = time((time_t *) 0);
+
+	sprintf(buffer, "%s\r", ctime(&clock));
+	write(s, buffer, strlen(buffer));
+}
+
+/* ARGSUSED */
+daytime_dg(s, sep)		/* Return human-readable time of day */
+	int s;
+	struct servtab *sep;
+{
+	char buffer[256];
+	time_t time(), clock;
+	struct sockaddr sa;
+	int size;
+	char *ctime();
+
+	clock = time((time_t *) 0);
+
+	size = sizeof(sa);
+	if (recvfrom(s, buffer, sizeof(buffer), 0, &sa, &size) < 0)
+		return;
+	sprintf(buffer, "%s\r", ctime(&clock));
+	(void) sendto(s, buffer, strlen(buffer), 0, &sa, sizeof(sa));
 }
