@@ -24,16 +24,18 @@ static char sccsid[] = "@(#)xinstall.c	5.5 (Berkeley) %G%";
 #include <ctype.h>
 
 #define	YES		1			/* yes/true */
+#define	NO		0			/* no/false */
 #define	DEF_GROUP	"staff"			/* default group */
 #define	DEF_OWNER	"root"			/* default owner */
 
-static int	docopy, dostrip,
-		mode = 0755;
-static char	*group = DEF_GROUP,
-		*owner = DEF_OWNER,
-		*path;
 extern int	errno;
 extern char	*sys_errlist[];
+
+static struct passwd	*pp;
+static struct group	*gp;
+static int	docopy, dostrip,
+		mode = 0755;
+static char	pathbuf[MAXPATHLEN];
 
 main(argc, argv)
 	int	argc;
@@ -41,13 +43,12 @@ main(argc, argv)
 {
 	extern char	*optarg;
 	extern int	optind;
-	register int	to_fd;
 	struct stat	from_sb, to_sb;
-	struct passwd	*pp;
-	struct group	*gp;
-	int	ch, devnull;
-	char	pbuf[MAXPATHLEN];
+	int	ch, no_target;
+	char	*group, *owner, *to_name;
 
+	group = DEF_GROUP;
+	owner = DEF_OWNER;
 	while ((ch = getopt(argc, argv, "cg:m:o:s")) != EOF)
 		switch((char)ch) {
 		case 'c':
@@ -71,7 +72,7 @@ main(argc, argv)
 		}
 	argc -= optind;
 	argv += optind;
-	if (argc != 2)
+	if (argc < 2)
 		usage();
 
 	/* get group and owner id's */
@@ -84,97 +85,112 @@ main(argc, argv)
 		exit(1);
 	}
 
-	/* check source */
-	if (stat(argv[0], &from_sb)) {
-		fprintf(stderr, "install: fstat: %s: %s\n", argv[0], sys_errlist[errno]);
-		exit(1);
-	}
-	/* special case for removing files */
-	devnull = !strcmp(argv[0], "/dev/null");
-	if (!devnull && !(from_sb.st_mode & S_IFREG)) {
-		fprintf(stderr, "install: %s isn't a regular file.\n", argv[0]);
-		exit(1);
+	no_target = stat(to_name = argv[argc - 1], &to_sb);
+	if (!no_target && to_sb.st_mode & S_IFDIR) {
+		for (; *argv != to_name; ++argv)
+			install(*argv, to_name, YES);
+		exit(0);
 	}
 
-	/* build target path, find out if target is same as source */
-	if (!stat(path = argv[1], &to_sb)) {
-		if (to_sb.st_mode & S_IFDIR) {
-			char	*C, *rindex();
+	/* can't do file1 file2 directory/file */
+	if (argc != 2)
+		usage();
 
-			(void)sprintf(path = pbuf, "%s/%s", argv[1], (C = rindex(argv[0], '/')) ? ++C : argv[0]);
-			if (stat(path, &to_sb))
-				goto nocompare;
+	if (!no_target) {
+		if (stat(*argv, &from_sb)) {
+			fprintf(stderr, "install: can't find %s.\n", *argv);
+			exit(1);
 		}
 		if (!(to_sb.st_mode & S_IFREG)) {
-			fprintf(stderr, "install: %s isn't a regular file.\n", path);
+			fprintf(stderr, "install: %s isn't a regular file.\n", to_name);
 			exit(1);
 		}
 		if (to_sb.st_dev == from_sb.st_dev && to_sb.st_ino == from_sb.st_ino) {
-			fprintf(stderr, "install: %s and %s are the same file.\n", argv[0], path);
+			fprintf(stderr, "install: %s and %s are the same file.\n", *argv, to_name);
 			exit(1);
 		}
 		/* unlink now... avoid ETXTBSY errors later */
-		(void)unlink(path);
+		(void)unlink(to_name);
 	}
-
-nocompare:
-	/* open target, set mode, owner, group */
-	if ((to_fd = open(path, O_CREAT|O_WRONLY|O_TRUNC, 0)) < 0) {
-		fprintf(stderr, "install: %s: %s\n", path, sys_errlist[errno]);
-		exit(1);
-	}
-	if (fchmod(to_fd, mode)) {
-		fprintf(stderr, "install: fchmod: %s: %s\n", path, sys_errlist[errno]);
-		bad();
-	}
-	if (fchown(to_fd, pp->pw_uid, gp->gr_gid)) {
-		fprintf(stderr, "install: fchown: %s: %s\n", path, sys_errlist[errno]);
-		bad();
-	}
-
-	if (devnull)
-		exit(0);
-
-	if (dostrip) {
-		strip(to_fd, argv[0], path);
-		if (docopy)
-			exit(0);
-	}
-	else if (docopy) {
-		copy(argv[0], to_fd, path);
-		exit(0);
-	}
-	else if (rename(argv[0], path))
-		copy(argv[0], to_fd, path);
-	(void)unlink(argv[0]);
+	install(*argv, to_name, NO);
 	exit(0);
 }
 
 /*
- * copy --
- *	copy from one file to another
+ * install --
+ *	build a path name and install the file
  */
 static
-copy(from_name, to_fd, to_name)
-	register int	to_fd;
+install(from_name, to_name, isdir)
 	char	*from_name, *to_name;
+	int	isdir;
 {
-	register int	n, from_fd;
-	char	buf[MAXBSIZE];
+	struct stat	from_sb;
+	int	devnull, from_fd, to_fd;
+	char	*C,
+		*rindex();
 
 	if ((from_fd = open(from_name, O_RDONLY, 0)) < 0) {
 		fprintf(stderr, "install: open: %s: %s\n", from_name, sys_errlist[errno]);
-		bad();
+		exit(1);
 	}
-	while ((n = read(from_fd, buf, sizeof(buf))) > 0)
-		if (write(to_fd, buf, n) != n) {
-			fprintf(stderr, "install: write: %s: %s\n", to_name, sys_errlist[errno]);
-			bad();
+
+	/* if try to install "/dev/null" to a directory, fails */
+	devnull = isdir ? NO : !strcmp(from_name, "/dev/null");
+	if (!devnull) {
+		if (fstat(from_fd, &from_sb)) {
+			fprintf(stderr, "install: can't find %s.\n", from_name);
+			exit(1);
 		}
-	if (n == -1) {
-		fprintf(stderr, "install: read: %s: %s\n", from_name, sys_errlist[errno]);
+		if (!(from_sb.st_mode & S_IFREG)) {
+			fprintf(stderr, "install: %s isn't a regular file.\n", from_name);
+			exit(1);
+		}
+	}
+
+	/* build the path */
+	if (isdir) {
+		(void)sprintf(pathbuf, "%s/%s", to_name, (C = rindex(*from_name, '/')) ? ++C : from_name);
+		to_name = pathbuf;
+	}
+
+	/* unlink now... avoid ETXTBSY errors later */
+	(void)unlink(to_name);
+
+	/* open target, set owner, group, mode */
+	if ((to_fd = open(to_name, O_CREAT|O_WRONLY|O_TRUNC, 0)) < 0) {
+		fprintf(stderr, "install: %s: %s\n", to_name, sys_errlist[errno]);
+		exit(1);
+	}
+	if (fchmod(to_fd, mode)) {
+		fprintf(stderr, "install: fchmod: %s: %s\n", to_name, sys_errlist[errno]);
 		bad();
 	}
+	if (fchown(to_fd, pp->pw_uid, gp->gr_gid)) {
+		fprintf(stderr, "install: fchown: %s: %s\n", to_name, sys_errlist[errno]);
+		bad();
+	}
+
+	if (devnull) {
+		(void)close(to_fd);
+		return;
+	}
+
+	if (dostrip) {
+		strip(from_fd, from_name, to_fd, to_name);
+		if (docopy)
+			goto done;
+	}
+	else if (docopy) {
+		copy(from_fd, from_name, to_fd, to_name);
+		goto done;
+	}
+	else if (rename(from_name, to_name))
+		copy(from_fd, from_name, to_fd, to_name);
+	(void)unlink(from_name);
+
+done:	(void)close(from_fd);
+	(void)close(to_fd);
 }
 
 /*
@@ -182,20 +198,16 @@ copy(from_name, to_fd, to_name)
  *	copy file, strip(1)'ing it at the same time
  */
 static
-strip(to_fd, from_name, to_name)
-	register int	to_fd;
+strip(from_fd, from_name, to_fd, to_name)
+	register int	from_fd, to_fd;
 	char	*from_name, *to_name;
 {
 	typedef struct exec	EXEC;
 	register long	size;
-	register int	n, from_fd;
+	register int	n;
 	EXEC	head;
 	char	buf[MAXBSIZE];
 
-	if ((from_fd = open(from_name, O_RDONLY, 0)) < 0) {
-		fprintf(stderr, "install: open: %s: %s\n", from_name, sys_errlist[errno]);
-		bad();
-	}
 	if (read(from_fd, (char *)&head, sizeof(head)) < 0 || N_BADMAG(head)) {
 		fprintf(stderr, "install: %s not in a.out format.\n", from_name);
 		bad();
@@ -225,6 +237,33 @@ strip(to_fd, from_name, to_name)
 			bad();
 		}
 	}
+	else {
+		(void)lseek(from_fd, L_SET, 0L);
+		copy(from_fd, from_name, to_fd, to_name);
+	}
+}
+
+/*
+ * copy --
+ *	copy from one file to another
+ */
+static
+copy(from_fd, from_name, to_fd, to_name)
+	register int	from_fd, to_fd;
+	char	*from_name, *to_name;
+{
+	register int	n;
+	char	buf[MAXBSIZE];
+
+	while ((n = read(from_fd, buf, sizeof(buf))) > 0)
+		if (write(to_fd, buf, n) != n) {
+			fprintf(stderr, "install: write: %s: %s\n", to_name, sys_errlist[errno]);
+			bad();
+		}
+	if (n == -1) {
+		fprintf(stderr, "install: read: %s: %s\n", from_name, sys_errlist[errno]);
+		bad();
+	}
 }
 
 /*
@@ -243,23 +282,23 @@ atoo(str)
 }
 
 /*
- * usage --
- *	print a usage message and die
- */
-static
-usage()
-{
-	fputs("usage: install [-cs] [-g group] [-m mode] [-o owner] source destination\n", stderr);
-	exit(1);
-}
-
-/*
  * bad --
  *	remove created target and die
  */
 static
 bad()
 {
-	(void)unlink(path);
+	(void)unlink(pathbuf);
+	exit(1);
+}
+
+/*
+ * usage --
+ *	print a usage message and die
+ */
+static
+usage()
+{
+	fputs("usage: install [-cs] [-g group] [-m mode] [-o owner] f1 f2;\n\tor f1 ... fn directory\n", stderr);
 	exit(1);
 }
