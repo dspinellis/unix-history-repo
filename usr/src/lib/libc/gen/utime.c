@@ -1,5 +1,6 @@
-/*	utime.c	4.1	83/05/31	*/
+/*	utime.c	4.2	83/05/31	*/
 
+#include <sys/time.h>
 /*
  * Backwards compatible utime.
  */
