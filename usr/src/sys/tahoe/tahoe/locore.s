@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.3 (Berkeley) %G%
+ *	@(#)locore.s	7.4 (Berkeley) %G%
  */
 
 #include "../tahoe/mtpr.h"
@@ -883,6 +883,28 @@ ENTRY(badaddr, R3|R4)
 1:	bbc	$1,r4,1f; tstw	(r3)
 1:	bbc	$2,r4,1f; tstl	(r3)
 1:	clrl	r0
+2:	movl	r2,_scb+SCB_BUSERR
+	mtpr	r1,$IPL
+	ret
+
+/*
+ * wbadaddr(addr, len, value)
+ *	see if write of value to addr with a len type instruction causes
+ *	a machine check
+ *	len is length of access (1=byte, 2=short, 4=long)
+ *	r0 = 0 means good(exists); r0 =1 means does not exist.
+ */
+ENTRY(wbadaddr, R3|R4)
+	mfpr	$IPL,r1
+	mtpr	$HIGH,$IPL
+	movl	_scb+SCB_BUSERR,r2
+	movl	4(fp),r3
+	movl	8(fp),r4
+	movab	9f,_scb+SCB_BUSERR
+	bbc	$0,r4,1f; movb	15(fp), (r3)
+1:	bbc	$1,r4,1f; movw	14(fp), (r3)
+1:	bbc	$2,r4,1f; movl	12(fp), (r3)
+1:	clrl	r0			# made it w/o machine checks
 2:	movl	r2,_scb+SCB_BUSERR
 	mtpr	r1,$IPL
 	ret
