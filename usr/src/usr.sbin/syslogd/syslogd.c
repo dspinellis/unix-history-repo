@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	4.10 (Berkeley) %G%";
 #endif
 
 /*
@@ -420,6 +420,7 @@ logmsg(pri, msg, from, flags)
 			/* we found a match, update the time */
 			strncpy(prevdate, cp+2, 15);
 			count++;
+			(void) sigsetmask(omask);
 			return;
 		} else {
 			/* new line, save it */
