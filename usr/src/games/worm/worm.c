@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)worm.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)worm.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -30,8 +30,6 @@ static char sccsid[] = "@(#)worm.c	5.9 (Berkeley) %G%";
 #define BODY 'o'
 #define LENGTH 7
 #define RUNLEN 8
-#define when break;case
-#define otherwise break;default
 #define CNTRL(p) (p-'A'+1)
 #ifndef baudrate
 # define	baudrate()	_tty.sg_ospeed
@@ -185,19 +183,19 @@ char ch;
 	y = head->y;
 	switch(ch)
 	{
-		when 'h': x--;
-		when 'j': y++;
-		when 'k': y--;
-		when 'l': x++;
-		when 'H': x--; running = RUNLEN; ch = tolower(ch);
-		when 'J': y++; running = RUNLEN/2; ch = tolower(ch);
-		when 'K': y--; running = RUNLEN/2; ch = tolower(ch);
-		when 'L': x++; running = RUNLEN; ch = tolower(ch);
-		when '\f': setup(); return;
-		when CNTRL('Z'): suspend(); return;
-		when CNTRL('C'): crash(); return;
-		when CNTRL('D'): crash(); return;
-		otherwise: if (! running) alarm(1);
+		case 'h': x--; break;
+		case 'j': y++; break;
+		case 'k': y--; break;
+		case 'l': x++; break;
+		case 'H': x--; running = RUNLEN; ch = tolower(ch); break;
+		case 'J': y++; running = RUNLEN/2; ch = tolower(ch); break;
+		case 'K': y--; running = RUNLEN/2; ch = tolower(ch); break;
+		case 'L': x++; running = RUNLEN; ch = tolower(ch); break;
+		case '\f': setup(); return;
+		case CNTRL('Z'): suspend(); return;
+		case CNTRL('C'): crash(); return;
+		case CNTRL('D'): crash(); return;
+		default: if (! running) alarm(1);
 			   return;
 	}
 	lastch = ch;
