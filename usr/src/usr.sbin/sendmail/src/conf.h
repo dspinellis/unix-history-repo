@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.182 (Berkeley) %G%
+ *	@(#)conf.h	8.183 (Berkeley) %G%
  */
 
 /*
@@ -225,6 +225,7 @@ extern void	hard_syslog(int, char *, ...);
 # endif
 # if defined(IRIX64) || defined(IRIX5)
 #  define ARGV_T	char *const *
+#  define HASSETRLIMIT	1	/* has setrlimit(2) syscall */
 # else
 #  define ARGV_T	const char **
 #  define WAITUNION	1	/* use "union wait" as wait argument type */
