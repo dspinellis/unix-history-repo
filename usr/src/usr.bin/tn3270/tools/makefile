@@ -27,9 +27,10 @@ tools:
 all:	${ALLEXE}
 	@echo done.
 
-prt3270:	prt3270.o ../general/globals.o ../ascii/ebctab.o
+prt3270:	prt3270.o ../general/globals.o ../ascii/ebctab.o \
+				../ascii/astosc.o ../ctlr/kbd.out
 	${CC} ${CFLAGS} -o prt3270 prt3270.o ../general/globals.o \
-							../ascii/ebctab.o
+					../ascii/ebctab.o ../ascii/astosc.o
 
 mkastosc:	mkastosc.o dohits.o ../ascii/asctab.o ../ctlr/ebc_disp.o
 	$(CC) $(CFLAGS) -o mkastosc mkastosc.o dohits.o \
@@ -50,8 +51,14 @@ mkhits:	mkhits.o dohits.o ../ascii/asctab.o ../ctlr/ebc_disp.o
 mkdctype:	mkdctype.o ../ctlr/ebc_disp.o ectype.o
 	$(CC) $(CFLAGS) -o mkdctype mkdctype.o ../ctlr/ebc_disp.o ectype.o
 
+../ascii/astosc.o:
+	(cd ../ascii; make astosc.o)
+
 ../ascii/ebctab.o:
 	(cd ../ascii; make ebctab.o)
+
+../ctlr/kbd.out:
+	(cd ../ctlr; make kbd.out)
 
 ../ctlr/ebc_disp.o:
 	(cd ../ctlr; make ebc_disp.o)
