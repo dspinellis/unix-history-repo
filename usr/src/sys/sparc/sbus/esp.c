@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)esp.c	7.4 (Berkeley) %G%
+ *	@(#)esp.c	7.5 (Berkeley) %G%
  *
- * from: $Header: esp.c,v 1.22 92/06/17 06:59:33 torek Exp $ (LBL)
+ * from: $Header: esp.c,v 1.27 93/04/20 11:20:38 torek Exp $ (LBL)
  *
  * Loosely derived from Mary Baker's devSCSIC90.c from the Berkeley
  * Sprite project, which is:
@@ -113,7 +113,7 @@ struct esp_softc {
 	struct	hba_softc sc_hba;	/* base device + hba, must be first */
 	struct	sbusdev sc_sd;		/* sbus device */
 	struct	intrhand sc_ih;		/* interrupt entry */
-	int	sc_interrupts;		/* total number of interrupts taken */
+	struct	evcnt sc_intrcnt;	/* interrupt counter */
 	struct	dma_softc *sc_dsc;	/* pointer to corresponding dma sc */
 
 	/*
@@ -140,6 +140,7 @@ struct esp_softc {
 	u_char	sc_conf1;		/* value for config reg 1 */
 	u_char	sc_conf2;		/* value for config reg 2 */
 	u_char	sc_conf3;		/* value for config reg 3 */
+	struct	bootpath *sc_bp;	/* esp bootpath so far */
 
 	/*
 	 * Information pertaining to the current transfer,
@@ -225,7 +226,8 @@ char *espstates[] = {
 /* autoconfiguration driver */
 void	espattach(struct device *, struct device *, void *);
 struct cfdriver espcd =
-    { NULL, "esp", matchbyname, espattach, DV_DULL, sizeof(struct esp_softc) };
+    { NULL, "esp", matchbyname, espattach, DV_DULL, sizeof(struct esp_softc),
+      "intr" };
 
 /* Sbus driver */
 void	espsbreset(struct device *);
@@ -311,6 +313,7 @@ espattach(parent, self, args)
 	register struct esp_softc *sc = (struct esp_softc *)self;
 	register struct sbus_attach_args *sa = args;
 	register volatile struct espreg *esp;
+	register struct bootpath *bp;
 	struct dma_softc *dsc;
 	int node, pri, freq, t;
 
@@ -388,6 +391,15 @@ espattach(parent, self, args)
 	sc->sc_ih.ih_fun = espintr;
 	sc->sc_ih.ih_arg = sc;
 	intr_establish(pri, &sc->sc_ih);
+	evcnt_attach(&sc->sc_hba.hba_dev, "intr", &sc->sc_intrcnt);
+
+#define SAME_ESP(bp, sa) \
+	((bp->val[0] == sa->sa_slot && bp->val[1] == sa->sa_offset) || \
+	 (bp->val[0] == -1 && bp->val[1] == sc->sc_hba.hba_dev.dv_unit))
+
+	bp = sa->sa_ra.ra_bp;
+	if (bp != NULL && strcmp(bp->name, "esp") == 0 && SAME_ESP(bp, sa))
+		sc->sc_bp = bp + 1;
 	espdoattach(sc->sc_hba.hba_dev.dv_unit);
 }
 
@@ -402,7 +414,9 @@ espdoattach(unit)
 {
 	register struct esp_softc *sc;
 	register struct dma_softc *dsc;
-	register int targ;
+	register struct bootpath *bp;
+	register struct targ *t;
+	register int targ, u;
 
 	/* make sure we have both */
 	if (espcd.cd_ndevs <= unit ||
@@ -431,6 +445,18 @@ espdoattach(unit)
 	}
 	sc->sc_probing = 0;
 	sc->sc_clearing = 0;
+
+	if ((bp = sc->sc_bp) == NULL || (u_int)(targ = bp->val[0]) >= 8 ||
+	    (u_int)(u = bp->val[1]) >= 8)
+		return;
+
+	/*
+	 * Did we find it? We could compare bp->name against the unit's
+	 * name but there's no real need since a target and unit
+	 * uniquely specify a scsi device.
+	 */
+	if ((t = sc->sc_hba.hba_targets[targ]) != NULL && t->t_units[u] != NULL)
+		bootdv = t->t_units[u]->u_dev;
 }
 
 /*
@@ -1283,7 +1309,7 @@ espintr(sc0)
 	r = dma->dma_csr;
 	if (!DMA_INTR(r))
 		return (0);		/* not ours */
-	sc->sc_interrupts++;
+	sc->sc_intrcnt.ev_count++;
 
 again:
 	sc->sc_espstat = esp->esp_stat;
