@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)savecore.c	4.6 (Berkeley) 81/05/20";
+static	char *sccsid = "@(#)savecore.c	4.7 (Berkeley) 81/05/20";
 /*
  * savecore
  */
@@ -35,6 +35,7 @@ struct nlist nl[] = {
 	{ 0 },
 };
 
+char	*system;
 char	*dirname;			/* directory to save dumps in */
 char	*ddname;			/* name of dump device */
 char	*find_dev();
@@ -58,11 +59,13 @@ main(argc, argv)
 	int argc;
 {
 
-	if (argc != 2) {
-		fprintf(stderr, "usage: savecore dirname\n");
+	if (argc != 2 && argc != 3) {
+		fprintf(stderr, "usage: savecore dirname [ system ]\n");
 		exit(1);
 	}
 	dirname = argv[1];
+	if (argc == 3)
+		system = argv[2];
 	if (access(dirname, 2) < 0) {
 		perror(dirname);
 		exit(1);
@@ -156,6 +159,8 @@ read_kmem()
 		fprintf(stderr, "Couldn't fdopen kmem\n");
 		exit(1);
 	}
+	if (system)
+		return;
 	fseek(fp, (long)nl[X_VERSION].n_value, 0);
 	fgets(vers, sizeof vers, fp);
 	fclose(fp);
@@ -180,13 +185,15 @@ read_kmem()
 		while (*cp++);
 	}
 	fclose(fp);
-}	
+}
 
 get_crashtime()
 {
 	int dumpfd;
 	time_t clobber = (time_t)0;
 
+	if (system)
+		return (1);
 	dumpfd = Open(ddname, 2);
 	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_TIME].n_value)), 0);
 	Read(dumpfd, (char *)&dumptime, sizeof dumptime);
@@ -267,7 +274,7 @@ save_core()
 	register FILE *fp;
 
 	bounds = read_number("bounds");
-	ifd = Open("/vmunix", 0);
+	ifd = Open(system?system:"/vmunix", 0);
 	ofd = Create(path(sprintf(cp, "vmunix.%d", bounds)), 0666);
 	while((n = Read(ifd, cp, BUFSIZ)) > 0)
 		Write(ofd, cp, n);
