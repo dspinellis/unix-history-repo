@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.52 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.53 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -170,36 +170,67 @@ lfs_update(vp, ta, tm, waitfor)
 	return (0);
 }
 
+/* Update segment usage information when removing a block. */
+#define UPDATE_SEGUSE { \
+	LFS_SEGENTRY(sup, fs, lastseg, bp); \
+	sup->su_nbytes -= fs->lfs_bsize * num; \
+	LFS_UBWRITE(bp); \
+	blocksreleased += num; \
+}
+
+#define SEGDEC { \
+	if (daddr != UNASSIGNED) { \
+		if (lastseg != (seg = datosn(fs, daddr))) { \
+			UPDATE_SEGUSE; \
+			num = 1; \
+			lastseg = seg; \
+		} else \
+			++num; \
+	} \
+}
+
 /*
- * Truncate the inode ip to at most length size.
- *
- * NB: triple indirect blocks are untested.
+ * Truncate the inode ip to at most length size.  Update segment usage
+ * table information.
  */
 /* ARGSUSED */
 int
-lfs_truncate(ovp, length, flags)
-	struct vnode *ovp;
+lfs_truncate(vp, length, flags)
+	struct vnode *vp;
 	u_long length;
 	int flags;
 {
-	register struct lfs *fs;
-	register struct inode *oip;
+	register INDIR *ap;
+	register int i;
+	register daddr_t *daddrp;
 	struct buf *bp;
-	daddr_t lbn;
-	int error, offset, size;
+	struct inode *ip;
+	struct lfs *fs;
+	INDIR a[NIADDR + 2], a_end[NIADDR + 2];
+	SEGUSE *sup;
+	daddr_t daddr, lastblock, lbn, olastblock;
+	off_t off;
+	long blocksreleased;
+	int error, depth, lastseg, num, offset, seg, size;
 
 #ifdef VERBOSE
 	printf("lfs_truncate\n");
 #endif
-	vnode_pager_setsize(ovp, length);
-	oip = VTOI(ovp);
-
+	vnode_pager_setsize(vp, length);
+	ip = VTOI(vp);
 	/* If length is larger than the file, just update the times. */
-	if (oip->i_size <= length) {
-		oip->i_flag |= ICHG|IUPD;
-		ITIMES(oip, &time, &time);
-		return (0);
+	if (ip->i_size <= length) {
+		ip->i_flag |= ICHG|IUPD;
+		return (lfs_update(vp, &time, &time, 1));
 	}
+	/*
+	 * Calculate index into inode's block list of last direct and indirect
+	 * blocks (if any) which we want to keep.  Lastblock is 0 when the
+	 * file is truncated to 0.
+	 */
+	fs = ip->i_lfs;
+	lastblock = lblkno(fs, length + fs->lfs_bsize - 1);
+	olastblock = lblkno(fs, ip->i_size + fs->lfs_bsize - 1) - 1;
 
 	/*
 	 * Update the size of the file. If the file is not being truncated to
@@ -207,33 +238,112 @@ lfs_truncate(ovp, length, flags)
 	 * of the file must be zero'ed in case it ever become accessable again
 	 * because of subsequent file growth.
 	 */
-	fs = oip->i_lfs;
 	offset = blkoff(fs, length);
 	if (offset == 0)
-		oip->i_size = length;
+		ip->i_size = length;
 	else {
 		lbn = lblkno(fs, length);
 #ifdef QUOTA
-		if (error = getinoquota(oip))
+		if (error = getinoquota(ip))
 			return (error);
 #endif	
-		if (error = bread(ovp, lbn, fs->lfs_bsize, NOCRED, &bp))
+		if (error = bread(vp, lbn, fs->lfs_bsize, NOCRED, &bp))
 			return (error);
-		oip->i_size = length;
+		ip->i_size = length;
 		size = blksize(fs);
-		(void)vnode_pager_uncache(ovp);
+		(void)vnode_pager_uncache(vp);
 		bzero(bp->b_un.b_addr + offset, (unsigned)(size - offset));
 		allocbuf(bp, size);
 		LFS_UBWRITE(bp);
 	}
 	/*
-	 * XXX
-	 * Bzero inode block pointers here, for consistency with ffs.
-	 * Segment usage information has to be updated when the blocks
-	 * are free.
-	 * Block count in the inode has to be fixed when blocks are
-	 * free.
+	 * Modify sup->su_nbyte counters for each deleted block; keep track
+	 * of number of blocks removed for ip->i_blocks.
 	 */
-	(void)vinvalbuf(ovp, length > 0);
+	blocksreleased = 0;
+	num = 0;
+	lastseg = -1;
+
+	for (lbn = olastblock; lbn >= lastblock;) {
+		lfs_bmaparray(vp, lbn, &daddr, a, &depth);
+		if (lbn == olastblock)
+			for (i = NIADDR + 2; i--;)
+				a_end[i] = a[i];
+		switch (depth) {
+		case 0:				/* Direct block. */
+			daddr = ip->i_db[lbn];
+			SEGDEC;
+			ip->i_db[lbn] = 0;
+			--lbn;
+			break;
+#ifdef DIAGNOSTIC
+		case 1:				/* An indirect block. */
+			panic("lfs_truncate: lfs_bmaparray returned depth 1");
+			/* NOTREACHED */
+#endif
+		default:			/* Chain of indirect blocks. */
+			ap = a + --depth;
+			if (ap->in_off > 0 && lbn != lastblock) {
+				lbn -= ap->in_off < lbn - lastblock ?
+				    ap->in_off : lbn - lastblock;
+				break;
+			}
+			for (; depth && (ap->in_off == 0 || lbn == lastblock);
+			    --ap, --depth) {
+				/*
+				 * XXX
+				 * The indirect block may not yet exist, so
+				 * bread will create one just so we can free
+				 * it.
+				 */
+				if (bread(vp,
+				    ap->in_lbn, fs->lfs_bsize, NOCRED, &bp))
+					panic("lfs_truncate: bread bno %d",
+					    ap->in_lbn);
+				daddrp = bp->b_un.b_daddr + ap->in_off;
+				for (i = ap->in_off;
+				    i++ <= a_end[depth].in_off;) {
+					daddr = *daddrp++;
+					SEGDEC;
+				}
+				a_end[depth].in_off=NINDIR(fs)-1;
+				if (ap->in_off > 0 && lbn == lastblock) {
+					bzero(bp->b_un.b_daddr + ap->in_off,
+					    fs->lfs_bsize - 
+					    ap->in_off * sizeof(daddr_t));
+					LFS_UBWRITE(bp);
+				} else 
+					brelse (bp);
+			}
+			if (a[1].in_off == 0) {
+				off = a[0].in_off;
+				daddr = ip->i_ib[off];
+				SEGDEC;
+				ip->i_ib[off] = 0;
+			}
+			if (lbn == lastblock)
+				--lbn;
+			else {
+				lbn -= NINDIR(fs);
+				if (lbn < lastblock)
+					lbn = lastblock;
+			}
+		}
+	}
+	if (lastseg != -1)
+		UPDATE_SEGUSE;
+
+	ip->i_blocks -= blocksreleased;
+	/* 
+	 * XXX
+	 * Currently, we don't know when we allocate an indirect block, so
+	 * ip->i_blocks isn't getting incremented appropriately.  As a result,
+	 * when we delete any indirect blocks, we get a bad number here.
+	 */
+	if (ip->i_blocks < 0)
+		ip->i_blocks = 0;
+	ip->i_flag |= ICHG|IUPD;
+	(void)vinvalbuf(vp, length > 0); 
+	error = lfs_update(vp, &time, &time, MNT_WAIT);
 	return (0);
 }
