@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.23	82/08/01	*/
+/*	tty_pty.c	4.24	82/08/22	*/
 
 /*
  * Pseudo-teletype Driver
@@ -13,9 +13,9 @@
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/conf.h"
-#include "../h/buf.h"
 #include "../h/file.h"
 #include "../h/proc.h"
+#include "../h/uio.h"
 
 #if NPTY == 1
 #undef	NPTY
@@ -81,8 +81,9 @@ ptsclose(dev)
 	ttyclose(tp);
 }
 
-ptsread(dev)
+ptsread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
 	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
@@ -108,15 +109,18 @@ again:
 			sleep((caddr_t)&tp->t_rawq, TTIPRI);
 			goto again;
 		}
-		while (tp->t_rawq.c_cc > 1 && passc(getc(&tp->t_rawq)) >= 0)
-			;
+		while (tp->t_rawq.c_cc > 1 && uio->uio_resid > 0)
+			if (ureadc(getc(&tp->t_rawq), uio) < 0) {
+				u.u_error = EFAULT;
+				break;
+			}
 		if (tp->t_rawq.c_cc == 1)
 			(void) getc(&tp->t_rawq);
 		if (tp->t_rawq.c_cc)
 			return;
 	} else
 		if (tp->t_oproc)
-			(*linesw[tp->t_line].l_read)(tp);
+			(*linesw[tp->t_line].l_read)(tp, uio);
 	wakeup((caddr_t)&tp->t_rawq.c_cf);
 	if (pti->pt_selw) {
 		selwakeup(pti->pt_selw, pti->pt_flags & PF_WCOLL);
@@ -130,14 +134,15 @@ again:
  * Wakeups of controlling tty will happen
  * indirectly, when tty driver calls ptsstart.
  */
-ptswrite(dev)
+ptswrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register struct tty *tp;
 
 	tp = &pt_tty[minor(dev)];
 	if (tp->t_oproc)
-		(*linesw[tp->t_line].l_write)(tp);
+		(*linesw[tp->t_line].l_write)(tp, uio);
 }
 
 /*
@@ -210,8 +215,9 @@ ptcclose(dev)
 	tp->t_oproc = 0;		/* mark closed */
 }
 
-ptcread(dev)
+ptcread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register struct tty *tp;
 	struct pt_ioctl *pti;
@@ -222,11 +228,11 @@ ptcread(dev)
 	pti = &pt_ioctl[minor(dev)];
 	if (pti->pt_flags & PF_PKT) {
 		if (pti->pt_send) {
-			(void) passc(pti->pt_send);
+			(void) ureadc(pti->pt_send, uio);
 			pti->pt_send = 0;
 			return;
 		}
-		(void) passc(0);
+		(void) ureadc(0, uio);
 	}
 	while (tp->t_outq.c_cc == 0 || (tp->t_state&TS_TTSTOP)) {
 		if (pti->pt_flags&PF_NBIO) {
@@ -235,8 +241,11 @@ ptcread(dev)
 		}
 		sleep((caddr_t)&tp->t_outq.c_cf, TTIPRI);
 	}
-	while (tp->t_outq.c_cc && passc(getc(&tp->t_outq)) >= 0)
-		;
+	while (tp->t_outq.c_cc && uio->uio_resid > 0)
+		if (ureadc(getc(&tp->t_outq), uio) < 0) {
+			u.u_error = EFAULT;
+			break;
+		}
 	if (tp->t_outq.c_cc <= TTLOWAT(tp)) {
 		if (tp->t_state&TS_ASLEEP) {
 			tp->t_state &= ~TS_ASLEEP;
@@ -307,8 +316,9 @@ ptcselect(dev, rw)
 	return (0);
 }
 
-ptcwrite(dev)
+ptcwrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register struct tty *tp;
 	register char *cp, *ce;
@@ -321,9 +331,21 @@ ptcwrite(dev)
 	if ((tp->t_state&(TS_CARR_ON|TS_ISOPEN)) == 0)
 		return;
 	do {
-		cc = MIN(u.u_count, BUFSIZ);
+		register struct iovec *iov;
+
+		if (uio->uio_iovcnt == 0)
+			break;
+		iov = uio->uio_iov;
+		if (iov->iov_len == 0) {
+			uio->uio_iovcnt--;	
+			uio->uio_iov++;
+			if (uio->uio_iovcnt < 0)
+				panic("ptcwrite");
+			continue;
+		}
+		cc = MIN(iov->iov_len, BUFSIZ);
 		cp = locbuf;
-		iomove(cp, (unsigned)cc, B_WRITE);
+		u.u_error = uiomove(cp, cc, UIO_WRITE, uio);
 		if (u.u_error)
 			break;
 		ce = cp + cc;
@@ -331,7 +353,10 @@ again:
 		if (pti->pt_flags & PF_REMOTE) {
 			if (tp->t_rawq.c_cc) {
 				if (pti->pt_flags & PF_NBIO) {
-					u.u_count += ce - cp;
+					iov->iov_base -= ce - cp;
+					iov->iov_len += ce - cp;
+					uio->uio_resid += ce - cp;
+					uio->uio_offset -= ce - cp;
 					u.u_error = EWOULDBLOCK;
 					return;
 				}
@@ -347,7 +372,10 @@ again:
 			while (tp->t_delct && tp->t_rawq.c_cc >= TTYHOG - 2) {
 				wakeup((caddr_t)&tp->t_rawq);
 				if (tp->t_state & TS_NBIO) {
-					u.u_count += ce - cp;
+					iov->iov_base -= ce - cp;
+					iov->iov_len += ce - cp;
+					uio->uio_resid += ce - cp;
+					uio->uio_offset -= ce - cp;
 					if (cnt == 0)
 						u.u_error = EWOULDBLOCK;
 					return;
@@ -360,7 +388,7 @@ again:
 			(*linesw[tp->t_line].l_rint)(*cp++, tp);
 			cnt++;
 		}
-	} while (u.u_count);
+	} while (uio->uio_resid);
 }
 
 /*ARGSUSED*/
