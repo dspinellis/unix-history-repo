@@ -6,12 +6,11 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)mkfifo.1	5.5 (Berkeley) %G%
+.\"     @(#)mkfifo.1	5.6 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt MKFIFO 1
-.Os ATT 7th
+.Os
 .Sh NAME
 .Nm mkfifo
 .Nd make fifos
@@ -26,11 +25,11 @@ using mode
 .Li \&0777 .
 .Pp
 Options available are:
-.Tw Ds
-.Tp Fl p
+.Bl -tag -width Ds
+.It Fl p
 Create intermediate directories as required.  If this option is not
 specified, the full path prefix of each operand must already exist.
-.Tp
+.El
 .Pp
 .Nm Mkfifo
 requires write permission in the parent directory.
@@ -38,9 +37,18 @@ requires write permission in the parent directory.
 .Nm Mkfifo
 exits 0 if successful, and >0 if an error occurred.
 .Sh STANDARDS
-Mkfifo is POSIX 1003.2 compliant.
-.br
-This manual page derived from the POSIX 1003.2 manual page.
+.Nm Mkfifo is
+.St -p1003.2
+compliant.
+.Pp
+This manual page derived from the
+.St p1003.2
+manual page.
 .Sh SEE ALSO
 .Xr mkdir 1 ,
 .Xr rm 1
+.Sh HISTORY
+The
+.Nm
+command is
+.Ud
