@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)token.l	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)token.l	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -24,20 +24,21 @@ static char sccsid[] = "@(#)token.l	5.2 (Berkeley) %G%";
 
 char *initfile = ".pdxinit";
 
-/*
- * This is a silly "lex" thing.
- */
+/* override Lex default input macro. */
+LOCAL int pdxinput();
 
-#define yywrap()	(1)
-
-/*
- * Override Lex default input macros.
- */
-
-#undef  input
-#undef  unput
-
-#define unput(c)	ungetc(c, yyin)
+#undef  YY_INPUT
+#define YY_INPUT(buf,result,max_size)	\
+	{				\
+	int c = pdxinput();		\
+	if ( c == EOF )			\
+		result = YY_NULL;	\
+	else				\
+		{			\
+		buf[0] = c;		\
+		result = 1;		\
+		}			\
+	}
 
 %}
 
@@ -51,12 +52,11 @@ e		(("e"|"E")("+"|"-")?{n})
 alphanum	[a-zA-Z0-9]
 ident		{alpha}{alphanum}*
 filenm		[^ \t\n"<>!*"]+
-qfilenm		{filenm}/":"
 string		'[^']+'('[^']*')*
 newline		"\n"
 char		.
 
-%Start file sh
+%Start File sh
 
 %%
 
@@ -64,8 +64,8 @@ char		.
 ^sh{white}.*$	{ BEGIN 0; yylval.y_string = &yytext[3]; return(SH); }
 ^sh		{ BEGIN 0; yylval.y_string = NIL; return(SH); }
 ^{ident}	{ return(findcmd(yytext)); }
-<file>{filenm}	{ yylval.y_string = strdup(yytext); return(FILENAME); }
-{qfilenm}	{ yylval.y_string = strdup(yytext); return(FILENAME); }
+<File>{filenm}	{ yylval.y_string = strdup(yytext); return(FILENAME); }
+{filenm}/":"	{ yylval.y_string = strdup(yytext); return(FILENAME); }
 {n}?\.{n}{e}?	{ yylval.y_real = atof(yytext); return(REAL); }
 0{n}		{ yylval.y_long = octal(yytext); return(INT); }
 0x{h}		{ yylval.y_long = hex(yytext); return(INT); }
@@ -103,7 +103,7 @@ char *s;
 		case RUN:
 		case SOURCE:
 		case STATUS:
-			BEGIN file;
+			BEGIN File;
 			break;
 
 		default:
@@ -306,7 +306,7 @@ BOOLEAN isstdin()
 	return((BOOLEAN) (yyin == stdin));
 }
 
-LOCAL int input()
+LOCAL int pdxinput()
 {
 	register int c;
 
