@@ -222,7 +222,7 @@ main(argc,argv)
 
 	infile[0] = stdin;		/* default input (naturally) */
 	active = stdout;		/* default active output     */
-	m4temp = mktemp(DIVNAM);	/* filename for diversions   */
+	m4temp = mktemp(strdup(DIVNAM));/* filename for diversions   */
 
 	sp = -1;			/* stack pointer initialized */
 	fp = 0; 			/* frame pointer initialized */
