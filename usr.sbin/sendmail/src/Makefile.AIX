@@ -22,7 +22,7 @@ O=	-g
 # If YPCOMPAT is defined and /var/yp/Makefile exists, sendmail will build
 #   both the NEWDB and DBM libraries (the DBM just for YP).
 #
-DBMDEF=	-DNDBM -DNEWDB
+DBMDEF=	-DNEWDB
 
 # define the load average calculation on your system: -DLA_TYPE=LA_INT,
 #   -DLA_TYPE=LA_FLOAT, -DLA_TYPE=LA_SUBR, or -DLA_TYPE=LA_ZERO
