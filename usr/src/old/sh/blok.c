@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)blok.c	4.2 %G%";
+static char sccsid[] = "@(#)blok.c	4.3 %G%";
 #endif
 
 #
@@ -113,3 +113,18 @@ chkbptr(ptr)
 	prn(un); prc(SP); prn(us); prc(NL);
 }
 #endif
+
+void *
+realloc(cp, nbytes)
+	void *cp;
+	unsigned int nbytes;
+{
+	void *new;
+
+	new = malloc(nbytes);
+	if (cp == 0)
+		return (new);
+	bcopy(cp, new, nbytes);
+	free(cp);
+	return (new);
+}
