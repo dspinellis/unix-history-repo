@@ -1,0 +1,33 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)ffs.3	5.1 (Berkeley) %G%
+.\"
+.TH FFS 3  ""
+.UC 7
+.SH NAME
+ffs \- find first bit set in a bit string
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+int
+ffs(int value);
+.ft R
+.fi
+.SH DESCRIPTION
+.B Ffs
+finds the first bit set in
+.I value
+and returns the index of that bit.
+Bits are numbered starting from 1, starting at the right-most
+bit.
+A return value of 0 means that the argument was zero.
+.SH SEE\ ALSO
+bitstring(3)
