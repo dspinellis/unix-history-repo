@@ -3,13 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.18 (Berkeley) %G%
+ *	@(#)locore.s	7.19 (Berkeley) %G%
  */
 
 #include "psl.h"
 #include "pte.h"
 
 #include "errno.h"
+#include "syscall.h"
 #include "cmap.h"
 
 #include "mtpr.h"
@@ -382,7 +383,9 @@ SCBVEC(netintr):
 #ifdef NS
 	bbcc	$NETISR_NS,_netisr,1f; calls $0,_nsintr; 1:
 #endif
-	bbcc	$NETISR_RAW,_netisr,1f; calls $0,_rawintr; 1:
+#ifdef ISO
+	bbcc	$NETISR_ISO,_netisr,1f; calls $0,_clnlintr; 1:
+#endif
 	POPR
 	incl	_cnt+V_SOFT
 	rei
@@ -668,15 +671,20 @@ _catcher:
 	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
 
 	.globl	_cold
+	.globl	_br
+	.globl	_cvec
 _cold:	.long	1
-	.data
+_br:	.long	0
+_cvec:	.long	0
 
 	.text
 SCBVEC(ustray):
 	blbc	_cold,1f
 	mfpr	$IPL,r11
+	movl	r11,_br
 	subl3	$_catcher+8,(sp)+,r10
 	ashl	$-1,r10,r10
+	movl	r10,_cvec
 	POPR
 	rei
 1:
@@ -855,8 +863,12 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(mmap	,vmmap		,1		)
 	SYSMAP(alignmap	,alignutl	,1		)	/* XXX */
 	SYSMAP(msgbufmap,msgbuf		,MSGBUFPTECNT	)
-	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*CLSIZE+CLSIZE )
-	SYSMAP(kmempt	,kmembase	,200*CLSIZE	)
+	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*MCLBYTES/NBPG+CLSIZE )
+	/*
+	 * XXX: NEED way to compute kmem size from maxusers,
+	 * device complement
+	 */
+	SYSMAP(kmempt	,kmembase	,300*CLSIZE	)
 #ifdef	GPROF
 	SYSMAP(profmap	,profbase	,600*CLSIZE	)
 #endif
@@ -885,7 +897,7 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(UMEMmap	,umem		,(UBAPAGES+UBAIOPAGES)*NUBA )
 #endif
 #else /* QBA */
-	SYSMAP(UMEMmap	,umem		,(QBAPAGES+UBAIOPAGES)*NUBA )
+	SYSMAP(UMEMmap	,umem		,(UBAPAGES+UBAIOPAGES)*NUBA )
 #endif /* QBA */
 #if VAX8600
 	SYSMAP(Ioamap	,ioa		,MAXNIOA*IOAMAPSIZ/NBPG	)
@@ -968,13 +980,15 @@ start:
 	clrl	r3
 1:	addl2	(r1)+,r3; sobgtr r2,1b
 	movl	r3,(r0)+			# rp_chksum
-/* count up memory */
+/* count up memory; _physmem contains limit */
 	clrl	r7
+	ashl	$PGSHIFT,_physmem,r8
+	decl	r8
 1:	pushl	$4; pushl r7; calls $2,_badaddr; tstl r0; bneq 9f
-	acbl	$MAXMEM*1024-1,$64*1024,r7,1b
+	acbl	r8,$64*1024,r7,1b
 9:
 #if  VAX630 || VAX650
-/* reserved area at top of memory for processor specific use */
+/* reserve area at top of memory for processor specific use */
 	cmpb	_cpu,$VAX_630
 	beql	1f
 	cmpb	_cpu,$VAX_650
@@ -1025,9 +1039,7 @@ start:
 /* now go to mapped mode */
 	mtpr	$0,$TBIA; mtpr $1,$MAPEN; jmp *$0f; 0:
 /* init mem sizes */
-	ashl	$-PGSHIFT,r7,_maxmem
-	movl	_maxmem,_physmem
-	movl	_maxmem,_freemem
+	ashl	$-PGSHIFT,r7,_physmem
 /* setup context for proc[0] == Scheduler */
 	bicl3	$SYSTEM|(NBPG-1),r9,r6	# make phys, page boundary
 /* setup page table for proc[0] */
@@ -1096,14 +1108,12 @@ start:
 sigcode:
 	calls	$4,8(pc)	# params pushed by sendsig
 	movl	sp,ap		# calls frame built by sendsig
-	chmk	$103		# cleanup mask and onsigstack
+	chmk	$SYS_sigcleanup	# cleanup mask and onsigstack
 	halt			# sigreturn() does not return!
 	.word	0x3f		# registers 0-5
 	callg	(ap),*16(ap)	# call the signal handler
 	ret			# return to code above
 
-	.set	exec,11
-	.set	exit,1
 	.globl	_icode
 	.globl	_initflags
 	.globl	_szicode
@@ -1116,9 +1126,9 @@ _icode:
 l0:	pushab	b`init-l1(pc)
 l1:	pushl	$2
 	movl	sp,ap
-	chmk	$exec
+	chmk	$SYS_exec
 	pushl	r0
-	chmk	$exit
+	chmk	$SYS_exit
 
 init:	.asciz	"/sbin/init"
 	.align	2
