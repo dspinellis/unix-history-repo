@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.53 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.54 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -42,6 +42,11 @@ struct vfsops ufs_vfsops = {
 	ufs_vptofh,
 	ufs_init
 };
+
+/*
+ * Flag to allow forcible unmounting.
+ */
+int doforce = 1;
 
 /*
  * Called by vfs_mountroot when ufs is going to be mounted as root.
@@ -330,7 +335,7 @@ ufs_unmount(mp, mntflags, p)
 	int i, error, ronly, flags = 0;
 
 	if (mntflags & MNT_FORCE) {
-		if (mp == rootfs)
+		if (!doforce || mp == rootfs)
 			return (EINVAL);
 		flags |= FORCECLOSE;
 	}
@@ -537,6 +542,8 @@ loop:
 		 */
 		if (vp->v_mount != mp)
 			goto loop;
+		if (VOP_ISLOCKED(vp))
+			continue;
 		ip = VTOI(vp);
 		if ((ip->i_flag & (IMOD|IACC|IUPD|ICHG)) == 0 &&
 		    vp->v_dirtyblkhd == NULL)
