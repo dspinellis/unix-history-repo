@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)files.c	4.17 (Berkeley) 87/12/21";
+static	char *sccsid = "@(#)files.c	4.18 (Berkeley) 88/09/13";
 #include <fcntl.h>
 
 /* UNIX DEPENDENT PROCEDURES */
@@ -11,7 +11,7 @@ char *builtin[] =
 #ifdef pwb
 	".SUFFIXES : .L .out .o .c .f .e .r .y .yr .ye .l .s .z .x .t .h .cl",
 #else
-	".SUFFIXES : .out .o .c .F .f .e .r .y .yr .ye .l .s .cl .p",
+	".SUFFIXES : .out .o .c .F .f .e .r .y .yr .ye .l .s .cl .p .8 .7 .6 .5 .4 .3 .2 .1 .0",
 #endif
 	"YACC=yacc",
 	"YACCR=yacc -r",
@@ -34,6 +34,7 @@ char *builtin[] =
 	"EFLAGS=",
 	"FFLAGS=",
 	"LOADLIBES=",
+	"NROFF=nroff",
 #ifdef pwb
 	"SCOMP=scomp",
 	"SCFLAGS=",
@@ -129,6 +130,30 @@ char *builtin[] =
 	"\t$(LEX) $(LFLAGS) $<",
 	"\t$(CC) $(CFLAGS) lex.yy.c $(LOADLIBES) -ll -o $@",
 	"\trm lex.yy.c",
+
+	".8.0 :",
+	"\t$(NROFF) -man -h $< > $@",
+
+	".7.0 :",
+	"\t$(NROFF) -man -h $< > $@",
+
+	".6.0 :",
+	"\t$(NROFF) -man -h $< > $@",
+
+	".5.0 :",
+	"\t$(NROFF) -man -h $< > $@",
+
+	".4.0 :",
+	"\t$(NROFF) -man -h $< > $@",
+
+	".3.0 :",
+	"\t$(NROFF) -man -h $< > $@",
+
+	".2.0 :",
+	"\t$(NROFF) -man -h $< > $@",
+
+	".1.0 :",
+	"\t$(NROFF) -man -h $< > $@",
 
 	0 };
 
