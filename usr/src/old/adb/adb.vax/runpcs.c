@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)runpcs.c	4.3 %G%";
+static	char sccsid[] = "@(#)runpcs.c	4.4 %G%";
 #endif
 /*
  *
@@ -204,8 +204,6 @@ doexec()
 			*p++ = '\0';
 	 		ap++;
 		FI
-		WHILE lastc==SP ORF lastc==TB DO readchar(); OD
-
 	PER lastc!=EOR DONE
 	*ap++=0;
 	exect(symfil, argl, environ);
