@@ -1,10 +1,15 @@
 #ifndef lint
-static char sccsid[] = "@(#)hys.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)hys.c	4.4 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
 
 #ifdef HAYES
+#define USR2400	/* U.S. Robotics Courier 2400 */
+#ifdef USR2400
+#define DROPDTR
+#endif USR2400
+
 /*
  *	hyspopn(telno, flds, dev) connect to hayes smartmodem (pulse call)
  *	hystopn(telno, flds, dev) connect to hayes smartmodem (tone call)
@@ -66,12 +71,20 @@ int toneflag;
 			close(dh);
 			return CF_DIAL;
 		}
-		write(dh, "ATV1H\r", 6);
+		write(dh, "ATV1E0H\r", 8);
 		if (expect("OK\r\n", dh) != 0) {
 			logent(dcname, "HSM seems dead");
-			close(dh);
+			hyscls(dh);
 			return CF_DIAL;
 		}
+#ifdef USR2400
+		write(dh, "ATX6\r", 5);
+		if (expect("OK\r\n", dh) != 0) {
+			logent(dcname, "HSM seems dead");
+			hyscls(dh);
+			return CF_DIAL;
+		}
+#endif USR2400
 		if (toneflag)
 			write(dh, "\rATDT", 5);
 		else
@@ -86,23 +99,26 @@ int toneflag;
 			return CF_DIAL;
 		}
 		signal(SIGALRM, alarmtr);
-		alarm(MAXMSGTIME);
-		cp = cbuf;
-		while (read(dh, cp ,1) == 1)
-			if (*cp >= ' ')
-				break;
-		cp++;
-		while (cp < &cbuf[MAXPH] && read(dh, cp, 1) == 1 && *cp++ != '\n')
-			;
-		alarm(0);
-		*cp = '\0';
+		do {
+			alarm(MAXMSGTIME);
+			cp = cbuf;
+			while (read(dh, cp ,1) == 1)
+				if (*cp >= ' ')
+					break;
+			while (++cp < &cbuf[MAXPH] && read(dh, cp, 1) == 1 && *cp != '\n')
+				;
+			alarm(0);
+			*cp-- = '\0';
+			if (*cp == '\r')
+				*cp = '\0';
+			DEBUG(4,"\nGOT: %s", cbuf);
+		} while (strncmp(cbuf, "RING", 4) == 0);
 		if (strncmp(cbuf, "CONNECT", 7) != 0) {
-			logent("HSM no carrier", _FAILED);
+			logent(cbuf, _FAILED);
 			strcpy(devSel, dev->D_line);
 			hyscls(dh);
 			return CF_DIAL;
 		}
-		DEBUG(4,"\nGOT: %s", cbuf);
 		i = atoi(&cbuf[8]);
 		if (i > 0 && i != dev->D_speed) {	
 			DEBUG(4,"Baudrate reset to %d\n", i);
@@ -147,13 +163,7 @@ int fd;
 		close(fd);
 		sleep(2);
 		fd = open(dcname, 2);
-		/*
-		 * Since we have a getty sleeping on this line, when it wakes up it sends
-		 * all kinds of garbage to the modem.  Unfortunatly, the modem likes to
-		 * execute the previous command when it sees the garbage.  The previous
-		 * command was to dial the phone, so let's make the last command reset
-		 * the modem.
-		 */
+		stty(fd, &sav);
 #else
 		sleep(3);
 		write(fd, "+++", 3);
