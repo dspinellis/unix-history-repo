@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cgthreereg.h	8.1 (Berkeley) %G%
+ *	@(#)cgthreereg.h	8.2 (Berkeley) %G%
  *
  * from: $Header: cgthreereg.h,v 1.5 92/11/26 02:28:07 torek Exp $
  */
