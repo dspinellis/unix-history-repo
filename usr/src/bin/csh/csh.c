@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)csh.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)csh.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -53,7 +53,7 @@ extern bool NLSMapsAreInited;
  */
 
 Char   *dumphist[] = {STRhistory, STRmh, 0, 0};
-Char   *loadhist[] = {STRsource, STRmh, STRhistfile, 0};
+Char   *loadhist[] = {STRsource, STRmh, STRtildothist, 0};
 
 int     nofile = 0;
 bool    reenter = 0;
@@ -499,9 +499,14 @@ notty:
 
 	if (!fast && !arginp && !onelflg && !havhash)
 	    dohash(NULL, NULL);
+	/*
+	 * Source history before .login so that it is available in .login
+	 */
+	if ((cp = value(STRhistfile)) != STRNULL)
+	    loadhist[2] = cp;
+	dosource(loadhist, NULL);
         if (loginsh)
 	      (void) srccat(value(STRhome), STRsldotlogin);
-	dosource(loadhist, NULL);
     }
 
     /*

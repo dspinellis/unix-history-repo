@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)csh.1	6.22 (Berkeley) %G%
+.\"     @(#)csh.1	6.23 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CSH 1
@@ -1813,6 +1813,8 @@ substitution.  The first character of its value is used as the
 history substitution character, replacing the default character `!'.
 The second character of its value replaces the character `\(ua' in
 quick substitutions.
+.It Ic histfile
+Can be set to the pathname where history is going to be saved/restored.
 .It Ic history
 Can be given a numeric value to control the size of the history list.
 Any command which has been referenced in this many events will not be
@@ -1907,6 +1909,10 @@ enabling history to be saved across logins.
 Too large values of
 .Ar savehist
 will slow down the shell during start up.
+If
+.Ar savehist
+is just set, the shell will use the value of
+.Ar history.
 .It Ic shell
 The file in which the shell resides.
 This is used in forking shells to interpret files which have execute
