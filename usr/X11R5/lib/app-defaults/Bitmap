@@ -1,0 +1,230 @@
+
+
+! The App-defaults file for Bitmap.
+
+*TransientShell.allowShellResize:	True
+*shapeStyle:				oval
+*cursor:				left_ptr
+*pane.orientation:			horizontal
+
+*Form*top:				ChainTop
+*Form*bottom:				ChainTop
+*Form*left:				ChainLeft
+*Form*right:				ChainLeft
+
+*MenuButton.leftBitmap:			menu12
+*form*width:              		120
+*form*height:             		15
+
+*baseTranslations:#override\
+			Ctrl<Key>c:	do-quit()\n\
+			<Key>q:		do-quit()\n\
+			Ctrl<Key>n:	do-new()\n\
+			Ctrl<Key>f:	do-load()\n\
+			Ctrl<Key>i:	do-insert()\n\
+			Ctrl<Key>s:	do-save()\n\
+			Ctrl<Key>w:	do-save-as()\n\
+			Ctrl<Key>r:	do-resize()\n\
+			Ctrl<Key>x:	do-rescale()\n\
+			Ctrl<Key>e:	do-filename()\n\
+			Ctrl<Key>b:	do-basename()\n\
+			Meta<Key>i:	switch-image()\n\
+			Meta<Key>g:	switch-grid()\n\
+			Meta<Key>d:	switch-dashed()\n\
+			Meta<Key>a:	switch-axes()\n\
+			Meta<Key>s:	switch-stippled()\n\
+			Meta<Key>p:	switch-proportional()\n\
+			Meta<Key>z:	switch-zoom()\n\
+			Meta<Key>c:	do-cut()\n\
+			Meta<Key>w:	do-copy()\n\
+			Meta<Key>y:	do-paste()
+
+
+*Toggle.translations:	<EnterWindow>:		highlight(WhenUnset)\n\
+			<LeaveWindow>:		unhighlight()\n\
+			<Btn1Down>,<Btn1Up>: 	set() notify()
+
+*MenuButton.translations:<EnterWindow>:		highlight()\n\
+			<LeaveWindow>:  	reset()\n\
+			<BtnDown>:  		reset() fix-menu() PopupMenu()
+
+*Dialog*baseTranslations:#override\
+			<Key>Return:	set-dialog-button(okay, yes, retry)\n\
+			Ctrl<Key>g:	set-dialog-button(cancel, abort)
+*image*baseTranslations:#override\
+			<Btn1Down>,<Btn1Up>:	switch-image()
+*image*width: 0
+*image*height: 0
+*image*Label.internalWidth: 0
+*image*Label.internalHeight: 0
+*image*normalImage.foreground: white
+*image*normalImage.background: black
+*image*invertedImage.foreground: black
+*image*invertedImage.background: white
+
+*bitmap.cursor:           		tcross
+*bitmap.dashes:				Dashes
+*bitmap.stipple:			Stipple
+*bitmap.stippled:			on
+
+*TransientShell.width:			300
+
+*input*icon:				Term
+*qsave*icon:				Term
+*error*icon:				Excl
+*Dialog.yes.label:			Yes
+*Dialog.no.label:			No
+*Dialog.okay.label:			OK
+*Dialog.abort.label:			Abort
+*Dialog.cancel.label:			Cancel
+*Dialog.retry.label:			Retry
+
+*MenuButton.width:			58
+
+*SimpleMenu.width:			0
+*SimpleMenu.height:			0
+*SimpleMenu.cursor:			hand2
+*SimpleMenu.line.height:		0
+
+*fileButton.label:			File
+*fileButton.menuName:			fileMenu
+
+*editButton.label:			Edit
+*editButton.fromHoriz: 			fileButton
+*editButton.menuName:			editMenu
+
+*formy.status*top:			ChainTop
+*formy.status*bottom:			ChainTop
+*formy.status*left:			ChainLeft
+*formy.status*right:			ChainRight
+*status.fromHoriz:			editButton
+*status.borderWidth:			0
+
+*SmeBSB.HorizontalMargins:		32
+
+*fileMenu.new.label:			New (Ctrl-N)...
+*fileMenu.load.label:			Load (Ctrl-F)...   
+*fileMenu.insert.label:			Insert (Ctrl-I)... 
+*fileMenu.save.label:			Save (Ctrl-S)
+*fileMenu.saveAs.label:			Save As (Ctrl-W)...
+*fileMenu.resize.label:			Resize (Ctrl-R)... 
+*fileMenu.rescale.label:		Rescale (Ctrl-X)...
+*fileMenu.filename.label:		Filename (Ctrl-E)...
+*fileMenu.basename.label:		Basename (Ctrl-B)...
+*fileMenu.quit.label:			Quit (Ctrl-C, Q)
+
+*editMenu.image.label:			Image (Meta-I)
+*editMenu.grid.label:			Grid (Meta-G)
+*editMenu.dashed.label:			Dashed (Meta-D)
+*editMenu.axes.label:			Axes (Meta-A)
+*editMenu.stippled.label:		Stippled (Meta-S)
+*editMenu.proportional.label:		Proportional (Meta-P)
+*editMenu.zoom.label:			Zoom (Meta-Z)
+*editMenu.cut.label:			Cut (Meta-C)
+*editMenu.copy.label:			Copy (Meta-W)
+*editMenu.paste.label:			Paste (Meta-Y, Ctrl-mb)
+
+*form.clear.label:			Clear
+*form.set.fromVert: 			clear
+*form.set.label:			Set
+*form.invert.fromVert: 			set
+*form.invert.label:			Invert
+
+*form.mark.vertDistance:		10
+*form.mark.fromVert:			invert
+*form.mark.label:			Mark
+*form.unmark.fromVert:              	mark
+*form.unmark.label:			Unmark
+
+*form.copy.vertDistance:		10
+*form.copy.fromVert: 			unmark
+*form.copy.radioGroup:			mark
+*form.copy.label:			Copy
+*form.move.fromVert: 			copy
+*form.move.radioGroup:			copy
+*form.move.label:			Move
+
+*form.flipHoriz.vertDistance:		10
+*form.flipHoriz.width:			36
+*form.flipHoriz.height:			36
+*form.flipHoriz.fromVert: 		move
+*form.flipHoriz.bitmap:			FlipHoriz
+*form.up.vertDistance:			10
+*form.up.width:				36
+*form.up.height:			36
+*form.up.fromVert: 			move
+*form.up.fromHoriz:			flipHoriz
+*form.up.bitmap:			Up
+*form.flipVert.vertDistance:		10
+*form.flipVert.width:			36
+*form.flipVert.height:			36
+*form.flipVert.fromVert: 		move
+*form.flipVert.fromHoriz:		up
+*form.flipVert.bitmap:			FlipVert
+*form.left.width:			36
+*form.left.height:			36
+*form.left.fromVert: 			flipHoriz
+*form.left.bitmap:			Left
+*form.fold.width:			36
+*form.fold.height:			36
+*form.fold.fromVert: 			up
+*form.fold.fromHoriz: 			left
+*form.fold.bitmap:			Fold
+*form.right.width:			36
+*form.right.height:			36
+*form.right.fromVert: 			flipVert
+*form.right.fromHoriz: 			fold
+*form.right.bitmap:			Right
+*form.rotateLeft.width:			36
+*form.rotateLeft.height:		36
+*form.rotateLeft.fromVert:		left
+*form.rotateLeft.bitmap:		RotateLeft
+*form.down.width:			36
+*form.down.height:			36
+*form.down.fromVert: 			fold
+*form.down.fromHoriz: 			rotateLeft
+*form.down.bitmap:			Down
+*form.rotateRight.width:		36
+*form.rotateRight.height:		36
+*form.rotateRight.fromVert:		right
+*form.rotateRight.fromHoriz:		down
+*form.rotateRight.bitmap:		RotateRight
+
+*form.point.vertDistance:		10
+*form.point.fromVert: 			rotateLeft
+*form.point.radioGroup:  		move
+*form.point.label:			Point
+*form.curve.fromVert: 			point
+*form.curve.radioGroup:  		point
+*form.curve.label:			Curve
+*form.line.fromVert: 			curve
+*form.line.radioGroup: 			curve
+*form.line.label:			Line
+*form.rectangle.fromVert: 		line
+*form.rectangle.radioGroup:  		line
+*form.rectangle.label:			Rectangle
+*form.filledRectangle.fromVert: 	rectangle
+*form.filledRectangle.radioGroup:  	rectangle
+*form.filledRectangle.label:		Filled Rectangle
+*form.circle.fromVert: 			filledRectangle
+*form.circle.radioGroup:  		filledRectangle
+*form.circle.label:			Circle
+*form.filledCircle.fromVert: 		circle
+*form.filledCircle.radioGroup:  	circle
+*form.filledCircle.label:		Filled Circle
+*form.floodFill.fromVert:		filledCircle
+*form.floodFill.radioGroup:  		filledCircle
+*form.floodFill.label:			Flood Fill
+
+*form.setHotSpot.vertDistance:		10
+*form.setHotSpot.fromVert: 		floodFill
+*form.setHotSpot.radioGroup:  		floodFill
+*form.setHotSpot.label:			Set Hot Spot
+*form.clearHotSpot.fromVert: 		setHotSpot
+*form.clearHotSpot.label:		Clear Hot Spot
+
+*form.undo.vertDistance:		10
+*form.undo.fromVert:			clearHotSpot
+*form.undo.label:			Undo
+
+

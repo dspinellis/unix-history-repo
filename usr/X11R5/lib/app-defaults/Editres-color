@@ -1,0 +1,36 @@
+! Here are some suggested resources if you are using a color workstation.
+! They look pretty good on my display, your mileage may vary.
+
+#include "Editres"
+
+*flashColor:			Yellow
+
+*Background:			RoyalBlue4
+*Foreground:			Azure
+*BorderColor:			LightCyan1
+
+*Tree.Background: 		Grey
+*Tree.Foreground: 		White
+
+*Tree.Toggle.Foreground: 	Gold
+*Tree.Toggle.BorderWidth: 	0
+
+*MenuButton.Foreground:		Gold
+*MenuButton.BorderWidth: 	0
+
+*SmeBSB.Foreground: 		Gold
+
+*Porthole.Background:		Grey
+*Panner*Foreground:		MintCream
+*Panner*Background:		Grey
+*Panner*BorderColor:		Grey
+*Panner*ShadowColor:		Black
+*Panner*BackgroundStipple:	None
+
+*resourceBox*namesAndClasses.Background: Grey
+*resourceBox*namesAndClasses*Toggle.Background: RoyalBlue4
+*resourceBox*namesAndClasses*Toggle.Foreground: White
+*resourceBox*valueForm.Background: Grey
+*resourceBox*valueLabel.Background: Grey
+*resourceBox*valueLabel.Foreground: White
+*resourceBox*Command.Foreground: Gold

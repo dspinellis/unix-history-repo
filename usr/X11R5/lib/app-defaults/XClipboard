@@ -1,0 +1,125 @@
+*Command*Font: 	-*-helvetica-bold-r-normal--*-120-*-*-*-*-iso8859-1
+*Label*Font: 	-*-helvetica-bold-r-normal--*-120-*-*-*-*-iso8859-1
+*Text*Font:	-*-courier-medium-r-normal--*-120-*-*-*-*-iso8859-1
+
+*quit.label: 			Quit
+*quit.top: 			ChainTop
+*quit.bottom: 			ChainTop
+*quit.left: 			ChainLeft
+*quit.right: 			ChainLeft
+*quit.translations:		#override \n\
+				<Btn1Down>,<Btn1Up>:Quit() unset()
+
+*delete.label: 			Delete
+*delete.fromHoriz: 		quit
+*delete.top: 			ChainTop
+*delete.bottom:			ChainTop
+*delete.left:			ChainLeft
+*delete.right:			ChainLeft
+*delete.translations:		#override \n\
+				<Btn1Down>,<Btn1Up>:DeleteClip() unset()
+
+*new.label: 			New
+*new.fromHoriz: 		delete
+*new.top: 			ChainTop
+*new.bottom:			ChainTop
+*new.left:			ChainLeft
+*new.right:			ChainLeft
+*new.translations:		#override \n\
+				<Btn1Down>,<Btn1Up>:NewClip() unset()
+
+*save.label: 			Save
+*save.fromHoriz: 		new
+*save.top: 			ChainTop
+*save.bottom:			ChainTop
+*save.left:			ChainLeft
+*save.right:			ChainLeft
+*save.translations:		#override \n\
+				<Btn1Down>,<Btn1Up>:Save() unset()
+
+*next.label: 			Next
+*next.fromHoriz: 		save
+*next.top: 			ChainTop
+*next.bottom:			ChainTop
+*next.left:			ChainLeft
+*next.right:			ChainLeft
+*next.translations:		#override \n\
+				<Btn1Down>,<Btn1Up>:NextClip() unset()
+
+*prev.label: 			Prev
+*prev.fromHoriz: 		next
+*prev.top: 			ChainTop
+*prev.bottom:			ChainTop
+*prev.left:			ChainLeft
+*prev.right:			ChainLeft
+*prev.translations:		#override \n\
+				<Btn1Down>,<Btn1Up>:PrevClip() unset()
+
+*index.fromHoriz:		prev
+*index.top: 			ChainTop
+*index.bottom:			ChainTop
+*index.left:			ChainLeft
+*index.right:			ChainLeft
+*index.resizable:		true
+
+*text.scrollVertical:  		WhenNeeded
+*text.scrollHorizontal:  	WhenNeeded
+*text.autoFill: 		on
+
+*text.fromVert: 		quit
+*text.top: 			ChainTop
+*text.bottom: 			ChainBottom
+*text.left: 			ChainLeft
+*text.right: 			ChainRight
+*text.resizable:		true
+*text.width:			300
+
+XClipboard.geometry:		300x200
+*ShapeStyle:			oval
+XClipboard.baseTranslations: #augment\n\
+			<Message>WM_PROTOCOLS: WMProtocols()\n
+*TransientShell.baseTranslations: #augment\n\
+			<Message>WM_PROTOCOLS: WMProtocols()\n
+
+*fileDialog.label:			Save to file:
+*fileDialogShell.allowShellResize:	true
+*fileDialogShell.title:			File Save
+
+*fileDialog*accept.label:		Accept
+*fileDialog*accept.translations:	#override\
+			<BtnUp>: AcceptSave() unset()
+*fileDialog*value.translations:	#override\
+			<Key>Return: AcceptSave() \n\
+			Ctrl<Key>S: no-op(ring-bell) \n\
+			Ctrl<Key>R: no-op(ring-bell) \n\
+			Ctrl<Key>M: no-op(ring-bell) \n\
+			Ctrl<Key>J: no-op(ring-bell) \n\
+			Meta<Key>I: no-op(ring-bell)
+*fileDialog*value.baseTranslations:	#override\
+			<Key>Return: AcceptSave() \n\
+			Ctrl<Key>S: no-op(ring-bell) \n\
+			Ctrl<Key>R: no-op(ring-bell) \n\
+			Ctrl<Key>M: no-op(ring-bell) \n\
+			Ctrl<Key>J: no-op(ring-bell) \n\
+			Meta<Key>I: no-op(ring-bell)
+
+*fileDialog*cancel.label:		Cancel
+*fileDialog*cancel.translations:	#override\
+			<BtnUp>:CancelSave() unset()
+
+*failDialog*Label.resizable:		true
+*failDialog.label:			Can't write file
+*failDialogShell.title:			Error
+*failDialogShell.allowShellResize:	true
+
+*failDialog*continue.label:		Continue
+*failDialog*continue.translations:	#override\
+			<BtnUp>:FailContinue() unset()
+
+*failDialog*value.translations:	#override\
+			<Key>Return: FailContinue() \n\
+			Ctrl<Key>S: no-op(ring-bell) \n\
+			Ctrl<Key>R: no-op(ring-bell) \n\
+			Ctrl<Key>M: no-op(ring-bell) \n\
+			Ctrl<Key>J: no-op(ring-bell) \n\
+			Meta<Key>I: no-op(ring-bell)

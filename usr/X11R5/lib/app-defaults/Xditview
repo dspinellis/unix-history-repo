@@ -1,0 +1,96 @@
+Xditview.geometry: 600x800
+*MenuButton*Font: 	-*-helvetica-bold-r-normal--*-120-*-*-*-*-iso8859-1
+*SimpleMenu*Font: 	-*-helvetica-bold-r-normal--*-120-*-*-*-*-iso8859-1
+*Text*Font:	-*-courier-medium-r-normal--*-120-*-*-*-*-iso8859-1
+
+*paned.allowResize:		true
+*paned.?.showGrip:		false
+*paned.?.skipAdjust:		false
+*paned.form.porthole.width:	600
+*paned.form.porthole.height:	800
+*paned.label.skipAdjust:	true
+
+*MenuButton.shapeStyle: oval
+*Command.shapeStyle: oval
+
+*fileMenuButton.label:		File
+*fileMenuButton.leftBitmap:	menu12
+*fileMenuButton.menuName:	fileMenu
+
+*fileMenu.openFile.label:	Open File
+*fileMenu.revisitFile.label:	Reopen File
+*fileMenu.setResolution.label:	Set Screen Resolution
+*fileMenu.quit.label:		Quit
+
+*prevButton.bitmap:		ldblarrow
+*prevButton.internalHeight:	0
+*prevButton.Translations: 	#override <BtnUp>: PreviousPage() unset()
+
+*pageNumber.translations: #override\
+     Ctrl<Key>J:    SetPageNumber()\n\
+     Ctrl<Key>M:    SetPageNumber()\n\
+     <Key>Linefeed: SetPageNumber()\n\
+     <Key>Return:   SetPageNumber()\n\
+     Ctrl<Key>O:    Noop()\n\
+     Meta<Key>I:    Noop()\n\
+     Ctrl<Key>N:    Noop()\n\
+     Ctrl<Key>P:    Noop()\n\
+     Ctrl<Key>Z:    Noop()\n\
+     Meta<Key>Z:    Noop()\n\
+     <Key>space:    NextPage()\n\
+     Ctrl<Key>v:    NextPage()\n\
+     Meta<Key>v:    PreviousPage()\n\
+     <Key>Next:	    NextPage()\n\
+     <Key>Prior:    PreviousPage()\n\
+     <Key>Find:	    OpenFile()
+*pageNumber*editType:	edit
+
+*nextButton.bitmap:		rdblarrow
+*nextButton.internalHeight:	0
+*nextButton.translations: 	#override <BtnUp>: NextPage() unset()
+
+*viewport.allowResize:	false
+*viewport.forceBars:	true
+*viewport.allowHoriz: true
+*viewport.allowVert: true
+
+*dvi.translations: #augment \
+	<Btn1Down>:	XawPositionSimpleMenu(popupMenu) MenuPopup(popupMenu)\n\
+	Ctrl<Key>v:	NextPage()\n\
+	Meta<Key>v:	PreviousPage()\n\
+	<Key>space:	NextPage()\n\
+	<Key>Next:	NextPage()\n\
+	<Key>Prior:	PreviousPage()\n\
+	<Key>Find:	OpenFile()
+*dvi.baseTranslations: #augment \
+	<Btn1Down>:	XawPositionSimpleMenu(popupMenu) MenuPopup(popupMenu)\n\
+	<Key>space:	NextPage()\n\
+	Ctrl<Key>v:	NextPage()\n\
+	Meta<Key>v:	PreviousPage()\n\
+	<Key>Next:	NextPage()\n\
+	<Key>Prior:	PreviousPage()\n\
+	<Key>Find:	OpenFile()
+*popupMenu.nextPage.label:	Next Page
+*popupMenu.previousPage.label:	Previous Page
+*popupMenu.setResolution.label:	Set Screen Resolution
+*popupMenu.openFile.label:	Open File
+*popupMenu.revisitFile.label:	Reopen File
+*popupMenu.quit.label:		Quit
+
+*promptShell.allowShellResize:	true
+*promptShell.promptDialog.value.translations: #override\
+	<Key>Return: Accept()
+*promptShell.promptDialog.value.baseTranslations: #override\
+	<Key>Return: Accept()
+
+*promptShell.promptDialog.accept.label: Accept
+*promptShell.promptDialog.accept.translations: #override\
+	<BtnUp>: Accept() unset()
+*promptShell.promptDialog.accept.baseTranslations: #override \
+	<BtnUp>: Accept() unset()
+
+*promptShell.promptDialog.cancel.label: Cancel
+*promptShell.promptDialog.cancel.translations: #override \
+	<BtnUp>: Cancel() unset()
+*promptShell.promptDialog.cancel.baseTranslations: #override \
+	<BtnUp>: Cancel() unset()

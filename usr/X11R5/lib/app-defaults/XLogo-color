@@ -1,0 +1,4 @@
+XLogo.input: false
+! MIT colors are Cardinal Red (Pantone 201c) and Silver Grey (Pantone 421c)
+XLogo*background: rgb:d2/22/32
+XLogo*foreground: rgb:d7/d7/d7

@@ -1,0 +1,21 @@
+*allowShellResize:		true
+XConsole.translations:		#override\
+	<MapNotify>:		Deiconified()	\n\
+	<UnmapNotify>:		Iconified()	\n\
+	<Message>WM_PROTOCOLS:	Quit()
+XConsole.baseTranslations:		#override\
+	<MapNotify>:		Deiconified()	\n\
+	<UnmapNotify>:		Iconified()	\n\
+	<Message>WM_PROTOCOLS:	Quit()
+*text.translations:		#override\
+	Ctrl<KeyPress>C:	Clear()	\n\
+	<KeyPress>Clear:	Clear()
+*text.baseTranslations:		#override\
+	Ctrl<KeyPress>C:	Clear()	\n\
+	<KeyPress>Clear:	Clear()
+*text.scrollVertical:		whenNeeded
+*text.scrollHorizontal:		whenNeeded
+*text.width:			400
+*text.height:			70
+*text.allowResize:		true
+*editType:			read

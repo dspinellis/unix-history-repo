@@ -1,0 +1,34 @@
+*input:					TRUE
+
+*filename*preferredPaneSize:		525
+*editWindow*preferredPaneSize:		500
+
+*labelWindow*justify:			center
+*labelWindow*label:			no file yet
+
+*quit.label:				Quit
+*save.label:				Save
+*load.label:				Load
+
+*buttons*orientation:			horizontal
+*buttons*showGrip:			False
+
+*messageWindow*preferredPaneSize:	50
+*Paned*Text*allowResize:		True
+
+*messageWindow.autoFill:		True
+*messageWindow.scrollVertical:		WhenNeeded
+
+*editWindow.autoFill:			True
+*editWindow.scrollVertical:		WhenNeeded
+
+*bc_label*label:			Use Control-S and Control-R to Search.
+
+!
+! Keep CR in filename window from confusing the user.
+!
+
+*filename.translations: #override \
+				<Key>Return: end-of-line()
+*filename.baseTranslations: #override \
+				<Key>Return: end-of-line()
