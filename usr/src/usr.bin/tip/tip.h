@@ -1,4 +1,4 @@
-/*	tip.h	4.4	81/07/11	*/
+/*	tip.h	4.5	81/11/20	*/
 /*
  * tip - terminal interface program
  *
@@ -204,6 +204,7 @@ int	quit;			/* same; but on other end */
 int	intflag;		/* recognized interrupt */
 int	stoprompt;		/* for interrupting a prompt session */
 int	timedout;		/* ~> transfer timedout */
+int	cumode;			/* simulating the "cu" program */
 
 char	fname[80];		/* file name buffer for ~< */
 char	copyname[80];		/* file name buffer for ~> */
