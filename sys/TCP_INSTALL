@@ -1,0 +1,25 @@
+This tcp is believed to run on Sun-3/x systems running Sun OS v3.3,
+Vax 7xx and CCI Tahoe systems running 4.3BSD, VAX VMS systems
+running the most recent Wollongong WIN software and Gould systems
+running ?? (contact dpk@brl.arpa for Gould details).  It should
+run, unmodified, on any stock 4.2 or 4.3BSD machine.  Various
+defines to account for system dependencies are at the front of
+tcp_var.h.  If tcp won't work on your system, check the comments
+in tcp_var.h to see if there's some obvious change you should
+make.  If you have to tweak the configuration to make things
+work on your machine, please let van@lbl-csam.arpa know.  We'd
+like to make the public release of the code easy-to-install on
+as many machines as possible.  That means that any notes you
+can send us on installation problems will be invaluable.
+
+The tcp* files in the netinet subdirectory are replacements for the
+tcp* files of your 4.[23] distribution (i.e., they should replace the
+tcp files in /sys/netinet).  "Makefile.sun" is a makefile to construct
+tcp binaries on an object-only Sun system.  The "netstat" subdirectory
+contains a modification to "netstat" to print out the new
+tcp statistics.  It is a replacement for /usr/src/ucb/netstat/inet.c.
+You will need source for your current version of netstat to make use of
+this.  If you don't, be sure that OLDSTAT is defined in tcp_var.h
+so that the old TCP statistics are available from netstat.  The remaining
+source files for netstat are in the inet portion of this network
+release, but these will work without modification only on 4.3BSD systems.
