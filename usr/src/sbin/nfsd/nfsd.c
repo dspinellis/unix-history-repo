@@ -25,7 +25,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsd.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -70,6 +70,7 @@ main(argc, argv)
 	register int i;
 	int cnt, sock;
 	struct sockaddr_in saddr;
+	u_long msk, mtch;
 
 	if (debug == 0) {
 		if (fork())
@@ -78,9 +79,9 @@ main(argc, argv)
 		for (s = 0; s < 10; s++)
 			(void) close(s);
 		}
-		(void) open("/", O_RDONLY);
-		(void) dup2(0, 1);
-		(void) dup2(0, 2);
+		(void) open("/dev/null", O_RDONLY);
+		(void) open("/dev/null", O_WRONLY);
+		(void) dup2(1, 2);
 		{ int tt = open("/dev/tty", O_RDWR);
 		  if (tt > 0) {
 			ioctl(tt, TIOCNOTTY, (char *)0);
@@ -113,12 +114,25 @@ main(argc, argv)
 		syslog(LOG_ERR, "Can't register with portmap");
 		exit(1);
 	}
-	if (argc != 2 || (cnt = atoi(argv[1])) <= 0 || cnt > 20)
+	if (argc == 2) {
+		if ((cnt = atoi(argv[1])) <= 0 || cnt > 20)
+			cnt = 1;
+		msk = 0;
+		mtch = 0;
+	} else if (argc == 4) {
+		if ((cnt = atoi(argv[1])) <= 0 || cnt > 20)
+			cnt = 1;
+		msk = inet_addr(argv[2]);
+		mtch = inet_addr(argv[3]);
+	} else {
 		cnt = 1;
+		msk = 0;
+		mtch = 0;
+	}
 	for (i = 1; i < cnt; i++)
 		if (fork() == 0)
 			break;
-	if (nfssvc(sock) < 0)		/* Only returns on error */
+	if (nfssvc(sock, msk, mtch) < 0)	/* Only returns on error */
 		syslog(LOG_ERR, "nfssvc() failed %m");
 	exit();
 }

@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsstat.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsstat.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -183,11 +183,18 @@ intpr(interval, nfsstataddr)
 		nfsstats.rpccnt[17]);
 	printf("Rpc retries\n%11d\n",nfsstats.rpcretries);
 	printf("Cache Info:\n");
-	printf("%9.9s %9.9s %9.9s %9.9s\n",
+	printf("%9.9s %9.9s %9.9s %9.9s",
 		"Attr Hits", "Misses", "Lkup Hits", "Misses");
-	printf("%9d %9d %9d %9d\n",
+	printf(" %9.9s %9.9s %9.9s %9.9s\n",
+		"BioR Hits", "Misses", "BioW Hits", "Misses");
+	printf("%9d %9d %9d %9d",
 		nfsstats.attrcache_hits, nfsstats.attrcache_misses,
 		nfsstats.lookupcache_hits, nfsstats.lookupcache_misses);
+	printf(" %9d %9d %9d %9d\n",
+		nfsstats.biocache_reads-nfsstats.read_bios,
+		nfsstats.read_bios,
+		nfsstats.biocache_writes-nfsstats.write_bios,
+		nfsstats.write_bios);
 	printf("Server Info:\n");
 	printf("%9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s\n",
 		"Getattr", "Setattr", "Lookup", "Readlink", "Read",
@@ -212,10 +219,18 @@ intpr(interval, nfsstataddr)
 		nfsstats.srvrpccnt[15],
 		nfsstats.srvrpccnt[16],
 		nfsstats.srvrpccnt[17]);
-	printf("Server Rpc Errors\n");
+	printf("Server Ret-Failed\n");
 	printf("%17d\n", nfsstats.srvrpc_errs);
 	printf("Server Faults\n");
 	printf("%13d\n", nfsstats.srv_errs);
+	printf("Server Cache Stats:\n");
+	printf("%9.9s %9.9s %9.9s %9.9s\n",
+		"Inprog", "Idem", "Non-idem", "Misses");
+	printf("%9d %9d %9d %9d\n",
+		nfsstats.srvcache_inproghits,
+		nfsstats.srvcache_idemdonehits,
+		nfsstats.srvcache_nonidemdonehits,
+		nfsstats.srvcache_misses);
 }
 
 u_char	signalled;			/* set if alarm goes off "early" */
