@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -24,6 +24,7 @@ static char sccsid[] = "@(#)savecore.c	5.28 (Berkeley) %G%";
 #include <dirent.h>
 #include <stdio.h>
 #include <nlist.h>
+#include <unistd.h>
 #include <paths.h>
 
 #define	DAY	(60L*60L*24L)
@@ -79,8 +80,7 @@ char	vers[80];
 char	core_vers[80];
 char	panic_mesg[80];
 int	panicstr;
-off_t	lseek();
-off_t	Lseek();
+void	Lseek __P((int fd, off_t off, int flag));
 int	verbose;
 int	force;
 int	clear;
@@ -223,14 +223,14 @@ read_kmem()
 			exit(1);
 		}
 	kmem = Open(_PATH_KMEM, O_RDONLY);
-	Lseek(kmem, (long)current_nl[X_DUMPDEV].n_value, L_SET);
+	Lseek(kmem, (off_t)current_nl[X_DUMPDEV].n_value, L_SET);
 	Read(kmem, (char *)&dumpdev, sizeof (dumpdev));
-	Lseek(kmem, (long)current_nl[X_DUMPLO].n_value, L_SET);
+	Lseek(kmem, (off_t)current_nl[X_DUMPLO].n_value, L_SET);
 	Read(kmem, (char *)&dumplo, sizeof (dumplo));
 	if (verbose)
 		printf("dumplo = %d (%d * %d)\n", dumplo, dumplo/DEV_BSIZE,
 		    DEV_BSIZE);
-	Lseek(kmem, (long)current_nl[X_DUMPMAG].n_value, L_SET);
+	Lseek(kmem, (off_t)current_nl[X_DUMPMAG].n_value, L_SET);
 	Read(kmem, (char *)&dumpmag, sizeof (dumpmag));
 	dumplo *= DEV_BSIZE;
 	ddname = find_dev(dumpdev, S_IFBLK);
@@ -447,10 +447,10 @@ Read(fd, buff, size)
 	return (ret);
 }
 
-off_t
+void
 Lseek(fd, off, flag)
 	int fd, flag;
-	long off;
+	off_t off;
 {
 	long ret;
 
@@ -459,7 +459,6 @@ Lseek(fd, off, flag)
 		Perror(LOG_ERR, "lseek: %m", "lseek");
 		exit(1);
 	}
-	return (ret);
 }
 
 Create(file, mode)
