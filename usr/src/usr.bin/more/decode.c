@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)decode.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)decode.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -147,12 +147,10 @@ cmd_decode(c)
 	*kp++ = c;
 	*kp = '\0';
 
-#if USERFILE
 	/*
 	 * Look first for any user-defined commands.
 	 */
 	action = cmd_search(usertable, userendtable);
-#endif
 	/*
 	 * If didn't find user-defined command,
 	 * try the normal default commands.
@@ -235,7 +233,6 @@ cmd_search(table, endtable)
 	public void
 init_cmd()
 {
-#if USERFILE
 	char *filename;
 	char *homedir;
 	int f;
@@ -285,5 +282,4 @@ init_cmd()
 	}
 	userendtable = usertable + n;
 	close(f);
-#endif
 }
