@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_vnops.c	8.17 (Berkeley) %G%
+ *	@(#)procfs_vnops.c	8.18 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_vnops.c,v 3.2 1993/12/15 09:40:17 jsp Exp $
@@ -185,7 +185,7 @@ procfs_bmap(ap)
 }
 
 /*
- * _inactive is called when the pfsnode
+ * procfs_inactive is called when the pfsnode
  * is vrele'd and the reference count goes
  * to zero.  (vp) will be on the vnode free
  * list, so to get it back vget() must be
@@ -198,17 +198,19 @@ procfs_bmap(ap)
  * chances are that the process will still be
  * there and PFIND is not free.
  *
- * (vp) is not locked on entry or exit.
+ * (vp) is locked on entry, but must be unlocked on exit.
  */
 procfs_inactive(ap)
 	struct vop_inactive_args /* {
 		struct vnode *a_vp;
 	} */ *ap;
 {
-	struct pfsnode *pfs = VTOPFS(ap->a_vp);
+	struct vnode *vp = ap->a_vp;
+	struct pfsnode *pfs = VTOPFS(vp);
 
+	VOP_UNLOCK(vp, 0, ap->a_p);
 	if (PFIND(pfs->pfs_pid) == 0)
-		vgone(ap->a_vp);
+		vgone(vp);
 
 	return (0);
 }

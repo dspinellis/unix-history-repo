@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal_vnops.c	8.13 (Berkeley) %G%
+ *	@(#)portal_vnops.c	8.14 (Berkeley) %G%
  *
  * $Id: portal_vnops.c,v 1.4 1992/05/30 10:05:24 jsp Exp jsp $
  */
@@ -488,9 +488,11 @@ int
 portal_inactive(ap)
 	struct vop_inactive_args /* {
 		struct vnode *a_vp;
+		struct proc *a_p;
 	} */ *ap;
 {
 
+	VOP_UNLOCK(ap->a_vp, 0, ap->a_p);
 	return (0);
 }
 
