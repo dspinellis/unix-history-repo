@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)head.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)head.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -138,13 +138,20 @@ copyin(src, space)
  */
 char ctype[] = "Aaa Aaa O0 00:00:00 0000";
 char tmztype[] = "Aaa Aaa O0 00:00:00 AAA 0000";
+/*
+ * Yuck.  If the mail file is created by Sys V (Solaris),
+ * there are no seconds in the time...
+ */
+char SysV_ctype[] = "Aaa Aaa O0 00:00 0000";
+char SysV_tmztype[] = "Aaa Aaa O0 00:00 AAA 0000";
 
 int
 isdate(date)
 	char date[];
 {
 
-	return cmatch(date, ctype) || cmatch(date, tmztype);
+	return cmatch(date, ctype) || cmatch(date, tmztype)
+	    || cmatch(date, SysV_tmztype) || cmatch(date, SysV_ctype);
 }
 
 /*

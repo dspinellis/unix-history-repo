@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)def.h	8.3 (Berkeley) %G%
+ *	@(#)def.h	8.4 (Berkeley) %G%
  */
 
 /*
@@ -18,7 +18,7 @@
 #include <sys/time.h>
 
 #include <signal.h>
-#include <sgtty.h>
+#include <termios.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
