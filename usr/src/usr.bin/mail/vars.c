@@ -8,7 +8,7 @@
  * Variable handling stuff.
  */
 
-static char *SccsId = "@(#)vars.c	2.2 %G%";
+static char *SccsId = "@(#)vars.c	2.3 %G%";
 
 /*
  * Assign a value to a variable.
@@ -59,7 +59,8 @@ vcopy(str)
 
 	if (equal(str, ""))
 		return("");
-	top = calloc(strlen(str)+1, 1);
+	if ((top = calloc(strlen(str)+1, 1)) == NULL)
+		panic ("Out of memory");
 	cp = top;
 	cp2 = str;
 	while (*cp++ = *cp2++)
