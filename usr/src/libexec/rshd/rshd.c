@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)rshd.c	4.20 (Berkeley) %G%";
+static	char sccsid[] = "@(#)rshd.c	4.21 (Berkeley) %G%";
 #endif
 
 /*
@@ -21,10 +21,10 @@ static	char sccsid[] = "@(#)rshd.c	4.20 (Berkeley) %G%";
 #include <pwd.h>
 #include <signal.h>
 #include <netdb.h>
+#include <syslog.h>
 
 int	errno;
-struct	passwd *getpwnam();
-char	*index(), *rindex(), *sprintf();
+char	*index(), *rindex();
 /* VARARGS 1 */
 int	error();
 
@@ -43,14 +43,14 @@ main(argc, argv)
 		_exit(1);
 	}
 	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0) {
-		fprintf(stderr, "%s: ", argv[0]);
-		perror("setsockopt (SO_KEEPALIVE)");
+		openlog(argv[0], LOG_PID, 0);
+		syslog(LOG_WARNING, "setsockopt (SO_KEEPALIVE): %m");
 	}
 	linger.l_onoff = 1;
 	linger.l_linger = 60;			/* XXX */
 	if (setsockopt(0, SOL_SOCKET, SO_LINGER, &linger, sizeof (linger)) < 0) {
-		fprintf(stderr, "%s: ", argv[0]);
-		perror("setsockopt (SO_LINGER)");
+		openlog(argv[0], LOG_PID, 0);
+		syslog(LOG_WARNING, "setsockopt (SO_LINGER): %m");
 	}
 	doit(dup(0), &from);
 }
@@ -90,7 +90,8 @@ doit(f, fromp)
 	fromp->sin_port = ntohs((u_short)fromp->sin_port);
 	if (fromp->sin_family != AF_INET ||
 	    fromp->sin_port >= IPPORT_RESERVED) {
-		fprintf(stderr, "rshd: malformed from address\n");
+		openlog("rshd", LOG_PID, 0);
+		syslog(LOG_ERR, "malformed from address\n");
 		exit(1);
 	}
 	(void) alarm(60);
@@ -98,7 +99,8 @@ doit(f, fromp)
 	for (;;) {
 		char c;
 		if (read(f, &c, 1) != 1) {
-			perror("rshd: read");
+			openlog("rshd", LOG_PID, 0);
+			syslog(LOG_ERR, "read: %m");
 			shutdown(f, 1+1);
 			exit(1);
 		}
@@ -111,16 +113,19 @@ doit(f, fromp)
 		int lport = IPPORT_RESERVED - 1, retryshift;
 		s = rresvport(&lport);
 		if (s < 0) {
-			perror("rshd: can't get stderr port");
+			openlog("rshd", LOG_PID, 0);
+			syslog(LOG_ERR, "can't get stderr port: %m");
 			exit(1);
 		}
 		if (port >= IPPORT_RESERVED) {
-			fprintf(stderr, "rshd: 2nd port not reserved\n");
+			openlog("rshd", LOG_PID, 0);
+			syslog(LOG_ERR, "2nd port not reserved\n");
 			exit(1);
 		}
 		fromp->sin_port = htons((u_short)port);
 		if (connect(s, fromp, sizeof (*fromp), 0) < 0) {
-			perror("rshd: connect");
+			openlog("rshd", LOG_PID, 0);
+			syslog(LOG_ERR, "connect: %m");
 			exit(1);
 		}
 	}
