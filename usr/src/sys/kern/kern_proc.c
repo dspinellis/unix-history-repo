@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.21	%G%	*/
+/*	kern_proc.c	3.22	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -113,7 +113,8 @@ exece()
 		bdwrite(bp);
 	bp = 0;
 	nc = (nc + NBPW-1) & ~(NBPW-1);
-	if (getxfile(ip, nc) || u.u_error) {
+	getxfile(ip, nc);
+	if (u.u_error) {
 badarg:
 		for (c = 0; c < nc; c += BSIZE)
 			if (bp = baddr(argdev, dbtofsb(bno)+(c>>BSHIFT))) {
@@ -170,27 +171,20 @@ bad:
 
 /*
  * Read in and set up memory for executed file.
- * Zero return is normal;
- * non-zero means only the text is being replaced
  */
 getxfile(ip, nargc)
 register struct inode *ip;
 {
-	register sep;
 	register size_t ts, ds, ss;
-	int overlay;
 	int pagi = 0;
 
 	/*
 	 * read in first few bytes
 	 * of file for segment
 	 * sizes:
-	 * ux_mag = 407/410/411/405
+	 * ux_mag = 407/410/413
 	 *  407 is plain executable
 	 *  410 is RO text
-	 *  411 is separated ID
-	 *  405 is overlaid text
-	 *  412 is demand paged plain executable (NOT IMPLEMENTED)
 	 *  413 is demand paged RO text
 	 */
 
@@ -206,17 +200,7 @@ register struct inode *ip;
 		u.u_error = ENOEXEC;
 		goto bad;
 	}
-	sep = 0;
-	overlay = 0;
 	switch (u.u_exdata.ux_mag) {
-
-	case 0405:
-		overlay++;
-		break;
-
-	case 0412:
-		u.u_error = ENOEXEC;
-		goto bad;
 
 	case 0407:
 		u.u_exdata.ux_dsize += u.u_exdata.ux_tsize;
@@ -233,10 +217,6 @@ register struct inode *ip;
 			goto bad;
 		}
 		break;
-
-	case 0411:
-		u.u_error = ENOEXEC;
-		goto bad;
 
 	default:
 		u.u_error = ENOEXEC;
@@ -261,89 +241,74 @@ register struct inode *ip;
 	ts = clrnd(btoc(u.u_exdata.ux_tsize));
 	ds = clrnd(btoc((u.u_exdata.ux_dsize+u.u_exdata.ux_bsize)));
 	ss = clrnd(SSIZE + btoc(nargc));
-	if (overlay) {
-		if ((u.u_procp->p_flag & SPAGI) ||
-		    u.u_sep==0 && ctos(ts) != ctos(u.u_tsize) || nargc) {
-			u.u_error = ENOMEM;
-			goto bad;
-		}
-		ds = u.u_dsize;
-		ss = u.u_ssize;
-		sep = u.u_sep;
-		xfree();
-		xalloc(ip, pagi);
-		u.u_ar0[PC] = u.u_exdata.ux_entloc + 2; /* skip over entry mask */
-	} else {
-		if (chksize(ts, ds, ss))
-			goto bad;
-		u.u_cdmap = zdmap;
-		u.u_csmap = zdmap;
-		if (swpexpand(ds, ss, &u.u_cdmap, &u.u_csmap) == NULL)
-			goto bad;
+	if (chksize(ts, ds, ss))
+		goto bad;
+	u.u_cdmap = zdmap;
+	u.u_csmap = zdmap;
+	if (swpexpand(ds, ss, &u.u_cdmap, &u.u_csmap) == NULL)
+		goto bad;
 
-		/*
-		 * At this point, committed to the new image!
-		 * Release virtual memory resources of old process, and
-		 * initialize the virtual memory of the new process.
-		 * If we resulted from vfork(), instead wakeup our
-		 * parent who will set SVFDONE when he has taken back
-		 * our resources.
-		 */
-		u.u_prof.pr_scale = 0;
-		if ((u.u_procp->p_flag & SVFORK) == 0)
-			vrelvm();
-		else {
-			u.u_procp->p_flag &= ~SVFORK;
-			u.u_procp->p_flag |= SKEEP;
-			wakeup((caddr_t)u.u_procp);
-			while ((u.u_procp->p_flag & SVFDONE) == 0)
-				sleep((caddr_t)u.u_procp, PZERO - 1);
-			u.u_procp->p_flag &= ~(SVFDONE|SKEEP);
-		}
-		u.u_procp->p_flag &= ~(SPAGI|SANOM|SUANOM);
-		u.u_procp->p_flag |= pagi;
-		u.u_dmap = u.u_cdmap;
-		u.u_smap = u.u_csmap;
-		vgetvm(ts, ds, ss);
-
-		if (pagi == 0) {
-			/*
-			 * Read in data segment.
-			 */
-			u.u_base = (char *)ctob(ts);
-			u.u_offset = sizeof(u.u_exdata)+u.u_exdata.ux_tsize;
-			u.u_count = u.u_exdata.ux_dsize;
-			readi(ip);
-		}
-		xalloc(ip, pagi);
-		if (pagi && u.u_procp->p_textp)
-			vinifod((struct fpte *)dptopte(u.u_procp, 0),
-			    PG_FTEXT, u.u_procp->p_textp->x_iptr,
-			    1 + ts/CLSIZE, (int)btoc(u.u_exdata.ux_dsize));
-
-		/* THIS SHOULD BE DONE AT A LOWER LEVEL, IF AT ALL */
-		mtpr(TBIA, 0);
-
-		/*
-		 * set SUID/SGID protections, if no tracing
-		 */
-		if ((u.u_procp->p_flag&STRC)==0) {
-			if(ip->i_mode&ISUID)
-				if(u.u_uid != 0) {
-					u.u_uid = ip->i_uid;
-					u.u_procp->p_uid = ip->i_uid;
-				}
-			if(ip->i_mode&ISGID)
-				u.u_gid = ip->i_gid;
-		} else
-			psignal(u.u_procp, SIGTRAP);
+	/*
+	 * At this point, committed to the new image!
+	 * Release virtual memory resources of old process, and
+	 * initialize the virtual memory of the new process.
+	 * If we resulted from vfork(), instead wakeup our
+	 * parent who will set SVFDONE when he has taken back
+	 * our resources.
+	 */
+	u.u_prof.pr_scale = 0;
+	if ((u.u_procp->p_flag & SVFORK) == 0)
+		vrelvm();
+	else {
+		u.u_procp->p_flag &= ~SVFORK;
+		u.u_procp->p_flag |= SKEEP;
+		wakeup((caddr_t)u.u_procp);
+		while ((u.u_procp->p_flag & SVFDONE) == 0)
+			sleep((caddr_t)u.u_procp, PZERO - 1);
+		u.u_procp->p_flag &= ~(SVFDONE|SKEEP);
 	}
+	u.u_procp->p_flag &= ~(SPAGI|SANOM|SUANOM|SNUSIG);
+	u.u_procp->p_flag |= pagi;
+	u.u_dmap = u.u_cdmap;
+	u.u_smap = u.u_csmap;
+	vgetvm(ts, ds, ss);
+
+	if (pagi == 0) {
+		/*
+		 * Read in data segment.
+		 */
+		u.u_base = (char *)ctob(ts);
+		u.u_offset = sizeof(u.u_exdata)+u.u_exdata.ux_tsize;
+		u.u_count = u.u_exdata.ux_dsize;
+		readi(ip);
+	}
+	xalloc(ip, pagi);
+	if (pagi && u.u_procp->p_textp)
+		vinifod((struct fpte *)dptopte(u.u_procp, 0),
+		    PG_FTEXT, u.u_procp->p_textp->x_iptr,
+		    1 + ts/CLSIZE, (int)btoc(u.u_exdata.ux_dsize));
+
+	/* THIS SHOULD BE DONE AT A LOWER LEVEL, IF AT ALL */
+	mtpr(TBIA, 0);
+
+	/*
+	 * set SUID/SGID protections, if no tracing
+	 */
+	if ((u.u_procp->p_flag&STRC)==0) {
+		if(ip->i_mode&ISUID)
+			if(u.u_uid != 0) {
+				u.u_uid = ip->i_uid;
+				u.u_procp->p_uid = ip->i_uid;
+			}
+		if(ip->i_mode&ISGID)
+			u.u_gid = ip->i_gid;
+	} else
+		psignal(u.u_procp, SIGTRAP);
 	u.u_tsize = ts;
 	u.u_dsize = ds;
 	u.u_ssize = ss;
-	u.u_sep = sep;
 bad:
-	return(overlay);
+	return;
 }
 
 /*
@@ -602,12 +567,10 @@ loop:
 		u.u_r.r_val1 = 0;
 		return;
 	}
-/*
-	if (setjmp(u.u_qsav)) {
+	if ((u.u_procp->p_flag&SNUSIG) && setjmp(u.u_qsav)) {
 		u.u_eosys = RESTARTSYS;
 		return;
 	}
-*/
 	sleep((caddr_t)u.u_procp, PWAIT);
 	goto loop;
 }
