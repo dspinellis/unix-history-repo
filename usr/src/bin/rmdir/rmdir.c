@@ -1,11 +1,11 @@
-static char *sccsid = "@(#)rmdir.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)rmdir.c	4.3 (Berkeley) %G%";
 /*
  * Remove directory
  */
 
 #include <sys/types.h>
-#include <sys/dir.h>
 #include <sys/stat.h>
+#include <ndir.h>
 #include <stdio.h>
 
 int	Errors = 0;
@@ -30,10 +30,10 @@ char **argv;
 rmdir(d)
 char *d;
 {
-	int	fd;
-	char	*np, name[500];
+	char	*np, name[BUFSIZ];
 	struct	stat	st, cst;
-	struct	direct	dir;
+	struct	direct	*dp;
+	DIR	*dirp;
 
 	strcpy(name, d);
 
@@ -75,21 +75,21 @@ char *d;
 		++Errors;
 		return;
 	}
-	if((fd = open(name,0)) < 0) {
+	if((dirp = opendir(name)) == NULL) {
 		fprintf(stderr, "rmdir: %s unreadable\n", name);
 		++Errors;
 		return;
 	}
-	while(read(fd, (char *)&dir, sizeof dir) == sizeof dir) {
-		if(dir.d_ino == 0) continue;
-		if(!strcmp(dir.d_name, ".") || !strcmp(dir.d_name, ".."))
+	while((dp = readdir(dirp)) != NULL) {
+		if(dp->d_ino == 0) continue;
+		if(!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
 			continue;
 		fprintf(stderr, "rmdir: %s not empty\n", name);
 		++Errors;
-		close(fd);
+		closedir(dirp);
 		return;
 	}
-	close(fd);
+	closedir(dirp);
 	strcat(name, "/.");
 	if((access(name, 0)) < 0) {		/* name/. non-existent */
 		strcat(name, ".");
