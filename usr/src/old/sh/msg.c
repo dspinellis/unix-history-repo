@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)msg.c	4.2 %G%";
+static char sccsid[] = "@(#)msg.c	4.3 %G%";
 #endif
 
 #
@@ -107,8 +107,25 @@ STRING	sysmsg[] {
 		0,	/* Broken pipe */
 		"Alarm call",
 		"Terminated",
-		"Signal 16",
+		"Urgent condition",
+		"Stopped",
+		"Stopped from terminal",
+		"Continued",
+		"Child terminated",
+		"Stopped on terminal input",
+		"Stopped on terminal output",
+		"Asynchronous I/O",
+		"Exceeded cpu time limit",
+		"Exceeded file size limit",
+		"Virtual time alarm",
+		"Profiling time alarm",
+		"Window changed",
+		"Signal 29",
+		"Signal 30",
+		"Signal 31",
+		"Signal 32",
 };
+INT		num_sysmsg = (sizeof sysmsg / sizeof sysmsg[0]);
 
 MSG		export = "export";
 MSG		readonly = "readonly";
