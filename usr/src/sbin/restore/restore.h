@@ -4,14 +4,8 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)restore.h	5.13 (Berkeley) %G%
+ *	@(#)restore.h	5.14 (Berkeley) %G%
  */
-
-#include <sys/param.h>
-#include <sys/time.h>
-#include <ufs/ufs/dinode.h>
-#include <ufs/ffs/fs.h>
-#include <stdio.h>
 
 /*
  * Flags
@@ -67,20 +61,7 @@ struct entry {
 #define REMOVED		0x0010	/* entry has been removed */
 #define TMPNAME		0x0020	/* entry has been given a temporary name */
 #define EXISTED		0x0040	/* directory already existed during extract */
-/*
- * functions defined on entry structs
- */
-extern struct entry *lookupino();
-extern struct entry *lookupname();
-extern struct entry *lookupparent();
-extern struct entry *addentry();
-extern char *myname();
-extern char *savename();
-extern char *gentempname();
-extern char *flagvalues();
-extern ino_t lowerbnd();
-extern ino_t upperbnd();
-#define NIL ((struct entry *)(0))
+
 /*
  * Constants associated with entry structs
  */
@@ -106,31 +87,6 @@ struct context {
  * Definitions for library routines operating on directories.
  */
 typedef struct rstdirdesc RST_DIR;
-extern RST_DIR *rst_opendir();
-extern struct direct *rst_readdir();
-
-/*
- * Other exported routines
- */
-extern ino_t pathsearch();
-extern ino_t dirlookup();
-extern long listfile();
-extern long deletefile();
-extern long addfile();
-extern long nodeupdates();
-extern long verifyfile();
-extern char *rindex();
-extern char *index();
-extern char *strcat();
-extern char *strncat();
-extern char *strcpy();
-extern char *strncpy();
-extern char *fgets();
-extern char *mktemp();
-extern char *malloc();
-extern char *calloc();
-extern char *realloc();
-extern long lseek();
 
 /*
  * Flags to setdirmodes.
