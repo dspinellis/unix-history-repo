@@ -1,78 +1,48 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)cat.1	6.3 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)cat.1	6.4 (Berkeley) %G%
 .\"
 .TH CAT 1 ""
-.UC 4
+.UC 1
 .SH NAME
-cat \- catenate and print
+cat \- concatenate and print files
 .SH SYNOPSIS
-.B cat
-[
-.B \-benstuv
-]
-file ...
-.br
+.nf
+cat [-u] [-] [file ...]
 .SH DESCRIPTION
-.I Cat
-reads each
-.I file
-in sequence and displays it on the standard output.  Thus
-.PP
-.ti+15n
-cat file
-.PP
-displays the file on the standard output, and
-.PP
-.ti+15n
-cat file1 file2 >file3
-.PP
-concatenates the first two files and places the result on the third.
-.PP
-If no input file is given, or if the argument `\-' is encountered,
+The
 .I cat
-reads from the standard input file.
-Output is buffered in the block size recommended by \fIstat\fP(2)
-unless the standard output is a terminal,
-when it is line buffered.  The
+utility reads files sequentially, writing them to the standard output.
+The
+.I file
+operands are processed in command line order.
+A single dash represents standard input.
+.PP
+The
 .B \-u
-option makes the output completely unbuffered.
+option guarantees that the output is unbuffered.
 .PP
-The
-.B \-n
-option displays the output lines preceded by lines numbers, numbered
-sequentially from 1.  Specifying the 
-.B \-b
-option with the
-.B \-n
-option omits the line numbers from blank lines.
+The command ``cat file1 file2 > file3'' concatenates the contents of
+file1 and file2 and places the result in file3.
 .PP
-The
-.B \-s
-option crushes out multiple adjacent empty lines so that the
-output is displayed single spaced.
-.PP
-The
-.B \-v
-option displays non-printing characters so that they are visible.
-Control characters print like ^X for control-x; the delete character
-(octal 0177) prints as ^?.
-Non-ascii characters (with the high bit set) are printed as M-
-(for meta) followed by the character of the low 7 bits.  A
-.B \-e
-option may be given with the
-.B \-v
-option, which displays a `$' character at the end of each line.
-Specifying the 
-.B \-t
-option with the
-.B \-v
-option displays tab characters as ^I.
-.PP
+Because of the shell language mechanism used to perform output
+redirection, the command ``cat file1 file 2 > file1'' will cause
+the original data in file1 to be destroyed!
 .SH "SEE ALSO"
-cp(1), ex(1), more(1), pr(1), tail(1)
-.SH BUGS
-Beware of `cat a b >a' and `cat a b >b', which destroy
-the input files before reading them.
+head(1), more(1), pr(1), tail(1)
+.br
+Rob Pike, ``UNIX Style, or cat -v Considered Harmful''
+USENIX Summer Conference Proceedings, 1983.
