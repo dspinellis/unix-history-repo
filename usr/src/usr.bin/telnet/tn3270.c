@@ -1,3 +1,5 @@
+#include "fdset.h"
+
 void
 tn3270_init()
 {

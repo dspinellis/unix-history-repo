@@ -403,7 +403,7 @@ telrcv()
 	    if (c == '\0') {
 		break;	/* Ignore \0 after CR */
 	    } else if (c == '\n') {
-		if (hisopts[TELOPT_ECHO] && !crmod) {
+		if ((!hisopts[TELOPT_ECHO]) && !crmod) {
 		    TTYADD(c);
 		}
 		break;
