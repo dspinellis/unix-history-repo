@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asscan2.c 4.13 %G%";
+static char sccsid[] = "@(#)asscan2.c 4.14 %G%";
 #endif not lint
 
 #include "asscanl.h"
@@ -13,26 +13,28 @@ char	inbufunget[8];
 char	inbuffer[ASINBUFSIZ];
 char	*Ginbufptr = inbuffer;
 int	Ginbufcnt = 0;
+int	scannerhadeof;
 
 fillinbuffer()
 {
 		int	nread;
-	static	int	hadeof;
 		int	goal;
 		int	got;
 
 	nread = 0;
-	if (hadeof == 0){
+	if (scannerhadeof == 0){
 		goal = sizeof(inbuffer);
 		do {
 			got = read(stdin->_file, inbuffer + nread, goal);
 			if (got == 0)
-				hadeof = 1;
+				scannerhadeof = 1;
 			if (got <= 0)
 				break;
 			nread += got;
 			goal -= got;
 		} while (goal);
+	} else {
+		scannerhadeof = 0;
 	}
 	/*
 	 *	getchar assumes that Ginbufcnt and Ginbufptr
