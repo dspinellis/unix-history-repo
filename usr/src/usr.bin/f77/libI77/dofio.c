@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dofio.c	5.1	%G%
+ *	@(#)dofio.c	5.2	%G%
  */
 
 /*
@@ -31,7 +31,7 @@ en_fio()
 		  ED  for I,IM,F,E,EE,D,DE,G,GE,L,A,AW
 		  and returns op for other values 
  */
-LOCAL int optypes[] = { OP_TYPE_TAB };
+LOCAL int optypes[] = OP_TYPE_TAB;
 LOCAL int rep_count, in_mid;
 
 do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;

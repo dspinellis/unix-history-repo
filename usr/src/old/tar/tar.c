@@ -8,11 +8,11 @@
 char copyright[] =
 "@(#) Copyright (c) 1980 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tar.c	5.10 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)tar.c	5.11 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * Tape Archival Program
@@ -458,7 +458,6 @@ putfile(longname, shortname, parent)
 	register int i;
 	long l;
 	char newparent[NAMSIZ+64];
-	extern int errno;
 	int	maxread;
 	int	hint;		/* amount to write to get "in sync" */
 
@@ -647,6 +646,7 @@ putfile(longname, shortname, parent)
 doxtract(argv)
 	char *argv[];
 {
+	extern int errno;
 	long blocks, bytes;
 	int ofile, i;
 
