@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -19,6 +19,7 @@ static char sccsid[] = "@(#)mkioconf.c	5.27 (Berkeley) %G%";
 char	*qu();
 char	*intv();
 char	*wnum();
+void	pseudo_ioconf();
 
 #if MACHINE_VAX
 vax_ioconf()
@@ -259,6 +260,7 @@ vax_ioconf()
 		    dp->d_flags);
 	}
 	fprintf(fp, "\t0\n};\n");
+	pseudo_ioconf(fp);
 	(void) fclose(fp);
 }
 #endif
@@ -433,6 +435,7 @@ tahoe_ioconf()
 		    dp->d_flags);
 	}
 	fprintf(fp, "\t0\n};\n");
+	pseudo_ioconf(fp);
 	(void) fclose(fp);
 }
 #endif
@@ -540,6 +543,7 @@ hp300_ioconf()
 			dp->d_addr, dp->d_dk, dp->d_flags);
 	}
 	fprintf(fp, "0\n};\n");
+	pseudo_ioconf(fp);
 	(void) fclose(fp);
 }
 
@@ -690,6 +694,7 @@ i386_ioconf()
 		}
 		fprintf(fp, "0\n};\n\n");
 	}
+	pseudo_ioconf(fp);
 	(void) fclose(fp);
 }
 
@@ -715,7 +720,7 @@ pmax_ioconf()
 		perror(path("ioconf.c"));
 		exit(1);
 	}
-	fprintf(fp, "#include \"types.h\"\n");
+	fprintf(fp, "#include \"sys/types.h\"\n");
 	fprintf(fp, "#include \"pmax/dev/device.h\"\n\n");
 	fprintf(fp, "#define C (char *)\n\n");
 
@@ -781,6 +786,7 @@ pmax_ioconf()
 			dp->d_dk, dp->d_flags);
 	}
 	fprintf(fp, "0\n};\n");
+	pseudo_ioconf(fp);
 	(void) fclose(fp);
 }
 #endif
@@ -935,6 +941,7 @@ news_ioconf()
 	fprintf(fp, "\t0\n};\n\n");
 	fprintf(fp, "#endif\n\n");
 /* END HB */
+	pseudo_ioconf(fp);
 	(void) fclose(fp);
 }
 #endif
@@ -971,4 +978,27 @@ wnum(num)
 		return ("?");
 	(void) sprintf(errbuf, "%d", num);
 	return (errbuf);
+}
+
+void
+pseudo_ioconf(fp)
+	register FILE *fp;
+{
+	register struct device *dp;
+
+	(void)fprintf(fp, "\n#include <sys/device.h>\n\n");
+	for (dp = dtab; dp != NULL; dp = dp->d_next)
+		if (dp->d_type == PSEUDO_DEVICE)
+			(void)fprintf(fp, "extern void %sattach __P((int));\n",
+			    dp->d_name);
+	/* XXX temporary for HP300, others */
+	(void)fprintf(fp, "\n#include <sys/systm.h> /* XXX */\n");
+	(void)fprintf(fp, "#define etherattach (void (*)__P((int)))nullop\n");
+	(void)fprintf(fp, "#define iteattach (void (*) __P((int)))nullop\n");
+	(void)fprintf(fp, "\nstruct pdevinit pdevinit[] = {\n");
+	for (dp = dtab; dp != NULL; dp = dp->d_next)
+		if (dp->d_type == PSEUDO_DEVICE)
+			(void)fprintf(fp, "\t{ %sattach, %d },\n", dp->d_name,
+			    dp->d_slave > 0 ? dp->d_slave : 1);
+	(void)fprintf(fp, "\t{ 0, 0 }\n};\n");
 }
