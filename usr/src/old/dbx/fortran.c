@@ -1,3 +1,7 @@
+/* Copyright (c) 1982 Regents of the University of California */
+
+static char sccsid[] = "@(#)fortran.c	1.2	%G%";
+
 /*
  * FORTRAN dependent symbol routines.
  */
