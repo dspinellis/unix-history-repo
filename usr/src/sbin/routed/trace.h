@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trace.h	5.1 (Berkeley) %G%
+ *	@(#)trace.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -56,7 +56,7 @@ FILE	*ftrace;		/* output trace file */
 		dumppacket(stdout, "from", src, packet, size); \
 	}
 #define	TRACE_OUTPUT(ifp, dst, size) { \
-	  if (tracing) \
+	  if (tracing && ifp) \
 		trace(&ifp->int_output, dst, packet, size, ifp->int_metric); \
 	  if (tracepackets) \
 		dumppacket(stdout, "to", dst, packet, size); \
