@@ -4,9 +4,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-static char SccsId[] = "@(#)alias.c	3.12	%G%	(with DBM)";
+static char SccsId[] = "@(#)alias.c	3.13	%G%	(with DBM)";
 # else DBM
-static char SccsId[] = "@(#)alias.c	3.12	%G%	(without DBM)";
+static char SccsId[] = "@(#)alias.c	3.13	%G%	(without DBM)";
 # endif DBM
 
 /*
@@ -51,10 +51,10 @@ static char SccsId[] = "@(#)alias.c	3.12	%G%	(without DBM)";
 typedef struct
 {
 	char	*dptr;
-	int dsize;
-} datum;
-datum lhs, rhs;
-extern datum fetch();
+	int	dsize;
+} DATUM;
+DATUM lhs, rhs;
+extern DATUM fetch();
 #endif DBM
 
 alias(a)
@@ -119,6 +119,7 @@ alias(a)
 **
 **	Parameters:
 **		aliasfile -- location of aliases.
+**		init -- if set and if DBM, initialize the DBM files.
 **
 **	Returns:
 **		none.
@@ -129,12 +130,62 @@ alias(a)
 **		if ~DBM: reads the aliases into the symbol table.
 */
 
-initaliases(aliasfile)
+# define DBMMODE	0666
+
+initaliases(aliasfile, init)
 	char *aliasfile;
+	bool init;
 {
 # ifdef DBM
+	if (init)
+	{
+		char buf[MAXNAME];
+
+		(void) strcpy(buf, aliasfile);
+		(void) strcat(buf, ".dir");
+		if (close(creat(buf, DBMMODE)) < 0)
+		{
+			syserr("cannot make %s", buf);
+			return;
+		}
+		(void) strcpy(buf, aliasfile);
+		(void) strcat(buf, ".pag");
+		if (close(creat(buf, DBMMODE)) < 0)
+		{
+			syserr("cannot make %s", buf);
+			return;
+		}
+	}
 	dbminit(aliasfile);
+	if (init)
+		readaliases(aliasfile, TRUE);
 # else DBM
+	readaliases(aliasfile, init);
+# endif DBM
+}
+/*
+**  READALIASES -- read and process the alias file.
+**
+**	This routine implements the part of initaliases that occurs
+**	when we are not going to use the DBM stuff.
+**
+**	Parameters:
+**		aliasfile -- the pathname of the alias file master.
+**		init -- if set, initialize the DBM stuff.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Reads aliasfile into the symbol table.
+**		Optionally, builds the .dir & .pag files.
+*/
+
+static
+readaliases(aliasfile, init)
+	char *aliasfile;
+	bool init;
+{
 	char line[BUFSIZ];
 	register char *p;
 	char *p2;
@@ -198,29 +249,30 @@ initaliases(aliasfile)
 		{
 			register char c;
 
-# ifdef SECURE
-			/* do parsing & compression of addresses */
-			c = *p;
-			while (c != '\0')
+			if (init)
 			{
-				p2 = p;
-				while (*p != '\n' && *p != ',' && *p != '\0')
-					p++;
+				/* do parsing & compression of addresses */
 				c = *p;
-				*p++ = '\0';
-				if (*p2 == '\0')
+				while (c != '\0')
 				{
+					p2 = p;
+					while (*p != '\n' && *p != ',' && *p != '\0')
+						p++;
+					c = *p;
+					*p++ = '\0';
+					if (*p2 == '\0')
+					{
+						p[-1] = c;
+						continue;
+					}
+					parse(p2, &bl, -1);
 					p[-1] = c;
-					continue;
+					while (isspace(*p))
+						p++;
 				}
-				parse(p2, &bl, -1);
-				p[-1] = c;
-				while (isspace(*p))
-					p++;
 			}
-# else SECURE
-			p = &p[strlen(p)];
-# endif SECURE
+			else
+				p = &p[strlen(p)];
 
 			/* see if there should be a continuation line */
 			c = fgetc(af);
@@ -240,11 +292,25 @@ initaliases(aliasfile)
 			syserr("aliases: %d: cannot alias non-local names", lineno);
 			continue;
 		}
-		s = stab(al.q_user, ST_ALIAS, ST_ENTER);
-		s->s_alias = newstr(rhs);
+# ifdef DBM
+		if (init)
+		{
+			DATUM key, content;
+
+			key.dsize = strlen(al.q_user) + 1;
+			key.dptr = al.q_user;
+			content.dsize = strlen(rhs) + 1;
+			content.dptr = rhs;
+			store(key, content);
+		}
+		else
+# endif DBM
+		{
+			s = stab(al.q_user, ST_ALIAS, ST_ENTER);
+			s->s_alias = newstr(rhs);
+		}
 	}
 	(void) fclose(af);
-# endif DBM
 }
 /*
 **  FORWARD -- Try to forward mail
