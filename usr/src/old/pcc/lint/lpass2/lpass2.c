@@ -1,6 +1,6 @@
 
 #ifndef lint
-static char sccsid[] = "@(#)lpass2.c	1.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lpass2.c	1.2	(Berkeley)	%G%";
 #endif lint
 
 # include "manifest"
@@ -14,7 +14,7 @@ static char sccsid[] = "@(#)lpass2.c	1.1	(Berkeley)	%G%";
 
 # define NSZ 2048
 # define TYSZ 3500
-# define FSZ 250
+# define FSZ 500
 # define NTY 50
 
 typedef struct sty STYPE;
