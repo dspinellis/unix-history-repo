@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.5	(Berkeley)	%G%
+#	@(#)Makefile	4.6	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -19,11 +19,11 @@ SUBDIR=	adventure backgammon boggle compat cribbage doctor fortune \
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD=	arithmetic btlgammon banner bcd chess fish number ohangman wump
+STD=	arithmetic btlgammon banner bcd chess fish number wump
 
 # C programs that live in the current directory and need explicit make lines.
 #
-NSTD=	canfield hangman rain worm worms
+NSTD=	canfield rain worm worms
 
 all:	${SUBDIR} ${STD} ${NSTD}
 
@@ -68,6 +68,7 @@ depend:
 canfield:
 	cc -o canfield canfield.c -lcurses -ltermcap
 
+
 rain:
 	cc -o rain rain.c -lcurses -ltermcap
 
@@ -90,6 +91,17 @@ bcd: bcd.c
 chess: chess.c
 chess: /usr/include/stdio.h
 fish: fish.c
+arithmetic: arithmetic.c
+arithmetic: /usr/include/stdio.h
+arithmetic: /usr/include/signal.h
+btlgammon: btlgammon.c
+btlgammon: /usr/include/stdio.h
+banner: banner.c
+banner: /usr/include/stdio.h
+bcd: bcd.c
+chess: chess.c
+chess: /usr/include/stdio.h
+fish: fish.c
 fish: /usr/include/stdio.h
 number: number.c
 wump: wump.c
@@ -99,10 +111,6 @@ canfield: canfield.c
 canfield: /usr/include/curses.h
 canfield: /usr/include/ctype.h
 canfield: /usr/include/signal.h
-hangman: hangman.c
-hangman: /usr/include/stdio.h
-hangman: /usr/include/sys/types.h
-hangman: /usr/include/sys/stat.h
 rain: rain.c
 rain: /usr/include/stdio.h
 rain: /usr/include/sgtty.h
