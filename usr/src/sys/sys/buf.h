@@ -1,4 +1,4 @@
-/*	buf.h	6.4	85/01/10	*/
+/*	buf.h	6.5	85/03/13	*/
 
 /*
  * The header for buffers in the buffer pool and otherwise used
@@ -68,10 +68,15 @@ struct buf
 #define	BQ_EMPTY	3		/* buffer headers with no memory */
 
 #ifdef	KERNEL
-#define	BUFHSZ	509
+#define	BUFHSZ	512
 #define RND	(MAXBSIZE/DEV_BSIZE)
+#if	((BUFHSZ&(BUFHSZ-1)) == 0)
+#define	BUFHASH(dev, dblkno)	\
+	((struct buf *)&bufhash[((int)(dev)+(((int)(dblkno))/RND))&(BUFHSZ-1)])
+#else
 #define	BUFHASH(dev, dblkno)	\
 	((struct buf *)&bufhash[((int)(dev)+(((int)(dblkno))/RND)) % BUFHSZ])
+#endif
 
 struct	buf *buf;		/* the buffer pool itself */
 char	*buffers;
