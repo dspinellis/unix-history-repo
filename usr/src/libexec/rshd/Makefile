@@ -14,10 +14,10 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.2 (Berkeley) %G%
+# @(#)Makefile	5.3 (Berkeley) %G%
 #
 
-CFLAGS=	-O
+CFLAGS=	-O -DKERBEROS
 LIBC=	/lib/libc.a
 SRCS=	rshd.c
 OBJS=
@@ -26,7 +26,7 @@ MAN=	rshd.0
 all: rshd
 
 rshd: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c
+	${CC} -o $@ ${CFLAGS} $@.c -lkrb -ldes
 
 clean:
 	rm -f ${OBJS} core rshd
