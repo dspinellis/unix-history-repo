@@ -1770,3 +1770,45 @@ strtol(p, ep, b)
 }
 
 #endif
+/*
+**  SOLARIS_GETHOSTBY{NAME,ADDR} -- compatibility routines for gethostbyXXX
+**
+**	Solaris versions prior through 2.3 don't properly deliver a
+**	canonical h_name field.  This tries to work around it.
+*/
+
+#ifdef SOLARIS
+
+struct hostent *
+solaris_gethostbyname(name)
+	char *name;
+{
+# ifdef SOLARIS_2_3
+	static struct hostent hp;
+	static char buf[1000];
+	extern struct hostent *_switch_gethostbyname_r();
+
+	return _switch_gethostbyname_r(name, &hp, buf, sizeof(buf), &h_errno);
+# else
+	return __switch_gethostbyname(name);
+# endif
+}
+
+struct hostent *
+solaris_gethostbyaddr(addr, len, type)
+	char *addr;
+	int len;
+	int type;
+{
+# ifdef SOLARIS_2_3
+	static struct hostent hp;
+	static char buf[1000];
+	extern struct hostent *_switch_gethostbyaddr_r();
+
+	return _switch_gethostbyaddr_r(addr, len, type, &hp, buf, sizeof(buf), &h_errno);
+# else
+	return __switch_gethostbyaddr(addr, len, type);
+# endif
+}
+
+#endif
