@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)rm.c	4.22 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.23 (Berkeley) %G%";
 
 /*
  * rm - for ReMoving files, directories & trees.
@@ -16,7 +16,7 @@ int	rflg;		/* -r recurse */
 
 int	errcode;	/* true if errors occured */
 
-char	*strcpy(), *malloc();
+char	*strcpy();
 
 main(argc, argv)
 	int argc;
@@ -73,9 +73,14 @@ rm(arg, level)
 	struct direct *dp;		/* for reading a directory */
 	DIR *dirp;			/* for reading a directory */
 	char prevname[MAXNAMLEN + 1];	/* previous name for -r */
-	char *cp;
+	char *cp, *rindex();
 
-	if (isdot(arg)) {
+	cp = rindex(arg, '/');
+	if (cp == NULL)
+		cp = arg;
+	else
+		++cp;
+	if (isdot(cp)) {
 		fprintf(stderr, "rm: cannot remove `.' or `..'\n");
 		return (0);
 	}
@@ -219,6 +224,7 @@ append(name)
 	char *name;
 {
 	register int n;
+	char *malloc();
 
 	n = strlen(name);
 	if (path == NULL) {
