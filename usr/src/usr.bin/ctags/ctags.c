@@ -1,4 +1,6 @@
-static char *sccsid = "@(#)ctags.c	4.7 (Berkeley) 8/18/83";
+#ifndef	lint
+static char *sccsid = "@(#)ctags.c	4.4 (Berkeley) 8/30/82";
+#endif
 
 #include <stdio.h>
 #include <ctype.h>
@@ -35,8 +37,6 @@ long	ftell();
 typedef	struct	nd_st	NODE;
 
 logical	number,				/* T if on line starting with #	*/
-	term	= FALSE,		/* T if print on terminal	*/
-	makefile= TRUE,			/* T if to creat "tags" file	*/
 	gotone,				/* found a func already on line	*/
 					/* boolean "func" (see init)	*/
 	_wht[0177],_etk[0177],_itk[0177],_btk[0177],_gd[0177];
@@ -208,21 +208,13 @@ char	*file;
 	}
 	curfile = savestr(file);
 	cp = rindex(file, '.');
-	/* .l implies lisp source code */
-	if (cp && cp[1] == 'l' && cp[2] == '\0') {
-		L_funcs(inf);
-		fclose(inf);
-		return;
-	}
-	/* if not a .c or .h file, try fortran */
-	if (cp && (cp[1] != 'c' && cp[1] != 'h') && cp[2] == '\0') {
-		if (PF_funcs(inf) != 0) {
-			fclose(inf);
-			return;
+	if (cp && (cp[1] != 'c' || cp[1] != 'h') && cp[2] == 0) {
+		if (PF_funcs(inf) == 0) {
+			rewind(inf);
+			C_entries();
 		}
-		rewind(inf);	/* no fortran tags found, try C */
-	}
-	C_entries();
+	} else
+		C_entries();
 	fclose(inf);
 }
 
@@ -355,7 +347,7 @@ C_entries()
 				if (endtoken(c)) {
 					int f;
 					int pfline = lineno;
-					if (start_entry(&sp,token,tp,&f)) {
+					if (start_entry(&sp,token,&f)) {
 						strncpy(tok,token,tp-token+1);
 						tok[tp-token+1] = 0;
 						getline();
@@ -388,12 +380,13 @@ C_entries()
  * It updates the input line * so that the '(' will be
  * in it when it returns.
  */
-start_entry(lp,token,tp,f)
-char	**lp,*token,*tp;
+start_entry(lp,token,f)
+char	**lp;
+register char *token;
 int	*f;
 {
 
-	reg	char	c,*sp,*tsp;
+	reg	char	c,*sp;
 	static	logical	found;
 	logical	firsttok;		/* T if have seen first token in ()'s */
 	int	bad;
@@ -693,7 +686,7 @@ getit()
 	cp[0] = 0;
 	strcpy(nambuf, dbp);
 	cp[0] = c;
-	pfnote(nambuf, lineno);
+	pfnote(nambuf, lineno, FALSE);
 	pfcnt++;
 }
 
@@ -729,47 +722,4 @@ register char *sp, c;
 			r = sp;
 	} while (*sp++);
 	return(r);
-}
-
-/*
- * lisp tag functions
- * just look for (def or (DEF
- */
-
-L_funcs (fi)
-FILE *fi;
-{
-	lineno = 0;
-	pfcnt = 0;
-	while (fgets(lbuf, sizeof(lbuf), fi)) {
-		lineno++;
-		dbp = lbuf;
-		if (dbp[0] == '(' && 
-		     (dbp[1] == 'D' || dbp[1] == 'd') &&
-		     (dbp[2] == 'E' || dbp[2] == 'e') &&
-		     (dbp[3] == 'F' || dbp[3] == 'f')) {
-		   while (!isspace(*dbp)) dbp++;
-		   while (isspace(*dbp)) dbp++;
-		   L_getit();
-		   }
-		}
-	}
-
-L_getit()
-{
-	register char *cp;
-	char c;
-	char nambuf[BUFSIZ];
-
-	for (cp = lbuf; *cp; cp++) ;
-	*--cp = 0;		/* zap newline */
-	if (*dbp == 0) return;
-	for (cp = dbp+1; *cp && *cp != '(' && *cp != ' '; cp++)
-	        continue;
-	c = cp[0];
-	cp[0] = 0;
-	strcpy(nambuf, dbp);
-	cp[0] = c;
-	pfnote(nambuf, lineno,TRUE);
-	pfcnt++;
 }
