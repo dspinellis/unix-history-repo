@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1988 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dohits.h	4.2 (Berkeley) %G%
+ *	@(#)dohits.h	8.1 (Berkeley) %G%
  */
 
 #define	numberof(x)	(sizeof x/sizeof x[0])
