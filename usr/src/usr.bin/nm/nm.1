@@ -2,16 +2,16 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)nm.1	5.1 (Berkeley) %G%
+.\"	@(#)nm.1	6.1 (Berkeley) %G%
 .\"
-.TH NM 1 "7 February 1983"
+.TH NM 1 ""
 .UC 4
 .SH NAME
 nm \- print name list
 .SH SYNOPSIS
 .B nm
 [
-.B \-gnopru
+.B \-agnopru
 ]
 [ file ... ]
 .SH DESCRIPTION
@@ -48,13 +48,16 @@ and one of the letters
 file name,
 or
 .B \-
-for sdb symbol table entries (see
+for debugger symbol table entries (see
 .B \-a
 below).
 If the symbol is local (non-external) the type letter is in lower case.
 The output is sorted alphabetically.
 .PP
 Options are:
+.TP
+.B  \-a
+Print symbol table entries inserted for use by debuggers.
 .TP
 .B  \-g
 Print only global (external) symbols.
