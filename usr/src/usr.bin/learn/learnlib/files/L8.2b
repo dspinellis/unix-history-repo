@@ -1,0 +1,23 @@
+#print
+The command
+ ls [aeiou]*.c
+will match all but one of the following names.
+  e.c
+  alpha.c
+  edward
+  u23.c
+Which one?  Type "answer NAME" where NAME
+is the file that doesn't match.  You can experiment
+first, as usual.
+#create alpha.c
+#create e.c
+#create edward
+#create u23.c
+#copyin
+#user
+#uncopyin
+#match edward
+#log
+#next
+8.2c 5
+9.1a 10
