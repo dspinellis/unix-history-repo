@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mscpvar.h	1.1 (Berkeley) %G%
+ *	@(#)mscpvar.h	1.2 (Berkeley) %G%
  */
 
 /*
@@ -51,6 +51,7 @@ struct mscp_driver {
 	int	md_nunits;		/* total number drives (all ctlrs) */
 	int	md_unitshift;		/* device number to unit: >> count */
 	struct	buf *md_utab;		/* pointer to device queues */
+	struct	disklabel *md_lab;	/* pointer to devicee disklabels */
 	struct	uba_device **md_dinfo;	/* pointer to device info */
 	int	(*md_dgram)();		/* error datagram */
 	int	(*md_ctlrdone)();	/* controller operation complete */

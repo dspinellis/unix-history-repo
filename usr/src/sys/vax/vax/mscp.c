@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mscp.c	1.2 (Berkeley) %G%
+ *	@(#)mscp.c	1.3 (Berkeley) %G%
  */
 
 /*
@@ -14,6 +14,8 @@
 #include "buf.h"
 #include "errno.h"
 #include "dkstat.h"
+#include "ioctl.h"
+#include "disklabel.h"
 #include "syslog.h"
 
 #include "../vaxuba/ubavar.h"
@@ -455,7 +457,8 @@ Emulex SC41/MS screwup: %s%d, got %d correct, then changed 0x%x to 0x%x\n",
 				goto out;
 
 			case MSCP_FAILED:	/* no luck */
-				harderr(bp, drivename);
+				diskerr(bp, drivename, "hard error",
+				    LOG_PRINTF, -1, &md->md_lab[ui->ui_unit]);
 				mscp_printevent(mp);
 				bp->b_flags |= B_ERROR;
 				bp->b_error = EIO;
@@ -816,7 +819,7 @@ mscp_printevent(mp)
 		else
 			scm = cdc->cdc_submsgs[sc];
 	}
-	printf("%s (%s) (code %d, subcode %d)\n", cm, scm, c, sc);
+	printf(" %s (%s) (code %d, subcode %d)\n", cm, scm, c, sc);
 }
 
 /*
@@ -846,7 +849,7 @@ mscp_decodeerror(name, ctlr, mp)
 #define BADCODE(h)	(codemsg[(unsigned)(h) >> 28])
 #define BADLBN(h)	((h) & 0xfffffff)
 
-	printf("%s%d: %s error datagram%s: ", name, ctlr,
+	printf("%s%d: %s error datagram%s:", name, ctlr,
 		issoft ? "soft" : "hard",
 		mp->mscp_flags & M_LF_CONT ? " (continuing)" : "");
 	switch (mp->mscp_format & 0377) {
@@ -855,11 +858,11 @@ mscp_decodeerror(name, ctlr, mp)
 		break;
 
 	case M_FM_BUSADDR:	/* host memory access error */
-		printf("memory addr 0x%x: ", mp->mscp_erd.erd_busaddr);
+		printf(" memory addr 0x%x:", mp->mscp_erd.erd_busaddr);
 		break;
 
 	case M_FM_DISKTRN:
-		printf("unit %d: level %d retry %d, %s %d: ",
+		printf(" unit %d: level %d retry %d, %s %d:",
 			mp->mscp_unit,
 			mp->mscp_erd.erd_level, mp->mscp_erd.erd_retry,
 			BADCODE(mp->mscp_erd.erd_hdr),
@@ -867,18 +870,18 @@ mscp_decodeerror(name, ctlr, mp)
 		break;
 
 	case M_FM_SDI:
-		printf("unit %d: %s %d: ", mp->mscp_unit,
+		printf(" unit %d: %s %d:", mp->mscp_unit,
 			BADCODE(mp->mscp_erd.erd_hdr),
 			BADLBN(mp->mscp_erd.erd_hdr));
 		break;
 
 	case M_FM_SMLDSK:
-		printf("unit %d: small disk error, cyl %d: ",
+		printf(" unit %d: small disk error, cyl %d:",
 			mp->mscp_unit, mp->mscp_erd.erd_sdecyl);
 		break;
 
 	default:
-		printf("unit %d: unknown error, format 0x%x: ",
+		printf(" unit %d: unknown error, format 0x%x:",
 			mp->mscp_unit, mp->mscp_format);
 	}
 	mscp_printevent(mp);
