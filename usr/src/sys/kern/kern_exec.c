@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.45 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.46 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -468,7 +468,7 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 	    vp->v_usecount != 1) {
 		register struct file *fp;
 
-		for (fp = file; fp < fileNFILE; fp++) {
+		for (fp = filehead; fp; fp = fp->f_filef) {
 			if (fp->f_type == DTYPE_VNODE &&
 			    fp->f_count > 0 &&
 			    (struct vnode *)fp->f_data == vp &&

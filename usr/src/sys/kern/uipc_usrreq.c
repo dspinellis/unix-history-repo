@@ -2,7 +2,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_usrreq.c	7.25 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -630,10 +630,10 @@ unp_gc()
 	unp_gcing = 1;
 restart:
 	unp_defer = 0;
-	for (fp = file; fp < fileNFILE; fp++)
+	for (fp = filehead; fp; fp = fp->f_filef)
 		fp->f_flag &= ~(FMARK|FDEFER);
 	do {
-		for (fp = file; fp < fileNFILE; fp++) {
+		for (fp = filehead; fp; fp = fp->f_filef) {
 			if (fp->f_count == 0)
 				continue;
 			if (fp->f_flag & FDEFER) {
@@ -671,7 +671,7 @@ restart:
 			unp_scan(so->so_rcv.sb_mb, unp_mark);
 		}
 	} while (unp_defer);
-	for (fp = file; fp < fileNFILE; fp++) {
+	for (fp = filehead; fp; fp = fp->f_filef) {
 		if (fp->f_count == 0)
 			continue;
 		if (fp->f_count == fp->f_msgcount && (fp->f_flag & FMARK) == 0)
