@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.5 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -70,6 +70,13 @@ extern enum vtype v_type[NFLNK+1];
 static char *nfs_unixauth();
 
 /*
+ * Maximum number of groups passed through to NFS server.
+ * For release 3.X systems, the maximum value is 8.
+ * For release 4.X systems, the maximum value is 10.
+ */
+int numgrps = 8;
+
+/*
  * Create the header for an rpc request packet
  * The function nfs_unixauth() creates a unix style authorization string
  * and returns a ptr to it.
@@ -94,7 +101,7 @@ struct mbuf *nfsm_reqh(prog, vers, proc, cred, hsiz, bpos, mb, retxid)
 	int asiz, siz;
 
 	NFSMGETHDR(mreq);
-	asiz = (((cred->cr_ngroups > 10) ? 10 : cred->cr_ngroups)<<2);
+	asiz = (((cred->cr_ngroups > numgrps) ? numgrps : cred->cr_ngroups)<<2);
 #ifdef FILLINHOST
 	asiz += nfsm_rndup(hostnamelen)+(9*NFSX_UNSIGNED);
 #else
@@ -538,7 +545,7 @@ static char *nfs_unixauth(cr)
 	}
 	*p++ = txdr_unsigned(cr->cr_uid);
 	*p++ = txdr_unsigned(cr->cr_groups[0]);
-	ngr = (cr->cr_ngroups > 10) ? 10 : cr->cr_ngroups;
+	ngr = (cr->cr_ngroups > numgrps) ? numgrps : cr->cr_ngroups;
 	*p++ = txdr_unsigned(ngr);
 	for (i = 0; i < ngr; i++)
 		*p++ = txdr_unsigned(cr->cr_groups[i]);
