@@ -1,8 +1,8 @@
-/*	bc.library	4.2	86/06/24	*/
+/*	bc.library	4.3	87/09/14	*/
 
 scale = 20
 define e(x){
-	auto a, b, c, d, e, g, w, y
+	auto a, b, c, d, e, g, t, w, y
 
 	t = scale
 	scale = t + .434*x + 1
