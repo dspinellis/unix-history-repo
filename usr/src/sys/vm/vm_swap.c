@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vm_swap.c	7.2 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,7 +19,6 @@
 #include "stat.h"
 #include "stat.h"
 
-struct	buf rswbuf;
 /*
  * Indirect driver for multi-controller paging.
  */
@@ -68,22 +67,6 @@ swstrategy(bp)
 	if (bp->b_dev == 0)
 		panic("swstrategy");
 	(*bdevsw[major(bp->b_dev)].d_strategy)(bp);
-}
-
-swread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-
-	return (physio(swstrategy, &rswbuf, dev, B_READ, minphys, uio));
-}
-
-swwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-
-	return (physio(swstrategy, &rswbuf, dev, B_WRITE, minphys, uio));
 }
 
 /*
