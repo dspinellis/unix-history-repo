@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)command.c	1.1 (Berkeley) %G%";
+static	char sccsid[] = "@(#)command.c	1.2 (Berkeley) %G%";
 #endif
 /*
  *
@@ -174,7 +174,7 @@ CHAR		defcom;
 
 	    case '>':
 		lastcom=0; savc=rdc();
-		IF regptr=getreg(savc)
+		IF (regptr=getreg(savc)) != -1
 		THEN IF kcore THEN *(int *)regptr = dot; ELSE
 		     *(ADDR *)(((ADDR)(&u))+regptr)=dot;
 		     ptrace(WUREGS, pid, regptr*NBPW,
