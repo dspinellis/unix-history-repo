@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fsync.2	5.1 (Berkeley) %G%
+.\"	@(#)fsync.2	6.1 (Berkeley) %G%
 .\"
-.TH FSYNC 2 "12 February 1983"
+.TH FSYNC 2 ""
 .UC 5
 .SH NAME
 fsync \- synchronize a file's in-core state with that on disk
@@ -38,5 +38,3 @@ The \fIfsync\fP fails if:
 \fIFd\fP refers to a socket, not to a file.
 .SH "SEE ALSO"
 sync(2), sync(8), update(8)
-.SH BUGS
-The current implementation of this call is expensive for large files.
