@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vfsops.c	7.4 (Berkeley) %G%
+ *	@(#)kernfs_vfsops.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -63,7 +63,7 @@ kernfs_init()
 {
 	int cmaj;
 	int bmaj = major(rootdev);
-	int error = ENOENT;
+	int error = ENXIO;
 
 #ifdef KERNFS_DIAGNOSTIC
 	printf("kernfs_init\n");		/* printed during system boot */
@@ -169,17 +169,6 @@ kernfs_unmount(mp, mntflags, p)
 	 * ever get anything cached at this level at the
 	 * moment, but who knows...
 	 */
-#if 0
-#ifdef KERNFS_DIAGNOSTIC
-	printf("kernfs_unmount: calling mntflushbuf\n");
-#endif
-	mntflushbuf(mp, 0);
-#ifdef KERNFS_DIAGNOSTIC
-	printf("kernfs_unmount: calling mntinvalbuf\n");
-#endif
-	if (mntinvalbuf(mp, 1))
-		return (EBUSY);
-#endif
 	if (rootvp->v_usecount > 1)
 		return (EBUSY);
 #ifdef KERNFS_DIAGNOSTIC
@@ -254,8 +243,8 @@ kernfs_statfs(mp, sbp, p)
 	sbp->f_blocks = 2;		/* 1K to keep df happy */
 	sbp->f_bfree = 0;
 	sbp->f_bavail = 0;
-	sbp->f_files = 0;		/* Allow for "." */
-	sbp->f_ffree = 0;		/* See comments above */
+	sbp->f_files = 0;
+	sbp->f_ffree = 0;
 	if (sbp != &mp->mnt_stat) {
 		bcopy(&mp->mnt_stat.f_fsid, &sbp->f_fsid, sizeof(sbp->f_fsid));
 		bcopy(mp->mnt_stat.f_mntonname, sbp->f_mntonname, MNAMELEN);
