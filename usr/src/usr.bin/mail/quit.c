@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)quit.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)quit.c	5.5 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -208,7 +208,7 @@ quit()
 	}
 	for (mp = &message[0]; mp < &message[msgCount]; mp++)
 		if (mp->m_flag & MBOX)
-			if (send(mp, obuf, 0) < 0) {
+			if (send(mp, obuf, saveignore) < 0) {
 				perror(mbox);
 				fclose(ibuf);
 				fclose(obuf);

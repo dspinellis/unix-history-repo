@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)glob.h	5.3 (Berkeley) %G%
+ *	@(#)glob.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -62,9 +62,10 @@ struct	message	*dot;			/* Pointer to current message */
 struct	message	*message;		/* The actual message structure */
 struct	var	*variables[HSHSIZE];	/* Pointer to active var list */
 struct	grouphead	*groups[HSHSIZE];/* Pointer to active groups */
-struct	ignore		*ignore[HSHSIZE];/* Pointer to ignored fields */
-struct	ignore		*retain[HSHSIZE];/* Pointer to retained fields */
-int	nretained;			/* Number of retained fields */
+struct	ignoretab	ignore[2];	/* ignored and retained fields
+					   0 is ignore, 1 is retain */
+struct	ignoretab	saveignore[2];	/* ignored and retained fields
+					   on save to folder */
 char	**altnames;			/* List of alternate names for user */
 char	**localnames;			/* List of aliases for our local host */
 int	debug;				/* Debug flag set */

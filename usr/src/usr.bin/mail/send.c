@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)send.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)send.c	5.6 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -28,11 +28,12 @@ static char sccsid[] = "@(#)send.c	5.5 (Berkeley) %G%";
  * Send message described by the passed pointer to the
  * passed output buffer.  Return -1 on error, but normally
  * the number of lines written.  Adjust the status: field
- * if need be.  If doign is set, suppress ignored header fields.
+ * if need be.  If doign is given, suppress ignored header fields.
  */
 send(mp, obuf, doign)
 	register struct message *mp;
 	FILE *obuf;
+	struct ignoretab *doign;
 {
 	long count;
 	register FILE *ibuf;
@@ -45,7 +46,7 @@ send(mp, obuf, doign)
 	ibuf = setinput(mp);
 	count = mp->m_size;
 	ishead = 1;
-	dostat = !doign || !isign("status");
+	dostat = doign == 0 || !isign("status", doign);
 	infld = 0;
 	lc = 0;
 	/*
@@ -110,7 +111,7 @@ send(mp, obuf, doign)
 				 * we care about such things, skip it.
 				 */
 				*cp2 = 0;	/* temporarily null terminate */
-				if (doign && isign(line))
+				if (doign && isign(line, doign))
 					ignoring = 1;
 				else if ((line[0] == 's' || line[0] == 'S') &&
 					 icequal(line, "status")) {

@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)aux.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)aux.c	5.8 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -658,8 +658,9 @@ stradd(str, c)
 /*
  * See if the given header field is supposed to be ignored.
  */
-isign(field)
+isign(field, ignore)
 	char *field;
+	struct ignoretab ignore[2];
 {
 	char realfld[BUFSIZ];
 
@@ -668,19 +669,19 @@ isign(field)
 	 * will hash to the same place.
 	 */
 	istrcpy(realfld, field);
-	if (nretained > 0)
-		return (!member(realfld, retain));
+	if (ignore[1].i_count > 0)
+		return (!member(realfld, ignore + 1));
 	else
 		return (member(realfld, ignore));
 }
 
 member(realfield, table)
 	register char *realfield;
-	struct ignore **table;
+	struct ignoretab *table;
 {
 	register struct ignore *igp;
 
-	for (igp = table[hash(realfield)]; igp != 0; igp = igp->i_link)
+	for (igp = table->i_head[hash(realfield)]; igp != 0; igp = igp->i_link)
 		if (*igp->i_field == *realfield &&
 		    equal(igp->i_field, realfield))
 			return (1);
