@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)login.c	4.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)login.c	4.9 (Berkeley) %G%";
 /*
  * login [ name ]
  */
@@ -193,7 +193,13 @@ bad:
 		namep++;
 	strcat(minusnam, namep);
 	alarm(0);
-	umask(022);
+#ifdef ARPAVAX
+	if (pwd->pw_gid == 31)
+		umask(2);
+	else
+#else
+		umask(022);
+#endif
 	showmotd();
 	strcat(maildir, pwd->pw_name);
 	if(access(maildir,4)==0) {
