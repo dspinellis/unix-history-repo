@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -205,6 +205,10 @@ ckfini()
 	register struct bufarea *bp, *nbp;
 	int cnt = 0;
 
+	if (fswritefd < 0) {
+		(void)close(fsreadfd);
+		return;
+	}
 	flush(fswritefd, &sblk);
 	if (havesb && sblk.b_bno != SBOFF / dev_bsize &&
 	    !preen && reply("UPDATE STANDARD SUPERBLOCK")) {
@@ -214,7 +218,7 @@ ckfini()
 	}
 	flush(fswritefd, &cgblk);
 	free(cgblk.b_un.b_buf);
-	for (bp = bufhead.b_prev; bp != &bufhead; bp = nbp) {
+	for (bp = bufhead.b_prev; bp && bp != &bufhead; bp = nbp) {
 		cnt++;
 		flush(fswritefd, bp);
 		nbp = bp->b_prev;
