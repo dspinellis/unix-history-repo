@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.13 (Berkeley) 84/02/09";
+static	char *sccsid = "@(#)docmd.c	4.14 (Berkeley) 84/02/16";
 #endif
 
 #include "defs.h"
@@ -250,19 +250,19 @@ dodcolon(files, stamp, cmds)
 	}
 	if (debug)
 		printf("%s: %d\n", stamp, stb.st_mtime);
-	if (!nflag) {
-		lastmod = stb.st_mtime;
-		(void) gettimeofday(&tv[0], &tz);
-		tv[1] = tv[0];
-		(void) utimes(stamp, tv);
-		if (options & VERIFY)
-			tfp = NULL;
-		else if ((tfp = fopen(tmpfile, "w")) == NULL) {
+
+	lastmod = stb.st_mtime;
+	if (nflag || (options & VERIFY))
+		tfp = NULL;
+	else {
+		if ((tfp = fopen(tmpfile, "w")) == NULL) {
 			error("%s: %s\n", stamp, sys_errlist[errno]);
 			return;
 		}
-	} else
-		tfp = NULL;
+		(void) gettimeofday(&tv[0], &tz);
+		tv[1] = tv[0];
+		(void) utimes(stamp, tv);
+	}
 
 	for (f = files; f != NULL; f = f->n_next) {
 #ifdef notdef
