@@ -1,0 +1,25 @@
+.TH FASTBOOT 8 "4 March 1983"
+.UC 4
+.SH NAME
+fastboot \- reboot the system without checking the disks
+.SH SYNOPSIS
+.B /etc/fastboot
+[
+.B reboot-options
+]
+.SH DESCRIPTION
+.I Fastboot
+is a shell script which reboots the system without
+checking the file systems.  This is done by creating a
+file 
+.IR /fastboot ,
+then invoking the 
+.I reboot
+program.  The system startup script,
+.IR /etc/rc ,
+looks for this file and, if present, skips the normal
+invocation of
+.IR fsck (8).
+.SH "SEE ALSO"
+reboot(8),
+rc(8)
