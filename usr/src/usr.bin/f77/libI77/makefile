@@ -1,10 +1,11 @@
 # Makefile for the f77 I/O library
-#	@(#)makefile	1.18	%G%
+#	@(#)makefile	1.19	%G%
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
 DESTDIR =
 LIB = libI77.a
+LIB_P = libI77_p.a
 CFLAGS = -O
 LPR = lpr
 
@@ -29,20 +30,27 @@ OBJECTS = dfe.o due.o iio.o sue.o sfe.o lread.o lwrite.o \
 	backspace.o rewind.o open.o close.o endfile.o inquire.o \
 	ioinit.o err.o util.o f_errlist.o
 
-all:	$(LIB)
+all:	$(LIB) $(LIB_P)
 
 $(LIB):	$(OBJECTS) Version
-	@rm -f $(LIB)
-	ar rc $(LIB) $(OBJECTS) Version
-	@chmod 664 $(LIB)
+	ar ru $(LIB) $?
+	ranlib $(LIB)
+	@chmod 644 $(LIB)
 
-install:	$(LIBDIR)/$(LIB) $(LIBDIR)/libI66.a
+$(LIB_P):	$(OBJECTS) Version
+	cd profiled; ar ru ../$(LIB_P) $?
+	ranlib $(LIB_P)
+	@chmod 644 $(LIB_P)
+
+install:	$(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB_P) $(LIBDIR)/libI66.a
 
 $(LIBDIR)/$(LIB):	$(LIB)
 	@-mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
-	cp $(LIB) $(LIBDIR)/$(LIB)
-	ranlib $(LIBDIR)/$(LIB)
-	@chmod 644 $(LIBDIR)/$(LIB)
+	tar cf - $(LIB) | (cd $(LIBDIR); tar xvf - )
+
+$(LIBDIR)/$(LIB_P):	$(LIB_P)
+	@-mv $(LIBDIR)/$(LIB_P) $(LIBDIR)/$(LIB_P).old
+	tar cf - $(LIB_P) | (cd $(LIBDIR); tar xvf - )
 
 $(LIBDIR)/libI66.a:	libI66.o
 	cp libI66.o $(LIBDIR)/libI66.a
@@ -75,29 +83,41 @@ fmtlib.o:	fio.h fmtlib.c
 
 # compile, then strip unnecessary symbols
 .c.o:
+	-cd profiled; \
+		cc $(CFLAGS) -p -c ../$*.c; \
+		ld -r -x $*.o; \
+		mv a.out $*.o
 	cc $(CFLAGS) -c $*.c
 	-ld -r -x $*.o
 	mv a.out $*.o
 
 ioinit.o:	ioinit.f
+	-cd profiled; \
+		f77 -O -p -c ../ioinit.f; \
+		ld -r -x ioinit.o; \
+		mv a.out ioinit.o
 	f77 -O -c ioinit.f
 	-ld -r -x ioinit.o
 	mv a.out ioinit.o
 
 f_errlist.o:	f_errlist.c
 	cc $(CFLAGS) -c f_errlist.c
+	@rm -f profiled/f_errlist.o
+	ln f_errlist.o profiled/f_errlist.o
 
 Version:	$(SOURCES) mkvers
 	@rm -f Version.c
 	./mkvers $(LIB) $(SOURCES) > Version.c
 	cc -c Version.c
 	mv Version.o Version
+	@rm -f profiled/Version
+	ln Version profiled/Version
 
 mkvers:	mkvers.c
 	@cc mkvers.c -o mkvers
 
 clean:
-	rm -f $(OBJECTS) $(LIB) libI66.o
+	rm -f $(OBJECTS) Version $(LIB) $(LIB_P) libI66.o profiled/*
 
 index:	$(SOURCES) mkindx
 	@./mkindx "f77 libI77.a Source Listing " Makefile $(SOURCES)
@@ -110,17 +130,17 @@ mkindx:	mkindx.c
 
 Intro:	Intro.tx
 	@-rm Intro
-	@nroff -ms Intro.tx > Intro
+	nroff -ms Intro.tx > Intro
 
 wup:	Intro.tx
-	@nroff -ms Intro.tx | ul | more
+	nroff -ms Intro.tx | ul | more
 
 order:
 	@rm -f order
-	@lorder $(OBJECTS) | tsort >order
+	lorder $(OBJECTS) | tsort > order
 
 tags:	$(SOURCES)
-	@ctags $(SOURCES)
+	ctags $(SOURCES)
 
 
 # End of Makefile
