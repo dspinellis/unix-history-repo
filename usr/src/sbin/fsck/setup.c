@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #define DKTYPENAMES
@@ -55,7 +55,6 @@ struct	disklabel *getdisklabel();
 setup(dev)
 	char *dev;
 {
-	dev_t rootdev;
 	long cg, size, asked, i, j;
 	long bmapsize;
 	struct disklabel *lp;
@@ -63,20 +62,16 @@ setup(dev)
 	struct fs proto;
 
 	havesb = 0;
-	if (stat("/", &statb) < 0)
-		errexit("Can't stat root\n");
-	rootdev = statb.st_dev;
 	if (stat(dev, &statb) < 0) {
 		perror(dev);
 		printf("Can't stat %s\n", dev);
 		return (0);
 	}
-	if ((statb.st_mode & S_IFMT) != S_IFBLK &&
-	    (statb.st_mode & S_IFMT) != S_IFCHR &&
-	    reply("file is not a block or character device; OK") == 0)
-		return (0);
-	if (rootdev == statb.st_rdev)
-		hotroot++;
+	if ((statb.st_mode & S_IFMT) != S_IFCHR) {
+		pfatal("%s is not a character device", dev);
+		if (reply("CONTINUE") == 0)
+			return (0);
+	}
 	if ((fsreadfd = open(dev, O_RDONLY)) < 0) {
 		perror(dev);
 		printf("Can't open %s\n", dev);
