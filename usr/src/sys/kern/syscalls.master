@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.25 (Berkeley) %G%
+	@(#)syscalls.master	7.26 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -36,7 +36,7 @@
 8	COMPAT	2 creat
 9	STD	2 link
 10	STD	1 unlink
-11	COMPAT	2 execv
+11	OBSOL	2 execv
 12	STD	1 chdir
 13	STD	1 fchdir
 14	STD	3 mknod
@@ -109,7 +109,7 @@
 73	STD	2 munmap
 74	STD	3 mprotect
 75	STD	3 madvise
-76	COMPAT	0 vhangup
+76	OBSOL	0 vhangup
 77	OBSOL	0 vlimit
 78	STD	3 mincore
 79	STD	2 getgroups
@@ -190,7 +190,7 @@
 146	COMPAT	2 killpg
 147	STD	0 setsid
 148	STD	4 quotactl
-149	STD	4 oldquota quota
+149	COMPAT	4 quota
 150	COMPAT	3 getsockname
 
 ; Syscalls 151-180 inclusive are reserved for vendor-specific
