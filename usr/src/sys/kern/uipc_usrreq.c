@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	1.12	83/06/13	*/
+/*	uipc_usrreq.c	1.13	83/06/14	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -67,12 +67,11 @@ uipc_usrreq(so, req, m, nam, rights)
 		error = unp_connect(so, nam);
 		break;
 
-#ifdef notdef
 	case PRU_CONNECT2:
-		error = unp_connect2(so, (struct mbuf *)0, (struct socket *)nam);
+		error = unp_connect2(so, (struct mbuf *)0,
+		    (struct socket *)nam);
 		break;
 
-#endif
 	case PRU_DISCONNECT:
 		unp_disconnect(unp);
 		break;
@@ -325,6 +324,16 @@ unp_connect(so, nam)
 		error = ECONNREFUSED;
 		goto bad;
 	}
+	if (so->so_type != so2->so_type) {
+		error = EPROTOTYPE;
+		goto bad;
+	}
+	if (so->so_proto->pr_flags & PR_CONNREQUIRED &&
+	    ((so2->so_options&SO_ACCEPTCONN) == 0 ||
+	     (so2 = sonewconn(so2)) == 0)) {
+		error = ECONNREFUSED;
+		goto bad;
+	}
 	error = unp_connect2(so, nam, so2);
 bad:
 	iput(ip);
@@ -351,9 +360,6 @@ unp_connect2(so, sonam, so2)
 		break;
 
 	case SOCK_STREAM:
-		if ((so2->so_options&SO_ACCEPTCONN) == 0 ||
-		    (so2 = sonewconn(so2)) == 0)
-			return (ECONNREFUSED);
 		unp2 = sotounpcb(so2);
 		unp->unp_conn = unp2;
 		unp2->unp_conn = unp;

@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.75	83/05/27	*/
+/*	uipc_socket.c	4.76	83/06/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -226,7 +226,6 @@ bad:
 	return (error);
 }
 
-#ifdef notdef
 soconnect2(so1, so2)
 	register struct socket *so1;
 	struct socket *so2;
@@ -234,13 +233,11 @@ soconnect2(so1, so2)
 	int s = splnet();
 	int error;
 
-	error =
-	    (*so1->so_proto->pr_usrreq)(so, PRU_CONNECT2,
-		(struct mbuf *)0, (struct mbuf *)so2, (struct mbuf *)0);
+	error = (*so1->so_proto->pr_usrreq)(so1, PRU_CONNECT2,
+	    (struct mbuf *)0, (struct mbuf *)so2, (struct mbuf *)0);
 	splx(s);
 	return (error);
 }
-#endif
 
 sodisconnect(so, nam)
 	register struct socket *so;

@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.46	83/05/27	*/
+/*	uipc_syscalls.c	4.47	83/06/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -210,8 +210,59 @@ bad:
 
 socketpair()
 {
+	register struct a {
+		int	domain;
+		int	type;
+		int	protocol;
+		int	*rsv;
+	} *uap = (struct a *)u.u_ap;
+	register struct file *fp1, *fp2;
+	struct socket *so1, *so2;
+	int sv[2];
 
-	u.u_error = ENOENT;
+	if (useracc((caddr_t)uap->rsv, 2 * sizeof (int), B_WRITE) == 0) {
+		u.u_error = EFAULT;
+		return;
+	}
+	u.u_error = socreate(uap->domain, &so1, uap->type, uap->protocol);
+	if (u.u_error)
+		return;
+	u.u_error = socreate(uap->domain, &so2, uap->type, uap->protocol);
+	if (u.u_error)
+		goto free;
+	fp1 = falloc();
+	if (fp1 == NULL)
+		goto free2;
+	sv[0] = u.u_r.r_val1;
+	fp1->f_flag = FREAD|FWRITE;
+	fp1->f_type = DTYPE_SOCKET;
+	fp1->f_ops = &socketops;
+	fp1->f_data = (caddr_t)so1;
+	fp2 = falloc();
+	if (fp2 == NULL)
+		goto free3;
+	fp2->f_flag = FREAD|FWRITE;
+	fp2->f_type = DTYPE_SOCKET;
+	fp2->f_ops = &socketops;
+	fp2->f_data = (caddr_t)so2;
+	sv[1] = u.u_r.r_val1;
+	u.u_error = soconnect2(so1, so2);
+	if (u.u_error)
+		goto free4;
+	(void) copyout((caddr_t)sv, (caddr_t)uap->rsv, 2 * sizeof (int));
+	return;
+free4:
+	fp2->f_count = 0;
+	u.u_ofile[sv[1]] = 0;
+free3:
+	fp1->f_count = 0;
+	u.u_ofile[sv[0]] = 0;
+free2:
+	so2->so_state |= SS_NOFDREF;
+	sofree(so2);
+free:
+	so1->so_state |= SS_NOFDREF;
+	sofree(so1);
 }
 
 sendto()
