@@ -1,41 +1,43 @@
 /*
  * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1980 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)script.c	5.4 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)script.c	5.5 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * script
  */
-#include <stdio.h>
-#include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
-#include <sgtty.h>
 #include <sys/time.h>
 #include <sys/file.h>
+#include <stdio.h>
+#include <signal.h>
 
-char	*getenv();
-char	*ctime();
 char	*shell;
 FILE	*fscript;
 int	master;
 int	slave;
 int	child;
 int	subchild;
-char	*fname = "typescript";
-int	finish();
+char	*fname;
 
 struct	sgttyb b;
 struct	tchars tc;
@@ -50,31 +52,38 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
+	extern char *optarg;
+	extern int optind;
+	int ch;
+	int finish();
+	char *getenv();
 
-	shell = getenv("SHELL");
-	if (shell == 0)
-		shell = "/bin/sh";
-	argc--, argv++;
-	while (argc > 0 && argv[0][0] == '-') {
-		switch (argv[0][1]) {
-
+	while ((ch = getopt(argc, argv, "a")) != EOF)
+		switch((char)ch) {
 		case 'a':
 			aflg++;
 			break;
-
+		case '?':
 		default:
-			fprintf(stderr,
-			    "usage: script [ -a ] [ typescript ]\n");
+			fprintf(stderr, "usage: script [-a] [file]\n");
 			exit(1);
 		}
-		argc--, argv++;
-	}
+	argc -= optind;
+	argv += optind;
+
 	if (argc > 0)
 		fname = argv[0];
+	else
+		fname = "typescript";
 	if ((fscript = fopen(fname, aflg ? "a" : "w")) == NULL) {
 		perror(fname);
 		fail();
 	}
+
+	shell = getenv("SHELL");
+	if (shell == NULL)
+		shell = "/bin/sh";
+
 	getmaster();
 	printf("Script started, file is %s\n", fname);
 	fixtty();
@@ -101,8 +110,8 @@ main(argc, argv)
 
 doinput()
 {
+	register int cc;
 	char ibuf[BUFSIZ];
-	int cc;
 
 	(void) fclose(fscript);
 	while ((cc = read(0, ibuf, BUFSIZ)) > 0)
@@ -128,12 +137,12 @@ finish()
 
 dooutput()
 {
-	time_t tvec;
-	char obuf[BUFSIZ];
-	int cc;
+	register int cc;
+	time_t tvec, time();
+	char obuf[BUFSIZ], *ctime();
 
 	(void) close(0);
-	tvec = time((time_t *)0);
+	tvec = time((time_t *)NULL);
 	fprintf(fscript, "Script started on %s", ctime(&tvec));
 	for (;;) {
 		cc = read(master, obuf, sizeof (obuf));
@@ -185,10 +194,11 @@ fail()
 
 done()
 {
-	time_t tvec;
+	time_t tvec, time();
+	char *ctime();
 
 	if (subchild) {
-		tvec = time((time_t *)0);
+		tvec = time((time_t *)NULL);
 		fprintf(fscript,"\nscript done on %s", ctime(&tvec));
 		(void) fclose(fscript);
 		(void) close(master);
