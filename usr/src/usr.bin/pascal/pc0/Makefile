@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.25 %G%"
+SCCSID = "@(#)Makefile 1.26 %G%"
 INSTALLDIR = $(DESTDIR)/usr/lib
 INSTALLNAME = ${INSTALLDIR}/pc0
 WHOAMI = pc

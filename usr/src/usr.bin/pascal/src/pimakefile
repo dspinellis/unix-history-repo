@@ -1,4 +1,4 @@
-SCCSID = "@(#)pimakefile 1.22 %G%"
+SCCSID = "@(#)pimakefile 1.23 %G%"
 INSTALLDIR = ${DESTDIR}/usr/ucb
 INSTALLNAME = ${INSTALLDIR}/pi
 WHOAMI = pi
