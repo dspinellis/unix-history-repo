@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)title.urm	8.2 (Berkeley) %G%
+.\"	@(#)title.urm	8.3 (Berkeley) %G%
 .\"
 .af % i
 .EH ''''
@@ -19,70 +19,29 @@
 .ce 2
 UNIX User's Reference Manual
 (URM)
-.nr LL 5.5i
-.nr PO 1.5i
-.bp
-\&
-.sp |1.5i
-.nr PS 11
-.nr VS 13
+.nr PS 14
+.nr VS 16
 .LP
-The USENIX Association,
-the UNIX and Advanced Computing Systems professional and technical organization,
-is a not-for-profit membership association of individuals and
-institutions with an interest in UNIX and UNIX-like systems,
-and, by extension, C++, X windows, and other programming tools.
-It is dedicated to:
-.IP \(bu
-fostering innovation and communicating research and technological devlopments,
-.IP \(bu
-sharing ideas and experience relevant to UNIX,
-UNIX-related, and advanced computing systems, and
-.IP \(bu
-providing a neutral forum for the exercise of critical
-thought and airing of technical issues.
-.LP
-USENIX publishes a journal (\fBComputing Systems\fP),
-Conference and Workshop Proceedings, and a Book Series.
-.nr LL 6i
-.nr PO 1i
-.bp
-\&
-.sp |2.75i
-.nr PS 18
-.nr VS 22
-.LP
-.ft B
-.ce 2
-UNIX User's Reference Manual
-(URM)
 .sp |4i
-.ce 2
+.ce 1
 4.4 Berkeley Software Distribution
-(June, 1993)
-.sp 3
-.nr PS 15
-.nr VS 18
-.LP
-.ce 2
-Computer Systems Research Group
-University of California, Berkeley
-.sp |8.2i
+.sp |5.75i
+.ft R
 .nr PS 12
-.nr VS 15
 .LP
-.ce 4
-A USENIX Association Book
-The MIT Press
-Cambridge, Massachusetts
-London, England
+.ce
+June, 1993
+.sp |8.2i
+.ce 5
+Computer Systems Research Group
+Computer Science Division
+Department of Electrical Engineering and Computer Science
+University of California
+Berkeley, California  94720
 .bp
 .hy 0
 .nr PS 9
 .nr VS 11
-.LP
-First Printing, 1993
-.sp 1
 .LP
 Copyright 1979, 1980, 1983, 1986, 1993
 The Regents of the University of California.  All rights reserved.
@@ -199,7 +158,7 @@ List of Documents	inside back cover
 .\" The contributor list below is derived from the file that resides in
 .\" vangogh:~admin/contrib/contrib:
 .\"
-.\"	@(#)contrib	5.51 (Berkeley) 7/1/93
+.\"	@(#)contrib	5.52 (Berkeley) 11/16/93
 .\"
 .\" This file should not be editted, rather the original contrib file
 .\" should be used to recrete this one following the directions at its top.
@@ -342,71 +301,72 @@ Kernel enhancements	Robert Elz, Peter Ivanov, Ian Johnstone, Piers Lauder,
 .TE
 .TS
 l l l l.
-adventure(6)	Don Woods	look(1)	David Hitz
-adventure(6)	Jim Gillogly	ls(1)	Elan Amir
-adventure(6)	Will Crowther	ls(1)	Michael Fischbein
-apply(1)	Rob Pike	lsearch(3)	Roger L. Snyder
-ar(1)	Hugh A. Smith	m4(1)	Ozan Yigit
-arithmetic(6)	Eamonn McManus	mail(1)	Kurt Schoens
-arp(8)	Sun Microsystems Inc.	make(1)	Adam de Boor
-at(1)	Steve Wall	me(7)	Eric Allman
-atc(6)	Ed James	mergesort(3)	Peter McIlroy
-awk(1)	Arnold Robbins	mh(1)	Marshall Rose
-awk(1)	David Trueman	mh(1)	The Rand Corporation
-backgammon(6)	Alan Char	mille(6)	Ken Arnold
-banner(1)	Mark Horton	mknod(8)	Kevin Fall
-battlestar(6)	David Riggle	monop(6)	Ken Arnold
-bcd(6)	Steve Hayman	more(1)	Eric Shienbrood
-bdes(1)	Matt Bishop	more(1)	Mark Nudleman
-berknet(1)	Eric Schmidt	mountd(8)	Herb Hasler
-bib(1)	Dain Samples	mprof(1)	Ben Zorn
-bib(1)	Gary M. Levin	msgs(1)	David Wasley
-bib(1)	Timothy A. Budd	multicast	Stephen Deering
-bitstring(3)	Paul Vixie	mv(1)	Ken Smith
-boggle(6)	Barry Brachman	named/bind(8)	Douglas Terry
-bpf(4)	Steven McCanne	named/bind(8)	Kevin Dunlap
-btree(3)	Mike Olson	news(1)	Rick Adams (and a cast of thousands)
-byte-range locking	Scooter Morris	nm(1)	Hans Huebner
-caesar(6)	John Eldridge	pascal(1)	Kirk McKusick
-caesar(6)	Stan King	pascal(1)	Peter Kessler
-cal(1)	Kim Letkeman	paste(1)	Adam S. Moskowitz
-cat(1)	Kevin Fall	patch(1)	Larry Wall
-chess(6)	Stuart Cracraft (The FSF)	pax(1)	Keith Muller
-ching(6)	Guy Harris	phantasia(6)	C. Robertson
-cksum(1)	James W. Williams	phantasia(6)	Edward A. Estes
-clri(8)	Rich $alz	ping(8)	Mike Muuss
-col(1)	Michael Rendell	pom(6)	Keith E. Brandt
-comm(1)	Case Larsen	pr(1)	Keith Muller
-compact(1)	Colin L. McMaster	primes(6)	Landon Curt Noll
-compress(1)	James A. Woods	qsort(3)	Doug McIlroy
-compress(1)	Joseph Orost	qsort(3)	Earl Cohen
-compress(1)	Spencer Thomas	qsort(3)	Jon Bentley
-courier(1)	Eric Cooper	quad(3)	Chris Torek
-cp(1)	David Hitz	quiz(6)	Jim R. Oldroyd
-cpio(1)	AT&T	quiz(6)	Keith Gabryelski
-crypt(3)	Tom Truscott	radixsort(3)	Dan Bernstein
-csh(1)	Christos Zoulas	radixsort(3)	Peter McIlroy
-csh(1)	Len Shar	rain(6)	Eric P. Scott
-curses(3)	Elan Amir	ranlib(1)	Hugh A. Smith
-curses(3)	Ken Arnold	rcs(1)	Walter F. Tichy
-cut(1)	Adam S. Moskowitz	rdist(1)	Michael Cooper
-cut(1)	Marciano Pitargue	regex(3)	Henry Spencer
-dbx(1)	Mark Linton	robots(6)	Ken Arnold
-dd(1)	Keith Muller	rogue(6)	Timothy C. Stoehr
-dd(1)	Lance Visser	rs(1)	John Kunze
-des(1)	Jim Gillogly	sail(6)	David Riggle
-des(1)	Phil Karn	sail(6)	Edward Wang
-des(1)	Richard Outerbridge	sccs(1)	Eric Allman
-dipress(1)	Xerox Corporation	scsiformat(1)	Lawrence Berkeley Laboratory
-disklabel(8)	Symmetric Computer Systems	sdb(1)	Howard Katseff
-du(1)	Chris Newcomb	sed(1)	Diomidis Spinellis
-dungeon(6)	R.M. Supnik	sendmail(8)	Eric Allman
-ed(1)	Rodney Ruddock	setmode(3)	Dave Borman
-emacs(1)	Richard Stallman	sh(1)	Kenneth Almquist
-erf(3)	Peter McIlroy, K.C. Ng	slattach(8)	Rick Adams
-error(1)	Robert R. Henry	slip(8)	Rick Adams
-ex(1)	Mark Horton	spms(1)	Peter J. Nicklin
-factor(6)	Landon Curt Noll	strtod(3)	David M. Gay
+adventure(6)	Don Woods	log(3)	Peter McIlroy
+adventure(6)	Jim Gillogly	look(1)	David Hitz
+adventure(6)	Will Crowther	ls(1)	Elan Amir
+apply(1)	Rob Pike	ls(1)	Michael Fischbein
+ar(1)	Hugh A. Smith	lsearch(3)	Roger L. Snyder
+arithmetic(6)	Eamonn McManus	m4(1)	Ozan Yigit
+arp(8)	Sun Microsystems Inc.	mail(1)	Kurt Schoens
+at(1)	Steve Wall	make(1)	Adam de Boor
+atc(6)	Ed James	me(7)	Eric Allman
+awk(1)	Arnold Robbins	mergesort(3)	Peter McIlroy
+awk(1)	David Trueman	mh(1)	Marshall Rose
+backgammon(6)	Alan Char	mh(1)	The Rand Corporation
+banner(1)	Mark Horton	mille(6)	Ken Arnold
+battlestar(6)	David Riggle	mknod(8)	Kevin Fall
+bcd(6)	Steve Hayman	monop(6)	Ken Arnold
+bdes(1)	Matt Bishop	more(1)	Eric Shienbrood
+berknet(1)	Eric Schmidt	more(1)	Mark Nudleman
+bib(1)	Dain Samples	mountd(8)	Herb Hasler
+bib(1)	Gary M. Levin	mprof(1)	Ben Zorn
+bib(1)	Timothy A. Budd	msgs(1)	David Wasley
+bitstring(3)	Paul Vixie	multicast	Stephen Deering
+boggle(6)	Barry Brachman	mv(1)	Ken Smith
+bpf(4)	Steven McCanne	named/bind(8)	Douglas Terry
+btree(3)	Mike Olson	named/bind(8)	Kevin Dunlap
+byte-range locking	Scooter Morris	news(1)	Rick Adams (and a cast of thousands)
+caesar(6)	John Eldridge	nm(1)	Hans Huebner
+caesar(6)	Stan King	pascal(1)	Kirk McKusick
+cal(1)	Kim Letkeman	pascal(1)	Peter Kessler
+cat(1)	Kevin Fall	paste(1)	Adam S. Moskowitz
+chess(6)	Stuart Cracraft (The FSF)	patch(1)	Larry Wall
+ching(6)	Guy Harris	pax(1)	Keith Muller
+cksum(1)	James W. Williams	phantasia(6)	C. Robertson
+clri(8)	Rich $alz	phantasia(6)	Edward A. Estes
+col(1)	Michael Rendell	ping(8)	Mike Muuss
+comm(1)	Case Larsen	pom(6)	Keith E. Brandt
+compact(1)	Colin L. McMaster	pr(1)	Keith Muller
+compress(1)	James A. Woods	primes(6)	Landon Curt Noll
+compress(1)	Joseph Orost	qsort(3)	Doug McIlroy
+compress(1)	Spencer Thomas	qsort(3)	Earl Cohen
+courier(1)	Eric Cooper	qsort(3)	Jon Bentley
+cp(1)	David Hitz	quad(3)	Chris Torek
+cpio(1)	AT&T	quiz(6)	Jim R. Oldroyd
+crypt(3)	Tom Truscott	quiz(6)	Keith Gabryelski
+csh(1)	Christos Zoulas	radixsort(3)	Dan Bernstein
+csh(1)	Len Shar	radixsort(3)	Peter McIlroy
+curses(3)	Elan Amir	rain(6)	Eric P. Scott
+curses(3)	Ken Arnold	ranlib(1)	Hugh A. Smith
+cut(1)	Adam S. Moskowitz	rcs(1)	Walter F. Tichy
+cut(1)	Marciano Pitargue	rdist(1)	Michael Cooper
+dbx(1)	Mark Linton	regex(3)	Henry Spencer
+dd(1)	Keith Muller	robots(6)	Ken Arnold
+dd(1)	Lance Visser	rogue(6)	Timothy C. Stoehr
+des(1)	Jim Gillogly	rs(1)	John Kunze
+des(1)	Phil Karn	sail(6)	David Riggle
+des(1)	Richard Outerbridge	sail(6)	Edward Wang
+dipress(1)	Xerox Corporation	sccs(1)	Eric Allman
+disklabel(8)	Symmetric Computer Systems	scsiformat(1)	Lawrence Berkeley Laboratory
+du(1)	Chris Newcomb	sdb(1)	Howard Katseff
+dungeon(6)	R.M. Supnik	sed(1)	Diomidis Spinellis
+ed(1)	Rodney Ruddock	sendmail(8)	Eric Allman
+emacs(1)	Richard Stallman	setmode(3)	Dave Borman
+erf(3)	Peter McIlroy, K.C. Ng	sh(1)	Kenneth Almquist
+error(1)	Robert R. Henry	slattach(8)	Rick Adams
+ex(1)	Mark Horton	slip(8)	Rick Adams
+factor(6)	Landon Curt Noll	spms(1)	Peter J. Nicklin
+file(1)	Ian Darwin	strtod(3)	David M. Gay
 find(1)	Cimarron Taylor	swab(3)	Jeffrey Mogul
 finger(1)	Tony Nardo	sysconf(3)	Sean Eric Fagan
 fish(6)	Muffy Barkocy	sysline(1)	J.K. Foderaro
@@ -458,7 +418,6 @@ libm(3)	Peter McIlroy	xneko(6)	Masayuki Koba
 libm(3)	UUNET Technologies, Inc.	XNSrouted(1)	Bill Nesheim
 locate(1)	James A. Woods	xroach(6)	J.T. Anderson
 lock(1)	Bob Toxen	yacc(1)	Robert Paul Corbett
-log(3)	Peter McIlroy
 .TE
 .\"
 .\" END OF CONTRIB: Contrib ends here.
