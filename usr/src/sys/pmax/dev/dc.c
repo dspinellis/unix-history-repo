@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dc.c	7.1 (Berkeley) %G%
+ *	@(#)dc.c	7.2 (Berkeley) %G%
  *
  * devDC7085.c --
  *
@@ -820,11 +820,7 @@ dcstart(tp)
 			tp->t_state &= ~TS_ASLEEP;
 			wakeup((caddr_t)&tp->t_outq);
 		}
-		if (tp->t_wsel) {
-			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
-			tp->t_wsel = 0;
-			tp->t_state &= ~TS_WCOLL;
-		}
+		selwakeup(&tp->t_wsel);
 	}
 	if (tp->t_outq.c_cc == 0)
 		goto out;
@@ -843,11 +839,7 @@ dcstart(tp)
 				tp->t_state &= ~TS_ASLEEP;
 				wakeup((caddr_t)&tp->t_outq);
 			}
-			if (tp->t_wsel) {
-				selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
-				tp->t_wsel = 0;
-				tp->t_state &= ~TS_WCOLL;
-			}
+			selwakeup(&tp->t_wsel);
 		}
 		goto out;
 	}
