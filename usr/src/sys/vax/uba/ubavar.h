@@ -1,4 +1,4 @@
-/*	ubavar.h	4.20	81/10/29	*/
+/*	ubavar.h	4.21	81/11/07	*/
 
 /*
  * This file contains definitions related to the kernel structures
@@ -43,6 +43,7 @@ struct	uba_hd {
 	int	uh_hangcnt;		/* number of ticks hung */
 	int	uh_zvcnt;		/* number of 0 vectors */
 	int	uh_errcnt;		/* number of errors */
+	int	uh_lastiv;		/* last free interrupt vector */
 	short	uh_users;		/* transient bdp use count */
 	short	uh_xclu;		/* an rk07 is using this uba! */
 #define	UAMSIZ	25
@@ -136,9 +137,10 @@ struct uba_driver {
 /*
  * Flags to UBA map/bdp allocation routines
  */
-#define	UBA_NEEDBDP	0x1		/* transfer needs a bdp */
-#define	UBA_CANTWAIT	0x2		/* don't block me */
-#define	UBA_NEED16	0x4		/* need 16 bit addresses only */
+#define	UBA_NEEDBDP	0x01		/* transfer needs a bdp */
+#define	UBA_CANTWAIT	0x02		/* don't block me */
+#define	UBA_NEED16	0x04		/* need 16 bit addresses only */
+#define	UBA_HAVEBDP	0x08		/* use bdp specified in high bits */
 
 #ifndef LOCORE
 #ifdef KERNEL
