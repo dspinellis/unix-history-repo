@@ -148,7 +148,7 @@
 
 #define	EVSPARE	DSIZE - EVUSED % DSIZE	/* number of leftover chars */
 #define	EVS	(EVUSED + EVSPARE)	/* should be a multiple of DSIZE */
-#define	NM	350	/* requests + macros */
+#define	NM	500	/* requests + macros */
 #define	DELTA	1024	/* delta core bytes */
 #define	NHYP	10	/* max hyphens per word */
 #define	NHEX	128	/* byte size of exception word list */
