@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)sync.c	1.3 83/10/14";
+static	char *sccsid = "@(#)sync.c	1.4 83/10/14";
 #endif
 
 #include "externs.h"
@@ -56,6 +56,7 @@ sync_open()
 	if (sync_fp == 0)
 		return -1;
 	sync_seek == 0;
+	return 0;
 }
 
 sync_close(remove)

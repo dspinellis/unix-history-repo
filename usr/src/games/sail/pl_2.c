@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_2.c	1.6 83/10/14";
+static	char *sccsid = "@(#)pl_2.c	1.7 83/10/14";
 #endif
 
 #include "player.h"
@@ -31,7 +31,7 @@ int ma, ta, af;
 		Signal("Already moved.", (struct ship *)0);
 		return;
 	}
-	sprintf(prompt, "move (%d,%c%d): ", ma, af ? '\'' : ' ', ta);
+	(void) sprintf(prompt, "move (%d,%c%d): ", ma, af ? '\'' : ' ', ta);
 	sgetstr(prompt, buf, sizeof buf);
 	dir = mf->dir;
 	vma = ma;

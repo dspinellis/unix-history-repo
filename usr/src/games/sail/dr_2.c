@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_2.c	1.4 83/10/10";
+static	char *sccsid = "@(#)dr_2.c	1.5 83/10/14";
 #endif
 
 #include "driver.h"
@@ -165,7 +165,7 @@ struct ship *ship;
 char *movement;
 {
 	register struct File *fp = ship->file;
-	int drift = fp->drift;
+	char drift = fp->drift;
 	int row = fp->row;
 	int col = fp->col;
 	int dir = fp->dir;
@@ -273,4 +273,15 @@ char command[], temp[];
 		try(command, temp, ma-1, ta-1, af, (min(ma-1,maxmove(f, (dir-1 ? dir-1 : 8), 0))), (dir-1 ? dir -1 : 8), f, t, high, rakeme);
 		rmend(temp);
 	}
+}
+
+rmend(str)
+char *str;
+{
+	register char *p;
+
+	for (p = str; *p; p++)
+		;
+	if (p != str)
+		*--p = 0;
 }
