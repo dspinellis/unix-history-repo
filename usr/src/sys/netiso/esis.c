@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)esis.c	7.16 (Berkeley) %G% */
+/*	@(#)esis.c	7.17 (Berkeley) %G% */
 #ifndef lint
 static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
 #endif
@@ -722,13 +722,18 @@ esis_config()
 	/* 
 	 *	Report configuration for each interface that 
 	 *	- is UP
-	 *	- is not loopback
+	 *	- has BROADCAST capability
 	 *	- has an ISO address
+	 */
+	/* Todo: a better way would be to construct the esh or ish
+	 * once and copy it out for all devices, possibly calling
+	 * a method in the iso_ifaddr structure to encapsulate and
+	 * transmit it.  This could work to advantage for non-broadcast media
 	 */
 	
 	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
 		if ((ifp->if_flags & IFF_UP) &&
-			((ifp->if_flags & IFF_LOOPBACK) == 0)) {
+		    (ifp->if_flags & IFF_BROADCAST)) {
 			/* search for an ISO address family */
 			struct ifaddr	*ia;
 
