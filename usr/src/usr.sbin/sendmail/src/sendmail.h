@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.20	%G%
+**	@(#)sendmail.h	3.21	%G%
 */
 
 
@@ -163,7 +163,7 @@ struct rewrite
 	struct rewrite	*r_next;/* next in chain */
 };
 
-struct rewrite	*RewriteRules[];
+extern struct rewrite	*RewriteRules[];
 
 # define MATCHANY	'\020'	/* match one or more tokens */
 # define MATCHONE	'\021'	/* match exactly one token */
