@@ -1,9 +1,14 @@
 			SENDMAIL RELEASE NOTES
-	     @(#)RELEASE_NOTES	8.6.7.1 (Berkeley) %G%
+	     @(#)RELEASE_NOTES	8.6.8.1 (Berkeley) %G%
 
 This listing shows the version of the sendmail binary, the version
 of the sendmail configuration files, the date of release, and a
 summary of the changes in that release.
+
+8.6.8/8.6.6	94/03/21
+	SECURITY: it was possible to read any file as root using the
+		E (error message) option.  Reported by Richard Jones;
+		fixed by Michael Corrigan and Christophe Wolfhugel.
 
 8.6.7/8.6.6	94/03/14
 	SECURITY: it was possible to get root access by using wierd
