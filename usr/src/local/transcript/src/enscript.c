@@ -1,6 +1,6 @@
 #ifndef lint
 static char Notice[] = "Copyright (c) 1985 Adobe Systems Incorporated";
-static char sccsid[] = "@(#)enscript.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)enscript.c	1.6 (Berkeley) %G%";
 static char *RCSID = "$Header: enscript.c,v 1.7 89/03/12 01:31:55 van Exp $";
 
 #endif
@@ -441,7 +441,7 @@ ShowChar (c)
 	register struct font *f;
 	register long nX, nY;
 	static  level = 0;
-	VOID PageEject();
+	VOID PageEject(), InitPage();
 
 	level++;
 	f = &fonts[CurFont];
@@ -474,10 +474,14 @@ ShowChar (c)
 			SeenText = TRUE;
 			dY = lY = lY + crY;
 			dX = lX = lX + crX;
-			if ((dY < minY) || (--LinesLeft <= 0))
+			if ((dY < minY) || (--LinesLeft <= 0)) {
 				PageEject ();
+				if (pagepending)
+					InitPage ();
+			}
 			col = 1;
 			ShowChar(c);
+			col++;
 			level--;
 			return;
 		}
