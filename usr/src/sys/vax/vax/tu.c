@@ -1,23 +1,21 @@
-/*	tu.c	4.20	83/06/17	*/
+/*	tu.c	4.21	83/07/07	*/
 
 #if defined(VAX750) || defined(VAX730)
 /*
  * TU58 DECtape II device driver
  *
- * This driver controls the console TU58(s) on a VAX-11/750 or VAX-11/730.
- * The TU58 is treated as a block device (only).  The error detection and
+ * TU58 console cassette driver (for VAX-11/750 or VAX-11/730).
+ * The TU58 is treated as a block device (only).  Error detection and
  * recovery is not extensive, but sufficient for most situations. It is 
- * assumed that the TU58 will follow the RSP (or MRSP) protocol 
- * exactly, very few protocol errors are checked for.  
- * It is also assumed that the 730 uses Modified RSP
- * (MRSP), while the 750 may use either RSP or MRSP depending on
- * whether defined(MRSP) is true or not.
+ * assumed that the TU58 will follow the RSP (or MRSP) protocol exactly,
+ * very few protocol errors are checked for.  It is also assumed that
+ * the 730 uses Modified RSP (MRSP), while the 750 may use either RSP
+ * or MRSP depending on whether defined(MRSP) is true or not.
  * In the case of a 750 without MRSP, the only way for the CPU to
  * keep up with the tu58 is to lock out virtually everything else.
  * This is taken care of by a pseudo DMA routine in locore.s.
  *
- * NOTE: This driver will not work in multiuser mode 
- *	 unless MRSP is used!!
+ * NOTE: This driver will not work multiuser without MRSP
  */
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -633,9 +631,11 @@ tuwatch()
 		return;
 	}
 	printf("tu%d: read stalled\n", tudata.pk_unit);
+#ifdef notdef
 	printf("%X %X %X %X %X %X %X %X\n", tu.tu_rbptr, tu.tu_rcnt,
 		tu.tu_wbptr, tu.tu_wcnt, tu.tu_state, tu.tu_flag,
 		tu.tu_addr, tu.tu_count);
+#endif
 	s = splx(TUIPL);
 	tu.tu_flag = 0;
 	(void) mfpr(CSRD);
