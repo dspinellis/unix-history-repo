@@ -1,4 +1,4 @@
-/*	uipc_domain.c	5.3	82/09/04	*/
+/*	uipc_domain.c	5.4	82/10/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,7 +7,6 @@
 #include "../h/reg.h"
 #include "../h/inode.h"
 #include "../h/proc.h"
-#include "../h/mtpr.h"
 #include "../h/timeb.h"
 #include "../h/times.h"
 #include "../h/reboot.h"
