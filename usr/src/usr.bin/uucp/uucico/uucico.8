@@ -1,9 +1,9 @@
-.\"	@(#)uucico.8	6.2 (Berkeley) %G%
+.\"	@(#)uucico.8	6.3 (Berkeley) %G%
 .\"
 .TH UUCICO 8C ""
 .UC 6
 .SH NAME
-uucico \- transfer files queued by uucp or uux
+uucico, uucpd \- transfer files queued by uucp or uux
 .SH SYNOPSIS
 .B /usr/lib/uucp/uucico
 [
@@ -23,6 +23,8 @@ uucico \- transfer files queued by uucp or uux
 ] [
 .BI \-t turnaround
 ]
+.PP
+.B /etc/uucpd
 .SH DESCRIPTION
 .I Uucico
 performs the actual work involved in transferring files between
@@ -136,6 +138,15 @@ receives a
 .IR kill (1)),
 it will toggle the debugging on or off.
 .PP
+.I Uucpd
+is the server for supporting uucp connections over networks.
+.I Uucpd
+listens for service requests at the port indicated in the ``uucp''
+service specification; see \fIservices\fP\|(5).
+The server provides login name and password authentication before starting up
+.I uucico
+for the rest of the transaction.
+.PP
 .I Uucico
 is commonly used either of two ways: as a daemon run periodically by
 .IR cron (8)
@@ -171,7 +182,7 @@ For example:
 .fi
 .PP
 The UID for UUCP remote logins is not critical, so long as it differs from
-the UUCP Administrative login (usually UID 5).
+the UUCP Administrative login.
 The latter owns the UUCP files, and assigning
 this UID to a remote login would be an extreme security hazard. 
 .SH FILES
