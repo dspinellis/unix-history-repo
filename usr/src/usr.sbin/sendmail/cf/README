@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.52 (Berkeley) %G%
+		@(#)README	8.53 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -1303,6 +1303,13 @@ confSAFE_FILE_ENV	SafeFileEnvironment
 					If set, sendmail will do a chroot()
 					into this directory before writing
 					files.
+confCOLON_OK_IN_ADDR	ColonOkInAddr	If set, colons are treated as a regular
+					character in addresses.  If not set,
+					they are treated as the introducer to
+					the RFC 822 "group" syntax.  Colons are
+					handled properly in route-addrs.  This
+					option defaults on for V5 and lower
+					configuration files.
 
 
 +-----------+
