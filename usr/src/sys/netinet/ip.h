@@ -1,13 +1,18 @@
-/* ip.h 1.4 81/10/26 */
+/* ip.h 1.4 81/10/28 */
 
 struct ip {
 	u_char	ip_hl:4,		/* header length */
 		ip_v:4;			/* version */
 	u_char	ip_tos;			/* type of service */
 #define	ip_mff	ip_tos			/* more fragments flag (input) */
-	u_short	ip_len;			/* total length */
+/* by rights, ip_len should be a u_short, but this makes operations */
+/* on it very dangerous as comparisons become unsigned and comparing */
+/* against negative numbers then fails... we don't expect any > 32767 */
+/* byte packets, so pragmatically delcare it to be a short */
+	short	ip_len;			/* total length */
 	u_short	ip_id;			/* identification */
-	u_short	ip_off;			/* fragment offset field */
+/* ip_off should also, by rights, be u_short, ala ip_len */
+	short	ip_off;			/* fragment offset field */
 #define	ip_df 0x4000			/* dont fragment flag */
 #define	ip_mf 0x2000			/* more fragments flag (output) */
 	u_char	ip_ttl;			/* time to live */
