@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)gmon.c	4.10 (Berkeley) %G%";
+static	char *sccsid = "@(#)gmon.c	4.11 (Berkeley) %G%";
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -20,6 +20,7 @@ static char		*minsbrk = 0;
 
 static int	ssiz;
 static int	*sbuf;
+static int	s_scale;
 
 #define	MSG "No space for monitor buffer(s)\n"
 
@@ -70,11 +71,7 @@ monstartup(lowpc, highpc)
     minsbrk = sbrk(0);
     tos[0].link = 0;
     monitor( lowpc , highpc , buffer , monsize , tolimit );
-	/*
-	 *	profiling is what mcount checks to see if
-	 *	all the data structures are ready!!!
-	 */
-    profiling = 0;
+    moncontrol(1);
 }
 
 _mcleanup()
@@ -117,6 +114,7 @@ _mcleanup()
 }
 
 asm(".text");
+asm(".align 2");
 asm("#the beginning of mcount()");
 asm(".data");
 mcount()
@@ -253,8 +251,7 @@ monitor( lowpc , highpc , buf , bufsiz , nfunc )
     register o;
 
     if ( lowpc == 0 ) {
-	profiling++; /* halt profiling */
-	profil( (char *) 0 , 0 , 0 , 0 );
+	moncontrol(0);
 	_mcleanup();
 	return;
     }
@@ -273,7 +270,28 @@ monitor( lowpc , highpc , buf , bufsiz , nfunc )
 	o = ( (float) bufsiz / o ) * 65536;
     else
 	o = 65536;
-    profil( buf , bufsiz , lowpc , o );
+    s_scale = o;
+    moncontrol(1);
+}
+
+/*
+ * Control profiling
+ *	profiling is what mcount checks to see if
+ *	all the data structures are ready.
+ */
+moncontrol(mode)
+    int mode;
+{
+    if (mode) {
+	/* start */
+	profil(sbuf + sizeof(struct phdr), ssiz - sizeof(struct phdr),
+		s_lowpc, s_scale);
+	profiling = 0;
+    } else {
+	/* stop */
+	profil((char *)0, 0, 0, 0);
+	profiling = 3;
+    }
 }
 
 /*
