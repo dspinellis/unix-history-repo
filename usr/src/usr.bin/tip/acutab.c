@@ -1,4 +1,4 @@
-/*	acutab.c	4.3	81/10/09	*/
+/*	acutab.c	4.4	81/11/20	*/
 #include "tip.h"
 
 extern int df02_dialer(), df03_dialer(), df_disconnect(), df_abort(),
@@ -6,6 +6,7 @@ extern int df02_dialer(), df03_dialer(), df_disconnect(), df_abort(),
 	   biz31w_dialer(),
 	   biz22f_dialer(), biz22_disconnect(), biz22_abort(),
 	   biz22w_dialer(),
+	   ven_dialer(), ven_disconnect(), ven_abort(),
 	   dn_dialer(), dn_disconnect(), dn_abort();
 
 acu_t acutable[] = {
@@ -25,6 +26,9 @@ acu_t acutable[] = {
 #endif
 #if DN11
 	"dn11",	dn_dialer,	dn_disconnect,		dn_abort,
+#endif
+#ifdef VENTEL
+	"ventel",ven_dialer,	ven_disconnect,		ven_abort,
 #endif
 	0,	0,		0,			0
 };
