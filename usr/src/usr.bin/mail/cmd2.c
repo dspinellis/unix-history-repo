@@ -9,7 +9,7 @@
  * More user commands.
  */
 
-static char *SccsId = "@(#)cmd2.c	2.5 %G%";
+static char *SccsId = "@(#)cmd2.c	2.6 %G%";
 
 /*
  * If any arguments were given, go to the next applicable argument
@@ -425,13 +425,13 @@ clobber(argv)
 		times = 1;
 	else
 		times = (atoi(argv[0]) + 511) / 512;
-	clobber1(times);
+	clob1(times);
 }
 
 /*
  * Clobber the stack.
  */
-clobber1(n)
+clob1(n)
 {
 	char buf[512];
 	register char *cp;
@@ -440,5 +440,5 @@ clobber1(n)
 		return;
 	for (cp = buf; cp < &buf[512]; *cp++ = 0xFF)
 		;
-	clobber1(n - 1);
+	clob1(n - 1);
 }
