@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -89,7 +89,7 @@ static char sccsid[] = "@(#)inetd.c	5.17 (Berkeley) %G%";
 
 extern	int errno;
 
-int	reapchild(), retry();
+void	config(), reapchild(), retry();
 char	*index();
 char	*malloc();
 
@@ -366,6 +366,7 @@ main(argc, argv, envp)
 	}
 }
 
+void
 reapchild()
 {
 	union wait status;
@@ -394,6 +395,7 @@ reapchild()
 	}
 }
 
+void
 config()
 {
 	register struct servtab *sep, *cp, **sepp;
@@ -474,6 +476,7 @@ config()
 	(void) sigsetmask(omask);
 }
 
+void
 retry()
 {
 	register struct servtab *sep;
