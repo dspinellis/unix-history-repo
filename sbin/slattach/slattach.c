@@ -79,7 +79,7 @@ char copyright[] =
 
 #ifndef lint
 static char sccsid[] = "@(#)slattach.c	4.6 (Berkeley) 6/1/90";
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.c,v 1.6 1993/09/08 05:55:56 rgrimes Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.c,v 1.7 1993/09/08 06:12:05 rich Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -219,20 +219,20 @@ int main(int argc, char **argv)
 	}
 	/* acquire the serial line as a controling terminal. */
 	if (ioctl(fd, TIOCSCTTY, 0) < 0)
-		syslog(LOG_NOTICE,"ioctl(TIOCSCTTY) failed: %s\n",
+		syslog(LOG_NOTICE,"ioctl(TIOCSCTTY) failed: %s",
 		       strerror(errno));
 	/* Make us the foreground process group associated with the
 	   slip line which is our controlling terminal. */
 	if (tcsetpgrp(fd, getpid()) < 0)
-		syslog(LOG_NOTICE,"tcsetpgrp failed: %s\n",
+		syslog(LOG_NOTICE,"tcsetpgrp failed: %s",
 		       strerror(errno));
 	/* upon INT log a timestamp and exit.  */
 	if ((int)signal(SIGINT,sigint_handler) < 0)
-		syslog(LOG_NOTICE,"cannot install SIGINT handler: %s\n",
+		syslog(LOG_NOTICE,"cannot install SIGINT handler: %s",
 		       strerror(errno));
 	/* upon HUP redial and reconnect.  */
 	if ((int)signal(SIGHUP,sighup_handler) < 0)
-		syslog(LOG_NOTICE,"cannot install SIGHUP handler: %s\n",
+		syslog(LOG_NOTICE,"cannot install SIGHUP handler: %s",
 		       strerror(errno));
 
 	setup_line();
@@ -310,7 +310,7 @@ void attach_line()
 		free (s);
 		unit = new_unit;
 	}
-	syslog(LOG_NOTICE,"sl%d connected to %s at %d b/s\n",unit,dev,speed);
+	syslog(LOG_NOTICE,"sl%d connected to %s at %d b/s",unit,dev,speed);
 }
 
 /* Signal handler for SIGHUP when carrier is dropped. */
@@ -327,7 +327,7 @@ void sighup_handler()
 		       unit,dev,redial_cmd);
 		system(redial_cmd);
 	} else {
-		syslog(LOG_NOTICE,"No redial phone number or command. aborting.\n",dev);
+		syslog(LOG_NOTICE,"No redial phone number or command. aborting.",dev);
 		exit_handler(0);
 	}
 	setup_line();
@@ -336,7 +336,7 @@ void sighup_handler()
 /* Signal handler for SIGINT.  We just log and exit. */
 void sigint_handler()
 {
-	syslog(LOG_NOTICE,"sl%d on %s caught SIGINT, exiting.\n",unit,dev);
+	syslog(LOG_NOTICE,"sl%d on %s caught SIGINT, exiting.",unit,dev);
 	exit_handler(0);
 }
 /* Run config_cmd if specified before exiting. */
