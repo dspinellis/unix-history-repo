@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if_sl.c	7.22 (Berkeley) 4/20/91
- *	$Id: if_sl.c,v 1.8 1994/03/02 20:28:55 guido Exp $
+ *	$Id: if_sl.c,v 1.10 1994/03/22 01:16:06 ache Exp $
  */
 
 /*
@@ -65,7 +65,7 @@
  * interrupts and network activity; thus, splimp must be >= spltty.
  */
 
-/* $Id: if_sl.c,v 1.8 1994/03/02 20:28:55 guido Exp $ */
+/* $Id: if_sl.c,v 1.10 1994/03/22 01:16:06 ache Exp $ */
 /* from if_sl.c,v 1.11 84/10/04 12:54:47 rick Exp */
 
 #include "sl.h"
@@ -869,6 +869,9 @@ slioctl(ifp, cmd, data)
 	caddr_t data;
 {
 	register struct ifaddr *ifa = (struct ifaddr *)data;
+#ifdef MULTICAST
+	register struct ifreq *ifr;
+#endif
 	int s = splimp(), error = 0;
 
 	switch (cmd) {
@@ -890,6 +893,25 @@ slioctl(ifp, cmd, data)
 			error = EAFNOSUPPORT;
 		break;
 
+#ifdef MULTICAST
+	case SIOCADDMULTI:
+	case SIOCDELMULTI:
+		ifr = (struct ifreq *)data;
+		if (ifr == 0) {
+			error = EAFNOSUPPORT;		/* XXX */
+			break;
+		}
+		switch (ifr->ifr_addr.sa_family) {
+#ifdef INET
+		case AF_INET:
+			break;
+#endif
+		default:
+			error = EAFNOSUPPORT;
+			break;
+		}
+		break;
+#endif
 	default:
 		error = EINVAL;
 	}

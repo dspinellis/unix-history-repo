@@ -38,7 +38,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ioctl.h	7.19 (Berkeley) 6/26/91
- *	$Id: ioctl.h,v 1.7 1994/02/24 16:09:09 phk Exp $
+ *	$Id: ioctl.h,v 1.8 1994/05/04 08:30:41 rgrimes Exp $
  */
 
 #ifndef	_IOCTL_H_
@@ -221,6 +221,9 @@ struct ttysize {
 #define	SIOCGIFMTU	_IOWR('i',126, struct ifreq)	/* get ifnet mtu */
 #define	SIOCSIFASYNCMAP	_IOW('i', 125, struct ifreq)	/* set ppp asyncmap */
 #define	SIOCGIFASYNCMAP	_IOWR('i',124, struct ifreq)	/* get ppp asyncmap */
+
+#define	SIOCADDMULTI	_IOW('i', 49, struct ifreq)	/* add m'cast addr */
+#define	SIOCDELMULTI	_IOW('i', 50, struct ifreq)	/* del m'cast addr */
 
 #ifndef KERNEL
 
