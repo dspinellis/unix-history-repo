@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asscan4.c 4.3 %G%";
+static char sccsid[] = "@(#)asscan4.c 4.4 %G%";
 #endif not lint
 
 #include "asscanl.h"
@@ -13,21 +13,23 @@ static char sccsid[] = "@(#)asscan4.c 4.3 %G%";
 
 static char	numbuf[NUMSIZE];
 
-int number(ch, cpp)
+#define	BACK(backval)	intval = backval; goto stuffback;
+
+int number(ch)
 	reg	int	ch;
-		char	**cpp;
 {
 		int	radix;
 		int	digit;		/* part of number being constructed */
 	reg	int	intval;		/* number being constructed */
 	reg	char	*cp;
 	reg	char	*inbufptr;
+	reg	int	inbufcnt;
 		char	ch1;
 		Bignum	floatnumber();
 		Ovf	overflow;	/* overflow flag */
 		int	maxstrlg;
 
-	inbufptr = *cpp;
+	MEMTOREGBUF;
 	cp = numbuf;
 	radix = 10;
 
@@ -36,8 +38,7 @@ int number(ch, cpp)
 		switch(ch = getchar()){
 		case 'b':
 			yylval = -1;
-			*cpp = inbufptr;
-			return(BFINT);
+			BACK(BFINT);
 		case 'f':
 			/*
 			 * Check if it is a local label by peeking ahead
@@ -46,8 +47,7 @@ int number(ch, cpp)
 			ungetc(ch1);
 			if (!FLTCHAR(ch1)){
 				yylval = 1;
-				*cpp = inbufptr;
-				return(BFINT);
+				BACK(BFINT);
 			}
 			/*FALLTHROUGH*/
 		case 'F': ch = 'f';	goto floatnum;
@@ -82,12 +82,10 @@ int number(ch, cpp)
 		switch(ch1 = getchar()){
 		case 'f':
 			yylval = ((ch - '0') + 1);
-			*cpp = inbufptr;
-			return(BFINT);
+			BACK(BFINT);
 		case 'b':
 			yylval = -((ch - '0') + 1);
-			*cpp = inbufptr;
-			return(BFINT);
+			BACK(BFINT);
 		default:
 			ungetc(ch1);	/* put back non zero */
 		}
@@ -160,24 +158,34 @@ int number(ch, cpp)
 	 */
   smallnum: ;
 	yylval = -intval;
-	*cpp = inbufptr;
-	return(INT);
+	BACK(INT);
   bignum: ;
 	yybignum = as_atoi(numbuf, radix, &overflow);
-	*cpp = inbufptr;
-	return(BIGNUM);
+	BACK(BIGNUM);
   floatnum: ;
-	*cpp = inbufptr;
-	yybignum = floatnumber(ch, cpp);
+	REGTOMEMBUF;
+	yybignum = floatnumber(ch);
 	return(BIGNUM);
+ stuffback: ;
+	REGTOMEMBUF;
+	return(intval);
 }
 
-#define	TOOLONG	if(cp == &numbuf[NUMSIZE]){if (passno == 2)yywarning(toolong); goto process;}
-#define	scanit(sign) *cpp = inbufptr; error |= scanint(sign, &cp, cpp); inbufptr = *cpp; ch = getchar(); TOOLONG;
+#define	TOOLONG \
+	if (cp == &numbuf[NUMSIZE]){ \
+		if (passno == 2) \
+			yywarning(toolong); \
+			goto process; \
+	}
+#define	scanit(sign) \
+	REGTOMEMBUF; \
+	error |= scanint(sign, &cp); \
+	MEMTOREGBUF; \
+	ch = getchar(); \
+	TOOLONG;
 
-Bignum floatnumber(fltradix, cpp)
+Bignum floatnumber(fltradix)
 	int	fltradix;
-	char	**cpp;		/* call by copy return semantics */
 {
 		char	*cp;
 		int	ch;
@@ -192,8 +200,9 @@ Bignum floatnumber(fltradix, cpp)
 		int	error;
 		int	fractOK;
 	reg	char	*inbufptr;
+	reg	int	inbufcnt;
 
-	inbufptr = *cpp;
+	MEMTOREGBUF;
 	cp = numbuf;
 	error = 0;
 	fractOK = 0;
@@ -234,25 +243,26 @@ Bignum floatnumber(fltradix, cpp)
 	case 'g':	fltradix = TYPG;	nGHnumbers++; break;
 	case 'h':	fltradix = TYPH;	nGHnumbers++; break;
 	}
+	REGTOMEMBUF;
 	/*
 	 *	The overflow value is lost in the call to as_atof
 	 */
-	*cpp = inbufptr;
 	return(as_atof(numbuf, fltradix, &overflow));
 }
 /*
  *	Scan an optionally signed integer, putting back the lookahead
  *	character when finished scanning.
  */
-int scanint(signOK, dstcpp, srccpp)
+int scanint(signOK, dstcpp)
 	int	signOK;
 	char	**dstcpp;
-	char	**srccpp;	/* call by copy return */
 {
-	int	ch;
-	int	back = 0;
-	reg	char	*inbufptr = *srccpp;
+		int	ch;
+		int	back = 0;
+	reg	char	*inbufptr;
+	reg	int	inbufcnt;
 
+	MEMTOREGBUF;
 	ch = getchar();
 	while (INCHARSET(ch, SIGN)){
 		if (signOK && !back)
@@ -266,6 +276,6 @@ int scanint(signOK, dstcpp, srccpp)
 		ch = getchar();
 	}
 	ungetc(ch);
-	*srccpp = inbufptr;
+	REGTOMEMBUF;
 	return(back);
 }

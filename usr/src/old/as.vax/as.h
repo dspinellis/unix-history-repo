@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)as.h 4.13 %G%
+ *	@(#)as.h 4.14 %G%
  */
 #ifdef VMS
 # define	vax	1
@@ -85,7 +85,7 @@
 /*
  *	Check sizes, and compiler error if sizes botch
  */
-#if ((ASINBUFSIZ < NCPString) || (ASINBUFSIZ < NCPName) || (STRPOOLDALLOP < NCPString) || (STRPOOLDALLOP < NCPName))
+#if ((STRPOOLDALLOP < NCPString) || (STRPOOLDALLOP < NCPName))
 	$$$botch with definition sizes
 #endif test botches
 /*

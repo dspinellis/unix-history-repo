@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)asscanl.h 4.4 %G%
+ *	@(#)asscanl.h 4.5 %G%
  */
 /*
  *	This file contains definitions local to the files implementing
@@ -12,16 +12,10 @@
 #include <stdio.h>
 #include "as.h"
 #include "asscan.h"
-/*
- *	Maps characters to their use in assembly language
- */
-#define EOFCHAR	(-1)
-#define	NEEDCHAR (-2)
 
+#define EOFCHAR	(-1)
 /*
  *	The table of possible uses for each character to test set inclusion.
- *	Different than the above table, which knows about tokens yylex
- *	is to return.
  */
 #define	HEXFLAG		01		/* 'x' or 'X' */
 #define	HEXLDIGIT	02		/* 'a' .. 'f' */
@@ -40,31 +34,26 @@
 #define	FLOATFLAG	040000		/* 'd', 'D', 'f', 'F' */
 
 #define	INCHARSET(val, kind) (charsets[val] & (kind) )
-#ifdef	getchar
-#undef		getchar
-#endif
-#define	getchar() *inbufptr++
-
-#ifdef	ungetc
-#undef		ungetc
-#endif
-#define	ungetc(char) *--inbufptr = char
-
 /*
- *	NOTE:
- *		This version of the assembler does not use fread and fwrite
- *	for the token buffering.  The token buffers are integrals of BUFSIZ
- *	at all times, so we use direct read and write.  fread and fwrite
- *	as supplied from BTL in stdio are HORRENDOUSLY inefficient,
- *	as they use putchar for each character, nested two deep in loops.
+ *	We use our own version of getchar/ungetc to get
+ *	some speed improvement
  */
-#define writeTEST(pointer, size, nelements, ioptr) \
-	write(ioptr->_file, pointer, nelements * size) != nelements * size
-
-#define readTEST(pointer, size, nelements, ioptr) \
-	read(ioptr->_file, pointer, nelements * size) != nelements * size
+extern	char	*Ginbufptr;
+extern	int	Ginbufcnt;
+#define	REGTOMEMBUF	Ginbufptr = inbufptr, Ginbufcnt = inbufcnt
+#define	MEMTOREGBUF	inbufptr = Ginbufptr, inbufcnt = Ginbufcnt
+#undef getchar
+#define	getchar() \
+	(inbufcnt-- > 0 ? (*inbufptr++) : \
+		(fillinbuffer(), \
+		MEMTOREGBUF, \
+		inbufptr[-1]))
+#undef ungetc
+#define ungetc(ch) \
+	(++inbufcnt, *--inbufptr = ch)
+
 /*
- *	Variables to manage the token buffering.
+ *	Variables and definitions to manage the token buffering.
  *	We scan (lexically analyze) a large number of tokens, and
  *	then parse all of the tokens in the scan buffer.
  *	This reduces procedure call overhead when the parser
@@ -89,17 +78,18 @@ int	bufno;			/*which buffer number: 0,1 for tmp file*/
 struct 	tokbufdesc tokbuf[2];	/*our initial increment of buffers*/
 ptrall	tokptr;			/*where the current token comes from*/
 ptrall	tokub;			/*the last token in the current token buffer*/
+/*
+ *	as does not use fread and fwrite for the token buffering.
+ *	The token buffers are integrals of BUFSIZ
+ *	at all times, so we use direct read and write.
+ *	fread and fwrite in stdio are HORRENDOUSLY inefficient,
+ *	as they use putchar for each character, nested two deep in loops.
+ */
+#define writeTEST(pointer, size, nelements, ioptr) \
+	write(ioptr->_file, pointer, nelements * size) != nelements * size
 
-#define bstrlg(from, length) \
-	*(lgtype *)from = length; \
-	(bytetoktype *)from += sizeof(lgtype) + length 
-
-#define bstrfromto(from,to) \
-	*(lgtype *)from = (bytetoktype *)to - (bytetoktype *)from - sizeof(lgtype); \
-	(bytetoktype *)from += sizeof(lgtype) + (bytetoktype *)to - (bytetoktype *)from
-
-#define eatstrlg(from) \
-	(bytetoktype *)from +=  sizeof(lgtype) + *(lgtype *)from
+#define readTEST(pointer, size, nelements, ioptr) \
+	read(ioptr->_file, pointer, nelements * size) != nelements * size
 
 #define bskiplg(from, length) \
 	*(lgtype *)from = length; \
