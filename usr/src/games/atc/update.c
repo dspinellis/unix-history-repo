@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)update.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)update.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include "include.h"
@@ -36,7 +36,7 @@ update()
 	signal(SIGALRM, update);
 #endif
 
-	clock++;
+	clck++;
 
 	erase_all();
 
@@ -56,7 +56,7 @@ update()
 	/* do altitude change and basic movement */
 	for (pp = air.head; pp != NULL; pp = pp->next) {
 		/* type 0 only move every other turn */
-		if (pp->plane_type == 0 && clock & 1)
+		if (pp->plane_type == 0 && clck & 1)
 			continue;
 
 		pp->fuel--;
