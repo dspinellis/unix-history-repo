@@ -7,11 +7,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.15 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
-# include <sys/stat.h>
 # include <sysexits.h>
 # include "conf.h"
 /*
@@ -492,6 +491,7 @@ dfopen(filename, mode)
 {
 	register int tries;
 	register FILE *fp;
+	struct stat st;
 
 	for (tries = 0; tries < 10; tries++)
 	{
@@ -503,7 +503,7 @@ dfopen(filename, mode)
 		if (errno != ENFILE && errno != EINTR)
 			break;
 	}
-	if (fp != NULL)
+	if (fp != NULL && fstat(fileno(fp), &st) >= 0 && S_ISREG(st.st_mode))
 	{
 		int locktype;
 		extern bool lockfile();
