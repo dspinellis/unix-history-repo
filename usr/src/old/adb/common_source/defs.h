@@ -1,4 +1,4 @@
-/*	@(#)defs.h	5.2 (Berkeley) %G%	*/
+/*	@(#)defs.h	5.3 (Berkeley) %G%	*/
 
 /*
  * adb: common definitions
@@ -17,7 +17,6 @@
  * Signals.  Adb catches SIGINT and SIGQUIT; the variables sigint and
  * sigquit hold the original state for adb's children.
  */
-typedef	int (*sig_t)();		/* for signal syscall */
 sig_t	sigint;			/* original SIGINT state */
 sig_t	sigquit;		/* original SIGQUIT state */
 sig_t	intcatch;		/* interrupt catch routine, or SIG_IGN */

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fly.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fly.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "externs.h"
@@ -32,7 +32,7 @@ int dr = 0, dc = 0;
 char destroyed;
 int clock = 120;		/* time for all the flights in the game */
 char cross = 0;
-int (*oldsig)();
+sig_t oldsig;
 
 succumb()
 {
