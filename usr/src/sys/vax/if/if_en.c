@@ -1,4 +1,4 @@
-/* if_en.c 4.11 81/11/20 */
+/* if_en.c 4.12 81/11/23 */
 
 #include "en.h"
 /*
@@ -10,6 +10,7 @@
 #include "../h/mbuf.h"
 #include "../net/inet.h"
 #include "../net/inet_pcb.h"
+#include "../net/if.h"
 #include "../net/inet_systm.h"
 #include "../net/imp.h"
 #include "../net/ip.h"
@@ -78,7 +79,14 @@ enprobe(reg)
 enattach(ui)
 	struct uba_device *ui;
 {
+	extern struct ifnet ifen;
 
+	ifen.if_mtu = 1024;
+	ifen.if_net = 10;
+	ifen.if_addr.s_host = LOCALHST;
+	ifen.if_addr.s_net = LOCALNET;
+	ifen.if_addr.s_imp = LOCALIMP;
+	n_lhost = ifen.if_addr;
 }
 
 eninit(unit)
