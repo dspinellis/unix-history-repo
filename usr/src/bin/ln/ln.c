@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ln.c	4.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)ln.c	4.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -20,10 +20,13 @@ static char sccsid[] = "@(#)ln.c	4.14 (Berkeley) %G%";
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 static int	dirflag,			/* undocumented force flag */
 		sflag,				/* symbolic, not hard, link */
 		(*linkf)();			/* system link call */
+static linkit(), usage();
 
 main(argc, argv)
 	int argc;
