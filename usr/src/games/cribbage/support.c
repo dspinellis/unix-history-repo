@@ -150,7 +150,8 @@ int		*scr, inc;
 
 /*
  * prpeg:
- *	put out the peg character on the score board
+ *	Put out the peg character on the score board and put the
+ *	score up on the board.
  */
 prpeg(score, peg, myturn)
 register int	score;
@@ -184,6 +185,7 @@ BOOLEAN		myturn;
 		x += SCORE_X + 3;
 	}
 	mvaddch(y, x, peg);
+	mvprintw(SCORE_Y + (myturn ? 7 : 1), SCORE_X + 10, "%3d", score);
 }
 
 /*
