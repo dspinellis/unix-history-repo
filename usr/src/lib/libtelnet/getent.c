@@ -6,22 +6,29 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getent.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)getent.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
+
+static char *area;
 
 /*ARGSUSED*/
 getent(cp, name)
 char *cp, *name;
 {
-	return(0);
+	char *dba[2];
+
+	dba[0] = "/etc/gettytab";
+	dba[1] = 0;
+	return((cgetent(&area, dba, name) == 0) ? 1 : 0);
 }
 
 #ifndef	__svr4__
 /*ARGSUSED*/
 char *
-getstr(cp, cpp)
-char *cp, **cpp;
+getstr(id, cpp)
+char *id, **cpp;
 {
-	return(0);
+	char *answer;
+	return((cgetstr(area, id, &answer) > 0) ? answer : 0);
 }
 #endif
