@@ -99,8 +99,6 @@ LINTFLAGS	= -hbxaz
 DESTDIR=
 
 BINDIR		= $(DESTDIR)/usr/ucb
-ETCDIR		= $(DESTDIR)/etc
-MANDIR		= $(DESTDIR)/usr/man/man
 
 # Names for the terminal libraries...
 LIBCURSES	= -lcurses
@@ -175,15 +173,9 @@ telnet$O:	$(TNMAIN)
 mset$O:	$(MSMAIN)
 	$(CC) $(CFLAGS) -c $(MSMAIN)
 
-install:
-	install -s tn3270 $(BINDIR)
-	install -s mset $(BINDIR)
-	if [ ! -f ${ETCDIR}/map3270 ]; then \
-		install -c -m 444 map3270.dat ${ETCDIR}/map3270; \
-	fi
-#	install -c -m 444 man/tn3270.1 $(MANDIR)1/tn3270.1
-#	install -c -m 444 man/mset.1 $(MANDIR)1/mset.1
-#	install -c -m 444 man/map3270.5 $(MANDIR)5/map3270.5
+install:	tn3270$X mset$X
+	install -m 755 -o bin -g bin -s tn3270 $(BINDIR)
+	install -m 755 -o bin -g bin -s mset $(BINDIR)
 
 action:
 	${ACTION}
