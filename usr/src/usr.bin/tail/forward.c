@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)forward.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)forward.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -132,6 +132,7 @@ forward(fp, style, off, sbp)
 				oerr();
 		if (ferror(fp))
 			ierr();
+		(void)fflush(stdout);
 		if (!fflag)
 			break;
 		/* Sleep(3) is eight system calls.  Do it fast. */
