@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)res_comp.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_comp.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -9,7 +9,10 @@ static char sccsid[] = "@(#)res_comp.c	4.1 (Berkeley) %G%";
 
 
 /*
- * Expand compressed domain name format to full domain name.
+ * Expand compressed domain name 'comp_dn' to full domain name.
+ * Expanded names are converted to upper case.
+ * 'msg' is a pointer to the begining of the message,
+ * 'exp_dn' is a pointer to a buffer of size 'length' for the result.
  * Return size of compressed name or -1 if there was an error.
  */
 dn_expand(msg, comp_dn, exp_dn, length)
@@ -19,7 +22,7 @@ dn_expand(msg, comp_dn, exp_dn, length)
 	register char *cp, *dn;
 	register int n, c;
 	char *eom;
-	int len = 0;
+	int len = -1;
 
 	dn = exp_dn;
 	cp = comp_dn;
@@ -33,19 +36,28 @@ dn_expand(msg, comp_dn, exp_dn, length)
 		 */
 		switch (n & INDIR_MASK) {
 		case 0:
-			if (dn != exp_dn)
+			if (dn != exp_dn) {
+				if (dn >= eom)
+					return (-1);
 				*dn++ = '.';
+			}
 			if (dn+n >= eom)
 				return (-1);
 			while (--n >= 0)
 				if (islower(c = *cp++))
 					*dn++ = toupper(c);
-				else
+				else {
+					if (c == '.') {
+						if (dn+n+1 >= eom)
+							return (-1);
+						*dn++ = '\\';
+					}
 					*dn++ = c;
+				}
 			break;
 
 		case INDIR_MASK:
-			if (len == 0)
+			if (len < 0)
 				len = cp - comp_dn + 1;
 			cp = msg + (((n & 0x3f) << 8) | (*cp & 0xff));
 			break;
@@ -55,15 +67,22 @@ dn_expand(msg, comp_dn, exp_dn, length)
 		}
 	}
 	*dn = '\0';
-	if (len == 0)
+	if (len < 0)
 		len = cp - comp_dn;
 	return (len);
 }
 
 /*
- * Compress domain name. Return the size of the compressed name or -1.
- * Dnptrs is a list of pointers to previous compressed names. dnptrs[0]
+ * Compress domain name 'exp_dn' into 'comp_dn'.
+ * Return the size of the compressed name or -1.
+ * 'length' is the size of the array pointed to by 'comp_dn'.
+ * 'dnptrs' is a list of pointers to previous compressed names. dnptrs[0]
  * is a pointer to the beginning of the message. The list ends with NULL.
+ * 'lastdnptr' is a pointer to the end of the arrary pointed to
+ * by 'dnptrs'. Side effect is to update the list of pointers for
+ * labels inserted into the message as we compress the name.
+ * If 'dnptr' is NULL, we don't try to compress names. If 'lastdnptr'
+ * is NULL, we don't update the list.
  */
 dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr)
 	char *exp_dn, *comp_dn;
@@ -108,11 +127,20 @@ dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr)
 				c = *dn++;
 				break;
 			}
+			if (c == '\\') {
+				if ((c = *dn++) == '\0')
+					break;
+			}
 			if (cp >= eob)
 				return (-1);
 			*cp++ = c;
 		} while ((c = *dn++) != '\0');
-		if ((l = cp - sp - 1) <= 0 || l > MAXLABEL)
+		/* catch trailing '.'s but not '..' */
+		if ((l = cp - sp - 1) == 0 && c == '\0') {
+			cp--;
+			break;
+		}
+		if (l <= 0 || l > MAXLABEL)
 			return (-1);
 		*sp = l;
 	}
@@ -123,15 +151,15 @@ dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr)
 }
 
 /*
- * Skip over a compressed domain name. Return the size.
+ * Skip over a compressed domain name. Return the size or -1.
  */
-dn_skip(buf)
-	char *buf;
+dn_skip(comp_dn)
+	char *comp_dn;
 {
 	register char *cp;
 	register int n;
 
-	cp = buf;
+	cp = comp_dn;
 	while (n = *cp++) {
 		/*
 		 * check for indirection
@@ -147,7 +175,7 @@ dn_skip(buf)
 		}
 		break;
 	}
-	return (cp - buf);
+	return (cp - comp_dn);
 }
 
 /*
@@ -171,9 +199,12 @@ dn_find(exp_dn, msg, dnptrs, lastdnptr)
 			 */
 			switch (n & INDIR_MASK) {
 			case 0:		/* normal case, n == len */
-				while (--n >= 0)
+				while (--n >= 0) {
+					if (*dn == '\\')
+						dn++;
 					if (*dn++ != *cp++)
 						goto next;
+				}
 				if ((n = *dn++) == '\0' && *cp == '\0')
 					return (sp - msg);
 				if (n == '.')
