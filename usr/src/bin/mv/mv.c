@@ -172,14 +172,14 @@ move(source, target)
 		}
 		symln[m] = '\0';
 
-		m = umask(~(s1.st_mode & MODEBITS));
+		(void) umask(~(s1.st_mode & MODEBITS));
 		if (symlink(symln, target) < 0) {
 			Perror(target);
 			return (1);
 		}
-		(void) umask(m);
 		goto cleanup;
 	}
+	(void) umask(0);
 	if (ISDEV(s1)) {
 		struct timeval tv[2];
 
