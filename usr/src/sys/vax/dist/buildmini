@@ -1,7 +1,7 @@
 #! /bin/sh
-#	@(#)buildmini	4.4	%G%
+#	@(#)buildmini	4.5	%G%
 #
-miniroot=hp0g
+miniroot=hp0d
 minitype=rm80
 #
 date
