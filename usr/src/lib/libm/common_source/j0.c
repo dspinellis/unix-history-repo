@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)j0.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)j0.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -48,16 +48,19 @@ static char sccsid[] = "@(#)j0.c	5.2 (Berkeley) %G%";
 	#6949 (19.41D)
 */
 
-#include <math.h>
+#include "mathimpl.h"
+
 #if defined(vax)||defined(tahoe)
 #include <errno.h>
 #else	/* defined(vax)||defined(tahoe) */
-static double zero = 0.e0;
+static const double zero = 0.e0;
 #endif	/* defined(vax)||defined(tahoe) */
+
 static double pzero, qzero;
-static double tpi	= .6366197723675813430755350535e0;
-static double pio4	= .7853981633974483096156608458e0;
-static double p1[] = {
+
+static const double tpi	= .6366197723675813430755350535e0;
+static const double pio4	= .7853981633974483096156608458e0;
+static const double p1[] = {
 	0.4933787251794133561816813446e21,
 	-.1179157629107610536038440800e21,
 	0.6382059341072356562289432465e19,
@@ -68,7 +71,7 @@ static double p1[] = {
 	-.4050412371833132706360663322e8,
 	0.2685786856980014981415848441e5,
 };
-static double q1[] = {
+static const double q1[] = {
 	0.4933787251794133562113278438e21,
 	0.5428918384092285160200195092e19,
 	0.3024635616709462698627330784e17,
@@ -79,7 +82,7 @@ static double q1[] = {
 	0.1363063652328970604442810507e4,
 	1.0
 };
-static double p2[] = {
+static const double p2[] = {
 	0.5393485083869438325262122897e7,
 	0.1233238476817638145232406055e8,
 	0.8413041456550439208464315611e7,
@@ -88,7 +91,7 @@ static double p2[] = {
 	0.2485271928957404011288128951e4,
 	0.0,
 };
-static double q2[] = {
+static const double q2[] = {
 	0.5393485083869438325560444960e7,
 	0.1233831022786324960844856182e8,
 	0.8426449050629797331554404810e7,
@@ -97,7 +100,7 @@ static double q2[] = {
 	0.2615700736920839685159081813e4,
 	1.0,
 };
-static double p3[] = {
+static const double p3[] = {
 	-.3984617357595222463506790588e4,
 	-.1038141698748464093880530341e5,
 	-.8239066313485606568803548860e4,
@@ -106,7 +109,7 @@ static double p3[] = {
 	-.4887199395841261531199129300e1,
 	0.0,
 };
-static double q3[] = {
+static const double q3[] = {
 	0.2550155108860942382983170882e6,
 	0.6667454239319826986004038103e6,
 	0.5332913634216897168722255057e6,
@@ -115,7 +118,7 @@ static double q3[] = {
 	0.4087714673983499223402830260e3,
 	1.0,
 };
-static double p4[] = {
+static const double p4[] = {
 	-.2750286678629109583701933175e20,
 	0.6587473275719554925999402049e20,
 	-.5247065581112764941297350814e19,
@@ -126,7 +129,7 @@ static double p4[] = {
 	0.5915213465686889654273830069e8,
 	-.4137035497933148554125235152e5,
 };
-static double q4[] = {
+static const double q4[] = {
 	0.3726458838986165881989980e21,
 	0.4192417043410839973904769661e19,
 	0.2392883043499781857439356652e17,
@@ -138,10 +141,11 @@ static double q4[] = {
 	1.0,
 };
 
+static void asympt();
+
 double
 j0(arg) double arg;{
 	double argsq, n, d;
-	double sin(), cos(), sqrt();
 	int i;
 
 	if(arg < 0.) arg = -arg;
@@ -161,12 +165,10 @@ j0(arg) double arg;{
 double
 y0(arg) double arg;{
 	double argsq, n, d;
-	double sin(), cos(), sqrt(), log(), j0();
 	int i;
 
 	if(arg <= 0.){
 #if defined(vax)||defined(tahoe)
-		extern double infnan();
 		return(infnan(EDOM));		/* NaN */
 #else	/* defined(vax)||defined(tahoe) */
 		return(zero/zero);	/* IEEE machines: invalid operation */
@@ -185,7 +187,7 @@ y0(arg) double arg;{
 	return(n/d + tpi*j0(arg)*log(arg));
 }
 
-static
+static void
 asympt(arg) double arg;{
 	double zsq, n, d;
 	int i;

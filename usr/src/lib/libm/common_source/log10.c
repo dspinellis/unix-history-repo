@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log10.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)log10.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /* LOG10(X)
@@ -62,26 +62,20 @@ static char sccsid[] = "@(#)log10.c	5.3 (Berkeley) %G%";
  * shown.
  */
 
-#if defined(vax)||defined(tahoe)	/* VAX D format (56 bits) */
-#ifdef vax
-#define _0x(A,B)	0x/**/A/**/B
-#else	/* vax */
-#define _0x(A,B)	0x/**/B/**/A
-#endif	/* vax */
-/* static double */
-/* ln10hi =  2.3025850929940456790E0     ; Hex   2^  2   *  .935D8DDDAAA8AC */
-static long    ln10hix[] = { _0x(5d8d,4113), _0x(a8ac,ddaa)};
-#define   ln10hi    (*(double*)ln10hix)
-#else	/* defined(vax)||defined(tahoe)	*/
-static double
-ivln10 =  4.3429448190325181667E-1    ; /*Hex   2^ -2   *  1.BCB7B1526E50E */
-#endif	/* defined(vax)||defined(tahoe)	*/
+#include "mathimpl.h"
+
+vc(ln10hi, 2.3025850929940456790E0 ,5d8d,4113,a8ac,ddaa, 2, .935D8DDDAAA8AC)
+
+ic(ivln10, 4.3429448190325181667E-1, -2, 1.BCB7B1526E50E)
+
+#ifdef vccast
+#define	ln10hi	vccast(ln10hi)
+#endif
+
 
 double log10(x)
 double x;
 {
-	double log();
-
 #if defined(vax)||defined(tahoe)
 	return(log(x)/ln10hi);
 #else	/* defined(vax)||defined(tahoe) */

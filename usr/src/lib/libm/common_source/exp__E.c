@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exp__E.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)exp__E.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /* exp__E(x,c)
@@ -75,41 +75,32 @@ static char sccsid[] = "@(#)exp__E.c	5.3 (Berkeley) %G%";
  * shown.
  */
 
-#if defined(vax)||defined(tahoe)	/* VAX D format */
-#ifdef vax
-#define _0x(A,B)	0x/**/A/**/B
-#else	/* vax */
-#define _0x(A,B)	0x/**/B/**/A
-#endif	/* vax */
-/* static double */
-/* p1     =  1.5150724356786683059E-2    , Hex  2^ -6   *  .F83ABE67E1066A */
-/* p2     =  6.3112487873718332688E-5    , Hex  2^-13   *  .845B4248CD0173 */
-/* q1     =  1.1363478204690669916E-1    , Hex  2^ -3   *  .E8B95A44A2EC45 */
-/* q2     =  1.2624568129896839182E-3    , Hex  2^ -9   *  .A5790572E4F5E7 */
-/* q3     =  1.5021856115869022674E-6    ; Hex  2^-19   *  .C99EB4604AC395 */
-static long        p1x[] = { _0x(3abe,3d78), _0x(066a,67e1)};
-static long        p2x[] = { _0x(5b42,3984), _0x(0173,48cd)};
-static long        q1x[] = { _0x(b95a,3ee8), _0x(ec45,44a2)};
-static long        q2x[] = { _0x(7905,3ba5), _0x(f5e7,72e4)};
-static long        q3x[] = { _0x(9eb4,36c9), _0x(c395,604a)};
-#define       p1    (*(double*)p1x)
-#define       p2    (*(double*)p2x)
-#define       q1    (*(double*)q1x)
-#define       q2    (*(double*)q2x)
-#define       q3    (*(double*)q3x)
-#else	/* defined(vax)||defined(tahoe)	*/
-static double 
-p1     =  1.3887401997267371720E-2    , /*Hex  2^ -7   *  1.C70FF8B3CC2CF */
-p2     =  3.3044019718331897649E-5    , /*Hex  2^-15   *  1.15317DF4526C4 */
-q1     =  1.1110813732786649355E-1    , /*Hex  2^ -4   *  1.C719538248597 */
-q2     =  9.9176615021572857300E-4    ; /*Hex  2^-10   *  1.03FC4CB8C98E8 */
-#endif	/* defined(vax)||defined(tahoe)	*/
+#include "mathimpl.h"
+
+vc(p1, 1.5150724356786683059E-2 ,3abe,3d78,066a,67e1,  -6, .F83ABE67E1066A)
+vc(p2, 6.3112487873718332688E-5 ,5b42,3984,0173,48cd, -13, .845B4248CD0173)
+vc(q1, 1.1363478204690669916E-1 ,b95a,3ee8,ec45,44a2,  -3, .E8B95A44A2EC45)
+vc(q2, 1.2624568129896839182E-3 ,7905,3ba5,f5e7,72e4,  -9, .A5790572E4F5E7)
+vc(q3, 1.5021856115869022674E-6 ,9eb4,36c9,c395,604a, -19, .C99EB4604AC395)
+
+ic(p1, 1.3887401997267371720E-2,  -7, 1.C70FF8B3CC2CF)
+ic(p2, 3.3044019718331897649E-5, -15, 1.15317DF4526C4)
+ic(q1, 1.1110813732786649355E-1,  -4, 1.C719538248597)
+ic(q2, 9.9176615021572857300E-4, -10, 1.03FC4CB8C98E8)
+
+#ifdef vccast
+#define       p1    vccast(p1)
+#define       p2    vccast(p2)
+#define       q1    vccast(q1)
+#define       q2    vccast(q2)
+#define       q3    vccast(q3)
+#endif
 
 double exp__E(x,c)
 double x,c;
 {
-	static double zero=0.0, one=1.0, half=1.0/2.0, small=1.0E-19;
-	double copysign(),z,p,q,xp,xh,w;
+	const static double zero=0.0, one=1.0, half=1.0/2.0, small=1.0E-19;
+	double z,p,q,xp,xh,w;
 	if(copysign(x,one)>small) {
            z = x*x  ;
 	   p = z*( p1 +z* p2 );

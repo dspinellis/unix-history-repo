@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)acosh.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)acosh.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /* ACOSH(X)
@@ -61,29 +61,23 @@ static char sccsid[] = "@(#)acosh.c	5.3 (Berkeley) %G%";
  * shown.
  */
 
-#if defined(vax)||defined(tahoe)	/* VAX D format */
-#ifdef vax
-#define _0x(A,B)	0x/**/A/**/B
-#else	/* vax */
-#define _0x(A,B)	0x/**/B/**/A
-#endif	/* vax */
-/* static double */
-/* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
-/* ln2lo  =  1.6465949582897081279E-12   ; Hex  2^-39   *  .E7BCD5E4F1D9CC */
-static long     ln2hix[] = { _0x(7217,4031), _0x(0000,f7d0)};
-static long     ln2lox[] = { _0x(bcd5,2ce7), _0x(d9cc,e4f1)};
-#define    ln2hi    (*(double*)ln2hix)
-#define    ln2lo    (*(double*)ln2lox)
-#else	/* defined(vax)||defined(tahoe) */
-static double
-ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
-ln2lo  =  1.9082149292705877000E-10   ; /*Hex  2^-33   *  1.A39EF35793C76 */
-#endif	/* defined(vax)||defined(tahoe) */
+#include "mathimpl.h"
+
+vc(ln2hi, 6.9314718055829871446E-1  ,7217,4031,0000,f7d0,   0, .B17217F7D00000)
+vc(ln2lo, 1.6465949582897081279E-12 ,bcd5,2ce7,d9cc,e4f1, -39, .E7BCD5E4F1D9CC)
+
+ic(ln2hi, 6.9314718036912381649E-1,  -1, 1.62E42FEE00000)
+ic(ln2lo, 1.9082149292705877000E-10,-33, 1.A39EF35793C76)
+
+#ifdef vccast
+#define    ln2hi    vccast(ln2hi)
+#define    ln2lo    vccast(ln2lo)
+#endif
 
 double acosh(x)
 double x;
 {	
-	double log1p(),sqrt(),t,big=1.E20; /* big+1==big */
+	double t,big=1.E20; /* big+1==big */
 
 #if !defined(vax)&&!defined(tahoe)
 	if(x!=x) return(x);	/* x is NaN */

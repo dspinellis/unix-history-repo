@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)support.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)support.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /* 
@@ -62,23 +62,23 @@ static char sccsid[] = "@(#)support.c	5.3 (Berkeley) %G%";
  * REVISED BY K.C. NG on 1/22/85, 2/13/85, 3/24/85.
  */
 
+#include "mathimpl.h"
 
 #if defined(vax)||defined(tahoe)      /* VAX D format */
 #include <errno.h>
-    static unsigned short msign=0x7fff , mexp =0x7f80 ;
-    static short  prep1=57, gap=7, bias=129           ;   
-    static double novf=1.7E38, nunf=3.0E-39, zero=0.0 ;
+    static const unsigned short msign=0x7fff , mexp =0x7f80 ;
+    static const short  prep1=57, gap=7, bias=129           ;   
+    static const double novf=1.7E38, nunf=3.0E-39, zero=0.0 ;
 #else	/* defined(vax)||defined(tahoe) */
-    static unsigned short msign=0x7fff, mexp =0x7ff0  ;
-    static short prep1=54, gap=4, bias=1023           ;
-    static double novf=1.7E308, nunf=3.0E-308,zero=0.0;
+    static const unsigned short msign=0x7fff, mexp =0x7ff0  ;
+    static const short prep1=54, gap=4, bias=1023           ;
+    static const double novf=1.7E308, nunf=3.0E-308,zero=0.0;
 #endif	/* defined(vax)||defined(tahoe) */
 
 double scalb(x,N)
 double x; int N;
 {
         int k;
-        double scalb();
 
 #ifdef national
         unsigned short *px=(unsigned short *) &x + 3;
@@ -93,7 +93,6 @@ double x; int N;
             if (N < -260)
 		return(nunf*nunf);
 	    else if (N > 260) {
-		extern double infnan(),copysign();
 		return(copysign(infnan(ERANGE),x));
 	    }
 #else	/* defined(vax)||defined(tahoe) */
@@ -181,7 +180,7 @@ double drem(x,p)
 double x,p;
 {
         short sign;
-        double hp,dp,tmp,drem(),scalb();
+        double hp,dp,tmp;
         unsigned short  k; 
 #ifdef national
         unsigned short
@@ -207,7 +206,6 @@ double x,p;
 		return  (x-p)-(x-p);	/* create nan if x is inf */
 	if (p == zero) {
 #if defined(vax)||defined(tahoe)
-		extern double infnan();
 		return(infnan(EDOM));
 #else	/* defined(vax)||defined(tahoe) */
 		return zero/zero;
@@ -257,13 +255,15 @@ double x,p;
 
             }
 }
+
+
 double sqrt(x)
 double x;
 {
         double q,s,b,r;
-        double logb(),scalb();
-        double t,zero=0.0;
-        int m,n,i,finite();
+        double t;
+	double const zero=0.0;
+        int m,n,i;
 #if defined(vax)||defined(tahoe)
         int k=54;
 #else	/* defined(vax)||defined(tahoe) */
@@ -276,7 +276,6 @@ double x;
     /* sqrt(negative) is invalid */
         if(x<zero) {
 #if defined(vax)||defined(tahoe)
-		extern double infnan();
 		return (infnan(EDOM));	/* NaN */
 #else	/* defined(vax)||defined(tahoe) */
 		return(zero/zero);
@@ -343,13 +342,13 @@ double x,y;
 {
 
 #ifdef national		/* order of words in floating point number */
-	static n0=3,n1=2,n2=1,n3=0;
+	static const n0=3,n1=2,n2=1,n3=0;
 #else /* VAX, SUN, ZILOG, TAHOE */
-	static n0=0,n1=1,n2=2,n3=3;
+	static const n0=0,n1=1,n2=2,n3=3;
 #endif
 
-    	static unsigned short mexp =0x7ff0, m25 =0x0190, m57 =0x0390;
-	static double zero=0.0;
+    	static const unsigned short mexp =0x7ff0, m25 =0x0190, m57 =0x0390;
+	static const double zero=0.0;
 	double hy,y1,t,t1;
 	short k;
 	long n;
@@ -434,7 +433,7 @@ loop:
  *     subc(t)     ...perform t=t-1 regarding t as a 64 bit unsigned integer
  */
 
-static unsigned long table[] = {
+static const unsigned long table[] = {
 0, 1204, 3062, 5746, 9193, 13348, 18162, 23592, 29598, 36145, 43202, 50740,
 58733, 67158, 75992, 85215, 83599, 71378, 60428, 50647, 41945, 34246, 27478,
 21581, 16499, 12183, 8588, 5674, 3403, 1742, 661, 130, };
@@ -442,23 +441,26 @@ static unsigned long table[] = {
 double newsqrt(x)
 double x;
 {
-        double y,z,t,addc(),subc(),b54=134217728.*134217728.; /* b54=2**54 */
-        long mx,scalx,mexp=0x7ff00000;
+        double y,z,t,addc(),subc()
+	double const b54=134217728.*134217728.; /* b54=2**54 */
+        long mx,scalx;
+	long const mexp=0x7ff00000;
         int i,j,r,e,swapINX(),swapRM(),swapENI();       
         unsigned long *py=(unsigned long *) &y   ,
                       *pt=(unsigned long *) &t   ,
                       *px=(unsigned long *) &x   ;
 #ifdef national         /* ordering of word in a floating point number */
-        int n0=1, n1=0; 
+        const int n0=1, n1=0; 
 #else
-        int n0=0, n1=1; 
+        const int n0=0, n1=1; 
 #endif
 /* Rounding Mode:  RN ...round-to-nearest 
  *                 RZ ...round-towards 0
  *                 RP ...round-towards +INF
  *		   RM ...round-towards -INF
  */
-        int RN=0,RZ=1,RP=2,RM=3;/* machine dependent: work on a Zilog Z8070
+        const int RN=0,RZ=1,RP=2,RM=3;
+				/* machine dependent: work on a Zilog Z8070
                                  * and a National 32081 & 16081
                                  */
 

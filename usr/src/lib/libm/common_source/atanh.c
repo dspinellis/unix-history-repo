@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)atanh.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)atanh.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /* ATANH(X)
@@ -50,6 +50,8 @@ static char sccsid[] = "@(#)atanh.c	5.3 (Berkeley) %G%";
  *	observed error was 1.87 ulps (units in the last place) at
  *	x= -3.8962076028810414000e-03.
  */
+#include "mathimpl.h"
+
 #if defined(vax)||defined(tahoe)
 #include <errno.h>
 #endif	/* defined(vax)||defined(tahoe) */
@@ -57,12 +59,11 @@ static char sccsid[] = "@(#)atanh.c	5.3 (Berkeley) %G%";
 double atanh(x)
 double x;
 {
-	double copysign(),log1p(),z;
+	double z;
 	z = copysign(0.5,x);
 	x = copysign(x,1.0);
 #if defined(vax)||defined(tahoe)
 	if (x == 1.0) {
-	    extern double infnan();
 	    return(copysign(1.0,z)*infnan(ERANGE));	/* sign(x)*INF */
 	}
 #endif	/* defined(vax)||defined(tahoe) */

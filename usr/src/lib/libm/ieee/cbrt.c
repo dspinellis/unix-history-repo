@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cbrt.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cbrt.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /* kahan's cube root (53 bits IEEE double precision)
@@ -42,9 +42,10 @@ static char sccsid[] = "@(#)cbrt.c	5.4 (Berkeley) %G%";
  */
 #if !defined(vax)&&!defined(tahoe)
 
-static unsigned long B1 = 715094163, /* B1 = (682-0.03306235651)*2**20 */
+static const unsigned long
+		     B1 = 715094163, /* B1 = (682-0.03306235651)*2**20 */
 	             B2 = 696219795; /* B2 = (664-0.03306235651)*2**20 */
-static double
+static const double
 	    C= 19./35.,
 	    D= -864./1225.,
 	    E= 99./70.,
@@ -60,9 +61,9 @@ double x;
 		      mexp,sign;
 
 #ifdef national /* ordering of words in a floating points number */
-	int n0=1,n1=0;
+	const int n0=1,n1=0;
 #else	/* national */
-	int n0=0,n1=1;
+	const int n0=0,n1=1;
 #endif	/* national */
 
 	mexp=px[n0]&0x7ff00000;

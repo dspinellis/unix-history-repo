@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lgamma.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)lgamma.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -23,17 +23,18 @@ static char sccsid[] = "@(#)lgamma.c	5.2 (Berkeley) %G%";
 	Calls log, floor and sin.
 */
 
-#include <math.h>
+#include "mathimpl.h"
 #if defined(vax)||defined(tahoe)
 #include <errno.h>
 #endif	/* defined(vax)||defined(tahoe) */
+
 int	signgam = 0;
-static double goobie	= 0.9189385332046727417803297;	/* log(2*pi)/2 */
-static double pi	= 3.1415926535897932384626434;
+static const double goobie = 0.9189385332046727417803297;  /* log(2*pi)/2 */
+static const double pi	   = 3.1415926535897932384626434;
 
 #define M 6
 #define N 8
-static double p1[] = {
+static const double p1[] = {
 	0.83333333333333101837e-1,
 	-.277777777735865004e-2,
 	0.793650576493454e-3,
@@ -41,7 +42,7 @@ static double p1[] = {
 	0.83645878922e-3,
 	-.1633436431e-2,
 };
-static double p2[] = {
+static const double p2[] = {
 	-.42353689509744089647e5,
 	-.20886861789269887364e5,
 	-.87627102978521489560e4,
@@ -51,7 +52,7 @@ static double p2[] = {
 	-.67449507245925289918e1,
 	0.0,
 };
-static double q2[] = {
+static const double q2[] = {
 	-.42353689509744090010e5,
 	-.29803853309256649932e4,
 	0.99403074150827709015e4,
@@ -62,11 +63,12 @@ static double q2[] = {
 	0.10000000000000000000e1,
 };
 
+static double pos(), neg(), asym();
+
 double
 lgamma(arg)
 double arg;
 {
-	double log(), pos(), neg(), asym();
 
 	signgam = 1.;
 	if(arg <= 0.) return(neg(arg));
@@ -78,7 +80,6 @@ static double
 asym(arg)
 double arg;
 {
-	double log();
 	double n, argsq;
 	int i;
 
@@ -94,7 +95,6 @@ neg(arg)
 double arg;
 {
 	double t;
-	double log(), sin(), floor(), pos();
 
 	arg = -arg;
      /*
@@ -112,7 +112,6 @@ double arg;
 	    t += 1.e0;				/* t := integer nearest arg */
 #if defined(vax)||defined(tahoe)
 	if (arg == t) {
-	    extern double infnan();
 	    return(infnan(ERANGE));		/* +INF */
 	}
 #endif	/* defined(vax)||defined(tahoe) */
