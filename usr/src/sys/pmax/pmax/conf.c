@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.4 (Berkeley) %G%
+ *	@(#)conf.c	7.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -113,6 +113,13 @@ int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 	(dev_type_reset((*))) nullop, dev_tty_init(c,n), ttselect, \
 	(dev_type_map((*))) enodev, 0 }
 
+/* open, close, read, write, ioctl, select -- XXX should be a tty */
+#define	cdev_cn_init(c,n) { \
+	dev_init(c,n,open), dev_init(c,n,close), dev_init(c,n,read), \
+	dev_init(c,n,write), dev_init(c,n,ioctl), (dev_type_stop((*))) nullop, \
+	(dev_type_reset((*))) nullop, 0, dev_init(c,n,select), \
+	(dev_type_map((*))) enodev, 0 }
+
 #define	cdev_notdef() { \
 	(dev_type_open((*))) enodev, (dev_type_close((*))) enodev, \
 	(dev_type_read((*))) enodev, (dev_type_write((*))) enodev, \
@@ -122,13 +129,7 @@ int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
 cdev_decl(no);			/* dummy declarations */
 
-cdev_decl(dc);
-/* open, close, read, write, ioctl, select -- XXX should be a tty */
-#define	cdev_dc_init(c,n) { \
-	dev_init(c,n,open), dev_init(c,n,close), dev_init(c,n,read), \
-	dev_init(c,n,write), dev_init(c,n,ioctl), (dev_type_stop((*))) nullop, \
-	(dev_type_reset((*))) nullop, 0, ttselect, \
-	(dev_type_map((*))) enodev, 0 }
+cdev_decl(cn);		/* console interface */
 
 cdev_decl(ctty);
 /* open, read, write, ioctl, select -- XXX should be a tty */
@@ -218,9 +219,21 @@ cdev_decl(bpf);
 #include "cfb.h"
 cdev_decl(cfb);
 
+#include "xcfb.h"
+cdev_decl(xcfb);
+
+#include "dtop.h"
+cdev_decl(dtop);
+
+#include "scc.h"
+cdev_decl(scc);
+
+#include "dc.h"
+cdev_decl(dc);
+
 struct cdevsw	cdevsw[] =
 {
-	cdev_dc_init(1,dc),		/* 0: virtual console */
+	cdev_cn_init(1,cn),		/* 0: virtual console */
 	cdev_ctty_init(1,ctty),		/* 1: controlling terminal */
 	cdev_mm_init(1,mm),		/* 2: /dev/{null,mem,kmem,...} */
 	cdev_swap_init(1,sw),		/* 3: /dev/drum (swap pseudo-device) */
@@ -234,6 +247,10 @@ struct cdevsw	cdevsw[] =
 	cdev_vn_init(NVN,vn),		/* 11: vnode disk */
 	cdev_bpf_init(NBPFILTER,bpf),	/* 12: berkeley packet filter */
 	cdev_pm_init(NCFB,cfb),		/* 13: color frame buffer */
+	cdev_pm_init(NXCFB,xcfb),	/* 14: maxine color frame buffer */
+	cdev_tty_init(NDTOP,dtop),	/* 15: desktop bus interface */
+	cdev_tty_init(NDC,dc),		/* 16: dc7085 serial interface */
+	cdev_tty_init(NSCC,scc),	/* 17: scc 82530 serial interface */
 };
 
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);

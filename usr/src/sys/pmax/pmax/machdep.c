@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.11 (Berkeley) %G%
+ *	@(#)machdep.c	7.12 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -43,12 +43,52 @@
 #include <machine/cpu.h>
 #include <machine/reg.h>
 #include <machine/psl.h>
-#include <machine/machMon.h>
 #include <machine/pte.h>
+#include <machine/dc7085cons.h>
+
+#include <pmax/stand/dec_prom.h>
 
 #include <pmax/dev/device.h>
+#include <pmax/dev/sccreg.h>
 
 #include <pmax/pmax/clockreg.h>
+#include <pmax/pmax/kn01.h>
+#include <pmax/pmax/kn02.h>
+#include <pmax/pmax/kmin.h>
+#include <pmax/pmax/maxine.h>
+#include <pmax/pmax/asic.h>
+#include <pmax/pmax/turbochannel.h>
+#include <pmax/pmax/pmaxtype.h>
+#include <pmax/pmax/cons.h>
+
+#include <pm.h>
+#include <cfb.h>
+#include <mfb.h>
+#include <xcfb.h>
+#include <dc.h>
+#include <dtop.h>
+#include <scc.h>
+#include <le.h>
+
+#if NDC > 0
+extern int dcGetc(), dcparam();
+extern void dcPutc();
+#endif
+#if NDTOP > 0
+extern int dtopKBDGetc();
+#endif
+#if NSCC > 0
+extern int sccGetc(), sccparam();
+extern void sccPutc();
+#endif
+extern int KBDGetc();
+extern void fbPutc();
+extern struct consdev cn_tab;
+
+/* Will scan from max to min, inclusive */
+static int tc_max_slot = KN02_TC_MAX;
+static int tc_min_slot = KN02_TC_MIN;
+
 
 vm_map_t buffer_map;
 
@@ -59,16 +99,44 @@ int	nswbuf = 0;
 #ifdef	NBUF
 int	nbuf = NBUF;
 #else
-int	nbuf = 0;
+int	nbuf = 1024;
 #endif
 #ifdef	BUFPAGES
 int	bufpages = BUFPAGES;
 #else
-int	bufpages = 0;
+int	bufpages = 1024;
 #endif
-int	msgbufmapped;		/* set when safe to use msgbuf */
+int	msgbufmapped = 0;	/* set when safe to use msgbuf */
 int	maxmem;			/* max memory per process */
 int	physmem;		/* max supported memory, changes to actual */
+int	pmax_boardtype;		/* Mother board type */
+u_long	le_iomem;		/* 128K for lance chip via. ASIC */
+const	struct callback *callv;	/* pointer to PROM entry points */
+
+void	(*tc_enable_interrupt)();
+extern	int (*pmax_hardware_intr)();
+void	pmax_slot_hand_fill();
+int	kn02_intr(), kmin_intr(), xine_intr(), pmax_intr();
+extern	int Mach_spl0(), Mach_spl1(), Mach_spl2(), Mach_spl3(), splhigh();
+int	(*Mach_splnet)() = splhigh;
+int	(*Mach_splbio)() = splhigh;
+int	(*Mach_splimp)() = splhigh;
+int	(*Mach_spltty)() = splhigh;
+int	(*Mach_splclock)() = splhigh;
+int	(*Mach_splstatclock)() = splhigh;
+void	(*tc_slot_hand_fill)();
+extern	volatile struct chiptime *Mach_clock_addr;
+u_long	kmin_tc3_imask, xine_tc3_imask;
+tc_option_t tc_slot_info[TC_MAX_LOGICAL_SLOTS];
+static	void asic_init();
+extern	void RemconsInit();
+#ifdef DS5000
+void	kn02_enable_intr(), kn02_slot_hand_fill(),
+	kmin_enable_intr(), kmin_slot_hand_fill(),
+	xine_enable_intr(), xine_slot_hand_fill(),
+	tc_find_all_options();
+#endif /* DS5000 */
+
 /*
  * safepri is a safe priority for sleep to set for a spin-wait
  * during autoconfiguration or after a panic.
@@ -83,9 +151,11 @@ struct	proc nullproc;		/* for use by swtch_exit() */
  * Process arguments passed to us by the prom monitor.
  * Return the first page address following the system.
  */
-mach_init(argc, argv)
+mach_init(argc, argv, code, cv)
 	int argc;
 	char *argv[];
+	u_int code;
+	const struct callback *cv;
 {
 	register char *cp;
 	register int i;
@@ -103,13 +173,11 @@ mach_init(argc, argv)
 	v = (caddr_t)pmax_round_page(end);
 	bzero(edata, v - edata);
 
-#ifdef DS5000
 	/* check for direct boot from DS5000 PROM */
 	if (argc > 0 && strcmp(argv[0], "boot") == 0) {
 		argc--;
 		argv++;
 	}
-#endif
 
 	/* look at argv[0] and compute bootdev */
 	makebootdev(argv[0]);
@@ -212,47 +280,65 @@ mach_init(argc, argv)
 	/*
 	 * Determine what model of computer we are running on.
 	 */
-	{
-		char *(*f)() = (char *(*)())MACH_MON_GETENV2;
-
-		if (cp = (*f)("systype"))
+	if (code == DEC_PROM_MAGIC) {
+		callv = cv;
+		i = (*cv->getsysid)();
+		cp = "";
+	} else {
+		callv = &callvec;
+		if (cp = (*callv->getenv)("systype"))
 			i = atoi(cp);
-		else
+		else {
 			cp = "";
-
-		/* check for MIPS based platform */
-		if (((i >> 24) & 0xFF) != 0x82) {
-			printf("Unknown System type '%s'\n", cp);
-			boot(RB_HALT | RB_NOSYNC);
+			i = 0;
 		}
+	}
+	/* check for MIPS based platform */
+	if (((i >> 24) & 0xFF) != 0x82) {
+		printf("Unknown System type '%s'\n", cp);
+		boot(RB_HALT | RB_NOSYNC);
 	}
 
 	/* check what model platform we are running on */
-	switch ((i >> 16) & 0xFF) {
-#ifdef DS3100
-	case 1:	/* DS3100 Pmax */
+	pmax_boardtype = ((i >> 16) & 0xff);
+	switch (pmax_boardtype) {
+	case DS_PMAX:	/* DS3100 Pmax */
 		/*
-		 * Find out how much memory is available.
+		 * Set up interrupt handling and I/O addresses.
 		 */
-		physmem = btoc(v - KERNBASE);
-		cp = (char *)MACH_PHYS_TO_UNCACHED(physmem << PGSHIFT);
-		while (cp < (char *)MACH_MAX_MEM_ADDR) {
-			if (badaddr(cp, 4))
-				break;
-			cp += NBPG;
-			physmem++;
-		}
+		pmax_hardware_intr = pmax_intr;
+		Mach_splnet = Mach_spl1;
+		Mach_splbio = Mach_spl0;
+		Mach_splimp = Mach_spl1;
+		Mach_spltty = Mach_spl2;
+		Mach_splclock = Mach_spl3;
+		Mach_splstatclock = Mach_spl3;
+		Mach_clock_addr = (volatile struct chiptime *)
+			MACH_PHYS_TO_UNCACHED(KN01_SYS_CLOCK);
+		pmax_slot_hand_fill();
 		break;
-#endif
 
 #ifdef DS5000
-	case 2:	/* DS5000 3max */
-	    {
-		extern void tc_find_all_options();
+	case DS_3MAX:	/* DS5000/200 3max */
+		{
+		volatile int *csr_addr =
+			(volatile int *)MACH_PHYS_TO_UNCACHED(KN02_SYS_CSR);
 
 		/* disable all TURBOchannel interrupts */
-		i = *(volatile int *)MACH_SYS_CSR_ADDR;
-		*(volatile int *)MACH_SYS_CSR_ADDR = i & ~(MACH_CSR_MBZ | 0xFF);
+		i = *csr_addr;
+		*csr_addr = i & ~(KN02_CSR_WRESERVED | 0xFF);
+
+		tc_slot_hand_fill = kn02_slot_hand_fill;
+		pmax_hardware_intr = kn02_intr;
+		tc_enable_interrupt = kn02_enable_intr;
+		Mach_splnet = Mach_spl0;
+		Mach_splbio = Mach_spl0;
+		Mach_splimp = Mach_spl0;
+		Mach_spltty = Mach_spl0;
+		Mach_splclock = Mach_spl1;
+		Mach_splstatclock = Mach_spl1;
+		Mach_clock_addr = (volatile struct chiptime *)
+			MACH_PHYS_TO_UNCACHED(KN02_SYS_CLOCK);
 
 		/*
 		 * Probe the TURBOchannel to see what controllers are present.
@@ -260,40 +346,114 @@ mach_init(argc, argv)
 		tc_find_all_options();
 
 		/* clear any memory errors from probes */
-		*(unsigned *)MACH_ERROR_ADDR = 0;
-
-		/*
-		 * Find out how much memory is available.
-		 */
-		physmem = btoc(v - KERNBASE);
-		cp = (char *)MACH_PHYS_TO_UNCACHED(physmem << PGSHIFT);
-		while (cp < (char *)MACH_MAX_MEM_ADDR) {
-			if (badaddr(cp, 4))
-				break;
-			*(int *)cp = 0xa5a5a5a5;
-			/*
-			 * Data will persist on the bus if we read it right
-			 * away. Have to be tricky here.
-			 */
-			((int *)cp)[4] = 0x5a5a5a5a;
-			MachEmptyWriteBuffer();
-			if (*(int *)cp != 0xa5a5a5a5)
-				break;
-			cp += NBPG;
-			physmem++;
+		*(unsigned *)MACH_PHYS_TO_UNCACHED(KN02_SYS_ERRADR) = 0;
 		}
 		break;
-	    }
-#endif DS5000
 
-	case 5:	/* DS5800 Isis */
-	case 6:	/* DS5400 MIPSfair */
+	case DS_3MIN:	/* DS5000/1xx 3min */
+		tc_max_slot = KMIN_TC_MAX;
+		tc_min_slot = KMIN_TC_MIN;
+		tc_slot_hand_fill = kmin_slot_hand_fill;
+		pmax_hardware_intr = kmin_intr;
+		tc_enable_interrupt = kmin_enable_intr;
+
+		/*
+		 * Since all the motherboard interrupts come through the
+		 * I/O ASIC, it has to be turned off for all the spls and
+		 * since we don't know what kinds of devices are in the
+		 * turbochannel option slots, just splhigh().
+		 */
+		Mach_splnet = splhigh;
+		Mach_splbio = splhigh;
+		Mach_splimp = splhigh;
+		Mach_spltty = splhigh;
+		Mach_splclock = splhigh;
+		Mach_splstatclock = splhigh;
+		Mach_clock_addr = (volatile struct chiptime *)
+			MACH_PHYS_TO_UNCACHED(KMIN_SYS_CLOCK);
+
+		/*
+		 * Probe the TURBOchannel to see what controllers are present.
+		 */
+		tc_find_all_options();
+
+		/*
+		 * Initialize interrupts.
+		 */
+		*(u_int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_IMSK) = KMIN_IM0;
+		*(u_int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_INTR) = 0;
+		/* clear any memory errors from probes */
+		*(unsigned *)MACH_PHYS_TO_UNCACHED(KMIN_REG_TIMEOUT) = 0;
+		break;
+
+	case DS_MAXINE:	/* DS5000/xx maxine */
+		tc_max_slot = XINE_TC_MAX;
+		tc_min_slot = XINE_TC_MIN;
+		tc_slot_hand_fill = xine_slot_hand_fill;
+		pmax_hardware_intr = xine_intr;
+		tc_enable_interrupt = xine_enable_intr;
+		Mach_splnet = Mach_spl3;
+		Mach_splbio = Mach_spl3;
+		Mach_splimp = Mach_spl3;
+		Mach_spltty = Mach_spl3;
+		Mach_splclock = Mach_spl1;
+		Mach_splstatclock = Mach_spl1;
+		Mach_clock_addr = (volatile struct chiptime *)
+			MACH_PHYS_TO_UNCACHED(XINE_SYS_CLOCK);
+
+		/*
+		 * Probe the TURBOchannel to see what controllers are present.
+		 */
+		tc_find_all_options();
+
+		/*
+		 * Initialize interrupts.
+		 */
+		*(u_int *)MACH_PHYS_TO_UNCACHED(XINE_REG_IMSK) = XINE_IM0;
+		*(u_int *)MACH_PHYS_TO_UNCACHED(XINE_REG_INTR) = 0;
+		/* clear any memory errors from probes */
+		*(unsigned *)MACH_PHYS_TO_UNCACHED(XINE_REG_TIMEOUT) = 0;
+		break;
+#endif /* DS5000 */
+
 	default:
 		printf("kernel not configured for systype 0x%x\n", i);
 		boot(RB_HALT | RB_NOSYNC);
 	}
 
+	/*
+	 * Find out how much memory is available.
+	 */
+	physmem = btoc(v - KERNBASE);
+	cp = (char *)MACH_PHYS_TO_UNCACHED(physmem << PGSHIFT);
+	while (cp < (char *)MACH_MAX_MEM_ADDR) {
+		if (badaddr(cp, 4))
+			break;
+		*(int *)cp = 0xa5a5a5a5;
+		/*
+		 * Data will persist on the bus if we read it right
+		 * away. Have to be tricky here.
+		 */
+		((int *)cp)[4] = 0x5a5a5a5a;
+		MachEmptyWriteBuffer();
+		if (*(int *)cp != 0xa5a5a5a5)
+			break;
+		cp += NBPG;
+		physmem++;
+	}
+
 	maxmem = physmem;
+
+#if NLE > 0
+	/*
+	 * Grab 128K at the top of physical memory for the lance chip
+	 * on machines where it does dma through the I/O ASIC.
+	 */
+	if (pmax_boardtype == DS_3MIN || pmax_boardtype == DS_MAXINE) {
+		maxmem -= btoc(128 * 1024);
+		le_iomem = (maxmem << PGSHIFT);
+	}
+#endif /* NLE */
 
 	/*
 	 * Initialize error message buffer (at end of core).
@@ -366,31 +526,164 @@ mach_init(argc, argv)
  * Console initialization: called early on from main,
  * before vm init or startup.  Do enough configuration
  * to choose and initialize a console.
- * XXX need something better here.
  */
 consinit()
 {
+	register int kbd, crt;
+	register char *oscon;
 
-#include "pm.h"
-#if NPM > 0
-	if (pminit())
-		return;
-#endif
-
-#include "cfb.h"
-#if NCFB > 0
-	{
-		register struct pmax_ctlr *cp;
-		register struct driver *drp;
-
-		for (cp = pmax_cinit; drp = cp->pmax_driver; cp++) {
-			if (strcmp(drp->d_name, "cfb"))
-				continue;
-			if (cfb_init(cp))
-				return;
+	/*
+	 * First get the "osconsole" environment variable.
+	 */
+	oscon = (*callv->getenv)("osconsole");
+	crt = kbd = -1;
+	if (oscon && *oscon >= '0' && *oscon <= '9') {
+		kbd = *oscon - '0';
+		cn_tab.cn_screen = 0;
+		while (*++oscon) {
+			if (*oscon == ',')
+				cn_tab.cn_screen = 1;
+			else if (cn_tab.cn_screen &&
+			    *oscon >= '0' && *oscon <= '9') {
+				crt = kbd;
+				kbd = *oscon - '0';
+				break;
+			}
 		}
 	}
-#endif
+	if (pmax_boardtype == DS_PMAX && kbd == 1)
+		cn_tab.cn_screen = 1;
+
+	/*
+	 * First try the keyboard/crt cases then fall through to the
+	 * remote serial lines.
+	 */
+	if (cn_tab.cn_screen) {
+	    switch (pmax_boardtype) {
+	    case DS_PMAX:
+#if NDC > 0 && NPM > 0
+		if (pminit()) {
+			cn_tab.cn_dev = makedev(DCDEV, DCKBD_PORT);
+			cn_tab.cn_getc = KBDGetc;
+			cn_tab.cn_kbdgetc = dcGetc;
+			cn_tab.cn_putc = fbPutc;
+			cn_tab.cn_disabled = 0;
+			return;
+		}
+#endif /* NDC and NPM */
+		goto remcons;
+
+	    case DS_MAXINE:
+#if NDTOP > 0
+		if (kbd == 3) {
+			cn_tab.cn_dev = makedev(DTOPDEV, 0);
+			cn_tab.cn_getc = dtopKBDGetc;
+			cn_tab.cn_putc = fbPutc;
+		} else
+#endif /* NDTOP */
+			goto remcons;
+#if NXCFB > 0
+		if (crt == 3 && xcfbinit()) {
+			cn_tab.cn_disabled = 0;
+			return;
+		}
+#endif /* XCFB */
+		break;
+
+	    case DS_3MAX:
+#if NDC > 0
+		if (kbd == 7) {
+			cn_tab.cn_dev = makedev(DCDEV, DCKBD_PORT);
+			cn_tab.cn_getc = KBDGetc;
+			cn_tab.cn_kbdgetc = dcGetc;
+			cn_tab.cn_putc = fbPutc;
+		} else
+#endif /* NDC */
+			goto remcons;
+		break;
+
+	    case DS_3MIN:
+#if NSCC > 0
+		if (kbd == 3) {
+			cn_tab.cn_dev = makedev(SCCDEV, SCCKBD_PORT);
+			cn_tab.cn_getc = KBDGetc;
+			cn_tab.cn_kbdgetc = sccGetc;
+			cn_tab.cn_putc = fbPutc;
+		} else
+#endif /* NSCC */
+			goto remcons;
+		break;
+
+	    default:
+		goto remcons;
+	    };
+
+	    /*
+	     * Check for a suitable turbochannel frame buffer.
+	     */
+	    if (tc_slot_info[crt].driver_name) {
+#if NMFB > 0
+		if (strcmp(tc_slot_info[crt].driver_name, "mfb") == 0 &&
+		    mfbinit(tc_slot_info[crt].k1seg_address)) {
+			cn_tab.cn_disabled = 0;
+			return;
+		}
+#endif /* NMFB */
+#if NCFB > 0
+		if (strcmp(tc_slot_info[crt].driver_name, "cfb") == 0 &&
+		    cfbinit(tc_slot_info[crt].k1seg_address)) {
+			cn_tab.cn_disabled = 0;
+			return;
+		}
+#endif /* NCFB */
+		printf("crt: %s not supported as console device\n",
+			tc_slot_info[crt].driver_name);
+	    } else
+		printf("No crt console device in slot %d\n", crt);
+	}
+remcons:
+	/*
+	 * Configure a serial port as a remote console.
+	 */
+	cn_tab.cn_screen = 0;
+	switch (pmax_boardtype) {
+	case DS_PMAX:
+#if NDC > 0
+		if (kbd == 4)
+			cn_tab.cn_dev = makedev(DCDEV, DCCOMM_PORT);
+		else
+			cn_tab.cn_dev = makedev(DCDEV, DCPRINTER_PORT);
+		cn_tab.cn_getc = dcGetc;
+		cn_tab.cn_putc = dcPutc;
+#endif /* NDC */
+		break;
+
+	case DS_3MAX:
+#if NDC > 0
+		cn_tab.cn_dev = makedev(DCDEV, DCPRINTER_PORT);
+		cn_tab.cn_getc = dcGetc;
+		cn_tab.cn_putc = dcPutc;
+#endif /* NDC */
+		break;
+
+	case DS_3MIN:
+#if NSCC > 0
+		cn_tab.cn_dev = makedev(SCCDEV, SCCCOMM3_PORT);
+		cn_tab.cn_getc = sccGetc;
+		cn_tab.cn_putc = sccPutc;
+#endif /* NSCC */
+		break;
+
+	case DS_MAXINE:
+#if NSCC > 0
+		cn_tab.cn_dev = makedev(SCCDEV, SCCCOMM2_PORT);
+		cn_tab.cn_getc = sccGetc;
+		cn_tab.cn_putc = sccPutc;
+#endif /* NSCC */
+		break;
+	};
+	if (cn_tab.cn_dev == NODEV)
+		printf("Can't configure console!\n");
 }
 
 /*
@@ -758,17 +1051,24 @@ boot(howto)
 		resettodr();
 	}
 	(void) splhigh();		/* extreme priority */
-	if (howto & RB_HALT) {
-		void (*f)() = (void (*)())MACH_MON_REINIT;
+	if (callv != &callvec) {
+		if (howto & RB_HALT)
+			(*callv->rex)('h');
+		else {
+			if (howto & RB_DUMP)
+				dumpsys();
+			(*callv->rex)('b');
+		}
+	} else if (howto & RB_HALT) {
+		volatile void (*f)() = (volatile void (*)())DEC_PROM_REINIT;
 
 		(*f)();	/* jump back to prom monitor */
 	} else {
-		void (*f)() = (void (*)())MACH_MON_AUTOBOOT;
+		volatile void (*f)() = (volatile void (*)())DEC_PROM_AUTOBOOT;
 
 		if (howto & RB_DUMP)
 			dumpsys();
 		(*f)();	/* jump back to prom monitor and do 'auto' cmd */
-		/*NOTREACHED*/
 	}
 	/*NOTREACHED*/
 }
@@ -882,7 +1182,7 @@ initcpu()
 	int i;
 
 	/* disable clock interrupts (until startrtclock()) */
-	c = (volatile struct chiptime *)MACH_CLOCK_ADDR;
+	c = Mach_clock_addr;
 	c->regb = REGB_DATA_MODE | REGB_HOURS_FORMAT;
 	i = c->regc;
 	spl0();		/* safe to turn interrupts on now */
@@ -927,7 +1227,6 @@ atoi(s)
 			break;
 		default:
 			base = 8;
-			break;
 		}
 	}
 
@@ -949,6 +1248,44 @@ atoi(s)
 		val = -val;
 out:
 	return val;	
+}
+
+/*
+ * Fill in the pmax addresses by hand.
+ */
+static struct pmax_address {
+	char	*pmax_name;
+	char	*pmax_addr;
+	int	pmax_pri;
+} pmax_addresses[] = {
+	{ "pm",	(char *)MACH_PHYS_TO_CACHED(KN01_PHYS_FBUF_START),	3 },
+	{ "dc",	(char *)MACH_PHYS_TO_UNCACHED(KN01_SYS_DZ),		2 },
+	{ "le",	(char *)MACH_PHYS_TO_UNCACHED(KN01_SYS_LANCE),		1 },
+	{ "sii",(char *)MACH_PHYS_TO_UNCACHED(KN01_SYS_SII),		0 },
+	{ (char *)0, },
+};
+
+void
+pmax_slot_hand_fill()
+{
+	register struct pmax_ctlr *cp;
+	register struct driver *drp;
+	register struct pmax_address *pmap;
+
+	/*
+	 * Find the device driver entry and fill in the address.
+	 */
+	for (cp = pmax_cinit; drp = cp->pmax_driver; cp++) {
+		for (pmap = pmax_addresses; pmap->pmax_name; pmap++) {
+			if (strcmp(drp->d_name, pmap->pmax_name))
+				continue;
+			if (cp->pmax_addr == (char *)QUES) {
+				cp->pmax_addr = pmap->pmax_addr;
+				cp->pmax_pri = pmap->pmax_pri;
+				continue;
+			}
+		}
+	}
 }
 
 #ifdef DS5000
@@ -978,7 +1315,6 @@ out:
  * rights to redistribute these changes.
  */
 
-#include <pmax/pmax/turbochannel.h>
 
 /*
  * Driver map: associates a device driver to an option type.
@@ -989,114 +1325,218 @@ struct drivers_map {
 	char	module_name[TC_ROM_LLEN];	/* from ROM, literally! */
 	char	*driver_name;			/* in bus_??_init[] tables */
 } tc_drivers_map[] = {
-	{ "KN02    ",	"dc"},		/* system board, serial I/O */
+	{ "KN02    ",	"dc"},		/* (*) 3max system board (with DC) */
 	{ "PMAD-AA ",	"le"},		/* Ether */
 	{ "PMAZ-AA ",	"asc"},		/* SCSI */
+	{ "PMAG-AA ",	"mfb"},		/* Mono Frame Buffer */
 	{ "PMAG-BA ",	"cfb"},		/* Color Frame Buffer */
 	{ "PMAG-CA ",	"ga"},		/* 2D graphic board */
 	{ "PMAG-DA ",	"gq"},		/* 3D graphic board (LM) */
 	{ "PMAG-FA ",	"gq"},		/* 3D graphic board (HE) */
-
+	{ "PMAG-DV ",	"xcfb"},	/* (*) maxine Color Frame Buffer */
+	{ "Z8530   ",	"scc"},		/* (*) 3min/maxine serial lines */
+	{ "ASIC    ",	"asic"},	/* (*) 3min/maxine DMA controller */
+	{ "XINE-FDC",	"fdc"},		/* (*) maxine floppy controller */
+	{ "DTOP    ",	"dtop"},	/* (*) maxine desktop bus */
+	{ "AMD79c30",	"isdn"},	/* (*) maxine ISDN chip */
+	{ "XINE-FRC",	"frc"},		/* (*) maxine free-running counter */
 	{ "", 0}			/* list end */
 };
 
+/*
+ * Identify an option on the TC.  Looks at the mandatory
+ * info in the option's ROM and checks it.
+ */
 #ifdef DEBUG
 int tc_verbose = 0;
 #endif
 
+static int
+tc_identify_option( addr, slot, complain)
+	tc_rommap_t	*addr;
+	tc_option_t	*slot;
+	int		complain;
+{
+	register int	i;
+	unsigned char   width;
+	char            firmwr[TC_ROM_LLEN+1], vendor[TC_ROM_LLEN+1],
+			module[TC_ROM_LLEN+1], host_type[TC_ROM_SLEN+1];
+
+	/*
+	 * We do not really use the 'width' info, but take advantage
+	 * of the restriction that the spec impose on the portion
+	 * of the ROM that maps between +0x3e0 and +0x470, which
+	 * is the only piece we need to look at.
+	 */
+	width = addr->rom_width.value;
+	switch (width) {
+	case 1:
+	case 2:
+	case 4:
+		break;
+
+	default:
+#ifdef DEBUG
+		if (tc_verbose && complain)
+			printf("%s (x%x) at x%x\n", "Invalid ROM width",
+			       width, addr);
+#endif
+		return (0);
+	}
+
+	if (addr->rom_stride.value != 4) {
+#ifdef DEBUG
+		if (tc_verbose && complain)
+			printf("%s (x%x) at x%x\n", "Invalid ROM stride",
+			       addr->rom_stride.value, addr);
+#endif
+		return (0);
+	}
+
+	if ((addr->test_data[0] != 0x55) ||
+	    (addr->test_data[4] != 0x00) ||
+	    (addr->test_data[8] != 0xaa) ||
+	    (addr->test_data[12] != 0xff)) {
+#ifdef DEBUG
+		if (tc_verbose && complain)
+			printf("%s x%x\n", "Test pattern failed, option at",
+			       addr);
+#endif
+		return (0);
+	}
+
+	for (i = 0; i < TC_ROM_LLEN; i++) {
+		firmwr[i] = addr->firmware_rev[i].value;
+		vendor[i] = addr->vendor_name[i].value;
+		module[i] = addr->module_name[i].value;
+		if (i >= TC_ROM_SLEN)
+			continue;
+		host_type[i] = addr->host_firmware_type[i].value;
+	}
+	firmwr[TC_ROM_LLEN] = vendor[TC_ROM_LLEN] =
+	module[TC_ROM_LLEN] = host_type[TC_ROM_SLEN] = '\0';
+
+#ifdef DEBUG
+	if (tc_verbose)
+		printf("%s %s '%s' at x%x\n %s %s %s '%s'\n %s %d %s %d %s\n",
+		"Found a", vendor, module, addr,
+		"Firmware rev.", firmwr,
+		"diagnostics for a", host_type,
+		"ROM size is", addr->rom_size.value << 3,
+		"Kbytes, uses", addr->slot_size.value, "TC slot(s)");
+#endif
+
+	bcopy(module, slot->module_name, TC_ROM_LLEN);
+	bcopy(vendor,  slot->module_id, TC_ROM_LLEN);
+	bcopy(firmwr, &slot->module_id[TC_ROM_LLEN], TC_ROM_LLEN);
+	slot->slot_size = addr->slot_size.value;
+	slot->rom_width = width;
+
+	return (1);
+}
+
 /*
- * TURBOchannel autoconf procedure. Finds in one sweep what is
+ * TURBOchannel autoconf procedure.  Finds in one sweep what is
  * hanging on the bus and fills in the tc_slot_info array.
  * This is only the first part of the autoconf scheme, at this
- * time we are basically only looking for a graphics board and
- * serial port to use as system console (all workstations).
- *
- * XXX Someday make number of slots dynamic too.
+ * time we are basically only looking for a graphics board to
+ * use as system console (all workstations).
  */
 
-#define KN02_TC_NSLOTS	8
-
-tc_option_t	tc_slot_info[KN02_TC_NSLOTS];
-
-caddr_t	tc_slot_virt_addr[] = {
-	(caddr_t)0xbe000000,	/* TURBOchannel, slot 0 */
-	(caddr_t)0xbe400000,	/* TURBOchannel, slot 1 */
-	(caddr_t)0xbe800000,	/* TURBOchannel, slot 2 */
-	(caddr_t)0xbec00000,	/* TURBOchannel, slot 3 */
-	(caddr_t)0xbf000000,	/* TURBOchannel, slot 4 */
-	(caddr_t)0xbf400000,	/* TURBOchannel, slot 5 */
-	(caddr_t)0xbf800000,	/* TURBOchannel, slot 6 */
-/*	(caddr_t)0xbfc00000,	   TURBOchannel, slot 7 */
+unsigned int	tc_slot_phys_base [TC_MAX_SLOTS] = {
+	/* use 3max for default values */
+	KN02_PHYS_TC_0_START, KN02_PHYS_TC_1_START,
+	KN02_PHYS_TC_2_START, KN02_PHYS_TC_3_START,
+	KN02_PHYS_TC_4_START, KN02_PHYS_TC_5_START,
+	KN02_PHYS_TC_6_START, KN02_PHYS_TC_7_START
 };
 
 void
 tc_find_all_options()
 {
 	register int i;
-	caddr_t addr;
+	u_long addr;
+	int found;
 	register tc_option_t *sl;
-	register struct drivers_map *map;
+	struct drivers_map *map;
 	register struct pmax_ctlr *cp;
 	register struct driver *drp;
 
 	/*
-	 * Look for all controllers on the bus.
+	 * Take a look at the bus
 	 */
-	i = sizeof(tc_slot_virt_addr) / sizeof(tc_slot_virt_addr[0]) - 1;
-	while (i >= 0) {
-		addr = tc_slot_virt_addr[i];
-		if (tc_probe_slot(addr, &tc_slot_info[i])) {
+	bzero(tc_slot_info, sizeof(tc_slot_info));
+	for (i = tc_max_slot; i >= tc_min_slot;) {
+		addr = MACH_PHYS_TO_UNCACHED(tc_slot_phys_base[i]);
+		found = tc_probe_slot(addr, &tc_slot_info[i]);
+
+		if (found) {
 			/*
 			 * Found a slot, make a note of it 
 			 */
 			tc_slot_info[i].present = 1;
-			tc_slot_info[i].module_address = addr;
+			tc_slot_info[i].k1seg_address = addr;
 		}
 
 		i -= tc_slot_info[i].slot_size;
 	}
 
 	/*
-	 * Now for each slot found, see if we have a device driver that
-	 * handles it.
+	 * Some slots (e.g. the system slot on 3max) might require
+	 * hand-filling.  If so, do it now. 
 	 */
-	for (i = 0, sl = tc_slot_info; i < KN02_TC_NSLOTS; i++, sl++) {
+	if (tc_slot_hand_fill)
+		(*tc_slot_hand_fill) (tc_slot_info);
+
+	/*
+	 * Now for each alive slot see if we have a device driver that
+	 * handles it.  This is done in "priority order", meaning that
+	 * always present devices are at higher slot numbers on all
+	 * current TC machines, and option slots are at lowest numbers.
+	 */
+	for (i = TC_MAX_LOGICAL_SLOTS - 1; i >= 0; i--) {
+		sl = &tc_slot_info[i];
 		if (!sl->present)
 			continue;
-		/*
-		 * Look for mapping between the module name and
-		 * the device driver name.
-		 */
+		found = FALSE;
 		for (map = tc_drivers_map; map->driver_name; map++) {
 			if (bcmp(sl->module_name, map->module_name, TC_ROM_LLEN))
 				continue;
-			goto fnd_map;
+			sl->driver_name = map->driver_name;
+			found = TRUE;
+			break;
 		}
-#ifdef DEBUG
-		if (tc_verbose)
-			printf("Cannot associate a device driver to %s\n",
-				sl->module_name);
-#endif
-		sl->present = 0;
-		continue;
+		if (!found) {
+			printf("%s %s %s\n", "Cannot associate a device driver to",
+			       sl->module_name, ". Will (try to) ignore it.");
+			sl->present = 0;
+			continue;
+		}
 
 		/*
 		 * Find the device driver entry and fill in the address.
 		 */
-	fnd_map:
 		for (cp = pmax_cinit; drp = cp->pmax_driver; cp++) {
 			if (strcmp(drp->d_name, map->driver_name))
 				continue;
 			if (cp->pmax_addr == (char *)QUES) {
-				cp->pmax_addr = sl->module_address;
+				cp->pmax_addr = (char *)sl->k1seg_address;
 				cp->pmax_pri = i;
+				/*
+				 * Only enable interrupts if there is an
+				 * interrupt handler for it. (e.g., PMAG-BA 
+				 * can't disable the vertical retrace interrupt
+				 * and we might want to ignore it).
+				 */
+				if (drp->d_intr)
+					(*tc_enable_interrupt)(i, 1);
 				continue;
 			}
-			if (cp->pmax_addr != sl->module_address) {
+			if (cp->pmax_addr != (char *)sl->k1seg_address) {
 				cp->pmax_addr = (char *)QUES;
 				printf("%s: device not at configued address (expected at %x, found at %x)\n",
 					drp->d_name,
-					cp->pmax_addr, sl->module_address);
+					cp->pmax_addr, sl->k1seg_address);
 			}
 		}
 	}
@@ -1134,106 +1574,21 @@ tc_probe_slot(addr, slot)
 }
 
 /*
- * Identify an option on the TURBOchannel.  Looks at the mandatory
- * info in the option's ROM and checks it.
- */
-int
-tc_identify_option(addr, slot, complain)
-	tc_rommap_t *addr;
-	tc_option_t *slot;
-	int complain;
-{
-	register int i;
-	unsigned char width;
-	char firmwr[TC_ROM_LLEN+1];
-	char vendor[TC_ROM_LLEN+1];
-	char module[TC_ROM_LLEN+1];
-	char host_type[TC_ROM_SLEN+1];
-
-	/*
-	 * We do not really use the 'width' info, but take advantage
-	 * of the restriction that the spec impose on the portion
-	 * of the ROM that maps between +0x3e0 and +0x470, which
-	 * is the only piece we need to look at.
-	 */
-	width = addr->rom_width.value;
-	switch (width) {
-	case 1:
-	case 2:
-	case 4:
-		break;
-
-	default:
-		if (complain)
-			printf("Invalid ROM width (0x%x) at x%x\n",
-			       width, addr);
-		return (0);
-	}
-
-	if (addr->rom_stride.value != 4) {
-		if (complain)
-			printf("Invalid ROM stride (0x%x) at x%x\n",
-			       addr->rom_stride.value, addr);
-		return (0);
-	}
-
-	if (addr->test_data[0] != 0x55 ||
-	    addr->test_data[4] != 0x00 ||
-	    addr->test_data[8] != 0xaa ||
-	    addr->test_data[12] != 0xff) {
-		if (complain)
-			printf("Test pattern failed, option at x%x\n",
-			       addr);
-		return (0);
-	}
-
-	for (i = 0; i < TC_ROM_LLEN; i++) {
-		firmwr[i] = addr->firmware_rev[i].value;
-		vendor[i] = addr->vendor_name[i].value;
-		module[i] = addr->module_name[i].value;
-		if (i >= TC_ROM_SLEN)
-			continue;
-		host_type[i] = addr->host_firmware_type[i].value;
-	}
-
-#ifdef DEBUG
-	if (tc_verbose) {
-		firmwr[TC_ROM_LLEN] = '\0';
-		vendor[TC_ROM_LLEN] = '\0';
-		module[TC_ROM_LLEN] = '\0';
-		host_type[TC_ROM_SLEN] = '\0';
-		printf("%s %s '%s' at x%x\n %s %s %s '%s'\n %s %d %s %d %s\n",
-		       "Found a", vendor, module, addr,
-		       "Firmware rev.", firmwr,
-		       "diagnostics for a", host_type,
-		       "ROM size is", addr->rom_size.value << 3,
-		       "Kbytes, uses", addr->slot_size.value, "TC slot(s)");
-	}
-#endif
-
-	bcopy(module, slot->module_name, TC_ROM_LLEN);
-	bcopy(vendor, slot->module_id, TC_ROM_LLEN);
-	bcopy(firmwr, &slot->module_id[TC_ROM_LLEN], TC_ROM_LLEN);
-	slot->slot_size = addr->slot_size.value;
-	slot->rom_width = width;
-
-	return (1);
-}
-
-/*
  * Enable/Disable interrupts for a TURBOchannel slot.
  */
-tc_enable_interrupt(slotno, on)
+void
+kn02_enable_intr(slotno, on)
 	register int slotno;
 	int on;
 {
-	register volatile int *p_csr = (volatile int *)MACH_SYS_CSR_ADDR;
+	register volatile int *p_csr =
+		(volatile int *)MACH_PHYS_TO_UNCACHED(KN02_SYS_CSR);
 	int csr;
 	int s;
 
-	slotno = 1 << (slotno + MACH_CSR_IOINTEN_SHIFT);
+	slotno = 1 << (slotno + KN02_CSR_IOINTEN_SHIFT);
 	s = Mach_spl0();
-	csr = *p_csr & ~(MACH_CSR_MBZ | 0xFF);
+	csr = *p_csr & ~(KN02_CSR_WRESERVED | 0xFF);
 	if (on)
 		*p_csr = csr | slotno;
 	else
@@ -1241,4 +1596,294 @@ tc_enable_interrupt(slotno, on)
 	splx(s);
 }
 
+/*
+ *	Object:
+ *		kmin_enable_intr		EXPORTED function
+ *
+ *	Enable/Disable interrupts from a TURBOchannel slot.
+ *
+ *	We pretend we actually have 8 slots even if we really have
+ *	only 4: TCslots 0-2 maps to slots 0-2, TCslot3 maps to
+ *	slots 3-7 (see kmin_slot_hand_fill).
+ */
+void
+kmin_enable_intr(slotno, on)
+	register unsigned int slotno;
+	int on;
+{
+	register unsigned mask;
+
+	switch (slotno) {
+	case 0:
+	case 1:
+	case 2:
+		return;
+	case KMIN_SCSI_SLOT:
+		mask = (KMIN_INTR_SCSI | KMIN_INTR_SCSI_PTR_LOAD |
+			KMIN_INTR_SCSI_OVRUN | KMIN_INTR_SCSI_READ_E);
+		break;
+	case KMIN_LANCE_SLOT:
+		mask = KMIN_INTR_LANCE;
+		break;
+	case KMIN_SCC0_SLOT:
+		mask = KMIN_INTR_SCC_0;
+		break;
+	case KMIN_SCC1_SLOT:
+		mask = KMIN_INTR_SCC_1;
+		break;
+	case KMIN_ASIC_SLOT:
+		mask = KMIN_INTR_ASIC;
+		break;
+	default:
+		return;
+	}
+	if (on)
+		kmin_tc3_imask |= mask;
+	else
+		kmin_tc3_imask &= ~mask;
+}
+
+/*
+ *	Object:
+ *		xine_enable_intr		EXPORTED function
+ *
+ *	Enable/Disable interrupts from a TURBOchannel slot.
+ *
+ *	We pretend we actually have 11 slots even if we really have
+ *	only 3: TCslots 0-1 maps to slots 0-1, TCslot 2 is used for
+ *	the system (TCslot3), TCslot3 maps to slots 3-10
+ *	(see xine_slot_hand_fill).
+ *	Note that all these interrupts come in via the IMR.
+ */
+void
+xine_enable_intr(slotno, on)
+	register unsigned int slotno;
+	int on;
+{
+	register unsigned mask;
+
+	switch (slotno) {
+	case 0:			/* a real slot, but  */
+		mask = XINE_INTR_TC_0;
+		break;
+	case 1:			/* a real slot, but */
+		mask = XINE_INTR_TC_1;
+		break;
+	case XINE_FLOPPY_SLOT:
+		mask = XINE_INTR_FLOPPY;
+		break;
+	case XINE_SCSI_SLOT:
+		mask = (XINE_INTR_SCSI | XINE_INTR_SCSI_PTR_LOAD |
+			XINE_INTR_SCSI_OVRUN | XINE_INTR_SCSI_READ_E);
+		break;
+	case XINE_LANCE_SLOT:
+		mask = XINE_INTR_LANCE;
+		break;
+	case XINE_SCC0_SLOT:
+		mask = XINE_INTR_SCC_0;
+		break;
+	case XINE_DTOP_SLOT:
+		mask = XINE_INTR_DTOP_RX;
+		break;
+	case XINE_ISDN_SLOT:
+		mask = XINE_INTR_ISDN;
+		break;
+	case XINE_ASIC_SLOT:
+		mask = XINE_INTR_ASIC;
+		break;
+	default:
+		return;/* ignore */
+	}
+	if (on)
+		xine_tc3_imask |= mask;
+	else
+		xine_tc3_imask &= ~mask;
+}
+
+/*
+ *	Object:
+ *		kn02_slot_hand_fill		EXPORTED function
+ *
+ *	Fill in by hand the info for TC slots that are non-standard.
+ *	This is basically just the system slot on a 3max, it does not
+ *	look to me like it follows the TC rules although some of the
+ *	required info is indeed there.
+ *
+ */
+void
+kn02_slot_hand_fill(slot)
+	tc_option_t *slot;
+{
+	slot[7].present = 1;
+	slot[7].slot_size = 1;
+	slot[7].rom_width = 1;
+#if unsafe
+	bcopy(0xbffc0410, slot[7].module_name, TC_ROM_LLEN+1);
+#endif
+	bcopy("KN02    ", slot[7].module_name, TC_ROM_LLEN+1);
+	bcopy("DEC xxxx", slot[7].module_id, TC_ROM_LLEN+1);
+	slot[7].k1seg_address = MACH_PHYS_TO_UNCACHED(KN02_SYS_DZ);
+}
+
+/*
+ *	Object:
+ *		kmin_slot_hand_fill		EXPORTED function
+ *
+ *	Fill in by hand the info for TC slots that are non-standard.
+ *	This is the system slot on a 3min, which we think of as a
+ *	set of non-regular size TC slots.
+ *
+ */
+void
+kmin_slot_hand_fill(slot)
+	tc_option_t *slot;
+{
+	register int i;
+
+	for (i = KMIN_SCSI_SLOT; i < KMIN_ASIC_SLOT+1; i++) {
+		slot[i].present = 1;
+		slot[i].slot_size = 1;
+		slot[i].rom_width = 1;
+		slot[i].unit = 0;
+		bcopy("DEC KMIN", slot[i].module_id, TC_ROM_LLEN+1);
+	}
+
+	/* scsi */
+	bcopy("PMAZ-AA ", slot[KMIN_SCSI_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[KMIN_SCSI_SLOT].k1seg_address =
+		MACH_PHYS_TO_UNCACHED(KMIN_SYS_SCSI);
+
+	/* lance */
+	bcopy("PMAD-AA ", slot[KMIN_LANCE_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[KMIN_LANCE_SLOT].k1seg_address = 0;
+
+	/* scc */
+	bcopy("Z8530   ", slot[KMIN_SCC0_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[KMIN_SCC0_SLOT].k1seg_address =
+		MACH_PHYS_TO_UNCACHED(KMIN_SYS_SCC_0);
+
+	slot[KMIN_SCC1_SLOT].unit = 1;
+	bcopy("Z8530   ", slot[KMIN_SCC1_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[KMIN_SCC1_SLOT].k1seg_address =
+		MACH_PHYS_TO_UNCACHED(KMIN_SYS_SCC_1);
+
+	/* asic */
+	bcopy("ASIC    ", slot[KMIN_ASIC_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[KMIN_ASIC_SLOT].k1seg_address =
+		MACH_PHYS_TO_UNCACHED(KMIN_SYS_ASIC);
+	asic_init(TRUE);
+}
+
+/*
+ *	Object:
+ *		xine_slot_hand_fill		EXPORTED function
+ *
+ *	Fill in by hand the info for TC slots that are non-standard.
+ *	This is the system slot on a 3min, which we think of as a
+ *	set of non-regular size TC slots.
+ *
+ */
+void
+xine_slot_hand_fill(slot)
+	tc_option_t *slot;
+{
+	register int i;
+
+	for (i = XINE_FLOPPY_SLOT; i < XINE_FRC_SLOT+1; i++) {
+		slot[i].present = 1;
+		slot[i].slot_size = 1;
+		slot[i].rom_width = 1;
+		slot[i].unit = 0;
+		bcopy("DEC XINE", slot[i].module_id, TC_ROM_LLEN+1);
+	}
+
+	/* floppy */
+	bcopy("XINE-FDC", slot[XINE_FLOPPY_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[XINE_FLOPPY_SLOT].k1seg_address =
+		MACH_PHYS_TO_UNCACHED(XINE_SYS_FLOPPY);
+
+	/* scsi */
+	bcopy("PMAZ-AA ", slot[XINE_SCSI_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[XINE_SCSI_SLOT].k1seg_address =
+		MACH_PHYS_TO_UNCACHED(XINE_SYS_SCSI);
+
+	/* lance */
+	bcopy("PMAD-AA ", slot[XINE_LANCE_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[XINE_LANCE_SLOT].k1seg_address =
+		MACH_PHYS_TO_UNCACHED(XINE_SYS_LANCE);
+
+	/* scc */
+	bcopy("Z8530   ", slot[XINE_SCC0_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[XINE_SCC0_SLOT].k1seg_address =
+		MACH_PHYS_TO_UNCACHED(XINE_SYS_SCC_0);
+
+	/* Desktop */
+	bcopy("DTOP    ", slot[XINE_DTOP_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[XINE_DTOP_SLOT].k1seg_address =
+		MACH_PHYS_TO_UNCACHED(XINE_SYS_DTOP+0x20000); /* why? */
+
+	/* ISDN */
+	bcopy("AMD79c30", slot[XINE_ISDN_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[XINE_ISDN_SLOT].k1seg_address =
+		MACH_PHYS_TO_UNCACHED(XINE_SYS_ISDN);
+
+	/* Video */
+	bcopy("PMAG-DV ", slot[XINE_CFB_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[XINE_CFB_SLOT].k1seg_address =
+		MACH_PHYS_TO_CACHED(XINE_PHYS_CFB_START);
+
+	/* asic */
+	bcopy("ASIC    ", slot[XINE_ASIC_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[XINE_ASIC_SLOT].k1seg_address =
+		MACH_PHYS_TO_UNCACHED(XINE_SYS_ASIC);
+
+	/* free-running counter (high resolution mapped time) */
+	bcopy("XINE-FRC", slot[XINE_FRC_SLOT].module_name, TC_ROM_LLEN+1);
+	slot[XINE_FRC_SLOT].k1seg_address =
+		MACH_PHYS_TO_UNCACHED(XINE_REG_FCTR);
+	asic_init(FALSE);
+}
+
+/*
+ * Initialize the I/O asic
+ */
+static void
+asic_init(isa_3min)
+	int isa_3min;
+{
+	volatile u_int *ssr, *decoder;
+
+	/* These are common between 3min and maxine */
+	decoder = (volatile u_int *)
+		MACH_PHYS_TO_UNCACHED(KMIN_REG_LANCE_DECODE);
+	*decoder = KMIN_LANCE_CONFIG;
+#ifdef notdef
+	decoder = (volatile u_int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_DECODE);
+	*decoder = KMIN_SCSI_CONFIG;
+	decoder = (volatile u_int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCC0_DECODE);
+	*decoder = KMIN_SCC0_CONFIG;
+
+	ssr = (volatile u_int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_CSR);
+
+	if (isa_3min) {
+		decoder = (volatile u_int *)
+			MACH_PHYS_TO_UNCACHED(KMIN_REG_SCC1_DECODE);
+		*decoder = KMIN_SCC1_CONFIG;
+
+		/* take all chips out of reset now */
+		*ssr = 0x00000f00;
+
+	} else {
+		decoder = (volatile u_int *)
+			MACH_PHYS_TO_UNCACHED(XINE_REG_DTOP_DECODE);
+		*decoder = XINE_DTOP_CONFIG;
+		decoder = (volatile u_int *)
+			MACH_PHYS_TO_UNCACHED(XINE_REG_FLOPPY_DECODE);
+		*decoder = XINE_FLOPPY_CONFIG;
+
+		/* take all chips out of reset now */
+		*ssr = 0x00001fc1;
+	}
+#endif
+}
 #endif /* DS5000 */

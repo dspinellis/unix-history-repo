@@ -22,7 +22,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	7.10 (Berkeley) %G%
+ *	@(#)locore.s	7.11 (Berkeley) %G%
  */
 
 /*
@@ -2901,6 +2901,50 @@ LEAF(MachFlushICache)
 	nop
 	.set	reorder
 END(MachFlushICache)
+
+/*----------------------------------------------------------------------------
+ *
+ * MachFlushDCache --
+ *
+ *	void MachFlushDCache(addr, len)
+ *		vm_offset_t addr, len;
+ *
+ *	Flush data cache for range of addr to addr + len - 1.
+ *	The address can be any valid address so long as no TLB misses occur.
+ *	(Be sure to use cached K0SEG kernel addresses)
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The contents of the cache is flushed.
+ *
+ *----------------------------------------------------------------------------
+ */
+LEAF(MachFlushDCache)
+	.set	noreorder
+	mfc0	t0, MACH_COP_0_STATUS_REG	# Save SR
+	mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts.
+
+	la	v1, 1f
+	or	v1, MACH_UNCACHED_MEMORY_ADDR	# Run uncached.
+	j	v1
+	nop
+1:
+	bc0f	1b				# make sure stores are complete
+	li	v1, MACH_SR_ISOL_CACHES
+	mtc0	v1, MACH_COP_0_STATUS_REG
+	nop
+	addu	a1, a1, a0			# compute ending address
+1:
+	addu	a0, a0, 4
+	bne	a0, a1, 1b
+	sb	zero, -4(a0)
+
+	mtc0	t0, MACH_COP_0_STATUS_REG	# enable interrupts
+	j	ra				# return and run cached
+	nop
+	.set	reorder
+END(MachFlushDCache)
 
 #ifdef KADB
 /*

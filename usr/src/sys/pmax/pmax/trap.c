@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.10 (Berkeley) %G%
+ *	@(#)trap.c	7.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -33,11 +33,23 @@
 #include <machine/cpu.h>
 #include <machine/pte.h>
 #include <machine/mips_opcode.h>
-#include <pmax/pmax/clockreg.h>
 
 #include <vm/vm.h>
 #include <vm/vm_kern.h>
 #include <vm/vm_page.h>
+
+#include <pmax/pmax/clockreg.h>
+#include <pmax/pmax/kn01.h>
+#include <pmax/pmax/kn02.h>
+#include <pmax/pmax/kmin.h>
+#include <pmax/pmax/maxine.h>
+#include <pmax/pmax/asic.h>
+#include <pmax/pmax/turbochannel.h>
+
+#include <asc.h>
+#include <sii.h>
+#include <le.h>
+#include <dc.h>
 
 /*
  * This is a kludge to allow X windows to work.
@@ -60,7 +72,6 @@ extern void MachKernIntr();
 extern void MachUserIntr();
 extern void MachTLBModException();
 extern void MachTLBMissException();
-static void MemErrorInterrupt();
 extern unsigned MachEmulateBranch();
 
 void (*machExceptionTable[])() = {
@@ -134,6 +145,14 @@ struct trapdebug {		/* trap history buffer for debugging */
 	u_int	code;
 } trapdebug[TRAPSIZE], *trp = trapdebug;
 #endif
+
+static void pmax_errintr();
+static void kn02_errintr(), kn02ba_errintr();
+static unsigned kn02ba_recover_erradr();
+extern tc_option_t tc_slot_info[TC_MAX_LOGICAL_SLOTS];
+extern u_long kmin_tc3_imask, xine_tc3_imask;
+int (*pmax_hardware_intr)() = (int (*)())0;
+extern volatile struct chiptime *Mach_clock_addr;
 
 /*
  * Handle an exception.
@@ -710,12 +729,6 @@ out:
 	return (pc);
 }
 
-#ifdef DS5000
-struct	intr_tab intr_tab[8];
-#endif
-
-int	temp;		/* XXX ULTRIX compiler bug with -O */
-
 /*
  * Handle an interrupt.
  * Called from MachKernIntr() or MachUserIntr()
@@ -742,98 +755,8 @@ interrupt(statusReg, causeReg, pc)
 
 	cnt.v_intr++;
 	mask = causeReg & statusReg;	/* pending interrupts & enable mask */
-#ifdef DS3100
-	/* handle clock interrupts ASAP */
-	if (mask & MACH_INT_MASK_3) {
-		register volatile struct chiptime *c =
-			(volatile struct chiptime *)MACH_CLOCK_ADDR;
-
-		temp = c->regc;	/* XXX clear interrupt bits */
-		cf.pc = pc;
-		cf.sr = statusReg;
-		hardclock(&cf);
-		causeReg &= ~MACH_INT_MASK_3;	/* reenable clock interrupts */
-	}
-	/*
-	 * Enable hardware interrupts which were enabled but not pending.
-	 * We only respond to software interrupts when returning to spl0.
-	 */
-	splx((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
-		MACH_SR_INT_ENA_CUR);
-	if (mask & MACH_INT_MASK_0)
-		siiintr(0);
-	if (mask & MACH_INT_MASK_1)
-		leintr(0);
-	if (mask & MACH_INT_MASK_2)
-		dcintr(0);
-	if (mask & MACH_INT_MASK_4)
-		MemErrorInterrupt();
-#endif /* DS3100 */
-#ifdef DS5000
-	/* handle clock interrupts ASAP */
-	if (mask & MACH_INT_MASK_1) {
-		register volatile struct chiptime *c =
-			(volatile struct chiptime *)MACH_CLOCK_ADDR;
-		register unsigned csr;
-		static int warned = 0;
-
-		csr = *(unsigned *)MACH_SYS_CSR_ADDR;
-		if ((csr & MACH_CSR_PSWARN) && !warned) {
-			warned = 1;
-			printf("WARNING: power supply is overheating!\n");
-		} else if (warned && !(csr & MACH_CSR_PSWARN)) {
-			warned = 0;
-			printf("WARNING: power supply is OK again\n");
-		}
-
-		temp = c->regc;	/* XXX clear interrupt bits */
-		cf.pc = pc;
-		cf.sr = statusReg;
-		hardclock(&cf);
-		causeReg &= ~MACH_INT_MASK_1;	/* reenable clock interrupts */
-	}
-	if (mask & MACH_INT_MASK_0) {
-		register unsigned csr;
-		register unsigned i, m;
-
-		csr = *(unsigned *)MACH_SYS_CSR_ADDR;
-		m = csr & (csr >> MACH_CSR_IOINTEN_SHIFT) & MACH_CSR_IOINT_MASK;
-#if 0
-		*(unsigned *)MACH_SYS_CSR_ADDR =
-			(csr & ~(MACH_CSR_MBZ | 0xFF)) |
-			(m << MACH_CSR_IOINTEN_SHIFT);
-#endif
-		/*
-		 * Enable hardware interrupts which were enabled but not
-		 * pending. We only respond to software interrupts when
-		 * returning to spl0.
-		 */
-		splx((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
-			MACH_SR_INT_ENA_CUR);
-		for (i = 0; m; i++, m >>= 1) {
-			if (!(m & 1))
-				continue;
-			if (intr_tab[i].func)
-				(*intr_tab[i].func)(intr_tab[i].unit);
-			else
-				printf("spurious interrupt %d\n", i);
-		}
-#if 0
-		*(unsigned *)MACH_SYS_CSR_ADDR =
-			csr & ~(MACH_CSR_MBZ | 0xFF);
-#endif
-	} else {
-		/*
-		 * Enable hardware interrupts which were enabled but not
-		 * pending. We only respond to software interrupts when
-		 * returning to spl0.
-		 */
-		splx((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
-			MACH_SR_INT_ENA_CUR);
-	}
-	if (mask & MACH_INT_MASK_3)
-		MemErrorInterrupt();
-#endif /* DS5000 */
+	if (pmax_hardware_intr)
+		splx((*pmax_hardware_intr)(mask, pc, statusReg, causeReg));
 	if (mask & MACH_INT_MASK_5) {
 		if (!USERMODE(statusReg)) {
 #ifdef DEBUG
@@ -878,6 +801,302 @@ interrupt(statusReg, causeReg, pc)
 		}
 #endif
 	}
+}
+
+/*
+ * Handle pmax (DECstation 2100/3100) interrupts.
+ */
+pmax_intr(mask, pc, statusReg, causeReg)
+	unsigned mask;
+	unsigned pc;
+	unsigned statusReg;
+	unsigned causeReg;
+{
+	register volatile struct chiptime *c = Mach_clock_addr;
+	struct clockframe cf;
+	int temp;
+
+	/* handle clock interrupts ASAP */
+	if (mask & MACH_INT_MASK_3) {
+		temp = c->regc;	/* XXX clear interrupt bits */
+		cf.pc = pc;
+		cf.sr = statusReg;
+		hardclock(&cf);
+		causeReg &= ~MACH_INT_MASK_3;	/* reenable clock interrupts */
+		splx(MACH_INT_MASK_3 | MACH_SR_INT_ENA_CUR);
+	}
+#if NSII > 0
+	if (mask & MACH_INT_MASK_0)
+		siiintr(0);
+#endif
+#if NLE > 0
+	if (mask & MACH_INT_MASK_1)
+		leintr(0);
+#endif
+#if NDC > 0
+	if (mask & MACH_INT_MASK_2)
+		dcintr(0);
+#endif
+	if (mask & MACH_INT_MASK_4)
+		pmax_errintr();
+	return ((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
+		MACH_SR_INT_ENA_CUR);
+}
+
+/*
+ * Handle hardware interrupts for the KN02. (DECstation 5000/200)
+ * Returns spl value.
+ */
+kn02_intr(mask, pc, statusReg, causeReg)
+	unsigned mask;
+	unsigned pc;
+	unsigned statusReg;
+	unsigned causeReg;
+{
+	register unsigned i, m;
+	register volatile struct chiptime *c = Mach_clock_addr;
+	register unsigned csr;
+	int temp;
+	struct clockframe cf;
+	static int warned = 0;
+
+	/* handle clock interrupts ASAP */
+	if (mask & MACH_INT_MASK_1) {
+		csr = *(unsigned *)MACH_PHYS_TO_UNCACHED(KN02_SYS_CSR);
+		if ((csr & KN02_CSR_PSWARN) && !warned) {
+			warned = 1;
+			printf("WARNING: power supply is overheating!\n");
+		} else if (warned && !(csr & KN02_CSR_PSWARN)) {
+			warned = 0;
+			printf("WARNING: power supply is OK again\n");
+		}
+
+		temp = c->regc;	/* XXX clear interrupt bits */
+		cf.pc = pc;
+		cf.sr = statusReg;
+		hardclock(&cf);
+
+		/* Re-enable clock interrupts */
+		causeReg &= ~MACH_INT_MASK_1;
+		splx(MACH_INT_MASK_1 | MACH_SR_INT_ENA_CUR);
+	}
+	if (mask & MACH_INT_MASK_0) {
+
+		csr = *(unsigned *)MACH_PHYS_TO_UNCACHED(KN02_SYS_CSR);
+		m = csr & (csr >> KN02_CSR_IOINTEN_SHIFT) & KN02_CSR_IOINT;
+#if 0
+		*(unsigned *)MACHPHYS_TO_UNCACHED(KN02_SYS_CSR) =
+			(csr & ~(KN02_CSR_WRESERVED | 0xFF)) |
+			(m << KN02_CSR_IOINTEN_SHIFT);
+#endif
+		for (i = 0; m; i++, m >>= 1) {
+			if (!(m & 1))
+				continue;
+			if (tc_slot_info[i].intr)
+				(*tc_slot_info[i].intr)(tc_slot_info[i].unit);
+			else
+				printf("spurious interrupt %d\n", i);
+		}
+#if 0
+		*(unsigned *)MACH_PHYS_TO_UNCACHED(KN02_SYS_CSR) =
+			csr & ~(KN02_CSR_WRESERVED | 0xFF);
+#endif
+	}
+	if (mask & MACH_INT_MASK_3)
+		kn02_errintr();
+	return ((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
+		MACH_SR_INT_ENA_CUR);
+}
+
+/*
+ * 3min hardware interrupts. (DECstation 5000/1xx)
+ */
+kmin_intr(mask, pc, statusReg, causeReg)
+	unsigned mask;
+	unsigned pc;
+	unsigned statusReg;
+	unsigned causeReg;
+{
+	register u_int intr;
+	register volatile struct chiptime *c = Mach_clock_addr;
+	volatile u_int *imaskp =
+		(volatile u_int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_IMSK);
+	volatile u_int *intrp =
+		(volatile u_int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_INTR);
+	unsigned int old_mask;
+	struct clockframe cf;
+	int temp;
+	static int user_warned = 0;
+
+	old_mask = *imaskp & kmin_tc3_imask;
+	*imaskp = old_mask;
+
+	if (mask & MACH_INT_MASK_3) {
+		intr = *intrp;
+		/* masked interrupts are still observable */
+		intr &= old_mask;
+	
+		if (intr & KMIN_INTR_SCSI_PTR_LOAD) {
+			*intrp &= ~KMIN_INTR_SCSI_PTR_LOAD;
+#if NASC > 0
+			asc_dma_intr();
+#endif
+		}
+	
+		if (intr & (KMIN_INTR_SCSI_OVRUN | KMIN_INTR_SCSI_READ_E))
+			*intrp &= ~(KMIN_INTR_SCSI_OVRUN | KMIN_INTR_SCSI_READ_E);
+
+		if (intr & KMIN_INTR_LANCE_READ_E)
+			*intrp &= ~KMIN_INTR_LANCE_READ_E;
+
+		if (intr & KMIN_INTR_TIMEOUT)
+			kn02ba_errintr();
+	
+		if (intr & KMIN_INTR_CLOCK) {
+			temp = c->regc;	/* XXX clear interrupt bits */
+			cf.pc = pc;
+			cf.sr = statusReg;
+			hardclock(&cf);
+		}
+	
+		if ((intr & KMIN_INTR_SCC_0) &&
+			tc_slot_info[KMIN_SCC0_SLOT].intr)
+			(*(tc_slot_info[KMIN_SCC0_SLOT].intr))
+			(tc_slot_info[KMIN_SCC0_SLOT].unit);
+	
+		if ((intr & KMIN_INTR_SCC_1) &&
+			tc_slot_info[KMIN_SCC1_SLOT].intr)
+			(*(tc_slot_info[KMIN_SCC1_SLOT].intr))
+			(tc_slot_info[KMIN_SCC1_SLOT].unit);
+	
+		if ((intr & KMIN_INTR_SCSI) &&
+			tc_slot_info[KMIN_SCSI_SLOT].intr)
+			(*(tc_slot_info[KMIN_SCSI_SLOT].intr))
+			(tc_slot_info[KMIN_SCSI_SLOT].unit);
+	
+		if ((intr & KMIN_INTR_LANCE) &&
+			tc_slot_info[KMIN_LANCE_SLOT].intr)
+			(*(tc_slot_info[KMIN_LANCE_SLOT].intr))
+			(tc_slot_info[KMIN_LANCE_SLOT].unit);
+	
+		if (user_warned && ((intr & KMIN_INTR_PSWARN) == 0)) {
+			*imaskp = 0;
+			printf("%s\n", "Power supply ok now.");
+			user_warned = 0;
+		}
+		if ((intr & KMIN_INTR_PSWARN) && (user_warned < 3)) {
+			*imaskp = 0;
+			user_warned++;
+			printf("%s\n", "Power supply overheating");
+		}
+	}
+	if ((mask & MACH_INT_MASK_0) && tc_slot_info[0].intr)
+		(*tc_slot_info[0].intr)(tc_slot_info[0].unit);
+	if ((mask & MACH_INT_MASK_1) && tc_slot_info[1].intr)
+		(*tc_slot_info[1].intr)(tc_slot_info[1].unit);
+	if ((mask & MACH_INT_MASK_2) && tc_slot_info[2].intr)
+		(*tc_slot_info[2].intr)(tc_slot_info[2].unit);
+	return ((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
+		MACH_SR_INT_ENA_CUR);
+}
+
+/*
+ * Maxine hardwark interrupts. (Personal DECstation 5000/xx)
+ */
+xine_intr(mask, pc, statusReg, causeReg)
+	unsigned mask;
+	unsigned pc;
+	unsigned statusReg;
+	unsigned causeReg;
+{
+	register u_int intr;
+	register volatile struct chiptime *c = Mach_clock_addr;
+	volatile u_int *imaskp = (volatile u_int *)
+		MACH_PHYS_TO_UNCACHED(XINE_REG_IMSK);
+	volatile u_int *intrp = (volatile u_int *)
+		MACH_PHYS_TO_UNCACHED(XINE_REG_INTR);
+	u_int old_mask;
+	struct clockframe cf;
+	int temp;
+static int clkticks = 0;
+
+	old_mask = *imaskp & xine_tc3_imask;
+	*imaskp = old_mask;
+
+	/* handle clock interrupts ASAP */
+	if (mask & MACH_INT_MASK_1) {
+		temp = c->regc;	/* XXX clear interrupt bits */
+		cf.pc = pc;
+		cf.sr = statusReg;
+		hardclock(&cf);
+if ((++clkticks % 10000) == 0) printf("TICKKEYY TICKEY!\n");
+		causeReg &= ~MACH_INT_MASK_1;
+		/* reenable clock interrupts */
+		splx(MACH_INT_MASK_1 | MACH_SR_INT_ENA_CUR);
+	}
+	if (mask & MACH_INT_MASK_3) {
+		intr = *intrp;
+		/* masked interrupts are still observable */
+		intr &= old_mask;
+
+		if (intr & XINE_INTR_SCSI_PTR_LOAD) {
+			*intrp &= ~XINE_INTR_SCSI_PTR_LOAD;
+#if NASC > 0
+			asc_dma_intr();
+#endif
+		}
+	
+		if (intr & (XINE_INTR_SCSI_OVRUN | XINE_INTR_SCSI_READ_E))
+			*intrp &= ~(XINE_INTR_SCSI_OVRUN | XINE_INTR_SCSI_READ_E);
+
+		if (intr & XINE_INTR_LANCE_READ_E)
+			*intrp &= ~XINE_INTR_LANCE_READ_E;
+
+		if ((intr & XINE_INTR_FLOPPY) &&
+			tc_slot_info[XINE_FLOPPY_SLOT].intr)
+			(*(tc_slot_info[XINE_FLOPPY_SLOT].intr))
+			(tc_slot_info[XINE_FLOPPY_SLOT].unit);
+	
+		if ((intr & XINE_INTR_TC_0) &&
+			tc_slot_info[0].intr)
+			(*(tc_slot_info[0].intr))
+			(tc_slot_info[0].unit);
+	
+		if ((intr & XINE_INTR_ISDN) &&
+			tc_slot_info[XINE_ISDN_SLOT].intr)
+			(*(tc_slot_info[XINE_ISDN_SLOT].intr))
+			(tc_slot_info[XINE_ISDN_SLOT].unit);
+	
+		if ((intr & XINE_INTR_SCSI) &&
+			tc_slot_info[XINE_SCSI_SLOT].intr)
+			(*(tc_slot_info[XINE_SCSI_SLOT].intr))
+			(tc_slot_info[XINE_SCSI_SLOT].unit);
+	
+		if ((intr & XINE_INTR_LANCE) &&
+			tc_slot_info[XINE_LANCE_SLOT].intr)
+			(*(tc_slot_info[XINE_LANCE_SLOT].intr))
+			(tc_slot_info[XINE_LANCE_SLOT].unit);
+	
+		if ((intr & XINE_INTR_SCC_0) &&
+			tc_slot_info[XINE_SCC0_SLOT].intr)
+			(*(tc_slot_info[XINE_SCC0_SLOT].intr))
+			(tc_slot_info[XINE_SCC0_SLOT].unit);
+	
+		if ((intr & XINE_INTR_TC_1) &&
+			tc_slot_info[1].intr)
+			(*(tc_slot_info[1].intr))
+			(tc_slot_info[1].unit);
+	
+		if ((intr & XINE_INTR_DTOP_RX) &&
+			tc_slot_info[XINE_DTOP_SLOT].intr)
+			(*(tc_slot_info[XINE_DTOP_SLOT].intr))
+			(tc_slot_info[XINE_DTOP_SLOT].unit);
+	
+	}
+	if (mask & MACH_INT_MASK_2)
+		kn02ba_errintr();
+	return ((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
+		MACH_SR_INT_ENA_CUR);
 }
 
 /*
@@ -1001,7 +1220,10 @@ vmUserUnmap()
 /*
  *----------------------------------------------------------------------
  *
- * MemErrorInterrupt --
+ * MemErrorInterrupts --
+ *   pmax_errintr - for the DS2100/DS3100
+ *   kn02_errintr - for the DS5000/200
+ *   kn02ba_errintr - for the DS5000/1xx and DS5000/xx
  *
  *	Handler an interrupt for the control register.
  *
@@ -1014,26 +1236,67 @@ vmUserUnmap()
  *----------------------------------------------------------------------
  */
 static void
-MemErrorInterrupt()
+pmax_errintr()
 {
-#ifdef DS3100
-	volatile u_short *sysCSRPtr = (u_short *)MACH_SYS_CSR_ADDR;
+	volatile u_short *sysCSRPtr =
+		(u_short *)MACH_PHYS_TO_UNCACHED(KN01_SYS_CSR);
 	u_short csr;
 
 	csr = *sysCSRPtr;
 
-	if (csr & MACH_CSR_MEM_ERR) {
+	if (csr & KN01_CSR_MERR) {
 		printf("Memory error at 0x%x\n",
-			*(unsigned *)MACH_WRITE_ERROR_ADDR);
+			*(unsigned *)MACH_PHYS_TO_UNCACHED(KN01_SYS_ERRADR));
 		panic("Mem error interrupt");
 	}
-	*sysCSRPtr = (csr & ~MACH_CSR_MBZ) | 0xff;
-#endif /* DS3100 */
-#ifdef DS5000
-	printf("erradr %x\n", *(unsigned *)MACH_ERROR_ADDR);
-	*(unsigned *)MACH_ERROR_ADDR = 0;
+	*sysCSRPtr = (csr & ~KN01_CSR_MBZ) | 0xff;
+}
+
+static void
+kn02_errintr()
+{
+
+	printf("erradr %x\n", *(unsigned *)MACH_PHYS_TO_UNCACHED(KN02_SYS_ERRADR));
+	*(unsigned *)MACH_PHYS_TO_UNCACHED(KN02_SYS_ERRADR) = 0;
 	MachEmptyWriteBuffer();
-#endif /* DS5000 */
+}
+
+static void
+kn02ba_errintr()
+{
+	register int mer, adr, siz;
+	static int errintr_cnt = 0;
+
+	siz = *(volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_MSR);
+	mer = *(volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_MER);
+	adr = *(volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_AER);
+
+	/* clear interrupt bit */
+	*(unsigned int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_TIMEOUT) = 0;
+
+	errintr_cnt++;
+	printf("(%d)%s%x [%x %x %x]\n", errintr_cnt,
+	       "Bad memory chip at phys ",
+	       kn02ba_recover_erradr(adr, mer),
+	       mer, siz, adr);
+}
+
+static unsigned
+kn02ba_recover_erradr(phys, mer)
+	register unsigned phys, mer;
+{
+	/* phys holds bits 28:2, mer knows which byte */
+	switch (mer & KMIN_MER_LASTBYTE) {
+	case KMIN_LASTB31:
+		mer = 3; break;
+	case KMIN_LASTB23:
+		mer = 2; break;
+	case KMIN_LASTB15:
+		mer = 1; break;
+	case KMIN_LASTB07:
+		mer = 0; break;
+	}
+	return ((phys & KMIN_AER_ADDR_MASK) | mer);
 }
 
 /*
