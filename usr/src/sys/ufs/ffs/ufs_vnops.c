@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vnops.c	7.30 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -154,11 +154,61 @@ struct vnodeops spec_inodeops = {
 	ufs_islocked,		/* islocked */
 };
 
-enum vtype iftovt_tab[8] = {
-	VNON, VCHR, VDIR, VBLK, VREG, VLNK, VSOCK, VBAD,
+#ifdef FIFO
+int	fifo_lookup(),
+	fifo_open(),
+	ufsfifo_read(),
+	ufsfifo_write(),
+	fifo_bmap(),
+	fifo_ioctl(),
+	fifo_select(),
+	ufsfifo_close(),
+	fifo_print(),
+	fifo_badop(),
+	fifo_nullop();
+
+struct vnodeops fifo_inodeops = {
+	fifo_lookup,		/* lookup */
+	fifo_badop,		/* create */
+	fifo_badop,		/* mknod */
+	fifo_open,		/* open */
+	ufsfifo_close,		/* close */
+	ufs_access,		/* access */
+	ufs_getattr,		/* getattr */
+	ufs_setattr,		/* setattr */
+	ufsfifo_read,		/* read */
+	ufsfifo_write,		/* write */
+	fifo_ioctl,		/* ioctl */
+	fifo_select,		/* select */
+	fifo_badop,		/* mmap */
+	fifo_nullop,		/* fsync */
+	fifo_badop,		/* seek */
+	fifo_badop,		/* remove */
+	fifo_badop,		/* link */
+	fifo_badop,		/* rename */
+	fifo_badop,		/* mkdir */
+	fifo_badop,		/* rmdir */
+	fifo_badop,		/* symlink */
+	fifo_badop,		/* readdir */
+	fifo_badop,		/* readlink */
+	fifo_badop,		/* abortop */
+	ufs_inactive,		/* inactive */
+	ufs_reclaim,		/* reclaim */
+	ufs_lock,		/* lock */
+	ufs_unlock,		/* unlock */
+	fifo_bmap,		/* bmap */
+	fifo_badop,		/* strategy */
+	ufs_print,		/* print */
+	ufs_islocked,		/* islocked */
 };
-int	vttoif_tab[8] = {
-	0, IFREG, IFDIR, IFBLK, IFCHR, IFLNK, IFSOCK, IFMT,
+#endif /* FIFO */
+
+enum vtype iftovt_tab[16] = {
+	VNON, VFIFO, VCHR, VNON, VDIR, VNON, VBLK, VNON,
+	VREG, VNON, VLNK, VNON, VSOCK, VNON, VNON, VBAD,
+};
+int	vttoif_tab[9] = {
+	0, IFREG, IFDIR, IFBLK, IFCHR, IFLNK, IFSOCK, IFIFO, IFMT,
 };
 
 /*
@@ -192,21 +242,21 @@ ufs_mknod(ndp, vap, cred)
 
 	if (error = maknode(MAKEIMODE(vap->va_type, vap->va_mode), ndp, &ip))
 		return (error);
-	vp = ITOV(ip);
-	if (vap->va_rdev) {
+	ip->i_flag |= IACC|IUPD|ICHG;
+	if (vap->va_rdev != VNOVAL) {
 		/*
 		 * Want to be able to use this to make badblock
 		 * inodes, so don't truncate the dev number.
 		 */
 		ip->i_rdev = vap->va_rdev;
-		ip->i_flag |= IACC|IUPD|ICHG;
 	}
 	/*
 	 * Remove inode so that it will be reloaded by iget and
 	 * checked to see if it is an alias of an existing entry
 	 * in the inode cache.
 	 */
-	iput(ip);
+	vp = ITOV(ip);
+	vput(vp);
 	vp->v_type = VNON;
 	vgone(vp);
 	return (0);
@@ -606,9 +656,9 @@ ufs_ioctl(vp, com, data, fflag, cred)
 }
 
 /* ARGSUSED */
-ufs_select(vp, which, cred)
+ufs_select(vp, which, fflags, cred)
 	struct vnode *vp;
-	int which;
+	int which, fflags;
 	struct ucred *cred;
 {
 
@@ -1427,6 +1477,59 @@ ufsspec_close(vp, fflag, cred)
 		ITIMES(ip, &time, &time);
 	return (spec_close(vp, fflag, cred));
 }
+
+#ifdef FIFO
+/*
+ * Read wrapper for fifo's
+ */
+ufsfifo_read(vp, uio, ioflag, cred)
+	struct vnode *vp;
+	struct uio *uio;
+	int ioflag;
+	struct ucred *cred;
+{
+
+	/*
+	 * Set access flag.
+	 */
+	VTOI(vp)->i_flag |= IACC;
+	return (fifo_read(vp, uio, ioflag, cred));
+}
+
+/*
+ * Write wrapper for fifo's.
+ */
+ufsfifo_write(vp, uio, ioflag, cred)
+	struct vnode *vp;
+	struct uio *uio;
+	int ioflag;
+	struct ucred *cred;
+{
+
+	/*
+	 * Set update and change flags.
+	 */
+	VTOI(vp)->i_flag |= IUPD|ICHG;
+	return (fifo_write(vp, uio, ioflag, cred));
+}
+
+/*
+ * Close wrapper for fifo's.
+ *
+ * Update the times on the inode then do device close.
+ */
+ufsfifo_close(vp, fflag, cred)
+	struct vnode *vp;
+	int fflag;
+	struct ucred *cred;
+{
+	register struct inode *ip = VTOI(vp);
+
+	if (vp->v_usecount > 1 && !(ip->i_flag & ILOCKED))
+		ITIMES(ip, &time, &time);
+	return (fifo_close(vp, fflag, cred));
+}
+#endif /* FIFO */
 
 /*
  * Make a new file.
