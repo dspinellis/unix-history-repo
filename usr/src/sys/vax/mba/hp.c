@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.3 (Berkeley) %G%
+ *	@(#)hp.c	7.4 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -21,8 +21,6 @@ int	hpbdebug;
  * TODO:
  *	see if DCLR and/or RELEASE set attention status
  */
-#include "../machine/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "dkstat.h"
@@ -40,7 +38,9 @@ int	hpbdebug;
 #include "ioctl.h"
 #include "uio.h"
 #include "syslog.h"
+#include "stat.h"
 
+#include "../machine/pte.h"
 #include "../vax/dkio.h"
 #include "mbareg.h"
 #include "mbavar.h"
@@ -93,7 +93,7 @@ short	hptypes[] = {
 };
 
 struct	mba_device *hpinfo[NHP];
-int	hpattach(),hpustart(),hpstart(),hpdtint();
+int	hpattach(),hpustart(),hpstart(),hpdtint(),hpstrategy();
 struct	mba_driver hpdriver =
 	{ hpattach, 0, hpustart, hpstart, hpdtint, 0,
 	  hptypes, "hp", 0, hpinfo };
@@ -114,6 +114,8 @@ struct	hpsoftc {
 	u_char	sc_doseeks;	/* perform explicit seeks */
 	int	sc_state;	/* open fsm */
 	long	sc_openpart;	/* bit mask of open subunits */
+	long	sc_copenpart;	/* bit mask of open character subunits */
+	long	sc_bopenpart;	/* bit mask of open block subunits */
 	daddr_t	sc_mlsize;	/* ML11 size */
 	int	sc_blkdone;	/* amount sucessfully transfered */
 	daddr_t	sc_badbn;	/* replacement block number */
@@ -169,16 +171,16 @@ hpattach(mi, slave)
 		printf(": offline");
 }
 
-hpopen(dev, flags)
+hpopen(dev, flags, fmt)
 	dev_t dev;
-	int flags;
+	int flags, fmt;
 {
 	register int unit = hpunit(dev);
 	register struct hpsoftc *sc;
 	register struct disklabel *lp;
 	register struct partition *pp;
 	struct mba_device *mi;
-	int s, error, part = hppart(dev);
+	int s, error, part = hppart(dev), mask = 1 << part;
 	daddr_t start, end;
 
 	if (unit >= NHP || (mi = hpinfo[unit]) == 0 || mi->mi_alive == 0)
@@ -221,36 +223,51 @@ hpopen(dev, flags)
 				    pp - lp->d_partitions + 'a');
 		}
 	}
-	sc->sc_openpart |= 1 << part;
+	switch (fmt) {
+	case S_IFCHR:
+		sc->sc_copenpart |= mask;
+		break;
+	case S_IFBLK:
+		sc->sc_bopenpart |= mask;
+		break;
+	}
+	sc->sc_openpart |= mask;
 	return (0);
 }
 
-hpclose(dev, flags)
+hpclose(dev, flags, fmt)
 	dev_t dev;
-	int flags;
+	int flags, fmt;
 {
 	register int unit = hpunit(dev);
 	register struct hpsoftc *sc;
 	struct mba_device *mi;
-	int s;
+	int s, mask = 1 << hppart(dev);
 
 	sc = &hpsoftc[unit];
 	mi = hpinfo[unit];
-	sc->sc_openpart &= ~(1 << hppart(dev));
-#ifdef notdef
+	switch (fmt) {
+	case S_IFCHR:
+		sc->sc_copenpart &= ~mask;
+		break;
+	case S_IFBLK:
+		sc->sc_bopenpart &= ~mask;
+		break;
+	}
+	if (((sc->sc_copenpart | sc->sc_bopenpart) & mask) == 0)
+		sc->sc_openpart &= ~mask;
 	/*
 	 * Should wait for I/O to complete on this partition
 	 * even if others are open, but wait for work on blkflush().
 	 */
 	if (sc->sc_openpart == 0) {
 		s = spl5();
-		/* Can't sleep on b_actf, it might be async. */
 		while (mi->mi_tab.b_actf)
-			sleep((caddr_t)&mi->mi_tab.b_actf, PZERO - 1);
+			sleep((caddr_t)sc, PZERO - 1);
 		splx(s);
 		sc->sc_state = CLOSED;
 	}
-#endif
+	return (0);
 }
 
 hpinit(dev, flags)
@@ -260,10 +277,10 @@ hpinit(dev, flags)
 	register struct hpsoftc *sc;
 	register struct buf *bp;
 	register struct disklabel *lp;
-	struct disklabel *dlp;
 	struct mba_device *mi;
 	struct hpdevice *hpaddr;
 	struct dkbad *db;
+	char *msg, *readdisklabel();
 	int unit, i, error = 0;
 	extern int cold;
 
@@ -285,10 +302,6 @@ hpinit(dev, flags)
 	lp->d_nsectors = 32;
 	lp->d_ntracks = 20;
 	lp->d_secpercyl = 32*20;
-	lp->d_secperunit = 0x1fffffff;
-	lp->d_npartitions = 1;
-	lp->d_partitions[0].p_size = 0x1fffffff;
-	lp->d_partitions[0].p_offset = 0;
 
 	/*
 	 * Map all ML11's to the same type.  Also calculate
@@ -316,31 +329,13 @@ hpinit(dev, flags)
 	 * Preset, pack acknowledge will be done in hpstart
 	 * during first read operation.
 	 */
-	bp = geteblk(DEV_BSIZE);		/* max sector size */
-	bp->b_dev = dev;
-	bp->b_blkno = LABELSECTOR;
-	bp->b_bcount = DEV_BSIZE;
-	bp->b_flags = B_BUSY | B_READ;
-	hpstrategy(bp);
-	biowait(bp);
-	if (bp->b_flags & B_ERROR) {
-		error = u.u_error;		/* XXX */
-		u.u_error = 0;
-		sc->sc_state = CLOSED;
-		goto done;
-	}
-	if (sc->sc_state == OPENRAW)
-		goto done;
-
-	dlp = (struct disklabel *)(bp->b_un.b_addr + LABELOFFSET);
-	if (dlp->d_magic == DISKMAGIC &&
-	    dlp->d_magic2 == DISKMAGIC && dkcksum(dlp) == 0) {
-		*lp = *dlp;
-	} else {
+	if (msg = readdisklabel(dev, hpstrategy, lp)) {
+		if (sc->sc_state == OPENRAW)
+			goto done;
 		if (cold)
-			printf(": no disk label");
+			printf(": %s", msg);
 		else
-			log(LOG_ERR, "hp%d: no disk label\n", unit);
+			log(LOG_ERR, "hp%d: %s\n", unit, msg);
 #ifdef COMPAT_42
 		mi->mi_type = hpmaptype(mi, lp);
 #else
@@ -358,6 +353,8 @@ hpinit(dev, flags)
 	/*
 	 * Read bad sector table into memory.
 	 */
+	bp = geteblk(DEV_BSIZE);		/* max sector size */
+	bp->b_dev = dev;
 	sc->sc_state = RDBADTBL;
 	i = 0;
 	do {
@@ -381,9 +378,9 @@ hpinit(dev, flags)
 		u.u_error = 0;				/* XXX */
 		sc->sc_state = OPENRAW;
 	}
-done:
 	bp->b_flags = B_INVAL | B_AGE;
 	brelse(bp);
+done:
 	wakeup((caddr_t)sc);
 	return (error);
 }
@@ -723,6 +720,8 @@ hard:
 		hpaddr->hpof = HPOF_FMT22;
 		hpaddr->hpcs1 = HP_RELEASE|HP_GO;
 	}
+	if (sc->sc_openpart == 0)
+		wakeup((caddr_t)sc);
 	return (MBD_DONE);
 }
 
@@ -785,8 +784,10 @@ hpioctl(dev, cmd, data, flag)
 		*(struct disklabel *)data = *lp;
 		break;
 
-	case DIOCGDINFOP:
-		*(struct disklabel **)data = lp;
+	case DIOCGPART:
+		((struct partinfo *)data)->disklab = lp;
+		((struct partinfo *)data)->part =
+		    &lp->d_partitions[hppart(dev)];
 		break;
 
 	case DIOCSDINFO:
@@ -807,7 +808,7 @@ hpioctl(dev, cmd, data, flag)
 
 		*lp = *(struct disklabel *)data;
 		bp = geteblk(lp->d_secsize);
-		bp->b_dev = dev;
+		bp->b_dev = makedev(major(dev), hpminor(hpunit(dev), 0));
 		bp->b_blkno = LABELSECTOR;
 		bp->b_bcount = lp->d_secsize;
 		bp->b_flags = B_READ;
@@ -1334,6 +1335,7 @@ hpmaptype(mi, lp)
 	 * set up minimal disk label.
 	 */
 	st = &hpst[type];
+	lp->d_secsize = 512;
 	lp->d_nsectors = st->nsect;
 	lp->d_ntracks = st->ntrak;
 	lp->d_secpercyl = st->nspc;

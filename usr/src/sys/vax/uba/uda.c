@@ -1,5 +1,5 @@
 /*
- *	@(#)uda.c	7.2 (Berkeley) %G%
+ *	@(#)uda.c	7.3 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -43,6 +43,7 @@
 #include "uio.h"
 #include "disklabel.h"
 #include "syslog.h"
+#include "stat.h"
 
 #include "../vax/cpu.h"
 #include "ubareg.h"
@@ -88,6 +89,8 @@ struct	ra_info {
 					/* last onlin or GTUNT */
 	int		rastate;   	/* open/closed state */
 	u_long		openpart;	/* partitions open */
+	u_long		bopenpart;	/* block partitions open */
+	u_long		copenpart;	/* characters partitions open */
 } ra_info[NRA];
 
 struct  uba_ctlr *udminfo[NUDA];
@@ -134,7 +137,7 @@ extern	int	hz;			/* Should find the right include */
 #endif 
 #define mprintf printf			/* temporary JG hack until Rich fixes*/
 
-int     udprobe(), udslave(), udattach(), udintr();
+int     udprobe(), udslave(), udattach(), udintr(), udstrategy();
 struct  mscp *udgetcp();
 
 u_short udstd[] = { 0772150, 0772550, 0777550, 0 };
@@ -291,16 +294,17 @@ udattach(ui)
  * Open a UDA.  Initialize the device and
  * set the unit online.
  */
-udopen(dev, flag)
+udopen(dev, flag, fmt)
 	dev_t dev;
-	int flag;
+	int flag, fmt;
 {
 	register int unit;
 	register struct uba_device *ui;
 	register struct uda_softc *sc;
 	register struct disklabel *lp;
 	register struct partition *pp;
-	int s, i, part;
+	struct ra_info *ra = &ra_info[unit];
+	int s, i, part, mask = 1 << part;
 	daddr_t start, end;
 
 	unit = udunit(dev);
@@ -340,7 +344,7 @@ udopen(dev, flag)
 	 * unless one is the "raw" partition (whole disk).
 	 */
 #define	RAWPART		2		/* 'c' partition */	/* XXX */
-	if ((ra_info[unit].openpart & (1 << part)) == 0 &&
+	if ((ra->openpart & mask) == 0 &&
 	    part != RAWPART) {
 		pp = &lp->d_partitions[part];
 		start = pp->p_offset;
@@ -352,7 +356,7 @@ udopen(dev, flag)
 				continue;
 			if (pp - lp->d_partitions == RAWPART)
 				continue;
-			if (ra_info[unit].openpart &
+			if (ra->openpart &
 			    (1 << (pp - lp->d_partitions)))
 				log(LOG_WARNING,
 				    "ra%d%c: overlaps open partition (%c)\n",
@@ -360,37 +364,53 @@ udopen(dev, flag)
 				    pp - lp->d_partitions + 'a');
 		}
 	}
-	ra_info[unit].openpart |= (1 << part);
+	switch (fmt) {
+	case S_IFCHR:
+		ra->copenpart |= mask;
+		break;
+	case S_IFBLK:
+		ra->bopenpart |= mask;
+		break;
+	}
+	ra->openpart |= mask;
 	return (0);
 }
 
 /* ARGSUSED */
-udclose(dev, flags)
+udclose(dev, flags, fmt)
 	dev_t dev;
-	int flags;
+	int flags, fmt;
 {
 	register int unit = udunit(dev);
 	register struct uda_softc *sc;
 	struct uba_ctlr *um;
-	int s;
+	register struct ra_info *ra = &ra_info[unit];
+	int s, mask = (1 << udpart(dev));
 
 	um = udminfo[unit];
 	sc = &uda_softc[um->um_ctlr];
-	ra_info[unit].openpart &= ~(1 << udpart(dev));
-#ifdef notdef
+	switch (fmt) {
+	case S_IFCHR:
+		ra->copenpart &= ~mask;
+		break;
+	case S_IFBLK:
+		ra->bopenpart &= ~mask;
+		break;
+	}
+	if (((ra->copenpart | ra->bopenpart) & mask) == 0)
+		ra->openpart &= ~mask;
 	/*
 	 * Should wait for I/O to complete on this partition
 	 * even if others are open, but wait for work on blkflush().
 	 */
-	if (ra_info[unit].openpart == 0) {
+	if (ra->openpart == 0) {
 		s = spl5();
-		/* Can't sleep on b_actf, it might be async. */
-		while (um->um_tab.b_actf)
-			sleep((caddr_t)&um->um_tab.b_actf, PZERO - 1);
+		while (udutab[unit].b_actf)
+			sleep((caddr_t)&udutab[unit], PZERO - 1);
 		splx(s);
-		ra_info[unit].rastate = CLOSED;
+		ra->rastate = CLOSED;
 	}
-#endif
+	return (0);
 }
 
 /*
@@ -452,12 +472,11 @@ rainit(ui, flags)
 	register struct uba_device *ui;
 {
 	register struct mscp *mp;
-	register struct buf *bp;
 	register struct disklabel *lp;
 	register struct uda_softc *sc;
 	register unit = ui->ui_unit;
-	struct disklabel *dlp;
 	struct udadevice *udaddr;
+	char *msg, *readdisklabel();
 	int s, i, error = 0;
 	extern int cold;
 
@@ -515,36 +534,18 @@ rainit(ui, flags)
 	/*
 	 * Read pack label.
 	 */
-	bp = geteblk(DEV_BSIZE);		/* max sector size */
-	bp->b_dev = udminor(unit, 0);
-	bp->b_blkno = LABELSECTOR;
-	bp->b_bcount = DEV_BSIZE;
-	bp->b_flags = B_BUSY | B_READ;
-	udstrategy(bp);
-	biowait(bp);
-	if (bp->b_flags & B_ERROR) {
-		error = u.u_error;		/* XXX */
-		u.u_error = 0;
-		ra_info[unit].rastate = CLOSED;
-		goto done;
-	}
-
-	dlp = (struct disklabel *)(bp->b_un.b_addr + LABELOFFSET);
-	if (dlp->d_magic == DISKMAGIC &&
-	    dlp->d_magic2 == DISKMAGIC && dkcksum(dlp) == 0) {
-		*lp = *dlp;
-		ra_info[unit].rastate = OPEN;
-	} else {
+	if (msg = readdisklabel(udminor(unit, 0), udstrategy, lp)) {
 		log(LOG_ERR, "ra%d: no disk label\n", unit);
 #ifdef COMPAT_42
 		if (udmaptype(unit, lp))
 			ra_info[unit].rastate = OPEN;
 		else
+#else
+			ra_info[unit].rastate = OPENRAW;
 #endif
 		ra_info[unit].rastate = OPENRAW;
-	}
-done:
-	brelse(bp);
+	} else
+		ra_info[unit].rastate = OPEN;
 	return (error);
 }
 
@@ -682,6 +683,8 @@ loop:
 		 */
 		dp->b_active = 0;
 		um->um_tab.b_actf = dp->b_forw;
+		if (ra_info[dp - udutab].openpart == 0)
+			wakeup((caddr_t)dp);
 		goto loop;		/* Need to check for loop */
 	}
 	um->um_tab.b_active++;
@@ -1488,8 +1491,10 @@ udioctl(dev, cmd, data, flag)
 		*(struct disklabel *)data = *lp;
 		break;
 
-	case DIOCGDINFOP:
-		*(struct disklabel **)data = lp;
+	case DIOCGPART:
+		((struct partinfo *)data)->disklab = lp;
+		((struct partinfo *)data)->part =
+		    &lp->d_partitions[udpart(dev)];
 		break;
 
 	case DIOCSDINFO:
@@ -1511,7 +1516,7 @@ udioctl(dev, cmd, data, flag)
 
 		*lp = *(struct disklabel *)data;
 		bp = geteblk(lp->d_secsize);
-		bp->b_dev = dev;
+		bp->b_dev = makedev(major(dev), udminor(udunit(dev), 0));
 		bp->b_bcount = lp->d_secsize;
 		bp->b_blkno = LABELSECTOR;
 		bp->b_flags = B_READ;
@@ -1713,6 +1718,7 @@ udmaptype(unit, lp)
 		lp->d_partitions[0].p_size = lp->d_secperunit;
 		return (0);
 	}
+	lp->d_secsize = 512;
 	lp->d_npartitions = 8;
 	lp->d_secpercyl = lp->d_nsectors * lp->d_ntracks;
 	for (pp = lp->d_partitions; pp < &lp->d_partitions[8];
