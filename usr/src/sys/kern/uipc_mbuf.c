@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_mbuf.c	7.21 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -171,6 +171,7 @@ m_free(m)
 	return (n);
 }
 
+void
 m_freem(m)
 	register struct mbuf *m;
 {
@@ -351,6 +352,7 @@ m_cat(m, n)
 
 m_adj(mp, req_len)
 	struct mbuf *mp;
+	int req_len;
 {
 	register int len = req_len;
 	register struct mbuf *m;
@@ -497,8 +499,8 @@ bad:
  */
 struct mbuf *
 m_split(m0, len0, wait)
-register struct mbuf *m0;
-int len0;
+	register struct mbuf *m0;
+	int len0, wait;
 {
 	register struct mbuf *m, *n;
 	unsigned len = len0, remain;
