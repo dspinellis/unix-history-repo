@@ -1,22 +1,24 @@
 #ifndef lint
-static char sccsid[] = "@(#)rexecd.c	4.1 82/04/02";
+static char sccsid[] = "@(#)rexecd.c	4.2 82/11/14";
 #endif
 
-#include <stdio.h>
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/socket.h>
-#include <net/in.h>
+
+#include <netinet/in.h>
+
+#include <stdio.h>
 #include <errno.h>
 #include <pwd.h>
 #include <wait.h>
 #include <signal.h>
+#include <netdb.h>
 
 extern	errno;
-struct	sockaddr_in sin = { AF_INET, IPPORT_EXECSERVER };
+struct	sockaddr_in sin = { AF_INET };
 struct	passwd *getpwnam();
 char	*crypt(), *rindex(), *sprintf();
-int	options = SO_ACCEPTCONN|SO_KEEPALIVE;
 /* VARARGS 1 */
 int	error();
 /*
@@ -33,7 +35,14 @@ main(argc, argv)
 	union wait status;
 	int f;
 	struct sockaddr_in from;
+	struct servent *sp;
 
+	sp = getservbyname("exec", "tcp");
+	if (sp == 0) {
+		fprintf(stderr, "tcp/exec: unknown service\n");
+		exit(1);
+	}
+	sin.sin_port = htons((u_short)sp->s_port);
 #ifndef DEBUG
 	if (fork())
 		exit(0);
@@ -49,30 +58,30 @@ main(argc, argv)
 	  }
 	}
 #endif
-#if vax
-	sin.sin_port = htons(sin.sin_port);
-#endif
 	argc--, argv++;
-	if (argc > 0 && !strcmp(argv[0], "-d"))
-		options |= SO_DEBUG;
+	f = socket(0, SOCK_STREAM, 0, 0);
+	if (f < 0) {
+		perror("rexecd: socket");
+		exit(1);
+	}
+	if (bind(f, &sin, sizeof (sin), 0) < 0) {
+		perror("rexecd: bind:");
+		exit(1);
+	}
+	listen(f, 10);
 	for (;;) {
-		errno = 0;
-		f = socket(SOCK_STREAM, 0, &sin, options);
-		if (f < 0) {
-			perror("socket");
-			sleep(5);
-			continue;
-		}
-		if (accept(f, &from) < 0) {
-			perror("accept");
-			(void) close(f);
+		int s, len = sizeof (from);
+
+		s = accept(f, &from, &len, 0);
+		if (s < 0) {
+			perror("rexecd: accept");
 			sleep(1);
 			continue;
 		}
 		if (fork() == 0)
-			doit(f, &from);
-		(void) close(f);
-		while(wait3(status, WNOHANG, 0) > 0)
+			doit(s, &from);
+		(void) close(s);
+		while (wait3(status, WNOHANG, 0) > 0)
 			continue;
 	}
 }
@@ -132,11 +141,8 @@ doit(f, fromp)
 		if (s < 0)
 			exit(1);
 		(void) alarm(60);
-		fromp->sin_port = port;
-#if vax
-		fromp->sin_port = ntohs(fromp->sin_port);
-#endif
-		if (connect(s, fromp) < 0)
+		fromp->sin_port = ntohs((u_short)fromp->sin_port);
+		if (connect(s, fromp, sizeof (*fromp), 0) < 0)
 			exit(1);
 		(void) alarm(0);
 	}
@@ -177,7 +183,7 @@ doit(f, fromp)
 			/* should set s nbio! */
 			do {
 				ready = readfrom;
-				(void) select(32, &ready, 0, 1000000);
+				(void) select(16, &ready, 0, 0, 0);
 				if (ready & (1<<s)) {
 					if (read(s, &sig, 1) <= 0)
 						readfrom &= ~(1<<s);
@@ -203,7 +209,7 @@ doit(f, fromp)
 	if (*pwd->pw_shell == '\0')
 		pwd->pw_shell = "/bin/sh";
 	(void) close(f);
-	inigrp(pwd->pw_name, pwd->pw_gid);
+	initgroups(pwd->pw_name, pwd->pw_gid);
 	(void) setuid(pwd->pw_uid);
 	(void) setgid(pwd->pw_gid);
 	environ = envinit;

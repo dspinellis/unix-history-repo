@@ -1,13 +1,15 @@
 #ifndef lint
-static char sccsid[] = "@(#)route.c	4.3 82/10/07";
+static char sccsid[] = "@(#)route.c	4.4 82/11/14";
 #endif
 
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+
 #include <net/route.h>
-#include <net/in.h>
+#include <netinet/in.h>
+
+#include <stdio.h>
 #include <errno.h>
 #include <ctype.h>
 #include <netdb.h>
