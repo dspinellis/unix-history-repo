@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.34 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -737,18 +737,37 @@ putheader(fp, m, e)
 	register HDR *h;
 	char obuf[MAXLINE];
 
+	if (tTd(34, 1))
+		printf("--- putheader, mailer = %s ---\n", m->m_name);
+
 	for (h = e->e_header; h != NULL; h = h->h_link)
 	{
 		register char *p;
 		extern bool bitintersect();
 
+		if (tTd(34, 11))
+		{
+			printf("  %s: ", h->h_field);
+			xputs(h->h_value);
+		}
+
 		if (bitset(H_CHECK|H_ACHECK, h->h_flags) &&
 		    !bitintersect(h->h_mflags, m->m_flags))
+		{
+			if (tTd(34, 11))
+				printf(" (skipped)\n");
 			continue;
+		}
 
 		/* handle Resent-... headers specially */
 		if (bitset(H_RESENT, h->h_flags) && !bitset(EF_RESENT, e->e_flags))
+		{
+			if (tTd(34, 11))
+				printf(" (skipped (resent))\n");
 			continue;
+		}
+		if (tTd(34, 11))
+			printf("\n");
 
 		p = h->h_value;
 		if (bitset(H_DEFAULT, h->h_flags))
