@@ -1,4 +1,4 @@
-#	Makefile	6.1	83/07/29
+#	Makefile	4.7	83/08/05
 #
 # Make a 750/730 tu58 cassette
 # 
@@ -11,7 +11,7 @@ UTILS=	format.730 format.750 copy.730 copy.750 drtest.730 drtest.750
 # order is NOT random...
 OBJS=	boot ${STDBOO} ${DEFBOO} ${DEVBOO} format copy drtest
 FROMDEC=d[lmq]* cs* *boo.* boot.exe vmb.exe
-CASSETTE=/dev/uu0
+CASSETTE=/dev/tu0
 
 all:	cassette
 
@@ -39,7 +39,7 @@ update:	boot.730 ${STDBOO} ${DEFBOO} ${DEVBOO} format.730
 update:	copy.730 drtest.730
 	-mkdir fromdec
 	cd fromdec; arff mxf ${CASSETTE}; rm -f ${FROMDEC}; \
-		flcopy -t3; arff mcrf ${CASSETTE} *
+		flcopy -t3 -f ${CASSETTE}; arff mcrf ${CASSETTE} *
 	rm -rf fromdec
 	cp boot.730 boot
 	cp format.730 format
