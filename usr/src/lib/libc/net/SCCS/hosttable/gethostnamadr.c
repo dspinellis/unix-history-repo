@@ -1,4 +1,12 @@
-/*	gethostnamadr.c	5.1	85/05/30	*/
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)gethostnamadr.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 #include <stdio.h>
 #include <netdb.h>
