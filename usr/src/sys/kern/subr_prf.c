@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.17	81/05/11	*/
+/*	subr_prf.c	4.18	81/06/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -118,7 +118,8 @@ number:
 					for (; *s > 32; s++)
 						;
 			}
-			putchar('>', touser);
+			if (any)
+				putchar('>', touser);
 		}
 		break;
 
