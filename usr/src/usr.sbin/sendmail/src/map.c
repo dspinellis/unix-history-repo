@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	6.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	6.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -385,7 +385,7 @@ ndbm_map_open(map, mode)
 	}
 	map->map_db1 = (void *) dbm;
 	if (mode == O_RDONLY && bitset(MF_ALIAS, map->map_mflags))
-		aliaswait(map, ".dir");
+		aliaswait(map, ".pag");
 	return TRUE;
 }
 
