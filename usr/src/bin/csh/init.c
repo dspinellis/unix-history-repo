@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #if __STDC__
@@ -60,6 +60,7 @@ struct biltins bfunc[] =
     "notify", 	donotify, 	0, INF,
     "onintr", 	doonintr, 	0, 2,
     "popd", 	dopopd, 	0, INF,
+    "printf",	doprintf,	1, INF,
     "pushd", 	dopushd, 	0, INF,
     "rehash", 	dohash, 	0, 0,
     "repeat", 	dorepeat, 	2, INF,
@@ -78,6 +79,7 @@ struct biltins bfunc[] =
     "unset", 	unset, 		1, INF,
     "unsetenv", dounsetenv, 	1, INF,
     "wait", 	dowait, 	0, 0,
+    "which", 	dowhich, 	1, INF,
     "while", 	dowhile, 	1, INF,
 };
 int     nbfunc = sizeof bfunc / sizeof *bfunc;

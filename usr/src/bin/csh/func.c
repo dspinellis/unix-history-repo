@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)func.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)func.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -1408,3 +1408,21 @@ doeval(v, t)
     if (my_reenter)
 	stderror(ERR_SILENT);
 }
+
+void
+/*ARGSUSED*/
+doprintf(v, t)
+    Char **v;
+    struct command *t;
+{
+    char **c;
+    extern int progprintf __P((int, char **));
+    int ret;
+    
+    ret = progprintf(blklen(v), c = short2blk(v));
+
+    blkfree((Char **) c);
+    if (ret)
+	stderror(ERR_SILENT);
+}
+
