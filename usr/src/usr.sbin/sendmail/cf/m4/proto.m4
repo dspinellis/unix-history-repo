@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.2 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.3 (Berkeley) %G%)
 
 
 ##################
@@ -40,24 +40,25 @@ CONCAT(DM, ifdef(`MASQUERADE_NAME', MASQUERADE_NAME, $j))
 # who I send unqualified names to (null means deliver locally)
 CONCAT(DR, ifdef(`LOCAL_RELAY', LOCAL_RELAY))
 
-
 ifdef(`UUCP_NAME',
 # uucp hostnames
 UUCP_NAME
 UUCP_ALIASES
 
 # local UUCP connections
-`include(UUCP_HOSTS_FILE)')
+`include(UUCP_HOSTS_FILE)',
+`dnl')
 
 # operators that cannot be in local usernames (i.e., network indicators)
 CO @ % !
 
-# location of user database file (null means no lookup)
-ifdef(`USERDB_FILE', `CONCAT(`OU', USERDB_FILE)', `dnl')
+ifdef(`USERDB_FILE',
+`# location of user database file (null means no lookup)
+CONCAT(`OU', USERDB_FILE)', `dnl')
 
 ifdef(`_NO_WILDCARD_MX_',
 `# we can guarantee no wildcard MX records matching our domain
-Ow', `dnl')dnl
+Ow', `dnl')
 
 include(`../m4/version.m4')
 
