@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.50 (Berkeley) %G%
+.\"	@(#)op.me	6.51 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.50
+Version 6.51
 .sp
-For Sendmail Version 6.62
+For Sendmail Version 6.64
 .)l
 .sp 2
 .pp
@@ -1205,6 +1205,9 @@ when UUCP didn't understand the distinction between an envelope and a header;
 this was a hack to provide what should now be passed
 as the envelope sender address.
 It should go away.
+It is only used if the
+.b l
+option is set.
 .sh 3 "Apparently-To:"
 .pp
 If a message comes in with no recipients listed in the message
@@ -3566,6 +3569,12 @@ The point of this option is to be a good network neighbor
 and avoid using up excessive resources
 on the other end.
 The default is five minutes.
+.ip l
+If there is an
+.q Errors-To:
+header, send error messages to the addresses listed there.
+They normally go to the envelope sender.
+Use of this option causes sendmail to violate RFC 1123.
 .ip L\fIn\fP
 Set the default log level to
 .i n .
@@ -5725,6 +5734,11 @@ Forward file path.
 Connection cache size
 .ip K
 Connection cache lifetime.
+.ip l
+Enable Errors-To: header.
+These headers violate RFC 1123;
+this option is included to provide back compatibility
+with old versions of sendmail.
 .ip p
 Privacy options.
 .ip U
@@ -6271,7 +6285,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.50
+.\"Version 6.51
 .\".ce 0
 .pn 2
 .bp
