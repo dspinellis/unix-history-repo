@@ -7,12 +7,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fd.c	7.5 (Berkeley) %G%
+ *	@(#)fd.c	7.6 (Berkeley) %G%
  */
 
 #include "fd.h"
 #if NFD > 0
-
+/*
+ * This driver assumed that NFD == 2. Now it works for NFD == 1 or NFD == 2
+ * It will probably not work for NFD > 2.
+ */
 #include "param.h"
 #include "dkbad.h"
 #include "systm.h"
@@ -21,12 +24,14 @@
 #include "ioctl.h"
 #include "buf.h"
 #include "uio.h"
+
 #include "i386/isa/isa_device.h"
 #include "i386/isa/fdreg.h"
 #include "i386/isa/icu.h"
 
 #define	FDUNIT(s)	((s)&1)
 #define	FDTYPE(s)	(((s)>>1)&7)
+#define FDMOTOR(u) 	(fd_unit[(u)].motor ? (1 << (4 + (u))) : 0)
 
 #define b_cylin b_resid
 #define b_step b_resid
@@ -117,7 +122,7 @@ dev_t	dev;
 Fdstrategy(bp)
 	register struct buf *bp;	/* IO operation to perform */
 {
-	register struct buf *dp,*dp0,*dp1;
+	register struct buf *dp;
 	long nblocks,blknum;
  	int	unit, type, s;
 
@@ -148,16 +153,21 @@ printf("fdstrat%d, blk = %d, bcount = %d, addr = %x|",
 			bp->b_error = ENOSPC;
 			bp->b_flags |= B_ERROR;
 		}
+#ifdef FDTEST
+printf("fdstrat%d, too big\n");
+#endif 
 		goto bad;
 	}
  	bp->b_cylin = blknum / (fd_types[type].sectrac * 2);
 	dp = &fd_unit[unit].head;
-	dp0 = &fd_unit[0].head;
-	dp1 = &fd_unit[1].head;
 	dp->b_step = (fd_types[fd_unit[unit].type].steptrac);
 	s = splbio();
 	disksort(dp, bp);
-	if ((dp0->b_active == 0)&&(dp1->b_active == 0)) {
+	if ((fd_unit[0].head.b_active == 0)
+#if NFD > 1
+	    && (fd_unit[1].head.b_active == 0)
+#endif
+	    ) {
 #ifdef FDDEBUG
 printf("T|");
 #endif
@@ -180,10 +190,11 @@ bad:
 set_motor(unit,reset)
 int unit,reset;
 {
-	int m0,m1;
-	m0 = fd_unit[0].motor;
-	m1 = fd_unit[1].motor;
-	outb(fdc+fdout,unit | (reset ? 0 : 0xC)  | (m0 ? 16 : 0) | (m1 ? 32 : 0));
+	outb(fdc+fdout,unit | (reset ? 0 : 0xC)  | FDMOTOR(0) 
+#if NFD > 1
+	     | FDMOTOR(1)
+#endif
+	     );
 }
 
 fd_turnoff(unit)
@@ -274,6 +285,7 @@ Fdopen(dev, flags)
  	int type = FDTYPE(minor(dev));
 	int s;
 
+	printf("fdopen %x %d %d\n", minor(dev), unit, type);
 	/* check bounds */
 	if (unit >= NFD) return(ENXIO);
 	if (type >= NUMTYPES) return(ENXIO);
@@ -324,7 +336,7 @@ int unit;
 	int s;
 
 #ifdef FDTEST
-printf("st%d|",unit);
+printf("fd%d|",unit);
 #endif 
 	s = splbio();
 	if (!fd_unit[unit].motor) {
@@ -594,28 +606,36 @@ struct buf *dp,*bp;
 nextstate(dp)
 struct buf *dp;
 {
-	struct buf *dpother;
 	
-	dpother = &fd_unit[fd_drive ? 0 : 1].head;
-	if (dp->b_actf) fdstart(fd_drive);
-	else if (dpother->b_actf) {
+	if (dp->b_actf) 
+		fdstart(fd_drive);
+	else {
+#if NFD > 1
+		struct buf *dpother;
+
+		dpother = &fd_unit[fd_drive ? 0 : 1].head;
+
+		if (dpother->b_actf) {
 #ifdef FDTEST
 printf("switch|");
 #endif
-		untimeout(fd_turnoff,fd_drive);
-		timeout(fd_turnoff,fd_drive,5*hz);
-		fd_drive = 1 - fd_drive;
-		dp->b_active = 0;
-		dpother->b_active = 1;
-		fdstart(fd_drive);
-	} else {
+			untimeout(fd_turnoff,fd_drive);
+			timeout(fd_turnoff,fd_drive,5*hz);
+			fd_drive = 1 - fd_drive;
+			dp->b_active = 0;
+			dpother->b_active = 1;
+			fdstart(fd_drive);
+		} else 
+#endif
+		{
 #ifdef FDTEST
 printf("off|");
 #endif
-		untimeout(fd_turnoff,fd_drive);
-		timeout(fd_turnoff,fd_drive,5*hz);
-		fd_state = 0;
-		dp->b_active = 0;
+			untimeout(fd_turnoff,fd_drive);
+			timeout(fd_turnoff,fd_drive,5*hz);
+			fd_state = 0;
+			dp->b_active = 0;
+		}
 	}
 }
 
