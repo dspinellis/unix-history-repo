@@ -1,4 +1,4 @@
-/*	ht.c	4.21	82/01/17	*/
+/*	ht.c	4.22	82/05/12	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -271,6 +271,7 @@ htustart(mi)
 			}
 			if (htaddr->htds & HTDS_EOT) {
 				bp->b_resid = bp->b_bcount;
+				bp->b_flags |= B_ERROR;
 				return (MBU_NEXT);
 			}
 		}
