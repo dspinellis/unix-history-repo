@@ -5,7 +5,7 @@
 
 PROG=	m4
 CFLAGS+=-DEXTENDED
-SRCS =  main.c eval.c serv.c look.c misc.c expr.c
-NOMAN=	noman
+SRCS =  expr.c int2str.c look.c main.c misc.c serv.c
+MAN1 =  m4.0
 
 .include <bsd.prog.mk>
