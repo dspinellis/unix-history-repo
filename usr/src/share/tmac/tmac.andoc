@@ -4,15 +4,15 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)tmac.andoc	5.1 (Berkeley) %G%
+.\"     @(#)tmac.andoc	5.2 (Berkeley) %G%
 .\"
 .de Dd
 .rm Dd
-.so /usr/share/misc/tmac.doc
+.so /usr/share/tmac/tmac.doc
 .Dd \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8
 ..
 .de TH
 .rm TH
-.so /usr/share/misc/tmac.an
+.so /usr/share/tmac/tmac.an
 .TH \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8
 ..
