@@ -3,22 +3,22 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_imp.h	7.1 (Berkeley) %G%
+ *	@(#)if_imp.h	7.2 (Berkeley) %G%
  */
 
 /*
  * Structure of IMP 1822 long leader.
  */
 struct control_leader {
-	u_char	dl_format;	/* leader format */
-	u_char	dl_network;	/* src/dest network */
-	u_char	dl_flags;	/* leader flags */
-	u_char	dl_mtype;	/* message type */
-	u_char	dl_htype;	/* handling type */
-	u_char	dl_host;	/* host number */
-	u_short	dl_imp;		/* imp field */
-	u_char	dl_link;	/* link number */
-	u_char	dl_subtype;	/* message subtype */
+	u_char	dl_format;	/* 1-8   leader format */
+	u_char	dl_network;	/* 9-16  src/dest network */
+	u_char	dl_flags;	/* 17-24 leader flags */
+	u_char	dl_mtype;	/* 25-32 message type */
+	u_char	dl_htype;	/* 33-40 handling type */
+	u_char	dl_host;	/* 41-48 host number */
+	u_short	dl_imp;		/* 49-64 imp field */
+	u_char	dl_link;	/* 65-72 link number */
+	u_char	dl_subtype;	/* 73-80 message subtype */
 };
 
 struct imp_leader {
@@ -35,17 +35,16 @@ struct imp_leader {
 	u_short	il_length;	/* message length */
 };
 
-#define	IMP_DROPCNT	2	/* # of noops from imp to ignore */
+#define	IMP_NOOPCNT	3	/* # of noops to send imp on reset */
 /* insure things are even... */
 #define	IMPMTU		((8159 / NBBY) & ~01)
+#define	IMP_RCVBUF	((8159 / NBBY + 2) & ~01)
 
 /*
  * IMP-host flags
  */
 #define	IMP_NFF		0xf	/* 96-bit (new) format */
 #define	IMP_TRACE	0x8	/* trace message route */
-
-#define	IMP_DMASK	0x3	/* host going down mask */
 
 /*
  * IMP-host message types.
@@ -67,12 +66,31 @@ struct imp_leader {
 #define	IMPTYPE_READY		14	/* ready for next message */
 
 /*
- * IMPTYPE_DOWN subtypes.
+ * IMPTYPE_DOWN subtypes, in link number field.
  */
+#define	IMP_DMASK		0x3	/* host going down mask */
 #define	IMPDOWN_GOING		0	/* 30 secs */
 #define	IMPDOWN_PM		1	/* hardware PM */
 #define	IMPDOWN_RELOAD		2	/* software reload */
 #define	IMPDOWN_RESTART		3	/* emergency restart */
+#define	IMPDOWN_WHENMASK	0x3c	/* mask for "how soon" */
+#define	IMPDOWN_WHENSHIFT	2	/* shift for "how soon" */
+#define	IMPDOWN_WHENUNIT	5	/* unit for "how soon", 5 min. */
+
+#define	IMPTV_DOWN	30		/* going down timer 30 secs */
+
+#ifdef IMPMESSAGES
+/*
+ * Messages from IMP regarding why
+ * it's going down.
+ */
+char *impmessage[] = {
+	"in 30 seconds",
+	"for hardware PM",
+	"to reload software",
+	"for emergency reset"
+};
+#endif
 
 /*
  * IMPTYPE_BADLEADER subtypes.
@@ -124,32 +142,57 @@ struct imp_leader {
 #define	IMPRETRY_BUFFER		0	/* IMP buffer wasn't available */
 #define	IMPRETRY_BLOCK		1	/* connection block unavailable */
 
+#define	RFNMTIMER	(120*PR_SLOWHZ)	/* time to wait for RFNM for msg. */
 /*
  * Data structure shared between IMP protocol module and hardware
  * interface driver.  Used to allow layering of IMP routines on top
- * of varying device drivers.  NOTE: there's a possible problem 
- * with ambiguity in the ``unit'' definition which is implicitly
- * shared by the both IMP and device code.  If we have two IMPs,
- * with each on top of a device of the same unit, things won't work.
- * The assumption is if you've got multiple IMPs, then they all run
- * on top of the same type of device, or they must have different units.
+ * of varying device drivers.
  */
 struct impcb {
+	int	ic_hwunit;		/* H/W unit number */
+	char	*ic_hwname;		/* H/W type name */
 	char	ic_oactive;		/* output in progress */
 	int	(*ic_init)();		/* hardware init routine */
 	int	(*ic_start)();		/* hardware start output routine */
+	int	(*ic_stop)();		/* hardware "drop ready" routine */
 };
+
+/*
+ * IMP software status per interface.
+ * (partially shared with the hardware specific module)
+ *
+ * Each interface is referenced by a network interface structure,
+ * imp_if, which the routing code uses to locate the interface.
+ * This structure contains the output queue for the interface, its
+ * address, ...  IMP specific structures used in connecting the
+ * IMP software modules to the hardware specific interface routines
+ * are stored here.  The common structures are made visible to the
+ * interface driver by passing a pointer to the hardware routine
+ * at "attach" time.
+ */
+struct imp_softc {
+	struct	ifnet imp_if;		/* network visible interface */
+	struct	impcb imp_cb;		/* hooks to hardware module */
+	int	imp_state;		/* current state of IMP */
+	int	imp_dropcnt;		/* used during initialization */
+	u_long	imp_lostrfnm;		/* rfnm's timed out */
+	u_long	imp_badrfnm;		/* rfnm/incompl after timeout/bogus */
+	u_long	imp_incomplete;		/* incomplete's received */
+	u_long	imp_garbage;		/* bad messages received */
+};
+struct	imp_softc *impattach();
 
 /*
  * State of an IMP.
  */
-#define	IMPS_DOWN	0		/* unavailable, don't use */
-#define	IMPS_GOINGDOWN	1		/* been told we go down soon */
+#define	IMPS_DOWN	0		/* unavailable, host not ready */
+#define	IMPS_WINIT	1		/* imp not ready, waiting for init */
 #define	IMPS_INIT	2		/* coming up */
 #define	IMPS_UP		3		/* ready to go */
-#define	IMPS_RESET	4		/* reset in progress */
+#define	IMPS_GOINGDOWN	4		/* been told we go down soon */
 
-#define	IMPTV_DOWN	(30*60)		/* going down timer 30 secs */
+#define	IMPS_RUNNING(s)	((s) >= IMPS_UP)	/* ready for messages */
+#define	IMPS_IMPREADY(s) ((s) >= IMPS_INIT)	/* IMP ready line on */
 
 #ifdef IMPLEADERS
 char *impleaders[IMPTYPE_READY+1] = {

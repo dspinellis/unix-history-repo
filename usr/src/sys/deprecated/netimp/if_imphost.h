@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_imphost.h	7.1 (Berkeley) %G%
+ *	@(#)if_imphost.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -16,7 +16,9 @@
  */
 struct host {
 	struct	mbuf *h_q;		/* holding queue */
-	struct	in_addr h_addr;		/* host's address */
+	u_short	h_imp;			/* host's imp number */
+	u_char	h_host;			/* host's number on imp */
+	u_char	h_unit;			/* imp unit number */
 	u_char	h_qcnt;          	/* size of holding q */
 	u_char	h_timer;		/* used to stay off deletion */
 	u_char	h_rfnm;			/* # outstanding rfnm's */
@@ -35,19 +37,28 @@ struct host {
 #define	HF_DEAD		(1<<IMPTYPE_HOSTDEAD)
 #define	HF_UNREACH	(1<<IMPTYPE_HOSTUNREACH)
 
+/*
+ * Mark a host structure free
+ */
+#define	hostfree(hp) { \
+	(hp)->h_flags &= ~HF_INUSE; \
+}
+
 #define	HOSTTIMER	128		/* keep structure around awhile */
 
 /*
  * Host structures, as seen inside an mbuf.
- * Hashing on the host address is used to
+ * Hashing on the host and imp is used to
  * select an index into the first mbuf.  Collisions
  * are then resolved by searching successive
  * mbuf's at the same index.  Reclamation is done
  * automatically at the time a structure is free'd.
  */
 #define	HPMBUF	((MLEN - sizeof(int)) / sizeof(struct host))
-#if vax
-#define	HOSTHASH(a)	((((a).s_addr>>24)+(a).s_addr) % HPMBUF)
+#if defined(notdef) && BYTE_ORDER == BIG_ENDIAN
+#define	HOSTHASH(imp, host)	(((imp)+(host)) % HPMBUF)
+#else
+#define	HOSTHASH(imp, host)	((ntohs(imp)+(host)) % HPMBUF)
 #endif
 
 /*

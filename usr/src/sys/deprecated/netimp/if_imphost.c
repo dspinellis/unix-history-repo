@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_imphost.c	7.1 (Berkeley) %G%
+ *	@(#)if_imphost.c	7.2 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -18,7 +18,10 @@
  */
 #include "param.h"
 #include "mbuf.h"
+#include "socket.h"
 #include "syslog.h"
+
+#include "../net/if.h"
 
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
@@ -30,22 +33,24 @@
  * Head of host table hash chains.
  */
 struct mbuf *hosts;
+extern struct imp_softc imp_softc[];
 
 /*
  * Given an internet address
  * return a host structure (if it exists).
  */
 struct host *
-hostlookup(addr)
-	struct in_addr addr;
+hostlookup(imp, host, unit)
+	int imp, host, unit;
 {
 	register struct host *hp;
 	register struct mbuf *m;
-	register int hash = HOSTHASH(addr);
+	register int hash = HOSTHASH(imp, host);
 
 	for (m = hosts; m; m = m->m_next) {
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
-	        if (hp->h_addr.s_addr == addr.s_addr) {
+	        if (hp->h_imp == imp && hp->h_host == host &&
+		    hp->h_unit == unit) {
 			hp->h_flags |= HF_INUSE;
 			return (hp);
 		}
@@ -59,26 +64,25 @@ hostlookup(addr)
  * one and hook it into the host database.
  */
 struct host *
-hostenter(addr)                 
-	struct in_addr addr;
+hostenter(imp, host, unit)
+	int imp, host, unit;
 {
 	register struct mbuf *m, **mprev;
 	register struct host *hp, *hp0 = 0;
-	register int hash = HOSTHASH(addr);
+	register int hash = HOSTHASH(imp, host);
 
 	mprev = &hosts;
 	while (m = *mprev) {
 		mprev = &m->m_next;
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
+	        if (hp->h_imp == imp && hp->h_host == host &&
+		    hp->h_unit == unit)
+			goto foundhost;
 		if ((hp->h_flags & HF_INUSE) == 0) {
-			if (hp->h_addr.s_addr == addr.s_addr)
-				goto foundhost;
 			if (hp0 == 0)
 				hp0 = hp;
 			continue;
 		}
-	        if (hp->h_addr.s_addr == addr.s_addr)    
-			goto foundhost;
 	}
 
 	/*
@@ -95,7 +99,9 @@ hostenter(addr)
 	}
 	mtod(dtom(hp0), struct hmbuf *)->hm_count++;
 	hp = hp0;
-	hp->h_addr = addr;
+	hp->h_imp = imp;
+	hp->h_host = host;
+	hp->h_unit = unit;
 	hp->h_timer = 0;
 	hp->h_flags = 0;
 
@@ -105,42 +111,26 @@ foundhost:
 }
 
 /*
- * Mark a host structure free and set it's
- * timer going.
+ * Reset a given imp unit's host entries.
  */
-hostfree(hp)                               
-	register struct host *hp;
-{
-
-	hp->h_flags &= ~HF_INUSE;
-	hp->h_timer = HOSTTIMER;
-	hp->h_rfnm = 0;
-}
-
-/*
- * Reset a given network's host entries.
- */
-hostreset(net)	    
-	u_long net;
+hostreset(unit)
+	int unit;
 {
 	register struct mbuf *m;
 	register struct host *hp, *lp;
 	struct hmbuf *hm;
-	struct mbuf *mnext;
 
-	for (m = hosts; m; m = mnext) {
-		mnext = m->m_next;
+	for (m = hosts; m; m = m->m_next) {
 		hm = mtod(m, struct hmbuf *);
 		hp = hm->hm_hosts; 
 		lp = hp + HPMBUF;
 		while (hm->hm_count > 0 && hp < lp) {
-			if (in_netof(hp->h_addr) == net) {
-				hp->h_flags &= ~HF_INUSE;
+			if (hp->h_unit == unit)
 				hostrelease(hp);
-			}
 			hp++;
 		}
 	}
+	hostcompress();
 }
 
 /*
@@ -167,31 +157,20 @@ hostrelease(hp)
 	}
 	hp->h_flags = 0;
 	hp->h_rfnm = 0;
-	if (--mtod(mh, struct hmbuf *)->hm_count)
-		return;
-	mprev = &hosts;
-	while ((m = *mprev) != mh)
-		mprev = &m->m_next;
-	*mprev = m_free(mh);
+	--mtod(mh, struct hmbuf *)->hm_count;
 }
 
-/*
- * Remove a packet from the holding q.
- * The RFNM counter is also bumped.
- */
-struct mbuf *
-hostdeque(hp)
-	register struct host *hp;
+hostcompress()
 {
-	register struct mbuf *m;
+	register struct mbuf *m, **mprev;
 
-	hp->h_rfnm--;
-	HOST_DEQUE(hp, m);
-	if (m)
-		return (m);
-	if (hp->h_rfnm == 0)
-		hostfree(hp);
-	return (0);
+	mprev = &hosts;
+	while (m = *mprev) {
+		if (mtod(m, struct hmbuf *)->hm_count == 0)
+			*mprev = m_free(m);
+		else
+			mprev = &m->m_next;
+	}
 }
 
 /*
@@ -206,24 +185,33 @@ hostslowtimo()
 	register struct mbuf *m;
 	register struct host *hp, *lp;
 	struct hmbuf *hm;
-	struct mbuf *mnext;
-	int s = splimp();
+	int s = splimp(), any = 0;
 
-	for (m = hosts; m; m = mnext) {
-		mnext = m->m_next;
+	for (m = hosts; m; m = m->m_next) {
 		hm = mtod(m, struct hmbuf *);
 		hp = hm->hm_hosts; 
 		lp = hp + HPMBUF;
 		for (; hm->hm_count > 0 && hp < lp; hp++) {
-			if (hp->h_timer && --hp->h_timer == 0) {
-				if (hp->h_rfnm)
-				    log(LOG_WARNING,
-					"imp?: host %x, lost %d rfnms\n",
-					ntohl(hp->h_addr.s_addr), hp->h_rfnm);
-				hostrelease(hp);
+		    if (hp->h_timer && --hp->h_timer == 0) {
+			if (hp->h_rfnm) {
+			    log(LOG_WARNING,
+			        "imp%d: host %d/imp %d, lost %d rfnms\n",
+			        hp->h_unit, hp->h_host, ntohs(hp->h_imp),
+			        hp->h_rfnm);
+			    imp_softc[hp->h_unit].imp_lostrfnm += hp->h_rfnm;
+			    hp->h_rfnm = 0;
+			    if (hp->h_q) {
+				imprestarthost(hp);
+				continue;
+			    }
 			}
+			any = 1;
+			hostrelease(hp);
+		    }
 		}
 	}
+	if (any)
+		hostcompress();
 	splx(s);
 }
 #endif
