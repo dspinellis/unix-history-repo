@@ -1,4 +1,4 @@
-/*	lfs_inode.c	3.3	%G%	*/
+/*	lfs_inode.c	3.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
