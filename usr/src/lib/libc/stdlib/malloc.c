@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)malloc.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)malloc.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -30,23 +30,27 @@ static char sccsid[] = "@(#)malloc.c	4.4 (Berkeley) %G%";
 union	overhead {
 	union	overhead *ov_next;	/* when free */
 	struct {
+#ifndef RCHECK
 		u_char	ovu_magic;	/* magic number */
 		u_char	ovu_index;	/* bucket # */
-#ifdef RCHECK
-		u_short	ovu_size;	/* actual block size */
-		u_int	ovu_rmagic;	/* range magic number */
+#else
+		u_int	ovu_size;	/* actual block size */
+		u_char	ovu_magic;	/* magic number */
+		u_char	ovu_index;	/* bucket # */
+		u_short	ovu_rmagic;	/* range magic number */
 #endif
 	} ovu;
 #define	ov_magic	ovu.ovu_magic
 #define	ov_index	ovu.ovu_index
-#define	ov_size		ovu.ovu_size
 #define	ov_rmagic	ovu.ovu_rmagic
+#define	ov_size		ovu.ovu_size
 };
 
-#define	MAGIC		0xff		/* magic # on accounting info */
-#define RMAGIC		0x55555555	/* magic # on range info */
+#define	MAGIC		0xef		/* magic # on accounting info */
+#define RMAGIC		0x5555		/* magic # on range info */
+
 #ifdef RCHECK
-#define	RSLOP		sizeof (u_int)
+#define	RSLOP		sizeof (u_short)
 #else
 #define	RSLOP		0
 #endif
@@ -60,6 +64,9 @@ union	overhead {
 static	union overhead *nextf[NBUCKETS];
 extern	char *sbrk();
 
+static	int pagesz;			/* page size */
+static	int pagebucket;			/* page size bucket */
+
 #ifdef MSTATS
 /*
  * nmalloc[i] is the difference between the number of mallocs and frees
@@ -69,8 +76,8 @@ static	u_int nmalloc[NBUCKETS];
 #include <stdio.h>
 #endif
 
-#ifdef debug
-#define	ASSERT(p)   if (!(p)) botch("p"); else
+#ifdef DEBUG
+#define	ASSERT(p)   if (!(p)) botch("p")
 static
 botch(s)
 	char *s;
@@ -85,36 +92,69 @@ botch(s)
 
 char *
 malloc(nbytes)
-	register unsigned nbytes;
+	unsigned nbytes;
 {
-  	register union overhead *p;
-  	register int bucket = 0;
-  	register unsigned shiftr;
+  	register union overhead *op;
+  	register int bucket;
+	register unsigned amt, n;
 
 	/*
-	 * Convert amount of memory requested into
-	 * closest block size stored in hash buckets
-	 * which satisfies request.  Account for
-	 * space used per block for accounting.
+	 * First time malloc is called, setup page size and
+	 * align break pointer so all data will be page aligned.
 	 */
-  	nbytes += sizeof (union overhead) + RSLOP;
-  	nbytes = (nbytes + 3) &~ 3; 
-  	shiftr = (nbytes - 1) >> 2;
-	/* apart from this loop, this is O(1) */
-  	while (shiftr >>= 1)
-  		bucket++;
+	if (pagesz == 0) {
+		pagesz = n = getpagesize();
+		op = (union overhead *)sbrk(0);
+  		n = n - sizeof (*op) - ((int)op & (n - 1));
+		if (n < 0)
+			n += pagesz;
+  		if (n) {
+  			if (sbrk(n) == (char *)-1)
+				return (NULL);
+		}
+		bucket = 0;
+		amt = 8;
+		while (pagesz > amt) {
+			amt <<= 1;
+			bucket++;
+		}
+		pagebucket = bucket;
+	}
+	/*
+	 * Convert amount of memory requested into closest block size
+	 * stored in hash buckets which satisfies request.
+	 * Account for space used per block for accounting.
+	 */
+	if (nbytes <= (n = pagesz - sizeof (*op) - RSLOP)) {
+#ifndef RCHECK
+		amt = 8;	/* size of first bucket */
+		bucket = 0;
+#else
+		amt = 16;	/* size of first bucket */
+		bucket = 1;
+#endif
+		n = -(sizeof (*op) + RSLOP);
+	} else {
+		amt = pagesz;
+		bucket = pagebucket;
+	}
+	while (nbytes > amt + n) {
+		amt <<= 1;
+		bucket++;
+	}
 	/*
 	 * If nothing in hash bucket right now,
 	 * request more memory from the system.
 	 */
-  	if (nextf[bucket] == NULL)    
+  	if ((op = nextf[bucket]) == NULL) {
   		morecore(bucket);
-  	if ((p = (union overhead *)nextf[bucket]) == NULL)
-  		return (NULL);
+  		if ((op = nextf[bucket]) == NULL)
+  			return (NULL);
+	}
 	/* remove from linked list */
-  	nextf[bucket] = nextf[bucket]->ov_next;
-	p->ov_magic = MAGIC;
-	p->ov_index= bucket;
+  	nextf[bucket] = op->ov_next;
+	op->ov_magic = MAGIC;
+	op->ov_index = bucket;
 #ifdef MSTATS
   	nmalloc[bucket]++;
 #endif
@@ -123,13 +163,11 @@ malloc(nbytes)
 	 * Record allocated size of block and
 	 * bound space with magic numbers.
 	 */
-	p->ov_rmagic = RMAGIC;
-  	if (bucket <= 13) {
-		p->ov_size = nbytes - 1;
-  		*((u_int *)((caddr_t)p + nbytes - RSLOP)) = RMAGIC;
-	}
+	op->ov_size = nbytes;
+	op->ov_rmagic = RMAGIC;
+  	*(u_short *)((caddr_t)(op + 1) + nbytes) = RMAGIC;
 #endif
-  	return ((char *)(p + 1));
+  	return ((char *)(op + 1));
 }
 
 /*
@@ -137,49 +175,33 @@ malloc(nbytes)
  */
 static
 morecore(bucket)
-	register bucket;
+	int bucket;
 {
   	register union overhead *op;
-  	register int rnu;       /* 2^rnu bytes will be requested */
-  	register int nblks;     /* become nblks blocks of the desired size */
-	register int siz;
+	register int sz;		/* size of desired block */
+  	register int amt;		/* amount to allocate */
+  	register int nblks;		/* how many blocks we get */
 
-  	if (nextf[bucket])
-  		return;
-	/*
-	 * Insure memory is allocated
-	 * on a page boundary.  Should
-	 * make getpageize call?
-	 */
-  	op = (union overhead *)sbrk(0);
-  	if ((int)op & 0x3ff)
-  		sbrk(1024 - ((int)op & 0x3ff));
-	/* take 2k unless the block is bigger than that */
-  	rnu = (bucket <= 8) ? 11 : bucket + 3;
-  	nblks = 1 << (rnu - (bucket + 3));  /* how many blocks to get */
-  	if (rnu < bucket)
-		rnu = bucket;
-	op = (union overhead *)sbrk(1 << rnu);
+	sz = 1 << (bucket + 3);
+	if (sz < pagesz) {
+		amt = pagesz;
+  		nblks = amt / sz;
+	} else {
+		amt = sz + pagesz;
+		nblks = 1;
+	}
+	op = (union overhead *)sbrk(amt);
 	/* no more room! */
   	if ((int)op == -1)
   		return;
-	/*
-	 * Round up to minimum allocation size boundary
-	 * and deduct from block count to reflect.
-	 */
-  	if ((int)op & 7) {
-  		op = (union overhead *)(((int)op + 8) &~ 7);
-  		nblks--;
-  	}
 	/*
 	 * Add new memory allocated to that on
 	 * free list for this hash bucket.
 	 */
   	nextf[bucket] = op;
-  	siz = 1 << (bucket + 3);
   	while (--nblks > 0) {
-		op->ov_next = (union overhead *)((caddr_t)op + siz);
-		op = (union overhead *)((caddr_t)op + siz);
+		op->ov_next = (union overhead *)((caddr_t)op + sz);
+		op = (union overhead *)((caddr_t)op + sz);
   	}
 }
 
@@ -192,7 +214,7 @@ free(cp)
   	if (cp == NULL)
   		return;
 	op = (union overhead *)((caddr_t)cp - sizeof (union overhead));
-#ifdef debug
+#ifdef DEBUG
   	ASSERT(op->ov_magic == MAGIC);		/* make sure it was in use */
 #else
 	if (op->ov_magic != MAGIC)
@@ -200,11 +222,10 @@ free(cp)
 #endif
 #ifdef RCHECK
   	ASSERT(op->ov_rmagic == RMAGIC);
-	if (op->ov_index <= 13)
-		ASSERT(*(u_int *)((caddr_t)op + op->ov_size + 1 - RSLOP) == RMAGIC);
+	ASSERT(*(u_short *)((caddr_t)(op + 1) + op->ov_size) == RMAGIC);
 #endif
-  	ASSERT(op->ov_index < NBUCKETS);
   	size = op->ov_index;
+  	ASSERT(size < NBUCKETS);
 	op->ov_next = nextf[size];
   	nextf[size] = op;
 #ifdef MSTATS
@@ -230,10 +251,9 @@ realloc(cp, nbytes)
 	char *cp; 
 	unsigned nbytes;
 {   
-  	register u_int onb;
+  	register u_int onb, i;
 	union overhead *op;
   	char *res;
-	register int i;
 	int was_alloced = 0;
 
   	if (cp == NULL)
@@ -256,26 +276,39 @@ realloc(cp, nbytes)
 		 */
 		if ((i = findbucket(op, 1)) < 0 &&
 		    (i = findbucket(op, realloc_srchlen)) < 0)
+#ifndef RCHECK
 			i = 0;
-	}
-	onb = (1 << (i + 3)) - sizeof (*op) - RSLOP;
-	/* avoid the copy if same size block */
-	if (was_alloced &&
-	    nbytes <= onb && nbytes > (1 << (i + 2)) - sizeof(*op) - RSLOP) {
-#ifdef RCHECK
-  		if (i <= 13) {
-			op->ov_size = nbytes - 1;
-  			*((u_int *)((caddr_t)op + nbytes - RSLOP)) = RMAGIC;
-		}
+#else
+			i = 1;	/* smallest possible w/ RCHECK */
 #endif
-		return(cp);
+	}
+	onb = 1 << (i + 3);
+	if (onb < pagesz)
+		onb -= sizeof (*op) + RSLOP;
+	else
+		onb += pagesz - sizeof (*op) - RSLOP;
+	/* avoid the copy if same size block */
+	if (was_alloced) {
+		if (i) {
+			i = 1 << (i + 2);
+			if (i < pagesz)
+				i -= sizeof (*op) + RSLOP;
+			else
+				i += pagesz - sizeof (*op) - RSLOP;
+		}
+		if (nbytes <= onb && nbytes > i) {
+#ifdef RCHECK
+			op->ov_size = nbytes;
+			*(u_short *)((caddr_t)(op + 1) + op->ov_size) = RMAGIC;
+#endif
+			return(cp);
+		} else
+			free(cp);
 	}
   	if ((res = malloc(nbytes)) == NULL)
   		return (NULL);
   	if (cp != res)			/* common optimization */
 		bcopy(cp, res, (nbytes < onb) ? nbytes : onb);
-  	if (was_alloced)
-		free(cp);
   	return (res);
 }
 
