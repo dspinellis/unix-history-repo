@@ -1,6 +1,6 @@
 .lh
 .in 3i
-
+August 29, 1988
 .in -3i
 .nf
 Mary McDonald
@@ -154,12 +154,4 @@ cc:	Bill Moser, Business Services
 	Marshall Kirk McKusick, CSRG
 .fi
 .bp
-.rs
-.sp 2
-.ce
-Appendix A
-.sp 2
-.nf
-.sz 8
-.2c
 .so files.4.2.copyr
