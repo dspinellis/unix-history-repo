@@ -26,7 +26,7 @@
  */
 
 const char chkconfig_c_rcsid[] =
-  "$Id: chkconfig.c,v 1.1 1993/11/11 05:25:28 wollman Exp $";
+  "$Id: chkconfig.c,v 1.2 1993/11/11 23:30:34 wollman Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -251,10 +251,7 @@ static void insert(const char *fname) {
   else
     headp = &offhead;
 
-  while(*headp) {
-    if(strcmp(q->name, (**headp).name) >= 0)
-      break;			/* found the right spot! */
-
+  while(*headp && strcmp(q->name, (**headp).name) > 0) {
     headp = &(**headp).next;
   }
 
