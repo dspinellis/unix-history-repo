@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.76	82/10/09	*/
+/*	tcp_input.c	1.77	82/10/16	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -893,8 +893,11 @@ present:
 		ti = (struct tcpiphdr *)ti->ti_next;
 		if (so->so_state & SS_CANTRCVMORE)
 			m_freem(m);
-		else
+		else {
+SBCHECK(&so->so_rcv, "tcp_input before");
 			sbappend(&so->so_rcv, m);
+SBCHECK(&so->so_rcv, "tcp_input after");
+		}
 	} while (ti != (struct tcpiphdr *)tp && ti->ti_seq == tp->rcv_nxt);
 	sorwakeup(so);
 	return (flags);
