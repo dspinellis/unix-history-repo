@@ -2079,6 +2079,7 @@ Suff_Init ()
     suffNull->name =   	    strdup ("");
     suffNull->nameLen =     0;
     suffNull->searchPath =  Lst_Init (FALSE);
+    Dir_Concat(suffNull->searchPath, dirSearchPath);
     suffNull->children =    Lst_Init (FALSE);
     suffNull->parents =	    Lst_Init (FALSE);
     suffNull->sNum =   	    sNum++;
