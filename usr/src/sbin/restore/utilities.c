@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.15	(Berkeley)	83/08/11";
+static char sccsid[] = "@(#)utilities.c	3.16	(Berkeley)	83/12/30";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -164,26 +164,28 @@ linkit(existing, new, type)
 	if (type == SYMLINK) {
 		if (symlink(existing, new) < 0) {
 			fprintf(stderr,
-				"Warning: cannot create symbolic link %s->%s",
+				"Warning: cannot create symbolic link %s->%s: ",
 				new, existing);
 			(void) fflush(stderr);
 			perror("");
-			return;
+			return (FAIL);
 		}
 	} else if (type == HARDLINK) {
 		if (link(existing, new) < 0) {
 			fprintf(stderr,
-				"Warning: cannot create hard link %s->%s",
+				"Warning: cannot create hard link %s->%s: ",
 				new, existing);
 			(void) fflush(stderr);
 			perror("");
-			return;
+			return (FAIL);
 		}
 	} else {
 		panic("linkit: unknown type %d\n", type);
+		return (FAIL);
 	}
 	vprintf(stdout, "Create %s link %s->%s\n",
 		type == SYMLINK ? "symbolic" : "hard", new, existing);
+	return (GOOD);
 }
 
 /*
