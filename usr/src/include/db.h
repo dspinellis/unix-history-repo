@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.4 (Berkeley) %G%
+ *	@(#)db.h	5.5 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -25,7 +25,7 @@
 
 /* key/data structure -- a data-base thang */
 typedef struct {
-	char *data;
+	unsigned char *data;
 	int size;
 } DBT;
 
