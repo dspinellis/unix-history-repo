@@ -1,0 +1,25 @@
+Differences between textstyle and displaystyle
+
+superscripts are a little higher in displaystyle
+(does not apply to cramped variants)
+
+operators are bigger in ds
+[not done automatically]
+
+more separation between square-root bar and top of contents
+in displaystyle
+
+fractions are different: in textstyle change to script style;
+also num and denom positions different; also minimum
+separation between bar and contents different.
+[dealt with by smallover]
+
+
+	D 	D'	T	T'	S	S'
+sup	sup1	sup3	sup2	sup3	sup2	sup3
+sroot	xh	xh	rt	rt	rt	rt
+space	yes	yes	yes	yes	no	no
+
+If we make text-style--->display-style,
+
+too much separation square roots
