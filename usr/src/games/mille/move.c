@@ -1,12 +1,18 @@
 /*
  * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	5.1 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)move.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 #include	"mille.h"
 #ifndef	unctrl
@@ -77,8 +83,10 @@ domove()
 			error("already picked");
 		else {
 			pp->hand[0] = *--Topcard;
+#ifdef DEBUG
 			if (Debug)
 				fprintf(outf, "DOMOVE: Draw %s\n", C_name[*Topcard]);
+#endif
 acc:
 			if (Play == COMP) {
 				account(*Topcard);
@@ -88,8 +96,10 @@ acc:
 			if (pp->hand[1] == C_INIT && Topcard > Deck) {
 				Card_no = 1;
 				pp->hand[1] = *--Topcard;
+#ifdef DEBUG
 				if (Debug)
 					fprintf(outf, "DOMOVE: Draw %s\n", C_name[*Topcard]);
+#endif
 				goto acc;
 			}
 			pp->new_battle = FALSE;
@@ -139,16 +149,20 @@ check_go() {
 		for (i = 0; i < HAND_SZ; i++) {
 			card = pp->hand[i];
 			if (issafety(card) || canplay(pp, op, card)) {
+#ifdef DEBUG
 				if (Debug) {
 					fprintf(outf, "CHECK_GO: can play %s (%d), ", C_name[card], card);
 					fprintf(outf, "issafety(card) = %d, ", issafety(card));
 					fprintf(outf, "canplay(pp, op, card) = %d\n", canplay(pp, op, card));
 				}
+#endif
 				return;
 			}
+#ifdef DEBUG
 			else if (Debug)
 				fprintf(outf, "CHECK_GO: cannot play %s\n",
 				    C_name[card]);
+#endif
 		}
 	}
 	Finished = TRUE;
@@ -174,8 +188,10 @@ mustpick:
 	}
 
 	card = pp->hand[Card_no];
+#ifdef DEBUG
 	if (Debug)
 		fprintf(outf, "PLAYCARD: Card = %s\n", C_name[card]);
+#endif
 	Next = FALSE;
 	switch (card) {
 	  case C_200:
@@ -304,7 +320,6 @@ protected:
 getmove()
 {
 	reg char	c, *sp;
-	static char	moveprompt[] = ">>:Move:";
 #ifdef EXTRAP
 	static bool	last_ex = FALSE;	/* set if last command was E */
 
@@ -386,42 +401,41 @@ getmove()
 		  case ' ':		/* Spaces		*/
 		  case '\0':		/* and nulls		*/
 			break;
+#ifdef DEBUG
 		  case 'Z':		/* Debug code */
-			if (geteuid() == ARNOLD) {
-				if (!Debug && outf == NULL) {
-					char	buf[40];
-over:
-					prompt(FILEPROMPT);
-					leaveok(Board, FALSE);
-					refresh();
-					sp = buf;
-					while ((*sp = readch()) != '\n') {
-						if (*sp == killchar())
-							goto over;
-						else if (*sp == erasechar()) {
-							if (--sp < buf)
-								sp = buf;
-							else {
-								addch('\b');
-								if (*sp < ' ')
-								    addch('\b');
-								clrtoeol();
-							}
+			if (!Debug && outf == NULL) {
+				char	buf[MAXPATHLEN];
+
+				prompt(FILEPROMPT);
+				leaveok(Board, FALSE);
+				refresh();
+				sp = buf;
+				while ((*sp = readch()) != '\n') {
+					if (*sp == killchar())
+						goto over;
+					else if (*sp == erasechar()) {
+						if (--sp < buf)
+							sp = buf;
+						else {
+							addch('\b');
+							if (*sp < ' ')
+							    addch('\b');
+							clrtoeol();
 						}
-						else
-							addstr(unctrl(*sp++));
-						refresh();
 					}
-					*sp = '\0';
-					leaveok(Board, TRUE);
-					if ((outf = fopen(buf, "w")) == NULL)
-						perror(buf);
-					setbuf(outf, (char *)NULL);
+					else
+						addstr(unctrl(*sp++));
+					refresh();
 				}
-				Debug = !Debug;
-				break;
+				*sp = '\0';
+				leaveok(Board, TRUE);
+				if ((outf = fopen(buf, "w")) == NULL)
+					perror(buf);
+				setbuf(outf, (char *)NULL);
 			}
-			/* FALLTHROUGH */
+			Debug = !Debug;
+			break;
+#endif
 		  default:
 			error("unknown command: %s", unctrl(c));
 			break;
