@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_machdep.c	7.7 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.8 (Berkeley) %G%
  *	Utah $Hdr: vm_machdep.c 1.16.1.1 89/06/23$
  */
 
@@ -18,6 +18,7 @@
 #include "proc.h"
 #include "malloc.h"
 #include "buf.h"
+#include "vnode.h"
 #include "user.h"
 
 #include "../include/cpu.h"
@@ -66,7 +67,7 @@ cpu_fork(p1, p2)
         addr = trunc_page((u_int)vtopte(kstack));
 	(void)vm_map_pageable(&p2->p_vmspace->vm_map, addr, addr+NBPG, FALSE);
 	for (i=0; i < UPAGES; i++)
-		pmap_enter(&p2->p_vmspace->vm_pmap, kstack+i*NBPG,
+		pmap_enter(&p2->p_vmspace->vm_pmap, (vm_offset_t)kstack+i*NBPG,
 			pmap_extract(kernel_pmap, ((int)p2->p_addr)+i*NBPG),
 			VM_PROT_READ, 1);
 	pmap_activate(&p2->p_vmspace->vm_pmap, &up->u_pcb);
@@ -147,6 +148,20 @@ cpu_wait(p) struct proc *p; {
 	kmem_free(kernel_map, (vm_offset_t)p->p_addr, ctob(UPAGES));
 }
 #endif
+
+/*
+ * Dump the machine specific header information at the start of a core dump.
+ */
+cpu_coredump(p, vp, cred)
+	struct proc *p;
+	struct vnode *vp;
+	struct ucred *cred;
+{
+
+	return (vn_rdwr(UIO_WRITE, vp, (caddr_t) p->p_addr, ctob(UPAGES),
+	    (off_t)0, UIO_SYSSPACE, IO_NODELOCKED|IO_UNIT, cred, (int *)NULL,
+	    p));
+}
 
 /*
  * Set a red zone in the kernel stack after the u. area.
