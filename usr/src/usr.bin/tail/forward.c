@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)forward.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)forward.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -66,22 +66,28 @@ forward(fp, style, off, sbp)
 		if (S_ISREG(sbp->st_mode)) {
 			if (sbp->st_size < off)
 				off = sbp->st_size;
-			if (fseek(fp, off, SEEK_SET) == -1)
+			if (fseek(fp, off, SEEK_SET) == -1) {
 				ierr();
+				return;
+			}
 		} else while (off--)
 			if ((ch = getc(fp)) == EOF) {
-				if (ferror(fp))
+				if (ferror(fp)) {
 					ierr();
-					break;
+					return;
 				}
+				break;
+			}
 		break;
 	case FLINES:
 		if (off == 0)
 			break;
 		for (;;) {
 			if ((ch = getc(fp)) == EOF) {
-				if (ferror(fp))
+				if (ferror(fp)) {
 					ierr();
+					return;
+				}
 				break;
 			}
 			if (ch == '\n' && !--off)
@@ -91,26 +97,34 @@ forward(fp, style, off, sbp)
 	case RBYTES:
 		if (S_ISREG(sbp->st_mode)) {
 			if (sbp->st_size >= off &&
-			    fseek(fp, -off, SEEK_END) == -1)
+			    fseek(fp, -off, SEEK_END) == -1) {
 				ierr();
+				return;
+			}
 		} else if (off == 0) {
 			while (getc(fp) != EOF);
-			if (ferror(fp))
+			if (ferror(fp)) {
 				ierr();
+				return;
+			}
 		} else
 			bytes(fp, off);
 		break;
 	case RLINES:
 		if (S_ISREG(sbp->st_mode))
 			if (!off) {
-				if (fseek(fp, 0L, SEEK_END) == -1)
+				if (fseek(fp, 0L, SEEK_END) == -1) {
 					ierr();
+					return;
+				}
 			} else
 				rlines(fp, off, sbp);
 		else if (off == 0) {
 			while (getc(fp) != EOF);
-			if (ferror(fp))
+			if (ferror(fp)) {
 				ierr();
+				return;
+			}
 		} else
 			lines(fp, off);
 		break;
@@ -130,14 +144,16 @@ forward(fp, style, off, sbp)
 		while ((ch = getc(fp)) != EOF)
 			if (putchar(ch) == EOF)
 				oerr();
-		if (ferror(fp))
+		if (ferror(fp)) {
 			ierr();
+			return;
+		}
 		(void)fflush(stdout);
 		if (!fflag)
 			break;
 		/* Sleep(3) is eight system calls.  Do it fast. */
 		if (select(0, &zero, &zero, &zero, &second) == -1)
-			err("select: %s", strerror(errno));
+			err(1, "select: %s", strerror(errno));
 		clearerr(fp);
 	}
 }
@@ -158,8 +174,10 @@ rlines(fp, off, sbp)
 		return;
 
 	if ((p = mmap(NULL,
-	    size, PROT_READ, MAP_FILE, fileno(fp), (off_t)0)) == (caddr_t)-1)
-		err("%s", strerror(errno));
+	    size, PROT_READ, MAP_FILE, fileno(fp), (off_t)0)) == (caddr_t)-1) {
+		err(0, "%s", strerror(errno));
+		return;
+	}
 
 	/* Last char is special, ignore whether newline or not. */
 	for (p += size - 1; --size;)
@@ -171,6 +189,8 @@ rlines(fp, off, sbp)
 	/* Set the file pointer to reflect the length displayed. */
 	size = sbp->st_size - size;
 	WR(p, size);
-	if (fseek(fp, sbp->st_size, SEEK_SET) == -1)
+	if (fseek(fp, sbp->st_size, SEEK_SET) == -1) {
 		ierr();
+		return;
+	}
 }
