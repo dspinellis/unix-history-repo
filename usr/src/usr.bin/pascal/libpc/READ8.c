@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)READ8.c 1.7 %G%";
+static char sccsid[] = "@(#)READ8.c 1.8 %G%";
 
 #include "h00vars.h"
 #include <errno.h>
@@ -8,7 +8,6 @@ extern int errno;
 
 double
 READ8(curfile)
-
 	register struct iorec	*curfile;
 {
 	double			data;
@@ -49,9 +48,7 @@ READ8(curfile)
  *	syntax of section 6.1.5 and form them into a double.
  *
  *	the syntax of a signed-real is:
- *	    [-|+] digit {digit} e [+|-] digit {digit}
- *	or
- *	    [-|+] digit {digit} . digit {digit} [e [+|-] digit {digit}]
+ *	    [-|+] digit {digit} [ . digit {digit} ] [ e [+|-] digit {digit} ]
  *
  *	returns:
  *		1	for success (with value in *doublep)
@@ -91,11 +88,19 @@ readreal(curfile, doublep)
 	while (*sequencep) \
 		sequencep++;
 
+	/* general reader of the next character */
+#define	NEXT_CHAR(read, filep, format, sequencep) \
+	read = fscanf(filep, "%c", sequencep); \
+	RETURN_ON_EOF(read); \
+	*++sequencep = '\0';
+
+	/* e.g. use %[0123456789] for {digit}, and check read */
 #define	SOME(read, filep, format, sequencep) \
 	read = fscanf(filep, format, sequencep); \
 	RETURN_ON_EOF(read); \
 	PUSH_TO_NULL(sequencep);
 
+	/* e.g. use %[0123456789] for digit {digit} */
 #define	AT_LEAST_ONE(read, filep, format, sequencep) \
 	read = fscanf(filep, format, sequencep); \
 	RETURN_ON_EOF(read); \
@@ -103,7 +108,7 @@ readreal(curfile, doublep)
 		return (0); \
 	PUSH_TO_NULL(sequencep);
 
-#define	EXACTLY_ONE(read, filep, format, sequencep) \
+#define	ANY_ONE_OF(read, filep, format, sequencep) \
 	read = fscanf(filep, format, sequencep); \
 	RETURN_ON_EOF(read); \
 	if (strlen(sequencep) != 1) \
@@ -120,47 +125,64 @@ readreal(curfile, doublep)
 	sequencep = &sequence[0];
 	*sequencep = '\0';
 	/*
-	 * skip leading whitespace
+	 *	skip leading whitespace
 	 */
 	SOME(read, filep, "%*[ \t\n]", sequencep);
 	/*
+	 *	this much is required:
 	 *	[ "+" | "-" ] digit {digits}
 	 */
 	AT_MOST_ONE(read, filep, "%[+-]", sequencep);
+fprintf(stderr,	"leading sign		<%s>\n", sequence);
 	AT_LEAST_ONE(read, filep, "%[0123456789]", sequencep);
+fprintf(stderr,	"leading digits		<%s>\n", sequence);
 	/*
-	 *	either
-	 *		"." digit {digit} [ "e" [ "+" | "-" ] digit {digits} ]
-	 *	or
-	 *		"e" [ "+" | "-" ] digit {digits}
+	 *	any of this is optional:
+	 *	[ `.' digit {digit} ] [ `e' [ `+' | `-' ] digit {digits} ]
 	 */
-	AT_MOST_ONE(read, filep, "%c", sequencep);
+*sequencep = getc(filep);
+fprintf(stderr,	"before [.e]		0x%x\n", *sequencep);
+ungetc(*sequencep, filep);
+*sequencep = '\0';
+	/* ANY_ONE_OF(read, filep, "%c", sequencep);*/
+	/* read = fscanf(filep, "%c", sequencep);
+	 * *++sequencep = '\0';
+	 */
+	NEXT_CHAR(read, filep, "%c", sequencep);
+fprintf(stderr,	"[.e] (read %d)		<%s>\n", read, sequence);
 	switch (sequencep[-1]) {
 	default:
 		PUSHBACK(curfile, sequencep);
 		goto convert;
 	case '.':
 		SOME(read, filep, "%[0123456789]", sequencep);
+fprintf(stderr,	"trailing digits	<%s>\n", sequence);
 		if (!read) {
 			PUSHBACK(curfile, sequencep);
 			goto convert;
 		}
-		AT_MOST_ONE(read, filep, "%c", sequencep);
+		/* AT_MOST_ONE(read, filep, "%c", sequencep); */
+		NEXT_CHAR(read, filep, "%c", sequencep);
+fprintf(stderr,	"optional e		<%s>\n", sequence);
 		if (sequencep[-1] != 'e') {
 			PUSHBACK(curfile, sequencep);
 			goto convert;
 		}
 		/* fall through */
 	case 'e':
-		AT_MOST_ONE(read, filep, "%c", sequencep);
+		/* ANY_ONE_OF(read, filep, "%c", sequencep); */
+		NEXT_CHAR(read, filep, "%c", sequencep);
+fprintf(stderr,	"exponent sign		<%s>\n", sequence);
 		if (sequencep[-1] != '+' && sequencep[-1] != '-') {
 			PUSHBACK(curfile, sequencep);
 			SOME(read, filep, "%[0123456789]", sequencep);
+fprintf(stderr,	"signed exponent	<%s>\n", sequence);
 			if (!read)
 				PUSHBACK(curfile, sequencep);
 			goto convert;
 		}
 		SOME(read, filep, "%[0123456789]", sequencep);
+fprintf(stderr,	"unsigned exponent	<%s>\n", sequence);
 		if (!read) {
 			PUSHBACK(curfile, sequencep);
 			PUSHBACK(curfile, sequencep);
@@ -171,6 +193,7 @@ convert:
 	/*
 	 * convert sequence to double
 	 */
+fprintf(stderr,	"convert		<%s>\n", sequence);
 	*doublep = atof(&sequence[0]);
 	return (1);
 }
