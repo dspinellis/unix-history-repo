@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)nfsd.8	8.2 (Berkeley) %G%
+.\"	@(#)nfsd.8	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NFSD 8
@@ -15,10 +15,8 @@
 server
 .Sh SYNOPSIS
 .Nm nfsd
-.Op Fl r
-.Op Fl u
-.Op Fl t
-.Op Ar numprocs
+.Op Fl rut
+.Op Fl n Ar num_servers
 .Sh DESCRIPTION
 .Nm Nfsd
 runs on a server machine to service
@@ -27,25 +25,26 @@ requests from client machines.
 At least one
 .Nm nfsd
 must be running for a machine to operate as a server.
-The options
-.Fl u
-and
-.Fl t
-are used to indicate which transport protocols are to be served.
 .Pp
-Options available to
-.Nm nfsd :
+Unless otherwise specified, four servers for
+.Tn UDP
+transport are started.
+.Pp
+The following options are available:
 .Bl -tag -width Ds
 .It Fl r
 Register the
 .Tn NFS
 service with
 .Xr portmap 8
-without creating any servers. This option can be used along with the
+without creating any servers.
+This option can be used along with the
 .Fl u
 or
 .Fl t
 options to re-register NFS if the portmap server is restarted.
+.It Fl n
+Specifies how many servers to create.
 .It Fl t
 Serve
 .Tn TCP NFS
@@ -54,36 +53,17 @@ clients.
 Serve
 .Tn UDP NFS
 clients.
-.It Ar numprocs
-Specifies how many servers to fork off.
 .El
 .Pp
-If neither
-.Fl u
-or
-.Fl t
-are specified,
-.Ar numprocs
-servers for
-.Tn UDP
-transport are started. For compatibility,
-if
-.Ar numprocs
-is not specified, it defaults to 4.
-.Pp
-For example:
-.Bd -literal
-nfsd \-u \-t 6
-.Ed
-.Bl -item -offset indent
-.It
-Serves
+For example, 
+.Dq Li "nfsd -u -t 6"
+serves
 .Tn UDP
 and
 .Tn TCP
-transports using 6 daemons in the kernel.
+transports using six daemons.
 .Pp
-A server should typically run enough daemons to handle
+A server should run enough daemons to handle
 the maximum level of concurrency from its clients,
 typically four to six.
 .Pp
@@ -93,6 +73,10 @@ listens for service requests at the port indicated in the
 server specification; see
 .%T "Network File System Protocol Specification" ,
 RFC1094.
+.Pp
+The
+.Nm nfsd
+utility exits 0 on success, and >0 if an error occurs.
 .Sh SEE ALSO
 .Xr nfsstat 1 ,
 .Xr nfssvc 2 ,
