@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)script.c	4.5 (Berkeley) 83/07/02";
+static char *sccsid = "@(#)script.c	4.6 (Berkeley) 84/12/23";
 #endif
 
 /*
@@ -12,6 +12,7 @@ static char *sccsid = "@(#)script.c	4.5 (Berkeley) 83/07/02";
 #include <sys/ioctl.h>
 #include <sgtty.h>
 #include <sys/time.h>
+#include <sys/file.h>
 
 char	*getenv();
 char	*ctime();
@@ -134,7 +135,7 @@ doshell()
 {
 	int t;
 
-	t = open("/dev/tty", 2);
+	t = open("/dev/tty", O_RDWR);
 	if (t >= 0) {
 		ioctl(t, TIOCNOTTY, (char *)0);
 		(void) close(t);
@@ -178,25 +179,36 @@ done()
 
 getmaster()
 {
-	char c;
+	char *pty, *bank, *cp;
 	struct stat stb;
 	int i;
 
-	for (c = 'p'; c <= 's'; c++) {
-		line[strlen("/dev/pty")] = c;
-		line[strlen("/dev/ptyp")] = '0';
+	pty = &line[strlen("/dev/ptyp")];
+	for (bank = "pqrs"; *bank; bank++) {
+		line[strlen("/dev/pty")] = *bank;
+		*pty = '0';
 		if (stat(line, &stb) < 0)
 			break;
-		for (i = 0; i < 16; i++) {
-			line[strlen("/dev/ptyp")] = "0123456789abcdef"[i];
-			master = open(line, 2);
+		for (cp = "0123456789abcdef"; *cp; cp++) {
+			*pty = *cp;
+			master = open(line, O_RDWR);
 			if (master >= 0) {
-				ioctl(0, TIOCGETP, (char *)&b);
-				ioctl(0, TIOCGETC, (char *)&tc);
-				ioctl(0, TIOCGETD, (char *)&l);
-				ioctl(0, TIOCGLTC, (char *)&lc);
-				ioctl(0, TIOCLGET, (char *)&lb);
-				return;
+				char *tp = &line[strlen("/dev/")];
+				int ok;
+
+				/* verify slave side is usable */
+				*tp = 't';
+				ok = access(line, R_OK|W_OK) == 0;
+				*tp = 'p';
+				if (ok) {
+					ioctl(0, TIOCGETP, (char *)&b);
+					ioctl(0, TIOCGETC, (char *)&tc);
+					ioctl(0, TIOCGETD, (char *)&l);
+					ioctl(0, TIOCGLTC, (char *)&lc);
+					ioctl(0, TIOCLGET, (char *)&lb);
+					return;
+				}
+				close(master);
 			}
 		}
 	}
@@ -208,7 +220,7 @@ getslave()
 {
 
 	line[strlen("/dev/")] = 't';
-	slave = open(line, 2);
+	slave = open(line, O_RDWR);
 	if (slave < 0) {
 		perror(line);
 		fail();
