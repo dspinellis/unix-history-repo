@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	4.16 83/06/12";
+static char sccsid[] = "@(#)rlogind.c	4.17 83/06/24";
 #endif
 
 #include <stdio.h>
@@ -101,6 +101,7 @@ main(argc, argv)
 		}
 		if (fork() == 0) {
 			signal(SIGCHLD, SIG_IGN);
+			close(f);
 			doit(s, &from);
 		}
 		close(s);
