@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_usrreq.c	7.3 (Berkeley) %G%
+ *	@(#)tuba_usrreq.c	7.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -38,7 +38,7 @@
 #include <netiso/clnp.h>
 #include <netiso/iso_pcb.h>
 #include <netiso/iso_var.h>
-#include <netiso/tuba_addr.h>
+#include <netiso/tuba_table.h>
 /*
  * TCP protocol interface to socket abstraction.
  */
@@ -101,10 +101,17 @@ tuba_usrreq(so, req, m, nam, control)
 	case PRU_ATTACH:
 		if (error = iso_pcballoc(so, &tuba_isopcb))
 			break;
-		isop = (struct isopcb *) tp->t_tuba_pcb = so->so_pcb;
-		if (error = tcp_userreq(so, req, m, nam, control)) {
+		isop = (struct isopcb *)so->so_pcb;
+		so->so_pcb = 0;
+		if (error = tcp_usrreq(so, req, m, nam, control)) {
 			isop->isop_socket = 0;
-			isop_detach(isop);
+			iso_pcbdetach(isop);
+		} else {
+			inp = sotoinpcb(so);
+			tp = intotcpcb(inp);
+			if (tp == 0)
+				panic("tuba_usrreq 3");
+			tp->t_tuba_pcb = (caddr_t) isop;
 		}
 		goto notrace;
 
@@ -138,7 +145,7 @@ tuba_usrreq(so, req, m, nam, control)
 			break;
 		bcopy(TSEL(siso), &inp->inp_lport, 2);
 		if (siso->siso_nlen &&
-		    !(inp->inp_laddr.s_addr = tuba_lookup(&siso->siso_addr)))
+		    !(inp->inp_laddr.s_addr = tuba_lookup(&siso->siso_addr, M_WAITOK)))
 			error = ENOBUFS;
 		break;
 
@@ -167,7 +174,7 @@ tuba_usrreq(so, req, m, nam, control)
 		if (error = iso_pcbconnect(isop, nam))
 			break;
 		siso = mtod(nam, struct sockaddr_iso *);
-		if (!(inp->inp_faddr.s_addr = tuba_lookup(&siso->siso_addr))) {
+		if (!(inp->inp_faddr.s_addr = tuba_lookup(&siso->siso_addr, M_WAITOK))) {
 		unconnect:
 			iso_pcbdisconnect(isop);
 			error = ENOBUFS;
@@ -176,7 +183,7 @@ tuba_usrreq(so, req, m, nam, control)
 		bcopy(TSEL(isop->isop_faddr), &inp->inp_fport, 2);
 		if (inp->inp_laddr.s_addr == 0 &&
 		     (inp->inp_laddr.s_addr = 
-			    tuba_lookup(&isop->isop_laddr->siso_addr)) == 0)
+			    tuba_lookup(&isop->isop_laddr->siso_addr, M_WAITOK)) == 0)
 			goto unconnect;
 		if ((tp->t_template = tcp_template(tp)) == 0)
 			goto unconnect;
