@@ -1,4 +1,6 @@
-static	char sccsid[] = "@(#)ld.c 4.7 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)ld.c 4.8 %G%";
+#endif
 
 /*
  * ld - string table version for VAX
@@ -12,7 +14,6 @@ static	char sccsid[] = "@(#)ld.c 4.7 %G%";
 #include <a.out.h>
 #include <ranlib.h>
 #include <stat.h>
-#include <pagsiz.h>
 
 /*
  * Basic strategy:
@@ -314,6 +315,11 @@ char	*filname;		/* and its name */
  */
 char	*curstr;
 
+/*
+ * System software page size, as returned by getpagesize.
+ */
+int	pagesize;
+
 char 	get();
 int	delexit();
 char	*savestr();
@@ -333,6 +339,7 @@ char **argv;
 	if (argc == 1)
 		exit(4);
 	p = argv+1;
+	pagesize = getpagesize();
 
 	/*
 	 * Scan files once to find where symbols are defined.
@@ -879,7 +886,7 @@ middle()
 	if (!Aflag)
 		addsym = symseg[0].sy_first;
 	database = round(tsize+textbase,
-	    (nflag||zflag? PAGSIZ : sizeof (long)));
+	    (nflag||zflag? pagesize : sizeof (long)));
 	database += hsize;
 	if (dflag || rflag==0) {
 		ldrsym(p_etext, tsize, N_EXT+N_TEXT);
@@ -1014,8 +1021,8 @@ setupout()
 	bopen(tout, 0);
 	filhdr.a_magic = nflag ? NMAGIC : (zflag ? ZMAGIC : OMAGIC);
 	filhdr.a_text = nflag ? tsize :
-	    round(tsize, zflag ? PAGSIZ : sizeof (long));
-	filhdr.a_data = zflag ? round(dsize, PAGSIZ) : dsize;
+	    round(tsize, zflag ? pagesize : sizeof (long));
+	filhdr.a_data = zflag ? round(dsize, pagesize) : dsize;
 	bss = bsize - (filhdr.a_data - dsize);
 	if (bss < 0)
 		bss = 0;
@@ -1036,7 +1043,7 @@ setupout()
 	if (zflag) {
 		bflush1(tout);
 		biobufs = 0;
-		bopen(tout, PAGSIZ);
+		bopen(tout, pagesize);
 	}
 	wroff = N_TXTOFF(filhdr) + filhdr.a_text;
 	outb(&dout, filhdr.a_data);
@@ -1821,7 +1828,7 @@ off_t loc;
 	if (filhdr.a_text&01 || filhdr.a_data&01)
 		error(1, "text/data size odd");
 	if (filhdr.a_magic == NMAGIC || filhdr.a_magic == ZMAGIC) {
-		cdrel = -round(filhdr.a_text, PAGSIZ);
+		cdrel = -round(filhdr.a_text, pagesize);
 		cbrel = cdrel - filhdr.a_data;
 	} else if (filhdr.a_magic == OMAGIC) {
 		cdrel = -filhdr.a_text;
