@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.42 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -841,6 +841,10 @@ setoption(opt, val, sticky)
 
 	  case 'D':		/* rebuild alias database as needed */
 		AutoRebuild = atobool(val);
+		break;
+
+	  case 'E':		/* error message header/header file */
+		ErrMsgFile = newstr(val);
 		break;
 
 	  case 'e':		/* set error processing mode */
