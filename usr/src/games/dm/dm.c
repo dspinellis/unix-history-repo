@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dm.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)dm.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -30,24 +30,18 @@ static char sccsid[] = "@(#)dm.c	5.6 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 
-#define	GAMEHIDE	"/usr/games/hide/"
-#define	NOGAMING	"/usr/games/nogames"
-#define	CONTROL		"/usr/games/dm.config"
-#ifdef LOG
-#define	LOGFILE		"/usr/adm/dm.log"
-#endif
-
 static time_t	now;			/* current time value */
 static int	priority = 0;		/* priority game runs at */
 static char	*game,			/* requested game */
 		*gametty;		/* from tty? */
 
+/*ARGSUSED*/
 main(argc, argv)
-	int	argc;
-	char	**argv;
+	int argc;
+	char **argv;
 {
-	char	*cp, *rindex(), *ttyname();
-	time_t	time();
+	char *cp, *rindex(), *ttyname();
+	time_t time();
 
 	nogamefile();
 	game = (cp = rindex(*argv, '/')) ? ++cp : *argv;
@@ -58,7 +52,6 @@ main(argc, argv)
 	gametty = ttyname(0);
 	(void)time(&now);
 	read_config();
-
 #ifdef LOG
 	logfile();
 #endif
@@ -70,11 +63,12 @@ main(argc, argv)
  * play --
  *	play the game
  */
+#define	GAMEHIDE	"/usr/games/hide/"
 static
 play(args)
-	char	**args;
+	char **args;
 {
-	char	pbuf[MAXPATHLEN], *strcpy();
+	char pbuf[MAXPATHLEN], *strcpy();
 
 	(void)strcpy(pbuf, GAMEHIDE);
 	(void)strcpy(pbuf + sizeof(GAMEHIDE) - 1, game);
@@ -90,14 +84,27 @@ play(args)
  * read_config --
  *	read through config file, looking for key words.
  */
+#define	CONTROL		"/usr/games/dm.config"
 static
 read_config()
 {
-	FILE	*cfp;
-	char	lbuf[BUFSIZ], f1[40], f2[40], f3[40], f4[40], f5[40];
+	FILE *cfp;
+	char *control, *host, *index(), *strcpy();
+	char lbuf[BUFSIZ], path[MAXHOSTNAMELEN + sizeof(CONTROL)];
+	char f1[40], f2[40], f3[40], f4[40], f5[40];
 
-	if (!(cfp = fopen(CONTROL, "r"))) {
-		fprintf(stderr, "dm: unable to read %s.\n", CONTROL);
+	host = &path[sizeof(CONTROL)];
+	if (gethostname(host, MAXHOSTNAMELEN)) {
+		perror("dm: gethostname");
+		exit(1);
+	}
+	(void)strcpy(path, control = CONTROL);
+	host[-1] = '.';
+	if (host = index(host, '.'))
+		*host = '\0';
+	if (!(cfp = fopen(path, "r")) && !(cfp = fopen(control, "r"))) {
+		fprintf(stderr, "dm: unable to read %s or %s.\n",
+		    path, control);
 		exit(1);
 	}
 	while (fgets(lbuf, sizeof(lbuf), cfp))
@@ -129,14 +136,14 @@ read_config()
  */
 static
 c_day(s_day, s_start, s_stop)
-	char	*s_day, *s_start, *s_stop;
+	char *s_day, *s_start, *s_stop;
 {
-	static char	*days[] = {
+	static char *days[] = {
 		"sunday", "monday", "tuesday", "wednesday",
 		"thursday", "friday", "saturday",
 	};
-	static struct tm	*ct;
-	int	start, stop;
+	static struct tm *ct;
+	int start, stop;
 
 	if (!ct)
 		ct = localtime(&now);
@@ -162,11 +169,11 @@ c_day(s_day, s_start, s_stop)
  */
 static
 c_tty(tty)
-	char	*tty;
+	char *tty;
 {
-	static int	first = 1;
-	static char	*p_tty;
-	char	*rindex();
+	static int first = 1;
+	static char *p_tty;
+	char *rindex();
 
 	if (first) {
 		p_tty = rindex(gametty, '/');
@@ -185,10 +192,10 @@ c_tty(tty)
  */
 static
 c_game(s_game, s_load, s_users, s_priority)
-	char	*s_game, *s_load, *s_users, *s_priority;
+	char *s_game, *s_load, *s_users, *s_priority;
 {
-	static int	found;
-	double	load();
+	static int found;
+	double load();
 
 	if (found)
 		return;
@@ -207,7 +214,7 @@ c_game(s_game, s_load, s_users, s_priority)
 		priority = atoi(s_priority);
 }
 
-static struct	nlist nl[] = {
+static struct nlist nl[] = {
 	{ "_avenrun" },
 #define	X_AVENRUN	0
 	{ "" },
@@ -220,9 +227,9 @@ static struct	nlist nl[] = {
 static double
 load()
 {
-	double	avenrun[3];
-	int	kmem;
-	long	lseek();
+	double avenrun[3];
+	int kmem;
+	long lseek();
 
 	if (nlist("/vmunix", nl)) {
 		fputs("dm: nlist of /vmunix failed.\n", stderr);
@@ -246,9 +253,8 @@ load()
 static
 users()
 {
-	register int	nusers,
-			utmp;
-	struct utmp	buf;
+	register int nusers, utmp;
+	struct utmp buf;
 
 	if ((utmp = open("/etc/utmp", O_RDONLY, 0)) < 0) {
 		perror("dm: /etc/utmp");
@@ -265,11 +271,12 @@ users()
  *	if the file NOGAMING exists, no games allowed.
  *	file may also contain a message for the user.
  */
+#define	NOGAMING	"/usr/games/nogames"
 static
 nogamefile()
 {
-	register int	fd, n;
-	char	buf[BUFSIZ];
+	register int fd, n;
+	char buf[BUFSIZ];
 
 	if ((fd = open(NOGAMING, O_RDONLY, 0)) >= 0) {
 #define	MESG	"Sorry, no games right now.\n\n"
@@ -286,7 +293,7 @@ nogamefile()
  */
 static
 hour(h)
-	int	h;
+	int h;
 {
 	switch(h) {
 	case 0:
@@ -304,14 +311,19 @@ hour(h)
 }
 
 #ifdef LOG
+/*
+ * logfile --
+ *	log play of game
+ */
+#define	LOGFILE		"/usr/adm/dm.log"
 static
 logfile()
 {
-	struct passwd	*pw, *getpwuid();
-	FILE	*lp;
-	uid_t	uid;
-	int	lock_cnt;
-	char	*ctime();
+	struct passwd *pw, *getpwuid();
+	FILE *lp;
+	uid_t uid;
+	int lock_cnt;
+	char *ctime();
 
 	if (lp = fopen(LOGFILE, "a")) {
 		for (lock_cnt = 0;; ++lock_cnt) {
@@ -333,4 +345,4 @@ logfile()
 		(void)flock(fileno(lp), LOCK_UN);
 	}
 }
-#endif
+#endif /* LOG */
