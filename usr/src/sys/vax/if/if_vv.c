@@ -14,22 +14,27 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_vv.c	7.2 (Berkeley) %G%
+ *	@(#)if_vv.c	7.3 (Berkeley) %G%
  */
 
 #include "vv.h"
 #if NVV > 0
 
 /*
- * Proteon proNET-10 and proNET-80 token ring driver.
+ * Proteon ProNET-10 and ProNET-80 token ring driver.
  * The name of this device driver derives from the old MIT
  * name of V2LNI for the proNET hardware, would would abbreviate
- * to "v2", but this won't work right. Thus the name is "vv".
+ * to "v2", but this won't work right in config. Thus the name is "vv".
  *
- * This driver is compatible with the proNET 10 meagbit and
+ * This driver is compatible with the Unibus ProNET 10 megabit and
  * 80 megabit token ring interfaces (models p1000 and p1080).
  * A unit may be marked as 80 megabit using "flags 1" in the
  * config file.
+ *
+ * This driver is also compatible with the Q-bus ProNET 10 megabit and
+ * 80 megabit token ring interfaces (models p1100 and p1180), but
+ * only on a MicroVAX-II or MicroVAX-III.  No attempt is made to
+ * support the MicroVAX-I.
  *
  * TRAILERS: This driver has a new implementation of trailers that
  * is at least a tolerable neighbor on the ring. The offset is not
@@ -38,8 +43,8 @@
  * trailing header, are in network byte order, not VAX byte order.
  *
  * Of course, nothing but BSD UNIX supports trailers on ProNET.
- * If you need interoperability with anything else, turn off
- * trailers using the -trailers option to /etc/ifconfig!
+ * If you need interoperability with anything else (like the p4200),
+ * turn off trailers using the -trailers option to /etc/ifconfig!
  *
  * HARDWARE COMPATABILITY: This driver prefers that the HSBU (p1001)
  * have a serial number >= 040, which is about March, 1982. Older
@@ -84,23 +89,23 @@
 
 /*
  *    maximum transmission unit definition --
- *        you can set VVMTU at anything from 576 to 2024.
+ *        you can set VVMTU at anything from 576 to 2036.
  *        1536 is a popular "large" value, because it is a multiple
  *	  of 512, which the trailer scheme likes.
- *        The absolute maximum size is 2024, which is enforced.
+ *        The absolute maximum size is 2036, which is enforced.
  */
 
-#define VVMTU (1536)
+#define VVMTU (2036)
 
-#define VVMRU (VVMTU + 16)
+#define VVMRU (VVMTU + (2 * sizeof(u_short)))
 #define VVBUFSIZE (VVMRU + sizeof(struct vv_header))
-#if VVMTU>2024
+#if VVMTU>2036
 #undef VVMTU
 #undef VVMRU
 #undef VVBUFSIZE
 #define VVBUFSIZE (2046)
 #define VVMRU (VVBUFSIZE - sizeof (struct vv_header))
-#define VVMTU (VVMRU - 16)
+#define VVMTU (VVMRU - (2 * sizeof(u_short)))
 #endif
 
 /*
@@ -253,7 +258,7 @@ vvinit(unit)
 	register struct vv_softc *vs;
 	register struct uba_device *ui;
 	register struct vvreg *addr;
-	register int ubainfo, s;
+	register int ubaaddr, s;
 
 	vs = &vv_softc[unit];
 	ui = vvinfo[unit];
@@ -263,7 +268,7 @@ vvinit(unit)
 
 	addr = (struct vvreg *)ui->ui_addr;
 	if (if_ubainit(&vs->vs_ifuba, ui->ui_ubanum,
-	    sizeof (struct vv_header), (int)btoc(VVMTU)) == 0) {
+	    sizeof (struct vv_header), (int)btoc(VVMRU)) == 0) {
 		printf("vv%d: can't initialize, if_ubainit() failed\n", unit);
 		vs->vs_if.if_flags &= ~IFF_UP;
 		return;
@@ -302,9 +307,9 @@ vvinit(unit)
 	 * pending writes by faking a transmit complete.
 	 */
 	s = splimp();
-	ubainfo = vs->vs_ifuba.ifu_r.ifrw_info;
-	addr->vviba = (u_short)ubainfo;
-	addr->vviea = (u_short)(ubainfo >> 16);
+	ubaaddr = UBAI_ADDR(vs->vs_ifuba.ifu_r.ifrw_info);
+	addr->vviba = (u_short)ubaaddr;
+	addr->vviea = (u_short)(ubaaddr >> 16);
 	addr->vviwc = -(VVBUFSIZE) >> 1;
 	addr->vvicsr = VV_IEN | VV_HEN | VV_DEN | VV_ENB;
 	vs->vs_oactive = 1;
@@ -336,7 +341,7 @@ vvidentify(unit)
 	register struct vvreg *addr;
 	register struct mbuf *m;
 	register struct vv_header *v;
-	register int ubainfo;
+	register int ubaaddr;
 	register int i, successes, failures, waitcount;
 	u_short shost = NOHOST;
 
@@ -396,10 +401,10 @@ vvidentify(unit)
 		while ((successes < VVIDENTSUCC) && (failures < VVIDENTRETRY))
 		{
 			/* start a receive */
-			ubainfo = vs->vs_ifuba.ifu_r.ifrw_info;
+			ubaaddr = UBAI_ADDR(vs->vs_ifuba.ifu_r.ifrw_info);
 			addr->vvicsr = VV_RST | vv_modes[i]; /* abort last */
-			addr->vviba = (u_short) ubainfo;
-			addr->vviea = (u_short) (ubainfo >> 16);
+			addr->vviba = (u_short) ubaaddr;
+			addr->vviea = (u_short) (ubaaddr >> 16);
 			addr->vviwc = -(VVBUFSIZE) >> 1;
 			addr->vvicsr = vv_modes[i] | VV_DEN | VV_ENB;
 
@@ -409,10 +414,10 @@ vvidentify(unit)
 				    vs->vs_ifuba.ifu_w.ifrw_bdp);
 
 			/* do a transmit */
-			ubainfo = vs->vs_ifuba.ifu_w.ifrw_info;
+			ubaaddr = UBAI_ADDR(vs->vs_ifuba.ifu_w.ifrw_info);
 			addr->vvocsr = VV_RST;	/* abort last try */
-			addr->vvoba = (u_short) ubainfo;
-			addr->vvoea = (u_short) (ubainfo >> 16);
+			addr->vvoba = (u_short) ubaaddr;
+			addr->vvoea = (u_short) (ubaaddr >> 16);
 			addr->vvowc = -((vs->vs_olen + 1) >> 1);
 			addr->vvocsr = VV_CPB | VV_DEN | VV_INR | VV_ENB;
 
@@ -501,7 +506,7 @@ vvstart(dev)
 	register struct vv_softc *vs;
 	register struct vvreg *addr;
 	register struct mbuf *m;
-	register int unit, ubainfo, dest, s;
+	register int unit, ubaaddr, dest, s;
 
 	unit = VVUNIT(dev);
 	ui = vvinfo[unit];
@@ -542,9 +547,9 @@ restart:
 	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_w.ifrw_bdp);
 	addr = (struct vvreg *)ui->ui_addr;
-	ubainfo = vs->vs_ifuba.ifu_w.ifrw_info;
-	addr->vvoba = (u_short) ubainfo;
-	addr->vvoea = (u_short) (ubainfo >> 16);
+	ubaaddr = UBAI_ADDR(vs->vs_ifuba.ifu_w.ifrw_info);
+	addr->vvoba = (u_short) ubaaddr;
+	addr->vvoea = (u_short) (ubaaddr >> 16);
 	addr->vvowc = -((vs->vs_olen + 1) >> 1);
 	addr->vvowc = -((vs->vs_olen + 1) >> 1); /* extra byte is garbage */
 	if (addr->vvocsr & VV_NOK)
@@ -643,7 +648,7 @@ vvrint(unit)
 	register struct vv_header *vv;
 	register struct ifqueue *inq;
 	register struct mbuf *m;
-	int ubainfo, len, off, s;
+	int ubaaddr, len, off, s;
 	short resid;
 
 	vs = &vv_softc[unit];
@@ -791,9 +796,9 @@ len = %d, vvicsr = %b\n",
 	 * Reset for the next packet.
 	 */
 setup:
-	ubainfo = vs->vs_ifuba.ifu_r.ifrw_info;
-	addr->vviba = (u_short) ubainfo;
-	addr->vviea = (u_short) (ubainfo >> 16);
+	ubaaddr = UBAI_ADDR(vs->vs_ifuba.ifu_r.ifrw_info);
+	addr->vviba = (u_short) ubaaddr;
+	addr->vviea = (u_short) (ubaaddr >> 16);
 	addr->vviwc = -(VVBUFSIZE) >> 1;
 	addr->vvicsr = VV_HEN | VV_IEN | VV_DEN | VV_ENB;
 	return;
