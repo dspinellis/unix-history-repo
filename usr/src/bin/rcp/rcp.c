@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	4.10 84/01/30";
+static char sccsid[] = "@(#)rcp.c	4.10 84/02/13";
 #endif
 
 /*
@@ -468,6 +468,8 @@ sink(argc, argv)
 		  } else {
 			*slash = 0;
 			dir = nambuf;
+			if (*dir == '\0')
+				dir = "/";
 		  }
 		  if (exists == 0 && access(dir, 2) < 0)
 			goto bad;
@@ -578,4 +580,3 @@ mkdir(name, mode)
 	_exit(1);
 	/*NOTREACHED*/
 }
-
