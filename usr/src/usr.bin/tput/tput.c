@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tput.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tput.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/termios.h>
@@ -61,8 +61,7 @@ main(argc, argv)
 		exit(2);
 	}
 	setospeed();
-	for (cptr = buf; p = *argv; ++argv) {
-		exitval = 0;
+	for (cptr = buf, exitval = 0; p = *argv; ++argv) {
 		switch(*p) {
 		case 'c':
 			if (!strcmp(p, "clear"))
