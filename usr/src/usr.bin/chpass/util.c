@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -95,11 +95,11 @@ bad:		return(1);
 	tval = isleap(year) && month > 2;
 	for (--year; year >= EPOCH_YEAR; --year)
 		tval += isleap(year) ?
-		    DAYS_PER_LYEAR : DAYS_PER_NYEAR;
+		    DAYSPERLYEAR : DAYSPERNYEAR;
 	while (--month)
 		tval += dmsize[month];
 	tval += day - 1;
-	tval = tval * HOURS_PER_DAY * MINS_PER_HOUR * SECS_PER_MIN;
+	tval = tval * HOURSPERDAY * MINSPERHOUR * SECSPERMIN;
 	tval -= lt->tm_gmtoff;
 	*store = tval;
 	return(0);
