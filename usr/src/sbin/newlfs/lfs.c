@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -575,12 +575,12 @@ make_dir(bufp, protodir, entries)
 
 	spcleft = DIRBLKSIZ;
 	for (cp = bufp, i = 0; i < entries - 1; i++) {
-		protodir[i].d_reclen = DIRSIZ(&protodir[i]);
+		protodir[i].d_reclen = DIRSIZ(0, &protodir[i]);
 		bcopy(&protodir[i], cp, protodir[i].d_reclen);
 		cp += protodir[i].d_reclen;
 		if ((spcleft -= protodir[i].d_reclen) < 0)
 			fatal("%s: %s", special, "directory too big");
 	}
 	protodir[i].d_reclen = spcleft;
-	bcopy(&protodir[i], cp, DIRSIZ(&protodir[i]));
+	bcopy(&protodir[i], cp, DIRSIZ(0, &protodir[i]));
 }
