@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)des_rw.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)des_rw.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
-#if defined(KERBEROS) && defined(CRYPT)
+#ifdef CRYPT
+#ifdef KERBEROS
 #include <sys/param.h>
 #include <kerberosIV/des.h>
 #include <kerberosIV/krb.h>
@@ -158,4 +159,5 @@ des_write(fd, buf, len)
 	(void) write(fd, des_outbuf, roundup(len,8));
 	return(len);
 }
-#endif /* KERBEROS && CRYPT */
+#endif /* KERBEROS */
+#endif /* CRYPT */
