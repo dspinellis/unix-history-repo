@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)tmac.doc.old	5.1 (Berkeley) %G%
+.\"     @(#)tmac.doc.old	5.2 (Berkeley) %G%
 .\"
 .\" Assume nroff on crt's only if cR==1
 .if n .nr cR 1
@@ -319,7 +319,8 @@
 .de Os
 .ds oS Null
 .if "\\$1"" \{\
-.	ds oS 4.4 Berkeley UNIX
+.	ds oS \fIBSD Experimental\fP
+.\" .	ds oS (\fIBag o' Bits\fP)
 .\}
 .if "\\$2"" \{\
 .	ds o1 Non-Null
@@ -343,7 +344,6 @@
 .	if "\\$2"4.2"  .ds oS 4.2 Berkeley Distribution
 .	if "\\$2"4.3"  .ds oS 4.3 Berkeley Distribution
 .	if "\\$2"4.3+" .ds oS 4.3+tahoe Berkeley Distribution
-.	if "\\$2"4.4"  .ds oS 4.4 Berkeley Distribution
 .\}
 .if "\\*(oS"Null" .ds oS \\$1
 .if "\\*(o1"Non-Null" .as oS \0\\$2
