@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)clri.c 2.2 %G%";
+static char sccsid[] = "@(#)clri.c 2.3 %G%";
 
 /* static char *sccsid = "@(#)clri.c	4.1 (Berkeley) 10/1/80"; */
 
@@ -30,6 +30,7 @@ union {
 #define sblock sb_un.sblk
 
 int	status;
+long	dev_bsize = 1;
 
 main(argc, argv)
 	int argc;
@@ -49,7 +50,7 @@ main(argc, argv)
 		printf("cannot open %s\n", argv[1]);
 		exit(4);
 	}
-	lseek(f, SBLOCK * DEV_BSIZE, 0);
+	lseek(f, SBOFF, 0);
 	if (read(f, &sblock, SBSIZE) != SBSIZE) {
 		printf("cannot read %s\n", argv[1]);
 		exit(4);
@@ -58,6 +59,7 @@ main(argc, argv)
 		printf("bad super block magic number\n");
 		exit(4);
 	}
+	dev_bsize = sblock.fs_fsize / fsbtodb(&sblock, 1);
 	for (i = 2; i < argc; i++) {
 		if (!isnumber(argv[i])) {
 			printf("%s: is not a number\n", argv[i]);
@@ -70,7 +72,7 @@ main(argc, argv)
 			status = 1;
 			continue;
 		}
-		off = fsbtodb(&sblock, itod(&sblock, n)) * DEV_BSIZE;
+		off = fsbtodb(&sblock, itod(&sblock, n)) * dev_bsize;
 		lseek(f, off, 0);
 		if (read(f, (char *)buf, sblock.fs_bsize) != sblock.fs_bsize) {
 			printf("%s: read error\n", argv[i]);
@@ -82,7 +84,7 @@ main(argc, argv)
 	for (i = 2; i < argc; i++) {
 		n = atoi(argv[i]);
 		printf("clearing %u\n", n);
-		off = fsbtodb(&sblock, itod(&sblock, n)) * DEV_BSIZE;
+		off = fsbtodb(&sblock, itod(&sblock, n)) * dev_bsize;
 		lseek(f, off, 0);
 		read(f, (char *)buf, sblock.fs_bsize);
 		j = itoo(&sblock, n);

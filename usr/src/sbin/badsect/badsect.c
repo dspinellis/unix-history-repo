@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)badsect.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)badsect.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -44,6 +44,7 @@ union {
 struct	fs *fs;
 int	fso, fsi;
 int	errs;
+long	dev_bsize = 1;
 
 char buf[MAXBSIZE];
 
@@ -93,7 +94,8 @@ main(argc, argv)
 		exit(6);
 	}
 	fs = &sblock;
-	rdfs(SBLOCK, SBSIZE, (char *)fs);
+	rdfs(SBOFF, SBSIZE, (char *)fs);
+	dev_bsize = fs->fs_fsize / fsbtodb(fs, 1);
 	for (argc -= 2, argv += 2; argc > 0; argc--, argv++) {
 		number = atoi(*argv);
 		if (chkuse(number, 1))
@@ -155,7 +157,7 @@ rdfs(bno, size, bf)
 {
 	int n;
 
-	if (lseek(fsi, bno * DEV_BSIZE, 0) < 0) {
+	if (lseek(fsi, bno * dev_bsize, 0) < 0) {
 		printf("seek error: %ld\n", bno);
 		perror("rdfs");
 		exit(1);

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)icheck.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)icheck.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 
@@ -70,6 +70,7 @@ daddr_t	nbfree;
 daddr_t	ndup;
 
 int	nerror;
+long	dev_bsize = 1;
 
 extern int inside[], around[];
 extern unsigned char *fragtbl[];
@@ -575,7 +576,7 @@ makecg()
 	}
 	sblock.fs_ronly = 0;
 	sblock.fs_fmod = 0;
-	bwrite(SBLOCK, (char *)&sblock, SBSIZE);
+	bwrite(SBOFF / dev_bsize, (char *)&sblock, SBSIZE);
 }
 
 /*
@@ -618,7 +619,7 @@ getsb(fs, file)
 {
 	int i, j, size;
 
-	if (bread(SBLOCK, fs, SBSIZE)) {
+	if (bread(SBOFF, fs, SBSIZE)) {
 		printf("bad super block");
 		perror(file);
 		nerror |= 04;
@@ -629,6 +630,7 @@ getsb(fs, file)
 		nerror |= 04;
 		return;
 	}
+	dev_bsize = fs->fs_fsize / fsbtodb(fs, 1);
 	for (i = 0, j = 0; i < sblock.fs_cssize; i += sblock.fs_bsize, j++) {
 		size = sblock.fs_cssize - i < sblock.fs_bsize ?
 		    sblock.fs_cssize - i : sblock.fs_bsize;
@@ -643,7 +645,7 @@ bwrite(blk, buf, size)
 	daddr_t blk;
 	register size;
 {
-	if (lseek(fi, blk * DEV_BSIZE, 0) < 0) {
+	if (lseek(fi, blk * dev_bsize, 0) < 0) {
 		perror("FS SEEK");
 		return(1);
 	}
@@ -660,7 +662,7 @@ bread(bno, buf, cnt)
 {
 	register i;
 
-	lseek(fi, bno * DEV_BSIZE, 0);
+	lseek(fi, bno * dev_bsize, 0);
 	if ((i = read(fi, buf, cnt)) != cnt) {
 		if (sflg) {
 			printf("No Update\n");
