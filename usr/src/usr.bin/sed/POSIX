@@ -1,4 +1,4 @@
-#	@(#)POSIX	5.6 (Berkeley) %G%
+#	@(#)POSIX	5.7 (Berkeley) %G%
 
 Comments on the IEEE P1003.2 Draft 12
      Part 2: Shell and Utilities
@@ -102,18 +102,42 @@ All uses of "POSIX" refer to section 4.55, Draft 12 of POSIX 1003.2.
 
 12.	POSIX does not specify whether address ranges are checked and
 	reset if a command is not executed due to a jump.  The following
-	program, with the input "one\ntwo\nthree\nfour\nfive" can behave
-	in different ways depending on whether the the /one/,/three/c
-	command is triggered at the third line.
+	program will behave in different ways depending on whether the
+	'c' command is triggered at the third line, i.e. will the text
+	be output even though that command is never logically encountered
+	in the script by line 3.
 
 	2,4b
-	/one,/three/c\
-		append some text
+	1,3c\
+		text
 
 	Historic implementations of sed, for the above example, would
-	output the text after the "branch" no longer applied, but would
-	then quit without further processing.  This implementation has
-	the more intuitive behavior of never outputting the text at all.
+	never output the test.  There was a bug, however, that if the
+	"1,3" was replaced by a RE address they would output the text
+	after the branch no longer applied, but would then quit without
+	further processing.  For example:
+
+	2,4b
+	/one/,/three/c\
+		text
+
+	with the input:
+
+		one
+		two
+		three
+		four
+		five
+		six
+
+	would output:
+
+		two
+		three
+		four
+		text
+
+	This implementation never outputs the text, for either example.
 	This is based on the belief that it would be reasonable to want
 	to output some text if the pattern /one/,/three/ occurs but only
 	if it occurs outside of the range of lines 2 to 4.
