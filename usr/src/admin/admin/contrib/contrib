@@ -1,3 +1,10 @@
+.\"     @(#)contrib	5.5 (Berkeley) %G%
+.\"
+.\" To build a document, pipe the bottom list through column -c180, making
+.\" it two columns wide (remove the .TE at the end of the file first).
+.\" Then, compress multiple tabs into a single tab, and do "dtbl list |
+.\" psroff".  DON'T SAVE THE FILE IN COLUMNATED FORM, IT'S HARD TO UNDO!
+.\"
 .ds CH
 .sp 5
 The following organizations have either funded the development
