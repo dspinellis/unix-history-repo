@@ -5,333 +5,359 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctime.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	5.6 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
-/*
- * This routine converts time as follows.
- * The epoch is 0000 Jan 1 1970 GMT.
- * The argument time is in seconds since then.
- * The localtime(t) entry returns a pointer to an array
- * containing
- *  seconds (0-59)
- *  minutes (0-59)
- *  hours (0-23)
- *  day of month (1-31)
- *  month (0-11)
- *  year-1970
- *  weekday (0-6, Sun is 0)
- *  day of the year
- *  daylight savings flag
- *
- * The routine calls the system to determine the local
- * timezone and whether Daylight Saving Time is permitted locally.
- * (DST is then determined by the current local rules)
- *
- * The routine does not work
- * in Saudi Arabia which runs on Solar time.
- *
- * asctime(tvec))
- * where tvec is produced by localtime
- * returns a ptr to a character string
- * that has the ascii time in the form
- *	Thu Jan 01 00:00:00 1970\n\0
- *	0123456789012345678901234 5
- *	0	  1	    2
- *
- * ctime(t) just calls localtime, then asctime.
- */
-
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/timeb.h>
-
-static	char	cbuf[26];
-static	int	dmsize[12] =
-{
-	31,
-	28,
-	31,
-	30,
-	31,
-	30,
-	31,
-	31,
-	30,
-	31,
-	30,
-	31
-};
-
-/*
- * The following table is used for 1974 and 1975 and
- * gives the day number of the first day after the Sunday of the
- * change.
- */
-struct dstab {
-	int	dayyr;
-	int	daylb;
-	int	dayle;
-};
-
-static struct dstab usdaytab[] = {
-	1974,	5,	333,	/* 1974: Jan 6 - last Sun. in Nov */
-	1975,	58,	303,	/* 1975: Last Sun. in Feb - last Sun in Oct */
-	0,	119,	303,	/* all other years: end Apr - end Oct */
-};
-static struct dstab ausdaytab[] = {
-	1970,	400,	0,	/* 1970: no daylight saving at all */
-	1971,	303,	0,	/* 1971: daylight saving from Oct 31 */
-	1972,	303,	58,	/* 1972: Jan 1 -> Feb 27 & Oct 31 -> dec 31 */
-	0,	303,	65,	/* others: -> Mar 7, Oct 31 -> */
-};
-
-/*
- * The European tables ... based on hearsay
- * Believed correct for:
- *	WE:	Great Britain, Portugal?
- *	ME:	Belgium, Luxembourg, Netherlands, Denmark, Norway,
- *		Austria, Poland, Czechoslovakia, Sweden, Switzerland,
- *		DDR, DBR, France, Spain, Hungary, Italy, Jugoslavia
- *		Finland (EE timezone, but ME dst rules)
- * Eastern European dst is unknown, we'll make it ME until someone speaks up.
- *	EE:	Bulgaria, Greece, Rumania, Turkey, Western Russia
- *
- * Ireland is unpredictable.  (Years when Easter Sunday just happens ...)
- * Years before 1983 are suspect.
- */
-static struct dstab wedaytab[] = {
-	1983,	89,	296,	/* 1983: end March - end Oct */
-	0,	89,	303,	/* others: end March - end Oct */
-};
-
-static struct dstab medaytab[] = {
-	1983,	89,	296,	/* 1983: end March - end Oct */
-	0,	89,	272,	/* others: end March - end Sep */
-};
-
-/*
- * Canada, same as the US, except no early 70's fluctuations.
- * Can this really be right ??
- */
-static struct dstab candaytab[] = {
-	0,	119,	303,	/* all years: end Apr - end Oct */
-};
-
-static struct dayrules {
-	int		dst_type;	/* number obtained from system */
-	int		dst_hrs;	/* hours to add when dst on */
-	struct	dstab *	dst_rules;	/* one of the above */
-	enum {STH,NTH}	dst_hemi;	/* southern, northern hemisphere */
-} dayrules [] = {
-	DST_USA,	1,	usdaytab,	NTH,
-	DST_AUST,	1,	ausdaytab,	STH,
-	DST_WET,	1,	wedaytab,	NTH,
-	DST_MET,	1,	medaytab,	NTH,
-	DST_EET,	1,	medaytab,	NTH,	/* XXX */
-	DST_CAN,	1,	candaytab,	NTH,
-	-1,
-};
-
-struct tm	*gmtime();
-char		*ct_numb();
-struct tm	*localtime();
-char	*ctime();
-char	*ct_num();
-char	*asctime();
+#include "sys/param.h"
+#include "tzfile.h"
+#include "time.h"
 
 char *
 ctime(t)
 time_t *t;
 {
+	struct tm	*localtime();
+	char	*asctime();
+
 	return(asctime(localtime(t)));
 }
 
-struct tm *
-localtime(tim)
-time_t *tim;
-{
-	register int dayno;
-	register struct tm *ct;
-	register dalybeg, daylend;
-	register struct dayrules *dr;
-	register struct dstab *ds;
-	int year;
-	time_t copyt;
-	struct timeval curtime;
-	static struct timezone zone;
-	static int init = 0;
-
-	if (!init) {
-		gettimeofday(&curtime, &zone);
-		init++;
-	}
-	copyt = *tim - (time_t)zone.tz_minuteswest*60;
-	ct = gmtime(&copyt);
-	dayno = ct->tm_yday;
-	for (dr = dayrules; dr->dst_type >= 0; dr++)
-		if (dr->dst_type == zone.tz_dsttime)
-			break;
-	if (dr->dst_type >= 0) {
-		year = ct->tm_year + 1900;
-		for (ds = dr->dst_rules; ds->dayyr; ds++)
-			if (ds->dayyr == year)
-				break;
-		dalybeg = ds->daylb;	/* first Sun after dst starts */
-		daylend = ds->dayle;	/* first Sun after dst ends */
-		dalybeg = sunday(ct, dalybeg);
-		daylend = sunday(ct, daylend);
-		switch (dr->dst_hemi) {
-		case NTH:
-		    if (!(
-		       (dayno>dalybeg || (dayno==dalybeg && ct->tm_hour>=2)) &&
-		       (dayno<daylend || (dayno==daylend && ct->tm_hour<1))
-		    ))
-			    return(ct);
-		    break;
-		case STH:
-		    if (!(
-		       (dayno>dalybeg || (dayno==dalybeg && ct->tm_hour>=2)) ||
-		       (dayno<daylend || (dayno==daylend && ct->tm_hour<2))
-		    ))
-			    return(ct);
-		    break;
-		default:
-		    return(ct);
-		}
-	        copyt += dr->dst_hrs*60*60;
-		ct = gmtime(&copyt);
-		ct->tm_isdst++;
-	}
-	return(ct);
-}
-
 /*
- * The argument is a 0-origin day number.
- * The value is the day number of the last
- * Sunday on or before the day.
- */
-static
-sunday(t, d)
-register struct tm *t;
-register int d;
-{
-	if (d >= 58)
-		d += dysize(t->tm_year) - 365;
-	return(d - (d - t->tm_yday + t->tm_wday + 700) % 7);
-}
-
-struct tm *
-gmtime(tim)
-time_t *tim;
-{
-	register int d0, d1;
-	long hms, day;
-	register int *tp;
-	static struct tm xtime;
-
-	/*
-	 * break initial number into days
-	 */
-	hms = *tim % 86400;
-	day = *tim / 86400;
-	if (hms<0) {
-		hms += 86400;
-		day -= 1;
-	}
-	tp = (int *)&xtime;
-
-	/*
-	 * generate hours:minutes:seconds
-	 */
-	*tp++ = hms%60;
-	d1 = hms/60;
-	*tp++ = d1%60;
-	d1 /= 60;
-	*tp++ = d1;
-
-	/*
-	 * day is the day number.
-	 * generate day of the week.
-	 * The addend is 4 mod 7 (1/1/1970 was Thursday)
-	 */
-
-	xtime.tm_wday = (day+7340036)%7;
-
-	/*
-	 * year number
-	 */
-	if (day>=0) for(d1=70; day >= dysize(d1); d1++)
-		day -= dysize(d1);
-	else for (d1=70; day<0; d1--)
-		day += dysize(d1-1);
-	xtime.tm_year = d1;
-	xtime.tm_yday = d0 = day;
-
-	/*
-	 * generate month
-	 */
-
-	if (dysize(d1)==366)
-		dmsize[1] = 29;
-	for(d1=0; d0 >= dmsize[d1]; d1++)
-		d0 -= dmsize[d1];
-	dmsize[1] = 28;
-	*tp++ = d0+1;
-	*tp++ = d1;
-	xtime.tm_isdst = 0;
-	return(&xtime);
-}
+** A la X3J11
+*/
 
 char *
-asctime(t)
-struct tm *t;
+asctime(timeptr)
+register struct tm *	timeptr;
 {
-	register char *cp, *ncp;
-	register int *tp;
+	static char	wday_name[DAYS_PER_WEEK][3] = {
+		"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+	};
+	static char	mon_name[MONS_PER_YEAR][3] = {
+		"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+	};
+	static char	result[26];
 
-	cp = cbuf;
-	for (ncp = "Day Mon 00 00:00:00 1900\n"; *cp++ = *ncp++;);
-	ncp = &"SunMonTueWedThuFriSat"[3*t->tm_wday];
-	cp = cbuf;
-	*cp++ = *ncp++;
-	*cp++ = *ncp++;
-	*cp++ = *ncp++;
-	cp++;
-	tp = &t->tm_mon;
-	ncp = &"JanFebMarAprMayJunJulAugSepOctNovDec"[(*tp)*3];
-	*cp++ = *ncp++;
-	*cp++ = *ncp++;
-	*cp++ = *ncp++;
-	cp = ct_numb(cp, *--tp);
-	cp = ct_numb(cp, *--tp+100);
-	cp = ct_numb(cp, *--tp+100);
-	cp = ct_numb(cp, *--tp+100);
-	if (t->tm_year>=100) {
-		cp[1] = '2';
-		cp[2] = '0' + (t->tm_year-100) / 100;
+	(void) sprintf(result, "%.3s %.3s%3d %.2d:%.2d:%.2d %d\n",
+		wday_name[timeptr->tm_wday],
+		mon_name[timeptr->tm_mon],
+		timeptr->tm_mday, timeptr->tm_hour,
+		timeptr->tm_min, timeptr->tm_sec,
+		TM_YEAR_BASE + timeptr->tm_year);
+	return result;
+}
+
+#ifndef TRUE
+#define TRUE		1
+#define FALSE		0
+#endif /* !TRUE */
+
+extern char *		getenv();
+extern char *		strcpy();
+extern char *		strcat();
+struct tm *		offtime();
+
+struct ttinfo {				/* time type information */
+	long		tt_gmtoff;	/* GMT offset in seconds */
+	int		tt_isdst;	/* used to set tm_isdst */
+	int		tt_abbrind;	/* abbreviation list index */
+};
+
+struct state {
+	int		timecnt;
+	int		typecnt;
+	int		charcnt;
+	time_t		ats[TZ_MAX_TIMES];
+	unsigned char	types[TZ_MAX_TIMES];
+	struct ttinfo	ttis[TZ_MAX_TYPES];
+	char		chars[TZ_MAX_CHARS + 1];
+};
+
+static struct state	s;
+
+static int		tz_is_set;
+
+char *			tzname[2] = {
+	"GMT",
+	"GMT"
+};
+
+#ifdef USG_COMPAT
+time_t			timezone = 0;
+int			daylight = 0;
+#endif /* USG_COMPAT */
+
+static long
+detzcode(codep)
+char *	codep;
+{
+	register long	result;
+	register int	i;
+
+	result = 0;
+	for (i = 0; i < 4; ++i)
+		result = (result << 8) | (codep[i] & 0xff);
+	return result;
+}
+
+static
+tzload(name)
+register char *	name;
+{
+	register int	i;
+	register int	fid;
+
+	if (name == 0 && (name = TZDEFAULT) == 0)
+		return -1;
+	{
+		register char *	p;
+		register int	doaccess;
+		char		fullname[MAXPATHLEN];
+
+		doaccess = name[0] == '/';
+		if (!doaccess) {
+			if ((p = TZDIR) == 0)
+				return -1;
+			if ((strlen(p) + strlen(name) + 1) >= sizeof fullname)
+				return -1;
+			(void) strcpy(fullname, p);
+			(void) strcat(fullname, "/");
+			(void) strcat(fullname, name);
+			/*
+			** Set doaccess if '.' (as in "../") shows up in name.
+			*/
+			while (*name != '\0')
+				if (*name++ == '.')
+					doaccess = TRUE;
+			name = fullname;
+		}
+		if (doaccess && access(name, 4) != 0)
+			return -1;
+		if ((fid = open(name, 0)) == -1)
+			return -1;
 	}
-	cp += 2;
-	cp = ct_numb(cp, t->tm_year+100);
-	return(cbuf);
+	{
+		register char *			p;
+		register struct tzhead *	tzhp;
+		char				buf[sizeof s];
+
+		i = read(fid, buf, sizeof buf);
+		if (close(fid) != 0 || i < sizeof *tzhp)
+			return -1;
+		tzhp = (struct tzhead *) buf;
+		s.timecnt = (int) detzcode(tzhp->tzh_timecnt);
+		s.typecnt = (int) detzcode(tzhp->tzh_typecnt);
+		s.charcnt = (int) detzcode(tzhp->tzh_charcnt);
+		if (s.timecnt > TZ_MAX_TIMES ||
+			s.typecnt == 0 ||
+			s.typecnt > TZ_MAX_TYPES ||
+			s.charcnt > TZ_MAX_CHARS)
+				return -1;
+		if (i < sizeof *tzhp +
+			s.timecnt * (4 + sizeof (char)) +
+			s.typecnt * (4 + 2 * sizeof (char)) +
+			s.charcnt * sizeof (char))
+				return -1;
+		p = buf + sizeof *tzhp;
+		for (i = 0; i < s.timecnt; ++i) {
+			s.ats[i] = detzcode(p);
+			p += 4;
+		}
+		for (i = 0; i < s.timecnt; ++i)
+			s.types[i] = (unsigned char) *p++;
+		for (i = 0; i < s.typecnt; ++i) {
+			register struct ttinfo *	ttisp;
+
+			ttisp = &s.ttis[i];
+			ttisp->tt_gmtoff = detzcode(p);
+			p += 4;
+			ttisp->tt_isdst = (unsigned char) *p++;
+			ttisp->tt_abbrind = (unsigned char) *p++;
+		}
+		for (i = 0; i < s.charcnt; ++i)
+			s.chars[i] = *p++;
+		s.chars[i] = '\0';	/* ensure '\0' at end */
+	}
+	/*
+	** Check that all the local time type indices are valid.
+	*/
+	for (i = 0; i < s.timecnt; ++i)
+		if (s.types[i] >= s.typecnt)
+			return -1;
+	/*
+	** Check that all abbreviation indices are valid.
+	*/
+	for (i = 0; i < s.typecnt; ++i)
+		if (s.ttis[i].tt_abbrind >= s.charcnt)
+			return -1;
+	/*
+	** Set tzname elements to initial values.
+	*/
+	tzname[0] = tzname[1] = &s.chars[0];
+#ifdef USG_COMPAT
+	timezone = s.ttis[0].tt_gmtoff;
+	daylight = 0;
+#endif /* USG_COMPAT */
+	for (i = 1; i < s.typecnt; ++i) {
+		register struct ttinfo *	ttisp;
+
+		ttisp = &s.ttis[i];
+		if (ttisp->tt_isdst) {
+			tzname[1] = &s.chars[ttisp->tt_abbrind];
+#ifdef USG_COMPAT
+			daylight = 1;
+#endif /* USG_COMPAT */ 
+		} else {
+			tzname[0] = &s.chars[ttisp->tt_abbrind];
+#ifdef USG_COMPAT
+			timezone = ttisp->tt_gmtoff;
+#endif /* USG_COMPAT */ 
+		}
+	}
+	return 0;
 }
 
-dysize(y)
+static
+tzsetgmt()
 {
-	if((y%4) == 0)
-		return(366);
-	return(365);
+	s.timecnt = 0;
+	s.ttis[0].tt_gmtoff = 0;
+	s.ttis[0].tt_abbrind = 0;
+	(void) strcpy(s.chars, "GMT");
+	tzname[0] = tzname[1] = s.chars;
+#ifdef USG_COMPAT
+	timezone = 0;
+	daylight = 0;
+#endif /* USG_COMPAT */
 }
 
-static char *
-ct_numb(cp, n)
-register char *cp;
+void
+tzset()
 {
-	cp++;
-	if (n>=10)
-		*cp++ = (n/10)%10 + '0';
-	else
-		*cp++ = ' ';
-	*cp++ = n%10 + '0';
-	return(cp);
+	register char *	name;
+
+	tz_is_set = TRUE;
+	name = getenv("TZ");
+	if (name != 0 && *name == '\0')
+		tzsetgmt();		/* GMT by request */
+	else if (tzload(name) != 0)
+		tzsetgmt();
+}
+
+struct tm *
+localtime(timep)
+time_t *	timep;
+{
+	register struct ttinfo *	ttisp;
+	register struct tm *		tmp;
+	register int			i;
+	time_t				t;
+
+	if (!tz_is_set)
+		(void) tzset();
+	t = *timep;
+	if (s.timecnt == 0 || t < s.ats[0]) {
+		i = 0;
+		while (s.ttis[i].tt_isdst)
+			if (++i >= s.timecnt) {
+				i = 0;
+				break;
+			}
+	} else {
+		for (i = 1; i < s.timecnt; ++i)
+			if (t < s.ats[i])
+				break;
+		i = s.types[i - 1];
+	}
+	ttisp = &s.ttis[i];
+	/*
+	** To get (wrong) behavior that's compatible with System V Release 2.0
+	** you'd replace the statement below with
+	**	tmp = offtime((time_t) (t + ttisp->tt_gmtoff), 0L);
+	*/
+	tmp = offtime(&t, ttisp->tt_gmtoff);
+	tmp->tm_isdst = ttisp->tt_isdst;
+	tzname[tmp->tm_isdst] = &s.chars[ttisp->tt_abbrind];
+	tmp->tm_zone = &s.chars[ttisp->tt_abbrind];
+	return tmp;
+}
+
+struct tm *
+gmtime(clock)
+time_t *	clock;
+{
+	register struct tm *	tmp;
+
+	tmp = offtime(clock, 0L);
+	tzname[0] = "GMT";
+	tmp->tm_zone = "GMT";		/* UCT ? */
+	return tmp;
+}
+
+static int	mon_lengths[2][MONS_PER_YEAR] = {
+	31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
+	31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+};
+
+static int	year_lengths[2] = {
+	DAYS_PER_NYEAR, DAYS_PER_LYEAR
+};
+
+struct tm *
+offtime(clock, offset)
+time_t *	clock;
+long		offset;
+{
+	register struct tm *	tmp;
+	register long		days;
+	register long		rem;
+	register int		y;
+	register int		yleap;
+	register int *		ip;
+	static struct tm	tm;
+
+	tmp = &tm;
+	days = *clock / SECS_PER_DAY;
+	rem = *clock % SECS_PER_DAY;
+	rem += offset;
+	while (rem < 0) {
+		rem += SECS_PER_DAY;
+		--days;
+	}
+	while (rem >= SECS_PER_DAY) {
+		rem -= SECS_PER_DAY;
+		++days;
+	}
+	tmp->tm_hour = (int) (rem / SECS_PER_HOUR);
+	rem = rem % SECS_PER_HOUR;
+	tmp->tm_min = (int) (rem / SECS_PER_MIN);
+	tmp->tm_sec = (int) (rem % SECS_PER_MIN);
+	tmp->tm_wday = (int) ((EPOCH_WDAY + days) % DAYS_PER_WEEK);
+	if (tmp->tm_wday < 0)
+		tmp->tm_wday += DAYS_PER_WEEK;
+	y = EPOCH_YEAR;
+	if (days >= 0)
+		for ( ; ; ) {
+			yleap = isleap(y);
+			if (days < (long) year_lengths[yleap])
+				break;
+			++y;
+			days = days - (long) year_lengths[yleap];
+		}
+	else do {
+		--y;
+		yleap = isleap(y);
+		days = days + (long) year_lengths[yleap];
+	} while (days < 0);
+	tmp->tm_year = y - TM_YEAR_BASE;
+	tmp->tm_yday = (int) days;
+	ip = mon_lengths[yleap];
+	for (tmp->tm_mon = 0; days >= (long) ip[tmp->tm_mon]; ++(tmp->tm_mon))
+		days = days - (long) ip[tmp->tm_mon];
+	tmp->tm_mday = (int) (days + 1);
+	tmp->tm_isdst = 0;
+	tmp->tm_zone = "";
+	tmp->tm_gmtoff = offset;
+	return tmp;
 }
