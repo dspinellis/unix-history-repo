@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.93 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.94 (Berkeley) %G%
  */
 
 /*
@@ -203,9 +203,11 @@ void nqnfs_clientlease();
 extern u_long nfs_procids[NFS_NPROCS];
 extern u_long nfs_prog, nfs_vers, nfs_true, nfs_false;
 extern char nfsiobuf[MAXPHYS+NBPG];
-struct buf nfs_bqueue;		/* Queue head for nfsiod's */
 struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
 int nfs_numasync = 0;
+/* Queue head for nfsiod's */
+struct buf *nfs_bqueuehead;
+struct buf **nfs_bqueuetail = &nfs_bqueuehead;
 #define	DIRHDSIZ	(sizeof (struct dirent) - (MAXNAMLEN + 1))
 
 /*
@@ -1960,7 +1962,6 @@ nfs_strategy(ap)
 	} */ *ap;
 {
 	register struct buf *bp = ap->a_bp;
-	register struct buf *dp;
 	register int i;
 	int error = 0;
 	int fnd = 0;
@@ -1986,16 +1987,10 @@ nfs_strategy(ap)
 		return (nfs_doio(bp));
 	for (i = 0; i < NFS_MAXASYNCDAEMON; i++) {
 		if (nfs_iodwant[i]) {
-			dp = &nfs_bqueue;
-			if (dp->b_actf == NULL) {
-				dp->b_actl = bp;
-				bp->b_actf = dp;
-			} else {
-				dp->b_actf->b_actl = bp;
-				bp->b_actf = dp->b_actf;
-			}
-			dp->b_actf = bp;
-			bp->b_actl = dp;
+			bp->b_actf = NULL;
+			bp->b_actb = nfs_bqueuetail;
+			*nfs_bqueuetail = bp;
+			nfs_bqueuetail = &bp->b_actf;
 			fnd++;
 			wakeup((caddr_t)&nfs_iodwant[i]);
 			break;
