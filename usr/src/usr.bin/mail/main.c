@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -44,7 +44,6 @@ main(argc, argv)
 	char *subject;
 	char *ef;
 	char nosrc = 0;
-	char isedit = 0;
 	int hdrstop(), (*prevint)();
 	int sigchild();
 	extern int getopt(), optind, opterr;
@@ -209,16 +208,10 @@ Usage: mail [-iInv] [-s subject] [-c cc-addr] [-b bcc-addr] to-addr ...\n\
 	 * Decide whether we are editing a mailbox or reading
 	 * the system mailbox, and open up the right stuff.
 	 */
-	if (ef != NOSTR)
-		isedit++;
-	else
+	if (ef == NOSTR)
 		ef = "%";
-	if ((ef = expand(ef)) == NOSTR || setfile(ef, isedit) < 0)
+	if (setfile(ef) < 0)
 		exit(1);		/* error already reported */
-	if (!edit && msgCount == 0) {
-		fprintf(stderr, "No mail for %s\n", myname);
-		exit(1);
-	}
 	if (setjmp(hdrjmp) == 0) {
 		extern char *version;
 
