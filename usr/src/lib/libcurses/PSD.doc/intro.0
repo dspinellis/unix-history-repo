@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)intro.0	6.3 (Berkeley) %G%
+.\"	@(#)intro.0	6.4 (Berkeley) %G%
 .\"
 .tp
 .(l C
@@ -16,6 +16,7 @@ A Library Package
 .ps
 .sp
 .i "Kenneth C. R. C. Arnold"
+.i "Elan Amir"
 .sp
 Computer Science Division
 Department of Electrical Engineering and Computer Science
@@ -66,5 +67,14 @@ and
 Joe Kalash,
 was, and is,
 also greatly appreciated.
-.sp 2
-Revised 16 April 1986
+.i "Ken Arnold    16 April 1986"
+.pp
+The help and/or support of Kirk McKusick and Keith Bostic (public vi!)
+was invaluable in bringing the package ``into the 90's'', which now 
+includes completely new data structures and screen refresh optimization 
+routines.
+.i "Elan Amir   29 December 1992"
+
+
+
+
