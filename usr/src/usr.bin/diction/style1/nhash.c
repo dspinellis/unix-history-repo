@@ -1,5 +1,5 @@
 #ifndef lint
-static char nhash_sccsid[] = "@(#)nhash.c	4.2	(Berkeley)	82/11/06";
+static char nhash_sccsid[] = "@(#)nhash.c	4.3	(Berkeley)	91/02/02";
 #endif not lint
 
 struct dict {
@@ -65,7 +65,7 @@ struct dict *data;
 		p1 = (p1+p2)%aatsize;
 	}
 	fprintf(stderr, "hash table full:size %d\n",aatsize);
-	exit();
+	exit(1);
 }
 getd(){
 	struct dict *ptr;

@@ -1,5 +1,5 @@
 #ifndef lint
-static char ehash_sccsid[] = "@(#)ehash.c	4.2	(Berkeley)	82/11/06";
+static char ehash_sccsid[] = "@(#)ehash.c	4.3	(Berkeley)	91/02/02";
 #endif not lint
 
 #
@@ -172,7 +172,7 @@ struct dict *data;
 		p1 = (p1+p2)%aatsize;
 	}
 	fprintf(stderr, "hash table full\n");
-	exit();
+	exit(1);
 }
 struct hnode aa1root[43];
 #define aa1tsize 43
