@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass3.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass3.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -24,44 +24,29 @@ static char sccsid[] = "@(#)pass3.c	5.7 (Berkeley) %G%";
 #include <ufs/fs.h>
 #include "fsck.h"
 
-int	pass2check();
-
 pass3()
 {
-	register struct dinode *dp;
-	struct inodesc idesc;
-	ino_t inumber, orphan;
+	register struct inoinfo **inpp, *inp;
+	ino_t orphan;
 	int loopcnt;
 
-	bzero((char *)&idesc, sizeof(struct inodesc));
-	idesc.id_type = DATA;
-	for (inumber = ROOTINO; inumber <= lastino; inumber++) {
-		if (statemap[inumber] == DSTATE) {
-			pathp = pathname;
-			*pathp++ = '?';
-			*pathp = '\0';
-			idesc.id_func = findino;
-			idesc.id_name = "..";
-			idesc.id_parent = inumber;
-			loopcnt = 0;
-			do {
-				orphan = idesc.id_parent;
-				if (orphan < ROOTINO || orphan > maxino)
-					break;
-				dp = getcacheino(orphan);
-				idesc.id_parent = 0;
-				idesc.id_number = orphan;
-				if ((ckinode(dp, &idesc) & FOUND) == 0)
-					break;
-				if (loopcnt >= sblock.fs_cstotal.cs_ndir)
-					break;
-				loopcnt++;
-			} while (statemap[idesc.id_parent] == DSTATE);
-			if (linkup(orphan, idesc.id_parent) == 1) {
-				idesc.id_func = pass2check;
-				idesc.id_number = lfdir;
-				descend(&idesc, orphan);
-			}
+	for (inpp = &inpsort[inplast - 1]; inpp >= inpsort; inpp--) {
+		inp = *inpp;
+		if (inp->i_number == ROOTINO ||
+		    !(inp->i_parent == 0 || statemap[inp->i_number] == DSTATE))
+			continue;
+		for (loopcnt = 0; ; loopcnt++) {
+			orphan = inp->i_number;
+			if (inp->i_parent == 0 ||
+			    statemap[inp->i_parent] != DSTATE ||
+			    loopcnt > numdirs)
+				break;
+			inp = getinoinfo(inp->i_parent);
 		}
+		(void)linkup(orphan, inp->i_dotdot);
+		inp->i_parent = inp->i_dotdot = lfdir;
+		lncntp[lfdir]--;
+		statemap[orphan] = DFOUND;
+		propagate();
 	}
 }
