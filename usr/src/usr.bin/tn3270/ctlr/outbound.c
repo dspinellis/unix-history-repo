@@ -127,7 +127,7 @@ int	position;
 void
 Clear3270()
 {
-    bzero((char *)Host, sizeof(Host));
+    ClearArray(Host);
     DeleteAllFields();		/* get rid of all fields */
     BufferAddress = SetBufferAddress(0,0);
     CursorAddress = SetBufferAddress(0,0);
@@ -211,14 +211,24 @@ int	control;				/* this buffer ended block? */
 	    case CMD_READ_MODIFIED:
 	    case CMD_SNA_READ_MODIFIED:
 	    case CMD_SNA_READ_MODIFIED_ALL:
+		OiaOnlineA(1);
 		DoReadModified(Command);
 		break;
 	    case CMD_READ_BUFFER:
 	    case CMD_SNA_READ_BUFFER:
+		OiaOnlineA(1);
 		DoReadBuffer();
 		break;
 	    default:
-		break;
+		{
+		    char buffer[100];
+
+		    sprintf(buffer,
+			"Unexpected read command code 0x%x received.\n",
+								    Command);
+		    ExitString(stderr, buffer, 1);
+		    break;
+		}
 	    }
 	    return(1);			/* We consumed everything */
 	}
@@ -242,6 +252,8 @@ int	control;				/* this buffer ended block? */
 	    {
 		int newlines, newcolumns;
 
+		OiaOnlineA(1);
+		OiaTWait(0);
 		if ((Command == CMD_ERASE_WRITE)
 				|| (Command == CMD_SNA_ERASE_WRITE)) {
 		    newlines = 24;
@@ -275,6 +287,8 @@ int	control;				/* this buffer ended block? */
 
 	case CMD_ERASE_ALL_UNPROTECTED:
 	case CMD_SNA_ERASE_ALL_UNPROTECTED:
+	    OiaOnlineA(1);
+	    OiaTWait(0);
 	    CursorAddress = HighestScreen()+1;
 	    for (i = LowestScreen(); i <= HighestScreen(); i = ScreenInc(i)) {
 		if (IsUnProtected(i)) {
@@ -295,12 +309,15 @@ int	control;				/* this buffer ended block? */
 	    break;
 	case CMD_WRITE:
 	case CMD_SNA_WRITE:
+	    OiaOnlineA(1);
+	    OiaTWait(0);
 	    break;
 	default:
 	    {
 		char buffer[100];
 
-		sprintf(buffer, "Unexpected command code 0x%x received.\n",
+		sprintf(buffer,
+			"Unexpected write command code 0x%x received.\n",
 								Command);
 		ExitString(stderr, buffer, 1);
 		break;
@@ -507,6 +524,7 @@ int	control;				/* this buffer ended block? */
 		AidByte = 0;
 #endif	/* !defined(PURE3274) */
 		UnLocked = 1;
+		OiaSystemLocked(0);
 	    }
 	    if (Wcc & WCC_ALARM) {
 		RingBell(0);
@@ -533,9 +551,9 @@ Init3270()
 
     OptInit();		/* initialize mappings */
 
-    bzero((char *)Host, sizeof Host);	/* Clear host */
+    ClearArray(Host);
 
-    bzero(Orders, sizeof Orders);
+    ClearArray(Orders);
     for (i = 0; i <= highestof(orders_def); i++) {
 	Orders[orders_def[i].code] = 1;
     }
