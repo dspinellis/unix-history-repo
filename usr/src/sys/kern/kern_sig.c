@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.25 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -506,7 +506,11 @@ trapsignal(sig, code)
 			ktrpsig(p->p_tracep, sig, u.u_signal[sig], 
 				p->p_sigmask, code);
 #endif
+#if	defined(i386)
+		sendsig(u.u_signal[sig], sig, p->p_sigmask, code, 0x100);
+#else
 		sendsig(u.u_signal[sig], sig, p->p_sigmask, code);
+#endif
 		p->p_sigmask |= u.u_sigmask[sig] | mask;
 	} else {
 		u.u_code = code;	/* XXX for core dump/debugger */
@@ -882,7 +886,11 @@ stop(p)
  *	if (sig = CURSIG(p))
  *		psig(sig);
  */
+#if defined(i386)
+psig(sig, flags)
+#else
 psig(sig)
+#endif
 	register int sig;
 {
 	register struct proc *p = u.u_procp;
@@ -925,7 +933,11 @@ psig(sig)
 			p->p_sigmask |= u.u_sigmask[sig] | mask;
 			(void) spl0();
 			u.u_ru.ru_nsignals++;
+#if	defined(i386)
+			sendsig(action, sig, returnmask, 0, flags);
+#else
 			sendsig(action, sig, returnmask, 0);
+#endif
 			continue;
 		}
 		u.u_acflag |= AXSIG;
