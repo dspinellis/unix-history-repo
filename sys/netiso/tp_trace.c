@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_trace.c	7.4 (Berkeley) 5/6/91
+ *	from: @(#)tp_trace.c	7.4 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,11 +60,9 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /* 
  * ARGO TP
- *
- * $Header: tp_trace.c,v 5.3 88/11/18 17:29:14 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_trace.c,v $
  *
  * The whole protocol trace module.
  * We keep a circular buffer of trace structures, which are big

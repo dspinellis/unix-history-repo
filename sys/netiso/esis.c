@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)esis.c	7.19 (Berkeley) 6/27/91
+ *	from: @(#)esis.c	7.19 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 /***********************************************************

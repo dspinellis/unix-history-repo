@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_cons.c	7.8 (Berkeley) 5/9/91
+ *	from: @(#)tp_cons.c	7.8 (Berkeley) 5/9/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,10 +60,9 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /* 
  * ARGO TP
- * $Header: tp_cons.c,v 5.6 88/11/18 17:27:13 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_cons.c,v $
  *
  * Here is where you find the iso- and cons-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff

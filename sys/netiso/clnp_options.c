@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)clnp_options.c	7.8 (Berkeley) 5/6/91
+ *	from: @(#)clnp_options.c	7.8 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,8 +60,6 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: /var/src/sys/netiso/RCS/clnp_options.c,v 5.1 89/02/09 16:20:37 hagens Exp $ */
-/* $Source: /var/src/sys/netiso/RCS/clnp_options.c,v $ */
 
 #ifdef ISO
 

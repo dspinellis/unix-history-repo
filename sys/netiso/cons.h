@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)cons.h	7.3 (Berkeley) 5/6/91
+ *	from: @(#)cons.h	7.3 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,10 +60,8 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /*
- * $Header: cons.h,v 4.4 88/09/09 19:01:28 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/cons.h,v $
- *
  * interface between TP and CONS
  */
 

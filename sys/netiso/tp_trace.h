@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_trace.h	7.5 (Berkeley) 6/27/91
+ *	from: @(#)tp_trace.h	7.5 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,12 +60,9 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /* 
  * ARGO TP
- *
- * $Header: tp_trace.h,v 5.1 88/10/12 12:21:51 root Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_trace.h,v $
- *
  * 
  * Definitions needed for the protocol trace mechanism.
  */

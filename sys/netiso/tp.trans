@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp.trans	7.9 (Berkeley) 5/7/91
+ *	from: @(#)tp.trans	7.9 (Berkeley) 5/7/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,8 +60,8 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: tp.trans,v 5.1 88/10/12 12:22:07 root Exp $
- *
+
+/*
  * Transition file for TP.
  *
  * DO NOT:

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)iso.h	7.6 (Berkeley) 5/6/91
+ *	from: @(#)iso.h	7.6 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,8 +60,6 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: iso.h,v 4.9 88/09/11 18:06:38 hagens Exp $ */
-/* $Source: /usr/argo/sys/netiso/RCS/iso.h,v $ */
 
 #ifndef __ISO__
 #define __ISO__

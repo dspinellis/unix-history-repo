@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_meas.h	7.5 (Berkeley) 5/6/91
+ *	from: @(#)tp_meas.h	7.5 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_param.h	7.8 (Berkeley) 6/27/91
+ *	from: @(#)tp_param.h	7.8 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,12 +60,9 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /* 
  * ARGO TP
- *
- * $Header: tp_param.h,v 5.3 88/11/18 17:28:18 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_param.h,v $
- *
  */
 
 #ifndef __TP_PARAM__

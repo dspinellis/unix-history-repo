@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)cltp_var.h	7.3 (Berkeley) 6/28/90
+ *	from: @(#)cltp_var.h	7.3 (Berkeley) 6/28/90
+ *	$Id$
  */
 
 #define UD_TPDU_type	0x40	/* packet type */

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_subr2.c	7.10 (Berkeley) 6/27/91
+ *	from: @(#)tp_subr2.c	7.10 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,11 +60,9 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /* 
  * ARGO TP
- *
- * $Header: /a/cvs/386BSD/src/sys/netiso/tp_subr2.c,v 1.1.1.1 1993/06/12 14:57:17 rgrimes Exp $
- * $Source: /a/cvs/386BSD/src/sys/netiso/tp_subr2.c,v $
  *
  * Some auxiliary routines:
  * 	tp_protocol_error: required by xebec- called when a combo of state,

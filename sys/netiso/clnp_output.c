@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)clnp_output.c	7.10 (Berkeley) 5/6/91
+ *	from: @(#)clnp_output.c	7.10 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,8 +60,6 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: /var/src/sys/netiso/RCS/clnp_output.c,v 5.0 89/02/08 12:00:15 hagens Exp $ */
-/* $Source: /var/src/sys/netiso/RCS/clnp_output.c,v $ */
 
 #include "param.h"
 #include "mbuf.h"

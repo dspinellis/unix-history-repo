@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_user.h	7.10 (Berkeley) 5/6/91
+ *	from: @(#)tp_user.h	7.10 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,11 +60,9 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /* 
  * ARGO TP
- *
- * $Header: tp_user.h,v 5.2 88/11/04 15:44:44 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_user.h,v $
  *
  * These are the values a real-live user ;-) needs. 
  */

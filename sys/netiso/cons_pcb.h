@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)cons_pcb.h	7.4 (Berkeley) 5/6/91
+ *	from: @(#)cons_pcb.h	7.4 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,8 +60,6 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: cons_pcb.h,v 4.2 88/06/29 14:59:08 hagens Exp $ */
-/* $Source: /usr/argo/sys/netiso/RCS/cons_pcb.h,v $ */
 
 /*
  * protocol control block for the connection oriented network service

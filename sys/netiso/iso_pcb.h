@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)iso_pcb.h	7.5 (Berkeley) 5/6/91
+ *	from: @(#)iso_pcb.h	7.5 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,8 +60,6 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: iso_pcb.h,v 4.3 88/06/29 15:00:01 hagens Exp $ */
-/* $Source: /usr/argo/sys/netiso/RCS/iso_pcb.h,v $ */
 
 #define	MAXX25CRUDLEN	16	/* 16 bytes of call request user data */
 

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)iso.c	7.14 (Berkeley) 6/27/91
+ *	from: @(#)iso.c	7.14 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,10 +60,8 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /*
- * $Header: /a/cvs/386BSD/src/sys/netiso/iso.c,v 1.1.1.1 1993/06/12 14:57:20 rgrimes Exp $ 
- * $Source: /a/cvs/386BSD/src/sys/netiso/iso.c,v $ 
- *
  * iso.c: miscellaneous routines to support the iso address family
  */
 

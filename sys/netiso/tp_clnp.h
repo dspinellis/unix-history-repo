@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_clnp.h	7.3 (Berkeley) 5/6/91
+ *	from: @(#)tp_clnp.h	7.3 (Berkeley) 5/6/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,11 +60,9 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /* 
  * ARGO TP
- *
- * $Header: tp_clnp.h,v 5.1 88/10/12 12:16:36 root Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_clnp.h,v $
  *
  * AF_ISO net-dependent structures and include files
  *

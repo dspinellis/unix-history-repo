@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tp_stat.h	7.5 (Berkeley) 6/27/91
+ *	from: @(#)tp_stat.h	7.5 (Berkeley) 6/27/91
+ *	$Id$
  */
 
 /***********************************************************
@@ -59,11 +60,9 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
 /* 
  * ARGO TP
- *
- * $Header: tp_stat.h,v 5.4 88/11/18 17:28:38 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_stat.h,v $
  *
  * Here are the data structures in which the global
  * statistics(counters) are gathered.
