@@ -26,7 +26,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /* 
@@ -405,7 +405,7 @@ char ofname [100];
 #ifdef DEBUG
 int verbose = 0;
 #endif /* DEBUG */
-int (*oldint)();
+sig_t oldint;
 int bgnd_flag;
 
 int do_decomp = 0;
@@ -455,7 +455,7 @@ register int argc; char **argv;
     char **filelist, **fileptr;
     char *cp, *rindex(), *malloc();
     struct stat statbuf;
-    extern onintr(), oops();
+    void onintr(), oops();
 
     /* This bg check only works for sh. */
     if ( (oldint = signal ( SIGINT, SIG_IGN )) != SIG_IGN ) {
@@ -1378,6 +1378,7 @@ char *ifname, *ofname;
 	perror(ofname);
 }
 
+void
 onintr ( )
 {
     if (!precious)
@@ -1385,6 +1386,7 @@ onintr ( )
     exit ( 1 );
 }
 
+void
 oops ( )	/* wild pointer -- assume bad input */
 {
     if ( do_decomp ) 
@@ -1507,7 +1509,7 @@ long int num, den;
 
 version()
 {
-	fprintf(stderr, "%s, Berkeley 5.10 %G%\n", rcs_ident);
+	fprintf(stderr, "%s, Berkeley 5.11 %G%\n", rcs_ident);
 	fprintf(stderr, "Options: ");
 #ifdef vax
 	fprintf(stderr, "vax, ");

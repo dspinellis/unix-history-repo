@@ -1,4 +1,4 @@
-/*	dc.h	1.3	86/04/26	*/
+/*	dc.h	1.4	89/09/15	*/
 
 #define FATAL 0
 #define NFATAL 1
@@ -111,8 +111,7 @@ int	logo;
 int	log10;
 int	count;
 char	*pp;
-int	(*signal())();
-int	onintr();
+void	onintr();
 char	*malloc();
 char	*nalloc();
 char	*realloc();

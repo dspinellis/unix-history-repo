@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/file.h>
@@ -220,13 +220,14 @@ otape()
 	int	childpid;
 	int	status;
 	int	waitpid;
-	int	(*interrupt)() = signal(SIGINT, SIG_IGN);
+	sig_t	interrupt;
 	int	blks, i;
 
+	interrupt = signal(SIGINT, SIG_IGN);
 	parentpid = getpid();
 
     restore_check_point:
-	signal(SIGINT, interrupt);
+	(void)signal(SIGINT, interrupt);
 	/*
 	 *	All signals are inherited...
 	 */

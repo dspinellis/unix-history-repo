@@ -15,7 +15,7 @@
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-static char sccsid[] = "@(#)process.c 5.4 %G%";
+static char sccsid[] = "@(#)process.c 5.5 %G%";
 /*
  * Process management.
  *
@@ -328,8 +328,8 @@ public run()
 
 typedef int Intfunc();
 
-private Intfunc *dbintr;
-private intr();
+private sig_t dbintr;
+private void intr();
 
 public cont(signo)
 int signo;
@@ -370,7 +370,7 @@ int signo;
  * which will then be handled.
  */
 
-private intr()
+private void intr()
 {
     signal(SIGINT, intr);
 }
@@ -913,7 +913,7 @@ Process p;
  * Turn off attention to signals not being caught.
  */
 
-private Intfunc *sigfunc[NSIG];
+private sig_t sigfunc[NSIG];
 
 private sigs_off()
 {
