@@ -1,4 +1,4 @@
-/*	if_loop.c	4.18	83/05/27	*/
+/*	if_loop.c	4.19	83/06/13	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -9,6 +9,7 @@
 #include "../h/mbuf.h"
 #include "../h/socket.h"
 #include "../h/errno.h"
+#include "../h/ioctl.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
@@ -28,7 +29,7 @@
 #define	LOMTU	(1024+512)
 
 struct	ifnet loif;
-int	looutput();
+int	looutput(), loioctl();
 
 loattach()
 {
@@ -41,8 +42,9 @@ loattach()
 	ifp->if_host[0] = LOHOST;
 	sin = (struct sockaddr_in *)&ifp->if_addr;
 	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net, LOHOST);
-	ifp->if_flags = IFF_UP;
+	sin->sin_addr = if_makeaddr(LONET, LOHOST);
+	ifp->if_flags = IFF_UP | IFF_RUNNING;
+	ifp->if_ioctl = loioctl;
 	ifp->if_output = looutput;
 	if_attach(ifp);
 	if_rtinit(ifp, RTF_UP);
@@ -82,4 +84,35 @@ looutput(ifp, m0, dst)
 	ifp->if_ipackets++;
 	splx(s);
 	return (0);
+}
+
+/*
+ * Process an ioctl request.
+ */
+loioctl(ifp, cmd, data)
+	register struct ifnet *ifp;
+	int cmd;
+	caddr_t data;
+{
+	struct ifreq *ifr = (struct ifreq *)data;
+	struct sockaddr_in *sin;
+	int s = splimp(), error = 0;
+
+	switch (cmd) {
+
+	case SIOCSIFADDR:
+		if (ifp->if_flags & IFF_RUNNING)
+			if_rtinit(ifp, -1);	/* delete previous route */
+		ifp->if_addr = ifr->ifr_addr;
+		sin = (struct sockaddr_in *)&ifp->if_addr;
+		ifp->if_net = in_netof(sin->sin_addr);
+		ifp->if_host[0] = in_lnaof(sin->sin_addr);
+		if_rtinit(ifp, RTF_UP);
+		break;
+
+	default:
+		error = EINVAL;
+	}
+	splx(s);
+	return (error);
 }
