@@ -1,0 +1,30 @@
+# %Z% %M% %I% %E% %Z%
+#  the next line describes the fields and any prefix or suffix to be added to
+#  the field value - please do not change unless you know what you are doing
+#FIELDS host suffix=.tic.com no=@ ip prefix=192.135.128. no=@ proto wks
+#  Comments lines begin with # in the first column
+#  Null lines are allowed
+#  Fields may be separated with blanks or tabs
+#  Fields with embedded blanks may be quoted with double quoted (") or the blank
+#  may be escaped with a backslash
+#  Empty fields should be placemarked with an X (please capitalize)
+
+#host         ip            proto      wks
+#==============================================================================
+akasha        129           tcp        smtp
+akasha        129           tcp        telnet
+akasha        129           tcp        ftp
+akasha        129           tcp        time
+akasha        129           tcp        echo
+akasha        129           tcp        discard
+akasha        129           tcp        daytime
+akasha        129           tcp        chargen
+akasha        129           tcp        domain
+akasha        129           tcp        ntp
+akasha        129           tcp        nntp
+akasha        129           udp        time
+akasha        129           udp        echo
+akasha        129           udp        discard
+akasha        129           udp        daytime
+akasha        129           udp        chargen
+akasha        129           udp        domain
