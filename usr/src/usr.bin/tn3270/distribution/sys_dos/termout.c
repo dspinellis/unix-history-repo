@@ -318,7 +318,6 @@ InitTerminal()
 	screenInitd = 1;
 	screenStopped = 0;		/* Not stopped */
     }
-    Initialized = 1;
 }
 
 
@@ -438,7 +437,7 @@ int
 DoTerminalOutput()
 {
 	/* called just before a select to conserve IO to terminal */
-    if (!Initialized) {
+    if (!(screenInitd||screenStopped)) {
 	return 1;		/* No output if not initialized */
     }
     if ((Lowest <= Highest) || needToRing ||
