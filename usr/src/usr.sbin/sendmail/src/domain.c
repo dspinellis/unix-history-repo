@@ -10,9 +10,9 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.39 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.40 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.39 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.40 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -113,6 +113,8 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 		}
 		firsttime = FALSE;
 	}
+
+	*rcode = EX_OK;
 
 	/* efficiency hack -- numeric or non-MX lookups */
 	if (host[0] == '[')
