@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)timer.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)timer.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -25,6 +25,7 @@ timer()
 	register struct rt_entry *rt;
 	struct rthash *base = hosthash;
 	int doinghost = 1, timetobroadcast;
+	extern int externalinterfaces;
 
 	timeval += TIMER_RATE;
 	if (lookforinterfaces && (timeval % CHECK_INTERVAL) == 0)
@@ -45,7 +46,8 @@ again:
 			 * the mean time.
 			 */
 			if (!(rt->rt_state & RTS_PASSIVE) &&
-			    (supplier || !(rt->rt_state & RTS_INTERFACE)))
+			    (externalinterfaces > 1 ||
+			    !(rt->rt_state & RTS_INTERFACE)))
 				rt->rt_timer += TIMER_RATE;
 			if (rt->rt_timer >= EXPIRE_TIME)
 				rt->rt_metric = HOPCNT_INFINITY;
