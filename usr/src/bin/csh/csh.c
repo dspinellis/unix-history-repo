@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)csh.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)csh.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -33,6 +33,7 @@ static char sccsid[] = "@(#)csh.c	8.1 (Berkeley) %G%";
 #endif
 
 #include "csh.h"
+#include "proc.h"
 #include "extern.h"
 #include "pathnames.h"
 
@@ -841,6 +842,37 @@ phup(sig)
 int sig;
 {
     rechist();
+
+    /*
+     * We kill the last foreground process group. It then becomes
+     * responsible to propagate the SIGHUP to its progeny. 
+     */
+    {
+	struct process *pp, *np;
+
+	for (pp = proclist.p_next; pp; pp = pp->p_next) {
+	    np = pp;
+	    /* 
+	     * Find if this job is in the foreground. It could be that
+	     * the process leader has exited and the foreground flag
+	     * is cleared for it.
+	     */
+	    do
+		/*
+		 * If a process is in the foreground; we try to kill
+		 * it's process group. If we succeed, then the 
+		 * whole job is gone. Otherwise we keep going...
+		 * But avoid sending HUP to the shell again.
+		 */
+		if ((np->p_flags & PFOREGND) != 0 && np->p_jobid != shpgrp &&
+		    killpg(np->p_jobid, SIGHUP) != -1) {
+		    /* In case the job was suspended... */
+		    (void) killpg(np->p_jobid, SIGCONT);
+		    break;
+		}
+	    while ((np = np->p_friends) != pp);
+	}
+    }
     _exit(sig);
 }
 
