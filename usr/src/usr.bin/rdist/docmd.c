@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.20 (Berkeley) 84/05/03";
+static	char *sccsid = "@(#)docmd.c	4.21 (Berkeley) 84/06/28";
 #endif
 
 #include "defs.h"
@@ -71,7 +71,7 @@ doarrow(filev, files, rhost, cmds)
 	register struct namelist *f;
 	register struct subcmd *sc;
 	register char **cpp;
-	int n, ddir;
+	int n, ddir, opts = options;
 
 	if (debug)
 		printf("doarrow(%x, %s, %x)\n", files, rhost, cmds);
@@ -113,6 +113,7 @@ doarrow(filev, files, rhost, cmds)
 			n++;
 			install(f->n_name, sc->sc_name,
 				sc->sc_name == NULL ? 0 : ddir, sc->sc_options);
+			opts = sc->sc_options;
 		}
 		if (n == 0)
 			install(f->n_name, NULL, 0, options);
@@ -126,8 +127,16 @@ done:
 	for (sc = cmds; sc != NULL; sc = sc->sc_next)
 		if (sc->sc_type == NOTIFY)
 			notify(tmpfile, rhost, sc->sc_args, 0);
-	if (!nflag)
+	if (!nflag) {
 		(void) unlink(tmpfile);
+		for (; ihead != NULL; ihead = ihead->nextp) {
+			free(ihead);
+			if ((opts & IGNLNKS) || ihead->count == 0)
+				continue;
+			log(lfp, "%s: Warning: missing links\n",
+				ihead->pathname);
+		}
+	}
 }
 
 /*
@@ -186,8 +195,9 @@ makeconn(rhost)
 			n = (n * 10) + (*cp++ - '0');
 		if (*cp == '\0' && n == VERSION)
 			return(1);
-	}
-	error("connection failed: version numbers don't match\n");
+		error("connection failed: version numbers don't match (local %d, remote %d)\n", VERSION, n);
+	} else
+		error("connection failed: version numbers don't match\n");
 	closeconn();
 	return(0);
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.17 (Berkeley) 84/05/03";
+static	char *sccsid = "@(#)server.c	4.18 (Berkeley) 84/06/28";
 #endif
 
 #include "defs.h"
@@ -7,6 +7,7 @@ static	char *sccsid = "@(#)server.c	4.17 (Berkeley) 84/05/03";
 #define	ack() 	(void) write(rem, "\0\n", 2)
 #define	err() 	(void) write(rem, "\1\n", 2)
 
+struct	linkbuf *ihead;		/* list of files with more than one link */
 char	buf[BUFSIZ];		/* general purpose buffer */
 char	target[BUFSIZ];		/* target/source directory name */
 char	*tp;			/* pointer to end of target name */
@@ -17,6 +18,7 @@ int	oumask;			/* old umask for creating files */
 extern	FILE *lfp;		/* log file for mailing changes */
 
 int	cleanup();
+struct	linkbuf *savelink();
 
 /*
  * Server routine to read requests and process them.
@@ -71,12 +73,20 @@ server()
 			ack();
 			continue;
 
-		case 'R':  /* Receive. Transfer file. */
-			recvf(cp, 0);
+		case 'R':  /* Transfer a regular file. */
+			recvf(cp, S_IFREG);
 			continue;
 
-		case 'D':  /* Directory. Transfer file. */
-			recvf(cp, 1);
+		case 'D':  /* Transfer a directory. */
+			recvf(cp, S_IFDIR);
+			continue;
+
+		case 'K':  /* Transfer symbolic link. */
+			recvf(cp, S_IFLNK);
+			continue;
+
+		case 'k':  /* Transfer hard link. */
+			hardlink(cp);
 			continue;
 
 		case 'E':  /* End. (of directory) */
@@ -233,8 +243,11 @@ sendf(rname, opts)
 {
 	register struct subcmd *sc;
 	struct stat stb;
-	int sizerr, f, u;
+	int sizerr, f, u, len;
 	off_t i;
+	DIR *d;
+	struct direct *dp;
+	char *otp, *cp;
 	extern struct subcmd *subcmds;
 
 	if (debug)
@@ -242,12 +255,16 @@ sendf(rname, opts)
 
 	if (except(target))
 		return;
-	if (access(target, 4) < 0 || lstat(target, &stb) < 0) {
+	if (access(target, 4) < 0 ||
+	    (opts & FOLLOW ? stat(target, &stb) : lstat(target, &stb)) < 0) {
 		error("%s: %s\n", target, sys_errlist[errno]);
 		return;
 	}
-	if ((u = update(rname, opts, &stb)) == 0)
+	if ((u = update(rname, opts, &stb)) == 0) {
+		if ((stb.st_mode & S_IFMT) == S_IFREG && stb.st_nlink > 1)
+			(void) savelink(&stb);
 		return;
+	}
 
 	if (pw == NULL || pw->pw_uid != stb.st_uid)
 		if ((pw = getpwuid(stb.st_uid)) == NULL) {
@@ -270,19 +287,71 @@ sendf(rname, opts)
 	}
 
 	switch (stb.st_mode & S_IFMT) {
+	case S_IFDIR:
+		if ((d = opendir(target)) == NULL) {
+			error("%s: %s\n", target, sys_errlist[errno]);
+			return;
+		}
+		(void) sprintf(buf, "D%o %04o 0 0 %s %s %s\n", opts,
+			stb.st_mode & 07777, pw->pw_name, gr->gr_name, rname);
+		if (debug)
+		(void) write(rem, buf, strlen(buf));
+		if (response() < 0) {
+			closedir(d);
+			return;
+		}
+
+		if (opts & REMOVE)
+			rmchk(opts);
+
+		otp = tp;
+		len = tp - target;
+		while (dp = readdir(d)) {
+			if (!strcmp(dp->d_name, ".") ||
+			    !strcmp(dp->d_name, ".."))
+				continue;
+			if (len + 1 + strlen(dp->d_name) >= BUFSIZ - 1) {
+				error("%s/%s: Name too long\n", target,
+					dp->d_name);
+				continue;
+			}
+			tp = otp;
+			*tp++ = '/';
+			cp = dp->d_name;
+			while (*tp++ = *cp++)
+				;
+			tp--;
+			sendf(dp->d_name, opts);
+		}
+		closedir(d);
+		(void) write(rem, "E\n", 2);
+		(void) response();
+		tp = otp;
+		*tp = '\0';
+		return;
+
+	case S_IFLNK:
+		if (u != 1)
+			opts |= COMPARE;
+		(void) sprintf(buf, "K%o %o %D %D %s %s %s\n", opts,
+			stb.st_mode & 07777, stb.st_size, stb.st_mtime,
+			pw->pw_name, gr->gr_name, rname);
+		if (debug)
+			printf("buf = %s", buf);
+		(void) write(rem, buf, strlen(buf));
+		if (response() < 0)
+			return;
+		sizerr = (readlink(target, buf, BUFSIZ) != stb.st_size);
+		(void) write(rem, buf, stb.st_size);
+		if (debug)
+			printf("readlink = %.*s\n", stb.st_size, buf);
+		goto done;
+
 	case S_IFREG:
 		break;
 
-	case S_IFLNK:
-		error("%s: cannot install soft links - use 'special'\n", target);
-		return;
-
-	case S_IFDIR:
-		rsendf(rname, opts, &stb, pw->pw_name, gr->gr_name);
-		return;
-
 	default:
-		error("%s: not a plain file\n", target);
+		error("%s: not a file or directory\n", target);
 		return;
 	}
 
@@ -293,14 +362,27 @@ sendf(rname, opts)
 		}
 		log(lfp, "updating: %s\n", target);
 	}
-	if (stb.st_nlink != 1)
-		log(lfp, "%s: Warning: more than one hard link\n", target);
+
+	if (stb.st_nlink > 1) {
+		struct linkbuf *lp;
+
+		if ((lp = savelink(&stb)) != NULL) {
+			/* install link */
+			(void) sprintf(buf, "k%o %s %s\n", opts,
+				lp->pathname, rname);
+			if (debug)
+				printf("buf = %s", buf);
+			(void) write(rem, buf, strlen(buf));
+			(void) response();
+			return;
+		}
+	}
 
 	if ((f = open(target, 0)) < 0) {
 		error("%s: %s\n", target, sys_errlist[errno]);
 		return;
 	}
-	(void) sprintf(buf, "R%o %04o %D %D %s %s %s\n", opts,
+	(void) sprintf(buf, "R%o %o %D %D %s %s %s\n", opts,
 		stb.st_mode & 07777, stb.st_size, stb.st_mtime,
 		pw->pw_name, gr->gr_name, rname);
 	if (debug)
@@ -320,12 +402,14 @@ sendf(rname, opts)
 		(void) write(rem, buf, amt);
 	}
 	(void) close(f);
+done:
 	if (sizerr) {
 		error("%s: file changed size\n", target);
 		err();
 	} else
 		ack();
-	if (response() == 0 && (opts & COMPARE))
+	f = response();
+	if (f < 0 || f == 0 && (opts & COMPARE))
 		return;
 dospecial:
 	for (sc = subcmds; sc != NULL; sc = sc->sc_next) {
@@ -345,60 +429,30 @@ dospecial:
 	}
 }
 
-rsendf(rname, opts, st, owner, group)
-	char *rname;
-	int opts;
-	struct stat *st;
-	char *owner, *group;
+struct linkbuf *
+savelink(stp)
+	struct stat *stp;
 {
-	DIR *d;
-	struct direct *dp;
-	char *otp, *cp;
-	int len;
+	struct linkbuf *lp;
+	int found = 0;
 
-	if (debug)
-		printf("rsendf(%s, %x, %x, %s, %s)\n", rname, opts, st,
-			owner, group);
-
-	if ((d = opendir(target)) == NULL) {
-		error("%s: %s\n", target, sys_errlist[errno]);
-		return;
-	}
-	(void) sprintf(buf, "D%o %04o 0 0 %s %s %s\n", opts,
-		st->st_mode & 0777, owner, group, rname);
-	if (debug)
-		printf("buf = %s", buf);
-	(void) write(rem, buf, strlen(buf));
-	if (response() < 0) {
-		closedir(d);
-		return;
-	}
-
-	if (opts & REMOVE)
-		rmchk(opts);
-
-	otp = tp;
-	len = tp - target;
-	while (dp = readdir(d)) {
-		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
-			continue;
-		if (len + 1 + strlen(dp->d_name) >= BUFSIZ - 1) {
-			error("%s/%s: Name too long\n", target, dp->d_name);
-			continue;
+	for (lp = ihead; lp != NULL; lp = lp->nextp)
+		if (lp->inum == stp->st_ino && lp->devnum == stp->st_dev) {
+			lp->count--;
+			return(lp);
 		}
-		tp = otp;
-		*tp++ = '/';
-		cp = dp->d_name;
-		while (*tp++ = *cp++)
-			;
-		tp--;
-		sendf(dp->d_name, opts);
+	lp = (struct linkbuf *) malloc(sizeof(*lp));
+	if (lp == NULL)
+		log(lfp, "out of memory, link information lost\n");
+	else {
+		lp->nextp = ihead;
+		ihead = lp;
+		lp->inum = stp->st_ino;
+		lp->devnum = stp->st_dev;
+		lp->count = stp->st_nlink - 1;
+		strcpy(lp->pathname, target);
 	}
-	closedir(d);
-	(void) write(rem, "E\n", 2);
-	(void) response();
-	tp = otp;
-	*tp = '\0';
+	return(NULL);
 }
 
 /*
@@ -406,17 +460,17 @@ rsendf(rname, opts, st, owner, group)
  * Returns 0 if no update, 1 if remote doesn't exist, 2 if out of date
  * and 3 if comparing binaries to determine if out of date.
  */
-update(rname, opts, st)
+update(rname, opts, stp)
 	char *rname;
 	int opts;
-	struct stat *st;
+	struct stat *stp;
 {
 	register char *cp, *s;
 	register off_t size;
 	register time_t mtime;
 
 	if (debug) 
-		printf("update(%s, %x, %x)\n", rname, opts, st);
+		printf("update(%s, %x, %x)\n", rname, opts, stp);
 
 	/*
 	 * Check to see if the file exists on the remote machine.
@@ -481,13 +535,13 @@ update(rname, opts, st)
 	 * File needs to be updated?
 	 */
 	if (opts & YOUNGER) {
-		if (st->st_mtime == mtime)
+		if (stp->st_mtime == mtime)
 			return(0);
-		if (st->st_mtime < mtime) {
+		if (stp->st_mtime < mtime) {
 			log(lfp, "Warning: %s: remote copy is newer\n", target);
 			return(0);
 		}
-	} else if (st->st_mtime == mtime && st->st_size == size)
+	} else if (stp->st_mtime == mtime && stp->st_size == size)
 		return(0);
 	return(2);
 }
@@ -496,7 +550,7 @@ update(rname, opts, st)
  * Query. Check to see if file exists. Return one of the following:
  *	N\n		- doesn't exist
  *	Ysize mtime\n	- exists and its a regular file (size & mtime of file)
- *	Y\n		- exists and its a directory
+ *	Y\n		- exists and its a directory or symbolic link
  *	^Aerror message\n
  */
 query(name)
@@ -507,7 +561,7 @@ query(name)
 	if (catname)
 		(void) sprintf(tp, "/%s", name);
 
-	if (stat(target, &stb) < 0) {
+	if (lstat(target, &stb) < 0) {
 		(void) write(rem, "N\n", 2);
 		*tp = '\0';
 		return;
@@ -519,20 +573,21 @@ query(name)
 		(void) write(rem, buf, strlen(buf));
 		break;
 
+	case S_IFLNK:
 	case S_IFDIR:
 		(void) write(rem, "Y\n", 2);
 		break;
 
 	default:
-		error("%s: not a plain file\n", name);
+		error("%s: not a file or directory\n", name);
 		break;
 	}
 	*tp = '\0';
 }
 
-recvf(cmd, isdir)
+recvf(cmd, type)
 	char *cmd;
-	int isdir;
+	int type;
 {
 	register char *cp;
 	int f, mode, opts, wrerr, olderrno;
@@ -590,9 +645,10 @@ recvf(cmd, isdir)
 	}
 	*cp++ = '\0';
 
-	if (isdir) {
+	if (type == S_IFDIR) {
 		if (catname >= sizeof(stp)) {
-			error("%s: too many directory levels\n", target);
+			error("%s:%s: too many directory levels\n",
+				host, target);
 			return;
 		}
 		stp[catname] = tp;
@@ -606,7 +662,7 @@ recvf(cmd, isdir)
 			ack();
 			return;
 		}
-		if (stat(target, &stb) == 0) {
+		if (lstat(target, &stb) == 0) {
 			if (ISDIR(stb.st_mode)) {
 				if ((stb.st_mode & 0777) == mode) {
 					ack();
@@ -619,9 +675,9 @@ recvf(cmd, isdir)
 				(void) write(rem, buf, strlen(buf + 1) + 1);
 				return;
 			}
-			error("%s: %s\n", target, sys_errlist[ENOTDIR]);
+			error("%s:%s: %s\n", host,target,sys_errlist[ENOTDIR]);
 		} else if (chkparent(target) < 0 || mkdir(target, mode) < 0)
-			error("%s: %s\n", target, sys_errlist[errno]);
+			error("%s:%s: %s\n", host, target, sys_errlist[errno]);
 		else if (chog(target, owner, group, mode) == 0) {
 			ack();
 			return;
@@ -634,8 +690,9 @@ recvf(cmd, isdir)
 	new[0] = '\0';
 	if (catname)
 		(void) sprintf(tp, "/%s", cp);
-	if (stat(target, &stb) == 0 && (stb.st_mode & S_IFMT) != S_IFREG) {
-		error("%s: not a regular file\n", target);
+	if (lstat(target, &stb) == 0 && (f = stb.st_mode & S_IFMT) != S_IFREG &&
+	    f != S_IFLNK) {
+		error("%s:%s: not a regular file\n", host, target);
 		return;
 	}
 	if (chkparent(target) < 0)
@@ -653,10 +710,45 @@ recvf(cmd, isdir)
 	(void) sprintf(new, "%s/%s", dir, tmpname);
 	if (cp != NULL)
 		*cp = '/';
+
+	if (type == S_IFLNK) {
+		int j;
+
+		ack();
+		cp = buf;
+		for (i = 0; i < size; i += j) {
+			if ((j = read(rem, cp, size - i)) <= 0)
+				cleanup();
+			cp += j;
+		}
+		*cp = '\0';
+		umask(~mode & 0777);
+		j = symlink(buf, new);
+		umask(0);
+		(void) response();
+		if (j < 0)
+			goto bad1;
+		mode &= 0777;
+		if (opts & COMPARE) {
+			char tbuf[BUFSIZ];
+
+			if ((i = readlink(target, tbuf, BUFSIZ)) < 0)
+				goto bad;
+			if (i != size || strncmp(buf, tbuf, size) != 0) {
+				if (opts & VERIFY)
+					goto differ;
+			} else {
+				(void) unlink(new);
+				ack();
+				return;
+			}
+		}
+		goto fixup;
+	}
+
 	if ((f = creat(new, mode)) < 0)
 		goto bad1;
 	ack();
-
 	wrerr = 0;
 	for (i = 0; i < size; i += BUFSIZ) {
 		int amt = BUFSIZ;
@@ -686,7 +778,7 @@ recvf(cmd, isdir)
 	(void) close(f);
 	(void) response();
 	if (wrerr) {
-		error("%s: %s\n", cp, sys_errlist[olderrno]);
+		error("%s:%s: %s\n", host, cp, sys_errlist[olderrno]);
 		(void) unlink(new);
 		return;
 	}
@@ -709,6 +801,7 @@ recvf(cmd, isdir)
 		(void) fclose(f1);
 		(void) fclose(f2);
 		if (opts & VERIFY) {
+		differ:
 			(void) unlink(new);
 			buf[0] = '\0';
 			(void) sprintf(buf + 1, "need to update %s:%s\n",
@@ -721,16 +814,17 @@ recvf(cmd, isdir)
 	/*
 	 * Set last modified time
 	 */
-	tvp[0].tv_sec = stb.st_atime;	/* old accessed time from target */
+	tvp[0].tv_sec = stb.st_atime;	/* old atime from target */
 	tvp[0].tv_usec = 0;
 	tvp[1].tv_sec = mtime;
 	tvp[1].tv_usec = 0;
 	if (utimes(new, tvp) < 0) {
 bad1:
-		error("%s: %s\n", new, sys_errlist[errno]);
+		error("%s:%s: %s\n", host, new, sys_errlist[errno]);
 		(void) unlink(new);
 		return;
 	}
+fixup:
 	if (chog(new, owner, group, mode) < 0) {
 		(void) unlink(new);
 		return;
@@ -738,7 +832,7 @@ bad1:
 	
 	if (rename(new, target) < 0) {
 bad:
-		error("%s: %s\n", target, sys_errlist[errno]);
+		error("%s:%s: %s\n", host, target, sys_errlist[errno]);
 		if (new[0])
 			(void) unlink(new);
 		return;
@@ -749,6 +843,52 @@ bad:
 		(void) write(rem, buf, strlen(buf + 1) + 1);
 	} else
 		ack();
+}
+
+/*
+ * Creat a hard link to existing file.
+ */
+hardlink(cmd)
+	char *cmd;
+{
+	register char *cp;
+	struct stat stb;
+	char *oldname;
+	int opts, exists = 0;
+
+	cp = cmd;
+	opts = 0;
+	while (*cp >= '0' && *cp <= '7')
+		opts = (opts << 3) | (*cp++ - '0');
+	if (*cp++ != ' ') {
+		error("hardlink: options not delimited\n");
+		return;
+	}
+	oldname = cp;
+	while (*cp && *cp != ' ')
+		cp++;
+	if (*cp != ' ') {
+		error("hardlink: oldname name not delimited\n");
+		return;
+	}
+	*cp++ = '\0';
+
+	if (catname)
+		(void) sprintf(tp, "/%s", cp);
+	if (lstat(target, &stb) == 0) {
+		if ((stb.st_mode & S_IFMT) != S_IFREG) {
+			error("%s:%s: not a regular file\n", host, target);
+			return;
+		}
+		exists = 1;
+	}
+	if (chkparent(target) < 0 ||
+	    exists && unlink(target) < 0 ||
+	    link(oldname, target) < 0) {
+		error("%s:%s: %s\n", host, target, sys_errlist[errno]);
+		return;
+	}
+	ack();
 }
 
 /*
@@ -815,7 +955,8 @@ chog(file, owner, group, mode)
 		if (pw == NULL || strcmp(owner, pw->pw_name) != 0) {
 			if ((pw = getpwnam(owner)) == NULL) {
 				if (mode & 04000) {
-					error("%s: unknown login name\n", owner);
+					error("%s:%s: unknown login name\n",
+						host, owner);
 					return(-1);
 				}
 			} else
@@ -828,7 +969,7 @@ chog(file, owner, group, mode)
 	if (gr == NULL || strcmp(group, gr->gr_name) != 0) {
 		if ((gr = getgrnam(group)) == NULL) {
 			if (mode & 02000) {
-				error("%s: unknown group\n", group);
+				error("%s:%s: unknown group\n", host, group);
 				return(-1);
 			}
 		} else
@@ -844,14 +985,14 @@ chog(file, owner, group, mode)
 	}
 ok:
 	if (chown(file, uid, gid) < 0) {
-		error("%s: %s\n", file, sys_errlist[errno]);
+		error("%s:%s: %s\n", host, file, sys_errlist[errno]);
 		return(-1);
 	}
 	/*
 	 * Restore set-user-id or set-group-id bit if appropriate.
 	 */
 	if ((mode & 06000) && chmod(file, mode) < 0) {
-		error("%s: %s\n", file, sys_errlist[errno]);
+		error("%s:%s: %s\n", host, file, sys_errlist[errno]);
 		return(-1);
 	}
 	return(0);
@@ -899,7 +1040,7 @@ rmchk(opts)
 				printf("check %s\n", target);
 			if (except(target))
 				(void) write(rem, "N\n", 2);
-			else if (stat(target, &stb) < 0)
+			else if (lstat(target, &stb) < 0)
 				(void) write(rem, "Y\n", 2);
 			else
 				(void) write(rem, "N\n", 2);
@@ -959,7 +1100,7 @@ clean(cp)
 		return;
 	}
 	if (access(target, 6) < 0 || (d = opendir(target)) == NULL) {
-		error("%s: %s\n", target, sys_errlist[errno]);
+		error("%s:%s: %s\n", host, target, sys_errlist[errno]);
 		return;
 	}
 	ack();
@@ -970,7 +1111,8 @@ clean(cp)
 		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
 			continue;
 		if (len + 1 + strlen(dp->d_name) >= BUFSIZ - 1) {
-			error("%s/%s: Name too long\n", target, dp->d_name);
+			error("%s:%s/%s: Name too long\n",
+				host, target, dp->d_name);
 			continue;
 		}
 		tp = otp;
@@ -979,8 +1121,8 @@ clean(cp)
 		while (*tp++ = *cp++)
 			;
 		tp--;
-		if (stat(target, &stb) < 0) {
-			error("%s: %s\n", target, sys_errlist[errno]);
+		if (lstat(target, &stb) < 0) {
+			error("%s:%s: %s\n", host, target, sys_errlist[errno]);
 			continue;
 		}
 		(void) sprintf(buf, "Q%s\n", dp->d_name);
@@ -1013,8 +1155,8 @@ clean(cp)
  * Remove a file or directory (recursively) and send back an acknowledge
  * or an error message.
  */
-remove(st)
-	struct stat *st;
+remove(stp)
+	struct stat *stp;
 {
 	DIR *d;
 	struct direct *dp;
@@ -1023,8 +1165,9 @@ remove(st)
 	char *otp;
 	int len;
 
-	switch (st->st_mode & S_IFMT) {
+	switch (stp->st_mode & S_IFMT) {
 	case S_IFREG:
+	case S_IFLNK:
 		if (unlink(target) < 0)
 			goto bad;
 		goto removed;
@@ -1033,7 +1176,7 @@ remove(st)
 		break;
 
 	default:
-		error("%s: not a plain file\n", target);
+		error("%s:%s: not a plain file\n", host, target);
 		return;
 	}
 
@@ -1046,7 +1189,8 @@ remove(st)
 		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
 			continue;
 		if (len + 1 + strlen(dp->d_name) >= BUFSIZ - 1) {
-			error("%s/%s: Name too long\n", target, dp->d_name);
+			error("%s:%s/%s: Name too long\n",
+				host, target, dp->d_name);
 			continue;
 		}
 		tp = otp;
@@ -1055,8 +1199,8 @@ remove(st)
 		while (*tp++ = *cp++)
 			;
 		tp--;
-		if (stat(target, &stb) < 0) {
-			error("%s: %s\n", target, sys_errlist[errno]);
+		if (lstat(target, &stb) < 0) {
+			error("%s:%s: %s\n", host, target, sys_errlist[errno]);
 			continue;
 		}
 		remove(&stb);
@@ -1066,7 +1210,7 @@ remove(st)
 	*tp = '\0';
 	if (rmdir(target) < 0) {
 bad:
-		error("%s: %s\n", target, sys_errlist[errno]);
+		error("%s:%s: %s\n", host, target, sys_errlist[errno]);
 		return;
 	}
 removed:

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	4.11 (Berkeley) 84/04/09";
+static	char *sccsid = "@(#)main.c	4.12 (Berkeley) 84/06/28";
 #endif
 
 #include "defs.h"
@@ -112,6 +112,14 @@ main(argc, argv)
 				options |= YOUNGER;
 				break;
 
+			case 'h':
+				options |= FOLLOW;
+				break;
+
+			case 'i':
+				options |= IGNLNKS;
+				break;
+
 			default:
 				usage();
 			}
@@ -141,8 +149,8 @@ main(argc, argv)
 
 usage()
 {
-	printf("Usage: rdist [-nqbrvwyD] [-f distfile] [-d var=value] [file ...]\n");
-	printf("or: rdist [-nqbrvwyD] -c source [...] machine[:dest]\n");
+	printf("Usage: rdist [-nqbhirvwyD] [-f distfile] [-d var=value] [file ...]\n");
+	printf("or: rdist [-nqbhirvwyD] -c source [...] machine[:dest]\n");
 	exit(1);
 }
 
