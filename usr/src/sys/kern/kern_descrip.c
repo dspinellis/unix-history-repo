@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.18	82/11/13	*/
+/*	kern_descrip.c	5.19	82/12/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -81,7 +81,7 @@ dup()
 	j = ufalloc();
 	if (j < 0)
 		return;
-	dupit(j, fp, u.u_pofile[uap->i] & (SHLOCK|EXLOCK));
+	dupit(j, fp, u.u_pofile[uap->i] & (UF_SHLOCK|UF_EXLOCK));
 }
 
 dup2()
@@ -112,7 +112,7 @@ dup2()
 		/* u.u_ofile[uap->j] = 0; */
 		/* u.u_pofile[uap->j] = 0; */
 	}
-	dupit(uap->j, fp, u.u_pofile[uap->i] & (SHLOCK|EXLOCK));
+	dupit(uap->j, fp, u.u_pofile[uap->i] & (UF_SHLOCK|UF_EXLOCK));
 }
 
 dupit(fd, fp, lockflags)
@@ -124,9 +124,9 @@ dupit(fd, fp, lockflags)
 	u.u_ofile[fd] = fp;
 	u.u_pofile[fd] = lockflags;
 	fp->f_count++;
-	if (lockflags&SHLOCK)
+	if (lockflags&UF_SHLOCK)
 		fp->f_inode->i_shlockc++;
-	if (lockflags&EXLOCK)
+	if (lockflags&UF_EXLOCK)
 		fp->f_inode->i_exlockc++;
 }
 
@@ -493,7 +493,7 @@ closef(fp, nouser, flags)
 	ip = fp->f_inode;
 	dev = (dev_t)ip->i_rdev;
 	mode = ip->i_mode & IFMT;
-	flags &= SHLOCK|EXLOCK;			/* conservative */
+	flags &= UF_SHLOCK|UF_EXLOCK;			/* conservative */
 	if (flags)
 		funlocki(ip, flags);
 	ilock(ip);
