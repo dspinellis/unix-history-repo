@@ -12,7 +12,7 @@
  * Mail to others.
  */
 
-static char *SccsId = "@(#)send.c	2.3 %G%";
+static char *SccsId = "@(#)send.c	2.4 %G%";
 
 /*
  * Send message described by the passed pointer to the
@@ -20,7 +20,6 @@ static char *SccsId = "@(#)send.c	2.3 %G%";
  * the number of lines written.  Adjust the status: field
  * if need be.  If doign is set, suppress ignored header fields.
  */
-
 send(mailp, obuf, doign)
 	struct message *mailp;
 	FILE *obuf;
@@ -92,18 +91,6 @@ send(mailp, obuf, doign)
 			}
 			infld++;
 			/*
-			 * We are looking at a header line.
-			 * See if it is the status: field,
-			 * and if it is, print the real status: field
-			 */
-			if (icisname(line, "status", 6)) {
-				if (dostat) {
-					statusput(mailp, obuf, doign);
-					dostat = 0;
-				}
-				continue;
-			}
-			/*
 			 * Pick up the header field.
 			 * If it is an ignored field and
 			 * we care about such things, skip it.
@@ -115,6 +102,17 @@ send(mailp, obuf, doign)
 			*cp2 = 0;
 			if (doign && isign(field))
 				continue;
+			/*
+			 * If the field is "status," go compute and print the
+			 * real Status: field
+			 */
+			if (icequal(field, "status")) {
+				if (dostat) {
+					statusput(mailp, obuf, doign);
+					dostat = 0;
+				}
+				continue;
+			}
 		}
 writeit:
 		fputs(line, obuf);
