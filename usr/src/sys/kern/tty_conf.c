@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_conf.c	7.9 (Berkeley) %G%
+ *	@(#)tty_conf.c	7.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -55,29 +55,29 @@ int	slstart __P((struct tty *tp));
 
 struct	linesw linesw[] =
 {
-	ttyopen, ttylclose, ttread, ttwrite, nullioctl,
-	ttyinput, ttstart, ttymodem,			/* 0- termios */
+	{ ttyopen, ttylclose, ttread, ttwrite, nullioctl,
+	  ttyinput, ttstart, ttymodem },		/* 0- termios */
 
-	ttynodisc, ttyerrclose, ttyerrio, ttyerrio, nullioctl,
-	ttyerrinput, ttyerrstart, nullmodem,		/* 1- defunct */
+	{ ttynodisc, ttyerrclose, ttyerrio, ttyerrio, nullioctl,
+	  ttyerrinput, ttyerrstart, nullmodem },	/* 1- defunct */
 
-	ttynodisc, ttyerrclose, ttyerrio, ttyerrio, nullioctl,
-	ttyerrinput, ttyerrstart, nullmodem,		/* 2- defunct */
+	{ ttynodisc, ttyerrclose, ttyerrio, ttyerrio, nullioctl,
+	  ttyerrinput, ttyerrstart, nullmodem },	/* 2- defunct */
 
 #if NTB > 0
-	tbopen, tbclose, tbread, enodev, tbioctl,
-	tbinput, ttstart, nullmodem,			/* 3- TABLDISC */
+	{ tbopen, tbclose, tbread, enodev, tbioctl,
+	  tbinput, ttstart, nullmodem },		/* 3- TABLDISC */
 #else
-	ttynodisc, ttyerrclose, ttyerrio, ttyerrio, nullioctl,
-	ttyerrinput, ttyerrstart, nullmodem,
+	{ ttynodisc, ttyerrclose, ttyerrio, ttyerrio, nullioctl,
+	  ttyerrinput, ttyerrstart, nullmodem },
 #endif
 
 #if NSL > 0
-	slopen, slclose, ttyerrio, ttyerrio, sltioctl,
-	slinput, slstart, nullmodem,			/* 4- SLIPDISC */
+	{ slopen, slclose, ttyerrio, ttyerrio, sltioctl,
+	  slinput, slstart, nullmodem },		/* 4- SLIPDISC */
 #else
-	ttynodisc, ttyerrclose, ttyerrio, ttyerrio, nullioctl,
-	ttyerrinput, ttyerrstart, nullmodem,
+	{ ttynodisc, ttyerrclose, ttyerrio, ttyerrio, nullioctl,
+	  ttyerrinput, ttyerrstart, nullmodem },
 #endif
 };
 
