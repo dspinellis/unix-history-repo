@@ -4,13 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_ihash.c	7.6 (Berkeley) %G%
+ *	@(#)ufs_ihash.c	7.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/vnode.h>
 #include <sys/malloc.h>
+#include <sys/proc.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
@@ -80,6 +81,10 @@ ufs_ihashins(ip)
 	*ipp = ip;
 	if ((ip->i_flag & ILOCKED) != 0)
 		panic("ufs_ihashins: already locked");
+	if (curproc)
+		ip->i_lockholder = curproc->p_pid;
+	else
+		ip->i_lockholder = -1;
 	ip->i_flag |= ILOCKED;
 }
 
