@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)cons.4	4.1 (Berkeley) %G%
+.\"	@(#)cons.4	5.1 (Berkeley) %G%
 .\"
-.TH CONS 4 4/1/81
+.TH CONS 4 "27 July 1983"
 .UC 4
 .SH NAME
 cons \- VAX-11 console interface
@@ -16,14 +16,15 @@ the prompt is ``>>>'').  The operation of the console in this mode varies
 slightly per-processor.
 .PP
 On an 11/780 you can return to the conversational mode using the command
-``se t p'' if the processor is still running or ``continue'' if it is halted.
+``set t p'' (set terminal program) if the processor is still
+running or ``continue'' if it is halted.
 The latter command may be abbreviated ``c''.
 If you hit the break key on the console, then the console will go into ODT
 (console debugger mode).  Hit a ``P'' (upper-case letter p)
 to get out of this mode.
 .PP
 On an 11/750
-..or an 11/730
+or an 11/730
 the processor is halted whenever the console is not in conversational mode,
 and typing ``C'' returns to conversational mode.
 When in console mode on an 11/750 which has a remote diagnosis module,
