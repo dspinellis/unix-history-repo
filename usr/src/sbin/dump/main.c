@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "dump.h"
@@ -24,131 +24,151 @@ long	blocksperfile;	/* output blocks per file */
 char	*host;
 int	rmthost();
 #endif
-int	anydskipped;	/* set true in mark() if any directories are skipped */
-			/* this lets us avoid map pass 2 in some cases */
 
 main(argc, argv)
-	int	argc;
-	char	*argv[];
+	int argc;
+	char *argv[];
 {
-	char		*arg;
-	int		bflag = 0, i;
-	float		fetapes;
-	register	struct	fstab	*dt;
+	register ino_t ino;
+	register long bits; 
+	register struct dinode *dp;
+	register struct	fstab *dt;
+	register char *map;
+	register char *cp;
+	int i, anydirskipped, bflag = 0;
+	float fetapes;
+	ino_t maxino;
 
 	time(&(spcl.c_date));
 
 	tsize = 0;	/* Default later, based on 'c' option for cart tapes */
 	tape = _PATH_DEFTAPE;
-	disk = _PATH_DEFDISK;
-	increm = _PATH_DUMPDATES;
+	dumpdates = _PATH_DUMPDATES;
 	temp = _PATH_DTMP;
 	if (TP_BSIZE / DEV_BSIZE == 0 || TP_BSIZE % DEV_BSIZE != 0)
 		quit("TP_BSIZE must be a multiple of DEV_BSIZE\n");
-	incno = '9';
-	uflag = 0;
-	arg = "u";
-	if(argc > 1) {
-		argv++;
-		argc--;
-		arg = *argv;
-		if (*arg == '-')
-			argc++;
-	}
-	while(*arg)
-	switch (*arg++) {
-	case 'w':
-		lastdump('w');		/* tell us only what has to be done */
-		exit(0);
-		break;
-	case 'W':			/* what to do */
-		lastdump('W');		/* tell us the current state of what has been done */
-		exit(0);		/* do nothing else */
-		break;
+	level = '0';
+	argv++;
+	argc -= 2;
+	for (cp = *argv++; *cp; cp++) {
+		switch (*cp) {
+		case '-':
+			continue;
 
-	case 'f':			/* output file */
-		if(argc > 1) {
-			argv++;
-			argc--;
-			tape = *argv;
-		}
-		break;
+		case 'w':
+			lastdump('w');	/* tell us only what has to be done */
+			exit(0);
 
-	case 'd':			/* density, in bits per inch */
-		if (argc > 1) {
-			argv++;
+		case 'W':		/* what to do */
+			lastdump('W');	/* tell us state of what is done */
+			exit(0);	/* do nothing else */
+
+		case 'f':		/* output file */
+			if (argc < 1)
+				break;
+			tape = *argv++;
 			argc--;
+			continue;
+
+		case 'd':		/* density, in bits per inch */
+			if (argc < 1)
+				break;
 			density = atoi(*argv) / 10;
-			if (density >= 625 && !bflag)
-				ntrec = HIGHDENSITYTREC;
-		}
-		break;
-
-	case 's':			/* tape size, feet */
-		if(argc > 1) {
-			argv++;
-			argc--;
-			tsize = atol(*argv);
-			tsize *= 12L*10L;
-		}
-		break;
-
-	case 'b':			/* blocks per tape write */
-		if(argc > 1) {
-			argv++;
-			argc--;
-			bflag++;
-			ntrec = atol(*argv);
-			if (ntrec <= 0) {
-				fprintf(stderr,
-				    "bad number of blocks per write \"%s\"\n",
-				    *arg);
+			if (density < 1) {
+				fprintf(stderr, "bad density \"%s\"\n", *argv);
 				Exit(X_ABORT);
 			}
-		}
-		break;
-
-	case 'B':			/* blocks per output file */
-		if(argc > 1) {
-			argv++;
 			argc--;
+			argv++;
+			if (density >= 625 && !bflag)
+				ntrec = HIGHDENSITYTREC;
+			continue;
+
+		case 's':		/* tape size, feet */
+			if (argc < 1)
+				break;
+			tsize = atol(*argv);
+			if (tsize < 1) {
+				fprintf(stderr, "bad size \"%s\"\n", *argv);
+				Exit(X_ABORT);
+			}
+			argc--;
+			argv++;
+			tsize *= 12 * 10;
+			continue;
+
+		case 'b':		/* blocks per tape write */
+			if (argc < 1)
+				break;
+			bflag++;
+			ntrec = atol(*argv);
+			if (ntrec < 1) {
+				fprintf(stderr, "%s \"%s\"\n",
+				    "bad number of blocks per write ", *argv);
+				Exit(X_ABORT);
+			}
+			argc--;
+			argv++;
+			continue;
+
+		case 'B':		/* blocks per output file */
+			if (argc < 1)
+				break;
 			blocksperfile = atol(*argv);
+			if (blocksperfile < 1) {
+				fprintf(stderr, "%s \"%s\"\n",
+				    "bad number of blocks per file ", *argv);
+				Exit(X_ABORT);
+			}
+			argc--;
+			argv++;
+			continue;
+
+		case 'c':		/* Tape is cart. not 9-track */
+			cartridge++;
+			continue;
+
+		case '0':		/* dump level */
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+			level = *cp;
+			continue;
+
+		case 'u':		/* update /etc/dumpdates */
+			uflag++;
+			continue;
+
+		case 'n':		/* notify operators */
+			notify++;
+			continue;
+
+		default:
+			fprintf(stderr, "bad key '%c'\n", *cp);
+			Exit(X_ABORT);
 		}
-		break;
-
-	case 'c':			/* Tape is cart. not 9-track */
-		cartridge++;
-		break;
-
-	case '0':			/* dump level */
-	case '1':
-	case '2':
-	case '3':
-	case '4':
-	case '5':
-	case '6':
-	case '7':
-	case '8':
-	case '9':
-		incno = arg[-1];
-		break;
-
-	case 'u':			/* update /etc/dumpdates */
-		uflag++;
-		break;
-
-	case 'n':			/* notify operators */
-		notify++;
-		break;
-
-	default:
-		fprintf(stderr, "bad key '%c'\n", arg[-1]);
+		fprintf(stderr, "missing argument to '%c'\n", *cp);
 		Exit(X_ABORT);
 	}
-	if(argc > 1) {
-		argv++;
+	if (argc < 1) {
+		fprintf(stderr, "Must specify disk or filesystem\n");
+		Exit(X_ABORT);
+	} else {
+		disk = *argv++;
 		argc--;
-		disk = *argv;
+	}
+	if (argc >= 1) {
+		fprintf(stderr, "Unknown arguments to dump:");
+		while (argc--)
+			fprintf(stderr, " %s", *argv++);
+		fprintf(stderr, "\n");
+		Exit(X_ABORT);
 	}
 	if (strcmp(tape, "-") == 0) {
 		pipeout++;
@@ -223,13 +243,14 @@ main(argc, argv)
 	}
 	strcpy(spcl.c_label, "none");
 	gethostname(spcl.c_host, NAMELEN);
-	spcl.c_level = incno - '0';
+	spcl.c_level = level - '0';
 	spcl.c_type = TS_TAPE;
-	getitime();		/* /etc/dumpdates snarfed */
+	getdumptime();		/* /etc/dumpdates snarfed */
 
-	msg("Date of this level %c dump: %s\n", incno, prdate(spcl.c_date));
- 	msg("Date of last level %c dump: %s\n",
-		lastincno, prdate(spcl.c_ddate));
+	msg("Date of this level %c dump: %s", level,
+		spcl.c_date == 0 ? "the epoch\n" : ctime(&spcl.c_date));
+ 	msg("Date of last level %c dump: %s", lastlevel,
+		spcl.c_ddate == 0 ? "the epoch\n" : ctime(&spcl.c_ddate));
 	msg("Dumping %s ", disk);
 	if (dt != 0)
 		msgtail("(%s) ", dt->fs_file);
@@ -239,14 +260,12 @@ main(argc, argv)
 	msgtail("to %s\n", tape);
 #endif
 
-	fi = open(disk, 0);
-	if (fi < 0) {
+	if ((diskfd = open(disk, O_RDONLY)) < 0) {
 		msg("Cannot open %s\n", disk);
 		Exit(X_ABORT);
 	}
-	esize = 0;
-	sblock = (struct fs *)buf;
 	sync();
+	sblock = (struct fs *)buf;
 	bread(SBOFF, sblock, SBSIZE);
 	if (sblock->fs_magic != FS_MAGIC)
 		quit("bad sblock magic number\n");
@@ -257,44 +276,38 @@ main(argc, argv)
 	tp_bshift = ffs(TP_BSIZE) - 1;
 	if (TP_BSIZE != (1 << tp_bshift))
 		quit("TP_BSIZE (%d) is not a power of 2", TP_BSIZE);
-	msiz = roundup(howmany(sblock->fs_ipg * sblock->fs_ncg, NBBY),
+	maxino = sblock->fs_ipg * sblock->fs_ncg - 1;
+	mapsize = roundup(howmany(sblock->fs_ipg * sblock->fs_ncg, NBBY),
 		TP_BSIZE);
-	clrmap = (char *)calloc(msiz, sizeof(char));
-	dirmap = (char *)calloc(msiz, sizeof(char));
-	nodmap = (char *)calloc(msiz, sizeof(char));
+	usedinomap = (char *)calloc(mapsize, sizeof(char));
+	dumpdirmap = (char *)calloc(mapsize, sizeof(char));
+	dumpinomap = (char *)calloc(mapsize, sizeof(char));
+	tapesize = 3 * (howmany(mapsize * sizeof(char), TP_BSIZE) + 1);
 
-	anydskipped = 0;
 	msg("mapping (Pass I) [regular files]\n");
-	pass(mark, (char *)NULL);		/* mark updates esize */
+	anydirskipped = mapfiles(maxino, &tapesize);
 
-	if (anydskipped) {
-		do {
-			msg("mapping (Pass II) [directories]\n");
-			nadded = 0;
-			pass(add, dirmap);
-		} while (nadded);
-	} else				/* keep the operators happy */
-		msg("mapping (Pass II) [directories]\n");
-
-	bmapest(clrmap);
-	bmapest(nodmap);
+	msg("mapping (Pass II) [directories]\n");
+	while (anydirskipped) {
+		anydirskipped = mapdirs(maxino, &tapesize);
+	}
 
 	if (pipeout)
-		esize += 10;	/* 10 trailer blocks */
+		tapesize += 10;	/* 10 trailer blocks */
 	else {
 		if (blocksperfile)
-			fetapes = esize / blocksperfile;
+			fetapes = tapesize / blocksperfile;
 		else if (cartridge) {
 			/* Estimate number of tapes, assuming streaming stops at
 			   the end of each block written, and not in mid-block.
 			   Assume no erroneous blocks; this can be compensated
 			   for with an artificially low tape size. */
 			fetapes = 
-			(	  esize		/* blocks */
+			(	  tapesize	/* blocks */
 				* TP_BSIZE	/* bytes/block */
 				* (1.0/density)	/* 0.1" / byte */
 			  +
-				  esize		/* blocks */
+				  tapesize	/* blocks */
 				* (1.0/ntrec)	/* streaming-stops per block */
 				* 15.48		/* 0.1" / streaming-stop */
 			) * (1.0 / tsize );	/* tape / 0.1" */
@@ -303,44 +316,74 @@ main(argc, argv)
 			   tape */
 			int tenthsperirg = (density == 625) ? 3 : 7;
 			fetapes =
-			(	  esize		/* blocks */
+			(	  tapesize	/* blocks */
 				* TP_BSIZE	/* bytes / block */
 				* (1.0/density)	/* 0.1" / byte */
 			  +
-				  esize		/* blocks */
+				  tapesize	/* blocks */
 				* (1.0/ntrec)	/* IRG's / block */
 				* tenthsperirg	/* 0.1" / IRG */
 			) * (1.0 / tsize );	/* tape / 0.1" */
 		}
 		etapes = fetapes;		/* truncating assignment */
 		etapes++;
-		/* count the nodemap on each additional tape */
-		for (i = 1; i < etapes; i++)
-			bmapest(nodmap);
-		esize += i + 10;	/* headers + 10 trailer blocks */
+		/* count the dumped inodes map on each additional tape */
+		tapesize += (etapes - 1) *
+			(howmany(mapsize * sizeof(char), TP_BSIZE) + 1);
+		tapesize += etapes + 10;	/* headers + 10 trailer blks */
 	}
 	if (pipeout)
-		msg("estimated %ld tape blocks.\n", esize);
+		msg("estimated %ld tape blocks.\n", tapesize);
 	else
 		msg("estimated %ld tape blocks on %3.2f tape(s).\n",
-		    esize, fetapes);
+		    tapesize, fetapes);
 
 	alloctape();			/* Allocate tape buffer */
 
-	otape();			/* bitmap is the first to tape write */
+	startnewtape();
 	time(&(tstart_writing));
-	bitmap(clrmap, TS_CLRI);
+	dumpmap(usedinomap, TS_CLRI, maxino);
 
 	msg("dumping (Pass III) [directories]\n");
- 	pass(dirdump, dirmap);
+	for (map = dumpdirmap, ino = 0; ino < maxino; ) {
+		if ((ino % NBBY) == 0)
+			bits = *map++;
+		else
+			bits >>= 1;
+		ino++;
+		if ((bits & 1) == 0)
+			continue;
+		/*
+		 * Skip directory inodes deleted and maybe reallocated
+		 */
+		dp = getino(ino);
+		if ((dp->di_mode & IFMT) != IFDIR)
+			continue;
+		dumpino(dp, ino);
+	}
 
 	msg("dumping (Pass IV) [regular files]\n");
-	pass(dump, nodmap);
+	for (map = dumpinomap, ino = 0; ino < maxino; ) {
+		if ((ino % NBBY) == 0)
+			bits = *map++;
+		else
+			bits >>= 1;
+		ino++;
+		if ((bits & 1) == 0)
+			continue;
+		/*
+		 * Skip inodes deleted and reallocated as directories.
+		 */
+		dp = getino(ino);
+		if ((dp->di_mode & IFMT) == IFDIR)
+			continue;
+		dumpino(dp, ino);
+	}
 
 	spcl.c_type = TS_END;
 #ifndef RDUMP
-	for(i=0; i<ntrec; i++)
-		spclrec();
+	for (i = 0; i < ntrec; i++)
+		writeheader(maxino);
 #endif
 	if (pipeout)
 		msg("DUMP: %ld tape blocks\n",spcl.c_tapea);
@@ -349,14 +392,15 @@ main(argc, argv)
 		    spcl.c_tapea, spcl.c_volume);
 	msg("DUMP IS DONE\n");
 
-	putitime();
+	putdumptime();
 #ifndef RDUMP
 	if (!pipeout) {
-		close(to);
+		close(tapefd);
 		trewind();
 	}
 #else
-	tflush(1);
+	for (i = 0; i < ntrec; i++)
+		writeheader(curino);
 	trewind();
 #endif
 	broadcast("DUMP IS DONE!\7\7\n");
