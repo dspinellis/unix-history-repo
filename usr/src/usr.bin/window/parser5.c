@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser5.c	3.2 84/01/13";
+static	char *sccsid = "@(#)parser5.c	3.3 84/04/06";
 #endif
 
 #include "parser.h"
@@ -181,10 +181,12 @@ char flag;
 		error("expr12: function %s.", cmd);
 #endif
 		if (p_function(cmd, v, flag) < 0) {
-			str_free(cmd);
+			if (cmd)
+				str_free(cmd);
 			return -1;
 		}
-		str_free(cmd);
+		if (cmd)
+			str_free(cmd);
 		if (token != T_RP) {
 			p_synerror();
 			val_free(*v);
