@@ -1,4 +1,4 @@
-/*	vd.c	1.21	87/11/01	*/
+/*	vd.c	1.22	87/11/12	*/
 
 #include "dk.h"
 #if NVD > 0
@@ -872,7 +872,7 @@ vdioctl(dev, cmd, data, flag)
 		error = ENOTTY;
 		break;
 	}
-	return (0);
+	return (error);
 }
 
 /*
