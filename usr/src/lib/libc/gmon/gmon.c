@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gmon.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)gmon.c	5.4 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #ifdef DEBUG
@@ -56,12 +56,12 @@ monstartup(lowpc, highpc)
     monsize = (s_textsize / HISTFRACTION) + sizeof(struct phdr);
     buffer = sbrk( monsize );
     if ( buffer == (char *) -1 ) {
-	write( 2 , MSG , sizeof(MSG) );
+	write( 2 , MSG , sizeof(MSG) - 1 );
 	return;
     }
     froms = (unsigned short *) sbrk( s_textsize / HASHFRACTION );
     if ( froms == (unsigned short *) -1 ) {
-	write( 2 , MSG , sizeof(MSG) );
+	write( 2 , MSG , sizeof(MSG) - 1 );
 	froms = 0;
 	return;
     }
@@ -73,7 +73,7 @@ monstartup(lowpc, highpc)
     }
     tos = (struct tostruct *) sbrk( tolimit * sizeof( struct tostruct ) );
     if ( tos == (struct tostruct *) -1 ) {
-	write( 2 , MSG , sizeof(MSG) );
+	write( 2 , MSG , sizeof(MSG) - 1 );
 	froms = 0;
 	tos = 0;
 	return;
@@ -238,7 +238,7 @@ out:
 overflow:
 	profiling++; /* halt further profiling */
 #   define	TOLIMIT	"mcount: tos overflow\n"
-	write(2, TOLIMIT, sizeof(TOLIMIT));
+	write(2, TOLIMIT, sizeof(TOLIMIT) - 1);
 	goto out;
 }
 asm(".text");
