@@ -403,7 +403,7 @@ again: /* jump here after setting a variable with ${var=text} */
 			if ((c = *p++) == CTLESC)
 				p++;
 			else if (c == CTLBACKQ || c == (CTLBACKQ|CTLQUOTE)) {
-				if (set)
+				if (set && argbackq)
 					argbackq = argbackq->next;
 			} else if (c == CTLVAR) {
 				if ((*p++ & VSTYPE) != VSNORMAL)
