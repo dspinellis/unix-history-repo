@@ -1,4 +1,4 @@
-/*	llib-lc	1.24	85/10/30	*/
+/*	llib-lc	1.25	85/10/30	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -163,7 +163,7 @@ char *	ecvt(v, n, d, s) double v; int *d, *s; { return(""); }
 	encrypt(s, i) char *s; {}
 int	endfsent() { return 0; }
 int	endgrent() { return 0; }
-void	endpwent() {}
+	endpwent() {}
 char **	environ;
 	/* VARARGS */
 	execl(f, a) char *f, *a; {;}
@@ -224,7 +224,7 @@ int	setgid(g) { return(0); }
 int	setjmp(e) jmp_buf e; { return(0); }
 	setkey(k) char *k; {}
 int	setlogmask(m) { return(0); }
-void	setpwent() {}
+	setpwent() {}
 long *	setstate( st ) long *st; { return st; }
 int	setuid(u) { return(0); }
 	sleep(i) unsigned i; {}
