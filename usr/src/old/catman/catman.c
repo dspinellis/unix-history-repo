@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)catman.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)catman.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -21,30 +21,34 @@ static char sccsid[] = "@(#)catman.c	5.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/file.h>
 #include <sys/time.h>
 #include <sys/dir.h>
 #include <ctype.h>
-
-#define	SYSTEM(str)	(pflag ? printf("%s\n", str) : system(str))
 
 char	buf[BUFSIZ];
 char	pflag;
 char	nflag;
 char	wflag;
 char	man[MAXNAMLEN+6] = "manx/";
+int	exstat = 0;
 char	cat[MAXNAMLEN+6] = "catx/";
 char	lncat[MAXNAMLEN+6] = "catx/";
-char	*mandir = "/usr/man";
-char	*rindex();
+char	*manpath = "/usr/man";
+char	*sections = "12345678ln";
+char	*makewhatis = "/usr/lib/makewhatis";
+char	*index(), *rindex();
+char	*strcpy();
+char	*getenv();
 
 main(ac, av)
 	int ac;
 	char *av[];
 {
-	register char *msp, *csp, *sp;
-	register char *sections;
-	register int exstat = 0;
-	register char changed = 0;
+	char *mp, *nextp;
+
+	if ((mp = getenv("MANPATH")) != NULL)
+		manpath = mp;
 
 	ac--, av++;
 	while (ac > 0 && av[0][0] == '-') {
@@ -65,12 +69,12 @@ main(ac, av)
 		case 'M':
 		case 'P':
 			if (ac < 1) {
-				fprintf(stderr, "%s: missing directory\n",
+				fprintf(stderr, "%s: missing path\n",
 				    av[0]);
 				exit(1);
 			}
 			ac--, av++;
-			mandir = *av;
+			manpath = *av;
 			break;
 
 		default:
@@ -83,16 +87,36 @@ usage:
 		printf("usage: catman [ -p ] [ -n ] [ -w ] [ -M path ] [ sections ]\n");
 		exit(-1);
 	}
-	sections = (ac == 1) ? *av : "12345678ln";
+	if (ac == 1)
+		sections = *av;
+	for (mp = manpath; mp && ((nextp = index(mp, ':')), 1); mp = nextp) {
+		if (nextp)
+			*nextp++ = '\0';
+		doit(mp);
+	}
+	exit(exstat);
+}
+
+doit(mandir)
+	char *mandir;
+{
+	register char *msp, *csp, *sp;
+	int changed = 0;
+	int status;
+
 	if (wflag)
 		goto whatis;
 	if (chdir(mandir) < 0) {
-		fprintf(stderr, "catman: "), perror(mandir);
-		exit(1);
+		sprintf(buf, "catman: %s", mandir);
+		perror(buf);
+		/* exstat = 1; */
+		return;
 	}
+	if (pflag)
+		printf("cd %s\n", mandir);
 	msp = &man[5];
 	csp = &cat[5];
-	umask(02);
+	(void) umask(02);
 	for (sp = sections; *sp; sp++) {
 		register DIR *mdir;
 		register struct direct *dir;
@@ -101,15 +125,15 @@ usage:
 		man[3] = cat[3] = *sp;
 		*msp = *csp = '\0';
 		if ((mdir = opendir(man)) == NULL) {
-			fprintf(stderr, "opendir:");
-			perror(man);
-			exstat = 1;
+			sprintf(buf, "catman: opendir: %s", man);
+			perror(buf);
+			/* exstat = 1; */
 			continue;
 		}
 		if (stat(cat, &sbuf) < 0) {
-			char buf[MAXNAMLEN + 6], *cp, *rindex();
+			register char *cp;
 
-			strcpy(buf, cat);
+			(void) strcpy(buf, cat);
 			cp = rindex(buf, '/');
 			if (cp && cp[1] == '\0')
 				*cp = '\0';
@@ -118,15 +142,25 @@ usage:
 			else if (mkdir(buf, 0775) < 0) {
 				sprintf(buf, "catman: mkdir: %s", cat);
 				perror(buf);
+				exstat = 1;
 				continue;
 			}
-			stat(cat, &sbuf);
+			(void) stat(cat, &sbuf);
 		}
-		if ((sbuf.st_mode & 0777) != 0775)
-			chmod(cat, 0775);
+		if (access(cat, R_OK|W_OK|X_OK) == -1) {
+			sprintf(buf, "catman: %s", cat);
+			perror(buf);
+			exstat = 1;
+			continue;
+		}
+		if ((sbuf.st_mode & S_IFMT) != S_IFDIR) {
+			fprintf(stderr, "catman: %s: Not a directory\n", cat);
+			exstat = 1;
+			continue;
+		}
 		while ((dir = readdir(mdir)) != NULL) {
 			time_t time;
-			char *tsp;
+			register char *tsp;
 			FILE *inf;
 			int  makelink;
 
@@ -145,9 +179,10 @@ usage:
 				continue;
 			if (*tsp && *++tsp)
 				continue;
-			strcpy(msp, dir->d_name);
+			(void) strcpy(msp, dir->d_name);
 			if ((inf = fopen(man, "r")) == NULL) {
-				perror(man);
+				sprintf(buf, "catman: %s");
+				perror(buf);
 				exstat = 1;
 				continue;
 			}
@@ -171,13 +206,13 @@ usage:
 				makelink = 1;
 			}
 			fclose(inf);
-			strcpy(csp, dir->d_name);
+			(void) strcpy(csp, dir->d_name);
 			if (stat(cat, &sbuf) >= 0) {
 				time = sbuf.st_mtime;
-				stat(man, &sbuf);
+				(void) stat(man, &sbuf);
 				if (time >= sbuf.st_mtime)
 					continue;
-				unlink(cat);
+				(void) unlink(cat);
 			}
 			if (makelink) {
 				/*
@@ -185,15 +220,26 @@ usage:
 				 */
 				if (stat(lncat, &sbuf) >= 0 &&
 				    ((sbuf.st_mode&S_IFMT)==S_IFREG))
-					unlink(cat);
+					(void) unlink(cat);
 				if (pflag)
 					printf("ln %s %s\n", lncat, cat);
 				else
-					link(lncat, cat);
+					if (link(lncat, cat) == -1) {
+						sprintf(buf, "catman: link: %s", cat);
+						perror(buf);
+						exstat = 1;
+						continue;
+					}
 			}
 			else {
 				sprintf(buf, "nroff -man %s > %s", man, cat);
-				SYSTEM(buf);
+				if (pflag)
+					printf("%s\n", buf);
+				else if ((status = system(buf)) != 0) {
+					fprintf(stderr, "catman: nroff: %s: exit status %d: Owooooo!\n", cat, status);
+					exstat = 1;
+					continue;
+				}
 			}
 			changed = 1;
 		}
@@ -201,13 +247,14 @@ usage:
 	}
 	if (changed && !nflag) {
 whatis:
-		if (!pflag) {
-			execl("/bin/sh", "/bin/sh",
-			    "/usr/lib/makewhatis", mandir, 0);
-			perror("/bin/sh /usr/lib/makewhatis");
+		sprintf(buf, "%s %s", makewhatis, mandir);
+		if (pflag)
+			printf("%s\n", buf);
+		else if ((status = system(buf)) != 0) {
+			fprintf(stderr, "catman: %s: exit status %d\n",
+			    buf, status);
 			exstat = 1;
-		} else
-			printf("/bin/sh /usr/lib/makewhatis %s\n", mandir);
+		}
 	}
-	exit(exstat);
+	return;
 }
