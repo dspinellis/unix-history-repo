@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)param.c	7.9 (Berkeley) %G%
+ *	@(#)param.c	7.10 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -63,10 +63,6 @@ int	nfile = 16 * (NPROC + 16 + MAXUSERS) / 10 + 32;
 int	ncallout = 16 + NPROC;
 int	nclist = 60 + 12 * MAXUSERS;
 int     nmbclusters = NMBCLUSTERS;
-#ifdef QUOTA
-int	nquota = (MAXUSERS * 9) / 7 + 3;
-int	ndquot = NVNODE + (MAXUSERS * NMOUNT) / 4;
-#endif
 int	fscale = FSCALE;	/* kernel uses `FSCALE', user uses `fscale' */
 
 /*
@@ -88,7 +84,3 @@ struct	cblock *cfree;
 struct	buf *buf, *swbuf;
 char	*buffers;
 struct	cmap *cmap, *ecmap;
-#ifdef QUOTA
-struct	quota *quota, *quotaNQUOTA;
-struct	dquot *dquot, *dquotNDQUOT;
-#endif
