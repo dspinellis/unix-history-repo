@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	7.11 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -22,7 +22,7 @@
 #include "syslog.h"
 
 #include "../machine/mtpr.h"
-#ifdef KDB
+#ifdef KADB
 #include "../machine/kdbparam.h"
 #endif
 
@@ -327,7 +327,7 @@ panic(s)
 		panicstr = s;
 	}
 	printf("panic: %s\n", s);
-#ifdef KDB
+#ifdef KADB
 	if (boothowto & RB_KDB) {
 		int x = splnet();	/* below kdb pri */
 
