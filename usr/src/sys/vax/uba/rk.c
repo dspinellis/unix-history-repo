@@ -1,10 +1,15 @@
-/*	rk.c	4.33	81/04/02	*/
+/*	rk.c	4.34	81/05/09	*/
 
 #include "rk.h"
 #if NHK > 0
 int	rkpip;		/* DEBUG */
 int	rknosval;	/* DEBUG */
+#ifdef RKDEBUG
 int	rkdebug;
+#endif
+#ifdef RKBDEBUG
+int	rkbdebug;
+#endif
 /*
  * RK611/RK0[67] disk driver
  *
@@ -12,7 +17,6 @@ int	rkdebug;
  *
  * TODO:
  *	Learn why we lose an interrupt sometime when spinning drives down
- *	Support rk06
  */
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -28,6 +32,7 @@ int	rkdebug;
 #include "../h/dk.h"
 #include "../h/cpu.h"
 #include "../h/cmap.h"
+#include "../h/dkbad.h"
 
 #include "../h/rkreg.h"
 
@@ -42,7 +47,7 @@ struct	rk_softc {
 struct size {
 	daddr_t	nblocks;
 	int	cyloff;
-} rk7_sizes[] ={
+} rk7_sizes[8] ={
 	15884,	0,		/* A=cyl 0 thru 240 */
 	10032,	241,		/* B=cyl 241 thru 392 */
 	53790,	0,		/* C=cyl 0 thru 814 */
@@ -51,8 +56,19 @@ struct size {
 	0,	0,
 	27786,	393,		/* G=cyl 393 thru 813 */
 	0,	0,
+}, rk6_sizes[8] ={
+	15884,	0,		/* A=cyl 0 thru 240 */
+	11154,	241,		/* B=cyl 241 thru 409 */
+	27126,	0,		/* C=cyl 0 thru 410 */
+	0,	0,
+	0,	0,
+	0,	0,
+	0,	0,
+	0,	0,
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
+
+short	rktypes[] = { RK_CDT, 0 };
 
 int	rkprobe(), rkslave(), rkattach(), rkdgo(), rkintr();
 struct	uba_ctlr *rkminfo[NHK];
@@ -64,6 +80,10 @@ struct	uba_driver hkdriver =
  { rkprobe, rkslave, rkattach, rkdgo, rkstd, "rk", rkdinfo, "hk", rkminfo, 1 };
 struct	buf rkutab[NRK];
 short	rkcyl[NRK];
+#ifndef NOBADBLOCK
+struct	dkbad rkbad[NRK];
+struct	buf brkbuf[NRK];
+#endif
 
 struct	rkst {
 	short	nsect;
@@ -73,6 +93,7 @@ struct	rkst {
 	struct	size *sizes;
 } rkst[] = {
 	NRKSECT, NRKTRK, NRKSECT*NRKTRK,	NRK7CYL,	rk7_sizes,
+	NRKSECT, NRKTRK, NRKSECT*NRKTRK,	NRK6CYL,	rk6_sizes,
 };
 
 u_char 	rk_offset[16] =
@@ -110,14 +131,19 @@ rkslave(ui, reg)
 {
 	register struct rkdevice *rkaddr = (struct rkdevice *)reg;
 
-	rkaddr->rkcs1 = RK_CDT|RK_CCLR;
+	ui->ui_type = 0;
+	rkaddr->rkcs1 = RK_CCLR;
 	rkaddr->rkcs2 = ui->ui_slave;
 	rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
 	rkwait(rkaddr);
 	DELAY(50);
 	if (rkaddr->rkcs2&RKCS2_NED || (rkaddr->rkds&RKDS_SVAL) == 0) {
-		rkaddr->rkcs1 = RK_CDT|RK_CCLR;
+		rkaddr->rkcs1 = RK_CCLR;
 		return (0);
+	}
+	if (rkaddr->rkcs1&RK_CERR && rkaddr->rker&RKER_DTYE) {
+		ui->ui_type = 1;
+		rkaddr->rkcs1 = RK_CCLR;
 	}
 	return (1);
 }
@@ -135,6 +161,7 @@ rkattach(ui)
 	rkip[ui->ui_ctlr][ui->ui_slave] = ui;
 	rk_softc[ui->ui_ctlr].sc_ndrive++;
 	rkcyl[ui->ui_unit] = -1;
+	ui->ui_flags = 0;
 }
  
 rkstrategy(bp)
@@ -195,18 +222,35 @@ rkustart(ui)
 		rk_softc[um->um_ctlr].sc_softas |= 1<<ui->ui_slave;
 		return (0);
 	}
-	rkaddr->rkcs1 = RK_CDT|RK_CERR;
+	rkaddr->rkcs1 = rktypes[ui->ui_type]|RK_CERR;
 	rkaddr->rkcs2 = ui->ui_slave;
-	rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
+	rkaddr->rkcs1 = rktypes[ui->ui_type]|RK_DCLR|RK_GO;
 	rkwait(rkaddr);
 	if ((bp = dp->b_actf) == NULL) {
-		rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
+		rkaddr->rkcs1 = rktypes[ui->ui_type]|RK_DCLR|RK_GO;
 		rkwait(rkaddr);
 		return (0);
 	}
-	if ((rkaddr->rkds & RKDS_VV) == 0) {
+	if ((rkaddr->rkds & RKDS_VV) == 0 || ui->ui_flags == 0) {
 		/* SHOULD WARN SYSTEM THAT THIS HAPPENED */
-		rkaddr->rkcs1 = RK_CDT|RK_PACK|RK_GO;
+#ifndef NOBADBLOCK
+		struct rkst *st = &rkst[ui->ui_type];
+		struct buf *bbp = &brkbuf[ui->ui_unit];
+#endif
+
+		rkaddr->rkcs1 = rktypes[ui->ui_type]|RK_PACK|RK_GO;
+		ui->ui_flags = 1;
+#ifndef NOBADBLOCK
+		bbp->b_flags = B_READ|B_BUSY;
+		bbp->b_dev = bp->b_dev;
+		bbp->b_bcount = 512;
+		bbp->b_un.b_addr = (caddr_t)&rkbad[ui->ui_unit];
+		bbp->b_blkno = st->ncyl*st->nspc - st->nsect;
+		bbp->b_cylin = st->ncyl - 1;
+		dp->b_actf = bbp;
+		bbp->av_forw = bp;
+		bp = bbp;
+#endif
 		rkwait(rkaddr);
 	}
 	if (dp->b_active)
@@ -220,7 +264,7 @@ rkustart(ui)
 		goto done;
 	rkaddr->rkcyl = bp->b_cylin;
 	rkcyl[ui->ui_unit] = bp->b_cylin;
-	rkaddr->rkcs1 = RK_CDT|RK_IE|RK_SEEK|RK_GO;
+	rkaddr->rkcs1 = rktypes[ui->ui_type]|RK_IE|RK_SEEK|RK_GO;
 	didie = 1;
 	if (ui->ui_dk >= 0) {
 		dk_busy |= 1<<ui->ui_dk;
@@ -267,9 +311,9 @@ loop:
 	sn %= st->nsect;
 	rkaddr = (struct rkdevice *)ui->ui_addr;
 retry:
-	rkaddr->rkcs1 = RK_CDT|RK_CERR;
+	rkaddr->rkcs1 = RK_CCLR;
 	rkaddr->rkcs2 = ui->ui_slave;
-	rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
+	rkaddr->rkcs1 = rktypes[ui->ui_type]|RK_DCLR|RK_GO;
 	rkwait(rkaddr);
 	if ((rkaddr->rkds&RKDS_SVAL) == 0) {
 		rknosval++;
@@ -283,9 +327,9 @@ retry:
 		printf("rk%d: not ready", dkunit(bp));
 		if ((rkaddr->rkds&RKDS_DREADY) != RKDS_DREADY) {
 			printf("\n");
-			rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
+			rkaddr->rkcs1 = rktypes[ui->ui_type]|RK_DCLR|RK_GO;
 			rkwait(rkaddr);
-			rkaddr->rkcs1 = RK_CDT|RK_CERR;
+			rkaddr->rkcs1 = RK_CCLR;
 			rkwait(rkaddr);
 			um->um_tab.b_active = 0;
 			um->um_tab.b_errcnt = 0;
@@ -303,9 +347,9 @@ nosval:
 	rkaddr->rkda = (tn << 8) + sn;
 	rkaddr->rkwc = -bp->b_bcount / sizeof (short);
 	if (bp->b_flags & B_READ)
-		cmd = RK_CDT|RK_IE|RK_READ|RK_GO;
+		cmd = rktypes[ui->ui_type]|RK_IE|RK_READ|RK_GO;
 	else
-		cmd = RK_CDT|RK_IE|RK_WRITE|RK_GO;
+		cmd = rktypes[ui->ui_type]|RK_IE|RK_WRITE|RK_GO;
 	um->um_cmd = cmd;
 	(void) ubago(ui);
 	return (1);
@@ -339,27 +383,42 @@ rkintr(rk11)
 		bp = dp->b_actf;
 		ui = rkdinfo[dkunit(bp)];
 		dk_busy &= ~(1 << ui->ui_dk);
+#ifndef NOBADBLOCK
+		if (bp->b_flags&B_BAD)
+			if (rkecc(ui, CONT))
+				return;
+#endif
 		if (rkaddr->rkcs1 & RK_CERR) {
 			int recal;
 			u_short ds = rkaddr->rkds;
 			u_short cs2 = rkaddr->rkcs2;
 			u_short er = rkaddr->rker;
+#ifdef RKDEBUG
 			if (rkdebug) {
 				printf("cs2=%b ds=%b er=%b\n",
 				    cs2, RKCS2_BITS, ds, 
 				    RKDS_BITS, er, RKER_BITS);
 			}
+#endif
 			if (er & RKER_WLE) {
 				printf("rk%d: write locked\n", dkunit(bp));
 				bp->b_flags |= B_ERROR;
 			} else if (++um->um_tab.b_errcnt > 28 ||
 			    ds&RKDS_HARD || er&RKER_HARD || cs2&RKCS2_HARD) {
+hard:
 				harderr(bp, "rk");
 				printf("cs2=%b ds=%b er=%b\n",
 				    cs2, RKCS2_BITS, ds, 
 				    RKDS_BITS, er, RKER_BITS);
 				bp->b_flags |= B_ERROR;
 				sc->sc_recal = 0;
+			} else if (er & RKER_BSE) {
+#ifndef NOBADBLOCK
+				if (rkecc(ui, BSE))
+					return;
+				else
+#endif
+					goto hard;
 			} else
 				um->um_tab.b_active = 0;
 			if (cs2&RKCS2_MDS) {
@@ -371,14 +430,14 @@ rkintr(rk11)
 			    (um->um_tab.b_errcnt&07) == 4)
 				recal = 1;
 			if ((er & (RKER_DCK|RKER_ECH)) == RKER_DCK)
-				if (rkecc(ui))
+				if (rkecc(ui, ECC))
 					return;
-			rkaddr->rkcs1 = RK_CDT|RK_CCLR;
+			rkaddr->rkcs1 = RK_CCLR;
 			rkaddr->rkcs2 = ui->ui_slave;
-			rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
+			rkaddr->rkcs1 = rktypes[ui->ui_type]|RK_DCLR|RK_GO;
 			rkwait(rkaddr);
 			if (recal && um->um_tab.b_active == 0) {
-				rkaddr->rkcs1 = RK_CDT|RK_IE|RK_RECAL|RK_GO;
+				rkaddr->rkcs1 = rktypes[ui->ui_type]|RK_IE|RK_RECAL|RK_GO;
 				rkcyl[ui->ui_unit] = -1;
 				sc->sc_recal = 0;
 				goto nextrecal;
@@ -390,14 +449,14 @@ retry:
 		case 1:
 			rkaddr->rkcyl = bp->b_cylin;
 			rkcyl[ui->ui_unit] = bp->b_cylin;
-			rkaddr->rkcs1 = RK_CDT|RK_IE|RK_SEEK|RK_GO;
+			rkaddr->rkcs1 = rktypes[ui->ui_type]|RK_IE|RK_SEEK|RK_GO;
 			goto nextrecal;
 		case 2:
 			if (um->um_tab.b_errcnt < 16 ||
 			    (bp->b_flags&B_READ) == 0)
 				goto donerecal;
 			rkaddr->rkatt = rk_offset[um->um_tab.b_errcnt & 017];
-			rkaddr->rkcs1 = RK_CDT|RK_IE|RK_OFFSET|RK_GO;
+			rkaddr->rkcs1 = rktypes[ui->ui_type]|RK_IE|RK_OFFSET|RK_GO;
 			/* fall into ... */
 		nextrecal:
 			sc->sc_recal++;
@@ -410,6 +469,7 @@ retry:
 			um->um_tab.b_active = 0;
 			break;
 		}
+		ubadone(um);
 		if (um->um_tab.b_active) {
 			um->um_tab.b_active = 0;
 			um->um_tab.b_errcnt = 0;
@@ -424,7 +484,6 @@ retry:
 					needie = 0;
 		}
 		as &= ~(1<<ui->ui_slave);
-		ubadone(um);
 	}
 	for (unit = 0; as; as >>= 1, unit++)
 		if (as & 1) {
@@ -433,17 +492,18 @@ retry:
 				if (rkustart(rkip[rk11][unit]))
 					needie = 0;
 			} else {
-				rkaddr->rkcs1 = RK_CERR|RK_CDT;
+				rkaddr->rkcs1 = RK_CCLR;
 				rkaddr->rkcs2 = unit;
-				rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
+				rkaddr->rkcs1 = RK_DCLR|RK_GO;
 				rkwait(rkaddr);
+				rkaddr->rkcs1 = RK_CCLR;
 			}
 		}
 	if (um->um_tab.b_actf && um->um_tab.b_active == 0)
 		if (rkstart(um))
 			needie = 0;
 	if (needie)
-		rkaddr->rkcs1 = RK_CDT|RK_IE;
+		rkaddr->rkcs1 = RK_IE;
 }
 
 rkwait(addr)
@@ -476,7 +536,7 @@ rkwrite(dev)
 		physio(rkstrategy, &rrkbuf[unit], dev, B_WRITE, minphys);
 }
 
-rkecc(ui)
+rkecc(ui, flag)
 	register struct uba_device *ui;
 {
 	register struct rkdevice *rk = (struct rkdevice *)ui->ui_addr;
@@ -484,56 +544,105 @@ rkecc(ui)
 	register struct uba_ctlr *um = ui->ui_mi;
 	register struct rkst *st;
 	struct uba_regs *ubp = ui->ui_hd->uh_uba;
-	register int i;
 	caddr_t addr;
-	int reg, bit, byte, npf, mask, o, cmd, ubaddr;
+	int reg, npf, o, cmd, ubaddr;
 	int bn, cn, tn, sn;
 
-	npf = btop((rk->rkwc * sizeof(short)) + bp->b_bcount) - 1;
+#ifndef NOBADBLOCK
+	if (flag == CONT)
+		npf = bp->b_error;
+	else
+#endif
+		npf = btop((rk->rkwc * sizeof(short)) + bp->b_bcount);
 	reg = btop(um->um_ubinfo&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	printf("rk%d%c: soft ecc sn%d\n", dkunit(bp),
-	    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
-	mask = rk->rkec2;
-	ubapurge(um);
-	i = rk->rkec1 - 1;		/* -1 makes 0 origin */
-	bit = i&07;
-	i = (i&~07)>>3;
-	byte = i + o;
-	while (i < 512 && (int)ptob(npf)+i < bp->b_bcount && bit > -11) {
-		addr = ptob(ubp->uba_map[reg+btop(byte)].pg_pfnum)+
-		    (byte & PGOFSET);
-		putmemc(addr, getmemc(addr)^(mask<<bit));
-		byte++;
-		i++;
-		bit -= 8;
-	}
-	um->um_tab.b_active++;	/* Either complete or continuing... */
-	if (rk->rkwc == 0)
-		return (0);
-#ifdef notdef
-	rk->rkcs1 |= RK_GO;
-#else
-	rk->rkcs1 = RK_CDT|RK_CCLR;
-	rk->rkcs2 = ui->ui_slave;
-	rk->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
-	rkwait(rk);
 	bn = dkblock(bp);
 	st = &rkst[ui->ui_type];
 	cn = bp->b_cylin;
-	sn = bn%st->nspc + npf + 1;
+	sn = bn%st->nspc + npf;
 	tn = sn/st->nsect;
 	sn %= st->nsect;
 	cn += tn/st->ntrak;
 	tn %= st->ntrak;
+	ubapurge(um);
+	um->um_tab.b_active++;	/* Either complete or continuing... */
+	switch (flag) {
+	case ECC:
+		{
+		register int i;
+		int bit, byte, mask;
+
+		npf--;
+		reg--;
+		printf("rk%d%c: soft ecc sn%d\n", dkunit(bp),
+		    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
+		mask = rk->rkec2;
+		i = rk->rkec1 - 1;		/* -1 makes 0 origin */
+		bit = i&07;
+		i = (i&~07)>>3;
+		byte = i + o;
+		while (i < 512 && (int)ptob(npf)+i < bp->b_bcount && bit > -11) {
+			addr = ptob(ubp->uba_map[reg+btop(byte)].pg_pfnum)+
+			    (byte & PGOFSET);
+			putmemc(addr, getmemc(addr)^(mask<<bit));
+			byte++;
+			i++;
+			bit -= 8;
+		}
+		if (rk->rkwc == 0)
+			return (0);
+		npf++;
+		reg++;
+		break;
+		}
+
+#ifndef NOBADBLOCK
+	case BSE:
+#ifdef RKBDEBUG
+		if (rkbdebug)
+	printf("rkecc, BSE: bn %d cn %d tn %d sn %d\n", bn, cn, tn, sn);
+#endif
+		if ((bn = isbad(&rkbad[ui->ui_unit], cn, tn, sn)) < 0)
+			return(0);
+		bp->b_flags |= B_BAD;
+		bp->b_error = npf + 1;
+		bn = st->ncyl*st->nspc - st->nsect - 1 - bn;
+		cn = bn/st->nspc;
+		sn = bn%st->nspc;
+		tn = sn/st->nsect;
+		sn %= st->nsect;
+#ifdef RKBDEBUG
+		if (rkbdebug)
+	printf("revector to cn %d tn %d sn %d\n", cn, tn, sn);
+#endif
+		rk->rkwc = -(512 / sizeof (short));
+		break;
+
+	case CONT:
+#ifdef RKBDEBUG
+		if (rkbdebug)
+	printf("rkecc, CONT: bn %d cn %d tn %d sn %d\n", bn,cn,tn,sn);
+#endif
+		bp->b_flags &= ~B_BAD;
+		rk->rkwc = -((bp->b_bcount - (int)ptob(npf)) / sizeof (short));
+		if (rk->rkwc == 0)
+			return(0);
+		break;
+#endif
+	}
+	rk->rkcs1 = RK_CCLR;
+	rk->rkcs2 = ui->ui_slave;
+	rk->rkcs1 = rktypes[ui->ui_type]|RK_DCLR|RK_GO;
+	rkwait(rk);
 	rk->rkcyl = cn;
 	rk->rkda = (tn << 8) | sn;
-	ubaddr = (int)ptob(reg+1) + o;
+	ubaddr = (int)ptob(reg) + o;
 	rk->rkba = ubaddr;
-	cmd = (ubaddr >> 8) & 0x300;
-	cmd |= RK_CDT|RK_IE|RK_GO|RK_READ;
+	cmd = (bp->b_flags&B_READ ? RK_READ : RK_WRITE)|RK_IE|RK_GO;
+	cmd |= (ubaddr >> 8) & 0x300;
+	cmd |= rktypes[ui->ui_type];
 	rk->rkcs1 = cmd;
-#endif
+	um->um_tab.b_errcnt = 0;	/* error has been corrected */
 	return (1);
 }
 
@@ -624,12 +733,12 @@ rkdump(dev)
 	rkaddr = (struct rkdevice *)ui->ui_physaddr;
 	num = maxfree;
 	start = 0;
-	rkaddr->rkcs1 = RK_CDT|RK_CERR;
+	rkaddr->rkcs1 = RK_CCLR;
 	rkaddr->rkcs2 = unit;
-	rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
+	rkaddr->rkcs1 = rktypes[ui->ui_type]|RK_DCLR|RK_GO;
 	rkwait(rkaddr);
 	if ((rkaddr->rkds & RKDS_VV) == 0) {
-		rkaddr->rkcs1 = RK_CDT|RK_IE|RK_PACK|RK_GO;
+		rkaddr->rkcs1 = rktypes[ui->ui_type]|RK_IE|RK_PACK|RK_GO;
 		rkwait(rkaddr);
 	}
 	st = &rkst[ui->ui_type];
@@ -657,7 +766,7 @@ rkdump(dev)
 		*rp = (tn << 8) + sn;
 		*--rp = 0;
 		*--rp = -blk*NBPG / sizeof (short);
-		*--rp = RK_CDT|RK_GO|RK_WRITE;
+		*--rp = rktypes[ui->ui_type]|RK_GO|RK_WRITE;
 		rkwait(rkaddr);
 		if (rkaddr->rkcs1 & RK_CERR)
 			return (EIO);
