@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rdist.1	6.1 (Berkeley) %G%
+.\"	@(#)rdist.1	6.2 (Berkeley) %G%
 .\"
 .TH RDIST 1 ""
 .UC 6
@@ -31,7 +31,8 @@ If
 is `\-', the standard input is used.
 If no
 .B \-f
-option is present, the file `distfile' is used for input.
+option is present, the program looks first for `distfile',
+then `Distfile' to use as the input.
 If no names are specified on the command line,
 .I rdist
 will update all of the files and directories listed in
