@@ -1,4 +1,4 @@
-/*	dh.c	3.5	%H%	*/
+/*	dh.c	3.6	%H%	*/
 
 /*
  *	DH-11 driver
@@ -17,6 +17,18 @@
 #include "../h/pte.h"
 #include "../h/uba.h"
 #include "../h/bk.h"
+
+/*
+ * When running dz's using only SAE (silo alarm) on input
+ * it is necessary to call dzrint() at clock interrupt time.
+ * This is unsafe unless spl5()s in tty code are changed to
+ * spl6()s to block clock interrupts.  Note that the dh driver
+ * currently in use works the same way as the dz, even though
+ * we could try to more intelligently manage its silo.
+ * Thus don't take this out if you have no dz's unless you
+ * change clock.c and dhtimer().
+ */
+#define	spl5	spl6
 
 #define	DHADDR	((struct device *)(UBA0_DEV + 0160020))
 #define	NDH11	16	/* number of lines */
@@ -309,7 +321,9 @@ dhxint(dev)
 	register struct device *addr;
 	register d;
 	short ttybit, bar, *sbar;
+	int s;
 
+	s = spl6();	/* block the clock */
 	d = minor(dev) & 0177;
 	addr = DHADDR + d;
 	addr->un.dhcsr &= (short)~XINT;
@@ -339,6 +353,7 @@ dhxint(dev)
 				dhstart(tp);
 		}
 	}
+	splx(s);
 }
 
 /*
