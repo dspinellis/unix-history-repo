@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -418,28 +418,28 @@ mime8to7(mci, header, e, boundaries, flags)
 				linelen = 0;
 			}
 			linelen += 4;
-			fputc(Base64Code[(c1 >> 2) & 0x3f], mci->mci_out);
+			fputc(Base64Code[(c1 >> 2)], mci->mci_out);
 			c1 = (c1 & 0x03) << 4;
 			c2 = (*getcharf)(e->e_dfp, boundaries, &bt);
 			if (c2 == EOF)
 			{
-				fputc(Base64Code[c1 & 0x3f], mci->mci_out);
+				fputc(Base64Code[c1], mci->mci_out);
 				fputc('=', mci->mci_out);
 				fputc('=', mci->mci_out);
 				break;
 			}
 			c1 |= (c2 >> 4) & 0x0f;
-			fputc(Base64Code[c1 & 0x3f], mci->mci_out);
+			fputc(Base64Code[c1], mci->mci_out);
 			c1 = (c2 & 0x0f) << 2;
 			c2 = (*getcharf)(e->e_dfp, boundaries, &bt);
 			if (c2 == EOF)
 			{
-				fputc(Base64Code[c1 & 0x3f], mci->mci_out);
+				fputc(Base64Code[c1], mci->mci_out);
 				fputc('=', mci->mci_out);
 				break;
 			}
 			c1 |= (c2 >> 6) & 0x03;
-			fputc(Base64Code[c1 & 0x3f], mci->mci_out);
+			fputc(Base64Code[c1], mci->mci_out);
 			fputc(Base64Code[c2 & 0x3f], mci->mci_out);
 		}
 	}
@@ -566,11 +566,11 @@ mime_getchar(fp, boundaries, btp)
 	int *btp;
 {
 	int c;
-	static char *bp = NULL;
+	static u_char *bp = NULL;
 	static int buflen = 0;
 	static bool atbol = TRUE;	/* at beginning of line */
 	static int bt = MBT_SYNTAX;	/* boundary type of next EOF */
-	static char buf[128];		/* need not be a full line */
+	static u_char buf[128];		/* need not be a full line */
 
 	if (buflen > 0)
 	{
