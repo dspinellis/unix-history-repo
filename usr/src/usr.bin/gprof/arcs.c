@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)arcs.c	1.11 (Berkeley) %G%";
+    static	char *sccsid = "@(#)arcs.c	1.12 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -447,8 +447,8 @@ doflags()
 		printname( childp );
 		printf( " ends up with printflag %d and propfraction %f\n" ,
 			childp -> printflag , childp -> propfraction );
-		printf( "time %f propself %f\n" ,
-			childp -> time , childp -> propself );
+		printf( "time %f propself %f printtime %f\n" ,
+			childp -> time , childp -> propself , printtime );
 	    }
 #	endif DEBUG
     }
@@ -478,6 +478,9 @@ inheritflags( childp )
 	childp -> propfraction = 0.0;
 	for (arcp = childp -> parents ; arcp ; arcp = arcp -> arc_parentlist) {
 	    parentp = arcp -> arc_parentp;
+	    if ( childp == parentp ) {
+		continue;
+	    }
 	    childp -> printflag |= parentp -> printflag;
 	    childp -> propfraction += parentp -> propfraction
 					* ( ( (double) arcp -> arc_count )
