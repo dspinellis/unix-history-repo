@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.48 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.49 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -872,7 +872,11 @@ include(fname, forwarding, ctladdr, sendq, e)
 		{
 			initgroups(uname, gid);
 			if (uid != 0)
-				(void) setreuid(0, uid);
+			{
+				if (setreuid(0, uid) < 0)
+					syserr("setreuid(0, %d) failure (real=%d, eff=%d)",
+						uid, getuid(), geteuid());
+			}
 		}
 #endif                   
 	}
@@ -927,9 +931,14 @@ resetuid:
 	if (saveduid == 0)
 	{
 		if (uid != 0)
-			if (setreuid(-1, 0) < 0 || setreuid(RealUid, 0) < 0)
+		{
+			if (setreuid(-1, 0) < 0)
+				syserr("setreuid(-1, 0) failure (real=%d, eff=%d)",
+					getuid(), geteuid());
+			if (setreuid(RealUid, 0) < 0)
 				syserr("setreuid(%d, 0) failure (real=%d, eff=%d)",
 					RealUid, getuid(), geteuid());
+		}
 		setgid(savedgid);
 	}
 #endif
