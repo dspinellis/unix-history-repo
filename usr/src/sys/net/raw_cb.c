@@ -1,4 +1,4 @@
-/*	raw_cb.c	4.7	82/04/10	*/
+/*	raw_cb.c	4.8	82/04/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -87,9 +87,10 @@ COUNT(RAW_ATTACH);
 	insque(rp, &rawcb);
 	so->so_pcb = (caddr_t)rp;
 	rp->rcb_pcb = 0;
-	if (addr)
+	if (addr) {
 		bcopy((caddr_t)addr, (caddr_t)&rp->rcb_laddr, sizeof(*addr));
-	rp->rcb_flags |= RAW_LADDR;
+		rp->rcb_flags |= RAW_LADDR;
+	}
 	return (0);
 bad2:
 	sbrelease(&so->so_snd);

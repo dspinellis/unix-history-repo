@@ -1,4 +1,4 @@
-/*	raw_ip.c	4.10	82/04/10	*/
+/*	raw_ip.c	4.11	82/04/11	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -34,8 +34,8 @@ COUNT(RIP_INPUT);
 	ripproto.sp_protocol = ip->ip_p;
 	ripdst.sin_addr = ip->ip_dst;
 	ripsrc.sin_addr = ip->ip_src;
-	raw_input(m, &ripproto, (struct sockaddr *)&ripdst,
-	  (struct sockaddr *)&ripsrc);
+	raw_input(m, &ripproto, (struct sockaddr *)&ripsrc,
+	  (struct sockaddr *)&ripdst);
 }
 
 /*
