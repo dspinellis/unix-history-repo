@@ -247,6 +247,7 @@ runcom(oldhowto)
 	return (1);
 }
 
+int merge();
 struct	sigvec	mvec = { merge, sigmask(SIGTERM), 0 };
 /*
  * Multi-user.  Listen for users leaving, SIGHUP's
