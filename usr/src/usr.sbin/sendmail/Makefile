@@ -1,4 +1,4 @@
-#       @(#)Makefile	6.6 (Berkeley) %G%
+#       @(#)Makefile	6.7 (Berkeley) %G%
 
 SUBDIR= mailstats praliases
 VER=	XX
@@ -12,13 +12,13 @@ tar: Files.base Files.cf Files.misc Files.xdoc
 	(cd src; ${MAKE})
 	(cd doc; PRINTER=lz ${MAKE})
 	(cd cf/cf; ${MAKE})
-	tar chf sendmail.${VER}.base.tar `cat Files.base`
+	pax -w -x tar -L -f sendmail.${VER}.base.tar `cat Files.base`
 	compress sendmail.${VER}.base.tar
-	tar chf sendmail.${VER}.cf.tar `cat Files.cf`
+	pax -w -x tar -L -f sendmail.${VER}.cf.tar `cat Files.cf`
 	compress sendmail.${VER}.cf.tar
-	tar chf sendmail.${VER}.misc.tar `cat Files.misc`
+	pax -w -x tar -L -f sendmail.${VER}.misc.tar `cat Files.misc`
 	compress sendmail.${VER}.misc.tar
-	tar chf sendmail.${VER}.xdoc.tar `cat Files.xdoc`
+	pax -w -x tar -L -f sendmail.${VER}.xdoc.tar `cat Files.xdoc`
 	compress sendmail.${VER}.xdoc.tar
 
 ftp: sendmail.${VER}.base.tar.Z sendmail.${VER}.cf.tar.Z sendmail.${VER}.misc.tar.Z sendmail.${VER}.xdoc.tar.Z
