@@ -17,34 +17,34 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)apropos.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)apropos.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <strings.h>
 
 #define	DEF_PATH	"/usr/man:/usr/new/man:/usr/local/man"
 #define	MAXLINELEN	1000			/* max line handled */
-#define	NO		0			/* no/false */
 #define	WHATIS		"whatis"		/* database name */
-#define	YES		1			/* yes/true */
 
-static char	*myname;
+#define	NO	0				/* no/false */
+#define	YES	1				/* yes/true */
+
+static char *myname;
 
 main(argc, argv)
-	int	argc;
-	char	**argv;
+	int argc;
+	char **argv;
 {
-	extern char	*optarg;
-	extern int	optind;
-	register char	*beg, *end, **C;
-	int	ch, foundman = NO, *found, isapropos,
-		a_match(), w_match(), (*match)();
-	char	*manpath = NULL,
-		buf[MAXLINELEN + 1], fname[MAXPATHLEN + 1],
-		wbuf[MAXLINELEN + 1],
-		*getenv(), *index(), *malloc(), *rindex();
+	extern char *optarg;
+	extern int optind;
+	register char *beg, *end, **C;
+	int ch, foundman = NO, *found, isapropos;
+	int a_match(), w_match(), (*match)();
+	char *manpath = NULL, buf[MAXLINELEN + 1], fname[MAXPATHLEN + 1];
+	char wbuf[MAXLINELEN + 1], *getenv(), *malloc();
 
 	myname = (beg = rindex(*argv, '/')) ? beg + 1 : *argv;
 	if (!strcmp(myname, "apropos")) {
@@ -78,15 +78,14 @@ main(argc, argv)
 		fprintf(stderr, "%s: out of space.\n", myname);
 		exit(1);
 	}
-	bzero((char *)found, argc * sizeof(int));	/* calloc is silly */
+	bzero((char *)found, argc * sizeof(int));
 
-	if (!isapropos)
-		for (C = argv; *C; ++C) {		/* trim full paths */
-			if (beg = rindex(*C, '/'))
-				*C = beg + 1;
-		}
-	for (C = argv; *C; ++C)			/* convert to lower-case */
-		lowstr(*C, *C);
+	if (isapropos)
+		for (C = argv; *C; ++C)		/* convert to lower-case */
+			lowstr(*C, *C);
+	else for (C = argv; *C; ++C)		/* trim full paths */
+		if (beg = rindex(*C, '/'))
+			*C = beg + 1;
 
 	for (beg = manpath; beg; beg = end) {	/* through path list */
 		end = index(beg, ':');
@@ -96,83 +95,115 @@ main(argc, argv)
 			(void)sprintf(fname, "%.*s/%s", end - beg, beg, WHATIS);
 			++end;
 		}
-						/* for each file found */
-		if (freopen(fname, "r", stdin)) {
-			foundman = YES;
-			while (gets(buf)) {	/* read & convert to lcase */
-				lowstr(buf, wbuf);
-				for (C = argv; *C; ++C)
-					if ((*match)(wbuf, *C)) {
-						puts(buf);
-						found[C - argv] = YES;
+		if (!freopen(fname, "r", stdin))
+			continue;
 
-						/* only print line once */
-						while (*++C)
-							if ((*match)(wbuf, *C))
-								found[C - argv] = YES;
-						break;
-					}
-			}
+						/* for each file found */
+		for (foundman = YES; gets(buf);) {
+			if (isapropos)
+				lowstr(buf, wbuf);
+			else
+				dashtrunc(buf, wbuf);
+			for (C = argv; *C; ++C)
+				if ((*match)(wbuf, *C)) {
+					puts(buf);
+					found[C - argv] = YES;
+
+					/* only print line once */
+					while (*++C)
+						if ((*match)(wbuf, *C))
+							found[C - argv] = YES;
+					break;
+				}
 		}
 	}
 	if (!foundman) {
 		fprintf(stderr, "%s: no %s file found in %s.\n", myname, WHATIS, manpath);
 		exit(1);
 	}
-	for (C = argv; *C; C++)
+	for (C = argv; *C; ++C)
 		if (!found[C - argv])
 			printf("%s: %s\n", *C, isapropos ? "nothing appropriate" : "not found");
 }
 
+/*
+ * a_match --
+ *	match for apropos; anywhere the string appears
+ */
 static
 a_match(bp, str)
-	register char	*bp, *str;
+	register char *bp, *str;
 {
-	register char	test, *Cs, *Cb;
+	register int len;
+	register char test;
 
 	if (!*bp)
 		return(NO);
-	/* backward contemptible: everything matches empty string */
+	/* backward compatible: everything matches empty string */
 	if (!*str)
 		return(YES);
-	for (test = *str++; *bp;)
-		if (test == *bp++) {
-			Cs = str;
-			Cb = bp;
-			do {
-				if (!*Cs)
-					return(YES);
-			} while (*Cb++ == *Cs++);
-		}
+	for (test = *str++, len = strlen(str); *bp;)
+		if (test == *bp++ && !strncmp(bp, str, len))
+			return(YES);
 	return(NO);
 }
 
+/*
+ * w_match --
+ *	match for whatis; looks for full word match
+ */
 static
 w_match(bp, str)
-	register char	*bp, *str;
+	register char *bp, *str;
 {
-	register char	test, *Cs, *Cb;
+	register int len;
+	register char *start;
 
 	if (!*str || !*bp)
 		return(NO);
-	for (test = *str++; *bp;)
-		if (test == *bp++) {
-			for (Cs = str, Cb = bp; *Cs == *Cb; ++Cs, ++Cb);
-			if (!*Cs && (isspace(*Cb) || *Cb == '(' || *Cb == ','))
-				return(YES);
-		}
+	for (len = strlen(str);;) {
+		for (; *bp && !isdigit(*bp) && !isalpha(*bp); ++bp);
+		if (!*bp)
+			break;
+		for (start = bp++; *bp && (isdigit(*bp) || isalpha(*bp)); ++bp);
+		if (bp - start == len && !strncasecmp(start, str, len))
+			return(YES);
+	}
 	return(NO);
 }
 
+/*
+ * dashtrunc --
+ *	truncate a string at " - "
+ */
 static
-lowstr(from, to)
-	register char	*from, *to;
+dashtrunc(from, to)
+	register char *from, *to;
 {
-	for (; *from; ++from, ++to)
-		*to = isupper(*from) ? tolower(*from) : *from;
+	do {
+		if (from[0] == ' ' && from[1] == '-' && from[2] == ' ')
+			break;
+	} while (*to++ = *from++);
 	*to = '\0';
 }
 
+/*
+ * lowstr --
+ *	convert a string to lower case
+ */
+static
+lowstr(from, to)
+	register char *from, *to;
+{
+	do {
+		*to++ = isupper(*from) ? tolower(*from) : *from;
+	} while (*from++);
+}
+
+/*
+ * usage --
+ *	print usage message and die
+ */
 static
 usage()
 {
