@@ -1,0 +1,204 @@
+This is Info file gawk.info, produced by Makeinfo-1.54 from the input
+file gawk.texi.
+
+   This file documents `awk', a program that you can use to select
+particular records in a file and perform operations upon them.
+
+   This is Edition 0.15 of `The GAWK Manual',
+for the 2.15 version of the GNU implementation
+of AWK.
+
+   Copyright (C) 1989, 1991, 1992, 1993 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided that
+the entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Foundation.
+
+
+Indirect:
+gawk.info-1: 1052
+gawk.info-2: 48248
+gawk.info-3: 98077
+gawk.info-4: 146748
+gawk.info-5: 195871
+gawk.info-6: 243594
+gawk.info-7: 291465
+gawk.info-8: 340847
+gawk.info-9: 380680
+
+Tag Table:
+(Indirect)
+Node: Top1052
+Node: Preface3963
+Node: History5556
+Node: Copying7899
+Node: This Manual27051
+Node: Sample Data Files28895
+Node: Getting Started31687
+Node: Very Simple33398
+Node: Two Rules35366
+Node: More Complex37450
+Node: Running gawk40436
+Node: One-shot41385
+Node: Read Terminal42521
+Node: Long43580
+Node: Executable Scripts44922
+Node: Comments47145
+Node: Statements/Lines48248
+Node: When51139
+Node: Reading Files53054
+Node: Records54781
+Node: Fields58015
+Node: Non-Constant Fields60628
+Node: Changing Fields62452
+Node: Field Separators65825
+Node: Constant Size75461
+Node: Multiple Line79009
+Node: Getline81405
+Node: Close Input91149
+Node: Printing92605
+Node: Print93604
+Node: Print Examples95738
+Node: Output Separators98077
+Node: OFMT99815
+Node: Printf100959
+Node: Basic Printf101863
+Node: Control Letters103288
+Node: Format Modifiers105102
+Node: Printf Examples107607
+Node: Redirection110289
+Node: File/Pipe Redirection111025
+Node: Close Output114498
+Node: Special Files117002
+Node: One-liners121936
+Node: Patterns124658
+Node: Kinds of Patterns125636
+Node: Regexp126641
+Node: Regexp Usage127585
+Node: Regexp Operators129614
+Node: Case-sensitivity135092
+Node: Comparison Patterns137402
+Node: Boolean Patterns139563
+Node: Expression Patterns141073
+Node: Ranges142513
+Node: BEGIN/END143923
+Node: Empty146477
+Node: Actions146748
+Node: Expressions149128
+Node: Constants151149
+Node: Variables156714
+Node: Assignment Options158323
+Node: Arithmetic Ops160007
+Node: Concatenation161673
+Node: Comparison Ops163021
+Node: Boolean Ops167446
+Node: Assignment Ops169909
+Node: Increment Ops173983
+Node: Conversion176479
+Node: Values179554
+Node: Conditional Exp182137
+Node: Function Calls183465
+Node: Precedence186229
+Node: Statements189612
+Node: If Statement191295
+Node: While Statement192823
+Node: Do Statement194786
+Node: For Statement195871
+Node: Break Statement199063
+Node: Continue Statement200672
+Node: Next Statement203295
+Node: Next File Statement205239
+Node: Exit Statement208285
+Node: Arrays209900
+Node: Array Intro211102
+Node: Reference to Elements214605
+Node: Assigning Elements216548
+Node: Array Example217050
+Node: Scanning an Array218781
+Node: Delete221081
+Node: Numeric Array Subscripts222061
+Node: Multi-dimensional223941
+Node: Multi-scanning227169
+Node: Built-in228791
+Node: Calling Built-in229748
+Node: Numeric Functions231012
+Node: String Functions234359
+Node: I/O Functions243594
+Node: Time Functions246218
+Node: User-defined254306
+Node: Definition Syntax255024
+Node: Function Example259016
+Node: Function Caveats260091
+Node: Return Statement263134
+Node: Built-in Variables265517
+Node: User-modified266553
+Node: Auto-set270830
+Node: Command Line276569
+Node: Options277494
+Node: Other Arguments284568
+Node: AWKPATH Variable286934
+Node: Obsolete289076
+Node: Undocumented290336
+Node: Language History290524
+Node: V7/S5R3.1291465
+Node: S5R4294169
+Node: POSIX295706
+Node: POSIX/GNU296424
+Node: Installation298055
+Node: Gawk Distribution298921
+Node: Extracting299374
+Node: Distribution contents300969
+Node: Unix Installation303773
+Node: Quick Installation304464
+Node: Configuration Philosophy305633
+Node: New Configurations307959
+Node: VMS Installation310061
+Node: VMS Compilation310620
+Node: VMS Installation Details312235
+Node: VMS Running313872
+Node: VMS POSIX315458
+Node: MS-DOS Installation316846
+Node: Atari Installation317774
+Node: Gawk Summary323536
+Node: Command Line Summary324297
+Node: Language Summary326730
+Node: Variables/Fields328819
+Node: Fields Summary329545
+Node: Built-in Summary331012
+Node: Arrays Summary334217
+Node: Data Type Summary335492
+Node: Rules Summary336965
+Node: Pattern Summary338614
+Node: Regexp Summary340847
+Node: Actions Summary342067
+Node: Operator Summary342982
+Node: Control Flow Summary344343
+Node: I/O Summary344949
+Node: Printf Summary346828
+Node: Special File Summary348654
+Node: Numeric Functions Summary350712
+Node: String Functions Summary351548
+Node: Time Functions Summary353380
+Node: String Constants Summary354144
+Node: Functions Summary355527
+Node: Historical Features356586
+Node: Sample Program357443
+Node: Bugs361697
+Node: Notes364545
+Node: Compatibility Mode365074
+Node: Future Extensions365907
+Node: Improvements368204
+Node: Glossary370239
+Node: Index380680
+
+End Tag Table
