@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -63,6 +63,7 @@ deliver(firstto, editfcn)
 	ADDRESS *tochain = NULL;	/* chain of users in this mailer call */
 	int rcode;			/* response code */
 	char *from;			/* pointer to from person */
+	char *firstsig;			/* signature of firstto */
 	char *pv[MAXPV+1];
 	char tobuf[MAXLINE-50];		/* text line of to people */
 	char buf[MAXNAME];
@@ -72,6 +73,7 @@ deliver(firstto, editfcn)
 	extern ADDRESS *getctladdr();
 	extern char *remotename();
 	extern MCI *openmailer();
+	extern char *hostsignature();
 
 	errno = 0;
 	if (bitset(QDONTSEND, to->q_flags))
@@ -216,6 +218,7 @@ deliver(firstto, editfcn)
 	tobuf[0] = '\0';
 	e->e_to = tobuf;
 	ctladdr = NULL;
+	firstsig = hostsignature(firstto->q_mailer, firstto->q_host, e);
 	for (; to != NULL; to = to->q_next)
 	{
 		/* avoid sending multiple recipients to dumb mailers */
@@ -224,8 +227,8 @@ deliver(firstto, editfcn)
 
 		/* if already sent or not for this host, don't send */
 		if (bitset(QDONTSEND, to->q_flags) ||
-		    strcmp(to->q_host, host) != 0 ||
-		    to->q_mailer != firstto->q_mailer)
+		    to->q_mailer != firstto->q_mailer ||
+		    strcmp(hostsignature(to->q_mailer, to->q_host, e), firstsig) != 0)
 			continue;
 
 		/* avoid overflowing tobuf */
@@ -259,7 +262,7 @@ deliver(firstto, editfcn)
 			continue;
 		}
 		rcode = checkcompat(to, e);
-		if (r <= 0)
+		if (rcode <= 0)
 		{
 			giveresponse(rcode == 0 ? EX_UNAVAILABLE : EX_TEMPFAIL,
 				     m, e);
@@ -706,33 +709,12 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 #ifdef DAEMON
 		register int i;
 		register u_short port;
-		int nmx;
-		char *mxhosts[MAXMXHOSTS + 1];
+		char *curhost;
 		extern MCI *mci_get();
+		extern char *hostsignature();
 
 		CurHostName = pvp[1];
-#ifdef NAMED_BIND
-		if (CurHostName != NULL && CurHostName[0] != '\0' &&
-		    CurHostName[0] != '[')
-		{
-			int rcode;
-			char buf[MAXNAME];
-
-			expand("\001j", buf, &buf[sizeof(buf) - 1], e);
-			nmx = getmxrr(CurHostName, mxhosts, buf, &rcode);
-			if (nmx < 0)
-			{
-				mci = mci_get(CurHostName, m);
-				mci->mci_exitstat = rcode;
-				mci->mci_errno = errno;
-			}
-		}
-		else
-#endif
-		{
-			nmx = 1;
-			mxhosts[0] = CurHostName;
-		}
+		curhost = hostsignature(m, pvp[1], e);
 
 		if (!clever)
 			syserr("non-clever IPC");
