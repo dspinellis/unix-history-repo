@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -35,6 +35,7 @@ static char sccsid[] = "@(#)cmds.c	5.19 (Berkeley) %G%";
 #include <netdb.h>
 #include <ctype.h>
 #include <time.h>
+#include <netinet/in.h>
 
 #include "ftp_var.h"
 #include "pathnames.h"
@@ -61,7 +62,7 @@ setpeer(argc, argv)
 	char *argv[];
 {
 	char *host, *hookup();
-	int port;
+	short port;
 
 	if (connected) {
 		printf("Already connected to %s, use close first.\n",
@@ -258,14 +259,20 @@ changetype(newtype, show)
 	verbose = oldverbose;
 }
 
+char *stype[] = {
+	"type",
+	"",
+	0
+};
+
 /*
  * Set binary transfer type.
  */
 /*VARARGS*/
 setbinary()
 {
-
-	call(settype, "type", "binary", 0);
+	stype[1] = "binary";
+	settype(2, stype);
 }
 
 /*
@@ -274,8 +281,8 @@ setbinary()
 /*VARARGS*/
 setascii()
 {
-
-	call(settype, "type", "ascii", 0);
+	stype[1] = "ascii";
+	settype(2, stype);
 }
 
 /*
@@ -284,8 +291,8 @@ setascii()
 /*VARARGS*/
 settenex()
 {
-
-	call(settype, "type", "tenex", 0);
+	stype[1] = "tenex";
+	settype(2, stype);
 }
 
 /*
@@ -294,8 +301,8 @@ settenex()
 /*VARARGS*/
 setebcdic()
 {
-
-	call(settype, "type", "ebcdic", 0);
+	stype[1] = "ebcdic";
+	settype(2, stype);
 }
 
 /*
@@ -405,7 +412,8 @@ mput(argc, argv)
 	char *argv[];
 {
 	register int i;
-	int ointer, (*oldintr)(), mabort();
+	int ointer;
+	sig_t (*oldintr)(), mabort();
 	extern jmp_buf jabort;
 	char *tp;
 
@@ -500,7 +508,7 @@ mput(argc, argv)
 			printf("%s\n", globerr);
 			if (gargs) {
 				blkfree(gargs);
-				free(gargs);
+				free((char *)gargs);
 			}
 			continue;
 		}
@@ -522,7 +530,7 @@ mput(argc, argv)
 		}
 		if (gargs != NULL) {
 			blkfree(gargs);
-			free(gargs);
+			free((char *)gargs);
 		}
 	}
 	(void) signal(SIGINT, oldintr);
@@ -600,6 +608,7 @@ usage:
 	recvrequest("RETR", argv[2], argv[1], "w");
 }
 
+sig_t
 mabort()
 {
 	int ointer;
@@ -627,7 +636,8 @@ mget(argc, argv)
 	char *argv[];
 {
 	char *cp, *tp, *tp2, tmpbuf[MAXPATHLEN];
-	int ointer, (*oldintr)(), mabort();
+	int ointer;
+	sig_t (*oldintr)(), mabort();
 	extern jmp_buf jabort;
 
 	if (argc < 2) {
@@ -969,6 +979,7 @@ lcd(argc, argv)
 	char *argv[];
 {
 	char buf[MAXPATHLEN];
+	extern char *getwd();
 
 	if (argc < 2)
 		argc++, argv[1] = home;
@@ -1020,7 +1031,8 @@ mdelete(argc, argv)
 	char *argv[];
 {
 	char *cp;
-	int ointer, (*oldintr)(), mabort();
+	int ointer;
+	sig_t (*oldintr)(), mabort();
 	extern jmp_buf jabort;
 
 	if (argc < 2) {
@@ -1135,7 +1147,8 @@ mls(argc, argv)
 	char *argv[];
 {
 	char *cmd, mode[1], *dest;
-	int ointer, i, (*oldintr)(), mabort();
+	int ointer, i;
+	sig_t (*oldintr)(), mabort();
 	extern jmp_buf jabort;
 
 	if (argc < 2) {
@@ -1194,7 +1207,8 @@ mls(argc, argv)
 shell(argc, argv)
 	char *argv[];
 {
-	int pid, (*old1)(), (*old2)();
+	int pid;
+	sig_t (*old1)(), (*old2)();
 	char shellnam[40], *shell, *namep; 
 	union wait status;
 
@@ -1568,7 +1582,7 @@ globulize(cpp)
 		printf("%s: %s\n", *cpp, globerr);
 		if (globbed) {
 			blkfree(globbed);
-			free(globbed);
+			free((char *)globbed);
 		}
 		return (0);
 	}
@@ -1577,7 +1591,7 @@ globulize(cpp)
 		/* don't waste too much memory */
 		if (*globbed) {
 			blkfree(globbed);
-			free(globbed);
+			free((char *)globbed);
 		}
 	}
 	return (1);
@@ -1609,6 +1623,7 @@ account(argc,argv)
 
 jmp_buf abortprox;
 
+sig_t
 proxabort()
 {
 	extern int proxy;
@@ -1630,7 +1645,7 @@ doproxy(argc,argv)
 	int argc;
 	char *argv[];
 {
-	int (*oldintr)(), proxabort();
+	sig_t (*oldintr)(), proxabort();
 	register struct cmd *c;
 	struct cmd *getcmd();
 	extern struct cmd cmdtab[];
@@ -2120,7 +2135,7 @@ modtime(argc, argv)
 		printf("%s\t%02d/%02d/%04d %02d:%02d:%02d GMT\n", argv[1],
 			mo, day, yy, hour, min, sec);
 	} else
-		fputs(reply_string, stdout);
+		printf("%s\n", reply_string);
 	verbose = overbose;
 }
 
