@@ -2,32 +2,83 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tu.4	4.1 (Berkeley) %G%
+.\"	@(#)tu.4	5.1 (Berkeley) %G%
 .\"
-.TH TU 4 10/8/81
+.TH TU 4 "27 July 1983"
 .UC 4
 .SH NAME
-tu \- console TU58 interface
+tu \- VAX-11/730 and VAX-11/750 TU58 console cassette interface
+.SH SYNOPSIS
+.B "options MRSP"
+(for VAX-11/750's with an MRSP prom)
 .SH DESCRIPTION
+The
+.I tu
+interface provides access to the VAX 11/730 and 11/750 TU58 console
+cassette drive(s).  
 .PP
-This is a simple interface to the TU58
-cassette tape unit, which is part of the console
-subsytem for VAX-11/750's.
-Access is given to the entire
-tape consisting of 1024 blocks of 512 bytes.
+The interface supports only block i/o to the TU58 cassettes.
+The devices are normally manipulated with the 
+.IR arff (8V)
+program using the ``f'' and ``m'' options.
 .PP
-The TU58 behaves like a disk but has only a block interface (no raw).
-The cassette is commonly accessed via the
-.IR arff (8)
-command, using the `m' flag.
+The device driver is automatically included when a
+system is configured to run on an 11/730 or 11/750.
+.PP
+The TU58 on an 11/750 uses the Radial Serial Protocol (RSP)
+to communicate with the cpu over a serial line.  This 
+protocol is inherently unreliable as it has no flow
+control measures built in.  On an 11/730 the Modified
+Radial Serial Protocol is used.  This protocol incorporates
+flow control measures which insure reliable data transfer
+between the cpu and the device.  Certain 11/750's have
+been modified to use the MRSP prom used in the 11/730.
+To reliably use the console TU58 on an 11/750 under UNIX,
+the MRSP prom is required.  For those 11/750's without
+an MRSP prom, an unreliable but often
+useable interface has been developed.
+This interface uses an assembly language ``pseudo-dma'' routine
+to minimize the receiver interrupt service latency.
+To include this code in
+the system, the configuration must \fBnot\fP specify the
+system will run on an 11/730 or use an MRSP prom.
+This unfortunately makes it impossible to configure a
+single system which will properly handle TU58's on both an 11/750
+and an 11/730 (unless both machines have MRSP proms).
 .SH FILES
-/dev/floppy
-.SH SEE ALSO
-arff(8)
+.nf
+.DT
+/dev/tu0
+/dev/tu1	(only on a VAX-11/730)
+.fi
+.SH "SEE ALSO"
+arff(8V)
 .SH DIAGNOSTICS
-Lots, mostly cryptic.  Read the driver.
+.BR "tu%d: no bp, active %d" .
+A transmission complete interrupt was received with no outstanding
+i/o request.  This indicates a hardware problem.
+.PP
+.BR "tu%d protocol error, state=%s, op=%x, cnt=%d, block=%d" .
+The driver entered an illegal state.  The information printed
+indicates the illegal state, operation currently being executed,
+the i/o count, and the block number on the cassette.
+.PP
+.BR "tu%d receive state error, state=%s, byte=%x" .
+The driver entered an illegal state in the receiver finite
+state machine.  The state is shown along with the control
+byte of the received packet.
+.PP
+.BR "tu%d: read stalled" .
+A timer watching the controller detected no interrupt for
+an extended period while an operation was outstanding.
+This usually indicates that one or more receiver interrupts
+were lost and the transfer is restarted (11/750 only).
+.PP
+.BR "tu%d: hard error bn%d, pk_mod %o" .
+The device returned a status code indicating a hard error. The
+actual error code is shown in octal. No retries are attempted
+by the driver.
 .SH BUGS
-The driver is very unreliable due to the nature of the TU58 interface.
-The TU58 should be used only when the system is in single-user mode,
-since it is often necessary to reboot the system to unhang the process
-accessing the TU58.
+The VAX-11/750 console interface without MRSP prom is unuseable
+while the system is multi-user; it should be used only with
+the system running single-user and, even then, with caution.
