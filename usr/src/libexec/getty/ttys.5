@@ -1,4 +1,4 @@
-.\"	@(#)ttys.5	6.3 (Berkeley) %G%
+.\"	@(#)ttys.5	6.4 (Berkeley) %G%
 .\"
 .TH TTYS 5  ""
 .AT 3
@@ -19,8 +19,7 @@ Fields are separated by tabs and/or spaces.
 Some fields may contain more than one word and should be enclosed
 in double quotes.
 Blank lines and comments can appear anywhere in the file; comments
-are delimited by `#' and new line. Unspecified fields default to
-the empty string or zero as appropriate.
+are delimited by `#' and new line. Unspecified fields default to null.
 The first field is the terminal's entry in the device directory, /dev.
 The second field of the file is the command to execute for the line,
 typically
@@ -28,7 +27,7 @@ typically
 which performs such tasks as baud-rate recognition, reading the login name,
 and calling
 .IR login (1).
-It can be, however, any command you wish, for example
+It can be, however, any desired command, for example
 the start up for a window system terminal emulator or some other
 daemon process, and can contain multiple words if quoted.
 The third field is the type of terminal normally connected to that
@@ -52,7 +51,8 @@ this line.  These flag fields should not be quoted.
 The string `window=' is followed by a quoted command
 string which
 .I init
-will execute.
+will execute before starting
+.IR getty .
 If the line ends in a comment, the comment is included in the
 .I ty_comment
 field of the ttyent structure.
@@ -60,13 +60,14 @@ field of the ttyent structure.
 Some examples:
 .PP
 .nf
-console "/etc/getty std.1200" vt100 on secure
-ttyd0 "/etc/getty d1200" dialup on
-ttyh0 "/etc/getty std.9600" hp2621-nl on
-ttyh1 "/etc/getty std.9600" plugboard on John's office
-ttyp0 none network
-ttyp1 none network off
-ttyv0 "/etc/xpty -L :0" vs100 on window="/etc/X 0"
+.ta \w'console\ 'u +\w'"/etc/getty std.9600"\ \ \ 'u +\w'hp2621-nl\ \ \ \ 'u +.7i
+console	"/etc/getty std.1200"	vt100	on secure
+ttyd0	"/etc/getty d1200"	dialup	on	# 555-1234
+ttyh0	"/etc/getty std.9600"	hp2621-nl	on	# 254MC
+ttyh1	"/etc/getty std.9600"	plugboard	on	# John's office
+ttyp0	none	network
+ttyp1	none	network	off
+ttyv0	"/usr/new/xterm -L :0"	vs100	on window="/usr/new/Xvs100 0"
 .fi
 .PP
 The first example permits root login on the console at 1200 baud,
@@ -74,12 +75,12 @@ the second allows dialup at 1200 baud without root login,
 the third and fourth allow login at 9600 baud with terminal types of
 "hp2621-nl" and "plugboard" respectively,
 the fifth and sixth line are examples of network pseudo ttys, which
-should not have getty enabled on them,
+should not have
+.I getty
+enabled on them,
 and the last example shows a terminal emulator and window system
 startup entry.
 .SH FILES
 /etc/ttys
 .SH "SEE ALSO"
-getttyent(3), gettytab(5), init(8), getty(8), login(1)
-.SH BUGS
-The parsing of the flags, window, and comment fields is stupid.
+login(1), getttyent(3), gettytab(5), init(8), getty(8)
