@@ -1,5 +1,5 @@
 #
-#	@(#)rc	5.5 (Berkeley) %G%
+#	@(#)rc	5.6 (Berkeley) %G%
 #
 
 HOME=/; export HOME
@@ -49,22 +49,6 @@ umount -a
 swapon -a						>/dev/console 2>&1
 mount -a						>/dev/console 2>&1
 
-			echo -n 'checking quotas:'	>/dev/console
-quotacheck -a -p					>/dev/console 2>&1
-			echo ' done.'			>/dev/console
-quotaon -a
-
-# build ps data base
-ps -U							>/dev/console 2>&1
-
-# clean up left-over files
-rm -f /etc/nologin
-rm -f /usr/spool/uucp/LCK.*
-rm -f /usr/spool/uucp/STST/*
-(cd /var/run; rm -rf *)
-
-chmod 666 /dev/tty[pqrs]*
-
 # set hostname, turn on network
 . /etc/netstart
 
@@ -78,6 +62,22 @@ if [ -d /var/crash ]; then
 	echo 'checking for core dump... '	>/dev/console
  	savecore /var/crash			>/dev/console 2>&1
 fi
+
+# clean up left-over files
+rm -f /etc/nologin
+rm -f /usr/spool/uucp/LCK.*
+rm -f /usr/spool/uucp/STST/*
+(cd /var/run; rm -rf *)
+
+			echo -n 'checking quotas:'	>/dev/console
+quotacheck -a -p					>/dev/console 2>&1
+			echo ' done.'			>/dev/console
+quotaon -a
+
+# build ps data base
+ps -U							>/dev/console 2>&1
+
+chmod 666 /dev/tty[pqrs]*
 
 # check the password temp/lock file
 if [ -f /etc/ptmp ]
