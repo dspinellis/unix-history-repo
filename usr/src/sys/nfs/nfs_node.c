@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.17 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -213,11 +213,9 @@ nfs_reclaim(vp)
 	 * Flush out any bio buffer or cmap references
 	 */
 	if (vp->v_type == VREG) {
-		if (vp->v_blockh) {
-			nfs_lock(vp);
-			vinvalbuf(vp, TRUE);
-			nfs_unlock(vp);
-		}
+		nfs_lock(vp);
+		vinvalbuf(vp, TRUE);
+		nfs_unlock(vp);
 		if (np->n_flag & NPAGEDON)
 			mpurge(vp);
 	}
