@@ -1,4 +1,4 @@
-/*	hp.c	6.6	84/08/29	*/
+/*	hp.c	6.7	85/03/19	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -34,6 +34,7 @@ int	hpbdebug;
 #include "dkbad.h"
 #include "ioctl.h"
 #include "uio.h"
+#include "syslog.h"
 
 #include "../vax/dkio.h"
 #include "mbareg.h"
@@ -260,6 +261,7 @@ struct	hpsoftc {
 #define	RM80	(hptypes[mi->mi_type] == MBDT_RM80)
 
 #define	MASKREG(reg)	((reg)&0xffff)
+#define HPWAIT(mi, addr) (((addr)->hpds & HPDS_DRY) || hpwait(mi))
 
 #ifdef INTRLVE
 daddr_t dkblock();
@@ -562,18 +564,20 @@ hpdtint(mi, mbsr)
 	register struct hpst *st;
 	register int er1, er2;
 	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
-	int retry = 0;
+	int retry = 0, i;
 
 	st = &hpst[mi->mi_type];
 	if (hpaddr->hpds&HPDS_ERR || mbsr&MBSR_EBITS) {
 		er1 = hpaddr->hper1;
 		er2 = hpaddr->hper2;
+		if (HPWAIT(mi, hpaddr) == 0)
+			goto hard;
 #ifdef HPDEBUG
 		if (hpdebug) {
 			int dc = hpaddr->hpdc, da = hpaddr->hpda;
 
-			printf("hperr: bp %x cyl %d blk %d as %o ",
-				bp, bp->b_cylin, bp->b_blkno,
+			printf("hperr: bp %x cyl %d blk %d pgdone %d as %o ",
+				bp, bp->b_cylin, bp->b_blkno, sc->sc_pgdone,
 				hpaddr->hpas&0xff);
 			printf("dc %x da %x\n",MASKREG(dc), MASKREG(da));
 			printf("errcnt %d ", mi->mi_tab.b_errcnt);
@@ -588,7 +592,7 @@ hpdtint(mi, mbsr)
 			er2 &= ~HPER2_BSE;
 		}
 		if (er1 & HPER1_WLE) {
-			printf("hp%d: write locked\n", dkunit(bp));
+			log(KERN_RECOV, "hp%d: write locked\n", dkunit(bp));
 			bp->b_flags |= B_ERROR;
 		} else if (sc->sc_hdr) {
 			goto hard;
@@ -623,10 +627,12 @@ hpdtint(mi, mbsr)
 hard:
 			if (bp->b_flags & B_BAD)
 				bp->b_blkno = sc->sc_badbn;
-			else
-				bp->b_blkno = dkblock(bp) + sc->sc_pgdone;
- 			if (hpaddr->hpof & HPOF_SSEI)
- 				bp->b_blkno++;
+			else {
+				bp->b_blkno = dkblock(bp) + btop(bp->b_bcount -
+				    MASKREG(-mi->mi_mba->mba_bcr));
+				if (er1 & (HPER1_DCK | HPER1_ECH))
+					bp->b_blkno--;
+			}
 			harderr(bp, "hp");
 			if (mbsr & (MBSR_EBITS &~ (MBSR_DTABT|MBSR_MBEXC)))
 				printf("mbsr=%b ", mbsr, mbsr_bits);
@@ -662,6 +668,7 @@ hard:
 			    hpaddr->hper2, HPER2_BITS);
 		}
 #endif
+	HPWAIT(mi, hpaddr);
 	switch (sc->sc_recal) {
 
 	case 1:
@@ -679,9 +686,7 @@ hard:
 			hpaddr->hpof =
 			    hp_offset[mi->mi_tab.b_errcnt & 017]|HPOF_FMT22;
 			hpaddr->hpcs1 = HP_OFFSET|HP_GO;
-			while ((hpaddr->hpds & (HPDS_DRY | HPDS_PIP)) !=
-			    HPDS_DRY)
-				DELAY(10);
+			HPWAIT(mi, hpaddr);
 			mbclrattn(mi);
 		}
 		return (MBD_RETRY);
@@ -692,8 +697,7 @@ hard:
 		 * bother with interrupts.
 		 */
 		hpaddr->hpcs1 = HP_RTC|HP_GO;
-		while ((hpaddr->hpds & (HPDS_DRY | HPDS_PIP)) != HPDS_DRY)
-			DELAY(10);
+		HPWAIT(mi, hpaddr);
 		mbclrattn(mi);
 	}
 	if ((bp->b_flags & B_BAD) && hpecc(mi, CONT))
@@ -706,6 +710,23 @@ hard:
 		hpaddr->hpcs1 = HP_RELEASE|HP_GO;
 	}
 	return (MBD_DONE);
+}
+
+/*
+ * Wait (for a bit) for a drive to come ready;
+ * returns nonzero on success.
+ */
+hpwait(mi)
+	register struct mba_device *mi;
+{
+	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
+	register i = 100000;
+
+	while ((hpaddr->hpds & HPDS_DRY) == 0 && --i)
+		DELAY(10);
+	if (i == 0)
+		printf("hp%d: intr, not ready\n", mi->mi_unit);
+	return (i);
 }
 
 hpread(dev, uio)
@@ -762,17 +783,15 @@ hpecc(mi, flag)
 	int bn, cn, tn, sn;
 	int bcr;
 
-	bcr = MASKREG(mbp->mba_bcr);
-	if (bcr)
-		bcr |= 0xffff0000;		/* sxt */
+	bcr = MASKREG(-mbp->mba_bcr);
 	if (bp->b_flags & B_BAD)
 		npf = bp->b_error;
 	else
-		npf = btop(bcr + bp->b_bcount);
+		npf = btop(bp->b_bcount - bcr);
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	bn = dkblock(bp) + npf;
+	bn = dkblock(bp);
 	cn = bp->b_cylin;
-	sn = bn%(st->nspc);
+	sn = bn%(st->nspc) + npf;
 	tn = sn/st->nsect;
 	sn %= st->nsect;
 	cn += tn/st->ntrak;
@@ -785,9 +804,10 @@ hpecc(mi, flag)
 		int bit, byte, mask;
 
 		npf--;		/* because block in error is previous block */
+		bn--;
 		if (bp->b_flags & B_BAD)
 			bn = sc->sc_badbn;
-		printf("hp%d%c: soft ecc sn%d\n", dkunit(bp),
+		log(KERN_RECOV, "hp%d%c: soft ecc sn%d\n", dkunit(bp),
 		    'a'+(minor(bp->b_dev)&07), bn);
 		mask = MASKREG(rp->hpec2);
 		i = MASKREG(rp->hpec1) - 1;		/* -1 makes 0 origin */
@@ -802,7 +822,7 @@ hpecc(mi, flag)
 			i++;
 			bit -= 8;
 		}
-		if ((bp->b_flags & B_BAD) || bcr == 0)
+		if (bcr == 0)
 			return (0);
 		npf++;
 		break;
