@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)bugfiler.8	6.1 (Berkeley) %G%
+.\"	@(#)bugfiler.8	6.2 (Berkeley) %G%
 .\"
 .TH BUGFILER 8 ""
 .UC 5
@@ -28,10 +28,12 @@ with a line such as the following in /usr/lib/aliases.
 It reads the message from the standard input or the named file, checks
 the format and returns mail acknowledging receipt or a message 
 indicating the proper format.  Valid reports are then summarized and
-filed in the appropriate folder.  Users can then log onto the system and
+filed in the appropriate folder; improperly formatted messages
+are filed in a folder named ``errors.''
+Program maintainers can then log onto the system and
 check the summary file for bugs that pertain to them.
-Bug reports are submitted in RFC822 format and
-must contain the following header lines:
+Bug reports should be submitted in RFC822 format and
+aremust contain the following header lines to be properly indexed:
 .PP
 .DT
 	Date: <date the report is received>
@@ -59,15 +61,27 @@ and a line appended to the summary file in the following format:
 	<folder name>/<message number>	<Index info>
 .br
 						<Subject info>
+.PP
+The bug report may also be redistributed according to the index.
+If the file
+.IR maildir /.redist
+exists, it is examined for a line beginning with the index name
+followed with a tab.
+The remainder of this line contains a comma-separated list of mail addresses
+which should receive copies of bugs with this index.
+The list may be continued onto multiple lines by ending each but the last
+with a backslash (`\e').
 .SH FILES
 .ta 2.5i
-/usr/new/lib/mh/deliver	mail delivery program
+/usr/lib/sendmail	mail delivery program
 .br
-/usr/new/lib/mh/unixtomh	converts unix mail format to mh format
+/usr/lib/unixtomh	converts unix mail format to mh format
 .br
 maildir/.ack	the message sent in acknowledgement
 .br
 maildir/.format	the message sent when format errors are detected
+.br
+maildir/.redist	the redistribution list
 .br
 maildir/summary	the summary file
 .br
