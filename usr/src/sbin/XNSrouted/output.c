@@ -42,8 +42,8 @@ sendmsg(dst, flags, ifp)
 	struct interface *ifp;
 {
 
-	(*afswitch[dst->sa_family].af_output)(ifp->int_ripsock[0], flags,
-		dst, sizeof (struct rip));
+	(*afswitch[dst->sa_family].af_output)
+		(flags, dst, sizeof (struct rip));
 	TRACE_OUTPUT(ifp, dst, sizeof (struct rip));
 }
 
@@ -61,7 +61,7 @@ supply(dst, flags, ifp)
 	register struct rthash *rh;
 	struct rthash *base = hosthash;
 	int doinghost = 1, size;
-	struct sockaddr_xn *sxn =  (struct sockaddr_xn *) dst;
+	struct sockaddr_ns *sns =  (struct sockaddr_ns *) dst;
 	int (*output)() = afswitch[dst->sa_family].af_output;
 
 	msg->rip_cmd = ntohs(RIPCMD_RESPONSE);
@@ -70,12 +70,12 @@ again:
 	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
 		size = (char *)n - (char *)msg;
 		if (size > MAXPACKETSIZE - sizeof (struct netinfo)) {
-			(*output)(ifp->int_ripsock[0], flags, dst, size);
+			(*output)(flags, dst, size);
 			TRACE_OUTPUT(ifp, dst, size);
 			n = msg->rip_nets;
 		}
-		sxn = (struct sockaddr_xn *)&rt->rt_dst;
-		xnnet(n->rip_dst) = xnnet(((struct sockaddr_xn *)&rt->rt_dst)->sxn_addr.xn_net);
+		sns = (struct sockaddr_ns *)&rt->rt_dst;
+		xnnet(n->rip_dst[0]) = ns_netof(sns->sns_addr);
 		n->rip_metric = htons(min(rt->rt_metric + 1, HOPCNT_INFINITY));
 		n++;
 	}
@@ -86,7 +86,7 @@ again:
 	}
 	if (n != msg->rip_nets) {
 		size = (char *)n - (char *)msg;
-		(*output)(ifp->int_ripsock[0], flags, dst, size);
+		(*output)(flags, dst, size);
 		TRACE_OUTPUT(ifp, dst, size);
 	}
 }

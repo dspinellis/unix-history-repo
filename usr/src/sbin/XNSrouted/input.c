@@ -11,11 +11,13 @@ struct sockaddr *
 xns_nettosa(net)
 u_short *net;
 {
-	static struct sockaddr_xn sxn;
+	static struct sockaddr_ns sxn;
+	extern char ether_broadcast_addr[6];
 	
-	bzero(&sxn, sizeof (struct sockaddr_xn));
-	sxn.sxn_family = AF_XNS;
-	xnnet(sxn.sxn_addr.xn_net) = xnnet(net);
+	bzero(&sxn, sizeof (struct sockaddr_ns));
+	sxn.sns_family = AF_NS;
+	xnnet(sxn.sns_addr.x_net) = xnnet(net[0]);
+	sxn.sns_addr.x_host = *(union ns_host *)ether_broadcast_addr;
 	return( (struct sockaddr *)&sxn);
 	
 }
@@ -34,20 +36,11 @@ rip_input(from, size)
 	struct afswitch *afp;
 
 	
+	ifp = 0;
 	TRACE_INPUT(ifp, from, size);
 	if (from->sa_family >= AF_MAX)
 		return;
 	afp = &afswitch[from->sa_family];
-	
-	/* are we talking to ourselves? */
-	if (ifp = if_ifwithaddr(from)) {
-		rt = rtfind(from);
-		if (rt == 0 || (rt->rt_state & RTS_INTERFACE) == 0)
-			addrouteforif(ifp);
-		else
-			rt->rt_timer = 0;
-		return;
-	}
 	
 	size -= sizeof (u_short)	/* command */;
 	n = msg->rip_nets;
@@ -67,10 +60,11 @@ rip_input(from, size)
 			 * A single entry with rip_dst == DSTNETS_ALL and
 			 * metric ``infinity'' means ``all routes''.
 			 */
-			if (ntohl(xnnet(n->rip_dst)) == DSTNETS_ALL &&
-		            ntohs(n->rip_metric) == HOPCNT_INFINITY && size == 0) {
-				if(ifp = if_ifwithnet(from))
-				    supply(from, 0, ifp);
+			if (ntohl(xnnet(n->rip_dst[0])) == DSTNETS_ALL &&
+		            ntohs(n->rip_metric) == HOPCNT_INFINITY &&
+			    size == 0) {
+				ifp = if_ifwithnet(from);
+				supply(from, 0, ifp);
 				return;
 			}
 			/*
@@ -86,7 +80,7 @@ rip_input(from, size)
 			newsize += sizeof (u_short);
 			/* should check for if with dstaddr(from) first */
 			if(ifp = if_ifwithnet(from))
-			    (*afp->af_output)(ifp->int_ripsock[0], 0, from, newsize);
+			    (*afp->af_output)(0, from, newsize);
 		}
 		return;
 
@@ -94,6 +88,16 @@ rip_input(from, size)
 		/* verify message came from a router */
 		if ((*afp->af_portmatch)(from) == 0)
 			return;
+		(*afp->af_canon)(from);
+		/* are we talking to ourselves? */
+		if (ifp = if_ifwithaddr(from)) {
+			rt = rtfind(from);
+			if (rt == 0 || (rt->rt_state & RTS_INTERFACE) == 0)
+				addrouteforif(ifp);
+			else
+				rt->rt_timer = 0;
+			return;
+		}
 		/* update timer for interface on which the packet arrived */
 		if ((rt = rtfind(from)) && (rt->rt_state & RTS_INTERFACE))
 			rt->rt_timer = 0;
@@ -102,7 +106,7 @@ rip_input(from, size)
 				break;
 			if ((unsigned) ntohs(n->rip_metric) > HOPCNT_INFINITY)
 				continue;
-			rt = rtlookup(xns_nettosa(n->rip_dst));
+			rt = rtfind(xns_nettosa(n->rip_dst));
 			if (rt == 0) {
 				rtadd(xns_nettosa(n->rip_dst), from, ntohs(n->rip_metric), 0);
 				continue;

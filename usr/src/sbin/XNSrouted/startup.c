@@ -9,147 +9,115 @@ static char rcsid[] = "$Header$";
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <nlist.h>
+#include <syslog.h>
 
 struct	interface *ifnet;
-int	kmem = -1;
 int	lookforinterfaces = 1;
 int	performnlist = 1;
 int	externalinterfaces = 0;		/* # of remote and local interfaces */
 int	gateway = 0;		/* 1 if we are a gateway to parts beyond */
 char ether_broadcast_addr[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
-struct nlist nl[] = {
-#define	N_IFNET		0
-	{ "_ifnet" },
-	{ "" },
-};
 
 /*
- * Probe the kernel through /dev/kmem to find the network
- * interfaces which have configured themselves.  If the
- * interface is present but not yet up (for example an
+ * Find the network interfaces which have configured themselves.
+ * If the interface is present but not yet up (for example an
  * ARPANET IMP), set the lookforinterfaces flag so we'll
  * come back later and look again.
  */
 ifinit()
 {
-	struct interface *ifp;
-	struct ifnet ifs, *next;
-	char name[32], *cp, *index();
-	int j,iffound;
-	struct sockaddr ifaddr, ifdstaddr;
-	struct sockaddr_xn *sxn;
+	struct interface ifs, *ifp;
+	int s, n;
+	char buf[BUFSIZ];
+        struct ifconf ifc;
+        struct ifreq ifreq, *ifr;
+	u_long i;
 
-	if (performnlist) {
-		nlist("/vmunix", nl);
-		if (nl[N_IFNET].n_value == 0) {
-			printf("ifnet: not in namelist\n");
-			goto bad;
-		}
-		performnlist = 0;
+	if ((s = socket(AF_NS, SOCK_DGRAM, 0)) < 0) {
+		syslog(LOG_ERR, "socket: %m");
+		exit(1);
 	}
-	if (kmem < 0) {
-		kmem = open("/dev/kmem", 0);
-		if (kmem < 0) {
-			perror("/dev/kmem");
-			goto bad;
-		}
-	}
-	if (lseek(kmem, (long)nl[N_IFNET].n_value, 0) == -1 ||
-	    read(kmem, (char *)&next, sizeof (next)) != sizeof (next)) {
-		printf("ifnet: error reading kmem\n");
-		goto bad;
-	}
+        ifc.ifc_len = sizeof (buf);
+        ifc.ifc_buf = buf;
+        if (ioctl(s, SIOCGIFCONF, (char *)&ifc) < 0) {
+                syslog(LOG_ERR, "ioctl (get interface configuration)");
+		close(s);
+                return (0);
+        }
+        ifr = ifc.ifc_req;
 	lookforinterfaces = 0;
-	while (next) {
-		if (lseek(kmem, (long)next, 0) == -1 ||
-		    read(kmem, (char *)&ifs, sizeof (ifs)) != sizeof (ifs)) {
-			perror("read");
-			goto bad;
-		}
-		next = ifs.if_next;
-		if ((ifs.if_flags & IFF_UP) == 0) {
+        for (n = ifc.ifc_len / sizeof (struct ifreq); n > 0; n--, ifr++) {
+		bzero((char *)&ifs, sizeof(ifs));
+		ifs.int_addr = ifr->ifr_addr;
+		ifreq = *ifr;
+                if (ioctl(s, SIOCGIFFLAGS, (char *)&ifreq) < 0) {
+                        syslog(LOG_ERR, "ioctl (get interface flags)");
+                        continue;
+                }
+		ifs.int_flags = ifreq.ifr_flags | IFF_INTERFACE;
+		if ((ifs.int_flags & IFF_UP) == 0 ||
+		    ifr->ifr_addr.sa_family == AF_UNSPEC) {
 			lookforinterfaces = 1;
 			continue;
 		}
-		/* Only interested in af XNS */
-		iffound = 0;
-		for( j = 0; j < NIFADDR; j++) {
-		    if (ifs.if_addr[j].sa_family != AF_XNS)
-		    	continue;
-		    /* already known to us? */
-		    if (if_ifwithaddr(&ifs.if_addr[j]))
-			continue; 
-		    ifaddr = ifs.if_addr[j];
-		    ifdstaddr = ifs.if_dstaddr[j];
-		    iffound++;
+		/* already known to us? */
+		if (if_ifwithaddr(&ifs.int_addr))
+			continue;
+		/* argh, this'll have to change sometime */
+		if (ifs.int_addr.sa_family != AF_NS)
+			continue;
+                if (ifs.int_flags & IFF_POINTOPOINT) {
+                        if (ioctl(s, SIOCGIFDSTADDR, (char *)&ifreq) < 0) {
+                                syslog(LOG_ERR, "ioctl (get dstaddr)");
+                                continue;
+			}
+			ifs.int_dstaddr = ifreq.ifr_dstaddr;
 		}
-		if (!iffound) continue;
-		
+                if (ifs.int_flags & IFF_BROADCAST) {
+                        if (ioctl(s, SIOCGIFBRDADDR, (char *)&ifreq) < 0) {
+                                syslog(LOG_ERR, "ioctl (get broadaddr)");
+                                continue;
+                        }
+			ifs.int_broadaddr = ifreq.ifr_broadaddr;
+		}
+		/* no one cares about software loopback interfaces */
+		if (strcmp(ifr->ifr_name,"lo0")==0)
+			continue;
 		ifp = (struct interface *)malloc(sizeof (struct interface));
 		if (ifp == 0) {
 			printf("routed: out of memory\n");
 			break;
 		}
+		*ifp = ifs;
 		/*
 		 * Count the # of directly connected networks
 		 * and point to point links which aren't looped
 		 * back to ourself.  This is used below to
 		 * decide if we should be a routing ``supplier''.
 		 */
-		if ((ifs.if_flags & IFF_POINTOPOINT) == 0 ||
-		    if_ifwithaddr(ifdstaddr) == 0)
+		if ((ifs.int_flags & IFF_POINTOPOINT) == 0 ||
+		    if_ifwithaddr(&ifs.int_dstaddr) == 0)
 			externalinterfaces++;
-		if ((ifs.if_flags & IFF_LOCAL) == 0 && gateway == 0) {
-			/*
-			 * If we have an interface to a non-local network,
-			 * we are a candidate for use as a gateway.
-			 */
-			gateway = 1;
-		}
-		lseek(kmem, ifs.if_name, 0);
-		read(kmem, name, sizeof (name));
-		name[sizeof (name) - 1] = '\0';
-		cp = index(name, '\0');
-		*cp++ = ifs.if_unit + '0';
-		*cp = '\0';
-		ifp->int_name = malloc(strlen(name) + 1);
+		ifp->int_name = malloc(strlen(ifr->ifr_name) + 1);
 		if (ifp->int_name == 0) {
 			fprintf(stderr, "routed: ifinit: out of memory\n");
 			goto bad;		/* ??? */
 		}
-		strcpy(ifp->int_name, name);
-		ifp->int_flags = (ifs.if_flags & 0x1ff) | IFF_INTERFACE;
-		ifp->int_addr = ifaddr;
-		/* this works because broadaddr overlaps dstaddr */
-		ifp->int_broadaddr = ifdstaddr;
+		strcpy(ifp->int_name, ifr->ifr_name);
 		ifp->int_metric = 0;
 		ifp->int_next = ifnet;
-		/* 
-		 * Now arrange for a socket to listen on.
-		 * This nonsense is necessary because of the stupidity
-		 * of the raw socket code.
-		 */
-		/* listen on our own address... */
-		sxn = (struct sockaddr_xn *) &ifp->int_addr;
-		sxn->sxn_addr.xn_socket = htons(IDPPORT_RIF);
-		ifp->int_ripsock[0] = getsocket(AF_XNS, SOCK_RAW, IDPPROTO_RIF, sxn);
-		/* AND on our broadcast address if we have one */
-		if (ifp->int_flags & IFF_BROADCAST) {
-		    sxn = (struct sockaddr_xn *)  &ifp->int_broadaddr ;
-		    sxn->sxn_addr.xn_socket = htons(IDPPORT_RIF);
-		    ifp->int_ripsock[1] = getsocket(AF_XNS, SOCK_RAW, IDPPROTO_RIF, sxn);
-		}
 		ifnet = ifp;
 		traceinit(ifp);
 		addrouteforif(ifp);
 	}
 	if (externalinterfaces > 1 && supplier < 0)
 		supplier = 1;
+	close(s);
 	return;
 bad:
 	sleep(60);
-	for(j = 3; j < 32; j++) close(j);
+	close(s);
 	execv("/etc/XNSrouted", argv0);
 	_exit(0177);
 }
@@ -157,7 +125,7 @@ bad:
 addrouteforif(ifp)
 	struct interface *ifp;
 {
-	struct sockaddr_xn net;
+	struct sockaddr_ns net;
 	struct sockaddr *dst;
 	int state, metric;
 	struct rt_entry *rt;
@@ -165,16 +133,12 @@ addrouteforif(ifp)
 	if (ifp->int_flags & IFF_POINTOPOINT)
 		dst = &ifp->int_dstaddr;
 	else {
-		bzero(&net, sizeof (net));
-		net.sxn_family = AF_XNS;
-		xnnet(net.sxn_addr.xn_net) = xnnet(((struct sockaddr_xn *)(&ifp->int_addr))->sxn_addr.xn_net);
-		dst = (struct sockaddr *)&net;
+		dst = &ifp->int_broadaddr;
 	}
 	rt = rtlookup(dst);
-	rtadd(dst, &ifp->int_addr, ifp->int_metric,
-		ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE));
 	if (rt)
 		rtdelete(rt);
+	rtadd(dst, &ifp->int_addr, ifp->int_metric,
+		ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE));
 }
-
 

@@ -14,7 +14,7 @@ static char rcsid[] = "$Header$";
 #endif
 
 int	install = !DEBUG;		/* if 1 call kernel */
-static  int	s;			/* for routing table ioctl's */
+int	delete = 1;
 /*
  * Lookup dst in the tables for an exact match.
  */
@@ -76,11 +76,10 @@ again:
 		if (doinghost) {
 			if (equal(&rt->rt_dst, dst))
 				return (rt);
-		} else {
-			if (rt->rt_dst.sa_family == af &&
-			    (*match)(&rt->rt_dst, dst))
-				return (rt);
 		}
+		if (rt->rt_dst.sa_family == af &&
+		    (*match)(&rt->rt_dst, dst))
+			return (rt);
 	}
 	if (doinghost) {
 		doinghost = 0;
@@ -171,6 +170,7 @@ rtchange(rt, gate, metric)
 	if (doioctl && install) {
 		if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
 			perror("SIOCADDRT");
+		if (delete)
 		if (ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
 			perror("SIOCDELRT");
 	}
@@ -181,7 +181,7 @@ rtdelete(rt)
 {
 
 	TRACE_ACTION(DELETE, rt);
-	if (install && ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
+	if (install && delete && ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
 		perror("SIOCDELRT");
 	remque(rt);
 	free((char *)rt);
@@ -195,9 +195,4 @@ rtinit()
 		rh->rt_forw = rh->rt_back = (struct rt_entry *)rh;
 	for (rh = hosthash; rh < &hosthash[ROUTEHASHSIZ]; rh++)
 		rh->rt_forw = rh->rt_back = (struct rt_entry *)rh;
-		
-	if ((s = socket(AF_XNS, SOCK_RAW, IDPPROTO_RAW)) < 0) {
-		perror("socket");
-		exit(1);
-	}
 }

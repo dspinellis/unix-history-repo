@@ -55,8 +55,8 @@ again:
 				if (!supplier || timetobroadcast)
 					continue;
 				msg->rip_cmd = htons(RIPCMD_RESPONSE);
-				xnnet(msg->rip_nets[0].rip_dst) = 
-					htonl(xnnet(((struct sockaddr_xn *)&rt->rt_dst)->sxn_addr.xn_net));
+				xnnet(msg->rip_nets[0].rip_dst[0]) = 
+					ns_netof(satons_addr(rt->rt_dst));
 				msg->rip_nets[0].rip_metric =
 				   	htons(min(rt->rt_metric+1, HOPCNT_INFINITY));
 				toall(sendmsg);

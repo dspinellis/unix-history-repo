@@ -25,31 +25,34 @@ int	xnnet_hash(), xnnet_netmatch(), xnnet_output(),
 struct afswitch afswitch[AF_MAX] =
 	{ NIL, NIL, NIL, NIL, NIL, NIL, XNSNET, NIL, NIL, NIL, NIL };
 
-struct sockaddr_xn xnnet_default = { AF_XNS };
+struct sockaddr_ns xnnet_default = { AF_NS };
 
-xnnet_hash(sxn, hp)
-	register struct sockaddr_xn *sxn;
+xnnet_hash(sns, hp)
+	register struct sockaddr_ns *sns;
 	struct afhash *hp;
 {
-	hp->afh_nethash = xnnet(sxn->sxn_addr.xn_net);
-	hp->afh_hosthash = *(int *)sxn->sxn_addr.xn_host;
+	register long hash = 0;
+	register u_short *s = sns->sns_addr.x_host.s_host;
+	hp->afh_nethash = xnnet(sns->sns_addr.x_net);
+	hash = *s++; hash <<= 8; hash += *s++; hash <<= 8; hash += *s;
+	hp->afh_hosthash = hash;
 }
 
 xnnet_netmatch(sxn1, sxn2)
-	struct sockaddr_xn *sxn1, *sxn2;
+	struct sockaddr_ns *sxn1, *sxn2;
 {
 
-	return (xnnet(sxn1->sxn_addr.xn_net) == xnnet(sxn2->sxn_addr.xn_net));
+	return (xnnet(sxn1->sns_addr.x_net) == xnnet(sxn2->sns_addr.x_net));
 }
 
 /*
  * Verify the message is from the right port.
  */
-xnnet_portmatch(sxn)
-	register struct sockaddr_xn *sxn;
+xnnet_portmatch(sns)
+	register struct sockaddr_ns *sns;
 {
 	
-	return (ntohs(sxn->sxn_addr.xn_socket) == IDPPORT_RIF );
+	return (ntohs(sns->sns_addr.x_port) == IDPPORT_RIF );
 }
 
 
@@ -59,21 +62,21 @@ xnnet_portmatch(sxn)
 #ifdef DEBUG
 int do_output = 0;
 #endif
-xnnet_output(s, flags, sxn, size)
-	int s, flags;
-	struct sockaddr_xn *sxn;
+xnnet_output(flags, sns, size)
+	int flags;
+	struct sockaddr_ns *sns;
 	int size;
 {
-	struct sockaddr_xn dst;
+	struct sockaddr_ns dst;
 
-	dst = *sxn;
-	sxn = &dst;
-	if (sxn->sxn_addr.xn_socket == 0)
-		sxn->sxn_addr.xn_socket = htons(IDPPORT_RIF);
+	dst = *sns;
+	sns = &dst;
+	if (sns->sns_addr.x_port == 0)
+		sns->sns_addr.x_port = htons(IDPPORT_RIF);
 #ifdef DEBUG
 	if(do_output || ntohs(msg->rip_cmd) == RIPCMD_REQUEST)
 #endif	
-	if (sendto(s, msg, size, flags, sxn, sizeof (*sxn)) < 0)
+	if (sendto(s, msg, size, flags, sns, sizeof (*sns)) < 0)
 		perror("sendto");
 }
 
@@ -81,8 +84,8 @@ xnnet_output(s, flags, sxn, size)
  * Return 1 if the address is believed
  *  -- THIS IS A KLUDGE.
  */
-xnnet_checkhost(sxn)
-	struct sockaddr_xn *sxn;
+xnnet_checkhost(sns)
+	struct sockaddr_ns *sns;
 {
 	return (1);
 }
@@ -91,21 +94,22 @@ xnnet_checkhost(sxn)
  * Return 1 if the address is
  * for a host, 0 for a network.
  */
-xnnet_ishost(sxn)
-	struct sockaddr_xn *sxn;
+xnnet_ishost(sns)
+struct sockaddr_ns *sns;
 {
-	register int i;
+	register u_short *s = sns->sns_addr.x_host.s_host;
 
-	for (i = 0; i < 6; i++)
-		if (sxn->sxn_addr.xn_host[i] != 0) return (1);
-	return (0);
+	if ((s[0]==0xffff) && (s[1]==0xffff) && (s[2]==0xffff))
+		return (0);
+	else
+		return (1);
 }
 
-xnnet_canon(sxn)
-	struct sockaddr_xn *sxn;
+xnnet_canon(sns)
+	struct sockaddr_ns *sns;
 {
 
-	sxn->sxn_addr.xn_socket = 0;
+	sns->sns_addr.x_port = 0;
 }
 
 /*ARGSUSED*/
