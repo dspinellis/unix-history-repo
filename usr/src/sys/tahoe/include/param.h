@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.5 (Berkeley) %G%
+ *	@(#)param.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -88,6 +88,13 @@
 #define	MAXDKEY	255		/* maximal allowed data key */
 #define	NCKEY	(MAXCKEY+1)	/* # code keys, including 0 (reserved) */
 #define	NDKEY	(MAXDKEY+1)	/* # data keys, including 0 (reserved) */
+
+/*
+ * Size of kernel malloc arena in CLBYTES-sized logical pages
+ */ 
+#ifndef NKMEMCLUSTERS
+#define	NKMEMCLUSTERS	(512*1024/CLBYTES)
+#endif
 
 /*
  * Some macros for units conversion
