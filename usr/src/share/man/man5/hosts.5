@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)hosts.5	6.1 (Berkeley) %G%
+.\"	@(#)hosts.5	6.2 (Berkeley) %G%
 .\"
 .TH HOSTS 5  ""
 .UC 5
@@ -43,10 +43,16 @@ from the Internet address manipulation library,
 Host names may contain any printable
 character other than a field delimiter, newline,
 or comment character.
+.PP
+When using the name server this file is used as a backup for when 
+.IR named (8)
+is not running.
+For the name server it is suggested that only a few addresses
+be included in this file.
+These include  address for the local interfaces that 
+.IR ifconfig (8C)
+needs at boot time and a few machines on the local network.
 .SH FILES
 /etc/hosts
 .SH "SEE ALSO"
-gethostent(3N)
-.SH BUGS
-A name server should be used instead of a static file.
-A binary indexed file format should be available for fast access.
+gethostent(3N), ifconfig(8C), named(8), Name Server Operations Guide for BIND
