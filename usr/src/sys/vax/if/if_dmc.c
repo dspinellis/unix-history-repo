@@ -1,26 +1,20 @@
-/*	if_dmc.c	6.3	84/09/27	*/
+/*	if_dmc.c	6.4	84/12/20	*/
 
 #include "dmc.h"
 #if NDMC > 0
-#define printd if(dmcdebug)printf
-int dmcdebug = 0;
+
 /*
  * DMC11 device driver, internet version
  *
- *	Bill Nesheim	(bill@cornell.arpa or {vax135,uw-beaver,ihnp4}!bill)
+ *	Bill Nesheim
  *	Cornell University
- *	Department of Computer Science
  *
- *	Based loosly on 4.2BSD release
- *	The UNIBUS support routines were taken from Lou Salkind's DEUNA driver
- *
- * TO DO:
- *	generalize unibus routines
- *	add timeout to mark interface down when other end of link dies
- *	figure out better way to check for completed buffers
- *	(not critical with DMC, only 7 bufs, but may cause problems
- *		on a DMR)
+ *	Lou Salkind
+ *	New York University
  */
+
+/* #define DEBUG	/* for base table dump on fatal error */
+
 #include "../machine/pte.h"
 
 #include "param.h"
@@ -39,6 +33,8 @@ int dmcdebug = 0;
 #include "../net/route.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
+#include "../netinet/ip.h"
+#include "../netinet/ip_var.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
@@ -46,6 +42,13 @@ int dmcdebug = 0;
 #include "if_dmc.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
+
+#include "../h/time.h"
+#include "../h/kernel.h"
+
+int	dmctimer;			/* timer started? */
+int	dmc_timeout = 8;		/* timeout value */
+int	dmcwatch();
 
 /*
  * Driver information for auto-configuration stuff.
@@ -57,17 +60,19 @@ u_short	dmcstd[] = { 0 };
 struct	uba_driver dmcdriver =
 	{ dmcprobe, 0, dmcattach, 0, dmcstd, "dmc", dmcinfo };
 
-/* as long as we use clists for command queues, we only have 28 bytes to use! */
-/* DMC-11 only has 7 buffers; DMR-11 has 64 */
 #define NRCV 7
-#define NXMT (NRCV - 2)	/* avoid running out of buffers on recv end */ 
+#define NXMT 3 
 #define NTOT (NRCV + NXMT)
+#define NCMDS	(NTOT+4)	/* size of command queue */
+
+#define printd if(dmcdebug)printf
+int dmcdebug = 0;
 
 /* error reporting intervals */
 #define DMC_RPNBFS	50
 #define DMC_RPDSC	1
-#define DMC_RPTMO	20
-#define DMC_RPDCK	5
+#define DMC_RPTMO	10
+#define DMC_RPDCK	10
 
 struct  dmc_command {
 	char	qp_cmd;		/* command */
@@ -78,14 +83,15 @@ struct  dmc_command {
 
 /*
  * The dmcuba structures generalize the ifuba structure
- * to an arbitrary number of recieve and transmit buffers.
+ * to an arbitrary number of receive and transmit buffers.
  */
 struct	ifxmt {
-	struct	ifrw x_ifrw;		/* mapping imfo */
+	struct	ifrw x_ifrw;		/* mapping info */
 	struct	pte x_map[IF_MAXNUBAMR];	/* output base pages */
 	short 	x_xswapd;		/* mask of clusters swapped */
 	struct	mbuf *x_xtofree;	/* pages being dma'd out */
 };
+
 struct	dmcuba {
 	short	ifu_uban;		/* uba number */
 	short	ifu_hlen;		/* local net header length */
@@ -104,7 +110,7 @@ struct dmcbufs {
 #define	DBUF_OURS	0	/* buffer is available */
 #define	DBUF_DMCS	1	/* buffer claimed by somebody */
 #define	DBUF_XMIT	4	/* transmit buffer */
-#define	DBUF_RCV	8	/* recieve buffer */
+#define	DBUF_RCV	8	/* receive buffer */
 
 struct mbuf *dmc_get();
 
@@ -125,8 +131,9 @@ struct dmc_softc {
 	short	sc_oused;		/* output buffers currently in use */
 	short	sc_iused;		/* input buffers given to DMC */
 	short	sc_flag;		/* flags */
+	int	sc_nticks;		/* seconds since last interrupt */
 	struct	ifnet sc_if;		/* network-visible interface */
-	struct	dmcbufs sc_rbufs[NRCV];	/* recieve buffer info */
+	struct	dmcbufs sc_rbufs[NRCV];	/* receive buffer info */
 	struct	dmcbufs sc_xbufs[NXMT];	/* transmit buffer info */
 	struct	dmcuba sc_ifuba;	/* UNIBUS resources */
 	int	sc_ubinfo;		/* UBA mapping info for base table */
@@ -136,7 +143,7 @@ struct dmc_softc {
 #define sc_nobuf sc_errors[2]
 #define sc_disc  sc_errors[3]
 	/* command queue stuff */
-	struct	dmc_command sc_cmdbuf[NTOT+3];
+	struct	dmc_command sc_cmdbuf[NCMDS];
 	struct	dmc_command *sc_qhead;	/* head of command queue */
 	struct	dmc_command *sc_qtail;	/* tail of command queue */
 	struct	dmc_command *sc_qactive;	/* command in progress */
@@ -146,11 +153,13 @@ struct dmc_softc {
 } dmc_softc[NDMC];
 
 /* flags */
-#define	DMC_ALLOC	01	/* unibus resources allocated */
-#define	DMC_BMAPPED	02	/* base table mapped */
+#define DMC_ALLOC	01		/* unibus resources allocated */
+#define DMC_BMAPPED	02		/* base table mapped */
+#define DMC_RESTART	04		/* software restart in progress */
+#define DMC_ACTIVE	08		/* device active */
 
-struct	dmc_base {
-	short	d_base[128];	/* DMC base table */
+struct dmc_base {
+	short	d_base[128];		/* DMC base table */
 } dmc_base[NDMC];
 
 /* queue manipulation macros */
@@ -187,11 +196,14 @@ dmcprobe(reg)
 	addr->bsel1 = DMC_MCLR;
 	for (i = 100000; i && (addr->bsel1 & DMC_RUN) == 0; i--)
 		;
-	if ((addr->bsel1 & DMC_RUN) == 0)
+	if ((addr->bsel1 & DMC_RUN) == 0) {
+		printf("dmcprobe: can't start device\n" );
 		return (0);
-	/* MCLR is self clearing */
+	}
 	addr->bsel0 = DMC_RQI|DMC_IEI;
-	DELAY(100000);
+	/* let's be paranoid */
+	addr->bsel0 |= DMC_RQI|DMC_IEI;
+	DELAY(1000000);
 	addr->bsel1 = DMC_MCLR;
 	for (i = 100000; i && (addr->bsel1 & DMC_RUN) == 0; i--)
 		;
@@ -207,7 +219,6 @@ dmcattach(ui)
 	register struct uba_device *ui;
 {
 	register struct dmc_softc *sc = &dmc_softc[ui->ui_unit];
-	register struct dmc_command *qp;
 
 	sc->sc_if.if_unit = ui->ui_unit;
 	sc->sc_if.if_name = "dmc";
@@ -219,15 +230,11 @@ dmcattach(ui)
 	sc->sc_if.if_flags = IFF_POINTOPOINT;
 	sc->sc_ifuba.ifu_flags = UBA_CANTWAIT;
 
-	/* set up command queues */
-	sc->sc_qfreeh = sc->sc_qfreet =
-		sc->sc_qhead = sc->sc_qtail = sc->sc_qactive =
-		(struct dmc_command *) 0;
-	/* set up free command buffer list */
-	for (qp = &sc->sc_cmdbuf[0]; qp < &sc->sc_cmdbuf[NTOT+2]; qp++ ) {
-		QUEUE_AT_HEAD( qp, sc->sc_qfreeh, sc->sc_qfreet);
-	}
 	if_attach(&sc->sc_if);
+	if (dmctimer == 0) {
+		dmctimer = 1;
+		timeout(dmcwatch, (caddr_t) 0, hz);
+	}
 }
 
 /*
@@ -244,7 +251,7 @@ dmcreset(unit, uban)
 	    ui->ui_ubanum != uban)
 		return;
 	printf(" dmc%d", unit);
-	sc->sc_flag = 0;	/* previous unibus resources no longer valid */
+	sc->sc_flag = 0;
 	dmcinit(unit);
 }
 
@@ -261,10 +268,11 @@ dmcinit(unit)
 	register struct ifrw *ifrw;
 	register struct ifxmt *ifxp;
 	register struct dmcbufs *rp;
+	register struct dmc_command *qp;
 	int base;
 	struct sockaddr_in *sin;
+	int s;
 
-	printd("dmcinit\n");
 	addr = (struct dmcdevice *)ui->ui_addr;
 
 	sin = (struct sockaddr_in *) &ifp->if_addr;
@@ -280,16 +288,16 @@ dmcinit(unit)
 		return;
 	}
 	/* map base table */
-	if ((sc->sc_flag&DMC_BMAPPED) == 0) {
+	if ((sc->sc_flag & DMC_BMAPPED) == 0) {
 		sc->sc_ubinfo = uballoc(ui->ui_ubanum,
 			(caddr_t)&dmc_base[unit], sizeof (struct dmc_base), 0);
 		sc->sc_flag |= DMC_BMAPPED;
 	}
 	/* initialize UNIBUS resources */
 	sc->sc_iused = sc->sc_oused = 0;
-	if ((sc->sc_flag&DMC_ALLOC) == 0) {
-		if (dmc_ubainit(&sc->sc_ifuba, ui->ui_ubanum, 0,
-				(int)btoc(DMCMTU)) == 0) {
+	if ((sc->sc_flag & DMC_ALLOC) == 0) {
+		if (dmc_ubainit(&sc->sc_ifuba, ui->ui_ubanum,
+		    sizeof(struct dmc_header), (int)btoc(DMCMTU)) == 0) {
 			printf("dmc%d: can't initialize\n", unit);
 			ifp->if_flags &= ~IFF_UP;
 			return;
@@ -298,13 +306,12 @@ dmcinit(unit)
 	}
 
 	/* initialize buffer pool */
-	/* recieves */
+	/* receives */
 	ifrw = &sc->sc_ifuba.ifu_r[0];
 	for (rp = &sc->sc_rbufs[0]; rp < &sc->sc_rbufs[NRCV]; rp++) {
 		rp->ubinfo = ifrw->ifrw_info & 0x3ffff;
-		rp->cc = DMCMTU;
+		rp->cc = DMCMTU + sizeof (struct dmc_header);
 		rp->flags = DBUF_OURS|DBUF_RCV;
-		printd("rcv: 0x%x\n",rp->ubinfo);
 		ifrw++; 
 	}
 	/* transmits */
@@ -313,40 +320,51 @@ dmcinit(unit)
 		rp->ubinfo = ifxp->x_ifrw.ifrw_info & 0x3ffff;
 		rp->cc = 0;
 		rp->flags = DBUF_OURS|DBUF_XMIT;
-		printd("xmit: 0x%x\n",rp->ubinfo);
 		ifxp++; 
 	}
+
+	/* set up command queues */
+	sc->sc_qfreeh = sc->sc_qfreet
+		 = sc->sc_qhead = sc->sc_qtail = sc->sc_qactive =
+		(struct dmc_command *)0;
+	/* set up free command buffer list */
+	for (qp = &sc->sc_cmdbuf[0]; qp < &sc->sc_cmdbuf[NCMDS]; qp++) {
+		QUEUE_AT_HEAD(qp, sc->sc_qfreeh, sc->sc_qfreet);
+	}
+
 	/* base in */
 	base = sc->sc_ubinfo & 0x3ffff;
-	printd("  base 0x%x\n", base);
-	dmcload(sc, DMC_BASEI, base, (base>>2)&DMC_XMEM);
+	dmcload(sc, DMC_BASEI, base, (base>>2) & DMC_XMEM);
 	/* specify half duplex operation, flags tell if primary */
 	/* or secondary station */
 	if (ui->ui_flags == 0)
-		       /* use DDMCP mode in full duplex */
-			dmcload(sc, DMC_CNTLI, 0, 0);
+		/* use DDMCP mode in full duplex */
+		dmcload(sc, DMC_CNTLI, 0, 0);
 	else if (ui->ui_flags == 1)
-		       /* use MAINTENENCE mode */
-		       dmcload(sc, DMC_CNTLI, 0, DMC_MAINT );
+		/* use MAINTENENCE mode */
+		dmcload(sc, DMC_CNTLI, 0, DMC_MAINT );
 	else if (ui->ui_flags == 2)
 		/* use DDCMP half duplex as primary station */
 		dmcload(sc, DMC_CNTLI, 0, DMC_HDPLX);
 	else if (ui->ui_flags == 3)
 		/* use DDCMP half duplex as secondary station */
 		dmcload(sc, DMC_CNTLI, 0, DMC_HDPLX | DMC_SEC);
-	
+
+	/* enable operation done interrupts */
+	sc->sc_flag &= ~DMC_ACTIVE;
+	while ((addr->bsel2 & DMC_IEO) == 0)
+		addr->bsel2 |= DMC_IEO;
+	s = spl5();
 	/* queue first NRCV buffers for DMC to fill */
 	for (rp = &sc->sc_rbufs[0]; rp < &sc->sc_rbufs[NRCV]; rp++) {
 		rp->flags |= DBUF_DMCS;
 		dmcload(sc, DMC_READ, rp->ubinfo,
-			(((rp->ubinfo>>2)&DMC_XMEM)|rp->cc));
+			(((rp->ubinfo>>2)&DMC_XMEM) | rp->cc));
 		sc->sc_iused++;
 	}
-
-	/* enable output interrupts */
-	while ((addr->bsel2&DMC_IEO) == 0)
-		addr->bsel2 |= DMC_IEO;
+	splx(s);
 	ifp->if_flags |= IFF_UP|IFF_RUNNING;
+
 }
 
 /*
@@ -365,10 +383,6 @@ dmcstart(dev)
 	register struct dmcbufs *rp;
 	register int n;
 
-	if ((sc->sc_flag & DMC_ALLOC) == 0) {
-		printf("dmcstart: no unibus resources!!\n");
-		return;
-	}
 	/*
 	 * Dequeue up to NXMT requests and map them to the UNIBUS.
 	 * If no more requests, or no dmc buffers available, just return.
@@ -376,19 +390,18 @@ dmcstart(dev)
 	n = 0;
 	for (rp = &sc->sc_xbufs[0]; rp < &sc->sc_xbufs[NXMT]; rp++ ) {
 		/* find an available buffer */
-		if ((rp->flags&DBUF_DMCS) == 0){
+		if ((rp->flags & DBUF_DMCS) == 0) {
 			IF_DEQUEUE(&sc->sc_if.if_snd, m);
 			if (m == 0)
 				return;
-			if ((rp->flags&DBUF_XMIT) == 0)
-				printf("dmcstart: not xmit buf\n");
 			/* mark it dmcs */
 			rp->flags |= (DBUF_DMCS);
 			/*
 			 * Have request mapped to UNIBUS for transmission
 			 * and start the output.
 			 */
-			rp->cc = (dmcput(&sc->sc_ifuba, n, m))&DMC_CCOUNT;
+			rp->cc = dmcput(&sc->sc_ifuba, n, m);
+			rp->cc &= DMC_CCOUNT;
 			sc->sc_oused++;
 			dmcload(sc, DMC_WRITE, rp->ubinfo, 
 				rp->cc | ((rp->ubinfo>>2)&DMC_XMEM));
@@ -408,7 +421,7 @@ dmcload(sc, type, w0, w1)
 	register int unit, sps;
 	register struct dmc_command *qp;
 
-	unit = (sc - dmc_softc)/ sizeof (struct dmc_softc);
+	unit = sc - dmc_softc;
 	addr = (struct dmcdevice *)dmcinfo[unit]->ui_addr;
 	sps = spl5();
 
@@ -452,15 +465,13 @@ dmcrint(unit)
 	addr = (struct dmcdevice *)dmcinfo[unit]->ui_addr;
 	sc = &dmc_softc[unit];
 	if ((qp = sc->sc_qactive) == (struct dmc_command *) 0) {
-		printf("dmcrint: no command\n");
+		printf("dmc%d: dmcrint no command\n", unit);
 		return;
 	}
 	while (addr->bsel0&DMC_RDYI) {
 		addr->sel4 = qp->qp_ubaddr;
 		addr->sel6 = qp->qp_cc;
 		addr->bsel0 &= ~(DMC_IEI|DMC_RQI);
-		printd("load done, cmd 0x%x, ubaddr 0x%x, cc 0x%x\n",
-			qp->qp_cmd, qp->qp_ubaddr, qp->qp_cc);
 		/* free command buffer */
 		QUEUE_AT_HEAD(qp, sc->sc_qfreeh, sc->sc_qfreet);
 		while (addr->bsel0 & DMC_RDYI) {
@@ -471,22 +482,23 @@ dmcrint(unit)
 			DELAY(5);
 		}
 		/* move on to next command */
-		if ((sc->sc_qactive = sc->sc_qhead)==(struct dmc_command *) 0) 
-			/* all done */
-			break;
+		if ((sc->sc_qactive = sc->sc_qhead) == (struct dmc_command *)0)
+			break;		/* all done */
 		/* more commands to do, start the next one */
 		qp = sc->sc_qactive;
 		DEQUEUE(sc->sc_qhead, sc->sc_qtail);
 		addr->bsel0 = qp->qp_cmd;
 		n = RDYSCAN;
-		while (n-- && (addr->bsel0&DMC_RDYI) == 0)
-			DELAY(5);
+		while (n-- > 0)
+			if ((addr->bsel0&DMC_RDYI) || (addr->bsel2&DMC_RDYO))
+				break;
 	}
 	if (sc->sc_qactive) {
 		addr->bsel0 |= DMC_IEI|DMC_RQI;
 		/* VMS does it twice !*$%@# */
 		addr->bsel0 |= DMC_IEI|DMC_RQI;
 	}
+
 }
 
 /*
@@ -503,174 +515,293 @@ dmcxint(unit)
 	struct uba_device *ui = dmcinfo[unit];
 	struct dmcdevice *addr;
 	struct mbuf *m;
-	register struct ifqueue *inq;
+	struct ifqueue *inq;
 	int arg, pkaddr, cmd, len;
 	register struct ifrw *ifrw;
 	register struct dmcbufs *rp;
+	register struct ifxmt *ifxp;
+	struct dmc_header *dh;
+	int off, resid;
 
 	addr = (struct dmcdevice *)ui->ui_addr;
 	sc = &dmc_softc[unit];
 	ifp = &sc->sc_if;
 
-	cmd = addr->bsel2 & 0xff;
-	arg = addr->sel6 & 0xffff;
-	if ((cmd&DMC_RDYO) == 0)  {
-		printf("dmc%d: bogus xmit intr\n", unit);
-		return; 
-	}
-	/* reconstruct UNIBUS address of buffer returned to us */
-	pkaddr = ((arg&DMC_XMEM)<<2)|(addr->sel4 & 0xffff);
-	/* release port */
-	addr->bsel2 &= ~DMC_RDYO;
-	switch (cmd & 07) {
+	while (addr->bsel2 & DMC_RDYO) {
 
-	case DMC_OUR:
-		/*
-		 * A read has completed.  
-		 * Pass packet to type specific
-		 * higher-level input routine.
-		 */
-		ifp->if_ipackets++;
-		len = arg & DMC_CCOUNT;
-		/* find location in dmcuba struct */
-		ifrw = &sc->sc_ifuba.ifu_r[0];
-		rp = &sc->sc_rbufs[0];
-		for (; rp < &sc->sc_rbufs[NRCV]; rp++) {
-			if (rp->ubinfo == pkaddr)
-				goto foundrcv;
-			ifrw++;
-		}
-		printf("bad rcv pkt addr 0x%x len 0x%x\n", pkaddr, len);
-		goto setup;
-		
-	foundrcv:
-		if ((rp->flags&DBUF_DMCS) == 0) {
-			printf("dmcxint: done unalloc rbuf\n");
-		}
-		switch (ifp->if_addr.sa_family) {
+		cmd = addr->bsel2 & 0xff;
+		arg = addr->sel6 & 0xffff;
+		/* reconstruct UNIBUS address of buffer returned to us */
+		pkaddr = ((arg&DMC_XMEM)<<2) | (addr->sel4 & 0xffff);
+		/* release port */
+		addr->bsel2 &= ~DMC_RDYO;
+		switch (cmd & 07) {
+
+		case DMC_OUR:
+			/*
+			 * A read has completed.  
+			 * Pass packet to type specific
+			 * higher-level input routine.
+			 */
+			ifp->if_ipackets++;
+			/* find location in dmcuba struct */
+			ifrw= &sc->sc_ifuba.ifu_r[0];
+			for (rp = &sc->sc_rbufs[0]; rp < &sc->sc_rbufs[NRCV]; rp++) {
+				if(rp->ubinfo == pkaddr)
+					break;
+				ifrw++;
+			}
+			if (rp >= &sc->sc_rbufs[NRCV])
+				panic("dmc rcv");
+			if ((rp->flags & DBUF_DMCS) == 0)
+				printf("dmc%d: done unalloc rbuf\n", unit);
+
+			len = (arg & DMC_CCOUNT) - sizeof (struct dmc_header);
+			if (len < 0 || len > DMCMTU) {
+				ifp->if_ierrors++;
+				printd("dmc%d: bad rcv pkt addr 0x%x len 0x%x\n",
+				    unit, pkaddr, len);
+				goto setup;
+			}
+			/*
+			 * Deal with trailer protocol: if type is trailer
+			 * get true type from first 16-bit word past data.
+			 * Remember that type was trailer by setting off.
+			 */
+			dh = (struct dmc_header *)ifrw->ifrw_addr;
+			dh->dmc_type = ntohs((u_short)dh->dmc_type);
+#define dmcdataaddr(dh, off, type)	((type)(((caddr_t)((dh)+1)+(off))))
+			if (dh->dmc_type >= DMC_TRAILER &&
+			    dh->dmc_type < DMC_TRAILER+DMC_NTRAILER) {
+				off = (dh->dmc_type - DMC_TRAILER) * 512;
+				if (off >= DMCMTU)
+					goto setup;		/* sanity */
+				dh->dmc_type = ntohs(*dmcdataaddr(dh, off, u_short *));
+				resid = ntohs(*(dmcdataaddr(dh, off+2, u_short *)));
+				if (off + resid > len)
+					goto setup;		/* sanity */
+				len = off + resid;
+			} else
+				off = 0;
+			if (len == 0)
+				goto setup;
+
+			/*
+			 * Pull packet off interface.  Off is nonzero if
+			 * packet has trailing header; dmc_get will then
+			 * force this header information to be at the front,
+			 * but we still have to drop the type and length
+			 * which are at the front of any trailer data.
+			 */
+			m = dmc_get(&sc->sc_ifuba, ifrw, len, off);
+			if (m == 0)
+				goto setup;
+			if (off) {
+				m->m_off += 2 * sizeof (u_short);
+				m->m_len -= 2 * sizeof (u_short);
+			}
+			switch (dh->dmc_type) {
+
 #ifdef INET
-		case AF_INET:
-			schednetisr(NETISR_IP);
-			inq = &ipintrq;
-			break;
+			case DMC_IPTYPE:
+				schednetisr(NETISR_IP);
+				inq = &ipintrq;
+				break;
 #endif
+			default:
+				m_freem(m);
+				goto setup;
+			}
 
-		default:
-			printf("dmc%d: unknown address type %d\n", unit,
-			    ifp->if_addr.sa_family);
-			goto setup;
-		}
+			if (IF_QFULL(inq)) {
+				IF_DROP(inq);
+				m_freem(m);
+			} else
+				IF_ENQUEUE(inq, m);
 
-		m = dmc_get(&sc->sc_ifuba, ifrw, len, 0);
-		if (m == (struct mbuf *)0)
-			goto setup;
-		if (IF_QFULL(inq)) {
-			IF_DROP(inq);
-			m_freem(m);
-		} else
-			IF_ENQUEUE(inq, m);
-setup:
-		arg = ifrw->ifrw_info & 0x3ffff;
-		dmcload(sc, DMC_READ, arg, ((arg >> 2) & DMC_XMEM) | DMCMTU);
-		break;
+	setup:
+			/* is this needed? */
+			rp->ubinfo = ifrw->ifrw_info & 0x3ffff;
 
-	case DMC_OUX:
-		/*
-		 * A write has completed, start another
-		 * transfer if there is more data to send.
-		 */
-		ifp->if_opackets++;
-		printd("OUX pkaddr 0x%x\n",pkaddr);
-		/* find associated dmcbuf structure */
-		rp = &sc->sc_xbufs[0];
-		for (; rp < &sc->sc_xbufs[NXMT]; rp++) {
-			if (rp->ubinfo == pkaddr)
-				goto found;
-		}
-		printf("dmc%d: bad packet address 0x%x\n",
-			unit, pkaddr);
-		break;
-	found:
-		if ((rp->flags&DBUF_DMCS) == 0)
-			printf("dmc returned unallocated packet 0x%x\n",
-				pkaddr);
-		/* mark buffer free */
-		rp->flags &= ~(DBUF_DMCS);
-		sc->sc_oused--;
-		dmcstart(unit);
-		break;
-
-	case DMC_CNTLO:
-		arg &= DMC_CNTMASK;
-		if (arg&DMC_FATAL) {
-			register int i;
-
-			printf("dmc%d: fatal error, flags=%b\n",
-			    unit, arg, CNTLO_BITS);
-			ifp->if_flags &= ~(IFF_RUNNING|IFF_UP);
-			/* master clear device */
-			addr->bsel1 = DMC_MCLR;
-			for (i = 100000; i && (addr->bsel1 & DMC_RUN) == 0; i--)
-				;
-			dmcinit(unit);
-			ifp->if_ierrors++;
+			dmcload(sc, DMC_READ, rp->ubinfo, 
+			    ((rp->ubinfo >> 2) & DMC_XMEM) | rp->cc);
 			break;
-		} else {
-                        /* ACCUMULATE STATISTICS */
+
+		case DMC_OUX:
+			/*
+			 * A write has completed, start another
+			 * transfer if there is more data to send.
+			 */
+			ifp->if_opackets++;
+			/* find associated dmcbuf structure */
+			ifxp = &sc->sc_ifuba.ifu_w[0];
+			for (rp = &sc->sc_xbufs[0]; rp < &sc->sc_xbufs[NXMT]; rp++) {
+				if(rp->ubinfo == pkaddr)
+					break;
+				ifxp++;
+			}
+			if (rp >= &sc->sc_xbufs[NXMT]) {
+				printf("dmc%d: bad packet address 0x%x\n",
+				    unit, pkaddr);
+				break;
+			}
+			if ((rp->flags & DBUF_DMCS) == 0)
+				printf("dmc%d: unallocated packet 0x%x\n",
+				    unit, pkaddr);
+			/* mark buffer free */
+			if (ifxp->x_xtofree) {
+				(void)m_freem(ifxp->x_xtofree);
+				ifxp->x_xtofree = 0;
+			}
+			rp->flags &= ~DBUF_DMCS;
+			sc->sc_oused--;
+			sc->sc_nticks = 0;
+			sc->sc_flag |= DMC_ACTIVE;
+			break;
+
+		case DMC_CNTLO:
+			arg &= DMC_CNTMASK;
+			if (arg & DMC_FATAL) {
+				printd("dmc%d: fatal error, flags=%b\n",
+				    unit, arg, CNTLO_BITS);
+				ifp->if_flags &= ~(IFF_RUNNING|IFF_UP);
+				dmcrestart(unit);
+				break;
+			}
+			/* ACCUMULATE STATISTICS */
 			switch(arg) {
 			case DMC_NOBUFS:
-                        	ifp->if_ierrors++;
-				if((sc->sc_nobuf++ % DMC_RPNBFS) != 0)
-					break;
-				goto report;
+				ifp->if_ierrors++;
+				if ((sc->sc_nobuf++ % DMC_RPNBFS) == 0)
+					goto report;
+				break;
 			case DMC_DISCONN:
-				if((sc->sc_disc++ % DMC_RPDSC) != 0)
-					break;
-				goto report;
+				if ((sc->sc_disc++ % DMC_RPDSC) == 0)
+					goto report;
+				break;
 			case DMC_TIMEOUT:
-				if((sc->sc_timeo++ % DMC_RPTMO) != 0)
-					break;
-				goto report;
+				if ((sc->sc_timeo++ % DMC_RPTMO) == 0)
+					goto report;
+				break;
 			case DMC_DATACK:
-                        	ifp->if_oerrors++;
-				if((sc->sc_datck++ % DMC_RPDCK) != 0)
-					break;
-				goto report;
+				ifp->if_oerrors++;
+				if ((sc->sc_datck++ % DMC_RPDCK) == 0)
+					goto report;
+				break;
 			default:
 				goto report;
 			}
 			break;
 		report:
-                        printf("dmc%d: soft error, flags=%b\n",
-                            unit, arg, CNTLO_BITS);
-		}
-		break;
+			printd("dmc%d: soft error, flags=%b\n", unit,
+			    arg, CNTLO_BITS);
+			if ((sc->sc_flag & DMC_RESTART) == 0) {
+				/*
+				 * kill off the dmc to get things
+				 * going again by generating a
+				 * procedure error
+				 */
+				sc->sc_flag |= DMC_RESTART;
+				arg = sc->sc_ubinfo & 0x3ffff;
+				dmcload(sc, DMC_BASEI, arg, (arg>>2)&DMC_XMEM);
+			}
+			break;
 
-	default:
-		printf("dmc%d: bad control %o\n", unit, cmd);
+		default:
+			printf("dmc%d: bad control %o\n", unit, cmd);
+			break;
+		}
 	}
+	dmcstart(unit);
 	return;
 }
 
 /*
  * DMC output routine.
- * Just send the data, header was supplied by
- * upper level protocol routines.
+ * Encapsulate a packet of type family for the dmc.
+ * Use trailer local net encapsulation if enough data in first
+ * packet leaves a multiple of 512 bytes of data in remainder.
  */
-dmcoutput(ifp, m, dst)
+dmcoutput(ifp, m0, dst)
 	register struct ifnet *ifp;
-	register struct mbuf *m;
+	register struct mbuf *m0;
 	struct sockaddr *dst;
 {
-	int s;
+	int type, error, s;
+	register struct mbuf *m = m0;
+	register struct dmc_header *dh;
+	register int off;
 
-	if (dst->sa_family != ifp->if_addr.sa_family) {
-		printf("dmc%d: af%d not supported\n", ifp->if_unit,
-		    dst->sa_family);
-		m_freem(m);
-		return (EAFNOSUPPORT);
+	switch (dst->sa_family) {
+#ifdef	INET
+	case AF_INET:
+		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
+		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
+		if (off > 0 && (off & 0x1ff) == 0 &&
+		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
+			type = DMC_TRAILER + (off>>9);
+			m->m_off -= 2 * sizeof (u_short);
+			m->m_len += 2 * sizeof (u_short);
+			*mtod(m, u_short *) = htons((u_short)DMC_IPTYPE);
+			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
+			goto gottrailertype;
+		}
+		type = DMC_IPTYPE;
+		off = 0;
+		goto gottype;
+#endif
+
+	case AF_UNSPEC:
+		dh = (struct dmc_header *)dst->sa_data;
+		type = dh->dmc_type;
+		goto gottype;
+
+	default:
+		printf("dmc%d: can't handle af%d\n", ifp->if_unit,
+			dst->sa_family);
+		error = EAFNOSUPPORT;
+		goto bad;
 	}
-	s = spl5();
+
+gottrailertype:
+	/*
+	 * Packet to be sent as a trailer; move first packet
+	 * (control information) to end of chain.
+	 */
+	while (m->m_next)
+		m = m->m_next;
+	m->m_next = m0;
+	m = m0->m_next;
+	m0->m_next = 0;
+	m0 = m;
+
+gottype:
+	/*
+	 * Add local network header
+	 * (there is space for a uba on a vax to step on)
+	 */
+	if (m->m_off > MMAXOFF ||
+	    MMINOFF + sizeof(struct dmc_header) > m->m_off) {
+		m = m_get(M_DONTWAIT, MT_HEADER);
+		if (m == 0) {
+			error = ENOBUFS;
+			goto bad;
+		}
+		m->m_next = m0;
+		m->m_off = MMINOFF;
+		m->m_len = sizeof (struct dmc_header);
+	} else {
+		m->m_off -= sizeof (struct dmc_header);
+		m->m_len += sizeof (struct dmc_header);
+	}
+	dh = mtod(m, struct dmc_header *);
+	dh->dmc_type = htons((u_short)type);
+
+	/*
+	 * Queue message on interface, and start output if interface
+	 * not yet active.
+	 */
+	s = splimp();
 	if (IF_QFULL(&ifp->if_snd)) {
 		IF_DROP(&ifp->if_snd);
 		m_freem(m);
@@ -681,7 +812,12 @@ dmcoutput(ifp, m, dst)
 	dmcstart(ifp->if_unit);
 	splx(s);
 	return (0);
+
+bad:
+	m_freem(m0);
+	return (error);
 }
+
 
 /*
  * Process an ioctl request.
@@ -698,9 +834,11 @@ dmcioctl(ifp, cmd, data)
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, -1);     /* delete previous route */
 		sin = (struct sockaddr_in *)&ifr->ifr_addr;
+		if (sin->sin_family != AF_INET)
+			return (EINVAL);
+		if (ifp->if_flags & IFF_RUNNING)
+			if_rtinit(ifp, -1);	/* delete previous route */
 		ifp->if_addr = *(struct sockaddr *)sin;
 		ifp->if_net = in_netof(sin->sin_addr);
 		ifp->if_flags |= IFF_UP;
@@ -724,6 +862,7 @@ dmcioctl(ifp, cmd, data)
 	return (error);
 }
 
+
 /*
  * Routines supporting UNIBUS network interfaces.
  */
@@ -745,13 +884,13 @@ dmc_ubainit(ifu, uban, hlen, nmr)
 	int i, ncl;
 
 	ncl = clrnd(nmr + CLSIZE) / CLSIZE;
-	if (ifu->ifu_r[0].ifrw_addr) {
+	if (ifu->ifu_r[0].ifrw_addr)
 		/*
 		 * If the first read buffer has a non-zero
 		 * address, it means we have already allocated core
 		 */
 		cp = ifu->ifu_r[0].ifrw_addr - (CLBYTES - hlen);
-	} else {
+	else {
 		cp = m_clalloc(NTOT * ncl, MPG_SPACE);
 		if (cp == 0)
 			return (0);
@@ -985,5 +1124,94 @@ dmcput(ifu, n, m)
 	}
 	ifxp->x_xswapd |= xswapd;
 	return (cc);
+}
+
+/*
+ * Restart after a fatal error.
+ * Clear device and reinitialize.
+ */
+dmcrestart(unit)
+	int unit;
+{
+	register struct dmc_softc *sc = &dmc_softc[unit];
+	register struct uba_device *ui = dmcinfo[unit];
+	register struct dmcdevice *addr;
+	register struct ifxmt *ifxp;
+	register int i;
+	register struct mbuf *m;
+	struct dmcuba *ifu;
+	
+	addr = (struct dmcdevice *)ui->ui_addr;
+	ifu = &sc->sc_ifuba;
+#ifdef DEBUG
+	/* dump base table */
+	printf("dmc%d base table:\n", unit);
+	for (i = 0; i < sizeof (struct dmc_base); i++)
+		printf("%o\n" ,dmc_base[unit].d_base[i]);
+#endif
+	/*
+	 * Let the DMR finish the MCLR.	 At 1 Mbit, it should do so
+	 * in about a max of 6.4 milliseconds with diagnostics enabled.
+	 */
+	addr->bsel1 = DMC_MCLR;
+	for (i = 100000; i && (addr->bsel1 & DMC_RUN) == 0; i--)
+		;
+	/* Did the timer expire or did the DMR finish? */
+	if ((addr->bsel1 & DMC_RUN) == 0) {
+		printf("dmc%d: M820 Test Failed\n", unit);
+		return;
+	}
+
+#ifdef notdef	/* tef sez why throw these packets away??? */
+	/* purge send queue */
+	IF_DEQUEUE(&sc->sc_if.if_snd, m);
+	while (m) {
+		m_freem(m);
+		IF_DEQUEUE(&sc->sc_if.if_snd, m);
+	}
+#endif
+	for (ifxp = ifu->ifu_w; ifxp < &ifu->ifu_w[NXMT]; ifxp++) {
+		if (ifxp->x_xtofree) {
+			(void) m_freem(ifxp->x_xtofree);
+			ifxp->x_xtofree = 0;
+		}
+	}
+
+	/* restart DMC */
+	dmcinit(unit);
+	sc->sc_flag &= ~DMC_RESTART;
+	sc->sc_if.if_collisions++;	/* why not? */
+}
+
+/*
+ * Check to see that transmitted packets don't
+ * lose interrupts.  The device has to be active.
+ */
+dmcwatch()
+{
+	register struct uba_device *ui;
+	register struct dmc_softc *sc;
+	struct dmcdevice *addr;
+	register int i;
+
+	for (i = 0; i < NDMC; i++) {
+		sc = &dmc_softc[i];
+		if ((sc->sc_flag & DMC_ACTIVE) == 0)
+			continue;
+		if ((ui = dmcinfo[i]) == 0 || ui->ui_alive == 0)
+			continue;
+		if (sc->sc_oused) {
+			sc->sc_nticks++;
+			if (sc->sc_nticks > dmc_timeout) {
+				sc->sc_nticks = 0;
+				addr = (struct dmcdevice *)ui->ui_addr;
+				printd("dmc%d hung: bsel0=%b bsel2=%b\n", i,
+				    addr->bsel0 & 0xff, DMC0BITS,
+				    addr->bsel2 & 0xff, DMC2BITS);
+				dmcrestart(i);
+			}
+		}
+	}
+	timeout(dmcwatch, (caddr_t) 0, hz);
 }
 #endif
