@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.63 91/04/24$
  *
- *	@(#)machdep.c	7.14 (Berkeley) %G%
+ *	@(#)machdep.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -215,7 +215,7 @@ again:
 	 */
 	if (firstaddr == 0) {
 		size = (vm_size_t)(v - firstaddr);
-		firstaddr = (int)kmem_alloc(kernel_map, round_page(size));
+		firstaddr = (caddr_t) kmem_alloc(kernel_map, round_page(size));
 		if (firstaddr == 0)
 			panic("startup: no room for tables");
 		goto again;
