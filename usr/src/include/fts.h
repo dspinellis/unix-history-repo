@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fts.h	5.11 (Berkeley) %G%
+ *	@(#)fts.h	5.12 (Berkeley) %G%
  */
 
 typedef struct {
@@ -12,19 +12,21 @@ typedef struct {
 	struct _ftsent *fts_child;	/* linked list of children */
 	struct _ftsent *fts_savelink;	/* saved link if node had a cycle */
 	struct _ftsent **fts_array;	/* sort array */
-	dev_t sdev;			/* starting device # */
+	dev_t rdev;			/* starting device # */
 	char *fts_path;			/* path for this descent */
-	int fts_sd;			/* fd for root */
+	int fts_dfd;			/* fd for directories */
+	int fts_rfd;			/* fd for root */
 	int fts_pathlen;		/* sizeof(path) */
 	int fts_nitems;			/* elements in the sort array */
 	int (*fts_compar)();		/* compare function */
-#define	FTS__STOP	0x001		/* private: unrecoverable error */
-#define	FTS_LOGICAL	0x002		/* user: use stat(2) */
-#define	FTS_NOCHDIR	0x004		/* user: don't use chdir(2) */
-#define	FTS_NOSTAT	0x008		/* user: don't require stat info */
-#define	FTS_PHYSICAL	0x010		/* user: use lstat(2) */
-#define	FTS_SEEDOT	0x020		/* user: return dot and dot-dot */
-#define	FTS_XDEV	0x040		/* user: don't cross devices */
+
+#define	FTS_LOGICAL	0x001		/* logical walk */
+#define	FTS_NOCHDIR	0x002		/* don't change directories */
+#define	FTS_NOSTAT	0x004		/* don't get stat info */
+#define	FTS_PHYSICAL	0x008		/* physical walk */
+#define	FTS_SEEDOT	0x010		/* return dot and dot-dot */
+#define	FTS_STOP	0x020		/* (private) unrecoverable error */
+#define	FTS_XDEV	0x040		/* don't cross devices */
 	int fts_options;		/* openfts() options */
 } FTS;
 
@@ -39,26 +41,30 @@ typedef struct _ftsent {
 #define	fts_pointer	fts_local.pointer
 	char *fts_accpath;		/* access path */
 	char *fts_path;			/* root path */
+	int fts_cderr;			/* chdir failed -- errno */
 	short fts_pathlen;		/* strlen(fts_path) */
 	short fts_namelen;		/* strlen(fts_name) */
 	short fts_level;		/* depth (-1 to N) */
+
 #define	FTS_D		 1		/* preorder directory */
 #define	FTS_DC		 2		/* directory that causes cycles */
-#define	FTS_DNR		 3		/* unreadable directory */
-#define	FTS_DNX		 4		/* unsearchable directory */
+#define	FTS_DEFAULT	 3		/* none of the above */
+#define	FTS_DNR		 4		/* unreadable directory */
 #define	FTS_DP		 5		/* postorder directory */
 #define	FTS_ERR		 6		/* error; errno is set */
 #define	FTS_F		 7		/* regular file */
-#define	FTS_NS		 8		/* no stat(2) information */
-#define	FTS_SL		 9		/* symbolic link */
-#define	FTS_SLNONE	10		/* symbolic link without target */
-#define	FTS_DEFAULT	11		/* none of the above */
-	u_short fts_info;		/* flags for FTSENT structure */
-#define	FTS__NOINSTR	 0		/* private: no instructions */
-#define	FTS_AGAIN	 1		/* user: read node again */
-#define	FTS_SKIP	 2		/* user: discard node */
-#define	FTS_FOLLOW	 3		/* user: follow symbolic link */
-	short fts_instr;		/* private: fts_set() instructions */
+#define	FTS_NS		 8		/* stat(2) failed */
+#define	FTS_NSOK	 9		/* no stat(2) requested */
+#define	FTS_SL		10		/* symbolic link */
+#define	FTS_SLNONE	11		/* symbolic link without target */
+	u_short fts_info;		/* user flags for FTSENT structure */
+
+#define	FTS_AGAIN	 1		/* read node again */
+#define	FTS_FOLLOW	 2		/* follow symbolic link */
+#define	FTS_NOINSTR	 3		/* no instructions */
+#define	FTS_SKIP	 4		/* discard node */
+	u_short fts_instr;		/* fts_set() instructions */
+
 	struct stat fts_statb;		/* stat(2) information */
 	char fts_name[1];		/* file name */
 } FTSENT;
