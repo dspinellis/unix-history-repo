@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.10 (Berkeley) %G%
+ *	@(#)conf.h	8.11 (Berkeley) %G%
  */
 
 /*
@@ -173,6 +173,27 @@
 #ifdef BSD4_4
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
+#endif
+
+/*
+**  4.3 BSD -- this is for very old systems
+**
+**	You'll also have to install a new resolver library.
+**	I don't guarantee that support for this environment is complete.
+*/
+
+#ifdef oldBSD43
+# define NEEDVPRINTF	1	/* need a replacement for vprintf(3) */
+# define NEEDGETOPT	1	/* need a replacement for getopt(3) */
+# ifndef LA_TYPE
+#  define LA_TYPE	LA_FLOAT
+# endif
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
+# endif
+# ifndef _PATH_SENDMAILFC
+#  define _PATH_SENDMAILFC	"/usr/lib/sendmail.fc"
+# endif
 #endif
 
 /*

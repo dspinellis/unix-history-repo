@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1093,6 +1093,131 @@ setsid __P ((void))
 # else
 	return 0;
 # endif
+}
+
+#endif
+/*
+**  GETOPT -- for old systems or systems with bogus implementations
+*/
+
+#ifdef NEEDGETOPT
+
+/*
+ * Copyright (c) 1985 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+
+/*
+** this version hacked to add `atend' flag to allow state machine
+** to reset if invoked by the program to scan args for a 2nd time
+*/
+
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)getopt.c	4.3 (Berkeley) 3/9/86";
+#endif LIBC_SCCS and not lint
+
+#include <stdio.h>
+
+/*
+ * get option letter from argument vector
+ */
+int	opterr = 1,		/* if error message should be printed */
+	optind = 1,		/* index into parent argv vector */
+	optopt;			/* character checked for validity */
+char	*optarg;		/* argument associated with option */
+
+#define BADCH	(int)'?'
+#define EMSG	""
+#define tell(s)	if (opterr) {fputs(*nargv,stderr);fputs(s,stderr); \
+		fputc(optopt,stderr);fputc('\n',stderr);return(BADCH);}
+
+getopt(nargc,nargv,ostr)
+int	nargc;
+char	**nargv,
+	*ostr;
+{
+	static char	*place = EMSG;	/* option letter processing */
+	static char	atend = 0;
+	register char	*oli;		/* option letter list index */
+	char	*index();
+
+	if (atend) {
+		atend = 0;
+		place = EMSG;
+	}
+	if(!*place) {			/* update scanning pointer */
+		if(optind >= nargc || *(place = nargv[optind]) != '-' || !*++place) {
+			atend++;
+			return(EOF);
+		}
+		if (*place == '-') {	/* found "--" */
+			++optind;
+			atend++;
+			return(EOF);
+		}
+	}				/* option letter okay? */
+	if ((optopt = (int)*place++) == (int)':' || !(oli = index(ostr,optopt))) {
+		if(!*place) ++optind;
+		tell(": illegal option -- ");
+	}
+	if (*++oli != ':') {		/* don't need argument */
+		optarg = NULL;
+		if (!*place) ++optind;
+	}
+	else {				/* need an argument */
+		if (*place) optarg = place;	/* no white space */
+		else if (nargc <= ++optind) {	/* no arg */
+			place = EMSG;
+			tell(": option requires an argument -- ");
+		}
+	 	else optarg = nargv[optind];	/* white space */
+		place = EMSG;
+		++optind;
+	}
+	return(optopt);			/* dump back option letter */
+}
+
+#endif
+/*
+**  VFPRINTF, VSPRINTF -- for old 4.3 BSD systems missing a real version
+*/
+
+#ifdef NEEDVPRINTF
+
+#define MAXARG	16
+
+vfprintf(fp, fmt, ap)
+	FILE *	fp;
+	char *	fmt;
+	char **	ap;
+{
+	char *	bp[MAXARG];
+	int	i = 0;
+
+	while (*ap && i < MAXARG)
+		bp[i++] = *ap++;
+	fprintf(fp, fmt, bp[0], bp[1], bp[2], bp[3],
+			 bp[4], bp[5], bp[6], bp[7],
+			 bp[8], bp[9], bp[10], bp[11],
+			 bp[12], bp[13], bp[14], bp[15]);
+}
+
+vsprintf(s, fmt, ap)
+	char *	s;
+	char *	fmt;
+	char **	ap;
+{
+	char *	bp[MAXARG];
+	int	i = 0;
+
+	while (*ap && i < MAXARG)
+		bp[i++] = *ap++;
+	sprintf(s, fmt, bp[0], bp[1], bp[2], bp[3],
+			bp[4], bp[5], bp[6], bp[7],
+			bp[8], bp[9], bp[10], bp[11],
+			bp[12], bp[13], bp[14], bp[15]);
 }
 
 #endif

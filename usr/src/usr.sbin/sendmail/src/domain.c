@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.3 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.4 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.3 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.4 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -37,6 +37,10 @@ static char	MXHostBuf[MAXMXHOSTS*PACKETSZ];
 
 #ifndef MAX
 #define MAX(a, b)	((a) > (b) ? (a) : (b))
+#endif
+
+#ifndef NO_DATA
+# define NO_DATA	NO_ADDRESS
 #endif
 
 /* don't use sizeof because sizeof(long) is different on 64-bit machines */
