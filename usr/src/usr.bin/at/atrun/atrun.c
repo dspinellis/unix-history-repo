@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)atrun.c	4.6	(Berkeley)	%G%";
+static char sccsid[] = "@(#)atrun.c	4.7	(Berkeley)	%G%";
 #endif not lint
 /*
  *	Synopsis: atrun
@@ -133,8 +133,10 @@ char *spoolfile;
 	char mailvar[4];		/* send mail variable ("yes" or "no") */
 	char runfile[100];		/* file sent to forked shell for exec-
 					   ution */
+	char owner[16];			/* owner of job we're going to run */
 	char jobname[100];		/* name of job we're going to run */
 	char whichshell[100];		/* which shell should we fork off? */
+	struct passwd *pwdbuf;		/* password info of the owner of job */
 	struct stat errbuf;		/* stats on error file */
 	struct stat jobbuf;		/* stats on job file */
 	FILE *infile;			/* I/O stream to spoolfile */
@@ -157,6 +159,7 @@ char *spoolfile;
 	/*
 	 * Grab the 3-line header out of the spoolfile.
 	 */
+	fscanf(infile,"# owner: %s\n",owner);
 	fscanf(infile,"# jobname: %s\n",jobname);
 	fscanf(infile,"# shell: %s\n",shell);
 	fscanf(infile,"# notify by mail: %s\n",mailvar);
@@ -166,6 +169,16 @@ char *spoolfile;
 	 */
 	notifybymail = (strcmp(mailvar, "yes") == 0);
 	fclose(infile);
+
+	/*
+	 * Change the ownership of the spoolfile from "daemon" to the owner
+	 * of the job.
+	 */
+	pwdbuf = getpwnam(owner);
+	if (chown(spoolfile,pwdbuf->pw_uid,pwdbuf->pw_gid) == -1) {
+		perror(spoolfile);
+		exit(1);
+	}
 
 	/*
 	 * Move the spoolfile to the directory where jobs are run from and
