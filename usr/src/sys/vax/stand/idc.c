@@ -1,4 +1,4 @@
-/*	idc.c	4.5	82/12/17	*/
+/*	idc.c	4.6	82/12/30	*/
 
 /*
  * IDC (RB730)
@@ -131,4 +131,14 @@ idcwait(idcaddr)
 	while ((idcaddr->idccsr & (IDC_CRDY|IDC_DRDY)) != (IDC_CRDY|IDC_DRDY))
 		for (i = 10; i; i--)
 			;
+}
+
+/*ARGSUSED*/
+idcioctl(io, cmd, arg)
+	struct iob *io;
+	int cmd;
+	caddr_t arg;
+{
+
+	return (ECMD);
 }
