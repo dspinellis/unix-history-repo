@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grfioctl.h 1.15 92/01/22$
+ * from: Utah $Hdr: grfioctl.h 1.17 93/08/13$
  *
- *	@(#)grfioctl.h	8.1 (Berkeley) %G%
+ *	@(#)grfioctl.h	8.2 (Berkeley) %G%
  */
 
 struct	grfinfo {
@@ -47,6 +47,20 @@ struct	grf_slot {
 	u_char	*addr;
 };
 
+struct	grf_fbinfo {
+	int	id;
+	int	mapsize;
+	int	dwidth, dlength;
+	int	width, length;
+	int	xlen;
+	int	bpp, bppu;
+	int	npl, nplbytes;
+	char	name[32];
+	int	attr;
+	caddr_t	fbbase, regbase;
+	caddr_t	regions[6];
+};
+
 #ifndef _IOH
 #define _IOH(x,y)	(IOC_IN|((x)<<8)|y)	/* IOC_IN is IOC_VOID */
 
@@ -64,6 +78,7 @@ struct	grf_slot {
 #define	GCSTATIC_CMAP	_IOH('G', 11)
 #define	GCVARIABLE_CMAP _IOH('G', 12)
 #define GCSLOT		_IOWR('G', 13, struct grf_slot)
+#define GCDESCRIBE	_IOR('G', 21, struct grf_fbinfo)
 
 /* XXX: for now */
 #define	IOMAPID		_IOR('M',0,int)	/* ??? */
