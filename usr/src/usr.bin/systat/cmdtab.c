@@ -5,29 +5,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
-
-int     showpigs(), fetchpigs(), labelpigs();
-int	initpigs(), closepigs();
-WINDOW	*openpigs();
-int     showswap(), fetchswap(), labelswap();
-int	initswap(), closeswap();
-WINDOW	*openswap();
-int	showmbufs(), fetchmbufs(), labelmbufs();
-int	initmbufs(), closembufs();
-WINDOW	*openmbufs();
-int	showiostat(), fetchiostat(), labeliostat();
-int	initiostat(), closeiostat(), cmdiostat();
-WINDOW	*openiostat();
-int	showkre(), fetchkre(), labelkre();
-int	initkre(), closekre(), cmdkre();
-WINDOW	*openkre();
-int	shownetstat(), fetchnetstat(), labelnetstat();
-int	initnetstat(), closenetstat(), cmdnetstat();
-WINDOW	*opennetstat();
+#include "extern.h"
 
 struct	cmdtab cmdtab[] = {
         { "pigs",	showpigs,	fetchpigs,	labelpigs,
