@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.26 (Berkeley) %G%
+#	@(#)READ_ME	8.27 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -35,6 +35,10 @@ location for the new database libraries, described below.
 There is also a shell script (makesendmail) that tries to be clever
 about using object subdirectories.  It's pretty straightforward, and
 may help if you share a source tree among different architectures.
+
+IMPORTANT:  DO NOT USE OPTIMIZATION (``-O'') IF YOU ARE RUNNING GCC
+2.4.x.  THERE IS A BUG IN THE GCC OPTIMIZER THAT CAUSES SENDMAIL TO
+FAIL MISERABLY.
 
 
 +----------------------+
@@ -403,4 +407,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.26, last update %G% 14:18:18)
+(Version 8.27, last update %G% 13:15:55)
