@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)icheck.c	2.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	2.4 (Berkeley) %G%";
 
 /*
  * icheck
@@ -34,6 +34,7 @@ union {
 
 struct	dinode	itab[MAXIPG];
 daddr_t	blist[NB];
+daddr_t	fsblist[NB];
 char	*bmap;
 
 int	mflg;
@@ -130,6 +131,7 @@ check(file)
 	register i, j, c;
 	daddr_t d, cgd, cbase, b;
 	long n;
+	char buf[BUFSIZ];
 
 	fi = open(file, sflg ? 2 : 0);
 	if (fi < 0) {
@@ -156,6 +158,8 @@ check(file)
 	getsb(&sblock, file);
 	if (nerror)
 		return;
+	for (n=0; blist[n] != -1; n++)
+		fsblist[n] = dbtofsb(&sblock, blist[n]);
 	ino = 0;
 	n = roundup(howmany(sblock.fs_size, NBBY), sizeof(short));
 #ifdef STANDALONE
@@ -182,16 +186,22 @@ check(file)
 				d = cgbase(&sblock, c);
 			else
 				d = cgsblock(&sblock, c);
+			sprintf(buf, "spare super block %d", c);
 			for (; d < cgd; d += sblock.fs_frag)
-				chk(d, "badcg", sblock.fs_bsize);
+				chk(d, buf, sblock.fs_bsize);
 			d = cgimin(&sblock, c);
+			sprintf(buf, "cylinder group %d", c);
 			while (cgd < d) {
-				chk(cgd, "cg", sblock.fs_bsize);
+				chk(cgd, buf, sblock.fs_bsize);
 				cgd += sblock.fs_frag;
 			}
 			d = cgdmin(&sblock, c);
-			for (; cgd < d; cgd += sblock.fs_frag)
-				chk(cgd, "inode", sblock.fs_bsize);
+			i = INOPB(&sblock);
+			for (; cgd < d; cgd += sblock.fs_frag) {
+				sprintf(buf, "inodes %d-%d", ino, ino + i);
+				chk(cgd, buf, sblock.fs_bsize);
+				ino += i;
+			}
 			if (c == 0) {
 				d += howmany(sblock.fs_cssize, sblock.fs_fsize);
 				for (; cgd < d; cgd++)
@@ -199,6 +209,7 @@ check(file)
 			}
 		}
 	}
+	ino = 0;
 	cginit = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
@@ -233,11 +244,11 @@ check(file)
 			if (isblock(&sblock, cgrp.cg_free,
 			    b / sblock.fs_frag)) {
 				nbfree++;
-				chk(cbase+b, "block", sblock.fs_bsize);
+				chk(cbase+b, "free block", sblock.fs_bsize);
 			} else {
 				for (d = 0; d < sblock.fs_frag; d++)
 					if (isset(cgrp.cg_free, b+d)) {
-						chk(cbase+b+d, "frag", sblock.fs_fsize);
+						chk(cbase+b+d, "free frag", sblock.fs_fsize);
 						nffree++;
 					}
 			}
@@ -288,6 +299,8 @@ pass1(ip)
 	daddr_t ind2[MAXNINDIR];
 	daddr_t db, ib;
 	register int i, j, k, siz;
+	int lbn;
+	char buf[BUFSIZ];
 
 	i = ip->di_mode & IFMT;
 	if(i == 0)
@@ -317,7 +330,8 @@ pass1(ip)
 		if (db == 0)
 			continue;
 		siz = dblksize(&sblock, ip, i);
-		chk(db, "data (block)", siz);
+		sprintf(buf, "logical data block %d", i);
+		chk(db, buf, siz);
 		if (siz == sblock.fs_bsize)
 			nblock++;
 		else
@@ -325,7 +339,7 @@ pass1(ip)
 	}
 	for(i = 0; i < NIADDR; i++) {
 		ib = ip->di_ib[i];
-		if(ib == 0)
+		if (ib == 0)
 			continue;
 		if (chk(ib, "1st indirect", sblock.fs_bsize))
 			continue;
@@ -336,8 +350,10 @@ pass1(ip)
 			if (ib == 0)
 				continue;
 			if (i == 0) {
-				siz = dblksize(&sblock, ip, NDADDR + j);
-				chk(ib, "data (large)", siz);
+				lbn = NDADDR + j;
+				siz = dblksize(&sblock, ip, lbn);
+				sprintf(buf, "logical data block %d", lbn);
+				chk(ib, buf, siz);
 				if (siz == sblock.fs_bsize)
 					nblock++;
 				else
@@ -353,9 +369,10 @@ pass1(ip)
 				ib = ind2[k];
 				if (ib == 0)
 					continue;
-				siz = dblksize(&sblock, ip,
-				    NDADDR + NINDIR(&sblock) * (i + j) + k);
-				chk(ib, "data (huge)", siz);
+				lbn = NDADDR + NINDIR(&sblock) * (i + j) + k;
+				siz = dblksize(&sblock, ip, lbn);
+				sprintf(buf, "logical data block %d", lbn);
+				chk(ib, buf, siz);
 				if (siz == sblock.fs_bsize)
 					nblock++;
 				else
@@ -378,14 +395,14 @@ chk(bno, s, size)
 		printf("%ld bad; inode=%u, class=%s\n", bno, ino, s);
 		return(1);
 	}
-	if (size == sblock.fs_bsize) {
+	frags = numfrags(&sblock, size);
+	if (frags == sblock.fs_frag) {
 		if (duped(bno, size)) {
 			printf("%ld dup block; inode=%u, class=%s\n",
 			    bno, ino, s);
 			ndup += sblock.fs_frag;
 		}
 	} else {
-		frags = numfrags(&sblock, size);
 		for (n = 0; n < frags; n++) {
 			if (duped(bno + n, sblock.fs_fsize)) {
 				printf("%ld dup frag; inode=%u, class=%s\n",
@@ -395,8 +412,9 @@ chk(bno, s, size)
 		}
 	}
 	for (n=0; blist[n] != -1; n++)
-		if (bno == blist[n])
-			printf("%ld arg; inode=%u, class=%s\n", bno, ino, s);
+		if (fsblist[n] >= bno && fsblist[n] < bno + frags)
+			printf("%ld arg; frag %d of %d, inode=%u, class=%s\n",
+				blist[n], fsblist[n] - bno, frags, ino, s);
 	return(0);
 }
 
