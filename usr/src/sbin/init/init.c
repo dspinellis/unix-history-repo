@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -583,7 +583,7 @@ single_user()
 				if (clear == 0 || *clear == '\0')
 					_exit(0);
 				password = crypt(clear, pp->pw_passwd);
-				bzero(clear, _PASSWORD_LEN);
+				memset(clear, 0, _PASSWORD_LEN);
 				if (strcmp(password, pp->pw_passwd) == 0)
 					break;
 				warning("single-user login failed\n");
@@ -840,7 +840,7 @@ find_session(pid)
 	key.size = sizeof pid;
 	if ((*session_db->get)(session_db, &key, &data, 0) != 0)
 		return 0;
-	bcopy(data.data, (char *)&ret, sizeof(ret));
+	memmove(&ret, data.data, sizeof(ret));
 	return ret;
 }
 
@@ -899,7 +899,7 @@ new_session(sprev, session_index, typ)
 		return 0;
 
 	sp = (session_t *) malloc(sizeof (session_t));
-	bzero(sp, sizeof *sp);
+	memset(sp, 0, sizeof *sp);
 
 	sp->se_index = session_index;
 

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -338,7 +338,7 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	if (!(dpagep = malloc(lfsp->lfs_bsize)))
 		fatal("%s", strerror(errno));
 	dip = (struct dinode *)dpagep;
-	bzero(dip, lfsp->lfs_bsize);
+	memset(dip, 0, lfsp->lfs_bsize);
 
 	/* Create a block of IFILE structures. */
 	if (!(ipagep = malloc(lfsp->lfs_bsize)))
@@ -430,14 +430,14 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	 */
 
 	/* Write out the root and lost and found directories */
-	bzero(ipagep, lfsp->lfs_bsize);
+	memset(ipagep, 0, lfsp->lfs_bsize);
 	make_dir(ipagep, lfs_root_dir, 
 	    sizeof(lfs_root_dir) / sizeof(struct direct));
 	*dp++ = ((u_long *)ipagep)[0];
 	put(fd, off, ipagep, lfsp->lfs_bsize);
 	off += lfsp->lfs_bsize;
 
-	bzero(ipagep, lfsp->lfs_bsize);
+	memset(ipagep, 0, lfsp->lfs_bsize);
 	make_dir(ipagep, lfs_lf_dir, 
 		sizeof(lfs_lf_dir) / sizeof(struct direct));
 	*dp++ = ((u_long *)ipagep)[0];
@@ -486,7 +486,7 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 
 	/* copy into segment */
 	sump = ipagep;
-	bcopy(&summary, sump, sizeof(SEGSUM));
+	memmove(sump, &summary, sizeof(SEGSUM));
 	sump += sizeof(SEGSUM);
 
 	/* Now, add the ifile */
@@ -494,9 +494,9 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	file_info.fi_version = 1;
 	file_info.fi_ino = LFS_IFILE_INUM;
 
-	bcopy(&file_info, sump, sizeof(FINFO) - sizeof(u_long));
+	memmove(sump, &file_info, sizeof(FINFO) - sizeof(u_long));
 	sump += sizeof(FINFO) - sizeof(u_long);
-	bcopy(block_array, sump, sizeof(u_long) * file_info.fi_nblocks);
+	memmove(sump, block_array, sizeof(u_long) * file_info.fi_nblocks);
 	sump += sizeof(u_long) * file_info.fi_nblocks;
 
 	/* Now, add the root directory */
@@ -504,12 +504,12 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	file_info.fi_version = 1;
 	file_info.fi_ino = ROOTINO;
 	file_info.fi_blocks[0] = 0;
-	bcopy(&file_info, sump, sizeof(FINFO));
+	memmove(sump, &file_info, sizeof(FINFO));
 	sump += sizeof(FINFO);
 
 	/* Now, add the lost and found */
 	file_info.fi_ino = LOSTFOUNDINO;
-	bcopy(&file_info, sump, sizeof(FINFO));
+	memmove(sump, &file_info, sizeof(FINFO));
 
 	((daddr_t *)ipagep)[LFS_SUMMARY_SIZE / sizeof(daddr_t) - 1] = 
 	    lfsp->lfs_idaddr;
@@ -634,11 +634,11 @@ make_dir(bufp, protodir, entries)
 	spcleft = DIRBLKSIZ;
 	for (cp = bufp, i = 0; i < entries - 1; i++) {
 		protodir[i].d_reclen = DIRSIZ(NEWDIRFMT, &protodir[i]);
-		bcopy(&protodir[i], cp, protodir[i].d_reclen);
+		memmove(cp, &protodir[i], protodir[i].d_reclen);
 		cp += protodir[i].d_reclen;
 		if ((spcleft -= protodir[i].d_reclen) < 0)
 			fatal("%s: %s", special, "directory too big");
 	}
 	protodir[i].d_reclen = spcleft;
-	bcopy(&protodir[i], cp, DIRSIZ(NEWDIRFMT, &protodir[i]));
+	memmove(cp, &protodir[i], DIRSIZ(NEWDIRFMT, &protodir[i]));
 }

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)symtab.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -148,7 +148,7 @@ lookupparent(name)
 	struct entry *ep;
 	char *tailindex;
 
-	tailindex = rindex(name, '/');
+	tailindex = strrchr(name, '/');
 	if (tailindex == NULL)
 		return (NULL);
 	*tailindex = '\0';
@@ -173,7 +173,7 @@ myname(ep)
 
 	for (cp = &namebuf[MAXPATHLEN - 2]; cp > &namebuf[ep->e_namlen]; ) {
 		cp -= ep->e_namlen;
-		bcopy(ep->e_name, cp, (long)ep->e_namlen);
+		memmove(cp, ep->e_name, (long)ep->e_namlen);
 		if (ep == lookupino(ROOTINO))
 			return (cp);
 		*(--cp) = '/';
@@ -203,7 +203,7 @@ addentry(name, inum, type)
 	if (freelist != NULL) {
 		np = freelist;
 		freelist = np->e_next;
-		bzero((char *)np, (long)sizeof(struct entry));
+		memset(np, 0, (long)sizeof(struct entry));
 	} else {
 		np = (struct entry *)calloc(1, sizeof(struct entry));
 		if (np == NULL)
@@ -220,7 +220,7 @@ addentry(name, inum, type)
 		addino(ROOTINO, np);
 		return (np);
 	}
-	np->e_name = savename(rindex(name, '/') + 1);
+	np->e_name = savename(strrchr(name, '/') + 1);
 	np->e_namlen = strlen(np->e_name);
 	np->e_parent = ep;
 	np->e_sibling = ep->e_entries;
@@ -304,7 +304,7 @@ moveentry(ep, newname)
 		ep->e_sibling = np->e_entries;
 		np->e_entries = ep;
 	}
-	cp = rindex(newname, '/') + 1;
+	cp = strrchr(newname, '/') + 1;
 	freename(ep->e_name);
 	ep->e_name = savename(cp);
 	ep->e_namlen = strlen(cp);
@@ -458,8 +458,7 @@ dumpsymtable(filename, checkpt)
 	stroff = 0;
 	for (i = WINO; i <= maxino; i++) {
 		for (ep = lookupino(i); ep != NULL; ep = ep->e_links) {
-			bcopy((char *)ep, (char *)tep,
-				(long)sizeof(struct entry));
+			memmove(tep, ep, (long)sizeof(struct entry));
 			tep->e_name = (char *)stroff;
 			stroff += allocsize(ep->e_namlen);
 			tep->e_parent = (struct entry *)ep->e_parent->e_index;

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -48,7 +48,7 @@ pass1()
 	/*
 	 * Find all allocated blocks.
 	 */
-	bzero((char *)&idesc, sizeof(struct inodesc));
+	memset(&idesc, 0, sizeof(struct inodesc));
 	idesc.id_type = ADDR;
 	idesc.id_func = pass1check;
 	inumber = 0;
@@ -78,9 +78,9 @@ checkinode(inumber, idesc)
 	dp = getnextinode(inumber);
 	mode = dp->di_mode & IFMT;
 	if (mode == 0) {
-		if (bcmp((char *)dp->di_db, (char *)zino.di_db,
+		if (memcmp(dp->di_db, zino.di_db,
 			NDADDR * sizeof(ufs_daddr_t)) ||
-		    bcmp((char *)dp->di_ib, (char *)zino.di_ib,
+		    memcmp(dp->di_ib, zino.di_ib,
 			NIADDR * sizeof(ufs_daddr_t)) ||
 		    dp->di_mode || dp->di_size) {
 			pfatal("PARTIALLY ALLOCATED INODE I=%lu", inumber);
@@ -131,8 +131,7 @@ checkinode(inumber, idesc)
 					inumber, symbuf, (long)dp->di_size);
 			}
 			dp = ginode(inumber);
-			bcopy(symbuf, (caddr_t)dp->di_shortlink,
-			    (long)dp->di_size);
+			memmove(dp->di_shortlink, symbuf, (long)dp->di_size);
 			dp->di_blocks = 0;
 			inodirty();
 		}

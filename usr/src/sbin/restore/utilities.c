@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -35,7 +35,7 @@ pathcheck(name)
 	struct entry *ep;
 	char *start;
 
-	start = index(name, '/');
+	start = strchr(name, '/');
 	if (start == 0)
 		return;
 	for (cp = start; *cp != '\0'; cp++) {

@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ping.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ping.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -214,7 +214,7 @@ main(argc, argv)
 		usage();
 	target = *argv;
 
-	bzero((char *)&whereto, sizeof(struct sockaddr));
+	memset(&whereto, 0, sizeof(struct sockaddr));
 	to = (struct sockaddr_in *)&whereto;
 	to->sin_family = AF_INET;
 	to->sin_addr.s_addr = inet_addr(target);
@@ -228,7 +228,7 @@ main(argc, argv)
 			exit(1);
 		}
 		to->sin_family = hp->h_addrtype;
-		bcopy(hp->h_addr, (caddr_t)&to->sin_addr, hp->h_length);
+		memmove(&to->sin_addr, hp->h_addr, hp->h_length);
 		(void)strncpy(hnamebuf, hp->h_name, sizeof(hnamebuf) - 1);
 		hostname = hnamebuf;
 	}
@@ -576,7 +576,7 @@ pr_pack(buf, cc, from)
 				break;
 			}
 			old_rrlen = i;
-			bcopy((char *)cp, old_rr, i);
+			memmove(old_rr, cp, i);
 			(void)printf("\nRR: ");
 			for (;;) {
 				l = *++cp;

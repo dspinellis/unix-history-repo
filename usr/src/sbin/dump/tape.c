@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -598,10 +598,10 @@ restore_check_point:
 		 * the remaining names for subsequent volumes.
 		 */
 		tapeno++;               /* current tape sequence */
-		if (nexttape || index(tape, ',')) {
+		if (nexttape || strchr(tape, ',')) {
 			if (nexttape && *nexttape)
 				tape = nexttape;
-			if ((p = index(tape, ',')) != NULL) {
+			if ((p = strchr(tape, ',')) != NULL) {
 				*p = '\0';
 				nexttape = p + 1;
 			} else

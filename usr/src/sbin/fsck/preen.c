@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)preen.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)preen.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -314,7 +314,7 @@ unrawname(name)
 	char *dp;
 	struct stat stb;
 
-	if ((dp = rindex(name, '/')) == 0)
+	if ((dp = strrchr(name, '/')) == 0)
 		return (name);
 	if (stat(name, &stb) < 0)
 		return (name);
@@ -333,7 +333,7 @@ rawname(name)
 	static char rawbuf[32];
 	char *dp;
 
-	if ((dp = rindex(name, '/')) == 0)
+	if ((dp = strrchr(name, '/')) == 0)
 		return (0);
 	*dp = 0;
 	(void)strcpy(rawbuf, name);

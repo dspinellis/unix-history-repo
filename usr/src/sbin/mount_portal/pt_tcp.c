@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pt_tcp.c	8.4 (Berkeley) %G%
+ *	@(#)pt_tcp.c	8.5 (Berkeley) %G%
  *
  * $Id: pt_tcp.c,v 1.1 1992/05/25 21:43:09 jsp Exp jsp $
  */
@@ -102,7 +102,7 @@ int portal_tcp(pcr, key, v, kso, fdp)
 		s_port = htons(s_port);
 	}
 
-	bzero(&sain, sizeof(sain));
+	memset(&sain, 0, sizeof(sain));
 	sain.sin_len = sizeof(sain);
 	sain.sin_family = AF_INET;
 	sain.sin_port = s_port;

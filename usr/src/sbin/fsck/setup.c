@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	8.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #define DKTYPENAMES
@@ -196,8 +196,7 @@ setup(dev)
 		dirty(&asblk);
 	}
 	if (asblk.b_dirty && !bflag) {
-		bcopy((char *)&sblock, (char *)&altsblock,
-			(size_t)sblock.fs_sbsize);
+		memmove(&altsblock, &sblock, (size_t)sblock.fs_sbsize);
 		flush(fswritefd, &asblk);
 	}
 	/*
@@ -326,13 +325,11 @@ readsb(listerr)
 	altsblock.fs_optim = sblock.fs_optim;
 	altsblock.fs_rotdelay = sblock.fs_rotdelay;
 	altsblock.fs_maxbpg = sblock.fs_maxbpg;
-	bcopy((char *)sblock.fs_csp, (char *)altsblock.fs_csp,
-		sizeof sblock.fs_csp);
+	memmove(altsblock.fs_csp, sblock.fs_csp, sizeof sblock.fs_csp);
 	altsblock.fs_maxcluster = sblock.fs_maxcluster;
-	bcopy((char *)sblock.fs_fsmnt, (char *)altsblock.fs_fsmnt,
-		sizeof sblock.fs_fsmnt);
-	bcopy((char *)sblock.fs_sparecon, (char *)altsblock.fs_sparecon,
-		sizeof sblock.fs_sparecon);
+	memmove(altsblock.fs_fsmnt, sblock.fs_fsmnt, sizeof sblock.fs_fsmnt);
+	memmove(altsblock.fs_sparecon,
+		sblock.fs_sparecon, sizeof sblock.fs_sparecon);
 	/*
 	 * The following should not have to be copied.
 	 */
@@ -345,7 +342,7 @@ readsb(listerr)
 	altsblock.fs_qfmask = sblock.fs_qfmask;
 	altsblock.fs_state = sblock.fs_state;
 	altsblock.fs_maxfilesize = sblock.fs_maxfilesize;
-	if (bcmp((char *)&sblock, (char *)&altsblock, (int)sblock.fs_sbsize)) {
+	if (memcmp(&sblock, &altsblock, (int)sblock.fs_sbsize)) {
 		if (debug) {
 			long *nlp, *olp, *endlp;
 
@@ -398,7 +395,7 @@ calcsb(dev, devfd, fs)
 	register char *cp;
 	int i;
 
-	cp = index(dev, '\0') - 1;
+	cp = strchr(dev, '\0') - 1;
 	if (cp == (char *)-1 || ((*cp < 'a' || *cp > 'h') && !isdigit(*cp))) {
 		pfatal("%s: CANNOT FIGURE OUT FILE SYSTEM PARTITION\n", dev);
 		return (0);
@@ -414,7 +411,7 @@ calcsb(dev, devfd, fs)
 			fstypenames[pp->p_fstype] : "unknown");
 		return (0);
 	}
-	bzero((char *)fs, sizeof(struct fs));
+	memset(fs, 0, sizeof(struct fs));
 	fs->fs_fsize = pp->p_fsize;
 	fs->fs_frag = pp->p_frag;
 	fs->fs_cpg = pp->p_cpg;

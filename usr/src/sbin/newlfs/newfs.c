@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -101,7 +101,7 @@ main(argc, argv)
 	int debug, lfs, fsi, fso, segsize;
 	char *cp, *opstring;
 
-	if (progname = rindex(*argv, '/'))
+	if (progname = strrchr(*argv, '/'))
 		++progname;
 	else
 		progname = *argv;
@@ -243,7 +243,7 @@ main(argc, argv)
 	 * prefix, try /dev/r%s and then /dev/%s.
 	 */
 	special = argv[0];
-	if (index(special, '/') == NULL) {
+	if (strchr(special, '/') == NULL) {
 		(void)sprintf(device, "%sr%s", _PATH_DEV, special);
 		if (stat(device, &st) == -1)
 			(void)sprintf(device, "%s%s", _PATH_DEV, special);
@@ -267,7 +267,7 @@ main(argc, argv)
 	if (!debug && !mfs && !S_ISCHR(st.st_mode))
 		(void)printf("%s: %s: not a character-special device\n",
 		    progname, special);
-	cp = index(argv[0], '\0') - 1;
+	cp = strchr(argv[0], '\0') - 1;
 	if (!debug && (cp == 0 || (*cp < 'a' || *cp > 'h') && !isdigit(*cp)))
 		fatal("%s: can't figure out file system partition", argv[0]);
 
@@ -375,7 +375,7 @@ rewritelabel(s, fd, lp)
 		cfd = open(specname, O_WRONLY);
 		if (cfd < 0)
 			fatal("%s: %s", specname, strerror(errno));
-		bzero(blk, sizeof(blk));
+		memset(blk, 0, sizeof(blk));
 		*(struct disklabel *)(blk + LABELOFFSET) = *lp;
 		alt = lp->d_ncylinders * lp->d_secpercyl - lp->d_nsectors;
 		for (i = 1; i < 11 && i < lp->d_nsectors; i += 2) {

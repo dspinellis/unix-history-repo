@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ccitt_addr.c	8.1 (Berkeley) %G%
+ *	@(#)ccitt_addr.c	8.2 (Berkeley) %G%
  */
 /*
  * parse CCITT addresses
@@ -36,7 +36,7 @@ register struct sockaddr_x25 *xp;
 	register char *p, *ap, *limit;
 	int havenet = 0;
 
-	bzero ((char *)xp, sizeof (*xp));
+	memset(xp, 0, sizeof (*xp));
 	xp->x25_family = AF_CCITT;
 	xp->x25_len = sizeof(*xp);
 	p = addr;

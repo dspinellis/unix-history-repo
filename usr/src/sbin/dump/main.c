@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -217,9 +217,9 @@ main(argc, argv)
 			tsize = cartridge ? 1700L*120L : 2300L*120L;
 	}
 
-	if (index(tape, ':')) {
+	if (strchr(tape, ':')) {
 		host = tape;
-		tape = index(host, ':');
+		tape = strchr(host, ':');
 		*tape++ = '\0';
 #ifdef RDUMP
 		if (rmthost(host) == 0)
@@ -506,7 +506,7 @@ rawname(cp)
 	char *cp;
 {
 	static char rawbuf[MAXPATHLEN];
-	char *dp = rindex(cp, '/');
+	char *dp = strrchr(cp, '/');
 
 	if (dp == NULL)
 		return (NULL);
