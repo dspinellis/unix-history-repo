@@ -1,4 +1,6 @@
 #
+#	@(#)aliases	5.3 (Berkeley) %G%
+#
 #  Aliases in this file will NOT be expanded in the header from
 #  Mail, but WILL be visible over networks or from /bin/mail.
 #
@@ -12,14 +14,14 @@ MAILER-DAEMON: postmaster
 postmaster: root
 
 # General redirections for pseudo accounts
-bin: root
-daemon: root
-games: root
-ingres: root
-nobody: root
-system: root
-toor: root
-uucp: root
+bin:	root
+daemon:	root
+games:	root
+ingres:	root
+nobody:	root
+system:	root
+toor:	root
+uucp:	root
 
 # Well-known aliases
 root:
