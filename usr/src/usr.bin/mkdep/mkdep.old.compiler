@@ -15,7 +15,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)mkdep.old.compiler	5.1 (Berkeley) %G%
+#	@(#)mkdep.old.compiler	5.2 (Berkeley) %G%
 #
 
 # This is a version of mkdep that works pretty well
@@ -25,12 +25,20 @@ PATH=/bin:/usr/bin:/usr/ucb:/lib:/usr/lib
 
 INCL=
 D=.depend
+append=0
+
 while :
 	do case "$1" in
+		# -a appends to the depend file
+		-a)
+			append=1
+			shift ;;
+
 		# -f allows you to select a makefile name
 		-f)
 			D=$2
 			shift; shift ;;
+
 		# the -p flag produces "program: program.c" style dependencies
 		# so .o's don't get produced
 		-p)
@@ -98,5 +106,10 @@ END {
 	print rec
 }' > $TMP
 
-mv $TMP $D
+if [ $append = 1 ]; then
+	cat $TMP >> $D
+	rm -f $TMP
+else
+	mv $TMP $D
+fi
 exit 0
