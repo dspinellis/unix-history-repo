@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dinode.h	7.18 (Berkeley) %G%
+ *	@(#)dinode.h	7.19 (Berkeley) %G%
  */
 
 /*
@@ -56,7 +56,7 @@ struct dinode {
 #define	di_inumber	di_u.inumber
 #define	di_rdev		di_db[0]
 #define di_shortlink	di_db
-#define	MAXSYMLINKLEN	(NDADDR * sizeof(daddr_t))
+#define	MAXSYMLINKLEN	((NDADDR + NIADDR) * sizeof(daddr_t))
 
 /* file modes */
 #define	IFMT		0170000		/* mask of file type */
