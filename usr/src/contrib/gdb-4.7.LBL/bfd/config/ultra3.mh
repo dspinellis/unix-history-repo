@@ -1,0 +1,4 @@
+CC=u3cc
+AR=u3ar
+RANLIB=/bin/true
+HDEFINES=-DNO_FCNTL
