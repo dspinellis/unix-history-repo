@@ -9,24 +9,24 @@
 # software without specific written prior permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 # -DLOG		log games in /usr/adm
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	dm.c
-OBJS=	dm.o
+OBJS=
 
 all: dm
 
-dm: ${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS}
+dm: ${LIBC}
+	${CC} -o $@ ${CFLAGS} dm.c
 
 clean: FRC
-	rm -f ${OBJS} core dm
+	rm -f core dm
 
 depend: FRC
-	mkdep ${CFLAGS} ${SRCS}
+	mkdep -p ${CFLAGS} ${SRCS}
 
 install: FRC
 	install -s -o games -g kmem -m 6755 dm ${DESTDIR}/usr/games
@@ -43,11 +43,11 @@ FRC:
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
-dm.o: dm.c /usr/include/sys/param.h /usr/include/sys/types.h
-dm.o: /usr/include/signal.h /usr/include/machine/trap.h
-dm.o: /usr/include/machine/machparam.h /usr/include/sys/file.h
-dm.o: /usr/include/sys/time.h /usr/include/time.h /usr/include/sys/resource.h
-dm.o: /usr/include/pwd.h /usr/include/utmp.h /usr/include/nlist.h
-dm.o: /usr/include/stdio.h /usr/include/ctype.h
+dm: dm.c /usr/include/sys/param.h /usr/include/sys/types.h
+dm: /usr/include/signal.h /usr/include/machine/trap.h
+dm: /usr/include/machine/machparam.h /usr/include/sys/file.h
+dm: /usr/include/sys/time.h /usr/include/time.h /usr/include/sys/resource.h
+dm: /usr/include/pwd.h /usr/include/utmp.h /usr/include/nlist.h
+dm: /usr/include/stdio.h /usr/include/ctype.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
