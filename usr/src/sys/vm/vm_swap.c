@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_swap.c	8.1 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.30 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -65,7 +65,9 @@ swapinit()
 	if (swdevt[0].sw_vp == NULL &&
 	    bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp))
 		panic("swapvp");
-	if (error = swfree(p, 0)) {
+	if (nswap == 0)
+		printf("WARNING: no swap space found\n");
+	else if (error = swfree(p, 0)) {
 		printf("swfree errno %d\n", error);	/* XXX */
 		panic("swapinit swfree 0");
 	}
@@ -220,12 +222,12 @@ swfree(p, index)
 			blk = dmmax;
 		if (vsbase == 0) {
 			/*
-			 * First of all chunks.
-			 * Cannot free a zero-index block in a resource
-			 * map so we waste the first block.
+			 * First of all chunks... initialize the swapmap.
+			 * Don't use the first cluster of the device
+			 * in case it starts with a label or boot block.
 			 */
-			rminit(swapmap, (long)(blk - 1), (long)1,
-			    "swap", nswapmap);
+			rminit(swapmap, blk - ctod(CLSIZE),
+			    vsbase + ctod(CLSIZE), "swap", nswapmap);
 		} else if (dvbase == 0) {
 			/*
 			 * Don't use the first cluster of the device
