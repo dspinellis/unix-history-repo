@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)vax.c 1.5 %G%";
+static char sccsid[] = "@(#)vax.c 1.6 %G%";
 
 /*
  * Target machine dependent stuff.
@@ -313,6 +313,21 @@ private Format fmt[] = {
     { nil, nil, 0 }
 };
 
+private Format *findformat(s)
+String s;
+{
+    register Format *f;
+
+    f = &fmt[0];
+    while (f->name != nil and not streq(f->name, s)) {
+	++f;
+    }
+    if (f->name == nil) {
+	error("bad print format \"%s\"", s);
+    }
+    return f;
+}
+
 public Address printdata(lowaddr, highaddr, format)
 Address lowaddr;
 Address highaddr;
@@ -326,13 +341,7 @@ String format;
     if (lowaddr > highaddr) {
 	error("first address larger than second");
     }
-    f = &fmt[0];
-    while (f->name != nil and not streq(f->name, format)) {
-	++f;
-    }
-    if (f->name == nil) {
-	error("bad print format \"%s\"", format);
-    }
+    f = findformat(format);
     n = 0;
     value = 0;
     for (addr = lowaddr; addr <= highaddr; addr += f->length) {
@@ -372,13 +381,7 @@ String format;
     if (count <= 0) {
 	error("non-positive repetition count");
     }
-    f = &fmt[0];
-    while (f->name != nil and not streq(f->name, format)) {
-	++f;
-    }
-    if (f->name == nil) {
-	error("bad print format \"%s\"", format);
-    }
+    f = findformat(format);
     isstring = (Boolean) streq(f->name, "s");
     n = 0;
     addr = startaddr;
@@ -414,6 +417,33 @@ String format;
 	putchar('\n');
     }
     prtaddr = addr;
+}
+
+/*
+ * Print out a value according to the given format.
+ */
+
+public printvalue(v, format)
+long v;
+String format;
+{
+    Format *f;
+    char *p, *q;
+
+    f = findformat(format);
+    if (streq(f->name, "s")) {
+	putchar('"');
+	p = (char *) &v;
+	q = p + sizeof(v);
+	while (p < q) {
+	    printchar(*p);
+	    ++p;
+	}
+	putchar('"');
+    } else {
+	printf(f->printfstring, v);
+    }
+    putchar('\n');
 }
 
 /*
@@ -461,21 +491,6 @@ public printerror()
 	printinst(pc, pc);
     }
     erecover();
-}
-
-private printloc()
-{
-    if (curline > 0) {
-	if (nlhdr.nfiles > 1) {
-	    printf("at line %d in file %s", curline, cursource);
-	} else {
-	    printf("at line %d", curline);
-	}
-    } else {
-	printf("in ");
-	printname(stdout, curfunc);
-	printf(" at 0x%x", pc);
-    }
 }
 
 /*
@@ -793,7 +808,7 @@ Address addr;
 	    return;
 	}
     }
-    iread(&save, addr, sizeof(addr));
+    iread(&save, addr, sizeof(save));
     newsave = new(Savelist);
     newsave->location = addr;
     newsave->save = save;
