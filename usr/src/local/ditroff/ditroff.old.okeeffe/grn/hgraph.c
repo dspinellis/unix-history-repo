@@ -19,6 +19,7 @@ extern char *tfont[];
 extern int tsize[];
 extern int stipple_index[];	/* stipple font index for stipples 1 - 8 */
 extern char *stipple;		/* stipple type (cf or ug) */
+extern int oldstipmap;		/* use old-style stipple mapping */
 
 
 extern double troffscale;	/* imports from main.c */
@@ -97,20 +98,14 @@ int baseline;
 	     case POLYGON:  tmove(p1);
 			    if (stipple) {
 				didstipple = 1;
-				if (element->brushf) {
-				    printf("\\D'p %d", 
-					    element->size <= NSTIPPLES ?
-					    stipple_index[element->size - 1] :
-					    element->size);
-				} else {
-				    printf("\\D'P %d",
-					    element->size <= NSTIPPLES ?
-					    stipple_index[element->size - 1] :
-					    element->size);
-				}
+				printf(element->brushf ? "\\D'p %d":"\\D'P %d",
+					(element->size > NSTIPPLES ||
+					oldstipmap == FALSE) ? element->size :
+					stipple_index[element->size - 1]);
 			    } else {
 				if (didstipple) {
-				    error("no stipple font requested for picture at line %d", baseline);
+				    error("no stipple for picture at line %d",
+						baseline);
 				    didstipple = 0;
 				}
 				printf("\\D'p 0");
