@@ -199,11 +199,13 @@ lfs_mountfs(devvp, mp, p)
 	struct partinfo dpart;
 	dev_t dev;
 	int error, i, ronly, size;
+	struct ucred *cred;
 
+	cred = p ? p->p_ucred : NOCRED;
 	if (error = VOP_OPEN(devvp, ronly ? FREAD : FREAD|FWRITE, FSCRED, p))
 		return (error);
 
-	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, NOCRED, p) != 0)
+	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, cred, p) != 0)
 		size = DEV_BSIZE;
 	else {
 		size = dpart.disklab->d_secsize;
@@ -220,7 +222,7 @@ lfs_mountfs(devvp, mp, p)
 	ump = NULL;
 
 	/* Read in the superblock. */
-	if (error = bread(devvp, LFS_LABELPAD / size, LFS_SBPAD, NOCRED, &bp))
+	if (error = bread(devvp, LFS_LABELPAD / size, LFS_SBPAD, cred, &bp))
 		goto out;
 		error = EINVAL;		/* XXX needs translation */
 		goto out;
@@ -283,7 +285,7 @@ lfs_mountfs(devvp, mp, p)
 out:
 	if (bp)
 		brelse(bp);
-	(void)VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED, p);
+	(void)VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, cred, p);
 	if (ump) {
 		free(ump->um_lfs, M_UFSMNT);
 		free(ump, M_UFSMNT);
