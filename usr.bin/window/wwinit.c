@@ -104,6 +104,8 @@ wwinit()
 	wwnewtty.ww_termios.c_lflag = 0;
 	for (i = 0; i < NCCS; i++)
 		wwnewtty.ww_termios.c_cc[i] = _POSIX_VDISABLE;
+	wwnewtty.ww_termios.c_cc[VMIN] = 1;
+	wwnewtty.ww_termios.c_cc[VTIME] = 0;
 #endif
 	wwnewtty.ww_fflags = wwoldtty.ww_fflags | FASYNC;
 	if (wwsettty(0, &wwnewtty) < 0)
