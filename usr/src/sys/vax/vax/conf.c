@@ -1,4 +1,4 @@
-/*	conf.c	3.2	%H%	*/
+/*	conf.c	3.3	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -88,31 +88,28 @@ struct cdevsw	cdevsw[] =
 		0,
 };
 
-int	ttyopen(),ttread(),nullioctl(),ttstart();
+int	ttyopen(), ttread(), nullioctl(), ttstart();
 char	*ttwrite();
 int	ttyinput(), ttyrend();
-#ifdef BERKNET
-int	netopen(), netclose(), netread(), netinput(), netioctl();
-#endif
+int	bkopen(), bkclose(), bkread(), bkinput(), bkioctl();
+int	ntyopen(), ntyclose(), ntread();
+char 	*ntwrite();
+int	ntyinput(), ntyrend();
  
 struct	linesw linesw[] =
 {
 	ttyopen, nulldev, ttread, ttwrite, nullioctl,
 	ttyinput, ttyrend, nulldev, nulldev, nulldev,	/* 0 */
-#ifdef BERKNET
-	netopen, netclose, netread, ttwrite, netioctl,
-	netinput, nodev, nulldev, ttstart, nulldev,	/* 1 */
-#endif
+	bkopen, bkclose, bkread, ttwrite, bkioctl,
+	bkinput, nodev, nulldev, ttstart, nulldev,	/* 1 */
+	ntyopen, ntyclose, ntread, ntwrite, nullioctl,
+	ntyinput, ntyrend, nulldev, ttstart, nulldev,	/* 2 */
 	mxopen, mxclose, mcread, mcwrite, mxioctl,
-	nulldev, nulldev, nulldev, nulldev, nulldev,	/* 1 or 2 */
+	nulldev, nulldev, nulldev, nulldev, nulldev,	/* 3 */
 	0
 };
  
-#ifdef BERKNET
-int	nldisp = 2;
-#else
-int	nldisp = 1;
-#endif
+int	nldisp = 3;
 dev_t	rootdev	= makedev(0, 0);
 dev_t	swapdev	= makedev(0, 1);
 dev_t	pipedev	= makedev(0, 0);
