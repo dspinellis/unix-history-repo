@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)factor.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)factor.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -141,7 +141,7 @@ pr_fact(val)
 	}
 
 	/* Factor value. */
-	(void)printf("%ld:", val);
+	(void)printf("%lu:", val);
 	for (fact = &prime[0]; val > 1; ++fact) {
 		/* Look for the smallest factor. */
 		do {
@@ -151,13 +151,13 @@ pr_fact(val)
 
 		/* Watch for primes larger than the table. */
 		if (fact > pr_limit) {
-			(void)printf(" %ld", val);
+			(void)printf(" %lu", val);
 			break;
 		}
 
 		/* Divide factor out until none are left. */
 		do {
-			(void)printf(" %ld", *fact);
+			(void)printf(" %lu", *fact);
 			val /= (long)*fact;
 		} while ((val % (long)*fact) == 0);
 
