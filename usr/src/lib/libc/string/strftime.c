@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strftime.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)strftime.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -226,8 +226,11 @@ _secs(t)
 	static char buf[15];
 	register time_t s;
 	register char *p;
+	struct tm tmp;
 
-	s = mktime(t);
+	/* Make a copy, mktime(3) modifies the tm struct. */
+	tmp = *t;
+	s = mktime(&tmp);
 	for (p = buf + sizeof(buf) - 2; s > 0 && p > buf; s /= 10)
 		*p-- = s % 10 + '0';
 	return(_add(++p));
