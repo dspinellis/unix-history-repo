@@ -1,4 +1,4 @@
-/*	kern_time.c	5.12	82/12/17	*/
+/*	kern_time.c	5.13	82/12/28	*/
 
 #include "../machine/reg.h"
 
@@ -29,17 +29,13 @@ gettimeofday()
 	int s;
 
 	s = spl7(); atv = time; splx(s);
-	if (copyout((caddr_t)&atv, (caddr_t)uap->tp, sizeof (atv))) {
-		u.u_error = EFAULT;
+	u.u_error = copyout((caddr_t)&atv, (caddr_t)uap->tp, sizeof (atv));
+	if (u.u_error)
 		return;
-	}
 	if (uap->tzp == 0)
 		return;
 	/* SHOULD HAVE PER-PROCESS TIMEZONE */
-	if (copyout((caddr_t)&tz, (caddr_t)uap->tzp, sizeof (tz))) {
-		u.u_error = EFAULT;
-		return;
-	}
+	u.u_error = copyout((caddr_t)&tz, (caddr_t)uap->tzp, sizeof (tz));
 }
 
 settimeofday()
@@ -51,16 +47,16 @@ settimeofday()
 	struct timeval atv;
 	struct timezone atz;
 
-	if (copyin((caddr_t)uap->tv, (caddr_t)&atv, sizeof (struct timeval))) {
-		u.u_error = EFAULT;
+	u.u_error = copyin((caddr_t)uap->tv, (caddr_t)&atv,
+		sizeof (struct timeval));
+	if (u.u_error)
 		return;
-	}
 	setthetime(&atv);
 	if (uap->tzp && suser()) {
-		if (copyin((caddr_t)uap->tzp, (caddr_t)&atz, sizeof (atz))) {
-			u.u_error = EFAULT;
+		u.u_error = copyin((caddr_t)uap->tzp, (caddr_t)&atz,
+			sizeof (atz));
+		if (u.u_error)
 			return;
-		}
 	}
 }
 
@@ -128,9 +124,8 @@ getitimer()
 	} else
 		aitv = u.u_timer[uap->which];
 	splx(s);
-	if (copyout((caddr_t)&aitv, (caddr_t)uap->itv,
-	    sizeof (struct itimerval)))
-		u.u_error = EFAULT;
+	u.u_error = copyout((caddr_t)&aitv, (caddr_t)uap->itv,
+	    sizeof (struct itimerval));
 	splx(s);
 }
 
@@ -148,11 +143,10 @@ setitimer()
 		u.u_error = EINVAL;
 		return;
 	}
-	if (copyin((caddr_t)uap->itv, (caddr_t)&aitv,
-	    sizeof (struct itimerval))) {
-		u.u_error = EFAULT;
+	u.u_error = copyin((caddr_t)uap->itv, (caddr_t)&aitv,
+	    sizeof (struct itimerval));
+	if (u.u_error)
 		return;
-	}
 	if (uap->oitv) {
 		uap->itv = uap->oitv;
 		getitimer();
@@ -346,8 +340,7 @@ oftime()
 	(void) spl0();
 	tb.timezone = tz.tz_minuteswest;
 	tb.dstflag = tz.tz_dsttime;
-	if (copyout((caddr_t)&tb, (caddr_t)uap->tp, sizeof (tb)) < 0)
-		u.u_error = EFAULT;
+	u.u_error = copyout((caddr_t)&tb, (caddr_t)uap->tp, sizeof (tb));
 }
 
 oalarm()

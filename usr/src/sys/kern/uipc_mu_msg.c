@@ -1,4 +1,4 @@
-/*	uipc_mu_msg.c	Melb 4.2	82/11/13	*/
+/*	uipc_mu_msg.c	Melb 4.3	82/12/28	*/
 
 #ifdef	MUSH
 #include "../h/param.h"
@@ -56,9 +56,8 @@ mu_msg()
 				p->p_msgflgs |= MSGOK;
 				sleep((caddr_t) &p->p_mb, MSGPRI);
 			}
-			if (copyout((caddr_t)&p->p_mb, (caddr_t)uap->msgp,
-			    sizeof(mmsgbuf)))
-				u.u_error = EFAULT;
+			u.u_error = copyout((caddr_t)&p->p_mb,
+				(caddr_t)uap->msgp, sizeof(mmsgbuf));
 			p->p_msgflgs &= ~(MSGOK|MSGWRPLY);
 			if (p->p_mb.msg_rply)
 				p->p_msgflgs |= MSGRPLY;
@@ -74,11 +73,10 @@ mu_msg()
 		case MSG_SEND:
 		case MSG_SNDW:
 		case MSG_RPLY:
-			if (copyin((caddr_t)uap->msgp, (caddr_t)&mb,
-			    sizeof(mmsgbuf))) {
-				u.u_error = EFAULT;
+			u.u_error = copyin((caddr_t)uap->msgp, (caddr_t)&mb,
+			    sizeof(mmsgbuf));
+			if (u.u_error)
 				return;
-			}
 			if (uap->cmd == MSG_RPLY) {
 				if (!(p->p_msgflgs & MSGRPLY) ||
 				    mb.msg_pid != p->p_mb.msg_pid) {

@@ -1,4 +1,4 @@
-/*	kern_resource.c	4.18	82/12/17	*/
+/*	kern_resource.c	4.19	82/12/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -156,10 +156,10 @@ setrlimit()
 		return;
 	}
 	alimp = &u.u_rlimit[uap->which];
-	if (copyin((caddr_t)uap->lim, (caddr_t)&alim, sizeof (struct rlimit))) {
-		u.u_error = EFAULT;
+	u.u_error = copyin((caddr_t)uap->lim, (caddr_t)&alim,
+		sizeof (struct rlimit));
+	if (u.u_error)
 		return;
-	}
 	if (alim.rlim_cur > alimp->rlim_max || alim.rlim_max > alimp->rlim_max)
 		if (!suser())
 			return;
@@ -191,11 +191,8 @@ getrlimit()
 		u.u_error = EINVAL;
 		return;
 	}
-	if (copyout((caddr_t)&u.u_rlimit[uap->which], (caddr_t)uap->rlp,
-	    sizeof (struct rlimit))) {
-		u.u_error = EFAULT;
-		return;
-	}
+	u.u_error = copyout((caddr_t)&u.u_rlimit[uap->which], (caddr_t)uap->rlp,
+	    sizeof (struct rlimit));
 }
 
 getrusage()
@@ -220,11 +217,8 @@ getrusage()
 		u.u_error = EINVAL;
 		return;
 	}
-	if (copyout((caddr_t)rup, (caddr_t)uap->rusage,
-	    sizeof (struct rusage))) {
-		u.u_error = EFAULT;
-		return;
-	}
+	u.u_error = copyout((caddr_t)rup, (caddr_t)uap->rusage,
+	    sizeof (struct rusage));
 }
 
 ruadd(ru, ru2)
@@ -266,10 +260,7 @@ otimes()
 	atms.tms_stime = scale60(&u.u_ru.ru_stime);
 	atms.tms_cutime = scale60(&u.u_cru.ru_utime);
 	atms.tms_cstime = scale60(&u.u_cru.ru_stime);
-	if (copyout((caddr_t)&atms, (caddr_t)uap->tmsb, sizeof (atms))) {
-		u.u_error = EFAULT;
-		return;
-	}
+	u.u_error = copyout((caddr_t)&atms, (caddr_t)uap->tmsb, sizeof (atms));
 }
 
 scale60(tvp)
@@ -291,17 +282,17 @@ ovtimes()
 
 	if (uap->par) {
 		getvtimes(&u.u_ru, &avt);
-		if (copyout((caddr_t)&avt, (caddr_t)uap->par, sizeof (avt))) {
-			u.u_error = EFAULT;
+		u.u_error = copyout((caddr_t)&avt, (caddr_t)uap->par,
+			sizeof (avt));
+		if (u.u_error)
 			return;
-		}
 	}
 	if (uap->chi) {
 		getvtimes(&u.u_cru, &avt);
-		if (copyout((caddr_t)&avt, (caddr_t)uap->chi, sizeof (avt))) {
-			u.u_error = EFAULT;
+		u.u_error = copyout((caddr_t)&avt, (caddr_t)uap->chi,
+			sizeof (avt));
+		if (u.u_error)
 			return;
-		}
 	}
 }
 
