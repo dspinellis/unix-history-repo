@@ -1,42 +1,66 @@
 #
-# Copyright (c) 1980 Regents of the University of California.
+# Copyright (c) 1987 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.3	(Berkeley)	%G%
 #
-DESTDIR=
 CFLAGS=	-O
+LIBC=	/lib/libc.a
 LIBS=	-lm -ltermcap
-BIN=	$(DESTDIR)/usr/games
-LIB=	$(DESTDIR)/usr/games/lib
-USER=	daemon
-UTILS=	snscore
-OBJS=	snake.o move.o
-ALL=	snake ${UTILS}
+SRCS1=	snake.c move.c
+OBJS1=	snake.o move.o
+SRCS2=	snscore.c
+OBJS2=	snscore.o
+SRCS3=	busy.c
+OBJS3=	busy.o
 
-all:	${ALL}
+all:	snake snscore
 
-snake:	$(OBJS)
-	cc $(OBJS) -o snake $(LIBS)
+snake:	${OBJS1} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJS1} ${LIBS}
 
-snake.o move.o:snake.h
+snscore: ${OBJS2} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJS2}
 
-snscore: snscore.c
-	cc $(CFLAGS) snscore.c -o snscore
+busy:	${OBJS3} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJS3}
 
-busy:	busy.c
-	cc $(CFLAGS) busy.c -o busy
+clean: FRC
+	rm -f ${OBJS1} ${OBJS2} ${OBJS3} core snake snscore busy
 
-install: all
-	install -s -m 4755 -o ${USER} snake ${BIN}/snake
-	install -s -m 755 -o ${USER} snscore ${BIN}/snscore
-#	install -s -m 755 -o ${USER} busy ${BIN}/busy
-	cat /dev/null >> $(LIB)/snakerawscores
-	chmod 644 $(LIB)/snakerawscores
-	chown $(USER) $(LIB)/snakerawscores
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS1} ${SRCS2} ${SRCS3}
 
-clean:
-	rm -f *.o ${ALL}
+install: FRC
+	install -s -o daemon -g bin -m 4755 snake ${DESTDIR}/usr/games/snake
+	install -s -o daemon -g bin -m 755 snscore ${DESTDIR}/usr/games/snscore
+	install -c -o daemon -g bin -m 644 /dev/null ${DESTDIR}/usr/games/lib/snakerawscores
+#	install -s -o daemon -g bin -m 755 busy ${DESTDIR}/usr/games/busy
 
-depend:
+lint: FRC
+	lint ${CFLAGS} ${SRCS1}
+	lint ${CFLAGS} ${SRCS2}
+	lint ${CFLAGS} ${SRCS3}
+
+tags: FRC
+	ctags ${SRCS1} ${SRCS2} ${SRCS3}
+
+FRC:
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+snake.o: snake.c snake.h /usr/include/stdio.h /usr/include/assert.h
+snake.o: /usr/include/sys/types.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+snake.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+snake.o: /usr/include/signal.h /usr/include/math.h /usr/include/pwd.h
+move.o: move.c snake.h /usr/include/stdio.h /usr/include/assert.h
+move.o: /usr/include/sys/types.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+move.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+move.o: /usr/include/signal.h /usr/include/math.h
+snscore.o: snscore.c /usr/include/stdio.h /usr/include/pwd.h
+busy.o: busy.c /usr/include/stdio.h /usr/include/sys/types.h
+busy.o: /usr/include/a.out.h /usr/include/sys/exec.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
