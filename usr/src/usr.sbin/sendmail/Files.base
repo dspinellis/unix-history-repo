@@ -1,4 +1,4 @@
-#	@(#)Files.base	8.32 (Berkeley) %G%
+#	@(#)Files.base	8.33 (Berkeley) %G%
 FAQ
 KNOWNBUGS
 Makefile
@@ -94,10 +94,11 @@ src/Makefiles/Makefile.Linux
 src/Makefiles/Makefile.LUNA
 src/Makefiles/Makefile.Mach386
 src/Makefiles/Makefile.NCR3000
-src/Makefiles/Makefile.NeXT
 src/Makefiles/Makefile.NetBSD
 src/Makefiles/Makefile.NEWS-OS.4.x
 src/Makefiles/Makefile.NEWS-OS.6.x
+src/Makefiles/Makefile.NeXT
+src/Makefiles/Makefile.NEXTSTEP
 src/Makefiles/Makefile.NonStop-UX
 src/Makefiles/Makefile.OSF1
 src/Makefiles/Makefile.Paragon
