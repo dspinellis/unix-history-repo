@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.11 (Berkeley) %G%
+ *	@(#)curses.h	5.12 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -68,7 +68,6 @@ typedef struct _win_st {		/* Window structure. */
 #define	_STANDOUT	0x080		/* Added characters are standout. */
 	unsigned short	_flags;
 
-	short		scroll;		/* Scrolling offset. */
 	short		_ch_off;	/* x offset for firstch/lastch. */
 	char		_clear;		/* If clear on next refresh. */
 	char		_leave;		/* If cursor left. */
