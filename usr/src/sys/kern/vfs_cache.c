@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_cache.c	7.8 (Berkeley) %G%
+ *	@(#)vfs_cache.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -65,38 +65,40 @@ int doingcache = 1;			/* 1 => enable the cache */
  * the name does not exist (negative cacheing), a status of ENOENT
  * is returned. If the lookup fails, a status of zero is returned.
  */
-cache_lookup(ndp)
-	register struct nameidata *ndp;
+int
+cache_lookup(dvp, vpp, cnp)      /* converted to CN.  NEEDSWORK: do callers */
+/* old: cache_lookup(ndp) */
+	struct vnode *dvp;
+	struct vnode **vpp;
+	struct componentname *cnp;
 {
-	register struct vnode *dvp;
 	register struct namecache *ncp;
 	union nchash *nhp;
 
 	if (!doingcache)
 		return (0);
-	if (ndp->ni_namelen > NCHNAMLEN) {
+	if (cnp->cn_namelen > NCHNAMLEN) {
 		nchstats.ncs_long++;
-		ndp->ni_makeentry = 0;
+		cnp->cn_flags &= ~MAKEENTRY;
 		return (0);
 	}
-	dvp = ndp->ni_dvp;
-	nhp = &nchashtbl[ndp->ni_hash & nchash];
+	nhp = &nchashtbl[cnp->cn_hash & nchash];
 	for (ncp = nhp->nch_forw; ncp != (struct namecache *)nhp;
 	    ncp = ncp->nc_forw) {
 		if (ncp->nc_dvp == dvp &&
 		    ncp->nc_dvpid == dvp->v_id &&
-		    ncp->nc_nlen == ndp->ni_namelen &&
-		    !bcmp(ncp->nc_name, ndp->ni_ptr, (unsigned)ncp->nc_nlen))
+		    ncp->nc_nlen == cnp->cn_namelen &&
+		    !bcmp(ncp->nc_name, cnp->cn_nameptr, (unsigned)ncp->nc_nlen))
 			break;
 	}
 	if (ncp == (struct namecache *)nhp) {
 		nchstats.ncs_miss++;
 		return (0);
 	}
-	if (!ndp->ni_makeentry) {
+	if (!(cnp->cn_flags & MAKEENTRY)) {
 		nchstats.ncs_badhits++;
 	} else if (ncp->nc_vp == NULL) {
-		if ((ndp->ni_nameiop & OPMASK) != CREATE) {
+		if ((cnp->cn_nameiop & OPMASK) != CREATE) {
 			nchstats.ncs_neghits++;
 			/*
 			 * Move this slot to end of LRU chain,
@@ -131,7 +133,7 @@ cache_lookup(ndp)
 			*nchtail = ncp;
 			nchtail = &ncp->nc_nxt;
 		}
-		ndp->ni_vp = ncp->nc_vp;
+		*vpp = ncp->nc_vp;
 		return (-1);
 	}
 
@@ -162,8 +164,11 @@ cache_lookup(ndp)
 /*
  * Add an entry to the cache
  */
-cache_enter(ndp)
-	register struct nameidata *ndp;
+cache_enter(dvp, vp, cnp)      /* converted to CN.  NEEDSWORK: do callers */
+/* old: cache_lookup(ndp) */
+	struct vnode *dvp;
+	struct vnode *vp;
+	struct componentname *cnp;
 {
 	register struct namecache *ncp;
 	union nchash *nhp;
@@ -190,23 +195,23 @@ cache_enter(ndp)
 	} else
 		return;
 	/* grab the vnode we just found */
-	ncp->nc_vp = ndp->ni_vp;
-	if (ndp->ni_vp)
-		ncp->nc_vpid = ndp->ni_vp->v_id;
+	ncp->nc_vp = vp;
+	if (vp)
+		ncp->nc_vpid = vp->v_id;
 	else
 		ncp->nc_vpid = 0;
 	/* fill in cache info */
-	ncp->nc_dvp = ndp->ni_dvp;
-	ncp->nc_dvpid = ndp->ni_dvp->v_id;
-	ncp->nc_nlen = ndp->ni_namelen;
-	bcopy(ndp->ni_ptr, ncp->nc_name, (unsigned)ncp->nc_nlen);
+	ncp->nc_dvp = dvp;
+	ncp->nc_dvpid = dvp->v_id;
+	ncp->nc_nlen = cnp->cn_namelen;
+	bcopy(cnp->cn_nameptr, ncp->nc_name, (unsigned)ncp->nc_nlen);
 	/* link at end of lru chain */
 	ncp->nc_nxt = NULL;
 	ncp->nc_prev = nchtail;
 	*nchtail = ncp;
 	nchtail = &ncp->nc_nxt;
 	/* and insert on hash chain */
-	nhp = &nchashtbl[ndp->ni_hash & nchash];
+	nhp = &nchashtbl[cnp->cn_hash & nchash];
 	insque(ncp, nhp);
 }
 

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.45 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.46 (Berkeley) %G%
  */
 
 /*
@@ -863,7 +863,7 @@ nfs_namei(ndp, fhp, len, slp, nam, mdp, dposp, p)
 	/*
 	 * Check for encountering a symbolic link
 	 */
-	if (ndp->ni_more) {
+	if (ndp->ni_nameiop & ISSYMLINK) {
 		if ((ndp->ni_nameiop & LOCKPARENT) && ndp->ni_pathlen == 1)
 			vput(ndp->ni_dvp);
 		else

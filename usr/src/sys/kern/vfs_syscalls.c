@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.75 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.76 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,6 +19,11 @@
 #include "proc.h"
 #include "uio.h"
 #include "malloc.h"
+
+/* NEEDSWORK: debugging */
+#define CURCOUNT (curproc?curproc->p_spare[2]:0)
+#define CHECKPOINT int oldrefcount=CURCOUNT;
+#define CHECKCHECK(F) if (oldrefcount!=CURCOUNT) { printf("REFCOUNT: %s, old=%d, new=%d\n", (F), oldrefcount, CURCOUNT); }
 
 /*
  * Virtual File System System Calls
@@ -655,6 +660,7 @@ mknod(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
+	CHECKPOINT;
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 	ndp = &nd;
@@ -689,9 +695,9 @@ mknod(p, uap, retval)
 out:
 	if (!error) {
 		LEASE_CHECK(ndp->ni_dvp, p, p->p_ucred, LEASE_WRITE);
-		error = VOP_MKNOD(ndp, &vattr, p->p_ucred, p);
+		error = VOP_MKNOD(ndp->ni_dvp, &ndp->ni_vp, &ndp->ni_cnd, &vattr);
 	} else {
-		VOP_ABORTOP(ndp);
+		VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
 		if (ndp->ni_dvp == vp)
 			vrele(ndp->ni_dvp);
 		else
@@ -699,6 +705,7 @@ out:
 		if (vp)
 			vrele(vp);
 	}
+	CHECKCHECK("mknod");
 	return (error);
 }
 
@@ -729,7 +736,7 @@ mkfifo(p, uap, retval)
 	if (error = namei(ndp, p))
 		return (error);
 	if (ndp->ni_vp != NULL) {
-		VOP_ABORTOP(ndp);
+		VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
 		if (ndp->ni_dvp == ndp->ni_vp)
 			vrele(ndp->ni_dvp);
 		else
@@ -741,7 +748,7 @@ mkfifo(p, uap, retval)
 	vattr.va_type = VFIFO;
 	vattr.va_mode = (uap->fmode & 07777) &~ p->p_fd->fd_cmask;
 	LEASE_CHECK(ndp->ni_dvp, p, p->p_ucred, LEASE_WRITE);
-	return (VOP_MKNOD(ndp, &vattr, p->p_ucred, p));
+	return (VOP_MKNOD(ndp->ni_dvp, &ndp->ni_vp, &ndp->ni_cnd, &vattr));
 #endif /* FIFO */
 }
 
@@ -762,6 +769,7 @@ link(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
+	CHECKPOINT;
 	ndp = &nd;
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
@@ -788,9 +796,9 @@ out:
 	if (!error) {
 		LEASE_CHECK(xp, p, p->p_ucred, LEASE_WRITE);
 		LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
-		error = VOP_LINK(vp, ndp, p);
+		error = VOP_LINK(vp, ndp->ni_dvp, &ndp->ni_cnd);
 	} else {
-		VOP_ABORTOP(ndp);
+		VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
 		if (ndp->ni_dvp == ndp->ni_vp)
 			vrele(ndp->ni_dvp);
 		else
@@ -800,6 +808,7 @@ out:
 	}
 out1:
 	vrele(vp);
+	CHECKCHECK("link");
 	return (error);
 }
 
@@ -821,6 +830,7 @@ symlink(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
+	CHECKPOINT;
 	ndp = &nd;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->linkname;
@@ -831,7 +841,7 @@ symlink(p, uap, retval)
 	if (error = namei(ndp, p))
 		goto out;
 	if (ndp->ni_vp) {
-		VOP_ABORTOP(ndp);
+		VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
 		if (ndp->ni_dvp == ndp->ni_vp)
 			vrele(ndp->ni_dvp);
 		else
@@ -843,9 +853,10 @@ symlink(p, uap, retval)
 	VATTR_NULL(&vattr);
 	vattr.va_mode = 0777 &~ p->p_fd->fd_cmask;
 	LEASE_CHECK(ndp->ni_dvp, p, p->p_ucred, LEASE_WRITE);
-	error = VOP_SYMLINK(ndp, &vattr, target, p);
+	error = VOP_SYMLINK(ndp->ni_dvp, &ndp->ni_vp, &ndp->ni_cnd, &vattr, target);
 out:
 	FREE(target, M_NAMEI);
+	CHECKCHECK("symlink");
 	return (error);
 }
 
@@ -865,6 +876,7 @@ unlink(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
+	CHECKPOINT;
 	ndp = &nd;
 	ndp->ni_nameiop = DELETE | LOCKPARENT | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
@@ -887,15 +899,16 @@ out:
 	if (!error) {
 		LEASE_CHECK(ndp->ni_dvp, p, p->p_ucred, LEASE_WRITE);
 		LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
-		error = VOP_REMOVE(ndp, p);
+		error = VOP_REMOVE(ndp->ni_dvp, ndp->ni_vp, &ndp->ni_cnd);
 	} else {
-		VOP_ABORTOP(ndp);
+		VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
 		if (ndp->ni_dvp == vp)
 			vrele(ndp->ni_dvp);
 		else
 			vput(ndp->ni_dvp);
 		vput(vp);
 	}
+	CHECKCHECK("unlink");
 	return (error);
 }
 
@@ -1080,6 +1093,7 @@ readlink(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
+	CHECKPOINT;
 	ndp = &nd;
 	ndp->ni_nameiop = LOOKUP | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
@@ -1104,6 +1118,7 @@ readlink(p, uap, retval)
 out:
 	vput(vp);
 	*retval = uap->count - auio.uio_resid;
+	CHECKCHECK("readlink");
 	return (error);
 }
 
@@ -1491,6 +1506,7 @@ rename(p, uap, retval)
 	struct nameidata fromnd, tond;
 	int error;
 
+	CHECKPOINT;
 	fromnd.ni_nameiop = DELETE | WANTPARENT | SAVESTART;
 	fromnd.ni_segflg = UIO_USERSPACE;
 	fromnd.ni_dirp = uap->from;
@@ -1501,7 +1517,7 @@ rename(p, uap, retval)
 	tond.ni_segflg = UIO_USERSPACE;
 	tond.ni_dirp = uap->to;
 	if (error = namei(&tond, p)) {
-		VOP_ABORTOP(&fromnd);
+		VOP_ABORTOP(fromnd.ni_dvp, &fromnd.ni_cnd);
 		vrele(fromnd.ni_dvp);
 		vrele(fvp);
 		goto out1;
@@ -1543,16 +1559,23 @@ out:
 			LEASE_CHECK(fromnd.ni_dvp, p, p->p_ucred, LEASE_WRITE);
 		if (tvp)
 			LEASE_CHECK(tvp, p, p->p_ucred, LEASE_WRITE);
-		error = VOP_RENAME(&fromnd, &tond, p);
+		if (fromnd.ni_startdir != fromnd.ni_dvp ||
+		    tond.ni_startdir != tond.ni_dvp)   /* NEEDSWORK: debug */
+			printf ("rename: f.startdir=%x, dvp=%x; t.startdir=%x, dvp=%x\n", fromnd.ni_startdir, fromnd.ni_dvp, tond.ni_startdir, tond.ni_dvp);
+		error = VOP_RENAME(fromnd.ni_dvp, fromnd.ni_vp, &fromnd.ni_cnd,
+				   tond.ni_dvp, tond.ni_vp, &tond.ni_cnd);
+		if (fromnd.ni_startdir != fromnd.ni_dvp ||
+		    tond.ni_startdir != tond.ni_dvp)   /* NEEDSWORK: debug */
+			printf ("rename: f.startdir=%x, dvp=%x; t.startdir=%x, dvp=%x\n", fromnd.ni_startdir, fromnd.ni_dvp, tond.ni_startdir, tond.ni_dvp);
 	} else {
-		VOP_ABORTOP(&tond);
+		VOP_ABORTOP(tond.ni_dvp, &tond.ni_cnd);
 		if (tdvp == tvp)
 			vrele(tdvp);
 		else
 			vput(tdvp);
 		if (tvp)
 			vput(tvp);
-		VOP_ABORTOP(&fromnd);
+		VOP_ABORTOP(fromnd.ni_dvp, &fromnd.ni_cnd);
 		vrele(fromnd.ni_dvp);
 		vrele(fvp);
 	}
@@ -1563,6 +1586,7 @@ out1:
 	p->p_spare[1]--;
 	vrele(fromnd.ni_startdir);
 	FREE(fromnd.ni_pnbuf, M_NAMEI);
+	CHECKCHECK("rename");
 	if (error == -1)
 		return (0);
 	return (error);
@@ -1586,6 +1610,7 @@ mkdir(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
+	CHECKPOINT;
 	ndp = &nd;
 	ndp->ni_nameiop = CREATE | LOCKPARENT;
 	ndp->ni_segflg = UIO_USERSPACE;
@@ -1594,21 +1619,23 @@ mkdir(p, uap, retval)
 		return (error);
 	vp = ndp->ni_vp;
 	if (vp != NULL) {
-		VOP_ABORTOP(ndp);
+		VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
 		if (ndp->ni_dvp == vp)
 			vrele(ndp->ni_dvp);
 		else
 			vput(ndp->ni_dvp);
 		vrele(vp);
+		CHECKCHECK("mkdir1");
 		return (EEXIST);
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_type = VDIR;
 	vattr.va_mode = (uap->dmode & 0777) &~ p->p_fd->fd_cmask;
 	LEASE_CHECK(ndp->ni_dvp, p, p->p_ucred, LEASE_WRITE);
-	error = VOP_MKDIR(ndp, &vattr, p);
+	error = VOP_MKDIR(ndp->ni_dvp, &ndp->ni_vp, &ndp->ni_cnd, &vattr);
 	if (!error)
 		vput(ndp->ni_vp);
+	CHECKCHECK("mkdir2");
 	return (error);
 }
 
@@ -1628,6 +1655,7 @@ rmdir(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
+	CHECKPOINT;
 	ndp = &nd;
 	ndp->ni_nameiop = DELETE | LOCKPARENT | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
@@ -1655,15 +1683,16 @@ out:
 	if (!error) {
 		LEASE_CHECK(ndp->ni_dvp, p, p->p_ucred, LEASE_WRITE);
 		LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
-		error = VOP_RMDIR(ndp, p);
+		error = VOP_RMDIR(ndp->ni_dvp, ndp->ni_vp, &ndp->ni_cnd);
 	} else {
-		VOP_ABORTOP(ndp);
+		VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
 		if (ndp->ni_dvp == vp)
 			vrele(ndp->ni_dvp);
 		else
 			vput(ndp->ni_dvp);
 		vput(vp);
 	}
+	CHECKCHECK("rmdir");
 	return (error);
 }
 

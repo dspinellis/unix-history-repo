@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	7.36 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.37 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -239,11 +239,13 @@ nfs_islocked(vp)
  * done. Currently nothing to do.
  */
 /* ARGSUSED */
-nfs_abortop(ndp)
-	struct nameidata *ndp;
+int
+nfs_abortop(dvp, cnp)
+	struct vnode *dvp;
+	struct componentname *cnp;
 {
 
-	if ((ndp->ni_nameiop & (HASBUF | SAVESTART)) == HASBUF)
-		FREE(ndp->ni_pnbuf, M_NAMEI);
+	if ((cnp->cn_flags & (HASBUF | SAVESTART)) == HASBUF)
+		FREE(cnp->cn_pnbuf, M_NAMEI);
 	return (0);
 }

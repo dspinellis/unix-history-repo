@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.43 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.44 (Berkeley) %G%
  */
 
 /*
@@ -601,7 +601,7 @@ nfsrv_create(nfsd, mrep, md, dpos, cred, nam, mrq)
 			p->p_spare[1]--;
 			vrele(nd.ni_startdir);
 			nqsrv_getl(nd.ni_dvp, NQL_WRITE);
-			if (error = VOP_CREATE(&nd, vap, nfsd->nd_procp))
+			if (error = VOP_CREATE(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, vap))
 				nfsm_reply(0);
 			FREE(nd.ni_pnbuf, M_NAMEI);
 		} else if (vap->va_type == VCHR || vap->va_type == VBLK ||
@@ -610,19 +610,19 @@ nfsrv_create(nfsd, mrep, md, dpos, cred, nam, mrq)
 				vap->va_type = VFIFO;
 			if (vap->va_type == VFIFO) {
 #ifndef FIFO
-				VOP_ABORTOP(&nd);
+				VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
 				vput(nd.ni_dvp);
 				error = ENXIO;
 				goto out;
 #endif /* FIFO */
 			} else if (error = suser(cred, (u_short *)0)) {
-				VOP_ABORTOP(&nd);
+				VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
 				vput(nd.ni_dvp);
 				goto out;
 			} else
 				vap->va_rdev = (dev_t)rdev;
 			nqsrv_getl(nd.ni_dvp, NQL_WRITE);
-			if (error = VOP_MKNOD(&nd, vap, cred, nfsd->nd_procp)) {
+			if (error = VOP_MKNOD(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, vap)) {
 				p->p_spare[1]--;
 				vrele(nd.ni_startdir);
 				nfsm_reply(0);
@@ -635,15 +635,15 @@ nfsrv_create(nfsd, mrep, md, dpos, cred, nam, mrq)
 				nfsm_reply(0);
 			}
 			FREE(nd.ni_pnbuf, M_NAMEI);
-			if (nd.ni_more) {
+			if (nd.ni_nameiop & ISSYMLINK) {
 				vrele(nd.ni_dvp);
 				vput(nd.ni_vp);
-				VOP_ABORTOP(&nd);
+				VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
 				error = EINVAL;
 				nfsm_reply(0);
 			}
 		} else {
-			VOP_ABORTOP(&nd);
+			VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
 			vput(nd.ni_dvp);
 			error = ENXIO;
 			goto out;
@@ -658,7 +658,7 @@ nfsrv_create(nfsd, mrep, md, dpos, cred, nam, mrq)
 			vrele(nd.ni_dvp);
 		else
 			vput(nd.ni_dvp);
-		VOP_ABORTOP(&nd);
+		VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
 		vap->va_size = 0;
 		nqsrv_getl(vp, NQL_WRITE);
 		if (error = VOP_SETATTR(vp, vap, cred, nfsd->nd_procp)) {
@@ -682,7 +682,7 @@ nfsrv_create(nfsd, mrep, md, dpos, cred, nam, mrq)
 nfsmout:
 	if (nd.ni_nameiop)
 		p->p_spare[1]--, vrele(nd.ni_startdir);
-	VOP_ABORTOP(&nd);
+	VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
 	if (nd.ni_dvp == nd.ni_vp)
 		vrele(nd.ni_dvp);
 	else
@@ -744,9 +744,9 @@ out:
 	if (!error) {
 		nqsrv_getl(nd.ni_dvp, NQL_WRITE);
 		nqsrv_getl(vp, NQL_WRITE);
-		error = VOP_REMOVE(&nd, nfsd->nd_procp);
+		error = VOP_REMOVE(nd.ni_dvp, nd.ni_vp, &nd.ni_cnd);
 	} else {
-		VOP_ABORTOP(&nd);
+		VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
 		if (nd.ni_dvp == vp)
 			vrele(nd.ni_dvp);
 		else
@@ -803,7 +803,7 @@ nfsrv_rename(nfsd, mrep, md, dpos, cred, nam, mrq)
 	tond.ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE
 		| SAVESTART;
 	if (error = nfs_namei(&tond, tfhp, len2, nfsd->nd_slp, nam, &md, &dpos, nfsd->nd_procp)) {
-		VOP_ABORTOP(&fromnd);
+		VOP_ABORTOP(fromnd.ni_dvp, &fromnd.ni_cnd);
 		vrele(fromnd.ni_dvp);
 		vrele(fvp);
 		goto out1;
@@ -848,16 +848,17 @@ out:
 		nqsrv_getl(tdvp, NQL_WRITE);
 		if (tvp)
 			nqsrv_getl(tvp, NQL_WRITE);
-		error = VOP_RENAME(&fromnd, &tond, nfsd->nd_procp);
+		error = VOP_RENAME(fromnd.ni_dvp, fromnd.ni_vp, &fromnd.ni_cnd,
+				   tond.ni_dvp, tond.ni_vp, &tond.ni_cnd);
 	} else {
-		VOP_ABORTOP(&tond);
+		VOP_ABORTOP(tond.ni_dvp, &tond.ni_cnd);
 		if (tdvp == tvp)
 			vrele(tdvp);
 		else
 			vput(tdvp);
 		if (tvp)
 			vput(tvp);
-		VOP_ABORTOP(&fromnd);
+		VOP_ABORTOP(fromnd.ni_dvp, &fromnd.ni_cnd);
 		vrele(fromnd.ni_dvp);
 		vrele(fvp);
 	}
@@ -881,7 +882,7 @@ nfsmout:
 		p->p_spare[1]--;
 		vrele(fromnd.ni_startdir);
 		FREE(fromnd.ni_pnbuf, M_NAMEI);
-		VOP_ABORTOP(&fromnd);
+		VOP_ABORTOP(fromnd.ni_dvp, &fromnd.ni_cnd);
 		vrele(fromnd.ni_dvp);
 		vrele(fvp);
 	}
@@ -935,9 +936,9 @@ out:
 	if (!error) {
 		nqsrv_getl(vp, NQL_WRITE);
 		nqsrv_getl(xp, NQL_WRITE);
-		error = VOP_LINK(vp, &nd, nfsd->nd_procp);
+		error = VOP_LINK(vp, nd.ni_dvp, &nd.ni_cnd);
 	} else {
-		VOP_ABORTOP(&nd);
+		VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
 		if (nd.ni_dvp == nd.ni_vp)
 			vrele(nd.ni_dvp);
 		else
@@ -1000,7 +1001,7 @@ nfsrv_symlink(nfsd, mrep, md, dpos, cred, nam, mrq)
 	nfsm_dissect(sp, struct nfsv2_sattr *, NFSX_SATTR);
 	*(pathcp + len2) = '\0';
 	if (nd.ni_vp) {
-		VOP_ABORTOP(&nd);
+		VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
 		if (nd.ni_dvp == nd.ni_vp)
 			vrele(nd.ni_dvp);
 		else
@@ -1012,14 +1013,14 @@ nfsrv_symlink(nfsd, mrep, md, dpos, cred, nam, mrq)
 	VATTR_NULL(vap);
 	vap->va_mode = fxdr_unsigned(u_short, sp->sa_mode);
 	nqsrv_getl(nd.ni_dvp, NQL_WRITE);
-	error = VOP_SYMLINK(&nd, vap, pathcp, nfsd->nd_procp);
+	error = VOP_SYMLINK(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, vap, pathcp);
 out:
 	if (pathcp)
 		FREE(pathcp, M_TEMP);
 	nfsm_reply(0);
 	return (error);
 nfsmout:
-	VOP_ABORTOP(&nd);
+	VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
 	if (nd.ni_dvp == nd.ni_vp)
 		vrele(nd.ni_dvp);
 	else
@@ -1070,7 +1071,7 @@ nfsrv_mkdir(nfsd, mrep, md, dpos, cred, nam, mrq)
 	vap->va_mode = nfstov_mode(*tl++);
 	vp = nd.ni_vp;
 	if (vp != NULL) {
-		VOP_ABORTOP(&nd);
+		VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
 		if (nd.ni_dvp == vp)
 			vrele(nd.ni_dvp);
 		else
@@ -1080,7 +1081,7 @@ nfsrv_mkdir(nfsd, mrep, md, dpos, cred, nam, mrq)
 		nfsm_reply(0);
 	}
 	nqsrv_getl(nd.ni_dvp, NQL_WRITE);
-	if (error = VOP_MKDIR(&nd, vap, nfsd->nd_procp))
+	if (error = VOP_MKDIR(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, vap))
 		nfsm_reply(0);
 	vp = nd.ni_vp;
 	bzero((caddr_t)fhp, sizeof(nfh));
@@ -1097,7 +1098,7 @@ nfsrv_mkdir(nfsd, mrep, md, dpos, cred, nam, mrq)
 	nfsm_srvfillattr;
 	return (error);
 nfsmout:
-	VOP_ABORTOP(&nd);
+	VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
 	if (nd.ni_dvp == nd.ni_vp)
 		vrele(nd.ni_dvp);
 	else
@@ -1157,9 +1158,9 @@ out:
 	if (!error) {
 		nqsrv_getl(nd.ni_dvp, NQL_WRITE);
 		nqsrv_getl(vp, NQL_WRITE);
-		error = VOP_RMDIR(&nd, nfsd->nd_procp);
+		error = VOP_RMDIR(nd.ni_dvp, nd.ni_vp, &nd.ni_cnd);
 	} else {
-		VOP_ABORTOP(&nd);
+		VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
 		if (nd.ni_dvp == nd.ni_vp)
 			vrele(nd.ni_dvp);
 		else

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	7.16 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.17 (Berkeley) %G%
  */
 
 /*
@@ -88,18 +88,19 @@ struct nfsnode {
  * Prototypes for NFS vnode operations
  */
 int	nfs_lookup __P((
-		struct vnode *vp,
-		struct nameidata *ndp,
-		struct proc *p));
+		struct vnode *dvp,
+		struct vnode **vpp,
+		struct componentname *cnp));
 int	nfs_create __P((
-		struct nameidata *ndp,
-		struct vattr *vap,
-		struct proc *p));
+		struct vnode *dvp,
+		struct vnode **vpp,
+		struct componentname *cnp,
+		struct vattr *vap));
 int	nfs_mknod __P((
-		struct nameidata *ndp,
-		struct vattr *vap,
-		struct ucred *cred,
-		struct proc *p));
+		struct vnode *dvp,
+		struct vnode **vpp,
+		struct componentname *cnp,
+		struct vattr *vap));
 int	nfs_open __P((
 		struct vnode *vp,
 		int mode,
@@ -165,28 +166,35 @@ int	nfs_fsync __P((
 		off_t newoff, \
 		struct ucred *cred))) nullop)
 int	nfs_remove __P((
-		struct nameidata *ndp,
-		struct proc *p));
-int	nfs_link __P((
+		struct vnode *dvp,
 		struct vnode *vp,
-		struct nameidata *ndp,
-		struct proc *p));
+		struct componentname *cnp));
+int	nfs_link __P((
+		register struct vnode *vp,
+		struct vnode *tdvp,
+		struct componentname *cnp));
 int	nfs_rename __P((
-		struct nameidata *fndp,
-		struct nameidata *tdnp,
-		struct proc *p));
+		struct vnode *fdvp,
+		struct vnode *fvp,
+		struct componentname *fcnp,
+		struct vnode *tdvp,
+		struct vnode *tvp,
+		struct componentname *tcnp));
 int	nfs_mkdir __P((
-		struct nameidata *ndp,
-		struct vattr *vap,
-		struct proc *p));
+		struct vnode *dvp,
+		struct vnode **vpp,
+		struct componentname *cnp,
+		struct vattr *vap));
 int	nfs_rmdir __P((
-		struct nameidata *ndp,
-		struct proc *p));
+		struct vnode *dvp,
+		struct vnode *vp,
+		struct componentname *cnp));
 int	nfs_symlink __P((
-		struct nameidata *ndp,
+		struct vnode *dvp,
+		struct vnode **vpp,
+		struct componentname *cnp,
 		struct vattr *vap,
-		char *target,
-		struct proc *p));
+		char *nm));
 int	nfs_readdir __P((
 		struct vnode *vp,
 		struct uio *uio,
@@ -197,7 +205,8 @@ int	nfs_readlink __P((
 		struct uio *uio,
 		struct ucred *cred));
 int	nfs_abortop __P((
-		struct nameidata *ndp));
+		struct vnode *,
+		struct componentname *));
 int	nfs_inactive __P((
 		struct vnode *vp,
 		struct proc *p));
