@@ -1,4 +1,4 @@
-/*	tty.h	4.6	81/10/17	*/
+/*	tty.h	4.7	82/01/14	*/
 
 #ifdef KERNEL
 #include "../h/ioctl.h"
@@ -32,7 +32,7 @@ struct tty
 	struct	clist t_outq;		/* device */
 	int	(*t_oproc)();		/* device */
 	struct	proc *t_rsel;		/* tty */
-				struct chan *T_CHAN;	/* ### */
+	struct	proc *t_wsel;
 				caddr_t	T_LINEP;	/* ### */
 	caddr_t	t_addr;			/* ??? */
 	dev_t	t_dev;			/* device */
@@ -90,18 +90,20 @@ short	tthiwat[NSPEEDS], ttlowat[NSPEEDS];
 #define	IENABLE	0100
 
 /* internal state bits */
-#define	TIMEOUT	000001		/* delay timeout in progress */
-#define	WOPEN	000002		/* waiting for open to complete */
-#define	ISOPEN	000004		/* device is open */
-#define	FLUSH	000010		/* outq has been flushed during DMA */
-#define	CARR_ON	000020		/* software copy of carrier-present */
-#define	BUSY	000040		/* output in progress */
-#define	ASLEEP	000100		/* wakeup when output done */
-#define	XCLUDE	000200		/* exclusive-use flag against open */
-#define	TTSTOP	000400		/* output stopped by ctl-s */
-#define	HUPCLS	001000		/* hang up upon last close */
-#define	TBLOCK	002000		/* tandem queue blocked */
-#define	RCOLL	004000		/* collision in read select */
+#define	TS_TIMEOUT	000001		/* delay timeout in progress */
+#define	TS_WOPEN	000002		/* waiting for open to complete */
+#define	TS_ISOPEN	000004		/* device is open */
+#define	TS_FLUSH	000010		/* outq has been flushed during DMA */
+#define	TS_CARR_ON	000020		/* software copy of carrier-present */
+#define	TS_BUSY		000040		/* output in progress */
+#define	TS_ASLEEP	000100		/* wakeup when output done */
+#define	TS_XCLUDE	000200		/* exclusive-use flag against open */
+#define	TS_TTSTOP	000400		/* output stopped by ctl-s */
+#define	TS_HUPCLS	001000		/* hang up upon last close */
+#define	TS_TBLOCK	002000		/* tandem queue blocked */
+#define	TS_RCOLL	004000		/* collision in read select */
+#define	TS_WCOLL	010000		/* collision in write select */
+#define	TS_NBIO		020000		/* tty in non-blocking mode */
 
 /* define partab character types */
 #define	ORDINARY	0
