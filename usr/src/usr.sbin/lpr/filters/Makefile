@@ -14,11 +14,10 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-LIBDIR=	/usr/lib
 SRCS=	lpf.c
 OBJS=
 
@@ -37,7 +36,7 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 lpf ${DESTDIR}/${LIBDIR}/lpf
+	install -s -o bin -g bin -m 755 lpf ${DESTDIR}/usr/libexec/lpr
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
