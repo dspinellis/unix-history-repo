@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	8.4 (Berkeley) %G%
+ *	@(#)uipc_socket.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -880,7 +880,7 @@ sosetopt(so, level, optname, m0)
 				goto bad;
 			}
 			tv = mtod(m, struct timeval *);
-			if (tv->tv_sec > SHRT_MAX / hz - hz) {
+			if (tv->tv_sec * hz + tv->tv_usec / tick > SHRT_MAX) {
 				error = EDOM;
 				goto bad;
 			}
@@ -986,7 +986,7 @@ sogetopt(so, level, optname, mp)
 			m->m_len = sizeof(struct timeval);
 			mtod(m, struct timeval *)->tv_sec = val / hz;
 			mtod(m, struct timeval *)->tv_usec =
-			    (val % hz) / tick;
+			    (val % hz) * tick;
 			break;
 		    }
 
