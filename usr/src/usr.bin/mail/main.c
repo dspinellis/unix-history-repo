@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	2.14 (Berkeley) %G%";
+static char *sccsid = "@(#)main.c	2.15 (Berkeley) %G%";
 #endif
 
 #include "rcv.h"
@@ -210,6 +210,13 @@ main(argc, argv)
 			 * Send mailer verbose flag
 			 */
 			assign("verbose", "");
+			break;
+
+		case 'I':
+			/*
+			 * We're interactive
+			 */
+			intty = 1;
 			break;
 
 		default:
