@@ -1,0 +1,22 @@
+.NH
+Installation Under Sun 2.X and 3.0.
+.PP
+The name of the executable built in the ``X'' directory for the is
+Xsun.
+.PP
+Use under \fIinit(8)\fP is not supported.
+Use \fIxinit(1)\fP instead.
+See the caveats in the \fIXsun(8c)\fP manual page.
+.PP
+Be sure to rebuild \fIXsun\fP and \fIxterm\fP under Sun 3.0.
+.PP
+As the Sun version of X happened at the last possible moment,
+its installation is not as smooth as one would like.
+.PP
+The top level \fIX/Makefile\fP has a ``make sun'' entry which edits out
+an include of \fI<sys/types.h>\fP which should be executed on Sun 2.X
+versions of the system.
+You should remove the build of \fIinline\fP, \fIlibvs100\fP, and \fIxpr\fP
+from the \fIX/Makefile\fP.
+You must also edit out the use of ``inline'' in \fIX/Xlib/Makefile\fP,
+which is a VAX specific optimizer.
