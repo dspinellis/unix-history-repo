@@ -26,6 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/09 16:20:46 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_subr.c,v $ */
+/*	@(#)clnp_subr.c	7.6 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/09 16:20:46 hagens Exp $";

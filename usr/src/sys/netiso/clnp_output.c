@@ -26,6 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_output.c,v 5.0 89/02/08 12:00:15 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_output.c,v $ */
+/*	@(#)clnp_output.c	7.4 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_output.c,v 5.0 89/02/08 12:00:15 hagens Exp $";
@@ -136,14 +137,14 @@ int				clnp_id = 0;		/* id for segmented dgrams */
  *					to have clnp check that the route has the same dest, but
  *					by avoiding this check, we save a call to iso_addrmatch1.
  */
-clnp_output(m0, isop, flags)
+clnp_output(m0, isop, datalen, flags)
 struct mbuf			*m0;		/* data for the packet */
 struct isopcb		*isop;		/* iso pcb */
+int					datalen;	/* number of bytes of data in m0 */
 int					flags;		/* flags */
 {
 	int							error = 0;		/* return value of function */
 	register struct mbuf		*m = m0;		/* mbuf for clnp header chain */
-	int							datalen;	/* number of bytes of data in m */
 	register struct clnp_fixed	*clnp;			/* ptr to fixed part of hdr */
 	register caddr_t			hoff;			/* offset into header */
 	int							total_len;		/* total length of packet */
@@ -156,11 +157,6 @@ int					flags;		/* flags */
 	src = &isop->isop_laddr->siso_addr;
 	dst = &isop->isop_faddr->siso_addr;
 
-	if ((m->m_flags & M_PKTHDR) == 0) {
-		m_freem(m);
-		return EINVAL;
-	}
-	datalen = m->m_pkthdr.len;
 	IFDEBUG(D_OUTPUT)
 		printf("clnp_output: to %s", clnp_iso_addrp(dst));
 		printf(" from %s of %d bytes\n", clnp_iso_addrp(src), datalen);

@@ -1,5 +1,6 @@
 /* $Header$ */
 /* $Source$ */
+/*	@(#)tp_astring.c	7.3 (Berkeley) %G% */
 #ifndef _NFILE
 #include <stdio.h>
 #endif _NFILE
@@ -12,6 +13,7 @@ char *tp_sstring[] = {
 "TP_CLOSING(0x5)",
 "TP_REFWAIT(0x6)",
 "TP_LISTENING(0x7)",
+"TP_CONFIRMING(0x8)",
 };
 
 char *tp_estring[] = {
@@ -39,4 +41,5 @@ char *tp_estring[] = {
 "T_USR_Xrcvd(0x15)",
 "T_DETACH(0x16)",
 "T_NETRESET(0x17)",
+"T_ACPT_req(0x18)",
 };

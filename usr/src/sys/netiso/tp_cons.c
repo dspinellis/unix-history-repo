@@ -28,6 +28,7 @@ SOFTWARE.
  * ARGO TP
  * $Header: tp_cons.c,v 5.6 88/11/18 17:27:13 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_cons.c,v $
+ *	@(#)tp_cons.c	7.3 (Berkeley) %G% *
  *
  * Here is where you find the iso-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff

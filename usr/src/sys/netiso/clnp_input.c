@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_input.c,v $ */
-/*	@(#)clnp_input.c	7.5 (Berkeley) %G% */
+/*	@(#)clnp_input.c	7.6 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $";
@@ -51,10 +51,11 @@ static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/
 #include "iso_snpac.h"
 #include "clnp.h"
 #include "clnl.h"
+#include "esis.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/ip.h"
+#include "../netinet/if_ether.h"
 #include "eonvar.h"
-#include "esis.h"
 #include "clnp_stat.h"
 #include "argo_debug.h"
 
@@ -161,11 +162,11 @@ next:
 
 	default:
 		if (sh.snh_ifp->if_output == ether_output) {
-			bcopy((caddr_t)(mtod(m, struct llc_etherhdr *)->dst),
+			bcopy((caddr_t)(mtod(m, struct ether_header *)->ether_dhost),
 				(caddr_t)sh.snh_dhost, 2*sizeof(sh.snh_dhost));
-			m->m_data += sizeof (struct llc_etherhdr);
-			m->m_len -= sizeof (struct llc_etherhdr);
-			m->m_pkthdr.len -= sizeof (struct llc_etherhdr);
+			m->m_data += sizeof (struct ether_header);
+			m->m_len -= sizeof (struct ether_header);
+			m->m_pkthdr.len -= sizeof (struct ether_header);
 		}
 	}
 	IFDEBUG(D_INPUT)

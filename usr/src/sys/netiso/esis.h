@@ -27,6 +27,7 @@ SOFTWARE.
 /*
  *	$Header: esis.h,v 4.7 88/09/15 11:24:18 hagens Exp $
  *	$Source: /usr/argo/sys/netiso/RCS/esis.h,v $
+ *	@(#)esis.h	7.3 (Berkeley) %G% *
  */
 
 #ifndef BYTE_ORDER

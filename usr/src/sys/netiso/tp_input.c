@@ -29,6 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_input.c,v $
+ *	@(#)tp_input.c	7.3 (Berkeley) %G% *
  *
  * tp_input() gets an mbuf chain from ip.  Actually, not directly
  * from ip, because ip calls a net-level routine that strips off
@@ -219,7 +220,7 @@ tp_newsocket(so, fname, cons_channel, class_to_use, netservice)
 {
 	register struct tp_pcb	*tpcb = sototpcb(so); /* old tpcb, needed below */
 	struct tp_pcb *			 newtpcb;
-	struct proc *			selproc = so->so_rcv.sb_sel; /* kludge for select */
+	extern struct socket *sonewsock();
 
 	/* 
 	 * sonewconn() gets a new socket structure,
@@ -227,21 +228,17 @@ tp_newsocket(so, fname, cons_channel, class_to_use, netservice)
 	 * but the pcbs are unnamed (not bound)
 	 */
 	IFTRACE(D_NEWSOCK)
-		tptraceTPCB(TPPTmisc, "newsock: listg_so,_tpcb selproc, so_head",
-			so, tpcb, selproc, so->so_head);
+		tptraceTPCB(TPPTmisc, "newsock: listg_so, _tpcb, so_head",
+			so, tpcb, so->so_head);
 	ENDTRACE	
 
-	if ((so = sonewconn(so)) == (struct socket *)0)
+	if ((so = sonewsock(so, SS_ISCONFIRMING)) == (struct socket *)0)
 		return so;
 	IFTRACE(D_NEWSOCK)
-		tptraceTPCB(TPPTmisc, "newsock: after newconn so, selproc, so_head",
-			so, selproc, so->so_head, 0);
+		tptraceTPCB(TPPTmisc, "newsock: after newconn so, so_head",
+			so, so->so_head, 0, 0);
 	ENDTRACE	
 
-	so->so_rcv.sb_sel = selproc; /* so that soisconnected() after receipt
-		* of the ack will wake this guy up if he's selecting on the
-		* listening socket
-		*/
 	IFDEBUG(D_NEWSOCK)
 		printf("tp_newsocket(channel 0x%x)  after sonewconn so 0x%x \n",
 				cons_channel, so);
@@ -379,38 +376,39 @@ tp_input(m, faddr, laddr, cons_channel, dgout_routine)
 	register struct tpdu 	*hdr = mtod(m, struct tpdu *);
 	struct socket 			*so;
 	struct tp_event 		e;
-	int 					error = 0;
+	int 					error;
 	unsigned 				dutype;
 	u_short 				dref, sref, acktime, subseq; /*VAX*/
-	u_char 					preferred_class=0, class_to_use=0;
+	u_char 					preferred_class, class_to_use;
 	u_char					opt, dusize, addlopt;
 #ifdef TP_PERF_MEAS
-	u_char					perf_meas=0;
+	u_char					perf_meas;
 #endif TP_PERF_MEAS
 	u_char					fsufxlen;
 	u_char					lsufxlen;
-	caddr_t					fsufxloc=0, lsufxloc=0;
+	caddr_t					fsufxloc, lsufxloc;
 	int						tpdu_len;
 	u_int 					takes_data;
 	u_int					fcc_present; 
-	caddr_t					errloc=0;
+	caddr_t					errloc;
 	struct tp_conn_param 	tpp;
 	int						tpcons_output();
 
+again:
 #ifdef TP_PERF_MEAS
-	GET_CUR_TIME( &e.e_time );
+	GET_CUR_TIME( &e.e_time ); perf_meas = 0;
 #endif TP_PERF_MEAS
 	
 	IFDEBUG(D_TPINPUT)
 		printf("tp_input(0x%x, ... 0x%x)\n", m, cons_channel);
 	ENDDEBUG
 
-again:
 
 	tpdu_len = 0;
 	tpcb = (struct tp_pcb *)0;
-	fsufxlen = 0;
-	lsufxlen = 0;
+	fsufxlen = 0; fsufxloc = 0;
+	lsufxlen = 0; lsufxloc = 0;
+	errloc = 0; error = 0;
 	addlopt = 0;
 	acktime = 2;
 	dusize = TP_DFL_TPDUSIZE;
@@ -418,6 +416,7 @@ again:
 	subseq = 0;
 	takes_data = FALSE;
 	fcc_present = FALSE;
+	preferred_class = 0; class_to_use = 0;
 
 	/* 
 	 * get the actual tpdu length - necessary for monitoring
@@ -770,10 +769,12 @@ again:
 
 			/* stash the f suffix in the new tpcb */
 			/* l suffix is already there */
-
 			bcopy(fsufxloc, tpcb->tp_fsuffix, fsufxlen);
+
 			(tpcb->tp_nlproto->nlp_putsufx)
 					(so->so_pcb, fsufxloc, fsufxlen, TP_FOREIGN);
+			(tpcb->tp_nlproto->nlp_putsufx)
+					(so->so_pcb, lsufxloc, lsufxlen, TP_LOCAL);
 
 #ifdef TP_PERF_MEAS
 			if( tpcb->tp_perf_on = perf_meas ) { /* assignment */

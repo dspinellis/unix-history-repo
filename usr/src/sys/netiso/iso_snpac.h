@@ -24,6 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+/*	@(#)iso_snpac.h	7.3 (Berkeley) %G% */
 #define	MAX_SNPALEN		8			/* curiously equal to sizeof x.121 (
 										plus 1 for nibble len) addr */
 struct snpa_req {

@@ -28,6 +28,7 @@ SOFTWARE.
  * ARGO TP
  * $Header: /var/src/sys/netiso/RCS/tp_iso.c,v 5.1 89/02/09 16:20:51 hagens Exp $
  * $Source: /var/src/sys/netiso/RCS/tp_iso.c,v $
+ *	@(#)tp_iso.c	7.3 (Berkeley) %G% *
  *
  * Here is where you find the iso-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff
@@ -100,7 +101,7 @@ iso_getsufx(isop, lenp, data_out, which)
 		addr = isop->isop_faddr;
 	}
 	if (addr)
-		bcopy(TSEL(addr), data_out, (*lenp = addr->siso_tsuffixlen));
+		bcopy(TSEL(addr), data_out, (*lenp = addr->siso_tlen));
 }
 
 /* CALLED FROM:
@@ -138,13 +139,14 @@ iso_putsufx(isop, sufxloc, sufxlen, which)
 	if ((addr = *dst) == 0) {
 		addr = *dst = backup;
 		addr->siso_nlen = 0;
-		addr->siso_ssuffixlen = 0;
+		addr->siso_slen = 0;
+		addr->siso_plen = 0;
 		printf("iso_putsufx on un-initialized isopcb\n");
 	}
 	len = sufxlen + addr->siso_nlen +
-			(sizeof(struct sockaddr_iso) - sizeof(struct iso_addr));
+			(sizeof(*addr) - sizeof(addr->siso_data));
 	if (addr == backup) {
-		if (len > sizeof(isop->isop_sladdr)) {
+		if (len > sizeof(*addr)) {
 				m = m_getclr(M_DONTWAIT, MT_SONAME);
 				if (m == 0)
 					return;
@@ -152,10 +154,9 @@ iso_putsufx(isop, sufxloc, sufxlen, which)
 				*addr = *backup;
 				m->m_len = len;
 		}
-	} else
-		dtom(addr)->m_len = len;
+	}
 	bcopy(sufxloc, TSEL(addr), sufxlen);
-	addr->siso_tsuffixlen = sufxlen;
+	addr->siso_tlen = sufxlen;
 	addr->siso_len = len;
 }
 
@@ -174,7 +175,7 @@ void
 iso_recycle_tsuffix(isop)
 	struct isopcb	*isop;
 {
-	isop->isop_laddr->siso_tsuffixlen = isop->isop_faddr->siso_tsuffixlen = 0;
+	isop->isop_laddr->siso_tlen = isop->isop_faddr->siso_tlen = 0;
 }
 
 /*
@@ -370,23 +371,9 @@ tpclnp_output(isop, m0, datalen, nochksum)
 		dump_isoaddr(isop->isop_laddr);
 		dump_mbuf(m0, "at tpclnp_output");
 	ENDDEBUG
-	if ((m->m_flags & M_PKTHDR) == 0) {
-		IFDEBUG(D_TPISO)
-		printf("tpclnp_output: non headered mbuf");
-		ENDDEBUG
-		MGETHDR(m, M_DONTWAIT, MT_DATA);
-		if (m == 0) {
-			m_freem(m0);
-			return ENOBUFS;
-		}
-		m->m_next = m0;
-		m->m_len = 0;
-		m->m_pkthdr.len = datalen;
-		m0 = m;
-	}
 
 	return 
-		clnp_output(m0, isop, /* flags */nochksum ? CLNP_NO_CKSUM : 0);
+		clnp_output(m0, isop, datalen,  /* flags */nochksum ? CLNP_NO_CKSUM : 0);
 }
 
 /*
@@ -443,19 +430,7 @@ tpclnp_output_dg(laddr, faddr, m0, datalen, ro, nochksum)
 
 	IncStat(ts_tpdu_sent);
 
-	if ((m->m_flags & M_PKTHDR) == 0) {
-		printf("tpclnp_output: non headered mbuf");
-		MGETHDR(m, M_DONTWAIT, MT_DATA);
-		if (m == 0) {
-			m_freem(m0);
-			return ENOBUFS;
-		}
-		m->m_next = m0;
-		m->m_len = 0;
-		m->m_pkthdr.len = datalen;
-		m0 = m;
-	}
-	err = clnp_output(m0, &tmppcb, flags);
+	err = clnp_output(m0, &tmppcb, datalen,  flags);
 	
 	/*
 	 *	Free route allocated by clnp (if the route was indeed allocated)

@@ -26,6 +26,7 @@ SOFTWARE.
  */
 /* $Header: iso_proto.c,v 4.4 88/09/08 08:38:42 hagens Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/iso_proto.c,v $ 
+ *	@(#)iso_proto.c	7.3 (Berkeley) %G% *
  *
  * iso_proto.c : protocol switch tables in the ISO domain
  *

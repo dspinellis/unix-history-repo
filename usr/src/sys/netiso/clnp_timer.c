@@ -26,6 +26,7 @@ SOFTWARE.
  */
 /* $Header: clnp_timer.c,v 4.2 88/06/29 14:59:05 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/clnp_timer.c,v $ */
+/*	@(#)clnp_timer.c	7.3 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: clnp_timer.c,v 4.2 88/06/29 14:59:05 hagens Exp $";

@@ -25,6 +25,7 @@ SOFTWARE.
  */
 /* $Header: clnp_raw.c,v 4.2 88/06/29 14:58:56 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/clnp_raw.c,v $ */
+/*	@(#)clnp_raw.c	7.4 (Berkeley) %G% */
 #ifndef lint
 static char *rcsid = "$Header: clnp_raw.c,v 4.2 88/06/29 14:58:56 hagens Exp $";
 #endif lint
@@ -113,6 +114,8 @@ struct socket	*so;	/* socket to send from */
 	int						error;		/* return value of function */
 	int						flags;		/* flags for clnp_output */
 
+	if (0 == m0->m_flags & M_PKTHDR)
+		return (EINVAL);
 	/*
 	 *	Set up src address. If user has bound socket to an address, use it.
 	 *	Otherwise, do not specify src (clnp_output will fill it in).
@@ -134,7 +137,8 @@ bad:
 	/* get flags and ship it off */
 	flags = rp->risop_flags & CLNP_VFLAGS;
 
-	error = clnp_output(m0, &rp->risop_isop, flags|CLNP_NOCACHE);
+	error = clnp_output(m0, &rp->risop_isop, m0->m_pkthdr.len,
+												flags|CLNP_NOCACHE);
 
 	return (error);
 }

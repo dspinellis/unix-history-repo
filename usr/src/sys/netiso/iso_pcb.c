@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: iso_pcb.c,v 4.5 88/06/29 14:59:56 hagens Exp $
  * $Source: /usr/argo/sys/netiso/RCS/iso_pcb.c,v $
- *	@(#)iso_pcb.c	7.4 (Berkeley) %G%
+ *	@(#)iso_pcb.c	7.5 (Berkeley) %G% *
  *
  * Iso address family net-layer(s) pcb stuff. NEH 1/29/87
  */
@@ -131,10 +131,12 @@ iso_pcbbind(isop, nam)
 		return EADDRINUSE;
 	if(nam == (struct mbuf *)0) {
 		isop->isop_laddr = &isop->isop_sladdr;
-		isop->isop_sladdr.siso_tsuffixlen = 2;
-		isop->isop_sladdr.siso_nlen = 0;
-		isop->isop_sladdr.siso_family = AF_ISO;
 		isop->isop_sladdr.siso_len = sizeof(struct sockaddr_iso);
+		isop->isop_sladdr.siso_family = AF_ISO;
+		isop->isop_sladdr.siso_tlen = 2;
+		isop->isop_sladdr.siso_nlen = 0;
+		isop->isop_sladdr.siso_slen = 0;
+		isop->isop_sladdr.siso_plen = 0;
 		goto noname;
 	}
 	siso = mtod(nam, struct sockaddr_iso *);
@@ -154,7 +156,7 @@ iso_pcbbind(isop, nam)
 	if( (nam->m_len < 2) || (nam->m_len < siso->siso_len)) {
 			return ENAMETOOLONG;
 	}
-	if (siso->siso_tsuffixlen) {
+	if (siso->siso_tlen) {
 			register char *cp = TSEL(siso);
 			suf.data[0] = cp[0];
 			suf.data[1] = cp[1];
@@ -179,7 +181,7 @@ iso_pcbbind(isop, nam)
 	}
 	bcopy((caddr_t)siso, (caddr_t)isop->isop_laddr, siso->siso_len);
 	if (suf.s) {
-		if((suf.s < ISO_PORT_RESERVED) && (siso->siso_tsuffixlen <= 2) &&
+		if((suf.s < ISO_PORT_RESERVED) && (siso->siso_tlen <= 2) &&
 		   (u.u_uid != 0))
 			return EACCES;
 		if ((isop->isop_socket->so_options & SO_REUSEADDR) == 0 &&
@@ -250,7 +252,7 @@ iso_pcbconnect(isop, nam)
 		if (ia = iso_ifaddr) {
 			int nlen = ia->ia_addr.siso_nlen;
 			ovbcopy(TSEL(siso), nlen + TSEL(siso),
-				siso->siso_tsuffixlen + siso->siso_ssuffixlen);
+				siso->siso_plen + siso->siso_tlen + siso->siso_slen);
 			bcopy((caddr_t)&ia->ia_addr.siso_addr,
 				  (caddr_t)&siso->siso_addr, nlen + 1);
 			/* includes siso->siso_nlen = nlen; */
@@ -291,7 +293,7 @@ iso_pcbconnect(isop, nam)
 	if (local_zero) {
 		int nlen, tlen, totlen; caddr_t oldtsel, newtsel;
 		siso = isop->isop_laddr;
-		if (siso == 0 || siso->siso_tsuffixlen == 0)
+		if (siso == 0 || siso->siso_tlen == 0)
 			(void)iso_pcbbind(isop, (struct mbuf *)0);
 		/*
 		 * Here we have problem of squezeing in a definite network address
@@ -300,7 +302,7 @@ iso_pcbconnect(isop, nam)
 		 */
 		siso = isop->isop_laddr;
 		oldtsel = TSEL(siso);
-		tlen = siso->siso_tsuffixlen;
+		tlen = siso->siso_tlen;
 		nlen = ia->ia_addr.siso_nlen;
 		totlen = tlen + nlen + _offsetof(struct sockaddr_iso, siso_data[0]);
 		if ((siso == &isop->isop_sladdr) &&
@@ -315,7 +317,7 @@ iso_pcbconnect(isop, nam)
 		newtsel = TSEL(siso);
 		ovbcopy(oldtsel, newtsel, tlen);
 		bcopy(ia->ia_addr.siso_data, siso->siso_data, nlen);
-		siso->siso_tsuffixlen = tlen;
+		siso->siso_tlen = tlen;
 		siso->siso_family = AF_ISO;
 		siso->siso_len = totlen;
 		siso = mtod(nam, struct sockaddr_iso *);
@@ -456,39 +458,6 @@ iso_pcbdetach(isop)
 	free((caddr_t)isop, M_IFADDR);
 }
 
-#ifdef notdef
-/* NEEDED? */
-void
-iso_setsockaddr(isop, nam)
-	register struct isopcb *isop;
-	struct mbuf *nam;
-{
-	register struct sockaddr_iso *siso = mtod(nam, struct sockaddr_iso *);
-	
-	nam->m_len = sizeof (*siso);
-	siso = mtod(nam, struct sockaddr_iso *);
-	bzero((caddr_t)siso, sizeof (*siso));
-	siso->siso_family = AF_ISO;
-	siso->siso_tsuffix = isop->isop_lport;
-	siso->siso_addr = isop->isop_laddr.siso_addr;
-}
-
-/* NEEDED? */
-void
-iso_setpeeraddr(isop, nam)
-	register struct isopcb *isop;
-	struct mbuf *nam;
-{
-	register struct sockaddr_iso *siso = mtod(nam, struct sockaddr_iso *);
-	
-	nam->m_len = sizeof (*siso);
-	siso = mtod(nam, struct sockaddr_iso *);
-	bzero((caddr_t)siso, sizeof (*siso));
-	siso->siso_family = AF_ISO;
-	siso->siso_tsuffix = isop->isop_fport;
-	siso->siso_addr = isop->isop_faddr.siso_addr;
-}
-#endif notdef
 
 /*
  * FUNCTION:		iso_pcbnotify
@@ -565,7 +534,7 @@ iso_pcblookup(head, fportlen, fport, laddr)
 {
 	register struct isopcb *isop;
 	register caddr_t lp = TSEL(laddr);
-	unsigned int llen = laddr->siso_tsuffixlen;
+	unsigned int llen = laddr->siso_tlen;
 
 	IFDEBUG(D_ISO)
 		printf("iso_pcblookup(head 0x%x laddr 0x%x fport 0x%x)\n", 
@@ -574,7 +543,7 @@ iso_pcblookup(head, fportlen, fport, laddr)
 	for (isop = head->isop_next; isop != head; isop = isop->isop_next) {
 		if (isop->isop_laddr == 0 || isop->isop_laddr == laddr)
 			continue;
-		if (isop->isop_laddr->siso_tsuffixlen != llen)
+		if (isop->isop_laddr->siso_tlen != llen)
 			continue;
 		if (bcmp(lp, TSEL(isop->isop_laddr), llen))
 			continue;

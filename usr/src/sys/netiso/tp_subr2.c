@@ -29,6 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_subr2.c,v 5.5 88/11/18 17:28:55 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_subr2.c,v $
+ *	@(#)tp_subr2.c	7.3 (Berkeley) %G% *
  *
  * Some auxiliary routines:
  * 		tp_protocol_error: required by xebec- called when a combo of state,
@@ -474,6 +475,7 @@ tp_route_to( m, tpcb, channel)
 			 * can get long enough timers. sigh.
 			if( siso->siso_addr.osinet_idi[1] == (u_char)IDI_OSINET )
 			 */
+#define	IDI_OSINET	0x0004	/* bcd of "0004" */	
 			if( siso->siso_addr.isoa_genaddr[2] == (char)IDI_OSINET ) {
 				if( tpcb->tp_dont_change_params == 0) {
 					copyQOSparms( &tp_conn_param[ISO_COSNS],

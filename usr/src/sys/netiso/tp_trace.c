@@ -29,6 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_trace.c,v 5.3 88/11/18 17:29:14 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_trace.c,v $
+ *	@(#)tp_trace.c	7.3 (Berkeley) %G% *
  *
  * The whole protocol trace module.
  * We keep a circular buffer of trace structures, which are big

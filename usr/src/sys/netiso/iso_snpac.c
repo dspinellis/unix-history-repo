@@ -26,6 +26,7 @@ SOFTWARE.
  */
 /* $Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/iso_snpac.c,v $ */
+/*	@(#)iso_snpac.c	7.5 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $";
@@ -53,8 +54,8 @@ static char *rcsid = "$Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $"
 #include "iso_snpac.h"
 #include "clnp.h"
 #include "clnp_stat.h"
-#include "argo_debug.h"
 #include "esis.h"
+#include "argo_debug.h"
 
 #define	SNPAC_BSIZ	20		/* bucket size */
 #define	SNPAC_NB	13		/* number of buckets */

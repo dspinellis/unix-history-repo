@@ -29,6 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_pcb.c,v 5.4 88/11/18 17:28:24 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_pcb.c,v $
+ *	@(#)tp_pcb.c	7.3 (Berkeley) %G% *
  *
  *
  * This is the initialization and cleanup stuff - 
@@ -113,7 +114,7 @@ struct tp_conn_param tp_conn_param[] = {
 		0,						/* 1 bit use net xpd */
 		0,						/* 1 bit use rcc */
 		0,						/* 1 bit use efc */
-		0,						/* no disc indications */
+		1,						/* no disc indications */
 		0,						/* don't change params */
 		ISO_CLNS,				/* p_netservice */
 	},
@@ -148,7 +149,7 @@ struct tp_conn_param tp_conn_param[] = {
 		0,						/* 1 bit use net xpd */
 		0,						/* 1 bit use rcc */
 		0,						/* 1 bit use efc */
-		0,						/* no disc indications */
+		1,						/* no disc indications */
 		0,						/* don't change params */
 		IN_CLNS,				/* p_netservice */
 	},
@@ -383,16 +384,8 @@ void
 tp_soisdisconnecting(so)
 	register struct socket *so;
 {
-	so->so_state &= ~SS_ISCONNECTING;
-	so->so_state |= SS_ISDISCONNECTING;
-	if (so->so_head) {
-		if (!soqremque(so, 0) && !soqremque(so, 1))
-			panic("tp_soisdisconnecting");
-		so->so_head = 0;
-	}
-	wakeup((caddr_t)&so->so_timeo);
-	sowwakeup(so);
-	sorwakeup(so);
+	soisdisconnecting(so);
+	so->so_state &= ~SS_CANTSENDMORE;
 	IFPERF(sototpcb(so))
 		register struct tp_pcb *tpcb = sototpcb(so);
 		u_int 	fsufx, lsufx;
@@ -435,15 +428,8 @@ tp_soisdisconnected(tpcb)
 {
 	register struct socket	*so = tpcb->tp_sock;
 
-	so->so_state &= ~(SS_ISCONNECTING|SS_ISCONNECTED|SS_ISDISCONNECTING);
-	if (so->so_head) {
-		if (!soqremque(so, 0) && !soqremque(so, 1))
-			panic("tp_soisdisconnected");
-		so->so_head = 0;
-	}
-	wakeup((caddr_t)&so->so_timeo);
-	sowwakeup(so);
-	sorwakeup(so);
+	soisdisconnecting(so);
+	so->so_state &= ~SS_CANTSENDMORE;
 	IFPERF(sototpcb(so))
 		register struct tp_pcb *ttpcb = sototpcb(so);
 		u_int 	fsufx, lsufx;

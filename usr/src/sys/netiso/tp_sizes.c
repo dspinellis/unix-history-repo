@@ -48,6 +48,7 @@ SOFTWARE.
  *
  * $Header: tp_sizes.c,v 5.1 88/10/12 12:21:03 root Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_sizes.c,v $
+ *	@(#)tp_sizes.c	7.3 (Berkeley) %G% *
  *
  *
  * This is the initialization and cleanup stuff - 
@@ -76,8 +77,6 @@ static char *rcsid = "$Header: tp_sizes.c,v 5.1 88/10/12 12:21:03 root Exp $";
 #include "errno.h"
 #include "time.h"
 #include "tp_param.h"
-#include "tp_timer.h"
-#include "tp_ip.h"
 #include "tp_stat.h"
 #include "tp_pcb.h"
 #include "tp_tpdu.h"
@@ -92,7 +91,7 @@ static char *rcsid = "$Header: tp_sizes.c,v 5.1 88/10/12 12:21:03 root Exp $";
 #include "cons_pcb.h"
 
 #define DUP(x) x, x
-#define SIZE(P) printf("Size of %s: 0x%x %d\n", "P", DUP(sizeof(struct P)))
+#define SIZE(P) printf("  Size of %s: 0x%x %d\n", "P", DUP(sizeof(struct P)))
 #define OFF(P, Q) printf("\toffset of %s in %s: 0x%x %d\n", "P", "Q", \
 		DUP(_offsetof(struct Q, P)))
 main()
@@ -100,24 +99,24 @@ main()
 	printf( "TP struct sizes:\n");
 	SIZE(tp_pcb);
 #define O(y) OFF(tp_/**/y,tp_pcb);
-	O(state) O(retrans) O(snduna)
-	O(lref) O(fref) O(fsuffix)
-	O(fsuffixlen) O(lsuffix) O(lsuffixlen)
-	O(Xsnd) O(Xuna)
-	SIZE(tp_ref); OFF(tpr_pcb,tp_ref);OFF(tpr_calltodo,tp_ref);
-	SIZE(tp_stat); SIZE(tp_param);
-	SIZE(tp_conn_param); SIZE(tp_rtc); SIZE(nl_protosw);
-#ifdef TP_PERF_MEAS
-	SIZE(tp_Meas);
-#endif
-	printf( "ISO struct sizes:\n");
+	O(state) O(retrans) O(snduna) O(lref) O(fref)
+	O(fsuffix) O(fsuffixlen) O(lsuffix) O(lsuffixlen) O(Xsnd) O(Xuna)
+	SIZE(tp_ref);
+#undef O
+#define O(y) OFF(tpr_/**/y,tp_ref);
+	O(pcb) O(calltodo)
+	SIZE(tp_stat);
+	SIZE(tp_param); SIZE(tp_conn_param);
+	SIZE(tp_rtc); SIZE(nl_protosw);
+#undef O
+#define O(y) OFF(so_/**/y,socket);
+	printf( "socket struct sizes:\n");
 	SIZE(socket);
-	OFF(so_timeo,socket); OFF(so_rcv,socket); OFF(so_snd,socket);
-	OFF(so_tpcb,socket); OFF(so_pcb,socket); OFF(so_qlen,socket);
-	OFF(so_error,socket); OFF(so_state,socket);
+	O(timeo) O(rcv) O(snd) O(tpcb) O(pcb) O(qlen) O(error) O(state)
 	SIZE(sockbuf);
-	OFF(sb_flags,sockbuf); OFF(sb_cc,sockbuf);
-	OFF(sb_mb,sockbuf); OFF(sb_mbcnt,sockbuf);
-	SIZE(isopcb);
-	 SIZE(cons_pcb); OFF(co_state,cons_pcb);
+#undef O
+#define O(y) OFF(sb_/**/y,sockbuf);
+	O(flags) O(cc) O(mb) O(mbcnt)
+	SIZE(isopcb); SIZE(cons_pcb);
+	OFF(co_state,cons_pcb);
 }
