@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.3 (Berkeley) %G%
+	@(#)syscalls.master	7.4 (Berkeley) %G%
 ; System call name/number master file (or rather, slave, from HP-UX).
 ; Processed to created hpux_sysent.c, hpux_syscalls.c and hpux_syscall.h.
 ;
@@ -42,7 +42,7 @@
 16	STD	3 chown
 17	STD	1 obreak break
 18	COMPAT	2 hpuxstat stat
-19	STD	3 lseek
+19	STD	3 olseek
 20	STD	0 getpid
 21	NOTIMPL	3 mount
 22	NOTIMPL	1 umount
