@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)esis.c	7.14 (Berkeley) %G% */
+/*	@(#)esis.c	7.15 (Berkeley) %G% */
 #ifndef lint
 static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
 #endif
@@ -159,6 +159,7 @@ struct mbuf		*control;	/* optional control */
 		if (so->so_pcb = (caddr_t)rp) {
 			bzero(so->so_pcb, sizeof(*rp));
 			insque(rp, &esis_pcb);
+			rp->rcb_socket = so;
 			error = soreserve(so, esis_sendspace, esis_recvspace);
 		} else
 			error = ENOBUFS;
@@ -575,6 +576,8 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	while (buf < buflim) {
 		switch (*buf) {
 		case ESISOVAL_ESCT:
+			if (iso_systype & SNPA_IS)
+				break;
 			if (buf[1] != 2)
 				goto bad;
 			CTOH(buf[2], buf[3], newct);
@@ -939,7 +942,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		}
 	}
 	if (first_rp && sbappendaddr(&first_rp->rcb_socket->so_rcv,
-							  &esis_dl, mm, (struct mbuf *)0) != 0) {
+							  &esis_dl, m0, (struct mbuf *)0) != 0) {
 		sorwakeup(first_rp->rcb_socket);
 		return;
 	}
