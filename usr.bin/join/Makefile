@@ -1,5 +1,5 @@
+#	@(#)Makefile	5.2 (Berkeley) 5/11/90
 
 PROG=	join
-SRCS=	join.c getopt.c getopt1.c
 
 .include <bsd.prog.mk>
