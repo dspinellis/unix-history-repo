@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)monop.h	5.2 (Berkeley) %G%
+ *	@(#)monop.h	5.3 (Berkeley) %G%
  */
 
 # include	<stdio.h>
@@ -63,7 +63,7 @@ struct sqr_st {			/* structure for square			*/
 
 typedef struct sqr_st	SQUARE;
 
-struct mon_st {			/* monopoly descriptin structure	*/
+struct mon_st {			/* monopoly description structure	*/
 	char	*name;			/* monop. name (color)		*/
 	shrt	owner;			/* owner of monopoly		*/
 	shrt	num_in;			/* # in monopoly		*/
@@ -71,7 +71,7 @@ struct mon_st {			/* monopoly descriptin structure	*/
 	shrt	h_cost;			/* price of houses		*/
 	char	*not_m;			/* name if not monopoly		*/
 	char	*mon_n;			/* name if a monopoly		*/
-	char	sqnum[3];		/* Square numbers (used to init)*/
+	char	sqnums[3];		/* Square numbers (used to init)*/
 	SQUARE	*sq[3];			/* list of squares in monop	*/
 };
 
