@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	4.10 (Berkeley) 87/11/15";
+static	char *sccsid = "@(#)main.c	4.11 (Berkeley) 88/09/13";
 # include "defs"
 /*
 command make to update programs.
@@ -163,13 +163,11 @@ setvar("MFLAGS", options);		/* MFLAGS=options to make */
 
 setvar("MACHINE", MACHINE);
 
-if( !descset )
-#ifdef unix
-	if( rddescf("makefile") )  rddescf("Makefile");
-#endif
-#ifdef gcos
-	rddescf("makefile");
-#endif
+if (!descset) {
+	if (rddescf("makefile"))
+		rddescf("Makefile");
+	rddescf(".depend");
+}
 
 if (doenvlast == YES)
 	readenv();
