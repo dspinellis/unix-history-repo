@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pager.c	7.3 (Berkeley) %G%
+ *	@(#)vm_pager.c	7.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -48,10 +48,6 @@
 #include "vm_page.h"
 #include "vm_kern.h"
 
-#ifdef hp300
-#include "../hp300/hp300/pte.h"			/* XXX XXX XXX */
-#endif
-
 #include "swappager.h"
 
 #if NSWAPPAGER > 0
@@ -87,17 +83,17 @@ struct pagerops *dfltpagerops = NULL;	/* default pager */
  */
 #define PAGER_MAP_SIZE	(256 * PAGE_SIZE)
 vm_map_t pager_map;
+vm_offset_t pager_sva, pager_eva;
 
 void
 vm_pager_init()
 {
-	vm_offset_t whocares1, whocares2;
 	struct pagerops **pgops;
 
 	/*
 	 * Allocate a kernel submap for tracking get/put page mappings
 	 */
-	pager_map = kmem_suballoc(kernel_map, &whocares1, &whocares2,
+	pager_map = kmem_suballoc(kernel_map, &pager_sva, &pager_eva,
 				  PAGER_MAP_SIZE, FALSE);
 	/*
 	 * Initialize known pagers
@@ -186,18 +182,18 @@ vm_pager_map_page(m)
 {
 	vm_offset_t kva;
 
+#ifdef DEBUG
+	if (!m->busy || m->active)
+		panic("vm_pager_map_page: page active or not busy");
+	if (m->pagerowned)
+		printf("vm_pager_map_page: page %x already in pager\n", m);
+#endif
 	kva = kmem_alloc_wait(pager_map, PAGE_SIZE);
-#ifdef hp300
-	/*
-	 * XXX: cannot use pmap_enter as the mapping would be
-	 * removed by a pmap_remove_all().
-	 */
-	*(int *)kvtopte(kva) = VM_PAGE_TO_PHYS(m) | PG_CI | PG_V;
-	TBIS(kva);
-#else
+#ifdef DEBUG
+	m->pagerowned = 1;
+#endif
 	pmap_enter(vm_map_pmap(pager_map), kva, VM_PAGE_TO_PHYS(m),
 		   VM_PROT_DEFAULT, TRUE);
-#endif
 	return(kva);
 }
 
@@ -205,11 +201,20 @@ void
 vm_pager_unmap_page(kva)
 	vm_offset_t	kva;
 {
-#ifdef hp300
-	*(int *)kvtopte(kva) = PG_NV;
-	TBIS(kva);
+#ifdef DEBUG
+	vm_page_t m;
+
+	m = PHYS_TO_VM_PAGE(pmap_extract(vm_map_pmap(pager_map), kva));
 #endif
+	pmap_remove(vm_map_pmap(pager_map), kva, kva + PAGE_SIZE);
 	kmem_free_wakeup(pager_map, kva, PAGE_SIZE);
+#ifdef DEBUG
+	if (m->pagerowned)
+		m->pagerowned = 0;
+	else
+		printf("vm_pager_unmap_page: page %x(%x/%x) not owned\n",
+		       m, kva, VM_PAGE_TO_PHYS(m));
+#endif
 }
 
 vm_pager_t
