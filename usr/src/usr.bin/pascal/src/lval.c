@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)lval.c 1.12 %G%";
+static char sccsid[] = "@(#)lval.c 1.13 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -274,6 +274,7 @@ lvalue(r, modflag , required )
 	if (s) {
 		error("Too few subscripts (%d given, %d required)",
 			s, p->type->value[0]);
+		return NLNIL;
 	}
 	if (f) {
 		if (bn == 0)
@@ -386,7 +387,7 @@ arycod(np, el)
 			return (-1);
 		}
 		if (p->class == CRANGE) {
-			constsub = 0;
+			constsub = FALSE;
 		} else {
 			w = aryconst(np, i);
 		}
