@@ -1,0 +1,20 @@
+To install everything, you might use:
+cd /usr/local/bin; ln -s /usr/src/public/bash-1.12/bin/* .
+cd /usr/local/man/cat1; ln -s /usr/src/public/bash-1.12/man/cat1/* .
+
+To recompile, cd to the bash-1.12 directory and type 'make'.  Gcc
+should not report any errors, but will issue a few warnings about
+redefined cpp macro/symbol names.
+
+The install directories is set to /usr/src/public/bash-1.12/bin,
+though there are no paths compiled into the executables.  The
+preformatted manpage is in man/cat1.  To regenerate the preformatted
+manual page, cd to man and type 'sh catman'.
+
+The unmodified sources are available via anonymous ftp from
+prep.ai.mit.edu in directory /pub/gnu and file bash-1.12.tar.Z.
+
+Rich Murphey                   409-772-3399
+Physiology & Biophysics F-41   Fax 409-772-3381
+Univ. of Texas Medical Branch  rich@rice.edu
+Galveston, Texas 77555-0641    rich@rice.UUCP
