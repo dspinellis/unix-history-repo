@@ -1,4 +1,4 @@
-/*	scb.s	4.10	81/10/17	*/
+/*	scb.s	4.11	81/11/22	*/
 
 /*
  * System control block
@@ -26,7 +26,7 @@ _scb:	.globl	_scb
 /* 080 */	STRAY;		STRAY;		KS(astflt);	STRAY;
 /* 090 */	STRAY;		STRAY;		STRAY;		STRAY;
 /* 0a0 */	IS(softclock);	STRAY;		STRAY;		STRAY;
-#ifdef BBNNET
+#ifdef INET
 /* 0b0 */	IS(netintr);	STRAY;		STRAY;		STRAY;
 #else
 /* 0b0 */	STRAY;		STRAY;		STRAY;		STRAY;
