@@ -1,0 +1,443 @@
+.na
+.ce
+C Changes
+
+1.  Long integers
+
+The compiler implements 32-bit integers.
+The associated type keyword is `long'.
+The word can act rather like an adjective in that
+`long int' means a 32-bit integer and `long float'
+means the same as `double.'
+But plain `long' is a long integer.
+Essentially all operations on longs are implemented except that
+assignment-type operators do not have values, so
+l1+(l2=+l3) won't work.
+Neither will l1 = l2 = 0.
+
+Long constants are written with a terminating `l' or `L'.
+E.g. "123L" or "0177777777L" or "0X56789abcdL".
+The latter is a hex constant, which could also have been short;
+it is marked by starting with "0X".
+Every fixed decimal constant larger than 32767 is taken to
+be long, and so are octal or hex constants larger than
+0177777 (0Xffff, or 0xFFFF if you like).
+A warning is given in such a case since this is actually
+an incompatibility with the older compiler.
+Where the constant is just used as an initializer or
+assigned to something it doesn't matter.
+If it is passed to a subroutine
+then the routine will not get what it expected.
+
+When a short and a long integer are
+operands of an arithmetic operator,
+the short is converted to long (with sign extension).
+This is true also when a short is assigned to a long.
+When a long is assigned to a short integer it
+is truncated at the high order end with no notice
+of possible loss of significant digits.
+This is true as well when a long is added to a pointer
+(which includes its usage as a subscript).
+The conversion rules for expressions involving
+doubles and floats mixed with longs
+are the same as those for short integers,
+.ul
+mutatis mutandis.
+
+A point to note is that constant expressions involving
+longs are not evaluated at compile time,
+and may not be used where constants are expected.
+Thus
+
+	long x {5000L*5000L};
+
+is illegal;
+
+	long x {5000*5000};
+
+is legal but wrong because the high-order part is lost;
+but both
+
+	long x 25000000L;
+
+and
+
+	long x 25.e6;
+
+are correct
+and have the same meaning
+because the double constant is converted to long at compile time.
+
+2.  Unsigned integers
+
+A new fundamental data type with keyword `unsigned,' is
+available.  It may be used alone:
+
+        unsigned u;
+
+or as an adjective with `int'
+
+        unsigned int u;
+
+with the same meaning.  There are not yet (or possibly ever)
+unsigned longs or chars.  The meaning of an unsigned variable is
+that of an integer modulo 2^n, where n is 16 on the PDP-11.  All
+operators whose operands are unsigned produce results consistent
+with this interpretation except division and remainder where the
+divisor is larger than 32767; then the result is incorrect.  The
+dividend in an unsigned division may however have any value (i.e.
+up to 65535) with correct results.  Right shifts of unsigned
+quantities are guaranteed to be logical shifts.
+
+When an ordinary integer and an unsigned integer are combined
+then the ordinary integer is mapped into an integer mod 2^16 and
+the result is unsigned.  Thus, for example `u = -1' results in
+assigning 65535 to u.  This is mathematically reasonable, and
+also happens to involve no run-time overhead.
+
+When an unsigned integer is assigned to a plain integer, an
+(undiagnosed) overflow occurs when the unsigned integer exceeds
+2^15-1.
+
+It is intended that unsigned integers be used in contexts where
+previously character pointers were used (artificially and
+nonportably) to represent unsigned integers.
+
+3.  Block structure.
+
+A sequence of declarations may now appear at the beginning of any
+compound statement in {}.  The variables declared thereby are
+local to the compound statement.  Any declarations of the same
+name existing before the block was entered are pushed down for
+the duration of the block.  Just as in functions, as before, auto
+variables disappear and lose their values when the block is left;
+static variables retain their values.  Also according to the same
+rules as for the declarations previously allowed at the start of
+functions, if no storage class is mentioned in a declaration the
+default is automatic.
+
+Implementation of inner-block declarations is such that there is
+no run-time cost associated with using them.
+
+4.  Initialization (part 1)
+
+This compiler properly handles initialization of structures
+so the construction
+
+ 	struct { char name[8]; char type; float val; } x
+ 		{ "abc", 'a', 123.4 };
+
+compiles correctly.
+In particular it is recognized that the string is supposed
+to fill an 8-character array, the `a' goes into a character,
+and that the 123.4 must be rounded and placed in a single-precision
+cell.
+Structures of arrays, arrays of structures, and the like all work;
+a more formal description of what is done follows.
+
+<initializer> ::= <element>
+
+<element> ::= <expression> | <element> , <element> |
+ 		{ <element> } | { <element> , }
+
+An element is an expression or a comma-separated sequence of
+elements possibly enclosed in braces.
+In a brace-enclosed
+sequence, a comma is optional after the last element.
+This very
+ambiguous definition is parsed as described below.
+"Expression"
+must of course be a constant expression within the previous
+meaning of the Act.
+
+An initializer for a non-structured scalar is an element with
+exactly one expression in it.
+
+An "aggregate" is a structure or an array.
+If the initializer
+for an aggregate begins with a left brace, then the succeeding
+comma-separated sequence of elements initialize the members of
+the aggregate.
+It is erroneous for the number of members in the
+sequence to exceed the number of elements in the aggregate.
+If
+the sequence has too few members the aggregate is padded.
+
+If the initializer for an aggregate does not begin with a left
+brace, then the members of the aggregate are initialized with
+successive elements from the succeeding comma-separated sequence.
+If the sequence terminates before the aggregate is filled the
+aggregate is padded.
+
+The "top level" initializer is the object which initializes an
+external object itself, as opposed to one of its members.
+The
+top level initializer for an aggregate must begin with a left
+brace.
+
+If the top-level object being initialized is an array and if its
+size is omitted in the declaration, e.g. "int a[]", then the size
+is calculated from the number of elements which initialized it.
+
+Short of complete assimilation of this description, there are two
+simple approaches to the initialization of complicated objects.
+First, observe that it is always legal to initialize any object
+with a comma-separated sequence of expressions.
+The members of
+every structure and array are stored in a specified order, so the
+expressions which initialize these members may if desired be laid
+out in a row to successively, and recursively, initialize the
+members.
+
+Alternatively, the sequences of expressions which initialize
+arrays or structures may uniformly be enclosed in braces.
+
+5.  Initialization (part 2)
+
+Declarations, whether external, at the head of functions, or
+in inner blocks may have initializations whose syntax is the same
+as previous external declarations with initializations.  The only
+restrictions are that automatic structures and arrays may not be
+initialized (they can't be assigned either); nor, for the moment
+at least, may external variables when declared inside a function.
+
+The declarations and initializations should be thought of as
+occurring in lexical order so that forward references in
+initializations are unlikely to work.  E.g.,
+
+        { int a a;
+          int b c;
+          int c 5;
+          ...
+        }
+
+Here a is initialized by itself (and its value is thus
+undefined); b is initialized with the old value of c (which is
+either undefined or any c declared in an outer block).
+
+6.  Bit fields
+
+A declarator inside a structure may have the form
+
+	<declarator> : <constant>
+
+which specifies that the object declared is stored in a field
+the number of bits in which is specified by the constant.
+If several such things are stacked up next to each other
+then the compiler allocates the fields from right to left,
+going to the next word
+when the new field will not fit.
+The declarator may also have the form
+
+	: <constant>
+
+which allocates an unnamed field to simplify accurate
+modelling of things like hardware formats where there are unused
+fields.
+Finally,
+
+	: 0
+
+means to force the next field to start on a word boundary.
+
+The types of bit fields can be only "int" or "char".
+The only difference between the two
+is in the alignment and length restrictions:
+no int field can be longer than 16 bits, nor any char longer
+than 8 bits.
+If a char field will not fit into the current character,
+then it is moved up to the next character boundary.
+
+Both int and char fields
+are taken to be unsigned (non-negative)
+integers.
+
+Bit-field variables are not quite full-class citizens.
+Although most operators can be applied to them,
+including assignment operators,
+they do not have addresses (i.e. there are no bit pointers)
+so the unary & operator cannot be applied to them.
+For essentially this reason there are no arrays of bit field
+variables.
+
+There are three twoes in the implementation:
+addition (=+) applied to fields
+can result in an overflow into the next field;
+it is not possible to initialize bit fields.
+
+7.  Macro preprocessor
+
+The proprocessor handles `define' statements with formal arguments.
+The line
+
+	#define macro(a1,...,an) ...a1...an...
+
+is recognized by the presence of a left parenthesis
+following the defined name.
+When the form
+
+	macro(b1,...,bn)
+
+is recognized in normal C program text,
+it is replaced by the definition, with the corresponding
+.ul
+bi
+actual argument string substituted for the corresponding
+.ul
+ai
+formal arguments.
+Both actual and formal arguments are separated by
+commas not included in parentheses; the formal arguments
+have the syntax of names.
+
+Macro expansions are no longer surrounded by spaces.
+Lines in which a replacement has taken place are rescanned until
+no macros remain.
+
+The preprocessor has a rudimentary conditional facility.
+A line of the form
+
+	#ifdef name
+
+is ignored if
+`name' is defined to the preprocessor
+(i.e. was the subject of a `define' line).
+If name is not defined then all lines through
+a line of the form
+
+	#endif
+
+are ignored.
+A corresponding
+form is
+
+	#ifndef name
+ 	...
+ 	#endif
+
+which ignores the intervening lines unless `name' is defined.
+The name `unix' is predefined and replaced by itself
+to aid writers of C programs which are expected to be transported
+to other machines with C compilers.
+
+In connection with this, there is a new option to the cc command:
+
+	cc -Dname
+
+which causes `name' to be defined to the preprocessor (and replaced by
+itself).
+This can be used together with conditional preprocessor
+statements to select variant versions of a program at compile time.
+
+The previous two facilities (macros with arguments, conditional
+compilation)
+were actually available in the 6th Edition system, but
+undocumented.
+New in this release of the cc command is the ability to
+nest `include' files.
+Preprocessor include lines may have the new form
+
+	#include <file>
+
+where the angle brackets replace double quotes.
+In this case, the file name is prepended with a standard prefix,
+namely `/usr/include'.
+In is intended that commonly-used include files be placed
+in this directory;
+the convention reduces the dependence on system-specific
+naming conventions.
+The standard prefix can be replaced by
+the cc command option `-I':
+
+	cc -Iotherdirectory
+
+8.  Registers
+
+A formal argument may be given the storage class `register.'
+When this occurs the save sequence copies it
+from the place
+the caller left it into a fast register;
+all usual restrictions on its use are the same
+as for ordinary register variables.
+
+Now any variable inside a function may be declared `register;'
+if the type is unsuitable, or if
+there are more than three register declarations,
+then the compiler makes it `auto' instead.
+The restriction that the & operator may not be applied
+to a register remains.
+
+9.  Mode declarations
+
+A declaration of the form
+
+	typedef_______ type-specifier declarator ;_
+
+makes the name given in the declarator into the equivalent
+of a keyword specifying the type which the name would have
+in an ordinary declaration.
+Thus
+
+	typedef int *iptr;
+
+makes `iptr' usable in declarations of pointers to integers;
+subsequently the declarations
+
+	iptr ip;
+.br
+	int *ip;
+
+would mean the same thing.
+Type names introduced in this way
+obey the same scope rules as ordinary variables.
+The facility is new, experimental, and probably buggy.
+
+10. Restrictions
+
+The compiler is somewhat stickier about
+some constructions that used to be accepted.
+
+One difference is that external declarations made inside
+functions are remembered to the end of the file,
+that is even past the end of the function.
+The most frequent problem that this causes is that
+implicit declaration of a function as an integer in one
+routine,
+and subsequent explicit declaration
+of it as another type,
+is not allowed.
+This turned out to affect
+several source programs
+distributed with the system.
+
+It is now required that all forward references to labels
+inside a function be the subject of a `goto.'
+This has turned out to affect mainly people who
+pass a label to the routine `setexit.'
+In fact a routine is supposed to be passed here,
+and why a label worked I do not know.
+
+In general this compiler makes it more difficult
+to use label variables.
+Think of this as a contribution to structured programming.
+
+The compiler now checks multiple declarations of the same name
+more carefully for consistency.
+It used to be possible to declare the same name to
+be a pointer to different structures;
+this is caught.
+So too are declarations of the same array as having different
+sizes.
+The exception is that array declarations with empty brackets
+may be used in conjunction with a declaration with a specified size.
+Thus
+
+	int a[];
+	int a[50];
+
+is acceptable (in either order).
+
+An external array all of whose definitions
+involve empty brackets is diagnosed as `undefined'
+by the loader;
+it used to be taken as having 1 element.
