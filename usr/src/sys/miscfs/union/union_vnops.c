@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.7 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -601,7 +601,17 @@ union_getattr(ap)
 
 	vp = un->un_uppervp;
 	if (vp != NULLVP) {
-		FIXUP(un);
+		/*
+		 * It's not clear whether VOP_GETATTR is to be
+		 * called with the vnode locked or not.  stat() calls
+		 * it with (vp) locked, and fstat calls it with
+		 * (vp) unlocked.
+		 * In the mean time, compensate here by checking
+		 * the union_node's lock flag.
+		 */
+		if (un->un_flags & UN_LOCKED)
+			FIXUP(un);
+
 		error = VOP_GETATTR(vp, vap, ap->a_cred, ap->a_p);
 		if (error)
 			return (error);
@@ -1179,6 +1189,7 @@ union_inactive(ap)
 		struct vnode *a_vp;
 	} */ *ap;
 {
+	struct union_node *un = VTOUNION(ap->a_vp);
 
 	/*
 	 * Do nothing (and _don't_ bypass).
@@ -1194,11 +1205,14 @@ union_inactive(ap)
 	 */
 
 #ifdef UNION_DIAGNOSTIC
-	struct union_node *un = VTOUNION(ap->a_vp);
-
 	if (un->un_flags & UN_LOCKED)
 		panic("union: inactivating locked node");
+	if (un->un_flags & UN_ULOCK)
+		panic("union: inactivating w/locked upper node");
 #endif
+
+	if ((un->un_flags & UN_CACHED) == 0)
+		vgone(ap->a_vp);
 
 	return (0);
 }
