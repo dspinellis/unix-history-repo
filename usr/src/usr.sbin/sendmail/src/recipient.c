@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.55 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -131,22 +131,6 @@ sendto(list, copyf, ctladdr, qflags)
 		    (firstone && *p == '\0' && bitset(QPRIMARY, ctladdr->q_flags)))
 			a->q_flags |= QPRIMARY;
 
-		if (ctladdr != NULL && sameaddr(ctladdr, a))
-			ctladdr->q_flags |= QSELFREF;
-		al = a;
-		firstone = FALSE;
-	}
-
-	/* arrange to send to everyone on the local send list */
-	prev = sibl = NULL;
-	if (ctladdr != NULL)
-		prev = ctladdr->q_child;
-	while (al != NULL)
-	{
-		register ADDRESS *a = al;
-		extern ADDRESS *recipient();
-
-		al = a->q_next;
 		sibl = recipient(a);
 		if (sibl != NULL)
 		{
