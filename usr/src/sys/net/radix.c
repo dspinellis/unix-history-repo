@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)radix.c	7.15 (Berkeley) %G%
+ *	@(#)radix.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -12,6 +12,7 @@
  */
 #ifndef RNF_NORMAL
 #include "param.h"
+#include "systm.h"
 #include "radix.h"
 #include "malloc.h"
 #define	M_DONTWAIT M_NOWAIT
