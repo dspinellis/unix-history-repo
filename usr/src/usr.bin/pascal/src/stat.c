@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)stat.c 1.6 %G%";
+static char sccsid[] = "@(#)stat.c 1.7 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -115,10 +115,6 @@ top:
 					break;
 				case T_WITH:
 					withop(s);
-					break;
-				case T_ASRT:
-					putline();
-					asrtop(s);
 					break;
 			}
 			--level;
@@ -598,40 +594,4 @@ repop(r)
 #	endif PC
 	if (goc != gocnt)
 		putcnt();
-}
-
-/*
- * assert expr
- */
-asrtop(r)
-	register int *r;
-{
-	register struct nl *q;
-
-	if (opt('s')) {
-		standard();
-		error("Assert statement is non-standard");
-	}
-	if (!opt('t'))
-		return;
-	r = r[2];
-#	ifdef OBJ
-	    q = rvalue((int *) r, NLNIL , RREQ );
-#	endif OBJ
-#	ifdef PC
-	    putleaf( P2ICON , 0 , 0
-		    , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_ASRT" );
-	    q = stkrval( r , NLNIL , RREQ );
-#	endif PC
-	if (q == NIL)
-		return;
-	if (isnta(q, "b"))
-		error("Assert expression must be Boolean, not %ss", nameof(q));
-#	ifdef OBJ
-	    put(1, O_ASRT);
-#	endif OBJ
-#	ifdef PC
-	    putop( P2CALL , P2INT );
-	    putdot( filename , line );
-#	endif PC
 }

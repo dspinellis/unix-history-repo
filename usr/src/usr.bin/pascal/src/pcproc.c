@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcproc.c 1.8 %G%";
+static	char sccsid[] = "@(#)pcproc.c 1.9 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -1391,6 +1391,41 @@ pcproc(r)
 		putdot( filename , line );
 		return;
 
+	case O_ASRT:
+		if (!opt('t'))
+			return;
+		if (argc == 0 || argc > 2) {
+			error("Assert expects one or two arguments");
+			return;
+		}
+		putleaf( P2ICON , 0 , 0
+		    , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_ASRT" );
+		ap = stkrval(argv[1], NIL , RREQ );
+		if (ap == NIL)
+			return;
+		if (isnta(ap, "b"))
+			error("Assert expression must be Boolean, not %ss", nameof(ap));
+		if (argc == 2) {
+			/*
+			 * Optional second argument is a string specifying
+			 * why the assertion failed.
+			 */
+			al = argv[2];
+			al = stkrval(al[1], NIL , RREQ );
+			if (al == NIL)
+				return;
+			if (classify(al) != TSTR) {
+				error("Second argument to assert must be a string, not %s", nameof(al));
+				return;
+			}
+		} else {
+			putleaf( P2ICON , 0 , 0 , P2INT , 0 );
+		}
+		putop( P2LISTOP , P2INT );
+		putop( P2CALL , P2INT );
+		putdot( filename , line );
+		return;
+
 	case O_PACK:
 		if (argc != 3) {
 			error("pack expects three arguments");
@@ -1477,7 +1512,7 @@ packunp:
 		putdot( filename , line );
 		return;
 	case 0:
-		error("%s is an unimplemented 6400 extension", p->symbol);
+		error("%s is an unimplemented extension", p->symbol);
 		return;
 
 	default:

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)yycosts.c 1.2 %G%";
+static char sccsid[] = "@(#)yycosts.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -100,7 +100,6 @@ inscost(sy, before)
 		case '[':
 		case YWHILE:
 		case YWITH:
-		case YASSERT:
 			return (5);
 		case YPROCEDURE:
 		case YFUNCTION:

@@ -64,8 +64,7 @@
 	YSET		YSTRING		YTHEN		YDOWNTO
 	YTYPE		YUNTIL		YVAR		YWHILE
 	YWITH		YBINT		YOCT		YHEX
-	YASSERT		YCASELAB	YILLCH		YEXTERN
-	YLAST
+	YCASELAB	YILLCH		YEXTERN		YLAST
 
 /*
  * PRECEDENCE DECLARATIONS
@@ -89,7 +88,7 @@
 
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pas.y 1.5 %G%"; */
+/* static	char sccsid[] = "@(#)pas.y 1.6 %G%"; */
 
 /*
  * The following line marks the end of the yacc
@@ -99,7 +98,7 @@
 ##
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pas.y 1.5 %G%";
+static	char sccsid[] = "@(#)pas.y 1.6 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -603,9 +602,6 @@ stat:
 		|
 	YIF expr YTHEN stat YELSE stat
 		= $$ = tree5(T_IFEL, lineof($1), $2, $4, $6);
-		|
-	YASSERT '(' expr ')'
-		= $$ = tree3(T_ASRT, lineof($1), $3);
 		|
 	error
 		= {
