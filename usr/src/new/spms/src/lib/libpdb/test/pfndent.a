@@ -1,0 +1,46 @@
+!<arch>
+Ipfndent        418698232   968   27    100644  105       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+Opfndent        418871389   968   27    100644  72        `
+fff:lp=here:id=butnothere
+Tpfndent: ./Ipfndent must be read access only
+Tpfndent.c      418698238   968   27    100644  676       `
+/*
+ * pfndent()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+#include "yesno.h"
+
+char *PGN = "Tpfndent";			/* program name */
+
+main()
+{
+	int closepdb();			/* close database */
+	int pfndent();			/* find and load database entry */
+	PDB *mustopenpdb();		/* must open database or die */
+	PDB *pdbp;			/* database stream */
+	
+	pdbp = mustopenpdb("Ipfndent", ".", "r");
+	if (pfndent("fff", pdbp) == YES)
+		printf("%s\n", pdbp->pbuf);
+	closepdb(pdbp);
+	fflush(stdout);
+	pdbp = mustopenpdb("Ipfndent", ".", "rw");
+	if (pfndent("fff", pdbp) == YES)
+		printf("%s\n", pdbp->pbuf);
+	if (pfndent("fff", pdbp) == YES)
+		printf("%s\n", pdbp->pbuf);
+	closepdb(pdbp);
+	exit(0);
+}

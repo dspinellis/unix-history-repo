@@ -1,0 +1,41 @@
+!<arch>
+Owarn           418696446   968   27    100644  124       `
+Twarn: ___this___is___test___1___
+Twarn: ___this___is___test___
+Twarn: ___this___is___
+Twarn: ___this___
+Twarn: ___
+Twarn: 
+Twarn.c         418696448   968   27    100644  309       `
+/*
+ * warn()
+ */
+
+char *PGN = "Twarn";
+
+main()
+{
+	char one = '1';
+	char *s1 = "this";
+	char *s2 = "is";
+	char *s3 = "test";
+
+	warn("___%s___%s___%s___%c___", s1, s2, s3, one);
+	warn("___%s___%s___%s___", s1, s2, s3);
+	warn("___%s___%s___", s1, s2);
+	warn("___%s___", s1);
+	warn("___");
+	warn("");
+	exit(0);
+}
+
+Twarn.sh        418870326   968   27    100755  128       `
+#!/bin/csh -f
+#
+# warn()
+#
+Twarn >& T_OUTPUT
+cat T_OUTPUT | diff - Owarn
+set diffstatus = $status
+rm T_OUTPUT
+exit($diffstatus)

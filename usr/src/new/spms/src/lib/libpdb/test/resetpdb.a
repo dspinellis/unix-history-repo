@@ -1,0 +1,61 @@
+!<arch>
+Iresetpdb       418698403   968   27    100644  105       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+Oresetpdb       418698403   968   27    100644  40        `
+aaa
+bbb
+ddd
+fff
+ggg
+hhh
+iii
+aaa
+hhh
+aaa
+Tresetpdb.c     418698407   968   27    100644  928       `
+/*
+ * resetpdb()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+
+#define KEYSIZE 10
+
+char *PGN = "Tresetpdb";		/* program name */
+
+main()
+{
+	char keybuf[KEYSIZE];		/* key string buffer */
+	char *pbgetkey();		/* get next key */
+	int closepdb();			/* close database */
+	int i;				/* entry counter */
+	int pgetent();			/* load next entry into buffer */
+	PDB *mustopenpdb();		/* must open database or die */
+	PDB *pdbp1;			/* 1st database stream */
+	PDB *pdbp2;			/* 2nd database stream */
+	
+	pdbp1 = mustopenpdb("Iresetpdb", ".", "r");
+	pdbp2 = mustopenpdb("Iresetpdb", ".", "r");
+	for (i = 0; i < 6 && pgetent(pdbp1) != EOF; i++)
+		printf("%s\n", pbgetkey(keybuf));
+	printf("%s\n", pbgetkey(keybuf));
+	if (pgetent(pdbp2) != EOF)
+		printf("%s\n", pbgetkey(keybuf));
+	resetpdb(pdbp1);
+	printf("%s\n", pbgetkey(keybuf));
+	resetpdb(pdbp2);
+	printf("%s\n", pbgetkey(keybuf));
+	closepdb(pdbp1);
+	closepdb(pdbp2);
+	exit(0);
+}

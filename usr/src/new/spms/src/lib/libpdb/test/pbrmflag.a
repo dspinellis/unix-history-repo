@@ -1,0 +1,51 @@
+!<arch>
+Ipbrmflag       418698147   968   27    100644  111       `
+aaa
+bbb|ccc
+ddd|eee:lp
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere:lp:
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+Opbrmflag       418698147   968   27    100644  103       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere:
+
+:jjj
+kkk|lll|:lp=andherealso:
+
+Tpbrmflag.c     418698153   968   27    100644  517       `
+/*
+ * pbrmflag()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+
+char *PGN = "Tpbrmflag";		/* program name */
+
+main()
+{
+	int closepdb();			/* close database */
+	int pgetent();			/* load next entry into buffer */
+	PDB *mustopenpdb();		/* must open database or die */
+	PDB *pdbp;			/* database stream */
+	void pbrmflag();		/* remove flag field */
+	
+	pdbp = mustopenpdb("Ipbrmflag", ".", "r");
+	while (pgetent(pdbp) != EOF)
+		{
+		pbrmflag("lp");
+		printf("%s\n", pdbp->pbuf);
+		}
+	closepdb(pdbp);
+	exit(0);
+}
+
