@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_input.c	8.8 (Berkeley) %G%
+ *	@(#)tcp_input.c	8.9 (Berkeley) %G%
  */
 
 #ifndef TUBA_INCLUDE
@@ -61,7 +61,10 @@ extern u_long sb_max;
 	if ((ti)->ti_seq == (tp)->rcv_nxt && \
 	    (tp)->seg_next == (struct tcpiphdr *)(tp) && \
 	    (tp)->t_state == TCPS_ESTABLISHED) { \
-		tp->t_flags |= TF_DELACK; \
+		if ((ti)->ti_flags & TH_PUSH) \
+			tp->t_flags |= TF_ACKNOW; \
+		else \
+			tp->t_flags |= TF_DELACK; \
 		(tp)->rcv_nxt += (ti)->ti_len; \
 		flags = (ti)->ti_flags & TH_FIN; \
 		tcpstat.tcps_rcvpack++;\
@@ -474,7 +477,10 @@ findpcb:
 			m->m_len -= sizeof(struct tcpiphdr)+off-sizeof(struct tcphdr);
 			sbappend(&so->so_rcv, m);
 			sorwakeup(so);
-			tp->t_flags |= TF_DELACK;
+			if (ti->ti_flags & TH_PUSH)
+				tp->t_flags |= TF_ACKNOW;
+			else
+				tp->t_flags |= TF_DELACK;
 			return;
 		}
 	}
