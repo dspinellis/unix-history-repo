@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.6 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.7 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.6 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.7 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -359,16 +359,18 @@ makeconnection(host, port, mci, usesecureport)
 **		A list of aliases for this host.
 **
 **	Side Effects:
-**		none.
+**		Sets the MyIpAddrs buffer to a list of my IP addresses.
 */
+
+struct in_addr	MyIpAddrs[MAXIPADDR + 1];
 
 char **
 myhostname(hostbuf, size)
 	char hostbuf[];
 	int size;
 {
+	register struct hostent *hp;
 	extern struct hostent *gethostbyname();
-	struct hostent *hp;
 
 	if (gethostname(hostbuf, size) < 0)
 	{
@@ -377,7 +379,22 @@ myhostname(hostbuf, size)
 	hp = gethostbyname(hostbuf);
 	if (hp != NULL)
 	{
-		(void) strcpy(hostbuf, hp->h_name);
+		(void) strncpy(hostbuf, hp->h_name, size - 1);
+		hostbuf[size - 1] = '\0';
+
+		if (hp->h_addrtype == AF_INET && hp->h_length == 4)
+		{
+			register int i;
+
+			for (i = 0; i < MAXIPADDR; i++)
+			{
+				if (hp->h_addr_list[i] == NULL)
+					break;
+				MyIpAddrs[i].s_addr = *(u_long *) hp->h_addr_list[i];
+			}
+			MyIpAddrs[i].s_addr = 0;
+		}
+
 		return (hp->h_aliases);
 	}
 	else
@@ -413,6 +430,7 @@ maphostname(map, hbuf, hbsize, avp)
 	register struct hostent *hp;
 	u_long in_addr;
 	char *cp;
+	int i;
 	struct hostent *gethostbyaddr();
 
 	/* allow room for null */
@@ -438,11 +456,24 @@ maphostname(map, hbuf, hbsize, avp)
 		return (NULL);
 	*cp = '\0';
 	in_addr = inet_addr(&hbuf[1]);
+
+	/* check to see if this is one of our addresses */
+	for (i = 0; MyIpAddrs[i].s_addr != 0; i++)
+	{
+		if (MyIpAddrs[i].s_addr == in_addr)
+		{
+			strncpy(hbuf, MyHostName, hbsize);
+			hbuf[hbsize] = '\0';
+			return hbuf;
+		}
+	}
+
+	/* nope -- ask the name server */
 	hp = gethostbyaddr((char *)&in_addr, sizeof(struct in_addr), AF_INET);
 	if (hp == NULL)
 		return (NULL);
 
-	/* found a match -- copy and dot terminate */
+	/* found a match -- copy out */
 	if (strlen(hp->h_name) > hbsize)
 		hp->h_name[hbsize] = '\0';
 	(void) strcpy(hbuf, hp->h_name);
