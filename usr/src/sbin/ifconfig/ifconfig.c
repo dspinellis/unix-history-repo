@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -91,12 +91,12 @@ struct	cmd {
 	{ "ipdst",	NEXTARG,	setifipdst },
 	{ "snpaoffset",	NEXTARG,	setsnpaoffset },
 	{ "nsellength",	NEXTARG,	setnsellength },
-	{ "llc0",	IFF_LLC0,	setifflags } ,
-	{ "-llc0",	-IFF_LLC0,	setifflags } ,
-	{ "llc1",	IFF_LLC1,	setifflags } ,
-	{ "-llc1",	-IFF_LLC1,	setifflags } ,
-	{ "llc2",	IFF_LLC2,	setifflags } ,
-	{ "-llc2",	-IFF_LLC2,	setifflags } ,
+	{ "link0",	IFF_LINK0,	setifflags } ,
+	{ "-link0",	-IFF_LINK0,	setifflags } ,
+	{ "link1",	IFF_LINK1,	setifflags } ,
+	{ "-link1",	-IFF_LINK1,	setifflags } ,
+	{ "link2",	IFF_LINK2,	setifflags } ,
+	{ "-link2",	-IFF_LINK2,	setifflags } ,
 	{ 0,		0,		setifaddr },
 	{ 0,		0,		setifdstaddr },
 };
@@ -332,7 +332,7 @@ setsnpaoffset(val)
 
 #define	IFFBITS \
 "\020\1UP\2BROADCAST\3DEBUG\4LOOPBACK\5POINTOPOINT\6NOTRAILERS\7RUNNING\10NOARP\
-\11PROMISC\12ALLMULTI\13OACTIVE\14SIMPLEX\15LLC0\16LLC1\16LLC2"
+\11PROMISC\12ALLMULTI\13OACTIVE\14SIMPLEX\15LINK0\16LINK1\16LINK2"
 
 /*
  * Print the status of the interface.  If an address family was
