@@ -1,33 +1,32 @@
-#	@(#)Makefile	5.8.1.1 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 
-# need conversion:	tn3270
-# remove lisp
+# BROKEN: tn3270, lisp, systat
+SUBDIR=	apply ar at awk banner basename bc bdes biff cal calendar checknr \
+	chflags chpass cksum col colcrt colrm column comm compress cpio \
+	ctags cut dc deroff diction diff dirname du env error ex expand \
+	false file find finger fmt fold fpr from fsplit fstat ftp gcore \
+	gprof graph grep groff head hexdump id indent join last lastcomm \
+	learn leave lex locate lock logger login logname lorder m4 machine \
+	mail make man mesg mkdep mkfifo mkstr more msgs mt netstat nfsstat \
+	nice nm nohup pagesize passwd paste plot pr printenv printf ptx \
+	quota ranlib ratfor rdist renice rev rlogin rsh ruptime rwho sccs \
+	script sed shar showmount size soelim sort spell spline split \
+	strings strip struct su talk tcopy tee telnet tftp time tip touch \
+	tput tr true tset tsort tty ul unexpand unifdef uniq units unvis \
+	users uucp uudecode uuencode vacation vgrind vis vmstat w wall wc \
+	what who whois window write xargs xinstall xsend xstr yacc yes
 
-SUBDIR=	ar banner basename bdes biff cal calendar \
-	checknr chpass cksum cmp col colcrt colrm column comm compress \
-	cpio ctags cut dirname du env error \
-	expand false find finger fmt fold fpr from fsplit fstat ftp \
-	g++ gcore gdb gprof groff groups head hexdump indent \
-	ktrace last lastcomm ld leave lex locate lock logger \
-	login lorder m4 machine mail make man mesg mkdep mkfifo \
-	mkstr more msgs mt netstat nfsstat nice nm nohup pagesize \
-	passwd paste printenv printf quota ranlib \
-	rdist renice rlogin rsh ruptime rwho sccs script \
-	shar showmount size soelim split strings \
-	strip su symorder talk tcopy tee telnet tftp time \
-	tip touch tput tr true tset tsort tty ul unexpand unifdef uniq \
-	unvis users uudecode uuencode vacation vgrind vis \
-	vmstat w wall wc what whereis which who whoami whois window \
-	write xargs xinstall xstr yacc yes
-
+# Gcc suit is new-VM only.
+# Cmp, look and tail all use mmap, so new-VM only.
+# F77 and pascal are VAX/Tahoe only.
 .if	${MACHINE} == "hp300"
-SUBDIR+=gas gcc
+SUBDIR+=cmp g++ gas gcc gdb ktrace ld look tail
 .elif	${MACHINE} == "i386"
-SUBDIR+=gas gcc
+SUBDIR+=cmp g++ gas gcc gdb ktrace ld look tail
 .elif	${MACHINE} == "tahoe"
-SUBDIR+=pascal
+SUBDIR+=f77 pascal
 .elif	${MACHINE} == "vax"
-SUBDIR+=gas pascal
+SUBDIR+=f77 pascal
 .endif
 
 .include <bsd.subdir.mk>
