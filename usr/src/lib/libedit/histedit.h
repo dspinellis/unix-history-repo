@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)histedit.h	8.1 (Berkeley) %G%
+ *	@(#)histedit.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -28,9 +28,9 @@ typedef struct editline EditLine;
  * For user-defined function interface
  */
 typedef struct lineinfo {
-    const char *buffer;
-    const char *cursor;
-    const char *lastchar;
+    __const char *buffer;
+    __const char *cursor;
+    __const char *lastchar;
 } LineInfo;
 
 
@@ -58,7 +58,7 @@ void		 el_end		__P((EditLine *));
 /*
  * Get a line, a character or push a string back in the input queue
  */
-const char      *el_gets	__P((EditLine *, int *));
+__const char    *el_gets	__P((EditLine *, int *));
 int		 el_getc	__P((EditLine *, char *));
 void		 el_push	__P((EditLine *, const char *));
 
@@ -105,9 +105,9 @@ void		 el_resize	__P((EditLine *));
 /*
  * User-defined function interface.
  */
-const LineInfo	*el_line	__P((EditLine *));
-int   		 el_insertstr	__P((EditLine *, char *));
-void		 el_deletestr	__P((EditLine *, int));
+__const LineInfo *el_line	__P((EditLine *));
+int   		  el_insertstr	__P((EditLine *, char *));
+void		  el_deletestr	__P((EditLine *, int));
 
 /*
  * ==== History ====
@@ -116,8 +116,8 @@ void		 el_deletestr	__P((EditLine *, int));
 typedef struct history History;
 
 typedef struct HistEvent {
-    int 	num;
-    const char* str;
+    int 	  num;
+    __const char *str;
 } HistEvent;
 
 /*
@@ -126,7 +126,7 @@ typedef struct HistEvent {
 History *		history_init	__P((void));
 void 			history_end	__P((History *));
 
-const HistEvent *	history		__P((History *, int, ...));
+__const HistEvent *	history		__P((History *, int, ...));
 
 #define H_FUNC		 0	/* , UTSL		*/
 #define H_EVENT		 1	/* , const int);	*/

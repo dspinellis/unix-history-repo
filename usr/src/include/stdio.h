@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdio.h	8.2 (Berkeley) %G%
+ *	@(#)stdio.h	8.3 (Berkeley) %G%
  */
 
 #ifndef	_STDIO_H_
@@ -214,7 +214,7 @@ int	 getchar __P((void));
 char	*gets __P((char *));
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
 extern int sys_nerr;			/* perror(3) external variables */
-extern const char *const sys_errlist[];
+extern __const char *__const sys_errlist[];
 #endif
 void	 perror __P((const char *));
 int	 printf __P((const char *, ...));

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ctype.h	8.1 (Berkeley) %G%
+ *	@(#)ctype.h	8.2 (Berkeley) %G%
  */
 
 #ifndef	_CTYPE_H_
@@ -74,14 +74,14 @@ __END_DECLS
 #endif
 
 #if defined(_USE_CTYPE_INLINE_)
-static inline int
+static __inline int
 __istype(_BSD_RUNE_T_ c, unsigned long f)
 {
 	return((((c & _CRMASK) ? ___runetype(c) :
 	    _CurrentRuneLocale->runetype[c]) & f) ? 1 : 0);
 }
 
-static inline int
+static __inline int
 __isctype(_BSD_RUNE_T_ c, unsigned long f)
 {
 	return((((c & _CRMASK) ? 0 :
@@ -90,14 +90,14 @@ __isctype(_BSD_RUNE_T_ c, unsigned long f)
 
 /* _ANSI_LIBRARY is defined by lib/libc/gen/isctype.c. */
 #if !defined(_ANSI_LIBRARY)
-static inline _BSD_RUNE_T_
+static __inline _BSD_RUNE_T_
 toupper(_BSD_RUNE_T_ c)
 {
 	return((c & _CRMASK) ?
 	    ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
 }
 
-static inline _BSD_RUNE_T_
+static __inline _BSD_RUNE_T_
 tolower(_BSD_RUNE_T_ c)
 {
 	return((c & _CRMASK) ?
