@@ -1,6 +1,6 @@
-.\"	@(#)ranlib.1	4.1 (Berkeley) %G%
+.\"	@(#)ranlib.1	5.1 (Berkeley) %G%
 .\"
-.TH RANLIB 1
+.TH RANLIB 1 "8 February 1983"
 .AT 3
 .SH NAME
 ranlib \- convert archives to random libraries
@@ -11,30 +11,25 @@ archive ...
 .I Ranlib
 converts each
 .I archive
-to a form which can be loaded
-more rapidly by the loader,
-by adding a table of contents named
-.B _\^_.SYMDEF
+to a form which the loader can load more rapidly.
+.I Ranlib
+does this by adding a table of contents called 
+.B _.SYMDEF
 to the beginning of the archive.
-It uses
+.I Ranlib
+uses 
 .IR ar (1)
-to reconstruct the archive,
-so that sufficient temporary file space must
-be available in the file system containing the
-current directory.
-.SH SEE ALSO
+to reconstruct the archive, so that sufficient temporary file space must
+be available in the file system which contains the current directory.
+.SH "SEE ALSO"
 ld(1), ar(1), lorder(1)
 .SH BUGS
 Because generation of a library by
 .I ar
-and randomization by
+and randomization of the library by
 .I ranlib
-are separate,
-phase errors are possible.
-The loader
-.I ld
-warns when the modification date of
-a library is more recent than
-the creation of its dictionary;
-but this means you get the warning even if you
-only copy the library.
+are separate processes, phase errors are possible.  The loader,
+.IR ld ,
+warns when the modification date of a library is more recent than the
+creation date of its dictionary;  but this means that you get the
+warning even if you only copy the library.
