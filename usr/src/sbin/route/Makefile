@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 PROG=	route
 MAN8=	route.0
@@ -9,7 +9,7 @@ all route depend lint tags: keywords.h
 
 keywords.h: keywords
 	sed -e '/^#/d' -e '/^$$/d' ${.CURDIR}/keywords > _keywords.tmp
-	tr a-z A-Z < _keywords.tmp | paste _keywords.tmp /dev/stdin | \
+	tr a-z A-Z < _keywords.tmp | paste _keywords.tmp - | \
 	    awk '{ \
 		if (NF > 1) \
 			printf "#define\tK_%s\t%d\n\t{\"%s\", K_%s},\n", \
