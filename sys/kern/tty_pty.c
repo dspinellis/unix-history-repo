@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty_pty.c	7.21 (Berkeley) 5/30/91
- *	$Id: tty_pty.c,v 1.10 1994/03/02 20:28:50 guido Exp $
+ *	$Id: tty_pty.c,v 1.11 1994/04/03 19:40:01 ache Exp $
  */
 
 /*
@@ -94,7 +94,7 @@ ptsopen(dev, flag, devtype, p)
 	struct proc *p;
 {
 	register struct tty *tp;
-	int error;
+	int error = 0;
 
 #ifdef lint
 	npty = npty;
@@ -120,14 +120,16 @@ ptsopen(dev, flag, devtype, p)
 		if (flag&FNONBLOCK)
 			break;
 		if (error = ttysleep(tp, (caddr_t)tp->t_raw, TTIPRI | PCATCH,
-		    ttopen, 0))
-			goto ret;
+		    "ptsopn", 0))
+			break;
 	}
-	error = (*linesw[tp->t_line].l_open)(dev, tp, flag);
-	ptcwakeup(tp, FREAD|FWRITE);
-	pt_ioctl[minor(dev)].pt_flags |= PF_SOPEN;
-ret:
-	tp->t_state &= ~TS_WOPEN;
+	if (error == 0)
+		error = (*linesw[tp->t_line].l_open)(dev, tp, flag);
+	if (error == 0) {
+		ptcwakeup(tp, FREAD|FWRITE);
+		pt_ioctl[minor(dev)].pt_flags |= PF_SOPEN;
+	} else
+		tp->t_state &= ~TS_WOPEN;
 	return (error);
 }
 
@@ -140,11 +142,10 @@ ptsclose(dev, flag, mode, p)
 	register struct tty *tp;
 
 	tp = pt_tty[minor(dev)];
+	ptcwakeup(tp, FREAD|FWRITE);
 	(*linesw[tp->t_line].l_close)(tp, flag);
 	ttyclose(tp);
-	ptcwakeup(tp, FREAD|FWRITE);
 	pt_ioctl[minor(dev)].pt_flags &= ~PF_SOPEN;
-	tp->t_state &= ~TS_ISOPEN;
 	if ((pt_ioctl[minor(dev)].pt_flags & PF_COPEN) == 0) {
 		ttyfree(tp);
 #ifdef broken /* session holds a ref to the tty; can't deallocate */
@@ -175,14 +176,14 @@ again:
 				return (EIO);
 			pgsignal(p->p_pgrp, SIGTTIN, 1);
 			if (error = ttysleep(tp, (caddr_t)&lbolt, 
-			    TTIPRI | PCATCH, ttybg, 0))
+			    TTIPRI | PCATCH, "ptsbg", 0))
 				return (error);
 		}
 		if (RB_LEN(tp->t_can) == 0) {
 			if (flag & IO_NDELAY)
 				return (EWOULDBLOCK);
 			if (error = ttysleep(tp, (caddr_t)tp->t_can,
-			    TTIPRI | PCATCH, ttyin, 0))
+			    TTIPRI | PCATCH, "ptsin", 0))
 				return (error);
 			goto again;
 		}
