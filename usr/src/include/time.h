@@ -4,10 +4,29 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	5.5 (Berkeley) %G%
+ *	@(#)time.h	5.6 (Berkeley) %G%
  */
 
-#include <sys/types.h>
+#include <machine/machtypes.h>
+
+#ifndef	NULL
+#define	NULL	0
+#endif
+
+#ifdef	_CLOCK_T_
+typedef	_CLOCK_T_	clock_t;
+#undef	_CLOCK_T_
+#endif
+
+#ifdef	_TIME_T_
+typedef	_TIME_T_	time_t;
+#undef	_TIME_T_
+#endif
+
+#ifdef	_SIZE_T_
+typedef	_SIZE_T_	size_t;
+#undef	_SIZE_T_
+#endif
 
 struct tm {
 	int	tm_sec;		/* seconds after the minute [0-60] */
