@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vfsops.c	8.3 (Berkeley) %G%
+ *	@(#)cd9660_vfsops.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -77,6 +77,7 @@ cd9660_mountroot()
 	bzero((char *)mp, (u_long)sizeof(struct mount));
 	mp->mnt_op = &cd9660_vfsops;
 	mp->mnt_flag = MNT_RDONLY;
+	LIST_INIT(&mp->mnt_vnodelist);
 	args.flags = ISOFSMNT_ROOT;
 	if (error = iso_mountfs(rootvp, mp, p, &args)) {
 		free(mp, M_MOUNT);
@@ -102,11 +103,6 @@ cd9660_mountroot()
 	vfs_unlock(mp);
 	return (0);
 }
-
-/*
- * Flag to allow forcible unmounting.
- */
-int iso_doforce = 1;
 
 /*
  * VFS Operations.
@@ -376,7 +372,9 @@ cd9660_unmount(mp, mntflags, p)
 	int i, error, ronly, flags = 0;
 	
 	if (mntflags & MNT_FORCE) {
-		if (!iso_doforce || (mp->mnt_flag & MNT_ROOTFS))
+		extern int doforce;
+
+		if (!doforce || (mp->mnt_flag & MNT_ROOTFS))
 			return (EINVAL);
 		flags |= FORCECLOSE;
 	}
@@ -468,7 +466,7 @@ cd9660_statfs(mp, sbp, p)
 	register struct fs *fs;
 	
 	isomp = VFSTOISOFS(mp);
-	
+
 	sbp->f_type = MOUNT_CD9660;
 	sbp->f_bsize = isomp->logical_block_size;
 	sbp->f_iosize = sbp->f_bsize;	/* XXX */
