@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsrvcache.h	7.5 (Berkeley) %G%
+ *	@(#)nfsrvcache.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -47,6 +47,7 @@ struct nfsrvcache {
 #define	RC_DROPIT	0
 #define	RC_REPLY	1
 #define	RC_DOIT		2
+#define	RC_CHECKIT	3
 
 /* Flag bits */
 #define	RC_LOCKED	0x01

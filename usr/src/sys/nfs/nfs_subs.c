@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.67 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.68 (Berkeley) %G%
  */
 
 /*
@@ -217,7 +217,7 @@ nfsm_rpchead(cr, nqnfs, procid, auth_type, auth_len, auth_str, mrest,
 			bpos += i;
 			siz -= i;
 		}
-		if ((siz = nfsm_rndup(auth_len) - auth_len) > 0) {
+		if ((siz = (nfsm_rndup(auth_len) - auth_len)) > 0) {
 			for (i = 0; i < siz; i++)
 				*bpos++ = '\0';
 			mb->m_len += siz;
@@ -748,17 +748,29 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 		vap->va_gen = fxdr_unsigned(u_long, fp->fa_nfsctime.nfs_usec);
 		vap->va_filerev = 0;
 	}
-	if (vap->va_size > np->n_size) {
-		np->n_size = vap->va_size;
-		vnode_pager_setsize(vp, (u_long)np->n_size);
+	if (vap->va_size != np->n_size) {
+		if (vap->va_type == VREG) {
+			if (np->n_flag & NMODIFIED) {
+				if (vap->va_size < np->n_size)
+					vap->va_size = np->n_size;
+				else
+					np->n_size = vap->va_size;
+			} else
+				np->n_size = vap->va_size;
+			vnode_pager_setsize(vp, (u_long)np->n_size);
+		} else
+			np->n_size = vap->va_size;
 	}
 	np->n_attrstamp = time.tv_sec;
 	*dposp = dpos;
 	*mdp = md;
 	if (vaper != NULL) {
 		bcopy((caddr_t)vap, (caddr_t)vaper, sizeof(*vap));
+#ifdef notdef
 		if ((np->n_flag & NMODIFIED) && np->n_size > vap->va_size)
+		if (np->n_size > vap->va_size)
 			vaper->va_size = np->n_size;
+#endif
 		if (np->n_flag & NCHG) {
 			if (np->n_flag & NACC) {
 				vaper->va_atime.ts_sec = np->n_atim.tv_sec;
@@ -780,13 +792,13 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
  * If the cache is valid, copy contents to *vap and return 0
  * otherwise return an error
  */
-nfs_getattrcache(vp, vap)
+nfs_getattrcache(vp, vaper)
 	register struct vnode *vp;
-	struct vattr *vap;
+	struct vattr *vaper;
 {
-	register struct nfsnode *np;
+	register struct nfsnode *np = VTONFS(vp);
+	register struct vattr *vap;
 
-	np = VTONFS(vp);
 	if (VFSTONFS(vp->v_mount)->nm_flag & NFSMNT_NQLOOKLEASE) {
 		if (!NQNFS_CKCACHABLE(vp, NQL_READ) || np->n_attrstamp == 0) {
 			nfsstats.attrcache_misses++;
@@ -797,20 +809,37 @@ nfs_getattrcache(vp, vap)
 		return (ENOENT);
 	}
 	nfsstats.attrcache_hits++;
-	bcopy((caddr_t)&np->n_vattr,(caddr_t)vap,sizeof(struct vattr));
+	vap = &np->n_vattr;
+	if (vap->va_size != np->n_size) {
+		if (vap->va_type == VREG) {
+			if (np->n_flag & NMODIFIED) {
+				if (vap->va_size < np->n_size)
+					vap->va_size = np->n_size;
+				else
+					np->n_size = vap->va_size;
+			} else
+				np->n_size = vap->va_size;
+			vnode_pager_setsize(vp, (u_long)np->n_size);
+		} else
+			np->n_size = vap->va_size;
+	}
+	bcopy((caddr_t)vap, (caddr_t)vaper, sizeof(struct vattr));
+#ifdef notdef
 	if ((np->n_flag & NMODIFIED) == 0) {
-		np->n_size = vap->va_size;
+		np->n_size = vaper->va_size;
 		vnode_pager_setsize(vp, (u_long)np->n_size);
-	} else if (np->n_size > vap->va_size)
-		vap->va_size = np->n_size;
+	} else if (np->n_size > vaper->va_size)
+	if (np->n_size > vaper->va_size)
+		vaper->va_size = np->n_size;
+#endif
 	if (np->n_flag & NCHG) {
 		if (np->n_flag & NACC) {
-			vap->va_atime.ts_sec = np->n_atim.tv_sec;
-			vap->va_atime.ts_nsec = np->n_atim.tv_usec * 1000;
+			vaper->va_atime.ts_sec = np->n_atim.tv_sec;
+			vaper->va_atime.ts_nsec = np->n_atim.tv_usec * 1000;
 		}
 		if (np->n_flag & NUPD) {
-			vap->va_mtime.ts_sec = np->n_mtim.tv_sec;
-			vap->va_mtime.ts_nsec = np->n_mtim.tv_usec * 1000;
+			vaper->va_mtime.ts_sec = np->n_mtim.tv_sec;
+			vaper->va_mtime.ts_nsec = np->n_mtim.tv_usec * 1000;
 		}
 	}
 	return (0);
@@ -1008,6 +1037,7 @@ nfsrv_fhtovp(fhp, lockflag, vpp, cred, slp, nam, rdonlyp)
 {
 	register struct mount *mp;
 	register struct nfsuid *uidp;
+	register int i;
 	struct ucred *credanon;
 	int error, exflags;
 
@@ -1027,13 +1057,18 @@ nfsrv_fhtovp(fhp, lockflag, vpp, cred, slp, nam, rdonlyp)
 			uidp = uidp->nu_hnext;
 		}
 		if (uidp) {
-			if (cred->cr_ref != 1)
-				panic("nsrv fhtovp");
-			*cred = uidp->nu_cr;
-		} else
+			cred->cr_uid = uidp->nu_cr.cr_uid;
+			for (i = 0; i < uidp->nu_cr.cr_ngroups; i++)
+				cred->cr_groups[i] = uidp->nu_cr.cr_groups[i];
+		} else {
+			vput(*vpp);
 			return (NQNFS_AUTHERR);
-	} else if (cred->cr_uid == 0 || (exflags & MNT_EXPORTANON))
-		*cred = *credanon;
+		}
+	} else if (cred->cr_uid == 0 || (exflags & MNT_EXPORTANON)) {
+		cred->cr_uid = credanon->cr_uid;
+		for (i = 0; i < credanon->cr_ngroups && i < NGROUPS; i++)
+			cred->cr_groups[i] = credanon->cr_groups[i];
+	}
 	if (exflags & MNT_EXRDONLY)
 		*rdonlyp = 1;
 	else

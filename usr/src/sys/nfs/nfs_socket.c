@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.41 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.42 (Berkeley) %G%
  */
 
 /*
@@ -688,7 +688,6 @@ nfs_reply(myrep)
 		 */
 		error = nfs_receive(myrep, &nam, &mrep);
 		nfs_rcvunlock(&nmp->nm_flag);
-if (error) printf("rcv err=%d\n",error);
 		if (error) {
 
 			/*
@@ -1337,16 +1336,24 @@ nfs_sndlock(flagp, rep)
 	struct nfsreq *rep;
 {
 	struct proc *p;
+	int slpflag = 0, slptimeo = 0;
 
-	if (rep)
+	if (rep) {
 		p = rep->r_procp;
-	else
+		if (rep->r_nmp->nm_flag & NFSMNT_INT)
+			slpflag = PCATCH;
+	} else
 		p = (struct proc *)0;
 	while (*flagp & NFSMNT_SNDLOCK) {
 		if (nfs_sigintr(rep->r_nmp, rep, p))
 			return (EINTR);
 		*flagp |= NFSMNT_WANTSND;
-		(void) tsleep((caddr_t)flagp, PZERO-1, "nfsndlck", 0);
+		(void) tsleep((caddr_t)flagp, slpflag | (PZERO - 1), "nfsndlck",
+			slptimeo);
+		if (slpflag == PCATCH) {
+			slpflag = 0;
+			slptimeo = 2 * hz;
+		}
 	}
 	*flagp |= NFSMNT_SNDLOCK;
 	return (0);
@@ -1373,12 +1380,22 @@ nfs_rcvlock(rep)
 	register struct nfsreq *rep;
 {
 	register int *flagp = &rep->r_nmp->nm_flag;
+	int slpflag, slptimeo = 0;
 
+	if (*flagp & NFSMNT_INT)
+		slpflag = PCATCH;
+	else
+		slpflag = 0;
 	while (*flagp & NFSMNT_RCVLOCK) {
 		if (nfs_sigintr(rep->r_nmp, rep, rep->r_procp))
 			return (EINTR);
 		*flagp |= NFSMNT_WANTRCV;
-		(void) tsleep((caddr_t)flagp, PZERO-1, "nfsrcvlck", 0);
+		(void) tsleep((caddr_t)flagp, slpflag | (PZERO - 1), "nfsrcvlk",
+			slptimeo);
+		if (slpflag == PCATCH) {
+			slpflag = 0;
+			slptimeo = 2 * hz;
+		}
 	}
 	*flagp |= NFSMNT_RCVLOCK;
 	return (0);
@@ -1841,8 +1858,8 @@ nfs_getreq(nd, has_header)
 	} else if (auth_type == rpc_auth_kerb) {
 		nd->nd_cr.cr_uid = fxdr_unsigned(uid_t, *tl++);
 		nd->nd_authlen = fxdr_unsigned(int, *tl);
-		iov.iov_len = uio.uio_resid = nfsm_rndup(nd->nd_authlen);
-		if (uio.uio_resid > (len - 2*NFSX_UNSIGNED)) {
+		uio.uio_resid = nfsm_rndup(nd->nd_authlen);
+		if (uio.uio_resid > (len - 2 * NFSX_UNSIGNED)) {
 			m_freem(mrep);
 			return (EBADRPC);
 		}
@@ -1851,8 +1868,9 @@ nfs_getreq(nd, has_header)
 		uio.uio_iovcnt = 1;
 		uio.uio_segflg = UIO_SYSSPACE;
 		iov.iov_base = (caddr_t)nd->nd_authstr;
+		iov.iov_len = RPCAUTH_MAXSIZ;
 		nfsm_mtouio(&uio, uio.uio_resid);
-		nfsm_dissect(tl, u_long *, 2*NFSX_UNSIGNED);
+		nfsm_dissect(tl, u_long *, 2 * NFSX_UNSIGNED);
 		nd->nd_flag |= NFSD_NEEDAUTH;
 	}
 
