@@ -1,0 +1,9 @@
+./"sc_if"n
+$<<ifnet
++/n"enet"48t"ipaddr"nxxx16tXn
++/"reg0"16t"reg1"16t"reg2"nXXXn
++/"rmd"nDn
++/"runt"16t"jab"16t"merr"16t"babl"nDDDDn
++/"cerr"16t"miss"16t"xint"16t"xown"nDDDDn
++/"uflo"16t"rxlen"16t"rxoff"16t"txoff"nDDDDn
++/"busy"16t"oactive"nDDnn
