@@ -1,286 +1,237 @@
-.if n .ds Lq \&"
-.if n .ds Rq \&"
-.if t .ds Lq \&``
-.if t .ds Rq \&''
-.ds Ux \\s-2UNIX\\s0
-.ds As \\s-2ASCII\\s0
-.ds Fp \\s-2FIPS\\s0 \\s-2PUB\\s0
-.TH BDES 1 "Dartmouth College"
+.\" Copyright (c) 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Matt Bishop of Dartmouth College.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)bdes.1	5.2 (Berkeley) %G%
+.\"
+.TH BDES 1 ""
 .SH NAME
 bdes \- encrypt/decrypt using the Data Encryption Standard
 .SH SYNOPSIS
-.BR bdes " ["
-.IR options " ]  ["
-.IR password " ]"
+.nf
+.ft B
+bdes [ \-abdp ] [ \-F N ] [ \-f N ] [ \-k key ]
+.ti +5
+[ \-m N ] [ \-o N ] [ \-v vector ]
+.ft R
+.fi
 .SH DESCRIPTION
 .I Bdes
-reads from the standard input and writes
-on the standard output.
-It implements all DES modes of operation described in \*(Fp 81
-including alternative cipher feedback mode and both authentication modes.
-All modes but the electronic code book mode require an
-initialization vector;
-if none is supplied,
-the zero vector is used.
-To protect the key and initialization vector from being read by
-.IR ps (1),
-.I bdes
-hides its arguments on entry.
+implements all DES modes of operation described in FIPS PUB 81, 
+including alternative cipher feedback mode and both authentication
+modes.
+.I Bdes
+reads from the standard input and writes to the standard output.
+By default, the input is encrypted using cipher block chaining mode.
+Using the same key for encryption and decryption preserves plaintext.
+.PP
+All modes but the electronic code book mode require an initialization
+vector; if none is supplied, the zero vector is used.
 If no
 .I key
-is given,
-one is requested from the controlling terminal if that can be opened,
-or from the standard input if not.
+is specified on the command line, the user is prompted for one (see
+.IR getpass (3)
+for more details).
+.PP
+The options are as follows:
+.TP
+\-a
+The key and initialization vector strings are to be taken as ASCII,
+suppressing the special interpretation given to leading ``0X'', ``0x'',
+``0B'', and ``0b'' characters.
+This flag applies to
+.I both
+the key and initialization vector.
+.TP
+\-b
+Use electronic code book mode.
+.TP
+\-d
+Invert (decrypt) the input.
+.TP
+\-F
+Use
+.IR N -bit
+alternative cipher feedback mode.
+Currently
+.I N
+must be a multiple of 7 between 7 and 56 inclusive (this does not conform
+to the alternative CFB mode specification).
+.TP
+\-f
+Use
+.IR N -bit
+cipher feedback mode.
+Currently
+.I N
+must be a multiple of 8 between 8 and 64 inclusive (this does not conform
+to the standard CFB mode specification).
+.TP
+\-k
+Use
+.I key
+as the encryption key.
+.TP
+\-m
+Compute a message authentication code (MAC) of
+.I N
+bits on the input.
+The value of
+.I N
+must be between 1 and 64 inclusive; if
+.I N
+is not a multiple of 8, enough 0 bits will be added to pad the MAC length
+to the nearest multiple of 8.
+Only the MAC is output.
+MACs are only available in cipher block chaining mode or in cipher feedback
+mode.
+.TP
+\-o
+Use
+.IR N -bit
+output feedback mode.
+Currently
+.I N
+must be a multiple of 8 between 8 and 64 inclusive (this does not conform
+to the OFB mode specification).
+.TP
+\-p
+Disable the resetting of the parity bit.
+This flag forces the parity bit of the key to be used as typed, rather than
+making each character be of odd parity.
+It is used only if the key is given in ASCII.
+.TP
+\-v
+Set the initialization vector to
+.IR vector ;
+the vector is interpreted in the same way as the key.
+The vector is ignored in electronic codebook mode.
 .PP
 The key and initialization vector are taken as sequences of \*(As
 characters which are then mapped into their bit representations.
-If either begins with `0x' or `0X',
+If either begins with ``0X'' or ``0x'',
 that one is taken as a sequence of hexadecimal digits indicating the
 bit pattern;
-if either begins with `0b' or `0B',
+if either begins with ``0B'' or ``0b'',
 that one is taken as a sequence of binary digits indicating the bit pattern.
 In either case,
 only the leading 64 bits of the key or initialization vector
 are used,
 and if fewer than 64 bits are provided, enough 0 bits are appended
 to pad the key to 64 bits.
-Note that if the key is not entered on the command line,
-it is assumed to be \*(As.
-This is due to limits of the password reading function
-.IR getpass (3),
-which allows at most 8 characters to be entered.
 .PP
-According to the DES standard,
-the low-order bit of each character in the key string is deleted.
-Since most \*(As representations set the high-order bit to 0,
-simply deleting the low-order bit effectively reduces the size of the
-key space from 2\u\s-356\s0\d to 2\u\s-348\s0\d keys.
-To prevent this,
-the high-order bit must be a function depending
-in part upon the low-order bit;
-so,
-the high-order bit is set to whatever value gives odd parity.
+According to the DES standard, the low-order bit of each character in the
+key string is deleted.
+Since most ASCII representations set the high-order bit to 0, simply
+deleting the low-order bit effectively reduces the size of the key space
+from 2\u\s-356\s0\d to 2\u\s-348\s0\d keys.
+To prevent this, the high-order bit must be a function depending in part
+upon the low-order bit; so, the high-order bit is set to whatever value
+gives odd parity.
 This preserves the key space size.
 Note this resetting of the parity bit is
 .I not
-done if the key is given in binary or hex,
-and can be disabled for \*(As keys (see the options, below).
+done if the key is given in binary or hex, and can be disabled for ASCII
+keys as well.
 .PP
-By default,
-the standard input is encrypted using cipher block chaining mode
-and is written to the standard output.
-Using the same key for encryption and decryption preserves plaintext,
-so
-.ce
-bdes \f2key\fP < plaintext | bdes \-i \f2key\fP
-is a very expensive equivalent of
-.IR cat (1).
-.PP
-Options are:
-.TP
-.B \-a
-the key and initialization vector strings are to be taken as \*(As.
-suppressing the special interpretation given to leading `0x', `0X',
-\&`0b', and `0B' characters.
-Note this flag applies to
-.I both
-the key and initialization vector.
-.TP
-.B \-c
-Use cipher block chaining mode.
-This is the default.
-.TP
-.B \-e
-Use electronic code book mode.
-.TP
-.BI \-f b
-Use
-.IR b -bit
-cipher feedback mode.
-Currently
-.I b
-must be a multiple of 8
-between 8 and 64 inclusive
-(this does not conform to the standard CFB mode specification).
-.TP
-.BI \-F b
-Use
-.IR b -bit
-alternative cipher feedback mode.
-Currently
-.I b
-must be a multiple of 7
-between 7 and 56 inclusive
-(this does not conform to the alternative CFB mode specification).
-.TP
-.B \-i
-invert (decrypt) the input.
-.TP
-.BI \-m b
-Compute a message authentication code (MAC) of
-.I b
-bits on the input.
-.I b
-must be between 1 and 64 inclusive;
-if
-.I b
-is not a multiple of 8,
-enough 0 bits will be added to pad the MAC length
-to the nearest multiple of 8.
-Only the MAC is output.
-MACs are only available in cipher block chaining mode
-or in cipher feedback mode.
-.TP
-.BI \-o b
-Use
-.IR b -bit
-output feedback mode.
-Currently
-.I b
-must be a multiple of 8
-between 8 and 64 inclusive
-(this does not conform to the OFB mode specification).
-.TP
-.B \-p
-Disable the resetting of the parity bit.
-This flag forces the parity bit of the key to be used as typed,
-rather than making each character be of odd parity.
-It is used only if the key is given in \*(As.
-.TP
-.BI \-v v
-Set the initialization vector to
-.IR v ;
-the vector is interpreted in the same way as the key.
-The vector is ignored in electronic codebook mode.
-.PP
-The DES is considered a very strong cryptosystem,
-and other than table lookup attacks,
-key search attacks,
-and Hellman's time-memory tradeoff
-(all of which are very expensive and time-consuming),
-no cryptanalytic methods for breaking the
-DES are known in the open literature.
-No doubt the choice of keys and key security
-are the most vulnerable aspect of
+The DES is considered a very strong cryptosystem, and other than table lookup
+attacks, key search attacks, and Hellman's time-memory tradeoff (all of which
+are very expensive and time-consuming), no cryptanalytic methods for breaking
+the DES are known in the open literature.
+No doubt the choice of keys and key security are the most vulnerable aspect
+of
 .IR bdes .
 .SH IMPLEMENTATION NOTES
 For implementors wishing to write software compatible with this program,
 the following notes are provided.
-This software is completely compatible with the implementation
-of the data encryption standard distributed by Sun Microsystems, Inc.
+This software is believed to be compatible with the implementation of the
+data encryption standard distributed by Sun Microsystems, Inc.
 .PP
-In the ECB and CBC modes,
-plaintext is encrypted in units of 64 bits (8 bytes, also called a block).
+In the ECB and CBC modes, plaintext is encrypted in units of 64 bits (8 bytes,
+also called a block).
 To ensure that the plaintext file is encrypted correctly,
 .I bdes
-will (internally) append from 1 to 8 bytes,
-the last byte containing an integer stating how many bytes of that final block
-are from the plaintext file,
-and encrypt the resulting block.
-Hence,
-when decrypting,
-the last block may contain from 0 to 7 characters present in the plaintext file,
-and the last byte tells how many.
-Note that if during decryption the last byte of the file does not contain
-an integer between 0 and 7,
-either the file has been corrupted or an incorrect key has been given.
-A similar mechanism is used for the OFB and CFB modes,
-except that those simply require the length of the input to be a multiple
-of the mode size,
-and the final byte contains an integer between 0 and one less than the
-number of bytes being used as the mode.
-(This was another reason that the mode size must be a multiple of 8
-for those modes.)
+will (internally) append from 1 to 8 bytes, the last byte containing an
+integer stating how many bytes of that final block are from the plaintext
+file, and encrypt the resulting block.
+Hence, when decrypting, the last block may contain from 0 to 7 characters
+present in the plaintext file, and the last byte tells how many.
+Note that if during decryption the last byte of the file does not contain an
+integer between 0 and 7, either the file has been corrupted or an incorrect
+key has been given.
+A similar mechanism is used for the OFB and CFB modes, except that those
+simply require the length of the input to be a multiple of the mode size,
+and the final byte contains an integer between 0 and one less than the number
+of bytes being used as the mode.
+(This was another reason that the mode size must be a multiple of 8 for those
+modes.)
 .PP
-Unlike Sun's implementation,
-unused bytes of that last block are not filled with random data,
-but instead contain what was in those byte positions in the preceding block.
-This is quicker and more portable,
-and does not weaken the encryption significantly
-(and even then, only in a few cases).
+Unlike Sun's implementation, unused bytes of that last block are not filled
+with random data, but instead contain what was in those byte positions in
+the preceding block.
+This is quicker and more portable, and does not weaken the encryption
+significantly (and even then, only in a few cases).
 .PP
-If the key is entered in \*(As,
-the parity bits of the key characters are set so that each key character is
-of odd parity.
-Unlike Sun's implementation,
-it is possible to enter binary or hexadecimal keys on the command line,
-and if this is done,
-the parity bits are
+If the key is entered in ASCII, the parity bits of the key characters are set
+so that each key character is of odd parity.
+Unlike Sun's implementation, it is possible to enter binary or hexadecimal
+keys on the command line, and if this is done, the parity bits are
 .I not
 reset.
 This allows testing using arbitrary bit patterns as keys.
 .PP
-The Sun implementation
-always uses an initialization vector of 0
-(that is,
-all zeroes).
+The Sun implementation always uses an initialization vector of 0
+(that is, all zeroes).
 By default,
 .I bdes
-does too,
-but this may be changed from the command line.
-.SH FILES
-/dev/tty	controlling terminal for typed key
+does too, but this may be changed from the command line.
 .SH SEE ALSO
-.br
-crypt(1), crypt(3)
-.br
+crypt(1), crypt(3), getpass(3)
+.sp
 .IR "Data Encryption Standard" ,
 Federal Information Processing Standard #46,
 National Bureau of Standards,
 U.S. Department of Commerce,
 Washington DC
 (Jan. 1977)
-.br
+.sp
 .IR "DES Modes of Operation" ,
 Federal Information Processing Standard #81,
 National Bureau of Standards,
 U.S. Department of Commerce
 Washington DC
 (Dec. 1980)
-.br
+.sp
 Dorothy Denning,
 .IR "Cryptography and Data Security" ,
 Addison-Wesley Publishing Co.,
 Reading, MA
 \(co1982.
-.br
+.sp
 Matt Bishop,
-\*(LqImplementation Notes on\
-.IR bdes (1)\*(Rq
+.IR "Implementation Notes on bdes(1)"
 Technical Report PCS-TR-91-158,
 Department of Mathematics and Computer Science,
 Dartmouth College,
 Hanover, NH  03755
 (Feb. 1991).
 .SH BUGS
-.PP
 There is a controversy raging over whether the DES will still be secure
-in a few years. The advent of special-purpose hardware could reduce
-the cost of any of the methods of attack named above
-so that they are no longer computationally infeasible.
+in a few years.
+The advent of special-purpose hardware could reduce the cost of any of the
+methods of attack named above so that they are no longer computationally
+infeasible.
 .PP
-As the key or key schedule is kept in memory
-throughout the run of this program,
-the encryption can be compromised if memory is readable.
-.PP
-There is no warranty of merchantability nor any warranty
-of fitness for a particular purpose nor any other warranty,
-either express or implied, as to the accuracy of the
-enclosed materials or as to their suitability for any
-particular purpose.  Accordingly, the user assumes full
-responsibility for their use. Further,
-the author assumes no obligation
-to furnish any assistance of any kind whatsoever, or to
-furnish any additional information or documentation.
-.SH AUTHOR
-Matt Bishop,
-Department of Mathematics and Computer Science,
-Bradley Hall,
-Dartmouth College,
-Hanover, NH  03755
-.sp
-Electronic mail addresses:
-.br
-Internet: Matt.Bishop@dartmouth.edu
-.br
-UUCP: decvax!dartvax!Matt.Bishop
+As the key or key schedule is stored in memory, the encryption can be
+compromised if memory is readable.
+.SH BUGS
+Programs which display programs' arguments may compromise the key and
+initialization vector, if they are specified on the command line.
+To avoid this
+.I bdes
+overwrites its arguments, however, the obvious race cannot currently be
+avoided.
