@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	7.20 (Berkeley) %G%
+ *	@(#)inode.h	7.21 (Berkeley) %G%
  */
 
 #include <ufs/ufs/dinode.h>
@@ -36,13 +36,23 @@ struct inode {
 #define	i_lfs	inode_u.lfs
 	struct	dquot *i_dquot[MAXQUOTAS]; /* pointer to dquot structures */
 	struct	lockf *i_lockf;	/* head of byte-level lock list */
-	long	i_diroff;	/* offset in dir, where we found last entry */
-	off_t	i_endoff;	/* end of useful stuff in directory */
 	u_quad_t i_modrev;	/* revision level for lease */
 	pid_t	i_lockholder;	/* DEBUG: holder of inode lock */
 	pid_t	i_lockwaiter;	/* DEBUG: latest blocked for inode lock */
-	long	i_spare[16];	/* spares to round up to 256 bytes */
+	/*
+	 * Side effects; used during directory lookup.
+	 */
+	off_t	i_endoff;	/* end of useful stuff in directory */
+	long	i_diroff;	/* offset in dir, where we found last entry */
+	long	i_offset;	/* offset of free space in directory */
+	long	i_count;	/* size of free slot in directory */
+	ino_t	i_ino;		/* inode number of found directory */
+	u_long	i_reclen;	/* size of found directory entry */
+	/*
+	 * the on-disk dinode itself.
+	 */
 	struct	dinode i_din;	/* the on-disk dinode */
+	long	i_spare[12];	/* spares to round up to 256 bytes */
 };
 
 #define	i_mode		i_din.di_mode
