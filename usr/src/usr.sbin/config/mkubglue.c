@@ -1,4 +1,6 @@
-/*	mkubglue.c	1.10	83/07/09	*/
+#ifndef lint
+static char sccsid[] = "@(#)mkubglue.c	1.11 (Berkeley) %G%";
+#endif
 
 /*
  * Make the uba interrupt file ubglue.s

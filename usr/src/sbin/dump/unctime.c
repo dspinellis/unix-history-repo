@@ -106,4 +106,4 @@ dcmp(dp, dp2)
 	DECIDE(tm_sec);
 	return(0);
 }
-static	char *sccsid = "@(#)unctime.c	1.4 (Berkeley) 83/07/03";
+static	char *sccsid = "@(#)unctime.c	1.5 (Berkeley) 83/08/11";

@@ -1,4 +1,7 @@
-/*	subr.c	4.1	83/03/09	*/
+#ifndef lint
+static char sccsid[] = "@(#)subr.c	4.2 (Berkeley) %G%";
+#endif
+
 /*
  * subr.c: general subroutines for fed.
  */

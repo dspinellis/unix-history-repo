@@ -1,6 +1,5 @@
-/*
- *  @(#)error.h	1.3 (Berkeley) %G%
- */
+/*	error.h	1.4	83/08/11	*/
+
 typedef	int	boolean;
 #define	reg	register
 

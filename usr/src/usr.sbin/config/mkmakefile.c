@@ -1,4 +1,6 @@
-/*	mkmakefile.c	1.29	83/06/29	*/
+#ifndef lint
+static char sccsid[] = "@(#)mkmakefile.c	1.30 (Berkeley) %G%";
+#endif
 
 /*
  * Build the makefile for the system, from

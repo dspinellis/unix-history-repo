@@ -1,4 +1,6 @@
-/*	rxformat.c	4.4	83/06/02	*/
+#ifndef lint
+static char sccsid[] = "@(#)rxformat.c	4.5 (Berkeley) %G%";
+#endif
 
 #include <stdio.h>
 #include <sys/file.h>

@@ -1,4 +1,7 @@
-/*	compact.c	4.3	83/06/03	*/
+#ifndef lint
+static char sccsid[] = "@(#)compact.c	4.4 (Berkeley) %G%";
+#endif
+
 /*
  *  Adaptive Huffman code input to output
  *

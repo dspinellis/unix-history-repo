@@ -1,4 +1,6 @@
-/*	mkioconf.c	2.8	83/06/11	*/
+#ifndef lint
+static char sccsid[] = "@(#)mkioconf.c	2.9 (Berkeley) %G%";
+#endif
 
 #include <stdio.h>
 #include "y.tab.h"

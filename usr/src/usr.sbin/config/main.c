@@ -1,4 +1,6 @@
-/*	main.c	1.9	83/05/18	*/
+#ifndef lint
+static char sccsid[] = "@(#)main.c	1.10 (Berkeley) %G%";
+#endif
 
 #include <stdio.h>
 #include <ctype.h>
