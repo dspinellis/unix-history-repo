@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux.h 1.33 93/08/05$
  *
- *	@(#)hpux.h	8.3 (Berkeley) %G%
+ *	@(#)hpux.h	8.4 (Berkeley) %G%
  */
 
 #include <hp/hpux/hpux_exec.h>
@@ -143,6 +143,23 @@ struct hpuxuser {
 #define HPUXFSYNCIO	00100000
 #define HPUXNONBLOCK	00200000
 #define HPUXFREMOTE	01000000
+
+/* HP-UX fcntl file locking */
+struct hpuxflock {
+	short	hl_type;
+	short	hl_whence;
+	long	hl_start;
+	long	hl_len;
+	long	hl_pid;
+};
+
+#define HPUXF_GETLK	7
+#define HPUXF_SETLK	8
+#define HPUXF_SETLKW	9
+
+#define HPUXF_RDLCK	1
+#define HPUXF_WRLCK	2
+#define HPUXF_UNLCK	3
 
 /* HP-UX only sysV shmctl() commands */
 #define SHM_LOCK	3	/* Lock segment in core */
