@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.11 82/01/13 */
+/* tcp_timer.c 4.12 82/01/17 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -20,7 +20,7 @@
 #include "../net/tcpip.h"
 #include "../errno.h"
 
-int	tcpdelack = 0;
+int	tcpnodelack = 0;
 /*
  * Fast timeout routine for processing delayed acks
  */
@@ -165,5 +165,18 @@ printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]);
 			    tp->t_template, tp->rcv_nxt, tp->snd_una-1, 0);
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		return;
+
+#ifdef TCPTRUEOOB
+	/*
+	 * Out-of-band data retransmit timer.
+	 */
+	case TCPT_OOBREXMT:
+		if (tp->t_flags & TF_NOOPT)
+			return;
+		(void) tcp_output(tp);
+		TCPT_RANGESET(tp->t_timer[TCPT_OOBREXMT],
+		    2 * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
+		return;
+#endif
 	}
 }

@@ -1,4 +1,4 @@
-/*	tcp_var.h	4.14	82/01/17	*/
+/*	tcp_var.h	4.15	82/01/17	*/
 
 /*
  * Kernel variables for tcp.
@@ -20,9 +20,11 @@ struct tcpcb {
 	u_char	t_flags;
 #define	TF_ACKNOW	0x01			/* ack peer immediately */
 #define	TF_DELACK	0x02			/* ack, but try to delay it */
-#define	TF_PUSH		0x04			/* push mode */
-#define	TF_URG		0x08			/* urgent mode */
-#define	TF_DONTKEEP	0x10			/* don't use keep-alives */
+#define	TF_DONTKEEP	0x04			/* don't use keep-alives */
+#define	TF_NOOPT	0x08			/* don't use tcp options */
+#ifdef TCPTRUEOOB
+#define	TF_DOOOB	0x10			/* do use out of band data */
+#endif
 	struct	tcpiphdr *t_template;	/* skeletal packet for transmit */
 	struct	inpcb *t_inpcb;		/* back pointer to internet pcb */
 /*
@@ -55,9 +57,18 @@ struct tcpcb {
 	short	t_rtt;			/* round trip time */
 	tcp_seq	t_rtseq;		/* sequence number being timed */
 	float	t_srtt;			/* smoothed round-trip time */
-/* out-of-band data; treat char before urgent pointer as out-of-band */
-	char	t_haveoob;		/* have some */
-	char	t_oobc;			/* the character */
+/* out-of-band data */
+	char	t_oobflags;		/* have some */
+#define	TCPOOB_HAVEDATA	0x01
+
+#ifdef TCPTRUEOOB
+#define	TCPOOB_OWEACK	0x02
+#define	TCPOOB_NEEDACK	0x04
+	char	t_iobc;			/* input character */
+	u_char	t_iobseq;		/* input receive sequence number */
+	char	t_oobc;			/* output character */
+	u_char	t_oobseq;		/* output transmit sequence number */
+#endif
 };
 
 #define	intotcpcb(ip)	((struct tcpcb *)(ip)->inp_ppcb)

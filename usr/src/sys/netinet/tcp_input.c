@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.48	82/01/17	*/
+/*	tcp_input.c	1.49	82/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -25,6 +25,7 @@ int	tcpprintfs = 0;
 int	tcpcksum = 1;
 struct	sockaddr_in tcp_in = { AF_INET };
 struct	tcpiphdr tcp_saveti;
+extern	tcpnodelack;
 
 struct	tcpcb *tcp_newtcpcb();
 /*
@@ -37,6 +38,7 @@ tcp_input(m0)
 	register struct tcpiphdr *ti;
 	struct inpcb *inp;
 	register struct mbuf *m;
+	struct mbuf *om = 0;
 	int len, tlen, off;
 	register struct tcpcb *tp = 0;
 	register int tiflags;
@@ -82,7 +84,7 @@ COUNT(TCP_INPUT);
 
 	/*
 	 * Check that TCP offset makes sense,
-	 * process TCP options and adjust length.
+	 * pull out TCP options and adjust length.
 	 */
 	off = ti->ti_off << 2;
 	if (off < sizeof (struct tcphdr) || off > tlen) {
@@ -90,10 +92,23 @@ COUNT(TCP_INPUT);
 		goto drop;
 	}
 	ti->ti_len = tlen - off;
-#if 0
-	if (off > sizeof (struct tcphdr))
-		tcp_options(ti);
-#endif
+	if (off > sizeof (struct tcphdr)) {
+		if ((m = m_pullup(m, sizeof (struct ip) + off)) == 0) {
+			tcpstat.tcps_hdrops++;
+			goto drop;
+		}
+		ti = mtod(m, struct tcpiphdr *);
+		om = m_get(M_DONTWAIT);
+		if (om == 0)
+			goto drop;
+		om->m_off = MMINOFF;
+		om->m_len = off - sizeof (struct tcphdr);
+		{ caddr_t op = mtod(m, caddr_t) + sizeof (struct tcpiphdr);
+		  bcopy(op, mtod(om, caddr_t), om->m_len);
+		  m->m_len -= om->m_len;
+		  bcopy(op+om->m_len, op, m->m_len-sizeof (struct tcpiphdr));
+		}
+	}
 	tiflags = ti->ti_flags;
 
 #if vax
@@ -133,6 +148,14 @@ COUNT(TCP_INPUT);
 	 */
 	tp->t_idle = 0;
 	tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
+
+	/*
+	 * Process options.
+	 */
+	if (om) {
+		tcp_dooptions(tp, om);
+		om = 0;
+	}
 
 	/*
 	 * Calculate amount of space in receive window,
@@ -509,22 +532,28 @@ printf("wl1 %x seq %x wl2 %x ack %x win %x wnd %x\n", tp->snd_wl1, ti->ti_seq, t
 
 	/*
 	 * If an URG bit is set and in the segment and is greater than the
-	 * current known urgent pointer, then signal the user that the
-	 * remote side has out of band data.  This should not happen
+	 * current known urgent pointer, then mark the data stream.
+	 * If the TCP is not doing out-of-band data, then indicate
+	 * urgent to the user.  This should not happen
 	 * in CLOSE_WAIT, CLOSING, LAST-ACK or TIME_WAIT STATES since
 	 * a FIN has been received from the remote side.  In these states
 	 * we ignore the URG.
 	 */
 	if ((tiflags & TH_URG) && TCPS_HAVERCVDFIN(tp->t_state) == 0 &&
-	    ti->ti_urp <= ti->ti_len &&
 	    SEQ_GT(ti->ti_seq+ti->ti_urp, tp->rcv_up)) {
 		tp->rcv_up = ti->ti_seq + ti->ti_urp;
 		so->so_oobmark = so->so_rcv.sb_cc +
 		    (tp->rcv_up - tp->rcv_nxt) - 1;
 		if (so->so_oobmark == 0)
 			so->so_state |= SS_RCVATMARK;
-		tcp_pulloutofband(so, ti);
-		sohasoutofband(so);
+#ifdef TCPTRUEOOB
+		if ((tp->t_flags & TF_DOOOB) == 0)
+#endif
+		{
+			sohasoutofband(so);
+			tp->t_oobflags |= TCPOOB_HAVEDATA;
+		}
+
 	}
 
 	/*
@@ -541,10 +570,10 @@ printf("wl1 %x seq %x wl2 %x ack %x win %x wnd %x\n", tp->snd_wl1, ti->ti_seq, t
 		m->m_off += off;
 		m->m_len -= off;
 		tiflags = tcp_reass(tp, ti);
-{ extern tcpdelack; 
-if (tcpdelack) tp->t_flags |= TF_DELACK; else
-		tp->t_flags |= TF_ACKNOW;		/* XXX TF_DELACK */
-}
+		if (tcpnodelack == 0)
+			tp->t_flags |= TF_DELACK;
+		else
+			tp->t_flags |= TF_ACKNOW;
 	} else {
 		m_freem(m);
 		tiflags &= ~TH_FIN;
@@ -619,6 +648,8 @@ dropafterack:
 	return;
 
 dropwithreset:
+	if (om)
+		m_free(om);
 	/*
 	 * Generate a RST, dropping incoming segment.
 	 * Make ACK acceptable to originator of segment.
@@ -642,37 +673,82 @@ drop:
 	return;
 }
 
-/*
- * Pull the character before the urgent pointer into
- * the TCP control block for presentation as out-of-band data.
- * We leave ti->ti_len reflecting the out-of-band data,
- * so that sequencing will continue to work.
- */
-tcp_pulloutofband(so, ti)
-	struct socket *so;
-	struct tcpiphdr *ti;
+tcp_dooptions(tp, om)
+	struct tcpcb *tp;
+	struct mbuf *om;
 {
-	register struct mbuf *m;
-	int cnt = sizeof (struct tcpiphdr) + ti->ti_urp - 1;
-	
-	m = dtom(ti);
-	while (cnt >= 0) {
-		if (m->m_len > cnt) {
-			char *cp = mtod(m, caddr_t) + cnt;
-			struct tcpcb *tp = sototcpcb(so);
+	register u_char *cp;
+	int opt, optlen, cnt;
 
-			tp->t_oobc = *cp;
-			tp->t_haveoob = 1;
-			bcopy(cp+1, cp, m->m_len - cnt - 1);
-			m->m_len--;
-			return;
-		}
-		cnt -= m->m_len;
-		m = m->m_next;
-		if (m == 0)
+	cp = mtod(om, u_char *);
+	cnt = om->m_len;
+	for (; cnt > 0; cnt -= optlen, cp += optlen) {
+		opt = cp[0];
+		if (opt == TCPOPT_EOL)
 			break;
+		if (opt == TCPOPT_NOP)
+			optlen = 1;
+		else
+			optlen = cp[1];
+		switch (opt) {
+
+		default:
+			break;
+
+		case TCPOPT_MAXSEG:
+			if (optlen != 4)
+				continue;
+			tp->t_maxseg = *(u_short *)(cp + 2);
+#if vax
+			tp->t_maxseg = ntohs(tp->t_maxseg);
+#endif
+			break;
+			
+#ifdef TCPTRUEOOB
+		case TCPOPT_WILLOOB:
+			tp->t_flags |= TF_DOOOB;
+printf("tp %x dooob\n", tp);
+			break;
+
+		case TCPOPT_OOBDATA: {
+			int seq;
+
+			if (optlen != 4)
+				continue;
+			seq = cp[2];
+			if (seq < tp->t_iobseq)
+				seq += 256;
+printf("oobdata cp[2] %d iobseq %d seq %d\n", cp[2], tp->t_iobseq, seq);
+			if (seq - tp->t_iobseq > 128) {
+printf("bad seq\n");
+				tp->t_oobflags |= TCPOOB_OWEACK;
+				break;
+			}
+			tp->t_iobseq = cp[2];
+			tp->t_iobc = cp[3];
+printf("take oob data %x input iobseq now %x\n", tp->t_iobc, tp->t_iobseq);
+			sohasoutofband(tp->t_inpcb->inp_socket);
+			break;
+		}
+
+		case TCPOPT_OOBACK: {
+			int seq;
+
+			if (optlen != 4)
+				continue;
+			if (tp->t_oobseq != cp[2]) {
+printf("wrong ack\n");
+				break;
+			}
+printf("take oob ack %x and cancel rexmt\n", cp[2]);
+			tp->t_oobflags &= ~TCPOOB_NEEDACK;
+			tp->t_timer[TCPT_OOBREXMT] = 0;
+			break;
+		}
+#endif TCPTRUEOOB
+		}
 	}
-	panic("tcp_pulloutofband");
+	m_free(om);
 }
 
 /*

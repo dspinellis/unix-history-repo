@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.28	82/01/17	*/
+/*	tcp_output.c	4.29	82/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -22,6 +22,18 @@
 #include "../errno.h"
 
 char *tcpstates[]; /* XXX */
+
+/*
+ * Initial options: indicate max segment length 1/2 of space
+ * allocated for receive; if TCPTRUEOOB is defined, indicate
+ * willingness to do true out-of-band.
+ */
+#ifndef TCPTRUEOOB
+u_char	tcp_initopt[4] = { TCPOPT_MAXSEG, 4, 0x0, 0x0, };
+#else
+u_char	tcp_initopt[6] = { TCPOPT_MAXSEG, 4, 0x0, 0x0, TCPOPT_WILLOOB, 2 };
+#endif
+
 /*
  * Tcp output routine: figure out what should be sent and send it.
  */
@@ -34,7 +46,9 @@ tcp_output(tp)
 	int off, flags;
 	register struct mbuf *m;
 	register struct tcpiphdr *ti;
-	int win;
+	int win, force;
+	u_char *opt;
+	unsigned optlen = 0;
 
 COUNT(TCP_OUTPUT);
 
@@ -59,8 +73,16 @@ COUNT(TCP_OUTPUT);
 	/*
 	 * Send if we owe peer an ACK.
 	 */
-	if (tp->t_flags & TF_ACKNOW)
+	if (tp->t_flags&TF_ACKNOW)
 		goto send;
+
+#ifdef TCPTRUEOOB
+	/*
+	 * Send if an out of band data or ack should be transmitted.
+	 */
+	if (tp->t_oobflags&(TCPOOB_OWEACK|TCPOOB_NEEDACK)))
+		goto send;
+#endif
 
 	/*
 	 * Calculate available window in i, and also amount
@@ -109,21 +131,73 @@ send:
 	ti->ti_seq = htonl(ti->ti_seq);
 	ti->ti_ack = htonl(ti->ti_ack);
 #endif
-	if (tp->t_tcpopt) {
+	/*
+	 * Before ESTABLISHED, force sending of initial options
+	 * unless TCP set to not do any options.
+	 */
+	if (tp->t_state < TCPS_ESTABLISHED) {
+		if (tp->t_flags&TF_NOOPT)
+			goto noopt;
+		opt = tcp_initopt;
+		optlen = sizeof (tcp_initopt);
+		*(u_short *)(opt + 2) = so->so_rcv.sb_hiwat / 2;
+#if vax
+		*(u_short *)(opt + 2) = htons(*(u_short *)(opt + 2));
+#endif
+	} else {
+		if (tp->t_tcpopt == 0)
+			goto noopt;
+		opt = mtod(tp->t_tcpopt, u_char *);
+		optlen = tp->t_tcpopt->m_len;
+	}
+#ifndef TCPTRUEOOB
+	if (opt)
+#else
+	if (opt || (tp->t_oobflags&(TCPOOB_OWEACK|TCPOOB_NEEDACK)))
+#endif
+	{
 		m0 = m->m_next;
 		m->m_next = m_get(0);
 		if (m->m_next == 0) {
 			(void) m_free(m);
-			m_freem(m);
+			m_freem(m0);
 			return (0);
 		}
 		m->m_next->m_next = m0;
-		m->m_off = MMINOFF;
-		m->m_len = tp->t_tcpopt->m_len;
-		bcopy(mtod(tp->t_tcpopt, caddr_t), mtod(m, caddr_t),
-		    (unsigned)tp->t_tcpopt->m_len);
-		ti->ti_off = (sizeof (struct tcphdr)+tp->t_tcpopt->m_len) >> 2;
+		m0 = m->m_next;
+		m0->m_off = MMINOFF;
+		m0->m_len = optlen;
+		bcopy(opt, mtod(m0, caddr_t), optlen);
+		opt = (u_char *)(mtod(m0, caddr_t) + optlen);
+#ifdef TCPTRUEOOB
+		if (tp->t_oobflags&TCPOOB_OWEACK) {
+printf("tp %x send OOBACK for %x\n", tp->t_iobseq);
+			*opt++ = TCPOPT_OOBACK;
+			*opt++ = 3;
+			*opt++ = tp->t_iobseq;
+			m0->m_len += 3;
+			tp->t_oobflags &= ~TCPOOB_OWEACK;
+			/* sender should rexmt oob to force ack repeat */
+		}
+		if (tp->t_oobflags&TCPOOB_NEEDACK) {
+printf("tp %x send OOBDATA seq %x data %x\n", tp->t_oobseq, tp->t_oobc);
+			*opt++ = TCPOPT_OOBDATA;
+			*opt++ = 4;
+			*opt++ = tp->t_oobseq;
+			*opt++ = tp->t_oobc;
+			m0->m_len += 4;
+			TCPT_RANGESET(tp->t_timer[TCPT_OOBREXMT],
+			    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
+		}
+#endif
+		while (m0->m_len & 0x3) {
+			*opt++ = TCPOPT_EOL;
+			m0->m_len++;
+		}
+		optlen = m0->m_len;
+		ti->ti_off = (sizeof (struct tcphdr) + optlen) >> 2;
 	}
+noopt:
 	ti->ti_flags = flags;
 	win = sbspace(&so->so_rcv);
 	if (win > 0)
@@ -148,9 +222,13 @@ send:
 	 * Put TCP length in extended header, and then
 	 * checksum extended header and data.
 	 */
-	if (len)
-		ti->ti_len = htons((u_short)(len + sizeof (struct tcphdr)));
-	ti->ti_sum = in_cksum(m, sizeof (struct tcpiphdr) + len);
+	if (len + optlen) {
+		ti->ti_len = sizeof (struct tcphdr) + optlen + len;
+#if vax
+		ti->ti_len = htons((u_short)ti->ti_len);
+#endif
+	}
+	ti->ti_sum = in_cksum(m, sizeof (struct tcpiphdr) + optlen + len);
 
 	/*
 	 * Advance snd_nxt over sequence space of this segment
@@ -202,7 +280,7 @@ send:
 	 * Fill in IP length and desired time to live and
 	 * send to IP level.
 	 */
-	((struct ip *)ti)->ip_len = len + sizeof (struct tcpiphdr);
+	((struct ip *)ti)->ip_len = sizeof (struct tcpiphdr) + optlen + len;
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
 	if (ip_output(m, tp->t_ipopt) == 0)
 		return (0);
