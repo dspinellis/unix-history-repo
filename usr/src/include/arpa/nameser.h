@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)nameser.h	5.2 (Berkeley) %G%
+ *	@(#)nameser.h	5.3 (Berkeley) %G%
  */
 
 /*
