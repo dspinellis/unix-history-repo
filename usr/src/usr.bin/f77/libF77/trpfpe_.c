@@ -4,7 +4,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trpfpe_.c	5.4	%G%
+ *	@(#)trpfpe_.c	5.5	%G%
  *
  *
  *	Fortran floating-point error handler
@@ -27,10 +27,10 @@
 
 
 #include <stdio.h>
-#include <signal.h>
+#include <sys/signal.h>
 #include "../libI77/fiodefs.h"
 
-#define	SIG_VAL		int (*)()
+#define	SIG_VAL		void (*)()
 
 #ifdef vax
 #include "opcodes.h"
@@ -328,6 +328,7 @@ on_fpe(signo, code, myaddr, pc, ps)
 	int signo, code, ps;
 	char *myaddr, *pc;
 #else
+void
 on_fpe(signo, code, sc, grbg)
 	int signo, code;
 	struct sigcontext *sc;
@@ -358,9 +359,9 @@ on_fpe(signo, code, sc, grbg)
 cant_fix:
 			if (sigfpe_dfl > (SIG_VAL)7)	/* user specified */
 #ifdef	OLD_BSD
-				return((*sigfpe_dfl)(signo, code, myaddr, pc, ps));
+				(*sigfpe_dfl)(signo, code, myaddr, pc, ps);
 #else
-				return((*sigfpe_dfl)(signo, code, sc, grbg));
+				(*sigfpe_dfl)(signo, code, sc, grbg);
 #endif
 			else
 #ifdef	OLD_BSD
@@ -645,7 +646,7 @@ static union {
 static int	max_messages	= 1;		/* the user can tell us */
 static int	fpe_count	= 0;		/* how bad is it ? */
        long	fpeflt_		= 0;	/* fortran "common /fpeflt/ flag" */
-static int	(*sigfpe_dfl)()	= SIG_DFL;	/* if we can't fix it ... */
+static sig_t sigfpe_dfl		= SIG_DFL;	/* if we can't fix it ... */
 
 /*
  * The fortran unit control table
@@ -684,7 +685,7 @@ extern struct msgtbl	act_fpe[];
  * and substitutes a previously supplied value.
  *  DOES NOT REPAIR ON TAHOE !!!
  */
-
+void
 on_fpe(signo, code, sc)
 	int signo, code;
 	struct sigcontext *sc;
@@ -715,7 +716,7 @@ on_fpe(signo, code, sc)
 		default:
 cant_fix:
 			if (sigfpe_dfl > (SIG_VAL)7)	/* user specified */
-				return((*sigfpe_dfl)(signo, code, sc));
+				(*sigfpe_dfl)(signo, code, sc);
 			else
 			if (++fpe_count <= max_messages) {
 				fprintf(ef, "trpfpe: %s",
