@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kgmon.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)kgmon.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -31,9 +31,7 @@ static char sccsid[] = "@(#)kgmon.c	5.14 (Berkeley) %G%";
 struct nlist nl[] = {
 #define	N_GMONPARAM	0
 	{ "__gmonparam" },
-#define	N_KCOUNT	1
-	{ "_kcount" },
-#define	N_PROFHZ	2
+#define	N_PROFHZ	1
 	{ "_profhz" },
 	0,
 };
@@ -44,7 +42,6 @@ struct nlist nl[] = {
  */
 struct gmonparam gmonparam;
 
-u_short *kcount;
 int profhz;
 
 kvm_t	*kd;
@@ -58,7 +55,7 @@ int	debug = 0;
  * Build the gmon header and write it to a file.
  */
 void
-dumphdr(FILE *fp, struct gmonparam *p, int ksize)
+dumphdr(FILE *fp, struct gmonparam *p)
 {
 	struct gmonhdr h;
 
@@ -67,7 +64,7 @@ dumphdr(FILE *fp, struct gmonparam *p, int ksize)
 
 	h.lpc = p->lowpc;
 	h.hpc = p->highpc;
-	h.ncnt = ksize + sizeof(h);
+	h.ncnt = p->kcountsize + sizeof(h);
 	h.version = GMONVERSION;
 	h.profrate = profhz;
 
@@ -128,7 +125,6 @@ dumpstate(struct gmonparam *p)
 	u_short *froms;
 	int i, n;
 	int fromindex, endfrom, toindex;
-	u_int fromssize, tossize, ksize;
 
 	setprof(GMON_PROF_OFF);
 	fp = fopen("gmon.out", "w");
@@ -136,30 +132,27 @@ dumpstate(struct gmonparam *p)
 		perror("gmon.out");
 		return;
 	}
-	ksize = p->textsize / HISTFRACTION;
-	dumphdr(fp, p, ksize);
-	dumpbuf(fp, (u_long)kcount, ksize);
+	dumphdr(fp, p);
+	dumpbuf(fp, (u_long)p->kcount, p->kcountsize);
 
-	fromssize = p->textsize / HASHFRACTION;
-	froms = (u_short *)malloc(fromssize);
-	i = kvm_read(kd, (u_long)p->froms, (void *)froms, fromssize);
-	if (i != fromssize) {
+	froms = (u_short *)malloc(p->fromssize);
+	i = kvm_read(kd, (u_long)p->froms, (void *)froms, p->fromssize);
+	if (i != p->fromssize) {
 		(void)fprintf(stderr, "kgmon: read kmem: read %u, got %d: %s",
-		    fromssize, i, strerror(errno));
+		    p->fromssize, i, strerror(errno));
 		exit(5);
 	}
-	tossize = (p->textsize * ARCDENSITY / 100) * sizeof(struct tostruct);
-	tos = (struct tostruct *)malloc(tossize);
-	i = kvm_read(kd, (u_long)p->tos, (void *)tos, tossize);
-	if (i != tossize) {
+	tos = (struct tostruct *)malloc(p->tossize);
+	i = kvm_read(kd, (u_long)p->tos, (void *)tos, p->tossize);
+	if (i != p->tossize) {
 		(void)fprintf(stderr, "kgmon: read kmem: read %u, got %d: %s",
-		    tossize, i, kvm_geterr(kd));
+		    p->tossize, i, kvm_geterr(kd));
 		exit(6);
 	}
 	if (debug)
 		(void)fprintf(stderr, "lowpc 0x%x, textsize 0x%x\n",
 			      p->lowpc, p->textsize);
-	endfrom = fromssize / sizeof(*froms);
+	endfrom = p->fromssize / sizeof(*froms);
 	for (fromindex = 0; fromindex < endfrom; ++fromindex) {
 		if (froms[fromindex] == 0)
 			continue;
@@ -205,24 +198,20 @@ kzero(u_long addr, int cc)
 void
 reset(struct gmonparam *p)
 {
-	int fromssize, tossize, ksize;
 
 	setprof(GMON_PROF_OFF);
 
-	ksize = p->textsize / HISTFRACTION;
-	if (kzero((u_long)kcount, ksize)) {
+	if (kzero((u_long)p->kcount, p->kcountsize)) {
 		(void)fprintf(stderr, "kgmon: sbuf write: %s\n",
 		    kvm_geterr(kd));
 		exit(7);
 	}
-	fromssize = p->textsize / HASHFRACTION;
-	if (kzero((u_long)p->froms, fromssize)) {
+	if (kzero((u_long)p->froms, p->fromssize)) {
 		(void)fprintf(stderr, "kgmon: kfroms write: %s\n",
 		    kvm_geterr(kd));
 		exit(8);
 	}
-	tossize = (p->textsize * ARCDENSITY / 100) * sizeof(struct tostruct);
-	if (kzero((u_long)p->tos, tossize)) {
+	if (kzero((u_long)p->tos, p->tossize)) {
 		(void)fprintf(stderr, "kgmon: ktos write: %s\n",
 		    kvm_geterr(kd));
 		exit(9);
@@ -323,9 +312,6 @@ main(int argc, char **argv)
 	if (KREAD(kd, nl[N_GMONPARAM].n_value, &gmonparam))
 		(void)fprintf(stderr,
 		    "kgmon: read kmem: %s\n", kvm_geterr(kd));
-	if (KREAD(kd, nl[N_KCOUNT].n_value, &kcount))
-		(void)fprintf(stderr, "kgmon: read kmem: %s\n",
-			      kvm_geterr(kd));
 	if (KREAD(kd, nl[N_PROFHZ].n_value, &profhz))
 		(void)fprintf(stderr, "kgmon: read kmem: %s\n",
 			      kvm_geterr(kd));
