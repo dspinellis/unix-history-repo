@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char     sccsid[] = "@(#)str.c	8.4 (Berkeley) %G%";
+static char     sccsid[] = "@(#)str.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "make.h"
@@ -112,8 +112,14 @@ brk_string(str, store_argc)
 					inquote = '\0';
 				else
 					break;
-			else
+			else {
 				inquote = (char) ch;
+				/* Don't miss "" or '' */
+				if (start == NULL && p[1] == inquote) {
+					start = t + 1;
+					break;
+				}
+			}
 			continue;
 		case ' ':
 		case '\t':
