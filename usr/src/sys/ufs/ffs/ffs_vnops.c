@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.94 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.95 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -341,7 +341,7 @@ ffs_write(ap)
 		} else
 			bdwrite(bp);
 		ip->i_flag |= IUPD|ICHG;
-		if (ap->a_cred->cr_uid != 0)
+		if (ap->a_cred && ap->a_cred->cr_uid != 0)
 			ip->i_mode &= ~(ISUID|ISGID);
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
 	if (error && (ioflag & IO_UNIT)) {
