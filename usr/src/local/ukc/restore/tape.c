@@ -362,6 +362,8 @@ printdumpinfo()
 		return;
 	fprintf(stderr, "Level %d dump of %s on %s:%s\n",
 		spcl.c_level, spcl.c_filesys, spcl.c_host, spcl.c_dev);
+	printf("Volume %d of the dump, starting at inode %d\n",
+			spcl.c_volume, spcl.c_inumber);
 	fprintf(stderr, "Label: %s\n", spcl.c_label);
 }
 
