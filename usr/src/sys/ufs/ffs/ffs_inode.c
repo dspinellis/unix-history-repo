@@ -1,4 +1,4 @@
-/*	ffs_inode.c	4.4	81/03/09	*/
+/*	ffs_inode.c	4.5	81/04/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -409,4 +409,42 @@ struct inode *ip;
 	u.u_base = (caddr_t)&u.u_dent;
 	writei(u.u_pdir);
 	iput(u.u_pdir);
+}
+
+#ifdef plock
+#undef plock
+#endif
+#ifdef prele
+#undef prele
+#endif
+/*
+ * Lock an inode (should be called ilock).
+ * If its already locked,
+ * set the WANT bit and sleep.
+ */
+plock(ip)
+register struct inode *ip;
+{
+
+	while(ip->i_flag&ILOCK) {
+		ip->i_flag |= IWANT;
+		sleep((caddr_t)ip, PINOD);
+	}
+	ip->i_flag |= ILOCK;
+}
+
+/*
+ * Unlock an inode.
+ * If WANT bit is on,
+ * wakeup.
+ */
+prele(ip)
+register struct inode *ip;
+{
+
+	ip->i_flag &= ~ILOCK;
+	if(ip->i_flag&IWANT) {
+		ip->i_flag &= ~IWANT;
+		wakeup((caddr_t)ip);
+	}
 }
