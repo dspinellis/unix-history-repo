@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_syscalls.c	6.13 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	6.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -688,7 +688,7 @@ pipe()
 	wf->f_data = (caddr_t)wso;
 	u.u_r.r_val2 = u.u_r.r_val1;
 	u.u_r.r_val1 = r;
-	if (u.u_error = unp_connect2(wso, (struct mbuf *)0, rso))
+	if (u.u_error = unp_connect2(wso, rso))
 		goto free4;
 	wso->so_state |= SS_CANTRCVMORE;
 	rso->so_state |= SS_CANTSENDMORE;
