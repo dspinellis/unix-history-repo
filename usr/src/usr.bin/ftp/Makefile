@@ -1,6 +1,8 @@
-# @(#)Makefile	4.1 %G%
+#	@(#)Makefile	4.2	%G%
+#
 ALL=	ftp ftpd
-CFLAGS=-O
+DESTDIR=
+CFLAGS=	-O
 
 all:	${ALL}
 
@@ -19,6 +21,10 @@ ftpd:	ftpd.o ftpcmd.o vers.o glob.o
 vers.o:	ftpd.c ftpcmd.y
 	sh newvers.sh
 	${CC} -c vers.c
+
+install:
+	install -s ftp ${DESTDIR}/usr/ucb/ftp
+	install -s ftpd ${DESTDIR}/etc/ftpd
 
 clean:
 	rm -f ${ALL} *.o *.s errs core a.out t.? yacc.* y.tab.c
