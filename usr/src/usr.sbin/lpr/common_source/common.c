@@ -1,4 +1,4 @@
-/*	common.c	4.2	83/05/13	*/
+/*	common.c	4.3	83/05/18	*/
 /*
  * Routines and data common to all the line printer functions.
  */
@@ -53,7 +53,8 @@ char	*from = host;	/* client's machine name */
  * Create a connection to the remote printer server.
  * Most of this code comes from rcmd.c.
  */
-getport()
+getport(rhost)
+	char *rhost;
 {
 	struct hostent *hp;
 	struct servent *sp;
@@ -63,11 +64,11 @@ getport()
 	/*
 	 * Get the host address and port number to connect to.
 	 */
-	if (RM == NULL)
+	if (rhost == NULL)
 		fatal("no remote host to connect to");
-	hp = gethostbyname(RM);
+	hp = gethostbyname(rhost);
 	if (hp == NULL)
-		fatal("unknown host %s", RM);
+		fatal("unknown host %s", rhost);
 	sp = getservbyname("printer", "tcp");
 	if (sp == NULL)
 		fatal("printer/tcp: unknown service");
@@ -118,10 +119,8 @@ rresvport(alport)
 		if (errno != EADDRINUSE && errno != EADDRNOTAVAIL)
 			return(-1);
 		(*alport)--;
-		if (*alport == IPPORT_RESERVED/2) {
-			printf("%s: All ports in use\n", name);
+		if (*alport == IPPORT_RESERVED/2)
 			return(-1);
-		}
 	}
 }
 

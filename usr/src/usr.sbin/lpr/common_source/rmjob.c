@@ -1,4 +1,4 @@
-/*	rmjob.c	4.2	83/05/13	*/
+/*	rmjob.c	4.3	83/05/18	*/
 /*
  * rmjob - remove the specified jobs from the queue.
  */
@@ -39,8 +39,7 @@ rmjob()
 		LP = DEFDEVLP;
 	if ((RP = pgetstr("rp", &bp)) == NULL)
 		RP = DEFLP;
-	if ((RM = pgetstr("rm", &bp)) == NULL)
-		RM = host;
+	RM = pgetstr("rm", &bp);
 
 	/*
 	 * If the format was `lprm -' and the user isn't the super-user,
@@ -114,7 +113,7 @@ lockchk(s)
 	}
 	cur_daemon = atoi(line);
 	for (i = 1; (n = fread(current, sizeof(char), sizeof(current), fp)) <= 0; i++) {
-		if (i > 20) {
+		if (i > 5) {
 			n = 1;
 			break;
 		}
@@ -247,7 +246,7 @@ chkremote()
 		(void) sprintf(cp, " %d", requ[i]);
 	}
 	strcat(cp, "\n");
-	rem = getport();
+	rem = getport(RM);
 	if (rem < 0) {
 		if (from != host)
 			printf("%s: ", host);

@@ -1,4 +1,4 @@
-/*	printjob.c	4.2	83/05/16	*/
+/*	printjob.c	4.3	83/05/18	*/
 /*
  * printjob -- print jobs in the queue.
  *
@@ -928,7 +928,7 @@ openpr()
 		status("%s is ready and printing", printer);
 	} else if (RM != NULL) {
 		for (i = 1; ; i = i < 512 ? i << 1 : i) {
-			pfd = getport();
+			pfd = getport(RM);
 			if (pfd >= 0) {
 				(void) sprintf(line, "\2%s\n", RP);
 				n = strlen(line);
