@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)pr.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)pr.c	4.4 (Berkeley) %G%";
 
 /*
  *   print file with headings
@@ -204,7 +204,7 @@ char **argp;
 	if (fp) {
 		if((file=fopen(fp, "r"))==NULL) {
 			if (tty==NULL)
-				fprintf(stderr, "pr: can't open %s\n", fp);
+				perror(fp);
 			ncol = sncol;
 			header = sheader;
 			return;

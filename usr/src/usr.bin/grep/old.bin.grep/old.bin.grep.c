@@ -1,4 +1,4 @@
-/*	old.bin.grep.c	4.2	83/03/17	*/
+/*	old.bin.grep.c	4.3	83/04/29	*/
 
 /*
  * grep -- print lines matching (or not matching) a pattern
@@ -272,7 +272,7 @@ char *file;
 
 	if (file) {
 		if (freopen(file, "r", stdin) == NULL) {
-			fprintf(stderr, "grep: can't open %s\n", file);
+			perror(file);
 			retcode = 2;
 		}
 	}

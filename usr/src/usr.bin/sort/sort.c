@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)sort.c	4.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)sort.c	4.5 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -546,7 +546,7 @@ cant(f)
 char *f;
 {
 
-	diag("can't open ",f);
+	perror(f);
 	term();
 }
 

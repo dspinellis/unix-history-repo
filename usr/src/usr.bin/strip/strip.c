@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)strip.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)strip.c	4.3 (Berkeley) %G%";
 #include <a.out.h>
 #include <signal.h>
 #include <pagsiz.h>
@@ -45,7 +45,7 @@ char *name;
 
 	f = open(name, 0);
 	if(f < 0) {
-		printf("cannot open %s\n", name);
+		perror(name);
 		status = 1;
 		goto out;
 	}

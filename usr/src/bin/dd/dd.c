@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)dd.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)dd.c	4.3 (Berkeley) %G%";
 #include <stdio.h>
 #include <signal.h>
 
@@ -251,7 +251,7 @@ char	**argv;
 	else
 		ibf = dup(0);
 	if(ibf < 0) {
-		fprintf(stderr,"cannot open: %s\n", ifile);
+		perror(ifile);
 		exit(0);
 	}
 	if (ofile)

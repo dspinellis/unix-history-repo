@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)split.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)split.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 
 unsigned count = 1000;
@@ -46,7 +46,7 @@ char *argv[];
 		is = stdin;
 	else
 		if((is=fopen(ifil,"r")) == NULL) {
-			fprintf(stderr,"cannot open input\n");
+			perror(ifil);
 			exit(1);
 		}
 	if(ofil == 0)

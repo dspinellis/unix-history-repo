@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)checkeq.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)checkeq.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 FILE	*fin;
 int	delim	= '$';
@@ -10,7 +10,7 @@ main(argc, argv) char **argv; {
 	else
 		while (--argc > 0) {
 			if ((fin = fopen(*++argv, "r")) == NULL) {
-				printf("Can't open %s\n", *argv);
+				perror(*argv);
 				exit(1);
 			}
 			printf("%s:\n", *argv);
