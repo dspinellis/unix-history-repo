@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.14 1993/09/14 00:37:15 rgrimes Exp $
+#	$Id: Makefile,v 1.15 1993/09/24 14:13:25 rgrimes Exp $
 #
 
 SUBDIR=
@@ -67,7 +67,8 @@ cleandist:
 	@echo " Cleaning up the source tree, and rebuilding the obj tree"
 	@echo "--------------------------------------------------------------"
 	@echo
-	cd /usr/obj; rm -rf ${SUBDIR}
+	here=`pwd`; dest=/usr/obj/`echo $$here | sed 's,/usr/src,,'`; \
+	cd $$dest; rm -rf ${SUBDIR}
 	find . -name obj | xargs -n30 rm -rf
 	make cleandir
 	make obj
