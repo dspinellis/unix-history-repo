@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)truncate.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)truncate.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -17,10 +17,10 @@ static char sccsid[] = "@(#)truncate.c	5.1 (Berkeley) %G%";
  * is not supplied by GCC 1.X but is supplied by GCC 2.X.
  */
 int
-__truncate(path, length)
+truncate(path, length)
 	char 	*path;
 	off_t	length;
 {
 
-	return(__indir((quad_t)SYS___truncate, path, 0, length));
+	return(__indir((quad_t)SYS_truncate, path, 0, length));
 }
