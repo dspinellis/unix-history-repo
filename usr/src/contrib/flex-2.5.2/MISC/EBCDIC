@@ -1,0 +1,48 @@
+Return-Path: Mark_Ganter@liz.com
+Received: from 192.216.61.11 by horse.ee.lbl.gov for vern (5.65/1.43r)
+	id AA02152; Tue, 11 Jan 94 06:19:36 -0800
+Received: from melonville.radiomail.net (mayberry.radiomail.net) by radiomail.net with SMTP id AA20220
+  (5.65c+/IDA-1.4.4 for <vern@horse.ee.lbl.gov>); Tue, 11 Jan 1994 06:19:35 -0800
+Message-Id: <199401111419.AA20220@radiomail.net>
+Received: from liz.com by melonville.radiomail.net with CCGW-1.7(930217);
+          Tue, 11 Jan 94 06:19:17 
+From: Mark_Ganter@liz.com
+Date: 11 Jan 94 09:05
+To: vern@horse.ee.lbl.gov
+Subject: Re[2]: Flex on an AS400
+
+              I have no problem at all with being a contact for advice
+          on porting Flex to EBCDIC.  The code was put on an AS400, so
+          filing the message under /MISC/AS400 is more appropriate.
+          The port was an interesting, very educational experience.
+          Thanks again.
+
+
+                                           Mark
+
+------------------------------------------------------------------------
+Date: Tue, 18 Apr 1995 12:33:48 -0400
+To: "Michael W. Duffy" <mduffy@netcom.com>, Mark_Ganter@liz.com,
+        vern@ee.lbl.gov (Vern Paxson), slayten@cas.org
+From: slayten@cas.org (Steve Layten)
+Subject: RE: Porting LEX scanner on EBCDIC machine
+X-Mailer: <Windows Eudora Version 2.0.2>
+Content-Length: 918
+
+I came in late on this discussion - I don't follow comp.compilers very
+closely these days because my job has shifted somewhat.
+
+I ported (quite some time ago) flex 2.3.6 to an IBM 3090 under MVS, using
+the SAS C compiler. The approach I used was, as Vern suggested, was to
+translate the tables to reflect EBCDIC-based indices. I haven't even
+downloaded flex 2.4 yet, so I don't know what's in the current distribution.
+My patches were in the flex 2.3 distribution for a while in the MISC
+directory. If you want any more info feel free to drop me a line - I still
+have (somewhere) the patches that I created from version 2.3.6.
+
+Steve Layten
+-- 
+Steven W. Layten, Senior Research Scientist
+Chemical Abstracts Service PO BOX 3012, Columbus, OH 43210  +1 614 447 3600
+INET: slayten@cas.org                                  FAX: +1 614 447 3813
+# # Speaking only for myself, and NOT for Chemical Abstracts Service! # # #
