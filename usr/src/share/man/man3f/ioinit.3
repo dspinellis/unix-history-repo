@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ioinit.3	6.1 (Berkeley) %G%
+.\"	@(#)ioinit.3	6.2 (Berkeley) %G%
 .\"
 .TH IOINIT 3F ""
 .UC 5
@@ -59,12 +59,12 @@ A value of
 .B .false.
 will restore the default behavior.
 .PP
-Many systems provide an automatic association of global names with
-fortran logical units when a program is run.
-There is no such automatic association in
-.UX
-f77.
-However, if the argument
+.I Ioinit
+may be used to associate file names with Fortran logical unit numbers
+through environment variables
+(see "Introduction to the f77 I/O Library" for a more general way of
+doing this).
+If the argument
 .I prefix
 is a non-blank string, then names of the form
 .BR prefix NN
