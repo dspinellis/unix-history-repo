@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rshd.8	6.1 (Berkeley) %G%
+.\"	@(#)rshd.8	6.2 (Berkeley) %G%
 .\"
 .TH RSHD 8C ""
 .UC 5
@@ -50,14 +50,14 @@ the server aborts the connection.
 .IP 5)
 A null terminated user name of at most 16 characters
 is retrieved on the initial socket.  This user name
-is interpreted as a user identity to use on the
-.BR server 's
+is interpreted as the user identity on the
+.BR client 's
 machine.
 .IP 6)
 A null terminated user name of at most 16 characters
 is retrieved on the initial socket.  This user name
-is interpreted as the user identity on the
-.BR client 's
+is interpreted as a user identity to use on the
+.BR server 's
 machine.
 .IP 7)
 A null terminated command to be passed to a
@@ -85,22 +85,20 @@ in the home directory of the remote user is checked for
 the machine name and identity of the user on the client's
 machine.  If this lookup fails, the connection is terminated.
 .IP 9)
-A null byte is returned on the connection associated
-with the
-.B stderr 
+A null byte is returned on the initial socket
 and the command line is passed to the normal login
 shell of the user.  The
 shell inherits the network connections established
 by
 .IR rshd .
 .SH DIAGNOSTICS
-All diagnostic messages are returned on the connection
-associated with the
-.BR stderr ,
+Except for the last one listed below,
+all diagnostic messages
+are returned on the initial socket,
 after which any network connections are closed.
 An error is indicated by a leading byte with a value of
 1 (0 is returned in step 9 above upon successful completion
-of all the steps prior to the command execution).
+of all the steps prior to the execution of the login shell).
 .PP
 .B ``locuser too long''
 .br
@@ -117,7 +115,7 @@ longer than 16 characters.
 The command line passed exceeds the size of the argument
 list (as configured into the system).
 .PP
-.B ``Hostname for your address unknown.''
+.B ``Host name for your address unknown.''
 .br
 No entry in the host name database existed for
 the client's machine.
@@ -148,9 +146,12 @@ A
 .I fork
 by the server failed.
 .PP
-.B ``/bin/sh: ...''
+.B ``<shellname>: ...''
 .br
-The user's login shell could not be started.
+The user's login shell could not be started.  This message is returned
+on the connection associated with the
+.BR stderr ,
+and is not preceded by a flag byte.
 .SH SEE ALSO
 rsh(1C),
 rcmd(3X)
