@@ -1,0 +1,62 @@
+cat ../h/mtpr.m ../h/trap.m ../h/psl.m ../h/pcb.m ../h/clock.m  ../h/cons.m ../h/page.m ../h/mba.m ../h/uba.m locore.s | as -o locore.o
+cc -O -c acct.c
+cc -O -c alloc.c
+cc -O -c bio.c
+cc -O -c clock.c
+cc -O -c conf.c
+cc -O -c cons.c
+cc -O -c dkleave.c
+cc -O -c dsort.c
+cc -c -S dz.c
+/lib/c2 -i dz.s dz.os
+as -o dz.o dz.os
+rm dz.s dz.os
+cc -O -c fio.c
+cc -c -S hp.c
+/lib/c2 -i hp.s hp.os
+as -o hp.o hp.os
+rm hp.s hp.os
+cc -c -S ht.c
+/lib/c2 -i ht.s ht.os
+as -o ht.o ht.os
+rm ht.s ht.os
+cc -O -c iget.c
+cc -O -c machdep.c
+cc -O -c main.c
+cc -O -c malloc.c
+cc -c -S mba.c
+/lib/c2 -i mba.s mba.os
+as -o mba.o mba.os
+rm mba.s mba.os
+cc -O -c mem.c
+cc -O -c mx1.c
+cc -O -c mx2.c
+cc -O -c nami.c
+cc -O -c partab.c
+cc -O -c pipe.c
+cc -O -c prf.c
+cc -O -c prim.c
+cc -O -c rdwri.c
+cc -O -c sig.c
+cc -O -c slp.c
+cc -O -c subr.c
+cc -O -c sys.c
+cc -O -c sys1.c
+cc -O -c sys2.c
+cc -O -c sys3.c
+cc -O -c sys4.c
+cc -O -c sysent.c
+cc -c -S tdump.c
+/lib/c2 -i tdump.s tdump.os
+as -o tdump.o tdump.os
+rm tdump.s tdump.os
+cc -O -c text.c
+cc -O -c trap.c
+cc -O -c tty.c
+cc -c -S uba.c
+/lib/c2 -i uba.s uba.os
+as -o uba.o uba.os
+rm uba.s uba.os
+cc -O -c univec.c
+sh loadall
+-rwxrwxrwx 1 tbl     57376 Mar  7 10:22 unix
