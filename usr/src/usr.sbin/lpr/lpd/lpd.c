@@ -1,4 +1,7 @@
-/*	lpd.c	4.7	83/07/17	*/
+#ifndef lint
+static char sccsid[] = "@(#)lpd.c	4.7 (Berkeley) %G%";
+#endif
+
 /*
  * lpd -- line printer daemon.
  *
@@ -143,16 +146,22 @@ main(argc, argv)
 		listen(finet, 5);
 	}
 	for (;;) {
-		int domain, s, readfds = defreadfds;
+		int domain, nfds, s, readfds = defreadfds;
 
-		(void) select(&readfds, 0, 0, 0);
+		nfds = select(20, &readfds, 0, 0, 0);
+		if (nfds <= 0) {
+			if (nfds < 0 && errno != EINTR) {
+				logerr("select");
+				cleanup();
+				/*NOTREACHED*/
+			}
+			continue;
+		}
 		if (readfds & (1 << funix)) {
-			domain = AF_UNIX;
-			fromlen = sizeof(fromunix);
+			domain = AF_UNIX, fromlen = sizeof(fromunix);
 			s = accept(funix, &fromunix, &fromlen);
-		} else {
-			domain = AF_INET;
-			fromlen = sizeof(frominet);
+		} else if (readfds & (1 << finet)) {
+			domain = AF_INET, fromlen = sizeof(frominet);
 			s = accept(finet, &frominet, &fromlen);
 		}
 		if (s < 0) {
