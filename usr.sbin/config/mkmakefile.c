@@ -186,7 +186,7 @@ makefile()
 	} else
 		up = &users[machine-1];
 	if (maxfdescs == 0) {
-		printf("maxfdescs not specifid; %d assumed\n", DEF_MAXFDESCS);
+		printf("maxfdescs not specified; %d assumed\n", DEF_MAXFDESCS);
 		maxfdescs = DEF_MAXFDESCS;
 	}
 	if (maxusers == 0) {
