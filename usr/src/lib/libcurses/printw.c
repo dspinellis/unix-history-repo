@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printw.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)printw.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -22,7 +22,10 @@ printw(fmt, args)
 char	*fmt;
 int	args; {
 
-	return _sprintw(stdscr, fmt, &args);
+	char	buf[512];
+
+	(void) vsprintf(buf, fmt, &args);
+	return waddstr(stdscr, buf);
 }
 
 /*
@@ -33,29 +36,8 @@ WINDOW	*win;
 char	*fmt;
 int	args; {
 
-	return _sprintw(win, fmt, &args);
-}
-/*
- *	This routine actually executes the printf and adds it to the window
- *
- *	This is really a modified version of "sprintf".  As such,
- * it assumes that sprintf interfaces with the other printf functions
- * in a certain way.  If this is not how your system works, you
- * will have to modify this routine to use the interface that your
- * "sprintf" uses.
- */
-_sprintw(win, fmt, args)
-WINDOW	*win;
-char	*fmt;
-int	*args; {
-
-	FILE	junk;
 	char	buf[512];
 
-	junk._flag = _IOWRT + _IOSTRG;
-	junk._ptr = buf;
-	junk._cnt = 32767;
-	_doprnt(fmt, args, &junk);
-	putc('\0', &junk);
+	(void) vsprintf(buf, fmt, &args);
 	return waddstr(win, buf);
 }
