@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	8.4 (Berkeley) %G%
+ *	@(#)rtsock.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -174,9 +174,9 @@ route_output(m, so)
 	case RTM_GET:
 	case RTM_CHANGE:
 	case RTM_LOCK:
-		if ((rnh = rt_tables[dst->sa_family]) == 0)
+		if ((rnh = rt_tables[dst->sa_family]) == 0) {
 			senderr(EAFNOSUPPORT);
-		else if (rt = (struct rtentry *)
+		} else if (rt = (struct rtentry *)
 				rnh->rnh_lookup(dst, netmask, rnh))
 			rt->rt_refcnt++;
 		else
