@@ -1,4 +1,4 @@
-/* @(#)doprnt.c	4.4 (Berkeley) %G% */
+/* @(#)doprnt.c	4.5 (Berkeley) %G% */
 	# C library -- conversions
 
 .globl	__doprnt
@@ -54,12 +54,21 @@ __doprnt:
 strfoo:
 	clrl r4					# fix interrupt race
 	jbr strok				# and try again
-strmore:
-	movzbl (r1)+,r2			# one char
-	tstb strtab[r2]			# translate
-	jeql stresc2			# bad guy in disguise (outbuf is full)
 strout2:		# enter here to force out r2; r0,r1 must be set
-	pushr $3				# save input descriptor
+	# do some tricks with line buffering (_IOLBF) first
+	movl	fdesc,r3
+	jbc	$7,16(r3),0f		# not line buffered (unbuffered)
+	addl3	12(r3),8(r3),r4		# fdesc->_base+fdesc->_bufsiz
+	cmpl	4(r3),r4		# buffer full?
+	jgeq	0f			#  yes
+	cmpl	r2,$10			# c == '\n'?
+	jeql	0f			#  yes
+	movb	r2,*4(r3)		# line buffered and not buffer full
+	incl	4(r3)			#  and not newline
+	clrl	(r3)			#  just stuff it and fix _cnt
+	incl	nchar			# count the char
+	jbr	strout			# skip __flsbuf
+0:	pushr	$3				# save input descriptor
 	pushl fdesc				# FILE
 	pushl r2				# the char
 	calls $2,__flsbuf		# please empty the buffer and handle 1 char
@@ -102,9 +111,12 @@ movdon: movq r4,*fdesc                  /*  update output descriptor */
 	sobgeq r0,strmore		# no; but out buffer might be full
 stresc:
 	rsb
-stresc2:
-	incl r0					# fix the length
-	decl r1					# and the addr
+strmore:
+	movzbl (r1)+,r2			# one char
+	tstb strtab[r2]			# translate
+	jneq strout2			# bad guy in disguise (outbuf is full)
+	incl r0				# fix the length
+	decl r1				# and the addr
 	movl $1<vbit,r2			# fake condition codes
 	rsb
 
