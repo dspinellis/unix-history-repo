@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser1.c	3.5 83/12/09";
+static	char *sccsid = "@(#)parser1.c	3.6 83/12/12";
 #endif
 
 #include <stdio.h>
@@ -11,9 +11,10 @@ static	char *sccsid = "@(#)parser1.c	3.5 83/12/09";
 #include "var.h"
 
 #define p_erred()	(cx.x_erred)
+#define p_synerred()	(cx.x_synerred)
 #define p_clearerr()	(cx.x_erred = cx.x_synerred = 0)
 #define p_abort()	(cx.x_abort)
-#define p_varfree(v)	if ((v).v_type == V_STR) str_free((v).v_str)
+#define p_valfree(v)	if ((v).v_type == V_STR) str_free((v).v_str)
 
 p_start()
 {
@@ -156,7 +157,7 @@ char flag;
 #ifdef DEBUG
 			error("command: expression.");
 #endif
-			p_varfree(t);
+			p_valfree(t);
 			return 0;
 		}
 	}
@@ -191,7 +192,7 @@ char flag;
 		}
 	}
 	str_free(cmd);
-	p_varfree(t);
+	p_valfree(t);
 	if (token == T_EOL)
 		(void) s_gettok();
 	else if (token != T_EOF) {
@@ -229,7 +230,16 @@ register struct value *v;
 	for (i = 0;;) {
 		ap = 0;
 		if (p_expr0(&t, flag) < 0)
-			break;
+			if (!p_synerred() && token == T_MUL) {
+				if (c->lc_arg[i].arg_name == 0)
+					p_error("%s: Too many arguments.",
+						c->lc_name);
+				else
+					i++;
+				(void) s_gettok();
+				continue;
+			} else
+				break;
 		if (t.v_type == V_ERR)
 			flag = 0;
 		if (token != T_ASSIGN) {
@@ -238,7 +248,7 @@ register struct value *v;
 				if (ap->arg_name == 0) {
 					p_error("%s: Too many arguments.",
 						c->lc_name);
-					p_varfree(t);
+					p_valfree(t);
 					ap = 0;
 					flag = 0;
 				} else
@@ -277,7 +287,7 @@ register struct value *v;
 				if (ap->arg_name == 0) {
 					p_error("%s: Unknown argument \"%s\".",
 						c->lc_name, tmp);
-					p_varfree(t);
+					p_valfree(t);
 					flag = 0;
 					ap = 0;
 				}
@@ -289,7 +299,7 @@ register struct value *v;
 				p_error("%s: Argument %d (%s) duplicated.",
 					c->lc_name, ap - c->lc_arg + 1,
 					ap->arg_name);
-				p_varfree(t);
+				p_valfree(t);
 				flag = 0;
 			} else if (t.v_type == V_ERR) {
 				/* do nothing */
@@ -298,7 +308,7 @@ register struct value *v;
 				p_error("%s: Argument %d (%s) type mismatch.",
 					c->lc_name, ap - c->lc_arg + 1,
 					ap->arg_name);
-				p_varfree(t);
+				p_valfree(t);
 				flag = 0;
 			} else
 				ap->arg_val = t;
@@ -315,12 +325,12 @@ register struct value *v;
 		(*c->lc_func)(v);
 	if (c != 0)
 		for (ap = c->lc_arg; ap->arg_name != 0; ap++)
-			p_varfree(ap->arg_val);
+			p_valfree(ap->arg_val);
 	return 0;
 abort:
 	if (c != 0)
 		for (ap = c->lc_arg; ap->arg_name != 0; ap++)
-			p_varfree(ap->arg_val);
+			p_valfree(ap->arg_val);
 	return -1;
 }
 
@@ -340,7 +350,7 @@ char flag;
 	case V_NUM:
 		if (flag && var_set(name, v) == 0) {
 			p_memerror();
-			p_varfree(*v);
+			p_valfree(*v);
 			return -1;
 		}
 		break;
@@ -423,9 +433,11 @@ char flag;
 		break;
 	}
 	(void) s_gettok();
+	v->v_type = V_ERR;
 	if ((flag && true ? p_expr1(v, 1) : p_expr1(&t, 0)) < 0)
 		return -1;
 	if (token != T_COLON) {
+		p_valfree(*v);
 		p_synerror();
 		return -1;
 	}
@@ -608,11 +620,17 @@ char flag;
 		op = token;
 		(void) s_gettok();
 		if (level == 10) {
-			if (p_expr11(&t, flag) < 0)
+			if (p_expr11(&t, flag) < 0) {
+				p_synerror();
+				p_valfree(*v);
 				return -1;
+			}
 		} else {
-			if (p_expr3_10(level + 1, &t, flag) < 0)
+			if (p_expr3_10(level + 1, &t, flag) < 0) {
+				p_synerror();
+				p_valfree(*v);
 				return -1;
+			}
 		}
 
 		if (t.v_type == V_ERR)
@@ -646,8 +664,8 @@ char flag;
 		}
 
 		if (!flag) {
-			p_varfree(*v);
-			p_varfree(t);
+			p_valfree(*v);
+			p_valfree(t);
 			v->v_type = V_ERR;
 			continue;
 		}
@@ -796,7 +814,7 @@ char flag;
 /*
  * string, number, ( expr )
  * Plus function calls.
- * Also we map * and % into strings.
+ * Also we map % into string.
  *
  * Always return v_type == V_ERR when flag == 0.
  */
@@ -809,16 +827,6 @@ char flag;
 	error("expr12: %d.", flag);
 #endif
 	switch (token) {
-	case T_MUL:
-#ifdef DEBUG
-		error("expr12: *.");
-#endif
-		if (flag) {
-			v->v_type = V_STR;
-			v->v_str = str_cpy("*");
-		}
-		(void) s_gettok();
-		break;
 	case T_MOD:
 #ifdef DEBUG
 		error("expr12: %.");
@@ -857,7 +865,7 @@ char flag;
 		}
 		if (token != T_RP) {
 			p_synerror();
-			p_varfree(*v);
+			p_valfree(*v);
 			return -1;
 		}
 		(void) s_gettok();
@@ -897,7 +905,7 @@ char flag;
 		str_free(cmd);
 		if (token != T_RP) {
 			p_synerror();
-			p_varfree(*v);
+			p_valfree(*v);
 			return -1;
 		}
 		(void) s_gettok();
