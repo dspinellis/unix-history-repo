@@ -1,0 +1,7 @@
+link "../ilib/ttyinit"
+
+procedure main()
+   ttyinit()
+   write("TANDEM=",TANDEM)
+   write("RAW=",RAW)
+end
