@@ -1,4 +1,4 @@
-/*	vmparam.h	6.1	83/07/29	*/
+/*	vmparam.h	6.2	84/08/12	*/
 
 /*
  * Machine dependent constants for VAX
@@ -10,10 +10,10 @@
  * beginning of the text and from the beginning of the P1 region to the
  * beginning of the stack respectively.
  */
-					/* number of ptes per page */
 #define	USRTEXT		0
-#define	USRSTACK	(0x80000000-UPAGES*NBPG)
-					/* Start of user stack */
+#define	USRSTACK	(0x80000000-UPAGES*NBPG) /* Start of user stack */
+#define	BTOPUSRSTACK	(0x400000 - UPAGES)	 /* btop(USRSTACK) */
+/* number of ptes per page */
 #define	P1PAGES		0x200000	/* number of pages in P1 region */
 #define	LOWPAGES	0
 #define	HIGHPAGES	UPAGES
