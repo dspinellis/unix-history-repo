@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.27	(Berkeley)	%G%
+#	@(#)Makefile	1.28	(Berkeley)	%G%
 #
 M=../../libexec/mip
 P=../../libexec/pcc
@@ -48,7 +48,8 @@ rodata.c cgram.c: $M/cgram.y pcctokens
 	cat pcctokens $M/cgram.y > gram.in
 	$(YACC) gram.in
 	rm -f rodata.c
-	sh ./:yyfix yyexca yyact yypact yypgo yyr1 yyr2 yychk yydef
+	sh ./:yyfix yylhs yylen yydefred yydgoto yysindex yyrindex \
+		yygindex yytable yycheck
 	mv y.tab.c cgram.c
 
 GREP=	egrep
