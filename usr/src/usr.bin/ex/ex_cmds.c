@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_cmds.c	5.2 %G%";
+static char *sccsid = "@(#)ex_cmds.c	5.3 %G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -570,7 +570,7 @@ quit:
 				eol();
 				source(file, 0);
 				continue;
-#ifdef TIOCLGET
+#ifdef SIGTSTP
 /* stop */
 			case 't':
 				tail("stop");

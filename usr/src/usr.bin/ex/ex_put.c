@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_put.c	5.1 %G%";
+static char *sccsid = "@(#)ex_put.c	5.2 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -1023,7 +1023,7 @@ gTTY(i)
 	ioctl(i, TIOCGETC, &ottyc);
 	nttyc = ottyc;
 # endif
-# ifdef TIOCLGET
+# ifdef TIOCGLTC
 	ioctl(i, TIOCGLTC, &olttyc);
 	nlttyc = olttyc;
 # endif
@@ -1064,7 +1064,7 @@ sTTY(i)
 	/* Update the other random chars while we're at it. */
 	ioctl(i, TIOCSETC, &nttyc);
 # endif
-# ifdef TIOCLGET
+# ifdef TIOCSLTC
 	ioctl(i, TIOCSLTC, &nlttyc);
 # endif
 
@@ -1083,7 +1083,7 @@ noonl()
 	putchar(Outchar != termchar ? ' ' : '\n');
 }
 
-#ifdef TIOCLGET
+#ifdef SIGTSTP
 /*
  * We have just gotten a susp.  Suspend and prepare to resume.
  */
