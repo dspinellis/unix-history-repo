@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.31 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -467,16 +467,38 @@ errhdr(fp, m, xdot)
 					putline(buf, fp, m);
 				}
 				(void) fclose(xfile);
-				fprintf(fp, "\n");
+				putline("\n", fp, m);
 			}
 		}
 		else
 		{
 			expand(ErrMsgFile, buf, &buf[sizeof buf - 1], e);
 			putline(buf, fp, m);
-			fprintf(fp, "\n");
+			putline("\n", fp, m);
 		}
 	}
+
+	/*
+	**  Output message introduction
+	*/
+
+	printheader = TRUE;
+	for (q = e->e_parent->e_sendqueue; q != NULL; q = q->q_next)
+	{
+		if (bitset(QBADADDR, q->q_flags))
+		{
+			if (printheader)
+			{
+				putline("The following addresses failed:\n",
+					fp, m);
+				printheader = FALSE;
+			}
+			sprintf(buf, "\t%s\n", q->q_paddr);
+			putline(buf, fp, m);
+		}
+	}
+	if (!printheader)
+		putline("\n", fp, m);
 
 	/*
 	**  Output transcript of errors
@@ -493,7 +515,7 @@ errhdr(fp, m, xdot)
 	if ((xfile = fopen(p, "r")) == NULL)
 	{
 		syserr("Cannot open %s", p);
-		putline("  ----- Transcript of session is unavailable -----\n", fp, m);
+		putline("   ----- Transcript of session is unavailable -----\n", fp, m);
 	}
 	else
 	{
