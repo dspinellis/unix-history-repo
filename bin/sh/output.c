@@ -70,7 +70,7 @@ static char sccsid[] = "@(#)output.c	5.1 (Berkeley) 3/7/91";
 
 
 struct output output = {NULL, 0, NULL, OUTBUFSIZ, 1, 0};
-struct output errout = {NULL, 0, NULL, 100, 2, 0};;
+struct output errout = {NULL, 0, NULL, 100, 2, 0};
 struct output memout = {NULL, 0, NULL, 0, MEM_OUT, 0};
 struct output *out1 = &output;
 struct output *out2 = &errout;

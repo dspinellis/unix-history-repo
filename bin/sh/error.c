@@ -204,7 +204,7 @@ STATIC const struct errname errormsg[] = {
 #endif
 	ENOMEM, ALL,	"not enough memory",
 #ifdef ENOLINK
-	ENOLINK, ALL,	"remote access failed"
+	ENOLINK, ALL,	"remote access failed",
 #endif
 #ifdef EMULTIHOP
 	EMULTIHOP, ALL,	"remote access failed",

@@ -89,7 +89,7 @@ copyfunc(n)
       funcstringsize = 0;
       calcsize(n);
       funcblock = ckmalloc(funcblocksize + funcstringsize);
-      funcstring = funcblock + funcblocksize;
+      funcstring = (char *)funcblock + funcblocksize;
       return copynode(n);
 }
 
@@ -138,7 +138,7 @@ copynodelist(lp)
       lpp = &start;
       while (lp) {
 	    *lpp = funcblock;
-	    funcblock += ALIGN(sizeof (struct nodelist));
+	    funcblock = (char *)funcblock + ALIGN(sizeof (struct nodelist));
 	    (*lpp)->n = copynode(lp->n);
 	    lp = lp->next;
 	    lpp = &(*lpp)->next;

@@ -112,6 +112,7 @@ main(argc, argv)
 			parsenode();
 	}
 	output(argv[2]);
+	return 0;
 }
 
 
@@ -286,7 +287,7 @@ outfunc(cfile, calcsize)
 		fputs("      funcblocksize += nodesize[n->type];\n", cfile);
 	else {
 		fputs("      new = funcblock;\n", cfile);
-		fputs("      funcblock += nodesize[n->type];\n", cfile);
+		fputs("      funcblock = (char *)funcblock + nodesize[n->type];\n", cfile);
 	}
 	fputs("      switch (n->type) {\n", cfile);
 	for (sp = str ; sp < &str[nstr] ; sp++) {
