@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.34 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.35 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.34 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.35 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -216,6 +216,14 @@ queueup(df)
 		/* don't output resent headers on non-resent messages */
 		if (bitset(H_RESENT, h->h_flags) && !bitset(EF_RESENT, e->e_flags))
 			continue;
+
+		/* expand macros; if null, don't output header at all */
+		if (bitset(H_DEFAULT, h->h_flags))
+		{
+			(void) expand(h->h_value, buf, &buf[sizeof buf], e);
+			if (buf[0] == '\0')
+				continue;
+		}
 
 		/* output this header */
 		fprintf(f, "H");
