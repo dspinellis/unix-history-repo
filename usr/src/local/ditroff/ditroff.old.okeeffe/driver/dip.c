@@ -1,4 +1,4 @@
-/*	dip.c	1.7	(Berkeley)	84/03/14
+/*	dip.c	1.8	(Berkeley)	84/04/13
  *	dip
  *	driver for impress/imagen canon laser printer
  */
