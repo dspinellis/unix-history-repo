@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.15	82/01/17	*/
+/*	tty_pty.c	4.16	82/01/19	*/
 
 /*
  * Pseudo-teletype Driver
@@ -38,7 +38,7 @@ struct	pt_ioctl {
 #define	PF_WCOLL	0x02
 #define	PF_NBIO		0x04
 #define	PF_PKT		0x08		/* packet mode */
-#define	PF_FLOWCTL	0x10		/* peers flow control mode */
+#define	PF_STOPPED	0x10		/* user told stopped */
 
 /*ARGSUSED*/
 ptsopen(dev, flag)
@@ -117,9 +117,14 @@ ptswrite(dev)
 ptsstart(tp)
 	struct tty *tp;
 {
+	register struct pt_ioctl *pti = &pt_ioctl[minor(tp->t_dev)];
 
 	if (tp->t_state & TS_TTSTOP)
 		return;
+	if (pti->pt_flags & PF_STOPPED) {
+		pti->pt_flags &= ~PF_STOPPED;
+		pti->pt_send = TIOCPKT_START;
+	}
 	ptcwakeup(tp);
 }
 
@@ -221,9 +226,14 @@ ptsstop(tp, flush)
 {
 	struct pt_ioctl *pti = &pt_ioctl[minor(tp->t_dev)];
 
-	if (flush == 0)
-		return;
-	pti->pt_send |= flush;
+	/* note: FLUSHREAD and FLUSHWRITE already ok */
+	if (flush == 0) {
+		flush = TIOCPKT_STOP;
+		pti->pt_flags |= PF_STOPPED;
+	} else {
+		pti->pt_flags &= ~PF_STOPPED;
+	}
+	pti->pt_send = flush;
 	ptcwakeup(tp);
 }
 
