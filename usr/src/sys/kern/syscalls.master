@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.22 (Berkeley) %G%
+	@(#)syscalls.master	7.23 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -79,7 +79,7 @@
 47	STD	0 getgid
 48	STD	2 sigprocmask
 49	STD	2 getlogin
-50	STD	2 setlogin
+50	STD	1 setlogin
 51	STD	1 sysacct acct
 52	STD	0 sigpending
 #ifdef notyet
