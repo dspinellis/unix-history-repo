@@ -1,0 +1,28 @@
+Date: 	Mon, 26 Apr 1993 18:06:39 -0400
+From: Andy Poling <andy@jhunix.hcf.jhu.edu>
+Subject: Re: Long Running Dream (was Re: send me your to-do lists)
+To: Mohamed Ellozy <ellozy@farber.harvard.edu>
+Cc: bind@uunet.UU.NET, bind-4.9@inet-gw-2.pa.dec.com
+Mime-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+
+On Mon, 26 Apr 1993, Andy Poling writes
+
+>I'm afraid I removed it from my anonymous FTP archive a few months ago. 
+>It seemed out-of-date enough that it just might be dangerous if someone
+>actually expected it to still be useful.  :-)
+>
+>I didn't even keep the source around - it just didn't really seem useful
+>anymore.
+
+I have it!  I took Dennis Ferguson's nsmaint code and added Andy's
+check_boot code and bundled it up into a inhanced nsmaint.  Together
+with Theodore Ts'o ninit, these programs pretty much run the show
+here.  Our staff can reload the server by typing "nsmaint hup" which
+does a check on the boot files before reloading.  Some of my recoding
+is dreadful :), but it works very well.  I'm sure someone out there
+could grab it, cover my sins, and make it better.  I stuck in the ftp
+area on indiana.edu as nsmaint.tar.Z which includes the ninit stuff too.
+
+Regards,
+Steve Mosier @ Indiana University
