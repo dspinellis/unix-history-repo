@@ -1,0 +1,198 @@
+
+
+
+AFMTODIT(1)            BSD Reference Manual           AFMTODIT(1)
+
+
+NNAAMMEE
+       afmtodit - create font files for use with groff -Tps
+
+SSYYNNOOPPSSIISS
+       aaffmmttooddiitt  [ --nnss ] [ --dd_d_e_s_c___f_i_l_e ] [ --ee_e_n_c___f_i_l_e ] [ --ii_n ] [
+       --aa_n ] _a_f_m___f_i_l_e _m_a_p___f_i_l_e _f_o_n_t
+
+DDEESSCCRRIIPPTTIIOONN
+       aaffmmttooddiitt creates a font file for use with groff and ggrrooppss.
+       aaffmmttooddiitt  is written in perl; you must have perl version 3
+       installed in order to run aaffmmttooddiitt.  _a_f_m___f_i_l_e is  the  AFM
+       (Adobe Font Metric) file for the font.  _m_a_p___f_i_l_e is a file
+       that says  which  groff  character  names  map  onto  each
+       PostScript  character  name;  this  file  should contain a
+       sequence of lines of the form
+
+              _p_s___c_h_a_r _g_r_o_f_f___c_h_a_r
+
+       where _p_s___c_h_a_r is the PostScript name of the character  and
+       _g_r_o_f_f___c_h_a_r  is the groff name of the character (as used in
+       the groff font file.)  The same _p_s___c_h_a_r can occur multiple
+       times  in  the  file;  each  _g_r_o_f_f___c_h_a_r must occur at most
+       once.   _f_o_n_t  is  the  groff  name  of  the  font.   If  a
+       PostScript character is in the encoding to be used for the
+       font but is not mentioned in _m_a_p___f_i_l_e then  aaffmmttooddiitt  will
+       put  it  in  the  groff font file as an unnamed character,
+       which can be accessed by the \\NN escape sequence in  ttrrooffff.
+       The  groff font file will be output to a file called _f_o_n_t.
+
+       If there is a downloadable font file for the font, it  may
+       be           listed          in          the          file
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevvppss//ddoowwnnllooaadd; see ggrrooppss(1).
+
+       If the --ii option is used, aaffmmttooddiitt will automatically gen-
+       erate an italic correction, a left italic correction and a
+       subscript correction for each character (the  significance
+       of  these parameters is explained in ggrrooffff__ffoonntt(5)); these
+       parameters may be specified for individual  characters  by
+       adding to the _a_f_m___f_i_l_e lines of the form:
+
+              iittaalliiccCCoorrrreeccttiioonn _p_s___c_h_a_r _n
+              lleeffttIIttaalliiccCCoorrrreeccttiioonn _p_s___c_h_a_r _n
+              ssuubbssccrriippttCCoorrrreeccttiioonn _p_s___c_h_a_r _n
+
+       where _p_s___c_h_a_r is the PostScript name of the character, and
+       _n is the desired value of the corresponding  parameter  in
+       thousandths  of  an  em.   These  parameters  are normally
+       needed only for italic (or oblique) fonts.
+
+OOPPTTIIOONNSS
+       --nn     Don't output a lliiggaattuurreess  command  for  this  font.
+
+
+
+Groff Version 1.08       23 February 1993                       1
+
+
+
+
+
+
+
+
+AFMTODIT(1)            BSD Reference Manual           AFMTODIT(1)
+
+
+              Use this with constant-width fonts.
+
+       --ss     The  font is special.  The effect of this option is
+              to add the ssppeecciiaall command to the font file.
+
+       --dd_d_e_s_c___f_i_l_e
+              The device description  file  is  _d_e_s_c___f_i_l_e  rather
+              than the default DDEESSCC.
+
+       --ee_e_n_c___f_i_l_e
+              The  PostScript font should be reencoded to use the
+              encoding described  in  enc_file.   The  format  of
+              _e_n_c___f_i_l_e is described in ggrrooppss(1).
+
+       --aa_n    Use _n as the slant parameter in the font file; this
+              is used by groff in the positioning of accents.  By
+              default aaffmmttooddiitt uses the negative of the ItalicAn-
+              gle specified in the afm  file;  with  true  italic
+              fonts it is sometimes desirable to use a slant that
+              is less than this.  If  you  find  that  characters
+              from  an italic font have accents placed too far to
+              the right over them, then use the --aa option to give
+              the font a smaller slant.
+
+       --ii_n    Generate an italic correction for each character so
+              that the character's  width  plus  the  character's
+              italic  correction  is equal to _n thousandths of an
+              em plus the amount by which the right edge  of  the
+              character's bounding is to the right of the charac-
+              ter's origin.  If this would result in  a  negative
+              italic  correction,  use  a  zero italic correction
+              instead.
+
+              Also generate a subscript correction equal  to  the
+              product of the tangent of the slant of the font and
+              four fifths of the x-height of the font.   If  this
+              would result in a subscript correction greater than
+              the italic correction, use a  subscript  correction
+              equal to the italic correction instead.
+
+              Also  generate  a  left  italic correction for each
+              character equal to _n thousandths of an em plus  the
+              amount  by  which  the left edge of the character's
+              bounding box is to the left of the character's ori-
+              gin.  The left italic correction may be negative.
+
+              This option is normally needed only with italic (or
+              oblique) fonts.  The font  files  distributed  with
+              groff  were  created  using  an  option of --ii5500 for
+              italic fonts.
+
+
+
+
+Groff Version 1.08       23 February 1993                       2
+
+
+
+
+
+
+
+
+AFMTODIT(1)            BSD Reference Manual           AFMTODIT(1)
+
+
+FFIILLEESS
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevvppss//DDEESSCC
+              Device desciption file.
+
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevvppss//_F
+              Font description file for font _F.
+
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevvppss//ddoowwnnllooaadd
+              List of downloadable fonts.
+
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevvppss//tteexxtt..eenncc
+              Encoding used for text fonts.
+
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevvppss//ggeenneerraattee//tteexxttmmaapp
+              Standard mapping.
+
+SSEEEE AALLSSOO
+       ggrrooffff(1), ggrrooppss(1), ggrrooffff__ffoonntt(5), ppeerrll(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Groff Version 1.08       23 February 1993                       3
+
+
+
+
+
