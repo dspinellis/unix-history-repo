@@ -1,6 +1,6 @@
-#	@(#)Makefile	5.13 (Berkeley) %G%
+#	@(#)Makefile	5.14 (Berkeley) %G%
 
-SUBDIR=	lpc lpd lpq lpr lprm lptest pac filters vfilters
+SUBDIR=	lpc lpd lpq lpr lprm lptest pac filters
 
 .include <bsd.subdir.mk>
 
