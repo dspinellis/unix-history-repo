@@ -5,12 +5,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gethead.c	5.1 (Berkeley) 86/11/25";
+static char sccsid[] = "@(#)gethead.c	5.2 (Berkeley) 87/04/11";
 #endif not lint
 
 #include <bug.h>
 #include <sys/stat.h>
-#include <sys/dir.h>
 #include <stdio.h>
 
 static int	chk1();
@@ -29,50 +28,51 @@ HEADER	mailhead[] = {				/* mail headers */
 	{ ERR, }
 };
 
-extern short	do_redist,		/* if redistributing report */
-		made_dist;		/* if dist file needs removing */
-extern char	tmpname[];		/* temp bug report file */
-
-char	*distf = TMP_FILE,		/* redist temp file */
-	dir[MAXNAMLEN],			/* subject and folder */
+FILE	*dfp;				/* distf file pointer */
+char	dir[MAXNAMLEN],			/* subject and folder */
 	folder[MAXNAMLEN];
 
 /*
  * gethead --
  *	read mail and bug headers from bug report, construct redist headers
  */
-gethead()
+gethead(redist)
+	int	redist;
 {
 	register HEADER	*hp;		/* mail header pointer */
-	register FILE	*dfp;		/* distf file pointer */
-	char	*strcpy(), *malloc(), *mktemp();
+	char	*strcpy(), *malloc();
 
-	if (do_redist && (!mktemp(distf) || !(dfp = fopen(distf,"w"))))
-		error("unable to create redistribution file %s.",distf);
-	made_dist = YES;
-	if (!freopen(tmpname,"r",stdin))
-		error("unable to read temporary bug file %s.",tmpname);
+	if (redist) {
+		int	fd;
+		char	*distf;
 
-	while (fgets(bfr,sizeof(bfr),stdin)) {
-		for (hp = mailhead;hp->found != ERR;++hp)
+		distf = "/tmp/BUG_XXXXXX";
+		if (!(fd = mkstemp(distf)) || !(dfp = fdopen(fd, "w+")))
+			error("can't create redistribution file %s.", distf);
+		/* disappear after last reference is closed */
+		(void)unlink(distf);
+	}
+	if (!freopen(tmpname, "r", stdin))
+		error("can't read temporary bug file %s.", tmpname);
+
+	while (fgets(bfr, sizeof(bfr), stdin)) {
+		for (hp = mailhead; hp->found != ERR; ++hp)
 			if (!hp->found)
-				if (!strncmp(hp->tag,bfr,hp->len)) {
+				if (!strncmp(hp->tag, bfr, hp->len)) {
 					if (hp->valid && !((*(hp->valid))(bfr)))
 						break;
 					if (!(hp->line = malloc((u_int)(strlen(bfr) + 1))))
-						error("unable to allocate space for header search.",CHN);
-					strcpy(hp->line,bfr);
+						error("malloc failed.", CHN);
+					(void)strcpy(hp->line, bfr);
 					hp->found = YES;
 					break;
 				}
-		if ((hp->found == ERR || hp->redist) && do_redist)
-			fputs(bfr,dfp);
+		if ((hp->found == ERR || hp->redist) && redist)
+			fputs(bfr, dfp);
 	}
 
 	if (!mailhead[INDX_TAG].found)
-		error("no readable \"Index:\" header in bug report.",CHN);
-	if (do_redist)
-		fclose(dfp);
+		error("no readable \"Index:\" header in bug report.", CHN);
 }
 
 /*
@@ -81,23 +81,20 @@ gethead()
  */
 static
 chk1(line)
-char	*line;
+	char	*line;
 {
 	register char	*C;		/* tmp pointer */
 	struct stat	sbuf;		/* existence check */
 	char	*index();
 
-	if (sscanf(line," Index: %s %s ",folder,dir) != 2)
+	if (sscanf(line, " Index: %s %s ", folder, dir) != 2)
 		return(NO);
-
-	/* backward compatible, deal with "bin/from.c" */
-	if (C = index(folder,'/')) {
+	if (C = index(folder, '/')) {	/* deal with "bin/from.c" */
 		if (C == folder)
 			return(NO);
 		*C = EOS;
 	}
-
-	if (stat(dir,&sbuf) || (sbuf.st_mode & S_IFMT) != S_IFDIR)
+	if (stat(dir, &sbuf) || (sbuf.st_mode & S_IFMT) != S_IFDIR)
 		return(NO);
 	return(YES);
 }
