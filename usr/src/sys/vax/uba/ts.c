@@ -1,4 +1,4 @@
-/*	ts.c	4.4	%G%	*/
+/*	ts.c	4.5	%G%	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -30,7 +30,7 @@ struct	buf	ctsbuf;
 #define	INF	1000000000
 
 u_short	ts_uba;
-long	ts_iouba;
+int	ts_ubinfo;
 char	ts_flags;
 char	ts_openf;
 daddr_t	ts_blkno;
@@ -249,9 +249,9 @@ tsstart()
 		ts.ts_cmd.c_loba = 1;		/* count always 1 */
 	} else if (blkno == dbtofsb(bp->b_blkno)) {
 		tstab.b_active = SIO;
-		ts_iouba = ubasetup(bp, 1);
-		ts.ts_cmd.c_loba = (u_short)ts_iouba;
-		ts.ts_cmd.c_hiba = (u_short)(ts_iouba >> 16) & 03;
+		ts_ubinfo = ubasetup(bp, 1);
+		ts.ts_cmd.c_loba = (u_short)ts_ubinfo;
+		ts.ts_cmd.c_hiba = (u_short)(ts_ubinfo >> 16) & 03;
 		ts.ts_cmd.c_size = bp->b_bcount;
 		if(bp->b_flags & B_READ)
 			ts.ts_cmd.c_cmd = ACK+CVC+IE+READ;
@@ -340,11 +340,7 @@ tsintr()
 	switch(state) {
 	case SIO:
 		ts_blkno++;
-		if (ts_iouba)
-			ubafree(ts_iouba);
-		else
-			printf("uba alloc botch\n");
-		ts_iouba = 0;
+		ubarelse(&ts_ubinfo);
 	case SCOM:
 		tstab.b_errcnt = 0;
 		tstab.b_actf = bp->av_forw;

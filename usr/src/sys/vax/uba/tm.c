@@ -1,4 +1,4 @@
-/*	tm.c	4.4	%G%	*/
+/*	tm.c	4.5	%G%	*/
 
 #include "tm.h"
 #if NTM > 0
@@ -232,6 +232,7 @@ tmstart()
 	register struct buf *bp;
 	register cmd;
 	register daddr_t blkno;
+	int s;
 
 loop:
 	if ((bp = tmtab.b_actf) == 0)
@@ -262,8 +263,10 @@ loop:
 	}
 	if ((blkno = t_blkno) == dbtofsb(bp->b_blkno)) {
 		TMADDR->tmbc = -bp->b_bcount;
+		s = spl6();
 		if (tm_ubinfo == 0)
 			tm_ubinfo = ubasetup(bp,1);
+		splx(s);
 		if ((bp->b_flags&B_READ) == 0) {
 			if (tmtab.b_errcnt)
 				cmd |= WIRG;
@@ -289,10 +292,7 @@ loop:
 	return;
 
 next:
-	if (tm_ubinfo != 0) {
-		ubafree(tm_ubinfo);
-		tm_ubinfo = 0;
-	}
+	ubarelse(&tm_ubinfo);
 	tmtab.b_actf = bp->av_forw;
 	iodone(bp);
 	goto loop;
@@ -333,10 +333,7 @@ tmintr()
 					printf("TM UBA late error\n");
 				else
 					t_blkno += 2;		/* ???????? */
-				if (tm_ubinfo) {
-					ubafree(tm_ubinfo);
-					tm_ubinfo = 0;
-				}
+				ubarelse(&tm_ubinfo);
 				tmstart();
 				return;
 			}
@@ -375,10 +372,7 @@ errout:
 		tmtab.b_errcnt = 0;
 		tmtab.b_actf = bp->av_forw;
 		bp->b_resid = -TMADDR->tmbc;
-		if (tm_ubinfo != 0) {
-			ubafree(tm_ubinfo);
-			tm_ubinfo = 0;
-		}
+		ubarelse(&tm_ubinfo);
 		iodone(bp);
 		break;
 

@@ -1,4 +1,4 @@
-/*	uba.c	4.3	%G%	*/
+/*	uba.c	4.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/map.h"
@@ -100,12 +100,21 @@ uballoc(addr, bcnt, bdpflg)
 	return (ubasetup(&ubabuf, bdpflg));
 }
  
-ubafree(mr)
-	int mr;
+/*
+ * Old ubafree(info) is now ubarelse(&info) to avoid races.
+ */
+ubafree(amr)
+	int *amr;
 {
 	register int bdp, reg, npf, a;
+	int mr;
  
 	a = spl6();
+	mr = *amr;
+	if (mr == 0) {
+		splx(a);
+		return;
+	}
 	bdp = (mr >> 28) & 0x0f;
 	if (bdp) {
 		((struct uba_regs *)UBA0)->uba_dpr[bdp] |= BNE;	/* purge */
