@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.c	8.5 (Berkeley) %G%
+ *	@(#)tty.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -625,6 +625,7 @@ ttioctl(tp, cmd, data, flag)
 					tq = tp->t_rawq;
 					tp->t_rawq = tp->t_canq;
 					tp->t_canq = tq;
+					CLR(tp->t_lflag, PENDIN);
 				}
 		}
 		tp->t_iflag = t->c_iflag;
@@ -636,7 +637,7 @@ ttioctl(tp, cmd, data, flag)
 			SET(t->c_lflag, EXTPROC);
 		else
 			CLR(t->c_lflag, EXTPROC);
-		tp->t_lflag = t->c_lflag;
+		tp->t_lflag = t->c_lflag | ISSET(tp->t_lflag, PENDIN);
 		bcopy(t->c_cc, tp->t_cc, sizeof(t->c_cc));
 		splx(s);
 		break;
