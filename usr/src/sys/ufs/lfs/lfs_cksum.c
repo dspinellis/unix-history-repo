@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_cksum.c	8.1 (Berkeley) %G%
+ *	@(#)lfs_cksum.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/types.h>
@@ -26,7 +26,7 @@ cksum(str, len)
 	len &= ~(sizeof(u_short) - 1);
 	for (sum = 0; len; len -= sizeof(u_short)) {
 		sum ^= *(u_short *)str;
-		++(u_short *)str;
+		str = (void *)((u_short *)str + 1);
 	}
 	return (sum);
 }
