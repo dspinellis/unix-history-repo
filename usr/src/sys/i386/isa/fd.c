@@ -1,3 +1,5 @@
+#include "fd.h"
+#if NFD > 0
 /*-
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
@@ -7,7 +9,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)fd.c	5.1 (Berkeley) %G%
+ *	@(#)fd.c	5.2 (Berkeley) %G%
  */
 
 /****************************************************************************/
@@ -26,13 +28,15 @@
 #include "vm.h"
 #include "uio.h"
 #include "machine/pte.h"
-#include "machine/device.h"
+#include "machine/isa/device.h"
+#include "machine/isa/fdreg.h"
 #include "icu.h"
 
-#define NFD 2
 #define	FDUNIT(s)	((s)&1)
 #define	FDTYPE(s)	(((s)>>1)&7)
+
 #define b_cylin b_resid
+#define b_step b_resid
 #define FDBLK 512
 #define NUMTYPES 4
 
@@ -48,7 +52,7 @@ struct fd_type {
 };
 
 struct fd_type fd_types[NUMTYPES] = {
-	{ 18,2,0xFF,0x1B,80,2880,1,0 },	/* 1.44 meg HD 3.5in floppy    */
+ 	{ 18,2,0xFF,0x1B,80,2880,1,0 },	/* 1.44 meg HD 3.5in floppy    */
 	{ 15,2,0xFF,0x1B,80,2400,1,0 },	/* 1.2 meg HD floppy           */
 	{ 9,2,0xFF,0x23,40,720,2,1 },	/* 360k floppy in 1.2meg drive */
 	{ 9,2,0xFF,0x2A,40,720,1,1 },	/* 360k floppy in DD drive     */
@@ -58,44 +62,60 @@ struct fd_u {
 	int type;		/* Drive type (HD, DD     */
 	int active;		/* Drive activity boolean */
 	int motor;		/* Motor on flag          */
-	int opencnt;		/* Num times open         */
 	struct buf head;	/* Head of buf chain      */
 	struct buf rhead;	/* Raw head of buf chain  */
+	int reset;
 } fd_unit[NFD];
+
 
 extern int hz;
 
 /* state needed for current transfer */
+static fdc;	/* floppy disk controller io base register */
+int	fd_dmachan = 2;
 static int fd_skip;
 static int fd_state;
 static int fd_retry;
 static int fd_drive;
+static int fd_track = -1;
 static int fd_status[7];
-static char fdrawbuf[FDBLK];
 
-/* stuff needed for virtual to physical calculations */
-extern char Sysbase;
-static unsigned long sbase = (unsigned long) &Sysbase;
+/*
+	make sure bounce buffer for DMA is aligned since the DMA chip
+	doesn't roll over properly over a 64k boundary
+*/
+extern struct buf *dma_bounce[];
 
 /****************************************************************************/
 /*                      autoconfiguration stuff                             */
 /****************************************************************************/
 int fdprobe(), fdattach(), fd_turnoff();
 
-struct	driver fddriver = {
+struct	isa_driver fddriver = {
 	fdprobe, fdattach, "fd",
 };
 
 fdprobe(dev)
-struct device *dev;
+struct isa_device *dev;
 {
 	return 1;
 }
 
 fdattach(dev)
-struct device *dev;
+struct isa_device *dev;
+{	int	s;
+
+	fdc = dev->id_iobase;
+	/* Set transfer to 500kbps */
+	outb(fdc+fdctl,0);
+	fd_turnoff(0);
+}
+
+int
+fdsize(dev)
+dev_t	dev;
 {
-	INTREN(IRQ6);
+	return(2400);
 }
 
 /****************************************************************************/
@@ -106,41 +126,51 @@ fdstrategy(bp)
 {
 	register struct buf *dp,*dp0,*dp1;
 	long nblocks,blknum;
-	int	unit, type, s;
+ 	int	unit, type, s;
 
-	unit = FDUNIT(minor(bp->b_dev));
-	type = FDTYPE(minor(bp->b_dev));
-#ifdef FDOTHER
-	printf("fdstrat: unit = %d, blkno = %d, bcount = %d\n",
-		unit, bp->b_blkno, bp->b_bcount);
+ 	unit = FDUNIT(minor(bp->b_dev));
+ 	type = FDTYPE(minor(bp->b_dev));
+
+#ifdef FDTEST
+printf("fdstrat%d, blk = %d, bcount = %d, addr = %x|",
+	unit, bp->b_blkno, bp->b_bcount,bp->b_un.b_addr);
 #endif
 	if ((unit >= NFD) || (bp->b_blkno < 0)) {
 		printf("fdstrat: unit = %d, blkno = %d, bcount = %d\n",
 			unit, bp->b_blkno, bp->b_bcount);
 		pg("fd:error in fdstrategy");
 		bp->b_error = EINVAL;
+		bp->b_flags |= B_ERROR;
 		goto bad;
 	}
 	/*
 	 * Set up block calculations.
 	 */
 	blknum = (unsigned long) bp->b_blkno * DEV_BSIZE/FDBLK;
-	nblocks = fd_types[type].size;
+ 	nblocks = fd_types[type].size;
 	if (blknum + (bp->b_bcount / FDBLK) > nblocks) {
-		if (blknum == nblocks) bp->b_resid = bp->b_bcount;
-		else bp->b_error = ENOSPC;
+		if (blknum == nblocks) {
+			bp->b_resid = bp->b_bcount;
+		} else {
+			bp->b_error = ENOSPC;
+			bp->b_flags |= B_ERROR;
+		}
 		goto bad;
 	}
-	bp->b_cylin = blknum / (fd_types[type].sectrac * 2);
-	bp->b_cylin *= (fd_types[type].steptrac);
+ 	bp->b_cylin = blknum / (fd_types[type].sectrac * 2);
 	dp = &fd_unit[unit].head;
 	dp0 = &fd_unit[0].head;
 	dp1 = &fd_unit[1].head;
+	dp->b_step = (fd_types[fd_unit[unit].type].steptrac);
 	s = splbio();
 	disksort(dp, bp);
 	if ((dp0->b_active == 0)&&(dp1->b_active == 0)) {
+#ifdef FDDEBUG
+printf("T|");
+#endif
 		dp->b_active = 1;
 		fd_drive = unit;
+		fd_track = -1;  /* force seek on first xfer */
 		untimeout(fd_turnoff,unit);
 		fdstart(unit);		/* start drive if idle */
 	}
@@ -148,7 +178,6 @@ fdstrategy(bp)
 	return;
 
 bad:
-	bp->b_flags |= B_ERROR;
 	biodone(bp);
 }
 
@@ -161,7 +190,7 @@ int unit,reset;
 	int m0,m1;
 	m0 = fd_unit[0].motor;
 	m1 = fd_unit[1].motor;
-	outb(0x3f2,unit | (reset ? 0 : 0xC)  | (m0 ? 16 : 0) | (m1 ? 32 : 0));
+	outb(fdc+fdout,unit | (reset ? 0 : 0xC)  | (m0 ? 16 : 0) | (m1 ? 32 : 0));
 }
 
 fd_turnoff(unit)
@@ -186,8 +215,9 @@ int
 in_fdc()
 {
 	int i;
-	while ((i = inb(0x3f4) & 192) != 192) if (i == 128) return -1;
-	return inb(0x3f5);
+	while ((i = inb(fdc+fdsts) & (NE7_DIO|NE7_RQM)) != (NE7_DIO|NE7_RQM))
+		if (i == NE7_RQM) return -1;
+	return inb(fdc+fddata);
 }
 
 dump_stat()
@@ -197,9 +227,9 @@ dump_stat()
 		fd_status[i] = in_fdc();
 		if (fd_status[i] < 0) break;
 	}
-	printf("FD bad status :%X %X %X %X %X %X %X\n",
-		fd_status[0], fd_status[1], fd_status[2], fd_status[3],
-		fd_status[4], fd_status[5], fd_status[6] );
+printf("FD bad status :%X %X %X %X %X %X %X\n",
+	fd_status[0], fd_status[1], fd_status[2], fd_status[3],
+	fd_status[4], fd_status[5], fd_status[6] );
 }
 
 out_fdc(x)
@@ -209,12 +239,12 @@ int x;
 	static int maxcnt = 0;
 	errcnt = 0;
 	do {
-		r = (inb(0x3f4) & 192);
-		if (r==128) break;
-		if (r==192) {
+		r = (inb(fdc+fdsts) & (NE7_DIO|NE7_RQM));
+		if (r== NE7_RQM) break;
+		if (r==(NE7_DIO|NE7_RQM)) {
 			dump_stat(); /* error: direction. eat up output */
 #ifdef FDOTHER
-			printf("%X\n",x);
+printf("%X\n",x);
 #endif
 		}
 		/* printf("Error r = %d:",r); */
@@ -223,10 +253,10 @@ int x;
 	if (errcnt > maxcnt) {
 		maxcnt = errcnt;
 #ifdef FDOTHER
-		printf("New MAX = %d\n",maxcnt);
+printf("New MAX = %d\n",maxcnt);
 #endif
 	}
-	outb(0x3f5,x&0xFF);
+	outb(fdc+fddata,x);
 }
 
 /* see if fdc responding */
@@ -235,7 +265,7 @@ check_fdc()
 {
 	int i;
 	for(i=0;i<100;i++) {
-		if (inb(0x3f4)&128) return 0;
+		if (inb(fdc+fdsts)& NE7_RQM) return 0;
 	}
 	return 1;
 }
@@ -247,19 +277,18 @@ fdopen(dev, flags)
 	dev_t	dev;
 	int	flags;
 {
-	int unit = FDUNIT(minor(dev));
-	int type = FDTYPE(minor(dev));
+ 	int unit = FDUNIT(minor(dev));
+ 	int type = FDTYPE(minor(dev));
 	int s;
 
 	/* check bounds */
 	if (unit >= NFD) return(ENXIO);
 	if (type >= NUMTYPES) return(ENXIO);
+/*
 	if (check_fdc()) return(EBUSY);
+*/
 
 	/* Set proper disk type, only allow one type */
-	s = splbio();
-	splx(s);
-
 	return 0;
 }
 
@@ -278,7 +307,7 @@ fdread(dev, uio)			/* character read routine */
 dev_t dev;
 struct uio *uio;
 {
-	int unit = FDUNIT(minor(dev)) ;
+ 	int unit = FDUNIT(minor(dev)) ;
 	if (unit >= NFD) return(ENXIO);
 	return(physio(fdstrategy,&fd_unit[unit].rhead,dev,B_READ,minphys,uio));
 }
@@ -287,7 +316,7 @@ fdwrite(dev, uio)			/* character write routine */
 dev_t dev;
 struct uio *uio;
 {
-	int unit = FDUNIT(minor(dev));
+ 	int unit = FDUNIT(minor(dev)) ;
 	if (unit >= NFD) return(ENXIO);
 	return(physio(fdstrategy,&fd_unit[unit].rhead,dev,B_WRITE,minphys,uio));
 }
@@ -301,72 +330,41 @@ int unit;
 	register struct buf *dp,*bp;
 	int s;
 
+#ifdef FDTEST
+printf("st%d|",unit);
+#endif 
+	s = splbio();
 	if (!fd_unit[unit].motor) {
 		fd_turnon(unit);
 		/* Wait for 1 sec */
 		timeout(fdstart,unit,hz);
-	} else {
-		s = splbio();
+		/*DELAY(1000000);*/
+	}else
+		 {
+		/* make sure drive is selected as well as on */
+		/*set_motor(unit,0);*/
+
 		dp = &fd_unit[unit].head;
 		bp = dp->b_actf;
 		fd_retry = 0;
-		fd_state = 1;
+		if (fd_unit[unit].reset) fd_state = 1;
+		else {
+			/* DO a RESET */
+			fd_unit[unit].reset = 1;
+			fd_state = 5;
+		}
 		fd_skip = 0;
+#ifdef FDDEBUG
+printf("Seek %d %d\n", bp->b_cylin, dp->b_step);
+#endif
+		if (bp->b_cylin != fd_track) {
 		/* Seek necessary, never quite sure where head is at! */
 		out_fdc(15);	/* Seek function */
 		out_fdc(unit);	/* Drive number */
-		out_fdc(bp->b_cylin);
-		splx(s);
+		out_fdc(bp->b_cylin * dp->b_step);
+		} else fdintr(0);
 	}
-}
-
-/* XXX temporary */
-kernel_space(x)
-unsigned long x;
-{
-	if ((x >= sbase) & (x < sbase + 0x800000)) return 1;
-	else return 0;
-}
-
-
-/****************************************************************************/
-/*                                 fd_dma                                   */
-/* set up DMA read/write operation and virtual address addr for nbytes      */
-/****************************************************************************/
-fd_dma(read,addr,nbytes)
-int read;
-unsigned long addr;
-int nbytes;
-{
-	unsigned long phys;
-	int s,raw;
-
-	if (kernel_space(addr)) raw = 0;
-	else raw = 1;
-
-	/* copy bounce buffer on write */
-	if (raw && !read) bcopy(addr,fdrawbuf,FDBLK);
-
-	/* Set read/write bytes */
-	if (read) {
-		outb(0xC,0x46); outb(0xB,0x46);
-	} else {
-		outb(0xC,0x4A); outb(0xB,0x4A);
-	}
-	/* Send start address */
-	if (raw) phys = (unsigned long) &fdrawbuf[0];
-	else phys = addr;
-	/* translate to physical */
-	phys = phys - sbase;
-	outb(0x4,phys & 0xFF);
-	outb(0x4,(phys>>8) & 0xFF);
-	outb(0x81,(phys>>16) & 0xFF);
-	/* Send count */
-	nbytes--;
-	outb(0x5,nbytes & 0xFF);
-	outb(0x5,(nbytes>>8) & 0xFF);
-	/* set channel 2 */
-	outb(0x0A,2);
+	splx(s);
 }
 
 fd_timeout(x)
@@ -399,26 +397,34 @@ int vec;
 {
 	register struct buf *dp,*bp;
 	struct buf *dpother;
-	int read,head,trac,sec,i,s,sectrac;
+	int read,head,trac,sec,i,s,sectrac,cyl;
 	unsigned long blknum;
 	struct fd_type *ft;
-	static int fd_track;
+
+#ifdef FDTEST
+	printf("state %d, vec %d, dr %d|",fd_state,vec,fd_drive);
+#endif
 
 	dp = &fd_unit[fd_drive].head;
 	bp = dp->b_actf;
 	read = bp->b_flags & B_READ;
-	ft = &fd_types[FDTYPE(bp->b_dev)];
+ 	ft = &fd_types[FDTYPE(bp->b_dev)];
 
 	switch (fd_state) {
 	case 1 : /* SEEK DONE, START DMA */
-#ifdef FDOTHER
-		out_fdc(0x8);
-		i = in_fdc();
-		sec = in_fdc();
-		printf("ST0 = %X, PCN = %X:",i,sec);
-#endif
+		/* Make sure seek really happened*/
+		if (vec) {
+			out_fdc(0x8);
+			i = in_fdc();
+			cyl = in_fdc();
+			if (!(i&0x20) || (cyl != bp->b_cylin*dp->b_step)) {
+printf("Stray int ST0 = %X, PCN = %X:",i,cyl);
+				return;
+			}
+		}
+
 		fd_track = bp->b_cylin;
-		fd_dma(read,bp->b_un.b_addr+fd_skip,FDBLK);
+		at_dma(read,bp->b_un.b_addr+fd_skip,FDBLK, fd_dmachan);
 		blknum = (unsigned long)bp->b_blkno*DEV_BSIZE/FDBLK
 			+ fd_skip/FDBLK;
 		sectrac = ft->sectrac;
@@ -448,10 +454,11 @@ int vec;
 		}
 		if (fd_status[0]&0xF8) {
 #ifdef FDOTHER
-			printf("status0 err %d:",fd_status[0]);
+printf("status0 err %d:",fd_status[0]);
 #endif
 			goto retry;
 		}
+/*
 		if (fd_status[1]){
 			printf("status1 err %d:",fd_status[0]);
 			goto retry;
@@ -460,14 +467,18 @@ int vec;
 			printf("status2 err %d:",fd_status[0]);
 			goto retry;
 		}
+*/
 		/* All OK */
 		if (!kernel_space(bp->b_un.b_addr+fd_skip)) {
 			/* RAW transfer */
-			if (read) bcopy(fdrawbuf,bp->b_un.b_addr+fd_skip,
-					DEV_BSIZE);
+			if (read) bcopy(dma_bounce[fd_dmachan]->b_un.b_addr,
+				bp->b_un.b_addr+fd_skip, FDBLK);
 		}
 		fd_skip += FDBLK;
 		if (fd_skip >= bp->b_bcount) {
+#ifdef FDTEST
+printf("DONE %d|", bp->b_blkno);
+#endif
 			/* ALL DONE */
 			fd_skip = 0;
 			bp->b_resid = 0;
@@ -476,26 +487,34 @@ int vec;
 			nextstate(dp);
 
 		} else {
+#ifdef FDDEBUG
+printf("next|");
+#endif
 			/* set up next transfer */
 			blknum = (unsigned long)bp->b_blkno*DEV_BSIZE/FDBLK
 				+ fd_skip/FDBLK;
 			fd_state = 1;
 			bp->b_cylin = (blknum / (ft->sectrac * 2));
-			bp->b_cylin *= ft->steptrac;
 			if (bp->b_cylin != fd_track) {
+#ifdef FDTEST
+printf("Seek|");
+#endif
 				/* SEEK Necessary */
 				out_fdc(15);	/* Seek function */
 				out_fdc(fd_drive);/* Drive number */
-				out_fdc(bp->b_cylin);
+				out_fdc(bp->b_cylin * dp->b_step);
 				break;
-			} else fdintr();
+			} else fdintr(0);
 		}
 		break;
 	case 3:
+#ifdef FDOTHER
+printf("Seek %d %d\n", bp->b_cylin, dp->b_step);
+#endif
 		/* Seek necessary */
 		out_fdc(15);	/* Seek function */
 		out_fdc(fd_drive);/* Drive number */
-		out_fdc(bp->b_cylin);
+		out_fdc(bp->b_cylin * dp->b_step);
 		fd_state = 1;
 		break;
 	case 4:
@@ -506,8 +525,18 @@ int vec;
 		out_fdc(fd_drive);
 		fd_state = 3;
 		break;
+	case 5:
+#ifdef FDOTHER
+		printf("**RESET**\n");
+#endif
+		/* Try a reset, keep motor on */
+		set_motor(fd_drive,1);
+		set_motor(fd_drive,0);
+		outb(fdc+fdctl,ft->trans);
+		fd_retry++;
+		fd_state = 4;
+		break;
 	default:
-#ifdef FDDEBUG
 		printf("Unexpected FD int->");
 		out_fdc(0x8);
 		i = in_fdc();
@@ -521,27 +550,20 @@ int vec;
 	printf("intr status :%X %X %X %X %X %X %X ",
 		fd_status[0], fd_status[1], fd_status[2], fd_status[3],
 		fd_status[4], fd_status[5], fd_status[6] );
-#endif
 		break;
 	}
 	return;
 retry:
 	switch(fd_retry) {
 	case 0: case 1:
+	case 2: case 3:
 		break;
-	case 2:
-#ifdef FDDEBUG
-		printf("**RESET**\n");
-#endif
-		/* Try a reset, keep motor on */
-		set_motor(fd_drive,1);
-		set_motor(fd_drive,0);
-		outb(0x3f7,ft->trans);
+	case 4:
 		fd_retry++;
-		fd_state = 4;
+		fd_state = 5;
+		fdintr(0);
 		return;
-	case 3: case 4:
-	case 5: case 6:
+	case 5: case 6: case 7:
 		break;
 	default:
 		printf("FD err %X %X %X %X %X %X %X\n",
@@ -552,7 +574,7 @@ retry:
 	}
 	fd_state = 1;
 	fd_retry++;
-	fdintr();
+	fdintr(0);
 }
 
 badtrans(dp,bp)
@@ -585,12 +607,23 @@ struct buf *dp;
 	dpother = &fd_unit[fd_drive ? 0 : 1].head;
 	if (dp->b_actf) fdstart(fd_drive);
 	else if (dpother->b_actf) {
+#ifdef FDTEST
+printf("switch|");
+#endif
+		untimeout(fd_turnoff,fd_drive);
+		timeout(fd_turnoff,fd_drive,5*hz);
+		fd_drive = 1 - fd_drive;
 		dp->b_active = 0;
-		fdstart(fd_drive ? 0 : 1);
+		dpother->b_active = 1;
+		fdstart(fd_drive);
 	} else {
+#ifdef FDTEST
+printf("off|");
+#endif
 		untimeout(fd_turnoff,fd_drive);
 		timeout(fd_turnoff,fd_drive,5*hz);
 		fd_state = 0;
 		dp->b_active = 0;
 	}
 }
+#endif
