@@ -24,11 +24,11 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: clnp_options.c,v 4.3 88/09/15 18:57:36 hagens Exp $ */
-/* $Source: /usr/argo/sys/netiso/RCS/clnp_options.c,v $ */
+/* $Header: /var/src/sys/netiso/RCS/clnp_options.c,v 5.1 89/02/09 16:20:37 hagens Exp $ */
+/* $Source: /var/src/sys/netiso/RCS/clnp_options.c,v $ */
 
 #ifndef lint
-static char *rcsid = "$Header: clnp_options.c,v 4.3 88/09/15 18:57:36 hagens Exp $";
+static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_options.c,v 5.1 89/02/09 16:20:37 hagens Exp $";
 #endif lint
 
 #ifdef ISO
@@ -126,7 +126,7 @@ struct iso_addr		*isoa;		/* ptr to our address for this ifp */
 		u_char	off;			/* offset from opt of first free byte */
 		char	*rec_start;		/* beginning of first record rt option */
 
-		opt = oidx->cni_recrtp + (caddr_t)options;
+		opt = CLNP_OFFTOOPT(options, oidx->cni_recrtp);
 		off = *(opt + 1);
 		rec_start = opt + 2;
 
@@ -244,7 +244,7 @@ struct mbuf	**data;		/* source of option information */
  * SIDE EFFECTS:	
  *
  * NOTES:			Each pointer field of the option index is filled in with
- *					the offset from the beginning of the mbuf, not the
+ *					the offset from the beginning of the mbuf data, not the
  *					actual address.
  */
 clnp_opt_sanity(m, opts, len, oidx)
@@ -344,7 +344,7 @@ struct clnp_optidx	*oidx;	/* RETURN: filled in with option idx info */
 					((format & 0xc0) == 0))		/* high 2 bits zero ? */
 					return(GEN_HDRSYNTAX);
 
-				oidx->cni_securep = opts - (caddr_t)m;
+				oidx->cni_securep = CLNP_OPTTOOFF(m, opts);
 				oidx->cni_secure_len = oplen;
 				opts += oplen;
 			} break;
@@ -386,7 +386,7 @@ struct clnp_optidx	*oidx;	/* RETURN: filled in with option idx info */
 				if (!((type == CLNPOVAL_PARTRT) || (type == CLNPOVAL_COMPRT)))
 					return(SRCRT_SYNTAX);
 				
-				oidx->cni_srcrt_s = opts - (caddr_t)m;
+				oidx->cni_srcrt_s = CLNP_OPTTOOFF(m, opts);
 				oidx->cni_srcrt_len = oplen;
 
 				opts += offset-1;	/*set opts to first addr in rt */
@@ -427,7 +427,7 @@ struct clnp_optidx	*oidx;	/* RETURN: filled in with option idx info */
 				 */
 				record_end = opts + oplen;
 
-				oidx->cni_recrtp = opts - (caddr_t)m;
+				oidx->cni_recrtp = CLNP_OPTTOOFF(m, opts);
 				oidx->cni_recrt_len = oplen;
 
 				if (opts + 2 > record_end)
@@ -463,7 +463,7 @@ struct clnp_optidx	*oidx;	/* RETURN: filled in with option idx info */
 						((format & 0x3f) > 0))) /* not global,low bits used ? */
 					return(GEN_HDRSYNTAX);
 				
-				oidx->cni_qos_formatp = opts - (caddr_t)m;
+				oidx->cni_qos_formatp = CLNP_OPTTOOFF(m, opts);
 				oidx->cni_qos_len = oplen;
 
 				opts += oplen;
@@ -478,7 +478,7 @@ struct clnp_optidx	*oidx;	/* RETURN: filled in with option idx info */
 				if (oplen != 1)
 					return(GEN_HDRSYNTAX);
 				
-				oidx->cni_priorp = opts - (caddr_t)m;
+				oidx->cni_priorp = CLNP_OPTTOOFF(m, opts);
 
 				opts += oplen;
 			} break;
