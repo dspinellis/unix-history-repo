@@ -77,7 +77,7 @@ main(argc, argv)
 	if (gettimeofday(&tv[0], NULL))
 		err(1, "gettimeofday");
 
-	while ((ch = getopt(argc, argv, "acfmr:t:")) != EOF)
+	while ((ch = getopt(argc, argv, "acfmr:t:T:")) != EOF)
 		switch(ch) {
 		case 'a':
 			aflag = 1;
@@ -98,6 +98,12 @@ main(argc, argv)
 		case 't':
 			timeset = 1;
 			stime_arg1(optarg, tv);
+			break;
+		case 'T':
+			timeset = 1;
+			tv[0].tv_sec  = atoi(optarg);
+			tv[0].tv_usec = 0;
+			tv[1] = tv[0];
 			break;
 		case '?':
 		default:
@@ -346,6 +352,6 @@ void
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: touch [-acfm] [-r file] [-t time] file ...\n");
+	    "usage: touch [-acfm] [-r file] [-t time] [-T time] file ...\n");
 	exit(1);
 }

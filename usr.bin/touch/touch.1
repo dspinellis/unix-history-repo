@@ -45,6 +45,7 @@
 .Op Fl acfm
 .Op Fl r Ar file
 .Op Fl t [[CC]YY]MMDDhhmm[.SS]
+.Op Fl T seconds
 .Ar file ...
 .Sh DESCRIPTION
 The
@@ -77,6 +78,10 @@ flag is also specified.
 .It Fl r
 Use the access and modifications times from the specified file
 instead of the current time of day.
+.It Fl T
+Change the access and modification times to the specified time.
+The time is seconds since the start of the epoch. (The same value returned
+by time(3).)
 .It Fl t
 Change the access and modification times to the specified time.
 The argument should be in the form
@@ -127,7 +132,8 @@ The
 .Nm touch
 utility exits 0 on success, and >0 if an error occurs.
 .Sh SEE ALSO
-.Xr utimes 2
+.Xr utimes 2 ,
+.Xr time 3
 .Sh COMPATIBILITY
 The obsolescent form of
 .Nm touch ,
