@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.81 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.82 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -632,7 +632,6 @@ deliver(firstto, editfcn)
 				continue;
 			to->q_flags |= QQUEUEUP;
 			e->e_to = to->q_paddr;
-			define('h', NULL, e);
 			message("queued");
 			if (LogLevel > 8)
 				logdelivery(m, NULL, "queued", NULL, e);
@@ -1618,7 +1617,7 @@ logdelivery(m, mci, stat, ctladdr, e)
 		(void) strcat(bp, "]");
 # endif
 	}
-	else
+	else if (strcmp(stat, "queued") != 0)
 	{
 		char *p = macvalue('h', e);
 
@@ -1724,7 +1723,7 @@ logdelivery(m, mci, stat, ctladdr, e)
 		(void) strcat(buf, "]");
 # endif
 	}
-	else
+	else if (strcmp(stat, "queued") != 0)
 	{
 		char *p = macvalue('h', e);
 
