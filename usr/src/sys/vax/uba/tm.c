@@ -1,6 +1,6 @@
-/*	tm.c	4.18	%G%	*/
+/*	tm.c	4.19	%G%	*/
 
-#include "tm.h"
+#include "te.h"
 #if NTM > 0
 int	tmgapsdcnt;		/* DEBUG */
 /*

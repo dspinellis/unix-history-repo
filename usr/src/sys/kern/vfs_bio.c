@@ -1,4 +1,4 @@
-/*	vfs_bio.c	4.12	%G%	*/
+/*	vfs_bio.c	4.13	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -79,7 +79,7 @@ short	swsize[NSWBUF];		/* CAN WE JUST USE B_BCOUNT? */
 int	swpf[NSWBUF];
 
 
-#ifdef	FASTVAX
+#ifndef	UNFAST
 #define	notavail(bp) \
 { \
 	int s = spl6(); \
@@ -458,7 +458,7 @@ register struct buf *bp;
 	geterror(bp);
 }
 
-#ifndef FASTVAX
+#ifdef UNFAST
 /*
  * Unlink a buffer from the available list and mark it busy.
  * (internal interface)
