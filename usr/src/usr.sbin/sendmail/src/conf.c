@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.38 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -131,6 +131,25 @@ struct prival PrivacyValues[] =
 */
 
 int	DtableSize =	50;		/* max open files; reset in 4.2bsd */
+
+
+/*
+**  Following should be config parameters (and probably will be in
+**  future releases).  In the meantime, setting these is considered
+**  unsupported, and is intentionally undocumented.
+*/
+
+#ifdef BROKENSMTPPEERS
+bool	BrokenSmtpPeers = TRUE;		/* set if you have broken SMTP peers */
+#else
+bool	BrokenSmtpPeers = FALSE;	/* set if you have broken SMTP peers */
+#endif
+#ifdef NOLOOPBACKCHECK
+bool	CheckLoopBack = FALSE;		/* set to check HELO loopback */
+#else
+bool	CheckLoopBack = TRUE;		/* set to check HELO loopback */
+#endif
+
 /*
 **  SETDEFAULTS -- set default values
 **
