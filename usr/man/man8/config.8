@@ -1,0 +1,257 @@
+.TH CONFIG 8 4/1/81
+.UC 4
+.SH NAME
+config \- Build system configuration files
+.SH SYNOPSIS
+.B /etc/config
+.I config_file
+.SH DESCRIPTION
+.PP
+.I Config
+builds a set of system configuration files from a short file which describes
+the sort of system that is being configured.  It also takes as input a file
+which tells
+.I config
+what files are needed to generate a system.
+.PP
+.I Config
+should be run from the
+.B conf
+subdirectory of the system source (usually /sys/conf
+or /usr/src/sys/conf).
+.I Config
+assumes that there is already a directory
+.I "../config_file"
+created and it places all its output files in there.  
+The output of
+.I config
+consists of a number files:
+.B ioconf.c
+which contains a description
+of what i/o devices are attached to the system, 
+.B ubglue.s
+which is a set of interrupt service routines for devices
+attached to the UNIBUS,
+.B makefile
+for building the system and a set of header files which contain
+the number of various devices that will be compiled into the system.
+.PP
+After running
+.I config,
+it is necessary to run "make depend" in the directory where the new makefile
+was created.
+.I Config
+reminds you of this when it completes.
+.PP
+If you get any other error messages from
+.I config,
+you should fix the problems in your configuration file and try again.
+If you try to compile a system that had configuration errors, you will
+meet with failure.
+.SH "CONFIG FILE FORMAT"
+.PP
+In the following descriptions, a number can be a decimal integer,
+a whole octal number or a whole hexadecimal number.  Hex and octal
+are specified to
+.I config
+in the same way they are specified to the C
+compiler, a number starting with "0x" is a hex number and a number
+starting with just a "0" is an octal number.  When specifying the
+timezone, you may also use floating point numbers.
+.PP
+Comments are specified in a config file with the character "#".
+All characters from a "#" to the end of a line are ignored.
+.PP
+Lines beginning with tabs are considered continuations of the previous
+line.
+.PP
+Lines of the config file can be one of several types.  First there are
+lines which describe general things about your system.  Here is a list
+of the possibilities.
+.HP 5
+\fBcpu\fR\fI\ "type"\fR
+.br
+This system is to run on the cpu type specified.
+More than one cpu type can appear in the config file.
+Legal types are
+.B VAX780, VAX750,
+and
+.B VAX7ZZ.
+.HP 5
+.BI options " optlist"
+.br
+Compile the listed options into the system.  Options in this list are
+seperated by commas.
+There is a list of options that you may specify in the generic makefile.
+A line of the form "options FUNNY,HAHA" yields \-DFUNNY \-DHAHA to the
+C compiler.
+.HP 5
+.BI timezone " number"
+[
+.B dst
+]
+.br
+Specifies the timezone you are in.  This is measured in the number of hours
+west of GMT you are.  5 is EST, 8 is PST.  If you specify
+.B dst,
+the system will operate under daylight savings time.
+.HP 5
+.BI ident " name"
+.br
+This system is to be known as
+.I name.
+This is usually a cute name like ERNIE (short for Ernie Co-Vax) or
+VAXWELL (for Vaxwell Smart).
+.HP 5
+.BI maxusers " number"
+.br
+The maximum expected number of simultaneously active user on this system is
+.I number.
+This number is used to size several system data structures.
+.HP 5
+.BI config " device sysname"
+.br
+Generate a system which runs with its root on
+.I device
+and call it
+.I sysname.
+There may be more than one
+.I config
+specification in a config file.
+.PP
+The second type of line in the config file describes what devices your
+system has and what they are connected to (e.g. I have a DZ-11 on UNIBUS
+Adapter 0).
+These lines have the following format.
+.br
+.I "	dev_type	dev_name	"
+.B at
+.I "con_dev more_info"
+.PP
+.I Dev_type
+is either
+.B master,
+.B tape,
+.B disk,
+.B controller
+.B device,
+or
+.B pseudo-device.
+A master is a MASSBUS tape controller.
+A controller is a disk controller, a UNIBUS tape controller,
+an mba (MASSBUS) or a uba (UNIBUS).  A device is usually something which
+connects to the uba, like a DZ-11 or a DR-11.
+Disk and tape should be self-explanatory.
+A pseudo-device is something
+which should be conditionally loaded, but is not really a device.
+Current examples are the
+bk line discipline, the pseudo-tty driver and various network
+subsystems.  If you load a subsystem
+you will probably find it convenient to enable
+conditionaly code using a
+.B options
+specification.
+.PP
+The
+.I dev_name
+is the name of the device you are specifying.  If it is not a pseudo-device,
+you must give a number afterwards (e.g. dz0, dz1, hp0).
+.PP
+.I Con_dev
+is what the device you are specifying is connected to.  If you have a disk
+on MASSBUS adapter zero then the proper
+.I con_dev
+is
+.B mba0.
+For MASSBUS and UNIBUS adapters, you must give
+.B nexus?
+as the
+.I con_dev.
+.PP
+The
+.I more_info
+field is a sequence of the following:
+.HP 5
+.BI csr " addr"
+.br
+Specifies the csr for a device.  Must be given for UNIBUS tape and disk
+controllers and all devices connected to the UNIBUS.  Make certain that
+you put a leading zero on the address so that it will be interpreted
+as an octal number.
+.HP 5
+.BI drive " number"
+.br
+For a disk or UNIBUS tape, specifies which drive this is.
+.HP 5
+.BI slave " number"
+.br
+For a MASSBUS tape, specifies which tape slave it is.
+.HP 5
+.BI flags " number"
+.br
+These flags are passed to the device driver at system initialization time.
+.HP 5
+.BI vector " addr [ addr ]"
+.br
+For devices which interrupt on the UNIBUS, specifies the interrupt
+service routine.
+.PP
+The easiest way to understand config files it to look at a working
+one and modify it to suit your system.  Here is a short sample configuration
+file for a system with an RM03, a TU45, a DZ-11 and a DH-11.
+.nf
+.ta .5i 1.6i 2.2i 4.5i
+	#
+	# Sample configuration file
+	#
+
+	cpu	VAX780
+	ident	SAMPLE
+	hz	60
+	timezone	8 dst
+	maxusers	24
+
+	config	hp	vmunix
+	config	rk	rkvmunix
+
+	controller	mba0	at nexus ?
+	controller	uba0	at nexus ?
+	disk	hp0	at mba0 drive 0
+	master	ht0	at mba1 drive 0
+	tape	tu0	at ht0 slave 0
+	pseudo-device	pty
+	pseudo-device	bk
+	controller	hk0	at uba0 csr 0177440	vector rkintr
+	disk	rk0	at hk0 drive 0
+	disk	rk1	at hk0 drive 1
+	device	dh1	at uba0 csr 0160040	vector dhrint dhxint
+	device	dz0	at uba0 csr 0160100 flags 0xc0	vector dzrint dzxint
+.fi
+.dt
+.PP
+A
+.B ?
+may be substituted for a number in two places and the system will
+figure out what to fill in for the
+.B ?
+when it boots.  You can put question marks on a
+.I con_dev
+(e.g. at mba?) or on a drive number (e.g. drive ?).
+This allows redundancy as a single system can be built
+which will reboot on different hardware configurations.
+.SH FILES
+/sys/conf/makefile	Generic makefile
+.br
+/sys/conf/files	List of files system is built from
+.SH SEE ALSO
+The SYNOPSIS portion of each device in section 4.
+.SH AUTHOR
+Michael Toy
+.SH BUGS
+The line numbers reported in error messages are usually off by one.
+.PP
+Should describe the format of the ``files'' file here; you can
+probably figure it out for yourself in the meantime.
+.PP
+No exhaustive testing of responses to all the weird input semantic errors
+possible has been done.
