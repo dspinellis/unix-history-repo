@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.10 (Berkeley) %G%
+		@(#)README	8.11 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -40,7 +40,8 @@ IF YOU DON'T HAVE A BERKELEY MAKE, don't despair!  Just run
 "m4 foo.mc > foo.cf" -- that should be all you need.
 
 To get started, you may want to look at tcpproto.mc (for TCP-only
-sites) and uucpproto.m4 (for UUCP-only sites).  Others are versions
+sites), uucpproto.mc (for UUCP-only sites), and clientproto.mc (for
+clusters of clients using a single mail host).  Others are versions
 that we use at Berkeley, although not all are in current use.  For
 example, ucbarpa has gone away, but I've left ucbarpa.mc in because
 it demonstrates some interesting techniques.
@@ -280,11 +281,14 @@ use_cw_file	Read the file /etc/sendmail.cw file to get alternate
 		"Cw<name1> <name2> ..." is probably superior.
 		The actual filename can be overridden by redefining
 		confCW_FILE.
+
 redirect	Reject all mail addressed to "address.REDIRECT" with
 		a ``551 User not local; please try <address>'' message.
 		If this is set, you can alias people who have left
 		to their new address with ".REDIRECT" appended.
+
 nouucp		Don't do anything special with UUCP addresses at all.
+
 nocanonify	Don't pass addresses to $[ ... $] for canonification.
 		This would generally only be used by sites that only
 		act as mail gateways or which have user agents that do
@@ -292,11 +296,13 @@ nocanonify	Don't pass addresses to $[ ... $] for canonification.
 		use "define(`confBIND_OPTS',`-DNSRCH -DEFNAMES')" to
 		turn off the usual resolver options that do a similar
 		thing.
+
 notsticky	By default, email sent to "user@local.host" are marked
 		as "sticky" -- that is, the local addresses aren't
 		matched against UDB and don't go through ruleset 5.
 		This features disables this treatment.  It would
 		normally be used on network gateway machines.
+
 mailertable	Include a "mailer table" which can be used to override
 		routing for particular domains.  The argument of the
 		FEATURE may be the key definition.  If none is specified,
@@ -310,6 +316,7 @@ mailertable	Include a "mailer table" which can be used to override
 		where "mailer" is the internal mailer name, and "domain"
 		is where to send the message.  These maps are not
 		reflected into the message header.
+
 domaintable	Include a "domain table" which can be used to provide
 		full domains on unqualified (single word) hosts.  The
 		argument of the FEATURE may be the key definition.  If
@@ -319,6 +326,7 @@ domaintable	Include a "domain table" which can be used to provide
 		value is the fully qualified domain.  Anything in the
 		domaintable is reflected into headers; that is, this
 		is done in ruleset 3.
+
 bitdomain	Look up bitnet hosts in a table to try to turn them into
 		internet addresses.  The table can be built using the
 		bitdomain program contributed by John Gardiner Myers.
@@ -327,15 +335,18 @@ bitdomain	Look up bitnet hosts in a table to try to turn them into
 			hash -o /etc/bitdomain.db
 		Keys are the bitnet hostname; values are the corresponding
 		internet hostname.
+
 uucpdomain	Similar feature for UUCP hosts.  The default map definition
 		is:
 			hash -o /etc/uudomain.db
 		At the moment there is no automagic tool to build this
 		database.
+
 always_add_domain
 		Include the local host domain even on locally delivered
 		mail.  Normally it is not added unless it is already
 		present.
+
 allmasquerade	If masquerading is enabled (using MASQUERADE_AS), this
 		feature will cause recipient addresses to also masquerade
 		as being from the masquerade host.  Normally they get
@@ -348,9 +359,18 @@ allmasquerade	If masquerading is enabled (using MASQUERADE_AS), this
 		feature ONLY if you can guarantee that the ENTIRE
 		namespace on your masquerade host supersets all the
 		local entries.
+
 nodns		We aren't running DNS at our site (for example,
 		we are UUCP-only connected).  It's hard to consider
 		this a "feature", but hey, it had to go somewhere.
+
+nullclient	This is a special case -- it creates a stripped down
+		configuration file containing nothing but support for
+		forwarding all mail to a central hub.  The argument
+		is the name of that hub.  No other features should be
+		used, and no mailers need be defined -- this is all
+		implicit.  The client always masquerades as the mail
+		hub.  No aliasing or forwarding is done.
 
 
 +-------+
