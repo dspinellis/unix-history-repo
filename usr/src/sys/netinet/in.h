@@ -1,4 +1,4 @@
-/*	in.h	4.19	82/12/17	*/
+/*	in.h	4.20	83/01/17	*/
 
 /*
  * Constants and structures defined by the internet system,
