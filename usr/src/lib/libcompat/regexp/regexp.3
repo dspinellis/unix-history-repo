@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)regexp.3	5.2 (Berkeley) %G%
+.\"     @(#)regexp.3	5.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt REGEXP 3
@@ -23,6 +23,9 @@
 .Ft void
 .Fn regsub "const regexp *prog" "const char *source" "char *dest"
 .Sh DESCRIPTION
+This interface is made obsolete by
+.Xr regex 3 .
+.Pp
 The
 .Fn regcomp ,
 .Fn regexec ,
