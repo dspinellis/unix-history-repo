@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ls.c	4.11 (Berkeley) %G%";
+static	char *sccsid = "@(#)ls.c	4.12 (Berkeley) %G%";
 #endif
 
 /*
@@ -270,7 +270,7 @@ gstat(fp, file, statarg, pnb)
 	char *file;
 	int statarg, *pnb;
 {
-	int (*statf)() = Lflg || Fflg ? lstat : stat;
+	int (*statf)() = Lflg || Fflg ? stat : lstat;
 	char buf[BUFSIZ]; int cc;
 	static struct afile azerofile;
 
