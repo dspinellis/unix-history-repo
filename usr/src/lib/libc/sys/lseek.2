@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lseek.2	6.1 (Berkeley) %G%
+.\"	@(#)lseek.2	6.2 (Berkeley) %G%
 .\"
 .TH LSEEK 2 ""
 .UC 4
@@ -63,8 +63,9 @@ Seeking far beyond the end of a file, then writing,
 creates a gap or \*(lqhole\*(rq, which occupies no
 physical space and reads as zeros.
 .SH "RETURN VALUE
-Upon successful completion, a non-negative integer,
-the current file pointer value, is returned.  Otherwise,
+Upon successful completion,
+the current file pointer value is returned.
+Otherwise,
 a value of \-1 is returned and \fIerrno\fP is set to indicate
 the error.
 .SH "ERRORS
