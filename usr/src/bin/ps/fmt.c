@@ -6,13 +6,20 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fmt.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fmt.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/param.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "ps.h"
+
+static char *cmdpart __P((char *));
+static char *shquote __P((char **));
 
 /*
  * XXX
@@ -57,7 +64,7 @@ fmt_argv(argv, cmd, maxlen)
 	int maxlen;
 {
 	register int len;
-	register char *ap, *cp, *arg0;
+	register char *ap, *cp;
 
 	if (argv == 0 || argv[0] == 0) {
 		if (cmd == NULL)
