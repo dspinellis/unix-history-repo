@@ -1,5 +1,5 @@
 #
-#	@(#)math.sed	5.1 (Berkeley) %G%
+#	@(#)math.sed	8.1 (Berkeley) %G%
 #
 # Addition and multiplication in sed.
 # ++ for a limited time only do (expr) too!!!
