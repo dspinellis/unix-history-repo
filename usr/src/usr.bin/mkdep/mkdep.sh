@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)mkdep.sh	5.20 (Berkeley) %G%
+#	@(#)mkdep.sh	5.21 (Berkeley) %G%
 #
 
 PATH=/bin:/usr/bin:/usr/ucb:/usr/old/bin
@@ -29,7 +29,7 @@ while :
 		# the -p flag produces "program: program.c" style dependencies
 		# so .o's don't get produced
 		-p)
-			SED='s;\.o;;'
+			SED='s;\.o ; ;'
 			shift ;;
 		*)
 			break ;;
