@@ -1,4 +1,4 @@
-/*	tty_subr.c	4.10	81/03/09	*/
+/*	tty_subr.c	4.11	81/04/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -18,7 +18,7 @@ register struct clist *p;
 	register struct cblock *bp;
 	register int c, s;
 
-	s = spl6();
+	s = spl5();
 	if (p->c_cc <= 0) {
 		c = -1;
 		p->c_cc = 0;
@@ -68,7 +68,7 @@ register char *cp;
 
 	if (cc <= 0)
 		return(0);
-	s = spl6();
+	s = spl5();
 	if (q->c_cc <= 0) {
 		q->c_cc = 0;
 		q->c_cf = q->c_cl = NULL;
@@ -121,7 +121,7 @@ register struct clist *q;
 register cc;
 int s;
 
-	s = spl6();
+	s = spl5();
 	if (q->c_cc <= 0) {
 		cc = -q->c_cc;
 		goto out;
@@ -164,7 +164,7 @@ char *end;
 int rem;
 register s;
 
-	s = spl6();
+	s = spl5();
 	if (q->c_cc < 0) {
 		printf("neg q flush\n");
 		goto out;
@@ -222,7 +222,7 @@ register struct clist *p;
 	register char *cp;
 	register s;
 
-	s = spl6();
+	s = spl5();
 	if ((cp = p->c_cl) == NULL || p->c_cc < 0 ) {
 		if ((bp = cfreelist) == NULL) {
 			splx(s);
@@ -271,7 +271,7 @@ register int cc;
 	acc = cc;
 
 
-	s = spl6();
+	s = spl5();
 	if ((cq = q->c_cl) == NULL || q->c_cc < 0) {
 		if ((bp = cfreelist) == NULL) 
 			goto out;
@@ -334,7 +334,7 @@ register struct clist *p;
 	register int c, s;
 	struct cblock *obp;
 
-	s = spl6();
+	s = spl5();
 	if (p->c_cc <= 0)
 		c = -1;
 	else {
@@ -402,7 +402,7 @@ register struct clist *p;
 {
 	register s;
 
-	s = spl6();
+	s = spl5();
 	if (cfreelist==NULL) {
 		splx(s);
 		return(-1);

@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.4	81/03/09	*/
+/*	vm_meter.c	4.5	81/04/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -81,7 +81,7 @@ sched()
 	 * amount of free memory.
 	 */
 loop:
-	(void) spl6();
+	wantin = 0;
 	deservin = 0;
 	sleeper = 0;
 	p = 0;
@@ -121,11 +121,12 @@ loop:
 		    swappable(rp)) {
 			/*
 			 * Kick out deadwood.
-			 * FOLLOWING 3 LINES MUST BE AT spl6().
 			 */
+			(void) spl6();
 			rp->p_flag &= ~SLOAD;
 			if (rp->p_stat == SRUN)
 				remrq(rp);
+			(void) spl0();
 			(void) swapout(rp, rp->p_dsize, rp->p_ssize);
 			goto loop;
 		}
@@ -136,11 +137,17 @@ loop:
 	 * No one wants in, so nothing to do.
 	 */
 	if (outpri == -20000) {
-		runout++;
-		sleep((caddr_t)&runout, PSWP);
+		(void) spl6();
+		if (wantin) {
+			wantin = 0;
+			sleep((caddr_t)&lbolt, PSWP);
+		} else {
+			runout++;
+			sleep((caddr_t)&runout, PSWP);
+		}
+		(void) spl0();
 		goto loop;
 	}
-	(void) spl0();
 	/*
 	 * Decide how deserving this guy is.  If he is deserving
 	 * we will be willing to work harder to bring him in.
@@ -171,7 +178,6 @@ hardswap:
 	 * Select the nbig largest jobs, then the oldest of these
 	 * is ``most likely to get booted.''
 	 */
-	(void) spl6();
 	inp = p;
 	sleeper = 0;
 	if (nbig > MAXNBIG)
@@ -236,9 +242,11 @@ hardswap:
 	 * we kick the poor luser out.
 	 */
 	if (sleeper || desperate && p || deservin && inpri > maxslp) {
+		(void) spl6();
 		p->p_flag &= ~SLOAD;
 		if (p->p_stat == SRUN)
 			remrq(p);
+		(void) spl0();
 		if (desperate) {
 			/*
 			 * Want to give this space to the rest of
@@ -262,6 +270,7 @@ hardswap:
 	(void) spl6();
 	runin++;
 	sleep((caddr_t)&runin, PSWP);
+	(void) spl0();
 	goto loop;
 }
 
