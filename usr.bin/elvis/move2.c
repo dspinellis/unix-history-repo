@@ -12,11 +12,19 @@
 
 #include "config.h"
 #include "vi.h"
-#include "regexp.h"
+#ifdef REGEX
+# include <regex.h>
+#else
+# include "regexp.h"
+#endif
 
 extern long	atol();
 
+#ifdef REGEX
+static regex_t	*re = NULL;	/* compiled version of the pattern to search for */
+#else
 static regexp	*re;	/* compiled version of the pattern to search for */
+#endif
 static		prevsf;	/* boolean: previous search direction was forward? */
 
 #ifndef NO_EXTENSIONS
@@ -97,6 +105,11 @@ MARK	m_fsrch(m, ptrn)
 	char	*line;	/* text of line to be searched */
 	int	wrapped;/* boolean: has our search wrapped yet? */
 	int	pos;	/* where we are in the line */
+#ifdef REGEX
+	regex_t *optpat();
+	regmatch_t rm[SE_MAX];
+	int	n;
+#endif
 #ifndef CRUNCH
 	long	delta = INFINITY;/* line offset, for things like "/foo/+1" */
 #endif
@@ -116,11 +129,17 @@ MARK	m_fsrch(m, ptrn)
 #endif
 		ptrn++;
 
+
+#ifdef REGEX
+		/* XXX where to free re? */
+		re = optpat(ptrn);
+#else
 		/* free the previous pattern */
 		if (re) _free_(re);
 
 		/* compile the pattern */
 		re = regcomp(ptrn);
+#endif
 		if (!re)
 		{
 			return MARK_UNSET;
@@ -169,7 +188,11 @@ MARK	m_fsrch(m, ptrn)
 		line = fetchline(l);
 
 		/* check this line */
+#ifdef REGEX
+		if (!regexec(re, &line[pos], SE_MAX, rm, (pos == 0) ? 0 : REG_NOTBOL))
+#else
 		if (regexec(re, &line[pos], (pos == 0)))
+#endif
 		{
 			/* match! */
 			if (wrapped && *o_warn)
@@ -187,7 +210,11 @@ MARK	m_fsrch(m, ptrn)
 				return MARK_AT_LINE(l);
 			}
 #endif
+#ifdef REGEX
+			return MARK_AT_LINE(l) + pos + rm[0].rm_so;
+#else
 			return MARK_AT_LINE(l) + (int)(re->startp[0] - line);
+#endif
 		}
 		pos = 0;
 	}
@@ -207,6 +234,11 @@ MARK	m_bsrch(m, ptrn)
 	int	pos;	/* last acceptable idx for a match on this line */
 	int	last;	/* remembered idx of the last acceptable match on this line */
 	int	try;	/* an idx at which we strat searching for another match */
+#ifdef REGEX
+	regex_t *optpat();
+	regmatch_t rm[SE_MAX];
+	int	n;
+#endif
 #ifndef CRUNCH
 	long	delta = INFINITY;/* line offset, for things like "/foo/+1" */
 #endif
@@ -226,6 +258,10 @@ MARK	m_bsrch(m, ptrn)
 #endif
 		ptrn++;
 
+#ifdef REGEX
+		/* XXX where to free re? */
+		re = optpat(ptrn);
+#else
 		/* free the previous pattern, if any */
 		if (re) _free_(re);
 
@@ -235,6 +271,7 @@ MARK	m_bsrch(m, ptrn)
 		{
 			return MARK_UNSET;
 		}
+#endif
 	}
 	else if (!re)
 	{
@@ -266,16 +303,30 @@ MARK	m_bsrch(m, ptrn)
 		line = fetchline(l);
 
 		/* check this line */
+#ifdef REGEX
+		if (!regexec(re, line, SE_MAX, rm, 0) && rm[0].rm_so < pos)
+#else
 		if (regexec(re, line, 1) && (int)(re->startp[0] - line) < pos)
+#endif
 		{
 			/* match!  now find the last acceptable one in this line */
 			do
 			{
+#ifdef REGEX
+				last = rm[0].rm_so;
+				try = rm[0].rm_eo;
+#else
 				last = (int)(re->startp[0] - line);
 				try = (int)(re->endp[0] - line);
+#endif
 			} while (try > 0
+#ifdef REGEX
+				 && !regexec(re, &line[try], SE_MAX, rm, REG_NOTBOL)
+				 && try + rm[0].rm_so < pos);
+#else
 				 && regexec(re, &line[try], FALSE)
 				 && (int)(re->startp[0] - line) < pos);
+#endif
 
 			if (wrapped && *o_warn)
 				msg("(wrapped)");

@@ -7,14 +7,26 @@
 #include "config.h"
 #include "ctype.h"
 #include "vi.h"
-#include "regexp.h"
+#ifdef REGEX
+# include <regex.h>
+#else
+# include "regexp.h"
+#endif
 
 
 /* perform substitutions after a regexp match */
+#ifdef REGEX
+void regsub(rm, startp, endp, src, dst)
+	regmatch_t	*rm;	/* the regexp with pointers into matched text */
+	char		*startp, *endp;
+	REG char	*src;	/* the replacement string */
+	REG char	*dst;	/* where to put the result of the subst */
+#else
 void regsub(re, src, dst)
 	regexp		*re;	/* the regexp with pointers into matched text */
 	REG char	*src;	/* the replacement string */
 	REG char	*dst;	/* where to put the result of the subst */
+#endif
 {
 	REG char	*cpy;	/* pointer to start of text to copy */
 	REG char	*end;	/* pointer to end of text to copy */
@@ -38,7 +50,8 @@ void regsub(re, src, dst)
 		{
 			if (!prev)
 			{
-				regerror("No prev text to substitute for ~");
+				regerr("No prev text to substitute for ~");
+
 				return;
 			}
 			len += strlen(prev) - 1;
@@ -60,7 +73,7 @@ void regsub(re, src, dst)
 	start = cpy = (char *)malloc((unsigned)(len + 1));
 	if (!cpy)
 	{
-		regerror("Not enough memory for ~ expansion");
+		regerr("Not enough memory for ~ expansion");
 		return;
 	}
 
@@ -111,8 +124,13 @@ void regsub(re, src, dst)
 		/* recognize any meta characters */
 		if (c == '&' && *o_magic)
 		{
+#ifdef REGEX
+			cpy = startp;
+			end = endp;
+#else
 			cpy = re->startp[0];
 			end = re->endp[0];
+#endif
 		}
 		else
 #endif /* not NO_MAGIC */
@@ -134,8 +152,13 @@ void regsub(re, src, dst)
 			  case '9':
 				/* \0 thru \9 mean "copy subexpression" */
 				c -= '0';
+#ifdef REGEX
+				cpy = startp + (rm[c].rm_so - rm[0].rm_so);
+				end = endp + (rm[c].rm_eo - rm[0].rm_eo);
+#else
 				cpy = re->startp[c];
 				end = re->endp[c];
+#endif
 				break;
 # ifndef CRUNCH
 			  case 'U':
@@ -159,15 +182,25 @@ void regsub(re, src, dst)
 					*dst++ = c;
 					continue;
 				}
+#ifdef REGEX
+				cpy = startp;
+				end = endp;
+#else
 				cpy = re->startp[0];
 				end = re->endp[0];
+#endif
 				break;
 
 #else /* NO_MAGIC */
 			  case '&':
 				/* "\&" means "original text" */
+#ifdef REGEX
+				cpy = startp;
+				end = endp;
+#else
 				cpy = re->startp[0];
 				end = re->endp[0];
+#endif
 				break;
 #endif /* NO_MAGIC */
 			  default:

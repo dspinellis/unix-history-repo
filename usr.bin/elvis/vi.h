@@ -66,6 +66,9 @@
 /*------------------------------------------------------------------------*/
 /* Miscellaneous constants.						  */
 
+#ifdef REGEX
+# define SE_MAX		30		/* max number of subexpressions */
+#endif
 #define INFINITY	2000000001L	/* a very large integer */
 #define LONGKEY		10		/* longest possible raw :map key */
 #ifndef MAXRCLEN

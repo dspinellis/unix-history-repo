@@ -13,7 +13,11 @@
 #include "config.h"
 #include "ctype.h"
 #include "vi.h"
-#include "regexp.h"
+#ifdef REGEX
+# include <regex.h>
+#else
+# include "regexp.h"
+#endif
 #if TOS
 # include <stat.h>
 #else
@@ -28,6 +32,9 @@
 # endif
 #endif
 
+#ifdef REGEX
+int patlock = 0;	 /* lock substitute pattern */
+#endif
 
 /*ARGSUSED*/
 void cmd_substitute(frommark, tomark, cmd, bang, extra)
@@ -38,8 +45,19 @@ void cmd_substitute(frommark, tomark, cmd, bang, extra)
 	char	*extra;	/* rest of the command line */
 {
 	char	*line;	/* a line from the file */
+#ifdef REGEX
+	static regex_t *ore = NULL;	/* old regex */
+	regex_t *optpat();
+	regex_t *re = NULL;
+	regmatch_t rm[SE_MAX];
+	char *startp, *endp;
+	int n;
+#else
 	regexp	*re;	/* the compiled search expression */
+#endif
+	char	*eol;
 	char	*subst;	/* the substitution string */
+	static char *osubst;
 	char	*opt;	/* substitution options */
 	long	l;	/* a line number */
 	char	*s, *d;	/* used during subtitutions */
@@ -57,7 +75,7 @@ void cmd_substitute(frommark, tomark, cmd, bang, extra)
 	/* for now, assume this will fail */
 	rptlines = -1L;
 
-	if (cmd == CMD_SUBAGAIN)
+	if (cmd == CMD_SUBAGAIN || !*extra)
 	{
 #ifndef NO_MAGIC
 		if (*o_magic)
@@ -65,7 +83,15 @@ void cmd_substitute(frommark, tomark, cmd, bang, extra)
 		else
 #endif
 		subst = "\\~";
+#ifdef REGEX
+		/* get the previous substitute pattern; not necessarily
+		 * the previous pattern.
+		 */
+		if ((re = ore) == NULL)
+			msg("RE error: no previous pattern");
+#else
 		re = regcomp("");
+#endif
 
 		/* if visual "&", then turn off the "p" and "c" options */
 		if (bang)
@@ -84,7 +110,19 @@ void cmd_substitute(frommark, tomark, cmd, bang, extra)
 
 		/* parse & compile the search pattern */
 		subst = parseptrn(extra);
+#ifdef REGEX
+		if (re = optpat(extra + 1))
+			patlock = 1;
+		else
+			return;
+		if (re != ore && ore) {
+			regfree(ore);
+			free(ore);
+		}
+		ore = re;
+#else
 		re = regcomp(extra + 1);
+#endif
 	}
 
 	/* abort if RE error -- error message already given by regcomp() */
@@ -146,9 +184,14 @@ void cmd_substitute(frommark, tomark, cmd, bang, extra)
 		{
 			/* fetch the line */
 			line = fetchline(l);
+			eol = line + strlen(line);
 
 			/* if it contains the search pattern... */
+#ifdef REGEX
+			if (!regexec(re, line, SE_MAX, rm, 0))
+#else
 			if (regexec(re, line, TRUE))
+#endif
 			{
 				/* increment the line change counter */
 				chline++;
@@ -160,14 +203,26 @@ void cmd_substitute(frommark, tomark, cmd, bang, extra)
 				/* do once or globally ... */
 				do
 				{
+#ifdef REGEX
+					startp = s + rm[0].rm_so;
+					endp = s + rm[0].rm_eo;
+#endif
 #ifndef CRUNCH
 					/* confirm, if necessary */
 					if (optc)
 					{
+#ifdef REGEX
+						for (conf = line; conf < startp; conf++)
+#else
 						for (conf = line; conf < re->startp[0]; conf++)
+#endif
 							addch(*conf);
 						standout();
+#ifdef REGEX
+						for ( ; conf < endp; conf++)
+#else
 						for ( ; conf < re->endp[0]; conf++)
+#endif
 							addch(*conf);
 						standend();
 						for (; *conf; conf++)
@@ -177,7 +232,11 @@ void cmd_substitute(frommark, tomark, cmd, bang, extra)
 						if (getkey(0) != 'y')
 						{
 							/* copy accross the original chars */
+#ifdef REGEX
+							while (s <  endp)
+#else
 							while (s < re->endp[0])
+#endif
 								*d++ = *s++;
 
 							/* skip to next match on this line, if any */
@@ -190,17 +249,31 @@ void cmd_substitute(frommark, tomark, cmd, bang, extra)
 					chsub++;
 
 					/* copy stuff from before the match */
+#ifdef REGEX
+					while (s < startp)
+#else
 					while (s < re->startp[0])
+#endif
 					{
 						*d++ = *s++;
 					}
 
 					/* substitute for the matched part */
+#ifdef REGEX
+					regsub(rm, startp, endp, subst, d);
+#else
 					regsub(re, subst, d);
+#endif
+#ifdef REGEX
+					s = endp;
+#else
 					s = re->endp[0];
+#endif
 					d += strlen(d);
 
 Continue:
+;
+#ifndef REGEX
 					/* if this regexp could conceivably match
 					 * a zero-length string, then require at
 					 * least 1 unmatched character between
@@ -212,8 +285,18 @@ Continue:
 							break;
 						*d++ = *s++;
 					}
+#endif
 
-				} while (optg && regexec(re, s, FALSE));
+				} 
+#ifdef REGEX
+				while (*s && optg && rm[0].rm_eo && !regexec(re, s, SE_MAX, rm, REG_NOTBOL));
+				if (eol - s > 0 && !rm[0].rm_eo && optg) {
+					msg("RE error: line too long");
+					return;
+				}
+#else
+				while (optg && regexec(re, s, FALSE));
+#endif
 
 				/* copy stuff from after the match */
 				while (*d++ = *s++)	/* yes, ASSIGNMENT! */
@@ -253,7 +336,9 @@ Continue:
 	}
 
 	/* free the regexp */
+#ifndef REGEX
 	_free_(re);
+#endif
 
 	/* if done from within a ":g" command, then finish silently */
 	if (doingglobal)

@@ -15,7 +15,11 @@
 #include "config.h"
 #include "ctype.h"
 #include "vi.h"
-#include "regexp.h"
+#ifdef REGEX
+# include <regex.h>
+#else
+# include "regexp.h"
+#endif	/* REGEX */
 
 #ifndef NO_TAGSTACK
 /* These describe the current state of the tag related commands		  */
@@ -355,7 +359,11 @@ void cmd_global(frommark, tomark, cmd, bang, extra)
 	long	l;		/* used as a counter to move through lines */
 	long	lqty;		/* quantity of lines to be scanned */
 	long	nchanged;	/* number of lines changed */
+#ifdef REGEX
+	regex_t *re, *optpat();
+#else
 	regexp	*re;		/* the compiled search expression */
+#endif
 
 	/* can't nest global commands */
 	if (doingglobal)
@@ -385,13 +393,16 @@ void cmd_global(frommark, tomark, cmd, bang, extra)
 		msg("Can't use empty regular expression with '%c' command", cmd == CMD_GLOBAL ? 'g' : 'v');
 		return;
 	}
+#ifdef REGEX
+	re = optpat(extra + 1);
+#else
 	re = regcomp(extra + 1);
+#endif
 	if (!re)
 	{
 		/* regcomp found & described an error */
 		return;
 	}
-
 	/* for each line in the range */
 	doingglobal = TRUE;
 	ChangeText
@@ -412,7 +423,11 @@ void cmd_global(frommark, tomark, cmd, bang, extra)
 			line = fetchline(nlines - l);
 
 			/* if it contains the search pattern... */
+#ifdef REGEX
+			if ((!regexec(re, line, 0, NULL, 0)) == (cmd == CMD_GLOBAL))
+#else
 			if ((!regexec(re, line, 1)) == (cmd != CMD_GLOBAL))
+#endif
 			{
 				/* move the cursor to that line */
 				cursor = MARK_AT_LINE(nlines - l);
@@ -429,8 +444,10 @@ void cmd_global(frommark, tomark, cmd, bang, extra)
 	}
 	doingglobal = FALSE;
 
+#ifndef REGEX
 	/* free the regexp */
 	_free_(re);
+#endif
 
 	/* Reporting...*/
 	rptlines = nchanged;
