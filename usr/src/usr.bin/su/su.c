@@ -1,10 +1,11 @@
 #ifndef lint
-static char *sccsid = "@(#)su.c	4.9 (Berkeley) %G%";
+static char *sccsid = "@(#)su.c	4.10 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
 #include <pwd.h>
 #include <grp.h>
+#include <syslog.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -94,12 +95,9 @@ again:
 ok:
 	endpwent();
 	if (pwd->pw_uid == 0) {
-		FILE *console = fopen("/dev/console", "w");
-		if (console != NULL) {
-			fprintf(console, "SU: %s %s\r\n",
-				getlogin(), ttyname(2));
-			fclose(console);
-		}
+		openlog("su", 0, 0);
+		syslog(LOG_SECURITY, "%s on %s", getlogin(), ttyname(2));
+		closelog();
 	}
 	if (setgid(pwd->pw_gid) < 0) {
 		perror("su: setgid");
