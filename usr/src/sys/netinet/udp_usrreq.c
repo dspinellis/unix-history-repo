@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)udp_usrreq.c	7.1 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -43,6 +43,7 @@ int	udpcksum = 1;
 #else
 int	udpcksum = 0;		/* XXX */
 #endif
+int	udp_ttl = UDP_TTL;
 
 struct	sockaddr_in udp_in = { AF_INET };
 
@@ -230,7 +231,7 @@ udp_output(inp, m0)
 		ui->ui_sum = -1;
 	}
 	((struct ip *)ui)->ip_len = sizeof (struct udpiphdr) + len;
-	((struct ip *)ui)->ip_ttl = UDP_TTL;
+	((struct ip *)ui)->ip_ttl = udp_ttl;
 	return (ip_output(m, inp->inp_options, &inp->inp_route,
 	    inp->inp_socket->so_options & (SO_DONTROUTE | SO_BROADCAST)));
 }
