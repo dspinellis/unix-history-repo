@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -375,7 +375,7 @@ dovmstat(interval, reps)
 		if (!--hdrcnt)
 			printhdr();
 		kread(X_CPTIME, cur.time, sizeof(cur.time));
-		kread(X_DKXFER, cur.xfer, sizeof(*cur.xfer * dk_ndrive));
+		kread(X_DKXFER, cur.xfer, sizeof(*cur.xfer) * dk_ndrive);
 		kread(X_SUM, &sum, sizeof(sum));
 		size = sizeof(total);
 		if (getkerninfo(KINFO_METER, &total, &size, 0) < 0) {
