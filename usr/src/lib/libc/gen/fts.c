@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.31 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -800,12 +800,12 @@ fts_alloc(sp, name, len)
 	 * if the user doesn't need it, and the name is variable length.
 	 * Allocate enough extra space after the structure to store them.
 	 */
-	needstat = ISSET(FTS_NOSTAT) ? 0 : sizeof(struct stat);
+	needstat = ISSET(FTS_NOSTAT) ? 0 : ALIGN(sizeof(struct stat));
 	if ((p = malloc((size_t)(sizeof(FTSENT) + len + 1 + needstat))) == NULL)
 		return (NULL);
 	bcopy(name, p->fts_name, len + 1);
 	if (needstat)
-		p->fts_statp = (struct stat *)(p->fts_name + len + 1);
+		p->fts_statp = (struct stat *)ALIGN(p->fts_name + len + 1);
 	p->fts_namelen = len;
 	p->fts_path = sp->fts_path;
 	p->fts_errno = 0;
