@@ -1,4 +1,4 @@
-/* tcp_subr.c 4.3 81/11/26 */
+/* tcp_subr.c 4.4 81/11/29 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -19,7 +19,7 @@
 #include "../net/tcp_timer.h"
 #include "../net/tcp_var.h"
 #include "../net/tcpip.h"
-#include "/usr/include/errno.h"
+#include "../errno.h"
 
 /*
  * Tcp initialization
@@ -103,7 +103,7 @@ COUNT(TCP_RESPOND);
 	ti->ti_sum = in_cksum(m, sizeof(struct tcpiphdr));
 	((struct ip *)ti)->ip_len = sizeof(struct tcpiphdr);
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
-	ip_output(m, (struct mbuf *)0);
+	(void) ip_output(m, (struct mbuf *)0);
 }
 
 /*
@@ -178,18 +178,8 @@ COUNT(TCP_CLOSE);
 	socantsendmore(so);
 }
 
-/*ARGSUSED*/
-tcp_sense(m)
-	struct mbuf *m;
-{
-
-COUNT(TCP_SENSE);
-	return (EOPNOTSUPP);
-}
-
 tcp_drain()
 {
-	register struct inpcb *ip;
 
 COUNT(TCP_DRAIN);
 }

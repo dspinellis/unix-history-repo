@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.3 81/11/26 */
+/* tcp_timer.c 4.4 81/11/29 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -18,7 +18,7 @@
 #include "../net/tcp_timer.h"
 #include "../net/tcp_var.h"
 #include "../net/tcpip.h"
-#include "/usr/include/errno.h"
+#include "../errno.h"
 
 /*
  * Fast timeout routine for processing delayed acks
@@ -39,7 +39,6 @@ tcp_slowtimo()
 	register struct inpcb *ip;
 	register struct tcpcb *tp;
 	int s = splnet();
-	register short *tmp;
 	register int i;
 COUNT(TCP_SLOWTIMO);
 
@@ -53,7 +52,6 @@ COUNT(TCP_SLOWTIMO);
 				(void) tcp_usrreq(tp->t_inpcb->inp_socket,
 				    PRU_SLOWTIMO, (struct mbuf *)0,
 				    (caddr_t)i);
-			tmp++;
 		}
 	}
 	tcp_iss += TCP_ISSINCR/PR_SLOWHZ;		/* increment iss */

@@ -1,4 +1,4 @@
-/*	if.c	4.3	81/11/26	*/
+/*	if.c	4.4	81/11/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -36,6 +36,7 @@ COUNT(IF_IFONNETOF);
 	return (ifp);
 }
 
+/*ARGSUSED*/
 struct ifnet *
 if_gatewayfor(addr)
 	struct in_addr addr;
@@ -43,4 +44,20 @@ if_gatewayfor(addr)
 
 COUNT(IF_GATEWAYFOR);
 	return (0);
+}
+
+struct in_addr
+if_makeaddr(net, host)
+	int net, host;
+{
+	u_long addr;
+
+	if (net < 128)
+		addr = (host << 8) | net;
+	else if (net < 65536)
+		addr = (host << 16) | net;
+	else
+		addr = (host << 24) | net;
+	addr = htonl(addr);
+	return (*(struct in_addr *)&addr);
 }

@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.36 81/11/26 */
+/* tcp_usrreq.c 1.37 81/11/29 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -18,7 +18,7 @@
 #include "../net/tcp_timer.h"
 #include "../net/tcp_var.h"
 #include "../net/tcpip.h"
-#include "/usr/include/errno.h"
+#include "../errno.h"
 
 struct	tcpcb *tcp_newtcpcb();
 /*
@@ -36,7 +36,6 @@ tcp_usrreq(so, req, m, addr)
 	register struct tcpcb *tp;
 	int s = splnet();
 	int error = 0;
-	struct tcpiphdr ti;
 COUNT(TCP_USRREQ);
 
 	/*
@@ -93,7 +92,7 @@ COUNT(TCP_USRREQ);
 		inp->inp_ppcb = (caddr_t)tp;
 		soisconnecting(so);
 		tp->t_state = TCPS_SYN_SENT;
-		tcp_output(tp);
+		(void) tcp_output(tp);
 		break;
 
 	case PRU_ACCEPT:
@@ -105,7 +104,7 @@ COUNT(TCP_USRREQ);
 			tcp_close(tp);
 		else {
 			soisdisconnecting(so);
-			tcp_output(tp);
+			(void) tcp_output(tp);
 		}
 		break;
 
@@ -121,18 +120,18 @@ COUNT(TCP_USRREQ);
 		case TCPS_SYN_RECEIVED:
 		case TCPS_ESTABLISHED:
 			tp->t_state = TCPS_FIN_WAIT_1;
-			tcp_output(tp);
+			(void) tcp_output(tp);
 			break;
 
 		case TCPS_CLOSE_WAIT:
 			tp->t_state = TCPS_LAST_ACK;
-			tcp_output(tp);
+			(void) tcp_output(tp);
 			break;
 		}
 		break;
 
 	case PRU_RCVD:
-		tcp_output(tp);
+		(void) tcp_output(tp);
 		break;
 
 	case PRU_SEND:
@@ -143,7 +142,7 @@ COUNT(TCP_USRREQ);
  */
 		if (tp->t_flags & TF_URG)
 			tp->snd_up = tp->snd_una + so->so_snd.sb_cc + 1;
-		tcp_output(tp);
+		(void) tcp_output(tp);
 		break;
 
 	case PRU_ABORT:
@@ -151,6 +150,18 @@ COUNT(TCP_USRREQ);
 		break;
 
 	case PRU_CONTROL:
+		error = EOPNOTSUPP;
+		break;
+
+	case PRU_SENSE:
+		error = EOPNOTSUPP;
+		break;
+
+	case PRU_RCVOOB:
+		error = EOPNOTSUPP;
+		break;
+
+	case PRU_SENDOOB:
 		error = EOPNOTSUPP;
 		break;
 

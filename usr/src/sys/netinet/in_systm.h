@@ -1,4 +1,4 @@
-/* in_systm.h 4.6 81/11/26 */
+/* in_systm.h 4.7 81/11/29 */
 
 /*
  * Miscellaneous internetwork
@@ -32,6 +32,7 @@ typedef	u_long	n_time;			/* ms since 00:00 GMT, byte rev */
  */
 #define	splimp		spl5
 #define	setipintr()	mtpr(SIRR, 12)
+#define	setrawintr()	mtpr(SIRR, 13)
 /* splnet is defined in ../sys/asm.sed */
 
 #ifdef	KERNEL
