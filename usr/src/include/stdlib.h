@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	8.2 (Berkeley) %G%
+ *	@(#)stdlib.h	8.3 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
@@ -132,6 +132,7 @@ int	 radixsort __P((const unsigned char **, int, const unsigned char *,
 int	 sradixsort __P((const unsigned char **, int, const unsigned char *,
 	    unsigned));
 long	 random __P((void));
+char	*realpath __P((const char *, char resolved_path[]));
 char	*setstate __P((char *));
 void	 srandom __P((unsigned));
 char	*user_from_uid __P((unsigned long, int));
