@@ -1,4 +1,4 @@
-/* @(#)display.c	1.2	%G%
+/* @(#)display.c	1.3	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -54,6 +54,7 @@ int layer;
                case CURVE:  (void) GRCurve(element->ptlist, element->brushf);
                             break;
 
+             case POLYGON:
               case VECTOR:  p1 = element->ptlist;
                             p2 = PTNextPoint(p1);
                             while ( !Nullpoint(p2) )
@@ -105,6 +106,7 @@ int layer;
               case CURVE:  (void) GRCurve(element->ptlist, eraseany);
                            break;
 
+            case POLYGON:
              case VECTOR:  p1 = element->ptlist;
                            p2 = PTNextPoint(p1);
                            while ( !Nullpoint(p2) )

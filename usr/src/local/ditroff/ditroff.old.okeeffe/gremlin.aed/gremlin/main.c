@@ -1,4 +1,4 @@
-/* @(#)main.c	1.5	%G%
+/* @(#)main.c	1.6	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -13,7 +13,7 @@
 #include <sgtty.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <time.h>
+#include <sys/time.h>
 
 /* imports from config.c */
 
@@ -78,7 +78,7 @@ extern char *malloc(), *sprintf(), *strcat(), *strcpy();
 
 /* Version number */
 
-char SccsId [] = "@(#)main.c	1.5	(Berkeley)	%G%";
+char SccsId [] = "@(#)main.c	1.6	(Berkeley)	%G%";
 
 #ifdef SIGTINT
 static int lintrup = LINTRUP;    /* Constant for local mode bit */
@@ -185,12 +185,14 @@ char *argv[];
     }
 
     PSetPath(path);
-    map = fopen(GMapFile, "r");
-    for (i=0; i<768; ++i)    /* read in color map */
-    {
-        (void) fscanf(map,"%o",&j);
-        colours[i] = j&0377;
-    };
+    if ((map = fopen(GMapFile, "r")) == NULL) {
+	error ("can't open color map");
+    } else
+	for (i=0; i<768; ++i)    /* read in color map */
+	{
+	    (void) fscanf(map,"%o",&j);
+	    colours[i] = j&0377;
+	}
 
     /* Open the display, and call all of the initialization routines.
      * Initialize all of the globals defined in this file.
