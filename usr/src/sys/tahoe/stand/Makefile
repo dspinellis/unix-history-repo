@@ -1,4 +1,4 @@
-#	Makefile	7.6	87/02/23
+#	Makefile	7.7	87/11/03
 #
 DESTDIR=
 LIBS=	libsa.a ${DESTDIR}/lib/libc.a
@@ -8,12 +8,12 @@ BOOTRELOC=e0000
 COPTS=	-O -I. -I../h
 CFLAGS=	-DSTANDALONE -DTAHOE -DRELOC=0x${RELOC} ${COPTS}
 SRCS=	sys.c conf.c prf.c machdep.c 
-DRIVERS=udc.o cy.o vd.o
+DRIVERS=udc.o cy.o vd.o hdc.o
 LDT1MBSYSOPT=-T ${MTBOOTRELOC} -x
 LDTSYSOPT=-T ${BOOTRELOC} -x
 LDTOPT=	-T ${RELOC} -e _entry -x
 CFILES=	boot.c cat.c conf.c ls.c prf.c srt0.c sys.c ls.c \
-	fastcopy.c devcopy.c copy.c cat.c  vd.c cy.c
+	fastcopy.c devcopy.c copy.c cat.c vd.c cy.c hdc.c
 SUBDIR=	vdformat
 ALL=	boot cat copy ls devcopy fastcopy
 
@@ -102,50 +102,57 @@ print:
 	@ls -l | pr -f
 	@pr -f *.h *.c *.lst
 
-depend:
-	${CC} -M ${COPTS} ${CFILES} | \
-	sed -e ':loop' \
-	    -e 's/\.\.\/[^ /]*\/\.\./../' \
-	    -e 't loop' | \
-	awk ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
-		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
-		       else rec = rec " " $$2 } } \
-	      END { print rec } ' > makedep
-	echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	cp Makefile Makefile.bak
-	ex - Makefile < eddep
-	rm eddep makedep
+tags: FRC
+	ctags ${CFILES}
 
-# DO NOT DELETE THIS LINE -- make depend uses it
+depend: FRC
+	mkdep ${COPTS} ${CFILES}
 
-boot.o: boot.c ./../machine/mtpr.h ../h/param.h
-boot.o: /usr/include/machine/machparam.h ../h/signal.h /usr/include/sys/types.h
-boot.o: ../h/inode.h ../h/fs.h ../h/vm.h /usr/include/sys/vmparam.h
-boot.o: /usr/include/machine/vmparam.h /usr/include/sys/vmmac.h
-boot.o: /usr/include/sys/vmmeter.h /usr/include/sys/vmsystm.h ./saio.h
-boot.o: ../h/reboot.h /usr/include/a.out.h /usr/include/sys/exec.h
+FRC:
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+boot.o: boot.c ../machine/mtpr.h ../h/param.h /usr/include/sys/types.h
+boot.o: ../h/signal.h /usr/include/machine/trap.h
+boot.o: /usr/include/machine/machparam.h ../h/inode.h ../h/fs.h ../h/vm.h
+boot.o: /usr/include/sys/vmparam.h /usr/include/machine/vmparam.h
+boot.o: /usr/include/sys/vmmac.h /usr/include/sys/vmmeter.h
+boot.o: /usr/include/sys/vmsystm.h saio.h ../h/reboot.h /usr/include/a.out.h
+boot.o: /usr/include/sys/exec.h
 cat.o: cat.c
-conf.o: conf.c ./../machine/pte.h ../h/param.h /usr/include/machine/machparam.h
-conf.o: ../h/signal.h /usr/include/sys/types.h ../h/inode.h ../h/fs.h ./saio.h
-ls.o: ls.c ../h/param.h /usr/include/machine/machparam.h ../h/signal.h
-ls.o: /usr/include/sys/types.h ../h/inode.h ../h/dir.h ../h/fs.h ./saio.h
-prf.o: prf.c ./../machine/mtpr.h ../h/param.h /usr/include/machine/machparam.h
-prf.o: ../h/signal.h /usr/include/sys/types.h ./../tahoe/cp.h
-srt0.o: srt0.c ./../machine/mtpr.h
-sys.o: sys.c ./../machine/mtpr.h ../h/param.h /usr/include/machine/machparam.h
-sys.o: ../h/signal.h /usr/include/sys/types.h ../h/inode.h ../h/fs.h ../h/dir.h
-sys.o: ./saio.h
-ls.o: ls.c ../h/param.h /usr/include/machine/machparam.h ../h/signal.h
-ls.o: /usr/include/sys/types.h ../h/inode.h ../h/dir.h ../h/fs.h ./saio.h
+conf.o: conf.c ../machine/pte.h ../h/param.h /usr/include/sys/types.h
+conf.o: ../h/signal.h /usr/include/machine/trap.h
+conf.o: /usr/include/machine/machparam.h ../h/inode.h ../h/fs.h saio.h
+ls.o: ls.c ../h/param.h /usr/include/sys/types.h ../h/signal.h
+ls.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h ../h/inode.h
+ls.o: ../h/dir.h ../h/fs.h saio.h
+prf.o: prf.c ../machine/mtpr.h ../h/param.h /usr/include/sys/types.h
+prf.o: ../h/signal.h /usr/include/machine/trap.h
+prf.o: /usr/include/machine/machparam.h ../tahoe/cp.h
+srt0.o: srt0.c ../machine/mtpr.h
+sys.o: sys.c ../h/param.h /usr/include/sys/types.h ../h/signal.h
+sys.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
+sys.o: ../h/inode.h ../h/fs.h ../h/dir.h ../h/reboot.h saio.h ../machine/mtpr.h
+ls.o: ls.c ../h/param.h /usr/include/sys/types.h ../h/signal.h
+ls.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h ../h/inode.h
+ls.o: ../h/dir.h ../h/fs.h saio.h
 fastcopy.o: fastcopy.c
 devcopy.o: devcopy.c
+copy.o: copy.c
 cat.o: cat.c
-vd.o: vd.c ./../machine/mtpr.h ../h/param.h
-vd.o: /usr/include/machine/machparam.h ../h/signal.h /usr/include/sys/types.h
-vd.o: ../h/inode.h ../h/fs.h ./../tahoevba/vdreg.h ./../tahoevba/vbaparam.h
-vd.o: ./saio.h
-cy.o: cy.c ./../machine/pte.h ./../machine/mtpr.h ../h/param.h
-cy.o: /usr/include/machine/machparam.h ../h/signal.h /usr/include/sys/types.h
-cy.o: ../h/inode.h ../h/fs.h ./saio.h ./cyvar.h ./../tahoevba/vbaparam.h
+vd.o: vd.c ../machine/mtpr.h ../h/param.h /usr/include/sys/types.h
+vd.o: ../h/signal.h /usr/include/machine/trap.h
+vd.o: /usr/include/machine/machparam.h ../h/inode.h ../h/fs.h ../h/buf.h
+vd.o: ../h/disklabel.h saio.h ../tahoevba/vdreg.h ../tahoevba/vbaparam.h
+cy.o: cy.c ../machine/pte.h ../machine/mtpr.h ../h/param.h
+cy.o: /usr/include/sys/types.h ../h/signal.h /usr/include/machine/trap.h
+cy.o: /usr/include/machine/machparam.h ../h/inode.h ../h/fs.h saio.h
+cy.o: ../tahoevba/cyreg.h ../tahoevba/vbaparam.h
+hdc.o: hdc.c /usr/include/machine/mtpr.h ../h/param.h ../h/types.h
+hdc.o: ../h/signal.h /usr/include/machine/trap.h ../h/../machine/machparam.h
+hdc.o: ../h/inode.h ../h/fs.h ../h/buf.h ../h/ioctl.h ../h/ttychars.h
+hdc.o: ../h/ttydev.h ../h/disklabel.h saio.h ../tahoevba/dsk.h
+hdc.o: ../tahoevba/dskio.h ../tahoevba/hdc.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
