@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	8.5 (Berkeley) %G%
+ *	@(#)vm_glue.c	8.6 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -44,6 +44,8 @@
 #include <vm/vm.h>
 #include <vm/vm_page.h>
 #include <vm/vm_kern.h>
+
+#include <machine/cpu.h>
 
 int	avefree = 0;		/* XXX */
 unsigned maxdmap = MAXDSIZ;	/* XXX */
