@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -198,7 +198,7 @@ main(argc, argv)
 		read(mf, &phz, sizeof phz);
 	}
 	HZ = phz ? phz : hz;
-	if (nl[DK_NDRIVE].n_value == 0) {
+	if (nl[X_DK_NDRIVE].n_value == 0) {
 		fprintf(stderr, "dk_ndrive undefined in system\n");
 		exit(1);
 	}
