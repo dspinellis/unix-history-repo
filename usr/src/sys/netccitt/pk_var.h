@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_var.h	7.2 (Berkeley) %G%
+ *	@(#)pk_var.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -40,6 +40,7 @@ struct pklcd {
         bool	lcd_intrconf_pending;	/* Interrupt confirmation pending */
 	octet	lcd_intrdata;		/* Octet of incoming intr data */
 	short   lcd_timer;		/* Various timer values */
+	short   lcd_dg_timer;		/* to reclaim idle datagram circuits */
 	char	lcd_retry;		/* Timer retry count */
 	char	lcd_rsn;		/* Seq no of last received packet */
 	char	lcd_ssn;		/* Seq no of next packet to send */
@@ -62,10 +63,27 @@ struct pklcd {
 	long    lcd_rxcnt;		/* Data packet receive count */
 	short   lcd_intrcnt;		/* Interrupt packet transmit count */
 	struct	pklcd *lcd_listen;	/* Next lcd on listen queue */
-	struct	ifaddr *lcd_ifa;	/* network this lcd is attached to */
+	struct	pkcb *lcd_pkp;		/* network this lcd is attached to */
 };
 
+#define X25_DG_CIRCUIT	0x10		/* lcd_flag: used for datagrams */
+#define X25_DG_ROUTING	0x20		/* lcd_flag: peer addr not yet known */
 
+/*
+ * Per network information, allocated dynamically
+ * when a new network is configured.
+ */
+
+struct	pkcb {
+	struct	pkcb *pk_next;
+	struct	x25_ifaddr *pk_ia;	/* backpointer to ifaddr */
+	short	pk_state;		/* packet level status */
+	int	(*pk_output) ();	/* link level output procedure */
+	struct	x25config *pk_xcp;	/* network specific configuration */
+	struct	x25config pk_xc;	/* network specific configuration */
+	struct	pklcd **pk_chan;	/* actual size == xc_maxlcn+1 */
+#define	pk_maxlcn pk_xc.xc_maxlcn	/* local copy of xc_maxlcn */
+};
 /*
  *	Interface address, x25 version. Exactly one of these structures is 
  *	allocated for each interface with an x25 address.
@@ -77,28 +95,40 @@ struct x25_ifaddr {
 	struct	ifaddr ia_ifa;		/* protocol-independent info */
 #define ia_ifp		ia_ifa.ifa_ifp
 #define	ia_flags	ia_ifa.ifa_flags
-	struct	x25_ifaddr *ia_next;	/* next in list of x25 addresses */
-	struct	sockaddr_x25 ia_addr;	/* reserve space for interface name */
+	struct	pkcb	ia_pkcb;	/* per network information */
+#define ia_maxlcn	ia_pkcb.pk_maxlcn
+#define ia_chan		ia_pkcb.pk_chan
+#define	ia_addr		ia_pkcb.pk_xc.xc_addr
 	struct	sockaddr_x25 ia_sockmask; /* reserve space for netmask */
-	struct	x25config *ia_xcp;	/* network specific configuration */
-	struct	x25config *ia_xc;	/* network specific configuration */
-	short	ia_state;		/* packet level status */
-#define ia_maxlcn ia->ia_xc.xc_maxlcn	/* local copy of xc_maxlcn */
-	struct	pklcd **ia_chan;	/* dispatch vector for ciruits */
 };
 
 /*
  * ``Link-Level'' extension to Routing Entry for upper level
  * packet switching via X.25 virtual circuits.
  */
-struct rtext_x25 {
-	struct	pklcd *rtx_lcd;
-	int	rtx_state;
-	struct	rtentry *rtx_rt;
+struct rtextension_x25 {
+	struct	pklcd *rtx_lcd;		/* local connection block */
+	struct	rtentry *rtx_rt;	/* back pointer to route */
+	struct	x25_ifaddr *rtx_ia;	/* may not be same as rt_ifa */
+	int	rtx_state;		/* can't trust lcd->lcd_state */
+	int	rtx_flags;
+	int	rtx_timer;		/* for idle timeout */
 };
 
+/* States for rtx_state */
+#define XRS_NEWBORN		0
+#define XRS_RESOLVING		1
+#define XRS_FREE		2
+#define XRS_CONNECTED		3
+#define XRS_CONNECTING		4
+#define XRS_DISCONNECTING 	5
+
+/* flags */
+#define XRF_VALID	0x1		/* Circuit is live, etc. */
+#define XRF_RTHELD	0x2		/* this lcb references rtentry */
+
 #ifdef KERNEL
-struct	x25_ifaddr *x25_ifaddr;		/* head of linked list of networks */
+struct	pkcb *pkcbhead;		/* head of linked list of networks */
 struct	pklcd *pk_listenhead;
 
 char	*pk_name[], *pk_state[];

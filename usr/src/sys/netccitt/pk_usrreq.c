@@ -9,27 +9,25 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_usrreq.c	7.3 (Berkeley) %G%
+ *	@(#)pk_usrreq.c	7.4 (Berkeley) %G%
  */
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/socket.h"
-#include "../h/protosw.h"
-#include "../h/socketvar.h"
-#include "../h/errno.h"
-#ifdef BSD4_3
-#include "../net/if.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "socket.h"
+#include "protosw.h"
+#include "socketvar.h"
+#include "errno.h"
 #include "ioctl.h"
-#include "dir.h"
 #include "user.h"
 #include "stat.h"
-#endif
 
-#include "../netccitt/x25.h"
-#include "../netccitt/pk.h"
-#include "../netccitt/pk_var.h"
+#include "../net/if.h"
+
+#include "x25.h"
+#include "pk.h"
+#include "pk_var.h"
 
 struct	x25_packet *pk_template ();
 
@@ -261,7 +259,7 @@ int cmd;
 caddr_t data;
 register struct ifnet *ifp;
 {
-	register struct ifreq *ifr = (struct ifreq *)data;
+	register struct ifreq_x25 *ifr = (struct ifreq_x25 *)data;
 	register struct ifaddr *ifa = 0;
 	register struct x25_ifaddr *ia = 0;
 	int error, s;
@@ -272,18 +270,18 @@ register struct ifnet *ifp;
 	 */
 	if (ifp)
 		for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next)
-			if (ifa->ifa_addr.sa_family == AF_CCITT)
+			if (ifa->ifa_addr->sa_family == AF_CCITT)
 				break;
 
 	ia = (struct x25_ifaddr *)ifa;
 	switch (cmd) {
-	case SIOCGIFADDR:
+	case SIOCGIFCONF_X25:
 		if (ifa == 0)
 			return (EADDRNOTAVAIL);
-		ifr->ifr_addr = *(struct sockaddr *)ia->ia_xc;
+		ifr->ifr_xc = *(struct sockaddr *)ia->ia_xc;
 		return (0);
 
-	case SIOCSIFADDR:
+	case SIOCSIFCONF_X25:
 		if (!suser())
 			return (u.u_error);
 
@@ -303,29 +301,34 @@ register struct ifnet *ifp;
 			} else
 				ifp->if_addrlist = &ia->ia_ifa;
 			ifa = &ia->ia_ifa;
-			ifa->ifa_ifp = ifp;
-			ifa->ifa_addr = (struct sockaddr *)&ia->ia_addr;
 			ifa->ifa_netmask = (struct sockaddr *)&ia->ia_sockmask;
+			ifa->ifa_addr = (struct sockaddr *)&ia->ia_addr;
+			ia->ia_ifp = ifp;
+			ia->ia_pkcb.pk_ia = ia;
+			ia->ia_pkcb.pk_next = pkcbhead;
+			pkcbhead = &ia->ia_pkcb;
 		}
-		ia->ia_xcp = (struct x25config *) &(ifr->ifr_addr);
+		ia->ia_xcp = &(ifr->ifr_xc);
 		if (ia->ia_chan && (ia->ia_maxlcn != ia->xcp->xc_maxlcn)) {
 			free((caddr_t)ia->ia_chan, M_IFADDR);
 			ia->ia_ia_chan = 0;
 		}
 		n = ia->ia_maxlcn * sizeof(struct pklcd *);
 		if (ia->ia_chan == 0)
-		    ia->ia_chan = (struct pklcd **) malloc(n, M_IFADDR);
+			ia->ia_chan = (struct pklcd **) malloc(n, M_IFADDR);
 		if (ia->ia_chan)
 			bzero((caddr_t)ia->ia_chan, n);
-		else
+		else {
+			ia->ia_xcp = &ia->ia_xc;
 			return (ENOBUFS);
+		}
 		/*
 		 * Give the interface a chance to initialize if this
 		 * is its first address, and to validate the address.
 		 */
 		s = splimp();
 		if (ifp->if_ioctl)
-			error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, ifa)));
+			error = (*ifp->if_ioctl)(ifp, SIOCSIFCONF_X25, ifa)));
 		splx(s);
 		if (error == 0) {
 			ia->ia_xc = *ia->ia_xcp;

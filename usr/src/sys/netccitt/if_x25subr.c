@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_x25subr.c	7.2 (Berkeley) %G%
+ *	@(#)if_x25subr.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,12 +17,14 @@
 #include "errno.h"
 #include "syslog.h"
 
-#include "if.h"
-#include "netisr.h"
-#include "route.h"
+#include "../net/if.h"
+#include "../net/netisr.h"
+#include "../net/route.h"
 
-#include "x25_var.h"
-#include "x25_pk.h"
+#include "x25.h"
+#include "x25error.h"
+#include "pk_var.h"
+
 #include "machine/mtpr.h"
 
 #ifdef INET
@@ -47,108 +49,114 @@ extern	struct ifnet loif;
 /*
  * X.25 output routine.
  */
-x25_ifoutput(xc, m0, dst, rt)
-struct	x25com *xc;
+x25_ifoutput(ifp, m0, dst, rt)
+struct	ifnet *ifp;
 struct	mbuf *m0;
 struct	sockaddr *dst;
 register struct	rtentry *rt;
 {
-	register struct mbuf *m = m0;
-	register struct x25lcb *xl;
-	register struct xq *oq;
-	register struct x25lcb **xlp;
+	register struct mbuf *m;
+	struct rtextension_x25 *rtx;
+	struct pq *pq;
+	struct pklcd *lcp;
+	struct x25_ifaddr *ia;
 	struct mbuf    *prev;
 	int             s, error = 0, flags = 0;
 	union imp_addr  imp_addr;
 	int flags = 0;
 
-	if ((xc->xc_if.if_flags & IFF_UP) == 0)
+	if ((ifp->if_flags & IFF_UP) == 0)
 		return (ENETDOWN);
 	if (rt == 0 ||
 	    ((rt->rt_flags & RTF_GATEWAY) && (dst = rt->rt_gateway))) {
 		if ((rt = rtalloc1(dst, 1)) == 0)
 			return (EHOSTUNREACH);
 		rt->rt_refcnt++;
-		flags = XL_RTHELD;
+		flags = XRF_RTHELD;
 	}
 	/*
 	 * Sanity checks.
 	 */
-	if ((rt->rt_ifp != (struct ifnet *)xc) ||
+	if ((rt->rt_ifp != ifp) ||
 	    (rt->rt_flags & (RTF_CLONING | RTF_GATEWAY)) ||
-	    ((xl = (struct x25lcb *)rt->rt_llinfo) == 0)) {
+	    ((rtx = (struct rtextension_x25 *)rt->rt_llinfo) == 0)) {
 		printf("Inconsistent call to x25_output, should panic\n");
 		senderr(ENETUNREACH);
 	}
-	xq = &xl->xl_downq;
-	switch (xl->xl_state) {
+    {
+	register struct ifaddr *ifa;
+	for (ifa = ifp->if_addrlist; ; ifa = ifa->ifa_next) {
+		if (ifa == 0)
+			senderr(ENETDOWN);
+		if (ifa->ifa_addr->sa_family == AF_CCITT)
+			break;
+	}
+	ia = (struct x25_ifaddr *)ifa;
+    }
+	if (rtx->rtx_lcd == 0) {
+		int x25_ifinput();
 
-	case XLS_CONNECTED:
-		xl->xl_timer = xc->xc_dg_idletimo;
-		/* FALLTHROUGH */
-	case XLS_CONNECTING:
-		if (xq->xq_space < 0)
+		m = m_getclr(M_DONTWAIT, MT_PCB);
+		if (m == 0)
 			senderr(ENOBUFS);
-		xq->xq_put(xq, m);
+		rtx->rtx_lcd = lcp = mtod(m, struct pklcd *);
+		rtx->rtx_rt = rt;
+		rtx->rtx_ia = ia;
+		lcp->lcd_upq.pq_next = (caddr_t)rtx;
+		lcp->lcd_upq.pq_put = x25_ifinput;
+	}
+	pq = &lcp->lcd_downq;
+	switch (rtx->rtx_state) {
+
+	case XRS_CONNECTED:
+		lcd->lcd_dg_timer = ia->ia_xc.xc_dg_idletimo;
+		/* FALLTHROUGH */
+	case XRS_CONNECTING:
+		if (pq->pq_space < 0)
+			senderr(ENOBUFS);
+		pq->pq_put(pq, m);
 		break;
 
-	case XLS_NEWBORN:
-		xq = &xl->xl_upq;
-		xq->xq_next = (caddr_t)rt;
-		xq->xq_put = x25_ifinput;
+	case XRS_NEWBORN:
 		if (dst->sa_family == AF_INET &&
-		    xc->xc_if.if_type == IFT_DDN &&
+		    ia->xc_if.if_type == IFT_DDN &&
 		    rt->rt_gateway->sa_family != AF_CCITT)
 			x25_ddnip_to_ccitt(dst, rt->rt_gateway);
-		xl->xl_xc = xc;
-		xq = &xl->xl_downq;
-		xq->xq_space = 2048;  /* XXX: bogus xq before if_start called */
-		xl->xl_flags |= XL_DGRAM;
-		xl->xl_state = XLS_FREE;
+		pq->pq_space = 2048;  /* XXX: bogus pq before if_start called */
+		lcp->lcd_flags |= X25_DG_CIRCUIT;
+		rtx->rtx_state = XRS_FREE;
 		if (rt->rt_gateway->sa_family != AF_CCITT) {
 			/*
 			 * Need external resolution of dst
 			 */
 			if ((rt->rt_flags & RTF_XRESOLVE) == 0)
 				senderr(ENETUNREACH);
-			xl->xl_flags |= flags;
-			xl->xl_timer = xc->xc_rslvtimo;
+			rtx->rtx_flags |= flags;
 			flags = 0;
 			rt_missmsg(RTM_RESOLVE, dst,
 			    (struct sockaddr *)0, (struct sockaddr *)0,
 			    (struct sockaddr *)0, 0, 0);
-			xl->xl_state = XLS_RESOLVING;
+			rtx->rtx_state = XRS_RESOLVING;
 			/* FALLTHROUGH */
-	case XLS_RESOLVING:
-			if (xq->xq_space < 0)
+	case XRS_RESOLVING:
+			if (pq->pq_space < 0)
 				senderr(ENOBUFS);
-			xq->xq_space -= m->m_pkthdr.len;
-			if (xq->xq_data == 0)
-				xq->xq_data = m;
+			pq->pq_space -= m->m_pkthdr.len;
+			if (pq->pq_data == 0)
+				pq->pq_data = m;
 			else {
-				for (m = xq->xq_data; m->m_nextpkt; )
+				for (m = pq->pq_data; m->m_nextpkt; )
 					m = m->m_nextpkt;
 				m->m_nextpkt = m0;
 			}
 			break;
 		}
 		/* FALLTHROUGH */
-	case XLS_FREE:
-		xlp = xc->xc_lcbvec + xc->xc_nchan;
-		s = splimp(); /* need to block out incoming requests */
-		if (xc->xc_nactive < xc->xc_nchan) {
-			while (--xlp > xc->xc_lcbvec && *xlp)
-				;
-			if (xlp > xc->xc_lcbvec) {
-				xc->xc_nactive++;
-				*xlp = xl;
-				xl->xl_index = xlp - xc->xc_lcbvec;
-				x25_ifstart(xl, m, rt->rt_gateway, dst);
-				splx(s);
-				break;
-			}
-		}
-		splx(s);
+	case XRS_FREE:
+		lcp->lcd_downq.pq_data = m;
+		lcp->lcd_pkcb = &(rtx->rtx_ia->ia_pkcb);
+		pk_connect(lcp, rt->rt_gateway);
+		break;
 		/* FALLTHROUGH */
 	default:
 		/*
@@ -170,38 +178,54 @@ register struct	rtentry *rt;
 			m_freem(m);
 	}
 out:
-	if (flags & XL_RTHELD)
+	if (flags & XRF_RTHELD)
 		RTFREE(rt);
 	return (error);
 }
 
 /*
- * Simpleminded timer for very smart devices.
+ * Simpleminded timer routine.
  */
-x25_iftimeout(xc)
-register struct x25com *xc;
+x25_iftimeout(ifp)
+struct ifnet *ifp;
 {
-	register struct x25lcb **xlp = xc->xc_lcbvec + xc->xc_nchan;
-	register struct x25lcb *xl;
+	register struct pkcb *pkcb = 0;
+	register struct ifaddr *ifa;
+	register struct pklcd **lcpp, *lcp;
 	int s = splimp();
 
-	if (xc->xc_disconnect)
-	    while (--xlp > xc->xc_lcbvec)
-		if ((xl = *xlp) && xl->xl_state == XLS_CONECTED &&
-		    (xl->xl_flags & XL_DGRAM) && --(xl->xl_timer) <= 0)
-			xc->xc_disconnect(xl);
+	for (ifa = ifp->if_addrlist; ; ifa = ifa->ifa_next) {
+		if (ifa->ifa_addr->sa_family == AF_CCITT)
+			break;
+	}
+	if (ifa)
+		pkcb = &((struct x25_ifaddr *)ifa)->ia_pkcb;
+	if (pkcb)
+		for (lcpp = pkcb->pk_chan + pkcb->pk_maxlcn;
+		     --lcpp >= pkcb->pk_chan;)
+			if ((lcp = *lcpp) &&
+			    lcp->lcd_state == DATA_TRANSFER &&
+			    (lcp->lcd_flags & X25_DG_CICRUIT) &&
+			    (--(lcp->lcd_dg_timer) <= 0)) {
+				register struct rtextension_x25 *rtx;
+				pk_disconnect(lcp);
+				rtx = (struct rtextension_x25 *)
+						lcp->lcp_upq.pq_next;
+				if (rtx)
+					rtx->rtx_state = XRS_DISCONNECTING;
+			    }
 	splx(s);
 }
 
 /*
  * Process a x25 packet as datagram;
  */
-x25_ifinput(xq, m)
-struct xq *xq;
+x25_ifinput(pq, m)
+struct pq *pq;
 struct mbuf *m;
 {
-	struct rtentry *rt = (struct rtentry *)xq->xq_next;
-	struct x25lcb *xl = (struct x25lcb *)rt->rt_llinfo;
+	struct rtentry *rt = (struct rtentry *)pq->pq_next;
+	struct pklcd *xl = (struct pklcd *)rt->rt_llinfo;
 	register struct ifnet *ifp = &xl->xl_xc.xc_if;
 	register struct llc *l;
 	int s;
@@ -319,43 +343,53 @@ x25_ifrtchange(cmd, rt, dst)
 register struct rtentry *rt;
 struct sockaddr *dst;
 {
-	register struct x25lcb *xl = (struct x25lcb *)rt->rt_llinfo;
-	register struct x25com *xc;
+	register struct rtextension_x25 *rtx = (struct pklcd *)rt->rt_llinfo;
 	register struct sockaddr_x25 *sa =(struct sockaddr_x25 *)rt->rt_gateway;
+	register struct pklcd *lcp;
+	register struct x25_ifaddr *ia;
 	register struct sockaddr *sa2;
 	struct mbuf *m, *mold;
+	int x25_ifrtree();
 
-	if (xl == 0)
+	if (rtx == 0)
 		return;
-	xc = xl->xl_xc;
+	ia = rtx->rtx_ia;
+	lcp = rtx->rtx_lcd;
+
 	switch (caseof(xl->xl_state, cmd)) {
-	case caseof(XLS_CONNECTED, RTM_DELETE):
-	case caseof(XLS_CONNECTED, RTM_CHANGE):
-	case caseof(XLS_CONNECTING, RTM_DELETE):
-	case caseof(XLS_CONNECTING, RTM_CHANGE):
-		xc->xc_disconnect(xl);
+
+	case caseof(XRS_CONNECTED, RTM_DELETE):
+	case caseof(XRS_CONNECTED, RTM_CHANGE):
+	case caseof(XRS_CONNECTING, RTM_DELETE):
+	case caseof(XRS_CONNECTING, RTM_CHANGE):
+		pk_disconnect(lcp);
+		lcp->lcd_upq.pq_unblock = x25_ifrtfree;
+		rt->rt_refcnt++;
 		break;
 
-	case caseof(XLS_CONNECTED, RTM_ADD):
-	case caseof(XLS_CONNECTING, RTM_ADD):
-	case caseof(XLS_RESOLVING, RTM_ADD):
+	case caseof(XRS_CONNECTED, RTM_ADD):
+	case caseof(XRS_CONNECTING, RTM_ADD):
+	case caseof(XRS_RESOLVING, RTM_ADD):
 		printf("ifrtchange: impossible transition, should panic\n");
 		break;
 
-	case caseof(XLS_RESOLVING, RTM_DELETE):
-		for (m = xl->xl_downq.xq_data; m;) {
+	case caseof(XRS_RESOLVING, RTM_DELETE):
+		for (m = lcp->lcd_downq.pq_data; m;) {
 			mold = m;
 			m = m->m_nextpkt;
 			m_freem(mold);
 		}
+		m_free(dtom(rtx->rtx_lcd));
+		rtx->rtx_lcd = 0;
 		break;
 
-	case caseof(XLS_RESOLVING, RTM_CHANGE):
-		xc->xc_if.if_start(xl, 0, dst);
+	case caseof(XRS_RESOLVING, RTM_CHANGE):
+		lcp->lcd_pkcb = &(ia->ia_pkcb);
+		pk_connect(lcp, nam);
 		break;
 	}
-	if (xc->xc_if.if_type == IFT_DDN)
-		return;  /* reverse name table not necessary */
+	if (rt->rt_ifp->if_type == IFT_DDN)
+		return;
 	sa2 = SA(rt->rt_key);
 	if (cmd == RTM_CHANGE) {
 		if (sa->sa_family == AF_CCITT) {
@@ -378,12 +412,12 @@ static struct sockaddr sin = {sizeof(sin), AF_INET};
  * This is a utility routine to be called by x25 devices when a
  * call request is honored with the intent of starting datagram forwarding.
  */
-x25_dg_rtinit(dst, xc, af)
+x25_dg_rtinit(dst, ia, af)
 struct sockaddr_x25 *dst;
-register struct x25com *xc;
+register struct x25com *ia;
 {
 	struct sockaddr *sa = 0;
-	if (xc->xc_if.if_type == IFT_DDN && af == AF_INET) {
+	if (ia->xc_if.if_type == IFT_DDN && af == AF_INET) {
 	/*
 	 * Inverse X25 to IPP mapping copyright and courtesy ACC.
 	 */
@@ -396,7 +430,7 @@ register struct x25com *xc;
 		register struct in_ifaddr *ia;
 		extern struct in_ifaddr *in_ifaddr;
 		for (ia = in_ifaddr; ia; ia = ia->ia_next)
-			if (ia->ia_ifp == &xc->xc_if) {
+			if (ia->ia_ifp == &ia->xc_if) {
 				imp_addr.ip = ia->ia_addr.sin_addr;
 				break;
 			}
