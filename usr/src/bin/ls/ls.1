@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ls.1	6.6 (Berkeley) %G%
+.\"	@(#)ls.1	6.7 (Berkeley) %G%
 .\"
 .TH LS 1 ""
 .UC
@@ -54,6 +54,10 @@ names begin with a period
 are
 .I not
 listed.
+.TP
+.B \-A
+List all entries except for ``.'' and ``..''.  Always set for the
+super-user.
 .TP
 .B \-s
 Give size in kilobytes of each file.
