@@ -1,6 +1,6 @@
-.\"	@(#)exp.3	4.1 (Berkeley) %G%
+.\"	@(#)exp.3	5.1 (Berkeley) %G%
 .\"
-.TH EXP 3M 
+.TH EXP 3M  "18 July 1983"
 .AT 3
 .SH NAME
 exp, log, log10, pow, sqrt \- exponential, logarithm, power, square root
@@ -42,24 +42,21 @@ returns
 returns the square root of 
 .I x.
 .SH SEE ALSO
-hypot(3),
-sinh(3),
-intro(2)
+hypot(3M),
+sinh(3M),
+intro(3M)
 .SH DIAGNOSTICS
 .I Exp
 and
 .I pow
-return a huge value when the correct value would
-overflow;
+return a huge value when the correct value would overflow;
 .I errno
 is set to ERANGE.
 .I Pow
 returns 0 and sets
 .I errno
-to
-EDOM when the second argument is negative and non-integral and
-when
-both arguments are 0.
+to EDOM when the second argument is negative and non-integral and
+when both arguments are 0.
 .PP
 .I Log
 returns 0 when
