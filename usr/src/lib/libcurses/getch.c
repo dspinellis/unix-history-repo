@@ -3,7 +3,7 @@
 /*
  *	This routine reads in a character from the window.
  *
- * %G% (Berkeley) @(#)getch.c	1.1
+ * %G% (Berkeley) @(#)getch.c	1.2
  */
 wgetch(win)
 reg WINDOW	*win; {
@@ -12,7 +12,7 @@ reg WINDOW	*win; {
 	reg char	inp;
 
 	if (!win->_scroll && (win->_flags&_FULLWIN)
-	    && win->_curx == win->_maxx && win->_cury == win->_maxy)
+	    && win->_curx == win->_maxx - 1 && win->_cury == win->_maxy - 1)
 		return ERR;
 # ifdef DEBUG
 	fprintf(outf, "WGETCH: _echoit = %c, _rawmode = %c\n", _echoit ? 'T' : 'F', _rawmode ? 'T' : 'F');
