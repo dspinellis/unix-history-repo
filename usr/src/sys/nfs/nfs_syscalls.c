@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_syscalls.c	7.20 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -40,7 +40,6 @@ extern struct buf nfs_bqueue;
 extern int nfs_asyncdaemons;
 extern struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
 extern int nfs_tcpnodelay;
-struct file *getsock();
 struct mbuf *nfs_compress();
 
 #define	TRUE	1
@@ -140,10 +139,9 @@ nfssvc(p, uap, retval)
 	 * Must be super user
 	 */
 	if (error = suser(u.u_cred, &u.u_acflag))
-		goto bad;
-	fp = getsock(uap->s);
-	if (fp == 0)
-		return;
+		return (error);
+	if (error = getsock(p->p_fd, uap->s, &fp))
+		return (error);
 	so = (struct socket *)fp->f_data;
 	if (sosendallatonce(so))
 		siz = NFS_MAXPACKET;
