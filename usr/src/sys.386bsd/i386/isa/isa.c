@@ -34,11 +34,24 @@
  * SUCH DAMAGE.
  *
  *	@(#)isa.c	7.2 (Berkeley) 5/13/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00017
+ * --------------------         -----   ----------------------
+ *
+ * 18 Aug 92	Frank Maclachlan	*See comments below
  */
 static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/isa/RCS/isa.c,v 1.2 92/01/21 14:34:23 william Exp Locker: root $";
 
 /*
  * code to manage AT bus
+ *
+ * 92/08/18  Frank P. MacLachlan (fpm@crash.cts.com):
+ * Fixed uninitialized variable problem and added code to deal
+ * with DMA page boundaries in isa_dmarangecheck().  Fixed word
+ * mode DMA count compution and reorganized DMA setup code in
+ * isa_dmastart()
  */
 
 #include "param.h"
@@ -57,6 +70,22 @@ static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/isa/RCS/isa.c,v 1.2 92/
 #include "i386/isa/icu.h"
 #include "i386/isa/ic/i8237.h"
 #include "i386/isa/ic/i8042.h"
+
+/*
+**  Register definitions for DMA controller 1 (channels 0..3):
+*/
+#define	DMA1_CHN(c)	(IO_DMA1 + 1*(2*(c)))	/* addr reg for channel c */
+#define	DMA1_SMSK	(IO_DMA1 + 1*10)	/* single mask register */
+#define	DMA1_MODE	(IO_DMA1 + 1*11)	/* mode register */
+#define	DMA1_FFC	(IO_DMA1 + 1*12)	/* clear first/last FF */
+
+/*
+**  Register definitions for DMA controller 2 (channels 4..7):
+*/
+#define	DMA2_CHN(c)	(IO_DMA1 + 2*(2*(c)))	/* addr reg for channel c */
+#define	DMA2_SMSK	(IO_DMA2 + 2*10)	/* single mask register */
+#define	DMA2_MODE	(IO_DMA2 + 2*11)	/* mode register */
+#define	DMA2_FFC	(IO_DMA2 + 2*12)	/* clear first/last FF */
 
 int config_isadev(struct isa_device *, u_short *);
 #ifdef notyet
@@ -278,21 +307,18 @@ static short dmapageport[8] =
  * external dma control by a board.
  */
 void isa_dmacascade(unsigned chan)
-{	int modeport;
-
+{
 	if (chan > 7)
 		panic("isa_dmacascade: impossible request"); 
 
 	/* set dma channel mode, and set dma channel mode */
-	if ((chan & 4) == 0)
-		modeport = IO_DMA1 + 0xb;
-	else
-		modeport = IO_DMA2 + 0x16;
-	outb(modeport, DMA37MD_CASCADE | (chan & 3));
-	if ((chan & 4) == 0)
-		outb(modeport - 1, chan & 3);
-	else
-		outb(modeport - 2, chan & 3);
+	if ((chan & 4) == 0) {
+		outb(DMA1_MODE, DMA37MD_CASCADE | chan);
+		outb(DMA1_SMSK, chan);
+	} else {
+		outb(DMA2_MODE, DMA37MD_CASCADE | (chan & 3));
+		outb(DMA2_SMSK, chan & 3);
+	}
 }
 
 /*
@@ -301,13 +327,15 @@ void isa_dmacascade(unsigned chan)
  */
 void isa_dmastart(int flags, caddr_t addr, unsigned nbytes, unsigned chan)
 {	vm_offset_t phys;
-	int modeport, waport, mskport;
+	int waport;
 	caddr_t newaddr;
 
-	if (chan > 7 || nbytes > (1<<16))
+	if (    chan > 7
+	    || (chan < 4 && nbytes > (1<<16))
+	    || (chan >= 4 && (nbytes > (1<<17) || (u_int)addr & 1)))
 		panic("isa_dmastart: impossible request"); 
 
-	if (isa_dmarangecheck(addr, nbytes)) {
+	if (isa_dmarangecheck(addr, nbytes, chan)) {
 		if (dma_bounce[chan] == 0)
 			dma_bounce[chan] =
 				/*(caddr_t)malloc(MAXDMASZ, M_TEMP, M_WAITOK);*/
@@ -325,48 +353,56 @@ void isa_dmastart(int flags, caddr_t addr, unsigned nbytes, unsigned chan)
 	/* translate to physical */
 	phys = pmap_extract(pmap_kernel(), (vm_offset_t)addr);
 
-	/* set dma channel mode, and reset address ff */
-	if ((chan & 4) == 0)
-		modeport = IO_DMA1 + 0xb;
-	else
-		modeport = IO_DMA2 + 0x16;
-	if (flags & B_READ)
-		outb(modeport, DMA37MD_SINGLE|DMA37MD_WRITE|(chan&3));
-	else
-		outb(modeport, DMA37MD_SINGLE|DMA37MD_READ|(chan&3));
-	if ((chan & 4) == 0)
-		outb(modeport + 1, 0);
-	else
-		outb(modeport + 2, 0);
-
-	/* send start address */
 	if ((chan & 4) == 0) {
-		waport =  IO_DMA1 + (chan<<1);
+		/*
+		 * Program one of DMA channels 0..3.  These are
+		 * byte mode channels.
+		 */
+		/* set dma channel mode, and reset address ff */
+		if (flags & B_READ)
+			outb(DMA1_MODE, DMA37MD_SINGLE|DMA37MD_WRITE|chan);
+		else
+			outb(DMA1_MODE, DMA37MD_SINGLE|DMA37MD_READ|chan);
+		outb(DMA1_FFC, 0);
+
+		/* send start address */
+		waport =  DMA1_CHN(chan);
 		outb(waport, phys);
 		outb(waport, phys>>8);
-	} else {
-		waport =  IO_DMA2 + ((chan - 4)<<2);
-		outb(waport, phys>>1);
-		outb(waport, phys>>9);
-	}
-	outb(dmapageport[chan], phys>>16);
+		outb(dmapageport[chan], phys>>16);
 
-	/* send count */
-	if ((chan & 4) == 0) {
+		/* send count */
 		outb(waport + 1, --nbytes);
 		outb(waport + 1, nbytes>>8);
+
+		/* unmask channel */
+		outb(DMA1_SMSK, chan);
 	} else {
-		nbytes <<= 1;
+		/*
+		 * Program one of DMA channels 4..7.  These are
+		 * word mode channels.
+		 */
+		/* set dma channel mode, and reset address ff */
+		if (flags & B_READ)
+			outb(DMA2_MODE, DMA37MD_SINGLE|DMA37MD_WRITE|(chan&3));
+		else
+			outb(DMA2_MODE, DMA37MD_SINGLE|DMA37MD_READ|(chan&3));
+		outb(DMA2_FFC, 0);
+
+		/* send start address */
+		waport = DMA2_CHN(chan - 4);
+		outb(waport, phys>>1);
+		outb(waport, phys>>9);
+		outb(dmapageport[chan], phys>>16);
+
+		/* send count */
+		nbytes >>= 1;
 		outb(waport + 2, --nbytes);
 		outb(waport + 2, nbytes>>8);
-	}
 
-	/* unmask channel */
-	if ((chan & 4) == 0)
-		mskport =  IO_DMA1 + 0x0a;
-	else
-		mskport =  IO_DMA2 + 0x14;
-	outb(mskport, chan & 3);
+		/* unmask channel */
+		outb(DMA2_SMSK, chan & 3);
+	}
 }
 
 void isa_dmadone(int flags, caddr_t addr, int nbytes, int chan)
@@ -382,12 +418,14 @@ void isa_dmadone(int flags, caddr_t addr, int nbytes, int chan)
 
 /*
  * Check for problems with the address range of a DMA transfer
- * (non-contiguous physical pages, outside of bus address space).
+ * (non-contiguous physical pages, outside of bus address space,
+ * crossing DMA page boundaries).
  * Return true if special handling needed.
  */
 
-isa_dmarangecheck(caddr_t va, unsigned length) {
-	vm_offset_t phys, priorpage, endva;
+isa_dmarangecheck(caddr_t va, unsigned length, unsigned chan) {
+	vm_offset_t phys, priorpage = 0, endva;
+	u_int dma_pgmsk = (chan & 4) ?  ~(128*1024-1) : ~(64*1024-1);
 
 	endva = (vm_offset_t)round_page(va + length);
 	for (; va < (caddr_t) endva ; va += NBPG) {
@@ -397,8 +435,13 @@ isa_dmarangecheck(caddr_t va, unsigned length) {
 			panic("isa_dmacheck: no physical page present");
 		if (phys > ISARAM_END) 
 			return (1);
-		if (priorpage && priorpage + NBPG != phys)
-			return (1);
+		if (priorpage) {
+			if (priorpage + NBPG != phys)
+				return (1);
+			/* check if crossing a DMA page boundary */
+			if (((u_int)priorpage ^ (u_int)phys) & dma_pgmsk)
+				return (1);
+		}
 		priorpage = phys;
 	}
 	return (0);
