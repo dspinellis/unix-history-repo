@@ -1,4 +1,4 @@
-/*	machdep.c	4.27	81/03/17	*/
+/*	machdep.c	4.28	81/03/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -388,6 +388,11 @@ memenable()
 			M750_ENA(mcr);
 			break;
 #endif
+#if VAX730
+		case VAX_730:
+			M730_ENA(mcr);
+			break;
+#endif
 		}
 	}
 	if (memintvl > 0)
@@ -423,6 +428,17 @@ memerr()
 				printf("mcr%d: soft ecc addr %x syn %x\n",
 				    m, M750_ADDR(mcr), M750_SYN(mcr));
 				M750_INH(mcr);
+			}
+			break;
+#endif
+#if VAX730
+		case VAX_730:
+			if (M730_ERR(mcr)) {
+				struct mcr amcr;
+				amcr.mc_reg[0] = mcr->mc_reg[0];
+				printf("mcr%d: soft ecc addr %x syn %x\n",
+				    m, M730_ADDR(&amcr), M730_SYN(&amcr));
+				M730_INH(mcr);
 			}
 			break;
 #endif
@@ -480,8 +496,8 @@ boot(paniced, arghowto)
 			doadump();
 		tocons(TXDB_BOOT);
 	}
-#if VAX750
-	if (cpu == VAX_750)
+#if defined(VAX750) || defined(VAX730)
+	if (cpu != VAX_780)
 		{ asm("movl r11,r5"); }		/* boot flags go in r5 */
 #endif
 	for (;;)
@@ -540,18 +556,28 @@ dumpsys()
  * Machine check error recovery code.
  * Print out the machine check frame and then give up.
  */
+#if defined(VAX780) || defined(VAX750)
 char *mc780[] = {
 	"cp read",	"ctrl str par",	"cp tbuf par",	"cp cache par",
 	"cp rdtimo", 	"cp rds",	"ucode lost",	0,
 	0,		0,		"ib tbuf par",	0,
 	"ib rds",	"ib rd timo",	0,		"ib cache par"
 };
+#endif
+#if VAX730
+#define	NMC730	12
+char *mc730[] = {
+	"tb par",	"bad retry",	"bad intr id",	"cant write ptem",
+	"unkn mcr err",	"iib rd err",	"nxm ref",	"cp rds",
+	"unalgn ioref",	"nonlw ioref",	"bad ioaddr",	"unalgn ubaddr",
+};
+#endif
 
 /*
- * Frame for a 780
+ * Frame for each cpu
  */
 struct mc780frame {
-	int	mc8_bcnt;		/* byte count == 28 */
+	int	mc8_bcnt;		/* byte count == 0x28 */
 	int	mc8_summary;		/* summary parameter (as above) */
 	int	mc8_cpues;		/* cpu error status */
 	int	mc8_upc;		/* micro pc */
@@ -566,7 +592,7 @@ struct mc780frame {
 	int	mc8_psl;		/* trapped psl */
 };
 struct mc750frame {
-	int	mc5_bcnt;		/* byte count == 28 */
+	int	mc5_bcnt;		/* byte count == 0x28 */
 	int	mc5_summary;		/* summary parameter (as above) */
 	int	mc5_va;			/* virtual address register */
 	int	mc5_errpc;		/* error pc */
@@ -580,14 +606,40 @@ struct mc750frame {
 	int	mc5_pc;			/* trapped pc */
 	int	mc5_psl;		/* trapped psl */
 };
+struct mc730frame {
+	int	mc3_bcnt;		/* byte count == 0xc */
+	int	mc3_summary;		/* summary parameter */
+	int	mc3_parm[2];		/* parameter 1 and 2 */
+	int	mc3_pc;			/* trapped pc */
+	int	mc3_psl;		/* trapped psl */
+};
 
 machinecheck(cmcf)
 	caddr_t cmcf;
 {
-	register int type = ((struct mc780frame *)cmcf)->mc8_summary;
+	register u_int type = ((struct mc780frame *)cmcf)->mc8_summary;
 
-	printf("machine check %x: %s%s\n", type, mc780[type&0xf],
-	    (type&0xf0) ? " abort" : " fault"); 
+	printf("machine check %x: ", type);
+	switch (cpu) {
+#if VAX780
+	case VAX_780:
+#endif
+#if VAX750
+	case VAX_750:
+#endif
+#if defined(VAX780) || defined(VAX750)
+		printf("%s%s\n", type, mc780[type&0xf],
+		    (type&0xf0) ? " abort" : " fault"); 
+		break;
+#endif
+#if VAX730
+	case VAX_730:
+		if (type < NMC730)
+			printf("%s", mc730[type]);
+		printf("\n");
+		break;
+#endif
+	}
 	switch (cpu) {
 #if VAX780
 	case VAX_780: {
@@ -616,6 +668,16 @@ machinecheck(cmcf)
 		printf("\tbuserr %x mcesr %x pc %x psl %x mcsr %x\n",
 		    mcf->mc5_buserr, mcf->mc5_mcesr, mcf->mc5_pc, mcf->mc5_psl,
 		    mfpr(MCSR));
+		mtpr(MCESR, 0xf);
+		break;
+		}
+#endif
+#if VAX730
+	case VAX_730: {
+		register struct mc730frame *mcf = (struct mc730frame *)cmcf;
+		printf("params %x,%x pc %x psl %x mcesr %x\n",
+		    mcf->mc3_parm[0], mcf->mc3_parm[1],
+		    mcf->mc3_pc, mcf->mc3_psl, mfpr(MCESR));
 		mtpr(MCESR, 0xf);
 		break;
 		}
