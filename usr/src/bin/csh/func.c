@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)func.c 4.8 83/02/09";
+static	char *sccsid = "@(#)func.c 4.9 83/06/10";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -75,16 +75,16 @@ doonintr(v)
 	cp = gointr, gointr = 0, xfree(cp);
 	if (vv == 0) {
 		if (setintr)
-			sighold(SIGINT);
+			(void) sigblock(mask(SIGINT));
 		else
-			sigset(SIGINT, SIG_DFL);
+			signal(SIGINT, SIG_DFL);
 		gointr = 0;
 	} else if (eq((vv = strip(vv)), "-")) {
-		sigset(SIGINT, SIG_IGN);
+		signal(SIGINT, SIG_IGN);
 		gointr = "-";
 	} else {
 		gointr = savestr(vv);
-		sigset(SIGINT, pintr);
+		signal(SIGINT, pintr);
 	}
 }
 
@@ -162,6 +162,7 @@ dologin(v)
 	exit(1);
 }
 
+#ifdef NEWGRP
 donewgrp(v)
 	char **v;
 {
@@ -174,6 +175,7 @@ donewgrp(v)
 	untty();
 	exit(1);
 }
+#endif
 
 islogin()
 {
@@ -398,10 +400,10 @@ preread()
 
 	whyles->w_end = -1;
 	if (setintr)
-		sigrelse(SIGINT);
+		(void) sigrelse(mask(SIGINT));
 	search(ZBREAK, 0);
 	if (setintr)
-		sighold(SIGINT);
+		sigblock(mask(SIGINT));
 	whyles->w_end = btell();
 }
 
@@ -451,17 +453,17 @@ dorepeat(v, kp)
 
 	i = getn(v[1]);
 	if (setintr)
-		sighold(SIGINT);
+		(void) sigblock(mask(SIGINT));
 	lshift(v, 2);
 	while (i > 0) {
 		if (setintr)
-			sigrelse(SIGINT);
+			(void) sigrelse(mask(SIGINT));
 		reexecute(kp);
 		--i;
 	}
 	donefds();
 	if (setintr)
-		sigrelse(SIGINT);
+		(void) sigrelse(mask(SIGINT));
 }
 
 doswbrk()
@@ -697,7 +699,7 @@ echo(sep, v)
 	int nonl = 0;
 
 	if (setintr)
-		sigrelse(SIGINT);
+		(void) sigrelse(mask(SIGINT));
 	v++;
 	if (*v == 0)
 		return;
@@ -723,7 +725,7 @@ echo(sep, v)
 	else
 		flush();
 	if (setintr)
-		sighold(SIGINT);
+		(void) sigblock(mask(SIGINT));
 	if (gargv)
 		blkfree(gargv), gargv = 0;
 }
@@ -1000,23 +1002,23 @@ setlim(lp, limit)
 
 dosuspend()
 {
-	int old, ldisc;
+	int (*old)(), ldisc;
 	int ctpgrp;
 
 	if (loginsh)
 		error("Can't suspend a login shell (yet)");
 	untty();
-	old = sigsys(SIGTSTP, SIG_DFL);
+	old = signal(SIGTSTP, SIG_DFL);
 	kill(0, SIGTSTP);
 	/* the shell stops here */
-	sigsys(SIGTSTP, old);
+	signal(SIGTSTP, old);
 	if (tpgrp != -1) {
 retry:
 		ioctl(FSHTTY, TIOCGPGRP, &ctpgrp);
 		if (ctpgrp != opgrp) {
-			old = sigsys(SIGTTIN, SIG_DFL);
+			old = signal(SIGTTIN, SIG_DFL);
 			kill(0, SIGTTIN);
-			sigsys(SIGTTIN, old);
+			signal(SIGTTIN, old);
 			goto retry;
 		}
 		ioctl(FSHTTY, TIOCSPGRP, &shpgrp);

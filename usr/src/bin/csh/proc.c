@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)proc.c	4.8 (Berkeley) 83/02/03";
+static	char *sccsid = "@(#)proc.c	4.9 (Berkeley) 83/06/10";
 
 #include "sh.h"
 #include "sh.dir.h"
@@ -144,12 +144,12 @@ pnote()
 	neednote = 0;
 	for (pp = proclist.p_next; pp != PNULL; pp = pp->p_next) {
 		if (pp->p_flags & PNEEDNOTE) {
-			sighold(SIGCHLD);
+			(void) sigblock(mask(SIGCHLD));
 			pp->p_flags &= ~PNEEDNOTE;
 			flags = pprint(pp, NUMBER|NAME|REASON);
 			if ((flags&(PRUNNING|PSTOPPED)) == 0)
 				pflush(pp);
-			sigrelse(SIGCHLD);
+			(void) sigrelse(mask(SIGCHLD));
 		}
 	}
 }
@@ -165,7 +165,7 @@ pwait()
 	/*
 	 * Here's where dead procs get flushed.
 	 */
-	sighold(SIGCHLD);
+	(void) sigblock(mask(SIGCHLD));
 	for (pp = (fp = &proclist)->p_next; pp != PNULL; pp = (fp = pp)->p_next)
 		if (pp->p_pid == 0) {
 			fp->p_next = pp->p_next;
@@ -176,9 +176,11 @@ pwait()
 			xfree((char *)pp);
 			pp = fp;
 		}
-	sigrelse(SIGCHLD);
+	(void) sigrelse(mask(SIGCHLD));
+#ifdef notdef
 	if (setintr)
-		sigignore(SIGINT);
+		signal(SIGINT, SIG_IGN);
+#endif
 	pjwait(pcurrjob);
 }
 
@@ -190,7 +192,7 @@ pjwait(pp)
 	register struct process *pp;
 {
 	register struct process *fp;
-	int jobflags, reason;
+	int jobflags, reason, omask;
 
 	fp = pp;
 	do {
@@ -202,17 +204,17 @@ pjwait(pp)
 	 * and the target process, or any of its friends, are running
 	 */
 	fp = pp;
+	omask = sigblock(mask(SIGCHLD));
 	for (;;) {
-		sighold(SIGCHLD);
 		jobflags = 0;
 		do
 			jobflags |= fp->p_flags;
 		while((fp = (fp->p_friends)) != pp);
 		if ((jobflags & PRUNNING) == 0)
 			break;
-		sigpause(SIGCHLD);
+		sigpause(omask &~ mask(SIGCHLD));
 	}
-	sigrelse(SIGCHLD);
+	sigsetmask(omask);
 	if (tpgrp > 0)
 		ioctl(FSHTTY, TIOCSPGRP, &tpgrp);	/* get tty back */
 	if ((jobflags&(PSIGNALED|PSTOPPED|PTIME)) ||
@@ -247,19 +249,20 @@ pjwait(pp)
 dowait()
 {
 	register struct process *pp;
+	int omask;
 
 	pjobs++;
 	if (setintr)
-		sigrelse(SIGINT);
+		(void) sigrelse(mask(SIGINT));
+	omask = sigblock(mask(SIGCHLD));
 loop:
-	sighold(SIGCHLD);
 	for (pp = proclist.p_next; pp; pp = pp->p_next)
 		if (pp->p_pid && pp->p_pid == pp->p_jobid &&
 		    pp->p_flags&PRUNNING) {
-			sigpause(SIGCHLD);
+			sigpause(omask &~ mask(SIGCHLD));
 			goto loop;
 		}
-	sigrelse(SIGCHLD);
+	sigsetmask(omask);
 	pjobs = 0;
 }
 
@@ -704,7 +707,7 @@ dofg(v)
 		pp = pfind(*v);
 		pstart(pp, 1);
 		if (setintr)
-			sigignore(SIGINT);
+			signal(SIGINT, SIG_IGN);
 		pjwait(pp);
 	} while (*v && *++v);
 }
@@ -721,7 +724,7 @@ dofg1(v)
 	pp = pfind(v[0]);
 	pstart(pp, 1);
 	if (setintr)
-		sigignore(SIGINT);
+		signal(SIGINT, SIG_IGN);
 	pjwait(pp);
 }
 
@@ -812,11 +815,12 @@ pkill(v, signum)
 	register int jobflags = 0;
 	int pid;
 	extern char *sys_errlist[];
-	int err = 0;
+	int err = 0, omask = 0;
 
 	if (setintr)
-		sighold(SIGINT);
-	sighold(SIGCHLD);
+		omask |= mask(SIGINT);
+	omask |= mask(SIGCHLD);
+	omask = sigblock(omask);
 	while (*v) {
 		if (**v == '%') {
 			np = pp = pfind(*v);
@@ -854,9 +858,7 @@ pkill(v, signum)
 cont:
 		v++;
 	}
-	sigrelse(SIGCHLD);
-	if (setintr)
-		sigrelse(SIGINT);
+	sigsetmask(omask);
 	if (err)
 		error(NOSTR);
 }
@@ -871,7 +873,7 @@ pstart(pp, foregnd)
 	register struct process *np;
 	int jobflags = 0;
 
-	sighold(SIGCHLD);
+	(void) sigblock(mask(SIGCHLD));
 	np = pp;
 	do {
 		jobflags |= np->p_flags;
@@ -891,7 +893,7 @@ pstart(pp, foregnd)
 		ioctl(FSHTTY, TIOCSPGRP, &pp->p_jobid);
 	if (jobflags&PSTOPPED)
 		killpg(pp->p_jobid, SIGCONT);
-	sigrelse(SIGCHLD);
+	(void) sigrelse(mask(SIGCHLD));
 }
 
 panystop(neednl)
@@ -1003,7 +1005,7 @@ pfork(t, wanttty)
 {
 	register int pid;
 	bool ignint = 0;
-	int pgrp;
+	int pgrp, omask;
 
 	/*
 	 * A child will be uninterruptible only under very special
@@ -1020,13 +1022,12 @@ pfork(t, wanttty)
 	/*
 	 * Hold SIGCHLD until we have the process installed in our table.
 	 */
-	sighold(SIGCHLD);
+	(void) sigblock(mask(SIGCHLD));
 	while ((pid = fork()) < 0)
 		if (setintr == 0)
 			sleep(FORKSLEEP);
 		else {
-			sigrelse(SIGINT);
-			sigrelse(SIGCHLD);
+			(void) sigrelse(mask(SIGINT)|mask(SIGCHLD));
 			error("No more processes");
 		}
 	if (pid == 0) {
@@ -1038,7 +1039,7 @@ pfork(t, wanttty)
 		child++;
 		if (setintr) {
 			setintr = 0;		/* until I think otherwise */
-			sigrelse(SIGCHLD);
+			(void) sigrelse(mask(SIGCHLD));
 			/*
 			 * Children just get blown away on SIGINT, SIGQUIT
 			 * unless "onintr -" seen.
@@ -1076,10 +1077,11 @@ pfork(t, wanttty)
 */
 			nice(t->t_nice);
 		}
+		sigrelse(mask(SIGINT));
 
 	} else {
 		palloc(pid, t);
-		sigrelse(SIGCHLD);
+		(void) sigrelse(mask(SIGCHLD));
 	}
 
 	return (pid);
@@ -1092,4 +1094,13 @@ okpcntl()
 		error("No job control in this shell");
 	if (tpgrp == 0)
 		error("No job control in subshells");
+}
+
+/*
+ * For "compatibility".
+ */
+sigrelse(m)
+{
+
+	return (sigsetmask(sigblock(0) &~ m));
 }
