@@ -1,4 +1,4 @@
-SCCSID = "@(#)pimakefile 1.14 %G%"
+SCCSID = "@(#)pimakefile 1.15 %G%"
 WHOAMI = pi
 INSTALLNAME = ${DESTDIR}/usr/ucb/pi
 VERSION = 2.0
@@ -20,8 +20,8 @@ ERRORSTRINGS = pi2.0strings
 
 SRCS =	ato.c \
 	call.c case.c clas.c const.c conv.c cset.c \
-	error.c fdec.c flvalue.c func.c gen.c hash.c \
-	lab.c lookup.c lval.c stklval.c \
+	error.c fdec.c flvalue.c forop.c func.c gen.c \
+	hash.c lab.c lookup.c lval.c stklval.c \
 	main.c nl.c proc.c put.c \
 	rec.c rval.c stkrval.c\
 	stat.c string.c subr.c \
@@ -38,8 +38,8 @@ OTHERS = pas.y opc.c version.c gram pic.c
 
 OBJS =	ato.o \
 	call.o case.o clas.o const.o conv.o cset.o \
-	error.o fdec.o flvalue.o func.o gen.o hash.o \
-	lab.o lookup.o lval.o stklval.o \
+	error.o fdec.o flvalue.o forop.o func.o gen.o \
+	hash.o lab.o lookup.o lval.o stklval.o \
 	main.o nl.o proc.o put.o \
 	rec.o rval.o stkrval.o\
 	stat.o string.o subr.o \
@@ -181,6 +181,13 @@ flvalue.o: opcode.h
 flvalue.o: objfmt.h
 flvalue.o: pc.h
 flvalue.o: pcops.h
+forop.o: whoami.h
+forop.o: 0.h
+forop.o: opcode.h
+forop.o: tree.h
+forop.o: opcode.h
+forop.o: pc.h
+forop.o: pcops.h
 flvalue.o: whoami.h
 flvalue.o: 0.h
 flvalue.o: tree.h
@@ -280,9 +287,9 @@ type.o: objfmt.h
 var.o: whoami.h
 var.o: 0.h
 var.o: align.h
+var.o: iorec.h
 var.o: pc.h
 var.o: pcops.h
-var.o: iorec.h
 y.tab.o: whoami.h
 y.tab.o: 0.h
 y.tab.o: yy.h
