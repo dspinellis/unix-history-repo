@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dev.c	7.11 (Berkeley) %G%
+ *	@(#)dev.c	7.12 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -29,7 +29,7 @@ devread(io)
 	cc = (*devsw[io->i_dev].dv_strategy)(io, F_READ);
 	io->i_flgs &= ~F_TYPEMASK;
 	if (scankbd())
-		_longjmp(&exception, 1);
+		_longjmp(exception, 1);
 	return (cc);
 }
 
@@ -43,7 +43,7 @@ devwrite(io)
 	cc = (*devsw[io->i_dev].dv_strategy)(io, F_WRITE);
 	io->i_flgs &= ~F_TYPEMASK;
 	if (scankbd())
-		_longjmp(&exception, 1);
+		_longjmp(exception, 1);
 	return (cc);
 }
 
