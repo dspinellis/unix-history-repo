@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ching.cno.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ching.cno.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -55,10 +55,6 @@ main()
 	time(&now);
 	seed = (int)now + getquest() + getgid() + getuid() + getpid();	/* randomize */
 	printf("%s\n", change());
-	if ((logf = fopen("log", "a")) != (FILE *)NULL) {
-		fprintf(logf, "%s\t%s", string, ctime(&now));
-		fclose(logf);
-	}
 }
 
 /*
