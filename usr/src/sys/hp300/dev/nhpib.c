@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nhpib.c	7.1 (Berkeley) %G%
+ *	@(#)nhpib.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -78,85 +78,98 @@ nhpibifc(hd)
 	hd->hpib_acr = AUX_SSRE;
 }
 
-nhpibsend(unit, slave, sec, addr, cnt)
+nhpibsend(unit, slave, sec, addr, origcnt)
 	register char *addr;
-	register int cnt;
 {
 	register struct hpib_softc *hs = &hpib_softc[unit];
 	register struct nhpibdevice *hd;
-	register int origcnt = cnt;
+	register int cnt = origcnt;
 
 	hd = (struct nhpibdevice *)hs->sc_hc->hp_addr;
 	hd->hpib_acr = AUX_TCA;
 	hd->hpib_data = C_UNL;
-	nhpibowait(hd);
+	if (nhpibwait(hd, MIS_BO))
+		goto senderror;
 	hd->hpib_data = C_TAG + hs->sc_ba;
 	hd->hpib_acr = AUX_STON;
-	nhpibowait(hd);
+	if (nhpibwait(hd, MIS_BO))
+		goto senderror;
 	hd->hpib_data = C_LAG + slave;
-	nhpibowait(hd);
+	if (nhpibwait(hd, MIS_BO))
+		goto senderror;
 	if (sec != -1) {
 		hd->hpib_data = C_SCG + sec;
-		nhpibowait(hd);
+		if (nhpibwait(hd, MIS_BO))
+			goto senderror;
 	}
 	hd->hpib_acr = AUX_GTS;
 	if (cnt) {
-		while (--cnt) {
+		while (--cnt > 0) {
 			hd->hpib_data = *addr++;
-			if (nhpibowait(hd) < 0) {
-				nhpibifc(hd);
-				cnt++;
-				goto out;
-			}
+			if (nhpibwait(hd, MIS_BO))
+				goto senderror;
 		}
 		hd->hpib_acr = AUX_EOI;
 		hd->hpib_data = *addr;
-		if (nhpibowait(hd) < 0) {
-			nhpibifc(hd);
-			cnt++;
-		}
-		else
-			hd->hpib_acr = AUX_TCA;
+		if (nhpibwait(hd, MIS_BO))
+			goto senderror;
+		hd->hpib_acr = AUX_TCA;
+#if 0
+		/*
+		 * May be causing 345 disks to hang due to interference
+		 * with PPOLL mechanism.
+		 */
+		hd->hpib_data = C_UNL;
+		(void) nhpibwait(hd, MIS_BO);
+#endif
 	}
-out:
-	return(origcnt - cnt);
+	return(origcnt);
+senderror:
+	nhpibifc(hd);
+	return(origcnt - cnt - 1);
 }
 
-nhpibrecv(unit, slave, sec, addr, cnt)
+nhpibrecv(unit, slave, sec, addr, origcnt)
 	register char *addr;
-	register int cnt;
 {
 	register struct hpib_softc *hs = &hpib_softc[unit];
 	register struct nhpibdevice *hd;
-	register int origcnt = cnt;
+	register int cnt = origcnt;
 
 	hd = (struct nhpibdevice *)hs->sc_hc->hp_addr;
 	hd->hpib_acr = AUX_TCA;
 	hd->hpib_data = C_UNL;
-	nhpibowait(hd);
+	if (nhpibwait(hd, MIS_BO))
+		goto recverror;
 	hd->hpib_data = C_LAG + hs->sc_ba;
 	hd->hpib_acr = AUX_SLON;
-	nhpibowait(hd);
+	if (nhpibwait(hd, MIS_BO))
+		goto recverror;
 	hd->hpib_data = C_TAG + slave;
-	nhpibowait(hd);
+	if (nhpibwait(hd, MIS_BO))
+		goto recverror;
 	if (sec != -1) {
 		hd->hpib_data = C_SCG + sec;
-		nhpibowait(hd);
+		if (nhpibwait(hd, MIS_BO))
+			goto recverror;
 	}
 	hd->hpib_acr = AUX_RHDF;
 	hd->hpib_acr = AUX_GTS;
 	if (cnt) {
 		while (--cnt >= 0) {
-			if (nhpibiwait(hd) < 0) {
-				nhpibifc(hd);
-				break;
-			}
+			if (nhpibwait(hd, MIS_BI))
+				goto recvbyteserror;
 			*addr++ = hd->hpib_data;
 		}
-		cnt++;
 		hd->hpib_acr = AUX_TCA;
+		hd->hpib_data = (slave == 31) ? C_UNA : C_UNT;
+		(void) nhpibwait(hd, MIS_BO);
 	}
-	return(origcnt - cnt);
+	return(origcnt);
+recverror:
+	nhpibifc(hd);
+recvbyteserror:
+	return(origcnt - cnt - 1);
 }
 
 nhpibgo(unit, slave, sec, addr, count, rw)
@@ -183,19 +196,17 @@ nhpibgo(unit, slave, sec, addr, count, rw)
 		dmago(hs->sc_dq.dq_ctlr, addr, count, DMAGO_BYTE|DMAGO_READ);
 		nhpibrecv(unit, slave, sec, 0, 0);
 		hd->hpib_mim = MIS_END;
-	}
-	else {
-		if (count == 1) {
-			hs->sc_curcnt = 1;
-			dmago(hs->sc_dq.dq_ctlr, addr, 1, DMAGO_BYTE);
-			nhpibsend(unit, slave, sec, 0, 0);
-			hd->hpib_acr = AUX_EOI;
+	} else {
+		hd->hpib_mim = 0;
+		if (count < hpibdmathresh) {
+			hs->sc_curcnt = count;
+			nhpibsend(unit, slave, sec, addr, count);
+			nhpibdone(unit);
+			return;
 		}
-		else {
-			hs->sc_curcnt = count - 1;
-			dmago(hs->sc_dq.dq_ctlr, addr, count - 1, DMAGO_BYTE);
-			nhpibsend(unit, slave, sec, 0, 0);
-		}
+		hs->sc_curcnt = --count;
+		dmago(hs->sc_dq.dq_ctlr, addr, count, DMAGO_BYTE);
+		nhpibsend(unit, slave, sec, 0, 0);
 	}
 	hd->hpib_ie = IDS_IE | IDS_DMA(hs->sc_dq.dq_ctlr);
 }
@@ -211,19 +222,19 @@ nhpibdone(unit)
 	cnt = hs->sc_curcnt;
 	hs->sc_addr += cnt;
 	hs->sc_count -= cnt;
-	if (hs->sc_flags & HPIBF_READ) {
-		hs->sc_flags |= HPIBF_DONE;
-		hd->hpib_ie = IDS_IE;
-	} else {
+	hs->sc_flags |= HPIBF_DONE;
+	hd->hpib_ie = IDS_IE;
+	if ((hs->sc_flags & HPIBF_READ) == 0) {
 		if (hs->sc_count == 1) {
-			hs->sc_curcnt = 1;
+			(void) nhpibwait(hd, MIS_BO);
 			hd->hpib_acr = AUX_EOI;
-			dmago(hs->sc_dq.dq_ctlr, hs->sc_addr, 1, DMAGO_BYTE);
-			return;
+			hd->hpib_data = *hs->sc_addr;
+			hd->hpib_mim = MIS_BO;
 		}
-		hs->sc_flags |= HPIBF_DONE;
-		hd->hpib_ie = IDS_IE;
-		hd->hpib_mim = MIS_BO;
+#ifdef DEBUG
+		else if (hs->sc_count)
+			panic("nhpibdone");
+#endif
 	}
 }
 
@@ -232,7 +243,7 @@ nhpibintr(unit)
 {
 	register struct hpib_softc *hs = &hpib_softc[unit];
 	register struct nhpibdevice *hd;
-	register struct devqueue *dq = hs->sc_sq.dq_forw;
+	register struct devqueue *dq;
 	register int stat0;
 	int stat1;
 
@@ -244,6 +255,7 @@ nhpibintr(unit)
 		return(0);
 	stat0 = hd->hpib_mis;
 	stat1 = hd->hpib_lis;
+	dq = hs->sc_sq.dq_forw;
 	if (hs->sc_flags & HPIBF_IO) {
 		hd->hpib_mim = 0;
 		if ((hs->sc_flags & HPIBF_DONE) == 0)
@@ -252,28 +264,29 @@ nhpibintr(unit)
 		hs->sc_flags &= ~(HPIBF_DONE|HPIBF_IO|HPIBF_READ);
 		dmafree(&hs->sc_dq);
 		(dq->dq_driver->d_intr)(dq->dq_unit);
-		return(1);
-	}
-	if (hs->sc_flags & HPIBF_PPOLL) {
+	} else if (hs->sc_flags & HPIBF_PPOLL) {
 		hd->hpib_mim = 0;
 		stat0 = nhpibppoll(unit);
 		if (stat0 & (0x80 >> dq->dq_slave)) {
 			hs->sc_flags &= ~HPIBF_PPOLL;
 			(dq->dq_driver->d_intr)(dq->dq_unit);
 		}
-		return(1);
+#ifdef DEBUG
+		else
+			printf("hpib%d: PPOLL intr bad status %x\n",
+			       unit, stat0);
+#endif
 	}
 	return(1);
 }
 
 nhpibppoll(unit)
-	register int unit;
+	int unit;
 {
-	register struct hpib_softc *hs = &hpib_softc[unit];
 	register struct nhpibdevice *hd;
 	register int ppoll;
 
-	hd = (struct nhpibdevice *)hs->sc_hc->hp_addr;
+	hd = (struct nhpibdevice *)hpib_softc[unit].sc_hc->hp_addr;
 	hd->hpib_acr = AUX_SPP;
 	DELAY(25);
 	ppoll = hd->hpib_cpt;
@@ -281,27 +294,13 @@ nhpibppoll(unit)
 	return(ppoll);
 }
 
-nhpibowait(hd)
+nhpibwait(hd, x)
 	register struct nhpibdevice *hd;
 {
-	extern int hpibtimeout;
 	register int timo = hpibtimeout;
 
-	while ((hd->hpib_mis & MIS_BO) == 0 && --timo)
-		;
-	if (timo == 0)
-		return(-1);
-	return(0);
-}
-
-nhpibiwait(hd)
-	register struct nhpibdevice *hd;
-{
-	extern int hpibtimeout;
-	register int timo = hpibtimeout;
-
-	while ((hd->hpib_mis & MIS_BI) == 0 && --timo)
-		;
+	while ((hd->hpib_mis & x) == 0 && --timo)
+		DELAY(1);
 	if (timo == 0)
 		return(-1);
 	return(0);
@@ -311,12 +310,10 @@ nhpibppwatch(unit)
 	register int unit;
 {
 	register struct hpib_softc *hs = &hpib_softc[unit];
-	register struct devqueue *dq = hs->sc_sq.dq_forw;
-	register int slave = 0x80 >> dq->dq_slave;
 
 	if ((hs->sc_flags & HPIBF_PPOLL) == 0)
 		return;
-	if (nhpibppoll(unit) & slave)
+	if (nhpibppoll(unit) & (0x80 >> hs->sc_sq.dq_forw->dq_slave))
        		((struct nhpibdevice *)hs->sc_hc->hp_addr)->hpib_mim = MIS_BO;
 	else
 		timeout(nhpibppwatch, unit, 1);
