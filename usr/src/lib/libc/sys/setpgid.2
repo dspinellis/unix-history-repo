@@ -2,26 +2,24 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)setpgid.2	4.1 (Berkeley) %G%
+.\"	@(#)setpgid.2	5.1 (Berkeley) %G%
 .\"
-.TH SETPGRP 2J
+.TH SETPGRP 2 "12 February 1983"
 .UC 4
 .SH NAME
-setpgrp, getpgrp \- set/get process group
+setpgrp \- set process group
 .SH SYNOPSIS
-.B int getpgrp(pid)
-.PP
-.B setpgrp(pid, pgrp)
-.PP
-.B cc ... \-ljobs
+.ft B
+setpgrp(pid, pgrp)
+.br
+int pid, pgrp;
+.ft R
 .SH DESCRIPTION
-The process group of the specified process is returned by
-.I getpgrp.
 .I Setpgrp
 sets the process group of the specified process
 .I pid
 to the specified
-.I pgrp.
+.IR pgrp .
 If
 .I pid
 is zero, then the call applies to the current process.
@@ -29,32 +27,24 @@ is zero, then the call applies to the current process.
 If the invoker is not the super-user, then the affected process
 must have the same effective user-id as the invoker or be a descendant
 of the invoking process.
-.PP
-This call is used by
-.IR csh (1)
-to create
-process groups
-in implementing job control.
-The TIOCGPGRP and TIOCSPGRP calls
-described in
-.IR tty (4)
-are used to get/set the process group of the control terminal.
-.PP
-See
-.IR jobs(3)
-for a general discussion of job control.
+.SH "RETURN VALUE
+.I Setpgrp
+returns when the operation was successful.  If
+the request failed, \-1 is returned and the global
+variable
+.I errno
+indicates the reason.
+.SH ERRORS
+.I Setpgrp
+will fail and the process group will not be altered if
+one of the following occur:
+.TP 15
+[ESRCH]
+The requested process does not exist.
+.TP 15
+[EPERM]
+The effective user ID of the requested process is different
+from that of the caller and the process is not a descendent
+of the calling process.
 .SH "SEE ALSO"
-jobs(3), getuid(2), tty(4)
-.SH BUGS
-The job control facilities are not available in standard version 7 UNIX.
-These facilities are still under development and may change in future
-releases of the system as better inter-process communication facilities
-and support for virtual terminals become available.  The options and
-specifications of these system calls and even the calls themselves
-are thus subject to change.
-.PP
-A system call
-.I setpgrp
-has been implemented in other versions of UNIX which are not widely
-used outside of Bell Laboratories; these implementations
-have, in general, slightly different semantics.
+getpgrp(2)
