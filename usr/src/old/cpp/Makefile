@@ -1,4 +1,4 @@
-#	Makefile	1.3	86/10/15
+#	Makefile	1.4	87/05/30
 #
 
 YYFIX=	../pcc/pcc.`machine`/:yyfix
@@ -20,6 +20,8 @@ clean :
 
 install :
 	install -s cpp $(DESTDIR)/lib
+
+depend :
 
 sources : cpp.c cpy.y yylex.c README
 cpp.c cpy.y yylex.c README :
