@@ -12,20 +12,29 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 
+#include <err.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#ifdef __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
 void	compress __P((char *, char *, int));
+void	cwarn __P((const char *, ...));
+void	cwarnx __P((const char *, ...));
 void	decompress __P((char *, char *, int));
 void	err __P((int, const char *, ...));
 int	permission __P((char *));
@@ -57,7 +66,7 @@ main(argc, argv)
 		style = COMPRESS;
 	} else {
 		progname = *argv;
-		err(1, "unknown program name");
+		errx(1, "unknown program name");
 	}
 
 	bits = cat = 0;
@@ -66,7 +75,7 @@ main(argc, argv)
 		case 'b':
 			bits = strtol(optarg, &p, 10);
 			if (*p)
-				err(1, "illegal bit count -- %s", optarg);
+				errx(1, "illegal bit count -- %s", optarg);
 			break;
 		case 'c':
 			cat = 1;
@@ -100,7 +109,7 @@ main(argc, argv)
 	}
 
 	if (cat == 1 && argc > 1)
-		err(1, "the -c option permits only a single file argument");
+		errx(1, "the -c option permits only a single file argument");
 
 	for (; *argv; ++argv)
 		switch(style) {
@@ -111,13 +120,13 @@ main(argc, argv)
 			}
 			if ((p = rindex(*argv, '.')) != NULL &&
 			    !strcmp(p, ".Z")) {
-				err(0, "%s: name already has trailing .Z",
+				cwarnx("%s: name already has trailing .Z",
 				    *argv);
 				break;
 			}
 			len = strlen(*argv);
 			if (len > sizeof(newname) - 3) {
-				err(0, "%s: name too long", *argv);
+				cwarnx("%s: name too long", *argv);
 				break;
 			}
 			memmove(newname, *argv, len);
@@ -131,7 +140,7 @@ main(argc, argv)
 			if ((p = rindex(*argv, '.')) == NULL ||
 			    strcmp(p, ".Z")) {
 				if (len > sizeof(newname) - 3) {
-					err(0, "%s: name too long", *argv);
+					cwarnx("%s: name too long", *argv);
 					break;
 				}
 				memmove(newname, *argv, len);
@@ -142,7 +151,7 @@ main(argc, argv)
 				    cat ? "/dev/stdout" : *argv, bits);
 			} else {
 				if (len - 2 > sizeof(newname) - 1) {
-					err(0, "%s: name too long", *argv);
+					cwarnx("%s: name too long", *argv);
 					break;
 				}
 				memmove(newname, *argv, len - 2);
@@ -173,41 +182,41 @@ compress(in, out, bits)
 
 	ifp = ofp = NULL;
 	if ((ifp = fopen(in, "r")) == NULL) {
-		err(0, "%s: %s", in, strerror(errno));
+		cwarn("%s", in);
 		return;
 	}
 	if (stat(in, &isb)) {		/* DON'T FSTAT! */
-		err(0, "%s: %s", in, strerror(errno));
+		cwarn("%s", in);
 		goto err;
 	}
 	if (!S_ISREG(isb.st_mode))
 		isreg = 0;
 
 	if ((ofp = zopen(out, "w", bits)) == NULL) {
-		err(0, "%s: %s", out, strerror(errno));
+		cwarn("%s", out);
 		goto err;
 	}
 	while ((nr = fread(buf, 1, sizeof(buf), ifp)) != 0)
 		if (fwrite(buf, 1, nr, ofp) != nr) {
-			err(0, "%s: %s", out, strerror(errno));
+			cwarn("%s", out);
 			goto err;
 		}
 
 	if (ferror(ifp) || fclose(ifp)) {
-		err(0, "%s: %s", in, strerror(errno));
+		cwarn("%s", in);
 		goto err;
 	}
 	ifp = NULL;
 
 	if (fclose(ofp)) {
-		err(0, "%s: %s", out, strerror(errno));
+		cwarn("%s", out);
 		goto err;
 	}
 	ofp = NULL;
 
 	if (isreg) {
 		if (stat(out, &sb)) {
-			err(0, "%s: %s", out, strerror(errno));
+			cwarn("%s", out);
 			goto err;
 		}
 
@@ -215,14 +224,14 @@ compress(in, out, bits)
 			if (verbose)
 		(void)printf("%s: file would grow; left unmodified\n", in);
 			if (unlink(out))
-				err(0, "%s: %s", out, strerror(errno));
+				cwarn("%s", out);
 			goto err;
 		}
 
 		setfile(out, &isb);
 
 		if (unlink(in))
-			err(0, "%s: %s", in, strerror(errno));
+			cwarn("%s", in);
 
 		if (verbose) {
 			(void)printf("%s: ", out);
@@ -263,16 +272,16 @@ decompress(in, out, bits)
 
 	ifp = ofp = NULL;
 	if ((ofp = fopen(out, "w")) == NULL) {
-		err(0, "%s: %s", out, strerror(errno));
+		cwarn("%s", out);
 		return;
 	}
 
 	if ((ifp = zopen(in, "r", bits)) == NULL) {
-		err(0, "%s: %s", in, strerror(errno));
+		cwarn("%s", in);
 		goto err;
 	}
 	if (stat(in, &sb)) {
-		err(0, "%s: %s", in, strerror(errno));
+		cwarn("%s", in);
 		goto err;
 	}
 	if (!S_ISREG(sb.st_mode))
@@ -280,18 +289,18 @@ decompress(in, out, bits)
 
 	while ((nr = fread(buf, 1, sizeof(buf), ifp)) != 0)
 		if (fwrite(buf, 1, nr, ofp) != nr) {
-			err(0, "%s: %s", out, strerror(errno));
+			cwarn("%s", out);
 			goto err;
 		}
 
 	if (ferror(ifp) || fclose(ifp)) {
-		err(0, "%s: %s", in, strerror(errno));
+		cwarn("%s", in);
 		goto err;
 	}
 	ifp = NULL;
 
 	if (fclose(ofp)) {
-		err(0, "%s: %s", out, strerror(errno));
+		cwarn("%s", out);
 		goto err;
 	}
 
@@ -299,7 +308,7 @@ decompress(in, out, bits)
 		setfile(out, &sb);
 
 		if (unlink(in))
-			err(0, "%s: %s", in, strerror(errno));
+			cwarn("%s", in);
 	}
 	return;
 
@@ -324,7 +333,7 @@ setfile(name, fs)
 	TIMESPEC_TO_TIMEVAL(&tv[0], &fs->st_atimespec);
 	TIMESPEC_TO_TIMEVAL(&tv[1], &fs->st_mtimespec);
 	if (utimes(name, tv))
-		err(0, "utimes: %s: %s", name, strerror(errno));
+		cwarn("utimes: %s", name);
 
 	/*
 	 * Changing the ownership probably won't succeed, unless we're root
@@ -334,14 +343,14 @@ setfile(name, fs)
 	 */
 	if (chown(name, fs->st_uid, fs->st_gid)) {
 		if (errno != EPERM)
-			err(0, "chown: %s: %s", name, strerror(errno));
+			cwarn("chown: %s", name);
 		fs->st_mode &= ~(S_ISUID|S_ISGID);
 	}
 	if (chmod(name, fs->st_mode))
-		err(0, "chown: %s: %s", name, strerror(errno));
+		cwarn("chown: %s", name);
 
 	if (chflags(name, fs->st_flags))
-		err(0, "chflags: %s: %s", name, strerror(errno));
+		cwarn("chflags: %s", name);
 }
 
 int
@@ -372,19 +381,13 @@ usage(iscompress)
 	exit(1);
 }
 
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
 void
 #if __STDC__
-err(int fatal, const char *fmt, ...)
+cwarnx(const char *fmt, ...)
 #else
-err(fatal, fmt, va_alist)
-	int fatal;
-	char *fmt;
+cwarnx(fmt, va_alist)
+	int eval;
+	const char *fmt;
 	va_dcl
 #endif
 {
@@ -394,11 +397,28 @@ err(fatal, fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	(void)fprintf(stderr, "%s: ", progname);
-	(void)vfprintf(stderr, fmt, ap);
+	vwarnx(fmt, ap);
 	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	if (fatal)
-		exit(1);
+	eval = 1;
+}
+
+void
+#if __STDC__
+cwarn(const char *fmt, ...)
+#else
+cwarn(fmt, va_alist)
+	int eval;
+	const char *fmt;
+	va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	vwarn(fmt, ap);
+	va_end(ap);
 	eval = 1;
 }
