@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.11 (Berkeley) %G%
+#	@(#)Makefile.inc	5.12 (Berkeley) %G%
 
 .PATH: ${.CURDIR}/${MACHINE}/string ${.CURDIR}/string
 
@@ -8,6 +8,20 @@ SRCS+=	memccpy.c strcasecmp.c strcoll.c strdup.c strerror.c \
 
 # machine-dependent string sources
 .include "${.CURDIR}/${MACHINE}/string/Makefile.inc"
+
+# If no machine specific bzero(3), build one out of memset(3).
+.if empty(SRCS:Mbzero.s)
+OBJS+=	bzero.o
+bzero.o: memset.c
+	${CC} -DBZERO ${CFLAGS} -c ${.ALLSRC} -o ${.TARGET}
+	@${LD} -x -r ${.TARGET}
+	@mv a.out ${.TARGET}
+
+bzero.po: memset.c
+	${CC} -DBZERO ${CFLAGS} -c -p ${.ALLSRC} -o ${.TARGET}
+	@${LD} -X -r ${.TARGET}
+	@mv a.out ${.TARGET}
+.endif
 
 # If no machine specific memmove(3), build one out of bcopy(3).
 .if empty(SRCS:Mmemmove.s)
