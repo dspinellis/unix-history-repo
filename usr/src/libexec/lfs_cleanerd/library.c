@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)library.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)library.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -407,12 +407,18 @@ add_inodes (fsp, bip, countp, sp, seg_buf, seg_addr)
 		bp->bi_bp = di;
 		bp->bi_segcreate = sp->ss_create;
 
-		ifp = IFILE_ENTRY(lfsp, fsp->fi_ifilep, inum);
-		PRINT_INODE(ifp->if_daddr == *daddrp, ip);
-		if (ifp->if_daddr == *daddrp) {
+		if (inum == LFS_IFILE_INUM) {
 			bp++;
 			++(*countp);
-		} 
+			PRINT_INODE(1, bp);
+		} else {
+			ifp = IFILE_ENTRY(lfsp, fsp->fi_ifilep, inum);
+			PRINT_INODE(ifp->if_daddr == *daddrp, bp);
+			if (ifp->if_daddr == *daddrp) {
+				bp++;
+				++(*countp);
+			} 
+		}
 	}
 }
 
