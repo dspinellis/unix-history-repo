@@ -13,17 +13,14 @@
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  * from: hp300/hp300/clock.c	7.19 (Berkeley) 2/18/93
  *
- *	@(#)clock.c	7.9 (Berkeley) %G%
+ *	@(#)clock.c	7.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/kernel.h>
 
-#include <luna68k/luna68k/clockreg.h>
-
-#ifdef LUNA2
 #include <machine/cpu.h>
-#endif
+#include <luna68k/luna68k/clockreg.h>
 
 extern int clock_on;
 
