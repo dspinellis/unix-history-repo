@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	4.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	4.12 (Berkeley) %G%";
 #endif
 
 /*
@@ -24,8 +24,10 @@ static int	prchild;		/* id of pr process */
 static int	child;			/* id of any filters */
 static int	ofilter;		/* id of output filter, if any */
 static int	tof;			/* true if at top of form */
+static int	count;			/* Number of files actually printed */
 static int	remote;			/* true if sending files to remote */
 
+static char	fromhost[32];		/* user's host machine */
 static char	logname[32];		/* user's login name */
 static char	jobname[32];		/* job or file name */
 static char	class[32];		/* classification field */
@@ -64,7 +66,7 @@ printjob()
 	}
 	if (stat(LO, &stb) == 0 && (stb.st_mode & 0100))
 		exit(0);		/* printing disabled */
-	lfd = open(LO, O_WRONLY|O_CREAT|O_TRUNC, 0644);
+	lfd = open(LO, O_WRONLY|O_CREAT, 0644);
 	if (lfd < 0) {
 		log("cannot create %s", LO);
 		exit(1);
@@ -134,10 +136,9 @@ again:
 				break;
 			}
 		}
-		/*
-		 * Check to see if we should try reprinting the job.
-		 */
-		if (i > 0) {
+		if (i == 0)		/* file ok and printed */
+			count++;
+		else if (i > 0) {	/* try reprinting the job */
 			log("restarting");
 			if (ofilter > 0) {
 				kill(ofilter, SIGCONT);	/* to be sure */
@@ -164,10 +165,12 @@ again:
 	}
 	if (nitems == 0) {		/* no more work to do */
 	done:
-		if (!SF && !tof)
-			(void) write(ofd, FF, strlen(FF));
-		if (TR != NULL)		/* output trailer */
-			(void) write(ofd, TR, strlen(TR));
+		if (count > 0) {	/* Files actually printed */
+			if (!SF && !tof)
+				(void) write(ofd, FF, strlen(FF));
+			if (TR != NULL)		/* output trailer */
+				(void) write(ofd, TR, strlen(TR));
+		}
 		exit(0);
 	}
 	goto again;
@@ -248,7 +251,7 @@ printit(file)
 	while (getline(cfp))
 		switch (line[0]) {
 		case 'H':
-			strcpy(host, line+1);
+			strcpy(fromhost, line+1);
 			if (class[0] == '\0')
 				strcpy(class, line+1);
 			continue;
@@ -337,7 +340,7 @@ pass2:
 	 */
 	(void) fclose(cfp);
 	(void) unlink(file);
-	return(0);
+	return(bombed ? -1 : 0);
 }
 
 /*
@@ -480,7 +483,7 @@ print(format, file)
 	av[n++] = "-n";
 	av[n++] = logname;
 	av[n++] = "-h";
-	av[n++] = host;
+	av[n++] = fromhost;
 	av[n++] = AF;
 	av[n] = 0;
 	fo = pfd;
@@ -806,12 +809,12 @@ sendmail(bombed)
 			cp++;
 		else
 			cp = MAIL;
-		sprintf(buf, "%s@%s", line+1, host);
+		sprintf(buf, "%s@%s", line+1, fromhost);
 		execl(MAIL, cp, buf, 0);
 		exit(0);
 	} else if (stat > 0) {				/* parent */
 		dup2(p[1], 1);
-		printf("To: %s\n", line+1);
+		printf("To: %s@%s\n", line+1, fromhost);
 		printf("Subject: printer job\n\n");
 		printf("Your printer job ");
 		if (*jobname)

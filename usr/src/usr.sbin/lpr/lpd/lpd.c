@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -90,13 +90,6 @@ main(argc, argv)
 		(void) close(f);
 	}
 #endif
-#define	mask(s)	(1 << ((s) - 1))
-#define	ALLINTS	mask(SIGHUP)|mask(SIGINT)|mask(SIGQUIT)|mask(SIGTERM)
-	omask = sigblock(ALLINTS);
-	signal(SIGHUP, cleanup);
-	signal(SIGINT, cleanup);
-	signal(SIGQUIT, cleanup);
-	signal(SIGTERM, cleanup);
 	signal(SIGCHLD, reapchild);
 	(void) umask(0);
 	/*
@@ -108,6 +101,12 @@ main(argc, argv)
 		logerr("socket");
 		exit(1);
 	}
+#define	mask(s)	(1 << ((s) - 1))
+	omask = sigblock(mask(SIGHUP)|mask(SIGINT)|mask(SIGQUIT)|mask(SIGTERM));
+	signal(SIGHUP, cleanup);
+	signal(SIGINT, cleanup);
+	signal(SIGQUIT, cleanup);
+	signal(SIGTERM, cleanup);
 	sun.sun_family = AF_UNIX;
 	strcpy(sun.sun_path, SOCKETNAME);
 	if (bind(funix, &sun, strlen(sun.sun_path) + 2) < 0) {
@@ -115,6 +114,8 @@ main(argc, argv)
 		exit(1);
 	}
 	sigsetmask(omask);
+	defreadfds = 1 << funix;
+	listen(funix, 5);
 	finet = socket(AF_INET, SOCK_STREAM, 0);
 	if (finet >= 0) {
 		struct servent *sp;
@@ -135,16 +136,12 @@ main(argc, argv)
 			logerr("internet domain bind");
 			cleanup();
 		}
-	}
-	/*
-	 * Main loop: listen, accept, do a request, continue.
-	 */
-	defreadfds = 1 << funix;
-	listen(funix, 5);
-	if (finet >= 0) {
 		defreadfds |= 1 << finet;
 		listen(finet, 5);
 	}
+	/*
+	 * Main loop: accept, do a request, continue.
+	 */
 	for (;;) {
 		int domain, nfds, s, readfds = defreadfds;
 
@@ -197,6 +194,8 @@ reapchild()
 static
 cleanup()
 {
+	if (lflag)
+		log("cleanup()");
 	unlink(SOCKETNAME);
 	exit(0);
 }
