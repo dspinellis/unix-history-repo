@@ -1,4 +1,4 @@
-/*	if_acc.c	4.15	82/04/20	*/
+/*	if_acc.c	4.16	82/06/14	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -61,6 +61,10 @@ struct	acc_softc {
 	char	acc_flush;		/* flush remainder of message */
 } acc_softc[NACC];
 
+#define	NACCDEBUG	10000
+char	accdebug[NACCDEBUG];
+int	accdebugx;
+
 /*
  * Reset the IMP and cause a transmitter interrupt by
  * performing a null DMA.
@@ -81,7 +85,8 @@ COUNT(ACCPROBE);
 	addr->ocsr = OUT_BBACK; DELAY(5000);
 	addr->owc = 0;
 	addr->ocsr = ACC_IE | ACC_GO; DELAY(5000);
-	addr->ocsr = 0;
+	addr->icsr = ACC_RESET; DELAY(5000);
+	addr->ocsr = ACC_RESET; DELAY(5000);
 	if (cvec && cvec != 0x200)	/* transmit -> receive */
 		cvec -= 4;
 #ifdef ECHACK
@@ -113,8 +118,9 @@ COUNT(ACCATTACH);
 	sc->acc_ic = ip;
 	ip->ic_init = accinit;
 	ip->ic_start = accstart;
+	sc->acc_ifuba.ifu_flags = UBA_CANTWAIT;
 #ifdef notdef
-	sc->acc_ifuba.ifu_flags = UBA_NEEDBDP | UBA_CANTWAIT;
+	sc->acc_ifuba.ifu_flags |= UBA_NEEDBDP;
 #endif
 }
 
@@ -168,7 +174,8 @@ COUNT(ACCINIT);
 	if (if_ubainit(&sc->acc_ifuba, ui->ui_ubanum, 0,
 	     (int)btoc(IMPMTU)) == 0) {
 		printf("acc%d: can't initialize\n", unit);
-		goto down;
+		ui->ui_alive = 0;
+		return (0);
 	}
 	addr = (struct accdevice *)ui->ui_addr;
 
@@ -176,33 +183,21 @@ COUNT(ACCINIT);
 	 * Reset the imp interface;
 	 * the delays are pure guesswork.
 	 */
-	addr->icsr = ACC_RESET; DELAY(5000);
         addr->ocsr = ACC_RESET; DELAY(5000);
 	addr->ocsr = OUT_BBACK;	DELAY(5000);	/* reset host master ready */
 	addr->ocsr = 0;
-	addr->icsr = IN_MRDY | IN_WEN;		/* close the relay */
-	DELAY(10000);
-	/* YECH!!! */
-	for (i = 0; i < 500; i++) {
-		if ((addr->icsr & IN_HRDY) ||
-		    (addr->icsr & (IN_RMR | IN_IMPBSY)) == 0)
-			goto ok;
-		addr->icsr = IN_MRDY | IN_WEN; DELAY(10000);
-		/* keep turning IN_RMR off */
+	if (accinputreset(addr, unit) == 0) {
+		ui->ui_alive = 0;
+		return (0);
 	}
-	printf("acc%d: imp doesn't respond, icsr=%b\n", unit,
-		addr->icsr, ACC_INBITS);
-down:
-	ui->ui_alive = 0;
-	return (0);
 
-ok:
 	/*
 	 * Put up a read.  We can't restart any outstanding writes
 	 * until we're back in synch with the IMP (i.e. we've flushed
 	 * the NOOPs it throws at us).
 	 * Note: IMPMTU includes the leader.
 	 */
+	acctrace("init", addr->icsr);
 	info = sc->acc_ifuba.ifu_r.ifrw_info;
 	addr->iba = (u_short)info;
 	addr->iwc = -(IMPMTU >> 1);
@@ -212,6 +207,28 @@ ok:
 	addr->icsr = 
 		IN_MRDY | ACC_IE | IN_WEN | ((info & 0x30000) >> 12) | ACC_GO;
 	return (1);
+}
+
+accinputreset(addr, unit)
+	register struct accdevice *addr;
+	register int unit;
+{
+	register int i;
+
+	addr->icsr = ACC_RESET; DELAY(5000);
+	addr->icsr = IN_MRDY | IN_WEN;		/* close the relay */
+	DELAY(10000);
+	/* YECH!!! */
+	for (i = 0; i < 500; i++) {
+		if ((addr->icsr & IN_HRDY) ||
+		    (addr->icsr & (IN_RMR | IN_IMPBSY)) == 0)
+			return (1);
+		addr->icsr = IN_MRDY | IN_WEN; DELAY(10000);
+		/* keep turning IN_RMR off */
+	}
+	printf("acc%d: imp doesn't respond, icsr=%b\n", unit,
+		addr->icsr, ACC_INBITS);
+	return (0);
 }
 
 /*
@@ -227,6 +244,7 @@ accstart(dev)
 	u_short cmd;
 
 COUNT(ACCSTART);
+	acctrace("start", sc->acc_ic->ic_oactive);
 	if (sc->acc_ic->ic_oactive)
 		goto restart;
 	
@@ -237,6 +255,7 @@ COUNT(ACCSTART);
 	 */
 	IF_DEQUEUE(&sc->acc_if->if_snd, m);
 	if (m == 0) {
+		acctrace("q empty", 0);
 		sc->acc_ic->ic_oactive = 0;
 		return;
 	}
@@ -270,16 +289,20 @@ accxint(unit)
 	register struct accdevice *addr;
 
 COUNT(ACCXINT);
+	acctrace("xint", sc->acc_ic->ic_oactive);
+	addr = (struct accdevice *)accinfo[unit]->ui_addr;
 	if (sc->acc_ic->ic_oactive == 0) {
-		printf("acc%d: stray xmit interrupt\n", unit);
+		printf("acc%d: stray xmit interrupt, csr=%b\n", unit,
+			addr->ocsr, ACC_OUTBITS);
+		addr->ocsr  = ACC_RESET; 
 		return;
 	}
-	addr = (struct accdevice *)accinfo[unit]->ui_addr;
+	acctrace("ocsr", addr->ocsr);
 	sc->acc_if->if_opackets++;
 	sc->acc_ic->ic_oactive = 0;
-	if (addr->ocsr & ACC_ERR) {
-		printf("acc%d: output error, csr=%b\n", unit,
-			addr->ocsr, ACC_OUTBITS);
+	if (addr->ocsr & (ACC_ERR|OUT_TMR)) {
+		printf("acc%d: output error, ocsr=%b, icsr=%b\n", unit,
+			addr->ocsr, ACC_OUTBITS, addr->icsr, ACC_INBITS);
 		sc->acc_if->if_oerrors++;
 	}
 	if (sc->acc_ifuba.ifu_xtofree) {
@@ -301,6 +324,12 @@ accrint(unit)
 	int len, info;
 
 COUNT(ACCRINT);
+	addr = (struct accdevice *)accinfo[unit]->ui_addr;
+	if ((addr->icsr & ACC_RDY) == 0) {
+		printf("acc%d: stray input interrupt\n", unit);
+		accinputreset(addr, unit);
+		goto setup;
+	}
 	sc->acc_if->if_ipackets++;
 
 	/*
@@ -308,20 +337,24 @@ COUNT(ACCRINT);
 	 */
 	if (sc->acc_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(sc->acc_ifuba.ifu_uba, sc->acc_ifuba.ifu_r.ifrw_bdp);
-	addr = (struct accdevice *)accinfo[unit]->ui_addr;
-	if (addr->icsr & ACC_ERR) {
-		printf("acc%d: input error, csr=%b\n", unit,
-		    addr->icsr, ACC_INBITS);
+	acctrace("rint", addr->icsr);
+	if (addr->icsr & (ACC_ERR|IN_RMR)) {
+		printf("acc%d: input error, icsr=%b, ocsr=%b\n", unit,
+		    addr->icsr, ACC_INBITS, addr->ocsr, ACC_OUTBITS);
 		sc->acc_if->if_ierrors++;
+		if (addr->icsr & IN_RMR)
+			accinputreset(addr, unit);
 		sc->acc_flush = 1;
 	}
 
+	acctrace("flush", sc->acc_flush);
 	if (sc->acc_flush) {
 		if (addr->icsr & IN_EOM)
 			sc->acc_flush = 0;
 		goto setup;
 	}
 	len = IMPMTU + (addr->iwc << 1);
+	acctrace("length", len);
 	if (len < 0 || len > IMPMTU) {
 		printf("acc%d: bad length=%d\n", len);
 		sc->acc_if->if_ierrors++;
@@ -347,6 +380,7 @@ COUNT(ACCRINT);
 		m = sc->acc_iq;
 		sc->acc_iq = 0;
 	}
+	acctrace("impinput", 0);
 	impinput(unit, m);
 
 setup:
@@ -358,5 +392,28 @@ setup:
 	addr->iwc = -(IMPMTU >> 1);
 	addr->icsr =
 		IN_MRDY | ACC_IE | IN_WEN | ((info & 0x30000) >> 12) | ACC_GO;
+}
+
+int	accprintf = 0;
+
+acctrace(cmd, value)
+	char *cmd;
+	int value;
+{
+	register int i;
+	register char *p = (char *)&value;
+
+	if (accprintf)
+		printf("%s: %x", cmd, value);
+	do {
+		if (accdebugx >= NACCDEBUG)
+			accdebugx = 0;
+		accdebug[accdebugx++] = *cmd;
+	} while (*cmd++);
+	for (i = 0; i < sizeof (int); i++) {
+		if (accdebugx >= NACCDEBUG)
+			accdebugx = 0;
+		accdebug[accdebugx++] = *p++;
+	}
 }
 #endif
