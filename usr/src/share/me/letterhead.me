@@ -4,7 +4,7 @@
 .\" This version prints the U.C. letterhead, complete with seal.
 .\" Unfortunately, it assumes that you have ditroff and the seal font.
 .\"
-.\"	@(#)letterhead.me	2.4		%G%
+.\"	@(#)letterhead.me	2.5		%G%
 .\"	%beginstrip%
 .nr xx \n(.d
 .nr xy \n(.u
@@ -20,10 +20,11 @@
 .el \{\
 .	po 0.4i
 .	sp |0.5i
-.ie "\*(.T"ip" \
-.	ft R
-.el \
-.	ft cr
+.	ie "\*(.T"ip" \
+.		ft R
+.	el \
+.		ft cr
+.\}
 .ps 12
 .vs 0.14i
 .in 0
