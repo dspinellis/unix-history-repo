@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -233,17 +233,18 @@ username()
 
 			pw = getpwuid(getruid());
 			if (pw != NULL)
-				myname = pw->pw_name;
+				myname = newstr(pw->pw_name);
 		}
 		else
 		{
 
-			pw = getpwnam(myname);
-			if(getuid() != pw->pw_uid)
+			myname = newstr(myname);
+			if ((pw = getpwnam(myname)) == NULL ||
+			      getuid() != pw->pw_uid)
 			{
 				pw = getpwuid(getuid());
 				if (pw != NULL)
-					myname = pw->pw_name;
+					myname = newstr(pw->pw_name);
 			}
 		}
 		if (myname == NULL || myname[0] == '\0')
