@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)adduser.8	6.3 (Berkeley) %G%
+.\"	@(#)adduser.8	6.4 (Berkeley) %G%
 .\"
 .TH ADDUSER 8 ""
 .UC 4
@@ -10,9 +10,10 @@
 adduser \- procedure for adding new users
 .SH DESCRIPTION
 A new user must choose a login name, which must not already appear in
-\fI/etc/passwd\fP or \fI/usr/lib/aliases\fP.  An account can be added
-by editing a line into the passwd file; this must be done with the
-password file locked e.g. by using
+\fI/etc/passwd\fP or \fI/usr/lib/aliases\fP.  It must also not begin with
+the hyphen (``-'') character.  An account can be added by editing a line
+into the passwd file; this must be done with the password file locked
+e.g. by using
 .IR vipw (8).
 .PP
 A new user is given a group and user id.

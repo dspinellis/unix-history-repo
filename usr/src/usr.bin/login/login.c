@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.20 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -127,6 +127,8 @@ main(argc, argv)
 				printf("Other options not allowed with -r\n");
 				exit(1);
 			}
+			if (argv[2] == 0)
+				exit(1);
 			rflag = 1;
 			usererr = doremotelogin(argv[2]);
 			if ((p = index(argv[2], '.')) && strcmp(p, domain) == 0)
@@ -219,8 +221,14 @@ main(argc, argv)
 		 */
 		if (rflag && !invalid)
 			SCPYN(utmp.ut_name, lusername);
-		else
+		else {
 			getloginname(&utmp);
+			if (utmp.ut_name[0] == '-') {
+				puts("login names may not start with '-'.");
+				invalid = TRUE;
+				continue;
+			}
+		}
 		invalid = FALSE;
 		if (!strcmp(pwd->pw_shell, "/bin/csh")) {
 			ldisc = NTTYDISC;
