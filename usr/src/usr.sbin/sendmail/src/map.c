@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.60 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.61 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1566,8 +1566,8 @@ nisplus_getcanonname(name, hbsize, statp)
 	}
 
 	if (tTd(38, 20))
-		printf("\nnisplus_getcanoname(%s), qbuf=%s\n%s\n",
-			 name, buf, nis_path);
+		printf("\nnisplus_getcanoname(%s), qbuf=%s\n",
+			 name, buf);
 
 	result = nis_list(buf, EXPAND_NAME|FOLLOW_LINKS|FOLLOW_PATH,
 		NULL, NULL);
