@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.6 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.7 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -88,8 +88,8 @@ realinstall: beforeinstall
 	install -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
 	    lib${LIB}_p.a ${DESTDIR}${LIBDIR}
 	${RANLIB} -t ${DESTDIR}/usr/lib/lib${LIB}_p.a
-	install -c -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
-	    llib-l${LIB}.ln ${DESTDIR}${LINTLIBDIR}
+#	install -c -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
+#	    llib-l${LIB}.ln ${DESTDIR}${LINTLIBDIR}
 
 install: afterinstall
 afterinstall: realinstall maninstall
