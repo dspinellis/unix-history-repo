@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tcopy.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tcopy.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -40,7 +40,7 @@ char **argv;
 	register n, nw, inp, outp;
 	struct mtop op;
 
-	if (argc <=1 || argc >= 3) {
+	if (argc <=1 || argc > 3) {
 		fprintf(stderr, "Usage: tcopy src [dest]\n");
 		exit(1);
 	}
