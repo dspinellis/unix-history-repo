@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_buf.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_buf.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /******************************************************************************
@@ -76,7 +76,7 @@ static BUFHEAD *newbuf();
 */
 extern BUFHEAD *
 __get_buf ( addr, prev_bp, newpage )
-int	addr;
+u_int	addr;
 BUFHEAD	*prev_bp;
 int	newpage;		/* If prev_bp is set, indicates that this is
 					a new overflow page */
@@ -132,7 +132,7 @@ int	newpage;		/* If prev_bp is set, indicates that this is
 */
 static BUFHEAD *
 newbuf ( addr, prev_bp )
-int	addr;
+u_int	addr;
 BUFHEAD	*prev_bp;
 {
     register	BUFHEAD	*bp;	/* The buffer we're going to use */
