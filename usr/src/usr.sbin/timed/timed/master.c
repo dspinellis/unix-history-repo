@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)master.c	2.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)master.c	2.3 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -39,7 +39,6 @@ master()
 	struct timeval wait;
 	struct timeval time;
 	struct timezone tzone;
-	struct timeval mytime;
 	struct tsp *msg, to;
 	struct sockaddr_in saveaddr;
 	int findhost();
@@ -79,36 +78,10 @@ loop:
 		switch (msg->tsp_type) {
 
 		case TSP_MASTERREQ:
-			ind = addmach(msg->tsp_name, &from);
-			if (trace)
-				prthp();
-			if (hp[ind].seq !=  msg->tsp_seq) {
-				hp[ind].seq = msg->tsp_seq;
-				to.tsp_type = TSP_SETTIME;
-				(void)strcpy(to.tsp_name, hostname);
-				/*
-				 * give the upcoming slave the time
-				 * to check its input queue before
-				 * setting the time
-				 */
-				sleep(1);
-				to.tsp_time.tv_usec = 0;
-				(void) gettimeofday(&mytime,
-				    (struct timezone *)0);
-				to.tsp_time.tv_sec = mytime.tv_sec;
-				answer = acksend(&to, &hp[ind].addr,
-				    hp[ind].name, TSP_ACK,
-				    (struct netinfo *)NULL);
-				if (answer == NULL) {
-					syslog(LOG_ERR,
-					    "ERROR ON SETTIME machine: %s",
-					    hp[ind].name);
-					slvcount--;
-				}
-			}
 			break;
 		case TSP_SLAVEUP:
-			(void) addmach(msg->tsp_name, &from);
+			ind = addmach(msg->tsp_name, &from);
+			newslave(ind, msg->tsp_seq);
 			break;
 		case TSP_DATE:
 			saveaddr = from;
@@ -207,17 +180,12 @@ loop:
 
 			(void)strcpy(to.tsp_name, hostname);
 
-			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
-				if ((ntp->mask & from.sin_addr.s_addr) ==
-				    ntp->net)
-					break;
-			}
-			if (ntp == NULL)
+			if (fromnet == NULL)
 				break;
 			for(;;) {
 				to.tsp_type = TSP_RESOLVE;
-				answer = acksend(&to, &ntp->dest_addr,
-				    (char *)ANYADDR, TSP_MASTERACK, ntp);
+				answer = acksend(&to, &fromnet->dest_addr,
+				    (char *)ANYADDR, TSP_MASTERACK, fromnet);
 				if (answer == NULL)
 					break;
 				to.tsp_type = TSP_QUIT;
@@ -230,7 +198,7 @@ loop:
 					(void) addmach(answer->tsp_name, &from);
 				}
 			}
-			masterup(ntp);
+			masterup(fromnet);
 			pollingtime = 0;
 			break;
 		case TSP_RESOLVE:
@@ -251,7 +219,7 @@ loop:
 		default:
 			if (trace) {
 				fprintf(fd, "garbage: ");
-				print(msg);
+				print(msg, &from);
 			}
 			break;
 		}
@@ -335,7 +303,7 @@ long mydelta;
 #endif
 		for(i=1; i<slvcount; i++) {
 			if (hp[i].delta == HOSTDOWN) {
-				free((char *)hp[i].name);
+				rmmach(i);
 				hp[i] = hp[--slvcount];
 #ifdef MEASURE
 				header = ON;
@@ -450,9 +418,8 @@ rmmach(ind)
 {
 	if (trace)
 		fprintf(fd, "rmmach: %s\n", hp[ind].name);
-	if (slvcount-ind-1 > 0)
-		bcopy(&hp[ind+1], &hp[ind], (slvcount-ind-1)*sizeof(hp[ind]));
-	slvcount--;
+	free(hp[ind].name);
+	hp[ind] = hp[--slvcount];
 }
 
 prthp()
@@ -470,6 +437,7 @@ struct netinfo *net;
 {
 	struct timeval wait;
 	struct tsp to, *msg, *readmsg();
+	int ind;
 
 	to.tsp_type = TSP_MASTERUP;
 	to.tsp_vers = TSPVERSION;
@@ -486,8 +454,42 @@ struct netinfo *net;
 		wait.tv_usec = 0;
 		msg = readmsg(TSP_SLAVEUP, (char *)ANYADDR, &wait, net);
 		if (msg != NULL) {
-			(void) addmach(msg->tsp_name, &from);
+			ind = addmach(msg->tsp_name, &from);
 		} else
 			break;
+	}
+}
+
+newslave(ind, seq)
+{
+	struct tsp to;
+	struct tsp *answer, *acksend();
+	struct timeval mytime;
+
+	if (trace)
+		prthp();
+	if (seq == 0 || hp[ind].seq !=  seq) {
+		hp[ind].seq = seq;
+		to.tsp_type = TSP_SETTIME;
+		(void)strcpy(to.tsp_name, hostname);
+		/*
+		 * give the upcoming slave the time
+		 * to check its input queue before
+		 * setting the time
+		 */
+		sleep(1);
+		to.tsp_time.tv_usec = 0;
+		(void) gettimeofday(&mytime,
+		    (struct timezone *)0);
+		to.tsp_time.tv_sec = mytime.tv_sec;
+		answer = acksend(&to, &hp[ind].addr,
+		    hp[ind].name, TSP_ACK,
+		    (struct netinfo *)NULL);
+		if (answer == NULL) {
+			syslog(LOG_ERR,
+			    "ERROR ON SETTIME machine: %s",
+			    hp[ind].name);
+			rmmach(ind);
+		}
 	}
 }

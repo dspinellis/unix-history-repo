@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readmsg.c	2.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)readmsg.c	2.2 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -39,6 +39,7 @@ static struct tsplist {
 	struct tsplist *p;
 } msgslist;
 struct sockaddr_in from;
+struct netinfo *fromnet;
 
 /*
  * `readmsg' returns message `type' sent by `machfrom' if it finds it 
@@ -74,7 +75,7 @@ struct netinfo *netfrom;
 		fprintf(fd, "msgqueue:\n");
 		while (ptr != NULL) {
 			fprintf(fd, "\t");
-			print(&ptr->info);
+			print(&ptr->info, &ptr->addr);
 			ptr = ptr->p;
 		}
 	}
@@ -164,7 +165,7 @@ struct netinfo *netfrom;
 					msgin.tsp_type == TSP_TRACEOFF)) {
 				if (trace) {
 					fprintf(fd, "readmsg: discarded: ");
-					print(&msgin);
+					print(&msgin, &from);
 				}
 				(void)gettimeofday(&rtime,(struct timezone *)0);
 				if (ISTOUTOFF(rtime, rtout))
@@ -184,12 +185,11 @@ struct netinfo *netfrom;
 				    ntp->net) {
 					if (ntp->status == MASTER)
 						masterack();
-					else 
+					else
 						slaveack();
 					break;
 				}
 			}
-
 			if (LOOKAT(msgin, type, machfrom, netfrom, from)) {
 				ret = &msgin;
 				break;
@@ -213,7 +213,15 @@ out:
 	if (ret != NULL) {
 		if (trace) {
 			fprintf(fd, "readmsg: ");
-			print(ret);
+			print(ret, &from);
+		}
+		fromnet = NULL;
+		for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
+			if ((ntp->mask & from.sin_addr.s_addr) ==
+			    ntp->net) {
+				fromnet = ntp;
+				break;
+			}
 		}
 	}
 	return(ret);
@@ -245,7 +253,7 @@ slaveack()
 		(void)strcpy(resp.tsp_name, hostname);
 		if (trace) {
 			fprintf(fd, "Slaveack: ");
-			print(&resp);
+			print(&resp, &from);
 		}
 		bytenetorder(&resp);     /* this is not really necessary here */
 		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
@@ -286,7 +294,7 @@ masterack()
 		bytenetorder(&resp);
 		if (trace) {
 			fprintf(fd, "Masterack: ");
-			print(&resp);
+			print(&resp, &from);
 		}
 		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
 						&from, length) < 0) {
@@ -300,7 +308,7 @@ masterack()
 		bytenetorder(&resp);
 		if (trace) {
 			fprintf(fd, "Masterack: ");
-			print(&resp);
+			print(&resp, &from);
 		}
 		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
 						&from, length) < 0) {
@@ -313,7 +321,7 @@ masterack()
 		bytenetorder(&resp);
 		if (trace) {
 			fprintf(fd, "Masterack: ");
-			print(&resp);
+			print(&resp, &from);
 		}
 		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
 						&from, length) < 0) {
@@ -329,14 +337,16 @@ masterack()
 /*
  * Print a TSP message 
  */
-print(msg)
+print(msg, addr)
 struct tsp *msg;
+struct sockaddr_in *addr;
 {
- 	fprintf(fd, "%s %d %d (%d, %d) %s\n",
+ 	fprintf(fd, "%s %d %d (%d, %d) %s %s\n",
 		tsptype[msg->tsp_type],
 		msg->tsp_vers,
 		msg->tsp_seq,
 		msg->tsp_time.tv_sec, 
 		msg->tsp_time.tv_usec, 
-		msg->tsp_name);
+		msg->tsp_name,
+		inet_ntoa(addr->sin_addr));
 }
