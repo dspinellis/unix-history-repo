@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vfsops.c	7.25 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.26 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -47,6 +47,7 @@ struct vfsops mfs_vfsops = {
 	ufs_quotactl,
 	mfs_statfs,
 	ffs_sync,
+	ffs_vget,
 	ffs_fhtovp,
 	ffs_vptofh,
 	mfs_init,
