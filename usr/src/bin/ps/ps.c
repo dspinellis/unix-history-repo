@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.48 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.49 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -23,7 +23,7 @@ static char sccsid[] = "@(#)ps.c	5.48 (Berkeley) %G%";
 #include <sys/proc.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
-#include <sys/kinfo.h>
+#include <sys/sysctl.h>
 #include <nlist.h>
 #include <kvm.h>
 #include <errno.h>
@@ -253,13 +253,13 @@ main(argc, argv)
 	 * get proc list
 	 */
 	if (uid != -1) {
-		what = KINFO_PROC_UID;
+		what = KERN_PROC_UID;
 		flag = uid;
 	} else if (ttydev != NODEV) {
-		what = KINFO_PROC_TTY;
+		what = KERN_PROC_TTY;
 		flag = ttydev;
 	} else if (pid != -1) {
-		what = KINFO_PROC_PID;
+		what = KERN_PROC_PID;
 		flag = pid;
 	/*
 	 * select procs
