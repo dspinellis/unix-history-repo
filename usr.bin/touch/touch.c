@@ -60,6 +60,9 @@ void	stime_arg2 __P((char *, int, struct timeval *));
 void	stime_file __P((char *, struct timeval *));
 void	usage __P((void));
 
+/*temporary we aren't 4.4 portability hack*/
+#define TIMET_TO_TIMEVAL(timevalp, tp) (timevalp)->tv_sec = *(tp);
+
 int
 main(argc, argv)
 	int argc;
@@ -117,6 +120,7 @@ main(argc, argv)
 		if (*p == '\0' && (len == 8 || len == 10)) {
 			timeset = 1;
 			stime_arg2(argv[0], len == 10, tv);
+			argv++;
 		}
 	}
 
@@ -147,9 +151,12 @@ main(argc, argv)
 				continue;
 
 		if (!aflag)
-			TIMESPEC_TO_TIMEVAL(&tv[0], &sb.st_atimespec);
+/*			TIMESPEC_TO_TIMEVAL(&tv[0], &sb.st_atimespec);*/
+			TIMET_TO_TIMEVAL(&tv[0], &sb.st_atime);
 		if (!mflag)
-			TIMESPEC_TO_TIMEVAL(&tv[1], &sb.st_mtimespec);
+/*			TIMESPEC_TO_TIMEVAL(&tv[1], &sb.st_mtimespec);*/
+			TIMET_TO_TIMEVAL(&tv[1], &sb.st_mtime);
+
 
 		/* Try utimes(2). */
 		if (!utimes(*argv, tv))
@@ -277,8 +284,10 @@ stime_file(fname, tvp)
 
 	if (stat(fname, &sb))
 		err(1, "%s", fname);
-	TIMESPEC_TO_TIMEVAL(tvp, &sb.st_atimespec);
-	TIMESPEC_TO_TIMEVAL(tvp + 1, &sb.st_mtimespec);
+/*	TIMESPEC_TO_TIMEVAL(tvp, &sb.st_atimespec);*/
+	TIMET_TO_TIMEVAL(tvp, &sb.st_atime);
+/*	TIMESPEC_TO_TIMEVAL(tvp + 1, &sb.st_mtimespec);*/
+	TIMET_TO_TIMEVAL(tvp + 1, &sb.st_mtime);
 }
 
 int
