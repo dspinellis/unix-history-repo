@@ -1,6 +1,8 @@
-.\"	@(#)e0	5.1 (Berkeley) %G%
+.\"	@(#)e0	6.1 (Berkeley) %G%
 .\"
-.RP
+.EH 'USD:12-%''A Tutorial Introduction to the \s-2UNIX\s+2 Text Editor'
+.OH 'A Tutorial Introduction to the \s-2UNIX\s+2 Text Editor''USD:12-%'
+.\".RP
 .TL
 A Tutorial Introduction to the \s-2UNIX\s+2 Text Editor
 .AU
