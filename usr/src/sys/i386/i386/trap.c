@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	5.9 (Berkeley) %G%
+ *	@(#)trap.c	5.10 (Berkeley) %G%
  */
 
 /*
@@ -194,6 +194,7 @@ copyfault:
 		extern vm_map_t kernel_map;
 		unsigned nss,v;
 
+		va = trunc_page((vm_offset_t)rcr2());
 		/*
 		 * It is only a kernel address space fault iff:
 		 * 	1. (type & USER) == 0  and
@@ -202,7 +203,8 @@ copyfault:
 		 * The last can occur during an exec() copyin where the
 		 * argument space is lazy-allocated.
 		 */
-		if (type == T_PAGEFLT && (!nofault/*|| (code & PGEX_U) == 0*/))
+		/*if (type == T_PAGEFLT && !nofault)*/
+		if (type == T_PAGEFLT && va >= 0xfe000000)
 			map = kernel_map;
 		else
 			map = u.u_procp->p_map;
@@ -210,7 +212,7 @@ copyfault:
 			ftype = VM_PROT_READ | VM_PROT_WRITE;
 		else
 			ftype = VM_PROT_READ;
-		va = trunc_page((vm_offset_t)rcr2());
+
 #ifdef DEBUG
 		if (map == kernel_map && va == 0) {
 			printf("trap: bad kernel access at %x\n", v);
@@ -220,16 +222,24 @@ copyfault:
 		/*
 		 * XXX: rude hack to make stack limits "work"
 		 */
-#ifdef notyet
 		nss = 0;
 		if ((caddr_t)va >= u.u_maxsaddr && map != kernel_map) {
 			nss = clrnd(btoc(USRSTACK-(unsigned)va));
 			if (nss > btoc(u.u_rlimit[RLIMIT_STACK].rlim_cur)) {
+pg("stk fuck");
 				rv = KERN_FAILURE;
 				goto nogo;
 			}
 		}
-#endif
+		/* check if page table is mapped, if not, fault it first */
+		if (!PTD[(va>>PD_SHIFT)&1023].pd_v) {
+			v = trunc_page(vtopte(va));
+/*pg("pt fault");*/
+			rv = vm_fault(map, v, ftype, FALSE);
+			if (rv != KERN_SUCCESS) goto nogo;
+			/* check if page table fault, increment wiring */
+			vm_map_pageable(map, v, round_page(v+1), FALSE);
+		} else v=0;
 		rv = vm_fault(map, va, ftype, FALSE);
 		if (rv == KERN_SUCCESS) {
 			/*
@@ -237,17 +247,23 @@ copyfault:
 			 */
 			if (nss > u.u_ssize)
 				u.u_ssize = nss;
+			va = trunc_page(vtopte(va));
+			/* for page table, increment wiring
+			   as long as not a page table fault as well */
+			if (!v && type != T_PAGEFLT)
+			  vm_map_pageable(map, va, round_page(va+1), FALSE);
 			if (type == T_PAGEFLT)
 				return;
 			goto out;
 		}
 nogo:
+/*pg("nogo");*/
 		if (type == T_PAGEFLT) {
 			if (nofault)
 				goto copyfault;
 			printf("vm_fault(%x, %x, %x, 0) -> %x\n",
 			       map, va, ftype, rv);
-			printf("  type %x, code [mmu,,ssw]: %x\n",
+			printf("  type %x, code %x\n",
 			       type, code);
 			goto bit_sucker;
 		}
@@ -320,6 +336,7 @@ out:
 		locr0[tEFLAGS] |= PSL_T;
 if(u.u_procp->p_pid == 1 && (pc == 0xec9 || pc == 0xebd))
 		locr0[tEFLAGS] |= PSL_T;*/
+spl0(); /*XXX*/
 #undef type
 #undef code
 #undef pc
