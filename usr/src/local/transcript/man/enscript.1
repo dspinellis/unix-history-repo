@@ -6,7 +6,7 @@ enscript \- convert text files to P\s-2OST\s+2S\s-2CRIPT\s+2 format for printing
 .SH SYNOPSIS
 .B enscript
 [ 
-.B \-\s-112BGghKklmoqRr\s+1 
+.B \-\s-112BGghKklmoqRrv\s+1 
 ] [ 
 .BI \-L lines
 ] [
@@ -15,6 +15,9 @@ enscript \- convert text files to P\s-2OST\s+2S\s-2CRIPT\s+2 format for printing
 .BI \-F hfont
 ] [
 .BI \-b header
+] [
+] [
+.BI \-s header2
 ] [
 .BI \-p out
 ] [
@@ -86,6 +89,13 @@ sets the string to be used for page headings to
 .IR header .  
 The default header is constructed from the file name, its last
 modification date, and a page number.
+In gaudy mode, two header lines are provided; the
+.B \-b
+option sets the top header,
+while the second header normally contains the file name.
+.TP
+.BI \-s header2
+sets the second header for gaudy mode (normally the file name).
 .TP
 .BI \-L lines
 set the maximum number of lines to output on a page.
@@ -138,6 +148,9 @@ disable page prefeed (the default).
 .TP
 .B \-h
 suppress printing of job burst page.
+.TP
+.B \-v
+verbose mode; the default on other versions of this program.
 .PP
 In 4.2bsd systems, the following spooler options are also recognized:
 .TP
@@ -240,10 +253,6 @@ Options and the ENSCRIPT environment string are parsed in
 .IR getopt (3)
 fashion.
 .SH BUGS
-Long lines are truncated.  Line truncation may be 
-off by a little bit as printer margins vary.  There should be a 
-"wrap" option and multiple (truncated or wrapped) columns.
-.sp
 .I Enscript
 generates temporary files which are spooled for printing.  The temporary file
 names are used by the spooling software (e.g., 
