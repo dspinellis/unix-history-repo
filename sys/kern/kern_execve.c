@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern_execve.c,v 1.16 1994/03/15 01:58:29 wollman Exp $
+ *	$Id: kern_execve.c,v 1.17 1994/03/15 02:48:35 wollman Exp $
  */
 
 #include "param.h"
@@ -258,6 +258,8 @@ interpret:
 	}
 	
 	/* implement set userid/groupid */
+	p->p_flag &= ~SUGID;
+
 	/*
 	 * Turn off kernel tracing for set-id programs, except for
 	 * root.
@@ -271,10 +273,12 @@ interpret:
 	if ((attr.va_mode&VSUID) && (p->p_flag & STRC) == 0) {
 		p->p_ucred = crcopy(p->p_ucred);
 		p->p_ucred->cr_uid = attr.va_uid;
+		p->p_flag |= SUGID;
 	}
 	if ((attr.va_mode&VSGID) && (p->p_flag & STRC) == 0) {
 		p->p_ucred = crcopy(p->p_ucred);
 		p->p_ucred->cr_groups[0] = attr.va_gid;
+		p->p_flag |= SUGID;
 	}
 
 	/*
@@ -295,9 +299,6 @@ interpret:
 
 	/* clear "fork but no exec" flag, as we _are_ execing */
 	p->p_acflag &= ~AFORK;
-
-	/* clear `set id since last exec' flag */
-	p->p_flag &= ~SUGID;
 
 	/* Set entry address */
 	setregs(p, iparams->entry_addr, stack_base);
