@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1125,6 +1125,84 @@ hes_map_lookup(map, name, av, statp)
 		return NULL;
 	(void) sprintf(keybuf, "%s@%s", pobox->po_name, pobox->po_host);
 	return map_rewrite(map, keybuf, strlen(keybuf), av);
+}
+
+#endif
+/*
+**  NeXT NETINFO Modules
+*/
+
+#ifdef NETINFO
+
+#define NETINFO_DEFAULT_DIR		"/aliases"
+#define NETINFO_DEFAULT_PROPERTY	"members"
+
+
+/*
+**  NI_MAP_OPEN -- open NetInfo Aliases
+*/
+
+bool 
+ni_map_open(map, mode)
+	MAP *map;
+	int mode;
+{
+	char *p;
+
+	if (tTd(38, 20))
+		printf("ni_map_open: %s\n", map->map_file);
+
+	p = strchr(map->map_file, '@');
+	if (p != NULL)
+	{
+		*p++ = '\0';
+		if (*p != '\0')
+			map->map_domain = p;
+	}
+	if (*map->map_file == '\0')
+		map->map_file = NETINFO_DEFAULT_DIR;
+
+	if (map->map_domain == NULL)
+		map->map_domain = NETINFO_DEFAULT_PROPERTY;
+
+	if (map->map_sepchar == '\0' && bitset(MF_ALIAS, map->map_mflags))
+		map->map_sepchar = ',';
+
+	return TRUE;
+}
+
+
+/*
+**  NI_MAP_LOOKUP -- look up a datum in NetInfo
+*/
+
+char *
+ni_map_lookup(map, name, av, statp)
+	MAP *map;
+	char *name;
+	char **av;
+	int *statp;
+{
+	char *res;
+	char *propval;
+	extern char *ni_propval();
+
+	if (tTd(38, 20))
+		printf("ni_map_lookup(%s, %s)\n", 
+			map->map_mname, name);
+
+	propval = ni_propval(map->map_file, map->map_keycolnm, name,
+			     map->map_valcolnm, map->map_coldelim);
+
+	if (propval == NULL) 
+		return NULL;
+
+	if (bitset(MF_MATCHONLY, map->map_mflags))
+		res = map_rewrite(map, name, strlen(name), NULL);
+	else
+		res = map_rewrite(map, propval, strlen(propval), av);
+	free(propval);
+	return res;
 }
 
 #endif
