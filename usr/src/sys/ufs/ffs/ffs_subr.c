@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_subr.c	7.5 (Berkeley) %G%
+ *	@(#)ffs_subr.c	7.6 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -55,7 +55,7 @@ update()
 	 * of each file system is still in the buffer cache.
 	 */
 	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
-		if (mp->m_fs == NULL || mp->m_dev == NODEV)
+		if (mp->m_fs == NULL || mp->m_fs == (struct fs *)1)   /* XXX */
 			continue;
 		fs = mp->m_fs;
 		if (fs->fs_fmod == 0)
@@ -302,6 +302,7 @@ setblock(fs, cp, h)
  *
  * The algorithm is a linear search through the mount table. A
  * consistency check of the super block magic number is performed.
+ * Filesystems still working on a mount are skipped.
  *
  * panic: no fs -- the device is not mounted.
  *	this "cannot happen"
@@ -314,7 +315,8 @@ getfs(dev)
 	register struct fs *fs;
 
 	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
-		if (mp->m_fs == NULL || mp->m_dev != dev)
+		if (mp->m_dev != dev || mp->m_fs == NULL ||
+		    mp->m_fs == (struct fs *)1)			/* XXX */
 			continue;
 		fs = mp->m_fs;
 		if (fs->fs_magic != FS_MAGIC) {

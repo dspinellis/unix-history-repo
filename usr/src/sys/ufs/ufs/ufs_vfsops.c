@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_vfsops.c	7.8 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -99,6 +99,7 @@ mountfs(dev, ronly, ip)
 	}
 	mp->m_fs = (struct fs *)1;	/* just to reserve this slot */
 	mp->m_dev = dev;
+	mp->m_inodp = NULL;
 	error =
 	    (*bdevsw[major(dev)].d_open)(dev, ronly ? FREAD : FREAD|FWRITE,
 	        S_IFBLK);
