@@ -1,7 +1,7 @@
 /*
  * Machine Language Assist for UC Berkeley Virtual Vax/Unix
  *
- *	locore.s		4.9	%G%
+ *	locore.s		4.10	%G%
  */
 
 	.set	HIGH,31		# mask for total disable
@@ -220,8 +220,7 @@ ubasrv:
  */
 	bitl	$CFGFLT,UBA0+UCN_OFF  	# any SBI faults ?
 	beql	UBAflt
-	clrl	_waittime
-	pushr	$0xf  			# save regs 0-3
+	pushr	$0x3f  			# save regs 0-5
 	pushl	UBA0+UCN_OFF
 	pushl	UBA0+UST_OFF
 	pushab	SBIflt
@@ -882,8 +881,7 @@ _addupc:	.globl	_addupc
 	tstl	r1
 	bneq	9f
 	incl	r0
-	bicb2	$1,r0
-	blss	9f
+	bicl2	$1,r0
 	cmpl	r0,4(r2)		# length
 	bgequ	9f
 	addl2	(r2),r0			# base
