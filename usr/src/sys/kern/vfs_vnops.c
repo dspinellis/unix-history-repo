@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	8.4 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -245,7 +245,7 @@ vn_write(fp, uio, cred)
 	struct ucred *cred;
 {
 	register struct vnode *vp = (struct vnode *)fp->f_data;
-	int count, error, ioflag = 0;
+	int count, error, ioflag = IO_UNIT;
 
 	if (vp->v_type == VREG && (fp->f_flag & O_APPEND))
 		ioflag |= IO_APPEND;
