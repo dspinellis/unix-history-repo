@@ -1,9 +1,8 @@
-/*	vdfmt.h	1.1	86/07/05	*/
+/*	vdfmt.h	1.2	86/11/04	*/
 
 /*
-**
-*/
-
+ * VERSAbus disk controller (vd) disk formatter.
+ */
 #include <setjmp.h>
 #include "tahoe/mtpr.h"
 #include "param.h"
@@ -14,7 +13,7 @@
 #include "tahoevba/vdreg.h"
 
 #include "tahoe/cp.h"
-extern	struct cpdcb_i cpin;
+extern	struct cpdcb_i cpin;		/* found in prf.c */
 
 /*
  * Poll console and return 1 if input is present.
@@ -22,14 +21,16 @@ extern	struct cpdcb_i cpin;
 #define	input() \
     (uncache(&cpin.cp_hdr.cp_unit), (cpin.cp_hdr.cp_unit&CPDONE))
 
-/* Configuration parameters */
-#define	MAXCTLR		8			/* Maximum # of controllers */
-#define	MAXDRIVE	16			/* Max drives per controller */
+/*
+ * Configuration parameters
+ */
+#define	MAXCTLR		8		/* Maximum # of controllers */
+#define	MAXDRIVE	16		/* Max drives per controller */
 
-#define NUMMAP		1			/* # Cyls in bad sector map */
-#define	NUMMNT		1			/* # cyls for diagnostics */
-#define	NUMREL		3			/* # Cyls in relocation area */
-#define	NUMSYS		(NUMREL+NUMMNT+NUMMAP)	/* Total cyls used by system */
+#define NUMMAP		1		/* # Cyls in bad sector map */
+#define	NUMMNT		1		/* # cyls for diagnostics */
+#define	NUMREL		3		/* # Cyls in relocation area */
+#define	NUMSYS	(NUMREL+NUMMNT+NUMMAP)	/* Total cyls used by system */
 
 #define	MAXTRKS		24
 #define	MAXSECS_PER_TRK	64
@@ -38,11 +39,10 @@ extern	struct cpdcb_i cpin;
 #define	TRKSIZ		((SECSIZ/sizeof(long)) * MAXSECS_PER_TRK)
 #define bytes_trk	(CURRENT->vc_nsec * SECSIZ)
 
-#define	HARD_ERROR	(DRVNRDY | INVDADR | DNEMEM | PARERR | OPABRT | \
-			 WPTERR | DSEEKERR | NOTCYLERR)
-#define DATA_ERROR	(CTLRERR | UCDATERR | DCOMPERR | DSERLY | DSLATE | \
-			 TOPLUS | TOMNUS | CPDCRT | \
-			 HRDERR | SFTERR)
+#define	HARD_ERROR \
+    (DRVNRDY|INVDADR|DNEMEM|PARERR|OPABRT|WPTERR|DSEEKERR|NOTCYLERR)
+#define DATA_ERROR \
+    (CTLRERR|UCDATERR|DCOMPERR|DSERLY|DSLATE|TOPLUS|TOMNUS|CPDCRT|HRDERR|SFTERR)
 #define HEADER_ERROR	(HCRCERR | HCMPERR)
 #define	NRM		(short)0
 #define	BAD		(short)VDUF
@@ -50,44 +50,59 @@ extern	struct cpdcb_i cpin;
 #define RELOC_SECTOR	(short)(VDALT)
 #define	ALT_SECTOR	(short)(VDALT)
 
+typedef enum { false, true } boolean;
+typedef enum { u_false, u_true, u_unknown } uncertain;
 
-/* New types used by VDFORMAT */
-
-typedef enum {false, true} boolean;	/* Standard boolean expression */
-
-typedef enum {u_false, u_true, u_unknown} uncertain;
-
-
-	/* Free bad block allocation bit map */
+/*
+ * Free bad block allocation bit map
+ */
 typedef struct {
 	long	free_error;
-	enum	{ALLOCATED, NOTALLOCATED} free_status;
+	enum { ALLOCATED, NOTALLOCATED } free_status;
 } fmt_free;
 
-	/* Type of relocation that took place */
-typedef enum {SINGLE_SECTOR, FULL_TRACK} rel_type;
+typedef enum { SINGLE_SECTOR, FULL_TRACK } rel_type;	/* relocation type */
 
-	/* Error table format */
+/*
+ * Error table format
+ */
 typedef struct {
 	dskadr	err_adr;
 	long	err_stat;
 } fmt_err;
 
 /* utilities */
+int	blkcopy();
+int	blkzero();
+int	to_sector();
+int	to_track();
+int	data_ok();
+boolean	blkcmp();
+boolean	get_yes_no();
+boolean	is_in_map();
+boolean	is_formatted();
+boolean	read_bad_sector_map();
+dskadr	*from_sector();
+dskadr	*from_track();
+dskadr	*from_unix();
+dskadr	is_relocated();
+dskadr	*new_location();
 
-int	blkcopy(), blkzero(), to_sector(), to_track(), data_ok();
-boolean blkcmp(), get_yes_no(), is_in_map();
-boolean	is_formatted(), read_bad_sector_map();
-dskadr	*from_sector(), *from_track(), *from_unix();
-dskadr	is_relocated(), *new_location();
-
-/* Operation table */
-
-extern int	format(), verify(), relocate(), info();
-extern int	correct(), profile(), exercise();
+/*
+ * Operation table
+ */
+typedef struct {
+	int	(*routine)();
+	char	*op_name;
+	char	*op_action;
+} op_tbl;
 
 #define	NUMOPS	7
-	/* operation bit mask values (must match order in operations table) */
+op_tbl	operations[NUMOPS];
+
+/*
+ * Operation bit mask values (must match order in operations table)
+ */
 #define	FORMAT_OP	0x01	/* Format operation bit */
 #define	VERIFY_OP	0x02	/* Verify operation bit */
 #define	RELOCATE_OP	0x04	/* Relocate operation bit */
@@ -96,48 +111,67 @@ extern int	correct(), profile(), exercise();
 #define	PROFILE_OP	0x20	/* Profile operation bit */
 #define	EXERCISE_OP	0x40	/* Exercise operation bit */
 
-typedef struct {
-	int	(*routine)();
-	char	*op_name;
-	char	*op_action;
-} op_tbl;
-
-op_tbl	operations[NUMOPS];
+extern	int format(), verify(), relocate(), info();
+extern	int correct(), profile(), exercise();
 
 
-/* Operation table type and definitions */
-
+/*
+ * Operation table type and definitions
+ */
 typedef struct {
 	int	op;
 	int	numpat;
 } op_spec;
-
 op_spec	ops_to_do[MAXCTLR][MAXDRIVE];
 
+/*
+ * Contains all the current parameters
+ */
+typedef enum {
+	formatted,
+	half_formatted,
+	unformatted,
+	unknown
+} drv_stat;
+typedef enum {
+	fmt,
+	vfy,
+	rel,
+	cor,
+	inf,
+	cmd,
+	exec,
+	prof,
+	setup
+} state;
+typedef enum {
+	sub_chk,
+	sub_rcvr,
+	sub_stat,
+	sub_rel,
+	sub_vfy,
+	sub_fmt,
+	sub_sk
+} substate;
 
-/* Contains all the current parameters */
-
-typedef enum {formatted, half_formatted, unformatted, unknown} drv_stat;
-typedef enum {fmt, vfy, rel, cor, inf, cmd, exec, prof} state;
-typedef enum {sub_chk,sub_rcvr,sub_stat,sub_rel,sub_vfy,sub_fmt,sub_sk}substate;
-
-/* Different environments for setjumps */
+/*
+ * Different environments for setjumps
+ */
 jmp_buf	reset_environ;	/* Use when reset is issued */
 jmp_buf	quit_environ;	/* Use when you want to quit what your doing */
 jmp_buf	abort_environ;	/* Use when nothing can be done to recover */
 
-
-/* Flaw map definitions and storage */
-
+/*
+ * Flaw map definitions and storage
+ */
 typedef struct {
 	short	bs_cyl;			/* Cylinder position of flaw */
 	short	bs_trk;			/* Track position of flaw */
 	long	bs_offset;		/* (byte) Position of flaw on track */
 	long	bs_length;		/* Length (in bits) of flaw */
 	dskadr	bs_alt;			/* Addr of alt sector (all 0 if none) */
-	enum {flaw_map, scanning, operator} bs_how; /* How it was found */
+	enum { flaw_map, scanning, operator } bs_how; /* How it was found */
 } bs_entry ;
-
 
 struct {
 	int		controller;
@@ -148,9 +182,9 @@ struct {
 	dskadr		daddr;
 } cur;
 
-
-/* Controller specific information */
-
+/*
+ * Controller specific information
+ */
 typedef struct {
 	uncertain	alive;
 	cdr		*addr;
@@ -162,11 +196,12 @@ typedef struct {
 	int		(*track_skew)();
 } ctlr_info;
 
+#define	C_INFO	 c_info[cur.controller]
 ctlr_info	c_info[MAXCTLR];
 
-
-/* drive specific information */
-
+/*
+ * Drive specific information
+ */
 typedef struct {
 	uncertain	alive;
 	int		id;
@@ -177,13 +212,10 @@ typedef struct {
 	drv_stat	condition;
 } drive_info;
 
+#define	D_INFO	 d_info[cur.controller][cur.drive]
+#define	CURRENT	 D_INFO.info
 drive_info	d_info[MAXCTLR][MAXDRIVE];
 
-
-#define	D_INFO	 d_info[cur.controller][cur.drive]
-#define	C_INFO	 c_info[cur.controller]
-
-#define	CURRENT	 D_INFO.info
 typedef struct {
 	unsigned int	bs_id;		/* Pack id */
 	unsigned int	bs_count;	/* number of known bad sectors */
@@ -194,12 +226,14 @@ typedef struct {
 #define MAX_FLAWS (((TRKSIZ*sizeof(long))-sizeof(bs_map))/sizeof(bs_entry))
 
 long	bs_map_space[TRKSIZ];
-bs_map		*bad_map;
+bs_map	*bad_map;
 
-boolean		kill_processes;
-int		num_controllers;
+boolean	kill_processes;
+int	num_controllers;
 
-/* Pattern buffers and the sort */
+/*
+ * Pattern buffers and the sort
+ */
 fmt_free	free_tbl[NUMREL*MAXTRKS][MAXSECS_PER_TRK];
 fmt_mdcb	mdcb;		/* Master device control block */
 fmt_dcb		dcb;		/* Device control blocks */
@@ -213,13 +247,14 @@ long	pattern_10[TRKSIZ], pattern_11[TRKSIZ];
 long	pattern_12[TRKSIZ], pattern_13[TRKSIZ];
 long	pattern_14[TRKSIZ], pattern_15[TRKSIZ];
 
-/* Will be filled in at boot time with pointers to above patterns */
-long	*pattern_address[16];
+long	*pattern_address[16];	/* pointers to pattern_* */
 
-/* Double buffer for scanning existing file systems and general scratch */
+/*
+ * Double buffer for scanning existing
+ * file systems and general scratch
+ */
 long	scratch[TRKSIZ];
 long	save[TRKSIZ];
-
 
 /* XXX */
 /*
@@ -290,3 +325,4 @@ struct	vdconfig {
 };
 struct	vdconfig vdconfig[];
 int	ndrives;
+int	smddrives;
