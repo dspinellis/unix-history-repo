@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	6.11 (Berkeley) %G%
+ *	@(#)hp.c	6.12 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -629,18 +629,18 @@ hpdtint(mi, mbsr)
 			if (hpecc(mi, ECC))
 				return (MBD_RESTARTED);
 			/* else done */
-		} else if (++mi->mi_tab.b_errcnt > 27 ||
-		    (ML11 && mi->mi_tab.b_errcnt > 15) ||
-		    mbsr & MBSR_HARD ||
-		    er1 & HPER1_HARD ||
-		    (!ML11 && (er2 & HPER2_HARD))) {
+		} else if ((er1 & HPER1_HCRC) && !ML11 && hpecc(mi, BSE)) {
  			/*
  			 * HCRC means the header is screwed up and the sector
  			 * might well exist in the bad sector table, 
 			 * better check....
  			 */
- 			if ((er1 & HPER1_HCRC) && !ML11 && hpecc(mi, BSE))
-				return (MBD_RESTARTED);
+			return (MBD_RESTARTED);
+		} else if (++mi->mi_tab.b_errcnt > 27 ||
+		    (ML11 && mi->mi_tab.b_errcnt > 15) ||
+		    mbsr & MBSR_HARD ||
+		    er1 & HPER1_HARD ||
+		    (!ML11 && (er2 & HPER2_HARD))) {
 hard:
 			if (bp->b_flags & B_BAD)
 				bp->b_blkno = sc->sc_badbn;
@@ -876,7 +876,7 @@ hpecc(mi, flag)
 		sn = bn%st->nspc;
 		tn = sn/st->nsect;
 		sn %= st->nsect;
-		mbp->mba_bcr = -512;
+		mbp->mba_bcr = -(min(512, bp->b_bcount - (int)ptob(npf)));
 #ifdef HPBDEBUG
 		if (hpbdebug)
 		printf("revector to cn %d tn %d sn %d\n", cn, tn, sn);
@@ -889,9 +889,9 @@ hpecc(mi, flag)
 		printf("hpecc, CONT: bn %d cn %d tn %d sn %d\n", bn,cn,tn,sn);
 #endif
 		bp->b_flags &= ~B_BAD;
-		mbp->mba_bcr = -(bp->b_bcount - (int)ptob(npf));
-		if (MASKREG(mbp->mba_bcr) == 0)
+		if ((int)ptob(npf) >= bp->b_bcount)
 			return (0);
+		mbp->mba_bcr = -(bp->b_bcount - (int)ptob(npf));
 		break;
 	}
 	rp->hpcs1 = HP_DCLR|HP_GO;
