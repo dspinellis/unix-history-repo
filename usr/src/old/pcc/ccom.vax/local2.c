@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.35 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.36 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -504,7 +504,11 @@ sconv( p, forarg ) register NODE *p; {
 		}
 	if (r->in.op == ICON)
 		if (r->in.name[0] == '\0') {
-			if (r->tn.lval == 0 && !forarg) {
+			if (r->tn.lval == 0 &&
+			    (r->in.type == DOUBLE || r->in.type == FLOAT ||
+			    !forarg)) {
+				if (r->in.type == FLOAT)
+					r->in.type = DOUBLE;
 				putstr("clr");
 				prtype(l);
 				putchar('\t');
