@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	5.12 (Berkeley) %G%
+ *	@(#)unistd.h	5.13 (Berkeley) %G%
  */
 
 #ifndef _UNISTD_H_
@@ -31,52 +31,52 @@
 typedef	int ssize_t;		/* count of bytes or error indication */
 
 __BEGIN_DECLS
-void volatile	 _exit __P((int));
-int		 access __P((const char *, int));
-u_int		 alarm __P((u_int));
-int		 chdir __P((const char *));
-int		 chown __P((const char *, uid_t, gid_t));
-int		 close __P((int));
-char		*cuserid __P((char *));
-int		 dup __P((int));
-int		 dup2 __P((int, int));
-int		 execl __P((const char *, const char *, ...));
-int		 execle __P((const char *, const char *, ...));
-int		 execlp __P((const char *, const char *, ...));
-int		 execv __P((const char *, char * const *));
-int		 execve __P((const char *, char * const *, char * const *));
-int		 execvp __P((const char *, char * const *));
-pid_t		 fork __P((void));
-long		 fpathconf __P((int, int));		/* not yet */
-char		*getcwd __P((char *, size_t));
-gid_t		 getegid __P((void));
-uid_t		 geteuid __P((void));
-gid_t		 getgid __P((void));
-int		 getgroups __P((int, int *));		/* XXX (gid_t *) */
-char		*getlogin __P((void));
-pid_t		 getpgrp __P((void));
-pid_t		 getpid __P((void));
-pid_t		 getppid __P((void));
-uid_t		 getuid __P((void));
-int		 isatty __P((int));
-int		 link __P((const char *, const char *));
-off_t		 lseek __P((int, off_t, int));
-long		 pathconf __P((const char *, int));	/* not yet */
-int		 pause __P((void));
-int		 pipe __P((int *));
-ssize_t		 read __P((int, void *, size_t));
-int		 rmdir __P((const char *));
-int		 setgid __P((gid_t));
-int		 setpgid __P((pid_t, pid_t));
-pid_t		 setsid __P((void));
-int		 setuid __P((uid_t));
-u_int		 sleep __P((u_int));
-long		 sysconf __P((int));			/* not yet */
-pid_t		 tcgetpgrp __P((int));
-int		 tcsetpgrp __P((int, pid_t));
-char		*ttyname __P((int));
-int		 unlink __P((const char *));
-ssize_t		 write __P((int, const void *, size_t));
+void	 _exit __P((int));
+int	 access __P((const char *, int));
+u_int	 alarm __P((u_int));
+int	 chdir __P((const char *));
+int	 chown __P((const char *, uid_t, gid_t));
+int	 close __P((int));
+char	*cuserid __P((char *));
+int	 dup __P((int));
+int	 dup2 __P((int, int));
+int	 execl __P((const char *, const char *, ...));
+int	 execle __P((const char *, const char *, ...));
+int	 execlp __P((const char *, const char *, ...));
+int	 execv __P((const char *, char * const *));
+int	 execve __P((const char *, char * const *, char * const *));
+int	 execvp __P((const char *, char * const *));
+pid_t	 fork __P((void));
+long	 fpathconf __P((int, int));		/* not yet */
+char	*getcwd __P((char *, size_t));
+gid_t	 getegid __P((void));
+uid_t	 geteuid __P((void));
+gid_t	 getgid __P((void));
+int	 getgroups __P((int, int *));		/* XXX (gid_t *) */
+char	*getlogin __P((void));
+pid_t	 getpgrp __P((void));
+pid_t	 getpid __P((void));
+pid_t	 getppid __P((void));
+uid_t	 getuid __P((void));
+int	 isatty __P((int));
+int	 link __P((const char *, const char *));
+off_t	 lseek __P((int, off_t, int));
+long	 pathconf __P((const char *, int));	/* not yet */
+int	 pause __P((void));
+int	 pipe __P((int *));
+ssize_t	 read __P((int, void *, size_t));
+int	 rmdir __P((const char *));
+int	 setgid __P((gid_t));
+int	 setpgid __P((pid_t, pid_t));
+pid_t	 setsid __P((void));
+int	 setuid __P((uid_t));
+u_int	 sleep __P((u_int));
+long	 sysconf __P((int));			/* not yet */
+pid_t	 tcgetpgrp __P((int));
+int	 tcsetpgrp __P((int, pid_t));
+char	*ttyname __P((int));
+int	 unlink __P((const char *));
+ssize_t	 write __P((int, const void *, size_t));
 
 #ifndef	_POSIX_SOURCE
 
