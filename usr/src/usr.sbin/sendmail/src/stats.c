@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)stats.c	3.5		%G%);
+SCCSID(@(#)stats.c	3.6		%G%);
 
 /*
 **  Statistics structure.
@@ -49,8 +49,6 @@ markstats(e, to)
 **	Side Effects:
 **		merges the Stat structure with the sfile file.
 */
-
-struct statistics	Stat;
 
 poststats(sfile)
 	char *sfile;
