@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)gnsys.c	5.5	%G%";
+static char sccsid[] = "@(#)gnsys.c	5.6	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -9,7 +9,7 @@ static char sccsid[] = "@(#)gnsys.c	5.5	%G%";
 #include <sys/dir.h>
 #endif
 
-#define LSIZE 128	/* number of systems to store */
+#define LSIZE 512	/* number of systems to store */
 #define WSUFSIZE 6	/* work file name suffix size */
 
 /*LINTLIBRARY*/
@@ -39,7 +39,11 @@ retry:
 		/* get list of systems with work */
 		int i;
 		dirp = opendir(subdir(dir,pre));
-		ASSERT(dirp != NULL, "BAD DIRECTORY", dir, 0);
+		if (dirp == NULL) {
+			syslog(LOG_ERR, "opendir(%s) failed: %m",
+				subdir(dir,pre));
+			cleanup(FAIL);
+		}
 		for (i = base; i < LSIZE; i++)
 			list[i] = NULL;
 		while (dentp = readdir(dirp)) {
@@ -54,8 +58,12 @@ retry:
 			if (systname[0] == '\0')
 				continue;
 			nitem = srchst(systname, list, nitem);
-			if (LSIZE <= nitem)
+			if (LSIZE <= nitem) {
+				syslog(LOG_WARNING,
+					"%s: Increase LSIZE in gnsys.c",
+					systname);
 				break;
+			}
 		}
 		closedir(dirp);
 	}
@@ -80,9 +88,13 @@ retry:
 			register char *p;
 			char line[MAXFULLNAME];
 			fp = fopen(SYSFILE, "r");
-			ASSERT(fp != NULL, CANTOPEN, SYSFILE, 0);
+			if (fp == NULL) {
+				syslog(LOG_ERR, "fopen(%s) failed: %m",
+					SYSFILE);
+				cleanup(FAIL);
+			}
 			while (cfgets(line, sizeof(line), fp) != NULL) {
-				p = index(line, ' ');
+				p = strpbrk(line, " \t");
 				if (p)
 					*p = '\0';
 				if (strncmp(sname, line, SYSNSIZE) == SAME) {
