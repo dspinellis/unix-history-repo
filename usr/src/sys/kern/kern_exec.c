@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exec.c	7.10 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -108,10 +108,10 @@ execve()
 	}
 
   again:
-	if (u.u_error = vn_access(vp, VEXEC, u.u_cred))
+	if (u.u_error = VOP_ACCESS(vp, VEXEC, u.u_cred))
 		goto bad;
 	if ((u.u_procp->p_flag & STRC) &&
-	    (u.u_error = vn_access(vp, VREAD, u.u_cred)))
+	    (u.u_error = VOP_ACCESS(vp, VREAD, u.u_cred)))
 		goto bad;
 	if (vp->v_type != VREG ||
 	    (vattr.va_mode & (VEXEC|(VEXEC>>3)|(VEXEC>>6))) == 0) {
