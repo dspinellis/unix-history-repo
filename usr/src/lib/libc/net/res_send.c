@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_send.c	6.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.12 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)res_send.c	6.11 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/socket.h>
+#include <sys/uio.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <errno.h>
@@ -43,6 +44,7 @@ res_send(buf, buflen, answer, anslen)
 	struct timeval timeout;
 	HEADER *hp = (HEADER *) buf;
 	HEADER *anhp = (HEADER *) answer;
+	struct iovec iov[2];
 
 #ifdef DEBUG
 	if (_res.options & RES_DEBUG) {
@@ -94,8 +96,11 @@ res_send(buf, buflen, answer, anslen)
 			 * Send length & message
 			 */
 			len = htons((u_short)buflen);
-			if (write(s, (char *)&len, sizeof(len)) != sizeof(len)||
-			    write(s, buf, buflen) != buflen) {
+			iov[0].iov_base = (caddr_t)&len;
+			iov[0].iov_len = sizeof(len);
+			iov[1].iov_base = buf;
+			iov[1].iov_len = buflen;
+			if (writev(s, iov, 2) != sizeof(len) + buflen) {
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					perror("write failed");
@@ -109,7 +114,7 @@ res_send(buf, buflen, answer, anslen)
 			 */
 			cp = answer;
 			len = sizeof(short);
-			while (len > 0 &&
+			while (len != 0 &&
 			    (n = read(s, (char *)cp, (int)len)) > 0) {
 				cp += n;
 				len -= n;
@@ -125,7 +130,7 @@ res_send(buf, buflen, answer, anslen)
 			}
 			cp = answer;
 			resplen = len = ntohs(*(u_short *)cp);
-			while (len > 0 &&
+			while (len != 0 &&
 			   (n = read(s, (char *)cp, (int)len)) > 0) {
 				cp += n;
 				len -= n;
@@ -175,7 +180,8 @@ res_send(buf, buflen, answer, anslen)
 			timeout.tv_usec = 0;
 wait:
 			dsmask = 1 << s;
-			n = select(s+1, &dsmask, 0, 0, &timeout);
+			n = select(s+1, &dsmask, (fd_set *)NULL,
+				(fd_set *)NULL, &timeout);
 			if (n < 0) {
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
