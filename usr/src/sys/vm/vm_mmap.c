@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	8.1 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.31 (Berkeley) %G%
  */
 
 /*
@@ -71,16 +71,6 @@ sstk(p, uap, retval)
 	return (EOPNOTSUPP);
 }
 
-struct mmap_args {
-	caddr_t	addr;
-	size_t	len;
-	int	prot;
-	int	flags;
-	int	fd;
-	long	pad;
-	off_t	pos;
-};
-
 #if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 struct getpagesize_args {
 	int	dummy;
@@ -98,8 +88,18 @@ ogetpagesize(p, uap, retval)
 }
 #endif /* COMPAT_43 || COMPAT_SUNOS */
 
+struct mmap_args {
+	caddr_t	addr;
+	size_t	len;
+	int	prot;
+	int	flags;
+	int	fd;
+	long	pad;
+	off_t	pos;
+};
+
 #ifdef COMPAT_43
-struct osmmap_args {
+struct ommap_args {
 	caddr_t	addr;
 	int	len;
 	int	prot;
@@ -108,9 +108,9 @@ struct osmmap_args {
 	long	pos;
 };
 int
-osmmap(p, uap, retval)
+ommap(p, uap, retval)
 	struct proc *p;
-	register struct osmmap_args *uap;
+	register struct ommap_args *uap;
 	int *retval;
 {
 	struct mmap_args nargs;
@@ -148,12 +148,12 @@ osmmap(p, uap, retval)
 		nargs.flags |= MAP_INHERIT;
 	nargs.fd = uap->fd;
 	nargs.pos = uap->pos;
-	return (smmap(p, &nargs, retval));
+	return (mmap(p, &nargs, retval));
 }
 #endif
 
 int
-smmap(p, uap, retval)
+mmap(p, uap, retval)
 	struct proc *p;
 	register struct mmap_args *uap;
 	int *retval;
