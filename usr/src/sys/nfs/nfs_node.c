@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	8.4 (Berkeley) %G%
+ *	@(#)nfs_node.c	8.5 (Berkeley) %G%
  */
 
 
@@ -80,7 +80,8 @@ nfs_nget(mntp, fhp, fhsize, npp)
 	int fhsize;
 	struct nfsnode **npp;
 {
-	register struct nfsnode *np;
+	struct proc *p = curproc;	/* XXX */
+	struct nfsnode *np;
 	struct nfsnodehashhead *nhpp;
 	register struct vnode *vp;
 	extern int (**nfsv2_vnodeop_p)();
@@ -94,7 +95,7 @@ loop:
 		    bcmp((caddr_t)fhp, (caddr_t)np->n_fhp, fhsize))
 			continue;
 		vp = NFSTOV(np);
-		if (vget(vp, 1))
+		if (vget(vp, LK_EXCLUSIVE, p))
 			goto loop;
 		*npp = np;
 		return(0);
@@ -204,57 +205,6 @@ nfs_reclaim(ap)
 	cache_purge(vp);
 	FREE(vp->v_data, M_NFSNODE);
 	vp->v_data = (void *)0;
-	return (0);
-}
-
-/*
- * Lock an nfsnode
- */
-int
-nfs_lock(ap)
-	struct vop_lock_args /* {
-		struct vnode *a_vp;
-	} */ *ap;
-{
-	register struct vnode *vp = ap->a_vp;
-
-	/*
-	 * Ugh, another place where interruptible mounts will get hung.
-	 * If you make this sleep interruptible, then you have to fix all
-	 * the VOP_LOCK() calls to expect interruptibility.
-	 */
-	while (vp->v_flag & VXLOCK) {
-		vp->v_flag |= VXWANT;
-		(void) tsleep((caddr_t)vp, PINOD, "nfslck", 0);
-	}
-	if (vp->v_tag == VT_NON)
-		return (ENOENT);
-	return (0);
-}
-
-/*
- * Unlock an nfsnode
- */
-int
-nfs_unlock(ap)
-	struct vop_unlock_args /* {
-		struct vnode *a_vp;
-	} */ *ap;
-{
-
-	return (0);
-}
-
-/*
- * Check for a locked nfsnode
- */
-int
-nfs_islocked(ap)
-	struct vop_islocked_args /* {
-		struct vnode *a_vp;
-	} */ *ap;
-{
-
 	return (0);
 }
 
