@@ -1,0 +1,15 @@
+
+	We would like to request that the Commerce Department provide
+a commodity classification for the Berkeley Software Distribution
+Networking Release #1.  The software is primarily support for the DARPA
+standard TCP, IP, UDP, ICMP, and ARP communication protocols.  It also
+includes support for higher level application protocols such as FTP,
+TELNET, SMTP, rcp, rlogin, and rsh.  It implements a wide-area network,
+capable of connecting a large number of hosts over a geographically 
+disperse area.  It implements the link, network, and transport layers
+of the International Standards Organization Network Model, as well as
+several applications.
+	Attached are copies of the Networking Release License agreement,
+the Networking Implementation Notes, 4.3BSD Edition, and the Berkeley
+Software Architecture Manual, 4.3BSD Edition.
+
