@@ -1,7 +1,7 @@
-/*	ts.c	4.10	81/04/14	*/
+/*	ts.c	4.11	81/04/15	*/
 
 #include "ts.h"
-#include "tm.h"
+#include "te.h"
 #if NTS > 0
 #define printd if(tsdebug)printf
 int tsdebug;
