@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	8.5 (Berkeley) %G%
+ *	@(#)kern_sig.c	8.6 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -1081,8 +1081,8 @@ sigexit(p, signum)
 }
 
 /*
- * Dump core, into a file named "core.progname".
- * Do not drop core if the process was setuid/setgid.
+ * Dump core, into a file named "progname.core", unless the process was
+ * setuid/setgid.
  */
 coredump(p)
 	register struct proc *p;
@@ -1091,6 +1091,7 @@ coredump(p)
 	register struct pcred *pcred = p->p_cred;
 	register struct ucred *cred = pcred->pc_ucred;
 	register struct vmspace *vm = p->p_vmspace;
+	struct nameidata nd;
 
 	if (pcred->p_svuid != pcred->p_ruid || pcred->p_svgid != pcred->p_rgid)
 		return (0);
