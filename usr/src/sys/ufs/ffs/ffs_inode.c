@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	8.1 (Berkeley) %G%
+ *	@(#)ffs_inode.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -51,11 +51,12 @@ int
 ffs_update(ap)
 	struct vop_update_args /* {
 		struct vnode *a_vp;
-		struct timeval *a_ta;
-		struct timeval *a_tm;
+		struct timeval *a_access;
+		struct timeval *a_modify;
 		int a_waitfor;
 	} */ *ap;
 {
+	register struct fs *fs;
 	struct buf *bp;
 	struct inode *ip;
 	struct dinode *dp;
@@ -63,20 +64,20 @@ ffs_update(ap)
 
 	ip = VTOI(ap->a_vp);
 	if (ap->a_vp->v_mount->mnt_flag & MNT_RDONLY) {
-		ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
+		ip->i_flag &= ~(IUPD | IACC | ICHG | IMOD);
 		return (0);
 	}
 	if ((ip->i_flag & (IUPD|IACC|ICHG|IMOD)) == 0)
 		return (0);
-	if (ip->i_flag&IACC)
-		ip->i_atime.ts_sec = ap->a_ta->tv_sec;
-	if (ip->i_flag&IUPD) {
-		ip->i_mtime.ts_sec = ap->a_tm->tv_sec;
+	if (ip->i_flag & IACC)
+		ip->i_atime.ts_sec = ap->a_access->tv_sec;
+	if (ip->i_flag & IUPD) {
+		ip->i_mtime.ts_sec = ap->a_modify->tv_sec;
 		ip->i_modrev++;
 	}
 	if (ip->i_flag&ICHG)
 		ip->i_ctime.ts_sec = time.tv_sec;
-	ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
+	ip->i_flag &= ~(IUPD | IACC | ICHG | IMOD);
 	fs = ip->i_fs;
 	/*
 	 * Ensure that uid and gid are correct. This is a temporary

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_balloc.c	8.1 (Berkeley) %G%
+ *	@(#)ffs_balloc.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -41,10 +41,10 @@ ffs_balloc(ip, bn, size, cred, bpp, flags)
 	struct buf *bp, *nbp;
 	struct vnode *vp = ITOV(ip);
 	struct indir indirs[NIADDR + 2];
-	int osize, nsize, num, j, error;
 	daddr_t newb, lbn, *bap, pref;
+	int osize, nsize, num, i, error;
 
-	*bpp = (struct buf *)0;
+	*bpp = NULL;
 	if (bn < 0)
 		return (EFBIG);
 	fs = ip->i_fs;
@@ -165,18 +165,18 @@ ffs_balloc(ip, bn, size, cred, bpp, flags)
 	/*
 	 * Fetch through the indirect blocks, allocating as necessary.
 	 */
-	for (j = 1; ; ) {
-		error = bread(vp, indirs[j].in_lbn, (int)fs->fs_bsize, NOCRED,
-		    &bp);
+	for (i = 1;;) {
+		error = bread(vp,
+		    indirs[i].in_lbn, (int)fs->fs_bsize, NOCRED, &bp);
 		if (error) {
 			brelse(bp);
 			return (error);
 		}
 		bap = bp->b_un.b_daddr;
-		nb = bap[indirs[j].in_off];
-		if (j == num)
+		nb = bap[indirs[i].in_off];
+		if (i == num)
 			break;
-		j += 1;
+		i += 1;
 		if (nb != 0) {
 			brelse(bp);
 			continue;
@@ -189,7 +189,7 @@ ffs_balloc(ip, bn, size, cred, bpp, flags)
 			return (error);
 		}
 		nb = newb;
-		nbp = getblk(vp, indirs[j].in_lbn, fs->fs_bsize, 0, 0);
+		nbp = getblk(vp, indirs[i].in_lbn, fs->fs_bsize, 0, 0);
 		nbp->b_blkno = fsbtodb(fs, nb);
 		clrbuf(nbp);
 		/*
@@ -201,7 +201,7 @@ ffs_balloc(ip, bn, size, cred, bpp, flags)
 			brelse(bp);
 			return (error);
 		}
-		bap[indirs[j - 1].in_off] = nb;
+		bap[indirs[i - 1].in_off] = nb;
 		/*
 		 * If required, write synchronously, otherwise use
 		 * delayed write.
@@ -216,9 +216,9 @@ ffs_balloc(ip, bn, size, cred, bpp, flags)
 	 * Get the data block, allocating if necessary.
 	 */
 	if (nb == 0) {
-		pref = ffs_blkpref(ip, lbn, indirs[j].in_off, &bap[0]);
-		if (error =
-		    ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize, cred, &newb)) {
+		pref = ffs_blkpref(ip, lbn, indirs[i].in_off, &bap[0]);
+		if (error = ffs_alloc(ip,
+		    lbn, pref, (int)fs->fs_bsize, cred, &newb)) {
 			brelse(bp);
 			return (error);
 		}
@@ -227,7 +227,7 @@ ffs_balloc(ip, bn, size, cred, bpp, flags)
 		nbp->b_blkno = fsbtodb(fs, nb);
 		if (flags & B_CLRBUF)
 			clrbuf(nbp);
-		bap[indirs[j].in_off] = nb;
+		bap[indirs[i].in_off] = nb;
 		/*
 		 * If required, write synchronously, otherwise use
 		 * delayed write.
