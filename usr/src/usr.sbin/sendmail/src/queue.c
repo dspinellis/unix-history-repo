@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.63 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.41.1.2 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.63 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.41.1.2 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -216,7 +216,7 @@ queueup(e, queueall, announce)
 
 	/* message from envelope, if it exists */
 	if (e->e_message != NULL)
-		fprintf(tfp, "M%s\n", denlstring(e->e_message));
+		fprintf(tfp, "M%s\n", denlstring(e->e_message, FALSE));
 
 	/* send various flag bits through */
 	p = buf;
@@ -232,14 +232,14 @@ queueup(e, queueall, announce)
 
 	/* $r and $s and $_ macro values */
 	if ((p = macvalue('r', e)) != NULL)
-		fprintf(tfp, "$r%s\n", denlstring(p));
+		fprintf(tfp, "$r%s\n", denlstring(p, FALSE));
 	if ((p = macvalue('s', e)) != NULL)
-		fprintf(tfp, "$s%s\n", denlstring(p));
+		fprintf(tfp, "$s%s\n", denlstring(p, FALSE));
 	if ((p = macvalue('_', e)) != NULL)
-		fprintf(tfp, "$_%s\n", denlstring(p));
+		fprintf(tfp, "$_%s\n", denlstring(p, FALSE));
 
 	/* output name of sender */
-	fprintf(tfp, "S%s\n", denlstring(e->e_from.q_paddr));
+	fprintf(tfp, "S%s\n", denlstring(e->e_from.q_paddr, FALSE));
 
 	/* output ESMTP-supplied "original" information */
 	if (e->e_envid != NULL)
@@ -251,7 +251,7 @@ queueup(e, queueall, announce)
 		if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
 		{
 			printctladdr(q, tfp);
-			fprintf(tfp, "E%s\n", denlstring(q->q_paddr));
+			fprintf(tfp, "E%s\n", denlstring(q->q_paddr, FALSE));
 		}
 	}
 
@@ -263,7 +263,7 @@ queueup(e, queueall, announce)
 		{
 			printctladdr(q, tfp);
 			if (q->q_orcpt != NULL)
-			fprintf(tfp, "R%s\n", denlstring(q->q_paddr));
+			fprintf(tfp, "R%s\n", denlstring(q->q_paddr, FALSE));
 			if (announce)
 			{
 				e->e_to = q->q_paddr;
@@ -440,7 +440,7 @@ printctladdr(a, tfp)
 	else
 		uname = pw->pw_name;
 
-	fprintf(tfp, "C%s:%s\n", uname, denlstring(a->q_paddr));
+	fprintf(tfp, "C%s:%s\n", uname, denlstring(a->q_paddr, FALSE));
 }
 /*
 **  RUNQUEUE -- run the jobs in the queue.

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.134 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.89.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -2002,6 +2002,9 @@ usershellok(shell)
 	register char *p;
 	extern char *getusershell();
 
+	if (shell == NULL || shell[0] == '\0')
+		return TRUE;
+
 	setusershell();
 	while ((p = getusershell()) != NULL)
 		if (strcmp(p, shell) == 0 || strcmp(p, WILDCARD_SHELL) == 0)
@@ -2011,6 +2014,9 @@ usershellok(shell)
 #else
 	register FILE *shellf;
 	char buf[MAXLINE];
+
+	if (shell == NULL || shell[0] == '\0')
+		return TRUE;
 
 	shellf = fopen(_PATH_SHELLS, "r");
 	if (shellf == NULL)
