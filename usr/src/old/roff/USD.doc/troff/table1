@@ -1,6 +1,6 @@
-.\"	@(#)table1	5.1 (Berkeley) %G%
+.\"	@(#)table1	6.1 (Berkeley) %G%
 .\"
-.pn 31
+.pn 32
 .rm mx
 .br
 .tr &&
@@ -61,11 +61,10 @@ Font Style Examples
 .na
 The following fonts are printed in 12-point, with a vertical spacing of 14-point,
 and with
-non-alphanumeric characters separated by \(14\|em space.
-The Special Mathematical Font was specially prepared for Bell Laboratories
-by Graphic Systems, Inc. of Hudson, New Hampshire.
-The Times Roman, Italic, and Bold are
-among the many standard fonts available from that company.
+non-alphanumeric characters separated by \(14\|em space (all measurements
+on 8.5 \(mu 11 inch paper prior to photoreduction).
+This font sample is printed on an APS-5 phototypesetter at University of California,
+Berkeley.
 .sp.5i
 .ps12
 .vs14p
