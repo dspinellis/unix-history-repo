@@ -3,7 +3,7 @@
 .\"
 %sccs.include.redist.man%
 .\"
-.\"	@(#)rsh.1	6.5 (Berkeley) %G%
+.\"	@(#)rsh.1	6.6 (Berkeley) %G%
 .\"
 .\" $Source: /mit/kerberos/src/man/RCS/rsh.1,v $
 .\" $Author: jtkohl $
@@ -15,7 +15,7 @@
 rsh \- remote shell
 .SH SYNOPSIS
 .ft B
-rsh [ \-dnx ] [ \-k realm ] [ \-l username ] host [ command ]
+rsh [ \-Kdnx ] [ \-k realm ] [ \-l username ] host [ command ]
 .ft R
 .SH DESCRIPTION
 .I Rsh
@@ -33,6 +33,9 @@ command;
 .I rsh
 normally terminates when the remote command does.
 The options are as follows:
+.TP
+\-K
+The \-K option turns off all Kerberos authentication.
 .TP
 \-d
 The \-d option turns on socket debugging (using
