@@ -1,4 +1,4 @@
-/*	if_acc.c	4.21	82/10/10	*/
+/*	if_acc.c	4.22	82/10/17	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -148,7 +148,7 @@ accinit(unit)
 	register struct acc_softc *sc;
 	register struct uba_device *ui;
 	register struct accdevice *addr;
-	int info, i;
+	int info;
 
 	if (unit >= NACC || (ui = accinfo[unit]) == 0 || ui->ui_alive == 0) {
 		printf("acc%d: not alive\n", unit);
