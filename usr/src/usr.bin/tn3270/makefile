@@ -94,11 +94,17 @@ ALLPRINT =	${ALLH} ${ALLC}
 ALLSOURCE =	${ALLPRINT} makefile makefile.mak README
 
 # The places where the various components live...
-SUBDIR =	ascii ctlr sys general api
+# (We put ctlr first so that a 'make clean; make' will work.  If
+#	ascii is first, then since the make in ascii does some
+#	sub-makes in ctlr, the bsd make utility decides not to
+#	bother with doing a full make in ctlr.)
+
+SUBDIR =	ctlr ascii sys general api
 
 # The following are directories we don't do regular make's in, but
 # we do make everywhere, print, and sourcelist in.
-EXTRADIR =	apilib sys_dos tools
+
+EXTRADIR =	apilib arpa sys_dos tools
 
 # The libraries we use.  The order here is important.
 # ctlr.lib and sys.lib should come first, then api.lib
