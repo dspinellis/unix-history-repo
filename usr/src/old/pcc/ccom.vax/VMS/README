@@ -1,0 +1,13 @@
+These are files needed to producing a VMS C compiler.
+
+The program filter translates unix assembly language into something
+that the VMS assembler will accept assuming the file jeql.mar is
+transported to VMS and made into a macro library to reside in
+"db0:[c]jeql.mlb".
+
+PLEASE NOTE THAT the most recent mit version of stdio.h for VMS has
+been revised, due to alignment problems. (The code produced by the
+compilers is not wholly compatible since that of the unix/32V compiler
+attempts to allign longword members of structures on longword
+boundaries and the mit/Ritchie compiler only aligns to 2 byte
+boundaries.)  The revised stdio.h is given here.
