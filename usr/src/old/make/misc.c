@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)misc.c	4.1 (Berkeley) 81/02/28";
+static	char *sccsid = "@(#)misc.c	4.2 (Berkeley) 82/10/19";
 #include "defs"
 
 FSTATIC struct nameblock *hashtab[HASHSIZE];
@@ -251,7 +251,7 @@ return(vp);
 fatal1(s, t)
 char *s, *t;
 {
-char buf[100];
+char buf[BUFSIZ];
 sprintf(buf, s, t);
 fatal(buf);
 }
