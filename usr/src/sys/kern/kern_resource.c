@@ -30,10 +30,6 @@ sysacct()
 			}
 			return;
 		}
-		if (acctp) {
-			u.u_error = EBUSY;
-			return;
-		}
 		ip = namei(uchar, 0, 1);
 		if(ip == NULL)
 			return;
@@ -42,6 +38,9 @@ sysacct()
 			iput(ip);
 			return;
 		}
+		if (acctp && (acctp->i_number != ip->i_number ||
+		    acctp->i_dev != ip->i_dev))
+			irele(acctp);
 		acctp = ip;
 		iunlock(ip);
 	}
@@ -73,7 +72,10 @@ acct()
 	if (i = u.u_vm.vm_utime + u.u_vm.vm_stime)
 		ap->ac_mem = (u.u_vm.vm_ixrss + u.u_vm.vm_idsrss) / i;
 	ap->ac_io = compress((long)(u.u_vm.vm_inblk + u.u_vm.vm_oublk));
-	ap->ac_tty = u.u_ttyd;
+	if (u.u_ttyp)
+		ap->ac_tty = u.u_ttyd;
+	else
+		ap->ac_tty = NODEV;
 	ap->ac_flag = u.u_acflag;
 	siz = ip->i_size;
 	u.u_offset = siz;
