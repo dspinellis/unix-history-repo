@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.35 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.36 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -42,9 +42,9 @@
  *		if symbolic link, massage name in buffer and continue
  *	}
  */
-namei(ndp, p)
+int
+namei(ndp)
 	register struct nameidata *ndp;
-	struct proc *p;
 {
 	register struct filedesc *fdp;	/* pointer to file descriptor state */
 	register char *cp;		/* pointer into pathname argument */
@@ -52,31 +52,40 @@ namei(ndp, p)
 	struct iovec aiov;		/* uio for reading symbolic links */
 	struct uio auio;
 	int error, linklen;
+	struct componentname *cnp = &ndp->ni_cnd;
 
-	ndp->ni_cred = p->p_ucred;
-	fdp = p->p_fd;
+	ndp->ni_cnd.cn_cred = ndp->ni_cnd.cn_proc->p_ucred;
+#ifdef DIAGNOSTIC
+	if (!cnp->cn_cred || !cnp->cn_proc)
+		panic ("namei: bad cred/proc");
+	if (cnp->cn_nameiop & (~OPMASK))
+		panic ("namei: nameiop contaminated with flags");
+	if (cnp->cn_flags & OPMASK)
+		panic ("namei: flags contaminated with nameiops");
+#endif
+	fdp = cnp->cn_proc->p_fd;
 
 	/*
 	 * Get a buffer for the name to be translated, and copy the
 	 * name into the buffer.
 	 */
-	if ((ndp->ni_nameiop & HASBUF) == 0)
-		MALLOC(ndp->ni_pnbuf, caddr_t, MAXPATHLEN, M_NAMEI, M_WAITOK);
+	if ((cnp->cn_flags & HASBUF) == 0)
+		MALLOC(cnp->cn_pnbuf, caddr_t, MAXPATHLEN, M_NAMEI, M_WAITOK);
 	if (ndp->ni_segflg == UIO_SYSSPACE)
-		error = copystr(ndp->ni_dirp, ndp->ni_pnbuf,
+		error = copystr(ndp->ni_dirp, cnp->cn_pnbuf,
 			    MAXPATHLEN, &ndp->ni_pathlen);
 	else
-		error = copyinstr(ndp->ni_dirp, ndp->ni_pnbuf,
+		error = copyinstr(ndp->ni_dirp, cnp->cn_pnbuf,
 			    MAXPATHLEN, &ndp->ni_pathlen);
 	if (error) {
-		free(ndp->ni_pnbuf, M_NAMEI);
+		free(cnp->cn_pnbuf, M_NAMEI);
 		ndp->ni_vp = NULL;
 		return (error);
 	}
 	ndp->ni_loopcnt = 0;
 #ifdef KTRACE
-	if (KTRPOINT(p, KTR_NAMEI))
-		ktrnamei(p->p_tracep, ndp->ni_pnbuf);
+	if (KTRPOINT(cnp->cn_proc, KTR_NAMEI))
+		ktrnamei(cnp->cn_proc->p_tracep, cnp->cn_pnbuf);
 #endif
 
 	/*
@@ -91,32 +100,32 @@ namei(ndp, p)
 		 * Check if root directory should replace current directory.
 		 * Done at start of translation and after symbolic link.
 		 */
-		ndp->ni_ptr = ndp->ni_pnbuf;
-		if (*ndp->ni_ptr == '/') {
+		cnp->cn_nameptr = cnp->cn_pnbuf;
+		if (*(cnp->cn_nameptr) == '/') {
 			vrele(dp);
-			while (*ndp->ni_ptr == '/') {
-				ndp->ni_ptr++;
+			while (*(cnp->cn_nameptr) == '/') {
+				cnp->cn_nameptr++;
 				ndp->ni_pathlen--;
 			}
 			dp = ndp->ni_rootdir;
 			VREF(dp);
 		}
 		ndp->ni_startdir = dp;
-		if (error = lookup(ndp, p)) {
-			FREE(ndp->ni_pnbuf, M_NAMEI);
+		if (error = lookup(ndp)) {
+			FREE(cnp->cn_pnbuf, M_NAMEI);
 			return (error);
 		}
 		/*
 		 * Check for symbolic link
 		 */
-		if ((ndp->ni_cnd.cn_flags & ISSYMLINK) == 0) {
-			if ((ndp->ni_nameiop & (SAVENAME | SAVESTART)) == 0)
-				FREE(ndp->ni_pnbuf, M_NAMEI);
+		if ((cnp->cn_flags & ISSYMLINK) == 0) {
+			if ((cnp->cn_flags & (SAVENAME | SAVESTART)) == 0)
+				FREE(cnp->cn_pnbuf, M_NAMEI);
 			else
-				ndp->ni_nameiop |= HASBUF;
+				cnp->cn_flags |= HASBUF;
 			return (0);
 		}
-		if ((ndp->ni_nameiop & LOCKPARENT) && ndp->ni_pathlen == 1)
+		if ((cnp->cn_flags & LOCKPARENT) && ndp->ni_pathlen == 1)
 			VOP_UNLOCK(ndp->ni_dvp);
 		if (ndp->ni_loopcnt++ >= MAXSYMLINKS) {
 			error = ELOOP;
@@ -125,7 +134,7 @@ namei(ndp, p)
 		if (ndp->ni_pathlen > 1)
 			MALLOC(cp, char *, MAXPATHLEN, M_NAMEI, M_WAITOK);
 		else
-			cp = ndp->ni_pnbuf;
+			cp = cnp->cn_pnbuf;
 		aiov.iov_base = cp;
 		aiov.iov_len = MAXPATHLEN;
 		auio.uio_iov = &aiov;
@@ -135,7 +144,7 @@ namei(ndp, p)
 		auio.uio_segflg = UIO_SYSSPACE;
 		auio.uio_procp = (struct proc *)0;
 		auio.uio_resid = MAXPATHLEN;
-		if (error = VOP_READLINK(ndp->ni_vp, &auio, p->p_ucred)) {
+		if (error = VOP_READLINK(ndp->ni_vp, &auio, cnp->cn_cred)) {
 			if (ndp->ni_pathlen > 1)
 				free(cp, M_NAMEI);
 			break;
@@ -149,15 +158,15 @@ namei(ndp, p)
 		}
 		if (ndp->ni_pathlen > 1) {
 			bcopy(ndp->ni_next, cp + linklen, ndp->ni_pathlen);
-			FREE(ndp->ni_pnbuf, M_NAMEI);
-			ndp->ni_pnbuf = cp;
+			FREE(cnp->cn_pnbuf, M_NAMEI);
+			cnp->cn_pnbuf = cp;
 		} else
-			ndp->ni_pnbuf[linklen] = '\0';
+			cnp->cn_pnbuf[linklen] = '\0';
 		ndp->ni_pathlen += linklen;
 		vput(ndp->ni_vp);
 		dp = ndp->ni_dvp;
 	}
-	FREE(ndp->ni_pnbuf, M_NAMEI);
+	FREE(cnp->cn_pnbuf, M_NAMEI);
 	vrele(ndp->ni_dvp);
 	vput(ndp->ni_vp);
 	ndp->ni_vp = NULL;
@@ -203,9 +212,9 @@ namei(ndp, p)
  *	    if LOCKPARENT set, return locked parent in ni_dvp
  *	    if WANTPARENT set, return unlocked parent in ni_dvp
  */
-lookup(ndp, p)   /* converted to CN */
+int
+lookup(ndp)
 	register struct nameidata *ndp;
-	struct proc *p;
 {
 	register char *cp;		/* pointer into pathname argument */
 	register struct vnode *dp = 0;	/* the directory we are searching */
@@ -216,36 +225,14 @@ lookup(ndp, p)   /* converted to CN */
 	int rdonly;			/* lookup read-only flag bit */
 	int error = 0;
 	struct componentname *cnp = &ndp->ni_cnd;
-#define COMPAT_HACK
-#ifdef COMPAT_HACK
-	int returncode=0;
-#define RETURN(N) {returncode=(N); goto byebye;}
-#else
-#define RETURN(N) return((N));
-#endif
-
-#ifdef COMPAT_HACK
-	/*
-	 * NEEDSWORK: We assume that the caller has the old
-	 * defn of nameiop and so doesn't use flags.
-	 * Here we correct this view.
-	 * (Will go away when conversion is finished.)
-	 */
-	cnp->cn_flags = ndp->ni_nameiop & ~OPMASK;
-	cnp->cn_nameiop = ndp->ni_nameiop & OPMASK;
-
-	cnp->cn_proc = p;
-#endif
 
 	/*
 	 * Setup: break out flag bits into variables.
 	 */
-	wantparent = cnp->cn_flags & (LOCKPARENT|WANTPARENT);
+	wantparent = cnp->cn_flags & (LOCKPARENT | WANTPARENT);
 	docache = (cnp->cn_flags & NOCACHE) ^ NOCACHE;
-	if (cnp->cn_nameiop == DELETE || (wantparent && cnp->cn_nameiop != CREATE))
-	wantparent = cnp->cn_flags & (LOCKPARENT|WANTPARENT);
-	docache = (cnp->cn_flags & NOCACHE) ^ NOCACHE;
-	if (cnp->cn_nameiop == DELETE || (wantparent && cnp->cn_nameiop != CREATE))
+	if (cnp->cn_nameiop == DELETE ||
+	    (wantparent && cnp->cn_nameiop != CREATE))
 		docache = 0;
 	rdonly = cnp->cn_flags & RDONLY;
 	ndp->ni_dvp = NULL;
@@ -311,7 +298,7 @@ dirloop:
 		ndp->ni_vp = dp;
 		if (cnp->cn_flags & SAVESTART)
 			panic("lookup: SAVESTART");
-		RETURN (0);
+		return (0);
 	}
 
 	/*
@@ -375,7 +362,7 @@ dirloop:
 			VREF(ndp->ni_startdir);
 			p->p_spare[1]++;
 		}
-		RETURN (0);
+		return (0);
 	}
 #ifdef NAMEI_DIAGNOSTIC
 	printf("found\n");
@@ -388,7 +375,7 @@ dirloop:
 	if ((dp->v_type == VLNK) &&
 	    ((cnp->cn_flags & FOLLOW) || *ndp->ni_next == '/')) {
 		cnp->cn_flags |= ISSYMLINK;
-		RETURN (0);
+		return (0);
 	}
 
 	/*
@@ -447,7 +434,7 @@ nextname:
 		vrele(ndp->ni_dvp);
 	if ((cnp->cn_flags & LOCKLEAF) == 0)
 		VOP_UNLOCK(dp);
-	RETURN (0);
+	return (0);
 
 bad2:
 	if ((cnp->cn_flags & LOCKPARENT) && *ndp->ni_next == '\0')
@@ -456,19 +443,7 @@ bad2:
 bad:
 	vput(dp);
 	ndp->ni_vp = NULL;
-	RETURN (error);
-
-#ifdef COMPAT_HACK
- byebye:
-	/*
-	 * Put flags back into ni_nameiop and bail.
-	 */
-	if (cnp->cn_nameiop & ~OPMASK)
-		panic ("lookup: nameiop is contaminated with flags.");
-	ndp->ni_nameiop = (cnp->cn_nameiop & OPMASK) |
-		(cnp->cn_flags & ~OPMASK);
-	return (returncode);
-#endif
+	return (error);
 }
 
 
