@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)proc.c 1.16 %G%";
+static char sccsid[] = "@(#)proc.c 1.17 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -11,6 +11,7 @@ static char sccsid[] = "@(#)proc.c 1.16 %G%";
 #include "tree.h"
 #include "opcode.h"
 #include "objfmt.h"
+#include "tmps.h"
 
 /*
  * The constant REALSPC defines the amount of forced padding preceeding

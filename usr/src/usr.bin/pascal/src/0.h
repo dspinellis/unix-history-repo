@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 1.19 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.20 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -465,27 +465,6 @@ short	line;
  * this must be no greater than 32.
  */
 #define	DSPLYSZ 20
-
-/*
- * The following structure is used
- * to keep track of the amount of variable
- * storage required by each block.
- * "Max" is the high water mark, "off"
- * the current need. Temporaries for "for"
- * loops and "with" statements are allocated
- * in the local variable area and these
- * numbers are thereby changed if necessary.
- */
-struct om {
-	long	om_max;
-	long	reg_max;
-	struct tmps {
-		long	om_off;
-		long	reg_off;
-	} curtmps;
-} sizes[DSPLYSZ];
-#define NOREG 0
-#define REGOK 1
 
     /*
      *	the following structure records whether a level declares

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)forop.c 1.15 %G%";
+static char sccsid[] = "@(#)forop.c 1.16 %G%";
 
 #include	"whoami.h"
 #include	"0.h"
@@ -11,6 +11,7 @@ static char sccsid[] = "@(#)forop.c 1.15 %G%";
 #    include	"pc.h"
 #    include	"pcops.h"
 #endif PC
+#include	"tmps.h"
 
     /*
      *	for-statements.

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.21 %G%";
+static	char sccsid[] = "@(#)call.c 1.22 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -11,6 +11,7 @@ static	char sccsid[] = "@(#)call.c 1.21 %G%";
 #   include "pc.h"
 #   include "pcops.h"
 #endif PC
+#include "tmps.h"
 
 /*
  * Call generates code for calls to

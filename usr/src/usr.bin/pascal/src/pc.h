@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pc.h 1.7 %G%"; */
+/* static	char sccsid[] = "@(#)pc.h 1.8 %G%"; */
 
 #include <setjmp.h>
 
@@ -115,16 +115,16 @@ char	*enclosing[ DSPLYSZ ];
      *	runtime check mask for divide check and integer overflow
      */
 #   define	RUNCHECK	( ( 1 << 15 ) | ( 1 << 14 ) )
+
     /*
      *	and of course ...
      */
 #   define	BITSPERBYTE	8
-
 #endif vax
 
 #ifdef mc68000
     /*
-     *	this magic numbers lifted from pcc/mac2defs
+     *	these magic numbers lifted from pcc/mac2defs
      */
 #   define	P2FP		14
 #   define	P2FPNAME	"a6"
