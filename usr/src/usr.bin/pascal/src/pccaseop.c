@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static char sccsid[] = "@(#)pccaseop.c 1.12 %G%";
+static char sccsid[] = "@(#)pccaseop.c 1.13 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -382,7 +382,7 @@ bsrecur( deflabel , ctab , count )
 #	endif vax
 #	ifdef mc68000
 	    putprintf("	cmpl	#%d,%s", 0, ctab[1].cconst, FORCENAME);
-	    putprintf("	jeq	L%d", 0, LABELPREFIX, ctab[1].clabel);
+	    putprintf("	jeq	%s%d", 0, LABELPREFIX, ctab[1].clabel);
 	    putjbr(deflabel);
 #	endif mc68000
 	return;
