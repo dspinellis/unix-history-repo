@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.23 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -73,7 +73,7 @@ struct nlist nl[] = {
 	{ "" },
 };
 
-#define USAGE "[ -hi ] [ user ]"
+#define USAGE "[ -ht ] [ user ]"
 #define usage()	fprintf(stderr, "usage: %s: %s\n", program, USAGE)
 
 main(argc, argv)
@@ -100,12 +100,12 @@ main(argc, argv)
 	if (*cp == 'u')
 		wcmd = 0;
 
-	while ((ch = getopt(argc, argv, "hiflsuw")) != EOF)
+	while ((ch = getopt(argc, argv, "htflsuw")) != EOF)
 		switch((char)ch) {
 		case 'h':
 			header = 0;
 			break;
-		case 'i':
+		case 't':
 			sortidle++;
 			break;
 		case 'f': case 'l': case 's': case 'u': case 'w':
