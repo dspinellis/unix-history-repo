@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.16 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)utilities.c	5.15 (Berkeley) %G%";
 
 long	diskreads, totalreads;	/* Disk cache statistics */
 long	lseek();
+char	*malloc();
 
 ftypeok(dp)
 	DINODE *dp;
@@ -95,7 +96,7 @@ bufinit()
 	long bufcnt, i;
 	char *bufp;
 
-	bufp = (char *)malloc(sblock.fs_bsize);
+	bufp = malloc(sblock.fs_bsize);
 	if (bufp == 0)
 		errexit("cannot allocate buffer pool\n");
 	cgblk.b_un.b_buf = bufp;
@@ -106,8 +107,8 @@ bufinit()
 		bufcnt = MINBUFS;
 	for (i = 0; i < bufcnt; i++) {
 		bp = (BUFAREA *)malloc(sizeof(BUFAREA));
-		bufp = (char *)malloc(sblock.fs_bsize);
-		if (bp == 0 || bufp == 0) {
+		bufp = malloc(sblock.fs_bsize);
+		if (bp == NULL || bufp == NULL) {
 			if (i >= MINBUFS)
 				break;
 			errexit("cannot allocate buffer pool\n");
