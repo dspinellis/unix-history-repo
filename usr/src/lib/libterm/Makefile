@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2	(Berkeley)	%G%
+#	@(#)Makefile	5.3	(Berkeley)	%G%
 #
 CFLAGS=	-O -DCM_N -DCM_GT -DCM_B -DCM_D
 LIBC=	/lib/libc.a
@@ -22,6 +22,12 @@ all: termcap.a termcap_p.a
 termcap.a termcap_p.a: ${OBJS}
 	ar cr termcap.a ${OBJS}
 	cd profiled; ar cr ../termcap_p.a ${OBJS}
+
+test:
+	ranlib termcap.a
+	${CC} ${CFLAGS} -o tc1 tc1.c termcap.a
+	${CC} ${CFLAGS} -o tc2 tc2.c termcap.a
+	${CC} ${CFLAGS} -o tc3 tc3.c termcap.a
 
 clean: FRC
 	rm -f ${OBJS} core profiled/*.o termcap.a termcap_p.a
