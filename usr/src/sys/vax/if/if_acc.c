@@ -1,4 +1,4 @@
-/*	if_acc.c	4.11	82/03/19	*/
+/*	if_acc.c	4.12	82/04/10	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -147,7 +147,7 @@ accinit(unit)
 	register struct acc_softc *sc;
 	register struct uba_device *ui;
 	register struct accdevice *addr;
-	int x, info;
+	int info, i;
 
 COUNT(ACCINIT);
 	if (unit >= NACC || (ui = accinfo[unit]) == 0 || ui->ui_alive == 0) {
@@ -173,36 +173,33 @@ COUNT(ACCINIT);
 	 * Reset the imp interface;
 	 * the delays are pure guesswork.
 	 */
-	x = spl5();
 	addr->icsr = ACC_RESET; DELAY(5000);
         addr->ocsr = ACC_RESET; DELAY(5000);
 	addr->ocsr = OUT_BBACK;	DELAY(5000);	/* reset host master ready */
 	addr->ocsr = 0;
-	splx(x);
 	addr->icsr = IN_MRDY | IN_WEN;		/* close the relay */
 	DELAY(10000);
 	/* YECH!!! */
-	x = 500;
-	while (x-- > 0) {
+	for (i = 0; i < 500; i++) {
 		if ((addr->icsr & IN_HRDY) ||
 		    (addr->icsr & (IN_RMR | IN_IMPBSY)) == 0)
-			break;
+			goto ok;
 		addr->icsr = IN_MRDY | IN_WEN; DELAY(10000);
 		/* keep turning IN_RMR off */
 	}
-	if (x <= 0) {
-		printf("acc%d: imp doesn't respond, icsr=%b\n", unit,
-			addr->icsr, ACC_INBITS);
-		goto down;
-	}
+	printf("acc%d: imp doesn't respond, icsr=%b\n", unit,
+		addr->icsr, ACC_INBITS);
+down:
+	ui->ui_alive = 0;
+	return (0);
 
+ok:
 	/*
 	 * Put up a read.  We can't restart any outstanding writes
 	 * until we're back in synch with the IMP (i.e. we've flushed
 	 * the NOOPs it throws at us).
 	 * Note: IMPMTU includes the leader.
 	 */
-	x = spl5();
 	info = sc->acc_ifuba.ifu_r.ifrw_info;
 	addr->iba = (u_short)info;
 	addr->iwc = -(IMPMTU >> 1);
@@ -211,11 +208,7 @@ COUNT(ACCINIT);
 #endif
 	addr->icsr = 
 		IN_MRDY | ACC_IE | IN_WEN | ((info & 0x30000) >> 12) | ACC_GO;
-	splx(x);
 	return (1);
-down:
-	ui->ui_alive = 0;
-	return (0);
 }
 
 /*
