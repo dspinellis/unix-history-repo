@@ -1,4 +1,4 @@
-/*	word.c	4.1	82/05/07	*/
+/*	word.c	4.2	83/06/10	*/
 
 #
 /*
@@ -126,7 +126,9 @@ LOCAL	readb()
 	REG FILE	f=standin;
 	REG INT		len;
 
+	IF setjmp(INTbuf) == 0 THEN trapjmp[INTR] = 1; FI
 	REP	IF trapnote&SIGSET THEN newline(); sigchk() FI
 	PER (len=read(f->fdes,f->fbuf,f->fsiz))<0 ANDF trapnote DONE
+	trapjmp[INTR] = 0;
 	return(len);
 }

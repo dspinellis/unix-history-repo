@@ -1,4 +1,4 @@
-/*	fault.c	4.1	82/05/07	*/
+/*	fault.c	4.2	83/06/10	*/
 
 #
 /*
@@ -14,6 +14,7 @@
 
 STRING		trapcom[MAXTRAP];
 BOOL		trapflg[MAXTRAP];
+BOOL		trapjmp[MAXTRAP];
 
 /* ========	fault handling routines	   ======== */
 
@@ -23,7 +24,6 @@ VOID	fault(sig)
 {
 	REG INT		flag;
 
-	signal(sig,fault);
 	IF sig==MEMF
 	THEN	IF setbrk(brkincr) == -1
 		THEN	error(nospace);
@@ -35,6 +35,11 @@ VOID	fault(sig)
 	ELSE	flag = (trapcom[sig] ? TRAPSET : SIGSET);
 		trapnote |= flag;
 		trapflg[sig] |= flag;
+	FI
+	IF trapjmp[sig] ANDF sig==INTR
+	THEN
+		trapjmp[sig] = 0;
+		longjmp(INTbuf, 1);
 	FI
 }
 

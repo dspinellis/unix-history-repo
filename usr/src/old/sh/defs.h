@@ -1,4 +1,4 @@
-/*	defs.h	4.1	82/05/07	*/
+/*	defs.h	4.2	83/06/10	*/
 
 #
 /*
@@ -222,6 +222,7 @@ INT		flags;
 #include	<setjmp.h>
 jmp_buf		subshell;
 jmp_buf		errshell;
+jmp_buf		INTbuf;
 
 /* fault handling */
 #include	"brkincr.h"
@@ -243,6 +244,7 @@ VOID		fault();
 BOOL		trapnote;
 STRING		trapcom[];
 BOOL		trapflg[];
+BOOL		trapjmp[];
 
 /* name tree and words */
 STRING		*environ;
