@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	4.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,7 +40,7 @@ extern int errno;
 struct	ifreq		ifr, ridreq;
 struct	ifaliasreq	addreq;
 struct	iso_ifreq	iso_ridreq;
-struct	iso_aliasreq	iso_addreq;
+struct	iso_aliasreq	iso_addreq = {"", {0,0,0,0,1}}; /* default nsellen = 1*/
 struct	sockaddr_in	netmask;
 
 char	name[30];
@@ -56,7 +56,7 @@ extern	int errno;
 
 int	setifflags(), setifaddr(), setifdstaddr(), setifnetmask();
 int	setifmetric(), setifbroadaddr(), setifipdst();
-int	notealias(), setsnpaoffset();
+int	notealias(), setsnpaoffset(), setnsellength();
 
 #define	NEXTARG		0xffffff
 
@@ -83,9 +83,10 @@ struct	cmd {
 #endif
 	{ "netmask",	NEXTARG,	setifnetmask },
 	{ "metric",	NEXTARG,	setifmetric },
-	{ "snpaoffset",	NEXTARG,	setsnpaoffset },
 	{ "broadcast",	NEXTARG,	setifbroadaddr },
 	{ "ipdst",	NEXTARG,	setifipdst },
+	{ "snpaoffset",	NEXTARG,	setsnpaoffset },
+	{ "nsellength",	NEXTARG,	setnsellength },
 	{ 0,		0,		setifaddr },
 	{ 0,		0,		setifdstaddr },
 };
@@ -458,33 +459,37 @@ iso_status(force)
 		perror("ifconfig: socket");
 		exit(1);
 	}
-	if (ioctl(s, SIOCGIFADDR, (caddr_t)&ifr) < 0) {
+	bzero((caddr_t)&ifr, sizeof(ifr));
+	strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
+	if (ioctl(s, SIOCGIFADDR_ISO, (caddr_t)&ifr) < 0) {
 		if (errno == EADDRNOTAVAIL || errno == EAFNOSUPPORT) {
 			if (!force)
 				return;
 			bzero((char *)&ifr.ifr_Addr, sizeof(ifr.ifr_Addr));
-		} else
-			perror("ioctl (SIOCGIFADDR)");
+		} else {
+			perror("ioctl (SIOCGIFADDR_ISO)");
+			exit(1);
+		}
 	}
 	strncpy(ifr.ifr_name, name, sizeof ifr.ifr_name);
 	siso = &ifr.ifr_Addr;
-	printf("\tiso %s ", iso_ntoa(siso->siso_addr));
-	if (ioctl(s, SIOCGIFNETMASK, (caddr_t)&ifr) < 0) {
+	printf("\tiso %s ", iso_ntoa(&siso->siso_addr));
+	if (ioctl(s, SIOCGIFNETMASK_ISO, (caddr_t)&ifr) < 0) {
 		if (errno != EADDRNOTAVAIL)
-			perror("ioctl (SIOCGIFNETMASK)");
+			perror("ioctl (SIOCGIFNETMASK_ISO)");
 	} else {
-		printf("\n netmask %s ", iso_ntoa(siso->siso_addr));
+		printf(" netmask %s ", iso_ntoa(&siso->siso_addr));
 	}
 	if (flags & IFF_POINTOPOINT) {
-		if (ioctl(s, SIOCGIFDSTADDR, (caddr_t)&ifr) < 0) {
+		if (ioctl(s, SIOCGIFDSTADDR_ISO, (caddr_t)&ifr) < 0) {
 			if (errno == EADDRNOTAVAIL)
 			    bzero((char *)&ifr.ifr_Addr, sizeof(ifr.ifr_Addr));
 			else
-			    Perror("ioctl (SIOCGIFDSTADDR)");
+			    Perror("ioctl (SIOCGIFDSTADDR_ISO)");
 		}
 		strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
 		siso = &ifr.ifr_Addr;
-		printf("--> %s ", iso_ntoa(siso->siso_addr));
+		printf("--> %s ", iso_ntoa(&siso->siso_addr));
 	}
 	putchar('\n');
 }
@@ -611,4 +616,17 @@ char *addr;
 	    siso->siso_family = AF_ISO;
 	    siso->siso_len =  sizeof(*siso);
 	}
+}
+
+setnsellength(val)
+	char *val;
+{
+	register struct sockaddr_iso *siso = sisotab[ADDR];
+	int n = atoi(val);
+	if (afp == 0 || afp->af_af != AF_ISO) {
+		fprintf(stderr, "Setting NSEL length valid only for iso\n");
+		exit (1);
+	}
+	if (n >= 0)
+		siso->siso_tlen = n;
 }
