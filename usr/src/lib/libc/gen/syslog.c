@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.18 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -42,6 +42,7 @@ static char sccsid[] = "@(#)syslog.c	5.17 (Berkeley) %G%";
 #include <sys/syslog.h>
 #include <netdb.h>
 #include <strings.h>
+#include <varargs.h>
 #include <stdio.h>
 
 #define	LOGNAME	"/dev/log"
@@ -56,6 +57,14 @@ static int	LogFacility = LOG_USER;	/* default facility code */
 syslog(pri, fmt, args)
 	int pri, args;
 	char *fmt;
+{
+	vsyslog(pri, fmt, &args);
+}
+
+vsyslog(pri, fmt, ap)
+	int pri;
+	char *fmt;
+	va_list ap;
 {
 	register int cnt;
 	register char *p;
@@ -91,7 +100,7 @@ syslog(pri, fmt, args)
 		*p++ = ' ';
 	}
 
-	(void)vsprintf(p, fmt, &args);
+	(void)vsprintf(p, fmt, ap);
 
 	/* output the message to the local logger */
 	if (send(LogFile, tbuf, cnt = strlen(tbuf), 0) >= 0 ||
