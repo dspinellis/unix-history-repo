@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)spp_usrreq.c	6.5 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	6.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -43,10 +43,10 @@ int traceallspps = 0;
 extern int sppconsdebug;
 
 int spp_hardnosed;
-spp_input(m)
+spp_input(m, nsp)
 	register struct mbuf *m;
-{
 	register struct nspcb *nsp;
+{
 	register struct sppcb *cb;
 	register struct spidp *si = mtod(m, struct spidp *);
 	register struct socket *so;
@@ -54,18 +54,21 @@ spp_input(m)
 	int dropsocket = 0;
 
 
-	/*
-	 * Locate pcb for datagram.
-	 */
-	nsp = ns_pcblookup(&si->si_sna, si->si_dna.x_port, NS_WILDCARD);
 	if (nsp==0) {
-		ns_error(m, NS_ERR_NOSOCK, 0);
+		panic("No nspcb in spp_input\n");
 		return;
 	}
 
 	cb = nstosppcb(nsp);
 	if (cb == 0) goto bad;
 
+	if (m->m_len < sizeof(*si)) {
+		if ((m = m_pullup(m, sizeof(*si)))==0) {
+			spp_istat.hdrops++;
+			return;
+		}
+		si = mtod(m, struct spidp *);
+	}
 	si->si_seq = ntohs(si->si_seq);
 	si->si_ack = ntohs(si->si_ack);
 	si->si_alo = ntohs(si->si_alo);
