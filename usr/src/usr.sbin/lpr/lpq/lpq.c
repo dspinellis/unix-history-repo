@@ -1,4 +1,4 @@
-/*	lpq.c	4.2	83/05/13	*/
+/*	lpq.c	4.3	83/05/26	*/
 /*
  * Spool Queue examination program
  *
@@ -58,7 +58,12 @@ main(argc, argv)
 		} else if (arg[0] == '-')
 			switch (arg[1]) {
 			case 'P':		/* printer name */
-				printer = &arg[2];
+				if (arg[2])
+					printer = &arg[2];
+				else if (argc > 1) {
+					argc--;
+					printer = *++argv;
+				}
 				break;
 
 			case 'l':		/* long output */

@@ -122,7 +122,12 @@ main(argc, argv)
 		switch (arg[1]) {
 
 		case 'P':		/* specifiy printer name */
-			printer = &arg[2];
+			if (arg[2])
+				printer = &arg[2];
+			else if (argc > 1) {
+				argc--;
+				printer = *++argv;
+			}
 			break;
 
 		case 'C':		/* classification spec */

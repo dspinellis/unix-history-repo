@@ -1,4 +1,4 @@
-/*	lprm.c	4.2	83/05/13	*/
+/*	lprm.c	4.3	83/05/26	*/
 /*
  * lprm - remove the current user's spool entry
  *
@@ -46,7 +46,12 @@ main(argc, argv)
 		if ((arg = *++argv)[0] == '-')
 			switch (arg[1]) {
 			case 'P':
-				printer = &arg[2];
+				if (arg[2])
+					printer = &arg[2];
+				else if (argc > 1) {
+					argc--;
+					printer = *++argv;
+				}
 				break;
 			case '\0':
 				if (!users) {
