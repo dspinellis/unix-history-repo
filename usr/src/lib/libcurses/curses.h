@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	8.3 (Berkeley) %G%
+ *	@(#)curses.h	8.4 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -260,8 +260,8 @@ int	 wmove __P((WINDOW *, int, int));
 int	 wprintw __P((WINDOW *, const char *, ...));
 int	 wrefresh __P((WINDOW *));
 int	 wscanw __P((WINDOW *, const char *, ...));
-char	*wstandend __P((WINDOW *));
-char	*wstandout __P((WINDOW *));
+int	 wstandend __P((WINDOW *));
+int	 wstandout __P((WINDOW *));
 int	 vwprintw __P((WINDOW *, const char *, _BSD_VA_LIST_));
 
 /* Private functions that are needed for user programs prototypes. */
