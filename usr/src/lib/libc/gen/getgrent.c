@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getgrent.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)getgrent.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -127,7 +127,7 @@ grscan(search, gid, name)
 		if (!(cp = strsep(&bp, ":\n")))
 			continue;
 		_gr_group.gr_gid = atoi(cp);
-		if (search && gid && _gr_group.gr_gid != gid)
+		if (search && name == NULL && _gr_group.gr_gid != gid)
 			continue;
 		for (m = _gr_group.gr_mem = members;; ++m) {
 			if (m == &members[MAXGRP - 1]) {
