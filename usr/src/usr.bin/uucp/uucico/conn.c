@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)conn.c	5.14	(Berkeley) %G%";
+static char sccsid[] = "@(#)conn.c	5.15	(Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -94,6 +94,10 @@ static char *PCFlds[] = {
 };
 
 static char PCP_brand[25];
+int Dcf = -1;
+char *Flds[MAXC/10];
+char LineType[10];
+extern int LocalOnly;
 
 /*
  *	place a telephone call to system and login, etc.
@@ -107,12 +111,6 @@ static char PCP_brand[25];
  *
  *		>0  - file no.  -  connect ok
  */
-
-int Dcf = -1;
-char *Flds[MAXC/10];
-char LineType[10];
-extern int LocalOnly;
-
 conn(system)
 char *system;
 {
@@ -204,6 +202,7 @@ keeplooking:
 
 	if (fcode >= 0) {
 		DEBUG(4, "login %s\n", "called");
+		setproctitle("login");
 		fcode = login(nf, Flds, Dcf); }
 	if (fcode < 0) {
 		clsacu();
@@ -220,6 +219,9 @@ keeplooking:
 	return Dcf;
 }
 
+int nulldev();
+int (*CU_end)() = nulldev;
+
 /*
  *	connect to remote machine
  *
@@ -227,9 +229,6 @@ keeplooking:
  *		>0  -  file number - ok
  *		FAIL  -  failed
  */
-
-int nulldev();
-
 getto(flds)
 register char *flds[];
 {
@@ -274,8 +273,6 @@ register char *flds[];
  *
  *	return codes:  none
  */
-
-int (*CU_end)() = nulldev;
 clsacu()
 {
 	/* make *sure* Dcf is no longer exclusive.
@@ -307,7 +304,6 @@ clsacu()
 /*
  *	expand phone number for given prefix and number
  */
-
 exphone(in, out)
 register char *in, *out;
 {
@@ -355,7 +351,6 @@ register char *in, *out;
  *
  *	return code - FAIL at end-of file; 0 otherwise
  */
-
 rddev(fp, dev)
 register struct Devices *dev;
 FILE *fp;
@@ -386,7 +381,6 @@ FILE *fp;
  *		CF_SYSTEM  -  system name not found
  *		CF_TIME  -  wrong time to call
  */
-
 finds(fsys, sysnam, info, flds)
 char *sysnam, info[], *flds[];
 FILE *fsys;
@@ -419,7 +413,6 @@ FILE *fsys;
  *
  *	return codes:  SUCCESS  |  FAIL
  */
-
 login(nf, flds, fn)
 register char *flds[];
 int nf, fn;
@@ -538,7 +531,6 @@ struct sg_spds {int sp_val, sp_name;} spds[] = {
  *
  *	return codes:  none
  */
-
 fixline(tty, spwant)
 int tty, spwant;
 {
@@ -598,7 +590,6 @@ int tty, spwant;
  *		FAIL  -  lost line or too many characters read
  *		some character  -  timed out
  */
-
 expect(str, fn)
 register char *str;
 int fn;
@@ -617,7 +608,9 @@ int fn;
 			switch(*++strptr) {
 			case 's':
 				DEBUG(5, "BLANK\n", CNULL);
+				strptr--;
 				*strptr = ' ';
+				strcpy(&strptr[1], &strptr[4]);
 				break;
 			default:
 				strptr--;  /* back up to backslash */
