@@ -1,4 +1,4 @@
-/* @(#)filbuf.c	4.2 (Berkeley) %G% */
+/* @(#)filbuf.c	4.3 (Berkeley) %G% */
 #include	<stdio.h>
 char	*malloc();
 
@@ -26,10 +26,10 @@ tryagain:
 		}
 		iop->_flag |= _IOMYBUF;
 	}
-	iop->_ptr = iop->_base;
 	if (iop == stdin && (stdout->_flag&_IOLBF))
 		fflush(stdout);
-	iop->_cnt = read(fileno(iop), iop->_ptr, iop->_flag&_IONBF?1:BUFSIZ);
+	iop->_cnt = read(fileno(iop), iop->_base, iop->_flag&_IONBF?1:BUFSIZ);
+	iop->_ptr = iop->_base;
 	if (--iop->_cnt < 0) {
 		if (iop->_cnt == -1) {
 			iop->_flag |= _IOEOF;
