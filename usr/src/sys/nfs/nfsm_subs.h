@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsm_subs.h	7.11 (Berkeley) %G%
+ *	@(#)nfsm_subs.h	7.12 (Berkeley) %G%
  */
 
 /*
@@ -22,13 +22,11 @@
 extern struct mbuf *nfsm_reqh();
 
 #define	M_HASCL(m)	((m)->m_flags & M_EXT)
-#define	NFSMGETHDR(m) \
-		MGETHDR(m, M_WAIT, MT_DATA); \
-		(m)->m_pkthdr.len = 0; \
-		(m)->m_pkthdr.rcvif = (struct ifnet *)0
 #define	NFSMINOFF(m) \
 		if (M_HASCL(m)) \
 			(m)->m_data = (m)->m_ext.ext_buf; \
+		else if ((m)->m_flags & M_PKTHDR) \
+			(m)->m_data = (m)->m_pktdat; \
 		else \
 			(m)->m_data = (m)->m_dat
 #define	NFSMADV(m, s)	(m)->m_data += (s)
@@ -48,10 +46,8 @@ extern struct mbuf *nfsm_reqh();
  * unions.
  */
 
-#ifndef lint
 #define	nfsm_build(a,c,s) \
-		t1 = NFSMSIZ(mb); \
-		if ((s) > (t1-mb->m_len)) { \
+		{ if ((s) > M_TRAILINGSPACE(mb)) { \
 			MGET(mb2, M_WAIT, MT_DATA); \
 			if ((s) > MLEN) \
 				panic("build > MLEN"); \
@@ -62,24 +58,10 @@ extern struct mbuf *nfsm_reqh();
 		} \
 		(a) = (c)(bpos); \
 		mb->m_len += (s); \
-		bpos += (s)
-#else /* lint */
-#define	nfsm_build(a,c,s) \
-		t1 = NFSMSIZ(mb); \
-		if ((s) > (t1-mb->m_len)) { \
-			MGET(mb2, M_WAIT, MT_DATA); \
-			mb->m_next = mb2; \
-			mb = mb2; \
-			mb->m_len = 0; \
-			bpos = mtod(mb, caddr_t); \
-		} \
-		(a) = (c)(bpos); \
-		mb->m_len += (s); \
-		bpos += (s)
-#endif /* lint */
+		bpos += (s); }
 
-#define	nfsm_disect(a,c,s) \
-		t1 = mtod(md, caddr_t)+md->m_len-dpos; \
+#define	nfsm_dissect(a,c,s) \
+		{ t1 = mtod(md, caddr_t)+md->m_len-dpos; \
 		if (t1 >= (s)) { \
 			(a) = (c)(dpos); \
 			dpos += (s); \
@@ -88,10 +70,10 @@ extern struct mbuf *nfsm_reqh();
 			goto nfsmout; \
 		} else { \
 			(a) = (c)cp2; \
-		}
+		} }
 
-#define	nfsm_disecton(a,c,s) \
-		t1 = mtod(md, caddr_t)+md->m_len-dpos; \
+#define	nfsm_dissecton(a,c,s) \
+		{ t1 = mtod(md, caddr_t)+md->m_len-dpos; \
 		if (t1 >= (s)) { \
 			(a) = (c)(dpos); \
 			dpos += (s); \
@@ -100,7 +82,7 @@ extern struct mbuf *nfsm_reqh();
 			goto nfsmout; \
 		} else { \
 			(a) = (c)cp2; \
-		}
+		} }
 
 #define nfsm_fhtom(v) \
 		nfsm_build(cp,caddr_t,NFSX_FH); \
@@ -112,7 +94,7 @@ extern struct mbuf *nfsm_reqh();
 
 #define nfsm_mtofh(d,v) \
 		{ struct nfsnode *np; nfsv2fh_t *fhp; \
-		nfsm_disect(fhp,nfsv2fh_t *,NFSX_FH); \
+		nfsm_dissect(fhp,nfsv2fh_t *,NFSX_FH); \
 		if (error = nfs_nget((d)->v_mount, fhp, &np)) { \
 			m_freem(mrep); \
 			goto nfsmout; \
@@ -130,19 +112,19 @@ extern struct mbuf *nfsm_reqh();
 		(v) = tvp; }
 
 #define	nfsm_strsiz(s,m) \
-		nfsm_disect(tl,u_long *,NFSX_UNSIGNED); \
+		{ nfsm_dissect(tl,u_long *,NFSX_UNSIGNED); \
 		if (((s) = fxdr_unsigned(long,*tl)) > (m)) { \
 			m_freem(mrep); \
 			error = EBADRPC; \
 			goto nfsmout; \
-		}
+		} }
 
 #define	nfsm_srvstrsiz(s,m) \
-		nfsm_disect(tl,u_long *,NFSX_UNSIGNED); \
+		{ nfsm_dissect(tl,u_long *,NFSX_UNSIGNED); \
 		if (((s) = fxdr_unsigned(long,*tl)) > (m) || (s) <= 0) { \
 			error = EBADRPC; \
 			nfsm_reply(0); \
-		}
+		} }
 
 #define nfsm_mtouio(p,s) \
 		if ((s) > 0 && \
@@ -157,20 +139,17 @@ extern struct mbuf *nfsm_reqh();
 			goto nfsmout; \
 		}
 
-#define	nfsm_reqhead(a,c,s) \
-		if ((mreq = nfsm_reqh(nfs_prog,nfs_vers,(a),(c),(s),&bpos,&mb,&xid)) == NULL) { \
-			error = ENOBUFS; \
-			goto nfsmout; \
-		}
+#define	nfsm_reqhead(v,a,s) \
+		mb = mreq = nfsm_reqh((v),(a),(s),&bpos)
 
 #define nfsm_reqdone	m_freem(mrep); \
 		nfsmout: 
 
 #define nfsm_rndup(a)	(((a)+3)&(~0x3))
 
-#define	nfsm_request(v, t, p, h)	\
-		if (error = nfs_request((v), mreq, xid, (t), (p), (h), \
-		   (v)->v_mount, &mrep, &md, &dpos)) \
+#define	nfsm_request(v, t, p, c)	\
+		if (error = nfs_request((v), mreq, (t), (p), \
+		   (c), &mrep, &md, &dpos)) \
 			goto nfsmout
 
 #define	nfsm_strtom(a,s,m) \
@@ -180,7 +159,7 @@ extern struct mbuf *nfsm_reqh();
 			goto nfsmout; \
 		} \
 		t2 = nfsm_rndup(s)+NFSX_UNSIGNED; \
-		if(t2<=(NFSMSIZ(mb)-mb->m_len)){ \
+		if (t2 <= M_TRAILINGSPACE(mb)) { \
 			nfsm_build(tl,u_long *,t2); \
 			*tl++ = txdr_unsigned(s); \
 			*(tl+((t2>>2)-2)) = 0; \
@@ -194,34 +173,20 @@ extern struct mbuf *nfsm_reqh();
 		nfsmout: \
 		return(error)
 
-#ifndef lint
 #define	nfsm_reply(s) \
 		{ \
-		*repstat = error; \
+		nfsd->nd_repstat = error; \
 		if (error) \
-			nfs_rephead(0, xid, error, mrq, &mb, &bpos); \
+		   (void) nfs_rephead(0, nfsd, error, cache, &frev, \
+			mrq, &mb, &bpos); \
 		else \
-			nfs_rephead((s), xid, error, mrq, &mb, &bpos); \
+		   (void) nfs_rephead((s), nfsd, error, cache, &frev, \
+			mrq, &mb, &bpos); \
 		m_freem(mrep); \
 		mreq = *mrq; \
 		if (error) \
 			return(0); \
 		}
-#else	/* lint */
-#define	nfsm_reply(s) \
-		{ \
-		*repstat = error; \
-		if (error) \
-			nfs_rephead(0, xid, error, mrq, &mb, &bpos); \
-		else \
-			nfs_rephead((s), xid, error, mrq, &mb, &bpos); \
-		m_freem(mrep); \
-		mreq = *mrq; \
-		mrep = mreq; \
-		if (error) \
-			return(0); \
-		}
-#endif	/* lint */
 
 #define	nfsm_adv(s) \
 		t1 = mtod(md, caddr_t)+md->m_len-dpos; \
@@ -233,20 +198,18 @@ extern struct mbuf *nfsm_reqh();
 		}
 
 #define nfsm_srvmtofh(f) \
-		nfsm_disecton(tl, u_long *, NFSX_FH); \
+		nfsm_dissecton(tl, u_long *, NFSX_FH); \
 		bcopy((caddr_t)tl, (caddr_t)f, NFSX_FH)
 
 #define	nfsm_clget \
 		if (bp >= be) { \
+			if (mp == mb) \
+				mp->m_len += bp-bpos; \
 			MGET(mp, M_WAIT, MT_DATA); \
 			MCLGET(mp, M_WAIT); \
 			mp->m_len = NFSMSIZ(mp); \
-			if (mp3 == NULL) \
-				mp3 = mp2 = mp; \
-			else { \
-				mp2->m_next = mp; \
-				mp2 = mp; \
-			} \
+			mp2->m_next = mp; \
+			mp2 = mp; \
 			bp = mtod(mp, caddr_t); \
 			be = bp+mp->m_len; \
 		} \
