@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)access.3	6.1 (Berkeley) %G%
+.\"	@(#)access.3	6.2 (Berkeley) %G%
 .\"
 .TH ACCESS 3F ""
 .UC 5
 .SH NAME
-access \- determine accessability of a file
+access \- determine accessibility of a file
 .SH SYNOPSIS
 .B integer function access (name, mode)
 .br
@@ -16,7 +16,7 @@ access \- determine accessability of a file
 .I Access
 checks the given file,
 .I name,
-for accessability with respect to the caller according to
+for accessibility with respect to the caller according to
 .I mode.
 .I Mode
 may include in any order and in any combination one or more of:
@@ -31,7 +31,7 @@ may include in any order and in any combination one or more of:
 .fi
 .PP
 An error code is returned if either argument is illegal, or if the file
-can not be accessed in all of the specified modes.
+cannot be accessed in all of the specified modes.
 0 is returned if the specified access would be successful.
 .SH FILES
 .ie \nM /usr/ucb/lib/libU77.a
