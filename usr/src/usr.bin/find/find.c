@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	4.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	4.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -48,7 +48,7 @@ main(argc, argv)
 		usage();
 
 	paths = argv;
-	ftsoptions = FTS_MULTIPLE|FTS_NOSTAT|FTS_PHYSICAL;
+	ftsoptions = FTS_NOSTAT|FTS_PHYSICAL;
 
 	/*
 	 * if arguments start with an option, it's new syntax; otherwise,
