@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.2 (Berkeley) %G%
+ *	@(#)pathnames.h	5.3 (Berkeley) %G%
  */
 
 #include <paths.h>
 
 #undef _PATH_TMP
 #define	_PATH_TMP	"/tmp/dbxXXXXXX"
-
+#define	_PATH_ADBINSTR	"/usr/src/bin/adb/adb.tahoe/instrs.adb"
