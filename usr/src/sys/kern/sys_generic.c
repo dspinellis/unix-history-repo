@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_generic.c	7.3 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -16,7 +16,7 @@
 #include "uio.h"
 #include "kernel.h"
 #include "stat.h"
-#include "buf.h"				/* XXX */
+#include "malloc.h"
 
 /*
  * Read system call.
@@ -161,7 +161,7 @@ ioctl()
 	} *uap;
 	register int com;
 	register u_int size;
-	struct buf *bp = 0;
+	caddr_t memp = 0;
 #define STK_PARAMS	128
 	char buf[STK_PARAMS];
 	caddr_t data = buf;
@@ -207,15 +207,18 @@ ioctl()
 		return;
 	}
 	if (size > sizeof (buf)) {
-		bp = geteblk(IOCPARM_MAX);		/* XXX */
-		data = bp->b_un.b_addr;
+		memp = (caddr_t)malloc(IOCPARM_MAX, M_IOCTLOPS, M_WAITOK);
+		data = memp;
 	}
 	if (com&IOC_IN) {
 		if (size) {
 			u.u_error =
 			    copyin(uap->cmarg, data, (u_int)size);
-			if (u.u_error)
+			if (u.u_error) {
+				if (memp)
+					free(memp, M_IOCTLOPS);
 				return;
+			}
 		} else
 			*(caddr_t *)data = uap->cmarg;
 	} else if ((com&IOC_OUT) && size)
@@ -257,8 +260,8 @@ ioctl()
 			u.u_error = copyout(data, uap->cmarg, (u_int)size);
 		break;
 	}
-	if (bp)
-		brelse(bp);
+	if (memp)
+		free(memp, M_IOCTLOPS);
 }
 
 int	unselect();
