@@ -1,4 +1,4 @@
-/*	telnet.c	4.1	82/02/28	*/
+/*	telnet.c	4.2	82/03/01	*/
 
 /*
  * User telnet program.
@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <net/in.h>
+#define	TELOPTS
 #include "telnet.h"
 
 #define	ctrl(x)		((x) & 037)
@@ -35,6 +36,7 @@ char	wont[] = { IAC, WONT, '%', 'c', 0 };
 
 int	connected;
 int	net;
+int	showoptions;
 char	*prompt;
 char	escape = ctrl('_');
 
@@ -48,7 +50,7 @@ jmp_buf	peerdied;
 extern	int errno;
 
 int	tn(), quit(), suspend(), bye(), help();
-int	setescape(), status(), toggle();
+int	setescape(), status(), toggle(), setoptions();
 
 #define HELPINDENT (sizeof("connect"))
 
@@ -65,6 +67,7 @@ char	zhelp[] = "suspend telnet";
 char	ehelp[] = "set escape character";
 char	shelp[] = "print status information";
 char	hhelp[] = "print help information";
+char	phelp[] = "toggle viewing of options processing";
 
 struct cmd cmdtab[] = {
 	{ "open",	ohelp,		tn },
@@ -73,6 +76,7 @@ struct cmd cmdtab[] = {
 	{ "z",		zhelp,		suspend },
 	{ "escape",	ehelp,		setescape },
 	{ "status",	shelp,		status },
+	{ "options",	phelp,		setoptions },
 	{ "?",		hhelp,		help },
 	0
 };
@@ -125,16 +129,21 @@ tn(argc, argv)
 		return;
 	}
 	sin.sin_addr.s_addr = rhost(&argv[1]);
-	if (sin.sin_addr.s_addr == 0) {
+	if (sin.sin_addr.s_addr <= 0) {
 		printf("%s: unknown host\n", argv[1]);
 		return;
+	}
+	if (argc == 3) {
+		sin.sin_port = atoi(argv[2]);
+		if (sin.sin_port < 0) {
+			printf("%s: bad port number\n", argv[2]);
+			return;
+		}
 	}
 	if ((net = socket(SOCK_STREAM, 0, 0, 0)) < 0) {
 		perror("socket");
 		return;
 	}
-	if (argc == 3)
-		sin.sin_port = atoi(argv[2]);
 	sigset(SIGINT, intr);
 	sigset(SIGPIPE, deadpeer);
 	printf("Trying...\n");
@@ -313,10 +322,16 @@ telnet(s)
 	int on = 1;
 
 	mode(1);
+	if (showoptions)
+		printoption("<--", doopt, TELOPT_ECHO);
 	sprintf(nfrontp, doopt, TELOPT_ECHO);
 	nfrontp += sizeof(doopt) - 2;
+	if (showoptions)
+		printoption("<--", doopt, TELOPT_SGA);
 	sprintf(nfrontp, doopt, TELOPT_SGA);
 	nfrontp += sizeof(doopt) - 2;
+	if (showoptions)
+		printoption("<--", will, TELOPT_SGA);
 	sprintf(nfrontp, will, TELOPT_SGA);
 	nfrontp += sizeof(doopt) - 2;
 	ioctl(s, FIONBIO, &on);
@@ -488,28 +503,38 @@ telrcv()
 			continue;
 
 		case TS_WILL:
+			if (showoptions)
+				printoption("-->", will, c);
 			if (!hisopts[c])
 				willoption(c);
 			state = TS_DATA;
 			continue;
 
 		case TS_WONT:
+			if (showoptions)
+				printoption("-->", wont, c);
 			if (hisopts[c])
 				wontoption(c);
 			state = TS_DATA;
 			continue;
 
 		case TS_DO:
+			if (showoptions)
+				printoption("-->", doopt, c);
 			if (!myopts[c])
 				dooption(c);
 			state = TS_DATA;
 			continue;
 
 		case TS_DONT:
+			if (showoptions)
+				printoption("-->", dont, c);
 			if (myopts[c]) {
 				myopts[c] = 0;
 				sprintf(nfrontp, wont, c);
 				nfrontp += sizeof(wont) - 2;
+				if (showoptions)
+					printoption("<--", wont, c);
 			}
 			state = TS_DATA;
 			continue;
@@ -540,8 +565,10 @@ willoption(option)
 		fmt = dont;
 		break;
 	}
-	sprintf(nfrontp, dont, option);
+	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof(dont) - 2;
+	if (showoptions)
+		printoption("<--", fmt, option);
 }
 
 wontoption(option)
@@ -564,6 +591,8 @@ wontoption(option)
 	}
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof(doopt) - 2;
+	if (showoptions)
+		printoption("<--", fmt, option);
 }
 
 dooption(option)
@@ -587,6 +616,8 @@ dooption(option)
 	}
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof(doopt) - 2;
+	if (showoptions)
+		printoption("<--", fmt, option);
 }
 
 /*
@@ -609,6 +640,13 @@ setescape(argc, argv)
 	if (arg[0] != '\0')
 		escape = arg[0];
 	printf("Escape character is '%s'.\n", control(escape));
+}
+
+/*VARARGS*/
+setoptions()
+{
+	showoptions = !showoptions;
+	printf("%s show option processing.\n", showoptions ? "Will" : "Wont");
 }
 
 /*
@@ -701,4 +739,25 @@ netflush(fd)
 	nbackp += n;
 	if (nbackp == nfrontp)
 		nbackp = nfrontp = netobuf;
+}
+
+printoption(direction, fmt, option)
+	char *direction, *fmt;
+	int option;
+{
+	printf("%s ", direction);
+	if (fmt == doopt)
+		fmt = "do";
+	else if (fmt == dont)
+		fmt = "dont";
+	else if (fmt == will)
+		fmt = "will";
+	else if (fmt == wont)
+		fmt = "wont";
+	else
+		fmt = "???";
+	if (option < TELOPT_SUPDUP)
+		printf("%s %s\r\n", fmt, telopts[option]);
+	else
+		printf("%s %d\r\n", fmt, option);
 }
