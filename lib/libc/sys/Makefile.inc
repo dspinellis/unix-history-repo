@@ -19,7 +19,8 @@ ASM=	accept.o access.o acct.o adjtime.o async_daemon.o bind.o chdir.o \
 	getpriority.o getrlimit.o getrusage.o getsockname.o getsockopt.o \
 	gettimeofday.o getuid.o ioctl.o kill.o ktrace.o link.o listen.o \
 	lseek.o lstat.o madvise.o mincore.o mkdir.o mkfifo.o mknod.o \
-	mmap.o mount.o mprotect.o msgsys.o msync.o munmap.o nfssvc.o open.o \
+	mmap.o mount.o mprotect.o msgsys.o msync.o munmap.o nfssvc.o \
+	ntp_adjtime.o ntp_gettime.o open.o \
 	profil.o quotactl.o read.o readlink.o readv.o recvfrom.o recvmsg.o \
 	rename.o revoke.o rmdir.o select.o semsys.o sendmsg.o sendto.o \
 	setdomainname.o setegid.o seteuid.o setgid.o setgroups.o sethostid.o \
