@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -382,32 +382,6 @@ save_core()
 	fprintf(fp, "%d\n", bounds+1);
 	fclose(fp);
 	free(cp);
-}
-
-char *days[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-char *months[] = {
-	"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
-	"Oct", "Nov", "Dec"
-};
-
-log_entry()
-{
-	FILE *fp;
-	struct tm *tm, *localtime();
-
-	fp = fopen("/usr/adm/shutdownlog", "a");
-	if (fp == 0)
-		return;
-	tm = localtime(&now);
-	fseek(fp, 0L, L_XTND);
-	fprintf(fp, "%02d:%02d  %s %s %2d, %4d.  Reboot", tm->tm_hour,
-		tm->tm_min, days[tm->tm_wday], months[tm->tm_mon],
-		tm->tm_mday, tm->tm_year + 1900);
-	if (panicstr)
-		fprintf(fp, " after panic: %s\n", panic_mesg);
-	else
-		putc('\n', fp);
-	fclose(fp);
 }
 
 /*
