@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.34 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.35 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -2155,6 +2155,10 @@ t4|ti745|745|743|ti silent 745:\
 	:do=^J:le=^H:bs:co#80:hc:os:
 t8|ti800|ti omni 800:\
 	:do=^J:le=^H:bs:co#132:hc:os:
+# From lesleymw@topaz.berkeley.edu
+t9|ti931|ti 931:\
+	al=\EN:am:bs:cd=\EJ:ce=\EI:cl=\EL:cm=\EY%+ %+ :co=#80:dl=\EO:do=\EB:\
+	eo:ho=\EH:li=#24:ku=\EA:kd=\EB:kr=\EC:kl=\ED:mi:nd:sf=\Eb:sr=\Ea:up=\EA:
 # # --------------------------------
 #
 # v: TELEVIDEO
@@ -2232,12 +2236,12 @@ v9|925a|tvi925a|TeleVideo Model 925:\
 #	start-protected field delimiter (\Ex2\200\200)
 #	end-protected field delimiter (\Ex3\200\200)
 # set end of text delimiter to carriage return/null (\Ex4\r\200)
-#
+# CHANGED 4-29-87 to set tabs and keep status line --John Kunze (jak@opal)
 va|tvi950|950|televideo950:\
 	:ct=\E3:st=\E1:do=^J:\
-	:is=\EDF\EC\Ed\EG0\Eg\Er\EO\E\047\E(\E%\Ew\EX\Ee ^O\
+	:is=\EDF\EC\Ed\EG0\Er\EO\E\047\E(\E%\Ew\EX\Ee ^O\
 	\El\E016\E004\Ex0\200\200\Ex1\200\200\Ex2\200\200\
-	\Ex3\200\200\Ex4\r\200\Ef\r:\
+	\Ex3\200\200\Ex4\r\200\Ef\r:if=/usr/lib/tabset/stdcrt:\
 	:al=\EE:am:le=^H:bs:bt=\EI:cd=\Ey:ce=\Et:cl=\E*:cm=\E=%+ %+ :\
 	:co#80:dc=\EW:dl=\ER:do=^V:ei=\Er:ho=^^:im=\Eq:k0=^A0\r:\
 	:k1=^A@\r:k2=^AA\r:k3=^AB\r:k4=^AC\r:k5=^AD\r:k6=^AE\r:\
@@ -2778,6 +2782,11 @@ zA|653|t653x|Tandem 653x multipage terminal:\
 	:if=/usr/lib/tabset/tandem653:sb=\ES:sr=\ET:da:db:so=\E6$:se=\E6 :\
 	:us=\E60:ue=\E6 :sg#1:ug#1:up=\EA:do=\012:le=\010:nd=\EC:\
 	:hs:ts=\Eo:fs=\r:ds=\Eo\r:ws#64:
+# From Paul Leondis, unllab@amber.berkeley.edu
+zB|ifmr|Informer D304:\
+	:am:bs:cd=\E/:ce=\EQ:cl=\EZ:cm=\EY%r%+ %+ :co#80:dc=\E\\:\
+	:do=^J:im=:ei=:ic=\E[:li#24:nd=\EC:so=\EJ:se=\EK:up=\EA:\
+	:sr=\En:ho=\EH:
 #
 # END OF TERMCAP
 #  ------------------------
