@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *      @(#)in_cksum.c	1.3 (Berkeley) %G%
+ *      @(#)in_cksum.c	1.4 (Berkeley) %G%
  */
 #include "types.h"
 #include "mbuf.h"
@@ -76,14 +76,14 @@ in_cksum(m, len)
 		 */
 		if (3 & (int) w) {
 			REDUCE;
-			if (1 & (int) w) {
+			if ((1 & (int) w) && (mlen > 0)) {
 				sum <<= 8;
-				sum += *(u_char *)w;
+				s_util.c[0] = *(char *)w;
 				w = (u_short *)((char *)w + 1);
 				mlen--;
 				byte_swapped = 1;
 			}
-			if ((2 & (int) w) && mlen >= 2) {
+			if ((2 & (int) w) && (mlen >= 2)) {
 				sum += *w++;
 				mlen -= 2;
 			}
@@ -125,16 +125,15 @@ in_cksum(m, len)
 			sum += *w++;
 		}
 		if (byte_swapped) {
-			if (mlen == -1) {
-				s_util.c[0] = *(char *)w;
-				s_util.c[1] = 0;
-				sum += s_util.s;
-				mlen = 0;
-			}
 			sum <<= 8;
 			byte_swapped = 0;
-		}
-		if (mlen == -1)
+			if (mlen == -1) {
+				s_util.c[1] = *(char *)w;
+				sum += s_util.s;
+				mlen = 0;
+			} else
+				mlen = -1;
+		} else if (mlen == -1)
 			/*
 			 * This mbuf has odd number of bytes. 
 			 * There could be a word split betwen
