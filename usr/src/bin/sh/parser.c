@@ -32,6 +32,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00168
+ * --------------------         -----   ----------------------
+ *
+ * 04 Jun 93	Jim Wilson		Seven (7) fixes for misc bugs
+ *
  */
 
 #ifndef lint
@@ -99,7 +107,7 @@ STATIC union node *list __P((int));
 STATIC union node *andor __P((void));
 STATIC union node *pipeline __P((void));
 STATIC union node *command __P((void));
-STATIC union node *simplecmd __P((void));
+STATIC union node *simplecmd __P((union node **, union node *));
 STATIC void parsefname __P((void));
 STATIC void parseheredoc __P((void));
 STATIC int readtoken __P((void));
@@ -264,6 +272,16 @@ command() {
 	int t;
 
 	checkkwd = 2;
+	redir = 0;
+	rpp = &redir;
+	/* Check for redirection which may precede command */
+	while (readtoken() == TREDIR) {
+		*rpp = n2 = redirnode;
+		rpp = &n2->nfile.next;
+		parsefname();
+	}
+	tokpushback++;
+
 	switch (readtoken()) {
 	case TIF:
 		n1 = (union node *)stalloc(sizeof (struct nif));
@@ -326,6 +344,10 @@ TRACE(("expecting DO got %s %s\n", tokname[got], got == TWORD ? wordtext : ""));
 			}
 			*app = NULL;
 			n1->nfor.args = ap;
+			/* A newline or semicolon is required here to end
+			   the list.  */
+			if (lasttoken != TNL && lasttoken != TSEMI)
+				synexpect(-1);
 		} else {
 #ifndef GDB_HACK
 			static const char argvars[5] = {CTLVAR, VSNORMAL|VSQUOTE,
@@ -337,9 +359,11 @@ TRACE(("expecting DO got %s %s\n", tokname[got], got == TWORD ? wordtext : ""));
 			n2->narg.backquote = NULL;
 			n2->narg.next = NULL;
 			n1->nfor.args = n2;
+			/* A newline or semicolon is optional here. Anything
+			   else gets pushed back so we can read it again.  */
+			if (lasttoken != TNL && lasttoken != TSEMI)
+				tokpushback++;
 		}
-		if (lasttoken != TNL && lasttoken != TSEMI)
-			synexpect(-1);
 		checkkwd = 2;
 		if ((t = readtoken()) == TDO)
 			t = TDONE;
@@ -411,16 +435,16 @@ TRACE(("expecting DO got %s %s\n", tokname[got], got == TWORD ? wordtext : ""));
 			synexpect(TEND);
 		checkkwd = 1;
 		break;
+	/* Handle an empty command like other simple commands.  */
+	case TNL:
 	case TWORD:
-	case TREDIR:
 		tokpushback++;
-		return simplecmd();
+		return simplecmd(rpp, redir);
 	default:
 		synexpect(-1);
 	}
 
 	/* Now check for redirection which may follow command */
-	rpp = &redir;
 	while (readtoken() == TREDIR) {
 		*rpp = n2 = redirnode;
 		rpp = &n2->nfile.next;
@@ -442,14 +466,24 @@ TRACE(("expecting DO got %s %s\n", tokname[got], got == TWORD ? wordtext : ""));
 
 
 STATIC union node *
-simplecmd() {
+simplecmd(rpp, redir)
+	union node **rpp, *redir;
+	{
 	union node *args, **app;
-	union node *redir, **rpp;
+	union node **orig_rpp = rpp;
 	union node *n;
+
+	/* If we don't have any redirections already, then we must reset
+	   rpp to be the address of the local redir variable.  */
+	if (redir == 0)
+		rpp = &redir;
 
 	args = NULL;
 	app = &args;
-	rpp = &redir;
+	/* We save the incoming value, because we need this for shell
+	   functions.  There can not be a redirect or an argument between
+	   the function name and the open parenthesis.  */
+	orig_rpp = rpp;
 	for (;;) {
 		if (readtoken() == TWORD) {
 			n = (union node *)stalloc(sizeof (struct narg));
@@ -463,7 +497,7 @@ simplecmd() {
 			rpp = &n->nfile.next;
 			parsefname();	/* read name of redirection file */
 		} else if (lasttoken == TLP && app == &args->narg.next
-					    && rpp == &redir) {
+					    && rpp == orig_rpp) {
 			/* We have a function */
 			if (readtoken() != TRP)
 				synexpect(TRP);
@@ -836,12 +870,6 @@ readtoken1(firstc, syntax, eofmark, striptabs)
 				}
 				break;
 			case CBQUOTE:	/* '`' */
-				if (parsebackquote && syntax == BASESYNTAX) {
-					if (out == stackblock())
-						return lasttoken = TENDBQUOTE;
-					else
-						goto endword;	/* exit outer loop */
-				}
 				PARSEBACKQOLD();
 				break;
 			case CEOF:
@@ -855,7 +883,7 @@ readtoken1(firstc, syntax, eofmark, striptabs)
 		}
 	}
 endword:
-	if (syntax != BASESYNTAX && eofmark == NULL)
+	if (syntax != BASESYNTAX && ! parsebackquote && eofmark == NULL)
 		synerror("Unterminated quoted string");
 	if (varnest != 0) {
 		startlinno = plinno;
@@ -1048,7 +1076,6 @@ parsebackq: {
 	struct jmploc jmploc;
 	struct jmploc *volatile savehandler;
 	int savelen;
-	int t;
 
 	savepbq = parsebackquote;
 	if (setjmp(jmploc.loc)) {
@@ -1068,6 +1095,33 @@ parsebackq: {
 	savehandler = handler;
 	handler = &jmploc;
 	INTON;
+	if (oldstyle) {
+		/* We must read until the closing backquote, giving special
+		   treatment to some slashes, and then push the string and
+		   reread it as input, interpreting it normally.  */
+		register char *out;
+		register c;
+		int savelen;
+		char *str;
+
+		STARTSTACKSTR(out);
+		while ((c = pgetc ()) != '`') {
+			if (c == '\\') {
+				c = pgetc ();
+				if (c != '\\' && c != '`' && c != '$'
+				    && (!dblquote || c != '"'))
+					STPUTC('\\', out);
+			}
+			STPUTC(c, out);
+		}
+		STPUTC('\0', out);
+		savelen = out - stackblock();
+		if (savelen > 0) {
+			str = ckmalloc(savelen);
+			bcopy(stackblock(), str, savelen);
+		}
+		setinputstring(str, 1);
+	}
 	nlpp = &bqlist;
 	while (*nlpp)
 		nlpp = &(*nlpp)->next;
@@ -1075,10 +1129,12 @@ parsebackq: {
 	(*nlpp)->next = NULL;
 	parsebackquote = oldstyle;
 	n = list(0);
-	t = oldstyle? TENDBQUOTE : TRP;
-	if (readtoken() != t)
-		synexpect(t);
+	if (!oldstyle && (readtoken() != TRP))
+		synexpect(TRP);
 	(*nlpp)->n = n;
+	/* Start reading from old file again.  */
+	if (oldstyle)
+		popfile();
 	while (stackblocksize() <= savelen)
 		growstackblock();
 	STARTSTACKSTR(out);

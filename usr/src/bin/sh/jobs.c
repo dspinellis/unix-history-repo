@@ -32,6 +32,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00168
+ * --------------------         -----   ----------------------
+ *
+ * 04 Jun 93	Jim Wilson		Seven (7) fixes for misc bugs
+ *
  */
 
 #ifndef lint
@@ -56,6 +64,7 @@ static char sccsid[] = "@(#)jobs.c	5.1 (Berkeley) 3/7/91";
 #include "memalloc.h"
 #include "error.h"
 #include "mystring.h"
+#include "redir.h"
 #include <fcntl.h>
 #include <signal.h>
 #include <errno.h>
@@ -550,7 +559,8 @@ forkshell(jp, n, mode)
 		} else if (mode == FORK_BG) {
 			ignoresig(SIGINT);
 			ignoresig(SIGQUIT);
-			if (jp == NULL || jp->nprocs == 0) {
+			if ((jp == NULL || jp->nprocs == 0)
+			    && ! fd0_redirected_p ()) {
 				close(0);
 				if (open("/dev/null", O_RDONLY) != 0)
 					error("Can't open /dev/null");
@@ -560,7 +570,8 @@ forkshell(jp, n, mode)
 		if (mode == FORK_BG) {
 			ignoresig(SIGINT);
 			ignoresig(SIGQUIT);
-			if (jp == NULL || jp->nprocs == 0) {
+			if ((jp == NULL || jp->nprocs == 0)
+			    && ! fd0_redirected_p ()) {
 				close(0);
 				if (open("/dev/null", O_RDONLY) != 0)
 					error("Can't open /dev/null");
