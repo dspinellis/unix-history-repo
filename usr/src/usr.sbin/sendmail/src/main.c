@@ -53,6 +53,13 @@
 **				return exit status).
 **		-ep		(default)  Print error messages
 **				normally.
+**		-ee		Send BerkNet style errors.  This
+**				is equivalent to MailBack except
+**				that it has gives zero return code
+**				(unless there were errors during
+**				returning).  This used to be
+**				"EchoBack", but you know how the old
+**				software bounces.
 **		-m		In group expansion, send to the
 **				sender also (stands for the Mail metoo
 **				option.
@@ -137,7 +144,7 @@ char	ArpaFmt;	/* mail is expected to be in ARPANET format */
 char	FromFlag;	/* from person is explicitly specified */
 char	Debug;		/* run in debug mode */
 char	MailBack;	/* mail back response on error */
-char	EchoBack;	/* echo the message on error */
+char	BerkNet;	/* called from BerkNet */
 char	WriteBack;	/* write back response on error */
 char	HasXscrpt;	/* if set, the transcript file exists */
 char	NoAlias;	/* don't do aliasing */
@@ -263,8 +270,8 @@ main(argc, argv)
 				openxscrpt();
 				break;
 
-			  case 'e':	/* echo back */
-				EchoBack++;
+			  case 'e':	/* do berknet error processing */
+				BerkNet++;
 				openxscrpt();
 				break;
 
