@@ -1,4 +1,9 @@
-/*	tab300-12.c	4.1	83/08/05	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)tab300-12.c	4.2 (Berkeley) %G%
+ */
+
 #define INCH 240
 /*
  * DASI 300 12 pitch

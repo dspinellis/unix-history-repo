@@ -1,4 +1,9 @@
-/*	tabqume.c	4.2	88/07/22	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)tabqume.c	4.3 (Berkeley) %G%
+ */
+
 #define INCH 240
 /*
  * QUME 10 Pitch

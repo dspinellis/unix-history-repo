@@ -1,4 +1,9 @@
-/*	tabitoh.c	4.1	83/08/05	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)tabitoh.c	4.2 (Berkeley) %G%
+ */
+
 #define INCH 240
 /*
  * C:Itoh Prowriter (dot matrix) 10 pitch

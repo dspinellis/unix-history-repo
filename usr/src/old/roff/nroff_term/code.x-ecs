@@ -1,4 +1,9 @@
-/*	code.x-ecs	4.1	83/08/05	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)code.x-ecs	4.2 (Berkeley) %G%
+ */
+
 "\001 ",	/*space*/
 "\001!",	/*!*/
 "\001\"",	/*"*/

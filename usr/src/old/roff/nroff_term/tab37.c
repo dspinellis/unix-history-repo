@@ -1,4 +1,9 @@
-/*	tab37.c	4.2	88/07/22	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)tab37.c	4.3 (Berkeley) %G%
+ */
+
 #define INCH 240
 /*
  * Model 37 TeleType

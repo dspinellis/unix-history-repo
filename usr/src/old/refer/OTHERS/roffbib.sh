@@ -1,7 +1,10 @@
-#! /bin/sh
+#!/bin/sh -
 #
-#	@(#)roffbib.sh	4.1	(Berkeley)	83/05/08
+# %sccs.include.proprietary.sh%
 #
+#	@(#)roffbib.sh	4.2 (Berkeley) %G%
+#
+
 #	roffbib sh script
 #
 flags=

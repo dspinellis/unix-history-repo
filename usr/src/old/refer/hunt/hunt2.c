@@ -1,6 +1,10 @@
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char *sccsid = "@(#)hunt2.c	4.5 (Berkeley) %G%";
-#endif
+static char sccsid[] = "@(#)hunt2.c	4.6 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "refer..c"
 

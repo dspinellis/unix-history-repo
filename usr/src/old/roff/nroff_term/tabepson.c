@@ -1,3 +1,9 @@
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)tabepson.c	1.4 (Berkeley) %G%
+ */
+
 /*************************************************************************
  * This is 'tabepson.c' for an Epson FX80. Default spacing is elite.	 *
  * This represents a combination and very slight modification of two	 *

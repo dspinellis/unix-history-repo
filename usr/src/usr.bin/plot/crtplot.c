@@ -1,6 +1,10 @@
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)crtplot.c	4.2 (Berkeley) %G%";
-#endif
+static char sccsid[] = "@(#)crtplot.c	4.3 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
 This plotting routine interprets plot commands and outputs them onto

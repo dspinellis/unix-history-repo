@@ -1,4 +1,9 @@
-/*	tabnec25-t.c	4.2	88/07/22	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)tabnec25-t.c	4.3 (Berkeley) %G%
+ */
+
 #define INCH 240
 /*
 NEC Spinwriter 7725 and 5525 (Diablo replacements)

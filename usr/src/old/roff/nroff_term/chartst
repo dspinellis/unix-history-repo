@@ -1,4 +1,9 @@
-.\"	chartst	4.1	83/08/05
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)chartst	4.2 (Berkeley) %G%
+ */
+
 .LP
 .nf
 .ta 5 10 15 20
