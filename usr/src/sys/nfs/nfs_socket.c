@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.26 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.27 (Berkeley) %G%
  */
 
 /*
@@ -47,8 +47,6 @@
 #include "nfsnode.h"
 #include "nfsrtt.h"
 #include "nqnfs.h"
-
-#include "syslog.h"
 
 #define	TRUE	1
 #define	FALSE	0
@@ -401,9 +399,10 @@ nfs_send(so, nam, top, rep)
 
 	error = sosend(so, sendnam, (struct uio *)0, top,
 		(struct mbuf *)0, flags);
-if(error) printf("nfssnd err=%d\n",error);
 	if (error) {
 		if (rep) {
+			log(LOG_INFO, "nfs send error %d for server %s\n",error,
+			    rep->r_nmp->nm_mountp->mnt_stat.f_mntfromname);
 			/*
 			 * Deal with errors for the client side.
 			 */
@@ -411,7 +410,8 @@ if(error) printf("nfssnd err=%d\n",error);
 				error = EINTR;
 			else
 				rep->r_flags |= R_MUSTRESEND;
-		}
+		} else
+			log(LOG_INFO, "nfsd send error %d\n", error);
 
 		/*
 		 * Handle any recoverable (soft) socket errors here. (???)
@@ -519,11 +519,10 @@ tryagain:
 			   }
 			} while (error == EWOULDBLOCK);
 			if (!error && auio.uio_resid > 0) {
-			    if (rep)
-				log(LOG_INFO,
-				   "short receive (%d/%d) from nfs server %s\n",
-				   sizeof(u_long) - auio.uio_resid,
-				   sizeof(u_long),
+			    log(LOG_INFO,
+				 "short receive (%d/%d) from nfs server %s\n",
+				 sizeof(u_long) - auio.uio_resid,
+				 sizeof(u_long),
 				 rep->r_nmp->nm_mountp->mnt_stat.f_mntfromname);
 			    error = EPIPE;
 			}
@@ -535,11 +534,10 @@ tryagain:
 			 * and forcing a disconnect/reconnect is all I can do.
 			 */
 			if (len > NFS_MAXPACKET) {
-			    if (rep)
-				log(LOG_ERR, "%s (%d) from nfs server %s\n",
-				    "impossible packet length",
-				    len,
-				 rep->r_nmp->nm_mountp->mnt_stat.f_mntfromname);
+			    log(LOG_ERR, "%s (%d) from nfs server %s\n",
+				"impossible packet length",
+				len,
+				rep->r_nmp->nm_mountp->mnt_stat.f_mntfromname);
 			    error = EFBIG;
 			    goto errout;
 			}
@@ -551,11 +549,10 @@ tryagain:
 			} while (error == EWOULDBLOCK || error == EINTR ||
 				 error == ERESTART);
 			if (!error && auio.uio_resid > 0) {
-			    if (rep)
-				log(LOG_INFO,
-				   "short receive (%d/%d) from nfs server %s\n",
-				   len - auio.uio_resid, len,
-				 rep->r_nmp->nm_mountp->mnt_stat.f_mntfromname);
+			    log(LOG_INFO,
+				"short receive (%d/%d) from nfs server %s\n",
+				len - auio.uio_resid, len,
+				rep->r_nmp->nm_mountp->mnt_stat.f_mntfromname);
 			    error = EPIPE;
 			}
 		} else {
@@ -591,7 +588,7 @@ errout:
 		if (error && error != EINTR && error != ERESTART) {
 			m_freem(*mp);
 			*mp = (struct mbuf *)0;
-			if (error != EPIPE && rep)
+			if (error != EPIPE)
 				log(LOG_INFO,
 				    "receive error %d from nfs server %s\n",
 				    error,
