@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_subr.c	7.8 (Berkeley) %G%
+ *	@(#)ffs_subr.c	7.9 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -32,16 +32,7 @@
 #include "../ufs/quota.h"
 #else
 #include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/buf.h>
-#include <sys/time.h>
-#include <sys/file.h>
-#include <sys/mount.h>
-#include <sys/vnode.h>
-#include <ufs/inode.h>
-#include <ufs/ufsmount.h>
 #include <ufs/fs.h>
-#include <ufs/quota.h>
 #endif
 
 #ifdef KERNEL
