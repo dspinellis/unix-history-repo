@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	4.20 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -107,7 +107,7 @@ main(argc, argv)
 	int af = AF_INET;
 
 	if (argc < 2) {
-		fprintf(stderr, "usage: ifconfig interface\n%s%s%s%s",
+		fprintf(stderr, "usage: ifconfig interface\n%s%s%s%s%s",
 		    "\t[ af [ address [ dest_addr ] ] [ up ] [ down ]",
 			    "[ netmask mask ] ]\n",
 		    "\t[ metric n ]\n",
