@@ -46,6 +46,8 @@ static char sccsid[] = "@(#)pw_copy.c	5.3 (Berkeley) 5/2/91";
 
 extern char *progname, *tempname;
 
+int globcnt;
+
 pw_copy(ffd, tfd, pw)
 	int ffd, tfd;
 	struct passwd *pw;
@@ -54,13 +56,16 @@ pw_copy(ffd, tfd, pw)
 	register int done;
 	register char *p;
 	char buf[8192];
+        int tmpcnt;
 
 	if (!(from = fdopen(ffd, "r")))
 		pw_error(_PATH_MASTERPASSWD, 1, 1);
 	if (!(to = fdopen(tfd, "w")))
 		pw_error(tempname, 1, 1);
 
+        tmpcnt=0;
 	for (done = 0; fgets(buf, sizeof(buf), from);) {
+            tmpcnt++;
 		if (!index(buf, '\n')) {
 			(void)fprintf(stderr, "%s: %s: line too long\n",
 			    progname, _PATH_MASTERPASSWD);
@@ -85,6 +90,7 @@ pw_copy(ffd, tfd, pw)
 				goto err;
 			continue;
 		}
+                globcnt = tmpcnt;
 		(void)fprintf(to, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n",
 		    pw->pw_name, pw->pw_passwd, pw->pw_uid, pw->pw_gid,
 		    pw->pw_class, pw->pw_change, pw->pw_expire, pw->pw_gecos,
@@ -94,10 +100,13 @@ pw_copy(ffd, tfd, pw)
 			goto err;
 	}
 	if (!done)
+        {
+                globcnt = tmpcnt+1;
 		(void)fprintf(to, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n",
 		    pw->pw_name, pw->pw_passwd, pw->pw_uid, pw->pw_gid,
 		    pw->pw_class, pw->pw_change, pw->pw_expire, pw->pw_gecos,
 		    pw->pw_dir, pw->pw_shell);
+        }
 
 	if (ferror(to))
 err:		pw_error(NULL, 1, 1);
