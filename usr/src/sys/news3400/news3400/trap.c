@@ -12,10 +12,9 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.6 (Berkeley) %G%
+ *	@(#)trap.c	7.7 (Berkeley) %G%
  */
 
-#include <machine/fix_machine_type.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
@@ -389,6 +388,10 @@ trap(statusReg, causeReg, vadr, pc, args)
 		int rval[2];
 		struct sysent *systab;
 		extern int nsysent;
+#ifdef COMPAT_NEWSOS
+		extern int nnewssys;
+		extern struct sysent newssys[];
+#endif
 
 		cnt.v_syscall++;
 		/* compute next PC after syscall instruction */
@@ -400,8 +403,11 @@ trap(statusReg, causeReg, vadr, pc, args)
 		numsys = nsysent;
 		code = locr0[V0];
 #ifdef COMPAT_NEWSOS
-		if (code >= 1000)
-			code -= 1000;			/* too easy */
+		if (code >= 1000) {
+			code -= 1000;
+			systab = newssys;
+			numsys = nnewssys;
+		}
 #endif
 		switch (code) {
 		case SYS_indir:
@@ -410,8 +416,11 @@ trap(statusReg, causeReg, vadr, pc, args)
 			 */
 			code = locr0[A0];
 #ifdef COMPAT_NEWSOS
-			if (code >= 1000)
-				code -= 1000;		/* too easy */
+			if (code >= 1000) {
+				code -= 1000;
+				systab = newssys;
+				numsys = nnewssys;
+			}
 #endif
 			if (code >= numsys)
 				callp = &systab[SYS_indir]; /* (illegal) */
@@ -509,15 +518,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 		else
 			trp[-1].code = code;
 #endif
-#ifdef COMPAT_NEWSOS
-	/* 151 = setenvp, 152 = sysnews, 162 = getdomainname KU:XXX */
-	if (code == 151 || code == 152 || code == 162)
-		i = 0;
-	else
-#endif
 		i = (*callp->sy_call)(p, &args, rval);
-if(i==EINVAL)
-printf("EINVAL: pid=%d, code=%d\n", p->p_pid, code);
 		/*
 		 * Reinitialize proc pointer `p' as it may be different
 		 * if this is a child returning from fork syscall.
@@ -677,7 +678,10 @@ printf("EINVAL: pid=%d, code=%d\n", p->p_pid, code);
 	    }
 #else
 #ifdef DEBUG
+		printf("trap: pid %d %s sig %d adr %x pc %x ra %x\n", p->p_pid,
+			p->p_comm, i, vadr, pc, p->p_md.md_regs[RA]); /* XXX */
 		trapDump("trap");
+		traceback();
 #endif
 #endif
 		panic("trap");
@@ -737,6 +741,7 @@ interrupt(statusReg, causeReg, pc)
 {
 	register unsigned mask;
 	struct clockframe cf;
+	int oonfault = ((struct pcb *)UADDR)->pcb_onfault;
 
 #ifdef DEBUG
 	trp->status = statusReg;
@@ -750,7 +755,6 @@ interrupt(statusReg, causeReg, pc)
 #endif
 
 	mask = causeReg & statusReg;	/* pending interrupts & enable mask */
-#ifndef NOPRIORITY
 	if (mask & MACH_INT_MASK_5) {		/* level 5 interrupt */
 		splx((MACH_SPL_MASK_8 & ~causeReg) | MACH_SR_INT_ENA_CUR);
 		printf("level 5 interrupt: PC %x CR %x SR %x\n",
@@ -821,72 +825,7 @@ interrupt(statusReg, causeReg, pc)
 		causeReg &= ~MACH_INT_MASK_0;
 	}
 	splx((MACH_SPL_MASK_3 & ~causeReg) | MACH_SR_INT_ENA_CUR);
-#else /* NOPRIORITY */
-	/* handle clock interrupts ASAP */
-	if (mask & MACH_INT_MASK_2) {		/* level 2 interrupt */
-		register int stat;
 
-		stat = *(volatile u_char *)INTST0;
-		if (stat & INTST0_TIMINT) {	/* timer */
-			static int led_count = 0;
-
-			*(volatile u_char *)INTCLR0 = INTCLR0_TIMINT;
-			cf.pc = pc;
-			cf.sr = statusReg;
-			hardclock(&cf);
-			if (++led_count > hz) {
-				led_count = 0;
-				*(volatile u_char *)DEBUG_PORT ^= DP_LED1;
-			}
-		}
-#if NBM > 0
-		if (stat & INTST0_KBDINT)	/* keyboard */
-			kbm_rint(SCC_KEYBOARD);
-#endif
-#if NMS > 0
-		if (stat & INTST0_MSINT)	/* mouse */
-			kbm_rint(SCC_MOUSE);
-#endif
-		causeReg &= ~MACH_INT_MASK_2;	/* reenable clock interrupts */
-	}
-	/*
-	 * Enable hardware interrupts which were enabled but not pending.
-	 * We only respond to software interrupts when returning to spl0.
-	 */
-	splx((statusReg & ~causeReg & MACH_HARD_INT_MASK)|MACH_SR_INT_ENA_CUR);
-
-	if (mask & MACH_INT_MASK_5) {		/* level 5 interrupt */
-		printf("level 5 interrupt: PC %x CR %x SR %x\n",
-			pc, causeReg, statusReg);
-		;
-	}
-	if (mask & MACH_INT_MASK_4) {		/* level 4 interrupt */
-		/*
-		 * asynchronous bus error
-		 */
-		printf("level 4 interrupt: PC %x CR %x SR %x\n",
-			pc, causeReg, statusReg);
-		*(char *)INTCLR0 = INTCLR0_BERR;
-	}
-	if (mask & MACH_INT_MASK_3) {		/* level 3 interrupt */
-		/*
-		 * fp error
-		 */
-		if (!USERMODE(statusReg)) {
-#ifdef DEBUG
-			trapDump("fpintr");
-#else
-			printf("FPU interrupt: PC %x CR %x SR %x\n",
-				pc, causeReg, statusReg);
-#endif
-		} else
-			MachFPInterrupt(statusReg, causeReg, pc);
-	}
-	if (mask & MACH_INT_MASK_1)		/* level 1 interrupt */
-		level1_intr();
-	if (mask & MACH_INT_MASK_0)		/* level 0 interrupt */
-		level0_intr();
-#endif /* NOPRIORITY */
 	if (mask & MACH_SOFT_INT_MASK_0) {
 		struct clockframe cf;
 
@@ -924,6 +863,8 @@ interrupt(statusReg, causeReg, pc)
 		}
 #endif
 	}
+	/* restore onfault flag */
+	((struct pcb *)UADDR)->pcb_onfault = oonfault;
 }
 
 /*
@@ -989,7 +930,7 @@ trapDump(msg)
 			trap_type[(trp->cause & MACH_CR_EXC_CODE) >>
 				MACH_CR_EXC_CODE_SHIFT],
 			trp->vadr, trp->pc, trp->cause, trp->status);
-		printf("   RA %x code %d\n", trp-> ra, trp->code);
+		printf("   RA %x code %d\n", trp->ra, trp->code);
 	}
 	bzero(trapdebug, sizeof(trapdebug));
 	trp = trapdebug;
@@ -1422,4 +1363,123 @@ print_int_stat(msg)
 	else
 		printf("intr: ");
 	printf("INTST0=0x%x, INTST1=0x%x.\n", s0, s1);
+}
+
+traceback()
+{
+	u_int pc, sp;
+
+	getpcsp(&pc, &sp);
+	backtr(pc, sp);
+}
+
+#define EF_RA   	        92              /* r31: return address */
+#define KERN_REG_SIZE		(18 * 4)
+#define STAND_FRAME_SIZE	24
+#define EF_SIZE			STAND_FRAME_SIZE + KERN_REG_SIZE + 12
+
+extern u_int MachKernGenExceptionEnd[];
+extern u_int end[];
+#define	ENDOFTXT	(end + 1)
+
+#define VALID_TEXT(pc)	\
+	((u_int *)MACH_CODE_START <= (u_int *)MACH_UNCACHED_TO_CACHED(pc) && \
+	 (u_int *)MACH_UNCACHED_TO_CACHED(pc) <= (u_int *)ENDOFTXT)
+
+#define ExceptionHandler(x) \
+	((u_int*)MachKernGenException < (u_int*)MACH_UNCACHED_TO_CACHED(x) && \
+	 (u_int*)MACH_UNCACHED_TO_CACHED(x) < (u_int*)MachKernGenExceptionEnd)
+
+backtr(pc, sp)
+	register u_int *pc;
+	register caddr_t sp;
+{
+	int fsize;
+	u_int *getra();
+	extern int _gp[];
+
+	printf("start trace back pc=%x, sp=%x, pid=%d[%s]\n",
+		pc, sp, curproc->p_pid, curproc->p_comm);
+
+	while (VALID_TEXT(pc)) {
+		if (sp >= (caddr_t)KERNELSTACK || sp < (caddr_t)UADDR) {
+			printf("stack exhausted (sp=0x%x)\n", sp);
+			break;
+		}
+		if (ExceptionHandler(pc)) {
+			pc = (u_int *)(*((u_int *)&sp[EF_RA]));
+			sp += EF_SIZE;
+			printf("trapped from pc=%x, sp=%x\n", pc, sp);
+		} else {
+			pc = getra(pc, sp, &fsize);
+			sp += fsize;
+			printf("called from pc=%x, sp=%x\n", pc, sp);
+		}
+	}
+	printf("trace back END. pid=%d[%s]\n", curproc->p_pid, curproc->p_comm);
+}
+
+#define	NPCSTOCK	128
+
+u_int *
+getra(pc, sp, fsize)
+	register int *pc;
+	register caddr_t sp;
+	int *fsize;
+{
+	u_int regs[32];
+	int *opcs[NPCSTOCK];
+	register int i, nbpc = 0;
+	int printed = 0;
+	InstFmt I;
+
+	*fsize = 0;
+	for (i = 0; i < 32; i++) regs[i] = 0;
+	for (; (u_int*)MACH_UNCACHED_TO_CACHED(pc) < (u_int*)ENDOFTXT; pc++) {
+		I.word = *pc;
+		switch (I.IType.op) {
+
+		case OP_ADDIU:
+			/* sp += fsize */
+			if (I.IType.rs == SP && I.IType.rt == SP)
+				*fsize = (u_short)I.IType.imm;
+			break;
+
+		case OP_LW:
+			if (I.IType.rs != SP)
+				break;
+			regs[I.IType.rt] = *(u_int *)&sp[(short)I.IType.imm];
+			break;
+
+		case OP_BEQ:
+			if (I.IType.rs != ZERO || I.IType.rt != ZERO)
+				break;
+			for (i = 0; i < nbpc; i++)
+				if (pc == opcs[i]) {
+					/*
+					 * Brach constructs infinite loop.
+					 */
+					if (!printed) {
+						printf("branch loop\n");
+						printed = 1;
+					}
+					break;
+				}
+			if (i == nbpc) {
+				opcs[nbpc] = pc;
+				nbpc = imin(nbpc + 1, NPCSTOCK);
+				pc = pc + (short)I.IType.imm;
+			}
+			break;
+
+		default:
+			break;
+		}
+
+		I.word = *(pc - 1);
+		if (I.RType.op == OP_SPECIAL && I.RType.func == OP_JR)
+			return ((int *)regs[I.RType.rs]);
+	}
+	printf("pc run out of TEXT\n");
+	return (0);
 }
