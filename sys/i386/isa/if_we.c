@@ -66,6 +66,10 @@
  * we_attach enhanced with link level address by Rodney W. Grimes, 1/30/93
  *
  * $Log: if_we.c,v $
+ * Revision 1.4  1993/08/24  00:15:31  rgrimes
+ * Fixed the printf's for ethernet address so that ALL ethernet drivers are
+ * consistent in the format of this.
+ *
  * Revision 1.3  1993/08/22  22:54:56  ats
  * Added a new-line in the output of the ethernet-address that it gets
  * on it's line alone ( not mangled with the FPU detection ).
@@ -151,9 +155,7 @@ static inline char *we_ring_copy();
  * This structure contains the output queue for the interface, its address, ...
  */
 struct	we_softc {
-	struct	arpcom we_ac;		/* Ethernet common part 	*/
-#define	we_if	we_ac.ac_if		/* network-visible interface 	*/
-#define	we_addr	we_ac.ac_enaddr		/* hardware Ethernet address 	*/
+	struct	arpcom arpcom;		/* Ethernet common part 	*/
 
 	u_char	we_flags;		/* software state		*/
 #define	WDF_RUNNING	0x01
@@ -270,7 +272,7 @@ weprobe(is)
 	 * Save board ROM station address
 	 */
 	for (i = 0; i < ETHER_ADDR_LEN; ++i)
-	    sc->we_addr[i] = inb(sc->we_io_ctl_addr + WD_ROM_OFFSET + i);
+	    sc->arpcom.ac_enaddr[i] = inb(sc->we_io_ctl_addr + WD_ROM_OFFSET + i);
 
 	/*
 	 * Mapin interface memory, setup memory select register
@@ -304,7 +306,7 @@ weattach(is)
 	struct isa_device *is;
 {
 	register struct we_softc *sc = &we_softc[is->id_unit];
-	register struct ifnet *ifp = &sc->we_if;
+	register struct ifnet *ifp = &sc->arpcom.ac_if;
 	union we_command wecmd;
 	struct ifaddr *ifa;
 	struct sockaddr_dl *sdl;
@@ -345,7 +347,7 @@ weattach(is)
 		sdl->sdl_type = IFT_ETHER;
 		sdl->sdl_alen = ETHER_ADDR_LEN;
 		sdl->sdl_slen = 0;
-		bcopy(sc->we_addr, LLADDR(sdl), ETHER_ADDR_LEN);
+		bcopy(sc->arpcom.ac_enaddr, LLADDR(sdl), ETHER_ADDR_LEN);
 		}
 
 #if NBPFILTER > 0
@@ -358,7 +360,7 @@ weattach(is)
 	printf("we%d: %s address %s\n",
 		is->id_unit,
 		(sc->we_type & WD_ETHERNET) ? "ethernet" : "starlan",
-		ether_sprintf(sc->we_addr));
+		ether_sprintf(sc->arpcom.ac_enaddr));
 }
  
 /*
@@ -412,7 +414,7 @@ weinit(unit)
 	int unit;
 {
 	register struct we_softc *sc = &we_softc[unit];
-	register struct ifnet *ifp = &sc->we_if;
+	register struct ifnet *ifp = &sc->arpcom.ac_if;
 	union we_command wecmd;
 	int i, s;
 
@@ -462,7 +464,7 @@ weinit(unit)
 	wecmd.cs_ps = 1;
 	outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
 	for (i = 0; i < ETHER_ADDR_LEN; ++i)
-	    outb(sc->we_io_nic_addr + WD_P1_PAR0 + i, sc->we_addr[i]);
+	    outb(sc->we_io_nic_addr + WD_P1_PAR0 + i, sc->arpcom.ac_enaddr[i]);
 	for (i = 0; i < ETHER_ADDR_LEN; ++i)	/* == broadcast addr */
 	    outb(sc->we_io_nic_addr + WD_P1_MAR0 + i, 0xff);
 	outb(sc->we_io_nic_addr + WD_P1_CURR, WD_TXBUF_SIZE);
@@ -472,7 +474,7 @@ weinit(unit)
 	wecmd.cs_rd = 0x4;
 	outb(sc->we_io_nic_addr + WD_P1_COMMAND, wecmd.cs_byte);
 #if NBPFILTER > 0
-	if (sc->we_if.if_flags & IFF_PROMISC) {
+	if (sc->arpcom.ac_if.if_flags & IFF_PROMISC) {
 		outb(sc->we_io_nic_addr + WD_P0_RCR,
 			 WD_R_PRO | WD_R_SEP | WD_R_AR | WD_R_CONFIG);
 	} else
@@ -511,7 +513,7 @@ westart(ifp)
 		(void) splx(s);
 		return;
 	}
-	IF_DEQUEUE(&sc->we_if.if_snd, m);
+	IF_DEQUEUE(&sc->arpcom.ac_if.if_snd, m);
 	if (m == 0) {
 		(void) splx(s);
 		return;
@@ -608,7 +610,7 @@ westart(ifp)
 	outb(sc->we_io_nic_addr + WD_P0_TBCR1, len >> 8);
 	wecmd.cs_txp = 1;
 	outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
-	sc->we_if.if_timer = 3;
+	sc->arpcom.ac_if.if_timer = 3;
 	(void) splx(s);
 }
  
@@ -634,9 +636,9 @@ loop:
 	/* transmit error */
 	if (weisr.is_txe) {
 		/* need to read these registers to clear status */
-		sc->we_if.if_collisions +=
+		sc->arpcom.ac_if.if_collisions +=
 		    inb(sc->we_io_nic_addr + WD_P0_TBCR0);
-		++sc->we_if.if_oerrors;
+		++sc->arpcom.ac_if.if_oerrors;
 	}
 
 	/* receiver error */
@@ -645,7 +647,7 @@ loop:
 		(void) inb(sc->we_io_nic_addr + 0xD);
 		(void) inb(sc->we_io_nic_addr + 0xE);
 		(void) inb(sc->we_io_nic_addr + 0xF);
-		++sc->we_if.if_ierrors;
+		++sc->arpcom.ac_if.if_ierrors;
 	}
 
 	/* normal transmit complete */
@@ -657,7 +659,7 @@ loop:
 		werint (unit);
 
 	/* try to start transmit */
-	westart(&sc->we_if);
+	westart(&sc->arpcom.ac_if);
 
 	/* re-enable onboard interrupts */
 	wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
@@ -680,9 +682,9 @@ wetint(unit)
 	 * Do some statistics (assume page zero of NIC mapped in)
 	 */
 	sc->we_flags &= ~WDF_TXBUSY; 
-	sc->we_if.if_timer = 0;
-	++sc->we_if.if_opackets;
-	sc->we_if.if_collisions += inb(sc->we_io_nic_addr + WD_P0_TBCR0);
+	sc->arpcom.ac_if.if_timer = 0;
+	++sc->arpcom.ac_if.if_opackets;
+	sc->arpcom.ac_if.if_collisions += inb(sc->we_io_nic_addr + WD_P0_TBCR0);
 }
  
 /*
@@ -789,7 +791,8 @@ weioctl(ifp, cmd, data)
 			register struct ns_addr *ina = &(IA_SNS(ifa)->sns_addr);
 
 			if (ns_nullhost(*ina))
-				ina->x_host = *(union ns_host *)(sc->ns_addr);
+				ina->x_host =
+					*(union ns_host *)(sc->arpcom.ac_enaddr);
 			else {
 				/* 
 				 * The manual says we cant change the address 
@@ -798,7 +801,8 @@ weioctl(ifp, cmd, data)
 				 */
 				ifp->if_flags &= ~IFF_RUNNING; 
 				bcopy((caddr_t)ina->x_host.c_host,
-				    (caddr_t)sc->ns_addr, sizeof(sc->ns_addr));
+				    (caddr_t)sc->arpcom.ac_enaddr,
+					 sizeof(sc->arpcom.ac_enaddr));
 			}
 			weinit(ifp->if_unit); /* does ne_setaddr() */
 			break;
@@ -819,7 +823,7 @@ weioctl(ifp, cmd, data)
 		    (ifp->if_flags & IFF_RUNNING) == 0)
 			weinit(ifp->if_unit);
 #if NBPFILTER > 0
-		if (sc->we_if.if_flags & IFF_PROMISC) {
+		if (sc->arpcom.ac_if.if_flags & IFF_PROMISC) {
 			outb(sc->we_io_nic_addr + WD_P0_RCR,
 				 WD_R_PRO | WD_R_SEP | WD_R_AR | WD_R_CONFIG);
 		} else
@@ -854,7 +858,7 @@ wesetaddr(physaddr, unit)
 	 * Rewrite ethernet address, and then force restart of NIC
 	 */
 	for (i = 0; i < ETHER_ADDR_LEN; i++)
-		sc->we_addr[i] = physaddr[i];
+		sc->arpcom.ac_enaddr[i] = physaddr[i];
 	sc->we_flags &= ~WDF_RUNNING;
 	weinit(unit);
 }
@@ -883,13 +887,13 @@ weread(sc, buf, len)
 		u_short trail_residual;
 	} trailer_header;
 
-	++sc->we_if.if_ipackets;
+	++sc->arpcom.ac_if.if_ipackets;
 
 	/* Allocate a header mbuf */
 	MGETHDR(m, M_DONTWAIT, MT_DATA);
 	if (m == 0)
 		goto bad;
-	m->m_pkthdr.rcvif = &sc->we_if;
+	m->m_pkthdr.rcvif = &sc->arpcom.ac_if;
 	m->m_pkthdr.len = len;
 	m->m_len = 0;
 	head = m;
@@ -964,8 +968,8 @@ weread(sc, buf, len)
 	 *
 	 * XXX This test does not support multicasts.
 	 */
-	if ((sc->we_if.if_flags & IFF_PROMISC) &&
-		bcmp(eh->ether_dhost, sc->we_addr,
+	if ((sc->arpcom.ac_if.if_flags & IFF_PROMISC) &&
+		bcmp(eh->ether_dhost, sc->arpcom.ac_enaddr,
 			sizeof(eh->ether_dhost)) != 0 &&
 		bcmp(eh->ether_dhost, etherbroadcastaddr,
 			sizeof(eh->ether_dhost)) != 0) {
@@ -985,7 +989,7 @@ weread(sc, buf, len)
 	 */
 	eh->ether_type = ntohs(eh->ether_type);
 
-	ether_input(&sc->we_if, eh, head);
+	ether_input(&sc->arpcom.ac_if, eh, head);
 	return;
 
 bad:	if (head)

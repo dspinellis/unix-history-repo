@@ -95,9 +95,9 @@
  * This structure contains the output queue for the interface, its address, ...
  */
 struct	ec_softc {
-	struct	arpcom ec_ac;		/* Ethernet common part 	*/
-#define	ec_if	ec_ac.ac_if		/* network-visible interface 	*/
-#define	ec_addr	ec_ac.ac_enaddr		/* hardware Ethernet address 	*/
+	struct	arpcom arpcom;		/* Ethernet common part 	*/
+#define	ec_if	arpcom.ac_if		/* network-visible interface 	*/
+#define	ec_addr	arpcom.ac_enaddr		/* hardware Ethernet address 	*/
 
 	u_char	ec_flags;		/* software state		*/
 #define	EC_RUNNING	0x01
@@ -605,7 +605,8 @@ caddr_t data;
 			register struct ns_addr *ina = &(IA_SNS(ifa)->sns_addr);
 
 			if (ns_nullhost(*ina))
-				ina->x_host = *(union ns_host *)(sc->ns_addr);
+				ina->x_host =
+					*(union ns_host *)(sc->arpcom.ac_enaddr);
 			else {
 				/* 
 				 * The manual says we can't change the address 
@@ -614,7 +615,8 @@ caddr_t data;
 				 */
 				ifp->if_flags &= ~IFF_RUNNING; 
 				bcopy((caddr_t)ina->x_host.c_host,
-				    (caddr_t)sc->ns_addr, sizeof(sc->ns_addr));
+				    (caddr_t)sc->arpcom.ac_enaddr,
+					sizeof(sc->arpcom.ac_enaddr));
 			}
 			ec_init(ifp->if_unit); /* does ne_setaddr() */
 			break;
