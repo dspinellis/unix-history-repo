@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -1056,7 +1056,14 @@ enoughspace()
 			printf("enoughspace: bfree=%ld, min=%ld\n",
 				fs.f_bfree, MinBlocksFree);
 		if (fs.f_bfree < MinBlocksFree)
+		{
+#ifdef LOG
+			if (LogLevel > 0)
+				syslog(LOG_ALERT, "%s: low on space (have %ld, need %ld)",
+					QueueDir, fs.f_bfree, MinBlocksFree);
+#endif
 			return FALSE;
+		}
 	}
 	else if (tTd(4, 80))
 		printf("enoughspace: min=%ld: %s\n",
