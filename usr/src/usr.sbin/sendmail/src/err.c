@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.31 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -42,7 +42,8 @@ static char sccsid[] = "@(#)err.c	8.30 (Berkeley) %G%";
 **		sets ExitStat.
 */
 
-char	MsgBuf[BUFSIZ*2];	/* text of most recent message */
+char	MsgBuf[BUFSIZ*2];		/* text of most recent message */
+char	HeldMessageBuf[sizeof MsgBuf];	/* for held messages */
 
 static void	fmtmsg();
 
@@ -221,7 +222,7 @@ message(msg, va_alist)
 	VA_START(msg);
 	fmtmsg(MsgBuf, CurEnv->e_to, "050", 0, msg, ap);
 	VA_END;
-	putoutmsg(MsgBuf, FALSE);
+	putoutmsg(MsgBuf, FALSE, FALSE);
 
 	/* save this message for mailq printing */
 	if (MsgBuf[0] == '5' || (CurEnv->e_message == NULL && MsgBuf[0] == '4'))
@@ -265,7 +266,7 @@ nmessage(msg, va_alist)
 	VA_START(msg);
 	fmtmsg(MsgBuf, (char *) NULL, "050", 0, msg, ap);
 	VA_END;
-	putoutmsg(MsgBuf, FALSE);
+	putoutmsg(MsgBuf, FALSE, FALSE);
 }
 /*
 **  PUTOUTMSG -- output error message to transcript and channel
@@ -274,6 +275,8 @@ nmessage(msg, va_alist)
 **		msg -- message to output (in SMTP format).
 **		holdmsg -- if TRUE, don't output a copy of the message to
 **			our output channel.
+**		heldmsg -- if TRUE, this is a previously held message;
+**			don't log it to the transcript file.
 **
 **	Returns:
 **		none.
@@ -284,21 +287,29 @@ nmessage(msg, va_alist)
 **		Deletes SMTP reply code number as appropriate.
 */
 
-putoutmsg(msg, holdmsg)
+putoutmsg(msg, holdmsg, heldmsg)
 	char *msg;
 	bool holdmsg;
+	bool heldmsg;
 {
 	/* display for debugging */
 	if (tTd(54, 8))
-		printf("--- %s%s\n", msg, holdmsg ? " (held)" : "");
+		printf("--- %s%s%s\n", msg, holdmsg ? " (hold)" : "",
+			heldmsg ? " (held)" : "");
 
 	/* output to transcript if serious */
-	if (CurEnv->e_xfp != NULL && strchr("456", msg[0]) != NULL)
+	if (!heldmsg && CurEnv->e_xfp != NULL && strchr("456", msg[0]) != NULL)
 		fprintf(CurEnv->e_xfp, "%s\n", msg);
 
 	/* output to channel if appropriate */
-	if (holdmsg || (!Verbose && msg[0] == '0'))
+	if (!Verbose && msg[0] == '0')
 		return;
+	if (holdmsg)
+	{
+		/* save for possible future display */
+		strcpy(HeldMessageBuf, msg);
+		return;
+	}
 
 	/* map warnings to something SMTP can handle */
 	if (msg[0] == '6')
@@ -359,7 +370,7 @@ puterrmsg(msg)
 	char msgcode = msg[0];
 
 	/* output the message as usual */
-	putoutmsg(msg, HoldErrs);
+	putoutmsg(msg, HoldErrs, FALSE);
 
 	/* signal the error */
 	Errors++;
@@ -446,6 +457,42 @@ fmtmsg(eb, to, num, eno, fmt, ap)
 		(void) sprintf(eb, ": %s", errstring(eno));
 		eb += strlen(eb);
 	}
+}
+/*
+**  BUFFER_ERRORS -- arrange to buffer future error messages
+**
+**	Parameters:
+**		none
+**
+**	Returns:
+**		none.
+*/
+
+void
+buffer_errors()
+{
+	HeldMessageBuf[0] = '\0';
+	HoldErrs = TRUE;
+}
+/*
+**  FLUSH_ERRORS -- flush the held error message buffer
+**
+**	Parameters:
+**		print -- if set, print the message, otherwise just
+**			delete it.
+**
+**	Returns:
+**		none.
+*/
+
+void
+flush_errors(print)
+	bool print;
+{
+	if (print && HeldMessageBuf[0] != '\0')
+		putoutmsg(HeldMessageBuf, FALSE, TRUE);
+	HeldMessageBuf[0] = '\0';
+	HoldErrs = FALSE;
 }
 /*
 **  ERRSTRING -- return string description of error code

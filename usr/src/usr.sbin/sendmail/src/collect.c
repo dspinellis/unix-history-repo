@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.32 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -36,9 +36,6 @@ static char sccsid[] = "@(#)collect.c	8.31 (Berkeley) %G%";
 **		The from person may be set.
 */
 
-char	*CollectErrorMessage;
-bool	CollectErrno;
-
 static jmp_buf	CtxCollectTimeout;
 static void	collecttimeout();
 static bool	CollectProgress;
@@ -55,7 +52,6 @@ static EVENT	*CollectTimeout;
 #define MS_UFROM	0	/* reading Unix from line */
 #define MS_HEADER	1	/* reading message header */
 #define MS_BODY		2	/* reading message body */
-
 
 void
 maketemp(from)
@@ -81,8 +77,6 @@ maketemp(from)
 	extern void tferror();
 	extern char *index();
 
-	CollectErrorMessage = NULL;
-	CollectErrno = 0;
 	if (hdrp == NULL)
 		hdrp = &e->e_header;
 	else
@@ -403,19 +397,9 @@ readerr:
 		}
 	}
 
-	if (CollectErrorMessage != NULL && Errors <= 0)
+	/* An EOF when running SMTP is an error */
+	if (inputerr && (OpMode == MD_SMTP || OpMode == MD_DAEMON))
 	{
-		if (CollectErrno != 0)
-		{
-			errno = CollectErrno;
-			syserr(CollectErrorMessage, dfname);
-			finis();
-		}
-		usrerr(CollectErrorMessage);
-	}
-	else if (inputerr && (OpMode == MD_SMTP || OpMode == MD_DAEMON))
-	{
-		/* An EOF when running SMTP is an error */
 		char *host;
 		char *problem;
 
@@ -557,6 +541,7 @@ collecttimeout(timeout)
 **
 **	Parameters:
 **		tf -- the file pointer for the temporary file.
+**		e -- the current envelope.
 **
 **	Returns:
 **		none.
@@ -571,7 +556,6 @@ tferror(tf, e)
 	FILE *tf;
 	register ENVELOPE *e;
 {
-	CollectErrno = errno;
 	if (errno == ENOSPC)
 	{
 		struct stat st;
@@ -602,12 +586,10 @@ tferror(tf, e)
 			fprintf(tf, "*** Currently, %ld kilobytes are available for mail temp files.\n",
 				avail);
 		}
-		CollectErrorMessage = "452 Out of disk space for temp file";
+		usrerr("452 Out of disk space for temp file");
 	}
 	else
-	{
-		CollectErrorMessage = "cannot write message body to disk (%s)";
-	}
+		syserr("collect: Cannot write tf%s", e->e_id);
 	(void) freopen("/dev/null", "w", tf);
 }
 /*
