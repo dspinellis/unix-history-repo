@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)pstat.8	6.7 (Berkeley) %G%
+.\"	@(#)pstat.8	6.8 (Berkeley) %G%
 .\"
 .TH PSTAT 8 ""
 .UC 4
@@ -47,9 +47,10 @@ where \fIfstype\fP is one of \fBufs, nfs, mfs, or pc\fP; \fIfrom\fP
 is the filesystem is mounted from; \fIon\fP is the directory
 the filesystem is mounted on; and \fIfsflags\fP is a list
 of optional flags applied to the mount (see
-.IR mount (8)).  The second line is a header for the individual fields,
-the first part of which are fixed, and the second part are filesystem
-type specific.  The headers common to all vnodes are:
+.IR mount (8)).
+The second line is a header for the individual fields, the first part
+of which are fixed, and the second part are filesystem type specific.
+The headers common to all vnodes are:
 .IP ADDR
 Location of this vnode.
 .IP TYP
