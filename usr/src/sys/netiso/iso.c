@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso.c	7.16 (Berkeley) %G%
+ *	@(#)iso.c	7.17 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -547,7 +547,7 @@ iso_control(so, cmd, data, ifp)
 			else
 				printf("Didn't unlink isoifadr from list\n");
 		}
-		free((caddr_t)oia, M_IFADDR);
+		IFAFREE((&oia->ia_ifa));
 		break;
 
 	default:
@@ -614,7 +614,6 @@ iso_ifinit(ifp, ia, siso, scrub)
 	if (ifp->if_output == ether_output) {
 		ia->ia_ifa.ifa_rtrequest = llc_rtrequest;
 		ia->ia_ifa.ifa_flags |= RTF_CLONING;
-		ia->ia_ifa.ifa_llinfolen = sizeof(struct llinfo_llc);
 	}
 	/*
 	 * Add route for the network.

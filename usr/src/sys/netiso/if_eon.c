@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_eon.c	7.16 (Berkeley) %G%
+ *	@(#)if_eon.c	7.17 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -171,7 +171,6 @@ eonioctl(ifp, cmd, data)
 			ifp->if_flags |= IFF_UP;
 			if (ifa->ifa_addr->sa_family != AF_LINK)
 				ifa->ifa_rtrequest = eonrtrequest;
-			ifa->ifa_llinfolen = sizeof(struct eon_llinfo);
 		}
 		break;
 	}

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns.c	7.8 (Berkeley) %G%
+ *	@(#)ns.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -44,7 +44,6 @@ ns_control(so, cmd, data, ifp)
 	register struct ns_ifaddr *ia;
 	struct ifaddr *ifa;
 	struct ns_ifaddr *oia;
-	struct mbuf *m;
 	int error, dstIsNew, hostIsNew;
 
 	/*
@@ -102,16 +101,17 @@ ns_control(so, cmd, data, ifp)
 	case SIOCSIFADDR:
 	case SIOCSIFDSTADDR:
 		if (ia == (struct ns_ifaddr *)0) {
-			m = m_getclr(M_WAIT, MT_IFADDR);
-			if (m == (struct mbuf *)NULL)
+			oia = (struct ns_ifaddr *)
+				malloc(sizeof *ia, M_IFADDR, M_WAITOK);
+			if (oia == (struct ns_ifaddr *)NULL)
 				return (ENOBUFS);
 			if (ia = ns_ifaddr) {
 				for ( ; ia->ia_next; ia = ia->ia_next)
 					;
-				ia->ia_next = mtod(m, struct ns_ifaddr *);
+				ia->ia_next = oia;
 			} else
-				ns_ifaddr = mtod(m, struct ns_ifaddr *);
-			ia = mtod(m, struct ns_ifaddr *);
+				ns_ifaddr = oia;
+			ia = oia;
 			if (ifa = ifp->if_addrlist) {
 				for ( ; ifa->ifa_next; ifa = ifa->ifa_next)
 					;
@@ -182,7 +182,7 @@ ns_control(so, cmd, data, ifp)
 			else
 				printf("Didn't unlink nsifadr from list\n");
 		}
-		(void) m_free(dtom(oia));
+		IFAFREE((&oia->ia_ifa));
 		if (0 == --ns_interfaces) {
 			/*
 			 * We reset to virginity and start all over again
