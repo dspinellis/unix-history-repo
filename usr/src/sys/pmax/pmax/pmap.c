@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.5 (Berkeley) %G%
+ *	@(#)pmap.c	7.6 (Berkeley) %G%
  */
 
 /*
