@@ -1,7 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)lib.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)lib.c	4.8 (Berkeley) %G%";
 #endif
 
+#include <stdarg.h>
 #include "stdio.h"
 #include "awk.def"
 #include "awk.h"
@@ -215,13 +216,20 @@ yyerror(s) char *s; {
 	errorflag = 2;
 }
 
-error(f, s, a1, a2, a3, a4, a5, a6, a7) {
-	fprintf(stderr, "awk: ");
-	fprintf(stderr, s, a1, a2, a3, a4, a5, a6, a7);
-	fprintf(stderr, "\n");
+error(isfatal, fmt)
+	int isfatal;
+	char *fmt;
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	(void)fprintf(stderr, "awk: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
 	if (NR && *NR > 0)
-		fprintf(stderr, " record number %g\n", *NR);
-	if (f)
+		(void)fprintf(stderr, " record number %g\n", *NR);
+	if (isfatal)
 		exit(2);
 }
 
