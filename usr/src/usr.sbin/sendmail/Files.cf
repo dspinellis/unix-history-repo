@@ -1,4 +1,4 @@
-#	@(#)Files.cf	8.4 (Berkeley) %G%
+#	@(#)Files.cf	8.5 (Berkeley) %G%
 cf/README
 cf/cf/Makefile
 cf/cf/Makefile.dist
@@ -41,13 +41,13 @@ cf/feature/allmasquerade.m4
 cf/feature/always_add_domain.m4
 cf/feature/bitdomain.m4
 cf/feature/domaintable.m4
+cf/feature/local_procmail.m4
 cf/feature/mailertable.m4
 cf/feature/nocanonify.m4
 cf/feature/nodns.m4
 cf/feature/notsticky.m4
 cf/feature/nouucp.m4
 cf/feature/nullclient.m4
-cf/feature/procmail.m4
 cf/feature/redirect.m4
 cf/feature/stickyhost.m4
 cf/feature/use_cw_file.m4
@@ -60,6 +60,7 @@ cf/m4/version.m4
 cf/mailer/fax.m4
 cf/mailer/local.m4
 cf/mailer/pop.m4
+cf/mailer/procmail.m4
 cf/mailer/smtp.m4
 cf/mailer/usenet.m4
 cf/mailer/uucp.m4
