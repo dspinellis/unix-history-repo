@@ -1,4 +1,4 @@
-/*	proc.h	6.2	84/05/10	*/
+/*	proc.h	6.2	84/06/06	*/
 
 /*
  * One structure allocated per active
@@ -11,6 +11,8 @@
 struct	proc {
 	struct	proc *p_link;	/* linked list of running processes */
 	struct	proc *p_rlink;
+	struct	proc *p_nxt;	/* linked list of allocated proc slots */
+	struct	proc **p_prev;		/* also zombies, and free proc's */
 	struct	pte *p_addr;	/* u-area kernel map address */
 	char	p_usrpri;	/* user-priority based on p_cpu and p_nice */
 	char	p_pri;		/* priority, negative is high */
@@ -56,13 +58,15 @@ struct	proc {
 	struct	quota *p_quota;	/* quotas for this process */
 };
 
-#define	PIDHSZ		63
-#define	PIDHASH(pid)	((pid) % PIDHSZ)
+#define	PIDHSZ		64
+#define	PIDHASH(pid)	((pid) & (PIDHSZ - 1))
 
 #ifdef KERNEL
 short	pidhash[PIDHSZ];
 struct	proc *pfind();
 struct	proc *proc, *procNPROC;	/* the proc table itself */
+struct	proc *freeproc, *zombproc, *allproc;
+			/* lists of procs in various states */
 int	nproc;
 
 #define	NQS	32		/* 32 run queues */
