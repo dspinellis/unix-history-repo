@@ -1,4 +1,4 @@
-/*	@(#)tmscp.c	7.11 (Berkeley) %G% */
+/*	@(#)tmscp.c	7.12 (Berkeley) %G% */
 
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
@@ -1894,6 +1894,7 @@ tmscpioctl(dev, cmd, data, flag)
 	register struct uba_device *ui;
 	register struct tms_info *tms;
 	int fcount;		/* number of files (or records) to space */
+	int error = 0;
 	register struct mtop *mtop;	/* mag tape cmd op to perform */
 	register struct mtget *mtget;	/* mag tape struct to get info in */
 
@@ -1936,7 +1937,10 @@ tmscpioctl(dev, cmd, data, flag)
 			if (bp->b_flags & B_ERROR)	/* like hitting BOT */
 				break;
 			}
-		return (geterror(bp));
+		if (bp->b_flags&B_ERROR)
+			if ((error = bp->b_error)==0)
+				return (EIO);
+		return (error);
 
 	case MTIOCGET:
 		/*

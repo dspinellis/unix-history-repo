@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ut.c	7.8 (Berkeley) %G%
+ *	@(#)ut.c	7.9 (Berkeley) %G%
  */
 
 #include "tj.h"
@@ -719,7 +719,7 @@ utioctl(dev, cmd, data, flag)
 	register struct tj_softc *sc = &tj_softc[TJUNIT(dev)];
 	register struct buf *bp = &cutbuf[UTUNIT(dev)];
 	register callcount;
-	int fcount;
+	int fcount, error = 0;
 	struct mtop *mtop;
 	struct mtget *mtget;
 	/* we depend of the values and order of the MT codes here */
@@ -754,7 +754,10 @@ utioctl(dev, cmd, data, flag)
 			if ((bp->b_flags&B_ERROR) || (sc->sc_dsreg&UTDS_BOT))
 				break;
 		}
-		return (geterror(bp));
+		if (bp->b_flags&B_ERROR)
+			if ((error = bp->b_error)==0)
+				return (EIO);
+		return (error);
 
 	case MTIOCGET:
 		mtget = (struct mtget *)data;
