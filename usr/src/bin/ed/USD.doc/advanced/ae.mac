@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)ae.mac	8.1 (Berkeley) %G%
+.\"	@(#)ae.mac	6.3 (Berkeley) %G%
 .\"
 .tr _\(em
 .de UL
@@ -22,7 +22,7 @@
 .if n .ta 5 10 15 20 25 30 35 40 45 50 55 60
 .if t .ta .3i .6i .9i 1.2i 1.5i 1.8i
 .tr -\-
-.		use first argument as indent if present
+.\"		use first argument as indent if present
 .if \\n(.$ .DS I \\$1
 .if !\\n(.$ .DS I 5
 ..
@@ -50,6 +50,6 @@
 .if t .ds e \z\e\h'1u'\e
 .if n .ds e \e
 .hy 14
-.	2=not last lines; 4= no -xx; 8=no xx-
+.\"	2=not last lines; 4= no -xx; 8=no xx-
 .tr *\(**
 
