@@ -1,4 +1,4 @@
-/*	machdep.c	4.65	82/10/20	*/
+/*	machdep.c	4.66	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -193,18 +193,6 @@ startup(firstaddr)
 	 */
 	tocons(TXDB_CWSI);
 	tocons(TXDB_CCSI);
-}
-
-/*
- * set up a physical address
- * into users virtual address space.
- */
-sysphys()
-{
-
-	if(!suser())
-		return;
-	u.u_error = EINVAL;
 }
 
 clockstart()
@@ -830,6 +818,7 @@ machinecheck(cmcf)
 	panic("mchk");
 }
 
+#ifdef notdef
 microtime(tvp)
 	struct timeval *tvp;
 {
@@ -843,3 +832,4 @@ microtime(tvp)
 	}
 	splx(s);
 }
+#endif

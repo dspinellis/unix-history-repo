@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.80	82/10/20	*/
+/*	tcp_input.c	1.81	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -221,10 +221,10 @@ tcp_input(m0)
 			inp->inp_laddr = ti->ti_dst;
 		if (in_pcbconnect(inp, am)) {
 			inp->inp_laddr = laddr;
-			m_free(am);
+			(void) m_free(am);
 			goto drop;
 		}
-		m_free(am);
+		(void) m_free(am);
 		tp->t_template = tcp_template(tp);
 		if (tp->t_template == 0) {
 			in_pcbdisconnect(inp);

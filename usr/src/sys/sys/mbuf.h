@@ -1,4 +1,4 @@
-/*	mbuf.h	4.14	82/10/05	*/
+/*	mbuf.h	4.15	82/10/20	*/
 
 /*
  * Constants related to memory allocator.
@@ -87,7 +87,7 @@ struct mbstat {
 extern	struct mbuf mbutl[];		/* virtual address of net free mem */
 extern	struct pte Mbmap[];		/* page tables to map Netutl */
 struct	mbstat mbstat;
-extern	int nmbclusters;
+int	nmbclusters;
 struct	mbuf *mfree, *mclfree;
 char	mclrefcnt[NMBCLUSTERS];
 struct	mbuf *m_get(),*m_getclr(),*m_free(),*m_more(),*m_copy(),*m_pullup();

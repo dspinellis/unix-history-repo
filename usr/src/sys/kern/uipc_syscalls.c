@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.33	82/10/20	*/
+/*	uipc_syscalls.c	4.34	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -193,7 +193,7 @@ noname:
 	fp->f_socket = so;
 ret:
 	nam = m_get(M_WAIT);
-	soaccept(so, nam, &aopt);
+	(void) soaccept(so, nam, &aopt);
 	if (uap->name) {
 		if (namelen > nam->m_len)
 			namelen = nam->m_len;
