@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern_execve.c,v 1.17 1994/03/15 02:48:35 wollman Exp $
+ *	$Id: kern_execve.c,v 1.18 1994/03/15 03:55:35 wollman Exp $
  */
 
 #include "param.h"
@@ -231,7 +231,6 @@ interpret:
 	stack_base = exec_copyout_strings(iparams);
 	p->p_vmspace->vm_minsaddr = (char *)stack_base;
 
-	p->p_vmspace->vm_ssize = (((caddr_t)USRSTACK - (char *)stack_base) >> PAGE_SHIFT) + 1;
 
 	/*
 	 * Stuff argument count as first item on stack
@@ -344,7 +343,7 @@ exec_fail:
 
 /*
  * Destroy old address space, and allocate a new stack
- *	The new stack is only DFLSSIZ large because it is grown
+ *	The new stack is only SGROWSIZ large because it is grown
  *	automatically in trap.c.
  */
 int
@@ -353,7 +352,7 @@ exec_new_vmspace(iparams)
 {
 	int error;
 	struct vmspace *vmspace = iparams->proc->p_vmspace;
-	caddr_t	stack_addr = (caddr_t) (USRSTACK - DFLSSIZ);
+	caddr_t	stack_addr = (caddr_t) (USRSTACK - SGROWSIZ);
 
 	iparams->vmspace_destroyed = 1;
 
@@ -362,9 +361,11 @@ exec_new_vmspace(iparams)
 
 	/* Allocate a new stack */
 	error = vm_allocate(&vmspace->vm_map, (vm_offset_t *)&stack_addr,
-			    DFLSSIZ, FALSE);
+			    SGROWSIZ, FALSE);
 	if (error)
 		return(error);
+
+	vmspace->vm_ssize = SGROWSIZ >> PAGE_SHIFT;
 
 	/* Initialize maximum stack address */
 	vmspace->vm_maxsaddr = (char *)USRSTACK - MAXSSIZ;
