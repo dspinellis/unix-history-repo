@@ -1,0 +1,205 @@
+BT_CLR	../btree/btree.h	/^#define	BT_CLR(t)	(t->bt_sp = t->bt_stack)$/
+BT_POP	../btree/btree.h	/^#define	BT_POP(t)	(t->bt_sp == t->bt_stack ? NULL /
+BT_PUSH	../btree/btree.h	/^#define	BT_PUSH(t, p, i) {						\\$/
+BUCKET_TO_PAGE	../hash/hash.h	/^#define BUCKET_TO_PAGE(B) \\$/
+BUF_INSERT	../hash/hash_buf.c	/^#define BUF_INSERT(B, P) { \\$/
+BUF_REMOVE	../hash/hash_buf.c	/^#define BUF_REMOVE(B) { \\$/
+CLRBIT	../hash/hash.h	/^#define CLRBIT(A, N)	((A)[(N)\/BITS_PER_MAP] &= ~(/
+DODISK	../hash/hash.h	/^#define DODISK(X)	((X) = (char *)((ptrdiff_t)(X)|0/
+DOMOD	../hash/hash.h	/^#define DOMOD(X)	((X) = (char *)((ptrdiff_t)(X)|0x/
+FREESPACE	../hash/page.h	/^#define FREESPACE(P)	((P)[(P)[0]+1])$/
+F_CLR	../btree/btree.h	/^#define	F_CLR(p, f)	(p)->flags &= ~(f)$/
+F_ISSET	../btree/btree.h	/^#define	F_ISSET(p, f)	((p)->flags & (f))$/
+F_SET	../btree/btree.h	/^#define	F_SET(p, f)	(p)->flags |= (f)$/
+GETBINTERNAL	../btree/btree.h	/^#define	GETBINTERNAL(pg, indx)						\\$/
+GETBLEAF	../btree/btree.h	/^#define	GETBLEAF(pg, indx)						\\$/
+GETRINTERNAL	../btree/btree.h	/^#define	GETRINTERNAL(pg, indx)						\\$/
+GETRLEAF	../btree/btree.h	/^#define	GETRLEAF(pg, indx)						\\$/
+HASHKEY	../include/mpool.h	/^#define	HASHKEY(pgno)	((pgno - 1) % HASHSIZE)$/
+ISDISK	../hash/hash.h	/^#define ISDISK(X)	((u_int32_t)(ptrdiff_t)(X)&0x2)$/
+ISMOD	../hash/hash.h	/^#define ISMOD(X)	((u_int32_t)(ptrdiff_t)(X)&0x1)$/
+ISSET	../hash/hash.h	/^#define ISSET(A, N)	((A)[(N)\/BITS_PER_MAP] & (1<</
+IS_BUCKET	../hash/hash.h	/^#define IS_BUCKET(X)	((X) & BUF_BUCKET)$/
+KEYSIZE	../hash/page.h	/^#define KEYSIZE(K)	(4*sizeof(u_int16_t) + (K)->siz/
+LALIGN	../btree/btree.h	/^#define	LALIGN(n)	(((n) + sizeof(pgno_t) - 1) & ~(/
+LRU_INSERT	../hash/hash_buf.c	/^#define LRU_INSERT(B)	BUF_INSERT((B), LRU)$/
+MOD	../hash/hash.c	/^#define MOD(x, y)		((x) & ((y) - 1))$/
+MRU_INSERT	../hash/hash_buf.c	/^#define MRU_INSERT(B)	BUF_INSERT((B), &hashp->bufh/
+M_16_SWAP	../include/db.h	/^#define	M_16_SWAP(a) {							\\$/
+M_32_SWAP	../include/db.h	/^#define	M_32_SWAP(a) {							\\$/
+NBINTERNAL	../btree/btree.h	/^#define NBINTERNAL(len)							\\$/
+NBLEAF	../btree/btree.h	/^#define NBLEAF(p)	NBLEAFDBT((p)->ksize, (p)->dsize/
+NBLEAFDBT	../btree/btree.h	/^#define NBLEAFDBT(ksize, dsize)						\\$/
+NEXTINDEX	../btree/btree.h	/^#define	NEXTINDEX(p)	(((p)->lower - BTDATAOFF) \/ /
+NRLEAF	../btree/btree.h	/^#define NRLEAF(p)	NRLEAFDBT((p)->dsize)$/
+NRLEAFDBT	../btree/btree.h	/^#define	NRLEAFDBT(dsize)						\\$/
+OADDR_OF	../hash/hash.h	/^#define	OADDR_OF(S,O)	((u_int32_t)((u_int32_t)(S) /
+OADDR_TO_PAGE	../hash/hash.h	/^#define OADDR_TO_PAGE(B) 	\\$/
+OFFSET	../hash/page.h	/^#define	OFFSET(P)	((P)[(P)[0]+2])$/
+OPAGENUM	../hash/hash.h	/^#define OPAGENUM(N)	((N) & SPLITMASK)$/
+PAGE_INIT	../hash/hash_page.c	/^#define	PAGE_INIT(P) { \\$/
+PAGE_META	../hash/page.h	/^#define PAGE_META(N)	(((N)+3) * sizeof(u_int16_t))/
+PAIRFITS	../hash/page.h	/^#define PAIRFITS(P,K,D) \\$/
+PAIRSIZE	../hash/page.h	/^#define	PAIRSIZE(K,D)	(2*sizeof(u_int16_t) + (K)->/
+PTROF	../hash/hash.h	/^#define PTROF(X)	((BUFHEAD *)((ptrdiff_t)(X)&~0x3)/
+P_16_COPY	../include/db.h	/^#define	P_16_COPY(a, b) {						\\$/
+P_16_SWAP	../include/db.h	/^#define	P_16_SWAP(a) {							\\$/
+P_32_COPY	../include/db.h	/^#define	P_32_COPY(a, b) {						\\$/
+P_32_SWAP	../include/db.h	/^#define	P_32_SWAP(a) {							\\$/
+RETURN_ERROR	../hash/hash.c	/^#define RETURN_ERROR(ERR, LOC)	{ save_errno = ERR;/
+SETBIT	../hash/hash.h	/^#define SETBIT(A, N)	((A)[(N)\/BITS_PER_MAP] |= (1/
+SPLITNUM	../hash/hash.h	/^#define SPLITNUM(N)	(((u_int32_t)(N)) >> SPLITSHIF/
+WR_BINTERNAL	../btree/btree.h	/^#define	WR_BINTERNAL(p, size, pgno, flags) {				\\/
+WR_BLEAF	../btree/btree.h	/^#define	WR_BLEAF(p, key, data, flags) {					\\$/
+WR_RINTERNAL	../btree/btree.h	/^#define	WR_RINTERNAL(p, nrecs, pgno) {					\\$/
+WR_RLEAF	../btree/btree.h	/^#define	WR_RLEAF(p, data, flags) {					\\$/
+X	../btree/bt_debug.c	/^#define	X(flag, name) \\$/
+__add_ovflpage	../hash/hash_page.c	/^__add_ovflpage(hashp, bufp)$/
+__addel	../hash/hash_page.c	/^__addel(hashp, bufp, key, val)$/
+__big_delete	../hash/hash_bigkey.c	/^__big_delete(hashp, bufp)$/
+__big_insert	../hash/hash_bigkey.c	/^__big_insert(hashp, bufp, key, val)$/
+__big_keydata	../hash/hash_bigkey.c	/^__big_keydata(hashp, bufp, key, val, set)$/
+__big_return	../hash/hash_bigkey.c	/^__big_return(hashp, bufp, ndx, val, set_current)$/
+__big_split	../hash/hash_bigkey.c	/^__big_split(hashp, op, np, big_keyp, addr, obucket/
+__bt_bdelete	../btree/bt_delete.c	/^__bt_bdelete(t, key)$/
+__bt_close	../btree/bt_close.c	/^__bt_close(dbp)$/
+__bt_cmp	../btree/bt_utils.c	/^__bt_cmp(t, k1, e)$/
+__bt_curdel	../btree/bt_delete.c	/^__bt_curdel(t, key, h, index)$/
+__bt_defcmp	../btree/bt_utils.c	/^__bt_defcmp(a, b)$/
+__bt_defpfx	../btree/bt_utils.c	/^__bt_defpfx(a, b)$/
+__bt_delete	../btree/bt_delete.c	/^__bt_delete(dbp, key, flags)$/
+__bt_dleaf	../btree/bt_delete.c	/^__bt_dleaf(t, key, h, index)$/
+__bt_dmpage	../btree/bt_debug.c	/^__bt_dmpage(h)$/
+__bt_dnpage	../btree/bt_debug.c	/^__bt_dnpage(dbp, pgno)$/
+__bt_dpage	../btree/bt_debug.c	/^__bt_dpage(h)$/
+__bt_dump	../btree/bt_debug.c	/^__bt_dump(dbp)$/
+__bt_fd	../btree/bt_open.c	/^__bt_fd(dbp)$/
+__bt_first	../btree/bt_seq.c	/^__bt_first(t, key, erval, exactp)$/
+__bt_free	../btree/bt_page.c	/^__bt_free(t, h)$/
+__bt_get	../btree/bt_get.c	/^__bt_get(dbp, key, data, flags)$/
+__bt_new	../btree/bt_page.c	/^__bt_new(t, npg)$/
+__bt_open	../btree/bt_open.c	/^__bt_open(fname, flags, mode, openinfo, dflags)$/
+__bt_pdelete	../btree/bt_delete.c	/^__bt_pdelete(t, h)$/
+__bt_pgin	../btree/bt_conv.c	/^__bt_pgin(t, pg, pp)$/
+__bt_pgout	../btree/bt_conv.c	/^__bt_pgout(t, pg, pp)$/
+__bt_put	../btree/bt_put.c	/^__bt_put(dbp, key, data, flags)$/
+__bt_relink	../btree/bt_delete.c	/^__bt_relink(t, h)$/
+__bt_ret	../btree/bt_utils.c	/^__bt_ret(t, e, key, rkey, data, rdata, copy)$/
+__bt_search	../btree/bt_search.c	/^__bt_search(t, key, exactp)$/
+__bt_seq	../btree/bt_seq.c	/^__bt_seq(dbp, key, data, flags)$/
+__bt_seqadv	../btree/bt_seq.c	/^__bt_seqadv(t, ep, flags)$/
+__bt_seqset	../btree/bt_seq.c	/^__bt_seqset(t, ep, key, flags)$/
+__bt_setcur	../btree/bt_seq.c	/^__bt_setcur(t, pgno, index)$/
+__bt_snext	../btree/bt_search.c	/^__bt_snext(t, h, key, exactp)$/
+__bt_split	../btree/bt_split.c	/^__bt_split(t, sp, key, data, flags, ilen, argskip)/
+__bt_sprev	../btree/bt_search.c	/^__bt_sprev(t, h, key, exactp)$/
+__bt_stat	../btree/bt_debug.c	/^__bt_stat(dbp)$/
+__bt_stkacq	../btree/bt_delete.c	/^__bt_stkacq(t, hp, c)$/
+__bt_sync	../btree/bt_close.c	/^__bt_sync(dbp, flags)$/
+__buf_free	../hash/hash_buf.c	/^__buf_free(hashp, do_free, to_disk)$/
+__buf_init	../hash/hash_buf.c	/^__buf_init(hashp, nbytes)$/
+__call_hash	../hash/hash.c	/^__call_hash(hashp, k, len)$/
+__dberr	../db/db.c	/^__dberr()$/
+__dbpanic	../db/db.c	/^__dbpanic(dbp)$/
+__delpair	../hash/hash_page.c	/^__delpair(hashp, bufp, ndx)$/
+__expand_table	../hash/hash.c	/^__expand_table(hashp)$/
+__find_bigpair	../hash/hash_bigkey.c	/^__find_bigpair(hashp, bufp, ndx, key, size)$/
+__find_last_page	../hash/hash_bigkey.c	/^__find_last_page(hashp, bpp)$/
+__free_ovflpage	../hash/hash_page.c	/^__free_ovflpage(hashp, obufp)$/
+__get_buf	../hash/hash_buf.c	/^__get_buf(hashp, addr, prev_bp, newpage)$/
+__get_page	../hash/hash_page.c	/^__get_page(hashp, p, bucket, is_bucket, is_disk, i/
+__hash_open	../hash/hash.c	/^__hash_open(file, flags, mode, info, dflags)$/
+__ibitmap	../hash/hash_page.c	/^__ibitmap(hashp, pnum, nbits, ndx)$/
+__log2	../hash/hash_log2.c	/^__log2(num)$/
+__ovfl_delete	../btree/bt_overflow.c	/^__ovfl_delete(t, p)$/
+__ovfl_get	../btree/bt_overflow.c	/^__ovfl_get(t, p, ssz, buf, bufsz)$/
+__ovfl_put	../btree/bt_overflow.c	/^__ovfl_put(t, dbt, pg)$/
+__put_page	../hash/hash_page.c	/^__put_page(hashp, p, bucket, is_bucket, is_bitmap)/
+__rec_close	../recno/rec_close.c	/^__rec_close(dbp)$/
+__rec_delete	../recno/rec_delete.c	/^__rec_delete(dbp, key, flags)$/
+__rec_dleaf	../recno/rec_delete.c	/^__rec_dleaf(t, h, index)$/
+__rec_fd	../recno/rec_open.c	/^__rec_fd(dbp)$/
+__rec_fmap	../recno/rec_get.c	/^__rec_fmap(t, top)$/
+__rec_fpipe	../recno/rec_get.c	/^__rec_fpipe(t, top)$/
+__rec_get	../recno/rec_get.c	/^__rec_get(dbp, key, data, flags)$/
+__rec_iput	../recno/rec_put.c	/^__rec_iput(t, nrec, data, flags)$/
+__rec_open	../recno/rec_open.c	/^__rec_open(fname, flags, mode, openinfo, dflags)$/
+__rec_put	../recno/rec_put.c	/^__rec_put(dbp, key, data, flags)$/
+__rec_ret	../recno/rec_utils.c	/^__rec_ret(t, e, nrec, key, data)$/
+__rec_search	../recno/rec_search.c	/^__rec_search(t, recno, op)$/
+__rec_seq	../recno/rec_seq.c	/^__rec_seq(dbp, key, data, flags)$/
+__rec_sync	../recno/rec_close.c	/^__rec_sync(dbp, flags)$/
+__rec_vmap	../recno/rec_get.c	/^__rec_vmap(t, top)$/
+__rec_vpipe	../recno/rec_get.c	/^__rec_vpipe(t, top)$/
+__reclaim_buf	../hash/hash_buf.c	/^__reclaim_buf(hashp, bp)$/
+__split_page	../hash/hash_page.c	/^__split_page(hashp, obucket, nbucket)$/
+alloc_segs	../hash/hash.c	/^alloc_segs(hashp, nsegs)$/
+bt_broot	../btree/bt_split.c	/^bt_broot(t, h, l, r)$/
+bt_fast	../btree/bt_put.c	/^bt_fast(t, key, data, exactp)$/
+bt_meta	../btree/bt_close.c	/^bt_meta(t)$/
+bt_page	../btree/bt_split.c	/^bt_page(t, h, lp, rp, skip, ilen)$/
+bt_preserve	../btree/bt_split.c	/^bt_preserve(t, pg)$/
+bt_psplit	../btree/bt_split.c	/^bt_psplit(t, h, l, r, pskip, ilen)$/
+bt_root	../btree/bt_split.c	/^bt_root(t, h, lp, rp, skip, ilen)$/
+bt_rroot	../btree/bt_split.c	/^bt_rroot(t, h, l, r)$/
+byteorder	../btree/bt_open.c	/^byteorder()$/
+collect_data	../hash/hash_bigkey.c	/^collect_data(hashp, bufp, len, set)$/
+collect_key	../hash/hash_bigkey.c	/^collect_key(hashp, bufp, len, val, set)$/
+dbm_clearerr	../hash/ndbm.c	/^dbm_clearerr(db)$/
+dbm_close	../hash/ndbm.c	/^dbm_close(db)$/
+dbm_delete	../hash/ndbm.c	/^dbm_delete(db, key)$/
+dbm_dirfno	../hash/ndbm.c	/^dbm_dirfno(db)$/
+dbm_error	../hash/ndbm.c	/^dbm_error(db)$/
+dbm_fetch	../hash/ndbm.c	/^dbm_fetch(db, key)$/
+dbm_firstkey	../hash/ndbm.c	/^dbm_firstkey(db)$/
+dbm_nextkey	../hash/ndbm.c	/^dbm_nextkey(db)$/
+dbm_open	../hash/ndbm.c	/^dbm_open(file, flags, mode)$/
+dbm_store	../hash/ndbm.c	/^dbm_store(db, key, content, flags)$/
+dbopen	../db/db.c	/^dbopen(fname, flags, mode, type, openinfo)$/
+dcharhash	../hash/hash_func.c	/^#define dcharhash(h, c)	((h) = 0x63c63cd9*(h) + 0x/
+fetch_bitmap	../hash/hash_page.c	/^fetch_bitmap(hashp, ndx)$/
+first_free	../hash/hash_page.c	/^first_free(map)$/
+flush_meta	../hash/hash.c	/^flush_meta(hashp)$/
+hash2	../hash/hash_func.c	/^hash2(keyarg, len)$/
+hash3	../hash/hash_func.c	/^hash3(keyarg, len)$/
+hash4	../hash/hash_func.c	/^hash4(keyarg, len)$/
+hash_access	../hash/hash.c	/^hash_access(hashp, action, key, val)$/
+hash_close	../hash/hash.c	/^hash_close(dbp)$/
+hash_delete	../hash/hash.c	/^hash_delete(dbp, key, flag)$/
+hash_fd	../hash/hash.c	/^hash_fd(dbp)$/
+hash_get	../hash/hash.c	/^hash_get(dbp, key, data, flag)$/
+hash_put	../hash/hash.c	/^hash_put(dbp, key, data, flag)$/
+hash_realloc	../hash/hash.c	/^hash_realloc(p_ptr, oldsize, newsize)$/
+hash_seq	../hash/hash.c	/^hash_seq(dbp, key, data, flag)$/
+hash_sync	../hash/hash.c	/^hash_sync(dbp, flags)$/
+hcreate	../hash/hsearch.c	/^hcreate(nel)$/
+hdestroy	../hash/hash.c	/^hdestroy(hashp)$/
+hsearch	../hash/hsearch.c	/^hsearch(item, action)$/
+init_hash	../hash/hash.c	/^init_hash(hashp, file, info)$/
+init_htab	../hash/hash.c	/^init_htab(hashp, nelem)$/
+mpool_bkt	../mpool/mpool.c	/^mpool_bkt(mp)$/
+mpool_close	../mpool/mpool.c	/^mpool_close(mp)$/
+mpool_filter	../mpool/mpool.c	/^mpool_filter(mp, pgin, pgout, pgcookie)$/
+mpool_get	../mpool/mpool.c	/^mpool_get(mp, pgno, flags)$/
+mpool_look	../mpool/mpool.c	/^mpool_look(mp, pgno)$/
+mpool_new	../mpool/mpool.c	/^mpool_new(mp, pgnoaddr)$/
+mpool_open	../mpool/mpool.c	/^mpool_open(key, fd, pagesize, maxcache)$/
+mpool_put	../mpool/mpool.c	/^mpool_put(mp, page, flags)$/
+mpool_stat	../mpool/mpool.c	/^mpool_stat(mp)$/
+mpool_sync	../mpool/mpool.c	/^mpool_sync(mp)$/
+mpool_write	../mpool/mpool.c	/^mpool_write(mp, bp)$/
+mswap	../btree/bt_conv.c	/^mswap(pg)$/
+newbuf	../hash/hash_buf.c	/^newbuf(hashp, addr, prev_bp)$/
+nroot	../btree/bt_open.c	/^nroot(t)$/
+open_temp	../hash/hash_page.c	/^open_temp(hashp)$/
+overflow_page	../hash/hash_page.c	/^overflow_page(hashp)$/
+print_chain	../hash/hash_page.c	/^print_chain(addr)$/
+putpair	../hash/hash_page.c	/^putpair(p, key, val)$/
+rec_rdelete	../recno/rec_delete.c	/^rec_rdelete(t, nrec)$/
+rec_total	../btree/bt_split.c	/^rec_total(h)$/
+squeeze_key	../hash/hash_page.c	/^squeeze_key(sp, key, val)$/
+swap_header	../hash/hash.c	/^swap_header(hashp)$/
+swap_header_copy	../hash/hash.c	/^swap_header_copy(srcp, destp)$/
+tmp	../btree/bt_open.c	/^tmp()$/
+u_int32_t	../hash/extern.h	/^extern u_int32_t (*__default_hash) __P((const void/
+ugly_split	../hash/hash_page.c	/^ugly_split(hashp, obucket, old_bufp, new_bufp, cop/
