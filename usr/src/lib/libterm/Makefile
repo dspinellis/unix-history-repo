@@ -14,13 +14,14 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 CFLAGS=	-O -DCM_N -DCM_GT -DCM_B -DCM_D
 LIBC=	/lib/libc.a
 SRCS=	termcap.c tgoto.c tputs.c
 OBJS=	termcap.o tgoto.o tputs.o
 MAN=	termcap.0
+MDIR=	${DESTDIR}/usr/man/cat3
 
 .c.o:
 	${CC} ${CFLAGS} -c -p $*.c
@@ -60,6 +61,12 @@ install: ${MAN}
 	ln ${DESTDIR}/usr/lib/libtermcap_p.a ${DESTDIR}/usr/lib/libtermlib_p.a
 	ranlib ${DESTDIR}/usr/lib/libtermcap_p.a
 	install -c -o bin -g bin -m 444 termcap.0 ${DESTDIR}/usr/man/cat3
+	rm -f ${MDIR}/tgetent.0; ln ${MDIR}/termcap.0 ${MDIR}/tgetent.0
+	rm -f ${MDIR}/tgetflag.0; ln ${MDIR}/termcap.0 ${MDIR}/tgetflag.0
+	rm -f ${MDIR}/tgetnum.0; ln ${MDIR}/termcap.0 ${MDIR}/tgetnum.0
+	rm -f ${MDIR}/tgetstr.0; ln ${MDIR}/termcap.0 ${MDIR}/tgetstr.0
+	rm -f ${MDIR}/tgoto.0; ln ${MDIR}/termcap.0 ${MDIR}/tgoto.0
+	rm -f ${MDIR}/tputs.0; ln ${MDIR}/termcap.0 ${MDIR}/tputs.0
 
 lint:
 	lint ${CFLAGS} ${SRCS}
