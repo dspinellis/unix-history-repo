@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)master.c	2.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)master.c	2.10 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -104,7 +104,6 @@ loop:
 			break;
 		case TSP_SETDATE:
 			saveaddr = from;
-			msg->tsp_time.tv_usec = 0;
 			/*
 			 * the following line is necessary due to syslog
 			 * calling ctime() which clobbers the static buffer
@@ -138,7 +137,6 @@ loop:
 			}
 			if (hp[ind].seq !=  msg->tsp_seq) {
 				hp[ind].seq = msg->tsp_seq;
-				msg->tsp_time.tv_usec = 0;
 				/*
 				 * the following line is necessary due to syslog
 				 * calling ctime() which clobbers the static buffer
@@ -476,7 +474,6 @@ struct netinfo *net;
 {
 	struct timeval wait;
 	struct tsp to, *msg, *readmsg();
-	int ind;
 
 	to.tsp_type = TSP_MASTERUP;
 	to.tsp_vers = TSPVERSION;
@@ -493,7 +490,7 @@ struct netinfo *net;
 		wait.tv_usec = 0;
 		msg = readmsg(TSP_SLAVEUP, (char *)ANYADDR, &wait, net);
 		if (msg != NULL) {
-			ind = addmach(msg->tsp_name, &from);
+			(void) addmach(msg->tsp_name, &from);
 		} else
 			break;
 	}
@@ -503,7 +500,6 @@ newslave(ind, seq)
 {
 	struct tsp to;
 	struct tsp *answer, *acksend();
-	struct timeval mytime;
 
 	if (trace)
 		prthp();
@@ -517,10 +513,8 @@ newslave(ind, seq)
 		 * setting the time
 		 */
 		sleep(1);
-		to.tsp_time.tv_usec = 0;
-		(void) gettimeofday(&mytime,
+		(void) gettimeofday(&to.tsp_time,
 		    (struct timezone *)0);
-		to.tsp_time.tv_sec = mytime.tv_sec;
 		answer = acksend(&to, &hp[ind].addr,
 		    hp[ind].name, TSP_ACK,
 		    (struct netinfo *)NULL);
