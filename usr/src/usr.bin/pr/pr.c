@@ -1,7 +1,6 @@
-
 /*-
  * Copyright (c) 1991 Keith Muller.
- * Copyright (c) 1991 The Regents of the University of California.
+ * Copyright (c) 1993 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -12,24 +11,26 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1993 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pr.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pr.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/stat.h>
-#include <stdio.h>
-#include <signal.h>
+
 #include <ctype.h>
-#include <stdlib.h>
 #include <errno.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
 #include "pr.h"
 #include "extern.h"
 
@@ -77,15 +78,10 @@ int	addone;			/* page length is odd with double space */
 int	errcnt;			/* error count on file processing */
 char	digs[] = "0123456789";	/* page number translation map */
 
-#if __STDC__
-int
-main(int argc, char **argv)
-#else
 int
 main(argc, argv)
         int argc;
-        char **argv;
-#endif
+        char *argv[];
 {
 	int ret_val;
 
@@ -116,15 +112,10 @@ main(argc, argv)
  * onecol:	print files with only one column of output.
  *		Line length is unlimited.
  */
-#if __STDC__
-int
-onecol(int argc, char **argv)
-#else
 int
 onecol(argc, argv)
         int argc;
-        char **argv;
-#endif
+        char *argv[];
 {
 	register int cnt = -1;
 	register int off;
@@ -266,15 +257,10 @@ onecol(argc, argv)
 /*
  * vertcol:	print files with more than one column of output down a page
  */
-#if __STDC__
-int
-vertcol(int argc, char **argv)
-#else
 int
 vertcol(argc, argv)
         int argc;
-        char **argv;
-#endif
+        char *argv[];
 {
 	register char *ptbf;
 	register char **lstdat;
@@ -592,15 +578,10 @@ vertcol(argc, argv)
 /*
  * horzcol:	print files with more than one column of output across a page
  */
-#if __STDC__
-int
-horzcol(int argc, char **argv)
-#else
 int
 horzcol(argc, argv)
         int argc;
-        char **argv;
-#endif
+        char *argv[];
 {
 	register char *ptbf;
 	register int pln;
@@ -740,15 +721,10 @@ horzcol(argc, argv)
  * mulfile:	print files with more than one column of output and
  *		more than one file concurrently
  */
-#if __STDC__
-int
-mulfile(int argc, char **argv)
-#else
 int
 mulfile(argc, argv)
         int argc;
-        char **argv;
-#endif
+        char *argv[];
 {
 	register char *ptbf;
 	register int j;
@@ -959,10 +935,6 @@ mulfile(argc, argv)
  *	trnc:	throw away data more than lim up to \n 
  *	mor:	set if more data in line (not truncated)
  */
-#if __STDC__
-int
-inln(FILE *inf, char *buf, register int lim, int *cps, int trnc, int *mor)
-#else
 int
 inln(inf, buf, lim, cps, trnc, mor)
 	FILE *inf;
@@ -971,7 +943,6 @@ inln(inf, buf, lim, cps, trnc, mor)
 	int *cps;
 	int trnc;
 	int *mor;
-#endif
 {
 	register int col;
 	register int gap = ingap;
@@ -1075,10 +1046,6 @@ inln(inf, buf, lim, cps, trnc, mor)
  *	mor:	output line not complete in this buf; more data to come.	
  *		1 is more, 0 is complete, -1 is no \n's
  */
-#if __STDC__
-int
-otln(register char *buf, int cnt, int *svops, int *svips, int mor)
-#else
 int
 otln(buf, cnt, svips, svops, mor)
 	register char *buf;
@@ -1086,7 +1053,6 @@ otln(buf, cnt, svips, svops, mor)
 	int *svops;
 	int *svips;
 	int mor;
-#endif
 {
 	register int ops;		/* last col output */
 	register int ips;		/* last col in buf examined */
@@ -1222,16 +1188,11 @@ otln(buf, cnt, svips, svops, mor)
  *	pgcnt	number of pages to skip
  *	lncnt	number of lines per page
  */
-#if __STDC__
-int
-inskip(FILE *inf, register int pgcnt, register int lncnt)
-#else
 int
 inskip(inf, pgcnt, lncnt)
 	FILE *inf;
 	register int pgcnt;
 	register int lncnt;
-#endif
 {
 	register int c;
 	register int cnt;
@@ -1258,10 +1219,6 @@ inskip(inf, pgcnt, lncnt)
  *	buf	array to store proper date for the header.
  *	dt	if set skips the date processing (used with -m)
  */
-#if __STDC__
-FILE *
-nxtfile(int argc, char **argv, char **fname, char *buf, int dt)
-#else
 FILE *
 nxtfile(argc, argv, fname, buf, dt)
 	int argc;
@@ -1269,7 +1226,6 @@ nxtfile(argc, argv, fname, buf, dt)
 	char **fname;
 	char *buf;
 	int dt;
-#endif
 {
 	FILE *inf = NULL;
 	struct timeval tv;
@@ -1400,16 +1356,11 @@ nxtfile(argc, argv, fname, buf, dt)
  *		part of the column. The usage of addnum	currently treats
  *		numbers as part of the column so spaces may be replaced.
  */
-#if __STDC__
-void
-addnum(register char *buf, register int wdth, register int line)
-#else
 void
 addnum(buf, wdth, line)
 	register char *buf;
 	register int wdth;
 	register int line;
-#endif
 {
 	register char *pt = buf + wdth;
 
@@ -1433,16 +1384,11 @@ addnum(buf, wdth, line)
  *	fname	fname field for header
  *	pagcnt	page number
  */
-#if __STDC__
-int
-prhead(char *buf, char *fname, int pagcnt)
-#else
 int
 prhead(buf, fname, pagcnt)
 	char *buf;
 	char *fname;
 	int pagcnt;
-#endif
 {
 	int ips = 0;
 	int ops = 0;
@@ -1476,15 +1422,10 @@ prhead(buf, fname, pagcnt)
  *	cnt	number of lines of padding needed
  *	incomp	was a '\n' missing from last line output
  */
-#if __STDC__
-int
-prtail(register int cnt, int incomp)
-#else
 int
 prtail(cnt, incomp)
 	register int cnt;
 	int incomp;
-#endif
 {
 	if (nohead) {
 		/*
@@ -1536,14 +1477,9 @@ prtail(cnt, incomp)
 /*
  * terminate():	when a SIGINT is recvd
  */
-#if __STDC__
-void
-terminate(int which_sig)
-#else
 void
 terminate(which_sig)
-int which_sig;
-#endif
+	int which_sig;
 {
 	flsh_errs();
 	exit(1);
@@ -1554,13 +1490,8 @@ int which_sig;
  * flsh_errs():	output saved up diagnostic messages after all normal
  *		processing has completed
  */
-#if __STDC__
-void
-flsh_errs(void)
-#else
 void
 flsh_errs()
-#endif
 {
 	char buf[BUFSIZ];
 
@@ -1573,35 +1504,20 @@ flsh_errs()
 		(void)fputs(buf, stderr);
 }
 
-#if __STDC__
-void
-mfail(void)
-#else
 void
 mfail()
-#endif
 {
 	(void)fputs("pr: memory allocation failed\n", err);
 }
 
-#if __STDC__
-void
-pfail(void)
-#else
 void
 pfail()
-#endif
 {
 	(void)fprintf(err, "pr: write failure, %s\n", strerror(errno));
 }
 
-#if __STDC__
-void
-usage(void)
-#else
 void
 usage()
-#endif
 {
 	(void)fputs(
 	 "usage: pr [+page] [-col] [-adFmrt] [-e[ch][gap]] [-h header]\n",err);
@@ -1615,15 +1531,10 @@ usage()
  * setup:	Validate command args, initialize and perform sanity 
  *		checks on options
  */
-#if __STDC__
-int
-setup(register int argc, register char **argv)
-#else
 int
 setup(argc, argv)
 	register int argc;
 	register char **argv;
-#endif
 {
 	register int c;
 	int eflag = 0;
