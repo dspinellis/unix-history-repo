@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.11 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -262,10 +262,6 @@ printf("lfs_segment: failed to get vnode (tell Keith)!\n");
 	free(sp->bpp, M_SEGMENT);
 	free(sp, M_SEGMENT);
 
-	/* Wake up any cleaning processes waiting on this file system. */
-	wakeup((caddr_t)&fs->lfs_nextseg);
-	wakeup((caddr_t)&lfs_allclean_wakeup);
-
 	return (0);
 }
 
@@ -320,7 +316,8 @@ lfs_writefile(fs, sp, vp)
 		sp->fip =
 		    (struct finfo *)((caddr_t)fip + sizeof(struct finfo) +
 		    sizeof(daddr_t) * (fip->fi_nblocks - 1));
-	}
+	} else
+		sp->sum_bytes_left += sizeof(struct finfo) - sizeof(daddr_t);
 }
 
 void
@@ -331,7 +328,8 @@ lfs_writeinode(fs, sp, ip)
 {
 	struct buf *bp, *ibp;
 	IFILE *ifp;
-	daddr_t next_addr;
+	SEGUSE *sup;
+	daddr_t daddr;
 	ino_t ino;
 	int ndx;
 
@@ -348,17 +346,17 @@ lfs_writeinode(fs, sp, ip)
 		}
 
 		/* Get next inode block. */
-		next_addr = fs->lfs_offset;
+		daddr = fs->lfs_offset;
 		fs->lfs_offset += fsbtodb(fs, 1);
 		sp->ibp = *sp->cbpp++ =
-		    lfs_newbuf(fs, sp, next_addr, fs->lfs_bsize);
+		    lfs_newbuf(fs, sp, daddr, fs->lfs_bsize);
 
 		/* Set remaining space counter. */
 		sp->seg_bytes_left -= fs->lfs_bsize;
 		sp->sum_bytes_left -= sizeof(daddr_t);
 		ndx = LFS_SUMMARY_SIZE / sizeof(daddr_t) -
 		    sp->ninodes / INOPB(fs) - 1;
-		((daddr_t *)(sp->segsum))[ndx] = next_addr;
+		((daddr_t *)(sp->segsum))[ndx] = daddr;
 	}
 
 	/* Update the inode times and copy the inode onto the inode page. */
@@ -382,8 +380,20 @@ lfs_writeinode(fs, sp, ip)
 		fs->lfs_idaddr = bp->b_blkno;
 
 	LFS_IENTRY(ifp, fs, ino, ibp);
+	daddr = ifp->if_daddr;
 	ifp->if_daddr = bp->b_blkno;
 	LFS_UBWRITE(ibp);
+
+	if (daddr != LFS_UNUSED_DADDR) {
+		LFS_SEGENTRY(sup, fs, datosn(fs, daddr), bp);
+#ifdef DIAGNOSTIC
+		if (sup->su_nbytes < sizeof(struct dinode))
+			panic("lfs: negative bytes (segment %d)\n",
+			    datosn(fs, daddr));
+#endif
+		sup->su_nbytes -= sizeof(struct dinode);
+		LFS_UBWRITE(bp);
+	}
 }
 
 void
@@ -413,29 +423,20 @@ lfs_gather(fs, sp, vp, match)
 		nbp = bp->b_blockf;
 		/*
 		 * XXX
-		 * Should probably sleep on any BUSY buffer if
-		 * doing an fsync?
+		 * Should sleep on any BUSY buffer if doing an fsync?
 		 */
 		if (bp->b_flags & B_BUSY || !match(fs, bp))
 			continue;
-
 #ifdef DIAGNOSTIC
 		if (!(bp->b_flags & B_DELWRI))
 			panic("lfs_gather: bp not B_DELWRI");
 		if (!(bp->b_flags & B_LOCKED))
 			panic("lfs_gather: bp not B_LOCKED");
 #endif
-		/* Insert into the buffer list, update the FINFO block. */
-		*sp->cbpp++ = bp;
-		++fip->fi_nblocks;
-		*lbp++ = bp->b_lblkno;
-
 		/*
 		 * If full, finish this segment.  We may be doing I/O, so
 		 * release and reacquire the splbio().
 		 */
-		sp->sum_bytes_left -= sizeof(daddr_t);
-		sp->seg_bytes_left -= bp->b_bufsize;
 		if (sp->sum_bytes_left < sizeof(daddr_t) ||
 		    sp->seg_bytes_left < fs->lfs_bsize) {
 			splx(s);
@@ -454,9 +455,20 @@ lfs_gather(fs, sp, vp, match)
 			fip->fi_ino = ip->i_number;
 			start_lbp = lbp = fip->fi_blocks;
 
+			sp->sum_bytes_left -= 
+			    sizeof(struct finfo) - sizeof(daddr_t);
+
 			bpp = sp->cbpp;
 			s = splbio();
 		}
+
+		/* Insert into the buffer list, update the FINFO block. */
+		*sp->cbpp++ = bp;
+		++fip->fi_nblocks;
+		*lbp++ = bp->b_lblkno;
+
+		sp->sum_bytes_left -= sizeof(daddr_t);
+		sp->seg_bytes_left -= bp->b_bufsize;
 	}
 	splx(s);
 	lfs_updatemeta(fs, sp, vp, start_lbp, bpp, lbp - start_lbp);
@@ -523,7 +535,6 @@ lfs_updatemeta(fs, sp, vp, lbp, bpp, nblocks)
 		/* Update segment usage information. */
 		if (daddr != UNASSIGNED) {
 			LFS_SEGENTRY(sup, fs, datosn(fs, daddr), bp);
-			sup->su_lastmod = time.tv_sec;
 #ifdef DIAGNOSTIC
 			if (sup->su_nbytes < fs->lfs_bsize)
 				panic("lfs: negative bytes (segment %d)\n",
@@ -553,6 +564,10 @@ lfs_initseg(fs, sp)
 #endif
 	/* Advance to the next segment. */
 	if (!LFS_PARTIAL_FITS(fs)) {
+		/* Wake up any cleaning procs waiting on this file system. */
+		wakeup((caddr_t)&fs->lfs_nextseg);
+		wakeup((caddr_t)&lfs_allclean_wakeup);
+
 		lfs_newseg(fs);
 		fs->lfs_offset = fs->lfs_curseg;
 		sp->seg_number = datosn(fs, fs->lfs_curseg);
@@ -665,12 +680,6 @@ lfs_writeseg(fs, sp)
 	if ((nblocks = sp->cbpp - sp->bpp) == 0)
 		return;
 
-	/* Update the segment usage information. */
-	LFS_SEGENTRY(sup, fs, sp->seg_number, bp);
-	sup->su_nbytes += nblocks - 1 << fs->lfs_bshift;
-	sup->su_lastmod = time.tv_sec;
-	LFS_UBWRITE(bp);
-
 	/*
 	 * Compute checksum across data and then across summary; the first
 	 * block (the summary block) is skipped.  Set the create time here
@@ -722,6 +731,14 @@ lfs_writeseg(fs, sp)
 
 	for (bpp = sp->bpp, i = nblocks; i--;)
 		(strategy)(*bpp++);
+
+	/* Update the segment usage information. */
+	LFS_SEGENTRY(sup, fs, sp->seg_number, bp);
+	sup->su_nbytes += nblocks - 1 - 
+	    (ssp->ss_ninos + INOPB(fs) - 1) / INOPB(fs) << fs->lfs_bshift;
+	sup->su_nbytes += ssp->ss_ninos * sizeof(struct dinode);
+	sup->su_lastmod = time.tv_sec;
+	LFS_UBWRITE(bp);
 }
 
 void
