@@ -1,4 +1,4 @@
-/*	ad.c	4.5	82/10/10	*/
+/*	ad.c	4.6	82/10/17	*/
 
 #include "ad.h"
 #if NAD > 0
@@ -42,7 +42,7 @@ struct ad {
 adprobe(reg)
 	caddr_t reg;
 {
-	register int br, cvec;
+	register int br, cvec;		/* value-result */
 	register struct addevice *adaddr = (struct addevice *) reg;
 
 	adaddr->ad_csr = AD_IENABLE | AD_START;
@@ -51,9 +51,11 @@ adprobe(reg)
 	return (sizeof (struct addevice));
 }
 
+/*ARGSUSED*/
 adattach(ui)
 	struct uba_device *ui;
 {
+
 }
 
 adopen(dev)
@@ -62,15 +64,14 @@ adopen(dev)
 	register struct ad *adp;
 	register struct uba_device *ui;
 
-	if(ADUNIT(dev) >= NAD || (adp = &ad[ADUNIT(dev)])->ad_open ||
-		(ui = addinfo[ADUNIT(dev)]) == 0 || ui->ui_alive == 0) {
-			u.u_error = ENXIO;
-			return;
-	}
+	if (ADUNIT(dev) >= NAD || (adp = &ad[ADUNIT(dev)])->ad_open ||
+	    (ui = addinfo[ADUNIT(dev)]) == 0 || ui->ui_alive == 0)
+		return (ENXIO);
 	adp->ad_open = 1;
 	adp->ad_icnt = 0;
 	adp->ad_state = 0;
 	adp->ad_uid = u.u_uid;
+	return (0);
 }
 
 adclose(dev)
@@ -87,7 +88,7 @@ adioctl(dev, cmd, addr, flag)
 	register caddr_t addr;
 {
 	register struct addevice *adaddr =
-			(struct addevice *) addinfo[ADUNIT(dev)]->ui_addr;
+	    (struct addevice *) addinfo[ADUNIT(dev)]->ui_addr;
 	register struct uba_device *ui = addinfo[ADUNIT(dev)];
 	register struct ad *adp;
 	register int i;
@@ -105,21 +106,22 @@ adioctl(dev, cmd, addr, flag)
 		spl6();
 		adaddr->ad_csr = adp->ad_chan;
 		i = 1000;
-		while(i-- > 0 && (adaddr->ad_csr&037400) != adp->ad_chan) {
+		while (i-- > 0 && (adaddr->ad_csr&037400) != adp->ad_chan) {
 			adp->ad_loop++;
 			adaddr->ad_csr = adp->ad_chan;
 		}
 		adp->ad_state |= ADBUSY;
 		adaddr->ad_csr |= AD_IENABLE|AD_START;
-		while(adp->ad_state&ADBUSY)
+		while (adp->ad_state&ADBUSY)
 			sleep((caddr_t)adp, ADWAITPRI);
 		spl0();
 		*(int *)data = adp->ad_softdata;
 		break;
 
 	default:
-		u.u_error = ENOTTY;	/* Not a legal ioctl cmd. */
+		return (ENOTTY);	/* Not a legal ioctl cmd. */
 	}
+	return (0);
 }
 
 /*ARGSUSED*/

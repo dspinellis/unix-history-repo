@@ -1,4 +1,4 @@
-/*	tm.c	4.55	82/10/10	*/
+/*	tm.c	4.56	82/10/17	*/
 
 #include "te.h"
 #include "ts.h"
@@ -196,10 +196,8 @@ tmopen(dev, flag)
 
 	teunit = TEUNIT(dev);
 	if (teunit>=NTE || (sc = &te_softc[teunit])->sc_openf ||
-	    (ui = tedinfo[teunit]) == 0 || ui->ui_alive == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
+	    (ui = tedinfo[teunit]) == 0 || ui->ui_alive == 0)
+		return (ENXIO);
 	olddens = sc->sc_dens;
 	dens = TM_IE | TM_GO | (ui->ui_slave << 8);
 	if ((minor(dev) & T_1600BPI) == 0)
@@ -214,19 +212,16 @@ get:
 	sc->sc_dens = olddens;
 	if ((sc->sc_erreg&(TMER_SELR|TMER_TUR)) != (TMER_SELR|TMER_TUR)) {
 		uprintf("te%d: not online\n", teunit);
-		u.u_error = EIO;
-		return;
+		return (EIO);
 	}
 	if ((flag&FWRITE) && (sc->sc_erreg&TMER_WRL)) {
 		uprintf("te%d: no write ring\n", teunit);
-		u.u_error = EIO;
-		return;
+		return (EIO);
 	}
 	if ((sc->sc_erreg&TMER_BOT) == 0 && (flag&FWRITE) &&
 	    dens != sc->sc_dens) {
 		uprintf("te%d: can't change density in mid-tape\n", teunit);
-		u.u_error = EIO;
-		return;
+		return (EIO);
 	}
 	sc->sc_openf = 1;
 	sc->sc_blkno = (daddr_t)0;
@@ -240,6 +235,7 @@ get:
 		timeout(tmtimer, (caddr_t)dev, 5*hz);
 	}
 	splx(s);
+	return (0);
 }
 
 /*
@@ -848,7 +844,7 @@ tmioctl(dev, cmd, data, flag)
 
 	case MTIOCTOP:	/* tape operation */
 		mtop = (struct mtop *)data;
-		switch(mtop->mt_op) {
+		switch (mtop->mt_op) {
 
 		case MTWEOF:
 			callcount = mtop->mt_count;
@@ -871,25 +867,20 @@ tmioctl(dev, cmd, data, flag)
 			break;
 
 		default:
-			u.u_error = ENXIO;
-			return;
+			return (ENXIO);
 		}
-		if (callcount <= 0 || fcount <= 0) {
-			u.u_error = ENXIO;
-			return;
-		}
+		if (callcount <= 0 || fcount <= 0)
+			return (EINVAL);
 		while (--callcount >= 0) {
 			tmcommand(dev, tmops[mtop->mt_op], fcount);
 			if ((mtop->mt_op == MTFSR || mtop->mt_op == MTBSR) &&
-			    bp->b_resid) {
-				u.u_error = EIO;
-				break;
-			}
+			    bp->b_resid)
+				return (EIO);
 			if ((bp->b_flags&B_ERROR) || sc->sc_erreg&TMER_BOT)
 				break;
 		}
-		geterror(bp);
-		return;
+		geterror(bp);		/* XXX */
+		return (u.u_error);	/* XXX */
 
 	case MTIOCGET:
 		mtget = (struct mtget *)data;
@@ -897,11 +888,12 @@ tmioctl(dev, cmd, data, flag)
 		mtget->mt_erreg = sc->sc_erreg;
 		mtget->mt_resid = sc->sc_resid;
 		mtget->mt_type = MT_ISTM;
-		return;
+		break;
 
 	default:
-		u.u_error = ENXIO;
+		return (ENXIO);
 	}
+	return (0);
 }
 
 #define	DBSIZE	20

@@ -1,4 +1,4 @@
-/*	vp.c	4.20	82/10/10	*/
+/*	vp.c	4.21	82/10/17	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -123,10 +123,8 @@ vpopen(dev)
 
 	if (VPUNIT(dev) >= NVP ||
 	    ((sc = &vp_softc[minor(dev)])->sc_state&VPSC_OPEN) ||
-	    (ui = vpdinfo[VPUNIT(dev)]) == 0 || ui->ui_alive == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
+	    (ui = vpdinfo[VPUNIT(dev)]) == 0 || ui->ui_alive == 0)
+		return (ENXIO);
 	vpaddr = (struct vpdevice *)ui->ui_addr;
 	sc->sc_state = VPSC_OPEN|VPSC_PRINT | VP_CLRCOM|VP_RESET;
 	sc->sc_count = 0;
@@ -136,12 +134,12 @@ vpopen(dev)
 		(void) spl4();
 		if (vpwait(dev)) {
 			vpclose(dev);
-			u.u_error = EIO;
-			return;
+			return (EIO);
 		}
 		vpstart(dev);
 		(void) spl0();
 	}
+	return (0);
 }
 
 vpstrategy(bp)
@@ -260,21 +258,18 @@ vpioctl(dev, cmd, addr, flag)
 
 	case VGETSTATE:
 		(void) suword(addr, sc->sc_state);
-		return;
+		break;
 
 	case VSETSTATE:
 		m = fuword(addr);
-		if (m == -1) {
-			u.u_error = EFAULT;
-			return;
-		}
+		if (m == -1)
+			return (EFAULT);
 		sc->sc_state =
 		    (sc->sc_state & ~VPSC_MODE) | (m&(VPSC_MODE|VPSC_CMNDS));
 		break;
 
 	default:
-		u.u_error = ENOTTY;
-		return;
+		return (ENOTTY);
 	}
 	(void) spl4();
 	(void) vpwait(dev);
@@ -288,6 +283,7 @@ vpioctl(dev, cmd, addr, flag)
 		vpstart(dev);
 	}
 	(void) spl0();
+	return (0);
 }
 
 vptimo(dev)
@@ -338,10 +334,7 @@ vpreset(uban)
 		vpaddr->prcsr = VP_IENABLE|VP_DTCINTR;
 		if ((sc->sc_state & VPSC_BUSY) == 0)
 			continue;
-		if (sc->sc_ubinfo) {
-			printf("<%d>", (sc->sc_ubinfo>>28)&0xf);
-			ubarelse(ui->ui_ubanum, &sc->sc_ubinfo);
-		}
+		sc->sc_ubinfo = 0;
 		sc->sc_count = sc->sc_bp->b_bcount;
 		vpstart(sc->sc_bp->b_dev);
 	}

@@ -1,4 +1,4 @@
-/*	dn.c	4.8	82/10/10	*/
+/*	dn.c	4.9	82/10/17	*/
 
 #include "dn.h"
 #if NDN > 0
@@ -69,7 +69,9 @@ dnprobe(reg)
 
 dnattach(ui)
 	struct uba_device *ui;
-{}
+{
+
+}
 
 /*ARGSUSED*/
 dnopen(dev, flag)
@@ -81,23 +83,18 @@ dnopen(dev, flag)
 	register short dialer;
 
 	if ((unit = DNUNIT(dev)) >= NDN || (ui = dninfo[unit]) == 0 ||
-	    ui->ui_alive == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
+	    ui->ui_alive == 0)
+		return (ENXIO);
 	dialer = DNREG(dev);
 	dp = (struct dndevice *)ui->ui_addr;
-	if (dp->dn_reg[dialer] & PWI) {
-		u.u_error = ENXIO;
-		return;
-	}
+	if (dp->dn_reg[dialer] & PWI)
+		return (ENXIO);
 	dnreg = &(dp->dn_reg[dialer]);
-	if (*dnreg&(DLO|CRQ)) {
-		u.u_error = EBUSY;
-		return;
-	}
+	if (*dnreg&(DLO|CRQ))
+		return (EBUSY);
 	dp->dn_reg[0] |= MENABLE;
 	*dnreg = IENABLE|MENABLE|CRQ;
+	return (0);
 }
 
 /*ARGSUSED*/

@@ -1,4 +1,4 @@
-/*	dmf.c	4.9	82/10/13	*/
+/*	dmf.c	4.10	82/10/17	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -221,15 +221,11 @@ dmfopen(dev, flag)
 
 	unit = minor(dev);
 	dmf = unit >> 3;
-	if (unit >= NDMF*8 || (ui = dmfinfo[dmf])== 0 || ui->ui_alive == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
+	if (unit >= NDMF*8 || (ui = dmfinfo[dmf])== 0 || ui->ui_alive == 0)
+		return (ENXIO);
 	tp = &dmf_tty[unit];
-	if (tp->t_state&TS_XCLUDE && u.u_uid!=0) {
-		u.u_error = EBUSY;
-		return;
-	}
+	if (tp->t_state&TS_XCLUDE && u.u_uid!=0)
+		return (EBUSY);
 	addr = (struct dmfdevice *)ui->ui_addr;
 	tp->t_addr = (caddr_t)addr;
 	tp->t_oproc = dmfstart;
@@ -277,7 +273,7 @@ dmfopen(dev, flag)
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	}
 	splx(s);
-	(*linesw[tp->t_line].l_open)(dev, tp);
+	return ((*linesw[tp->t_line].l_open)(dev, tp));
 }
 
 /*
@@ -408,15 +404,19 @@ dmfioctl(dev, cmd, data, flag)
 	register int unit = minor(dev);
 	register int dmf = unit >> 3;
 	register struct device *dmfaddr;
+	int error;
  
 	tp = &dmf_tty[unit];
-	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
-	if (cmd == 0)
-		return;
-	if (ttioctl(tp, cmd, data, flag)) {
+	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
+	if (error >= 0)
+		return (error);
+	error = ttioctl(tp, cmd, data, flag);
+	if (error >= 0) {
 		if (cmd == TIOCSETP || cmd == TIOCSETN)
 			dmfparam(unit);
-	} else switch(cmd) {
+		return (error);
+	}
+	switch (cmd) {
 
 	case TIOCSBRK:
 		dmfmctl(dev, DMF_BRK, DMBIS);
@@ -451,8 +451,9 @@ dmfioctl(dev, cmd, data, flag)
 		break;
 
 	default:
-		u.u_error = ENOTTY;
+		return (ENOTTY);
 	}
+	return (0);
 }
 
 dmtodmf(bits)
@@ -766,7 +767,6 @@ dmfreset(uban)
 #ifdef DMFDMA
 	if (dmf_ubinfo[uban] == 0)
 		return;
-	ubarelse(uban, &dmf_ubinfo[uban]);
 	dmf_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
 	    nclist*sizeof (struct cblock), 0);
 	cbase[uban] = dmf_ubinfo[uban]&0x3ffff;

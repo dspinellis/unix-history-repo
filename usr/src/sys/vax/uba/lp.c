@@ -1,4 +1,4 @@
-/*	lp.c	4.29	82/10/10	*/
+/*	lp.c	4.30	82/10/17	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -16,8 +16,6 @@
 #include "../h/systm.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/ioctl.h"
-#include "../h/tty.h"
 
 #include "../vaxuba/ubavar.h"
 
@@ -111,15 +109,11 @@ lpopen(dev, flag)
 
 	if ((unit = LPUNIT(dev)) >= NLP ||
 	    (sc = &lp_softc[unit])->sc_state&OPEN ||
-	    (ui = lpinfo[unit]) == 0 || ui->ui_alive == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
+	    (ui = lpinfo[unit]) == 0 || ui->ui_alive == 0)
+		return (ENXIO);
 	lpaddr = (struct lpdevice *)ui->ui_addr;
-	if (lpaddr->lpsr&ERROR) {
-		u.u_error = EIO;
-		return;
-	}
+	if (lpaddr->lpsr&ERROR)
+		return (EIO);
 	sc->sc_state |= OPEN;
 	sc->sc_inbuf = geteblk(512);
 	sc->sc_flags = minor(dev) & 07;
@@ -130,6 +124,7 @@ lpopen(dev, flag)
 	}
 	(void) spl0();
 	lpcanon(dev, '\f');
+	return (0);
 }
 
 /*ARGSUSED*/

@@ -1,4 +1,4 @@
-/*	lpa.c	4.7	82/10/10	*/
+/*	lpa.c	4.8	82/10/17	*/
 
 #include "lpa.h"
 #if NLPA > 0
@@ -199,10 +199,8 @@ lpaopen(dev, flag)
 
 TRACER("OPEN\n");
 	if (unit >= NLPA || sc->sc_flag & OPEN || ui == 0 ||
-	    ui->ui_alive == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
+	    ui->ui_alive == 0)
+		return (ENXIO);
 	(void) spl7();
 	lpaaddr->lcim = RESET;
 	lpaaddr->lcim = 0;
@@ -219,6 +217,7 @@ TRACER("OPEN\n");
 	sc->sc_ubufn = -1;
 	/* THIS SHOULD EVENTUALLY SPECIFY "REAL-TIME" */
 	u.u_procp->p_nice = NICE;
+	return (0);
 }
 
 lpaclose(dev, flag)
@@ -375,19 +374,8 @@ lpaioctl(dev, cmd, data, flag)
 	} *iocb;
 
 TRACER("IOCTL IN\n");
-	if (cmd != TIOCSETP) {
-TRACER("NOT TIOCSETP\n");
-		/* not valid */
-		u.u_error = ENXIO;
-		return;
-	}
-#ifndef NOMCODE
-	if ((sc->sc_flag & DMDT) == 0) {
-TRACER("NO DMDT\n");
-		u.u_error = ENXIO;
-		return;
-	}
-#endif
+	if (cmd != TIOCSETP || (sc->sc_flag & DMDT) == 0)
+		return (ENXIO);
 	iocb = (struct iocb *)data;
 	p = (short *) sc->sc_buffer->b_un.b_addr;	/* CLOCK START */
 	*p++ = CLOCK | CLOCKA;			/* mode */
@@ -412,17 +400,15 @@ TRACER("CLOCK STARTED\n");
 	*p++ |= sc->sc_nbuf++ << 8;		/* into high portion of word */
 					/* buffer addresses */
 	if (useracc(sc->sc_ubuffer.b_un.b_addr = (caddr_t) iocb->baddr,
-		    sc->sc_ubuffer.b_bcount = sc->sc_count * sc->sc_nbuf * 2,
-		    (i = (sc->sc_device)? B_READ : B_WRITE) ) == NULL) {
+	    sc->sc_ubuffer.b_bcount = sc->sc_count * sc->sc_nbuf * 2,
+	    (i = (sc->sc_device)? B_READ : B_WRITE) ) == NULL) {
 TRACER("USER BUFFER FAULT\n");
-			u.u_error = EFAULT;
-			return;
+		return (EFAULT);
 	}
 	sc->sc_ubuffer.b_flags = B_PHYS | B_BUSY | i;
 	sc->sc_ubuffer.b_proc = u.u_procp;
 	u.u_procp->p_flag |= SPHYSIO;
 	vslock(sc->sc_ubuffer.b_un.b_addr, sc->sc_ubuffer.b_bcount);
-/*	sc->sc_ubabuf = ubasetup(ui->ui_ubanum, &sc->sc_ubuffer, UBA_NEEDBDP);*/
 	sc->sc_ubabuf = ubasetup(ui->ui_ubanum, &sc->sc_ubuffer, 0);
 	v = sc->sc_ubabuf;
 	for (i = 0; i < sc->sc_nbuf; i++) {
@@ -448,6 +434,7 @@ TRACER("USER BUFFER FAULT\n");
 	sc->sc_lbufnx = 0;
 	sc->sc_flag |= STTY;
 TRACER("IOCTL OUT\n");
+	return (0);
 }
 
 lparead(dev, uio)

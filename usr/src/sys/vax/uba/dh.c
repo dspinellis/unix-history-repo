@@ -1,4 +1,4 @@
-/*	dh.c	4.52	82/10/10	*/
+/*	dh.c	4.53	82/10/17	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -237,15 +237,11 @@ dhopen(dev, flag)
 
 	unit = minor(dev);
 	dh = unit >> 4;
-	if (unit >= NDH*16 || (ui = dhinfo[dh])== 0 || ui->ui_alive == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
+	if (unit >= NDH*16 || (ui = dhinfo[dh])== 0 || ui->ui_alive == 0)
+		return (ENXIO);
 	tp = &dh11[unit];
-	if (tp->t_state&TS_XCLUDE && u.u_uid!=0) {
-		u.u_error = EBUSY;
-		return;
-	}
+	if (tp->t_state&TS_XCLUDE && u.u_uid!=0)
+		return (EBUSY);
 	addr = (struct dhdevice *)ui->ui_addr;
 	tp->t_addr = (caddr_t)addr;
 	tp->t_oproc = dhstart;
@@ -288,7 +284,7 @@ dhopen(dev, flag)
 	 * Wait for carrier, then process line discipline specific open.
 	 */
 	dmopen(dev);
-	(*linesw[tp->t_line].l_open)(dev, tp);
+	return ((*linesw[tp->t_line].l_open)(dev, tp));
 }
 
 /*
@@ -397,16 +393,20 @@ dhioctl(dev, cmd, data, flag)
 	caddr_t data;
 {
 	register struct tty *tp;
-	register unit = minor(dev);
+	register int unit = minor(dev);
+	int error;
 
 	tp = &dh11[unit];
-	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
-	if (cmd == 0)
-		return;
-	if (ttioctl(tp, cmd, data, flag)) {
+	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
+	if (error >= 0)
+		return (error);
+	error = ttioctl(tp, cmd, data, flag);
+	if (error >= 0) {
 		if (cmd == TIOCSETP || cmd == TIOCSETN)
 			dhparam(unit);
-	} else switch(cmd) {
+		return (error);
+	}
+	switch (cmd) {
 
 	case TIOCSBRK:
 		((struct dhdevice *)(tp->t_addr))->dhbreak |= 1<<(unit&017);
@@ -425,8 +425,9 @@ dhioctl(dev, cmd, data, flag)
 		break;
 
 	default:
-		u.u_error = ENOTTY;
+		return (ENOTTY);
 	}
+	return (0);
 }
 
 /*
@@ -649,7 +650,6 @@ dhreset(uban)
 
 	if (dh_ubinfo[uban] == 0)
 		return;
-	ubarelse(uban, &dh_ubinfo[uban]);
 	dh_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
 	    512+nclist*sizeof (struct cblock), 0);
 	cbase[uban] = dh_ubinfo[uban]&0x3ffff;
