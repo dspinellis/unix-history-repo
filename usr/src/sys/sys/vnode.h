@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.37 (Berkeley) %G%
+ *	@(#)vnode.h	7.38 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -39,7 +39,8 @@ enum vtagtype	{ VT_NON, VT_UFS, VT_NFS, VT_MFS };
 
 struct vnode {
 	u_long		v_flag;			/* vnode flags (see below) */
-	long		v_usecount;		/* reference count of users */
+	short		v_usecount;		/* reference count of users */
+	short		v_writecount;		/* reference count of writers */
 	long		v_holdcnt;		/* page & buffer references */
 	off_t		v_lastr;		/* last read (read-ahead) */
 	u_long		v_id;			/* capability identifier */
@@ -250,6 +251,8 @@ struct vnodeops {
  */
 int 	vn_open __P((struct nameidata *ndp, struct proc *p, int fmode,
 	    int cmode));
+int 	vn_close __P((struct vnode *vp, int flags, struct ucred *cred,
+	    struct proc *p));
 int 	vn_rdwr __P((enum uio_rw rw, struct vnode *vp, caddr_t base,
 	    int len, off_t offset, enum uio_seg segflg, int ioflg,
 	    struct ucred *cred, int *aresid, struct proc *p));
@@ -257,7 +260,6 @@ int	vn_read __P((struct file *fp, struct uio *uio, struct ucred *cred));
 int	vn_write __P((struct file *fp, struct uio *uio, struct ucred *cred));
 int	vn_ioctl __P((struct file *fp, int com, caddr_t data, struct proc *p));
 int	vn_select __P((struct file *fp, int which, struct proc *p));
-int 	vn_close __P(( struct file *fp, struct proc *p));
 int 	getnewvnode __P((enum vtagtype tag, struct mount *mp,
 	    struct vnodeops *vops, struct vnode **vpp));
 int 	bdevvp __P((int dev, struct vnode **vpp));
