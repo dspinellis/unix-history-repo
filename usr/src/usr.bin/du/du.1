@@ -1,52 +1,58 @@
-.\"	@(#)du.1	6.4 (Berkeley) %G%
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH DU 1 ""
-.AT 3
-.SH NAME
-du \- summarize disk usage
-.SH SYNOPSIS
-.B du
-[
-.B \-aksx
-] [ name ... ]
-.SH DESCRIPTION
-.I Du
-gives the number of 512-byte blocks contained in all files and,
-recursively, directories within each specified directory or file
-.IR name .
-If
-.I name
-is missing, the current directory is used.
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)du.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DU 1
+.Os BSD 4.4
+.Sh NAME
+.Nm du
+.Nd display disk usage statistics
+.Sh SYNOPSIS
+.Nm du
+.Op Fl aksx
+.Op Ar pathname ...
+.Sh DESCRIPTION
+.Nm Du
+utility displays the block usage of files in the current directory
+or for the entire tree of a given pathname.
+.Pp
 The options are as follows:
-.TP
--a
+.Tp Fl a
 Generate an entry for each file.
-.TP
--k
+.Tp Fl k
 By default,
-.I du
+.Nm du
 displays the number of blocks as returned by the
-.IR stat (2)
+.Xr stat  2
 system call, i.e. 512-byte blocks.
 If the
-.I -k
+.Fl k
 flag is specified, the number displayed is the number of 1024-byte
 blocks with partial blocks rounded up.
-.TP
--s
+.Tp Fl s
 Generate only the grand total.
 If neither
-.I -a
+.Fl a
 or
-.I -s
+.Fl s
 are specified, an entry is generated for each directory only.
-.TP
--x
+.Tp Fl x
 Don't traverse any mount points.
-.PP
-A file which has multiple hard links to it is only counted
-(and displayed) once per
-.I du
+.Tp
+.Pp
+Files having multiple hard links are counted
+(and displayed) a single time per
+.Nm du
 execution.
-.SH "SEE ALSO"
-df(1), quot(8)
+.Dp
+.Sh SEE ALSO
+.Xr df 1 ,
+.Xr quot 8
+.Sh HISTORY
+A
+.Nm du
+command appeared in Version 6 AT&T Unix.
