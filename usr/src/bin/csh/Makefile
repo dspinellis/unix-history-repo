@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley Software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
@@ -13,17 +13,16 @@
 DEFS=	-DTELL -DVFORK -DFILEC
 CFLAGS=	${DEFS} -O
 XSTR=	/usr/ucb/xstr
-AS=	as
 VGRIND=	/usr/ucb/vgrind
 
-SRCS=	alloc.c printf.c sh.c sh.char.c sh.dir.c sh.dol.c sh.err.c \
-	sh.exec.c sh.exp.c sh.file.c sh.func.c sh.glob.c sh.hist.c sh.init.c \
-	sh.lex.c sh.misc.c sh.parse.c sh.print.c sh.proc.c sh.sem.c sh.set.c \
-	sh.time.c
-OBJS=	alloc.o printf.o sh.o sh.char.o sh.dir.o sh.dol.o sh.err.o \
-	sh.exec.o sh.exp.o sh.file.o sh.func.o sh.glob.o sh.hist.o sh.init.o \
-	sh.lex.o sh.misc.o sh.parse.o sh.print.o sh.proc.o sh.sem.o sh.set.o \
-	sh.time.o doprnt.o
+SRCS=	alloc.c doprnt.c sh.c sh.char.c sh.dir.c sh.dol.c sh.err.c \
+	sh.exec.c sh.exp.c sh.file.c sh.func.c sh.glob.c sh.hist.c \
+	sh.init.c sh.lex.c sh.misc.c sh.parse.c sh.print.c sh.proc.c \
+	sh.sem.c sh.set.c sh.time.c
+OBJS=	alloc.o doprnt.o sh.o sh.char.o sh.dir.o sh.dol.o sh.err.o \
+	sh.exec.o sh.exp.o sh.file.o sh.func.o sh.glob.o sh.hist.o \
+	sh.init.o sh.lex.o sh.misc.o sh.parse.o sh.print.o sh.proc.o \
+	sh.sem.o sh.set.o sh.time.o
 
 # Special massaging of C files for sharing of strings
 .c.o:
@@ -35,10 +34,6 @@ OBJS=	alloc.o printf.o sh.o sh.char.o sh.dir.o sh.dol.o sh.err.o \
 # strings.o must be last since it can change when previous files compile
 csh: ${OBJS} strings.o
 	${CC} ${CFLAGS} ${OBJS} strings.o -o $@
-
-# need an old doprnt, whose output we can trap
-doprnt.o: doprnt.c
-	/lib/cpp doprnt.c | ${AS} -o doprnt.o
 
 # strings.o, sh.init.o, and sh.char.o are specially processed to be shared
 strings.o: strings
@@ -101,7 +96,6 @@ vgrind:
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
 alloc.o: alloc.c /usr/include/sys/types.h
-printf.o: printf.c
 sh.o: sh.c
 sh.o:sh.h
 sh.o: /usr/include/sys/time.h /usr/include/time.h /usr/include/sys/resource.h

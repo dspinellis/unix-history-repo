@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)time.c	5.5 (Berkeley) %G%";
+static char *sccsid = "@(#)time.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -94,7 +94,7 @@ prusage(r0, r1, e, b)
 		cp = vp->vec[1];
 	for (; *cp; cp++)
 	if (*cp != '%')
-		putchar(*cp);
+		cshputchar(*cp);
 	else if (cp[1]) switch(*++cp) {
 
 	case 'U':
@@ -153,7 +153,7 @@ prusage(r0, r1, e, b)
 		printf("%ld", r1->ru_oublock-r0->ru_oublock);
 		break;
 	}
-	putchar('\n');
+	cshputchar('\n');
 }
 
 pdeltat(t1, t0)

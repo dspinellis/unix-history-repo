@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)lex.c	5.5 (Berkeley) %G%";
+static char *sccsid = "@(#)lex.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -111,7 +111,7 @@ prlex(sp0)
 		if (sp == sp0)
 			break;
 		if (sp->word[0] != '\n')
-			putchar(' ');
+			cshputchar(' ');
 	}
 }
 

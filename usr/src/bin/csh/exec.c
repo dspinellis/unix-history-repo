@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)exec.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)exec.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -269,7 +269,7 @@ xechoit(t)
 	if (adrof("echo")) {
 		flush();
 		haderr = 1;
-		blkpr(t), putchar('\n');
+		blkpr(t), cshputchar('\n');
 		haderr = 0;
 	}
 }

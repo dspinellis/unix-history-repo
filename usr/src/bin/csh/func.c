@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)func.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)func.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -749,12 +749,12 @@ echo(sep, v)
 		register int c;
 
 		while (c = *cp++)
-			putchar(c | QUOTE);
+			cshputchar(c | QUOTE);
 		if (*v)
-			putchar(sep | QUOTE);
+			cshputchar(sep | QUOTE);
 	}
 	if (sep && nonl == 0)
-		putchar('\n');
+		cshputchar('\n');
 	else
 		flush();
 	if (setintr)
