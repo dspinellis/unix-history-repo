@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.3	82/08/10	*/
+/*	kern_sig.c	5.4	82/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -21,6 +21,7 @@
 #include "../h/vm.h"
 #include "../h/vlimit.h"
 #include "../h/acct.h"
+#include "../h/uio.h"
 
 /* KILL CODE SHOULDNT KNOW ABOUT PROCESS INTERNALS !?! */
 
@@ -674,7 +675,7 @@ core()
 	}
 #endif
 	if (u.u_uid != u.u_ruid)
-		return;
+		return (0);
 	if (ctob(UPAGES+u.u_dsize+u.u_ssize) >= u.u_limit[LIM_CORE])
 		return (0);
 	u.u_error = 0;
@@ -687,28 +688,30 @@ core()
 		if (ip==NULL)
 			return (0);
 	}
-	if (!access(ip, IWRITE) &&
-	   (ip->i_mode&IFMT) == IFREG &&
-	   ip->i_nlink == 1) {
-		itrunc(ip, 0);
-		u.u_acflag |= ACORE;
-		u.u_offset = 0;
-		u.u_base = (caddr_t)&u;
-		u.u_count = ctob(UPAGES);
-		u.u_segflg = 1;
-		writei(ip);
-		u.u_base = (char *)ctob(u.u_tsize);
-		u.u_count = ctob(u.u_dsize);
-		u.u_segflg = 0;
-		writei(ip);
-		u.u_base = (char *)(USRSTACK - ctob(u.u_ssize));
-		u.u_count = ctob(u.u_ssize);
-		writei(ip);
-	} else
+	if (access(ip, IWRITE) ||
+	   (ip->i_mode&IFMT) != IFREG ||
+	   ip->i_nlink != 1) {
 		u.u_error = EFAULT;
+		goto out;
+	}
+	itrunc(ip, 0);
+	u.u_acflag |= ACORE;
+	u.u_error =rdwri(UIO_WRITE, ip,
+	    (caddr_t)&u, ctob(UPAGES),
+	    0, 1, (int *)0);
+	if (u.u_error)
+	rdwri(UIO_WRITE, ip,
+	    (caddr_t)ctob(u.u_tsize), ctob(u.u_dsize),
+	    ctob(UPAGES), 0, (int *)0);
+	if (u.u_error)
+	rdwri(UIO_WRITE, ip,
+	    (caddr_t)(USRSTACK-ctob(u.u_ssize)), ctob(u.u_ssize),
+	    ctob(UPAGES)+ctob(u.u_dsize), 0, (int *)0);
+out:
 	iput(ip);
-	return (u.u_error==0);
+	return (u.u_error == 0);
 }
+
 /*
  * alarm clock signal
  */
