@@ -5,13 +5,14 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)MAKEDEV	5.4 (Berkeley) %G%
+#	@(#)MAKEDEV	5.5 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
 #	local	configuration specific devices
 # Tapes:
 #	ct*	HP300 HP-IB cartridge tape
+#	st*	Exabyte tape
 # Disks:
 #	cd*	"concatenated" pseudo-disks
 #	rd*	HP300 HP-IB disks
@@ -56,10 +57,11 @@ std)
 	chmod 666 fd/*
 	;;
 
-ct*)
+ct*|st*)
 	umask 0 ; unit=`expr $i : '..\(.*\)'`
 	case $i in
-	ct*) blk=0; chr=7;;
+	ct*) name=ct; blk=0; chr=7;;
+	st*) name=st; blk=6; chr=20;;
 	esac
 	case $unit in
 	0|1|2|3|4|5|6|7)
@@ -67,19 +69,19 @@ ct*)
 		twelve=`expr $unit + 12`; twenty=`expr $unit + 20`
 		#
 		# block devices don't work so don't make them
-		#mknod ct$unit	b $blk $unit
-		#mknod ct$four	b $blk $four
-		#mknod ct$eight	b $blk $eight
-		#mknod ct$twelve	b $blk $twelve
-		#mknod nct$unit	b $blk $four ;: sanity w/pdp11 v7
-		#mknod nct$eight	b $blk $twelve ;: ditto
+		#mknod ${name}${unit}	b $blk $unit
+		#mknod ${name}${four}	b $blk $four
+		#mknod ${name}${eight}	b $blk $eight
+		#mknod ${name}${twelve}	b $blk $twelve
+		#mknod n${name}${unit}	b $blk $four ;: sanity w/pdp11 v7
+		#mknod n${name}${eight}	b $blk $twelve ;: ditto
 		#
-		mknod rct$unit	c $chr $unit
-		mknod rct$four	c $chr $four
-		mknod rct$eight	c $chr $eight
-		mknod rct$twelve	c $chr $twelve
-		ln rct$four nrct$unit ;: sanity w/pdp11 v7
-		ln rct$twelve nrct$eight ;: ditto
+		mknod r${name}${unit}	c $chr $unit
+		mknod r${name}${four}	c $chr $four
+		mknod r${name}${eight}	c $chr $eight
+		mknod r${name}${twelve}	c $chr $twelve
+		ln r${name}${four} nr${name}${unit} ;: sanity w/pdp11 v7
+		ln r${name}${twelve} nr${name}${eight} ;: ditto
 		;;
 	*)
 		echo bad unit for tape in: $1
@@ -243,6 +245,8 @@ local)
 	umask 0
 	sh MAKEDEV.local
 	;;
-
+*)
+	echo $i: unknown device
+	;;
 esac
 done
