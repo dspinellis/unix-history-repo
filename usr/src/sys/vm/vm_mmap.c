@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.3 90/01/21$
  *
- *	@(#)vm_mmap.c	7.4 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -116,13 +116,22 @@ smmap(p, uap, retval)
 		return(EINVAL);
 	}
 	/*
-	 * Address (if FIXED) and size must be page aligned
+	 * Address (if FIXED) must be page aligned.
+	 * Size is implicitly rounded to a page boundary.
 	 */
-	size = (vm_size_t)uap->len;
-	addr = (vm_offset_t)uap->addr;
-	if ((size & page_mask) ||
-	    (uap->flags & MAP_FIXED) && (addr & page_mask))
+	addr = (vm_offset_t) uap->addr;
+	if ((uap->flags & MAP_FIXED) && (addr & page_mask) || uap->len < 0)
 		return(EINVAL);
+	size = (vm_size_t) round_page(uap->len);
+	/*
+	 * XXX if no hint provided for a non-fixed mapping place it after
+	 * the end of the largest possible heap.
+	 *
+	 * There should really be a pmap call to determine a reasonable
+	 * location.
+	 */
+	if (addr == 0 && (uap->flags & MAP_FIXED) == 0)
+		addr = round_page(p->p_vmspace->vm_daddr + MAXDSIZ);
 	/*
 	 * Mapping file or named anonymous, get fp for validation
 	 */
@@ -179,7 +188,7 @@ smmap(p, uap, retval)
 msync(p, uap, retval)
 	struct proc *p;
 	struct args {
-		char	*addr;
+		caddr_t	addr;
 		int	len;
 	} *uap;
 	int *retval;
@@ -197,7 +206,7 @@ msync(p, uap, retval)
 		printf("msync(%d): addr %x len %x\n",
 		       p->p_pid, uap->addr, uap->len);
 #endif
-	if (((int)uap->addr & page_mask) || (uap->len & page_mask))
+	if (((int)uap->addr & page_mask) || uap->len < 0)
 		return(EINVAL);
 	addr = oaddr = (vm_offset_t)uap->addr;
 	osize = (vm_size_t)uap->len;
@@ -266,9 +275,9 @@ munmap(p, uap, retval)
 #endif
 
 	addr = (vm_offset_t) uap->addr;
-	size = (vm_size_t) uap->len;
-	if ((addr & page_mask) || (size & page_mask))
+	if ((addr & page_mask) || uap->len < 0)
 		return(EINVAL);
+	size = (vm_size_t) round_page(uap->len);
 	if (size == 0)
 		return(0);
 	if (!vm_map_is_allocated(&p->p_vmspace->vm_map, addr, addr+size,
@@ -295,7 +304,7 @@ munmapfd(fd)
 mprotect(p, uap, retval)
 	struct proc *p;
 	struct args {
-		char	*addr;
+		caddr_t	addr;
 		int	len;
 		int	prot;
 	} *uap;
@@ -312,9 +321,9 @@ mprotect(p, uap, retval)
 #endif
 
 	addr = (vm_offset_t) uap->addr;
-	size = (vm_size_t) uap->len;
-	if ((addr & page_mask) || (size & page_mask))
+	if ((addr & page_mask) || uap->len < 0)
 		return(EINVAL);
+	size = (vm_size_t) uap->len;
 	/*
 	 * Map protections
 	 */
@@ -340,7 +349,7 @@ mprotect(p, uap, retval)
 madvise(p, uap, retval)
 	struct proc *p;
 	struct args {
-		char	*addr;
+		caddr_t	addr;
 		int	len;
 		int	behav;
 	} *uap;
@@ -355,7 +364,7 @@ madvise(p, uap, retval)
 mincore(p, uap, retval)
 	struct proc *p;
 	struct args {
-		char	*addr;
+		caddr_t	addr;
 		int	len;
 		char	*vec;
 	} *uap;
