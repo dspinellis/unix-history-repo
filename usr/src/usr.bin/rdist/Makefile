@@ -1,4 +1,4 @@
-#	Makefile	4.4	83/10/26
+#	Makefile	4.5	83/10/28
 
 DESTDIR=
 SRCS =	docmd.c expand.c gram.y lookup.c main.c server.c
@@ -15,7 +15,7 @@ clean:
 	rm -f *.o gram.c errs
 
 install:
-	install -s rdist ${DESTDIR}/usr/ucb/rdist
+	install -s -m 4751 rdist ${DESTDIR}/usr/local/rdist
 
 lint:	docmd.c expand.c gram.c lookup.c main.c server.c
 	${LINT} docmd.c expand.c gram.c lookup.c main.c server.c
