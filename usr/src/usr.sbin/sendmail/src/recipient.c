@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.63 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.44.1.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -27,8 +27,6 @@ static char sccsid[] = "@(#)recipient.c	8.63 (Berkeley) %G%";
 **			expansion.
 **		sendq -- a pointer to the head of a queue to put
 **			these people into.
-**		aliaslevel -- the current alias nesting depth -- to
-**			diagnose loops.
 **		e -- the envelope in which to add these recipients.
 **
 **	Returns:
@@ -38,17 +36,12 @@ static char sccsid[] = "@(#)recipient.c	8.63 (Berkeley) %G%";
 **		none.
 */
 
-#define MAXRCRSN	10	/* maximum levels of alias recursion */
+# define MAXRCRSN	10
 
-/* q_flags bits inherited from ctladdr */
-#define QINHERITEDBITS	(QPINGONSUCCESS|QPINGONFAILURE|QPINGONDELAY|QHAS_RET_PARAM|QRET_HDRS)
-
-int
-sendtolist(list, ctladdr, sendq, aliaslevel, e)
+sendtolist(list, ctladdr, sendq, e)
 	char *list;
 	ADDRESS *ctladdr;
 	ADDRESS **sendq;
-	int aliaslevel;
 	register ENVELOPE *e;
 {
 	register char *p;
@@ -57,9 +50,6 @@ sendtolist(list, ctladdr, sendq, aliaslevel, e)
 	char delimiter;		/* the address delimiter */
 	int naddrs;
 	char *oldto = e->e_to;
-	static char *bufp = NULL;
-	static int buflen;
-	char buf[MAXNAME + 1];
 
 	if (list == NULL)
 	{
@@ -86,22 +76,7 @@ sendtolist(list, ctladdr, sendq, aliaslevel, e)
 	al = NULL;
 	naddrs = 0;
 
-	if (buf == NULL)
-	{
-		bufp = buf;
-		buflen = sizeof buf - 1;
-	}
-	if (strlen(list) > buflen)
-	{
-		/* allocate additional space */
-		if (bufp != buf)
-			free(bufp);
-		buflen = strlen(list);
-		bufp = malloc(buflen + 1);
-	}
-	strcpy(bufp, list);
-
-	for (p = bufp; *p != '\0'; )
+	for (p = list; *p != '\0'; )
 	{
 		auto char *delimptr;
 		register ADDRESS *a;
@@ -121,25 +96,8 @@ sendtolist(list, ctladdr, sendq, aliaslevel, e)
 		    (firstone && *p == '\0' && bitset(QPRIMARY, ctladdr->q_flags)))
 			a->q_flags |= QPRIMARY;
 
-		/* arrange to inherit attributes from parent */
-		if (ctladdr != NULL)
-		{
-			/* self reference test */
-			if (sameaddr(ctladdr, a))
-				ctladdr->q_flags |= QSELFREF;
-
-			/* full name */
-			if (a->q_fullname == NULL)
-				a->q_fullname = ctladdr->q_fullname;
-
-			/* various flag bits */
-			a->q_flags &= ~QINHERITEDBITS;
-			a->q_flags |= ctladdr->q_flags & QINHERITEDBITS;
-
-			/* original recipient information */
-			a->q_orcpt = ctladdr->q_orcpt;
-		}
-
+		if (ctladdr != NULL && sameaddr(ctladdr, a))
+			ctladdr->q_flags |= QSELFREF;
 		al = a;
 		firstone = FALSE;
 	}
@@ -150,7 +108,11 @@ sendtolist(list, ctladdr, sendq, aliaslevel, e)
 		register ADDRESS *a = al;
 
 		al = a->q_next;
-		a = recipient(a, sendq, aliaslevel, e);
+		a = recipient(a, sendq, e);
+
+		/* arrange to inherit full name */
+		if (a->q_fullname == NULL && ctladdr != NULL)
+			a->q_fullname = ctladdr->q_fullname;
 		naddrs++;
 	}
 
@@ -167,7 +129,6 @@ sendtolist(list, ctladdr, sendq, aliaslevel, e)
 **		sendq -- a pointer to the head of a queue to put the
 **			recipient in.  Duplicate supression is done
 **			in this queue.
-**		aliaslevel -- the current alias nesting depth.
 **		e -- the current envelope.
 **
 **	Returns:
@@ -179,10 +140,9 @@ sendtolist(list, ctladdr, sendq, aliaslevel, e)
 */
 
 ADDRESS *
-recipient(a, sendq, aliaslevel, e)
+recipient(a, sendq, e)
 	register ADDRESS *a;
 	register ADDRESS **sendq;
-	int aliaslevel;
 	register ENVELOPE *e;
 {
 	register ADDRESS *q;
@@ -191,9 +151,7 @@ recipient(a, sendq, aliaslevel, e)
 	register char *p;
 	bool quoted = FALSE;		/* set if the addr has a quote bit */
 	int findusercount = 0;
-	int i;
-	char *buf;
-	char buf0[MAXNAME];		/* unquoted image of the user name */
+	char buf[MAXNAME];		/* unquoted image of the user name */
 	extern int safefile();
 
 	e->e_to = a->q_paddr;
@@ -215,10 +173,9 @@ recipient(a, sendq, aliaslevel, e)
 	}
 
 	/* break aliasing loops */
-	if (aliaslevel > MAXRCRSN)
+	if (AliasLevel > MAXRCRSN)
 	{
-		usrerr("554 aliasing/forwarding loop broken (%d aliases deep; %d max",
-			aliaslevel, MAXRCRSN);
+		usrerr("554 aliasing/forwarding loop broken");
 		return (a);
 	}
 
@@ -226,12 +183,10 @@ recipient(a, sendq, aliaslevel, e)
 	**  Finish setting up address structure.
 	*/
 
+	/* set the queue timeout */
+	a->q_timeout = TimeOuts.to_q_return;
+
 	/* get unquoted user for file, program or user.name check */
-	i = strlen(a->q_user);
-	if (i >= sizeof buf)
-		buf = xalloc(i + 1);
-	else
-		buf = buf0;
 	(void) strcpy(buf, a->q_user);
 	for (p = buf; *p != '\0' && !quoted; p++)
 	{
@@ -289,7 +244,7 @@ recipient(a, sendq, aliaslevel, e)
 			else if (bitset(QSELFREF, q->q_flags))
 				q->q_flags |= a->q_flags & ~QDONTSEND;
 			a = q;
-			goto done;
+			goto testselfdestruct;
 		}
 	}
 
@@ -321,7 +276,7 @@ recipient(a, sendq, aliaslevel, e)
 			int ret;
 
 			message("including file %s", a->q_user);
-			ret = include(a->q_user, FALSE, a, sendq, aliaslevel, e);
+			ret = include(a->q_user, FALSE, a, sendq, e);
 			if (transienterror(ret))
 			{
 #ifdef LOG
@@ -368,23 +323,27 @@ recipient(a, sendq, aliaslevel, e)
 		else if (!writable(buf, getctladdr(a), SFF_ANYFILE))
 		{
 			a->q_flags |= QBADADDR;
-			giveresponse(EX_CANTCREAT, m, NULL, a->q_alias,
-				     (time_t) 0, e);
+			giveresponse(EX_CANTCREAT, m, NULL, a->q_alias, e);
 		}
 	}
 
+	if (m != LocalMailer)
+	{
+		if (!bitset(QDONTSEND, a->q_flags))
+			e->e_nrcpts++;
+		goto testselfdestruct;
+	}
+
 	/* try aliasing */
-	if (!bitset(QDONTSEND, a->q_flags) && bitnset(M_ALIASABLE, m->m_flags))
-		alias(a, sendq, aliaslevel, e);
+	alias(a, sendq, e);
 
 # ifdef USERDB
 	/* if not aliased, look it up in the user database */
-	if (!bitset(QDONTSEND|QNOTREMOTE|QVERIFIED, a->q_flags) &&
-	    bitnset(M_CHECKUDB, m->m_flags))
+	if (!bitset(QDONTSEND|QNOTREMOTE|QVERIFIED, a->q_flags))
 	{
 		extern int udbexpand();
 
-		if (udbexpand(a, sendq, aliaslevel, e) == EX_TEMPFAIL)
+		if (udbexpand(a, sendq, e) == EX_TEMPFAIL)
 		{
 			a->q_flags |= QQUEUEUP;
 			if (e->e_message == NULL)
@@ -403,6 +362,10 @@ recipient(a, sendq, aliaslevel, e)
 	}
 # endif
 
+	/* if it was an alias or a UDB expansion, just return now */
+	if (bitset(QDONTSEND|QQUEUEUP|QVERIFIED, a->q_flags))
+		goto testselfdestruct;
+
 	/*
 	**  If we have a level two config file, then pass the name through
 	**  Ruleset 5 before sending it off.  Ruleset 5 has the right
@@ -416,11 +379,10 @@ recipient(a, sendq, aliaslevel, e)
 			ConfigLevel, RewriteRules[5]);
 		printaddr(a, FALSE);
 	}
-	if (!bitset(QNOTREMOTE|QDONTSEND|QQUEUEUP|QVERIFIED, a->q_flags) &&
-	    ConfigLevel >= 2 && RewriteRules[5] != NULL &&
-	    bitnset(M_TRYRULESET5, m->m_flags))
+	if (!bitset(QNOTREMOTE, a->q_flags) && ConfigLevel >= 2 &&
+	    RewriteRules[5] != NULL)
 	{
-		maplocaluser(a, sendq, aliaslevel, e);
+		maplocaluser(a, sendq, e);
 	}
 
 	/*
@@ -428,8 +390,7 @@ recipient(a, sendq, aliaslevel, e)
 	**  and deliver it.
 	*/
 
-	if (!bitset(QDONTSEND|QQUEUEUP|QVERIFIED, a->q_flags) &&
-	    bitnset(M_HASPWENT, m->m_flags))
+	if (!bitset(QDONTSEND|QQUEUEUP, a->q_flags))
 	{
 		auto bool fuzzy;
 		register struct passwd *pw;
@@ -440,8 +401,7 @@ recipient(a, sendq, aliaslevel, e)
 		if (pw == NULL)
 		{
 			a->q_flags |= QBADADDR;
-			giveresponse(EX_NOUSER, m, NULL, a->q_alias,
-				     (time_t) 0, e);
+			giveresponse(EX_NOUSER, m, NULL, a->q_alias, e);
 		}
 		else
 		{
@@ -456,7 +416,7 @@ recipient(a, sendq, aliaslevel, e)
 					a->q_flags |= QBADADDR;
 					usrerr("554 aliasing/forwarding loop for %s broken",
 						pw->pw_name);
-					goto done;
+					return (a);
 				}
 
 				/* see if it aliases */
@@ -480,7 +440,7 @@ recipient(a, sendq, aliaslevel, e)
 				a->q_flags |= QBOGUSSHELL;
 			}
 			if (!quoted)
-				forward(a, sendq, aliaslevel, e);
+				forward(a, sendq, e);
 		}
 	}
 	if (!bitset(QDONTSEND, a->q_flags))
@@ -504,10 +464,6 @@ recipient(a, sendq, aliaslevel, e)
 			usrerr("554 aliasing/forwarding loop broken");
 		}
 	}
-
-  done:
-	if (buf != buf0)
-		free(buf);
 	return (a);
 }
 /*
@@ -548,7 +504,6 @@ finduser(name, fuzzyp)
 
 	*fuzzyp = FALSE;
 
-#ifdef HESIOD
 	/* DEC Hesiod getpwnam accepts numeric strings -- short circuit it */
 	for (p = name; *p != '\0'; p++)
 		if (!isascii(*p) || !isdigit(*p))
@@ -559,7 +514,6 @@ finduser(name, fuzzyp)
 			printf("failed (numeric input)\n");
 		return NULL;
 	}
-#endif
 
 	/* look up this login name using fast path */
 	if ((pw = getpwnam(name)) != NULL)
@@ -692,24 +646,12 @@ writable(filename, ctladdr, flags)
 		egid = ctladdr->q_gid;
 		uname = ctladdr->q_user;
 	}
-#ifdef RUN_AS_REAL_UID
 	else
 	{
 		euid = RealUid;
 		egid = RealGid;
 		uname = RealUserName;
 	}
-#else
-	else if (FileMailer != NULL)
-	{
-		euid = FileMailer->m_uid;
-		egid = FileMailer->m_gid;
-	}
-	else
-	{
-		euid = egid = 0;
-	}
-#endif
 	if (euid == 0)
 	{
 		euid = DefUid;
@@ -749,8 +691,6 @@ writable(filename, ctladdr, flags)
 **			the important things.
 **		sendq -- a pointer to the head of the send queue
 **			to put these addresses in.
-**		aliaslevel -- the alias nesting depth.
-**		e -- the current envelope.
 **
 **	Returns:
 **		open error status
@@ -781,12 +721,11 @@ static int	includetimeout();
 #endif
 
 int
-include(fname, forwarding, ctladdr, sendq, aliaslevel, e)
+include(fname, forwarding, ctladdr, sendq, e)
 	char *fname;
 	bool forwarding;
 	ADDRESS *ctladdr;
 	ADDRESS **sendq;
-	int aliaslevel;
 	ENVELOPE *e;
 {
 	register FILE *fp = NULL;
@@ -841,29 +780,24 @@ include(fname, forwarding, ctladdr, sendq, aliaslevel, e)
 		uid = DefUid;
 		gid = DefGid;
 		uname = DefUser;
+		saveduid = -1;
 	}
 	else
 	{
 		uid = ca->q_uid;
 		gid = ca->q_gid;
 		uname = ca->q_user;
-	}
 #ifdef HASSETREUID
-	saveduid = geteuid();
-	savedgid = getegid();
-	if (saveduid == 0)
-	{
-		initgroups(uname, gid);
-		if (uid != 0)
+		saveduid = geteuid();
+		savedgid = getegid();
+		if (saveduid == 0)
 		{
-			if (setreuid(0, uid) < 0)
-				syserr("setreuid(0, %d) failure (real=%d, eff=%d)",
-					uid, getuid(), geteuid());
-			else
-				sfflags |= SFF_NOPATHCHECK;
+			initgroups(uname, gid);
+			if (uid != 0)
+				(void) setreuid(0, uid);
 		}
-	}
 #endif                   
+	}
 
 	if (tTd(27, 9))
 		printf("include: new uid = %d/%d\n", getuid(), geteuid());
@@ -882,10 +816,7 @@ include(fname, forwarding, ctladdr, sendq, aliaslevel, e)
 		rval = EOPENTIMEOUT;
 		goto resetuid;
 	}
-	if (TimeOuts.to_fileopen > 0)
-		ev = setevent(TimeOuts.to_fileopen, includetimeout, 0);
-	else
-		ev = NULL;
+	ev = setevent((time_t) 60, includetimeout, 0);
 
 	/* the input file must be marked safe */
 	rval = safefile(fname, uid, gid, uname, sfflags, S_IREAD);
@@ -906,8 +837,7 @@ include(fname, forwarding, ctladdr, sendq, aliaslevel, e)
 				printf("include: open: %s\n", errstring(rval));
 		}
 	}
-	if (ev != NULL)
-		clrevent(ev);
+	clrevent(ev);
 
 resetuid:
 
@@ -915,14 +845,9 @@ resetuid:
 	if (saveduid == 0)
 	{
 		if (uid != 0)
-		{
-			if (setreuid(-1, 0) < 0)
-				syserr("setreuid(-1, 0) failure (real=%d, eff=%d)",
-					getuid(), geteuid());
-			if (setreuid(RealUid, 0) < 0)
+			if (setreuid(-1, 0) < 0 || setreuid(RealUid, 0) < 0)
 				syserr("setreuid(%d, 0) failure (real=%d, eff=%d)",
 					RealUid, getuid(), geteuid());
-		}
 		setgid(savedgid);
 	}
 #endif
@@ -960,27 +885,25 @@ resetuid:
 	}
 	else
 	{
+		char *sh;
 		register struct passwd *pw;
 
+		sh = "/SENDMAIL/ANY/SHELL/";
 		pw = getpwuid(st.st_uid);
-		if (pw == NULL)
-			ctladdr->q_flags |= QBOGUSSHELL;
-		else
+		if (pw != NULL)
 		{
-			char *sh;
-
 			ctladdr->q_ruser = newstr(pw->pw_name);
 			if (safechown)
 				sh = pw->pw_shell;
+		}
+		if (pw == NULL)
+			ctladdr->q_flags |= QBOGUSSHELL;
+		else if(!usershellok(sh))
+		{
+			if (safechown)
+				ctladdr->q_flags |= QBOGUSSHELL;
 			else
-				sh = "/SENDMAIL/ANY/SHELL/";
-			if (!usershellok(sh))
-			{
-				if (safechown)
-					ctladdr->q_flags |= QBOGUSSHELL;
-				else
-					ctladdr->q_flags |= QUNSAFEADDR;
-			}
+				ctladdr->q_flags |= QUNSAFEADDR;
 		}
 	}
 
@@ -1030,7 +953,9 @@ resetuid:
 				oldto, buf);
 #endif
 
-		nincludes += sendtolist(buf, ctladdr, sendq, aliaslevel + 1, e);
+		AliasLevel++;
+		nincludes += sendtolist(buf, ctladdr, sendq, e);
+		AliasLevel--;
 	}
 
 	if (ferror(fp) && tTd(27, 3))
@@ -1080,8 +1005,6 @@ sendtoargv(argv, e)
 
 	while ((p = *argv++) != NULL)
 	{
-		(void) sendtolist(denlstring(p), NULLADDR,
-				  &e->e_sendqueue, 0, e);
 	}
 }
 /*
