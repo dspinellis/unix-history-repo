@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_2.c	2.2 83/12/12";
+static	char *sccsid = "@(#)dr_2.c	2.3 83/12/13";
 #endif
 
 #include "driver.h"
@@ -43,13 +43,15 @@ checkup()
 	register char explode, sink;
 
 	foreachship(sp) {
+		if (sp->file->dir == 0)
+			continue;
 		explode = sp->file->explode;
 		sink = sp->file->sink;
-		if (die() < 5)
-			continue;
 		if (explode != 1 && sink != 1)
 			continue;
-		Write(sink ? W_SINK : W_EXPLODE, sp, 0, 2, 0, 0, 0);
+		if (die() < 5)
+			continue;
+		Write(sink == 1 ? W_SINK : W_EXPLODE, sp, 0, 2, 0, 0, 0);
 		Write(W_SHIPDIR, sp, 0, 0, 0, 0, 0);
 		if (fouled(sp) || grappled(sp)) {
 			for (k = 0; k < NSHIP; k++) {
