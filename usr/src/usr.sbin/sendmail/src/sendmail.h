@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.28 (Berkeley) %G%
+ *	@(#)sendmail.h	6.29 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.28		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.29		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -249,6 +249,7 @@ struct envelope
 	char		*e_to;		/* the target person */
 	char		*e_receiptto;	/* return receipt address */
 	ADDRESS		e_from;		/* the person it is from */
+	char		*e_sender;	/* e_from.q_paddr w comments stripped */
 	char		**e_fromdomain;	/* the domain part of the sender */
 	ADDRESS		*e_returnto;	/* place to return the message to */
 	ADDRESS		*e_sendqueue;	/* list of message recipients */
