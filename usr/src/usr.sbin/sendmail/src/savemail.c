@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.20	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.21	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -28,8 +28,6 @@ savemail()
 	register struct passwd *pw;
 	register FILE *xfile;
 	char buf[MAXLINE+1];
-	extern errhdr();
-	auto ADDRESS to_addr;
 	extern struct passwd *getpwnam();
 	register char *p;
 	register int i;
@@ -113,25 +111,7 @@ savemail()
 
 	if (MailBack)
 	{
-		(void) freopen("/dev/null", "w", stdout);
-		NoAlias++;
-		ForceMail++;
-
-		/* fake up an address header for the from person */
-		bmove((char *) &From, (char *) &to_addr, sizeof to_addr);
-		(void) expand("$n", buf, &buf[sizeof buf - 1]);
-		if (parse(buf, &From, -1) == NULL)
-		{
-			syserr("Can't parse myself!");
-			ExitStat = EX_SOFTWARE;
-			finis();
-		}
-		to_addr.q_next = NULL;
-		i = deliver(&to_addr, errhdr);
-		bmove((char *) &to_addr, (char *) &From, sizeof From);
-		if (i != 0)
-			syserr("Can't return mail to %s", p);
-		else
+		if (returntosender("Unable to deliver mail") == 0)
 			return;
 	}
 
@@ -178,14 +158,58 @@ savemail()
 		printf("-----\r\n");
 }
 /*
+**  RETURNTOSENDER -- return a message to the sender with an error.
+**
+**	Parameters:
+**		msg -- the explanatory message.
+**
+**	Returns:
+**		zero -- if everything went ok.
+**		else -- some error.
+**
+**	Side Effects:
+**		Returns the current message to the sender via
+**		mail.
+*/
+
+static char	*ErrorMessage;
+
+returntosender(msg)
+	char *msg;
+{
+	ADDRESS to_addr;
+	char buf[MAXNAME];
+	register int i;
+	extern errhdr();
+
+	(void) freopen("/dev/null", "w", stdout);
+	NoAlias++;
+	ForceMail++;
+	ErrorMessage = msg;
+
+	/* fake up an address header for the from person */
+	bmove((char *) &From, (char *) &to_addr, sizeof to_addr);
+	(void) expand("$n", buf, &buf[sizeof buf - 1]);
+	if (parse(buf, &From, -1) == NULL)
+	{
+		syserr("Can't parse myself!");
+		ExitStat = EX_SOFTWARE;
+		return (-1);
+	}
+	to_addr.q_next = NULL;
+	i = deliver(&to_addr, errhdr);
+	bmove((char *) &to_addr, (char *) &From, sizeof From);
+	if (i != 0)
+	{
+		syserr("Can't return mail to %s", From.q_paddr);
+		return (-1);
+	}
+	return (0);
+}
+/*
 **  ERRHDR -- Output the header for error mail.
 **
 **	This is the edit filter to error mailbacks.
-**
-**	Algorithm:
-**		Output fixed header.
-**		Output the transcript part.
-**		Output the original message.
 **
 **	Parameters:
 **		xfile -- the transcript file.
@@ -195,13 +219,9 @@ savemail()
 **		none
 **
 **	Side Effects:
-**		input from xfile
-**		output to fp
-**
-**	Called By:
-**		deliver
+**		Outputs the current message with an appropriate
+**		error header.
 */
-
 
 errhdr(fp, m)
 	register FILE *fp;
@@ -248,7 +268,7 @@ errhdr(fp, m)
 		fprintf(fp, "From: %s (Mail Delivery Subsystem)\n", buf);
 	}
 	fprintf(fp, "To: %s\n", To);
-	fprintf(fp, "Subject: Unable to deliver mail\n");
+	fprintf(fp, "Subject: %s\n", ErrorMessage);
 
 	/*
 	**  End of error message header

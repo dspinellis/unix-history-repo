@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.26	%G%";
+static char	SccsId[] = "@(#)collect.c	3.27	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -401,10 +401,10 @@ struct prio
 
 static struct prio	Prio[] =
 {
-	"normal",		PRI_NORMAL,
+	"alert",		PRI_ALERT,
 	"quick",		PRI_QUICK,
-	"priority",		PRI_PRIORITY,
-	"first-class",		PRI_NORMAL,
+	"first-class",		PRI_FIRSTCL,
+	"normal",		PRI_NORMAL,
 	"second-class",		PRI_SECONDCL,
 	"third-class",		PRI_THIRDCL,
 	NULL,			PRI_NORMAL,
@@ -414,10 +414,11 @@ priencode(p)
 	char *p;
 {
 	register struct prio *pl;
+	extern bool sameword();
 
 	for (pl = Prio; pl->pri_name != NULL; pl++)
 	{
-		if (strcmp(p, pl->pri_name) == 0)
+		if (sameword(p, pl->pri_name))
 			break;
 	}
 	return (pl->pri_val);

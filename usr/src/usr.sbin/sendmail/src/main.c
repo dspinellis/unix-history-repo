@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.47	%G%";
+static char	SccsId[] = "@(#)main.c	3.48	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -125,6 +125,7 @@ main(argc, argv)
 	bool verifyonly = FALSE;	/* only verify names */
 	bool safecf = TRUE;		/* this conf file is sys default */
 	char ibuf[30];			/* holds HostName */
+	bool queuemode = FALSE;		/* process queue requests */
 	bool aliasinit = FALSE;
 	extern bool safefile();
 	STAB *st;
@@ -349,9 +350,8 @@ main(argc, argv)
 			break;
 
 		  case 'q':	/* run queue files at intervals */
+			queuemode = TRUE;
 			QueueIntvl = atoi(&p[1]);
-			if (QueueIntvl == 0)
-				QueueIntvl = 60*60;
 			break;
 
 		  default:
@@ -429,7 +429,7 @@ main(argc, argv)
 	**  If collecting stuff from the queue, go start doing that.
 	*/
 
-	if (QueueIntvl > 0)
+	if (queuemode)
 	{
 		runqueue();
 		finis();
@@ -639,6 +639,11 @@ setfrom(from, realname)
 
 finis()
 {
+# ifdef DEBUG
+	if (Debug > 2)
+		printf("\n====finis: stat %d\n", ExitStat);
+# endif DEBUG
+
 	/* mail back the transcript on errors */
 	if (ExitStat != EX_OK)
 		savemail();
@@ -676,8 +681,12 @@ openxscrpt()
 	extern char *mktemp();
 
 	(void) mktemp(XcriptFile);
-	if (freopen(XcriptFile, "w", stdout) == NULL)
+	OutChannel = fopen(XcriptFile, "w");
+	if (OutChannel == NULL)
+	{
+		OutChannel = stdout;
 		syserr("Can't create %s", XcriptFile);
+	}
 	(void) chmod(XcriptFile, 0600);
 	Transcript = XcriptFile;
 	setbuf(stdout, (char *) NULL);
@@ -710,7 +719,7 @@ setsender(from)
 	**	Getlogin can return errno != 0 on non-errors.
 	*/
 
-	if (!Smtp)
+	if (!Smtp && !QueueRun)
 	{
 		errno = 0;
 		p = getlogin();
@@ -725,7 +734,7 @@ setsender(from)
 		pw = getpwnam(p);
 		if (pw == NULL)
 		{
-			if (!Smtp)
+			if (!Smtp && !QueueRun)
 				syserr("Who are you? (name=%s)", p);
 			p = NULL;
 		}
@@ -802,6 +811,7 @@ initsys()
 	extern long time();
 
 	/* convert timeout interval to absolute time */
+	TimeOut -= CurTime;
 	(void) time(&CurTime);
 	TimeOut += CurTime;
 

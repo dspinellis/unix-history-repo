@@ -6,7 +6,7 @@
 
 # ifdef _DEFINE
 # define EXTERN
-static char SmailSccsId[] =	"@(#)sendmail.h	3.50	%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.51	%G%";
 # else  _DEFINE
 # define EXTERN extern
 # endif _DEFINE
@@ -199,13 +199,15 @@ EXTERN WORK	*WorkQ;			/* queue of things to be done */
 
 /*
 **  Message priorities.
+**	Priorities > 0 should be preemptive.
 */
 
-# define PRI_NORMAL	20
-# define PRI_SECONDCL	10
-# define PRI_THIRDCL	7
-# define PRI_QUICK	24
-# define PRI_PRIORITY	40
+# define PRI_ALERT	20
+# define PRI_QUICK	10
+# define PRI_FIRSTCL	0
+# define PRI_NORMAL	-4
+# define PRI_SECONDCL	-10
+# define PRI_THIRDCL	-20
 
 EXTERN int	MsgPriority;		/* priority of this message */
 
