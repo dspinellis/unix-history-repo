@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)nextaddr.c 1.3 %G%";
+static char sccsid[] = "@(#)nextaddr.c 1.4 %G%";
 
 /*
  * Calculate the next address that will be executed from the current one.
@@ -351,4 +351,18 @@ int incr;
     } else {
 	return(addr + sizeof(short));
     }
+}
+
+/*
+ * Determine whether or not the given address corresponds to the
+ * end of a procedure.
+ */
+
+BOOLEAN isendofproc(addr)
+ADDRESS addr;
+{
+    PXOP op;
+
+    iread(&op, addr, sizeof(op));
+    return (op == O_END);
 }
