@@ -1,0 +1,73 @@
+Fri Oct  9 04:56:05 1992  John Gilmore  (gnu@cygnus.com)
+
+	* configure.in:  For host support, use ../bfd/configure.host
+	so it stays in sync with the ../bfd/hosts database.
+
+Thu Oct  1 23:38:54 1992  david d `zoo' zuhn  (zoo at cirdan.cygnus.com)
+
+	* configure.in: use cpu-vendor-os triple instead of nested cases
+
+Wed Sep 30 16:09:20 1992  Michael Werner  (mtw@cygnus.com)
+
+	* z8k-dis.c (unparse_instr): fix bug where opcode returned was
+	*always* the wrong one.
+
+Wed Sep 30 07:42:17 1992  Steve Chamberlain  (sac@thepub.cygnus.com)
+
+	* z8kgen.c: added copyright info
+
+Tue Sep 29 12:20:21 1992  Steve Chamberlain  (sac@thepub.cygnus.com)
+
+	* z8k-dis.c (unparse_instr): prettier tabs
+	* z8kgen.c -> z8k-opc.h: bug fixes in tables
+
+Fri Sep 25 12:50:32 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* configure.in:  Add ncr* configuration.
+	* z8k-dis.c (struct instr_data_s):  Make instr_asmsrc char to make
+	picayune ANSI compilers happy.
+
+Sep 20 08:50:55 1992  Fred Fish  (fnf@cygnus.com)
+
+	* configure.in (i386):  Make i386 and i486 synonymous for now.
+	* configure.in (i[34]86-*-sysv4):  Add my_host definition.
+
+Fri Sep 18 17:01:23 1992  Ken Raeburn  (raeburn@cambridge.cygnus.com)
+
+	* Makefile.in (install): Fix typo.
+
+Fri Sep 18 02:04:24 1992  John Gilmore  (gnu@cygnus.com)
+
+	* Makefile.in (make):  Remove obsolete crud.
+	(sparc-opc.o):  Avoid Sun Make VPATH bug.
+
+Tue Sep  8 17:29:27 1992  K. Richard Pixley  (rich@sendai.cygnus.com)
+
+	* Makefile.in: since there are no SUBDIRS, remove rule and
+	references of subdir_do.
+
+Tue Sep  8 17:02:58 1992  Ken Raeburn  (raeburn@cambridge.cygnus.com)
+
+	* Makefile.in (install): Get the library name right here too.
+	Don't install bfd.h, since it's unrelated to this library.  No
+	subdirs to recurse into, either.
+	(CFILES): The source file has a .c suffix, not .o.
+
+	* sparc-opc.c: New file, moved from BFD.
+	* Makefile.in (OFILES): Build it.
+
+Thu Sep  3 16:59:20 1992  Michael Werner  (mtw@cygnus.com)
+
+	* z8k-dis.c: fixed forward refferences of some declarations.
+
+Mon Aug 31 16:09:45 1992  Michael Werner  (mtw@cygnus.com)
+
+	* Makefile.in: get the name of the library right
+
+Mon Aug 31 13:47:35 1992  Steve Chamberlain  (sac@thepub.cygnus.com)
+
+	* z8k-dis.c: knows how to disassemble z8k stuff
+	* z8k-opc.h: new file full of z8000 opcodes
+
+
+
