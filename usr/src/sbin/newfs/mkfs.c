@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <unistd.h>
@@ -907,7 +907,8 @@ alloc(size, mode)
 goth:
 	blkno = fragstoblks(&sblock, d);
 	clrblock(&sblock, cg_blksfree(&acg), blkno);
-	clrbit(cg_clustersfree(&acg), blkno);
+	if (sblock.fs_contigsumsize > 0)
+		clrbit(cg_clustersfree(&acg), blkno);
 	acg.cg_cs.cs_nbfree--;
 	sblock.fs_cstotal.cs_nbfree--;
 	fscs[0].cs_nbfree--;
