@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_output.c,v 5.4 88/11/18 17:28:08 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_output.c,v $
- *	@(#)tp_output.c	7.4 (Berkeley) %G% *
+ *	@(#)tp_output.c	7.5 (Berkeley) %G% *
  *
  * In here is tp_ctloutput(), the guy called by [sg]etsockopt(),
  */
@@ -536,36 +536,8 @@ tp_ctloutput(cmd, so, level, optname, mp)
 		}
 		break;
 
-#ifdef TPOPT_NGC8_ACCEPT
-	case TPOPT_NGC8_ACCEPT: 
-		if ( cmd == PRCO_GETOPT ) {
-			*(int *)value = (int)tpcb->tp_flags & TPFLAG_NGC8_ACCEPT;
-			(*mp)->m_len = sizeof(u_int);
-		} else  {
-			if (*(int *)value)
-				tpcb->tp_flags |= TPFLAG_NGC8_ACCEPT;
-			else
-				tpcb->tp_flags &= ~TPFLAG_NGC8_ACCEPT;
-		}
-		break;
-#endif
-
 	case TPOPT_CFRM_DATA:
-		if (cmd == PRCO_SETOPT && (so->so_state & SS_ISCONFIRMING))
-			(void) tp_confirm(tpcb);
-		/* drop through */
 	case TPOPT_DISC_DATA: 
-		/* drop through */
-	/* sending is for debugging purposes only -- we don't pretend 
-	 * to support * data on connect or disconnect fully. It's a 
-	 * kludge at best.
-	 * This data-on-connect is only for the active side.  It's sort of
-	 * meaningless on the passive side (because
-	 * you can't reject a connect request based on the data 
-	 * arriving w/ the CR, this, and because you'd have to 
-	 * do this setsockopt system call for each accept).
-	 * but you can use it if you want.
-	 */
 	case TPOPT_CONN_DATA: 
 		if( tpcb->tp_class == TP_CLASS_0 ) {
 			error = EOPNOTSUPP;
@@ -590,14 +562,16 @@ tp_ctloutput(cmd, so, level, optname, mp)
 				m_cat(tpcb->tp_ucddata, *mp);
 			else
 				tpcb->tp_ucddata = *mp;
-		IFDEBUG(D_REQUEST)
-			dump_mbuf(tpcb->tp_ucddata, "tp_ctloutput after CONN_DATA");
-		ENDDEBUG
+			IFDEBUG(D_REQUEST)
+				dump_mbuf(tpcb->tp_ucddata, "tp_ctloutput after CONN_DATA");
+			ENDDEBUG
 			IFTRACE(D_REQUEST)
 				tptrace(TPPTmisc,"C/D DATA: flags snd.sbcc val_len",
 					tpcb->tp_flags, so->so_snd.sb_cc,val_len,0);
 			ENDTRACE
 			*mp = MNULL; /* prevent sosetopt from freeing it! */
+			if (optname == TPOPT_CFRM_DATA && (so->so_state & SS_ISCONFIRMING))
+				(void) tp_confirm(tpcb);
 		}
 		break;
 
