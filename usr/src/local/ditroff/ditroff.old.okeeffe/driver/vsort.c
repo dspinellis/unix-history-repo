@@ -1,4 +1,4 @@
-/* vsort.c	1.10	84/04/11
+/* vsort.c	1.11	84/05/24
  *
  *	Sorts and shuffles ditroff output for versatec wide printer.  It
  *	puts pages side-by-side on the output, and fits as many as it can
