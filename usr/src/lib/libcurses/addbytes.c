@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)addbytes.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)addbytes.c	5.10 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -45,17 +45,35 @@ waddbytes(win, bytes, count)
 			break;
 
 		default:
-#ifdef DEBUG
-	__TRACE("ADDBYTES: 1: y = %d, x = %d, firstch = %d, lastch = %d\n",
-	    y, x, win->lines[y]->firstch, win->lines[y]->lastch);
-#endif
 			if (win->flags & __WSTANDOUT)
 				c |= __STANDOUT;
 #ifdef DEBUG
 	__TRACE("ADDBYTES(%0.2o, %d, %d)\n", win, y, x);
 #endif
-			lp = win->lines[y];
 			
+			lp = win->lines[y];
+			if (lp->flags & __ISPASTEOL) {
+				lp->flags &= ~__ISPASTEOL;
+newline:			if (y == win->maxy - 1) {
+					if (win->flags & __SCROLLOK) {
+					        x = 0;
+						SYNCH_OUT;
+						scroll(win);
+						SYNCH_IN;
+						lp = win->lines[y];
+					} 
+				} else {
+					y++;
+					lp = win->lines[y];
+					x = 0;
+				}
+			}
+				
+							
+#ifdef DEBUG
+	__TRACE("ADDBYTES: 1: y = %d, x = %d, firstch = %d, lastch = %d\n",
+	    y, x, win->lines[y]->firstch, win->lines[y]->lastch);
+#endif
 			if (lp->line[x] != c) {
 				newx = x + win->ch_off;
 				if (!(lp->flags & __ISDIRTY)) {
@@ -74,17 +92,10 @@ waddbytes(win, bytes, count)
 #endif
 			}
 			lp->line[x] = c;
-			if (++x >= win->maxx) {
-				x = 0;
-newline:			if (++y >= win->maxy) 
-					if (win->flags & __SCROLLOK) {
-						SYNCH_OUT;
-						scroll(win);
-						SYNCH_IN;
-						--y;
-					} else
-						return (ERR);
-			}
+			if (x == win->maxx - 1)
+				lp->flags |= __ISPASTEOL;
+			else
+				x++;
 #ifdef DEBUG
 	__TRACE("ADDBYTES: 2: y = %d, x = %d, firstch = %d, lastch = %d\n",
 	    y, x, win->lines[y]->firstch, win->lines[y]->lastch);
@@ -109,3 +120,4 @@ newline:			if (++y >= win->maxy)
 	SYNCH_OUT;
 	return (OK);
 }
+ 
