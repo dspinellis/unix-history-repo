@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
  *
- *	@(#)sysv_shm.c	7.15 (Berkeley) %G%
+ *	@(#)sysv_shm.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -319,8 +319,9 @@ shmat(p, uap, retval)
 		flags |= MAP_FIXED;
 	else
 		uva = (caddr_t)0x1000000;	/* XXX */
-	error = vm_mmap(&p->p_vmspace->vm_map, &uva, (vm_size_t)size, prot,
-	    flags, ((struct shmhandle *)shp->shm_handle)->shmh_id, 0);
+	error = vm_mmap(&p->p_vmspace->vm_map, (vm_offset_t *)&uva,
+	    (vm_size_t)size, prot, flags,
+	    ((struct shmhandle *)shp->shm_handle)->shmh_id, 0);
 	if (error)
 		return(error);
 	shmd->shmd_uva = (vm_offset_t)uva;
