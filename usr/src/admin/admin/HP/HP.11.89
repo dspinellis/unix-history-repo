@@ -1,4 +1,4 @@
-.\"	@(#)HP.11.89	1.1	89/08/11
+.\"	@(#)HP.11.89	1.2	89/08/11
 .if n \{\
 .ND
 .rm CH
@@ -6,9 +6,26 @@
 .nr LL 7i
 .ad l
 .\}
-.ce 2
-Proposal for Hewlett Packard support
-of the Berkeley Computer Systems Research Group
+.HE
+.nr PS 11
+.nr VS 13
+.nr LL 6i
+.nr OI 0.5i
+.in 0.5i
+.ps 11p
+.ti 5i
+July 18, 1989
+.LP
+.nf
+Ralph Hyver
+101M
+Hewlett-Packard Company
+1266 Kifer Road
+Sunnyvale, CA 94086
+.sp 1
+.LP
+Dear Mr Hyver,
+.PP
 .sp 1
 .PP
 This is a proposal for support by Hewlett-Packard of operating
