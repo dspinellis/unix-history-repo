@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)runtime.vax.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)runtime.vax.c	5.3 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: runtime.c,v 1.5 84/12/26 10:41:52 linton Exp $";
+static char rcsid[] = "$Header: runtime.vax.c,v 1.3 88/01/11 21:27:00 donn Exp $";
 
 /*
  * Runtime organization dependent routines, mostly dealing with
@@ -27,6 +27,7 @@ static char rcsid[] = "$Header: runtime.c,v 1.5 84/12/26 10:41:52 linton Exp $";
 #include "operators.h"
 #include "object.h"
 #include <sys/param.h>
+#include <signal.h>
 
 #ifndef public
 typedef struct Frame *Frame;
@@ -51,8 +52,8 @@ private Boolean walkingstack = false;
 
 #define frameeq(f1, f2) ((f1)->save_fp == (f2)->save_fp)
 
-#define isstackaddr(addr) \
-    (((addr) < 0x80000000) and ((addr) > 0x80000000 - 0x200 * UPAGES))
+#define inSignalHandler(addr) \
+    (((addr) < 0x80000000) and ((addr) > 0x80000000 - ctob(UPAGES)))
 
 typedef struct {
     Node callnode;
@@ -115,7 +116,7 @@ Frame frp;
     Frame newfrp;
     struct Frame frame;
     integer mask;
-    Address prev_frame, callpc; 
+    Address prev_frame, callpc;
     static integer ntramp = 0;
 
     newfrp = frp;
@@ -144,28 +145,35 @@ Frame frp;
  */
 
 nextf:
-    dread(&frame, prev_frame, sizeof(struct Frame));
+    if (prev_frame + sizeof(struct Frame) <= USRSTACK) {
+	dread(&frame, prev_frame, sizeof(struct Frame));
+    } else if (USRSTACK - prev_frame > 2 * sizeof(Word)) {
+	dread(&frame, prev_frame, USRSTACK - prev_frame);
+    } else {
+	frame.save_fp = nil;
+    }
     if (ntramp == 1) {
-	dread(&callpc, prev_frame + 84, sizeof(callpc));
+	dread(&callpc, prev_frame + 92, sizeof(callpc));
     } else {
 	callpc = frame.save_pc;
     }
     if (frame.save_fp == nil or frame.save_pc == (Address) -1) {
 	newfrp = nil;
-    } else if (isstackaddr(callpc)) {
-	ntramp++;
-	prev_frame = frame.save_fp;
-	goto nextf;
     } else {
+	if (inSignalHandler(callpc)) {
+	    ntramp++;
+	    prev_frame = frame.save_fp;
+	    goto nextf;
+	}
 	frame.save_pc = callpc;
         ntramp = 0;
+	newfrp->save_fp = frame.save_fp;
+	newfrp->save_pc = frame.save_pc;
 	mask = ((frame.mask >> 16) & 0x0fff);
 	getsaveregs(newfrp, &frame, mask);
 	newfrp->condition_handler = frame.condition_handler;
 	newfrp->mask = mask;
 	newfrp->save_ap = frame.save_ap;
-	newfrp->save_fp = frame.save_fp;
-	newfrp->save_pc = frame.save_pc;
     }
     return newfrp;
 }
@@ -266,15 +274,15 @@ Address addr;
     integer i, j, mask;
 
     dread(&frame, addr, sizeof(frame));
-    setreg(ARGP, frame.save_ap);
     setreg(FRP, frame.save_fp);
     setreg(PROGCTR, frame.save_pc);
+    setreg(ARGP, frame.save_ap);
     mask = ((frame.mask >> 16) & 0x0fff);
     j = 0;
     for (i = 0; i < NSAVEREG; i++) {
 	if (bis(mask, i)) {
-	    setreg(i, frame.save_reg[j]);
-	    ++j;
+	setreg(i, frame.save_reg[j]);
+	++j;
 	}
     }
     pc = frame.save_pc;
@@ -406,9 +414,11 @@ public Word argn(n, frp)
 integer n;
 Frame frp;
 {
+    Address argaddr;
     Word w;
 
-    dread(&w, args_base(frp) + (n * sizeof(Word)), sizeof(w));
+    argaddr = args_base(frp) + (n * sizeof(Word));
+    dread(&w, argaddr, sizeof(w));
     return w;
 }
 
@@ -648,15 +658,20 @@ integer n;
 
 /*
  * Find the entry point of a procedure or function.
+ *
+ * On the VAX we add the size of the register mask (FUNCOFFSET) or
+ * the size of the Modula-2 internal entry sequence, on other machines
+ * (68000's) we add the entry sequence size (FUNCOFFSET) unless
+ * we're right at the beginning of the program.
  */
 
 public findbeginning (f)
 Symbol f;
 {
     if (isinternal(f)) {
-	f->symvalue.funcv.beginaddr += 15;
+	f->symvalue.funcv.beginaddr += 18;	/* VAX only */
     } else {
-	f->symvalue.funcv.beginaddr += 2;
+	f->symvalue.funcv.beginaddr += FUNCOFFSET;
     }
 }
 
@@ -685,13 +700,14 @@ Symbol f;
 
 public runtofirst()
 {
-    Address addr;
+    Address addr, endaddr;
 
     addr = pc;
-    while (linelookup(addr) == 0 and addr < objsize) {
+    endaddr = objsize + CODESTART;
+    while (linelookup(addr) == 0 and addr < endaddr) {
 	++addr;
     }
-    if (addr < objsize) {
+    if (addr < endaddr) {
 	stepto(addr);
     }
 }
@@ -720,7 +736,7 @@ public Address lastaddr()
  * Presumably information evaluated while walking the stack is active.
  */
 
-public Boolean isactive(f)
+public Boolean isactive (f)
 Symbol f;
 {
     Boolean b;
@@ -728,7 +744,7 @@ Symbol f;
     if (isfinished(process)) {
 	b = false;
     } else {
-	if (walkingstack or f == program or
+	if (walkingstack or f == program or f == nil or
 	  (ismodule(f) and isactive(container(f)))) {
 	    b = true;
 	} else {
@@ -770,6 +786,7 @@ boolean isfunc;
     pushenv();
     pc = codeloc(proc);
     argc = pushargs(proc, arglist);
+    setreg(FRP, 1);	/* have to ensure it's non-zero for return_addr() */
     beginproc(proc, argc);
     event_once(
 	build(O_EQ, build(O_SYM, pcsym), build(O_SYM, retaddrsym)),
@@ -957,17 +974,17 @@ Node arglist;
 }
 
 /*
- * Evaluate an argument list without concern for matching the formal
- * parameters of a function in type or quantity.  Useful for functions
- * like C's printf().
+ * Evaluate an argument list without any type checking.
+ * This is only useful for procedures with a varying number of
+ * arguments that are compiled -g.
  */
 
-private integer unsafe_evalargs(proc, arglist)
+private integer unsafe_evalargs (proc, arglist)
 Symbol proc;
 Node arglist;
 {
     Node p;
-    Integer count;
+    integer count;
 
     count = 0;
     for (p = arglist; p != nil; p = p->value.arg[1]) {
@@ -1005,7 +1022,7 @@ Symbol f;
     } else {
 	putchar('\n');
 	printname(stdout, f);
-	printf(" returns successfully\n", symname(f));
+	printf(" returns successfully\n");
     }
     erecover();
 }
@@ -1026,6 +1043,7 @@ private pushenv()
     push(CallEnv, endproc);
     push(Word, reg(PROGCTR));
     push(Word, reg(STKP));
+    push(Word, reg(FRP));
 }
 
 /*
@@ -1036,6 +1054,7 @@ public popenv()
 {
     String filename;
 
+    setreg(FRP, pop(Word));
     setreg(STKP, pop(Word));
     setreg(PROGCTR, pop(Word));
     endproc = pop(CallEnv);
@@ -1068,9 +1087,9 @@ public flushoutput()
 	iob = lookup(identname("_iob", true));
 	if (iob != nil) {
 	    pushenv();
-	    pc = codeloc(p);
+	    pc = codeloc(p) - FUNCOFFSET;
 	    savesp = sp;
-	    push(long, address(iob, nil) + sizeof(struct _iobuf));
+	    push(long, address(iob, nil) + sizeof(*stdout));
 	    setreg(STKP, reg(STKP) - sizeof(long));
 	    dwrite(savesp, reg(STKP), sizeof(long));
 	    sp = savesp;
