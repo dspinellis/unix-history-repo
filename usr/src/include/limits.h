@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)limits.h	8.1 (Berkeley) %G%
+ *	@(#)limits.h	8.2 (Berkeley) %G%
  */
 
 #ifndef _LIMITS_H_
@@ -20,6 +20,9 @@
 #define	_POSIX_OPEN_MAX		16
 #define	_POSIX_PATH_MAX		255
 #define	_POSIX_PIPE_BUF		512
+#define	_POSIX_SSIZE_MAX	32767
+#define	_POSIX_STREAM_MAX	8
+#define	_POSIX_TZNAME_MAX	3
 
 #define	_POSIX2_BC_BASE_MAX	99
 #define	_POSIX2_BC_DIM_MAX	2048
