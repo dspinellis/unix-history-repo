@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.55 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.56 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.55 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.56 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -124,7 +124,7 @@ smtp(e)
 		CurSmtpClient = CurHostName;
 
 	setproctitle("server %s startup", CurSmtpClient);
-	expand("\201e", inp, &inp[sizeof inp], e);
+	expand("\201e", inp, sizeof inp, e);
 	if (BrokenSmtpPeers)
 	{
 		p = strchr(inp, '\n');

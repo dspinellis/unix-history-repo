@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.55 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.56 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -183,7 +183,7 @@ savemail(e, sendbody)
 				break;
 			}
 
-			expand("\201n", buf, &buf[sizeof buf - 1], e);
+			expand("\201n", buf, sizeof buf, e);
 			printf("\r\nMessage from %s...\r\n", buf);
 			printf("Errors occurred while sending mail.\r\n");
 			if (e->e_xfp != NULL)
@@ -324,7 +324,7 @@ savemail(e, sendbody)
 
 				/* we have a home directory; open dead.letter */
 				define('z', p, e);
-				expand("\201z/dead.letter", buf, &buf[sizeof buf - 1], e);
+				expand("\201z/dead.letter", buf, sizeof buf, e);
 				Verbose = TRUE;
 				message("Saving message in %s", buf);
 				Verbose = oldverb;
@@ -528,7 +528,7 @@ returntosender(msg, returnq, sendbody, e)
 	addheader("Subject", msg, ee);
 
 	/* fake up an address header for the from person */
-	expand("\201n", buf, &buf[sizeof buf - 1], e);
+	expand("\201n", buf, sizeof buf, e);
 	if (parseaddr(buf, &ee->e_from, RF_COPYALL|RF_SENDERADDR, '\0', NULL, e) == NULL)
 	{
 		syserr("553 Can't parse myself!");
@@ -637,7 +637,7 @@ errbody(mci, e, separator)
 	sprintf(buf, "The original message was received at %s",
 		arpadate(ctime(&e->e_parent->e_ctime)));
 	putline(buf, mci);
-	expand("from \201_", buf, &buf[sizeof buf - 1], e->e_parent);
+	expand("from \201_", buf, sizeof buf, e->e_parent);
 	putline(buf, mci);
 	putline("", mci);
 
@@ -654,7 +654,7 @@ errbody(mci, e, separator)
 			{
 				while (fgets(buf, sizeof buf, xfile) != NULL)
 				{
-					expand(buf, buf, &buf[sizeof buf - 1], e);
+					expand(buf, buf, sizeof buf, e);
 					putline(buf, mci);
 				}
 				(void) fclose(xfile);
@@ -663,7 +663,7 @@ errbody(mci, e, separator)
 		}
 		else
 		{
-			expand(ErrMsgFile, buf, &buf[sizeof buf - 1], e);
+			expand(ErrMsgFile, buf, sizeof buf, e);
 			putline(buf, mci);
 			putline("", mci);
 		}

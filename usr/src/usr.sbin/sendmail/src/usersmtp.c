@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.37 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.38 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.37 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.38 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -387,7 +387,7 @@ smtpmailfrom(m, mci, e)
 	    !bitnset(M_NO_NULL_FROM, m->m_flags))
 		(void) strcpy(buf, "");
 	else
-		expand("\201g", buf, &buf[sizeof buf], e);
+		expand("\201g", buf, sizeof buf, e);
 	if (buf[0] == '<')
 	{
 		/* strip off <angle brackets> (put back on below) */

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.57 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.58 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -435,7 +435,7 @@ prescan(addr, delim, pvpbuf, pvpbsize, delimptr)
 		char obuf[50];
 
 		firsttime = FALSE;
-		expand("\201o", obuf, &obuf[sizeof obuf - sizeof DELIMCHARS], CurEnv);
+		expand("\201o", obuf, sizeof obuf - sizeof DELIMCHARS, CurEnv);
 		strcat(obuf, DELIMCHARS);
 		for (p = obuf; *p != '\0'; p++)
 		{
@@ -2121,9 +2121,9 @@ remotename(name, m, flags, pstat, e)
 
 	/* need to make sure route-addrs have <angle brackets> */
 	if (bitset(RF_CANONICAL, flags) && lbuf[0] == '@')
-		expand("<\201g>", buf, &buf[sizeof buf], e);
+		expand("<\201g>", buf, sizeof buf, e);
 	else
-		expand(fancy, buf, &buf[sizeof buf], e);
+		expand(fancy, buf, sizeof buf, e);
 
 	define('g', oldg, e);
 

@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.39 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -808,7 +808,7 @@ forward(user, sendq, aliaslevel, e)
 		ep = strchr(pp, ':');
 		if (ep != NULL)
 			*ep = '\0';
-		expand(pp, buf, &buf[sizeof buf - 1], e);
+		expand(pp, buf, sizeof buf, e);
 		if (ep != NULL)
 			*ep++ = ':';
 		if (tTd(27, 3))

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.67 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.68 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.67 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.68 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -315,7 +315,7 @@ queueup(e, queueall, announce)
 		/* expand macros; if null, don't output header at all */
 		if (bitset(H_DEFAULT, h->h_flags))
 		{
-			(void) expand(h->h_value, buf, &buf[sizeof buf], e);
+			(void) expand(h->h_value, buf, sizeof buf, e);
 			if (buf[0] == '\0')
 				continue;
 		}

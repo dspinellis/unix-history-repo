@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.129 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.130 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -752,7 +752,7 @@ deliver(e, firstto)
 			break;
 
 		/* this entry is safe -- go ahead and process it */
-		expand(*mvp, buf, &buf[sizeof buf], e);
+		expand(*mvp, buf, sizeof buf, e);
 		*pvp++ = newstr(buf);
 		if (pvp >= &pv[MAXPV - 3])
 		{
@@ -938,7 +938,7 @@ deliver(e, firstto)
 
 		if (!clever)
 		{
-			expand(*mvp, buf, &buf[sizeof buf], e);
+			expand(*mvp, buf, sizeof buf, e);
 			*pvp++ = newstr(buf);
 			if (pvp >= &pv[MAXPV - 2])
 			{
@@ -964,7 +964,7 @@ deliver(e, firstto)
 
 	while (!clever && *++mvp != NULL)
 	{
-		expand(*mvp, buf, &buf[sizeof buf], e);
+		expand(*mvp, buf, sizeof buf, e);
 		*pvp++ = newstr(buf);
 		if (pvp >= &pv[MAXPV])
 			syserr("554 deliver: pv overflow after $u for %s", pv[0]);
@@ -1300,7 +1300,7 @@ tryhost:
 					q = strchr(p, ':');
 					if (q != NULL)
 						*q = '\0';
-					expand(p, buf, &buf[sizeof buf], e);
+					expand(p, buf, sizeof buf, e);
 					if (q != NULL)
 						*q++ = ':';
 					if (tTd(11, 20))
@@ -2195,7 +2195,7 @@ putfromline(mci, e)
 		char *bang;
 		char xbuf[MAXLINE];
 
-		expand("\201g", buf, &buf[sizeof buf - 1], e);
+		expand("\201g", buf, sizeof buf, e);
 		bang = strchr(buf, '!');
 		if (bang == NULL)
 		{
@@ -2210,7 +2210,7 @@ putfromline(mci, e)
 		}
 	}
 # endif /* UGLYUUCP */
-	expand(template, buf, &buf[sizeof buf - 1], e);
+	expand(template, buf, sizeof buf, e);
 	putxline(buf, mci, FALSE);
 }
 /*
