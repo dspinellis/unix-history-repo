@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cons.h	7.4 (Berkeley) %G%
+ *	@(#)cons.h	7.5 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -59,8 +59,8 @@ struct dte_addr {
 
 #ifndef	PRC_NCMDS
 #include <sys/protosw.h>
-#endif	PRC_NCMDS
+#endif	/* PRC_NCMDS */
 
 #define PRC_CONS_SEND_DONE 2 /* something unused in protosw.h */
 
-#endif	KERNEL
+#endif	/* KERNEL */
