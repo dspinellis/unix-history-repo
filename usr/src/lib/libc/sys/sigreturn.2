@@ -1,0 +1,62 @@
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)sigreturn.2	6.1 (Berkeley) %G%
+.\"
+.TH SIGRETURN 2 ""
+.UC 6
+.SH NAME
+sigreturn \- return from signal
+.SH SYNOPSIS
+.nf
+.B #include <signal.h>
+.PP
+.B struct	sigcontext {
+.B 	int	sc_onstack;
+.B 	int	sc_mask;
+.B 	int	sc_sp;
+.B 	int	sc_fp;
+.B 	int	sc_ap;
+.B 	int	sc_pc;
+.B 	int	sc_ps;
+.B };
+.PP
+.B sigreturn(scp);
+.B struct sigcontext *scp;
+.SH DESCRIPTION
+.I Sigreturn
+allows users to atomically unmask, switch stacks,
+and return from a signal context.
+The processes signal mask and stack status are
+restored from the context.
+The system call does not return;
+the users stack pointer, frame pointer, argument pointer,
+and processor status longword are restored from the context.
+Execution resumes at the specified pc.
+This system call is used by the trampoline code, and
+.IR longjmp (3)
+when returning from a signal to the previously executing program.
+.SH NOTES
+This system call is not available in 4.2BSD,
+hence it should not be used if backward compatibility is needed.
+.SH "RETURN VALUE
+If successful, the system call does not return.
+Otherwise, a value of \-1 is returned and 
+.I errno
+is set to indicate the error.
+.SH ERRORS
+.I Sigreturn
+will fail and the process context will remain unchanged
+if one of the following occurs.
+.TP 15
+[EFAULT]
+.I Scp
+points to memory which is not a valid part of the process
+address space.
+.TP
+[EINVAL]
+The process status longword is invalid or would improperly
+raise the privilege level of the process.
+.SH "SEE ALSO"
+sigvec(2), setjmp(3)
