@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)shutdown.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)shutdown.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -232,15 +232,12 @@ static jmp_buf alarmbuf;
 warn()
 {
 	static int first;
-	static char hostname[MAXHOSTNAMELEN];
 	FILE *pf;
 	char *ctime();
 	int timeout();
 
-	if (!first++) {
+	if (!first++)
 		(void)signal(SIGALRM, timeout);
-		(void)gethostname(hostname, sizeof(hostname));
-	}
 
 	if (!(pf = popen(_PATH_WALL, "w"))) {
 		syslog(LOG_ERR, "shutdown: can't find %s: %m", _PATH_WALL);
