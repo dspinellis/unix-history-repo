@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	4.16	82/06/07	*/
+/*	vfs_lookup.c	4.17	82/07/15	*/
 
 /* merged into kernel:	@(#)nami.c 2.3 4/8/82 */
 
@@ -11,6 +11,10 @@
 #include "../h/user.h"
 #include "../h/buf.h"
 #include "../h/conf.h"
+
+#ifdef	EFS
+extern	int	efs_major;
+#endif
 
 /*
  * Convert a pathname into a pointer to
@@ -90,6 +94,17 @@ dirloop:
 	 * must have X permission.
 	 * cp is a path name relative to that directory.
 	 */
+#ifdef	EFS
+	/*
+	 * But first, if the last component was a character special file
+	 * and the major device is the extended file system device
+	 * then return even if more pathname exists.
+	 */
+	if ((dp->i_mode & IFMT) == IFCHR && major(dp->i_rdev) == efs_major) {
+		brelse(nbp);
+		return(dp);
+	}
+#endif
 	if ((dp->i_mode&IFMT) != IFDIR)
 		u.u_error = ENOTDIR;
 	(void) access(dp, IEXEC);
