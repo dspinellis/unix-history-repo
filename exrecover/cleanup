@@ -1,0 +1,2 @@
+rm *.h *.o
+rm expreserve exrecover
