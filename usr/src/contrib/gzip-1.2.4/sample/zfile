@@ -1,0 +1,28 @@
+#!/bin/sh
+
+if test $# = 0; then
+  echo 'zfile: file(1) for programs which may be compressed with gzexe'
+  echo usage: `basename $0`  files...
+  exit 1
+fi
+
+tmp=/tmp/gz$$
+
+for i do
+  if test ! -f "$i" ; then
+    echo `basename $0`: $i not a file
+    res=1
+    continue
+  fi
+  skip=18
+  if sed -e 1d -e 2q "$i" | grep "^skip=[0-9]*$" >/dev/null; then
+    eval `sed -e 1d -e 2q "$i"`
+  fi
+  if tail +$skip "$i" | gzip --list >/dev/null 2>&1; then
+    tail +$skip "$i" | gzip -cd | dd count=1 >$tmp 2>/dev/null
+    file $tmp | sed "s|^$tmp|$i|"
+  else
+    file "$i"
+  fi
+  rm -f $tmp
+done
