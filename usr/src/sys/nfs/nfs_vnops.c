@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.100 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.101 (Berkeley) %G%
  */
 
 /*
@@ -941,7 +941,7 @@ nfs_mknod(ap)
 	nfsm_request(dvp, NFSPROC_CREATE, cnp->cn_proc, cnp->cn_cred);
 	nfsm_mtofh(dvp, newvp);
 	nfsm_reqdone;
-	if (!error)
+	if (!error && (cnp->cn_flags & MAKEENTRY))
 		cache_enter(dvp, newvp, cnp);
 	FREE(cnp->cn_pnbuf, M_NAMEI);
 	VTONFS(dvp)->n_flag |= NMODIFIED;
@@ -998,7 +998,7 @@ nfs_create(ap)
 	nfsm_request(dvp, NFSPROC_CREATE, cnp->cn_proc, cnp->cn_cred);
 	nfsm_mtofh(dvp, *ap->a_vpp);
 	nfsm_reqdone;
-	if (!error)
+	if (!error && (cnp->cn_flags & MAKEENTRY))
 		cache_enter(dvp, *ap->a_vpp, cnp);
 	FREE(cnp->cn_pnbuf, M_NAMEI);
 	VTONFS(dvp)->n_flag |= NMODIFIED;
@@ -1758,7 +1758,8 @@ nfs_readdirlookrpc(vp, uiop, cred)
 					ltime > time.tv_sec)
 					nqnfs_clientlease(nmp, np, NQL_READ,
 						cachable, ltime, frev);
-				cache_enter(ndp->ni_dvp, ndp->ni_vp, cnp);
+				if (cnp->cn_namelen <= NCHNAMLEN)
+					cache_enter(ndp->ni_dvp, ndp->ni_vp, cnp);
 			} else {
 				nfsm_adv(nfsm_rndup(len));
 			}
