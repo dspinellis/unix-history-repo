@@ -1,4 +1,4 @@
-/*	vp.c	4.13	82/05/19	*/
+/*	vp.c	4.14	82/05/19	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -93,7 +93,7 @@ vpprobe(reg)
 	vpaddr->prbcr = 1;
 	DELAY(10000);
 	vpaddr->prcsr = 0;
-#if OVPR || CAD
+#if ERNIE || CAD || UCBVAX
 	/* UNTIL REWIRED, GET INTERRUPT AT 200 BUT WANT 174 */
 	if (cvec == 0200) {
 		printf("vp reset vec from 200 to 174\n");
