@@ -1,0 +1,89 @@
+acc_init	ttymon.c	/^acc_init()$/
+branch	branch.c	/^branch()$/
+branchto	branch.c	/^branchto(label)$/
+bufalloc	buf.c	/^bufalloc(size)$/
+bufcrunch	buf.c	/^bufcrunch(buffer)$/
+bufflatten	buf.c	/^bufflatten(buf, length)$/
+bufflush	buf.c	/^bufflush(buffer)$/
+buffree	buf.c	/^buffree(ptr)$/
+bufget	buf.c	/^bufget(buffer)$/
+bufpurge	buf.c	/^bufpurge(buffer)$/
+bufput	buf.c	/^bufput(c, buffer)$/
+cgprompt	prompt.c	/^cgprompt()$/
+clear	clear.c	/^clear(f)$/
+closecatalog	ttymon.c	/^closecatalog()$/
+clrline	clrline.c	/^clrline(noprompt)$/
+edit	edit.c	/^edit()$/
+eval	eval.c	/^eval(pr)$/
+exp_op	expr.c	/^exp_op(op, lv, rv)$/
+expr	expr.c	/^expr()$/
+exprfind	expr.c	/^exprfind()$/
+exprgch	expr.c	/^exprgch()$/
+getch	getch.c	/^getch()$/
+getescape	monitor.c	/^getescape(copy)$/
+getfilenm	getfilenm.c	/^getfilenm()$/
+getname	monitor.c	/^getname()$/
+go	go.c	/^go()$/
+include	include.c	/^include(filename)$/
+macallscan	mac.c	/^macallscan()$/
+macckch	mac.c	/^macckch()$/
+macdefine	mac.c	/^macdefine(template, subs, raw)$/
+macdelim	mac.c	/^macdelim()$/
+macdnl	mac.c	/^macdnl()$/
+macdump	mac.c	/^macdump(name)$/
+macfetch	mac.c	/^macfetch(quote)$/
+macgch	mac.c	/^macgch()$/
+macgetch	mac.c	/^macgetch()$/
+macinit	mac.c	/^macinit(rawget, rawpar, endtrap)$/
+macload	mac.c	/^macload(str, flag)$/
+macmatch	mac.c	/^macmatch(template)$/
+macmlkup	mac.c	/^macmlkup(name)$/
+macmmatch	mac.c	/^macmmatch(name, temp, flag)$/
+macmmchew	mac.c	/^macmmchew(pp)$/
+macmocv	mac.c	/^macmocv(m)$/
+macmode	mac.c	/^macmode(ch)$/
+macnewev	mac.c	/^macnewev(rawget, rawpar)$/
+macnumber	mac.c	/^macnumber(s)$/
+macparam	mac.c	/^macparam(mode, name, delim)$/
+macpflush	mac.c	/^macpflush(env)$/
+macplkup	mac.c	/^macplkup(name)$/
+macpopev	mac.c	/^macpopev()$/
+macprescan	mac.c	/^macprescan(pp)$/
+macprim	mac.c	/^macprim(n)$/
+macread	mac.c	/^macread()$/
+macremove	mac.c	/^macremove(name)$/
+macrescan	mac.c	/^macrescan()$/
+macro	mac.c	/^macro(name)$/
+macscan	mac.c	/^macscan(mac)$/
+macschng	mac.c	/^macschng(ch)$/
+macsget	mac.c	/^macsget(pp)$/
+macspring	mac.c	/^macspring(trap)$/
+macsstr	mac.c	/^macsstr(from, to, string)$/
+macsubs	mac.c	/^macsubs(mac)$/
+mactcvt	mac.c	/^mactcvt(raw, paramdefined)$/
+macunget	mac.c	/^macunget(mask)$/
+mcall	mcall.c	/^mcall(mac)$/
+monitor	monitor.c	/^monitor()$/
+newdirec	newdirec.c	/^newdirec()$/
+numberget	expr.c	/^numberget(cx)$/
+opfind	expr.c	/^opfind()$/
+pageflush	ttymon.c	/^pageflush(x)$/
+popnum	expr.c	/^popnum()$/
+popop	expr.c	/^popop()$/
+print	print.c	/^print()$/
+proc_err	ttymon.c	/^proc_err(ppb, pc, pv)$/
+prompt	prompt.c	/^prompt(msg)$/
+pushnum	expr.c	/^pushnum(num)$/
+pushop	expr.c	/^pushop(op)$/
+putch	monitor.c	/^putch(ch)$/
+quit	quit.c	/^quit()$/
+reset	syscntrl.c	/^reset()$/
+shell	shell.c	/^shell()$/
+tm_init	ttymon.c	/^tm_init(argc, argv)$/
+tm_intr	ttymon.c	/^tm_intr(typ)$/
+tm_mon	ttymon.c	/^tm_mon()$/
+trace	syscntrl.c	/^trace()$/
+trapquery	trapquery.c	/^trapquery(resp, name)$/
+valof	expr.c	/^valof(terminator)$/
+writeout	writeout.c	/^writeout()$/
+xwait	xwait.c	/^xwait()$/
