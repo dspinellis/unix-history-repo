@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)gprof.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)gprof.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "gprof.h"
@@ -173,6 +173,7 @@ main(argc, argv)
 getnfile()
 {
     FILE	*nfile;
+    int		valcmp();
 
     nfile = fopen( a_outname ,"r");
     if (nfile == NULL) {
@@ -290,12 +291,12 @@ getsymtab(nfile)
 gettextspace( nfile )
     FILE	*nfile;
 {
-    unsigned char	*malloc();
+    char	*malloc();
     
     if ( cflag == 0 ) {
 	return;
     }
-    textspace = malloc( xbuf.a_text );
+    textspace = (u_char *) malloc( xbuf.a_text );
     if ( textspace == 0 ) {
 	fprintf( stderr , "%s: ran out room for %d bytes of text space:  " ,
 			whoami , xbuf.a_text );
@@ -367,7 +368,7 @@ openpfile(filename)
     lowpc = (unsigned long)h.lowpc / sizeof(UNIT);
     highpc = (unsigned long)h.highpc / sizeof(UNIT);
     sampbytes = h.ncnt - sizeof(struct hdr);
-    nsamples = sampbytes / sizeof (unsigned UNIT);
+    nsamples = sampbytes / sizeof (UNIT);
 #   ifdef DEBUG
 	if ( debug & SAMPLEDEBUG ) {
 	    printf( "[openpfile] hdr.lowpc 0x%x hdr.highpc 0x%x hdr.ncnt %d\n",
@@ -431,7 +432,7 @@ dumpsum( sumfile )
     /*
      * dump the samples
      */
-    if (fwrite(samples, sizeof(unsigned UNIT), nsamples, sfile) != nsamples) {
+    if (fwrite(samples, sizeof (UNIT), nsamples, sfile) != nsamples) {
 	perror( sumfile );
 	done();
     }
@@ -474,18 +475,18 @@ readsamples(pfile)
     FILE	*pfile;
 {
     register i;
-    unsigned UNIT	sample;
+    UNIT	sample;
     
     if (samples == 0) {
-	samples = (unsigned UNIT *) calloc(sampbytes, sizeof (unsigned UNIT));
+	samples = (UNIT *) calloc(sampbytes, sizeof (UNIT));
 	if (samples == 0) {
 	    fprintf( stderr , "%s: No room for %d sample pc's\n", 
-		whoami , sampbytes / sizeof (unsigned UNIT));
+		whoami , sampbytes / sizeof (UNIT));
 	    done();
 	}
     }
     for (i = 0; i < nsamples; i++) {
-	fread(&sample, sizeof (unsigned UNIT), 1, pfile);
+	fread(&sample, sizeof (UNIT), 1, pfile);
 	if (feof(pfile))
 		break;
 	samples[i] += sample;
@@ -533,7 +534,7 @@ readsamples(pfile)
 asgnsamples()
 {
     register int	j;
-    unsigned UNIT	ccnt;
+    UNIT		ccnt;
     double		time;
     unsigned long	pcl, pch;
     register int	i;
