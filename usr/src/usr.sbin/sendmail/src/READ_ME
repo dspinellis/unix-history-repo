@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.29 (Berkeley) %G%
+#	@(#)READ_ME	8.30 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -272,7 +272,10 @@ Solaris 2.x (SunOS 5.x)
 	patch.
 
 OSF/1
-	If you are compiling on OSF/1 (DEC Alpha), you must use -lmld.
+	If you are compiling on OSF/1 (DEC Alpha), you must use -lmld
+	and -non_shared (otherwise it core dumps on startup).  Also,
+	the enclosed makefile removed /usr/sbin/smtpd; if you need it,
+	just create the link to the sendmail binary.
 
 NeXT
 	If you are compiling on NeXT, you will have to create an empty
@@ -454,4 +457,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.29, last update %G% 08:34:23)
+(Version 8.30, last update %G% 10:39:19)
