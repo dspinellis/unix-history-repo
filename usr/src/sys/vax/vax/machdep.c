@@ -1,4 +1,4 @@
-/*	machdep.c	3.4	%H%	*/
+/*	machdep.c	3.5	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -129,7 +129,7 @@ sendsig(p, n)
 	asm("probew $3,$20,(r11)");
 	asm("beql bad");
 	*usp++ = n;
-	*usp++ = n == SIGINS ? u.u_cfcode : 0;
+	*usp++ = n == SIGILL ? u.u_cfcode : 0;
 	*usp++ = p;
 	*usp++ = regs[PC];
 	*usp++ = regs[PS];
@@ -142,7 +142,7 @@ sendsig(p, n)
 		goto bad;
 	if (suword((caddr_t)--usp, p))
 		goto bad;
-	if (suword((caddr_t)--usp, n==SIGINS ? u.u_cfcode : 0))
+	if (suword((caddr_t)--usp, n==SIGILL ? u.u_cfcode : 0))
 		goto bad;
 	if (suword((caddr_t)--usp, n))
 		goto bad;
@@ -157,7 +157,7 @@ asm("bad:");
 #endif
 bad:
 	printf("%d: cant send signal\n", u.u_procp->p_pid);
-	psignal(u.u_procp, SIGKIL);
+	psignal(u.u_procp, SIGKILL);
 }
 
 /*
