@@ -3,7 +3,7 @@
 # include <sys/stat.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.12	%G%";
+static char SccsId[] = "@(#)recipient.c	3.13	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -211,8 +211,9 @@ recipient(a)
 		else
 		{
 			register struct passwd *pw;
-			extern struct passwd *getpwnam();
-			pw = getpwnam(buf);
+			extern struct passwd *finduser();
+
+			pw = finduser(buf);
 			if (pw == NULL)
 			{
 				a->q_flags |= QBADADDR;
@@ -227,6 +228,31 @@ recipient(a)
 			}
 		}
 	}
+}
+/*
+**  FINDUSER -- find the password entry for a user.
+**
+**	This looks a lot like getpwnam, except that it may want to
+**	do some fancier pattern matching in /etc/passwd.
+**
+**	Parameters:
+**		name -- the name to match against.
+**
+**	Returns:
+**		A pointer to a pw struct.
+**		NULL if name is unknown or ambiguous.
+**
+**	Side Effects:
+**		none.
+*/
+
+struct passwd *
+finduser(name)
+	char *name;
+{
+	extern struct passwd *getpwnam();
+
+	return (getpwnam(name));
 }
 /*
 **  WRITABLE -- predicate returning if the file is writable.
