@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)strings.1	6.9 (Berkeley) %G%
+.\"     @(#)strings.1	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STRINGS 1
@@ -28,7 +28,7 @@ The options are as follows:
 .It Fl a
 By default,
 .Nm strings
-only searches the initialized data space of object files.
+only searches the text and data segments of object files.
 The
 .Fl a
 option causes
@@ -52,6 +52,9 @@ is useful for identifying random binaries, among other things.
 .Xr hexdump 1
 .Sh BUGS
 The algorithm for identifying strings is extremely primitive.
+In particular, machine code instructions on certain architectures
+can resemble sequences of ASCII bytes, which
+will fool the algorithm.
 .Sh HISTORY
 The
 .Nm
