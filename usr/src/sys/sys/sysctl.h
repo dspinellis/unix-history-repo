@@ -7,19 +7,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sysctl.h	7.15 (Berkeley) %G%
+ *	@(#)sysctl.h	7.16 (Berkeley) %G%
  */
 
 /*
- * Definitions for sysctl call.
- * The sysctl call uses a hierarchical name for objects
- * that can be examined or modified.
- * The name is expressed as a sequence of integers.
- * Like a file path name, the meaning of each component
- * depends on its place in the hierarchy.
- * The top-level and kern identifiers are defined here,
- * and other identifiers are defined in the respective
- * subsystem header files.
+ * Definitions for sysctl call.  The sysctl call uses a hierarchical name
+ * for objects that can be examined or modified.  The name is expressed as
+ * a sequence of integers.  Like a file path name, the meaning of each
+ * component depends on its place in the hierarchy.  The top-level and kern
+ * identifiers are defined here, and other identifiers are defined in the
+ * respective subsystem header files.
  */
 
 #define CTL_MAXNAME	12	/* largest number of components supported */
@@ -128,23 +125,26 @@
 #ifdef KERNEL
 /*
  * Internal sysctl function calling convention:
+ *
  *	(*sysctlfn)(name, namelen, oldval, oldlenp, newval, newlen);
- * The name parameter points at the next component of the name
- * to be interpreted.  The namelen parameter is the number of integers
- * in the name.
+ *
+ * The name parameter points at the next component of the name to be
+ * interpreted.  The namelen parameter is the number of integers in
+ * the name.
  */
-typedef int (sysctlfn) __P((int *, u_int, void *, u_int *, void *, u_int,
-	struct proc *));
-int sysctl_int __P((void *, u_int *, void *, u_int, int *));
-int sysctl_rdint __P((void *, u_int *, void *, int));
-int sysctl_string __P((void *, u_int *, void *, u_int, char *, int));
-int sysctl_rdstring __P((void *, u_int *, void *, char *));
-int sysctl_rdstruct __P((void *, u_int *, void *, void *, int));
+typedef int (sysctlfn)
+    __P((int *, u_int, void *, size_t *, void *, size_t, struct proc *));
 
-#else /* KERNEL */
+int sysctl_int __P((void *, size_t *, void *, size_t, int *));
+int sysctl_rdint __P((void *, size_t *, void *, int));
+int sysctl_string __P((void *, size_t *, void *, size_t, char *, int));
+int sysctl_rdstring __P((void *, size_t *, void *, char *));
+int sysctl_rdstruct __P((void *, size_t *, void *, void *, int));
+
+#else /* !KERNEL */
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int	sysctl __P((int *, int, void *, int *, void *, int));
+int	sysctl __P((int *, u_int, void *, size_t *, void *, size_t));
 __END_DECLS
 #endif /* KERNEL */
