@@ -1,0 +1,26 @@
+.pa 1
+.he 'LINK (II)'3/15/72'LINK (II)'
+.ti 0
+NAME		link -- link to a file
+.sp
+.ti 0
+SYNOPSIS	sys link; name\d1\u; name\d2\u  / link = 9.
+.sp
+.ti 0
+DESCRIPTION	A link
+to name____\d1\u is created; the link has name name____\d2\u.
+Either name may be an arbitrary path name.
+.sp
+.ti 0
+SEE ALSO	link(I), unlink(II)
+.sp
+.ti 0
+DIAGNOSTICS	The error bit
+(c-bit) is set when name____\d1\u
+cannot be found; when name____\d2\u
+already exists; when the directory of name____\d2\u
+cannot be written; when
+an attempt is made to link to a directory by a user other than the super-user.
+.sp
+.ti 0
+BUGS		--
