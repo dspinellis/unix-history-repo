@@ -1,5 +1,5 @@
 /*
- *	@(#)uda.c	6.7 (Berkeley) %G%
+ *	@(#)uda.c	6.8 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -563,6 +563,7 @@ loop:
 		goto loop;
 	}
 	switch (cpu) {
+	case VAX_8600:
 	case VAX_780:
 		i = UBA_NEEDBDP|UBA_CANTWAIT;
 		break;
@@ -670,7 +671,7 @@ udintr(d)
 			return;
 		}
 		udaddr->udasa = ((int)&sc->sc_uda->uda_ca.ca_ringbase)|
-		    (cpu == VAX_780 ? UDA_PI : 0);
+		    ((cpu == VAX_780) || (cpu == VAX_8600) ? UDA_PI : 0);
 		sc->sc_state = S_STEP2;
 		return;
 
