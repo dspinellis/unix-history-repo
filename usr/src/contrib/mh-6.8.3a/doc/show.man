@@ -1,0 +1,198 @@
+
+
+
+SHOW(1)                BSD Reference Manual               SHOW(1)
+
+
+NNAAMMEE
+       show - show (list) messages
+
+SSYYNNOOPPSSIISS
+       show   [+folder]  [msgs]  [-draft]  [-header]  [-noheader]
+            [-showproc program] [-noshowproc] [switches for _s_h_o_w_-
+            _p_r_o_c] [-help]
+
+DDEESSCCRRIIPPTTIIOONN
+       _S_h_o_w  lists each of the specified messages to the standard
+       output (typically, the terminal).  Typically, the messages
+       are  listed  exactly as they are, with no reformatting.  A
+       program named by the _s_h_o_w_p_r_o_c profile component is invoked
+       to do the listing, and any switches not recognized by _s_h_o_w
+       are passed along to that program.  The default program  is
+       known  as _m_o_r_e (1).  To override the default and the _s_h_o_w_-
+       _p_r_o_c  profile  component,  use   the   `-showproc program'
+       switch.   For  example,  `-show pr'  will cause the _p_r (1)
+       program to list the messages.  The _M_H command _m_h_l  can  be
+       used as a _s_h_o_w_p_r_o_c to show messages in a more uniform for-
+       mat.  Normally, this program is specified as the  _s_h_o_w_p_r_o_c
+       is  the  user's .mh_profile.  See _m_h_l (1) for the details.
+       If the `-noshowproc' option is  specified,  `/bin/cat'  is
+       used instead of _s_h_o_w_p_r_o_c.
+
+       If  you  have messages with multi-media contents, the pro-
+       file entry _m_h_n_p_r_o_c defines the name of a program to manip-
+       ulate  multi-media  messages.  (The _m_h_n (1) program, which
+       is suitable for this purpose, is  the  default.)   If  the
+       `-noshowproc'  option is NOT specified, and if one or more
+       named messages has a multi-media content, then the program
+       indicated by _m_h_n_p_r_o_c will be run instead of _s_h_o_w_p_r_o_c.  The
+       use of the _m_h_n_p_r_o_c can also be disabled if the environment
+       variable  $$NNOOMMHHNNPPRROOCC is set.  Note that the _m_h_n_p_r_o_c may be
+       invoked even for textual contents, depending on the  char-
+       acter  set involved.  The environment variable $MM_CHARSET
+       should be set to the terminal's  character  set  to  avoid
+       gratuitous invocations of the _m_h_n_p_r_o_c.
+
+       The  `-header'  switch  tells  _s_h_o_w  to display a one-line
+       description of the message being shown.  This  description
+       includes the folder and the message number.
+
+       If  no  `msgs' are specified, the current message is used.
+       If more than one message is specified,  _m_o_r_e  will  prompt
+       for  a  <RETURN> prior to listing each message.  _m_o_r_e will
+       list each message, a page at a time.  When the end of page
+       is reached, _m_o_r_e will ring the bell and wait for a <SPACE>
+       or <RETURN>.  If a <RETURN> is entered,  _m_o_r_e  will  print
+       the next line, whereas <SPACE> will print the next screen-
+       ful.  To exit _m_o_r_e, type "q".
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+SHOW(1)                BSD Reference Manual               SHOW(1)
+
+
+       If the standard output is not a terminal, no  queries  are
+       made,  and  each file is listed with a one-line header and
+       two lines of separation.
+
+       "show -draft" will list  the  file  <mh-dir>/draft  if  it
+       exists.
+
+       If  the  profile  entry  "Unseen-Sequence"  is present and
+       non-empty, then _s_h_o_w will  remove  each  of  the  messages
+       shown from each sequence named by the profile entry.  This
+       is similar to the "Previous-Sequence" profile  entry  sup-
+       ported by all _M_H commands which take `msgs' or `msg' argu-
+       ments.
+
+FFIILLEESS
+       $HOME/.mh_profile                         The user profile
+
+PPRROOFFIILLEE CCOOMMPPOONNEENNTTSS
+       Path:                To determine the user's MH directory
+       Current-Folder:      To find the default current folder
+       Unseen-Sequence:     To name sequences denoting unseen messages
+       showproc:            Program to show messages
+       mhnproc:             Program to show messages with multi-media content
+
+SSEEEE AALLSSOO
+       mhl(1), more(1), next(1), pick(1), prev(1), scan(1)
+
+DDEEFFAAUULLTTSS
+       `+folder' defaults to the current folder
+       `msgs' defaults to cur
+       `-header'
+
+CCOONNTTEEXXTT
+       If a folder is given, it will become the  current  folder.
+       The last message shown will become the current message.
+
+BBUUGGSS
+       The  `-header'  switch doesn't work when `msgs' expands to
+       more than one message.  If the _s_h_o_w_p_r_o_c is  _m_h_l,  then  is
+       problem  can  be circumvented by referencing the "message-
+       name" field in the _m_h_l format file.
+
+       _S_h_o_w updates the user's context before  showing  the  mes-
+       sage.   Hence _s_h_o_w will mark messages as seen prior to the
+       user actually seeing them.  This is generally not a  prob-
+       lem, unless the user relies on the "unseen" messages mech-
+       anism, and interrupts _s_h_o_w while it  is  showing  "unseen"
+       messages.
+
+       If _s_h_o_w_p_r_o_c is _m_h_l, then _s_h_o_w uses a built-in _m_h_l: it does
+       not actually run the _m_h_l program.  Hence,  if  you  define
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+
+
+
+
+SHOW(1)                BSD Reference Manual               SHOW(1)
+
+
+       your  own _s_h_o_w_p_r_o_c, don't call it _m_h_l since _s_h_o_w won't run
+       it.
+
+       If _m_o_r_e (1) is your showproc  (the  default),  then  avoid
+       running _s_h_o_w in the background with only its standard out-
+       put piped to another process, as in
+
+            show | imprint &
+
+       Due to a bug in _m_o_r_e, show will  go  into  a  "tty  input"
+       state.  To avoid this problem, re-direct _s_h_o_w's diagnostic
+       output as well.  For users of _c_s_h:
+
+            show |& imprint &
+
+       For users of _s_h:
+
+            show 2>&1 | imprint &
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            3
+
+
+
+
+
