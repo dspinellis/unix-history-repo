@@ -1,0 +1,603 @@
+.po 1i
+.he 'ACC'Preliminary'\*(td'
+.fo ''%''
+.ba 1i
+.nr ii 1.25i
+.nr si 0.3i
+.ps +4
+.sp 3
+.ce
+\fB5250 Programmers Interface\fR
+.ps
+.sp 2
+.sh 1 "Introduction"
+.lp
+This document describes the preliminary design for the ACC X.25 Programmers
+Interface for the 5250 and 6250 boards.  
+.lp
+The Programmers Interface (PI) is
+an extension to the standard [5/6]250 Unix Driver.  It allows user processes
+to access the front end (FE) at the same level as the driver.  This can be
+used to implement new protocols over X.25.
+.lp
+Using the Programmer's Interface allows full access to the ACC X.25 Front
+End.  All commands are available to the programmer.  The PI and FE handle
+packet numbering and packet flow control thus greatly
+simplifying X.25 programming. 
+.sh 1 "PI Devices"
+.lp
+Communication with the FE is done through a character device driver.  Character
+special devices are opened by user programs.  Packets to/from the FE are
+transmitted via \fIioctl(2)\fR calls to the open device.  
+.lp
+Each open device is referred to as a \fIchannel\fR.  The channel uses
+ioctl calls to reserve logical circuits.  Each logical circuit can be used
+to establish a virtual circuit and transfer data with a remote host.
+The user is responsible for clearing any established call  and
+freeing any logical circuits before closing the channel.  Outstanding data 
+queued within the driver will be aborted automatically.
+.lp
+Each channel has two queues associated with it: an input queue and one 
+or more output queues.
+The input queue holds data that has come in from all logical circuits that
+have been associated with the channel as well as supervisory (logical circuit
+0) data.  The input queue will hold at most 1 message at a time from 
+any given logical circuit.  This does not apply to the supervisory circuit.
+Thus the length of this queue should be equal to the sum of 1) the maximum
+number of logical circuits a channel will have open simultaneously and 2)
+the maximum number of supervisory messages that will be presented to the
+channel at one time.
+.lp
+Channels may be shared between processes using standard UNIX open file
+inheritance or by multiple opens of the same minor device.  Currently the
+driver does not support the non-blocking and block if in use flags to the
+open call.
+.lp
+There are 256 minor devices for each major device.  The PI interface
+consists of a single major device regarless of the number of ACP boards
+in the system.  Thus, the minor device numbers are split among the
+available boards.  The constant PILINES in if_pi.c defines the number 
+of minor devices per board.  In general this number should simply be
+256 divided by number of boards present.
+.lp
+The character
+device design allows the PI interface to be ported to many Unix drivers. 
+This includes those that do not support a socket interface.  This design also
+allows more different process structures for managing data traffic (See
+section 5).  Access to the FE is controlled using the permission bits of the
+character device entries in the file system.
+.sh 1 "Programming"
+.lp
+The PI allows the user program to send any command supported by the FE.
+It is recommended that only those commands that affect a single logical
+channel be used.  Global commands may adversely affect the IP 
+and X.29 interfaces if they are being used simultaneously.
+.lp
+Each command or data packet is sent in a single \fIioctl\fR(2) call. 
+All available ioctl calls are listed below.  If an invalid command is
+sent to the PI ioctl handler then the ioctl call will return -1 and errno
+will be set to ENOTTY.
+.sp
+.ip "\fBXIOGETLCN\fR"
+This call will reserve a logical circuit and associate it with the channel
+that the ioctl is issued on.  The byte of data used by the ioctl will contain
+the lcn of the channel reserved.  A value of 0 indicates that no circuits
+are available.
+.ip "\fBXIOWRITE\fR" 
+The write ioctl uses the following structure to describe the user buffer.  
+.(l 
+struct pi_dblock {
+    caddr_t         dataptr;	/* pointer to user data to be written */
+    u_int           length;	/* length of data pointed to by dataptr */
+    u_short         lcn;	/* logical channel to send data out on */
+    u_char	    func;       /* read status , write function value */
+    u_char          subfunc;	/* read substatus, write subfunction value */
+    u_short         flags;	/* special flags */
+};
+.)l
+The write ioctl is used to send data or supervisory messages to the FE.
+The data is pointed to by \fIdataptr\fR.  The amount of data is given
+by \fIlength\fR.  The \fIlcn\fR field gives the logical circuit that the
+data is to go out on.  If this value is 0 then the data should be a 
+supervisory message.  A channel is permitted to write only on circuit 0 
+and those logical circuits that it has reserved for its use. (for more
+details see the XIOGETLCN description).
+.ip
+The \fIfunc\fR field is currently not used.  
+It is reserved for future enhancements.
+It should always be set to 0.  The \fIsubfunc\fR field is used to set the q-bit
+for packets.  The value of the \fIsubfunc\fR field is or-ed into the subfunction
+byte in the FE's data request mailbox (See ACP [5/6]250 Hardware
+Installation Manual for more information).  To set the q-bit for the packet
+the value of \fIsubfunc\fR should be 0x80 (hexadecimal 80) otherwise this
+field should always be 0.
+.ip
+The data is copied from the user buffer to an mbuf and then queued for output.
+If the data is less than or equal to (MLEN-1) (111) bytes then a small mbuf is
+used.  If the data is 112 to 1K bytes then a page cluster is allocated to
+create a large mbuf.  The maximum size for a packet is CLBYTES (1024 on
+most systems) bytes.
+.ip
+The mbuf allocated is queued for output.  If the queue is full then the
+process will sleep waiting for it to empty.  If the DB_NONBLOCK bit is
+set in \fIflags\fR then the write is non-blocking. The ioctl call
+will return -1  and errno will be set to EWOULDBLOCK.
+The length of the per logical circuit output queue is defined by DDA_OQMAX
+in if_ddavar.h.  This limit applies to all interfaces: IP, x29, and PI.
+.ip
+The following table gives values returned in errno by the XIOWRITE ioctl
+and all possible reasons for the error.
+.TS
+box,tab(:);
+l l.
+EINVAL:lcn is <= 0 or greater than max lcns configured.
+EINVAL:lcn specified is not associated with this channel.
+EINVAL:length specified is <= 0 or greater than CLBYTES.
+ENOBUFS:An mbuf or cluster could not be allocated.
+EFAULT:dataptr address violation.
+EWOULDBLOCK: operation would block.
+.TE
+.ip "\fBXIOREAD\fR"
+The read ioctl uses the same pi_dblock structure as the XIOWRITE ioctl.
+The program must fill in the dataptr and length fields.  The flags field
+can have the value of \fIDB_NONBLOCK\fR to specify a non-blocking read.
+.ip
+Upon return the length field will contain the number of bytes actually read.
+The lcn field will contain the logical circuit number that the data came in
+on.  If the lcn field is 0 then the data should be interpreted as a
+supervisory message. Each read will return 1 complete packet.
+The buffer provided must be able to accept the largest possible packet.
+If supervisory or data packets come in when no user read has been issued then
+the packet will be queued on the channel input queue.  
+Additional packets will be dropped and an error message printed on the console.
+This message indicates that the length of the input queue should probably
+be increased.  The length of the input queue is set by PIQLEN in if_pi.c.
+.ip
+It should always be set to 0.  The \fIsubfunc\fR field is used to set the q-bit
+for packets.  The value of the \fIsubfunc\fR field is or-ed into the subfunction
+byte in the FE's data request mailbox (See ACP [5/6]250 Hardware
+Installation Manual for more information).  To set the q-bit for the packet
+the value of \fIsubfunc\fR should be 0x80 (hexadecimal 80) otherwise this
+field should always be 0.
+.ip
+The \fIsubfunc\fR field will contain the C_SBSTAT (completion sub-status)
+data contained in the Host Completion Mailbox.  This field indicates 
+whether the q-bit was set for the packet. A value of 0x80 (hexadecimal 80)
+indicates the q-bit was set otherwise the value of \fIsubfunc\fR will be 0.
+.ip
+The \fIfunc\fR field will containing the C_STATUS (completion status) data
+from the Host Completion Mailbox.  Since the driver always returns a
+complete, valid packet this value is uninteresting.
+.ip
+The following table gives values returned in errno by the XIOREAD ioctl
+and all possible reasons for the error.
+.TS
+box,tab(:);
+l l.
+EINVAL:the length specified is too small to hold the entire packet.
+EFAULT:dataptr address violation.
+EWOULDBLOCK:operation would block.
+.TE
+.ip "\fBXIORPEND\fR"
+This ioctl will return the number of messages queued on the channel's
+input queue.
+.ip "\fBXIORSIG\fR"
+This ioctl specifies a signal to be sent to the process when data is
+available to be read on this channel.  The program passes an integer
+specifying
+the signal number as defined in the <sys/signal.h> include file.
+.ip "\fBXIOACCRING\fR"
+The lower and upper fields specify a range of protocol byte values 
+that this channel will accept.  The proto_range structure is used.
+.(l
+typedef proto_range {
+	u_char lower;  
+	u_char upper; 
+} proto_range; 
+.)l
+The protocol byte of an incoming call is 
+the first byte of the protocol field in the ring packet.
+Thus an incoming call with a protocol byte within the requested range
+may be routed to this PI device.  If more than one PI device has requested
+rings of the same protocol type then the driver will arbitrarily 
+(not necessarily fairly) give the ring to one of the devices.  
+.ip "\fBXIONORING\fR"
+Inform the driver that the device will no longer accept
+incoming calls.  This command will not purge any rings that have already been
+put in the data queue for the device.
+.ip "\fBXIOANYPROTO\fR"
+Issuing this ioctl will tell the driver that any calls that have
+protocol types not handled by any other channel may be routed to 
+this channel.
+.ip "\fBXIOCLRCHAN\fR"
+This call will flush any input data queued in the driver for the channel
+that the ioctl is issued on.
+.ip "\fBXIOFREELCN\fR"
+This call is the complement of XIOGETLCN.  It is used when the process
+is finished with a logical circuit.  The process is responsible for clearing
+the call before freeing the circuit.  This call will abort any outstanding
+writes.
+.ip
+The following table gives values returned in errno by the XIOFREELCN ioctl
+and all possible reasons for the error.
+.TS
+box,tab(:);
+l l.
+EINVAL:lcn is <= 0 or greater than max lcns configured.
+EINVAL:lcn specified is not associated with this channel.
+.TE
+.ip "\fBXIOABORT\fR"
+This call will abort any outstanding writes for the logical ciruit specified.
+This should be done before sending a CLEAR LOGICAL CIRCUIT supervisory
+message to ensure that no data is sent on the circuit after it has been
+cleared.
+.ip
+The following table gives values returned in errno by the XIOABORT ioctl
+and all possible reasons for the error.
+.TS
+box,tab(:);
+l l.
+EINVAL:lcn is <= 0 or greater than max lcns configured.
+EINVAL:lcn specified is not associated with this channel.
+.TE
+.sh 1 "Interaction with IP and X.29"
+.lp
+The PI interface can operate simultaneously with IP and X.29 interfaces.
+The \fIacpconfig\fR program supplied by ACC is used to configure the FE
+and bring up the link.
+.lp
+The main point of contention between the interfaces is allocation of
+virtual circuits.  All interfaces share the same virtual circuit table.
+This means that there is a limit of 126 circuits among all types of traffic.
+A virtual circuit is reserved each time X.29 device is opened 
+as well as each time a PI channel make an XIOGETLCN call.  
+IP traffic must use whatever is left over.
+Virtual circuits between host pairs are never shared between traffic types.
+.lp
+It is possible for the PI interface to handle IP or X.29 traffic.  The PI
+has precedence over the DDA and X.29 interfaces.
+.sh 1 "Usage Examples"
+.lp
+The following are several ways in which processes could be structured to
+process incoming supervisory and data traffic using the PI devices.
+.sh 2 "Single Process"
+.lp
+One process opens many PI devices.
+The process knows to open a new channel when all its channels are in use.
+Alternatively the process could open one PI device and make multiple
+XIOLCNREQ calls to have multiple circuits associated with it.
+.sh 2 "Multiple Process"
+.lp
+Each process opens a channel and manages the communication on that channel.
+Each process could open more than one channel if desired.
+.sh 2 "Master Process with Children"
+.lp
+A single master process sits on a channel  with rings enabled.  When a call
+comes in the process forks.  The child process handles the channel.  The parent
+process opens a new channel. Either the parent or child process can answer the
+call.  The master process can also make outgoing calls and fork children to
+process the data.  After the child process has been created the parent may
+close the channel to free the file descriptor.
+.sh 2 "Master Process with Peers"
+.lp
+A master process sets up connections and informs other (already running)
+processes of the name of the PI device to open to process the data.  The
+peer processes handle the data.  Communication between peers can be done
+using some combination of shared memory, sockets, pipes, files and
+signals.
+.sh 2 "Server Process"
+.lp
+One process acts as a server.  It is responsible for all manipulation of
+PI devices.  It can have one or many channels open at a time.  Other
+processes use sockets to establish connections to the server and to 
+send requests and receive replies. Fig. 3 shows this process structure.
+It is not required that there be the same number of client processes as
+there are open PI devices.  The server can allocate data any way it wishes.
+.(b F
+.sp 2
+.PS
+P: [
+down
+A: circle "process" "1"
+B: circle "process" "2"
+C: circle "process" "3"
+]
+move;move
+S: box "server"
+move right 0.75i
+D: box "PI driver" invis
+line <-> from 1/4 <S.ne, S.se> to D.l dashed "PI dev" above
+line <-> from 1/2 <S.ne, S.se> to D.l dashed
+line <-> from 3/4 <S.ne, S.se> to D.l dashed
+line <-> from P.A to S.nw chop circlerad chop 0
+line <-> from P.B to S.l "socket" above chop circlerad chop 0
+line <-> from P.C to S.sw chop circlerad chop 0
+.PE
+\fBFigure 3. Process structure for a PI server. Dashed lines are PI devices.
+Solid lines are sockets.\fR
+.sp
+.)b
+.bp
+.sh 1 "Supervisory Command Formats"
+.lp
+This section describes the commands to be used in the \fBSupr\fR command
+types and their formats.
+.sh 2 "Call Command Header"
+.TS H 
+box center;
+c c
+r|l.
+.sp .5v
+Byte Offset
+.sp .5v
+_
+.TH
+  0:   	Command code (00)
+  1:   	LCN * 2
+  2:   	NA
+  3:   	Count
+4-r:   	Common body
+.sp .5v
+.TE
+.sh 2 "Ring Command Header"
+.TS H 
+box center;
+c c
+r|l.
+.sp .5v
+Byte Offset
+.sp .5v
+_
+.TH
+  0:   	Command code (01)
+  1:   	NA
+  2:   	VCN
+  3:   	Count
+4-r:   	Common body
+.sp .5v
+.TE
+.sh 2 "Clear Virtual Circuit Command Header"
+.TS H 
+box center;
+c c
+r|l.
+.sp .5v
+Byte Offset
+.sp .5v
+_
+.TH
+  0:   	 Command code (02)
+  1:   	 VCN
+  2:   	 Cause code
+  3:   	 Count
+  4:   	 Diagnostic code
+5-r:   	 Common body
+.sp .5v
+.TE
+.sh 2 "Answer Command Header"
+.TS H 
+box center;
+c c
+r|l.
+.sp .5v
+Byte Offset
+.sp .5v
+_
+.TH
+  0:   	 Command code (03)
+  1:   	 LCN * 2
+  2:   	 VCN
+  3:   	 Count
+4-r:   	 Common body
+.sp .5v
+.TE
+.bp
+.sh 2 "Clear Logical Channel Command Header"
+.TS H 
+box center;
+c c
+r|l.
+.sp .5v
+Byte Offset
+.sp .5v
+_
+.TH
+  0:   	Command Code (04)
+  1:   	LCN * 2
+  2:   	Cause Code
+  3:   	Count
+  4:   	Diagnostic code
+5-r:   	Common body
+.sp .5v
+.TE
+.sh 2 "Call, Ring, Answer, Clear Virtual Circuit, and Clear Logical Channel Commands Common Body"
+.TS H
+box center;
+c c
+r|l.
+.sp .5v
+Byte Offset
+.sp .5v
+_
+.TH
+   m:   	length of called address (0 to 14 decimal)
+ m+1:   	called address in ASCII
+   n:   	length of calling address (0 to 14 decimal)
+ n+1:   	calling address in ASCII
+   o:   	length of protocol (0 to 4)
+ o+1:   	protocol
+   p:   	length of facilities (0 to 63 decimal)
+ p+1:   	facilities
+   q:   	length of user data (0 to 124 decimal)
+ q+1:   	user data
+.sp .5v
+.TE
+.ce
+NOTE
+Offset m begins at 4 for Answer, Call, and Ring.
+It begins at 5 for Clear Virtual Circuit and Clear Logical Channel.
+All length fields are binary values giving the number
+of bytes for the field to follow.
+.sh 2 "Reset Command"
+.TS H
+box center;
+c c
+r|l.
+.sp .5v
+Byte Offset
+.sp .5v
+_
+.TH
+0:   	command code (040)
+1:   	LCN * 2
+2:   	cause code
+3:   	count (0 or 1)
+4:   	diagnostic code (optional)
+.sp .25v
+.TE
+.sh 2 "Reset Acknowledge"
+.TS H 
+box center;
+c c
+r|l.
+.sp .5v
+Byte Offset
+.sp .5v
+_
+.TH
+  0:   	 command code (041)
+  1:   	 LCN * 2
+  2:   	 NA
+  3:   	 count (0)
+.sp .25v
+.TE
+.sh 2 "Interrupt Command"
+.TS H 
+box center;
+c c
+r|l.
+.sp .5v
+Byte Offset
+.sp .5v
+_
+.TH
+  0:   	 command code (042)
+  1:   	 LCN * 2
+  2:   	 reason code
+  3:   	 count (0)
+.sp .5v
+.TE
+.sh 2 "Ready Command"
+.TS H 
+box center;
+c c
+r|l.
+.sp .5v
+Byte Offset
+.sp .5v
+_
+.TH
+  0:   	 command code (043)
+  1:   	 LCN * 2
+  2:   	 type code (zero=RNR,
+	 nonzero=RR)
+  3:   	 count (0)
+.sp .5v
+.TE
+.sh 2 "Interrupt Acknowledge"
+.TS H 
+box center;
+c c
+r|l.
+.sp .5v
+Byte Offset
+.sp .5v
+_
+.TH
+  0:   	 command code (044)
+  1:   	 LCN * 2
+  2:   	 NA
+  3:   	 count (0)
+.sp .5v
+.TE
+.bp
+.sh 1 "Ioctl Header File and Structures"
+
+.nf
+/*
+ * Ioctl's have the command encoded in the lower word,
+ * and the size of any in or out parameters in the upper
+ * word.  The high 2 bits of the upper word are used
+ * to encode the in/out status of the parameter; for now
+ * we restrict parameters to at most 128 bytes.
+ */
+
+/* this structure is used when writing or reading data data */
+struct pi_dblock
+{
+    caddr_t         dataptr;	/* pointer to user data to be written */
+    u_int           length;	/* length of data pointed to by dataptr */
+    u_short         lcn;	/* logical channel to send data out on */
+    u_char	    func;       /* read status , write function value */
+    u_char          subfunc;	/* read substatus, write subfunction value */
+    u_short         flags;	/* special flags */
+};
+
+/* pi_dblock.flags:  The follwing values can be used to set bits */
+#define	DB_NONBLOCK	0x01	/* non-blocking read or write */
+
+typedef struct proto_range
+{
+    u_char          lower;	/* lower bound on protocol range (inclusive) */
+    u_char          upper;	/* upper bound on protocol range (inclusive) */
+}               proto_range;
+
+/* data write */
+#define	XIOWRITE	_IOWR(t, 1, struct pi_dblock)
+
+/* data read */
+#define	XIOREAD		_IOWR(t, 2, struct pi_dblock)
+
+/* see if data is ready to be read on a particular channel.  
+ * The field will return the number of pending data bytes.
+ */
+#define	XIORPEND	_IOR(t, 3, int)
+
+/* allow rings on this minor device.  The proto_range structure specifies
+ * the lower and upper bounds on the protocol byte of incomming calls
+ */
+#define	XIOACCRING	_IOW(t, 4, proto_range)
+
+/* specify that a protocol not requested by anyone else will be accepted on
+ * this channel.
+ */
+#define	XIOANYPROTO	_IO(t, 5)
+
+/* reserve an lcn for use by this channel (minor device).  The number of the
+ * lcn is returned the the character passed
+ */
+#define	XIOGETLCN	_IOR(t, 6, u_char)
+
+/* free an lcn specified by the u_char parameter.  This should be called for all
+ * lcn's obtained with XIOGETLCN before the channel is closed.
+ */
+#define	XIOFREELCN	_IOW(t, 11, u_char)
+
+/* clear any data associated with a channel.  The lcn is passed.  Note that
+ * this does not clear the circut.  It only flushes queued data stored in the
+ * driver
+ */
+#define	XIOCLRCHAN	_IO(t, 7)
+
+/* disallow incomming calls on this channel */
+#define	XIONORING	_IO(t, 9)
+
+/* specify a signal to be sent to the process when there  is data ready to
+ * be read on a particular channel.  The u_int specifies the signal to be
+ * sent.
+ */
+#define	XIORSIG		_IOW(t, 10, u_int)
+
+/* abort all output for the given lcn. */
+#define	XIOABORT	_IOW(t, 12, u_char)
+.fi

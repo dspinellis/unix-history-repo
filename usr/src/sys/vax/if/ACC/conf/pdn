@@ -1,0 +1,18 @@
+#! /bin/csh -f
+# configure ACP5250/6250 for connection to public data network
+set UNIT=0			# if necessary, change to suit your system
+set INET_ADDR=X.X.X.X		# change to your site's internet address
+set X25_ADDR=XXXXXXXXXXXXXX 	# (optionally) change to your X.25 address
+set ADDRFILE=/etc/addresses     # set name of address translation table if
+                                # one exists
+alias acp /etc/acpconfig dda$UNIT
+acp $INET_ADDR
+acp -u down			# required only if interface was enabled
+acp -b external			# clock supplied by modem
+acp -o extended			# enable extended clear format (Telenet)
+acp -a $INET_ADDR $X25_ADDR	# enter ourselves in translation table
+if (-r $ADDRFILE) then
+    acp -A $ADDRFILE  # read addresses if file exists and readable
+endif
+acp -s pdn			# PDN mode
+acp -u dte			# DTE
