@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.1	%G%
+#	Makefile	4.2	83/07/03
 #
 CFLAGS=	-O
 DESTDIR=
@@ -21,7 +21,6 @@ more.o:	/usr/include/sgtty.h
 more.o:	/usr/include/setjmp.h
 more.o:	/usr/include/sys/types.h
 more.o:	/usr/include/sys/stat.h
-more.o:	/usr/include/local/uparm.h
 
 clean:
 	rm -f more more.o core a.out errs
