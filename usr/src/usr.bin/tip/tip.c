@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tip.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)tip.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -118,10 +118,10 @@ main(argc, argv)
 	system = sbuf;
 
 notnumber:
-	signal(SIGINT, cleanup);
-	signal(SIGQUIT, cleanup);
-	signal(SIGHUP, cleanup);
-	signal(SIGTERM, cleanup);
+	(void)signal(SIGINT, cleanup);
+	(void)signal(SIGQUIT, cleanup);
+	(void)signal(SIGHUP, cleanup);
+	(void)signal(SIGTERM, cleanup);
 
 	if ((i = hunt(system)) == 0) {
 		printf("all ports busy\n");
@@ -193,7 +193,7 @@ cucommon:
 	raw();
 
 	pipe(fildes); pipe(repdes);
-	signal(SIGALRM, timeout);
+	(void)signal(SIGALRM, timeout);
 
 	/*
 	 * Everything's set up now:
@@ -298,7 +298,7 @@ prompt(s, p)
 
 	stoprompt = 0;
 	oint = signal(SIGINT, intprompt);
-	oint = signal(SIGQUIT, SIG_IGN);
+	oquit = signal(SIGQUIT, SIG_IGN);
 	unraw();
 	printf("%s", s);
 	if (setjmp(promptbuf) == 0)
@@ -307,8 +307,8 @@ prompt(s, p)
 	*p = '\0';
 
 	raw();
-	signal(SIGINT, oint);
-	signal(SIGQUIT, oint);
+	(void)signal(SIGINT, oint);
+	(void)signal(SIGQUIT, oquit);
 	return (stoprompt || p == b);
 }
 
@@ -319,7 +319,7 @@ void
 intprompt()
 {
 
-	signal(SIGINT, SIG_IGN);
+	(void)signal(SIGINT, SIG_IGN);
 	stoprompt = 1;
 	printf("\r\n");
 	longjmp(promptbuf, 1);
