@@ -1,0 +1,126 @@
+cc -O -c main.c
+cc -O -c 0.alloc.c
+"0.alloc.c", line 50: warning: illegal combination of pointer and integer
+"0.alloc.c", line 57: warning: illegal combination of pointer and integer
+"0.alloc.c", line 93: warning: illegal combination of pointer and integer
+"0.alloc.c", line 105: warning: illegal pointer combination
+"0.alloc.c", line 106: warning: illegal combination of pointer and integer
+cc -O -c 0.args.c
+cc -O -c 0.def.c
+cc -O -c 0.extr.c
+cc -O -c 0.graph.c
+cc -O -c 0.list.c
+"0.list.c", line 9: warning: illegal combination of pointer and integer
+cc -O -c 0.parts.c
+"0.parts.c", line 107: warning: illegal combination of pointer and integer
+"0.parts.c", line 109: warning: illegal pointer combination
+"0.parts.c", line 112: warning: illegal combination of pointer and integer
+cc -O -c 0.string.c
+"0.string.c", line 102: warning: illegal combination of pointer and integer
+"0.string.c", line 105: warning: illegal combination of pointer and integer
+cc -O -c 1.finish.c
+cc -O -c 1.form.c
+cc -O -c 1.fort.c
+"1.fort.c", line 45: warning: illegal combination of pointer and integer
+"1.fort.c", line 70: warning: illegal combination of pointer and integer
+"1.fort.c", line 94: warning: illegal combination of pointer and integer
+"1.fort.c", line 111: warning: illegal combination of pointer and integer
+"1.fort.c", line 125: warning: illegal combination of pointer and integer
+"1.fort.c", line 130: warning: illegal combination of pointer and integer
+"1.fort.c", line 168: warning: illegal combination of pointer and integer
+"1.fort.c", line 169: warning: illegal combination of pointer and integer
+"1.fort.c", line 190: warning: illegal combination of pointer and integer
+"1.fort.c", line 207: warning: illegal combination of pointer and integer
+"1.fort.c", line 247: warning: illegal combination of pointer and integer
+"1.fort.c", line 249: warning: illegal combination of pointer and integer
+"1.fort.c", line 259: warning: illegal combination of pointer and integer
+cc -O -c 1.hash.c
+"1.hash.c", line 92: warning: illegal combination of pointer and integer
+"1.hash.c", line 93: warning: illegal combination of pointer and integer
+"1.hash.c", line 94: warning: illegal combination of pointer and integer
+"1.hash.c", line 162: warning: illegal combination of pointer and integer
+"1.hash.c", line 187: warning: illegal combination of pointer and integer
+"1.hash.c", line 212: warning: illegal combination of pointer and integer
+cc -O -c 1.init.c
+"1.init.c", line 11: warning: illegal combination of pointer and integer
+cc -O -c 1.line.c
+cc -O -c 1.main.c
+cc -O -c 1.node.c
+cc -O -c 1.recog.c
+"1.recog.c", line 14: warning: illegal combination of pointer and integer
+"1.recog.c", line 14: warning: illegal combination of pointer and integer
+"1.recog.c", line 37: warning: illegal combination of pointer and integer
+"1.recog.c", line 105: warning: illegal combination of pointer and integer
+"1.recog.c", line 127: warning: illegal combination of pointer and integer
+"1.recog.c", line 162: warning: illegal combination of pointer and integer
+"1.recog.c", line 163: warning: illegal combination of pointer and integer
+"1.recog.c", line 183: warning: illegal combination of pointer and integer
+"1.recog.c", line 187: warning: illegal combination of pointer and integer
+"1.recog.c", line 243: warning: illegal combination of pointer and integer
+"1.recog.c", line 308: warning: illegal combination of pointer and integer
+"1.recog.c", line 309: warning: illegal combination of pointer and integer
+"1.recog.c", line 317: warning: illegal combination of pointer and integer
+"1.recog.c", line 319: warning: illegal combination of pointer and integer
+cc -O -c 1.tables.c
+cc -O -c 2.dfs.c
+"2.dfs.c", line 40: warning: illegal combination of pointer and integer
+"2.dfs.c", line 50: warning: illegal combination of pointer and integer
+"2.dfs.c", line 53: warning: illegal combination of pointer and integer
+"2.dfs.c", line 54: warning: illegal combination of pointer and integer
+cc -O -c 2.dom.c
+cc -O -c 2.head.c
+cc -O -c 2.inarc.c
+"2.inarc.c", line 36: warning: illegal combination of pointer and integer
+cc -O -c 2.main.c
+"2.main.c", line 21: warning: illegal combination of pointer and integer
+"2.main.c", line 26: warning: illegal combination of pointer and integer
+"2.main.c", line 30: warning: illegal combination of pointer and integer
+cc -O -c 2.tree.c
+cc -O -c 3.branch.c
+cc -O -c 3.flow.c
+cc -O -c 3.loop.c
+cc -O -c 3.main.c
+"3.main.c", line 18: warning: illegal combination of pointer and integer
+cc -O -c 3.reach.c
+"3.reach.c", line 40: warning: illegal combination of pointer and integer
+"3.reach.c", line 53: warning: illegal combination of pointer and integer
+"3.reach.c", line 61: warning: illegal combination of pointer and integer
+"3.reach.c", line 87: warning: illegal combination of pointer and integer
+cc -O -c 3.then.c
+cc -O -c 4.brace.c
+cc -O -c 4.form.c
+cc -O -c 4.main.c
+"4.main.c", line 10: warning: illegal combination of pointer and integer
+cc -O -c 4.out.c
+cc -o structure main.o 0.*.o 1.*.o 2.*.o 3.*.o 4.*.o 
+cc -O -c beauty.c
+"beauty.c", line 122: warning: illegal combination of pointer and integer
+"beauty.y", line 128: warning: illegal combination of pointer and integer
+cc -O -c tree.c
+"tree.c", line 12: warning: illegal combination of pointer and integer
+"tree.c", line 16: warning: illegal combination of pointer and integer
+"tree.c", line 18: warning: illegal combination of pointer and integer
+"tree.c", line 39: warning: old-fashioned initialization: use =
+"tree.c", line 40: warning: old-fashioned initialization: use =
+"tree.c", line 41: warning: old-fashioned initialization: use =
+"tree.c", line 75: warning: illegal combination of pointer and integer
+"tree.c", line 79: warning: illegal combination of pointer and integer
+"tree.c", line 80: warning: illegal combination of pointer and integer
+"tree.c", line 82: warning: illegal combination of pointer and integer
+"tree.c", line 89: warning: illegal combination of pointer and integer
+"tree.c", line 94: warning: illegal combination of pointer and integer
+"tree.c", line 95: warning: illegal combination of pointer and integer
+"tree.c", line 98: warning: illegal combination of pointer and integer
+"tree.c", line 109: warning: illegal combination of pointer and integer
+"tree.c", line 110: warning: illegal combination of pointer and integer
+"tree.c", line 111: warning: illegal combination of pointer and integer
+lex  lextab.l
+cc -O -c lex.yy.c
+"lex.yy.c", line 58: warning: illegal combination of pointer and integer
+"lex.yy.c", line 178: warning: illegal combination of pointer and integer
+"lex.yy.c", line 180: warning: illegal combination of pointer and integer
+"lex.yy.c", line 197: warning: illegal combination of pointer and integer
+rm lex.yy.c
+mv lex.yy.o lextab.o
+cc -O -c bdef.c
+cc -O beauty.o tree.o lextab.o bdef.o -o beautify -lln
