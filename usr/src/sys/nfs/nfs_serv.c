@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.6 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -78,6 +78,7 @@ nfsrv_getattr(mrep, md, dpos, cred, xid, mrq)
 	struct ucred *cred;
 	u_long xid;
 {
+	register struct nfsv2_fattr *fp;
 	struct vattr va;
 	register struct vattr *vap = &va;
 	struct vnode *vp;
@@ -92,23 +93,21 @@ nfsrv_getattr(mrep, md, dpos, cred, xid, mrq)
 	error = VOP_GETATTR(vp, vap, cred);
 	vput(vp);
 	nfsm_reply(NFSX_FATTR);
-	nfsm_build(p, u_long *, NFSX_FATTR);
-	*p++ = vtonfs_type(vap->va_type);
-	*p++ = vtonfs_mode(vap->va_type, vap->va_mode);
-	*p++ = txdr_unsigned(vap->va_nlink);
-	*p++ = txdr_unsigned(vap->va_uid);
-	*p++ = txdr_unsigned(vap->va_gid);
-	*p++ = txdr_unsigned(vap->va_size);
-	*p++ = txdr_unsigned(vap->va_blocksize);
-	*p++ = txdr_unsigned(vap->va_rdev);
-	*p++ = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
-	*p++ = txdr_unsigned(vap->va_fsid);
-	*p++ = txdr_unsigned(vap->va_fileid);
-	txdr_time(&(vap->va_atime), p);
-	p += 2;
-	txdr_time(&(vap->va_mtime), p);
-	p += 2;
-	txdr_time(&(vap->va_ctime), p);
+	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
+	fp->fa_type = vtonfs_type(vap->va_type);
+	fp->fa_mode = vtonfs_mode(vap->va_type, vap->va_mode);
+	fp->fa_nlink = txdr_unsigned(vap->va_nlink);
+	fp->fa_uid = txdr_unsigned(vap->va_uid);
+	fp->fa_gid = txdr_unsigned(vap->va_gid);
+	fp->fa_size = txdr_unsigned(vap->va_size);
+	fp->fa_blocksize = txdr_unsigned(vap->va_blocksize);
+	fp->fa_rdev = txdr_unsigned(vap->va_rdev);
+	fp->fa_blocks = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
+	fp->fa_fsid = txdr_unsigned(vap->va_fsid);
+	fp->fa_fileid = txdr_unsigned(vap->va_fileid);
+	txdr_time(&vap->va_atime, &fp->fa_atime);
+	txdr_time(&vap->va_mtime, &fp->fa_mtime);
+	txdr_time(&vap->va_ctime, &fp->fa_ctime);
 	nfsm_srvdone;
 }
 
@@ -124,6 +123,8 @@ nfsrv_setattr(mrep, md, dpos, cred, xid, mrq)
 {
 	struct vattr va;
 	register struct vattr *vap = &va;
+	register struct nfsv2_sattr *sp;
+	register struct nfsv2_fattr *fp;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -131,7 +132,7 @@ nfsrv_setattr(mrep, md, dpos, cred, xid, mrq)
 
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
-	nfsm_disect(p, u_long *, NFSX_SATTR);
+	nfsm_disect(sp, struct nfsv2_sattr *, NFSX_SATTR);
 	if (error = nfsrv_fhtovp(fhp, TRUE, &vp, cred))
 		nfsm_reply(0);
 	if (error = nfsrv_access(vp, VWRITE, cred))
@@ -144,20 +145,19 @@ nfsrv_setattr(mrep, md, dpos, cred, xid, mrq)
 	 * doesn't sign extend.
 	 * --> check the low order 2 bytes for 0xffff
 	 */
-	if ((fxdr_unsigned(int, *p) & 0xffff) != 0xffff)
-		vap->va_mode = nfstov_mode(*p);
-	if (*++p != nfs_xdrneg1)
-		vap->va_uid = fxdr_unsigned(uid_t, *p);
-	if (*++p != nfs_xdrneg1)
-		vap->va_gid = fxdr_unsigned(gid_t, *p);
-	if (*++p != nfs_xdrneg1) {
-		vap->va_size = fxdr_unsigned(u_long, *p);
+	if ((fxdr_unsigned(int, sp->sa_mode) & 0xffff) != 0xffff)
+		vap->va_mode = nfstov_mode(sp->sa_mode);
+	if (sp->sa_uid != nfs_xdrneg1)
+		vap->va_uid = fxdr_unsigned(uid_t, sp->sa_uid);
+	if (sp->sa_gid != nfs_xdrneg1)
+		vap->va_gid = fxdr_unsigned(gid_t, sp->sa_gid);
+	if (sp->sa_size != nfs_xdrneg1) {
+		vap->va_size = fxdr_unsigned(u_long, sp->sa_size);
 	}
-	if (*++p != nfs_xdrneg1)
-		fxdr_time(p, &(vap->va_atime));
-	p += 2;
-	if (*p != nfs_xdrneg1)
-		fxdr_time(p, &(vap->va_mtime));
+	if (sp->sa_atime.tv_sec != nfs_xdrneg1)
+		fxdr_time(&sp->sa_atime, &vap->va_atime);
+	if (sp->sa_mtime.tv_sec != nfs_xdrneg1)
+		fxdr_time(&sp->sa_mtime, &vap->va_mtime);
 	if (error = VOP_SETATTR(vp, vap, cred)) {
 		vput(vp);
 		nfsm_reply(0);
@@ -166,23 +166,21 @@ nfsrv_setattr(mrep, md, dpos, cred, xid, mrq)
 out:
 	vput(vp);
 	nfsm_reply(NFSX_FATTR);
-	nfsm_build(p, u_long *, NFSX_FATTR);
-	*p++ = vtonfs_type(vap->va_type);
-	*p++ = vtonfs_mode(vap->va_type, vap->va_mode);
-	*p++ = txdr_unsigned(vap->va_nlink);
-	*p++ = txdr_unsigned(vap->va_uid);
-	*p++ = txdr_unsigned(vap->va_gid);
-	*p++ = txdr_unsigned(vap->va_size);
-	*p++ = txdr_unsigned(vap->va_blocksize);
-	*p++ = txdr_unsigned(vap->va_rdev);
-	*p++ = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
-	*p++ = txdr_unsigned(vap->va_fsid);
-	*p++ = txdr_unsigned(vap->va_fileid);
-	txdr_time(&(vap->va_atime), p);
-	p += 2;
-	txdr_time(&(vap->va_mtime), p);
-	p += 2;
-	txdr_time(&(vap->va_ctime), p);
+	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
+	fp->fa_type = vtonfs_type(vap->va_type);
+	fp->fa_mode = vtonfs_mode(vap->va_type, vap->va_mode);
+	fp->fa_nlink = txdr_unsigned(vap->va_nlink);
+	fp->fa_uid = txdr_unsigned(vap->va_uid);
+	fp->fa_gid = txdr_unsigned(vap->va_gid);
+	fp->fa_size = txdr_unsigned(vap->va_size);
+	fp->fa_blocksize = txdr_unsigned(vap->va_blocksize);
+	fp->fa_rdev = txdr_unsigned(vap->va_rdev);
+	fp->fa_blocks = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
+	fp->fa_fsid = txdr_unsigned(vap->va_fsid);
+	fp->fa_fileid = txdr_unsigned(vap->va_fileid);
+	txdr_time(&vap->va_atime, &fp->fa_atime);
+	txdr_time(&vap->va_mtime, &fp->fa_mtime);
+	txdr_time(&vap->va_ctime, &fp->fa_ctime);
 	nfsm_srvdone;
 }
 
@@ -196,6 +194,7 @@ nfsrv_lookup(mrep, md, dpos, cred, xid, mrq)
 	struct ucred *cred;
 	u_long xid;
 {
+	register struct nfsv2_fattr *fp;
 	register struct nameidata *ndp = &u.u_nd;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
@@ -222,23 +221,21 @@ nfsrv_lookup(mrep, md, dpos, cred, xid, mrq)
 	vput(vp);
 	nfsm_reply(NFSX_FH+NFSX_FATTR);
 	nfsm_srvfhtom(fhp);
-	nfsm_build(p, u_long *, NFSX_FATTR);
-	*p++ = vtonfs_type(vap->va_type);
-	*p++ = vtonfs_mode(vap->va_type, vap->va_mode);
-	*p++ = txdr_unsigned(vap->va_nlink);
-	*p++ = txdr_unsigned(vap->va_uid);
-	*p++ = txdr_unsigned(vap->va_gid);
-	*p++ = txdr_unsigned(vap->va_size);
-	*p++ = txdr_unsigned(vap->va_blocksize);
-	*p++ = txdr_unsigned(vap->va_rdev);
-	*p++ = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
-	*p++ = txdr_unsigned(vap->va_fsid);
-	*p++ = txdr_unsigned(vap->va_fileid);
-	txdr_time(&(vap->va_atime), p);
-	p += 2;
-	txdr_time(&(vap->va_mtime), p);
-	p += 2;
-	txdr_time(&(vap->va_ctime), p);
+	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
+	fp->fa_type = vtonfs_type(vap->va_type);
+	fp->fa_mode = vtonfs_mode(vap->va_type, vap->va_mode);
+	fp->fa_nlink = txdr_unsigned(vap->va_nlink);
+	fp->fa_uid = txdr_unsigned(vap->va_uid);
+	fp->fa_gid = txdr_unsigned(vap->va_gid);
+	fp->fa_size = txdr_unsigned(vap->va_size);
+	fp->fa_blocksize = txdr_unsigned(vap->va_blocksize);
+	fp->fa_rdev = txdr_unsigned(vap->va_rdev);
+	fp->fa_blocks = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
+	fp->fa_fsid = txdr_unsigned(vap->va_fsid);
+	fp->fa_fileid = txdr_unsigned(vap->va_fileid);
+	txdr_time(&vap->va_atime, &fp->fa_atime);
+	txdr_time(&vap->va_mtime, &fp->fa_mtime);
+	txdr_time(&vap->va_ctime, &fp->fa_ctime);
 	nfsm_srvdone;
 }
 
@@ -329,6 +326,7 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq)
 	struct iovec iv[NFS_MAXDATA/MCLBYTES+1];
 	register struct iovec *ivp = iv;
 	register struct mbuf *mp;
+	register struct nfsv2_fattr *fp;
 	nfsm_srvars;
 	struct mbuf *mp2, *mp3;
 	struct vnode *vp;
@@ -394,24 +392,21 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq)
 		m_freem(mp3);
 	vput(vp);
 	nfsm_reply(NFSX_FATTR+NFSX_UNSIGNED);
-	nfsm_build(p, u_long *, NFSX_FATTR+NFSX_UNSIGNED);
-	*p++ = vtonfs_type(vap->va_type);
-	*p++ = vtonfs_mode(vap->va_type, vap->va_mode);
-	*p++ = txdr_unsigned(vap->va_nlink);
-	*p++ = txdr_unsigned(vap->va_uid);
-	*p++ = txdr_unsigned(vap->va_gid);
-	*p++ = txdr_unsigned(vap->va_size);
-	*p++ = txdr_unsigned(vap->va_blocksize);
-	*p++ = txdr_unsigned(vap->va_rdev);
-	*p++ = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
-	*p++ = txdr_unsigned(vap->va_fsid);
-	*p++ = txdr_unsigned(vap->va_fileid);
-	txdr_time(&(vap->va_atime), p);
-	p += 2;
-	txdr_time(&(vap->va_mtime), p);
-	p += 2;
-	txdr_time(&(vap->va_ctime), p);
-	p += 2;
+	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
+	fp->fa_type = vtonfs_type(vap->va_type);
+	fp->fa_mode = vtonfs_mode(vap->va_type, vap->va_mode);
+	fp->fa_nlink = txdr_unsigned(vap->va_nlink);
+	fp->fa_uid = txdr_unsigned(vap->va_uid);
+	fp->fa_gid = txdr_unsigned(vap->va_gid);
+	fp->fa_size = txdr_unsigned(vap->va_size);
+	fp->fa_blocksize = txdr_unsigned(vap->va_blocksize);
+	fp->fa_rdev = txdr_unsigned(vap->va_rdev);
+	fp->fa_blocks = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
+	fp->fa_fsid = txdr_unsigned(vap->va_fsid);
+	fp->fa_fileid = txdr_unsigned(vap->va_fileid);
+	txdr_time(&vap->va_atime, &fp->fa_atime);
+	txdr_time(&vap->va_mtime, &fp->fa_mtime);
+	txdr_time(&vap->va_ctime, &fp->fa_ctime);
 	if (uiop->uio_resid > 0) {
 		len -= uiop->uio_resid;
 		if (len > 0) {
@@ -422,6 +417,7 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq)
 			mp3 = (struct mbuf *)0;
 		}
 	}
+	nfsm_build(p, u_long *, NFSX_UNSIGNED);
 	*p = txdr_unsigned(len);
 	mb->m_next = mp3;
 	nfsm_srvdone;
@@ -438,6 +434,7 @@ nfsrv_write(mrep, md, dpos, cred, xid, mrq)
 {
 	register struct iovec *ivp;
 	register struct mbuf *mp;
+	register struct nfsv2_fattr *fp;
 	struct iovec iv[MAX_IOVEC];
 	struct vattr va;
 	register struct vattr *vap = &va;
@@ -524,23 +521,21 @@ nfsrv_write(mrep, md, dpos, cred, xid, mrq)
 	error = VOP_GETATTR(vp, vap, cred);
 	vput(vp);
 	nfsm_reply(NFSX_FATTR);
-	nfsm_build(p, u_long *, NFSX_FATTR);
-	*p++ = vtonfs_type(vap->va_type);
-	*p++ = vtonfs_mode(vap->va_type, vap->va_mode);
-	*p++ = txdr_unsigned(vap->va_nlink);
-	*p++ = txdr_unsigned(vap->va_uid);
-	*p++ = txdr_unsigned(vap->va_gid);
-	*p++ = txdr_unsigned(vap->va_size);
-	*p++ = txdr_unsigned(vap->va_blocksize);
-	*p++ = txdr_unsigned(vap->va_rdev);
-	*p++ = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
-	*p++ = txdr_unsigned(vap->va_fsid);
-	*p++ = txdr_unsigned(vap->va_fileid);
-	txdr_time(&(vap->va_atime), p);
-	p += 2;
-	txdr_time(&(vap->va_mtime), p);
-	p += 2;
-	txdr_time(&(vap->va_ctime), p);
+	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
+	fp->fa_type = vtonfs_type(vap->va_type);
+	fp->fa_mode = vtonfs_mode(vap->va_type, vap->va_mode);
+	fp->fa_nlink = txdr_unsigned(vap->va_nlink);
+	fp->fa_uid = txdr_unsigned(vap->va_uid);
+	fp->fa_gid = txdr_unsigned(vap->va_gid);
+	fp->fa_size = txdr_unsigned(vap->va_size);
+	fp->fa_blocksize = txdr_unsigned(vap->va_blocksize);
+	fp->fa_rdev = txdr_unsigned(vap->va_rdev);
+	fp->fa_blocks = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
+	fp->fa_fsid = txdr_unsigned(vap->va_fsid);
+	fp->fa_fileid = txdr_unsigned(vap->va_fileid);
+	txdr_time(&vap->va_atime, &fp->fa_atime);
+	txdr_time(&vap->va_mtime, &fp->fa_mtime);
+	txdr_time(&vap->va_ctime, &fp->fa_ctime);
 	nfsm_srvdone;
 }
 
@@ -554,6 +549,7 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq)
 	struct ucred *cred;
 	long xid;
 {
+	register struct nfsv2_fattr *fp;
 	struct vattr va;
 	register struct vattr *vap = &va;
 	register struct nameidata *ndp = &u.u_nd;
@@ -602,23 +598,21 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq)
 	vput(vp);
 	nfsm_reply(NFSX_FH+NFSX_FATTR);
 	nfsm_srvfhtom(fhp);
-	nfsm_build(p, u_long *, NFSX_FATTR);
-	*p++ = vtonfs_type(vap->va_type);
-	*p++ = vtonfs_mode(vap->va_type, vap->va_mode);
-	*p++ = txdr_unsigned(vap->va_nlink);
-	*p++ = txdr_unsigned(vap->va_uid);
-	*p++ = txdr_unsigned(vap->va_gid);
-	*p++ = txdr_unsigned(vap->va_size);
-	*p++ = txdr_unsigned(vap->va_blocksize);
-	*p++ = txdr_unsigned(vap->va_rdev);
-	*p++ = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
-	*p++ = txdr_unsigned(vap->va_fsid);
-	*p++ = txdr_unsigned(vap->va_fileid);
-	txdr_time(&(vap->va_atime), p);
-	p += 2;
-	txdr_time(&(vap->va_mtime), p);
-	p += 2;
-	txdr_time(&(vap->va_ctime), p);
+	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
+	fp->fa_type = vtonfs_type(vap->va_type);
+	fp->fa_mode = vtonfs_mode(vap->va_type, vap->va_mode);
+	fp->fa_nlink = txdr_unsigned(vap->va_nlink);
+	fp->fa_uid = txdr_unsigned(vap->va_uid);
+	fp->fa_gid = txdr_unsigned(vap->va_gid);
+	fp->fa_size = txdr_unsigned(vap->va_size);
+	fp->fa_blocksize = txdr_unsigned(vap->va_blocksize);
+	fp->fa_rdev = txdr_unsigned(vap->va_rdev);
+	fp->fa_blocks = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
+	fp->fa_fsid = txdr_unsigned(vap->va_fsid);
+	fp->fa_fileid = txdr_unsigned(vap->va_fileid);
+	txdr_time(&vap->va_atime, &fp->fa_atime);
+	txdr_time(&vap->va_mtime, &fp->fa_mtime);
+	txdr_time(&vap->va_ctime, &fp->fa_ctime);
 	return (error);
 nfsmout:
 	VOP_ABORTOP(ndp);
@@ -865,6 +859,7 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq)
 {
 	struct vattr va;
 	register struct vattr *vap = &va;
+	register struct nfsv2_fattr *fp;
 	register struct nameidata *ndp = &u.u_nd;
 	nfsm_srvars;
 	struct vnode *vp;
@@ -903,23 +898,21 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq)
 	vput(vp);
 	nfsm_reply(NFSX_FH+NFSX_FATTR);
 	nfsm_srvfhtom(fhp);
-	nfsm_build(p, u_long *, NFSX_FATTR);
-	*p++ = vtonfs_type(vap->va_type);
-	*p++ = vtonfs_mode(vap->va_type, vap->va_mode);
-	*p++ = txdr_unsigned(vap->va_nlink);
-	*p++ = txdr_unsigned(vap->va_uid);
-	*p++ = txdr_unsigned(vap->va_gid);
-	*p++ = txdr_unsigned(vap->va_size);
-	*p++ = txdr_unsigned(vap->va_blocksize);
-	*p++ = txdr_unsigned(vap->va_rdev);
-	*p++ = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
-	*p++ = txdr_unsigned(vap->va_fsid);
-	*p++ = txdr_unsigned(vap->va_fileid);
-	txdr_time(&(vap->va_atime), p);
-	p += 2;
-	txdr_time(&(vap->va_mtime), p);
-	p += 2;
-	txdr_time(&(vap->va_ctime), p);
+	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
+	fp->fa_type = vtonfs_type(vap->va_type);
+	fp->fa_mode = vtonfs_mode(vap->va_type, vap->va_mode);
+	fp->fa_nlink = txdr_unsigned(vap->va_nlink);
+	fp->fa_uid = txdr_unsigned(vap->va_uid);
+	fp->fa_gid = txdr_unsigned(vap->va_gid);
+	fp->fa_size = txdr_unsigned(vap->va_size);
+	fp->fa_blocksize = txdr_unsigned(vap->va_blocksize);
+	fp->fa_rdev = txdr_unsigned(vap->va_rdev);
+	fp->fa_blocks = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
+	fp->fa_fsid = txdr_unsigned(vap->va_fsid);
+	fp->fa_fileid = txdr_unsigned(vap->va_fileid);
+	txdr_time(&vap->va_atime, &fp->fa_atime);
+	txdr_time(&vap->va_mtime, &fp->fa_mtime);
+	txdr_time(&vap->va_ctime, &fp->fa_ctime);
 	return (error);
 nfsmout:
 	VOP_ABORTOP(ndp);
@@ -1176,6 +1169,7 @@ nfsrv_statfs(mrep, md, dpos, cred, xid, mrq)
 	u_long xid;
 {
 	register struct statfs *sf;
+	register struct nfsv2_statfs *sfp;
 	nfsm_srvars;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
@@ -1190,12 +1184,12 @@ nfsrv_statfs(mrep, md, dpos, cred, xid, mrq)
 	error = VFS_STATFS(vp->v_mount, sf);
 	vput(vp);
 	nfsm_reply(NFSX_STATFS);
-	nfsm_build(p, u_long *, NFSX_STATFS);
-	*p++ = txdr_unsigned(NFS_MAXDATA);
-	*p++ = txdr_unsigned(sf->f_fsize);
-	*p++ = txdr_unsigned(sf->f_blocks);
-	*p++ = txdr_unsigned(sf->f_bfree);
-	*p = txdr_unsigned(sf->f_bavail);
+	nfsm_build(sfp, struct nfsv2_statfs *, NFSX_STATFS);
+	sfp->sf_tsize = txdr_unsigned(NFS_MAXDATA);
+	sfp->sf_bsize = txdr_unsigned(sf->f_fsize);
+	sfp->sf_blocks = txdr_unsigned(sf->f_blocks);
+	sfp->sf_bfree = txdr_unsigned(sf->f_bfree);
+	sfp->sf_bavail = txdr_unsigned(sf->f_bavail);
 	nfsm_srvdone;
 }
 

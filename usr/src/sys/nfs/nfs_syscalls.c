@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_syscalls.c	7.1 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,6 +31,7 @@
 #include "proc.h"
 #include "uio.h"
 #include "malloc.h"
+#include "buf.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -40,6 +41,8 @@
 /* Global defs. */
 extern u_long nfs_prog, nfs_vers;
 extern int (*nfsrv_procs[NFS_NPROCS])();
+extern struct buf nfs_bqueue;
+extern int nfs_iodwant;
 struct file *getsock();
 
 /*
@@ -195,3 +198,42 @@ nfssvc()
 		m_freem(nam);
 	}
 }
+
+#ifndef notyet
+/*
+ * Nfs pseudo system call for asynchronous i/o daemons.
+ * These babies just pretend to be disk interrupt service routines
+ * for client nfs. They are mainly here for read ahead
+ * Never returns unless it fails or gets killed
+ */
+async_daemon()
+{
+	register struct buf *bp, *dp;
+	int error;
+
+	/*
+	 * Must be super user
+	 */
+	if (error = suser(u.u_cred, &u.u_acflag))
+		RETURN (error);
+	dp = &nfs_bqueue;
+	/*
+	 * Just loop arround doin our stuff until SIGKILL
+	 */
+	for (;;) {
+		while (dp->b_actf == NULL) {
+			nfs_iodwant++;
+			sleep((caddr_t)&nfs_iodwant, PZERO+1);
+		}
+		/* Take one off the end of the list */
+		bp = dp->b_actl;
+		if (bp->b_actl == dp) {
+			dp->b_actf = dp->b_actl = (struct buf *)0;
+		} else {
+			dp->b_actl = bp->b_actl;
+			bp->b_actl->b_actf = dp;
+		}
+		(void) nfs_doio(bp);
+	}
+}
+#endif

@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.3 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -230,18 +230,6 @@ bad:
 }
 
 /*
- * Make a filesystem operational.
- * Nothing to do at the moment.
- */
-nfs_start(mp, flags)
-	struct mount *mp;
-	int flags;
-{
-
-	return (0);
-}
-
-/*
  * unmount system call
  */
 nfs_unmount(mp, flags)
@@ -257,6 +245,12 @@ nfs_unmount(mp, flags)
 	if (flags & MNT_FORCE)
 		return (EINVAL);
 	nmp = vfs_to_nfs(mp);
+	/*
+	 * Clear out the buffer cache
+	 */
+	bflush(mp);
+	if (binval(mp))
+		return (EBUSY);
 	/*
 	 * Goes something like this..
 	 * - Call nfs_nflush() to clear out the nfsnode table
@@ -314,14 +308,21 @@ nfs_root(mp, vpp)
 	return (0);
 }
 
+extern int syncprt;
+
 /*
- * Since writes are synchronous, I think this is a no-op
- * Maybe write cache on nfs version 3 will require something ??
+ * Flush out the buffer cache
  */
 nfs_sync(mp, waitfor)
 	struct mount *mp;
 	int waitfor;
 {
+	if (syncprt)
+		bufstats();
+	/*
+	 * Force stale buffer cache information to be flushed.
+	 */
+	bflush(mp);
 	return (0);
 }
 
@@ -345,4 +346,14 @@ nfs_vptofh(mp, fhp, vpp)
 	struct vnode **vpp;
 {
 	return (EINVAL);
+}
+
+/*
+ * Vfs start routine, a no-op.
+ */
+nfs_start(mp, flags)
+	struct mount *mp;
+	int flags;
+{
+	return (0);
 }

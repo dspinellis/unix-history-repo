@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsnode.h	7.1 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -39,6 +39,9 @@ struct nfsnode {
 	struct	sillyrename *n_sillyrename;	/* Ptr to silly rename struct */
 	struct nfsnode  *n_freef;	/* free list forward */
 	struct nfsnode **n_freeb;	/* free list back */
+	daddr_t	n_lastr;	/* Last block read for read ahead */
+	u_long	n_size;		/* Current size of file */
+	time_t	n_mtime;	/* Prev modify time to maintain data cache consistency*/
 };
 
 #define	n_forw		n_chain[0]
@@ -64,3 +67,4 @@ extern struct vnodeops nfsv2chr_vnodeops; /* vnode operations for chr devices */
  */
 #define	NLOCKED		0x1
 #define	NWANT		0x2
+#define NMODIFIED	0x4
