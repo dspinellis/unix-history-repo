@@ -1,4 +1,4 @@
-#	Makefile	4.6	85/06/06
+#	Makefile	4.7	85/06/09
 #
 DESTDIR=
 CFLAGS=	-O
@@ -6,7 +6,7 @@ CFLAGS=	-O
 # Programs that live in subdirectories, and have makefiles of their own.
 #
 SUBDIR=	apl bib courier cpm dsh icon hyper learn mh news notes rcs sccstorcs \
-	spms tools 
+	spms tac tools 
 
 all:	${SUBDIR}
 
