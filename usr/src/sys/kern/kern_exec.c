@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exec.c	7.25 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -502,7 +502,7 @@ badarg:
 	}
 	while (u.u_lastfile >= 0 && u.u_ofile[u.u_lastfile] == NULL)
 		u.u_lastfile--;
-	setregs(exdata.ex_exec.a_entry);
+	setregs(exdata.ex_exec.a_entry, retval);
 	/*
 	 * Remember file name for accounting.
 	 */
