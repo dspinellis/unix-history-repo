@@ -1,0 +1,23 @@
+#print
+Edit file "junk" and print the first line
+that contains either "color" or "Color".
+Then leave the editor and type "ready".
+#create junk
+this file contains
+a few random lines
+much noise
+bright Colors
+other stuff
+colored paper
+and color by Technicolor
+#create x2
+bright Colors
+#copyout
+#user
+#uncopyout
+grep olor .ocopy >x1
+#cmp x1 x2
+#log
+#next
+50.2d 5
+50.1c 10
