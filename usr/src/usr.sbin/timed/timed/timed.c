@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)timed.c	2.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)timed.c	2.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "globals.h"
@@ -226,12 +226,8 @@ char **argv;
 		exit(1);
 	}
 	ntp = NULL;
-#ifdef RTM_ADD
 #define max(a, b) (a > b ? a : b)
 #define size(p)	max((p).sa_len, sizeof(p))
-#else
-#define size(p) (sizeof (p))
-#endif
 	cplim = buf + ifc.ifc_len; /*skip over if's with big ifr_addr's */
 	for (cp = buf; cp < cplim;
 			cp += sizeof (ifr->ifr_name) + size(ifr->ifr_addr)) {
