@@ -1,4 +1,4 @@
-/*	lfs_inode.c	6.6	84/07/02	*/
+/*	lfs_inode.c	6.7	84/07/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -269,7 +269,7 @@ iput(ip)
 
 	if ((ip->i_flag & ILOCKED) == 0)
 		panic("iput");
-	iunlock(ip);
+	IUNLOCK(ip);
 	irele(ip);
 }
 
@@ -294,7 +294,7 @@ irele(ip)
 #endif
 		}
 		IUPDAT(ip, &time, &time, 0);
-		iunlock(ip);
+		IUNLOCK(ip);
 		ip->i_flag = 0;
 		/*
 		 * Put the inode on the end of the free list.
