@@ -1,0 +1,16 @@
+/* LINTLIBRARY */
+
+#include "../mts/mmdf/util.h"
+#include "../mts/mmdf/mmdf.h"
+
+char   *OfficialName(n) char *n; { return OfficialName(n); }
+int	mm_init() { return mm_init(); }
+int	mm_sbinit() { return mm_sbinit(); }
+int	mm_winit(a,b,c) char *a,*b,*c; { return mm_winit(a,b,c); }
+int	mm_sbend() { return mm_sbend(); }
+int	mm_end(s) { return mm_end(s); }
+int	mm_waend() { return mm_waend(); }
+int	mm_wtxt(b,n) char *b; { return mm_wtxt(b,n); }
+int	mm_wtend() { return mm_wtend(); }
+int	mm_rrply(r,n) struct rp_bufstruct *r; int *n; { return mm_rrply(r,n); }
+int	mm_wadr(h,m) char *h,*m; { return mm_wadr(h,m); }

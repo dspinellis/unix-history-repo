@@ -1,0 +1,19 @@
+FIRST=1
+for FILE
+do
+	if test $FIRST -eq 0; then
+		echo "--More--(Next file: $FILE)\c"
+		stty cbreak -echo
+		ANS=`dd bs=1 count=1 2>/dev/null` 
+		stty -cbreak echo
+		echo " "
+		if test "$ANS" = 'e'; then
+			exit
+		fi
+	fi
+	echo "------> $FILE <------"
+	zcat $FILE | more
+	if test -t; then
+		FIRST=0
+	fi
+done

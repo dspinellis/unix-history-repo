@@ -1,0 +1,84 @@
+% run this through PhD-TeX
+
+\input dcustom
+\articlestyle
+\input version
+
+\def\draftext{%
+    \begingroup
+	\eightpoint\sf
+	Reprinted from
+	{\it Proceedings, Summer Usenix Conference and Exhibition},
+	Portland, Oregon,
+	June, {\oldstyle 1985}%
+    \endgroup
+}
+
+\input sfwmac
+
+\def\bannerhack{$^{\bowtie}$\global\let\bannerhack=\empty}
+\header
+    MH.5:\\
+	How to process 200 messages a day\\
+	and still get some real work done\bannerhack\title
+    Marshall T.~Rose\\
+	Member, Research Technical Staff\\
+	Northrop Research and Technology Center$^\dagger$\\
+	\\
+    John L.~Romine\\
+	Computing Support Group\\
+	Department of Information and Computer Science\\
+	University of California, Irvine$^\ddagger$\author\info
+\footnote{}{\hskip -\parindent $^{\bowtie}$
+Alternate title: {\sl MH: Your Key to Success}.}
+\footnote{}{\hskip -\parindent $^\dagger$
+One~Research Park,
+Palos Verdes Peninsula, CA  90274.
+Telephone: 213/377--4811.\hbreak
+Computer mail:
+MRose\%NRTC@USC-ECL, $\tdots$!\{ucbvax!ucivax,trwrb\}!nrtc!mrose.}
+\footnote{}{\hskip -\parindent $^\ddagger$
+University of California at Irvine,
+Irvine, CA  92717.
+Telephone: 714/856--6852.\hbreak
+Computer mail:
+J-Romine@USC-ECL, $\tdots$!\{ucbvax,trwrb\}!ucivax!jromine.}
+
+\centerline{\sc Abstract}			% mtr
+{\rightskip=0pt\narrower
+\lp
+The UCI version of the Rand Message Handling System (\MH/) is discussed.
+\MH/ is a powerful user agent which operates in the ARPA Internet and UUCP
+environments.
+In addition to the usual functions provided by similar programs,
+\MH/ has several distinguishing characteristics which give the user
+additional message handling capability.
+In particular,
+\MH/ provides mechanisms for maintaining an organized mail environment,
+tailoring its behavior,
+and extending its functions.
+
+\lp
+This document describes \MH/ from several perspectives.
+Particular emphasis is given to:
+the \MH/ user environment,
+advanced features of \MH/ which have proven to be particularly useful for
+sophisticated users of electronic mail,
+the user interface issues in \MH/,
+and the \mh5 distribution.
+The paper concludes with a summary of the authors' experiences with \MH/,
+and a discussion of future areas of enhancement.
+\par}
+
+\input text
+\input refs
+\input appendixA
+\input appendixB
+
+\printcontents
+\unskip\footnote{}{\hskip -\parindent
+This document (version \versiontag/)
+was \TeX set \today\ with DISS.STY v\version.}
+\showsummary
+
+\bye

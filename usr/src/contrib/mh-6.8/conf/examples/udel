@@ -1,0 +1,11 @@
+# udel		- UDel template
+bin	/usr/uci
+bboards	on
+etc	/usr/uci/lib/mh
+mail	.mail
+manuals	local
+mts	mmdf2/smtp
+options	BSD42 MHE MSGPROT='"0600"' OVERHEAD RPOP WHATNOW
+pop	on
+popbboards on
+ldoptions -n -s

@@ -1,0 +1,49 @@
+# uci.gcc	- MH 6.8 - Sun3 or Sun4 running Sun OS 4.1
+#
+bin	/usr/bs/mh-6.8/bin
+etc	/usr/bs/mh-6.8/lib
+popdir	/usr/bs/mh-6.8/lib
+mandir	/usr/bs/mh-6.8/man
+slibdir	/usr/bs/mh-6.8/lib
+bbhome	/usr/bs/mh-6.8/bboards
+mail	/usr/spool/mail
+mailgroup	off
+manuals		none
+chown	/etc/chown
+editor	prompter
+remove	rm -f
+mts	mmdf2/smtp
+bboards	nntp
+bbdelivery off
+mf	off
+pop	on
+options	BIND
+options	BSD42 
+options	BSD43 
+#options	LOCKF
+options	MHE
+options	MHRC 
+options	RPATHS
+options	WHATNOW
+options	MIME
+options UCI
+options	POP2
+options	RPOP
+#options	APOP
+curses -lcurses -ltermcap
+ranlib  on
+# Sun specifics
+#options	TYPESIG=void
+signal	void
+options	DBMPWD
+options	NFS
+options	SUN40
+options	ATTVIBUG
+#options	MPOP
+#options	ZONEINFO
+#
+#cc	/usr/bs/sunc/cc
+cc	/usr/gnu/bin/gcc -ansi -fpcc-struct-return
+ldoptions -s
+ldoptlibs -ldbm
+sharedlib off

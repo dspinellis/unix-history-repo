@@ -1,0 +1,132 @@
+V0.2 Changes 
+============
+
+The variable $friendly now is set to the friendly part of the sender's
+email address. For example, if the sender's address is:
+
+	strike@convex.com (Martin Streicher)
+
+$friendly would be set to "Martin Streicher"
+
+
+
+Keys for the %headers array are all lowercase. That is to say that if a mail
+message has headers:
+
+	To: strike
+	Cc: george
+	From: zombie@foo.edu
+	Subject: News
+
+the keys for %header will be "to", "from", "cc", "subject". $header{"subject"}
+would be set to "News"
+
+
+
+The "Received" headers in a mail message are now saved in an array called
+@received. The first element in the array is the first received header;
+that last element in the array would show the message being delivered to
+your machine. See the Suggestions file for how to use this feature.
+
+
+
+If someone from your local machine sends you email, $organization
+is set to "local". If the site name (e.g.,"convex" for "pixel.convex.com")
+cannot be determined, $organization is set to "unknown". Also, $organization
+is much more reliable (I have not found a case yet where $organization
+was not set correctly.) 
+
+
+
+$organization is always in lower-case.
+
+
+
+audit.pl was broken up to make the code more reusable. The utilities
+refileto and refilefrom use some of the routines in audit.pl and mh.pl.
+
+
+
+Fixed a bug that sometimes added NULL to an empty message body.
+
+
+
+mh.pl has new routines to recursively create a directory path, parse your
+MH profile and parse MH-like command line options.
+
+
+New utilities
+=============
+There are two new utilities: refileto and rfolder and adjunts refilefrom
+and rfolders.
+
+refileto is used to refile messages into log folders according to who
+you sent the messages to. refilefrom refiles messages you   have received
+according to who sent you the message. 
+
+By default all messages are logged into the folder +log. You can change this
+by adding the line:
+
+	Logdir:                 log
+
+to your .mh_profile. Also by default, the current folder is processed.
+You can change that also. Here are the command line options for 
+refileto/refilefrom:
+
+refileto -help
+syntax: refileto [msgs] [switches]
+   switches are:
+   -debug
+   -draft
+   -file file
+   -help
+   -link
+   -log +folder
+   -nolink
+   -nopreserve
+   -preserve
+   -rmmproc program
+   -src +folder
+   -verbose
+
+
+A sample usage might be:
+
+refileto -src +outbox -verbose 
+
+-verbose shows you what is being files and where. Use -debug to check what will
+happen without actually refiling the mail messages.
+
+Here is a sample output of the command 
+"refileto -src +log/outgoing -verbose all":
+
+refile  -file /gmaster/home/strike/Mail/log/outgoing/5 +log/local/holt
+refile  -file /gmaster/home/strike/Mail/log/outgoing/7 +log/convex/sowton
+refile  -file /gmaster/home/strike/Mail/log/outgoing/9 +log/convex/lutz 
+	+log/convex/sowton
+
+
+
+The rfolder utility is like folders: it can recursively descend 
+a list of folders. However, you can use rfolder to run another MH command
+in every folder it finds. For example, let say you want to sort
+all of the subfolders in your +log folder.
+
+You could say:
+
+rfolder +log -all -recurse -verbose -exec sortm -textfield subject
+
+-debug will show you what might happen without actually executing the
+command.
+
+By the way, -clean can be used to remove empty folders (empty folders
+must be completely empty, without any .# or # files from rmm's, etc.)
+
+
+You can even use refileto/refilefrom and rfolder(s) to build a new 
+log directory from all your existing mail. Ala:
+
+rfolder -all -recurse -verbose -exec refilefrom -log +log -src
+
+
+rfolders implis the -all -recurse flags

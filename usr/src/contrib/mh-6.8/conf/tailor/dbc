@@ -1,0 +1,4 @@
+mmdfldir:	
+mmdflfil:	.maildrop
+hostable:	/usr/local/lib/mh/hosts
+servers:	localhost

@@ -1,0 +1,23 @@
+printenv USER >& /dev/null
+if ($status != 0) then
+    set path=(/bin /usr/ucb /usr/bin /usr/mmdf/bin /usr/uci .)
+    goto crontab
+endif
+
+printenv LOGNAME >& /dev/null
+if ($status != 0) then
+    setenv LOGNAME "$USER"
+endif
+
+if (-r ~/.$LOGNAME) then
+    source ~/.$LOGNAME
+else
+    if (~$LOGNAME/.cshrc != ~/.cshrc) source ~$LOGNAME/.cshrc
+endif
+
+if (~$LOGNAME/.signature != ~/.signature && -r ~$LOGNAME/.signature \
+	&& -r ~/.signature) \
+    setenv SIGNATURE "`cat ~/.signature` (agent: `cat ~$LOGNAME/.signature`)"
+
+crontab:
+umask 0022

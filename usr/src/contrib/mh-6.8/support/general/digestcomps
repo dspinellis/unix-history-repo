@@ -1,0 +1,9 @@
+From:	  %{digest}-Request
+To:	  %{digest} Distribution: dist-%{digest};
+Subject:  %{digest} Digest V%(cur) #%(msg)
+Reply-To: %{digest}
+--------
+%{digest} Digest	%(weekday{date}), %2(mday{date}) %(month{date}) 19%02(year{date})
+		Volume %(cur) : Issue %(msg)
+
+Today's Topics:

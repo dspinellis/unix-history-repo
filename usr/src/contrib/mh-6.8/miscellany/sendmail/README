@@ -1,0 +1,8 @@
+# miscellany/sendmail/README
+
+spooler.c    -- a replacement local delivery mailer for sendmail that
+		was written by Terry West (terry@rand.org) and has been
+		in use there for many years now.
+
+		It writes maildrops in the MMDF/MH ctrl/A format so you
+		can avoid munging "From " lines.

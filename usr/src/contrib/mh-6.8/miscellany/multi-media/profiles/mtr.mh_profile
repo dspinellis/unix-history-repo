@@ -1,0 +1,59 @@
+Path:		mhbox
+Alternate-Mailboxes: mrose*
+Draft-Folder:	drafts
+Folder-Protect:	700
+Msg-Protect:	600
+Sequence-Negation: ^
+lproc:		show
+moreproc:	less
+mshproc:	msh
+showproc:	mhl
+ex-next:	zz
+prompter-next:	vi
+da-server:	wp2.psi.net
+ali:		-alias aliases
+anno:		-inplace
+bomb:		-annotate -fcc +outbox -form repl.bomb -inplace -nocc all
+		    -whatnow push
+burst:		-inplace
+dist:		-annotate -form dist.comps -inplace
+forw:		-annotate -editor rapid -form forw.comps -inplace -mime
+fym:		-annotate -fcc +outbox -form repl.fym -inplace -nocc all
+		    -whatnow push -filter mhl.fym
+hnfy:		-annotate -fcc +outbox -form repl.hnfy -inplace -nocc all
+		    -whatnow push
+inc:		-apop -form scan.time
+msgchk:		-apop
+msh:		-scan -topcur
+next:		-noheader
+ok:		-annotate -fcc +outbox -form repl.ok -inplace -nocc all
+		    -whatnow push
+oops:		-annotate -fcc +outbox -form repl.oops -inplace -nocc all
+		    -whatnow push
+pick:		-sequence select -list
+pop:		-rpop -form scan.timely
+popi:		-apop
+popf:		-pop
+prev:		-noheader
+push:		-alias aliases -forward -mime -msgid -push -verbose
+pushf:		-push
+rapid:		-rapid
+repl:		-annotate -fcc +outbox -inplace -cc all -nocc me
+scan:		-form scan.time
+send:		-alias aliases -mime -msgid -verbose
+sendf:		-alias aliases -mime -msgid -verbose -draftfolder +drafts
+show:		-noheader
+ssortm:		-limit 0 -textfield subject
+thanks:		-annotate -fcc +outbox -form repl.thanks -inplace -nocc all
+		    -whatnow push
+whom:		-alias aliases
+vmh:		-novmhproc
+yl:		-annotate -fcc +outbox -form repl.yl -inplace -nocc all
+		    -whatnow push
+Split-Delay:	180
+automhnproc:	mhn
+mhnproc:	mhn
+mcomp:		-editor rapid -form comp.mhn
+mhn:		-list -nomoreproc
+mhn-cache:	/tmp
+mhn-storage:	/tmp

@@ -1,0 +1,19 @@
+Date: Mon, 30 Mar 92 08:07:45 PST
+From: David Vezie <dv@cc-mac.nbn.com>
+
+    That is, that the Received: lines might be useful.  For the person who
+    wanted to avoid infinite loops, the problem could be solved by your
+    package if you enabled the individual Received: lines to be parsed.
+    He could, for example do:
+
+	rcvdist("myself@siteB") if ( ! grep (/siteB/, @received));
+
+    (If there is no Received: line for siteB, he would forward it to siteB,
+    thus preventing infinite loops).  The mirror system would be on siteB for
+    siteA.
+
+    (Actually, I could do the same thing!  I have the same (or a similar)
+    problem).
+
+Completed: 3/31/92
+

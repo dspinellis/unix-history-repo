@@ -1,0 +1,58 @@
+% run this through PhD-TeX
+
+\input dcustom
+\articlestyle
+\draftfalse
+\input version
+
+\input sfwmac
+
+% these are special for mh4.tex
+\def\entry#1{\boxit{#1:}}
+\def\whatnow/{{\tt What now?\/}}
+
+\def\pgm#1{{\it#1}}			% UNIX programs
+\def\man#1(#2){\pgm{#1\/}(#2)}		% Manual entries
+\def\arg#1{\hbox{\sl\`{}#1\'{}}}	% arguments to programs
+\def\switch#1{\hbox{\`{}\tt-\sl#1\'{}}}	% switches to programs
+\def\eg#1{\hbox{\tt#1}}			% example
+\def\file#1{\hbox{\sl#1}}		% filename
+\def\bq#1{\`{}#1\`{}}			% back-quoted command
+
+\header
+    Changes to\\
+	The Rand MH Message Handling System:\\\\
+	MH.4\title
+    Marshall T.~Rose\author
+    \versiondate/\info
+\footnote{}{\hskip -\parskip $^\dagger$ Computer Mail: {\tx MRose@ICS.UCI.EDU}.}
+\centerline{\sc Abstract}
+{\rightskip=0pt\narrower\narrower
+\noindent
+This document describes user-visible changes to the
+UCI version of the Rand \MH/ system that were made
+from \mh3 to \mh4.
+In particular,
+four facilities are discussed:
+multiple composition of drafts,
+user-defined sequences,
+the folder-stack,
+and,
+relative folder addressing.
+This document does not describe bug-fixes, per se,
+or internal changes,
+unless these activities resulted in a visible change for the \MH/ user.
+\par
+This document is meant to supplement,
+not supersede, the standard \MH/ user manual\cite{MH}.
+\par
+Comments concerning this documentation should be addressed to the Internet
+mailbox {\sf Bug-MH@ICS.UCI.EDU}.
+\par}
+
+\input text
+\input refs
+\printcontents
+\showsummary
+
+\bye

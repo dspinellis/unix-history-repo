@@ -1,0 +1,12 @@
+mhn-compose-audio/basic: /usr/demo/SOUND/record | /usr/demo/SOUND/raw2audio -F
+mhn-compose-audio/x-next: /usr/demo/SOUND/record | /usr/openwin/bin/adpcm_enc
+mhn-charset-iso-8859-1: xterm -fn '-*-*-medium-r-normal-*-*-120-*-*-c-*-iso8859-*' -e %s
+mhn-show-application/PostScript: %plpr -Pps
+mhn-show-audio/basic: %p/usr/demo/SOUND/raw2audio 2>/dev/null | play
+mhn-show-audio/x-next: %p/usr/openwin/bin/adpcm_dec | /usr/demo/SOUND/play
+mhn-show-image: %pxv -geometry =-0+0 %f
+mhn-show-text/richtext: %p/usr/local/lib/mh/richtext -p %F
+mhn-store-application/PostScript: %m%P.ps
+mhn-store-audio/basic: | /usr/demo/SOUND/raw2audio -e ulaw -s 8000 -c 1 > %m%P.au
+mhn-store-audio/x-next: %m%P.au
+mhn-store-text: %m%P.txt

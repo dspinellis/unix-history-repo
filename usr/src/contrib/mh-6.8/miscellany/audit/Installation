@@ -1,0 +1,71 @@
+1. Create a directory and unpack the perl files.
+
+2. Create a perl script to audit your mail. You might name it something
+   like ~/.audit.
+
+3. Follow the instruction in the README and require the files audit.pl
+   and mh.pl in your PERL script. 
+   
+   *
+   * BE SURE TO CHANGE THE PATH NAMES to 
+   * to the absolute path name of where you unpacked 
+   * the files in step 1.
+   *
+
+   If you install the .pl file in /usr/lib/perl, you can just
+   require them as in "require 'audit.pl';"
+
+4. Create a .forward file in your home directory and add 
+
+   " | <pathname of audit file> <login>"
+
+   where <pathname> is the absolute path of your audit script
+   and <login> is your login name.
+
+5. If you are going to use the refileto and rfolder utilities,
+   also edit the unshift line to reference the NEW absolute path.
+
+   By default it will look in the path reference by the environment
+   variable DELIVERPATH. You can change that to an absolute path
+   if you want to.
+
+   If you installed audit.pl and mh.pl in /usr/lib/perl,
+   you can delete the unshift line.
+
+6. Make sure you chmod +x your audit file script!
+
+
+For example,
+
+1. My PERL files are in /gmaster/home/strike/work/perl/deliver.
+
+2. My audit script is in /gmaster/home/strike/.audit and has
+
+    #! /usr/local/bin/perl
+
+    require '/gmaster/home/strike/work/perl/deliver/audit.pl' || 
+	    die "deliver: cannot include audit.pl: $@";
+
+    require '/gmaster/home/strike/work/perl/deliver/mh.pl' || 
+	    die "deliver: cannot include mh.pl: $@";
+
+    &initialize();
+
+
+   at the very top of the file.
+
+4. My .forward file has:
+
+   " | /gmaster/home/strike/.audit strike"
+
+5. I edited refileto and rfolder to say:
+
+   unshift(@INC, "/gmaster/home/strike/work/perl/deliver");
+
+   I could also have set DELIVERPATH ala
+
+   setenv DELIVERPATH /gmaster/home/strike/work/perl/deliver
+
+6. I did:
+
+   chmod +x /gmaster/home/strike/.audit

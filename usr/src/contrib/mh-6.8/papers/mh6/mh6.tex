@@ -1,0 +1,558 @@
+% run this through LaTeX
+
+\input lcustom
+\input version
+
+\documentstyle[12pt,DScustom,sfwmac]{article}
+\setcounter{page}{0}
+\pagestyle{empty}
+
+\begin{document}
+
+\title{Changes to\\ The Rand MH Message Handling System:\\ MH.6}
+\author{Marshall T.~Rose\\
+	Northrop Research and Technology Center\\
+	One~Research Park\\
+	Palos Verdes Peninsula, CA  90274}
+\date{\ifdraft \versiondate/\\ Version \versiontag/\else \today\fi}
+\maketitle
+\footnotetext[0]{\hskip -\parindent
+This document (version \versiontag/)
+was \LaTeX set \today\ with \fmtname\ v\fmtversion.}%
+
+\begin{abstract}
+\noindent This document describes the user-visible change to the
+UCI version of the Rand \MH/ system that were made from \mh5 to \mh6.
+This document does not describe bug-fixes, per se,
+or internal changes,
+unless these activities resulted in a visible change for the \MH/ user.
+
+This document is meant to supplement,
+not supersede, the standard \MH/ User's manual\cite{MH}.
+
+Comments concerning this documentation should be addressed to the Internet
+mailbox {\sf Bug-MH@UCI.EDU}.
+\end{abstract}
+
+\bop\pagestyle{plain}\pagenumbering{arabic}
+
+\section*	{Acknowledgements}
+The \MH/ system described herein is based on the original Rand \MH/ system.
+It has been extensively developed (perhaps too much so) by Marshall T.~Rose
+and John L.~Romine at the University of California, Irvine.
+Einar A.~Stefferud, Jerry N.~Sweet,
+and Terry P.~Domae provided numerous suggestions
+to improve the UCI version of \MH/.
+Of course,
+a large number of people have helped \MH/ along.
+The list of ``\MH/~immortals'' is too long to list here.
+
+\section*	{Disclaimer}
+The Regents of the University of California wish to make it known that:
+\begin{quote}
+Although each program has been tested by its contributor,
+no warranty, express or implied,
+is made by the contributor or the University of California,
+as to the accuracy and functioning of the program
+and related program material,
+nor shall the fact of distribution constitute any such warranty,
+and no responsibility is assumed by the contributor
+or the University of California in connection herewith.
+\end{quote}
+
+\bop
+
+\section*	{Conventions}
+In this document,
+certain \LaTeX -formatting conventions are adhered to:
+\begin{enumerate}
+\item	The names of \unix/ commands, such as \pgm{comp},
+are presented in {\it text italics}.
+
+\item	Arguments to programs, such as \arg{msgs},
+are presented in {\tt typewriter style} and delimited by single-quotes.
+
+\item	\unix/ pathnames and envariables,
+such as $$\file{/usr/uci/}\hbox{\qquad and\qquad}\file{\$SIGNATURE},$$
+are presented in {\sl slanted roman}.
+
+\item	Text presenting an example, such as
+\example comp\ -editor\ zz\endexample
+is presented in {\tt typewriter style}.
+\end{enumerate}
+
+\bop
+
+\section*	{General Changes}
+Unlike the changes between \mh4 and \mh5,
+a large number of user-visible changes have been made in \mh6.
+These changes have been in the form of bug fixes and several generalizations.
+The majority of these will not affect novice users.
+In addition, \mh6 is a great deal faster than \mh5:
+all programs have been speeded-up significantly,
+thanks to work done by Van Jacobson as part of the process of including \mh5
+in the 4.3\bsd/~\unix/ distribution.
+
+This document describes all user-visible changes to \mh5 from it's initial
+release to the initial release of \mh6.
+
+\subsection*	{System-5 Support}
+In addition to support for \bsd/~\unix/, V7~\unix/ and \xenix/ variants of
+\unix/,
+\MH/ finally has support for the AT\&T variant of \unix/, System~5.
+Hopefully this will greatly expand the number of system which can run \MH/.
+Ironically,
+it appears that five ports of earlier versions of \MH/ (including \mh5)
+were done,
+but news of the work was not widespread.%
+\nfootnote{In fact,
+three groups in one large organization ported \MH/ independently,
+each without knowledge of the others' work.}
+
+\subsection*	{Documentation}
+Several new documents have been included in the \mh6 distribution:
+The paper {\em MH.5: How to process 200 messages a day and still get some
+real work done}
+was presented at the 1985 Summer Usenix Conference and Exhibition in
+Portland, Orgeon.
+Another paper, {\em MH: A Multifarious User Agent},
+has been accepted for publication by Computer Networks.
+Both describe \MH/,
+the former from a more technical and somewhat humorous perspective,
+the latter from a more serious and research-oriented perspective.
+In addition,
+a third paper has been included,
+{\em Design of the TTI Prototype Trusted Mail Agent},
+which describes a so-called ``trusted'' mail agent built on top of \MH/.
+This paper was presented at the Second International Symposium on
+Computer Message Systems in Washington, D.C.
+A fourth paper,
+{\em MZnet: Mail Service for Personal Micro-Computer Systems},
+is also included.
+This paper,
+which was presented at the First International Symposium on Computer Message
+Systems in Nottingham, U.K.,
+describes a \cpm/-based version of \MH/.
+
+In addition,
+the \MH/ tutorial, {\em The Rand MH Message Handling System: Tutorial},
+and,
+{\em The Rand MH Message Handling System: The UCI BBoards Facility},
+have both been updated by Jerry N.~Sweet.
+
+For \MH/ administrators (PostMasters and the like),
+there's an entirely new document,
+{\em The Rand MH Message Handling System: Administrator's Guide}.
+It explains most of the ``ins and outs'' of maintaining an \MH/ system.
+
+Finally, all of the manual entries and the \MH/ manual have had a thorough
+working over.
+The documentation is expanded, more accurate, and more detailed.
+
+\subsection*	{Help Listings}
+When any \MH/ command is invoked with the \switch{help} switch,
+in addition to listing the syntax of the command and version information,
+the \MH/ configuration options will be listed.
+\MH/ has so many configuration options,
+that when debugging problems, this information is invaluable.
+
+\subsection*	{The \MH/ Profile}
+There are two new profile entries worth noting:
+\eg{MH-Sequences} tells \MH/ the name of the file to record public
+sequences in.
+Users of \pgm{vm}, a proprietary, visual front-end to \MH/,
+make use of this to disable the public sequences feature of \MH/.
+
+The profile entry \eg{Unseen-Sequence} names those sequences which should be
+defined as those messages recently incorporated by \pgm{inc}.
+The \pgm{show} program knows to remove messages from this sequence once it
+thinks they have been seen.
+If this profile entry is not present, or is empty, then no sequences are
+defined.
+Otherwise, for each name given, the sequence is first zero'd and then each
+message incorporated is added to the sequence.
+As such, this profile entry is rather analogous to the
+\eg{Previous-Sequence} entry in the user's \MH/ profile.
+
+In addition, the \eg{Alternate-Mailboxes} entry in the profile has been
+expanded to support simple wild-carding.
+Also, the default for this profile entry is now the user's mail-id at any host.
+This change was made since \MH/ can no longer reliably figure out what
+the user's real outgoing address looks like.
+
+Finally,
+when the \pgm{install-mh} program is automatically invoked by \MH/,
+it won't prompt the user for information.
+Instead, it notes that it's setting up the default environment.
+In addition,
+the \MH/ administrator may set-up a file called \file{mh.profile} in the \MH/
+library area which is consulted by \pgm{install-mh} when initializing the
+user's \profile/.
+
+\subsection*	{The \MH/ Context}
+The \pgm{folder}, \pgm{scan}, and \pgm{show} programs have been modified to
+update the user's \MH/ context prior to writing to the user's terminal.
+This allows the \MH/ user interrupt output to the terminal and still have the
+expected context.
+This is especially useful to interrupt long \pgm{scan} listings.
+This change also introduces a subtle bug between \pgm{show} and messages
+denoted by the \eg{Unseen-Sequence}.
+See \man show(1) for the details.
+
+\subsection*	{Addresses and 822 support}
+\MH/ now fully supports the RFC-822 routing syntax for addresses
+(it used to recognize the syntax, but ignore the information present).
+In addition,
+there are three major modes for support of non-822 addressing in \MH/:
+\begin{itemize}
+\item	BERK\hbreak
+This is useful on sites running \SendMail/.
+It doesn't support full 822--style addressing,
+in favor of recognizing such formats as ACSnet, and so on.
+For sites that can't run in an 822--compliant environment,
+this is the option to use
+(at the price of sacrificing some of the power of 822--style addressing).
+
+\item	DUMB\hbreak
+Although not as liberal as BERK,
+the DUMB option is useful on sites in which the message transport system
+conforms to the 822 standard,
+but wants to do all the defaulting itself.
+
+\item	BANG\hbreak
+From out in left field,
+the BANG option favors \UUCP/-style addressing over 822--style addressing.
+Hopefully when all the \UUCP/ sites around get around to adopting domain-style
+addresses, this option won't be needed.
+\end{itemize}
+
+The \pgm{ap} program (mentioned momentarily) and the \pgm{ali} program
+both support a \switch{normalize} switch indicate if addresses should be
+resolved to their ``official'' hostnames.
+
+\subsection*	{New Programs}
+There are five new programs available:
+The \pgm{ap} program is the \MH/ stand-alone address parser.
+It's useful for printing address in various formats
+(and for debugging address strings).
+The \pgm{dp} program is similar, but works on dates instead of addresses.
+
+The \pgm{msgchk} program checks for new mail,
+possibly using the Post Office Protocol, POP, described below.
+
+A new receive mail hook,
+the \pgm{rcvstore} program,
+which was written by Julian L.~Onions is available.
+
+Finally, a visual front-end to \pgm{msh} called \pgm{vmh} has been included.
+(This program is discussed in greater detail later on.)
+
+\subsection*	{Message Numbering}
+\MH/ now no longer restricts the number of messages which may reside in a
+folder
+(beyond that of system memory constraints).
+This means that message numbers larger than 2000 are permissible.
+Hopefully this will make life easier for people reading the network news
+using \MH/.
+
+\section*	{The WhatNow Shell}
+In \mh6,
+there is now the concept of a unified \whatnow/ processor that
+the four composition programs, \pgm{comp}, \pgm{dist}, \pgm{forw},
+and \pgm{repl} all invoke.
+This permits a greater flexibility in building mail applications with \MH/.
+As a result, there's a new program, \pgm{whatnow}, which acts as the default
+\whatnow/ program.
+Consult the \man whatnow(1) manual entry for all the details.
+
+The only other thing worth noting is that unless \MH/ has been compiled with
+the UCI option,
+the user's \file{\$HOME/.signature} file is not consulted for the user's
+personal name.
+
+\section*	{Format Strings}
+A general format string facility has been added to allow \MH/ users to tailor
+the output of certain commands.
+
+The \pgm{inc}, \pgm{scan}, \pgm{ap}, and \pgm{dp} programs all consult a
+file containing format strings.
+Format strings,
+which look a lot like \man printf(3) strings,
+give these \MH/ commands precise instructions on how to format their output.
+
+As a result,
+the \pgm{inc} and \pgm{scan} programs no longer have the
+\switch{size}, \switch{nosize},
+\switch{time}, \switch{notime},
+\switch{numdate}, and \switch{nonumdate}
+switches.
+These switches have been replaced with the
+\switch{form~formatfile} switch and the \switch{format~string} switch.
+The former directs the program to consult the named file for the format
+strings.
+The latter directs the program to use the named string as the format.
+To get the behavior of the old \switch{time} option,
+use the \switch{form~scan.time} option.
+Similarly,
+to get the effect of \switch{size},
+use \switch{form~scan.size}.
+
+The \pgm{repl} command uses a file containing format files to
+indicate how the reply draft should be constructed.
+Note that reply templates prior to \mh6 are incompatible with \mh5.
+Don't worry though,
+it's quite easy to convert the templates by hand.
+(Those clever enough to have written a reply template to begin with won't
+have {\em any\/} problem.)
+
+Similarly, when the \pgm{forw} program is constructing a digest,
+it uses a file containing format strings to indicate how to build the
+encapsulating draft.
+
+\section*	{News}
+The depreciated \MH/ news system (from \mh1) is now de-supported.
+Use the ``hoopy'' BBoards facility instead.
+
+\section*	{BBoards}
+\MH/ maintainers take note:
+the default home directory for the bboards login has changed from
+\file{/usr/bboards/} to \file{/usr/spool/bboards/}.
+Use the \eg{bbhome} directive in your \MH/ configuration file to set
+it back to the old value if you wish.
+
+In addition, the aliases field for a BBoard in the BBoards file is now
+deemed useful only for addressing, not for user input to \pgm{bbc}.
+This means when giving the name of a BBoard to \pgm{bbc},
+only the official name should be used.
+
+A final note for mailsystem maintainers:
+the \MMDFII/ BBoards channel and the \SendMail/ BBoards mailer have been
+modified to use the standard message encapsulation format when returning
+failed messages to the list maintainer.
+This means that the failure notices that the maintainer receives can
+simply be \pgm{burst}.
+
+\subsection*	{New Switches in bbc}
+The \pgm{bbc} program permits you to specify the \eg{mshproc} to use on the
+command line by using the \switch{mshproc~program} option.
+In addition, options which aren't understood by \pgm{bbc} are passed along to
+the \eg{mshproc}.
+
+In addition, the following commands
+pass any unrecognized switches on to the program that they invoke:
+\pgm{bbc}, \pgm{next}, \pgm{show}, \pgm{prev}, and \pgm{vmh}.
+
+\subsection*	{Distributed BBoards}
+If both BBoards and POP (see the next section) are enabled,
+then distributed BBoards can be supported on top of the POP service.
+This allows the \MH/ user to read BBoards on a server machine
+instead of the local host
+(which saves a lot of wasted disk space when the same BBoards are replicated
+several times at a site with several hosts).
+See the {\em Administrator's Guide\/} for information on how this can be made
+completely transparent to the \MH/ user.
+
+If you have several machines at your site running 4.2\bsd/~\unix/
+and connected by an \ethernet/ (or other high-speed LAN),
+you {\em want\/} this software.
+
+\subsection*	{Visual Front-End to msh}
+A simple window management protocol has been implemented for \MH/ programs
+that might wish to act as a back-end to a sophisticated visual front-end.
+
+The first implementation of a server side (front-end) program is \pgm{vmh},
+which uses \man curses(3) to maintain a split-screen interface.
+Perhaps look for a \pgm{mhtool} program for the SUN next!
+
+The \pgm{msh} program has been modified to speak the client side (back-end)
+of this protocol, if so directed.
+At present, \pgm{msh} is the only program in the \MH/ distribution which
+implements the client side of the window management protocol.
+
+\subsection*	{Updates in msh}
+Prior to quitting,
+the \pgm{msh} command now asks if the \pgm{packf\/}'d file you've been
+perusing should be updated if you've modified it and the file is writable by
+you.
+The file can be modified by using \pgm{burst}, \pgm{rmm}, \pgm{rmm},
+or \pgm{sortm} commands.
+The file can also be modified by using the \pgm{refile} command without the
+\switch{link} option.
+(Or course,
+the \switch{link} option doesn't actually link anything to the file.)
+
+\section*	{Distributed Mail}
+\MH/ now contains a powerful facility for doing distributed mail
+(having \MH/ reside on a host different than the message transport agent).
+For general information,
+consult either the 
+{\em MH.5: How to process 200 messages a day and still get some real work
+done} paper,
+or the {\em MH: A Multifarious User Agent} paper.
+For specific information,
+consult the {\em Administrator's Guide}.
+Here's a brief synopsis:
+
+This POP facility in \MH/ is based on a modification of the ARPA Post
+Office Protocol (POP).
+A POP {\em subscriber\/} is a remote user,
+on a POP {\em client host},
+that wishes to pick-up mail on a POP {\em service host}.
+
+There are two ways to administer POP:
+\begin{itemize}
+\item	Naive Mode\hbreak
+Each user-id in the \man passwd(5) file is considered a POP subscriber.
+No changes are required for the mailsystem on the POP service host.
+However,
+this method requires that each POP subscriber have an entry in the password
+file.
+The POP server will fetch the user's mail from wherever maildrops are kept on
+the POP service host.
+This means that if maildrops are kept in the user's home directory,
+then each POP subscriber must have a home directory.
+
+\item	Smart Mode\hbreak
+This is based on the notion that the list of POP subscribers and the list of
+login users are completely separate name spaces.
+A separate database (similar to the \man BBoards(5) file)
+is used to record information about each POP subscriber.
+Unfortunately,
+the local mailsystem must be changed to reflect this.
+This requires two changes (both of which are simple):
+\begin{enumerate}
+\item	Aliasing\hbreak
+	The aliasing mechanism is augmented so that POP subscriber addresses
+	are diverted to a special delivery mechanism.
+	\MH/ comes with a program, \man popaka(8), which generates the
+	additional information to be put in the mailsystem's alias file.
+\item	Delivery\hbreak
+	A special POP channel (for \MMDFII/) or POP mailer (for \SendMail/)
+	performs the actual delivery (\mh6 supplies both).
+	All it really does is just place the mail in the POP spool area.
+\end{enumerate}
+Clever mailsystem people will note that
+the POP mechanism is really a special case of the more general
+BBoards mechanism.
+\end{itemize}
+These two different philosophies are not compatible on the same POP service
+host: one or the other, but not both, may be run.
+
+In addition, there is one user-visible difference,
+which the administrator controls the availability of.
+The difference is whether the POP subscriber must supply a password to the POP
+server:
+\begin{itemize}
+\item	ARPA standard method\hbreak
+This uses the standard ARPA technique of sending a username and a password.
+The appropriate programs (\pgm{inc}, \pgm{msgchk}, and possibly \pgm{bbc\/})
+will prompt the user for this information.
+
+\item	\unix/ remote method\hbreak
+This uses the Berkeley \unix/ reserved port method for authentication.
+This requires that the two or three mentioned above programs be {\em setuid\/}
+to root.
+(There are no known holes in any of these programs.)
+\end{itemize}
+These two different philosophies are compatible on the same POP service host:
+to selectively disable RPOP for hosts which aren't trusted,
+either modify the \file{.rhosts} file in the case of POP subscribers being
+\unix/ logins,
+or zero the contents of network address field of the \man pop(5) file for the
+desired POP subscribers.
+
+The \pgm{inc} command also has two other switches when \MH/ is enabled for
+POP:
+\switch{pack~file} and \switch{nopack}.
+Normally,
+\pgm{inc} will use the POP to incorporate mail from a POP service host into
+an \MH/ folder (\eg{+inbox}).
+However,
+there are some misguided individuals who prefer to \pgm{msh} to read their
+maildrop.
+By using the \switch{pack~file} option,
+these individuals can direct \pgm{inc} to fetch their maildrop from the POP
+service host and store it locally in the named file.
+As expected, \pgm{inc} will treat the local file as a maildrop,
+performing the appropriate locking protocols.
+
+\section*	{Rcvmail hooks}
+In order to offer users of \MH/ increated rcvmail hook functionality,
+the \pgm{slocal} program has been upgraded to support the semantics of
+the \MMDFII/ mail-delivery mechanism.
+This means that users of \mh6 can maintain identical \file{.maildelivery}
+files regardless of the underlying transport system.
+See \man mhook(1) for all the details.
+
+\subsection*	{Field change in rcvpack}
+The \pgm{rcvpack} rcvmail hook now adds the field name \eg{Delivery-Date:}
+instead of \eg{Cron-Date:} to messages it \pgm{pack\/}s.
+
+\section*	{Other Changes}
+Here's the miscellany:
+
+\subsection*	{Continuation Lines}
+Alias files used by \MH/,
+display templates used by \pgm{mhl},
+and format files used by \pgm{forw}, \pgm{repl}, and \pgm{scan} all support
+a standard continuation line syntax.
+To continue a line in one of these files,
+simply end the line with the backslash character (`$\backslash$').
+All the other files used by \MH/ are in 822--format,
+so the 822--continuation mechanism is used.%
+\nfootnote{Looking back,
+it would have been best had all files in \MH/ used the 822--format.}
+
+\subsection*	{Modifications to show}
+The \switch{format}, \switch{noformat}, \switch{pr}, and \switch{nopr}
+options to \pgm{show} have gone away in favor of a more general mechanism.
+The \switch{showproc~program} option tells \pgm{show}
+(or \pgm{next} or \pgm{prev\/}) to use the named program as the \eg{showproc}.
+The \switch{noshowproc} option tells \pgm{show}, et. al.,
+to use the \man cat(1) program instead of a \eg{showproc}.
+As a result, the profile entry \eg{prproc} is no longer used.
+
+\subsection*	{Front-End to mhl}
+When outputting to a terminal,
+the \pgm{mhl} program now runs the program denoted by the profile entry
+\eg{moreproc}.
+If this entry is not present,
+the default is the UCB \pgm{more} program.
+If the entry is non-empty,
+then that program is spliced between \pgm{mhl} and the user's terminal.
+The author uses the \pgm{less} program as his \eg{moreproc}.
+
+Of course,
+if \pgm{mhl} isn't outputting to a terminal,
+then \eg{moreproc} is not invoked.
+
+\subsection*	{Switch change in inc}
+The \switch{ms~ms-file} switch in \pgm{inc} has been changed to
+\switch{file~name} to be more consistent.
+
+\subsection*	{Complex Expressions in pick}
+The \pgm{pick} command now handles complex boolean expressions.
+
+\subsection*	{Defaults change in prompter and burst}
+The \switch{prepend} option is now the default in \pgm{prompter}.
+The \switch{noinplace} option is now the default in \pgm{burst}.
+
+\subsection*	{Interactive option in rmf}
+The \pgm{rmf} program has been changed to support an \switch{interactive}
+switch.
+If given,
+then the user is prompted regarding whether the folder should be deleted.
+If the folder to be removed is not given by the user,
+this switch is defaulted to on.
+
+\subsection*	{Trusted Mail Interface}
+\MH/ now has an interface for so-called ``trusted mail'' applications.
+Although the modifications to \MH/ to support this are in the public domain,
+the actual library that \MH/ uses is not.
+Contact Professor David J.~Farber ({\sf Farber@UDel\/}) for more information.
+
+\bibliography{mh6}
+
+\showsummary
+
+\end{document}
