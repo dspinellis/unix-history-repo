@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)signal.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)signal.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -148,7 +148,7 @@ psignals()
 	register int tsignals;
 
 	if ((tsignals = sigs) == 0)
-		return (0);
+		return;
 	sigs = 0;
 
 #ifdef S_WINCH
