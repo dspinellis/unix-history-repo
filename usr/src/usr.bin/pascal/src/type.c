@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)type.c 1.7 %G%";
+static char sccsid[] = "@(#)type.c 1.8 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -10,8 +10,11 @@ static char sccsid[] = "@(#)type.c 1.7 %G%";
 /*
  * Type declaration part
  */
-typebeg()
+typebeg( lineofytype , r )
+    int	lineofytype;
 {
+    static bool	type_order = FALSE;
+    static bool	type_seen = FALSE;
 
 /*
  * this allows for multiple
@@ -25,21 +28,30 @@ typebeg()
 #ifndef PI1
 	if (!progseen)
 		level1();
+	line = lineofytype;
 	if ( parts[ cbn ] & ( VPRT | RPRT ) ) {
 	    if ( opt( 's' ) ) {
 		standard();
+		error("Type declarations should precede var and routine declarations");
 	    } else {
-		warning();
+		if ( !type_order ) {
+		    type_order = TRUE;
+		    warning();
+		    error("Type declarations should precede var and routine declarations");
+		}
 	    }
-	    error("Type declarations should precede var and routine declarations");
 	}
 	if (parts[ cbn ] & TPRT) {
 	    if ( opt( 's' ) ) {
 		standard();
+		error("All types should be declared in one type part");
 	    } else {
-		warning();
+		if ( !type_seen ) {
+		    type_seen = TRUE;
+		    warning();
+		    error("All types should be declared in one type part");
+		}
 	    }
-	    error("All types should be declared in one type part");
 	}
 	parts[ cbn ] |= TPRT;
 #endif

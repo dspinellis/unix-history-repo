@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)lab.c 1.12 %G%";
+static char sccsid[] = "@(#)lab.c 1.13 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -20,6 +20,8 @@ static char sccsid[] = "@(#)lab.c 1.12 %G%";
 label(r, l)
 	int *r, l;
 {
+    static bool	label_order = FALSE;
+    static bool	label_seen = FALSE;
 #ifdef PC
 	char	extname[ BUFSIZ ];
 #endif PC
@@ -39,18 +41,26 @@ label(r, l)
 	if (parts[ cbn ] & (CPRT|TPRT|VPRT|RPRT)){
 	    if ( opt( 's' ) ) {
 		standard();
+		error("Label declarations should precede const, type, var and routine declarations");
 	    } else {
-		warning();
+		if ( !label_order ) {
+		    label_order = TRUE;
+		    warning();
+		    error("Label declarations should precede const, type, var and routine declarations");
+		}
 	    }
-	    error("Label declarations should precede const, type, var and routine declarations");
 	}
 	if (parts[ cbn ] & LPRT) {
 	    if ( opt( 's' ) ) {
 		standard();
+		error("All labels should be declared in one label part");
 	    } else {
-		warning();
+		if ( !label_seen ) {
+		    label_seen = TRUE;
+		    warning();
+		    error("All labels should be declared in one label part");
+		}
 	    }
-	    error("All labels should be declared in one label part");
 	}
 	parts[ cbn ] |= LPRT;
 #endif
