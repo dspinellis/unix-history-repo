@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -237,19 +237,19 @@ copy(type, ftsp)
                  * source name to the target name.  
                  */
 		if (type == FILE_TO_DIR) {
-			if ((curr->fts_pathlen + to.target_end - to.p_path + 1)
+			if ((curr->fts_namelen + to.target_end - to.p_path + 1)
 			    > MAXPATHLEN) {
 				err("%s/%s: name too long (not copied)", 
-				    to.p_path, curr->fts_path);
+				    to.p_path, curr->fts_name);
 				continue;
 			}
 			if (to.target_end[-1] != '/') {
 				*to.target_end = '/';
 				*(to.target_end + 1) = 0;
 			}
-			(void)strncat(to.target_end + 1, curr->fts_path, 
-                            curr->fts_pathlen);
-			to.p_end = to.target_end + curr->fts_pathlen + 1;
+			(void)strncat(to.target_end + 1, curr->fts_name, 
+                            curr->fts_namelen);
+			to.p_end = to.target_end + curr->fts_namelen + 1;
 			*to.p_end = 0;
 			STRIP_TRAILING_SLASH(to);
 		}
