@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.60 (Berkeley) %G%
+		@(#)README	8.61 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -1451,6 +1451,7 @@ RULESETS (* means built in to sendmail)
   96	Bottom half of Ruleset 3 (ruleset 6 in old sendmail)
   97	Hook for recursive ruleset 0 call (ruleset 7 in old sendmail)
   98	Local part of ruleset 0 (ruleset 8 in old sendmail)
+  99	Guaranteed null (for debugging)
 
 
 MAILERS
