@@ -61,18 +61,14 @@
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00147
- * --------------------         -----   ----------------------
- *
- * 20 Apr 93	Paul Kranenburg		Detect and prevent kernel deadlocks in
- *					VM system
+ *	$Id$
  */
 
 /*
  *	Virtual memory object module.
  */
+
+#include "ddb.h"
 
 #include "param.h"
 #include "malloc.h"
@@ -1477,7 +1473,7 @@ boolean_t vm_object_coalesce(prev_object, next_object,
 	return(TRUE);
 }
 
-#ifdef	DEBUG
+#if defined(DEBUG) || (NDDB > 0)
 /*
  *	vm_object_print:	[ debug ]
  */
@@ -1526,4 +1522,4 @@ void vm_object_print(object, full)
 		printf("\n");
 	indent -= 2;
 }
-#endif	/* DEBUG */
+#endif /* defined(DEBUG) || (NDDB > 0) */

@@ -61,18 +61,14 @@
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00137
- * --------------------         -----   ----------------------
- *
- * 08 Apr 93	Yuval Yarom		Several VM system fixes
+ *	$Id$
  */
 
 /*
  *	Virtual memory mapping module.
  */
 
+#include "ddb.h"
 #include "param.h"
 #include "systm.h"
 #include "malloc.h"
@@ -2411,7 +2407,7 @@ void vm_map_simplify(map, start)
 	vm_map_unlock(map);
 }
 
-#ifdef	DEBUG
+#if defined(DEBUG) || (NDDB > 0)
 /*
  *	vm_map_print:	[ debug ]
  */
@@ -2481,4 +2477,4 @@ void vm_map_print(map, full)
 	}
 	indent -= 2;
 }
-#endif	/* DEBUG */
+#endif /* defined(DEBUG) || (NDDB > 0) */
