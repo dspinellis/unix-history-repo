@@ -1,4 +1,4 @@
-/*	hpreg.h	4.10	82/02/08	*/
+/*	hpreg.h	4.11	82/05/20	*/
 
 struct hpdevice
 {
@@ -14,6 +14,7 @@ struct hpdevice
 	int	hpof;		/* offset register */
 	int	hpdc;		/* desired cylinder address register */
 	int	hpcc;		/* current cylinder */
+#define	hphr	hpcc		/* holding register */
 /* on an rp drive, mr2 is called er2 and er2 is called er3 */
 /* we use rm terminology here */
 	int	hpmr2;		/* maintenance register 2 */
@@ -126,7 +127,31 @@ struct hpdevice
 #define	HPOF_P1200	060		/* +1200 uinches */
 #define	HPOF_M1200	0260		/* -1200 uinches */
 
+/* hphr (alias hpcc) commands */
+#define	HPHR_MAXCYL	0x8017		/* maximum cylinder address */
+#define	HPHR_MAXTRAK	0x8018		/* maximum track address */
+#define	HPHR_MAXSECT	0x8019		/* maximum sector address */
+#define	HPHR_FMTENABLE	0xffff		/* enable format command in cs1 */
+
 /* hpmr */
 #define	HPMR_SZ		0174000		/* ML11 system size */
 #define	HPMR_ARRTYP	0002000		/* ML11 array type */
 #define	HPMR_TRT	0001400		/* ML11 transfer rate */
+
+/*
+ * Systems Industries kludge: use value in
+ * the serial # register to figure out real drive type.
+ */
+#define	SIMB_MB	0xff00		/* model byte value */
+#define	SIMB_S6	0x2000		/* switch s6 */
+#define	SIMB_LU	0x0007		/* logical unit (should = drive #) */
+
+#define	SI9775D	0x0700		/* 9775 direct */
+#define	SI9775M	0x0e00		/* 9775 mapped */
+#define	SI9730D	0x0b00		/* 9730 direct */
+#define	SI9730M	0x0d00		/* 9730 mapped */
+#define	SI9766	0x0300		/* 9766 */
+#define	SI9762	0x0100		/* 9762 */
+
+#define	SIRM03	0x8000		/* RM03 indication */
+#define	SIRM05	0x0000		/* RM05 pseudo-indication */
