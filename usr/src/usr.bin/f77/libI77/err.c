@@ -1,5 +1,5 @@
 /*
-char id_err[] = "@(#)err.c	1.8";
+char id_err[] = "@(#)err.c	1.9";
  *
  * file i/o error and initialization routines
  */
@@ -39,6 +39,7 @@ int radix;
 ioflag signit,tab,cplus,cblank,elist,errflag,endflag,lquit,l_first;
 flag leof;
 int lcount,line_len;
+struct ioiflg ioiflg_;	/* initialization flags */
 
 /*error messages*/
 
