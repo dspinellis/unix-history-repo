@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -381,6 +381,30 @@ static short StateTab[NSTATES][NSTATES] =
 	/*ONE*/		OPR,	OPR,	OPR,	OPR,	OPR,
 };
 
+/* token type table -- it gets modified with $o characters */
+static TokTypeTab[256] =
+{
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,SPC,SPC,SPC,SPC,SPC,ATM,ATM,
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+	SPC,ATM,QST,ATM,ATM,ATM,ATM,ATM,ATM,SPC,ATM,ATM,ATM,ATM,ATM,ATM,
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+	OPR,OPR,ONE,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,
+	OPR,OPR,OPR,ONE,ONE,ONE,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+};
+
+#define toktype(c)	((int) TokTypeTab[(c) & 0xff])
+
+
 # define NOCHAR		-1	/* signal nothing in lookahead token */
 
 char **
@@ -402,6 +426,22 @@ prescan(addr, delim, pvpbuf, pvpbsize, delimptr)
 	int newstate;
 	char *saveto = CurEnv->e_to;
 	static char *av[MAXATOM+1];
+	static char firsttime = TRUE;
+
+	if (firsttime)
+	{
+		/* initialize the token type table */
+		char obuf[50];
+
+		firsttime = FALSE;
+		expand("\201o", obuf, &obuf[sizeof obuf - sizeof DELIMCHARS], CurEnv);
+		strcat(obuf, DELIMCHARS);
+		for (p = obuf; *p != '\0'; p++)
+		{
+			if (TokTypeTab[*p & 0xff] == ATM)
+				TokTypeTab[*p & 0xff] = OPR;
+		}
+	}
 
 	/* make sure error messages don't have garbage on them */
 	errno = 0;
@@ -608,53 +648,6 @@ prescan(addr, delim, pvpbuf, pvpbsize, delimptr)
 		return (NULL);
 	}
 	return (av);
-}
-/*
-**  TOKTYPE -- return token type
-**
-**	Parameters:
-**		c -- the character in question.
-**
-**	Returns:
-**		Its type.
-**
-**	Side Effects:
-**		none.
-*/
-
-static int
-toktype(c)
-	register int c;
-{
-	static char buf[50];
-	static bool firstime = TRUE;
-
-	if (firstime)
-	{
-		firstime = FALSE;
-		expand("\201o", buf, &buf[sizeof buf - 1], CurEnv);
-		(void) strcat(buf, DELIMCHARS);
-	}
-	c &= 0377;
-	if (c == MATCHCLASS || c == MATCHREPL || c == MATCHNCLASS)
-		return (ONE);
-	if (c == MACRODEXPAND)
-		return (ONE);
-#ifdef MACVALUE
-	if (c == MACVALUE)
-		return (ONE);
-#endif /* MACVALUE */
-	if (c == '"')
-		return (QST);
-	if ((c & 0340) == 0200)
-		return (OPR);
-	if (!isascii(c))
-		return (ATM);
-	if (isspace(c) || c == ')')
-		return (SPC);
-	if (strchr(buf, c) != NULL)
-		return (OPR);
-	return (ATM);
 }
 /*
 **  REWRITE -- apply rewrite rules to token vector.
