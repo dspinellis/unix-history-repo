@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)asc.c	8.4 (Berkeley) %G%
+ *	@(#)asc.c	8.5 (Berkeley) %G%
  */
 
 /* 
@@ -222,6 +222,7 @@ static int asc_disconnect();		/* process an expected disconnect */
 #define	SCRIPT_CONTINUE_OUT	5
 #define	SCRIPT_SIMPLE		6
 #define	SCRIPT_GET_STATUS	7
+#define	SCRIPT_DONE		8
 #define	SCRIPT_MSG_IN		9
 #define	SCRIPT_REPLY_SYNC	11
 #define	SCRIPT_TRY_SYNC		12
@@ -271,10 +272,10 @@ script_t asc_scripts[] = {
 	/* get status and finish command */
 	{SCRIPT_MATCH(ASC_INT_FC, ASC_PHASE_MSG_IN),			/*  7 */
 		asc_get_status, ASC_CMD_MSG_ACPT,
-		&asc_scripts[SCRIPT_GET_STATUS + 1]},
+		&asc_scripts[SCRIPT_DONE]},
 	{SCRIPT_MATCH(ASC_INT_DISC, 0),					/*  8 */
 		asc_end, ASC_CMD_NOP,
-		&asc_scripts[SCRIPT_GET_STATUS + 1]},
+		&asc_scripts[SCRIPT_DONE]},
 
 	/* message in */
 	{SCRIPT_MATCH(ASC_INT_FC, ASC_PHASE_MSG_IN),			/*  9 */
@@ -992,14 +993,30 @@ again:
 	/* check for disconnect */
 	if (ir & ASC_INT_DISC) {
 		state = &asc->st[asc->target];
-		switch (ASC_SS(ss)) {
-		case 0: /* device did not respond */
-			/* check for one of the starting scripts */
-			switch (asc->script - asc_scripts) {
-			case SCRIPT_TRY_SYNC:
-			case SCRIPT_SIMPLE:
-			case SCRIPT_DATA_IN:
-			case SCRIPT_DATA_OUT:
+		switch (asc->script - asc_scripts) {
+		case SCRIPT_DONE:
+		case SCRIPT_DISCONNECT:
+			/*
+			 * Disconnects can happen normally when the
+			 * command is complete with the phase being
+			 * either ASC_PHASE_DATAO or ASC_PHASE_MSG_IN.
+			 * The SCRIPT_MATCH() only checks for one phase
+			 * so we can wind up here.
+			 * Perform the appropriate operation, then proceed.
+			 */
+			if ((*scpt->action)(asc, status, ss, ir)) {
+				regs->asc_cmd = scpt->command;
+				readback(regs->asc_cmd);
+				asc->script = scpt->next;
+			}
+			goto done;
+
+		case SCRIPT_TRY_SYNC:
+		case SCRIPT_SIMPLE:
+		case SCRIPT_DATA_IN:
+		case SCRIPT_DATA_OUT: /* one of the starting scripts */
+			if (ASC_SS(ss) == 0) {
+				/* device did not respond */
 				if (regs->asc_flags & ASC_FLAGS_FIFO_CNT) {
 					regs->asc_cmd = ASC_CMD_FLUSH;
 					readback(regs->asc_cmd);
@@ -1013,6 +1030,9 @@ again:
 		default:
 			printf("asc%d: SCSI device %d: unexpected disconnect\n",
 				asc - asc_softc, asc->target);
+#ifdef DEBUG
+			asc_DumpLog("asc_disc");
+#endif
 			/*
 			 * On rare occasions my RZ24 does a disconnect during
 			 * data in phase and the following seems to keep it
