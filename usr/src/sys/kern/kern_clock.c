@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.43	82/10/30	*/
+/*	kern_clock.c	4.44	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -52,13 +52,13 @@
  * update statistics accordingly.
  */
 /*ARGSUSED*/
-#if vax
+#ifdef vax
 hardclock(pc, ps)
 	caddr_t pc;
 	int ps;
 {
 #endif
-#if sun
+#ifdef sun
 hardclock(regs)
 	struct regs regs;
 {
@@ -217,13 +217,13 @@ hardclock(regs)
  * Run periodic events from timeout queue.
  */
 /*ARGSUSED*/
-#if vax
+#ifdef vax
 softclock(pc, ps)
 	caddr_t pc;
 	int ps;
 {
 #endif
-#if sun
+#ifdef sun
 softclock(sirret, regs)
 	caddr_t sirreg;
 	struct regs regs;

@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.23	82/10/31	*/
+/*	subr_prf.c	4.24	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -169,14 +169,14 @@ printn(n, b, touser)
 panic(s)
 	char *s;
 {
-#if sun
+#ifdef sun
 	register int *a5;
 #endif
 	int bootopt = RB_AUTOBOOT;
 
 	if (panicstr)
 		bootopt |= RB_NOSYNC;
-#if sun
+#ifdef sun
 	else {
 		asm("movl a6, a5");
 		traceback(a5, a5);
@@ -233,11 +233,11 @@ putchar(c, touser)
 		}
 		return;
 	}
-#if vax
+#ifdef vax
 #include "../vax/mtpr.h"		/* XXX */
 #endif
 	if (c != '\0' && c != '\r' && c != 0177
-#if vax
+#ifdef vax
 	    && mfpr(MAPEN)
 #endif
 	    ) {
