@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)makefile	3.2 (Berkeley) %G%
+#	@(#)makefile	3.3 (Berkeley) %G%
 #
 # msdos versus unix defines
 O	= .o
@@ -74,7 +74,9 @@ ALLC = map3270.c mset.c termin.c
 # We don't include mset$O here...
 ALLO	= map3270$O termin$O
 
-ALLPRINT = default.map ${ALLH} ${ALLC}
+
+ALLHC=	${ALLH} ${ALLC}
+ALLPRINT =	${ALLHC}
 
 ALLSOURCE =	${ALLPRINT} makefile makefile.mak
 
@@ -96,6 +98,14 @@ clean:
 sccsclean:
 	-sccs clean
 	-sccs get makefile
+
+clist:	${ALLC}
+	@for i in ${ALLC} ; \
+		do (echo ${DIRPATH}$$i); done
+
+hclist:	${ALLHC}
+	@for i in ${ALLHC} ; \
+		do (echo ${DIRPATH}$$i); done
 
 sourcelist:	${ALLSOURCE}
 	@for i in ${ALLSOURCE}; \
