@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_buf.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_buf.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /******************************************************************************
@@ -84,6 +84,7 @@ int	newpage;		/* If prev_bp is set, indicates that this is
     register int	segment_ndx;
     register	BUFHEAD	*bp;
     register	unsigned	is_disk = 0;
+    register	unsigned	is_disk_mask = 0;
     SEGMENT	segp;
 
     if ( prev_bp ) {
@@ -103,16 +104,17 @@ int	newpage;		/* If prev_bp is set, indicates that this is
 	assert(segp != NULL);
 #endif
 	bp = PTROF(segp[segment_ndx]);
-	is_disk = ISDISK(segp[segment_ndx]);
+	is_disk_mask = ISDISK(segp[segment_ndx]); 
+	is_disk = is_disk_mask || !hashp->new_file; 
     } 
 
     if ( !bp ) {
 	bp = newbuf ( addr, prev_bp );
-	if ( !bp || __get_page ( bp->page, addr, !prev_bp, (int)is_disk, 0 )) {
+	if ( !bp || __get_page ( bp->page, addr, !prev_bp, is_disk, 0 )) {
 	    return(NULL);
 	}
 	if ( !prev_bp ) {
-	    segp[segment_ndx] = (BUFHEAD *)((unsigned)bp | is_disk);
+	    segp[segment_ndx] = (BUFHEAD *)((unsigned)bp | is_disk_mask );
 	}
     } else {
 	BUF_REMOVE ( bp );
