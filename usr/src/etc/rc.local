@@ -1,12 +1,12 @@
 #
 # site-specific startup actions, daemons
 #
-#	@(#)rc.local	8.2 (Berkeley) %G%
+#	@(#)rc.local	8.3 (Berkeley) %G%
 #
 
 T=/tmp/_motd
 rm -f $T
-sysctl -n kern.version > $T
+sysctl -n kern.version | sed 1q > $T
 echo "" >> $T
 sed '1,/^$/d' < /etc/motd >> $T
 cp $T /etc/motd
