@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mail.1	6.9 (Berkeley) %G%
+.\"	@(#)mail.1	6.10 (Berkeley) %G%
 .\"
 .TH MAIL 1 ""
 .UC 4
@@ -22,7 +22,7 @@ mail \- send and receive mail
 .SH SYNOPSIS
 .B mail
 [
-.B \-inv
+.B \-iInv
 ]
 [
 .B \-s
@@ -40,7 +40,7 @@ to-addr...
 .br
 .B mail
 [
-.B \-inv
+.B \-iInNv
 ]
 .B \-f
 [
@@ -49,7 +49,7 @@ name
 .br
 .B mail
 [
-.B \-inv
+.B \-iInNv
 ]
 [
 .B \-u
@@ -73,8 +73,17 @@ particularly useful when using
 .I mail
 on noisy phone lines.
 The
+.B \-I
+flag forces mail to run in interactive mode even when
+input isn't a terminal.  In particular, the `~' special
+character when sending mail is only active in interactive mode.
+The
 .B \-n
 flag inhibits the reading of /usr/lib/Mail.rc.
+The
+.B \-N
+flag inhibits the initial display of message headers
+when reading mail or editing a mail folder.
 .PP
 .I "Sending mail.\ "
 To send a message to one or more people,
@@ -368,7 +377,7 @@ as deletions) you have made in the current file and read in
 the new file. Some special conventions are recognized for
 the name. # means the previous file, % means your system
 mailbox, %user means user's system mailbox, & means
-your \~/mbox file, and +folder means a file in your folder
+your \fImbox\fP file, and +folder means a file in your folder
 directory.
 .TP
 .B from
@@ -502,12 +511,13 @@ quote blanks or tabs, i.e. ``set tabstr="-> "''.
 .B saveignore
 \fBSaveignore\fP is to \fBsave\fP what \fBignore\fP is to \fBprint\fP
 and \fBtype\fP.  Header fields thus marked are filtered out when
-saving a message by \fBsave\fP or when automatically saving to mbox.
+saving a message by \fBsave\fP or when automatically saving to \fImbox\fP.
 .TP
 .B saveretain
 \fBSaveretain\fP is to \fBsave\fP what \fBretain\fP is to \fBprint\fP
 and \fBtype\fP.  Header fields thus marked are the only ones saved
-with a message when saving by \fBsave\fP or when automatically saving to mbox.
+with a message when saving by \fBsave\fP or when automatically saving to
+\fImbox\fP.
 \fBSaveretain\fP overrides \fBsaveignore\fP.
 .TP
 .B shell
@@ -613,6 +623,11 @@ message.
 \fB~f\fR messages
 Read the named messages into the message being sent.
 If no messages are specified, read in the current message.
+Message headers currently being ignored (by the \fIignore\fP or \fIretain\fP
+command) are not included.
+.TP
+\fB~F\fR messages
+Identical to \fB~f\fP, except all message headers are included.
 .TP
 .B ~h
 Edit the message header fields by typing each one in turn and allowing
@@ -621,7 +636,13 @@ current terminal erase and kill characters.
 .TP
 \fB~m\fR messages
 Read the named messages into the message being sent, shifted right one
-tab.  If no messages are specified, read the current message.
+tab or by the value of \fItabstr\fP.  If no messages are specified,
+read the current message.
+Message headers currently being ignored (by the \fIignore\fP or \fIretain\fP
+command) are not included.
+.TP
+\fB~M\fR messages
+Identical to \fB~m\fP, except all message headers are included.
 .TP
 .B ~p
 Print out the message collected so far, prefaced by the message header
@@ -661,6 +682,9 @@ is often used as
 .I command
 to rejustify the message.
 .TP
+\fB~:\fR mail-command
+Execute the given mail command.  Not all commands, however, are allowed.
+.TP
 .BR ~~ string
 Insert the string of text in the message prefaced by a single ~.  If
 you have changed the escape character, then you should double
@@ -679,9 +703,7 @@ The binary options include the following:
 Causes messages saved in
 .I mbox
 to be appended to the end rather than prepended.
-(This is set in
-/usr/lib/Mail.rc
-on version 7 systems.)
+This should always be set (perhaps in /usr/lib/Mail.rc).
 .TP
 .B ask
 Causes
@@ -746,6 +768,13 @@ Usually, when a group is expanded that contains the sender, the sender
 is removed from the expansion.  Setting this option causes the sender
 to be included in the group.
 .TP
+.B noheader
+Setting the option
+.I noheader
+is the same as giving the
+.B \-N
+flag on the command line.
+.TP
 .B nosave
 Normally, when you abort a message with two \s-2RUBOUT\s0,
 .I mail
@@ -780,6 +809,11 @@ Pathname of the text editor to use in the
 .B edit
 command and ~e escape.  If not defined, then a default editor is used.
 .TP
+LISTER
+Pathname of the directory lister to use in the
+.B folders
+command.  Default is /bin/ls.
+.TP
 PAGER
 Pathname of the program to use in the
 .B more
@@ -806,7 +840,9 @@ The valued option
 is used as a threshold to determine how long a message must
 be before
 .B PAGER
-is used to read it.
+is used to read it.  If \fIcrt\fP is set without a value,
+then the height of the terminal screen stored in the system
+is used to compute the threshold (see \fIstty(1)\fP).
 .TP
 .B escape
 If defined, the first character of this option gives the character to
@@ -818,6 +854,10 @@ messages. If this name begins with a `/',
 .I mail
 considers it to be an absolute pathname; otherwise, the
 folder directory is found relative to your home directory.
+.TP
+.B mbox
+The name of the \fImbox\fP file.  It can be the name of a folder.
+The default is ``mbox'' in the user's home directory.
 .TP
 .B record
 If defined, gives the pathname of the file used to record all outgoing
@@ -842,13 +882,11 @@ command; normally, the first five lines are printed.
 .br
 ~/.mailrc	file giving initial mail commands
 .br
-/tmp/R#	temporary for editor escape
+/tmp/R*	temporary files
 .br
 /usr/lib/Mail.help*	help files
 .br
 /usr/lib/Mail.rc	system initialization file
-.br
-Message*	temporary for editing messages
 .SH "SEE ALSO"
 binmail(1), fmt(1), newaliases(1), aliases(5),
 .br
@@ -856,7 +894,7 @@ mailaddr(7), sendmail(8)
 .br
 `The Mail Reference Manual'
 .SH BUGS
-There are many flags that are not documented here. Most are
+There are some flags that are not documented here. Most are
 not useful to the general user.
 .br
 Usually,
