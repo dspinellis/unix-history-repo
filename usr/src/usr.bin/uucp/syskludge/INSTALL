@@ -1,0 +1,51 @@
+--- Installing the /usr/spool/uucp subdirectory kludge on system "xyz" ---
+	(This assumes your uucp sources are in good shape,
+	and are located in /usr/src/cmd/uucp.)
+
+1.  Fixing up the syskludge files
+1a) Mkdir /usr/src/cmd/uucp/syskludge, and chdir to it.
+1b) Extract this tar file.
+1c) Edit syskludge.c and change "D.duke" to "D.xyz".
+1d) "make syskludge.a"
+
+2.  Fixing up uucp
+2a) chdir to /usr/src/cmd/uucp.
+2b) Edit makefile and change "LIBS=" to "LIBS=syskludge/syskludge.a".
+2c) Edit uucp.h and add "extern char *subdir();" at the end.
+2d) Edit gnsys.c and append the following subroutine:
+
+	/*
+	 * return possibly corrected directory for searching
+	 */
+	char *
+	subdir(d, pre)
+	char *d, pre;
+	{
+		if (strcmp(d, Spool) == 0 && pre == CMDPRE)
+			return("/usr/spool/uucp/C.");
+		return(d);
+	}
+
+2e) Edit gnsys.c and "/fopen(dir,/s//fopen(subdir(dir, pre),/"
+2f) Edit anlwrk.c and "/fopen(dir,/s//fopen(subdir(dir, pre[0]),/"
+	(NOTE "pre" in gnsys.c, "pre[0]" in anlwrk.c)
+
+3.  Finishing up.
+3a) su root
+3b) make
+3c) make backup copies of uucp, uux, uucico, and uuxqt.
+3d) WAIT UNTIL THERE IS NO UUCP TRAFFIC (single user is safest).
+3e) Copy the new uucp, uux, uucico, uuxqt to the appropriate places.
+3f) chdir to /usr/spool/uucp
+3g) mkdir C. D. D.xyz; chmod 755 C. D. D.xyz
+3h) chown uucp C. D. D.xyz; chgrp daemon C. D. D.xyz
+3i) mv D.xyz?* D.xyz; mv D.?* D.; mv C.?* C.
+
+4.  All done!  Mail a letter somewhere and see if it goes.
+At your leisure, pack /usr/spool/uucp to remove the empty slots.
+
+5.  Final notes:
+5a. uulog, uuclean, and uuname are linked with LIBS, so they get changed.
+You might want to copy them too, though there should be no functional change.
+5b) If "C." is not a mapped prefix in syskludge.c, omit the "subdir()" kludge.
+	(steps 2c-2f)
