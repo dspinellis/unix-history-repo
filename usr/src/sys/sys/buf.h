@@ -1,4 +1,4 @@
-/*	buf.h	4.2	%G%	*/
+/*	buf.h	4.3	%G%	*/
 
 /*
  * Each buffer in the pool is usually doubly linked into 2 lists:
@@ -44,9 +44,12 @@ struct buf
 	struct  proc  *b_proc;		/* process doing physical or swap I/O */
 };
 
+#define	BQUEUES		4		/* number of free buffer queues */
+
 #ifdef	KERNEL
 extern	struct buf buf[];		/* The buffer pool itself */
 extern	struct buf swbuf[];		/* swap I/O headers */
+extern	struct buf bfreelist[BQUEUES];	/* heads of available lists */
 extern	struct buf bfreelist;		/* head of available list */
 extern	struct buf bswlist;		/* head of free swap header list */
 extern	struct buf *bclnlist;		/* head of cleaned page list */
@@ -83,7 +86,9 @@ unsigned minphys();
 #define	B_DIRTY		0x02000	/* dirty page to be pushed out async */
 #define	B_PGIN		0x04000	/* pagein op, so swap() can count it */
 #define	B_CACHE		0x08000	/* did bread find us in the cache ? */
-#define	B_INVAL		0x10000	/* buffer contains invalid data */
+#define	B_INVAL		0x10000	/* does not contain valid info (if not BUSY) */
+#define	B_LOCKED	0x20000	/* this buffer locked in core (not reusable) */
+#define	B_HEAD		0x40000	/* this is a buffer header, not a buffer */
 
 /*
  * special redeclarations for
