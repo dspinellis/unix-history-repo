@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_input.c,v $ */
-/*	@(#)clnp_input.c	7.8 (Berkeley) %G% */
+/*	@(#)clnp_input.c	7.9 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $";
@@ -246,8 +246,10 @@ struct mbuf		*m;		/* ptr to first mbuf of pkt */
 struct snpa_hdr	*shp;	/* subnetwork header */
 {
 	register struct clnp_fixed	*clnp;	/* ptr to fixed part of header */
-	struct iso_addr				src;	/* source address of pkt */
-	struct iso_addr				dst;	/* destination address of pkt */
+	struct sockaddr_iso			source; /* source address of pkt */
+	struct sockaddr_iso			target; /* destination address of pkt */
+#define src	source.siso_addr
+#define dst	target.siso_addr
 	caddr_t						hoff;	/* current offset in packet */
 	caddr_t						hend;	/* address of end of header info */
 	struct clnp_segment			seg_part; /* segment part of hdr */
@@ -255,6 +257,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	int							seg_len;/* length of packet data&hdr in bytes */
 	struct clnp_optidx			oidx, *oidxp = NULL;	/* option index */
 	extern int 					iso_systype;	/* used by ESIS config resp */
+	extern struct sockaddr_iso	blank_siso;		/* used for initializing */
 	int							need_afrin = 0; 
 										/* true if congestion experienced */
 										/* which means you need afrin nose */
@@ -321,8 +324,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	 *	extract the source and destination address
 	 *	drop packet on failure
 	 */
-	bzero((caddr_t)&src, sizeof(src));
-	bzero((caddr_t)&dst, sizeof(dst));
+	source = target = blank_siso;
 
 	hoff = (caddr_t)clnp + sizeof(struct clnp_fixed);
 	CLNP_EXTRACT_ADDR(dst, hoff, hend);
@@ -484,7 +486,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
  			ENDDEBUG
  			tpclnp_ctlinput1(PRC_QUENCH2, &src);
  		}
-		(*isosw[clnp_protox[ISOPROTO_TP]].pr_input)(m, &src, &dst,
+		(*isosw[clnp_protox[ISOPROTO_TP]].pr_input)(m, &source, &target,
 			clnp->cnf_hdr_len);
 		break;
 
