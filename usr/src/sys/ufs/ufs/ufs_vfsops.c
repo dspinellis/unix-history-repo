@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vfsops.c	7.17 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.18 (Berkeley) %G%
  */
 
 
@@ -527,26 +527,44 @@ bufstats()
 
 /*
  * File handle to vnode
+ *
+ * Have to be really careful about stale file handles:
+ * - check that the inode number is in range
+ * - call iget() to get the locked inode
+ * - check for an unallocated inode (i_mode == 0)
+ * - check that the generation number matches
  */
 ufs_fhtovp(mp, fhp, vpp)
-	struct mount *mp;
+	register struct mount *mp;
 	struct fid *fhp;
 	struct vnode **vpp;
 {
 	register struct ufid *ufhp;
+	register struct fs *fs;
 	struct inode tip, *ip;
 	int error;
 
 	ufhp = (struct ufid *)fhp;
+	fs = VFSTOUFS(mp)->um_fs;
+	if (ufhp->ufid_ino < ROOTINO ||
+	    ufhp->ufid_ino >= fs->fs_ncg * fs->fs_ipg) {
+		*vpp = (struct vnode *)0;
+		return (EINVAL);
+	}
 	tip.i_dev = VFSTOUFS(mp)->um_dev;
 	tip.i_vnode.v_mount = mp;
 	if (error = iget(&tip, ufhp->ufid_ino, &ip)) {
-		*vpp = NULL;
+		*vpp = (struct vnode *)0;
 		return (error);
+	}
+	if (ip->i_mode == 0) {
+		iput(ip);
+		*vpp = (struct vnode *)0;
+		return (EINVAL);
 	}
 	if (ip->i_gen != ufhp->ufid_gen) {
 		iput(ip);
-		*vpp = NULL;
+		*vpp = (struct vnode *)0;
 		return (EINVAL);
 	}
 	*vpp = ITOV(ip);
