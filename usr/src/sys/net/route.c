@@ -1,4 +1,4 @@
-/*	route.c	6.4	84/04/12	*/
+/*	route.c	6.5	84/07/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -42,7 +42,7 @@ rtalloc(ro)
 	match = afswitch[af].af_netmatch;
 	hash = h.afh_hosthash, table = rthost, doinghost = 1;
 again:
-	for (m = table[hash % RTHASHSIZ]; m; m = m->m_next) {
+	for (m = table[RTHASHMOD(hash)]; m; m = m->m_next) {
 		rt = mtod(m, struct rtentry *);
 		if (rt->rt_hash != hash)
 			continue;
@@ -206,10 +206,10 @@ rtrequest(req, entry)
 	(*afswitch[af].af_hash)(&entry->rt_dst, &h);
 	if (entry->rt_flags & RTF_HOST) {
 		hash = h.afh_hosthash;
-		mprev = &rthost[hash % RTHASHSIZ];
+		mprev = &rthost[RTHASHMOD(hash)];
 	} else {
 		hash = h.afh_nethash;
-		mprev = &rtnet[hash % RTHASHSIZ];
+		mprev = &rtnet[RTHASHMOD(hash)];
 	}
 	match = afswitch[af].af_netmatch;
 	s = splimp();
