@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_x25subr.c	7.19 (Berkeley) %G%
+ *	@(#)if_x25subr.c	7.20 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -139,10 +139,9 @@ register struct mbuf *m;
 	ifp = m->m_pkthdr.rcvif;
 	ifp->if_lastchange = time;
 	switch (m->m_type) {
-	case MT_OOBDATA:
+	default:
 		if (m)
 			m_freem(m);
-	default:
 		return;
 
 	case MT_DATA:
@@ -190,6 +189,7 @@ register struct pklcd *lcp;
 register struct mbuf *m;
 {
 	register struct llinfo_x25 *lx = (struct llinfo_x25 *)lcp->lcd_upnext;
+	int do_clear = 1;
 	if (m == 0)
 		goto refused;
 	if (m->m_type != MT_CONTROL) {
@@ -203,10 +203,12 @@ register struct mbuf *m;
 			lcp->lcd_send(lcp); /* XXX start queued packets */
 		return;
 	default:
+		do_clear = 0;
 	refused:
 		lcp->lcd_upper = 0;
 		lx->lx_lcd = 0;
-		pk_disconnect(lcp);
+		if (do_clear)
+			pk_disconnect(lcp);
 		return;
 	}
 }
