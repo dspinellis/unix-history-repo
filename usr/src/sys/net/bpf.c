@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)bpf.c	7.7 (Berkeley) %G%
+ *      @(#)bpf.c	7.8 (Berkeley) %G%
  *
  * static char rcsid[] =
  * "$Header: bpf.c,v 1.33 91/10/27 21:21:58 mccanne Exp $";
@@ -450,11 +450,7 @@ bpf_wakeup(d)
 	register struct bpf_d *d;
 {
 	wakeup((caddr_t)d);
-	if (d->bd_selproc) {
-		selwakeup(d->bd_selproc, (int)d->bd_selcoll);
-		d->bd_selcoll = 0;
-		d->bd_selproc = 0;
-	}
+	selwakeup(&d->bd_selproc);
 }
 
 int
@@ -885,11 +881,7 @@ bpf_select(dev, rw, p)
 	 * forks while one of these is open, it is possible that both
 	 * processes could select on the same descriptor.
 	 */
-	if (d->bd_selproc && d->bd_selproc->p_wchan == (caddr_t)&selwait)
-		d->bd_selcoll = 1;
-	else
-		d->bd_selproc = p;
-
+	selrecord(p, &d->bd_selproc);
 	splx(s);	
 	return (0);
 }
