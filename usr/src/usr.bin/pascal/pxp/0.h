@@ -1,4 +1,4 @@
-/* static	char *sccsid = "@(#)0.h	1.5 (Berkeley) %G%";*/
+/* static	char *sccsid = "@(#)0.h	2.1 (Berkeley) %G%";*/
 /* Copyright (c) 1979 Regents of the University of California */
 /* #define DEBUG */
 #define	CHAR

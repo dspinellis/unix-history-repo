@@ -1,4 +1,4 @@
-/*	@(#)whoami.h	1.2	(Berkeley)	83/02/05	*/
+/*	@(#)whoami.h	2.1	(Berkeley)	84/02/08	*/
 
 /*
  *	we assume one of the following will be defined by the preprocessor:
