@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lint.c	1.12	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lint.c	1.13	(Berkeley)	%G%";
 #endif lint
 
 # include "pass1.h"
@@ -223,13 +223,13 @@ bfcode( a, n ) int a[]; {
 	if( Cflag && cfp->sclass == STATIC ) return;
 
 	/* if variable number of arguments, only print the ones which will be checked */
-	if( vaflag > 0 ){
+	if( vaflag >= 0 ){
 		if( n < vaflag ) werror( "declare the VARARGS arguments you want checked!" );
 		else n = vaflag;
 		}
 	fsave( ftitle );
-	if( cfp->sclass == STATIC ) outdef( cfp, LST, vaflag>=0?-n:n );
-	else outdef( cfp, libflag?LIB:LDI, vaflag>=0?-n:n );
+	if( cfp->sclass == STATIC ) outdef( cfp, LST, vaflag>=0?~n:n );
+	else outdef( cfp, libflag?LIB:LDI, vaflag>=0?~n:n );
 	vaflag = -1;
 
 	/* output the arguments */
@@ -465,8 +465,6 @@ lprt( p, down, uses ) register NODE *p; {
 			if( uses & VALSET ) q->sflags |= SSET;
 			if( uses & VALUSED ) q->sflags |= SREF;
 			if( uses & VALADDR ) q->sflags |= (SREF|SSET);
-			if (uses & (VALSET | VALADDR))
-				q->suse = -lineno;
 			if( p->tn.lval == 0 ){
 				lnp->lid = id;
 				lnp->flgs = (uses&VALADDR)?0:((uses&VALSET)?VALSET:VALUSED);
@@ -751,6 +749,8 @@ noinit(){
 
 
 cinit( p, sz ) NODE *p; { /* initialize p into size sz */
+	register int id;
+
 	inoff += sz;
 	if( p->in.op == INIT ){
 		if( p->in.left->in.op == ICON ) return;
@@ -1302,7 +1302,7 @@ main(argc, argv)
 	extern int	optind;
 	int	ch;
 
-	while ((ch = getopt(argc,argv,"C:D:I:U:LPabchnpuvxz")) != EOF)
+	while ((ch = getopt(argc,argv,"C:D:I:U:LX:Pabchnpuvxz")) != EOF)
 		switch((char)ch) {
 			case 'C':
 				Cflag = 1;
@@ -1311,6 +1311,7 @@ main(argc, argv)
 			case 'D':	/* #define */
 			case 'I':	/* include path */
 			case 'U':	/* #undef */
+			case 'X':	/* debugging, done in first pass */
 			case 'P':	/* debugging, done in second pass */
 				break;
 			case 'L':
