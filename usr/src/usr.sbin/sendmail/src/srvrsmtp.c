@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.18 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.19 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.18 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.19 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -858,6 +858,9 @@ runinchild(label, e)
 			st = waitfor(childpid);
 			if (st == -1)
 				syserr("%s: lost child", label);
+			else if (!WIFEXITED(st))
+				syserr("%s: died on signal %d",
+					label, st & 0177);
 
 			/* if we exited on a QUIT command, complete the process */
 			if (st == (EX_QUIT << 8))
