@@ -1,4 +1,6 @@
-.\"	@(#)ss8	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)ss8	6.2 (Berkeley) %G%
 .\"
 .SH
 8: The Yacc Environment

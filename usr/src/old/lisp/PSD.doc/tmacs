@@ -1,8 +1,9 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)tmacs	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)tmacs	6.3 (Berkeley) %G%
 .\"
 ." @(#)lmacs	34.4 3/23/82
 ." $Header: lmacs 1.2 83/07/01 11:21:33 sklower Exp $

@@ -1,8 +1,9 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1985 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)f77.ms	5.4 (Berkeley) %G%
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)f77.ms	5.5 (Berkeley) %G%
 .\"
 .rm CM
 .hw name-list

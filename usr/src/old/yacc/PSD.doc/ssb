@@ -1,4 +1,6 @@
-.\"	@(#)ssb	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)ssb	6.2 (Berkeley) %G%
 .\"
 .SH
 Appendix B: Yacc Input Syntax

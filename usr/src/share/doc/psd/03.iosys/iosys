@@ -1,4 +1,6 @@
-.\"	@(#)iosys	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)iosys	6.2 (Berkeley) %G%
 .\"
 .EH 'PS2:5-%''The UNIX I/O System'
 .OH 'The UNIX I/O System''PS2:5-%'

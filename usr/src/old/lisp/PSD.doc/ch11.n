@@ -1,8 +1,9 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)ch11.n	6.1 (Berkeley) %G%
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)ch11.n	6.2 (Berkeley) %G%
 .\"
 ." $Header: ch11.n 1.1 83/01/31 07:08:25 jkf Exp $
 .Lc The\ Joseph\ Lister\ Trace\ Package 11

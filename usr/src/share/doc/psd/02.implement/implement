@@ -1,4 +1,9 @@
-.\"	@(#)implement	6.2 (Berkeley) %G%
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)implement	6.3 (Berkeley) %G%
 .\"
 .EH 'PS2:4-%''UNIX Implementation'
 .OH 'UNIX Implementation''PS2:4-%'

@@ -1,6 +1,7 @@
-.\" Copyright (c) 1986 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
 .\"
 .\"	@(#)dgramread.c	6.4 (Berkeley) %G%
 .\"

@@ -1,4 +1,6 @@
-.\"	@(#)Clang.ms	6.2 (Berkeley) %G%
+.\" %sccs.include.proprietary.man%
+.\"
+.\"	@(#)Clang.ms	6.3 (Berkeley) %G%
 .\"
 .nr Cl 2
 .TL

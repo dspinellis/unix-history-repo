@@ -1,3 +1,10 @@
+.\" Copyright (c) 1979 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)pxin4.n	5.2 (Berkeley) %G%
+.\"
 .if !\n(xx .so tmac.p
 .nr H1 3
 .if n .ND

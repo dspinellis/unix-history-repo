@@ -1,4 +1,6 @@
-.\"	@(#)ssc	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)ssc	6.2 (Berkeley) %G%
 .\"
 .SH
 Appendix C: An Advanced Example

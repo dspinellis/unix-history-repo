@@ -1,4 +1,6 @@
-.\"	@(#)ss4	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)ss4	6.2 (Berkeley) %G%
 .\"
 .SH
 4: How the Parser Works

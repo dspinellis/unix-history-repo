@@ -1,4 +1,6 @@
-.\"	@(#)p1	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)p1	6.2 (Berkeley) %G%
 .\"
 .if n .ls 2
 .if t .tr |\(or

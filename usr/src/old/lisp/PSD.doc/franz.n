@@ -1,12 +1,13 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)franz.n	6.1 (Berkeley) %G%
+.\" %sccs.include.redist.roff%
 .\"
-."  franz.n				-[Thu Jun 17 11:01:27 1982 by jkf]-
-." this file will contain a description of the franz lisp system.
-." sort of a systems manual.
+.\"	@(#)franz.n	6.2 (Berkeley) %G%
+.\"
+.\"  franz.n				-[Thu Jun 17 11:01:27 1982 by jkf]-
+.\" this file will contain a description of the franz lisp system.
+.\" sort of a systems manual.
 .de Fr
 F\s-2RANZ\s0 L\s-2ISP\s0
 ..

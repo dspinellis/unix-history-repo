@@ -1,8 +1,9 @@
-.\" Copyright (c) 1982 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1982 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)3.t	4.3 (Berkeley) %G%
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)3.t	4.4 (Berkeley) %G%
 .\"
 .ds RH Fixing corrupted file systems
 .NH

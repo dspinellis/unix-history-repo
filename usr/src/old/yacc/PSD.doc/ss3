@@ -1,4 +1,6 @@
-.\"	@(#)ss3	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)ss3	6.2 (Berkeley) %G%
 .\"
 .SH
 3: Lexical Analysis

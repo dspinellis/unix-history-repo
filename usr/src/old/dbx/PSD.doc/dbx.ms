@@ -1,7 +1,10 @@
-.\"	@(#)dbx.ms	6.4 (Berkeley) %G%
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\" modified by mark seiden in cosmetic ways.
-.\" examples VAXinated by Kevin Dunlap
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)dbx.ms	6.5 (Berkeley) %G%
+.\"
 .\" dtbl | ditroff -ms
 .OH 'Debugging with dbx''PS1:11-%'
 .EH 'PS1:11-%''Debugging with dbx'

@@ -1,4 +1,6 @@
-.\"	@(#)ss7	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)ss7	6.2 (Berkeley) %G%
 .\"
 .SH
 7: Error Handling

@@ -1,4 +1,6 @@
-.\"	@(#)ss6	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)ss6	6.2 (Berkeley) %G%
 .\"
 .SH
 6: Precedence

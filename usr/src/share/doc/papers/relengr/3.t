@@ -1,4 +1,10 @@
-.\"	@(#)3.t	1.7	(Copyright 1989 M. K. McKusick)	89/02/24
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)3.t	5.1 (Berkeley) %G%
+.\"
 .NH
 System Release
 .PP
