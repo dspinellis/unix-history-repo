@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsproto.h	7.3 (Berkeley) %G%
+ *	@(#)nfsproto.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -87,7 +87,8 @@
 #define	NFSPROC_STATFS		17
 
 /* Conversion macros */
-#define	vtonfs_mode(t,m) txdr_unsigned(MAKEIMODE(t,m))
+extern int		vttoif_tab[];
+#define	vtonfs_mode(t,m) txdr_unsigned((int)(vttoif_tab[(int)(t)] | (m)))
 #define	nfstov_mode(a)	(fxdr_unsigned(u_short, (a))&07777)
 #define	vtonfs_type(a)	txdr_unsigned(nfs_type[((long)(a))])
 #define	nfstov_type(a)	v_type[fxdr_unsigned(u_long, (a))]
