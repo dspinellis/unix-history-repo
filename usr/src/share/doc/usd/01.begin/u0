@@ -1,9 +1,11 @@
-.\"	@(#)u0	5.1 (Berkeley) %G%
+.\"	@(#)u0	6.1 (Berkeley) %G%
 .\"
 ...TM 78-1273-8
-...ND October 2, 1978
+.EH 'USD:1-%''UNIX For Beginners'
+.OH 'UNIX For Beginners''USD:1-%'
+.ND October 2, 1978
 ...old TM -74-1273-18, October 29, 1974
-.RP
+.\".RP
 .TL
 UNIX For Beginners \(em
 Second Edition
@@ -11,6 +13,8 @@ Second Edition
 Brian W. Kernighan
 .AI
 .MH
+.AU
+(Updated for 4.3BSD by Mark Seiden)
 .AB
 .PP
 This paper is meant to help
