@@ -1,0 +1,56 @@
+.TH DN 4 12/2/81
+.UC 4
+.SH NAME
+dn \- dn-11 automatic calling unit interface
+.SH SYNOPSIS
+device dn0 at uba0 csr 0175200 vector dnintr
+.SH DESCRIPTION
+A dn-11 is a controller for an automatic calling unit (ACU).
+With a dn-11, a call unit, and a modem
+a computer may dial a telephone number and establish a data link.
+Hardware supporting this interface includes the DEC DN11 and Able
+Quadracall controllers working with either Bell 801 or Racal/Vadic
+801 or 811 call units.
+.PP
+A dn-11 interface can control as many as four call units.
+In normal operation
+a data link is established by opening the file associated with
+a call unit, sending the desired phone number in a single
+.IR write (2)
+operation, then opening the terminal line attached to the appropriate
+outgoing modem.  If the phone call was successful and the remote host
+presented a carrier signal, the open on the terminal line should be
+successful.  At this point the call unit should be closed and a link
+has been established.  This sequence is normally performed for the user
+by one of 
+.IR cu (1),
+.IR uucp (1),
+or
+.IR dnd (8).
+.PP
+Each controller/call unit pair has different programming 
+characteristics which
+impact the programmer; the dn-11 interface presents a
+.I "raw interface"
+rather than imbed local dependencies in the device driver.  For
+example, the Racal/Vadic 811 call unit is multiplexed,
+providing the user with the ability to place phones calls on as many as
+64 separate phone lines from a single interface.  This multiplexing
+is carried out based on the first two digits of the phone number presented
+by the user (the first digit selects the modem's rack and modem type, while
+the second digit selects the specific modem in the rack).
+.PP
+The legal dn-11 dial codes are: \fB0-9\fP, \fB*\fP (\fB:\fP is a synonym),
+\fB#\fP (\fB;\fP is a synonym), \fB=\fP (\fBw\fP is a synonym), and \fB\-\fP.
+A phone number may optionally be terminated with a \fB<\fP or \fBe\fP.
+Phone numbers may be no more than 40 characters long.
+.PP
+By convention /dev/cu[al]0 are connected to a 300 baud interface, while
+/dev/cu[al]1 provides a 1200 baud interface.
+.SH FILES
+.DT
+/dev/cua[0-9]	ACU interfaces
+.br
+/dev/cul[0-9]	associated outgoing terminal line
+.SH "SEE ALSO"
+rv(4)
