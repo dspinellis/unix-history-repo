@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <netinet/igmp.h>
 #define KERNEL 1
+#include <sys/socketvar.h>
 #include <netinet/ip_mroute.h>
 #undef KERNEL
 
