@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fsdb.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)fsdb.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -212,7 +212,7 @@ jmp_buf		env;
 extern char	*malloc(), *calloc();
 char		getachar();
 char		*getblk(), *fmtentry();
-int		err();
+void		err();
 long		get(), bmap(), expr(), term(), getnumb();
 unsigned long	*print_check();
 
@@ -2810,6 +2810,7 @@ insert(bp)
  *	appropriate flags.  A reset call is made to return
  *	to the main loop;
  */
+void
 err()
 {
 	freemem(filenames, nfiles);

@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.14 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -67,9 +67,9 @@ struct grouplist {
 };
 
 /* Global defs */
-int xdr_fhs(), xdr_mlist(), xdr_dir(), xdr_explist();
-int mntsrv(), get_exportlist(), send_umntall(), umntall_each();
-void get_mountlist(), add_mlist(), del_mlist();
+int mntsrv(), umntall_each(), xdr_fhs(), xdr_mlist(), xdr_dir(), xdr_explist();
+void add_mlist(), del_mlist(), get_exportlist(), get_mountlist();
+void send_umntall();
 struct exportlist exphead;
 struct mountlist *mlhead;
 char exname[MAXPATHLEN];
@@ -396,6 +396,7 @@ char line[LINESIZ];
 /*
  * Get the export list
  */
+void
 get_exportlist()
 {
 	register struct hostent *hp, *nhp;
@@ -773,6 +774,7 @@ void add_mlist(hostp, dirp)
  * This function is called via. SIGTERM when the system is going down.
  * It sends a broadcast RPCMNT_UMNTALL.
  */
+void
 send_umntall()
 {
 	(void) clnt_broadcast(RPCPROG_MNT, RPCMNT_VER1, RPCMNT_UMNTALL,
