@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.22 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1247,18 +1247,21 @@ vsprintf(s, fmt, ap)
 
 #endif
 /*
-**  ENOUGHSPACE -- check to see if there is enough free space on the queue fs
+**  FREESPACE -- see how much free space is on the queue filesystem
 **
 **	Only implemented if you have statfs.
 **
 **	Parameters:
-**		msize -- the size to check against.  If zero, we don't yet
-**			know how big the message will be, so just check for
-**			a "reasonable" amount.
+**		dir -- the directory in question.
+**		bsize -- a variable into which the filesystem
+**			block size is stored.
 **
 **	Returns:
-**		TRUE if there is enough space.
-**		FALSE otherwise.
+**		The number of bytes free on the queue filesystem.
+**		-1 if the statfs call fails.
+**
+**	Side effects:
+**		Puts the filesystem block size into bsize.
 */
 
 #ifndef HASSTATFS
@@ -1287,9 +1290,10 @@ vsprintf(s, fmt, ap)
 # endif
 #endif
 
-bool
-enoughspace(msize)
-	long msize;
+long
+freespace(dir, bsize)
+	char *dir;
+	long *bsize;
 {
 #if defined(HASSTATFS) || defined(HASUSTAT)
 # if defined(HASUSTAT)
@@ -1305,12 +1309,53 @@ enoughspace(msize)
 #  else
 	struct statfs fs;
 #   define FSBLOCKSIZE	fs.f_bsize
-#   if defined(_SCO_unix_)
+#   if defined(_SCO_UNIX_)
 #    define f_bavail f_bfree
 #   endif
 #  endif
 # endif
 	extern int errno;
+
+# if defined(HASUSTAT)
+	if (stat(dir, &statbuf) == 0 && ustat(statbuf.st_dev, &fs) == 0)
+# else
+#  if defined(sgi) || defined(apollo)
+	if (statfs(dir, &fs, sizeof fs, 0) == 0)
+#  else
+#   if defined(ultrix)
+	if (statfs(dir, &fs) > 0)
+#   else
+	if (statfs(dir, &fs) == 0)
+#   endif
+#  endif
+# endif
+	{
+		if (bsize != NULL)
+			*bsize = FSBLOCKSIZE;
+		return (fs.f_bavail);
+	}
+	return (-1);
+}
+/*
+**  ENOUGHSPACE -- check to see if there is enough free space on the queue fs
+**
+**	Only implemented if you have statfs.
+**
+**	Parameters:
+**		msize -- the size to check against.  If zero, we don't yet
+**		know how big the message will be, so just check for
+**		a "reasonable" amount.
+**
+**	Returns:
+**		TRUE if there is enough space.
+**		FALSE otherwise.
+*/
+
+bool
+enoughspace(msize)
+	long msize;
+{
+	long bfree, bsize;
 
 	if (MinBlocksFree <= 0 && msize <= 0)
 	{
@@ -1319,39 +1364,24 @@ enoughspace(msize)
 		return TRUE;
 	}
 
-	if (msize < 0)
-		msize = 0;
-
-# if defined(HASUSTAT)
-	if (stat(QueueDir, &statbuf) == 0 && ustat(statbuf.st_dev, &fs) == 0)
-# else
-#  if defined(sgi) || defined(apollo)
-	if (statfs(QueueDir, &fs, sizeof fs, 0) == 0)
-#  else
-#   if defined(ultrix)
-	if (statfs(QueueDir, &fs) > 0)
-#   else
-	if (statfs(QueueDir, &fs) == 0)
-#   endif
-#  endif
-# endif
+	if ((bfree = freespace(QueueDir, &bsize)) >= 0)
 	{
 		if (tTd(4, 80))
 			printf("enoughspace: bavail=%ld, need=%ld\n",
-				fs.f_bavail, msize);
+				bfree, msize);
 
 		/* convert msize to block count */
-		msize = msize / FSBLOCKSIZE + 1;
+		msize = msize / bsize + 1;
 		if (MinBlocksFree >= 0)
 			msize += MinBlocksFree;
 
-		if (fs.f_bavail < msize)
+		if (bfree < msize)
 		{
 #ifdef LOG
 			if (LogLevel > 0)
 				syslog(LOG_ALERT,
 					"%s: low on space (have %ld, %s needs %ld in %s)",
-					CurEnv->e_id, fs.f_bavail,
+					CurEnv->e_id, bfree,
 					CurHostName, msize, QueueDir);
 #endif
 			return FALSE;
