@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.7 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.8 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.7 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.8 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -267,10 +267,14 @@ punt:
 				if (inet_addr(&MXHostBuf[1]) != -1)
 					*p = ']';
 				else
+				{
+					trycanon = TRUE;
 					mxhosts[0]++;
+				}
 			}
 		}
-		if (trycanon && getcanonname(MXHostBuf, sizeof MXHostBuf - 1, FALSE))
+		if (trycanon &&
+		    getcanonname(mxhosts[0], sizeof MXHostBuf - 2, FALSE))
 		{
 			bp = &MXHostBuf[strlen(MXHostBuf)];
 			if (bp[-1] != '.')
