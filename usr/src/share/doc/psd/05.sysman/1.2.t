@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.2.t	6.8 (Berkeley) %G%
+.\"	@(#)1.2.t	6.9 (Berkeley) %G%
 .\"
 .sh "Memory management\(dg
 .NH 3
