@@ -1,11 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)dumpgame.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)dumpgame.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
 
 /***  THIS CONSTANT MUST CHANGE AS THE DATA SPACES CHANGE ***/
-# define	VERSION		1
+# define	VERSION		2
 
 struct dump
 {
@@ -13,17 +13,18 @@ struct dump
 	int	count;
 };
 
-struct dump	Dump_template[]
+
+struct dump	Dump_template[] =
 {
-	&Ship,		sizeof Ship,
-	&Now,		sizeof Now,
-	&Param,		sizeof Param,
-	&Etc,		sizeof Etc,
-	&Game,		sizeof Game,
-	&Sect,		sizeof Sect,
-	&Quad,		sizeof Quad,
-	&Move,		sizeof Move,
-	&Event,		sizeof Event,
+	(char *)&Ship,		sizeof (Ship),
+	(char *)&Now,		sizeof (Now),
+	(char *)&Param,		sizeof (Param),
+	(char *)&Etc,		sizeof (Etc),
+	(char *)&Game,		sizeof (Game),
+	(char *)Sect,		sizeof (Sect),
+	(char *)Quad,		sizeof (Quad),
+	(char *)&Move,		sizeof (Move),
+	(char *)Event,		sizeof (Event),
 	0
 };
 
@@ -113,9 +114,9 @@ int	fd1;
 
 	for (d = Dump_template; d->area; d++)
 	{
-		if (read(fd, &junk, sizeof junk) != sizeof junk)
+		if (read(fd, &junk, sizeof junk) != (sizeof junk))
 			return (1);
-		if (junk != d->area)
+		if ((char *)junk != d->area)
 			return (1);
 		i = d->count;
 		if (read(fd, d->area, i) != i)

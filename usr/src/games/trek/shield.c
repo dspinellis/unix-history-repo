@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)shield.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)shield.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -22,9 +22,9 @@ static char sccsid[] = "@(#)shield.c	4.1	(Berkeley)	%G%";
 **	so you get partial hits.
 */
 
-struct cvntab Udtab[]
+struct cvntab Udtab[] =
 {
-	"u",		"p",			1,		0,
+	"u",		"p",			(int (*)())1,		0,
 	"d",		"own",			0,		0,
 	0
 };
@@ -76,14 +76,14 @@ int	f;
 	if (f <= 0 && !testnl())
 	{
 		r = getcodpar("Up or down", Udtab);
-		i = r->value;
+		i = (int) r->value;
 	}
 	else
 	{
 		if (*stat)
-			printf(-1, s, "%s %s up.  Do you want %s down", device, dev2, dev3);
+			sprintf(s, "%s %s up.  Do you want %s down", device, dev2, dev3);
 		else
-			printf(-1, s, "%s %s down.  Do you want %s up", device, dev2, dev3);
+			sprintf(s, "%s %s down.  Do you want %s up", device, dev2, dev3);
 		if (!getynpar(s))
 			return;
 		i = !*stat;
@@ -99,7 +99,7 @@ int	f;
 	}
 	if (i)
 		if (f >= 0)
-			Ship.energy =- Param.shupengy;
+			Ship.energy -= Param.shupengy;
 		else
 			Ship.cloakgood = 0;
 	Move.free = 0;

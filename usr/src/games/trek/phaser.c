@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)phaser.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)phaser.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -38,9 +38,9 @@ static char sccsid[] = "@(#)phaser.c	4.1	(Berkeley)	%G%";
 **	Uses trace flag 30
 */
 
-struct cvntab	Matab[]
+struct cvntab	Matab[] =
 {
-	"m",		"anual",		1,		0,
+	"m",		"anual",		(int (*)())1,		0,
 	"a",		"utomatic",		0,		0,
 	0
 };
@@ -48,8 +48,8 @@ struct cvntab	Matab[]
 struct banks
 {
 	int	units;
-	float	angle;
-	float	spread;
+	double	angle;
+	double	spread;
 };
 
 
@@ -105,7 +105,7 @@ phaser()
 	if (!manual)
 	{
 		ptr = getcodpar("Manual or automatic", Matab);
-		manual = ptr->value;
+		manual = (int) ptr->value;
 	}
 	if (!manual && damaged(COMPUTER))
 	{
@@ -135,7 +135,7 @@ phaser()
 					return;
 				if (hit == 0)
 					break;
-				extra =+ hit;
+				extra += hit;
 				if (extra > Ship.energy)
 				{
 					printf("available energy exceeded.  ");
@@ -152,7 +152,7 @@ phaser()
 				if (b->spread < 0 || b->spread > 1)
 					return;
 			}
-			Ship.energy =- extra;
+			Ship.energy -= extra;
 		}
 		extra = 0;
 	}
@@ -175,7 +175,7 @@ phaser()
 				continue;
 			}
 			flag = 0;
-			Ship.energy =- hit;
+			Ship.energy -= hit;
 			extra = hit;
 			n = Etc.nkling;
 			if (n > NBANKS)
@@ -187,9 +187,9 @@ phaser()
 				b = &bank[i];
 				distfactor = k->dist;
 				anglefactor = ALPHA * BETA * OMEGA / (distfactor * distfactor + EPSILON);
-				anglefactor =* GAMMA;
+				anglefactor *= GAMMA;
 				distfactor = k->power;
-				distfactor =/ anglefactor;
+				distfactor /= anglefactor;
 				hitreqd[i] = distfactor + 0.5;
 				dx = Ship.sectx - k->x;
 				dy = k->y - Ship.secty;
@@ -204,12 +204,12 @@ phaser()
 						distfactor, anglefactor);
 				}
 #				endif
-				extra =- b->units;
+				extra -= b->units;
 				hit = b->units - hitreqd[i];
 				if (hit > 0)
 				{
-					extra =+ hit;
-					b->units =- hit;
+					extra += hit;
+					b->units -= hit;
 				}
 			}
 
@@ -224,12 +224,12 @@ phaser()
 						continue;
 					if (hit >= extra)
 					{
-						b->units =+ extra;
+						b->units += extra;
 						extra = 0;
 						break;
 					}
 					b->units = hitreqd[i];
-					extra =- hit;
+					extra -= hit;
 				}
 				if (extra > 0)
 					printf("%d units overkill\n", extra);
@@ -298,11 +298,11 @@ phaser()
 			** tion applies.
 			*/
 			distfactor = BETA + franf();
-			distfactor =* ALPHA + b->spread;
-			distfactor =* OMEGA;
+			distfactor *= ALPHA + b->spread;
+			distfactor *= OMEGA;
 			anglefactor = k->dist;
-			distfactor =/ anglefactor * anglefactor + EPSILON;
-			distfactor =* b->units;
+			distfactor /= anglefactor * anglefactor + EPSILON;
+			distfactor *= b->units;
 			dx = Ship.sectx - k->x;
 			dy = k->y - Ship.secty;
 			anglefactor = atan2(dy, dx) - b->angle;
@@ -313,12 +313,12 @@ phaser()
 				continue;
 			}
 			hit = anglefactor * distfactor + 0.5;
-			k->power =- hit;
+			k->power -= hit;
 			printf("%d unit hit on Klingon", hit);
 			if (!damaged(SRSCAN))
 				printf(" at %d,%d", k->x, k->y);
 			printf("\n");
-			b->units =- hit;
+			b->units -= hit;
 			if (k->power <= 0)
 			{
 				killk(k->x, k->y);
@@ -330,7 +330,7 @@ phaser()
 
 	/* compute overkill */
 	for (i = 0; i < NBANKS; i++)
-		extra =+ bank[i].units;
+		extra += bank[i].units;
 	if (extra > 0)
 		printf("\n%d units expended on empty space\n", extra);
 }

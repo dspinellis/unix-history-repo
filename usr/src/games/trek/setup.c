@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)setup.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -16,23 +16,23 @@ static char sccsid[] = "@(#)setup.c	4.1	(Berkeley)	%G%";
 **	Game restart and tournament games are handled here.
 */
 
-struct cvntab	Lentab[]
+struct cvntab	Lentab[] =
 {
-	"s",		"hort",			1,		0,
-	"m",		"edium",		2,		0,
-	"l",		"ong",			4,		0,
+	"s",		"hort",			(int (*)())1,		0,
+	"m",		"edium",		(int (*)())2,		0,
+	"l",		"ong",			(int (*)())4,		0,
 	"restart",	"",			0,		0,
 	0
 };
 
-struct cvntab	Skitab[]
+struct cvntab	Skitab[] =
 {
-	"n",		"ovice",		1,		0,
-	"f",		"air",			2,		0,
-	"g",		"ood",			3,		0,
-	"e",		"xpert",		4,		0,
-	"c",		"ommodore",		5,		0,
-	"i",		"mpossible",		6,		0,
+	"n",		"ovice",		(int (*)())1,		0,
+	"f",		"air",			(int (*)())2,		0,
+	"g",		"ood",			(int (*)())3,		0,
+	"e",		"xpert",		(int (*)())4,		0,
+	"c",		"ommodore",		(int (*)())5,		0,
+	"i",		"mpossible",		(int (*)())6,		0,
 	0
 };
 
@@ -40,7 +40,7 @@ setup()
 {
 	struct cvntab		*r;
 	register int		i, j;
-	float			f;
+	double			f;
 	int			d;
 	int			fd;
 	int			klump;
@@ -51,7 +51,7 @@ setup()
 	while (1)
 	{
 		r = getcodpar("What length game", Lentab);
-		Game.length = r->value;
+		Game.length = (int) r->value;
 		if (Game.length == 0)
 		{
 			if (restartgame())
@@ -61,7 +61,7 @@ setup()
 		break;
 	}
 	r = getcodpar("What skill game", Skitab);
-	Game.skill = r->value;
+	Game.skill = (int) r->value;
 	Game.tourn = 0;
 	getstrpar("Enter a password", Game.passwd, 14, 0);
 	if (sequal(Game.passwd, "tournament"))
@@ -70,7 +70,7 @@ setup()
 		Game.tourn = 1;
 		d = 0;
 		for (i = 0; Game.passwd[i]; i++)
-			d =+ Game.passwd[i] << i;
+			d += Game.passwd[i] << i;
 		srand(d);
 	}
 	Param.bases = Now.bases = ranf(6 - Game.skill) + 2;
@@ -124,7 +124,7 @@ setup()
 	Param.damprob[XPORTER] = 80;	/* transporter		 8.0% */
 	/* check to see that I didn't blow it */
 	for (i = j = 0; i < NDEV; i++)
-		j =+ Param.damprob[i];
+		j += Param.damprob[i];
 	if (j != 1000)
 		syserr("Device probabilities sum to %d", j);
 	Param.dockfac = 0.5;
@@ -137,7 +137,7 @@ setup()
 	i = Game.skill;
 	Param.klingpwr = 100 + 150 * i;
 	if (i >= 6)
-		Param.klingpwr =+ 150;
+		Param.klingpwr += 150;
 	Param.phasfac = 0.8;
 	Param.hitfac = 0.5;
 	Param.klingcrew = 200;
@@ -197,7 +197,7 @@ setup()
 			q->scanned = -1;
 			q->stars = ranf(9) + 1;
 			q->holes = ranf(3) - q->stars / 5;
-			q->systemname = 0;
+			q->qsystemname = 0;
 		}
 
 	/* select inhabited starsystems */
@@ -208,8 +208,8 @@ setup()
 			i = ranf(NQUADS);
 			j = ranf(NQUADS);
 			q = &Quad[i][j];
-		} while (q->systemname);
-		q->systemname = d;
+		} while (q->qsystemname);
+		q->qsystemname = d;
 	}
 
 	/* position starbases */
@@ -249,8 +249,8 @@ setup()
 			q = &Quad[ix][iy];
 			if (q->klings + klump > MAXKLQUAD)
 				continue;
-			q->klings =+ klump;
-			i =- klump;
+			q->klings += klump;
+			i -= klump;
 			break;
 		}
 	}
