@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttgeneric.c	3.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttgeneric.c	3.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -469,6 +469,12 @@ tt_generic()
 	if (gen_UG > 0 || gen_US && gen_SO && ttstrcmp(gen_US, gen_SO) == 0)
 		gen_US = 0;
 
+	if (gen_IM->ts_n == 0)
+		gen_IM = 0;
+	if (gen_EI->ts_n == 0)
+		gen_EI = 0;
+	if (gen_IC->ts_n == 0)
+		gen_IC = 0;
 	if (gen_IM)
 		tt.tt_inschar = gen_inschar;
 	else if (gen_IC)
