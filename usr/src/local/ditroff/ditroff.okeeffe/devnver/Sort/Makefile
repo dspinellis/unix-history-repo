@@ -1,13 +1,15 @@
 #
+#  1.2	(CWI)	87/04/01
 #
 # nvsort
 #
-DESTFILE=/usr/lib/nvsort80
+DESTDIR =
+LIBDIR=/usr/lib
 
 all:	nvsort
 
 install: nvsort
-	 install -c nvsort $(DESTFILE)
+	 install -c nvsort $(DESTDIR)${LIBDIR}/nvsort
 
 clean:
 	rm -f make.out nvsort
