@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)update.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)update.c	4.2 (Berkeley) %G%";
 /*
  * Update the file system every 30 seconds.
  * For cache benefit, open certain system directories.
@@ -8,8 +8,11 @@ static char *sccsid = "@(#)update.c	4.1 (Berkeley) %G%";
 
 char *fillst[] = {
 	"/bin",
+	"/lib",
 	"/usr",
 	"/usr/bin",
+	"/usr/lib",
+	"/usr/ucb",
 	0,
 };
 
