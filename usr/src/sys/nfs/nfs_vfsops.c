@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.11 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -138,6 +138,7 @@ mountnfs(argp, mp, saddr, pth, hst)
 	char *pth, *hst;
 {
 	register struct nfsmount *nmp;
+	struct nfsnode *np;
 	fsid_t tfsid;
 	int error;
 
@@ -209,6 +210,20 @@ mountnfs(argp, mp, saddr, pth, hst)
 	 * Actually any exact multiple of CLBYTES will do
 	 */
 	mp->m_bsize = mp->m_fsize = CLBYTES;
+	/*
+	 * A reference count is needed on the nfsnode representing the
+	 * remote root.  If this object is not persistent, then backward
+	 * traversals of the mount point (i.e. "..") will not work if
+	 * the nfsnode gets flushed out of the cache. Ufs does not have
+	 * this problem, because one can identify root inodes by their
+	 * number == ROOTINO (2).
+	 */
+	if (error = nfs_nget(mp, &nmp->nm_fh, &np))
+		goto bad;
+	/*
+	 * Unlock it, but keep the reference count.
+	 */
+	nfs_unlock(NFSTOV(np));
 	return (0);
 bad:
 	m_freem(saddr);
@@ -226,6 +241,7 @@ nfs_unmount(mp, flags)
 	register struct nfsmount *nmp;
 	register struct nfsreq *rep;
 	struct nfsreq *rep2;
+	struct nfsnode *np;
 	int error;
 	int s;
 
@@ -240,11 +256,25 @@ nfs_unmount(mp, flags)
 		return (EBUSY);
 	/*
 	 * Goes something like this..
+	 * - Decrement reference on the nfsnode representing remote root.
+	 *   Must do this first, otherwise vflush will return EBUSY.
 	 * - Call vflush() to clear out vnodes for this file system
 	 * - Flush out lookup cache
 	 * - Close the socket
 	 * - Free up the data structures
 	 */
+	/*
+	 * We need to decrement the ref. count on the nfsnode representing
+	 * the remote root.  See comment in mountnfs().  The VFS unmount()
+	 * has done vput on this vnode, otherwise we would get deadlock!
+	 */
+	if (error = nfs_nget(mp, &nmp->nm_fh, &np))
+		return(error);
+	/*
+	 * Get rid of two reference counts, and unlock it on the second.
+	 */
+	vrele(NFSTOV(np));
+	vput(NFSTOV(np));
 	if (error = vflush(mp, (struct vnode *)0, flags))
 		return (error);
 	/*
