@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -50,6 +50,7 @@ static char sccsid[] = "@(#)fstat.c	8.1 (Berkeley) %G%";
 #include <ctype.h>
 #include <errno.h>
 #include <kvm.h>
+#include <limits.h>
 #include <nlist.h>
 #include <paths.h>
 #include <pwd.h>
@@ -128,6 +129,7 @@ main(argc, argv)
 	struct kinfo_proc *p, *plast;
 	int arg, ch, what;
 	char *memf, *nlistf;
+	char buf[_POSIX2_LINE_MAX];
 	int cnt;
 
 	arg = 0;
@@ -202,8 +204,8 @@ main(argc, argv)
 	if (nlistf != NULL || memf != NULL)
 		setgid(getgid());
 
-	if ((kd = kvm_open(nlistf, memf, NULL, O_RDONLY, NULL)) == NULL) {
-		fprintf(stderr, "fstat: %s\n", kvm_geterr(kd));
+	if ((kd = kvm_openfiles(nlistf, memf, NULL, O_RDONLY, buf)) == NULL) {
+		fprintf(stderr, "fstat: %s\n", buf);
 		exit(1);
 	}
 #ifdef notdef
