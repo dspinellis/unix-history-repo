@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.37 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -952,8 +952,6 @@ thaw(freezefile)
 	f = open(freezefile, 0);
 	if (f < 0)
 	{
-		syslog(LOG_WARNING, "Cannot open frozen config file %s: %m",
-			freezefile);
 		errno = 0;
 		return (FALSE);
 	}
@@ -961,11 +959,11 @@ thaw(freezefile)
 	/* read in the header */
 	if (read(f, (char *) &fhdr, sizeof fhdr) < sizeof fhdr)
 	{
-		syserr("Cannot read frozen config file");
+		syslog(LOG_WARNING, "Cannot read frozen config file");
 		(void) close(f);
 		return (FALSE);
 	}
-	if ( fhdr.frzinfo.frzedata != &edata ||
+	if (fhdr.frzinfo.frzedata != &edata ||
 	    fhdr.frzinfo.frzend != &end ||
 	    strcmp(fhdr.frzinfo.frzver, Version) != 0)
 	{
