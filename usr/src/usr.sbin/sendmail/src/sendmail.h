@@ -3,7 +3,7 @@
 **
 **	Most of these are actually allocated in globals.c
 **
-**	@(#)sendmail.h	2.1	%G%
+**	@(#)sendmail.h	2.2	%G%
 */
 
 
@@ -55,6 +55,7 @@ struct mailer
 # define M_HDR		0020	/* insert From line */
 # define M_NOHOST	0040	/* ignore host in comparisons */
 # define M_STRIPQ	0100	/* strip quote characters from user/host */
+# define M_FHDR		0200	/* force good From line */
 
 extern struct mailer Mailer[];
 
