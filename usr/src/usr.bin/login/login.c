@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)login.c	4.29 (Berkeley) 83/06/10";
+static	char *sccsid = "@(#)login.c	4.30 (Berkeley) 83/06/13";
 #endif
 
 /*
@@ -64,10 +64,11 @@ char	*stypeof();
 extern	char **environ;
 extern	int errno;
 
-struct	ttychars tc = {
-	CERASE,	CKILL,	CINTR,	CQUIT,	CSTART,
-	CSTOP,	CEOF,	CBRK,	CSUSP,	CDSUSP,
-	CRPRNT,	CFLUSH,	CWERASE,CLNEXT
+struct	tchars tc = {
+	CINTR, CQUIT, CSTART, CSTOP, CEOT, CBRK
+};
+struct	ltchars ltc = {
+	CSUSP, CDSUSP, CRPRNT, CFLUSH, CWERASE, CLNEXT
 };
 
 int	rflag;
@@ -108,11 +109,11 @@ main(argc, argv)
 			argc = 0;
 		}
 	}
-	ioctl(0, TIOCLSET, &zero);	/* XXX */
+	ioctl(0, TIOCLSET, &zero);
 	ioctl(0, TIOCNXCL, 0);
 	ioctl(0, FIONBIO, &zero);
 	ioctl(0, FIOASYNC, &zero);
-	ioctl(0, TIOCGETP, &ttyb);	/* XXX */
+	ioctl(0, TIOCGETP, &ttyb);
 	/*
 	 * If talking to an rlogin process,
 	 * propagate the terminal type and
@@ -120,8 +121,9 @@ main(argc, argv)
 	 */
 	if (rflag)
 		doremoteterm(term, &ttyb);
-	ioctl(0, TIOCSETP, &ttyb);	/* XXX */
-	ioctl(0, TIOCCSET, &tc);
+	ioctl(0, TIOCSLTC, &ltc);
+	ioctl(0, TIOCSETC, &tc);
+	ioctl(0, TIOCSETP, &ttyb);
 	for (t = getdtablesize(); t > 3; t--)
 		close(t);
 	ttyn = ttyname(0);
