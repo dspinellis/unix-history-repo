@@ -22,12 +22,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * login [ name ]
- * login -r hostname	(for rlogind)
  * login -h hostname	(for telnetd, etc.)
  * login -f name	(for pre-authenticated login: datakit, xterm, etc.)
  */
@@ -87,7 +86,7 @@ main(argc, argv)
 	struct group *gr;
 	register int ch;
 	register char *p;
-	int fflag, hflag, pflag, rflag, cnt;
+	int fflag, hflag, pflag, cnt;
 	int quietlog, passwd_req, ioctlval, timedout();
 	char *domain, *salt, *envinit[1], *ttyn, *tty;
 	char tbuf[MAXPATHLEN + 2];
@@ -104,35 +103,24 @@ main(argc, argv)
 
 	/*
 	 * -p is used by getty to tell login not to destroy the environment
-	 * -r is used by rlogind to cause the autologin protocol;
  	 * -f is used to skip a second login authentication 
-	 * -h is used by other servers to pass the name of the
-	 * remote host to login so that it may be placed in utmp and wtmp
+	 * -h is used by other servers to pass the name of the remote
+	 *    host to login so that it may be placed in utmp and wtmp
 	 */
 	(void)gethostname(tbuf, sizeof(tbuf));
 	domain = index(tbuf, '.');
 
-	fflag = hflag = pflag = rflag = 0;
+	fflag = hflag = pflag = 0;
 	passwd_req = 1;
-	while ((ch = getopt(argc, argv, "fh:pr:")) != EOF)
+	while ((ch = getopt(argc, argv, "fh:p")) != EOF)
 		switch (ch) {
 		case 'f':
-			if (rflag) {
-				fprintf(stderr,
-				    "login: only one of -r and -f allowed.\n");
-				exit(1);
-			}
 			fflag = 1;
 			break;
 		case 'h':
 			if (getuid()) {
 				fprintf(stderr,
 				    "login: -h for super-user only.\n");
-				exit(1);
-			}
-			if (rflag) {
-				fprintf(stderr,
-				    "login: only one of -r and -h allowed.\n");
 				exit(1);
 			}
 			hflag = 1;
@@ -143,29 +131,6 @@ main(argc, argv)
 			break;
 		case 'p':
 			pflag = 1;
-			break;
-		case 'r':
-			if (hflag || fflag) {
-				fprintf(stderr,
-				    "login: -f and -h not allowed with -r.\n");
-				exit(1);
-			}
-			if (getuid()) {
-				fprintf(stderr,
-				    "login: -r for super-user only.\n");
-				exit(1);
-			}
-			/* "-r hostname" must be last args */
-			if (optind != argc) {
-				fprintf(stderr, "Syntax error.\n");
-				exit(1);
-			}
-			rflag = 1;
-			passwd_req = (doremotelogin(optarg) == -1);
-			if (domain && (p = index(optarg, '.')) &&
-			    !strcmp(p, domain))
-				*p = '\0';
-			hostname = optarg;
 			break;
 		case '?':
 		default:
@@ -182,13 +147,6 @@ main(argc, argv)
 	(void)ioctl(0, TIOCNXCL, 0);
 	(void)fcntl(0, F_SETFL, ioctlval);
 	(void)ioctl(0, TIOCGETP, &sgttyb);
-
-	/*
-	 * If talking to an rlogin process, propagate the terminal type and
-	 * baud rate across the network.
-	 */
-	if (rflag)
-		doremoteterm(&sgttyb);
 	sgttyb.sg_erase = CERASE;
 	sgttyb.sg_kill = CKILL;
 	(void)ioctl(0, TIOCSLTC, &ltc);
@@ -237,7 +195,7 @@ main(argc, argv)
 		}
 
 		/*
-		 * If no remote login authentication and a password exists
+		 * If no pre-authentication and a password exists
 		 * for this user, prompt for one and verify it.
 		 */
 		if (!passwd_req || pwd && !*pwd->pw_passwd)
@@ -320,7 +278,7 @@ main(argc, argv)
 	quietlog = access(HUSHLOGIN, F_OK) == 0;
 	dolastlog(quietlog, tty);
 
-	if (!hflag && !rflag) {					/* XXX */
+	if (!hflag) {					/* XXX */
 		static struct winsize win = { 0, 0, 0, 0 };
 
 		(void)ioctl(0, TIOCSWINSZ, &win);
@@ -506,22 +464,6 @@ stypeof(ttyid)
 	return(ttyid && (t = getttynam(ttyid)) ? t->ty_type : UNKNOWN);
 }
 
-doremotelogin(host)
-	char *host;
-{
-	static char lusername[UT_NAMESIZE+1];
-	char rusername[UT_NAMESIZE+1];
-
-	getstr(rusername, sizeof(rusername), "remuser");
-	getstr(lusername, sizeof(lusername), "locuser");
-	getstr(term, sizeof(term), "Terminal type");
-	username = lusername;
-	pwd = getpwnam(username);
-	if (pwd == NULL)
-		return(-1);
-	return(ruserok(host, (pwd->pw_uid == 0), rusername, username));
-}
-
 getstr(buf, cnt, err)
 	char *buf, *err;
 	int cnt;
@@ -537,33 +479,6 @@ getstr(buf, cnt, err)
 		}
 		*buf++ = ch;
 	} while (ch);
-}
-
-char *speeds[] = {
-	"0", "50", "75", "110", "134", "150", "200", "300", "600",
-	"1200", "1800", "2400", "4800", "9600", "19200", "38400",
-};
-#define	NSPEEDS	(sizeof(speeds) / sizeof(speeds[0]))
-
-doremoteterm(tp)
-	struct sgttyb *tp;
-{
-	register char *cp = index(term, '/'), **cpp;
-	char *speed;
-
-	if (cp) {
-		*cp++ = '\0';
-		speed = cp;
-		cp = index(speed, '/');
-		if (cp)
-			*cp++ = '\0';
-		for (cpp = speeds; cpp < &speeds[NSPEEDS]; cpp++)
-			if (strcmp(*cpp, speed) == 0) {
-				tp->sg_ispeed = tp->sg_ospeed = cpp-speeds;
-				break;
-			}
-	}
-	tp->sg_flags = ECHO|CRMOD|ANYP|XTABS;
 }
 
 sleepexit(eval)
