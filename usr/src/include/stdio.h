@@ -1,4 +1,4 @@
-/*	@(#)stdio.h	1.1 (Berkeley) %G%	*/
+/*	@(#)stdio.h	1.2 (Berkeley) %G%	*/
 #define	BUFSIZ	1024
 #define	_NFILE	20
 # ifndef FILE
@@ -6,6 +6,7 @@ extern	struct	_iobuf {
 	int	_cnt;
 	char	*_ptr;
 	char	*_base;
+	int	_bufsiz;
 	short	_flag;
 	char	_file;
 } _iob[_NFILE];

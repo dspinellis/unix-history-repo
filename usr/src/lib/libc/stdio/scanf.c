@@ -1,4 +1,4 @@
-/* @(#)scanf.c	4.1 (Berkeley) %G% */
+/* @(#)scanf.c	4.2 (Berkeley) %G% */
 #include	<stdio.h>
 
 scanf(fmt, args)
@@ -25,5 +25,6 @@ char *fmt;
 	_strbuf._cnt = 0;
 	while (*str++)
 		_strbuf._cnt++;
+	_strbuf._bufsiz = _strbuf._cnt;
 	return(_doscan(&_strbuf, fmt, &args));
 }
