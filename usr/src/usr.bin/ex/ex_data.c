@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_data.c	7.1	%G%";
+static char *sccsid = "@(#)ex_data.c	7.2	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 
@@ -50,6 +50,7 @@ struct	option options[NOPTS + 1] = {
 	"list",		0,	ONOFF,		0,	0,	0,
 	"magic",	0,	ONOFF,		1,	1,	0,
 	"mesg",		0,	ONOFF,		1,	1,	0,
+	"modeline",	0,	ONOFF,		0,	0,	0,
 	"number",	"nu",	ONOFF,		0,	0,	0,
 	"open",		0,	ONOFF,		1,	1,	0,
 	"optimize",	"opt",	ONOFF,		0,	0,	0,
