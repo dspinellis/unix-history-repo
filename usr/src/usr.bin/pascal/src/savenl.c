@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)savenl.c 1.4 %G%";
+static char sccsid[] = "@(#)savenl.c 1.5 %G%";
 
 /*
  * savenl - routines for saving namelist and line number information
@@ -210,7 +210,7 @@ struct nl *to;
 		s->osymvalue.orangev.lower = p->range[0];
 		s->osymvalue.orangev.upper = p->range[1];
 		if (isblock(p)) {
-			s->osymvalue.ofuncv.codeloc = p->entloc;
+			s->osymvalue.ofuncv.codeloc = p->value[NL_ENTLOC];
 		} else if (p->class == RECORD || p->class == VARNT) {
 			s->osymvalue.ovarnt.vtorecno = symno(p->ptr[2]);
 			s->osymvalue.ovarnt.vtagno = symno(p->ptr[3]);

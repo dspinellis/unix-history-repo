@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)clas.c 1.4 %G%";
+static	char sccsid[] = "@(#)clas.c 1.5 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -214,17 +214,17 @@ nowexp(r)
      *	    positives are parameters
      *	    negative evens are locals
      */
-whereis( level , offset , extra_flags )
+whereis( level , offset , other_flags )
     int		level;
     int		offset;
-    char	extra_flags;
+    char	other_flags;
 {
     
 #   ifdef OBJ
 	return ( offset >= 0 ? PARAMVAR : LOCALVAR );
 #   endif OBJ
 #   ifdef PC
-	switch ( extra_flags & ( NGLOBAL | NPARAM | NLOCAL ) ) {
+	switch ( other_flags & ( NGLOBAL | NPARAM | NLOCAL ) ) {
 	    case NGLOBAL:
 		return GLOBALVAR;
 	    case NPARAM:

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fhdr.c 1.4 %G%";
+static char sccsid[] = "@(#)fhdr.c 1.5 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -241,13 +241,13 @@ funchdr(r)
 	 * the "entry point" of
 	 * the prog/proc/func.
 	 */
-	p->entloc = getlab();
+	p->value[NL_ENTLOC] = getlab();
 	if (monflg) {
 		bodycnts[ cbn ] = getcnt();
 		p->value[ NL_CNTR ] = 0;
 	}
 #	ifdef OBJ
-	    put(2, O_TRA4, (long)p->entloc);
+	    put(2, O_TRA4, (long)p->value[NL_ENTLOC]);
 #	endif OBJ
 #	ifdef PTREE
 	    {

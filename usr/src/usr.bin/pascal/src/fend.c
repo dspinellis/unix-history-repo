@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.11 %G%";
+static char sccsid[] = "@(#)fend.c 1.12 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -78,7 +78,7 @@ funcend(fp, bundle, endline)
 	 * Patch the branch to the
 	 * entry point of the function
 	 */
-	patch4(fp->entloc);
+	patch4(fp->value[NL_ENTLOC]);
 	/*
 	 * Put out the block entrance code and the block name.
 	 * HDRSZE is the number of bytes of info in the static
@@ -131,14 +131,14 @@ funcend(fp, bundle, endline)
 	    putprintf( "	calls	$0,_program" , 0 );
 	    putprintf( "	pushl	$0" , 0 );
 	    putprintf( "	calls	$1,_PCEXIT" , 0 );
-	    ftnno = fp -> entloc;
+	    ftnno = fp -> value[NL_ENTLOC];
 	    putprintf( "	.text" , 0 );
 	    putprintf( "	.align	1" , 0 );
 	    putprintf( "	.globl	_program" , 0 );
 	    putprintf( "_program:" , 0 );
 	    stabfunc( "program" , fp -> class , bundle[1] , 0 );
 	} else {
-	    ftnno = fp -> entloc;
+	    ftnno = fp -> value[NL_ENTLOC];
 	    putprintf( "	.text" , 0 );
 	    putprintf( "	.align	1" , 0 );
 	    sextname( extname , fp -> symbol , cbn - 1 );
