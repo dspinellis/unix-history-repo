@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)save.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)save.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include	"mille.h"
@@ -136,7 +136,7 @@ reg char	*file; {
 	/*
 	 * initialize some necessary values
 	 */
-	sprintf(Initstr, "%s [%s]\n", file, buf);
+	(void)sprintf(Initstr, "%s [%s]\n", file, buf);
 	Fromfile = file;
 	return !On_exit;
 }
