@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -36,21 +36,10 @@ prcopy(src, dest, len)
 	}
 }
 
-void *
-emalloc(size)
-	u_int size;
-{
-	void *retval;
-
-	if ((retval = malloc(size)) == NULL)
-		err(1, "%s", strerror(errno));
-	return (retval);
-}
-
 void
 usage()
 {
-	(void)fprintf(stderr, "usage: ls [-1ACFLRTacdfgiklqrstu] [file ...]\n");
+	(void)fprintf(stderr, "usage: ls [-1ACFLRTacdfiklqrstu] [file ...]\n");
 	exit(1);
 }
 
@@ -67,7 +56,7 @@ err(int fatal, const char *fmt, ...)
 err(fatal, fmt, va_alist)
 	int fatal;
 	char *fmt;
-        va_dcl
+	va_dcl
 #endif
 {
 	va_list ap;
