@@ -9,17 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	8.6 (Berkeley) %G%
+ *	@(#)inode.h	8.7 (Berkeley) %G%
  */
 
 #include <ufs/ufs/dinode.h>
-
-/*
- * Theoretically, directories can be more than 2Gb in length, however, in
- * practice this seems unlikely. So, we define the type doff_t as a 32-bit
- * quantity to keep down the cost of doing lookup on a 32-bit machine.
- */
-#define	doff_t	int32_t
 
 /*
  * The inode is used to describe each active (or recently active) file in the
