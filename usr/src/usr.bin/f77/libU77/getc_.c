@@ -1,5 +1,5 @@
 /*
-char id_getc[] = "@(#)getc_.c	1.2";
+char id_getc[] = "@(#)getc_.c	1.3";
  *
  * get a character from the standard input
  *
@@ -25,8 +25,8 @@ char *c; long clen;
 	lu = &units[STDIN];
 	if (!lu->ufd)
 		return((long)(errno=F_ERNOPEN));
-	if (lu->uwrt)
-		nowreading(lu);
+	if (lu->uwrt && ! nowreading(lu))
+		return((long)errno);
 	if ((i = getc (lu->ufd)) < 0)
 	{
 		if (feof(lu->ufd))
