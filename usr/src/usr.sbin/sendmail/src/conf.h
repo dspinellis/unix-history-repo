@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.17 (Berkeley) %G%
+ *	@(#)conf.h	6.18 (Berkeley) %G%
  */
 
 /*
@@ -92,15 +92,16 @@
 #endif
 
 /*
-**  Due to a "feature" in Ultrix, if you receive an ICMP_UNREACH_HOST
-**  on _any_ connection, all connections to that host are closed.  Some
-**  firewalls return this error if you try to connect to the IDENT port
-**  (113), so you can't receive email from these hosts on Ultrix.  The
-**  firewall really should use ICMP_UNREACH_PROTOCOL or _PORT or
-**  _NET_PROHIB instead.
+**  Due to a "feature" in some operating systems such as Ultrix 4.3 and
+**  HPUX 8.0, if you receive a "No route to host" message (ICMP message
+**  ICMP_UNREACH_HOST) on _any_ connection, all connections to that host
+**  are closed.  Some firewalls return this error if you try to connect
+**  to the IDENT port (113), so you can't receive email from these hosts
+**  on these systems.  The firewall really should use a more specific
+**  message such as ICMP_UNREACH_PROTOCOL or _PORT or _NET_PROHIB.
 */
 
-#ifndef ultrix
+#if !defined(ultrix) && !defined(hpux)
 # define IDENTPROTO	1	/* use IDENT proto (RFC 1413) */
 #endif
 
