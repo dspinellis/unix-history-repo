@@ -17,7 +17,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 # PLOTDEVICE is used for plotting the map.
 # Change as appropriate.
@@ -25,7 +25,6 @@ PLOTDEVICE =	> /dev/tty
 
 # The following are program constants which are implementation dependent.
 #
-# DEST is passed on.  Note that there is no closing quote here.
 # WIZARD is the login of the one who will clean up things.
 # UID is the uid of game wizard.
 # define OK_TO_PLAY to restrict playing access at certain times.
@@ -35,10 +34,7 @@ PLOTDEVICE =	> /dev/tty
 # SHELL is the default shell for shell escapes.  If SHELL is not defined,
 #	shell escapes are not enabled.
 
-DEST=	/usr/games/lib/phantasia
-DESTR=	/usr/games
-CFLAGS=	-O -DDEST=\"${DEST} -DDESTR=\"${DESTR} -DWIZARD=\"root\" -DUID=0 \
-	-DENEMY -DBSD42
+CFLAGS=	-O -DWIZARD=\"root\" -DUID=0 -DENEMY -DBSD42
 LIBC=	/lib/libc.a
 SRCS=	main.c fight.c io.c interplayer.c gamesupport.c misc.c phantglobs.c
 OBJS=	main.o fight.o io.o interplayer.o gamesupport.o misc.o phantglobs.o

@@ -48,21 +48,6 @@ extern	FILE	*Energyvoidfp;	/* pointer to open energy void file		*/
 
 extern	char	Databuf[];	/* a place to read data into			*/
 
-/* edit these path definitions to let files reside elsewhere */
-extern	char	Monstfile[];	/* monster database		*/
-extern	char	Peoplefile[];	/* player database		*/
-extern	char	Gameprog[];	/* game binary			*/
-extern	char	Messfile[];	/* player to player messages	*/
-extern	char	Lastdead[];	/* data on last player killed	*/
-extern	char	Helpfile[];	/* manual pages			*/
-extern	char	Motdfile[];	/* message from 'wizard'	*/
-extern	char	Goldfile[];	/* gold collected in taxes	*/
-extern	char	Voidfile[];	/* energy void database		*/
-extern	char	Scorefile[];	/* hi score database		*/
-#ifdef ENEMY
-extern	char	Enemyfile[];	/* restricted account database	*/
-#endif
-
 /* some canned strings for messages */
 extern	char	Illcmd[];
 extern	char	Illmove[];

@@ -847,8 +847,7 @@ leavegame()
 /	fwrite(), fflush(), printw(), strcpy(), fclose(), waddstr(), cleanup(), 
 /	fprintf(), wrefresh(), getanswer(), descrtype()
 /
-/ GLOBAL INPUTS: Curmonster, Wizard, Player, *stdscr, Fileloc, *Monstfp, 
-/	Lastdead[], Gameprog[], Messfile[]
+/ GLOBAL INPUTS: Curmonster, Wizard, Player, *stdscr, Fileloc, *Monstfp
 /
 / GLOBAL OUTPUTS: Player
 /
@@ -934,14 +933,14 @@ static	char	*deathmesg[] =
     enterscore();		/* update score board */
 
     /* put info in last dead file */
-    fp = fopen(Lastdead, "w");
+    fp = fopen(_PATH_LASTDEAD, "w");
     fprintf(fp,"%s (%s, run by %s, level %.0f, killed by %s)",
 	Player.p_name, descrtype(&Player, TRUE),
 	Player.p_login, Player.p_level, how);
     fclose(fp);
 
     /* let other players know */
-    fp = fopen(Messfile, "w");
+    fp = fopen(_PATH_MESS, "w");
     fprintf(fp, "%s was killed by %s.", Player.p_name, how);
     fclose(fp);
 
@@ -956,7 +955,8 @@ static	char	*deathmesg[] =
     if (ch == 'Y')
 	{
 	cleanup(FALSE);
-	execl(Gameprog, "phantasia", "-s", (Wizard ? "-S": (char *) NULL), 0);
+	execl(_PATH_GAMEPROG, "phantasia", "-s",
+	    (Wizard ? "-S": (char *) NULL), 0);
 	exit(0);
 	/*NOTREACHED*/
 	}
@@ -1642,7 +1642,7 @@ drandom()
 /
 / MODULES CALLED: fread(), fseek(), fopen(), floor(), fwrite(), fclose()
 /
-/ GLOBAL INPUTS: Player, Goldfile[]
+/ GLOBAL INPUTS: Player
 /
 / GLOBAL OUTPUTS: Player
 /
@@ -1691,7 +1691,7 @@ double	taxes;		/* tax liability */
 
     Player.p_gold -= taxes;
 
-    if ((fp = fopen(Goldfile, "r+")) != NULL)
+    if ((fp = fopen(_PATH_GOLD, "r+")) != NULL)
 	/* update taxes */
 	{
 	dtemp = 0.0;

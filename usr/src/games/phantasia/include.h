@@ -13,3 +13,4 @@
 #include "phantdefs.h"
 #include "phantstruct.h"
 #include "phantglobs.h"
+#include "pathnames.h"
