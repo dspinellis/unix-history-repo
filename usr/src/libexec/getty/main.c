@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.6 (Berkeley) 83/12/13";
+static char sccsid[] = "@(#)main.c	4.7 (Berkeley) 85/04/01";
 #endif
 
 /*
@@ -12,7 +12,11 @@ static char sccsid[] = "@(#)main.c	4.6 (Berkeley) 83/12/13";
 #include <signal.h>
 #include <ctype.h>
 #include <setjmp.h>
+#include <syslog.h>
+#include <sys/file.h>
 #include "gettytab.h"
+
+extern	char **environ;
 
 struct	sgttyb tmode = {
 	0, 0, CERASE, CKILL, 0
@@ -33,7 +37,11 @@ int	digit;
 
 char	hostname[32];
 char	name[16];
+char	dev[] = "/dev/";
+char	ctty[] = "/dev/console";
+char	ttyn[32];
 char	*portselector();
+char	*ttyname();
 
 #define	OBUFSIZ		128
 #define	TABBUFSIZ	512
@@ -92,14 +100,47 @@ main(argc, argv)
 {
 	char *tname;
 	long allflags;
+	int repcnt = 0;
 
 	signal(SIGINT, SIG_IGN);
 /*
 	signal(SIGQUIT, SIG_DFL);
 */
+	openlog("getty", LOG_ODELAY|LOG_CONS, 0);
 	gethostname(hostname, sizeof(hostname));
 	if (hostname[0] == '\0')
 		strcpy(hostname, "Amnesiac");
+	/*
+	 * The following is a work around for vhangup interactions
+	 * which cause great problems getting window systems started.
+	 * If the tty line is "-", we do the old style getty presuming
+	 * that the file descriptors are already set up for us. 
+	 * J. Gettys - MIT Project Athena.
+	 */
+	if (argc <= 2 || strcmp(argv[2], "-") == 0)
+		strcpy(ttyn, ttyname(0));
+	else {
+		strcpy(ttyn, dev);
+		strncat(ttyn, argv[2], sizeof(ttyn)-sizeof(dev));
+		chown(ttyn, 0, 0);
+		chmod(ttyn, 0622);
+		while (open(ttyn, O_RDWR) != 0) {
+			if (repcnt % 10 == 0) {
+				syslog(LOG_FAIL, "%s: %m", ttyn);
+				closelog();
+			}
+			repcnt++;
+			sleep(60);
+		}
+		signal(SIGHUP, SIG_IGN);
+		vhangup();
+		(void) open(ttyn, O_RDWR);
+		close(0);
+		dup(1);
+		dup(0);
+		signal(SIGHUP, SIG_DFL);
+	}
+
 	gettable("default", defent, defstrs);
 	gendefaults();
 	tname = "default";
@@ -128,6 +169,12 @@ main(argc, argv)
 		ioctl(0, TIOCSETD, &ldisp);
 		if (HC)
 			ioctl(0, TIOCHPCL, 0);
+		if (AB) {
+			extern char *autobaud();
+
+			tname = autobaud();
+			continue;
+		}
 		if (PS) {
 			tname = portselector();
 			continue;
@@ -147,6 +194,9 @@ main(argc, argv)
 			alarm(TO);
 		}
 		if (getname()) {
+			register int i;
+
+			oflush();
 			alarm(0);
 			signal(SIGALRM, SIG_DFL);
 			if (!(upper || lower || digit))
@@ -163,11 +213,11 @@ main(argc, argv)
 			ioctl(0, TIOCSETP, &tmode);
 			ioctl(0, TIOCSLTC, &ltc);
 			ioctl(0, TIOCLSET, &allflags);
-			putchr('\n');
-			oflush();
-			makeenv(env);
 			signal(SIGINT, SIG_DFL);
-			execle(LO, "login", name, (char *)0, env);
+			for (i = 0; environ[i] != (char *)0; i++)
+				env[i] = environ[i];
+			makeenv(&env[i]);
+			execle(LO, "login", "-p", name, (char *) 0, env);
 			exit(1);
 		}
 		alarm(0);
@@ -215,14 +265,15 @@ getname()
 			return (0);
 		if (c == EOT)
 			exit(1);
-		if (c == '\r' || c == '\n' || np >= &name[16])
+		if (c == '\r' || c == '\n' || np >= &name[sizeof name]) {
+			putf("\r\n");
 			break;
-
+		}
 		if (c >= 'a' && c <= 'z')
 			lower++;
-		else if (c >= 'A' && c <= 'Z') {
+		else if (c >= 'A' && c <= 'Z')
 			upper++;
-		} else if (c == ERASE || c == '#' || c == '\b') {
+		else if (c == ERASE || c == '#' || c == '\b') {
 			if (np > name) {
 				np--;
 				if (tmode.sg_ospeed >= B1200)
@@ -242,11 +293,9 @@ getname()
 			prompt();
 			np = name;
 			continue;
-		} else if (c == ' ')
-			c = '_';
-		else if (c >= '0' && c <= '9')
+		} else if (c >= '0' && c <= '9')
 			digit++;
-		if (IG && (c < ' ' || c > 0176))
+		if (IG && (c <= ' ' || c > 0176))
 			continue;
 		*np++ = c;
 		putchr(cs);
@@ -354,9 +403,10 @@ prompt()
 putf(cp)
 	register char *cp;
 {
-	char *tp;
+	char *ttyn, *slash;
+	char datebuffer[60];
 	extern char editedhost[];
-	extern char *ttyname();
+	extern char *ttyname(), *rindex();
 
 	while (*cp) {
 		if (*cp != '%') {
@@ -365,17 +415,22 @@ putf(cp)
 		}
 		switch (*++cp) {
 
+		case 't':
+			ttyn = ttyname(0);
+			slash = rindex(ttyn, '/');
+			if (slash == (char *) 0)
+				puts(ttyn);
+			else
+				puts(&slash[1]);
+			break;
+
 		case 'h':
 			puts(editedhost);
 			break;
 
-		case 't':
-			tp = ttyname(0);
-			if (tp != (char *)0) {
-				if (strncmp(tp, "/dev/", 5) == 0)
-					tp += 5;
-				puts(tp);
-			}
+		case 'd':
+			get_date(datebuffer);
+			puts(datebuffer);
 			break;
 
 		case '%':
