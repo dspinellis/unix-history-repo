@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)perror.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)perror.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -25,6 +25,8 @@ static char sccsid[] = "@(#)perror.c	5.6 (Berkeley) %G%";
 int errno;
 extern int sys_nerr;
 extern char *sys_errlist[];
+
+static char ebuf[20];
 
 perror(s)
 	char *s;
@@ -40,8 +42,12 @@ perror(s)
 		v->iov_len = 2;
 		v++;
 	}
-	v->iov_base = (u_int)errno < sys_nerr ?
-	    sys_errlist[errno] : "Unknown error";
+	if ((u_int)errno < sys_nerr)
+		v->iov_base = sys_errlist[errno];
+	else {
+		(void)sprintf(ebuf, "Unknown error: %d", errno);
+		v->iov_base = ebuf;
+	}
 	v->iov_len = strlen(v->iov_base);
 	v++;
 	v->iov_base = "\n";
@@ -53,6 +59,8 @@ char *
 strerror(errnum)
 	int errnum;
 {
-	return((u_int)errnum < sys_nerr ?
-	    sys_errlist[errnum] : "Unknown error");
+	if ((u_int)errnum < sys_nerr)
+		return(sys_errlist[errnum]);
+	(void)sprintf(ebuf, "Unknown error: %d", errnum);
+	return(ebuf);
 }
