@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_fault.c	7.12 (Berkeley) %G%
+ *	@(#)vm_fault.c	7.13 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -383,10 +383,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			}
 			if (object != first_object) {
 				FREE_PAGE(m);
-				/*
-				 * XXX - we cannot just fall out at this
-				 * point, m has been freed and is invalid!
-				 */
+				/* note that `m' is not used after this */
 			}
 		}
 
