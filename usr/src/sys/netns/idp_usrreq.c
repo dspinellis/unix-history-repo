@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1984,1985 Regents of the University of California.
+ * Copyright (c) 1984, 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *      @(#)idp_usrreq.c	6.11 (Berkeley) %G%
+ *      @(#)idp_usrreq.c	6.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -49,7 +49,7 @@ idp_input(m, nsp, ifp)
 	 * Stuff source address and datagram in user buffer.
 	 */
 	idp_ns.sns_addr = idp->idp_sna;
-	if (ns_netof(idp->idp_sna)==0 && ifp) {
+	if (ns_neteqnn(idp->idp_sna.x_net, ns_zeronet) && ifp) {
 		register struct ifaddr *ia;
 
 		for (ia = ifp->if_addrlist; ia; ia = ia->ifa_next) {
@@ -162,7 +162,9 @@ idp_output(nsp, m0)
 			m_freem(m0);
 			return (ENOBUFS);
 		}
-		m->m_off = MMAXOFF - sizeof (struct idp);
+		m->m_off = MMAXOFF - sizeof (struct idp) - 2;
+				/* adjust to start on longword bdry
+				   for NSIP on gould */
 		m->m_len = sizeof (struct idp);
 		m->m_next = m0;
 		idp = mtod(m, struct idp *);
