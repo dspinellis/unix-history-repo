@@ -1,4 +1,4 @@
-/* tcp_input.c 1.11 81/10/30 */
+/* tcp_input.c 1.12 81/10/30 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,7 +12,7 @@
 #include "../inet/tcp.h"
 #include "../inet/tcp_fsm.h"
 
-extern int nosum;
+int	tcpcksum = 1;
 
 tcp_input(mp)
 	register struct mbuf *mp;
@@ -46,24 +46,24 @@ COUNT(TCP_INPUT);
 	if ((hlen = n->t_off << 2) > mp->m_len)
 		{ printf("tcp header overflow\n"); m_freem(mp); return; }
 
-	/*
-	 * Checksum extended header and data
-	 */
-	j = n->t_sum; n->t_sum = 0;
+	if (tcpcksum) {
+		/*
+		 * Checksum extended header and data
+		 */
+		j = n->t_sum; n->t_sum = 0;
 #ifdef vax
-	if (tlen == 20) {
-		asm("addl3 $8,r10,r0; movl (r0)+,r1; addl2 (r0)+,r1");
-		asm("adwc (r0)+,r1; adwc (r0)+,r1; adwc (r0)+,r1");
-		asm("adwc (r0)+,r1; adwc (r0)+,r1; adwc (r0)+,r1");
-		asm("adwc $0,r1; ashl $-16,r1,r0; addw2 r0,r1");
-		asm("adwc $0,r1");		/* ### */
-		asm("mcoml r1,r1; movzwl r1,r1; subl2 r1,r9");
-	} else
+		if (tlen == 20) {
+			asm("addl3 $8,r10,r0; movl (r0)+,r1; addl2 (r0)+,r1");
+			asm("adwc (r0)+,r1; adwc (r0)+,r1; adwc (r0)+,r1");
+			asm("adwc (r0)+,r1; adwc (r0)+,r1; adwc (r0)+,r1");
+			asm("adwc $0,r1; ashl $-16,r1,r0; addw2 r0,r1");
+			asm("adwc $0,r1");		/* ### */
+			asm("mcoml r1,r1; movzwl r1,r1; subl2 r1,r9");
+		} else
 #endif
-		j -= cksum(mp, sizeof (struct ip) + tlen);
-	if (j != 0) {
-		netstat.t_badsum++;
-		if (nosum == 0) {
+			j -= cksum(mp, sizeof (struct ip) + tlen);
+		if (j != 0) {
+			netstat.t_badsum++;
 			m_freem(mp);
 			return;
 		}
@@ -153,7 +153,7 @@ common:
 			goto badseg;
 		}
 		if (syn_ok(tp, n) && n->t_seq != tp->irs) {
-			tcp_sndnull(tp);				/* 74 */
+			tcp_sndnull(tp);			/* 74 */
 			goto badseg;
 		}
 		goto goodseg;
@@ -164,6 +164,7 @@ badseg:
 
 goodseg:
 #ifdef notdef
+	/* DO SOMETHING ABOUT UNACK!!! */
 	/*
 	 * Defer processing if no buffer space for this connection.
 	 */
@@ -414,11 +415,9 @@ tcp_ctldat(tp, n, dataok)
 	register struct tcb *tp;
 	register struct th *n;
 {
-	register sent;
-	register struct ucb *up;
-	register struct mbuf *m, *mn;
-	register len;
-COUNT(RCV_CTLDAT);
+	register struct mbuf *m;
+	int sent;
+COUNT(TCP_CTLDAT);
 
 	tp->tc_flags &= ~(TC_DROPPED_TXT|TC_ACK_DUE|TC_NEW_WINDOW);
 /* syn */
@@ -431,6 +430,10 @@ COUNT(RCV_CTLDAT);
 /* ack */
 	if ((n->th_flags&TH_ACK) && (tp->tc_flags&TC_SYN_RCVD) &&
 	    n->t_ackno > tp->snd_una) {
+		register struct mbuf *mn;
+		register struct ucb *up;
+		register int len;
+
 		up = tp->t_ucb;
 
 		/* update snd_una and snd_nxt */
@@ -483,88 +486,15 @@ COUNT(RCV_CTLDAT);
 		tp->tc_flags |= TC_NEW_WINDOW;
 		tp->t_persist = 0;
 	}
-	if (dataok) {
+	if (dataok == 0)
+		goto ctlonly;
 /* text */
-		if (n->t_len != 0)
-			tcp_text(tp, n);
-/* urg */
-		if (n->th_flags&TH_URG) {
-			unsigned urgent;
-
-			urgent = n->t_urp + n->t_seq;
-			if (tp->rcv_nxt < urgent) {
-				if (tp->rcv_urp <= tp->rcv_nxt)
-					to_user(tp->t_ucb, UURGENT);
-				tp->rcv_urp = urgent;
-			}
-		}
-/* eol */
-		if ((n->th_flags&TH_EOL) &&
-		    (tp->tc_flags&TC_DROPPED_TXT) == 0 &&
-		    tp->t_rcv_prev != (struct th *)tp) {
-			/* mark last mbuf */
-			m = dtom(tp->t_rcv_prev);
-			if (m != NULL) {
-				while (m->m_next != NULL)
-					m = m->m_next;
-				m->m_act =
-				    (struct mbuf *)(m->m_off + m->m_len - 1);
-			}
-		}
-	}
-/* fin */
-	if ((n->th_flags&TH_FIN) && (tp->tc_flags&TC_DROPPED_TXT) == 0) {
-		int last;
-
-		if ((tp->tc_flags&TC_FIN_RCVD) == 0) {
-			/* do we really have fin ? */
-			last = firstempty(tp);
-			if (tp->t_rcv_prev == (struct th *)tp ||
-			    last == t_end(tp->t_rcv_prev)) {
-				tp->tc_flags |= TC_FIN_RCVD;
-				netwakeup(tp->t_ucb);		/* poke */
-			}
-			if ((tp->tc_flags&TC_FIN_RCVD) &&
-			    tp->rcv_nxt >= last) {
-				tp->rcv_nxt = last + 1;		/* fin seq */
-				tp->tc_flags |= TC_ACK_DUE;
-			}
-		} else
-			tp->tc_flags |= TC_ACK_DUE;
-	}
-
-/* respond */
-	sent = 0;
-	if (tp->tc_flags&TC_ACK_DUE)
-		sent = tcp_sndctl(tp);
-	else if (tp->tc_flags&TC_NEW_WINDOW) {
-		seq_t last = tp->snd_off;
-		up = tp->t_ucb;
-		for (m = up->uc_sbuf; m != NULL; m = m->m_next)
-			last += m->m_len;
-		if (tp->snd_nxt <= last || (tp->tc_flags&TC_SND_FIN))
-			sent = tcp_send(tp);
-	}
-
-/* set for retrans */
-	if (!sent && tp->snd_una < tp->snd_nxt &&
-	    (tp->tc_flags&TC_CANCELLED)) {
-		tp->t_rexmt = tp->t_xmtime;
-		tp->t_rexmttl = T_REXMTTL;
-		tp->t_rexmt_val = tp->t_rtl_val = tp->snd_lst;
-		tp->tc_flags &= ~TC_CANCELLED;
-	}
-}
-
-tcp_text(tp, n)
-	register struct tcb *tp;
-	register struct th *n;
-{
-	register int i;
-	register struct th *p, *q;
-	register struct mbuf *m;
-	int overage;
-COUNT(RCV_TEXT);
+	if (n->t_len == 0)
+		goto notext;
+	{ register int i;
+	  register struct th *p, *q;
+	  register struct mbuf *m;
+	  int overage;
 
 	/*
 	 * Discard duplicate data already passed to user.
@@ -572,7 +502,7 @@ COUNT(RCV_TEXT);
 	if (SEQ_LT(n->t_seq, tp->rcv_nxt)) {
 		i = tp->rcv_nxt - n->t_seq;
 		if (i >= n->t_len)
-			goto dropseg;
+			goto notext;
 		n->t_seq += i;
 		n->t_len -= i;
 		m_adj(dtom(n), i);
@@ -595,7 +525,7 @@ COUNT(RCV_TEXT);
 		i = q->t_prev->t_seq + q->t_prev->t_len - n->t_seq;
 		if (i > 0) {
 			if (i >= n->t_len)
-				goto dropseg;
+				goto notext;	/* w/o setting TC_NET_KEEP */
 			m_adj(dtom(tp), i);
 			n->t_len -= i;
 			n->t_seq += i;
@@ -631,7 +561,7 @@ COUNT(RCV_TEXT);
 	 */
 	q = tp->t_rcv_prev;
 	overage = 
-	    (tp->t_socket->uc_rcc + tp->rcv_seqcnt) - tp->t_socket->uc_rhiwat;
+	    (tp->t_ucb->uc_rcc + tp->rcv_seqcnt) - tp->t_ucb->uc_rhiwat;
 	if (overage > 0)
 		for (;;) {
 			i = MIN(q->t_len, overage);
@@ -662,21 +592,81 @@ COUNT(RCV_TEXT);
 			break;
 	}
 	tp->tc_flags |= (TC_ACK_DUE|TC_NET_KEEP);
-	return;
+	}
+notext:
+/* urg */
+	if (n->th_flags&TH_URG) {
+		unsigned urgent;
 
-dropseg:
-	/* don't set TC_NET_KEEP, so that mbuf's will get dropped */
-	return;
+		urgent = n->t_urp + n->t_seq;
+		if (tp->rcv_nxt < urgent) {
+			if (tp->rcv_urp <= tp->rcv_nxt)
+				to_user(tp->t_ucb, UURGENT);
+			tp->rcv_urp = urgent;
+		}
+	}
+/* eol */
+	if ((n->th_flags&TH_EOL) &&
+	    (tp->tc_flags&TC_DROPPED_TXT) == 0 &&
+	    tp->t_rcv_prev != (struct th *)tp) {
+		/* mark last mbuf */
+		m = dtom(tp->t_rcv_prev);
+		if (m != NULL) {
+			while (m->m_next != NULL)
+				m = m->m_next;
+			m->m_act =
+			    (struct mbuf *)(m->m_off + m->m_len - 1);
+		}
+	}
+ctlonly:
+/* fin */
+	if ((n->th_flags&TH_FIN) && (tp->tc_flags&TC_DROPPED_TXT) == 0) {
+		seq_t last;
+
+		if ((tp->tc_flags&TC_FIN_RCVD) == 0) {
+			/* do we really have fin ? */
+			last = firstempty(tp);
+			if (tp->t_rcv_prev == (struct th *)tp ||
+			    last == t_end(tp->t_rcv_prev)) {
+				tp->tc_flags |= TC_FIN_RCVD;
+				netwakeup(tp->t_ucb);		/* poke */
+			}
+			if ((tp->tc_flags&TC_FIN_RCVD) &&
+			    tp->rcv_nxt >= last) {
+				tp->rcv_nxt = last + 1;		/* fin seq */
+				tp->tc_flags |= TC_ACK_DUE;
+			}
+		} else
+			tp->tc_flags |= TC_ACK_DUE;
+	}
+
+/* respond */
+	sent = 0;
+	if (tp->tc_flags&TC_ACK_DUE)
+		sent = tcp_sndctl(tp);
+	else if (tp->tc_flags&TC_NEW_WINDOW) {
+		seq_t last = tp->snd_off;
+		for (m = tp->t_ucb->uc_sbuf; m != NULL; m = m->m_next)	/*###*/
+			last += m->m_len;				/*###*/
+		if (tp->snd_nxt <= last || (tp->tc_flags&TC_SND_FIN))
+			sent = tcp_send(tp);
+	}
+
+/* set for retrans */
+	if (!sent && tp->snd_una < tp->snd_nxt &&
+	    (tp->tc_flags&TC_CANCELLED)) {
+		tp->t_rexmt = tp->t_xmtime;
+		tp->t_rexmttl = T_REXMTTL;
+		tp->t_rexmt_val = tp->t_rtl_val = tp->snd_lst;
+		tp->tc_flags &= ~TC_CANCELLED;
+	}
 }
-
-#define	socket		ucb			/* ### */
-#define	t_socket	t_ucb			/* ### */
 
 present_data(tp)
 	register struct tcb *tp;
 {
 	register struct th *t;
-	register struct socket *up;
+	register struct ucb *up;
 	register struct mbuf *m, **mp;
 	seq_t ready;
 COUNT(PRESENT_DATA);
@@ -684,7 +674,7 @@ COUNT(PRESENT_DATA);
 	/* connection must be synced and data available for user */
 	if ((tp->tc_flags&TC_SYN_ACKED) == 0)
 		return;
-	up = tp->t_socket;
+	up = tp->t_ucb;
 	mp = &up->uc_rbuf;
 	while (*mp)
 		mp = &(*mp)->m_next;
