@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.104 (Berkeley) %G%
+#	@(#)termcap.src	5.105 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -1121,47 +1121,47 @@ aaa-unk-s|ann arbor ambassador unknown with/status:\
 	:ts=\E7\E[>51h\E[H\E[2K\E[%i%d`:fs=\E[>51l\E8:\
 	:ds=\E7\E[>51h\E[H\E[2K\E[>51l\E8:\
 	:tc=aaa-unk:
-aaa-18-s|ambassador|ann arbor ambassador/18 lines + status line:\
+aaa-18-s|ann arbor ambassador/18 lines + status line:\
 	:ti=\E[2J\E[18;1;0;18p:\
 	:te=\E[60;1;0;18p\E[17;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;18p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#17:tc=aaa-unk-s:
-aaa-20-s|ambassador|ann arbor ambassador/20 lines + status line:\
+aaa-20-s|ann arbor ambassador/20 lines + status line:\
 	:ti=\E[2J\E[20;1;0;20p:\
 	:te=\E[60;1;0;20p\E[19;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;20p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#19:tc=aaa-unk-s:
-aaa-22-s|ambassador|ann arbor ambassador/22 lines + status line:\
+aaa-22-s|ann arbor ambassador/22 lines + status line:\
 	:ti=\E[2J\E[22;1;0;22p:\
 	:te=\E[60;1;0;22p\E[21;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;22p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#21:tc=aaa-unk-s:
-aaa-24-s|ambassador|ann arbor ambassador/24 lines + status line:\
+aaa-24-s|ann arbor ambassador/24 lines + status line:\
 	:ti=\E[2J\E[24;1;0;24p:\
 	:te=\E[60;1;0;24p\E[23;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;24p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#23:tc=aaa-unk-s:
-aaa-26-s|ambassador|ann arbor ambassador/26 lines + status line:\
+aaa-26-s|ann arbor ambassador/26 lines + status line:\
 	:ti=\E[2J\E[26;1;0;26p:\
 	:te=\E[60;1;0;26p\E[25;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;26p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#25:tc=aaa-unk-s:
-aaa-28-s|ambassador|ann arbor ambassador/28 lines + status line:\
+aaa-28-s|ann arbor ambassador/28 lines + status line:\
 	:ti=\E[2J\E[28;1;0;28p:\
 	:te=\E[60;1;0;28p\E[27;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;28p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#27:tc=aaa-unk-s:
-aaa-30-s|ambassador|ann arbor ambassador/30 lines + status line:\
+aaa-30-s|ann arbor ambassador/30 lines + status line:\
 	:ti=\E[2J\E[30;1;0;30p:\
 	:te=\E[60;1;0;30p\E[29;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;30p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#29:tc=aaa-unk-s:
-aaa-36-s|ambassador|ann arbor ambassador/36 lines + status line:\
+aaa-36-s|ann arbor ambassador/36 lines + status line:\
 	:ti=\E[2J\E[36;1;0;36p:\
 	:te=\E[60;1;0;36p\E[35;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;36p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#35:tc=aaa-unk-s:
-aaa-40-s|ambassador|ann arbor ambassador/40 lines + status line:\
+aaa-40-s|ann arbor ambassador/40 lines + status line:\
 	:ti=\E[2J\E[40;1;0;40p:\
 	:te=\E[60;1;0;40p\E[39;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;40p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
@@ -1170,7 +1170,7 @@ aaa-48-s|ann arbor ambassador/48 lines+sl:\
 	:ti=\E[2J\E[48;1;0;48p:te=\E[60;1;0;48p\E[47;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\EP`?y~[[2J~[[H\E7\E[60;1;0;48p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#47:tc=aaa-unk-s:
-aaa-60-s|ambassador|ann arbor ambassador/60 lines + status line:\
+aaa-60-s|ann arbor ambassador/60 lines + status line:\
 	:ti=\E[2J\E[60;1;0;60p:te=\E[60;1;0;60p\E[59;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;60p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#59:tc=aaa-unk-s:
@@ -1295,21 +1295,21 @@ aaa-60-rv-s|aaa-60-s-rv|ambassador/60 lines+sl+rv:\
 	:ti=\E[2J\E[60;1;0;60p:te=\E[60;1;0;60p\E[59;1H\E[J:li#59:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;60p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-unk-s:
-aaa-24-ctxt|ann arbor ambassador/24 lines:\
+aaa-24-ctxt:\
 	:ti=\E[30;1H\E[K\E[24;0;0;24p:te=\E[60;1;0;24p\E[60;1H\E[K:tc=aaa-24:
 aaa-24-rv-ctxt|ambassador/24+rv:\
 	:ti=\E[30;1H\E[K\E[24;0;0;24p:te=\E[60;1;0;24p\E[60;1H\E[K:tc=aaa-24-rv:
 aaa-s-ctxt|aaa-30-s-ctxt|hairy aaa:\
 	:ti=\E[30;1H\E[K\E[30;1;0;30p:te=\E[60;1;0;30p\E[59;1H\E[K:tc=aaa-30-s:
-aaa-s-rv-ctxt|aaa-30-s-rv-ctxt|hairy aaa:\
+aaa-s-rv-ctxt|aaa-30-s-rv-ctxt:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;30p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:ti=\E[30;1H\E[K\E[30;1;0;30p:te=\E[60;1;0;30p\E[59;1H\E[K:\
 	:li#29:tc=aaa-unk-s:
-aaa-ctxt|aaa-30-ctxt|ann arbor ambassador/30 lines:\
+aaa-ctxt|aaa-30-ctxt:\
 	:ti=\E[30;0;0;30p:te=\E[60;0;0;30p\E[60;1H\E[K:tc=aaa-30:
-aaa-rv-ctxt|aaa-30-rv-ctxt|ann arbor ambassador/30 lines:\
+aaa-rv-ctxt|aaa-30-rv-ctxt:\
 	:ti=\E[30;0;0;30p:te=\E[60;0;0;30p\E[60;1H\E[K:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
