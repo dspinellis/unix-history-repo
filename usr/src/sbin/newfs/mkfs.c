@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	6.9 (Berkeley) %G%";
 #endif not lint
 
 #ifndef STANDALONE
@@ -517,7 +517,7 @@ next:
 	printf("%s:\t%d sectors in %d cylinders of %d tracks, %d sectors\n",
 	    fsys, sblock.fs_size * NSPF(&sblock), sblock.fs_ncyl,
 	    sblock.fs_ntrak, sblock.fs_nsect);
-	printf("\t%.1fMb in %d cyl groups (%d c/g, %.2fMb/g, %d i/g)\n",
+	printf("\t%.1fMB in %d cyl groups (%d c/g, %.2fMB/g, %d i/g)\n",
 	    (float)sblock.fs_size * sblock.fs_fsize * 1e-6, sblock.fs_ncg,
 	    sblock.fs_cpg, (float)sblock.fs_fpg * sblock.fs_fsize * 1e-6,
 	    sblock.fs_ipg);
