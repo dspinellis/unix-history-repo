@@ -1,6 +1,6 @@
 /* #define	OLD_BSD		if you're running < 4.2bsd */
 /*
-char	id_trpfpe[] = "@(#)trpfpe_.c	1.1";
+char	id_trpfpe[] = "@(#)trpfpe_.c	1.2";
  *
  *	Fortran floating-point error handler
  *
@@ -259,41 +259,47 @@ get_operand (oper_size)
 
 		case BYTEDISP:
 		case BYTEREL:
-			oper_addr = (anything *)(((anything *)(*ipc))->ua_byte + reg_addr->ua_long);
-			*ipc += sizeof (char);
+			index = ((anything *)(*ipc))->ua_byte;
+			*ipc += sizeof (char);	/* do it now in case reg==PC */
+			oper_addr = (anything *)(index + reg_addr->ua_long);
 			return(oper_addr);
 
 		case BYTEDISPDEF:
 		case BYTERELDEF:
-			oper_addr = (anything *)(((anything *)(*ipc))->ua_byte + reg_addr->ua_long);
+			index = ((anything *)(*ipc))->ua_byte;
+			*ipc += sizeof (char);	/* do it now in case reg==PC */
+			oper_addr = (anything *)(index + reg_addr->ua_long);
 			oper_addr = oper_addr->ua_anything;
-			*ipc += sizeof (char);
 			return(oper_addr);
 
 		case WORDDISP:
 		case WORDREL:
-			oper_addr = (anything *)(((anything *)(*ipc))->ua_word + reg_addr->ua_long);
-			*ipc += sizeof (short);
+			index = ((anything *)(*ipc))->ua_word;
+			*ipc += sizeof (short);	/* do it now in case reg==PC */
+			oper_addr = (anything *)(index + reg_addr->ua_long);
 			return(oper_addr);
 
 		case WORDDISPDEF:
 		case WORDRELDEF:
-			oper_addr = (anything *)(((anything *)(*ipc))->ua_word + reg_addr->ua_long);
+			index = ((anything *)(*ipc))->ua_word;
+			*ipc += sizeof (short);	/* do it now in case reg==PC */
+			oper_addr = (anything *)(index + reg_addr->ua_long);
 			oper_addr = oper_addr->ua_anything;
-			*ipc += sizeof (short);
 			return(oper_addr);
 
 		case LONGDISP:
 		case LONGREL:
-			oper_addr = (anything *)(((anything *)(*ipc))->ua_long + reg_addr->ua_long);
-			*ipc += sizeof (long);
+			index = ((anything *)(*ipc))->ua_long;
+			*ipc += sizeof (long);	/* do it now in case reg==PC */
+			oper_addr = (anything *)(index + reg_addr->ua_long);
 			return(oper_addr);
 
 		case LONGDISPDEF:
 		case LONGRELDEF:
-			oper_addr = (anything *)(((anything *)(*ipc))->ua_long + reg_addr->ua_long);
+			index = ((anything *)(*ipc))->ua_long;
+			*ipc += sizeof (long);	/* do it now in case reg==PC */
+			oper_addr = (anything *)(index + reg_addr->ua_long);
 			oper_addr = oper_addr->ua_anything;
-			*ipc += sizeof (long);
 			return(oper_addr);
 
 		/* NOTREACHED */
