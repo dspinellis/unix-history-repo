@@ -1,4 +1,7 @@
-static	char *sccsid = "@(#)login.c.1	4.23 83/05/19";
+#ifndef lint
+static	char *sccsid = "@(#)login.c.1	4.24 83/05/22";
+#endif
+
 /*
  * login [ name ]
  * login -r
@@ -12,6 +15,9 @@ static	char *sccsid = "@(#)login.c.1	4.23 83/05/19";
 #include <stdio.h>
 #include <sys/stat.h>
 #include <lastlog.h>
+#define	QUOTA
+#include <sys/quota.h>
+#include <errno.h>
 
 #define	SCPYN(a, b)	strncpy(a, b, sizeof(a))
 
@@ -52,6 +58,7 @@ char	*crypt();
 char	*getpass();
 char	*stypeof();
 extern	char **environ;
+extern	int errno;
 
 struct	ttychars tc = {
 	CERASE,	CKILL,	CINTR,	CQUIT,	CSTART,
@@ -84,6 +91,7 @@ char **argv;
 	nice(-100);
 	nice(20);
 	nice(0);
+	quota(Q_SETUID, 0, 0, 0);
 	if (argc > 1 && !strcmp(argv[1], "-r")) {
 		rflag++;
 		rhost = argv[2];
@@ -260,7 +268,18 @@ normal:
 			exit(1);
 	} while (invalid);
 
-
+	if (quota(Q_SETUID, pwd->pw_uid, 0, 0) < 0) {
+		if (errno == EUSERS)
+			printf("%s.\n%s.\n",
+			   "Too many users logged on already",
+			   "Try again later");
+		else if (errno == EPROCLIM)
+			printf("You have too many processes running.\n");
+		else
+			perror("setuid");
+		sleep(5);
+		exit(0);
+	}
 	time(&utmp.ut_time);
 	t = ttyslot();
 	if (t>0 && (f = open("/etc/utmp", 1)) >= 0) {
@@ -303,6 +322,7 @@ normal:
 	strncpy(name, utmp.ut_name, NMAX);
 	name[NMAX] = '\0';
 	initgroups(name, pwd->pw_gid);
+	quota(Q_DOWARN, pwd->pw_uid, (dev_t)-1, 0);
 	setuid(pwd->pw_uid);
 	environ = envinit;
 	strncat(homedir, pwd->pw_dir, sizeof(homedir)-6);
