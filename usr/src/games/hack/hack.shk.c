@@ -69,6 +69,8 @@ register struct monst *mtmp;
 	return(ESHK(mtmp)->shknam);
 }
 
+static void setpaid();
+
 shkdead(mtmp)				/* called in mon.c */
 register struct monst *mtmp;
 {
@@ -92,7 +94,7 @@ register struct monst *mtmp, *mtmp2;
 	}
 }
 
-static
+static void
 setpaid(){	/* caller has checked that shopkeeper exists */
 		/* either we paid or left the shop or he just died */
 register struct obj *obj;
@@ -130,6 +132,8 @@ register struct bill_x *bp = bill;
 
 inshop(){
 register roomno = inroom(u.ux,u.uy);
+
+	static void findshk();
 
 	/* Did we just leave a shop? */
 	if(u.uinshop &&
@@ -223,7 +227,7 @@ register roomno = inroom(u.ux,u.uy);
 	return(u.uinshop);
 }
 
-static
+static void
 findshk(roomno)
 register roomno;
 {
@@ -308,6 +312,8 @@ long ltmp;
 register struct bill_x *bp;
 register struct monst *shkp;
 int pass, tmp;
+
+	static int dopayobj();
 
 	multi = 0;
 	(void) inshop();
@@ -506,6 +512,8 @@ register struct bill_x *bp;
 	return(obj);
 }
 
+static int getprice();
+
 /* called in hack.c when we pickup an object */
 addtobill(obj) register struct obj *obj; {
 register struct bill_x *bp;
@@ -686,6 +694,8 @@ quit:
 static
 getprice(obj) register struct obj *obj; {
 register int tmp, ac;
+	static int realhunger();
+
 	switch(obj->olet){
 	case AMULET_SYM:
 		tmp = 10*rnd(500);

@@ -13,7 +13,7 @@ extern int CO, LI;	/* usually COLNO and ROWNO+2 */
 extern char *CD;
 extern char quitchars[];
 extern char *getenv(), *getlogin();
-int done1();
+void done1();
 
 dowhatis()
 {
@@ -372,7 +372,10 @@ union wait {		/* used only for the cast  (union wait *) 0  */
 #endif NOWAITINCLUDE
 
 child(wt) {
-register int f = fork();
+	int status;
+	register int f;
+
+	f = fork();
 	if(f == 0){		/* child */
 		settty((char *) 0);		/* also calls end_screen() */
 		(void) setuid(getuid());
@@ -389,7 +392,7 @@ register int f = fork();
 	/* fork succeeded; wait for child to exit */
 	(void) signal(SIGINT,SIG_IGN);
 	(void) signal(SIGQUIT,SIG_IGN);
-	(void) wait((union wait *) 0);
+	(void) wait(&status);
 	gettty();
 	setftty();
 	(void) signal(SIGINT,done1);

@@ -12,11 +12,13 @@ extern struct monst youmonst;
 extern char *Doname();
 extern char *nomovemsg;
 
+static int drop();
+
 dodrop() {
 	return(drop(getobj("0$#", "drop")));
 }
 
-static
+static int
 drop(obj) register struct obj *obj; {
 	if(!obj) return(0);
 	if(obj->olet == '$') {		/* pseudo object */

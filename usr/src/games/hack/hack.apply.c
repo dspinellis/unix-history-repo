@@ -12,6 +12,9 @@ extern char *occtxt;
 extern char quitchars[];
 extern char pl_character[];
 
+static void use_camera(), use_ice_box(), use_whistle(), use_magic_whistle();
+static int use_pick_axe();
+
 doapply() {
 	register struct obj *obj;
 	register int res = 1;
@@ -60,7 +63,7 @@ doapply() {
 }
 
 /* ARGSUSED */
-static
+static void
 use_camera(obj) /* register */ struct obj *obj; {
 register struct monst *mtmp;
 	if(!getdir(1)){		/* ask: in what direction? */
@@ -157,7 +160,7 @@ register struct obj *otmp;
 	(void) addinv(obj);
 }
 
-static
+static void
 use_ice_box(obj) register struct obj *obj; {
 register int cnt = 0;
 register struct obj *otmp;
@@ -204,7 +207,7 @@ bchit(ddx,ddy,range,sym) register int ddx,ddy,range; char sym; {
 }
 
 /* ARGSUSED */
-static
+static void
 use_whistle(obj) struct obj *obj; {
 register struct monst *mtmp = fmon;
 	pline("You produce a high whistling sound.");
@@ -220,7 +223,7 @@ register struct monst *mtmp = fmon;
 }
 
 /* ARGSUSED */
-static
+static void
 use_magic_whistle(obj) struct obj *obj; {
 register struct monst *mtmp = fmon;
 	pline("You produce a strange whistling sound.");
