@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd2.c	3.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd2.c	3.37 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -61,9 +61,11 @@ char *help_longcmd[] = {
 	":foreground # flag      Make # a foreground window, if `flag' is true",
 	":label # string         Set label of window # to `string'",
 	":list                   List all open windows",
-	":nline lines            Set default window buffer size to `lines'",
+	":default_nline lines    Set default window buffer size to `lines'",
+	":default_smooth flag    Set default smooth scroll flag",
+	":default_shell string ...",
+	"                        Set default shell to `string ...'",
 	":select #               Select window #",
-	":shell string ...       Set default shell program to `string ...'",
 	":smooth # flag          Set window # to smooth scroll mode",
 	":source filename        Execute commands in `filename'",
 	":terse flag             Set terse mode",

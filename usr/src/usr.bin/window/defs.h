@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)defs.h	3.18 (Berkeley) %G%
+ *	@(#)defs.h	3.19 (Berkeley) %G%
  */
 
 #include "ww.h"
@@ -34,9 +34,10 @@ struct ww *fgwin;		/* the last foreground window */
 
 #define isfg(w)		((w)->ww_order <= fgwin->ww_order)
 
-char *shell[128];		/* the shell argv */
-char *shellfile;		/* the shell program */
-int nbufline;			/* default buffer size for new windows */
+char *default_shell[128];	/* default shell argv */
+char *default_shellfile;	/* default shell program */
+int default_nline;		/* default buffer size for new windows */
+int default_smooth;		/* default "smooth" parameter */
 char escapec;			/* the escape character */
 
 	/* flags */

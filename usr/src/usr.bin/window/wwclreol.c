@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwclreol.c	3.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwclreol.c	3.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -24,8 +24,7 @@ static char sccsid[] = "@(#)wwclreol.c	3.17 (Berkeley) %G%";
 
 /*
  * Clear w to the end of line.
- * If cleared is true, then the screen line has already been cleared
- * previously.
+ * If cleared is true, then the screen line has already been cleared.
  */
 wwclreol1(w, row, col, cleared)
 register struct ww *w;
@@ -56,9 +55,9 @@ char cleared;
 		col = w->ww_i.l;
 
 	/*
-	 * Now find out how much is actually cleared, and fix wwns.
+	 * Now fix wwns.
 	 */
-	if (cleared) {
+	{
 		register union ww_char *s;
 		register char *smap, *win;
 
@@ -66,57 +65,12 @@ char cleared;
 		smap = &wwsmap[row][i];
 		s = &wwns[row][i];
 		win = &w->ww_win[row][i];
-		for (i = w->ww_i.r - i; --i >= 0;) {
-			if (*smap++ != w->ww_index)
-				continue;
-			s++->c_w = ' ' | *win++ << WWC_MSHIFT;
-		}
-	} else {
-		register union ww_char *s;
-		register char *smap, *win;
-		int ntouched = 0;
-		int gain = 0;
-
-		i = col;
-		smap = &wwsmap[row][i];
-		s = wwns[row];
-		win = w->ww_win[row];
-		for (; i < w->ww_i.r; i++) {
-			if (*smap++ != w->ww_index) {
-				if (s[i].c_w != ' ')
-					gain--;
-			} else if (win[i] == 0) {
-				if (s[i].c_w != ' ') {
-					gain++;
-					ntouched++;
-					s[i].c_w = ' ';
-				}
-			} else {
-				short c = ' ' | win[i] << WWC_MSHIFT;
-				if (s[i].c_w == c)
-					gain--;
-				else {
-					s[i].c_w = c;
-					ntouched++;
-				}
-			}
-		}
-		s += i;
-		for (i = wwncol - i; --i >= 0;)
-			if (s++->c_w != ' ')
-				gain--;
-		if (ntouched > 0)
-			wwtouched[row] |= WWU_TOUCHED;
-		/*
-		 * Can/should we use clear eol?
-		 */
-		if (tt.tt_clreol != 0 && gain > 4) {
-			/* clear to the end */
-			(*tt.tt_move)(row, col);
-			(*tt.tt_clreol)();
-			s = &wwos[row][col];
-			for (i = wwncol - col; --i >= 0;)
-				s++->c_w = ' ';
-		}
+		for (i = w->ww_i.r - i; --i >= 0;)
+			if (*smap++ == w->ww_index)
+				s++->c_w = ' ' | *win++ << WWC_MSHIFT;
+			else
+				s++, win++;
 	}
+	if (!cleared)
+		wwtouched[row] |= WWU_TOUCHED;
 }

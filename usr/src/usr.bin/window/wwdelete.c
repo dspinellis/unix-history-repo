@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwdelete.c	3.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwdelete.c	3.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -41,9 +41,7 @@ register struct ww *w;
 				ns[j].c_w = ' ';
 				nchanged++;
 			}
-		if (nchanged > 4)
-			wwtouched[i] |= WWU_MAJOR|WWU_TOUCHED;
-		else if (nchanged > 0)
+		if (nchanged > 0)
 			wwtouched[i] |= WWU_TOUCHED;
 	}
 
@@ -103,9 +101,7 @@ again:
 			if (win[j] == 0)
 				nvis++;
 		}
-		if (nchanged > 4)
-			wwtouched[i] |= WWU_MAJOR|WWU_TOUCHED;
-		else if (nchanged > 0)
+		if (nchanged > 0)
 			wwtouched[i] |= WWU_TOUCHED;
 		w->ww_nvis[i] = nvis;
 	}

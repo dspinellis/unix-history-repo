@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ww.h	3.49 (Berkeley) %G%
+ *	@(#)ww.h	3.50 (Berkeley) %G%
  */
 
 #include <sgtty.h>
@@ -116,6 +116,13 @@ union ww_char {
 #define c_c c_un.C_c
 #define c_m c_un.C_m
 
+	/* for display update */
+struct ww_update {
+	int best_gain;
+	int best_col;
+	int gain;
+};
+
 	/* parts of ww_char */
 #define WWC_CMASK	0x00ff
 #define WWC_MMASK	0xff00
@@ -164,9 +171,8 @@ union ww_char {
 #define WWE_BADTERM	6		/* bad terminal type */
 #define WWE_CANTDO	7		/* dumb terminal */
 
-	/* wwtouched[] bits */
+	/* wwtouched[] bits, there used to be more than one */
 #define WWU_TOUCHED	0x01		/* touched */
-#define WWU_MAJOR	0x02		/* major change */
 
 	/* the window structures */
 struct ww wwhead;
@@ -190,6 +196,7 @@ char **wwsmap;			/* the screen map */
 union ww_char **wwos;		/* the old (current) screen */
 union ww_char **wwns;		/* the new (desired) screen */
 char *wwtouched;		/* wwns changed flags */
+struct ww_update *wwupd;	/* for display update */
 extern int wwbaudmap[];		/* maps stty() baud rate code into number */
 int wwbaud;			/* wwbaudmap[wwoldtty.ww_sgttyb.sg_ospeed] */
 int wwcursorrow, wwcursorcol;	/* where we want the cursor to be */
@@ -198,7 +205,8 @@ int wwerrno;			/* error number */
 	/* statistics */
 int wwnflush, wwnwr, wwnwre, wwnwrz, wwnwrc;
 int wwnwwr, wwnwwra, wwnwwrc;
-int wwnupdate, wwnupdline, wwnupdmiss, wwnmajline, wwnmajmiss;
+int wwnupdate, wwnupdline, wwnupdmiss;
+int wwnupdscan, wwnupdclreol, wwnupdclreos, wwnupdclreosmiss, wwnupdclreosline;
 int wwnread, wwnreade, wwnreadz, wwnreadc;
 int wwnwread, wwnwreade, wwnwreadz, wwnwreadd, wwnwreadc, wwnwreadp;
 int wwnselect, wwnselecte, wwnselectz;

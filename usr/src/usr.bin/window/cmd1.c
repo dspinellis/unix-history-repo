@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd1.c	3.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd1.c	3.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -63,7 +63,6 @@ c_window()
 		wwbox(boxwin, row - 1, col - 1,
 			xrow - row + 3, xcol - col + 3);
 		wwsetcursor(xrow, xcol);
-		wwflush();
 		while (wwpeekc() < 0)
 			wwiomux();
 		switch (getpos(&xrow, &xcol, row, col, wwnrow - 1, wwncol - 1))
@@ -86,8 +85,8 @@ c_window()
 	if (!terse)
 		wwputc('\n', cmdwin);
 	wwcurtowin(cmdwin);
-	(void) openwin(id, row, col, xrow-row+1, xcol-col+1, nbufline,
-		(char *) 0, 1, 1, shellfile, shell);
+	(void) openwin(id, row, col, xrow-row+1, xcol-col+1, default_nline,
+		(char *) 0, 1, 1, default_shellfile, default_shell);
 }
 
 getpos(row, col, minrow, mincol, maxrow, maxcol)
