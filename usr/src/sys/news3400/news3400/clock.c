@@ -12,7 +12,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.5 (Berkeley) %G%
+ *	@(#)clock.c	7.6 (Berkeley) %G%
  */
 
 #include <machine/fix_machine_type.h>
@@ -50,35 +50,21 @@ setstatclockrate(newhz)
 }
 
 /*
- * Start the real-time clock.
- */
-static void
-startrtclock()
-{
-
-	*(char *)ITIMER = IOCLOCK / 6144 / 100 - 1;
-}
-
-/*
- * Enable the real-time clock.
- */
-static void
-enablertclock()
-{
-
-	*(char *)INTEN0 |= (char)INTEN0_TIMINT;
-}
-
-/*
  * Set up the real-time and statistics clocks.  Leave stathz 0 only if
  * no alternative timer is available.
- *
  */
 cpu_initclocks()
 {
 
-	startrtclock();
-	enablertclock();
+	/*
+	 * Start the real-time clock.
+	 */
+	*(char *)ITIMER = IOCLOCK / 6144 / 100 - 1;
+
+	/*
+	 * Enable the real-time clock.
+	 */
+	*(char *)INTEN0 |= (char)INTEN0_TIMINT;
 }
 
 /*
