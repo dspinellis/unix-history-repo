@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	8.5 (Berkeley) %G%
+ *	@(#)mount.h	8.6 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -64,8 +64,8 @@ struct statfs {
 #define MOUNT_UMAP	10	/* User/Group Identifer Remapping Filesystem */
 #define MOUNT_KERNFS	11	/* Kernel Information Filesystem */
 #define MOUNT_PROCFS	12	/* /proc Filesystem */
-#define MOUNT_AFS	13	/* Andrew Filesystem */
-#define MOUNT_MAXTYPE	13
+#define MOUNT_ISOFS	14	/* ISO9660 (aka CDROM) Filesystem */
+#define	MOUNT_MAXTYPE	14
 
 #define INITMOUNTNAMES { \
 	"none",		/*  0 MOUNT_NONE */ \
@@ -81,7 +81,9 @@ struct statfs {
 	"umap",		/* 10 MOUNT_UMAP */ \
 	"kernfs",	/* 11 MOUNT_KERNFS */ \
 	"procfs",	/* 12 MOUNT_PROCFS */ \
-	0,		/* 13 MOUNT_SPARE */ \
+	"afs",		/* 13 MOUNT_AFS */ \
+	"iso9660fs",	/* 14 MOUNT_ISOFS */ \
+	0,		/* 15 MOUNT_SPARE */ \
 }
 
 /*
@@ -219,6 +221,7 @@ typedef struct fhandle	fhandle_t;
 
 #ifdef KERNEL
 #include <net/radix.h>
+#include <sys/socket.h>		/* XXX for AF_MAX */
 
 /*
  * Network address lookup element
@@ -228,20 +231,35 @@ struct netcred {
 	int	netc_exflags;
 	struct	ucred netc_anon;
 };
+
+/*
+ * Network export information
+ */
+struct netexport {
+	struct	netcred ne_defexported;		      /* Default export */
+	struct	radix_node_head *ne_rtable[AF_MAX+1]; /* Individual exports */
+};
 #endif /* KERNEL */
+
+/*
+ * Export arguments for local filesystem mount calls.
+ */
+struct export_args {
+	int	ex_flags;		/* export related flags */
+	uid_t	ex_root;		/* mapping for root uid */
+	struct	ucred ex_anon;		/* mapping for anonymous user */
+	struct	sockaddr *ex_addr;	/* net address to which exported */
+	int	ex_addrlen;		/* and the net address length */
+	struct	sockaddr *ex_mask;	/* mask of valid bits in saddr */
+	int	ex_masklen;		/* and the smask length */
+};
 
 /*
  * Arguments to mount UFS-based filesystems
  */
 struct ufs_args {
-	char	*fspec;		/* block special device to mount */
-	int	exflags;	/* export related flags */
-	uid_t	exroot;		/* mapping for root uid */
-	struct	ucred anon;	/* mapping for anonymous user */
-	struct	sockaddr *saddr;/* net address to which exported */
-	int	slen;		/* and the net address length */
-	struct	sockaddr *smask;/* mask of valid bits in saddr */
-	int	msklen;		/* and the smask length */
+	char	*fspec;			/* block special device to mount */
+	struct	export_args export;	/* network export information */
 };
 
 #ifdef MFS
@@ -249,11 +267,28 @@ struct ufs_args {
  * Arguments to mount MFS
  */
 struct mfs_args {
-	char	*name;		/* name to export for statfs */
-	caddr_t	base;		/* base address of file system in memory */
-	u_long size;		/* size of file system */
+	char	*fspec;			/* name to export for statfs */
+	struct	export_args export;	/* if exported MFSes are supported */
+	caddr_t	base;			/* base of file system in memory */
+	u_long size;			/* size of file system */
 };
 #endif /* MFS */
+
+#ifdef ISOFS
+/*
+ * Arguments to mount ISO 9660 filesystems.
+ */
+struct iso_args {
+	char *fspec;			/* block special device to mount */
+	struct	export_args export;	/* network export info */
+	int flags;			/* mounting flags, see below */
+
+};
+#define ISOFSMNT_NORRIP		0x00000001 /* disable Rock Ridge Ext.*/
+#define ISOFSMNT_GENS		0x00000002 /* enable generation numbers */
+#define ISOFSMNT_EXTATT		0x00000004 /* enable extended attributes */
+#define ISOFSMNT_NOTRANS	0x00000008 /* disable filename translation */
+#endif /* ISOFS */
 
 #ifdef NFS
 /*
@@ -326,9 +361,14 @@ struct nfs_args {
 /*
  * exported vnode operations
  */
-int	vfs_lock __P((struct mount *mp));	/* lock a vfs */
-void	vfs_unlock __P((struct mount *mp));	/* unlock a vfs */
-struct	mount *getvfs __P((fsid_t *fsid));	/* return vfs given fsid */
+struct	mount *getvfs __P((fsid_t *));      /* return vfs given fsid */
+int	vfs_export			    /* process mount export info */
+	  __P((struct mount *, struct netexport *, struct export_args *));
+struct	netcred *vfs_export_lookup	    /* lookup host in fs export list */
+	  __P((struct mount *, struct netexport *, struct mbuf *));
+int	vfs_lock __P((struct mount *));     /* lock a vfs */
+int	vfs_mountedon __P((struct vnode *));/* is a vfs mounted on vp */
+void	vfs_unlock __P((struct mount *));   /* unlock a vfs */
 extern	TAILQ_HEAD(mntlist, mount) mountlist;	/* mounted filesystem list */
 extern	struct vfsops *vfssw[];			/* filesystem type table */
 
