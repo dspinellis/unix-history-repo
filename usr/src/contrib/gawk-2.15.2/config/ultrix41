@@ -1,0 +1,4 @@
+DECstation running Ultrix 4.1 (and 4.2??)
+STDC_HEADERS	1 
+#define	Ultrix41	1
+MAKE_ALLOCA_C
