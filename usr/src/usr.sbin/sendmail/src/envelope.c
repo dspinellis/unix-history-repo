@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -324,8 +324,8 @@ void
 initsys(e)
 	register ENVELOPE *e;
 {
-	static char cbuf[5];			/* holds hop count */
-	static char pbuf[10];			/* holds pid */
+	char cbuf[5];				/* holds hop count */
+	char pbuf[10];				/* holds pid */
 #ifdef TTYNAME
 	static char ybuf[60];			/* holds tty id */
 	register char *p;
@@ -359,11 +359,11 @@ initsys(e)
 
 	/* process id */
 	(void) sprintf(pbuf, "%d", getpid());
-	define('p', pbuf, e);
+	define('p', newstr(pbuf), e);
 
 	/* hop count */
 	(void) sprintf(cbuf, "%d", e->e_hopcount);
-	define('c', cbuf, e);
+	define('c', newstr(cbuf), e);
 
 	/* time as integer, unix time, arpa time */
 	settime(e);
@@ -402,8 +402,8 @@ settime(e)
 {
 	register char *p;
 	auto time_t now;
-	static char tbuf[20];			/* holds "current" time */
-	static char dbuf[30];			/* holds ctime(tbuf) */
+	char tbuf[20];				/* holds "current" time */
+	char dbuf[30];				/* holds ctime(tbuf) */
 	register struct tm *tm;
 	extern char *arpadate();
 	extern struct tm *gmtime();
@@ -412,12 +412,12 @@ settime(e)
 	tm = gmtime(&now);
 	(void) sprintf(tbuf, "%04d%02d%02d%02d%02d", tm->tm_year + 1900,
 			tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min);
-	define('t', tbuf, e);
+	define('t', newstr(tbuf), e);
 	(void) strcpy(dbuf, ctime(&now));
 	p = strchr(dbuf, '\n');
 	if (p != NULL)
 		*p = '\0';
-	define('d', dbuf, e);
+	define('d', newstr(dbuf), e);
 	p = arpadate(dbuf);
 	p = newstr(p);
 	if (macvalue('a', e) == NULL)
