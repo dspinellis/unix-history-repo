@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)4.t	1.2 (Berkeley) %G%
+.\"	@(#)4.t	1.3 (Berkeley) %G%
 .\"
-.ds RH "Client/Server Model
+.\".ds RH "Client/Server Model
 .bp
 .nr H1 4
 .nr H2 0
@@ -223,7 +223,7 @@ has occurred.
 With a connection
 in hand, the server then forks a child process and invokes
 the main body of the remote login protocol processing.  Note
-how the socket used by the parent for queueing connection
+how the socket used by the parent for queuing connection
 requests is closed in the child, while the socket created as
 a result of the \fIaccept\fP is closed in the parent.  The
 address of the client is also handed the \fIdoit\fP routine
@@ -336,6 +336,11 @@ to generate the status information for each host.  Servers
 operate autonomously, coupled only by the local network and
 its broadcast capabilities.
 .PP
+Note that the use of broadcast for such a task is fairly inefficient,
+as all hosts must process each message, whether or not using an rwho server.
+Unless such a service is sufficiently universal and is frequently used,
+the expense of periodic broadcasts outweighs the simplicity.
+.PP
 The rwho server, in a simplified form, is pictured in Figure
 4.  There are two separate tasks performed by the server.  The
 first task is to act as a receiver of status information broadcast
@@ -395,7 +400,7 @@ main()
 			continue;
 		}
 		(void) sprintf(path, "%s/whod.%s", RWHODIR, wd.wd_hostname);
-		whod = open(path, O_RDONLY | O_CREAT | O_TRUNC, 0666);
+		whod = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
 		...
 		(void) time(&wd.wd_recvtime);
 		(void) write(whod, (char *)&wd, cc);

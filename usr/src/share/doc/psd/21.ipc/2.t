@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.t	1.2 (Berkeley) %G%
+.\"	@(#)2.t	1.3 (Berkeley) %G%
 .\"
-.ds RH "Basics
+.\".ds RH "Basics
 .bp
 .nr H1 2
 .nr H2 0
@@ -184,13 +184,16 @@ while in the UNIX domain, an association is composed of
 local and foreign path names (the phrase ``foreign pathname''
 means a pathname created by a foreign process, not a pathname
 on a foreign system).
-Associations are always unique.  That is, in the Internet domain, there
+In most domains, associations must be unique.
+In the Internet domain there
 may never be duplicate <protocol, local address, local port, foreign
-address, foreign port> tuples.  Similarly, in the UNIX domain,
+address, foreign port> tuples.  UNIX domain sockets need not always
+be bound to a name, but when bound
 there may never be duplicate <protocol, local pathname, foreign
-pathname> tuples, and the pathnames must (in 4.3; the situation
-may change in future releases) be unique with respect to the files
-already existing on the system.
+pathname> tuples.
+The pathnames may not refer to files
+already existing on the system
+in 4.3; the situation may change in future releases.
 .PP
 The \fIbind\fP system call allows a process to specify half of
 an association, <local address, local port>
@@ -206,9 +209,6 @@ bind an appropriate address if they are used with an
 unbound socket.  The process of binding names to NS
 sockets is similar in most ways to that of
 binding names to Internet sockets.
-While binding names to sockets in the
-UNIX domain is less complex, the \fIconnect\fP and \fIsend\fP
-calls can still be used to automatically bind local names.
 .PP
 The \fIbind\fP system call is used as follows:
 .DS
@@ -220,7 +220,7 @@ communication domain to communication domain (this is one of
 the properties which comprise the \*(lqdomain\*(rq).
 As mentioned, in the
 Internet domain names contain an Internet address and port
-number.  NS domain names contain a NS address and
+number.  NS domain names contain an NS address and
 port number.  In the UNIX domain, names contain a path name and
 a family, which is always AF_UNIX.  If one wanted to bind
 the name \*(lq/tmp/foo\*(rq to a UNIX domain socket, the
@@ -267,7 +267,7 @@ requires some discussion.  We will come back to the problem
 of formulating Internet addresses in section 3 when 
 the library routines used in name resolution are discussed.
 .PP
-Binding a NS address to a socket is even more
+Binding an NS address to a socket is even more
 difficult,
 especially since the Internet library routines do not
 work with NS hostnames.  The actual call is again similar:
@@ -284,13 +284,16 @@ will be deferred to section 3.
 .NH 2
 Connection establishment
 .PP
-With a bound socket it is possible to rendezvous with
-an unrelated process.  This operation is usually asymmetric
+Connection establishment is usually asymmetric,
 with one process a \*(lqclient\*(rq and the other a \*(lqserver\*(rq.
+The server, when willing to offer its advertised services,
+binds a socket to a well-known address associated with the service
+and then passively \*(lqlistens\*(rq on its socket.
+It is then possible for an unrelated process to rendezvous
+with the server.
 The client requests services from the server by initiating a
-\*(lqconnection\*(rq to the server's socket.  The server, when
-willing to offer its advertised services, passively \*(lqlistens\*(rq
-on its socket.  On the client side the \fIconnect\fP call is
+\*(lqconnection\*(rq to the server's socket.
+On the client side the \fIconnect\fP call is
 used to initiate a connection.  Using the UNIX domain, this
 might appear as,
 .DS
@@ -318,7 +321,7 @@ client process wishes to speak.
 If the client process's socket is unbound at the time of
 the connect call,
 the system will automatically select and bind a name to
-the socket; c.f. section 5.4.
+the socket if necessary; c.f. section 5.4.
 This is the usual way that local addresses are bound
 to a socket.
 .PP
@@ -409,8 +412,8 @@ way for a process to indicate it will accept connections from only
 a specific individual, or individuals.  It is up to the user process
 to consider who the connection is from and close down the connection
 if it does not wish to speak to the process.  If the server process
-wants to accept connections on more than one socket, or not block
-on the accept call, there are alternatives;  they will be considered
+wants to accept connections on more than one socket, or wants to avoid blocking
+on the accept call, there are alternatives; they will be considered
 in section 5.
 .NH 2
 Data transfer
@@ -490,22 +493,24 @@ exchange.  While processes are still likely to be client
 and server, there is no requirement for connection establishment.
 Instead, each message includes the destination address.
 .PP
-Datagram sockets are created as before, and each should
-have a name bound to it in order that the recipient of
-a message may identify the sender.  To send data,
-the \fIsendto\fP primitive is used,
+Datagram sockets are created as before.
+If a particular local address is needed,
+the \fIbind\fP operation must precede the first data transmission.
+Otherwise, the system will set the local address and/or port
+when data is first sent.
+To send data, the \fIsendto\fP primitive is used,
 .DS
 sendto(s, buf, buflen, flags, (struct sockaddr *)&to, tolen);
 .DE
 The \fIs\fP, \fIbuf\fP, \fIbuflen\fP, and \fIflags\fP
 parameters are used as before. 
 The \fIto\fP and \fItolen\fP
-values are used to indicate the intended recipient of the
+values are used to indicate the address of the intended recipient of the
 message.  When
 using an unreliable datagram interface, it is
-unlikely any errors will be reported to the sender.  Where
-information is present locally to recognize a message which may
-never be delivered (for instance when a network is unreachable),
+unlikely that any errors will be reported to the sender.  When
+information is present locally to recognize a message that can
+not be delivered (for instance when a network is unreachable),
 the call will return \-1 and the global value \fIerrno\fP will
 contain an error number. 
 .PP
@@ -517,7 +522,7 @@ recvfrom(s, buf, buflen, flags, (struct sockaddr *)&from, &fromlen);
 Once again, the \fIfromlen\fP parameter is handled in
 a value-result fashion, initially containing the size of
 the \fIfrom\fP buffer, and modified on return to indicate
-the actual size of the from address.
+the actual size of the address from which the datagram was received.
 .PP
 In addition to the two calls mentioned above, datagram
 sockets may also use the \fIconnect\fP call to associate
@@ -525,13 +530,27 @@ a socket with a specific destination address.  In this case, any
 data sent on the socket will automatically be addressed
 to the connected peer, and only data received from that
 peer will be delivered to the user.  Only one connected
-address is permitted for each socket (i.e. no multi-casting).
+address is permitted for each socket at one time;
+a second connect will change the destination address,
+and a connect to a null address (family AF_UNSPEC)
+will disconnect.
 Connect requests on datagram sockets return immediately,
 as this simply results in the system recording
-the peer's address (as compared to a stream socket where a
+the peer's address (as compared to a stream socket, where a
 connect request initiates establishment of an end to end
 connection).  \fIAccept\fP and \fIlisten\fP are not
 used with datagram sockets.
+.PP
+While a datagram socket socket is connected,
+errors from recent \fIsend\fP calls may be returned
+asynchronously.
+These errors may be reported on subsequent operations
+on the socket,
+or a special socket option used with \fIgetsockopt\fP, SO_ERROR,
+may be used to interrogate the error status.
+A \fIselect\fP for reading or writing will return true
+when an error indication has been received.
+The next operation will return the error, and the error status is cleared.
 Other of the less
 important details of datagram sockets are described
 in section 5.
@@ -543,8 +562,6 @@ is the ability to multiplex i/o requests among multiple
 sockets and/or files.  This is done using the \fIselect\fP
 call:
 .DS
-#define FD_SETSIZE	128   /* How many file descriptors we're interested in */
- ...
 #include <sys/time.h>
 #include <sys/types.h>
  ...
@@ -560,34 +577,27 @@ be able to read data on, one for those descriptors to which
 data is to be written, and one for which exceptional conditions
 are pending; out-of-band data is the only
 exceptional condition currently implemented by the socket
-abstraction.
-If it is known that the
-that the maximum number of open file descriptors will be less than
-a given value,
-then this number should be used as the definition of FD_SETSIZE
-(which must be done before \fI<sys/types>\fP is included).
-Otherwise, it is acceptable to let FD_SETSIZE default to the
-value specified in \fI<sys/types.h>\fP.
-.PP
-Each set is actually a structure containing an array of
-long integers; the length of the array is implicitly set
-by the definition of FD_SETSIZE, and the array will be
-long enough to hold one bit for each of FD_SETSIZE file descriptors.
 If the user is not interested
 in certain conditions (i.e., read, write, or exceptions),
 the corresponding argument to the \fIselect\fP should
 be a null pointer.
 .PP
-The macros \fIFD_SET(fd, &mask)\fP and
-\fIFD_CLR(fd, &mask)\fP
+Each set is actually a structure containing an array of
+long integer bit masks; the size of the array is set
+by the definition FD_SETSIZE.
+The array is be
+long enough to hold one bit for each of FD_SETSIZE file descriptors.
+.PP
+The macros FD_SET(\fIfd, &mask\fP) and
+FD_CLR(\fIfd, &mask\fP)
 have been provided for adding and removing file descriptor
 \fIfd\fP in the set \fImask\fP.  The
 set should be zeroed before use, and
-the macro \fIFD_ZERO(&mask)\fP has been provided
+the macro FD_ZERO(\fI&mask\fP) has been provided
 to clear the set \fImask\fP.
 The parameter \fInfds\fP in the \fIselect\fP call specifies the range
 of file descriptors  (i.e. one plus the value of the largest
-descriptor) specified in a set. 
+descriptor) to be examined in a set. 
 .PP
 A timeout value may be specified if the selection
 is not to last more than a predetermined period of time.  If
@@ -603,8 +613,9 @@ the caller, interrupting the system call.
 \fISelect\fP normally returns the number of file descriptors selected;
 if the \fIselect\fP call returns due to the timeout expiring, then
 the value 0 is returned.
-If the \fIselect\fP terminates because of an error, a \-1 is returned
-with the error number in \fIerrno\fP.
+If the \fIselect\fP terminates because of an error or interruption,
+a \-1 is returned with the error number in \fIerrno\fP,
+and with the file descriptor masks unchanged.
 .PP
 Assuming a successful return, the three sets will
 indicate which
