@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)unistd.h	5.2 (Berkeley) %G%
+ *	@(#)unistd.h	5.3 (Berkeley) %G%
  */
 
 /* compile-time symbolic constants */
@@ -43,7 +43,9 @@
 #define	STDOUT_FILENO		1	/* standard output value, stdout */
 #define	STDERR_FILENO		2	/* standard error value, stdout */
 
+#ifndef NULL
 #define	NULL	0			/* null pointer constant */
+#endif
 
 /* configurable pathname variables */
 #define	_PC_LINK_MAX		1
