@@ -3,13 +3,13 @@
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Arthur Olson.
+ * Arthur David Olson of the National Cancer Institute.
  *
  * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctime.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	5.22 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
