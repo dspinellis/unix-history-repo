@@ -1,4 +1,4 @@
-/*	up.c	4.52	82/05/19	*/
+/*	up.c	4.53	82/05/27	*/
 
 #include "up.h"
 #if NSC > 0
@@ -465,7 +465,7 @@ updgo(um)
 {
 	register struct updevice *upaddr = (struct updevice *)um->um_addr;
 
-	um->um_tab.b_active++;	/* should now be 2 */
+	um->um_tab.b_active = 2;	/* should now be 2 */
 	upaddr->upba = um->um_ubinfo;
 	upaddr->upcs1 = um->um_cmd|((um->um_ubinfo>>8)&0x300);
 }
@@ -497,6 +497,7 @@ upintr(sc21)
 			upaddr->upcs1 = UP_TRE;
 		goto doattn;
 	}
+	um->um_tab.b_active = 1;
 	/*
 	 * Get device and block structures, and a pointer
 	 * to the uba_device for the drive.  Select the drive.
@@ -743,7 +744,6 @@ upecc(ui)
 		i++;
 		bit -= 8;
 	}
-	um->um_tab.b_active = 2;	/* Either complete or continuing... */
 	if (up->upwc == 0)
 		return (0);
 	/*
@@ -771,6 +771,7 @@ upecc(ui)
 	up->upba = ubaddr;
 	cmd = (ubaddr >> 8) & 0x300;
 	cmd |= UP_IE|UP_GO|UP_RCOM;
+	um->um_tab.b_active = 2;	/* continuing transfer ... */
 	up->upcs1 = cmd;
 #endif
 	return (1);
