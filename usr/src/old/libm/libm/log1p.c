@@ -13,7 +13,7 @@ From Prof. Kahan at UC at Berkeley
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log1p.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)log1p.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 /* L(x) 
@@ -78,6 +78,9 @@ static char sccsid[] = "@(#)log1p.c	1.1 (Berkeley) %G%";
 #ifdef VAX	/* VAX D format */
 #include <errno.h>
 extern errno;
+static long	NaN_[] = {0x8000, 0x0};
+#define NaN	(*(double *) NaN_)
+
 /* double static */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
 /* ln2lo  =  1.6465949582897081279E-12   , Hex  2^-39   *  .E7BCD5E4F1D9CC */
@@ -129,12 +132,14 @@ double x;
 	    else {
 #ifdef VAX
 		errno = EDOM;
-#endif
+		return (NaN);
+#else
 		/* x = -1, return -INF with signal */
 		if ( x == negone ) return( negone/zero );
 
 		/* negative argument for log, return NAN with signal */
 	        else return ( zero / zero );
+#endif
 	    }
 	}
     /* end of if (finite(x)) */
