@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.21 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -315,9 +315,9 @@ spec_ioctl(vp, com, data, fflag, cred)
 }
 
 /* ARGSUSED */
-spec_select(vp, which, cred)
+spec_select(vp, which, fflags, cred)
 	struct vnode *vp;
-	int which;
+	int which, fflags;
 	struct ucred *cred;
 {
 	register dev_t dev;
