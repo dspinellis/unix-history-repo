@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.70 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.71 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1776,7 +1776,7 @@ mailfile(filename, ctladdr, e)
 		putfromline(f, FileMailer, e);
 		(*e->e_puthdr)(f, FileMailer, e);
 		putline("\n", f, FileMailer);
-		(*e->e_putbody)(f, FileMailer, e);
+		(*e->e_putbody)(f, FileMailer, e, NULL);
 		putline("\n", f, FileMailer);
 		if (ferror(f))
 		{

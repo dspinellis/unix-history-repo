@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.39 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -342,7 +342,7 @@ savemail(e)
 			putfromline(fp, FileMailer, e);
 			(*e->e_puthdr)(fp, FileMailer, e);
 			putline("\n", fp, FileMailer);
-			(*e->e_putbody)(fp, FileMailer, e);
+			(*e->e_putbody)(fp, FileMailer, e, NULL);
 			putline("\n", fp, FileMailer);
 			(void) fflush(fp);
 			state = ferror(fp) ? ESM_PANIC : ESM_DONE;
@@ -462,9 +462,21 @@ errhdr(fp, m, xdot)
 	if (e->e_parent == NULL)
 	{
 		syserr("errbody: null parent");
-		putline("\n", fp, m);
 		putline("   ----- Original message lost -----\n", fp, m);
 		return;
+	}
+
+	/*
+	**  Output MIME header.
+	*/
+
+	if (e->e_msgboundary != NULL)
+	{
+		putline("This is a MIME-encapsulated message", fp, m);
+		putline("", fp, m);
+		(void) sprintf(buf, "--%s", e->e_msgboundary);
+		putline(buf, fp, m);
+		putline("", fp, m);
 	}
 
 	/*
@@ -491,7 +503,7 @@ errhdr(fp, m, xdot)
 		{
 			expand(ErrMsgFile, buf, &buf[sizeof buf - 1], e);
 			putline(buf, fp, m);
-			putline("\n", fp, m);
+			putline("", fp, m);
 		}
 	}
 
@@ -506,15 +518,14 @@ errhdr(fp, m, xdot)
 		{
 			if (printheader)
 			{
-				putline("The following addresses failed:\n",
+				putline("   ----- The following addresses failed -----",
 					fp, m);
 				printheader = FALSE;
 			}
 			if (q->q_alias != NULL)
-				sprintf(buf, "\t%s\n", q->q_alias->q_paddr);
+				putline(q->q_alias->q_paddr, fp, m);
 			else
-				sprintf(buf, "\t%s\n", q->q_paddr);
-			putline(buf, fp, m);
+				putline(q->q_paddr, fp, m);
 		}
 	}
 	if (!printheader)
@@ -588,29 +599,41 @@ errhdr(fp, m, xdot)
 
 	if (NoReturn)
 		SendBody = FALSE;
+	putline("", fp, m);
 	if (e->e_parent->e_df != NULL)
 	{
 		if (SendBody)
-		{
-			putline("\n", fp, m);
 			putline("   ----- Unsent message follows -----\n", fp, m);
-			(void) fflush(fp);
-			putmessage(fp, Mailer[1], xdot);
-		}
 		else
-		{
-			putline("\n", fp, m);
 			putline("  ----- Message header follows -----\n", fp, m);
-			(void) fflush(fp);
-			putheader(fp, m, e->e_parent);
+		(void) fflush(fp);
+
+		if (e->e_msgboundary != NULL)
+		{
+			putline("", fp, m);
+			(void) sprintf(buf, "--%s", e->e_msgboundary);
+			putline(buf, fp, m);
+			(void) sprintf(buf, "Content-Type: %s/rfc822",
+				SendBody ? "message" : "X-message-header");
+			putline(buf, fp, m);
+			putline("", fp, m);
+		}
+		putheader(fp, m, e->e_parent);
+		putline("", fp, m);
+		if (SendBody)
+			putbody(fp, m, e->e_parent, e->e_msgboundary);
+		if (e->e_msgboundary != NULL)
+		{
+			(void) sprintf(buf, "--%s--", e->e_msgboundary);
+			putline(buf, fp, m);
 		}
 	}
 	else
 	{
-		putline("\n", fp, m);
 		putline("  ----- No message was collected -----\n", fp, m);
-		putline("\n", fp, m);
 	}
+
+	putline("", fp, m);
 
 	/*
 	**  Cleanup and exit
