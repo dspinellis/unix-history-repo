@@ -1,5 +1,5 @@
 /*
-char id_system[] = "@(#)system_.c	1.1";
+char id_system[] = "@(#)system_.c	1.2";
  *
  * execute a unix command
  *
@@ -10,9 +10,15 @@ char id_system[] = "@(#)system_.c	1.1";
  *	command is a character string containing the command to be executed
  */
 
+#include	"../libI77/fiodefs.h"
+
+ 
 long system_(s, n)
 char *s;
 long n;
 {
+	int i;
+
+	for (i = 0; i < MXUNIT; flush(i++)) ;
 	return((long)system(s));
 }
