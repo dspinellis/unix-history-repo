@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getmntinfo.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)getmntinfo.c	6.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -26,15 +26,16 @@ static char sccsid[] = "@(#)getmntinfo.c	6.1 (Berkeley) %G%";
  * Return information about mounted filesystems.
  */
 int
-getmntinfo(mntbufp)
+getmntinfo(mntbufp, flags)
 	struct statfs **mntbufp;
+	int flags;
 {
 	static struct statfs *mntbuf;
 	static int mntsize, bufsize;
 
-	if (mntsize <= 0 && (mntsize = getfsstat(0, 0)) < 0)
+	if (mntsize <= 0 && (mntsize = getfsstat(0, 0, MNT_NOWAIT)) < 0)
 		return (0);
-	if (bufsize > 0 && (mntsize = getfsstat(mntbuf, bufsize)) < 0)
+	if (bufsize > 0 && (mntsize = getfsstat(mntbuf, bufsize, flags)) < 0)
 		return (0);
 	while (bufsize <= mntsize * sizeof(struct statfs)) {
 		if (mntbuf)
@@ -42,7 +43,7 @@ getmntinfo(mntbufp)
 		bufsize = (mntsize + 1) * sizeof(struct statfs);
 		if ((mntbuf = (struct statfs *)malloc(bufsize)) == 0)
 			return (0);
-		if ((mntsize = getfsstat(mntbuf, bufsize)) < 0)
+		if ((mntsize = getfsstat(mntbuf, bufsize, flags)) < 0)
 			return (0);
 	}
 	*mntbufp = mntbuf;
