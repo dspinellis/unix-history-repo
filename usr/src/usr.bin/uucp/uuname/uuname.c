@@ -1,17 +1,18 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuname.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuname.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <signal.h>
 
-/*******
- *      uuname  -  return list of all remote systems 
- *		   recognized by uucp, or  (with -l) the local
- *		   uucp name.
+/*
+ *      return list of all remote systems 
+ *	recognized by uucp, or  (with -l) the local  uucp name.
  *
  *      return codes: 0 | 1  (can't read)
  */
+
+struct timeb Now;
  
 main(argc,argv)
 char *argv[];
