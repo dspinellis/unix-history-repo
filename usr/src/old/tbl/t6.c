@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)t6.c	4.2 %G%";
+static char sccsid[] = "@(#)t6.c	4.3 %G%";
 #endif
 
  /* t6.c: compute tab stops */
@@ -180,7 +180,7 @@ fprintf(tabout, ".nr TW \\n(%d\n", ncol+CRIGHT-1);
 if (boxflg || allflg || dboxflg)
 	fprintf(tabout, ".nr TW +%d*\\n(%d\n", sep[ncol-1], TMP);
 fprintf(tabout,
- ".if t .if (\\n(TW+\\n(.o)>7.65i .tm Table at line %d file %s is too wide - \\n(TW units\n", iline-1, ifile);
+ ".if t .if \\n(TW>\\n(.li .tm Table at line %d file %s is too wide - \\n(TW units\n", iline-1, ifile);
 return;
 }
 wide(s, fn, size)
