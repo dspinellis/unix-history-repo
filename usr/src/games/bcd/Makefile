@@ -14,22 +14,22 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-SRCS=	bcd.c
+SRCS=	bcd.c morse.c ppt.c
 OBJS=
 MAN=	bcd.0
 
-all: bcd
+all: bcd morse ppt
 
-bcd: ${LIBC}
+bcd morse ppt: ${LIBC}
 	${CC} -o $@ ${CFLAGS} $@.c
 
 clean:
-	rm -f ${OBJS} core bcd
+	rm -f ${OBJS} core bcd morse ppt
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
@@ -38,7 +38,7 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 bcd ${DESTDIR}/usr/games
+	install -s -o bin -g bin -m 755 bcd morse ppt ${DESTDIR}/usr/games
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat6
 	rm -f ${DESTDIR}/usr/man/cat6/morse.0 ${DESTDIR}/usr/man/cat6/ppt.0
 	ln ${DESTDIR}/usr/man/cat6/bcd.0 ${DESTDIR}/usr/man/cat6/morse.0
