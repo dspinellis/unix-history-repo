@@ -1,4 +1,4 @@
-/*	ts.c	4.12	81/05/03	*/
+/*	ts.c	4.13	81/05/05	*/
 
 #include "ts.h"
 #include "te.h"
@@ -414,7 +414,7 @@ loop:
 	 * Default is that last command was NOT a write command;
 	 * if we do a write command we will notice this in tsintr().
 	 */
-	sc->sc_lastiow = 1;
+	sc->sc_lastiow = 0;
 	if (sc->sc_openf < 0 || (addr->tssr&TS_OFL)) {
 		/*
 		 * Have had a hard error on a non-raw tape
@@ -826,7 +826,7 @@ tsioctl(dev, cmd, addr, flag)
 	struct mtget mtget;
 	/* we depend of the values and order of the MT codes here */
 	static tsops[] =
-	 {TS_WEOF,TS_SFORW,TS_SREV,TS_SFORWF,TS_SREVF,TS_REW,TS_OFFL,TS_SENSE};
+	 {TS_WEOF,TS_SFORWF,TS_SREVF,TS_SFORW,TS_SREV,TS_REW,TS_OFFL,TS_SENSE};
 
 	switch (cmd) {
 	case MTIOCTOP:	/* tape operation */
@@ -840,9 +840,6 @@ tsioctl(dev, cmd, addr, flag)
 			fcount = 1;
 			break;
 		case MTFSF: case MTBSF:
-			callcount = mtop.mt_count;
-			fcount = INF;
-			break;
 		case MTFSR: case MTBSR:
 			callcount = 1;
 			fcount = mtop.mt_count;
