@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_lookup.c	7.19 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -571,6 +571,7 @@ direnter(ip, ndp)
 		ndp->ni_count = newentrysize;
 		ndp->ni_resid = newentrysize;
 		ndp->ni_base = (caddr_t)&ndp->ni_dent;
+		ndp->ni_uioseg = UIO_SYSSPACE;
 		error =
 		    ufs_write(ndp->ni_dvp, &ndp->ni_uio, IO_SYNC, ndp->ni_cred);
 		if (DIRBLKSIZ > dp->i_fs->fs_fsize)
@@ -681,6 +682,7 @@ dirremove(ndp)
 		ndp->ni_dent.d_ino = 0;
 		ndp->ni_count = ndp->ni_resid = DIRSIZ(&ndp->ni_dent);
 		ndp->ni_base = (caddr_t)&ndp->ni_dent;
+		ndp->ni_uioseg = UIO_SYSSPACE;
 		error =
 		    ufs_write(ndp->ni_dvp, &ndp->ni_uio, IO_SYNC, ndp->ni_cred);
 	} else {
@@ -711,6 +713,7 @@ dirrewrite(dp, ip, ndp)
 	ndp->ni_dent.d_ino = ip->i_number;
 	ndp->ni_count = ndp->ni_resid = DIRSIZ(&ndp->ni_dent);
 	ndp->ni_base = (caddr_t)&ndp->ni_dent;
+	ndp->ni_uioseg = UIO_SYSSPACE;
 	return (ufs_write(ITOV(dp), &ndp->ni_uio, IO_SYNC, ndp->ni_cred));
 }
 
