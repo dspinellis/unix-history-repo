@@ -1,12 +1,10 @@
 .\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)sendbug.1	6.7 (Berkeley) %G%
+.\"     @(#)sendbug.1	6.8 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt SENDBUG 1
 .Os BSD 4.2
@@ -34,26 +32,28 @@ specified on the command line.
 .Sh ENVIRONMENT
 .Nm Sendbug
 will utilize the following environment variable if it exists:
-.Tw Fl
-.Tp Ev EDITOR
+.Bl -tag -width EDITOR
+.It Ev EDITOR
 Specifies the preferred editor. If
 .Ev EDITOR
 is not set,
 .Nm
 defaults to
 .Xr vi 1 .
-.Tp
+.El
 .Sh FILES
-.Dw /usr/share/misc/bugformat
-.Di L
-.Dp Pa /usr/share/misc/bugformat
-contains the bug report outline
-.Dp
+.Bl -tag -width /usr/share/misc/bugformat -compact
+.It Pa /usr/share/misc/bugformat
+Contains the bug report outline.
+.El
 .Sh SEE ALSO
 .Xr vi 1 ,
 .Xr environ 7 ,
 .Xr bugfiler 8 ,
 .Xr sendmail 8
 .Sh HISTORY
-.Nm Sendbug
-appeared in 4.2 BSD.
+The
+.Nm sendbug
+command
+appeared in
+.Bx 4.2 .
