@@ -1,4 +1,4 @@
-/*	tty.c	4.18	82/01/19	*/
+/*	tty.c	4.19	82/01/24	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -279,6 +279,17 @@ caddr_t addr;
 		if (u.u_error==0)
 			tp->t_line = t;
 		(void) spl0();
+		break;
+
+	/*
+	 * Prevent more opens on channel
+	 */
+	case TIOCEXCL:
+		tp->t_state |= TS_XCLUDE;
+		break;
+
+	case TIOCNXCL:
+		tp->t_state &= ~TS_XCLUDE;
 		break;
 
 	/*
