@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -999,10 +999,15 @@ atooct(s)
 **		none.
 */
 
+int
 waitfor(pid)
 	int pid;
 {
+#ifdef WAITUNION
+	union wait st;
+#else
 	auto int st;
+#endif
 	int i;
 
 	do
@@ -1011,8 +1016,12 @@ waitfor(pid)
 		i = wait(&st);
 	} while ((i >= 0 || errno == EINTR) && i != pid);
 	if (i < 0)
-		st = -1;
-	return (st);
+		return -1;
+#ifdef WAITUNION
+	return st.w_status;
+#else
+	return st;
+#endif
 }
 /*
 **  BITINTERSECT -- tell if two bitmaps intersect
