@@ -24,6 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+/*	@(#)iso_errno.h	7.3 (Berkeley) %G% */
 
 #ifndef __ISO_ERRNO__
 #define __ISO_ERRNO__

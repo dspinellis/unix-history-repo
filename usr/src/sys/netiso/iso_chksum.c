@@ -27,6 +27,7 @@ SOFTWARE.
 /* 
  * $Header: iso_chksum.c,v 4.7 88/07/29 15:31:26 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/iso_chksum.c,v $
+ *	@(#)iso_chksum.c	7.3 (Berkeley) %G% *
  *
  * ISO CHECKSUM
  *

@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: iso.c,v 4.11 88/09/19 14:58:35 root Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/iso.c,v $ 
- *	@(#)iso.c	7.4 (Berkeley) %G%
+ *	@(#)iso.c	7.5 (Berkeley) %G%
  *
  * iso.c: miscellaneous routines to support the iso address family
  */
@@ -919,7 +919,7 @@ dump_isoaddr(s)
 
 	if( s->siso_family == AF_ISO) {
 		printf("ISO address: suffixlen %d, %s\n",
-			s->siso_tsuffixlen, clnp_saddr_isop(s));
+			s->siso_tlen, clnp_saddr_isop(s));
 	} else if( s->siso_family == AF_INET) {
 		/* hack */
 		struct sockaddr_in *sin = (struct sockaddr_in *)s;

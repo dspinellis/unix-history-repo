@@ -26,6 +26,7 @@ SOFTWARE.
  */
 /* $Header: iso_pcb.h,v 4.3 88/06/29 15:00:01 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/iso_pcb.h,v $ */
+/*	@(#)iso_pcb.h	7.3 (Berkeley) %G% */
 
 #define	MAXX25CRUDLEN	16	/* 16 bytes of call request user data */
 
@@ -39,8 +40,6 @@ struct isopcb {
 	struct	socket			*isop_socket;	/* back pointer to socket */
 	struct	sockaddr_iso	*isop_laddr;
 	struct	sockaddr_iso	*isop_faddr;
-#define isop_lportlen isop_laddr->siso_tsuffixlen
-#define isop_fportlen isop_faddr->siso_tsuffixlen
 	struct	route_iso {
 		struct	rtentry 	*ro_rt;
 		struct	sockaddr_iso ro_dst;

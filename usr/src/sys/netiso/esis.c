@@ -24,6 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+/*	@(#)esis.c	7.4 (Berkeley) %G% */
 #ifndef lint
 static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
 #endif
@@ -51,8 +52,8 @@ static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
 #include "clnl.h"
 #include "clnp.h"
 #include "clnp_stat.h"
-#include "argo_debug.h"
 #include "esis.h"
+#include "argo_debug.h"
 
 /*
  *	Global variables to esis implementation

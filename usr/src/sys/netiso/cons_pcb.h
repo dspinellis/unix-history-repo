@@ -26,6 +26,7 @@ SOFTWARE.
  */
 /* $Header: cons_pcb.h,v 4.2 88/06/29 14:59:08 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/cons_pcb.h,v $ */
+/*	@(#)cons_pcb.h	7.3 (Berkeley) %G% */
 
 /*
  * protocol control block for the connection oriented network service

@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_user.h,v 5.2 88/11/04 15:44:44 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_user.h,v $
- *	@(#)tp_user.h	7.3 (Berkeley) %G%
+ *	@(#)tp_user.h	7.4 (Berkeley) %G%
  *
  * These are the values a real-live user ;-) needs. 
  */
@@ -109,6 +109,7 @@ struct tp_control_hdr {
 #define TPOPT_PARAMS		0xc00 /* to replace a bunch of the others */
 #define TPOPT_MY_TSEL		0x800 
 #define TPOPT_PEER_TSEL		0x900 
+#define TPOPT_NGC8_ACCEPT	0xd00 /* negotiate connection requests */
 
 /* 
  ***********************flags**********************************
@@ -122,6 +123,7 @@ struct tp_control_hdr {
 #define TPFLAG_XPD_PRESENT		(u_char)0x08 /* xpd data present */
 #define TPFLAG_PEER_ON_SAMENET	(u_char)0x02
 #define TPFLAG_NLQOS_PDN		(u_char)0x01
+#define TPFLAG_NGC8_ACCEPT		(u_char)0x04 /* negotiate conn rq's */
 
 
 /* 

@@ -29,6 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_pcb.h,v 5.2 88/11/18 17:09:32 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_pcb.h,v $
+ *	@(#)tp_pcb.h	7.4 (Berkeley) %G% *
  *
  * 
  * This file defines the transport protocol control block (tpcb).

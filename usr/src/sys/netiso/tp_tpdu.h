@@ -29,6 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_tpdu.h,v 4.4 88/07/26 16:45:40 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_tpdu.h,v $
+ *	@(#)tp_tpdu.h	7.3 (Berkeley) %G% *
  *
  * This ghastly set of macros makes it possible to
  * refer to tpdu structures without going mad.

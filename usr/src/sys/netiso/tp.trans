@@ -50,7 +50,7 @@ SOFTWARE.
 *INCLUDE
 
 {
-
+/*	@(#)tp.trans	7.3 (Berkeley) %G% */
 #include "param.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -105,6 +105,7 @@ TP_OPEN
 TP_CLOSING 
 TP_REFWAIT
 TP_LISTENING	/* Local to this implementation */
+TP_CONFIRMING	/* Local to this implementation */
 
 *EVENTS		{ struct timeval e_time; } 		SYNONYM  E
 
@@ -190,6 +191,7 @@ TP_LISTENING	/* Local to this implementation */
  T_USR_Xrcvd	
  T_DETACH
  T_NETRESET
+ T_ACPT_req
 
 
 *TRANSITIONS
@@ -290,27 +292,16 @@ TP_CLOSED  		<== 		[ TP_LISTENING, TP_CLOSED ] 			T_DETACH
 	}
 ;
 
-TP_OPEN		<==		 TP_LISTENING  								CR_TPDU 
-	( $P.tp_class == TP_CLASS_0 )
+TP_CONFIRMING	<==		 TP_LISTENING  								CR_TPDU 
+	( $P.tp_class == TP_CLASS_0)
 	{
-		IncStat(ts_tp0_conn);
-		IFTRACE(D_CONN)
-			tptrace(TPPTmisc, "CR datalen data", $$.e_datalen, $$.e_data,0,0);
-		ENDTRACE
-		IFDEBUG(D_CONN)
-			printf("CR datalen 0x%x data 0x%x", $$.e_datalen, $$.e_data);
-		ENDDEBUG
-		soisconnected($P.tp_sock);
 		$P.tp_refp->tpr_state = REF_OPEN; /* has timers ??? */
-		(void) tp_emit(CC_TPDU_type, $P, 0,0, MNULL) ;
-		$P.tp_fcredit = 1;
 	}
 ;
 
-TP_AKWAIT		<==		 TP_LISTENING  								CR_TPDU 
-	( tp_emit(CC_TPDU_type, $P, 0,0, MCPY($P.tp_ucddata, M_NOWAIT)) == 0 )
+TP_CONFIRMING		<==		 TP_LISTENING  							CR_TPDU 
+	DEFAULT
 	{
-		IncStat(ts_tp4_conn); /* even though not quite open */
 		IFTRACE(D_CONN)
 			tptrace(TPPTmisc, "CR datalen data", $$.e_datalen, $$.e_data,0,0);
 		ENDTRACE
@@ -318,6 +309,7 @@ TP_AKWAIT		<==		 TP_LISTENING  								CR_TPDU
 			printf("CR datalen 0x%x data 0x%x", $$.e_datalen, $$.e_data);
 		ENDDEBUG
 		$P.tp_refp->tpr_state = REF_OPEN; /* has timers */
+		$P.tp_fcredit = $$.e_cdt;
 
 		if ($$.e_datalen > 0) {
 			/* n/a for class 0 */
@@ -326,16 +318,45 @@ TP_AKWAIT		<==		 TP_LISTENING  								CR_TPDU
 			/*$P.tp_flags |= TPF_CONN_DATA_IN;*/
 			$$.e_data = MNULL; 
 		} 
-		$P.tp_fcredit = $$.e_cdt;
+	}
+;
+
+TP_OPEN		<==		 TP_CONFIRMING  								T_ACPT_req 
+	( $P.tp_class == TP_CLASS_0 )
+	{
+		IncStat(ts_tp0_conn);
+		IFTRACE(D_CONN)
+			tptrace(TPPTmisc, "Confiming", $P, 0,0,0);
+		ENDTRACE
+		IFDEBUG(D_CONN)
+			printf("Confirming connection: $P" );
+		ENDDEBUG
+		soisconnected($P.tp_sock);
+		(void) tp_emit(CC_TPDU_type, $P, 0,0, MNULL) ;
+		$P.tp_fcredit = 1;
+	}
+;
+
+TP_AKWAIT		<==		 TP_CONFIRMING  							T_ACPT_req
+	(tp_emit(CC_TPDU_type, $P, 0,0, MCPY($P.tp_ucddata, M_NOWAIT)) == 0)
+	{
+		IncStat(ts_tp4_conn); /* even though not quite open */
+		IFTRACE(D_CONN)
+			tptrace(TPPTmisc, "Confiming", $P, 0,0,0);
+		ENDTRACE
+		IFDEBUG(D_CONN)
+			printf("Confirming connection: $P" );
+		ENDDEBUG
+		soisconnecting($P.tp_sock);
 		if($P.tp_rx_strat & TPRX_FASTSTART)
-			$P.tp_cong_win = $$.e_cdt;
+			$P.tp_cong_win = $P.tp_fcredit;
 		$P.tp_retrans = $P.tp_Nretrans;
 		tp_ctimeout($P.tp_refp, TM_retrans, (int)$P.tp_cc_ticks);
-	 }
+	}
 ;
 
 /* TP4 only */
-TP_CLOSED		<==		 TP_LISTENING  								CR_TPDU 
+TP_CLOSED		<==		 TP_CONFIRMING								T_ACPT_req
 	DEFAULT /* emit failed */
 	{
 		register struct tp_ref *r = $P.tp_refp;
@@ -343,6 +364,7 @@ TP_CLOSED		<==		 TP_LISTENING  								CR_TPDU
 		IFDEBUG(D_CONN)
 			printf("event: CR_TPDU emit CC failed done " );
 		ENDDEBUG
+		soisdisconnected($P.tp_sock);
 		tp_recycle_tsuffix( $P );
 		tp_freeref(r);
 		tp_detach($P);
@@ -846,7 +868,7 @@ TP_REFWAIT		<== 	TP_CRSENT 										T_DETACH
 ;
 
 /* TP4 only */
-TP_CLOSING		<== 	[ TP_CLOSING, TP_AKWAIT, TP_CRSENT ]			T_DETACH
+TP_CLOSING		<== [ TP_CLOSING, TP_AKWAIT, TP_CRSENT, TP_CONFIRMING ]	T_DETACH
 	DEFAULT
 	{
 		struct socket *so = $P.tp_sock;
@@ -878,7 +900,7 @@ TP_REFWAIT		<==		[ TP_OPEN, TP_CRSENT ]		 	  			T_DISC_req
 ;
 
 /* TP4 only */
-TP_CLOSING		<==		[ TP_AKWAIT, TP_OPEN, TP_CRSENT ]		 	  T_DISC_req
+TP_CLOSING		<==	[ TP_AKWAIT, TP_OPEN, TP_CRSENT, TP_CONFIRMING ]  T_DISC_req
 	DEFAULT
 	{
 		struct mbuf *data = MCPY($P.tp_ucddata, M_WAIT);

@@ -29,6 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_output.c,v 5.4 88/11/18 17:28:08 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_output.c,v $
+ *	@(#)tp_output.c	7.4 (Berkeley) %G% *
  *
  * In here is tp_ctloutput(), the guy called by [sg]etsockopt(),
  */
@@ -392,6 +393,7 @@ tp_ctloutput(cmd, so, level, optname, mp)
 		&&
 		(cmd == PRCO_SETOPT  && 
 			optname != TPOPT_DISC_DATA && 
+			optname != TPOPT_CFRM_DATA && 
 			optname != TPOPT_PERF_MEAS &&
 			optname != TPOPT_CDDATA_CLEAR ) ) {
 		error = EISCONN; goto done;
@@ -401,7 +403,7 @@ tp_ctloutput(cmd, so, level, optname, mp)
 	 * and they're not allowed if the ref timer has gone off, because
 	 * the tpcb is gone 
 	 */
-	if ((so->so_state & SS_ISCONNECTED) ==  0) {
+	if ((so->so_state & (SS_ISCONNECTED | SS_ISCONFIRMING)) ==  0) {
 		if ( so->so_tpcb == (caddr_t)0 ) {
 			error = ENOTCONN; goto done;
 		}
@@ -528,12 +530,30 @@ tp_ctloutput(cmd, so, level, optname, mp)
 			error = EINVAL;
 		} else {
 			if (tpcb->tp_ucddata) {
-					m_freem(tpcb->tp_ucddata);
-					tpcb->tp_ucddata = 0;
+				m_freem(tpcb->tp_ucddata);
+				tpcb->tp_ucddata = 0;
 			}
 		}
 		break;
 
+#ifdef TPOPT_NGC8_ACCEPT
+	case TPOPT_NGC8_ACCEPT: 
+		if ( cmd == PRCO_GETOPT ) {
+			*(int *)value = (int)tpcb->tp_flags & TPFLAG_NGC8_ACCEPT;
+			(*mp)->m_len = sizeof(u_int);
+		} else  {
+			if (*(int *)value)
+				tpcb->tp_flags |= TPFLAG_NGC8_ACCEPT;
+			else
+				tpcb->tp_flags &= ~TPFLAG_NGC8_ACCEPT;
+		}
+		break;
+#endif
+
+	case TPOPT_CFRM_DATA:
+		if (cmd == PRCO_SETOPT && (so->so_state & SS_ISCONFIRMING))
+			(void) tp_confirm(tpcb);
+		/* drop through */
 	case TPOPT_DISC_DATA: 
 		/* drop through */
 	/* sending is for debugging purposes only -- we don't pretend 

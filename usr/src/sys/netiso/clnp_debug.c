@@ -26,6 +26,7 @@ SOFTWARE.
  */
 /* $Header: clnp_debug.c,v 4.2 88/06/29 14:58:34 hagens Exp $ */
 /* $Source: /usr/argo/sys/netargo/RCS/clnp_debug.c,v $ */
+/*	@(#)clnp_debug.c	7.4 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: clnp_debug.c,v 4.2 88/06/29 14:58:34 hagens Exp $";
@@ -220,7 +221,7 @@ register struct sockaddr_iso *s;
 
 	while (*cp) cp++;
 	*cp++ = '(';
-	cp = clnp_hexp(TSEL(s), (int)s->siso_tsuffixlen, cp);
+	cp = clnp_hexp(TSEL(s), (int)s->siso_tlen, cp);
 	*cp++ = ')';
 	*cp++ = 0;
 	return (iso_addr_b);

@@ -29,6 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_subr.c,v 5.3 88/11/18 17:28:43 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_subr.c,v $
+ *	@(#)tp_subr.c	7.3 (Berkeley) %G% *
  *
  * The main work of data transfer is done here.
  * These routines are called from tp.trans.
@@ -452,17 +453,12 @@ tp_send(tpcb)
 			lowseq, highseq, tpcb->tp_fcredit,  tpcb->tp_cong_win);
 	ENDTRACE
 
-	while( SEQ_LT( tpcb, lowseq, highseq ) ) {
-		mb = m = sb->sb_mb; 
-		if (m == (struct mbuf *)0) {
-			break; /* empty socket buffer */
-		}
+	while ((SEQ_LT(tpcb, lowseq, highseq)) && (mb = m = sb->sb_mb)) {
 		if (tpcb->tp_Xsnd.sb_mb) {
-			register SeqNum Xuna = * (mtod(m, SeqNum *));
 			IFTRACE(D_XPD)
 				tptraceTPCB( TPPTmisc,
 					"tp_send XPD mark low high tpcb.Xuna", 
-					Xuna, lowseq, highseq, tpcb->tp_Xuna);
+					lowseq, highseq, tpcb->tp_Xsnd.sb_mb, 0);
 			ENDTRACE
 			/* stop sending here because there are unacked XPD which were 
 			 * given to us before the next data were.
@@ -478,7 +474,7 @@ tp_send(tpcb)
 				eotsdu_reached = 1;
 			sbfree(sb, m); /* reduce counts in socket buffer */
 		}
-		m = sb->sb_mb = nextrecord;
+		sb->sb_mb = nextrecord;
 		IFTRACE(D_STASH)
 			tptraceTPCB(TPPTmisc, "tp_send whole mbuf: m_len len maxsize",
 				 0, mb->m_len, len, maxsize);
@@ -513,17 +509,15 @@ tp_send(tpcb)
 		/* make a copy - mb goes into the retransmission list 
 		 * while m gets emitted.  m_copy won't copy a zero-length mbuf.
 		 */
-		if(len) {
-			if( (m = m_copy(mb, 0, len )) == MNULL ) { 
+		if (len) {
+			if ((m = m_copy(mb, 0, len )) == MNULL)
 				goto done;
-			}
 		} else {
 			/* eotsdu reached */
 			MGET(m, M_WAIT, TPMT_DATA);
-			if (m == NULL)
+			if (m == MNULL)
 				goto done;
 			m->m_len = 0;
-			m->m_act = MNULL;
 		}
 
 		SEQ_INC(tpcb,lowseq);	/* it was decremented at the beginning */
@@ -652,6 +646,7 @@ tp_stash( tpcb, e )
 	if ( E.e_eot ) {
 		register struct mbuf *n = E.e_data;
 		n->m_flags |= M_EOR;
+		n->m_act = 0;
 	}
 		IFDEBUG(D_STASH)
 			dump_mbuf(tpcb->tp_sock->so_rcv.sb_mb, 
@@ -857,19 +852,10 @@ tp0_stash( tpcb, e )
 
 	if ( E.e_eot ) {
 		register struct mbuf *n = E.e_data;
-
-		/* sigh. have to go through this again! */
-		/* a kludgy optimization would be to take care of this in
-		 * tp_input (oh, horrors!) 
-		 */
-		while (n->m_next )
-			n = n->m_next;
-
-		n->m_act = MNULL; /* set on tp_input */
-
 		n->m_flags |= M_EOR;
+		n->m_act = MNULL; /* set on tp_input */
 	}
-	sbappendrecord (&tpcb->tp_sock->so_rcv, E.e_data);
+	sbappend(&tpcb->tp_sock->so_rcv, E.e_data);
 	IFDEBUG(D_STASH)
 		dump_mbuf(tpcb->tp_sock->so_rcv.sb_mb, 
 			"stash 0: so_rcv after appending");

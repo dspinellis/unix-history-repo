@@ -29,6 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_usrreq.c,v 5.4 88/11/18 17:29:18 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_usrreq.c,v $
+ *	@(#)tp_usrreq.c	7.4 (Berkeley) %G% *
  *
  * tp_usrreq(), the fellow that gets called from most of the socket code.
  * Pretty straighforward.
@@ -156,8 +157,6 @@ tp_rcvoob(tpcb, so, m, outflags, inflags)
 		return ENOBUFS;
 
 restart:
-	sblock(sb);
-
 	if ((((so->so_state & SS_ISCONNECTED) == 0)
 		 || (so->so_state & SS_ISDISCONNECTING) != 0) &&
 		(so->so_proto->pr_flags & PR_CONNREQUIRED)) {
@@ -176,6 +175,7 @@ restart:
 	 * uipc_socket2.c (like sbappend).
 	 */
 	
+	sblock(sb);
 	for (nn = &sb->sb_mb; n = *nn; nn = &n->m_act)
 		if (n->m_type == MT_OOBDATA)
 			break;
@@ -185,10 +185,10 @@ restart:
 		IFDEBUG(D_XPD)
 			printf("RCVOOB: empty queue!\n");
 		ENDDEBUG
+		sbunlock(sb);
 		if (so->so_state & SS_NBIO) {
 			return  EWOULDBLOCK;
 		}
-		sbunlock(sb);
 		sbwait(sb);
 		goto restart;
 	}
@@ -267,7 +267,6 @@ tp_sendoob(tpcb, so, xdata, outflags)
 		if(xdata)
 			printf("xdata len 0x%x\n", xdata->m_len);
 	ENDDEBUG
-oob_again:
 	/* DO NOT LOCK the Xsnd buffer!!!! You can have at MOST one 
 	 * socket buf locked at any time!!! (otherwise you might
 	 * sleep() in sblock() w/ a signal pending and cause the
@@ -275,14 +274,15 @@ oob_again:
 	 * is a problem.  So the so_snd buffer lock
 	 * (done in sosend()) serves as the lock for Xpd.
 	 */
-	if (sb->sb_mb) { /* anything already in this sockbuf? */
+	if (sb->sb_mb) { /* Anything already in eXpedited data sockbuf? */
 		if (so->so_state & SS_NBIO) {
 			return EWOULDBLOCK;
 		}
-		sbunlock(&so->so_snd);
-		sbwait(&so->so_snd);
-		sblock(&so->so_snd);
-		goto oob_again;
+		while (sb->sb_mb) {
+			sbunlock(&so->so_snd); /* already locked by sosend */
+			sbwait(&so->so_snd);
+			sblock(&so->so_snd);  /* sosend will unlock on return */
+		}
 	}
 
 	if (xdata == (struct mbuf *)0) {
@@ -315,7 +315,7 @@ oob_again:
 
 
 	IFTRACE(D_XPD)
-		tptraceTPCB(TPPTmisc, "XPD mark m_next ", xmark->m_next, 0, 0, 0);
+		tptraceTPCB(TPPTmisc, "XPD mark m_next ", xdata->m_next, 0, 0, 0);
 	ENDTRACE
 
 	sbappendrecord(sb, xdata);	
@@ -326,7 +326,6 @@ oob_again:
 		dump_mbuf(tpcb->tp_Xsnd.sb_mb, "XPD request Xsndbuf:");
 	ENDDEBUG
 	return DoEvent(T_XPD_req); 
-
 }
 
 /*
@@ -339,11 +338,6 @@ oob_again:
  * 	receive type requests only.
  * 	(nam) is used for addresses usually, in particular for the bind request.
  * 
- * 	The last argument (rights in most usrreq()s) has been stolen for 
- * 	returning flags values.  Since rights can't be passed around w/ tp,
- * 	this field is used only for RCVOOB user requests, and is assumed
- * 	to be either 0 (as soreceive() would have it) or a ptr to the int flags
- * 	(as recvv()'s version of soreceive() would have it
  */
 /*ARGSUSED*/
 ProtoHook
@@ -424,12 +418,9 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 		break;
 
 	case PRU_LISTEN:
-		if ( *SHORT_LSUFXP(tpcb) == (short)0 ) {
-			/* note: this suffix is independent of the extended suffix */
+		if( tpcb->tp_lsuffixlen ==  0) {
 			if( error = (tpcb->tp_nlproto->nlp_pcbbind)(so->so_pcb, MNULL) )
 				break;
-		}
-		if( tpcb->tp_lsuffixlen ==  0) {
 			(tpcb->tp_nlproto->nlp_getsufx)(so->so_pcb, &tpcb->tp_lsuffixlen,
 				tpcb->tp_lsuffix, TP_LOCAL );
 		}
@@ -456,17 +447,13 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 			tpcb->tp_sock, *SHORT_LSUFXP(tpcb), tpcb->tp_lsuffixlen,
 				tpcb->tp_class);
 		ENDDEBUG
-		if (*SHORT_LSUFXP(tpcb) == (short)0) {
-			/* no bind was done */
-			/* note: this suffix is independent of the extended suffix */
+		if( tpcb->tp_lsuffixlen ==  0) {
 			if( error = (tpcb->tp_nlproto->nlp_pcbbind)(so->so_pcb, MNULL) ) {
 				IFDEBUG(D_CONN)
 					printf("pcbbind returns error 0x%x\n", error );
 				ENDDEBUG
 				break;
 			}
-		}
-		if( tpcb->tp_lsuffixlen ==  0) {
 			(tpcb->tp_nlproto->nlp_getsufx)(so->so_pcb, &tpcb->tp_lsuffixlen,
 				tpcb->tp_lsuffix, TP_LOCAL );
 		}
@@ -510,30 +497,11 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 		break;
 
 	case PRU_ACCEPT: 
-		/* all this garbage is to keep accept from returning
-		 * before the 3-way handshake is done in class 4.
-		 * it'll have to be modified for other classes 
-		 */
+		(tpcb->tp_nlproto->nlp_getnetaddr)(so->so_pcb, nam, TP_FOREIGN);
 		IFDEBUG(D_REQUEST)
-			printf("PRU_ACCEPT so_error 0x%x\n", so->so_error);
+			printf("ACCEPT PEERADDDR:");
+			dump_buf(mtod(nam, char *), nam->m_len);
 		ENDDEBUG
-		so->so_error = 0;
-		if ((so->so_state & SS_NBIO) && (so->so_state & SS_ISCONNECTED)== 0) {
-			error = EWOULDBLOCK;
-			break;
-		}
-		while ((so->so_state & SS_ISCONNECTED) == 0 && so->so_error == 0) {
-			sleep((caddr_t)&so->so_timeo, PZERO+1);
-		}
-		if (so->so_error) {
-			error = so->so_error;
-		} else {
-			(tpcb->tp_nlproto->nlp_getnetaddr)(so->so_pcb, nam, TP_FOREIGN);
-			IFDEBUG(D_REQUEST)
-				printf("ACCEPT PEERADDDR:");
-				dump_buf(mtod(nam, char *), nam->m_len);
-			ENDDEBUG
-		}
 		IFPERF(tpcb)
 			u_int lsufx, fsufx;
 			lsufx = *(u_int *)(tpcb->tp_lsuffix);
@@ -545,6 +513,11 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 		break;
 
 	case PRU_RCVD:
+		if (so->so_state & SS_ISCONFIRMING) {
+			if (tpcb->tp_state == TP_CONFIRMING)
+				error = tp_confirm(tpcb);
+			break;
+		}
 		IFTRACE(D_DATA)
 			tptraceTPCB(TPPTmisc,
 			"RCVD BF: lcredit sent_lcdt cc hiwat \n",
@@ -580,21 +553,32 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 		error = tp_rcvoob(tpcb, so, m, outflags, (int)nam);
 		break;
 
+	case PRU_SEND:
 	case PRU_SENDOOB:
 		if (controlp && (error = tp_snd_control(controlp, so, &m)))
 			break;
-		if (m == 0)
-			break;
-		if (so->so_state & SS_ISCONFIRMING)
-			tp_confirm();
-		if( ! tpcb->tp_xpd_service ) {
-			error = EOPNOTSUPP;
+		if (so->so_state & SS_ISCONFIRMING) {
+			if (tpcb->tp_state == TP_CONFIRMING)
+				error = tp_confirm(tpcb);
+			if (m) {
+				if (error == 0 && m->m_len != 0)
+					error =  ENOTCONN;
+				m_freem(m);
+				m = 0;
+			}
 			break;
 		}
-		error = tp_sendoob(tpcb, so, m, outflags);
-		break;
+		if (m == 0)
+			break;
 
-	case PRU_SEND:
+		if (req == PRU_SENDOOB) {
+			if (tpcb->tp_xpd_service == 0) {
+				error = EOPNOTSUPP;
+				break;
+			}
+			error = tp_sendoob(tpcb, so, m, outflags);
+			break;
+		}
 		/*
 		 * The protocol machine copies mbuf chains,
 		 * prepends headers, assigns seq numbers, and
@@ -605,12 +589,6 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 		 * Sbspace may be made negative by appending this mbuf chain,
 		 * possibly by a whole cluster.
 		 */
-		if (controlp && (error = tp_snd_control(controlp, so, &m)))
-			break;
-		if (m == 0)
-			break;
-		if (so->so_state & SS_ISCONFIRMING)
-			tp_confirm();
 		{
 			register struct mbuf *n = m;
 			register int len=0;
@@ -624,8 +602,10 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 			 * Could have eotsdu and no data.(presently MUST have
 			 * an mbuf though, even if its length == 0) 
 			 */
-			if (n->m_flags & M_EOR)
+			if (n->m_flags & M_EOR) {
 				eotsdu = 1;
+				n->m_flags &= ~M_EOR;
+			}
 			IFPERF(tpcb)
 			   PStat(tpcb, Nb_from_sess) += totlen;
 			   tpmeas(tpcb->tp_lref, TPtime_from_session, 0, 0, 
@@ -646,12 +626,12 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 			while (n->m_pkthdr.len > maxsize) {
 				struct mbuf *nn
 					    = m_copym(n, 0, maxsize, M_WAIT);
-				if (eotsdu)
-					n->m_flags &= ~M_EOR;
 				sbappendrecord(sb, nn);
 				m_adj(n, maxsize);
 			}
 			sbappendrecord(sb, n);
+			if (eotsdu)	/* This presumes knowledge of sbappendrecord() */
+				n->m_flags |= M_EOR;
 			IFDEBUG(D_SYSCALL)
 				printf("PRU_SEND: eot %d after sbappend 0x%x len 0x%x\n",
 					eotsdu, n, len);
@@ -672,15 +652,7 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 		break;
 
 	case PRU_PEERADDR:
-		if ((so->so_state & SS_ISCONNECTED) && 
-		    (so->so_state & SS_ISDISCONNECTING) == 0) {
-				(tpcb->tp_nlproto->nlp_getnetaddr)(so->so_pcb, nam, TP_FOREIGN);
-				IFDEBUG(D_REQUEST)
-					printf("PEERADDDR:");
-					dump_buf(mtod(nam, char *), nam->m_len);
-				ENDDEBUG
-		} else 
-			error = ENOTCONN;
+		(tpcb->tp_nlproto->nlp_getnetaddr)(so->so_pcb, nam, TP_FOREIGN);
 		break;
 
 	case PRU_CONTROL:
@@ -703,7 +675,9 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 	}
 
 	IFDEBUG(D_REQUEST)
-		printf("returning from tp_usrreq(so 0x%x) error 0x%x\n", so, error);
+		printf("%s, so 0x%x, tpcb 0x%x, error %d, state %d\n",
+			"returning from tp_usrreq", so, tpcb, error,
+			tpcb ? 0 : tpcb->tp_state);
 	ENDDEBUG
 	IFTRACE(D_REQUEST)
 		tptraceTPCB(TPPTusrreq, "END req so m state [", req, so, m, 
@@ -713,11 +687,15 @@ tp_usrreq(so, req, m, nam, rightsp, controlp)
 	return error;
 }
 
-/*
- * Stub for future negotiated confirmation of connections.
- */
-tp_confirm()
+tp_confirm(tpcb)
+register struct tp_pcb *tpcb;
 {
+	struct tp_event E;
+	if (tpcb->tp_state == TP_CONFIRMING)
+	    return DoEvent(T_ACPT_req);
+	printf("Tp confirm called when not confirming; tpcb 0x%x, state 0x%x\n",
+		tpcb, tpcb->tp_state);
+	return 0;
 }
 
 /*
