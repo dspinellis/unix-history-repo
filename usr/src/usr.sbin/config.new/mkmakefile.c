@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkmakefile.c	5.2 (Berkeley) %G%
+ *	@(#)mkmakefile.c	5.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -220,23 +220,32 @@ emitfiles(fp, suffix)
 		lpos += len + 1;
 		sp = ' ';
 	}
-	for (cf = allcf; cf != NULL; cf = cf->cf_next) {
-		if (cf->cf_root == NULL)
-			(void)sprintf(swapname, "$S/%s/%s/swapgeneric.c",
-			    machine, machine);
-		else
-			(void)sprintf(swapname, "swap%s.c", cf->cf_name);
-		len = strlen(swapname);
-		if (lpos + len > 72) {
-			if (fputs(" \\\n", fp) < 0)
+	/*
+	 * The allfiles list does not include the configuration-specific
+	 * C source files.  These files should be eliminated someday, but
+	 * for now, we have to add them to ${CFILES} (and only ${CFILES}).
+	 */
+	if (suffix == 'c') {
+		for (cf = allcf; cf != NULL; cf = cf->cf_next) {
+			if (cf->cf_root == NULL)
+				(void)sprintf(swapname,
+				    "$S/%s/%s/swapgeneric.c",
+				    machine, machine);
+			else
+				(void)sprintf(swapname, "swap%s.c",
+				    cf->cf_name);
+			len = strlen(swapname);
+			if (lpos + len > 72) {
+				if (fputs(" \\\n", fp) < 0)
+					return (1);
+				sp = '\t';
+				lpos = 7;
+			}
+			if (fprintf(fp, "%c%s", sp, swapname) < 0)
 				return (1);
-			sp = '\t';
-			lpos = 7;
+			lpos += len + 1;
+			sp = ' ';
 		}
-		if (fprintf(fp, "%c%s", sp, swapname) < 0)
-			return (1);
-		lpos += len + 1;
-		sp = ' ';
 	}
 	if (lpos != 7 && putc('\n', fp) < 0)
 		return (1);
