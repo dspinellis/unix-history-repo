@@ -1,6 +1,6 @@
-SCCSID = "@(#)Makefile	1.2 (Berkeley) %G%"
+SCCSID = "@(#)Makefile	1.3 (Berkeley) %G%"
 DESTDIR=
-ED=	-ed
+ED=	-ex
 AS=	-as
 VERSION= version
 EYACC=	/usr/ucb/eyacc
@@ -17,21 +17,20 @@ OBJS2=	doprnt.o printf.o treen.o yycopy.o TRdata.o Version.o
 all: a.out
 
 a.out:	${OBJS} ${OBJS2}
-	${CC} ${CFLAGS} -i ${OBJS} ${OBJS2}
+	${CC} ${CFLAGS} ${OBJS} ${OBJS2}
 
 doprnt.o: doprnt.c
 	${CC} ${CFLAGS} -E doprnt.c > doprnt.s
 	${AS} -o doprnt.o doprnt.s
 	-rm -f doprnt.s
 
-#y.tab.c: pas.y
-#	${EYACC} pas.y
-#	${ED} - y.tab.c < gram
+y.tab.c: pas.y
+	${EYACC} pas.y
+	${ED} - y.tab.c < gram
 
 clean:
 	-rm -f pi1:2strings a.out core
-	-echo dont rm y.tab.c
-	-rm -f *.o x*
+	-rm -f *.o x* y.tab.c y.tab.h
 
 install: a.out
 	cp a.out ${DESTDIR}/usr/ucb/pxp
