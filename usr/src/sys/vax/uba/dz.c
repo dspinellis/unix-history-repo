@@ -1,4 +1,4 @@
-/*	dz.c	6.2	84/03/15	*/
+/*	dz.c	6.3	84/04/16	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -607,11 +607,11 @@ dzscan()
 	for (i = 0; i < NDZ; i++) {
 		ave(dzrate[i], dzchars[i], 8);
 		if (dzchars[i] > dzhighrate && ((dzsilos & (1 << i)) == 0)) {
-			dzpdma[i].p_addr->dzcsr = DZ_IEN | DZ_SAE;
+			dzpdma[i << 3].p_addr->dzcsr = DZ_IEN | DZ_SAE;
 			dzsilos |= (1 << i);
 			dztransitions++;		/*DEBUG*/
 		} else if ((dzsilos & (1 << i)) && (dzrate[i] < dzlowrate)) {
-			dzpdma[i].p_addr->dzcsr = DZ_IEN;
+			dzpdma[i << 3].p_addr->dzcsr = DZ_IEN;
 			dzsilos &= ~(1 << i);
 		}
 		dzchars[i] = 0;
