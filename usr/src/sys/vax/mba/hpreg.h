@@ -1,4 +1,4 @@
-/*	hpreg.h	4.8	81/06/27	*/
+/*	hpreg.h	4.9	81/08/31	*/
 
 struct hpdevice
 {
@@ -109,7 +109,7 @@ struct hpdevice
 
 #define	HPER2_BITS \
 "\10\20BSE\17SKI\16OPE\15IVC\14LSC\13LBC\10DVC\5SSE\4DPE"
-#define	HPER2_HARD    (HPER2_BSE|HPER2_OPE)
+#define	HPER2_HARD    (HPER2_OPE)
 
 /* hpof */
 #define	HPOF_CMO	0100000		/* command modifier */
