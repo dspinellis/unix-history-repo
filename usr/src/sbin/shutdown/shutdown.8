@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)shutdown.8	6.4 (Berkeley) %G%
+.\"	@(#)shutdown.8	6.5 (Berkeley) %G%
 .\"
 .TH SHUTDOWN 8 ""
 .UC 4
@@ -11,69 +11,46 @@ shutdown \- close down the system at a given time
 .SH SYNOPSIS
 .B /etc/shutdown
 [
-.B \-k
-] [
-.B \-r
-] [
-.B \-h
-] [
-.B \-f
-] [
-.B \-n
+.B \-fhkrn
 ]
 time [ warning-message ... ]
 .SH DESCRIPTION
 .I Shutdown
 provides an automated shutdown procedure which a super-user
-can use to notify users
-nicely when the system is shutting down, saving them from
-system administrators, hackers, and gurus, who would otherwise
-not bother with niceties.
-.LP
+can use to notify users nicely when the system is shutting down,
+saving them from system administrators, hackers, and gurus, who
+would otherwise not bother with such niceties.
+.PP
 .I Time
-is the time at which
-.I shutdown
-will bring the system down and
-may be the word
-.B now
-(indicating an immediate shutdown)
-or specify a future time in one of two formats:
-.BR + number
-and
-.RB hour : min.
-The first form brings the system down in
-.I number
-minutes
-and the second brings the system down at the time of day indicated
-(as a 24\-hour clock).
+is the time at which \fIshutdown\fP will bring the system down and
+may be the word \fInow\fP (indicating an immediate shutdown) or
+specify a future time in one of two formats: \fI+number\fP, or
+\fIyymmddhhmm\fP, where the year, month, and day may be defaulted
+to the current system values.  The first form brings the system down in
+\fInumber\fP minutes and the second at the absolute time specified.
 .PP
-At intervals which get closer together as apocalypse approaches,
-warning messages are displayed at the terminals of all users on the
-system.  Five minutes before shutdown, or immediately if
-shutdown is in less than 5 minutes, logins are disabled by
-creating
-/etc/nologin
-and writing a message there.
-If this file exists when a user attempts to log in,
-.IR login (1)
-prints its contents
-and exits.
-The file is removed just before
-.I shutdown
-exits.
+Any other arguments comprise the warning message that is broadcast
+to users currently logged into the system; if no other arguments
+are provided, the warning message is read from the standard input.
 .PP
-At shutdown time a
-message is written in the system log, containing the
-time of shutdown, who ran shutdown and the reason.
-Then a terminate signal is sent to
-.I init
-to bring the system down to single-user state.
+At intervals, which get closer together as apocalypse approaches,
+starting at ten hours before shutdown, warning messages are displayed
+at the terminals of all users on the system.  Five minutes before
+shutdown, or immediately if shutdown is in less than 5 minutes,
+logins are disabled by creating \fI/etc/nologin\fP and copying the
+warning message there.  If this file exists when a user attempts to
+log in, \fIlogin\fP(1) prints its contents and exits.  The file is
+removed just before \fIshutdown\fP exits.
+.PP
+At shutdown time a message is written in the system log, containing the
+time of shutdown, who ran shutdown and the reason.  Then a terminate
+signal is sent to \fIinit\fP to bring the system down to single-user state.
 Alternatively, if
 .B \-r,
 .B \-h,
 or
 .B \-k
-was used, then
+is used, then
 .I shutdown
 will exec
 .IR reboot (8),
@@ -99,14 +76,19 @@ option prevents the normal
 before stopping.
 .PP
 The time of the shutdown and the warning message
-are placed in /etc/nologin and should be used to
+are placed in \fI/etc/nologin\fP and should be used to
 inform the users about when the system will be back up
 and why it is going down (or anything else).
 .SH FILES
-.DT
-/etc/nologin	tells login not to let anyone log in
+.TP 15
+/etc/nologin
+tells login not to let anyone log in
+.TP 15
+/fastboot
+tells /etc/rc not to run fsck when rebooting
 .SH "SEE ALSO"
-login(1), reboot(8), fastboot(8)
-.SH BUGS
-Only allows you to kill the system between now and 23:59 if
-you use the absolute time for shutdown.
+login(1), wall(1), fastboot(8), halt(8), reboot(8)
+.SH "BACKWARD COMPATIBILITY"
+The hours and minutes in the second time format may be separated by
+a colon (``:'') for backward compatibility.
+
