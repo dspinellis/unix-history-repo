@@ -110,15 +110,18 @@ __bt_sync(dbp)
 		if (status =
 		    __bt_dleaf(t, h, t->bt_bcursor.index) == RET_ERROR)
 			goto ecrsr;
+		mpool_put(t->bt_mp, h, MPOOL_DIRTY);
 	}
 		
 	if ((status = mpool_sync(t->bt_mp)) == RET_SUCCESS)
 		CLR(t, BTF_MODIFIED);
 
 ecrsr:	if (ISSET(t, BTF_DELCRSR)) {
+		if ((h = mpool_get(t->bt_mp, t->bt_bcursor.pgno, 0)) == NULL)
+			return (RET_ERROR);
 		bcopy(p, h, t->bt_psize);
 		free(p);
-		mpool_put(t->bt_mp, h, 0);
+		mpool_put(t->bt_mp, h, MPOOL_DIRTY);
 	}
 	return (status);
 }
