@@ -2,7 +2,7 @@
 # include "sendmail.h"
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	4.2		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	4.3		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -10,7 +10,7 @@ SCCSID(@(#)daemon.c	4.2		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <sys/wait.h>
 
-SCCSID(@(#)daemon.c	4.2		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	4.3		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -345,6 +345,7 @@ makeconnection(host, port, outfile, infile)
 		(void) setsockopt(s, SOL_SOCKET, SO_DEBUG, 0, 0);
 # endif DEBUG
 	(void) fflush(CurEnv->e_xfp);			/* for debugging */
+	errno = 0;					/* for debugging */
 #ifdef NVMUNIX
 	bind(s, &SendmailAddress, sizeof SendmailAddress, 0);
 	if (connect(s, &SendmailAddress, sizeof SendmailAddress, 0) < 0)
@@ -377,7 +378,7 @@ makeconnection(host, port, outfile, infile)
 			/* why is this happening? */
 			syserr("makeconnection: funny failure, addr=%lx, port=%x",
 				SendmailAddress.sin_addr.s_addr, SendmailAddress.sin_port);
-			/* explicit fall-through */
+			return (EX_TEMPFAIL);
 
 		  default:
 			return (EX_UNAVAILABLE);
