@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.32	%G%";
+static char SccsId[] = "@(#)deliver.c	3.33	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -207,7 +207,7 @@ deliver(to, editfcn)
 		define('z', to->q_home);	/* user's home */
 
 		/* expand out this user */
-		(void) expand(user, buf, &buf[sizeof buf - 1]);
+		(void) expand(*mvp, buf, &buf[sizeof buf - 1]);
 		*pvp++ = newstr(buf);
 		if (pvp >= &pv[MAXPV - 2])
 		{
