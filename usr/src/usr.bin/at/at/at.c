@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)at.c	4.12	(Berkeley)	%G%";
+static char sccsid[] = "@(#)at.c	4.13	(Berkeley)	%G%";
 #endif not lint
 
 /*
@@ -364,6 +364,12 @@ char **argv;
 	}
 
 	/*
+	 * If the inputfile is not from a tty then turn off standardin
+	 */
+	if (!(isatty(fileno(inputfile)))) 
+		standardin = 0 ;
+
+	/*
 	 * Now that we have all the files set up, we can start reading in
 	 * the job. (I added the prompt "at>" so that the user could tell
 	 * when/if he/she was supposed to enter commands from standard
@@ -371,7 +377,7 @@ char **argv;
 	 * message that said it was waiting for input if it was reading
 	 * form standard input).
 	 */
-	while(fputs((standardin) ? "at> " : "",stdout) 
+	while(fputs((standardin) ? "at> " : "",stdout) != EOF
 				&& (fgets(line,100,inputfile) != NULL)) {
 		fputs(line, spoolfile);
 	}
