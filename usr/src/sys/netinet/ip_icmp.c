@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_icmp.c	7.9 (Berkeley) %G%
+ *	@(#)ip_icmp.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -75,6 +75,7 @@ icmp_error(n, type, code, dest)
 	if (oip->ip_off &~ (IP_MF|IP_DF))
 		goto free;
 	if (oip->ip_p == IPPROTO_ICMP && type != ICMP_REDIRECT &&
+	  n->m_len >= oiplen + ICMP_MINLEN &&
 	  !ICMP_INFOTYPE(((struct icmp *)((caddr_t)oip + oiplen))->icmp_type)) {
 		icmpstat.icps_oldicmp++;
 		goto free;
@@ -108,19 +109,19 @@ icmp_error(n, type, code, dest)
 	nip->ip_len = htons((u_short)(nip->ip_len + oiplen));
 
 	/*
-	 * Now, copy old ip header in front of icmp message.
+	 * Now, copy old ip header (without options)
+	 * in front of icmp message.
 	 */
-	if (m->m_len + oiplen > MHLEN)
-		oiplen = sizeof(struct ip);
-	if (m->m_data - oiplen < m->m_pktdat)
+	if (m->m_data - sizeof(struct ip) < m->m_pktdat)
 		panic("icmp len");
-	m->m_data -= oiplen;
-	m->m_len += oiplen;
+	m->m_data -= sizeof(struct ip);
+	m->m_len += sizeof(struct ip);
 	m->m_pkthdr.len = m->m_len;
 	m->m_pkthdr.rcvif = n->m_pkthdr.rcvif;
 	nip = mtod(m, struct ip *);
 	bcopy((caddr_t)oip, (caddr_t)nip, oiplen);
 	nip->ip_len = m->m_len;
+	nip->ip_hl = sizeof(struct ip) >> 2;
 	nip->ip_p = IPPROTO_ICMP;
 	icmp_reflect(m);
 
@@ -129,9 +130,10 @@ free:
 }
 
 static struct sockproto icmproto = { AF_INET, IPPROTO_ICMP };
-static struct sockaddr_in icmpsrc = { AF_INET };
-static struct sockaddr_in icmpdst = { AF_INET };
-static struct sockaddr_in icmpgw = { AF_INET };
+static struct sockaddr_in icmpsrc = { sizeof (struct sockaddr_in), AF_INET };
+static struct sockaddr_in icmpdst = { sizeof (struct sockaddr_in), AF_INET };
+static struct sockaddr_in icmpgw = { sizeof (struct sockaddr_in), AF_INET };
+struct sockaddr_in icmpmask = { 8, 0 };
 struct in_ifaddr *ifptoia();
 
 /*
@@ -264,7 +266,7 @@ icmp_input(m, hlen)
 		    (ia = ifptoia(m->m_pkthdr.rcvif)) == 0)
 			break;
 		icp->icmp_type = ICMP_MASKREPLY;
-		icp->icmp_mask = htonl(ia->ia_subnetmask);
+		icp->icmp_mask = ia->ia_sockmask.sin_addr.s_addr;
 		if (ip->ip_src.s_addr == 0) {
 			if (ia->ia_ifp->if_flags & IFF_BROADCAST)
 			    ip->ip_src = satosin(&ia->ia_broadaddr)->sin_addr;
@@ -298,10 +300,14 @@ reflect:
 				icp->icmp_gwaddr);
 #endif
 		if (code == ICMP_REDIRECT_NET || code == ICMP_REDIRECT_TOSNET) {
+			u_long in_netof();
 			icmpsrc.sin_addr =
 			 in_makeaddr(in_netof(icp->icmp_ip.ip_dst), INADDR_ANY);
+			icmpmask.sin_addr.s_addr =
+					in_maskof(icp->icmp_ip.ip_dst);
 			rtredirect((struct sockaddr *)&icmpsrc,
-			  (struct sockaddr *)&icmpdst, RTF_GATEWAY,
+			  (struct sockaddr *)&icmpdst,
+			  (struct sockaddr *)&icmpmask, RTF_GATEWAY,
 			  (struct sockaddr *)&icmpgw);
 			icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
 			pfctlinput(PRC_REDIRECT_NET,
@@ -309,7 +315,8 @@ reflect:
 		} else {
 			icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
 			rtredirect((struct sockaddr *)&icmpsrc,
-			  (struct sockaddr *)&icmpdst, RTF_GATEWAY | RTF_HOST,
+			  (struct sockaddr *)&icmpdst,
+			  (struct sockaddr *)0, RTF_GATEWAY | RTF_HOST,
 			  (struct sockaddr *)&icmpgw);
 			pfctlinput(PRC_REDIRECT_HOST,
 			  (struct sockaddr *)&icmpsrc);
@@ -375,15 +382,41 @@ icmp_reflect(m)
 	ip->ip_ttl = MAXTTL;
 
 	if (optlen > 0) {
+		register u_char *cp;
+		int opt, cnt, off;
+		u_int len;
+
 		/*
-		 * Retrieve any source routing from the incoming packet
-		 * and strip out other options.  Adjust the IP length.
+		 * Retrieve any source routing from the incoming packet;
+		 * add on any record-route or timestamp options.
+		 * Strip out original options.  Adjust the IP length.
 		 */
-		opts = ip_srcroute();
-		bcopy((caddr_t)ip + ip->ip_len, (caddr_t)ip + sizeof(struct ip),
-		    (unsigned)m->m_len - ip->ip_len);
-		ip->ip_len -= optlen;
+		cp = (u_char *) (ip + 1);
+		if (opts = ip_srcroute())
+		    for (cnt = optlen; cnt > 0; cnt -= len, cp += len) {
+			opt = cp[IPOPT_OPTVAL];
+			if (opt == IPOPT_EOL)
+				break;
+			if (opt == IPOPT_NOP)
+				len = 1;
+			else {
+				len = cp[IPOPT_OLEN];
+				if (len <= 0 || len > cnt)
+					break;
+			}
+			/* should check for overflow, but it "can't happen" */
+			if (opt == IPOPT_RR || opt == IPOPT_TS) {
+				bcopy((caddr_t)cp,
+				    mtod(opts, caddr_t) + opts->m_len, len);
+				opts->m_len += len;
+			}
+		}
+		ovbcopy((caddr_t)ip, (caddr_t)ip + optlen, sizeof(struct ip));
+		m->m_data += optlen;
 		m->m_len -= optlen;
+		ip = mtod(m, struct ip *);
+		ip->ip_len -= optlen;
+		ip->ip_hl = sizeof(struct ip) >> 2;
 		if (m->m_flags & M_PKTHDR)
 			m->m_pkthdr.len -= optlen;
 	}
