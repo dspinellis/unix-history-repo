@@ -14,7 +14,7 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-static char	SccsId[] = "@(#)daemon.c	5.2 (Berkeley) %G%	(w/o daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.3 (Berkeley) %G%	(w/o daemon mode)";
 #else
 
 #include <sys/socket.h>
@@ -22,7 +22,7 @@ static char	SccsId[] = "@(#)daemon.c	5.2 (Berkeley) %G%	(w/o daemon mode)";
 #include <netdb.h>
 #include <sys/wait.h>
 
-static char	SccsId[] = "@(#)daemon.c	5.2 (Berkeley) %G% (with daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.3 (Berkeley) %G% (with daemon mode)";
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -326,7 +326,7 @@ myhostname(hostbuf, size)
 	hp = gethostbyname(hostbuf);
 	if (hp != NULL)
 	{
-		strcpy(hostbuf, hp->h_name);
+		(void) strcpy(hostbuf, hp->h_name);
 		return (hp->h_aliases);
 	}
 	else
@@ -364,7 +364,7 @@ maphostname(hbuf, hbsize)
 
 		if (i >= hbsize)
 			hp->h_name[--i] = '\0';
-		strcpy(hbuf, hp->h_name);
+		(void) strcpy(hbuf, hp->h_name);
 	}
 }
 

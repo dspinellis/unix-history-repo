@@ -14,10 +14,10 @@
 # include <signal.h>
 
 # ifndef SMTP
-static char	SccsId[] = "@(#)srvrsmtp.c	5.2 (Berkeley) %G%	(no SMTP)";
+static char	SccsId[] = "@(#)srvrsmtp.c	5.3 (Berkeley) %G%	(no SMTP)";
 # else SMTP
 
-static char	SccsId[] = "@(#)srvrsmtp.c	5.2 (Berkeley) %G%";
+static char	SccsId[] = "@(#)srvrsmtp.c	5.3 (Berkeley) %G%";
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -374,7 +374,7 @@ smtp()
 				char seed[3];
 				extern char *crypt();
 
-				strncpy(seed, WizWord, 2);
+				(void) strncpy(seed, WizWord, 2);
 				if (strcmp(WizWord, crypt(p, seed)) == 0)
 				{
 					IsWiz = TRUE;

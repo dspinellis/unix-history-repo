@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)collect.c	5.1 (Berkeley) %G%";
+static char	SccsId[] = "@(#)collect.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include <errno.h>
@@ -324,7 +324,7 @@ eatfrom(fm)
 
 		/* we have found a date */
 		q = xalloc(25);
-		strncpy(q, p, 25);
+		(void) strncpy(q, p, 25);
 		q[24] = '\0';
 		define('d', q, CurEnv);
 		q = arpadate(q);
