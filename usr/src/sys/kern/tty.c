@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	6.23 (Berkeley) %G%
+ *	@(#)tty.c	6.24 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -657,7 +657,8 @@ ttymodem(tp, flag)
  * Default modem control routine (for other line disciplines).
  * Return argument flag, to turn off device on carrier drop.
  */
-nullmodem(flag)
+nullmodem(tp, flag)
+	register struct tty *tp;
 	int flag;
 {
 	
