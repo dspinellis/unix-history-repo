@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_usrreq.c	6.19 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	6.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -79,8 +79,7 @@ uipc_usrreq(so, req, m, nam, rights)
 		break;
 
 	case PRU_CONNECT2:
-		error = unp_connect2(so, (struct mbuf *)0,
-		    (struct socket *)nam);
+		error = unp_connect2(so, (struct socket *)nam);
 		break;
 
 	case PRU_DISCONNECT:
@@ -405,15 +404,14 @@ unp_connect(so, nam)
 		error = ECONNREFUSED;
 		goto bad;
 	}
-	error = unp_connect2(so, nam, so2);
+	error = unp_connect2(so, so2);
 bad:
 	iput(ip);
 	return (error);
 }
 
-unp_connect2(so, sonam, so2)
+unp_connect2(so, so2)
 	register struct socket *so;
-	struct mbuf *sonam;
 	register struct socket *so2;
 {
 	register struct unpcb *unp = sotounpcb(so);
