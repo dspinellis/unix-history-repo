@@ -1,4 +1,4 @@
-/*	mac.h	4.1	82/05/07	*/
+/*	mac.h	4.2	82/12/24	*/
 
 #
 /*
@@ -33,6 +33,7 @@
 #define OD	;}
 #define REP	do{
 #define PER	}while(
+#undef DONE
 #define DONE	);
 #define LOOP	for(;;){
 #define POOL	}
