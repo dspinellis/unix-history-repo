@@ -3,12 +3,15 @@ static	char *sccsid = "@(#)dumprmt.c	1.8 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/mtio.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/inode.h>
 
 #include <netinet/in.h>
 
 #include <stdio.h>
 #include <pwd.h>
 #include <netdb.h>
+#include <dumprestor.h>
 
 #define	TS_CLOSED	0
 #define	TS_OPEN		1
@@ -18,6 +21,8 @@ int	rmtape;
 int	rmtconnaborted();
 char	*rmtpeer;
 
+extern int ntrec;		/* blocking factor on tape */
+
 rmthost(host)
 	char *host;
 {
@@ -26,13 +31,14 @@ rmthost(host)
 	signal(SIGPIPE, rmtconnaborted);
 	rmtgetconn();
 	if (rmtape < 0)
-		exit(1);
+		return (0);
+	return (1);
 }
 
 rmtconnaborted()
 {
 
-	fprintf(stderr, "Lost connection to remote host.\n");
+	fprintf(stderr, "rdump: Lost connection to remote host.\n");
 	exit(1);
 }
 
@@ -41,6 +47,7 @@ rmtgetconn()
 	static struct servent *sp = 0;
 	struct passwd *pw;
 	char *name = "root";
+	int size;
 
 	if (sp == 0) {
 		sp = getservbyname("shell", "tcp");
@@ -53,6 +60,9 @@ rmtgetconn()
 	if (pw && pw->pw_name)
 		name = pw->pw_name;
 	rmtape = rcmd(&rmtpeer, sp->s_port, name, name, "/etc/rmt", 0);
+	size = ntrec * TP_BSIZE;
+	if (setsockopt(rmtape, SOL_SOCKET, SO_SNDBUF, &size, sizeof (size)) < 0)
+		fprintf(stderr, "rdump: Warning: setsockopt buffer size failed.\n");
 }
 
 rmtopen(tape, mode)
