@@ -1,0 +1,90 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)hy.4	5.1 (Berkeley) %G%
+.\"
+.TH HY 4 "27 July 1983"
+.UC 5
+.SH NAME
+hy \- Network Systems Hyperchannel interface
+.SH SYNOPSIS
+.B "device hy0 at uba0 csr 0172410 vector hyint"
+.SH DESCRIPTION
+The
+.I hy
+interface provides access to a Network
+Systems Corporation Hyperchannel Adapter.
+.PP
+The network to which the interface is attached
+is specified at boot time with an SIOCSIFADDR ioctl.  
+The host's address is discovered by reading the adapter status
+register.  The interface will not transmit or receive
+packets until the network number is known.
+.SH DIAGNOSTICS
+\fBhy%d: unit number 0x%x port %d type %x microcode level 0x%x\fP.
+Identifies the device during autoconfiguration.
+.PP
+\fBhy%d: can't handle af%d\fP.  The interface was handed
+a message with addresses formatted in an unsuitable address
+family; the packet was dropped.
+.PP
+\fBhy%d: can't initialize\fP.
+The interface was unable to allocate UNIBUS resources. This
+is usually due to having too many network devices on an 11/750
+where there are only 3 buffered data paths.
+.PP
+\fBhy%d: NEX - Non Existent Memory\fP.
+Non existent memory error returned from hardware.
+.PP
+\fBhy%d:  BAR overflow\fP.  Bus address register
+overflow error returned from hardware.
+.PP
+\fBhy%d: Power Off bit set, trying to reset\fP.
+Adapter has lost power, driver will reset the bit
+and see if power is still out in the adapter.
+.PP
+\fBhy%d: Power Off Error, network shutdown\fP.
+Power was really off in the adapter, network
+connections are dropped.
+Software does not shut down the network unless
+power has been off for a while.
+.PP
+\fBhy%d: RECVD MP > MPSIZE (%d)\fP.
+A message proper was received that is too big.
+Probable a driver bug.
+Shouldn't happen.
+.PP
+\fBhy%d: xmit error \- len > hy_olen [%d > %d]\fP.
+Probable driver error.
+Shouldn't happen.
+.PP
+\fBhy%d: DRIVER BUG \- INVALID STATE %d\fP.
+The driver state machine reached a non-existent state.
+Definite driver bug.
+.PP
+\fBhy%d: watchdog timer expired\fP.
+A command in the adapter has taken too long to complete.
+Driver will abort and retry the command.
+.PP
+\fBhy%d: adapter power restored\fP.
+Software was able to reset the power off bit,
+indicating that the power has been restored.
+.SH SEE ALSO
+intro(4N), inet(4F)
+.SH BUGS
+If the adapter does not respond to the status command
+issued during autoconfigure, the adapter is assumed down.
+A reboot is required to recognize it.
+.PP
+The adapter power fail interrupt seems to occur
+sporadically when power has, in fact, not failed.
+The driver will believe that power has failed
+only if it can not reset the power fail latch after
+a ``reasonable'' time interval.
+These seem to appear about 2-4 times a day on some machines.
+There seems to be no correlation with adapter
+rev level, number of ports used etc. and whether a
+machine will get these ``bogus powerfails''.
+They don't seem to cause any real problems so they have
+been ignored.
