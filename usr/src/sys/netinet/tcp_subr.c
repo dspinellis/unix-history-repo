@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_subr.c	7.5 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -288,7 +288,7 @@ tcp_ctlinput(cmd, sa)
 
 /*
  * When a source quench is received, close congestion window
- * to 80% of the outstanding data (but not less than one segment).
+ * to one segment.  We will gradually open it again as we proceed.
  */
 tcp_quench(inp)
 	struct inpcb *inp;
@@ -296,6 +296,5 @@ tcp_quench(inp)
 	struct tcpcb *tp = intotcpcb(inp);
 
 	if (tp)
-	    tp->snd_cwnd = MAX(8 * (tp->snd_nxt - tp->snd_una) / 10,
-		tp->t_maxseg);
+		tp->snd_cwnd = tp->t_maxseg;
 }
