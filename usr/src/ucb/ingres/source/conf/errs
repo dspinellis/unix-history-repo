@@ -1,0 +1,6 @@
+cc -z version.o vaxingres.o  ../../lib/parser ../../lib/qrymod ../../lib/decomp ../../lib/ovqp ../../lib/dbulib ../../lib/ctlmod ../../lib/iutil ../../lib/gutil -lm -o vaxingres
+chmod 4740 vaxingres
+ls -l vaxingres; size vaxingres
+-rwsr-----  1 ingres     192512 Jan 27 12:39 vaxingres
+text	data	bss	dec	hex
+125952	36864	80388	243204	3b604
