@@ -1,0 +1,10 @@
+#	@(#)Makefile	5.1 (Berkeley) 5/3/91
+
+PROG=	stty
+SRCS=	cchar.c gfmt.c key.c modes.c print.c stty.c util.c
+CFLAGS+=-DLETS_GET_SMALL
+NOMAN=	noman
+LDFLAGS=-s -N
+.PATH:	${.CURDIR}/../../../../bin/stty
+
+.include <bsd.prog.mk>
