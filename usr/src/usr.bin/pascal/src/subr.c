@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)subr.c 1.1 %G%";
+static	char sccsid[] = "@(#)subr.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -95,9 +95,15 @@ Perror(file, error)
 	char *file, *error;
 {
 
+	write(2, file, strlen(file));
+	write(2, ": ", 2);
+	write(2, error, strlen(error));
+	write(2, "\n", 1);
+/*
 	errno = 0;
 	sys_errlist[0] = error;
 	perror(file);
+*/
 }
 
 int *
