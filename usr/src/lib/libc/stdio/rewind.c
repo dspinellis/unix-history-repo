@@ -1,28 +1,25 @@
-/*
- * Copyright (c) 1987 Regents of the University of California.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Chris Torek.
  *
  * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rewind.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)rewind.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
-#include <sys/file.h>
+#include <errno.h>
 #include <stdio.h>
 
-rewind(iop)
-	register FILE *iop;
+void
+rewind(fp)
+	register FILE *fp;
 {
-	off_t lseek();
-
-	(void)fflush(iop);
-	(void)lseek(fileno(iop), 0L, L_SET);
-	iop->_cnt = 0;
-	iop->_ptr = iop->_base;
-	iop->_flag &= ~(_IOERR|_IOEOF);
-	if (iop->_flag & _IORW)
-		iop->_flag &= ~(_IOREAD|_IOWRT);
+	(void) fseek(fp, 0L, SEEK_SET);
+	clearerr(fp);
+	errno = 0;      /* not required, but seems reasonable */
 }
