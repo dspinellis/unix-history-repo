@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -75,7 +75,7 @@ loop:
 	pnoprocesses = pid == -1;
 	return;
     }
-    for (pp = proclist.p_next; pp != PNULL; pp = pp->p_next)
+    for (pp = proclist.p_next; pp != NULL; pp = pp->p_next)
 	if (pid == pp->p_pid)
 	    goto found;
     goto loop;
@@ -175,7 +175,7 @@ pnote()
     sigset_t omask;
 
     neednote = 0;
-    for (pp = proclist.p_next; pp != PNULL; pp = pp->p_next) {
+    for (pp = proclist.p_next; pp != NULL; pp = pp->p_next) {
 	if (pp->p_flags & PNEEDNOTE) {
 	    omask = sigblock(sigmask(SIGCHLD));
 	    pp->p_flags &= ~PNEEDNOTE;
@@ -201,7 +201,7 @@ pwait()
      * Here's where dead procs get flushed.
      */
     omask = sigblock(sigmask(SIGCHLD));
-    for (pp = (fp = &proclist)->p_next; pp != PNULL; pp = (fp = pp)->p_next)
+    for (pp = (fp = &proclist)->p_next; pp != NULL; pp = (fp = pp)->p_next)
 	if (pp->p_pid == 0) {
 	    fp->p_next = pp->p_next;
 	    xfree((ptr_t) pp->p_command);
@@ -333,7 +333,7 @@ pflushall()
 {
     register struct process *pp;
 
-    for (pp = proclist.p_next; pp != PNULL; pp = pp->p_next)
+    for (pp = proclist.p_next; pp != NULL; pp = pp->p_next)
 	if (pp->p_pid)
 	    pflush(pp);
 }
@@ -383,7 +383,7 @@ pclrcurr(pp)
 {
 
     if (pp == pcurrent)
-	if (pprevious != PNULL) {
+	if (pprevious != NULL) {
 	    pcurrent = pprevious;
 	    pprevious = pgetcurr(pp);
 	}
@@ -460,9 +460,9 @@ palloc(pid, t)
 	tryagain:;
 	    }
 	}
-	if (pcurrent == PNULL)
+	if (pcurrent == NULL)
 	    pcurrent = pp;
-	else if (pprevious == PNULL)
+	else if (pprevious == NULL)
 	    pprevious = pp;
     }
     pp->p_next = proclist.p_next;
@@ -567,7 +567,7 @@ psavejob()
 {
 
     pholdjob = pcurrjob;
-    pcurrjob = PNULL;
+    pcurrjob = NULL;
 }
 
 /*
@@ -579,7 +579,7 @@ prestjob()
 {
 
     pcurrjob = pholdjob;
-    pholdjob = PNULL;
+    pholdjob = NULL;
 }
 
 /*
@@ -1042,12 +1042,12 @@ pfind(cp)
     register struct process *pp, *np;
 
     if (cp == 0 || cp[1] == 0 || eq(cp, STRcent2) || eq(cp, STRcentplus)) {
-	if (pcurrent == PNULL)
+	if (pcurrent == NULL)
 	    stderror(ERR_NAME | ERR_JOBCUR);
 	return (pcurrent);
     }
     if (eq(cp, STRcentminus) || eq(cp, STRcenthash)) {
-	if (pprevious == PNULL)
+	if (pprevious == NULL)
 	    stderror(ERR_NAME | ERR_JOBPREV);
 	return (pprevious);
     }
@@ -1059,7 +1059,7 @@ pfind(cp)
 		return (pp);
 	stderror(ERR_NAME | ERR_NOSUCHJOB);
     }
-    np = PNULL;
+    np = NULL;
     for (pp = proclist.p_next; pp; pp = pp->p_next)
 	if (pp->p_pid == pp->p_jobid) {
 	    if (cp[1] == '?') {
@@ -1095,14 +1095,14 @@ pgetcurr(pp)
     register struct process *pp;
 {
     register struct process *np;
-    register struct process *xp = PNULL;
+    register struct process *xp = NULL;
 
     for (np = proclist.p_next; np; np = np->p_next)
 	if (np != pcurrent && np != pp && np->p_pid &&
 	    np->p_pid == np->p_jobid) {
 	    if (np->p_flags & PSTOPPED)
 		return (np);
-	    if (xp == PNULL)
+	    if (xp == NULL)
 		xp = np;
 	}
     return (xp);
@@ -1174,7 +1174,7 @@ pfork(t, wanttty)
 	settimes();
 	pgrp = pcurrjob ? pcurrjob->p_jobid : getpid();
 	pflushall();
-	pcurrjob = PNULL;
+	pcurrjob = NULL;
 	child++;
 	if (setintr) {
 	    setintr = 0;	/* until I think otherwise */
