@@ -6,16 +6,27 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)displayq.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)displayq.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
+
+#include <sys/param.h>
+#include <sys/stat.h>
+
+#include <signal.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include "lp.h"
+#include "lp.local.h"
+#include "pathnames.h"
 
 /*
  * Routines to display the state of the queue.
  */
-
-#include "lp.h"
-#include "pathnames.h"
-
 #define JOBCOL	40		/* column for job # in -l format */
 #define OWNCOL	7		/* start of Owner column in normal */
 #define SIZCOL	62		/* start of Size column in normal */
@@ -43,6 +54,7 @@ char	*head1 = "Total Size\n";
 /*
  * Display the current state of the queue. Format = 1 if long format.
  */
+void
 displayq(format)
 	int format;
 {
@@ -52,7 +64,6 @@ displayq(format)
 	struct queue **queue;
 	struct stat statb;
 	FILE *fp;
-	char c;
 
 	lflag = format;
 	totsize = 0;
@@ -196,6 +207,7 @@ displayq(format)
 /*
  * Print a warning message if there is no daemon present.
  */
+void
 warn()
 {
 	if (sendtorem)
@@ -207,6 +219,7 @@ warn()
 /*
  * Print the header for the short listing format
  */
+void
 header()
 {
 	printf(head0);
@@ -215,11 +228,11 @@ header()
 	printf(head1);
 }
 
+void
 inform(cf)
 	char *cf;
 {
-	register int j, k;
-	register char *cp;
+	register int j;
 	FILE *cfp;
 
 	/*
@@ -277,6 +290,7 @@ inform(cf)
 	}
 }
 
+int
 inlist(name, file)
 	char *name, *file;
 {
@@ -302,8 +316,10 @@ inlist(name, file)
 	return(0);
 }
 
+void
 show(nfile, file, copies)
 	register char *nfile, *file;
+	int copies;
 {
 	if (strcmp(nfile, " ") == 0)
 		nfile = "(standard input)";
@@ -316,6 +332,7 @@ show(nfile, file, copies)
 /*
  * Fill the line with blanks to the specified column
  */
+void
 blankfill(n)
 	register int n;
 {
@@ -326,8 +343,10 @@ blankfill(n)
 /*
  * Give the abbreviated dump of the file names
  */
+void
 dump(nfile, file, copies)
 	char *nfile, *file;
+	int copies;
 {
 	register short n, fill;
 	struct stat lbuf;
@@ -357,8 +376,10 @@ dump(nfile, file, copies)
 /*
  * Print the long info about the file
  */
+void
 ldump(nfile, file, copies)
 	char *nfile, *file;
+	int copies;
 {
 	struct stat lbuf;
 
@@ -368,7 +389,7 @@ ldump(nfile, file, copies)
 	else
 		printf("%-32s", nfile);
 	if (*file && !stat(file, &lbuf))
-		printf(" %ld bytes", lbuf.st_size);
+		printf(" %qd bytes", lbuf.st_size);
 	else
 		printf(" ??? bytes");
 	putchar('\n');
@@ -378,9 +399,11 @@ ldump(nfile, file, copies)
  * Print the job's rank in the queue,
  *   update col for screen management
  */
+void
 prank(n)
+	int n;
 {
-	char line[100];
+	char rline[100];
 	static char *r[] = {
 		"th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"
 	};
@@ -391,9 +414,9 @@ prank(n)
 		return;
 	}
 	if ((n/10)%10 == 1)
-		(void) sprintf(line, "%dth", n);
+		(void)snprintf(rline, sizeof(rline), "%dth", n);
 	else
-		(void) sprintf(line, "%d%s", n, r[n%10]);
-	col += strlen(line);
-	printf("%s", line);
+		(void)snprintf(rline, sizeof(rline), "%d%s", n, r[n%10]);
+	col += strlen(rline);
+	printf("%s", rline);
 }

@@ -6,21 +6,54 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * lpc -- line printer control program -- commands:
  */
 
-#include "lp.h"
+#include <sys/param.h>
 #include <sys/time.h>
+#include <sys/stat.h>
+
+#include <signal.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include "lp.h"
+#include "lp.local.h"
+#include "lpc.h"
+#include "extern.h"
 #include "pathnames.h"
+
+static void	abortpr __P((int));
+static void	cleanpr __P((void));
+static int	doselect __P((struct dirent *));
+static void	upstat __P((char *));
+static int	sortq __P((const void *, const void *));
+static void	unlinkf __P((char *));
+static int	doarg __P((char *));
+static int	touch __P((struct queue *));
+static void	stoppr __P((void));
+static void	prstat __P((void));
+static void	startpr __P((int));
+static void	putmsg __P((int, char **));
+static void	disablepr __P((void));
+static void	enablepr __P((void));
+
 
 /*
  * kill an existing daemon and disable printing.
  */
-abort(argc, argv)
+void
+doabort(argc, argv)
+	int argc;
 	char *argv[];
 {
 	register int c, status;
@@ -56,7 +89,9 @@ abort(argc, argv)
 	}
 }
 
+static void
 abortpr(dis)
+	int dis;
 {
 	register FILE *fp;
 	struct stat stbuf;
@@ -118,6 +153,7 @@ abortpr(dis)
 /*
  * Write a message into the status file.
  */
+static void
 upstat(msg)
 	char *msg;
 {
@@ -145,7 +181,9 @@ upstat(msg)
 /*
  * Remove all spool files and temporaries from the spooling area.
  */
+void
 clean(argc, argv)
+	int argc;
 	char *argv[];
 {
 	register int c, status;
@@ -181,8 +219,9 @@ clean(argc, argv)
 	}
 }
 
-select(d)
-struct direct *d;
+static int
+doselect(d)
+	struct dirent *d;
 {
 	int c = d->d_name[0];
 
@@ -195,11 +234,15 @@ struct direct *d;
  * Comparison routine for scandir. Sort by job number and machine, then
  * by `cf', `tf', or `df', then by the sequence letter A-Z, a-z.
  */
-sortq(d1, d2)
-struct direct **d1, **d2;
+static int
+sortq(a, b)
+	const void *a, *b;
 {
+	struct dirent **d1, **d2;
 	int c1, c2;
 
+	d1 = (struct dirent **)a;
+	d2 = (struct dirent **)b;
 	if (c1 = strcmp((*d1)->d_name + 3, (*d2)->d_name + 3))
 		return(c1);
 	c1 = (*d1)->d_name[0];
@@ -216,11 +259,12 @@ struct direct **d1, **d2;
 /*
  * Remove incomplete jobs from spooling area.
  */
+static void
 cleanpr()
 {
 	register int i, n;
 	register char *cp, *cp1, *lp;
-	struct direct **queue;
+	struct dirent **queue;
 	int nitems;
 
 	bp = pbuf;
@@ -232,7 +276,7 @@ cleanpr()
 		;
 	lp[-1] = '/';
 
-	nitems = scandir(SD, &queue, select, sortq);
+	nitems = scandir(SD, &queue, doselect, sortq);
 	if (nitems < 0) {
 		printf("\tcannot examine spool directory\n");
 		return;
@@ -267,6 +311,7 @@ cleanpr()
      	} while (++i < nitems);
 }
  
+static void
 unlinkf(name)
 	char	*name;
 {
@@ -279,7 +324,9 @@ unlinkf(name)
 /*
  * Enable queuing to the printer (allow lpr's).
  */
+void
 enable(argc, argv)
+	int argc;
 	char *argv[];
 {
 	register int c, status;
@@ -315,6 +362,7 @@ enable(argc, argv)
 	}
 }
 
+static void
 enablepr()
 {
 	struct stat stbuf;
@@ -341,7 +389,9 @@ enablepr()
 /*
  * Disable queuing.
  */
+void
 disable(argc, argv)
+	int argc;
 	char *argv[];
 {
 	register int c, status;
@@ -377,6 +427,7 @@ disable(argc, argv)
 	}
 }
 
+static void
 disablepr()
 {
 	register int fd;
@@ -413,7 +464,9 @@ disablepr()
  * Disable queuing and printing and put a message into the status file
  * (reason for being down).
  */
+void
 down(argc, argv)
+	int argc;
 	char *argv[];
 {
 	register int c, status;
@@ -447,7 +500,9 @@ down(argc, argv)
 	putmsg(argc - 2, argv + 2);
 }
 
+static void
 putmsg(argc, argv)
+	int argc;
 	char **argv;
 {
 	register int fd;
@@ -514,7 +569,9 @@ putmsg(argc, argv)
 /*
  * Exit lpc
  */
+void
 quit(argc, argv)
+	int argc;
 	char *argv[];
 {
 	exit(0);
@@ -523,7 +580,9 @@ quit(argc, argv)
 /*
  * Kill and restart the daemon.
  */
+void
 restart(argc, argv)
+	int argc;
 	char *argv[];
 {
 	register int c, status;
@@ -564,7 +623,9 @@ restart(argc, argv)
 /*
  * Enable printing on the specified printer and startup the daemon.
  */
+void
 start(argc, argv)
+	int argc;
 	char *argv[];
 {
 	register int c, status;
@@ -600,7 +661,9 @@ start(argc, argv)
 	}
 }
 
+static void
 startpr(enable)
+	int enable;
 {
 	struct stat stbuf;
 
@@ -630,7 +693,9 @@ startpr(enable)
 /*
  * Print the status of each queue listed or all the queues.
  */
+void
 status(argc, argv)
+	int argc;
 	char *argv[];
 {
 	register int c, status;
@@ -665,11 +730,12 @@ status(argc, argv)
 /*
  * Print the status of the printer queue.
  */
+static void
 prstat()
 {
 	struct stat stbuf;
 	register int fd, i;
-	register struct direct *dp;
+	register struct dirent *dp;
 	DIR *dirp;
 
 	bp = pbuf;
@@ -728,7 +794,9 @@ prstat()
  * Stop the specified daemon after completing the current job and disable
  * printing.
  */
+void
 stop(argc, argv)
+	int argc;
 	char *argv[];
 {
 	register int c, status;
@@ -764,6 +832,7 @@ stop(argc, argv)
 	}
 }
 
+static void
 stoppr()
 {
 	register int fd;
@@ -806,12 +875,13 @@ time_t	mtime;
 /*
  * Put the specified jobs at the top of printer queue.
  */
+void
 topq(argc, argv)
+	int argc;
 	char *argv[];
 {
-	register int n, i;
+	register int i;
 	struct stat stbuf;
-	register char *cfname;
 	int status, changed;
 
 	if (argc < 3) {
@@ -871,6 +941,7 @@ topq(argc, argv)
  * Reposition the job by changing the modification time of
  * the control file.
  */
+static int
 touch(q)
 	struct queue *q;
 {
@@ -885,6 +956,7 @@ touch(q)
  * Checks if specified job name is in the printer's queue.
  * Returns:  negative (-1) if argument name is not in the queue.
  */
+static int
 doarg(job)
 	char *job;
 {
@@ -953,7 +1025,9 @@ doarg(job)
 /*
  * Enable everything and start printer (undo `down').
  */
+void
 up(argc, argv)
+	int argc;
 	char *argv[];
 {
 	register int c, status;

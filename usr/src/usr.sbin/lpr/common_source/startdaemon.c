@@ -6,27 +6,35 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startdaemon.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)startdaemon.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
+
+
+#include <sys/param.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+
+#include <dirent.h>
+#include <errno.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include "lp.h"
+#include "pathnames.h"
+
+static void perr __P((char *));
 
 /*
  * Tell the printer daemon that there are new files in the spool directory.
  */
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <stdio.h>
-#include "lp.local.h"
-#include "pathnames.h"
-
+int
 startdaemon(printer)
 	char *printer;
 {
 	struct sockaddr_un un;
 	register int s, n;
 	char buf[BUFSIZ];
-	static void perr();
 
 	s = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (s < 0) {
@@ -64,9 +72,7 @@ static void
 perr(msg)
 	char *msg;
 {
-	extern int errno;
 	extern char *name;
-	char *strerror();
 
 	(void)printf("%s: %s: %s\n", name, msg, strerror(errno));
 }

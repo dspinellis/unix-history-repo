@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpf.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpf.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -24,8 +24,10 @@ static char sccsid[] = "@(#)lpf.c	5.4 (Berkeley) %G%";
  *	to try to gain a little speed.
  */
 
-#include <stdio.h>
 #include <signal.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #define MAXWIDTH  132
 #define MAXREP    10
@@ -42,6 +44,7 @@ char	*name;		/* user's login name */
 char	*host;		/* user's machine name */
 char	*acctfile;	/* accounting information file */
 
+int
 main(argc, argv) 
 	int argc;
 	char *argv[];

@@ -12,19 +12,27 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpc.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpc.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
+
+#include <sys/param.h>
+
+#include <dirent.h>
+#include <signal.h>
+#include <setjmp.h>
+#include <syslog.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include "lp.h"
+#include "lpc.h"
+#include "extern.h"
 
 /*
  * lpc -- line printer control program
  */
-#include <stdio.h>
-#include <signal.h>
-#include <ctype.h>
-#include <setjmp.h>
-#include <syslog.h>
-
-#include "lpc.h"
 
 int	fromatty;
 
@@ -32,12 +40,17 @@ char	cmdline[200];
 int	margc;
 char	*margv[20];
 int	top;
-void	intr();
-struct	cmd *getcmd();
 
 jmp_buf	toplevel;
 
+static void		 cmdscanner __P((int));
+static struct cmd	*getcmd __P((char *));
+static void		 intr __P((int));
+static void		 makeargv __P((void));
+
+int
 main(argc, argv)
+	int argc;
 	char *argv[];
 {
 	register struct cmd *c;
@@ -73,8 +86,9 @@ main(argc, argv)
 	}
 }
 
-void
-intr()
+static void
+intr(signo)
+	int signo;
 {
 	if (!fromatty)
 		exit(0);
@@ -84,6 +98,7 @@ intr()
 /*
  * Command parser.
  */
+static void
 cmdscanner(top)
 	int top;
 {
@@ -97,7 +112,7 @@ cmdscanner(top)
 			fflush(stdout);
 		}
 		if (fgets(cmdline, sizeof(cmdline), stdin) == 0)
-			quit();
+			quit(0, NULL);
 		if (cmdline[0] == 0 || cmdline[0] == '\n')
 			break;
 		makeargv();
@@ -118,8 +133,6 @@ cmdscanner(top)
 	}
 	longjmp(toplevel, 0);
 }
-
-extern struct cmd cmdtab[];
 
 struct cmd *
 getcmd(name)
@@ -153,6 +166,7 @@ getcmd(name)
 /*
  * Slice a string up into argc/argv.
  */
+static void
 makeargv()
 {
 	register char *cp;
@@ -180,6 +194,7 @@ makeargv()
 /*
  * Help command.
  */
+void
 help(argc, argv)
 	int argc;
 	char *argv[];

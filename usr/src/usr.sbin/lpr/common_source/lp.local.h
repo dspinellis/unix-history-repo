@@ -4,29 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lp.local.h	5.6 (Berkeley) %G%
+ *	@(#)lp.local.h	5.7 (Berkeley) %G%
  */
 
 /*
  * Possibly, local parameters to the spooling system
  */
-
-/*
- * Magic number mapping for binary files, used by lpr to avoid
- *   printing objects files.
- */
-
-#include <sys/types.h>
-#include <a.out.h>
-#include <ar.h>
-
-#ifndef A_MAGIC1	/* must be a VM/UNIX system */
-#	define A_MAGIC1	OMAGIC
-#	define A_MAGIC2	NMAGIC
-#	define A_MAGIC3	ZMAGIC
-#	undef ARMAG
-#	define ARMAG	0177545
-#endif
 
 /*
  * Defaults for line printer capabilities data base
