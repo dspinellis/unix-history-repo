@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -44,6 +44,7 @@ main(argc, argv)
 	char *subject;
 	char *ef;
 	char nosrc = 0;
+	char isedit = 0;
 	int hdrstop(), (*prevint)();
 	int sigchild();
 	extern int getopt(), optind, opterr;
@@ -209,16 +210,13 @@ Usage: mail [-iInv] [-s subject] [-c cc-addr] [-b bcc-addr] to-addr ...\n\
 	 * the system mailbox, and open up the right stuff.
 	 */
 	if (ef != NOSTR)
-		edit++;
+		isedit++;
 	else
 		ef = "%";
-	if ((ef = expand(ef)) == NOSTR)
+	if ((ef = expand(ef)) == NOSTR || setfile(ef, isedit) < 0)
 		exit(1);		/* error already reported */
-	if (setfile(ef, edit) < 0) {
-		if (edit)
-			perror(ef);
-		else
-			fprintf(stderr, "No mail for %s\n", myname);
+	if (!edit && msgCount == 0) {
+		fprintf(stderr, "No mail for %s\n", myname);
 		exit(1);
 	}
 	if (setjmp(hdrjmp) == 0) {
@@ -233,18 +231,11 @@ Usage: mail [-iInv] [-s subject] [-c cc-addr] [-b bcc-addr] to-addr ...\n\
 		fflush(stdout);
 		signal(SIGINT, prevint);
 	}
-	if (!edit && msgCount == 0) {
-		printf("No mail\n");
-		fflush(stdout);
-		exit(0);
-	}
 	commands();
-	if (!edit) {
-		signal(SIGHUP, SIG_IGN);
-		signal(SIGINT, SIG_IGN);
-		signal(SIGQUIT, SIG_IGN);
-		quit();
-	}
+	signal(SIGHUP, SIG_IGN);
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
+	quit();
 	exit(0);
 }
 

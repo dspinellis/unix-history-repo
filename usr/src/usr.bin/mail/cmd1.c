@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd1.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd1.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -416,7 +416,7 @@ folders()
 
 	if (getfold(dirname) < 0) {
 		printf("No value set for \"folder\"\n");
-		return -1;
+		return 1;
 	}
 	if ((cmd = value("LISTER")) == NOSTR)
 		cmd = "ls";

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "def.h"
@@ -29,7 +29,7 @@ static char sccsid[] = "@(#)cmdtab.c	5.9 (Berkeley) %G%";
 
 extern int type(), preserve(), delete(), undelete(), next(), shell(), schdir();
 extern int save(), help(), headers(), pdot(), respond(), editor();
-extern int edstop(), rexit(), pcmdlist(), sendmail(), from(), copycmd();
+extern int quitcmd(), rexit(), pcmdlist(), sendmail(), from(), copycmd();
 extern int messize(), psalloc(), deltype(), unset(), set(), source();
 extern int pversion(), group(), top(), core(), null(), stouch(), visual();
 extern int swrite(), dosh(), file(), echo(), Respond(), scroll(), ifcmd();
@@ -87,7 +87,7 @@ struct cmd cmdtab[] = {
 	"respond",	respond,	R|I|MSGLIST,	0,	MMNDEL,
 	"edit",		editor,		I|MSGLIST,	0,	MMNORM,
 	"echo",		echo,		M|RAWLIST,	0,	1000,
-	"quit",		edstop,		NOLIST,		0,	0,
+	"quit",		quitcmd,	NOLIST,		0,	0,
 	"list",		pcmdlist,	M|NOLIST,	0,	0,
 	"xit",		rexit,		M|NOLIST,	0,	0,
 	"exit",		rexit,		M|NOLIST,	0,	0,
