@@ -1,24 +1,15 @@
-#	@(#)Makefile.inc	5.10 (Berkeley) %G%
+#	@(#)Makefile.inc	5.11 (Berkeley) %G%
 
-# stdlib sources
+# machine-independent stdlib sources
 .PATH: ${.CURDIR}/${MACHINE}/stdlib ${.CURDIR}/stdlib
 
 SRCS+=	abort.c atexit.c atoi.c atol.c bsearch.c calloc.c div.c exit.c \
 	getenv.c getopt.c getsubopt.c heapsort.c labs.c ldiv.c malloc.c \
 	multibyte.c putenv.c qsort.c radixsort.c rand.c random.c setenv.c \
-	strtol.c strtoul.c system.c
+	strtol.c strtoq.c strtoul.c strtouq.c system.c
 
-.if   (${MACHINE} == "hp300" || ${MACHINE} == "luna68k")
-SRCS+=	abs.s atof.c
-.elif (${MACHINE} == "i386")
-SRCS+=	abs.s atof.c
-.elif (${MACHINE} == "mips")
-SRCS+=	abs.s atof.c
-.elif (${MACHINE} == "tahoe")
-SRCS+=	abs.s atof.s
-.elif (${MACHINE} == "vax")
-SRCS+=	abs.s atof.s
-.endif
+# machine-dependent stdlib sources
+.include "${.CURDIR}/${MACHINE}/stdlib/Makefile.inc"
 
 MAN3+=	abort.0 abs.0 alloca.0 atexit.0 atof.0 atoi.0 atol.0 bsearch.0 \
 	calloc.0 div.0 exit.0 free.0 getenv.0 getopt.0 getsubopt.0 labs.0 \
