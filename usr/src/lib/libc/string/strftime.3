@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)strftime.3	5.2 (Berkeley) %G%
+.\"	@(#)strftime.3	5.3 (Berkeley) %G%
 .\"
 .TH STRFTIME 3 "%Q"
 .AT 3
@@ -77,7 +77,7 @@ is replaced by the abbreviated month name, where the abbreviation is
 the first three characters.
 .TP
 .B %c
-is equivalent to ``%a %b %d %X %Z %Y''.
+is equivalent to ``%m/%d/%y''.
 .TP
 .B %D
 is replaced by the date in the format ``mm/dd/yy''.
@@ -134,7 +134,7 @@ is replaced by the weekday (Sunday as the first day of the week)
 as a decimal number (0-6).
 .TP
 .B %x
-is equivalent to ``%a %b %d %Y''.
+is equivalent to ``%m/%d/%y %H:%M:%S''.
 .TP
 .B %Y
 is replaced by the year with century as a decimal number.
