@@ -1,0 +1,26 @@
+DMESG(8)                  BSD System Manager's Manual                 DMESG(8)
+
+NNAAMMEE
+     ddmmeessgg - display the system message buffer
+
+SSYYNNOOPPSSIISS
+     ddmmeessgg [--MM _c_o_r_e] [--NN _s_y_s_t_e_m]
+
+DDEESSCCRRIIPPTTIIOONN
+     DDmmeessgg displays the contents of the system message buffer.
+
+     The options are as follows:
+
+     --MM      Extract values associated with the name list from the specified
+             core instead of the default ``/dev/kmem''.
+
+     --NN      Extract the name list from the specified system instead of the
+             default ``/vmunix''.
+
+SSEEEE AALLSSOO
+     syslogd(8)
+
+HHIISSTTOORRYY
+     The ddmmeessgg command appeared in 4.0BSD.
+
+4th Berkeley Distribution        June 5, 1993                                1

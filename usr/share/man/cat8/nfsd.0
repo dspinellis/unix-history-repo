@@ -1,0 +1,46 @@
+NFSD(8)                   BSD System Manager's Manual                  NFSD(8)
+
+NNAAMMEE
+     nnffssdd - remote NFS server
+
+SSYYNNOOPPSSIISS
+     nnffssdd [--rruutt] [--nn _n_u_m___s_e_r_v_e_r_s]
+
+DDEESSCCRRIIPPTTIIOONN
+     NNffssdd runs on a server machine to service NFS requests from client ma-
+     chines.  At least one nnffssdd must be running for a machine to operate as a
+     server.
+
+     Unless otherwise specified, four servers for UDP transport are started.
+
+     The following options are available:
+
+     --rr      Register the NFS service with portmap(8) without creating any
+             servers.  This option can be used along with the --uu or --tt options
+             to re-register NFS if the portmap server is restarted.
+
+     --nn      Specifies how many servers to create.
+
+     --tt      Serve TCP NFS clients.
+
+     --uu      Serve UDP NFS clients.
+
+     For example, ``nfsd -u -t 6'' serves UDP and TCP transports using six
+     daemons.
+
+     A server should run enough daemons to handle the maximum level of concur-
+     rency from its clients, typically four to six.
+
+     NNffssdd listens for service requests at the port indicated in the NFS server
+     specification; see _N_e_t_w_o_r_k _F_i_l_e _S_y_s_t_e_m _P_r_o_t_o_c_o_l _S_p_e_c_i_f_i_c_a_t_i_o_n, RFC1094
+     and _N_F_S_: _N_e_t_w_o_r_k _F_i_l_e _S_y_s_t_e_m _V_e_r_s_i_o_n _3 _P_r_o_t_o_c_o_l _S_p_e_c_i_f_i_c_a_t_i_o_n.
+
+     The nnffssdd utility exits 0 on success, and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     nfsstat(1),  nfssvc(2),  mountd(8),  portmap(8)
+
+HHIISSTTOORRYY
+     The nnffssdd utility first appeared in 4.4BSD.
+
+4.4BSD                          March 29, 1995                               1

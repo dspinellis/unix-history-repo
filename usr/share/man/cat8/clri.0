@@ -1,0 +1,29 @@
+CLRI(8)                   BSD System Manager's Manual                  CLRI(8)
+
+NNAAMMEE
+     ccllrrii - clear an inode
+
+SSYYNNOOPPSSIISS
+     ccllrrii _s_p_e_c_i_a_l___d_e_v_i_c_e _i_n_o_d_e___n_u_m_b_e_r _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     CCllrrii iiss oobbssoolleetteedd ffoorr nnoorrmmaall ffiillee ssyysstteemm rreeppaaiirr wwoorrkk bbyy fsck((88))..
+
+     CCllrrii zeros out the inodes with the specified inode number(s) on the
+     filesystem residing on the given _s_p_e_c_i_a_l___d_e_v_i_c_e. The fsck(8) utility is
+     usually run after ccllrrii to reclaim the zero'ed inode(s) and the blocks
+     previously claimed by those inode(s).  Both read and write permission are
+     required on the specified _s_p_e_c_i_a_l___d_e_v_i_c_e.
+
+     The primary purpose of this routine is to remove a file which for some
+     reason is not being properly handled by fsck(8).  Once removed, it is an-
+     ticipated that fsck(8) will be able to clean up the resulting mess.
+
+SSEEEE AALLSSOO
+     fsck(8),  fsdb(8),  icheck(8),  ncheck(8)
+
+BBUUGGSS
+     If the file is open, the work of ccllrrii will be lost when the inode is
+     written back to disk from the inode cache.
+
+4th Berkeley Distribution       April 19, 1994                               1

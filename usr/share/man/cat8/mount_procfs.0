@@ -1,0 +1,129 @@
+MOUNT_PROCFS(8)           BSD System Manager's Manual          MOUNT_PROCFS(8)
+
+NNAAMMEE
+     mmoouunntt__pprrooccffss - mount the process file system
+
+SSYYNNOOPPSSIISS
+     mmoouunntt__pprrooccffss [--oo _o_p_t_i_o_n_s] _/_p_r_o_c _m_o_u_n_t___p_o_i_n_t
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmoouunntt__pprrooccffss command attaches an instance of the process namespace to
+     the global filesystem namespace.  The conventional mount point is _/_p_r_o_c.
+     This command is normally executed by mount(8) at boot time.
+
+     The options are as follows:
+
+     --oo      Options are specified with a --oo flag followed by a comma separat-
+             ed string of options.  See the mount(8) man page for possible op-
+             tions and their meanings.
+
+     The root of the process filesystem contains an entry for each active pro-
+     cess.  These processes are visible as a directory whose name is the pro-
+     cess' pid.  In addition, the special entry _c_u_r_p_r_o_c references the current
+     process.
+
+     Each directory contains several files.
+
+     _c_t_l     a writeonly file which supports a variety of control operations.
+             Control commands are written as strings to the _c_t_l file.  The
+             control commands are:
+             attach  stops the target process and arranges for the sending
+                     process to become the debug control process.
+             detach  continue execution of the target process and remove it
+                     from control by the debug process (which need not be the
+                     sending process).
+             run     continue running the target process until a signal is de-
+                     livered, a breakpoint is hit, or the target process ex-
+                     its.
+             step    single step the target process, with no signal delivery.
+             wait    wait for the target process to come to a steady state
+                     ready for debugging.  The target process must be in this
+                     state before any of the other commands are allowed.
+
+             The string can also be the name of a signal, lower case and with-
+             out the SIG prefix, in which case that signal is delivered to the
+             process (see sigaction(2)).
+
+     _f_i_l_e    A reference to the vnode from which the process text was read.
+             This can be used to gain access to the process' symbol table, or
+             to start another copy of the process.
+
+     _m_e_m     The complete virtual memory image of the process.  Only those ad-
+             dress which exist in the process can be accessed.  Reads and
+             writes to this file modify the process.  Writes to the text seg-
+             ment remain private to the process.
+
+     _n_o_t_e    Not implemented.
+
+     _n_o_t_e_p_g  Not implemented.
+
+     _r_e_g_s    Allows read and write access to the process' register set.  This
+             file contains a binary data structure struct regs defined in
+             _<_m_a_c_h_i_n_e_/_r_e_g_._h_>. _r_e_g_s can only be written when the process is
+
+
+
+
+             stopped.
+
+     _f_p_r_e_g_s  The floating point registers as defined by struct fpregs in
+             _<_m_a_c_h_i_n_e_/_r_e_g_._h_>. _f_p_r_e_g_s is only implemented on machines which
+             have distinct general purpose and floating point register sets.
+
+     _s_t_a_t_u_s  The process status.  This file is readonly and returns a single
+             line containing multiple space-separated fields as follows:
+
+             ++oo   command name
+             ++oo   process id
+             ++oo   parent process id
+             ++oo   process group id
+             ++oo   session id
+             ++oo   _m_a_j_o_r_,_m_i_n_o_r of the controlling terminal, or -1,-1 if there is
+                 no controlling terminal.
+             ++oo   a list of process flags: ctty if there is a controlling ter-
+                 minal, sldr if the process is a session leader, noflags if
+                 neither of the other two flags are set.
+             ++oo   the process start time in seconds and microseconds, comma
+                 separated.
+             ++oo   the user time in seconds and microseconds, comma separated.
+             ++oo   the system time in seconds and microseconds, comma separated.
+             ++oo   the wait channel message
+             ++oo   the process credentials consisting of the effective user id
+                 and the list of groups (whose first member is the effective
+                 group id) all comma separated.
+
+     In a normal debugging environment, where the target is fork/exec'd by the
+     debugger, the debugger should fork and the child should stop itself (with
+     a self-inflicted SIGSTOP for example).  The parent should issue a wait
+     and then an attach command via the appropriate _c_t_l file.  The child pro-
+     cess will receive a SIGTRAP immediately after the call to exec (see
+     execve(2)).
+
+FFIILLEESS
+     /proc/#
+     /proc/curproc
+     /proc/curproc/ctl
+     /proc/curproc/file
+     /proc/curproc/mem
+     /proc/curproc/note
+     /proc/curproc/notepg
+     /proc/curproc/regs
+     /proc/curproc/fpregs
+     /proc/curproc/status
+
+SSEEEE AALLSSOO
+     sigaction(2),  mount(2),  unmount(2),
+
+CCAAVVEEAATTSS
+     No . and _._. entries appear when listing the contents of the _/_p_r_o_c direc-
+     tory.  This makes sense in the context of this filesystem, but is incon-
+     sistent with usual filesystem conventions.  However, it is still possible
+     to refer to both . and _._. in a pathname.
+
+     This filesystem may not be NFS-exported since most of the functionality
+     of procfs requires that state be maintained.
+
+HHIISSTTOORRYY
+     The mmoouunntt__pprrooccffss utility first appeared in 4.4BSD.
+
+4.4BSD                           June 1, 1994                                2

@@ -1,0 +1,60 @@
+BADSECT(8)                BSD System Manager's Manual               BADSECT(8)
+
+NNAAMMEE
+     bbaaddsseecctt - create files to contain bad sectors
+
+SSYYNNOOPPSSIISS
+     //eettcc//bbaaddsseecctt _b_b_d_i_r _s_e_c_t_o_r _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     BBaaddsseecctt makes a file to contain a bad sector.  Normally, bad sectors are
+     made inaccessible by the standard formatter, which provides a forwarding
+     table for bad sectors to the driver; see bad144(8) for details.  If a
+     driver supports the bad blocking standard it is much preferable to use
+     that method to isolate bad blocks, since the bad block forwarding makes
+     the pack appear perfect, and such packs can then be copied with dd(1).
+     The technique used by this program is also less general than bad block
+     forwarding, as bbaaddsseecctt can't make amends for bad blocks in the i-list of
+     file systems or in swap areas.
+
+     On some disks, adding a sector which is suddenly bad to the bad sector
+     table currently requires the running of the standard DEC formatter.  Thus
+     to deal with a newly bad block or on disks where the drivers do not sup-
+     port the bad-blocking standard bbaaddsseecctt may be used to good effect.
+
+     BBaaddsseecctt is used on a quiet file system in the following way: First mount
+     the file system, and change to its root directory.  Make a directory BAD
+     there.  Run bbaaddsseecctt giving as argument the _B_A_D directory followed by all
+     the bad sectors you wish to add.  (The sector numbers must be relative to
+     the beginning of the file system, but this is not hard as the system re-
+     ports relative sector numbers in its console error messages.)  Then
+     change back to the root directory, unmount the file system and run
+     fsck(8) on the file system.  The bad sectors should show up in two files
+     or in the bad sector files and the free list.  Have fsck remove files
+     containing the offending bad sectors, but _d_o _n_o_t have it remove the
+     _B_A_D_/_n_n_n_n_n files.  This will leave the bad sectors in only the BAD files.
+
+     BBaaddsseecctt works by giving the specified sector numbers in a mknod(2) system
+     call, creating an illegal file whose first block address is the block
+     containing bad sector and whose name is the bad sector number.  When it
+     is discovered by fsck it will ask ``HOLD BAD BLOCK ?'' A positive re-
+     sponse will cause fsck to convert the inode to a regular file containing
+     the bad block.
+
+SSEEEE AALLSSOO
+     bad144(8),  fsck(8),  format(8)
+
+DDIIAAGGNNOOSSTTIICCSS
+     BBaaddsseecctt refuses to attach a block that resides in a critical area or is
+     out of range of the file system.  A warning is issued if the block is al-
+     ready in use.
+
+BBUUGGSS
+     If more than one sector which comprise a file system fragment are bad,
+     you should specify only one of them to bbaaddsseecctt, as the blocks in the bad
+     sector files actually cover all the sectors in a file system fragment.
+
+HHIISSTTOORRYY
+     The bbaaddsseecctt command appeared in 4.1BSD.
+
+4th Berkeley Distribution        June 5, 1993                                1

@@ -1,0 +1,42 @@
+SWAPON(8)                 BSD System Manager's Manual                SWAPON(8)
+
+NNAAMMEE
+     sswwaappoonn - specify additional device for paging and swapping
+
+SSYYNNOOPPSSIISS
+     sswwaappoonn --aa
+     sswwaappoonn _s_p_e_c_i_a_l___f_i_l_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     SSwwaappoonn is used to specify additional devices on which paging and swapping
+     are to take place.  The system begins by swapping and paging on only a
+     single device so that only one disk is required at bootstrap time.  Calls
+     to sswwaappoonn normally occur in the system multi-user initialization file
+     _/_e_t_c_/_r_c making all swap devices available, so that the paging and swap-
+     ping activity is interleaved across several devices.
+
+     Normally, the first form is used:
+
+     --aa      All devices marked as ``sw'' swap devices in _/_e_t_c_/_f_s_t_a_b are made
+             available.
+
+     The second form gives individual block devices as given in the system
+     swap configuration table.  The call makes only this space available to
+     the system for swap allocation.
+
+SSEEEE AALLSSOO
+     swapon(2),  fstab(8) init(8) rc(8)
+
+FFIILLEESS
+     /dev/[ru][pk]?b  standard paging devices
+     /etc/fstab       ascii filesystem description table
+
+BBUUGGSS
+     There is no way to stop paging and swapping on a device.  It is therefore
+     not possible to make use of devices which may be dismounted during system
+     operation.
+
+HHIISSTTOORRYY
+     The sswwaappoonn command appeared in 4.0BSD.
+
+4th Berkeley Distribution        June 5, 1993                                1

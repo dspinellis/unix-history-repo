@@ -1,0 +1,41 @@
+NEWLFS(8)                 BSD System Manager's Manual                NEWLFS(8)
+
+NNAAMMEE
+     nneewwllffss - construct a new LFS file system
+
+SSYYNNOOPPSSIISS
+     nneewwllffss --LL [_n_e_w_l_f_s_-_o_p_t_i_o_n_s] _s_p_e_c_i_a_l
+
+DDEESSCCRRIIPPTTIIOONN
+     NNeewwllffss builds a log-structured file system on the specified special de-
+     vice basing its defaults on the information in the disk label.  (Before
+     running nneewwllffss the disk must be labeled using disklabel(8).)
+
+     The following options define the general layout policies.
+
+     --BB          The logical segment size of the file system in bytes.
+
+     --bb _b_l_o_c_k_-_s_i_z_e
+                 The block size of the file system in bytes.
+
+     --LL          Create a log-structured file system (LFS).  This flag is cur-
+                 rently required.
+
+     --mm _f_r_e_e _s_p_a_c_e _%
+                 The percentage of space reserved from normal users; the mini-
+                 mum free space threshold.  The default value used is 10%.
+                 See tunefs(8) for more details on how to set this option.
+
+     --ss _s_i_z_e     The size of the file system in sectors.
+
+SSEEEE AALLSSOO
+     disktab(5),  fs(5),  dumplfs(8),  disklabel(8),  diskpart(8),  tunefs(8)
+
+     M. McKusick, W. Joy, S. Leffler, and R. Fabry, "A Fast File System for
+     UNIX,", _A_C_M _T_r_a_n_s_a_c_t_i_o_n_s _o_n _C_o_m_p_u_t_e_r _S_y_s_t_e_m_s _2, 3, pp 181-197, August
+     1984, (reprinted in the BSD System Manager's Manual).
+
+HHIISSTTOORRYY
+     The nneewwllffss command appeared in 4.4BSD.
+
+4.4BSD                           June 19, 1993                               1

@@ -1,0 +1,49 @@
+MOUNT_CD9660(8)           BSD System Manager's Manual          MOUNT_CD9660(8)
+
+NNAAMMEE
+     mmoouunntt__ccdd99666600 - mount an ISO-9660 filesystem
+
+SSYYNNOOPPSSIISS
+     mmoouunntt__ccdd99666600 [--eeggrr] [--oo _o_p_t_i_o_n_s] _s_p_e_c_i_a_l | _n_o_d_e
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmoouunntt__ccdd99666600 command attaches the ISO-9660 filesystem residing on the
+     device _s_p_e_c_i_a_l to the global filesystem namespace at the location indi-
+     cated by _n_o_d_e. This command is normally executed by mount(8) at boot
+     time.
+
+     The options are as follows:
+
+     --ee      Enable the use of extended attributes.
+
+     --gg      Do not strip version numbers on files.  (By default, if there are
+             files with different version numbers on the disk, only the last
+             one will be listed.)  In either case, files may be opened without
+             explicitly stating a version number.
+
+     --oo      Options are specified with a --oo flag followed by a comma separat-
+             ed string of options.  See the mount(8) man page for possible op-
+             tions and their meanings.
+
+     --rr      Do not use any Rockridge extensions included in the filesystem.
+
+SSEEEE AALLSSOO
+     mount(2),  unmount(2),  fstab(5),  mount(8)
+
+BBUUGGSS
+     The cd9660 filesystem does not support the original "High Sierra"
+     ("CDROM001") format.
+
+     POSIX device node mapping is currently not supported.
+
+     Version numbers are not stripped if Rockridge extensions are in use.  In
+     this case, accessing files that don't have Rockridge names without ver-
+     sion numbers gets the one with the lowest version number and not the one
+     with the highest.
+
+     There is no ECMA support.
+
+HHIISSTTOORRYY
+     The mmoouunntt__ccdd99666600 utility first appeared 4.4BSD.
+
+4th Berkeley Distribution       March 27, 1994                               1
