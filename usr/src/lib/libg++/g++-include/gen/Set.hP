@@ -1,0 +1,88 @@
+// This may look like C code, but it is really -*- C++ -*-
+/* 
+Copyright (C) 1988 Free Software Foundation
+    written by Doug Lea (dl@rocky.oswego.edu)
+
+This file is part of GNU CC.
+
+GNU CC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY.  No author or distributor
+accepts responsibility to anyone for the consequences of using it
+or for whether it serves any particular purpose or works at all,
+unless he says so in writing.  Refer to the GNU CC General Public
+License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+GNU CC, but only under the conditions described in the
+GNU CC General Public License.   A copy of this license is
+supposed to have been given to you along with GNU CC so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  
+*/
+
+
+#ifndef _<T>Set_h
+#ifdef __GNUG__
+#pragma once
+#pragma interface
+#endif
+#define _<T>Set_h 1
+
+#include <Pix.h>
+#include "<T>.defs.h"
+
+class <T>Set
+{
+protected:
+
+  int                   count;
+
+public:
+  virtual              ~<T>Set();
+
+  int                   length();                // current number of items
+  int                   empty();
+
+  virtual Pix           add(<T&> item) = 0;      // add item; return Pix
+  virtual void          del(<T&> item) = 0;      // delete item
+  virtual int           contains(<T&> item);     // is item in set?
+
+  virtual void          clear();                 // delete all items
+
+  virtual Pix           first() = 0;             // Pix of first item or 0
+  virtual void          next(Pix& i) = 0;        // advance to next or 0
+  virtual <T>&          operator () (Pix i) = 0; // access item at i
+
+  virtual int           owns(Pix i);             // is i a valid Pix  ?
+  virtual Pix           seek(<T&> item);         // Pix of item
+
+  void                  operator |= (<T>Set& b); // add all items in b
+  void                  operator -= (<T>Set& b); // delete items also in b
+  void                  operator &= (<T>Set& b); // delete items not in b
+
+  int                   operator == (<T>Set& b);
+  int                   operator != (<T>Set& b);
+  int                   operator <= (<T>Set& b); 
+
+  void                  error(const char* msg);
+  virtual int           OK() = 0;                // rep invariant
+};
+
+#if defined(__OPTIMIZE__) || defined(USE_LIBGXX_INLINES)
+
+inline <T>Set::~<T>Set() {}
+
+inline int <T>Set::length()
+{
+  return count;
+}
+
+inline int <T>Set::empty()
+{
+  return count == 0;
+}
+
+
+#endif
+#endif
