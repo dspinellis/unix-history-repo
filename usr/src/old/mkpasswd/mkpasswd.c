@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)mkpasswd.c	4.5 (Berkeley) 84/10/26";
+static	char *sccsid = "@(#)mkpasswd.c	4.6 (Berkeley) 85/01/10";
 #endif
 
 #include <sys/file.h>
@@ -46,9 +46,12 @@ main(argc, argv)
 #define	COMPACT(e)	tp = pwd->pw_/**/e; while (*cp++ = *tp++);
 		COMPACT(name);
 		COMPACT(passwd);
-		*(int *)cp = pwd->pw_uid; cp += sizeof (int);
-		*(int *)cp = pwd->pw_gid; cp += sizeof (int);
-		*(int *)cp = pwd->pw_quota; cp += sizeof (int);
+		bcopy((char *)&pwd->pw_uid, cp, sizeof (int));
+		cp += sizeof (int);
+		bcopy((char *)&pwd->pw_gid, cp, sizeof (int));
+		cp += sizeof (int);
+		bcopy((char *)&pwd->pw_quota, cp, sizeof (int));
+		cp += sizeof (int);
 		COMPACT(comment);
 		COMPACT(gecos);
 		COMPACT(dir);

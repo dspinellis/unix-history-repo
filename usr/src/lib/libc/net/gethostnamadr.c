@@ -1,4 +1,4 @@
-/*	gethostnamadr.c	4.5	84/08/28	*/
+/*	gethostnamadr.c	4.6	85/01/10	*/
 
 #include <stdio.h>
 #include <netdb.h>
@@ -39,8 +39,10 @@ fetchhost(key)
 	}
 	*ap = (char *)NULL;
 	host.h_aliases = host_aliases;
-	host.h_addrtype = *(int *)cp; cp += sizeof (int);
-	host.h_length = *(int *)cp; cp += sizeof (int);
+	bcopy(cp, (char *)&host.h_addrtype, sizeof (int));
+	cp += sizeof (int);
+	bcopy(cp, (char *)&host.h_length, sizeof (int));
+	cp += sizeof (int);
 	host.h_addr = tp;
 	bcopy(cp, tp, host.h_length);
         return (&host);
