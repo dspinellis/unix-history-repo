@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)sort.c	4.10 (Berkeley) %G%";
+static	char *sccsid = "@(#)sort.c	4.11 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -333,13 +333,21 @@ sort()
 			}
 			*lp++ = cp;
 			len = strlen(cp) + 1; /* null terminate */
-			if(cp[len - 2] != '\n') {
-				diag("line too long (skipped): ", cp);
-				while((c = getc(is)) != EOF && c != '\n')
-					/* throw it away */;
-				--lp;
-				continue;
-			}
+			if(cp[len - 2] != '\n')
+				if (len == L) {
+					diag("line too long (skipped): ", cp);
+					while((c=getc(is)) != EOF && c != '\n')
+						/* throw it away */;
+					--lp;
+					continue;
+				} else {
+					diag("missing newline before EOF in ",
+						f ? f : "standard input");
+					/* be friendly, append a newline */
+					++len;
+					cp[len - 2] = '\n';
+					cp[len - 1] = '\0';
+				}
 			cp += len;
 			--lines;
 			text -= len;
@@ -819,15 +827,6 @@ char **ppa;
 	}
 	return(n);
 }
-
-#ifndef	blank
-blank(c)
-{
-	if(c==' ' || c=='\t')
-		return(1);
-	return(0);
-}
-#endif
 
 #define qsexc(p,q) t= *p;*p= *q;*q=t
 #define qstexc(p,q,r) t= *p;*p= *r;*r= *q;*q=t
