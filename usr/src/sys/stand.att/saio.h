@@ -1,4 +1,4 @@
-/*	saio.h	4.7	%G%	*/
+/*	saio.h	4.8	%G%	*/
 
 /*
  * header file for standalone package
@@ -21,6 +21,7 @@ struct	iob {
 	int	i_cc;
 	int	i_error;
 	int	i_errcnt;
+	int	i_errblk;
 	int	i_active;
 	char	i_buf[MAXBSIZE];
 	union {
@@ -29,11 +30,14 @@ struct	iob {
 	} i_un;
 };
 #define i_fs i_un.ui_fs
+#define NULL 0
 
 #define F_READ		0x1	/* file opened for reading */
 #define F_WRITE		0x2	/* file opened for writing */
 #define F_ALLOC		0x4	/* buffer allocated */
 #define F_FILE		0x8	/* file instead of device */
+#define F_NBSF		0x10	/* no bad sector forwarding */
+#define F_ECCLM		0x20	/* limit the number of bad bits accepted in ecc's */
 /* io types */
 #define	F_RDDATA	0x0100	/* read data */
 #define	F_WRDATA	0x0200	/* write data */
@@ -55,6 +59,18 @@ struct devsw {
 };
 
 struct devsw devsw[];
+
+/* 
+ * device data structure,
+ * used by the ioctl-command SAIODEVDATA ( for disks only)
+ */
+
+struct devdata {
+	int	nsect;	/* number of sectors per track */
+	int	ntrak;	/* number of tracks/surfaces/heads... */
+	int	nspc;	/* number of sectors per cylinder */
+	int	ncyl;	/* number of cylinders */
+};
 
 /*
  * request codes. Must be the same a F_XXX above
@@ -92,6 +108,16 @@ extern	int errno;	/* just like unix */
 #define EECC	14	/* severe ecc error, sector recorded as bad*/
 
 /* ioctl's -- for disks just now */
-#define	SAIOHDR	(('d'<<8)|1)	/* next i/o includes header */
+#define	SAIOHDR		(('d'<<8)|1)	/* next i/o includes header */
 #define	SAIOCHECK	(('d'<<8)|2)	/* next i/o checks data */
 #define	SAIOHCHECK	(('d'<<8)|3)	/* next i/o checks header & data */
+#define	SAIONOBAD	(('d'<<8)|4)	/* inhibit bad sector forwarding */
+#define	SAIODOBAD	(('d'<<8)|5)	/* do bad sector forwarding */
+#define	SAIOECCLIM	(('d'<<8)|6)	/* report sectors as bad if more than
+					 * 5 bits are bad in ecc */
+#define	SAIOECCUNL	(('d'<<8)|7)	/* use standard ecc procedures */
+#define SAIODEVDATA	(('d'<<8)|8)	/* get device data */
+
+/* codes for sector header word 1 */
+#define HDR1_FMT22	0x1000	/* standard 16 bit format */
+#define HDR1_OKSCT	0xc000	/* sector ok */
