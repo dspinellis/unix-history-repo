@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vm_meter.c	7.1 (Berkeley) %G%
+ *	@(#)vm_meter.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -398,7 +398,7 @@ next:
 
 			case SSLEEP:
 			case SSTOP:
-				if (p->p_pri <= PZERO)
+				if (p->p_pri <= PZERO && p->p_stat == SSLEEP)
 					nrun++;
 				if (p->p_flag & SPAGE)
 					total.t_pw++;
