@@ -21,6 +21,8 @@ static char sccsid[] = "@(#)rlogin.c	5.11 (Berkeley) %G%";
 #include <sys/errno.h>
 #include <sys/file.h>
 #include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include <sys/wait.h>
 
 #include <netinet/in.h>
@@ -34,7 +36,12 @@ static char sccsid[] = "@(#)rlogin.c	5.11 (Berkeley) %G%";
 #include <netdb.h>
 #include <setjmp.h>
 
-char	*index(), *rindex(), *malloc(), *getenv();
+/* concession to sun */
+# ifndef SIGUSR1
+# define SIGUSR1 30
+# endif SIGUSR1
+
+char	*index(), *rindex(), *malloc(), *getenv(), *strcat(), *strcpy();
 struct	passwd *getpwuid();
 char	*name;
 int	rem;
@@ -49,9 +56,35 @@ extern	int errno;
 int	lostpeer();
 int	nosigwin;
 jmp_buf	winsizechanged;
-struct	winsize winsize;
 #endif sun
+struct	winsize winsize;
 int	sigwinch();
+
+/*
+ * The following routine provides compatibility (such as it is)
+ * between 4.2BSD Suns and others.  Suns have only a `ttysize',
+ * so we convert it to a winsize.
+ */
+#ifdef sun
+int
+get_window_size(fd, wp)
+	int fd;
+	struct winsize *wp;
+{
+	struct ttysize ts;
+	int error;
+
+	if ((error = ioctl(0, TIOCGSIZE, &ts)) != 0)
+		return (error);
+	wp->ws_row = ts.ts_lines;
+	wp->ws_col = ts.ts_cols;
+	wp->ws_xpixel = 0;
+	wp->ws_ypixel = 0;
+	return (0);
+}
+#else sun
+#define get_window_size(fd, wp)	ioctl(fd, TIOCGWINSZ, wp)
+#endif sun
 
 main(argc, argv)
 	int argc;
@@ -116,20 +149,11 @@ another:
 	}
 	cp = getenv("TERM");
 	if (cp)
-		strcpy(term, cp);
+		(void) strcpy(term, cp);
 	if (ioctl(0, TIOCGETP, &ttyb) == 0) {
-		strcat(term, "/");
-		strcat(term, speeds[ttyb.sg_ospeed]);
+		(void) strcat(term, "/");
+		(void) strcat(term, speeds[ttyb.sg_ospeed]);
 	}
-#ifdef sun
-	(void) ioctl(0, TIOCGSIZE, &winsize);
-#else sun
-	if (!nosigwin && ioctl(0, TIOCGWINSZ, &winsize) == 0) {
-		cp = index(term, '\0');
-		sprintf(cp, "/%u,%u,%u,%u", winsize.ws_row, winsize.ws_col,
-		    winsize.ws_xpixel, winsize.ws_ypixel);
-	}
-	signal(SIGPIPE, lostpeer);
         rem = rcmd(&host, sp->s_port, pwd->pw_name,
 	    name ? name : pwd->pw_name, term, 0);
         if (rem < 0)
@@ -168,20 +192,20 @@ doit()
 	int exit();
 	struct sgttyb sb;
 
-	ioctl(0, TIOCGETP, (char *)&sb);
+	(void) ioctl(0, TIOCGETP, (char *)&sb);
 	defflags = sb.sg_flags;
 	tabflag = defflags & TBDELAY;
 	defflags &= ECHO | CRMOD;
 	deferase = sb.sg_erase;
 	defkill = sb.sg_kill;
-	ioctl(0, TIOCLGET, (char *)&deflflags);
-	ioctl(0, TIOCGETC, (char *)&deftc);
+	(void) ioctl(0, TIOCLGET, (char *)&deflflags);
+	(void) ioctl(0, TIOCGETC, (char *)&deftc);
 	notc.t_startc = deftc.t_startc;
 	notc.t_stopc = deftc.t_stopc;
-	ioctl(0, TIOCGLTC, (char *)&defltc);
-	signal(SIGINT, exit);
-	signal(SIGHUP, exit);
-	signal(SIGQUIT, exit);
+	(void) ioctl(0, TIOCGLTC, (char *)&defltc);
+	(void) signal(SIGINT, SIG_IGN);
+	setsignal(SIGHUP, exit);
+	setsignal(SIGQUIT, exit);
 	child = fork();
 	if (child == -1) {
 		perror("rlogin: fork");
@@ -190,7 +214,7 @@ doit()
 	signal(SIGINT, SIG_IGN);
 	mode(1);
 	if (child == 0) {
-		if (reader() == 0) {
+		if (reader(oldmask) == 0) {
 			prf("Connection closed.");
 			exit(0);
 		}
@@ -198,19 +222,48 @@ doit()
 		prf("\007Connection closed.");
 		exit(3);
 	}
-	signal(SIGCHLD, catchild);
+
+	/*
+	 * We may still own the socket, and may have a pending SIGURG
+	 * (or might receive one soon) that we really want to send to
+	 * the reader.  Set a trap that simply copies such signals to
+	 * the child.
+	 */
+	(void) signal(SIGURG, copytochild);
+	(void) signal(SIGUSR1, writeroob);
+	(void) sigsetmask(oldmask);
+	(void) signal(SIGCHLD, catchild);
 	writer();
 	prf("Closed connection.");
 	done(0);
 }
 
+/*
+ * Trap a signal, unless it is being ignored.
+ */
+setsignal(sig, act)
+	int sig, (*act)();
+{
+	int omask = sigblock(sigmask(sig));
+
+	if (signal(sig, act) == SIG_IGN)
+		(void) signal(sig, SIG_IGN);
+	(void) sigsetmask(omask);
+}
+
 done(status)
 	int status;
 {
+	int w;
 
 	mode(0);
-	if (child > 0 && kill(child, SIGKILL) >= 0)
-		wait((int *)0);
+	if (child > 0) {
+		/* make sure catchild does not snap it up */
+		(void) signal(SIGCHLD, SIG_DFL);
+		if (kill(child, SIGKILL) >= 0)
+			while ((w = wait((union wait *)0)) > 0 && w != child)
+				/*void*/;
+	}
 	exit(status);
 }
 
@@ -220,14 +273,14 @@ catchild()
 	int pid;
 
 again:
-	pid = wait3(&status, WNOHANG|WUNTRACED, 0);
+	pid = wait3(&status, WNOHANG|WUNTRACED, (struct rusage *)0);
 	if (pid == 0)
 		return;
 	/*
 	 * if the child (reader) dies, just quit
 	 */
 	if (pid < 0 || pid == child && !WIFSTOPPED(status))
-		done(status.w_termsig | status.w_retcode);
+		done((int)(status.w_termsig | status.w_retcode));
 	goto again;
 }
 
@@ -308,7 +361,7 @@ writer()
 				continue;
 			}
 			if (c != cmdchar)
-				write(rem, &cmdchar, 1);
+				(void) write(rem, &cmdchar, 1);
 		}
 		if (write(rem, &c, 1) == 0) {
 			prf("line gone");
@@ -338,7 +391,7 @@ register char c;
 		*p++ = c;
 	*p++ = '\r';
 	*p++ = '\n';
-	write(1, buf, p - buf);
+	(void) write(1, buf, p - buf);
 }
 
 stop(cmdc)
@@ -347,26 +400,13 @@ stop(cmdc)
 	struct winsize ws;
 
 	mode(0);
-	signal(SIGCHLD, SIG_IGN);
-	kill(cmdc == defltc.t_suspc ? 0 : getpid(), SIGTSTP);
-	signal(SIGCHLD, catchild);
+	(void) signal(SIGCHLD, SIG_IGN);
+	(void) kill(cmdc == defltc.t_suspc ? 0 : getpid(), SIGTSTP);
+	(void) signal(SIGCHLD, catchild);
 	mode(1);
 	sigwinch();			/* check for size changes */
 }
 
-#ifdef sun
-sigwinch()
-{
-	struct ttysize ws;
-
-	if (dosigwinch && ioctl(0, TIOCGSIZE, &ws) == 0 &&
-	    bcmp(&ws, &winsize, sizeof (ws))) {
-		winsize = ws;
-		sendwindow();
-	}
-}
-
-#else sun
 sigwinch()
 {
 	struct winsize ws;
@@ -377,7 +417,6 @@ sigwinch()
 		longjmp(winsizechanged, 1);
 	}
 }
-#endif
 
 oob()
 {
@@ -414,15 +453,15 @@ oob()
 	if (!eight && (mark & TIOCPKT_NOSTOP)) {
 		notc.t_stopc = -1;
 		notc.t_startc = -1;
-		ioctl(0, TIOCSETC, (char *)&notc);
+		(void) ioctl(0, TIOCSETC, (char *)&notc);
 	}
 	if (!eight && (mark & TIOCPKT_DOSTOP)) {
 		notc.t_stopc = deftc.t_stopc;
 		notc.t_startc = deftc.t_startc;
-		ioctl(0, TIOCSETC, (char *)&notc);
+		(void) ioctl(0, TIOCSETC, (char *)&notc);
 	}
 	if (mark & TIOCPKT_FLUSHWRITE) {
-		ioctl(1, TIOCFLUSH, (char *)&out);
+		(void) ioctl(1, TIOCFLUSH, (char *)&out);
 		for (;;) {
 			if (ioctl(rem, SIOCATMARK, &atmark) < 0) {
 				perror("ioctl");
@@ -444,6 +483,11 @@ oob()
 		rcvcnt = 0;
 		longjmp(rcvtop, 1);
 	}
+
+	/*
+	 * oob does not do FLUSHREAD (alas!)
+	 */
+
 	/*
 	 * If we filled the receive buffer while a read was pending,
 	 * longjmp to the top to restart appropriately.  Don't abort
@@ -456,7 +500,8 @@ oob()
 /*
  * reader: read from remote: line -> 1
  */
-reader()
+reader(oldmask)
+	int oldmask;
 {
 #if !defined(BSD) || BSD < 43
 	int pid = -getpid();
@@ -467,10 +512,12 @@ reader()
 	char *bufp = rcvbuf;
 
 	signal(SIGURG, oob);
-	signal(SIGTTOU, SIG_IGN);
-	fcntl(rem, F_SETOWN, pid);
+	(void) signal(SIGTTOU, SIG_IGN);
+	(void) signal(SIGURG, oob);
 	ppid = getppid();
+	(void) fcntl(rem, F_SETOWN, pid);
 	(void) setjmp(rcvtop);
+	(void) sigsetmask(oldmask);
 	for (;;) {
 		while ((remaining = rcvcnt - (bufp - rcvbuf)) > 0) {
 			rcvstate = WRITING;
@@ -504,8 +551,8 @@ mode(f)
 	struct sgttyb sb;
 	int	lflags;
 
-	ioctl(0, TIOCGETP, (char *)&sb);
-	ioctl(0, TIOCLGET, (char *)&lflags);
+	(void) ioctl(0, TIOCGETP, (char *)&sb);
+	(void) ioctl(0, TIOCLGET, (char *)&lflags);
 	switch (f) {
 
 	case 0:
@@ -534,23 +581,25 @@ mode(f)
 	default:
 		return;
 	}
-	ioctl(0, TIOCSLTC, (char *)ltc);
-	ioctl(0, TIOCSETC, (char *)tc);
-	ioctl(0, TIOCSETN, (char *)&sb);
-	ioctl(0, TIOCLSET, (char *)&lflags);
+	(void) ioctl(0, TIOCSLTC, (char *)ltc);
+	(void) ioctl(0, TIOCSETC, (char *)tc);
+	(void) ioctl(0, TIOCSETN, (char *)&sb);
+	(void) ioctl(0, TIOCLSET, (char *)&lflags);
 }
 
 /*VARARGS*/
 prf(f, a1, a2, a3)
 	char *f;
 {
+
 	fprintf(stderr, f, a1, a2, a3);
 	fprintf(stderr, CRLF);
 }
 
 lostpeer()
 {
-	signal(SIGPIPE, SIG_IGN);
+
+	(void) signal(SIGPIPE, SIG_IGN);
 	prf("\007Connection closed.");
 	done(1);
 }
