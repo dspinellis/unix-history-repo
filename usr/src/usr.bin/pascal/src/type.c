@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)type.c 1.4 %G%";
+static	char sccsid[] = "@(#)type.c 1.5 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -200,11 +200,13 @@ gtype(r)
 	}
 	line = oline;
 	w = lwidth(np);
+#ifndef PC
 	if (w >= TOOMUCH) {
 		error("Storage requirement of %s exceeds the implementation limit of %d by %d bytes",
 			nameof(np), TOOMUCH-1, w-TOOMUCH+1);
 		np = NIL;
 	}
+#endif
 	return (np);
 }
 
@@ -340,12 +342,14 @@ tyary(r)
 			np = NIL;
 			continue;
 		}
+#ifndef PC
 		if (tp->class == RANGE && bytes(tp->range[0], tp->range[1]) > 2) {
 #ifndef PI1
 			error("Value of dimension specifier too large or small for this implementation");
 #endif
 			continue;
 		}
+#endif
 		tp = nlcopy(tp);
 		i++;
 		ltp->chain = tp;
