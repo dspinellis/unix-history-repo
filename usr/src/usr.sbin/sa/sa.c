@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)sa.c	4.5 (Berkeley) 83/10/07";
+static	char *sccsid = "@(#)sa.c	4.5 (Berkeley) 83/10/14";
 #endif
 
 /*
@@ -633,7 +633,7 @@ char *f;
 		y = fbuf.ac_mem;
 		z = expand(fbuf.ac_io);
 		if (uflg) {
-			printf("%3d%6.1fcp %6dmem %6dio %.14s\n",
+			printf("%3d %6d cpu %8u mem %6d io %.14s\n",
 			    fbuf.ac_uid, x, y, z, fbuf.ac_comm);
 			continue;
 		}
