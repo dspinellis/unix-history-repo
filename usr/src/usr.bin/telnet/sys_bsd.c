@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_bsd.c	1.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_bsd.c	1.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -26,6 +26,7 @@ static char sccsid[] = "@(#)sys_bsd.c	1.15 (Berkeley) %G%";
 
 #if	defined(unix)
 
+#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -335,10 +336,7 @@ int fd;
     int myPid;
 
     myPid = getpid();
-#if	defined(NOT43)
-    myPid = -myPid;
-#endif	/* defined(NOT43) */
-    ioctl(fd, SIOCSPGRP, (char *)&myPid);	/* set my pid */
+    fcntl(fd, F_SETOWN, myPid);
 }
 #endif	/*defined(TN3270)*/
 
