@@ -1,4 +1,4 @@
-/*	if_il.c	4.15	82/12/14	*/
+/*	if_il.c	4.16	82/12/16	*/
 
 #include "il.h"
 
@@ -26,14 +26,12 @@
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
-#include "../vaxif/if_ilreg.h"
+#include "../vaxif/if_ether.h"
 #include "../vaxif/if_il.h"
+#include "../vaxif/if_ilreg.h"
 #include "../vaxif/if_uba.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
-
-#define	ILMTU	1500
-#define	ILMIN	(60-14)
 
 int	ilprobe(), ilattach(), ilrint(), ilcint();
 struct	uba_device *ilinfo[NIL];
@@ -109,7 +107,7 @@ ilattach(ui)
 
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "il";
-	ifp->if_mtu = ILMTU;
+	ifp->if_mtu = ETHERMTU;
 	ifp->if_net = ui->ui_flags;
 
 	/*
@@ -195,7 +193,7 @@ ilinit(unit)
 	int s;
 
 	if (if_ubainit(&is->is_ifuba, ui->ui_ubanum,
-	    sizeof (struct il_rheader), (int)btoc(ILMTU)) == 0) { 
+	    sizeof (struct il_rheader), (int)btoc(ETHERMTU)) == 0) { 
 		printf("il%d: can't initialize\n", unit);
 		is->is_if.if_flags &= ~IFF_UP;
 		return;
@@ -227,7 +225,7 @@ ilinit(unit)
 	while ((addr->il_csr & IL_CDONE) == 0)
 		;
 	addr->il_bar = is->is_ifuba.ifu_r.ifrw_info & 0xffff;
-	addr->il_bcr = sizeof(struct il_rheader) + ILMTU + 6;
+	addr->il_bcr = sizeof(struct il_rheader) + ETHERMTU + 6;
 	addr->il_csr =
 		((is->is_ifuba.ifu_r.ifrw_info >> 2) & IL_EUA)|ILC_RCV|IL_RIE;
 	while ((addr->il_csr & IL_CDONE) == 0)
@@ -274,8 +272,8 @@ ilstart(dev)
 	 * For security, it might be wise to zero out the added bytes,
 	 * but we're mainly interested in speed at the moment.
 	 */
-	if (len - sizeof(struct il_xheader) < ILMIN)
-		len = ILMIN + sizeof(struct il_xheader);
+	if (len - sizeof(struct ether_header) < ETHERMIN)
+		len = ETHERMIN + sizeof(struct ether_header);
 	if (is->is_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(is->is_ifuba.ifu_uba, is->is_ifuba.ifu_w.ifrw_bdp);
 	addr->il_bar = is->is_ifuba.ifu_w.ifrw_info & 0xffff;
@@ -313,7 +311,7 @@ ilcint(unit)
 	 */
 	if (is->is_flags & ILF_RCVPENDING) {
 		addr->il_bar = is->is_ifuba.ifu_r.ifrw_info & 0xffff;
-		addr->il_bcr = sizeof(struct il_rheader) + ILMTU + 6;
+		addr->il_bcr = sizeof(struct il_rheader) + ETHERMTU + 6;
 		addr->il_csr =
 		  ((is->is_ifuba.ifu_r.ifrw_info >> 2) & IL_EUA)|ILC_RCV|IL_RIE;
 		while ((addr->il_csr & IL_CDONE) == 0)
@@ -366,7 +364,8 @@ ilrint(unit)
 		UBAPURGE(is->is_ifuba.ifu_uba, is->is_ifuba.ifu_r.ifrw_bdp);
 	il = (struct il_rheader *)(is->is_ifuba.ifu_r.ifrw_addr);
 	len = il->ilr_length - sizeof(struct il_rheader);
-	if ((il->ilr_status&(ILFSTAT_A|ILFSTAT_C)) || len < 46 || len > ILMTU) {
+	if ((il->ilr_status&(ILFSTAT_A|ILFSTAT_C)) || len < 46 ||
+	    len > ETHERMTU) {
 		is->is_if.if_ierrors++;
 #ifdef notdef
 		if (is->is_if.if_ierrors % 100 == 0)
@@ -380,14 +379,15 @@ ilrint(unit)
 	 * get true type from first 16-bit word past data.
 	 * Remember that type was trailer by setting off.
 	 */
+	il->ilr_type = ntohs((u_short)il->ilr_type);
 #define	ildataaddr(il, off, type)	((type)(((caddr_t)((il)+1)+(off))))
-	if (il->ilr_type >= ILPUP_TRAIL &&
-	    il->ilr_type < ILPUP_TRAIL+ILPUP_NTRAILER) {
-		off = (il->ilr_type - ILPUP_TRAIL) * 512;
-		if (off >= ILMTU)
+	if (il->ilr_type >= ETHERPUP_TRAIL &&
+	    il->ilr_type < ETHERPUP_TRAIL+ETHERPUP_NTRAILER) {
+		off = (il->ilr_type - ETHERPUP_TRAIL) * 512;
+		if (off >= ETHERMTU)
 			goto setup;		/* sanity */
-		il->ilr_type = *ildataaddr(il, off, u_short *);
-		resid = *(ildataaddr(il, off+2, u_short *));
+		il->ilr_type = ntohs(*ildataaddr(il, off, u_short *));
+		resid = ntohs(*(ildataaddr(il, off+2, u_short *)));
 		if (off + resid > len)
 			goto setup;		/* sanity */
 		len = off + resid;
@@ -412,7 +412,7 @@ ilrint(unit)
 	switch (il->ilr_type) {
 
 #ifdef INET
-	case ILPUP_IPTYPE:
+	case ETHERPUP_IPTYPE:
 		schednetisr(NETISR_IP);
 		inq = &ipintrq;
 		break;
@@ -440,7 +440,7 @@ setup:
 		return;
 	}
 	addr->il_bar = is->is_ifuba.ifu_r.ifrw_info & 0xffff;
-	addr->il_bcr = sizeof(struct il_rheader) + ILMTU + 6;
+	addr->il_bcr = sizeof(struct il_rheader) + ETHERMTU + 6;
 	addr->il_csr =
 		((is->is_ifuba.ifu_r.ifrw_info >> 2) & IL_EUA)|ILC_RCV|IL_RIE;
 	while ((addr->il_csr & IL_CDONE) == 0)
@@ -461,7 +461,7 @@ iloutput(ifp, m0, dst)
 	int type, dest, s, error;
 	register struct il_softc *is = &il_softc[ifp->if_unit];
 	register struct mbuf *m = m0;
-	register struct il_xheader *il;
+	register struct ether_header *il;
 	register int off;
 
 	switch (dst->sa_family) {
@@ -472,14 +472,14 @@ iloutput(ifp, m0, dst)
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		if (off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
-			type = ILPUP_TRAIL + (off>>9);
+			type = ETHERPUP_TRAIL + (off>>9);
 			m->m_off -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = ILPUP_IPTYPE;
-			*(mtod(m, u_short *) + 1) = m->m_len;
+			*mtod(m, u_short *) = htons((u_short)ETHERPUP_IPTYPE);
+			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
 			goto gottrailertype;
 		}
-		type = ILPUP_IPTYPE;
+		type = ETHERPUP_IPTYPE;
 		off = 0;
 		goto gottype;
 #endif
@@ -509,7 +509,7 @@ gottype:
 	 * allocate another.
 	 */
 	if (m->m_off > MMAXOFF ||
-	    MMINOFF + sizeof (struct il_xheader) > m->m_off) {
+	    MMINOFF + sizeof (struct ether_header) > m->m_off) {
 		m = m_get(M_DONTWAIT, MT_HEADER);
 		if (m == 0) {
 			error = ENOBUFS;
@@ -517,24 +517,24 @@ gottype:
 		}
 		m->m_next = m0;
 		m->m_off = MMINOFF;
-		m->m_len = sizeof (struct il_xheader);
+		m->m_len = sizeof (struct ether_header);
 	} else {
-		m->m_off -= sizeof (struct il_xheader);
-		m->m_len += sizeof (struct il_xheader);
+		m->m_off -= sizeof (struct ether_header);
+		m->m_len += sizeof (struct ether_header);
 	}
-	il = mtod(m, struct il_xheader *);
+	il = mtod(m, struct ether_header *);
 	if ((dest &~ 0xff) == 0)
-		bcopy((caddr_t)ilbroadcastaddr, (caddr_t)il->ilx_dhost, 6);
+		bcopy((caddr_t)ilbroadcastaddr, (caddr_t)il->ether_dhost, 6);
 	else {
 		u_char *to = dest & 0x8000 ? is->is_stats.ils_addr : il_ectop;
 
-		bcopy((caddr_t)to, (caddr_t)il->ilx_dhost, 3);
-		il->ilx_dhost[3] = (dest>>8) & 0x7f;
-		il->ilx_dhost[4] = (dest>>16) & 0xff;
-		il->ilx_dhost[5] = (dest>>24) & 0xff;
+		bcopy((caddr_t)to, (caddr_t)il->ether_dhost, 3);
+		il->ether_dhost[3] = (dest>>8) & 0x7f;
+		il->ether_dhost[4] = (dest>>16) & 0xff;
+		il->ether_dhost[5] = (dest>>24) & 0xff;
 	}
-	bcopy((caddr_t)is->is_stats.ils_addr, (caddr_t)il->ilx_shost, 6);
-	il->ilx_type = type;
+	bcopy((caddr_t)is->is_stats.ils_addr, (caddr_t)il->ether_shost, 6);
+	il->ether_type = htons((u_short)type);
 
 	/*
 	 * Queue message on interface, and start output if interface
