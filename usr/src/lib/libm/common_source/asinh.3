@@ -1,0 +1,32 @@
+From Prof. Kahan at UC at Berkeley
+.TH ASINH 3M "8 May 1985"
+.UC 4
+.SH NAME
+asinh, acosh, atanh \- inverse hyperbolic functions
+.SH SYNOPSIS
+.nf
+.B #include <math.h>
+.PP
+.B double asinh(x)
+.B double x;
+.PP
+.B double acosh(x)
+.B double x;
+.PP
+.B double atanh(x)
+.B double x;
+.fi
+.SH DESCRIPTION
+These functions compute the designated inverse hyperbolic functions for real
+arguments.
+.SH SEE ALSO
+intro(3M)
+.SH DIAGNOSTICS
+.I Acosh
+returns the reserved operand on the VAX if the argument is less than 1.
+.PP
+.I Atanh
+returns the reserved operand on the VAX if the argument has absolute value
+bigger than or equal to 1.
+.SH AUTHOR
+W. Kahan, Kwok-Choi Ng
