@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	4.1 82/04/02";
+static char sccsid[] = "@(#)rlogin.c	4.2 82/04/06";
 #endif
 
 #include <stdio.h>
@@ -115,7 +115,7 @@ struct tchars deftchars;
 struct tchars notchars = { 0377, 0377, 'q'&037, 's'&037, 0377, 0377 };
 struct ltchars defltchars;
 struct ltchars noltchars = { 0377, 0377, 0377, 0377, 0377, 0377 };
-char defkill, deferase;
+char defkill, deferase, defflags;
 
 cumain()
 {
@@ -128,6 +128,7 @@ cumain()
 	gtty(0, &stbuf);
 	defkill = stbuf.sg_kill;
 	deferase = stbuf.sg_erase;
+	defflags = stbuf.sg_flags & (ECHO | CRMOD);
 	ioctl(0, TIOCGETC, &deftchars);
 	ioctl(0, TIOCGLTC, &defltchars);
 	signal(SIGINT, exit);
@@ -570,7 +571,7 @@ mode(f)
 	ioctl(0, TIOCGETP, &stbuf);
 	if (f == 0) {
 		stbuf.sg_flags &= ~CBREAK;
-		stbuf.sg_flags |= ECHO|CRMOD;
+		stbuf.sg_flags |= defflags;
 		ioctl(0, TIOCSETC, &deftchars);
 		ioctl(0, TIOCSLTC, &defltchars);
 		stbuf.sg_kill = defkill;
