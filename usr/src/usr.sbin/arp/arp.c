@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)arp.c	5.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)arp.c	5.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -98,20 +98,24 @@ set(argc, argv)
 
 	argc -= 2;
 	argv += 2;
-	hp = gethostbyname(host);
-	if (hp == NULL) {
-		fprintf(stderr, "arp: %s: unknown host\n", host);
-		return;
-	}
 	bzero((caddr_t)&ar, sizeof ar);
-	ar.arp_pa.sa_family = AF_INET;
 	sin = (struct sockaddr_in *)&ar.arp_pa;
-	bcopy((char *)hp->h_addr, (char *)&sin->sin_addr, sizeof sin->sin_addr);
+	sin->sin_family = AF_INET;
+	sin->sin_addr.s_addr = inet_addr(host);
+	if (sin->sin_addr.s_addr == -1) {
+		hp = gethostbyname(host);
+		if (hp == NULL) {
+			fprintf(stderr, "arp: %s: unknown host\n", host);
+			return;
+		}
+		bcopy((char *)hp->h_addr, (char *)&sin->sin_addr,
+		    sizeof sin->sin_addr);
+	}
 	ea = (u_char *)ar.arp_ha.sa_data;
 	if (ether_aton(eaddr, ea))
 		return;
 	ar.arp_flags = ATF_PERM;
-	while(argc-- > 0) {
+	while (argc-- > 0) {
 		if (strncmp(argv[0], "temp", 4) == 0)
 			ar.arp_flags &= ~ATF_PERM;
 		if (strncmp(argv[0], "pub", 3) == 0)
@@ -146,15 +150,20 @@ get(host)
 	u_char *ea;
 	int s;
 
-	hp = gethostbyname(host);
-	if (hp == NULL) {
-		fprintf(stderr, "arp: %s: unknown host\n", host);
-		exit(1);
-	}
 	bzero((caddr_t)&ar, sizeof ar);
 	ar.arp_pa.sa_family = AF_INET;
 	sin = (struct sockaddr_in *)&ar.arp_pa;
-	sin->sin_addr = *(struct in_addr *)hp->h_addr;
+	sin->sin_family = AF_INET;
+	sin->sin_addr.s_addr = inet_addr(host);
+	if (sin->sin_addr.s_addr == -1) {
+		hp = gethostbyname(host);
+		if (hp == NULL) {
+			fprintf(stderr, "arp: %s: unknown host\n", host);
+			exit(1);
+		}
+		bcopy((char *)hp->h_addr, (char *)&sin->sin_addr,
+		    sizeof sin->sin_addr);
+	}
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
                 perror("arp: socket");
@@ -192,15 +201,20 @@ delete(host)
 	struct sockaddr_in *sin;
 	int s;
 
-	hp = gethostbyname(host);
-	if (hp == NULL) {
-		fprintf(stderr, "arp: %s: unknown host\n", host);
-		exit(1);
-	}
 	bzero((caddr_t)&ar, sizeof ar);
 	ar.arp_pa.sa_family = AF_INET;
 	sin = (struct sockaddr_in *)&ar.arp_pa;
-	bcopy((char *)hp->h_addr, (char *)&sin->sin_addr, sizeof sin->sin_addr);
+	sin->sin_family = AF_INET;
+	sin->sin_addr.s_addr = inet_addr(host);
+	if (sin->sin_addr.s_addr == -1) {
+		hp = gethostbyname(host);
+		if (hp == NULL) {
+			fprintf(stderr, "arp: %s: unknown host\n", host);
+			exit(1);
+		}
+		bcopy((char *)hp->h_addr, (char *)&sin->sin_addr,
+		    sizeof sin->sin_addr);
+	}
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
                 perror("arp: socket");
@@ -236,6 +250,7 @@ dump(kernel, mem)
 	struct arptab *at;
 	struct hostent *hp;
 	char *host;
+	int bynumber = 0;
 
 	nlist(kernel, nl);
 	if(nl[X_ARPTAB_SIZE].n_type == 0) {
@@ -268,12 +283,18 @@ dump(kernel, mem)
 	for (; arptab_size-- > 0; at++) {
 		if (at->at_iaddr.s_addr == 0 || at->at_flags == 0)
 			continue;
-		hp = gethostbyaddr((caddr_t)&at->at_iaddr, sizeof at->at_iaddr,
-			AF_INET);
+		if (bynumber == 0)
+			hp = gethostbyaddr((caddr_t)&at->at_iaddr,
+			    sizeof at->at_iaddr, AF_INET);
+		else
+			hp = 0;
 		if (hp)
 			host = hp->h_name;
-		else
+		else {
 			host = "?";
+			if (h_errno == TRY_AGAIN)
+				bynumber = 1;
+		}
 		printf("%s (%s) at ", host, inet_ntoa(at->at_iaddr));
 		if (at->at_flags & ATF_COM)
 			ether_print(at->at_enaddr);
