@@ -11,7 +11,7 @@
 # using "sendbug 4bsd-bugs@BERKELEY", to the authors.
 #
 
-# @(#)cbrt.s	1.1 (ELEFUNT) %G%
+# @(#)cbrt.s	1.1 (Berkeley) 5/23/85; 1.2 (ucb.elefunt) %G%
 
 # double cbrt(double arg)
 # W. Kahan, 10/13/80. revised 1/13/84 for keeping sign symmetry

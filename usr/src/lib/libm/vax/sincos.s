@@ -11,7 +11,7 @@
 # using "sendbug 4bsd-bugs@BERKELEY", to the authors.
 #
 
-# @(#)sincos.s	1.1 (ELEFUNT) %G%
+# @(#)sincos.s	1.1 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%
 
 #  This is the implementation of Peter Tang's double precision  
 #  sine and cosine for the VAX using Bob Corbett's argument reduction.

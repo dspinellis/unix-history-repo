@@ -11,7 +11,7 @@
  * using "sendbug 4bsd-bugs@BERKELEY", to the authors.
  *
  *
- * @(#)sqrt.s	1.1 (ELEFUNT) %G%
+ * @(#)sqrt.s	1.1 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%
  *
  * double sqrt(arg)   revised August 15,1982
  * double arg;

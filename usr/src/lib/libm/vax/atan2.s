@@ -11,7 +11,7 @@
 # using "sendbug 4bsd-bugs@BERKELEY", to the authors.
 #
 
-# @(#)atan2.s	1.1 (ELEFUNT) %G%
+# @(#)atan2.s	1.2 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%
 
 # ATAN2(Y,X)
 # RETURN ARG (X+iY)

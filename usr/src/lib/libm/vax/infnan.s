@@ -10,7 +10,7 @@
  * their  experiences (good or bad) with these elementary function  codes,
  * using "sendbug 4bsd-bugs@BERKELEY", to the authors.
  *
- * @(#)infnan.s	1.1 (ELEFUNT) %G%
+ * @(#)infnan.s	1.1 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%
  *
  * infnan(arg) int arg;
  * where arg :=    EDOM	if result is  NaN
