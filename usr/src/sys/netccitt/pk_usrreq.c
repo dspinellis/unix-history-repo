@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_usrreq.c	7.11 (Berkeley) %G%
+ *	@(#)pk_usrreq.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -439,22 +439,25 @@ register struct mbuf *m;
 	bzero ((caddr_t)newp, sizeof (*newp));
 
 	newp -> x25_family = AF_CCITT;
+	newp -> x25_len = sizeof(*newp);
 	newp -> x25_opts.op_flags = (oldp -> xaddr_facilities & X25_REVERSE_CHARGE)
 		| X25_MQBIT | X25_OLDSOCKADDR;
 	if (oldp -> xaddr_facilities & XS_HIPRIO)	/* Datapac specific */
 		newp -> x25_opts.op_psize = X25_PS128;
 	bcopy ((caddr_t)oldp -> xaddr_addr, newp -> x25_addr,
-		(unsigned)min (oldp -> xaddr_len, sizeof (newp -> x25_addr) - 1));
-	bcopy ((caddr_t)oldp -> xaddr_proto, newp -> x25_udata, 4);
-	newp -> x25_udlen = 4;
-
+	       (unsigned)min (oldp -> xaddr_len, sizeof (newp -> x25_addr) - 1));
+	if (bcmp ((caddr_t)oldp -> xaddr_proto, newp -> x25_udata, 4) != 0) {
+		bcopy ((caddr_t)oldp -> xaddr_proto, newp -> x25_udata, 4);
+		newp -> x25_udlen = 4;
+	}
 	ocp = (caddr_t)oldp -> xaddr_userdata;
 	ncp = newp -> x25_udata + 4;
 	while (*ocp && ocp < (caddr_t)oldp -> xaddr_userdata + 12) {
+		if (newp -> x25_udlen == 0)
+			newp -> x25_udlen = 4;
 		*ncp++ = *ocp++;
 		newp -> x25_udlen++;
 	}
-
 	bcopy ((caddr_t)newp, mtod (m, char *), sizeof (*newp));
 	m -> m_len = sizeof (*newp);
 }
@@ -488,8 +491,9 @@ register struct mbuf *m;
 	}
 
 	bcopy (newp -> x25_udata, (caddr_t)oldp -> xaddr_proto, 4);
-	bcopy (newp -> x25_udata + 4, (caddr_t)oldp -> xaddr_userdata,
-		(unsigned)(newp -> x25_udlen - 4));
+	if (newp -> x25_udlen > 4)
+		bcopy (newp -> x25_udata + 4, (caddr_t)oldp -> xaddr_userdata,
+			(unsigned)(newp -> x25_udlen - 4));
 
 	bcopy ((caddr_t)oldp, mtod (m, char *), sizeof (*oldp));
 	m -> m_len = sizeof (*oldp);
