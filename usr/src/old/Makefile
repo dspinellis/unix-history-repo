@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.42 (Berkeley) %G%
+#	@(#)Makefile	5.43 (Berkeley) %G%
 
 # These programs are the only ones in src/old that we believe are worth
 # installing on the system.  (Most of the other programs in src/old don't
@@ -6,7 +6,7 @@
 # replacements prove to have compatibility or stability problems.
 
 SUBDIR=	awk compact cpp crypt ed eqn lex make more ms od \
-	pr refer roff sed sh sort sum symorder tar tbl test \
+	pr refer roff sed sh sum symorder tar tbl test \
 	tmac which yacc
 
 .if   (${MACHINE} == "hp300")
