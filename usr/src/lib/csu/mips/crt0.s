@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)crt0.s	8.1 (Berkeley) %G%
+ *	@(#)crt0.s	8.2 (Berkeley) %G%
  */
 
 #include <machine/regdef.h>
@@ -66,10 +66,6 @@ eprol:
 	break	0
 	.set	reorder
 END(start)
-
-LEAF(__main)
-	j	ra
-END(__main)
 
 #ifndef MCRT0
 LEAF(moncontrol)
