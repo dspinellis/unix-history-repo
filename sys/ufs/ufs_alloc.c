@@ -30,15 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ufs_alloc.c	7.26 (Berkeley) 5/2/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00106
- * --------------------         -----   ----------------------
- *
- * 28 Mar 93    Chris Torek     Fix contiguous block allocation.
- *
+ *	from: @(#)ufs_alloc.c	7.26 (Berkeley) 5/2/91
+ *	$Id$
  */
 
 #include "param.h"

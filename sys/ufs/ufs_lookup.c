@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ufs_lookup.c	7.33 (Berkeley) 5/19/91
+ *	from: @(#)ufs_lookup.c	7.33 (Berkeley) 5/19/91
+ *	$Id$
  */
 
 #include "param.h"

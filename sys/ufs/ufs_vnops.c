@@ -30,18 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ufs_vnops.c	7.64 (Berkeley) 5/16/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         3       00147
- * --------------------         -----   ----------------------
- *
- * 27 Nov 92	Bruce Evans		Fixed access()
- * 20 Aug 92	David Greenman		Fixed incorrect setting of B_AGE after
- *					each read to improve cache performance
- * 20 Apr 93	Paul Kranenburg		Detect and prevent kernel deadlocks in
- *					VM system
+ *	from: @(#)ufs_vnops.c	7.64 (Berkeley) 5/16/91
+ *	$Id$
  */
 
 #include "param.h"

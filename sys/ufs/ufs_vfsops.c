@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ufs_vfsops.c	7.56 (Berkeley) 6/28/91
+ *	from: @(#)ufs_vfsops.c	7.56 (Berkeley) 6/28/91
+ *	$Id$
  */
 
 #include "param.h"

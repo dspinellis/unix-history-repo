@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ufs_subr.c	7.13 (Berkeley) 6/28/90
+ *	from: @(#)ufs_subr.c	7.13 (Berkeley) 6/28/90
+ *	$Id$
  */
 
 #ifdef KERNEL

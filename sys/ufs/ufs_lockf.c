@@ -33,15 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ufs_lockf.c	7.7 (Berkeley) 7/2/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00169
- * --------------------         -----   ----------------------
- *
- * 04 Jun 93	Paul Kranenburg		Fix dangling pointer in lockf struct
- *
+ *	from: @(#)ufs_lockf.c	7.7 (Berkeley) 7/2/91
+ *	$Id$
  */
 
 #include "param.h"

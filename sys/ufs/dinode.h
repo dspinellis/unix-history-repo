@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)dinode.h	7.10 (Berkeley) 5/8/91
+ *	from: @(#)dinode.h	7.10 (Berkeley) 5/8/91
+ *	$Id$
  */
 
 /*

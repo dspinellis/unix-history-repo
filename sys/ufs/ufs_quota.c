@@ -33,8 +33,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ufs_quota.c	7.11 (Berkeley) 6/21/91
+ *	from: @(#)ufs_quota.c	7.11 (Berkeley) 6/21/91
+ *	$Id$
  */
+
 #include "param.h"
 #include "kernel.h"
 #include "systm.h"

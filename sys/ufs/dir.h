@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)dir.h	7.10 (Berkeley) 3/25/91
+ *	from: @(#)dir.h	7.10 (Berkeley) 3/25/91
+ *	$Id$
  */
 
 #ifndef _DIR_H_
