@@ -1,0 +1,327 @@
+From jkf Tue Apr 13 00:12:22 1982
+To: /na/doe/jkf/lispnews
+Subject: new features
+
+ In response to requests from franz users, these enhancements have been
+made:
+
+In Lisp 38.07,  if the lisp variable 'displace-macros' is set to non-nil,
+then when a macro expansion is done by the evaluator, the resulting
+expansion replaces the original call.  This means that macro expansion
+is only done once.  
+
+In Liszt 8.03, the 'function' function is open coded.  If you have
+	(function (lambda ....))
+in your code then the lambda expression is compiled as a separate function
+and the result of the function call is a 'bcd' object which points
+to that compiled lambda.
+
+
+
+From jkf Sun Apr 18 13:16:46 1982
+To: local-lisp
+Subject: opus 38.09
+
+ The new features of this version are:
+	If the load function ends up fasl'ing in a file, then load will
+  do what is necessary to insure that the new functions are linked in
+  correctly. Previously, if you turned on the transfer tables with
+  (sstatus translink on) or (sstatus translink t) and then fasl'ed in
+  functions which already existed, the old versions of the functions
+  would still be used, unless you did (sstatus translink on) yourself.
+  Now this is done automatically.
+
+      tyi now accepts a second argument which is the object to return
+  upon eof.  -1 is the default.
+
+     (pp-form 'g_obj ['p_port]) should be used instead of $prpr
+ for pretty printing a form.
+
+     The storage allocator and collector has been modified to add
+ two new data types: vector and vector immediate.  They are not in
+ their final form so I suggest that you not try to use them. 
+ However, be on the lookout for garbage collection bugs.
+
+
+
+From jkf Wed Apr 21 07:45:54 1982
+To: local-lisp
+Subject: liszt 8.04
+
+  the new features of liszt 8.04 are:
+
+1) init files:
+    Before liszt begins compiling, it looks for an init file to load in.
+    It first searches in the current directory, and then it searches
+    your home directory (getenv 'HOME).
+    It looks for file names:
+	.lisztrc.o  .lisztrc.l  lisztrc.o lisztrc.l
+    It loads only the first one it finds.
+
+2) interrupt handling
+    If you interrupt liszt  (with ^C typically), it will remove its
+    temporary file and exit.
+
+3) preallocation of space
+    It preallocates space in order to reduce the number of gc's done
+    during compiling.
+
+	
+	
+
+
+From jkf Wed Apr 21 13:47:50 1982
+To: local-lisp
+Subject: lisp opus 38.10
+
+ lisp will now look for a lisprc in a way similar to liszt.
+
+ It will first search in . and then in $HOME
+ It will look for the file .lisprc or lisprc ending with .o, .l and then
+just .lisprc or lisprc.
+
+ Shortly, it will only look for files ending in .l and .o since we don't
+want to encourage files with non-standard filename extensions.
+
+
+ 
+
+
+From jkf Wed Apr 21 23:40:59 1982
+To: local-lisp
+Subject: lisp opus 38.11
+
+ I finally got sick of showstack and baktrace and rewrote them in lisp,
+rincorporating some of the features people have been requesting.
+Showstack now works as follows:
+	(showstack) : show all interesting forms.  Forms resulting from
+		      the trace package are not printed as well as 
+		      extraneous calls to eval.  In the form printed,
+		      the special form <**> means 'the previous expression
+		      printed'.  prinlevel and prinlength are set to 
+		      reasonable values to prevent the expression from
+		      getting too large
+	(showstack t) : same as above but print all expressions.
+	(showstack 5) : print only the first 5 expressions. of course, 5
+		      is not the only possible numeric argument.
+	(showstack lev 3) : set prinlevel to 3 before printing
+	(showstack len 4) : set prinlength to 4 before printing
+ the above arguments can be used in combination.
+
+The default value of prinlevel is showstack-prinlevel, that of prinlength
+is showstack-prinlength.  the default showstack printer is the
+value of showstack-printer (default is 'print').
+
+baktrace accepts the same arguments as showstack, but it ignores the
+prinlevel and prinlength arguments.
+
+
+
+
+From jkf Sat Apr 24 08:55:18 1982
+To: local-lisp
+Subject: lisp opus 38.12, liszt 8.05
+
+  these changes and enhancements were made:
+
+1) the function 'function' in the interpreter acts just like 'quote'
+   In the compiler, 'function' will act like 'quote' unless the
+   argument is a lambda expression, in which case liszt will replace
+   the lambda expression with a unique symbol.  That unique symbol's
+   function cell will contain a compiled version of the lambda 
+   expression.   These changes will make Franz compatible with Maclisp
+   type lisps, as far as the treatment of 'function'
+
+2) Mechanisms were added to permit user written C or Fortran code to call 
+   lisp code. Everything isn't quite ready yet.
+
+3) Signal was fixed so that if you ask for a signal to be ignored, the
+   operating system will be notified.  The correct way to fork a lisp
+   is now:
+	(cond ((fork) (signal 2 (prog1 (signal 2) (wait)))))
+
+4) You can select the default function trace uses to print the arguments and
+   results.  Just lambda bind trace-printer to the name of the function
+   you want it to use.  The standard trace-printer sets prinlevel and
+   prinlength to the values of trace-prinlevel and trace-prinlength before
+   printing.  By default, trace-prinlevel is 4, and trace-prinlength is 5
+
+
+   
+
+
+From jkf Sun Apr 25 23:46:16 1982
+To: local-lisp
+Subject: lisp opus 38.13
+
+  Functions 1+ and 1- are now part of the interpreter, rather than
+being made equivalent to add1 and sub1.
+
+
+
+From jkf Wed Apr 28 09:52:43 1982
+To: local-lisp
+Subject: Opus 38.14
+
+  Has these new features:
+	1) the message [load filename] will appear before load
+	   reads in a lisp source file.  This can be disabled by
+	   setting $ldprint to nil.
+	2) a function 'truename' as been added.  It takes a port
+	   and returns the name of the file associated with that port.
+	   It returns a string if there is a file associated with
+	   the port, otherwise it returns nil.
+
+
+
+From jkf Wed Apr 28 10:36:34 1982
+To: local-lisp
+Subject: more on opus 38.14
+
+ $ldprint is lambda bound to nil during the loading of the lisprc file.
+
+
+
+
+From jkf Wed May  5 08:30:00 1982
+To: local-lisp
+Subject: opus 38.15
+
+ a minor modification: 'makhunk' is now more efficient.
+
+
+From jkf Wed May  5 20:56:40 1982
+To: local-lisp
+Subject: Opus 38.16
+
+ A new function was added:
+	(hunk-to-list 'h_hunk) 
+	returns the elements of h_hunk as a list.
+
+ Also, the error message printed when an oversized print name is encountered
+has been improved.
+
+
+
+From jkf Fri May  7 20:03:40 1982
+To: local-lisp
+Subject: Liszt version 8.06
+
+
+ Local declarations are now supported.  You can say:
+(defun foo (a b)
+   (declare (special a))
+   ... body ...)
+
+and the special declaration for 'a' will affect the body of function
+foo only.  The 'a' which is an argument to foo will also be special
+in this case.    Declarations may be 
+ 1) at the top level, not within a function body.
+ 2) at the beginning of a  'lambda' body.
+ 3) at the beginning of a 'prog' body
+ 4) at the beginning of a 'do' body.
+
+'the beginning' means either the first, second or third form in the body.
+When the compiler is searching for declarations, it will not macroexpand.
+
+
+ Fixnum declarations now have meaning.  If you do
+	(declare (fixnum i j))
+then
+	(greaterp i  j)  will be converted to (>& i j)
+
+ The declare function is now defined in the compiler.  Previously,
+the only way to declare something was for the compiler to 'compile'
+the declaration form.  Now, if you load or fasl in a file with
+a declare statement in it, the declare statement will have the
+proper effect in the compiler.
+
+
+ (function (lambda () ...)), (function (nlambda () ...)) and
+ (function (lexpr () ...))  are all supported.
+
+
+
+From jkf Wed May 12 08:15:37 1982
+To: local-lisp
+Subject: Lisp Opus 38.17
+
+ ... has a minor bug fix:  The port returned by 'fileopen' will now print
+correctly.
+
+
+
+From jkf  Tue May 25 06:18:04 1982
+Date: 25-May-82 06:17:51-PDT (Tue)
+From: jkf
+Subject: opus 38.18
+Via: ucbkim.EtherNet (V3.100 [3/27/82]); 25-May-82 06:18:04-PDT (Tue)
+To: local-lisp
+
+  The msg macro will now evaluate all atom arguments except the ones 
+for carriage control (N B).  Thus if you used (msg foo) you should
+now use (msg "foo").
+
+
+
+From jkf Thu May 27 08:29:29 1982
+To: local-lisp
+Subject: liszt 8.08
+
+ Fixes a bug in the code which converts generic arithmetic to fixnum only
+arithmetic.   Liszt was converting from generic to fixnum operators based on
+the first argument only due to a typo in the code.
+
+ 
+
+
+From jkf Wed Jun  9 07:25:19 1982
+To: local-lisp
+Subject: lisp Opus 38.20
+
+  There is now a character macro for reading hexadecimal.
+  #x1f = #X1f = #X1F = 31
+  #x-1f = -31
+  
+
+
+From jkf Thu Jun 17 15:42:54 1982
+To: local-lisp
+Subject: Lisp Opus 38.21
+
+  Has two routines for interfacing with termcap.  These routines were
+written by morris djavaher and are meant to be called by lisp programs
+which have yet to be installed.
+
+
+
+
+From uucp@NPRDC Fri Jun 18 19:03:11 1982
+From uucp@NPRDC Fri Jun 18 18:58:39 1982
+From: uucp at NPRDC
+>From davidson Fri Jun 18 18:56:30 1982 remote from sdcsvax
+Date: 18 June 1982 1856-PDT (Friday)
+Reply-To: davidson <sdcsvax!davidson@nprdc>
+To:  franz-friends@berkeley
+Subject: wanted: lisp shells
+
+I am looking for lisp packages which allow lisp to serve
+as a shell for UNIX.  Please let me know if you have such
+a package, or if you know of someone else who does.
+
+Thank you,
+
+Greg Davidson
+
+
+From jkf  Tue Jun 22 09:09:25 1982
+Date: 22-Jun-82 09:09:13-PDT (Tue)
+From: jkf
+Subject: opus 38.22
+Via: ucbkim.EtherNet (V3.120 [6/17/82]); 22-Jun-82 09:09:25-PDT (Tue)
+To: local-lisp
+
+  setq with no arguments will now return nil.
+  
+
+

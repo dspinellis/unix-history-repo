@@ -1,0 +1,340 @@
+Tue Jun 22 08:39:01 1982 by jkf
+	fixed ../Makefile so lisp can be installed in official distribution
+	(now: version 38.22)
+	
+Fri Jun 18 13:56:14 1982 by jkf
+	fixed bug in setq which occured when setq was given no arguments
+	
+Thu Jun 17 15:37:11 1982 by jkf
+	added two low level functions for doing termlib.
+	    termcapinit, termcapexe
+	fixed a bug in memory use reporter
+	(now: version 38.21)
+	
+Wed Jun  9 07:21:03 1982 by jkf
+	added the #x, #X character macro which reads hex.  Reads digits
+	0-9,a-f,A-F and allows a preceeding minus sign.
+	(now: version 38.20)
+	
+Thu May 27 14:38:15 1982 by jkf
+	fixed bug in the code to reset the translinks after a load or
+	fasl.
+	file affected: common1.l
+	(now: version 38.19)
+	
+Tue May 25 06:17:51 1982 by jkf
+	fixed the msg macro so that all atoms are evaled and printed
+	(now: version: 38.18)
+	
+Wed May 12 13:36:20 1982 by jkf
+	fixed bug in fileopen (lam8.c) in which it failed to store
+	the name of the file opened.   
+	(now: version 38.17)
+
+Wed May  5 20:37:39 1982 by jkf
+	added function hunk-to-list which takes a hunk as an argument
+	and returns a list.
+	The error message which is printed when a too large print name
+	is encountered was improved.
+	(now: version 38.16)
+
+Wed May  5 20:20:10 1982 by jkf
+	sped up makhunk in common1.l.  Used =& instead of equal
+	(now: version 38.15)
+
+Wed Apr 28 09:37:45 1982 by jkf
+	if $ldprint is non-nil, then load will print [load filename]
+	before it does a load of a lisp source file.
+	file affected: common1.l
+	(now: version 38.14)
+
+Mon Apr 26 21:29:35 1982 by jkf
+	added the truename function
+    	files affected: lam1.c, sysat.c h/funcs.h
+
+Sun Apr 25 21:44:21 1982 by jkf
+	improved error message for fixnum interpreted functions.
+	added fixnum functions 1+ and 1-
+	files affected: lam4.c, sysat.c, h/lfuncs.h
+	(now: version 38.13)
+
+Sat Apr 24 08:39:01 1982 by jkf
+	Changed 'function' so that it works exactly like 'quote' 
+	(in the interpreter).  This was necessary to preserve equivalence
+	with liszt which now always returns a symbol for 'function',
+	not a binary object.   This also makes the handling of 'function'
+	compatible with Maclisp type lisps.
+	(now: version 38.12)
+
+Fri Apr 23 14:03:13 1982 by sklower
+	modified Ifcall to push a frame on the stack to indicate
+	that lisp is calling fortran: F_TO_FORT. Another identifier,
+	F_TO_LISP is pushed when coming from fortran to lisp.  The
+	purpose of this is mainly to indicate when the current values
+	of np and lbot should be used.
+	files affected: inits.c, eval2.c and most likely others.
+
+Fri Apr 23 12:34:39 1982 by jkf
+	fixed 'signal' so that it tells the operating system to
+	ignore ignored signals, rather than just putting a notation
+	in the sigacts array.  This is important if you want
+	waiting processes to ignore signals
+	file affected: lam6.c
+
+Wed Apr 21 23:59:41 1982 by jkf
+	write function int:showstack which returns one showstack
+	frame.  then wrote showstack and baktrace in lisp.
+	files affected: lam3.c, sysat.c, lfuncs.h, common2.l
+	(now: version 38.11)
+
+Wed Apr 21 13:41:25 1982 by jkf
+	the read-in-lisprc function will now act like the liszt. it
+	will search first in . then in $HOME.  It will search
+	first for .o then .l then "" (soon to be removed).
+	the name it will look for are .lisprc and lisprc
+	(now: version 38.10)
+
+Sun Apr 18 12:51:06 1982 by jkf
+	added functions to access parts of a filestat structure
+	file affected: common2.l
+	(now: version 38.09)
+
+Sun Apr 18 12:46:22 1982 by jkf
+	added the function (pp-form 'g_form ['p_port]) which
+	should be used instead of $prpr.  $prpr will be removed
+	but for now, it also exists
+	file affected: pp.l
+
+Sat Apr 17 14:03:30 1982 by jkf
+	modified tyi in lam6.c so that it will take an optional second
+	argument which is the value to return upon eof.
+ 	file affected: lam6.c
+
+Sat Apr 17 12:53:18 1982 by jkf
+	modified load in common1.l, so that if a fasl is done when the
+	translinks are turned on, the new functions fasl'ed will be
+	linked in.  Previously, you would have to explictly relink the
+	tables after fasl'ing in or else the old functions would be
+	used.  files affected: common1.l, toplevel.l (autoloading)
+
+Tue Apr 13 14:32:11 1982 by jkf
+	added vector and vectori data types.
+	files affected:Talloc.c, lam8.c, io.c, sysat.c, lam1.c
+	    data.c, Orderit.s,  h/global.h, h/lfuncs.h, h/sigtab.h
+	will describe the new functions once they stabilize
+
+Tue Apr 13 09:26:12 1982 by jkf
+	short circuit recursive evaluation of arguments to lambdas if
+	  the arguments are bound atoms or int's or strings.
+	  file affected: eval.c
+	(now: version 38.08)
+
+Tue Apr 13 00:00:08 1982 by jkf
+	if the lisp variable 'displace-macros' is non-nil, then when
+	  a macro expansion is done, the resulting expansion replaces
+	  the definition.  
+	  files affected: eval.c, sysat.c, h/sigtab.h
+	(now: version 38.07)
+
+Mon Apr 12 10:32:21 1982 by jkf
+	keith made changes to these files in response to kashtan's work
+   	to get franz working under vms:
+		<to be filled in>
+	fixed filestat to produce ctime.  also modified filestat: fcns.
+		files affected: lam8.c, common2.l
+	(now: version 38.06)
+
+Tue Apr  6 13:07:13 1982 by jkf
+	vertical tab was listed as 9. in charmac, it should be 11.
+	(now: version 38.05)
+
+Sun Apr  4 12:13:40 1982 by jkf
+	qfuncl.c: preserved r0 across call to Undeff. This caused a
+	    obscure error after a call to an autoloaded function from
+	    compiled code. (fix l38.3)
+	eval.c: modified function Undeff to insure that it only returned
+	    a symbol. Otherwise qlinker would do the wrong thing.
+	    (fix l38.3)
+	toplevel.l: made a better error message if autoloading  a file
+	    didn't work correctly.  Not important enough to send out a
+	    fix.
+	(now version: 38.04)
+
+Thu Apr  1 11:09:37 1982 by jkf
+	fixed bug in append2args (fix l38.2)
+	added filestat:* functions to common2.l to access filestat
+	  info.  They should probably be macros.
+	modified C coded filestat to return all the stat information
+	(now: version 38.03)
+
+Wed Mar 31 08:13:45 1982 by jkf
+	In order to keep track of which version has which fixes in it,
+	I've added a file version.l to /usr/lib/lisp.  This sets two 
+	variables:
+   		franz-minor-version-number: reflects the particular edit
+		this-lisp-version-built: ctime string set when lisp loaded
+	(now: version 38.02)
+
+Tue Mar 30 08:43:01 1982 by jkf
+	fixed bug in qfuncl.c (address of port_name).  Fixed distribution
+	source.   (now: version 38.01)
+
+Fri Mar 19 11:17:12 1982 by jkf
+	make distribution. (now: version 38.00)
+
+Fri Mar 19 11:16:33 1982 by jkf
+	fix bug in makeenv. it wasn't protecting a dtpr from gc while
+	building the environment.
+
+Tue Mar 16 10:55:47 1982 by jkf
+	backquote will now correctly handle `(a \, b) resulting in
+	the list (a |,| b)
+
+Mon Mar 15 21:40:23 1982 by jkf
+	add Ibindvars and Iunbindvars to permit progv to be open compiled.
+	Functions are in lam7.c, and nfasl.c is modified to put those 
+	entry points in the symbol table.
+
+Mon Mar 15 21:39:56 1982 by jkf
+	Allow concat to generate full size strings
+
+Sun Mar 14 15:58:50 1982 by jkf
+	added setting of initial values for Standard-Input, Standard-Output
+	and Standard-Error.  These symbols should be considered read-only by
+	the user.  Originally they were set in the lisp code, but because
+	the standard input was changed while the lisp code was fasled in,
+	Standard-Input was never set correctly.
+
+Tue Feb 23 10:26:56 1982 by jkf
+	fixed bug in allocator (next_one in Talloc.c).  If a symbol
+	was allocated and there were non left, next_one incorrectly
+	assumed that symbols were not gc'ed and thus failed to 
+	trigger a gc.
+
+Tue Feb 16 11:34:56 1982 by jkf
+	In order to use the new reader, the setsyntax function was 
+	written in lisp to use symbolic character types.  the 
+	getsyntax function was also written in lisp and it uses
+	the new int:getsyntax function written in C.
+
+Tue Feb 16 11:32:34 1982 by sklower
+	the reader was modified to look at the bits of the character code
+	independently.  Infix splicing and non splicing macros were added.
+	Other readtable functions were changed: explode, print.
+	
+	
+Tue Feb 16 11:03:22 1982 by jkf
+	changed to opus 38
+
+Fri Feb 12 16:06:03 1982 by jkf
+	fixed bug in eval.  if a function was interpreted, its definition
+	was not stacked, the code assuming that the function would
+	not redefine itself.  this is a poor assumption, so the code was
+	changed to stack the function definiton
+
+Tue Feb  9 22:37:48 1982 by jkf
+	fixed bug in bignum division, routine calqhat (in assembler).
+	Problem was an incorrect rendering of step D3 of knuths
+	bignum division algorithm.  It would fail very rarely.
+
+Sun Feb  7 13:16:26 1982 by jkf
+	fixed bug in fasl (file nfasl.c), whereby if more than 500
+	functions were defined, it would scribble in memory, usually
+	causing a 'bad format for fasl file' error.  The limit is 
+	now 2000 and if that is exceeded, an error message will be 
+	produced.
+
+Fri Dec 25 21:46:20 1981 by jkf
+	fixed bug in macrox, whereby if a macro function did a read
+	from another port, that port would be used when the macro 
+	returned
+
+Fri Dec 25 18:57:13 1981 by jkf
+	fixed bug in readlist so that even if an error occurs during the
+	readlist, the file descriptor will be de-allocated.
+	Also fixed a bug which caused the mkstFI function fail to realize
+	where were no more file descriptors left.
+	file affected: lam6.c
+
+Fri Dec 25 18:53:04 1981 by jkf
+	modified the sharp sign macro in /usr/lib/lisp/backquote.l so that
+	users can add there own handlers to the sharp sign macro.  There
+	are many examples of the defsharp macro in backquote.l and
+	documentation as well.
+
+Fri Dec 25 18:49:58 1981 by jkf
+	when allocating a large amount of space, now only MAXCLEAR is
+	cleared at once with blzero.  This limit exists due to the
+	limitations of the vax hardware (and the movc5 instruction)
+	file affected: Talloc.c
+
+Sun Dec 13 17:47:46 1981 by jkf
+	converted qfuncl.s to be pre-processable by the C preprocessor.
+	It is now named qfuncl.c and it has been re-entered into
+	SCCS.  The old file: qfuncl.s is still sccs get'able.
+	qfuncl.c, if compiled with -DPROF, will put in profiling code
+	for the common functions.
+	
+Sun Dec  6 19:50:32 1981 by jkf
+	made the error messages for reading a right paren or period
+	be reasonable.
+	
+Sat Nov 21 00:30:10 1981 by jkf
+	now load will not disable garbage collection during the loading
+	process (it will not bind gcdisable to t).  This was done
+	because it was causing problems: for example, if a dumplisp
+	were done during a load, gcdisable would be 'permanently' set
+	to t.
+	
+Thu Nov 19 20:33:34 1981 by jkf
+	some people didn't like the fact that the compiler purcopies its
+	literals.  Thus there is now a lisp symbol $purcopylits which
+	when true tells fasl to purcopy the literals. It defaults to true.
+	Files affected in the change: h/sigtab.h, sysat.c, nfasl.c,
+	Talloc.c
+	
+Sat Nov  7 08:53:44 1981 by jkf
+	more unwind-protect bugs:  if a non throw was intercepted by a 
+	unwind-protect, it would be saved and restarted as if it were
+	a throw.  This was fixed by having the value returned by a 
+	*catch of ER%uwpt have its 'car' be the number of the class of non
+	local goto which was caught by the unwind-protect.
+	modified: frame.c and lam8.c
+	
+Tue Nov  3 09:49:42 1981 by jkf
+	two bugs discoverd in franz's error handlers.
+	Lerr: the call to errorh was done incorrectly (lam6.c)
+	Lctcherr: handy was never given a value (lam8.c)
+	both of these are being sent out as fix l36.?
+	
+Sat Oct 24 16:56:36 1981 by jkf
+	in auxfns0.l:
+	rewrote lambdacvt from scratch.  Now it will do things a bit
+	more intelligently: making a lambda instead of a lexpr
+	if only &aux variables are given.
+	
+Thu Oct 22 10:18:14 1981 by jkf
+	added functions (actually equivalences) <&,=& and >& to be the
+	fixnum only equivlants of lessp,equal and greaterp.
+	file affected: auxfns0.l
+	
+Thu Oct 22 10:16:40 1981 by jkf
+	fixed bug in Ndo (fex2.c) whereby whenever a go was caught
+	inside a do, the end test was evaluated next.  This was
+	saved as bug fix l36.4 since even though we are on Opus 37,
+	this bug exists in 36 as well.
+	
+Wed Oct 14 10:46:08 1981 by jkf
+	fixed Lsyscall so it would return an inewint instead of a newint,
+	thus preventing small not eq fixnums from entering the environment.
+	file: lam4.c
+	
+Sat Oct 10 13:53:43 1981 by jkf
+	Fixed Ltyi to return numbers in range 0 to 255 or -1 for
+	EOF.  The key is that getc returns in integer which is 
+	either -1 (for eof) or a number between 0 and 255 (0 and 127
+	if in cooked mode).
+	[file: lam6.c]
+	
+	
+

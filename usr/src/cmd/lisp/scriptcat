@@ -1,0 +1,17 @@
+#!/bin/csh 
+# shell script which is given arguments
+#	sourcedir  destdir  file1 file2 ... filen
+# it generates a shell command to create those files based on
+# the text that follows the command.
+#  the code will come from sourcedir/filei, it will go to 
+#  destdir/filei when extracted
+#
+set sourcedir=$argv[1]
+shift argv
+set destdir=$argv[1]
+while ($#argv > 1)
+  shift argv
+  echo "cat > " $destdir/$argv[1] " << 'EndOfFile'"
+  cat $sourcedir/$argv[1]
+  echo EndOfFile
+end
