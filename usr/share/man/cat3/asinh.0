@@ -1,0 +1,25 @@
+ASINH(3)                    BSD Programmer's Manual                   ASINH(3)
+
+NNAAMMEE
+     aassiinnhh - inverse hyperbolic sine function
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<mmaatthh..hh>>
+
+     _d_o_u_b_l_e
+     aassiinnhh(_d_o_u_b_l_e _x);
+
+DDEESSCCRRIIPPTTIIOONN
+     The aassiinnhh() function computes the inverse hyperbolic sine of the real ar-
+     gument _x. For a discussion of error due to roundoff, see math(3).
+
+RREETTUURRNN VVAALLUUEESS
+     The aassiinnhh() function returns the inverse hyperbolic sine of _x.
+
+SSEEEE AALLSSOO
+     acosh(3),  atanh(3),  exp(3),  infnan(3) math(3),
+
+HHIISSTTOORRYY
+     The aassiinnhh() function appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 4, 1993                                1

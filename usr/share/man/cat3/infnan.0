@@ -1,0 +1,74 @@
+INFNAN(3)                   BSD Programmer's Manual                  INFNAN(3)
+
+NNAAMMEE
+     iinnffnnaann - signals invalid floating-point operations on a VAX (temporary)
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<mmaatthh..hh>>
+
+     _d_o_u_b_l_e
+     iinnffnnaann(_i_n_t _i_a_r_g);
+
+DDEESSCCRRIIPPTTIIOONN
+     At some time in the future, some of the useful properties of the Infini-
+     ties and _N_a_Ns in the IEEE standard 754 for Binary Floating-Point Arith-
+     metic will be simulated in UNIX on the DEC VAX by using its Reserved
+     Operands.  Meanwhile, the Invalid, Overflow and Divide-by-Zero exceptions
+     of the IEEE standard are being approximated on a VAX by calls to a proce-
+     dure iinnffnnaann() in appropriate places in libm(3).  When better excep-
+     tion-handling is implemented in UNIX, only iinnffnnaann() among the codes in
+     libm will have to be changed.  And users of libm can design their own
+     iinnffnnaann() now to insulate themselves from future changes.
+
+     Whenever an elementary function code in libm has to simulate one of the
+     aforementioned IEEE exceptions, it calls iinnffnnaann(_i_a_r_g) with an appropriate
+     value of _i_a_r_g. Then a reserved operand fault stops computation.  But
+     iinnffnnaann() could be replaced by a function with the same name that returns
+     some plausible value, assigns an apt value to the global variable _e_r_r_n_o,
+     and allows computation to resume.  Alternatively, the Reserved Operand
+     Fault Handler could be changed to respond by returning that plausible
+     value, etc.  instead of aborting.
+
+     In the table below, the first two columns show various exceptions sig-
+     naled by the IEEE standard, and the default result it prescribes.  The
+     third column shows what value is given to _i_a_r_g by functions in libm when
+     they invoke iinnffnnaann(_i_a_r_g) under analogous circumstances on a VAX. Current-
+     ly iinnffnnaann() stops computation under all those circumstances.  The last
+     two columns offer an alternative; they suggest a setting for _e_r_r_n_o and a
+     value for a revised iinnffnnaann() to return.  And a C program to implement
+     that suggestion follows.
+
+
+           IEEE Signal    IEEE Default    _i_a_r_g           _e_r_r_n_o
+                                                   iinnffnnaann()
+           Invalid        _N_a_N             EDOM           EDOM            0
+           Overflow       +-infinity      ERANGE         ERANGE          HUGE
+           Div-by-0       +-Infinity      +-ERANGE       ERANGE or
+                                          EDOM  +-HUGE
+                          (HUGE = 1.7e38 ... nearly  2.0**127)
+
+     ALTERNATIVE iinnffnnaann():
+
+           #include        <math.h>
+           #include        <errno.h>
+           extern int      errno ;
+           double  infnan(iarg)
+           int     iarg ;
+           {
+                   switch(iarg) {
+                   case     ERANGE:        errno = ERANGE; return(HUGE);
+                   case    -ERANGE:        errno = EDOM;   return(-HUGE);
+                   default:                errno = EDOM;   return(0);
+                   }
+           }
+
+SSEEEE AALLSSOO
+     math(3),  intro(2),  signal(3).
+
+     ERANGE and EDOM are defined in <_e_r_r_n_o_._h>. (See intro(2) for explanation
+     of EDOM and ERANGE.)
+
+HHIISSTTOORRYY
+     The iinnffnnaann() function appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 4, 1993                                2
