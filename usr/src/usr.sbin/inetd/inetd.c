@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -73,7 +73,8 @@ char	*index();
 char	*malloc();
 
 int	debug = 0;
-int	allsock;
+int	nsock, maxsock;
+fd_set	allsock;
 int	options;
 struct	servent *sp;
 
@@ -98,7 +99,6 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int ctrl;
 	register struct servtab *sep;
 	register struct passwd *pwd;
 	char *cp, buf[50];
@@ -145,16 +145,17 @@ nextopt:
 	signal(SIGHUP, config);
 	signal(SIGCHLD, reapchild);
 	for (;;) {
-		int readable, s, ctrl;
+		int s, ctrl, n;
+		fd_set readable;
 
-		while (allsock == 0)
+		while (nsock == 0)
 			sigpause(0);
 		readable = allsock;
-		if (select(32, &readable, 0, 0, 0) <= 0)
+		if ((n = select(maxsock + 1, &readable, 0, 0, 0)) <= 0)
 			continue;
-		s = ffs(readable)-1;
-		if (s < 0)
-			continue;
+		for (s = 0; s <= maxsock; s++)
+			if (FD_ISSET(s, &readable))
+				break;
 		for (sep = servtab; sep; sep = sep->se_next)
 			if (s == sep->se_fd)
 				goto found;
@@ -162,7 +163,7 @@ nextopt:
 	found:
 		if (debug)
 			fprintf(stderr, "someone wants %s\n", sep->se_service);
-		if (sep->se_socktype == SOCK_STREAM) {
+		if (!sep->se_wait && sep->se_socktype == SOCK_STREAM) {
 			ctrl = accept(s, 0, 0);
 			if (debug)
 				fprintf(stderr, "accept, ctrl %d\n", ctrl);
@@ -174,18 +175,18 @@ nextopt:
 			}
 		} else
 			ctrl = sep->se_fd;
-#define mask(sig)	(1 << (sig - 1))
-		sigblock(mask(SIGCHLD)|mask(SIGHUP));
+		sigblock(sigmask(SIGCHLD)|sigmask(SIGHUP));
 		pid = fork();
 		if (pid < 0) {
-			if (sep->se_socktype == SOCK_STREAM)
+			if (!sep->se_wait && sep->se_socktype == SOCK_STREAM)
 				close(ctrl);
 			sleep(1);
 			continue;
 		}
 		if (sep->se_wait) {
 			sep->se_wait = pid;
-			allsock &= ~(1 << s);
+			FD_CLR(s, &allsock);
+			nsock--;
 		}
 		sigsetmask(0);
 		if (pid == 0) {
@@ -196,7 +197,7 @@ nextopt:
 				close(tt);
 			}
 #endif
-			dup2(ctrl, 0), close(ctrl), dup2(0, 1);
+			dup2(ctrl, 0); close(ctrl); dup2(0, 1); dup2(0, 2);
 			for (i = getdtablesize(); --i > 2; )
 				close(i);
 			if ((pwd = getpwnam(sep->se_user)) == NULL) {
@@ -216,7 +217,7 @@ nextopt:
 			syslog(LOG_ERR, "execv %s: %m", sep->se_server);
 			_exit(1);
 		}
-		if (sep->se_socktype == SOCK_STREAM)
+		if (!sep->se_wait && sep->se_socktype == SOCK_STREAM)
 			close(ctrl);
 	}
 }
@@ -242,7 +243,8 @@ reapchild()
 				if (debug)
 					fprintf(stderr, "restored %s, fd %d\n",
 					    sep->se_service, sep->se_fd);
-				allsock |= 1 << sep->se_fd;
+				FD_SET(sep->se_fd, &allsock);
+				nsock++;
 				sep->se_wait = 1;
 			}
 	}
@@ -268,7 +270,7 @@ config()
 		if (sep != 0) {
 			int i;
 
-			omask = sigblock(mask(SIGCHLD));
+			omask = sigblock(sigmask(SIGCHLD));
 			sep->se_wait = cp->se_wait;
 #define SWAP(a, b) { char *c = a; a = b; b = c; }
 			if (cp->se_server)
@@ -310,13 +312,16 @@ config()
 		}
 		if (sep->se_socktype == SOCK_STREAM)
 			listen(sep->se_fd, 10);
-		allsock |= 1 << sep->se_fd;
+		FD_SET(sep->se_fd, &allsock);
+		nsock++;
+		if (sep->se_fd > maxsock)
+			maxsock = sep->se_fd;
 	}
 	endconfig();
 	/*
 	 * Purge anything not looked at above.
 	 */
-	omask = sigblock(mask(SIGCHLD));
+	omask = sigblock(sigmask(SIGCHLD));
 	sepp = &servtab;
 	while (sep = *sepp) {
 		if (sep->se_checked) {
@@ -325,7 +330,8 @@ config()
 		}
 		*sepp = sep->se_next;
 		if (sep->se_fd != -1) {
-			allsock &= ~(1 << sep->se_fd);
+			FD_CLR(sep->se_fd, &allsock);
+			nsock--;
 			(void) close(sep->se_fd);
 		}
 		freeconfig(sep);
@@ -339,7 +345,7 @@ enter(cp)
 	struct servtab *cp;
 {
 	register struct servtab *sep;
-	int omask, i;
+	int omask;
 	char *strdup();
 
 	sep = (struct servtab *)malloc(sizeof (*sep));
@@ -349,7 +355,7 @@ enter(cp)
 	}
 	*sep = *cp;
 	sep->se_fd = -1;
-	omask = sigblock(mask(SIGCHLD));
+	omask = sigblock(sigmask(SIGCHLD));
 	sep->se_next = servtab;
 	servtab = sep;
 	sigsetmask(omask);
