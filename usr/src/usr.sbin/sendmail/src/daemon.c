@@ -15,7 +15,7 @@
 
 # ifndef DAEMON
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.12 (Berkeley) %G%	(w/o daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.13 (Berkeley) %G%	(w/o daemon mode)";
 # endif not lint
 # else
 
@@ -26,7 +26,7 @@ static char	SccsId[] = "@(#)daemon.c	5.12 (Berkeley) %G%	(w/o daemon mode)";
 # include <sys/resource.h>
 
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.12 (Berkeley) %G% (with daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.13 (Berkeley) %G% (with daemon mode)";
 # endif not lint
 
 /*
@@ -181,6 +181,8 @@ getrequests()
 **		none.
 */
 
+int	h_errno;	/*this will go away when code implemented*/
+
 makeconnection(host, port, outfile, infile)
 	char *host;
 	u_short port;
@@ -193,6 +195,9 @@ makeconnection(host, port, outfile, infile)
 	**  Set up the address for the mailer.
 	**	Accept "[a.b.c.d]" syntax for host name.
 	*/
+
+	h_errno = 0;
+	errno = 0;
 
 	if (host[0] == '[')
 	{
@@ -216,13 +221,19 @@ makeconnection(host, port, outfile, infile)
 	{
 		register struct hostent *hp = gethostbyname(host);
 
-		if (errno == ETIMEDOUT)
-		{
-			CurEnv->e_flags &= ~EF_FATALERRS;
-			return (EX_TEMPFAIL);
-		}
 		if (hp == NULL)
+		{
+			if (errno == ETIMEDOUT || h_errno == TRY_AGAIN)
+			{
+				CurEnv->e_flags &= ~EF_FATALERRS;
+				return (EX_TEMPFAIL);
+			}
+#ifdef notdef
+			if (h_errno == NO_ADDRESS)
+				;		/*look for mail forwarder records*/
+#endif notdef
 			return (EX_NOHOST);
+		}
 		bcopy(hp->h_addr, (char *) &SendmailAddress.sin_addr, hp->h_length);
 	}
 
