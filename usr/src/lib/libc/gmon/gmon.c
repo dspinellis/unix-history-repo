@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)gmon.c	4.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)gmon.c	4.8 (Berkeley) %G%";
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -11,7 +11,7 @@ static	char *sccsid = "@(#)gmon.c	4.7 (Berkeley) %G%";
      */
 static unsigned short	*froms;
 static struct tostruct	*tos = 0;
-static unsigned short	tolimit = 0;
+static long		tolimit = 0;
 static char		*s_lowpc = 0;
 static char		*s_highpc = 0;
 static unsigned long	s_textsize = 0;
@@ -31,10 +31,18 @@ monstartup(lowpc, highpc)
     char		*sbrk();
     unsigned long	limit;
 
+	/*
+	 *	round lowpc and highpc to multiples of the density we're using
+	 *	so the rest of the scaling (here and in gprof) stays in ints.
+	 */
+    lowpc = (char *)
+	    ROUNDDOWN((unsigned)lowpc, HISTFRACTION*sizeof(HISTCOUNTER));
     s_lowpc = lowpc;
+    highpc = (char *)
+	    ROUNDUP((unsigned)highpc, HISTFRACTION*sizeof(HISTCOUNTER));
     s_highpc = highpc;
     s_textsize = highpc - lowpc;
-    monsize = (s_textsize + 1) / 2 + sizeof(struct phdr);
+    monsize = (s_textsize / HISTFRACTION) + sizeof(struct phdr);
     buffer = sbrk( monsize );
     if ( buffer == (char *) -1 ) {
 	write( 2 , MSG , sizeof(MSG) );
@@ -46,9 +54,9 @@ monstartup(lowpc, highpc)
 	froms = 0;
 	return;
     }
-    limit = s_textsize * DENSITY / 100;
-    if ( limit < MINCNT ) {
-	limit = MINCNT;
+    limit = s_textsize * ARCDENSITY / 100;
+    if ( limit < MINARCS ) {
+	limit = MINARCS;
     } else if ( limit > 65534 ) {
 	limit = 65534;
     }
@@ -59,6 +67,7 @@ monstartup(lowpc, highpc)
 	tos = 0;
 	return;
     }
+    minsbrk = sbrk(0);
     tos[0].link = 0;
 	/*
 	 *	tolimit is what mcount checks to see if
@@ -106,97 +115,136 @@ _mcleanup()
     close( fd );
 }
 
-    /*
-     *	This routine is massaged so that it may be jsb'ed to
-     */
-asm("#define _mcount mcount");
+asm(".text");
+asm("#the beginning of mcount()");
+asm(".data");
 mcount()
 {
-    register char		*selfpc;	/* r11 */
-    register unsigned short	*frompcindex;	/* r10 */
-    register struct tostruct	*top;		/* r9 */
-    static int			profiling = 0;
+	register char			*selfpc;	/* r11 => r5 */
+	register unsigned short		*frompcindex;	/* r10 => r4 */
+	register struct tostruct	*top;		/* r9  => r3 */
+	register struct tostruct	*prevtop;	/* r8  => r2 */
+	register long			toindex;	/* r7  => r1 */
+	static int			profiling = 0;
 
-    asm( "	forgot to run ex script on gcrt0.s" );
-    asm( "#define r11 r5" );
-    asm( "#define r10 r4" );
-    asm( "#define r9 r3" );
 #ifdef lint
-    selfpc = (char *) 0;
-    frompcindex = 0;
+	selfpc = (char *)0;
+	frompcindex = 0;
 #else not lint
 	/*
 	 *	find the return address for mcount,
 	 *	and the return address for mcount's caller.
 	 */
-    asm("	movl (sp), r11");	/* selfpc = ... (jsb frame) */
-    asm("	movl 16(fp), r10");	/* frompcindex =     (calls frame) */
+	asm("	.text");		/* make sure we're in text space */
+	asm("	movl (sp), r11");	/* selfpc = ... (jsb frame) */
+	asm("	movl 16(fp), r10");	/* frompcindex =     (calls frame) */
 #endif not lint
 	/*
 	 *	check that we are profiling
 	 *	and that we aren't recursively invoked.
 	 */
-    if ( tolimit == 0 ) {
-	goto out;
-    }
-    if ( profiling ) {
-	goto out;
-    }
-    profiling = 1;
+	if (tolimit == 0) {
+		goto out;
+	}
+	if (profiling) {
+		goto out;
+	}
+	profiling = 1;
 	/*
 	 *	check that frompcindex is a reasonable pc value.
 	 *	for example:	signal catchers get called from the stack,
 	 *			not from text space.  too bad.
 	 */
-    frompcindex = (unsigned short *) ( (long) frompcindex - (long) s_lowpc );
-    if ( (unsigned long) frompcindex > s_textsize ) {
-	goto done;
-    }
-    frompcindex = &froms[ ( (long) frompcindex ) >> 1 ];
-    if ( *frompcindex == 0 ) {
-	*frompcindex = ++tos[0].link;
-	if ( *frompcindex >= tolimit ) {
-	    goto overflow;
+	frompcindex = (unsigned short *)((long)frompcindex - (long)s_lowpc);
+	if ((unsigned long)frompcindex > s_textsize) {
+		goto done;
 	}
-	top = &tos[ *frompcindex ];
-	top->selfpc = selfpc;
-	top->count = 0;
-	top->link = 0;
-    } else {
-	top = &tos[ *frompcindex ];
-    }
-    for ( ; /* goto done */ ; top = &tos[ top -> link ] ) {
-	if ( top -> selfpc == selfpc ) {
-	    top -> count++;
-	    goto done;
+	frompcindex =
+	    &froms[(((long)frompcindex) + sizeof(*froms) - 1) / sizeof(*froms)];
+	toindex = *frompcindex;
+	if (toindex == 0) {
+		/*
+		 *	first time traversing this arc
+		 */
+		toindex = ++tos[0].link;
+		if (toindex >= tolimit) {
+			goto overflow;
+		}
+		*frompcindex = toindex;
+		top = &tos[toindex];
+		top->selfpc = selfpc;
+		top->count = 1;
+		top->link = 0;
+		goto done;
 	}
-	if ( top -> link == 0 ) {
-	    top -> link = ++tos[0].link;
-	    if ( top -> link >= tolimit )
-		goto overflow;
-	    top = &tos[ top -> link ];
-	    top -> selfpc = selfpc;
-	    top -> count = 1;
-	    top -> link = 0;
-	    goto done;
+	top = &tos[toindex];
+	if (top->selfpc == selfpc) {
+		/*
+		 *	arc at front of chain; usual case.
+		 */
+		top->count++;
+		goto done;
 	}
-    }
+	/*
+	 *	have to go looking down chain for it.
+	 *	top points to what we are looking at,
+	 *	prevtop points to previous top.
+	 *	we know it is not at the head of the chain.
+	 */
+	for (; /* goto done */; ) {
+		if (top->link == 0) {
+			/*
+			 *	top is end of the chain and none of the chain
+			 *	had top->selfpc == selfpc.
+			 *	so we allocate a new tostruct
+			 *	and link it to the head of the chain.
+			 */
+			toindex = ++tos[0].link;
+			if (toindex >= tolimit) {
+				goto overflow;
+			}
+			top = &tos[toindex];
+			top->selfpc = selfpc;
+			top->count = 1;
+			top->link = *frompcindex;
+			*frompcindex = toindex;
+			goto done;
+		}
+		/*
+		 *	otherwise, check the next arc on the chain.
+		 */
+		prevtop = top;
+		top = &tos[top->link];
+		if (top->selfpc == selfpc) {
+			/*
+			 *	there it is.
+			 *	increment its count
+			 *	move it to the head of the chain.
+			 */
+			top->count++;
+			toindex = prevtop->link;
+			prevtop->link = top->link;
+			top->link = *frompcindex;
+			*frompcindex = toindex;
+			goto done;
+		}
+
+	}
 done:
-    profiling = 0;
-    /* and fall through */
+	profiling = 0;
+	/* and fall through */
 out:
-    asm( "	rsb" );
-    asm( "#undef r11" );
-    asm( "#undef r10" );
-    asm( "#undef r9" );
-    asm( "#undef _mcount");
+	asm("	rsb");
 
 overflow:
-    tolimit = 0;
+	tolimit = 0;
 #   define	TOLIMIT	"mcount: tos overflow\n"
-    write( 2 , TOLIMIT , sizeof( TOLIMIT ) );
-    goto out;
+	write(2, TOLIMIT, sizeof(TOLIMIT));
+	goto out;
 }
+asm(".text");
+asm("#the end of mcount()");
+asm(".data");
 
 /*VARARGS1*/
 monitor( lowpc , highpc , buf , bufsiz , nfunc )
@@ -235,7 +283,6 @@ monitor( lowpc , highpc , buf , bufsiz , nfunc )
  * catch so that it will not deallocate our data space.
  * (of which the program is not aware)
  */
-asm("#define _curbrk curbrk");
 extern char *curbrk;
 
 brk(addr)
