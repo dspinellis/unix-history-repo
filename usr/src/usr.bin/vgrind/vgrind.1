@@ -1,199 +1,199 @@
-.\" Copyright (c) 1980 The Regents of the University of California.
+.\" Copyright (c) 1980 ,1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)vgrind.1	6.4 (Berkeley) %G%
+.\"     @(#)vgrind.1	6.4 (Berkeley) %G%
 .\"
-.TH VGRIND 1 ""
-.UC 4
-.SH NAME
-vgrind \- grind nice listings of programs
-.SH SYNOPSIS
-.B vgrind
-[
-.B \-f
-] [
-.B \-
-] [
-.B \-t
-] [
-.B \-n
-] [
-.B \-x
-] [
-.B \-W
-] [
-.B \-sn
-] [
-.B \-h
-header
-] [
-.B \-d
-file
-] [
-.BI \-l language
-]
-name ...
-.SH DESCRIPTION
-.I Vgrind
+.Dd 
+.Dt VGRIND 1
+.Os BSD 4
+.Sh NAME
+.Nm vgrind
+.Nd grind nice listings of programs
+.Sh SYNOPSIS
+.Nm vgrind
+.Op Fl 
+.Op Fl W
+.Op Fl d Ar file
+.Op Fl f
+.Op Fl h Ar header
+.Op Fl l Ar language
+.Op Fl n
+.Op Fl sn
+.Op Fl t
+.Op Fl x
+.Ar name Ar ...
+.Sh DESCRIPTION
+.Nm Vgrind
 formats the program sources which are arguments 
 in a nice style using
-.IR troff (1)
+.Xr troff 1
 Comments are placed in italics, keywords in bold face,
 and the name of the current function is listed down the margin of each
 page as it is encountered.
-.PP
-.I Vgrind 
-runs in two basic modes, filter mode or regular mode.  In filter mode 
-.I vgrind
+.Pp
+.Nm Vgrind
+runs in two basic modes, filter mode (see the
+.Fl f
+option) or regular mode.  In filter mode 
+.Nm vgrind
 acts as a filter in a manner similar to
-.IR tbl (1).
+.Xr tbl 1 .
 The standard input is passed directly to the standard output except
 for lines bracketed by the 
-.I troff-like
+.Em troff-like
 macros:
-.IP .vS
-- starts processing
-.IP .vE
-- ends processing
-.LP
+.Bl -tag -width Ds
+.It \&.vS
+starts processing
+.It \&.vE
+ends processing
+.El
+.Pp
 These lines are formatted as described above.  The output from this
 filter can be passed to 
-.I troff 
+.Xr troff
 for output.  There need be no particular ordering with 
-.IR eqn (1)
+.Xr eqn 1
 or
-.IR tbl (1).
-.PP
+.Xr tbl 1 .
+.Pp
 In regular mode 
-.I vgrind
+.Nm vgrind
 accepts input files, processes them, and passes them to 
-.IR troff (1)
+.Xr troff 1
 for output.  
-.PP
+.Pp
 In both modes 
-.I vgrind
+.Nm vgrind
 passes any lines beginning with a decimal point without conversion.
-.PP
+.Pp
 The options are:
-.IP \fB\-f\fP
-forces filter mode
-.IP \fB\-\fP
+.Bl -tag -width Ar
+.It Fl 
 forces input to be taken from standard input (default if
-.B \fB\-f\fP
+.Fl f
 is specified )
-.IP \fB\-t\fP
-similar to the same option in
-.I troff
-causing formatted text to go to the standard output
-.IP \fB\-n\fP
+.It Fl W
+forces output to the (wide) Versatec printer rather than the (narrow)
+Varian
+.It Fl d Ar file
+specifies an alternate language definitions
+file (default is
+.Pa /usr/share/misc/vgrindefs )
+.It Fl f
+forces filter mode
+.It Fl h Ar header
+specifies a particular header to put on every output page (default is
+the file name)
+.It Fl l
+specifies the language to use.  Currently known are
+.Tn PASCAL
+.Pq Fl l Ns Ar p ,
+.Tn MODEL
+.Pq Fl l Ns Ar m ,
+C
+.Pf ( Fl l Ns Ar c
+or the default),
+.Tn CSH
+.Pq Fl l Ns Ar csh ,
+.Tn SHELL
+.Pq Fl l Ns Ar sh ,
+.Tn RATFOR
+.Pq Fl l Ns Ar r ,
+.Tn MODULA2
+.Pq Fl l Ns Ar mod2 ,
+.Tn YACC
+.Pq Fl l Ns Ar yacc ,
+.Tn LISP
+.Pq Fl l Ns Ar isp ,
+and
+.Tn ICON
+.Pq Fl l Ns Ar I .
+.It Fl n
 forces no keyword bolding
-.IP \fB\-x\fP
+.It Fl s
+specifies a point size to use on output (exactly the same as the argument
+of a .ps)
+.It Fl t
+similar to the same option in
+.Xr troff
+causing formatted text to go to the standard output
+.It Fl x
 outputs the index file in a ``pretty'' format. 
 The index file itself is produced whenever 
-.I vgrind
+.Nm vgrind
 is run with a file called 
-.I index
+.Pa index
 in the current directory.
 The index of function
 definitions can then be run off by giving 
-.I vgrind 
+.Nm vgrind
 the
-.B \-x
+.Fl x
 option and the file
-.I index
+.Pa index
 as argument.
-.IP \fB\-W\fP
-forces output to the (wide) Versatec printer rather than the (narrow)
-Varian
-.IP \fB\-s\fP
-specifies a point size to use on output (exactly the same as the argument
-of a .ps)
-.IP \fB\-h\fP
-specifies a particular header to put on every output page (default is
-the file name)
-.IP \fB\-d\fP
-specifies an alternate language definitions
-file (default is /usr/lib/vgrindefs)
-.IP \fB\-l\fP
-specifies the language to use.  Currently known are PASCAL
-.RB ( \-lp ),
-MODEL
-.RB ( \-lm ), C
-.RB ( \-lc
-or the default), CSH
-.RB ( \-lcsh ), 
-SHELL
-.RB ( \-lsh ),
-RATFOR
-.RB ( \-lr ),
-MODULA2
-.RB ( \-lmod2 ),
-YACC
-.RB ( \-lyacc ),
-ISP
-.RB ( \-lisp ),
-and ICON
-.RB ( \-lI ).
-.SH FILES
-.ta 2i
-index	file where source for index is created
-.br
-/usr/lib/tmac/tmac.vgrind	macro package
-.br
-/usr/lib/vfontedpr		preprocessor
-.br
-/usr/lib/vgrindefs		language descriptions
-.SH AUTHOR
-Dave Presotto & William Joy
-.SH SEE ALSO
-vlp(1),
-vtroff(1),
-vgrindefs(5)
-.SH BUGS
+.El
+.Sh FILES
+.Bl -tag -width /usr/share/misc/vgrindefsxx -compact
+.It Pa index
+file where source for index is created
+.It Pa /usr/share/tmac/tmac.vgrind
+macro package
+.It Pa /usr/libexec/vfontedpr
+preprocessor
+.It Pa /usr/share/misc/vgrindefs
+language descriptions
+.El
+.Sh SEE ALSO
+.Xr vlp 1 ,
+.Xr vtroff 1 ,
+.Xr vgrindefs 5
+.Sh BUGS
 Vfontedpr assumes that a certain programming style is followed:
-.PP
+.Pp
 For 
-.B C
+.Tn C
 \- function names can be preceded on a line only by spaces, tabs, or an
 asterisk.  The parenthesized arguments must also be on the same line.
-.PP
+.Pp
 For
-.B PASCAL
+.Tn PASCAL
 \- function names need to appear on the same line as the keywords
-.I function
+.Em function
 or
-.I procedure.
-.PP
+.Em procedure .
+.Pp
 For
-.B MODEL
+.Tn MODEL
 \- function names need to appear on the same line as the keywords
-.I is
-.I beginproc.
-.PP
+.Em is beginproc .
+.Pp
 If these conventions are not followed, the indexing and marginal function
 name comment mechanisms will fail.
-.sp
+.Pp
 More generally, arbitrary formatting styles for programs mostly look bad.
 The use of spaces to align source code fails miserably; if you plan to
-.I vgrind
+.Nm vgrind
 your program you should use tabs.  This is somewhat inevitable since the
 font used by
-.I vgrind
+.Nm vgrind
 is variable width.
-.PP
-The mechanism of ctags in recognizing functions should be used here.
-.PP
-Filter mode does not work in documents using the \-me or \-ms macros.
+.Pp
+The mechanism of
+.Xr ctags 1
+in recognizing functions should be used here.
+.Pp
+Filter mode does not work in documents using the
+.Fl me
+or
+.Fl ms
+macros.
 (So what use is it anyway?)
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 3.0 .
