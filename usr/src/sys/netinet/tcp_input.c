@@ -1,4 +1,4 @@
-/* tcp_input.c 1.12 81/10/30 */
+/* tcp_input.c 1.13 81/10/30 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -72,11 +72,11 @@ COUNT(TCP_INPUT);
 	/*
 	 * Find tcb for message (SHOULDN'T USE LINEAR SEARCH!)
 	 */
-	for (tp = tcb_head; tp != 0; tp = tp->t_tcb_next)
+	for (tp = tcb.tcb_next; tp != (struct tcb *)&tcb; tp = tp->tcb_next)
 		if (tp->t_lport == lport && tp->t_fport == fport &&
 		    tp->t_ucb->uc_host->h_addr.s_addr == n->t_s.s_addr)
 			goto found;
-	for (tp = tcb_head; tp != 0; tp = tp->t_tcb_next)
+	for (tp = tcb.tcb_next; tp != (struct tcb *)&tcb; tp = tp->tcb_next)
 		if (tp->t_lport == lport &&
 		    (tp->t_fport==fport || tp->t_fport==0) &&
 		    (tp->t_ucb->uc_host->h_addr.s_addr == n->t_s.s_addr ||

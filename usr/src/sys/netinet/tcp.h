@@ -1,4 +1,4 @@
-/* tcp.h 1.10 81/10/30 */
+/* tcp.h 1.11 81/10/30 */
 
 /*
  * Tcp header.  Fits over the ip header after option removed.
@@ -43,8 +43,8 @@ struct th {
 struct tcb {
 	struct	th *t_rcv_next;		/* first el on rcv queue */
 	struct	th *t_rcv_prev;		/* last el on rcv queue */
-	struct	tcb *t_tcb_next;	/* next tcb */
-	struct	tcb *t_tcb_prev;	/* next tcb */
+	struct	tcb *tcb_next;		/* next tcb */
+	struct	tcb *tcb_prev;		/* next tcb */
 	struct	ucb *t_ucb;		/* ucb */
 	struct	mbuf *t_rcv_unack;	/* unacked message queue */
 	short	seqcnt;
@@ -104,6 +104,10 @@ struct tcb {
 	u_char	t_xmt;			/* round trip transmission time */
 
 	seq_t	rcv_adv;		/* advertised window */
+};
+struct tcbhead {
+	struct	th *t_rcv_next,*t_rcv_prev;
+	struct	tcb *tcb_next,*tcb_prev;
 };
 
 /*
@@ -168,7 +172,7 @@ struct tcp_debug {
 #endif
 
 #ifdef KERNEL
-struct	tcb *tcb_head, *tcb_tail;	/* tcp tcb list */
+struct	tcbhead tcb;			/* tcp tcb list head */
 seq_t	tcp_iss;			/* tcp initial send seq # */
 int	tcpconsdebug;			/* set to 1 traces on console */
 #ifdef TCPDEBUG
