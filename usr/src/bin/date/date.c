@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)date.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -39,13 +39,16 @@ main(argc, argv)
 	char *format, buf[1024];
 
 	tz.tz_dsttime = tz.tz_minuteswest = 0;
-	while ((ch = getopt(argc, argv, "d:nut:")) != EOF)
+	while ((ch = getopt(argc, argv, "d:nr:ut:")) != EOF)
 		switch((char)ch) {
 		case 'd':		/* daylight savings time */
 			tz.tz_dsttime = atoi(optarg) ? 1 : 0;
 			break;
 		case 'n':		/* don't set network */
 			nflag = 1;
+			break;
+		case 'r':
+			tval = atol(optarg);
 			break;
 		case 'u':		/* do everything in GMT */
 			(void)setenv("TZ", "GMT", 1);
@@ -73,7 +76,7 @@ main(argc, argv)
 		exit(1);
 	}
 
-	if (time(&tval) == (time_t)-1) {
+	if (!tval && time(&tval) == (time_t)-1) {
 		perror("date: time");
 		exit(1);
 	}
@@ -186,6 +189,7 @@ badformat()
 usage()
 {
 	(void)fprintf(stderr,
-"usage: date [-nu] [-d dst] [-t west] [+format] [yy[mm[dd[hh]]]]mm[.ss]]\n");
+	    "usage: date [-nu] [-d dst] [-r seconds] [-t west] [+format]\n");
+	(void)fprintf(stderr, "            [yy[mm[dd[hh]]]]mm[.ss]]\n");
 	exit(1);
 }
