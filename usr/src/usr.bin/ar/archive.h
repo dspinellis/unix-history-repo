@@ -5,7 +5,7 @@
  * This code is derived from software contributed to Berkeley by
  * Hugh Smith at The University of Guelph.
  *
- *	@(#)archive.h	5.1 (Berkeley) %G%
+ *	@(#)archive.h	5.2 (Berkeley) %G%
  */
 
 /* Ar(1) options. */
@@ -39,6 +39,7 @@ typedef struct {
 	char *rname;			/* read name */
 	int wfd;			/* write file descriptor */
 	char *wname;			/* write name */
+#define	NOPAD	0x00			/* don't pad */
 #define	RPAD	0x01			/* pad on reads */
 #define	WPAD	0x02			/* pad on writes */
 	u_int flags;			/* pad flags */
@@ -46,21 +47,15 @@ typedef struct {
 
 /* Header structure internal format. */
 typedef struct {
+	off_t size;			/* size of the object in bytes */
 	long date;			/* date */
-	long size;			/* size in bytes */
+	int lname;			/* size of the long name in bytes */
 	int gid;			/* group */
-	int lname;			/* if long name */
 	int uid;			/* owner */
 	u_short mode;			/* permissions */
 	char name[MAXNAMLEN + 1];	/* name */
 } CHDR;
 
-/* Seek over the module contents; always rounds. */
-#define	SKIP(fd, size, name) { \
-	if (lseek((fd), ((size) + ((size) & 1)), SEEK_CUR) == (off_t)-1) \
-		error(name); \
-}
-	
 /* Print out any files that weren't in the archive. */
 #define	ORPHANS { \
 	if (*argv) { \
