@@ -9,7 +9,7 @@
  * More user commands.
  */
 
-static char *SccsId = "@(#)cmd2.c	1.2 %G%";
+static char *SccsId = "@(#)cmd2.c	1.3 %G%";
 
 /*
  * If any arguments were given, go to the next applicable argument
@@ -65,10 +65,8 @@ next(msgvec)
 	 * Note that this must exist for us to get here at all.
 	 */
 
-	if (!sawcom) {
-		dot = &message[0];
+	if (!sawcom)
 		goto hitit;
-	}
 
 	/*
 	 * Just find the next good message after dot, no
