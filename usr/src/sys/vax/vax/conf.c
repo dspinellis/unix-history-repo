@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.11 (Berkeley) %G%
+ *	@(#)conf.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -110,6 +110,16 @@ int	udaioctl(),udareset(),udadump(),udasize();
 #define	udareset	nulldev
 #define	udadump		nodev
 #define	udasize		0
+#endif
+
+#include "kra.h"
+#if NKDA > 0
+int	kdaopen(),kdastrategy(),kdadump(),kdasize();
+#else
+#define	kdaopen		nodev
+#define	kdastrategy	nodev
+#define	kdadump		nodev
+#define	kdasize		0
 #endif
 
 #include "up.h"
@@ -236,6 +246,8 @@ struct bdevsw	bdevsw[] =
 	  rldump,	rlsize,		0 },
 	{ tmscpopen,	tmscpclose,	tmscpstrategy,	tmscpioctl,	/*15*/
 	  tmscpdump,	0,		B_TAPE },
+	{ kdaopen,	nulldev,	kdastrategy,	nodev,		/*16*/
+	  kdadump,	kdasize,	0 },
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
@@ -717,9 +729,25 @@ struct cdevsw	cdevsw[] =
 	kmcopen,	kmcclose,	kmcread,	kmcwrite,	/*46*/
 	kmcioctl,	nulldev,	kmcdclr,	NULL,
 	seltrue,	nodev,		NULL,
-	rx50open,	rx50close,	rx50read,	rx50write,	/*47*/
+	nodev,		nodev,		nodev,		nodev,		/*47*/
+	nodev,		nulldev,	nulldev,	NULL,
+	nodev,		nodev,		NULL,
+	nodev,		nodev,		nodev,		nodev,		/*48*/
+	nodev,		nulldev,	nulldev,	NULL,
+	nodev,		nodev,		NULL,
+	nodev,		nodev,		nodev,		nodev,		/*49*/
+	nodev,		nulldev,	nulldev,	NULL,
+	nodev,		nodev,		NULL,
+	nodev,		nodev,		nodev,		nodev,		/*50*/
+	nodev,		nulldev,	nulldev,	NULL,
+	nodev,		nodev,		NULL,
+	rx50open,	rx50close,	rx50read,	rx50write,	/*51*/
  	nodev,		nodev,		nulldev,	0,
  	seltrue,	nodev,		NULL,
+/* kdb50 ra */
+	kdaopen,	nulldev/*XXX*/,	rawread,	rawwrite,	/*52*/
+	nodev,		nodev,		nulldev,	0,
+	seltrue,	nodev,		kdastrategy,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
