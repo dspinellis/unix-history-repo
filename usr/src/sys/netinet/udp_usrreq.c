@@ -1,26 +1,26 @@
-/*	udp_usrreq.c	6.6	84/08/21	*/
+/*	udp_usrreq.c	6.7	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/mbuf.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/errno.h"
-#include "../h/stat.h"
+#include "param.h"
+#include "dir.h"
+#include "user.h"
+#include "mbuf.h"
+#include "protosw.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "errno.h"
+#include "stat.h"
 
 #include "../net/if.h"
 #include "../net/route.h"
 
-#include "../netinet/in.h"
-#include "../netinet/in_pcb.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
-#include "../netinet/ip_icmp.h"
-#include "../netinet/udp.h"
-#include "../netinet/udp_var.h"
+#include "in.h"
+#include "in_pcb.h"
+#include "in_systm.h"
+#include "ip.h"
+#include "ip_var.h"
+#include "ip_icmp.h"
+#include "udp.h"
+#include "udp_var.h"
 
 /*
  * UDP protocol implementation.

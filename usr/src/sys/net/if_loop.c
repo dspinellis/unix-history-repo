@@ -1,24 +1,24 @@
-/*	if_loop.c	6.1	83/07/29	*/
+/*	if_loop.c	6.2	84/08/29	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
  */
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/socket.h"
-#include "../h/errno.h"
-#include "../h/ioctl.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "socket.h"
+#include "errno.h"
+#include "ioctl.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
 
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
+#include "in.h"
+#include "in_systm.h"
+#include "ip.h"
+#include "ip_var.h"
 
 #ifdef vax
 #include "../vax/mtpr.h"

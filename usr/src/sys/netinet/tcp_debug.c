@@ -1,32 +1,32 @@
-/*	tcp_debug.c	6.1	83/07/29	*/
+/*	tcp_debug.c	6.2	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "socket.h"
+#include "socketvar.h"
 #define PRUREQUESTS
-#include "../h/protosw.h"
-#include "../h/errno.h"
+#include "protosw.h"
+#include "errno.h"
 
 #include "../net/route.h"
 #include "../net/if.h"
 
-#include "../netinet/in.h"
-#include "../netinet/in_pcb.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
-#include "../netinet/tcp.h"
+#include "in.h"
+#include "in_pcb.h"
+#include "in_systm.h"
+#include "ip.h"
+#include "ip_var.h"
+#include "tcp.h"
 #define TCPSTATES
-#include "../netinet/tcp_fsm.h"
-#include "../netinet/tcp_seq.h"
+#include "tcp_fsm.h"
+#include "tcp_seq.h"
 #define	TCPTIMERS
-#include "../netinet/tcp_timer.h"
-#include "../netinet/tcp_var.h"
-#include "../netinet/tcpip.h"
+#include "tcp_timer.h"
+#include "tcp_var.h"
+#include "tcpip.h"
 #define	TANAMES
-#include "../netinet/tcp_debug.h"
+#include "tcp_debug.h"
 
 int	tcpconsdebug = 0;
 /*

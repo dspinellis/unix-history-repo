@@ -1,12 +1,12 @@
-/*	in.c	6.3	84/04/24	*/
+/*	in.c	6.4	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/mbuf.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
+#include "param.h"
+#include "mbuf.h"
+#include "protosw.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "in.h"
+#include "in_systm.h"
 #include "../net/if.h"
 #include "../net/route.h"
 #include "../net/af.h"

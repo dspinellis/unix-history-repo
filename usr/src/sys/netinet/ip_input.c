@@ -1,25 +1,25 @@
-/*	ip_input.c	6.5	84/08/22	*/
+/*	ip_input.c	6.5	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/domain.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/errno.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "domain.h"
+#include "protosw.h"
+#include "socket.h"
+#include "errno.h"
+#include "time.h"
+#include "kernel.h"
 
 #include "../net/if.h"
 #include "../net/route.h"
 
-#include "../netinet/in.h"
-#include "../netinet/in_pcb.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
-#include "../netinet/ip_icmp.h"
-#include "../netinet/tcp.h"
+#include "in.h"
+#include "in_pcb.h"
+#include "in_systm.h"
+#include "ip.h"
+#include "ip_var.h"
+#include "ip_icmp.h"
+#include "tcp.h"
 
 u_char	ip_protox[IPPROTO_MAX];
 int	ipqmaxlen = IFQ_MAXLEN;
