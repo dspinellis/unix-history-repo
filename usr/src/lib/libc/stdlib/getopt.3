@@ -3,18 +3,19 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getopt.3	6.17 (Berkeley) %G%
+.\"     @(#)getopt.3	6.18 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETOPT 3
 .Os BSD 4.3
 .Sh NAME
 .Nm getopt
-.Nd get option letter from argv
+.Nd get option character from command line argument list
 .Sh SYNOPSIS
 .Fd #include <stdlib.h>
 .Vt extern char *optarg
 .Vt extern int   optind
+.Vt extern int   optopt
 .Vt extern int   opterr
 .Vt extern int   optreset
 .Ft int
@@ -22,11 +23,11 @@
 .Sh DESCRIPTION
 The
 .Fn getopt
-function gets 
-the next
+function incrementally parses a command line argument list
+.Fa argv
+and returns the next
 .Em known
-option character from
-.Fa argv .
+option character.
 An option character is
 .Em known
 if it has been specified in the string of accepted option characters,
@@ -34,10 +35,18 @@ if it has been specified in the string of accepted option characters,
 .Pp
 The option string
 .Fa optstring
-may contain the following characters; letters and
-letters followed by a colon to indicate an option argument
+may contain the following elements: individual characters, and
+characters followed by a colon to indicate an option argument
 is to follow.
-It does not matter to the function
+For example, an option string
+.Li "\&""x""
+recognizes an option
+.Dq Fl x ,
+and an option string
+.Li "\&""x:""
+recognizes an option and argument
+.Dq Fl x Ar argument .
+It does not matter to
 .Fn getopt
 if a following argument has leading white space.
 .Pp
@@ -51,6 +60,12 @@ contains the index to the next
 .Fa argv
 argument for a subsequent call
 to
+.Fn getopt .
+The variable
+.Va optopt
+saves the last
+.Em known
+option character returned by
 .Fn getopt .
 .Pp
 The variable
