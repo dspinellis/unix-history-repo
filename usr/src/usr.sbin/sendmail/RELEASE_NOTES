@@ -720,6 +720,10 @@ summary of the changes in that release.
 		"AGENT=sendmail" environment variable, in part to enforce
 		at least one environment variable, since many programs and
 		libraries die horribly if this is not guaranteed.
+	Change heuristic for rebuilding both NEWDB and NDBM versions of
+		alias databases -- new algorithm looks for the substring
+		"/yp/" in the file name.  This is more portable and involves
+		less overhead.  Suggested by Motonori Nakamura.
 	PORTABILITY FIXES:
 		Solaris 2 from Rob McMahon <cudcv@csv.warwick.ac.uk>.
 		System V Release 4 from Motonori Nakamura of Ritsumeikan
@@ -930,6 +934,9 @@ summary of the changes in that release.
 		by Scott Hutton.
 	CONFIG: Add MAILER(mail11) to get DECnet support.  Code contributed
 		by Barb Dijker of Labyrinth Computer Services.
+	CONFIG: change confCHECK_ALIASES to default to False -- it has poor
+		performance for large alias files, and this confused many
+		people.
 	NEW FILES:
 		cf/cf/cs-hpux10.mc
 		cf/cf/cs-solaris2.mc
@@ -946,6 +953,7 @@ summary of the changes in that release.
 		cf/feature/local_procmail.m4
 		cf/feature/smrsh.m4
 		cf/feature/stickydomain.m4
+		cf/mailer/mail11.m4
 		cf/mailer/procmail.m4
 		cf/ostype/amdahl-uts.m4
 		cf/ostype/hpux10.m4
@@ -958,9 +966,12 @@ summary of the changes in that release.
 		smrsh/smrsh.8
 		smrsh/smrsh.c
 		src/Makefiles/Makefile.CSOS
+		src/Makefiles/Makefile.EWS-UX_V
 		src/Makefiles/Makefile.IRIX.5.x
 		src/Makefiles/Makefile.IRIX64
 		src/Makefiles/Makefile.ISC
+		src/Makefiles/Makefile.NEWS-OS.4.x
+		src/Makefiles/Makefile.NEWS-OS.6.x
 		src/Makefiles/Makefile.NonStop-UX
 		src/Makefiles/Makefile.Paragon
 		src/Makefiles/Makefile.SunOS.5.3
@@ -968,6 +979,7 @@ summary of the changes in that release.
 		src/Makefiles/Makefile.UNIX_SV.4.2.i386
 		src/Makefiles/Makefile.uts.systemV
 		src/mime.c
+		test/t_seteuid.c
 	RENAMED FILES:
 		cf/cf/alpha.mc =>		cf/cf/s2k-osf1.mc
 		cf/cf/chez.mc =>		cf/cf/chez.cs.mc
