@@ -6,11 +6,19 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)qsort.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)qsort.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <stdlib.h>
+
+/*
+ * XXX
+ * Report from John Bentley at ATT:  the BSD qsort goes quadratic on random
+ * 0 and 1  (N/2 of each.)  This is because it does not keep = elements
+ * together.   (<= go before test element; > go after, > so everything gets
+ * shoved before the test element, which is qsort's worst case.)
+ */
 
 /*
  * MTHRESH is the smallest partition for which we compare for a median
