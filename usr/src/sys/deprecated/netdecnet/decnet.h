@@ -1,4 +1,4 @@
-/*	decnet.h	1.2	82/05/15	*/
+/*	decnet.h	1.3	82/10/09	*/
 
 /*
  * DECnet address (should be expanded for Phase 3E)
