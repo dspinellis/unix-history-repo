@@ -13,9 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkswap.c	5.1 (Berkeley) %G%
- *
- * from: $Header: mkswap.c,v 1.2 92/09/22 03:32:04 torek Exp $
+ *	@(#)mkswap.c	5.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>

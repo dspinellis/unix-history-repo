@@ -13,9 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkmakefile.c	5.1 (Berkeley) %G%
- *
- * from: $Header: mkmakefile.c,v 1.6 93/01/12 03:58:45 torek Exp $
+ *	@(#)mkmakefile.c	5.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>

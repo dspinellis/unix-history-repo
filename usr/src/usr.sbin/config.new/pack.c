@@ -13,9 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pack.c	5.1 (Berkeley) %G%
- *
- * from: $Header: pack.c,v 1.2 92/10/10 09:01:35 torek Exp $
+ *	@(#)pack.c	5.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
