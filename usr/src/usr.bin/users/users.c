@@ -22,74 +22,55 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)users.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)users.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- * users
- */
 #include <sys/types.h>
+#include <errno.h>
 #include <utmp.h>
 #include <stdio.h>
 
-#define NMAX		sizeof(utmp.ut_name)
-#define MAXUSERS	200
-
-static struct utmp utmp;		/* read structure */
-static int ncnt;			/* count of names */
-static char *names[MAXUSERS];		/* names table */
+#define	MAXUSERS	200
 
 main()
 {
-	register FILE *fp;		/* file pointer */
+	register int cnt, ncnt;
+	struct utmp utmp;
+	char names[MAXUSERS][UT_NAMESIZE];
+	int scmp();
 
-	if (!(fp = fopen(_PATH_UTMP, "r"))) {
+	if (!freopen(_PATH_UTMP, "r", stdin)) {
 		(void)fprintf(stderr, "users: can't open %s.\n", _PATH_UTMP);
 		exit(1);
 	}
-	while (fread((char *)&utmp, sizeof(utmp), 1, fp) == 1)
+	for (ncnt = 0;
+	    fread((char *)&utmp, sizeof(utmp), 1, stdin) == 1;)
 		if (*utmp.ut_name) {
-			if (++ncnt > MAXUSERS) {
-				ncnt = MAXUSERS;
-				fputs("users: too many users.\n", stderr);
+			if (ncnt == MAXUSERS) {
+				(void)fprintf(stderr,
+				    "users: too many users.\n");
 				break;
 			}
-			nsave();
+			(void)strncpy(names[ncnt], utmp.ut_name, UT_NAMESIZE);
+			++ncnt;
 		}
-	summary();
+
+	if (ncnt) {
+		qsort(names, ncnt, UT_NAMESIZE, scmp);
+		(void)printf("%s", names[0]);
+		for (cnt = 1; cnt < ncnt; ++cnt) {
+			while (cnt < ncnt - 1 &&
+			    !strncmp(names[cnt], names[cnt + 1], UT_NAMESIZE))
+				++cnt;
+			(void)printf(" %.*s", UT_NAMESIZE, names[cnt]);
+		}
+		(void)printf("\n");
+	}
 	exit(0);
 }
 
-nsave()
-{
-	static char **namp = names;	/* pointer to names table */
-	char *calloc();
-
-	if (!(*namp = calloc((u_int)(NMAX + 1), sizeof(char)))) {
-		fputs("users: malloc error.\n", stderr);
-		exit(1);
-	}
-	bcopy(utmp.ut_name, *namp++, NMAX);
-}
-
-summary()
-{
-	register char **p;
-	int scmp();
-
-	if (!ncnt)
-		return;
-	qsort((char *)names, ncnt, sizeof(names[0]), scmp);
-	fputs(names[0], stdout);
-	for (p = &names[1]; --ncnt; ++p) {
-		putchar(' ');
-		fputs(*p, stdout);
-	}
-	putchar('\n');
-}
-
 scmp(p, q)
-	char **p, **q;
+	char *p, *q;
 {
-	return(strcmp(*p, *q));
+	return(strcmp(p, q));
 }
