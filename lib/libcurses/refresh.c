@@ -298,7 +298,7 @@ makech(win, wy)
 		    && wx <= lch) {
 
 			if (ce != NULL && win->maxx + win->begx == 
-			    curscr->maxx && wx >= nlsp && nsp->ch == ' ') {
+			    curscr->maxx && wx >= nlsp && nsp->ch == ' ' && nsp->attr == 0) {
 				/* Check for clear to end-of-line. */
 				cep = &curscr->lines[win->begy + wy]->line[win->begx + win->maxx - 1];
 				while (cep->ch == ' ' && cep->attr == 0)
