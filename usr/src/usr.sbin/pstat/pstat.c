@@ -1,23 +1,21 @@
 /*-
- * Copyright (c) 1980, 1991 The Regents of the University of California.
+ * Copyright (c) 1980, 1991, 1993 The Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.proprietary.c%
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980, 1991 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1980, 1991, 1993 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.41 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sys/user.h>
-#include <sys/proc.h>
 #include <sys/time.h>
 #include <sys/vnode.h>
 #include <sys/map.h>
@@ -31,8 +29,6 @@ static char sccsid[] = "@(#)pstat.c	5.40 (Berkeley) %G%";
 #undef NFS
 #include <sys/stat.h>
 #include <nfs/nfsnode.h>
-/* #include <nfs/nfsv2.h> */
-/* #include <nfs/nfs.h> */
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <sys/conf.h>
@@ -42,72 +38,38 @@ static char sccsid[] = "@(#)pstat.c	5.40 (Berkeley) %G%";
 #include <nlist.h>
 #include <kvm.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <limits.h>
 #include "pathnames.h"
 
-#define mask(x)		(x&0377)
-#define	clear(x)	((int)x &~ KERNBASE)
-
-char	*nlistf	= NULL;
-char	*memf	= NULL;
-
 struct nlist nl[] = {
-#define	SWAPMAP	0
-	{ "_swapmap" },
-#define	SNSWAPMAP 1
-	{ "_nswapmap" },
-#define	SDMMIN	2
-	{ "_dmmin" },
-#define	SDMMAX	3
-	{ "_dmmax" },
-#define	SNSWDEV	4
-	{ "_nswdev" },
-#define	SSWDEVT	5
-	{ "_swdevt" },
-#define NLMANDATORY SSWDEVT	/* names up to here are mandatory */
+#define VM_SWAPMAP	0
+	{ "_swapmap" },	/* list of free swap areas */
+#define VM_NSWAPMAP	1
+	{ "_nswapmap" },/* size of the swap map */
+#define VM_SWDEVT	2
+	{ "_swdevt" },	/* list of swap devices and sizes */
+#define VM_NSWAP	3
+	{ "_nswap" },	/* size of largest swap device */
+#define VM_NSWDEV	4
+	{ "_nswdev" },	/* number of swap devices */
+#define VM_DMMAX	5
+	{ "_dmmax" },	/* maximum size of a swap block */
+#define V_NUMV		6
+	{ "_numvnodes" },
+#define V_ROOTFS	7
+	{ "_rootfs" },
+#define	FNL_NFILE	8
+	{"_nfiles"},
+#define FNL_MAXFILE	9
+	{"_maxfiles"},
+#define NLMANDATORY FNL_MAXFILE	/* names up to here are mandatory */
 #define	SCONS	NLMANDATORY + 1
 	{ "_cons" },
 #define	SPTY	NLMANDATORY + 2
 	{ "_pt_tty" },
 #define	SNPTY	NLMANDATORY + 3
 	{ "_npty" },
-#ifdef vax
-#define	SDZ	(SNPTY+1)
-	{ "_dz_tty" },
-#define	SNDZ	(SNPTY+2)
-	{ "_dz_cnt" },
-#define	SDMF	(SNPTY+3)
-	{ "_dmf_tty" },
-#define	SNDMF	(SNPTY+4)
-	{ "_ndmf" },
-#define	SDH	(SNPTY+5)
-	{ "_dh11" },
-#define	SNDH	(SNPTY+6)
-	{ "_ndh11" },
-#define	SDHU	(SNPTY+7)
-	{ "_dhu_tty" },
-#define	SNDHU	(SNPTY+8)
-	{ "_ndhu" },
-#define	SDMZ	(SNPTY+9)
-	{ "_dmz_tty" },
-#define	SNDMZ	(SNPTY+10)
-	{ "_ndmz" },
-#define	SQD	(SNPTY+11)
-	{ "_qd_tty" },
-#define	SNQD	(SNPTY+12)
-	{ "_nNQD" },
-#endif
-
-#ifdef tahoe
-#define	SVX	(SNPTY+1)
-	{ "_vx_tty" },
-#define	SNVX	(SNPTY+2)
-	{ "_nvx" },
-#define SMP	(SNPTY+3)
-	{ "_mp_tty" },
-#define SNMP	(SNPTY+4)
-	{ "_nmp" },
-#endif
 
 #ifdef hp300
 #define	SDCA	(SNPTY+1)
@@ -138,25 +100,25 @@ struct nlist nl[] = {
 	{ "" }
 };
 
-int	vnof;
-int	txtf;
-int	prcf;
-int	ttyf;
-int	usrf;
-int	upid;
-int	filf;
-int	swpf;
-int	totflg;
-char	partab[1];
-struct	cdevsw	cdevsw[1];
-struct	bdevsw	bdevsw[1];
-int	allflg;
-int	nflg;
-u_long	getword();
-off_t	mkphys();
+int	usenumflag;
+int	totalflag;
+char	*nlistf	= NULL;
+char	*memf	= NULL;
 kvm_t	*kd;
 
-#define V(x)	(u_long)(x)
+#define	SVAR(var) __STRING(var)	/* to force expansion */
+#define	KGET(idx, var) \
+	KGET1(idx, &var, sizeof(var), SVAR(var))
+#define	KGET1(idx, p, s, msg) \
+	KGET2(nl[idx].n_value, p, s, msg)
+#define	KGET2(addr, p, s, msg) \
+	if (kvm_read(kd, (u_long)(addr), p, s) != s) \
+		error("cannot read %s: %s", msg, kvm_geterr(kd))
+#define	KGETRET(addr, p, s, msg) \
+	if (kvm_read(kd, (u_long)(addr), p, s) != s) { \
+		error("cannot read %s: %s", msg, kvm_geterr(kd)); \
+		return (0); \
+	}
 
 main(argc, argv)
 	int argc;
@@ -165,56 +127,41 @@ main(argc, argv)
 	extern char *optarg;
 	extern int optind;
 	int ch, ret;
+	int swapflag = 0, vnodeflag = 0, ttyflag = 0, fileflag = 0;
 	char buf[_POSIX2_LINE_MAX];
 
-	while ((ch = getopt(argc, argv, "TafvikptU:sxnu")) != EOF)
+	while ((ch = getopt(argc, argv, "TM:N:finstv")) != EOF)
 		switch (ch) {
-		case 'T':
-			totflg++;
+		case 'M':
+			memf = optarg;
 			break;
-		case 'a':
-			allflg++;
-			/*FALLTHROUGH*/
-		case 'p':
-			prcf++;
+		case 'N':
+			nlistf = optarg;
+			break;
+		case 'T':
+			totalflag++;
 			break;
 		case 'f':
-			filf++;
+			fileflag++;
 			break;
 		case 'v':
 		case 'i':
-			vnof++;
+			vnodeflag++;
 			break;
 		case 't':
-			ttyf++;
-			break;
-		case 'U':
-			usrf++;
-			sscanf(optarg, "%d", &upid);
+			ttyflag++;
 			break;
 		case 's':
-			swpf++;
-			break;
-		case 'x':
-			txtf++;
+			swapflag++;
 			break;
 		case 'n':
-			nflg++;
+			usenumflag++;
 			break;
-		case 'u':
-			fprintf(stderr, "pstat: use [ -U pid ] for -u\n");
-			exit(1);
-		case '?':
 		default:
 			usage();
 		}
 	argc -= optind;
 	argv += optind;
-
-	if (argc > 1)
-		memf = argv[1];
-	if (argc > 0)
-		nlistf = argv[0];
 
 	/*
 	 * Discard setgid privileges if not the running kernel so that bad
@@ -244,21 +191,15 @@ main(argc, argv)
 		if (quit)
 			exit(1);
 	}
-	if (!(filf | totflg | vnof | prcf | txtf | ttyf | usrf | swpf))
+	if (!(fileflag | vnodeflag | ttyflag | swapflag | totalflag))
 		usage();
-	if (filf||totflg)
+	if (fileflag || totalflag)
 		dofile();
-	if (vnof||totflg)
+	if (vnodeflag || totalflag)
 		dovnode();
-	if (prcf||totflg)
-		doproc();
-	if (txtf||totflg)
-		dotext();
-	if (ttyf)
+	if (ttyflag)
 		dotty();
-	if (usrf)
-		dousr();
-	if (swpf||totflg)
+	if (swapflag || totalflag)
 		doswap();
 }
 
@@ -266,7 +207,7 @@ usage()
 {
 
 	fprintf(stderr,
-	    "usage: pstat -[Tafiptsx] [-U [pid]] [system] [core]\n");
+	    "usage: pstat -Tfnstv [system] [core]\n");
 	exit(1);
 }
 
@@ -285,7 +226,7 @@ dovnode()
 	struct mount *getmnt();
 
 	e_vnodebase = loadvnodes(&numvnodes);
-	if (totflg) {
+	if (totalflag) {
 		printf("%7d vnodes\n", numvnodes);
 		return;
 	}
@@ -420,11 +361,8 @@ ufs_print(vp)
 	mode_t type;
 	extern char *devname();
 
-	if (kvm_read(kd, V(VTOI(vp)), &inode, sizeof(struct inode)) != 
-	    sizeof(struct inode)) {
-		error("can't read inode for %x", vp);
-		return;
-	}
+
+	KGETRET(VTOI(vp), &inode, sizeof(struct inode), "vnode's inode");
 	flag = ip->i_flag;
 	if (flag & ILOCKED)
 		*flags++ = 'L';
@@ -453,7 +391,7 @@ ufs_print(vp)
 	printf(" %6d %5s", ip->i_number, flagbuf);
 	type = ip->i_mode & S_IFMT;
 	if (type == S_IFCHR || type == S_IFBLK)
-		if (nflg || ((name = devname(ip->i_rdev, type)) == NULL))
+		if (usenumflag || ((name = devname(ip->i_rdev, type)) == NULL))
 			printf("   %2d,%-2d", 
 				major(ip->i_rdev), minor(ip->i_rdev));
 		else
@@ -475,13 +413,8 @@ nfs_print(vp)
 	register flag;
 	char *name;
 	mode_t type;
-	extern char *devname();
 
-	if (kvm_read(kd, V(VTONFS(vp)), &nfsnode, sizeof(struct nfsnode)) != 
-	    sizeof(struct nfsnode)) {
-		error("can't read nfsnode for %x", vp);
-		return;
-	}
+	KGETRET(VTONFS(vp), &nfsnode, sizeof(nfsnode), "vnode's nfsnode");
 	flag = np->n_flag;
 	if (flag & NFLUSHWANT)
 		*flags++ = 'W';
@@ -505,7 +438,7 @@ nfs_print(vp)
 	printf(" %6d %5s", VT.va_fileid, flagbuf);
 	type = VT.va_mode & S_IFMT;
 	if (type == S_IFCHR || type == S_IFBLK)
-		if (nflg || ((name = devname(VT.va_rdev, type)) == NULL))
+		if (usenumflag || ((name = devname(VT.va_rdev, type)) == NULL))
 			printf("   %2d,%-2d", 
 				major(VT.va_rdev), minor(VT.va_rdev));
 		else
@@ -536,11 +469,7 @@ getmnt(maddr)
 		error("out of memory");
 		exit(1);
 	}
-	if (kvm_read(kd, V(maddr), &mt->mount, sizeof(struct mount)) != 
-	    sizeof(struct mount)) {
-		error("can't read mount table at %x", maddr);
-		return (NULL);
-	}
+	KGETRET(maddr, &mt->mount, sizeof(struct mount), "mount table");
 	mt->maddr = maddr;
 	mt->next = mhead;
 	mhead = mt;
@@ -707,13 +636,6 @@ struct e_vnode *
 kinfo_vnodes(avnodes)
 	int *avnodes;
 {
-	struct nlist vnl[] = {
-#define V_NUMV	0
-		{ "_numvnodes" },
-#define V_ROOTFS 1
-		{ "_rootfs" },
-		{""}
-	};
 	int numvnodes;
 	struct mount *rootfs, *mp, mount;
 	char *vbuf, *evbuf, *bp;
@@ -722,13 +644,8 @@ kinfo_vnodes(avnodes)
 
 #define VPTRSZ  sizeof (struct vnode *)
 #define VNODESZ sizeof (struct vnode)
-#define NVAL(indx)	vnl[(indx)].n_value
 
-	if (kvm_nlist(kd, vnl) != 0) {
-		error("nlist vnl: %s", kvm_geterr(kd));
-		exit(1);
-	}
-	numvnodes = getword(NVAL(V_NUMV));
+	KGET(V_NUMV, numvnodes);
 	if ((vbuf = (char *)malloc((numvnodes + 20) * (VPTRSZ + VNODESZ))) 
 	    == NULL) {
 		error("out of memory");
@@ -736,11 +653,12 @@ kinfo_vnodes(avnodes)
 	}
 	bp = vbuf;
 	evbuf = vbuf + (numvnodes + 20) * (VPTRSZ + VNODESZ);
-	mp = rootfs = (struct mount *)getword(NVAL(V_ROOTFS));
+	KGET(V_ROOTFS, rootfs);
+	mp = rootfs;
 	do {
-		kvm_read(kd, V(mp), &mount, sizeof(mount));
+		KGET2(mp, &mount, sizeof(mount), "mount entry");
 		for (vp = mount.mnt_mounth; vp; vp = vnode.v_mountf) {
-			kvm_read(kd, V(vp), &vnode, sizeof (vnode));
+			KGET2(vp, &vnode, sizeof(vnode), "vnode");
 			if ((bp + VPTRSZ + VNODESZ) > evbuf) {
 				/* XXX - should realloc */
 				fprintf(stderr, "pstat: ran out of room for vnodes\n");
@@ -758,38 +676,7 @@ kinfo_vnodes(avnodes)
 	return ((struct e_vnode *)vbuf);
 }
 	
-	
-u_long
-getword(loc)
-	int loc;
-{
-	u_long word;
-
-	kvm_read(kd, V(loc), &word, sizeof (word));
-	return (word);
-}
-
-putf(v, n)
-{
-	if (v)
-		printf("%c", n);
-	else
-		printf(" ");
-}
-
-dotext()
-{
-
-	printf("no text table in this system\n");
-}
-
-doproc()
-{
-	if (!totflg)
-		printf("pstat: -p no longer supported (use ps)\n");
-}
-
-char mesg[] = "  LINE RAW CAN OUT  HWT LWT     ADDR COL STATE  SESS  PGID DISC\n";
+char hdr[]="  LINE RAW CAN OUT  HWT LWT     ADDR COL STATE  SESS  PGID DISC\n";
 int ttyspace = 128;
 struct tty *tty;
 
@@ -802,8 +689,8 @@ dotty()
 	}
 #ifndef hp300
 	printf("1 cons\n");
-	kvm_read(kd, V(nl[SCONS].n_value), tty, sizeof(*tty));
-	printf(mesg);
+	KGET(SCONS, *tty);
+	printf(hdr);
 	ttyprt(&tty[0], 0);
 #endif
 #ifdef vax
@@ -844,35 +731,15 @@ dotty()
 		dottytype("pty", SPTY, SNPTY);
 }
 
-/* 
- * Special case the qdss: there are 4 ttys per qdss,
- * but only the first of each is used as a tty.  
- */
-#ifdef vax
-doqdss()
-{
-	int nqd;
-	register struct tty *tp;
-
-	kvm_read(kd, V(nl[SNQD].n_value), &nqd, sizeof(nqd));
-	printf("%d qd\n", nqd);
-	kvm_read(kd, V(nl[SQD].n_value), tty, nqd * sizeof(struct tty) * 4);
-	printf(mesg);
-	for (tp = tty; tp < &tty[nqd * 4]; tp += 4)
-		ttyprt(tp, tp - tty);
-}
-#endif
-
 dottytype(name, type, number)
 char *name;
 {
 	int ntty;
 	register struct tty *tp;
-	extern char *realloc();
 
 	if (tty == (struct tty *)0) 
 		return;
-	kvm_read(kd, V(nl[number].n_value), &ntty, sizeof(ntty));
+	KGET(number, ntty);
 	printf("%d %s %s\n", ntty, name, (ntty == 1) ? "line" :
 	    "lines");
 	if (ntty > ttyspace) {
@@ -882,8 +749,8 @@ char *name;
 			return;
 		}
 	}
-	kvm_read(kd, V(nl[type].n_value), tty, ntty * sizeof(struct tty));
-	printf(mesg);
+	KGET1(type, tty, ntty * sizeof(struct tty), "tty structs");
+	printf(hdr);
 	for (tp = tty; tp < &tty[ntty]; tp++)
 		ttyprt(tp, tp - tty);
 }
@@ -912,17 +779,16 @@ struct {
 };
 
 ttyprt(atp, line)
-struct tty *atp;
+	struct tty *atp;
 {
 	register struct tty *tp;
 	char state[20];
 	register i, j;
 	char *name;
-	extern char *devname();
 	pid_t pgid;
 
 	tp = atp;
-	if (nflg || tp->t_dev == 0 ||
+	if (usenumflag || tp->t_dev == 0 ||
 	   (name = devname(tp->t_dev, S_IFCHR)) == NULL)
 		printf("%7d ", line); 
 	else
@@ -937,9 +803,9 @@ struct tty *atp;
 		state[j++] = '-';
 	state[j] = '\0';
 	printf("%-4s %6x", state, (u_long)tp->t_session & ~KERNBASE);
-	if (tp->t_pgrp == NULL || kvm_read(kd, V(&tp->t_pgrp->pg_id), &pgid, 
-	    sizeof (pid_t)) != sizeof (pid_t))
-		pgid = 0;
+	pgid = 0;
+	if (tp->t_pgrp != NULL)
+		KGET2(&tp->t_pgrp->pg_id, &pgid, sizeof (pid_t), "pgid");
 	printf("%6d ", pgid);
 	switch (tp->t_line) {
 
@@ -960,51 +826,17 @@ struct tty *atp;
 	}
 }
 
-/*
- * The user structure is going away.  What's left here won't
- * be around for long.
- */
-dousr()
-{
-
-	printf("nothing left in user structure in this system\n");
-}
-
-oatoi(s)
-char *s;
-{
-	register v;
-
-	v = 0;
-	while (*s)
-		v = (v<<3) + *s++ - '0';
-	return(v);
-}
-
 dofile()
 {
 	register struct file *fp;
 	struct file *addr;
-	char *buf;
+	char *buf, flagbuf[16], *fbp;
 	int len, maxfile, nfile;
-	struct nlist fnl[] = {
-#define	FNL_NFILE	0
-		{"_nfiles"},
-#define FNL_MAXFILE	1
-		{"_maxfiles"},
-		{""}
-	};
 	static char *dtypes[] = { "???", "inode", "socket" };
 
-	if (kvm_nlist(kd, fnl) != 0) {
-		error("kvm_nlist: no _nfiles or _maxfiles: %s", 
-			kvm_geterr(kd));
-		return;
-	}
-	kvm_read(kd, V(fnl[FNL_MAXFILE].n_value), &maxfile,
-		sizeof (maxfile));
-	if (totflg) {
-		kvm_read(kd, V(fnl[FNL_NFILE].n_value), &nfile, sizeof (nfile));
+	KGET(FNL_MAXFILE, maxfile);
+	if (totalflag) {
+		KGET(FNL_NFILE, nfile);
 		printf("%3d/%3d files\n", nfile, maxfile);
 		return;
 	}
@@ -1026,24 +858,29 @@ dofile()
 			continue;
 		printf("%x ", addr);
 		printf("%-8.8s", dtypes[fp->f_type]);
-		putf(fp->f_flag&FREAD, 'R');
-		putf(fp->f_flag&FWRITE, 'W');
-		putf(fp->f_flag&FAPPEND, 'A');
+		fbp = flagbuf;
+		if (fp->f_flag & FREAD)
+			*fbp++ = 'R';
+		if (fp->f_flag & FWRITE)
+			*fbp++ = 'W';
+		if (fp->f_flag & FAPPEND)
+			*fbp++ = 'A';
 #ifdef FSHLOCK	/* currently gone */
-		putf(fp->f_flag&FSHLOCK, 'S');
-		putf(fp->f_flag&FEXLOCK, 'X');
-#else
-		putf(0, ' ');
-		putf(0, ' ');
+		if (fp->f_flag & FSHLOCK)
+			*fbp++ = 'S';
+		if (fp->f_flag & FEXLOCK)
+			*fbp++ = 'X';
 #endif
-		putf(fp->f_flag&FASYNC, 'I');
-		printf("  %3d", fp->f_count);
+		if (fp->f_flag & FASYNC)
+			*fbp++ = 'I';
+		*fbp = '\0';
+		printf("%6s  %3d", flagbuf, fp->f_count);
 		printf("  %3d", fp->f_msgcount);
 		printf("  %8.1x", fp->f_data);
 		if (fp->f_offset < 0)
-			printf("  %x\n", fp->f_offset);
+			printf("  %qx\n", fp->f_offset);
 		else
-			printf("  %ld\n", fp->f_offset);
+			printf("  %qd\n", fp->f_offset);
 	}
 	free(buf);
 }
@@ -1082,10 +919,121 @@ getfiles(abuf, alen)
 	return (0);
 }
 
-
+/*
+ * doswap is based on a program called swapinfo written
+ * by Kevin Lahey <kml@rokkaku.atl.ga.us>.
+ */
 doswap()
 {
-	printf("swap statistics not yet supported in this system\n");
+	char *header;
+	int hlen, nswap, nswdev, dmmax, nswapmap;
+	int s, e, div, i, avail, nfree, npfree, used;
+	struct swdevt *sw;
+	long blocksize, *perdev;
+	struct map *swapmap, *kswapmap;
+	struct mapent *mp;
+
+	KGET(VM_NSWAP, nswap);
+	KGET(VM_NSWDEV, nswdev);
+	KGET(VM_DMMAX, dmmax);
+	KGET(VM_NSWAPMAP, nswapmap);
+	KGET(VM_SWAPMAP, kswapmap);	/* kernel `swapmap' is a pointer */
+	if ((sw = (struct swdevt *)malloc(nswdev * sizeof(*sw))) == NULL ||
+	    (perdev = (long *)malloc(nswdev * sizeof(*perdev))) == NULL ||
+	    (mp = (struct mapent *)malloc(nswapmap * sizeof(*mp))) == NULL)
+		err(1, "malloc");
+	KGET1(VM_SWDEVT, sw, nswdev * sizeof(*sw), "swdevt");
+	KGET2((long)kswapmap, mp, nswapmap * sizeof(*mp), "swapmap");
+
+	/* first entry in map is `struct map'; rest are mapent's */
+	swapmap = (struct map *)mp;
+	if (nswapmap != swapmap->m_limit - (struct mapent *)kswapmap)
+		errx(1, "panic: nswapmap goof");
+
+	/*
+	 * Count up swap space.
+	 */
+	nfree = 0;
+	bzero(perdev, nswdev * sizeof(*perdev));
+	for (mp++; mp->m_addr != 0; mp++) {
+		s = mp->m_addr;			/* start of swap region */
+		e = mp->m_addr + mp->m_size;	/* end of region */
+		nfree += mp->m_size;
+
+		/*
+		 * Swap space is split up among the configured disks.
+		 * The first dmmax blocks of swap space some from the
+		 * first disk, the next dmmax blocks from the next, 
+		 * and so on.  The list of free space joins adjacent
+		 * free blocks, ignoring device boundries.  If we want
+		 * to keep track of this information per device, we'll
+		 * just have to extract it ourselves.
+		 */
+
+		/* calculate first device on which this falls */
+		i = (s / dmmax) % nswdev;
+		while (s < e) {		/* XXX this is inefficient */
+			int bound = roundup(s+1, dmmax);
+
+			if (bound > e)
+				bound = e;
+			perdev[i] += bound - s;
+			if (++i >= nswdev)
+				i = 0;
+			s = bound;
+		}
+	}
+
+	header = getbsize(&hlen, &blocksize);
+	if (!totalflag)
+		(void)printf("%-10s %*s %10s %10s %10s\n",
+		    "Device", hlen, header, "Used", "Available", "Capacity");
+	div = blocksize / 512;
+	avail = npfree = 0;
+	for (i = 0; i < nswdev; i++) {
+		int xsize, xfree;
+
+		if (!totalflag)
+			(void)printf("/dev/%-5s %*d ",
+			    devname(sw[i].sw_dev, S_IFBLK),
+			    hlen, sw[i].sw_nblks / div);
+
+		/*
+		 * Don't report statistics for partitions which have not
+		 * yet been activated via swapon(8).
+		 */
+		if (!sw[i].sw_freed) {
+			if (totalflag)
+				continue;
+			(void)printf(" *** not available for swapping ***\n");
+			continue;
+		}
+		xsize = sw[i].sw_nblks;
+		xfree = perdev[i];
+		used = xsize - xfree;
+		npfree++;
+		avail += xsize;
+		if (totalflag)
+			continue;
+		(void)printf("%10d %10d %7.0f%%\n", 
+		    used / div, xfree / div,
+		    (double)used / (double)xsize * 100.0);
+	}
+
+	/* 
+	 * If only one partition has been set up via swapon(8), we don't
+	 * need to bother with totals.
+	 */
+	used = avail - nfree;
+	if (totalflag) {
+		printf("%dM/%dM swap space\n", used / 2048, avail / 2048);
+		return;
+	}
+	if (npfree > 1) {
+		(void)printf("%-10s %*d %10d %10d %7.0f%%\n",
+		    "Total", hlen, avail / div, used / div, nfree / div,
+		    (double)used / (double)avail * 100.0);
+	}
 }
 
 #include <varargs.h>
