@@ -1,0 +1,139 @@
+   Copyright (C) 1990, 1992 Aladdin Enterprises.  All rights reserved.
+   Distributed by Free Software Foundation, Inc.
+
+This file is part of Ghostscript.
+
+Ghostscript is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+to anyone for the consequences of using it or for whether it serves any
+particular purpose or works at all, unless he says so in writing.  Refer
+to the Ghostscript General Public License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+Ghostscript, but only under the conditions described in the Ghostscript
+General Public License.  A copy of this license is supposed to have been
+given to you along with Ghostscript so you can know your rights and
+responsibilities.  It should be in a file named COPYING.  Among other
+things, the copyright notice and this notice must be preserved on all
+copies.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, readme.doc, describes problems and new features in the
+current release of Ghostscript.  This file describes version 2.4.1 of
+Ghostscript.
+
+For an overview of Ghostscript and a list of the documentation files, see
+README.
+
+New features
+============
+
+Note: this is not a complete list of new features.  See the most recent
+section of history.doc for full details.
+
+The SunView driver works again.
+
+The SuperVGA drivers, except for the VESA driver, now work with the
+32-bit MS-DOS executable.
+
+You can use \ in file names on the command line on MS-DOS.
+
+You no longer need to set GS_RUN_EXE=dos4gw when using the Watcom
+compiler.
+
+Dictionaries expand automatically when they fill up.  (No more dictfull
+errors.)
+
+There are new drivers that produce all six types of Portable Bitmap /
+Graymap / Pixmap output.  (writeppmfile is still supported, but it
+will be removed in the next release.)
+
+There are new drivers that produce three flavors of PCX files
+(black-and-white, EGA/VGA-style 16-color, and SuperVGA-style
+256-color), and two flavors of GIF files (black-and-white and
+256-color).
+
+Known problems
+==============
+
+Interpreter
+-----------
+
+The interactive interpreter requires that every statement fit on a line,
+i.e., you can't have an unpaired ( or {.
+
+On a MS-DOS system, interrupting Ghostscript by typing ^C doesn't restore
+the display mode.
+
+Operators
+---------
+
+The Ghostscript language does not include the following operators of the
+PostScript language:
+
+	resetfile
+	banddevice, renderbands
+
+The following are not implemented completely:
+
+	%statementedit (file name): interpreted as equivalent to
+%lineedit.
+
+Most of the new color operators, particularly those that support the CMYK
+color model, are implemented as Ghostscript language procedures, and they
+essentially emulate CMYK using RGB.
+
+The following operators that expect arrays won't accept packed arrays:
+	definefont (Subrs (type 1 fonts))
+	setdash (dash pattern)
+	setcachedevice (bounding box)
+	makeimagedevice (palette)
+
+The file operator only recognizes modes r and w, not the newer modes r+,
+w+, a, and a+.
+
+Limitations
+-----------
+
+Floating point exceptions terminate Ghostscript, rather than producing a
+rangecheck error.
+
+Some access checks aren't implemented.
+
+copypage does nothing in the MS-DOS implementation, and merely
+synchronizes the X connection in the Unix implementation.  showpage is a
+procedure that does a copypage and then beeps the bell and waits for the
+user to hit a key. (copypage does do the right thing for printers.)
+
+Graphics bugs
+-------------
+
+strokepath produces incorrect output for dashed lines.
+
+The implementation only looks at the PaintType of the font when doing
+show, not when doing charpath.  Because of this, stroked fonts don't work
+correctly with charpath.
+
+arcto gives an error for negative radii.
+
+Halftone screens that aren't parallel to the coordinate axes may produce
+incorrect output: the cell is rotated, but not the tiling pattern.
+
+Changing the contents of the Encoding array or the Metrics dictionary of a
+font dynamically doesn't produce the expected result (may have no effect)
+if character caching is enabled.
+
+Halftone patterns "flip over" at the 50% coverage point, producing
+anomalous visual effects on some color devices.
+
+We have not been able to test 2-, 4-, and 16-bit memory devices as
+thoroughly as 1-, 8-, 24-, and 32-bit devices; please report any
+problems.
+
+Non-graphics bugs
+-----------------
+
+restore doesn't properly undo currentgstate.
+
+copy doesn't handle gstates.
