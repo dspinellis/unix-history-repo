@@ -1,8 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)n1.c	4.3 %G%";
+static char sccsid[] = "@(#)n1.c	4.4 %G%";
 #endif lint
 
 #include "tdef.h"
+#include <sys/types.h>
 #include <sys/stat.h>
 extern
 #include "d.h"
