@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)ww.h	3.47 (Berkeley) %G%
+ *	@(#)ww.h	3.48 (Berkeley) %G%
  */
 
 #include <sgtty.h>
@@ -174,7 +174,6 @@ struct ww_tty wwnewtty;		/* the new (current) terminal settings */
 struct ww_tty wwwintty;		/* the terminal settings for windows */
 char *wwterm;			/* the terminal name */
 char wwtermcap[1024];		/* place for the termcap */
-char wwkeys[512];		/* termcap fields for the function keys */
 
 	/* generally useful variables */
 int wwnrow, wwncol;		/* the screen size */
@@ -229,16 +228,20 @@ jmp_buf wwjmpbuf;	/* jmpbuf for above */
 	/* the window virtual terminal */
 #define WWT_TERM	"window-v2"
 #define WWT_TERMCAP	"WW|window-v2|window program version 2:\
-	:cr=^M:nl=^J:bl=^G:\
-	:al=\\EL:am:le=^H:bs:cd=\\EJ:ce=\\EK:cl=\\EE:cm=\\EY%+ %+ :\
-	:da:db:dc=\\EN:dl=\\EM:do=\\EB:ei=\\EO:ho=\\EH:im=\\E@:mi:\
-	:nd=\\EC:ta=^I:pt:up=\\EA:me=\\Er^?:"
+	:am:bs:da:db:ms:pt:cr=^M:nl=^J:bl=^G:ta=^I:\
+	:cm=\\EY%+ %+ :le=^H:nd=\\EC:up=\\EA:do=\\EB:ho=\\EH:\
+	:cd=\\EJ:ce=\\EK:cl=\\EE:me=\\Er^?:"
 #define WWT_REV		"se=\\ErA:so=\\EsA:mr=\\EsA:"
 #define WWT_BLK		"BE=\\ErB:BS=\\EsB:mb=\\EsB:"
 #define WWT_UL		"ue=\\ErD:us=\\EsD:"
 #define WWT_GRP		"ae=\\ErH:as=\\EsH:"
 #define WWT_DIM		"HE=\\ErP:HS=\\EsP:mh=\\EsP:"
 #define WWT_USR		"XE=\\Er`:XS=\\Es`:"
+#define WWT_ALDL	"al=\\EL:dl=\\EM:"
+#define WWT_IMEI	"im=\\E@:ei=\\EO:mi:"
+#define WWT_DC		"dc=\\EN:"
+char wwwintermcap[1024];	/* terminal-specific but window-independent
+				   part of the window termcap */
 
 	/* our functions */
 struct ww *wwopen();

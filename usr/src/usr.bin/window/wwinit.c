@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwinit.c	3.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwinit.c	3.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -121,7 +121,25 @@ wwinit()
 	wwindex[WWX_NOBODY] = &wwnobody;
 	wwnobody.ww_order = NWW;
 
-	kp = wwkeys;
+	kp = wwwintermcap;
+	if (wwavailmodes & WWM_REV)
+		wwaddcap1(WWT_REV, &kp);
+	if (wwavailmodes & WWM_BLK)
+		wwaddcap1(WWT_BLK, &kp);
+	if (wwavailmodes & WWM_UL)
+		wwaddcap1(WWT_UL, &kp);
+	if (wwavailmodes & WWM_GRP)
+		wwaddcap1(WWT_GRP, &kp);
+	if (wwavailmodes & WWM_DIM)
+		wwaddcap1(WWT_DIM, &kp);
+	if (wwavailmodes & WWM_USR)
+		wwaddcap1(WWT_USR, &kp);
+	if (tt.tt_insline && tt.tt_delline || tt.tt_setscroll)
+		wwaddcap1(WWT_ALDL, &kp);
+	if (tt.tt_hasinsert)
+		wwaddcap1(WWT_IMEI, &kp);
+	if (tt.tt_delchar)
+		wwaddcap1(WWT_DC, &kp);
 	wwaddcap("kb", &kp);
 	wwaddcap("ku", &kp);
 	wwaddcap("kd", &kp);
@@ -163,8 +181,8 @@ bad:
 }
 
 wwaddcap(cap, kp)
-register char *cap;
-register char **kp;
+	register char *cap;
+	register char **kp;
 {
 	char tbuf[512];
 	char *tp = tbuf;
@@ -182,4 +200,13 @@ register char **kp;
 		*(*kp)++ = ':';
 		**kp = 0;
 	}
+}
+
+wwaddcap1(cap, kp)
+	register char *cap;
+	register char **kp;
+{
+	while (*(*kp)++ = *cap++)
+		;
+	(*kp)--;
 }
