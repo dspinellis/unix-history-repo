@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -594,34 +594,32 @@ fatal(s)
 	dologout(0);
 }
 
-/*VARARGS2*/
-reply(n, s, args)
+reply(n, s, p0, p1, p2, p3, p4)
 	int n;
 	char *s;
 {
 
 	printf("%d ", n);
-	_doprnt(s, &args, stdout);
+	printf(s, p0, p1, p2, p3, p4);
 	printf("\r\n");
 	(void) fflush(stdout);
 	if (debug) {
 		syslog(LOG_DEBUG, "<--- %d ", n);
-		syslog(LOG_DEBUG, s, &args);
+		syslog(LOG_DEBUG, s, p0, p1, p2, p3, p4);
 	}
 }
 
-/*VARARGS2*/
-lreply(n, s, args)
+lreply(n, s, p0, p1, p2, p3, p4)
 	int n;
 	char *s;
 {
 	printf("%d-", n);
-	_doprnt(s, &args, stdout);
+	printf(s, p0, p1, p2, p3, p4);
 	printf("\r\n");
 	(void) fflush(stdout);
 	if (debug) {
 		syslog(LOG_DEBUG, "<--- %d- ", n);
-		syslog(LOG_DEBUG, s, &args);
+		syslog(LOG_DEBUG, s, p0, p1, p2, p3, p4);
 	}
 }
 
