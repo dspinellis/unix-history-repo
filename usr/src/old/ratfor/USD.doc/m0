@@ -1,5 +1,7 @@
-.\"	@(#)m0	6.1 (Berkeley) %G%
+.\"	@(#)m0	6.2 (Berkeley) %G%
 .\"
+.OH 'RATFOR \(em A Preprocessor for a Rational Fortran''PS2:9-%'
+.EH 'PS2:9-%''RATFOR \(em A Preprocessor for a Rational Fortran'
 .....ND "January 1, 1977"
 .RP
 ....TR 55
