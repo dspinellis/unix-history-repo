@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.51 (Berkeley) %G%
+.\"	@(#)contrib	5.52 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -217,6 +217,7 @@ erf(3)	Peter McIlroy, K.C. Ng
 error(1)	Robert R. Henry
 ex(1)	Mark Horton
 factor(6)	Landon Curt Noll
+file(1)	Ian Darwin
 find(1)	Cimarron Taylor
 finger(1)	Tony Nardo
 fish(6)	Muffy Barkocy
