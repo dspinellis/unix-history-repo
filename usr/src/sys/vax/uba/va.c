@@ -1,6 +1,5 @@
-/*	va.c	3.5	%G%	*/
+/*	va.c	3.6	%G%	*/
 
-#ifdef ERNIE
 #include "../h/param.h"
 #include "../h/dir.h"
 #include "../h/user.h"
@@ -12,61 +11,63 @@
 #include "../h/vcmd.h"
 
 /*
- * Benson-Varian matrix printer/plotter.  Device "va", for "varian".
+ * Benson-Varian matrix printer/plotter
  * dma interface driver
  */
-int	vabdp = 1;	/* Used with ubasetup. */
+int	vabdp = 1;
 
-unsigned minvaph();	/* Maximum amount transferred by physio. */
+unsigned minvaph();
 
 #define	VAPRI	(PZERO-1)
 
-struct	varegs {	/* Unibus registers provided by va. */
-	unsigned short vabufaddr;	/* DMA buffer address. */
-	short vawcount;			/* Negative of number of 16-bit
-					   words to transfer by DMA. */
+#define	ushort	unsigned short
+struct	varegs {
+	ushort	vaba;
+	short	vawc;
 	union {
-		short vacsrword;	/* csr addressed as a word (for R). */
+		short	Vacsw;
 		struct {
-			char Vacsrlo;
-			char Vacsrhi;	/* High byte (command bytes go here). */
-		} vacsrbytes;		/* csr addressed as bytes (for W). */
-	} vacsr;			/* Control/Status Register (csr). */
+			char Vacsl;
+			char Vacsh;
+		} vacsr;
+	} vacs;
 	short	vadata;
 };
 
-#define	vacsrhi	vacsr.vacsrbytes.Vacsrhi
-#define	vacsrlo	vacsr.vacsrbytes.Vacsrlo
+#define	vacsw	vacs.Vacsw
+#define	vacsh	vacs.vacsr.Vacsh
+#define	vacsl	vacs.vacsr.Vacsl
+
 #define	VAADDR	((struct varegs *)(UBA0_DEV + 0164000))
 
-/* vacsr.vacsrword bits: */
-#define	ERROR		0100000		/* R	Some error has occurred */
-#define NPRTIMO		01000		/* R    DMA timeout error */
-#define NOTREADY	0400		/* R	Something besides NPRTIMO */
-#define DONE		0200		/* R	*/
-#define	IENABLE		0100		/* R/W	Interrupt enable */
-#define	SUPPLIESLOW	04		/* R	*/
-#define BOTOFFORM	02		/* R	*/
-#define BYTEREVERSE	01		/* R/W	Reverse byte order in words */
+/* vacsw bits */
+#define	ERROR		0100000		/* Some error has occurred */
+#define NPRTIMO		01000		/* DMA timeout error */
+#define NOTREADY	0400		/* Something besides NPRTIMO */
+#define DONE		0200
+#define	IENABLE		0100		/* Interrupt enable */
+#define	SUPPLIESLOW	04
+#define BOTOFFORM	02
+#define BYTEREVERSE	01		/* Reverse byte order in words */
 
-/* Command bytes sent to vacsrhi */
+/* vacsh command bytes */
 #define VAPLOT		0340
 #define VAPRINT		0100
 #define VAPRINTPLOT	0160
 #define VAAUTOSTEP	0244
-/* The following commands are not used in this driver: */
-#define VANOAUTOSTEP	0045
-#define	VAFORMFEED	0263
-#define	VASLEW		0265
-#define	VASTEP		0064
+#define VANOAUTOSTEP	0045		/* unused */
+#define	VAFORMFEED	0263		/* unused */
+#define	VASLEW		0265		/* unused */
+#define	VASTEP		0064		/* unused */
 
 struct {
-	char	va_is_open;
+	char	va_open;
 	char	va_busy;
 	int	va_state;	/* State: bits are commands in vcmd.h. */
-	int	va_wcount;
+	int	va_wc;
 	int	va_bufp;
-} vainfo;
+	struct	buf *va_bp;
+} va11;
 int	va_ubinfo;
 
 struct	buf rvabuf;		/* Used by physio for a buffer. */
@@ -74,19 +75,17 @@ struct	buf rvabuf;		/* Used by physio for a buffer. */
 vaopen()
 {
 
-	if (vainfo.va_is_open) {	/* Can't open if it's already open. */
+	if (va11.va_open) {
 		u.u_error = ENXIO;
 		return;
 	}
-	vainfo.va_is_open = 1;		/* NOW it's open! */
-	VAADDR->vawcount = 0;		/* Clear residual errors */
-	vainfo.va_wcount = 0;		/* No DMA to do now. */
-	vainfo.va_state = 0;
-	VAADDR->vacsrlo = IENABLE;
-					/* Enable interrupts. */
+	va11.va_open = 1;
+	VAADDR->vawc = 0;
+	va11.va_wc = 0;
+	va11.va_state = 0;
+	VAADDR->vacsl = IENABLE;
 	vatimo();
-
-	vacmd(VPRINT);			/* Start in print mode. */
+	vacmd(VPRINT);
 	if (u.u_error)
 		vaclose();
 }
@@ -97,44 +96,41 @@ vastrategy(bp)
 	register int e;
 
 	(void) spl4();
-	while (vainfo.va_busy)		/* Wait till not busy. */
-		sleep((caddr_t)&vainfo, VAPRI);
-	vainfo.va_busy = 1;		/* Grab it. */
-	(void) spl0();
-
-	va_ubinfo = ubasetup(bp, vabdp);	/* Set up uba mapper. */
-	vainfo.va_bufp = va_ubinfo & 0x3ffff;
-
-	(void) spl4();
+	while (va11.va_busy)
+		sleep((caddr_t)&va11, VAPRI);
+	va11.va_busy = 1;
+	va11.va_bp = bp;
+	va_ubinfo = ubasetup(bp, vabdp);
+	va11.va_bufp = va_ubinfo & 0x3ffff;
 	if (e = vaerror(DONE))
 		goto brkout;
-	vainfo.va_wcount = -(bp->b_bcount/2);
-		/* va uses a word count, 
-		   so user had better supply an even number of bytes. */
+	va11.va_wc = -(bp->b_bcount/2);
 	vastart();
-	e = vaerror(DONE);	/* Wait for DMA to complete. */
-	vainfo.va_wcount = 0;	/* Reset state info. */
-	vainfo.va_bufp = 0;
+	e = vaerror(DONE);	/* Wait for DMA to complete */
+	va11.va_wc = 0;
+	va11.va_bufp = 0;
 
-	/* After printing a line of characters, VPRINTPLOT mode essentially
-	   reverts to VPLOT mode, plotting things until a new mode is set.
-	   This change is indicated by sending a VAAUTOSTEP command to
-	   the va.  We also change va_state to reflect this effective
-	   mode change.
+	/*
+	 * After printing a line of characters, VPRINTPLOT mode essentially
+	 * reverts to VPLOT mode, plotting things until a new mode is set.
+	 * This change is indicated by sending a VAAUTOSTEP command to
+	 * the va.  We also change va_state to reflect this effective
+	 * mode change.
 	 */
-	if (vainfo.va_state & VPRINTPLOT) {
-		vainfo.va_state = (vainfo.va_state & ~VPRINTPLOT) | VPLOT;
-		VAADDR->vacsrhi = VAAUTOSTEP;
+	if (va11.va_state & VPRINTPLOT) {
+		va11.va_state = (va11.va_state & ~VPRINTPLOT) | VPLOT;
+		VAADDR->vacsh = VAAUTOSTEP;
 		e |= vaerror(DONE);
 	}
 	(void) spl0();
 brkout:
 	ubafree(va_ubinfo), va_ubinfo = 0;
-	vainfo.va_busy = 0;
+	va11.va_bp = 0;
+	va11.va_busy = 0;
 	iodone(bp);
 	if (e)
 		u.u_error = EIO;
-	wakeup((caddr_t)&vainfo);
+	wakeup((caddr_t)&va11);
 }
 
 int	vablock = 16384;
@@ -161,17 +157,16 @@ vaerror(bit)
 {
 	register int e;
 
-	while ((e = VAADDR->vacsr.vacsrword & (bit|ERROR)) == 0)
-		sleep((caddr_t)&vainfo, VAPRI);
+	while ((e = VAADDR->vacsw & (bit|ERROR)) == 0)
+		sleep((caddr_t)&va11, VAPRI);
 	return (e & ERROR);
 }
 
-/* vastart starts up the DMA by setting the buffer pointer and the word count. */
 vastart()
 {
-	if (vainfo.va_wcount) {
-		VAADDR->vabufaddr = vainfo.va_bufp;
-		VAADDR->vawcount = vainfo.va_wcount;
+	if (va11.va_wc) {
+		VAADDR->vaba = va11.va_bufp;
+		VAADDR->vawc = va11.va_wc;
 		return;
 	}
 }
@@ -185,7 +180,7 @@ vaioctl(dev, cmd, addr, flag)
 	switch (cmd) {
 
 	case VGETSTATE:
-		(void) suword(addr, vainfo.va_state);
+		(void) suword(addr, va11.va_state);
 		return;
 
 	case VSETSTATE:
@@ -203,35 +198,35 @@ vaioctl(dev, cmd, addr, flag)
 	}
 }
 
-/* vacmd sends a command code to the va, and waits for it to complete.
-   If an error occurs, u.u_error is set to EIO.
-   vacmd also updates vainfo.va_state.
+/*
+ * Send a command code to the va, and wait for it to complete.
+ * If an error occurs, u.u_error is set to EIO.
+ * In any case, update va11.va_state.
  */
-
 vacmd(vcmd)
 {
 	(void) spl4();
-	(void) vaerror(DONE);	/* Wait for va to be ready. */
+	(void) vaerror(DONE);		/* Wait for va to be ready */
 	switch (vcmd) {
 
 	case VPLOT:
 		/* Must turn on plot AND autostep modes. */
-		VAADDR->vacsrhi = VAPLOT;
+		VAADDR->vacsh = VAPLOT;
 		if (vaerror(DONE))
 			u.u_error = EIO;
-		VAADDR->vacsrhi = VAAUTOSTEP;
+		VAADDR->vacsh = VAAUTOSTEP;
 		break;
 
 	case VPRINT:
-		VAADDR->vacsrhi = VAPRINT;
+		VAADDR->vacsh = VAPRINT;
 		break;
 
 	case VPRINTPLOT:
-		VAADDR->vacsrhi = VAPRINTPLOT;
+		VAADDR->vacsh = VAPRINTPLOT;
 		break;
 	}
-	vainfo.va_state =
-		(vainfo.va_state & ~(VPLOT | VPRINT | VPRINTPLOT)) | vcmd;
+	va11.va_state =
+		(va11.va_state & ~(VPLOT | VPRINT | VPRINTPLOT)) | vcmd;
 
 	if (vaerror(DONE))	/* Wait for command to complete. */
 		u.u_error = EIO;
@@ -240,7 +235,7 @@ vacmd(vcmd)
 
 vatimo()
 {
-	if (vainfo.va_is_open)
+	if (va11.va_open)
 		timeout(vatimo, (caddr_t)0, HZ/10);
 	vaintr(0);
 }
@@ -248,17 +243,48 @@ vatimo()
 /*ARGSUSED*/
 vaintr(dev)
 {
-	wakeup((caddr_t)&vainfo);
+	wakeup((caddr_t)&va11);
 }
 
 vaclose()
 {
 
-	vainfo.va_is_open = 0;
-	vainfo.va_busy = 0;
-	vainfo.va_state = 0;
-	vainfo.va_wcount = 0;
-	vainfo.va_bufp = 0;
-	VAADDR->vacsrlo = 0;
+	va11.va_open = 0;
+	va11.va_busy = 0;
+	va11.va_state = 0;
+	va11.va_wc = 0;
+	va11.va_bufp = 0;
+	VAADDR->vacsl = 0;
 }
-#endif
+
+#define	DELAY(N)	{ register int d; d = N; while (--d > 0); }
+
+vareset()
+{
+
+	if (va11.va_open == 0)
+		return;
+	printf(" va");
+	VAADDR->vacsl = IENABLE;
+	if (va11.va_state & VPLOT) {
+		VAADDR->vacsh = VAPLOT;
+		DELAY(10000);
+		VAADDR->vacsh = VAAUTOSTEP;
+	} else if (va11.va_state & VPRINTPLOT)
+		VAADDR->vacsh = VPRINTPLOT;
+	else
+		VAADDR->vacsh = VAPRINTPLOT;
+	DELAY(10000);
+	if (va11.va_busy == 0)
+		return;
+	if (va_ubinfo) {
+		printf("<%d>", (va_ubinfo>>28)&0xf);
+		ubafree(va_ubinfo), va_ubinfo = 0;
+	}
+	/* This code belongs in vastart() */
+	va_ubinfo = ubasetup(va11.va_bp, vabdp);
+	va11.va_bufp = va_ubinfo & 0x3ffff;
+	va11.va_wc = (-va11.va_bp->b_bcount/2);
+	/* End badly placed code */
+	vastart();
+}
