@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.193 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.194 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -3185,7 +3185,7 @@ sm_getpwnam(user)
 
 struct passwd *
 sm_getpwuid(uid)
-	uid_t uid;
+	UID_T uid;
 {
 	return getpwuid(uid);
 }
@@ -3236,7 +3236,7 @@ load_if_names()
 	close(s);
 
 	/* scan the list of IP address */
-	if (tTd(0, 4))
+	if (tTd(0, 40))
 		printf("scanning for interface specific names, ifc_len=%d\n",
 			ifc.ifc_len);
 
