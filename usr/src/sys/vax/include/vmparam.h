@@ -1,4 +1,4 @@
-/*	vmparam.h	4.2	82/11/13	*/
+/*	vmparam.h	4.3	83/02/21	*/
 
 /*
  * Machine dependent constants for VAX
