@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tset.c	1.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)tset.c	1.13 (Berkeley) %G%";
 #endif
 
 /*
@@ -1100,12 +1100,9 @@ ask:
 
 		/* Set window size */
 		if (DoSetenv) {
-			ioctl(FILEDES, TIOCGWINSZ, &win);
-			if (win.ws_row == 0 && win.ws_col == 0) {
-				win.ws_row = lines;
-				win.ws_col = columns;
-				ioctl(FILEDES, TIOCSWINSZ, &win);
-			}
+			win.ws_row = lines;
+			win.ws_col = columns;
+			ioctl(FILEDES, TIOCSWINSZ, &win);
 		}
 		/* output startup string */
 		if (!NoInit)
