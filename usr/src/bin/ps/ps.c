@@ -1,11 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)ps.c	4.20 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.21 (Berkeley) %G%";
 #endif
 
 /*
  * ps
  */
-
 #include <stdio.h>
 #include <ctype.h>
 #include <nlist.h>
@@ -19,8 +18,8 @@ static	char *sccsid = "@(#)ps.c	4.20 (Berkeley) %G%";
 #include <sys/vm.h>
 #include <sys/text.h>
 #include <sys/stat.h>
+#include <sys/mbuf.h>
 #include <math.h>
-#include <sys/vlimit.h>
 
 struct nlist nl[] = {
 	{ "_proc" },
@@ -43,7 +42,7 @@ struct nlist nl[] = {
 #define	X_NPROC		8
 	{ "_ntext" },
 #define	X_NTEXT		9
-	{ 0 },
+	{ "" },
 };
 
 struct	savcom {
@@ -52,8 +51,7 @@ struct	savcom {
 		float	u_pctcpu;
 		struct	vsav *vp;
 		int	s_ssiz;
-		struct	sssav *ssp;
-	} sun;
+	} s_un;
 	struct	asav *ap;
 } *savcom;
 
@@ -75,13 +73,6 @@ struct	lsav {
 	char	l_cpu;
 	int	l_addr;
 	caddr_t	l_wchan;
-};
-
-char	*sshdr;
-struct	sssav {
-	short 	ss_ppid;
-	short	ss_brother;
-	short	ss_sons;
 };
 
 char	*uhdr;
@@ -107,8 +98,8 @@ union {
 #define clear(x) 	((int)x & 0x7fffffff)
 
 int	chkpid;
-int	aflg, cflg, eflg, gflg, kflg, lflg, sflg, ssflg,
-	nonssflg, uflg, vflg, xflg;
+int	aflg, cflg, eflg, gflg, kflg, lflg, sflg,
+	uflg, vflg, xflg;
 char	*tptr;
 char	*gettty(), *getcmd(), *getname(), *savestr(), *alloc(), *state();
 char	*rindex(), *calloc(), *sbrk(), *strcpy(), *strcat(), *strncat();
@@ -120,7 +111,7 @@ struct	text *atext;
 double	ccpu;
 int	ecmx;
 struct	pte *Usrptma, *usrpt;
-int	nproc, ntext, hz;
+int	nproc, ntext;
 
 struct	ttys {
 	char	name[MAXNAMLEN+1];
@@ -141,6 +132,8 @@ int	pcbpf;
 int	argaddr;
 extern	char _sobuf[];
 
+#define	pgtok(a)	((a)*CLBYTES/1024)
+
 main(argc, argv)
 	char **argv;
 {
@@ -150,20 +143,13 @@ main(argc, argv)
 	off_t procp;
 
 	twidth = 80;
-	if (ap = rindex(argv[0], '/'))
-		ap++;
-	else
-		ap = argv[0];
-	if (*ap == 's')				/* If name starts with 's' */
-		ssflg++;
-
 	argc--, argv++;
 	if (argc > 0) {
 		ap = argv[0];
 		while (*ap) switch (*ap++) {
 
 		case 'C':
-			rawcpu++; nonssflg++;
+			rawcpu++;
 			break;
 		case 'S':
 			sumcpu++;
@@ -172,39 +158,39 @@ main(argc, argv)
 			aflg++;
 			break;
 		case 'c':
-			cflg = !cflg; nonssflg++;
+			cflg = !cflg;
 			break;
 		case 'e':
-			eflg++; nonssflg++;
+			eflg++;
 			break;
 		case 'g':
-			gflg++; nonssflg++;
+			gflg++;
 			break;
 		case 'k':
-			kflg++; nonssflg++;
+			kflg++;
 			break;
 		case 'l':
-			lflg++; nonssflg++;
+			lflg++;
 			break;
 		case 's':
-			sflg++; nonssflg++;
+			sflg++;
 			break;
 		case 't':
 			if (*ap)
 				tptr = ap;
-			aflg++; nonssflg++;
+			aflg++;
 			gflg++;
-			if (*tptr == '?')
+			if (tptr && *tptr == '?')
 				xflg++;
 			while (*ap)
 				ap++;
 			break;
 		case 'u': 
-			uflg++; nonssflg++;
+			uflg++;
 			break;
 		case 'v':
 			cflg = 1;
-			vflg++; nonssflg++;
+			vflg++;
 			break;
 		case 'w':
 			if (twidth == 80)
@@ -215,26 +201,15 @@ main(argc, argv)
 		case 'x':
 			xflg++;
 			break;
-		case 'y':		/* Rand 2/81 */
-			ssflg++;
-			break;
 		default:
 			if (!isdigit(ap[-1]))
 				break;
 			chkpid = atoi(--ap);
 			*ap = 0;
-			aflg++;	nonssflg++;
+			aflg++;
 			xflg++;
 			break;
 		}
-	}
-	if (ssflg) {
-		if (nonssflg) {
-			fprintf (stderr, "Usage: ss [axwS]\n");
-			exit(1);
-		}
-		uflg++;
-		gflg++;
 	}
 	openfiles(argc, argv);
 	getkvars(argc, argv);
@@ -283,10 +258,6 @@ main(argc, argv)
 		}
 	}
 	qsort(savcom, npr, sizeof(savcom[0]), pscomp);
-	if (ssflg) {
-		walk(npr);
-		exit (npr == 0);
-	}
 	for (i=0; i<npr; i++) {
 		register struct savcom *sp = &savcom[i];
 		if (lflg)
@@ -430,10 +401,9 @@ printhdr()
 		fprintf(stderr, "ps: specify only one of s,l,v and u\n");
 		exit(1);
 	}
-	hdr = ssflg ? sshdr :
-		(lflg ? lhdr : 
+	hdr = lflg ? lhdr : 
 			(vflg ? vhdr : 
-				(uflg ? uhdr : shdr))); 
+				(uflg ? uhdr : shdr));
 	if (lflg+vflg+uflg+sflg == 0)
 		hdr += strlen("SSIZ ");
 	cmdstart = strlen(hdr);
@@ -638,8 +608,6 @@ save()
 	ap->a_tty[0] = ttyp[0];
 	ap->a_tty[1] = ttyp[1] ? ttyp[1] : ' ';
 	if (ap->a_stat == SZOMB) {
-		register struct xproc *xp = (struct xproc *)mproc;
-
 		ap->a_cpu = 0;
 	} else {
 		ap->a_size = mproc->p_dsize + mproc->p_ssize;
@@ -660,7 +628,7 @@ save()
 	if (lflg) {
 		register struct lsav *lp;
 
-		sp->sun.lp = lp = (struct lsav *)alloc(sizeof (struct lsav));
+		sp->s_un.lp = lp = (struct lsav *)alloc(sizeof (struct lsav));
 #define e(a,b) lp->a = mproc->b
 		e(l_ppid, p_ppid); e(l_cpu, p_cpu);
 		if (ap->a_stat != SZOMB)
@@ -670,7 +638,7 @@ save()
 	} else if (vflg) {
 		register struct vsav *vp;
 
-		sp->sun.vp = vp = (struct vsav *)alloc(sizeof (struct vsav));
+		sp->s_un.vp = vp = (struct vsav *)alloc(sizeof (struct vsav));
 #define e(a,b) vp->a = mproc->b
 		if (ap->a_stat != SZOMB) {
 			e(v_swrss, p_swrss);
@@ -680,22 +648,15 @@ save()
 		}
 		vp->v_pctcpu = pcpu();
 #undef e
-	} else if (uflg) {
-		if (!ssflg)
-			sp->sun.u_pctcpu = pcpu();
-		else {
-			register struct sssav *ssp;
-
-			sp->sun.ssp =ssp= (struct sssav *)alloc(sizeof (struct sssav));
-			ssp->ss_ppid = mproc->p_ppid;
-		}
-	} else if (sflg) {
+	} else if (uflg)
+		sp->s_un.u_pctcpu = pcpu();
+	else if (sflg) {
 		if (ap->a_stat != SZOMB) {
 			for (cp = (char *)u.u_stack;
 			    cp < &user.upages[UPAGES][0]; )
 				if (*cp++)
 					break;
-			sp->sun.s_ssiz = (&user.upages[UPAGES][0] - cp);
+			sp->s_un.s_ssiz = (&user.upages[UPAGES][0] - cp);
 		}
 	}
 
@@ -745,7 +706,7 @@ getu()
 	if ((mproc->p_flag & SLOAD) == 0) {
 		if (swap < 0)
 			return (0);
-		(void) lseek(swap, (long)ctob(mproc->p_swaddr), 0);
+		(void) lseek(swap, (long)dtob(mproc->p_swaddr), 0);
 		if (read(swap, (char *)&user.user, size) != size) {
 			fprintf(stderr, "ps: cant read u for pid %d from %s\n",
 			    mproc->p_pid, swapf);
@@ -793,7 +754,7 @@ getu()
 char *
 getcmd()
 {
-	char cmdbuf[BUFSIZ];
+	char cmdbuf[CLSIZE*NBPG];
 	union {
 		char	argc[CLSIZE*NBPG];
 		int	argi[CLSIZE*NBPG/sizeof (int)];
@@ -815,7 +776,7 @@ getcmd()
 		if (swap < 0)
 			goto retucomm;
 		vstodb(0, CLSIZE, &u.u_smap, &db, 1);
-		(void) lseek(swap, (long)ctob(db.db_base), 0);
+		(void) lseek(swap, (long)dtob(db.db_base), 0);
 		if (read(swap, (char *)&argspac, sizeof(argspac))
 		    != sizeof(argspac))
 			goto bad;
@@ -879,17 +840,17 @@ retucomm:
 }
 
 char	*lhdr =
-"     F UID   PID  PPID CP PRI NI ADDR  SZ  RSS WCHAN STAT TT  TIME";
+"      F UID   PID  PPID CP PRI NI ADDR  SZ  RSS WCHAN STAT TT  TIME";
 lpr(sp)
 	struct savcom *sp;
 {
 	register struct asav *ap = sp->ap;
-	register struct lsav *lp = sp->sun.lp;
+	register struct lsav *lp = sp->s_un.lp;
 
-	printf("%6x%4d%6u%6u%3d%4d%3d%5x%4d%5d",
+	printf("%7x%4d%6u%6u%3d%4d%3d%5x%4d%5d",
 	    ap->a_flag, ap->a_uid,
 	    ap->a_pid, lp->l_ppid, lp->l_cpu&0377, ap->a_pri-PZERO,
-	    ap->a_nice-NZERO, lp->l_addr, ap->a_size/2, ap->a_rss/2);
+	    ap->a_nice-NZERO, lp->l_addr, pgtok(ap->a_size), pgtok(ap->a_rss));
 	printf(lp->l_wchan ? " %5x" : "      ", (int)lp->l_wchan&0xfffff);
 	printf(" %4.4s ", state(ap));
 	ptty(ap->a_tty);
@@ -918,12 +879,12 @@ upr(sp)
 	register struct asav *ap = sp->ap;
 	int vmsize, rmsize;
 
-	vmsize = (ap->a_size + ap->a_tsiz)/2;
-	rmsize = ap->a_rss/2;
+	vmsize = pgtok((ap->a_size + ap->a_tsiz));
+	rmsize = pgtok(ap->a_rss);
 	if (ap->a_xccount)
-		rmsize += ap->a_txtrss/ap->a_xccount/2;
+		rmsize += pgtok(ap->a_txtrss/ap->a_xccount);
 	printf("%-8.8s %5d%5.1f%5.1f%5d%5d",
-	    getname(ap->a_uid), ap->a_pid, sp->sun.u_pctcpu, pmem(ap),
+	    getname(ap->a_uid), ap->a_pid, sp->s_un.u_pctcpu, pmem(ap),
 	    vmsize, rmsize);
 	putchar(' ');
 	ptty(ap->a_tty);
@@ -932,11 +893,11 @@ upr(sp)
 }
 
 char *vhdr =
-"  PID TT STAT  TIME SL RE PAGEIN SIZE  RSS  LIM TSIZ TRS %CPU %MEM";
+" SIZE  PID TT STAT  TIME SL RE PAGEIN SIZE  RSS  LIM TSIZ TRS %CPU %MEM"+5;
 vpr(sp)
 	struct savcom *sp;
 {
-	register struct vsav *vp = sp->sun.vp;
+	register struct vsav *vp = sp->s_un.vp;
 	register struct asav *ap = sp->ap;
 
 	printf("%5u ", ap->a_pid);
@@ -946,13 +907,13 @@ vpr(sp)
 	printf("%3d%3d%7d%5d%5d",
 	   ap->a_slptime > 99 ? 99 : ap-> a_slptime,
 	   ap->a_time > 99 ? 99 : ap->a_time, vp->v_majflt,
-	   ap->a_size/2, ap->a_rss/2);
-	if (ap->a_maxrss == (INFINITY/NBPG))
+	   pgtok(ap->a_size), pgtok(ap->a_rss));
+	if (ap->a_maxrss == (RLIM_INFINITY/NBPG))
 		printf("   xx");
 	else
-		printf("%5d", ap->a_maxrss/2);
+		printf("%5d", pgtok(ap->a_maxrss));
 	printf("%5d%4d%5.1f%5.1f",
-	   ap->a_tsiz/2, ap->a_txtrss/2, vp->v_pctcpu, pmem(ap));
+	   pgtok(ap->a_tsiz), pgtok(ap->a_txtrss), vp->v_pctcpu, pmem(ap));
 }
 
 char	*shdr =
@@ -963,7 +924,7 @@ spr(sp)
 	register struct asav *ap = sp->ap;
 
 	if (sflg)
-		printf("%4d ", sp->sun.s_ssiz);
+		printf("%4d ", sp->s_un.s_ssiz);
 	printf("%5u", ap->a_pid);
 	putchar(' ');
 	ptty(ap->a_tty);
@@ -1035,6 +996,8 @@ vstodb(vsbase, vssize, dmp, dbp, rev)
 	register int blk = DMMIN;
 	register swblk_t *ip = dmp->dm_map;
 
+	vsbase = ctod(vsbase);
+	vssize = ctod(vssize);
 	if (vsbase < 0 || vsbase + vssize > dmp->dm_size)
 		panic("vstodb");
 	while (vsbase >= blk) {
@@ -1070,8 +1033,8 @@ pscomp(s1, s2)
 {
 	register int i;
 
-	if (uflg && !ssflg)
-		return (s2->sun.u_pctcpu > s1->sun.u_pctcpu ? 1 : -1);
+	if (uflg)
+		return (s2->s_un.u_pctcpu > s1->s_un.u_pctcpu ? 1 : -1);
 	if (vflg)
 		return (vsize(s2) - vsize(s1));
 	i = s1->ap->a_ttyd - s2->ap->a_ttyd;
@@ -1084,7 +1047,7 @@ vsize(sp)
 	struct savcom *sp;
 {
 	register struct asav *ap = sp->ap;
-	register struct vsav *vp = sp->sun.vp;
+	register struct vsav *vp = sp->s_un.vp;
 	
 	if (ap->a_flag & SLOAD)
 		return (ap->a_rss +
@@ -1137,6 +1100,9 @@ alloc(size)
 	register char *cp;
 	register int i;
 
+#ifdef sun
+	size = (size+1)&~1;
+#endif
 	if (size > nleft) {
 		freebase = (char *)sbrk((int)(i = size > 2048 ? size : 2048));
 		if (freebase == 0) {
@@ -1164,91 +1130,4 @@ savestr(cp)
 	dp = (char *)alloc(len+1);
 	(void) strcpy(dp, cp);
 	return (dp);
-}
-
-walk(np)
-	int np;
-{
-	register int i, j, k, l, m;
-#undef afl
-#undef sfl
-#define afl(i,f) savcom[i].ap -> f
-#define sfl(i,f) savcom[i].sun.ssp -> f
-
-	for(i = 0; i < np; i = j) {
-		for(j = i; afl(j,a_ttyd) == afl(i,a_ttyd); j++) {
-			sfl(j,ss_brother) = -1;
-			sfl(j,ss_sons) = -1;
-		}
-		for(k = i+1; k < j; k++) {
-			if(sfl(k,ss_ppid) == sfl(i,ss_ppid)) {
-				for(l=i; sfl(l,ss_brother) != -1; 
-					l=sfl(l,ss_brother)) ;
-				sfl(l,ss_brother) = k;
-				goto next;
-			}
-			for(l = i; l < j; l++) {
-				if(l == k) continue;
-				if(sfl(k,ss_ppid) == afl(l,a_pid)) {
-					if(sfl(l,ss_sons) == -1)
-					    sfl(l,ss_sons) = k;
-					else {
-					    for(m = sfl(l,ss_sons);
-						sfl(m,ss_brother) != -1;
-						m = sfl(m,ss_brother)) ;
-					    sfl(m,ss_brother) = k;
-					}
-					goto next;
-				}
-			}
-			for(l = i; l < j; l++) {
-				if(l == k) continue;
-				if(sfl(k,ss_ppid) == sfl(l,ss_ppid)) {
-					for(m = k; sfl(m,ss_brother) != -1;
-					    m = sfl(m,ss_brother)) ;
-					sfl(m,ss_brother) = l;
-				}
-			}
-		next: ;
-		}
-		walk1(i, 0);
-	}
-}
-
-walk1(pno, depth)
-	int pno, depth;
-{
-	if(pno == -1)
-		return;
-/***    printf("%5d, %d\n",outargs[pno].o_pid, depth);  ***/
-	walkpr(&savcom[pno], depth);
-	walk1(sfl(pno,ss_sons), depth+1);
-	walk1(sfl(pno,ss_brother), depth);
-}
-
-char *sshdr =
-"TTY User     SZ RSS  CPU  S      PID  ";
-
-walkpr(a, depth)
-	register struct savcom *a;
-	int depth;
-{
-
-	if(!depth) {
-		printf("%-2.2s", a->ap->a_tty);
-		printf(" %-8.8s", getname(a->ap->a_uid));
-	} else
-		printf("   %-8s", &".......*"[8-(depth<=8?depth:8)]);
-	printf("%4d%4d", a->ap->a_size/2, a->ap->a_rss/2);
-	ptime(a->ap);
-	/* Once there was a "CCPU" field here.  Subsumed by -S now. */
-	printf(" %4.4s", state(a->ap));
-	printf("%6u ", a->ap->a_pid);
-	if (a->ap->a_pid == 0)
-		printf(" swapper");
-	else if (a->ap->a_pid == 2)
-		printf(" pagedaemon");
-	else
-		printf(" %.*s", twidth - cmdstart - 2, a->ap->a_cmdp);
-	putchar('\n');
 }
