@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd5.c	1.7 83/07/29";
+static	char *sccsid = "@(#)cmd5.c	1.8 83/07/30";
 #endif
 
 #include "defs.h"
@@ -19,22 +19,25 @@ int s_label();
 int s_terse();
 int s_refresh();
 int s_source();
+int s_write();
 
 struct scmd {
 	char *s_name;			/* name of command */
-	int s_len;			/* number of characters to check */
+	int s_lmin;			/* minimum length to check */
+	int s_lmax;			/* maximum length to check */
 	int s_amin;			/* minimum argument */
 	int s_amax;			/* maximum argument */
 	int (*s_func)();		/* the function */
 };
 static struct scmd scmd[] = {
-	"window",	1, 4, 4, s_window,
-	"%",		1, 0, 0, s_select,
-	"escape",	1, 1, 1, s_escape,
-	"label",	1, 2, 2, s_label,
-	"terse",	1, 0, 1, s_terse,
-	"refresh",	1, 1, 2, s_refresh,
-	"source",	1, 1, 1, s_source,
+	"%",		1, 1, 0, 0, s_select,
+	"escape",	1, 0, 1, 1, s_escape,
+	"label",	1, 0, 2, 2, s_label,
+	"refresh",	1, 0, 1, 2, s_refresh,
+	"source",	1, 0, 1, 1, s_source,
+	"terse",	1, 0, 0, 1, s_terse,
+	"window",	1, 0, 4, 4, s_window,
+	"write",	2, 0, 2, 2, s_write,
 	0
 };
 
@@ -59,17 +62,18 @@ dolongcmd(line)
 char *line;
 {
 	register struct scmd *sp;
+	register len;
 
 	makeargv(line);
 	if (argc == 0)
 		return;
-	for (sp = scmd; sp->s_name; sp++)
-		if (sp->s_len > 0) {
-			if (strncmp(*argv, sp->s_name, sp->s_len) == 0)
-				break;
-		} else
-			if (strncmp(*argv, sp->s_name) == 0)
-				break;
+	for (sp = scmd; sp->s_name; sp++) {
+		len = strlen(*argv);
+		if (len < sp->s_lmin)
+			continue;
+		if (!strncmp(*argv, sp->s_name, sp->s_lmax ? sp->s_lmax : len))
+			break;
+	}
 	if (sp->s_name) {
 		if (sp->s_amin > argc - 1)
 			error("Too few arguments.");
@@ -99,9 +103,11 @@ register char *p;
 				switch (*p) {
 				case 'n':
 					*q++ = '\n';
+					p++;
 					break;
 				case 'r':
 					*q++ = '\r';
+					p++;
 					break;
 				case '0': case '1': case '2': case '3':
 				case '4': case '5': case '6': case '7':
@@ -117,7 +123,8 @@ register char *p;
 				}
 				escape = 0;
 			} else if (*p == '\\') {
-				escape == 1;
+				escape = 1;
+				p++;
 			} else if (quote) {
 				if (*p == quote) {
 					quote = 0;
@@ -232,6 +239,15 @@ s_source()
 	}
 	if (dosource(argv[1]) < 0)
 		error("Can't open %s.", argv[1]);
+}
+
+s_write()
+{
+	struct ww *w;
+
+	if ((w = idtowin(argv[1])) == 0)
+		return;
+	write(w->ww_pty, argv[2], strlen(argv[2]));
 }
 
 struct ww *
