@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.58 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.59 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -753,6 +753,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			errno = st->s_host.ho_errno;
 		}
 		}
+		mci->mci_pid = 0;
 		else
 			return (0);
 #else /* no DAEMON */
@@ -893,8 +894,10 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		*/
 
 		mci = (MCI *) xalloc(sizeof *mci);
+		bzero((char *) mci, sizeof *mci);
 		mci->mci_mailer = m;
 		mci->mci_state = clever ? MCIS_OPENING : MCIS_OPEN;
+		mci->mci_pid = pid;
 		(void) close(mpvect[0]);
 		mci->mci_out = fdopen(mpvect[1], "w");
 		if (clever)
