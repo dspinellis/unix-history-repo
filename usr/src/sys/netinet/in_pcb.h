@@ -1,4 +1,4 @@
-/*	in_pcb.h	4.3	82/03/03	*/
+/*	in_pcb.h	4.4	82/03/29	*/
 
 /*
  * Common structure pcb for internet protocol implementation.
@@ -18,6 +18,7 @@ struct inpcb {
 	u_short	inp_lport;		/* local port */
 	struct	socket *inp_socket;	/* back pointer to socket */
 	caddr_t	inp_ppcb;		/* pointer to per-protocol pcb */
+	struct	route inp_route;	/* placeholder for routing entry */
 };
 
 #define	INPLOOKUP_WILDCARD	1

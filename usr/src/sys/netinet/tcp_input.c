@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.64	82/03/26	*/
+/*	tcp_input.c	1.65	82/03/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,6 +7,7 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../net/in.h"
+#include "../net/route.h"
 #include "../net/in_pcb.h"
 #include "../net/in_systm.h"
 #include "../net/if.h"
