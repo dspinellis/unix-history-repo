@@ -21,11 +21,14 @@
 #include "saio.h"
 #include "savax.h"
 
-u_short	idcstd[] = { 0175606 };
 short	rb02_off[] = { 0, 400, 0, -1, -1, -1, -1, -1 };
 short	rb80_off[] = { 0, 37, 0, -1, -1, -1, 115, 305 };
 
-int idc_type[4];
+#define	MAXCTLR		1
+#define	MAXUNIT		4
+#define	MAXPART		8
+
+int	idc_type[MAXUNIT];
 
 idcopen(io)
 	register struct iob *io;
@@ -33,11 +36,15 @@ idcopen(io)
 	register struct idcdevice *idcaddr;
 	register int i;
 
-	idcaddr = (struct idcdevice *)((caddr_t)ubauba(io->i_unit) + 0x200);
-	if ((unsigned)io->i_boff > 7) {
-		printf("idc bad unit");
+	if ((u_int)io->i_adapt >= MAXNUBA)
+		return (EADAPT);
+	if ((u_int)io->i_ctlr >= MAXCTLR)
+		return (ECTLR);
+	if ((u_int)io->i_unit >= MAXUNIT)
 		return (EUNIT);
-	}
+	if ((u_int)io->i_part >= MAXPART)
+		return (EPART);
+	idcaddr = (struct idcdevice *)((caddr_t)ubauba(io->i_adapt) + 0x200);
 	idcaddr->idcmpr = IDCGS_GETSTAT;
 	idcaddr->idccsr = IDC_GETSTAT|(io->i_unit<<8);
 	idcwait(idcaddr);
@@ -54,14 +61,10 @@ idcopen(io)
 	i = idcaddr->idcmpr;
 	if (idcaddr->idccsr & IDC_R80) {
 		idc_type[io->i_unit] = 1;
-		io->i_boff = rb80_off[io->i_boff] * NRB80SECT * NRB80TRK;
+		io->i_boff = rb80_off[io->i_part] * NRB80SECT * NRB80TRK;
 	} else {
 		idc_type[io->i_unit] = 0;
-		io->i_boff = rb02_off[io->i_boff] * NRB02SECT/2 * NRB02TRK;
-	}
-	if (io->i_boff < 0) {
-		printf("idc%d: bad unit type", io->i_unit);
-		return (EUNIT);
+		io->i_boff = rb02_off[io->i_part] * NRB02SECT/2 * NRB02TRK;
 	}
 	return (0);
 }
@@ -76,7 +79,7 @@ idcstrategy(io, func)
 	short ccleft, thiscc = 0;
 	int ubinfo, errcnt = 0;
 
-	idcaddr = (struct idcdevice *)((caddr_t)ubauba(io->i_unit) + 0x200);
+	idcaddr = (struct idcdevice *)((caddr_t)ubauba(io->i_adapt) + 0x200);
 	ubinfo = ubasetup(io, 1);
 	bn = io->i_bn;
 	ccleft = io->i_cc;
@@ -114,12 +117,11 @@ retry:
 	if (idcaddr->idccsr & IDC_ERR) {
 		printf("idc%d error: (cyl,trk,sec)=(%d,%d,%d) csr=%b\n",
 		    dn, cn, tn, sn, idcaddr->idccsr, IDCCSR_BITS);
-		if (errcnt == 10) {
+		if (errcnt++ == 10) {
 			printf("idc: unrecovered error\n");
 			ubafree(io, ubinfo);
 			return (-1);
 		}
-		errcnt++;
 		goto retry;
 	}
 	if (errcnt)
@@ -133,22 +135,10 @@ retry:
 	return (io->i_cc);
 }
 
+static
 idcwait(idcaddr)
 	register struct idcdevice *idcaddr;
 {
-	register int i;
-
 	while ((idcaddr->idccsr & (IDC_CRDY|IDC_DRDY)) != (IDC_CRDY|IDC_DRDY))
-		for (i = 10; i; i--)
-			;
-}
-
-/*ARGSUSED*/
-idcioctl(io, cmd, arg)
-	struct iob *io;
-	int cmd;
-	caddr_t arg;
-{
-
-	return (ECMD);
+		DELAY(10);
 }
