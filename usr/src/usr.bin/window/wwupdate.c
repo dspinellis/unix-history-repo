@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwupdate.c	3.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwupdate.c	3.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -219,39 +219,31 @@ simple:
 				}
 				j++;
 			}
-			if (wwwrap
-			    && i == wwnrow - 1 && q - buf + c == wwncol) {
-				if (tt.tt_inschar) {
-					if (q - buf != 1) {
-						xxwrite(i, c, buf + 1,
-							q - buf - 1, m);
-						xxinschar(i, c, *buf, m);
-					} else {
-						xxwrite(i, c - 1, buf, 1, m);
-						xxinschar(i, c - 1,
-							ns[-2].c_c, ns[-2].c_m);
-					}
-				} else if (tt.tt_insspace) {
-					if (q - buf != 1) {
-						xxwrite(i, c, buf + 1,
-							q - buf - 1, m);
-						xxinsspace(i, c);
-						xxwrite(i, c, buf, 1, m);
-					} else {
-						xxwrite(i, c - 1, buf, 1, m);
-						xxinsspace(i, c - 1);
-						xxwrite(i, c - 1, &ns[-2].c_c,
-							1, ns[-2].c_m);
-					}
-				} else {
-					if (q - buf > 1)
-						xxwrite(i, c, buf,
-							q - buf - 1, m);
-					os[-1] = lastc;
-					*touched = WWU_TOUCHED;
+			n = q - buf;
+			if (!wwwrap || i != wwnrow - 1 || c + n != wwncol)
+				xxwrite(i, c, buf, n, m);
+			else if (tt.tt_inschar || tt.tt_insspace) {
+				if (n > 1) {
+					q[-2] = q[-1];
+					n--;
+				} else
+					c--;
+				xxwrite(i, c, buf, n, m);
+				c += n - 1;
+				if (tt.tt_inschar)
+					xxinschar(i, c, ns[-2].c_c,
+						ns[-2].c_m);
+				else {
+					xxinsspace(i, c);
+					xxwrite(i, c, &ns[-2].c_c, 1,
+						ns[-2].c_m);
 				}
-			} else
-				xxwrite(i, c, buf, q - buf, m);
+			} else {
+				if (--n)
+					xxwrite(i, c, buf, n, m);
+				os[-1] = lastc;
+				*touched = WWU_TOUCHED;
+			}
 			didit = 1;
 		}
 		if (!didit)
