@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)last.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)last.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -20,11 +20,15 @@ static char sccsid[] = "@(#)last.c	5.18 (Berkeley) %G%";
  */
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/file.h>
+
+#include <fcntl.h>
 #include <signal.h>
-#include <time.h>
-#include <utmp.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
+#include <utmp.h>
 #include <paths.h>
 
 #define	SECDAY	(24*60*60)			/* seconds in a day */
@@ -54,6 +58,15 @@ static long	currentout,			/* current logout value */
 		maxrec;				/* records to display */
 static char	*file = _PATH_WTMP;		/* wtmp file */
 
+void	 addarg __P((int, char *));
+TTY	*addtty __P((char *));
+void	 hostconv __P((char *));
+void	 onintr __P((int));
+char	*ttyconv __P((char *));
+int	 want __P((struct utmp *, int));
+void	 wtmp __P((void));
+
+int
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -61,8 +74,7 @@ main(argc, argv)
 	extern int optind;
 	extern char *optarg;
 	int ch;
-	long atol();
-	char *p, *ttyconv();
+	char *p;
 
 	maxrec = -1;
 	while ((ch = getopt(argc, argv, "0123456789f:h:t:")) != EOF)
@@ -118,18 +130,15 @@ main(argc, argv)
  * wtmp --
  *	read through the wtmp file
  */
+void
 wtmp()
 {
 	register struct utmp	*bp;		/* current structure */
 	register TTY	*T;			/* tty list entry */
 	struct stat	stb;			/* stat of file for size */
-	long	bl, delta,			/* time difference */
-		lseek(), time();
+	long	bl, delta;			/* time difference */
 	int	bytes, wfd;
-	char	*ct, *crmsg,
-		*asctime(), *ctime(), *strcpy();
-	TTY	*addtty();
-	void	onintr();
+	char	*ct, *crmsg;
 
 	if ((wfd = open(file, O_RDONLY, 0)) < 0 || fstat(wfd, &stb) == -1) {
 		perror(file);
@@ -224,6 +233,7 @@ wtmp()
  * want --
  *	see if want this entry
  */
+int
 want(bp, check)
 	register struct utmp *bp;
 	int check;
@@ -265,12 +275,12 @@ want(bp, check)
  * addarg --
  *	add an entry to a linked list of arguments
  */
+void
 addarg(type, arg)
 	int type;
 	char *arg;
 {
 	register ARG *cur;
-	char *malloc();
 
 	if (!(cur = (ARG *)malloc((u_int)sizeof(ARG)))) {
 		fputs("last: malloc failure.\n", stderr);
@@ -291,7 +301,6 @@ addtty(ttyname)
 	char *ttyname;
 {
 	register TTY *cur;
-	char *malloc();
 
 	if (!(cur = (TTY *)malloc((u_int)sizeof(TTY)))) {
 		fputs("last: malloc failure.\n", stderr);
@@ -309,6 +318,7 @@ addtty(ttyname)
  *	has a domain attached that is the same as the current domain, rip
  *	off the domain suffix since that's what login(1) does.
  */
+void
 hostconv(arg)
 	char *arg;
 {
@@ -338,7 +348,7 @@ char *
 ttyconv(arg)
 	char *arg;
 {
-	char *mval, *malloc(), *strcpy();
+	char *mval;
 
 	/*
 	 * kludge -- we assume that all tty's end with
