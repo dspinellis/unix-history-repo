@@ -3,14 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)confxx.c	7.1 (Berkeley) %G%
+ *	@(#)confxx.c	7.2 (Berkeley) %G%
  */
 
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
+#include "param.h"
+#include "inode.h"
+#include "fs.h"
 #include "saio.h"
 
 devread(io)
@@ -41,7 +41,7 @@ devopen(io)
 	register struct iob *io;
 {
 
-	(*devsw[io->i_ino.i_dev].dv_open)(io);
+	return (*devsw[io->i_ino.i_dev].dv_open)(io);
 }
 
 devclose(io)
@@ -85,3 +85,5 @@ struct devsw devsw[] = {
 	{ "XX",	xxstrategy,	xxopen,		nullsys,	xxioctl },
 	{ 0, 0, 0, 0, 0 }
 };
+
+int	ndevs = (sizeof(devsw) / sizeof(devsw[0]) - 1);
