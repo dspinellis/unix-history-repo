@@ -2,7 +2,7 @@
  * Datakit driver
  * Common subroutines for all drivers
  *	SCCSID[] = "@(#)dksub.c	1.2 Garage 84/03/27"
- *		   "@(#)dksub.c	1.5 (Berkeley) %G%"
+ *		   "@(#)dksub.c	1.6 (Berkeley) %G%"
  */
 
 #include "datakit.h"
@@ -24,6 +24,8 @@
 #include "mbuf.h"
 #include "buf.h"
 #include "uio.h"
+#include "vnode.h"
+#include "specdev.h"
 #include "dkit.h"
 #include "dk.h"
 #include "dkdev.h"
@@ -232,8 +234,8 @@ dkgetdev(fildes, devnop)
 	vp = (struct vnode *)fp->f_data;
 	if (vp->v_type != VCHR)
 		return ENOTTY;
-	if (dkdevtype((dev_t) vp->v_rdev)) {
-		*devnop = minor(ip->i_rdev);
+	if (dkdevtype(vp->v_rdev)) {
+		*devnop = minor(vp->v_rdev);
 		return 0;
 	}
 	return EINVAL;
