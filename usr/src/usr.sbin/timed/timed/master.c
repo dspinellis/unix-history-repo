@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)master.c	2.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)master.c	2.4 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -83,7 +83,7 @@ loop:
 			ind = addmach(msg->tsp_name, &from);
 			newslave(ind, msg->tsp_seq);
 			break;
-		case TSP_DATE:
+		case TSP_SETDATE:
 			saveaddr = from;
 			msg->tsp_time.tv_usec = 0;
 			/*
@@ -92,7 +92,8 @@ loop:
 			 */
 			(void)strcpy(olddate, date());
 			(void)gettimeofday(&time, &tzone);
-			time.tv_sec += msg->tsp_time.tv_sec;
+			time.tv_sec = msg->tsp_time.tv_sec;
+			time.tv_usec = msg->tsp_time.tv_usec;
 			time.tv_sec++;
 			(void)settimeofday(&time, &tzone);
 			syslog(LOG_NOTICE, "date changed from: %s", olddate);
@@ -108,7 +109,7 @@ loop:
 			spreadtime();
 			pollingtime = 0;
 			break;
-		case TSP_DATEREQ:
+		case TSP_SETDATEREQ:
 			ind = findhost(msg->tsp_name);
 			if (ind < 0) { 
 			    syslog(LOG_ERR,
@@ -124,7 +125,8 @@ loop:
 				 */
 				(void)strcpy(olddate, date());
 				(void)gettimeofday(&time, &tzone);
-				time.tv_sec += msg->tsp_time.tv_sec;
+				time.tv_sec = msg->tsp_time.tv_sec;
+				time.tv_usec = msg->tsp_time.tv_usec;
 				time.tv_sec++;
 				(void)settimeofday(&time, &tzone);
 				syslog(LOG_NOTICE,
@@ -265,9 +267,8 @@ long mydelta;
 		hp[0].delta = 0;
 		for(i=1; i<slvcount; i++) {
 			tack.tv_sec = 0;
-			tack.tv_usec = 100000;
-			if ((measure_status = measure(&tack, &hp[i].addr,
-			    ON)) < 0) {
+			tack.tv_usec = 500000;
+			if ((measure_status = measure(&tack, &hp[i].addr)) <0) {
 				syslog(LOG_ERR, "measure: %m");
 				exit(1);
 			}
@@ -304,7 +305,6 @@ long mydelta;
 		for(i=1; i<slvcount; i++) {
 			if (hp[i].delta == HOSTDOWN) {
 				rmmach(i);
-				hp[i] = hp[--slvcount];
 #ifdef MEASURE
 				header = ON;
 #endif
