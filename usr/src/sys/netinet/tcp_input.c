@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	6.18 (Berkeley) %G%
+ *	@(#)tcp_input.c	6.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -171,7 +171,7 @@ tcp_input(m0)
 	register struct tcpcb *tp = 0;
 	register int tiflags;
 	struct socket *so;
-	int todrop, acked;
+	int todrop, acked, newwin;
 	short ostate;
 	struct in_addr laddr;
 	int dropsocket = 0;
@@ -325,10 +325,13 @@ tcp_input(m0)
 	 * Receive window is amount of space in rcv queue,
 	 * but not less than advertised window.
 	 */
-	tp->rcv_wnd = sbspace(&so->so_rcv);
-	if (tp->rcv_wnd < 0)
-		tp->rcv_wnd = 0;
-	tp->rcv_wnd = MAX(tp->rcv_wnd, (short)(tp->rcv_adv - tp->rcv_nxt));
+	{ int win;
+
+	win = sbspace(&so->so_rcv);
+	if (win < 0)
+		win = 0;
+	tp->rcv_wnd = MAX(win, (int)(tp->rcv_adv - tp->rcv_nxt));
+	}
 
 	switch (tp->t_state) {
 
@@ -376,9 +379,8 @@ tcp_input(m0)
 		(void) m_free(am);
 		tp->t_template = tcp_template(tp);
 		if (tp->t_template == 0) {
-			in_pcbdisconnect(inp);
+			tp = tcp_drop(tp);
 			dropsocket = 0;		/* socket is already gone */
-			tp = 0;
 			goto drop;
 		}
 		if (om) {
@@ -389,6 +391,7 @@ tcp_input(m0)
 		tp->irs = ti->ti_seq;
 		tcp_sendseqinit(tp);
 		tcp_rcvseqinit(tp);
+		tp->t_flags |= TF_ACKNOW;
 		tp->t_state = TCPS_SYN_RECEIVED;
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		dropsocket = 0;		/* committed to socket */
@@ -446,9 +449,10 @@ trimthenstep6:
 			todrop = ti->ti_len - tp->rcv_wnd;
 			m_adj(m, -todrop);
 			ti->ti_len = tp->rcv_wnd;
-			ti->ti_flags &= ~TH_FIN;
+			tiflags &= ~TH_FIN;
 		}
 		tp->snd_wl1 = ti->ti_seq - 1;
+		tp->rcv_up = ti->ti_seq;
 		goto step6;
 	}
 
@@ -478,7 +482,7 @@ trimthenstep6:
 		if (ti->ti_len > 0) {
 			m_adj(m, ti->ti_len);
 			ti->ti_len = 0;
-			ti->ti_flags &= ~(TH_PUSH|TH_FIN);
+			tiflags &= ~(TH_PUSH|TH_FIN);
 		}
 	} else {
 		/*
@@ -489,7 +493,6 @@ trimthenstep6:
 		if (todrop > 0) {
 			if (tiflags & TH_SYN) {
 				tiflags &= ~TH_SYN;
-				ti->ti_flags &= ~TH_SYN;
 				ti->ti_seq++;
 				if (ti->ti_urp > 1) 
 					ti->ti_urp--;
@@ -507,7 +510,6 @@ trimthenstep6:
 				ti->ti_urp -= todrop;
 			else {
 				tiflags &= ~TH_URG;
-				ti->ti_flags &= ~TH_URG;
 				ti->ti_urp = 0;
 			}
 		}
@@ -521,7 +523,7 @@ trimthenstep6:
 				goto dropafterack;
 			m_adj(m, -todrop);
 			ti->ti_len -= todrop;
-			ti->ti_flags &= ~(TH_PUSH|TH_FIN);
+			tiflags &= ~(TH_PUSH|TH_FIN);
 		}
 	}
 
@@ -723,16 +725,20 @@ trimthenstep6:
 step6:
 	/*
 	 * Update window information.
+	 * Don't look at window if no ACK: TAC's send garbage on first SYN.
 	 */
-	if (SEQ_LT(tp->snd_wl1, ti->ti_seq) || tp->snd_wl1 == ti->ti_seq &&
+	if ((tiflags & TH_ACK) &&
+	    (SEQ_LT(tp->snd_wl1, ti->ti_seq) || tp->snd_wl1 == ti->ti_seq &&
 	    (SEQ_LT(tp->snd_wl2, ti->ti_ack) ||
-	     tp->snd_wl2 == ti->ti_ack && ti->ti_win > tp->snd_wnd)) {
+	     tp->snd_wl2 == ti->ti_ack && ti->ti_win > tp->snd_wnd))) {
 		tp->snd_wnd = ti->ti_win;
 		tp->snd_wl1 = ti->ti_seq;
 		tp->snd_wl2 = ti->ti_ack;
 		if (tp->snd_wnd > tp->max_sndwnd)
 			tp->max_sndwnd = tp->snd_wnd;
-	}
+		newwin = 1;
+	} else
+		newwin = 0;
 
 	/*
 	 * Process segments with URG.
@@ -740,7 +746,7 @@ step6:
 	if ((tiflags & TH_URG) && ti->ti_urp &&
 	    TCPS_HAVERCVDFIN(tp->t_state) == 0) {
 		/*
-		 * This is a kludge, but if we receive accept
+		 * This is a kludge, but if we receive and accept
 		 * random urgent pointers, we'll crash in
 		 * soreceive.  It's hard to imagine someone
 		 * actually wanting to send this much urgent data.
@@ -748,8 +754,7 @@ step6:
 		if (ti->ti_urp + so->so_rcv.sb_cc > SB_MAX) {
 			ti->ti_urp = 0;			/* XXX */
 			tiflags &= ~TH_URG;		/* XXX */
-			ti->ti_flags &= ~TH_URG;	/* XXX */
-			goto badurp;			/* XXX */
+			goto dodata;			/* XXX */
 		}
 		/*
 		 * If this segment advances the known urgent pointer,
@@ -775,8 +780,15 @@ step6:
 		 */
 		if (ti->ti_urp <= ti->ti_len)
 			tcp_pulloutofband(so, ti);
-	}
-badurp:							/* XXX */
+	} else
+		/*
+		 * If no out of band data is expected,
+		 * pull receive urgent pointer along
+		 * with the receive window.
+		 */
+		if (SEQ_GT(tp->rcv_nxt, tp->rcv_up))
+			tp->rcv_up = tp->rcv_nxt;
+dodata:							/* XXX */
 
 	/*
 	 * Process the segment text, merging it into the TCP sequencing queue,
@@ -861,7 +873,10 @@ badurp:							/* XXX */
 	/*
 	 * Return any desired output.
 	 */
-	(void) tcp_output(tp);
+#ifdef notyet
+	if (newwin || tp->t_flags & TF_ACKNOW)
+#endif
+		(void) tcp_output(tp);
 	return;
 
 dropafterack:
