@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clnp_subr.c	7.16 (Berkeley) %G%
+ *	@(#)clnp_subr.c	7.17 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -158,7 +158,7 @@ register struct iso_addr	*destp;		/* ptr to destination address buffer */
 	else
 		return (caddr_t) 0;
 }
-#endif	notdef
+#endif	/* notdef */
 
 /*
  * FUNCTION:		clnp_ours
@@ -337,7 +337,7 @@ struct snpa_hdr		*inbound_shp;	/* subnetwork header of inbound packet */
 			}
 		}
 	}
-#endif	DECBIT
+#endif	/* DECBIT */
 	
 	/*
 	 *	Dispatch the datagram if it is small enough, otherwise fragment
@@ -387,7 +387,7 @@ register struct iso_addr	*dstp;	/* ptr to dst addr */
 	return bufp;
 }
 
-#endif	notdef
+#endif	/* notdef */
 
 /*
  * FUNCTION:		clnp_route
@@ -629,4 +629,4 @@ u_int	len;		/* number of bytes */
 	while (len--)
 		*(to + len) = *(from + len);
 }
-#endif	ISO
+#endif	/* ISO */
