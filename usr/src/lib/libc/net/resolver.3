@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)resolver.3	1.4 (Berkeley) %G%
+.\"	@(#)resolver.3	1.5 (Berkeley) %G%
 .\"
 .TH RESOLVER 3 "15 November 1985"
 .UC 4
@@ -15,7 +15,7 @@ res_mkquery, res_send, res_init, dn_comp, dn_expand \- resolver routines
 .br
 .B #include <arpa/nameser.h>
 .br
-.B #include <arpa/resolv.h>
+.B #include <resolv.h>
 .PP
 .B "res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)"
 .br
@@ -57,7 +57,6 @@ res_mkquery, res_send, res_init, dn_comp, dn_expand \- resolver routines
 .PP
 .B dn_expand(msg, msglen, comp_dn, exp_dn, length)
 .br
-.SM
 .B char *msg, *comp_dn, exp_dn;
 .br
 .B int  msglen, length;
@@ -87,16 +86,19 @@ will continue until it finds an authoritative answer or finds an error.
 Currently this is not implemented.
 .IP RES_USEVC
 Use TCP connections for queries instead of UDP.
-.IP RES_PRIMARY
-Unused currently.
+.IP RES_STAYOPEN
+Used with RES_USEVC to keep the TCP connection open between
+queries.
+This is useful only in programs that regularly do many queries.
+UDP should be the normal mode used.
 .IP RES_IGNTC
 Unused currently (ignore truncation errors, i.e., don't retry with TCP).
 .IP RES_RECURSE
 Set the recursion desired bit in queries. This is the default.
 (
 .I res_send
-does not currently perform iterative queries and expects the name server
-to handle recursion. This should be fixed.)
+does not do iterative queries and expects the name server
+to handle recursion.)
 .IP RES_DEFNAMES
 Append the default domain name to single label queries. This is the default.
 .PP
@@ -107,7 +109,7 @@ domain name and the Internet address of the initial hosts
 running the name server. If this line does not exist, the host running
 the resolver is tried.
 .I Res_mkquery
-is used to make a standard query message and places it in
+makes a standard query message and places it in
 .IR buf .
 .I Res_mkquery
 will return the size of the query or \-1 if the query is
@@ -129,7 +131,7 @@ by the environment variable LOCALDOMAIN.
 is currently unused but is intended for making update messages.
 .PP
 .I Res_send
-is used to send a query to name servers and return an answer.
+sends a query to name servers and returns an answer.
 It will call
 .I res_init
 if RES_INIT is not set, send the query to the local name server, and
@@ -175,4 +177,5 @@ is NULL, we don't update the list.
 .SH FILES
 /etc/resolv.conf see resolver(5)
 .SH "SEE ALSO"
-named(8), resolver(5), RFC882, RFC883
+named(8), resolver(5), RFC882, RFC883, RFC973, RFC974,
+BIND - Operations Guide
