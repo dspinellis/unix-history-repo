@@ -11,19 +11,19 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tset.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tset.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
 **  TSET -- set terminal modes
 **
 **	This program does sophisticated terminal initialization.
-**	I recommend that you include it in your .start_up or .login
+**	I recommend that you include it in your .profile or .login
 **	file to initialize whatever terminal you are on.
 **
 **	There are several features:
 **
-**	A special file or sequence (as controlled by the ttycap file)
+**	A special file or sequence (as controlled by the termcap file)
 **	is sent to the terminal.
 **
 **	Mode bits are set on a per-terminal_type basis (much better
@@ -45,12 +45,10 @@ static char sccsid[] = "@(#)tset.c	5.5 (Berkeley) %G%";
 **	to be -- if you reply with just a newline, it will default
 **	to the type given.
 **
-**	The htmp file, used by ex, etc., can be updated.
-**
 **	The current terminal type can be queried.
 **
 **	Usage:
-**		tset [-] [-EC] [-eC] [-kC] [-s] [-h] [-u] [-r]
+**		tset [-] [-EC] [-eC] [-kC] [-iC] [-s] [-h] [-u] [-r]
 **			[-m [ident] [test baudrate] :type]
 **			[-Q] [-I] [-S] [type]
 **
@@ -84,23 +82,21 @@ static char sccsid[] = "@(#)tset.c	5.5 (Berkeley) %G%";
 **			except those which cannot backspace (e.g.,
 **			a TTY 33).  C defaults to control-H.
 **		-eC -- set the erase character to C on all terminals.
-**			C defaults to control-H.  If neither -E or -e
-**			are specified, the erase character is set to
-**			control-H if the terminal can both backspace
-**			and not overstrike (e.g., a CRT).  If the erase
-**			character is NULL (zero byte), it will be reset
-**			to '#' if nothing else is specified.
+**			C defaults to control-H.  If not specified,
+**			the erase character is untouched; however, if
+**			not specified and the erase character is NULL
+**			(zero byte), the erase character  is set to delete.
 **		-kC -- set the kill character to C on all terminals.
 **			Default for C is control-X.  If not specified,
 **			the kill character is untouched; however, if
 **			not specified and the kill character is NULL
-**			(zero byte), the kill character is set to '@'.
+**			(zero byte), the kill character is set to control-U.
 **		-iC -- set the interrupt character to C on all terminals.
-			Default for C is Delete.  If not specified, the
-			interrupt character is untouched; however, if
-			not specified and the kill character is NULL
-			(zero byte), the interrupt character is set to
-			Delete.
+**			Default for C is control-C.  If not specified, the
+**			interrupt character is untouched; however, if
+**			not specified and the interrupt character is NULL
+**			(zero byte), the interrupt character is set to
+**			control-C.
 **		-qC -- reserved for setable quit character.
 **		-m -- map the system identified type to some user
 **			specified type. The mapping can be baud rate
@@ -171,7 +167,7 @@ static char sccsid[] = "@(#)tset.c	5.5 (Berkeley) %G%";
 **		PLUGBOARD -- the type code for a plugboard port.
 **		ARPANET -- the type code for an arpanet port.
 **		BACKSPACE -- control-H, the default for -e.
-**		CTRL('X') -- control-X, the default for -k.
+**		CNTL('X') -- control-X, the default for -k.
 **		OLDERASE -- the system default erase character.
 **		OLDKILL -- the system default kill character.
 **		FILEDES -- the file descriptor to do the operation
@@ -309,15 +305,40 @@ static char sccsid[] = "@(#)tset.c	5.5 (Berkeley) %G%";
 
 # define	YES		1
 # define	NO		0
-#undef CTRL
-# define	CTRL(x)		(x ^ 0100)
-# define	BACKSPACE	(CTRL('H'))
+#undef CNTL
+# define	CNTL(c)		((c)&037)
+# define	BACKSPACE	(CNTL('H'))
 # define	CHK(val, dft)	(val<=0 ? dft : val)
 # define	isdigit(c)	(c >= '0' && c <= '9')
 # define	isalnum(c)	(c > ' ' && !(index("<@=>!:|\177", c)) )
 # define	OLDERASE	'#'
 # define	OLDKILL		'@'
 # define	OLDINTR		'\177'	/* del */
+
+/* default special characters */
+#ifndef CERASE
+#define	CERASE	'\177'
+#endif
+#ifndef CKILL
+#define	CKILL	CNTL('U')
+#endif
+#ifndef CINTR
+#define	CINTR	CNTL('C')
+#endif
+#ifndef CDSUSP
+#define	CQUIT	034		/* FS, ^\ */
+#define	CSTART	CNTL('Q')
+#define	CSTOP	CNTL('S')
+#define	CEOF	CNTL('D')
+#define	CEOT	CEOF
+#define	CBRK	0377
+#define	CSUSP	CNTL('Z')
+#define	CDSUSP	CNTL('Y')
+#define	CRPRNT	CNTL('R')
+#define	CFLUSH	CNTL('O')
+#define	CWERASE	CNTL('W')
+#define	CLNEXT	CNTL('V')
+#endif
 
 # define	FILEDES		2	/* do gtty/stty on this descriptor */
 # define	STDOUT		1	/* output of -s/-S to this descriptor */
@@ -329,9 +350,9 @@ static char sccsid[] = "@(#)tset.c	5.5 (Berkeley) %G%";
 # endif
 
 # ifdef UCB_NTTY
-# define	USAGE	"usage: tset [-] [-nrsIQS] [-eC] [-kC] [-m [ident][test speed]:type] [type]\n"
+# define	USAGE	"usage: tset [-] [-nrsIQS] [-eC] [-kC] [-iC] [-m [ident][test speed]:type] [type]\n"
 # else
-# define	USAGE	"usage: tset [-] [-rsIQS] [-eC] [-kC] [-m [ident][test speed]:type] [type]\n"
+# define	USAGE	"usage: tset [-] [-rsIQS] [-eC] [-kC] [-iC] [-m [ident][test speed]:type] [type]\n"
 # endif
 
 # define	OLDFLAGS
@@ -400,6 +421,7 @@ struct
 	"2400",	B2400,	2400,
 	"4800",	B4800,	4800,
 	"9600",	B9600,	9600,
+	"19200",EXTA,	19200,
 	"exta",	EXTA,	19200,
 	"extb",	EXTB,	38400,
 	0,
@@ -576,34 +598,36 @@ char	*argv[];
 	 * Very useful after crapping out in raw.
 	 */
 # ifndef V6
-#  ifdef TIOCGETC
-		struct tchars tbuf;
-#  endif TIOCGETC
 #  ifdef UCB_NTTY
 		struct ltchars ltc;
+#ifdef TIOCLBIC
+		static int lclear = LMDMBUF|LLITOUT|LPASS8;
+#endif TIOCLBIC
 
 		if (ldisc == NTTYDISC)
 		{
 			ioctl(FILEDES, TIOCGLTC, &ltc);
-			ltc.t_suspc = CHK(ltc.t_suspc, CTRL('Z'));
-			ltc.t_dsuspc = CHK(ltc.t_dsuspc, CTRL('Y'));
-			ltc.t_rprntc = CHK(ltc.t_rprntc, CTRL('R'));
-			ltc.t_flushc = CHK(ltc.t_flushc, CTRL('O'));
-			ltc.t_werasc = CHK(ltc.t_werasc, CTRL('W'));
-			ltc.t_lnextc = CHK(ltc.t_lnextc, CTRL('V'));
+			ltc.t_suspc = CHK(ltc.t_suspc, CSUSP);
+			ltc.t_dsuspc = CHK(ltc.t_dsuspc, CDSUSP);
+			ltc.t_rprntc = CHK(ltc.t_rprntc, CRPRNT);
+			ltc.t_flushc = CHK(ltc.t_flushc, CFLUSH);
+			ltc.t_werasc = CHK(ltc.t_werasc, CWERASE);
+			ltc.t_lnextc = CHK(ltc.t_lnextc, CLNEXT);
 			ioctl(FILEDES, TIOCSLTC, &ltc);
 		}
 #  endif UCB_NTTY
 #  ifndef USG
 #   ifdef TIOCGETC
-		ioctl(FILEDES, TIOCGETC, &tbuf);
-		tbuf.t_intrc = CHK(tbuf.t_intrc, CTRL('?'));
-		tbuf.t_quitc = CHK(tbuf.t_quitc, CTRL('\\'));
-		tbuf.t_startc = CHK(tbuf.t_startc, CTRL('Q'));
-		tbuf.t_stopc = CHK(tbuf.t_stopc, CTRL('S'));
-		tbuf.t_eofc = CHK(tbuf.t_eofc, CTRL('D'));
+		tchar.t_intrc = CHK(tchar.t_intrc, CINTR);
+		tchar.t_quitc = CHK(tchar.t_quitc, CQUIT);
+		tchar.t_startc = CHK(tchar.t_startc, CSTART);
+		tchar.t_stopc = CHK(tchar.t_stopc, CSTOP);
+		tchar.t_eofc = CHK(tchar.t_eofc, CEOF);
 		/* brkc is left alone */
-		ioctl(FILEDES, TIOCSETC, &tbuf);
+		ioctl(FILEDES, TIOCSETC, &tchar);
+#ifdef TIOCLBIC
+		ioctl(FILEDES, TIOCLBIC, &lclear);
+#endif TIOCLBIC
 #   endif TIOCGETC
 		mode.sg_flags &= ~(RAW
 #   ifdef CBREAK
@@ -611,15 +635,16 @@ char	*argv[];
 #   endif CBREAK
 						|VTDELAY|ALLDELAY);
 		mode.sg_flags |= XTABS|ECHO|CRMOD|ANYP;
-		curerase = CHK(curerase, OLDERASE);
-		curkill = CHK(curkill, OLDKILL);
+		curerase = CHK(curerase, CERASE);
+		curkill = CHK(curkill, CKILL);
+		curintr = CHK(curintr, CINTR);
 #  else USG
 		ioctl(FILEDES, TCGETA, &mode);
 		curerase = CHK(curerase, OLDERASE);
 		curkill = CHK(curkill, OLDKILL);
-		curintr = CHK(curintr, CTRL('?'));
-		mode.c_cc[VQUIT] = CHK(mode.c_cc[VQUIT], CTRL('\\'));
-		mode.c_cc[VEOF] = CHK(mode.c_cc[VEOF], CTRL('D'));
+		curintr = CHK(curintr, OLDINTR);
+		mode.c_cc[VQUIT] = CHK(mode.c_cc[VQUIT], CQUIT);
+		mode.c_cc[VEOF] = CHK(mode.c_cc[VEOF], CEOF);
 
 		mode.c_iflag |= (BRKINT|ISTRIP|ICRNL|IXON);
 		mode.c_iflag &= ~(IGNBRK|PARMRK|INPCK|INLCR|IGNCR|IUCLC|IXOFF);
@@ -677,7 +702,10 @@ char	*argv[];
 				else
 				{
 					if (*p == '^' && p[1] != NULL)
-						Erase_char = CTRL(*++p);
+						if (*++p == '?')
+							Erase_char = '\177';
+						else
+							Erase_char = CNTL(*p);
 					else
 						Erase_char = *p;
 					p++;
@@ -685,13 +713,16 @@ char	*argv[];
 				continue;
 
 # if defined(USG) || defined(TIOCGETC)
-			  case 'i':	/* erase character */
+			  case 'i':	/* interrupt character */
 				if (*p == NULL)
-					Intr_char = CTRL('C');
+					Intr_char = CNTL('C');
 				else
 				{
 					if (*p == '^' && p[1] != NULL)
-						Intr_char = CTRL(*++p);
+						if (*++p == '?')
+							Intr_char = '\177';
+						else
+							Intr_char = CNTL(*p);
 					else
 						Intr_char = *p;
 					p++;
@@ -701,11 +732,14 @@ char	*argv[];
 
 			  case 'k':	/* kill character */
 				if (*p == NULL)
-					Kill_char = CTRL('X');
+					Kill_char = CNTL('X');
 				else
 				{
 					if (*p == '^' && p[1] != NULL)
-						Kill_char = CTRL(*++p);
+						if (*++p == '?')
+							Kill_char = '\177';
+						else
+							Kill_char = CNTL(*p);
 					else
 						Kill_char = *p;
 					p++;
@@ -1025,17 +1059,17 @@ ask:
 			Erase_char = (bs_char != 0) ? bs_char : BACKSPACE;
 
 		if (curerase == 0)
-			curerase = OLDERASE;
+			curerase = CERASE;
 		if (Erase_char != 0)
 			curerase = Erase_char;
 
 		if (curintr == 0)
-			curintr = OLDKILL;
+			curintr = CINTR;
 		if (Intr_char != 0)
 			curintr = Intr_char;
 
 		if (curkill == 0)
-			curkill = OLDKILL;
+			curkill = CKILL;
 		if (Kill_char != 0)
 			curkill = Kill_char;
 
@@ -1150,14 +1184,12 @@ ask:
 		lines = tgetnum("li");
 
 		/* Set window size */
-		if (DoSetenv) {
-			ioctl(FILEDES, TIOCGWINSZ, &win);
-			if (win.ws_row == 0 && win.ws_col == 0 &&
-			    lines > 0 && columns > 0) {
-				win.ws_row = lines;
-				win.ws_col = columns;
-				ioctl(FILEDES, TIOCSWINSZ, &win);
-			}
+		ioctl(FILEDES, TIOCGWINSZ, &win);
+		if (win.ws_row == 0 && win.ws_col == 0 &&
+		    lines > 0 && columns > 0) {
+			win.ws_row = lines;
+			win.ws_col = columns;
+			ioctl(FILEDES, TIOCSWINSZ, &win);
 		}
 		/* output startup string */
 		if (!NoInit)
@@ -1184,14 +1216,16 @@ ask:
 				flush();
 			}
 			bufp = buf;
-			if (tgetstr(IsReset? "rs" : "is", &bufp) != 0)
+			if (IsReset && tgetstr("rs", &bufp) != 0 || 
+			    tgetstr("is", &bufp) != 0)
 			{
 				tputs(buf, 0, prc);
 				settle = YES;
 				flush();
 			}
 			bufp = buf;
-			if (tgetstr(IsReset? "rf" : "if", &bufp) != 0)
+			if (IsReset && tgetstr("rf", &bufp) != 0 ||
+			    tgetstr("if", &bufp) != 0)
 			{
 				cat(buf);
 				settle = YES;
