@@ -43,9 +43,10 @@ sys/kern_resource.c	standard
 sys/kern_sig.c		standard
 sys/kern_synch.c	standard
 sys/kern_time.c		standard
-sys/quota_charges.c	standard
-sys/quota_share.c	standard
+sys/quota_kern.c	standard
+sys/quota_subr.c	standard
 sys/quota_sys.c		standard
+sys/quota_ufs.c		standard
 sys/subr_mcount.c	optional profiling-routine
 sys/subr_prf.c		standard
 sys/subr_rmap.c		standard
@@ -79,7 +80,6 @@ sys/ufs_syscalls.c	standard
 sys/ufs_tables.c	standard
 sys/ufs_xxx.c		standard
 sys/uipc_mbuf.c		standard
-sys/uipc_mu_msg.c	standard
 sys/uipc_pipe.c		standard
 sys/uipc_proto.c	standard
 sys/uipc_socket.c	standard
