@@ -1,4 +1,4 @@
-/*	locore.s	4.78	83/04/20	*/
+/*	locore.s	4.79	83/05/30	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -326,6 +326,7 @@ segflt:
 SCBVEC(transflt):
 	bitl	$2,(sp)+
 	bnequ	tableflt
+	jsb	Fastreclaim		# try and avoid pagein
 	TRAP(PAGEFLT)
 tableflt: 
 	TRAP(TABLEFLT)
@@ -966,3 +967,91 @@ kacc5:
 kacerr:
 	clrl	r0		# error
 	ret
+/*
+ * Extracted and unrolled most common case of pagein (hopefully):
+ *	resident and not on free list (reclaim of page is purely
+ *	for the purpose of simulating a reference bit)
+ *
+ * Built in constants:
+ *	CLSIZE of 2, USRSTACK of 0x7ffff000, any bit fields
+ *	in pte's or the core map
+ */
+	.globl	Fastreclaim
+	.text
+Fastreclaim:
+	PUSHR
+	extzv	$9,$23,28(sp),r3	# virtual address
+	bicl2	$1,r3			# v = clbase(btop(virtaddr)); 
+	movl	_u+U_PROCP,r5		# p = u.u_procp 
+					# from vtopte(p, v) ...
+	cmpl	r3,P_TSIZE(r5)
+	jgequ	2f			# if (isatsv(p, v)) {
+	ashl	$2,r3,r4
+	addl2	P_P0BR(r5),r4		#	tptopte(p, vtotp(p, v));
+	movl	$1,r2			#	type = CTEXT;
+	jbr	3f
+2:
+	subl3	P_SSIZE(r5),$0x3ffff8,r0
+	cmpl	r3,r0
+	jgequ	2f			# } else if (isadsv(p, v)) {
+	ashl	$2,r3,r4
+	addl2	P_P0BR(r5),r4		#	dptopte(p, vtodp(p, v));
+	clrl	r2			#	type = !CTEXT;
+	jbr	3f
+2:
+	cvtwl	P_SZPT(r5),r4		# } else (isassv(p, v)) {
+	ashl	$7,r4,r4
+	subl2	$(0x3ffff8+UPAGES),r4
+	addl2	r3,r4
+	ashl	$2,r4,r4
+	addl2	P_P0BR(r5),r4		#	sptopte(p, vtosp(p, v));
+	clrl	r2			# 	type = !CTEXT;
+3:					# }
+	bitb	$0x82,3(r4)
+	beql	2f			# if (pte->pg_v || pte->pg_fod)
+	POPR; rsb			#	let pagein handle it
+2:
+	bicl3	$0xffe00000,(r4),r0
+	jneq	2f			# if (pte->pg_pfnum == 0)
+	POPR; rsb			# 	let pagein handle it 
+2:
+	subl2	_firstfree,r0
+	ashl	$-1,r0,r0	
+	incl	r0			# pgtocm(pte->pg_pfnum) 
+	mull2	$12,r0
+	addl2	_cmap,r0		# &cmap[pgtocm(pte->pg_pfnum)] 
+	tstl	r2
+	jeql	2f			# if (type == CTEXT &&
+	jbc	$29,4(r0),2f		#     c_intrans)
+	POPR; rsb			# 	let pagein handle it
+2:
+	jbc	$30,4(r0),2f		# if (c_free)
+	POPR; rsb			# 	let pagein handle it 
+2:
+	bisb2	$0x80,3(r4)		# pte->pg_v = 1;
+	jbc	$26,4(r4),2f		# if (anycl(pte, pg_m) 
+	bisb2	$0x04,3(r4)		#	pte->pg_m = 1;
+2:
+	bicw3	$0x7f,2(r4),r0
+	bicw3	$0xff80,6(r4),r1
+	bisw3	r0,r1,6(r4)		# distcl(pte);
+	ashl	$PGSHIFT,r3,r0
+	mtpr	r0,$TBIS
+	addl2	$NBPG,r0
+	mtpr	r0,$TBIS		# tbiscl(v); 
+	tstl	r2
+	jeql	2f			# if (type == CTEXT) 
+	pushl	r4
+	pushl	r3
+	pushl	P_TEXTP(r5)		#	distpte(p->p_textp,
+	calls	$3,_distpte		#	    vtotp(p, v), pte); 
+2:					# collect a few statistics...
+	incl	_cnt+V_FAULTS		# cnt.v_faults++; 
+	incl	_u+U_RU+RU_MINFLT	# u.u_ru.ru_minflt++;
+	incl	_cnt+V_PGREC		# cnt.v_pgrec++;
+	incl	_cnt+V_FASTPGREC	# cnt.v_fastpgrec++;
+	incl	_cnt+V_TRAP		# cnt.v_trap++;
+	POPR
+	addl2	$8,sp			# pop pc, code
+	mtpr	$HIGH,$IPL		## dont go to a higher IPL (GROT)
+	rei
