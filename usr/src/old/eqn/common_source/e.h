@@ -1,13 +1,22 @@
-/*	e.h	4.1	83/02/11	*/
+/*	e.h	4.2	83/02/12	*/
 
 #include <stdio.h>
 
 #define	FATAL	1
 #define	ROM	'1'
+#ifndef NEQN
 #define	ITAL	'2'
 #define	BLD	'3'
+#else NEQN
+#define	ITAL	'1'
+#define	BLD	'1'
+#endif NEQN
 
+#ifndef NEQN
 #define	VERT(n)	((((n)+1)/3)*3)
+#else NEQN
+#define	VERT(n)	(20 * (n))
+#endif NEQN
 #define	EFFPS(p)	((p) >= 6 ? (p) : 6)
 
 extern int	dbg;

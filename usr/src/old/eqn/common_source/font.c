@@ -1,4 +1,4 @@
-/*	font.c	4.1	83/02/11	*/
+/*	font.c	4.2	83/02/12	*/
 
 # include "e.h"
 
@@ -14,7 +14,11 @@ setfont(ch1) char ch1; {
 	else
 		ft = ch1;
 	printf(".ft %c\n", ft);
+#ifndef NEQN
 	if(dbg)printf(".\tsetfont %c %c\n", ch1, ft);
+#else NEQN
+	if(dbg)printf(".\tsetfont %c\n", ft);
+#endif NEQN
 }
 
 font(p1, p2) int p1, p2; {
