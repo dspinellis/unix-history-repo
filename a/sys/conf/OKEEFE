@@ -1,0 +1,48 @@
+#
+# ETHERNET 780
+#
+machine		vax
+cpu		"VAX780"
+cpu		"VAX750"
+cpu		"VAX730"
+ident		OKEEFE
+timezone	8 dst
+maxusers	48
+options		INET, PUP
+
+config	hphp	vmunix
+config	hk	hkvmunix
+
+controller	uba0	at nexus ?
+controller	mba0	at nexus ?
+disk		hp0	at mba0 drive 0
+disk		hp1	at mba0 drive 1
+controller	mba1	at nexus ?
+disk		hp2	at mba1 drive 0
+disk		hp3	at mba1 drive 1
+controller	hk0	at uba? csr 0177440 		vector rkintr
+disk		rk0	at hk0 drive 0
+disk		rk1	at hk0 drive 1
+controller	sc0	at uba? csr 0176700		vector upintr
+disk		up0	at sc0 drive 0
+disk		up1	at sc0 drive 1
+controller	tm0	at uba? csr 0172520		vector tmintr
+tape		te0	at tm0 drive 0
+tape		te1	at tm0 drive 1
+controller	uda0	at uba? csr 0172150		vector udintr
+disk		ra0	at uda0 drive 0
+disk		ra1	at uda0 drive 1
+device	 	dh0	at uba? csr 0160020		vector dhrint dhxint
+device		dm0	at uba? csr 0170500		vector dmintr
+device	 	dh1	at uba? csr 0160040		vector dhrint dhxint
+device		dm1	at uba? csr 0170510		vector dmintr
+device	 	dh2	at uba? csr 0160060		vector dhrint dhxint
+device		dm2	at uba? csr 0170520		vector dmintr
+device		dz0	at uba? csr 0160120 flags 0xff	vector dzrint dzxint
+device		dz1	at uba? csr 0160140 flags 0x0	vector dzrint dzxint
+pseudo-device	pty
+pseudo-device	inet
+pseudo-device	pup
+pseudo-device	loop
+device		en0	at uba0 csr 0161000 flags 46
+				vector enxint enrint encollide
