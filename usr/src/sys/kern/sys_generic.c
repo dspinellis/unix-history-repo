@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)sys_generic.c	7.12 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -490,7 +490,7 @@ retry:
 		}
 		timeout(unselect, (caddr_t)u.u_procp, hzto(&atv));
 	}
-	sleep((caddr_t)&selwait, PZERO+1);
+	tsleep((caddr_t)&selwait, PZERO+1, SLP_SELECT, 0);
 	if (uap->tv) {
 		u.u_qsave = lqsave;
 		untimeout(unselect, (caddr_t)u.u_procp);
