@@ -1,28 +1,42 @@
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)bugfiler.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
  * Bug report processing program.
- * It is designed to be invoked by alias(5) and to be compatible with mh.
+ * It is designed to be invoked by alias(5)
+ * and to be compatible with mh.
  */
 
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
+#include <pwd.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
 
-char	deliver[] = "/usr/new/lib/mh/deliver";
+#define	BUGS_NAME	"4bsd-bugs"
+#define	BUGS_HOME	"%ucbarpa@BERKELEY"
+#define	MAILCMD		"/usr/lib/sendmail -i -t"
+
 char	unixtomh[] = "/usr/new/lib/mh/unixtomh";
-char	*maildir = "/ra/bugs/mail";
+#ifdef notdef
+char	*bugperson = "bugs";
+char	*maildir = "mail";
+#else
+char	*bugperson = "sam";
+char	*maildir = "Mail";
+#endif
 char	ackfile[] = ".ack";
 char	errfile[] = ".format";
 char	sumfile[] = "summary";
 char	logfile[] = "errors/log";
+char	redistfile[] = ".redist";
 char	tmpname[] = "BfXXXXXX";
 char	draft[] = "RpXXXXXX";
+char	disttmp[] = "RcXXXXXX";
 
 char	buf[8192];
 char	folder[MAXNAMLEN];
@@ -34,6 +48,7 @@ int	debug;
 char	*index();
 char	*rindex();
 char	*fixaddr();
+char	*any();
 
 main(argc, argv)
 	char *argv[];
@@ -71,6 +86,19 @@ main(argc, argv)
 	if (!debug)
 		freopen(logfile, "a", stderr);
 
+	if (bugperson) {
+		struct passwd *pwd = getpwnam(bugperson);
+
+		if (pwd == NULL) {
+			fprintf(stderr, "%s: bugs person is unknown\n",
+			    bugperson);
+			exit(1);
+		}
+		if (chdir(pwd->pw_dir) < 0) {
+			fprintf(stderr, "can't chdir to %s\n", pwd->pw_dir);
+			exit(1);
+		}
+	}
 	if (chdir(maildir) < 0) {
 		fprintf(stderr, "can't chdir to %s\n", maildir);
 		exit(1);
@@ -331,6 +359,11 @@ process()
 		fprintf(fs, "\t\t    %-51.51s\n", SUBJECT_I);
 	}
 	fclose(fs);
+	/*
+	 * Check redistribution list and, if members,
+	 * mail a copy of the bug report to these people.
+	 */
+	redistribute(folder, num);
 	return(state == EOM);
 }
 
@@ -382,6 +415,12 @@ chkindex(hp)
 		cp1++;
 	while (substr(cp1, "usr/") || substr(cp1, "src/") || substr(cp1, "sys/"))
 		cp1 += 4;
+	/* 
+	 * Don't toss "sys/" if nothing else is given for
+	 * a folder name, this is a valid folder as well.
+	 */
+	if (index(cp1, '/') == NULL && substr(cp1 - 4, "sys/"))
+		cp1 -= 4;
 	/*
 	 * Read the folder name and remove it from the index line.
 	 */
@@ -425,7 +464,8 @@ chkindex(hp)
 
 /*
  * Move or copy the file msg to the folder (directory).
- * A side effect is to set num to the number of the file in folder.
+ * As a side effect, num is set to the number under which
+ * the message is filed in folder.
  */
 
 file(fname, folder)
@@ -482,14 +522,176 @@ file(fname, folder)
 }
 
 /*
+ * Redistribute a bug report to those people indicated
+ * in the redistribution list file.  Perhaps should also
+ * annotate bug report with this information for future
+ * reference?
+ */
+redistribute(folder, num)
+	char *folder;
+	int num;
+{
+	FILE *fredist, *fbug, *ftemp;
+	char line[BUFSIZ], bug[2 * MAXNAMLEN + 1];
+	register char *cp;
+	int redistcnt, continuation, first;
+
+	fredist = fopen(redistfile, "r");
+	if (fredist == NULL) {
+		if (debug)
+			printf("redistribute(%s, %d), no distribution list\n",
+			    folder, num);
+		return;
+	}
+	continuation = 0;
+	first = 1;
+	redistcnt = 0;
+	while (fgets(line, sizeof (line) - 1, fredist) != NULL) {
+		if (debug)
+			printf("%s: %s", redistfile, line);
+		if (continuation && index(line, '\\'))
+			continue;
+		continuation = 0;
+		cp = any(line, " \t");
+		if (cp == NULL)
+			continue;
+		*cp++ = '\0';
+		if (strcmp(folder, line) == 0)
+			goto found;
+		if (index(cp, '\\'))
+			continuation = 1;
+	}
+	if (debug)
+		printf("no redistribution list found\n");
+	fclose(fredist);
+	return;
+found:
+	mktemp(disttmp);
+	ftemp = fopen(disttmp, "w+r");
+	if (ftemp == NULL) {
+		if (debug)
+			printf("%s: couldn't create\n", disttmp);
+		return;
+	}
+again:
+	if (debug)
+		printf("redistribution list %s", cp);
+	while (cp) {
+		char *user, terminator;
+
+		while (*cp && (*cp == ' ' || *cp == '\t' || *cp == ','))
+			cp++;
+		user = cp, cp = any(cp, ", \t\n\\");
+		if (cp) {
+			terminator = *cp;
+			*cp++ = '\0';
+			if (terminator == '\n')
+				cp = 0;
+			if (terminator == '\\')
+				continuation++;
+		}
+		if (*user == '\0')
+			continue;
+		if (debug)
+			printf("copy to %s\n", user);
+		if (first) {
+			fprintf(ftemp, "To: %s", user);
+			first = 0;
+		} else
+			fprintf(ftemp, ", %s", user);
+		redistcnt++;
+	}
+	if (!first)
+		putc('\n', ftemp);
+	if (continuation) {
+		first = 1;
+		continuation = 0;
+		cp = line;
+		if (fgets(line, sizeof (line) - 1, fredist))
+			goto again;
+	}
+	fclose(fredist);
+	if (redistcnt == 0)
+		goto cleanup;
+	fprintf(ftemp, "Subject: ");
+	if (SUBJECT_I)
+		fprintf(ftemp, "%s\n", SUBJECT_I);
+	else
+		fprintf(ftemp, "Untitled bug report\n");
+	fprintf(ftemp, "\nRedistributed-by: %s%s\n", BUGS_NAME, BUGS_HOME);
+	/*
+	 * Create copy of bug report.  Perhaps we should
+	 * truncate large messages and just give people
+	 * a pointer to the original?
+	 */
+	sprintf(bug, "%s/%d", folder, num);
+	fbug = fopen(bug, "r");
+	if (fbug == NULL) {
+		if (debug)
+			printf("%s: disappeared?\n", bug);
+		goto cleanup;
+	}
+	first = 1;
+	while (fgets(line, sizeof (line) - 1, fbug)) {
+		/* first blank line indicates start of mesg */
+		if (first && line[0] == '\n') {
+			first = 0;
+			continue;
+		}
+		fputs(line, ftemp);
+	}
+	fclose(fbug);
+	if (first) {
+		if (debug)
+			printf("empty bug report?\n");
+		goto cleanup;
+	}
+	if (dodeliver(ftemp))
+		unlink(disttmp);
+	fclose(ftemp);
+	return;
+cleanup:
+	fclose(ftemp);
+	unlink(disttmp);
+}
+
+dodeliver(fd)
+	FILE *fd;
+{
+	char buf[BUFSIZ], cmd[BUFSIZ];
+	FILE *pf, *popen();
+
+	strcpy(cmd, MAILCMD);
+	if (debug) {
+		strcat(cmd, " -v");
+		printf("dodeliver \"%s\"\n", cmd);
+	}
+	pf = popen(cmd, "w");
+	if (pf == NULL) {
+		if (debug)
+			printf("dodeliver, \"%s\" failed\n", cmd);
+		return (0);
+	}
+	rewind(fd);
+	while (fgets(buf, sizeof (buf) - 1, fd)) {
+		if (debug)
+			printf("%s", buf);
+		(void) fputs(buf, pf);
+	}
+	if (debug)
+		printf("EOF\n");
+	(void) pclose(pf);
+	return (1);
+}
+
+/*
  * Mail file1 and file2 back to the sender.
  */
 
 reply(to, file1, file2)
 	char	*to, *file1, *file2;
 {
-	int (*istat)(), (*qstat)();
-	int pid, w, status, pfd[2], in;
+	int pfd[2], in, w;
 	FILE *fout;
 
 	if (debug)
@@ -499,14 +701,14 @@ reply(to, file1, file2)
 	 * Create a temporary file to put the message in.
 	 */
 	mktemp(draft);
-	if ((fout = fopen(draft, "w")) == NULL) {
+	if ((fout = fopen(draft, "w+r")) == NULL) {
 		fprintf(stderr, "Can't create %s\n", draft);
 		return;
 	}
 	/*
 	 * Output the proper header information.
 	 */
-	fprintf(fout, "Reply-To: 4bsd-bugs%%ucbarpa@BERKELEY\n");
+	fprintf(fout, "Reply-To: %s%s\n", BUGS_NAME, BUGS_HOME);
 	if (RETURNPATH_I != NULL)
 		to = RETURNPATH_I;
 	if (REPLYTO_I != NULL)
@@ -530,7 +732,7 @@ reply(to, file1, file2)
 		if (MSGID_I)
 			fprintf(fout, "             %s\n", MSGID_I);
 	}
-	fprintf(fout, "----------\n");
+	fprintf(fout, "\n");
 	if ((in = open(file1, 0)) >= 0) {
 		while ((w = read(in, buf, sizeof(buf))) > 0)
 			fwrite(buf, 1, w, fout);
@@ -541,20 +743,9 @@ reply(to, file1, file2)
 			fwrite(buf, 1, w, fout);
 		close(in);
 	}
-	fclose(fout);
-	while ((pid = fork()) == -1)
-		sleep(5);
-	if (pid == 0) {
-		execl(deliver, "deliver", draft, 0);
-		_exit(127);
-	}
-	istat = signal(SIGINT, SIG_IGN);
-	qstat = signal(SIGQUIT, SIG_IGN);
-	while ((w = wait(&status)) != -1 && w != pid);
-	signal(SIGINT, istat);
-	signal(SIGQUIT, qstat);
-	if (w != -1 && status == 0)
+	if (dodeliver(fout))
 		unlink(draft);
+	fclose(fout);
 }
 
 /*
@@ -618,6 +809,24 @@ substr(s1, s2)
 		if (c != *s1++)
 			return(0);
 	return(1);
+}
+
+char *
+any(cp, set)
+	register char *cp;
+	char *set;
+{
+	register char *sp;
+
+	if (cp == 0 || set == 0)
+		return (0);
+	while (*cp) {
+		for (sp = set; *sp; sp++)
+			if (*cp == *sp)
+				return (cp);
+		cp++;
+	}
+	return ((char *)0);
 }
 
 peekc(fp)
