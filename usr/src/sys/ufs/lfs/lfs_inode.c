@@ -1,4 +1,4 @@
-/*	lfs_inode.c	4.14	82/06/30	*/
+/*	lfs_inode.c	4.15	82/07/01	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -314,9 +314,6 @@ itrunc(ip)
 	struct inode itmp;
 	register struct fs *fs;
 
-	i = ip->i_mode & IFMT;
-	if (i != IFREG && i != IFDIR && i != IFLNK)
-		return;
 	/*
 	 * Clean inode on disk before freeing blocks
 	 * to insure no duplicates if system crashes.
@@ -331,6 +328,13 @@ itrunc(ip)
 	iupdat(&itmp, &time, &time, 1);
 	ip->i_flag &= ~(IUPD|IACC|ICHG);
 
+	/*
+	 * Only plain files, directories and symbolic
+	 * links contain blocks.
+	 */
+	i = ip->i_mode & IFMT;
+	if (i != IFREG && i != IFDIR && i != IFLNK)
+		return;
 	/*
 	 * Now return blocks to free list... if machine
 	 * crashes, they will be harmless MISSING blocks.
