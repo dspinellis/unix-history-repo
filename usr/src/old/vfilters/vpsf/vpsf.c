@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vpsf.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)vpsf.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -11,8 +11,8 @@ static char sccsid[] = "@(#)vpsf.c	4.5 (Berkeley) %G%";
 #include <sys/vcmd.h>
 
 #define	LINELN 440
-#define	PAGELN	86
-#define	LMARG	10
+#define	PAGELN  86
+#define	LMARG   10
 
 int	pltmode[] = {VPLOT};
 int	prtmode[] = {VPRINT};
@@ -20,19 +20,21 @@ int	prtmode[] = {VPRINT};
 char	screen[PAGELN][LINELN];
 char	ul[PAGELN][LINELN];
 char	anyul[PAGELN];
-int	origin;
-int	outline;
-int	outcol;
+int	origin;		/* first column of a page */
+int	origin_ind;	/* origin plus indent */
+int	outline;	/* current line number */
+int	outcol;		/* current column number */
 int	npages;
-int	width = 106;	/* page width */
-int	length = 86;	/* page length */
+int	width = 106;	/* default page width */
+int	length = 86;	/* default page length */
+int	indent = 0;	/* default indent */
 
 int	literal;
 char	*name;		/* user's login name */
 char	*host;		/* user's machine name */
 char	*acctfile;	/* accounting information file */
 
-main(argc, argv) 
+main(argc, argv)
 	int argc;
 	char *argv[];
 {
@@ -61,6 +63,12 @@ main(argc, argv)
 					length = i;
 				break;
 
+			case 'i':
+				if ((i = atoi(&argv[0][2])) >= 0 &&
+				    i < LINELN - 1)
+					indent = i;
+				break;
+
 			case 'c':	/* Print input without throwing away
 					   control chars and without putting
 					   in page breaks. */
@@ -70,6 +78,9 @@ main(argc, argv)
 		} else
 			acctfile = *argv;
 	}
+	indent += literal ? 1 : LMARG;
+	if (indent >= width)
+		indent = width - 1;
 
 	/*
 	 * input file is open on file descriptor 0.
@@ -97,14 +108,20 @@ main(argc, argv)
 	exit(0);
 }
 
+set_up()
+{
+	clear(screen, sizeof(screen));
+	origin = 0;
+	origin_ind = outcol = origin + indent;
+	outline = 0;
+	cutmark(origin);
+}
+
 process()
 {
 	register int c;
 
-	clear(screen, sizeof(screen));
-	origin = LMARG;
-	outcol = LMARG;
-	cutmark(LMARG);
+	set_up();
 
 	while ((c = getchar()) != EOF)
 		switch (c) {
@@ -113,16 +130,16 @@ process()
 			break;
 
 		case '\t':
-			outcol = ((outcol - origin) | 07) + origin + 1;
+			outcol = ((outcol - origin_ind) | 07) + origin_ind + 1;
 			break;
 
 		case '\b':
-			if (outcol > origin)
+			if (outcol > origin_ind)
 				outcol--;
 			break;
 
 		case '\r':
-			outcol = origin; 
+			outcol = origin_ind;
 			break;
 
 		case '\f':
@@ -131,16 +148,16 @@ process()
 
 		case '\n':
 			if (++outline >= length) {
-				origin += width;
-				if (origin + width > LINELN) {
-					cutmark(origin);
+				origin += width + 1;
+ 				origin_ind += width + 1;
+				cutmark(origin);
+				if (origin + width + 1 >= LINELN) {
 					oflush();
 					break;
 				}
 				outline = 0;
-				cutmark(origin);
 			}
-			outcol = origin;
+			outcol = origin_ind;
 			break;
 
 		default:
@@ -148,8 +165,8 @@ process()
 			break;
 		}
 
-	if (outline || origin != LMARG) {
-		cutmark(origin + width);
+	if (outline || origin) {
+		cutmark(origin + width + 1);
 		oflush();
 	}
 	printf("\n\n\n\n\n");
@@ -163,7 +180,7 @@ outchar(c)
 
 	if (!literal && (c < 040 || c >= 0177))
 		return;
-	if (outcol >= LINELN) {
+	if (outcol >= origin + width + 1) {
 		outcol++;
 		return;
 	}
@@ -199,11 +216,8 @@ oflush()
 	for (i = 0; i < LINELN; i++)
 		putchar('_');
 	putchar('\n');
-	clear(screen, sizeof(screen));
-	outline = 0;
-	outcol = LMARG;
-	origin = LMARG;
-	cutmark(LMARG);
+
+	set_up();
 }
 
 clear(cp, i)
@@ -221,10 +235,10 @@ cutmark(o)
 {
 	register int i;
 
-	screen[0][o - LMARG] = '|';
-	screen[1][o - LMARG] = '|';
-	screen[length - 1][o - LMARG] = '|';
-	screen[length - 2][o - LMARG] = '|';
+	screen[0][o] = '|';
+	screen[1][o] = '|';
+	screen[length - 1][o] = '|';
+	screen[length - 2][o] = '|';
 }
 
 putline(n)
