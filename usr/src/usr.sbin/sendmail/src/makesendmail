@@ -6,13 +6,21 @@
 #
 # %sccs.include.redist.sh%
 #
-#       @(#)makesendmail	8.23 (Berkeley) %G%
+#       @(#)makesendmail	8.24 (Berkeley) %G%
 #
 
 #
 #  A quick-and-dirty script to compile sendmail in the presence of
 #  multiple architectures and Makefiles.
 #
+
+if [ "x${1-""}" = "x-m" ]
+then
+	# show Makefile name only
+	mflag=1
+else
+	mflag=""
+fi
 
 #
 #  Do heuristic guesses for machines that do not have uname
@@ -107,7 +115,7 @@ else
 	sfx=".${SENDMAIL_SUFFIX}"
 fi
 
-echo "Making sendmail with os=$os, rel=$rel, rbase=$rbase, arch=$arch, sfx=$sfx"
+echo "Configuration: os=$os, rel=$rel, rbase=$rbase, arch=$arch, sfx=$sfx"
 
 # now try to find a reasonable object directory
 if [ -r obj.$os.$rel.$arch$sfx ]; then
@@ -181,10 +189,38 @@ else
 		echo "Cannot determine how to support $arch.$os.$rel"
 		exit 1
 	fi
+	if [ "$mflag" ]
+	then
+		echo "Will run in virgin $obj using $makefile"
+		exit 0
+	fi
 	echo "Creating $obj using $makefile"
 	mkdir $obj
 	(cd $obj; ln -s ../*.[ch158] ../sendmail.hf .; ln -s ../Makefiles/$makefile Makefile)
 fi
+
+if [ "$mflag" ]
+then
+	makefile=`ls -l $obj/Makefile | sed 's/.* //'`
+	if [ -z "$makefile" ]
+	then
+		echo "ERROR: $obj exists but has no Makefile"
+		exit 1
+	fi
+	case $makefile
+	in
+	  ../Makefiles/*)
+		makefile=`echo $makefile | sed 's/...Makefiles.//'`
+		echo "Will run in existing $obj using $makefile"
+		;;
+
+	  *)
+		echo "Will run in existing $obj using custom $makefile"
+		;;
+	esac
+	exit 0
+fi
+
 echo "Making in $obj"
 cd $obj
 if [ $# = 0 ]
