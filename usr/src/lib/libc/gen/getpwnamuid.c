@@ -10,8 +10,8 @@ static char PASSWD[] = "/etc/passwd";
 static char EMPTY[] = "";
 static char line[BUFSIZ+1];
 static struct passwd passwd;
-DBM *_pw_db = 0;
-int _pw_stayopen = 0;
+DBM *_pw_db;
+int _pw_stayopen;
 
 static struct passwd *
 fetchpw(key)
@@ -21,7 +21,7 @@ fetchpw(key)
 
         if (key.dptr == 0)
                 return ((struct passwd *)NULL);
-	key = dbmfetch(_pw_db, key);
+	key = dbm_fetch(_pw_db, key);
 	if (key.dptr == 0)
                 return ((struct passwd *)NULL);
         cp = key.dptr;
@@ -48,24 +48,24 @@ getpwnam(nam)
 	register struct passwd *pw;
 
         if (_pw_db == (DBM *)0 &&
-	    (_pw_db = ndbmopen(PASSWD, O_RDONLY)) == (DBM *)0) {
+	    (_pw_db = dbm_open(PASSWD, O_RDONLY)) == (DBM *)0) {
 	oldcode:
 		setpwent();
 		while ((pw = getpwent()) && strcmp(nam, pw->pw_name));
 		endpwent();
 		return (pw);
 	}
-	if (flock(_pw_db->db_dirf, LOCK_SH) < 0) {
-		ndbmclose(_pw_db);
+	if (flock(_pw_db->dbm_dirf, LOCK_SH) < 0) {
+		dbm_close(_pw_db);
 		_pw_db = (DBM *)0;
 		goto oldcode;
 	}
         key.dptr = nam;
         key.dsize = strlen(nam);
 	pw = fetchpw(key);
-	(void) flock(_pw_db->db_dirf, LOCK_UN);
+	(void) flock(_pw_db->dbm_dirf, LOCK_UN);
 	if (!_pw_stayopen) {
-		ndbmclose(_pw_db);
+		dbm_close(_pw_db);
 		_pw_db = (DBM *)0;
 	}
         return (pw);
@@ -79,24 +79,24 @@ getpwuid(uid)
 	register struct passwd *pw;
 
         if (_pw_db == (DBM *)0 &&
-	    (_pw_db = ndbmopen(PASSWD, O_RDONLY)) == (DBM *)0) {
+	    (_pw_db = dbm_open(PASSWD, O_RDONLY)) == (DBM *)0) {
 	oldcode:
 		setpwent();
 		while ((pw = getpwent()) && pw->pw_uid != uid);
 		endpwent();
 		return (pw);
 	}
-	if (flock(_pw_db->db_dirf, LOCK_SH) < 0) {
-		ndbmclose(_pw_db);
+	if (flock(_pw_db->dbm_dirf, LOCK_SH) < 0) {
+		dbm_close(_pw_db);
 		_pw_db = (DBM *)0;
 		goto oldcode;
 	}
         key.dptr = (char *) &uid;
         key.dsize = sizeof uid;
 	pw = fetchpw(key);
-	(void) flock(_pw_db->db_dirf, LOCK_UN);
+	(void) flock(_pw_db->dbm_dirf, LOCK_UN);
 	if (!_pw_stayopen) {
-		ndbmclose(_pw_db);
+		dbm_close(_pw_db);
 		_pw_db = (DBM *)0;
 	}
         return (pw);
