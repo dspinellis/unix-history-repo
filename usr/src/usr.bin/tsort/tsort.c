@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tsort.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tsort.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -28,7 +28,7 @@ static char sccsid[] = "@(#)tsort.c	5.5 (Berkeley) %G%";
 #include <string.h>
 
 /*
- *  Topological sort.  Input is a list of pairs of strings seperated by
+ *  Topological sort.  Input is a list of pairs of strings separated by
  *  white space (spaces, tabs, and/or newlines); strings are written to
  *  standard output in sorted order, one per line.
  *
@@ -251,7 +251,7 @@ tsort()
 
 	while (graph) {
 		/*
-		 * keep getting rid of simple cases until there are none left,
+		 * Keep getting rid of simple cases until there are none left,
 		 * if there are any nodes still in the graph, then there is
 		 * a cycle in it.
 		 */
@@ -276,11 +276,9 @@ tsort()
 			 */
 			for (cnt = 0, n = graph; n; n = n->n_next)
 				++cnt;
-			cycle_buf =
-			    (NODE **)malloc((u_int)sizeof(NODE *) * cnt);
-			longest_cycle =
-			    (NODE **)malloc((u_int)sizeof(NODE *) * cnt);
-			if (!cycle_buf || !longest_cycle)
+			cycle_buf = malloc((u_int)sizeof(NODE *) * cnt);
+			longest_cycle = malloc((u_int)sizeof(NODE *) * cnt);
+			if (cycle_buf == NULL || longest_cycle == NULL)
 				err("%s", strerror(errno));
 		}
 		for (n = graph; n; n = n->n_next)
