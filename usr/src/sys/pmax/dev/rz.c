@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rz.c	8.1 (Berkeley) %G%
+ *	@(#)rz.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -276,7 +276,7 @@ rzprobe(sd)
 	printf("rz%d at %s%d drive %d slave %d", sd->sd_unit,
 		sd->sd_cdriver->d_name, sd->sd_ctlr, sd->sd_drive,
 		sd->sd_slave);
-	if (inqbuf.version > 1 || i < 36)
+	if (inqbuf.version > 2 || i < 36)
 		printf(" type 0x%x, qual 0x%x, ver %d",
 			inqbuf.type, inqbuf.qualifier, inqbuf.version);
 	else {
