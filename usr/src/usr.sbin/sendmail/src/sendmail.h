@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.115		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.116		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -178,7 +178,7 @@ extern struct hdrinfo	HdrInfo[];
 # define H_EOH		00001	/* this field terminates header */
 # define H_RCPT		00002	/* contains recipient addresses */
 # define H_DEFAULT	00004	/* if another value is found, drop this */
-# define H_RESENT	00010	/* this address is a "resent-..." address */
+# define H_RESENT	00010	/* this address is a "Resent-..." address */
 # define H_CHECK	00020	/* check h_mflags against m_flags */
 # define H_ACHECK	00040	/* ditto, but always (not just default) */
 # define H_FORCE	00100	/* force this field, even if default */
@@ -232,6 +232,7 @@ typedef struct envelope	ENVELOPE;
 #define EF_FATALERRS	000040		/* fatal errors occured */
 #define EF_KEEPQUEUE	000100		/* keep queue files always */
 #define EF_RESPONSE	000200		/* this is an error or return receipt */
+#define EF_RESENT	000400		/* this message is being forwarded */
 
 EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
 /*

@@ -32,7 +32,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.69		%G%);
+SCCSID(@(#)conf.c	3.70		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -46,8 +46,8 @@ SCCSID(@(#)conf.c	3.69		%G%);
 struct hdrinfo	HdrInfo[] =
 {
 		/* originator fields, most to least significant  */
-	"resent-sender",	H_FROM,
-	"resent-from",		H_FROM,
+	"resent-sender",	H_FROM|H_RESENT,
+	"resent-from",		H_FROM|H_RESENT,
 	"sender",		H_FROM,
 	"from",			H_FROM,
 	"full-name",		H_ACHECK,
@@ -55,14 +55,19 @@ struct hdrinfo	HdrInfo[] =
 	"errors-to",		H_FROM,
 		/* destination fields */
 	"to",			H_RCPT,
-	"resent-to",		H_RCPT,
+	"resent-to",		H_RCPT|H_RESENT,
 	"cc",			H_RCPT,
-	"resent-cc",		H_RCPT,
+	"resent-cc",		H_RCPT|H_RESENT,
 	"bcc",			H_RCPT|H_ACHECK,
-	"resent-bcc",		H_RCPT|H_ACHECK,
+	"resent-bcc",		H_RCPT|H_ACHECK|H_RESENT,
 		/* message identification and control */
+	"message-id",		0,
+	"resent-message-id",	H_RESENT,
 	"message",		H_EOH,
 	"text",			H_EOH,
+		/* date fields */
+	"date",			0,
+	"resent-date",		H_RESENT,
 		/* trace fields */
 	"received",		H_TRACE|H_FORCE,
 	"via",			H_TRACE|H_FORCE,

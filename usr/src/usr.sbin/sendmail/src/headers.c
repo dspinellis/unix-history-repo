@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.52		%G%);
+SCCSID(@(#)headers.c	3.53		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -93,9 +93,23 @@ chompheader(line, def)
 			break;
 	}
 
+	/* see if this is a resent message */
+	if (!def && bitset(H_RESENT, h->h_flags))
+		CurEnv->e_flags |= EF_RESENT;
+
 	/* if this means "end of header" quit now */
 	if (bitset(H_EOH, hi->hi_flags))
 		return (hi->hi_flags);
+
+	/* drop explicit From: if same as what we would generate -- for MH */
+	if (!def && strcmp(fvalue, CurEnv->e_from.q_paddr) == 0)
+	{
+		p = "resent-from";
+		if (!bitset(EF_RESENT, CurEnv->e_flags))
+			p += 7;
+		if (strcmp(fname, p) == 0)
+			return (hi->hi_flags);
+	}
 
 	/* create/fill in a new node */
 	if (h == NULL || bitset(H_FORCE, h->h_flags))
@@ -124,10 +138,6 @@ chompheader(line, def)
 	{
 		CurEnv->e_flags &= ~EF_OLDSTYLE;
 	}
-
-	/* send to this person if we so desire */
-	if (!def && GrabTo && bitset(H_RCPT, h->h_flags))
-		sendtolist(h->h_value, (ADDRESS *) NULL, &CurEnv->e_sendqueue);
 
 	return (h->h_flags);
 }
@@ -274,8 +284,19 @@ eatheader(e)
 		if (tTd(32, 1))
 			printf("%s: %s\n", capitalize(h->h_field), h->h_value);
 #endif DEBUG
+		/* count the number of times it has been processed */
 		if (bitset(H_TRACE, h->h_flags))
 			hopcnt++;
+
+		/* send to this person if we so desire */
+		if (GrabTo && bitset(H_RCPT, h->h_flags) &&
+		    !bitset(H_DEFAULT, h->h_flags) &&
+		    (!bitset(EF_RESENT, CurEnv->e_flags) || bitset(H_RESENT, h->h_flags)))
+		{
+			sendtolist(h->h_value, (ADDRESS *) NULL, &CurEnv->e_sendqueue);
+		}
+
+		/* log the message-id */
 #ifdef LOG
 		if (!QueueRun && LogLevel > 8 &&
 		    strcmp(h->h_field, "message-id") == 0)
@@ -597,6 +618,10 @@ putheader(fp, m, e)
 
 		if (bitset(H_CHECK|H_ACHECK, h->h_flags) &&
 		    !bitintersect(h->h_mflags, m->m_flags))
+			continue;
+
+		/* handle Resent-... headers specially */
+		if (bitset(H_RESENT, h->h_flags) && !bitset(EF_RESENT, e->e_flags))
 			continue;
 
 		p = h->h_value;
