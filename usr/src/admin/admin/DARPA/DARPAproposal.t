@@ -1,12 +1,14 @@
-.\"	@(#)DARPAproposal.t	1.6	87/06/08
+.\"	@(#)DARPAproposal.t	1.7	87/06/08
 .\" *troff -ms
 .rm CM
 .sp 2
-.ce 2
-\fB\s+2Proposal for Continued UNIX Research at Berkeley\s-2\fP
+.ce 100
+\fB\s+2Proposal for Continued UNIX-based
+Operating Systems Research at Berkeley\s-2\fP
 .ie 1 .ds DT 
 .el     .ds DT \n(mo/\n(dy/\n(yr
 \fBDRAFT of \*(DT\fP
+.ce 0
 .sp 2
 .nf
 .ce 4
@@ -37,6 +39,8 @@ and terminal protocols to provide more internal flexibility.
 .sp 2
 .NH
 Accomplishments Under the Current Contract
+.NH 2
+4.3BSD
 .PP
 This section summarizes the work done at Berkeley between the
 September 1983 4.2BSD distribution of
@@ -153,6 +157,42 @@ lookup mechanism.
 .IP \s+1\(bu\s0
 A new time synchronization server has been added to allow a set of machines to
 keep their clocks within tens of milliseconds of each other.
+.NH 2
+Work since the release of 4.3BSD
+.PP
+There have been several changes in the system since the release of 4.3BSD.
+The largest change has been the incorporation of support for the first
+non-VAX processor, the CCI Power 6/32.
+The Power 6 version of 4.3BSD is based upon the compilers and
+device drivers done for CCI's 4.2BSD UNIX,
+and is otherwise similar to the VAX release of 4.3.
+The kernel source tree and the sources for all user-level software
+have been merged using a structure that will accommodate addition
+of other processor families.
+The 4.3BSD release for the CCI Power 6 (and for OEM versions
+sold by Harris and Sperry) is now in beta test.
+.PP
+In the course of the work on the CCI machine, it was finally
+resolved that disk geometry and filesystem layout information
+must be stored on each disk in a pack label.
+This was implemented for the CCI disks and for the most common
+types of disk controllers on the VAX.
+A utility was written to create and maintain the disk information,
+and other user-level programs that use such information now obtain
+it from the disk label.
+.PP
+The Internet and the Berkeley collection of local-area networks
+have both grown at high rates in the last year.
+The Bay Area Regional Research Network (BARRNet)
+connecting several UC campuses, Stanford and NASA-Ames
+has recently become operational, increasing the complexity
+of the network connectivity.
+Both Internet and local routing algorithms are showing the strain
+of continued growth.
+We have made several changes in the local routing algorithm
+to keep accommodate the current topology,
+and are participating in the development of new routing algorithms
+and protocols.
 .br
 .ne 10
 .sp 2
