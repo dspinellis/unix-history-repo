@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.58 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.59 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -29,127 +29,10 @@
 
 static int ffs_indirtrunc __P((struct inode *, daddr_t, daddr_t, int, long *));
 
-extern u_long nextgennumber;
-
 int
 ffs_init()
 {
 	return (ufs_init());
-}
-
-/*
- * Look up a UFS dinode number to find its incore vnode.
- * If it is not in core, read it in from the specified device.
- * If it is in core, wait for the lock bit to clear, then
- * return the inode locked. Detection and handling of mount
- * points must be done by the calling routine.
- */
-ffs_vget (ap)
-	struct vop_vget_args *ap;
-{
-	register struct fs *fs;
-	register struct inode *ip;
-	struct ufsmount *ump;
-	struct buf *bp;
-	struct dinode *dp;
-	struct vnode *vp;
-	union ihead *ih;
-	dev_t dev;
-	int i, type, error;
-
-	ump = VFSTOUFS(ap->a_mp);
-	dev = ump->um_dev;
-	if ((*ap->a_vpp = ufs_ihashget(dev, ap->a_ino)) != NULL)
-		return (0);
-
-	/* Allocate a new vnode/inode. */
-	if (error = getnewvnode(VT_UFS, ap->a_mp, ffs_vnodeop_p, &vp)) {
-		*ap->a_vpp = NULL;
-		return (error);
-	}
-	type = ump->um_devvp->v_tag == VT_MFS ? M_MFSNODE : M_FFSNODE; /* XXX */
-	MALLOC(ip, struct inode *, sizeof(struct inode), type, M_WAITOK);
-	vp->v_data = ip;
-	ip->i_vnode = vp;
-	ip->i_flag = 0;
-	ip->i_devvp = 0;
-	ip->i_mode = 0;
-	ip->i_diroff = 0;
-	ip->i_lockf = 0;
-	ip->i_fs = fs = ump->um_fs;
-	ip->i_dev = dev;
-	ip->i_number = ap->a_ino;
-#ifdef QUOTA
-	for (i = 0; i < MAXQUOTAS; i++)
-		ip->i_dquot[i] = NODQUOT;
-#endif
-	/*
-	 * Put it onto its hash chain and lock it so that other requests for
-	 * this inode will block if they arrive while we are sleeping waiting
-	 * for old data structures to be purged or for the contents of the
-	 * disk portion of this inode to be read.
-	 */
-	ufs_ihashins(ip);
-
-	/* Read in the disk contents for the inode, copy into the inode. */
-	if (error = bread(ump->um_devvp, fsbtodb(fs, itod(fs, ap->a_ino)),
-	    (int)fs->fs_bsize, NOCRED, &bp)) {
-		/*
-		 * The inode does not contain anything useful, so it would
-		 * be misleading to leave it on its hash chain. It will be
-		 * returned to the free list by ufs_iput().
-		 */
-		remque(ip);
-		ip->i_forw = ip;
-		ip->i_back = ip;
-
-		/* Unlock and discard unneeded inode. */
-		ufs_iput(ip);
-		brelse(bp);
-		*ap->a_vpp = NULL;
-		return (error);
-	}
-	dp = bp->b_un.b_dino;
-	dp += itoo(fs, ap->a_ino);
-	ip->i_din = *dp;
-	brelse(bp);
-
-	/*
-	 * Initialize the vnode from the inode, check for aliases.
-	 * Note that the underlying vnode may have changed.
-	 */
-	if (error = ufs_vinit(ap->a_mp, ffs_specop_p, FFS_FIFOOPS, &vp)) {
-		ufs_iput(ip);
-		*ap->a_vpp = NULL;
-		return (error);
-	}
-	/*
-	 * Finish inode initialization now that aliasing has been resolved.
-	 */
-	ip->i_devvp = ump->um_devvp;
-	VREF(ip->i_devvp);
-	/*
-	 * Set up a generation number for this inode if it does not
-	 * already have one. This should only happen on old filesystems.
-	 */
-	if (ip->i_gen == 0) {
-		if (++nextgennumber < (u_long)time.tv_sec)
-			nextgennumber = time.tv_sec;
-		ip->i_gen = nextgennumber;
-		if ((vp->v_mount->mnt_flag & MNT_RDONLY) == 0)
-			ip->i_flag |= IMOD;
-	}
-	/*
-	 * Ensure that uid and gid are correct. This is a temporary
-	 * fix until fsck has been changed to do the update.
-	 */
-	if (fs->fs_inodefmt < FS_44INODEFMT) {		/* XXX */
-		ip->i_uid = ip->i_din.di_ouid;		/* XXX */
-		ip->i_gid = ip->i_din.di_ogid;		/* XXX */
-	}						/* XXX */
-
-	*ap->a_vpp = vp;
-	return (0);
 }
 
 /*
@@ -162,8 +45,13 @@ ffs_vget (ap)
  * then wait for the disk write of the inode to complete.
  */
 int
-ffs_update (ap)
-	struct vop_update_args *ap;
+ffs_update(ap)
+	struct vop_update_args /* {
+		struct vnode *a_vp;
+		struct timeval *a_ta;
+		struct timeval *a_tm;
+		int a_waitfor;
+	} */ *ap;
 {
 	struct buf *bp;
 	struct inode *ip;
@@ -217,14 +105,20 @@ ffs_update (ap)
  *
  * NB: triple indirect blocks are untested.
  */
-ffs_truncate (ap)
-	struct vop_truncate_args *ap;
+ffs_truncate(ap)
+	struct vop_truncate_args /* {
+		struct vnode *a_vp;
+		off_t a_length;
+		int a_flags;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
-	USES_VOP_UPDATE;
 	register struct vnode *ovp = ap->a_vp;
 	register daddr_t lastblock;
 	register struct inode *oip;
 	daddr_t bn, lbn, lastiblock[NIADDR];
+	off_t length = ap->a_length;
 	register struct fs *fs;
 	register struct inode *ip;
 	struct buf *bp;
@@ -238,7 +132,7 @@ ffs_truncate (ap)
 	oip = VTOI(ovp);
 	if (ovp->v_type == VLNK && ovp->v_mount->mnt_maxsymlinklen > 0) {
 #ifdef DIAGNOSTIC
-		if (ap->a_length != 0)
+		if (length != 0)
 			panic("ffs_truncate: partial truncate of symlink");
 #endif
 		bzero((char *)&oip->i_shortlink, (u_int)oip->i_size);
@@ -246,11 +140,11 @@ ffs_truncate (ap)
 		oip->i_flag |= ICHG|IUPD;
 		return (VOP_UPDATE(ovp, &time, &time, 1));
 	}
-	if (oip->i_size <= ap->a_length) {
+	if (oip->i_size <= length) {
 		oip->i_flag |= ICHG|IUPD;
 		return (VOP_UPDATE(ovp, &time, &time, 1));
 	}
-	vnode_pager_setsize(ovp, (u_long)ap->a_length);
+	vnode_pager_setsize(ovp, (u_long)length);
 	/*
 	 * Calculate index into inode's block list of
 	 * last direct and indirect blocks (if any)
@@ -258,7 +152,7 @@ ffs_truncate (ap)
 	 * the file is truncated to 0.
 	 */
 	fs = oip->i_fs;
-	lastblock = lblkno(fs, ap->a_length + fs->fs_bsize - 1) - 1;
+	lastblock = lblkno(fs, length + fs->fs_bsize - 1) - 1;
 	lastiblock[SINGLE] = lastblock - NDADDR;
 	lastiblock[DOUBLE] = lastiblock[SINGLE] - NINDIR(fs);
 	lastiblock[TRIPLE] = lastiblock[DOUBLE] - NINDIR(fs) * NINDIR(fs);
@@ -271,11 +165,11 @@ ffs_truncate (ap)
 	 * of subsequent file growth.
 	 */
 	osize = oip->i_size;
-	offset = blkoff(fs, ap->a_length);
+	offset = blkoff(fs, length);
 	if (offset == 0) {
-		oip->i_size = ap->a_length;
+		oip->i_size = length;
 	} else {
-		lbn = lblkno(fs, ap->a_length);
+		lbn = lblkno(fs, length);
 		aflags = B_CLRBUF;
 		if (ap->a_flags & IO_SYNC)
 			aflags |= B_SYNC;
@@ -285,7 +179,7 @@ ffs_truncate (ap)
 #endif
 		if (error = ffs_balloc(oip, lbn, offset, ap->a_cred, &bp, aflags))
 			return (error);
-		oip->i_size = ap->a_length;
+		oip->i_size = length;
 		size = blksize(fs, oip, lbn);
 		(void) vnode_pager_uncache(ovp);
 		bzero(bp->b_un.b_addr + offset, (unsigned)(size - offset));
@@ -311,7 +205,7 @@ ffs_truncate (ap)
 	for (i = NDADDR - 1; i > lastblock; i--)
 		oip->i_db[i] = 0;
 	oip->i_flag |= ICHG|IUPD;
-	allerror = vinvalbuf(ovp, ap->a_length > 0, ap->a_cred, ap->a_p);
+	allerror = vinvalbuf(ovp, length > 0, ap->a_cred, ap->a_p);
 	if (error = VOP_UPDATE(ovp, &time, &time, MNT_WAIT))
 		allerror = error;
 
@@ -367,7 +261,7 @@ ffs_truncate (ap)
 		 * back as old block size minus new block size.
 		 */
 		oldspace = blksize(fs, ip, lastblock);
-		ip->i_size = ap->a_length;
+		ip->i_size = length;
 		newspace = blksize(fs, ip, lastblock);
 		if (newspace == 0)
 			panic("itrunc: newspace");
