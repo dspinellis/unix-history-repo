@@ -5,7 +5,7 @@
 # include <sysexits.h>
 # include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c	1.15 %G%";
+static char SccsId[] = "@(#)sccs.c	1.16 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -390,9 +390,11 @@ clean(really)
 	struct direct dir;
 	struct stat stbuf;
 	char buf[100];
+	char pline[120];
 	register FILE *dirfd;
 	register char *basefile;
 	bool gotedit;
+	FILE *pfp;
 
 	dirfd = fopen(SccsPath, "r");
 	if (dirfd == NULL)
@@ -415,11 +417,14 @@ clean(really)
 		strcpy(buf, SccsPath);
 		strcat(buf, "/p.");
 		basefile = &buf[strlen(buf)];
-		basefile[sizeof dir.d_name - 2] = '\0';
 		strcpyn(basefile, &dir.d_name[2], sizeof dir.d_name - 2);
-		if (stat(buf, &stbuf) >= 0)
+		basefile[sizeof dir.d_name - 2] = '\0';
+		pfp = fopen(buf, "r");
+		if (pfp != NULL)
 		{
-			printf("%s: being editted\n", basefile);
+			while (fgets(pline, sizeof pline, pfp) != NULL)
+				printf("%12s: being editted: %s", basefile, pline);
+			fclose(pfp);
 			gotedit = TRUE;
 			continue;
 		}
