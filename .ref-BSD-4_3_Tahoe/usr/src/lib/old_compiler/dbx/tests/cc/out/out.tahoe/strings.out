@@ -1,7 +1,0 @@
-reading symbolic information ...
-[using memory image in strings.core]
-abort() at 0xe6
-f(s = "parameter test"), line 15 in "strings.c"
-main(0x1, 0xbfffe414, 0xbfffe41c), line 9 in "strings.c"
-"this is a test" 
-

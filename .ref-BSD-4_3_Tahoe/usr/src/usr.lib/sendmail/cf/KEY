@@ -1,8 +1,0 @@
-
-Macro					Class
------					-----
-U	This host's UUCP name		U	UUCP aliases
-V	None				V	UUCP hosts on $V
-W	Host to forward to for $=W	W	UUCP hosts on $W
-X	Host to forward to for $=X	X	UUCP hosts on $X
-Y	Host to forward to for $=Y	Y	UUCP hosts on $Y

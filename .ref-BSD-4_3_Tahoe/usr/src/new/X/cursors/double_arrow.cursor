@@ -1,9 +1,0 @@
-#define double_arrow_width 16
-#define double_arrow_height 16
-#define double_arrow_x_hot 8
-#define double_arrow_y_hot 8
-static short double_arrow_bits[] = {
-   0x0000, 0x0180, 0x03c0, 0x07e0,
-   0x0db0, 0x1998, 0x0180, 0x0180,
-   0x0180, 0x0180, 0x1998, 0x0db0,
-   0x07e0, 0x03c0, 0x0180, 0x0000};

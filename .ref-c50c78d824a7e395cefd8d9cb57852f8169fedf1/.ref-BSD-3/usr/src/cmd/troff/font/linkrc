@@ -1,7 +1,0 @@
-cd /usr/lib/font
-rm ftH ftHI ftHM ftFD ftCI
-ln ftG ftH
-ln ftGI ftHI
-ln ftGM ftHM
-ln ftUD ftFD
-ln ftCK ftCI

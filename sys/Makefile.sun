@@ -1,0 +1,28 @@
+# @(#) $Header: Makefile,v 1.5 87/06/24 02:56:18 van Locked $ (LBL)
+
+CC= cc -m68020 -fsoft
+CFLAGS= -O -c -I/sys/OBJ -I/sys/h\
+    -DKERNEL -Dsun3 -DSUN3_160 -DSUN3_50 -DSUN3_260 -DSUN3_110\
+    -DGENERIC -DINET -DSYSACCT -DQUOTA -DNFS -DNIT\
+    -DIPCMESSAGE -DIPCSEMAPHORE -DIPCSHMEM
+
+all: tcp_input.o tcp_output.o tcp_subr.o tcp_timer.o tcp_debug.o\
+    tcp_usrreq.o
+
+tcp_debug.o: ../netinet/tcp_debug.c
+	${CC} ${CFLAGS} $?
+
+tcp_input.o: ../netinet/tcp_input.c
+	${CC} ${CFLAGS} $?
+
+tcp_output.o: ../netinet/tcp_output.c
+	${CC} ${CFLAGS} $?
+
+tcp_subr.o: ../netinet/tcp_subr.c
+	${CC} ${CFLAGS} $?
+
+tcp_timer.o: ../netinet/tcp_timer.c
+	${CC} ${CFLAGS} $?
+
+tcp_usrreq.o: ../netinet/tcp_usrreq.c
+	${CC} ${CFLAGS} $?

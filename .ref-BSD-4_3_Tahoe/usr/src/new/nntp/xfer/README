@@ -1,9 +1,0 @@
-This is a "passive" news transmission client.  It queries
-other servers for news with NEWNEWS and gets it via the article
-command.
-
-No docs, sorry.  It's unsupported (like the rest of the stuff is???).
-Read the source code.
-
-Originally written by Brian Kantor <brian@sdcsvax.ucsd.edu>, with some
-bug fixes by Ambar <ambar@athena.mit.edu>.

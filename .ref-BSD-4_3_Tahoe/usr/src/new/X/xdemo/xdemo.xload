@@ -1,8 +1,0 @@
-*
-../CLUlib/*
-~CLU/bin/string_ops
-~CLU/bin/mint
-~CLU/bin/hex
-#-sym
-#heap:60
-^xdemo

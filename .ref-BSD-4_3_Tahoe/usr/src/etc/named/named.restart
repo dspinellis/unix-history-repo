@@ -1,2 +1,0 @@
-kill -9 `cat /etc/named.pid`
-/etc/named 

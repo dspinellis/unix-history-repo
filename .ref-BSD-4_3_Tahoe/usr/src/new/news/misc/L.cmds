@@ -1,8 +1,0 @@
-#
-# If rnews lives in a peculiar directory on your system
-# (e.g. /usr/new under 4.3 BSD) make sure that uucp can
-# find it using the PATH in /usr/lib/uucp/L.cmds.
-#
-PATH=/bin:/usr/bin:/usr/ucb:/usr/new
-#
-rnews,Error

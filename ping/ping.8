@@ -1,0 +1,93 @@
+.\" Copyright (c) 1985 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)ping.8	6.3 (Berkeley) 9/19/88
+.\"
+.TH PING 8 "September 19, 1988"
+.UC 6
+.SH NAME
+ping \- send ICMP ECHO_REQUEST packets to network hosts
+.SH SYNOPSIS
+.B /etc/ping
+[
+.B \-r
+] [
+.B \-v
+]
+.I host
+[
+.I packetsize
+] [
+.I count
+]
+.SH DESCRIPTION
+The DARPA Internet is a large and complex aggregation of
+network hardware, connected together by gateways.
+Tracking a single-point hardware or software failure
+can often be difficult.
+.I Ping
+utilizes the
+ICMP protocol's mandatory ECHO_REQUEST datagram to elicit an
+ICMP ECHO_RESPONSE from a host or gateway.
+ECHO_REQUEST datagrams (``pings'') have an IP and ICMP header,
+followed by a \fBstruct timeval\fR, and then an arbitrary number
+of ``pad'' bytes used to fill out the packet.
+Default datagram length is 64 bytes, but this may be changed
+using the command-line option.
+Other options are:
+.TP
+.B \-r
+Bypass the normal routing tables and send directly to a host on an attached
+network.
+If the host is not on a directly-attached network,
+an error is returned.
+This option can be used to ping a local host through an interface
+that has no route through it (e.g., after the interface was dropped by
+.IR routed (8C)).
+.TP
+.B \-v
+Verbose output.  ICMP packets other than ECHO RESPONSE that are received
+are listed.
+.PP
+When using \fIping\fR for fault isolation,
+it should first be run on the local
+host, to verify that the local network interface is up and
+running.
+Then, hosts and gateways further and further away
+should be ``pinged''.
+\fIPing\fR sends one datagram per second, and
+prints one line of output for every ECHO_RESPONSE returned.
+No output is produced if there is no response.
+If an optional
+.I count
+is given, only that number of requests is sent.
+Round-trip times and packet loss statistics are computed.
+When all responses have been received or the program times out (with a
+.I count
+specified),
+or if the program is terminated with a SIGINT, a brief
+summary is displayed.
+.PP
+This program is intended for use in network testing, measurement
+and management.
+It should be used primarily for manual fault isolation.
+Because of the load it could impose on the network,
+it is unwise to use
+.I ping
+during normal operations or from automated scripts.
+.SH AUTHOR
+Mike Muuss
+.SH SEE ALSO
+netstat(1), ifconfig(8)

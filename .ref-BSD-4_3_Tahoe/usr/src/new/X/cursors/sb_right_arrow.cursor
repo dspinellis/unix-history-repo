@@ -1,9 +1,0 @@
-#define sb_right_arrow_width 16
-#define sb_right_arrow_height 16
-#define sb_right_arrow_x_hot 7
-#define sb_right_arrow_y_hot 7
-static short sb_right_arrow_bits[] = {
-   0x0000, 0x0000, 0x0000, 0x0000,
-   0x1000, 0x3000, 0x7ff0, 0xf000,
-   0x7ff0, 0x3000, 0x1000, 0x0000,
-   0x0000, 0x0000, 0x0000, 0x0000};

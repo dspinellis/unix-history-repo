@@ -1,3 +1,0 @@
-uiuccsb:net.all,fa.all,to.uiuccsb,rbe::
-nf_sys:net.all,fa.all,to.nf_sys,rbe::/usr/spool/notes/.utilities/newsinput
-uiuccsh:to.uiuccsh,rbe::/usr/ucb/rsh h /usr/spool/notes/.utilities/newsinput

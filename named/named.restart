@@ -1,0 +1,6 @@
+#!/bin/sh -
+#
+#	@(#)named.restart	5.2 (Berkeley) 2/5/89
+#
+kill -9 `cat /etc/named.pid`
+/etc/named 

@@ -1,0 +1,71 @@
+.\" Copyright (c) 1985 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)nsip.4	1.2 (Berkeley) 2/14/89
+.\"
+.TH NSIP 4 "February 14, 1989"
+.UC 6
+.SH NAME
+nsip \- software network interface encapsulating ns packets in ip packets.
+.SH SYNOPSIS
+.B options NSIP
+.br
+.B #include <netns/ns_if.h>
+.SH DESCRIPTION
+The
+.I nsip
+interface is a software mechanism which may be
+used to transmit Xerox NS(tm) packets through otherwise uncooperative
+networks.
+It functions by prepending an IP header, and resubmitting the packet
+through the unix IP machinery.
+.LP
+The super-user can advise the operating system of a willing partner
+by naming an IP address to be associated with an NS address.
+Presently, only specific hosts pairs are allowed, and for each host
+pair, an artificial point-to-point interface is constructed.
+At some future date, IP broadcast addresses or hosts may be paired
+with NS networks or hosts.
+.LP
+Specifically, a socket option of SO_NSIP_ROUTE is set on a socket
+of family AF_NS, type SOCK_DGRAM, passing the following structure:
+.nf
+
+struct nsip_req {
+	struct sockaddr rq_ns;	/* must be ns format destination */
+	struct sockaddr rq_ip;	/* must be ip format gateway */
+	short rq_flags;
+};
+
+.SH DIAGNOSTICS
+\fBnsip%d: can't handle af%d\fP.  The interface was handed
+a message with addresses formatted in an unsuitable address
+family; the packet was dropped.
+.SH SEE ALSO
+intro(4), ns(4)
+.SH BUGS
+It is absurd to have a separate pseudo-device for each pt-to-pt
+link.
+There is no way to change the IP address for an NS host once the
+the encapsulation interface is set up.
+The request should honor flags of RTF_GATEWAY to indicate
+remote networks, and the absence of RTF_UP should be a clue
+to remove that partner.
+This was intended to postpone the necessity of rewriting reverse ARP
+for the 
+.B en
+device, and to allow passing XNS packets through an
+Arpanet-Milnet gateway, to facilitate testing between some co-operating
+universities.

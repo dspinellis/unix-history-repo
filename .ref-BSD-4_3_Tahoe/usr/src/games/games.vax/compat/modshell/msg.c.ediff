@@ -1,9 +1,0 @@
-66a
-MSG	defrts		= "/usr/bin/v7run";
-.
-50a
-MSG	rtsname		= "RTS";
-.
-41a
-MSG	norts	= "alternate RTS not found";
-.

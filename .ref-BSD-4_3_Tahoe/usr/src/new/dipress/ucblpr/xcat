@@ -1,6 +1,0 @@
-#!/bin/csh -f
-echo "Converting Ditroff Output" > /usr/spool/dpd/status
-/usr/local/dipress -t -f /usr/local/lib/font > /tmp/xd$$
-echo "Transmitting to Printing Server" > /usr/spool/dpd/status
-(/usr/new/xnsprint -n "$4@$6" -b Ditroff -r /tmp/xd$$) > /usr/spool/dpd/q
-(echo -n "$4@$6" "" ; date ) >> /usr/adm/xacct

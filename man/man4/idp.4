@@ -1,0 +1,136 @@
+.\" Copyright (c) 1985 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)idp.4	1.2 (Berkeley) 2/14/89
+.\"
+.TH IDP 4 "July 30, 1985"
+.UC 6
+.SH NAME
+idp \- Xerox Internet Datagram Protocol
+.SH SYNOPSIS
+.B #include <sys/socket.h>
+.br
+.B #include <netns/ns.h>
+.br
+.B #include <netns/idp.h>
+.PP
+.B s = socket(AF_NS, SOCK_DGRAM, 0);
+.SH DESCRIPTION
+IDP is a simple, unreliable datagram protocol which is used
+to support the SOCK_DGRAM abstraction for the Internet
+protocol family.  IDP sockets are connectionless, and are
+normally used with the
+.I sendto 
+and
+.IR recvfrom 
+calls, though the
+.IR connect (2)
+call may also be used to fix the destination for future
+packets (in which case the 
+.IR recv (2)
+or
+.IR read (2)
+and 
+.IR send (2)
+or
+.IR write(2)
+system calls may be used).
+.PP
+Xerox protocols are built vertically on top of IDP.
+Thus, IDP address formats are identical to those used by
+SPP.
+Note that the IDP port
+space is the same as the SPP port space (i.e. a IDP port
+may be \*(lqconnected\*(rq to a SPP port, with certain
+options enabled below).
+In addition broadcast packets may be sent
+(assuming the underlying network supports
+this) by using a reserved \*(lqbroadcast address\*(rq; this address
+is network interface dependent.
+.SH DIAGNOSTICS
+A socket operation may fail with one of the following errors returned:
+.TP 15
+[EISCONN]
+when trying to establish a connection on a socket which
+already has one, or when trying to send a datagram with the destination
+address specified and the socket is already connected;
+.TP 15
+[ENOTCONN]
+when trying to send a datagram, but
+no destination address is specified, and the socket hasn't been
+connected;
+.TP 15
+[ENOBUFS]
+when the system runs out of memory for
+an internal data structure;
+.TP 15
+[EADDRINUSE]
+when an attempt
+is made to create a socket with a port which has already been
+allocated;
+.TP 15
+[EADDRNOTAVAIL]
+when an attempt is made to create a 
+socket with a network address for which no network interface
+exists.
+.SH SOCKET OPTIONS
+.TP 15
+[SO_HEADERS_ON_INPUT]
+When set, the first 30 bytes of any data returned from a read
+or recv from will be the initial 30 bytes of the IDP packet,
+as described by
+.nf
+struct idp {
+	u_short		idp_sum;
+	u_short		idp_len;
+	u_char		idp_tc;
+	u_char		idp_pt;
+	struct ns_addr	idp_dna;
+	struct ns_addr	idp_sna;
+};
+.fi
+This allows the user to determine the packet type, and whether
+the packet was a multi-cast packet or directed specifically at
+the local host.
+When requested, gives the current state of the option,
+(NSP_RAWIN or 0).
+.TP 15
+[SO_HEADERS_ON_OUTPUT]
+When set, the first 30 bytes of any data sent
+will be the initial 30 bytes of the IDP packet.
+This allows the user to determine the packet type, and whether
+the packet should be multi-cast packet or directed specifically at
+the local host.
+You can also misrepresent the sender of the packet.
+When requested, gives the current state of the option.
+(NSP_RAWOUT or 0).
+.TP 15
+[SO_DEFAULT_HEADERS]
+The user provides the kernel an IDP header, from which
+it gleans the Packet Type.
+When requested, the kernel will provide an IDP header, showing
+the default packet type, and local and foreign addresses, if
+connected.
+.TP 15
+[SO_ALL_PACKETS]
+When set, this option defeats automatic processing of Error packets,
+and Sequence Protocol packets.
+.TP 15
+[SO_SEQNO]
+When requested, this returns a sequence number which is not likely
+to be repeated until the machine crashes or a very long time has passed.
+It is useful in constructing Packet Exchange Protocol packets.
+.SH SEE ALSO
+send(2), recv(2), intro(4), ns(4)

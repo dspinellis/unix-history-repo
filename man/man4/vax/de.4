@@ -1,0 +1,90 @@
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)de.4	6.3 (Berkeley) 2/14/89
+.\"
+.TH DE 4 "February 14, 1989"
+.UC 5
+.SH NAME
+de \- DEC DEUNA 10 Mb/s Ethernet interface
+.SH SYNOPSIS
+.B "device de0 at uba0 csr 174510 vector deintr"
+.SH DESCRIPTION
+The
+.I de
+interface provides access to a 10 Mb/s Ethernet network through
+a Digital Equipment UNIBUS Network Adapter (DEUNA).
+.PP
+Each of the host's network addresses
+is specified at boot time with an SIOCSIFADDR
+ioctl.  The
+.I de
+interface employs the address resolution protocol described in
+.IR arp (4)
+to dynamically map between Internet and Ethernet addresses on the local
+network.
+.PP
+The interface normally tries to use a ``trailer'' encapsulation
+to minimize copying data on input and output.
+The use of trailers is negotiated with ARP.
+This negotiation may be disabled, on a per-interface basis,
+by setting the IFF_NOTRAILERS
+flag with an SIOCSIFFLAGS ioctl.
+.SH DIAGNOSTICS
+\fBde%d: hardware address %s\fP.
+This is a normal autoconfiguration message noting the 6 byte physical
+ethernet address of the adapter.
+.PP
+\fBde%d: oerror, flags=%b tdrerr=%b (len=%d)\fP.
+The hardware indicated an error
+in transmitting a packet to the cable.
+The status and error flags are reported.
+.PP
+\fBde%d: ierror, flags=%b lenerr=%b (len=%d)\fP.
+The hardware indicated an error
+in reading a packet from the cable.
+The status and error flags are reported.
+.PP
+\fBde%d: can't handle af%d\fP.  The interface was handed
+a message with addresses formatted in an unsuitable address
+family; the packet was dropped.
+.PP
+\fBde%d: buffer unavailable\fP.  The interface received more packets
+than it had buffers allocated to receive them.
+.PP
+\fBde%d: address change failed, csr0=%b csr1=%b\fP.
+The interface was unable to reprogram
+its physical ethernet address.
+This may happen with very early models of the interface.
+This facility is used only when
+the controller is not the first network interface configured for XNS.
+.PP
+The following messages indicate a probable hardware error performing
+the indicated operation during autoconfiguration or initialization.
+The two control and status registers
+should indicate the nature of the failure.
+See the hardware manual for details.
+.PP
+\fBde%d: reset failed, csr0=%b csr1=%b\fP.
+.PP
+\fBde%d: ppcb failed, csr0=%b csr1=%b\fP.
+.PP
+\fBde%d: read addr failed, csr0=%b csr1=%b\fP.
+.PP
+\fBde%d: wtring failed, csr0=%b csr1=%b\fP.
+.PP
+\fBde%d: wtmode failed, csr0=%b csr1=%b\fP.
+.SH SEE ALSO
+netintro(4), inet(4), arp(4)

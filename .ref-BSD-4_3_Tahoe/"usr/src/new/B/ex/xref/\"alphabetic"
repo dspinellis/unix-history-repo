@@ -1,2 +1,0 @@
-TEST alphabetic char:
-	REPORT char in {'a'..'z'} OR char in {'A'..'Z'}

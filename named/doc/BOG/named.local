@@ -1,0 +1,27 @@
+.\" Copyright (c) 1986, 1988 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that this notice is preserved and that due credit is given
+.\" to the University of California at Berkeley. The name of the University
+.\" may not be used to endorse or promote products derived from this
+.\" software without specific prior written permission. This software
+.\" is provided ``as is'' without express or implied warranty.
+.\"
+.\"	@(#)named.local	6.2 (Berkeley) 2/29/88
+.\"
+.sh 3 "named.local"
+.(b L 
+
+.TS
+l l l l. 
+@	IN	SOA	ucbvax\fB.\fPBerkeley\fB.\fPEdu. kjd\fB.\fPucbvax\fB.\fPBerkeley\fB.\fPEdu\fB.\fP (
+			1       ; Serial
+			3600    ; Refresh
+			300     ; Retry
+			3600000 ; Expire
+			3600 )  ; Minimum
+	IN	NS	ucbvax\fB.\fPBerkeley\fB.\fPEdu\fB.\fP
+1	IN	PTR	localhost\fB.\fP
+.TE
+.)b

@@ -1,9 +1,0 @@
-Init can now be used to maintain arbitrary daemons besides terminal lines,
-restarting them after exit automatically.
-
-Do not forget to add the termcap and/or terminfo entries found in
-xterm's source directory to /etc/termcap or /etc/term.
-
-Note that the file format of /etc/ttys changes radically (for the better).
-You must also add the Vs100 entry to your /etc/gettytab file, so that
-getty can do the correct things for your login window.

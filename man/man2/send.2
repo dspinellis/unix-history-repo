@@ -1,0 +1,140 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)send.2	6.5 (Berkeley) 2/14/89
+.\"
+.TH SEND 2 "February 14, 1989"
+.UC 5
+.SH NAME
+send, sendto, sendmsg \- send a message from a socket
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/socket.h>
+.PP
+.ft B
+cc = send(s, msg, len, flags)
+int cc, s;
+char *msg;
+int len, flags;
+.PP
+.ft B
+cc = sendto(s, msg, len, flags, to, tolen)
+int cc, s;
+char *msg;
+int len, flags;
+struct sockaddr *to;
+int tolen;
+.PP
+.ft B
+cc = sendmsg(s, msg, flags)
+int cc, s;
+struct msghdr *msg;
+int flags;
+.fi
+.SH DESCRIPTION
+.IR Send ,
+.IR sendto ,
+and
+.I sendmsg
+are used to transmit a message to another socket.
+.I Send
+may be used only when the socket is in a 
+.I connected
+state, while 
+.I sendto
+and
+.I sendmsg
+may be used at any time.
+.PP
+The address of the target is given by
+.I to
+with 
+.I tolen
+specifying its size.
+The length of the message is given by
+.IR len .
+If the message is too long to pass atomically through the
+underlying protocol, then the error EMSGSIZE is returned, and
+the message is not transmitted.
+.PP
+No indication of failure to deliver is implicit in a
+.IR send .
+Return values of \-1 indicate some locally detected errors.
+.PP
+If no messages space is available at the socket to hold
+the message to be transmitted, then
+.I send
+normally blocks, unless the socket has been placed in
+non-blocking I/O mode.
+The
+.IR select (2)
+call may be used to determine when it is possible to
+send more data.
+.PP
+The
+.I flags
+parameter may include one or more of the following:
+.PP
+.nf
+.RS
+.ta \w'#define\ \ 'u +\w'MSG_DONTROUTE\ \ \ 'u +\w'0x\0\0\0\ \ 'u
+#define	MSG_OOB	0x1	/* process out-of-band data */
+#define	MSG_DONTROUTE	0x4	/* bypass routing, use direct interface */
+.RE
+.fi
+The flag MSG_OOB is used to send \*(lqout-of-band\*(rq
+data on sockets that support this notion (e.g. SOCK_STREAM);
+the underlying protocol must also support \*(lqout-of-band\*(rq data.
+MSG_DONTROUTE is usually used only by diagnostic or routing programs.
+.PP
+See 
+.IR recv (2)
+for a description of the
+.I msghdr
+structure.
+.SH "RETURN VALUE
+The call returns the number of characters sent, or \-1
+if an error occurred.
+.SH "ERRORS
+.TP 20
+[EBADF]
+An invalid descriptor was specified.
+.TP 20
+[ENOTSOCK]
+The argument \fIs\fP is not a socket.
+.TP 20
+[EFAULT]
+An invalid user space address was specified for a parameter.
+.TP 20
+[EMSGSIZE]
+The socket requires that message be sent atomically,
+and the size of the message to be sent made this impossible.
+.TP 20
+[EWOULDBLOCK]
+The socket is marked non-blocking and the requested operation
+would block.
+.TP 20
+[ENOBUFS]
+The system was unable to allocate an internal buffer.
+The operation may succeed when buffers become available.
+.TP 20
+[ENOBUFS]
+The output queue for a network interface was full.
+This generally indicates that the interface has stopped sending,
+but may be caused by transient congestion.
+.SH SEE ALSO
+fcntl(2), recv(2), select(2), getsockopt(2), socket(2), write(2)

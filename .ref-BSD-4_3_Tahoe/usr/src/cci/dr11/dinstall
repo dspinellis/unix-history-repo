@@ -1,8 +1,0 @@
-mkdir /usr/lib/dr11
-mv ./dstat /usr/lib/dr11
-chown root /usr/lib/dr11/*
-chmod a+x /usr/lib/dr11/*
-mknod /dev/dr00 c 16 0
-mknod /dev/dr11 c 17 0
-chmod a+w /dev/dr00 /dev/dr11
-chown root /dev/dr00 /dev/dr11

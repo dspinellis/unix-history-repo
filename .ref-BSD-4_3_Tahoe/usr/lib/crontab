@@ -1,9 +1,0 @@
-1,11,21,31,41,51 * * * *	root	(echo -n '	'; date; echo -n ) >/dev/console
-0,15,30,45 * * * *	root /usr/lib/atrun
-00 1 * * *	daemon	/usr/new/lib/news/daily
-0 0 * * *	uucp	/usr/local/lib/uucp.daily
-7 5,12,18 * * *	uucp	/usr/local/lib/uucp.6hours
-0 2 * * *	root	/bin/sh /usr/adm/daily 2>&1 | mail root
-30 3 * * 6	root	/bin/sh /usr/adm/weekly 2>&1 | mail root
-30 3 * * 7	nobody	/usr/lib/find/updatedb
-30 5 1 * *	root	/bin/sh /usr/adm/monthly 2>&1 | mail root

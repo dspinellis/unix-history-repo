@@ -1,4 +1,0 @@
-run_interactive = proc (e: env, c: char)
-		    signals (errmsg(string), stop(env, string))
-    signal errmsg("Cannot run interactive programs")
-    end run_interactive

@@ -1,7 +1,0 @@
-10 * * * * su notes < /usr/spool/notes/.utilities/cronlocal.sh > /tmp/rbe/nf-local.out
-20 1,3,5,19,21 * * * su notes < /usr/spool/notes/.utilities/cronnet.sh > /tmp/rbe/nf-net.out
-25 3,22 * * * su notes < /usr/spool/notes/.utilities/cron2news.sh |/usr/ucb/mail -s "Gateway Notesfiles to News" usenet
-15 7 * * 0,3 su notes < /usr/spool/notes/.utilities/cronarch.sh > /tmp/rbe/nf-arch.out
-00 23 * * * su notes < /usr/spool/notes/.utilities/cron.convex.sh > /tmp/rbe/nf-convex.pm
-45 06 * * * su notes < /usr/spool/notes/.utilities/cron.convex.sh > /tmp/rbe/nf-convex.am
-35 06 * * 1,5 su notes < /usr/spool/notes/.utilities/cron.uiucme.sh > /tmp/rbe/nf-uiucme.out

@@ -1,0 +1,115 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)getprotoent.3	6.4 (Berkeley) 2/14/89
+.\"
+.TH GETPROTOENT 3 "February 14, 1989"
+.UC 5
+.SH NAME
+getprotoent, getprotobynumber, getprotobyname, setprotoent,
+endprotoent \- get protocol entry
+.SH SYNOPSIS
+.nf
+.ft B
+.B #include <netdb.h>
+.PP
+.ft B
+struct protoent *getprotoent()
+.PP
+.ft B
+struct protoent *getprotobyname(name)
+char *name;
+.PP
+.ft B
+struct protoent *getprotobynumber(proto)
+int proto;
+.PP
+.ft B
+setprotoent(stayopen)
+int stayopen
+.PP
+.ft B
+endprotoent()
+.fi
+.SH DESCRIPTION
+.IR Getprotoent ,
+.IR getprotobyname ,
+and
+.I getprotobynumber
+each return a pointer to an object with the
+following structure
+containing the broken-out
+fields of a line in the network protocol data base,
+.IR /etc/protocols .
+.RS
+.PP
+.nf
+struct	protoent {
+	char	*p_name;	/* official name of protocol */
+	char	**p_aliases;	/* alias list */
+	int	p_proto;	/* protocol number */
+};
+.ft R
+.ad
+.fi
+.RE
+.PP
+The members of this structure are:
+.TP \w'p_aliases'u+2n
+p_name
+The official name of the protocol.
+.TP \w'p_aliases'u+2n
+p_aliases
+A zero terminated list of alternate names for the protocol.
+.TP \w'p_aliases'u+2n
+p_proto
+The protocol number.
+.PP
+.I Getprotoent
+reads the next line of the file, opening the file if necessary.
+.PP
+.I Setprotoent
+opens and rewinds the file.  If the
+.I stayopen
+flag is non-zero,
+the net data base will not be closed after each call to 
+.I getprotobyname
+or
+.IR getprotobynumber .
+.PP
+.I Endprotoent
+closes the file.
+.PP
+.I Getprotobyname
+and
+.I getprotobynumber
+sequentially search from the beginning
+of the file until a matching
+protocol name or
+protocol number is found,
+or until EOF is encountered.
+.SH FILES
+/etc/protocols
+.SH "SEE ALSO"
+protocols(5)
+.SH DIAGNOSTICS
+Null pointer
+(0) returned on EOF or error.
+.SH BUGS
+All information
+is contained in a static area
+so it must be copied if it is
+to be saved.  Only the Internet
+protocols are currently understood.

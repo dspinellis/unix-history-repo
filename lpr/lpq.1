@@ -1,0 +1,87 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)lpq.1	6.5 (Berkeley) 9/29/88
+.\"
+.TH LPQ 1 "September 29, 1988"
+.UC 5
+.SH NAME
+lpq \- spool queue examination program
+.SH SYNOPSIS
+.B lpq
+[ -l ] [ \-Pprinter ] [ job # ... ] [ user ... ]
+.SH DESCRIPTION
+.I lpq
+examines the spooling area used by
+.IR lpd (8)
+for printing files on the line printer, and reports the status of the
+specified jobs or all jobs associated with a user.  \fIlpq\fP invoked
+without any arguments reports on any jobs currently in the queue.  A
+.B \-P
+flag may be used to specify a particular printer, otherwise the default
+line printer is used (or the value of the PRINTER variable in the
+environment). All other arguments supplied are interpreted as user
+names or job numbers to filter out only those jobs of interest.
+.PP
+For each job submitted (i.e. invocation of 
+.IR lpr (1))
+.I lpq
+reports the user's name, current rank in the queue, the
+names of files comprising the job, the job identifier (a number which
+may be supplied to
+.IR lprm (1)
+for removing a specific job), and the total size in bytes.
+The
+.B \-l
+option causes information about each of the files comprising the job
+to be printed.
+Normally, only as much information as will fit on one line is displayed.
+Job ordering is dependent on
+the algorithm used to scan the spooling directory and is supposed
+to be FIFO (First in First Out).
+File names comprising a job may be unavailable
+(when
+.IR lpr (1)
+is used as a sink in a pipeline) in which case the file
+is indicated as ``(standard input)".
+.PP
+If
+.I lpq
+warns that there is no daemon present (i.e. due to some malfunction),
+the
+.IR lpc (8)
+command can be used to restart the printer daemon.
+.SH FILES
+.nf
+.ta \w'/etc/termcap            'u
+/etc/termcap	for manipulating the screen for repeated display
+/etc/printcap	to determine printer characteristics
+/usr/spool/*	the spooling directory, as determined from printcap
+/usr/spool/*/cf*	control files specifying jobs
+/usr/spool/*/lock	the lock file to obtain the currently active job 
+.fi
+.SH "SEE ALSO"
+lpr(1),
+lprm(1),
+lpc(8),
+lpd(8)
+.SH BUGS
+Due to the dynamic nature of the information in the spooling directory
+lpq may report unreliably.
+Output formatting is sensitive to the line length of the terminal;
+this can results in widely spaced columns.
+.SH DIAGNOSTICS
+Unable to open various files.  The lock file being malformed.  Garbage
+files when there is no daemon active, but files in the spooling directory.

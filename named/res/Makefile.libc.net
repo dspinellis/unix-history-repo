@@ -1,0 +1,109 @@
+#
+# Copyright (c) 1988 Regents of the University of California.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific prior written permission. This software
+# is provided ``as is'' without express or implied warranty.
+#
+#	@(#)Makefile	5.16 (Berkeley) 3/14/88
+#
+SRCS=	getnetbyaddr.c getnetent.c getnetbyname.c getproto.c getprotoent.c \
+	getprotoname.c getservent.c getservbyport.c getservbyname.c \
+	herror.c rcmd.c rexec.c ruserpass.c res_comp.c res_debug.c \
+	res_init.c res_mkquery.c res_query.c res_send.c
+OBJS=	getnetbyaddr.o getnetent.o getnetbyname.o getproto.o getprotoent.o \
+	getprotoname.o getservent.o getservbyport.o getservbyname.o \
+	herror.o rcmd.o rexec.o ruserpass.o res_comp.o res_debug.o \
+	res_init.o res_mkquery.o res_query.o res_send.o
+
+CFLAGS=	-O ${DEFS}
+TAGSFILE=tags
+
+.c.o:
+	${CC} -p -c ${CFLAGS} $*.c
+	-ld -X -r $*.o
+	mv a.out profiled/$*.o
+	${CC} ${CFLAGS} -c $*.c
+	-ld -x -r $*.o
+	mv a.out $*.o
+
+netlib netlib_p: ${OBJS}
+	@echo "building profiled netlib"
+	@cd profiled; ar cru ../netlib_p ${OBJS}
+	@echo "building normal netlib"
+	@ar cru netlib ${OBJS}
+
+tags:
+	cwd=`pwd`; \
+	for i in ${SRCS}; do \
+		ctags -a -f ${TAGSFILE} $$cwd/$$i; \
+	done
+
+clean:
+	rm -f *.o profiled/*.o errs a.out core netlib netlib_p tags
+
+depend:
+	mkdep ${CFLAGS} ${SRCS}
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+getnetbyaddr.o: getnetbyaddr.c /usr/include/netdb.h
+getnetent.o: getnetent.c /usr/include/stdio.h /usr/include/sys/types.h
+getnetent.o: /usr/include/sys/socket.h /usr/include/netdb.h
+getnetent.o: /usr/include/ctype.h
+getnetbyname.o: getnetbyname.c /usr/include/netdb.h
+getproto.o: getproto.c /usr/include/netdb.h
+getprotoent.o: getprotoent.c /usr/include/stdio.h /usr/include/sys/types.h
+getprotoent.o: /usr/include/sys/socket.h /usr/include/netdb.h
+getprotoent.o: /usr/include/ctype.h
+getprotoname.o: getprotoname.c /usr/include/netdb.h
+getservent.o: getservent.c /usr/include/stdio.h /usr/include/sys/param.h
+getservent.o: /usr/include/sys/types.h /usr/include/signal.h
+getservent.o: /usr/include/machine/trap.h /usr/include/sys/types.h
+getservent.o: /usr/include/sys/socket.h /usr/include/netdb.h
+getservent.o: /usr/include/ctype.h
+getservbyport.o: getservbyport.c /usr/include/netdb.h
+getservbyname.o: getservbyname.c /usr/include/netdb.h
+herror.o: herror.c /usr/include/sys/types.h /usr/include/sys/uio.h
+rcmd.o: rcmd.c /usr/include/stdio.h /usr/include/ctype.h /usr/include/pwd.h
+rcmd.o: /usr/include/sys/param.h /usr/include/sys/types.h /usr/include/signal.h
+rcmd.o: /usr/include/machine/trap.h /usr/include/sys/file.h
+rcmd.o: /usr/include/sys/signal.h /usr/include/sys/socket.h
+rcmd.o: /usr/include/sys/stat.h /usr/include/netinet/in.h /usr/include/netdb.h
+rcmd.o: /usr/include/errno.h
+rexec.o: rexec.c /usr/include/sys/types.h /usr/include/sys/socket.h
+rexec.o: /usr/include/netinet/in.h /usr/include/stdio.h /usr/include/netdb.h
+rexec.o: /usr/include/errno.h
+ruserpass.o: ruserpass.c /usr/include/stdio.h /usr/include/utmp.h
+ruserpass.o: /usr/include/ctype.h /usr/include/sys/types.h
+ruserpass.o: /usr/include/sys/stat.h /usr/include/errno.h
+res_comp.o: res_comp.c /usr/include/sys/types.h /usr/include/stdio.h
+res_comp.o: /usr/include/arpa/nameser.h
+res_debug.o: res_debug.c /usr/include/sys/types.h /usr/include/netinet/in.h
+res_debug.o: /usr/include/stdio.h /usr/include/arpa/nameser.h
+res_init.o: res_init.c /usr/include/sys/types.h /usr/include/sys/socket.h
+res_init.o: /usr/include/netinet/in.h /usr/include/stdio.h
+res_init.o: /usr/include/arpa/nameser.h /usr/include/resolv.h
+res_mkquery.o: res_mkquery.c /usr/include/stdio.h /usr/include/sys/types.h
+res_mkquery.o: /usr/include/netinet/in.h /usr/include/arpa/nameser.h
+res_mkquery.o: /usr/include/resolv.h
+res_query.o: res_query.c /usr/include/sys/param.h /usr/include/sys/types.h
+res_query.o: /usr/include/signal.h /usr/include/machine/trap.h
+res_query.o: /usr/include/sys/socket.h /usr/include/netinet/in.h
+res_query.o: /usr/include/ctype.h /usr/include/netdb.h /usr/include/stdio.h
+res_query.o: /usr/include/errno.h /usr/include/strings.h
+res_query.o: /usr/include/arpa/inet.h /usr/include/arpa/nameser.h
+res_query.o: /usr/include/resolv.h
+res_send.o: res_send.c /usr/include/sys/param.h /usr/include/sys/types.h
+res_send.o: /usr/include/signal.h /usr/include/machine/trap.h
+res_send.o: /usr/include/sys/time.h /usr/include/time.h
+res_send.o: /usr/include/sys/socket.h /usr/include/sys/uio.h
+res_send.o: /usr/include/netinet/in.h /usr/include/stdio.h /usr/include/errno.h
+res_send.o: /usr/include/arpa/nameser.h /usr/include/resolv.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY

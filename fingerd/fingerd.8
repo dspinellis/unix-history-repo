@@ -1,0 +1,62 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)fingerd.8	6.2 (Berkeley) 9/19/88
+.\"
+.TH FINGERD 8 "September 19, 1988"
+.UC 6
+.SH NAME
+fingerd \- remote user information server
+.SH SYNOPSIS
+.B /etc/fingerd
+.SH DESCRIPTION
+.I Fingerd
+is a simple protocol based on RFC742 that provides an interface to the
+Name and Finger programs at several network sites.
+The program is supposed to return a friendly,
+human-oriented status report on either the system at the moment
+or a particular person in depth.
+There is no required format and the
+protocol consists mostly of specifying a single ``command line''.
+.PP
+.I Fingerd
+listens for TCP requests at port 79.
+Once connected it reads a single command line
+terminated by a <CRLF> which is passed to
+.IR finger (1).
+.I Fingerd
+closes its connections as soon as the output is finished.
+.PP
+If the line is null (i.e. just a <CRLF> is sent) then 
+.I finger
+returns a ``default'' report that lists all people logged into
+the system at that moment.
+.PP
+If a user name is specified (e.g. eric<CRLF>) then the
+response lists more extended information for only that particular user,
+whether logged in or not.
+Allowable ``names'' in the command line include both ``login names''
+and ``user names''.
+If a name is ambiguous, all possible derivations are returned.
+.SH SEE ALSO
+finger(1)
+.SH BUGS
+Connecting directly to the server from a TIP
+or an equally narrow-minded TELNET-protocol user program can result
+in meaningless attempts at option negotiation being sent to the
+server, which will foul up the command line interpretation.
+.I Fingerd
+should be taught to filter out IAC's and perhaps even respond
+negatively (IAC WON'T) to all option commands received.

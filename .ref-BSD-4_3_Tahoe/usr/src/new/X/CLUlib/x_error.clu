@@ -1,5 +1,0 @@
-% Copyright    Barbara Liskov    1985
-
-x_error = proc (why: string)
-    signal failure(why)
-    end x_error

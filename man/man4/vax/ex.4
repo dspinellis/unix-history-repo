@@ -1,0 +1,70 @@
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)ex.4	6.4 (Berkeley) 2/14/89
+.\"
+.TH EX 4 "February 14, 1989"
+.UC 5
+.SH NAME
+ex \- Excelan 10 Mb/s Ethernet interface
+.SH SYNOPSIS
+.B "device ex0 at uba0 csr 164000 vector excdint"
+.SH DESCRIPTION
+The
+.I ex
+interface provides access to a 10 Mb/s Ethernet network through
+an Excelan controller used as a link-layer interface.
+.PP
+Each of the host's network addresses
+is specified at boot time with an SIOCSIFADDR
+ioctl.  The
+.I ex
+interface employs the address resolution protocol described in
+.IR arp (4)
+to dynamically map between Internet and Ethernet addresses on the local
+network.
+.PP
+The interface normally tries to use a ``trailer'' encapsulation
+to minimize copying data on input and output.
+The use of trailers is negotiated with ARP.
+This negotiation may be disabled, on a per-interface basis,
+by setting the IFF_NOTRAILERS
+flag with an SIOCSIFFLAGS ioctl.
+.SH DIAGNOSTICS
+\fBex%d: HW %c.%c, NX %c.%c, hardware address %s\fP.
+This provides firmware revisions levels, and is expected during
+autoconfiguration.
+.PP
+\fBex%d: can't initialize\fP.
+There was a failure in allocating unibus resources for the device.
+.PP
+\fBex%d: configuration failed; cc = %x\fP.
+The hardware indicated an error when trying to initalize itself.
+The error code returned is described at length in the device
+Reference Manual.
+.PP
+\fBex%d: receive error %b\fP.  The hardware indicated an error
+in reading a packet from the cable.
+Specific Error bits are provided
+.PP
+\fBex%d: transmit error %b\fP.  The hardware indicated an error
+in transmitting a packet to the cable or an illegally sized packet.
+Specific Error bits are provided
+.PP
+\fBex%d: can't handle af%d\fP.  The interface was handed
+a message with addresses formatted in an unsuitable address
+family; the packet was dropped.
+.SH SEE ALSO
+netintro(4), inet(4), arp(4)

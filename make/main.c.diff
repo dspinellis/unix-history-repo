@@ -1,0 +1,40 @@
+*** /tmp/d28443	Sat Jan 28 11:37:09 1989
+--- main.c	Tue Sep 13 09:19:51 1988
+***************
+*** 1,4 ****
+! static	char *sccsid = "@(#)main.c	4.10 (Berkeley) 87/11/15";
+  # include "defs"
+  /*
+  command make to update programs.
+--- 1,4 ----
+! static	char *sccsid = "@(#)main.c	4.11 (Berkeley) 88/09/13";
+  # include "defs"
+  /*
+  command make to update programs.
+***************
+*** 163,175 ****
+  
+  setvar("MACHINE", MACHINE);
+  
+! if( !descset )
+! #ifdef unix
+! 	if( rddescf("makefile") )  rddescf("Makefile");
+! #endif
+! #ifdef gcos
+! 	rddescf("makefile");
+! #endif
+  
+  if (doenvlast == YES)
+  	readenv();
+--- 163,173 ----
+  
+  setvar("MACHINE", MACHINE);
+  
+! if (!descset) {
+! 	if (rddescf("makefile"))
+! 		rddescf("Makefile");
+! 	rddescf(".depend");
+! }
+  
+  if (doenvlast == YES)
+  	readenv();
