@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dd.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)dd.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -48,9 +48,10 @@ u_int	files_cnt = 1;		/* # of files to copy */
 int	errstats;		/* show statistics on error */
 u_char	*ctab;			/* conversion table */
 
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	jcl(argv);
 	setup();
@@ -86,7 +87,7 @@ setup()
 		err("%s: %s", in.name, strerror(errno));
 	if (S_ISCHR(sb.st_mode))
 		in.flags |= ioctl(in.fd, MTIOCGET, &mt) ? ISCHR : ISTAPE;
-	else if (lseek(in.fd, 0L, SEEK_CUR) == -1 && errno == ESPIPE)
+	else if (lseek(in.fd, (off_t)0, SEEK_CUR) == -1 && errno == ESPIPE)
 		in.flags |= ISPIPE;		/* XXX fixed in 4.4BSD */
 
 	if (files_cnt > 1 && !(in.flags & ISTAPE))
@@ -117,7 +118,7 @@ setup()
 		err("%s: %s", out.name, strerror(errno));
 	if (S_ISCHR(sb.st_mode))
 		out.flags |= ioctl(out.fd, MTIOCGET, &mt) ? ISCHR : ISTAPE;
-	else if (lseek(out.fd, 0L, SEEK_CUR) == -1 && errno == ESPIPE)
+	else if (lseek(out.fd, (off_t)0, SEEK_CUR) == -1 && errno == ESPIPE)
 		out.flags |= ISPIPE;		/* XXX fixed in 4.4BSD */
 
 	/*
