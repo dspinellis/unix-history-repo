@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vi.apwh.ms	4.1 (Berkeley) %G%
+.\"	@(#)vi.apwh.ms	5.1 (Berkeley) %G%
 .\"
 .TL
 Vi Command & Function Reference
