@@ -6,11 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nlist.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sys/user.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <a.out.h>
