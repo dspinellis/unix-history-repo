@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile	1.15 (Berkeley) %G%
+SCCSID = @(#)Makefile	1.16 (Berkeley) %G%
 
 DFLAGS = 
 CFLAGS = -O ${DFLAGS}
@@ -15,7 +15,7 @@ gprof: ${GPROFOBJS}
 	cc -o gprof ${CFLAGS} ${GPROFOBJS}
 
 install: gprof flat.blurb callg.blurb
-	${INSTALL} gprof ${DESTDIR}/usr/bin/gprof
+	${INSTALL} gprof ${DESTDIR}/usr/ucb/gprof
 	cp flat.blurb ${DESTDIR}/usr/lib/flat.blurb
 	cp callg.blurb ${DESTDIR}/usr/lib/callg.blurb
 
