@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)rec.c 1.3 %G%";
+static char sccsid[] = "@(#)rec.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
