@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)tail.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)tail.c	4.5 (Berkeley) %G%";
 /* tail command 
  *
  *	tail where [file]
@@ -20,7 +20,9 @@ static char *sccsid = "@(#)tail.c	4.4 (Berkeley) %G%";
 #include	<sys/stat.h>
 #include	<errno.h>
 
-#define LBIN 4097
+#define LBIN 8193
+#undef	BUFSIZ
+#define	BUFSIZ	LBIN-1
 struct	stat	statb;
 int	follow;
 int	piped;
@@ -66,6 +68,7 @@ char **argv;
 	switch(*arg++) {
 
 	case 'b':
+		if (n == -1) n = 1;
 		n <<= 9;
 		if(bylines!=-1) goto errcom;
 		bylines=0;
@@ -135,7 +138,8 @@ keep:
 		fexit();
 	if(!piped) {
 		fstat(0,&statb);
-		di = !bylines&&n<LBIN?n:LBIN-1;
+		/* If by lines, back up 1 buffer: else back up as needed */
+		di = bylines?BUFSIZ:n;
 		if(statb.st_size > di)
 			lseek(0,-di,2);
 		if(!bylines)
