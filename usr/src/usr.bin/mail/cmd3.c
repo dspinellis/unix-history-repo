@@ -9,7 +9,7 @@
  * Still more user commands.
  */
 
-static char *SccsId = "@(#)cmd3.c	1.10 %G%";
+static char *SccsId = "@(#)cmd3.c	1.11 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,
@@ -618,7 +618,7 @@ echo(argv)
 	for (ap = argv; *ap != NOSTR; ap++) {
 		cp = *ap;
 		if ((cp = expand(cp)) != NOSTR)
-			printf("%s\n", cp);
+			printf("%s ", cp);
 	}
 	return(0);
 }
