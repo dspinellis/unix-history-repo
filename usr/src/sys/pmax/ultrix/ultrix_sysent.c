@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_sysent.c 1.1 90/07/09$
  *
- *	@(#)ultrix_sysent.c	7.1 (Berkeley) %G%
+ *	@(#)ultrix_sysent.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -32,7 +32,6 @@ int	close();
 int	ocreat();
 int	link();
 int	unlink();
-int	ultrixexecv();
 int	chdir();
 int	mknod();
 int	chmod();
@@ -85,7 +84,7 @@ int	oaccept();
 int	getpriority();
 int	osend();
 int	orecv();
-int	ultrixsigreturn();
+int	sigreturn();
 int	bind();
 int	setsockopt();
 int	listen();
@@ -117,7 +116,6 @@ int	socketpair();
 int	mkdir();
 int	rmdir();
 int	utimes();
-int	ultrixsigcleanup();
 int	adjtime();
 int	ogetpeername();
 int	gethostid();
@@ -240,7 +238,7 @@ struct sysent ultrixsysent[] = {
 	2, getpriority,			/* 100 = getpriority */
 	4, osend,			/* 101 = send */
 	4, orecv,			/* 102 = recv */
-	1, ultrixsigreturn,		/* 103 = sigreturn */
+	1, sigreturn,			/* 103 = sigreturn */
 	3, bind,			/* 104 = bind */
 	5, setsockopt,			/* 105 = setsockopt */
 	2, listen,			/* 106 = listen */
@@ -276,7 +274,7 @@ struct sysent ultrixsysent[] = {
 	2, mkdir,			/* 136 = mkdir */
 	1, rmdir,			/* 137 = rmdir */
 	2, utimes,			/* 138 = utimes */
-	1, ultrixsigcleanup,		/* 139 = internal (4.2 sigreturn) */
+	1, sigreturn,			/* 139 = internal (4.2 sigreturn) */
 	2, adjtime,			/* 140 = adjtime */
 	3, ogetpeername,		/* 141 = getpeername */
 	2, gethostid,			/* 142 = gethostid */
