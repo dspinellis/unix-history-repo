@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.19 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -36,11 +36,13 @@ int	spec_lookup(),
 	spec_read(),
 	spec_write(),
 	spec_strategy(),
+	spec_bmap(),
 	spec_ioctl(),
 	spec_select(),
 	spec_lock(),
 	spec_unlock(),
 	spec_close(),
+	spec_print(),
 	spec_ebadf(),
 	spec_badop(),
 	spec_nullop();
@@ -74,8 +76,9 @@ struct vnodeops spec_vnodeops = {
 	spec_nullop,		/* reclaim */
 	spec_lock,		/* lock */
 	spec_unlock,		/* unlock */
-	spec_badop,		/* bmap */
+	spec_bmap,		/* bmap */
 	spec_strategy,		/* strategy */
+	spec_print,		/* print */
 };
 
 /*
@@ -284,7 +287,7 @@ spec_write(vp, uio, ioflag, cred)
 /* ARGSUSED */
 spec_ioctl(vp, com, data, fflag, cred)
 	struct vnode *vp;
-	register int com;
+	int com;
 	caddr_t data;
 	int fflag;
 	struct ucred *cred;
@@ -297,6 +300,11 @@ spec_ioctl(vp, com, data, fflag, cred)
 		return ((*cdevsw[major(dev)].d_ioctl)(dev, com, data, fflag));
 
 	case VBLK:
+		if (com == 0 && (int)data == B_TAPE)
+			if (bdevsw[major(dev)].d_flags & B_TAPE)
+				return (0);
+			else
+				return (1);
 		return ((*bdevsw[major(dev)].d_ioctl)(dev, com, data, fflag));
 
 	default:
@@ -330,7 +338,25 @@ spec_select(vp, which, cred)
 spec_strategy(bp)
 	register struct buf *bp;
 {
+
 	(*bdevsw[major(bp->b_dev)].d_strategy)(bp);
+	return (0);
+}
+
+/*
+ * This is a noop, simply returning what one has been given.
+ */
+spec_bmap(vp, bn, vpp, bnp)
+	struct vnode *vp;
+	daddr_t bn;
+	struct vnode **vpp;
+	daddr_t *bnp;
+{
+
+	if (vpp != NULL)
+		*vpp = vp;
+	if (bnp != NULL)
+		*bnp = bn;
 	return (0);
 }
 
@@ -386,8 +412,8 @@ spec_close(vp, flag, cred)
 		 * we must invalidate any in core blocks, so that
 		 * we can, for instance, change floppy disks.
 		 */
-		bflush(vp->v_mounton);
-		if (binval(vp->v_mounton))
+		vflushbuf(vp, 0);
+		if (vinvalbuf(vp, 1))
 			return (0);
 		/*
 		 * We do not want to really close the device if it
@@ -417,6 +443,17 @@ spec_close(vp, flag, cred)
 	} else
 		error = (*cfunc)(dev, flag, mode);
 	return (error);
+}
+
+/*
+ * Print out the contents of a special device vnode.
+ */
+spec_print(vp)
+	struct vnode *vp;
+{
+
+	printf("tag VT_NON, dev %d, %d\n", major(vp->v_rdev),
+		minor(vp->v_rdev));
 }
 
 /*
