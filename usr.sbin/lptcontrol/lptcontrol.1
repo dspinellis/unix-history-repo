@@ -11,7 +11,7 @@
 .\"    documentation and/or other materials provided with the distribution.
 .\"
 .\"
-.\" $Id$
+.\" $Id: lptcontrol.1,v 1.2 1994/04/08 22:23:38 csgr Exp $
 .TH lptcontrol 1 "March 12, 1994" "" "FreeBSD"
 
 .SH NAME
@@ -55,7 +55,11 @@ must be specified.
 /dev/lpt?
 .PP
 .SH BUGS
-Sure to be some.
+If the port to be controlled does not have a printer connected and
+on-line, then lptcontrol will not be able to open the port in question
+for performing ioctl's and will fail.
+.sp
+Sure to be others.
 .SH "SEE ALSO"
 .BR lpt (4) ,
 .BR /sys/i386/conf/GENERICAH
