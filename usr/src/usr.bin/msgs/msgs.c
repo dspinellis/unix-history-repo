@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)msgs.c	4.4 %G%";
+static char sccsid[] = "@(#)msgs.c	4.5 %G%";
 #endif lint
 /*
  * msgs - a user bulletin board program
@@ -75,6 +75,7 @@ bool	mailing = NO;
 bool	quitit = NO;
 bool	sending = NO;
 bool	intrpflg = NO;
+bool	tstpflag = NO;
 int	uid;
 int	msg;
 int	prevmsg;
@@ -88,6 +89,7 @@ struct	sgttyb	otty;
 char	*ctime();
 char	*nxtfld();
 int	onintr();
+int	onsusp();
 off_t	ftell();
 FILE	*popen();
 struct	passwd	*getpwuid();
@@ -412,6 +414,10 @@ int argc; char *argv[];
 		/*
 		 * Print header
 		 */
+again:
+		tstpflag = NO;
+		if (totty)
+			signal(SIGTSTP, onsusp);
 		nlines = 2;
 		if (seenfrom) {
 			printf("Message %d:\nFrom %s %s", msg, from, date);
@@ -451,6 +457,13 @@ int argc; char *argv[];
 			ask(lct? MORE : (msg==lastmsg? NOMORE : NEXT));
 		else
 			inbuf[0] = 'y';
+		if (totty)
+			signal(SIGTSTP, SIG_DFL);
+		/*
+		 * Loop if we've been suspended
+		 */
+		if (tstpflag)
+			goto again;
 cmnd:
 		in = inbuf;
 		switch (*in) {
@@ -573,6 +586,20 @@ onintr()
 			fseek(newmsg, 0L, 2);
 		intrpflg = YES;
 	}
+}
+
+/*
+ * We have just gotten a susp.  Suspend and prepare to resume.
+ */
+onsusp()
+{
+	tstpflag = YES;
+	signal(SIGTSTP, SIG_DFL);
+	kill(0, SIGTSTP);
+
+	/* the pc stops here */
+
+	signal(SIGTSTP, onsusp);
 }
 
 linecnt(f)
