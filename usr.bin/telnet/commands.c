@@ -291,7 +291,6 @@ sendcmd(argc, argv)
     int  argc;
     char **argv;
 {
-    int what;		/* what we are sending this time */
     int count;		/* how many bytes we are going to need to send */
     int i;
     int question = 0;	/* was at least one argument a question */
@@ -364,8 +363,8 @@ sendcmd(argc, argv)
 				  (s->narg > 1) ? argv[i+2] : 0);
 	    i += s->narg;
 	} else {
-	    NET2ADD(IAC, what);
-	    printoption("SENT", IAC, what);
+	    NET2ADD(IAC, s->what);
+	    printoption("SENT", IAC, s->what);
 	}
     }
     return (count == success);
