@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pageout.c	8.4 (Berkeley) %G%
+ *	@(#)vm_pageout.c	8.5 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -183,7 +183,7 @@ vm_pageout_scan()
 		 * queue (due to potential blocking in the pager with the
 		 * queues unlocked).  If it isn't, we just start over.
 		 */
-		if ((next->flags & PG_INACTIVE) == 0)
+		if (next && (next->flags & PG_INACTIVE) == 0)
 			next = vm_page_queue_inactive.tqh_first;
 	}
 	
