@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1990, 1993, 1995
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo_vnops.c	8.5 (Berkeley) %G%
+ *	@(#)fifo_vnops.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -310,6 +310,7 @@ fifo_bmap(ap)
 		daddr_t  a_bn;
 		struct vnode **a_vpp;
 		daddr_t *a_bnp;
+		int *a_runp;
 	} */ *ap;
 {
 

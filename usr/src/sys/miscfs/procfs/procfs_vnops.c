@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1993 Jan-Simon Pendry
- * Copyright (c) 1993
+ * Copyright (c) 1993, 1995 Jan-Simon Pendry
+ * Copyright (c) 1993, 1995
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_vnops.c	8.11 (Berkeley) %G%
+ *	@(#)procfs_vnops.c	8.12 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_vnops.c,v 3.2 1993/12/15 09:40:17 jsp Exp $
@@ -171,6 +171,7 @@ procfs_bmap(ap)
 		daddr_t  a_bn;
 		struct vnode **a_vpp;
 		daddr_t *a_bnp;
+		int *a_runp;
 	} */ *ap;
 {
 
