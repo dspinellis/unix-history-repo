@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -24,13 +24,14 @@ static char sccsid[] = "@(#)xinstall.c	5.1 (Berkeley) %G%";
 #include <ctype.h>
 
 #define	YES		1			/* yes/true */
-#define	DEF_GROUP	"root"			/* default group */
-#define	DEF_OWNER	"staff"			/* default owner */
+#define	DEF_GROUP	"staff"			/* default group */
+#define	DEF_OWNER	"root"			/* default owner */
 
 static int	docopy, dostrip,
 		mode = 0755;
 static char	*group = DEF_GROUP,
-		*owner = DEF_OWNER;
+		*owner = DEF_OWNER,
+		*path;
 
 main(argc, argv)
 	int	argc;
@@ -43,7 +44,7 @@ main(argc, argv)
 	struct passwd	*pp;
 	struct group	*gp;
 	int	ch;
-	char	*path, pbuf[MAXPATHLEN];
+	char	pbuf[MAXPATHLEN];
 
 	while ((ch = getopt(argc, argv, "cg:m:o:s")) != EOF)
 		switch((char)ch) {
@@ -70,6 +71,16 @@ main(argc, argv)
 	argv += optind;
 	if (argc != 2)
 		usage();
+
+	/* get group and owner id's */
+	if (!(gp = getgrnam(group))) {
+		fprintf(stderr, "install: unknown group %s.\n", group);
+		exit(1);
+	}
+	if (!(pp = getpwnam(owner))) {
+		fprintf(stderr, "install: unknown user %s.\n", owner);
+		exit(1);
+	}
 
 	/* check source */
 	if (stat(argv[0], &from_sb)) {
@@ -101,16 +112,6 @@ main(argc, argv)
 	}
 
 nocompare:
-	/* get group and owner id's */
-	if (!(gp = getgrnam(group))) {
-		fprintf(stderr, "install: unknown group %s.\n", group);
-		exit(1);
-	}
-	if (!(pp = getpwnam(owner))) {
-		fprintf(stderr, "install: unknown user %s.\n", owner);
-		exit(1);
-	}
-
 	/* open target, set mode, owner, group */
 	if ((to_fd = open(path, O_CREAT|O_WRONLY|O_TRUNC, 0)) < 0) {
 		fprintf(stderr, "install: %s: %s\n", path, sys_errlist[errno]);
@@ -118,13 +119,11 @@ nocompare:
 	}
 	if (fchmod(to_fd, mode)) {
 		fprintf(stderr, "install: fchmod: %s: %s\n", path, sys_errlist[errno]);
-		(void)unlink(path);
-		exit(1);
+		bad();
 	}
 	if (fchown(to_fd, pp->pw_uid, gp->gr_gid)) {
 		fprintf(stderr, "install: fchown: %s: %s\n", path, sys_errlist[errno]);
-		(void)unlink(path);
-		exit(1);
+		bad();
 	}
 
 	if (dostrip) {
@@ -156,17 +155,16 @@ copy(from_name, to_fd, to_name)
 
 	if ((from_fd = open(from_name, O_RDONLY, 0)) < 0) {
 		fprintf(stderr, "install: open: %s: %s\n", from_name, sys_errlist[errno]);
-		(void)unlink(to_name);
-		exit(1);
+		bad();
 	}
 	while ((n = read(from_fd, buf, sizeof(buf))) > 0)
 		if (write(to_fd, buf, n) != n) {
 			fprintf(stderr, "install: write: %s: %s\n", to_name, sys_errlist[errno]);
-			(void)unlink(to_name);
+			bad();
 		}
 	if (n == -1) {
-		fprintf(stderr, "install: read: %s: %s\n", to_name, sys_errlist[errno]);
-		(void)unlink(to_name);
+		fprintf(stderr, "install: read: %s: %s\n", from_name, sys_errlist[errno]);
+		bad();
 	}
 }
 
@@ -187,13 +185,11 @@ strip(to_fd, from_name, to_name)
 
 	if ((from_fd = open(from_name, O_RDONLY, 0)) < 0) {
 		fprintf(stderr, "install: open: %s: %s\n", from_name, sys_errlist[errno]);
-		(void)unlink(to_name);
-		exit(1);
+		bad();
 	}
 	if (read(from_fd, (char *)&head, sizeof(head)) < 0 || N_BADMAG(head)) {
 		fprintf(stderr, "install: %s not in a.out format.\n", from_name);
-		(void)unlink(to_name);
-		exit(1);
+		bad();
 	}
 	if (head.a_syms || head.a_trsize || head.a_drsize) {
 		size = (long)head.a_text + head.a_data;
@@ -202,21 +198,22 @@ strip(to_fd, from_name, to_name)
 			size += getpagesize() - sizeof(EXEC);
 		if (write(to_fd, (char *)&head, sizeof(EXEC)) != sizeof(EXEC)) {
 			fprintf(stderr, "install: write: %s: %s\n", to_name, sys_errlist[errno]);
-			(void)unlink(to_name);
-			exit(1);
+			bad();
 		}
 		for (; size; size -= n)
 			if ((n = read(from_fd, buf, (int)MIN(size, sizeof(buf)))) <= 0)
 				break;
 			else if (write(to_fd, buf, n) != n) {
 				fprintf(stderr, "install: write: %s: %s\n", to_name, sys_errlist[errno]);
-				(void)unlink(to_name);
-				exit(1);
+				bad();
 			}
+		if (size) {
+			fprintf(stderr, "install: read: %s: premature EOF.\n", from_name);
+			bad();
+		}
 		if (n == -1) {
 			fprintf(stderr, "install: read: %s: %s\n", from_name, sys_errlist[errno]);
-			(void)unlink(to_name);
-			exit(1);
+			bad();
 		}
 	}
 }
@@ -226,13 +223,13 @@ strip(to_fd, from_name, to_name)
  *	octal string to int
  */
 static
-atoo(C)
-	register char	*C;		/* argument string */
+atoo(str)
+	register char	*str;
 {
-	register int	val;		/* return value */
+	register int	val;
 
-	for (val = 0; isdigit(*C); ++C)
-		val = val * 8 + *C - '0';
+	for (val = 0; isdigit(*str); ++str)
+		val = val * 8 + *str - '0';
 	return(val);
 }
 
@@ -244,5 +241,16 @@ static
 usage()
 {
 	fputs("usage: install [-cs] [-g group] [-m mode] [-o owner] source destination\n", stderr);
+	exit(1);
+}
+
+/*
+ * bad --
+ *	remove created target and die
+ */
+static
+bad()
+{
+	(void)unlink(path);
 	exit(1);
 }
