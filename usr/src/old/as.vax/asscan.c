@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asscan.c 4.3 %G%";
+static	char sccsid[] = "@(#)asscan.c 4.4 %G%";
 #include <stdio.h>
 #include "as.h"
 #include "asscan.h"
@@ -797,6 +797,11 @@ scan_dot_s(bufferbox)
 			val = getchar();
 			if (val == 'b') {
 				yylval = -1;
+				val = BFINT;
+				goto ret;
+			} 
+			if (val == 'f') {
+				yylval = 1;
 				val = BFINT;
 				goto ret;
 			}
