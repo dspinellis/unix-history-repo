@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.47 %G%";
+static char SccsId[] = "@(#)sccs.c	1.48 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -444,7 +444,7 @@ command(argv, forkflag, arg0)
 		break;
 
 	  case CLEAN:
-		rval = clean((int) cmd->sccspath);
+		rval = clean((int) cmd->sccspath, ap);
 		break;
 
 	  case UNEDIT:
@@ -785,8 +785,9 @@ safepath(p)
 **	exists in the current directory is purged.
 **
 **	Parameters:
-**		tells whether this came from a "clean", "info", or
-**		"check" command.
+**		mode -- tells whether this came from a "clean", "info", or
+**			"check" command.
+**		argv -- the rest of the argument vector.
 **
 **	Returns:
 **		none.
@@ -797,16 +798,31 @@ safepath(p)
 **		Exits if a "check" command.
 */
 
-clean(mode)
+clean(mode, argv)
 	int mode;
+	char **argv;
 {
 	struct direct dir;
 	char buf[100];
-	char pline[120];
 	register FILE *dirfd;
 	register char *basefile;
 	bool gotedit;
+	bool gotpfent;
 	FILE *pfp;
+	bool nobranch = FALSE;
+	extern struct pfile *getpfent();
+	register struct pfile *pf;
+	register char **ap;
+
+	/*
+	**  Process the argv
+	*/
+
+	for (ap = argv; *ap != NULL; ap++)
+	{
+		if (strcmp(*ap, "-b") == 0)
+			nobranch = TRUE;
+	}
 
 	/*
 	**  Find and open the SCCS directory.
@@ -845,21 +861,37 @@ clean(mode)
 		basefile = &buf[strlen(buf)];
 		strncpy(basefile, &dir.d_name[2], sizeof dir.d_name - 2);
 		basefile[sizeof dir.d_name - 2] = '\0';
+
+		/*
+		**  open and scan the p-file.
+		**	'gotpfent' tells if we have found a valid p-file
+		**		entry.
+		*/
+
 		pfp = fopen(buf, "r");
+		gotpfent = FALSE;
 		if (pfp != NULL)
 		{
 			/* the file exists -- report it's contents */
-			if (mode == TELLC)
-				printf("%s\n", basefile);
-			else
+			while ((pf = getpfent(pfp)) != NULL)
 			{
-				while (fgets(pline, sizeof pline, pfp) != NULL)
-					printf("%12s: being edited: %s", basefile, pline);
+				if (nobranch && isbranch(pf->p_nsid))
+					continue;
+				gotedit = TRUE;
+				gotpfent = TRUE;
+				if (mode == TELLC)
+				{
+					printf("%s\n", basefile);
+					break;
+				}
+				printf("%12s: being edited: %s %s %s %s %s\n",
+				       basefile, pf->p_osid, pf->p_nsid,
+				       pf->p_user, pf->p_date, pf->p_time);
 			}
 			fclose(pfp);
-			gotedit = TRUE;
-			continue;
 		}
+		if (!gotpfent)
+			continue;
 		
 		/* the s. file exists and no p. file exists -- unlink the g-file */
 		if (mode == CLEANC)
@@ -877,6 +909,37 @@ clean(mode)
 	if (mode == CHECKC)
 		exit(gotedit);
 	return (EX_OK);
+}
+
+/*
+**  ISBRANCH -- is the SID a branch?
+**
+**	Parameters:
+**		sid -- the sid to check.
+**
+**	Returns:
+**		TRUE if the sid represents a branch.
+**		FALSE otherwise.
+**
+**	Side Effects:
+**		none.
+*/
+
+isbranch(sid)
+	char *sid;
+{
+	register char *p;
+	int dots;
+
+	dots = 0;
+	for (p = sid; *p != '\0'; p++)
+	{
+		if (*p == '.')
+			dots++;
+		if (dots > 1)
+			return (TRUE);
+	}
+	return (FALSE);
 }
 
 /*
@@ -912,7 +975,7 @@ unedit(fn)
 	char *myname;
 	extern char *getlogin();
 	struct pfile *pent;
-	extern struct pfile *getpfile();
+	extern struct pfile *getpfent();
 	char buf[120];
 	extern char *makefile();
 # ifdef UIDUSER
@@ -969,7 +1032,7 @@ unedit(fn)
 	**  Copy p-file to temp file, doing deletions as needed.
 	*/
 
-	while ((pent = getpfile(pfp)) != NULL)
+	while ((pent = getpfent(pfp)) != NULL)
 	{
 		if (strcmp(pent->p_user, myname) == 0)
 		{
@@ -1124,7 +1187,7 @@ tail(fn)
 }
 
 /*
-**  GETPFILE -- get an entry from the p-file
+**  GETPFENT -- get an entry from the p-file
 **
 **	Parameters:
 **		pfp -- p-file file pointer
@@ -1138,7 +1201,7 @@ tail(fn)
 */
 
 struct pfile *
-getpfile(pfp)
+getpfent(pfp)
 	FILE *pfp;
 {
 	static struct pfile ent;
