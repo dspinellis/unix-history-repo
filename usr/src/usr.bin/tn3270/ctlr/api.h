@@ -279,24 +279,31 @@ typedef struct {
 #define	FP_SEG(x)	(x)
 #define	FP_OFF(y)	(y)
 
+/*
+ * Now, it is somewhat of a pain, but we need to keep
+ * 8086 conventions about which of the "highlow"'s map
+ * into which of the "words".
+ */
+
 struct highlow {
-    char
-	ah,
+    unsigned char
 	al,
-	bh,
+	ah,
 	bl,
-	ch,
+	bh,
 	cl,
-	dh,
-	dl;
+	ch,
+	dl,
+	dh;
 };
 
 struct words {
-    int
+    unsigned short
 	ax,
 	bx,
 	cx,
-	dx,
+	dx;
+    unsigned int
 	si,
 	di;
 };
@@ -307,7 +314,7 @@ union REGS {
 };
 
 struct SREGS {
-    int
+    unsigned int
 	cs,
 	ds,
 	es,
