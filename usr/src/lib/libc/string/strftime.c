@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strftime.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)strftime.c	5.13 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -33,7 +33,7 @@ static char *Bfmt[] = {
 static size_t gsize;
 static char *pt;
 static int _add __P((char *));
-static int _conv __P((int, int, char));
+static int _conv __P((int, int, int));
 static int _secs __P((const struct tm *));
 static size_t _fmt __P((const char *, const struct tm *));
 
@@ -241,8 +241,7 @@ _secs(t)
 
 static int
 _conv(n, digits, pad)
-	int n, digits;
-	char pad;
+	int n, digits, pad;
 {
 	static char buf[10];
 	register char *p;
