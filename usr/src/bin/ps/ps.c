@@ -123,7 +123,7 @@ char	*lhdr;
 int	wcwidth;		/* width of the wchan field for sprintf*/
 struct	lsav {
 	short	l_ppid;
-	char	l_cpu;
+	u_char	l_cpu;
 	int	l_addr;
 	caddr_t	l_wchan;
 };
@@ -392,13 +392,13 @@ main(argc, argv)
 		else
 			spr(sp);
 		if (sp->ap->a_stat == SZOMB)
-			printf(" <defunct>");
+			printf(" %.*s", twidth - cmdstart - 2, "<defunct>");
 		else if (sp->ap->a_flag & SWEXIT)
-			printf(" <exiting>");
+			printf(" %.*s", twidth - cmdstart - 2, "<exiting>");
 		else if (sp->ap->a_pid == 0)
-			printf(" swapper");
+			printf(" %.*s", twidth - cmdstart - 2, "swapper");
 		else if (sp->ap->a_pid == 2)
-			printf(" pagedaemon");
+			printf(" %.*s", twidth - cmdstart - 2, "pagedaemon");
 		else
 			printf(" %.*s", twidth - cmdstart - 2, sp->ap->a_cmdp);
 		printf("\n");
@@ -1196,17 +1196,18 @@ retucomm:
 }
 
 char	*lhdr =
-"      F  UID   PID  PPID CP PRI NI ADDR    SZ  RSS %*sSTAT TT  TIME";
+"     F  UID   PID  PPID CP PRI NI ADDR    SZ  RSS %*sSTAT TT  TIME";
 lpr(sp)
 	struct savcom *sp;
 {
 	register struct asav *ap = sp->ap;
 	register struct lsav *lp = sp->s_un.lp;
 
-	printf("%7x %4d %5u %5u %2d %3d %2d %4x %5d %4d",
-	    ap->a_flag, ap->a_uid,
-	    ap->a_pid, lp->l_ppid, lp->l_cpu&0377, ap->a_pri-PZERO,
-	    ap->a_nice-NZERO, lp->l_addr, pgtok(ap->a_size), pgtok(ap->a_rss));
+	printf("%6x %4d %5u %5u %2d %3d %2d %4x %5d %4d",
+	    (ap->a_flag &~ SPTECHG),				/* XXX */
+	    ap->a_uid, ap->a_pid, lp->l_ppid,
+	    lp->l_cpu > 99 ? 99 : lp->l_cpu, ap->a_pri-PZERO,
+	    ap->a_nice, lp->l_addr, pgtok(ap->a_size), pgtok(ap->a_rss));
 	if (lp->l_wchan == 0)
 		printf(" %*s", wcwidth, "");
 	else if (nflg)
