@@ -6,7 +6,7 @@ BINOWN=	root
 BINMODE=4555
 .PATH:	${.CURDIR}/../../usr.bin/rlogin
 
-.if exists(${DESTDIR}/usr/lib/libkrb.a) && !defined(NOCRYPT)
+.if exists(${DESTDIR}/usr/lib/libkrb.a)
 CFLAGS+=-DCRYPT -DKERBEROS
 DPADD+= ${LIBKRB} ${LIBDES}
 LDADD+= -lkrb -ldes
