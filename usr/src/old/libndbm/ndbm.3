@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ndbm.3	6.8 (Berkeley) %G%
+.\"	@(#)ndbm.3	6.9 (Berkeley) %G%
 .\"
 .TH NDBM 3  ""
 .UC 6
@@ -61,6 +61,12 @@ int dbm_error(db)
 int dbm_clearerr(db)
     DBM *db;
 .SH DESCRIPTION
+.ft B
+The ndbm library has been obsoleted by db(3), and is now
+implemented using those routines.
+The original version of ndbm is available from the dbm library, libdbm.a
+.ft R
+.PP
 These functions maintain key/content pairs in a data base.
 The functions will handle very large (a billion blocks)
 databases and will access a keyed item in one or two file system accesses.
