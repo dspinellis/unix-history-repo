@@ -1,4 +1,4 @@
-/* @(#)dterm.c	1.1	(Berkeley)	%G%"
+/* @(#)dterm.c	1.2	(Berkeley)	%G%"
  *
  *	Converts ditroff output to text on a terminal.  It is NOT meant to
  *	produce readable output, but is to show one how one's paper is (in
@@ -47,7 +47,7 @@
 #define sqr(x)		(long int)(x)*(x)
 
 
-char	SccsId [] = "@(#)dterm.c	1.1	(Berkeley)	%G%";
+char	SccsId [] = "@(#)dterm.c	1.2	(Berkeley)	%G%";
 
 char *spectab[] ={
 	"em", "-", "hy", "-", "en", "-", "ru", "_", "l.", ".", "L.", ".",
@@ -109,8 +109,8 @@ char **argv;
 			keepon = 1;
 			break;
  		case 'w':
-			hscale = 20.0;
-			vscale = 12.0;
+			hscale = 16.0;
+			vscale = 9.6;
 			linelen = 131;
 			keepon = 1;
 			break;
