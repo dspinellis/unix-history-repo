@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_apxreg.h	7.1 (Berkeley) %G%
+ *	@(#)if_apxreg.h	7.2 (Berkeley) %G%
  */
 
 
@@ -70,10 +70,10 @@ struct sgsb {
 
 #define SGMTU 1032
 #define SGRBUF 16
-#define SGRBUFLOG2 4
+#define SGRBUF_LOG2 4
 #define SG_RLEN (SGRBUF_LOG2 << 12)
 #define SGTBUF 8
-#define SGTBUFLOG2 3
+#define SGTBUF_LOG2 3
 #define SG_TLEN (SGTBUF_LOG2 << 12)
 
 /*
@@ -105,7 +105,7 @@ struct apc_mem {
  * APC-PCX registers
  */
 struct apc_reg {
-	struct	sgcb axr_sgcb[2];
+	struct	sgcp axr_sgcp[2];
 	u_char	arx_pad0[4];
 	u_char	axr_cnt0;
 	u_char	axr_cnt1;
