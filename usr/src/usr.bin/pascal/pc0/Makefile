@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.1 %G%"
+SCCSID = "@(#)Makefile 1.2 %G%"
 
 MKSTR = /usr/ucb/mkstr
 EYACC = /usr/ucb/eyacc
@@ -24,13 +24,12 @@ SRCS =	ato.c \
 	tree.c type.c var.c \
 	TRdata.c \
 	treen.c putn.c yycopy.c \
-	y.tab.c \
 	yycosts.c yyerror.c yyget.c yyid.c yylex.c yymain.c yyoptions.c \
 	yypanic.c yyparse.c yyprint.c yyput.c yyrecover.c yyseman.c yytree.c \
 	p2put.c pcforop.c stab.c pcproc.c pcfunc.c pccaseop.c pclval.c
 
-HDRS =	0.h OPnames.h iorec.h objfmt.h opcode.h p.a.out.h pTree.h pc.h pcops.h \
-	send.h tree.h whoami.h y.tab.h yy.h
+HDRS =	0.h OPnames.h iorec.h objfmt.h p.a.out.h pc.h pcops.h \
+	send.h tree.h whoami.h yy.h
 
 OTHERS = pas.y opc.c version.c gram pic.c
 
@@ -74,11 +73,11 @@ opcode.h: OPnames.h
 	opc >opcode.h
 	${RM} opc opc.c
 
-version: version.c
-	${CC} version.c -o version
-
 pTree.h:
 	echo "/* this is not pTree.h */" > pTree.h
+
+version: version.c
+	${CC} version.c -o version
 
 clean:
 	${RM} *.o ${TMPDIR}/*.c
@@ -109,7 +108,7 @@ install: a.out
 depend:	sources
 	/bin/grep '^#[ 	]*include' *.h \
 		| sed '/<.*>/d' \
-		| sed 's/\(.*\):[^"]*"\([^"]*\)".*/\1: \2 ; touch \1/' >makedep
+		| sed 's/\(.*\):[^"]*"\([^"]*\)".*/\1: \2/' >makedep
 	/bin/grep '^#[ 	]*include' *.c \
 		| sed '/<.*>/d' \
 		| sed 's/:[^"]*"\([^"]*\)".*/: \1/' \
@@ -126,8 +125,8 @@ depend:	sources
 
 # DO NOT DELETE THIS LINE -- make depend uses it
 
-0.h: pTree.h ; touch 0.h
-yy.h: y.tab.h ; touch yy.h
+0.h: pTree.h
+yy.h: y.tab.h
 TRdata.o: whoami.h
 TRdata.o: 0.h
 ato.o: whoami.h
@@ -157,6 +156,9 @@ cset.o: whoami.h
 cset.o: 0.h
 cset.o: tree.h
 cset.o: opcode.h
+cset.o: objfmt.h
+cset.o: pc.h
+cset.o: pcops.h
 error.o: whoami.h
 error.o: 0.h
 error.o: yy.h
@@ -165,6 +167,7 @@ fdec.o: 0.h
 fdec.o: tree.h
 fdec.o: opcode.h
 fdec.o: objfmt.h
+fdec.o: align.h
 fdec.o: pc.h
 fdec.o: pcops.h
 func.o: whoami.h
@@ -214,13 +217,6 @@ pccaseop.o: tree.h
 pccaseop.o: objfmt.h
 pccaseop.o: pcops.h
 pccaseop.o: pc.h
-pccset.o: whoami.h
-pccset.o: 0.h
-pccset.o: tree.h
-pccset.o: opcode.h
-pccset.o: objfmt.h
-pccset.o: pc.h
-pccset.o: pcops.h
 pcforop.o: whoami.h
 pcforop.o: 0.h
 pcforop.o: opcode.h
@@ -304,9 +300,14 @@ type.o: tree.h
 type.o: objfmt.h
 var.o: whoami.h
 var.o: 0.h
+var.o: align.h
 var.o: pc.h
 var.o: pcops.h
 var.o: iorec.h
+y.tab.o: whoami.h
+y.tab.o: 0.h
+y.tab.o: yy.h
+y.tab.o: tree.h
 yycopy.o: 0.h
 yycopy.o: yy.h
 yycosts.o: whoami.h
