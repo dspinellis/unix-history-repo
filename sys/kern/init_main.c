@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)init_main.c	7.41 (Berkeley) 5/15/91
- *	$Id: init_main.c,v 1.11 1993/12/19 00:51:18 wollman Exp $
+ *	$Id: init_main.c,v 1.12 1993/12/20 19:31:16 wollman Exp $
  */
 
 #include "param.h"
@@ -234,7 +234,7 @@ main()
 	mbinit();
 
 	while(*pseudos) {
-		(**pseudos)();
+		(**pseudos++)();
 	}
 
 	/*
