@@ -1,0 +1,119 @@
+
+			KSH-I VS. SH
+
+
+
+I have not made a complete comparison between 5.2 /bin/sh and ksh-i.  A
+direct comparison of the manuals may uncover more incompatibilities than
+I have listed here.  In addition, I have omitted some incompatibilities
+that are bugs in 5.0 sh that may have been fixed for 5.2.  I have
+also omitted incompatibilities in cases that sh clearly is incorrect,
+such as in cases where it core dumps. I have also omitted cases which
+are bugs in ksh-i.  I have omitted built-ins in ksh-i which are not in /bin/sh
+since this can be circumvented by using the alias facility if necessary.
+
+The following is a list of known incompatibilities between ksh-i and sh:
+
+1.	The IFS parameter is only effective for the read built-in and
+	after parameter and command substitution in ksh-i.  Thus, IFS=x;
+	exit will execute e on the file it with sh but will exit with ksh-i.
+
+2.	If an environment parameter is modified by ksh-i, the new value
+	will be passed to the children.  In sh you must export the
+	parameter for this to happen.
+
+3.	Time is a reserved word in ksh-i.  Thus time a | b will time the
+	pipeline in ksh-i while only a will be timed with sh.  You can
+	also time built-in commands and functions with ksh-i, you can't
+	with sh.
+
+4.	Select and function are reserved words in ksh-i.
+
+5.	Parameter assignments only have scope for the command or function
+	they precede in ksh-i.  Only a subset of built-in commands in ksh-i treat
+	parameter assignments globally.  In sh, all built-in commands and
+	functions treat parameter assignments as globals.  (Notice that 5.0
+	and 5.2 treat parameter assignments to pwd and echo in an
+	incompatible way).
+
+6.	The output of some built-in commands and error messages is different
+	in a few cases, for example times produces two lines of output in ksh-i.
+
+7.	While loops with redirection are not executed in a separate process
+	in ksh-i so assignments made within loops remain in effect after the
+	loop completes.
+
+8.	The semantics of functions are somewhat different.  Ksh-i can have
+	local variables and allow recursive functions.  Errors in functions
+	abort the function but not the script that they are in.
+
+9.	The name space for functions and variables is separate in ksh-i.  In
+	/bin/sh they share the same space. The unset builtin requires
+	a -f flag to unset a function in ksh-i.
+
+10.	Words that begin with ~ may be expanded in ksh-i. Sh does not have
+	this feature.
+
+11.	The character ^ is not special in ksh-i.  In sh it is an archaic
+	synonym for |.
+
+12.	Whenever (( occurs where a command name is valid, ksh-i assumes
+	that an arithmetic expression follows.  In sh this means a
+	sub-shell inside a sub-shell.
+
+13.	Non-blank contiguous IFS delimiters generate a null input argument.
+	Therefore, you can use IFS=: and correctly read the /etc/profile
+	file even when fields are omitted.  In sh, multiple delimiters
+	count as a single delimiter.
+
+14.	Arithmetic test comparison operators (-eq, -lt, ...) allow any
+	arithmetic expressions.  Sh allows only constants.  If you say
+	test x -eq 0 in sh, which is meaningless, it returns true, but
+	in ksh-i it depends on the value of the variable x.  If there
+	is no variable x, then ksh-i produces an error message.
+
+15.	The environment handed down to a program is not sorted in ksh-i.
+	A user should not reply in this quirk of sh since any user
+	program can provide an environment list which does not have
+	to be sorted. (Getenv(3) does not assume a sorted list).
+
+16.	There is an alias hash in ksh-i which does what the 5.2 has
+	built-in hash does except for the -r flag.  In ksh-i, you must say
+	PATH=$PATH to achieve the same result.
+
+17.	The expansion of "$@" with no arguments produces the null string
+	in the Bourne shell and produces nothing with ksh-i when there are
+	no arguments.  I am not sure whether this is a bug in the Bourne
+	shell or intentional.  The manual page leads me to think that it
+	is a bug.  Set -- with no arguments unsets the positional parameter
+	list in ksh-i.  Thus, scripts that use set -- "$@" when there are
+	so positional parameters will not break.
+
+18.	Ksh-i accepts options of the form -x -v as well as -xv both for
+	invocation and for the set builtin.  The Bourne shell only allows
+	one option parameter.
+
+19.	Ksh-i does not allow unbalanced quotes with any script.  If the end of
+	file is reached before a balancing quote in sh, it quietly inserts
+	the balancing quote.  Ksh-i, behaves like sh for eval statements.
+
+20.	Failures of any built-in command cause a script to abort in sh. Ksh-i
+	scripts will only abort on errors in certainly documented built-ins.
+	In this respect ksh-i treats most built-in commands semantically the
+	same as non-builtin commands.
+
+21.	The sequence $( is special in ksh-i.  In sh the sequence is illegal
+	unless quoted.  When used with "", $( must be preceded by a \ in
+	ksh-i to remove its special meaning.
+
+22.	The built-in command exec when used without arguments (for I/O
+	redirection), will close on exec each file unit greater than 2.
+
+23.	Ksh-i has some added security features which may cause some setuid
+	programs to stop working.  Whenever the real and effective uid
+	of a shell program is different, ksh-i sets the -p mode which resets
+	the PATH and omits user profiles.  The file /etc/suid_profile is
+	executed instead of the ENV file.
+
+I am interested in expanding this list so please let me know if you
+uncover any others.
