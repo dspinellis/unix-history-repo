@@ -1,6 +1,7 @@
-static	char sccsid[] = "@(#)diffreg.c 4.19 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.20 %G%";
 
 #include "diff.h"
+#include "pathnames.h"
 /*
  * diff - compare two files.
  */
@@ -262,7 +263,7 @@ same:
 	done();
 }
 
-char *tempfile = "/tmp/dXXXXX";
+char *tempfile = _PATH_TMP;
 
 char *
 copytemp()
@@ -693,7 +694,6 @@ struct	context_vec	*context_vec_start,
 */
 change(a,b,c,d)
 {
-	int ch;
 	int lowa,upb,lowc,upd;
 	struct stat stbuf;
 
@@ -716,10 +716,6 @@ change(a,b,c,d)
 			context_vec_ptr = context_vec_start - 1;
 		}
 	}
-	if (a <= b && c <= d)
-		ch = 'c';
-	else
-		ch = (a <= b) ? 'd' : 'a';
 	if(opt == D_CONTEXT) {
 		/*
 		 * if this new change is within 'context' lines of
