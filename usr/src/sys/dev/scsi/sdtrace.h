@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sdtrace.h	5.2 (Berkeley) %G%
+ *	@(#)sdtrace.h	5.3 (Berkeley) %G%
  *
- * $Header: sdtrace.h,v 1.5 92/07/10 07:00:38 torek Exp $ (LBL)
+ * from: $Header: sdtrace.h,v 1.6 92/12/02 03:53:47 torek Exp $ (LBL)
  */
 
 /*
