@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)proc.c 4.3 %G%";
+static	char *sccsid = "@(#)sh.proc.c 4.4 3/31/81";
 
 #include "sh.h"
 #include "sh.dir.h"
@@ -224,14 +224,16 @@ pjwait(pp)
 	sigrelse(SIGCHLD);
 	if (tpgrp > 0)
 		ioctl(FSHTTY, TIOCSPGRP, &tpgrp);	/* get tty back */
+	if ((jobflags&(PSIGNALED|PSTOPPED|PTIME)) ||
+	     !eq(dcwd->di_name, fp->p_cwd->di_name)) {
+		if (jobflags&PSTOPPED)
+			printf("\n");
+		pprint(pp, AREASON|SHELLDIR);
+	}
 	if ((jobflags&(PINTERRUPTED|PSTOPPED)) && setintr &&
 	    (!gointr || !eq(gointr, "-"))) {
 		if ((jobflags & PSTOPPED) == 0)
 			pflush(pp);
-		else {
-			printf("\n");
-			pprint(pp, AREASON|SHELLDIR);
-		}
 		pintr1(0);
 		/*NOTREACHED*/
 	}
