@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.33 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.34 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -460,7 +460,7 @@ killpg1(cp, signo, pgid, all)
 		}
 		for (p = pgrp->pg_mem; p != NULL; p = p->p_pgrpnxt) {
 			if (p->p_pid <= 1 || p->p_flag&SSYS ||
-			    !CANSIGNAL(cp, pc, p, signo))
+			    p->p_stat == SZOMB || !CANSIGNAL(cp, pc, p, signo))
 				continue;
 			nfound++;
 			if (signo)
