@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.21 (Berkeley) %G%
+ *	@(#)proc.h	7.22 (Berkeley) %G%
  */
 
 /*
@@ -41,7 +41,7 @@ struct	proc {
 	struct	proc *p_rlink;
 	struct	proc *p_nxt;	/* linked list of allocated proc slots */
 	struct	proc **p_prev;		/* also zombies, and free proc's */
-	struct	pte *p_addr;	/* u-area kernel map address */
+	caddr_t	p_addr;		/* kernel virtual address of u-area */
 	char	p_usrpri;	/* user-priority based on p_cpu and p_nice */
 	char	p_pri;		/* priority, negative is high */
 	char	p_cpu;		/* cpu usage for scheduling */
@@ -64,20 +64,16 @@ struct	proc {
 	pid_t	p_ppid;		/* process id of parent */
 	u_short	p_xstat;	/* Exit status for wait; also stop signal */
 	struct	rusage *p_ru;	/* exit information */
-	short	p_poip;		/* page outs in progress */
-	short	p_szpt;		/* copy of page table size */
-	segsz_t p_tsize;	/* size of text (clicks) */
-	segsz_t p_dsize;	/* size of data space (clicks) */
-	segsz_t p_mmsize;	/* size of mapmem beyond p_dsize (clicks) */
-	segsz_t p_ssize;	/* copy of stack size (clicks) */
+	struct	vm_map *p_map;	/* VM address map */
+	caddr_t	p_shm;		/* SYS5 shared memory private data */
+	int	p_thread;	/* id for this "thread" (Mach glue) XXX */
+	int	p_pad1[2];
 	segsz_t p_rssize; 	/* current resident set size in clicks */
 	segsz_t p_maxrss;	/* copy of u.u_limit[MAXRSS] */
 	segsz_t p_swrss;	/* resident set size before last swap */
 	swblk_t	p_swaddr;	/* disk address of u area when swapped */
 	caddr_t p_wchan;	/* event process is awaiting */
-	struct	text *p_textp;	/* pointer to text structure */
-	struct	pte *p_p0br;	/* page table base P0BR */
-	struct	proc *p_xlink;	/* linked list of procs sharing same text */
+	int	pad2[3];
 	int	p_cpticks;	/* ticks of cpu time */
 	fixpt_t	p_pctcpu;	/* %cpu for this process during p_time */
 	short	p_ndx;		/* proc index for memall (because of vfork) */

@@ -3,7 +3,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mbuf.h	7.13 (Berkeley) %G%
+ *	@(#)mbuf.h	7.14 (Berkeley) %G%
  */
 
 #ifndef M_WAITOK
@@ -32,9 +32,9 @@
  * cltom(x) -	convert cluster # to ptr to beginning of cluster
  */
 #define mtod(m,t)	((t)((m)->m_data))
-#define	dtom(x)		((struct mbuf *)((int)x & ~(MSIZE-1)))
-#define	mtocl(x)	(((u_int)x - (u_int)mbutl) >> MCLSHIFT)
-#define	cltom(x)	((caddr_t)mbutl[x])
+#define	dtom(x)		((struct mbuf *)((int)(x) & ~(MSIZE-1)))
+#define	mtocl(x)	(((u_int)(x) - (u_int)mbutl) >> MCLSHIFT)
+#define	cltom(x)	((caddr_t)((u_int)mbutl + ((u_int)(x) >> MCLSHIFT)))
 
 /* header at beginning of each mbuf: */
 struct m_hdr {
@@ -315,12 +315,11 @@ struct mbstat {
 };
 
 #ifdef	KERNEL
-extern	char mbutl[][MCLBYTES];		/* virtual address of mclusters */
-extern	struct pte Mbmap[];		/* page tables to map mbutl */
+extern	struct mbuf *mbutl;		/* virtual address of mclusters */
+extern	char *mclrefcnt;		/* cluster reference counts */
 struct	mbstat mbstat;
 int	nmbclusters;
 union	mcluster *mclfree;
-char	mclrefcnt[NMBCLUSTERS + CLBYTES/MCLBYTES];
 int	max_linkhdr;			/* largest link-level header */
 int	max_protohdr;			/* largest protocol header */
 int	max_hdr;			/* largest link+protocol header */

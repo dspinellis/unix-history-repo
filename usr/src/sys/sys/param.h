@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.17 (Berkeley) %G%
+ *	@(#)param.h	7.18 (Berkeley) %G%
  */
 
 #define	BSD	199006		/* June, 1990 system version (year & month) */
@@ -32,6 +32,7 @@
  * Priorities
  */
 #define	PSWP	0
+#define	PVM	1
 #define	PINOD	10
 #define	PRIBIO	20
 #define	PVFS	22

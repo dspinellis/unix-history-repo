@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)systm.h	7.8 (Berkeley) %G%
+ *	@(#)systm.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -73,7 +73,7 @@ char	*bootesym;		/* end of symbol info from boot */
 #endif
 int	selwait;
 
-extern	char vmmap[];		/* poor name! */
+extern	char *vmmap;		/* poor name! */
 
 /* casts to keep lint happy */
 #define	insque(q,p)	_insque((caddr_t)q,(caddr_t)p)
