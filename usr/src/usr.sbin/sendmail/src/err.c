@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)err.c	3.26		%G%);
+SCCSID(@(#)err.c	3.27		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -14,6 +14,7 @@ SCCSID(@(#)err.c	3.26		%G%);
 **
 **	Returns:
 **		none
+**		Through TopFrame if QuickAbort is set.
 **
 **	Side Effects:
 **		increments Errors.
@@ -54,6 +55,8 @@ syserr(fmt, a, b, c, d, e)
 		syslog(LOG_ERR, "%s: %s", MsgId, &MsgBuf[4]);
 # endif LOG
 	errno = 0;
+	if (QuickAbort)
+		longjmp(TopFrame, 2);
 }
 /*
 **  USRERR -- Signal user error.
@@ -65,6 +68,7 @@ syserr(fmt, a, b, c, d, e)
 **
 **	Returns:
 **		none
+**		Through TopFrame if QuickAbort is set.
 **
 **	Side Effects:
 **		increments Errors.
@@ -84,6 +88,8 @@ usrerr(fmt, a, b, c, d, e)
 
 	fmtmsg(MsgBuf, CurEnv->e_to, Arpa_Usrerr, fmt, a, b, c, d, e);
 	putmsg(MsgBuf);
+	if (QuickAbort)
+		longjmp(TopFrame, 1);
 }
 /*
 **  MESSAGE -- print message (not necessarily an error)

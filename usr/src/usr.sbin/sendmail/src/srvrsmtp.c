@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.26		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.27		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.26		%G%);
+SCCSID(@(#)srvrsmtp.c	3.27		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -53,6 +53,7 @@ static struct cmd	CmdTab[] =
 	"rset",		CMDRSET,
 	"vrfy",		CMDVRFY,
 	"expn",		CMDVRFY,
+	"expn",		CMDVRFY,
 	"help",		CMDHELP,
 	"noop",		CMDNOOP,
 	"quit",		CMDQUIT,
@@ -90,6 +91,8 @@ smtp()
 		(void) dup(fileno(OutChannel));
 	}
 	message("220", "%s Sendmail version %s at your service", HostName, Version);
+	(void) setjmp(TopFrame);
+	QuickAbort = FALSE;
 	for (;;)
 	{
 		/* setup for the read */
