@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.7 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.8 (Berkeley) %G%)
 
 
 ##################
@@ -39,6 +39,10 @@ CONCAT(DM, ifdef(`MASQUERADE_NAME', MASQUERADE_NAME, $j))
 
 # who I send unqualified names to (null means deliver locally)
 CONCAT(DR, ifdef(`LOCAL_RELAY', LOCAL_RELAY))
+
+# names that should be delivered locally, even if we have a relay
+CLroot
+undivert(5)dnl
 
 ifdef(`UUCP_NAME',
 `# uucp hostnames
