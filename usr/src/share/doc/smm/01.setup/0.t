@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	6.2 (Berkeley) %G%
+.\"	@(#)0.t	6.3 (Berkeley) %G%
 .\"
 .ds Ux \s-1UNIX\s0
 .ds Bs \s-1BSD\s0
@@ -77,13 +77,13 @@ as distributed by The University of California at Berkeley.
 .PP
 It discusses procedures for installing \*(Ux on a new machine,
 and for upgrading an existing \*(Ps \*(Ux system to the new release.
-An explanation of how to lay out file systems on available disks,
+An explanation of how to lay out filesystems on available disks,
 how to set up terminal lines and user accounts,
 and how to do system-specific tailoring is provided.
 A description of how to install and configure the networking
 facilities included with \*(4B is included.
 Finally, the document details system operation procedures:
-shutdown and startup, file system backup procedures,
+shutdown and startup, filesystem backup procedures,
 resource control, performance monitoring, and procedures for recompiling
 and reinstalling system software.
 .AE

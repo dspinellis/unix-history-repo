@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.t	6.2 (Berkeley) %G%
+.\"	@(#)1.t	6.3 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -57,9 +57,10 @@ magnetic tape(s) in the distribution kit to guard against disaster.
 The tapes contain some 1024-byte records followed by many
 10240-byte records.  There are interspersed tape marks;
 end-of-tape is signaled by a double end-of-file.  The first file
-on the tape is a disk image of the root file system.
-Following the disk-image root file is a full dump of the root file system
-(see \fIdump\fP\|(8)*).
+on the tape is a disk image of the root filesystem.
+Following the disk-image root file is a full dump of the root filesystem
+(see
+.Xr dump (8)*).
 .FS
 \ * References of the form \fIX\fP(Y) mean the entry named
 \fIX\fP in section Y of the
@@ -68,7 +69,8 @@ programmer's manual.
 .FE
 Additional files on the tape(s)
 contain tape archive images of the system binaries and sources (see
-\fItar\fP\|(1)).  See the tape label for a description of the contents
+.Xr tar (1)).
+See the tape label for a description of the contents
 and format of the tape(s).
 .NH 2
 \*(Ux device naming
@@ -102,15 +104,18 @@ Each \*(Ux physical disk is divided into at most 8 logical disk partitions,
 each of which may occupy any consecutive cylinder range on the physical
 device.  The cylinders occupied by the 8 partitions for each drive type
 are specified initially in the disk description file /etc/disktab
-(c.f. \fIdisktab\fP(5)).  The partition information and description of the
+(c.f.
+.Xr disktab (5)).
+The partition information and description of the
 drive geometry are written in one of the first sectors of each disk with the
-\fIdisklabel\|\fP(8) program.  Each partition may be used for either a
-raw data area such as a paging area or to store a \*(Ux file system.
+.Xr disklabel (8)
+program.  Each partition may be used for either a
+raw data area such as a paging area or to store a \*(Ux filesystem.
 It is conventional for the first partition on a disk to be used
-to store a root file system, from which \*(Ux may be bootstrapped.
+to store a root filesystem, from which \*(Ux may be bootstrapped.
 The second partition is traditionally used as a paging area, and the
 rest of the disk is divided into spaces for additional ``mounted
-file systems'' by use of one or more additional partitions.
+filesystems'' by use of one or more additional partitions.
 .NH 2
 \*(Ux devices: block and raw
 .PP
@@ -133,7 +138,7 @@ to work faster.
 Raw devices are used when making new filesystems,
 when checking unmounted filesystems,
 or for copying quiescent filesystems.
-The block devices are used to mount file systems,
+The block devices are used to mount filesystems,
 or when operating on a mounted filesystem such as the root.
 .PP
 You should be aware that it is sometimes important whether to use

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.9 (Berkeley) %G%
+.\"	@(#)3.t	6.10 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -49,8 +49,9 @@ Once the new system is up and fully merged, the previous root and
 .Pn /usr
 filesystems can be reused.
 Other existing filesystems can be retained and used,
-except that (as usual) the new \fIfsck\fP should be run
-before they are mounted.
+except that (as usual) the new
+.Xr fsck
+should be run before they are mounted.
 .PP
 It is \fBSTRONGLY\fP advised that you make full dumps of each filesystem
 before beginning, especially any that you intend to modify in place
@@ -129,8 +130,9 @@ save and suggests directories in which site-specific files should be present.
 This list will likely be augmented with non-standard files you
 have added to your system.
 If you do not have enough space to create parallel
-filesystems, you should create a \fItar\fP image of the
-following files before the new filesystems are created.
+filesystems, you should create a
+.Xr tar
+image of the following files before the new filesystems are created.
 The rest of this subsection describes where theses files
 have moved and how they have changed.
 .TS
@@ -200,7 +202,9 @@ It is also desirable to run filesystem checks
 of all filesystems to be converted to \*(4B before shutting down.
 In any case, this is an excellent time to review your disk configuration
 for possible tuning of the layout.
-Section 4.2 and \fIconfig\fP(8) are required reading.
+Section 4.2 and
+.Xr config (8)
+are required reading.
 .PP
 The \*(4B bootstrap routines pass the identity of the boot device
 through to the kernel.
@@ -234,10 +238,12 @@ tables in the kernel.  Make the necessary table changes and boot
 your custom kernel \fBBEFORE\fP trying to access any of your old
 filesystems!  After doing this, if necessary, the remaining filesystems
 may be converted in place by running the \*(4B version of
-.IR fsck (8)
+.Xr fsck (8)
 on each filesystem and allowing it to make the necessary corrections.
-The new version of \fIfsck\fP is more
-strict about the size of directories than the version supplied with \*(Ps.
+The new version of
+.Xr fsck
+is more strict about the size of directories than
+the version supplied with \*(Ps.
 Thus the first time that it is run on a \*(Ps filesystem,
 it will produce messages of the form:
 .DS
@@ -245,7 +251,9 @@ it will produce messages of the form:
 .DE
 Length ``xx'' will be the size of the directory;
 it will be expanded to the next multiple of 512 bytes.
-The new \fIfsck\fP will also set default \fIinterleave\fP and
+The new
+.Xr fsck
+will also set default \fIinterleave\fP and
 \fInpsect\fP (number of physical sectors per track) values on older
 filesystems, in which these fields were unused spares; this correction
 will produce messages of the form:
@@ -260,20 +268,26 @@ This is correct on most drives;
 it affects only performance (and in most cases, virtually unmeasurably).
 .FE
 Filesystems that have had their interleave and npsect values
-set will be diagnosed by the old \fIfsck\fP as having a bad superblock;
-the old \fIfsck\fP will run only if given an alternate superblock
+set will be diagnosed by the old
+.Xr fsck
+as having a bad superblock; the old
+.Xr fsck
+will run only if given an alternate superblock
 (\fIfsck \-b32\fP),
 in which case it will re-zero these fields.
 The \*(4B kernel will internally set these fields to their defaults
 if fsck has not done so; again, the \fI\-b32\fP option may be
-necessary for running the old \fIfsck\fP.
+necessary for running the old
+.Xr fsck .
 .PP
 In addition, \*(4B removes several limits on filesystem sizes
 that were present in \*(Ps.
 The limited filesystems
 continue to work in \*(4B, but should be converted
 as soon as it is convenient
-by running \fIfsck\fP with the \fI\-c 2\fP option.
+by running
+.Xr fsck
+with the \fI\-c 2\fP option.
 The sequence \fIfsck \-p \-c 2\fP will update all of them,
 fix the interleave and npsect fields,
 fix any incorrect directory lengths,
@@ -293,8 +307,9 @@ filesystems fully installed you will be ready
 to continue with the next step in the conversion process,
 merging your old files into the new system.
 .PP
-If you saved the files on a \fItar\fP tape, extract them
-into a scratch directory, say
+If you saved the files on a
+.Xr tar
+tape, extract them into a scratch directory, say
 .Pn /usr/convert :
 .DS
 \fB#\fP \fImkdir /usr/convert\fP
@@ -386,7 +401,7 @@ and
 filesystems.
 Once a filesystem has been made for
 .Pn /var ,
-.I mtree
+.Xr mtree
 should be used to create a directory hierarchy there.
 .NH 3
 Changes in the
@@ -443,8 +458,8 @@ _	_	_
 .TE
 .DE
 .PP
-System security changes require adding several new ``well-known'' groups 
-to /etc/group.
+System security changes require adding several new ``well-known'' groups to
+.Pn /etc/group .
 The groups that are needed by the system as distributed are:
 .DS
 .TS
@@ -468,7 +483,9 @@ utmp	45	access to utmp files
 dialer	117	access to remote ports and dialers
 .TE
 .DE
-Only users in the ``wheel'' group are permitted to \fIsu\fP to ``root''.
+Only users in the ``wheel'' group are permitted to
+.Xr su
+to ``root''.
 Most programs that manage directories in
 .Pn /var/spool
 now run set-group-id to ``daemon'' so that users cannot
@@ -485,21 +502,30 @@ and other sources belong to group ``wsrc.''
 Rather than make user's terminals writable by all users,
 they are now placed in group ``tty'' and made only group writable.
 Programs that should legitimately have access to write on user's terminals
-such as \fItalkd\fP and \fIwrite\fP now run set-group-id to ``tty''.
+such as
+.Xr talkd
+and
+.Xr write
+now run set-group-id to ``tty''.
 The ``operator'' group controls access to disks.
 By default, disks are readable by group ``operator'',
-so that programs such as \fIdump\fP can access the filesystem
-information without being set-user-id to ``root''.
+so that programs such as
+.Xr dump
+can access the filesystem information without being set-user-id to ``root''.
 The
-.IR shutdown (8)
+.Xr shutdown (8)
 program is executable only by group operator
 and is setuid to root so that members of group operator may shut down
 the system without root access.
 .PP
 The ownership and modes of some directories have changed.
-The \fIat\fP programs now run set-user-id ``root'' instead of ``daemon.''
+The
+.Xr at
+programs now run set-user-id ``root'' instead of ``daemon.''
 Also, the uucp directory no longer needs to be publicly writable,
-as \fItip\fP reverts to privileged status to remove its lock files.
+as
+.Xr tip
+reverts to privileged status to remove its lock files.
 After copying your version of
 .Pn /var/spool ,
 you should do:
@@ -528,15 +554,19 @@ and
 You should look closely at the prototype version of these files
 and read the manual pages for the commands contained in it
 before trying to merge your local copy.
-Note in particular that \fIifconfig\fP has had many changes,
+Note in particular that
+.Xr ifconfig
+has had many changes,
 and that host names are now fully specified as domain-style names
 (e.g., vangogh.CS.Berkeley.EDU) for the benefit of the name server.
 .PP
 The C-library and system binaries on the distribution tape
 are compiled with new versions of
-\fIgethostbyname\fP and \fIgethostbyaddr\fP which use
-the name server,
-.IR named (8).
+.Xr gethostbyname
+and
+.Xr gethostbyaddr
+which use the name server,
+.Xr named (8).
 If you have only a small network and are not connected
 to a large network, you can use the distributed library routines without
 any problems; they use a linear scan of the host table
@@ -547,13 +577,17 @@ it is recommend that you set up
 and use the name server.
 For instructions on how to set up the necessary configuration files,
 refer to ``Name Server Operations Guide for BIND'' (SMM:10).
-Several programs rely on the host name returned by \fIgethostname\fP
+Several programs rely on the host name returned by
+.Xr gethostname
 to determine the local domain name.
 .PP
-If you are using the name server, your \fIsendmail\fP configuration
-file will need some updates to accommodate it.
+If you are using the name server, your
+.Xr sendmail
+configuration file will need some updates to accommodate it.
 See the ``Sendmail Installation and Operation Guide'' (SMM:8) and
-the sample \fIsendmail\fP configuration files in
+the sample
+.Xr sendmail
+configuration files in
 .Pn /usr/src/usr.sbin/sendmail/cf .
 The aliases file,
 .Pn /etc/aliases
@@ -586,8 +620,8 @@ programs.
 See also
 .Xr passwd (5).
 .PP
-Several new users have also been added to the group of ``well-known'' users 
-in /etc/passwd.
+Several new users have also been added to the group of ``well-known'' users in
+.Pn /etc/passwd .
 The current list is:
 .DS
 .TS
@@ -705,7 +739,7 @@ to access the root filesystem, and
 (3) the root filesystem is initially mounted read-only
 so that nothing can be written back to disk during or after modification
 of the raw filesystem by
-.I fsck .
+.Xr fsck .
 The root filesystem may be made writable while in single-user mode
 with the command
 .Li "mount -u /" .
@@ -717,8 +751,9 @@ Kerberos
 .PP
 The Kerberos authentication server from MIT (version 4)
 is included in this release.
-See \fIkerberos\fP\|(1) for a general, if MIT-specific,
-introduction.
+See
+.Xr kerberos (1)
+for a general, if MIT-specific, introduction.
 If it is configured,
 .Xr login (1),
 .Xr passwd (1),
@@ -761,31 +796,31 @@ and that Version 4 should probably be replaced at that time.
 Make and Makefiles
 .PP
 This release uses a completely new version of the
-.I make
+.Xr make
 program derived from the
-.I pmake
+.Xr pmake
 program developed by the Sprite project at Berkeley.
 It supports existing makefiles, although certain incorrect makefiles
 may fail.
 The makefiles for the \*(4B sources make extensive use of the new
 facilities, especially conditionals and file inclusion, and are thus
 completely incompatible with older versions of
-.I make
+.Xr make
 (but nearly all of the makefiles are now trivial!).
 The standard include files for
-.I make
+.Xr make
 are in
 .Pn /usr/share/mk .
 There is a bsd.README file in
 .Pn /usr/src/share/mk .
 .PP
 Another global change supported by the new
-.I make
+.Xr make
 is designed to allow multiple architectures to share a copy of the sources.
 If a subdirectory named
 .Pn obj
 is present in the current directory,
-.I make
+.Xr make
 descends into that directory and creates all object and other files there.
 We use this by building a directory hierarchy in
 .Pn /var/obj
@@ -831,7 +866,7 @@ has changed from previous \*(Bs releases
 to a blank-separated format to allow colons in pathnames.
 .PP
 An implementation of an auto-mounter daemon,
-.I amd,
+.Xr amd ,
 was contributed by Jan-Simon Pendry of the
 Imperial College of Science, Technology & Medicine.
 See the document ``AMD \- The 4.4BSD Automounter'' (SMM:13)
@@ -881,7 +916,7 @@ rather than the previous \*(Bs terminal interface.
 The new interface has nearly all of the functionality of the old interface,
 extending the POSIX interface as necessary.
 Both the old
-.I ioctl
+.Xr ioctl
 calls and old options to
 .Xr stty (1)
 are emulated.
@@ -904,7 +939,7 @@ The call fails if the terminal is in use.
 Programs that allocate controlling terminals (or pseudo-terminals)
 require modification to work in this environment.
 The versions of
-.I xterm
+.Xr xterm
 provided in the X11R5 release includes the necessary changes.
 New library routines are available for allocating and initializing
 pseudo-terminals and other terminals as controlling terminal; see
@@ -1200,16 +1235,22 @@ increased from 20 to 64.
 It is now possible to change this limit almost arbitrarily.
 The standard I/O library
 autoconfigures to the kernel limit.
-Note that file (``_iob'') entries may be allocated
-by \fImalloc\fP from \fIfopen\fP;
+Note that file (``_iob'') entries may be allocated by
+.Xr malloc
+from
+.Xr fopen ;
 this allocation has been known to cause problems with programs
 that use their own memory allocators.
 This does not occur until after 20 files have been opened
 by the standard I/O library.
 .PP
-\fISelect\fP can be used with more than 32 descriptors
+.Xr Select
+can be used with more than 32 descriptors
 by using arrays of \fBint\fPs for the bit fields rather than single \fBint\fPs.
-Programs that used \fIgetdtablesize\fP as their first argument to \fIselect\fP
+Programs that used
+.Xr getdtablesize
+as their first argument to
+.Xr select
 will no longer work correctly.
 Usually the program can be modified to correctly specify the number
 of bits in an \fBint\fP.
@@ -1218,17 +1259,20 @@ There are a set of macros available in
 .Pn <sys/types.h>
 to simplify this.
 See
-.IR select (2).
+.Xr select (2).
 .PP
 Old core files will not be intelligible by the current debuggers
 because of numerous changes to the user structure
 and because the kernel stack has been enlarged.
-The \fIa.out\fP header that was in the user structure is no longer present.
+The
+.Xr a.out
+header that was in the user structure is no longer present.
 Locally-written debuggers that try to check the magic number
 will need modification.
 .PP
 The system now has a database of file names,
-constructed once a week from \fIcron\fP.
+constructed once a week from
+.Xr cron .
 To find a file by name only,
 the command \fIlocate name\fP will look in the database for
 files that match the name.
