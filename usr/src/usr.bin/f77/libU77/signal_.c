@@ -1,5 +1,5 @@
 /*
-char id_signal[] = "@(#)signal_.c	1.3";
+char id_signal[] = "@(#)signal_.c	1.4";
  *
  * change the action for a specified signal
  *
@@ -23,7 +23,7 @@ char id_signal[] = "@(#)signal_.c	1.3";
 
 #include	"../libI77/f_errno.h"
 
-int (*dispatch[17])();
+static int (*dispatch[17])();
 int (*signal())();
 int sig_trap();
 
