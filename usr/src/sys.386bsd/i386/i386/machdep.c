@@ -38,11 +38,14 @@
  *
  * PATCHES MAGIC		LEVEL	PATCH THAT GOT US HERE
  * --------------------		-----	----------------------
- * CURRENT PATCH LEVEL:		2	00003
+ * CURRENT PATCH LEVEL:		3	00113
  * --------------------		-----	----------------------
  *
- * 15 Aug 92    William Jolitz          Large memory bug
+ * 15 Aug 92	William Jolitz		Large memory bug
  * 15 Aug 92	Terry Lambert		Fixed CMOS RAM size bug
+ * 25 Mar 93	Sean Eric Fagan		Added #ifdef HZ around microtime for
+ *					the new microtime.s routine
+ * 08 Apr 93	Andrew Herbert		Fixes for kmem_alloc panics
  */
 static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/i386/RCS/machdep.c,v 1.2 92/01/21 14:22:09 william Exp Locker: root $";
 
@@ -183,7 +186,7 @@ again:
 	/*
 	 * 15 Aug 92	William Jolitz		bufpages fix for too large
 	 */
-	bufpages = min( NKMEMCLUSTERS/2, bufpages);
+	bufpages = min( NKMEMCLUSTERS*2/5, bufpages);
 
 	if (nbuf == 0) {
 		nbuf = bufpages / 2;
@@ -561,6 +564,12 @@ dumpsys()
 	DELAY(10000);
 }
 
+#ifdef HZ
+/*
+ * If HZ is defined we use this code, otherwise the code in
+ * /sys/i386/i386/microtime.s is used.  The othercode only works
+ * for HZ=100.
+ */
 microtime(tvp)
 	register struct timeval *tvp;
 {
@@ -574,6 +583,7 @@ microtime(tvp)
 	}
 	splx(s);
 }
+#endif /* HZ */
 
 physstrat(bp, strat, prio)
 	struct buf *bp;
