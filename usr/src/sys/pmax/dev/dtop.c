@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dtop.c	8.1 (Berkeley) %G%
+ *	@(#)dtop.c	8.2 (Berkeley) %G%
  */
 
 /* 
@@ -94,7 +94,6 @@ SOFTWARE.
 
 extern int pmax_boardtype;
 
-extern int ttrstrt	__P((void *));
 void dtop_keyboard_repeat	__P((void *));
 int dtop_null_device_handler	__P((dtop_device_t, dtop_message_t, int, int));
 int dtop_locator_handler	__P((dtop_device_t, dtop_message_t, int, int));

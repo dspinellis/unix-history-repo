@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dc.c	8.1 (Berkeley) %G%
+ *	@(#)dc.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -171,7 +171,6 @@ dcprobe(cp)
 		pdp->p_addr = (void *)dcaddr;
 		pdp->p_arg = (int)tp;
 		pdp->p_fcn = dcxint;
-		tp->t_addr = (caddr_t)pdp;
 		pdp++, tp++;
 	}
 	dcsoftCAR[cp->pmax_unit] = cp->pmax_flags | 0xB;
@@ -225,7 +224,6 @@ dcopen(dev, flag, mode, p)
 	if (unit >= dc_cnt || dcpdma[unit].p_addr == (void *)0)
 		return (ENXIO);
 	tp = &dc_tty[unit];
-	tp->t_addr = (caddr_t)&dcpdma[unit];
 	tp->t_oproc = dcstart;
 	tp->t_param = dcparam;
 	tp->t_dev = dev;
@@ -549,7 +547,7 @@ dcxint(tp)
 	register struct pdma *dp;
 	register dcregs *dcaddr;
 
-	dp = (struct pdma *)tp->t_addr;
+	dp = &dcpdma[minor(tp->t_dev)];
 	if (dp->p_mem < dp->p_end) {
 		dcaddr = (dcregs *)dp->p_addr;
 		dcaddr->dc_tdr = dc_brk[(tp - dc_tty) >> 2] | *dp->p_mem++;
@@ -585,7 +583,7 @@ dcstart(tp)
 	register int cc;
 	int s;
 
-	dp = (struct pdma *)tp->t_addr;
+	dp = &dcpdma[minor(tp->t_dev)];
 	dcaddr = (dcregs *)dp->p_addr;
 	s = spltty();
 	if (tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
@@ -648,7 +646,7 @@ dcstop(tp, flag)
 	register struct pdma *dp;
 	register int s;
 
-	dp = (struct pdma *)tp->t_addr;
+	dp = &dcpdma[minor(tp->t_dev)];
 	s = spltty();
 	if (tp->t_state & TS_BUSY) {
 		dp->p_end = dp->p_mem;
