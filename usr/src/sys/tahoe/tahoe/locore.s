@@ -1,4 +1,4 @@
-/*	locore.s	1.3	86/01/12	*/
+/*	locore.s	1.4	86/01/20	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -555,7 +555,8 @@ SCBVEC(syscall):
 	rei
 
 /*
- * System page table
+ * System page table.
+ *
  * Mbmap and Usrptmap are enlarged by CLSIZE entries
  * as they are managed by resource maps starting with index 1 or CLSIZE.
  */ 
@@ -587,16 +588,11 @@ _/**/mname:	.globl	_/**/mname;		\
 #endif
 	SYSMAP(ecamap	,calimit	,0		)
 	SYSMAP(VMEMbeg	,vmembeg	,0		)
-	SYSMAP(VMEMmap	,vmem		,IOSIZE 	)
-	SYSMAP(ACE0map	,ace0utl	,ACEBPTE+1	)
-	SYSMAP(ACE1map	,ace1utl	,ACEBPTE+1	)
+	SYSMAP(VMEMmap	,vmem		,VBIOSIZE 	)
+	SYSMAP(VMEMmap1	,vmem1		,VBMEMSIZE	)
 	SYSMAP(VMEMend	,vmemend	,0		)
-	SYSMAP(VD0map	,vd0utl		,MAXBPTE+1	)
-	SYSMAP(VD1map	,vd1utl		,MAXBPTE+1	)
-	SYSMAP(VD2map	,vd2utl		,MAXBPTE+1	)
-	SYSMAP(VD3map	,vd3utl		,MAXBPTE+1	)
-	SYSMAP(CY0map	,cy0utl		,TBUFSIZ+1	)
-	SYSMAP(CY1map	,cy1utl		,TBUFSIZ+1	)
+	SYSMAP(VBmap	,vbbase		,VBPTSIZE	)
+	SYSMAP(eVBmap	,vbend		,0		)
 	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE+CLSIZE )
 eSysmap:
 	.globl	_Syssize

@@ -1,8 +1,9 @@
-/*	vmparam.h	1.3	86/01/12	*/
+/*	vmparam.h	1.4	86/01/20	*/
 
 /*
- * Machine dependent constants for TAHOE
+ * Machine dependent constants for tahoe.
  */
+
 /*
  * USRTEXT is the start of the user text/data space, while USRSTACK
  * is the top (end) of the user stack.  LOWPAGES and HIGHPAGES are
@@ -161,16 +162,3 @@
 #if CLSIZE == 1
 #define	tbiscl(v)	mtpr(TBIS, ptob(v))
 #endif
-
-/* 
- * The following constant is used to initialize the map of the
- * system page table i/o entries.
- * It's value should be the highest i/o address used by all the 
- * controllers handled in the system as specified in ubminit 
- * structure in ioconf.c.
- */
-#define MAXIOADDR	0xffffee45
-/* number of entries in the system page pable for i/o space */
-#define IOSIZE		(((MAXIOADDR - (int)IOBASE+ NBPG-1) >> PGSHIFT)+1)
-#define TBUFSIZ		32		/* maximum tape buffer size */
-#define	ACEBPTE		32		/* ACC Ethernet (ACE) I/O window */
