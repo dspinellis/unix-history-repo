@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex_vars.h	7.4 (Berkeley) %G%
+ *	@(#)ex_vars.h	7.5 (Berkeley) %G%
  */
 
 #define AUTOINDENT      0
@@ -35,17 +35,18 @@
 #define SHIFTWIDTH      26
 #define SHOWMATCH       27
 #define SLOWOPEN        28
-#define TABSTOP         29
-#define TAGLENGTH       30
-#define TAGS            31
-#define TERM            32
-#define TERSE           33
-#define TIMEOUT         34
-#define TTYTYPE         35
-#define WARN            36
-#define WINDOW          37
-#define WRAPSCAN        38
-#define WRAPMARGIN      39
-#define WRITEANY        40
+#define SOURCEANY       29
+#define TABSTOP         30
+#define TAGLENGTH       31
+#define TAGS            32
+#define TERM            33
+#define TERSE           34
+#define TIMEOUT         35
+#define TTYTYPE         36
+#define WARN            37
+#define WINDOW          38
+#define WRAPSCAN        39
+#define WRAPMARGIN      40
+#define WRITEANY        41
 
-#define	NOPTS	41
+#define	NOPTS	42
