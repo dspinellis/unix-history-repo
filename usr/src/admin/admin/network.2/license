@@ -1,4 +1,4 @@
-.\" @(#)license	1.5 (CSRG - distribution) %G%
+.\" @(#)license	1.6 (CSRG - distribution) %G%
 .nr LL 6.8i
 .OF '30 April 1991'''
 .EF '30 April 1991'''
@@ -39,7 +39,13 @@ hereby grants to LICENSEE a non-exclusive, non-transferable, and
 perpetual license to use the LICENSED MATERIAL upon the terms and
 conditions hereinafter set forth:
 .sp
-.IP 1.
+.IP 1. 
+.I Other Contributors. The term "Other Contributors" as used herein
+refers to persons or entities not employed or affiliated with THE
+REGENTS who have contributed software included in the LICENSED
+MATERIAL."
+.sp
+.IP 2.
 .I Term.
 The term of this Agreement shall commence on the
 date hereof, and unless sooner terminated as hereinafter set forth,
@@ -51,17 +57,19 @@ THE REGENTS may terminate this agreement by thirty (30)
 days notice to LICENSEE, if LICENSEE is in
 breach of this agreement and fails to correct
 such breach within that time.
-.IP 2.
+.IP 3.
 .I Fee.
 LICENSEE shall pay THE REGENTS the sum of $895.00
-as the fee for the LICENSED MATERIAL.  Payment shall
+as the fee for the LICENSED MATERIAL as set forth in Exhibit A,
+unless indicated otherwise on Exhibit A, which is incorporated
+into this Agreement. Payment shall
 be made by LICENSEE upon execution of this Agreement by check
 or money order
 made payable to: The Regents of the University of California and mailed
 to: Computer Systems Research Group,
 457 Evans Hall, University of California,
 Berkeley, California  94720.
-.IP 3.
+.IP 4.
 .I Disclaimer
 .I of
 .I Warranties.
@@ -69,7 +77,7 @@ THE REGENTS MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS
 OR IMPLIED, CONCERNING THE LICENSED MATERIAL,
 INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-.IP 4.
+.IP 5.
 .I Lack
 .I of
 .I Services.
@@ -82,13 +90,13 @@ OF EDUCATIONAL AND SCIENTIFIC COLLABORATION AIMED AT FURTHER DEVELOPMENT
 AND APPLICATION OF THE PROGRAM AND THE EXCHANGE OF TECHNICAL DATA.
 THE REGENTS DOES NOT WARRANT THAT THE OPERATION OF THE PROGRAM
 WILL BE UNINTERRUPTED OR ERROR-FREE.
-.IP 5.
+.IP 6.
 .I Title.
 LICENSEE agrees that the LICENSED MATERIAL
 is, and shall at all times remain, the property of THE REGENTS.
 LICENSEE shall have no right, title or interest therein or
 thereto except as expressly set forth in this License Agreement.
-.IP 6.  
+.IP 7.  
 .I Disclaimer
 .I of
 .I Proprietary
@@ -96,16 +104,15 @@ thereto except as expressly set forth in this License Agreement.
 .I Warranty.
 THE REGENTS DOES NOT WARRANT THAT THE USE OF THE LICENSED MATERIAL
 WILL NOT INFRINGE ANY COPYRIGHT, TRADE SECRET, PATENT, OR OTHER
-PROPRIETARY RIGHT OF A THIRD PARTY. THE LIMITATION OF LIABILITY
-SET FORTH ELSEWHERE IN THIS AGREEMENT IS APPLICABLE TO THIS
-PARAGRAPH.
-.IP 7.
+PROPRIETARY RIGHT OF ANOTHER PARTY. THE LIMITATION OF LIABILITY
+SET FORTH IN THIS AGREEMENT IS APPLICABLE. 
+.IP 8.
 .I Indemnification. 
 LICENSEE agrees to indemnify, defend and hold harmless The Regents of
-the University of California and the Other Contributors, their successors,
+the University of California, their successors,
 agents, officers, and employees, either in their individual capacities
 or by reason of their relationship to The Regents of the University of
-California or the Other Contributors, with respect to any expense,
+California, with respect to any expense,
 claim, liability, loss or damages, including any
 direct, indirect, special, incidental, or consequential damages
 (including lost profits), 
@@ -115,12 +122,12 @@ connection with or in any way arising out of the furnishing, sublicensing,
 performance or use of the BSD Networking Software, Release 2 in connection
 with this Agreement. LICENSEE's obligations include, but are not limited to,
 its obligation to indemnify, defend, and hold The Regents of the University
-of California and the Other Contributors, their agents, officers and
+of California, their agents, officers and
 employees harmless in the case of any claim of copyright, trade secret,
 patent, or any other type of proprietary rights infringement
 based in any manner on LICENSEE's use of BSD
 Networking Software, Release 2.
-.IP 8.
+.IP 9.
 .I Limitation
 .I of
 .I Liability
@@ -132,7 +139,7 @@ ATTORNEY'S FEES, OR OTHER LIABILITY WITH RESPECT TO
 ANY CLAIM BY LICENSEE OR ANY THIRD PARTY ON
 ACCOUNT OF OR ARISING FROM THIS AGREEMENT OR USE
 OF THE LICENSED MATERIAL.
-.IP 9.
+.IP 10.
 .I Copyright
 .I Notice
 .I and
@@ -162,7 +169,9 @@ California.  We acknowledge the
 role of the
 Computer Systems Research Group and the
 Electrical Engineering and Computer Sciences Department
-of the University of California at Berkeley in its development."
+of the University of California at Berkeley and the
+Other Contributors
+in its development."
 Advertisements or other promotional literature for
 products or features based on LICENSED MATERIAL
 should acknowledge the role of the University
@@ -170,7 +179,7 @@ of California, Berkeley.
 However, the name of the University may not be used to
 endorse or promote products derived from this software
 without specific prior written permission.
-.IP 10.
+.IP 11.
 .I Enhancements.
 LICENSEE may enhance, modify, or correct
 the LICENSED MATERIAL, may merge it into other material,
@@ -179,34 +188,34 @@ modified.
 However, the modified version is still
 subject to the copyright and acknowledgement provisions
 noted in Section 8.
-.IP 11.
+.IP 12.
 .I Source
 .I Code.
 THE REGENTS will deliver to
 LICENSEE one copy of source code materials
 for LICENSED MATERIAL as noted in Attachment A.
-.IP 12.
+.IP 13.
 .I Authority.
 LICENSEE warrants that the individual who executes
 this license on behalf of LICENSEE
 is authorized to do so by LICENSEE.
-.IP 13.
+.IP 14.
 .I California
 .I Law.
 This Agreement shall be governed
 by and construed in accordance with the laws of the State of
 California.
-.IP 14.
+.IP 15.
 .I Entire
 .I Agreement.
 This Agreement contains the entire
 Agreement between the parties and supersedes all prior written or
 oral agreements with respect to the subject matter hereof.
-.IP 15.
+.IP 16.
 .I Modification.
 Any modification to this Agreement
 must be in writing and signed by both parties.
-.IP 16.
+.IP 17.
 .I Assignment.
 This Agreement will not be assigned by
 LICENSEE to third parties without the prior written
