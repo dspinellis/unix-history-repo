@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	6.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	6.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -549,11 +549,13 @@ next:
 		printf("%s:\t%d sectors in %d %s of %d tracks, %d sectors\n",
 		    fsys, sblock.fs_size * NSPF(&sblock), sblock.fs_ncyl,
 		    "cylinders", sblock.fs_ntrak, sblock.fs_nsect);
+#define B2MBFACTOR (1 / (1024.0 * 1024.0))
 		printf("\t%.1fMB in %d cyl groups (%d c/g, %.2fMB/g, %d i/g)\n",
-		    (float)sblock.fs_size * sblock.fs_fsize * 1e-6,
+		    (float)sblock.fs_size * sblock.fs_fsize * B2MBFACTOR,
 		    sblock.fs_ncg, sblock.fs_cpg,
-		    (float)sblock.fs_fpg * sblock.fs_fsize * 1e-6,
+		    (float)sblock.fs_fpg * sblock.fs_fsize * B2MBFACTOR,
 		    sblock.fs_ipg);
+#undef B2MBFACTOR
 	}
 	/*
 	 * Now build the cylinders group blocks and
