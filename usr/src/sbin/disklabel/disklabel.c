@@ -32,6 +32,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00034
+ * --------------------         -----   ----------------------
+ *
+ * 18 Sep 92	Gary A Browning		Fix expectation of active partition
  */
 
 #ifndef lint
@@ -524,7 +531,8 @@ readmbr(f)
 	}
 
 	/* valid partition table? */
-	if (nboot != 1 || npart == 0 || njunk)
+	if (npart == 0 || njunk)			/* 18 Sep 92*/
+/* was:	if (nboot != 1 || npart == 0 || njunk)*/
 		return (0);
 	/* if no bsd partition, pass back first one */
 	if (!bsdp) {
