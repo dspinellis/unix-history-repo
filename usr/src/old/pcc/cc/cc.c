@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)cc.c 4.15 %G%";
+static	char sccsid[] = "@(#)cc.c 4.16 %G%";
 /*
  * cc - front end for C compiler
  */
@@ -7,14 +7,15 @@ static	char sccsid[] = "@(#)cc.c 4.15 %G%";
 #include <ctype.h>
 #include <signal.h>
 #include <sys/dir.h>
+#include "pathnames.h"
 
-char	*cpp = "/lib/cpp";
-char	*ccom = "/lib/ccom";
-char	*sccom = "/lib/sccom";
-char	*c2 = "/lib/c2";
-char	*as = "/bin/as";
-char	*ld = "/bin/ld";
-char	*crt0 = "/lib/crt0.o";
+char	*cpp = _PATH_CPP;
+char	*ccom = _PATH_CCOM;
+char	*sccom = _PATH_SCCOM;
+char	*c2 = _PATH_C2;
+char	*as = _PATH_AS;
+char	*ld = _PATH_LD;
+char	*crt0 = _PATH_CRT0;
 
 char	tmp0[30];		/* big enough for /tmp/ctm%05.5d */
 char	*tmp1, *tmp2, *tmp3, *tmp4, *tmp5;
