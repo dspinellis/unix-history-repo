@@ -1,20 +1,112 @@
-/*
- * Copyright (c) 1988 The Regents of the University of California.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  *
- *	@(#)string.h	5.2 (Berkeley) %G%
+ *	@(#)string.h	5.3 (Berkeley) %G%
  */
 
-#include <strings.h>
+#ifndef _STRING_H_
+#define	_STRING_H_
+#include <machine/machtypes.h>
+
+#ifdef	_SIZE_T_
+typedef	_SIZE_T_	size_t;
+#undef	_SIZE_T_
+#endif
+
+#ifndef	NULL
+#define	NULL	0
+#endif
+
+/* ANSI C standard routines */
+#ifdef __STDC__
+
+void	*memchr(const void *, int, size_t);
+int	 memcmp(const void *, const void *, size_t);
+void	*memcpy(void *, const void *, size_t);
+void	*memmove(void *, const void *, size_t);
+void	*memset(void *, int, size_t);
+char	*strcat(char *, const char *);
+char	*strchr(const char *, int);
+int	 strcmp(const char *, const char *);
+int	 strcoll(const char *, const char *);
+char	*strcpy(char *, const char *);
+size_t	 strcspn(const char *, const char *);
+char	*strerror(int);
+size_t	 strlen(const char *);
+char	*strncat(char *, const char *, size_t);
+int	 strncmp(const char *, const char *, size_t);
+char	*strncpy(char *, const char *, size_t);
+char	*strpbrk(const char *, const char *);
+char	*strrchr(const char *, int);
+size_t	 strspn(const char *, const char *);
+char	*strstr(const char *, const char *);
+char	*strtok(char *, const char *);
+size_t	 strxfrm(char *, const char *, size_t);
+
+#else /* !__STDC__ */
+
+void	*memchr();
+int	 memcmp();
+void	*memcpy();
+void	*memmove();
+void	*memset();
+char	*strcat();
+char	*strchr();
+int	 strcmp();
+int	 strcoll();
+char	*strcpy();
+size_t	 strcspn();
+char	*strerror();
+size_t	 strlen();
+char	*strncat();
+int	 strncmp();
+char	*strncpy();
+char	*strpbrk();
+char	*strrchr();
+size_t	 strspn();
+char	*strstr();
+char	*strtok();
+size_t	 strxfrm();
+
+#endif /* __STDC__ */
+
+/* Nonstandard routines */
+#ifndef _ANSI_SOURCE
+#ifdef __STDC__ */
+
+int	 bcmp(const char *, const char *, size_t);
+void	 bcopy(const char *, char *, size_t);
+void	 bzero(char *, size_t);
+int	 ffs(int);
+char	*index(const char *, int);
+void	*memccpy(void *, const void *, int, size_t);
+char	*rindex(const char *, int);
+int	 strcasecmp(const char *, const char *);
+char	*strdup(const char *);
+void	 strmode(mode_t, char *);
+int	 strncasecmp(const char *, const char *, size_t);
+char	*strsep(char *, const char *);
+void	 swab(const char *, char *, size_t);
+
+#else /* !__STDC__ */
+
+int	 bcmp();
+void	 bcopy();
+void	 bzero();
+int	 ffs();
+char	*index();
+void	*memccpy();
+char	*rindex();
+int	 strcasecmp();
+char	*strdup();
+void	strmode();
+int	 strncasecmp();
+char	*strsep();
+void	 swab();
+
+#endif /* __STDC__ */
+#endif /* _ANSI_SOURCE */
+#endif /* _STRING_H_ */
