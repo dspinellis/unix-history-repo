@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_input.c,v $
- *	@(#)tp_input.c	7.4 (Berkeley) %G% *
+ *	@(#)tp_input.c	7.5 (Berkeley) %G% *
  *
  * tp_input() gets an mbuf chain from ip.  Actually, not directly
  * from ip, because ip calls a net-level routine that strips off
@@ -365,11 +365,12 @@ tpcons_output()
  *  2 seems like a reasonable minimum.
  */
 ProtoHook
-tp_input(m, faddr, laddr, cons_channel, dgout_routine)
+tp_input(m, faddr, laddr, cons_channel, dgout_routine, ce_bit)
 	register	struct mbuf 	*m;
 	struct sockaddr 			*faddr, *laddr; /* NSAP addresses */
 	u_int 						cons_channel;
 	int 						(*dgout_routine)();
+	int							ce_bit;
 
 {
 	register struct tp_pcb 	*tpcb = (struct tp_pcb *)0;
@@ -818,6 +819,14 @@ again:
 			ENDDEBUG
 		}
 		IncStat(ts_CR_rcvd);
+		if (!tpcb->tp_cebit_off) {
+			tpcb->tp_win_recv = tp_start_win << 8;
+			tpcb->tp_cong_sample.cs_size = 0;
+			LOCAL_CREDIT(tpcb);
+			CONG_INIT_SAMPLE(tpcb);
+			CONG_UPDATE_SAMPLE(tpcb, ce_bit);
+		}
+		tpcb->tp_ackrcvd = 0;
 	} else if ( dutype == ER_TPDU_type ) {
 		/* 
 		 * ER TPDUs have to be recognized separately
@@ -898,6 +907,9 @@ again:
 		 * OPENING : a tpcb exists but no timers yet
 		 * OPEN  : tpcb exists & timers are outstanding
 		 */
+
+        if (!tpcb->tp_cebit_off)
+            CONG_UPDATE_SAMPLE(tpcb, ce_bit);
 
 		dusize = tpcb->tp_tpdusize;
 
@@ -1383,9 +1395,6 @@ again:
 		printf("takes_data 0x%x m_len 0x%x, tpdu_len 0x%x\n",
 			takes_data, (m==MNULL)?0:m->m_len,  tpdu_len);
 	ENDDEBUG
-
-	if( tpcb->tp_decbit != 0 ) /* unsigned 4 bits */
-		tpcb->tp_decbit --;
 
 	error = tp_driver(tpcb, &e);
 
