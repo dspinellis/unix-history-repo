@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -919,15 +919,19 @@ openmailer(m, pvp, ctladdr, clever, e)
 				if (ctladdr == NULL || ctladdr->q_uid == 0)
 				{
 					(void) setgid(DefGid);
+#ifndef SYSTEM5
 					(void) initgroups(DefUser, DefGid);
+#endif
 					(void) setuid(DefUid);
 				}
 				else
 				{
 					(void) setgid(ctladdr->q_gid);
+#ifndef SYSTEM5
 					(void) initgroups(ctladdr->q_ruser?
 						ctladdr->q_ruser: ctladdr->q_user,
 						ctladdr->q_gid);
+#endif
 					(void) setuid(ctladdr->q_uid);
 				}
 			}
@@ -1359,14 +1363,18 @@ mailfile(filename, ctladdr, e)
 			if (ctladdr->q_uid == 0)
 			{
 				(void) setgid(DefGid);
+#ifndef SYSTEM5
 				(void) initgroups(DefUser, DefGid);
+#endif
 			}
 			else
 			{
 				(void) setgid(ctladdr->q_gid);
+#ifndef SYSTEM5
 				(void) initgroups(ctladdr->q_ruser ?
 					ctladdr->q_ruser : ctladdr->q_user,
 					ctladdr->q_gid);
+#endif
 			}
 		}
 		if (!bitset(S_ISUID, mode) || setuid(stb.st_uid) < 0)

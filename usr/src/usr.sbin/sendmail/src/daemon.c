@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.3 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.4 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.3 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.4 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -257,59 +257,56 @@ makeconnection(host, port, mci, usesecureport)
 	**  Try to actually open the connection.
 	*/
 
-again:
-	if (tTd(16, 1))
-		printf("makeconnection (%s [%s])\n", host,
-		    inet_ntoa(addr.sin_addr));
+	for (;;)
+	{
+		if (tTd(16, 1))
+			printf("makeconnection (%s [%s])\n", host,
+			    inet_ntoa(addr.sin_addr));
 
-#ifdef NVMUNIX
-	s = socket(AF_INET, SOCK_STREAM, 0, 0);
-#else NVMUNIX
-	if (usesecureport)
-	{
-		int rport = IPPORT_RESERVED - 1;
+		if (usesecureport)
+		{
+			int rport = IPPORT_RESERVED - 1;
 
-		s = rresvport(&rport);
-	}
-	else
-	{
-		s = socket(AF_INET, SOCK_STREAM, 0);
-	}
-#endif NVMUNIX
-	if (s < 0)
-	{
-		sav_errno = errno;
-		syserr("makeconnection: no socket");
-		goto failure;
-	}
+			s = rresvport(&rport);
+		}
+		else
+		{
+			s = socket(AF_INET, SOCK_STREAM, 0);
+		}
+		if (s < 0)
+		{
+			sav_errno = errno;
+			syserr("makeconnection: no socket");
+			goto failure;
+		}
 
-	if (tTd(16, 1))
-		printf("makeconnection: fd=%d\n", s);
+		if (tTd(16, 1))
+			printf("makeconnection: fd=%d\n", s);
 
-	/* turn on network debugging? */
-	if (tTd(16, 101))
-	{
-		int on = 1;
-		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG, (char *)&on, sizeof on);
-	}
-	if (CurEnv->e_xfp != NULL)
-		(void) fflush(CurEnv->e_xfp);		/* for debugging */
-	errno = 0;					/* for debugging */
-#ifdef NVMUNIX
-	bind(s, &SendmailAddress, sizeof SendmailAddress, 0);
-	if (connect(s, &SendmailAddress, sizeof SendmailAddress, 0) < 0)
-#else NVMUNIX
-	addr.sin_family = AF_INET;
-	if (connect(s, (struct sockaddr *) &addr, sizeof addr) < 0)
-#endif NVMUNIX
-	{
+		/* turn on network debugging? */
+		if (tTd(16, 101))
+		{
+			int on = 1;
+			(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG,
+					  (char *)&on, sizeof on);
+		}
+		if (CurEnv->e_xfp != NULL)
+			(void) fflush(CurEnv->e_xfp);		/* for debugging */
+		errno = 0;					/* for debugging */
+		addr.sin_family = AF_INET;
+		if (connect(s, (struct sockaddr *) &addr, sizeof addr) >= 0)
+			break;
+
+		/* couldn't connect.... figure out why */
 		sav_errno = errno;
 		(void) close(s);
 		if (hp && hp->h_addr_list[i])
 		{
+			if (tTd(16, 1))
+				printf("Connect failed; trying new address....\n");
 			bcopy(hp->h_addr_list[i++], (char *) &addr.sin_addr,
 					hp->h_length);
-			goto again;
+			continue;
 		}
 
 		/* failure, decide if temporary or not */

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	6.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -395,9 +395,11 @@ errstring(errno)
 		(void) sprintf(buf, "Connection refused by %s", CurHostName);
 		return (buf);
 
+# ifdef NAMED_BIND
 	  case (TRY_AGAIN+MAX_ERRNO):
 		(void) sprintf(buf, "Host Name Lookup Failure");
 		return (buf);
+# endif
 	}
 # endif
 # endif

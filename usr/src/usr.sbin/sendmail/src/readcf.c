@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -16,6 +16,17 @@ static char sccsid[] = "@(#)readcf.c	6.4 (Berkeley) %G%";
 #ifdef NAMED_BIND
 # include <arpa/nameser.h>
 # include <resolv.h>
+#endif
+
+/* System 5 compatibility */
+#ifndef S_ISREG
+#define S_ISREG(foo)	((foo & S_IFREG) == S_IFREG)
+#endif
+#ifndef S_IWGRP
+#define S_IWGRP		020
+#endif
+#ifndef S_IWOTH
+#define S_IWOTH		002
 #endif
 
 /*

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -554,12 +554,18 @@ rlsesigs()
 #  if defined(hpux)
 #    define LA_TYPE		LA_FLOAT
 #  endif
-#  if defined(BSD)
-#    define LA_TYPE		LA_SUBR
-#  endif
 
 #  ifndef LA_TYPE
-#    define LA_TYPE		LA_ZERO
+#   if defined(SYSTEM5)
+#    define LA_TYPE		LA_INT
+#    define LA_AVENRUN		"avenrun"
+#   else
+#    if defined(BSD)
+#     define LA_TYPE		LA_SUBR
+#    else
+#     define LA_TYPE		LA_ZERO
+#    endif
+#   endif
 #  endif
 #endif
 
@@ -581,6 +587,9 @@ rlsesigs()
      /* powerful RISC/os */
 #    define _PATH_UNIX		"/unix"
 #  endif
+#  if defined(SYSTEM5)
+#    define _PATH_UNIX		"/unix"
+#  endif
 #  ifndef _PATH_UNIX
 #    define _PATH_UNIX		"/vmunix"
 #  endif
@@ -593,8 +602,14 @@ struct	nlist Nl[] =
 	{ 0 },
 };
 
+#if defined(unixpc)
+# define FSHIFT		5
+#endif
+
 #if (LA_TYPE == LA_INT) && !defined(FSHIFT)
 #  define FSHIFT	8
+#endif
+#if (LA_TYPE == LA_INT) && !defined(FSCALE)
 #  define FSCALE	(1 << FSHIFT)
 #endif
 
@@ -607,26 +622,59 @@ getla()
 	double avenrun[3];
 #endif
 	extern off_t lseek();
+	extern char *errstring();
+	extern int errno;
 
 	if (kmem < 0)
 	{
 		kmem = open("/dev/kmem", 0, 0);
 		if (kmem < 0)
+		{
+			if (tTd(3, 1))
+				printf("getla: open(/dev/kmem): %s\n",
+					errstring(errno));
 			return (-1);
+		}
 		(void) fcntl(kmem, F_SETFD, 1);
-		nlist(_PATH_UNIX, Nl);
-		if (Nl[0].n_type == 0)
+		if (nlist(_PATH_UNIX, Nl) < 0)
+		{
+			if (tTd(3, 1))
+				printf("getla: nlist(%s): %s\n", _PATH_UNIX,
+					errstring(errno));
 			return (-1);
+		}
 	}
+	if (tTd(3, 20))
+		printf("getla: symbol address = %#x\n", Nl[X_AVENRUN].n_value);
 	if (lseek(kmem, (off_t) Nl[X_AVENRUN].n_value, 0) == -1 ||
 	    read(kmem, (char *) avenrun, sizeof(avenrun)) < sizeof(avenrun))
 	{
 		/* thank you Ian */
+		if (tTd(3, 1))
+			printf("getla: lseek or read: %s\n", errstring(errno));
 		return (-1);
 	}
 #if LA_TYPE == LA_INT
+	if (tTd(3, 5))
+	{
+		printf("getla: avenrun = %d", avenrun[0]);
+		if (tTd(3, 15))
+			printf(", %d, %d", avenrun[1], avenrun[2]);
+		printf("\n");
+	}
+	if (tTd(3, 1))
+		printf("getla: %d\n", (int) (avenrun[0] + FSCALE/2) >> FSHIFT);
 	return ((int) (avenrun[0] + FSCALE/2) >> FSHIFT);
 #else
+	if (tTd(3, 5))
+	{
+		printf("getla: avenrun = %g", avenrun[0]);
+		if (tTd(3, 15))
+			printf(", %g, %g", avenrun[1], avenrun[2]);
+		printf("\n");
+	}
+	if (tTd(3, 1))
+		printf("getla: %d\n", (int) (avenrun[0] +0.5));
 	return ((int) (avenrun[0] + 0.5));
 #endif
 }
@@ -639,7 +687,13 @@ getla()
 	double avenrun[3];
 
 	if (getloadavg(avenrun, sizeof(avenrun) / sizeof(avenrun[0])) < 0)
+	{
+		if (tTd(3, 1))
+			perror("getla: getloadavg failed:");
 		return (-1);
+	}
+	if (tTd(3, 1))
+		printf("getla: %d\n", (int) (avenrun[0] +0.5));
 	return ((int) (avenrun[0] + 0.5));
 }
 
@@ -647,6 +701,8 @@ getla()
 
 getla()
 {
+	if (tTd(3, 1))
+		printf("getla: ZERO\n");
 	return (0);
 }
 
