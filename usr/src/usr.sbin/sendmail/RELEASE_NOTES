@@ -1,9 +1,130 @@
 			SENDMAIL RELEASE NOTES
-	     @(#)RELEASE_NOTES	8.6.8.1 (Berkeley) %G%
+	     @(#)RELEASE_NOTES	8.6.9.1 (Berkeley) %G%
 
 This listing shows the version of the sendmail binary, the version
 of the sendmail configuration files, the date of release, and a
 summary of the changes in that release.
+
+8.6.9/8.6.9	94/04/
+	Do all mail delivery completely disconnected from any terminal.
+		This provides consistency with daemon delivery and
+		may have some security implications.
+	Make sure that malloc doesn't get called with zero size,
+		since that fails on some systems.  Reported by Ed
+		Hill of the University of Iowa.
+	Fix multi-line values for $e (SMTP greeting message).  Reported
+		by Mike O'Connor of Ford Motor Company.
+	Avoid syserr if no NIS domain name is defined, but the map it
+		is trying to open is optional.  From Win Bent of USC.
+	Changes for picky compilers from Ed Gould of Digital Equipment.
+	Hesiod support for UDB from Todd Miller of the University of
+		Colorado.  Use "hesiod" as the service name in the U
+		option.
+	Fix a problem that failed to set the "authentic" host name (that
+		is, the one derived from the socket info) if you called
+		sendmail -bs from inetd.  Based on code contributed by
+		Todd Miller (this problem was also reported by Guy Helmer
+		of Dakota State University).  This also fixes a related
+		problem reported by Liudvikas Bukys of Rochester University.
+	Parameterize "nroff -h" in all the Makefiles so people with
+		variant versions can use them easily.  Suggested by
+		Peter Collinson of Hillside Systems.
+	SMTP "MAIL" commands with multiple ESMTP parameters required two
+		spaces between parameters instead of one.  Reported by
+		Valdis Kletnieks of Virginia Tech.
+	Reduce the number of system calls during message collection by
+		using global timeouts around the collect() loop.  This
+		code was contributed by Eric Wassenaar.
+	If the initial hostname name gathering results in a name
+		without a dot (usually caused by NIS misconfiguration)
+		and BIND is compiled in, directly access DNS to get
+		the canonical name.  This should make life easier for
+		Solaris systems.  If it still can't be resolved, and
+		if the name server is listed as "required", try again
+		in 30 seconds.  If that also fails, exit immediately to
+		avoid bogus "config error: mail loops back to myself"
+		messages.
+	Improve the "MAIL DELETED BECAUSE OF LACK OF DISK SPACE" error
+		message to explain how much space was available and
+		sound a bit less threatening.  Suggested by Stan Janet
+		of the National Institute of Standards and Technology.
+	If mail is delivered to an alias that has an owner, deliver any
+		requested return-receipt immediately, and strip the
+		Return-Receipt-To: header from the subsequent message.
+		This prevents a certain class of denial of service
+		attack, arguably gives more reasonable semantics, and
+		moves things more towards what will probably become a
+		network standard.  Suggested by Christopher Davis of
+		Kapor Enterprises.
+	Add a "noreceipts" privacy flag to turn off all return receipts
+		without recompiling.
+	Avoid printing ESMTP parameters as part of the error message
+		if there are errors during parsing.  This change is
+		purely cosmetic.
+	Avoid sending out error messages during the collect phase of
+		SMTP; there is an MVS mailer from UCLA that gets
+		confused by this.  Of course, I think it's their bug....
+	Check for the $j macro getting undefined, losing a dot, or getting
+		lost from $=w in the daemon before accepting a connection;
+		if it is, it dumps state, prints a LOG_ALERT message,
+		and drops core for debugging.  This is an attempt to
+		track down a bug that I thought was long since gone.
+		If you see this, please forward the log fragment to
+		sendmail@CS.Berkeley.EDU.
+	Change OLD_NEWDB from a #ifdef to a #if so it can be turned off
+		with -DOLD_NEWDB=0 on the command line.  From Christophe
+		Wolfhugel.
+	Instead of trying to truncate the listen queue for the server
+		SMTP port when the load average is too high, just close
+		the port completely and reopen it later as needed.
+		This ensures that the other end gets a quick "connection
+		refused" response, and that the connection can be
+		recovered later.  In particular, some socket emulations
+		seem to get confused if you tweak the listen queue
+		size around and can never start listening to connections
+		again.  The down side is that someone could start up
+		another daemon process in the interim, so you could
+		have multiple daemons all not listening to connections;
+		this could in turn cause the sendmail.pid file to be
+		incorrect.  A better approach might be to accept the
+		connection and give a 421 code, but that could break
+		other mailers in mysterious ways and have paging behaviour
+		implications.
+	Fix a glitch in TCP-level debugging that caused flag 16.101 to
+		set debugging on the wrong socket.  From Eric Wassenaar.
+	When creating a df* temporary file, be sure you truncate any
+		existing data in the file -- otherwise system crashes
+		and the like could result in extra data being sent.
+	DOC: Replace the CHANGES-R5-R8 readme file with a paper in the
+		doc directory.  This includes some additional
+		information.
+	CONFIG: change UUCP rules to never add $U! or $k! on the front
+		of recipient envelope addresses.  This should have been
+		handled by the $&h trick, but broke if people were
+		mixing domainized and UUCP addresses.  They should
+		probably have converted all the way over to uucp-uudom
+		instead of uucp-{new,old}, but the failure mode was to
+		loop the mail, which was bad news.
+	Portability fixes:
+		Newer BSDI systems (several people).
+		Older BSDI systems from Christophe Wolfhugel.
+		Intergraph CLIX, from Paul Southworth of CICNet.
+		UnixWare, from Evan Champion.
+		NetBSD from Adam Glass.
+		Solaris from Quentin Campbell of the University of
+			Newcastle upon Tyne.
+		IRIX from Dean Cookson and Bill Driscoll of Mitre
+			Corporation.
+		NCR 3000 from Kevin Darcy of Chrysler Corporation.
+		SunOS (it has setsid() and setvbuf() calls) from
+			Jonathan Kamens of OpenVision Technologies.
+		HP-UX from Tor Lillqvist.
+	New Files:
+		src/Makefile.CLIX
+		src/Makefile.NCR3000
+		doc/changes/Makefile
+		doc/changes/changes.me
+		doc/changes/changes.ps
 
 8.6.8/8.6.6	94/03/21
 	SECURITY: it was possible to read any file as root using the
