@@ -1,4 +1,4 @@
-0,15,30,45 * * * *	root /usr/lib/atrun
+0,15,30,45 * * * *	root /usr/libexec/atrun
 00 1 * * *	daemon	/usr/new/lib/news/daily
 0 0 * * *	uucp	/usr/local/lib/uucp.daily
 7 5,12,18 * * *	uucp	/usr/local/lib/uucp.6hours
