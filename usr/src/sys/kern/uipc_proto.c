@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.19	82/03/28	*/
+/*	uipc_proto.c	4.20	82/04/24	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -23,8 +23,7 @@ int	piusrreq();
  */
 int	ip_output();
 int	ip_init(),ip_slowtimo(),ip_drain();
-int	icmp_input(),icmp_ctlinput();
-int	icmp_drain();
+int	icmp_input();
 int	udp_input(),udp_ctlinput();
 int	udp_usrreq();
 int	udp_init();
@@ -52,7 +51,7 @@ int	rpup_output();
 /*
  * Sundries.
 */
-int	raw_init(),raw_usrreq(),raw_input();
+int	raw_init(),raw_usrreq(),raw_input(),raw_ctlinput();
 
 struct protosw protosw[] = {
 { SOCK_STREAM,	PF_UNIX,	0,		PR_CONNREQUIRED,
@@ -80,10 +79,10 @@ struct protosw protosw[] = {
   0,
   ip_init,	0,		ip_slowtimo,	ip_drain,
 },
-{ 0,		0,		IPPROTO_ICMP,	0,
-  icmp_input,	0,		icmp_ctlinput,	0,
+{ 0,		PF_INET,	IPPROTO_ICMP,	0,
+  icmp_input,	0,		0,		0,
   0,
-  0,		0,		0,		icmp_drain,
+  0,		0,		0,		0,
 },
 { SOCK_DGRAM,	PF_INET,	IPPROTO_UDP,	PR_ATOMIC|PR_ADDR,
   udp_input,	0,		udp_ctlinput,	0,
@@ -96,12 +95,12 @@ struct protosw protosw[] = {
   tcp_init,	tcp_fasttimo,	tcp_slowtimo,	tcp_drain,
 },
 { 0,		0,		0,		0,
-  raw_input,	0,		0,		0,
+  raw_input,	0,		raw_ctlinput,	0,
   raw_usrreq,
   raw_init,	0,		0,		0,
 },
 { SOCK_RAW,	PF_INET,	IPPROTO_RAW,	PR_ATOMIC|PR_ADDR,
-  rip_input,	rip_output,	0,		0,
+  rip_input,	rip_output,	0,	0,
   raw_usrreq,
   0,		0,		0,		0,
 }
@@ -179,6 +178,18 @@ COUNT(PFFINDPROTO);
 		if (pr->pr_family == family && pr->pr_protocol == protocol)
 			return (pr);
 	return (0);
+}
+
+pfctlinput(cmd, arg)
+	int cmd;
+	caddr_t arg;
+{
+	register struct protosw *pr;
+COUNT(PFCTLINPUT);
+
+	for (pr = protosw; pr <= protoswLAST; pr++)
+		if (pr->pr_ctlinput)
+			(*pr->pr_ctlinput)(cmd, arg);
 }
 
 /*
