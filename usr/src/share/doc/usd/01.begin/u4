@@ -1,4 +1,4 @@
-.\"	@(#)u4	5.1 (Berkeley) %G%
+.\"	@(#)u4	6.1 (Berkeley) %G%
 .\"
 .SH
 IV.  PROGRAMMING
@@ -167,12 +167,14 @@ in addition to the original
 it currently includes
 at least
 Honeywell 6000,
-IBM 370,
+IBM 370 and PC families,
 Interdata 8/32,
 Data General Nova and Eclipse,
 HP 2100,
 Harris /7,
-VAX 11/780,
+Motorola 68000 family (including machines like Sun Microsystems and
+Apple Macintosh),
+VAX 11 family,
 SEL 86,
 and
 Zilog Z80.
@@ -200,7 +202,11 @@ of C programs,
 but is rather hard to learn to use effectively.
 The most effective debugging tool is still
 careful thought, coupled with judiciously placed
-print statements.
+print statements.\(dg
+.FS
+\(dg The "dbx" debugger, supplied starting with 4.2BSD, has extensive facilities
+for high-level debugging of C programs and is much easier to use than "adb".
+.FE
 .PP
 The C compiler provides a limited instrumentation service,
 so you can find out
