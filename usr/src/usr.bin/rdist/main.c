@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -163,7 +163,7 @@ main(argc, argv)
 	}
 	*hp = NULL;
 
-	setreuid(0, userid);
+	seteuid(userid);
 	mktemp(tempfile);
 
 	if (iamremote) {
