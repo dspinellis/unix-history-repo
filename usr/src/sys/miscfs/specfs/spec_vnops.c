@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.40 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.41 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -78,14 +78,14 @@ struct vnodeops spec_vnodeops = {
 /*
  * Trivial lookup routine that always fails.
  */
-spec_lookup(vp, ndp, p)
-	struct vnode *vp;
-	struct nameidata *ndp;
-	struct proc *p;
+int
+spec_lookup(dvp, vpp, cnp)
+	struct vnode *dvp;
+	struct vnode **vpp;
+	struct componentname *cnp;
 {
 
-	ndp->ni_dvp = vp;
-	ndp->ni_vp = NULL;
+	*vpp = NULL;
 	return (ENOTDIR);
 }
 
