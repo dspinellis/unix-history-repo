@@ -1,4 +1,4 @@
-/*	mba.c	3.1	%H%	*/
+/*	mba.c	3.2	%H%	*/
 
 #include "../h/param.h"
 #include "../h/buf.h"
@@ -36,7 +36,7 @@ int *adcr;
 	register struct mba_regs *mbap;
 	struct proc *rp;
 	extern int mbanum[], *mbaloc[];
-	extern char buffers[][];
+	extern char buffers[NBUF][BSIZE];
 
 	mbap = (struct mba_regs *)mbaloc[mbanum[major(bp->b_dev)]];
 	if ((bp->b_flags & B_PHYS) == 0)
@@ -84,7 +84,7 @@ mbainit()
 {
 	register int *io0, *io1, *b, t, j;
 	extern int *mbaloc[];
-	extern char buffers[][];
+	extern char buffers[NBUF][BSIZE];
 
 	io0 = mbaloc[0] + (MBA_MAP/4);
 	io1 = mbaloc[1] + (MBA_MAP/4);
