@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.29 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.30 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.29 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.30 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -93,6 +93,8 @@ char	*RealHostName = NULL;		/* verified hostname, set in daemon.c */
 
 static char	*skipword();
 
+#define MAXBADCOMMANDS	25		/* maximum number of bad commands */
+
 smtp(e)
 	register ENVELOPE *e;
 {
@@ -112,6 +114,7 @@ smtp(e)
 	char *id;
 	int nrcpts;			/* number of RCPT commands */
 	bool doublequeue;
+	int badcommands = 0;		/* count of bad commands */
 	char inp[MAXLINE];
 	char cmdbuf[MAXLINE];
 	extern char Version[];
@@ -660,6 +663,7 @@ smtp(e)
 		  case CMDQUIT:		/* quit -- leave mail */
 			message("221 %s closing connection", MyHostName);
 
+doquit:
 			/* avoid future 050 messages */
 			disconnect(1, e);
 
@@ -711,6 +715,13 @@ smtp(e)
 			/* FALL THROUGH */
 
 		  case CMDERROR:	/* unknown command */
+			if (++badcommands > MAXBADCOMMANDS)
+			{
+				message("421 %s Too many bad commands; closing connection",
+					MyHostName);
+				goto doquit;
+			}
+
 			message("500 Command unrecognized");
 			break;
 
