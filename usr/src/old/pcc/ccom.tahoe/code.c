@@ -1,13 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)code.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)code.c	1.5 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
 # include <sys/types.h>
 # include <a.out.h>
 # include <stab.h>
-
-# define putstr(s)	fputs((s), stdout)
 
 int proflg = 0;	/* are we generating profiling code? */
 int strftn = 0;  /* is the current function one which returns a value */
@@ -18,9 +16,12 @@ char NULLNAME[8];
 #endif
 int labelno;
 
+# define putstr(s)	fputs((s), stdout)
+
 branch( n ){
 	/* output a branch to label n */
 	/* exception is an ordinary function branching to retlab: then, return */
+	if( nerrors ) return;
 	if( n == retlab && !strftn ){
 		register TWORD t;
 		register r;
@@ -58,6 +59,7 @@ locctr( l ){
 	if( l == lastloc ) return(l);
 	temp = lastloc;
 	lastloc = l;
+	if( nerrors ) return(temp);
 	switch( l ){
 
 	case PROG:
@@ -89,10 +91,12 @@ locctr( l ){
 	return( temp );
 	}
 
+#ifndef deflab
 deflab( n ){
 	/* output something to define the current position as label n */
 	printf( "L%d:\n", n );
 	}
+#endif
 
 int crslab = 10;
 
@@ -168,7 +172,8 @@ bfcode( a, n ) int a[]; {
 #endif
 	char *rname();
 
-	locctr( PROG );
+	if( nerrors ) return;
+	(void) locctr( PROG );
 	p = &stab[curftn];
 	putstr( "	.align	1\n");
 	defnam( p );
@@ -204,7 +209,7 @@ bfcode( a, n ) int a[]; {
 			temp = p->offset;  /* save register number */
 			p->sclass = PARAM;  /* forget that it is a register */
 			p->offset = NOOFFSET;
-			oalloc( p, &off );
+			(void) oalloc( p, &off );
 #ifdef REG_CHAR
 			printf( "	%s", toreg(p->stype)) );
 #else
@@ -231,7 +236,7 @@ bfcode( a, n ) int a[]; {
 			}
 
 		}
-	if (gdebug) {
+	if (gdebug && !nerrors) {
 #ifdef STABDOT
 		pstabdot(N_SLINE, lineno);
 #else
@@ -239,7 +244,7 @@ bfcode( a, n ) int a[]; {
 		printf("0,%d,LL%d\n", lineno, labelno);
 		printf("LL%d:\n", labelno++);
 #endif
-	}
+		}
 	fdefflag = 1;
 	}
 
@@ -250,22 +255,30 @@ bccode(){ /* called just before the first executable statment */
 	p2bbeg( autooff, regvar );
 	}
 
+/*ARGSUSED*/
 ejobcode( flag ){
 	/* called just before final exit */
 	/* flag is 1 if errors, 0 if none */
 	}
 
+#ifndef aobeg
 aobeg(){
 	/* called before removing automatics from stab */
 	}
+#endif aobeg
 
+#ifndef aocode
+/*ARGSUSED*/
 aocode(p) struct symtab *p; {
 	/* called when automatic p removed from stab */
 	}
+#endif aocode
 
+#ifndef aoend
 aoend(){
 	/* called after removing all automatics from stab */
 	}
+#endif aoend
 
 defnam( p ) register struct symtab *p; {
 	/* define the current location as the name p->sname */
@@ -285,6 +298,7 @@ static	int	lastoctal = 0;
 
 	/* put byte i+1 in a string */
 
+	if ( nerrors ) return;
 #ifdef ASSTRINGS
 
 	i &= 077;
@@ -336,15 +350,18 @@ zecode( n ){
 	inoff += temp*SZINT;
 	}
 
+/*ARGSUSED*/
 fldal( t ) unsigned t; { /* return the alignment of field of type t */
 	uerror( "illegal field type" );
 	return( ALINT );
 	}
 
+/*ARGSUSED*/
 fldty( p ) struct symtab *p; { /* fix up type of field p */
 	;
 	}
 
+/*ARGSUSED*/
 where(c){ /* print location of error  */
 	/* c is either 'u', 'c', or 'w' */
 	/* GCOS version */
@@ -403,6 +420,7 @@ genswitch(p,n) register struct sw *p;{
 	register CONSZ unsigned range;
 	register dlab, swlab;
 
+	if( nerrors ) return;
 	range = p[n].sval-p[1].sval;
 
 	if( range <= 3*n && n>=4 ){ /* implement a direct switch */
@@ -465,13 +483,13 @@ register struct sw *p;
 {
 	register int q;
 
-	q = select(m);
+	q = selectheap(m);
 	heapsw[n] = p[q];
 	if( q>1 ) makeheap(p, q-1, 2*n);
 	if( q<m ) makeheap(p+q, m-q, 2*n+1);
 }
 
-select(m) {
+selectheap(m) {
 	register int l,i,k;
 
 	for(i=1; ; i*=2)
