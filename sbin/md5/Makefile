@@ -1,4 +1,4 @@
-#	$Id$
+#	$Id: Makefile,v 1.2 1994/04/13 22:07:30 phk Exp $
 
 PROG=		md5
 MAN1=		md5.1
@@ -16,7 +16,7 @@ test: md5 test.rfc
 	@-if test -s diffs ; then \
 		echo '*** MD5 TEST FAILED'; cat diffs; \
 	else \
-		echo '*** MD5 Test Passed'; \
+		echo '    MD5 Test Passed'; \
 	fi
 	rm -f diffs
 
