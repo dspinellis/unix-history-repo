@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)get	4.21 (Berkeley) %G%
+#	@(#)get	4.22 (Berkeley) %G%
 #
 # Shell script to build a mini-root file system
 # in preparation for building a distribution tape.
@@ -85,7 +85,7 @@ fsck /dev/r${disk}a
 mount /dev/${disk}a /a
 cd /a
 echo 'Rewind tape'
-mt -t /dev/${tape}0 rew
+mt -f /dev/${tape}0 rew
 echo 'Restore the dump image of the root'
 restore rsf 3 /dev/${tape}0
 cd /
