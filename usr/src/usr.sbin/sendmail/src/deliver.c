@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.73 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.74 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1284,7 +1284,7 @@ tryhost:
 				rcode, mci->mci_state, firstsig);
 			rcode = EX_SOFTWARE;
 		}
-		else if (rcode == EX_TEMPFAIL)
+		else if (rcode == EX_TEMPFAIL && *curhost != '\0')
 		{
 			/* try next MX site */
 			goto tryhost;
