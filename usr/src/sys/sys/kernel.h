@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kernel.h	7.2 (Berkeley) %G%
+ *	@(#)kernel.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -28,7 +28,7 @@ int	lbolt;				/* awoken once a second */
 int	realitexpire();
 
 fixpt_t	averunnable[3];
-#ifdef COMPAT_43
+#if defined(COMPAT_43) && (defined(vax) || defined(tahoe))
 double	avenrun[3];
 #endif /* COMPAT_43 */
 
