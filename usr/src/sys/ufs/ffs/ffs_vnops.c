@@ -146,7 +146,7 @@ copen(mode, arg)
 		if (mode&FREAD)
 			if (access(ip, IREAD))
 				goto bad;
-		if (mode&FWRITE) {
+		if (mode&(FWRITE|FTRUNC)) {
 			if (access(ip, IWRITE))
 				goto bad;
 			if ((ip->i_mode&IFMT) == IFDIR) {
