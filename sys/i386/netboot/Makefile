@@ -40,6 +40,7 @@ netboot.rom:	$(COBJS) $(SSRCS) makerom
 test:	netboot.com
 	mount -t pcfs /dev/fd0a /msdos
 	cp netboot.com /msdos/netboot.com
+	cp netboot.rom /msdos/netboot.rom
 	umount /msdos
 clean:
 	rm -f $(COBJS) $(SOBJS) *.s netboot.com netboot.rom a.out makerom

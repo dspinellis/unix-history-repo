@@ -38,8 +38,8 @@
 	.word	(_start-RELOC)
 	.byte	0xa3			/* MOV %ax, 0x64 */
 	.word	0x64
-	mov	%ds,%ax
-	.byte	0xa3			/* MOV %ax, 0x64 */
+	mov	%cs,%ax
+	.byte	0xa3			/* MOV %ax, 0x66 */
 	.word	0x66
 	.byte	0xb8			/* MOV 'MR',%ax */
 	.word	0x4d52
@@ -89,7 +89,19 @@ _start:
 	.globl	_exit
 _exit:
 	call	_prot_to_real
+#ifdef BOOTROM
+	xor	%eax,%eax
+	mov	%ax,%ds
+	.byte	0xa1			/* MOV 0x302, %ax */
+	.word	0x302
+	push	%eax
+	.byte	0xa1			/* MOV 0x300, %ax */
+	.word	0x300
+	push	%eax
+	lret
+#else
 	int	$0x19
+#endif
 
 /**************************************************************************
 CURRTICKS - Get Time

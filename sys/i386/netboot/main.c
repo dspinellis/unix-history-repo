@@ -76,8 +76,6 @@ load()
 			longjmp(jmp_bootmenu,1);
 		}
 	}
-	if (!bootfile || (!(*bootfile)))
-		bootfile = DEFAULT_BOOTFILE;
 	printf("station IP %I, server IP %I\r\n",
 		arptable[ARP_CLIENT].ipaddr,
 		arptable[ARP_SERVER].ipaddr);
@@ -356,9 +354,10 @@ bootp()
 				convert_ipaddr(&arptable[ARP_SERVER].ipaddr,
 					reply->bp_siaddr);
 				bzero(arptable[ARP_SERVER].node, ETHER_ADDR_SIZE);  /* Kill arp */
-				if (*(reply->bp_file))
+				if (reply->bp_file[0]) {
 					bcopy(reply->bp_file, bootname, 128);
-				bootfile = bootname;
+					bootfile = bootname;
+				}
 				return(1);
 			}
 		}
