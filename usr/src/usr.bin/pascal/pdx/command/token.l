@@ -1,7 +1,7 @@
 %{
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)token.l 1.2 %G%";
+static char sccsid[] = "@(#)token.l 1.3 %G%";
 
 /*
  * Token definitions for pdx scanner.
@@ -10,6 +10,7 @@ static char sccsid[] = "@(#)token.l 1.2 %G%";
 #include "defs.h"
 #include "command.h"
 #include "y.tab.h"
+#include "main.h"
 #include "symtab.h"
 #include "sym.h"
 #include "process.h"
@@ -249,6 +250,7 @@ LOCAL FILE *infp[MAXINPUT];
 LOCAL FILE **curfp = &infp[0];
 
 LOCAL BOOLEAN isnewfile;
+LOCAL BOOLEAN firsttime;
 
 /*
  * Initially, we set the input to the initfile if it exists.
@@ -260,10 +262,14 @@ initinput()
 {
 	FILE *fp;
 
+	firsttime = FALSE;
 	fp = fopen(initfile, "r");
 	if (fp != NIL) {
 		fclose(fp);
 		setinput(initfile);
+		if (!option('r')) {
+			firsttime = TRUE;
+		}
 	}
 	nlflag = TRUE;
 }
@@ -309,7 +315,11 @@ LOCAL int input()
 			fclose(yyin);
 			yyin = *--curfp;
 			if (yyin == stdin) {
-				prompt();
+				if (firsttime) {
+					firsttime = FALSE;
+				} else {
+					prompt();
+				}
 			}
 		}
 	}
