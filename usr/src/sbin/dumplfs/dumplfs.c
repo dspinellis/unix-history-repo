@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumplfs.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumplfs.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -331,9 +331,9 @@ dump_dinode(dip)
 		"gid   ", dip->di_gid,
 		"size  ", dip->di_size);
 	(void)printf("%s%s%s%s%s%s",
-		"atime ", ctime(&dip->di_atime.ts_sec),
-		"mtime ", ctime(&dip->di_mtime.ts_sec),
-		"ctime ", ctime(&dip->di_ctime.ts_sec));
+		"atime ", ctime(&dip->di_atime),
+		"mtime ", ctime(&dip->di_mtime),
+		"ctime ", ctime(&dip->di_ctime));
 	(void)printf("inum  %d\n", dip->di_inumber);
 	(void)printf("Direct Addresses\n");
 	for (i = 0; i < NDADDR; i++) {
