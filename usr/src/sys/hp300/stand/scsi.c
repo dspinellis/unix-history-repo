@@ -11,15 +11,15 @@
  *
  * from: Utah $Hdr: scsi.c 1.3 90/01/27$
  *
- *	@(#)scsi.c	7.2 (Berkeley) %G%
+ *	@(#)scsi.c	7.3 (Berkeley) %G%
  */
 
 /*
  * SCSI bus driver for standalone programs.
  */
 
-#include "sys/types.h"
-#include "sys/reboot.h"
+#include <sys/param.h>
+#include <sys/reboot.h>
 #include "../dev/device.h"
 #include "../dev/scsireg.h"
 #include "scsivar.h"
