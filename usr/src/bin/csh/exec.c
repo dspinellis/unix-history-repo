@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)exec.c 4.1 %G%";
+static	char *sccsid = "@(#)exec.c 4.2 %G%";
 
 #include "sh.h"
 
@@ -226,6 +226,7 @@ execash(t, kp)
 {
 
 	didcch++;
+	rechist();
 	signal(SIGINT, parintr);
 	signal(SIGQUIT, parintr);
 	signal(SIGTERM, parterm);		/* if doexec loses, screw */
