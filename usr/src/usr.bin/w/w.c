@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)w.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)w.c	4.3 (Berkeley) %G%";
 /*
  * w - print system status (who and what)
  *
@@ -23,7 +23,7 @@ static char *sccsid = "@(#)w.c	4.2 (Berkeley) %G%";
 
 #define ARGWIDTH	33	/* # chars left on 80 col crt for args */
 
-struct smproc {
+struct pr {
 	short	w_pid;			/* proc.p_pid */
 	char	w_flag;			/* proc.p_flag */
 	short	w_size;			/* proc.p_size */
@@ -35,7 +35,8 @@ struct smproc {
 	dev_t	w_tty;			/* tty device of process */
 	char	w_comm[15];		/* user.u_comm, null terminated */
 	char	w_args[ARGWIDTH+1];	/* args if interesting process */
-} pr[NPROC];
+} *pr;
+int	nproc;
 
 struct	nlist nl[] = {
 	{ "_proc" },
@@ -52,6 +53,8 @@ struct	nlist nl[] = {
 #define	X_AVENRUN	5
 	{ "_bootime" },
 #define	X_BOOTIME	6
+	{ "_nproc" },
+#define	X_NPROC		7
 	{ 0 },
 };
 
@@ -66,6 +69,7 @@ dev_t	tty;
 char	doing[520];		/* process attached to terminal */
 time_t	proctime;		/* cpu time of process in doing */
 double	avenrun[3];
+struct	proc *aproc;
 
 #define	DIV60(t)	((t+30)/60)    /* x/60 rounded */ 
 #define	TTYEQ		(tty == pr[i].w_tty)
@@ -429,28 +433,20 @@ readpr()
 	/*
 	 * Locate proc table
 	 */
+	lseek(kmem, (long)nl[X_NPROC].n_value, 0);
+	read(kmem, &nproc, sizeof(nproc));
+	pr = (struct pr *)calloc(nproc, sizeof (struct pr));
 	np = 0;
-	for (pn=0; pn<NPROC; pn++) {
-		lseek(kmem, (long)(nl[X_PROC].n_value + pn*(sizeof mproc)), 0);
+	lseek(kmem, (long)nl[X_PROC].n_value, 0);
+	read(kmem, &aproc, sizeof(aproc));
+	for (pn=0; pn<nproc; pn++) {
+		lseek(kmem, (int)(aproc + pn), 0);
 		read(kmem, &mproc, sizeof mproc);
 		/* decide if it's an interesting process */
 		if (mproc.p_stat==0 || mproc.p_pgrp==0)
 			continue;
 		if (mproc.p_flag&SDETACH)
 			continue;
-		
-#ifdef notdef
-		/*
-		 * The following speeds up w on systems with lots of ttys
-		 * by ignoring inits and gettys, but loses on root login shells.
-		 * On Ernie it reduced user and system time by .3 seconds,
-		 * an insignificant amount.  It is commented out since it
-		 * will lose when root logs in.
-		 */
-		if (mproc.p_uid == 0 & mproc.p_ppid == 1)
-			continue;
-#endif
-
 		/* find & read in the user structure */
 		if ((mproc.p_flag & SLOAD) == 0) {
 			/* not in memory - get from swap device */
@@ -520,7 +516,7 @@ cont:
  */
 char *
 getargs(p)
-	struct smproc *p;
+	struct pr *p;
 {
 	int c, addr, nbad;
 	static int abuf[512/sizeof(int)];
