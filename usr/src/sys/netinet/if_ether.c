@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ether.c	7.21 (Berkeley) %G%
+ *	@(#)if_ether.c	7.22 (Berkeley) %G%
  */
 
 /*
@@ -351,8 +351,6 @@ in_arpinput(m)
 	struct in_addr isaddr, itaddr, myaddr;
 	int proto, op, completed = 0, sendtrailers;
 
-	if (ac->ac_if.if_flags & IFF_NOARP)
-		goto out;
 	ea = mtod(m, struct ether_arp *);
 	proto = ntohs(ea->arp_pro);
 	op = ntohs(ea->arp_op);
