@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)traverse.c	1.14 (Berkeley) %G%";
+static	char *sccsid = "@(#)traverse.c	1.15 (Berkeley) %G%";
 
 #include "dump.h"
 
@@ -245,9 +245,9 @@ dsrch(d, size, filesize)
 
 	if(dadded)
 		return;
-	bread(fsbtodb(sblock, d), dblk, size);
 	if (filesize > size)
 		filesize = size;
+	bread(fsbtodb(sblock, d), dblk, filesize);
 	for (loc = 0; loc < filesize; ) {
 		dp = (struct direct *)(dblk + loc);
 		if (dp->d_reclen == 0) {
@@ -291,35 +291,45 @@ getino(ino)
 int	breaderrors = 0;		
 #define	BREADEMAX 32
 
-bread(da, ba, c)
+bread(da, ba, cnt)
 	daddr_t da;
 	char *ba;
-	int	c;	
+	int	cnt;	
 {
-	register n;
-	register	regc;
+	int n;
 
+loop:
 	if (lseek(fi, (long)(da * DEV_BSIZE), 0) < 0){
 		msg("bread: lseek fails\n");
 	}
-	regc = c;	/* put c someplace safe; it gets clobbered */
-	n = read(fi, ba, c);
-	if (n != c || regc != c) {
-		msg("(This should not happen)bread from %s [block %d]: c=0x%x, regc=0x%x, &c=0x%x, n=0x%x\n",
-			disk, da, c, regc, &c, n);
-#ifdef ERNIE
-		msg("Notify Robert Henry of this error.\n");
-#endif
-		if (++breaderrors > BREADEMAX){
-			msg("More than %d block read errors from %d\n",
-				BREADEMAX, disk);
-			broadcast("DUMP IS AILING!\n");
-			msg("This is an unrecoverable error.\n");
-			if (!query("Do you want to attempt to continue?")){
-				dumpabort();
-				/*NOTREACHED*/
-			} else
-				breaderrors = 0;
-		}
+	n = read(fi, ba, cnt);
+	if (n == cnt)
+		return;
+	if (da + (cnt / DEV_BSIZE) > fsbtodb(sblock, sblock->fs_size)) {
+		/*
+		 * Trying to read the final fragment.
+		 *
+		 * NB - dump only works in TP_BSIZE blocks, hence
+		 * rounds DEV_BSIZE fragments up to TP_BSIZE pieces.
+		 * It should be smarter about not actually trying to
+		 * read more than it can get, but for the time being
+		 * we punt and scale back the read only when it gets
+		 * us into trouble. (mkm 9/25/83)
+		 */
+		cnt -= DEV_BSIZE;
+		goto loop;
+	}
+	msg("(This should not happen)bread from %s [block %d]: count=%d, got=%d\n",
+		disk, da, cnt, n);
+	if (++breaderrors > BREADEMAX){
+		msg("More than %d block read errors from %d\n",
+			BREADEMAX, disk);
+		broadcast("DUMP IS AILING!\n");
+		msg("This is an unrecoverable error.\n");
+		if (!query("Do you want to attempt to continue?")){
+			dumpabort();
+			/*NOTREACHED*/
+		} else
+			breaderrors = 0;
 	}
 }
