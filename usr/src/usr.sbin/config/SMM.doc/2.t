@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.3 (Berkeley) %G%
+.\"	@(#)2.t	6.4 (Berkeley) %G%
 .\"
 .\".ds RH "Configuration File Contents
 .ne 2i
@@ -42,7 +42,7 @@ indicates if the system is going to operate on a DEC VAX-11\(dg computer,
 \(dg DEC, VAX, UNIBUS, MASSBUS and MicroVAX are trademarks of Digital
 Equipment Corporation.
 .FE
-or some other machine on which 4.3BSD operates.  The machine type
+or some other machine on which 4.4BSD operates.  The machine type
 is used to locate certain data files which are machine specific, and
 also to select rules used in constructing the resultant
 configuration files.
@@ -152,8 +152,8 @@ System options
 Other than the mandatory pieces of information described above, it
 is also possible to include various optional system facilities
 or to modify system behavior and/or limits.
-For example, 4.3BSD can be configured to support binary compatibility for
-programs built under 4.1BSD.  Also, optional support is provided
+For example, 4.4BSD can be configured to support binary compatibility for
+programs built under 4.3BSD.  Also, optional support is provided
 for disk quotas and tracing the performance of the virtual memory
 subsystem.  Any optional facilities to be configured into
 the system are specified in the configuration file.  The resultant

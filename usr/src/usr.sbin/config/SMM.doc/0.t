@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	6.4 (Berkeley) %G%
+.\"	@(#)0.t	6.5 (Berkeley) %G%
 .\"
 .bd S B 3
 .de UX
@@ -20,9 +20,7 @@
 .nr GA 1\}
 ..
 .TL
-Building Berkeley 
-.UX
-Kernels with Config
+Building 4.4BSD Kernels with Config
 .AU
 Samuel J. Leffler and Michael J. Karels
 .AI
@@ -40,7 +38,7 @@ Berkeley, California  94720
 .PP
 This document describes the use of
 \fIconfig\fP\|(8) to configure and create bootable
-4.3BSD system images.
+4.4BSD system images.
 It discusses the structure of system
 configuration files and how to configure
 systems with non-standard hardware configurations.
@@ -57,5 +55,5 @@ Other configuration options are also listed.
 Revised 
 .AE
 .LP
-.OH 'Building Kernels with Config''SMM:2-%'
-.EH 'SMM:2-%''Building Kernels with Config'
+.OH 'Building 4.4BSD Kernels with Config''SMM:2-%'
+.EH 'SMM:2-%''Building 4.4BSD Kernels with Config'

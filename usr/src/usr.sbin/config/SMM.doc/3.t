@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.3 (Berkeley) %G%
+.\"	@(#)3.t	6.4 (Berkeley) %G%
 .\"
 .\".ds RH "System Building Process
 .ne 2i
@@ -47,7 +47,7 @@ Creating a configuration file
 .PP
 Configuration files normally reside in the directory ``/sys/conf''.
 A configuration file is most easily constructed by copying an
-existing configuration file and modifying it.  The 4.3BSD distribution
+existing configuration file and modifying it.  The 4.4BSD distribution
 contains a number of configuration files for machines at Berkeley;
 one may be suitable or, in worst case, a copy
 of the generic configuration file may be edited.
