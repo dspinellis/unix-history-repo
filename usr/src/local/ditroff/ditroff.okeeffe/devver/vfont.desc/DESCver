@@ -1,15 +1,17 @@
+#
 # Versatec DITroff Description file
-fonts 56 R I B S CW tr ti tb ts cr ci cb ap br bi bb bk ch cl co cy
-		dr di db gr gi gb gk gf hb hn m mn mr mi mb nr ni nb
-		oe or oi ob pb pp sc sl sg sh sr si sb tR tI tB tS
+#
+# Imitate the configuration on the Harris
+#
+fonts 10 R I B I nr ni nb ni S S
 sizes 6 7 8 9 10 11 12 14 16 18 20 22 24 28 36 0
-stipples 2 ug cf
+#stipples 2 ug cf
 unitwidth 36
 # unitwidth = the pointsize of the given font widths
 res 200
 hor 1
 vert 1
-paperwidth 7040
+paperwidth 2112
 paperlength 2200
 charset
 != ** *A *B *C *D *E *F *G *H *I *K *L *M *N *O *P *Q *R *S *T *U *W

@@ -1,5 +1,7 @@
 # Font /usr/lib/vfont/S.36, max width 96, max height 96
 name S
+internalname 9
+special
 # char	width	u/d	octal
 charset
 \|	  17	 0	00
