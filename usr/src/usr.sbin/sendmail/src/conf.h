@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.192 (Berkeley) %G%
+ *	@(#)conf.h	8.193 (Berkeley) %G%
  */
 
 /*
@@ -1303,7 +1303,9 @@ extern int	errno;
 # ifndef _PATH_UNIX
 #  define _PATH_UNIX		"/unix"
 # endif
-# define _PATH_VENDOR_CF	"/usr/ucblib/sendmail.cf"
+# ifndef _PATH_VENDOR_CF
+#  define _PATH_VENDOR_CF	"/usr/ucblib/sendmail.cf"
+# endif
 # ifndef _PATH_SENDMAILPID
 #  define _PATH_SENDMAILPID	"/usr/ucblib/sendmail.pid"
 # endif
