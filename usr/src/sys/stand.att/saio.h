@@ -1,9 +1,20 @@
 /*
- * Copyright (c) 1982, 1988 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1988 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)saio.h	7.9 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)saio.h	7.10 (Berkeley) %G%
  */
 
 #include "saioctl.h"
@@ -38,6 +49,7 @@ struct iob {
 		char dummy[SBSIZE];
 	} i_un;
 };
+
 #define	i_fs	i_un.ui_fs
 #define	i_bus	i_adapt
 
@@ -46,14 +58,14 @@ struct iob {
 #define	HDR1_OKSCT	0xc000	/* sector ok */
 #define	HDR1_SSF	0x2000	/* skip sector flag */
 
-#define	F_READ		0x1	/* file opened for reading */
-#define	F_WRITE		0x2	/* file opened for writing */
-#define	F_ALLOC		0x4	/* buffer allocated */
-#define	F_FILE		0x8	/* file instead of device */
-#define	F_NBSF		0x10	/* no bad sector forwarding */
-#define	F_ECCLM		0x20	/* limit # of bits in ecc correction */
-#define	F_SSI		0x40	/* set skip sector inhibit */
-#define	F_SEVRE		0x80	/* Severe burnin (no retries, no ECC) */
+#define	F_READ		0x0001	/* file opened for reading */
+#define	F_WRITE		0x0002	/* file opened for writing */
+#define	F_ALLOC		0x0004	/* buffer allocated */
+#define	F_FILE		0x0008	/* file instead of device */
+#define	F_NBSF		0x0010	/* no bad sector forwarding */
+#define	F_ECCLM		0x0020	/* limit # of bits in ecc correction */
+#define	F_SSI		0x0040	/* set skip sector inhibit */
+#define	F_SEVRE		0x0080	/* Severe burnin (no retries, no ECC) */
 
 /* io types */
 #define	F_RDDATA	0x0100	/* read data */
@@ -64,9 +76,6 @@ struct iob {
 
 #define	F_TYPEMASK	0xff00
 
-/*
- * Request codes. Must be the same as F_XXX above
- */
 #define	READ	F_READ
 #define	WRITE	F_WRITE
 
