@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	1.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -80,6 +80,15 @@ command(cmd)
                 alarm(0);
 		(*curcmd->c_close)(wnd);
 		wnd = (*p->c_open)();
+		if (wnd == 0) {
+			error("Couldn't open new display");
+			wnd = (*curcmd->c_open)();
+			if (wnd == 0) {
+				error("Couldn't change back to previous cmd");
+				exit(1);
+			}
+			p = curcmd;
+		}
                 curcmd = p;
 		if ((p->c_flags & CF_INIT) == 0) {
 			(*p->c_init)();
