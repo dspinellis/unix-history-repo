@@ -1,0 +1,16 @@
+# This awk script is called from within Makefile to strip multiple blank
+# lines from stdin.
+BEGIN { newlines = 0 }
+{
+  if (NF == 0)
+    newlines = 1;
+  else
+    {
+      if (newlines)
+	{
+	  printf "\n";
+	  newlines = 0;
+	}
+      print $0;
+    }
+}
