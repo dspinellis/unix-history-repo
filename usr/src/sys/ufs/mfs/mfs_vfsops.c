@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vfsops.c	7.9 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -64,7 +64,7 @@ struct vfsops mfs_vfsops = {
  */
 /* ARGSUSED */
 mfs_mount(mp, path, data, ndp)
-	struct mount *mp;
+	register struct mount *mp;
 	char *path;
 	caddr_t data;
 	struct nameidata *ndp;
@@ -99,8 +99,7 @@ mfs_mount(mp, path, data, ndp)
 	mfsp->mfs_vnode = devvp;
 	mfsp->mfs_pid = u.u_procp->p_pid;
 	mfsp->mfs_buflist = (struct buf *)0;
-	error = mountfs(devvp, mp);
-	if (error) {
+	if (error = mountfs(devvp, mp)) {
 		vrele(devvp);
 		return (error);
 	}
@@ -108,8 +107,11 @@ mfs_mount(mp, path, data, ndp)
 	fs = ump->um_fs;
 	(void) copyinstr(path, fs->fs_fsmnt, sizeof(fs->fs_fsmnt) - 1, &size);
 	bzero(fs->fs_fsmnt + size, sizeof(fs->fs_fsmnt) - size);
-	(void) copyinstr(args.name, ump->um_mntname, MNAMELEN - 1, &size);
-	bzero(ump->um_mntname + size, MNAMELEN - size);
+	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->m_stat.f_mntonname, MNAMELEN);
+	(void) copyinstr(args.name, mp->m_stat.f_mntfromname, MNAMELEN - 1,
+		&size);
+	bzero(mp->m_stat.f_mntfromname + size, MNAMELEN - size);
+	(void) mfs_statfs(mp, &mp->m_stat);
 	return (0);
 }
 
