@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)lex.ms	6.4 (Berkeley) %G%
+.\"	@(#)lex.ms	8.1 (Berkeley) %G%
 .\"
 .EH 'PSD:16-%''Lex \- A Lexical Analyzer Generator'
 .OH 'Lex \- A Lexical Analyzer Generator''PSD:16-%'
