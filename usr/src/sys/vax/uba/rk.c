@@ -1,4 +1,4 @@
-/*	rk.c	4.19	%G%	*/
+/*	rk.c	4.20	%G%	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -11,6 +11,7 @@ int	rkwaitdry;
  * TODO:
  *	Add reading of bad sector information and disk layout from sector 1
  *	Add bad sector forwarding code
+ *	Why do we lose an interrupt sometime when spinning drives down?
  */
 #define	DELAY(i)		{ register int j; j = i; while (--j > 0); }
 #include "../h/param.h"
@@ -198,15 +199,19 @@ rkustart(ui)
 	rkaddr->rkcs2 = ui->ui_slave;
 	rkaddr->rkcs1 = RK_CDT|RK_SELECT|RK_GO;
 	rkwait(rkaddr);
-	rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
-	rkwait(rkaddr);
-	if ((bp = dp->b_actf) == NULL)
-		goto out;
+	if ((bp = dp->b_actf) == NULL) {
+		rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
+		rkwait(rkaddr);
+		return (0);
+	}
 	if ((rkaddr->rkds & RK_VV) == 0) {
 		/* SHOULD WARN SYSTEM THAT THIS HAPPENED */
 		rkaddr->rkcs1 = RK_CDT|RK_PACK|RK_GO;
 		rkwait(rkaddr);
 	}
+	if (dp->b_active)
+		goto done;
+	dp->b_active = 1;
 	if ((rkaddr->rkds & RK_DREADY) != RK_DREADY)
 		goto done;
 	if (rk_softc[um->um_ctlr].sc_ndrive == 1)
@@ -411,10 +416,6 @@ att:
 			needie = 0;
 	if (needie)
 		rkaddr->rkcs1 = RK_CDT|RK_IE;
-	if ((rkaddr->rkcs1 & RK_IE) == 0) {
-		printf("cs1 %o not ie\n", rkaddr->rkcs1);
-		rkaddr->rkcs1 |= RK_CDT|RK_IE;
-	}
 }
 
 rkwait(addr)
