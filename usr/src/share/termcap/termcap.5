@@ -1,0 +1,602 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)termcap.5	4.1 (Berkeley) %G%
+.\"
+.tr ||
+.TH TERMCAP 5 5/10/80
+.UC 3
+.SH NAME
+termcap \- terminal capability data base
+.SH SYNOPSIS
+/etc/termcap
+.SH DESCRIPTION
+.I Termcap
+is a data base describing terminals,
+used,
+.IR e.g. ,
+by
+.IR vi (1)
+and
+.IR curses (3).
+Terminals are described in
+.I termcap
+by giving a set of capabilities which they have, and by describing
+how operations are performed.
+Padding requirements and initialization sequences
+are included in
+.I termcap.
+.PP
+Entries in
+.I termcap
+consist of a number of `:' separated fields.
+The first entry for each terminal gives the names which are known for the
+terminal, separated by `|' characters.  The first name is always 2 characters
+long and is used by older version 6 systems which store the terminal type
+in a 16 bit word in a systemwide data base.
+The second name given is the most common abbreviation for the terminal, and the
+last name given should be a long name fully identifying the terminal.
+The second name should contain no blanks; the last name may well contain
+blanks for readability.
+.SH CAPABILITIES
+.nf
+(P) indicates padding may be specified
+(P*) indicates that padding may be based on no. lines affected
+
+.ta \w'k0-k9  'u +\w'Type  'u +\w'Pad?  'u
+\fBName	Type	Pad?	Description\fR
+ae	str	(P)	End alternate character set
+al	str	(P*)	Add new blank line
+am	bool		Terminal has automatic margins
+as	str	(P)	Start alternate character set
+bc	str		Backspace if not \fB^H\fR
+bs	bool		Terminal can backspace with \fB^H\fR
+bt	str	(P)	Back tab
+bw	bool		Backspace wraps from column 0 to last column
+CC	str		Command character in prototype if terminal settable
+cd	str	(P*)	Clear to end of display
+ce	str	(P)	Clear to end of line
+ch	str	(P)	Like cm but horizontal motion only, line stays same
+cl	str	(P*)	Clear screen
+cm	str	(P)	Cursor motion
+co	num		Number of columns in a line
+cr	str	(P*)	Carriage return, (default \fB^M\fR)
+cs	str	(P)	Change scrolling region (vt100), like cm
+cv	str	(P)	Like ch but vertical only.
+da	bool		Display may be retained above
+dB	num		Number of millisec of bs delay needed
+db	bool		Display may be retained below
+dC	num		Number of millisec of cr delay needed
+dc	str	(P*)	Delete character
+dF	num		Number of millisec of ff delay needed
+dl	str	(P*)	Delete line
+dm	str		Delete mode (enter)
+dN	num		Number of millisec of nl delay needed
+do	str		Down one line
+dT	num		Number of millisec of tab delay needed
+ed	str		End delete mode
+ei	str		End insert mode; give \*(lq:ei=:\*(rq if \fBic\fR
+eo	str		Can erase overstrikes with a blank
+ff	str	(P*)	Hardcopy terminal page eject (default \fB^L\fR)
+hc	bool		Hardcopy terminal
+hd	str		Half-line down (forward 1/2 linefeed)
+ho	str		Home cursor (if no \fBcm\fR)
+hu	str		Half-line up (reverse 1/2 linefeed)
+hz	str		Hazeltine; can't print ~'s
+ic	str	(P)	Insert character
+if	str		Name of file containing \fBis\fR
+im	bool		Insert mode (enter); give \*(lq:im=:\*(rq if \fBic\fR
+in	bool		Insert mode distinguishes nulls on display
+ip	str	(P*)	Insert pad after character inserted
+is	str		Terminal initialization string
+k0-k9	str		Sent by \*(lqother\*(rq function keys 0-9
+kb	str		Sent by backspace key
+kd	str		Sent by terminal down arrow key
+ke	str		Out of \*(lqkeypad transmit\*(rq mode
+kh	str		Sent by home key
+kl	str		Sent by terminal left arrow key
+kn	num		Number of \*(lqother\*(rq keys
+ko	str		Termcap entries for other non-function keys
+kr	str		Sent by terminal right arrow key
+ks	str		Put terminal in \*(lqkeypad transmit\*(rq mode
+ku	str		Sent by terminal up arrow key
+l0-l9	str		Labels on \*(lqother\*(rq function keys
+li	num		Number of lines on screen or page
+ll	str		Last line, first column (if no \fBcm\fR)
+ma	str		Arrow key map, used by vi version 2 only
+mi	bool		Safe to move while in insert mode
+ml	str		Memory lock on above cursor.
+ms	bool		Safe to move while in standout and underline mode
+mu	str		Memory unlock (turn off memory lock).
+nc	bool		No correctly working carriage return (DM2500,H2000)
+nd	str		Non-destructive space (cursor right)
+nl	str	(P*)	Newline character (default \fB\en\fR)
+ns	bool		Terminal is a \s-2CRT\s+2 but doesn't scroll.
+os	bool		Terminal overstrikes
+pc	str		Pad character (rather than null)
+pt	bool		Has hardware tabs (may need to be set with \fBis\fR)
+se	str		End stand out mode
+sf	str	(P)	Scroll forwards
+sg	num		Number of blank chars left by so or se
+so	str		Begin stand out mode
+sr	str	(P)	Scroll reverse (backwards)
+ta	str	(P)	Tab (other than \fB^I\fR or with padding)
+tc	str		Entry of similar terminal - must be last
+te	str		String to end programs that use \fBcm\fP
+ti	str		String to begin programs that use \fBcm\fR
+uc	str		Underscore one char and move past it
+ue	str		End underscore mode
+ug	num		Number of blank chars left by us or ue
+ul	bool		Terminal underlines even though it doesn't overstrike
+up	str		Upline (cursor up)
+us	str		Start underscore mode
+vb	str		Visible bell (may not move cursor)
+ve	str		Sequence to end open/visual mode
+vs	str		Sequence to start open/visual mode
+xb	bool		Beehive (f1=escape, f2=ctrl C)
+xn	bool		A newline is ignored after a wrap (Concept)
+xr	bool		Return acts like \fBce\fP \er \en (Delta Data)
+xs	bool		Standout not erased by writing over it (HP 264?)
+xt	bool		Tabs are destructive, magic so char (Teleray 1061)
+.fi
+.PP
+.B A Sample Entry
+.PP
+The following entry, which describes the Concept\-100, is among the more
+complex entries in the
+.I termcap
+file as of this writing.
+(This particular concept entry is outdated,
+and is used as an example only.)
+.PP
+.nf
+c1\||\|c100\||\|concept100:is=\eEU\eEf\eE7\eE5\eE8\eEl\eENH\eEK\eE\e200\eEo&\e200:\e
+        :al=3*\eE^R:am:bs:cd=16*\eE^C:ce=16\eE^S:cl=2*^L:cm=\eEa%+ %+ :co#80:\e
+        :dc=16\eE^A:dl=3*\eE^B:ei=\eE\e200:eo:im=\eE^P:in:ip=16*:li#24:mi:nd=\eE=:\e
+        :se=\eEd\eEe:so=\eED\eEE:ta=8\et:ul:up=\eE;:vb=\eEk\eEK:xn:
+.fi
+.PP
+Entries may continue onto multiple lines by giving a \e as the last
+character of a line, and that empty fields
+may be included for readability (here between the last field on a line
+and the first field on the next).
+Capabilities in
+.I termcap
+are of three types:
+Boolean capabilities which indicate that the terminal has
+some particular feature, numeric capabilities giving the size of the terminal
+or the size of particular delays, and string
+capabilities, which give a sequence which can be used to perform particular
+terminal operations.
+.PP
+.B Types of Capabilities
+.PP
+All capabilities have two letter codes.  For instance, the fact that
+the Concept has \*(lqautomatic margins\*(rq (i.e. an automatic return and linefeed
+when the end of a line is reached) is indicated by the capability \fBam\fR.
+Hence the description of the Concept includes \fBam\fR.
+Numeric capabilities are followed by the character `#' and then the value.
+Thus \fBco\fR which indicates the number of columns the terminal has
+gives the value `80' for the Concept.
+.PP
+Finally, string valued capabilities, such as \fBce\fR (clear to end of line
+sequence) are given by the two character code, an `=', and then a string
+ending at the next following `:'.  A delay in milliseconds may appear after
+the `=' in such a capability, and padding characters are supplied by the
+editor after the remainder of the string is sent to provide this delay.
+The delay can be either a integer, e.g. `20', or an integer followed by
+an `*', i.e. `3*'.  A `*' indicates that the padding required is proportional
+to the number of lines affected by the operation, and the amount given is
+the per-affected-unit padding required.
+When a `*' is specified, it is sometimes useful to give a delay of the form
+`3.5' specify a delay per unit to tenths of milliseconds.
+.PP
+A number of escape sequences are provided in the string valued capabilities
+for easy encoding of characters there.  A \fB\eE\fR maps to an \s-2ESCAPE\s0
+character, \fB^x\fR maps to a control-x for any appropriate x, and the sequences
+\fB\en \er \et \eb \ef\fR give a newline, return, tab, backspace and formfeed.
+Finally, characters may be given as three octal digits after a \fB\e\fR,
+and the characters \fB^\fR and \fB\e\fR may be given as \fB\e^\fR and \fB\e\e\fR.
+If it is necessary to place a \fB:\fR in a capability it must be escaped in
+octal as \fB\e072\fR.
+If it is necessary to place a null character in a string capability it
+must be encoded as \fB\e200\fR.  The routines which deal with
+.I termcap
+use C strings, and strip the high bits of the output very late so that
+a \fB\e200\fR comes out as a \fB\e000\fR would.
+.br
+.ne 5
+.PP
+.B Preparing Descriptions
+.PP
+We now outline how to prepare descriptions of terminals.
+The most effective way to prepare a terminal description is by imitating
+the description of a similar terminal in
+.I termcap
+and to build up a description gradually, using partial descriptions
+with
+.I ex
+to check that they are correct.
+Be aware that a very unusual terminal may expose deficiencies in
+the ability of the
+.I termcap
+file to describe it
+or bugs in
+.I ex.
+To easily test a new terminal description you can set the environment variable
+TERMCAP to a pathname of a file containing the description you are working
+on and the editor will look there rather than in
+.I /etc/termcap.
+TERMCAP can also be set to the termcap entry itself
+to avoid reading the file when starting up the editor.
+(This only works on version 7 systems.)
+.PP
+.B Basic capabilities
+.PP
+The number of columns on each line for the terminal is given by the
+\fBco\fR numeric capability.  If the terminal is a \s-2CRT\s0, then the
+number of lines on the screen is given by the \fBli\fR capability.
+If the terminal wraps around to the beginning of the next line when
+it reaches the right margin, then it should have the \fBam\fR capability.
+If the terminal can clear its screen, then this is given by the
+\fBcl\fR string capability.  If the terminal can backspace, then it
+should have the \fBbs\fR capability, unless a backspace is accomplished
+by a character other than \fB^H\fR (ugh) in which case you should give
+this character as the \fBbc\fR string capability.  If it overstrikes
+(rather than clearing a position when a character is struck over)
+then it should have the \fBos\fR capability.
+.PP
+A very important point here is that the local cursor motions encoded
+in
+.I termcap
+are undefined at the left and top edges of a \s-2CRT\s0 terminal.
+The editor will never attempt to backspace around the left edge, nor
+will it attempt to go up locally off the top.  The editor assumes that
+feeding off the bottom of the screen will cause the screen to scroll up,
+and the \fBam\fR capability tells whether the cursor sticks at the right
+edge of the screen.  If the terminal has switch selectable automatic margins,
+the
+.I termcap
+file usually assumes that this is on, i.e. \fBam\fR.
+.PP
+These capabilities suffice to describe hardcopy and \*(lqglass-tty\*(rq terminals.
+Thus the model 33 teletype is described as
+.PP
+.DT
+	t3\||\|33\||\|tty33:co#72:os
+.PP
+while the Lear Siegler \s-2ADM\-3\s0 is described as
+.PP
+.DT
+	cl\||\|adm3|3|lsi adm3:am:bs:cl=^Z:li#24:co#80
+.PP
+.B Cursor addressing
+.PP
+Cursor addressing in the terminal is described by a
+\fBcm\fR string capability, with 
+.IR printf (3s)
+like escapes \fB%x\fR in it.
+These substitute to encodings of the current line or column position,
+while other characters are passed through unchanged.
+If the \fBcm\fR string is thought of as being a function, then its
+arguments are the line and then the column to which motion is desired,
+and the \fB%\fR encodings have the following meanings:
+.PP
+.DT
+.nf
+	%d	as in \fIprintf\fR, 0 origin
+	%2	like %2d
+	%3	like %3d
+	%.	like %c
+	%+x	adds \fIx\fR to value, then %.
+	%>xy	if value > x adds y, no output.
+	%r	reverses order of line and column, no output
+	%i	increments line/column (for 1 origin)
+	%%	gives a single %
+	%n	exclusive or row and column with 0140 (DM2500)
+	%B	BCD (16*(x/10)) + (x%10), no output.
+	%D	Reverse coding (x-2*(x%16)), no output. (Delta Data).
+.fi
+.PP
+Consider the HP2645, which, to get to row 3 and column 12, needs
+to be sent \eE&a12c03Y padded for 6 milliseconds.  Note that the order
+of the rows and columns is inverted here, and that the row and column
+are printed as two digits.  Thus its \fBcm\fR capability is \*(lqcm=6\eE&%r%2c%2Y\*(rq.
+The Microterm \s-2ACT-IV\s0 needs the current row and column sent
+preceded by a \fB^T\fR, with the row and column simply encoded in binary,
+\*(lqcm=^T%.%.\*(rq.  Terminals which use \*(lq%.\*(rq need to be able to
+backspace the cursor (\fBbs\fR or \fBbc\fR),
+and to move the cursor up one line on the screen (\fBup\fR introduced below).
+This is necessary because it is not always safe to transmit \fB\et\fR, \fB\en\fR
+\fB^D\fR and \fB\er\fR, as the system may change or discard them.
+.PP
+A final example is the \s-2LSI ADM\s0-3a, which uses row and column
+offset by a blank character, thus \*(lqcm=\eE=%+ %+ \*(rq.
+.PP
+.B Cursor motions
+.PP
+If the terminal can move the cursor one position to the right, leaving
+the character at the current position unchanged, then this sequence should
+be given as \fBnd\fR (non-destructive space).  If it can move the cursor
+up a line
+on the screen in the same column, this should be given as \fBup\fR.
+If the terminal has no cursor addressing capability, but can home the cursor
+(to very upper left corner of screen) then this can be given as
+\fBho\fR; similarly a fast way of getting to the lower left hand corner
+can be given as \fBll\fR; this may involve going up with \fBup\fR
+from the home position,
+but the editor will never do this itself (unless \fBll\fR does) because it
+makes no assumption about the effect of moving up from the home position.
+.PP
+.B Area clears
+.PP
+If the terminal can clear from the current position to the end of the
+line, leaving the cursor where it is, this should be given as \fBce\fR.
+If the terminal can clear from the current position to the end of the
+display, then this should be given as \fBcd\fR.
+The editor only uses
+\fBcd\fR from the first column of a line.
+.PP
+.B Insert/delete line
+.PP
+If the terminal can open a new blank line before the line where the cursor
+is, this should be given as \fBal\fR; this is done only from the first
+position of a line.  The cursor must then appear on the newly blank line.
+If the terminal can delete the line which the cursor is on, then this
+should be given as \fBdl\fR; this is done only from the first position on
+the line to be deleted.
+If the terminal can scroll the screen backwards, then this can be given as
+\fBsb\fR, but just \fBal\fR suffices.
+If the terminal can retain display memory above then the
+\fBda\fR capability should be given; if display memory can be retained
+below then \fBdb\fR should be given.  These let the editor understand
+that deleting a line on the screen may bring non-blank lines up from below
+or that scrolling back with \fBsb\fR may bring down non-blank lines.
+.PP
+.B Insert/delete character
+.PP
+There are two basic kinds of intelligent terminals with respect to
+insert/delete character which can be described using
+.I termcap.
+The most common insert/delete character operations affect only the characters
+on the current line and shift characters off the end of the line rigidly.
+Other terminals, such as the Concept 100 and the Perkin Elmer Owl, make
+a distinction between typed and untyped blanks on the screen, shifting
+upon an insert or delete only to an untyped blank on the screen which is
+either eliminated, or expanded to two untyped blanks.  You can find out
+which kind of terminal you have by clearing the screen and then typing
+text separated by cursor motions.  Type \*(lqabc\ \ \ \ def\*(rq using local
+cursor motions (not spaces) between the \*(lqabc\*(rq and the \*(lqdef\*(rq.
+Then position the cursor before the \*(lqabc\*(rq and put the terminal in insert
+mode.  If typing characters causes the rest of the line to shift
+rigidly and characters to fall off the end, then your terminal does
+not distinguish between blanks and untyped positions.  If the \*(lqabc\*(rq
+shifts over to the \*(lqdef\*(rq which then move together around the end of the
+current line and onto the next as you insert, you have the second type of
+terminal, and should give the capability \fBin\fR, which stands for
+\*(lqinsert null\*(rq.  If your terminal does something different and unusual
+then you may have to modify the editor to get it to use the insert
+mode your terminal defines.  We have seen no terminals which have an insert
+mode not not falling into one of these two classes.
+.PP
+The editor can handle both terminals which have an insert mode, and terminals
+which send a simple sequence to open a blank position on the current line.
+Give as \fBim\fR the sequence to get into insert mode, or give it an
+empty value if your terminal uses a sequence to insert a blank position.
+Give as \fBei\fR the sequence to leave insert mode (give this, with
+an empty value also if you gave \fBim\fR so).
+Now give as \fBic\fR any sequence needed to be sent just before sending
+the character to be inserted.  Most terminals with a true insert mode
+will not give \fBic\fR, terminals which send a sequence to open a screen
+position should give it here.  (Insert mode is preferable to the sequence
+to open a position on the screen if your terminal has both.)
+If post insert padding is needed, give this as a number of milliseconds
+in \fBip\fR (a string option).  Any other sequence which may need to be
+sent after an insert of a single character may also be given in \fBip\fR.
+.PP
+It is occasionally necessary to move around while in insert mode
+to delete characters on the same line (e.g. if there is a tab after
+the insertion position).  If your terminal allows motion while in
+insert mode you can give the capability \fBmi\fR to speed up inserting
+in this case.  Omitting \fBmi\fR will affect only speed.   Some terminals
+(notably Datamedia's) must not have \fBmi\fR because of the way their
+insert mode works.
+.PP
+Finally, you can specify delete mode by giving \fBdm\fR and \fBed\fR
+to enter and exit delete mode, and \fBdc\fR to delete a single character
+while in delete mode.
+.PP
+.B "Highlighting, underlining, and visible bells"
+.PP
+If your terminal has sequences to enter and exit standout mode these
+can be given as \fBso\fR and \fBse\fR respectively.
+If there are several flavors of standout mode
+(such as inverse video, blinking, or underlining \-
+half bright is not usually an acceptable \*(lqstandout\*(rq mode
+unless the terminal is in inverse video mode constantly)
+the preferred mode is inverse video by itself.
+If the code to change into or out of standout
+mode leaves one or even two blank spaces on the screen,
+as the TVI 912 and Teleray 1061 do,
+then \fBug\fR should be given to tell how many spaces are left.
+.PP
+Codes to begin underlining and end underlining can be given as \fBus\fR
+and \fBue\fR respectively.
+If the terminal has a code to underline the current character and move
+the cursor one space to the right, 
+such as the Microterm Mime,
+this can be given as \fBuc\fR.
+(If the underline code does not move the cursor to the right,
+give the code followed by a nondestructive space.)
+.PP
+Many terminals, such as the HP 2621, automatically leave standout
+mode when they move to a new line or the cursor is addressed.
+Programs using standout mode should exit standout mode before
+moving the cursor or sending a newline.
+.PP
+If the terminal has
+a way of flashing the screen to indicate an error quietly (a bell replacement)
+then this can be given as \fBvb\fR; it must not move the cursor.
+If the terminal should be placed in a different mode during
+open and visual modes of
+.I ex,
+this can be given as
+\fBvs\fR and \fBve\fR, sent at the start and end of these modes
+respectively.  These can be used to change, e.g., from a underline
+to a block cursor and back.
+.PP
+If the terminal needs to be in a special mode when running
+a program that addresses the cursor,
+the codes to enter and exit this mode can be given as \fBti\fR and \fBte\fR.
+This arises, for example, from terminals like the Concept with more than
+one page of memory.
+If the terminal has only memory relative cursor addressing and not screen
+relative cursor addressing, a one screen-sized window must be fixed into
+the terminal for cursor addressing to work properly.
+.PP
+If your terminal correctly generates underlined characters
+(with no special codes needed)
+even though it does not overstrike,
+then you should give the capability \fBul\fR.
+If overstrikes are erasable with a blank,
+then this should be indicated by giving \fBeo\fR.
+.PP
+.B Keypad
+.PP
+If the terminal has a keypad that transmits codes when the keys are pressed,
+this information can be given. Note that it is not possible to handle
+terminals where the keypad only works in local (this applies, for example,
+to the unshifted HP 2621 keys).
+If the keypad can be set to transmit or not transmit,
+give these codes as \fBks\fR and \fBke\fR.
+Otherwise the keypad is assumed to always transmit.
+The codes sent by the left arrow, right arrow, up arrow, down arrow,
+and home keys can be given as \fBkl, kr, ku, kd, \fRand\fB kh\fR respectively.
+If there are function keys such as f0, f1, ..., f9, the codes they send
+can be given as \fBk0, k1, ..., k9\fR.
+If these keys have labels other than the default f0 through f9, the labels
+can be given as \fBl0, l1, ..., l9\fR.
+If there are other keys that transmit the same code as the terminal expects
+for the corresponding function, such as clear screen, the \fItermcap\fP
+2 letter codes can be given in the \fBko\fR capability,
+for example, \*(lq:ko=cl,ll,sf,sb:\*(rq, which says that the terminal has
+clear, home down, scroll down, and scroll up keys that transmit
+the same thing as the cl, ll, sf, and sb entries.
+.PP
+The
+.B ma
+entry is also used to indicate arrow keys on terminals which have
+single character arrow keys.  It is obsolete but still in use in
+version 2 of vi, which must be run on some minicomputers due to
+memory limitations.
+This field is redundant with
+.BR "kl, kr, ku, kd, " and " kh" .
+It consists of groups of two characters.
+In each group, the first character is what an arrow key sends, the
+second character is the corresponding vi command.
+These commands are
+.B h
+for
+.BR kl ,
+.B j
+for
+.BR kd ,
+.B k
+for
+.BR ku ,
+.B l
+for
+.BR kr ,
+and
+.B H
+for
+.BR kh .
+For example, the mime would be
+.B ":ma=^Kj^Zk^Xl:"
+indicating arrow keys left (^H), down (^K), up (^Z), and right (^X).
+(There is no home key on the mime.)
+.PP
+.B Miscellaneous
+.PP
+If the terminal requires other than a null (zero) character as a pad,
+then this can be given as \fBpc\fR.
+.PP
+If tabs on the terminal require padding, or if the terminal uses a
+character other than \fB^I\fR to tab, then this can be given as \fBta\fR.
+.PP
+Hazeltine terminals, which don't allow `~' characters to be printed should
+indicate \fBhz\fR.
+Datamedia terminals, which echo carriage-return linefeed for carriage return
+and then ignore a following linefeed should indicate \fBnc\fR.
+Early Concept terminals, which ignore a linefeed immediately after an \fBam\fR
+wrap, should indicate \fBxn\fR.
+If an erase-eol is required to get rid of standout
+(instead of merely writing on top of it),
+\fBxs\fP should be given.
+Teleray terminals, where tabs turn all characters moved over to blanks,
+should indicate \fBxt\fR.
+Other specific terminal problems may be corrected by adding more
+capabilities of the form \fBx\fIx\fR.
+.PP
+Other capabilities
+include \fBis\fR, an initialization string for the terminal,
+and \fBif\fR, the name of a file containing long initialization strings.
+These strings are expected to properly clear and then set the tabs
+on the terminal, if the terminal has settable tabs.
+If both are given, \fBis\fR will be printed before \fBif\fR.
+This is useful where \fBif\fR is
+.I /usr/lib/tabset/std
+but \fBis\fR
+clears the tabs first.
+.PP
+.B Similar Terminals
+.PP
+If there are two very similar terminals,
+one can be defined as being just like the other with certain exceptions.
+The string capability \fBtc\fR can be given
+with the name of the similar terminal.
+This capability must be \fIlast\fP and the combined length of the two entries
+must not exceed 1024. Since
+.I termlib
+routines search the entry from left to right, and since the tc capability is
+replaced by the corresponding entry, the capabilities given at the left
+override the ones in the similar terminal.
+A capability can be cancelled with \fBxx@\fR where xx is the capability.
+For example, the entry
+.PP
+	hn\||\|2621nl:ks@:ke@:tc=2621:
+.PP
+defines a 2621nl that does not have the \fBks\fR or \fBke\fR capabilities,
+and hence does not turn on the function key labels when in visual mode.
+This is useful for different modes for a terminal, or for different
+user preferences.
+.SH FILES
+.DT
+/etc/termcap	file containing terminal descriptions
+.SH SEE ALSO
+ex(1), curses(3), termcap(3), tset(1), vi(1), ul(1), more(1)
+.SH AUTHOR
+William Joy
+.br
+Mark Horton added underlining and keypad support
+.SH BUGS
+.I Ex
+allows only 256 characters for string capabilities, and the routines
+in 
+.I termcap(3)
+do not check for overflow of this buffer.
+The total length of a single entry (excluding only escaped newlines)
+may not exceed 1024.
+.PP
+The
+.BR ma ,
+.BR vs ,
+and
+.B ve
+entries are specific to the
+.I vi
+program.
+.PP
+Not all programs support all entries.
+There are entries that are not supported by any program.
