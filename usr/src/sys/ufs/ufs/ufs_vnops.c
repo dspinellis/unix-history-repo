@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.77 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.78 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1798,21 +1798,3 @@ bad:
 	ufs_iput(ip);
 	return (error);
 }
-
-
-#if defined(JOHNH) && 0
-/*
- * A hack to get the kernel to compile.
- */
-int
-hang_addrlist()
-{
-    return 0;
-}
-int
-free_addrlist()
-{
-    return 0;
-}
-#endif
-
