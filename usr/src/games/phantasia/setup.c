@@ -4,6 +4,7 @@
 #include "include.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdlib.h>
 /**/
 /************************************************************************
 /
@@ -36,14 +37,7 @@
 /
 /************************************************************************/
 
-main()
-{
-FILE	*fp;			/* for opening files */
-struct stat	fbuf;		/* for getting files statistics */
-register char	**filename;	/* for pointing to file names */
-register int	fd;		/* file descriptor */
-static char *files[] =		/* all files to create */
-	{
+static char *files[] = {		/* all files to create */
 	_PATH_MONST,
 	_PATH_PEOPLE,
 	_PATH_MESS,
@@ -52,8 +46,33 @@ static char *files[] =		/* all files to create */
 	_PATH_GOLD,
 	_PATH_VOID,
 	_PATH_SCORE,
-	(char *) NULL
-	};
+	NULL,
+};
+
+char *monsterfile="monsters.asc";
+
+int
+main(argc, argv)
+	int argc;
+	char *argv[];
+{
+	register char	**filename;	/* for pointing to file names */
+	register int	fd;		/* file descriptor */
+	FILE	*fp;			/* for opening files */
+	struct stat	fbuf;		/* for getting files statistics */
+	int ch;
+
+	while ((ch = getopt(argc, argv, "m:")) != EOF)
+		switch(ch) {
+		case 'm':
+			monsterfile = optarg;
+			break;
+		case '?':
+		default:
+			break;
+		}
+	argc -= optind;
+	argv += optind;
 
     srandom((unsigned) time((long *) NULL));	/* prime random numbers */
 
@@ -105,7 +124,7 @@ static char *files[] =		/* all files to create */
 	Error("Cannot update %s.\n", _PATH_MONST);
     else
 	{
-	if ((fp = fopen("monsters.asc", "r")) == NULL)
+	if ((fp = fopen(monsterfile, "r")) == NULL)
 	    {
 	    fclose(Monstfp);
 	    Error("cannot open %s to create monster database.\n", "monsters.asc");
