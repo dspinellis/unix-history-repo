@@ -15,7 +15,7 @@ static char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsd.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsd.c	8.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -126,16 +126,27 @@ main(argc, argv, envp)
 		envp++;
 	LastArg = envp[-1] + strlen(envp[-1]);
 
-	nfsdcnt = 4;
+#define	MAXNFSDCNT	20
+#define	DEFNFSDCNT	 4
+	nfsdcnt = DEFNFSDCNT;
 	cltpflag = reregister = tcpflag = tp4cnt = tp4flag = tpipcnt = 0;
 	tpipflag = udpflag = 0;
 #ifdef ISO
-#define	FLAGS	"-crtu"
+#define	GETOPT	"cn:rtu"
+#define	USAGE	"[-crtu] [-n num_servers]"
 #else
-#define	FLAGS	"-rtu"
+#define	GETOPT	"n:rtu"
+#define	USAGE	"[-rtu] [-n num_servers]"
 #endif
-	while ((ch = getopt(argc, argv, &FLAGS[1])) != EOF)
+	while ((ch = getopt(argc, argv, GETOPT)) != EOF)
 		switch (ch) {
+		case 'n':
+			nfsdcnt = atoi(argv[optind]);
+			if (nfsdcnt < 1 || nfsdcnt > MAXNFSDCNT) {
+				warnx("nfsd count %d; reset to %d", DEFNFSDCNT);
+				nfsdcnt = DEFNFSDCNT;
+			}
+			break;
 		case 'r':
 			reregister = 1;
 			break;
@@ -165,14 +176,17 @@ main(argc, argv, envp)
 	argv += optind;
 	argc -= optind;
 
-	/* Trailing number is the count of daemons. */
+	/*
+	 * XXX
+	 * Backward compatibility, trailing number is the count of daemons.
+	 */
 	if (argc > 1)
 		usage();
 	if (argc == 1) {
 		nfsdcnt = atoi(argv[optind]);
-		if (nfsdcnt < 1 || nfsdcnt > 20) {
-			warnx("nfsd count %d; reset to 4", nfsdcnt);
-			nfsdcnt = 4;
+		if (nfsdcnt < 1 || nfsdcnt > MAXNFSDCNT) {
+			warnx("nfsd count %d; reset to %d", DEFNFSDCNT);
+			nfsdcnt = DEFNFSDCNT;
 		}
 	}
 
@@ -512,7 +526,7 @@ main(argc, argv, envp)
 void
 usage()
 {
-	(void)fprintf(stderr, "nfsd [%s] [num_nfsds]\n", FLAGS);
+	(void)fprintf(stderr, "nfsd %s\n", USAGE);
 	exit(1);
 }
 
