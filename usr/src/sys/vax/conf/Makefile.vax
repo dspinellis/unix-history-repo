@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.vax	7.3 (Berkeley) %G%
+#	@(#)Makefile.vax	7.4 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -47,8 +47,8 @@ clean:
 		errs linterrs makelinks
 
 lint: /tmp param.c
-	@lint -hbxn -DGENERIC ${COPTS} ${PARAM} ../vax/Locore.c \
-	  ${CFILES} ../vax/swapgeneric.c ioconf.c param.c | \
+	@lint -hbxn -DGENERIC ${COPTS} ${PARAM} \
+	  ../vax/Locore.c ${CFILES} ioconf.c param.c | \
 	    grep -v 'struct/union .* never defined' | \
 	    grep -v 'possible pointer alignment problem'
 

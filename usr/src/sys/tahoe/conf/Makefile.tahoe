@@ -1,4 +1,4 @@
-#	@(#)Makefile.tahoe	1.8 (Berkeley) %G%
+#	@(#)Makefile.tahoe	1.9 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -39,8 +39,8 @@ clean:
 		errs linterrs makelinks
 
 lint: /tmp param.c
-	@lint -hbxn -I. -DGENERIC ${COPTS} ${PARAM} ../tahoe/Locore.c \
-	  ${CFILES} ../tahoe/swapgeneric.c ioconf.c param.c | \
+	@lint -hbxn -I. -DGENERIC ${COPTS} ${PARAM} \
+	  ../tahoe/Locore.c ${CFILES} ioconf.c param.c | \
 	    grep -v 'struct/union .* never defined' | \
 	    grep -v 'possible pointer alignment problem'
 
