@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dinode.h	7.16 (Berkeley) %G%
+ *	@(#)dinode.h	7.17 (Berkeley) %G%
  */
 
 /*
@@ -42,7 +42,16 @@ struct dinode {
 	long		di_spare[2];	/* 120: reserved, currently unused */
 };
 
+/*
+ * The di_db fields may be overlaid with other information for
+ * file types that do not have associated disk storage. Block
+ * and character devices overlay the first data block with their
+ * dev_t value. Short symbolic links place their path in the
+ * di_db area.
+ */
 #define	di_rdev		di_db[0]
+#define di_shortlink	di_db
+#define	MAXSYMLINKLEN	(NDADDR * sizeof(daddr_t))
 
 /* file modes */
 #define	IFMT		0170000		/* mask of file type */
