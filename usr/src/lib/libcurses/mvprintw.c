@@ -6,9 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mvprintw.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mvprintw.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
+# include	<varargs.h>
 # include	"curses.ext"
 
 /*
@@ -17,29 +18,40 @@ static char sccsid[] = "@(#)mvprintw.c	5.5 (Berkeley) %G%";
  *
  */
 
-mvprintw(y, x, fmt, args)
-reg int		y, x;
-char		*fmt;
-int		args; {
+mvprintw(va_alist)
+va_dcl {
 
-	char	buf[512];
+	va_list	ap;
+	reg int	y, x;
+	int	ret;
 
+	va_start(ap);
+	y = va_arg(ap, int);
+	x = va_arg(ap, int);
 	if (move(y, x) != OK)
-		return ERR;
-	(void) vsprintf(buf, fmt, &args);
-	return waddstr(stdscr, buf);
+		ret = ERR;
+	else
+		ret = _sprintw(stdscr, ap);
+	va_end(ap);
+	return ret;
 }
 
-mvwprintw(win, y, x, fmt, args)
-reg WINDOW	*win;
-reg int		y, x;
-char		*fmt;
-int		args; {
+mvwprintw(va_alist)
+va_dcl {
 
-	char	buf[512];
+	va_list		ap;
+	reg WINDOW	*win;
+	reg int		y, x;
+	int		ret;
 
-	if (move(y, x) != OK)
-		return ERR;
-	(void) vsprintf(buf, fmt, &args);
-	return waddstr(win, buf);
+	va_start(ap);
+	win = va_arg(ap, WINDOW *);
+	y = va_arg(ap, int);
+	x = va_arg(ap, int);
+	if (wmove(win, y, x) != OK)
+		ret = ERR;
+	else
+		ret = _sprintw(win, ap);
+	va_end(ap);
+	return ret;
 }
