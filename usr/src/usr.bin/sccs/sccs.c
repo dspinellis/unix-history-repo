@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sccs.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)sccs.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
@@ -241,10 +241,6 @@ bool	Debug;			/* turn on tracing */
 # ifndef V6
 extern char	*getenv();
 # endif V6
-
-# ifdef DECLARE_SIGLIST
-extern char	*sys_siglist[];
-# endif
 
 char *gstrcat(), *strcat();
 char *gstrncat(), *strncat();
@@ -675,8 +671,8 @@ callprog(progpath, flags, argv, forkflag)
 	auto int st;
 	register int sigcode;
 	register int coredumped;
-	register char *sigmsg;
-	auto char sigmsgbuf[10+1];	/* "Signal 127" + terminating '\0' */
+	register const char *sigmsg;
+	char sigmsgbuf[10+1];	/* "Signal 127" + terminating '\0' */
 
 # ifdef DEBUG
 	if (Debug)
