@@ -1,9 +1,9 @@
-/*	dkbad.c	6.1	83/07/29	*/
+/*	dkbad.c	6.2	84/08/28	*/
 
 #ifndef NOBADSECT
-#include "../h/param.h"
-#include "../h/buf.h"
-#include "../h/dkbad.h"
+#include "param.h"
+#include "buf.h"
+#include "dkbad.h"
 
 /*
  * Search the bad sector table looking for

@@ -1,24 +1,24 @@
-/*	trap.c	6.3	84/07/08	*/
+/*	trap.c	6.4	84/08/28	*/
 
-#include "../machine/psl.h"
-#include "../machine/reg.h"
-#include "../machine/pte.h"
+#include "psl.h"
+#include "reg.h"
+#include "pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
 #include "assym.s"
-#include "../h/proc.h"
-#include "../h/seg.h"
-#include "../vax/trap.h"
-#include "../h/acct.h"
-#include "../h/kernel.h"
+#include "proc.h"
+#include "seg.h"
+#include "trap.h"
+#include "acct.h"
+#include "kernel.h"
 #ifdef SYSCALLTRACE
 #include "../sys/syscalls.c"
 #endif
 
-#include "../vax/mtpr.h"
+#include "mtpr.h"
 
 #define	USER	040		/* user-mode flag added to type */
 

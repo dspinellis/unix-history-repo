@@ -1,25 +1,25 @@
-/*	Locore.c	6.2	84/02/15	*/
+/*	Locore.c	6.3	84/08/28	*/
 
 #include "dz.h"
 #include "mba.h"
 #include "uba.h"
 
-#include "../machine/pte.h"
+#include "pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/vm.h"
-#include "../h/tty.h"
-#include "../h/proc.h"
-#include "../h/buf.h"
-#include "../h/msgbuf.h"
-#include "../h/mbuf.h"
-#include "../h/protosw.h"
-#include "../h/domain.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "vm.h"
+#include "tty.h"
+#include "proc.h"
+#include "buf.h"
+#include "msgbuf.h"
+#include "mbuf.h"
+#include "protosw.h"
+#include "domain.h"
 
-#include "../vax/nexus.h"
+#include "nexus.h"
 #include "../vaxuba/ubavar.h"
 #include "../vaxuba/ubareg.h"
 

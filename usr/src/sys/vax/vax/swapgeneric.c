@@ -1,18 +1,18 @@
-/*	swapgeneric.c	6.1	83/08/05	*/
+/*	swapgeneric.c	6.2	84/08/28	*/
 
 #include "mba.h"
 
-#include "../machine/pte.h"
+#include "pte.h"
 
-#include "../h/param.h"
-#include "../h/conf.h"
-#include "../h/buf.h"
-#include "../h/vm.h"
-#include "../h/systm.h"
-#include "../h/reboot.h"
+#include "param.h"
+#include "conf.h"
+#include "buf.h"
+#include "vm.h"
+#include "systm.h"
+#include "reboot.h"
 
-#include "../vax/cons.h"
-#include "../vax/mtpr.h"
+#include "cons.h"
+#include "mtpr.h"
 #include "../vaxmba/mbareg.h"
 #include "../vaxmba/mbavar.h"
 #include "../vaxuba/ubareg.h"

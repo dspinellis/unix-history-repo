@@ -1,22 +1,22 @@
-/*	mem.c	6.1	83/07/29	*/
+/*	mem.c	6.2	84/08/28	*/
 
 /*
  * Memory special file
  */
 
-#include "../machine/pte.h"
+#include "pte.h"
 
-#include "../h/param.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/conf.h"
-#include "../h/buf.h"
-#include "../h/systm.h"
-#include "../h/vm.h"
-#include "../h/cmap.h"
-#include "../h/uio.h"
+#include "param.h"
+#include "dir.h"
+#include "user.h"
+#include "conf.h"
+#include "buf.h"
+#include "systm.h"
+#include "vm.h"
+#include "cmap.h"
+#include "uio.h"
 
-#include "../vax/mtpr.h"
+#include "mtpr.h"
 
 mmread(dev, uio)
 	dev_t dev;

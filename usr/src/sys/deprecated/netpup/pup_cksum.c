@@ -1,7 +1,7 @@
-/*	pup_cksum.c	6.1	83/07/29	*/
+/*	pup_cksum.c	6.2	84/08/28	*/
 
-#include "../h/types.h"
-#include "../h/mbuf.h"
+#include "types.h"
+#include "mbuf.h"
 
 /*
  * Checksum routine for PUP-I Protocol family (VAX Version).

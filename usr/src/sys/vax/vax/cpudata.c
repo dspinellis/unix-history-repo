@@ -1,11 +1,11 @@
-/*	cpudata.c	6.1	83/07/29	*/
+/*	cpudata.c	6.2	84/08/28	*/
 
-#include "../machine/pte.h"
+#include "pte.h"
 
-#include "../h/param.h"
+#include "param.h"
 
-#include "../vax/cpu.h"
-#include "../vax/nexus.h"
+#include "cpu.h"
+#include "nexus.h"
 #include "../vaxuba/ubareg.h"
 
 /*

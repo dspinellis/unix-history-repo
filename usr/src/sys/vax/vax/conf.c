@@ -1,10 +1,10 @@
-/*	conf.c	6.2	84/07/27	*/
+/*	conf.c	6.3	84/08/28	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/buf.h"
-#include "../h/tty.h"
-#include "../h/conf.h"
+#include "param.h"
+#include "systm.h"
+#include "buf.h"
+#include "tty.h"
+#include "conf.h"
 
 int	nulldev();
 int	nodev();

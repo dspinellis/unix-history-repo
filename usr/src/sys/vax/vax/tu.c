@@ -1,4 +1,4 @@
-/*	tu.c	6.3	84/03/08	*/
+/*	tu.c	6.4	84/08/28	*/
 
 #if defined(VAX750) || defined(VAX730)
 /*
@@ -18,17 +18,17 @@
  *	 to crash your system if you are running multiuser.
  *	 	******FOR SINGLE USER USE ONLY*****
  */
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/buf.h"
-#include "../h/conf.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "systm.h"
+#include "buf.h"
+#include "conf.h"
+#include "dir.h"
+#include "user.h"
+#include "kernel.h"
 
-#include "../vax/cpu.h"
-#include "../vax/mtpr.h"
-#include "../vax/rsp.h"
+#include "cpu.h"
+#include "mtpr.h"
+#include "rsp.h"
 
 #define	printd	if(tudebug) printf
 #ifdef	printd

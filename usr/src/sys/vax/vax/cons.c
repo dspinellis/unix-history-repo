@@ -1,21 +1,21 @@
-/*	cons.c	6.1	83/07/29	*/
+/*	cons.c	6.2	84/08/28	*/
 
 /*
  * VAX console driver (and floppy interface)
  */
-#include "../h/param.h"
-#include "../h/conf.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/ioctl.h"
-#include "../h/tty.h"
-#include "../h/systm.h"
-#include "../h/uio.h"
+#include "param.h"
+#include "conf.h"
+#include "dir.h"
+#include "user.h"
+#include "proc.h"
+#include "ioctl.h"
+#include "tty.h"
+#include "systm.h"
+#include "uio.h"
 
-#include "../vax/cpu.h"
-#include "../vax/cons.h"
-#include "../vax/mtpr.h"
+#include "cpu.h"
+#include "cons.h"
+#include "mtpr.h"
 
 struct	tty cons;
 int	cnstart();

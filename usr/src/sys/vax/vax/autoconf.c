@@ -1,4 +1,4 @@
-/*	autoconf.c	6.6	84/02/16	*/
+/*	autoconf.c	6.7	84/08/28	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -22,22 +22,22 @@
 #include "mba.h"
 #include "uba.h"
 
-#include "../machine/pte.h"
+#include "pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/map.h"
-#include "../h/buf.h"
-#include "../h/dk.h"
-#include "../h/vm.h"
-#include "../h/conf.h"
-#include "../h/dmap.h"
+#include "param.h"
+#include "systm.h"
+#include "map.h"
+#include "buf.h"
+#include "dk.h"
+#include "vm.h"
+#include "conf.h"
+#include "dmap.h"
 
-#include "../vax/cpu.h"
-#include "../vax/mem.h"
-#include "../vax/mtpr.h"
-#include "../vax/nexus.h"
-#include "../vax/scb.h"
+#include "cpu.h"
+#include "mem.h"
+#include "mtpr.h"
+#include "nexus.h"
+#include "scb.h"
 #include "../vaxmba/mbareg.h"
 #include "../vaxmba/mbavar.h"
 #include "../vaxuba/ubareg.h"

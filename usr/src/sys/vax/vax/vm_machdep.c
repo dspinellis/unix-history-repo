@@ -1,18 +1,18 @@
-/*	vm_machdep.c	6.2	83/11/18	*/
+/*	vm_machdep.c	6.3	84/08/28	*/
 
-#include "../machine/pte.h"
+#include "pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/cmap.h"
-#include "../h/mount.h"
-#include "../h/vm.h"
-#include "../h/text.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "proc.h"
+#include "cmap.h"
+#include "mount.h"
+#include "vm.h"
+#include "text.h"
 
-#include "../vax/mtpr.h"
+#include "mtpr.h"
 
 /*
  * Set a red zone in the kernel stack after the u. area.
