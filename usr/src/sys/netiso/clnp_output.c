@@ -32,42 +32,32 @@ static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_output.c,v 5.0 89/02
 #endif lint
 
 #ifdef ISO
-#include "../h/types.h"
-#include "../h/param.h"
-#include "../h/mbuf.h"
-#include "../h/domain.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/errno.h"
-#include "../h/time.h"
+#include "types.h"
+#include "param.h"
+#include "mbuf.h"
+#include "domain.h"
+#include "protosw.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "errno.h"
+#include "time.h"
 
 #include "../net/if.h"
 #include "../net/route.h"
 
-#include "../netiso/iso.h"
-#include "../netiso/iso_pcb.h"
-#include "../netiso/clnp.h"
-#include "../netiso/clnp_stat.h"
-#include "../netiso/argo_debug.h"
+#include "iso.h"
+#include "iso_var.h"
+#include "iso_pcb.h"
+#include "clnp.h"
+#include "clnp_stat.h"
+#include "argo_debug.h"
 
 static struct clnp_fixed dt_template = {
 	ISO8473_CLNP,	/* network identifier */
 	0,				/* length */
 	ISO8473_V1,		/* version */
 	CLNP_TTL,		/* ttl */
-#if BYTE_ORDER == LITTLE_ENDIAN
-	CLNP_DT,		/* type */
-	1, 				/* error report */
-	0, 				/* more segments */
-	1, 				/* segmentation permitted */
-#endif
-#if BYTE_ORDER == BIG_ENDIAN
-	1, 				/* segmentation permitted */
-	0, 				/* more segments */
-	1, 				/* error report */
-	CLNP_DT,		/* type */
-#endif 
+	CLNP_DT|CNF_SEG_OK|CNF_ERR_OK,		/* type */
 	0,				/* segment length */
 	0				/* checksum */
 };
@@ -77,18 +67,7 @@ static struct clnp_fixed raw_template = {
 	0,				/* length */
 	ISO8473_V1,		/* version */
 	CLNP_TTL,		/* ttl */
-#if BYTE_ORDER == LITTLE_ENDIAN
-	CLNP_RAW,		/* type */
-	1, 				/* error report */
-	0, 				/* more segments */
-	1, 				/* segmentation permitted */
-#endif
-#if BYTE_ORDER == BIG_ENDIAN
-	1, 				/* segmentation permitted */
-	0, 				/* more segments */
-	1, 				/* error report */
-	CLNP_RAW,		/* type */
-#endif
+	CLNP_RAW|CNF_SEG_OK|CNF_ERR_OK,		/* type */
 	0,				/* segment length */
 	0				/* checksum */
 };
@@ -98,18 +77,7 @@ static struct clnp_fixed echo_template = {
 	0,				/* length */
 	ISO8473_V1,		/* version */
 	CLNP_TTL,		/* ttl */
-#if BYTE_ORDER == LITTLE_ENDIAN
-	CLNP_EC,		/* type */
-	1, 				/* error report */
-	0, 				/* more segments */
-	1, 				/* segmentation permitted */
-#endif
-#if BYTE_ORDER == BIG_ENDIAN
-	1, 				/* segmentation permitted */
-	0, 				/* more segments */
-	1, 				/* error report */
-	CLNP_EC,		/* type */
-#endif
+	CLNP_EC|CNF_SEG_OK|CNF_ERR_OK,		/* type */
 	0,				/* segment length */
 	0				/* checksum */
 };
@@ -168,14 +136,14 @@ int				clnp_id = 0;		/* id for segmented dgrams */
  *					to have clnp check that the route has the same dest, but
  *					by avoiding this check, we save a call to iso_addrmatch1.
  */
-clnp_output(m0, isop, datalen, flags)
+clnp_output(m0, isop, flags)
 struct mbuf			*m0;		/* data for the packet */
 struct isopcb		*isop;		/* iso pcb */
-int					datalen;	/* number of bytes of data in m */
 int					flags;		/* flags */
 {
 	int							error = 0;		/* return value of function */
-	register struct mbuf		*m;				/* mbuf for clnp header chain */
+	register struct mbuf		*m = m0;		/* mbuf for clnp header chain */
+	int							datalen;	/* number of bytes of data in m */
 	register struct clnp_fixed	*clnp;			/* ptr to fixed part of hdr */
 	register caddr_t			hoff;			/* offset into header */
 	int							total_len;		/* total length of packet */
@@ -185,9 +153,14 @@ int					flags;		/* flags */
 	struct clnp_cache			*clcp = NULL;	/* ptr to clc */
 	int							hdrlen = 0;
 
-	src = &isop->isop_laddr.siso_addr;
-	dst = &isop->isop_faddr.siso_addr;
+	src = &isop->isop_laddr->siso_addr;
+	dst = &isop->isop_faddr->siso_addr;
 
+	if ((m->m_flags & M_PKTHDR) == 0) {
+		m_freem(m);
+		return EINVAL;
+	}
+	datalen = m->m_pkthdr.len;
 	IFDEBUG(D_OUTPUT)
 		printf("clnp_output: to %s", clnp_iso_addrp(dst));
 		printf(" from %s of %d bytes\n", clnp_iso_addrp(src), datalen);
@@ -230,7 +203,7 @@ int					flags;		/* flags */
 			printf("clnp_output: using cache\n");
 		ENDDEBUG
 
-		m = m_copy(clcp->clc_hdr, 0, M_COPYALL);
+		m = m_copy(clcp->clc_hdr, 0, (int)M_COPYALL);
 		if (m == NULL) {
 			/*
 			 *	No buffers left to copy cached packet header. Use
@@ -346,7 +319,7 @@ int					flags;		/* flags */
 		/*
 		 *	Grab mbuf to contain header
 		 */
-		MGET(m, M_DONTWAIT, MT_HEADER);
+		MGETHDR(m, M_DONTWAIT, MT_HEADER);
 		if (m == 0) {
 			m_freem(m0);
 			return(ENOBUFS);
@@ -367,9 +340,9 @@ int					flags;		/* flags */
 			*clnp = dt_template;
 		}
 		if (flags & CLNP_NO_SEG)
-			clnp->cnf_seg_ok = 0;
+			clnp->cnf_type &= ~CNF_SEG_OK;
 		if (flags & CLNP_NO_ER)
-			clnp->cnf_err_ok = 0;
+			clnp->cnf_type &= ~CNF_ERR_OK;
 
 		/*
 		 *	Route packet; special case for source rt
@@ -379,14 +352,14 @@ int					flags;		/* flags */
 				printf("clnp_output: calling clnp_srcroute\n");
 			ENDDEBUG
 			error = clnp_srcroute(isop->isop_options, oidx, &isop->isop_route,
-				&clcp->clc_firsthop, &clcp->clc_ifp, dst);
+				&clcp->clc_firsthop, &clcp->clc_ifa, dst);
 		} else {
 			IFDEBUG(D_OUTPUT)
 			ENDDEBUG
 			error = clnp_route(dst, &isop->isop_route, flags, 
-				&clcp->clc_firsthop, &clcp->clc_ifp);
+				&clcp->clc_firsthop, &clcp->clc_ifa);
 		}
-		if (error != 0) {
+		if (error || (clcp->clc_ifa == 0)) {
 			IFDEBUG(D_OUTPUT)
 				printf("clnp_output: route failed, errno %d\n", error);
 				printf("@clcp:\n");
@@ -407,12 +380,7 @@ int					flags;		/* flags */
 		 *	the isopcb. Is this desirable? RAH?
 		 */
 		if (src->isoa_len == 0) {
-			src = clnp_srcaddr(clcp->clc_ifp,
-				&((struct sockaddr_iso *)clcp->clc_firsthop)->siso_addr);
-			if (src == NULL) {
-				error = ENETDOWN;
-				goto bad;
-			}
+			src = &(clcp->clc_ifa->ia_addr.siso_addr);
 			IFDEBUG(D_OUTPUT)
 				printf("clnp_output: new src %s\n", clnp_iso_addrp(src));
 			ENDDEBUG
@@ -422,13 +390,13 @@ int					flags;		/* flags */
 		 *	Insert the source and destination address,
 		 */
 		hoff = (caddr_t)clnp + sizeof(struct clnp_fixed);
-		CLNP_INSERT_ADDR(hoff, dst);
-		CLNP_INSERT_ADDR(hoff, src);
+		CLNP_INSERT_ADDR(hoff, *dst);
+		CLNP_INSERT_ADDR(hoff, *src);
 
 		/*
 		 *	Leave room for the segment part, if segmenting is selected
 		 */
-		if (clnp->cnf_seg_ok) {
+		if (clnp->cnf_type & CNF_SEG_OK) {
 			clcp->clc_segoff = hoff - (caddr_t)clnp;
 			hoff += sizeof(struct clnp_segment);
 		}
@@ -455,7 +423,7 @@ int					flags;		/* flags */
 		 *	If an options mbuf is present, concatenate a copy to the hdr mbuf.
 		 */
 		if (isop->isop_options) {
-			struct mbuf *opt_copy = m_copy(isop->isop_options, 0, M_COPYALL);
+			struct mbuf *opt_copy = m_copy(isop->isop_options, 0, (int)M_COPYALL);
 			if (opt_copy == NULL) {
 				error = ENOBUFS;
 				goto bad;
@@ -478,9 +446,8 @@ int					flags;		/* flags */
 		 *	Now set up the cache entry in the pcb
 		 */
 		if ((flags & CLNP_NOCACHE) == 0) {
-			if ((clcp->clc_hdr = m_copy(m, 0, clnp->cnf_hdr_len)) != NULL) {
-				bcopy((caddr_t)dst, (caddr_t)&clcp->clc_dst, 
-					sizeof(struct iso_addr));
+			if (clcp->clc_hdr = m_copy(m, 0, (int)clnp->cnf_hdr_len)) {
+				clcp->clc_dst  = *dst;
 				clcp->clc_flags = flags;
 				clcp->clc_options = isop->isop_options;
 			}
@@ -491,8 +458,9 @@ int					flags;		/* flags */
 	 *	If small enough for interface, send directly
 	 *	Fill in segmentation part of hdr if using the full protocol
 	 */
-	if ((total_len = clnp->cnf_hdr_len + datalen) <= SN_MTU(clcp->clc_ifp)) {
-		if (clnp->cnf_seg_ok) {
+	if ((total_len = clnp->cnf_hdr_len + datalen)
+			<= SN_MTU(clcp->clc_ifa->ia_ifp)) {
+		if (clnp->cnf_type & CNF_SEG_OK) {
 			struct clnp_segment	seg_part;		/* segment part of hdr */
 			seg_part.cng_id = htons(clnp_id++);
 			seg_part.cng_off = htons(0);
@@ -501,7 +469,7 @@ int					flags;		/* flags */
 				sizeof(seg_part));
 		}
 		HTOC(clnp->cnf_seglen_msb, clnp->cnf_seglen_lsb, total_len);
-
+		m->m_pkthdr.len = total_len;
 		/*
 		 *	Compute clnp checksum (on header only)
 		 */
@@ -526,7 +494,7 @@ int					flags;		/* flags */
 		/*
 		 * Too large for interface; fragment if possible.
 		 */
-		error = clnp_fragment(clcp->clc_ifp, m, clcp->clc_firsthop, total_len, 
+		error = clnp_fragment(clcp->clc_ifa->ia_ifp, m, clcp->clc_firsthop, total_len, 
 			clcp->clc_segoff, flags);
 		goto done;
 	}

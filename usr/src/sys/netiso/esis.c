@@ -30,30 +30,30 @@ static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
 
 #ifdef ISO
 
-#include "../h/types.h"
-#include "../h/param.h"
-#include "../h/mbuf.h"
-#include "../h/domain.h"
-#include "../h/protosw.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/errno.h"
-#include "../h/kernel.h"
+#include "types.h"
+#include "param.h"
+#include "mbuf.h"
+#include "domain.h"
+#include "protosw.h"
+#include "dir.h"
+#include "user.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "errno.h"
+#include "kernel.h"
 
 #include "../net/if.h"
 #include "../net/route.h"
 
-#include "../netiso/iso.h"
-#include "../netiso/iso_pcb.h"
-#include "../netiso/iso_var.h"
-#include "../netiso/iso_snpac.h"
-#include "../netiso/clnl.h"
-#include "../netiso/clnp.h"
-#include "../netiso/clnp_stat.h"
-#include "../netiso/argo_debug.h"
-#include "../netiso/esis.h"
+#include "iso.h"
+#include "iso_pcb.h"
+#include "iso_var.h"
+#include "iso_snpac.h"
+#include "clnl.h"
+#include "clnp.h"
+#include "clnp_stat.h"
+#include "argo_debug.h"
+#include "esis.h"
 
 /*
  *	Global variables to esis implementation
@@ -70,15 +70,13 @@ short			esis_config_time = ESIS_CONFIG;
 extern int		iso_systype;
 extern struct snpa_cache	all_es, all_is;
 
-#define EXTEND_PACKET(m, mhdr, len, cp)\
+#define EXTEND_PACKET(m, mhdr, cp)\
 	if (((m)->m_next = m_getclr(M_DONTWAIT, MT_HEADER)) == NULL) {\
 		esis_stat.es_nomem++;\
 		m_freem(mhdr);\
 		return;\
 	} else {\
-		(m)->m_len = (len);\
 		(m) = (m)->m_next;\
-		(len) = 0;\
 		(cp) = mtod((m), caddr_t);\
 	}
 /*
@@ -124,6 +122,7 @@ esis_init()
  *
  * NOTES:			This is here only so esis gets initialized.
  */
+/*ARGSUSED*/
 esis_usrreq(so, req, m, nam, rights)
 struct socket	*so;		/* socket: used only to get to this code */
 int				req;		/* request */
@@ -152,8 +151,8 @@ esis_input(m0, shp)
 struct mbuf		*m0;		/* ptr to first mbuf of pkt */
 struct snpa_hdr	*shp;	/* subnetwork header */
 {
-	struct isopcb		*isop;
 	struct esis_fixed	*pdu = mtod(m0, struct esis_fixed *);
+	register int type;
 
 	IFDEBUG(D_ESISINPUT)
 		int i;
@@ -171,7 +170,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	/*
 	 *	check checksum if necessary
 	 */
-	if (ESIS_CKSUM_REQUIRED(pdu) && iso_check_csum(m0, pdu->esis_hdr_len)) {
+	if (ESIS_CKSUM_REQUIRED(pdu) && iso_check_csum(m0, (int)pdu->esis_hdr_len)) {
 		esis_stat.es_badcsum++;
 		goto bad;
 	}
@@ -182,7 +181,8 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		goto bad;
 	}
 
-	switch(pdu->esis_type) {
+	type = pdu->esis_type & 0x1f;
+	switch (type) {
 		case ESIS_ESH:
 			esis_eshinput(m0, shp);
 			return;
@@ -235,7 +235,6 @@ struct snpa_cache	*nhop_sc;		/* snpa cache info regarding next hop of
 	esis_stat.es_rdsent++;
 
 	IFDEBUG(D_ESISOUTPUT)
-		int	i;
 		printf("esis_rdoutput: ifp x%x (%s%d), ht %d, m x%x, oidx x%x\n",
 			ifp, ifp->if_name, ifp->if_unit, esis_holding_time, inbound_m,
 			inbound_oidx);
@@ -243,13 +242,14 @@ struct snpa_cache	*nhop_sc;		/* snpa cache info regarding next hop of
 		printf("\tredirected toward:%s\n", clnp_iso_addrp(&nhop_sc->sc_nsap));
 	ENDDEBUG
 
-	if ((m0 = m = m_getclr(M_DONTWAIT, MT_HEADER)) == NULL) {
+	if ((m0 = m = m_gethdr(M_DONTWAIT, MT_HEADER)) == NULL) {
 		esis_stat.es_nomem++;
 		return;
 	}
+	bzero(mtod(m, caddr_t), MHLEN);
 
 	pdu = mtod(m, struct esis_fixed *);
-	cp = (caddr_t)pdu + sizeof(struct esis_fixed);
+	cp = (caddr_t)(pdu + 1); /*pointer arith.; 1st byte after header */
 	len = sizeof(struct esis_fixed);
 
 	/*
@@ -261,11 +261,11 @@ struct snpa_cache	*nhop_sc;		/* snpa cache info regarding next hop of
 	HTOC(pdu->esis_ht_msb, pdu->esis_ht_lsb, esis_holding_time);
 
 	/* Insert destination address */
-	(void) esis_insert_addr(&cp, &len, rd_dstnsap, MLEN - len);
+	(void) esis_insert_addr(&cp, &len, rd_dstnsap, m);
 
 	/* Insert the snpa of better next hop */
 	*cp++ = nhop_sc->sc_len;
-	bcopy(nhop_sc->sc_snpa, cp, nhop_sc->sc_len);
+	bcopy((caddr_t)nhop_sc->sc_snpa, cp, nhop_sc->sc_len);
 	len += (nhop_sc->sc_len + 1);
 
 	/* 
@@ -281,11 +281,12 @@ struct snpa_cache	*nhop_sc;		/* snpa cache info regarding next hop of
 			m_freem(m0);
 			return;
 		}
-		(void) esis_insert_addr(&cp, &len, &nhop_sc->sc_nsap, MLEN - len);
+		(void) esis_insert_addr(&cp, &len, &nhop_sc->sc_nsap, m);
 	} else {
 		*cp++ = 0;	/* NETL */
 		len++;
 	}
+	m->m_len = len;
 
 	/*
 	 *	PHASE2
@@ -306,9 +307,9 @@ struct snpa_cache	*nhop_sc;		/* snpa cache info regarding next hop of
 			optlen += 3;
 		if (inbound_oidx->cni_securep)
 			optlen += (inbound_oidx->cni_secure_len + 2);
-		if (MLEN-len < optlen) {
-			total_len += len;
-			EXTEND_PACKET(m, m0, len, cp);
+		if (M_TRAILINGSPACE(m) < optlen) {
+			EXTEND_PACKET(m, m0, cp);
+			m->m_len = 0;
 			/* assumes MLEN > optlen */
 		}
 		/* assume MLEN-len > optlen */
@@ -317,67 +318,33 @@ struct snpa_cache	*nhop_sc;		/* snpa cache info regarding next hop of
 		 *	the option code and length
 		 */
 		if (inbound_oidx->cni_qos_formatp) {
-			bcopy(inbound_m + inbound_oidx->cni_qos_formatp - 2, cp, 
-				inbound_oidx->cni_qos_len + 2);
+			bcopy((caddr_t)(inbound_m + inbound_oidx->cni_qos_formatp - 2), cp, 
+				(unsigned)(inbound_oidx->cni_qos_len + 2));
 			len += inbound_oidx->cni_qos_len + 2;
 		}
 		if (inbound_oidx->cni_priorp) {
-			bcopy(inbound_m + inbound_oidx->cni_priorp - 2, cp, 3);
+			bcopy((caddr_t)(inbound_m + inbound_oidx->cni_priorp - 2), cp, 3);
 			len += 3;
 		}
 		if (inbound_oidx->cni_securep) {
-			bcopy(inbound_m + inbound_oidx->cni_securep - 2, cp, 
-				inbound_oidx->cni_secure_len + 2);
+			bcopy((caddr_t)(inbound_m + inbound_oidx->cni_securep - 2), cp, 
+				(unsigned)(inbound_oidx->cni_secure_len + 2));
 			len += inbound_oidx->cni_secure_len + 2;
 		}
+		m->m_len += optlen;
 	}
 
-	m->m_len = len;
-	total_len += len;
-	pdu->esis_hdr_len = total_len;
+	pdu->esis_hdr_len = m0->m_pkthdr.len = len;
 	iso_gen_csum(m0, ESIS_CKSUM_OFF, (int)pdu->esis_hdr_len);
 
+	bzero((caddr_t)&siso, sizeof(siso));
+	siso.siso_len = 12;
 	siso.siso_family = AF_ISO;
-	siso.siso_addr.isoa_afi = AFI_SNA;
-	siso.siso_addr.isoa_len = 6 + 1;	/* should be taken from snpa_hdr */
+	siso.siso_data[0] = AFI_SNA;
+	siso.siso_nlen = 6 + 1;	/* should be taken from snpa_hdr */
 										/* +1 is for AFI */
-	bcopy(inbound_shp->snh_shost, siso.siso_addr.sna_idi, 6);
+	bcopy(inbound_shp->snh_shost, siso.siso_data + 1, 6);
 	(ifp->if_output)(ifp, m0, &siso);
-}
-
-/*
- * FUNCTION:		esis_extract_addr
- *
- * PURPOSE:			Remove an addr from a buffer, and stuff in iso_addr
- *
- * RETURNS:			true if the address was complete, else false
- *
- * SIDE EFFECTS:	Increment buf and decrement len according to the
- *					size of the iso_addr
- *
- * NOTES:			
- */
-esis_extract_addr(buf, isoa, len)
-caddr_t			*buf;		/* ptr to buffer to put address into */
-struct iso_addr	*isoa;		/* ptr to address */
-int				*len;		/* ptr to length of buffer */
-{
-	caddr_t		bp = *buf;
-
-	if (*len <= 0)
-		return(0);
-
-	bzero((caddr_t)isoa, sizeof (struct iso_addr));
-	isoa->isoa_len = *bp++;
-	*len -= 1;
-	if (isoa->isoa_len > *len)
-		return(0);	/* too big */
-	bcopy(bp, (caddr_t)isoa, isoa->isoa_len);
-	*len -= isoa->isoa_len;
-	bp += isoa->isoa_len;
-	*buf = bp;
-
-	return(1);
 }
 
 /*
@@ -391,22 +358,20 @@ int				*len;		/* ptr to length of buffer */
  *
  * NOTES:			Plus 1 here is for length byte
  */
-esis_insert_addr(buf, len, isoa, remaining)
+esis_insert_addr(buf, len, isoa, m)
 caddr_t			*buf;		/* ptr to buffer to put address into */
 int				*len;		/* ptr to length of buffer so far */
 struct iso_addr	*isoa;		/* ptr to address */
-int				remaining;	/* length of buffer */
+register struct mbuf	*m;	/* determine if there remains space */
 {
-	caddr_t		bp = *buf;
+	register int newlen = isoa->isoa_len + 1;
 
-	if ((isoa->isoa_len+1) > remaining)
+	if (newlen > M_TRAILINGSPACE(m))
 		return(0);
-	*bp++ = isoa->isoa_len;
-	*len += 1;
-	bcopy((caddr_t)isoa, bp, isoa->isoa_len);
-	bp += isoa->isoa_len;
-	*len += isoa->isoa_len;
-	*buf = bp;
+	bcopy((caddr_t)isoa, *buf, newlen);
+	*len += newlen;
+	*buf += newlen;
+	m->m_len += newlen;
 	return(1);
 }
 
@@ -429,10 +394,11 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 {
 	struct esis_fixed	*pdu = mtod(m, struct esis_fixed *);
 	u_short				ht;		/* holding time */
-	struct iso_addr		nsap;
-	int					naddr;
-	caddr_t				buf = (caddr_t)pdu + sizeof(struct esis_fixed);
+	struct iso_addr		*nsap;
+	int					naddr = 0;
+	u_char				*buf = (u_char *)(pdu + 1);
 	int					len = pdu->esis_hdr_len - sizeof(struct esis_fixed);
+	int					optlen, new_entry;
 
 	esis_stat.es_eshrcvd++;
 
@@ -449,26 +415,28 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	ENDDEBUG
 
 	while (naddr-- > 0) {
-		if (esis_extract_addr(&buf, &nsap, &len)) {
-			int new_entry = (snpac_look(&nsap) == NULL);
+		nsap = (struct iso_addr *)buf;
+		if ((len -=  (optlen = *buf++)) >= 0) {
+			buf += optlen;
+			new_entry = (snpac_look(nsap) == NULL);
 
 			IFDEBUG(D_ESISINPUT)
 				printf("esis_eshinput: nsap %s is %s\n", 
-					clnp_iso_addrp(&nsap), new_entry ? "new" : "old");
+					clnp_iso_addrp(nsap), new_entry ? "new" : "old");
 			ENDDEBUG
 
-			snpac_add(shp->snh_ifp, &nsap, shp->snh_shost, 6, SNPA_ES, ht);
+			snpac_add(shp->snh_ifp, nsap, shp->snh_shost, 6, SNPA_ES, ht);
 			if (new_entry)
 				esis_shoutput(shp->snh_ifp, 
 					iso_systype & SNPA_ES ? ESIS_ESH : ESIS_ISH,
 					esis_holding_time, shp->snh_shost, 6);
 		} else {
+bad:
 			esis_stat.es_toosmall++;
 			break;
 		}
 	}
 
-bad:
 	m_freem(m);
 }
 
@@ -489,9 +457,10 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 {
 	struct esis_fixed	*pdu = mtod(m, struct esis_fixed *);
 	u_short				ht;		/* holding time */
-	struct iso_addr		nsap;
+	struct iso_addr		*nsap;
 	caddr_t				buf = (caddr_t)pdu + sizeof(struct esis_fixed);
 	int					len = pdu->esis_hdr_len - sizeof(struct esis_fixed);
+	int					optlen, new_entry;
 
 	esis_stat.es_ishrcvd++;
 	CTOH(pdu->esis_ht_msb, pdu->esis_ht_lsb, ht);
@@ -500,22 +469,39 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		printf("esis_ishinput: ish: ht %d\n", ht);
 	ENDDEBUG
 
-	if (esis_extract_addr(&buf, &nsap, &len)) {
-		int new_entry = (snpac_look(&nsap) == NULL);
+	nsap = (struct iso_addr *)buf;
+	if ((len -=  (optlen = *buf++)) < 0)
+		goto bad;
+	buf += optlen;
 
-		IFDEBUG(D_ESISINPUT)
-			printf("esis_ishinput: nsap %s is %s\n", 
-				clnp_iso_addrp(&nsap), new_entry ? "new" : "old");
-		ENDDEBUG
-
-		snpac_add(shp->snh_ifp, &nsap, shp->snh_shost, 6, SNPA_IS, ht);
-		if (new_entry)
-			esis_shoutput(shp->snh_ifp, 
-				iso_systype & SNPA_ES ? ESIS_ESH : ESIS_ISH,
-				esis_holding_time, shp->snh_shost, 6);
-	} else {
-		esis_stat.es_toosmall++;
+	/* process options */
+	while (len > 0) {
+		switch (*buf++) {
+		case ESISOVAL_ESCT:
+			if (*buf != 2)
+				goto bad;
+			CTOH(buf[0], buf[1], esis_config_time);
+		}
+		if ((len -=  (optlen = *buf)) < 0) {
+	bad:
+			esis_stat.es_toosmall++;
+			m_freem(m);
+			return;
+		}
+		buf += 1 + optlen;
 	}
+	new_entry = (snpac_look(nsap) == NULL);
+
+	IFDEBUG(D_ESISINPUT)
+		printf("esis_ishinput: nsap %s is %s\n", 
+			clnp_iso_addrp(nsap), new_entry ? "new" : "old");
+	ENDDEBUG
+
+	snpac_add(shp->snh_ifp, nsap, shp->snh_shost, 6, SNPA_IS, ht);
+	if (new_entry)
+		esis_shoutput(shp->snh_ifp, 
+			iso_systype & SNPA_ES ? ESIS_ESH : ESIS_ISH,
+			esis_holding_time, shp->snh_shost, 6);
 	m_freem(m);
 }
 
@@ -536,13 +522,11 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 {
 	struct esis_fixed	*pdu = mtod(m0, struct esis_fixed *);
 	u_short				ht;		/* holding time */
-	struct iso_addr		da;
-	caddr_t				bsnpa;
-	int					bsnpalen;
-	struct iso_addr		net;
-	int					netl;
-	caddr_t				buf = (caddr_t)pdu + sizeof(struct esis_fixed);
+	register struct iso_addr *da, *net = 0, *netmask = 0, *snpamask = 0;
+	u_char				*buf = (u_char *)(pdu + 1);
 	int					len = pdu->esis_hdr_len - sizeof(struct esis_fixed);
+	int					optlen, bsnpalen;
+	caddr_t				bsnpa;
 
 	esis_stat.es_rdrcvd++;
 
@@ -551,38 +535,53 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		goto bad;
 
 	CTOH(pdu->esis_ht_msb, pdu->esis_ht_lsb, ht);
+	if (len <= 0)
+		goto bad;
 
 	/* Extract DA */
-	if (!esis_extract_addr(&buf, &da, &len)) {
-		esis_stat.es_toosmall++;
+	da = (struct iso_addr *)buf;
+	if ((len -=  (optlen = *buf++)) <= 0)
 		goto bad;
-	}
-	
+	buf += optlen;
+
 	/* Extract better snpa */
-	bsnpalen = *buf++;
-	if (bsnpalen > len) {
-		esis_stat.es_toosmall++;
+	if ((len -=  (bsnpalen = *buf++)) < 0)
 		goto bad;
-	} else {
-		bsnpa = buf;
-		buf += bsnpalen;
-		len -= bsnpalen;
+	bsnpa = (caddr_t)buf;
+	buf += optlen;
+	
+	/* Extract NET if present */
+	if (len) {
+		net = (struct iso_addr *)buf;
+		if ((len -=  (optlen = *buf++)) < 0)
+			goto bad;
+		buf += optlen;
 	}
 
-	/* Extract NET if present */
-	if ((netl = *buf) > 0) {
-		if (!esis_extract_addr(&buf, &net, &len)) {
-			esis_stat.es_toosmall++;
-			goto bad;
+	/* process options */
+	while (len > 0) {
+		switch (*buf++) {
+		case ESISOVAL_SNPAMASK:
+			if (snpamask) /* duplicate */
+				goto bad;
+			snpamask = (struct iso_addr *)buf;
+			break;
+
+		case ESISOVAL_NETMASK:
+			if (netmask) /* duplicate */
+				goto bad;
+			netmask = (struct iso_addr *)buf;
 		}
+		if ((len -=  (optlen = *buf)) < 0)
+			goto bad;
+		buf += 1 + optlen;
 	}
 
 	IFDEBUG(D_ESISINPUT)
-		printf("esis_rdinput: rd: ht %d, da %s\n", ht, clnp_iso_addrp(&da));
-		if (netl)
-			printf("\t: net %s\n", clnp_iso_addrp(&net));
+		printf("esis_rdinput: rd: ht %d, da %s\n", ht, clnp_iso_addrp(da));
+		if (net)
+			printf("\t: net %s\n", clnp_iso_addrp(net));
 	ENDDEBUG
-
 	/*
 	 *	If netl is zero, then redirect is to an ES. We need to add an entry
 	 *	to the snpa cache for (destination, better snpa).
@@ -592,12 +591,16 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	 *	If the redirect is to an IS, add a route entry towards that
 	 *	IS.
 	 */
-	if (netl == 0) {
+	if ((net == 0) || (snpamask)) {
 		/* redirect to an ES */
-		snpac_add(shp->snh_ifp, &da, bsnpa, bsnpalen, SNPA_ES, ht);
+		snpac_add(shp->snh_ifp, da, bsnpa, bsnpalen, SNPA_ES, ht);
 	} else {
-		snpac_add(shp->snh_ifp, &net, bsnpa, bsnpalen, SNPA_IS, ht);
-		snpac_addrt(&da, &net);
+		struct iso_addr bsnpa_ia;
+
+		snpac_add(shp->snh_ifp, net, bsnpa, bsnpalen, SNPA_IS, ht);
+		bcopy(bsnpa, bsnpa_ia.isoa_genaddr, bsnpa_ia.isoa_len = 1 + bsnpalen);
+		bsnpa_ia.isoa_genaddr[0] = AFI_SNA;
+		snpac_addrt(da, &bsnpa_ia, net, netmask);
 	}
 bad:
 	m_freem(m0);
@@ -636,12 +639,12 @@ esis_config()
 			struct ifaddr	*ia;
 
 			for (ia = ifp->if_addrlist; ia; ia = ia->ifa_next) {
-				if (ia->ifa_addr.sa_family == AF_ISO) {
+				if (ia->ifa_addr->sa_family == AF_ISO) {
 					esis_shoutput(ifp, 
 						iso_systype & SNPA_ES ? ESIS_ESH : ESIS_ISH,
 						esis_holding_time,
-						iso_systype & SNPA_ES ? all_is.sc_snpa : 
-						all_es.sc_snpa, 6);
+						(caddr_t)(iso_systype & SNPA_ES ? all_is.sc_snpa : 
+						all_es.sc_snpa), 6);
 					break;
 				}
 			}
@@ -672,7 +675,7 @@ int				sn_len;
 	int					naddr = 0;
 	struct esis_fixed	*pdu;
 	struct ifaddr		*ifa;
-	int					len, total_len = 0;
+	int					len;
 	struct sockaddr_iso	siso;
 
 	if (type == ESIS_ESH)
@@ -694,13 +697,14 @@ int				sn_len;
 		printf("\n");
 	ENDDEBUG
 
-	if ((m0 = m = m_getclr(M_DONTWAIT, MT_HEADER)) == NULL) {
+	if ((m0 = m = m_gethdr(M_DONTWAIT, MT_HEADER)) == NULL) {
 		esis_stat.es_nomem++;
 		return;
 	}
+	bzero(mtod(m, caddr_t), MHLEN);
 
 	pdu = mtod(m, struct esis_fixed *);
-	naddrp = cp = (caddr_t)pdu + sizeof(struct esis_fixed);
+	naddrp = cp = (caddr_t)(pdu + 1);
 	len = sizeof(struct esis_fixed);
 
 	/*
@@ -716,18 +720,16 @@ int				sn_len;
 		len++;
 	}
 
+	m->m_len = len;
 	for (ifa = ifp->if_addrlist; ifa; ifa=ifa->ifa_next) {
-		if (ifa->ifa_addr.sa_family == AF_ISO) {
+		if (ifa->ifa_addr->sa_family == AF_ISO) {
 			IFDEBUG(D_ESISOUTPUT)
 				printf("esis_shoutput: adding nsap %s\n", 
 					clnp_iso_addrp(&IA_SIS(ifa)->siso_addr));
 			ENDDEBUG
-			if (!esis_insert_addr(&cp, &len, &IA_SIS(ifa)->siso_addr, 
-				MLEN - len)) {
-				total_len += len;
-				EXTEND_PACKET(m, m0, len, cp);
-				(void) esis_insert_addr(&cp, &len, &IA_SIS(ifa)->siso_addr, 
-					MLEN - len);
+			if (!esis_insert_addr(&cp, &len, &IA_SIS(ifa)->siso_addr, m)) {
+				EXTEND_PACKET(m, m0, cp);
+				(void) esis_insert_addr(&cp, &len, &IA_SIS(ifa)->siso_addr, m);
 			}
 			naddr++;
 			if (type == ESIS_ISH)
@@ -738,15 +740,16 @@ int				sn_len;
 	if (type == ESIS_ESH)
 		*naddrp = naddr;
 
-	m->m_len = len;
-	total_len += len;
-	pdu->esis_hdr_len = total_len;
+	m0->m_pkthdr.len = len;
+	pdu->esis_hdr_len = len;
 	iso_gen_csum(m0, ESIS_CKSUM_OFF, (int)pdu->esis_hdr_len);
 
+	bzero((caddr_t)&siso, sizeof(siso));
 	siso.siso_family = AF_ISO;
-	siso.siso_addr.isoa_afi = AFI_SNA;
-	siso.siso_addr.isoa_len = sn_len + 1;
-	bcopy(sn_addr, siso.siso_addr.sna_idi, sn_len);
+	siso.siso_data[0] = AFI_SNA;
+	siso.siso_nlen = sn_len + 1;
+	siso.siso_len  = sn_len + 6;
+	bcopy(sn_addr, siso.siso_data + 1, (unsigned)sn_len);
 	(ifp->if_output)(ifp, m0, &siso);
 }
 
@@ -769,10 +772,11 @@ struct sockaddr_iso		*siso;		/* address of ifp */
 {
 	register struct iso_ifaddr *ia;	/* scan through interface addresses */
 
-	for (ia = iso_ifaddr; ia; ia = ia->ia_next) {
-		if (iso_addrmatch(IA_SIS(ia), siso))
-			snpac_flushifp(ia->ia_ifp);
-	}
+	if (req == PRC_IFDOWN)
+		for (ia = iso_ifaddr; ia; ia = ia->ia_next) {
+			if (iso_addrmatch(IA_SIS(ia), siso))
+				snpac_flushifp(ia->ia_ifp);
+		}
 }
 
 #endif	ISO

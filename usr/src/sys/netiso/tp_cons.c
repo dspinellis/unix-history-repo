@@ -51,7 +51,7 @@ static char *rcsid = "$Header: tp_cons.c,v 5.6 88/11/18 17:27:13 nhall Exp $";
 #ifdef ISO
 #if NARGOXTWENTYFIVE > 0
 
-#include "types.h"
+#include "param.h"
 #include "socket.h"
 #include "domain.h"
 #include "mbuf.h"
@@ -59,18 +59,18 @@ static char *rcsid = "$Header: tp_cons.c,v 5.6 88/11/18 17:27:13 nhall Exp $";
 #include "time.h"
 #include "../net/if.h"
 
-#include "../netiso/tp_param.h"
-#include "../netiso/argo_debug.h"
-#include "../netiso/tp_stat.h"
-#include "../netiso/tp_pcb.h"
-#include "../netiso/tp_trace.h"
-#include "../netiso/tp_stat.h"
-#include "../netiso/tp_tpdu.h"
+#include "tp_param.h"
+#include "argo_debug.h"
+#include "tp_stat.h"
+#include "tp_pcb.h"
+#include "tp_trace.h"
+#include "tp_stat.h"
+#include "tp_tpdu.h"
 #include "../net/route.h"
-#include "../netiso/iso.h"
-#include "../netiso/iso_pcb.h"
-#include "../netiso/cons.h"
-#include "../netiso/tp_seq.h"
+#include "iso.h"
+#include "iso_pcb.h"
+#include "cons.h"
+#include "tp_seq.h"
 
 int tpcons_output();
 

@@ -66,32 +66,34 @@ static char *rcsid = "$Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $";
 #include "time.h"
 #include "kernel.h"
 #include "types.h"
-#include "../netiso/iso_errno.h"
-#include "../netiso/tp_param.h"
-#include "../netiso/tp_timer.h"
-#include "../netiso/tp_stat.h"
-#include "../netiso/tp_pcb.h"
-#include "../netiso/argo_debug.h"
-#include "../netiso/tp_trace.h"
-#include "../netiso/tp_tpdu.h"
-#include "../netiso/iso.h"
-#include "../netiso/cons.h"
+#include "iso_errno.h"
+#include "tp_param.h"
+#include "tp_timer.h"
+#include "tp_stat.h"
+#include "tp_pcb.h"
+#include "argo_debug.h"
+#include "tp_trace.h"
+#include "tp_tpdu.h"
+#include "iso.h"
+#include "cons.h"
 
 int 	iso_check_csum(), tp_driver(), tp_headersize(), tp_error_emit();
 
-#ifdef lint
-#undef ATTR
-#define ATTR(X)ev_number
-#endif lint
+/*
+	#ifdef lint
+	#undef ATTR
+	#define ATTR(X)ev_number
+	#endif lint
+*/
 
 struct mbuf *
 tp_inputprep(m) 
-	struct mbuf *m;
+	register struct mbuf *m;
 {
-	struct tpdu *hdr;
+	int hdrlen;
 
 	IFDEBUG(D_TPINPUT)
-		printf("tp_inputprep: m 0x%x\n") ;
+		printf("tp_inputprep: m 0x%x\n", m) ;
 	ENDDEBUG
 
 	while(  m->m_len < 1 ) {
@@ -99,35 +101,28 @@ tp_inputprep(m)
 			return (struct mbuf *)0;
 		}
 	}
+	if(((int)m->m_data) & 0x3) {
+		/* If we are not 4-byte aligned, we have to be
+		 * above the beginning of the mbuf, and it is ok just
+		 * to slide it back. 
+		 */
+		caddr_t ocp = m->m_data;
 
-	if(m->m_off & 0x3) {
-		/* align to a 4-byte boundary - sigh */
-		register struct mbuf *n;
-
-		MGET(n, M_DONTWAIT, m->m_type);
-		if( n == MNULL ) {
-			m_freem(m);
-			return (struct mbuf *)0;
-		}
-		n->m_act = MNULL;
-		n->m_len = m->m_len;
-		n->m_next = m->m_next;
-		bcopy( mtod(m, caddr_t), mtod(n, caddr_t), m->m_len );
-		m->m_next = 0;
-		m_free(m);
-		m = n;
+		m->m_data = (caddr_t)(((int)m->m_data) & ~0x3);
+		ovbcopy(ocp, m->m_data, (unsigned)m->m_len);
 	}
 	CHANGE_MTYPE(m, TPMT_DATA);
 
-	/* we KNOW that there is at least 1 byte in this mbuf */
+	/* we KNOW that there is at least 1 byte in this mbuf
+	   and that it is hdr->tpdu_li XXXXXXX!  */
 
-	hdr = mtod( m, struct tpdu *);
+	hdrlen = 1 + *mtod( m, u_char *);
 
 	/*
 	 * now pull up the whole tp header 
 	 */
-	if ( m->m_len < hdr->tpdu_li + 1 ) {
-		if ((m = m_pullup(m, (int)(hdr->tpdu_li) + 1)) == MNULL ) {
+	if ( m->m_len < hdrlen) {
+		if ((m = m_pullup(m, hdrlen)) == MNULL ) {
 			IncStat(ts_recv_drop);
 			return (struct mbuf *)0;
 		}
@@ -135,7 +130,7 @@ tp_inputprep(m)
 	IFDEBUG(D_INPUT)
 	printf(
 	" at end: m 0x%x hdr->tpdu_li 0x%x m_len 0x%x\n",m,
-		hdr->tpdu_li,m->m_len);
+		hdrlen, m->m_len);
 	ENDDEBUG
 	return m;
 }
@@ -248,8 +243,9 @@ tp_newsocket(so, fname, cons_channel, class_to_use, netservice)
 		* listening socket
 		*/
 	IFDEBUG(D_NEWSOCK)
-		printf("tp_newsocket(channel 0x%x)  after sonewconn so 0x%x \n", so);
-		dump_isoaddr(fname);
+		printf("tp_newsocket(channel 0x%x)  after sonewconn so 0x%x \n",
+				cons_channel, so);
+		dump_addr(fname);
 		{ 
 			struct socket *t, *head ;
 
@@ -273,26 +269,19 @@ tp_newsocket(so, fname, cons_channel, class_to_use, netservice)
 	newtpcb->tp_l_tpdusize = tpcb->tp_l_tpdusize;
 	newtpcb->tp_lsuffixlen = tpcb->tp_lsuffixlen;
 	bcopy( tpcb->tp_lsuffix, newtpcb->tp_lsuffix, newtpcb->tp_lsuffixlen);
-	soreserve(so, tpcb->tp_winsize, tpcb->tp_winsize);
+	soreserve(so, (u_long)tpcb->tp_winsize, (u_long)tpcb->tp_winsize);
 
-	if( /* old */ tpcb->tp_flags & (TPF_CONN_DATA_OUT | TPF_DISC_DATA_OUT )) {
+	if( /* old */ tpcb->tp_ucddata) {
 		/* 
-		 * Flags has already been copied, now copy the data 
-		 * -- these data are the connect- or disconnect- data.
+		 * These data are the connect- , confirm- or disconnect- data.
 		 */
 		struct mbuf *conndata;
 
-		ASSERT(tpcb->tp_sock->so_snd.sb_mb != MNULL);
-		ASSERT(tpcb->tp_sock->so_snd.sb_cc != 0);
-		conndata = m_copy( tpcb->tp_sock->so_snd.sb_mb, 0,
-									tpcb->tp_sock->so_snd.sb_cc);
+		conndata = m_copy(tpcb->tp_ucddata, 0, (int)M_COPYALL);
 		IFDEBUG(D_CONN)
 			dump_mbuf(conndata, "conndata after mcopy");
-			dump_mbuf(tpcb->tp_sock->so_snd.sb_mb, "old sosnd after mcopy");
-			dump_mbuf(so->so_snd.sb_mb, "new (so->)sosnd before sbapndrec");
-			dump_mbuf(conndata, "conndata before sbappendrec");
 		ENDDEBUG
-		sbappendrecord( &so->so_snd, conndata );
+		newtpcb->tp_ucddata = conndata;
 	}
 
 	tpcb = newtpcb;
@@ -317,10 +306,8 @@ tp_newsocket(so, fname, cons_channel, class_to_use, netservice)
 			 * pcb_connect, which expects the name/addr in an mbuf as well.
 			 * sigh.
 			 */
-			bcopy((caddr_t)fname, mtod(m, caddr_t), sizeof (struct sockaddr));
-			m->m_act = MNULL;
-			m->m_len = (fname->sa_family == AF_INET) ? 
-				sizeof(struct sockaddr_in) : sizeof(struct sockaddr_iso);
+			bcopy((caddr_t)fname, mtod(m, caddr_t), fname->sa_len);
+			m->m_len = fname->sa_len;
 
 			/* grot  : have to say the kernel can override params in
 			 * the passive open case
@@ -447,7 +434,7 @@ again:
 		for(;;) {
 			tpdu_len += n->m_len;
 			IFDEBUG(D_MBUF_MEAS)
-				if( n->m_off > MMAXOFF) {
+				if( n->m_flags & M_EXT) {
 					IncStat(ts_mb_cluster);
 				} else {
 					IncStat(ts_mb_small);
@@ -513,7 +500,7 @@ again:
 #ifdef notdef  /* This is done up above */
 		sref = hdr->tpdu_CRsref;
 #endif notdef
-		preferred_class = (1 << hdr->tpdu_CRclass);
+		preferred_class = 1 << hdr->tpdu_CRclass;
 		opt = hdr->tpdu_CRoptions;
 
 		WHILE_OPTIONS(P, hdr, 1 ) /* { */
@@ -558,7 +545,7 @@ again:
 					printf("CR lsufx:");
 					{ register int j;
 						for(j=0; j<lsufxlen; j++ ) {
-							printf(" 0x%x. ", *((caddr_t)(lsufxloc+j)) );
+							printf(" 0x%x. ", *((u_char *)(lsufxloc+j)) );
 						}
 						printf("\n");
 					}
@@ -596,7 +583,7 @@ again:
 					for (i = ((struct tp_vbp *)P)->tpv_len; i>0; i--) {
 						aclass = 
 							(u_char *) &(((struct tp_vbp *)P)->tpv_val);
-						alt_classes |= (1<<(*aclass));
+						alt_classes |= (1<<((*aclass)>>4));
 					}
 					IFDEBUG(D_TPINPUT)
 						printf("alt_classes 0x%x\n", alt_classes);
@@ -759,11 +746,12 @@ again:
 			if( (so = 
 				tp_newsocket(so, faddr, cons_channel, 
 					class_to_use, 
-					(dgout_routine == tpcons_output)?ISO_CONS:ISO_CLNS)
+					((tpcb->tp_netservice == IN_CLNS) ? IN_CLNS :
+					(dgout_routine == tpcons_output)?ISO_CONS:ISO_CLNS))
 					) == (struct socket *)0 ) {
 				/* note - even if netservice is IN_CLNS, as far as
 				 * the tp entity is concerned, the only differences
-				 * are CO vs CL 
+				 * are CO vs CL
 				 */
 				IFDEBUG(D_CONN)
 					printf("tp_newsocket returns 0\n");
@@ -772,42 +760,20 @@ again:
 			}
 			tpcb = sototpcb(so);
 
-			/* stash the f suffix in the new tpcb */
-			/* l suffix is already there */
-
-			bcopy( fsufxloc, tpcb->tp_fsuffix, fsufxlen);
-			if( (tpcb->tp_fsuffixlen = fsufxlen) == sizeof(short) ) {
-				/* even if it's AF_ISO */
-				bcopy (fsufxloc, &(satosin(faddr)->sin_port), sizeof(short));
-				(tpcb->tp_nlproto->nlp_putsufx)(so->so_pcb, faddr, TP_FOREIGN);
-			}
-
 			/*
-			 * stash the addresses in the net level pcb 
+			 * Stash the addresses in the net level pcb 
 			 * kind of like a pcbconnect() but don't need
 			 * or want all those checks.
 			 */
 			(tpcb->tp_nlproto->nlp_putnetaddr)(so->so_pcb, faddr, TP_FOREIGN);
 			(tpcb->tp_nlproto->nlp_putnetaddr)(so->so_pcb, laddr, TP_LOCAL);
 
-			/*
-			 * in the AF_INET case, we need the l,f addrs to contain the ports
-			 */
-			if( tpcb->tp_domain == AF_INET) {
-				CHECK((fsufxlen != sizeof(short))||(lsufxlen != sizeof(short)),
-					E_TP_ADDR_UNK, ts_inv_dref, respond, 
-					(fsufxloc - (caddr_t)hdr))
-				bcopy (lsufxloc, &(satosin(laddr)->sin_port), sizeof(short));
-				(tpcb->tp_nlproto->nlp_putsufx)(so->so_pcb, laddr, TP_LOCAL);
-				/*
-					this has already been done 'cause the fsufxlen is
-					sizeof(short):
-					bcopy (fsufxloc, &(satosin(faddr)->sin_port), 
-						sizeof(short));
-					(tpcb->tp_nlproto->nlp_putsufx)(so->so_pcb, faddr, 
-						TP_FOREIGN);
-				*/
-			}
+			/* stash the f suffix in the new tpcb */
+			/* l suffix is already there */
+
+			bcopy(fsufxloc, tpcb->tp_fsuffix, fsufxlen);
+			(tpcb->tp_nlproto->nlp_putsufx)
+					(so->so_pcb, fsufxloc, fsufxlen, TP_FOREIGN);
 
 #ifdef TP_PERF_MEAS
 			if( tpcb->tp_perf_on = perf_meas ) { /* assignment */
@@ -847,7 +813,7 @@ again:
 			 */
 			IFDEBUG(D_ZDREF)
 				IncStat(ts_zdebug);
-				tpcb->tp_fref = 0;
+				/*tpcb->tp_fref = 0;*/
 			ENDDEBUG
 		}
 		IncStat(ts_CR_rcvd);
@@ -938,7 +904,7 @@ again:
 
 		WHILE_OPTIONS(P, hdr, tpcb->tp_xtd_format) /* { */
 
-#		define caseof(x,y) case (((x)<<8)+(y))
+#define caseof(x,y) case (((x)<<8)+(y))
 		switch( dutype | vbptr(P)->tpv_code ) {
 
 			caseof( CC_TPDU_type, TPP_addl_opt ): 
@@ -993,7 +959,7 @@ again:
 			caseof( XAK_TPDU_type,	TPP_checksum):		
 			caseof( DC_TPDU_type,	TPP_checksum):		
 					if( tpcb->tp_use_checksum )  {
-						CHECK( iso_check_csum(m, hdr->tpdu_li + 1), 
+						CHECK( iso_check_csum(m, (int)hdr->tpdu_li + 1), 
 							E_TP_INV_PVAL, ts_bad_csum, discard, 0)
 					}
 					break;
@@ -1348,22 +1314,52 @@ again:
 	 * into the mbuf's data area and we're still using hdr (the tpdu header)
 	 */
 	m->m_len -= ((int)hdr->tpdu_li + 1);
-	m->m_off += ((int)hdr->tpdu_li + 1);
+	m->m_data += ((int)hdr->tpdu_li + 1);
 
-	if(takes_data) {
-		register int max;
+	if (takes_data) {
+		int max = tpdu_info[ hdr->tpdu_type ] [TP_MAX_DATA_INDEX];
+		int datalen = tpdu_len - hdr->tpdu_li - 1, mbtype = MT_DATA;
+		struct tp_control_hdr c_hdr;
+		struct mbuf *n;
 
+		CHECK( (max && datalen > max), E_TP_LENGTH_INVAL,
+		        ts_inv_length, respond, (max + hdr->tpdu_li + 1) );
 		switch( hdr->tpdu_type ) {
-		case CR_TPDU_type:
-		case CC_TPDU_type:
-		case DR_TPDU_type:
-		case XPD_TPDU_type:
-		case DT_TPDU_type:
-			e.ATTR(DT_TPDU).e_datalen = tpdu_len - hdr->tpdu_li - 1;
-			max = tpdu_info[ hdr->tpdu_type ] [TP_MAX_DATA_INDEX];
-			CHECK( (max && e.ATTR(DT_TPDU).e_datalen > max),
-				 E_TP_LENGTH_INVAL,ts_inv_length, respond, (max + hdr->tpdu_li + 1))
 
+		case CR_TPDU_type:
+			c_hdr.cmsg_type = TPOPT_CONN_DATA;
+			goto make_control_msg;
+
+		case CC_TPDU_type:
+			c_hdr.cmsg_type = TPOPT_CFRM_DATA;
+			goto make_control_msg;
+
+		case DR_TPDU_type:
+			c_hdr.cmsg_type = TPOPT_DISC_DATA;
+		make_control_msg:
+			c_hdr.cmsg_level = SOL_TRANSPORT;
+			mbtype = MT_CONTROL;
+			if (datalen > 0) {
+				datalen += sizeof(c_hdr);
+				m->m_len += sizeof(c_hdr);
+				m->m_data -= sizeof(c_hdr);
+				c_hdr.cmsg_len = datalen;
+				bcopy((caddr_t)&c_hdr, mtod(m, caddr_t),
+								sizeof(c_hdr));
+			}
+			/* FALLTHROUGH */
+
+		case XPD_TPDU_type:
+			if (mbtype != MT_CONTROL)
+				mbtype = MT_OOBDATA;
+			m->m_flags |= M_EOR;
+			/* FALLTHROUGH */
+
+		case DT_TPDU_type:
+			for (n = m; n; n = n->m_next) { 
+				MCHTYPE(n, mbtype);
+			}
+			e.ATTR(DT_TPDU).e_datalen = datalen;
 			e.ATTR(DT_TPDU).e_data =  m;
 			break;
 
@@ -1427,6 +1423,7 @@ separate:
 		 * we can just pull up some more and repeat
 		 */
 
+		if( m = tp_inputprep(m) ) {
 		IFDEBUG(D_TPINPUT)
 			hdr = mtod(m, struct tpdu *);
 			printf("tp_input @ separate: hdr 0x%x size %d m 0x%x\n", 
@@ -1434,7 +1431,6 @@ separate:
 			dump_mbuf(m, "tp_input after driver, at separate");
 		ENDDEBUG
 
-		if( m = tp_inputprep(m) ) {
 			IncStat(ts_concat_rcvd);
 			goto again;
 		}
@@ -1474,9 +1470,9 @@ respond:
 	ENDTRACE
 	if( sref == 0 )
 		goto discard;
-	(void) tp_error_emit(error, sref, faddr, laddr, 
-		m, errloc, tpcb, cons_channel, dgout_routine
-		);
+	(void) tp_error_emit(error, (u_long)sref, (struct sockaddr_iso *)faddr,
+				(struct sockaddr_iso *)laddr, m, (int)errloc, tpcb,
+				(int)cons_channel, dgout_routine);
 	IFDEBUG(D_ERROR_EMIT)
 		printf("tp_input after error_emit\n");
 	ENDDEBUG

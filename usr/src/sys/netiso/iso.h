@@ -26,6 +26,7 @@ SOFTWARE.
  */
 /* $Header: iso.h,v 4.9 88/09/11 18:06:38 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/iso.h,v $ */
+/*	@(#)iso.h	7.2 (Berkeley) %G% */
 
 #ifndef __ISO__
 #define __ISO__
@@ -106,6 +107,7 @@ SOFTWARE.
  *  This means that you can't have multihoming in the x.25 environment.
  *  Makes loopback a bear.
  */
+#define BIGSOCKADDRS
 #ifdef BIGSOCKADDRS
 #define	ADDR37_IDI_LEN		7			/* 14 bcd digits == 7 octets */
 #define	ADDR37_DSP_LEN		9
@@ -228,7 +230,7 @@ struct addr_sn {
  *	Type 47 is the biggest address: 11 bytes. The length of iso_addr
  *	is 13 bytes.
  */
-struct iso_addr {
+struct old_iso_addr {
 	u_char	isoa_afi;						/* authority and format id */
 	union {
 		struct addr_37		addr_37;		/* type 37 */
@@ -237,6 +239,13 @@ struct iso_addr {
 		struct addr_sn		addr_sn;		/* subnetwork address */
 	} 		isoa_u;
 	u_char	isoa_len;						/* length (in bytes) */
+};
+
+/* The following looks like a sockaddr
+ * in case we decide to use tree routines */
+struct iso_addr {
+	u_char	isoa_len;						/* length (in bytes) */
+	char	isoa_genaddr[20];				/* general opaque address */
 };
 
 #define t37_idi		isoa_u.addr_37.a37_idi
@@ -256,10 +265,21 @@ struct iso_addr {
  * t37 and osinet addresses so that they were only 10 bytes long
  */
 struct sockaddr_iso {
-	u_short 			siso_family;		/* family */
-	u_short 			siso_tsuffix;		/* transport suffix */
+	u_char	 			siso_len;			/* length */
+	u_char	 			siso_family;		/* family */
+	u_char				siso_ssuffixlen;	/* session suffix len */
+	u_char				siso_tsuffixlen;	/* transport suffix len */
+/*  u_char				siso_nsaptype;		/* someday?? */
 	struct 	iso_addr	siso_addr;			/* network address */
+	u_char				siso_pad[3];		/* make multiple of sizeof long */
 };
+
+#define siso_data siso_addr.isoa_genaddr
+#define siso_nlen siso_addr.isoa_len
+#define TSEL(s) ((caddr_t)((s)->siso_data + (s)->siso_nlen))
+
+#define SAME_ISOADDR(a, b) \
+	(bcmp((a)->siso_data, (b)->siso_data, (unsigned)(a)->siso_nlen)==0)
 
 #define NSAPTYPE_UNKNOWN	-1
 #define NSAPTYPE_INET 		0
@@ -288,3 +308,4 @@ struct hostent *iso_gethostbyname(), *iso_gethostbyaddr();
 #endif KERNEL
 
 #endif __ISO__
+#define _offsetof(t, m) ((int)((caddr_t)&((t *)0)->m))

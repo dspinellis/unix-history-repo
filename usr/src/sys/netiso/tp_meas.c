@@ -38,7 +38,8 @@ static char *rcsid = "$Header: tp_meas.c,v 5.2 88/11/18 17:28:04 nhall Exp $";
 
 #include "types.h"
 #include "time.h"
-#include "../netiso/tp_meas.h"
+#include "argo_debug.h"
+#include "tp_meas.h"
 
 extern struct timeval time;
 
@@ -66,7 +67,7 @@ struct tp_Meas tp_Meas[TPMEASN];
  * NOTES:			
  */
 void
-tpmeas(ref, kind, timev, seq, win, size)
+Tpmeas(ref, kind, timev, seq, win, size)
 	u_int 	ref;
 	u_int	kind;
 	struct 	timeval *timev;

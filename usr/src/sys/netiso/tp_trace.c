@@ -50,15 +50,15 @@ static char *rcsid = "$Header: tp_trace.c,v 5.3 88/11/18 17:29:14 nhall Exp $";
 #include "types.h"
 #include "time.h"
 
-#include "../netiso/tp_param.h"
-#include "../netiso/tp_timer.h"
-#include "../netiso/tp_stat.h"
-#include "../netiso/tp_param.h"
-#include "../netiso/tp_ip.h"
-#include "../netiso/tp_pcb.h"
-#include "../netiso/tp_tpdu.h"
-#include "../netiso/argo_debug.h"
-#include "../netiso/tp_trace.h"
+#include "tp_param.h"
+#include "tp_timer.h"
+#include "tp_stat.h"
+#include "tp_param.h"
+#include "tp_ip.h"
+#include "tp_pcb.h"
+#include "tp_tpdu.h"
+#include "argo_debug.h"
+#include "tp_trace.h"
 
 #ifdef TPPT
 static tp_seq = 0;
@@ -98,7 +98,7 @@ tpTrace(tpcb, event, arg, src, len, arg4, arg5)
 
 	case TPPTertpdu:
 		bcopy((caddr_t)src, (caddr_t)&tp->tpt_ertpdu,
-			MIN((int)len, sizeof(struct tp_Trace)));
+			(unsigned)MIN((int)len, sizeof(struct tp_Trace)));
 		break;
 
 	case TPPTusrreq:
@@ -106,7 +106,7 @@ tpTrace(tpcb, event, arg, src, len, arg4, arg5)
 
 		/* arg is a string */
 		bcopy((caddr_t)arg, (caddr_t)tp->tpt_str, 
-			MIN(1+strlen((caddr_t) arg), TPTRACE_STRLEN));
+			(unsigned)MIN(1+strlen((caddr_t) arg), TPTRACE_STRLEN));
 		tp->tpt_m2 = src; 
 		tp->tpt_m3 = len;
 		tp->tpt_m4 = arg4;
@@ -137,8 +137,8 @@ tpTrace(tpcb, event, arg, src, len, arg4, arg5)
 	case TPPTtpduin:
 	case TPPTtpduout:
 		tp->tpt_arg2 = arg4;
-		bcopy((caddr_t)src, (caddr_t)&tp->tpt_tpdu, MIN((int)len, 
-			sizeof(struct tp_Trace)));
+		bcopy((caddr_t)src, (caddr_t)&tp->tpt_tpdu,
+		      (unsigned)MIN((int)len, sizeof(struct tp_Trace)));
 		break;
 	}
 }

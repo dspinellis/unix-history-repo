@@ -38,22 +38,22 @@ static char *rcsid = "$Header: iso_usrreq.c,v 4.2 88/06/29 15:00:06 hagens Exp $
 
 #ifdef ISO
 
-#include "../h/types.h"
-#include "../h/param.h"
-#include "../h/mbuf.h"
-#include "../h/domain.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/errno.h"
+#include "types.h"
+#include "param.h"
+#include "mbuf.h"
+#include "domain.h"
+#include "protosw.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "errno.h"
 
 #include "../net/if.h"
 #include "../net/route.h"
 
-#include "../netiso/iso.h"
-#include "../netiso/clnp.h"
-#include "../netiso/clnp_stat.h"
-#include "../netiso/argo_debug.h"
+#include "iso.h"
+#include "clnp.h"
+#include "clnp_stat.h"
+#include "argo_debug.h"
 
 
 /*
@@ -69,12 +69,13 @@ static char *rcsid = "$Header: iso_usrreq.c,v 4.2 88/06/29 15:00:06 hagens Exp $
  *					and PRU_DETACH are noops so socket and close don't return
  *					an error code.
  */
-iso_usrreq(so, req, m, nam, rights)
+iso_usrreq(so, req, m, nam, rights, control)
 struct socket	*so;		/* socket: used only to get to this code */
 int				req;		/* request */
 struct mbuf		*m;			/* data for request */
 struct mbuf		*nam;		/* optional name */
 struct mbuf		*rights;	/* optional rights */
+struct mbuf		*control;	/* optional control info */
 {
 	int		error;
 

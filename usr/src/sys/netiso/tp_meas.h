@@ -24,6 +24,11 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+#ifdef TPPT
+#define TP_PERF_MEAS
+#endif TPPT
+#define tpmeas(a, b, t, c, d, e) \
+	Tpmeas((u_int)(a), (u_int)(b), t, (u_int)(c), (u_int)(d), (u_int)(e))
 #ifdef TP_PERF_MEAS
 
 struct tp_Meas {

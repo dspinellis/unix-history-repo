@@ -33,39 +33,52 @@ static char *rcsid = "$Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $"
 
 #ifdef ISO
 
-#include "../h/types.h"
-#include "../h/param.h"
-#include "../h/mbuf.h"
-#include "../h/domain.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/errno.h"
-#include "../h/ioctl.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
+#include "types.h"
+#include "param.h"
+#include "mbuf.h"
+#include "domain.h"
+#include "protosw.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "errno.h"
+#include "ioctl.h"
+#include "time.h"
+#include "kernel.h"
 
 #include "../net/if.h"
 #include "../net/route.h"
 
-#include "../netiso/iso.h"
-#include "../netiso/iso_var.h"
-#include "../netiso/iso_snpac.h"
-#include "../netiso/clnp.h"
-#include "../netiso/clnp_stat.h"
-#include "../netiso/argo_debug.h"
-#include "../netiso/esis.h"
+#include "iso.h"
+#include "iso_var.h"
+#include "iso_snpac.h"
+#include "clnp.h"
+#include "clnp_stat.h"
+#include "argo_debug.h"
+#include "esis.h"
 
 #define	SNPAC_BSIZ	20		/* bucket size */
 #define	SNPAC_NB	13		/* number of buckets */
 #define	SNPAC_SIZE	(SNPAC_BSIZ * SNPAC_NB)
 struct	snpa_cache	iso_snpac[SNPAC_SIZE];
-int					iso_snpac_size = SNPAC_SIZE;/* for iso_map command */
+u_int				iso_snpac_size = SNPAC_SIZE;/* for iso_map command */
 int 				iso_systype = SNPA_ES;	/* default to be an ES */
-static struct iso_addr	zero_isoa;
+
+struct sockaddr_iso blank_siso = {sizeof(blank_siso), AF_ISO};
+extern u_long iso_hashchar();
+static struct sockaddr_iso
+	dst	= {sizeof(dst), AF_ISO},
+	gte	= {sizeof(dst), AF_ISO},
+	src	= {sizeof(dst), AF_ISO},
+	msk	= {sizeof(dst), AF_ISO},
+	zmk = {1};
+#define zsi blank_siso
+#define zero_isoa	zsi.siso_addr
+#define zap_isoaddr(a, b) (bzero((caddr_t)&a.siso_addr, sizeof(*r)), \
+	   ((r = b) && bcopy((caddr_t)r, (caddr_t)&a.siso_addr, 1 + (r)->isoa_len)))
+#define S(x) ((struct sockaddr *)&(x))
 
 #define	SNPAC_HASH(addr) \
-	(((u_long) iso_hashchar(addr, addr->isoa_len)) % SNPAC_NB)
+	(((u_long) iso_hashchar((caddr_t)addr, (int)addr->isoa_len)) % SNPAC_NB)
 
 #define	SNPAC_LOOK(sc,addr) { \
 	register n; \
@@ -140,24 +153,23 @@ struct snpa_cache	all_is = {
  *					A mechanism is needed to prevent this function from
  *					being invoked if the system is an IS.
  */
-iso_snparesolve(ifp, dst, snpa, snpa_len)
+iso_snparesolve(ifp, dest, snpa, snpa_len)
 struct ifnet 		*ifp;	/* outgoing interface */
-struct sockaddr_iso *dst;	/* destination */
+struct sockaddr_iso *dest;	/* destination */
 char				*snpa;	/* RESULT: snpa to be used */
 int					*snpa_len;	/* RESULT: length of snpa */
 {
 	extern struct ifnet 	loif;		/* loopback interface */
 	struct snpa_cache		*sc;		/* ptr to snpa table entry */
 	struct iso_addr			*destiso;	/* destination iso addr */
-	int						s;
 
- 	destiso = &dst->siso_addr;
+ 	destiso = &dest->siso_addr;
 
 	/*
 	 *	This hack allows us to send esis packets that have the destination snpa
 	 *	addresss embedded in the destination nsap address 
 	 */
-	if (destiso->isoa_afi == AFI_SNA) {
+	if (destiso->isoa_genaddr[0] == AFI_SNA) {
 		/*
 		 *	This is a subnetwork address. Return it immediately
 		 */
@@ -166,7 +178,8 @@ int					*snpa_len;	/* RESULT: length of snpa */
 		ENDDEBUG
 
 		*snpa_len = destiso->isoa_len - 1;	/* subtract size of AFI */
-		bcopy((caddr_t) destiso->sna_idi, (caddr_t)snpa, *snpa_len);
+		bcopy((caddr_t) destiso->isoa_genaddr + 1, (caddr_t)snpa,
+			  (unsigned)*snpa_len);
 		return (0);
 	}
 
@@ -177,7 +190,6 @@ int					*snpa_len;	/* RESULT: length of snpa */
 	/* 
 	 *	packet is not for us, check cache for an entry 
 	 */
-	s = splimp();
 	SNPAC_LOOK(sc, destiso);
 	if (sc == 0) {			/* not found */
 		/* If we are an IS, we can't do much with the packet */
@@ -207,11 +219,9 @@ int					*snpa_len;	/* RESULT: length of snpa */
 
 	bcopy((caddr_t)sc->sc_snpa, (caddr_t)snpa, sc->sc_len);
 	*snpa_len = sc->sc_len;
-	splx(s);
 	return (0);
 
 bad:
-	splx(s);
 	return(ENETUNREACH);
 }
 
@@ -251,8 +261,8 @@ struct iso_addr *isoa;	/* destination nsap */
  *
  * NOTES:			This ought to invoke the 8208 ES-IS function
  */
-iso_8208snparesolve(dst, snpa, snpa_len)
-struct sockaddr_iso *dst;	/* destination */
+iso_8208snparesolve(dest, snpa, snpa_len)
+struct sockaddr_iso *dest;	/* destination */
 char				*snpa;	/* RESULT: snpa to be used */
 int					*snpa_len;	/* RESULT: length of snpa */
 {
@@ -261,7 +271,7 @@ int					*snpa_len;	/* RESULT: length of snpa */
 	int						s;
 	int						err = 0;
 
- 	destiso = &dst->siso_addr;
+ 	destiso = &dest->siso_addr;
 
 	s = splimp();
 	SNPAC_LOOK(sc, destiso);
@@ -293,7 +303,7 @@ caddr_t				snpa;		/* translation */
 int					snpalen;	/* length in bytes */
 short				ht;			/* holding time (in seconds) */
 {
-	snpac_add(ifp, nsap, snpa, snpalen, SNPA_ES, ht);
+	snpac_add(ifp, nsap, snpa, snpalen, SNPA_ES, (u_short)ht);
 }
 
 /*
@@ -368,7 +378,6 @@ struct iso_addr *isoa;		/* iso address to enter into table */
 	snpac_free(maybe);
 	return maybe;
 }
-
 /*
  * FUNCTION:		snpac_free
  *
@@ -384,20 +393,24 @@ struct iso_addr *isoa;		/* iso address to enter into table */
 snpac_free(sc)
 register struct snpa_cache *sc;		/* entry to free */
 {
-	int s = splimp();
+	register struct rtentry *rt;
+	register struct iso_addr *r;
 
 	if (known_is == sc) {
-		snpac_rtrequest(SIOCDELRT, &zero_isoa, &known_is->sc_nsap, 
-			RTF_DYNAMIC|RTF_GATEWAY);
 		known_is = NULL;
 	}
-	if (sc->sc_da.isoa_len > 0) {
-		snpac_rtrequest(SIOCDELRT, &sc->sc_da, &known_is->sc_nsap, 
-			RTF_DYNAMIC|RTF_GATEWAY);
+	if (sc->sc_rt) {
+		zap_isoaddr(dst, (&(sc->sc_da)));
+		rt = rtalloc1((struct sockaddr *)&dst, 0);
+		if ((sc->sc_rt == rt) && (rt->rt_flags & RTF_UP)
+			&& (rt->rt_flags & (RTF_DYNAMIC | RTF_MODIFIED))) {
+			RTFREE(rt);
+			rtrequest(RTM_DELETE, rt_key(rt), rt->rt_gateway, rt_mask(rt),
+						rt->rt_flags, (struct rtentry **)0);
+		}
+		RTFREE(rt);
 	}
 	bzero((caddr_t)sc, sizeof(struct snpa_cache));
-
-	splx(s);
 }
 
 /*
@@ -415,12 +428,11 @@ snpac_add(ifp, nsap, snpa, snpalen, type, ht)
 struct ifnet		*ifp;		/* interface info is related to */
 struct iso_addr		*nsap;		/* nsap to add */
 caddr_t				snpa;		/* translation */
-int					snpalen;	/* length in bytes */
+int					snpalen;	/* translation length */
 char				type;		/* SNPA_IS or SNPA_ES */
-short				ht;			/* holding time (in seconds) */
+u_short				ht;			/* holding time (in seconds) */
 {
 	struct snpa_cache	*sc;
-	int					s = splimp();
 
 	SNPAC_LOOK(sc, nsap);
 	if (sc == NULL) {
@@ -431,14 +443,12 @@ short				ht;			/* holding time (in seconds) */
 	sc->sc_ht = ht;
 
 	sc->sc_len = min(snpalen, MAX_SNPALEN);
-	bcopy(snpa, sc->sc_snpa, sc->sc_len);
+	bcopy(snpa, (caddr_t)sc->sc_snpa, sc->sc_len);
 	sc->sc_flags = SNPA_VALID | type;
 	sc->sc_ifp = ifp;
 
 	if (type & SNPA_IS)
 		snpac_logdefis(sc);
-
-	splx(s);
 }
 
 /*
@@ -460,9 +470,14 @@ caddr_t	data;	/* data for the cmd */
 	register struct snpa_cache	*sc;
 	register struct iso_addr	*isoa;
 	int							s;
+	char						*type;
 
-	/* look up this address in table */
-	isoa = &rq->sr_isoa;
+	switch(cmd) {
+		case SIOCSISOMAP: type = "set"; break;
+		case SIOCDISOMAP: type = "delete"; break;
+		case SIOCGISOMAP: type = "get"; break;
+		default: return(snpac_systype(cmd, data));
+	}
 
 	/* sanity check */
 	if (rq->sr_len > MAX_SNPALEN)
@@ -471,18 +486,14 @@ caddr_t	data;	/* data for the cmd */
 	IFDEBUG (D_IOCTL)
 		int i;
 
-		printf("snpac_ioctl: ");
-		switch(cmd) {
-			case SIOCSISOMAP: printf("set"); break;
-			case SIOCDISOMAP: printf("delete"); break;
-			case SIOCGISOMAP: printf("get"); break;
-		}
-		printf(" %s to ", clnp_iso_addrp(isoa));
+		printf("snpac_ioctl: %s %s to ", type, clnp_iso_addrp(isoa));
 		for (i=0; i<rq->sr_len; i++)
 			printf("%x%c", rq->sr_snpa[i], i < (rq->sr_len-1) ? ':' : '\n');
 	ENDDEBUG
 
-	s = splimp();
+	/* look up this address in table */
+	isoa = &rq->sr_isoa;
+
 	SNPAC_LOOK(sc, isoa);
 	if (sc == NULL) {	 /* not found */
 		if (cmd != SIOCSISOMAP)
@@ -491,8 +502,10 @@ caddr_t	data;	/* data for the cmd */
 
 	switch(cmd) {
 		case SIOCSISOMAP:	/* set entry */
-			snpac_add(NULL, isoa, rq->sr_snpa, rq->sr_len, 
-				rq->sr_flags & (SNPA_ES|SNPA_IS|SNPA_PERM), rq->sr_ht);
+			snpac_add((struct ifnet *)NULL, isoa, (caddr_t)rq->sr_snpa,
+					  (int)rq->sr_len,
+					  (char)(rq->sr_flags & (SNPA_ES|SNPA_IS|SNPA_PERM)),
+					  rq->sr_ht);
 			break;
 		
 		case SIOCDISOMAP:	/* delete entry */
@@ -500,10 +513,9 @@ caddr_t	data;	/* data for the cmd */
 			break;
 		
 		case SIOCGISOMAP:	/* get entry */
-			bcopy((caddr_t)&sc->sc_sr, rq, sizeof(struct snpa_req));
+			bcopy((caddr_t)&sc->sc_sr, (caddr_t)rq, sizeof(struct snpa_req));
 			break;
 	}
-	splx(s);
 	return(0);
 }
 
@@ -521,13 +533,13 @@ caddr_t	data;	/* data for the cmd */
  *
  * NOTES:			
  */
-iso_tryloopback(m, dst)
+iso_tryloopback(m, dest)
 struct mbuf			*m;		/* pkt */
-struct sockaddr_iso *dst;	/* destination */
+struct sockaddr_iso *dest;	/* destination */
 {
 	struct iso_addr			*destiso;	/* destination iso addr */
 
- 	destiso = &dst->siso_addr;
+ 	destiso = &dest->siso_addr;
 
 	if (clnp_ours(destiso)) {
 		IFDEBUG(D_SNPA)
@@ -537,7 +549,7 @@ struct sockaddr_iso *dst;	/* destination */
 			IFDEBUG(D_SNPA)
 				printf("iso_tryloopback: calling looutput\n"); 
 			ENDDEBUG
-			return (looutput(&loif, m, (struct sockaddr *)dst));
+			return (looutput(&loif, m, (struct sockaddr *)dest));
 		}
 	}
 	return (-1);
@@ -605,15 +617,30 @@ caddr_t	data;	/* data for the cmd */
  * NOTES:			
  */
 snpac_logdefis(sc)
-struct snpa_cache	*sc;
+register struct snpa_cache	*sc;
 {
-	if (known_is) {
-		snpac_rtrequest(SIOCDELRT, &zero_isoa, &known_is->sc_nsap, 
-			RTF_DYNAMIC|RTF_GATEWAY);
+	register struct iso_addr *r;
+	register struct rtentry *rt = rtalloc1((struct sockaddr *)&zsi, 0);
+	if (known_is == 0)
+		known_is = sc;
+	if (known_is != sc) {
+		if (known_is->sc_rt) {
+			rtfree(known_is->sc_rt);
+			known_is->sc_rt = 0;
+		}
+		known_is = sc;
 	}
-	known_is = sc;
-	snpac_rtrequest(SIOCADDRT, &zero_isoa, &sc->sc_nsap, 
-		RTF_DYNAMIC|RTF_GATEWAY);
+	if (rt == 0) {
+		zap_isoaddr(dst, &(sc->sc_nsap));
+		rtrequest(RTM_ADD, S(zsi), S(dst), S(zmk),
+						RTF_DYNAMIC|RTF_GATEWAY, &sc->sc_rt);
+		return;
+	}
+	if (rt->rt_flags & (RTF_DYNAMIC | RTF_MODIFIED)) {
+		((struct sockaddr_iso *)rt->rt_gateway)->siso_addr = sc->sc_nsap;
+		known_is = sc;
+		sc->sc_rt = rt;
+	}
 }
 
 /*
@@ -674,8 +701,10 @@ snpac_ownmulti(snpa, len)
 char	*snpa;
 int		len;
 {
-	return (((iso_systype & SNPA_ES) && (!bcmp(snpa, all_es.sc_snpa, len)))
-		|| ((iso_systype & SNPA_IS) && (!bcmp(snpa, all_is.sc_snpa, len))));
+	return (((iso_systype & SNPA_ES) &&
+			 (!bcmp((caddr_t)snpa, (caddr_t)all_es.sc_snpa, (unsigned)len))) ||
+			((iso_systype & SNPA_IS) &&
+			 (!bcmp((caddr_t)snpa, (caddr_t)all_is.sc_snpa, (unsigned)len))));
 }
 
 /*
@@ -715,38 +744,36 @@ struct ifnet	*ifp;
  * NOTES:			In the future, this should make a request of a user
  *					level routing daemon.
  */
-snpac_rtrequest(req, dst, gateway, flags)
+snpac_rtrequest(req, host, gateway, netmask, flags, ret_nrt)
 int				req;
-struct iso_addr	*dst;
+struct iso_addr	*host;
 struct iso_addr	*gateway;
+struct iso_addr	*netmask;
 short			flags;
+struct rtentry	**ret_nrt;
 {
-	struct rtentry	rte;
-	struct iso_addr	*isoa;
+	register struct iso_addr *r;
 
 	IFDEBUG(D_SNPA)
 		printf("snpac_rtrequest: ");
-		if (req == SIOCADDRT)
+		if (req == RTM_ADD)
 			printf("add");
-		else if (req == SIOCDELRT)
+		else if (req == RTM_DELETE)
 			printf("delete");
 		else 
 			printf("unknown command");
-		printf(" dst: %s\n", clnp_iso_addrp(dst));
+		printf(" dst: %s\n", clnp_iso_addrp(host));
 		printf("\tgateway: %s\n", clnp_iso_addrp(gateway));
 	ENDDEBUG
 
-	bzero((caddr_t)&rte, sizeof(struct rtentry));
-	rte.rt_dst.sa_family = rte.rt_gateway.sa_family = AF_ISO;
-	isoa = &((struct sockaddr_iso *)&rte.rt_dst)->siso_addr;
-	*isoa = *dst;
-	isoa = &((struct sockaddr_iso *)&rte.rt_gateway)->siso_addr;
-	*isoa = *gateway;
-	rte.rt_flags = RTF_UP|flags;
 
-	rtrequest(req, &rte);
+	zap_isoaddr(dst, host);
+	zap_isoaddr(gte, gateway);
+	zap_isoaddr(msk, netmask);
+
+	rtrequest(req, S(dst), S(gte), (netmask ? S(msk) : (struct sockaddr *)0),
+		flags, ret_nrt);
 }
-
 
 /*
  * FUNCTION:		snpac_addrt
@@ -767,21 +794,24 @@ short			flags;
  *					This could be made more efficient by checking 
  *					the existing route before adding a new one.
  */
-snpac_addrt(host, gateway)
-struct iso_addr	*host;
-struct iso_addr	*gateway;
+snpac_addrt(host, gateway, source, netmask)
+struct iso_addr	*host, *gateway, *source, *netmask;
 {
-	struct snpa_cache	*sc;
-	int					s;
+	register struct snpa_cache	*sc;
+	register struct iso_addr *r;
 
-	s = splimp();
 	SNPAC_LOOK(sc, gateway);
 	if (sc != NULL) {
-		snpac_rtrequest(SIOCDELRT, &sc->sc_da, gateway, 
-			RTF_DYNAMIC|RTF_GATEWAY);
-		snpac_rtrequest(SIOCADDRT, host, gateway, RTF_DYNAMIC|RTF_GATEWAY);
-		bcopy(host, &sc->sc_da, sizeof(struct iso_addr));
+		bcopy((caddr_t)host, (caddr_t)&sc->sc_da, sizeof(struct iso_addr));
+		zap_isoaddr(dst, host);
+		zap_isoaddr(gte, gateway);
+		zap_isoaddr(src, source);
+		zap_isoaddr(msk, netmask);
+		if (netmask) {
+			rtredirect(S(dst), S(gte), S(msk), RTF_DONE, S(src), &sc->sc_rt);
+		} else
+			rtredirect(S(dst), S(gte), (struct sockaddr *)0,
+									RTF_DONE | RTF_HOST, S(src), &sc->sc_rt);
 	}
-	s = splx(s);
 }
 #endif	ISO

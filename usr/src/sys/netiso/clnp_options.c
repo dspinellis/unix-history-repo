@@ -45,10 +45,10 @@ static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_options.c,v 5.1 89/0
 #include "../net/if.h"
 #include "../net/route.h"
 
-#include "../netiso/iso.h"
-#include "../netiso/clnp.h"
-#include "../netiso/clnp_stat.h"
-#include "../netiso/argo_debug.h"
+#include "iso.h"
+#include "clnp.h"
+#include "clnp_stat.h"
+#include "argo_debug.h"
 
 /*
  * FUNCTION:		clnp_update_srcrt

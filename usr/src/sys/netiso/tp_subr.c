@@ -52,17 +52,17 @@ static char *rcsid = "$Header: tp_subr.c,v 5.3 88/11/18 17:28:43 nhall Exp $";
 #include "types.h"
 #include "time.h"
 
-#include "../netiso/tp_ip.h"
-#include "../netiso/iso.h"
-#include "../netiso/argo_debug.h"
-#include "../netiso/tp_timer.h"
-#include "../netiso/tp_param.h"
-#include "../netiso/tp_stat.h"
-#include "../netiso/tp_pcb.h"
-#include "../netiso/tp_tpdu.h"
-#include "../netiso/tp_trace.h"
-#include "../netiso/tp_meas.h"
-#include "../netiso/tp_seq.h"
+#include "tp_ip.h"
+#include "iso.h"
+#include "argo_debug.h"
+#include "tp_timer.h"
+#include "tp_param.h"
+#include "tp_stat.h"
+#include "tp_pcb.h"
+#include "tp_tpdu.h"
+#include "tp_trace.h"
+#include "tp_meas.h"
+#include "tp_seq.h"
 
 int 		tp_emit();
 static void tp_sbdrop();
@@ -213,7 +213,7 @@ tp_goodack(tpcb, cdt, seq, subseq)
 	ENDTRACE
 
 	IFPERF(tpcb)
-		tpmeas(tpcb->tp_lref, TPtime_ack_rcvd, 0, seq, 0, 0);
+		tpmeas(tpcb->tp_lref, TPtime_ack_rcvd, (struct timeval *)0, seq, 0, 0);
 	ENDPERF
 
 	if ( subseq != 0 && (subseq <= tpcb->tp_r_subseq) ) {
@@ -391,20 +391,12 @@ tp_sbdrop(tpcb, seq)
  * RETURN VALUE:
  * 	the highest seq # sent successfully.
  */
-
-/* For xpd marks we use mbufs of a special type with length 0;
- * the m_next field is really the seq number of the xpd tpdu that
- * must be acked before more normal data may be sent
- */
-
 tp_send(tpcb)
 	register struct tp_pcb	*tpcb;
 {
 	register int			len;
 	register struct mbuf	*m; /* the one we're inspecting now */
 	struct mbuf				*mb;/* beginning of this tpdu */
-	register struct mbuf	**n;/* link field we'll be modifying when we
-								take mb-->m out of the socket buffer */
 	struct mbuf 			*nextrecord; /* NOT next tpdu but next sb record */
 	struct 	sockbuf			*sb = &tpcb->tp_sock->so_snd;
 	int						maxsize = tpcb->tp_l_tpdusize 
@@ -465,112 +457,38 @@ tp_send(tpcb)
 		if (m == (struct mbuf *)0) {
 			break; /* empty socket buffer */
 		}
-		if ( m->m_type == TPMT_XPD ) {
+		if (tpcb->tp_Xsnd.sb_mb) {
 			register SeqNum Xuna = * (mtod(m, SeqNum *));
-			register struct mbuf *mnext = MNULL;
 			IFTRACE(D_XPD)
 				tptraceTPCB( TPPTmisc,
 					"tp_send XPD mark low high tpcb.Xuna", 
 					Xuna, lowseq, highseq, tpcb->tp_Xuna);
 			ENDTRACE
-			if( SEQ_GEQ(tpcb, Xuna, tpcb->tp_Xuna))  {
-				/* stop sending here because there are unacked XPD which were 
-				 * given to us before the next data were. Leave mark in place.
-				 */
-				IncStat(ts_xpd_intheway);
-				break;
-			}
-			/* otherwise, mark is obsolete; delete it */
-			sbfree(sb, m); /* have to do this to delete the sb_mbcnt */
-			sb->sb_mb = m->m_act;
-			IncStat(ts_xpdmark_del);
-			if( mnext = m_free(m) ) {
-				IFTRACE(D_XPD)
-					tptraceTPCB( TPPTmisc,
-						"tp_send XPD mark deleted mnext old_act new_act",
-						mnext, sb->sb_mb, mnext->m_act, 0);
-				ENDTRACE
-				IFDEBUG(D_XPD)
-					printf(
-			"tp_send XPD mark deleted mnext 0x%x old act 0x%x new act 0x%x\n",
-						mnext, sb->sb_mb, mnext->m_act, 0);
-				ENDDEBUG
-				mnext->m_act = sb->sb_mb;
-				sb->sb_mb = mnext;
-			}
-			continue;
+			/* stop sending here because there are unacked XPD which were 
+			 * given to us before the next data were.
+			 */
+			IncStat(ts_xpd_intheway);
+			break;
 		}
-		n  = &sb->sb_mb; 
 		eotsdu_reached = 0;
-		len =  0;
 		nextrecord = m->m_act;
-		while ( eotsdu_reached == 0  &&  len < maxsize  && m != MNULL) {
-			*n = m; /* meaningless first time through the loop */
+		for (len = 0; m; m = m->m_next) {
 			len += m->m_len; 
-			if ( len > maxsize ) {
-				/*  
-				 * Won't use the whole mbuf - split into 2 mbufs. 
-				 */
-				int amount = m->m_len + maxsize - len;
-				struct mbuf *mx;
-
-				/* copy the part we are NOT using and put that back in the
-				 * socket buf; leave m with this tpdu chain; adjust its fields
-				 */
-				IFTRACE(D_STASH)
-					tptraceTPCB(TPPTmisc, 
-					"tp_send SPLIT len, amount, m->m_len, tpdusize",
-						len, amount, m->m_len, maxsize);
-				ENDTRACE
-				mx = m_copy(m, amount, m->m_len - amount); /* preserves type */
-				mx->m_next = m->m_next;
-				mx->m_act = m->m_act; /* preserve */
-
-				CHANGE_MTYPE(m, TPMT_DATA);
-				m->m_next = (struct mbuf *)0;
-				m->m_act = (struct mbuf *)0; /* not strictly necessary */
-				m->m_len = amount;
-
-				/* would do an sbfree but don't want the mbcnt to be
-				 * decremented since it was never sballoced 
-				 */
-				sb->sb_cc -= amount; 
-				len = maxsize;
-				m = mx;
-				break;
-			}
-
-			/* going to use the whole mbuf */
-			IFTRACE(D_STASH)
-				tptraceTPCB(TPPTmisc, "tp_send whole mbuf: m_len len maxsize",
-					 0, m->m_len, len, maxsize);
-			ENDTRACE
-
-			if ( m->m_type == TPMT_EOT )
+			if (m->m_flags & M_EOR)
 				eotsdu_reached = 1;
-
 			sbfree(sb, m); /* reduce counts in socket buffer */
-			n = &m->m_next;
-			m = m->m_next;
-
-			*n = (struct mbuf *)0;  /* unlink the to-be-sent stuff from
-				the stuff still in the sb_mb so when we do the m_free
-				it won't clobber part of the socket buffer */
 		}
+		m = sb->sb_mb = nextrecord;
+		IFTRACE(D_STASH)
+			tptraceTPCB(TPPTmisc, "tp_send whole mbuf: m_len len maxsize",
+				 0, mb->m_len, len, maxsize);
+		ENDTRACE
 
 		if ( len == 0 && !eotsdu_reached) {
 			/* THIS SHOULD NEVER HAPPEN! */
 			ASSERT( 0 );
 			goto done;
 		}
-
-		/* sb_mb is non-null */
-		if(m) {
-			sb->sb_mb = m;
-			if(nextrecord != m)
-				m->m_act = nextrecord;
-		} else
-			sb->sb_mb = nextrecord;
 
 		/* If we arrive here one of the following holds:
 		 * 1. We have exactly <maxsize> octets of whole mbufs,
@@ -733,32 +651,19 @@ tp_stash( tpcb, e )
 
 	if ( E.e_eot ) {
 		register struct mbuf *n = E.e_data;
-
-		/* sigh. have to go through this again! */
-		/* a kludgy optimization would be to take care of this in
-		 * tp_input (oh, horrors!) 
-		 * BTW, don't set ack_reason here because we don't know if the
-		 * sequence number is right
-		 */
-		while (n->m_next )
-			n = n->m_next;
-
-		n->m_act = MNULL; /* set on tp_input */
-		CHANGE_MTYPE(n, TPMT_EOT);
-
+		n->m_flags |= M_EOR;
+	}
 		IFDEBUG(D_STASH)
-			printf("EOT! changing m_type of m 0x%x\n",  n);
 			dump_mbuf(tpcb->tp_sock->so_rcv.sb_mb, 
 				"stash: so_rcv before appending");
 			dump_mbuf(E.e_data,
 				"stash: e_data before appending");
 		ENDDEBUG
-	}
 
 	IFPERF(tpcb)
 		PStat(tpcb, Nb_from_ll) += E.e_datalen;
 		tpmeas(tpcb->tp_lref, TPtime_from_ll, &e->e_time,
-				E.e_seq, PStat(tpcb, Nb_from_ll), E.e_datalen);
+			E.e_seq, (u_int)PStat(tpcb, Nb_from_ll), (u_int)E.e_datalen);
 	ENDPERF
 
 	if( E.e_seq == tpcb->tp_rcvnxt ) {
@@ -773,18 +678,8 @@ tp_stash( tpcb, e )
 			E.e_seq, E.e_datalen, E.e_eot, 0);
 		ENDTRACE
 
-		if( E.e_datalen == 0 && E.e_eot ) {
-			IFDEBUG(D_STASH)
-				printf("stash EQ: appendrec\n");
-			ENDDEBUG
-			sbappendrecord (&tpcb->tp_sock->so_rcv, E.e_data);
-			/* 'cause sbappend won't append something of length zero */
-		} else {
-			IFDEBUG(D_STASH)
-				printf("stash EQ: plain old append\n");
-			ENDDEBUG
-			sbappend(&tpcb->tp_sock->so_rcv, E.e_data);
-		}
+		sbappend(&tpcb->tp_sock->so_rcv, E.e_data);
+
 		if (newrec = E.e_eot ) /* ASSIGNMENT */
 			ack_reason |= ACK_EOT;
 
@@ -800,11 +695,7 @@ tp_stash( tpcb, e )
 			while (s != (struct tp_rtc *)0 && s->tprt_seq == tpcb->tp_rcvnxt) {
 				*r = s->tprt_next;
 
-				if ( newrec ) {
-					sbappendrecord(&tpcb->tp_sock->so_rcv, s->tprt_data);
-				} else
-					sbappend(&tpcb->tp_sock->so_rcv, s->tprt_data);
-				newrec = s->tprt_eot;
+				sbappend(&tpcb->tp_sock->so_rcv, s->tprt_data);
 
 				SEQ_INC( tpcb, tpcb->tp_rcvnxt );
 
@@ -976,16 +867,11 @@ tp0_stash( tpcb, e )
 
 		n->m_act = MNULL; /* set on tp_input */
 
-		CHANGE_MTYPE(n, TPMT_EOT);
+		n->m_flags |= M_EOR;
 	}
-	if( E.e_datalen == 0 && E.e_eot ) {
-		sbappendrecord (&tpcb->tp_sock->so_rcv, E.e_data);
-	} else {
-		sbappend(&tpcb->tp_sock->so_rcv, E.e_data);
-	}
+	sbappendrecord (&tpcb->tp_sock->so_rcv, E.e_data);
 	IFDEBUG(D_STASH)
 		dump_mbuf(tpcb->tp_sock->so_rcv.sb_mb, 
 			"stash 0: so_rcv after appending");
 	ENDDEBUG
 } 
-

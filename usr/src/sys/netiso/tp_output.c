@@ -46,14 +46,14 @@ static char *rcsid = "$Header: tp_output.c,v 5.4 88/11/18 17:28:08 nhall Exp $";
 #include "errno.h"
 #include "types.h"
 #include "time.h"
-#include "../netiso/tp_param.h"
-#include "../netiso/tp_user.h"
-#include "../netiso/tp_stat.h"
-#include "../netiso/tp_ip.h"
-#include "../netiso/tp_timer.h"
-#include "../netiso/argo_debug.h"
-#include "../netiso/tp_pcb.h"
-#include "../netiso/tp_trace.h"
+#include "tp_param.h"
+#include "tp_user.h"
+#include "tp_stat.h"
+#include "tp_ip.h"
+#include "tp_timer.h"
+#include "argo_debug.h"
+#include "tp_pcb.h"
+#include "tp_trace.h"
 
 #define USERFLAGSMASK_G 0x0f00643b
 #define USERFLAGSMASK_S 0x0f000432
@@ -154,7 +154,8 @@ tp_consistency( tpcb, cmd, param )
 			error = EINVAL; goto done;
 	} else {
 		if( tpcb->tp_state == TP_CLOSED )
-			soreserve(tpcb->tp_sock, param->p_winsize, param->p_winsize);
+			soreserve(tpcb->tp_sock, (u_long)param->p_winsize,
+						(u_long)param->p_winsize);
 	}
 	IFDEBUG(D_SETPARAMS)
 		printf("use_csum 0x%x\n",  param->p_use_checksum );
@@ -197,14 +198,12 @@ tp_consistency( tpcb, cmd, param )
 		} 
 
 		/* connect/disc data not allowed for class 0 */
-		if ( tpcb->tp_flags & 
-			(TPF_CONN_DATA_OUT | TPF_DISC_DATA_OUT) ) {
+		if (tpcb->tp_ucddata) {
 			if(cmd & TP_STRICT) {
 				error = EINVAL;
 			} else if(cmd & TP_FORCE) {
-				sbdrop(&tpcb->tp_sock->so_snd, tpcb->tp_sock->so_snd.sb_cc);
-				tpcb->tp_flags &= 
-					~(TPF_CONN_DATA_OUT | TPF_DISC_DATA_OUT);
+				m_freem(tpcb->tp_ucddata);
+				tpcb->tp_ucddata = 0;
 			}
 		}
 		break;
@@ -335,8 +334,8 @@ tp_ctloutput(cmd, so, level, optname, mp)
 {
 	struct		tp_pcb	*tpcb = sototpcb(so);
 	int 		s = splnet();
-	u_char 		*value;
-	int			val_len;
+	caddr_t		value;
+	unsigned	val_len;
 	int			error = 0;
 
 	IFTRACE(D_REQUEST)
@@ -412,9 +411,9 @@ tp_ctloutput(cmd, so, level, optname, mp)
 		}
 	}
 
-	value = (u_char *) mtod(*mp, u_char *);  /* it's aligned, don't worry,
-											* but lint complains about it 
-											*/
+	value = mtod(*mp, caddr_t);  /* it's aligned, don't worry,
+								  * but lint complains about it 
+								  */
 	val_len = (*mp)->m_len;
 
 	switch (optname) {
@@ -422,14 +421,14 @@ tp_ctloutput(cmd, so, level, optname, mp)
 	case TPOPT_MY_TSEL:
 		if ( cmd == PRCO_GETOPT ) {
 			ASSERT( tpcb->tp_lsuffixlen <= MAX_TSAP_SEL_LEN );
-			bcopy( tpcb->tp_lsuffix, value, tpcb->tp_lsuffixlen);
+			bcopy((caddr_t)tpcb->tp_lsuffix, value, tpcb->tp_lsuffixlen);
 			(*mp)->m_len = tpcb->tp_lsuffixlen;
 		} else /* cmd == PRCO_SETOPT  */ {
 			if( (val_len > MAX_TSAP_SEL_LEN) || (val_len <= 0 )) {
 				printf("val_len 0x%x (*mp)->m_len 0x%x\n", val_len, (*mp));
 				error = EINVAL;
 			} else {
-				bcopy( value, tpcb->tp_lsuffix, val_len );
+				bcopy(value, (caddr_t)tpcb->tp_lsuffix, val_len);
 				tpcb->tp_lsuffixlen = val_len;
 			}
 		}
@@ -438,14 +437,14 @@ tp_ctloutput(cmd, so, level, optname, mp)
 	case TPOPT_PEER_TSEL:
 		if ( cmd == PRCO_GETOPT ) {
 			ASSERT( tpcb->tp_fsuffixlen <= MAX_TSAP_SEL_LEN );
-			bcopy( tpcb->tp_fsuffix, value, tpcb->tp_fsuffixlen);
+			bcopy((caddr_t)tpcb->tp_fsuffix, value, tpcb->tp_fsuffixlen);
 			(*mp)->m_len = tpcb->tp_fsuffixlen;
 		} else /* cmd == PRCO_SETOPT  */ {
 			if( (val_len > MAX_TSAP_SEL_LEN) || (val_len <= 0 )) {
 				printf("val_len 0x%x (*mp)->m_len 0x%x\n", val_len, (*mp));
 				error = EINVAL; 
 			} else {
-				bcopy( value, tpcb->tp_fsuffix, val_len );
+				bcopy(value, (caddr_t)tpcb->tp_fsuffix, val_len);
 				tpcb->tp_fsuffixlen = val_len;
 			}
 		}
@@ -506,10 +505,14 @@ tp_ctloutput(cmd, so, level, optname, mp)
 			error = EINVAL; goto done;
 		} 
 		IFPERF(tpcb)
-			/* tp_p_meas is a cluster : "copy" it */
-			mclrefcnt[mtocl( (tpcb->tp_p_meas) )]++;
-			(*mp)->m_off = (u_long)((int)tpcb->tp_p_meas - (int)(*mp));
-			(*mp)->m_len = sizeof(struct tp_pmeas);
+			if (*mp) {
+				struct mbuf * n;
+				do {
+					MFREE(*mp, n);
+					*mp = n;
+				} while (n);
+			}
+			*mp = m_copym(tpcb->tp_p_mbuf, (int)M_COPYALL, M_WAITOK);
 		ENDPERF 
 		else {
 			error = EINVAL; goto done;
@@ -524,9 +527,9 @@ tp_ctloutput(cmd, so, level, optname, mp)
 		if (cmd == PRCO_GETOPT) {
 			error = EINVAL;
 		} else {
-			if ( tpcb->tp_flags & (TPF_CONN_DATA_OUT | TPF_DISC_DATA_OUT) ) {
-				sbdrop(&so->so_snd, so->so_snd.sb_cc);
-				tpcb->tp_flags &= ~(TPF_CONN_DATA_OUT | TPF_DISC_DATA_OUT);
+			if (tpcb->tp_ucddata) {
+					m_freem(tpcb->tp_ucddata);
+					tpcb->tp_ucddata = 0;
 			}
 		}
 		break;
@@ -553,63 +556,28 @@ tp_ctloutput(cmd, so, level, optname, mp)
 			printf("m_len 0x%x, vallen 0x%x so_snd.cc 0x%x\n", 
 				(*mp)->m_len, val_len, so->so_snd.sb_cc);
 			dump_mbuf(so->so_snd.sb_mb, "tp_ctloutput: sosnd ");
-			dump_mbuf(tpcb->tp_Xrcv.sb_mb, "tp_ctlout: tpXrcv ");
 		ENDDEBUG
 		if (cmd == PRCO_SETOPT) {
+			int len = tpcb->tp_ucddata ?  tpcb->tp_ucddata->m_len : 0;
 			/* can append connect data in several calls */
-			if (so->so_snd.sb_cc + val_len > 
+			if (len + val_len > 
 				(optname==TPOPT_CONN_DATA?TP_MAX_CR_DATA:TP_MAX_DR_DATA) ) {
 				error = EMSGSIZE; goto done;
 			} 
-			tpcb->tp_flags |= 
-			((optname==TPOPT_CONN_DATA)?TPF_CONN_DATA_OUT:TPF_DISC_DATA_OUT);
 			(*mp)->m_next = MNULL;
 			(*mp)->m_act = 0;
-			sbappendrecord( &so->so_snd, *mp);
+			if (tpcb->tp_ucddata)
+				m_cat(tpcb->tp_ucddata, *mp);
+			else
+				tpcb->tp_ucddata = *mp;
 		IFDEBUG(D_REQUEST)
-			dump_mbuf(so->so_snd.sb_mb, "tp_ctloutput after sbappendrecord");
+			dump_mbuf(tpcb->tp_ucddata, "tp_ctloutput after CONN_DATA");
 		ENDDEBUG
 			IFTRACE(D_REQUEST)
 				tptrace(TPPTmisc,"C/D DATA: flags snd.sbcc val_len",
 					tpcb->tp_flags, so->so_snd.sb_cc,val_len,0);
 			ENDTRACE
 			*mp = MNULL; /* prevent sosetopt from freeing it! */
-		} else /* cmd == PRCO_GETOPT */ {
-			register int len = tpcb->tp_Xrcv.sb_cc;
-
-			/* getsockopt() allocated an mbuf but it's a whole lot easier
-			 * to do an m_copy than to explicitly copy from the socket buf
-			 * into the buffer provided by getsockopt()
-			 */
-			IFDEBUG(D_REQUEST)
-				dump_mbuf(tpcb->tp_Xrcv.sb_mb, 
-					"tp_ctlout: tpXrcv before sbdrop");
-			ENDDEBUG
-			if(len) {
-				(void) m_freem(*mp);
-				*mp = m_copy( tpcb->tp_Xrcv.sb_mb, 0, len);
-				if( *mp != MNULL ) {
-					(*mp)->m_act = 0;
-					sbdrop( &tpcb->tp_Xrcv, len);
-				} else {
-					error = ENOBUFS;
-				}
-			} else {
-				(*mp)->m_len = 0;
-			}
-			IFDEBUG(D_REQUEST)
-				dump_mbuf(tpcb->tp_Xrcv.sb_mb, 
-					"tp_ctlout: tpXrcv after sbdrop");
-			ENDDEBUG
-			/* a potential problem here is that REAL expedited may have arrived
-			 * after the data-on-connect 
-			 * however, this presently works because incoming XPD_TPDUs are
-			 * dropped if tp_Xrcv.sb_cc != 0
-			 */
-
-			if( tpcb->tp_Xrcv.sb_cc == 0)
-				tpcb->tp_flags &= 
-				optname == TPOPT_CONN_DATA?~TPF_CONN_DATA_IN:~TPF_DISC_DATA_IN;
 		}
 		break;
 

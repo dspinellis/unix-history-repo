@@ -69,6 +69,8 @@ SOFTWARE.
 #include "../netiso/cons.h"
 
 #define DRIVERTRACE TPPTdriver
+#define sbwakeup(sb)	sowakeup(p->tp_sock, sb);
+#define MCPY(d, w) (d ? m_copym(d, 0, (int)M_COPYALL, w): 0)
 
 static 	trick_hc = 1;
 
@@ -306,7 +308,7 @@ TP_OPEN		<==		 TP_LISTENING  								CR_TPDU
 ;
 
 TP_AKWAIT		<==		 TP_LISTENING  								CR_TPDU 
-	( tp_emit(CC_TPDU_type, $P, 0,0, MNULL) == 0 )
+	( tp_emit(CC_TPDU_type, $P, 0,0, MCPY($P.tp_ucddata, M_NOWAIT)) == 0 )
 	{
 		IncStat(ts_tp4_conn); /* even though not quite open */
 		IFTRACE(D_CONN)
@@ -321,7 +323,7 @@ TP_AKWAIT		<==		 TP_LISTENING  								CR_TPDU
 			/* n/a for class 0 */
 			ASSERT($P.tp_Xrcv.sb_cc == 0); 
 			sbappendrecord(&$P.tp_Xrcv, $$.e_data);
-			$P.tp_flags |= TPF_CONN_DATA_IN;
+			/*$P.tp_flags |= TPF_CONN_DATA_IN;*/
 			$$.e_data = MNULL; 
 		} 
 		$P.tp_fcredit = $$.e_cdt;
@@ -352,24 +354,19 @@ TP_CRSENT		<==		TP_CLOSED								T_CONN_req
 	DEFAULT
 	{
 		int error;
-		extern struct mbuf *m_copy();
 		struct mbuf *data = MNULL;
 
 		IFTRACE(D_CONN)
-			tptrace(TPPTmisc, "T_CONN_req flags sbcc", (int)$P.tp_flags,
-			$P.tp_sock->so_snd.sb_cc, 0, 0);
+			tptrace(TPPTmisc, "T_CONN_req flags ucddata", (int)$P.tp_flags,
+			$P.tp_ucddata, 0, 0);
 		ENDTRACE
-		if( $P.tp_flags & TPF_CONN_DATA_OUT ) {
+		data =  MCPY($P.tp_ucddata, M_WAIT);
+		if (data) {
 			IFDEBUG(D_CONN)
 				printf("T_CONN_req.trans m_copy cc 0x%x\n", 
-					$P.tp_sock->so_snd.sb_cc);
-				dump_mbuf($P.tp_sock->so_snd.sb_mb, "sosnd @ T_CONN_req");
+					$P.tp_ucddata);
+				dump_mbuf(data, "sosnd @ T_CONN_req");
 			ENDDEBUG
-			data = 
-				m_copy($P.tp_sock->so_snd.sb_mb, 0, $P.tp_sock->so_snd.sb_cc);
-			if( data == MNULL ) {
-				return ENOBUFS;
-			}
 		}
 
 		if (error = tp_emit(CR_TPDU_type, $P, 0, 0, data) )
@@ -388,7 +385,8 @@ TP_REFWAIT 		<==		[ TP_CRSENT, TP_AKWAIT, TP_OPEN ] 			DR_TPDU
 	DEFAULT
 	{
 		if ($$.e_datalen > 0 && $P.tp_class != TP_CLASS_0) {
-			sbdrop(&$P.tp_Xrcv, $P.tp_Xrcv.sb_cc); /* purge expedited data */
+			/*sbdrop(&$P.tp_Xrcv, $P.tp_Xrcv.sb_cc); /* purge expedited data */
+			sbflush(&$P.tp_Xrcv);
 			$P.tp_flags |= TPF_DISC_DATA_IN;
 			sbappendrecord(&$P.tp_Xrcv, $$.e_data);
 			$$.e_data = MNULL;
@@ -524,14 +522,13 @@ TP_OPEN			<==		TP_CRSENT									CC_TPDU
 			$P.tp_cong_win = $$.e_cdt;
 		tp_getoptions($P);
 		tp_cuntimeout($P.tp_refp, TM_retrans);
-		if( $P.tp_flags & TPF_CONN_DATA_OUT ) {
+		if ($P.tp_ucddata) {
 			IFDEBUG(D_CONN)
-				printf("dropping %d octets of connect data cc 0x%x\n",
-					$P.tp_sock->so_snd.sb_mb->m_len, 
-					$P.tp_sock->so_snd.sb_cc);
+				printf("dropping user connect data cc 0x%x\n",
+					$P.tp_ucddata->m_len);
 			ENDDEBUG
-			sbdrop(&$P.tp_sock->so_snd, $P.tp_sock->so_snd.sb_cc);
-			$P.tp_flags &= ~TPF_CONN_DATA_OUT;
+			m_freem($P.tp_ucddata);
+			$P.tp_ucddata = 0;
 		}
 		soisconnected($P.tp_sock);
 		if ($$.e_datalen > 0) {
@@ -550,19 +547,16 @@ TP_OPEN			<==		TP_CRSENT									CC_TPDU
 SAME			<==		TP_CRSENT									TM_retrans 
 	(	$P.tp_retrans > 0 )
 	{
-		extern struct mbuf *m_copy();
 		struct mbuf *data = MNULL;
 		int error;
 
 		IncStat(ts_retrans_cr);
-		if( $P.tp_flags & TPF_CONN_DATA_OUT ) {
+		data = MCPY($P.tp_ucddata, M_NOWAIT);
+		if($P.tp_ucddata) {
 			IFDEBUG(D_CONN)
-				printf("TM_retrans.trans m_copy cc 0x%x\n", 
-					$P.tp_sock->so_snd.sb_cc);
-				dump_mbuf($P.tp_sock->so_snd.sb_mb, "sosnd @ TM_retrans");
+				printf("TM_retrans.trans m_copy cc 0x%x\n", data);
+				dump_mbuf($P.tp_ucddata, "sosnd @ TM_retrans");
 			ENDDEBUG
-			data = 
-				m_copy($P.tp_sock->so_snd.sb_mb, 0, $P.tp_sock->so_snd.sb_cc);
 			if( data == MNULL )
 				return ENOBUFS;
 		}
@@ -595,8 +589,9 @@ SAME 			<==	 TP_AKWAIT											CR_TPDU
 	 */
 	{	
 		int error;
+		struct mbuf *data = MCPY($P.tp_ucddata, M_WAIT);
 
-		if( error = tp_emit(CC_TPDU_type, $P, 0, 0, MNULL) ) {
+		if( error = tp_emit(CC_TPDU_type, $P, 0, 0, data) ) {
 			$P.tp_sock->so_error = error;
 		}
 		$P.tp_retrans = $P.tp_Nretrans;
@@ -611,11 +606,14 @@ TP_OPEN			<==		TP_AKWAIT 										DT_TPDU
 	{
 		int doack;
 
-		if( $P.tp_flags & TPF_CONN_DATA_OUT ) {
-			sbdrop(&$P.tp_sock->so_snd, $P.tp_sock->so_snd.sb_cc);
-			$P.tp_flags &= ~TPF_CONN_DATA_OUT;
+		/*
+		 * Get rid of any confirm or connect data, so that if we
+		 * crash or close, it isn't thought of as disconnect data.
+		 */
+		if ($P.tp_ucddata) {
+			m_freem($P.tp_ucddata);
+			$P.tp_ucddata = 0;
 		}
-
 		tp_ctimeout($P.tp_refp, TM_inact, (int)$P.tp_inact_ticks);
 		tp_cuntimeout($P.tp_refp, TM_retrans);
 		soisconnected($P.tp_sock);
@@ -707,11 +705,10 @@ SAME 			<== 	[ TP_OPEN, TP_AKWAIT ]							DT_TPDU
 TP_OPEN			<==		TP_AKWAIT										AK_TPDU
 	DEFAULT
 	{
-		if( $P.tp_flags & TPF_CONN_DATA_OUT ) {
-			sbdrop(&$P.tp_sock->so_snd, $P.tp_sock->so_snd.sb_cc);
-			$P.tp_flags &= ~TPF_CONN_DATA_OUT;
+		if ($P.tp_ucddata) {
+			m_freem($P.tp_ucddata);
+			$P.tp_ucddata = 0;
 		}
-
 		(void) tp_goodack($P, $$.e_cdt, $$.e_seq, $$.e_subseq);
 		tp_cuntimeout($P.tp_refp, TM_retrans);
 
@@ -734,12 +731,12 @@ TP_OPEN			<==		TP_AKWAIT										AK_TPDU
 
 /* TP4 only */
 TP_OPEN 		<== 	[ TP_OPEN, TP_AKWAIT ]						XPD_TPDU
-	( $P.tp_Xrcvnxt == $$.e_seq  && $P.tp_Xrcv.sb_cc == 0)
+	( $P.tp_Xrcvnxt == $$.e_seq  /* && $P.tp_Xrcv.sb_cc == 0*/)
 	{
 		if( $P.tp_state == TP_AKWAIT ) {
-			if( $P.tp_flags & TPF_CONN_DATA_OUT ) {
-				sbdrop(&$P.tp_sock->so_snd, $P.tp_sock->so_snd.sb_cc);
-				$P.tp_flags &= ~TPF_CONN_DATA_OUT;
+			if ($P.tp_ucddata) {
+				m_freem($P.tp_ucddata);
+				$P.tp_ucddata = 0;
 			}
 			tp_cuntimeout($P.tp_refp, TM_retrans);
 			tp_getoptions($P);
@@ -752,13 +749,11 @@ TP_OPEN 		<== 	[ TP_OPEN, TP_AKWAIT ]						XPD_TPDU
 				$P.tp_Xrcvnxt,$$.e_seq,  $$.e_datalen, $$.e_data->m_len);
 		ENDTRACE
 
-		sbappendrecord(&$P.tp_Xrcv, $$.e_data);
+		$P.tp_sock->so_state |= SS_RCVATMARK;
+		sbinsertoob(&$P.tp_Xrcv, $$.e_data);
 		IFDEBUG(D_XPD)
 			dump_mbuf($$.e_data, "XPD TPDU: tp_Xrcv");
 		ENDDEBUG
-		$P.tp_flags |= TPF_XPD_PRESENT;
-		/* kludge for select(): */ 
-		$P.tp_sock->so_state |= SS_OOBAVAIL;
 		tp_indicate(T_XDATA, $P, 0);
 		sbwakeup( &$P.tp_Xrcv );
 
@@ -772,9 +767,9 @@ SAME			<==		TP_OPEN 									T_USR_Xrcvd
 	DEFAULT
 	{
 		if( $P.tp_Xrcv.sb_cc == 0 ) {
-			$P.tp_flags &= ~TPF_XPD_PRESENT;
+			/*$P.tp_flags &= ~TPF_XPD_PRESENT;*/
 			/* kludge for select(): */ 
-			$P.tp_sock->so_state &= ~SS_OOBAVAIL;
+			/* $P.tp_sock->so_state &= ~SS_OOBAVAIL; */
 		}
 	}
 	/* OLD WAY:
@@ -810,11 +805,13 @@ SAME	 		<== 	[ TP_AKWAIT, TP_OPEN ] 							XPD_TPDU
 		if( $P.tp_Xrcvnxt != $$.e_seq )
 			IncStat(ts_xpd_niw);
 		if( $P.tp_Xrcv.sb_cc ) {
+#ifdef notdef
 			if( $P.tp_flags & TPF_CONN_DATA_IN ) {
 				/* user isn't reading the connection data; see note above */
 				sbdrop(&$P.tp_Xrcv, $P.tp_Xrcv.sb_cc);
 				$P.tp_flags &= ~TPF_CONN_DATA_IN;
 			}
+#endif notdef
 			/* might as well kick 'em again */
 			tp_indicate(T_XDATA, $P, 0);
 			IncStat(ts_xpd_dup);
@@ -853,6 +850,7 @@ TP_CLOSING		<== 	[ TP_CLOSING, TP_AKWAIT, TP_CRSENT ]			T_DETACH
 	DEFAULT
 	{
 		struct socket *so = $P.tp_sock;
+		struct mbuf *data = MNULL;
 
 		/* detach from parent socket so it can finish closing */
 		if (so->so_head) {
@@ -862,7 +860,8 @@ TP_CLOSING		<== 	[ TP_CLOSING, TP_AKWAIT, TP_CRSENT ]			T_DETACH
 		}
 		if ($P.tp_state != TP_CLOSING) {
 			tp_soisdisconnecting($P.tp_sock);
-			(void) tp_emit(DR_TPDU_type, $P, 0, E_TP_NORMAL_DISC, MNULL);
+			data = MCPY($P.tp_ucddata, M_NOWAIT);
+			(void) tp_emit(DR_TPDU_type, $P, 0, E_TP_NORMAL_DISC, data);
 			$P.tp_retrans = $P.tp_Nretrans;
 			tp_ctimeout($P.tp_refp, TM_retrans, (int)$P.tp_dr_ticks);
 		}
@@ -882,24 +881,20 @@ TP_REFWAIT		<==		[ TP_OPEN, TP_CRSENT ]		 	  			T_DISC_req
 TP_CLOSING		<==		[ TP_AKWAIT, TP_OPEN, TP_CRSENT ]		 	  T_DISC_req
 	DEFAULT
 	{
-		struct mbuf *data = MNULL;
-		extern struct mbuf *m_copy();
+		struct mbuf *data = MCPY($P.tp_ucddata, M_WAIT);
 
 		if($P.tp_state == TP_OPEN) {
 			tp_euntimeout($P.tp_refp, TM_data_retrans); /* all */
 			tp_cuntimeout($P.tp_refp, TM_inact);
 			tp_cuntimeout($P.tp_refp, TM_sendack);
 		}
-		if( $P.tp_flags & TPF_DISC_DATA_OUT ) {
+		if (data) {
 			IFDEBUG(D_CONN)
-				printf("T_DISC_req.trans m_copy cc 0x%x\n", 
-					$P.tp_sock->so_snd.sb_cc);
-				dump_mbuf($P.tp_sock->so_snd.sb_mb, "sosnd @ T_DISC_req");
+				printf("T_DISC_req.trans tp_ucddata 0x%x\n", 
+					$P.tp_ucddata);
+				dump_mbuf(data, "ucddata @ T_DISC_req");
 			ENDDEBUG
-			data = 
-				m_copy($P.tp_sock->so_snd.sb_mb, 0, $P.tp_sock->so_snd.sb_cc);
 		}
-
 		tp_soisdisconnecting($P.tp_sock);
 		$P.tp_retrans = $P.tp_Nretrans;
 		tp_ctimeout($P.tp_refp, TM_retrans, (int)$P.tp_dr_ticks);
@@ -914,10 +909,11 @@ SAME			<==		TP_AKWAIT									TM_retrans
 	( $P.tp_retrans > 0 )
 	{
 		int error;
+		struct mbuf *data = MCPY($P.tp_ucddata, M_WAIT);
 
 		IncStat(ts_retrans_cc);
 		$P.tp_retrans --;
-		if( error = tp_emit(CC_TPDU_type, $P, 0, 0, MNULL) ) 
+		if( error = tp_emit(CC_TPDU_type, $P, 0, 0, data) ) 
 			$P.tp_sock->so_error = error;
 		tp_ctimeout($P.tp_refp, TM_retrans, (int)$P.tp_cc_ticks);
 	}
@@ -966,8 +962,7 @@ SAME			<==		TP_OPEN										TM_retrans
 	{
 		/* resume XPD */
 		if	( $P.tp_Xsnd.sb_mb )  {
-			extern struct mbuf *m_copy();
-			struct mbuf *m = m_copy($P.tp_Xsnd.sb_mb, 0, $P.tp_Xsnd.sb_cc);
+			struct mbuf *m = m_copy($P.tp_Xsnd.sb_mb, 0, (int)$P.tp_Xsnd.sb_cc);
 			/* m_copy doesn't preserve the m_xlink field, but at this pt.
 			 * that doesn't matter
 			 */
@@ -996,7 +991,6 @@ SAME 			<==		TP_OPEN									TM_data_retrans
 		register	struct tp_rtc 	*r = $P.tp_snduna_rtc;
 		register	struct mbuf 	*m;
 		register	SeqNum			high = $$.e_high;
-		extern		struct mbuf		*m_copy();
 
 		low =
 			SEQ_GT($P, $P.tp_snduna, $$.e_low )? $P.tp_snduna: $$.e_low;
@@ -1113,8 +1107,7 @@ SAME			<==		TP_OPEN										T_XPD_req
 
 		/* resume XPD */
 		if	( $P.tp_Xsnd.sb_mb )  {
-			extern struct mbuf *m_copy();
-			struct mbuf *m = m_copy($P.tp_Xsnd.sb_mb, 0, $P.tp_Xsnd.sb_cc);
+			struct mbuf *m = m_copy($P.tp_Xsnd.sb_mb, 0, (int)$P.tp_Xsnd.sb_cc);
 			/* m_copy doesn't preserve the m_xlink field, but at this pt.
 			 * that doesn't matter
 			 */
@@ -1201,7 +1194,6 @@ SAME			<==		TP_OPEN 			 						 AK_TPDU
 		/* just so happens that this is never true now, because we allow
 		 * only 1 packet in the queue at once (this could be changed)
 		if	( $P.tp_Xsnd.sb_mb )  {
-			extern struct mbuf *m_copy();
 			struct mbuf *m = m_copy($P.tp_Xsnd.sb_mb, 0, ??);
 
 			(void) tp_emit(XPD_TPDU_type, $P, $P.tp_Xuna, 1, m);

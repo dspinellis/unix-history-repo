@@ -46,8 +46,8 @@ SOFTWARE.
 
 #define 	N_TPREF				100
 
-#define 	TP_SOCKBUFSIZE		4096
-#define 	TP0_SOCKBUFSIZE		512
+#define 	TP_SOCKBUFSIZE		((u_long)4096)
+#define 	TP0_SOCKBUFSIZE		((u_long)512)
 #define		MAX_TSAP_SEL_LEN	64
 
 /* maximum tpdu size we'll accept: */
@@ -284,7 +284,7 @@ bcopy((caddr_t)&(((struct tp_vbp *)(src))->tpv_val),(caddr_t)&(dst),sizeof(type)
 	P = (caddr_t)(DU) + (int)((DU)->tpdu_li);\
 	vbptr(P)->tpv_code = type;\
 	vbptr(P)->tpv_len = len;\
-	bcopy((caddr_t)&src, (caddr_t)&(vbptr(P)->tpv_val), (int)len);\
+	bcopy((caddr_t)&src, (caddr_t)&(vbptr(P)->tpv_val), (unsigned)len);\
 	DU->tpdu_li += len+2;/* 1 for code, 1 for length */\
 }
 /******************************************************

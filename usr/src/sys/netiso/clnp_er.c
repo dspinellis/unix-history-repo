@@ -33,40 +33,31 @@ static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_er.c,v 5.1 89/02/09 
 
 #ifdef ISO
 
-#include "../h/types.h"
-#include "../h/param.h"
-#include "../h/mbuf.h"
-#include "../h/domain.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/errno.h"
+#include "types.h"
+#include "param.h"
+#include "mbuf.h"
+#include "domain.h"
+#include "protosw.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "errno.h"
 
 #include "../net/if.h"
 #include "../net/route.h"
 
-#include "../netiso/iso.h"
-#include "../netiso/clnp.h"
-#include "../netiso/clnp_stat.h"
-#include "../netiso/argo_debug.h"
+#include "iso.h"
+#include "iso_var.h"
+#include "iso_pcb.h"
+#include "clnp.h"
+#include "clnp_stat.h"
+#include "argo_debug.h"
 
 static struct clnp_fixed er_template = {
 	ISO8473_CLNP,	/* network identifier */
 	0,				/* length */
 	ISO8473_V1,		/* version */
 	CLNP_TTL,		/* ttl */
-#if BYTE_ORDER == LITTLE_ENDIAN
 	CLNP_ER,		/* type */
-	0, 				/* error report */
-	0, 				/* more segments */
-	0, 				/* segmentation permitted */
-#endif
-#if BYTE_ORDER == BIG_ENDIAN
-	0, 				/* segmentation permitted */
-	0, 				/* more segments */
-	0, 				/* error report */
-	CLNP_ER,		/* type */
-#endif
 	0,				/* segment length */
 	0				/* checksum */
 };
@@ -85,7 +76,7 @@ static struct clnp_fixed er_template = {
 clnp_er_input(m, src, reason)
 struct mbuf		*m;		/* ptr to packet itself */
 struct iso_addr	*src;	/* ptr to src of er */
-char			reason;	/* reason code of er */
+u_char			reason;	/* reason code of er */
 {
 	int	cmd = -1;
 	extern u_char clnp_protox[];
@@ -197,9 +188,10 @@ char					reason;	/* reason for discard */
 		if (m->m_len >= sizeof(struct clnp_fixed)) {
 			register struct clnp_fixed *clnp = mtod(m, struct clnp_fixed *);
 
-			if ((clnp->cnf_type != CLNP_ER) && (clnp->cnf_err_ok)) {
-				clnp_emit_er(m, reason);
-				return;
+			if (((clnp->cnf_type & CNF_TYPE) != CLNP_ER) &&
+				(clnp->cnf_type & CNF_ERR_OK)) {
+					clnp_emit_er(m, reason);
+					return;
 			}
 		}
 		m_freem(m);
@@ -229,13 +221,14 @@ char					reason;	/* reason for discard */
 {
 	register struct clnp_fixed	*clnp = mtod(m, struct clnp_fixed *);
 	register struct clnp_fixed	*er;
-	struct route				route;
+	struct route_iso			route;
 	struct ifnet				*ifp;
 	struct sockaddr				*first_hop;
 	struct iso_addr				src, dst, *our_addr;
 	caddr_t						hoff, hend;
 	int							total_len;		/* total len of dg */
 	struct mbuf 				*m0;			/* contains er pdu hdr */
+	struct iso_ifaddr			*ia = 0;
 
 	IFDEBUG(D_DISCARD)
 		printf("clnp_emit_er: m x%x, hdr len %d\n", m, clnp->cnf_hdr_len);
@@ -280,17 +273,18 @@ char					reason;	/* reason for discard */
 	}
 
 	if (m->m_len > clnp->cnf_hdr_len)
-		m_adj(m, -(m->m_len - clnp->cnf_hdr_len));
+		m_adj(m, (int)-(m->m_len - (int)clnp->cnf_hdr_len));
 
 	/* route er pdu: note we send pkt to src of original packet  */
-	if (clnp_route(&src, &route, /* flags */0, &first_hop, &ifp) != 0)
+	if (clnp_route(&src, &route, /* flags */0, &first_hop, &ia) != 0)
 		goto bad;
 
 	/* compute our address based upon firsthop/ifp */
-	our_addr = 
-			clnp_srcaddr(ifp, &((struct sockaddr_iso *)first_hop)->siso_addr);
-	if (our_addr == NULL)
-		goto bad;
+	if (ia)
+			our_addr = &ia->ia_addr.siso_addr;
+	else
+			goto bad;
+	ifp = ia->ia_ifp;
 
 	IFDEBUG(D_DISCARD)
 		printf("clnp_emit_er: to %s", clnp_iso_addrp(&src));
@@ -314,8 +308,8 @@ char					reason;	/* reason for discard */
 	/* setup src/dst on er pdu */
 	/* NOTE REVERSAL OF SRC/DST */
 	hoff = (caddr_t)er + sizeof(struct clnp_fixed);
-	CLNP_INSERT_ADDR(hoff, &src);
-	CLNP_INSERT_ADDR(hoff, our_addr);
+	CLNP_INSERT_ADDR(hoff, src);
+	CLNP_INSERT_ADDR(hoff, *our_addr);
 
 	/*
 	 *	TODO: if complete src rt was specified, then reverse path, and

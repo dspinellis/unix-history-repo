@@ -1,5 +1,4 @@
-/***********************************************************
-		Copyright IBM Corporation 1987
+/*********************************************************** Copyright IBM Corporation 1987
 
                       All Rights Reserved
 
@@ -27,10 +26,12 @@ SOFTWARE.
 /* 
  * $Header: argo_debug.h,v 4.6 88/07/19 15:53:40 hagens Exp $
  * $Source: /usr/argo/sys/netiso/RCS/argo_debug.h,v $
+ *	@(#)argo_debug.h	7.2 (Berkeley) %G%
  */
 #ifndef __ARGO_DEBUG__
 #define __ARGO_DEBUG__
 
+#define dump_buf(a, b) Dump_buf((caddr_t)(a), (int)(b))
 
 /***********************************************
  * Lint stuff
@@ -40,21 +41,27 @@ SOFTWARE.
  * lint can't handle the flaky vacuous definitions 
  * of IFDEBUG, ENDDEBUG, etc.
  */
-#ifndef TPPT
-#define TPPT
-#endif TPPT
-
-#ifndef ARGO_DEBUG
-#define ARGO_DEBUG
-#endif ARGO_DEBUG
-
 #endif	defined(lint)
 
 /***********************************************
  * DEBUG ON:
  **********************************************/
+#ifndef ARGO_DEBUG
+#define ARGO_DEBUG
+#endif ARGO_DEBUG
+
 
 #ifdef ARGO_DEBUG
+/*
+    #ifndef TPPT
+    #define TPPT
+    #endif TPPT
+
+    #ifndef TP_PERF_MEAS
+    #define TP_PERF_MEAS
+    #endif TP_PERF_MEAS
+*/
+
 unsigned char	argo_debug[128];
 
 #define IFDEBUG(ascii) \
@@ -213,8 +220,10 @@ void dump_mbuf();
 
 /***********************************************
  * New mbuf types for debugging w/ netstat -m
+ * This messes up 4.4 malloc for now. need bigger
+ * mbtypes array for now.
  **********************************************/
-#ifdef ARGO_DEBUG
+#ifdef notdef
 
 #define 	TPMT_DATA	0x21
 #define 	TPMT_RCVRTC	0x42
@@ -236,8 +245,7 @@ void dump_mbuf();
 #define 	TPMT_TPHDR	MT_HEADER
 #define 	TPMT_SONAME	MT_SONAME
 /* MT_EOT and MT_XPD are defined in tp_param.h */
-#define 	TPMT_EOT	MT_EOT
-#define 	TPMT_XPD	MT_XPD
+#define 	TPMT_XPD	MT_OOBDATA
 #define 	TPMT_PCB	MT_PCB
 #define 	TPMT_PERF	MT_PCB
 

@@ -32,7 +32,7 @@ struct snpa_req {
 	u_char			sr_snpa[MAX_SNPALEN];	/* snpa associated 
 												with nsap address */
 	u_char			sr_flags;		/* true if entry is valid */
-	short			sr_ht;			/* holding time */
+	u_short			sr_ht;			/* holding time */
 };
 
 /*
@@ -53,7 +53,8 @@ struct snpa_cache {
 #define	SNPA_PERM		0x10
 
 	/* redirects only */
-	struct iso_addr	sc_da;		/* DA from RD */
+	struct iso_addr sc_da;		/* DA from RD */
+	struct rtentry *sc_rt;
 };
 
 struct systype_req {
@@ -61,6 +62,9 @@ struct systype_req {
 	short	sr_configt;		/* configuration timer */
 	char	sr_type;		/* SNPA_ES or SNPA_IS */
 };
+
+#define	SIOCSSTYPE 	_IOW('a', 39, struct systype_req) /* set system type */
+#define	SIOCGSTYPE 	_IOW('a', 40, struct systype_req) /* set system type */
 
 #ifdef	KERNEL
 struct snpa_cache *snpac_look(/* struct iso_addr *isoa */);

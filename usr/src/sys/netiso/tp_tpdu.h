@@ -58,16 +58,16 @@ SOFTWARE.
  * structure below
  */
 struct tpdu_fixed {
-	unsigned	_tpduf_li:8,		/* length indicator */
+	u_char			_tpduf_li:8,		/* length indicator */
 #if BYTE_ORDER == LITTLE_ENDIAN
 				_tpduf_cdt: 4,		/* credit */
-				_tpduf_type: 4,		/* type of tpdu (DT, CR, etc.) */
+				_tpduf_type: 4;		/* type of tpdu (DT, CR, etc.) */
 #endif
 #if BYTE_ORDER == BIG_ENDIAN
 				_tpduf_type: 4,		/* type of tpdu (DT, CR, etc.) */
-				_tpduf_cdt: 4,		/* credit */
+				_tpduf_cdt: 4;		/* credit */
 #endif
-				_tpduf_dref: 16;	/* destination ref; not in DT in class 0 */
+	u_short			_tpduf_dref;		/* destination ref; not in DT in class 0 */
 };
 
 #define tpdu_li _tpduf._tpduf_li
@@ -76,7 +76,8 @@ struct tpdu_fixed {
 #define tpdu_dref _tpduf._tpduf_dref
 			
 struct tp0du {
-	unsigned	_tp0same:16,		/* same as in tpdu_fixed */
+	u_char		_tp0_li,
+				_tp0_cdt_type,		/* same as in tpdu_fixed */
 #if BYTE_ORDER == BIG_ENDIAN
 				_tp0_eot: 1,		/* eot */
 				_tp0_mbz: 7,		/* must be zero */
@@ -123,7 +124,7 @@ union seq_type {
 union  tpdu_fixed_rest {
 
 		struct {
-			unsigned	_tpdufr_sref:16, 	/* source reference */
+			u_short		_tpdufr_sref, 		/* source reference */
 #if BYTE_ORDER == BIG_ENDIAN
 						_tpdufr_class: 4,	/* class [ ISO 8073 13.3.3.e ] */
 						_tpdufr_opt: 4,		/* options [ ISO 8073 13.3.3.e ] */

@@ -45,21 +45,16 @@ static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_frag.c,v 5.1 89/02/0
 #include "../net/if.h"
 #include "../net/route.h"
 
-#include "../netiso/iso.h"
-#include "../netiso/iso_var.h"
-#include "../netiso/clnp.h"
-#include "../netiso/clnp_stat.h"
-#include "../netiso/argo_debug.h"
+#include "iso.h"
+#include "iso_var.h"
+#include "clnp.h"
+#include "clnp_stat.h"
+#include "argo_debug.h"
 
 /* all fragments are hung off this list */
 struct clnp_fragl	*clnp_frags = NULL;
 
 struct mbuf	*clnp_comp_pdu();
-
-#ifdef	TROLL
-float troll_random();
-static int troll_cnt = 0;
-#endif	TROLL
 
 
 /*
@@ -93,7 +88,7 @@ int				flags;		/* flags passed to clnp_output */
 
 	clnp = mtod(m, struct clnp_fixed *);
 
-	if (clnp->cnf_seg_ok) {
+	if (clnp->cnf_type & CNF_SEG_OK) {
 		struct mbuf			*hdr = NULL;		/* save copy of clnp hdr */
 		struct mbuf			*frag_hdr = NULL;
 		struct mbuf			*frag_data = NULL;
@@ -110,11 +105,11 @@ int				flags;		/* flags passed to clnp_output */
 		/*
 		 *	Duplicate header, and remove from packet
 		 */
-		if ((hdr = m_copy(m, 0, clnp->cnf_hdr_len)) == NULL) {
+		if ((hdr = m_copy(m, 0, (int)clnp->cnf_hdr_len)) == NULL) {
 			clnp_discard(m, GEN_CONGEST);
 			return(ENOBUFS);
 		}
-		m_adj(m, clnp->cnf_hdr_len);
+		m_adj(m, (int)clnp->cnf_hdr_len);
 		total_len -= clnp->cnf_hdr_len;
 		
 		while (total_len > 0) {
@@ -162,7 +157,7 @@ int				flags;		/* flags passed to clnp_output */
 				frag_data = m;
 			} else {
 				/* duplicate header and data mbufs */
-				if ((frag_hdr = m_copy(hdr, 0, M_COPYALL)) == NULL) {
+				if ((frag_hdr = m_copy(hdr, 0, (int)M_COPYALL)) == NULL) {
 					clnp_discard(m, GEN_CONGEST);
 					m_freem(hdr);
 					return(ENOBUFS);
@@ -177,7 +172,7 @@ int				flags;		/* flags passed to clnp_output */
 			clnp = mtod(frag_hdr, struct clnp_fixed *);
 
 			if (!last_frag)
-				clnp->cnf_more_segs = 1;
+				clnp->cnf_type |= CNF_MORE_SEGS;
 			
 			/* link together */
 			m_cat(frag_hdr, frag_data);
@@ -194,6 +189,9 @@ int				flags;		/* flags passed to clnp_output */
 			{
 				int	derived_len = clnp->cnf_hdr_len + frag_size;
 				HTOC(clnp->cnf_seglen_msb, clnp->cnf_seglen_lsb, derived_len);
+				if ((frag_hdr->m_flags & M_PKTHDR) == 0)
+					panic("clnp_frag:lost header");
+				frag_hdr->m_pkthdr.len = derived_len;
 			}
 			/* compute clnp checksum (on header only) */
 			if (flags & CLNP_NO_CKSUM) {
@@ -369,7 +367,7 @@ struct clnp_segment	*seg;	/* segment part of fragment header */
 	 *	Duplicate the header of this fragment, and save in cfh.
 	 *	Free m0 and return if m_copy does not succeed.
 	 */
-	if ((cfh->cfl_orighdr = m_copy(m, 0, clnp->cnf_hdr_len)) == NULL) {
+	if ((cfh->cfl_orighdr = m_copy(m, 0, (int)clnp->cnf_hdr_len)) == NULL) {
 		m_freem(m0);
 		return (0);
 	}
@@ -485,7 +483,7 @@ struct clnp_segment	*seg;	/* segment part of fragment header */
 					/* Trim data off of end of previous fragment */
 					/* inc overlap to prevent duplication of last byte */
 					overlap++;
-					m_adj(cf_prev->cfr_data, -overlap);
+					m_adj(cf_prev->cfr_data, -(int)overlap);
 					cf_prev->cfr_last -= overlap;
 				}
 			}
@@ -519,7 +517,7 @@ struct clnp_segment	*seg;	/* segment part of fragment header */
 					/* Trim data off of end of new fragment */
 					/* inc overlap to prevent duplication of last byte */
 					overlap++;
-					m_adj(m, -overlap);
+					m_adj(m, -(int)overlap);
 					last -= overlap;
 				}
 			}
@@ -668,7 +666,7 @@ struct clnp_fragl	*cfh;		/* fragment header */
 				printf("clnp_comp_pdu: shaving off %d bytes\n", 
 					cf_next_hdr.cfr_bytes);
 			ENDDEBUG
-			m_adj(cf_next_hdr.cfr_data, cf_next_hdr.cfr_bytes);
+			m_adj(cf_next_hdr.cfr_data, (int)cf_next_hdr.cfr_bytes);
 			m_cat(cf->cfr_data, cf_next_hdr.cfr_data);
 			cf->cfr_next = next_frag;
 		} else {
@@ -707,7 +705,7 @@ struct clnp_fragl	*cfh;		/* fragment header */
 			printf("clnp_comp_pdu: complete pdu!\n");
 		ENDDEBUG
 
-		m_adj(data, cf->cfr_bytes);
+		m_adj(data, (int)cf->cfr_bytes);
 		m_cat(hdr, data);
 
 		IFDEBUG(D_DUMPIN)
@@ -743,6 +741,7 @@ struct clnp_fragl	*cfh;		/* fragment header */
 	return(NULL);
 }
 #ifdef	TROLL
+static int troll_cnt;
 #include "../h/time.h"
 /*
  * FUNCTION:		troll_random
@@ -796,7 +795,7 @@ struct sockaddr	*dst;
 		float	f_freq = troll_cnt * trollctl.tr_dup_freq;
 		int		i_freq = troll_cnt * trollctl.tr_dup_freq;
 		if (i_freq == f_freq) {
-			struct mbuf *dup = m_copy(m, 0, M_COPYALL);
+			struct mbuf *dup = m_copy(m, 0, (int)M_COPYALL);
 			if (dup != NULL)
 				err = (*ifp->if_output)(ifp, dup, dst);
 		}

@@ -24,8 +24,8 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: clnp_stat.h,v 4.3 88/09/10 18:31:38 hagens Exp $ */
-/* $Source: /usr/argo/sys/netiso/RCS/clnp_stat.h,v $ */
+/* $Header: /var/src/sys/netiso/RCS/clnp_stat.h,v 5.1 89/02/09 16:20:42 hagens Exp $ */
+/* $Source: /var/src/sys/netiso/RCS/clnp_stat.h,v $ */
 
 
 #ifndef __CLNP_STAT__
@@ -46,6 +46,8 @@ struct clnp_stat {
 	u_short cns_frag;			/* fragments generated */
 	u_short cns_sent;			/* total packets sent */
 	u_short	cns_cachemiss;		/* cache misses */
+	u_short cns_congest_set;	/* congestion experienced bit set */
+	u_short cns_congest_rcvd;	/* congestion experienced bit received */
 	u_short	er_protoerr;		/*	GEN_NOREAS
 									GEN_PROTOERR
 									GEN_HDRSYNTAX

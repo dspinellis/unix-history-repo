@@ -26,8 +26,8 @@ SOFTWARE.
  */
 /* 
  * ARGO TP
- * $Header: tp_iso.c,v 5.3 88/11/18 17:27:57 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_iso.c,v $
+ * $Header: /var/src/sys/netiso/RCS/tp_iso.c,v 5.1 89/02/09 16:20:51 hagens Exp $
+ * $Source: /var/src/sys/netiso/RCS/tp_iso.c,v $
  *
  * Here is where you find the iso-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff
@@ -49,52 +49,58 @@ SOFTWARE.
  */
 
 #ifndef lint
-static char *rcsid = "$Header: tp_iso.c,v 5.3 88/11/18 17:27:57 nhall Exp $";
+static char *rcsid = "$Header: /var/src/sys/netiso/RCS/tp_iso.c,v 5.1 89/02/09 16:20:51 hagens Exp $";
 #endif lint
 
 #ifdef ISO
 
-#include "../h/types.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/domain.h"
-#include "../h/mbuf.h"
-#include "../h/errno.h"
-#include "../h/time.h"
+#include "param.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "domain.h"
+#include "malloc.h"
+#include "mbuf.h"
+#include "errno.h"
+#include "time.h"
+#include "protosw.h"
+
 #include "../net/if.h"
 #include "../net/route.h"
-#include "../h/protosw.h"
 
-#include "../netiso/tp_param.h"
-#include "../netiso/argo_debug.h"
-#include "../netiso/tp_stat.h"
-#include "../netiso/tp_pcb.h"
-#include "../netiso/tp_trace.h"
-#include "../netiso/tp_stat.h"
-#include "../netiso/tp_tpdu.h"
-#include "../netiso/tp_clnp.h"
+#include "argo_debug.h"
+#include "tp_param.h"
+#include "tp_stat.h"
+#include "tp_pcb.h"
+#include "tp_trace.h"
+#include "tp_stat.h"
+#include "tp_tpdu.h"
+#include "tp_clnp.h"
 
 /*
  * CALLED FROM:
  * 	pr_usrreq() on PRU_BIND, PRU_CONNECT, PRU_ACCEPT, and PRU_PEERADDR
- * FUNCTION, ARGUMENTS, and RETURN VALUE:
- * 	Return a transport suffix from an isopcb structure (inp).
- *  (CAST TO AN INT)
+ * FUNCTION, ARGUMENTS:
  * 	The argument (which) takes the value TP_LOCAL or TP_FOREIGN.
  */
 
-short
-iso_getsufx(isop,  which)
+iso_getsufx(isop, lenp, data_out, which)
 	struct isopcb *isop;
+	u_short *lenp;
+	caddr_t data_out;
 	int which;
 {
+	register struct sockaddr_iso *addr = 0;
+
 	switch (which) {
 	case TP_LOCAL:
-		return  htons(isop->isop_laddr.siso_tsuffix);
+		addr = isop->isop_laddr;
+		break;
 
 	case TP_FOREIGN:
-		return  htons(isop->isop_faddr.siso_tsuffix);
+		addr = isop->isop_faddr;
 	}
+	if (addr)
+		bcopy(TSEL(addr), data_out, (*lenp = addr->siso_tsuffixlen));
 }
 
 /* CALLED FROM:
@@ -106,19 +112,51 @@ iso_getsufx(isop,  which)
  * 	The argument (which) takes the value TP_LOCAL or TP_FOREIGN.
  */
 void
-iso_putsufx(isop, name, which)
+iso_putsufx(isop, sufxloc, sufxlen, which)
 	struct isopcb *isop;
-	struct sockaddr_iso *name;
-	int which;
+	caddr_t sufxloc;
+	int sufxlen, which;
 {
+	struct sockaddr_iso **dst, *backup;
+	register struct sockaddr_iso *addr;
+	struct mbuf *m;
+	int len;
+
 	switch (which) {
+	default:
+		return;
+
 	case TP_LOCAL:
-		isop->isop_lport = ntohs(name->siso_tsuffix);
+		dst = &isop->isop_laddr;
+		backup = &isop->isop_sladdr;
 		break;
+
 	case TP_FOREIGN:
-		isop->isop_fport = ntohs(name->siso_tsuffix);
-		break;
+		dst = &isop->isop_faddr;
+		backup = &isop->isop_sfaddr;
 	}
+	if ((addr = *dst) == 0) {
+		addr = *dst = backup;
+		addr->siso_nlen = 0;
+		addr->siso_ssuffixlen = 0;
+		printf("iso_putsufx on un-initialized isopcb\n");
+	}
+	len = sufxlen + addr->siso_nlen +
+			(sizeof(struct sockaddr_iso) - sizeof(struct iso_addr));
+	if (addr == backup) {
+		if (len > sizeof(isop->isop_sladdr)) {
+				m = m_getclr(M_DONTWAIT, MT_SONAME);
+				if (m == 0)
+					return;
+				addr = *dst = mtod(m, struct sockaddr_iso *);
+				*addr = *backup;
+				m->m_len = len;
+		}
+	} else
+		dtom(addr)->m_len = len;
+	bcopy(sufxloc, TSEL(addr), sufxlen);
+	addr->siso_tsuffixlen = sufxlen;
+	addr->siso_len = len;
 }
 
 /*
@@ -136,7 +174,7 @@ void
 iso_recycle_tsuffix(isop)
 	struct isopcb	*isop;
 {
-	isop->isop_laddr.siso_tsuffix = isop->isop_faddr.siso_tsuffix = 0;
+	isop->isop_laddr->siso_tsuffixlen = isop->isop_faddr->siso_tsuffixlen = 0;
 }
 
 /*
@@ -155,27 +193,24 @@ iso_putnetaddr(isop, name, which)
 	struct sockaddr_iso	*name;
 	int which;
 {
+	struct sockaddr_iso **sisop, *backup;
+	register struct sockaddr_iso *siso;
+
 	switch (which) {
 	case TP_LOCAL:
-		isop->isop_laddr.siso_family = AF_ISO;
-		bcopy((caddr_t)&name->siso_addr,
-			(caddr_t)&isop->isop_laddr.siso_addr, sizeof(struct iso_addr));
-		IFDEBUG(D_TPISO)
-			printf("PUT TP_LOCAL addr\n");
-			dump_isoaddr(&isop->isop_laddr);
-		ENDDEBUG
+		sisop = &isop->isop_laddr;
+		backup = &isop->isop_sladdr;
 		break;
 	case TP_FOREIGN:
-		isop->isop_faddr.siso_family = AF_ISO;
-		if( name != (struct sockaddr_iso *)0 ) {
-			bcopy((caddr_t)&name->siso_addr, 
-				(caddr_t)&isop->isop_faddr.siso_addr, sizeof(struct iso_addr));
-		}
-		IFDEBUG(D_TPISO)
-			printf("PUT TP_FOREIGN addr\n");
-			dump_isoaddr(&isop->isop_faddr);
-		ENDDEBUG
+		sisop = &isop->isop_faddr;
+		backup = &isop->isop_sfaddr;
 	}
+	siso = ((*sisop == 0) ? (*sisop = backup) : *sisop);
+	IFDEBUG(D_TPISO)
+		printf("ISO_PUTNETADDR\n");
+		dump_isoaddr(isop->isop_faddr);
+	ENDDEBUG
+	siso->siso_addr = name->siso_addr;
 }
 
 /*
@@ -190,20 +225,16 @@ iso_putnetaddr(isop, name, which)
 void
 iso_getnetaddr( isop, name, which)
 	struct isopcb *isop;
-	struct sockaddr_iso *name;
+	struct mbuf *name;
 	int which;
 {
-	switch (which) {
-	case TP_LOCAL:
-		bcopy( (caddr_t)&isop->isop_laddr.siso_addr, 
-			(caddr_t)&name->siso_addr, sizeof(struct iso_addr));
-		break;
-
-	case TP_FOREIGN:
-		bcopy( (caddr_t)&isop->isop_faddr.siso_addr, 
-			(caddr_t)&name->siso_addr, sizeof(struct iso_addr));
-		break;
-	}
+	struct sockaddr_iso *siso =
+		(which == TP_LOCAL ? isop->isop_laddr : isop->isop_faddr);
+	if (siso)
+		bcopy((caddr_t)siso, mtod(name, caddr_t),
+				(unsigned)(name->m_len = siso->siso_len));
+	else
+		name->m_len = 0;
 }
 
 /*
@@ -236,12 +267,13 @@ tpclnp_mtu(so, isop, size, negot )
 	u_char *negot;
 {
 	struct ifnet *ifp;
+	struct iso_ifaddr *ia;
 	register int i;
 	int windowsize = so->so_rcv.sb_hiwat;
 	int clnp_size;
 	int sizeismtu = 0;
 
-	struct ifnet	*iso_routeifp();
+	struct iso_ifaddr	*iso_routeifa();
 
 	IFDEBUG(D_CONN)
 		printf("tpclnp_mtu(0x%x,0x%x,0x%x,0x%x)\n", so, isop, size, negot);
@@ -256,35 +288,36 @@ tpclnp_mtu(so, isop, size, negot )
 		*size = windowsize;
 	}
 
-	if ((ifp = iso_routeifp(&isop->isop_faddr)) == (struct ifnet *)0)
+	if  (((ia = iso_routeifa(isop->isop_faddr)) == 0)
+	      || (ifp = ia->ia_ifp) == 0)
 		return;
 
 	/* TODO - make this indirect off the socket structure to the
 	 * network layer to get headersize
 	 */
-	clnp_size = clnp_hdrsize(isop->isop_laddr.siso_addr.isoa_len);
+	if (isop->isop_laddr)
+		clnp_size = clnp_hdrsize(isop->isop_laddr->siso_addr.isoa_len);
+	else
+		clnp_size = 20;
 
 	if(*size > ifp->if_mtu - clnp_size) {
 		*size = ifp->if_mtu - clnp_size;
 		sizeismtu = 1;
 	}
-	IFTRACE(D_CONN)
-		tptrace(TPPTmisc, "GET MTU MID: tpcb size negot i \n",
-		*size, *negot, i, 0);
-	ENDTRACE
-
 	/* have to transform size to the log2 of size */
 	for(i=TP_MIN_TPDUSIZE; (i<TP_MAX_TPDUSIZE && ((1<<i) <= *size)) ; i++)
 		;
 	i--;
 
+	IFTRACE(D_CONN)
+		tptrace(TPPTmisc, "GET MTU MID: tpcb size negot i \n",
+		*size, *negot, i, 0);
+	ENDTRACE
+
 	/* are we on the same LAN? if so, negotiate one tpdu size larger,
 	 * and actually send the real mtu size
 	 */
-	/* PHASE2: replace with iso_on_localnet(&isop->isop_faddr);
-	 * or something along those lines
-	 */
-	if ( iso_netmatch(&isop->isop_laddr, &isop->isop_faddr) && sizeismtu ) {
+	if (iso_localifa(isop->isop_faddr)) {
 		i++;
 	} else {
 		*size = 1<<i;
@@ -322,6 +355,7 @@ tpclnp_output(isop, m0, datalen, nochksum)
 	int 				datalen;
 	int					nochksum;
 {
+	register struct mbuf *m = m0;
 	IncStat(ts_tpdu_sent);
 
 	IFDEBUG(D_TPISO)
@@ -331,14 +365,28 @@ tpclnp_output(isop, m0, datalen, nochksum)
 "abt to call clnp_output: datalen 0x%x, hdr.li 0x%x, hdr.dutype 0x%x nocsum x%x dst addr:\n",
 			datalen,
 			(int)hdr->tpdu_li, (int)hdr->tpdu_type, nochksum);
-		dump_isoaddr(&isop->isop_faddr);
+		dump_isoaddr(isop->isop_faddr);
 		printf("\nsrc addr:\n");
-		dump_isoaddr(&isop->isop_laddr);
+		dump_isoaddr(isop->isop_laddr);
 		dump_mbuf(m0, "at tpclnp_output");
 	ENDDEBUG
+	if ((m->m_flags & M_PKTHDR) == 0) {
+		IFDEBUG(D_TPISO)
+		printf("tpclnp_output: non headered mbuf");
+		ENDDEBUG
+		MGETHDR(m, M_DONTWAIT, MT_DATA);
+		if (m == 0) {
+			m_freem(m0);
+			return ENOBUFS;
+		}
+		m->m_next = m0;
+		m->m_len = 0;
+		m->m_pkthdr.len = datalen;
+		m0 = m;
+	}
 
 	return 
-		clnp_output(m0, isop, datalen, nochksum?CLNP_NO_CKSUM:0 /* flags */);
+		clnp_output(m0, isop, /* flags */nochksum ? CLNP_NO_CKSUM : 0);
 }
 
 /*
@@ -362,9 +410,9 @@ tpclnp_output_dg(laddr, faddr, m0, datalen, ro, nochksum)
 	int					nochksum;
 {
 	struct isopcb		tmppcb;
-	struct iso_addr		*isoa;
 	int					err;
 	int					flags;
+	register struct mbuf *m = m0;
 
 	IFDEBUG(D_TPISO)
 		printf("tpclnp_output_dg  datalen 0x%x m0 0x%x\n", datalen, m0);
@@ -375,16 +423,16 @@ tpclnp_output_dg(laddr, faddr, m0, datalen, ro, nochksum)
 	 *	packet.
 	 */
 	bzero((caddr_t)&tmppcb, sizeof(tmppcb));
-	isoa = &(tmppcb.isop_laddr.siso_addr);
-	bcopy((caddr_t)laddr, (caddr_t)isoa, sizeof (struct iso_addr));
-	isoa = &(tmppcb.isop_faddr.siso_addr);
-	bcopy((caddr_t)faddr, (caddr_t)isoa, sizeof (struct iso_addr));
+	tmppcb.isop_laddr = &tmppcb.isop_sladdr;
+	tmppcb.isop_laddr->siso_addr = *laddr;
+	tmppcb.isop_faddr = &tmppcb.isop_sfaddr;
+	tmppcb.isop_faddr->siso_addr = *faddr;
 
 	IFDEBUG(D_TPISO)
 		printf("tpclnp_output_dg  faddr: \n");
-		dump_isoaddr(&tmppcb.isop_faddr);
+		dump_isoaddr(&tmppcb.isop_sfaddr);
 		printf("\ntpclnp_output_dg  laddr: \n");
-		dump_isoaddr(&tmppcb.isop_laddr);
+		dump_isoaddr(&tmppcb.isop_sladdr);
 		printf("\n");
 	ENDDEBUG
 
@@ -395,7 +443,19 @@ tpclnp_output_dg(laddr, faddr, m0, datalen, ro, nochksum)
 
 	IncStat(ts_tpdu_sent);
 
-	err = clnp_output(m0, &tmppcb, datalen, flags);
+	if ((m->m_flags & M_PKTHDR) == 0) {
+		printf("tpclnp_output: non headered mbuf");
+		MGETHDR(m, M_DONTWAIT, MT_DATA);
+		if (m == 0) {
+			m_freem(m0);
+			return ENOBUFS;
+		}
+		m->m_next = m0;
+		m->m_len = 0;
+		m->m_pkthdr.len = datalen;
+		m0 = m;
+	}
+	err = clnp_output(m0, &tmppcb, flags);
 	
 	/*
 	 *	Free route allocated by clnp (if the route was indeed allocated)
@@ -405,7 +465,7 @@ tpclnp_output_dg(laddr, faddr, m0, datalen, ro, nochksum)
 	
 	return(err);
 }
-
+extern struct sockaddr_iso blank_siso;
 /*
  * CALLED FROM:
  * 	clnp's input routine, indirectly through the protosw.
@@ -421,6 +481,7 @@ tpclnp_input(m, faddr, laddr, clnp_len)
 {
 	struct sockaddr_iso src, dst;
 	int s = splnet();
+	struct mbuf *tp_inputprep();
 
 	IncStat(ts_pkt_rcvd);
 
@@ -436,17 +497,17 @@ tpclnp_input(m, faddr, laddr, clnp_len)
 	 */
 
 	m->m_len -= clnp_len;
-	m->m_off += clnp_len;
+	m->m_data += clnp_len;
 
-	m = (struct mbuf *)tp_inputprep(m);
+	m = tp_inputprep(m);
 
 	IFDEBUG(D_TPINPUT)
 		dump_mbuf(m, "after tpclnp_input both pullups");
 	ENDDEBUG
 
-	src.siso_family = dst.siso_family = AF_ISO;
-	bcopy(faddr, &src.siso_addr, sizeof(struct iso_addr));
-	bcopy(laddr, &dst.siso_addr, sizeof(struct iso_addr));
+	src = blank_siso; dst = blank_siso;
+	bcopy((caddr_t)faddr, (caddr_t)&src.siso_addr, 1 + faddr->isoa_len);
+	bcopy((caddr_t)laddr, (caddr_t)&dst.siso_addr, 1 + laddr->isoa_len);
 
 	IFDEBUG(D_TPISO)
 		printf("calling tp_input: &src 0x%x  &dst 0x%x, src addr:\n", 
@@ -456,7 +517,8 @@ tpclnp_input(m, faddr, laddr, clnp_len)
 		dump_isoaddr(&dst);
 	ENDDEBUG
 
-	(void) tp_input(m, &src, &dst, 0, tpclnp_output_dg);
+	(void) tp_input(m, (struct sockaddr *)&src, (struct sockaddr *)&dst,
+				0, tpclnp_output_dg);
 
 	IFDEBUG(D_QUENCH)
 		{ 
@@ -473,19 +535,6 @@ tpclnp_input(m, faddr, laddr, clnp_len)
 	ENDDEBUG
 
 	splx(s);
-	return 0;
-
-discard:
-	IFDEBUG(D_TPINPUT)
-		printf("tpclnp_input DISCARD\n");
-	ENDDEBUG
-	IFTRACE(D_TPINPUT)
-		tptrace(TPPTmisc, "tpclnp_input DISCARD m",  m,0,0,0);
-	ENDTRACE
-	m_freem(m);
-	IncStat(ts_recv_drop);
-	splx(s);
-
 	return 0;
 }
 
@@ -505,7 +554,7 @@ void
 tpiso_decbit(isop)
 	struct isopcb *isop;
 {
-	tp_quench( isop->isop_socket->so_tpcb, PRC_QUENCH2 );
+	tp_quench((struct tp_pcb *)isop->isop_socket->so_tpcb, PRC_QUENCH2);
 }
 /*
  * CALLED FROM:
@@ -517,7 +566,7 @@ void
 tpiso_quench(isop)
 	struct isopcb *isop;
 {
-	tp_quench( isop->isop_socket->so_tpcb, PRC_QUENCH );
+	tp_quench((struct tp_pcb *)isop->isop_socket->so_tpcb, PRC_QUENCH);
 }
 
 /*
@@ -536,15 +585,26 @@ tpclnp_ctlinput(cmd, siso)
 	int cmd;
 	struct sockaddr_iso *siso;
 {
+	return tpclnp_ctlinput1(cmd, &siso->siso_addr);
+}
+
+/*
+ *	Entry to ctlinput with argument of an iso_addr rather than a sockaddr
+ */
+ProtoHook
+tpclnp_ctlinput1(cmd, isoa)
+	int cmd;
+	struct iso_addr	*isoa;
+{
 	extern u_char inetctlerrmap[];
 	extern ProtoHook tpiso_abort();
 	extern ProtoHook iso_rtchange();
 	extern ProtoHook tpiso_reset();
+	void iso_pcbnotify();
 
 	IFDEBUG(D_TPINPUT)
-		printf("tpclnp_ctlinput: cmd 0x%x addr: ", cmd);
-		dump_isoaddr(siso);
-		printf("\n");
+		printf("tpclnp_ctlinput1: cmd 0x%x addr: %s\n", cmd, 
+			clnp_iso_addrp(isoa));
 	ENDDEBUG
 
 	if (cmd < 0 || cmd > PRC_NCMDS)
@@ -552,23 +612,23 @@ tpclnp_ctlinput(cmd, siso)
 	switch (cmd) {
 
 		case	PRC_QUENCH2:
-			iso_pcbnotify(&tp_isopcb, &siso->siso_addr, 0, tpiso_decbit);
+			iso_pcbnotify(&tp_isopcb, isoa, 0, (int (*)())tpiso_decbit);
 			break;
 
 		case	PRC_QUENCH:
-			iso_pcbnotify(&tp_isopcb, &siso->siso_addr, 0, tpiso_quench);
+			iso_pcbnotify(&tp_isopcb, isoa, 0, (int (*)())tpiso_quench);
 			break;
 
 		case	PRC_TIMXCEED_REASS:
 		case	PRC_ROUTEDEAD:
-			iso_pcbnotify(&tp_isopcb, &siso->siso_addr, 0, tpiso_reset);
+			iso_pcbnotify(&tp_isopcb, isoa, 0, tpiso_reset);
 			break;
 
 		case	PRC_HOSTUNREACH:
 		case	PRC_UNREACH_NET:
 		case	PRC_IFDOWN:
 		case	PRC_HOSTDEAD:
-			iso_pcbnotify(&tp_isopcb, &siso->siso_addr,
+			iso_pcbnotify(&tp_isopcb, isoa,
 					(int)inetctlerrmap[cmd], iso_rtchange);
 			break;
 
@@ -587,8 +647,7 @@ tpclnp_ctlinput(cmd, siso)
 		case	PRC_TIMXCEED_INTRANS:
 		case	PRC_PARAMPROB:
 		*/
-		iso_pcbnotify(&tp_isopcb, &siso->siso_addr, 
-			(int)inetctlerrmap[cmd], tpiso_abort);
+		iso_pcbnotify(&tp_isopcb, isoa, (int)inetctlerrmap[cmd], tpiso_abort);
 		break;
 	}
 	return 0;
