@@ -12,13 +12,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #define USE_OLD_TTY
 
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/resource.h>
 
 #include <ctype.h>
 #include <ctype.h>
@@ -35,6 +36,12 @@ static char sccsid[] = "@(#)main.c	8.1 (Berkeley) %G%";
 #include "gettytab.h"
 #include "pathnames.h"
 #include "extern.h"
+
+/*
+ * Set the amount of running time that getty should accumulate
+ * before deciding that something is wrong and exit.
+ */
+#define GETTY_TIMEOUT	60 /* seconds */
 
 struct	sgttyb tmode = {
 	0, 0, CERASE, CKILL, 0
@@ -109,6 +116,17 @@ interrupt()
 	longjmp(intrupt, 1);
 }
 
+/*
+ * Action to take when getty is running too long.
+ */
+void
+timeoverrun()
+{
+
+	syslog(LOG_ERR, "getty exiting due to excessive running time\n");
+	exit(1);
+}
+
 static int	getname __P((void));
 static void	oflush __P((void));
 static void	prompt __P((void));
@@ -126,6 +144,7 @@ main(argc, argv)
 	char *tname;
 	long allflags;
 	int repcnt = 0;
+	struct rlimit limit;
 
 	signal(SIGINT, SIG_IGN);
 /*
@@ -135,6 +154,15 @@ main(argc, argv)
 	gethostname(hostname, sizeof(hostname));
 	if (hostname[0] == '\0')
 		strcpy(hostname, "Amnesiac");
+
+	/*
+	 * Limit running time to deal with broken or dead lines.
+	 */
+	signal(SIGXCPU, timeoverrun);
+	limit.rlim_max = RLIM_INFINITY;
+	limit.rlim_cur = GETTY_TIMEOUT;
+	setrlimit(RLIMIT_CPU, &limit);
+
 	/*
 	 * The following is a work around for vhangup interactions
 	 * which cause great problems getting window systems started.
