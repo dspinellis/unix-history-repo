@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)res_debug.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -52,8 +52,8 @@ char *rcodes[] = {
  * Print the contents of a query.
  * This is intended to be primarily a debugging routine.
  */
-p_query(buf)
-	char *buf;
+p_query(msg)
+	char *msg;
 {
 	register char *cp;
 	register HEADER *hp;
@@ -62,8 +62,8 @@ p_query(buf)
 	/*
 	 * Print header fields.
 	 */
-	hp = (HEADER *)buf;
-	cp = buf + sizeof(HEADER);
+	hp = (HEADER *)msg;
+	cp = msg + sizeof(HEADER);
 	printf("HEADER:\n");
 	printf("\topcode = %s", opcodes[hp->opcode]);
 	printf(", id = %d", ntohs(hp->id));
@@ -92,7 +92,7 @@ p_query(buf)
 		printf("QUESTIONS:\n");
 		while (--n >= 0) {
 			printf("\t");
-			cp = p_cdname(cp, buf);
+			cp = p_cdname(cp, msg);
 			if (cp == NULL)
 				return;
 			printf(", type = %s", p_type(getshort(cp)));
@@ -108,7 +108,7 @@ p_query(buf)
 		printf("ANSWERS:\n");
 		while (--n >= 0) {
 			printf("\t");
-			cp = p_rr(cp, buf);
+			cp = p_rr(cp, msg);
 			if (cp == NULL)
 				return;
 		}
@@ -120,7 +120,7 @@ p_query(buf)
 		printf("NAME SERVERS:\n");
 		while (--n >= 0) {
 			printf("\t");
-			cp = p_rr(cp, buf);
+			cp = p_rr(cp, msg);
 			if (cp == NULL)
 				return;
 		}
@@ -132,7 +132,7 @@ p_query(buf)
 		printf("ADDITIONAL RECORDS:\n");
 		while (--n >= 0) {
 			printf("\t");
-			cp = p_rr(cp, buf);
+			cp = p_rr(cp, msg);
 			if (cp == NULL)
 				return;
 		}
@@ -140,13 +140,13 @@ p_query(buf)
 }
 
 char *
-p_cdname(cp, buf)
-	char *cp, *buf;
+p_cdname(cp, msg)
+	char *cp, *msg;
 {
 	char name[MAXDNAME];
 	int n;
 
-	if ((n = dn_expand(buf, cp, name, sizeof(name))) < 0)
+	if ((n = dn_expand(msg, cp, name, sizeof(name))) < 0)
 		return (NULL);
 	if (name[0] == '\0') {
 		name[0] = '.';
@@ -160,14 +160,14 @@ p_cdname(cp, buf)
  * Print resource record fields in human readable form.
  */
 char *
-p_rr(cp, buf)
-	char *cp, *buf;
+p_rr(cp, msg)
+	char *cp, *msg;
 {
 	int type, class, dlen, n, c;
 	struct in_addr inaddr;
 	char *cp1;
 
-	if ((cp = p_cdname(cp, buf)) == NULL)
+	if ((cp = p_cdname(cp, msg)) == NULL)
 		return (NULL);			/* compression error */
 	printf("\n\ttype = %s", p_type(type = getshort(cp)));
 	cp += sizeof(u_short);
@@ -210,7 +210,7 @@ p_rr(cp, buf)
 	case T_NS:
 	case T_PTR:
 		printf("\tdomain name = ");
-		cp = p_cdname(cp, buf);
+		cp = p_cdname(cp, msg);
 		printf("\n");
 		break;
 
@@ -227,9 +227,9 @@ p_rr(cp, buf)
 
 	case T_SOA:
 		printf("\torigin = ");
-		cp = p_cdname(cp, buf);
+		cp = p_cdname(cp, msg);
 		printf("\n\tmail addr = ");
-		cp = p_cdname(cp, buf);
+		cp = p_cdname(cp, msg);
 		printf("\n\tserial=%ld", getlong(cp));
 		cp += sizeof(u_long);
 		printf(", refresh=%ld", getlong(cp));
@@ -240,6 +240,13 @@ p_rr(cp, buf)
 		cp += sizeof(u_long);
 		printf(", min=%ld\n", getlong(cp));
 		cp += sizeof(u_long);
+		break;
+
+	case T_MINFO:
+		printf("\trequests = ");
+		cp = p_cdname(cp, msg);
+		printf("\n\terrors = ");
+		cp = p_cdname(cp, msg);
 		break;
 
 	case T_UINFO:
