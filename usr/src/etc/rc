@@ -1,5 +1,5 @@
 #
-#	@(#)rc	5.13 (Berkeley) %G%
+#	@(#)rc	5.14 (Berkeley) %G%
 #
 
 HOME=/; export HOME
@@ -54,7 +54,7 @@ rm -f /fastboot		# XXX
 rm -f /etc/nologin
 rm -f /var/spool/uucp/LCK.*
 rm -f /var/spool/uucp/STST/*
-(cd /var/run; rm -rf *; : > utmp)
+(cd /var/run; rm -rf *; cp /dev/null utmp; chmod 644 utmp)
 
 # set hostname, turn on network
 . /etc/netstart
