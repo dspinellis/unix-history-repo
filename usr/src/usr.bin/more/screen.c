@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)screen.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)screen.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -198,7 +198,7 @@ cannot(s)
 		 */
 		return;
 
-	sprintf(message, "WARNING: terminal cannot \"%s\"", s);
+	(void)sprintf(message, "WARNING: terminal cannot \"%s\"", s);
 	error(message);
 }
 
@@ -221,7 +221,7 @@ get_term()
 #endif
 	static char sbuf[1024];
 
-	char *getenv();
+	char *getenv(), *strcpy();
 
 	/*
 	 * Find out what kind of terminal this is.
@@ -229,7 +229,7 @@ get_term()
  	if ((term = getenv("TERM")) == NULL)
  		term = "unknown";
  	if (tgetent(termbuf, term) <= 0)
- 		strcpy(termbuf, "dumb:co#80:hc:");
+ 		(void)strcpy(termbuf, "dumb:co#80:hc:");
 
 	/*
 	 * Get size of the screen.
@@ -374,7 +374,7 @@ get_term()
 			 * No "home" string,
 			 * but we can use "move(0,0)".
 			 */
-			strcpy(sp, tgoto(sc_move, 0, 0));
+			(void)strcpy(sp, tgoto(sc_move, 0, 0));
 			sc_home = sp;
 			sp += strlen(sp) + 1;
 		}
@@ -393,7 +393,7 @@ get_term()
 			 * No "lower-left" string, 
 			 * but we can use "move(0,last-line)".
 			 */
-			strcpy(sp, tgoto(sc_move, 0, sc_height-1));
+			(void)strcpy(sp, tgoto(sc_move, 0, sc_height-1));
 			sc_lower_left = sp;
 			sp += strlen(sp) + 1;
 		}
