@@ -1,6 +1,6 @@
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 
-# BROKEN: tn3270, lisp, systat
+# BROKEN: tn3270, lisp
 SUBDIR=	apply ar at awk banner basename bc bdes biff cal calendar checknr \
 	chflags chpass cksum col colcrt colrm column comm compress cpio \
 	ctags cut dc deroff diction diff dirname du env error ex expand \
@@ -11,10 +11,10 @@ SUBDIR=	apply ar at awk banner basename bc bdes biff cal calendar checknr \
 	nice nm nohup pagesize passwd paste plot pr printenv printf ptx \
 	quota ranlib ratfor rdist renice rev rlogin rsh ruptime rwho sccs \
 	script sed shar showmount size soelim sort spell spline split \
-	strings strip struct su talk tcopy tee telnet tftp time tip touch \
-	tput tr true tset tsort tty ul unexpand unifdef uniq units unvis \
-	users uucp uudecode uuencode vacation vgrind vis vmstat w wall wc \
-	what who whois window write xargs xinstall xsend xstr yacc yes
+	strings strip struct su systat talk tcopy tee telnet tftp time tip \
+	touch tput tr true tset tsort tty ul unexpand unifdef uniq units \
+	unvis users uucp uudecode uuencode vacation vgrind vis vmstat w \
+	wall wc what who whois window write xargs xinstall xsend xstr yacc yes
 
 # Gcc suit is new-VM only.
 # Cmp, look and tail all use mmap, so new-VM only.
