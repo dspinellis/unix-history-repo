@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)option.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)option.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -104,7 +104,7 @@ option(argc, argv)
 		case '?':
 		default:
 			fprintf(stderr,
-			    "usage: less [-ceinus] [-t tag] [-x tabs] [-/ pattern] [-#] [file ...]\n");
+			    "usage: more [-ceinus] [-t tag] [-x tabs] [-/ pattern] [-#] [file ...]\n");
 			exit(1);
 		}
 	return(optind);
