@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)sem.c 4.2 %G%";
+static	char *sccsid = "@(#)sem.c 4.3 %G%";
 
 #include "sh.h"
 #include "sh.proc.h"
@@ -114,7 +114,7 @@ execute(t, wanttty, pipein, pipeout)
 			int ochild, osetintr, ohaderr, odidfds, odidcch;
 			int oSHIN, oSHOUT, oSHDIAG, oOLDSTD, otpgrp;
 
-			(void) sigblock(mask(SIGCHLD));
+			sighold(SIGCHLD);
 			ochild = child; osetintr = setintr;
 			ohaderr = haderr; odidfds = didfds; odidcch = didcch;
 			oSHIN = SHIN; oSHOUT = SHOUT;
@@ -122,7 +122,7 @@ execute(t, wanttty, pipein, pipeout)
 			Vsav = Vdp = 0; Vav = 0;
 			pid = vfork();
 			if (pid < 0) {
-				(void) sigrelse(mask(SIGCHLD));
+				sigrelse(SIGCHLD);
 				error("No more processes");
 			}
 			forked++;
@@ -137,7 +137,7 @@ execute(t, wanttty, pipein, pipeout)
 				xfree(Vav); Vav = 0;
 				/* this is from pfork() */
 				palloc(pid, t);
-				(void) sigrelse(mask(SIGCHLD));
+				sigrelse(SIGCHLD);
 			} else {
 				/* this is from pfork() */
 				int pgrp;
@@ -152,21 +152,21 @@ execute(t, wanttty, pipein, pipeout)
 				if (setintr) {
 					setintr = 0;
 #ifdef notdef
-					signal(SIGCHLD, SIG_DFL);
+					sigsys(SIGCHLD, SIG_DFL);
 #endif
-					signal(SIGINT,
+					sigsys(SIGINT,
 					    ignint ? SIG_IGN : vffree);
-					signal(SIGQUIT,
+					sigsys(SIGQUIT,
 					    ignint ? SIG_IGN : SIG_DFL);
 					if (wanttty >= 0) {
-						signal(SIGTSTP, SIG_DFL);
-						signal(SIGTTIN, SIG_DFL);
-						signal(SIGTTOU, SIG_DFL);
+						sigsys(SIGTSTP, SIG_DFL);
+						sigsys(SIGTTIN, SIG_DFL);
+						sigsys(SIGTTOU, SIG_DFL);
 					}
-					signal(SIGTERM, parterm);
+					sigsys(SIGTERM, parterm);
 				} else if (tpgrp == -1 && (t->t_dflg&FINT)) {
-					signal(SIGINT, SIG_IGN);
-					signal(SIGQUIT, SIG_IGN);
+					sigsys(SIGINT, SIG_IGN);
+					sigsys(SIGQUIT, SIG_IGN);
 				}
 				if (wanttty > 0)
 					ioctl(FSHTTY, TIOCSPGRP, &pgrp);
@@ -175,7 +175,7 @@ execute(t, wanttty, pipein, pipeout)
 				if (tpgrp > 0)
 					tpgrp = 0;
 				if (t->t_dflg & FNOHUP)
-					signal(SIGHUP, SIG_IGN);
+					sigsys(SIGHUP, SIG_IGN);
 				if (t->t_dflg & FNICE)
 					nice(t->t_nice);
 			}
