@@ -1,4 +1,4 @@
-/* in_pcb.c 4.6 81/11/20 */
+/* in_pcb.c 4.7 81/11/21 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -24,7 +24,7 @@ in_pcballoc(so, head, sndcc, rcvcc, sin)
 	struct sockaddr_in *sin;
 {
 	struct mbuf *m;
-	register struct inpcb *inp;
+	register struct inpcb *inp, *xp;
 	struct ifnet *ifp;
 	u_long lport;
 
@@ -36,12 +36,12 @@ in_pcballoc(so, head, sndcc, rcvcc, sin)
 			return (EADDRNOTAVAIL);
 		lport = sin->sin_port;
 		if (lport) {
-			inp = head->inp_next;
-			for (; inp != head; inp = inp->inp_next) 
-				if (inp->inp_laddr.s_addr ==
+			xp = head->inp_next;
+			for (; xp != head; xp = inp->inp_next) 
+				if (xp->inp_laddr.s_addr ==
 				    sin->sin_addr.s_addr &&
-				    inp->inp_lport == lport &&
-				    inp->inp_faddr.s_addr == 0)
+				    xp->inp_lport == lport &&
+				    xp->inp_faddr.s_addr == 0)
 					return (EADDRINUSE);
 		}
 	} else {
@@ -50,7 +50,7 @@ in_pcballoc(so, head, sndcc, rcvcc, sin)
 	}
 	m = m_getclr(M_WAIT);
 	if (m == 0)
-		return (0);
+		return (ENOBUFS);
 	if (sbreserve(&so->so_snd, sndcc) == 0)
 		goto bad;
 	if (sbreserve(&so->so_rcv, rcvcc) == 0)
@@ -62,13 +62,14 @@ in_pcballoc(so, head, sndcc, rcvcc, sin)
 again:
 	if (head->inp_lport++ < 1024)
 		head->inp_lport = 1024;
-	for (inp = head->inp_next; inp != head; inp = inp->inp_next)
-		if (inp->inp_lport == head->inp_lport)
+	for (xp = head->inp_next; xp != head; xp = xp->inp_next)
+		if (xp->inp_lport == head->inp_lport)
 			goto again;
 	lport = head->inp_lport;
 gotport:
+	inp->inp_socket = so;
 	inp->inp_lport = lport;
-	insque(head, inp);
+	insque(inp, head);
 	so->so_pcb = (caddr_t)inp;
 	sin = (struct sockaddr_in *)&so->so_addr;
 	sin->sin_family = AF_INET;
@@ -106,6 +107,7 @@ in_pcbfree(inp)
 		sofree(so);
 	else
 		so->so_pcb = 0;
+	remque(inp);
 	(void) m_free(dtom(inp));
 }
 
