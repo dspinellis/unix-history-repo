@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)table.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)table.c	1.4 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -881,7 +881,11 @@ OPSIMP,	INAREG|INTAREG,
 	SAREG,	TFLOAT|TDOUBLE,
 	SZERO,	TANY,
 		0,	RLEFT,
+#if defined(FORT) || defined(SPRECC)
 		"T",
+#else
+		"",
+#endif
 
 OPSIMP,	INAREG|INTAREG|FORCC,
 	AWD,	TFLOAT,
