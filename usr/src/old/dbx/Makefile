@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 #
 # make file for debugger "dbx"
 #
@@ -204,7 +204,7 @@ test:
 	@cd tests; make
 
 install: ${AOUT}
-	install -s ${AOUT} ${DESTDIR}${DEST}
+	install -s -o bin -g bin -m 755 ${AOUT} ${DESTDIR}${DEST}
 
 #
 # Create a tar file called "tape" containing relevant files.
