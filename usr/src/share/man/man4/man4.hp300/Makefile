@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 MAN4=	autoconf.0 cons.0 ct.0 dca.0 dcl.0 dcm.0 dv.0 gb.0 grf.0 hil.0 \
 	intro.0 ite.0 le.0 mem.0 ppi.0 rb.0 rd.0 rmp.0 tc.0
