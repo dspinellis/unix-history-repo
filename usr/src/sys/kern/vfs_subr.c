@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.25 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.26 (Berkeley) %G%
  */
 
 /*
@@ -198,7 +198,7 @@ vfs_mountroot()
 	int error;
 
 	if (mountroot != NULL)
-		return ((*vfsp->vfc_mountroot)());
+		return ((*mountroot)());
 	for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next) {
 		if (vfsp->vfc_mountroot == NULL)
 			continue;
