@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp.h	6.4 (Berkeley) %G%
+ *	@(#)tcp.h	6.5 (Berkeley) %G%
  */
 
 typedef	u_long	tcp_seq;
@@ -37,11 +37,15 @@ struct tcphdr {
 #define	TCPOPT_MAXSEG	2
 
 /*
- *  Default maximum segment size for TCP.
- *  With an IP MSS of 576, this is 536,
- *  but 512 is probably more convenient.
+ * Default maximum segment size for TCP.
+ * With an IP MSS of 576, this is 536,
+ * but 512 is probably more convenient.
  */
+#ifdef	lint
+#define	TCP_MSS	536
+#else
 #define	TCP_MSS	MIN(512, IP_MSS - sizeof (struct tcpiphdr))
+#endif
 
 /*
  * User-settable options (used with setsockopt).
