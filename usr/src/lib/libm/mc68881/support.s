@@ -8,11 +8,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)support.s	5.2 (Berkeley) %G%
+ *	@(#)support.s	5.3 (Berkeley) %G%
  */
 
 	.text
-	.globl	_copysign, _finite, _scalb, _logb, _drem, _pow_p, _atan2__A
+	.globl	_copysign, _finite, _scalb, _logb, _drem, _pow_P, _atan2__A
 
 | copysign(x,y) 
 | returns x with the sign of y. 
@@ -86,9 +86,9 @@ _drem:
 	movel	sp@+,d1
 	rts
 
-| pow_p(x,y)
+| pow_P(x,y)
 | return x**y for x with sign=1 and finite y
-_pow_p:
+_pow_P:
 	flognd	sp@(4),fp0
 	fmuld	sp@(12),fp0
 	fetoxx	fp0
