@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_domain.c	6.8 (Berkeley) %G%
+ *	@(#)uipc_domain.c	6.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,14 +26,11 @@ domaininit()
 
 #ifndef lint
 	ADDDOMAIN(unix);
-#if defined(INET) || defined(BBNNET)
+#ifdef INET
 	ADDDOMAIN(inet);
 #endif
 #ifdef NS
 	ADDDOMAIN(ns);
-#endif
-#ifdef PUP
-	ADDDOMAIN(pup);
 #endif
 #include "imp.h"
 #if NIMP > 0
