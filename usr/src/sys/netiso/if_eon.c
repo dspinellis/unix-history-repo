@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_eon.c	7.19 (Berkeley) %G%
+ *	@(#)if_eon.c	7.20 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -90,7 +90,7 @@ int						eonoutput();
 int						eonioctl();
 int						eonattach();
 int						eoninit();
-int						eonrtrequest();
+void						eonrtrequest();
 extern 	int				ip_output();
 struct ifnet			eonif[1];
 
@@ -235,6 +235,7 @@ caddr_t loc;
  *
  * RETURNS:			nothing
  */
+void
 eonrtrequest(cmd, rt, gate)
 register struct rtentry *rt;
 register struct sockaddr *gate;
