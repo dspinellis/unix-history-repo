@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vfsops.c	7.25 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -395,7 +395,6 @@ ufs_statfs(mp, sbp)
 	if (fs->fs_magic != FS_MAGIC)
 		panic("ufs_statfs");
 	sbp->f_type = MOUNT_UFS;
-	sbp->f_flags = mp->m_flag &~ (M_MLOCK|M_MWAIT);
 	sbp->f_fsize = fs->fs_fsize;
 	sbp->f_bsize = fs->fs_bsize;
 	sbp->f_blocks = fs->fs_dsize;
@@ -405,7 +404,6 @@ ufs_statfs(mp, sbp)
 		(fs->fs_dsize - sbp->f_bfree);
 	sbp->f_files =  fs->fs_ncg * fs->fs_ipg - ROOTINO;
 	sbp->f_ffree = fs->fs_cstotal.cs_nifree;
-	sbp->f_fsid = mp->m_fsid;
 	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)&sbp->f_mntonname[0], MNAMELEN);
 	bcopy((caddr_t)ump->um_mntname, (caddr_t)&sbp->f_mntfromname[0],
 		MNAMELEN);
