@@ -1,9 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)lex.c	4.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)lex.c	4.8 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
 #include "sh.char.h"
+#include <sgtty.h>
 
 /*
  * C shell
@@ -1119,7 +1120,6 @@ top:
 reread:
 		c = bgetc();
 		if (c < 0) {
-#include <sgtty.h>
 			struct sgttyb tty;
 
 			if (wanteof)
@@ -1210,11 +1210,11 @@ again:
 		buf = (int) feobp / BUFSIZ;
 		off = (int) feobp % BUFSIZ;
 #ifndef FILEC
-		do
+		for (;;) {
 			c = read(SHIN, fbuf[buf] + off, BUFSIZ - off);
 #else
 		roomleft = BUFSIZ - off;
-		do
+		for (;;) {
 			if (filec && intty) {
 				c = numleft ? numleft : tenex(ttyline, BUFSIZ);
 				if (c > roomleft) {
@@ -1229,7 +1229,15 @@ again:
 			} else
 				c = read(SHIN, fbuf[buf] + off, roomleft);
 #endif
-		while (c < 0 && errno == EINTR);
+			if (c >= 0)
+				break;
+			if (errno == EWOULDBLOCK) {
+				int off = 0;
+
+				(void) ioctl(SHIN, FIONBIO, (char *)&off);
+			} else if (errno != EINTR)
+				break;
+		}
 		if (c <= 0)
 			return (-1);
 		feobp += c;
