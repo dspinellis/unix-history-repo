@@ -3,7 +3,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)xget.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)xget.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
