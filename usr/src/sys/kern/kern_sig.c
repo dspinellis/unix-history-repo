@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.32 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.33 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -986,7 +986,7 @@ coredump(p)
 	register struct ucred *cred = pcred->pc_ucred;
 	register struct vmspace *vm = p->p_vmspace;
 	struct vattr vattr;
-	int error;
+	int error, error1;
 	struct nameidata nd;
 	char name[MAXCOMLEN+12];	/* core.progname.pid */
 
@@ -1004,8 +1004,8 @@ coredump(p)
 	vp = nd.ni_vp;
 	if (vp->v_type != VREG || VOP_GETATTR(vp, &vattr, cred, p) ||
 	    vattr.va_nlink != 1) {
-		vput(vp);
-		return (EFAULT);
+		error = EFAULT;
+		goto out;
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_size = 0;
@@ -1036,7 +1036,11 @@ coredump(p)
 		    round_page(ctob(vm->vm_ssize)),
 		    (off_t)ctob(UPAGES) + ctob(vm->vm_dsize), UIO_USERSPACE,
 		    IO_NODELOCKED|IO_UNIT, cred, (int *) NULL, p);
-	vput(vp);
+out:
+	VOP_UNLOCK(vp);
+	error1 = vn_close(vp, FWRITE, cred, p);
+	if (!error)
+		error = error1;
 	return (error);
 }
 
