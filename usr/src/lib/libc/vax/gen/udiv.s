@@ -1,4 +1,6 @@
-/*	udiv.s	4.4	85/01/16	*/
+#ifndef lint
+	.asciz	"@(#)udiv.s	5.1 (Berkeley) %G%"
+#endif not lint
 
 /*
  * udiv - unsigned division for vax-11
