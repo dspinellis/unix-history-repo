@@ -9,7 +9,7 @@
  * Startup -- interface with user.
  */
 
-static char *SccsId = "@(#)main.c	2.7 %G%";
+static char *SccsId = "@(#)main.c	2.8 %G%";
 
 jmp_buf	hdrjmp;
 
@@ -256,8 +256,13 @@ main(argc, argv)
 		editfile = ef;
 		strcpy(mailname, ef);
 	}
-	if (setfile(mailname, edit) < 0)
+	if (setfile(mailname, edit) < 0) {
+		if (edit)
+			perror(mailname);
+		else
+			fprintf(stderr, "No mail for %s\n", myname);
 		exit(1);
+	}
 	if (!edit && !noheader && value("noheader") == NOSTR) {
 		if (setjmp(hdrjmp) == 0) {
 			if ((prevint = sigset(SIGINT, SIG_IGN)) != SIG_IGN)
