@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)endian.h	7.1 (Berkeley) %G%
+ *	@(#)endian.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@
 /*
  * Macros for network/external number representation conversion.
  */
-#if ENDIAN == BIG && !defined(lint)
+#if BYTE_ORDER == BIG_ENDIAN && !defined(lint)
 #define	ntohl(x)	(x)
 #define	ntohs(x)	(x)
 #define	htonl(x)	(x)
