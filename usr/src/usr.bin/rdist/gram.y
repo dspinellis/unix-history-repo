@@ -1,6 +1,6 @@
 %{
 #ifndef lint
-static	char *sccsid = "@(#)gram.y	4.3 (Berkeley) 83/10/10";
+static	char *sccsid = "@(#)gram.y	4.4 (Berkeley) 83/10/12";
 #endif
 
 #include "defs.h"
@@ -87,7 +87,7 @@ cmdlist:	  /* VOID */ {
 cmd:		  INSTALL options NAME = {
 			register struct block *b;
 
-			$1->b_options = $2;
+			$1->b_options = $2 | options;
 			b = expand($3, 0);
 			if (b == NULL || b->b_next != NULL)
 				fatal("exactly one name allowed\n");

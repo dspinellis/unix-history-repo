@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.3 (Berkeley) 83/10/10";
+static	char *sccsid = "@(#)server.c	4.4 (Berkeley) 83/10/12";
 #endif
 
 #include "defs.h"
@@ -143,9 +143,9 @@ server()
 /*
  * Transfer the file or directory 'name'.
  */
-sendf(lname, rname, options)
+sendf(lname, rname, opts)
 	char *lname, *rname;
-	int options;
+	int opts;
 {
 	register char *cp;
 	struct stat stb;
@@ -154,7 +154,7 @@ sendf(lname, rname, options)
 
 	if (debug)
 		printf("sendf(%s, %s, %x)\n", lname,
-			rname != NULL ? rname : "NULL", options);
+			rname != NULL ? rname : "NULL", opts);
 
 	if (exclude(lname))
 		return;
@@ -174,14 +174,14 @@ sendf(lname, rname, options)
 		 * the directory heirarchy (-w), we must strip off the first
 		 * directory name and preserve the rest.
 		 */
-		if (options & STRIP) {
-			options &= ~STRIP;
+		if (opts & STRIP) {
+			opts &= ~STRIP;
 			rname = index(rname, '/');
 			if (rname == NULL)
 				rname = tp;
 			else
 				rname++;
-		} else if (!(options & WHOLE)) {
+		} else if (!(opts & WHOLE)) {
 			rname = rindex(lname, '/');
 			if (rname == NULL)
 				rname = lname;
@@ -193,7 +193,7 @@ sendf(lname, rname, options)
 		error("%s: %s\n", lname, sys_errlist[errno]);
 		return;
 	}
-	if ((u = update(lname, rname, options, &stb)) == 0)
+	if ((u = update(lname, rname, opts, &stb)) == 0)
 		return;
 
 	if (p == NULL || p->pw_uid != stb.st_uid)
@@ -212,7 +212,7 @@ sendf(lname, rname, options)
 		break;
 
 	case S_IFDIR:
-		rsendf(lname, rname, options, &stb, p->pw_name, g->gr_name);
+		rsendf(lname, rname, opts, &stb, p->pw_name, g->gr_name);
 		return;
 
 	default:
@@ -222,15 +222,16 @@ sendf(lname, rname, options)
 
 	log(lfp, "%s: %s\n", u == 2 ? "updating" : "installing", lname);
 
-	if ((options & VERIFY) || vflag)
+	if (opts & VERIFY)
 		return;
 
 	if ((f = open(lname, 0)) < 0) {
 		error("%s: %s\n", lname, sys_errlist[errno]);
 		return;
 	}
-	(void) sprintf(buf, "R%04o %D %D %s %s %s\n", stb.st_mode & 07777,
-		stb.st_size, stb.st_mtime, p->pw_name, g->gr_name, rname);
+	(void) sprintf(buf, "R%1o %04o %D %D %s %s %s\n", opts,
+		stb.st_mode & 07777, stb.st_size, stb.st_mtime,
+		p->pw_name, g->gr_name, rname);
 	if (debug)
 		printf("buf = %s", buf);
 	(void) write(rem, buf, strlen(buf));
@@ -255,9 +256,9 @@ sendf(lname, rname, options)
 	(void) response();
 }
 
-rsendf(lname, rname, options, st, owner, group)
+rsendf(lname, rname, opts, st, owner, group)
 	char *lname, *rname;
-	int options;
+	int opts;
 	struct stat *st;
 	char *owner, *group;
 {
@@ -268,14 +269,14 @@ rsendf(lname, rname, options, st, owner, group)
 
 	if (debug)
 		printf("rsendf(%s, %s, %x, %x, %s, %s)\n", lname, rname,
-			options, st, owner, group);
+			opts, st, owner, group);
 
 	if ((d = opendir(lname)) == NULL) {
 		error("%s: %s\n", lname, sys_errlist[errno]);
 		return;
 	}
-	(void) sprintf(buf, "D%04o 0 0 %s %s %s\n", st->st_mode & 07777,
-		owner, group, rname);
+	(void) sprintf(buf, "D%1o %04o 0 0 %s %s %s\n", opts,
+		st->st_mode & 07777, owner, group, rname);
 	if (debug)
 		printf("buf = %s", buf);
 	(void) write(rem, buf, strlen(buf));
@@ -298,7 +299,7 @@ rsendf(lname, rname, options, st, owner, group)
 		while (*tp++ = *cp++)
 			;
 		tp--;
-		sendf(target, dp->d_name, options);
+		sendf(target, dp->d_name, opts);
 	}
 	closedir(d);
 	(void) write(rem, "E\n", 2);
@@ -311,9 +312,9 @@ rsendf(lname, rname, options, st, owner, group)
  * Check to see if file needs to be updated on the remote machine.
  * Returns 0 if no update, 1 if remote doesn't exist, and 2 if out of date.
  */
-update(lname, rname, options, st)
+update(lname, rname, opts, st)
 	char *lname, *rname;
-	int options;
+	int opts;
 	struct stat *st;
 {
 	register char *cp;
@@ -321,7 +322,7 @@ update(lname, rname, options, st)
 	register time_t mtime;
 
 	if (debug) 
-		printf("update(%s, %s, %x, %x)\n", lname, rname, options, st);
+		printf("update(%s, %s, %x, %x)\n", lname, rname, opts, st);
 
 	/*
 	 * Check to see if the file exists on the remote machine.
@@ -382,7 +383,7 @@ update(lname, rname, options, st)
 	/*
 	 * File needs to be updated?
 	 */
-	if (yflag || (options & YOUNGER)) {
+	if (opts & YOUNGER) {
 		if (st->st_mtime == mtime)
 			return(0);
 		if (st->st_mtime < mtime) {
@@ -446,7 +447,7 @@ recvf(cmd, isdir)
 	int isdir;
 {
 	register char *cp;
-	int f, mode, wrerr, olderrno;
+	int f, mode, opts, wrerr, olderrno;
 	off_t i, size;
 	time_t mtime;
 	struct stat stb;
@@ -455,13 +456,24 @@ recvf(cmd, isdir)
 	char new[BUFSIZ];
 	extern char *tmpname;
 
+	
+	cp = cmd;
+	if (*cp < '0' || *cp > '7') {
+		error("bad options\n");
+		return;
+	}
+	opts = *cp++ - '0';
+	if (*cp++ != ' ') {
+		error("options not delimited\n");
+		return;
+	}
 	mode = 0;
-	for (cp = cmd; cp < cmd+4; cp++) {
+	while (cp < cmd+6) {
 		if (*cp < '0' || *cp > '7') {
 			error("bad mode\n");
 			return;
 		}
-		mode = (mode << 3) | (*cp - '0');
+		mode = (mode << 3) | (*cp++ - '0');
 	}
 	if (*cp++ != ' ') {
 		error("mode not delimited\n");
@@ -511,7 +523,7 @@ recvf(cmd, isdir)
 				;
 			tp--;
 		}
-		if (vflag) {
+		if (opts & VERIFY) {
 			ga();
 			return;
 		}
@@ -743,7 +755,7 @@ log(fp, fmt, a1, a2, a3)
 		printf(fmt, a1, a2, a3);
 
 	/* Save changes (for mailing) if really updating files */
-	if (!vflag && fp != NULL)
+	if (!(options & VERIFY) && fp != NULL)
 		fprintf(fp, fmt, a1, a2, a3);
 }
 

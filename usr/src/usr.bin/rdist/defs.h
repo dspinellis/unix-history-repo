@@ -1,4 +1,4 @@
-/*	defs.h	4.3	83/10/10	*/
+/*	defs.h	4.4	83/10/12	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -57,8 +57,7 @@ struct block {
 extern int debug;		/* debugging flag */
 extern int nflag;		/* NOP flag, don't execute commands */
 extern int qflag;		/* Quiet. don't print messages */
-extern int vflag;		/* verify only */
-extern int yflag;		/* update iff remote younger than master */
+extern int options;		/* global options */
 
 extern int errs;		/* number of errors seen */
 extern int rem;			/* remote file descriptor */
