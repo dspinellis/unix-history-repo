@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.37 (Berkeley) %G%
+		@(#)README	8.38 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -288,6 +288,13 @@ fax		Facsimile transmission.  This is experimental and based
 
 pop		Post Office Protocol.
 
+The local mailer accepts addresses of the form "user+detail", where
+the "+detail" is not used for mailbox matching but is available
+to certain local mail programs (in particular, see FEATURE(procmail)).
+For example, "eric", "eric+sendmail", and "eric+sww" all indicate
+the same user, but additional arguments <null>, "sendmail", and "sww"
+may be provided for use in sorting mail.
+
 
 +----------+
 | FEATURES |
@@ -414,6 +421,13 @@ nullclient	This is a special case -- it creates a stripped down
 		they are qualifed with the masquerade name, which
 		defaults to the name of the hub machine).  No mailers
 		should be defined.  No aliasing or forwarding is done.
+
+procmail	Use procmail as the local mailer.  This mailer can
+		make use of the "user+indicator@local.host" syntax;
+		normally the +indicator is just tossed, but by default
+		it is passed as the -a argument to procmail.  The
+		argument to this feature is the pathname of procmail,
+		which defaults to /usr/local/bin/procmail.
 
 
 +-------+
@@ -1035,7 +1049,7 @@ confFROM_LINE		From $g  $d	Dl	The From_ line used when
 						sending to files or programs.
 confFROM_HEADER		$?x$x <$g>$|$g$.	The format of an internally
 					Dq	generated From: address.
-confOPERATORS		.:%@!^/[]	Do	Address operator characters.
+confOPERATORS		.:%@!^/[]+	Do	Address operator characters.
 confSMTP_LOGIN_MSG	$j Sendmail $v/$Z ready at $b
 					De	The initial (spontaneous)
 						SMTP greeting message.
