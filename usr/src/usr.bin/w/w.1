@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)w.1	6.1 (Berkeley) %G%
+.\"	@(#)w.1	6.2 (Berkeley) %G%
 .\"
 .TH W 1 ""
 .UC 4
@@ -29,8 +29,9 @@ averaged over 1, 5 and 15 minutes.
 The fields output are:
 the users login name,
 the name of the tty the user is on,
-the time of day the user logged on,
-the number of minutes since the user last typed anything,
+the host from which the user is logged in,
+the time the user logged on,
+the time since the user last typed anything,
 the CPU time used by all processes and their children on that terminal,
 the CPU time used by the currently active processes,
 the name and arguments of the current process.
@@ -45,6 +46,9 @@ In the short form, the tty is abbreviated, the login time and cpu times
 are left off, as are the arguments to commands.
 .B \-l
 gives the long output, which is the default.
+The
+.B \-f
+option suppresses the ``from'' field.
 .PP
 If a
 .I user
