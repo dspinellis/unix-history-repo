@@ -7,21 +7,14 @@ changes in FreeBSD between releases.  Entries are in reverse
 chronological order; userids can be decoded with the chart at the end
 of this file.
 
-<<<<<<< Changes
-Since 1.0.2:
-- Struct ttys are allocated dynamically.  (guido)
-
-||||||| 1.15
-Since 1.0.2:
-=======
 Since 1.1 BETA:
+- struct ttys now allocated dynamically. (guido)
 
 Between 1.1 BETA and 1.0.2:
 - Improved lpt driver, should no longer lock up when lprm is done on
   an active job.  Fixed up the probe routine so that it works on most
   if not all printers now. (csgr/rgrimes)
 
->>>>>>> /tmp/T4025574
 - Substantial changes to system configuration; you MUST re-build
   `config' before attempting to build a 1.1 kernel.  (nate/martin)
 
