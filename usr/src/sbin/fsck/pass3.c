@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass3.c	3.1 (Berkeley) %G%";
+static char version[] = "@(#)pass3.c	3.2 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -24,7 +24,7 @@ pass3()
 			*pathp++ = '?';
 			*pathp = '\0';
 			idesc.id_func = findino;
-			srchname = "..";
+			idesc.id_name = "..";
 			idesc.id_parent = inumber;
 			loopcnt = 0;
 			do {

@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)setup.c	3.1 (Berkeley) %G%";
+static char version[] = "@(#)setup.c	3.2 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -16,7 +16,7 @@ setup(dev)
 	dev_t rootdev;
 	struct stat statb;
 	daddr_t super = bflag ? bflag : SBLOCK;
-	int i, j, c, d, cgd;
+	int i, j;
 	long size;
 	BUFAREA asblk;
 #	define altsblock asblk.b_un.b_fs
@@ -25,7 +25,7 @@ setup(dev)
 		errexit("Can't stat root\n");
 	rootdev = statb.st_dev;
 	if (stat(dev, &statb) < 0) {
-		error("Can't stat %s\n", dev);
+		printf("Can't stat %s\n", dev);
 		return (0);
 	}
 	rawflg = 0;
@@ -40,7 +40,7 @@ setup(dev)
 	if (rootdev == statb.st_rdev)
 		hotroot++;
 	if ((dfile.rfdes = open(dev, 0)) < 0) {
-		error("Can't open %s\n", dev);
+		printf("Can't open %s\n", dev);
 		return (0);
 	}
 	if (preen == 0)
@@ -59,7 +59,6 @@ setup(dev)
 	muldup = enddup = &duplist[0];
 	badlnp = &badlncnt[0];
 	lfdir = 0;
-	rplyflag = 0;
 	initbarea(&sblk);
 	initbarea(&fileblk);
 	initbarea(&inoblk);
@@ -155,16 +154,6 @@ sbok:
 		printf("cannot alloc %d bytes for lncntp\n", 
 		    (imax + 1) * sizeof(short));
 		goto badsb;
-	}
-	for (c = 0; c < sblock.fs_ncg; c++) {
-		cgd = cgdmin(&sblock, c);
-		if (c == 0) {
-			d = cgbase(&sblock, c);
-			cgd += howmany(sblock.fs_cssize, sblock.fs_fsize);
-		} else
-			d = cgsblock(&sblock, c);
-		for (; d < cgd; d++)
-			setbmap(d);
 	}
 
 	return (1);

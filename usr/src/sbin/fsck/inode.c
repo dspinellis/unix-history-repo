@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)inode.c	3.1 (Berkeley) %G%";
+static char version[] = "@(#)inode.c	3.2 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -16,7 +16,7 @@ ckinode(dp, idesc)
 	int ret, n, ndb, offset;
 	DINODE dino;
 
-	if (SPECIAL)
+	if (SPECIAL(dp))
 		return (KEEPON);
 	dino = *dp;
 	idesc->id_fix = DONTKNOW;
@@ -39,7 +39,7 @@ ckinode(dp, idesc)
 			return (ret);
 	}
 	idesc->id_numfrags = sblock.fs_frag;
-	for (ap = &dino.di_ib[0], n = 1; n <= 2; ap++, n++) {
+	for (ap = &dino.di_ib[0], n = 1; n <= NIADDR; ap++, n++) {
 		if (*ap) {
 			idesc->id_blkno = *ap;
 			ret = iblock(idesc, n,
@@ -58,7 +58,7 @@ iblock(idesc, ilevel, isize)
 {
 	register daddr_t *ap;
 	register daddr_t *aplim;
-	int i, n, (*func)(), nif;
+	int i, n, (*func)(), nif, sizepb;
 	BUFAREA ib;
 
 	if (idesc->id_type == ADDR) {
@@ -73,11 +73,9 @@ iblock(idesc, ilevel, isize)
 	if (getblk(&ib, idesc->id_blkno, sblock.fs_bsize) == NULL)
 		return (SKIP);
 	ilevel--;
-	if (ilevel == 0) {
-		nif = lblkno(&sblock, isize) + 1;
-	} else /* ilevel == 1 */ {
-		nif = isize / (sblock.fs_bsize * NINDIR(&sblock)) + 1;
-	}
+	for (sizepb = sblock.fs_bsize, i = 0; i < ilevel; i++)
+		sizepb *= NINDIR(&sblock);
+	nif = isize / sizepb + 1;
 	if (nif > NINDIR(&sblock))
 		nif = NINDIR(&sblock);
 	aplim = &ib.b_un.b_indir[nif];
@@ -85,8 +83,7 @@ iblock(idesc, ilevel, isize)
 		if (*ap) {
 			idesc->id_blkno = *ap;
 			if (ilevel > 0)
-				n = iblock(idesc, ilevel,
-				    isize - i*NINDIR(&sblock)*sblock.fs_bsize);
+				n = iblock(idesc, ilevel, isize - i * sizepb);
 			else
 				n = (*func)(idesc);
 			if (n & STOP)
@@ -162,7 +159,7 @@ clri(idesc, s, flg)
 	if ((dp = ginode(idesc->id_number)) == NULL)
 		return;
 	if (flg == 1) {
-		pwarn("%s %s", s, DIRCT?"DIR":"FILE");
+		pwarn("%s %s", s, DIRCT(dp) ? "DIR" : "FILE");
 		pinode(idesc->id_number);
 	}
 	if (preen || reply("CLEAR") == 1) {
@@ -184,7 +181,7 @@ findino(idesc)
 
 	if (dirp->d_ino == 0)
 		return (KEEPON);
-	if (!strcmp(dirp->d_name, srchname)) {
+	if (!strcmp(dirp->d_name, idesc->id_name)) {
 		if (dirp->d_ino >= ROOTINO && dirp->d_ino <= imax)
 			idesc->id_parent = dirp->d_ino;
 		return (STOP);

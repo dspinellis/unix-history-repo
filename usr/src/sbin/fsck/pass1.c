@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass1.c	3.1 (Berkeley) %G%";
+static char version[] = "@(#)pass1.c	3.2 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -13,10 +13,26 @@ pass1()
 {
 	register int c, i, n, j;
 	register DINODE *dp;
-	int ndb, partial;
+	int ndb, partial, cgd;
 	struct inodesc idesc;
 	ino_t inumber;
 
+	/*
+	 * Set file system reserved blocks in used block map.
+	 */
+	for (c = 0; c < sblock.fs_ncg; c++) {
+		cgd = cgdmin(&sblock, c);
+		if (c == 0) {
+			i = cgbase(&sblock, c);
+			cgd += howmany(sblock.fs_cssize, sblock.fs_fsize);
+		} else
+			i = cgsblock(&sblock, c);
+		for (; i < cgd; i++)
+			setbmap(i);
+	}
+	/*
+	 * Find all allocated blocks.
+	 */
 	bzero((char *)&idesc, sizeof(struct inodesc));
 	idesc.id_type = ADDR;
 	idesc.id_func = pass1check;
@@ -35,7 +51,7 @@ pass1()
 			if (dp == NULL)
 				continue;
 			n++;
-			if (ALLOC) {
+			if (ALLOC(dp)) {
 				if (!isset(cgrp.cg_iused, i)) {
 					if (debug)
 						printf("%d bad, not used\n",
@@ -58,7 +74,7 @@ pass1()
 					goto unknown;
 				}
 				ndb = howmany(dp->di_size, sblock.fs_bsize);
-				if (SPECIAL)
+				if (SPECIAL(dp))
 					ndb++;
 				for (j = ndb; j < NDADDR; j++)
 					if (dp->di_db[j] != 0) {
@@ -87,7 +103,7 @@ pass1()
 							errexit("");
 					}
 				}
-				statemap[inumber] = DIRCT ? DSTATE : FSTATE;
+				statemap[inumber] = DIRCT(dp) ? DSTATE : FSTATE;
 				badblk = dupblk = 0; maxblk = 0;
 				idesc.id_number = inumber;
 				idesc.id_filesize = 0;
@@ -161,21 +177,25 @@ pass1check(idesc)
 	int anyout, nfrags;
 	daddr_t blkno = idesc->id_blkno;
 
-	anyout = outrange(blkno, idesc->id_numfrags);
+	if ((anyout = outrange(blkno, idesc->id_numfrags)) != 0) {
+		blkerr(idesc->id_number, "BAD", blkno);
+		if (++badblk >= MAXBAD) {
+			pwarn("EXCESSIVE BAD BLKS I=%u",
+				idesc->id_number);
+			if (preen)
+				printf(" (SKIPPING)\n");
+			else if (reply("CONTINUE") == 0)
+				errexit("");
+			return (STOP);
+		}
+	}
 	for (nfrags = idesc->id_numfrags; nfrags > 0; blkno++, nfrags--) {
 		if (anyout && outrange(blkno, 1)) {
-			blkerr(idesc->id_number, "BAD", blkno);
-			if (++badblk >= MAXBAD) {
-				pwarn("EXCESSIVE BAD BLKS I=%u",
-					idesc->id_number);
-				if (preen)
-					printf(" (SKIPPING)\n");
-				else if (reply("CONTINUE") == 0)
-					errexit("");
-				return (STOP);
-			}
 			res = SKIP;
-		} else if (getbmap(blkno)) {
+		} else if (!getbmap(blkno)) {
+			n_blks++;
+			setbmap(blkno);
+		} else {
 			blkerr(idesc->id_number, "DUP", blkno);
 			if (++dupblk >= MAXDUP) {
 				pwarn("EXCESSIVE DUP BLKS I=%u",
@@ -201,9 +221,6 @@ pass1check(idesc)
 				*enddup++ = *muldup;
 				*muldup++ = blkno;
 			}
-		} else {
-			n_blks++;
-			setbmap(blkno);
 		}
 		idesc->id_filesize++;
 	}
