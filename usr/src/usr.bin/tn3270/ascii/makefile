@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	3.6 (Berkeley) %G%
+#	@(#)makefile	3.7 (Berkeley) %G%
 #
 # msdos versus unix defines
 O	= .o
@@ -72,7 +72,7 @@ KBD	= unix.kbd
 
 
 # The source files...
-ALLH = state.h
+ALLH = map3270.h state.h
 
 ALLC = map3270.c mset.c termin.c
 
