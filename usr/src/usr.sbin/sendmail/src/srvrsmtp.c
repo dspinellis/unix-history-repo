@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.36 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.37 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.36 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.37 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -470,7 +470,7 @@ smtp(e)
 			if (a != NULL && e->e_sendmode != SM_QUEUE)
 			{
 				unlockqueue(e);
-				dowork(id, TRUE, e);
+				dowork(id, TRUE, TRUE, e);
 				e->e_id = NULL;
 			}
 

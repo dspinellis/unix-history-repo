@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.42 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.43 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.42 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.43 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -481,7 +481,7 @@ runqueue(forkflag)
 			continue;
 		}
 
-		dowork(w->w_name + 2, ForkQueueRuns, e);
+		dowork(w->w_name + 2, ForkQueueRuns, FALSE, e);
 		free(w->w_name);
 		free((char *) w);
 	}
@@ -747,6 +747,8 @@ workcmpf(a, b)
 **	Parameters:
 **		id -- the ID of the job to run.
 **		forkflag -- if set, run this in background.
+**		requeueflag -- if set, reinstantiate the queue quickly.
+**			This is used when expanding aliases in the queue.
 **		e - the envelope in which to run it.
 **
 **	Returns:
@@ -756,9 +758,10 @@ workcmpf(a, b)
 **		The work request is satisfied if possible.
 */
 
-dowork(id, forkflag, e)
+dowork(id, forkflag, requeueflag, e)
 	char *id;
 	bool forkflag;
+	bool requeueflag;
 	register ENVELOPE *e;
 {
 	register int i;
@@ -823,6 +826,9 @@ dowork(id, forkflag, e)
 
 		e->e_flags |= EF_INQUEUE;
 		eatheader(e);
+
+		if (requeueflag)
+			queueup(e, TRUE, FALSE);
 
 		/* do the delivery */
 		sendall(e, SM_DELIVER);
