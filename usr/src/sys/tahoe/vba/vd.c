@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)vd.c	7.3 (Berkeley) %G%
+ *	@(#)vd.c	7.4 (Berkeley) %G%
  */
 
 #include "dk.h"
@@ -1284,6 +1284,16 @@ struct	vdst {
 } vdst[] = {
 	{ 66, 23, 850, 512, "NEC 800",
 		{0,	 1290300},	/* a cyl   0 - 849 */
+	},
+	{ 64, 20, 842, 512, "2361a",
+		{0,	 61440},	/* a cyl   0 - 47 */
+		{61440,	 67840},	/* b cyl  48 - 100 */
+		{129280, 942080}, 	/* c cyl 101 - 836 */
+		{0,      1071360}, 	/* d cyl   0 - 836 */
+		{449280, 311040},	/* e cyl 351 - 593 */
+		{760320, 311040}, 	/* f cyl 594 - 836 */
+		{449280, 622080},	/* g cyl 351 - 836 */
+		{129280, 320000}	/* h cyl 101 - 350 */
 	},
 	{ 48, 24, 711, 512, "xsd",
 		{0,	 61056},	/* a cyl   0 - 52 */

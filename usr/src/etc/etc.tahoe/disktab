@@ -1,4 +1,4 @@
-#	@(#)disktab	4.10 (Berkeley) %G%
+#	@(#)disktab	4.11 (Berkeley) %G%
 # Disk geometry and partition layout tables. 
 # Key:
 #	dt	controller type
@@ -45,6 +45,19 @@ eagle|egl|474 Mb Fujitsu 2351A Eagle:\
  	:pf#740960:of#0:bf#4096:ff#1024:\
 	:pg#310640:og#118800:bg#4096:fg#1024:\
 	:ph#307120:oh#429440:bh#4096:fh#1024:
+
+2361a|deg|Fujitsu M2361a Super Eagle:\
+	:ty=winchester:ns#64:nt#20:nc#842:rm#3600:se#512:\
+	:dt=SMD:\
+	:d0#0:d1#40960:\
+	:pa#61440:oa#0:ba#8192:fa#1024:\
+	:pb#67840:ob#61440:bb#8192:fb#1024:tb=swap:\
+	:pc#942080:oc#129280:bc#8192:fc#1024:\
+	:pd#1071360:od#0:bd#8192:fd#1024:\
+	:pe#311040:oe#449280:be#8192:fe#1024:\
+	:pf#311040:of#760320:bf#8192:ff#1024:\
+	:pg#622080:og#449280:bg#8192:fg#1024:\
+	:ph#320000:oh#129280:bh#4096:fh#1024:
 
 xsd|Xsd|515 Mb FSD:\
  	:ty=winchester:ns#48:nt#24:nc#711:rm#3600:se#512:\

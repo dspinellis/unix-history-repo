@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)config.c	1.4 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)config.c	1.5 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -34,6 +34,13 @@ struct	disklabel vdproto[] = {
 		0, 40960, (long)&defpats, 0, 0, 0, 0, 0, 0, 0,
 		DISKMAGIC, 0, 1, BBSIZE, SBSIZE,
 		{ 66*23*850, 0 }
+	},
+	{ DISKMAGIC, DTYPE_SMD, 0, "2361a", "newly formatted",
+		512, 64, 20, 842, 64*20, 64*20*842,
+		0, 0, 0, 3600, 1, 0, 0, 900, 0, 0,
+		0, 40960, (long)&defpats, 0, 0, 0, 0, 0, 0, 0,
+		DISKMAGIC, 0, 1, BBSIZE, SBSIZE,
+		{ 64*20*842, 0 }
 	},
 	{ DISKMAGIC, DTYPE_SMD, 0, "egl", "newly formatted",
 		512, 44, 20, 842, 44*20, 44*20*842,
@@ -81,4 +88,4 @@ struct	disklabel vdproto[] = {
 };
 
 int	ndrives = sizeof (vdproto) / sizeof (vdproto[0]);
-int	smddrives = 4;			/* first 4 types are smd-e only */
+int	smddrives = 5;			/* first 5 types are smd-e only */
