@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	4.3 (Berkeley) %G%
+#	@(#)makefile	4.4 (Berkeley) %G%
 #
 
 # Makefile for tn3270 and friends...
@@ -115,7 +115,7 @@ LINTFLAGS	= -hbxaz
 
 DESTDIR=
 
-BINDIR		= $(DESTDIR)/usr/ucb
+BINDIR		= $(DESTDIR)/usr/bin
 MAN1DIR		= $(DESTDIR)/usr/man/cat1
 MAN5DIR		= $(DESTDIR)/usr/man/cat5
 
