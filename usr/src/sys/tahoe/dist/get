@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)get	1.2 (Berkeley) %G%
+#	@(#)get	1.3 (Berkeley) %G%
 #
 # Shell script to build a mini-root file system
 # in preparation for building a distribution tape.
@@ -37,6 +37,7 @@ cp $DISTROOT/etc/fsck etc
 cp $DISTROOT/etc/umount etc
 cp $DISTROOT/etc/ifconfig etc
 cp $DISTROOT/bin/dd bin
+cp $DISTROOT/bin/ed bin
 cp $DISTROOT/bin/mt bin
 cp $DISTROOT/bin/ls bin
 cp $DISTROOT/bin/sh bin
