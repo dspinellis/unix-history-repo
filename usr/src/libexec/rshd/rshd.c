@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	4.7 83/01/07";
+static char sccsid[] = "@(#)rshd.c	4.8 83/01/13";
 #endif
 
 #include <sys/ioctl.h>
@@ -19,7 +19,7 @@ int	errno;
 struct	sockaddr_in sin = { AF_INET };
 struct	passwd *getpwnam();
 char	*index(), *rindex(), *sprintf();
-int	options = SO_ACCEPTCONN|SO_KEEPALIVE;
+int	options;
 /* VARARGS 1 */
 int	error();
 /*
@@ -61,6 +61,10 @@ main(argc, argv)
 	sin.sin_port = sp->s_port;
 	argc--, argv++;
 	if (argc > 0 && !strcmp(argv[0], "-d")) {
+		options |= SO_DEBUG;
+		argc--, argv++;
+	}
+	if (argc > 0) {
 		int port = atoi(argv[0]);
 
 		if (port < 0) {
@@ -75,6 +79,12 @@ main(argc, argv)
 		perror("rshd: socket");
 		exit(1);
 	}
+	if (options & SO_DEBUG && setsockopt(f, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+		perror("rshd: setsockopt (SO_DEBUG)");
+#ifdef notdef
+	if (setsockopt(f, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0)
+		perror("rshd: setsockopt (SO_KEEPALIVE)");
+#endif
 	if (bind(f, (caddr_t)&sin, sizeof (sin), 0) < 0) {
 		perror("rshd: bind");
 		exit(1);
@@ -85,7 +95,7 @@ main(argc, argv)
 
 		g = accept(f, &from, &len, 0);
 		if (g < 0) {
-			perror("accept");
+			perror("rshd: accept");
 			sleep(1);
 			continue;
 		}
@@ -123,7 +133,7 @@ doit(f, fromp)
 	(void) signal(SIGINT, SIG_DFL);
 	(void) signal(SIGQUIT, SIG_DFL);
 	(void) signal(SIGTERM, SIG_DFL);
-#ifdef DEBUG
+#ifndef DEBUG
 	{ int t = open("/dev/tty", 2);
 	  if (t >= 0) {
 		ioctl(t, TIOCNOTTY, (char *)0);
@@ -151,7 +161,7 @@ doit(f, fromp)
 	(void) alarm(0);
 	if (port != 0) {
 		int lport = IPPORT_RESERVED - 1;
-		s = rresvport(0, &lport);
+		s = rresvport(&lport);
 		if (s < 0)
 			exit(1);
 		if (port >= IPPORT_RESERVED)
