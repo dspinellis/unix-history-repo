@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)MAKEDEV	4.28 (Berkeley) %G%
+#	@(#)MAKEDEV	4.29 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -44,6 +44,8 @@
 #	ps*	unibus interface to e&s picture system 2
 #	ad*	unibus interface to data translation a/d converter
 #	np*	unibus ethernet co-processor interface, for downloading.
+#	qv*	qvss (microvax) display
+#	ttyv0	qvss (microvax) display reserved pty
 umask 77
 for i
 do
@@ -56,7 +58,7 @@ std)
 	/etc/mknod crl		c 35 0
 	/etc/mknod tu0		b 8 0
 	/etc/mknod tu1		b 8 1
-	/etc/mknod kUmem	c 3 3	; chmod 600 kUmem ;: untested
+	/etc/mknod kUmem	c 3 3	; chmod 600 kUmem
 	/etc/mknod kmem		c 3 1	; chmod 640 kmem ; chgrp kmem kmem
 	/etc/mknod mem		c 3 0	; chmod 640 mem ; chgrp kmem mem
 	/etc/mknod null		c 3 2	; chmod 666 null
@@ -70,7 +72,6 @@ ht*|tm*|ts*|ut*)
 	ht*) blk=1; chr=5 ;;
 	tm*) blk=5; chr=14;;
 	ts*) blk=6; chr=16;;
-	mt*) blk=7; chr=19;;
 	ut*) blk=10; chr=17;;
 	esac
 	case $unit in
@@ -308,7 +309,7 @@ np*)
 	0) offset=0 name=0;;
 	1) offset=16 name=1;;
 	2) offset=32 name=2;;
-	*) echo bad unit for pty in: $i;;
+	*) echo bad unit for np in: $i;;
 	esac
 	case $class in
 	0|1|2)
@@ -339,6 +340,18 @@ dn*|ik*|ps*|ad*|ct*)
 		echo bad unit for ${name} in: $i
 		;;
 	esac
+	;;
+
+qv0)
+	/etc/mknod qv0 c 40 0
+	/etc/mknod qvcons c 40 1
+	/etc/mknod mouse c 40 2
+	;;
+
+ttyv0)
+	if [ ! -f ttyqf ]; then sh ./MAKEDEV pty1; fi
+	mv ttyqf ttyv0
+	mv ptyqf ptyv0
 	;;
 
 local)
