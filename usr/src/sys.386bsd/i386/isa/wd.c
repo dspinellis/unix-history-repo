@@ -37,9 +37,10 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00021
+ * CURRENT PATCH LEVEL:         3       00038
  * --------------------         -----   ----------------------
  *
+ * 17 Sep 92	Frank Maclachlan	Fixed I/O error reporting on raw device
  * 31 Jul 92	Christoph Robitschko	Fixed second disk recognition,
  *					bzero of malloced memory for warm
  *					boot problem.
@@ -558,6 +559,7 @@ wdintr(struct intrframe wdif)
 		}
 #ifdef B_FORMAT
 		if (bp->b_flags & B_FORMAT) {
+			bp->b_error = EIO;		/* 17 Sep 92*/
 			bp->b_flags |= B_ERROR;
 			goto done;
 		}
@@ -578,6 +580,7 @@ wdintr(struct intrframe wdif)
 						inb(wdc+wd_error), WDERR_BITS);
 #endif
 				}
+				bp->b_error = EIO;	/* 17 Sep 92*/
 				bp->b_flags |= B_ERROR;	/* flag the error */
 			}
 		} else if((du->dk_flags&DKFL_QUIET) == 0) {
