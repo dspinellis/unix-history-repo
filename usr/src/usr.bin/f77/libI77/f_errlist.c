@@ -1,10 +1,10 @@
 /*
-char id_f_errlist[] = "@(#)f_errlist.c	1.1";
+char id_f_errlist[] = "@(#)f_errlist.c	1.2";
  *
  * f77 I/O error messages
  */
 
-static char *f_errlist[] =
+char *f_errlist[] =
 {
 /* 100 */	"error in format",
 /* 101 */	"illegal unit number",
@@ -31,5 +31,4 @@ static char *f_errlist[] =
 /* 122 */	"negative repeat count",
 };
 
-static int f_nerr = (sizeof(f_errlist)/sizeof(char *));
-
+int f_nerr = (sizeof(f_errlist)/sizeof(char *));
