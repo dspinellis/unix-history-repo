@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)rval.c 1.10 %G%";
+static char sccsid[] = "@(#)rval.c 1.11 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -16,6 +16,8 @@ extern	char *opnames[];
 
     /* line number of the last record comparison warning */
 short reccompline = 0;
+    /* line number of the last non-standard set comparison */
+short nssetline = 0;
 
 #ifdef PC
     char	*relts[] =  {
@@ -799,6 +801,13 @@ cstrng:
 			case TSET:
 				if (c1 != TSET)
 					goto clash;
+				if ( opt( 's' ) &&
+				    ( ( r[0] == T_LT ) || ( r[0] == T_GT ) ) &&
+				    ( line != nssetline ) ) {
+				    nssetline = line;
+				    standard();
+				    error("%s comparison on sets is non-standard" , opname );
+				}
 				if (p != p1)
 					goto nonident;
 				g = TSET;
