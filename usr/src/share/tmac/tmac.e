@@ -4,12 +4,12 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tmac.e	8.1 (Berkeley) %G%
+.\"	@(#)tmac.e	8.2 (Berkeley) %G%
 .\"
 .\" If groff, use groff -me, else use local -me (w/ditroff, troff, nroff)
 .ie \n(.g \{\
 .	so /usr/share/tmac/tmac.groff_me
 .\}
 .el \{\
-.	so /usr/old/lib/tmac/tmac.e
+.	so /usr/share/tmac/tmac.orig_me
 .\}
