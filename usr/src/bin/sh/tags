@@ -1,0 +1,164 @@
+ADR	defs.h	/^#define		ADR(x)	((char*)(x))$/
+BLK	defs.h	/^#define		BLK(x)	((BLKPTR)(x))$/
+BYT	defs.h	/^#define		BYT(x)	((BYTPTR)(x))$/
+Lcheat	mode.h	/^#define Lcheat(a)	((a)._cheat)$/
+Ldup	main.c	/^Ldup(fa, fb)$/
+Mmain	main.c	/^main(c, v)$/
+Rcheat	mode.h	/^#define Rcheat(a)	((int)(a))$/
+STK	defs.h	/^#define		STK(x)	((STKPTR)(x))$/
+absstak	stak.h	/^#define		absstak(x)	(stakbot+Rcheat(x))$/
+addblok	blok.c	/^VOID	addblok(reqd)$/
+addg	expand.c	/^LOCAL VOID	addg(as1,as2,as3)$/
+alloc	blok.c	/^ADDRESS	alloc(nbytes)$/
+alphanum	ctype.h	/^#define alphanum(c)	(((c)&QUOTE)==0 ANDF _ctype2[c/
+any	string.c	/^INT	any(c,s)$/
+assign	name.c	/^assign(n,v)$/
+assnum	name.c	/^assnum(p, i)$/
+astchar	ctype.h	/^#define astchar(c)	(((c)&QUOTE)==0 ANDF _ctype2[c]/
+attrib	defs.h	/^#define attrib(n,f)	(n->namflg |= f)$/
+await	service.c	/^VOID	await(i)$/
+blank	print.c	/^blank()$/
+builtin	builtin.c	/^builtin()$/
+busy	blok.c	/^#define busy(x)	(Rcheat((x)->word)&BUSY)$/
+catpath	service.c	/^STRING	catpath(path,name)$/
+cf	string.c	/^INT	cf(s1, s2)$/
+chkbptr	blok.c	/^chkbptr(ptr)$/
+chkid	name.c	/^LOCAL BOOL	chkid(nam)$/
+chkopen	io.c	/^chkopen(idf)$/
+chkpipe	io.c	/^chkpipe(pv)$/
+chkpr	main.c	/^chkpr(eor)$/
+chksym	cmd.c	/^LOCAL VOID	chksym(sym)$/
+chktrap	fault.c	/^chktrap()$/
+chkword	cmd.c	/^LOCAL VOID	chkword()$/
+clearup	args.c	/^clearup()$/
+closepipe	defs.h	/^#define closepipe(x)	(close(x[INPIPE]), close(x[OT/
+clrsig	fault.c	/^clrsig(i)$/
+cmd	cmd.c	/^TREPTR	cmd(sym,flg)$/
+comsubst	macro.c	/^LOCAL	comsubst()$/
+copy	io.c	/^copy(ioparg)$/
+copyargs	args.c	/^LOCAL STRING *	copyargs(from, n)$/
+copyto	macro.c	/^LOCAL STRING	copyto(endch)$/
+countnam	name.c	/^VOID	countnam(n)$/
+cpystak	stak.c	/^STKPTR	cpystak(x)$/
+create	io.c	/^create(s)$/
+curstak	stak.h	/^#define		curstak()	(staktop)$/
+defchar	ctype.h	/^#define defchar(c)	(((c)&QUOTE)==0 ANDF _ctype2[c]/
+dfault	name.c	/^dfault(n,v)$/
+digchar	ctype.h	/^#define digchar(c)	(((c)&QUOTE)==0 ANDF _ctype2[c]/
+digit	ctype.h	/^#define	digit(c)	(((c)&QUOTE)==0 ANDF _ctype2[c]&(/
+dipchar	ctype.h	/^#define dipchar(c)	(((c)&QUOTE)==0 ANDF _ctype1[c]/
+dolchar	ctype.h	/^#define dolchar(c)	(((c)&QUOTE)==0 ANDF _ctype2[c]/
+done	error.c	/^done()$/
+endstak	stak.c	/^STKPTR	endstak(argp)$/
+eofmeta	ctype.h	/^#define eofmeta(c)	(((c)&QUOTE)==0 ANDF _ctype1[c]/
+eolchar	ctype.h	/^#define eolchar(c)	(((c)&QUOTE)==0 ANDF _ctype1[c]/
+eq	defs.h	/^#define eq(a,b)		(cf(a,b)==0)$/
+error	error.c	/^error(s)$/
+escchar	ctype.h	/^#define escchar(c)	(((c)&QUOTE)==0 ANDF _ctype1[c]/
+estabf	io.c	/^estabf(s)$/
+execa	service.c	/^VOID	execa(at)$/
+execexp	xec.c	/^execexp(s,f)$/
+execs	service.c	/^LOCAL STRING	execs(ap,t)$/
+execute	xec.c	/^execute(argt, execflg, pf1, pf2)$/
+exfile	main.c	/^LOCAL VOID	exfile(prof)$/
+exitset	error.c	/^exitset()$/
+exitsh	error.c	/^exitsh(xno)$/
+exname	name.c	/^VOID	exname(n)$/
+expand	expand.c	/^INT	expand(as,rflg)$/
+failed	error.c	/^failed(s1,s2)$/
+fault	fault.c	/^VOID	fault(sig)$/
+fixstak	stak.h	/^#define		fixstak()	endstak(staktop)$/
+flush	macro.c	/^LOCAL	flush(ot)$/
+fngchar	ctype.h	/^#define fngchar(c)	(((c)&QUOTE)==0 ANDF _ctype2[c]/
+free	blok.c	/^VOID	free(ap)$/
+freeargs	args.c	/^freeargs(blk)$/
+getarg	service.c	/^INT	getarg(ac)$/
+getch	macro.c	/^LOCAL	getch(endch)$/
+getenv	name.c	/^VOID	getenv()$/
+getpath	service.c	/^STRING	getpath(s)$/
+getsig	fault.c	/^getsig(n)$/
+getstak	stak.c	/^STKPTR	getstak(asize)$/
+gmatch	expand.c	/^gmatch(s, p)$/
+gocsh	service.c	/^gocsh(t, cp, xecenv)$/
+gsort	service.c	/^LOCAL VOID	gsort(from,to)$/
+ignsig	fault.c	/^ignsig(n)$/
+initf	io.c	/^initf(fd)$/
+initio	service.c	/^VOID	initio(iop)$/
+inout	cmd.c	/^LOCAL IOPTR	inout(lastio)$/
+item	cmd.c	/^LOCAL TREPTR	item(flag)$/
+itos	print.c	/^itos(n)$/
+length	string.c	/^INT	length(as)$/
+letter	ctype.h	/^#define	letter(c)	(((c)&QUOTE)==0 ANDF _ctype2[c]&/
+list	cmd.c	/^LOCAL TREPTR	list(flg)$/
+locstak	stak.c	/^STKPTR	locstak()$/
+lookup	name.c	/^NAMPTR		lookup(nam)$/
+macro	macro.c	/^STRING	macro(as)$/
+mactrim	service.c	/^STRING	mactrim(s)$/
+make	name.c	/^STRING	make(v)$/
+makearg	expand.c	/^makearg(args)$/
+makefork	cmd.c	/^TREPTR	makefork(flgs, i)$/
+makelist	cmd.c	/^LOCAL TREPTR	makelist(type,i,r)$/
+max	defs.h	/^#define max(a,b)	((a)>(b)?(a):(b))$/
+movstr	string.c	/^STRING	movstr(a,b)$/
+namscan	name.c	/^namscan(fn)$/
+namwalk	name.c	/^LOCAL VOID	namwalk(np)$/
+newline	print.c	/^newline()$/
+nextc	word.c	/^nextc(quote)$/
+oldsigs	fault.c	/^oldsigs()$/
+options	args.c	/^INT	options(argc,argv)$/
+pathopen	service.c	/^INT	pathopen(path, name)$/
+pop	io.c	/^pop()$/
+post	service.c	/^VOID	post(pcsid)$/
+postclr	service.c	/^postclr()$/
+prc	print.c	/^VOID	prc(c)$/
+printflg	name.c	/^VOID	printflg(n)$/
+printnam	name.c	/^VOID	printnam(n)$/
+prn	print.c	/^prn(n)$/
+prp	print.c	/^prp()$/
+prs	print.c	/^VOID	prs(as)$/
+prsym	cmd.c	/^LOCAL VOID	prsym(sym)$/
+prt	print.c	/^prt(t)$/
+push	io.c	/^push(af)$/
+pushnam	name.c	/^VOID	pushnam(n)$/
+pushstak	stak.h	/^#define		pushstak(c)	(*staktop++=(c))$/
+qotchar	ctype.h	/^#define qotchar(c)	(((c)&QUOTE)==0 ANDF _ctype1[c]/
+readb	word.c	/^LOCAL	readb()$/
+readc	word.c	/^readc()$/
+readvar	name.c	/^INT	readvar(names)$/
+relstak	stak.h	/^#define		relstak()	(staktop-stakbot)$/
+rename	io.c	/^rename(f1,f2)$/
+replace	name.c	/^replace(a, v)$/
+rmtemp	error.c	/^rmtemp(base)$/
+round	defs.h	/^#define round(a,b)	(((int)((ADR(a)+b)-1))&~((b)-1)/
+savstak	stak.c	/^STKPTR	savstak()$/
+scan	service.c	/^STRING	*scan(argn)$/
+setargs	args.c	/^VOID	setargs(argi)$/
+setbrk	setbrk.c	/^setbrk(incr)$/
+setchar	ctype.h	/^#define setchar(c)	(((c)&QUOTE)==0 ANDF _ctype2[c]/
+setenv	name.c	/^STRING	*setenv()$/
+setlist	name.c	/^setlist(arg,xp)$/
+setname	name.c	/^VOID	setname(argi, xp)$/
+setstak	stak.h	/^#define		setstak(x)	(staktop=absstak(x))$/
+settmp	main.c	/^settmp()$/
+sigchk	error.c	/^sigchk()$/
+skipnl	cmd.c	/^LOCAL VOID	skipnl()$/
+skipto	macro.c	/^LOCAL	skipto(endch)$/
+space	ctype.h	/^#define	space(c)	(((c)&QUOTE)==0 ANDF _ctype1[c]&(/
+split	service.c	/^LOCAL INT	split(s)$/
+stakchk	stak.c	/^stakchk()$/
+staknam	name.c	/^LOCAL STRING	staknam(n)$/
+stdsigs	fault.c	/^stdsigs()$/
+stoi	print.c	/^stoi(icp)$/
+subchar	ctype.h	/^#define subchar(c)	(((c)&QUOTE)==0 ANDF _ctype1[c]/
+subst	macro.c	/^subst(in,ot)$/
+synbad	cmd.c	/^LOCAL VOID	synbad()$/
+syncase	cmd.c	/^LOCAL REGPTR	syncase(esym)$/
+syslook	name.c	/^syslook(w,syswds)$/
+tdystak	stak.c	/^VOID	tdystak(x)$/
+term	cmd.c	/^LOCAL TREPTR	term(flg)$/
+tmpfil	io.c	/^tmpfil()$/
+trim	service.c	/^trim(at)$/
+useargs	args.c	/^DOLPTR	useargs()$/
+usestak	stak.h	/^#define		usestak()	{locstak();}$/
+word	word.c	/^word()$/
+zerostak	stak.h	/^#define		zerostak()	(*staktop=0)$/
