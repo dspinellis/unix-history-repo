@@ -116,13 +116,15 @@ extern char	*inet_ntoa();
 #endif	/* defined(unix) */
 
 #if	defined(TN3270)
+#include "ascii/termin.ext"
 #include "ctlr/screen.h"
-#include "general/globals.h"
-#include "telnet.ext"
+#include "ctlr/oia.h"
 #include "ctlr/options.ext"
 #include "ctlr/outbound.ext"
-#include "ascii/termin.ext"
+#include "general/globals.h"
+#include "telnet.ext"
 #endif	/* defined(TN3270) */
+
 #include "general/general.h"
 
 
@@ -1016,24 +1018,30 @@ tninit()
 static void
 makeargv()
 {
-	register char *cp;
-	register char **argp = margv;
+    register char *cp;
+    register char **argp = margv;
 
-	margc = 0;
-	for (cp = line; *cp;) {
-		while (isspace(*cp))
-			cp++;
-		if (*cp == '\0')
-			break;
-		*argp++ = cp;
-		margc += 1;
-		while (*cp != '\0' && !isspace(*cp))
-			cp++;
-		if (*cp == '\0')
-			break;
-		*cp++ = '\0';
-	}
-	*argp++ = 0;
+    margc = 0;
+    cp = line;
+    if (*cp == '!') {		/* Special case shell escape */
+	*argp++ = "!";		/* No room in string to get this */
+	margc++;
+	cp++;
+    }
+    while (*cp) {
+	while (isspace(*cp))
+	    cp++;
+	if (*cp == '\0')
+	    break;
+	*argp++ = cp;
+	margc += 1;
+	while (*cp != '\0' && !isspace(*cp))
+	    cp++;
+	if (*cp == '\0')
+	    break;
+	*cp++ = '\0';
+    }
+    *argp++ = 0;
 }
 
 static char *ambiguous;		/* special return value */
@@ -1890,6 +1898,7 @@ SetIn3270()
 	if (In3270) {
 	    StopScreen(1);
 	    In3270 = 0;
+	    Stop3270();		/* Tell 3270 we aren't here anymore */
 	    setconnmode();
 	}
     }
@@ -2374,7 +2383,17 @@ int returnCode;
 
 #endif	/* defined(TN3270) */
 
-static
+/*
+ * Scheduler()
+ *
+ * Try to do something.
+ *
+ * If we do something useful, return 1; else return 0.
+ *
+ */
+
+
+int
 Scheduler(block)
 int	block;			/* should we block in the select ? */
 {
@@ -2398,7 +2417,7 @@ int	block;			/* should we block in the select ? */
     if (TTYBYTES()) {
 	FD_SET(tout, &obits);
     }
-    if ((tcc == 0) && NETROOM()) {
+    if ((tcc == 0) && NETROOM() && (shell_active == 0)) {
 	FD_SET(tin, &ibits);
     }
 #endif	/* !defined(MSDOS) */
@@ -2550,7 +2569,7 @@ int	block;			/* should we block in the select ? */
      * Something to read from the tty...
      */
 #if	defined(MSDOS)
-    if ((tcc == 0) && NETROOM() && TerminalCanRead())
+    if ((tcc == 0) && NETROOM() && (shell_active == 0) && TerminalCanRead())
 #else	/* defined(MSDOS) */
     if (FD_ISSET(tin, &ibits))
 #endif	/* defined(MSDOS) */
@@ -2759,9 +2778,26 @@ telnet()
 	if (tfrontp-tbackp) {
 	    schedValue = 1;
 	} else {
-	    schedValue = DoTerminalOutput();
+	    if (shell_active) {
+#if	defined(MSDOS)
+		static int haventstopped = 1;
+
+		setcommandmode();
+		if (haventstopped) {
+		    StopScreen(1);
+		    haventstopped = 0;
+		}
+		if (shell_continue() == 0) {
+		    ConnectScreen();
+		    haventstopped = 1;
+		}
+		setconnmode();
+#endif	/* defined(MSDOS) */
+	    } else {
+		schedValue = DoTerminalOutput();
+	    }
 	}
-	if (schedValue) {
+	if (schedValue && (shell_active == 0)) {
 	    if (Scheduler(SCHED_BLOCK) == -1) {
 		setcommandmode();
 		return;
@@ -3391,9 +3427,10 @@ suspend()
 	setcommandmode();
 #if	defined(unix)
 	kill(0, SIGTSTP);
+#endif	/* defined(unix) */
 	/* reget parameters in case they were changed */
 	TerminalSaveState();
-#endif	/* defined(unix) */
+	setconnmode();
 	return 1;
 }
 
@@ -3857,6 +3894,17 @@ main(argc, argv)
 	tn(argc, argv);
     }
     setjmp(toplevel);
-    for (;;)
+    for (;;) {
+#if	!defined(TN3270)
 	command(1);
+#else	/* !defined(TN3270) */
+	if (!shell_active) {
+	    command(1);
+	} else {
+#if	defined(MSDOS)
+	    shell_continue();
+#endif	/* defined(MSDOS) */
+	}
+#endif	/* !defined(TN3270) */
+    }
 }
