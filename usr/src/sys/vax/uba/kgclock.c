@@ -1,15 +1,21 @@
 /*	kgclock.c	4.4	83/05/30	*/
 
-#ifdef KGCLOCK		/* kl-11 as profiling clock */
+#include "kg.h"
+#if NKG > 0
+/*
+ * KL-11 as profiling clock
+ */
+#include "../machine/pte.h"
+#include "../machine/psl.h"
 
 #include "../h/param.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../h/buf.h"
-#include "../vaxuba/ubavar.h"
-#include "../machine/psl.h"
+#include "../h/time.h"
+#include "../h/kernel.h"
 
-int	phz = 0;
+#include "../vaxuba/ubavar.h"
+
 int	kgprobe(), kgattach();
 struct	uba_device *kginfo[1];
 u_short	kgstd[] = { 0177560, 0 };
@@ -25,7 +31,7 @@ struct klregs {
 struct	klregs *klbase;
 
 kgprobe(reg)
-caddr_t reg;
+	caddr_t reg;
 {
 	register int br, cvec;	/* value-result */
 	register struct klregs *klp = (struct klregs *)reg;
@@ -58,19 +64,18 @@ kgclock(dev, r0, r1, r2, r3, r4 ,r5, pc, ps)
 	int ps;
 {
 	register int k;
-	extern time_t time;
-	static time_t otime = 0;
-	static time_t calibrate;
+	static long otime;
+	static long calibrate;
 
 	klbase->tbuf = 0377;	/* reprime clock (scope sync too) */
 	if (phz == 0) {
 		if (otime == 0) {
-			otime = time + 1;
+			otime = time.tv_sec + 1;
 			calibrate = 0;
 		}
-		if (time >= otime)
+		if (time.tv_sec >= otime)
 			calibrate++;
-		if (time >= otime + 4) {
+		if (time.tv_sec >= otime + 4) {
 			phz = calibrate / 4;
 			otime = 0;
 		}
@@ -78,4 +83,4 @@ kgclock(dev, r0, r1, r2, r3, r4 ,r5, pc, ps)
 	}
 	gatherstats(pc, ps);	/* this routine lives in kern_clock.c */
 }
-#endif KGCLOCK
+#endif
