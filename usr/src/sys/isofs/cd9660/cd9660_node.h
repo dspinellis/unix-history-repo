@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_node.h	8.3 (Berkeley) %G%
+ *	@(#)cd9660_node.h	8.4 (Berkeley) %G%
  */
 
 /*
@@ -101,6 +101,9 @@ int cd9660_unlock __P((struct vop_unlock_args *));
 int cd9660_strategy __P((struct vop_strategy_args *));
 int cd9660_print __P((struct vop_print_args *));
 int cd9660_islocked __P((struct vop_islocked_args *));
+int cd9660_pathconf __P((struct vop_pathconf_args *));
+int cd9660_blkatoff __P((struct vop_blkatoff_args *));
+
 void cd9660_defattr __P((struct iso_directory_record *,
 			struct iso_node *, struct buf *));
 void cd9660_deftstamp __P((struct iso_directory_record *,
@@ -108,6 +111,9 @@ void cd9660_deftstamp __P((struct iso_directory_record *,
 struct vnode *cd9660_ihashget __P((dev_t, ino_t));
 void cd9660_ihashins __P((struct iso_node *));
 void cd9660_ihashrem __P((struct iso_node *));
+int cd9660_tstamp_conv7 __P((u_char *, struct timespec *));
+int cd9660_tstamp_conv17 __P((u_char *, struct timespec *));
+ino_t isodirino __P((struct iso_directory_record *, struct iso_mnt *));
 #ifdef	ISODEVMAP
 struct iso_dnode *iso_dmap __P((dev_t, ino_t, int));
 void iso_dunmap __P((dev_t));
