@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ttgeneric.c	3.24 %G%";
+static char sccsid[] = "@(#)ttgeneric.c	3.25 %G%";
 #endif
 
 /*
@@ -15,12 +15,23 @@ char PC, *BC, *UP;
 short ospeed;
 char *tgoto();
 
+	/* normal frame */
 short gen_frame[16] = {
 	' ', '|', '-', '+',
 	'|', '|', '+', '+',
 	'-', '+', '-', '+',
 	'+', '+', '+', '+'
 };
+
+	/* ANSI graphics frame */
+#define G (WWM_GRP << WWC_MSHIFT)
+short ansi_frame[16] = {
+	' ',	'x'|G,	'Q'|G,	'm'|G,
+	'x'|G,	'x'|G,	'l'|G,	't'|G,
+	'q'|G,	'j'|G,	'q'|G,	'v'|G,
+	'k'|G,	'u'|G,	'w'|G,	'n'|G
+};
+#define ANSI_AS "\033(0"	/* ) */
 
 char *gen_CM;
 char *gen_IM;
@@ -359,6 +370,9 @@ tt_generic()
 	tt.tt_write = gen_write;
 	tt.tt_putc = gen_putc;
 	tt.tt_move = gen_move;
-	tt.tt_frame = gen_frame;
+	if (gen_AS && strcmp(gen_AS, ANSI_AS) == 0)
+		tt.tt_frame = ansi_frame;
+	else
+		tt.tt_frame = gen_frame;
 	return 0;
 }
