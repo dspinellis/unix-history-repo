@@ -1,4 +1,4 @@
-/*	dinode.h	4.21	82/12/17	*/
+/*	dinode.h	4.22	83/02/10	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -40,7 +40,7 @@ struct inode {
 		long	ic_atspare;
 		time_t	ic_mtime;	/* 24: time last modified */
 		long	ic_mtspare;
-		time_t	ic_ctime;	/* 32: time created */
+		time_t	ic_ctime;	/* 32: last time inode changed */
 		long	ic_ctspare;
 		daddr_t	ic_db[NDADDR];	/* 40: disk block addresses */
 		daddr_t	ic_ib[NIADDR];	/* 88: indirect blocks */
