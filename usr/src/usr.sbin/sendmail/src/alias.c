@@ -3,7 +3,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)alias.c	3.7	%G%";
+static char SccsId[] = "@(#)alias.c	3.8	%G%";
 
 /*
 **  ALIAS -- Compute aliases.
@@ -61,17 +61,16 @@ extern datum fetch();
 alias()
 {
 	register ADDRESS *q;
-	ADDRESS *q2;
+	register char *p;
+# ifndef DBM
 	FILE *af;
 	char line[MAXLINE+1];
-	register char *p;
-	extern int errno;
 	bool didalias;
 	bool gotmatch;
 	auto ADDRESS al;
-	extern bool sameaddr();
-	extern ADDRESS *parse();
+# else
 	int mno;
+# endif DBM
 
 	if (NoAlias)
 		return;
@@ -189,7 +188,7 @@ alias()
 			sendto(p, 1);
 		}
 	} while (didalias);
-	fclose(af);
+	(void) fclose(af);
 #else DBM
 	/*
 	**  Scan send queues
@@ -269,22 +268,21 @@ forward(user)
 	char buf[60];
 	register FILE *fp;
 	register char *p;
-	extern char *index();
 
 	if (user->q_mailer != M_LOCAL || bitset(QBADADDR, user->q_flags))
 		return (FALSE);
 
 	/* good address -- look for .forward file in home */
-	expand("$z/.forward", buf, &buf[sizeof buf - 1]);
+	(void) expand("$z/.forward", buf, &buf[sizeof buf - 1]);
 	fp = fopen(buf, "r");
 	if (fp == NULL)
 		return (FALSE);
 
 	/* we do have an address to forward to -- do it */
-	fgets(buf, sizeof buf, fp);
+	(void) fgets(buf, sizeof buf, fp);
 	if ((p = index(buf, '\n')) != NULL)
 		*p = '\0';
-	fclose(fp);
+	(void) fclose(fp);
 	if (buf[0] == '\0')
 		return (FALSE);
 	if (Verbose)

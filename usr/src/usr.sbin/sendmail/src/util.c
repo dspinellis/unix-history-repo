@@ -3,7 +3,7 @@
 # include "useful.h"
 # include <ctype.h>
 
-static char	SccsId[] = "@(#)util.c	3.5	%G%";
+static char	SccsId[] = "@(#)util.c	3.6	%G%";
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -95,7 +95,6 @@ xalloc(sz)
 	register unsigned int sz;
 {
 	register char *p;
-	extern char *malloc();
 
 	p = malloc(sz);
 	if (p == NULL)
@@ -125,7 +124,6 @@ newstr(s)
 	register char *s;
 {
 	register char *p;
-	extern char *strcpy();
 
 	p = xalloc((unsigned) (strlen(s) + 1));
 	strcpy(p, s);
@@ -157,15 +155,14 @@ copyplist(list, copycont)
 {
 	register char **vp;
 	register char **newvp;
-	extern char *xalloc();
 
 	for (vp = list; *vp != NULL; vp++)
 		continue;
 
 	vp++;
 
-	newvp = (char **) xalloc((vp - list) * sizeof *vp);
-	bmove(list, newvp, (vp - list) * sizeof *vp);
+	newvp = (char **) xalloc((unsigned) (vp - list) * sizeof *vp);
+	bmove((char *) list, (char *) newvp, (vp - list) * sizeof *vp);
 
 	if (copycont)
 	{
@@ -254,7 +251,7 @@ xputs(s)
 		}
 		putchar(c);
 	}
-	fflush(stdout);
+	(void) fflush(stdout);
 }
 # endif DEBUG
 /*
@@ -314,3 +311,22 @@ sameword(a, b)
 	}
 	return (FALSE);
 }
+/*
+**  SYSLOG -- fake entry to fool lint
+*/
+
+# ifdef LOG
+# ifdef lint
+
+/*VARARGS2*/
+syslog(pri, fmt, args)
+	int pri;
+	char *fmt;
+{
+	pri = *fmt;
+	args = pri;
+	pri = args;
+}
+
+# endif lint
+# endif LOG

@@ -3,7 +3,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.10	%G%";
+static char	SccsId[] = "@(#)collect.c	3.11	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -46,22 +46,21 @@ collect()
 	char buf[MAXFIELD+1];
 	register char *p;
 	char c;
-	extern int errno;
 	extern bool isheader();
-	extern char *newstr();
-	extern char *xalloc();
-	extern char *index(), *rindex();
 	char *xfrom;
 	extern char *hvalue();
-	extern char *strcpy(), *strcat(), *mktemp();
+	extern char *mktemp();
+	extern char *capitalize();
+# ifdef DEBUG
 	HDR *h;
+# endif
 
 	/*
 	**  Create the temp file name and create the file.
 	*/
 
-	mktemp(InFileName);
-	close(creat(InFileName, 0600));
+	(void) mktemp(InFileName);
+	(void) close(creat(InFileName, 0600));
 	if ((tf = fopen(InFileName, "w")) == NULL)
 	{
 		syserr("Cannot create %s", InFileName);
@@ -74,7 +73,7 @@ collect()
 	if (strncmp(buf, "From ", 5) == 0)
 	{
 		eatfrom(buf);
-		fgets(buf, sizeof buf, stdin);
+		(void) fgets(buf, sizeof buf, stdin);
 	}
 
 	/*
@@ -99,8 +98,8 @@ collect()
 			if (fgets(p, sizeof buf - (p - buf), stdin) == NULL)
 				break;
 		}
-		if (c != EOF)
-			ungetc(c, stdin);
+		if (!feof(stdin))
+			(void) ungetc(c, stdin);
 
 		MsgSize += strlen(buf);
 
@@ -119,7 +118,7 @@ collect()
 
 	/* throw away a blank line */
 	if (buf[0] == '\n')
-		fgets(buf, sizeof buf, stdin);
+		(void) fgets(buf, sizeof buf, stdin);
 
 	/*
 	**  Collect the body of the message.
@@ -143,16 +142,16 @@ collect()
 		{
 			if (errno == ENOSPC)
 			{
-				freopen(InFileName, "w", tf);
+				(void) freopen(InFileName, "w", tf);
 				fputs("\nMAIL DELETED BECAUSE OF LACK OF DISK SPACE\n\n", tf);
 				syserr("Out of disk space for temp file");
 			}
 			else
 				syserr("Cannot write %s", InFileName);
-			freopen("/dev/null", "w", tf);
+			(void) freopen("/dev/null", "w", tf);
 		}
 	}
-	fclose(tf);
+	(void) fclose(tf);
 
 	/*
 	**  Find out some information from the headers.
@@ -335,17 +334,12 @@ chompheader(line, def)
 	bool def;
 {
 	register char *p;
-	extern int errno;
 	register HDR *h;
 	HDR **hp;
 	extern bool isheader();
-	extern char *newstr();
-	extern char *xalloc();
 	char *fname;
 	char *fvalue;
-	extern char *index(), *rindex();
 	struct hdrinfo *hi;
-	extern char *strcpy(), *strcat(), *mktemp();
 
 	/* strip off trailing newline */
 	p = rindex(line, '\n');

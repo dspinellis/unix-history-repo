@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	3.5	%G%";
+static char	SccsId[] = "@(#)err.c	3.6	%G%";
 
 /*
 **  SYSERR -- Print error message.
@@ -18,48 +18,50 @@ static char	SccsId[] = "@(#)err.c	3.5	%G%";
 **		a, b, c, d, e -- parameters
 **
 **	Returns:
-**		-1 always
+**		none
 **
 **	Side Effects:
 **		increments Errors.
 **		sets ExitStat.
 */
 
+# ifdef lint
+int	sys_nerr;
+char	*sys_errlist[];
+# endif lint
+
 /*VARARGS1*/
 syserr(fmt, a, b, c, d, e)
 	char *fmt;
 {
-	extern int errno;
 	static char errbuf[MAXLINE+1];
-	register char *p;
 	extern char *sys_errlist[];
 	extern int sys_nerr;
-	extern char *sprintf();
 	register char *eb = errbuf;
 
 	/* add arpanet error number if not present */
 	if (!isdigit(*fmt))
 	{
-		strcpy(eb, "455 ");
+		(void) strcpy(eb, "455 ");
 		eb += 4;
 	}
 
 	/* put error message into buffer */
-	sprintf(eb, fmt, a, b, c, d, e);
+	(void) sprintf(eb, fmt, a, b, c, d, e);
 	if (errno != 0)
 	{
 		eb += strlen(eb);
 		if (errno < sys_nerr && errno > 0)
-			sprintf(eb, ": %s", sys_errlist[errno]);
+			(void) sprintf(eb, ": %s", sys_errlist[errno]);
 		else
-			sprintf(eb, ": error %d", errno);
+			(void) sprintf(eb, ": error %d", errno);
 	}
 
 	if (ArpaFmt)
 		printf("%s\r\n", errbuf);
 	else
 		printf("sendmail: %s\n", &errbuf[4]);
-	fflush(stdout);
+	(void) fflush(stdout);
 	Errors++;
 
 	/* determine exit status if not already set */
@@ -75,7 +77,6 @@ syserr(fmt, a, b, c, d, e)
 	syslog(LOG_ERR, "%s->%s: %s", From.q_paddr, To, errbuf);
 # endif LOG
 	errno = 0;
-	return (-1);
 }
 /*
 **  USRERR -- Signal user error.
@@ -86,7 +87,7 @@ syserr(fmt, a, b, c, d, e)
 **		fmt, a, b, c, d -- printf strings
 **
 **	Returns:
-**		-1
+**		none
 **
 **	Side Effects:
 **		increments Errors.
@@ -99,11 +100,10 @@ usrerr(fmt, a, b, c, d, e)
 	extern char SuprErrs;
 
 	if (SuprErrs)
-		return (0);
+		return;
 	Errors++;
 
 	message("450", fmt, a, b, c, d, e);
-	return (-1);
 }
 /*
 **  MESSAGE -- print message (not necessarily an error)
@@ -121,6 +121,7 @@ usrerr(fmt, a, b, c, d, e)
 **		none.
 */
 
+/*VARARGS2*/
 message(num, msg, a, b, c, d, e)
 	register char *num;
 	register char *msg;
@@ -142,5 +143,5 @@ message(num, msg, a, b, c, d, e)
 	if (ArpaFmt)
 		printf("\r");
 	printf("\n");
-	fflush(stdout);
+	(void) fflush(stdout);
 }

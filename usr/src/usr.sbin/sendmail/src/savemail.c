@@ -2,7 +2,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.9	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.10	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -36,13 +36,8 @@ savemail()
 	extern struct passwd *getpwnam();
 	register char *p;
 	register int i;
-	auto long tim;
-	extern int errno;
 	extern char *ttypath();
-	extern ADDRESS *parse();
 	static int exclusive;
-	extern char *strcpy(), *strcat();
-	extern char *expand();
 
 	if (exclusive++)
 		return;
@@ -97,13 +92,14 @@ savemail()
 			xfile = fopen(Transcript, "r");
 			if (xfile == NULL)
 				syserr("Cannot open %s", Transcript);
-			printf("\r\nMessage from %s\r\n", expand("$n", buf, &buf[sizeof buf - 1]));
+			(void) expand("$n", buf, &buf[sizeof buf - 1]);
+			printf("\r\nMessage from %s\r\n", buf);
 			printf("Errors occurred while sending mail, transcript follows:\r\n");
-			while (fgets(buf, sizeof buf, xfile) && !ferror(stdout))
+			while (fgets(buf, sizeof buf, xfile) != NULL && !ferror(stdout))
 				fputs(buf, stdout);
 			if (ferror(stdout))
-				syserr("savemail: stdout: write err");
-			fclose(xfile);
+				(void) syserr("savemail: stdout: write err");
+			(void) fclose(xfile);
 		}
 	}
 
@@ -120,13 +116,14 @@ savemail()
 
 	if (MailBack)
 	{
-		freopen("/dev/null", "w", stdout);
+		(void) freopen("/dev/null", "w", stdout);
 		NoAlias++;
 		ForceMail++;
 
 		/* fake up an address header for the from person */
 		bmove((char *) &From, (char *) &to_addr, sizeof to_addr);
-		if (parse(expand("$n", buf, &buf[sizeof buf - 1]), &From, -1) == NULL)
+		(void) expand("$n", buf, &buf[sizeof buf - 1]);
+		if (parse(buf, &From, -1) == NULL)
 		{
 			syserr("Can't parse myself!");
 			ExitStat = EX_SOFTWARE;
@@ -148,8 +145,8 @@ savemail()
 	**	and we all know what poor typists programmers are.
 	*/
 
-	setuid(getuid());
-	setgid(getgid());
+	(void) setuid(getuid());
+	(void) setgid(getgid());
 	setpwent();
 	p = NULL;
 	if (From.q_mailer == M_LOCAL)
@@ -173,7 +170,7 @@ savemail()
 		/* we have a home directory; open dead.letter */
 		message("050", "Saving message in dead.letter");
 		define('z', p);
-		expand("$z/dead.letter", buf, &buf[sizeof buf - 1]);
+		(void) expand("$z/dead.letter", buf, &buf[sizeof buf - 1]);
 		To = buf;
 		i = mailfile(buf);
 		giveresponse(i, TRUE, Mailer[M_LOCAL]);
@@ -214,21 +211,20 @@ errhdr(fp)
 {
 	char buf[MAXLINE];
 	register FILE *xfile;
-	extern int errno;
 
-	fflush(stdout);
+	(void) fflush(stdout);
 	if ((xfile = fopen(Transcript, "r")) == NULL)
 		syserr("Cannot open %s", Transcript);
 	errno = 0;
 	fprintf(fp, "To: %s\n", To);
 	fprintf(fp, "Subject: Unable to deliver mail\n");
 	fprintf(fp, "\n   ----- Transcript of session follows -----\n");
-	while (fgets(xfile, buf, sizeof buf) != NULL)
+	while (fgets(buf, sizeof buf, xfile) != NULL)
 		fputs(buf, fp);
 	fprintf(fp, "\n   ----- Unsent message follows -----\n");
-	fflush(fp);
+	(void) fflush(fp);
 	putmessage(fp, Mailer[1]);
-	close(xfile);
+	(void) fclose(xfile);
 	if (errno != 0)
 		syserr("errhdr: I/O error");
 }

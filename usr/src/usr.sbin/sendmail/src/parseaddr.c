@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.15	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.16	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -58,8 +58,6 @@ parse(addr, a, copyf)
 	register char **pvp;
 	register struct mailer *m;
 	extern char **prescan();
-	extern char *newstr();
-	extern char *strcpy();
 	extern ADDRESS *buildaddr();
 
 	/*
@@ -198,9 +196,9 @@ prescan(addr, delim)
 	register char c;
 	char *tok;
 	register char *q;
-	extern char *index();
 	register int state;
 	int nstate;
+	extern char lower();
 
 	space = FALSE;
 	q = buf;
@@ -446,7 +444,7 @@ toktype(c)
 	if (firstime)
 	{
 		firstime = FALSE;
-		expand("$o", buf, &buf[sizeof buf - 1]);
+		(void) expand("$o", buf, &buf[sizeof buf - 1]);
 		strcat(buf, DELIMCHARS);
 	}
 	if (isspace(c))
@@ -539,7 +537,7 @@ rewrite(pvp, ruleset)
 
 			  case MATCHANY:
 				/* match any number of tokens */
-				setmatch(mlist, rp[1], NULL, avp);
+				setmatch(mlist, rp[1], (char **) NULL, avp);
 				break;
 
 			  case MATCHCLASS:
@@ -582,7 +580,7 @@ rewrite(pvp, ruleset)
 				if (*rp == MATCHONE)
 				{
 					/* undo binding */
-					setmatch(mlist, rp[1], NULL, NULL);
+					setmatch(mlist, rp[1], (char **) NULL, (char **) NULL);
 				}
 			}
 
@@ -631,7 +629,7 @@ rewrite(pvp, ruleset)
 					*avp++ = rp;
 			}
 			*avp++ = NULL;
-			bmove(npvp, pvp, (avp - npvp) * sizeof *avp);
+			bmove((char *) npvp, (char *) pvp, (avp - npvp) * sizeof *avp);
 # ifdef DEBUG
 			if (Debug)
 			{
@@ -787,7 +785,6 @@ buildaddr(tv, a)
 	static char buf[MAXNAME];
 	struct mailer **mp;
 	register struct mailer *m;
-	extern char *xalloc();
 
 	if (a == NULL)
 		a = (ADDRESS *) xalloc(sizeof *a);
@@ -825,7 +822,7 @@ buildaddr(tv, a)
 		syserr("buildaddr: no user");
 	buf[0] = '\0';
 	while (**++tv != NULL)
-		strcat(buf, *tv);
+		(void) strcat(buf, *tv);
 	a->q_user = buf;
 
 	return (a);
@@ -896,7 +893,7 @@ printaddr(a, follow)
 	while (a != NULL)
 	{
 		printf("addr@%x: ", a);
-		fflush(stdout);
+		(void) fflush(stdout);
 		printf("%s: mailer %d (%s), host `%s', user `%s'\n", a->q_paddr,
 		       a->q_mailer, Mailer[a->q_mailer]->m_name, a->q_host, a->q_user);
 		printf("\tnext=%x flags=%o, rmailer %d\n", a->q_next,
