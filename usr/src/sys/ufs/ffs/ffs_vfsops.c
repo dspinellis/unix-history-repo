@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_vfsops.c	6.12 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	6.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -86,6 +86,7 @@ mountfs(dev, ronly, ip)
 		if (mp->m_bufp != 0 && dev == mp->m_dev) {
 			mp = 0;
 			error = EBUSY;
+			needclose = 0;
 			goto out;
 		}
 	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
@@ -152,9 +153,10 @@ out:
 		brelse(bp);
 	if (tp)
 		brelse(tp);
-	if (needclose)
-		(*bdevsw[major(dev)].d_close)(dev, ronly ? FREAD : FREAD|FWRITE);
-	binval(dev);
+	if (needclose) {
+		(*bdevsw[major(dev)].d_close)(dev, ronly? FREAD : FREAD|FWRITE);
+		binval(dev);
+	}
 	u.u_error = error;
 	return (0);
 }
