@@ -1,4 +1,4 @@
-/*	conf.c	4.17	%G%	*/
+/*	conf.c	4.18	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -42,7 +42,7 @@ int	htopen(),htclose(),htstrategy(),htread(),htwrite(),htdump();
 #endif
 
 #include "rk.h"
-#if NRK11 > 0
+#if NHK > 0
 int	rkstrategy(),rkread(),rkwrite(),rkintr(),rkdump();
 #else
 #define	rkstrategy	nodev
@@ -53,7 +53,7 @@ int	rkstrategy(),rkread(),rkwrite(),rkintr(),rkdump();
 #endif
 
 #include "tm.h"
-#if NTM03 > 0
+#if NTM > 0
 int	tmopen(),tmclose(),tmstrategy(),tmread(),tmwrite(),tmioctl(),tmdump();
 #else
 #define	tmopen		nodev
@@ -78,7 +78,7 @@ int	tsopen(),tsclose(),tsstrategy(),tsread(),tswrite(),tsdump();
 #endif
 
 #include "up.h"
-#if NUP > 0
+#if NSC > 0
 int	upstrategy(),upread(),upwrite(),upreset(),updump();
 #else
 #define	upstrategy	nodev
@@ -115,7 +115,7 @@ int	ctopen(),ctclose(),ctwrite();
 #endif
 
 #include "dh.h"
-#if NDH11 == 0
+#if NDH == 0
 #define	dhopen	nodev
 #define	dhclose	nodev
 #define	dhread	nodev
@@ -149,7 +149,7 @@ struct	tty	dkchans[];
 #endif
 
 #include "dz.h"
-#if NDZ11 == 0
+#if NDZ == 0
 #define	dzopen	nodev
 #define	dzclose	nodev
 #define	dzread	nodev
