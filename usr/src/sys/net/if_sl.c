@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)if_sl.c	7.7 (Berkeley) %G%
+ *	@(#)if_sl.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -268,7 +268,7 @@ slstart(tp)
 		 * If system is getting low on clists
 		 * and we have something running already, stop here.
 		 */
-		if (cfreecount < CLISTRESERVE + SLMTU && tp->t_outq.c_cc == 0)
+		if (cfreecount < CLISTRESERVE + SLMTU && tp->t_outq.c_cc)
 			return;
 
 		/*
