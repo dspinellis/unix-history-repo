@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)chflags.1	5.4 (Berkeley) %G%
+.\"	@(#)chflags.1	5.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHFLAGS 1
@@ -42,44 +42,36 @@ by the flags of the directory itself.
 When encountering a symbolic link anywhere in the traversal, follow it.
 .El
 .Pp
+Flags are a comma separated list of keywords.
+The following keywords are currently defined:
+.Bd -literal -offset indent compact
+.\"arch	nothing yet.
+dump	set the dump flag
+sapp	set the system append-only flag (super-user only)
+schng	set the system immutable flag (super-user only)
+uapp	set the user append-only flag (owner or super-user only)
+uchng	set the user immutable flag (owner or super-user only)
+.Ed
+.Pp
+Putting the letters
+.Dq no
+before an option causes the flag to be turned off.
+For example:
+.Bd -literal -offset indent compact
+nodump	the file should never be dumped
+.Ed
+.Pp
 The flags of a symbolic link are immutable, so that unless the
 .Fl h
 or
 .Fl H
 flags are set,
 .Nm chflags
-on a symbolic link is a no-op.
-.Pp
-Only the owner of a file or the super-user is permitted to change
-the low 16-bits in the flags of a file.
-Only the the super-user is permitted to change
-the high 16-bits in the flags of a file.
+on a symbolic link always succeeds and has no effect.
 .Pp
 The
 .Nm chflags
 utility exits 0 on success, and >0 if an error occurs.
-.Sh FLAGS
-Flags may be absolute or symbolic.
-An absolute flag is an octal number constructed by
-.Ar or'ing
-the following values:
-.Pp
-.Bl -tag -width 6n -compact -offset indent
-.It Li 1
-the file should never be dumped
-.El
-.Pp
-The symbolic flags is a comma separated list of keywords.
-The following keywords are defined:
-.Bd -literal -offset indent
-dump         cause the file to be dumped when it is next modified
-.Ed
-.Pp
-Putting the word ``no'' before an option causes it to be deleted.
-For example:
-.Bd -literal -offset indent
-nodump       the file should never be dumped
-.Ed
 .Sh SEE ALSO
 .Xr chflags 2 ,
 .Xr stat 2 ,
