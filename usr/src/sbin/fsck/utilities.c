@@ -1,6 +1,12 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
 #ifndef lint
-static char version[] = "@(#)utilities.c	3.7 (Berkeley) %G%";
-#endif
+static char sccsid[] = "@(#)utilities.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 #include <stdio.h>
 #include <ctype.h>

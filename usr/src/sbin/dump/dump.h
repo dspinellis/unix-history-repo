@@ -1,4 +1,10 @@
-/*	dump.h	1.13	84/10/05	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)dump.h	5.1 (Berkeley) %G%
+ */
 
 #define	NI		16
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
