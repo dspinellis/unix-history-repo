@@ -1,24 +1,24 @@
-/*	scalech.c	(Berkeley)	1.4	84/04/12
+/*	scalech.c	(Berkeley)	1.5	85/01/30
  *
  * Font scaling for character format fonts.
  *
- *	Use:	scalech  [ -s# ]  charfile1  > charfile2
+ *	Use:	scalech  [ -s# ]  [ charfile1 ]  > charfile2
  *
  *		Takes input from charfile1 (which must be in the format
- *	written by rst2ch), scales by # (default = 50%) and writes to stdout.
- *	If charfile1 is missing, stdin is read.  The -s flag sets the scaling
- *	factor to # (which is a percentage REDUCTION - can't make fonts bigger)
+ *	written by any of the xxx2ch programs), scales by # (default = 50%)
+ *	and writes to stdout.  If charfile1 is missing, stdin is read.  The
+ *	-s flag sets the scaling factor to # (which is a percentage REDUCTION:
+ *	scalech can't make fonts bigger)
  */
 
 #include <stdio.h>
-#include <ctype.h>
 
 
-#define MAXLINE		200
-#define MAXHEIGHT	200
+#define MAXLINE		300
+#define MAXHEIGHT	300
 #define SCALE		50
 
-
+					/* don't ask, really */
 int	width, length, vdest, hdest, code;
 int	refv, refh, spot, start, Bduring, Wduring;
 int	notfirsttime, build, voffset, hoffset;
@@ -71,11 +71,11 @@ char **argv;
 	if (ibuff[0][0] != ':') {
 	    sscanf (ibuff, "%s %f", ebuff, &par);
 	    if (strcmp(ebuff, "mag") == 0)
-		printf("mag %d\n", (int) (par * scale / 100 + 0.1));
+		printf("mag %d\n", (int) (par * scale / 100.0 + 0.1));
 	    else if (strcmp(ebuff, "linesp") == 0)
-		printf("linesp %.2f\n", par * scale / 100 + 0.001);
+		printf("linesp %.2f\n", par * scale / 100.0 + 0.001);
 	    else if (strcmp(ebuff, "wordsp") == 0)
-		printf("wordsp %.2f\n", par * scale / 100 + 0.001);
+		printf("wordsp %.2f\n", par * scale / 100.0 + 0.001);
 	    else
 		printf("%s", ibuff);
 	} else {
@@ -182,8 +182,19 @@ char **argv;
     } /* while */
 }
 
-outline(i)
-register int i;
+
+/*----------------------------------------------------------------------------*
+ | Routine:	outline (baseline)
+ |
+ | Results:	outputs a row of dots, based on gobs of information gathered
+ |		in the main program.  If "baseline" is set, then this line
+ |		should have the reference point on it.
+ |
+ | Bugs:	this method smells
+ *----------------------------------------------------------------------------*/
+
+outline(baseline)
+int baseline;
 {
 	register int set;
 	register int output = !build;
@@ -255,12 +266,12 @@ register int i;
 		}
 
 		if (set)  {
-		    if (!i || j != (hoffset + 1))
+		    if (!baseline || j != (hoffset + 1))
 			putchar('@');
 		    else
 			putchar('X');
 		} else {
-		    if (!i || j != (hoffset + 1))
+		    if (!baseline || j != (hoffset + 1))
 			putchar('.');
 		    else
 			putchar('x');
@@ -272,6 +283,16 @@ register int i;
 	putchar('\n');
 }
 
+
+/*----------------------------------------------------------------------------*
+ | Routine:	error (format_string, argument1, argument2.... )
+ |
+ | Results:	fprints a message to standard error, then exits with error
+ |		code 1.
+ |
+ | Side Efct:	This routine does NOT return
+ *----------------------------------------------------------------------------*/
+
 /*VARARGS1*/
 error(string, a1, a2, a3, a4)
 char *string;
@@ -279,5 +300,5 @@ char *string;
 	fprintf(stderr, "scalech: ");
 	fprintf(stderr, string, a1, a2, a3, a4);
 	fprintf(stderr, "\n");
-	exit(8);
-};
+	exit (1);
+}
