@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)disktab	4.14 (Berkeley) %G%
+#	@(#)disktab	4.15 (Berkeley) %G%
 #
 # Disk geometry and partition layout tables. 
 # Key:
@@ -30,6 +30,7 @@
 #	b[a-h]	partition block sizes in bytes
 #	f[a-h]	partition fragment sizes in bytes
 #	t[a-h]	partition types (filesystem, swap, etc)
+#	b[0-1]	primary and secondary bootstraps, optional
 #
 # WARNING:
 # On drives that contain bad-sector replacement areas,
@@ -396,6 +397,7 @@ rd52|RD52|DEC RD52 on Microvax:\
 	:pb#9766:ob#15884:bb#4096:fb#512:tb=swap:\
 	:pc#60480:oc#0:bc#4096:fc#512:\
 	:pg#34830:og#25650:bg#4096:fg#512:\
+	:b0=rdboot:
 #
 rd53|RD53|DEC RD53 on Microvax:\
 	:ty=winchester:ns#18:nt#8:nc#963:\
@@ -405,8 +407,9 @@ rd53|RD53|DEC RD53 on Microvax:\
 	:pc#138672:oc#0:bc#4096:fc#512:\
 	:pe#33440:oe#0:be#4096:fe#512:\
 	:pf#105232:of#33440:bf#4096:ff#512:\
-	:pg#89348:og#49324:bg#4096:fg#512:
+	:pg#89348:og#49324:bg#4096:fg#512:\
 	:ph#122788:oh#15884:bh#4096:fh#512:\
+	:b0=rdboot:
 #
 rd54|RD54|DEC RD54 on Microvax:\
 	:ty=winchester:ns#17:nt#15:nc#1225:\
@@ -417,7 +420,8 @@ rd54|RD54|DEC RD54 on Microvax:\
 	:pd#15884:od#49725:bd#4096:fd#512:\
 	:pe#55936:oe#65790:be#8192:fe#1024:\
 	:pf#190485:of#121890:bf#8192:ff#1024:\
-	:pg#262650:og#49725:bg#8192:fg#1024:
+	:pg#262650:og#49725:bg#8192:fg#1024:\
+	:b0=rdboot:
 #
 # RX02 floppy disk drives
 #
