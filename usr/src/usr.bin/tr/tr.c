@@ -12,31 +12,45 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tr.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)tr.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <stdio.h>
-#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
+#include "extern.h"
 
-#define	NCHARS	256				/* size of u_char */
-#define	OOBCH	257				/* out of band value */
+static int string1[NCHARS] = {
+	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,		/* ASCII */
+	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+	0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+	0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+	0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+	0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
+	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+	0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
+	0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
+	0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,
+	0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,
+	0x58, 0x59, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f,
+	0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,
+	0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f,
+	0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77,
+	0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f,
+}, string2[NCHARS];
 
-typedef struct {
-	char *str;
-	int lastch, endrange;
-	enum { NORM, INRANGE, EOS } state;
-} STR;
+static void setup __P((int *, char *, STR *, int, u_int));
+static void usage __P((void));
 
+int
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind;
+	register int ch, cnt, lastch, *p;
 	STR s1, s2;
-	register int ch, indx, lastch;
-	int cflag, dflag, sflag;
-	u_char *tp, tab[NCHARS], squeeze[NCHARS];
+	int cflag, dflag, sflag, isstring2;
 
 	cflag = dflag = sflag = 0;
 	while ((ch = getopt(argc, argv, "cds")) != EOF)
@@ -52,151 +66,209 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
-			fprintf(stderr,
-			    "usage: tr [-cds] [string1 [string2]]\n");
-			exit(1);
+			usage();
 		}
 	argc -= optind;
 	argv += optind;
 
+	switch(argc) {
+	case 0:
+	default:
+		usage();
+		/* NOTREACHED */
+	case 1:
+		isstring2 = 0;
+		break;
+	case 2:
+		isstring2 = 1;
+		break;
+	}
+
+	if (argv[0][0] == '\0')
+		err("empty string1");
+	if (isstring2 && argv[1][0] == '\0')
+		err("empty string2");
+	
 	/*
-	 * the original tr was amazingly tolerant of the command line.
-	 * Neither -c or -s have any effect unless there are two strings.
-	 * Extra arguments are silently ignored.  Bag this noise, they
-	 * should all be errors.
+	 * tr -ds [-c] string1 string2
+	 * Delete all characters (or complemented characters) in string1.
+	 * Squeeze all characters in string2.
 	 */
-	if (argc < 2 && !dflag) {
-		while ((ch = getchar()) != EOF)
-			putchar(ch);
+	if (dflag && sflag) {
+		if (!isstring2)
+			usage();
+
+		setup(string1, argv[0], &s1, cflag, T_CLASS | T_UL);
+		setup(string2, argv[1], &s2, 0, T_CLASS | T_SEQ | T_UL);
+		
+		for (lastch = OOBCH; (ch = getchar()) != EOF;)
+			if (!string1[ch] && (!string2[ch] || lastch != ch)) {
+				lastch = ch;
+				(void)putchar(ch);
+			}
 		exit(0);
 	}
 
-	bzero(tab, NCHARS);
-	if (sflag) {
-		s1.str = argv[1];
-		s1.state = NORM;
-		s1.lastch = OOBCH;
-		while (next(&s1))
-			squeeze[s1.lastch] = 1;
-	}
+	/*
+	 * tr -d [-c] string1
+	 * Delete all characters (or complemented characters) in string1.
+	 */
 	if (dflag) {
-		s1.str = argv[0];
-		s1.state = NORM;
-		s1.lastch = OOBCH;
+		if (isstring2)
+			usage();
+
+		setup(string1, argv[0], &s1, cflag, T_CLASS | T_UL);
+
+		while ((ch = getchar()) != EOF)
+			if (!string1[ch])
+				(void)putchar(ch);
+		exit(0);
+	}
+
+	/*
+	 * tr -s [-c] string1
+	 * Squeeze all characters (or complemented characters) in string1.
+	 */
+	if (sflag && !isstring2) {
+		setup(string1, argv[0], &s1, cflag, T_CLASS | T_UL);
+
+		for (lastch = OOBCH; (ch = getchar()) != EOF;)
+			if (!string1[ch] || lastch != ch) {
+				lastch = ch;
+				(void)putchar(ch);
+			}
+		exit(0);
+	}
+
+	/*
+	 * tr [-cs] string1 string2
+	 * Replace all characters (or complemented characters) in string1 with
+	 * the character in the same position in string2.  If the -s option is
+	 * specified, squeeze all the characters in string2.
+	 */
+	if (!isstring2)
+		usage();
+
+	s1.str = argv[0];
+	s1.state = NORMAL;
+	s1.lastch = OOBCH;
+	s1.type = T_CLASS | T_UL;
+
+	s2.str = argv[1];
+	s2.state = NORMAL;
+	s2.lastch = OOBCH;
+	s2.type = T_SEQ;
+
+	if (cflag) {
+		for (cnt = NCHARS, p = string1; cnt--;)
+			*p++ = OOBCH;
+		/*
+		 * More than a single character is meaningless with -c, but
+		 * allow "tr abc [\n*]".
+		 */
+		if (!next(&s2))
+			err("empty string2");
+		for (ch = s2.lastch; next(&s2) && s2.state != INFINITE;);
+		if (ch != s2.lastch)
+			err("-c option and string2 has multiple characters");
 		while (next(&s1))
-			tab[s1.lastch] = 1;
-		if (cflag)
-			for (tp = tab, indx = 0; indx < NCHARS; ++tp, ++indx)
-				*tp = !*tp;
+			string1[s1.lastch] = ch;
 		if (sflag)
-			for (lastch = OOBCH; (ch = getchar()) != EOF;) {
-				if (tab[ch] || (squeeze[ch] && lastch == ch))
-					continue;
-				lastch = ch;
-				putchar(ch);
-			}
-		else
-			while ((ch = getchar()) != EOF)
-				if (!tab[ch])
-					putchar(ch);
+			string2[ch] = 1;
+		for (cnt = 0, p = string1; cnt < NCHARS; ++p, ++cnt)
+			*p = *p == OOBCH ? ch : cnt;
 	} else {
-		s1.str = argv[0];
-		s2.str = argv[1];
-		s1.state = s2.state = NORM;
-		s1.lastch = s2.lastch = OOBCH;
-		if (cflag) {
+		s2.type |= T_UL;
+		while (next(&s1)) {
 			/*
-			 * if cflag is set, tr just pretends it only got one
-			 * character in string2.  As reasonable as anything
-			 * else.  Should really be an error.
+			 * If the second string runs out of characters, just
+			 * use the last one specified.
 			 */
-			while (next(&s2));
-			lastch = s2.lastch;
-			for (tp = tab, indx = 0; indx < NCHARS; ++tp, ++indx)
-				*tp = lastch;
-			while (next(&s1))
-				tab[s1.lastch] = s1.lastch;
-		} else {
-			for (tp = tab, indx = 0; indx < NCHARS; ++tp, ++indx)
-				*tp = indx;
-			while (next(&s1)) {
-				(void)next(&s2);
-				tab[s1.lastch] = s2.lastch;
-			}
+			if (!next(&s2))
+				err("empty string2");
+			if ((s1.state == ULSET || s2.state == ULSET) &&
+			    s1.state != s2.state)
+				err("mismatched lower/upper classes");
+			string1[s1.lastch] = s2.lastch;
+			if (sflag)
+				string2[s2.lastch] = 1;
 		}
-		if (sflag)
-			for (lastch = OOBCH; (ch = getchar()) != EOF;) {
-				ch = tab[ch];
-				if (squeeze[ch] && lastch == ch)
-					continue;
+		if (*s2.str)
+			err("string2 longer than string1");
+	}
+
+	if (sflag)
+		for (lastch = OOBCH; (ch = getchar()) != EOF;) {
+			ch = string1[ch];
+			if (!string2[ch] || lastch != ch) {
 				lastch = ch;
-				putchar(ch);
+				(void)putchar(ch);
 			}
-		else
-			while ((ch = getchar()) != EOF)
-				putchar((int)tab[ch]);
-	}
-	exit(0);
-}
-
-next(s)
-	register STR *s;
-{
-	register int ch;
-
-	if (s->state == EOS)
-		return(0);
-	if (s->state == INRANGE) {
-		if (++s->lastch == s->endrange)
-			s->state = NORM;
-		return(1);
-	}
-	if (!(ch = *s->str++)) {
-		s->state = EOS;
-		return(0);
-	}
-	if (ch == '\\') {			/* \### */
-		s->lastch = tran(s);
-		return(1);
-	}
-	if (ch == '-') {			/* ranges */
-		if (s->lastch == OOBCH)		/* "-a" */
-			goto fail2;
-		if (!(ch = *s->str++))		/* "a-" */
-			goto fail1;
-		if (ch == '\\')			/* \### */
-			ch = tran(s);
-		if (s->lastch > ch) { 		/* "z-a" */
-fail1:			--s->str;
-fail2:			s->lastch = '-';
-			return(1);
 		}
-		if (s->lastch == ch)		/* "a-a" */
-			return(next(s));
-		s->state = INRANGE;		/* "a-z" */
-		s->endrange = ch;
-		return(1);
-	}
-	s->lastch = ch;
-	return(1);
+	else
+		while ((ch = getchar()) != EOF)
+			(void)putchar(string1[ch]);
+	exit (0);
 }
 
-/*
- * Translate \-escapes.  Up to 3 octal digits => char; no digits => literal.
- * Unadorned backslash "\" is like \000.
- */
-tran(s)
-	register STR *s;
+static void
+setup(string, arg, str, cflag, type)
+	int *string;
+	char *arg;
+	STR *str;
+	int cflag;
+	u_int type;
 {
-	register int ch, cnt = 0, val = 0;
+	register int cnt, *p;
 
-	for (;;) {
-		ch = *s->str++;
-		if (!isascii(ch) || !isdigit(ch) || ++cnt > 3)
-			break;
-		val = val * 8 + ch - '0';
-	}
-	if (cnt || ch == 0)
-		s->str--;
-	return (cnt ? val : ch);
+	str->str = arg;
+	str->state = NORMAL;
+	str->lastch = OOBCH;
+	str->type = type;
+
+	bzero(string, NCHARS * sizeof(int));
+	while (next(str))
+		string[str->lastch] = 1;
+	if (cflag)
+		for (p = string, cnt = NCHARS; cnt--; ++p)
+			*p = !*p;
+}
+
+static void
+usage()
+{
+	(void)fprintf(stderr, "usage: tr [-cs] string1 string2\n");
+	(void)fprintf(stderr, "       tr [-c] -d string1\n");
+	(void)fprintf(stderr, "       tr [-c] -s string1\n");
+	(void)fprintf(stderr, "       tr [-c] -ds string1 string2\n");
+	exit(1);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "tr: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
 }
