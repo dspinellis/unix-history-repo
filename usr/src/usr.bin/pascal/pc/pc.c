@@ -1,8 +1,9 @@
-static	char sccsid[] = "@(#)pc.c 3.21 %G%";
+static	char sccsid[] = "@(#)pc.c 3.22 %G%";
 
 #include <stdio.h>
 #include <signal.h>
 #include <wait.h>
+#include <sys/param.h>
 
 /*
  * Pc - front end for Pascal compiler.
@@ -20,12 +21,14 @@ char	*mcrt0 = "/lib/mcrt0.o";
 char	*gcrt0 = "/usr/lib/gcrt0.o";
 
 char	*mktemp();
+char	*tmpdir = "/tmp";
+char	tmp0[MAXPATHLEN], tmp1[MAXPATHLEN];
 char	*tname[2];
 char	*tfile[2];
 
 char	*setsuf(), *savestr();
 
-int	Jflag, Sflag, Oflag, Tlflag, cflag, gflag, pflag, wflag;
+int	Jflag, Sflag, Oflag, Tlflag, cflag, gflag, pflag, wflag, tflag;
 int	debug;
 
 #define	NARGS	512
@@ -40,8 +43,10 @@ int	pc3argx = 1;
 #define	ldargs	pc0args
 /* char	*pc3args[NARGS] =	{ "pc3", 0 }; */
 /* char	*ldargs[NARGS] =	{ "ld", "-X", "/lib/crt0.o", 0, }; */
+
+				/* as -J -t tmpdir -o objfile srcfile \0 */
 int	asargx;
-char	*asargs[6] =		{ "as", 0, };
+char	*asargs[8] =		{ "as", 0, };
 
 char *mesg[] = {
 	0,
@@ -144,6 +149,15 @@ main(argc, argv)
 				exit(1);
 			}
 			continue;
+		case 't':
+			i++;
+			if (i == argc) {
+				fprintf(stderr, "pc: -T but no directory\n");
+				exit(1);
+			}
+			tmpdir = argv[i];
+			tflag = 1;
+			continue;
 		case 'O':
 			Oflag = 1;
 			continue;
@@ -210,9 +224,6 @@ main(argc, argv)
 			gflag = 1;
 			pc0args[pc0argx++] = argp;
 			continue;
-		case 't':
-			fprintf(stderr, "pc: -t is default; -C for checking\n");
-			continue;
 		case 'p':
 			if (argp[2] == 'g')
 				crt0 = gcrt0;
@@ -228,8 +239,10 @@ main(argc, argv)
 		fprintf(stderr, "pc: warning: -g overrides -O\n");
 		Oflag = 0;
 	}
-	tname[0] = mktemp("/tmp/p0XXXXXX");
-	tname[1] = mktemp("/tmp/p1XXXXXX");
+	sprintf(tmp0, "%s/%s", tmpdir, "p0XXXXXX");
+	tname[0] = mktemp(tmp0);
+	sprintf(tmp1, "%s/%s", tmpdir, "p1XXXXXX");
+	tname[1] = mktemp(tmp1);
 	savargx = pc0argx;
 	for (i = 0; i < argc; i++) {
 		argp = argv[i];
@@ -239,6 +252,12 @@ main(argc, argv)
 			asargx = 1;
 			if (Jflag)
 				asargs[asargx++] = "-J";
+#			ifdef vax
+				if (tflag) {
+					asargs[asargx++] = "-t";
+					asargs[asargx++] = tmpdir;
+				}
+#			endif vax
 			asargs[asargx++] = argp;
 			asargs[asargx++] = "-o";
 			tfile[1] = setsuf(argp, 'o');
@@ -286,6 +305,12 @@ main(argc, argv)
 		asargx = 1;
 		if (Jflag)
 			asargs[asargx++] = "-J";
+#		ifdef vax
+			if (tflag) {
+				asargs[asargx++] = "-t";
+				asargs[asargx++] = tmpdir;
+			}
+#		endif vax
 		asargs[asargx++] = tfile[0];
 		asargs[asargx++] = "-o";
 		tfile[1] = setsuf(argp, 'o');
@@ -372,6 +397,9 @@ duplicate:
 		case 'l':
 			if (argp[2])
 				ldargs[ldargx++] = argp;
+			continue;
+		case 't':
+			i++;
 			continue;
 		case 'c':
 		case 'g':
