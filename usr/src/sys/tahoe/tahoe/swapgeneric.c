@@ -1,4 +1,4 @@
-/*	swapgeneric.c	1.4	86/11/16	*/
+/*	swapgeneric.c	1.5	86/11/25	*/
 
 #include "../machine/pte.h"
 
@@ -17,7 +17,7 @@
 /*
  * Generic configuration;  all in one
  */
-dev_t	rootdev;
+dev_t	rootdev = NODEV;
 dev_t	argdev = NODEV;
 dev_t	dumpdev = NODEV;
 int	nswap;
@@ -97,33 +97,6 @@ doswap:
 		rootdev = dumpdev;
 }
 
-getchar()
-{
-	char c;
-	int timo;
-	extern struct cpdcb_i consin[];
-	extern struct cphdr *lasthdr;
-#define cpin consin[CPCONS]
-
-	timo = 10000;
-	uncache((char *)&lasthdr->cp_unit);
-	while ((lasthdr->cp_unit&CPTAKE) == 0 && --timo)
-		uncache(&lasthdr->cp_unit);
-	cpin.cp_hdr.cp_unit = CPCONS;	/* Resets done bit */
-	cpin.cp_hdr.cp_comm = CPREAD;
-	cpin.cp_hdr.cp_count = 1;
-	mtpr(CPMDCB, &cpin);
-	while ((cpin.cp_hdr.cp_unit & CPDONE) == 0) 
-		uncache(&cpin.cp_hdr.cp_unit);
-	uncache(&cpin.cpi_buf[0]);
-	c = cpin.cpi_buf[0] & 0x7f;
-	lasthdr = (struct cphdr *)&cpin;
-	if (c == '\r')
-		c = '\n';
-	printf("%c", c);	/* takes care of interrupts & parity */
-	return (c);
-}
-
 gets(cp)
 	char *cp;
 {
@@ -132,7 +105,7 @@ gets(cp)
 
 	lp = cp;
 	for (;;) {
-		c = getchar() & 0177;
+		printf("%c", c = cngetc()&0177);
 		switch (c) {
 		case '\n':
 		case '\r':
