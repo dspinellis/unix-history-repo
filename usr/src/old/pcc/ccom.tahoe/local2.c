@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.17 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -392,21 +392,28 @@ zzzcode( p, c ) register NODE *p; {
 		sconv(p, c == 'V');
 		break;
 
-	case 'W':		/* SCONV float/double => unsigned */
+	case 'W': {		/* SCONV or ASSIGN float/double => unsigned */
+		NODE *src = p->in.op == SCONV ? p->in.left : p->in.right;
+
 		putstr("ld");
-		prtype(p->in.left);
+		prtype(src);
 		putchar('\t');
-		adrput(p->in.left);
+		adrput(src);
 		putstr("\n\t");
 		float_to_unsigned(p);
 		break;
+	}
 
-	case 'Y':		/* SCONV unsigned => float/double */
+	case 'Y':		/* SCONV or ASSIGN unsigned => float/double */
 		unsigned_to_float(p);	/* stores into accumulator */
 		putstr("\n\tst");
 		prtype(p);
 		putchar('\t');
-		adrput(resc);
+		if (p->in.op == SCONV)
+			adrput(resc);
+		else
+			adrput(p->in.left);
+		rtyflg = 1;
 		break;
 
 	case 'Z':
@@ -605,24 +612,35 @@ float_to_unsigned(p)
 	int label1 = getlab();
 	int label2 = getlab();
 	int label3 = getlab();
+	NODE *src, *dst;
+
+	if (p->in.op == SCONV) {
+		src = p->in.left;
+		dst = resc;
+	} else {
+		src = p->in.right;
+		dst = p->in.left;
+	}
 
 	printf(".data\n\t.align\t2\nL%d:\n\t.long\t0x50000000", label1);
-	if (l->in.type == DOUBLE)
-		putstr(", 0x00000000");
-	putstr(" # .double 2147483648\n\t.text\n\tcmp");
-	prtype(l);
+	if (src->in.type == DOUBLE)
+		putstr(", 0x00000000 # .double");
+	else
+		putstr(" # .float");
+	putstr(" 2147483648\n\t.text\n\tcmp");
+	prtype(src);
 	printf("\tL%d\n\tjlss\tL%d\n\tsub", label1, label2);
-	prtype(l);
+	prtype(src);
 	printf("\tL%d\n\tcv", label1);
-	prtype(l);
+	prtype(src);
 	putstr("l\t");
-	adrput(resc);
+	adrput(dst);
 	putstr("\n\taddl2\t$-2147483648,");
-	adrput(resc);
+	adrput(dst);
 	printf("\n\tjbr\tL%d\nL%d:\n\tcv", label3, label2);
-	prtype(l);
+	prtype(src);
 	putstr("l\t");
-	adrput(resc);
+	adrput(dst);
 	printf("\nL%d:", label3);
 }
 
@@ -635,19 +653,32 @@ unsigned_to_float(p)
 {
 	int label1 = getlab();
 	int label2 = getlab();
+	NODE *src, *dst;
+
+	if (p->in.op == SCONV) {
+		src = p->in.left;
+		dst = resc;
+	} else {
+		src = p->in.right;
+		dst = p->in.left;
+	}
 
 	printf(".data\n\t.align\t2\nL%d:\n\t.long\t0x50800000", label2);
 	if (p->in.type == DOUBLE)
-		putstr(", 0x00000000");
-	putstr(" # .double 4294967296\n\t.text\n\tmovl\t");
-	adrput(p->in.left);
+		putstr(", 0x00000000 # .double");
+	else
+		putstr(" # .float");
+	putstr(" 4294967296\n\t.text\n\tmovl\t");
+	adrput(src);
 	putchar(',');
-	adrput(resc);
+	adrput(dst);
 	putstr("\n\tcvl");
 	prtype(p);
 	putchar('\t');
-	adrput(resc);
-	printf("\n\tjgeq\tL%d\n\taddd\tL%d\nL%d:", label1, label2, label1);
+	adrput(dst);
+	printf("\n\tjgeq\tL%d\n\tadd", label1);
+	prtype(p);
+	printf("\tL%d\nL%d:", label2, label1);
 }
 
 /*
@@ -682,15 +713,20 @@ sconv(p, forcc)
 	int val;
 
 	if (p->in.op == ASSIGN) {
-		src = getlr(p, 'R');
-		dst = getlr(p, 'L');
+		src = p->in.right;
+		dst = p->in.left;
 		dstlen = tlen(dst);
 		dsttype = dst->in.type;
-	} else /* if (p->in.op == SCONV || optype(p->in.op) == LTYPE) */ {
-		src = getlr(p, 'L');
-		dst = getlr(p, '1');
+	} else if (p->in.op == SCONV) {
+		src = p->in.left;
+		dst = resc;
 		dstlen = tlen(p);
 		dsttype = p->in.type;
+	} else /* if (p->in.op == OPLEAF) */ {
+		src = p;
+		dst = resc;
+		dstlen = SZINT/SZCHAR;
+		dsttype = ISUNSIGNED(src->in.type) ? UNSIGNED : INT;
 	}
 
 	if (src->in.op == REG) {
@@ -1260,10 +1296,23 @@ optim2( p ) register NODE *p; {
 
 	case SCONV:
 		l = p->in.left;
-		/* clobber conversions w/o side effects */
-		if (!anyfloat(p, l) && l->in.op != PCONV &&
+		if (anyfloat(p, l)) {
+			/* save some labor later */
+			NODE *t = talloc();
+
+			if (p->in.type == UCHAR || p->in.type == USHORT) {
+				*t = *p;
+				t->in.type = UNSIGNED;
+				p->in.left = t;
+			} else if (l->in.type == UCHAR || l->in.type == USHORT) {
+				*t = *p;
+				t->in.type = INT;
+				p->in.left = t;
+			}
+		} else if (l->in.op != PCONV &&
 		    l->in.op != CALL && l->in.op != UNARY CALL &&
 		    tlen(p) == tlen(l)) {
+			/* clobber conversions w/o side effects */
 			if (l->in.op != FLD)
 				l->in.type = p->in.type;
 			ncopy(p, l);
@@ -1291,6 +1340,18 @@ optim2( p ) register NODE *p; {
 				p->in.right = r->in.left;
 				r->in.op = FREE;
 			}
+		} else if (p->in.left->in.type == UNSIGNED && 
+			   r->in.type == UNSIGNED) {
+			/* let the code table handle it */
+			p->in.right = r->in.left;
+			r->in.op = FREE;
+		} else if ((p->in.left->in.type == FLOAT ||
+			    p->in.left->in.type == DOUBLE) &&
+			   p->in.left->in.type == r->in.type &&
+			   r->in.left->in.type == UNSIGNED) {
+			/* let the code table handle it */
+			p->in.right = r->in.left;
+			r->in.op = FREE;
 		}
 		return;
 	}
