@@ -1,4 +1,4 @@
-/* vsort.c	1.8	84/02/05
+/* vsort.c	1.9	84/03/14
  *
  *	Sorts and shuffles ditroff output for versatec wide printer.  It
  *	puts pages side-by-side on the output, and fits as many as it can
@@ -39,7 +39,7 @@
 
 #ifdef DEBUGABLE
 int	dbg = 0;	/* debug flag != 0 means do debug output */
-float	BAND = 2.0;
+float	BAND = 1.0;
 #endif
 
 
@@ -181,6 +181,8 @@ register FILE *fp;
 		oflush();
 	    }
 	    switch (c) {
+		case '\0':	/* filter out noise */
+			break;
 		case '\n':	/* let text input through */
 		case '\t':
 		case ' ':
@@ -210,8 +212,9 @@ register FILE *fp;
 		case 'C':	/* white-space terminated funny character */
 			setlimit(vpos - up, vpos + down);
 			*op++ = c;
-			while ((*op++ = c = getc(fp)) != ' ' && c != '\n')
-				;
+			do
+			    *op++ = c = getc(fp);
+			while (c != ' ' && c != '\n' && c != EOF);
 			break;
 		case 't':	/* straight text */
 			setlimit(vpos - up, vpos + down);
@@ -220,22 +223,25 @@ register FILE *fp;
 			op += strlen(op);
 			break;
 		case 'D':	/* draw function */
-			fgets(buf, SLOP, fp);
+			if (fgets(buf, SLOP, fp) == NULL)
+			    error(FATAL, "unexpected end of input");
 			switch (buf[0]) {
 			case 's':	/* "style" */
 				sscanf(buf+1, "%d", &style);
 				sprintf(op, "D%s", buf);
+				op += strlen(op);
 				break;
 			case 't':	/* thickness */
 				sscanf(buf+1, "%d", &thick);
 				sprintf(op, "D%s", buf);
+				op += strlen(op);
 				break;
 			case 'l':	/* draw a line */
 				sscanf(buf+1, "%d %d", &n, &m);
 				if (m < 0) {
 				    setlimit(vpos+m-thick/2, vpos+thick/2);
 				} else {
-				    setlimit(vpos-thick/2, vpos+m+thick/2);
+				    setlimit(vpos-(1+thick/2),vpos+1+m+thick/2);
 				}
 				sprintf(op, "D%s", buf);
 				op += strlen(op);
@@ -270,7 +276,8 @@ register FILE *fp;
 				    sprintf(op, "%s", buf);   /* point input */
 				    op += strlen(op);
 				    if (*(op - 1) != '\n')
-					fgets(buf, SLOP, fp);
+					if (fgets(buf, SLOP, fp) == NULL)
+					    error(FATAL, "unexpected end of input");
 				} while (*(op - 1) != '\n');
 				m = n = vpos;		/* = max/min vertical */
 							/* position for curve */
@@ -300,7 +307,7 @@ register FILE *fp;
 		case 's':
 			*op++ = c;
 			size = getnumber(fp);
-			up = (size * INCH) / POINT;	/* ROUGH estimate */
+			up = ((size + 1)*INCH) / POINT;	/* ROUGH estimate */
 			down = up / 3;			/* of max up/down */
 			break;
 		case 'f':
@@ -331,15 +338,25 @@ register FILE *fp;
 			break;
 		case 'n':	/* end of line */
 			hpos = leftmarg;
+			*op++ = c;
+			do
+			    *op++ = c = getc(fp);
+			while (c != '\n' && c != EOF);
+			break;
 		case '#':	/* comment */
+			do
+			    c = getc(fp);
+			while (c != '\n' && c != EOF);
+			break;
 		case 'x':	/* device control */
 			startspan(vpos);
 			*op++ = c;
-			while ((*op++ = getc(fp)) != '\n')
-				;
+			do
+			    *op++ = c = getc(fp);
+			while (c != '\n' && c != EOF);
 			break;
 		default:
-			error(!FATAL, "unknown input character %o %c\n", c, c);
+			error(!FATAL, "unknown input character %o %c", c, c);
 			done();
 	    }
 	}
@@ -355,7 +372,7 @@ register FILE *fp;
  | Side Efct:	may start new span.
  *----------------------------------------------------------------------------*/
 
-#define diffspan(x,y)	((x)/((int)(BAND * INCH)) - (y)/((int)(BAND * INCH)))
+#define diffspan(x,y)	((x)/((int)(BAND * INCH)) != (y)/((int)(BAND * INCH)))
 
 setlimit(newup, newdown)
 register int newup;
@@ -368,12 +385,13 @@ register int newdown;
 	if (newdown < 0) newdown = 0;
 
 	if (diffspan(currup, currdown)) {	/* now spans > one band */
-	    if ((newup < currup && diffspan(newup, currup))
-		    || (newdown > currdown && diffspan(newdown, currdown))
-		    || diffspan(newup, newdown) == 0) {
+	    if (diffspan(newup, currup) || diffspan(newdown, currdown)) {
 		startspan (vpos);
 		vlp->u = newup;
 		vlp->d = newdown;
+	    } else {
+		if (newup < currup) vlp->u = newup;
+		if (newdown > currdown) vlp->d = newdown;
 	    }
 	} else {
 	    if (newup < currup) {	/* goes farther up than before */
@@ -446,15 +464,13 @@ oflush()	/* sort, then dump out contents of obuf */
 	register int botv;
 	register int i;
 	register char *p;
-	int compar();
 
 #ifdef DEBUGABLE
 	if (dbg) fprintf(stderr, "into oflush, V=%d\n", vpos);
 #endif
 	if (op == obuf)
 		return;
- 	qsort((char *) vlist, nvlist, sizeof (struct vlist), compar);
-	*op++ = 0;
+	*op = 0;
 
 	topv = 0;
 	botv = NLINES - 1;
@@ -469,9 +485,8 @@ oflush()	/* sort, then dump out contents of obuf */
 		if(dbg>1)fprintf(stderr,"u=%d, d=%d,%.60s\n",vp->u,vp->d,vp->p);
 #endif
 		if (vp->u <= botv && vp->d >= topv) {
-		    printf("H%dV%ds%df%dDs%d\nDt%d\n",
-				vp->h, vp->v, vp->s, vp->f, vp->st, vp->t);
-		    for (p = vp->p; *p != 0; p++) putchar(*p);
+		    printf("H%dV%ds%df%d\nDs%d\nDt%d\n%s",
+			    vp->h, vp->v, vp->s, vp->f, vp->st, vp->t, vp->p);
 		}
 		notdone |= vp->d > botv;	/* not done if there's still */
 	    }					/* something to put lower */
@@ -498,12 +513,6 @@ oflush()	/* sort, then dump out contents of obuf */
 	nvlist = 1;
 }
 
-
-compar(p1, p2)
-struct vlist *p1, *p2;
-{
-	return(p1->v - p2->v);
-}
 
 done()
 {
