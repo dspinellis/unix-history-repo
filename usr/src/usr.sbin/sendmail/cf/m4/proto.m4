@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.9 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.10 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -299,6 +299,9 @@ undivert(6)dnl
 ###  Rulset 3 -- Name Canonicalization  ###
 ###########################################
 S3
+
+# handle null input (translate to <> special case)
+R$@			$@ <@>
 
 # basic textual canonicalization -- note RFC733 heuristic here
 R$*<$*>$*<$*>$*		<$2>$3$4$5			strip multiple <> <>
