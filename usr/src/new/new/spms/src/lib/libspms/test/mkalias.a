@@ -1,0 +1,44 @@
+!<arch>
+Imkalias        418696323   968   27    100644  102       `
+^
+/
+^^
+^libspms^test
+^libspms^test/xppath.a
+^libspms
+^libspms^test^work
+^libspms^test
+test
+?
+^libspms
+Omkalias        418696323   968   27    100644  53        `
+^
+/
+^
+test
+xppath.a
+libspms
+work
+test
+test
+?
+libspms
+
+Tmkalias.c      418696326   968   27    100644  315       `
+/*
+ * mkalias()
+ */
+#include <stdio.h>
+#include "path.h"
+
+main()
+{
+	char *gets();			/* get a line from stdin */
+	char *mkalias();		/* extract project directory alias */
+	char ppathname[PATHSIZE];	/* project pathname input buffer */
+
+	while (gets(ppathname) != NULL)
+		printf("%s\n",mkalias(ppathname));
+	exit(0);
+}
+

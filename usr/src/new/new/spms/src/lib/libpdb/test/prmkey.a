@@ -1,0 +1,60 @@
+!<arch>
+Iprmkey         418698360   968   27    100644  105       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+Oprmkey         418698361   968   27    100644  99        `
+aaa
+bbb|ccc
+ddd|:
+:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+Tprmkey.c       418698366   968   27    100644  443       `
+/*
+ * prmkey()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+
+char *PGN = "Tprmkey";			/* program name */
+
+main()
+{
+	int closepdb();			/* close database */
+	PDB *mustopenpdb();		/* must open database or die */
+	PDB *pdbp;			/* database stream */
+	void prmkey();			/* remove specified key */
+	
+	pdbp = mustopenpdb("T_INPUT", ".", "rw");
+	prmkey("eee", pdbp);
+	prmkey("fff", pdbp);
+	prmkey("fff", pdbp);
+	closepdb(pdbp);
+	exit(0);
+}
+
+Tprmkey.sh      418870196   968   27    100755  143       `
+#!/bin/csh -f
+#
+# prmkey()
+#
+cp Iprmkey T_INPUT
+Tprmkey
+cat T_INPUT |& diff - Oprmkey
+set diffstatus = $status
+rm -f T_INPUT
+exit($diffstatus)
+

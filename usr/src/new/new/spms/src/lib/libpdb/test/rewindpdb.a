@@ -1,0 +1,72 @@
+!<arch>
+Irewindpdb      418698411   968   27    100644  105       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+Orewindpdb      418698411   968   27    100644  114       `
+aaa
+bbb|ccc
+ddd|eee:
+new|fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+new|:
+:jjj
+kkk|lll|:lp:lp=andherealso:
+Trewindpdb.c    418698416   968   27    100644  778       `
+/*
+ * rewindpdb()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+
+char *PGN = "Trewindpdb";		/* program name */
+
+main()
+{
+	int closepdb();			/* close database */
+	int i;				/* input case counter */
+	int pgetent();			/* load next entry into buffer */
+	int pputent();			/* write buffer to database */
+	PDB *mustopenpdb();		/* must open database or die */
+	PDB *pdbp;			/* database stream */
+	void rewindpdb();		/* rewind database */
+	
+	pdbp = mustopenpdb("T_INPUT", ".", "rw");
+	rewindpdb(pdbp);
+	for (i = 1; pgetent(pdbp) != EOF; i++)
+		{
+		switch (i)
+			{
+			case 4: pbaddkey("new");
+				break;
+			case 7: pbaddkey("new");
+				break;
+			}
+		pputent(pdbp);
+		}
+	rewindpdb(pdbp);
+	while (pgetent(pdbp) != EOF)
+		printf("%s\n", pdbp->pbuf);
+	closepdb(pdbp);
+	exit(0);
+}
+Trewindpdb.sh   418870202   968   27    100755  143       `
+#!/bin/csh -f
+#
+# rewindpdb()
+#
+cp Irewindpdb T_INPUT
+Trewindpdb |& diff - Orewindpdb
+set diffstatus = $status
+rm -f T_INPUT
+exit($diffstatus)
+

@@ -1,0 +1,57 @@
+!<arch>
+Ipbchgkey       418698020   968   27    100644  105       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+Opbchgkey       418698020   968   27    100644  101       `
+ccc
+ccc
+eeee|ff:
+hhh:lp=here:id=butnothere
+hhh|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+Tpbchgkey.c     418698024   968   27    100644  683       `
+/*
+ * pbchgkey()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+
+char *PGN = "Tpbchgkey";		/* program name */
+
+main()
+{
+	int closepdb();			/* close database */
+	int pbchgkey();			/* change existing key */
+	int pgetent();			/* load next entry into buffer */
+	PDB *mustopenpdb();		/* must open database or die */
+	PDB *pdbp;			/* database stream */
+	
+	pdbp = mustopenpdb("Ipbchgkey", ".", "r");
+	while (pgetent(pdbp) != EOF)
+		{
+		pbchgkey("aaa", "bbb");
+		pbchgkey("bbb", "ccc");
+		pbchgkey("ddd", "eeee");
+		pbchgkey("eee", "ff");
+		pbchgkey("fff", "ggg");
+		pbchgkey("ggg", "hhh");
+		pbchgkey("jjj", "kkk");
+		printf("%s\n", pdbp->pbuf);
+		}
+	closepdb(pdbp);
+	exit(0);
+}
+

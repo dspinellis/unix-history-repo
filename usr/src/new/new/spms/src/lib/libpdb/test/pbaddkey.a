@@ -1,0 +1,76 @@
+!<arch>
+Ipbaddkey       418697991   968   27    100644  105       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+Opbaddkey       418697991   968   27    100644  125       `
+aaa
+bbb|ccc
+ddd|eee:
+new|fff:lp=here:id=butnothere
+ggg|
+new|hhh|iii:lp=andhere
+new|:
+jjj|:jjj
+kk|kkk|lll|:lp:lp=andherealso:
+
+Tpbaddkey.c     418697998   968   27    100644  979       `
+/*
+ * pbaddkey()
+ * pbcmpkey()
+ * pbskipkey()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+
+char *PGN = "Tpbaddkey";		/* program name */
+
+main()
+{
+	int closepdb();			/* close database */
+	int i;				/* input case counter */
+	int pbaddkey();			/* add key */
+	int pgetent();			/* load next entry into buffer */
+	PDB *mustopenpdb();		/* must open database or die */
+	PDB *pdbp;			/* database stream */
+	
+	pdbp = mustopenpdb("Ipbaddkey", ".", "r");
+	for (i = 1; pgetent(pdbp) != EOF; i++)
+		{
+		switch (i)
+			{
+			case 1: pbaddkey("aaa");
+				break;
+			case 2: pbaddkey("ccc");
+				break;
+			case 3: pbaddkey("eee");
+				break;
+			case 4: pbaddkey("new");
+				break;
+			case 5: pbaddkey("ggg");
+				break;
+			case 6: pbaddkey("hhh");
+				pbaddkey("new");
+				pbaddkey("hhh");
+				break;
+			case 7: pbaddkey("new");
+				break;
+			case 8: pbaddkey("jjj");
+				break;
+			case 9: pbaddkey("kk");
+				break;
+			}
+		printf("%s\n", pdbp->pbuf);
+		}
+	closepdb(pdbp);
+	exit(0);
+}
+

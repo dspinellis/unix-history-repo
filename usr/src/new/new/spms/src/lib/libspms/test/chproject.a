@@ -1,0 +1,47 @@
+!<arch>
+Ochproject      418696255   968   27    100644  192       `
+../../../../src/lib/libspms
+Tchproject: mumble: no such project
+../../../../src/lib/libspms
+Tchproject: mumble: no such project
+../../../../src/lib/libspms
+Tchproject: mumble: no such project
+Tchproject.c    418696257   968   27    100644  362       `
+/*
+ * chproject()
+ */
+#include <stdio.h>
+#include "yesno.h"
+
+char *PGN = "Tchproject";		/* program name */
+
+main()
+{
+	int chproject();		/* change current working project */
+
+	if (chproject("^libspms") == NO)
+		exit(1);
+	printf("%s\n", getcwp());
+	fflush(stdout);
+	if (chproject("mumble") == NO)
+		exit(1);
+	printf("%s\n", getcwp());
+	fflush(stdout);
+	exit(0);
+}
+Tchproject.sh   418870290   968   27    100755  286       `
+#!/bin/csh -f
+#
+# chproject()
+#
+setenv HOME ../../../..
+setenv PROJECT ../../../../src/lib/libtree
+Tchproject >& T_OUTPUT
+unsetenv PROJECT
+Tchproject >>& T_OUTPUT
+setenv PROJECT ""
+Tchproject >>& T_OUTPUT
+diff T_OUTPUT Ochproject
+set diffstatus=$status
+rm -f T_OUTPUT
+exit($diffstatus)

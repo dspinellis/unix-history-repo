@@ -1,0 +1,57 @@
+!<arch>
+Iprmflag        418698332   968   27    100644  109       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere:lp:
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+Oprmflag        418698332   968   27    100644  106       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere:
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+Tprmflag.c      418698340   968   27    100644  430       `
+/*
+ * prmflag()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+
+char *PGN = "Tprmflag";			/* program name */
+
+main()
+{
+	int closepdb();			/* close database */
+	PDB *mustopenpdb();		/* must open database or die */
+	PDB *pdbp;			/* database stream */
+	void prmflag();			/* remove flags */
+	
+	pdbp = mustopenpdb("T_INPUT", ".", "rw");
+	prmflag("fff", "lp", pdbp);
+	prmflag("fff", "lp", pdbp);
+	closepdb(pdbp);
+	exit(0);
+}
+Tprmflag.sh     418870194   968   27    100755  147       `
+#!/bin/csh -f
+#
+# prmflag()
+#
+cp Iprmflag T_INPUT
+Tprmflag
+cat T_INPUT |& diff - Oprmflag
+set diffstatus = $status
+rm -f T_INPUT
+exit($diffstatus)
+

@@ -1,0 +1,47 @@
+!<arch>
+Ipblenkey       418698128   968   27    100644  103       `
+aaa
+bbb|ccc
+dd|eee:
+fff:lp=here:id=butnothere
+ggg|
+|iii:lp=andhere
+
+:jjj
+kkkkk|lll|:lp:lp=andherealso:
+
+Opblenkey       418698128   968   27    100644  18        `
+3
+3
+2
+3
+3
+0
+0
+0
+5
+Tpblenkey.c     418698135   968   27    100644  497       `
+/*
+ * pblenkey()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+
+char *PGN = "Tpblenkey";		/* program name */
+
+main()
+{
+	int closepdb();			/* close database */
+	int pblenkey();			/* length of key */
+	int pgetent();			/* load next entry into buffer */
+	PDB *mustopenpdb();		/* must open database or die */
+	PDB *pdbp;			/* database stream */
+	
+	pdbp = mustopenpdb("Ipblenkey", ".", "r");
+	while (pgetent(pdbp) != EOF)
+		printf("%d\n", pblenkey(pdbp->pbuf));
+	closepdb(pdbp);
+	exit(0);
+}
+
