@@ -8,6 +8,10 @@ SRCS=	acksend.c candidate.c correct.c master.c networkdelta.c readmsg.c \
 DPADD=	${LIBUTIL}
 LDADD=	-lutil
 MAN8=	timed.8
+CLEANFILES+=	cksum.i386.c
+
+cksum.i386.c:
+	ln -s $(.CURDIR)/cksum.tahoe.c cksum.i386.c
 
 .include "../../Makefile.inc"
 .include <bsd.prog.mk>
