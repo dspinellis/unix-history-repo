@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)terminal.c	1.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)terminal.c	1.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <arpa/telnet.h>
@@ -32,16 +32,16 @@ char	ttyobuf[2*BUFSIZ], ttyibuf[BUFSIZ];
 
 int termdata;			/* Debugging flag */
 
+#ifdef	USE_TERMIO
 char
-    termEofChar,
-    termEraseChar,
     termFlushChar,
-    termIntChar,
-    termKillChar,
-#if	defined(MSDOS)
     termLiteralNextChar,
-#endif	/* defined(MSDOS) */
-    termQuitChar;
+    termSuspChar,
+    termWerasChar,
+    termRprntChar,
+    termStartChar,
+    termStopChar;
+#endif
 
 /*
  * initialize the terminal data structures.
@@ -62,8 +62,11 @@ init_terminal()
 /*
  *		Send as much data as possible to the terminal.
  *
- *		The return value indicates whether we did any
- *	useful work.
+ *		Return value:
+ *			-1: No useful work done, data waiting to go out.
+ *			 0: No data was waiting, so nothing was done.
+ *			 1: All waiting data was written out.
+ *			 n: All data - n was written out.
  */
 
 
@@ -99,7 +102,14 @@ int drop;
 	}
 	ring_consumed(&ttyoring, n);
     }
-    return n > 0;
+    if (n < 0)
+	return -1;
+    if (n == n0) {
+	if (n0)
+	    return -1;
+	return 0;
+    }
+    return n0 - n + 1;
 }
 
 
@@ -112,34 +122,46 @@ int drop;
 int
 getconnmode()
 {
-    static char newmode[16] =
-			{ 4, 5, 3, 3, 2, 2, 1, 1, 6, 6, 6, 6, 6, 6, 6, 6 };
-    int modeindex = 0;
+    extern int linemode;
+    int mode = 0;
+#ifdef	KLUDGELINEMODE
+    extern int kludgelinemode;
+#endif
 
-    if (dontlecho && (clocks.echotoggle > clocks.modenegotiated)) {
-	modeindex += 1;
+    if (In3270)
+	return(MODE_FLOW);
+
+    if (my_want_state_is_dont(TELOPT_ECHO))
+	mode |= MODE_ECHO;
+
+    if (localflow)
+	mode |= MODE_FLOW;
+
+#ifdef	KLUDGELINEMODE
+    if (kludgelinemode) {
+	if (my_want_state_is_dont(TELOPT_SGA)) {
+	    mode |= (MODE_TRAPSIG|MODE_EDIT);
+	    if (dontlecho && (clocks.echotoggle > clocks.modenegotiated)) {
+		mode &= ~MODE_ECHO;
+	    }
+	}
+	return(mode);
     }
-    if (should_he(TELOPT_ECHO)) {
-	modeindex += 2;
-    }
-    if (should_he(TELOPT_SGA)) {
-	modeindex += 4;
-    }
-    if (In3270) {
-	modeindex += 8;
-    }
-    return newmode[modeindex];
+#endif
+    if (my_want_state_is_will(TELOPT_LINEMODE))
+	mode |= linemode;
+    return(mode);
 }
 
 void
-setconnmode()
+setconnmode(force)
 {
-    TerminalNewMode(getconnmode());
+    TerminalNewMode(getconnmode()|(force?MODE_FORCE:0));
 }
 
 
 void
 setcommandmode()
 {
-    TerminalNewMode(0);
+    TerminalNewMode(-1);
 }

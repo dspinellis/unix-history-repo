@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_bsd.c	1.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_bsd.c	1.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -27,12 +27,12 @@ static char sccsid[] = "@(#)sys_bsd.c	1.18 (Berkeley) %G%";
 #if	defined(unix)
 
 #include <fcntl.h>
-#include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <signal.h>
 #include <errno.h>
+#include <arpa/telnet.h>
 
 #include "ring.h"
 
@@ -47,9 +47,20 @@ int
 	tin,			/* Input file descriptor */
 	net;
 
-static struct	tchars otc = { 0 }, ntc = { 0 };
-static struct	ltchars oltc = { 0 }, nltc = { 0 };
-static struct	sgttyb ottyb = { 0 }, nttyb = { 0 };
+#ifndef	USE_TERMIO
+struct	tchars otc = { 0 }, ntc = { 0 };
+struct	ltchars oltc = { 0 }, nltc = { 0 };
+struct	sgttyb ottyb = { 0 }, nttyb = { 0 };
+
+#define	ISPEED	ottyb.sg_ispeed
+#define	OSPEED	ottyb.sg_ospeed
+#else	/* USE_TERMIO */
+struct	termio old_tc = { 0 };
+extern struct termio new_tc;
+
+#define	ISPEED	(old_tc.c_cflag&CBAUD)
+#define	OSPEED	ISPEED
+#endif	/* USE_TERMIO */
 
 static fd_set ibits, obits, xbits;
 
@@ -97,6 +108,9 @@ TerminalAutoFlush()
 #endif	/* LNOFLSH */
 }
 
+#ifdef	KLUDGELINEMODE
+extern int kludgelinemode;
+#endif
 /*
  * TerminalSpecialChars()
  *
@@ -115,20 +129,34 @@ int	c;
 {
     void xmitAO(), xmitEL(), xmitEC(), intp(), sendbrk();
 
-    if (c == ntc.t_intrc) {
+    if (c == termIntChar) {
 	intp();
 	return 0;
-    } else if (c == ntc.t_quitc) {
-	sendbrk();
+    } else if (c == termQuitChar) {
+#ifdef	KLUDGELINEMODE
+	if (kludgelinemode)
+	    sendbrk();
+	else
+#endif
+	    sendabort();
 	return 0;
-    } else if (c == nltc.t_flushc) {
+    } else if (c == termEofChar) {
+	if (my_want_state_is_will(TELOPT_LINEMODE)) {
+	    sendeof();
+	    return 0;
+	}
+	return 1;
+    } else if (c == termSuspChar) {
+	sendsusp();
+	return(0);
+    } else if (c == termFlushChar) {
 	xmitAO();		/* Transmit Abort Output */
 	return 0;
     } else if (!MODE_LOCAL_CHARS(globalmode)) {
-	if (c == nttyb.sg_kill) {
+	if (c == termKillChar) {
 	    xmitEL();
 	    return 0;
-	} else if (c == nttyb.sg_erase) {
+	} else if (c == termEraseChar) {
 	    xmitEC();		/* Transmit Erase Character */
 	    return 0;
 	}
@@ -144,12 +172,17 @@ int	c;
 void
 TerminalFlushOutput()
 {
+#ifndef	USE_TERMIO
     (void) ioctl(fileno(stdout), TIOCFLUSH, (char *) 0);
+#else
+    (void) ioctl(fileno(stdout), TCFLSH, (char *) 0);
+#endif
 }
 
 void
 TerminalSaveState()
 {
+#ifndef	USE_TERMIO
     ioctl(0, TIOCGETP, (char *)&ottyb);
     ioctl(0, TIOCGETC, (char *)&otc);
     ioctl(0, TIOCGLTC, (char *)&oltc);
@@ -158,12 +191,68 @@ TerminalSaveState()
     nltc = oltc;
     nttyb = ottyb;
 
-    termEofChar = ntc.t_eofc;
-    termEraseChar = nttyb.sg_erase;
-    termFlushChar = nltc.t_flushc;
-    termIntChar = ntc.t_intrc;
-    termKillChar = nttyb.sg_kill;
-    termQuitChar = ntc.t_quitc;
+#else	/* USE_TERMIO */
+    ioctl(0, TCGETA, &old_tc);
+
+    new_tc = old_tc;
+
+    termFlushChar = 'O'&0x37;
+    termWerasChar = 'W'&0x37;
+    termRprntChar = 'R'&0x37;
+    termLiteralNextChar = 'V'&0x37;
+    termStartChar = 'Q'&0x37;
+    termStopChar = 'S'&0x37;
+#endif	/* USE_TERMIO */
+}
+
+char *
+tcval(func)
+register int func;
+{
+    switch(func) {
+    case SLC_IP:	return(&termIntChar);
+    case SLC_ABORT:	return(&termQuitChar);
+    case SLC_EOF:	return(&termEofChar);
+    case SLC_EC:	return(&termEraseChar);
+    case SLC_EL:	return(&termKillChar);
+    case SLC_XON:	return(&termStartChar);
+    case SLC_XOFF:	return(&termStopChar);
+#ifndef	CRAY
+    case SLC_AO:	return(&termFlushChar);
+    case SLC_SUSP:	return(&termSuspChar);
+    case SLC_EW:	return(&termWerasChar);
+    case SLC_RP:	return(&termRprntChar);
+    case SLC_LNEXT:	return(&termLiteralNextChar);
+#endif	CRAY
+
+    case SLC_SYNCH:
+    case SLC_BRK:
+    case SLC_AYT:
+    case SLC_EOR:
+    case SLC_FORW1:
+    case SLC_FORW2:
+    default:
+	return((char *)0);
+    }
+}
+
+void
+TerminalDefaultChars()
+{
+#ifndef	USE_TERMIO
+    ntc = otc;
+    nltc = oltc;
+    nttyb.sg_kill = ottyb.sg_kill;
+    nttyb.sg_erase = ottyb.sg_erase;
+#else	/* USE_TERMIO */
+    memcpy(new_tc.c_cc, old_tc.c_cc, sizeof(old_tc.c_cc));
+    termFlushChar = 'O'&0x37;
+    termWerasChar = 'W'&0x37;
+    termRprntChar = 'R'&0x37;
+    termLiteralNextChar = 'V'&0x37;
+    termStartChar = 'Q'&0x37;
+    termStopChar = 'S'&0x37;
+#endif	/* USE_TERMIO */
 }
 
 void
@@ -173,6 +262,24 @@ TerminalRestoreState()
 
 /*
  * TerminalNewMode - set up terminal to a specific mode.
+ *	MODE_ECHO: do local terminal echo
+ *	MODE_FLOW: do local flow control
+ *	MODE_TRAPSIG: do local mapping to TELNET IAC sequences
+ *	MODE_EDIT: do local line editing
+ *
+ *	Command mode:
+ *		MODE_ECHO|MODE_EDIT|MODE_FLOW|MODE_TRAPSIG
+ *		local echo
+ *		local editing
+ *		local xon/xoff
+ *		local signal mapping
+ *
+ *	Linemode:
+ *		local/no editing
+ *	Both Linemode and Single Character mode:
+ *		local/remote echo
+ *		local/no xon/xoff
+ *		local/no signal mapping
  */
 
 
@@ -181,106 +288,153 @@ TerminalNewMode(f)
 register int f;
 {
     static int prevmode = 0;
-    struct tchars *tc;
-    struct tchars tc3;
-    struct ltchars *ltc;
+#ifndef	USE_TERMIO
+    struct tchars tc;
+    struct ltchars ltc;
     struct sgttyb sb;
+#else	/* USE_TERMIO */
+    struct termio tmp_tc;
+#endif	/* USE_TERMIO */
     int onoff;
     int old;
-    struct	tchars notc2;
-    struct	ltchars noltc2;
-    static struct	tchars notc =	{ -1, -1, -1, -1, -1, -1 };
-    static struct	ltchars noltc =	{ -1, -1, -1, -1, -1, -1 };
 
-    globalmode = f;
+    globalmode = f&~MODE_FORCE;
     if (prevmode == f)
 	return;
-    old = prevmode;
-    prevmode = f;
-    sb = nttyb;
 
-    switch (f) {
-
-    case 0:
-	onoff = 0;
-	tc = &otc;
-	ltc = &oltc;
-	break;
-
-    case 1:		/* remote character processing, remote echo */
-    case 2:		/* remote character processing, local echo */
-    case 6:		/* 3270 mode - like 1, but with xon/xoff local */
-		    /* (might be nice to have "6" in telnet also...) */
-	    sb.sg_flags |= CBREAK;
-	    if ((f == 1) || (f == 6)) {
-		sb.sg_flags &= ~(ECHO|CRMOD);
-	    } else {
-		sb.sg_flags |= ECHO|CRMOD;
-	    }
-	    sb.sg_erase = sb.sg_kill = -1;
-	    if (localflow || (f == 6)) {
-		tc = &tc3;
-		tc3 = notc;
-		    /* get XON, XOFF characters */
-		tc3.t_startc = otc.t_startc;
-		tc3.t_stopc = otc.t_stopc;
-	    } else {
-		/*
-		 * If user hasn't specified one way or the other,
-		 * then default to not trapping signals.
-		 */
-		if (!donelclchars) {
-		    localchars = 0;
-		}
-		if (localchars) {
-		    notc2 = notc;
-		    notc2.t_intrc = ntc.t_intrc;
-		    notc2.t_quitc = ntc.t_quitc;
-		    tc = &notc2;
-		} else {
-		    tc = &notc;
-		}
-	    }
-	    ltc = &noltc;
-	    onoff = 1;
-	    break;
-    case 3:		/* local character processing, remote echo */
-    case 4:		/* local character processing, local echo */
-    case 5:		/* local character processing, no echo */
-	    sb.sg_flags &= ~CBREAK;
-	    sb.sg_flags |= CRMOD;
-	    if (f == 4)
-		sb.sg_flags |= ECHO;
-	    else
-		sb.sg_flags &= ~ECHO;
-	    notc2 = ntc;
-	    tc = &notc2;
-	    noltc2 = oltc;
-	    ltc = &noltc2;
+    /*
+     * Write any outstanding data before switching modes
+     * ttyflush() returns 0 only when there is no more data
+     * left to write out, it returns -1 if it couldn't do
+     * anything at all, otherwise it returns 1 + the number
+     * of characters left to write.
+     */
+    old = ttyflush(SYNCHing|flushout);
+    if (old < 0 || old > 1) {
+#ifndef	USE_TERMIO
+	ioctl(tin, TIOCGETP, (char *)&sb);
+#else	/* USE_TERMIO */
+	ioctl(tin, TCGETA, (char *)&tmp_tc);
+#endif	/* USE_TERMIO */
+	do {
 	    /*
-	     * If user hasn't specified one way or the other,
-	     * then default to trapping signals.
+	     * Wait for data to drain, then flush again.
 	     */
-	    if (!donelclchars) {
-		localchars = 1;
-	    }
-	    if (localchars) {
-		notc2.t_brkc = nltc.t_flushc;
-		noltc2.t_flushc = -1;
-	    } else {
-		notc2.t_intrc = notc2.t_quitc = -1;
-	    }
-	    noltc2.t_suspc = escape;
-	    noltc2.t_dsuspc = -1;
-	    onoff = 1;
-	    break;
-
-    default:
-	    return;
+#ifndef	USE_TERMIO
+	    ioctl(tin, TIOCSETP, (char *)&sb);
+#else	/* USE_TERMIO */
+	    ioctl(tin, TCSETAW, (char *)&tmp_tc);
+#endif	/* USE_TERMIO */
+	    old = ttyflush(SYNCHing|flushout);
+	} while (old < 0 || old > 1);
     }
-    ioctl(tin, TIOCSLTC, (char *)ltc);
-    ioctl(tin, TIOCSETC, (char *)tc);
-    ioctl(tin, TIOCSETP, (char *)&sb);
+
+    old = prevmode;
+    prevmode = f&~MODE_FORCE;
+#ifndef	USE_TERMIO
+    sb = nttyb;
+    tc = ntc;
+    ltc = nltc;
+#else
+    tmp_tc = new_tc;
+#endif
+
+    if (f&MODE_ECHO) {
+#ifndef	USE_TERMIO
+	sb.sg_flags |= ECHO;
+#else
+	tmp_tc.c_lflag |= ECHO;
+	tmp_tc.c_oflag |= ONLCR;
+	tmp_tc.c_iflag |= ICRNL;
+#endif
+    } else {
+#ifndef	USE_TERMIO
+	sb.sg_flags &= ~ECHO;
+#else
+	tmp_tc.c_lflag &= ~ECHO;
+	tmp_tc.c_oflag &= ~ONLCR;
+	tmp_tc.c_iflag &= ~ICRNL;
+#endif
+    }
+
+    if ((f&MODE_FLOW) == 0) {
+#ifndef	USE_TERMIO
+	tc.t_startc = -1;
+	tc.t_stopc = -1;
+#else
+	tmp_tc.c_iflag &= ~(IXANY|IXOFF|IXON);
+    } else {
+	tmp_tc.c_iflag |= IXANY|IXOFF|IXON;
+#endif
+    }
+
+    if ((f&MODE_TRAPSIG) == 0) {
+#ifndef	USE_TERMIO
+	tc.t_intrc = -1;
+	tc.t_quitc = -1;
+	tc.t_eofc = -1;
+	ltc.t_suspc = -1;
+	ltc.t_dsuspc = -1;
+#else
+	tmp_tc.c_lflag &= ~ISIG;
+#endif
+	localchars = 0;
+    } else {
+#ifdef	USE_TERMIO
+	tmp_tc.c_lflag |= ISIG;
+#endif
+	localchars = 1;
+    }
+
+    if (f&MODE_EDIT) {
+#ifndef	USE_TERMIO
+	sb.sg_flags &= ~CBREAK;
+	sb.sg_flags |= CRMOD;
+#else
+	tmp_tc.c_lflag |= ICANON;
+#endif
+    } else {
+#ifndef	USE_TERMIO
+	sb.sg_flags |= CBREAK;
+	if (f&MODE_ECHO)
+	    sb.sg_flags |= CRMOD;
+	else
+	    sb.sg_flags &= ~CRMOD;
+#else
+	tmp_tc.c_lflag &= ~ICANON;
+	tmp_tc.c_iflag &= ~ICRNL;
+	tmp_tc.c_cc[VMIN] = 1;
+	tmp_tc.c_cc[VTIME] = 0;
+#endif
+    }
+
+    if (f == -1) {
+	onoff = 0;
+    } else {
+	onoff = 1;
+    }
+
+#ifndef	USE_TERMIO
+    if (f != -1) {
+	if (f&MODE_EDIT) {
+	    void doescape();
+
+	    ltc.t_suspc = escape;
+	    (void) signal(SIGTSTP, (int (*)())doescape);
+	} else if (old&MODE_EDIT) {
+	    (void) signal(SIGTSTP, SIG_DFL);
+	    sigsetmask(sigblock(0) & ~(1<<(SIGTSTP-1)));
+	}
+	ioctl(tin, TIOCSLTC, (char *)&ltc);
+	ioctl(tin, TIOCSETC, (char *)&tc);
+	ioctl(tin, TIOCSETP, (char *)&sb);
+    } else {
+	(void) signal(SIGTSTP, SIG_DFL);
+	sigsetmask(sigblock(0) & ~(1<<(SIGTSTP-1)));
+	ioctl(tin, TIOCSLTC, (char *)&oltc);
+	ioctl(tin, TIOCSETC, (char *)&otc);
+	ioctl(tin, TIOCSETP, (char *)&ottyb);
+    }
 #if	(!defined(TN3270)) || ((!defined(NOT43)) || defined(PUTCHAR))
     ioctl(tin, FIONBIO, (char *)&onoff);
     ioctl(tout, FIONBIO, (char *)&onoff);
@@ -290,15 +444,10 @@ register int f;
 	ioctl(tin, FIOASYNC, (char *)&onoff);
     }
 #endif	/* defined(TN3270) */
-
-    if (MODE_LINE(f)) {
-	void doescape();
-
-	(void) signal(SIGTSTP, (int (*)())doescape);
-    } else if (MODE_LINE(old)) {
-	(void) signal(SIGTSTP, SIG_DFL);
-	sigsetmask(sigblock(0) & ~(1<<(SIGTSTP-1)));
-    }
+#else	/* USE_TERMIO */
+    if (ioctl(tin, TCSETAW, &tmp_tc) < 0)
+	ioctl(tin, TCSETA, &tmp_tc);
+#endif	/* USE_TERMIO */
 }
 
 void
@@ -318,13 +467,13 @@ long *ospeed;
 	    600, 1200, 1800, 2400, 4800, 9600, 19200, 38400 };
 #define NUMSPEEDS sizeof ttyspeeds/sizeof ttyspeeds[0]
 
-    if ((ottyb.sg_ospeed < 0) || (ottyb.sg_ospeed > NUMSPEEDS) ||
-	(ottyb.sg_ispeed < 0) || (ottyb.sg_ispeed > NUMSPEEDS)) {
+    if ((OSPEED < 0) || (OSPEED > NUMSPEEDS) ||
+	(ISPEED < 0) || (ISPEED > NUMSPEEDS)) {
 	ExitString("Invalid terminal speed.");
 	/*NOTREACHED*/
     } else {
-	*ispeed = ttyspeeds[ottyb.sg_ispeed];
-	*ospeed = ttyspeeds[ottyb.sg_ospeed];
+	*ispeed = ttyspeeds[ISPEED];
+	*ospeed = ttyspeeds[OSPEED];
     }
 }
 
@@ -332,14 +481,16 @@ int
 TerminalWindowSize(rows, cols)
 long *rows, *cols;
 {
+#ifdef	TIOCGWINSZ
     struct winsize ws;
 
-    if (ioctl(fileno(stdin), TIOCGWINSZ, (char *)&ws) < 0) {
-	return 0;
+    if (ioctl(fileno(stdin), TIOCGWINSZ, (char *)&ws) >= 0) {
+	*rows = ws.ws_row;
+	*cols = ws.ws_col;
+	return 1;
     }
-    *rows = ws.ws_row;
-    *cols = ws.ws_col;
-    return 1;
+#endif	TIOCGWINSZ
+    return 0;
 }
 
 int
@@ -406,7 +557,12 @@ static void
 intr2()
 {
     if (localchars) {
-	sendbrk();
+#ifdef	KLUDGELINEMODE
+	if (kludgelinemode)
+	    sendbrk();
+	else
+#endif
+	    sendabort();
 	return;
     }
 }
@@ -422,18 +578,26 @@ sendwin()
 static void
 doescape()
 {
-    command(0);
+    command(0, 0, 0);
 }
 
 void
 sys_telnet_init()
 {
+#ifndef	CRAY
     (void) signal(SIGINT, (int (*)())intr);
     (void) signal(SIGQUIT, (int (*)())intr2);
     (void) signal(SIGPIPE, (int (*)())deadpeer);
+#else
+    (void) signal(SIGINT, (void (*)())intr);
+    (void) signal(SIGQUIT, (void (*)())intr2);
+    (void) signal(SIGPIPE, (void (*)())deadpeer);
+#endif
+#ifdef	SIGWINCH
     (void) signal(SIGWINCH, (int (*)())sendwin);
+#endif
 
-    setconnmode();
+    setconnmode(0);
 
     NetNonblockingIO(net, 1);
 
@@ -656,7 +820,7 @@ int poll;		/* If 0, then block until something to do */
     }
     if (FD_ISSET(tout, &obits)) {
 	FD_CLR(tout, &obits);
-	returnValue |= ttyflush(SYNCHing|flushout);
+	returnValue |= (ttyflush(SYNCHing|flushout) > 0);
     }
 
     return returnValue;

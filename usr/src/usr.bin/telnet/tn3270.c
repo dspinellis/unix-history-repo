@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tn3270.c	1.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)tn3270.c	1.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -296,21 +296,21 @@ char c;
 void
 SetIn3270()
 {
-    if (Sent3270TerminalType && should_I(TELOPT_BINARY)
-			    && should_he(TELOPT_BINARY) && !donebinarytoggle) {
+    if (Sent3270TerminalType && my_want_state_is_will(TELOPT_BINARY)
+		&& my_want_state_is_do(TELOPT_BINARY) && !donebinarytoggle) {
 	if (!In3270) {
 	    In3270 = 1;
 	    Init3270();		/* Initialize 3270 functions */
 	    /* initialize terminal key mapping */
 	    InitTerminal();	/* Start terminal going */
-	    setconnmode();
+	    setconnmode(0);
 	}
     } else {
 	if (In3270) {
 	    StopScreen(1);
 	    In3270 = 0;
 	    Stop3270();		/* Tell 3270 we aren't here anymore */
-	    setconnmode();
+	    setconnmode(0);
 	}
     }
 }
@@ -359,7 +359,7 @@ tn3270_ttype()
 								1);
 	    /*NOTREACHED*/
 	}
-	printsub(">", sb_terminal+2, sizeof sb_terminal-2);
+	printsub('>', sb_terminal+2, sizeof sb_terminal-2);
 	ring_supply_data(&netoring, sb_terminal, sizeof sb_terminal);
 	return 1;
     } else {

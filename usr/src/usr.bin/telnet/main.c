@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	1.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -62,6 +62,9 @@ main(argc, argv)
 	char *argv[];
 {
     tninit();		/* Clear out things */
+#ifdef	CRAY
+    _setlist_init();	/* Work around compiler bug */
+#endif
 
     TerminalSaveState();
 
@@ -71,12 +74,9 @@ main(argc, argv)
 	    debug = 1;
 	} else if (!strcmp(argv[1], "-n")) {
 	    if ((argc > 1) && (argv[2][0] != '-')) {	/* get file name */
-		NetTrace = fopen(argv[2], "w");
+		SetNetTrace(argv[2]);
 		argv++;
 		argc--;
-		if (NetTrace == NULL) {
-		    NetTrace = stdout;
-		}
 	    }
 	} else {
 #if	defined(TN3270) && defined(unix)
@@ -115,10 +115,10 @@ main(argc, argv)
     (void) setjmp(toplevel);
     for (;;) {
 #if	!defined(TN3270)
-	command(1);
+	command(1, 0, 0);
 #else	/* !defined(TN3270) */
 	if (!shell_active) {
-	    command(1);
+	    command(1, 0, 0);
 	} else {
 #if	defined(TN3270)
 	    shell_continue();

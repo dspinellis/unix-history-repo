@@ -14,13 +14,23 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)externs.h	1.16 (Berkeley) %G%
+ *	@(#)externs.h	1.17 (Berkeley) %G%
  */
+
+#ifdef	CRAY
+#define	USE_TERMIO
+#endif
 
 #include <stdio.h>
 #include <setjmp.h>
+#include <sys/ioctl.h>
+#ifdef	USE_TERMIO
+#ifndef	VINTR
+#include <sys/termio.h>
+#endif
+#endif
 
-#define	SUBBUFSIZE	100
+#define	SUBBUFSIZE	256
 
 extern int errno;		/* outside this world */
 
@@ -49,6 +59,7 @@ extern int
     dontlecho,		/* do we suppress local echoing right now? */
     crmod,
     netdata,		/* Print out network data flow */
+    prettydump,		/* Print "netdata" output in user readable format */
 #if	defined(unix)
 #if	defined(TN3270)
     cursesdata,		/* Print out curses data flow */
@@ -72,27 +83,71 @@ extern char
  * We keep track of each side of the option negotiation.
  */
 
-#define	OPT_HE_SAID_DO		0x01
-#define	OPT_HE_SAID_WILL	0x02
-#define	OPT_I_SAID_DO		0x04
-#define	OPT_I_SAID_WILL		0x08
+#define	MY_STATE_WILL		0x01
+#define	MY_WANT_STATE_WILL	0x02
+#define	MY_STATE_DO		0x04
+#define	MY_WANT_STATE_DO	0x08
 
 /*
- * Macros to check out what has been said.
+ * Macros to check the current state of things
  */
 
-#define	did_he_say_do(opt)	(options[opt]&OPT_HE_SAID_DO)
-#define	did_he_say_will(opt)	(options[opt]&OPT_HE_SAID_WILL)
-#define	did_I_say_do(opt)	(options[opt]&OPT_I_SAID_DO)
-#define	did_I_say_will(opt)	(options[opt]&OPT_I_SAID_WILL)
+#define	my_state_is_do(opt)		(options[opt]&MY_STATE_DO)
+#define	my_state_is_will(opt)		(options[opt]&MY_STATE_WILL)
+#define my_want_state_is_do(opt)	(options[opt]&MY_WANT_STATE_DO)
+#define my_want_state_is_will(opt)	(options[opt]&MY_WANT_STATE_WILL)
 
-#define	should_he(opt) \
-	    (did_he_say_will(opt) && did_I_say_do(opt))
-#define	should_I(opt) \
-	    (did_I_say_will(opt) && did_he_say_do(opt))
+#define	my_state_is_dont(opt)		(!my_state_is_do(opt))
+#define	my_state_is_wont(opt)		(!my_state_is_will(opt))
+#define my_want_state_is_dont(opt)	(!my_want_state_is_do(opt))
+#define my_want_state_is_wont(opt)	(!my_want_state_is_will(opt))
+
+#define	set_my_state_do(opt)		{options[opt] |= MY_STATE_DO;}
+#define	set_my_state_will(opt)		{options[opt] |= MY_STATE_WILL;}
+#define	set_my_want_state_do(opt)	{options[opt] |= MY_WANT_STATE_DO;}
+#define	set_my_want_state_will(opt)	{options[opt] |= MY_WANT_STATE_WILL;}
+
+#define	set_my_state_dont(opt)		{options[opt] &= ~MY_STATE_DO;}
+#define	set_my_state_wont(opt)		{options[opt] &= ~MY_STATE_WILL;}
+#define	set_my_want_state_dont(opt)	{options[opt] &= ~MY_WANT_STATE_DO;}
+#define	set_my_want_state_wont(opt)	{options[opt] &= ~MY_WANT_STATE_WILL;}
+
+/*
+ * Make everything symetrical
+ */
+
+#define	HIS_STATE_WILL			MY_STATE_DO
+#define	HIS_WANT_STATE_WILL		MY_WANT_STATE_DO
+#define HIS_STATE_DO			MY_STATE_WILL
+#define HIS_WANT_STATE_DO		MY_WANT_STATE_WILL
+
+#define	his_state_is_do			my_state_is_will
+#define	his_state_is_will		my_state_is_do
+#define his_want_state_is_do		my_want_state_is_will
+#define his_want_state_is_will		my_want_state_is_do
+
+#define	his_state_is_dont		my_state_is_wont
+#define	his_state_is_wont		my_state_is_dont
+#define his_want_state_is_dont		my_want_state_is_wont
+#define his_want_state_is_wont		my_want_state_is_dont
+
+#define	set_his_state_do		set_my_state_will
+#define	set_his_state_will		set_my_state_do
+#define	set_his_want_state_do		set_my_want_state_will
+#define	set_his_want_state_will		set_my_want_state_do
+
+#define	set_his_state_dont		set_my_state_wont
+#define	set_his_state_wont		set_my_state_dont
+#define	set_his_want_state_dont		set_my_want_state_wont
+#define	set_his_want_state_wont		set_my_want_state_dont
+
 
 extern FILE
     *NetTrace;		/* Where debugging output goes */
+extern char
+    NetTraceFile[];	/* Name of file where debugging output goes */
+extern void
+    SetNetTrace();	/* Function to change where debugging goes */
 
 extern jmp_buf
     peerdied,
@@ -127,14 +182,99 @@ extern int
     dosynch();
 #endif	/* defined(NOT43) */
 
+#if	!defined(MSDOS)
+# ifndef	USE_TERMIO
+
+extern struct	tchars ntc;
+extern struct	ltchars nltc;
+extern struct	sgttyb nttyb;
+
+#  define termEofChar		ntc.t_eofc
+#  define termEraseChar		nttyb.sg_erase
+#  define termFlushChar		nltc.t_flushc
+#  define termIntChar		ntc.t_intrc
+#  define termKillChar		nttyb.sg_kill
+#  define termLiteralNextChar	nltc.t_lnextc
+#  define termQuitChar		ntc.t_quitc
+#  define termSuspChar		nltc.t_suspc
+#  define termRprntChar		nltc.t_rprntc
+#  define termWerasChar		nltc.t_werasc
+#  define termStartChar		ntc.t_startc
+#  define termStopChar		ntc.t_stopc
+
+#  define termEofCharp		&ntc.t_eofc
+#  define termEraseCharp	&nttyb.sg_erase
+#  define termFlushCharp	&nltc.t_flushc
+#  define termIntCharp		&ntc.t_intrc
+#  define termKillCharp		&nttyb.sg_kill
+#  define termLiteralNextCharp	&nltc.t_lnextc
+#  define termQuitCharp		&ntc.t_quitc
+#  define termSuspCharp		&nltc.t_suspc
+#  define termRprntCharp	&nltc.t_rprntc
+#  define termWerasCharp	&nltc.t_werasc
+#  define termStartCharp	&ntc.t_startc
+#  define termStopCharp		&ntc.t_stopc
+
+# else
+
+extern struct	termio new_tc;
+
+#  define termEofChar		new_tc.c_cc[VEOF]
+#  define termEraseChar		new_tc.c_cc[VERASE]
+#  define termIntChar		new_tc.c_cc[VINTR]
+#  define termKillChar		new_tc.c_cc[VKILL]
+#  define termQuitChar		new_tc.c_cc[VQUIT]
+
+extern char
+    termSuspChar,
+    termFlushChar,
+    termWerasChar,
+    termRprntChar,
+    termLiteralNextChar,
+    termStartChar,
+    termStopChar;
+
+# ifndef CRAY
+#  define termEofCharp		&new_tc.c_cc[VEOF]
+#  define termEraseCharp	&new_tc.c_cc[VERASE]
+#  define termIntCharp		&new_tc.c_cc[VINTR]
+#  define termKillCharp		&new_tc.c_cc[VKILL]
+#  define termQuitCharp		&new_tc.c_cc[VQUIT]
+# else
+	/* Work around a compiler bug */
+#  define termEofCharp		0
+#  define termEraseCharp	0
+#  define termIntCharp		0
+#  define termKillCharp		0
+#  define termQuitCharp		0
+# endif
+#  define termSuspCharp		&termSuspChar
+#  define termFlushCharp	&termFlushChar
+#  define termWerasCharp	&termWerasChar
+#  define termRprntCharp	&termRprntChar
+#  define termLiteralNextCharp	&termLiteralNextChar
+#  define termStartCharp	&termStartChar
+#  define termStopCharp		&termStopChar
+# endif
+
+#else	/* MSDOS */
+
 extern char
     termEofChar,
     termEraseChar,
-    termFlushChar,
     termIntChar,
     termKillChar,
+    termQuitChar,
+    termSuspChar,
+    termFlushChar,
+    termWerasChar,
+    termRprntChar,
     termLiteralNextChar,
-    termQuitChar;
+    termStartChar,
+    termStopChar;
+
+#endif
+
 
 /* Ring buffer structures which are shared */
 

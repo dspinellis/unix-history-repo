@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)defines.h	1.7 (Berkeley) %G%
+ *	@(#)defines.h	1.8 (Berkeley) %G%
  */
 
 #define	settimer(x)	clocks.x = clocks.system++
@@ -38,12 +38,6 @@
 #define	TTYROOM()	(ring_empty_count(&ttyoring))
 
 /*	Various modes */
-#define	MODE_LINE(m)	(modelist[m].modetype & LINE)
-#define	MODE_LOCAL_CHARS(m)	(modelist[m].modetype &  LOCAL_CHARS)
-#define	MODE_LOCAL_ECHO(m)	(modelist[m].modetype & LOCAL_ECHO)
-#define	MODE_COMMAND_LINE(m)	(modelist[m].modetype & COMMAND_LINE)
-
-#define	LOCAL_CHARS	0x01		/* Characters processed locally */
-#define	LINE		0x02		/* Line-by-line mode of operation */
-#define	LOCAL_ECHO	0x04		/* Echoing locally */
-#define	COMMAND_LINE	0x08		/* Command line mode */
+#define	MODE_LOCAL_CHARS(m)	((m)&(MODE_EDIT|MODE_TRAPSIG))
+#define	MODE_LOCAL_ECHO(m)	((m)&MODE_ECHO)
+#define	MODE_COMMAND_LINE(m)	((m)==-1)
