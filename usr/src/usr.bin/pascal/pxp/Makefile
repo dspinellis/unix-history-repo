@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile	1.1 (Berkeley) %G%"
+SCCSID = "@(#)Makefile	1.2 (Berkeley) %G%"
 DESTDIR=
 ED=	-ed
 AS=	-as
@@ -33,7 +33,7 @@ clean:
 	-echo dont rm y.tab.c
 	-rm -f *.o x*
 
-install:
+install: a.out
 	cp a.out ${DESTDIR}/usr/ucb/pxp
 #	cp a.outNOID /usr/ucb/pxp34
 
