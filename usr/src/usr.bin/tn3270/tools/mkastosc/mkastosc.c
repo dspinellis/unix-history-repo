@@ -98,7 +98,7 @@ char	*argv[];
     }
     /* Now, output the table */
     for (Pt = tbl, asciicode = 0; Pt <= tbl+highestof(tbl); Pt++, asciicode++) {
-	if (Pt->shift[0] == 0) {
+	if ((Pt->shift == 0) || (Pt->shift[0] == 0)) {
 	    if (isprint(asciicode) && (asciicode != ' ')) {
 		fprintf(stderr, "Unable to produce scancode sequence for");
 		fprintf(stderr, " ASCII character [%c]!\n", asciicode);
