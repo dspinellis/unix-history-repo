@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.49 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.50 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.49 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.50 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -355,7 +355,7 @@ printctladdr(a, tfp)
 	lastctladdr = a;
 
 	if (uid == 0 || (pw = getpwuid(uid)) == NULL)
-		uname = DefUser;
+		uname = "";
 	else
 		uname = pw->pw_name;
 
@@ -1442,8 +1442,8 @@ setctluser(user)
 	**  See if this clears our concept of controlling user.
 	*/
 
-	if (user == NULL || *user == '\0')
-		user = DefUser;
+	if (user == NULL)
+		user = "";
 
 	/*
 	**  Set up addr fields for controlling user.
@@ -1455,21 +1455,20 @@ setctluser(user)
 	p = strchr(user, ':');
 	if (p != NULL)
 		*p++ = '\0';
-	if ((pw = getpwnam(user)) != NULL)
+	if (*user != '\0' && (pw = getpwnam(user)) != NULL)
 	{
 		a->q_home = newstr(pw->pw_dir);
 		a->q_uid = pw->pw_uid;
 		a->q_gid = pw->pw_gid;
 		a->q_user = newstr(user);
+		a->q_flags |= QGOODUID;
 	}
 	else
 	{
-		a->q_uid = DefUid;
-		a->q_gid = DefGid;
 		a->q_user = newstr(DefUser);
 	}
 
-	a->q_flags |= QGOODUID|QPRIMARY;	/* flag as a "ctladdr"  */
+	a->q_flags |= QPRIMARY;		/* flag as a "ctladdr"  */
 	a->q_mailer = LocalMailer;
 	if (p == NULL)
 		a->q_paddr = a->q_user;
