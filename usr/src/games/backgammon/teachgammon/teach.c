@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)teach.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)teach.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "back.h"
@@ -54,7 +54,7 @@ char	**argv;
 #else
 	raw = ((noech = old & ~ECHO) | RAW);		/* set up modes */
 #endif
-	ospeed = old.sg_ospeed;				/* for termlib */
+	ospeed = tty.sg_ospeed;				/* for termlib */
 	tflag = getcaps (getenv ("TERM"));
 #ifdef V7
 	while (*++argv != 0)
