@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)ar11.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)ar11.c	4.4 (Berkeley) %G%";
 /* ar11 - archiver for PDP-11 formatted archives */
 
 #include <signal.h>
@@ -23,7 +23,7 @@ long	ar_size;
 #define unmklong(sp,l)	{ sp[0] = l >> 16; sp[1] = l & 0177777; }
 #define fixhdr(hdr)	(hdr)
 #endif
-#ifdef mc68000
+#if defined(mc68000) || defined(tahoe)
 #define	fixshort(s)	((short)(((s>>8)&0377)+((s&0377)<<8)))
 #define	mklong(sp)	(((sp)[0] << 16) + (sp)[1])
 #define unmklong(sp,l)	{ sp[0] = l >> 16; sp[1] = l & 0177777; }
@@ -659,7 +659,7 @@ wrerr()
 	done(1);
 }
 
-#ifdef mc68000
+#if defined(mc68000) || defined(tahoe)
 struct ar_hdr
 swaphdr(hdr)
 	struct ar_hdr hdr;
