@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.7	(Berkeley)	%G%
+#	@(#)Makefile	4.8	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -28,6 +28,10 @@ install:
 	-for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
 
+installsrc:
+	-for i in ${SRCDIR}; do \
+		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
+
 tags:
 	for i in include lib usr.lib; do \
 		(cd $$i; make ${MFLAGS} TAGSFILE=../tags tags); \
@@ -36,4 +40,4 @@ tags:
 
 clean:
 	rm -f a.out core *.s *.o
-	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
+	for i in ${LIBDIR} ${SRCDIR}; do (cd $$i; make ${MFLAGS} clean); done
