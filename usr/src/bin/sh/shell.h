@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)shell.h	5.4 (Berkeley) %G%
+ *	@(#)shell.h	5.5 (Berkeley) %G%
  */
 
 /*
@@ -15,8 +15,6 @@
  *	JOBS -> 1 if you have Berkeley job control, 0 otherwise.
  *	SYMLINKS -> 1 if your system includes symbolic links, 0 otherwise.
  *	DIRENT -> 1 if your system has the SVR3 directory(3X) routines.
- *	UDIR -> 1 if you want the shell to simulate the /u directory.
- *	ATTY -> 1 to include code for atty(1).
  *	SHORTNAMES -> 1 if your linker cannot handle long names.
  *	define BSD if you are running 4.2 BSD or later.
  *	define SYSV if you are running under System V.
@@ -31,8 +29,6 @@
 #define JOBS 1
 #define SYMLINKS 1
 #define DIRENT 1
-#define UDIR 0
-#define ATTY 0
 #define BSD
 #define DEBUG 1
 
