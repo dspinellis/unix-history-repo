@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.33 89/08/23$
  *
- *	@(#)hpux_sig.c	7.1 (Berkeley) %G%
+ *	@(#)hpux_sig.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -98,7 +98,7 @@ hpuxsigvec()
 			u.u_error = EINVAL;
 			return;
 		}
-		setsigvec(sig, (struct sigaction *)sv);
+		setsigvec(u.u_procp, sig, (struct sigaction *)sv);
 #if 0
 /* XXX -- SOUSIG no longer exists, do something here */
 		if (sv->sv_flags & HPUXSV_RESET)
@@ -188,7 +188,7 @@ ohpuxssig()
 	sv->sv_mask = 0;
 	sv->sv_flags = SV_INTERRUPT;
 	u.u_r.r_val1 = (int)u.u_signal[a];
-	setsigvec(a, (struct sigaction *)sv);
+	setsigvec(u.u_procp, a, (struct sigaction *)sv);
 #if 0
 	p->p_flag |= SOUSIG;		/* mark as simulating old stuff */
 #endif
