@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)makeinfo.sh	8.3 (Berkeley) %G%
+#	@(#)makeinfo.sh	8.4 (Berkeley) %G%
 #
 
 usewhoami=0
@@ -47,5 +47,5 @@ then
 else
 	host=`uname -n`
 fi
-echo '#####' built by $user on `date`
-echo '#####' in `pwd` on $host
+echo '#####' built by $user@$host on `date`
+echo '#####' in `pwd` | sed 's/\/tmp_mnt//'
