@@ -1,4 +1,4 @@
-#	Makefile	4.6	82/11/07
+#	Makefile	4.7	82/11/07
 #
 # makefile for intermachine communications package
 #
