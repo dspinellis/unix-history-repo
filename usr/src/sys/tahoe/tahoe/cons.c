@@ -1,4 +1,4 @@
-/*	cons.c	1.5	86/12/06	*/
+/*	cons.c	1.6	86/12/23	*/
 
 /*
  * Tahoe console processor driver
@@ -87,7 +87,7 @@ cnpostread(unit)
 	cin->cp_hdr.cp_unit = unit;
 	cin->cp_hdr.cp_comm = CPREAD;
 	cin->cp_hdr.cp_count = 1;	/* Get ready for input */
-	mtpr(CPMDCB, cin);
+	mtpr(CPMDCB, vtoph((struct proc *)0, (unsigned)cin));
 	cnlast = (struct cphdr *)cin;
 }
 
@@ -147,9 +147,10 @@ cnrint(dev)
 		uncache(&cnlast->cp_unit);
 	while ((cnlast->cp_unit&CPTAKE) == 0  && --timo);
 	if (cnlast->cp_unit&CPTAKE) {
+		/* This resets status bits */
 		consin[unit].cp_hdr.cp_unit = unit;
-			/* This resets status bits */
-		mtpr(CPMDCB, &consin[unit]); /* Ready for new character */
+		/* Ready for new character */
+		mtpr(CPMDCB, vtoph((struct proc *)0, (unsigned)&consin[unit]));
 		cnlast = (struct cphdr *)&consin[unit];
 		tp = constty[unit];
 #ifdef KDB
@@ -304,7 +305,7 @@ cnputchar(c, tp)
 		timeout(cnrestart, (caddr_t)tp, 10);
 	}
 	consoftc[unit].cs_flags |= CSF_RETRY;	/* wait some more */
-	mtpr(CPMDCB, current);
+	mtpr(CPMDCB, vtoph((struct proc *)0, (unsigned)current));
 }
 
 #if defined(KDB) || defined(GENERIC)
@@ -344,7 +345,7 @@ cngetchar(tp)
 	current->cp_hdr.cp_unit = unit;		/* Resets done bit */
 	current->cp_hdr.cp_comm = CPREAD;
 	current->cp_hdr.cp_count = 1;
-	mtpr(CPMDCB, current);
+	mtpr(CPMDCB, vtoph((struct proc *)0, (unsigned)current));
 	while ((current->cp_hdr.cp_unit&CPDONE) == 0) 
 		uncache(&current->cp_hdr.cp_unit);
 	uncache(&current->cpi_buf[0]);
@@ -412,7 +413,7 @@ cnparams(tp)
 	/* Reset done bit */
 	current->cp_hdr.cp_unit = (char)minor(tp->t_dev); 
 	cnlast = (struct cphdr *)current;
-	mtpr(CPMDCB, current);
+	mtpr(CPMDCB, vtoph((struct proc *)0, (unsigned)current));
 
 	timo = 10000;
 	do
@@ -422,7 +423,7 @@ cnparams(tp)
 	cin->cp_hdr.cp_unit = minor(tp->t_dev);
 	cin->cp_hdr.cp_comm = CPREAD;
 	cin->cp_hdr.cp_count = 1;	/* Get ready for input */
-	mtpr(CPMDCB, cin);
+	mtpr(CPMDCB, vtoph((struct proc *)0, (unsigned)cin));
 	cnlast = (struct cphdr *)cin;
 }
 
