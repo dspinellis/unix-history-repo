@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.69 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.70 (Berkeley) %G%
  */
 
 /*
@@ -740,9 +740,8 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 		vap->va_blocksize = fxdr_unsigned(long, fp->fa_nfsblocksize);
 		vap->va_bytes = fxdr_unsigned(long, fp->fa_nfsblocks) * NFS_FABLKSIZE;
 		vap->va_fileid = fxdr_unsigned(long, fp->fa_nfsfileid);
-		vap->va_atime.ts_sec = fxdr_unsigned(long, fp->fa_nfsatime.nfs_sec);
-		vap->va_atime.ts_nsec = 0;
-		vap->va_flags = fxdr_unsigned(u_long, fp->fa_nfsatime.nfs_usec);
+		fxdr_nfstime(&fp->fa_nfsatime, &vap->va_atime);
+		vap->va_flags = 0;
 		vap->va_ctime.ts_sec = fxdr_unsigned(long, fp->fa_nfsctime.nfs_sec);
 		vap->va_ctime.ts_nsec = 0;
 		vap->va_gen = fxdr_unsigned(u_long, fp->fa_nfsctime.nfs_usec);

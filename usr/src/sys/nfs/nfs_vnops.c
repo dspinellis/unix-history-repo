@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.103 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.104 (Berkeley) %G%
  */
 
 /*
@@ -496,8 +496,7 @@ nfs_setattr(ap)
 		sp->sa_nqrdev = VNOVAL;
 	} else {
 		sp->sa_nfssize = txdr_unsigned(vap->va_size);
-		sp->sa_nfsatime.nfs_sec = txdr_unsigned(vap->va_atime.ts_sec);
-		sp->sa_nfsatime.nfs_usec = txdr_unsigned(vap->va_flags);
+		txdr_nfstime(&vap->va_atime, &sp->sa_nfsatime);
 		txdr_nfstime(&vap->va_mtime, &sp->sa_nfsmtime);
 	}
 	nfsm_request(vp, NFSPROC_SETATTR, ap->a_p, ap->a_cred);
