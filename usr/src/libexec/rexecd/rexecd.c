@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rexecd.c	4.6 83/01/07";
+static char sccsid[] = "@(#)rexecd.c	4.7 83/01/22";
 #endif
 
 #include <sys/ioctl.h>
@@ -21,6 +21,7 @@ struct	passwd *getpwnam();
 char	*crypt(), *rindex(), *sprintf();
 /* VARARGS 1 */
 int	error();
+int	reapchild();
 /*
  * remote execute server:
  *	username\0
@@ -32,7 +33,6 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	union wait status;
 	int f;
 	struct sockaddr_in from;
 	struct servent *sp;
@@ -68,12 +68,15 @@ main(argc, argv)
 		perror("rexecd: bind:");
 		exit(1);
 	}
+	sigset(SIGCHLD, reapchild);
 	listen(f, 10);
 	for (;;) {
 		int s, len = sizeof (from);
 
 		s = accept(f, &from, &len, 0);
 		if (s < 0) {
+			if (errno == EINTR)
+				continue;
 			perror("rexecd: accept");
 			sleep(1);
 			continue;
@@ -81,9 +84,15 @@ main(argc, argv)
 		if (fork() == 0)
 			doit(s, &from);
 		(void) close(s);
-		while (wait3(status, WNOHANG, 0) > 0)
-			continue;
 	}
+}
+
+reapchild()
+{
+	union wait status;
+
+	while (wait3(&status, WNOHANG, 0) > 0)
+		;
 }
 
 char	username[20] = "USER=";
