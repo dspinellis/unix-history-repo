@@ -1,6 +1,6 @@
 #ifndef lint
 static char Notice[] = "Copyright (c) 1985 Adobe Systems Incorporated";
-static char sccsid[] = "@(#)enscript.c	1.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)enscript.c	1.8 (Berkeley) %G%";
 static char *RCSID = "$Header: enscript.c,v 1.7 89/03/12 01:31:55 van Exp $";
 
 #endif
@@ -126,7 +126,7 @@ struct font {
 private struct font fonts[16];	/* 16 possible fonts at one time */
 private int nf = 0;		/* number of fonts known about */
 
-private int TabWidth = TruePageWidth / 10;	/* width of a tab */
+private int TabWidth;		/* width of a tab */
 private int BSWidth;		/* width of a backspace */
 
 private long UperLine = UperInch / 7;
@@ -848,7 +848,7 @@ CopyFile ()
 			case 011:	/* tab ^I */
 				if (pagepending)
 					InitPage ();
-				dX += TabWidth - (dX % TabWidth);
+				dX += TabWidth - ((dX - lX) % TabWidth);
 				break;
 			default:	/* other control character, take your
 					 * chances */
