@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_acct.c	6.8 (Berkeley) %G%
+ *	@(#)kern_acct.c	6.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -49,9 +49,9 @@ sysacct()
 		ndp->ni_segflg = UIO_USERSPACE;
 		ndp->ni_dirp = uap->fname;
 		ip = namei(ndp);
-		if(ip == NULL)
+		if (ip == NULL)
 			return;
-		if((ip->i_mode & IFMT) != IFREG) {
+		if ((ip->i_mode&IFMT) != IFREG) {
 			u.u_error = EACCES;
 			iput(ip);
 			return;
@@ -122,7 +122,7 @@ acct()
 	else
 		ap->ac_mem = 0;
 	ap->ac_mem >>= CLSIZELOG2;
-	ap->ac_io = compress(ru->ru_inblock + ru->ru_oublock, 0);
+	ap->ac_io = compress(ru->ru_inblock + ru->ru_oublock, (long)0);
 	if (u.u_ttyp)
 		ap->ac_tty = u.u_ttyd;
 	else

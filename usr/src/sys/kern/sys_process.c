@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	6.5 (Berkeley) %G%
+ *	@(#)sys_process.c	6.6 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -21,6 +21,7 @@
 #include "vm.h"
 #include "buf.h"
 #include "acct.h"
+#include "ptrace.h"
 
 /*
  * Priority for tracing
@@ -85,7 +86,7 @@ ptrace()
 	wakeup((caddr_t)&ipc);
 }
 
-#ifdef vax
+#if defined(vax)
 #define	NIPCREG 16
 int ipcreg[NIPCREG] =
 	{R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,AP,FP,SP,PC};
@@ -112,31 +113,26 @@ procxmt()
 	ipc.ip_req = 0;
 	switch (i) {
 
-	/* read user I */
-	case 1:
+	case PT_READ_I:			/* read the child's text space */
 		if (!useracc((caddr_t)ipc.ip_addr, 4, B_READ))
 			goto error;
 		ipc.ip_data = fuiword((caddr_t)ipc.ip_addr);
 		break;
 
-	/* read user D */
-	case 2:
+	case PT_READ_D:			/* read the child's data space */
 		if (!useracc((caddr_t)ipc.ip_addr, 4, B_READ))
 			goto error;
 		ipc.ip_data = fuword((caddr_t)ipc.ip_addr);
 		break;
 
-	/* read u */
-	case 3:
+	case PT_READ_U:			/* read the child's u. */
 		i = (int)ipc.ip_addr;
 		if (i<0 || i >= ctob(UPAGES))
 			goto error;
 		ipc.ip_data = *(int *)PHYSOFF(&u, i);
 		break;
 
-	/* write user I */
-	/* Must set up to allow writing */
-	case 4:
+	case PT_WRITE_I:		/* write the child's text space */
 		/*
 		 * If text, must assure exclusive use
 		 */
@@ -159,15 +155,13 @@ procxmt()
 			xp->x_flag |= XWRIT;
 		break;
 
-	/* write user D */
-	case 5:
+	case PT_WRITE_D:		/* write the child's data space */
 		if (suword((caddr_t)ipc.ip_addr, 0) < 0)
 			goto error;
 		(void) suword((caddr_t)ipc.ip_addr, ipc.ip_data);
 		break;
 
-	/* write u */
-	case 6:
+	case PT_WRITE_U:		/* write the child's u. */
 		i = (int)ipc.ip_addr;
 		p = (int *)PHYSOFF(&u, i);
 		for (i=0; i<NIPCREG; i++)
@@ -184,22 +178,19 @@ procxmt()
 		*p = ipc.ip_data;
 		break;
 
-	/* set signal and continue */
-	/* one version causes a trace-trap */
-	case 9:
-	case 7:
+	case PT_STEP:			/* single step the child */
+	case PT_CONTINUE:		/* continue the child */
 		if ((int)ipc.ip_addr != 1)
 			u.u_ar0[PC] = (int)ipc.ip_addr;
 		if ((unsigned)ipc.ip_data > NSIG)
 			goto error;
 		u.u_procp->p_cursig = ipc.ip_data;	/* see issig */
-		if (i == 9) 
+		if (i == PT_STEP) 
 			u.u_ar0[PS] |= PSL_T;
 		wakeup((caddr_t)&ipc);
 		return (1);
 
-	/* force exit */
-	case 8:
+	case PT_KILL:			/* kill the child process */
 		wakeup((caddr_t)&ipc);
 		exit(u.u_procp->p_cursig);
 

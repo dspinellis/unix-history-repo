@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_fork.c	6.7 (Berkeley) %G%
+ *	@(#)kern_fork.c	6.8 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -237,7 +237,7 @@ again:
 	/*
 	 * Make child runnable and add to run queue.
 	 */
-	(void) spl6();
+	(void) splclock();
 	rpp->p_stat = SRUN;
 	setrq(rpp);
 	(void) spl0();
