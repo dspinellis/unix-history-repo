@@ -14,12 +14,12 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-SRCS=	bpad.c conv.c display.c hexdump.c parse.c
-OBJS=	bpad.o conv.o display.o hexdump.o parse.o
+SRCS=	conv.c display.c hexdump.c parse.c
+OBJS=	conv.o display.o hexdump.o parse.o
 MAN=	hexdump.0
 
 all: hexdump
