@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)arff.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)arff.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -340,7 +340,7 @@ rtx(name)
 		count = dope->count;
 		startad = dope->startad;
 		for( ; count > 0 ; count -= 512) {
-			lread(startad, 512, buff);
+			(void) lread(startad, 512, buff);
 			(void) write(file, buff, 512);
 			startad += 512;
 		}
@@ -389,7 +389,8 @@ ignore:
 	} else
 		floppydes = fileno(temp_floppydes);
 	if (!flag(c)) {
-		lread(6*RT_BLOCK, 2*RT_BLOCK, (char *)&rt_dir[0]);
+		if (lread(6*RT_BLOCK, 2*RT_BLOCK, (char *)&rt_dir[0]))
+			exit(2);
 		dirnum = rt_dir[0].rd_numseg;
 		/* check for blank/uninitialized diskette */
 		if (dirnum <= 0) {
@@ -401,7 +402,8 @@ ignore:
 			exit(1);
 		}
 		for (i = 1; i < dirnum; i++)
-			lread((6+2*i)*RT_BLOCK, 2*RT_BLOCK, (char *)&rt_dir[i]);
+		    if (lread((6+2*i)*RT_BLOCK, 2*RT_BLOCK, (char *)&rt_dir[i]))
+			exit(1);
 	} else {
 		dirnum = 1;
 		if (flag(b)) {
@@ -634,17 +636,24 @@ lread(startad, count, obuff)
 	long trans();
 	extern floppydes;
 	register int size = flag(m) ? 512 : 128;
+	int error = 0;
+	extern int errno;
 
 	rt_init();
 	while ((count -= size) >= 0) {
 		(void) lseek(floppydes, flag(m) ?
 			(long)startad : trans(startad), 0);
-		if (read(floppydes, obuff, size) != size)
-			fprintf(stderr, "arff: read error block %d\n",
+		if (read(floppydes, obuff, size) != size) {
+			error = errno;
+			fprintf(stderr, "arff: read error block %d: ",
 				startad/size);
+			errno = error;
+			perror("");
+		}
 		obuff += size;
 		startad += size;
 	}
+	return (error);
 }
 
 lwrite(startad, count, obuff)
