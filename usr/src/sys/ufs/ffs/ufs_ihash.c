@@ -4,30 +4,31 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_ihash.c	7.2 (Berkeley) %G%
+ *	@(#)ufs_ihash.c	7.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/namei.h>
 #include <sys/vnode.h>
+#include <sys/malloc.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
 #include <ufs/ufs/ufs_extern.h>
 
-#define	INOHSZ	512
-#if	((INOHSZ & (INOHSZ - 1)) == 0)
-#define	INOHASH(dev, ino)	(((dev) + (ino)) & (INOHSZ - 1))
-#else
-#define	INOHASH(dev, ino)	(((unsigned int)((dev) + (ino))) % INOHSZ)
-#endif
+/*
+ * Structures associated with inode cacheing.
+ */
+union ihash {
+	union	ihash *ih_head[2];
+	struct	inode *ih_chain[2];
+} *ihashtbl;
+#define	ih_forw	ih_chain[0]
+#define	ih_back	ih_chain[1]
 
-static union ihead {
-	union  ihead *ih_head[2];
-	struct inode *ih_chain[2];
-} ihead[INOHSZ];
-
+u_long	ihash;			/* size of hash table - 1 */
+#define	INOHASH(dev, ino)	(((dev) + (ino)) & ihash)
 
 /*
  * Initialize inode hash table.
@@ -35,11 +36,20 @@ static union ihead {
 void
 ufs_ihashinit()
 {
-	register union ihead *ih;
-	register int i;
+	register union ihash *ihp;
+	long ihashsize;
 
-	for (ih = ihead, i = INOHSZ; --i >= 0; ++ih)
-		ih->ih_head[0] = ih->ih_head[1] = ih;
+	ihashsize = roundup((desiredvnodes + 1) * sizeof *ihp / 2,
+		NBPG * CLSIZE);
+	ihashtbl = (union ihash *)malloc((u_long)ihashsize,
+	    M_UFSMNT, M_WAITOK);
+	for (ihash = 1; ihash <= ihashsize / sizeof *ihp; ihash <<= 1)
+		/* void */;
+	ihash = (ihash >> 1) - 1;
+	for (ihp = &ihashtbl[ihash]; ihp >= ihashtbl; ihp--) {
+		ihp->ih_head[0] = ihp;
+		ihp->ih_head[1] = ihp;
+	}
 }
 
 /*
@@ -51,13 +61,13 @@ ufs_ihashget(dev, ino)
 	/* dev_t */ int dev;
 	ino_t ino;
 {
-	register union ihead *ih;
+	register union ihash *ihp;
 	register struct inode *ip;
 	struct vnode *vp;
 
-	ih = &ihead[INOHASH(dev, ino)];
+	ihp = &ihashtbl[INOHASH(dev, ino)];
 loop:
-	for (ip = ih->ih_chain[0]; ip != (struct inode *)ih; ip = ip->i_forw) {
+	for (ip = ihp->ih_forw; ip != (struct inode *)ihp; ip = ip->i_forw) {
 		if (ino != ip->i_number || dev != ip->i_dev)
 			continue;
 		if ((ip->i_flag & ILOCKED) != 0) {
@@ -80,6 +90,6 @@ void
 ufs_ihashins(ip)
 	struct inode *ip;
 {
-	insque(ip, &ihead[INOHASH(ip->i_dev, ip->i_number)]);
+	insque(ip, &ihashtbl[INOHASH(ip->i_dev, ip->i_number)]);
 	ILOCK(ip);
 }
