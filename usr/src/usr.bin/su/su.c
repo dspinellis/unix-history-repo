@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -33,6 +33,7 @@ static char sccsid[] = "@(#)su.c	5.15 (Berkeley) %G%";
 #include <pwd.h>
 #include <grp.h>
 #include <string.h>
+#include <unistd.h>
 #include "pathnames.h"
 
 #ifdef KERBEROS
@@ -60,7 +61,7 @@ main(argc, argv)
 	enum { UNSET, YES, NO } iscsh = UNSET;
 	char *user, *shell, *username, *cleanenv[2], *nargv[4], **np;
 	char shellbuf[MAXPATHLEN];
-	char *crypt(), *getpass(), *getenv(), *getlogin();
+	char *crypt(), *getpass(), *getenv(), *getlogin(), *mytty();
 
 	np = &nargv[3];
 	*np-- = NULL;
@@ -142,7 +143,7 @@ main(argc, argv)
 				if (pwd->pw_uid == 0)
 					syslog(LOG_AUTH|LOG_CRIT,
 					    "BAD SU %s on %s", username,
-					    ttyname(2));
+					    mytty());
 				exit(1);
 			}
 		}
@@ -214,7 +215,7 @@ main(argc, argv)
 	*np = fulllogin ? "-su" : iscsh == YES ? "_su" : "su";
 
 	if (pwd->pw_uid == 0)
-		syslog(LOG_NOTICE|LOG_AUTH, "%s on %s", username, ttyname(2));
+		syslog(LOG_NOTICE|LOG_AUTH, "%s on %s", username, mytty());
 
 	(void)setpriority(PRIO_PROCESS, 0, prio);
 
@@ -235,6 +236,14 @@ chshell(sh)
 	return(0);
 }
 
+char *
+mytty()
+{
+	char *p, *ttyname();
+
+	return((p = ttyname(STDERR_FILENO)) ? p : "UNKNOWN TTY");
+}
+
 #ifdef KERBEROS
 kerberos(username, user, uid)
 	char *username, *user;
@@ -249,6 +258,7 @@ kerberos(username, user, uid)
 	u_long faddr;
 	char lrealm[REALM_SZ], krbtkfile[MAXPATHLEN], pw_buf[_PASSWORD_LEN];
 	char hostname[MAXHOSTNAMELEN], savehost[MAXHOSTNAMELEN];
+	char *mytty();
 
 	if (krb_get_lrealm(lrealm, 1) != KSUCCESS) {
 		(void)fprintf(stderr, "su: couldn't get local realm.\n");
@@ -285,7 +295,7 @@ kerberos(username, user, uid)
 			return(1);
 		(void)printf("su: unable to su: %s\n", krb_err_txt[kerno]);
 		syslog(LOG_NOTICE|LOG_AUTH,
-		    "su: BAD Kerberos SU: %s on %s: %s", username, ttyname(2),
+		    "su: BAD Kerberos SU: %s on %s: %s", username, mytty(),
 		    krb_err_txt[kerno]);
 		return(1);
 	}
@@ -312,11 +322,11 @@ kerberos(username, user, uid)
 	if (kerno == KDC_PR_UNKNOWN) {
 		(void)printf("Warning: tgt not verified.\n");
 		syslog(LOG_NOTICE|LOG_AUTH, "su: %s on %s, tgt not verified",
-		    username, ttyname(2));
+		    username, mytty());
 	} else if (kerno != KSUCCESS) {
 		(void)printf("Unable to use tgt: %s\n", krb_err_txt[kerno]);
 		syslog(LOG_NOTICE|LOG_AUTH, "su: failed su: %s on %s: %s",
-		    username, ttyname(2), krb_err_txt[kerno]);
+		    username, mytty(), krb_err_txt[kerno]);
 		dest_tkt();
 		return(1);
 	} else {
@@ -333,7 +343,7 @@ kerberos(username, user, uid)
 			    krb_err_txt[kerno]);
 			syslog(LOG_NOTICE|LOG_AUTH,
 			    "su: failed su: %s on %s: %s", username,
-			    ttyname(2), krb_err_txt[kerno]);
+			    mytty(), krb_err_txt[kerno]);
 			dest_tkt();
 			return(1);
 		}
