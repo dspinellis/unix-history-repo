@@ -1,4 +1,4 @@
-/*	@(#)macdefs.h	1.3	(Berkeley)	%G%	*/
+/*	@(#)macdefs.h	1.4	(Berkeley)	%G%	*/
 
 #if defined(pdp11) || defined(vax)
 #define makecc(val,i)  lastcon |= val<<(8*i);  /* pdp-11 womp next char  */
@@ -55,6 +55,9 @@ extern int ALSTRUCT;
 
 # define MAXRVAR 1000
 # define MINRVAR 1
+
+/* macros carried over from the PCC */
+# define ncopy(q, p)	((q)->in = (p)->in)
 
 /* many macro definitions for functions irrelevant to lint */
 
