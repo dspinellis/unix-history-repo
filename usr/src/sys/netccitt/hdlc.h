@@ -7,16 +7,44 @@
  * the Laboratory for Computation Vision and the Computer Science Department
  * of the University of British Columbia.
  *
- * %sccs.include.redist.c%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that: (1) source distributions retain this entire copyright
+ * notice and comment, and (2) distributions including binaries display
+ * the following acknowledgement:  ``This product includes software
+ * developed by the University of California, Berkeley and its contributors''
+ * in the documentation or other materials provided with the distribution
+ * and in all advertising materials mentioning features or use of this
+ * software. Neither the name of the University nor the names of its
+ * contributors may be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
  *	@(#)hdlc.h	7.3 (Berkeley) %G%
  */
-
-typedef char    bool;
+#ifndef ORDER4
 #define FALSE   0
 #define TRUE    1
-
 typedef u_char octet;
+typedef char    bool;
+
+/*
+ *  HDLC Packet format definitions
+ *  This will eventually have to be rewritten without reference
+ *  to bit fields, to be compliant with ANSI C and alignment safe.
+ */
+
+#if BYTE_ORDER == BIG_ENDIAN
+#define ORDER4(a, b, c, d) a , b , c , d
+#define ORDER5(a, b, c, d, e) a , b , c , d , e
+#endif
+
+#if BYTE_ORDER == LITTLE_ENDIAN
+#define ORDER4(a, b, c, d) d , c , b , a
+#define ORDER5(a, b, c, d, e) e , d , c , b , a
+#endif
+#endif
 
 #define MAX_INFO_LEN    4096+3+4
 #define ADDRESS_A       3	/* B'00000011' */
@@ -24,83 +52,26 @@ typedef u_char octet;
 
 struct Hdlc_iframe {
 	octet	address;
-#ifdef vax
-	unsigned hdlc_0:1;
-	unsigned ns:3;
-	unsigned pf:1;
-	unsigned nr:3;
-#endif
-#ifdef sun
-	unsigned nr:3;
-	unsigned pf:1;
-	unsigned ns:3;
-	unsigned hdlc_0:1;
-#endif
-	char    i_field[MAX_INFO_LEN];
+	octet	ORDER4(nr:3, pf:1, ns:3, hdlc_0:1);
+	octet    i_field[MAX_INFO_LEN];
 };
 
 struct Hdlc_sframe {
 	octet	address;
-#ifdef vax
-	unsigned hdlc_01:2;
-	unsigned s2:2;
-	unsigned pf:1;
-	unsigned nr:3;
-#endif
-#ifdef sun
-	unsigned nr:3;
-	unsigned pf:1;
-	unsigned s2:2;
-	unsigned hdlc_01:2;
-#endif
+	octet	ORDER4(nr:3, pf:1, s2:2, hdlc_01:2);
 };
 
 struct	Hdlc_uframe {
 	octet	address;
-#ifdef vax
-	unsigned hdlc_11:2;
-	unsigned m2:2;
-	unsigned pf:1;
-	unsigned m3:3;
-#endif
-#ifdef sun
-	unsigned m3:3;
-	unsigned pf:1;
-	unsigned m2:2;
-	unsigned hdlc_11:2;
-#endif
+	octet	ORDER4(m3:3, pf:1, m2:2, hdlc_11:2);
 };
 
 struct	Frmr_frame {
 	octet	address;
 	octet	control;
 	octet	frmr_control;
-#ifdef vax
-	unsigned frmr_f2_0:1;
-	unsigned frmr_ns:3;
-	unsigned frmr_f1_0:1;
-	unsigned frmr_nr:3;
-#endif
-#ifdef sun
-	unsigned frmr_nr:3;
-	unsigned frmr_f1_0:1;
-	unsigned frmr_ns:3;
-	unsigned frmr_f2_0:1;
-#endif
-#ifdef vax
-	unsigned frmr_w:1;
-	unsigned frmr_x:1;
-	unsigned frmr_y:1;
-	unsigned frmr_z:1;
-	unsigned frmr_0000:4;
-#endif
-#ifdef sun
-	unsigned frmr_0000:4;
-	unsigned frmr_z:1;
-	unsigned frmr_y:1;
-	unsigned frmr_x:1;
-	unsigned frmr_w:1;
-#endif
+	octet	ORDER4(frmr_nr:3, frmr_f1_0:1, frmr_ns:3, frmr_f2_0:1);
+	octet	ORDER5(frmr_0000:4, frmr_z:1, frmr_y:1, frmr_x:1, frmr_w:1);
 };
 
 #define HDHEADERLN	2
@@ -109,7 +80,7 @@ struct	Frmr_frame {
 struct	Hdlc_frame {
 	octet	address;
 	octet	control;
-	char	info[3];	/* min for FRMR */
+	octet	info[3];	/* min for FRMR */
 };
 
 #define SABM_CONTROL 057	/* B'00101111' */
