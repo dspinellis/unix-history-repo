@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)com.c	7.6 (Berkeley) %G%
+ *	@(#)com.c	7.7 (Berkeley) %G%
  */
 
 #include "com.h"
@@ -29,7 +29,8 @@
 #include "i386/isa/comreg.h"
 #include "i386/isa/ic/ns16550.h"
 
-int 	comprobe(), comattach(), comintr(), comstart(), comparam();
+void	comstart();
+int 	comprobe(), comattach(), comintr(), comparam();
 
 struct	isa_driver comdriver = {
 	comprobe, comattach, "com"
@@ -375,9 +376,11 @@ commint(unit, com)
 	}
 }
 
-comioctl(dev, cmd, data, flag)
+comioctl(dev, cmd, data, flag, p)
 	dev_t dev;
+	int cmd, flag;
 	caddr_t data;
+	struct proc *p;
 {
 	register struct tty *tp;
 	register int unit = UNIT(dev);
@@ -385,7 +388,7 @@ comioctl(dev, cmd, data, flag)
 	register int error;
  
 	tp = &com_tty[unit];
-	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
+	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag, p);
 	if (error >= 0)
 		return (error);
 	error = ttioctl(tp, cmd, data, flag);
@@ -484,6 +487,7 @@ comparam(tp, t)
 	return(0);
 }
  
+void
 comstart(tp)
 	register struct tty *tp;
 {
