@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)statfs.2	6.1 (Berkeley) %G%
+.\"	@(#)statfs.2	6.2 (Berkeley) %G%
 .\"
 .TH STATFS 2 ""
 .UC 7
@@ -72,7 +72,8 @@ struct statfs {
  */
 #define	MOUNT_UFS	1
 #define	MOUNT_NFS	2
-#define	MOUNT_PC	3
+#define	MOUNT_MFS	3
+#define	MOUNT_PC	4
 .fi
 .PP
 Fields that are undefined for a particular file system are set to \-1.
