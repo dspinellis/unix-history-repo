@@ -1,4 +1,4 @@
-/*	vmparam.h	4.3	83/02/21	*/
+/*	vmparam.h	4.3	83/06/14	*/
 
 /*
  * Machine dependent constants for VAX
@@ -94,3 +94,22 @@
  * processes data space.
  */
 #define	KLSDIST	3		/* klusters advance/retard for seq. fifo */
+
+/*
+ * Paging thresholds (see vm_sched.c).
+ * Strategy of 4/22/81:
+ *	lotsfree is 1/4 of memory free.
+ *	desfree is 200k bytes, but at most 1/8 of memory
+ *	minfree is 64k bytes, but at most 1/2 of desfree
+ */
+#define	LOTSFREEFRACT	4
+#define	DESFREE		(200 * 1024)
+#define	DESFREEFRACT	8
+#define	MINFREE		(64 * 1024)
+#define	MINFREEFRACT	2
+
+/*
+ * Believed threshold (in megabytes) for which interleaved
+ * swapping area is desirable.
+ */
+#define	LOTSOFMEM	2
