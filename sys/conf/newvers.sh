@@ -32,7 +32,7 @@
 # SUCH DAMAGE.
 #
 #	from: @(#)newvers.sh	7.4 (Berkeley) 12/7/90
-#	$Id: newvers.sh,v 1.8 1994/03/19 23:40:24 wollman Exp $
+#	$Id: newvers.sh,v 1.9 1994/06/21 16:25:34 jkh Exp $
 #
 
 if [ ! -r version ]
@@ -45,7 +45,7 @@ fi
 touch version
 
 ostype="FreeBSD"
-osrelease="1.1.5(ALPHA)"
+osrelease="1.1.5(RELEASE)"
 kernvers="${ostype} ${osrelease}"
 v=`cat version` t=`date "+ %m/%d/%y %H:%M"`
 t=`date`
