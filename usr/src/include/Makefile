@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.11 (Berkeley) 86/03/26
+#	@(#)Makefile	5.12 (Berkeley) 86/04/26
 #
 # Doing a make install builds /usr/include
 #
@@ -20,7 +20,7 @@ DESTDIR=
 SUBDIRS=arpa pascal protocols
 STD=	a.out.h ar.h assert.h ctype.h curses.h ndbm.h disktab.h \
 	fcntl.h fstab.h grp.h lastlog.h math.h memory.h mp.h mtab.h \
-	netdb.h nlist.h pcc.h pwd.h ranlib.h setjmp.h \
+	netdb.h nlist.h pcc.h pwd.h ranlib.h resolv.h setjmp.h \
 	sgtty.h stab.h stdio.h string.h strings.h struct.h syscall.h \
 	sysexits.h time.h ttyent.h utmp.h varargs.h vfont.h
 LINKS=	errno.h signal.h syslog.h
