@@ -1,34 +1,33 @@
 #
 # Sail - Wooden Ships And Iron Men
 #
-# Makefile	@(#)Makefile	1.1 83/03/17
+# Makefile	@(#)Makefile	1.2 83/03/18
 #
 CC= cc
-CFLAGS= -O -v
+CFLAGS= -O
 DFILES= driver1.c driver2.c driver3.c grap.c
 DOBJS= driver1.o driver2.o driver3.o grap.o
 PFILES= player1.c player2.c
 POBJS= player1.o player2.o
 LFILES= sail.log.c
 LOBJS= sail.log.o
-COMMONFILES= assorted.c boarders.c game.c globals.c \
+COMMONFILES= assorted.c boarders.c game.c globals.c\
 	main.c parties.c screen.c machdep.c
 COMMONOBJS= assorted.o boarders.o game.o globals.o\
 	main.o parties.o screen.o machdep.o
-OTHERFILES= makefile externs.h player.h machdep.h sail.m
+OTHERFILES= Makefile externs.h player.h machdep.h sail.m
 JUNKFILES= sail driver sail.log sail.doc junk arch tags
 PLIBS= -lcurses -ltermlib machdep.o
 DLIBS=
 LLIBS=
-HOME= /u1/tourist/leres
-BIN= /u1/tourist/leres/bin
-MAN= /u1/tourist/leres/man
-SAIL= sail
+SAIL= SAIL
 DRIVER= .driver
-SAIL.LOG= sail.log
-SAIL.DOC= sail.doc
+SAIL.LOG= SAIL.log
+SAIL.DOC= SAIL.doc
 
 ..c.o:; ${CC} ${CFLAGS} -c $<
+
+all: sail driver sail.log sail.doc
 
 sail: ${COMMONOBJS} ${POBJS}
 	cc -O ${COMMONOBJS} ${POBJS} ${PLIBS} -o sail
@@ -44,8 +43,8 @@ sail.log: ${LOBJS} globals.o
 sail.doc: sail.m
 	nroff -man sail.m > sail.doc
 
-arch:	sail.a
-	ar uv sail.a ${PFILES} ${COMMONFILES} ${OTHERFILES} \
+arch:	sail.ar
+	ar uv sail.ar ${PFILES} ${COMMONFILES} ${OTHERFILES} \
 	${DFILES} ${LFILES}
 
 driveprofile: ${COMMONOBJS} ${DOBJS}
