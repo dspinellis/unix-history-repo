@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.10 83/08/26";
+static	char *sccsid = "@(#)cmd2.c	3.11 83/09/01";
 #endif
 
 #include "defs.h"
@@ -134,14 +134,15 @@ c_stat()
 
 c_list()
 {
-	register struct ww *w;
+	register struct ww *w, *wp;
 	register i;
 	int n;
+	char *msg;
 
 	for (n = 0, i = 0; i < NWINDOW; i++)
 		if (window[i] != 0)
 			n++;
-	if ((w = openiwin(MAX(n, 1) + 2, "Active Windows")) == 0) {
+	if ((w = openiwin(MAX(n, 1) + 2, "Windows")) == 0) {
 		error("Can't open listing window: %s.", wwerror());
 		return;
 	}
@@ -149,13 +150,16 @@ c_list()
 		(void) wwputs("No windows.\n", w);
 	} else {
 		for (i = 0; i < NWINDOW; i++) {
-			if (window[i] == 0)
+			if ((wp = window[i]) == 0)
 				continue;
-			(void) wwprintf(w, "%c %c   %s\n",
-				window[i] == selwin ? '*' : ' ',
+			(void) wwprintf(w, "%c %c %-13s %-.*s\n",
+				wp == selwin ? '*' : ' ',
 				i + '1',
-				window[i]->ww_label ? window[i]->ww_label
-					: "(No label)");
+				wp->ww_state == WWS_HASPROC
+					? "" : "(No process)",
+				wwncol - 20,
+				wp->ww_label
+					? wp->ww_label : "(No label)");
 		}
 	}
 	waitnl(w);

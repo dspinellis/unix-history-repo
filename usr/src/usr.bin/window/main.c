@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.8 83/08/26";
+static	char *sccsid = "@(#)main.c	3.9 83/09/01";
 #endif
 
 #include "defs.h"
@@ -92,7 +92,6 @@ char **argv;
 		goto bad;
 	}
 
-	curwin = cmdwin;
 	wwupdate();
 	wwflush();
 	(void) signal(SIGCHLD, wwchild);
@@ -102,7 +101,7 @@ char **argv;
 		if (dflag || doconfig() < 0)
 			dodefault();
 		if (selwin != 0) {
-			curwin = selwin;
+			incmd = 0;
 			wwcursor(selwin, 0);
 		}
 		if (!terse) {
@@ -111,7 +110,7 @@ char **argv;
 		}
 	}
 	while (!quit) {
-		if (curwin == cmdwin) {
+		if (incmd) {
 			docmd();
 			continue;
 		}
@@ -119,7 +118,7 @@ char **argv;
 		 * Loop until we get some keyboard input.
 		 */
 		while (ibufc == 0) {
-			wwcurtowin(curwin);
+			wwcurtowin(selwin);
 			wwupdate();
 			wwflush();
 			while (imask = 1, wwforce(&imask) < 0)
@@ -146,17 +145,17 @@ char **argv;
 		 */
 		for (p = ibufp, n = ibufc;;) {
 			if (--n < 0) {
-				(void) write(curwin->ww_pty, ibufp, ibufc);
+				(void) write(selwin->ww_pty, ibufp, ibufc);
 				ibufp = ibuf;
 				ibufc = 0;
 				break;
 			} else if (*p++ == escapec) {
 				if ((n = p - ibufp) > 1)
-					(void) write(curwin->ww_pty,
+					(void) write(selwin->ww_pty,
 						ibufp, n - 1);
 				ibufp = p;
 				ibufc -= n;
-				curwin = cmdwin;
+				incmd = 1;
 				break;
 			}
 		}
