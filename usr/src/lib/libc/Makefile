@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	4.31 (Berkeley) %G%
+#	@(#)Makefile	4.32 (Berkeley) %G%
 #
 # Compatibility routines are kept in directories with a prefixing
 # ``compat'' (so they all sort together).
@@ -56,7 +56,7 @@ TWO=	compat-4.1/compat-4.1.${MACHINE} gen/gen.${MACHINE} \
 	${MACHINE}/csu ${MACHINE}/sys
 TAGSFILE=tags
 
-libc.a libc_p.a: mkdir ${ALL}
+libc.a libc_p.a: mkdir ${ALL} tags
 	ls library/*.o | sort -t/ +1 > t1
 	ar cr libc.a `lorder \`cat t1\` | tsort` ${MACHINE}/csu/${DFLMON}
 	ar ma findiop.o libc.a exit.o
@@ -80,6 +80,7 @@ install:
 	install -o bin -g bin -m 644 libc_p.a ${DESTDIR}/usr/lib/libc_p.a
 	ranlib ${DESTDIR}/usr/lib/libc_p.a
 	cd ${MACHINE}/csu; make DESTDIR=${DESTDIR} install
+	install -o bin -g bin -m 444 ${TAGSFILE} ${DESTDIR}/usr/lib/${TAGSFILE}
 
 tags:
 	for i in ${ONE}; do \
