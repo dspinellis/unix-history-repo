@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)catman.c	4.6 (Berkeley) %G%";
+static char *sccsid = "@(#)catman.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -21,6 +21,7 @@ char	nflag;
 char	wflag;
 char	man[MAXNAMLEN+6] = "manx/";
 char	cat[MAXNAMLEN+6] = "catx/";
+char	*mandir = "/usr/man";
 char	*rindex();
 
 main(ac, av)
@@ -32,19 +33,37 @@ main(ac, av)
 	register int exstat = 0;
 	register char changed = 0;
 
-	while (ac > 1) {
-		av++;
-		if (strcmp(*av, "-p") == 0)
+	ac--, av++;
+	while (ac > 1 && av[0][0] == '-') {
+		switch (av[0][1]) {
+
+		case 'p':
 			pflag++;
-		else if (strcmp(*av, "-n") == 0)
-			nflag++;
-		else if (strcmp(*av, "-w") == 0)
-			wflag++;
-		else if (*av[0] == '-')
-			goto usage;
-		else
 			break;
-		ac--;
+
+		case 'n':
+			nflag++;
+			break;
+
+		case 'w':
+			wflag++;
+			break;
+
+		case 'M':
+		case 'P':
+			if (ac < 1) {
+				fprintf(stderr, "%s: missing directory\n",
+				    av[0]);
+				exit(1);
+			}
+			ac--, av++;
+			mandir = *av;
+			break;
+
+		default:
+			goto usage;
+		}
+		ac--, av++;
 	}
 	if (ac == 2)
 		sections = *av;
@@ -52,12 +71,15 @@ main(ac, av)
 		sections = "12345678ln";
 	else {
 usage:
-		printf("usage: catman [ -p ] [ -n ] [ -w ] [ sections ]\n");
+		printf("usage: catman [ -p ] [ -n ] [ -w ] [ -M path ] [ sections ]\n");
 		exit(-1);
 	}
 	if (wflag)
 		goto whatis;
-	chdir("/usr/man");
+	if (chdir(mandir) < 0) {
+		fprintf(stderr, "catman: "), perror(mandir);
+		exit(1);
+	}
 	msp = &man[5];
 	csp = &cat[5];
 	umask(0);
@@ -140,13 +162,13 @@ usage:
 	}
 	if (changed && !nflag) {
 whatis:
-		if (pflag)
-			printf("/bin/sh /usr/lib/makewhatis\n");
-		else {
-			execl("/bin/sh", "/bin/sh", "/usr/lib/makewhatis", 0);
+		if (!pflag) {
+			execl("/bin/sh", "/bin/sh",
+			    "/usr/lib/makewhatis", mandir, 0);
 			perror("/bin/sh /usr/lib/makewhatis");
 			exstat = 1;
-		}
+		} else
+			printf("/bin/sh /usr/lib/makewhatis %s\n", mandir);
 	}
 	exit(exstat);
 }
