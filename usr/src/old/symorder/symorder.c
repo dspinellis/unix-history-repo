@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)symorder.c 3.1 %G%";
+static char *sccsid = "@(#)symorder.c	3.2 (Berkeley) %G%;
 /*
  * symorder - reorder symbol table
  */
@@ -6,7 +6,7 @@ static	char sccsid[] = "@(#)symorder.c 3.1 %G%";
 #include <pagsiz.h>
 #include <sys/types.h>
 #include <stat.h>
-#include <newa.out.h>
+#include <a.out.h>
 
 #define SPACE 100
 
