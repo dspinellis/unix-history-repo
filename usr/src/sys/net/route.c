@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)route.c	6.11 (Berkeley) %G%
+ *	@(#)route.c	6.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -108,13 +108,9 @@ rtfree(rt)
  *
  * N.B.: must be called at splnet or higher
  *
- * Should notify all parties with a reference to
- * the route that it's changed (so, for instance,
- * current round trip time estimates could be flushed),
- * but we have no back pointers at the moment.
  */
-rtredirect(dst, gateway, flags)
-	struct sockaddr *dst, *gateway;
+rtredirect(dst, gateway, flags, src)
+	struct sockaddr *dst, *gateway, *src;
 	int flags;
 {
 	struct route ro;
@@ -129,6 +125,17 @@ rtredirect(dst, gateway, flags)
 	ro.ro_rt = 0;
 	rtalloc(&ro);
 	rt = ro.ro_rt;
+#define	equal(a1, a2) \
+	(bcmp((caddr_t)(a1), (caddr_t)(a2), sizeof(struct sockaddr)) == 0)
+	/*
+	 * If the redirect isn't from our current router for this dst,
+	 * it's either old or wrong.
+	 */
+	if (rt && !equal(src, &rt->rt_gateway)) {
+		rtstat.rts_badredirect++;
+		rtfree(rt);
+		return;
+	}
 	/*
 	 * Create a new entry if we just got back a wildcard entry
 	 * or the the lookup failed.  This is necessary for hosts
@@ -141,7 +148,8 @@ rtredirect(dst, gateway, flags)
 		rt = 0;
 	}
 	if (rt == 0) {
-		rtinit(dst, gateway, (flags & RTF_HOST) | RTF_GATEWAY);
+		rtinit(dst, gateway,
+		    (flags & RTF_HOST) | RTF_GATEWAY | RTF_DYNAMIC);
 		rtstat.rts_dynamic++;
 		return;
 	}
@@ -167,7 +175,8 @@ rtredirect(dst, gateway, flags)
 			rt->rt_gateway = *gateway;
 		}
 		rtstat.rts_newgateway++;
-	}
+	} else
+		rtstat.rts_badredirect++;
 	rtfree(rt);
 }
 
@@ -196,6 +205,7 @@ rtrequest(req, entry)
 	register struct rtentry *entry;
 {
 	register struct mbuf *m, **mprev;
+	struct mbuf **mfirst;
 	register struct rtentry *rt;
 	struct afhash h;
 	int s, error = 0, (*match)();
@@ -217,13 +227,11 @@ rtrequest(req, entry)
 	}
 	match = afswitch[af].af_netmatch;
 	s = splimp();
-	for (; m = *mprev; mprev = &m->m_next) {
+	for (mfirst = mprev; m = *mprev; mprev = &m->m_next) {
 		rt = mtod(m, struct rtentry *);
 		if (rt->rt_hash != hash)
 			continue;
 		if (entry->rt_flags & RTF_HOST) {
-#define	equal(a1, a2) \
-	(bcmp((caddr_t)(a1), (caddr_t)(a2), sizeof (struct sockaddr)) == 0)
 			if (!equal(&rt->rt_dst, &entry->rt_dst))
 				continue;
 		} else {
@@ -255,23 +263,24 @@ rtrequest(req, entry)
 			error = EEXIST;
 			goto bad;
 		}
-		/*
-		 * If we are adding a route to an interface,
-		 * and the interface is a pt to pt link
-		 * we should search for the destination
-		 * as our clue to the interface.  Otherwise
-		 * we can use the local address.
-		 */
-		if ((entry->rt_flags & RTF_GATEWAY)==0) {
+		if ((entry->rt_flags & RTF_GATEWAY) == 0) {
+			/*
+			 * If we are adding a route to an interface,
+			 * and the interface is a pt to pt link
+			 * we should search for the destination
+			 * as our clue to the interface.  Otherwise
+			 * we can use the local address.
+			 */
 			if (entry->rt_flags & RTF_HOST) 
 				ifa = ifa_ifwithdstaddr(&entry->rt_dst);
 			else
 				ifa = ifa_ifwithaddr(&entry->rt_gateway);
 		} else {
-		/* If we are adding a route to a remote net
-		 * or host, the gateway may still be on the
-		 * other end of a pt to pt link.
-		 */
+			/*
+			 * If we are adding a route to a remote net
+			 * or host, the gateway may still be on the
+			 * other end of a pt to pt link.
+			 */
 			ifa = ifa_ifwithdstaddr(&entry->rt_gateway);
 		}
 		if (ifa == 0) {
@@ -286,15 +295,16 @@ rtrequest(req, entry)
 			error = ENOBUFS;
 			goto bad;
 		}
-		*mprev = m;
+		m->m_next = *mfirst;
+		*mfirst = m;
 		m->m_off = MMINOFF;
 		m->m_len = sizeof (struct rtentry);
 		rt = mtod(m, struct rtentry *);
 		rt->rt_hash = hash;
 		rt->rt_dst = entry->rt_dst;
 		rt->rt_gateway = entry->rt_gateway;
-		rt->rt_flags =
-		    RTF_UP | (entry->rt_flags & (RTF_HOST|RTF_GATEWAY));
+		rt->rt_flags = RTF_UP |
+		    (entry->rt_flags & (RTF_HOST|RTF_GATEWAY|RTF_DYNAMIC));
 		rt->rt_refcnt = 0;
 		rt->rt_use = 0;
 		rt->rt_ifp = ifa->ifa_ifp;
