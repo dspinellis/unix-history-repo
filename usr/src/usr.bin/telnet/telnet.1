@@ -1,0 +1,102 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)telnet.1	5.1 (Berkeley) %G%
+.\"
+.TH TELNET 1C "18 July 1983"
+.UC 5
+.SH NAME
+telnet \- user interface to the TELNET protocol
+.SH SYNOPSIS
+telnet [ host [ port ] ]
+.SH DESCRIPTION
+.I Telnet
+is used to communicate with another host using the TELNET protocol.  If 
+.I telnet
+is invoked without arguments, it enters command mode,
+indicated by its prompt (\*(lqtelnet>\*(rq).
+In this mode, it accepts and executes the commands listed below.
+If it is invoked with arguments, it performs an
+.I open
+command (see below) with those arguments.
+.PP
+Once a connection has been opened,
+.I telnet
+enters input mode.
+In this mode, text typed is sent to the remote host.  To issue
+.I telnet
+commands when in input mode, precede them with the
+.I telnet
+\*(lqescape character\*(rq (initially \*(lq^[\*(rq).
+When in command mode, the normal terminal editing conventions are available.
+.PP
+The following commands are available.
+Only enough of each command to uniquely identify it need be typed.
+.PP
+.TP
+\fBopen\fP \fIhost\fP [ \fIport\fP ]
+Open a connection to the named host.  If the no port number
+is specified, 
+.I telnet
+will attempt to contact a TELNET server at the default port.
+The host specification may be either a host name (see 
+.IR hosts (5))
+or an Internet address specified in the \*(lqdot notation\*(rq.
+.TP
+.B close
+Close a TELNET session and return to command mode.
+.TP
+.B quit
+Close any open TELNET session and exit 
+.IR telnet .
+.TP
+.B z
+Suspend
+.IR telnet .
+This command only works when the user is using the 
+.IR csh (1).
+.TP
+\fBescape\fP [ \fIescape-char\fP ]
+Set the 
+.I telnet
+\*(lqescape character\*(rq.  Control characters may
+be specified as \*(lq^\*(rq followed by a single
+letter; e.g. \*(lqcontrol-X\*(rq is \*(lq^X\*(rq.
+.TP
+.B status
+Show the current status of 
+.IR telnet .
+This includes the peer one is connected to, as well
+as the state of debugging.
+.TP
+.B options
+Toggle viewing of TELNET options processing.  When
+options viewing is enabled, all TELNET option negotiations
+will be displayed.  Options sent by 
+.I telnet
+are displayed as \*(lqSENT\*(rq, while options
+received from the TELNET server are displayed as
+\*(lqRCVD\*(rq.
+.TP
+.B crmod
+Toggle carriage return mode.  When this mode is enabled
+any carriage return characters received from the remote
+host will be mapped into a carriage return and a line
+feed.  This mode does not affect those characters typed
+by the user, only those received.  This mode is not very
+useful, but is required for some hosts that like to ask
+the user to do local echoing.
+.TP
+\fB?\fP [ \fIcommand\fP ]
+Get help.  With no arguments,
+.I telnet
+prints a help summary.
+If a command is specified, 
+.I telnet
+will print the help information available about the command only.
+.SH BUGS
+This implementation is very simple because
+.IR rlogin (1C)
+is the standard mechanism used to communicate locally 
+with hosts.
