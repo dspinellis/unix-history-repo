@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.2 (Berkeley) %G%
+.\"	@(#)2.t	6.3 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -41,7 +41,7 @@ working system involves the following major steps:
 Transfer a bootable root filesystem from the tape to a disk
 and get it booted and running.
 .IP 2)
-Build and restore the /var and /usr file systems from tape
+Build and restore the /var and /usr filesystems from tape
 with \fItar\fP\|(1).
 .IP 3)
 Extract the system and utility source files as desired.
@@ -163,11 +163,13 @@ The basic steps involved in bringing up the HP300 are as follows:
 .IP 1)
 Obtain a second disk and format it, if necessary.
 .IP 2)
-Copy a root file system from the
+Copy a root filesystem from the
 tape onto the beginning of the disk.
 .IP 3)
 Boot the UNIX system on the new disk.
 .IP 4)
+(Optional) Build a root filesystem optimized for your disk.
+.IP 5)
 Label the disks with the \fIdisklabel\fP\|(8) program.
 .NH 4
 Step 1: formating a disk.
@@ -181,9 +183,9 @@ the \fImediainit\fP\|(1m) program.
 Once you have \*(4B up and running on one machine you can use
 the \fIscsiformat\fP\|(8) program to format additional disks.
 .NH 4
-Step 2: copying the root file system from tape to disk
+Step 2: copying the root filesystem from tape to disk
 .PP
-There are two approaches to getting the root file system from tape to disk.
+There are two approaches to getting the root filesystem from tape to disk.
 If you have an extra disk, the easiest approach is to use \fIdd\fP\|(1)
 under HP-UX to copy the root filesystem image from the tape to the beginning
 of the second disk. 
@@ -320,18 +322,18 @@ is printed out at boot time as the system verifies that each device
 is present.
 .PP
 The \*(lqroot device?\*(rq prompt was printed by the system 
-to ask you for the name of the root file system to use.
+to ask you for the name of the root filesystem to use.
 This happens because the distribution system is a \fIgeneric\fP
 system, i.e., it can be bootstrapped on a cpu with its root device
 and paging area on any available disk drive.
-You should respond to the root device question with
- ``\*(Dk0''.  This response indicates that
+You should respond to the root device question with ``\*(Dk0''.
+This response indicates that
 that the disk it is running on is drive 0 of type ``\*(Dk''.
 You will later build a system tailored to your configuration
 that will not ask this question when it is bootstrapped.
 .DS
 \fBroot device?\fP \fI\*(Dk0\fP
-WARNING: preposterous time in file system \-\- CHECK AND RESET THE DATE!
+WARNING: preposterous time in filesystem \-\- CHECK AND RESET THE DATE!
 \fBerase ^?, kill ^U, intr ^C\fP
 \fB#\fP
 .DE
@@ -341,7 +343,7 @@ that was executed by the root shell when it started.  This message
 is present to inform you as to what values the character erase,
 line erase, and interrupt characters have been set.
 .NH 4
-Step 4: restoring the root file system
+Step 4: restoring the root filesystem
 .PP
 UNIX is now running,
 and the \fIUNIX Programmer's manual\fP applies.  The ``#'' is the prompt
@@ -364,16 +366,20 @@ If you bootstraped using the two disk method, you can
 overwrite your initial bootstrapping disk, as it will no longer
 be needed.
 .PP
-To actually create the root filesystem on drive 1 the shell script
-\*(lqxtr\*(rq should be run:
+To actually create the root filesystem on drive 1
+you should first label the disk as described in step 5 below.
+Then run the following commands:
 .DS
-\fB#\fP\|\fIdisk=\*(Dk1 tape=\*(Mt0 xtr\fP
-(Note, ``\*(Dk1'' specifies both the disk type and the unit number.  Modify
-as necessary.)
+\fB#\fP\|\fInewfs /dev/r\*(Dk1a\fP
+\fB#\fP\|\fImount /dev/\*(Dk1a /mnt\fP
+\fB#\fP\|\fIcd /mnt\fP
+\fB#\fP\|\fIdump 0f \- /dev/r\(*Dk0a | restore xf \-\fP
+(Note: restore will ask if you want to ``set owner/mode for '.'''
+to which you should reply ``yes''.)
 .DE
 .PP
 This will generate many messages regarding the construction
-of the file system and the restoration of the tape contents,
+of the filesystem and the restoration of the tape contents,
 but should eventually stop with the message:
 .DS
  ...
@@ -395,7 +401,7 @@ For each disk that you wish to label, run the following command:
 \fB#\|\fP\fIdisklabel  -rw  \*(Dk\fP\fB#\fP  \fBtype\fP  \fI"optional_pack_name"\fP
 .DE
 The \fB#\fP is the unit number; the \fBtype\fP is the HP300 disk device
-name as listed in section 1.2 or any other name listed in /etc/disktab.
+name as listed in section 2.2.1 or any other name listed in /etc/disktab.
 The optional information may contain any descriptive name for the
 contents of a disk, and may be up to 16 characters long.  This procedure
 will place the label on the disk using the information found in /etc/disktab
@@ -441,7 +447,7 @@ requires quite a bit more disk space than SunOS does.
 .IP 5)
 It is currently difficult (though not completely impossible) to
 run \*(4B diskless.  These instructions assume you will have a local
-boot, swap, and root file system.
+boot, swap, and root filesystem.
 .NH 3
 The Procedure
 .PP
@@ -449,20 +455,20 @@ You must have a spare disk on which to place \*(4B.
 The steps involved in bootstrapping this tape are as follows:
 .IP 1)
 Bring up SunOS (preferably SunOS 4.1.x / Solaris 1.x, although
-Solaris 2 may work -- this is untested).
+Solaris 2 may work \(em this is untested).
 .IP 2)
 Attach auxiliary SCSI disk(s).  Format and label using the
 SunOS formating and labeling programs as needed.
-Note that the root file system currently requires at least 10 MB; 16 MB
+Note that the root filesystem currently requires at least 10 MB; 16 MB
 or more is recommended.  The b partition will be used for swap;
 this should be at least 32 MB.
 .IP 3)
-Use the SunOS ``newfs'' to build the root file system.  You may also
-want to build other file systems at the same time.  (By default, the
-\*(4B newfs builds a file system that SunOS will not handle; if you
+Use the SunOS ``newfs'' to build the root filesystem.  You may also
+want to build other filesystems at the same time.  (By default, the
+\*(4B newfs builds a filesystem that SunOS will not handle; if you
 plan to switch OSes back and forth you may want to sacrifice the
-performance gain from the new file system format for compatibility.)
-You can build an old-format filesystem on \*(4B by giving the -O
+performance gain from the new filesystem format for compatibility.)
+You can build an old-format filesystem on \*(4B by giving the \-O
 option to \fInewfs\fP\|(8).
 \fIFsck\fP\|(8) can convert old format filesystems to new format
 filesystems, but not vice versa,
@@ -481,10 +487,9 @@ SunOS ``installboot'' program to enable disk-based booting:
 # umount /dev/sd3a
 # /usr/kvm/mdec/installboot installboot bootsd /dev/rsd3a
 .DE
-.LP
 The SunOS /boot will load \*(4B kernels; there is no SPARCstation
 bootstrap code on the distribution.  Note that the SunOS /boot does
-not handle the new \*(4B file sytem format.
+not handle the new \*(4B filesystem format.
 .IP 5)
 Mount the new root and restore /.
 .DS
@@ -492,7 +497,6 @@ Mount the new root and restore /.
 # cd /mnt
 # rrestore xf tapehost:/dev/nrst0
 .DE
-.LP
 If you have chosen to use the SunOS newfs to build /usr, you may
 mount and restore it now and skip the next step.
 .IP 6)
@@ -506,7 +510,7 @@ ok boot sd(0,3)vmunix -s		[for new proms]
 # ifconfig le0 [your address, subnet, etc, as needed]
 # newfs /dev/rsd0g
 \&... [newfs output, including a warning about being unable to
-     update the label -- ignore this]
+     update the label \(em ignore this]
 # mount /dev/sd0g /usr
 # cd /usr
 # rrestore xf tapehost:/dev/nrst0
@@ -518,14 +522,13 @@ At this point you may wish to set up \*(4B to reboot automatically:
 ok setenv boot-from sd(0,3)vmunix	[for old proms] OR
 ok setenv boot-device disk3		[for new proms]
 .DE
-.LP
-If you build backwards-compatible file systems, either with the SunOS
-newfs or with the \*(4B ``-O'' option, you can mount these under
-SunOS.  The SunOS fsck will, however, always think that these file
-systems are corrupted, as there are several new (previously unused)
-superblock fields that are updated in \*(4B.  Running ``fsck -b32''
+If you build backwards-compatible filesystems, either with the SunOS
+newfs or with the \*(4B ``\-O'' option, you can mount these under
+SunOS.  The SunOS fsck will, however, always think that these filesystems
+are corrupted, as there are several new (previously unused)
+superblock fields that are updated in \*(4B.  Running ``fsck \-b32''
 and letting it ``fix'' the superblock will take care of this.
-.PP
+.sp 0.5
 If you wish to run SunOS binaries that use SunOS shared libraries, you
 simply need to copy all of the dynamic linker files from an existing
 SunOS system:
@@ -533,7 +536,6 @@ SunOS system:
 # rcp sunos-host:/etc/ld.so.cache /etc/
 # rcp sunos-host:'/usr/lib/*.so*' /usr/lib/
 .DE
-.LP
 The SunOS compiler and linker should be able to produce SunOS binaries
 under \*(4B, but this has not been tested.  If you plan to try it you
 will need the appropriate .sa files as well.
@@ -546,11 +548,11 @@ The Procedure
 .PP
 Steps to bootstrap a system.
 .IP 1)
-Load kernel and mini-root into memory with one of the PROM commands.
+Load kernel and root filesystem into memory with one of the PROM commands.
 This is the only step that depends on what type of machine you are using.
 The 'cnfg' PROM command will display what devices are available
 (DEC 5000 only).
-The 'm' argument tells the kernel to look for a mini-root in memory.
+The 'm' argument tells the kernel to look for a root filesystem in memory.
 .DS
 DEC 3100:	boot -f tz(0,5,0) m	# 5 is the SCSI id of the TK50
 DEC 5000:	boot 5/tz6 m		# 6 is the SCSI id of the TK50
@@ -562,41 +564,34 @@ Format the disk if needed. Most SCSI disks are already formatted.
 format
 .DE
 .IP 3)
-Label disks and create file systems.
+Label disks and create filesystems.
 .DS
 # disklabel -W /dev/rrz?c		# This enables writing the label
 # disklabel -w -r -B /dev/rrz?c $DISKTYPE
 # newfs /dev/rrz?a
-# newfs /dev/rrz?g
 \&...
 # fsck /dev/rrz?a
-# fsck /dev/rrz?g
 \&...
 .DE
 Supported disk types are listed in /etc/disktab.
 Feel free to add to this list.
 .IP 4)
-Restore / and /usr partitions.
+Restore the root filesystem.
 .DS
-# mount -u /
+# mount \-u /
 # mount /dev/rz?a /a
-# mount /dev/rz?g /b
 # cd /a
-# mt -f /dev/nrmt0 rew
-# restore -xsf 2 /dev/rmt0
-# cd /b
-# {change tapes or tape drive}
-# restore -xf /dev/rmt0
+# mt \-f /dev/nrmt0 rew
+# restore \-xsf 2 /dev/rmt0
 # cd /
 # sync
 # umount /a
-# umount /b
-# fsck /dev/rz?a /dev/rz?g
+# fsck /dev/rz?a
 .DE
 .IP 5)
 Initialize the PROM monitor to boot automatically.
 .DS
-# halt -q
+# halt \-q
 
 DEC 3100:	setenv bootpath boot -f rz(0,?,0)vmunix
 DEC 5000:	setenv bootpath 5/rz?/vmunix -a
@@ -614,15 +609,15 @@ mfb0	raw interface to mono graphics devices
 .NH 2
 Installing the rest of the system
 .PP
-The next thing to do is to extract the rest of the data from
-the tape.
+All architectures now have a root filesystem up and running and now
+proceed from this point to extract the rest of the data from the tape.
 At a minimum you need to set up the /var and /usr filesystems.
 You may also want to extract some or all the program sources.
 You might wish to review the disk configuration information in section
 4.2 before continuing; the partitions used below are those most appropriate
 in size.
 .PP
-Then perform the following:
+Then do the following:
 .br
 .ne 5
 .DS
@@ -634,17 +629,17 @@ lw(2i) l.
 \fBNew password:\fP	(password will not echo)
 \fBRetype new password:\fP
 \fB#\fP \fIhostname mysitename\fP	(set your hostname)
-\fB#\fP \fInewfs r\*(Dk#c\fP	(create empty user file system)
-(\fIr\*(Dk\fP is the disk type, \fI#\fP is the unit number, \fIc\fP
+\fB#\fP \fInewfs r\*(Dk#c\fP	(create empty user filesystem)
+(\fI\*(Dk\fP is the disk type, \fI#\fP is the unit number, \fIc\fP\c
 is the partition; this takes a few minutes)
-\fB#\fP \fImount /dev/\*(Dk#c /var\fP	(mount the var file system)
+\fB#\fP \fImount /dev/\*(Dk#c /var\fP	(mount the var filesystem)
 \fB#\fP \fIcd /var\fP	(make /var the current directory)
 \fB#\fP \fImt -t /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 \fB#\fP \fItar xbpf 40 /dev/nr\*(Mt0\fP	(extract all of var)
-\fB#\fP \fInewfs r\*(Dk#c\fP	(create empty user file system)
-(as before \fIr\*(Dk\fP is the disk type, \fI#\fP is the unit number, \fIc\fP
+\fB#\fP \fInewfs r\*(Dk#c\fP	(create empty user filesystem)
+(as before \fI\*(Dk\fP is the disk type, \fI#\fP is the unit number, \fIc\fP\c
 is the partition)
-\fB#\fP \fImount /dev/\*(Dk#c /usr\fP	(mount the usr file system)
+\fB#\fP \fImount /dev/\*(Dk#c /usr\fP	(mount the usr filesystem)
 \fB#\fP \fIcd /usr\fP	(make /usr the current directory)
 \fB#\fP \fImt -t /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 \fB#\fP \fItar xbpf 40 /dev/nr\*(Mt0\fP	(extract all of usr except usr/src)
@@ -679,7 +674,7 @@ lw(2i) l.
 .TE
 .DE
 .PP
-You can check the consistency of the /usr file system by doing
+You can check the consistency of the /usr filesystem by doing
 .DS
 \fB#\fP \fIfsck /dev/r\*(Dk#c\fP
 .DE
@@ -699,11 +694,11 @@ should look something like:
 .R
 .DE
 .PP
-If there are inconsistencies in the file system, you may be prompted
-to apply corrective action; see the \fIfsck\fP(8) or \fIFsck -- The UNIX
+If there are inconsistencies in the filesystem, you may be prompted
+to apply corrective action; see the \fIfsck\fP(8) or \fIFsck \(en The UNIX
 File System Check Program\fP for more details.
 .PP
-To use the /usr file system, you should now remount it with:
+To use the /usr filesystem, you should now remount it with:
 .DS
 \fB#\fP \fI/etc/mount /dev/\*(Dk#c /usr\fP
 .DE
@@ -738,9 +733,9 @@ Additional conversion information
 After setting up the new \*(4B filesystems, you may restore the user
 files that were saved on tape before beginning the conversion.
 Note that the \*(4B \fIrestore\fP program does its work on a mounted
-file system using normal system operations.  This means that file
-system dumps may be restored even if the characteristics of the file
-system changed.  To restore a dump tape for, say, the /a file system
+filesystem using normal system operations.  This means that filesystem
+dumps may be restored even if the characteristics of the filesystem changed.
+To restore a dump tape for, say, the /a filesystem
 something like the following would be used:
 .DS
 \fB#\fP \fImkdir /a\fP
@@ -751,6 +746,6 @@ something like the following would be used:
 .DE
 .PP
 If \fItar\fP images were written instead of doing a dump, you should
-be sure to use its `-p' option when reading the files back.  No matter
-how you restore a file system, be sure to unmount it and and check its
+be sure to use its `\-p' option when reading the files back.  No matter
+how you restore a filesystem, be sure to unmount it and and check its
 integrity with \fIfsck\fP(8) when the job is complete.
