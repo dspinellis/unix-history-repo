@@ -1,0 +1,46 @@
+.\"	@(#)dir.5	4.1 (Berkeley) %G%
+.\"
+.TH DIR 5 
+.AT 3
+.SH NAME
+dir \- format of directories
+.SH SYNOPSIS
+.B #include <sys/types.h>
+.br
+.B #include <sys/dir.h>
+.SH DESCRIPTION
+A directory
+behaves exactly like an ordinary file, save that no
+user may write into a directory.
+The fact that a file is a directory is indicated by
+a bit in the flag word of its i-node entry;
+see
+.IR filsys (5).
+The structure of a directory entry as given in the
+include file is:
+.RS
+.ta 8n +10n
+.PP
+.nf
+#ifndef	DIRSIZ
+#define	DIRSIZ	14
+#endif
+struct	direct
+{
+	ino_t	d_ino;
+	char	d_name[DIRSIZ];
+};
+.fi
+.RE
+.PP
+By convention, the first two entries in each directory
+are for `\fB.\fR' and `\fB..\fR'.  The first is an entry for the
+directory itself.  The second is for the parent
+directory.
+The meaning of `\fB..\fR' is modified for the root directory
+of the master file system
+.RB (\*(lq / \*(rq),
+where `\fB..\fR' has the
+same meaning as `\fB.\fR'.
+.SH "SEE ALSO"
+filsys(5)
