@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.5 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -154,17 +154,7 @@ ffs_mount(mp, path, data, ndp, p)
 			/*
 			 * Process export requests.
 			 */
-			if (args.exflags & MNT_EXPORTED) {
-				if (error = ufs_hang_addrlist(mp, &args))
-					return (error);
-				mp->mnt_flag |= MNT_EXPORTED;
-			}
-			if (args.exflags & MNT_DELEXPORT) {
-				ufs_free_addrlist(ump);
-				mp->mnt_flag &=
-				    ~(MNT_EXPORTED | MNT_DEFEXPORTED);
-			}
-			return (0);
+			return (vfs_export(mp, &ump->um_export, &args.export));
 		}
 	}
 	/*
@@ -339,7 +329,7 @@ ffs_mountfs(devvp, mp, p)
 	 * (except for root, which might share swap device for miniroot).
 	 * Flush out any old buffers remaining from a previous use.
 	 */
-	if (error = ufs_mountedon(devvp))
+	if (error = vfs_mountedon(devvp))
 		return (error);
 	if (vcount(devvp) > 1 && devvp != rootvp)
 		return (EBUSY);
