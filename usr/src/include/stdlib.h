@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	5.15 (Berkeley) %G%
+ *	@(#)stdlib.h	5.16 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
