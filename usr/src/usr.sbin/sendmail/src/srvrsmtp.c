@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.39 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.40 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.39 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.40 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -104,6 +104,7 @@ smtp(e)
 	bool gothello;			/* helo command received */
 	bool vrfy;			/* set if this is a vrfy command */
 	char *protocol;			/* sending protocol */
+	char *sendinghost;		/* sending hostname */
 	long msize;			/* approximate maximum message size */
 	auto char *delimptr;
 	char *id;
@@ -194,7 +195,7 @@ smtp(e)
 		{
 		  case CMDHELO:		/* hello -- introduce yourself */
 			setproctitle("%s: %s", CurHostName, inp);
-			define('s', newstr(p), e);
+			sendinghost = newstr(p);
 			if (strcasecmp(p, RealHostName) != 0)
 			{
 				auth_warning(e, "Host %s claimed to be %s",
@@ -202,7 +203,7 @@ smtp(e)
 			}
 			p = macvalue('_', e);
 			if (p == NULL)
-				p = macvalue('s', e);
+				p = RealHostName;
 
 			/* send ext. message -- old systems must ignore */
 			message("250-%s Hello %s, pleased to meet you",
@@ -219,8 +220,8 @@ smtp(e)
 			if (!gothello)
 			{
 				/* set sending host to our known value */
-				if (macvalue('s', e) == NULL)
-					define('s', RealHostName, e);
+				if (sendinghost == NULL)
+					sendinghost = RealHostName;
 
 				if (bitset(PRIV_NEEDMAILHELO, PrivacyFlags))
 				{
@@ -252,6 +253,7 @@ smtp(e)
 			if (protocol == NULL)
 				protocol = "SMTP";
 			define('r', protocol, e);
+			define('s', sendinghost, e);
 			initsys(e);
 			setproctitle("%s %s: %s", e->e_id, CurHostName, inp);
 
