@@ -1,4 +1,4 @@
-/*	if_il.c	4.3	82/05/25	*/
+/*	if_il.c	4.4	82/05/27	*/
 
 #include "il.h"
 #include "imp.h"
@@ -579,8 +579,9 @@ COUNT(ILLHINIT);
 	sin = (struct sockaddr_in *)&ifp->if_addr;
 	sin->sin_family = AF_INET;
 	sin->sin_addr.s_addr = addr;
+	sin->sin_addr.s_lh = ilifp->if_host[0];
 	ifp->if_net = sin->sin_addr.s_net;
-	ifp->if_dstaddr = ilifp->if_addr;
+	ifp->if_dstaddr = ifp->if_addr;
 	ifp->if_flags = IFF_UP|IFF_POINTOPOINT;
 	ifp->if_output = looutput;
 	if_attach(ifp);
