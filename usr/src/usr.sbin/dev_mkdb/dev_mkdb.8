@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dev_mkdb.8	5.1 (Berkeley) %G%
+.\"	@(#)dev_mkdb.8	5.2 (Berkeley) %G%
 .\"
 .TH dev_mkdb 8 ""
 .UC 7
@@ -17,15 +17,17 @@ creates a
 .IR db (3)
 database in ``/var/run/dev.db'' which lists the name and
 .I st_rdev
-field of all of the character special files in the ``/dev'' directory.
-Each of these files is entered, with the
+field of all of the character and block special files in the ``/dev'' directory.
+Character special files are entered using the
 .I st_rdev
-field as the key and the file name as the data.
+field as the key.  Block special files are entered using the
+.I st_rdev
+field followed by a single NULL byte as the key.
+The file name is stored as the data.
 .PP
-This database is used by 
+This database is used by the devname() function in
 .IR ps (1)
-and
-.IR ttyname (3).
+and is shared among several other programs.
 .SH FILES
 /dev					Device directory
 .br
