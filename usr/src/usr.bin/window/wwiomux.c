@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwiomux.c	3.12 %G%";
+static char sccsid[] = "@(#)wwiomux.c	3.13 %G%";
 #endif
 
 #include "ww.h"
@@ -35,7 +35,8 @@ loop:
 	for (w = wwhead.ww_forw; w != &wwhead; w = w->ww_forw) {
 		if (w->ww_pty < 0)
 			continue;
-		imask |= 1 << w->ww_pty;
+		if (w->ww_obq < w->ww_obe)
+			imask |= 1 << w->ww_pty;
 		if (w->ww_obq > w->ww_obp && !w->ww_stopped)
 			noblock = 1;
 	}
