@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.24 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.25 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -145,6 +145,10 @@ mount(p, uap, retval)
 		vput(vp);
 		return (ENODEV);
 	}
+	if (vp->v_usecount > 1 || vp->v_mountedhere != NULL) {
+		vput(vp);
+		return (EBUSY);
+	}
 
 	/*
 	 * Allocate and initialize the file system.
@@ -157,12 +161,6 @@ mount(p, uap, retval)
 		free((caddr_t)mp, M_MOUNT);
 		vput(vp);
 		return (error);
-	}
-	if (vp->v_mountedhere != NULL) {
-		vfs_unlock(mp);
-		free((caddr_t)mp, M_MOUNT);
-		vput(vp);
-		return (EBUSY);
 	}
 	vp->v_mountedhere = mp;
 	mp->mnt_vnodecovered = vp;
