@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	6.16 (Berkeley) %G%
+ *	@(#)machdep.c	6.17 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -381,7 +381,7 @@ sendsig(p, sig, mask)
  * Return to previous pc and psl as specified by
  * context left by sendsig. Check carefully to
  * make sure that the user has not modified the
- * psl to gain improper priviledges or to cause
+ * psl to gain improper privileges or to cause
  * a machine fault.
  */
 sigreturn()
