@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	6.3	83/11/14	*/
+/*	udp_usrreq.c	6.4	84/06/22	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -160,7 +160,7 @@ udp_output(inp, m0)
 	register struct udpiphdr *ui;
 	register struct socket *so;
 	register int len = 0;
-	int flags;
+	register struct route *ro;
 
 	/*
 	 * Calculate data length and get a mbuf
@@ -201,8 +201,24 @@ udp_output(inp, m0)
 	((struct ip *)ui)->ip_len = sizeof (struct udpiphdr) + len;
 	((struct ip *)ui)->ip_ttl = MAXTTL;
 	so = inp->inp_socket;
-	flags = (so->so_options & SO_DONTROUTE) | (so->so_state & SS_PRIV);
-	return (ip_output(m, (struct mbuf *)0, (struct route *)0, flags));
+	if (so->so_options & SO_DONTROUTE)
+		return (ip_output(m, (struct mbuf *)0, (struct route *)0,
+		    IP_ROUTETOIF));
+	/*
+	 * Use cached route for previous datagram if
+	 * this is also to the same destination. 
+	 *
+	 * NB: We don't handle broadcasts because that
+	 *     would require 3 subroutine calls.
+	 */
+	ro = &inp->inp_route;
+#define	satosin(sa)	((struct sockaddr_in *)(sa))
+	if (ro->ro_rt &&
+	    satosin(&ro->ro_dst)->sin_addr.s_addr != ui->ui_dst.s_addr) {
+		RTFREE(ro->ro_rt);
+		ro->ro_rt = (struct rtentry *)0;
+	}
+	return (ip_output(m, (struct mbuf *)0, ro, so->so_state & SS_PRIV));
 }
 
 /*ARGSUSED*/
