@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.25 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.26 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.25 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.26 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -158,12 +158,12 @@ queueup(e, queueall, announce)
 		{
 			syserr("queueup: cannot create %s", e->e_df);
 			if (!newid)
-				(void) fclose(tfp);
+				(void) xfclose(tfp, "queueup tfp", e->e_id);
 			return;
 		}
 		dfp = fdopen(fd, "w");
 		(*e->e_putbody)(dfp, ProgMailer, e);
-		(void) fclose(dfp);
+		(void) xfclose(dfp, "queueup dfp", e->e_id);
 		e->e_putbody = putbody;
 	}
 
@@ -199,7 +199,7 @@ queueup(e, queueall, announce)
 	lastctladdr = NULL;
 	for (q = e->e_errorqueue; q != NULL; q = q->q_next)
 	{
-		if (!bitset(QDONTSEND, q->q_flags))
+		if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
 		{
 			ADDRESS *ctladdr;
 
@@ -219,7 +219,7 @@ queueup(e, queueall, announce)
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
 		if (bitset(QQUEUEUP, q->q_flags) ||
-		    (queueall && !bitset(QDONTSEND|QSENT, q->q_flags)))
+		    (queueall && !bitset(QDONTSEND|QBADADDR|QSENT, q->q_flags)))
 		{
 			ADDRESS *ctladdr;
 
@@ -317,7 +317,7 @@ queueup(e, queueall, announce)
 		if (rename(tf, qf) < 0)
 			syserr("cannot rename(%s, %s), df=%s", tf, qf, e->e_df);
 		if (e->e_lockfp != NULL)
-			(void) fclose(e->e_lockfp);
+			(void) xfclose(e->e_lockfp, "queueup lockfp", e->e_id);
 		e->e_lockfp = tfp;
 	}
 	else
@@ -1226,8 +1226,8 @@ queuename(e, type)
 {
 	static char buf[MAXNAME];
 	static int pid = -1;
-	char c1 = 'A';
-	char c2 = 'A';
+	static char c1 = 'A';
+	static char c2 = 'A';
 
 	if (e->e_id == NULL)
 	{
@@ -1323,9 +1323,12 @@ queuename(e, type)
 unlockqueue(e)
 	ENVELOPE *e;
 {
+	if (tTd(51, 4))
+		printf("unlockqueue(%s)\n", e->e_id);
+
 	/* if there is a lock file in the envelope, close it */
 	if (e->e_lockfp != NULL)
-		fclose(e->e_lockfp);
+		xfclose(e->e_lockfp, "unlockqueue", e->e_id);
 	e->e_lockfp = NULL;
 
 	/* remove the transcript */
@@ -1333,7 +1336,7 @@ unlockqueue(e)
 	if (LogLevel > 87)
 		syslog(LOG_DEBUG, "%s: unlock", e->e_id);
 # endif /* LOG */
-	if (!tTd(51, 4))
+	if (!tTd(51, 104))
 		xunlink(queuename(e, 'x'));
 
 }

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.15 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.16 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.15 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.16 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -191,7 +191,10 @@ smtpmailfrom(m, mci, e)
 
 	mci->mci_state = MCIS_ACTIVE;
 
-	expand("\201<", buf, &buf[sizeof buf - 1], e);
+	if (bitset(EF_RESPONSE, e->e_flags))
+		(void) strcpy(buf, "");
+	else
+		expand("\201g", buf, &buf[sizeof buf - 1], e);
 	if (e->e_from.q_mailer == LocalMailer ||
 	    !bitnset(M_FROMPATH, m->m_flags))
 	{
@@ -497,6 +500,9 @@ reply(m, mci, e, timeout)
 		if (mci->mci_state == MCIS_CLOSED)
 			return (SMTPCLOSING);
 
+		if (mci->mci_out != NULL)
+			fflush(mci->mci_out);
+
 		/* get the line from the other side */
 		p = sfgets(SmtpReplyBuffer, sizeof SmtpReplyBuffer, mci->mci_in,
 			   timeout);
@@ -605,11 +611,19 @@ smtpmessage(f, m, mci, va_alist)
 	VA_START(mci);
 	(void) vsprintf(SmtpMsgBuffer, f, ap);
 	VA_END;
+
 	if (tTd(18, 1) || Verbose)
 		nmessage(">>> %s", SmtpMsgBuffer);
 	if (mci->mci_out != NULL)
+	{
 		fprintf(mci->mci_out, "%s%s", SmtpMsgBuffer,
 			m == NULL ? "\r\n" : m->m_eol);
+		(void) fflush(mci->mci_out);
+		if (ferror(mci->mci_out))
+			syserr("smtpmessage: ERROR mci_out");
+	}
+	else
+		syserr("smtpmessage: NULL mci_out");
 }
 
 # endif /* SMTP */

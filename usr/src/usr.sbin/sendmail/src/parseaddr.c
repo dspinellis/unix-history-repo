@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1483,7 +1483,7 @@ buildaddr(tv, a)
 		return (NULL);
 	}
 	tv++;
-	if (!strcasecmp(*tv, "error"))
+	if (strcasecmp(*tv, "error") == 0)
 	{
 		if ((**++tv & 0377) == CANONHOST)
 		{
@@ -1524,7 +1524,7 @@ buildaddr(tv, a)
 
 	for (mp = Mailer; (m = *mp++) != NULL; )
 	{
-		if (!strcasecmp(m->m_name, *tv))
+		if (strcasecmp(m->m_name, *tv) == 0)
 			break;
 	}
 	if (m == NULL)

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -81,23 +81,20 @@ dropenvelope(e)
 
 	if (tTd(50, 1))
 	{
-		printf("dropenvelope %x id=", e);
+		printf("dropenvelope %x: id=", e);
 		xputs(e->e_id);
-		printf(" flags=%o\n", e->e_flags);
+		printf(", flags=%o\n", e->e_flags);
 	}
 
+	/* we must have an id to remove disk files */
 	if (id == NULL)
-		id = "(none)";
+		return;
 
 #ifdef LOG
 	if (LogLevel > 84)
 		syslog(LOG_DEBUG, "dropenvelope, id=%s, flags=%o, pid=%d",
 				  id, e->e_flags, getpid());
 #endif /* LOG */
-
-	/* we must have an id to remove disk files */
-	if (e->e_id == NULL)
-		return;
 
 	/*
 	**  Extract state information from dregs of send list.
@@ -153,10 +150,10 @@ dropenvelope(e)
 	unlockqueue(e);
 
 	/* make sure that this envelope is marked unused */
-	e->e_id = e->e_df = NULL;
 	if (e->e_dfp != NULL)
-		(void) fclose(e->e_dfp);
+		(void) xfclose(e->e_dfp, "dropenvelope", e->e_df);
 	e->e_dfp = NULL;
+	e->e_id = e->e_df = NULL;
 
 #ifdef LOG
 	if (LogLevel > 74)
@@ -195,9 +192,10 @@ clearenvelope(e, fullclear)
 	{
 		/* clear out any file information */
 		if (e->e_xfp != NULL)
-			(void) fclose(e->e_xfp);
+			(void) xfclose(e->e_xfp, "clearenvelope xfp", e->e_id);
 		if (e->e_dfp != NULL)
-			(void) fclose(e->e_dfp);
+			(void) xfclose(e->e_dfp, "clearenvelope dfp", e->e_df);
+		e->e_xfp = e->e_dfp = NULL;
 	}
 
 	/* now clear out the data */
@@ -379,7 +377,7 @@ closexscript(e)
 {
 	if (e->e_xfp == NULL)
 		return;
-	(void) fclose(e->e_xfp);
+	(void) xfclose(e->e_xfp, "closexscript", e->e_id);
 	e->e_xfp = NULL;
 }
 /*
@@ -571,10 +569,8 @@ setsender(from, e, delimptr)
 	rewrite(pvp, 3);
 	rewrite(pvp, 1);
 	rewrite(pvp, 4);
-	cataddr(pvp, buf, sizeof buf, '\0');
-	e->e_sender = e->e_returnpath = newstr(buf);
 
-	define('f', e->e_sender, e);
+	define('f', e->e_from.q_paddr, e);
 
 	/* save the domain spec if this mailer wants it */
 	if (e->e_from.q_mailer != NULL &&

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -614,6 +614,29 @@ xunlink(f)
 	if (i < 0 && LogLevel > 97)
 		syslog(LOG_DEBUG, "%s: unlink-fail %d", f, errno);
 # endif /* LOG */
+}
+/*
+**  XFCLOSE -- close a file, doing logging as appropriate.
+**
+**	Parameters:
+**		fp -- file pointer for the file to close
+**		a, b -- miscellaneous crud to print for debugging
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		fp is closed.
+*/
+
+xfclose(fp, a, b)
+	FILE *fp;
+	char *a, *b;
+{
+	if (tTd(9, 99))
+		printf("xfclose(%x) %s %s\n", fp, a, b);
+	if (fclose(fp) < 0 && tTd(9, 99))
+		printf("xfclose FAILURE: %s\n", errstring(errno));
 }
 /*
 **  SFGETS -- "safe" fgets -- times out and ignores random interrupts.

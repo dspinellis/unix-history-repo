@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.44 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -59,12 +59,10 @@ deliver(e, firstto)
 	bool clever = FALSE;		/* running user smtp to this mailer */
 	ADDRESS *tochain = NULL;	/* chain of users in this mailer call */
 	int rcode;			/* response code */
-	char *from;			/* pointer to from person */
 	char *firstsig;			/* signature of firstto */
 	char *pv[MAXPV+1];
 	char tobuf[MAXLINE-50];		/* text line of to people */
 	char buf[MAXNAME];
-	char tfrombuf[MAXNAME];		/* translated from person */
 	char rpathbuf[MAXNAME];		/* translated return path */
 	extern int checkcompat();
 	extern ADDRESS *getctladdr();
@@ -106,7 +104,7 @@ deliver(e, firstto)
 	{
 		for (; to != NULL; to = to->q_next)
 		{
-			if (bitset(QDONTSEND|QQUEUEUP, to->q_flags) ||
+			if (bitset(QDONTSEND|QBADADDR|QQUEUEUP, to->q_flags) ||
 			    to->q_mailer != m)
 				continue;
 			to->q_flags |= QQUEUEUP|QDONTSEND;
@@ -131,22 +129,11 @@ deliver(e, firstto)
 	*/
 
 	/* rewrite from address, using rewriting rules */
-	(void) strcpy(rpathbuf, remotename(e->e_returnpath, m, TRUE, FALSE,
+	(void) strcpy(rpathbuf, remotename(e->e_from.q_paddr, m, TRUE, FALSE,
 					   TRUE, FALSE, e));
-	if (e->e_returnpath == e->e_sender)
-	{
-		from = rpathbuf;
-	}
-	else
-	{
-		(void) strcpy(tfrombuf, remotename(e->e_sender, m, TRUE, FALSE,
-						   TRUE, FALSE, e));
-		from = tfrombuf;
-	}
 
-	define('f', e->e_returnpath, e);	/* raw return path */
-	define('<', rpathbuf, e);		/* translated return path */
-	define('g', from, e);			/* translated sender */
+	define('f', e->e_from.q_paddr, e);	/* raw return path */
+	define('g', rpathbuf, e);		/* translated return path */
 	define('h', host, e);			/* to host */
 	Errors = 0;
 	pvp = pv;
@@ -231,7 +218,7 @@ deliver(e, firstto)
 			break;
 
 		/* if already sent or not for this host, don't send */
-		if (bitset(QDONTSEND|QQUEUEUP, to->q_flags) ||
+		if (bitset(QDONTSEND|QBADADDR|QQUEUEUP, to->q_flags) ||
 		    to->q_mailer != firstto->q_mailer ||
 		    strcmp(hostsignature(to->q_mailer, to->q_host, e), firstsig) != 0)
 			continue;
@@ -252,12 +239,12 @@ deliver(e, firstto)
 
 		user = to->q_user;
 		e->e_to = to->q_paddr;
-		to->q_flags |= QDONTSEND;
 		if (tTd(10, 5))
 		{
 			printf("deliver: QDONTSEND ");
 			printaddr(to, FALSE);
 		}
+		to->q_flags |= QDONTSEND;
 
 		/*
 		**  Check to see that these people are allowed to
@@ -663,9 +650,9 @@ endmailer(mci, name)
 
 	/* close any connections */
 	if (mci->mci_in != NULL)
-		(void) fclose(mci->mci_in);
+		(void) xfclose(mci->mci_in, name, "mci_in");
 	if (mci->mci_out != NULL)
-		(void) fclose(mci->mci_out);
+		(void) xfclose(mci->mci_out, name, "mci_out");
 	mci->mci_in = mci->mci_out = NULL;
 	mci->mci_state = MCIS_CLOSED;
 
@@ -1257,7 +1244,7 @@ putfromline(fp, m, e)
 		char *bang;
 		char xbuf[MAXLINE];
 
-		expand("\201<", buf, &buf[sizeof buf - 1], e);
+		expand("\201g", buf, &buf[sizeof buf - 1], e);
 		bang = strchr(buf, '!');
 		if (bang == NULL)
 			syserr("554 No ! in UUCP! (%s)", buf);
@@ -1335,28 +1322,6 @@ putbody(fp, m, e)
 		ExitStat = EX_IOERR;
 	}
 	errno = 0;
-}
-/*
-**  PARENTBODY -- put the body of the parent of a message.
-**
-**	Parameters:
-**		fp -- file to output onto.
-**		m -- a mailer descriptor to control output format.
-**		e -- the envelope whose parent to put out.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		The message is written onto fp.
-*/
-
-parentbody(fp, m, e)
-	FILE *fp;
-	MAILER *m;
-	register ENVELOPE *e;
-{
-	putbody(fp, m, e->e_parent);
 }
 /*
 **  MAILFILE -- Send a message to a file.
@@ -1483,7 +1448,7 @@ mailfile(filename, ctladdr, e)
 			message("451 I/O error");
 			setstat(EX_IOERR);
 		}
-		(void) fclose(f);
+		(void) xfclose(f, "mailfile", filename);
 		(void) fflush(stdout);
 
 		/* reset ISUID & ISGID bits for paranoid systems */
@@ -1527,8 +1492,6 @@ sendall(e, mode)
 	char mode;
 {
 	register ADDRESS *q;
-	bool oldverbose;
-	int pid;
 	char *owner;
 	int otherowners;
 	ENVELOPE *splitenv = NULL;
@@ -1549,7 +1512,9 @@ sendall(e, mode)
 
 	if (tTd(13, 1))
 	{
-		printf("\nSENDALL: mode %c, sendqueue:\n", mode);
+		printf("\nSENDALL: mode %c, e_from ", mode);
+		printaddr(&e->e_from, FALSE);
+		printf("sendqueue:\n");
 		printaddr(e->e_sendqueue, TRUE);
 	}
 
@@ -1574,12 +1539,12 @@ sendall(e, mode)
 	{
 		extern ADDRESS *recipient();
 
-		e->e_from.q_flags |= QDONTSEND;
 		if (tTd(13, 5))
 		{
 			printf("sendall: QDONTSEND ");
 			printaddr(&e->e_from, FALSE);
 		}
+		e->e_from.q_flags |= QDONTSEND;
 		(void) recipient(&e->e_from, &e->e_sendqueue, e);
 	}
 
@@ -1599,8 +1564,9 @@ sendall(e, mode)
 		if (a != NULL)
 			q->q_owner = a->q_owner;
 				
-		if (q->q_owner != NULL && !bitset(QDONTSEND, q->q_flags) &&
-		    strcmp(q->q_owner, e->e_returnpath) == 0)
+		if (q->q_owner != NULL &&
+		    !bitset(QDONTSEND, q->q_flags) &&
+		    strcmp(q->q_owner, e->e_from.q_paddr) == 0)
 			q->q_owner = NULL;
 	}
 		
@@ -1646,16 +1612,34 @@ sendall(e, mode)
 			extern HDR *copyheader();
 			extern ADDRESS *copyqueue();
 
+			/*
+			**  Split this envelope into two.
+			*/
+
 			ee = (ENVELOPE *) xalloc(sizeof(ENVELOPE));
-			STRUCTCOPY(*e, *ee);
+			*ee = *e;
 			ee->e_id = NULL;
-			ee->e_parent = e;
+			(void) queuename(ee, '\0');
+
+			if (tTd(13, 1))
+				printf("sendall: split %s into %s\n",
+					e->e_id, ee->e_id);
+
 			ee->e_header = copyheader(e->e_header);
 			ee->e_sendqueue = copyqueue(e->e_sendqueue);
 			ee->e_errorqueue = copyqueue(e->e_errorqueue);
 			ee->e_flags = e->e_flags & ~(EF_INQUEUE|EF_CLRQUEUE);
-			ee->e_returnpath = owner;
-			ee->e_putbody = parentbody;
+			(void) parseaddr(owner, &ee->e_from, 1, '\0', NULL, ee);
+			if (tTd(13, 5))
+			{
+				printf("sendall(split): QDONTSEND ");
+				printaddr(&ee->e_from, FALSE);
+			}
+			ee->e_from.q_flags |= QDONTSEND;
+			ee->e_dfp = NULL;
+			ee->e_xfp = NULL;
+			ee->e_lockfp = NULL;
+			ee->e_df = NULL;
 			ee->e_sibling = splitenv;
 			splitenv = ee;
 			
@@ -1676,11 +1660,32 @@ sendall(e, mode)
 						e->e_df, ee->e_df);
 				}
 			}
+
+			if (mode != SM_VERIFY)
+			{
+				char xfbuf1[20], xfbuf2[20];
+
+				(void) strcpy(xfbuf1, queuename(e, 'x'));
+				(void) strcpy(xfbuf2, queuename(ee, 'x'));
+				if (link(xfbuf1, xfbuf2) < 0)
+				{
+					syserr("sendall: link(%s, %s)",
+						xfbuf1, xfbuf2);
+				}
+			}
 		}
 	}
 
 	if (owner != NULL)
-		e->e_returnpath = owner;
+	{
+		(void) parseaddr(owner, &e->e_from, 1, '\0', NULL, e);
+		if (tTd(13, 5))
+		{
+			printf("sendall(owner): QDONTSEND ");
+			printaddr(&e->e_from, FALSE);
+		}
+		e->e_from.q_flags |= QDONTSEND;
+	}
 
 # ifdef QUEUE
 	if ((mode == SM_QUEUE || mode == SM_FORK ||
@@ -1691,20 +1696,35 @@ sendall(e, mode)
 
 	if (splitenv != NULL)
 	{
+		register ENVELOPE *ee;
+
 		if (tTd(13, 1))
 		{
 			printf("\nsendall: Split queue; remaining queue:\n");
 			printaddr(e->e_sendqueue, TRUE);
 		}
 
-		while (splitenv != NULL)
+		for (ee = splitenv; ee != NULL; ee = ee->e_sibling)
 		{
-			sendall(splitenv, mode);
-			splitenv = splitenv->e_sibling;
+			CurEnv = ee;
+			sendenvelope(ee, mode);
 		}
 
 		CurEnv = e;
 	}
+	sendenvelope(e, mode);
+
+	for (; splitenv != NULL; splitenv = splitenv->e_sibling)
+		dropenvelope(splitenv);
+}
+
+sendenvelope(e, mode)
+	register ENVELOPE *e;
+	char mode;
+{
+	bool oldverbose;
+	int pid;
+	register ADDRESS *q;
 
 	oldverbose = Verbose;
 	switch (mode)
@@ -1732,7 +1752,7 @@ sendall(e, mode)
 
 		if (e->e_lockfp != NULL)
 		{
-			(void) fclose(e->e_lockfp);
+			(void) xfclose(e->e_lockfp, "sendenvelope", "lockfp");
 			e->e_lockfp = NULL;
 		}
 # endif /* LOCKF */
@@ -1749,7 +1769,7 @@ sendall(e, mode)
 # ifndef LOCKF
 			if (e->e_lockfp != NULL)
 			{
-				(void) fclose(e->e_lockfp);
+				(void) xfclose(e->e_lockfp, "sendenvelope", "lockfp");
 				e->e_lockfp = NULL;
 			}
 # endif
@@ -1757,12 +1777,12 @@ sendall(e, mode)
 			/* close any random open files in the envelope */
 			if (e->e_dfp != NULL)
 			{
-				(void) fclose(e->e_dfp);
+				(void) xfclose(e->e_dfp, "sendenvelope", "dfp");
 				e->e_dfp = NULL;
 			}
 			if (e->e_xfp != NULL)
 			{
-				(void) fclose(e->e_xfp);
+				(void) xfclose(e->e_xfp, "sendenvelope", "xfp");
 				e->e_xfp = NULL;
 			}
 			return;
@@ -1824,7 +1844,7 @@ sendall(e, mode)
 			if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
 				message("deliverable");
 		}
-		else if (!bitset(QDONTSEND, q->q_flags))
+		else if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
 		{
 # ifdef QUEUE
 			/*
@@ -1847,7 +1867,9 @@ sendall(e, mode)
 	*/
 
 	if (mode == SM_VERIFY)
+	{
 		return;
+	}
 
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
@@ -1860,6 +1882,8 @@ sendall(e, mode)
 		/* only send errors if the message failed */
 		if (!bitset(QBADADDR, q->q_flags))
 			continue;
+
+		e->e_flags |= EF_FATALERRS;
 
 		if (q->q_owner == NULL && strcmp(e->e_from.q_paddr, "<>") != 0)
 			(void) sendtolist(e->e_from.q_paddr, NULL,

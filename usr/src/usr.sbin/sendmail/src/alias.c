@@ -28,15 +28,15 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.24 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.25 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.24 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.25 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.24 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.25 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.24 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.25 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -122,7 +122,7 @@ alias(a, sendq, e)
 		printf("alias(%s)\n", a->q_paddr);
 
 	/* don't realias already aliased names */
-	if (bitset(QDONTSEND|QVERIFIED, a->q_flags))
+	if (bitset(QDONTSEND|QBADADDR|QVERIFIED, a->q_flags))
 		return;
 
 	e->e_to = a->q_paddr;
