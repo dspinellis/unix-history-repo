@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.89		%G%);
+SCCSID(@(#)deliver.c	3.90		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1252,6 +1252,8 @@ remotename(name, m, force)
 
 	define('x', getxpart(name));
 	pvp = prescan(name, '\0');
+	if (pvp == NULL)
+		return (name);
 	rewrite(pvp, 1);
 	rewrite(pvp, 3);
 	if (**pvp == CANONNET)
@@ -1267,6 +1269,8 @@ remotename(name, m, force)
 
 	/* rewrite to get rid of garbage we added in the expand above */
 	pvp = prescan(buf, '\0');
+	if (pvp == NULL)
+		return (name);
 	rewrite(pvp, 2);
 	cataddr(pvp, lbuf, sizeof lbuf);
 
