@@ -1,4 +1,4 @@
-/*	expand.c	4.3	83/06/10	*/
+/*	expand.c	4.4	83/07/01	*/
 
 #
 /*
@@ -12,7 +12,7 @@
 #include	"defs.h"
 #include	<sys/param.h>
 #include	<sys/stat.h>
-#include	<dir.h>
+#include	<sys/dir.h>
 
 
 
