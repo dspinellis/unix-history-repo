@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -218,7 +218,7 @@ acct:
 	}
 	sprintf(ibuf, "sent data %ld bytes %ld.%02d secs",
 		fbytes, (long)t2.time, mil / 10);
-	sysacct(abytes, t2.time - t1.time);
+	sysacct(abytes, t2.time);
 	if (retries > 0)
 		sprintf(&ibuf[strlen(ibuf)], ", %d retries", retries);
 	DEBUG(1, "%s\n", ibuf);
@@ -290,7 +290,7 @@ acct:
 		fbytes, (long)t2.time, mil/10);
 	if (retries > 0) 
 		sprintf(&ibuf[strlen(ibuf)]," %d retries", retries);
-	sysacct(abytes, t2.time - t1.time);
+	sysacct(abytes, t2.time);
 	DEBUG(1, "%s\n", ibuf);
 	syslog(ibuf);
 	if (ret == FAIL) {
