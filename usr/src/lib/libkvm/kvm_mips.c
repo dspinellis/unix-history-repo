@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_mips.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_mips.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 /*
  * MIPS machine dependent routines for kvm.  Hopefully, the forthcoming 
@@ -37,6 +37,11 @@ static char sccsid[] = "@(#)kvm_mips.c	5.1 (Berkeley) %G%";
 #include <machine/pte.h>
 #include <machine/pmap.h>
 
+struct vmstate {
+	pt_entry_t	*Sysmap;
+	u_int		Sysmapsize;
+};
+
 #define KREAD(kd, addr, p)\
 	(kvm_read(kd, addr, (char *)(p), sizeof(*(p))) != sizeof(*(p)))
 
@@ -44,13 +49,38 @@ void
 _kvm_freevtop(kd)
 	kvm_t *kd;
 {
+	if (kd->vmst != 0)
+		free(kd->vmst);
 }
 
 int
 _kvm_initvtop(kd)
 	kvm_t *kd;
 {
+	struct vmstate *vm;
+	struct nlist nlist[3];
 
+	vm = (struct vmstate *)_kvm_malloc(kd, sizeof(*vm));
+	if (vm == 0)
+		return (-1);
+	kd->vmst = vm;
+
+	nlist[0].n_name = "Sysmap";
+	nlist[1].n_name = "Sysmapsize";
+	nlist[2].n_name = 0;
+
+	if (kvm_nlist(kd, nlist) != 0) {
+		_kvm_err(kd, kd->program, "bad namelist");
+		return (-1);
+	}
+	if (KREAD(kd, (u_long)nlist[0].n_value, &vm->Sysmap)) {
+		_kvm_err(kd, kd->program, "cannot read Sysmap");
+		return (-1);
+	}
+	if (KREAD(kd, (u_long)nlist[1].n_value, &vm->Sysmapsize)) {
+		_kvm_err(kd, kd->program, "cannot read mmutype");
+		return (-1);
+	}
 	return (0);
 }
 
@@ -63,16 +93,31 @@ _kvm_kvatop(kd, va, pa)
 	u_long va;
 	u_long *pa;
 {
+	register struct vmstate *vm;
 	u_long pte, addr, offset;
 
+	if (ISALIVE(kd)) {
+		_kvm_err(kd, 0, "vatop called in live kernel!");
+		return((off_t)0);
+	}
+	vm = kd->vmst;
+	offset = va & PGOFSET;
+	/*
+	 * If we are initializing (kernel segment table pointer not yet set)
+	 * then return pa == va to avoid infinite recursion.
+	 */
+	if (vm->Sysmap == 0) {
+		*pa = va;
+		return (NBPG - offset);
+	}
 	if (va < KERNBASE ||
-	    va >= VM_MIN_KERNEL_ADDRESS + PMAP_HASH_KPAGES * NPTEPG * NBPG)
+	    va >= VM_MIN_KERNEL_ADDRESS + vm->Sysmapsize * NBPG)
 		goto invalid;
 	if (va < VM_MIN_KERNEL_ADDRESS) {
 		*pa = MACH_CACHED_TO_PHYS(va);
-		return (NBPG - (va & PGOFSET));
+		return (NBPG - offset);
 	}
-	addr = PMAP_HASH_KADDR + ((va - VM_MIN_KERNEL_ADDRESS) >> PGSHIFT);
+	addr = (u_long)(vm->Sysmap + ((va - VM_MIN_KERNEL_ADDRESS) >> PGSHIFT));
 	/*
 	 * Can't use KREAD to read kernel segment table entries.
 	 * Fortunately it is 1-to-1 mapped so we don't have to. 
@@ -80,7 +125,8 @@ _kvm_kvatop(kd, va, pa)
 	if (lseek(kd->pmfd, (off_t)addr, 0) < 0 ||
 	    read(kd->pmfd, (char *)&pte, sizeof(pte)) < 0)
 		goto invalid;
-	offset = va & PGOFSET;
+	if (!(pte & PG_V))
+		goto invalid;
 	*pa = (pte & PG_FRAME) | offset;
 	return (NBPG - offset);
 
@@ -99,18 +145,37 @@ _kvm_uvatop(kd, p, va, pa)
 	u_long va;
 	u_long *pa;
 {
-#if 0
 	register struct vmspace *vms = p->p_vmspace;
-	u_long stab_kva, kva;
+	u_long kva, offset;
 
-	kva = (u_long)&vms->vm_pmap.pm_stab;
-	if (kvm_read(kd, kva, (char *)&kva, 4) != 4) {
-		_kvm_err(kd, 0, "invalid address (%x)", va);
-		return (0);
-	}
-	return (_kvm_vatop(kd, kva, va, pa));
-#else
+	if (va >= KERNBASE)
+		goto invalid;
+
+	/* read the address of the first level table */
+	kva = (u_long)&vms->vm_pmap.pm_segtab;
+	if (kvm_read(kd, kva, (char *)&kva, sizeof(kva)) != sizeof(kva))
+		goto invalid;
+	if (kva == 0)
+		goto invalid;
+
+	/* read the address of the second level table */
+	kva += (va >> SEGSHIFT) * sizeof(caddr_t);
+	if (kvm_read(kd, kva, (char *)&kva, sizeof(kva)) != sizeof(kva))
+		goto invalid;
+	if (kva == 0)
+		goto invalid;
+
+	/* read the pte from the second level table */
+	kva += (va >> PGSHIFT) & (NPTEPG - 1);
+	if (kvm_read(kd, kva, (char *)&kva, sizeof(kva)) != sizeof(kva))
+		goto invalid;
+	if (!(kva & PG_V))
+		goto invalid;
+	offset = va & PGOFSET;
+	*pa = (kva & PG_FRAME) | offset;
+	return (NBPG - offset);
+
+invalid:
 	_kvm_err(kd, 0, "invalid address (%x)", va);
 	return (0);
-#endif
 }
