@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp.h	7.4.1.2 (Berkeley) %G%
+ *	@(#)tcp.h	7.6 (Berkeley) %G%
  */
 #ifndef BYTE_ORDER
 /*
@@ -70,15 +70,11 @@ struct tcphdr {
  * Default maximum segment size for TCP.
  * With an IP MSS of 576, this is 536,
  * but 512 is probably more convenient.
+ * This should be defined as MIN(512, IP_MSS - sizeof (struct tcpiphdr)).
  */
-#ifdef	lint
-#define	TCP_MSS	536
-#else
-#ifndef IP_MSS
-#define	IP_MSS	576
-#endif
-#define	TCP_MSS	MIN(512, IP_MSS - sizeof (struct tcpiphdr))
-#endif
+#define	TCP_MSS	512
+
+#define	TCP_MAXWIN	65535		/* largest value for window */
 
 /*
  * User-settable options (used with setsockopt).
