@@ -11,20 +11,12 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 /*
  * Print system stuff
  */
-
-#define mask(x) (x&0377)
-#ifdef vax
-#define	clear(x) ((int)x&0x7fffffff)
-#endif
-#ifdef tahoe
-#define	clear(x) ((int)x&~0xc0000000)
-#endif
 
 #include <sys/param.h>
 #include <sys/dir.h>
@@ -43,6 +35,9 @@ static char sccsid[] = "@(#)pstat.c	5.9 (Berkeley) %G%";
 #include <nlist.h>
 #include <machine/pte.h>
 #include <stdio.h>
+
+#define mask(x)		(x&0377)
+#define	clear(x)	((int)x &~ KERNBASE)
 
 char	*fcore	= "/dev/kmem";
 char	*fmem	= "/dev/mem";
@@ -1110,6 +1105,7 @@ mkphys(addr)
 
 	if (!kflg)
 		return(addr);
+	addr = clear(addr);
 	o = addr & PGOFSET;
 	addr >>= PGSHIFT;
 	addr &= PG_PFNUM;

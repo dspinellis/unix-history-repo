@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -603,7 +603,7 @@ getkvars(argc, argv)
 			exit(1);
 		}
 		addr = (long) nl[X_SYSMAP].n_value;
-		addr &= ~0x80000000;
+		addr &= ~KERNBASE;
 		(void) lseek(kmem, addr, 0);
 		read(kmem, (char *) Sysmap, Syssize * sizeof (struct pte));
 	}
@@ -1485,9 +1485,9 @@ long	loc;
 	register	p;
 	off_t	newloc;
 
-	newloc = loc & ~0xc0000000;
+	newloc = loc & ~KERNBASE;
 	p = btop(newloc);
-	if ((loc & 0xc0000000) == 0) {
+	if ((loc & KERNBASE) == 0) {
 		fprintf(stderr, "Vtophys: translating non-kernel address\n");
 		return((off_t) -1);
 	}
