@@ -1,4 +1,4 @@
-/*	strcpy.s	4.1	84/11/01	*/
+/*	strcpy.s	4.2	84/11/01	*/
 
 /*
  * Copy string s2 over top of s1.
@@ -7,10 +7,9 @@
  * strcpy(s1, s2)
  *	char *s1, *s2;
  */
-	.globl	_strcpy
+#include "DEFS.h"
 
-_strcpy:
-	.word	0x80
+ENTRY(strcpy, R6)
 	movl	4(ap), r3	# r3 = s1
 	movl	8(ap), r6	# r6 = s2
 1:

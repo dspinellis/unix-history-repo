@@ -1,4 +1,4 @@
-/*	setjmp.s	4.5	83/08/14	*/
+/*	setjmp.s	4.6	84/11/01	*/
 
 /*
  * C library -- setjmp, longjmp
@@ -15,7 +15,7 @@
 
 #include "DEFS.h"
 
-ENTRY(setjmp)
+ENTRY(setjmp, 0)
 	pushl	$0
 	calls	$1,_sigblock		# get signal mask
 	movl	r0,r1
@@ -27,7 +27,7 @@ ENTRY(setjmp)
 	clrl	r0
 	ret
 
-ENTRY(longjmp)
+ENTRY(longjmp, 0)
 	movl	8(ap),r0		# return(v)
 	movl	4(ap),r1		# fetch buffer
 	tstl	(r1)

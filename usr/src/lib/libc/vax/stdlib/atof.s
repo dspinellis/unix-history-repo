@@ -1,4 +1,4 @@
-/*	atof.s	4.2	83/06/30	*/
+/*	atof.s	4.3	84/11/01	*/
 
 #include "DEFS.h"
 
@@ -20,24 +20,12 @@
  *			second section: scratch
  *		r5:	the decimal exponent
  *		r6-7:	scratch
- *
- *	Flag definitions
  */
 	.set	msign,0		# mantissa has negative sign
 	.set	esign,1		# exponent has negative sign
 	.set	decpt,2		# decimal point encountered
 
-	.align	2
-two31:	.word	0x5000		# 2 ** 31
-	.word	0		# (=2147483648)
-	.word	0		# in floating-point
-	.word	0		# (so atof doesn't have to convert it)
-/*
- *	Entry point
- */
-ENTRY(atof)
-	pushl	r6
-	pushl	r7
+ENTRY(atof, R6|R7)
 /*
  *	Initialization
  */
@@ -319,8 +307,11 @@ cm2:	pushl	r2		# Put exponent in parameter list
 	movd	r0,-(sp)	#    and also mantissa
 	calls	$3,_ldexp	# go combine them
 
-
 exit:
-	movl	(sp)+,r7
-	movl	(sp)+,r6
 	ret
+
+	.align	2
+two31:	.word	0x5000		# 2 ** 31
+	.word	0		# (=2147483648)
+	.word	0		# in floating-point
+	.word	0		# (so atof doesn't have to convert it)

@@ -1,4 +1,4 @@
-/*	_setjmp.s	4.2	83/07/02	*/
+/*	_setjmp.s	4.3	84/11/01	*/
 
 /*
  * C library -- _setjmp, _longjmp
@@ -13,14 +13,14 @@
 
 #include "DEFS.h"
 
-ENTRY(_setjmp)
+ENTRY(_setjmp, 0)
 	movl	4(ap),r0
 	movl	12(fp),(r0)		# save frame pointer of caller
 	movl	16(fp),4(r0)		# save pc of caller
 	clrl	r0
 	ret
 
-ENTRY(_longjmp)
+ENTRY(_longjmp, 0)
 	movl	8(ap),r0		# return(v)
 	movl	4(ap),r1		# fetch buffer
 	tstl	(r1)

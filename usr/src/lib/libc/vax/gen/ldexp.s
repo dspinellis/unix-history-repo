@@ -1,4 +1,4 @@
-/*	ldexp.s	4.1	83/06/27	*/
+/*	ldexp.s	4.2	84/11/01	*/
 
 /*
  * double ldexp (value, exp)
@@ -18,7 +18,7 @@
 
 	.globl	_errno
 
-ENTRY(ldexp)
+ENTRY(ldexp, 0)
 	movd	4(ap),r0	/* fetch "value" */
 	extzv	$7,$8,r0,r2	/* r2 := biased exponent */
 	jeql	1f		/* if zero, done */

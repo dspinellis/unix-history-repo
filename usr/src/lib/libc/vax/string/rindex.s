@@ -1,4 +1,4 @@
-/*	rindex.s	4.1	84/11/01	*/
+/*	rindex.s	4.2	84/11/01	*/
 
 /*
  * Find the last occurence of c in the string cp.
@@ -8,10 +8,9 @@
  * rindex(cp, c)
  *	char *cp, c;
  */
-	.globl	_rindex
+#include "DEFS.h"
 
-_rindex:
-	.word	0x0
+ENTRY(rindex, 0)
 	movq	4(ap),r1	# r1 = cp; r2 = c
 	tstl	r2		# check for special case c == '\0'
 	bneq	2f

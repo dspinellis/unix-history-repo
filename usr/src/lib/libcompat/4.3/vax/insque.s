@@ -1,8 +1,8 @@
-/* @(#)insque.s	4.1 %G% */
+/* @(#)insque.s	4.2 %G% */
 /* insque(new, pred) */
 
 #include "DEFS.h"
 
-ENTRY(insque)
+ENTRY(insque, 0)
 	insque	*4(ap), *8(ap)
 	ret

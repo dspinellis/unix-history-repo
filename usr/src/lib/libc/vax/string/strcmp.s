@@ -1,4 +1,4 @@
-/*	strcmp.s	4.1	84/11/01	*/
+/*	strcmp.s	4.2	84/11/01	*/
 
 /*
  * Compare string s1 lexicographically to string s2.
@@ -10,10 +10,9 @@
  * strcmp(s1, s2)
  *	char *s1, *s2;
  */
-	.globl	_strcmp
+#include "DEFS.h"
 
-_strcmp:
-	.word	0x0
+ENTRY(strcmp, 0)
 	movq	4(ap),r3	# r3 = s1; r4 = s2
 1:
 	locc	$0,$65535,(r4)	# look for '\0' in s2
