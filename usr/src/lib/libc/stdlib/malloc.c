@@ -1,8 +1,77 @@
 #ifndef lint
-static char sccsid[] = "@(#)malloc.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)malloc.c	4.2 (Berkeley) %G%";
 #endif
+
+/*
+ * malloc.c (Caltech) 2/21/82
+ * Chris Kingsley, kingsley@cit-20.
+ *
+ * This is a very fast storage allocator.  It allocates blocks of a small 
+ * number of different sizes, and keeps free lists of each size.  Blocks that
+ * don't exactly fit are passed up to the next larger size.  In this 
+ * implementation, the available sizes are 2^n-4 (or 2^n-12) bytes long.
+ * This is designed for use in a program that uses vast quantities of memory,
+ * but bombs when it runs out. 
+ */
+
+#include <sys/types.h>
+
+#define	NULL 0
+
+/*
+ * The overhead on a block is at least 4 bytes.  When free, this space
+ * contains a pointer to the next free block, and the bottom two bits must
+ * be zero.  When in use, the first byte is set to MAGIC, and the second
+ * byte is the size index.  The remaining bytes are for alignment.
+ * If range checking is enabled and the size of the block fits
+ * in two bytes, then the top two bytes hold the size of the requested block
+ * plus the range checking words, and the header word MINUS ONE.
+ */
+union	overhead {
+	union	overhead *ov_next;	/* when free */
+	struct {
+		u_char	ovu_magic;	/* magic number */
+		u_char	ovu_index;	/* bucket # */
+#ifdef RCHECK
+		u_short	ovu_size;	/* actual block size */
+		u_int	ovu_rmagic;	/* range magic number */
+#endif
+	} ovu;
+#define	ov_magic	ovu.ovu_magic
+#define	ov_index	ovu.ovu_index
+#define	ov_size		ovu.ovu_size
+#define	ov_rmagic	ovu.ovu_rmagic
+};
+
+#define	MAGIC		0xff		/* magic # on accounting info */
+#define RMAGIC		0x55555555	/* magic # on range info */
+#ifdef RCHECK
+#define	RSLOP		sizeof (u_int)
+#else
+#define	RSLOP		0
+#endif
+
+/*
+ * nextf[i] is the pointer to the next free block of size 2^(i+3).  The
+ * smallest allocatable block is 8 bytes.  The overhead information
+ * precedes the data area returned to the user.
+ */
+#define	NBUCKETS 30
+static	union overhead *nextf[NBUCKETS];
+extern	char *sbrk();
+
+#ifdef MSTATS
+/*
+ * nmalloc[i] is the difference between the number of mallocs and frees
+ * for a given block size.
+ */
+static	u_int nmalloc[NBUCKETS];
+#include <stdio.h>
+#endif
+
 #ifdef debug
-#define ASSERT(p) if(!(p))botch("p");else
+#define	ASSERT(p)   if (!(p)) botch("p"); else
+static
 botch(s)
 char *s;
 {
@@ -10,183 +79,234 @@ char *s;
 	abort();
 }
 #else
-#define ASSERT(p)
+#define	ASSERT(p)
 #endif
-
-/*	avoid break bug */
-#ifdef pdp11
-#define GRANULE 64
-#else
-#define GRANULE 0
-#endif
-/*	C storage allocator
- *	circular first-fit strategy
- *	works with noncontiguous, but monotonically linked, arena
- *	each block is preceded by a ptr to the (pointer of) 
- *	the next following block
- *	blocks are exact number of words long 
- *	aligned to the data type requirements of ALIGN
- *	pointers to blocks must have BUSY bit 0
- *	bit in ptr is 1 for busy, 0 for idle
- *	gaps in arena are merely noted as busy blocks
- *	last block of arena (pointed to by alloct) is empty and
- *	has a pointer to first
- *	idle blocks are coalesced during space search
- *
- *	a different implementation may need to redefine
- *	ALIGN, NALIGN, BLOCK, BUSY, INT
- *	where INT is integer type to which a pointer can be cast
-*/
-#define INT int
-#define ALIGN int
-#define NALIGN 1
-#define WORD sizeof(union store)
-#define BLOCK 1024	/* a multiple of WORD*/
-#define BUSY 1
-#define NULL 0
-#define testbusy(p) ((INT)(p)&BUSY)
-#define setbusy(p) (union store *)((INT)(p)|BUSY)
-#define clearbusy(p) (union store *)((INT)(p)&~BUSY)
-
-union store { union store *ptr;
-	      ALIGN dummy[NALIGN];
-	      int calloc;	/*calloc clears an array of integers*/
-};
-
-static	union store allocs[2];	/*initial arena*/
-static	union store *allocp;	/*search ptr*/
-static	union store *alloct;	/*arena top*/
-static	union store *allocx;	/*for benefit of realloc*/
-char	*sbrk();
 
 char *
 malloc(nbytes)
-unsigned nbytes;
+	register unsigned nbytes;
 {
-	register union store *p, *q;
-	register nw;
-	static temp;	/*coroutines assume no auto*/
+  	register union overhead *p;
+  	register int bucket = 0;
+  	register unsigned shiftr;
 
-	if(allocs[0].ptr==0) {	/*first time*/
-		allocs[0].ptr = setbusy(&allocs[1]);
-		allocs[1].ptr = setbusy(&allocs[0]);
-		alloct = &allocs[1];
-		allocp = &allocs[0];
-	}
-	nw = (nbytes+WORD+WORD-1)/WORD;
-	ASSERT(allocp>=allocs && allocp<=alloct);
-	ASSERT(allock());
-	for(p=allocp; ; ) {
-		for(temp=0; ; ) {
-			if(!testbusy(p->ptr)) {
-				while(!testbusy((q=p->ptr)->ptr)) {
-					ASSERT(q>p&&q<alloct);
-					p->ptr = q->ptr;
-				}
-				if(q>=p+nw && p+nw>=p)
-					goto found;
-			}
-			q = p;
-			p = clearbusy(p->ptr);
-			if(p>q)
-				ASSERT(p<=alloct);
-			else if(q!=alloct || p!=allocs) {
-				ASSERT(q==alloct&&p==allocs);
-				return(NULL);
-			} else if(++temp>1)
-				break;
-		}
-		temp = ((nw+BLOCK/WORD)/(BLOCK/WORD))*(BLOCK/WORD);
-		q = (union store *)sbrk(0);
-		if(q+temp+GRANULE < q) {
-			return(NULL);
-		}
-		q = (union store *)sbrk(temp*WORD);
-		if((INT)q == -1) {
-			return(NULL);
-		}
-		ASSERT(q>alloct);
-		alloct->ptr = q;
-		if(q!=alloct+1)
-			alloct->ptr = setbusy(alloct->ptr);
-		alloct = q->ptr = q+temp-1;
-		alloct->ptr = setbusy(allocs);
-	}
-found:
-	allocp = p + nw;
-	ASSERT(allocp<=alloct);
-	if(q>allocp) {
-		allocx = allocp->ptr;
-		allocp->ptr = p->ptr;
-	}
-	p->ptr = setbusy(allocp);
-	return((char *)(p+1));
+	/*
+	 * Convert amount of memory requested into
+	 * closest block size stored in hash buckets
+	 * which satisfies request.  Account for
+	 * space used per block for accounting.
+	 */
+  	nbytes += sizeof (union overhead) + RSLOP;
+  	nbytes = (nbytes + 3) &~ 3; 
+  	shiftr = (nbytes - 1) >> 2;
+	/* apart from this loop, this is O(1) */
+  	while (shiftr >>= 1)
+  		bucket++;
+	/*
+	 * If nothing in hash bucket right now,
+	 * request more memory from the system.
+	 */
+  	if (nextf[bucket] == NULL)    
+  		morecore(bucket);
+  	if ((p = (union overhead *)nextf[bucket]) == NULL)
+  		return (NULL);
+	/* remove from linked list */
+  	nextf[bucket] = nextf[bucket]->ov_next;
+	p->ov_magic = MAGIC;
+	p->ov_index= bucket;
+#ifdef MSTATS
+  	nmalloc[bucket]++;
+#endif
+#ifdef RCHECK
+	/*
+	 * Record allocated size of block and
+	 * bound space with magic numbers.
+	 */
+  	if (nbytes <= 0x10000)
+		p->ov_size = nbytes - 1;
+	p->ov_rmagic = RMAGIC;
+  	*((u_int *)((caddr_t)p + nbytes - RSLOP)) = RMAGIC;
+#endif
+  	return ((char *)(p + 1));
 }
 
-/*	freeing strategy tuned for LIFO allocation
-*/
-free(ap)
-register char *ap;
+/*
+ * Allocate more memory to the indicated bucket.
+ */
+static
+morecore(bucket)
+	register bucket;
 {
-	register union store *p = (union store *)ap;
+  	register union overhead *op;
+  	register int rnu;       /* 2^rnu bytes will be requested */
+  	register int nblks;     /* become nblks blocks of the desired size */
+	register int siz;
 
-	ASSERT(p>clearbusy(allocs[1].ptr)&&p<=alloct);
-	ASSERT(allock());
-	allocp = --p;
-	ASSERT(testbusy(p->ptr));
-	p->ptr = clearbusy(p->ptr);
-	ASSERT(p->ptr > allocp && p->ptr <= alloct);
+  	if (nextf[bucket])
+  		return;
+	/*
+	 * Insure memory is allocated
+	 * on a page boundary.  Should
+	 * make getpageize call?
+	 */
+  	op = (union overhead *)sbrk(0);
+  	if ((int)op & 0x3ff)
+  		sbrk(1024 - ((int)op & 0x3ff));
+	/* take 2k unless the block is bigger than that */
+  	rnu = (bucket <= 8) ? 11 : bucket + 3;
+  	nblks = 1 << (rnu - (bucket + 3));  /* how many blocks to get */
+  	if (rnu < bucket)
+		rnu = bucket;
+	op = (union overhead *)sbrk(1 << rnu);
+	/* no more room! */
+  	if ((int)op == -1)
+  		return;
+	/*
+	 * Round up to minimum allocation size boundary
+	 * and deduct from block count to reflect.
+	 */
+  	if ((int)op & 7) {
+  		op = (union overhead *)(((int)op + 8) &~ 7);
+  		nblks--;
+  	}
+	/*
+	 * Add new memory allocated to that on
+	 * free list for this hash bucket.
+	 */
+  	nextf[bucket] = op;
+  	siz = 1 << (bucket + 3);
+  	while (--nblks > 0) {
+		op->ov_next = (union overhead *)((caddr_t)op + siz);
+		op = (union overhead *)((caddr_t)op + siz);
+  	}
 }
 
-/*	realloc(p, nbytes) reallocates a block obtained from malloc()
- *	and freed since last call of malloc()
- *	to have new size nbytes, and old content
- *	returns new location, or 0 on failure
-*/
+free(cp)
+	char *cp;
+{   
+  	register int size;
+	register union overhead *op;
+
+  	if (cp == NULL)
+  		return;
+	op = (union overhead *)((caddr_t)cp - sizeof (union overhead));
+#ifdef debug
+  	ASSERT(op->ov_magic == MAGIC);		/* make sure it was in use */
+#else
+	if (op->ov_magic != MAGIC)
+		return;				/* sanity */
+#endif
+#ifdef RCHECK
+  	ASSERT(op->ov_rmagic == RMAGIC);
+	if (op->ov_index <= 13)
+		ASSERT(*(u_int *)((caddr_t)op + op->ov_size + 1 - RSLOP) == RMAGIC);
+#endif
+  	ASSERT(op->ov_index < NBUCKETS);
+  	size = op->ov_index;
+	op->ov_next = nextf[size];
+  	nextf[size] = op;
+#ifdef MSTATS
+  	nmalloc[size]--;
+#endif
+}
+
+/*
+ * When a program attempts "storage compaction" as mentioned in the
+ * old malloc man page, it realloc's an already freed block.  Usually
+ * this is the last block it freed; occasionally it might be farther
+ * back.  We have to search all the free lists for the block in order
+ * to determine its bucket: 1st we make one pass thru the lists
+ * checking only the first block in each; if that fails we search
+ * ``realloc_srchlen'' blocks in each list for a match (the variable
+ * is extern so the caller can modify it).  If that fails we just copy
+ * however many bytes was given to realloc() and hope it's not huge.
+ */
+int realloc_srchlen = 4;	/* 4 should be plenty.  -1 means whole list */
 
 char *
-realloc(p, nbytes)
-register union store *p;
-unsigned nbytes;
-{
-	register union store *q;
-	union store *s, *t;
-	register unsigned nw;
-	unsigned onw;
+realloc(cp, nbytes)
+	char *cp; 
+	unsigned nbytes;
+{   
+  	register u_int onb;
+	union overhead *op;
+  	char *res;
+	register int i;
+	int was_alloced = 0;
 
-	if(testbusy(p[-1].ptr))
-		free((char *)p);
-	onw = p[-1].ptr - p;
-	q = (union store *)malloc(nbytes);
-	if(q==NULL || q==p)
-		return((char *)q);
-	s = p;
-	t = q;
-	nw = (nbytes+WORD-1)/WORD;
-	if(nw<onw)
-		onw = nw;
-	while(onw--!=0)
-		*t++ = *s++;
-	if(q<p && q+nw>=p)
-		(q+(q+nw-p))->ptr = allocx;
-	return((char *)q);
+  	if (cp == NULL)
+  		return (malloc(nbytes));
+	op = (union overhead *)((caddr_t)cp - sizeof (union overhead));
+	if (op->ov_magic == MAGIC) {
+		was_alloced++;
+		i = op->ov_index;
+	}
+	else {		/* already free: he is doing "compaction" (tee hee) */
+		if ((i = findbucket(op, 1)) < 0 &&
+		    (i = findbucket(op, realloc_srchlen)) < 0)
+			i = 0;		/* assume shortest possible */
+	}
+	onb = (1 << (i + 3)) - sizeof (*op) - RSLOP;
+	if (was_alloced &&		/* avoid the copy if same size block */
+	    nbytes <= onb && nbytes > (onb >> 1) - sizeof(*op) - RSLOP)
+		return(cp);
+  	if ((res = malloc(nbytes)) == NULL)
+  		return (NULL);
+  	if (cp != res)			/* common optimization */
+		bcopy(cp, res, (nbytes < onb) ? nbytes : onb);
+  	if (was_alloced)
+		free(cp);
+  	return (res);
 }
 
-#ifdef debug
-allock()
+/*
+ * Search ``srchlen'' elements of each free list for a block whose
+ * header starts at ``freep''.  If srchlen is -1 search the whole list.
+ * Return bucket number, or -1 if not found.
+ */
+static
+findbucket(freep, srchlen)
+union overhead *freep;
+int srchlen;
 {
-#ifdef longdebug
-	register union store *p;
-	int x;
-	x = 0;
-	for(p= &allocs[0]; clearbusy(p->ptr) > p; p=clearbusy(p->ptr)) {
-		if(p==allocp)
-			x++;
-	}
-	ASSERT(p==alloct);
-	return(x==1|p==allocp);
-#else
-	return(1);
-#endif
+	register union overhead *p;
+	register int i, j;
+
+	for (i = 0; i < NBUCKETS; i++)
+		for (j = 0, p = nextf[i]; p && j != srchlen; j++, p = p->ov_next)
+			if (p == freep)
+				return (i);
+	return (-1);
+}
+
+#ifdef MSTATS
+/*
+ * mstats - print out statistics about malloc
+ * 
+ * Prints two lines of numbers, one showing the length of the free list
+ * for each size category, the second showing the number of mallocs -
+ * frees for each size category.
+ */
+mstats(s)
+	char *s;
+{
+  	register int i, j;
+  	register union overhead *p;
+  	int totfree = 0,
+  	totused = 0;
+
+  	fprintf(stderr, "Memory allocation statistics %s\nfree:\t", s);
+  	for (i = 0; i < NBUCKETS; i++) {
+  		for (j = 0, p = nextf[i]; p; p = p->ov_next, j++)
+  			;
+  		fprintf(stderr, " %d", j);
+  		totfree += j * (1 << (i + 3));
+  	}
+  	fprintf(stderr, "\nused:\t");
+  	for (i = 0; i < NBUCKETS; i++) {
+  		fprintf(stderr, " %d", nmalloc[i]);
+  		totused += nmalloc[i] * (1 << (i + 3));
+  	}
+  	fprintf(stderr, "\n\tTotal in use: %d, total free: %d\n", totused, totfree);
 }
 #endif
