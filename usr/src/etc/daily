@@ -1,9 +1,9 @@
 #!/bin/sh -
 #
-#	@(#)daily	5.15 (Berkeley) %G%
+#	@(#)daily	5.16 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin
-host=`hostname -s`
+host=`hostname`
 echo "Subject: $host daily run output"
 bak=/var/backups
 
