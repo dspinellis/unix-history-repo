@@ -1,5 +1,5 @@
 /*
- *	@(#)bib.h	2.3	%G%
+ *	@(#)bib.h	2.4	%G%
  */
 /*   various arguments for bib and listrefs processors */
 
@@ -15,6 +15,8 @@
 
 # define CITEMARK (char) 02
 # define CITEEND  (char) 03
+# define FMTSTART (char) 04
+# define FMTEND   (char) 05
 
 /* file names */
 
@@ -53,8 +55,9 @@ char *malloc();
     *	Reference information
     */
    struct refinfo{
-	char	*ri_ref;	/* actual value */
+	char	*ri_ref;	/* actual value, base value */
 	char	*ri_cite;	/* citation string */
+	char	ri_disambig[2];	/* disambiguation string */
 	int	ri_length;	/* length of reference string, plus null */
 	long int ri_pos;	/* reference seek position */
 	int	ri_n;		/* number of citation in pass1 */
