@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)file.c	5.5 (Berkeley) %G%";
+static char *sccsid = "@(#)file.c	5.6 (Berkeley) %G%";
 #endif
 
 #ifdef FILEC
@@ -174,21 +174,7 @@ filetype(dir, file)
 	return (' ');
 }
 
-static int donewin;
 static struct winsize win;
-
-static
-winch()
-{
-
-	if (ioctl(SHIN, TIOCGWINSZ, (char *)&win) < 0) {
-		win.ws_col = 80;
-		signal(SIGWINCH, SIG_IGN);
-	}
-	if (win.ws_col == 0)
-		win.ws_col = 80;
-	donewin = 1;
-}
 
 /*
  * Print sorted down columns
@@ -199,10 +185,8 @@ print_by_column(dir, items, count)
 {
 	register int i, rows, r, c, maxwidth = 0, columns;
 
-	if (!donewin) {
-		signal(SIGWINCH, winch);
-		winch();
-	}
+	if (ioctl(SHOUT, TIOCGWINSZ, (char *)&win) < 0 || win.ws_col == 0)
+		win.ws_col = 80;
 	for (i = 0; i < count; i++)
 		maxwidth = maxwidth > (r = strlen(items[i])) ? maxwidth : r;
 	maxwidth += 2;			/* for the file tag and space */
@@ -441,7 +425,9 @@ again:	/* search for matches */
 		(void) endpwent();
 	else
 		closedir(dir_fd);
-	if (command == RECOGNIZE && numitems > 0) {
+	if (numitems == 0)
+		return (0);
+	if (command == RECOGNIZE) {
 		if (looking_for_lognames)
 			 copyn(word, "~", 1);
 		else
@@ -451,7 +437,7 @@ again:	/* search for matches */
 		catn(word, extended_name, max_word_length);
 		return (numitems);
 	}
-	if (command == LIST) {
+	else { 				/* LIST */
 		qsort((char *)items, numitems, sizeof(items[1]), sortscmp);
 		print_by_column(looking_for_lognames ? NULL : tilded_dir,
 		    items, numitems);
