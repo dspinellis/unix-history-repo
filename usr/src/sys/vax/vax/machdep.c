@@ -1,4 +1,4 @@
-/*	machdep.c	4.61	82/09/04	*/
+/*	machdep.c	4.62	82/10/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -260,7 +260,7 @@ clockinit(base)
 	 * seconds in the current year takes us to the end of the current year
 	 * and then around into the next year to the same position.
 	 */
-	time.tv_sec = (todr-TODRZERO)/100 + timezone*60;
+	time.tv_sec = (todr-TODRZERO)/100;
 	while (time.tv_sec < base-SECYR/2) {
 		if (LEAPYEAR(year))
 			time.tv_sec += SECDAY;
@@ -294,7 +294,7 @@ clkset()
 {
 	int year = YRREF;
 	unsigned secyr;
-	unsigned yrtime = time.tv_sec - timezone*60;
+	unsigned yrtime = time.tv_sec;
 
 	/*
 	 * Whittle the time down to an offset in the current year,
