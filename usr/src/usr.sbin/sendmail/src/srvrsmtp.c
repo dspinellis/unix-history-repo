@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.30 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.31 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.30 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.31 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -355,6 +355,11 @@ smtp(e)
 			break;
 
 		  case CMDRCPT:		/* rcpt -- designate recipient */
+			if (!gotmail)
+			{
+				usrerr("503 Need MAIL before RCPT");
+				break;
+			}
 			if (setjmp(TopFrame) > 0)
 			{
 				e->e_flags &= ~EF_FATALERRS;
