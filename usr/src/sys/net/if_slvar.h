@@ -1,4 +1,4 @@
-/*	@(#)if_slvar.h	7.3 (Berkeley) %G% */
+/*	@(#)if_slvar.h	7.4 (Berkeley) %G% */
 
 /*
  * Definitions for SLIP interface data structures
@@ -27,10 +27,12 @@ struct sl_softc {
 #endif
 };
 
-/* flags */
+/* visible flags */
 #define	SC_COMPRESS	0x0002		/* compress TCP traffic */
 #define	SC_NOICMP	0x0004		/* supress ICMP traffic */
-#define	SC_ABORT	0x0008		/* have been sent an abort request */
+#define	SC_AUTOCOMP	0x0008		/* auto-enable TCP compression */
+/* internal flags (should be separate) */
+#define	SC_ABORT	0x10000		/* have been sent an abort request */
 
 /* this stuff doesn't belong here... */
 #define	SLIOCGFLAGS	_IOR('t', 90, int)	/* get configuration flags */
