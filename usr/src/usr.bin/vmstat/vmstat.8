@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vmstat.8	6.3 (Berkeley) %G%
+.\"	@(#)vmstat.8	6.4 (Berkeley) %G%
 .\"
 .TH VMSTAT 1 ""
 .UC 4
@@ -19,7 +19,7 @@ vmstat \- report virtual memory statistics
 .SH SYNOPSIS
 .B vmstat
 [
-.B \-fsi
+.B \-fsim
 ]
 [ drives ]
 [ interval [ count ] ]
@@ -47,6 +47,14 @@ If given a
 argument, it instead reports on the number of
 .I interrupts
 taken by each device since system startup.
+If given a
+.B \-m
+argument, it instead reports on the usage of
+kernel dynamic memory listed first by 
+.I size
+of allocation and then by
+.I type
+of usage.
 .PP
 If none of these options are given,
 .I vmstat
