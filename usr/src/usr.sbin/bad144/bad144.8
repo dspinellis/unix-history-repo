@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)bad144.8	6.2 (Berkeley) %G%
+.\"	@(#)bad144.8	6.3 (Berkeley) %G%
 .\"
 .TH BAD144 8 ""
 .UC 4
@@ -120,10 +120,12 @@ and may be useful when replacing an unreliable sector.
 If the disk is an RP06, RM03, RM05, Fujitsu Eagle,
 or SMD disk on a Massbus, the
 .B \-f
-option may be used to mark the new bad sectors as ``bad.''
+option may be used to mark the new bad sectors as ``bad''
+by reformatting them as unusable sectors.
 \fBNOTE:  this can be done safely only when there is no other disk activity\fP,
 preferably while running single-user.
-This option is required unless 
+This option is required unless the sectors have already been marked bad,
+or the system will not be notified that it should use the replacement sector.
 .SH SEE ALSO
 badsect(8),
 format(8V)
