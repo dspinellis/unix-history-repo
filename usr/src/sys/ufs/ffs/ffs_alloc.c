@@ -1,4 +1,4 @@
-/*	ffs_alloc.c	2.24	83/03/21	*/
+/*	ffs_alloc.c	2.25	83/05/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -63,8 +63,9 @@ alloc(ip, bpref, size)
 	if (u.u_uid != 0 && freespace(fs, fs->fs_minfree) <= 0)
 		goto nospace;
 #ifdef QUOTA
-	if (chkdq(ip, (long)((unsigned)size/DEV_BSIZE), 0))
-		return(NULL);
+	u.u_error = chkdq(ip, (long)btodb(size), 0);
+	if (u.u_error)
+		return (NULL);
 #endif
 	if (bpref >= fs->fs_size)
 		bpref = 0;
@@ -76,6 +77,8 @@ alloc(ip, bpref, size)
 		(u_long (*)())alloccg);
 	if (bno <= 0)
 		goto nospace;
+	ip->i_blocks += btodb(size);
+	ip->i_flag |= IUPD|ICHG;
 	bp = getblk(ip->i_dev, fsbtodb(fs, bno), size);
 	clrbuf(bp);
 	return (bp);
@@ -120,8 +123,9 @@ realloccg(ip, bprev, bpref, osize, nsize)
 		panic("realloccg: bad bprev");
 	}
 #ifdef QUOTA
-	if (chkdq(ip, (long)((unsigned)(nsize-osize)/DEV_BSIZE), 0))
-		return(NULL);
+	u.u_error = chkdq(ip, (long)btodb(nsize - osize), 0);
+	if (u.u_error)
+		return (NULL);
 #endif
 	cg = dtog(fs, bprev);
 	bno = fragextend(ip, cg, (long)bprev, osize, nsize);
@@ -135,6 +139,8 @@ realloccg(ip, bprev, bpref, osize, nsize)
 		} while (brealloc(bp, nsize) == 0);
 		bp->b_flags |= B_DONE;
 		bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
+		ip->i_blocks += btodb(nsize - osize);
+		ip->i_flag |= IUPD|ICHG;
 		return (bp);
 	}
 	if (bpref >= fs->fs_size)
@@ -152,6 +158,8 @@ realloccg(ip, bprev, bpref, osize, nsize)
 		bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
 		brelse(obp);
 		free(ip, bprev, (off_t)osize);
+		ip->i_blocks += btodb(nsize - osize);
+		ip->i_flag |= IUPD|ICHG;
 		return (bp);
 	}
 nospace:
@@ -194,8 +202,9 @@ ialloc(pip, ipref, mode)
 	if (fs->fs_cstotal.cs_nifree == 0)
 		goto noinodes;
 #ifdef QUOTA
-	if (chkiq(pip->i_dev, (struct inode *)NULL, u.u_uid, 0))
-		return(NULL);
+	u.u_error = chkiq(pip->i_dev, (struct inode *)NULL, u.u_uid, 0);
+	if (u.u_error)
+		return (NULL);
 #endif
 	if (ipref >= fs->fs_ncg * fs->fs_ipg)
 		ipref = 0;
@@ -212,6 +221,11 @@ ialloc(pip, ipref, mode)
 		printf("mode = 0%o, inum = %d, fs = %s\n",
 		    ip->i_mode, ip->i_number, fs->fs_fsmnt);
 		panic("ialloc: dup alloc");
+	}
+	if (ip->i_blocks) {				/* XXX */
+		printf("free inode %s/%d had %d blocks\n",
+		    fs->fs_fsmnt, ino, ip->i_blocks);
+		ip->i_blocks = 0;
 	}
 	return (ip);
 noinodes:
