@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.47 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1715,6 +1715,13 @@ badaddr:
 	}
 	tv++;
 
+	if (bitnset(M_CHECKUDB, m->m_flags) && *tv != NULL &&
+	    strcmp(*tv, "@") == 0)
+	{
+		tv++;
+		a->q_flags |= QNOTREMOTE;
+	}
+
 	/* do special mapping for local mailer */
 	if (*tv != NULL)
 	{
@@ -1739,13 +1746,6 @@ badaddr:
 				return (a);
 			}
 		}
-	}
-
-	if (bitnset(M_CHECKUDB, m->m_flags) && *tv != NULL &&
-	    strcmp(*tv, "@") == 0)
-	{
-		tv++;
-		a->q_flags |= QNOTREMOTE;
 	}
 
 	if (m->m_r_rwset > 0)
