@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.59 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.60 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.59 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.60 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -820,6 +820,16 @@ mail_esmtp_args(kp, vp, e)
 			usrerr("501 ENVID requires a value");
 			/* NOTREACHED */
 		}
+		if (!xtextok(vp))
+		{
+			usrerr("501 Syntax error in ENVID parameter value");
+			/* NOTREACHED */
+		}
+		if (e->e_envid != NULL)
+		{
+			usrerr("501 Duplicate ENVID parameter");
+			/* NOTREACHED */
+		}
 		e->e_envid = newstr(vp);
 	}
 	else if (strcasecmp(kp, "ret") == 0)
@@ -827,6 +837,11 @@ mail_esmtp_args(kp, vp, e)
 		if (vp == NULL)
 		{
 			usrerr("501 RET requires a value");
+			/* NOTREACHED */
+		}
+		if (bitset(EF_RET_PARAM, e->e_flags))
+		{
+			usrerr("501 Duplicate RET parameter");
 			/* NOTREACHED */
 		}
 		e->e_flags |= EF_RET_PARAM;
@@ -899,6 +914,16 @@ rcpt_esmtp_args(a, kp, vp, e)
 		if (vp == NULL)
 		{
 			usrerr("501 ORCPT requires a value");
+			/* NOTREACHED */
+		}
+		if (!xtextok(vp))
+		{
+			usrerr("501 Syntax error in ORCPT parameter value");
+			/* NOTREACHED */
+		}
+		if (a->q_orcpt != NULL)
+		{
+			usrerr("501 Duplicate ORCPT parameter");
 			/* NOTREACHED */
 		}
 		a->q_orcpt = newstr(vp);
