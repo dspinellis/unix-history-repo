@@ -1,0 +1,3 @@
+#! /bin/csh -f
+cd @(BBHOME)/etc
+sh -c 'make inst-aliases > daily.log 2>&1'
