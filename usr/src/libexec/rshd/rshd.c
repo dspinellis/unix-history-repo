@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -249,7 +249,7 @@ doit(fromp)
 	port = 0;
 	for (;;) {
 		char c;
-		if ((cc = read(0, &c, 1)) != 1) {
+		if ((cc = read(STDIN_FILENO, &c, 1)) != 1) {
 			if (cc < 0)
 				syslog(LOG_NOTICE, "read: %m");
 			shutdown(0, 1+1);
@@ -443,7 +443,7 @@ fail:
 		exit(1);
 	}
 
-	(void) write(2, "\0", 1);
+	(void) write(STDERR_FILENO, "\0", 1);
 	sent_null = 1;
 
 	if (port) {
@@ -571,12 +571,14 @@ fail:
 						shutdown(pv1[0], 1+1);
 						FD_CLR(pv1[0], &readfrom);
 					} else
-						(void) des_write(1, buf, cc);
+						(void) des_write(STDOUT_FILENO,
+						    buf, cc);
 				}
 
 				if (doencrypt && FD_ISSET(pv2[0], &wready)) {
 					errno = 0;
-					cc = des_read(0, buf, sizeof(buf));
+					cc = des_read(STDIN_FILENO,
+					    buf, sizeof(buf));
 					if (cc <= 0) {
 						shutdown(pv2[0], 1+1);
 						FD_CLR(pv2[0], &writeto);
@@ -695,7 +697,7 @@ getstr(buf, cnt, err)
 	char c;
 
 	do {
-		if (read(0, &c, 1) != 1)
+		if (read(STDIN_FILENO, &c, 1) != 1)
 			exit(1);
 		*buf++ = c;
 		if (--cnt == 0) {
