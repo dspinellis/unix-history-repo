@@ -26,15 +26,15 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.27 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.28 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.27 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.28 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.27 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.28 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.27 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.28 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -814,6 +814,8 @@ readaliases(aliasfile, init, e)
 		IF_MAKEDBMFILES
 		{
 #ifdef YPCOMPAT
+			static void nis_magic P((DBM *dbmp));
+
 			nis_magic(dbmp);
 #endif
 			if (dbm_store(dbmp, key.dbm, key.dbm, DBM_REPLACE) != 0 ||
@@ -875,7 +877,7 @@ nis_magic(dbmp)
 
 	(void) myhostname(hbuf, sizeof hbuf);
 	contents[1].dptr = hbuf;
-	contents[1].dptr = strlen(hbuf);
+	contents[1].dsize = strlen(hbuf);
 
 	for (i = 0; i < sizeof key / sizeof *key; i++)
 	{
