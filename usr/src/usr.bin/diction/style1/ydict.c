@@ -1,7 +1,7 @@
 /*-
  * %sccs.include.proprietary.c%
  *
- *	@(#)ydict.c	4.4 (Berkeley) %G%
+ *	@(#)ydict.c	8.1 (Berkeley) %G%
  */
 
 struct dict ary_d[] = {

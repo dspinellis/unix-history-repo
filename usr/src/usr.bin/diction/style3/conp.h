@@ -1,7 +1,7 @@
 /*-
  * %sccs.include.proprietary.c%
  *
- *	@(#)conp.h	4.4 (Berkeley) %G%
+ *	@(#)conp.h	8.1 (Berkeley) %G%
  */
 
 #define SLENG 250
