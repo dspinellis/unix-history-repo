@@ -4,19 +4,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_debug.c	5.3 (Berkeley) %G%
+ *	@(#)lfs_debug.c	5.4 (Berkeley) %G%
  */
 
-#ifdef LOGFS
-#include "param.h"
-#include "namei.h"
-#include "vnode.h"
-#include "../ufs/quota.h"
-#include "../ufs/inode.h"
-#include "lfs.h"
+#ifdef DEBUG
+#include <sys/param.h>
+#include <sys/namei.h>
+#include <sys/vnode.h>
+
+#include <ufs/quota.h>
+#include <ufs/inode.h>
+
+#include <lfs/lfs.h>
+#include <lfs/lfs_extern.h>
 
 void 
-dump_super(lfsp)
+lfs_dump_super(lfsp)
 	LFS *lfsp;
 {
 	int i;
@@ -78,7 +81,7 @@ dump_super(lfsp)
 }
 
 void
-dump_dinode(dip)
+lfs_dump_dinode(dip)
 	DINODE *dip;
 {
 	int i;
@@ -101,19 +104,77 @@ dump_dinode(dip)
 	(void)printf("\n");
 }
 
-void
-lfs_print_inumber(vp)
-	VNODE *vp;
+/* XXX TEMPORARY */
+#include <sys/buf.h>
+#include <sys/mount.h>
+int
+lfs_umountdebug(mp)
+	struct mount *mp;
 {
-	(void)printf("%d\n", VTOI(vp)->i_number);
+	struct vnode *vp;
+	int dirty;
+
+	dirty = 0;
+	if ((mp->mnt_flag & MNT_MPBUSY) == 0)
+		panic("umountdebug: not busy");
+loop:
+	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
+		if (vget(vp))
+			goto loop;
+		dirty += lfs_vinvalbuf(vp);
+		vput(vp);
+		if (vp->v_mount != mp)
+			goto loop;
+	}
+	return (dirty);
 }
 
-void
-lfs_spin()
+int
+lfs_vinvalbuf(vp)
+	register struct vnode *vp;
 {
-	u_long i, j;
+	register struct buf *bp;
+	struct buf *nbp, *blist;
+	int s, dirty = 0;
 
-	for (i = 0; i < 10; ++i)
-		for (j = 0; j < 1000000; ++j);
+	for (;;) {
+		if (blist = vp->v_dirtyblkhd)
+			/* void */;
+		else if (blist = vp->v_cleanblkhd)
+			/* void */;
+		else
+			break;
+		for (bp = blist; bp; bp = nbp) {
+printf("lfs_vinvalbuf: ino %d, lblkno %d, blkno %lx flags %xl\n",
+VTOI(vp)->i_number, bp->b_lblkno, bp->b_blkno, bp->b_flags);
+			nbp = bp->b_blockf;
+			s = splbio();
+			if (bp->b_flags & B_BUSY) {
+printf("lfs_vinvalbuf: buffer busy, would normally sleep\n");
+/*
+				bp->b_flags |= B_WANTED;
+				sleep((caddr_t)bp, PRIBIO + 1);
+*/
+				splx(s);
+				break;
+			}
+			bremfree(bp);
+			bp->b_flags |= B_BUSY;
+			splx(s);
+			if (bp->b_flags & B_DELWRI) {
+				dirty++;			/* XXX */
+printf("lfs_vinvalbuf: buffer dirty (DELWRI). would normally write\n");
+				break;
+			}
+			if (bp->b_vp != vp)
+				reassignbuf(bp, bp->b_vp);
+			else
+				bp->b_flags |= B_INVAL;
+			brelse(bp);
+		}
+	}
+	if (vp->v_dirtyblkhd || vp->v_cleanblkhd)
+		panic("lfs_vinvalbuf: flush failed");
+	return (dirty);
 }
-#endif /* LOGFS */
+#endif /* DEBUG */
