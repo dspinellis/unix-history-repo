@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.28	82/10/17	*/
+/*	vfs_vnops.c	4.29	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -64,8 +64,11 @@ access(ip, mode)
 	m = mode;
 	if (m == IWRITE) {
 		if (ip->i_fs->fs_ronly != 0) {
-			u.u_error = EROFS;
-			return (1);
+			if ((ip->i_mode & IFMT) != IFCHR &&
+			    (ip->i_mode & IFMT) != IFBLK) {
+				u.u_error = EROFS;
+				return (1);
+			}
 		}
 		if (ip->i_flag&ITEXT)		/* try to free text */
 			xrele(ip);
