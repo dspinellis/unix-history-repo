@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.35 91/12/26$
  *
- *	@(#)trap.c	7.22 (Berkeley) %G%
+ *	@(#)trap.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -890,7 +890,6 @@ syscall(code, frame)
 		params += sizeof(int);
 		break;
 
-#ifdef SYS___indir
 	case SYS___indir:
 		/*
 		 * Like indir, but code is a quad, so as to maintain
@@ -900,12 +899,13 @@ syscall(code, frame)
 		if (p->p_flag & SHPUX)
 			break;
 #endif
-		code = fuword(params + QUAD_LOWWORD * sizeof(int));
-		params += sizeof(quad);
+		code = fuword(params + _QUAD_LOWWORD * sizeof(int));
+		params += sizeof(quad_t);
 		break;
-#endif
 
-	/* nothing to do by default */
+	default:
+		/* nothing to do by default */
+		break;
 	}
 	if (code < numsys)
 		callp += code;
