@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)bpf.c	7.12 (Berkeley) %G%
+ *      @(#)bpf.c	7.13 (Berkeley) %G%
  *
  * static char rcsid[] =
  * "$Header: bpf.c,v 1.33 91/10/27 21:21:58 mccanne Exp $";
@@ -29,7 +29,6 @@
 #include <sys/systm.h>
 #include <sys/mbuf.h>
 #include <sys/buf.h>
-#include <sys/dir.h>
 #include <sys/time.h>
 #include <sys/proc.h>
 #include <sys/user.h>
