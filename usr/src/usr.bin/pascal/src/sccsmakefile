@@ -1,102 +1,345 @@
-#	make file for getting source files from sccs files for pascal
+#	this makefile knows about all
+#	the sccs related things for the
+#	berkeley pascal system.
 
-SCCSID =	@(#)sccsmakefile	1.2 (Berkeley) %G%
+SCCSID = "sccsmakefile 1.3 %G% 16:11:35"
 
-PSCCSDIR =	/usr/src/cmd/pascal/SCCS
+PSCCSDIR = /usr/src/cmd/pascal
+PIDIR = ../pi
+PC0DIR = ../pc0
 
-SRCS =	0.h OPnames.h TRdata.c align.h ato.c				\
-	call.c case.c clas.c const.c conv.c cset.c			\
-	error.c fdec.c fend.c fhdr.c flvalue.c forop.c func.c		\
-	gen.c gram hash.c iorec.h		\
-	lab.c lookup.c lval.c main.c makeSCCS nl.c objfmt.h opc.c	\
-	p2put.c pTree.h pas.y pc.h pccaseop.c	\
-	pcfunc.c pclval.c pcmakefile pcops.h pcproc.c pcwhoami.h	\
-	pic.c pimakefile piwhoami.h proc.c pstab.h put.c \
-	rec.c rval.c send.h				\
-	stab.c stat.c stklval.c stkrval.c string.c subr.c		\
-	tmps.c tree.c tree.h treen.c type.c var.c version.c		\
-	yy.h yycopy.c yycosts.c yyerror.c yyget.c yyid.c yylex.c	\
-	yymain.c yyoptions.c yypanic.c yyparse.c yyprint.c yyput.c	\
-	yyrecover.c yyseman.c yytree.c
+GET = sccs -d${PSCCSDIR} get
 
-sources: ${SRCS}
+SRCS =	ato.c \
+	call.c case.c clas.c const.c conv.c cset.c \
+	error.c fdec.c fend.c fhdr.c flvalue.c forop.c func.c gen.c hash.c \
+	lab.c lookup.c lval.c stklval.c \
+	main.c nl.c proc.c put.c \
+	rec.c rval.c stkrval.c\
+	savenl.c \
+	stat.c string.c subr.c \
+	tmps.c tree.c type.c var.c \
+	TRdata.c \
+	treen.c yycopy.c \
+	yycosts.c yyerror.c yyget.c yyid.c yylex.c yymain.c yyoptions.c \
+	yypanic.c yyparse.c yyprint.c yyput.c yyrecover.c yyseman.c yytree.c \
+	p2put.c stab.c pcproc.c pcfunc.c pccaseop.c pclval.c
 
-0.h:		${PSCCSDIR}/s.0.h;		get ${PSCCSDIR}/s.0.h
-OPnames.h:	${PSCCSDIR}/s.OPnames.h;	get ${PSCCSDIR}/s.OPnames.h
-TRdata.c:	${PSCCSDIR}/s.TRdata.c;		get ${PSCCSDIR}/s.TRdata.c
-align.h:	${PSCCSDIR}/s.align.h;		get ${PSCCSDIR}/s.align.h
-ato.c:		${PSCCSDIR}/s.ato.c;		get ${PSCCSDIR}/s.ato.c
-call.c:		${PSCCSDIR}/s.call.c;		get ${PSCCSDIR}/s.call.c
-case.c:		${PSCCSDIR}/s.case.c;		get ${PSCCSDIR}/s.case.c
-clas.c:		${PSCCSDIR}/s.clas.c;		get ${PSCCSDIR}/s.clas.c
-const.c:	${PSCCSDIR}/s.const.c;		get ${PSCCSDIR}/s.const.c
-conv.c:		${PSCCSDIR}/s.conv.c;		get ${PSCCSDIR}/s.conv.c
-cset.c:		${PSCCSDIR}/s.cset.c;		get ${PSCCSDIR}/s.cset.c
-error.c:	${PSCCSDIR}/s.error.c;		get ${PSCCSDIR}/s.error.c
-fdec.c:		${PSCCSDIR}/s.fdec.c;		get ${PSCCSDIR}/s.fdec.c
-fend.c:		${PSCCSDIR}/s.fend.c;		get ${PSCCSDIR}/s.fend.c
-fhdr.c:		${PSCCSDIR}/s.fhdr.c;		get ${PSCCSDIR}/s.fhdr.c
-flvalue.c:	${PSCCSDIR}/s.flvalue.c;	get ${PSCCSDIR}/s.flvalue.c
-forop.c:	${PSCCSDIR}/s.forop.c;		get ${PSCCSDIR}/s.forop.c
-func.c:		${PSCCSDIR}/s.func.c;		get ${PSCCSDIR}/s.func.c
-gen.c:		${PSCCSDIR}/s.gen.c;		get ${PSCCSDIR}/s.gen.c
-gram:		${PSCCSDIR}/s.gram;		get ${PSCCSDIR}/s.gram
-hash.c:		${PSCCSDIR}/s.hash.c;		get ${PSCCSDIR}/s.hash.c
-iorec.h:	${PSCCSDIR}/s.iorec.h;		get ${PSCCSDIR}/s.iorec.h
-lab.c:		${PSCCSDIR}/s.lab.c;		get ${PSCCSDIR}/s.lab.c
-lookup.c:	${PSCCSDIR}/s.lookup.c;		get ${PSCCSDIR}/s.lookup.c
-lval.c:		${PSCCSDIR}/s.lval.c;		get ${PSCCSDIR}/s.lval.c
-main.c:		${PSCCSDIR}/s.main.c;		get ${PSCCSDIR}/s.main.c
-makeSCCS:	${PSCCSDIR}/s.makeSCCS;		get ${PSCCSDIR}/s.makeSCCS
-nl.c:		${PSCCSDIR}/s.nl.c;		get ${PSCCSDIR}/s.nl.c
-objfmt.h:	${PSCCSDIR}/s.objfmt.h;		get ${PSCCSDIR}/s.objfmt.h
-opc.c:		${PSCCSDIR}/s.opc.c;		get ${PSCCSDIR}/s.opc.c
-p2put.c:	${PSCCSDIR}/s.p2put.c;		get ${PSCCSDIR}/s.p2put.c
-pTree.h:	${PSCCSDIR}/s.pTree.h;		get ${PSCCSDIR}/s.pTree.h
-pas.y:		${PSCCSDIR}/s.pas.y;		get ${PSCCSDIR}/s.pas.y
-pc.h:		${PSCCSDIR}/s.pc.h;		get ${PSCCSDIR}/s.pc.h
-pccaseop.c:	${PSCCSDIR}/s.pccaseop.c;	get ${PSCCSDIR}/s.pccaseop.c
-pcfunc.c:	${PSCCSDIR}/s.pcfunc.c;		get ${PSCCSDIR}/s.pcfunc.c
-pclval.c:	${PSCCSDIR}/s.pclval.c;		get ${PSCCSDIR}/s.pclval.c
-pcmakefile:	${PSCCSDIR}/s.pcmakefile;	get ${PSCCSDIR}/s.pcmakefile
-pcops.h:	${PSCCSDIR}/s.pcops.h;		get ${PSCCSDIR}/s.pcops.h
-pcproc.c:	${PSCCSDIR}/s.pcproc.c;		get ${PSCCSDIR}/s.pcproc.c
-pcwhoami.h:	${PSCCSDIR}/s.pcwhoami.h;	get ${PSCCSDIR}/s.pcwhoami.h
-pic.c:		${PSCCSDIR}/s.pic.c;		get ${PSCCSDIR}/s.pic.c
-pimakefile:	${PSCCSDIR}/s.pimakefile;	get ${PSCCSDIR}/s.pimakefile
-piwhoami.h:	${PSCCSDIR}/s.piwhoami.h;	get ${PSCCSDIR}/s.piwhoami.h
-proc.c:		${PSCCSDIR}/s.proc.c;		get ${PSCCSDIR}/s.proc.c
-pstab.h:	${PSCCSDIR}/s.pstab.h;		get ${PSCCSDIR}/s.pstab.h
-put.c:		${PSCCSDIR}/s.put.c;		get ${PSCCSDIR}/s.put.c
-rec.c:		${PSCCSDIR}/s.rec.c;		get ${PSCCSDIR}/s.rec.c
-rval.c:		${PSCCSDIR}/s.rval.c;		get ${PSCCSDIR}/s.rval.c
-send.h:		${PSCCSDIR}/s.send.h;		get ${PSCCSDIR}/s.send.h
-stab.c:		${PSCCSDIR}/s.stab.c;		get ${PSCCSDIR}/s.stab.c
-stat.c:		${PSCCSDIR}/s.stat.c;		get ${PSCCSDIR}/s.stat.c
-stklval.c:	${PSCCSDIR}/s.stklval.c;	get ${PSCCSDIR}/s.stklval.c
-stkrval.c:	${PSCCSDIR}/s.stkrval.c;	get ${PSCCSDIR}/s.stkrval.c
-string.c:	${PSCCSDIR}/s.string.c;		get ${PSCCSDIR}/s.string.c
-subr.c:		${PSCCSDIR}/s.subr.c;		get ${PSCCSDIR}/s.subr.c
-tmps.c:		${PSCCSDIR}/s.tmps.c;		get ${PSCCSDIR}/s.tmps.c
-tree.c:		${PSCCSDIR}/s.tree.c;		get ${PSCCSDIR}/s.tree.c
-tree.h:		${PSCCSDIR}/s.tree.h;		get ${PSCCSDIR}/s.tree.h
-treen.c:	${PSCCSDIR}/s.treen.c;		get ${PSCCSDIR}/s.treen.c
-type.c:		${PSCCSDIR}/s.type.c;		get ${PSCCSDIR}/s.type.c
-var.c:		${PSCCSDIR}/s.var.c;		get ${PSCCSDIR}/s.var.c
-version.c:	${PSCCSDIR}/s.version.c;	get ${PSCCSDIR}/s.version.c
-yy.h:		${PSCCSDIR}/s.yy.h;		get ${PSCCSDIR}/s.yy.h
-yycopy.c:	${PSCCSDIR}/s.yycopy.c;		get ${PSCCSDIR}/s.yycopy.c
-yycosts.c:	${PSCCSDIR}/s.yycosts.c;	get ${PSCCSDIR}/s.yycosts.c
-yyerror.c:	${PSCCSDIR}/s.yyerror.c;	get ${PSCCSDIR}/s.yyerror.c
-yyget.c:	${PSCCSDIR}/s.yyget.c;		get ${PSCCSDIR}/s.yyget.c
-yyid.c:		${PSCCSDIR}/s.yyid.c;		get ${PSCCSDIR}/s.yyid.c
-yylex.c:	${PSCCSDIR}/s.yylex.c;		get ${PSCCSDIR}/s.yylex.c
-yymain.c:	${PSCCSDIR}/s.yymain.c;		get ${PSCCSDIR}/s.yymain.c
-yyoptions.c:	${PSCCSDIR}/s.yyoptions.c;	get ${PSCCSDIR}/s.yyoptions.c
-yypanic.c:	${PSCCSDIR}/s.yypanic.c;	get ${PSCCSDIR}/s.yypanic.c
-yyparse.c:	${PSCCSDIR}/s.yyparse.c;	get ${PSCCSDIR}/s.yyparse.c
-yyprint.c:	${PSCCSDIR}/s.yyprint.c;	get ${PSCCSDIR}/s.yyprint.c
-yyput.c:	${PSCCSDIR}/s.yyput.c;		get ${PSCCSDIR}/s.yyput.c
-yyrecover.c:	${PSCCSDIR}/s.yyrecover.c;	get ${PSCCSDIR}/s.yyrecover.c
-yyseman.c:	${PSCCSDIR}/s.yyseman.c;	get ${PSCCSDIR}/s.yyseman.c
-yytree.c:	${PSCCSDIR}/s.yytree.c;		get ${PSCCSDIR}/s.yytree.c
+HDRS =	0.h OPnames.h align.h iorec.h objfmt.h pstab.h pc.h pcops.h \
+	send.h tree.h whoami.h yy.h config.h
+
+OTHERS = pas.y opc.c CONFIG.c gram pic.c makefile
+
+sources: ${HDRS} ${SRCS} ${OTHERS}
+
+newversion:
+	/bin/csh newversion.csh pi ${PIDIR}
+	/bin/csh newversion.csh pc ${PC0DIR}
+
+makefile: ${PSCCSDIR}/SCCS/s.pimakefile ${PSCCSDIR}/SCCS/s.pcmakefile
+	cd ${PIDIR} ; ${GET} pimakefile ; mv pimakefile makefile
+	cd ${PC0DIR} ; ${GET} pcmakefile ; mv pcmakefile makefile
+
+whoami.h: ${PSCCSDIR}/SCCS/s.piwhoami.h ${PSCCSDIR}/SCCS/s.pcwhoami.h
+	cd ${PIDIR} ; ${GET} piwhoami.h ; mv piwhoami.h whoami.h
+	cd ${PC0DIR} ; ${GET} pcwhoami.h ; mv pcwhoami.h whoami.h
+
+ato.c: ${PSCCSDIR}/SCCS/s.ato.c
+	cd ${PIDIR} ; ${GET} ato.c
+	cd ${PC0DIR} ; ${GET} ato.c
+
+call.c: ${PSCCSDIR}/SCCS/s.call.c
+	cd ${PIDIR} ; ${GET} call.c
+	cd ${PC0DIR} ; ${GET} call.c
+
+case.c: ${PSCCSDIR}/SCCS/s.case.c
+	cd ${PIDIR} ; ${GET} case.c
+	cd ${PC0DIR} ; ${GET} case.c
+
+clas.c: ${PSCCSDIR}/SCCS/s.clas.c
+	cd ${PIDIR} ; ${GET} clas.c
+	cd ${PC0DIR} ; ${GET} clas.c
+
+const.c: ${PSCCSDIR}/SCCS/s.const.c
+	cd ${PIDIR} ; ${GET} const.c
+	cd ${PC0DIR} ; ${GET} const.c
+
+conv.c: ${PSCCSDIR}/SCCS/s.conv.c
+	cd ${PIDIR} ; ${GET} conv.c
+	cd ${PC0DIR} ; ${GET} conv.c
+
+cset.c: ${PSCCSDIR}/SCCS/s.cset.c
+	cd ${PIDIR} ; ${GET} cset.c
+	cd ${PC0DIR} ; ${GET} cset.c
+
+error.c: ${PSCCSDIR}/SCCS/s.error.c
+	cd ${PIDIR} ; ${GET} error.c
+	cd ${PC0DIR} ; ${GET} error.c
+
+fdec.c: ${PSCCSDIR}/SCCS/s.fdec.c
+	cd ${PIDIR} ; ${GET} fdec.c
+	cd ${PC0DIR} ; ${GET} fdec.c
+
+fend.c: ${PSCCSDIR}/SCCS/s.fend.c
+	cd ${PIDIR} ; ${GET} fend.c
+	cd ${PC0DIR} ; ${GET} fend.c
+
+fhdr.c: ${PSCCSDIR}/SCCS/s.fhdr.c
+	cd ${PIDIR} ; ${GET} fhdr.c
+	cd ${PC0DIR} ; ${GET} fhdr.c
+
+flvalue.c: ${PSCCSDIR}/SCCS/s.flvalue.c
+	cd ${PIDIR} ; ${GET} flvalue.c
+	cd ${PC0DIR} ; ${GET} flvalue.c
+
+forop.c: ${PSCCSDIR}/SCCS/s.forop.c
+	cd ${PIDIR} ; ${GET} forop.c
+	cd ${PC0DIR} ; ${GET} forop.c
+
+func.c: ${PSCCSDIR}/SCCS/s.func.c
+	cd ${PIDIR} ; ${GET} func.c
+	cd ${PC0DIR} ; ${GET} func.c
+
+gen.c: ${PSCCSDIR}/SCCS/s.gen.c
+	cd ${PIDIR} ; ${GET} gen.c
+	cd ${PC0DIR} ; ${GET} gen.c
+
+hash.c: ${PSCCSDIR}/SCCS/s.hash.c
+	cd ${PIDIR} ; ${GET} hash.c
+	cd ${PC0DIR} ; ${GET} hash.c
+
+lab.c: ${PSCCSDIR}/SCCS/s.lab.c
+	cd ${PIDIR} ; ${GET} lab.c
+	cd ${PC0DIR} ; ${GET} lab.c
+
+lookup.c: ${PSCCSDIR}/SCCS/s.lookup.c
+	cd ${PIDIR} ; ${GET} lookup.c
+	cd ${PC0DIR} ; ${GET} lookup.c
+
+lval.c: ${PSCCSDIR}/SCCS/s.lval.c
+	cd ${PIDIR} ; ${GET} lval.c
+	cd ${PC0DIR} ; ${GET} lval.c
+
+stklval.c: ${PSCCSDIR}/SCCS/s.stklval.c
+	cd ${PIDIR} ; ${GET} stklval.c
+	cd ${PC0DIR} ; ${GET} stklval.c
+
+main.c: ${PSCCSDIR}/SCCS/s.main.c
+	cd ${PIDIR} ; ${GET} main.c
+	cd ${PC0DIR} ; ${GET} main.c
+
+nl.c: ${PSCCSDIR}/SCCS/s.nl.c
+	cd ${PIDIR} ; ${GET} nl.c
+	cd ${PC0DIR} ; ${GET} nl.c
+
+proc.c: ${PSCCSDIR}/SCCS/s.proc.c
+	cd ${PIDIR} ; ${GET} proc.c
+	cd ${PC0DIR} ; ${GET} proc.c
+
+put.c: ${PSCCSDIR}/SCCS/s.put.c
+	cd ${PIDIR} ; ${GET} put.c
+	cd ${PC0DIR} ; ${GET} put.c
+
+rec.c: ${PSCCSDIR}/SCCS/s.rec.c
+	cd ${PIDIR} ; ${GET} rec.c
+	cd ${PC0DIR} ; ${GET} rec.c
+
+rval.c: ${PSCCSDIR}/SCCS/s.rval.c
+	cd ${PIDIR} ; ${GET} rval.c
+	cd ${PC0DIR} ; ${GET} rval.c
+
+stkrval.c: ${PSCCSDIR}/SCCS/s.stkrval.c
+	cd ${PIDIR} ; ${GET} stkrval.c
+	cd ${PC0DIR} ; ${GET} stkrval.c
+
+savenl.c: ${PSCCSDIR}/SCCS/s.savenl.c
+	cd ${PIDIR} ; ${GET} savenl.c
+	cd ${PC0DIR} ; ${GET} savenl.c
+
+stat.c: ${PSCCSDIR}/SCCS/s.stat.c
+	cd ${PIDIR} ; ${GET} stat.c
+	cd ${PC0DIR} ; ${GET} stat.c
+
+string.c: ${PSCCSDIR}/SCCS/s.string.c
+	cd ${PIDIR} ; ${GET} string.c
+	cd ${PC0DIR} ; ${GET} string.c
+
+subr.c: ${PSCCSDIR}/SCCS/s.subr.c
+	cd ${PIDIR} ; ${GET} subr.c
+	cd ${PC0DIR} ; ${GET} subr.c
+
+tmps.c: ${PSCCSDIR}/SCCS/s.tmps.c
+	cd ${PIDIR} ; ${GET} tmps.c
+	cd ${PC0DIR} ; ${GET} tmps.c
+
+tree.c: ${PSCCSDIR}/SCCS/s.tree.c
+	cd ${PIDIR} ; ${GET} tree.c
+	cd ${PC0DIR} ; ${GET} tree.c
+
+type.c: ${PSCCSDIR}/SCCS/s.type.c
+	cd ${PIDIR} ; ${GET} type.c
+	cd ${PC0DIR} ; ${GET} type.c
+
+var.c: ${PSCCSDIR}/SCCS/s.var.c
+	cd ${PIDIR} ; ${GET} var.c
+	cd ${PC0DIR} ; ${GET} var.c
+
+TRdata.c: ${PSCCSDIR}/SCCS/s.TRdata.c
+	cd ${PIDIR} ; ${GET} TRdata.c
+	cd ${PC0DIR} ; ${GET} TRdata.c
+
+treen.c: ${PSCCSDIR}/SCCS/s.treen.c
+	cd ${PIDIR} ; ${GET} treen.c
+	cd ${PC0DIR} ; ${GET} treen.c
+
+yycopy.c: ${PSCCSDIR}/SCCS/s.yycopy.c
+	cd ${PIDIR} ; ${GET} yycopy.c
+	cd ${PC0DIR} ; ${GET} yycopy.c
+
+yycosts.c: ${PSCCSDIR}/SCCS/s.yycosts.c
+	cd ${PIDIR} ; ${GET} yycosts.c
+	cd ${PC0DIR} ; ${GET} yycosts.c
+
+yyerror.c: ${PSCCSDIR}/SCCS/s.yyerror.c
+	cd ${PIDIR} ; ${GET} yyerror.c
+	cd ${PC0DIR} ; ${GET} yyerror.c
+
+yyget.c: ${PSCCSDIR}/SCCS/s.yyget.c
+	cd ${PIDIR} ; ${GET} yyget.c
+	cd ${PC0DIR} ; ${GET} yyget.c
+
+yyid.c: ${PSCCSDIR}/SCCS/s.yyid.c
+	cd ${PIDIR} ; ${GET} yyid.c
+	cd ${PC0DIR} ; ${GET} yyid.c
+
+yylex.c: ${PSCCSDIR}/SCCS/s.yylex.c
+	cd ${PIDIR} ; ${GET} yylex.c
+	cd ${PC0DIR} ; ${GET} yylex.c
+
+yymain.c: ${PSCCSDIR}/SCCS/s.yymain.c
+	cd ${PIDIR} ; ${GET} yymain.c
+	cd ${PC0DIR} ; ${GET} yymain.c
+
+yyoptions.c: ${PSCCSDIR}/SCCS/s.yyoptions.c
+	cd ${PIDIR} ; ${GET} yyoptions.c
+	cd ${PC0DIR} ; ${GET} yyoptions.c
+
+yypanic.c: ${PSCCSDIR}/SCCS/s.yypanic.c
+	cd ${PIDIR} ; ${GET} yypanic.c
+	cd ${PC0DIR} ; ${GET} yypanic.c
+
+yyparse.c: ${PSCCSDIR}/SCCS/s.yyparse.c
+	cd ${PIDIR} ; ${GET} yyparse.c
+	cd ${PC0DIR} ; ${GET} yyparse.c
+
+yyprint.c: ${PSCCSDIR}/SCCS/s.yyprint.c
+	cd ${PIDIR} ; ${GET} yyprint.c
+	cd ${PC0DIR} ; ${GET} yyprint.c
+
+yyput.c: ${PSCCSDIR}/SCCS/s.yyput.c
+	cd ${PIDIR} ; ${GET} yyput.c
+	cd ${PC0DIR} ; ${GET} yyput.c
+
+yyrecover.c: ${PSCCSDIR}/SCCS/s.yyrecover.c
+	cd ${PIDIR} ; ${GET} yyrecover.c
+	cd ${PC0DIR} ; ${GET} yyrecover.c
+
+yyseman.c: ${PSCCSDIR}/SCCS/s.yyseman.c
+	cd ${PIDIR} ; ${GET} yyseman.c
+	cd ${PC0DIR} ; ${GET} yyseman.c
+
+yytree.c: ${PSCCSDIR}/SCCS/s.yytree.c
+	cd ${PIDIR} ; ${GET} yytree.c
+	cd ${PC0DIR} ; ${GET} yytree.c
+
+p2put.c: ${PSCCSDIR}/SCCS/s.p2put.c
+	cd ${PIDIR} ; ${GET} p2put.c
+	cd ${PC0DIR} ; ${GET} p2put.c
+
+stab.c: ${PSCCSDIR}/SCCS/s.stab.c
+	cd ${PIDIR} ; ${GET} stab.c
+	cd ${PC0DIR} ; ${GET} stab.c
+
+pcproc.c: ${PSCCSDIR}/SCCS/s.pcproc.c
+	cd ${PIDIR} ; ${GET} pcproc.c
+	cd ${PC0DIR} ; ${GET} pcproc.c
+
+pcfunc.c: ${PSCCSDIR}/SCCS/s.pcfunc.c
+	cd ${PIDIR} ; ${GET} pcfunc.c
+	cd ${PC0DIR} ; ${GET} pcfunc.c
+
+pccaseop.c: ${PSCCSDIR}/SCCS/s.pccaseop.c
+	cd ${PIDIR} ; ${GET} pccaseop.c
+	cd ${PC0DIR} ; ${GET} pccaseop.c
+
+pclval.c: ${PSCCSDIR}/SCCS/s.pclval.c
+	cd ${PIDIR} ; ${GET} pclval.c
+	cd ${PC0DIR} ; ${GET} pclval.c
+
+0.h: ${PSCCSDIR}/SCCS/s.0.h
+	cd ${PIDIR} ; ${GET} 0.h
+	cd ${PC0DIR} ; ${GET} 0.h
+
+OPnames.h: ${PSCCSDIR}/SCCS/s.OPnames.h
+	cd ${PIDIR} ; ${GET} OPnames.h
+	cd ${PC0DIR} ; ${GET} OPnames.h
+
+align.h: ${PSCCSDIR}/SCCS/s.align.h
+	cd ${PIDIR} ; ${GET} align.h
+	cd ${PC0DIR} ; ${GET} align.h
+
+iorec.h: ${PSCCSDIR}/SCCS/s.iorec.h
+	cd ${PIDIR} ; ${GET} iorec.h
+	cd ${PC0DIR} ; ${GET} iorec.h
+
+objfmt.h: ${PSCCSDIR}/SCCS/s.objfmt.h
+	cd ${PIDIR} ; ${GET} objfmt.h
+	cd ${PC0DIR} ; ${GET} objfmt.h
+
+pstab.h: ${PSCCSDIR}/SCCS/s.pstab.h
+	cd ${PIDIR} ; ${GET} pstab.h
+	cd ${PC0DIR} ; ${GET} pstab.h
+
+pc.h: ${PSCCSDIR}/SCCS/s.pc.h
+	cd ${PIDIR} ; ${GET} pc.h
+	cd ${PC0DIR} ; ${GET} pc.h
+
+pcops.h: ${PSCCSDIR}/SCCS/s.pcops.h
+	cd ${PIDIR} ; ${GET} pcops.h
+	cd ${PC0DIR} ; ${GET} pcops.h
+
+send.h: ${PSCCSDIR}/SCCS/s.send.h
+	cd ${PIDIR} ; ${GET} send.h
+	cd ${PC0DIR} ; ${GET} send.h
+
+tree.h: ${PSCCSDIR}/SCCS/s.tree.h
+	cd ${PIDIR} ; ${GET} tree.h
+	cd ${PC0DIR} ; ${GET} tree.h
+
+yy.h: ${PSCCSDIR}/SCCS/s.yy.h
+	cd ${PIDIR} ; ${GET} yy.h
+	cd ${PC0DIR} ; ${GET} yy.h
+
+config.h: ${PSCCSDIR}/SCCS/s.config.h
+	cd ${PIDIR} ; ${GET} config.h
+	cd ${PC0DIR} ; ${GET} config.h
+
+pas.y: ${PSCCSDIR}/SCCS/s.pas.y
+	cd ${PIDIR} ; ${GET} pas.y
+	cd ${PC0DIR} ; ${GET} pas.y
+
+opc.c: ${PSCCSDIR}/SCCS/s.opc.c
+	cd ${PIDIR} ; ${GET} opc.c
+	cd ${PC0DIR} ; ${GET} opc.c
+
+CONFIG.c: ${PSCCSDIR}/SCCS/s.CONFIG.c
+	cd ${PIDIR} ; ${GET} CONFIG.c
+	cd ${PC0DIR} ; ${GET} CONFIG.c
+
+gram: ${PSCCSDIR}/SCCS/s.gram
+	cd ${PIDIR} ; ${GET} gram
+	cd ${PC0DIR} ; ${GET} gram
+
+pic.c: ${PSCCSDIR}/SCCS/s.pic.c
+	cd ${PIDIR} ; ${GET} pic.c
+	cd ${PC0DIR} ; ${GET} pic.c
