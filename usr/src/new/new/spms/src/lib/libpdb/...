@@ -1,0 +1,6 @@
+...|:^^:dp=.:dt=project:dd=SPMS Database Operations:
+....|:^^:dp=../../..:
+src|:dp=src:dt=clean/libsrc/print.3/src/update.200:dd=libpdb.a source:
+test|:dp=test:dt=:dd=libpdb.a test cases:
+work|:dp=work:dt=test.1:dd=libpdb.a workbench:
+lib|:dp=lib:dt=lib:dd=libpdb.a makefile templates:

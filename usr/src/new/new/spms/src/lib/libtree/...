@@ -1,0 +1,6 @@
+...|:^^:dp=.:dt=project:dd=SPMS Binary Tree Operations:
+....|:^^:dp=../../..:
+src|:dp=src:dt=clean/libsrc/print.3/src/update.200:dd=libtree.a source:
+test|:dp=test:dt=:dd=libtree.a test cases:
+work|:dp=work:dt=test.2:dd=libtree.a workbench:
+lib|:dp=lib:dt=lib:dd=libtree.a makefile templates:
