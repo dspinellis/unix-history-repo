@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)icheck.c	1.19 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	1.20 (Berkeley) %G%";
 
 /*
  * icheck
@@ -41,7 +41,7 @@ ino_t	nrfile;
 ino_t	ndfile;
 ino_t	nbfile;
 ino_t	ncfile;
-ino_t	nmcfile;
+ino_t	nlfile;
 
 daddr_t	nblock;
 daddr_t	nfrag;
@@ -136,7 +136,7 @@ check(file)
 	ndfile = 0;
 	ncfile = 0;
 	nbfile = 0;
-	nmcfile = 0;
+	nlfile = 0;
 
 	nblock = 0;
 	nfrag = 0;
@@ -238,13 +238,13 @@ check(file)
 		free(bmap);
 #endif
 
-	i = nrfile + ndfile + ncfile + nbfile + nmcfile;
+	i = nrfile + ndfile + ncfile + nbfile + nlfile;
 #ifndef STANDALONE
-	printf("files %6u (r=%u,d=%u,b=%u,c=%u,mc=%u)\n",
-		i, nrfile, ndfile, nbfile, ncfile, nmcfile);
+	printf("files %6u (r=%u,d=%u,b=%u,c=%u,sl=%u)\n",
+		i, nrfile, ndfile, nbfile, ncfile, nlfile);
 #else
-	printf("files %u (r=%u,d=%u,b=%u,c=%u,mc=%u)\n",
-		i, nrfile, ndfile, nbfile, ncfile, nmcfile);
+	printf("files %u (r=%u,d=%u,b=%u,c=%u,sl=%u)\n",
+		i, nrfile, ndfile, nbfile, ncfile, nlfile);
 #endif
 	n = (nblock + nindir + niindir) * sblock.fs_frag + nfrag;
 #ifdef STANDALONE
@@ -293,6 +293,9 @@ pass1(ip)
 		break;
 	case IFREG:
 		nrfile++;
+		break;
+	case IFLNK:
+		nlfile++;
 		break;
 	default:
 		printf("bad mode %u\n", ino);
