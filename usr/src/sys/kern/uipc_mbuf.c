@@ -13,11 +13,10 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_mbuf.c	7.12 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "cmap.h"
