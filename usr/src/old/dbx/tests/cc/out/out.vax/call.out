@@ -1,0 +1,31 @@
+reading symbolic information ...
+starting
+printf returns successfully
+[2] stop at 15
+[2] stopped in main at line 15
+   15       p1();
+in p1
+
+p1 returns successfully
+in p2(3)
+
+p2 returns successfully
+in p3(blah)
+
+p3 returns successfully
+main_local = 19
+printf returns successfully
+19 
+call call
+         ^ syntax error
+"call" not call-able
+too many parameters in call to p1
+type mismatch for from_main in call to p2
+[8] stop in p3
+[8] stopped in p3 at line 36
+   36       printf("in p3(%s)\n", s);
+in p3(blah)
+
+p3 returns successfully
+main(argc = 1, argv = 0x7fffebe8, 0x7fffebf0), line 15 in "call.c"
+
