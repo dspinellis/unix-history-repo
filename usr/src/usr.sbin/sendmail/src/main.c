@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.43 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -141,18 +141,18 @@ main(argc, argv, envp)
 	openlog("sendmail", LOG_PID);
 #endif 
 
-	/*
-	**  Set default values for variables.
-	**	These cannot be in initialized data space.
-	*/
-
-	setdefaults();
-
 	/* set up the blank envelope */
 	BlankEnvelope.e_puthdr = putheader;
 	BlankEnvelope.e_putbody = putbody;
 	BlankEnvelope.e_xfp = NULL;
 	CurEnv = &BlankEnvelope;
+
+	/*
+	**  Set default values for variables.
+	**	These cannot be in initialized data space.
+	*/
+
+	setdefaults(&BlankEnvelope);
 
 	RealUid = getuid();
 	RealGid = getgid();
@@ -566,10 +566,10 @@ main(argc, argv, envp)
 	if (Verbose)
 	{
 		/* turn off noconnect option */
-		setoption('c', "F", TRUE, FALSE);
+		setoption('c', "F", TRUE, FALSE, CurEnv);
 
 		/* turn on interactive delivery */
-		setoption('d', "", TRUE, FALSE);
+		setoption('d', "", TRUE, FALSE, CurEnv);
 	}
 
 	/* our name for SMTP codes */
@@ -853,7 +853,7 @@ main(argc, argv, envp)
 		finis();
 	}
 	if (OpMode == MD_VERIFY)
-		SendMode = SM_VERIFY;
+		CurEnv->e_sendmode = SM_VERIFY;
 
 	/*
 	**  Scan argv and deliver the message to everyone.
