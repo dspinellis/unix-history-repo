@@ -1,0 +1,136 @@
+.TH SCCS 1
+.UC
+.SH NAME
+sccs \- front end for the
+.SM SCCS
+subsystem
+.SH SYNOPSIS
+.B sccs
+[
+.B \-r
+] [
+.BI \-p path
+] command [ flags ] [ args ]
+.SH DESCRIPTION
+.I Sccs
+is a front end
+to csvax:eric.
+that make them mesh more cleanly
+with the rest of UNIX.
+It also runs as a special user
+.B sccs
+so that the
+.SM SCCS
+file protection
+can be used to advantage.
+.PP
+Basically,
+.I sccs
+runs the
+.I command
+with the specified
+.I flags
+and
+.I args.
+Each
+argument
+is modified to be prepended
+with ``sccs/s.''
+unless it begins with ``s.'',
+contains a `\|/\|' character,
+or specifies a directory.
+.PP
+Flags to be interpreted by the
+.I sccs
+program must be before the
+.I command
+argument.
+Flags to be passed to the actual
+.SM SCCS
+program
+must come after the
+.I command
+argument.
+These flags are specific to the command
+and are discussed in the documentation for that command.
+.PP
+The
+.B \-r
+flag runs
+.I sccs
+as the real user
+rather than as the pseudo-user
+.B sccs.
+The
+.B \-p
+flag defines the path to prepend to
+.SM SCCS
+file names;
+``sccs/s.'' is the default.
+.SH EXAMPLES
+.de BX
+.nf
+.in +0.5i
+.sp 0.3
+..
+.de EX
+.fi
+.in -0.5i
+.sp 0.3
+..
+To get a file for editting,
+edit it,
+and produce a new delta:
+.BX
+% sccs get \-e file.c
+% ex file.c
+% sccs delta file.c
+.EX
+To get a file from another directory:
+.BX
+% sccs \-p/usr/src/sccs/s. get cc.c
+.EX
+or
+.BX
+% sccs get /usr/src/sccs/s.cc.c
+.EX
+To make a delta of a large number of files
+in the current directory:
+.BX
+% sccs delta *.c
+.EX
+In a makefile, to get source files
+from an
+.SM SCCS
+file if it does not already exist:
+.BX
+SRCS = <list of source files>
+OBJS = <list of object files>
+.sp 0.4
+$(OBJS): $(SRCS)
+.sp 0.4
+\&.DEFAULT:
+	sccs get $(REL) $<
+.EX
+.SH "SEE ALSO"
+admin(SCCS),
+chghist(SCCS),
+comb(SCCS),
+delta(SCCS),
+get(SCCS),
+help(SCCS),
+prt(SCCS),
+rmdel(SCCS),
+sccsdiff(SCCS),
+what(SCCS),
+sccsdir(UCB)
+.SH AUTHOR
+Eric Allman (csvax:eric)
+.SH DISCLAIMER
+Since it is not yet clear
+what this program should do,
+it should not be considered
+a stable program product.
+Please send any
+constructive suggestions
+to csvax:eric.
