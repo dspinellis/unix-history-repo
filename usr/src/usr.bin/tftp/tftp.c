@@ -1,4 +1,4 @@
-/*	tftp.c	4.3	82/11/14	*/
+/*	tftp.c	4.4	82/11/15	*/
 
 /*
  * TFTP User Program -- Protocol Machines
@@ -67,14 +67,14 @@ sendfile(fd, name)
 rexmt:
 		if (trace)
 			tpacket("sent", tp, size + 4);
-		n = sendto(f, buf, size + 4, (caddr_t)&sin, sizeof (sin), 0);
+		n = sendto(f, buf, size + 4, 0, (caddr_t)&sin, sizeof (sin));
 		if (n != size + 4) {
 			perror("send");
 			break;
 		}
 again:
 		fromlen = sizeof (from);
-		n = recvfrom(f, buf, sizeof (buf), (caddr_t)&from, &fromlen, 0);
+		n = recvfrom(f, buf, sizeof (buf), 0, (caddr_t)&from, &fromlen);
 		if (n <= 0) {
 			if (n == 0)
 				goto again;
@@ -139,12 +139,12 @@ recvfile(fd, name)
 rexmt:
 		if (trace)
 			tpacket("sent", tp, size);
-		if (sendto(f, buf, size, (caddr_t)&sin, sizeof (sin), 0) != size) {
+		if (sendto(f, buf, size, 0, (caddr_t)&sin, sizeof (sin)) != size) {
 			perror("send");
 			break;
 		}
 again:
-		n = recvfrom(f, buf, sizeof (buf), (caddr_t)&from, &fromlen, 0);
+		n = recvfrom(f, buf, sizeof (buf), 0, (caddr_t)&from, &fromlen);
 		if (n <= 0) {
 			if (n == 0)
 				goto again;
@@ -179,7 +179,7 @@ again:
 	alarm(0);
 	tp->th_opcode = htons((u_short)ACK);
 	tp->th_block = htons((u_short)block);
-	(void) sendto(f, buf, 4, &sin, sizeof (sin), 0);
+	(void) sendto(f, buf, 4, 0, &sin, sizeof (sin));
 	(void) close(fd);
 	if (amount > 0) {
 		delta = time(0) - start;

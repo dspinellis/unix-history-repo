@@ -1,4 +1,4 @@
-/*	tftpd.c	4.4	82/11/14	*/
+/*	tftpd.c	4.5	82/11/15	*/
 
 /*
  * Trivial file transfer protocol server.
@@ -72,7 +72,7 @@ main(argc, argv)
 		}
 again:
 		fromlen = sizeof (from);
-		n = recvfrom(f, buf, sizeof (buf), (caddr_t)&from, &fromlen, 0);
+		n = recvfrom(f, buf, sizeof (buf), 0, (caddr_t)&from, &fromlen);
 		if (n <= 0) {
 			if (n < 0)
 				perror("tftpd: recvfrom");
