@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bmc.c	7.1 (Berkeley) %G%
+ *	@(#)bmc.c	7.2 (Berkeley) %G%
  */
 
 #define	BMC_NOCONSOLE
@@ -23,20 +23,20 @@
 #include "bmc.h"
 #if NBMC > 0
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/ioctl.h"
-#include "sys/proc.h"
-#include "sys/tty.h"
-#include "sys/conf.h"
-#include "sys/file.h"
-#include "sys/uio.h"
-#include "sys/kernel.h"
-#include "sys/syslog.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/ioctl.h>
+#include <sys/proc.h>
+#include <sys/tty.h>
+#include <sys/conf.h>
+#include <sys/file.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
+#include <sys/syslog.h>
 
-#include "device.h"
-#include "sioreg.h"
-#include "siovar.h"
+#include <luna68k/dev/device.h>
+#include <luna68k/dev/sioreg.h>
+#include <luna68k/dev/siovar.h>
 
 #ifdef	BMD
 #include "kbdreg.h"

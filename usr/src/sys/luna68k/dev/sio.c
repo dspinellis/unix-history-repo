@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sio.c	7.3 (Berkeley) %G%
+ *	@(#)sio.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -21,20 +21,20 @@
 
 #include "bmc.h"
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/ioctl.h"
-#include "sys/proc.h"
-#include "sys/tty.h"
-#include "sys/conf.h"
-#include "sys/file.h"
-#include "sys/uio.h"
-#include "sys/kernel.h"
-#include "sys/syslog.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/ioctl.h>
+#include <sys/proc.h>
+#include <sys/tty.h>
+#include <sys/conf.h>
+#include <sys/file.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
+#include <sys/syslog.h>
 
-#include "device.h"
-#include "sioreg.h"
-#include "siovar.h"
+#include <luna68k/dev/device.h>
+#include <luna68k/dev/sioreg.h>
+#include <luna68k/dev/siovar.h>
 
 struct sio_portc *sio_port_assign();
 
@@ -445,7 +445,7 @@ siointr(unit)
 /*
  * Following are all routines needed for SIO to act as console
  */
-#include "../luna68k/cons.h"
+#include <luna68k/luna68k/cons.h>
 
 siocnprobe(cp)
 	register struct consdev *cp;
