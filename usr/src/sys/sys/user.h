@@ -1,4 +1,4 @@
-/*	user.h	6.1	83/07/29	*/
+/*	user.h	6.2	83/11/21	*/
 
 #ifdef KERNEL
 #include "../machine/pcb.h"
@@ -132,6 +132,12 @@ struct	user {
 		unsigned pr_off;	/* pc offset */
 		unsigned pr_scale;	/* pc scaling */
 	} u_prof;
+	struct nameicache {		/* last successful directory search */
+		int nc_prevoffset;	/* offset at which last entry found */
+		ino_t nc_inumber;	/* inum of cached directory */
+		dev_t nc_dev;		/* dev of cached directory */
+		time_t nc_time;		/* time stamp for cache entry */
+	} u_ncache;
 	int	u_stack[1];
 };
 
