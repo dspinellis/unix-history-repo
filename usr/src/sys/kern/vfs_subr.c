@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.41 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.42 (Berkeley) %G%
  */
 
 /*
@@ -42,9 +42,9 @@ vfs_remove(mp)
 
 	if (mp == rootfs)
 		panic("vfs_remove: unmounting root");
-	mp->m_prev->m_next = mp->m_next;
-	mp->m_next->m_prev = mp->m_prev;
-	mp->m_vnodecovered->v_mountedhere = (struct mount *)0;
+	mp->mnt_prev->mnt_next = mp->mnt_next;
+	mp->mnt_next->mnt_prev = mp->mnt_prev;
+	mp->mnt_vnodecovered->v_mountedhere = (struct mount *)0;
 	vfs_unlock(mp);
 }
 
@@ -56,11 +56,11 @@ vfs_lock(mp)
 	register struct mount *mp;
 {
 
-	while(mp->m_flag & M_MLOCK) {
-		mp->m_flag |= M_MWAIT;
+	while(mp->mnt_flag & MNT_MLOCK) {
+		mp->mnt_flag |= MNT_MWAIT;
 		sleep((caddr_t)mp, PVFS);
 	}
-	mp->m_flag |= M_MLOCK;
+	mp->mnt_flag |= MNT_MLOCK;
 	return (0);
 }
 
@@ -73,11 +73,11 @@ vfs_unlock(mp)
 	register struct mount *mp;
 {
 
-	if ((mp->m_flag & M_MLOCK) == 0)
+	if ((mp->mnt_flag & MNT_MLOCK) == 0)
 		panic("vfs_unlock: not locked");
-	mp->m_flag &= ~M_MLOCK;
-	if (mp->m_flag & M_MWAIT) {
-		mp->m_flag &= ~M_MWAIT;
+	mp->mnt_flag &= ~MNT_MLOCK;
+	if (mp->mnt_flag & MNT_MWAIT) {
+		mp->mnt_flag &= ~MNT_MWAIT;
 		wakeup((caddr_t)mp);
 	}
 }
@@ -90,13 +90,13 @@ vfs_busy(mp)
 	register struct mount *mp;
 {
 
-	if (mp->m_flag & M_UNMOUNT)
+	if (mp->mnt_flag & MNT_UNMOUNT)
 		return (1);
-	while(mp->m_flag & M_MPBUSY) {
-		mp->m_flag |= M_MPWANT;
-		sleep((caddr_t)&mp->m_flag, PVFS);
+	while(mp->mnt_flag & MNT_MPBUSY) {
+		mp->mnt_flag |= MNT_MPWANT;
+		sleep((caddr_t)&mp->mnt_flag, PVFS);
 	}
-	mp->m_flag |= M_MPBUSY;
+	mp->mnt_flag |= MNT_MPBUSY;
 	return (0);
 }
 
@@ -109,12 +109,12 @@ vfs_unbusy(mp)
 	register struct mount *mp;
 {
 
-	if ((mp->m_flag & M_MPBUSY) == 0)
+	if ((mp->mnt_flag & MNT_MPBUSY) == 0)
 		panic("vfs_unbusy: not busy");
-	mp->m_flag &= ~M_MPBUSY;
-	if (mp->m_flag & M_MPWANT) {
-		mp->m_flag &= ~M_MPWANT;
-		wakeup((caddr_t)&mp->m_flag);
+	mp->mnt_flag &= ~MNT_MPBUSY;
+	if (mp->mnt_flag & MNT_MPWANT) {
+		mp->mnt_flag &= ~MNT_MPWANT;
+		wakeup((caddr_t)&mp->mnt_flag);
 	}
 }
 
@@ -129,11 +129,11 @@ getvfs(fsid)
 
 	mp = rootfs;
 	do {
-		if (mp->m_stat.f_fsid.val[0] == fsid->val[0] &&
-		    mp->m_stat.f_fsid.val[1] == fsid->val[1]) {
+		if (mp->mnt_stat.f_fsid.val[0] == fsid->val[0] &&
+		    mp->mnt_stat.f_fsid.val[1] == fsid->val[1]) {
 			return (mp);
 		}
-		mp = mp->m_next;
+		mp = mp->mnt_next;
 	} while (mp != rootfs);
 	return ((struct mount *)0);
 }
@@ -306,14 +306,14 @@ insmntque(vp, mp)
 		vp->v_mountb = NULL;
 		return;
 	}
-	if (mp->m_mounth) {
-		vp->v_mountf = mp->m_mounth;
-		vp->v_mountb = &mp->m_mounth;
-		mp->m_mounth->v_mountb = &vp->v_mountf;
-		mp->m_mounth = vp;
+	if (mp->mnt_mounth) {
+		vp->v_mountf = mp->mnt_mounth;
+		vp->v_mountb = &mp->mnt_mounth;
+		mp->mnt_mounth->v_mountb = &vp->v_mountf;
+		mp->mnt_mounth = vp;
 	} else {
-		mp->m_mounth = vp;
-		vp->v_mountb = &mp->m_mounth;
+		mp->mnt_mounth = vp;
+		vp->v_mountb = &mp->mnt_mounth;
 		vp->v_mountf = NULL;
 	}
 }
@@ -364,7 +364,7 @@ checkalias(nvp, nvp_rdev, mp)
 	struct vnode **vpp;
 
 	if (nvp->v_type != VBLK && nvp->v_type != VCHR)
-		return ((struct vnode *)0);
+		return (NULLVP);
 
 	vpp = &speclisth[SPECHASH(nvp_rdev)];
 loop:
@@ -394,7 +394,7 @@ loop:
 			vp->v_flag |= VALIASED;
 			vput(vp);
 		}
-		return ((struct vnode *)0);
+		return (NULLVP);
 	}
 	VOP_UNLOCK(vp);
 	vclean(vp, 0);
@@ -472,7 +472,7 @@ void vrele(vp)
 		vprint("vrele: bad ref count", vp);
 	if (vp->v_usecount > 0)
 		return;
-	if (vfreeh == (struct vnode *)0) {
+	if (vfreeh == NULLVP) {
 		/*
 		 * insert into empty list
 		 */
@@ -530,9 +530,9 @@ vflush(mp, skipvp, flags)
 	register struct vnode *vp, *nvp;
 	int busy = 0;
 
-	if ((mp->m_flag & M_MPBUSY) == 0)
+	if ((mp->mnt_flag & MNT_MPBUSY) == 0)
 		panic("vflush: not busy");
-	for (vp = mp->m_mounth; vp; vp = nvp) {
+	for (vp = mp->mnt_mounth; vp; vp = nvp) {
 		nvp = vp->v_mountf;
 		/*
 		 * Skip over a selected vnode.
@@ -891,7 +891,7 @@ kinfo_vnode(op, where, acopysize, arg, aneeded)
 #define RETRY	bp = savebp ; goto again
 	do {
 		if (vfs_busy(mp)) {
-			mp = mp->m_next;
+			mp = mp->mnt_next;
 			continue;
 		}
 		/*
@@ -904,7 +904,7 @@ kinfo_vnode(op, where, acopysize, arg, aneeded)
 		 */
 		savebp = bp;
 again:
-		nextvp = mp->m_mounth;
+		nextvp = mp->mnt_mounth;
 		while (vp = nextvp) {
 			if (vget(vp)) {
 				if (kinfo_vdebug)
@@ -930,7 +930,7 @@ again:
 			vput(vp);
 		}
 		omp = mp;
-		mp = mp->m_next;
+		mp = mp->mnt_next;
 		vfs_unbusy(omp);
 	} while (mp != rootfs);
 

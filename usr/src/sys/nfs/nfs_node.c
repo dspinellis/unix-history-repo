@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.24 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -303,15 +303,4 @@ nfs_abortop(ndp)
 			VOP_UNLOCK(ndp->ni_vp);
 		vrele(ndp->ni_vp);
 	}
-}
-
-/*
- * This is silly, but if you use a macro and try and use it in a file
- * that has mbuf.h included, m_data --> m_hdr.mh_data and this is not
- * a good thing
- */
-struct nfsmount *vfs_to_nfs(mp)
-	struct mount *mp;
-{
-	return ((struct nfsmount *)mp->m_data);
 }

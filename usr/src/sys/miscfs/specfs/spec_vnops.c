@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.25 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -120,7 +120,7 @@ spec_open(vp, mode, cred)
 	register int maj = major(dev);
 	int error;
 
-	if (vp->v_mount && (vp->v_mount->m_flag & M_NODEV))
+	if (vp->v_mount && (vp->v_mount->mnt_flag & MNT_NODEV))
 		return (ENXIO);
 
 	switch (vp->v_type) {

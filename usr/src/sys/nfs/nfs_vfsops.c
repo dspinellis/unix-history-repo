@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.19 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -29,7 +29,6 @@
 #include "errno.h"
 #include "buf.h"
 #include "mbuf.h"
-#undef	m_data
 #include "socket.h"
 #include "systm.h"
 #include "nfsv2.h"
@@ -98,7 +97,7 @@ nfs_mount(mp, path, data, ndp)
 	int len;
 	nfsv2fh_t nfh;
 
-	if (mp->m_flag & M_UPDATE)
+	if (mp->mnt_flag & MNT_UPDATE)
 		return (0);
 	if (error = copyin(data, (caddr_t)&args, sizeof (struct nfs_args)))
 		return (error);
@@ -135,7 +134,7 @@ mountnfs(argp, mp, saddr, pth, hst)
 
 	MALLOC(nmp, struct nfsmount *, sizeof *nmp, M_NFSMNT, M_WAITOK);
 	bzero((caddr_t)nmp, sizeof *nmp);
-	mp->m_data = (qaddr_t)nmp;
+	mp->mnt_data = (qaddr_t)nmp;
 	/*
 	 * Generate a unique nfs mount id. The problem is that a dev number
 	 * is not unique across multiple systems. The techique is as follows:
@@ -150,8 +149,8 @@ mountnfs(argp, mp, saddr, pth, hst)
 	 *     simply makes the major dev number tick up. The upper bound is
 	 *     set to major dev 127 to avoid any sign extention problems
 	 */
-	mp->m_stat.f_fsid.val[0] = makedev(nblkdev, 0);
-	mp->m_stat.f_fsid.val[1] = MOUNT_NFS;
+	mp->mnt_stat.f_fsid.val[0] = makedev(nblkdev, 0);
+	mp->mnt_stat.f_fsid.val[1] = MOUNT_NFS;
 	if (++nfs_mntid == 0)
 		++nfs_mntid;
 	tfsid.val[0] = makedev(nblkdev, nfs_mntid);
@@ -165,7 +164,7 @@ mountnfs(argp, mp, saddr, pth, hst)
 		m_freem(saddr);
 		goto bad;
 	}
-	mp->m_stat.f_fsid.val[0] = tfsid.val[0];
+	mp->mnt_stat.f_fsid.val[0] = tfsid.val[0];
 	nmp->nm_mountp = mp;
 	nmp->nm_flag = argp->flags;
 	nmp->nm_rto = NFS_TIMEO;
@@ -175,8 +174,9 @@ mountnfs(argp, mp, saddr, pth, hst)
 	nmp->nm_wsize = NFS_WSIZE;
 	nmp->nm_rsize = NFS_RSIZE;
 	bcopy((caddr_t)argp->fh, (caddr_t)&nmp->nm_fh, sizeof(nfsv2fh_t));
-	bcopy(hst, mp->m_stat.f_mntfromname, MNAMELEN);
-	bcopy(pth, mp->m_stat.f_mntonname, MNAMELEN);
+	mp->mnt_stat.f_type = MOUNT_NFS;
+	bcopy(hst, mp->mnt_stat.f_mntfromname, MNAMELEN);
+	bcopy(pth, mp->mnt_stat.f_mntonname, MNAMELEN);
 
 	if ((argp->flags & NFSMNT_TIMEO) && argp->timeo > 0) {
 		nmp->nm_rto = argp->timeo;
@@ -220,7 +220,7 @@ mountnfs(argp, mp, saddr, pth, hst)
 		goto bad;
 	}
 
-	if (error = nfs_statfs(mp, &mp->m_stat))
+	if (error = nfs_statfs(mp, &mp->mnt_stat))
 		goto bad;
 	/*
 	 * A reference count is needed on the nfsnode representing the
@@ -264,7 +264,7 @@ nfs_unmount(mp, mntflags)
 		return (EINVAL);
 	if (mntflags & MNT_FORCE)
 		flags |= FORCECLOSE;
-	nmp = vfs_to_nfs(mp);
+	nmp = VFSTONFS(mp);
 	/*
 	 * Clear out the buffer cache
 	 */
@@ -318,7 +318,7 @@ nfs_root(mp, vpp)
 	struct nfsnode *np;
 	int error;
 
-	nmp = vfs_to_nfs(mp);
+	nmp = VFSTONFS(mp);
 	if (error = nfs_nget(mp, &nmp->nm_fh, &np))
 		return (error);
 	vp = NFSTOV(np);

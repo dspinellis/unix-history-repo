@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_lookup.c	7.20 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -98,9 +98,9 @@ namei(ndp)
 	getbuf = (ndp->ni_nameiop & HASBUF) ^ HASBUF;
 	if (flag == DELETE || wantparent)
 		docache = 0;
-	rdonly = M_RDONLY;
+	rdonly = MNT_RDONLY;
 	if (ndp->ni_nameiop & REMOTE)
-		rdonly |= M_EXRDONLY;
+		rdonly |= MNT_EXRDONLY;
 	/*
 	 * Get a buffer for the name to be translated, and copy the
 	 * name into the buffer.
@@ -231,7 +231,7 @@ dirloop:
 				(ndp->ni_nameiop & NOCROSSMOUNT))
 				break;
 			tdp = dp;
-			dp = dp->v_mount->m_vnodecovered;
+			dp = dp->v_mount->mnt_vnodecovered;
 			vput(tdp);
 			VREF(dp);
 			VOP_LOCK(dp);
@@ -254,7 +254,7 @@ dirloop:
 		 * If creating and at end of pathname, then can consider
 		 * allowing file to be created.
 		 */
-		if (ndp->ni_dvp->v_mount->m_flag & rdonly) {
+		if (ndp->ni_dvp->v_mount->mnt_flag & rdonly) {
 			error = EROFS;
 			goto bad;
 		}
@@ -333,8 +333,8 @@ dirloop:
 mntloop:
 	while (dp->v_type == VDIR && (mp = dp->v_mountedhere) &&
 	       (ndp->ni_nameiop & NOCROSSMOUNT) == 0) {
-		while(mp->m_flag & M_MLOCK) {
-			mp->m_flag |= M_MWAIT;
+		while(mp->mnt_flag & MNT_MLOCK) {
+			mp->mnt_flag |= MNT_MWAIT;
 			sleep((caddr_t)mp, PVFS);
 			goto mntloop;
 		}
@@ -367,8 +367,8 @@ nextname:
 		 * Disallow directory write attempts on read-only
 		 * file systems.
 		 */
-		if ((dp->v_mount->m_flag & rdonly) ||
-		    (wantparent && (ndp->ni_dvp->v_mount->m_flag & rdonly))) {
+		if ((dp->v_mount->mnt_flag & rdonly) ||
+		    (wantparent && (ndp->ni_dvp->v_mount->mnt_flag & rdonly))) {
 			error = EROFS;
 			goto bad2;
 		}

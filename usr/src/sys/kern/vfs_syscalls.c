@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.45 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.46 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -67,7 +67,7 @@ mount(scp)
 	if (error = namei(ndp))
 		RETURN (error);
 	vp = ndp->ni_vp;
-	if (uap->flags & M_UPDATE) {
+	if (uap->flags & MNT_UPDATE) {
 		if ((vp->v_flag & VROOT) == 0) {
 			vput(vp);
 			RETURN (EINVAL);
@@ -77,13 +77,13 @@ mount(scp)
 		 * We allow going from read-only to read-write,
 		 * but not from read-write to read-only.
 		 */
-		if ((mp->m_flag & M_RDONLY) == 0 &&
-		    (uap->flags & M_RDONLY) != 0) {
+		if ((mp->mnt_flag & MNT_RDONLY) == 0 &&
+		    (uap->flags & MNT_RDONLY) != 0) {
 			vput(vp);
 			RETURN (EOPNOTSUPP);	/* Needs translation */
 		}
-		flag = mp->m_flag;
-		mp->m_flag |= M_UPDATE;
+		flag = mp->mnt_flag;
+		mp->mnt_flag |= MNT_UPDATE;
 		VOP_UNLOCK(vp);
 		goto update;
 	}
@@ -107,10 +107,10 @@ mount(scp)
 	 */
 	mp = (struct mount *)malloc((u_long)sizeof(struct mount),
 		M_MOUNT, M_WAITOK);
-	mp->m_op = vfssw[uap->type];
-	mp->m_flag = 0;
-	mp->m_exroot = 0;
-	mp->m_mounth = (struct vnode *)0;
+	mp->mnt_op = vfssw[uap->type];
+	mp->mnt_flag = 0;
+	mp->mnt_exroot = 0;
+	mp->mnt_mounth = NULLVP;
 	if (error = vfs_lock(mp)) {
 		free((caddr_t)mp, M_MOUNT);
 		vput(vp);
@@ -123,49 +123,49 @@ mount(scp)
 		RETURN (EBUSY);
 	}
 	vp->v_mountedhere = mp;
-	mp->m_vnodecovered = vp;
+	mp->mnt_vnodecovered = vp;
 update:
 	/*
 	 * Set the mount level flags.
 	 */
-	if (uap->flags & M_RDONLY)
-		mp->m_flag |= M_RDONLY;
+	if (uap->flags & MNT_RDONLY)
+		mp->mnt_flag |= MNT_RDONLY;
 	else
-		mp->m_flag &= ~M_RDONLY;
-	if (uap->flags & M_NOSUID)
-		mp->m_flag |= M_NOSUID;
+		mp->mnt_flag &= ~MNT_RDONLY;
+	if (uap->flags & MNT_NOSUID)
+		mp->mnt_flag |= MNT_NOSUID;
 	else
-		mp->m_flag &= ~M_NOSUID;
-	if (uap->flags & M_NOEXEC)
-		mp->m_flag |= M_NOEXEC;
+		mp->mnt_flag &= ~MNT_NOSUID;
+	if (uap->flags & MNT_NOEXEC)
+		mp->mnt_flag |= MNT_NOEXEC;
 	else
-		mp->m_flag &= ~M_NOEXEC;
-	if (uap->flags & M_NODEV)
-		mp->m_flag |= M_NODEV;
+		mp->mnt_flag &= ~MNT_NOEXEC;
+	if (uap->flags & MNT_NODEV)
+		mp->mnt_flag |= MNT_NODEV;
 	else
-		mp->m_flag &= ~M_NODEV;
-	if (uap->flags & M_SYNCHRONOUS)
-		mp->m_flag |= M_SYNCHRONOUS;
+		mp->mnt_flag &= ~MNT_NODEV;
+	if (uap->flags & MNT_SYNCHRONOUS)
+		mp->mnt_flag |= MNT_SYNCHRONOUS;
 	else
-		mp->m_flag &= ~M_SYNCHRONOUS;
+		mp->mnt_flag &= ~MNT_SYNCHRONOUS;
 	/*
 	 * Mount the filesystem.
 	 */
 	error = VFS_MOUNT(mp, uap->dir, uap->data, ndp);
-	if (mp->m_flag & M_UPDATE) {
-		mp->m_flag &= ~M_UPDATE;
+	if (mp->mnt_flag & MNT_UPDATE) {
+		mp->mnt_flag &= ~MNT_UPDATE;
 		vrele(vp);
 		if (error)
-			mp->m_flag = flag;
+			mp->mnt_flag = flag;
 		RETURN (error);
 	}
 	/*
 	 * Put the new filesystem on the mount list after root.
 	 */
-	mp->m_next = rootfs->m_next;
-	mp->m_prev = rootfs;
-	rootfs->m_next = mp;
-	mp->m_next->m_prev = mp;
+	mp->mnt_next = rootfs->mnt_next;
+	mp->mnt_prev = rootfs;
+	rootfs->mnt_next = mp;
+	mp->mnt_next->mnt_prev = mp;
 	cache_purge(vp);
 	if (!error) {
 		VOP_UNLOCK(vp);
@@ -231,10 +231,10 @@ dounmount(mp, flags)
 	struct vnode *coveredvp;
 	int error;
 
-	coveredvp = mp->m_vnodecovered;
+	coveredvp = mp->mnt_vnodecovered;
 	if (vfs_busy(mp))
 		return (EBUSY);
-	mp->m_flag |= M_UNMOUNT;
+	mp->mnt_flag |= MNT_UNMOUNT;
 	if (error = vfs_lock(mp))
 		return (error);
 
@@ -243,7 +243,7 @@ dounmount(mp, flags)
 	VFS_SYNC(mp, MNT_WAIT);
 
 	error = VFS_UNMOUNT(mp, flags);
-	mp->m_flag &= ~M_UNMOUNT;
+	mp->mnt_flag &= ~MNT_UNMOUNT;
 	vfs_unbusy(mp);
 	if (error) {
 		vfs_unlock(mp);
@@ -272,14 +272,14 @@ sync(scp)
 		 * The lock check below is to avoid races with mount
 		 * and unmount.
 		 */
-		if ((mp->m_flag & (M_MLOCK|M_RDONLY|M_MPBUSY)) == 0 &&
+		if ((mp->mnt_flag & (MNT_MLOCK|MNT_RDONLY|MNT_MPBUSY)) == 0 &&
 		    !vfs_busy(mp)) {
 			VFS_SYNC(mp, MNT_NOWAIT);
 			omp = mp;
-			mp = mp->m_next;
+			mp = mp->mnt_next;
 			vfs_unbusy(omp);
 		} else
-			mp = mp->m_next;
+			mp = mp->mnt_next;
 	} while (mp != rootfs);
 }
 
@@ -330,11 +330,11 @@ statfs(scp)
 	if (error = namei(ndp))
 		RETURN (error);
 	mp = ndp->ni_vp->v_mount;
-	sp = &mp->m_stat;
+	sp = &mp->mnt_stat;
 	vrele(ndp->ni_vp);
 	if (error = VFS_STATFS(mp, sp))
 		RETURN (error);
-	sp->f_flags = mp->m_flag & M_VISFLAGMASK;
+	sp->f_flags = mp->mnt_flag & MNT_VISFLAGMASK;
 	RETURN (copyout((caddr_t)sp, (caddr_t)uap->buf, sizeof(*sp)));
 }
 
@@ -353,10 +353,10 @@ fstatfs(scp)
 	if (error = getvnode(scp->sc_ofile, uap->fd, &fp))
 		RETURN (error);
 	mp = ((struct vnode *)fp->f_data)->v_mount;
-	sp = &mp->m_stat;
+	sp = &mp->mnt_stat;
 	if (error = VFS_STATFS(mp, sp))
 		RETURN (error);
-	sp->f_flags = mp->m_flag & M_VISFLAGMASK;
+	sp->f_flags = mp->mnt_flag & MNT_VISFLAGMASK;
 	RETURN (copyout((caddr_t)sp, (caddr_t)uap->buf, sizeof(*sp)));
 }
 
@@ -381,8 +381,9 @@ getfsstat(scp)
 	mp = rootfs;
 	count = 0;
 	do {
-		if (sfsp && count < maxcount && ((mp->m_flag & M_MLOCK) == 0)) {
-			sp = &mp->m_stat;
+		if (sfsp && count < maxcount &&
+		    ((mp->mnt_flag & MNT_MLOCK) == 0)) {
+			sp = &mp->mnt_stat;
 			/*
 			 * If MNT_NOWAIT is specified, do not refresh the
 			 * fsstat cache. MNT_WAIT overrides MNT_NOWAIT.
@@ -390,16 +391,16 @@ getfsstat(scp)
 			if (((uap->flags & MNT_NOWAIT) == 0 ||
 			    (uap->flags & MNT_WAIT)) &&
 			    (error = VFS_STATFS(mp, sp))) {
-				mp = mp->m_prev;
+				mp = mp->mnt_prev;
 				continue;
 			}
-			sp->f_flags = mp->m_flag & M_VISFLAGMASK;
+			sp->f_flags = mp->mnt_flag & MNT_VISFLAGMASK;
 			if (error = copyout((caddr_t)sp, sfsp, sizeof(*sp)))
 				RETURN (error);
 			sfsp += sizeof(*sp);
 		}
 		count++;
-		mp = mp->m_prev;
+		mp = mp->mnt_prev;
 	} while (mp != rootfs);
 	if (sfsp && count > maxcount)
 		scp->sc_retval1 = maxcount;
@@ -998,7 +999,7 @@ chflags(scp)
 	if (error = namei(ndp))
 		RETURN (error);
 	vp = ndp->ni_vp;
-	if (vp->v_mount->m_flag & M_RDONLY) {
+	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
 		goto out;
 	}
@@ -1029,7 +1030,7 @@ fchflags(scp)
 	vattr.va_flags = uap->flags;
 	vp = (struct vnode *)fp->f_data;
 	VOP_LOCK(vp);
-	if (vp->v_mount->m_flag & M_RDONLY) {
+	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
 		goto out;
 	}
@@ -1062,7 +1063,7 @@ chmod(scp)
 	if (error = namei(ndp))
 		RETURN (error);
 	vp = ndp->ni_vp;
-	if (vp->v_mount->m_flag & M_RDONLY) {
+	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
 		goto out;
 	}
@@ -1093,7 +1094,7 @@ fchmod(scp)
 	vattr.va_mode = uap->fmode & 07777;
 	vp = (struct vnode *)fp->f_data;
 	VOP_LOCK(vp);
-	if (vp->v_mount->m_flag & M_RDONLY) {
+	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
 		goto out;
 	}
@@ -1128,7 +1129,7 @@ chown(scp)
 	if (error = namei(ndp))
 		RETURN (error);
 	vp = ndp->ni_vp;
-	if (vp->v_mount->m_flag & M_RDONLY) {
+	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
 		goto out;
 	}
@@ -1161,7 +1162,7 @@ fchown(scp)
 	vattr.va_gid = uap->gid;
 	vp = (struct vnode *)fp->f_data;
 	VOP_LOCK(vp);
-	if (vp->v_mount->m_flag & M_RDONLY) {
+	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
 		goto out;
 	}
@@ -1195,7 +1196,7 @@ utimes(scp)
 	if (error = namei(ndp))
 		RETURN (error);
 	vp = ndp->ni_vp;
-	if (vp->v_mount->m_flag & M_RDONLY) {
+	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
 		goto out;
 	}

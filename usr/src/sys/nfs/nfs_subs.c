@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.21 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.22 (Berkeley) %G%
  */
 
 /*
@@ -662,7 +662,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	vap->va_rdev = rdev;
 	vap->va_bytes = fxdr_unsigned(long, fp->fa_blocks) * vap->va_blocksize;
 	vap->va_bytes_rsv = 0;
-	vap->va_fsid = vp->v_mount->m_stat.f_fsid.val[0];
+	vap->va_fsid = vp->v_mount->mnt_stat.f_fsid.val[0];
 	vap->va_fileid = fxdr_unsigned(long, fp->fa_fileid);
 	vap->va_atime.tv_sec = fxdr_unsigned(long, fp->fa_atime.tv_sec);
 	vap->va_atime.tv_usec = 0;
@@ -722,14 +722,14 @@ nfs_namei(ndp, fhp, len, mdp, dposp)
 	register int i, rem;
 	register struct mbuf *md;
 	register char *cp;
-	struct vnode *dp = (struct vnode *)0;
+	struct vnode *dp = NULLVP;
 	int flag;
 	int docache;
 	int wantparent;
 	int lockparent;
 	int error = 0;
 
-	ndp->ni_vp = ndp->ni_dvp = (struct vnode *)0;
+	ndp->ni_vp = ndp->ni_dvp = NULLVP;
 	flag = ndp->ni_nameiop & OPFLAG;
 	wantparent = ndp->ni_nameiop & (LOCKPARENT | WANTPARENT);
 	lockparent = ndp->ni_nameiop & LOCKPARENT;
@@ -792,7 +792,7 @@ nfs_namei(ndp, fhp, len, mdp, dposp)
 	 * called from rename()
 	 */
 	ndp->ni_cdir = dp;
-	ndp->ni_rdir = (struct vnode *)0;
+	ndp->ni_rdir = NULLVP;
 
 	/*
 	 * Handle "..":
@@ -816,7 +816,7 @@ nfs_namei(ndp, fhp, len, mdp, dposp)
 		 * If creating and at end of pathname, then can consider
 		 * allowing file to be created.
 		 */
-		if (ndp->ni_dvp->v_mount->m_flag & (M_RDONLY | M_EXRDONLY))
+		if (ndp->ni_dvp->v_mount->mnt_flag & (MNT_RDONLY|MNT_EXRDONLY))
 			error = EROFS;
 		if (flag == LOOKUP || flag == DELETE || error != ENOENT)
 			goto bad;
@@ -840,8 +840,10 @@ nextname:
 		 * Disallow directory write attempts on read-only
 		 * file systems.
 		 */
-		if ((dp->v_mount->m_flag & (M_RDONLY|M_EXRDONLY)) ||
-		    (wantparent && (ndp->ni_dvp->v_mount->m_flag & (M_RDONLY|M_EXRDONLY)))) {
+		if ((dp->v_mount->mnt_flag & (MNT_RDONLY|MNT_EXRDONLY)) ||
+		    (wantparent &&
+		    (ndp->ni_dvp->v_mount->mnt_flag &
+		     (MNT_RDONLY|MNT_EXRDONLY)))) {
 			error = EROFS;
 			goto bad2;
 		}
@@ -931,7 +933,7 @@ nfsm_adj(mp, len, nul)
  *	- check that it is exported
  *	- get vp by calling VFS_FHTOVP() macro
  *	- if not lockflag unlock it with VOP_UNLOCK()
- *	- if cred->cr_uid == 0 set it to m_exroot
+ *	- if cred->cr_uid == 0 set it to mnt_exroot
  */
 nfsrv_fhtovp(fhp, lockflag, vpp, cred)
 	fhandle_t *fhp;
@@ -943,12 +945,12 @@ nfsrv_fhtovp(fhp, lockflag, vpp, cred)
 
 	if ((mp = getvfs(&fhp->fh_fsid)) == NULL)
 		return (ESTALE);
-	if ((mp->m_flag & M_EXPORTED) == 0)
+	if ((mp->mnt_flag & MNT_EXPORTED) == 0)
 		return (EACCES);
 	if (VFS_FHTOVP(mp, &fhp->fh_fid, vpp))
 		return (ESTALE);
 	if (cred->cr_uid == 0)
-		cred->cr_uid = mp->m_exroot;
+		cred->cr_uid = mp->mnt_exroot;
 	if (!lockflag)
 		VOP_UNLOCK(*vpp);
 	return (0);

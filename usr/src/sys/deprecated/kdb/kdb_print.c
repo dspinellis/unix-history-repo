@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_print.c	7.17 (Berkeley) %G%
+ *	@(#)kdb_print.c	7.18 (Berkeley) %G%
  */
 
 #include "machine/mtpr.h"
@@ -235,10 +235,10 @@ kdbprinttrace(modif)
 		kdbprintf("Locked vnodes\n");
 		mp = rootfs;
 		do {
-			for (vp = mp->m_mounth; vp; vp = vp->v_mountf)
+			for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf)
 				if (VOP_ISLOCKED(vp))
 					vprint((char *)0, vp);
-			mp = mp->m_next;
+			mp = mp->mnt_next;
 		} while (mp != rootfs);
 		break;
 	}

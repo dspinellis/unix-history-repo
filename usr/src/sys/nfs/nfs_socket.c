@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_socket.c	7.10 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -458,7 +458,7 @@ giveup:
 		}
 		if (mntp->nm_rexmit >= nfsrexmtthresh && logged++ == 0)
 			uprintf("NFS server %s not responding, retrying\n",
-				mntp->nm_mountp->m_stat.f_mntfromname);
+				mntp->nm_mountp->mnt_stat.f_mntfromname);
 		sbunlock(&so->so_rcv);
 		nfs_sbwait(&so->so_rcv);
 		splx(s);
@@ -550,8 +550,8 @@ giveup:
 			}
 			if (rep == myrep) {		/* This is success */
 				if (logged)
-					uprintf("NFS server %s responded\n",
-					mntp->nm_mountp->m_stat.f_mntfromname);
+				    uprintf("NFS server %s responded\n",
+				       mntp->nm_mountp->mnt_stat.f_mntfromname);
 				goto release;
 			}
 			/* Else wake up other sleeper and wait for next */
@@ -610,7 +610,7 @@ nfs_request(vp, mreq, xid, idem, mp, mrp, mdp, dposp)
 	int s;
 	int error;
 
-	mntp = vfs_to_nfs(mp);
+	mntp = VFSTONFS(mp);
 	m = mreq;
 	MALLOC(rep, struct nfsreq *, sizeof(struct nfsreq), M_NFSREQ, M_WAITOK);
 	rep->r_xid = xid;
@@ -1013,7 +1013,7 @@ nfs_updatetimer(mntp)
 	if (mntp->nm_rexmit || nfshp->nh_currexmit) {
 		if (nfshp->nh_currexmit >= nfsrexmtthresh)
 			nfs_log("NFS server %s OK\n",
-				mntp->nm_mountp->m_stat.f_mntfromname);
+				mntp->nm_mountp->mnt_stat.f_mntfromname);
 		mntp->nm_rexmit = nfshp->nh_currexmit = 0;
 		return;
 	}
@@ -1079,7 +1079,7 @@ nfs_backofftimer(mntp)
 		if (nfshp->nh_currexmit >= nfsrexmtthresh) {
 			if (nfshp->nh_currexmit == nfsrexmtthresh) {
 				nfs_log("NFS server %s not responding\n",
-					mntp->nm_mountp->m_stat.f_mntfromname);
+				    mntp->nm_mountp->mnt_stat.f_mntfromname);
 				mntp->nm_rttvar += (mntp->nm_srtt >> 2);
 				mntp->nm_srtt = 0;
 			}

@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsmount.h	7.3 (Berkeley) %G%
+ *	@(#)nfsmount.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -60,4 +60,9 @@ struct nfshost {
 	struct	mbuf *nh_sockaddr;	/* Address of server */
 };
 
-struct nfsmount *vfs_to_nfs();
+#ifdef KERNEL
+/*
+ * Convert mount ptr to nfsmount ptr.
+ */
+#define VFSTONFS(mp)	((struct nfsmount *)((mp)->mnt_data))
+#endif /* KERNEL */

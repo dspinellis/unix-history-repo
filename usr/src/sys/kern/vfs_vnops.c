@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_vnops.c	7.19 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -133,7 +133,7 @@ vn_writechk(vp)
 	 * unless the file is a socket or a block or character
 	 * device resident on the file system.
 	 */
-	if ((vp->v_mount->m_flag & M_RDONLY) && vp->v_type != VCHR &&
+	if ((vp->v_mount->mnt_flag & MNT_RDONLY) && vp->v_type != VCHR &&
 	    vp->v_type != VBLK && vp->v_type != VSOCK)
 		return (EROFS);
 	/*
