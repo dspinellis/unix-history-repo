@@ -1,5 +1,5 @@
 /*
-char id_rindex[] = "@(#)rindex_.c	1.2";
+char id_rindex[] = "@(#)rindex_.c	1.3";
  *
  * find last occurrence of substring in string
  *
@@ -14,12 +14,20 @@ char id_rindex[] = "@(#)rindex_.c	1.2";
 long rindex_(str, substr, slen, sublen)
 char *str, *substr; long slen, sublen;
 {
-	register char *p = str + (slen - sublen);
+	register char	*p = str + (slen - sublen);
+	register char	*p1, *p2;
+	register int	len;
 
-	while (p >= str)
-		if (s_cmp(substr, p, sublen, slen) == 0)
+	if (sublen == 0)
+		return(0L);
+	while (p >= str) {
+		p1 = p;
+		p2 = substr;
+		len = sublen;
+		while ( *p1++ == *p2++ && --len > 0) ;
+		if ( len <= 0 )
 			return((long)(++p - str));
-		else
-			p--;
+		p--;
+	}
 	return(0L);
 }
