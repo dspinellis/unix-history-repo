@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lfs_vfsops.c	7.1 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -142,6 +142,9 @@ found:
 		cacheinval(ip);
 		iunlock(ip);
 	}
+	/* Sanity checks for old file systems.			   XXX */
+	fs->fs_npsect = MAX(fs->fs_npsect, fs->fs_nsect);	/* XXX */
+	fs->fs_interleave = MAX(fs->fs_interleave, 1);		/* XXX */
 	return (fs);
 out:
 	if (error == 0)
