@@ -212,10 +212,17 @@ char *syscallnames[] = {
 	"#174",			/* 174 = nosys */
 	"#175",			/* 175 = nosys */
 	"#176",			/* 176 = nosys */
+#ifdef MACHVMCOMPAT
+	"vm_allocate",			/* 177 = vm_allocate */
+	"vm_deallocate",			/* 178 = vm_deallocate */
+	"vm_inherit",			/* 179 = vm_inherit */
+	"vm_protect",			/* 180 = vm_protect */
+#else
 	"#177",			/* 177 = nosys */
 	"#178",			/* 178 = nosys */
 	"#179",			/* 179 = nosys */
 	"#180",			/* 180 = nosys */
+#endif
 	"setgid",			/* 181 = setgid */
 	"setegid",			/* 182 = setegid */
 	"seteuid",			/* 183 = seteuid */

@@ -165,6 +165,13 @@ int	uname();
 int	shmsys();
 #else
 #endif
+#ifdef MACHVMCOMPAT
+int	svm_allocate();
+int	svm_deallocate();
+int	svm_inherit();
+int	svm_protect();
+#else
+#endif
 int	setgid();
 int	setegid();
 int	seteuid();
@@ -208,6 +215,9 @@ int	ogetsockname();
 #else
 #endif
 #ifdef SYSVSHM
+#else
+#endif
+#ifdef MACHVMCOMPAT
 #else
 #endif
 
@@ -422,10 +432,17 @@ struct sysent sysent[] = {
 	0, nosys,			/* 174 = nosys */
 	0, nosys,			/* 175 = nosys */
 	0, nosys,			/* 176 = nosys */
+#ifdef MACHVMCOMPAT
+	4, svm_allocate,			/* 177 = vm_allocate */
+	3, svm_deallocate,			/* 178 = vm_deallocate */
+	4, svm_inherit,			/* 179 = vm_inherit */
+	5, svm_protect,			/* 180 = vm_protect */
+#else
 	0, nosys,			/* 177 = nosys */
 	0, nosys,			/* 178 = nosys */
 	0, nosys,			/* 179 = nosys */
 	0, nosys,			/* 180 = nosys */
+#endif
 	1, setgid,			/* 181 = setgid */
 	1, setegid,			/* 182 = setegid */
 	1, seteuid,			/* 183 = seteuid */
