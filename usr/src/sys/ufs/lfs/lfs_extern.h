@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_extern.h	7.15 (Berkeley) %G%
+ *	@(#)lfs_extern.h	7.16 (Berkeley) %G%
  */
 
 struct fid;
@@ -42,7 +42,7 @@ int	 lfs_unmount __P((struct mount *, int, struct proc *));
 int	 lfs_update __P((struct vop_update_args *));
 int	 lfs_valloc __P((struct vop_valloc_args *));
 int	 lfs_vcreate __P((struct mount *, ino_t, struct vnode **));
-void	 lfs_vfree __P((struct vop_vfree_args *));
+int	 lfs_vfree __P((struct vop_vfree_args *));
 int	 lfs_vflush __P((struct vnode *));
 int	 lfs_vget __P((struct vop_vget_args *));
 int	 lfs_vptofh __P((struct vnode *, struct fid *));
@@ -54,7 +54,8 @@ int	lfs_umountdebug __P((struct mount *));
 int	lfs_vinvalbuf __P((struct vnode *));
 #endif
 __END_DECLS
-extern struct vnodeops lfs_vnodeops, lfs_specops;
+extern int (**lfs_vnodeop_p)();
+extern int (**lfs_specop_p)();
 #ifdef FIFO
 extern int (**lfs_fifoop_p)();
 #define LFS_FIFOOPS lfs_fifoop_p
