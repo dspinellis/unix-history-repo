@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)res_debug.c	5.33 (Berkeley) %G%
+ *	@(#)res_debug.c	5.34 (Berkeley) %G%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_debug.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.34 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -19,7 +19,7 @@ static char sccsid[] = "@(#)res_debug.c	5.33 (Berkeley) %G%";
 #include <stdio.h>
 #include <string.h>
 
-static char *p_cdname(), *p_class(), *p_rr(), *p_time(), *p_type();
+static char *p_cdname(), *p_rr(), *p_time();
 
 char *_res_opcodes[] = {
 	"QUERY",
@@ -62,17 +62,17 @@ char *_res_resultcodes[] = {
 __p_query(msg)
 	char *msg;
 {
-	static void fp_query();
+	void __fp_query();
 
-	fp_query(msg,stdout);
+	__fp_query(msg,stdout);
 }
 
 /*
  * Print the contents of a query.
  * This is intended to be primarily a debugging routine.
  */
-static void
-fp_query(msg,file)
+void
+__fp_query(msg,file)
 	char *msg;
 	FILE *file;
 {
@@ -116,10 +116,10 @@ fp_query(msg,file)
 			cp = p_cdname(cp, msg, file);
 			if (cp == NULL)
 				return;
-			fprintf(file,", type = %s", p_type(_getshort(cp)));
+			fprintf(file,", type = %s", __p_type(_getshort(cp)));
 			cp += sizeof(u_short);
 			fprintf(file,
-			    ", class = %s\n\n", p_class(_getshort(cp)));
+			    ", class = %s\n\n", __p_class(_getshort(cp)));
 			cp += sizeof(u_short);
 		}
 	}
@@ -194,9 +194,9 @@ p_rr(cp, msg, file)
 
 	if ((cp = p_cdname(cp, msg, file)) == NULL)
 		return (NULL);			/* compression error */
-	fprintf(file,"\n\ttype = %s", p_type(type = _getshort(cp)));
+	fprintf(file,"\n\ttype = %s", __p_type(type = _getshort(cp)));
 	cp += sizeof(u_short);
-	fprintf(file,", class = %s", p_class(class = _getshort(cp)));
+	fprintf(file,", class = %s", __p_class(class = _getshort(cp)));
 	cp += sizeof(u_short);
 	fprintf(file,", ttl = %s", p_time(_getlong(cp)));
 	cp += sizeof(u_long);
@@ -365,8 +365,8 @@ static	char nbuf[40];
 /*
  * Return a string for the type
  */
-static char *
-p_type(type)
+char *
+__p_type(type)
 	int type;
 {
 	switch (type) {
@@ -425,8 +425,8 @@ p_type(type)
 /*
  * Return a mnemonic for class
  */
-static char *
-p_class(class)
+char *
+__p_class(class)
 	int class;
 {
 
