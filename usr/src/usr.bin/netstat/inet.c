@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	4.16 (Berkeley) 84/05/17";
+static char sccsid[] = "@(#)inet.c	4.17 (Berkeley) 84/07/04";
 #endif
 
 #include <sys/types.h>
@@ -298,25 +298,26 @@ inetname(in)
 	struct hostent *hp;
 	struct netent *np;
 
-	if (!nflag) {
+	if (!nflag && in.s_addr != INADDR_ANY) {
 		int net = inet_netof(in), subnet = inet_subnetof(in);
 		int lna = inet_lnaof(in);
+
 		if (lna == INADDR_ANY) {
 			np = getnetbyaddr(net, AF_INET);
 			if (np)
 				cp = np->n_name;
-		} else if ((subnet != net) && ((lna & 0xff) == 0) &&
+		} else if (subnet != net && (lna & 0xff) == 0 &&
 		    (np = getnetbyaddr(subnet, AF_INET))) {
 			struct in_addr subnaddr, inet_makeaddr();
+
 			subnaddr = inet_makeaddr(subnet, INADDR_ANY);
-			if (bcmp(&in, &subnaddr, sizeof(in)) == 0)
+			if (bcmp(&in, &subnaddr, sizeof (in)) == 0)
 				cp = np->n_name;
 			else
 				goto host;
 		} else {
 host:
-			hp = gethostbyaddr(&in, sizeof (struct in_addr),
-				AF_INET);
+			hp = gethostbyaddr(&in, sizeof (in), AF_INET);
 			if (hp)
 				cp = hp->h_name;
 		}
@@ -327,6 +328,7 @@ host:
 		strcpy(line, cp);
 	else {
 		u_char *ucp = (u_char *)&in;
+
 		sprintf(line, "%u.%u.%u.%u", ucp[0], ucp[1], ucp[2], ucp[3]);
 	}
 	return (line);
