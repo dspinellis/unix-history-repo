@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -105,7 +105,7 @@ redirect:
 			case 'D':
 				if (pd)
 					goto new;
-				if ((p = strnchr(ps, '\n', psl)) == NULL)
+				if ((p = memchr(ps, '\n', psl)) == NULL)
 					pd = 1;
 				else {
 					psl -= (p - ps) - 1;
@@ -157,7 +157,7 @@ redirect:
 			case 'P':
 				if (pd)
 					break;
-				if ((p = strnchr(ps, '\n', psl)) != NULL) {
+				if ((p = memchr(ps, '\n', psl)) != NULL) {
 					oldc = *p;
 					*p = '\0';
 				}
