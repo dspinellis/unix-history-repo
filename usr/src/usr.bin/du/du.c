@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)du.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -35,34 +35,43 @@ main(argc, argv)
 	register FTS *fts;
 	register FTSENT *p;
 	register int kvalue, listdirs, listfiles;
-	int ch, ftsoptions;
+	int aflag, ch, ftsoptions, sflag;
 	char **save;
 
 	ftsoptions = FTS_PHYSICAL;
-	kvalue = listfiles = 0;
-	listdirs = 1;
+	kvalue = 0;
 	save = argv;
+	aflag = sflag = 0;
 	while ((ch = getopt(argc, argv, "aksx")) != EOF)
 		switch(ch) {
 		case 'a':
-			listfiles = 1;
+			aflag = 1;
 			break;
 		case 'k':
 			kvalue = 1;
 			break;
 		case 's':
-			listfiles = listdirs = 0;
+			sflag = 1;
 			break;
 		case 'x':
 			ftsoptions |= FTS_XDEV;
 			break;
 		case '?':
 		default:
-			(void)fprintf(stderr,
-			    "usage: du [-aksx] [name ...]\n");
-			exit(1);
+			usage();
 		}
 	argv += optind;
+
+	if (aflag) {
+		if (sflag)
+			usage();
+		listdirs = listfiles = 1;
+	} else if (sflag)
+		listdirs = listfiles = 0;
+	else {
+		listfiles = 0;
+		listdirs = 1;
+	}
 
 	if (!*argv) {
 		argv = save;
@@ -150,4 +159,10 @@ linkchk(p)
 	files[nfiles].dev = dev;
 	++nfiles;
 	return(0);
+}
+
+usage()
+{
+	(void)fprintf(stderr, "usage: du [-a | -s] [-kx] [file ...]\n");
+	exit(1);
 }

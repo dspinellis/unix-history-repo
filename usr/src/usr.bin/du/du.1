@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)du.1	6.12 (Berkeley) %G%
+.\"     @(#)du.1	6.13 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DU 1
@@ -13,21 +13,22 @@
 .Nd display disk usage statistics
 .Sh SYNOPSIS
 .Nm du
-.Op Fl aksx
+.Op Fl a Li \&| Fl s
+.Op Fl kx
 .Op Ar file ...
 .Sh DESCRIPTION
 The
 .Nm du
 utility displays the file system block usage for each file argument
-or for each directory in the file hierarchy rooted in each directory
+and for each directory in the file hierarchy rooted in each directory
 argument.
-By default, the block usage of the hierarchy rooted in the current
-directory is displayed.
+If no file is specified, the block usage of the hierarchy rooted in
+the current directory is displayed.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
 .It Fl a
-Generate an entry for each file.
+Display an entry for each file in the file hierarchy.
 .It Fl k
 By default,
 .Nm du
@@ -40,7 +41,7 @@ flag is specified, the number displayed is the number of 1024-byte
 blocks.
 Partial numbers of blocks are rounded up.
 .It Fl s
-Generate only the grand total.
+Display only the grand total for the specified files.
 .It Fl x
 Filesystem mount points are not traversed.
 .El
