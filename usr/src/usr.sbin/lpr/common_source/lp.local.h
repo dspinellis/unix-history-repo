@@ -1,4 +1,4 @@
-/*	lp.local.h	1.3	82/12/02	*/
+/*	lp.local.h	1.4	83/01/05	*/
 /*
  * Possibly, local parameters to the spooling system
  */
@@ -25,11 +25,13 @@
 #define	DEFLP		"lp"
 #define DEFLOCK		"lock"
 #define	DEFSPOOL	"/usr/spool/lpd"
-#define	DEFMX		1000
-#define	DEFLOGF		"/dev/console"
-#define DEFFF		"\f"
 #define	DEFDAEMON	"/usr/lib/lpd"
+#define	DEFLOGF		"/dev/console"
 #define	DEFDEVLP	"/dev/lp"
+#define DEFRLPR		"/usr/lib/rlpr"
+#define DEFBINDIR	"/usr/ucb"
+#define	DEFMX		1000
+#define DEFFF		"\f"
 
 /*
  * Some utilities used by lpd
@@ -59,9 +61,3 @@
 #define HEIGHT	9		/* height of characters */
 #define WIDTH	8		/* width of characters */
 #define DROP	3		/* offset to drop characters with descenders */
-
-/*
- * Does lpd driver give a form feed on first open?  If so, set TOF to 1
- *  to save one page.
- */
-#define TOF	1

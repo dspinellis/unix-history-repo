@@ -55,75 +55,67 @@
 
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
-/*	lpr.c	4.4	82/12/02	*/
+/*	lpr.c	4.5	83/01/05	*/
 /*
  *      lpr -- off line print
  *              also known as print
+ *
+ * Allows multiple printers and printers on remote machines by
+ * using information from a printer data base.
  */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/file.h>
 #include <signal.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <ctype.h>
 #include "lp.local.h"
 
-/*
- * Multiple printer scheme using info from printer data base:
- *
- *	DN		who to invoke to print stuff
- *	SA		directory used as spool queue
- *
- * daemon identifies what printer it should use (in the case of the
- *  same code being shared) by inspecting its argv[1].
- */
-char    *tfname;		/* tmp copy of df before linking */
-char    *cfname;		/* copy files */
-char    *lfname;		/* linked files */
-char    *dfname;		/* daemon files, linked from tf's */
+char    *tfname;		/* tmp copy of cf before linking */
+char    *cfname;		/* daemon control files, linked from tf's */
+char    *dfname;		/* data files */
 
 int	nact;			/* number of jobs to act on */
-int	tff;			/* daemon file descriptor */
+int	tfd;			/* control file descriptor */
 int     mailflg;		/* send mail */
-int	jflag;			/* job name specified */
-int	qflg;			/* q job, but don't exec daemon */
+int	qflag;			/* q job, but don't exec daemon */
 int	prflag;			/* ``pr'' files */
+int	rflag;			/* remove files upon completion */	
+int	cflag;			/* force copy */
 char	*person;		/* user name */
 int	inchar;			/* location to increment char in file names */
 int     ncopies = 1;		/* # of copies to make */
 int	iflag;			/* indentation wanted */
 int	indent;			/* amount to indent */
-char	*daemname;		/* path name to daemon program */
-char	*DN;			/* daemon name */
-char	*SA;			/* spooling area */
-char	*LP;			/* line printer device */
+char	*DN;			/* path name to daemon program */
+char	*LP;			/* line printer device name */
+char	*RM;			/* remote machine name if no local printer */
+char	*SD;			/* spool directory */
 int     MX;			/* maximum size in blocks of a print file */
-int	hdr = 1;		/* 1 =>'s default header */
+int	hdr = 1;		/* print header or not (default is yes) */
 int     user;			/* user id */
-int	spgroup;		/* daemon's group for creating spool files */
 char	*title;			/* pr'ing title */
-char	classbuf[32];		/* class title on header page */
-char	*class = classbuf;
+char	host[32];		/* host name */
+char	*class = host;		/* class title on header page */
 char    *jobname;		/* job name on header page */
 char	*name;			/* program name */
-char	*printer;		/* printer name */
 
 char	*pgetstr();
-char	*mktmp();
 char	*malloc();
 char	*getenv();
 char	*rindex();
 
-/* ARGSUSED */
+/*ARGSUSED*/
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
 	register char *arg;
-	int i, c, f, flag, out();
-	char *sp;
-	struct stat sbuf;
+	int i, f, out();
+	char *printer = NULL;
+	struct stat stb;
 
 	/*
 	 * Strategy to maintain protected spooling area:
@@ -132,15 +124,12 @@ main(argc, argv)
 	 *	   root to access any file it wants (verifying things before
 	 *	   with an access call) and group id to know how it should
 	 *	   set up ownership of files in spooling area.
-	 *	3. Files in spooling area are owned by printer and spooling
+	 *	3. Files in spooling area are owned by daemon and spooling
 	 *	   group, with mode 660.
-	 *	4. lpd runs setuid daemon and setgrp spooling group to
+	 *	4. lpd runs setuid root and setgrp spooling group to
 	 *	   access files and printer.  Users can't get to anything
-	 *	   w/o help of sq and dq programs.
+	 *	   w/o help of lpq and lprm programs.
 	 */
-	gethostname(classbuf, sizeof (classbuf));
-	user = getuid();
-	spgroup = getegid();
 	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
 		signal(SIGHUP, out);
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
@@ -149,54 +138,71 @@ main(argc, argv)
 		signal(SIGQUIT, out);
 	if (signal(SIGTERM, SIG_IGN) != SIG_IGN)
 		signal(SIGTERM, out);
-	flag = 0;
-	if ((printer = getenv("PRINTER")) == NULL)
-		printer = DEFLP;
+
+	gethostname(host, sizeof (host));
+	user = getuid();
 	name = argv[0];
 
-	while (argc>1 && (arg = argv[1])[0]=='-') {
+	while (argc > 1 && (arg = argv[1])[0] == '-') {
+		argc--;
+		argv++;
 		switch (arg[1]) {
 
-		case 'c':		/* force copy of files */
-			flag = '+';
+		case 'P':		/* specifiy printer name */
+			printer = &arg[2];
 			break;
 
 		case 'C':		/* classification spec */
 			hdr++;
 			if (arg[2])
 				class = &arg[2];
-			else if (argc >= 2) {
-				++argv;
-				arg = argv[1];
+			else if (argc > 0) {
 				argc--;
-				class = arg;
+				class = *++argv;
 			}
 			break;
 
+		case 'J':		/* job name */
+			hdr++;
+			if (arg[2])
+				jobname = &arg[2];
+			else if (argc > 0) {
+				argc--;
+				jobname = *++argv;
+			}
+			break;
+
+		case 'T':		/* pr's title line */
+			if (arg[2])
+				title = &arg[2];
+			else if (argc > 0) {
+				argc--;
+				title = *++argv;
+			}
+			break;
+
+		case 'p':		/* use pr to print files */
+			prflag++;
+			break;
+
 		case 'r':		/* remove file when done */
-			flag = '-';
+			rflag++;
 			break;
 
 		case 'm':		/* send mail when done */
 			mailflg++;
 			break;
 
-		case 'q':		/* just q job */
-			qflg++;
+		case 'h':		/* toggle want of header page */
+			hdr = !hdr;
 			break;
 
-		case 'J':		/* job spec */
-			jflag++, hdr++;
-			if (arg[2]) {
-				jobname = &arg[2];
-				break;
-			}
-			if (argc>=2) {
-				++argv;
-				arg = argv[1];
-				jobname = &arg[0];
-				argc--;
-			}
+		case 'c':		/* force copy of files */
+			cflag++;
+			break;
+
+		case 'q':		/* just q job */
+			qflag++;
 			break;
 
 		case 'i':		/* indent output */
@@ -204,52 +210,22 @@ main(argc, argv)
 			indent = arg[2] ? atoi(&arg[2]) : 8;
 			break;
 
-		case 'p':		/* use pr to print files */
-			prflag++;
-			break;
-
-		case 'h':		/* pr's title line */
-			if (arg[2])
-				title = &arg[2];
-			else if (argc >= 2) {
-				++argv;
-				arg = argv[1];
-				argc--;
-				title = arg;
-			}
-			break;
-
-		case 'P':		/* specifiy printer name */
-			printer = &arg[2];
-			break;
-
-		case 'H':		/* toggle want of header page */
-			hdr = !hdr;
-			break;
-
 		default:		/* n copies ? */
 			if (isdigit(arg[1]))
 				ncopies = atoi(&arg[1]);
 		}
-		argc--;
-		argv++;
 	}
+	if (printer == NULL && (printer = getenv("PRINTER")) == NULL)
+		printer = DEFLP;
 	if (!chkprinter(printer)) {
-		fprintf(stderr, "%s: no entry for default printer %s\n", name,
-			printer);
+		printf("%s: unknown printer\n", name, printer);
 		exit(2);
 	}
-	i = getpid();
-	f = strlen(SA)+11;
-	tfname = mktmp("tf", i, f);
-	cfname = mktmp("cf", i, f);
-	lfname = mktmp("lf", i, f);
-	dfname = mktmp("df", i, f);
-	inchar = f-7;
-	tff = nfile(tfname);
-	if (jflag == 0) {
+	mktemps();
+	tfd = nfile(tfname);
+	if (jobname == NULL) {
 		if (argc == 1)
-			jobname = &dfname[f-10];
+			jobname = &cfname[inchar-2];
 		else
 			jobname = argv[1];
 	}
@@ -258,104 +234,84 @@ main(argc, argv)
 	if (argc == 1)
 		copy(0, " ");
 	else while (--argc) {
-		if (test(arg = *++argv) == -1)	/* file reasonable */
-			continue;
+		if (test(arg = *++argv))
+			continue;	/* file unreasonable */
 
-		if (flag == '+')		/* force copy flag */
-			goto cf;
-		if (stat(arg, &sbuf) < 0) {
-			printf("%s:", name);
-			perror(arg);
-			continue;
-		}
-		if ((sbuf.st_mode&04) == 0)
-			goto cf;
-		if (*arg == '/' && flag != '-') {
-			for (i=0;i<ncopies;i++) {
-				if (prflag) {
-					if (title)
-						card('H', title);
-					card('R', arg);
-				} else
-					card('F', arg);
-				card('N', arg);
-			}
-			nact++;
-			continue;
-		}
-		if (link(arg, lfname) < 0)
-			goto cf;
-		for (i=0;i<ncopies;i++) {
-			if (prflag) {
-				card('H', title ? title : arg);
-				card('R', lfname);
-			} else 
-				card('F', lfname);
+		if (!cflag && linked(arg)) {
+			if (prflag)
+				card('T', title ? title : arg);
+			for (i = 0;i < ncopies; i++)
+				card(prflag ? 'R' : 'F', &dfname[inchar-2]);
+			card('U', &dfname[inchar-2]);
 			card('N', arg);
+			dfname[inchar]++;
+			nact++;
 		}
-		card('U', lfname);
-		lfname[inchar]++;
-		nact++;
-		goto df;
-
-	cf:
-		if ((f = open(arg, 0)) < 0) {
-			printf("%s: cannot open %s\n", name, arg);
-			continue;
+		else {
+			if ((f = open(arg, 0)) < 0) {
+				printf("%s: cannot open %s\n", name, arg);
+				continue;
+			}
+			copy(f, arg);
+			(void) close(f);
 		}
-		copy(f, arg);
-		close(f);
+		if (rflag) {
+			register char *cp;
 
-	df:
-		if (flag == '-' && unlink(arg))
-			printf("%s: cannot remove %s\n", name, arg);
+			if ((cp = rindex(arg, '/')) == NULL)
+				f = access(".", 2);
+			else {
+				*cp = '\0';
+				f = access(arg, 2);
+				*cp = '/';
+			}
+			if (f || unlink(arg))
+				printf("%s: cannot remove %s\n", name, arg);
+		}
 	}
 
 	if (nact) {
 		tfname[inchar]--;
-		if (link(tfname, dfname) < 0) {
-			printf("%s: cannot rename %s\n", name, dfname);
+		if (link(tfname, cfname) < 0) {
+			printf("%s: cannot rename %s\n", name, cfname);
 			tfname[inchar]++;
 			out();
 		}
 		unlink(tfname);
-		if (qflg)		/* just q things up */
+		if (qflag)		/* just q things up */
 			exit(0);
-		if (stat(LP, &sbuf) >= 0 && (sbuf.st_mode&0777) == 0) {
-			printf("job queued, but printer down\n");
+		if (*LP && stat(LP, &stb) >= 0 && (stb.st_mode & 0777) == 0) {
+			printf("jobs queued, but line printer is down.\n");
 			exit(0);
 		}
-		for (f = 0; f < NOFILE; close(f++))
-			;
-		open("/dev/tty", 0);
-		open("/dev/tty", 1);
-		dup2(1, 2);
-		execl(DN, rindex(DN, '/') ? rindex(DN, '/')+1 : DN, printer, 0);
-		dfname[inchar]++;
+		execl(DN, arg = rindex(DN, "/") ? arg+1 : DN, printer, 0);
+		printf("jobs queued, but cannot start daemon.\n");
+		exit(0);
 	}
 	out();
+	/*NOTREACHED*/
 }
 
+/*
+ * Create the file n and copy from file descriptor f.
+ */
 copy(f, n)
 	int f;
 	char n[];
 {
-	int ff, i, nr, nc;
+	register int fd, i, nr, nc;
 	char buf[BUFSIZ];
 
-	for (i=0;i<ncopies;i++) {
-		if (prflag) {
-			card('H', title ? title : n);
-			card('R', cfname);
-		} else 
-			card('F', cfname);
-		card('N', n);
-	}
-	card('U', cfname);
-	ff = nfile(cfname);
+	if (prflag)
+		card('T', title ? title : n);
+	for (i = 0; i < ncopies; i++)
+		card(prflag ? 'R' : 'F', &dfname[inchar-2]);
+	card('U', &dfname[inchar-2]);
+	card('N', n);
+	fd = nfile(dfname);
 	nr = nc = 0;
 	while ((i = read(f, buf, BUFSIZ)) > 0) {
-		if (write(ff, buf, i) != i) {
+		if (write(fd, buf, i) != i) {
 			printf("%s: %s: temp file write error\n", name, n);
 			break;
 		}
@@ -368,26 +324,69 @@ copy(f, n)
 			}
 		}
 	}
-	close(ff);
+	(void) close(fd);
 	nact++;
 }
 
+/*
+ * Try and link the file to dfname. Return true if successful.
+ */
+linked(file)
+	register char *file;
+{
+	register char *cp;
+	char buf[BUFSIZ];
+
+	if (link(file, dfname) == 0)
+		return(1);
+	if (*file != '/') {
+		if (getwd(buf) == NULL)
+			return(0);
+		while (file[0] == '.') {
+			switch (file[1]) {
+			case '/':
+				file += 2;
+				continue;
+			case '.':
+				if (file[2] == '/') {
+					if ((cp = rindex(buf, '/')) != NULL)
+						*cp = '\0';
+					file += 3;
+					continue;
+				}
+			}
+			break;
+		}
+		strcat(buf, "/");
+		strcat(buf, file);
+		file = buf;
+	}
+	return(symlink(file, dfname) == 0);
+}
+
+/*
+ * Put a line into the control file.
+ */
 card(c, p2)
 	register char c, *p2;
 {
 	char buf[BUFSIZ];
 	register char *p1 = buf;
-	int col = 0;
+	register int len = 2;
 
 	*p1++ = c;
 	while ((c = *p2++) != '\0') {
 		*p1++ = c;
-		col++;
+		len++;
 	}
 	*p1++ = '\n';
-	write(tff, buf, col+2);
+	write(tfd, buf, len);
 }
 
+/*
+ * Get the identity of the person doing the lpr and save it in the
+ * control file.
+ */
 ident()
 {
 	extern char *getlogin();
@@ -402,9 +401,11 @@ ident()
 			person = pw->pw_name;
 	}
 
+	card('H', host);
+	card('P', person);
 	if (hdr) {
-		card('J',jobname);
-		card('C',class);
+		card('J', jobname);
+		card('C', class);
 		card('L', person);
 	}
 	if (iflag)
@@ -413,11 +414,15 @@ ident()
 		card('M', person);
 }
 
+/*
+ * Create a new file in the spool directory.
+ */
+
 nfile(n)
 	char *n;
 {
 	register f;
-	int oldumask = umask(022);		/* should block signals */
+	int oldumask = umask(0);		/* should block signals */
 
 	f = creat(n, FILMOD);
 	(void) umask(oldumask);
@@ -425,15 +430,18 @@ nfile(n)
 		printf("%s: cannot create %s\n", name, n);
 		out();
 	}
-	if (chown(n, user, spgroup) < 0) {
+	if (chown(n, user, getegid()) < 0) {
 		unlink(n);
 		printf("%s: cannot chown %s\n", name, n);
 		out();
 	}
 	n[inchar]++;
-	return (f);
+	return(f);
 }
 
+/*
+ * Cleanup after interrupts and errors.
+ */
 out()
 {
 	register i;
@@ -453,11 +461,6 @@ out()
 			cfname[i]--;
 			unlink(cfname);
 		}
-	if (lfname)
-		while (lfname[i] != 'A') {
-			lfname[i]--;
-			unlink(lfname);
-		}
 	if (dfname)
 		while (dfname[i] != 'A') {
 			dfname[i]--;
@@ -466,32 +469,35 @@ out()
 	exit();
 }
 
+/*
+ * Test to see if this is a printable file.
+ * Return -1 if it is not, else 0
+ */
 test(file)
 	char *file;
 {
-	struct exec buf;
-	struct stat mbuf;
+	struct exec execb;
+	struct stat statb;
 	int fd;
 
 	if (access(file, 4) < 0) {
 		printf("%s: cannot access %s\n", name, file);
-		return (-1);
+		return(-1);
 	}
-	if (stat(file, &mbuf) < 0) {
+	if (stat(file, &statb) < 0) {
 		printf("%s: cannot stat %s\n", name, file);
-		return (-1);
+		return(-1);
 	}
-	if ((mbuf.st_mode&S_IFMT) == S_IFDIR) {
+	if ((statb.st_mode & S_IFMT) == S_IFDIR) {
 		printf("%s: %s is a directory\n", name, file);
-		return (-1);
+		return(-1);
 	}
-
 	if ((fd = open(file, 0)) < 0) {
 		printf("%s: cannot open %s\n", name, file);
-		return (-1);
+		return(-1);
 	}
-	if (read(fd, &buf, sizeof(buf)) == sizeof(buf))
-		switch(buf.a_magic) {
+	if (read(fd, &execb, sizeof(execb)) == sizeof(execb))
+		switch(execb.a_magic) {
 		case A_MAGIC1:
 		case A_MAGIC2:
 		case A_MAGIC3:
@@ -505,13 +511,27 @@ test(file)
 			printf("%s: %s is an archive file", name, file);
 			goto error1;
 		}
+	(void) close(fd);
+	if (rflag) {	/* check to make sure user can delete this file */
+		register char	*cp = rindex(file, '/');
 
-	close(fd);
-	return (0);
+		if (cp == NULL)
+			file = ".";
+		else
+			*cp = '\0';
+		if (access(file, 2) < 0) {
+			*cp = '/';
+			printf("%s: cannot remove %s\n", name, file);
+			return(-1);
+		}
+		*cp = '/';
+	}
+	return(0);
+
 error1:
 	printf(" and is unprintable\n");
-	close(fd);
-	return (-1);
+	(void) close(fd);
+	return(-1);
 }
 
 /*
@@ -528,12 +548,11 @@ itoa(i)
 	do
 		*p-- = i%10 + '0';
 	while (i /= 10);
-	return (++p);
+	return(++p);
 }
 
 /*
  * Perform lookup for printer name or abbreviation --
- *   return pointer to daemon structure
  */
 chkprinter(s)
 	register char *s;
@@ -544,34 +563,75 @@ chkprinter(s)
 	char *bp = buf;
 
 	if ((stat = pgetent(b, s)) < 0) {
-		fprintf(stderr, "%s: can't open printer description file\n", name);
+		printf("%s: can't open printer description file\n", name);
 		exit(3);
 	} else if (stat == 0)
-		return (NULL);
+		return(0);
 	if ((DN = pgetstr("dn", &bp)) == NULL)
 		DN = DEFDAEMON;
 	if ((LP = pgetstr("lp", &bp)) == NULL)
 		LP = DEFDEVLP;
-	if ((SA = pgetstr("sa", &bp)) == NULL)
-		SA = DEFSPOOL;
+	if ((SD = pgetstr("sd", &bp)) == NULL)
+		SD = DEFSPOOL;
 	if ((MX = pgetnum("mx")) < 0)
 		MX = DEFMX;
-	return (1);
+	RM = pgetstr("rm", &bp);
+	return(1);
 }
 
 /*
- * Make a temp file
+ * Make the temp files.
+ */
+mktemps()
+{
+	register int fd, len;
+	int n;
+	char buf[BUFSIZ], *mktemp();
+
+	(void) sprintf(buf, "%s/.seq", SD);
+	if ((fd = open(buf, 2)) < 0) {
+		n = umask(0);
+		fd = creat(buf, FILMOD);
+		(void) umask(n);
+		if (fd < 0) {
+			printf("%s: cannot create %s\n", name, buf);
+			exit(1);
+		}
+		n = 1;
+	}
+	else {
+		if (flock(fd, FEXLOCK)) {
+			printf("%s: cannot lock %s\n", name, buf);
+			exit(1);
+		}
+		if (read(fd, (char *)&n, sizeof(n)) != sizeof(n))
+			n = 1;
+	}
+	len = strlen(SD) + strlen(host) + 8;
+	tfname = mktemp("tf", n, len);
+	cfname = mktemp("cf", n, len);
+	dfname = mktemp("df", n, len);
+	inchar = strlen(SD) + 3;
+	n = (n + 1) % 1000;
+	(void) lseek(fd, 0L, 0);
+	(void) write(fd, &n, sizeof(n));
+	(void) close(fd);
+}
+
+/*
+ * Make a temp file name.
  */
 char *
-mktmp(id, pid, n)
-	char *id;
+mktemp(id, num, len)
+	char	*id;
+	int	num, len;
 {
 	register char *s;
 
-	if ((s = malloc(n)) == NULL) {
-		fprintf(stderr, "%s: out of memory\n", name);
+	if ((s = malloc(len)) == NULL) {
+		printf("%s: out of memory\n", name);
 		exit(1);
 	}
-	sprintf(s, "%s/%sA%05d", SA, id, pid);
-	return (s);
+	(void) sprintf(s, "%s/%sA%03d%s", SD, id, num, host);
+	return(s);
 }
