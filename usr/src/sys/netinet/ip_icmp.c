@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_icmp.c	6.18 (Berkeley) %G%
+ *	@(#)ip_icmp.c	6.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -354,8 +354,9 @@ icmp_reflect(ip, ifp)
 	}
 	if (ia == (struct in_ifaddr *)0)
 		ia = ifptoia(ifp);
-	if (ia)
-		t = IA_SIN(ia)->sin_addr;
+	if (ia == (struct in_ifaddr *)0)
+		ia = in_ifaddr;
+	t = IA_SIN(ia)->sin_addr;
 	ip->ip_src = t;
 
 	if (optlen > 0) {
