@@ -1,20 +1,41 @@
-/* vi: set tabstop=4 : */
+/*-
+ * Copyright (c) 1993 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Barry Brachman.
+ *
+ * %sccs.include.redist.c%
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1993 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)mkindex.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <stdio.h>
 
 #include "bog.h"
 
+char *nextword __P((FILE *, char *, int *, int *));
+
+int
 main(argc, argv)
-int argc;
-char **argv;
+	int argc;
+	char *argv[];
 {
 	int clen, rlen, prev;
 	long off, start;
-	char buf[MAXWORDLEN + 1], *p, *nextword();
+	char buf[MAXWORDLEN + 1];
 
 	prev = '\0';
 	off = start = 0L;
-	while (nextword(stdin, buf, &clen, &rlen) != (char *) NULL) {
+	while (nextword(stdin, buf, &clen, &rlen) != NULL) {
 		if (*buf != prev) {
 			if (prev != '\0')
 				printf("%c %6ld %6ld\n", prev, start, off - 1);
@@ -35,30 +56,30 @@ char **argv;
  */
 char *
 nextword(fp, buffer, clen, rlen)
-FILE *fp;
-char *buffer;
-int *clen, *rlen;
+	FILE *fp;
+	char *buffer;
+	int *clen, *rlen;
 {
-    register int ch, pcount;
+	register int ch, pcount;
 	register char *p, *q;
 	static char buf[MAXWORDLEN + 1];
 	static int first = 1;
 	static int lastch = 0;
 
    	if (first) {
-        if ((pcount = getc(fp)) == EOF)
-			return((char *) NULL);
+		if ((pcount = getc(fp)) == EOF)
+			return (NULL);
 		first = 0;
 	}
 	else if ((pcount = lastch) == EOF)
-		return((char *) NULL);
+		return (NULL);
 
 	p = buf + (*clen = pcount);
  
-    while ((ch = getc(fp)) != EOF && ch >= 'a')
+	while ((ch = getc(fp)) != EOF && ch >= 'a')
 			*p++ = ch;
-	    lastch = ch;
-    *p = '\0';
+		lastch = ch;
+	*p = '\0';
 
 	*rlen = (int) (p - buf);
 	*clen = *rlen - *clen;
@@ -69,6 +90,5 @@ int *clen, *rlen;
 		if (*p++ == 'q')
 			*q++ = 'u';
 	}
-    return(buffer);
+	return (buffer);
 }
- 
