@@ -1,7 +1,7 @@
 .\" eqn % | troff -me
 .\"if n .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 5.4''Last Mod %G%'
+.fo 'Version 5.5''Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -29,7 +29,7 @@
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 5.4
+Version 5.5
 .)l
 .sp 2
 .pp
@@ -2181,8 +2181,7 @@ that have specific semantics.
 These are related as depicted by figure 2.
 .(z
 .hl
-.ie t .sp 2i
-.el \{\
+.ie n \{\
 .(c
                     +---+
                  -->| 0 |-->resolved address
@@ -2196,6 +2195,39 @@ addr-->| 3 |-->| D |--                      --->| 4 |-->msg
                             +---+   +---+
 .)c
 
+.\}
+.el .ie !"\*(.T"" \
+\{\
+.PS
+boxwid = 0.3i
+boxht = 0.3i
+movewid = 0.3i
+moveht = 0.3i
+linewid = 0.3i
+lineht = 0.3i
+
+	box invis "addr"; arrow
+Box3:	box "3"
+A1:	arrow
+BoxD:	box "D"; line; L1: Here
+C:	[
+	C1:	arrow; box "1"; arrow; box "S"; line; E1: Here
+		move to C1 down 0.5; right
+	C2:	arrow; box "2"; arrow; box "R"; line; E2: Here
+	] with .w at L1 + (0.5, 0)
+	move to C.e right 0.5
+L4:	arrow; box "4"; arrow; box invis "msg"
+	line from L1 to C.C1
+	line from L1 to C.C2
+	line from C.E1 to L4
+	line from C.E2 to L4
+	move to BoxD.n up 0.6; right
+Box0:	arrow; box "0"
+	arrow; box invis "resolved address" width 1.3
+	line from 1/3 of the way between A1 and BoxD.w to Box0
+.PE
+.\}
+.el .sp 2i
 .ce
 Figure 2 \*- Rewriting set semantics
 .(c
@@ -2203,7 +2235,6 @@ D \*- sender domain addition
 S \*- mailer-specific sender rewriting
 R \*- mailer-specific recipient rewriting
 .)c
-.\}
 .hl
 .)z
 .pp
@@ -3868,7 +3899,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 5.4
+Version 5.5
 .ce 0
 .bp 1
 .ce
