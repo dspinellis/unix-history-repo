@@ -1,42 +1,40 @@
 .\" Copyright (c) 1987, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)mesg.1	6.6 (Berkeley) %G%
+.\"	@(#)mesg.1	6.7 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt MESG 1
 .Os
 .Sh NAME
 .Nm mesg
-.Nd  Display (do not display) messages from other users
+.Nd display (do not display) messages from other users
 .Sh SYNOPSIS
 .Nm mesg
-.Op Cm n Li \&| Cm y
+.Op Cm n | Cm y
 .Sh DESCRIPTION
 The
 .Nm mesg
-utility allows a user to decide if other users may write
-messages to his or her screen.  Programs such as
+utility is invoked by a user to control write access others have to
+her or his terminal.  By default, write access is allowed, and
+programs such as
 .Xr talk 1 ,
 .Xr write 1
 and
 .Xr echo 1
-are social and display a message on the target user's terminal.
-Sometimes this is inconvenient.
+may display messages on the target user's terminal.
 .Pp
-Options:
-.Tw Ds
-.Tp Cm n
-Disallow messages, providing peace, and informing the contacting
-party
+Options available:
+.Bl -tag -width flag
+.It Cm n
+Disallows messages and informs the
+sender
 that `Your party is refusing messages'.
-.Tp Cm y
-Allow messages to be displayed.
-.Tp
+.It Cm y
+Allows messages to be displayed.
+.El
 .Pp
 If no arguments are given,
 .Nm mesg
@@ -45,19 +43,19 @@ displays the present message status.
 The
 .Nm mesg
 utility exits with one of the following values:
-.Dw Ds
-.Dp Li \&\ 0
-messages are allowed
-.Dp Li \&\ 1
-messages are not allowed
-.Dp Li \&\-\&1
+.Bl -tag -width flag -compact -offset indent
+.Pp
+.It Li "\ 0"
+Messages are allowed.
+.It Li "\ 1"
+Messages are not allowed.
+.It Li "\-1"
 An error has occurred.
-.Dp
+.El
 .Sh FILES
-.Dw /dev/[pt]ty[pq]?
-.Di L
-.Dp Pa /dev/[pt]ty[pq]?
-.Dp
+.Bl -tag -width /dev/[pt]ty[pq]? -compact
+.It Pa /dev/[pt]ty[pq]?
+.El
 .Sh SEE ALSO
 .Xr write 1 ,
 .Xr talk 1 ,
@@ -66,4 +64,5 @@ An error has occurred.
 .Sh HISTORY
 A
 .Nm mesg
-command appeared in Version 6 AT&T Unix.
+command appeared in
+.At v6 .
