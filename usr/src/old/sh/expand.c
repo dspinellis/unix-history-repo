@@ -1,4 +1,4 @@
-/*	expand.c	4.1	82/05/07	*/
+/*	expand.c	4.2	83/03/28	*/
 
 #
 /*
@@ -67,7 +67,7 @@ INT	expand(as,rflg)
 	POOL
 	IF stat(s,&statb)>=0
 	    ANDF (statb.st_mode&S_IFMT)==S_IFDIR
-	    ANDF (dirf=opendir(s))>0
+	    ANDF (dirf=opendir(s)) != NULL
 	THEN	dir++;
 	FI
 	count=0;
