@@ -1,4 +1,4 @@
-/*	hp.c	4.43	82/01/17	*/
+/*	hp.c	4.44	82/02/03	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -77,7 +77,7 @@ struct	size {
 	86240,	681,		/* F=cyl 681 thru 822 */
 	158592,	562,		/* G=cyl 562 thru 822 */
 #else
-	86636,	681,
+	86336,	681,
 	158688,	562,
 #endif
 	291346,	82,		/* H=cyl 82 thru 561 */
