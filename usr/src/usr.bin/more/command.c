@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -47,7 +47,6 @@ extern int quitting;
 extern int scroll;
 extern char *first_cmd;
 extern char *every_first_cmd;
-extern char version[];
 extern char *current_file;
 extern char *editor;
 extern int screen_trashed;	/* The screen has been overwritten */
@@ -599,14 +598,6 @@ commands()
 			error(eq_message());
 			break;
 			
-		case A_VERSION:
-			/*
-			 * Print version number, without the "@(#)".
-			 */
-			cmd_exec();
-			error(version+4);
-			break;
-
 		case A_QUIT:
 			/*
 			 * Exit.

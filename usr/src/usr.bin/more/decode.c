@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)decode.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)decode.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -116,7 +116,6 @@ static char cmdtable[] =
 
 	'H',0,				A_HELP,
 	'h',0,				A_HELP,
-	'V',0,				A_VERSION,
 	'q',0,				A_QUIT,
 	':','q',0,			A_QUIT,
 	'Z','Z',0,			A_QUIT
