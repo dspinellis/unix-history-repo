@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)renice.c	4.5 (Berkeley) 83/07/24";
+static	char *sccsid = "@(#)renice.c	4.6 (Berkeley) 83/07/24";
 #endif
 
 #include <sys/time.h>
@@ -20,7 +20,8 @@ main(argc, argv)
 
 	argc--, argv++;
 	if (argc < 2) {
-		fprintf(stderr, "usage: renice priority who ...\n");
+		fprintf(stderr, "usage: renice priority [ [ -p ] pids ] ");
+		fprintf(stderr, "[ [ -g ] pgrps ] [ [ -u ] users ]\n");
 		exit(1);
 	}
 	prio = atoi(*argv);
