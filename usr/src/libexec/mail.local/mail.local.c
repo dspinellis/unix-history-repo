@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	4.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	4.19 (Berkeley) %G%";
 #endif
 
 #include <ctype.h>
@@ -446,17 +446,16 @@ char **argv;
 				usage();
 				done();
 			}
-			if (strcmp(my_name, "root") &&
-			    strcmp(my_name, "daemon") &&
-			    strcmp(my_name, "network")) {
-				usage();
-				done();
+			if (strcmp(my_name, "root") == 0 ||
+			    strcmp(my_name, "daemon") == 0 ||
+			    strcmp(my_name, "network") == 0 ||
+			    strcmp(my_name, "uucp")) {
+				gaver++;
+				strcpy(truename, argv[1]);
+				fgets(line, LSIZE, stdin);
+				if (strncmp("From", line, 4) == 0)
+					line[0] = '\0';
 			}
-			gaver++;
-			strcpy(truename, argv[1]);
-			fgets(line, LSIZE, stdin);
-			if (strcmpn("From", line, 4) == 0)
-				line[0] = '\0';
 			argv++;
 			argc--;
 			break;
@@ -491,7 +490,7 @@ char **argv;
 		argc -= 2;
 		argv += 2;
 		fgets(line, LSIZE, stdin);
-		if (strcmpn("From", line, 4) == 0)
+		if (strncmp("From", line, 4) == 0)
 			line[0] = '\0';
 	} else
 		strcpy(truename, my_name);
