@@ -5,11 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)announce.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)announce.c	5.2 (Berkeley) %G%";
 #endif not lint
 
-#include "ctl.h"
-
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <sgtty.h>
 #include <sys/ioctl.h>
@@ -17,38 +16,37 @@ static char sccsid[] = "@(#)announce.c	5.1 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <syslog.h>
 
-char *sprintf();
+#include <protocols/talkd.h>
 
-extern int errno;
-extern char hostname[];
-int nofork = 0;		/* to be set from the debugger */
+extern	int errno;
+extern	char hostname[];
 
 /*
+ * Announce an invitation to talk.
+ *
  * Because the tty driver insists on attaching a terminal-less
  * process to any terminal that it writes on, we must fork a child
  * to protect ourselves
  */
-
 announce(request, remote_machine)
 	CTL_MSG *request;
 	char *remote_machine;
 {
 	int pid, val, status;
 
-	if (nofork)
-		return(announce_proc(request, remote_machine));
 	if (pid = fork()) {
 		/* we are the parent, so wait for the child */
 		if (pid == -1)		/* the fork failed */
-			return(FAILED);
+			return (FAILED);
 		do {
 			val = wait(&status);
 			if (val == -1) {
 				if (errno == EINTR)
 					continue;
 				/* shouldn't happen */
-				perror("wait");
+				syslog(LOG_WARNING, "announce: wait: %m");
 				return (FAILED);
 			}
 		} while (val != pid);
@@ -74,15 +72,15 @@ announce_proc(request, remote_machine)
 	FILE *tf;
 	struct stat stbuf;
 
-	(void) sprintf(full_tty, "/dev/%s", request->r_tty);
+	sprintf(full_tty, "/dev/%s", request->r_tty);
 	if (access(full_tty, 0) != 0)
 		return (FAILED);
 	if ((tf = fopen(full_tty, "w")) == NULL)
 		return (PERMISSION_DENIED);
 	/*
-	 * Open gratuitously attaches the talkd to
-	 * any tty it opens, so disconnect us from the
-	 * tty before we catch a signal
+	 * On first tty open, the server will have
+	 * it's pgrp set, so disconnect us from the
+	 * tty before we catch a signal.
 	 */
 	ioctl(fileno(tf), TIOCNOTTY, (struct sgttyb *) 0);
 	if (fstat(fileno(tf), &stbuf) < 0)
@@ -147,9 +145,9 @@ print_mesg(tf, request, remote_machine)
 	max_size = max(max_size, sizes[i]);
 	i++;
 	bptr = big_buf;
-	*(bptr++) = ''; /* send something to wake them up */
-	*(bptr++) = '\r';	/* add a \r in case of raw mode */
-	*(bptr++) = '\n';
+	*bptr++ = ''; /* send something to wake them up */
+	*bptr++ = '\r';	/* add a \r in case of raw mode */
+	*bptr++ = '\n';
 	for (i = 0; i < N_LINES; i++) {
 		/* copy the line into the big buffer */
 		lptr = line_buf[i];

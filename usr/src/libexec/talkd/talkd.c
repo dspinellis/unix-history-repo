@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)talkd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)talkd.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -23,17 +23,15 @@ static char sccsid[] = "@(#)talkd.c	5.1 (Berkeley) %G%";
 #include <stdio.h>
 #include <errno.h>
 #include <signal.h>
+#include <syslog.h>
 
-#include "ctl.h"
-
-struct	sockaddr_in sin = { AF_INET };
+#include <protocols/talkd.h>
 
 CTL_MSG		request;
 CTL_RESPONSE	response;
 
 int	sockt;
 int	debug = 0;
-FILE	*debugout;
 int	timeout();
 long	lastmsgtime;
 
@@ -46,41 +44,42 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	struct sockaddr_in from;
-	int fromlen, cc;
-	
-	if (debug)
-		debugout = (FILE *)fopen ("/usr/tmp/talkd.msgs", "w");
+	register CTL_MSG *mp = &request;
+	int cc;
 
 	if (getuid()) {
-		fprintf(stderr, "Talkd : not super user\n");
+		fprintf(stderr, "%s: getuid: not super-user", argv[0]);
 		exit(1);
 	}
-	gethostname(hostname, sizeof (hostname));
-	(void) chdir("/dev");
+	openlog("talkd", LOG_PID, LOG_DAEMON);
+	if (gethostname(hostname, sizeof (hostname) - 1) < 0) {
+		syslog(LOG_ERR, "gethostname: %m");
+		_exit(1);
+	}
+	if (chdir("/dev") < 0) {
+		syslog(LOG_ERR, "chdir: /dev: %m");
+		_exit(1);
+	}
+	if (argc > 1 && strcmp(argv[1], "-d") == 0)
+		debug = 1;
 	signal(SIGALRM, timeout);
 	alarm(TIMEOUT);
 	for (;;) {
 		extern int errno;
 
-		fromlen = sizeof(from);
-		cc = recvfrom(0, (char *)&request, sizeof (request), 0,
-		    &from, &fromlen);
-		if (cc != sizeof(request)) {
+		cc = recv(0, (char *)mp, sizeof (*mp), 0);
+		if (cc != sizeof (*mp)) {
 			if (cc < 0 && errno != EINTR)
-			perror("recvfrom");
+				syslog(LOG_WARNING, "recv: %m");
 			continue;
 		}
 		lastmsgtime = time(0);
-		swapmsg(&request);
-		if (debug) print_request(&request);
-		process_request(&request, &response);
+		process_request(mp, &response);
 		/* can block here, is this what I want? */
-		cc = sendto(sockt, (char *) &response,
-		    sizeof (response), 0, &request.ctl_addr,
-		    sizeof (request.ctl_addr));
-		if (cc != sizeof(response))
-			perror("sendto");
+		cc = sendto(sockt, (char *)&response,
+		    sizeof (response), 0, &mp->ctl_addr, sizeof (mp->ctl_addr));
+		if (cc != sizeof (response))
+			syslog(LOG_WARNING, "sendto: %m");
 	}
 }
 
@@ -88,22 +87,6 @@ timeout()
 {
 
 	if (time(0) - lastmsgtime >= MAXIDLE)
-		exit(0);
+		_exit(0);
 	alarm(TIMEOUT);
-}
-
-/*  
- * heuristic to detect if need to swap bytes
- */
-
-swapmsg(req)
-	CTL_MSG *req;
-{
-	if (req->ctl_addr.sin_family == ntohs(AF_INET)) {
-		req->id_num = ntohl(req->id_num);
-		req->pid = ntohl(req->pid);
-		req->addr.sin_family = ntohs(req->addr.sin_family);
-		req->ctl_addr.sin_family =
-			ntohs(req->ctl_addr.sin_family);
-	}
 }

@@ -3,39 +3,23 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 DESTDIR=
-DOBJECT=talkd.o announce.o process.o table.o print.o
-TOBJECT=talk.o get_names.o display.o io.o ctl.o init_disp.o \
-	msgs.o get_addrs.o ctl_transact.o invite.o look_up.o
-DSOURCE=talkd.c announce.c process.c table.c print.c
-TSOURCE=talk.c get_names.c display.c io.c ctl.c init_disp.c \
-	msgs.c get_addrs.c ctl_transact.c invite.c look_up.c
-INCLUDE=talk.h ctl.h talk_ctl.h
-SOURCE= ${DSOURCE} ${TSOURCE}
+OBJS=	talkd.o announce.o process.o table.o print.o
+SRCS=	talkd.c announce.c process.c table.c print.c
 CFLAGS= -O
 
-all:	talk talkd
+all:	talkd
 
-talkd: ${DOBJECT}
-	cc ${CFLAGS} -o talkd ${DOBJECT}
+talkd: ${OBJS}
+	cc ${CFLAGS} -o talkd ${OBJS}
 
-talk:	${TOBJECT}
-	cc -o talk ${TOBJECT} -lcurses -ltermlib
-
-${DOBJECT}: ctl.h
-${TOBJECT}: talk.h ctl.h talk_ctl.h
-
-install: talk talkd
-	install -s talk ${DESTDIR}/usr/ucb/talk
+install: talkd
 	install -s talkd ${DESTDIR}/etc/talkd
 
-lint:
-	lint ${DSOURCE}
-
 clean:
-	rm -f *.o talk talkd
+	rm -f ${OBJS} errs core a.out talkd
 
-tags:	${SOURCE} ${INCLUDE}
-	ctags ${SOURCE} ${INCLUDE}
+tags:	${SRCS}
+	ctags ${SOURCE}
