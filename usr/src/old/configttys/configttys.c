@@ -6,7 +6,7 @@
  */
 
 #ifndef	lint
-char	sccsid[]	= "@(#)configttys.c	4.3 Berkeley %G%";
+char	sccsid[]	= "@(#)configttys.c	4.4 Berkeley %G%";
 #endif
 
 #include <stdio.h>
