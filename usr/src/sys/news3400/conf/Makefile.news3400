@@ -1,4 +1,4 @@
-#	@(#)Makefile.news3400	7.6 (Berkeley) %G%
+#	@(#)Makefile.news3400	7.7 (Berkeley) %G%
 
 # Makefile for 4.4 BSD
 #
@@ -59,7 +59,7 @@ NORMAL_S_C=	${AS} -c ${COPTS} ${PARAM} $<
 #	${SYSTEM_LD_HEAD}
 #	${SYSTEM_LD} swapxxx.o
 #	${SYSTEM_LD_TAIL}
-SYSTEM_OBJ=	locore.o ${OBJS} param.o ioconf.o
+SYSTEM_OBJ=	locore.o ${OBJS} param.o ioconf.o vnode_if.o
 #SYSTEM_DEP=	Makefile symbols.sort ${SYSTEM_OBJ}
 SYSTEM_DEP=	Makefile ${SYSTEM_OBJ}
 SYSTEM_LD_HEAD=	rm -f $@
