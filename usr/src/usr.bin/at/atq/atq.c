@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)atq.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)atq.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -195,7 +195,7 @@ char **namelist;
 	int i;					/* for loop index */
 	int rank = 1;				/* rank of a job */
 	int entryfound;				/* found file owned by user(s)*/
-	int printrank();			/* print the rank of a job */
+	static int printrank();			/* print the rank of a job */
 	int plastrun();				/* print the last time the 
 						   spooling area was updated */
 	int powner();				/* print the name of the owner
@@ -313,7 +313,7 @@ plastrun()
 	struct timeval now;			/* time it is right now */
 	struct timezone zone;			/* NOT USED */
 	struct tm *loc;				/* detail of time it is right */
-	u_long lasttime;			/* last update time in seconds
+	time_t lasttime;			/* last update time in seconds
 						   since 1/1/70 */
 	FILE *last;				/* file where last update hour
 						   is stored */
