@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)order.c	1.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)order.c	1.8 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -413,6 +413,7 @@ genargs( p, ptemp ) register NODE *p, *ptemp; {
 	register NODE *pasg;
 	register int align;
 	register int size;
+	int count;
 
 	/* generate code for the arguments */
 
@@ -435,15 +436,11 @@ genargs( p, ptemp ) register NODE *p, *ptemp; {
 			/* make it look beautiful... */
 			p->in.op = UNARY MUL;
 			canon( p );  /* turn it into an oreg */
-			if( p->in.op != OREG ){
+			for( count = 0; p->in.op != OREG && count < 10; ++count ){
 				offstar( p->in.left );
 				canon( p );
-				if( p->in.op != OREG ){
-					offstar( p->in.left );
-					canon( p );
-					if( p->in.op != OREG ) cerror( "stuck starg" );
-					}
 				}
+			if( p->in.op != OREG ) cerror( "stuck starg" );
 			}
 
 
