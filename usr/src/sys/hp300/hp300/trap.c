@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: trap.c 1.35 91/12/26$
+ * from: Utah $Hdr: trap.c 1.37 92/12/20$
  *
- *	@(#)trap.c	7.25 (Berkeley) %G%
+ *	@(#)trap.c	7.26 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -210,7 +210,7 @@ trap(type, code, v, frame)
 	default:
 dopanic:
 		printf("trap type %d, code = %x, v = %x\n", type, code, v);
-		regdump(frame.f_regs, 128);
+		regdump(&frame, 128);
 		type &= ~T_USER;
 		if ((unsigned)type < TRAP_TYPES)
 			panic(trap_type[type]);
@@ -295,7 +295,7 @@ copyfault:
 
 	case T_ILLINST|T_USER:	/* illegal instruction fault */
 #ifdef HPUXCOMPAT
-		if (p->p_flag & SHPUX) {
+		if (p->p_md.md_flags & MDP_HPUX) {
 			ucode = HPUX_ILL_ILLINST_TRAP;
 			i = SIGILL;
 			break;
@@ -304,7 +304,7 @@ copyfault:
 #endif
 	case T_PRIVINST|T_USER:	/* privileged instruction fault */
 #ifdef HPUXCOMPAT
-		if (p->p_flag & SHPUX)
+		if (p->p_md.md_flags & MDP_HPUX)
 			ucode = HPUX_ILL_PRIV_TRAP;
 		else
 #endif
@@ -314,7 +314,7 @@ copyfault:
 
 	case T_ZERODIV|T_USER:	/* Divide by zero */
 #ifdef HPUXCOMPAT
-		if (p->p_flag & SHPUX)
+		if (p->p_md.md_flags & MDP_HPUX)
 			ucode = HPUX_FPE_INTDIV_TRAP;
 		else
 #endif
@@ -324,7 +324,7 @@ copyfault:
 
 	case T_CHKINST|T_USER:	/* CHK instruction trap */
 #ifdef HPUXCOMPAT
-		if (p->p_flag & SHPUX) {
+		if (p->p_md.md_flags & MDP_HPUX) {
 			/* handled differently under hp-ux */
 			i = SIGILL;
 			ucode = HPUX_ILL_CHK_TRAP;
@@ -337,7 +337,7 @@ copyfault:
 
 	case T_TRAPVINST|T_USER:	/* TRAPV instruction trap */
 #ifdef HPUXCOMPAT
-		if (p->p_flag & SHPUX) {
+		if (p->p_md.md_flags & MDP_HPUX) {
 			/* handled differently under hp-ux */
 			i = SIGILL;
 			ucode = HPUX_ILL_TRAPV_TRAP;
@@ -460,6 +460,19 @@ copyfault:
 			printf("trap: bad kernel access at %x\n", v);
 			goto dopanic;
 		}
+#endif
+#ifdef HPUXCOMPAT
+		if (ISHPMMADDR(va)) {
+			vm_offset_t bva;
+
+			rv = pmap_mapmulti(map->pmap, va);
+			if (rv != KERN_SUCCESS) {
+				bva = HPMMBASEADDR(va);
+				rv = vm_fault(map, bva, ftype, FALSE);
+				if (rv == KERN_SUCCESS)
+					(void) pmap_mapmulti(map->pmap, va);
+			}
+		} else
 #endif
 		rv = vm_fault(map, va, ftype, FALSE);
 #ifdef DEBUG
@@ -824,27 +837,6 @@ dumpwb(num, s, a, d)
 		printf("%x, current value %x", pa, fuword((caddr_t)a));
 	printf("\n");
 }
-
-#ifdef HPFPLIB
-fppanic(frame)
-	struct fppanicframe {
-		int	fpsaveframe;
-		int	regs[16];
-		int	fpregs[8*3];
-		int	fpcregs[3];
-		int	hole[5];
-		int	oa6;
-		short	sr;
-		int	pc;
-		short	vector;
-	} frame;
-{
-	printf("FP exception: pid %d(%s): no busy frame, ft=%x pc=%x vec=%x\n",
-	       curproc->p_pid, curproc->p_comm,
-	       frame.fpsaveframe, frame.pc, frame.vector);
-	panic("bad FP exception");
-}
-#endif
 #endif
 #endif
 
@@ -878,7 +870,7 @@ syscall(code, frame)
 	p->p_md.md_regs = frame.f_regs;
 	opc = frame.f_pc - 2;
 #ifdef HPUXCOMPAT
-	if (p->p_flag & SHPUX)
+	if (p->p_md.md_flags & MDP_HPUX)
 		callp = hpuxsysent, numsys = hpuxnsysent;
 	else
 #endif
@@ -892,6 +884,13 @@ syscall(code, frame)
 		 */
 		code = fuword(params);
 		params += sizeof(int);
+		/*
+		 * XXX sigreturn requires special stack manipulation
+		 * that is only done if entered via the sigreturn
+		 * trap.  Cannot allow it here so make sure we fail.
+		 */
+		if (code == SYS_sigreturn)
+			code = numsys;
 		break;
 
 	case SYS___indir:
@@ -900,7 +899,7 @@ syscall(code, frame)
 		 * quad alignment for the rest of the arguments.
 		 */
 #ifdef HPUXCOMPAT
-		if (p->p_flag & SHPUX)
+		if (p->p_md.md_flags & MDP_HPUX)
 			break;
 #endif
 		code = fuword(params + _QUAD_LOWWORD * sizeof(int));
@@ -959,7 +958,7 @@ syscall(code, frame)
 	default:
 	bad:
 #ifdef HPUXCOMPAT
-		if (p->p_flag & SHPUX)
+		if (p->p_md.md_flags & MDP_HPUX)
 			error = bsdtohpuxerrno(error);
 #endif
 		frame.f_regs[D0] = error;
