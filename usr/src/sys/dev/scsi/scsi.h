@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi.h	5.2 (Berkeley) %G%
+ *	@(#)scsi.h	5.3 (Berkeley) %G%
  *
- * from: $Header: scsi.h,v 1.3 92/05/15 11:24:02 torek Exp $ (LBL)
+ * from: $Header: scsi.h,v 1.5 93/02/01 19:19:15 torek Exp $ (LBL)
  */
 
 /*
