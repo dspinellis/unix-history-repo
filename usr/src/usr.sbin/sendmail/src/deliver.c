@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.106		%G%);
+SCCSID(@(#)deliver.c	3.107		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -93,20 +93,14 @@ deliver(firstto, editfcn)
 	**	a picky -f flag, we insert it as appropriate.  This
 	**	code does not check for 'pv' overflow; this places a
 	**	manifest lower limit of 4 for MAXPV.
-	**		We rewrite the from address here, being careful
-	**		to also rewrite it again using ruleset 2 to
-	**		eliminate redundancies.
+	**		The from address rewrite is expected to make
+	**		the address relative to the other end.
 	*/
 
 	/* rewrite from address, using rewriting rules */
 	(void) expand(m->m_from, buf, &buf[sizeof buf - 1]);
 	mvp = prescan(buf, '\0');
-	if (mvp == NULL)
-	{
-		syserr("bad mailer from translate \"%s\"", buf);
-		return (EX_SOFTWARE);
-	}
-	rewrite(mvp, 2);
+	rewrite(mvp, m->m_s_rwset);
 	cataddr(mvp, tfrombuf, sizeof tfrombuf);
 
 	define('g', tfrombuf);		/* translated sender address */
@@ -524,10 +518,12 @@ sendoff(m, pvp, editfcn, ctladdr)
 	giveresponse(i, TRUE, m);
 
 	/* arrange a return receipt if requested */
-	if (CurEnv->e_retreceipt && bitset(M_LOCAL, m->m_flags) && i == EX_OK)
+	if (CurEnv->e_receiptto != NULL && bitset(M_LOCAL, m->m_flags))
 	{
 		CurEnv->e_sendreceipt = TRUE;
-		fprintf(Xscript, "%s... successfully delivered\n", CurEnv->e_to);
+		if (ExitStat == EX_OK)
+			fprintf(Xscript, "%s... successfully delivered\n",
+				CurEnv->e_to);
 		/* do we want to send back more info? */
 	}
 
@@ -1007,84 +1003,49 @@ putheader(fp, m)
 	extern char *capitalize();
 	extern char *hvalue();
 	extern bool samefrom();
-	char *of_line;
 	char obuf[MAXLINE];
 	register char *obp;
 	bool fullsmtp = bitset(M_FULLSMTP, m->m_flags);
 
-	of_line = hvalue("original-from");
 	for (h = CurEnv->e_header; h != NULL; h = h->h_link)
 	{
 		register char *p;
 		char *origfrom = CurEnv->e_origfrom;
-		bool nooutput;
 
-		nooutput = FALSE;
 		if (bitset(H_CHECK|H_ACHECK, h->h_flags) && !bitset(h->h_mflags, m->m_flags))
-			nooutput = TRUE;
+			continue;
 
-		/* use From: line from message if generated is the same */
 		p = h->h_value;
-		if (strcmp(h->h_field, "from") == 0 && origfrom != NULL &&
-		    strcmp(m->m_from, "$f") == 0 && of_line == NULL)
-		{
-			p = origfrom;
-			origfrom = NULL;
-		}
-		else if (bitset(H_DEFAULT, h->h_flags))
+		if (bitset(H_DEFAULT, h->h_flags))
 		{
 			/* macro expand value if generated internally */
 			(void) expand(h->h_value, buf, &buf[sizeof buf]);
 			p = buf;
 		}
-		else if (bitset(H_ADDR, h->h_flags))
-		{
-			if (p == NULL || *p == '\0' || nooutput)
-				continue;
-			commaize(p, capitalize(h->h_field), fp, e->e_oldstyle, m);
-			nooutput = TRUE;
-		}
 		if (p == NULL || *p == '\0')
 			continue;
 
-		/* hack, hack -- output Original-From field if different */
-		if (strcmp(h->h_field, "from") == 0 && origfrom != NULL)
+		if (bitset(H_FROM|H_RCPT, h->h_flags))
 		{
-			/* output new Original-From line if needed */
-			if (of_line == NULL && !samefrom(p, origfrom))
-			{
-			{
-				(void) sprintf(obuf, "Original-From: %s\n", origfrom);
-				putline(obuf, fp, fullsmtp);
-			}
-				anyheader = TRUE;
-			}
-			if (of_line != NULL && !nooutput && samefrom(p, of_line))
-			{
-				/* delete Original-From: line if redundant */
-				p = of_line;
-				of_line = NULL;
-			}
+			/* address field */
+			commaize(h, p, fp, e->e_oldstyle, m);
 		}
-		else if (strcmp(h->h_field, "original-from") == 0 && of_line == NULL)
-			nooutput = TRUE;
-
-		/* finally, output the header line */
-		if (!nooutput)
+		else
 		{
+			/* vanilla header line */
 			(void) sprintf(obuf, "%s: %s\n", capitalize(h->h_field), p);
 			putline(obuf, fp, fullsmtp);
-			h->h_flags |= H_USED;
 			anyheader = TRUE;
 		}
+		h->h_flags |= H_USED;
 	}
 }
 /*
 **  COMMAIZE -- output a header field, making a comma-translated list.
 **
 **	Parameters:
-**		p -- the field to output.
-**		tag -- the tag to associate with it.
+**		h -- the header field to output.
+**		p -- the value to put in it.
 **		fp -- file to put it to.
 **		oldstyle -- TRUE if this is an old style header.
 **		m -- a pointer to the mailer descriptor.
@@ -1096,18 +1057,18 @@ putheader(fp, m)
 **		outputs "p" to file "fp".
 */
 
-commaize(p, tag, fp, oldstyle, m)
+commaize(h, p, fp, oldstyle, m)
+	register HDR *h;
 	register char *p;
-	char *tag;
 	FILE *fp;
 	bool oldstyle;
-	MAILER *m;
+	register MAILER *m;
 {
-	register int opos;
+	register char *obp;
+	int opos;
+	bool fullsmtp = bitset(M_FULLSMTP, m->m_flags);
 	bool firstone = TRUE;
 	char obuf[MAXLINE];
-	register char *obp;
-	bool fullsmtp = bitset(M_FULLSMTP, m->m_flags);
 
 	/*
 	**  Output the address list translated by the
@@ -1116,12 +1077,12 @@ commaize(p, tag, fp, oldstyle, m)
 
 # ifdef DEBUG
 	if (tTd(14, 2))
-		printf("commaize(%s: %s)\n", tag, p);
+		printf("commaize(%s: %s)\n", h->h_field, p);
 # endif DEBUG
 
 	obp = obuf;
-	(void) sprintf(obp, "%s: ", tag);
-	opos = strlen(tag) + 2;
+	(void) sprintf(obp, "%s: ", capitalize(h->h_field));
+	opos = strlen(h->h_field) + 2;
 	obp += opos;
 
 	/*
@@ -1131,10 +1092,10 @@ commaize(p, tag, fp, oldstyle, m)
 	while (*p != '\0')
 	{
 		register char *name;
-		extern char *remotename();
 		char savechar;
 		int commentlevel;
 		bool inquote;
+		extern char *remotename();
 
 		/*
 		**  Find the end of the name.  New style names
@@ -1194,7 +1155,7 @@ commaize(p, tag, fp, oldstyle, m)
 		*p = '\0';
 
 		/* translate the name to be relative */
-		name = remotename(name, m, FALSE);
+		name = remotename(name, m, bitset(H_FROM, h->h_flags));
 		if (*name == '\0')
 		{
 			*p = savechar;
