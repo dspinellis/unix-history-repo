@@ -4,48 +4,69 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufsmount.h	7.9 (Berkeley) %G%
+ *	@(#)ufsmount.h	7.10 (Berkeley) %G%
  */
 
 /*
- * This structure describes the UFS specific mount structure data.
+ * The root inode is the root of the file system.  Inode 0 can't be used for
+ * normal purposes and historically bad blocks were linked to inode 1, thus
+ * the root inode is 2. (inode 1 is no longer used for this purpose, however
+ * numerous dump tapes make this assumption, so we are stuck with it).
  */
-struct	ufsmount {
-	struct	mount *um_mountp;	/* vfs structure for this filesystem */
-	dev_t	um_dev;			/* device mounted */
-	struct	vnode *um_devvp;	/* vnode for block device mounted */
-	struct	fs *um_fs;		/* pointer to superblock */
-	struct	vnode *um_quotas[MAXQUOTAS]; /* pointer to quota files */
-	struct	ucred *um_cred[MAXQUOTAS]; /* cred for access to quota file */
-	time_t	um_btime[MAXQUOTAS];	/* block quota time limit */
-	time_t	um_itime[MAXQUOTAS];	/* inode quota time limit */
-	char	um_qflags[MAXQUOTAS];	/* quota specific flags, see below */
+#define	ROOTINO	((ino_t)2)
+
+struct buf;
+struct inode;
+struct nameidata;
+struct timeval;
+struct ucred;
+struct uio;
+struct vnode;
+
+/* This structure describes the UFS specific mount structure data. */
+struct ufsmount {
+	struct	mount *um_mountp;		/* filesystem vfs structure */
+	dev_t	um_dev;				/* device mounted */
+	struct	vnode *um_devvp;		/* block device mounted vnode */
+	union {					/* pointer to superblock */
+		struct	lfs *lfs;		/* LFS */
+		struct	fs *fs;			/* FFS */
+	} ufsmount_u;
+#define	um_fs	ufsmount_u.fs
+#define	um_lfs	ufsmount_u.lfs
+	struct	vnode *um_quotas[MAXQUOTAS];	/* pointer to quota files */
+	struct	ucred *um_cred[MAXQUOTAS];	/* quota file access cred */
+	time_t	um_btime[MAXQUOTAS];		/* block quota time limit */
+	time_t	um_itime[MAXQUOTAS];		/* inode quota time limit */
+	char	um_qflags[MAXQUOTAS];		/* quota specific flags */
+
+	/*
+	 * The following is the inode switch.  It is intended to provide
+	 * the interface between the Unix File System semantics and the
+	 * on-disk allocation, layout and I/O.
+	 */
+	int	(*um_blkatoff) __P((struct inode *ip,
+		    off_t offset, char **res, struct buf **bpp));
+	int	(*um_write) __P((struct vnode *vp,
+		    struct uio *uio, int ioflag, struct ucred *cred));
+	int	(*um_iget) __P((struct inode *pip,
+		    ino_t ino, struct inode **ipp));
+	int	(*um_ialloc) __P((struct inode *pip,
+		    int mode, struct ucred *cred, struct inode **ipp));
+	void	(*um_ifree) __P((struct inode *pip, ino_t ino, int mode));
+	int	(*um_itrunc) __P((struct inode *oip, u_long length, int flags));
+	int	(*um_iupdat) __P((struct inode *ip,
+		    struct timeval *ta, struct timeval *tm, int waitfor));
+	int	(*um_bwrite)		/* XXX changes */
+		    __P((struct buf *bp));
+	int	(*um_bmap)		/* XXX changes */
+		    __P((struct inode *ip, daddr_t bn, daddr_t *bnp));
 };
 /*
  * Flags describing the state of quotas.
  */
-#define	QTF_OPENING	0x01		/* Q_QUOTAON in progress */
-#define	QTF_CLOSING	0x02		/* Q_QUOTAOFF in progress */
+#define	QTF_OPENING	0x01			/* Q_QUOTAON in progress */
+#define	QTF_CLOSING	0x02			/* Q_QUOTAOFF in progress */
 
-#ifdef KERNEL
-/*
- * Convert mount ptr to ufsmount ptr.
- */
+/* Convert mount ptr to ufsmount ptr. */
 #define VFSTOUFS(mp)	((struct ufsmount *)((mp)->mnt_data))
-#endif /* KERNEL */
-
-/*
- * Prototypes for UFS mount operations
- */
-int ufs_mount __P((struct mount *mp, char *path, caddr_t data,
-	struct nameidata *ndp, struct proc *p));
-int ufs_start __P((struct mount *mp, int flags, struct proc *p));
-int ufs_unmount __P((struct mount *mp, int mntflags, struct proc *p));
-int ufs_root __P((struct mount *mp, struct vnode **vpp));
-int ufs_quotactl __P((struct mount *mp, int cmds, int uid, /* should be uid_t */
-	caddr_t arg, struct proc *p));
-int ufs_statfs __P((struct mount *mp, struct statfs *sbp, struct proc *p));
-int ufs_sync __P((struct mount *mp, int waitfor));
-int ufs_fhtovp __P((struct mount *mp, struct fid *fhp, struct vnode **vpp));
-int ufs_vptofh __P((struct vnode *vp, struct fid *fhp));
-int ufs_init __P(());
