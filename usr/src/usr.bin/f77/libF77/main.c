@@ -1,5 +1,5 @@
 /* STARTUP PROCEDURE FOR UNIX FORTRAN PROGRAMS */
-char id_libF77[] = "@(#)main.c	2.3	%G%";
+char id_libF77[] = "@(#)main.c	2.4	%G%";
 
 #include <stdio.h>
 #include <signal.h>
@@ -20,13 +20,13 @@ xargc = argc;
 xargv = argv;
 signal(SIGFPE, sigdie);	/* ignore underflow, enable overflow */
 signal(SIGIOT, sigdie);
-if(sigf=signal(SIGQUIT, sigdie) != SIG_DFL) signal(SIGQUIT, sigf);
-if(sigf=signal(SIGINT,  sigdie) != SIG_DFL) signal(SIGINT,  sigf);
-if(sigf=signal(SIGTERM, sigdie) != SIG_DFL) signal(SIGTERM, sigf);
-if(sigf=signal(SIGILL,  sigdie) != SIG_DFL) signal(SIGILL,  sigf);
-if(sigf=signal(SIGEMT,  sigdie) != SIG_DFL) signal(SIGEMT,  sigf);
-if(sigf=signal(SIGBUS,  sigdie) != SIG_DFL) signal(SIGBUS,  sigf);
-if(sigf=signal(SIGSEGV, sigdie) != SIG_DFL) signal(SIGSEGV, sigf);
+if((sigf=signal(SIGQUIT, sigdie)) != SIG_DFL) signal(SIGQUIT, sigf);
+if((sigf=signal(SIGINT,  sigdie)) != SIG_DFL) signal(SIGINT,  sigf);
+if((sigf=signal(SIGTERM, sigdie)) != SIG_DFL) signal(SIGTERM, sigf);
+if((sigf=signal(SIGILL,  sigdie)) != SIG_DFL) signal(SIGILL,  sigf);
+if((sigf=signal(SIGEMT,  sigdie)) != SIG_DFL) signal(SIGEMT,  sigf);
+if((sigf=signal(SIGBUS,  sigdie)) != SIG_DFL) signal(SIGBUS,  sigf);
+if((sigf=signal(SIGSEGV, sigdie)) != SIG_DFL) signal(SIGSEGV, sigf);
 
 #ifdef pdp11
 	ldfps(01200); /* detect overflow as an exception */
