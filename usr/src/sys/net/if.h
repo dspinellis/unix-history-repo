@@ -1,4 +1,4 @@
-/*	if.h	4.14	82/06/13	*/
+/*	if.h	4.15	82/06/23	*/
 
 /*
  * Structures defining a network interface, providing a packet
@@ -38,6 +38,7 @@ struct ifnet {
 	short	if_mtu;			/* maximum transmission unit */
 	int	if_net;			/* network number of interface */
 	short	if_flags;		/* up/down, broadcast, etc. */
+	short	if_timer;		/* time 'til if_watchdog called */
 	int	if_host[2];		/* local net host number */
 	struct	sockaddr if_addr;	/* address of interface */
 	union {
@@ -57,6 +58,7 @@ struct ifnet {
 	int	(*if_init)();		/* init routine */
 	int	(*if_output)();		/* output routine */
 	int	(*if_ubareset)();	/* uba reset routine */
+	int	(*if_watchdog)();	/* timer routine */
 /* generic interface statistics */
 	int	if_ipackets;		/* packets received on interface */
 	int	if_ierrors;		/* input errors on interface */
@@ -108,6 +110,7 @@ struct ifnet {
 }
 
 #define	IFQ_MAXLEN	50
+#define	IFNET_SLOWHZ	1		/* granularity is 1 second */
 
 #ifdef KERNEL
 #ifdef INET
