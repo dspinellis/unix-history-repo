@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.9 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.10 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -42,35 +42,36 @@ CP.
 Cwlocalhost
 ifdef(`USE_CW_FILE',
 `# file containing names of hosts for which we receive email
-CONCAT(`Fw', confCW_FILE)', `dnl')
+Fw`'confCW_FILE',
+	`dnl')
 
 ifdef(`UUCP_RELAY',
 `# UUCP relay host
-CONCAT(DY, UUCP_RELAY)
+DY`'UUCP_RELAY
 CPUUCP
 
 ')dnl
 ifdef(`BITNET_RELAY',
 `#  BITNET relay host
-CONCAT(DB, BITNET_RELAY)
+DB`'BITNET_RELAY
 CPBITNET
 
 ')dnl
 ifdef(`CSNET_RELAY',
 `# CSNET relay host
-CONCAT(DC, CSNET_RELAY)
+DC`'CSNET_RELAY
 CPCSNET
 
 ')dnl
 ifdef(`FAX_RELAY',
 `# FAX relay host
-CONCAT(DF, FAX_RELAY)
+DF`'FAX_RELAY
 CPFAX
 
 ')dnl
 ifdef(`SMART_HOST',
 `# "Smart" UUCP relay host
-CONCAT(DS, SMART_HOST)
+DS`'SMART_HOST
 
 ')dnl
 ifdef(`MAILER_TABLE',
@@ -84,16 +85,16 @@ Kdomaintable DOMAIN_TABLE
 
 ')dnl
 # who I send unqualified names to (null means deliver locally)
-CONCAT(DR, ifdef(`LOCAL_RELAY', LOCAL_RELAY))
+DR`'ifdef(`LOCAL_RELAY', LOCAL_RELAY)
 
 # who gets all local email traffic ($R has precedence for unqualified names)
-CONCAT(DH, ifdef(`MAIL_HUB', MAIL_HUB))
+DH`'ifdef(`MAIL_HUB', MAIL_HUB)
 
 # my official hostname ($w or $w.$D)
-CONCAT(Dj$w, ifdef(`NEED_DOMAIN', .$D))
+Dj$w`'ifdef(`NEED_DOMAIN', .$D)
 
 # who I masquerade as (can be $j)
-CONCAT(DM, ifdef(`MASQUERADE_NAME', MASQUERADE_NAME, $j))
+DM`'ifdef(`MASQUERADE_NAME', MASQUERADE_NAME, $j)
 
 # class L: names that should be delivered locally, even if we have a relay
 # class E: names that should be exposed as from this host, even if we masquerade
@@ -118,19 +119,19 @@ undivert(6)dnl
 ######################
 
 # SMTP initial login message
-CONCAT(De, confSMTP_LOGIN_MSG)
+De`'confSMTP_LOGIN_MSG
 
 # UNIX initial From header format
-CONCAT(Dl, confFROM_LINE)
+Dl`'confFROM_LINE
 
 # my name for error messages
-CONCAT(Dn, confMAILER_NAME)
+Dn`'confMAILER_NAME
 
 # delimiter (operator) characters
-CONCAT(Do, confOPERATORS)
+Do`'confOPERATORS
 
 # format of a total name
-CONCAT(Dq, ifdef(`confFROM_HEADER', confFROM_HEADER,
+Dq`'ifdef(`confFROM_HEADER', confFROM_HEADER,
 	ifdef(`_OLD_SENDMAIL_', `$g$?x ($x)$.', `$?x$x <$g>$|$g$.')))
 include(`../m4/version.m4')
 
@@ -139,131 +140,131 @@ include(`../m4/version.m4')
 ###############
 
 # strip message body to 7 bits on input?
-CONCAT(O7, confSEVEN_BIT_INPUT)
+O7`'confSEVEN_BIT_INPUT
 
 # wait (in minutes) for alias file rebuild
-CONCAT(Oa, confALIAS_WAIT)
+Oa`'confALIAS_WAIT
 
 # location of alias file
-CONCAT(OA, ifdef(`ALIAS_FILE', ALIAS_FILE, /etc/aliases))
+OA`'ifdef(`ALIAS_FILE', ALIAS_FILE, /etc/aliases)
 
 # minimum number of free blocks on filesystem
-CONCAT(Ob, confMIN_FREE_BLOCKS)
+Ob`'confMIN_FREE_BLOCKS
 
 # substitution for space (blank) characters
-CONCAT(OB, confBLANK_SUB)
+OB`'confBLANK_SUB
 
 # connect to "expensive" mailers on initial submission?
-CONCAT(Oc, confCON_EXPENSIVE)
+Oc`'confCON_EXPENSIVE
 
 # checkpoint queue runs after every N successful deliveries
-CONCAT(OC, confCHECKPOINT_INTERVAL)
+OC`'confCHECKPOINT_INTERVAL
 
 # default delivery mode
-CONCAT(Od, confDELIVERY_MODE)
+Od`'confDELIVERY_MODE
 
 # automatically rebuild the alias database?
-CONCAT(OD, confAUTO_REBUILD)
+OD`'confAUTO_REBUILD
 
-# error message header/file */
+# error message header/file
 ifdef(`confERROR_MESSAGE',
-	CONCAT(OE, confERROR_MESSAGE),
+	OE`'confERROR_MESSAGE,
 	#OE/etc/sendmail.oE)
 
 # error mode
 ifdef(`confERROR_MODE',
-	CONCAT(Oe, confERROR_MODE),
+	Oe`'confERROR_MODE,
 	#Oep)
 
 # save Unix-style "From_" lines at top of header?
-CONCAT(Of, confSAVE_FROM_LINES)
+Of`'confSAVE_FROM_LINES
 
 # temporary file mode
-CONCAT(OF, confTEMP_FILE_MODE)
+OF`'confTEMP_FILE_MODE
 
 # match recipients against GECOS field?
-CONCAT(OG, confMATCH_GECOS)
+OG`'confMATCH_GECOS
 
 # default GID
-CONCAT(Og, confDEF_GROUP_ID)
+Og`'confDEF_GROUP_ID
 
 # maximum hop count
-CONCAT(Oh, confMAX_HOP)
+Oh`'confMAX_HOP
 
 # location of help file
-CONCAT(OH, ifdef(`HELP_FILE', HELP_FILE, /usr/lib/sendmail.hf))
+OH`'ifdef(`HELP_FILE', HELP_FILE, /usr/lib/sendmail.hf)
 
 # ignore dots as terminators in incoming messages?
-CONCAT(Oi, confIGNORE_DOTS)
+Oi`'confIGNORE_DOTS
 
 # Insist that the BIND name server be running to resolve names
 ifdef(`confBIND_OPTS',
-	CONCAT(OI, confBIND_OPTS),
+	OI`'confBIND_OPTS,
 	#OI)
 
 # deliver MIME-encapsulated error messages?
-CONCAT(Oj, confMIME_FORMAT_ERRORS)
+Oj`'confMIME_FORMAT_ERRORS
 
 # Forward file search path
 ifdef(`confFORWARD_PATH',
-	CONCAT(OJ, confFORWARD_PATH),
+	OJ`'confFORWARD_PATH,
 	#OJ/var/forward/$u:$z/.forward.$w:$z/.forward)
 
 # open connection cache size
-CONCAT(Ok, confMCI_CACHE_SIZE)
+Ok`'confMCI_CACHE_SIZE
 
 # open connection cache timeout
-CONCAT(OK, confMCI_CACHE_TIMEOUT)
+OK`'confMCI_CACHE_TIMEOUT
 
 # use Errors-To: header?
-CONCAT(Ol, confUSE_ERRORS_TO)
+Ol`'confUSE_ERRORS_TO
 
 # log level
-CONCAT(OL, confLOG_LEVEL)
+OL`'confLOG_LEVEL
 
 # send to me too, even in an alias expansion?
-CONCAT(Om, confME_TOO)
+Om`'confME_TOO
 
 # verify RHS in newaliases?
-CONCAT(On, confCHECK_ALIASES)
+On`'confCHECK_ALIASES
 
 # default messages to old style headers if no special punctuation?
-CONCAT(Oo, confOLD_STYLE_HEADERS)
+Oo`'confOLD_STYLE_HEADERS
 
 # SMTP daemon options
 ifdef(`confDAEMON_OPTIONS',
-	CONCAT(OO, confDAEMON_OPTIONS),
+	OO`'confDAEMON_OPTIONS,
 	#OOPort=esmtp)
 
 # privacy flags
-CONCAT(Op, confPRIVACY_FLAGS)
+Op`'confPRIVACY_FLAGS
 
 # who (if anyone) should get extra copies of error messages
 ifdef(`confCOPY_ERRORS_TO',
-	CONCAT(OP, confCOPY_ERRORS_TO),
+	OP`'confCOPY_ERRORS_TO,
 	#OPPostmaster)
 
 # slope of queue-only function
 ifdef(`confQUEUE_FACTOR',
-	CONCAT(Oq, confQUEUE_FACTOR),
+	Oq`'confQUEUE_FACTOR,
 	#Oq600000)
 
 # queue directory
-CONCAT(OQ, ifdef(`QUEUE_DIR', QUEUE_DIR, /var/spool/mqueue))
+OQ`'ifdef(`QUEUE_DIR', QUEUE_DIR, /var/spool/mqueue)
 
 # read timeout -- now OK per RFC 1123 section 5.3.2
 ifdef(`confREAD_TIMEOUT',
-	CONCAT(Or, confREAD_TIMEOUT),
+	Or`'confREAD_TIMEOUT,
 	#Ordatablock=10m)
 
 # queue up everything before forking?
-CONCAT(Os, confSAFE_QUEUE)
+Os`'confSAFE_QUEUE
 
 # status file
-CONCAT(OS, ifdef(`STATUS_FILE', STATUS_FILE, /etc/sendmail.st))
+OS`'ifdef(`STATUS_FILE', STATUS_FILE, /etc/sendmail.st)
 
 # default message timeout interval
-CONCAT(OT, confMESSAGE_TIMEOUT)
+OT`'confMESSAGE_TIMEOUT
 
 # time zone handling:
 #  if undefined, use system default
@@ -271,44 +272,44 @@ CONCAT(OT, confMESSAGE_TIMEOUT)
 #  if defined and non-null, use that info
 ifelse(confTIME_ZONE, `USE_SYSTEM', `#Ot',
 	confTIME_ZONE, `USE_TZ', `',
-	`CONCAT(Ot, confTIME_ZONE)')
+	`Ot`'confTIME_ZONE')
 
 # default UID
-CONCAT(Ou, confDEF_USER_ID)
+Ou`'confDEF_USER_ID
 
 # list of locations of user database file (null means no lookup)
 OU`'ifdef(`confUSERDB_SPEC', `confUSERDB_SPEC')
 
 # fallback MX host
 ifdef(`confFALLBACK_MX',
-	CONCAT(OV, confFALLBACK_MX),
+	OV`'confFALLBACK_MX,
 	#OVfall.back.host.net)
 
 # if we are the best MX host for a site, try it directly instead of config err
-CONCAT(Ow, confTRY_NULL_MX_LIST)
+Ow`'confTRY_NULL_MX_LIST
 
 # load average at which we just queue messages
-CONCAT(Ox, confQUEUE_LA)
+Ox`'confQUEUE_LA
 
 # load average at which we refuse connections
-CONCAT(OX, confREFUSE_LA)
+OX`'confREFUSE_LA
 
 # work recipient factor
 ifdef(`confWORK_RECIPIENT_FACTOR',
-	CONCAT(Oy, confWORK_RECIPIENT_FACTOR),
+	Oy`'confWORK_RECIPIENT_FACTOR,
 	#Oy30000)
 
 # deliver each queued job in a separate process?
-CONCAT(OY, confSEPARATE_PROC)
+OY`'confSEPARATE_PROC
 
 # work class factor
 ifdef(`confWORK_CLASS_FACTOR',
-	CONCAT(Oz, confWORK_CLASS_FACTOR),
+	Oz`'confWORK_CLASS_FACTOR,
 	#Oz1800)
 
 # work time factor
 ifdef(`confWORK_TIME_FACTOR',
-	CONCAT(OZ, confWORK_TIME_FACTOR),
+	OZ`'confWORK_TIME_FACTOR,
 	#OZ90000)
 
 ###########################
