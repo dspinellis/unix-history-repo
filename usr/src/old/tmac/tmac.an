@@ -2,8 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tmac.an	6.1 (Berkeley) %G%
+.\"	@(#)tmac.an	6.2 (Berkeley) %G%
 .\"
+'	DT, PD, SM, and B macros invoked internally.
 '	# month name
 .if "\nd"0" .nr m \n(mo-1
 .if "\nm"0" .ds ]m January
@@ -72,7 +73,8 @@
 .de }H
 .ev 1
 .}C
-'sp .5i
+.if !"\*(.T"va" 'sp .4i
+'sp .1i
 .ft 1
 .ps 10
 .tl @\\*(]H@\\*(]D@\\*(]H@
@@ -92,10 +94,13 @@
 ..
 '	# the cut mark
 .if n .ig
+.if \nv>0 .ig
 .de }C
-.po .1i
-.tl '-'
+.po 0i
+.lt 7.45i
+.tl '__''__'
 .po
+.lt
 ..
 '	# the final cut mark
 .de }M
@@ -121,7 +126,8 @@
 .ie "\\$5"" .ds ]D UNIX Programmer's Manual
 .el .ds ]D \\$5
 .wh 0 }H
-.if t .wh -1i }F
+.if t .ie !"\*(.T"va" .wh -1i }F
+.if t .el .wh -1.4i }F
 .if n .wh -1.167i }F
 .em }M
 .if \\n(nl .bp 1
@@ -140,8 +146,11 @@
 ..
 '	# section heading
 .de SH
+.ss 12
+.if "\\$2"SYNOPSIS" .ss 18
 .}X 0
 .nr )E 2
+.SM
 \&\\$1 \|\\$2 \|\\$3 \|\\$4 \|\\$5 \|\\$6
 ..
 '	# sub section heading
@@ -159,7 +168,6 @@
 .nr )R 0
 .fi
 .it 1 }N
-.SM
 .B
 ..
 '	# end of SH (cf }X above and }N below)
@@ -231,13 +239,17 @@
 .nr )I .5i
 .ns
 ..
+'	# synonym for .PP
+.de P
+.PP
+..
 '	# paragraph distance
 .de PD
 .if t .nr )P .4v
 .if n .nr )P 1v
 .if !"\\$1"" .nr )P \\$1v
 ..
-'	# hanging indent
+'	# paragraph with hanging indent
 .de HP
 .sp \\n()Pu
 .ne 2
@@ -252,10 +264,11 @@
 .TP \\$2
 \&\\$1
 ..
-'	# hanging label
+'	# tagged paragraph (paragraph with hanging label)
 .de TP
 .if !"\\$1"" .nr )I \\$1n
 .sp \\n()Pu
+.ne 1.1v
 .in \\n()Ru
 .nr )E 1
 .ns
@@ -294,6 +307,11 @@
 .nr )I .5i
 .}E
 ..
+.de DS
+.RS
+.nf
+.sp
+..
 '	# decrease relative indent
 .de RE
 .if !"\\$1"" \{.ie "\\$1"0" .nr )p 1 1
@@ -305,11 +323,17 @@
 .if \\n()p .nr )p -1
 .}E
 ..
+.de DE
+.fi
+.RE
+.sp .5
+..
 .nr )p 0 1
 .ds ]I \\\\n(]
 .ds ]R \\\\n()
-.bd S 3 3
+.bd S B 3
 .if t .ds R \(rg
 .if n .ds R (Reg.)
 .ds S \s10
 .hy 14
+.if "\*(.T"va" .po -0.4i
