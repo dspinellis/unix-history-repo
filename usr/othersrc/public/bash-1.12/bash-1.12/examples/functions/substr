@@ -1,0 +1,79 @@
+#
+# substr -- a function to emulate the ancient ksh builtin
+#
+
+#
+# -l == shortest from left
+# -L == longest from left
+# -r == shortest from right (the default)
+# -R == longest from right
+
+substr()
+{
+	local flag pat str
+	local usage="usage: substr -lLrR pat string or substr string pat"
+
+	case "$1" in
+	-l | -L | -r | -R)
+		flag="$1"
+		pat="$2"
+		shift 2
+		;;
+	-*)
+		echo "substr: unknown option: $1"
+		echo "$usage"
+		return 1
+		;;
+	*)
+		flag="-r"
+		pat="$2"
+		;;
+	esac
+
+	if [ "$#" -eq 0 -o "$#" -gt 2 ] ; then
+		echo "substr: bad argument count"
+		return 2
+	fi
+
+	str="$1"
+
+	#
+	# We don't want -f, but we don't want to turn it back on if
+	# we didn't have it already
+	#
+	case "$-" in
+	"*f*")
+		;;
+	*)
+		fng=1
+		set -f
+		;;
+	esac
+
+	case "$flag" in
+	-l)
+		str="${str#$pat}"		# substr -l pat string
+		;;
+	-L)
+		str="${str##$pat}"		# substr -L pat string
+		;;
+	-r)
+		str="${str%$pat}"		# substr -r pat string
+		;;
+	-R)
+		str="${str%%$pat}"		# substr -R pat string
+		;;
+	*)
+		str="${str%$2}"			# substr string pat
+		;;
+	esac
+
+	echo "$str"
+
+	#
+	# If we had file name generation when we started, re-enable it
+	#
+	if [ "$fng" = "1" ] ; then
+		set +f
+	fi
+}

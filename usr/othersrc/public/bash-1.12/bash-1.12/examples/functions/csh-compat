@@ -1,0 +1,36 @@
+# C-shell compatabilty package.
+# setenv VAR VALUE
+function setenv () {
+  export $1="$2"
+}
+
+function unsetenv () {
+  unset $1
+}
+
+function alias () {
+  local name=$1
+  shift
+  local value="$*"
+
+  if [ "$name" = "" ]; then
+    builtin alias
+  elif [ "$value" = "" ]; then
+    builtin alias $name
+  else
+    builtin alias $name="$value"
+  fi
+}
+
+# Can't write foreach yet.  Need pattern matching, and a few extras.
+function foreach () {
+echo 'Can'\''t do `foreach'\'' yet.  Type "help for".'
+}
+
+# Make this work like csh's.  Special case "term" and "path".
+#set () {
+#}
+
+chdir () {
+  builtin cd $*
+ }

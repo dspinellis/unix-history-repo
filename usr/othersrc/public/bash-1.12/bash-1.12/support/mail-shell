@@ -1,0 +1,58 @@
+#!/usr/gnu/bin/bash
+#
+#  Mail the uuencoded files to USER.
+#
+
+UUENCODED_DIR=uuencoded
+
+if [ ! -d $UUENCODED_DIR ]; then
+  if make mailable; then :; else
+    echo "Cannot make the shell mailable."
+    exit
+  fi
+fi
+
+if [ "$1" = "" ]; then
+  echo "Usage:  mail-shell <user>"
+  exit
+fi
+
+unset -v files_to_send files_sent
+declare -i files_to_send files_sent
+count () { echo $#; }
+
+files_to_send=$(count $UUENCODED_DIR/*.uu.*)
+files_sent=1
+
+if [ ! -f $UUENCODED_DIR/inform ]; then
+  if [ -f inform ]; then
+     cat inform > $UUENCODED_DIR/inform
+  else
+     echo "No other information forthcoming.  Complain to bfox!" > $UUENCODED_DIR/inform
+  fi
+  echo "Here is a directory listing of the files to be sent." >>$UUENCODED_DIR/inform
+  (cd $UUENCODED_DIR; ls -l *.uu.* >> inform)
+fi
+
+for recipient in $*; do
+  echo -n "Mailing $recipient information file..."
+  cat $UUENCODED_DIR/inform |
+    Mail -s "Here comes bash.  Expect $files_to_send files." $recipient
+  echo "done."
+done
+
+for i in $UUENCODED_DIR/*.uu.*; do
+  mailfile=$(basename $i)
+  for recipient in $*; do
+     echo -n "Mailing $mailfile to $recipient..."
+     cat $i |
+        Mail -s \
+	"($files_sent of $files_to_send) Please save this in $mailfile" \
+	$recipient
+     echo "done."
+  done
+  let files_sent=$files_sent+1
+done
+
+echo "Done mailing the shell to $*."
+

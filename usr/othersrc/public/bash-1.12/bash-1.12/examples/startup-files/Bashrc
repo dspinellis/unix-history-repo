@@ -1,0 +1,72 @@
+# Bourne Again SHell init file.
+#
+# Files you make look like rw-rw-r
+umask 002
+
+# Don't make useless coredump files.  If you want a coredump,
+# say "ulimit -c unlimited" and then cause a segmentation fault.
+ulimit -c 0
+
+# Sometimes, there are lots of places that one can find tex inputs.
+export TEXINPUTS=.:$HOME/bin:/usr/lib/tex/inputs:/usr/local/lib/tex/inputs
+
+# Where's the Gnu stuff at?
+GNU=/usr/gnu/bin
+X11=/usr/bin/X11
+
+UTIL_PATH=$GNU:$X11
+STANDARD_PATH=/usr/local/bin:/usr/ucb:/bin:/usr/bin:/usr/etc:/etc:/usr/games
+if [ "$HOSTTYPE" = "sony" ]; then STANDARD_PATH=STANDARD_PATH:/usr/sony/bin; fi
+
+if [ -d $HOME/bin/$HOSTTYPE ]; then
+  MY_PATH=$HOME/bin/$HOSTTYPE
+fi
+
+if [ -d $HOME/bin ]; then
+  MY_PATH=$MY_PATH:$HOME/bin
+fi
+
+if [ -d /usr/hosts ]; then
+  STANDARD_PATH=$STANDARD_PATH:/usr/hosts
+fi
+
+PATH=.:$MY_PATH:$UTIL_PATH:$STANDARD_PATH
+
+# If running interactively, then:
+if [ "$PS1" ]; then
+
+  # Set ignoreeof if you don't want EOF as the sole input to the shell to
+  # immediately signal a quit condition.  This only happens at the start
+  # of a line if the line is empty, and you haven't just deleted a character
+  # with C-d.  I turn this on in ~/.bash_profile so that only login shells
+  # have the right to be obnoxious.
+  # ignoreeof=
+
+  # Set auto_resume if you want to resume on "emacs", as well as on
+  # "%emacs".
+  auto_resume=
+
+  # Set notify if you want to be asynchronously notified about background
+  # job completion.
+  notify=
+
+  # Make it so that failed `exec' commands don't flush this shell.
+  no_exit_on_failed_exec=
+
+  if [ ! "$LOGIN_SHELL" ]; then
+    PS1="\u@\h\$ "
+  fi
+
+  HISTSIZE=256
+  MAILCHECK=60
+
+  # A couple of default aliases.
+  alias j='jobs -l'
+  alias po=popd
+  alias pu=pushd
+  alias ls='ls -F'
+
+  if [ -f ~/.bash_aliases ]; then
+    source ~/.bash_aliases
+  fi
+fi

@@ -1,0 +1,88 @@
+#
+# .kshenv -- functions and aliases to provide the beginnings of a ksh 
+#	     environment for bash.
+#
+# Chet Ramey
+# chet@ins.CWRU.Edu
+#
+#
+# These are definitions for the ksh compiled-in `exported aliases'.  There
+# are others, but we already have substitutes for them: "history", "type",
+# and "hash".
+#
+alias r="fc -e -"
+alias functions="typeset -f"
+alias integer="typeset -i"
+alias nohup="nohup "
+alias true=":"
+alias false="let 0"
+
+#
+# An almost-ksh compatible `whence' command.  This is as hairy as it is 
+# because of the desire to exactly mimic ksh (whose behavior was determined
+# empirically).
+# 
+# This depends somewhat on knowing the format of the output of the bash
+# `builtin type' command.
+#
+
+whence()
+{
+	local vflag
+	local path
+
+	vflag=
+	path=
+	if [ "$#" = "0" ] ; then
+		echo "whence: argument expected"
+		return 1
+	fi
+	case "$1" in
+		-v) vflag=1
+		    shift 1
+		    ;;
+		-*) echo "whence: bad option: $1"
+		    return 1
+		    ;;
+		 *) ;;
+	esac
+
+	if [ "$#" = "0" ] ; then
+		echo "whence: bad argument count"
+		return 1
+	fi
+
+	for cmd
+	do
+		if [ "$vflag" ]	 ; then
+			echo $(builtin type $cmd | sed 1q)
+		else
+			path=$(builtin type -path $cmd)
+			if [ "$path" ] ; then
+				echo $path
+			else
+				case "$cmd" in
+					/*) echo ""
+					    ;;
+					 *) case "$(builtin type -type $cmd)" in
+						"") echo ""
+						    ;;
+						 *) echo "$cmd"
+						    ;;
+					    esac
+					    ;;
+				esac
+			fi
+		fi
+	done
+	return 0
+}
+
+#
+# For real ksh homeboy fanatics, redefine the `type' builtin with a ksh
+# version.
+#
+#type()
+#{
+#	whence -v "$*"
+#}

@@ -1,0 +1,103 @@
+#
+# An almost ksh-compatible `autoload'.  A function declared as `autoload' will
+# be read in from a file the same name as the function found by searching the
+# $FPATH (which works the same as $PATH), then that definition will be run.
+#
+# To do this without source support, we define a dummy function that, when
+# executed, will load the file (thereby re-defining the function), then 
+# execute that newly-redefined function with the original arguments.
+#
+# It's not identical to ksh because ksh apparently does lazy evaluation
+# and looks for the file to load from only when the function is referenced.
+# This one requires that the file exist when the function is declared as
+# `autoload'.
+#
+# usage: autoload func [func...]
+#
+# The first cut of this was by Bill Trost, trost@reed.bitnet
+#
+# Chet Ramey
+# chet@ins.CWRU.Edu
+
+#
+# Declare a function ($1) to be autoloaded from a file ($2) when it is first
+# called.  This defines a `temporary' function that will `.' the file 
+# containg the real function definition, then execute that new definition with
+# the arguments given to this `fake' function.  The autoload function defined
+# by the file and the file itself *must* be named identically.
+#
+
+aload()
+{
+	eval $1 '() {  . '$2' ; '$1' "$@" ; return $? }'
+}
+
+#
+# Search $FPATH for a file the same name as the function given as $1, and
+# autoload the function from that file.  There is no default $FPATH.
+#
+
+autoload()
+{
+	#
+	# Save the list of functions; we're going to blow away the arguments
+	# in a second.  If any of the names contain white space, TFB.
+	#
+
+	local args="$*"
+
+	#
+	# This should, I think, list the functions marked as autoload and not
+	# yet defined, but we don't have enough information to do that here.
+	#
+	if [ $# -eq 0 ] ; then
+		echo "usage: autoload function [function...]"
+		return 1
+	fi
+
+	#
+	# If there is no $FPATH, there is no work to be done
+	#
+
+	if [ -z "$FPATH" ] ; then
+		echo autoload: FPATH not set
+		return 1
+	fi
+
+	#
+	# This treats FPATH exactly like PATH: a null field anywhere in the
+	# FPATH is treated the same as the current directory.
+	#
+	# The path splitting command is taken from Kernighan and Pike
+	#
+
+	fp=$(echo $FPATH | sed 's/^:/.:/
+				s/::/:.:/g
+				s/:$/:./
+				s/:/ /g')
+
+	for FUNC in $args ; do
+		#
+		# We're blowing away the arguments to autoload here...
+		# We have to; there are no arrays.
+		#
+		set $fp
+
+		while [ $# -ne 0 ] ; do
+			if [ -f $1/$FUNC ] ; then
+				break			# found it! 
+			fi
+			shift
+		done
+
+		if [ $# -eq 0 ] ; then
+			echo "$FUNC: autoload function not found"
+			continue
+		fi
+
+#		echo auto-loading $FUNC from $1/$FUNC
+		aload $FUNC $1/$FUNC
+	done
+
+	return 0
+}

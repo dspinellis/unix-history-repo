@@ -1,0 +1,81 @@
+#
+# substr -- a function to emulate the ancient ksh builtin
+#
+
+# -l == remove shortest from left
+# -L == remove longest from left
+# -r == remove shortest from right (the default)
+# -R == remove longest from right
+
+substr()
+{
+	local flag pat str
+	local usage="usage: substr -lLrR pat string or substr string pat"
+	local options="l:L:r:R:"
+
+	OPTIND=1
+	while getopts "$options" c
+	do
+		case "$c" in
+		l | L | r | R)
+			flag="-$c"
+			pat="$OPTARG"
+			;;
+		'?')
+			echo "$usage"
+			return 1
+			;;
+		esac
+	done
+
+	if [ "$OPTIND" -gt 1 ] ; then
+		shift $[ $OPTIND -1 ]
+	fi
+
+	if [ "$#" -eq 0 -o "$#" -gt 2 ] ; then
+		echo "substr: bad argument count"
+		return 2
+	fi
+
+	str="$1"
+
+        #
+        # We don't want -f, but we don't want to turn it back on if
+        # we didn't have it already
+        #
+        case "$-" in
+        "*f*")
+                ;;
+        *)
+                fng=1
+                set -f
+		;;
+        esac
+
+	case "$flag" in
+	-l)
+		str="${str#$pat}"		# substr -l pat string
+		;;
+	-L)
+		str="${str##$pat}"		# substr -L pat string
+		;;
+	-r)
+		str="${str%$pat}"		# substr -r pat string
+		;;
+	-R)
+		str="${str%%$pat}"		# substr -R pat string
+		;;
+	*)
+		str="${str%$2}"			# substr string pat
+		;;
+	esac
+
+	echo "$str"
+
+        #
+        # If we had file name generation when we started, re-enable it
+        #
+        if [ "$fng" = "1" ] ; then
+                set +f
+        fi
+}
