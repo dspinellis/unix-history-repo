@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.19	82/09/04	*/
+/*	kern_synch.c	4.20	82/09/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,7 +11,144 @@
 #include "../h/pte.h"
 #include "../h/inline.h"
 #include "../h/mtpr.h"
+#ifdef MUSH
 #include "../h/quota.h"
+#include "../h/share.h"
+#endif
+#include "../h/kernel.h"
+#include "../h/buf.h"
+
+/*
+ * Force switch among equal priority processes every 100ms.
+ */
+roundrobin()
+{
+
+	runrun++;
+	aston();
+	timeout(roundrobin, 0, hz / 10);
+}
+
+/*
+ * The digital decay cpu usage priority assignment is scaled to run in
+ * time as expanded by the 1 minute load average.  Each second we
+ * multiply the the previous cpu usage estimate by
+ *		nrscale*avenrun[0]
+ * The following relates the load average to the period over which
+ * cpu usage is 90% forgotten:
+ *	loadav 1	 5 seconds
+ *	loadav 5	24 seconds
+ *	loadav 10	47 seconds
+ *	loadav 20	93 seconds
+ * This is a great improvement on the previous algorithm which
+ * decayed the priorities by a constant, and decayed away all knowledge
+ * of previous activity in about 20 seconds.  Under heavy load,
+ * the previous algorithm degenerated to round-robin with poor response
+ * time when there was a high load average.
+ */
+#undef ave
+#define	ave(a,b) ((int)(((int)(a*b))/(b+1)))
+int	nrscale = 2;
+double	avenrun[];
+
+/*
+ * Constant for decay filter for cpu usage field
+ * in process table (used by ps au).
+ */
+double	ccpu = 0.95122942450071400909;		/* exp(-1/20) */
+
+#ifdef MELB
+/*
+ * Automatic niceness rate & max constants
+ */
+#define	MAXNICE	(8 + NZERO)	/* maximum auto nice value */
+#define	NFACT	(40 * hz)	/* nice++ every 40 secs cpu+sys time */
+#endif
+
+/*
+ * Recompute process priorities, once a second
+ */
+schedcpu()
+{
+	register struct proc *p;
+	register int s, a;
+
+	s = spl6(); time.tv_sec += lbolt / hz; lbolt %= hz; splx(s);
+	wakeup((caddr_t)&lbolt);
+
+	for (p = proc; p < procNPROC; p++) if (p->p_stat && p->p_stat!=SZOMB) {
+#ifdef MUSH
+		/*
+		 * Charge process for memory in use
+		 */
+		if (p->p_quota->q_uid)
+			p->p_quota->q_cost +=
+			    shconsts.sc_click * p->p_rssize;
+#endif
+		if (p->p_time != 127)
+			p->p_time++;
+		if (timerisset(&p->p_seltimer) &&
+		     --p->p_seltimer.tv_sec <= 0) {
+			timerclear(&p->p_seltimer);
+			s = spl6();
+			switch (p->p_stat) {
+
+			case SSLEEP:
+				setrun(p);
+				break;
+
+			case SSTOP:
+				unsleep(p);
+				break;
+			}
+			splx(s);
+		}
+		if (timerisset(&p->p_realtimer.it_value) &&
+		    itimerdecr(&p->p_realtimer, 1000000) == 0)
+			psignal(p, SIGALRM);
+		if (p->p_stat==SSLEEP || p->p_stat==SSTOP)
+			if (p->p_slptime != 127)
+				p->p_slptime++;
+		if (p->p_flag&SLOAD)
+			p->p_pctcpu = ccpu * p->p_pctcpu +
+			    (1.0 - ccpu) * (p->p_cpticks/(float)hz);
+		p->p_cpticks = 0;
+#ifdef MUSH
+		a = ave((p->p_cpu & 0377), avenrun[0]*nrscale) +
+		     p->p_nice - NZERO + p->p_quota->q_nice;
+#else
+		a = ave((p->p_cpu & 0377), avenrun[0]*nrscale) +
+		     p->p_nice - NZERO;
+#endif
+		if (a < 0)
+			a = 0;
+		if (a > 255)
+			a = 255;
+		p->p_cpu = a;
+		(void) setpri(p);
+		s = spl6();	/* prevent state changes */
+		if (p->p_pri >= PUSER) {
+			if ((p != u.u_procp || noproc) &&
+			    p->p_stat == SRUN &&
+			    (p->p_flag & SLOAD) &&
+			    p->p_pri != p->p_usrpri) {
+				remrq(p);
+				p->p_pri = p->p_usrpri;
+				setrq(p);
+			} else
+				p->p_pri = p->p_usrpri;
+		}
+		splx(s);
+	}
+	vmmeter();
+	if (runin!=0) {
+		runin = 0;
+		wakeup((caddr_t)&runin);
+	}
+	if (bclnlist != NULL)
+		wakeup((caddr_t)&proc[2]);
+	timeout(schedcpu, 0, hz);
+}
 
 #define SQSIZE 0100	/* Must be power of 2 */
 #define HASH(x)	(( (int) x >> 5) & (SQSIZE-1))
@@ -95,7 +232,7 @@ tsleep(chan, pri, tvp)
 	int s, rval;
 
 	s = spl7();
-	if (timercmp(tvp, &p->p_realtimer.itimer_value, >)) {
+	if (timercmp(tvp, &p->p_realtimer.it_value, >)) {
 		/* alarm will occur first! */
 		sleep(chan, pri);
 		rval = TS_OK;		/* almost NOTREACHED modulo fuzz */
@@ -260,173 +397,4 @@ setpri(pp)
 	}
 	pp->p_usrpri = p;
 	return (p);
-}
-
-/*
- * Create a new process-- the internal version of
- * sys fork.
- * It returns 1 in the new process, 0 in the old.
- */
-newproc(isvfork)
-	int isvfork;
-{
-	register struct proc *p;
-	register struct proc *rpp, *rip;
-	register int n;
-	register struct file *fp;
-
-	p = NULL;
-	/*
-	 * First, just locate a slot for a process
-	 * and copy the useful info from this process into it.
-	 * The panic "cannot happen" because fork has already
-	 * checked for the existence of a slot.
-	 */
-retry:
-	mpid++;
-	if (mpid >= 30000) {
-		mpid = 0;
-		goto retry;
-	}
-	for (rpp = proc; rpp < procNPROC; rpp++) {
-		if (rpp->p_stat == NULL && p==NULL)
-			p = rpp;
-		if (rpp->p_pid==mpid || rpp->p_pgrp==mpid)
-			goto retry;
-	}
-	if ((rpp = p) == NULL)
-		panic("no procs");
-
-	/*
-	 * Make a proc table entry for the new process.
-	 */
-	rip = u.u_procp;
-#ifdef QUOTA
-	(rpp->p_quota = rip->p_quota)->q_cnt++;
-#endif
-	rpp->p_stat = SIDL;
-	timerclear(&rpp->p_realtimer.itimer_value);
-	rpp->p_flag = SLOAD | (rip->p_flag & (SPAGI|SNUSIG));
-	if (isvfork) {
-		rpp->p_flag |= SVFORK;
-		rpp->p_ndx = rip->p_ndx;
-	} else
-		rpp->p_ndx = rpp - proc;
-	rpp->p_uid = rip->p_uid;
-	rpp->p_pgrp = rip->p_pgrp;
-	rpp->p_nice = rip->p_nice;
-	rpp->p_textp = isvfork ? 0 : rip->p_textp;
-	rpp->p_pid = mpid;
-	rpp->p_ppid = rip->p_pid;
-	rpp->p_pptr = rip;
-	rpp->p_osptr = rip->p_cptr;
-	if (rip->p_cptr)
-		rip->p_cptr->p_ysptr = rpp;
-	rpp->p_ysptr = NULL;
-	rpp->p_cptr = NULL;
-	rip->p_cptr = rpp;
-	rpp->p_time = 0;
-	rpp->p_cpu = 0;
-	rpp->p_siga0 = rip->p_siga0;
-	rpp->p_siga1 = rip->p_siga1;
-	/* take along any pending signals, like stops? */
-	if (isvfork) {
-		rpp->p_tsize = rpp->p_dsize = rpp->p_ssize = 0;
-		rpp->p_szpt = clrnd(ctopt(UPAGES));
-		forkstat.cntvfork++;
-		forkstat.sizvfork += rip->p_dsize + rip->p_ssize;
-	} else {
-		rpp->p_tsize = rip->p_tsize;
-		rpp->p_dsize = rip->p_dsize;
-		rpp->p_ssize = rip->p_ssize;
-		rpp->p_szpt = rip->p_szpt;
-		forkstat.cntfork++;
-		forkstat.sizfork += rip->p_dsize + rip->p_ssize;
-	}
-	rpp->p_rssize = 0;
-	rpp->p_maxrss = rip->p_maxrss;
-	rpp->p_wchan = 0;
-	rpp->p_slptime = 0;
-	rpp->p_pctcpu = 0;
-	rpp->p_cpticks = 0;
-	n = PIDHASH(rpp->p_pid);
-	p->p_idhash = pidhash[n];
-	pidhash[n] = rpp - proc;
-	multprog++;
-
-	/*
-	 * Increase reference counts on shared objects.
-	 */
-	for (n = 0; n < NOFILE; n++) {
-		fp = u.u_ofile[n];
-		if (fp == NULL)
-			continue;
-		fp->f_count++;
-		if (u.u_pofile[n]&RDLOCK)
-			fp->f_inode->i_rdlockc++;
-		if (u.u_pofile[n]&WRLOCK)
-			fp->f_inode->i_wrlockc++;
-	}
-	u.u_cdir->i_count++;
-	if (u.u_rdir)
-		u.u_rdir->i_count++;
-
-	/*
-	 * Partially simulate the environment
-	 * of the new process so that when it is actually
-	 * created (by copying) it will look right.
-	 * This begins the section where we must prevent the parent
-	 * from being swapped.
-	 */
-	rip->p_flag |= SKEEP;
-	if (procdup(rpp, isvfork))
-		return (1);
-
-	/*
-	 * Make child runnable and add to run queue.
-	 */
-	(void) spl6();
-	rpp->p_stat = SRUN;
-	setrq(rpp);
-	(void) spl0();
-
-	/*
-	 * Cause child to take a non-local goto as soon as it runs.
-	 * On older systems this was done with SSWAP bit in proc
-	 * table; on VAX we use u.u_pcb.pcb_sswap so don't need
-	 * to do rpp->p_flag |= SSWAP.  Actually do nothing here.
-	 */
-	/* rpp->p_flag |= SSWAP; */
-
-	/*
-	 * Now can be swapped.
-	 */
-	rip->p_flag &= ~SKEEP;
-
-	/*
-	 * If vfork make chain from parent process to child
-	 * (where virtal memory is temporarily).  Wait for
-	 * child to finish, steal virtual memory back,
-	 * and wakeup child to let it die.
-	 */
-	if (isvfork) {
-		u.u_procp->p_xlink = rpp;
-		u.u_procp->p_flag |= SNOVM;
-		while (rpp->p_flag & SVFORK)
-			sleep((caddr_t)rpp, PZERO - 1);
-		if ((rpp->p_flag & SLOAD) == 0)
-			panic("newproc vfork");
-		uaccess(rpp, Vfmap, &vfutl);
-		u.u_procp->p_xlink = 0;
-		vpassvm(rpp, u.u_procp, &vfutl, &u, Vfmap);
-		u.u_procp->p_flag &= ~SNOVM;
-		rpp->p_ndx = rpp - proc;
-		rpp->p_flag |= SVFDONE;
-		wakeup((caddr_t)rpp);
-	}
-
-	/*
-	 * 0 return means parent.
-	 */
-	return (0);
 }
