@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)whois.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)whois.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -50,7 +50,7 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc != 1)
+	if (!argc)
 		usage();
 
 	hp = gethostbyname(host);
@@ -89,6 +89,8 @@ main(argc, argv)
 		(void)close(s);
 		exit(1);
 	}
+	while (argc-- > 1)
+		(void)fprintf(sfo, "%s ", *argv++);
 	(void)fprintf(sfo, "%s\r\n", *argv);
 	(void)fflush(sfo);
 	while ((ch = getc(sfi)) != EOF)
@@ -96,9 +98,8 @@ main(argc, argv)
 	exit(0);
 }
 
-static
 usage()
 {
-	(void)fprintf(stderr, "usage: whois [-h host] name\n");
+	(void)fprintf(stderr, "usage: whois [-h hostname] name ...\n");
 	exit(1);
 }
