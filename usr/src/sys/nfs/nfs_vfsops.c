@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	7.48 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.49 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -161,7 +161,13 @@ nfs_mountroot()
 
 #ifdef notyet
 	/* Set up swap credentials. */
-	*proc0.p_ucred = nfs_diskless.swap_ucred;
+	proc0.p_ucred->cr_uid = ntohl(nd->swap_ucred.cr_uid);
+	proc0.p_ucred->cr_gid = ntohl(nd->swap_ucred.cr_gid);
+	if ((proc0.p_ucred->cr_ngroups = ntohs(nd->swap_ucred.cr_ngroups)) >
+		NGROUPS)
+		proc0.p_ucred->cr_ngroups = NGROUPS;
+	for (i = 0; i < proc0.p_ucred->cr_ngroups; i++)
+	    proc0.p_ucred->cr_groups[i] = ntohl(nd->swap_ucred.cr_groups[i]);
 #endif
 
 	/*
@@ -242,7 +248,7 @@ nfs_mountroot()
 		if (hostname[i] == '\0')
 			break;
 	hostnamelen = i;
-	inittodr(nfs_diskless.root_time);
+	inittodr(ntohl(nd->root_time));
 	return (0);
 }
 

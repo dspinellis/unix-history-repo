@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.101 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.102 (Berkeley) %G%
  */
 
 /*
@@ -90,7 +90,7 @@ struct vnodeopv_entry_desc nfsv2_vnodeop_entries[] = {
 	{ &vop_vfree_desc, nfs_vfree },		/* vfree */
 	{ &vop_truncate_desc, nfs_truncate },	/* truncate */
 	{ &vop_update_desc, nfs_update },	/* update */
-	{ &vop_bwrite_desc, vn_bwrite },
+	{ &vop_bwrite_desc, nfs_bwrite },
 	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
 };
 struct vnodeopv_desc nfsv2_vnodeop_opv_desc =
@@ -140,7 +140,7 @@ struct vnodeopv_entry_desc spec_nfsv2nodeop_entries[] = {
 	{ &vop_vfree_desc, spec_vfree },	/* vfree */
 	{ &vop_truncate_desc, spec_truncate },	/* truncate */
 	{ &vop_update_desc, nfs_update },	/* update */
-	{ &vop_bwrite_desc, vn_bwrite },
+	{ &vop_bwrite_desc, nfs_bwrite },
 	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
 };
 struct vnodeopv_desc spec_nfsv2nodeop_opv_desc =
@@ -188,7 +188,7 @@ struct vnodeopv_entry_desc fifo_nfsv2nodeop_entries[] = {
 	{ &vop_vfree_desc, fifo_vfree },	/* vfree */
 	{ &vop_truncate_desc, fifo_truncate },	/* truncate */
 	{ &vop_update_desc, nfs_update },	/* update */
-	{ &vop_bwrite_desc, vn_bwrite },
+	{ &vop_bwrite_desc, nfs_bwrite },
 	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
 };
 struct vnodeopv_desc fifo_nfsv2nodeop_opv_desc =
@@ -319,14 +319,18 @@ nfs_open(ap)
 		    if (error)
 			return (error);
 		    if (np->n_lrev != np->n_brev) {
-			NFS_VINVBUF(np, vp, TRUE, ap->a_cred, ap->a_p);
+			if ((error = nfs_vinvalbuf(vp, V_SAVE, ap->a_cred,
+				ap->a_p, 1)) == EINTR)
+				return (error);
 			(void) vnode_pager_uncache(vp);
 			np->n_brev = np->n_lrev;
 		    }
 		}
 	    } else {
 		if (np->n_flag & NMODIFIED) {
-			NFS_VINVBUF(np, vp, TRUE, ap->a_cred, ap->a_p);
+			if ((error = nfs_vinvalbuf(vp, V_SAVE, ap->a_cred,
+				ap->a_p, 1)) == EINTR)
+				return (error);
 			(void) vnode_pager_uncache(vp);
 			np->n_attrstamp = 0;
 			np->n_direofoffset = 0;
@@ -338,7 +342,9 @@ nfs_open(ap)
 				return (error);
 			if (np->n_mtime != vattr.va_mtime.ts_sec) {
 				np->n_direofoffset = 0;
-				NFS_VINVBUF(np, vp, TRUE, ap->a_cred, ap->a_p);
+				if ((error = nfs_vinvalbuf(vp, V_SAVE,
+					ap->a_cred, ap->a_p, 1)) == EINTR)
+					return (error);
 				(void) vnode_pager_uncache(vp);
 				np->n_mtime = vattr.va_mtime.ts_sec;
 			}
@@ -371,7 +377,7 @@ nfs_close(ap)
 	if (vp->v_type == VREG) {
 	    if ((VFSTONFS(vp->v_mount)->nm_flag & NFSMNT_NQNFS) == 0 &&
 		(np->n_flag & NMODIFIED)) {
-		NFS_VINVBUFE(np, vp, TRUE, ap->a_cred, ap->a_p, error);
+		error = nfs_vinvalbuf(vp, V_SAVE, ap->a_cred, ap->a_p, 1);
 		np->n_attrstamp = 0;
 	    }
 	    if (np->n_flag & NWRITEERR) {
@@ -445,6 +451,26 @@ nfs_setattr(ap)
 	register struct vattr *vap = ap->a_vap;
 	u_quad_t frev;
 
+	if (vap->va_size != VNOVAL || vap->va_mtime.ts_sec != VNOVAL ||
+		vap->va_atime.ts_sec != VNOVAL) {
+		if (vap->va_size != VNOVAL) {
+			if (np->n_flag & NMODIFIED) {
+			    if (vap->va_size == 0)
+				error = nfs_vinvalbuf(vp, 0, ap->a_cred,
+					ap->a_p, 1);
+			    else
+				error = nfs_vinvalbuf(vp, V_SAVE, ap->a_cred,
+					ap->a_p, 1);
+			    if (error)
+				return (error);
+			}
+			np->n_size = np->n_vattr.va_size = vap->va_size;
+			vnode_pager_setsize(vp, (u_long)np->n_size);
+		} else if ((np->n_flag & NMODIFIED) &&
+			(error = nfs_vinvalbuf(vp, V_SAVE, ap->a_cred,
+			 ap->a_p, 1)) == EINTR)
+			return (error);
+	}
 	nfsstats.rpccnt[NFSPROC_SETATTR]++;
 	isnq = (VFSTONFS(vp->v_mount)->nm_flag & NFSMNT_NQNFS);
 	nfsm_reqhead(vp, NFSPROC_SETATTR, NFSX_FH+NFSX_SATTR(isnq));
@@ -473,15 +499,6 @@ nfs_setattr(ap)
 		sp->sa_nfsatime.nfs_sec = txdr_unsigned(vap->va_atime.ts_sec);
 		sp->sa_nfsatime.nfs_usec = txdr_unsigned(vap->va_flags);
 		txdr_nfstime(&vap->va_mtime, &sp->sa_nfsmtime);
-	}
-	if (vap->va_size != VNOVAL || vap->va_mtime.ts_sec != VNOVAL ||
-	    vap->va_atime.ts_sec != VNOVAL) {
-		if (np->n_flag & NMODIFIED) {
-			NFS_VINVBUFE(np, vp, vap->va_size? TRUE: FALSE,
-			             ap->a_cred, ap->a_p, error);
-		}
-		if (vap->va_size != VNOVAL)
-			np->n_size = np->n_vattr.va_size = vap->va_size;
 	}
 	nfsm_request(vp, NFSPROC_SETATTR, ap->a_p, ap->a_cred);
 	nfsm_loadattr(vp, (struct vattr *)0);
@@ -567,9 +584,11 @@ nfs_lookup(ap)
 					    (np->n_flag & NMODIFIED)) {
 						np->n_direofoffset = 0;
 						cache_purge(dvp);
-						NFS_VINVBUFE(np, dvp, FALSE,
+						error = nfs_vinvalbuf(dvp, 0,
 						    cnp->cn_cred, cnp->cn_proc,
-						    error);
+						    1);
+						if (error == EINTR)
+							return (error);
 						np->n_brev = np->n_lrev;
 					} else {
 						nfsstats.lookupcache_hits++;
@@ -1053,7 +1072,9 @@ nfs_remove(ap)
 		 * Throw away biocache buffers. Mainly to avoid
 		 * unnecessary delayed writes.
 		 */
-		NFS_VINVBUFE(np, vp, FALSE, cnp->cn_cred, cnp->cn_proc, error);
+		error = nfs_vinvalbuf(vp, 0, cnp->cn_cred, cnp->cn_proc, 1);
+		if (error == EINTR)
+			return (error);
 		/* Do the rpc */
 		nfsstats.rpccnt[NFSPROC_REMOVE]++;
 		nfsm_reqhead(dvp, NFSPROC_REMOVE,
@@ -1759,7 +1780,7 @@ nfs_readdirlookrpc(vp, uiop, cred)
 					nqnfs_clientlease(nmp, np, NQL_READ,
 						cachable, ltime, frev);
 				if (cnp->cn_namelen <= NCHNAMLEN)
-					cache_enter(ndp->ni_dvp, ndp->ni_vp, cnp);
+				    cache_enter(ndp->ni_dvp, ndp->ni_vp, cnp);
 			} else {
 				nfsm_adv(nfsm_rndup(len));
 			}
@@ -1948,166 +1969,38 @@ nfs_bmap(ap)
 }
 
 /*
- * Strategy routine for phys. i/o
- * If the biod's are running, queue a request
- * otherwise just call nfs_doio() to get it done
+ * Strategy routine.
+ * For async requests when nfsiod(s) are running, queue the request by
+ * calling nfs_asyncio(), otherwise just all nfs_doio() to do the
+ * request.
  */
 int
 nfs_strategy(ap)
-	struct vop_strategy_args /* {
-		struct buf *a_bp;
-	} */ *ap;
+	struct vop_strategy_args *ap;
 {
 	register struct buf *bp = ap->a_bp;
-	register int i;
+	struct ucred *cr;
+	struct proc *p;
 	int error = 0;
-	int fnd = 0;
 
-	/*
-	 * Set b_proc. It seems a bit silly to do it here, but since bread()
-	 * doesn't set it, I will.
-	 * Set b_proc == NULL for asynchronous ops, since these may still
-	 * be hanging about after the process terminates.
-	 */
-	if ((bp->b_flags & B_PHYS) == 0) {
-		if (bp->b_flags & B_ASYNC)
-			bp->b_proc = (struct proc *)0;
-		else
-			bp->b_proc = curproc;
-	}
+	if (bp->b_flags & B_PHYS)
+		panic("nfs physio");
+	if (bp->b_flags & B_ASYNC)
+		p = (struct proc *)0;
+	else
+		p = curproc;	/* XXX */
+	if (bp->b_flags & B_READ)
+		cr = bp->b_rcred;
+	else
+		cr = bp->b_wcred;
 	/*
 	 * If the op is asynchronous and an i/o daemon is waiting
 	 * queue the request, wake it up and wait for completion
 	 * otherwise just do it ourselves.
 	 */
-	if ((bp->b_flags & B_ASYNC) == 0 || nfs_numasync == 0)
-		return (nfs_doio(bp));
-	for (i = 0; i < NFS_MAXASYNCDAEMON; i++) {
-		if (nfs_iodwant[i]) {
-			queue_enter_tail(&nfs_bufq, bp, struct buf *, b_freelist);
-			fnd++;
-			wakeup((caddr_t)&nfs_iodwant[i]);
-			break;
-		}
-	}
-	if (!fnd)
-		error = nfs_doio(bp);
-	return (error);
-}
-
-/*
- * Fun and games with i/o
- * Essentially play ubasetup() and disk interrupt service routine by
- * mapping the data buffer into kernel virtual space and doing the
- * nfs read or write rpc's from it.
- * If the nfsiod's are not running, this is just called from nfs_strategy(),
- * otherwise it is called by the nfsiods to do what would normally be
- * partially disk interrupt driven.
- */
-int
-nfs_doio(bp)
-	register struct buf *bp;
-{
-	register struct uio *uiop;
-	register struct vnode *vp;
-	struct nfsnode *np;
-	struct ucred *cr;
-	int error;
-	struct uio uio;
-	struct iovec io;
-
-	vp = bp->b_vp;
-	np = VTONFS(vp);
-	uiop = &uio;
-	uiop->uio_iov = &io;
-	uiop->uio_iovcnt = 1;
-	uiop->uio_segflg = UIO_SYSSPACE;
-	uiop->uio_procp = bp->b_proc;
-
-	/*
-	 * For phys i/o, map the b_addr into kernel virtual space using
-	 * the Nfsiomap pte's
-	 * Also, add a temporary b_rcred for reading using the process's uid
-	 * and a guess at a group
-	 */
-	if (bp->b_flags & B_PHYS) {
-		if (bp->b_flags & B_DIRTY)
-			uiop->uio_procp = pageproc;
-		cr = crdup(uiop->uio_procp->p_ucred);
-		/* mapping was already done by vmapbuf */
-		io.iov_base = bp->b_un.b_addr;
-
-		/*
-		 * And do the i/o rpc
-		 */
-		io.iov_len = uiop->uio_resid = bp->b_bcount;
-		uiop->uio_offset = bp->b_blkno * DEV_BSIZE;
-		if (bp->b_flags & B_READ) {
-			uiop->uio_rw = UIO_READ;
-			nfsstats.read_physios++;
-			bp->b_error = error = nfs_readrpc(vp, uiop, cr);
-			(void) vnode_pager_uncache(vp);
-		} else {
-			uiop->uio_rw = UIO_WRITE;
-			nfsstats.write_physios++;
-			bp->b_error = error = nfs_writerpc(vp, uiop, cr, 0);
-		}
-
-		/*
-		 * Finally, release pte's used by physical i/o
-		 */
-		crfree(cr);
-	} else {
-		if (bp->b_flags & B_READ) {
-			io.iov_len = uiop->uio_resid = bp->b_bcount;
-			io.iov_base = bp->b_un.b_addr;
-			uiop->uio_rw = UIO_READ;
-			switch (vp->v_type) {
-			case VREG:
-				uiop->uio_offset = bp->b_blkno * DEV_BSIZE;
-				nfsstats.read_bios++;
-				error = nfs_readrpc(vp, uiop, bp->b_rcred);
-				break;
-			case VLNK:
-				uiop->uio_offset = 0;
-				nfsstats.readlink_bios++;
-				error = nfs_readlinkrpc(vp, uiop, bp->b_rcred);
-				break;
-			case VDIR:
-				uiop->uio_offset = bp->b_lblkno;
-				nfsstats.readdir_bios++;
-				if (VFSTONFS(vp->v_mount)->nm_flag & NFSMNT_NQNFS)
-				    error = nfs_readdirlookrpc(vp, uiop, bp->b_rcred);
-				else
-				    error = nfs_readdirrpc(vp, uiop, bp->b_rcred);
-				/*
-				 * Save offset cookie in b_blkno.
-				 */
-				bp->b_blkno = uiop->uio_offset;
-				break;
-			};
-			bp->b_error = error;
-		} else {
-			io.iov_len = uiop->uio_resid = bp->b_dirtyend
-				- bp->b_dirtyoff;
-			uiop->uio_offset = (bp->b_blkno * DEV_BSIZE)
-				+ bp->b_dirtyoff;
-			io.iov_base = bp->b_un.b_addr + bp->b_dirtyoff;
-			uiop->uio_rw = UIO_WRITE;
-			nfsstats.write_bios++;
-			bp->b_error = error = nfs_writerpc(vp, uiop,
-				bp->b_wcred, 0);
-			if (error) {
-				np->n_error = error;
-				np->n_flag |= NWRITEERR;
-			}
-			bp->b_dirtyoff = bp->b_dirtyend = 0;
-		}
-	}
-	if (error)
-		bp->b_flags |= B_ERROR;
-	bp->b_resid = uiop->uio_resid;
-	biodone(bp);
+	if ((bp->b_flags & B_ASYNC) == 0 ||
+		nfs_asyncio(bp, NOCRED))
+		error = nfs_doio(bp, cr, p);
 	return (error);
 }
 
@@ -2150,36 +2043,64 @@ nfs_fsync(ap)
 	register struct nfsnode *np = VTONFS(vp);
 	register struct buf *bp;
 	struct buf *nbp;
-	int s, error = 0;
+	struct nfsmount *nmp;
+	int s, error = 0, slptimeo = 0, slpflag = 0;
 
+	nmp = VFSTONFS(vp->v_mount);
+	if (nmp->nm_flag & NFSMNT_INT)
+		slpflag = PCATCH;
 loop:
 	s = splbio();
 	for (bp = vp->v_dirtyblkhd.le_next; bp; bp = nbp) {
 		nbp = bp->b_vnbufs.qe_next;
-		if ((bp->b_flags & B_BUSY))
-			continue;
+		if (bp->b_flags & B_BUSY) {
+			if (ap->a_waitfor != MNT_WAIT)
+				continue;
+			bp->b_flags |= B_WANTED;
+			error = tsleep((caddr_t)bp, slpflag | (PRIBIO + 1),
+				"nfsfsync", slptimeo);
+			splx(s);
+			if (error) {
+			    if (nfs_sigintr(nmp, (struct nfsreq *)0, ap->a_p))
+				return (EINTR);
+			    if (slpflag == PCATCH) {
+				slpflag = 0;
+				slptimeo = 2 * hz;
+			    }
+			}
+			goto loop;
+		}
 		if ((bp->b_flags & B_DELWRI) == 0)
 			panic("nfs_fsync: not dirty");
 		bremfree(bp);
 		bp->b_flags |= B_BUSY;
 		splx(s);
-		bawrite(bp);
+		bp->b_flags |= B_ASYNC;
+		VOP_BWRITE(bp);
 		goto loop;
 	}
+	splx(s);
 	if (ap->a_waitfor == MNT_WAIT) {
 		while (vp->v_numoutput) {
 			vp->v_flag |= VBWAIT;
-			sleep((caddr_t)&vp->v_numoutput, PRIBIO + 1);
+			error = tsleep((caddr_t)&vp->v_numoutput,
+				slpflag | (PRIBIO + 1), "nfsfsync", slptimeo);
+			if (error) {
+			    if (nfs_sigintr(nmp, (struct nfsreq *)0, ap->a_p))
+				return (EINTR);
+			    if (slpflag == PCATCH) {
+				slpflag = 0;
+				slptimeo = 2 * hz;
+			    }
+			}
 		}
-#ifdef DIAGNOSTIC
 		if (vp->v_dirtyblkhd.le_next) {
+#ifdef DIAGNOSTIC
 			vprint("nfs_fsync: dirty", vp);
+#endif
 			goto loop;
 		}
-#endif
 	}
-	splx(s);
-	np->n_flag &= ~NMODIFIED;
 	if (np->n_flag & NWRITEERR) {
 		error = np->n_error;
 		np->n_flag &= ~NWRITEERR;
