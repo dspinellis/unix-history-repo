@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)chmod.c	4.1 %G%";
+static char *sccsid = "@(#)chmod.c	4.2 %G%";
 
 /*
  * chmod options mode files
@@ -144,8 +144,6 @@ unsigned nm;
 		exit(255);
 	}
 ret:
-	if ((savem & S_IFDIR) || (savem & S_IEXEC))
-		nm = nm | ((nm & 0444) >> 2);
 	return(nm);
 }
 
