@@ -1,0 +1,507 @@
+Mon Jan 20 02:17:18 1992  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* Version 1.6.
+
+	* test.c: HAVE_MULTIPLE_GROUPS -> HAVE_GETGROUPS, for bash 1.11.
+
+Fri Jan 17 15:46:18 1992  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* expr.c (docolon): Use re_nsub to find the number of
+	subexpressions . . . From Karl Berry, who knows.
+
+Wed Dec 25 23:27:53 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* expr.c (docolon): Use the new way (re_regs.num_regs > 0) to find
+	out if there were any subexpressions, instead of the old way
+	(re_regs.start[1] >= 0), which can cause random memory
+	accesses with regex 0.1.  From Brian Matthews.
+
+Tue Dec 24 02:12:15 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* system.h, id.c, pathchk.c, tee.c: Change POSIX ifdefs to
+	HAVE_UNISTD_H and _POSIX_VERSION.
+
+Wed Dec 11 13:15:09 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* Version 1.5.
+
+	* expr.c (main): Set obscure_syntax to tell re_match to
+	allocate memory for the group registers.
+
+Sat Dec  7 00:32:02 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* Version 1.4.
+
+	* env, id, nice, pathchk, stty, tee, tty, uname: Change usage
+	messages and documentation to list long-named options starting
+	with `--' rather than `+'. 
+
+	* env.c (main), nice.c (main): Simplify test for which exit
+	status to use if exec fails.
+
+Fri Dec  6 23:49:42 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* tee.c (main) [POSIX]:  Use sigaction instead of signal, which
+	POSIX doesn't have.
+
+Fri Oct 18 00:31:35 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* test.c (two_arguments): Fix from Chet.
+
+	* expr.c: Include regex.h after sys/types.h, not before, so
+	size_t gets defined.
+
+	* test.c: New version, adapted from bash 1.10.
+
+	* id.c: GID_T -> GETGROUPS_T, for clarity.
+
+Sat Oct 12 14:38:34 1991  David J. MacKenzie  (djm at churchy.gnu.ai.mit.edu)
+
+	* configure: Define uid_t and gid_t as int if they're not
+	defined in sys/types.h.  That's probably right for old Unixes
+	and avoids trying to find the C preprocessor.
+
+Sat Sep 28 13:01:23 1991  David J. MacKenzie  (djm at churchy.gnu.ai.mit.edu)
+
+	* stty.c (set_mode): Make `raw' and `cooked' not change parity
+	and character size, which would probably make them useless on
+	7-bit lines.
+	Make `raw' set the `time' character to 0, not 1.
+	From Bruce Evans.
+
+	* nohup.sh: If creating nohup.out, give it mode 0600, for POSIX.
+
+Fri Sep 13 14:59:51 1991  David J. MacKenzie  (djm at churchy.gnu.ai.mit.edu)
+
+	* id.c [POSIX]: Always use sysconf to get NGROUPS_MAX.
+
+Thu Aug 29 14:43:07 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* test.c: Don't include sys/file.h if POSIX.
+	Use gid_t for getgroups.
+
+	* stty.c (set_mode): Use CEOF and CEOL instead of hardcoding them.
+	(display_speed): Fix a printf string type mismatch.
+	From Bruce Evans.
+
+Mon Aug 26 16:52:51 1991  David J. MacKenzie  (djm at pogo.gnu.ai.mit.edu)
+
+	* configure, src/Makefile.in, lib/Makefile.in: Only put $< in
+	Makefiles if VPATH is being used, because older makes don't
+	understand it.
+
+Mon Aug 19 01:57:46 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* Version 1.3.
+
+Sat Aug 17 22:48:15 1991  David J. MacKenzie  (djm at geech.gnu.ai.mit.edu)
+
+	* src/Makefile.in (install): Install a link to test called '['.
+
+Wed Aug 14 12:22:57 1991  David J. MacKenzie  (djm at geech.gnu.ai.mit.edu)
+
+	* test.c (unary_operator): Check first char of string, not its address.
+
+Sun Aug 11 18:10:30 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* Version 1.2.
+
+	* system.h: Define S_IFMT if needed, for test.c.
+
+	* test.c: New file, from bash.
+
+	* nice.c: Change +priority to +adjustment (more accurate).
+
+Sat Aug 10 13:09:51 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* stty.c [WINSIZE_IN_PTEM]: sys/ptem.h requires sys/stream.h.
+
+	* strftime.c: Add %e, %C, %R for POSIX or SysV compat.
+	Delete %P (which was my invention).
+
+	* nice.c, configure: Use nice if available and setpriority is missing.
+
+Thu Aug  8 01:34:05 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* date.c: USG needs TZ=GMT0 for UCT timezone, also.
+
+	* stty.c: Add pass8 and litout modes.
+
+Sun Aug  4 22:45:51 1991  David J. MacKenzie  (djm at wheat-chex)
+
+	* Version 1.1.
+
+Fri Aug  2 13:22:31 1991  David J. MacKenzie  (djm at apple-gunkies)
+
+	* configure: Implement +srcdir.  Don't check for bison.
+
+	* stty.c: Don't change ixon in "sane" mode.
+
+	* configure: Use 1 instead of 255 for checking tzname,
+	because of signedness.
+
+Thu Aug  1 13:40:58 1991  David J. MacKenzie  (djm at apple-gunkies)
+
+	* printenv.c (main): Don't print the variable names when given
+	args, as people seem to use printenv in scripts after all . . . .
+
+	* stty.c: Don't change parity or character size settings in
+	"sane" mode.  The right values for those depend on the hardware.
+
+Wed Jul 31 01:19:01 1991  David J. MacKenzie  (djm at hal)
+
+	* stty.c [_AIX]: Include sys/ioctl.h -- needed on
+	AIX to get window size.
+
+Tue Jul 30 00:06:54 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* getdate.y: New file.
+	* date.c: Add -s option to set date in English.
+	* configure: Check for ftime.
+
+	* date.c: Remove COMPUTE_TM_ZONE code, which didn't work.
+	* strftime.c (zone_name): New function.
+	(strftime) [TZNAME_MISSING]: Use it.
+	Declare tzname if it exists.
+	* configure: Instead of checking whether tzname is declared,
+	check whether it exists.
+
+	* logname.c (main): Go back to just printing an error message
+	if getlogin fails, as required by POSIX.
+
+	* stty.c (screen_columns, wrapf): New functions to implement
+	output wrapping.
+	Globally: use them.
+
+	* configure: Define uid_t and gid_t if sys/types.h doesn't.
+	* system.h: Define F_OK et al. if nothing else does.
+
+Mon Jul 29 21:11:16 1991  David J. MacKenzie  (djm at wombat.gnu.ai.mit.edu)
+
+	* pathchk.c (validate_new_path): Rearrange tests so that
+	pathconf is only called on existing directories.  Use access
+	instead of stat to determine directory searchability.
+	From Jim Meyering.
+
+	* stty.c, configure: Add WINSIZE_IN_PTEM and GWINSZ_BROKEN for SCO.
+
+Wed Jul 24 02:13:31 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* stty.c (sane_mode): Always set control chars to sane values.
+	Set min and time if they're different from eof and eol.
+
+	* whoami.c: Print UID as unsigned.
+	* logname.c: Do "whoami" if getlogin fails.
+
+	* logname.c (main): fprintf was missing an arg.
+
+Tue Jul 23 02:20:15 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* id.c: GID_T is int if ultrix as well as if sun.
+
+	* stty.c: Implement raw and cooked modes.
+
+Mon Jul 22 15:21:21 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* tee.c (main): close stdin and stdout to check for errors.
+
+	* stty.c: Use tcflag_t for termios bitmasks.
+	Use speed_t for speeds.  Use unsigned long for baud rates to
+	accomodate large values, and support 57600 and 115200 if available.
+
+	* date.c, strftime.c, configure: Instead of SIZE_T_MISSING,
+	define size_t if it's missing.
+
+	* id.c, whoami.c: Use uid_t and gid_t.
+
+	* id.c: If POSIX and not sun (bogus!), pass getgroups and
+	getugroups an array of gid_t instead of int.
+
+	* system.h: New file.
+	* Most programs: include it.
+
+Fri Jul 19 12:04:58 1991  David J. MacKenzie  (djm at apple-gunkies)
+
+	* env.c [!STDC_HEADERS]: Declare errno.
+	* printf.c, pathchk.c: Don't include errno.h; not needed.
+
+	* version.c: New file.
+	* All C programs: Link with it, to get version number in the
+	binary where at least `strings -' and grep can find it.
+
+	* pathchk.c (strip_trailing_slashes): Function removed; use
+	version in lib.
+
+Mon Jul 15 11:34:22 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* Version 1.0.
+
+	* pathchk.c: Always check whether _POSIX_PATH_MAX and
+	_POSIX_NAME_MAX need to be defined.
+	[POSIX]: If no PATH_MAX or NAME_MAX and pathconf for the path
+	returns -1 (some systems do this if the path does not exist),
+	use pathconf for "/". 
+
+Sun Jul 14 21:17:22 1991  David J. MacKenzie  (djm at geech.gnu.ai.mit.edu)
+
+	* date.c (date_seconds): Function removed, replaced with
+	posixtm.y in lib.
+	(set_date): Change caller.
+	* configure: Check for bison.
+
+	* stty.c [!C_LINE_MISSING]: Add support for setting and
+	printing the line discipline.
+	* configure: Check for C_LINE_MISSING.
+
+	* configure: Check for Minix.
+
+Sat Jul 13 01:33:59 1991  David J. MacKenzie  (djm at geech.gnu.ai.mit.edu)
+
+	* Add `man' directory and manual pages.
+	* configure: Set INSTALLDATA and MAN.
+
+	* id.c: Add #ifdefs for POSIX ways of getting max groups list size.
+	(print_group_list, print_full_info): Allocate list of groups
+	with malloc since its size might not be constant.
+
+	* nice.c (main): Don't adjust priority if printing it.
+	Default adjustment of 10, not 0.
+
+	* printf.c: Add \c escape and %b conversion.
+	Implement '*' for field width and precision.
+	Make all errors fatal.
+	(print_esc_string, print_esc): New functions.
+
+	* configure, date.c, strftime.c: Change SYS_TIME_H to
+	TM_IN_SYS_TIME.
+	* configure: Always check where to find struct tm.
+
+	* yes.c: Rewrite to accept multiple arguments.
+
+	* Add groups.sh.
+
+Fri Jul 12 10:57:00 1991  David J. MacKenzie  (djm at wookumz.gnu.ai.mit.edu)
+
+	* dirname.c: Move code from dirname function into main,
+	simplifying things quite a bit.  From Jim Meyering.
+	* Omit strdup from lib; no longer used.
+	* configure: Don't check for strdup.
+
+	* printenv.c (main): If args given, print the values in the order
+	given on the command line rather than the order given in the
+	environment.
+
+	* tee.c, tty.c (struct longopts): Revise to make short-option
+	equivalents clear.
+
+Thu Jul 11 12:46:11 1991  David J. MacKenzie  (djm at geech.gnu.ai.mit.edu)
+
+	* nice.c: Add long options.
+
+	* Add date command and libraries it needs.
+	* configure: Updated.
+
+	* env.c: Add long options.  Use GNU putenv instead of custom
+	setenv function.
+
+	* id.c: Add long options.
+
+	* pathchk.c [POSIX]: Use pathconf if necessary to get NAME_MAX
+	and PATH_MAX. 
+
+	* nice.c: Use exit status required for nohup by POSIX.2
+	(nohup execs nice).
+
+	* sleep.c: Don't bother with hex and octal.
+
+	* env.c: Fix exit status for POSIX.2 draft 11.1.
+
+	* Many files: Remove private copies of xmalloc, error, xstrdup,
+	etc. to use shared versions.
+	Fix #includes for USG, STDC_HEADERS, POSIX.
+
+Mon Jul  8 18:56:24 1991  David J. MacKenzie  (djm at churchy.gnu.ai.mit.edu)
+
+	* date.c (main): For -u, set TZ to "" instead of "GMT0",
+	unless on HP-UX or Ultrix.
+
+	* Rename some feature-test macros.
+	* stime.c: Created from code in date.c.
+	* date.c (compute_tm_zone): New function.
+	(date_seconds, show_date): Use it.
+	(xmalloc, xrealloc): Functions removed; use xmalloc.c instead.
+	* strftime.c (strftime): Return size_t, not int.
+
+Tue Jul  2 02:28:11 1991  David J. MacKenzie  (djm at geech.gnu.ai.mit.edu)
+
+	* tee.c (tee): Report errors in closing files.
+
+Mon Mar 18 10:13:59 1991  Jeffrey A. Law  (law at geech.ai.mit.edu)
+
+	* date.c (date_seconds, show_date): #if COMPUTE_TMZONE then
+	compute the proper value to place in tm->tm_zone from
+	information returned by localtime and gettimeofday.
+
+	* strftime.c: #if SYS_TIME_H then include <sys/time.h> instead
+	of <time.h>
+
+Fri Apr 26 11:38:09 1991  David J. MacKenzie  (djm at mole.gnu.ai.mit.edu)
+
+	* stty.c: Define default values for control chars if necessary.
+	Complain about invalid options if no other options follow.
+	Use POSIX functions instead of ioctl, for manipulating termios.
+
+	* expr.c (main): Exit status was backwards.
+
+Thu Dec 20 00:36:01 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* id.c: Reorganization and many changes to fix bugs and POSIX
+	compliance problems.
+
+Mon Dec 10 03:09:13 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* stty.c: Don't declare printf and some other functions that
+	might have variable numbers of args in system header file decls.
+
+Tue Nov 14 23:37:22 1990  Roland McGrath  (roland at geech.ai.mit.edu)
+
+	* id.c (print_groups): Put spaces after commas.
+	(print_group): New fn, to print a group id.  Uses numeric fmt
+	unless -n, in which case it uses group names.
+	(print_groups): Call it.  Find the rgid and egid, and print them as
+	well as the supplementary groups.  Make sure we print each group only
+	once.
+
+Sun Sep 16 01:49:14 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* id.c (main): Add -G option for POSIX.2 draft 10.
+	Allow a username to be given.
+	(print_groups): New function from code in main.
+	(getugroups): New function.
+
+Sun Aug 12 00:32:01 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* env.c (main): Instead of setting _POSIX_OPTION_ORDER,
+	tell getopt to not permute, with `+'.
+
+Sat Aug 11 01:32:53 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* expr.c: Use regex.c library instead of private regex routines.
+
+	* nice.c (main): Add -n option for POSIX.2a.
+	(usage): New function.
+
+Tue Aug  7 00:01:02 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* expr.c: Use exit directly instead of longjmp on error.
+	Use argv[0] instead of hardcoded "expr" in messages.
+	Make some functions void.
+
+Sat Aug  4 21:19:25 1990  David J. MacKenzie  (djm at pogo.ai.mit.edu)
+
+	* env.c: Change exit statuses for POSIX draft 10.
+
+Wed Jul  4 04:32:51 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* tee.c: Use error instead of perror_with_name and
+	out_of_memory. 
+
+Wed Jun 20 02:39:49 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* date.c: Change -DSETTOD to -DSTIME_MISSING, -DSIZE_T to
+	-DSIZE_T_IN_TYPES, and -DSTDC_HDRS to -DSTDC_HEADERS.
+	Declare some more functions.  Replace fatal, memory_out, and
+	nonfatal_perror with error.
+
+Mon Jun 18 00:16:52 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* stty.c: Add some Unix compatibility modes.
+
+Sat Jun 16 21:05:59 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* stty.c (display_changed, display_all): Print values of min
+	and time.
+
+Thu Jun 14 17:49:31 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* stty.c: Implement tab, backspace, etc. delay args.
+
+Thu May 31 12:25:40 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* nohup.sh: Don't ignore SIGTERM.
+	If ./nohup.out is unwritable, try $HOME/nohup.out.
+
+Mon Apr  2 01:27:23 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* id.c (main): Don't strip off leading path from program name.
+	Revise a couple of error messages.
+
+	* whoami.c (main): Use geteuid, not getuid, for Unix compatibility.
+
+Tue Mar 20 14:28:25 1990  David J. MacKenzie  (djm at pogo.ai.mit.edu)
+
+	* tee.c (main): Pass list of files and its size as args to tee
+	rather than as global vars.  Exit with return value of tee
+	instead of always 0.
+	(tee): Use unbuffered I/O instead of stdio, for POSIX.
+	Return an error status.
+	(xwrite): New function.
+
+Tue Mar  6 00:59:03 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* printenv.c (main): Allow multiple variables to be specified.
+	(barf): Function removed.
+
+Sat Jan 20 18:41:48 1990  Jim Kingdon  (kingdon at geech)
+
+	* expr.c (nextarg): Do not pass *args to strcmp if NULL.
+
+Mon Dec 18 09:57:20 1989  David J. MacKenzie  (djm at hobbes.ai.mit.edu)
+
+	* printenv.c (main): Simplify error messages.
+
+Sat Dec 16 15:15:50 1989  David J. MacKenzie  (djm at hobbes.ai.mit.edu)
+
+	* expr.c: Indent to regularize spacing.
+	(cmpv, arithf): Change '#define foo (args)' to '#define foo(args)'
+	so they compile.
+	(docolon): Remove unused vars.
+	(multiply): Rename from times to avoid libc conflict.
+	(error): Include program name in message.
+	(xmalloc): Rename from Malloc.
+	(re_compiled): Rename from re_comp to avoid libc conflict.
+
+	* basename.c: Fix some weird indentation.
+	(main): Print a clearer usage message.
+	Use a simpler method for removing suffix, if given.
+	(fatal): Function no longer used; removed.
+	
+	* sleep.c: (main): Rename `time' to `seconds'.  Print usage
+	message if given no args.
+	Exit with status 0 instead of falling off end.
+	(error): Print to stderr, not stdout.
+
+	* tee.c: (main): Use getopt_long instead of custom parser,
+	and adjust usage message.
+	Use list of filenames in argv rather than making a copy.
+	(tee): New function created from the second half of main.
+	Fix bug where it tried to fclose a loop index instead of a stream.
+	(xmalloc): Ok to return 0 if 0 bytes requested.
+	(xrealloc): Unused function removed.
+
+	* whoami.c: Canonicalize usage message and fix error message.
+
+Sat Oct 28 13:20:43 1989  David J. MacKenzie  (djm at spiff)
+
+	* uname.c: Added long options.
+	global: changed the word `part' to the word `element'
+	(more precise).
+	(program_name, long_options): New variables.
+	(main): Support long options.
+	(usage): Add long options summary to message.
+
+Local Variables:
+mode: indented-text
+left-margin: 8
+version-control: never
+End:
