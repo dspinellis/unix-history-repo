@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.61 (Berkeley) %G%
+		@(#)README	8.62 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -1375,6 +1375,15 @@ confCOLON_OK_IN_ADDR	ColonOkInAddr	If set, colons are treated as a regular
 					handled properly in route-addrs.  This
 					option defaults on for V5 and lower
 					configuration files.
+confMAX_QUEUE_RUN_SIZE	MaxQueueRunSize	If set, limit the maximum size of any
+					given queue run to this number of
+					entries.  Essentially, this will stop
+					reading the queue directory after this
+					number of entries are reached; it does
+					_not_ pick the highest priority jobs,
+					so this should be as large as your
+					system can tolerate.  If not set, there
+					is no limit.
 
 
 +-----------+
