@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cosh.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)cosh.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /* COSH(X)
@@ -91,7 +91,7 @@ double x;
 	if((x=copysign(x,one)) <= 22)
 	    if(x<0.3465) 
 		if(x<small) return(one+x);
-		else {t=x+exp__E(x,0.0);x=t+t; return(one+t*t/(2.0+x)); }
+		else {t=x+__exp__E(x,0.0);x=t+t; return(one+t*t/(2.0+x)); }
 
 	    else /* for x lies in [0.3465,22] */
 	        { t=exp(x); return((t+one/t)*half); }

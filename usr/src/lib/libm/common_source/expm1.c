@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)expm1.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)expm1.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /* EXPM1(X)
@@ -104,21 +104,21 @@ double x;
 			z=hi-(lo=k*ln2lo);
 			c=(hi-z)-lo;
 
-			if(k==0) return(z+exp__E(z,c));
+			if(k==0) return(z+__exp__E(z,c));
 			if(k==1)
 			    if(z< -0.25) 
-				{x=z+half;x +=exp__E(z,c); return(x+x);}
+				{x=z+half;x +=__exp__E(z,c); return(x+x);}
 			    else
-				{z+=exp__E(z,c); x=half+z; return(x+x);}
+				{z+=__exp__E(z,c); x=half+z; return(x+x);}
 		    /* end of k=1 */
 
 			else {
 			    if(k<=prec)
-			      { x=one-scalb(one,-k); z += exp__E(z,c);}
+			      { x=one-scalb(one,-k); z += __exp__E(z,c);}
 			    else if(k<100)
-			      { x = exp__E(z,c)-scalb(one,-k); x+=z; z=one;}
+			      { x = __exp__E(z,c)-scalb(one,-k); x+=z; z=one;}
 			    else 
-			      { x = exp__E(z,c)+z; z=one;}
+			      { x = __exp__E(z,c)+z; z=one;}
 
 			    return (scalb(x+z,k));  
 			}

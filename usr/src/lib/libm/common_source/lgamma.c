@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lgamma.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)lgamma.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -145,7 +145,7 @@ large_lgam(double x)
 	double z, p, x1;
 	int i;
 	struct Double t, u, v;
-	u = log__D(x);
+	u = __log__D(x);
 	u.a -= 1.0;
 	if (x > 1e15) {
 		v.a = x - 0.5;
@@ -199,12 +199,12 @@ CONTINUE:
 		case 5:	z *= (y + 4);
 		case 4:	z *= (y + 3);
 		case 3:	z *= (y + 2);
-			rr = log__D(z);
+			rr = __log__D(z);
 			rr.b += a0_lo; rr.a += a0_hi;
 			return(((r+rr.b)+t+rr.a));
 		case 2: return(((r+a0_lo)+t)+a0_hi);
 		case 0: r -= log1p(x);
-		default: rr = log__D(x);
+		default: rr = __log__D(x);
 			rr.a -= a0_hi; rr.b -= a0_lo;
 			return(((r - rr.b) + t) - rr.a);
 		}
@@ -224,15 +224,15 @@ CONTINUE:
 		case 5:	z *= (y + 4);
 		case 4:	z *= (y + 3);
 		case 3:	z *= (y + 2);
-			rr = log__D(z);
+			rr = __log__D(z);
 			r += rr.b; r += q;
 			return(rr.a + r);
 		case 2:	return (q+ r);
-		case 0: rr = log__D(x);
+		case 0: rr = __log__D(x);
 			r -= rr.b; r -= log1p(x);
 			r += q; r-= rr.a;
 			return(r);
-		default: rr = log__D(x);
+		default: rr = __log__D(x);
 			r -= rr.b;
 			q -= rr.a;
 			return (r+q);

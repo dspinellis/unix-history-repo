@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log1p.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)log1p.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /* LOG1P(x) 
@@ -111,7 +111,7 @@ double x;
  	   /* compute log(1+x)  */
               s = x/(2+x); t = x*x*half;
 	      c += (k*ln2lo-c*x);
-	      z = c+s*(t+log__L(s*s));
+	      z = c+s*(t+__log__L(s*s));
 	      x += (z - t) ;
 
 	      return(k*ln2hi+x);

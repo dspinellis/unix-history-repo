@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log__L.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)log__L.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /* log__L(Z)
@@ -73,7 +73,7 @@ ic(L7, 1.4795612545334174692E-1, -3, 1.2F039F0085122)
 #define	L8	vccast(L8)
 #endif
 
-double log__L(z)
+double __log__L(z)
 double z;
 {
 #if defined(vax)||defined(tahoe)

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mathimpl.h	5.5 (Berkeley) %G%
+ *	@(#)mathimpl.h	5.6 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -64,9 +64,9 @@
 /*
  * Functions internal to the math package, yet not static.
  */
-extern double	exp__E();
-extern double	log__L();
+extern double	__exp__E();
+extern double	__log__L();
 
 struct Double {double a, b;};
-double exp__D __P((double, double));
-struct Double log__D __P((double));
+double __exp__D __P((double, double));
+struct Double __log__D __P((double));
