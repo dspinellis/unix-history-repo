@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	4.4.1.1		%G%);
+SCCSID(@(#)readcf.c	4.5		%G%);
 
 /*
 **  READCF -- read control file.
@@ -653,6 +653,12 @@ setoption(opt, val, safe, sticky)
 			AliasFile = "aliases";
 		else
 			AliasFile = newstr(val);
+		break;
+
+	  case 'B':		/* substitution for blank character */
+		SpaceSub = val[0];
+		if (SpaceSub == '\0')
+			SpaceSub = ' ';
 		break;
 
 	  case 'a':		/* look for "@:@" in alias file */
