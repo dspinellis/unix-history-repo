@@ -1,4 +1,4 @@
-/*	ts.c	4.5	%G%	*/
+/*	ts.c	4.6	81/03/09	*/
 
 #include "ts.h"
 #if NTS > 0

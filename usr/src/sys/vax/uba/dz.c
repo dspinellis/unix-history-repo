@@ -1,4 +1,4 @@
-/*	dz.c	4.22	%G%	*/
+/*	dz.c	4.23	81/03/09	*/
 
 #include "dz.h"
 #if NDZ > 0

@@ -1,4 +1,4 @@
-/*	va.c	4.7	%G%	*/
+/*	va.c	4.8	81/03/09	*/
 
 #include "va.h"
 #if NVA > 0

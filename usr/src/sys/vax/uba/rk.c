@@ -1,4 +1,4 @@
-/*	rk.c	4.25	%G%	*/
+/*	rk.c	4.26	81/03/09	*/
 
 #include "rk.h"
 #if NHK > 0

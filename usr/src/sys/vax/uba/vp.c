@@ -1,4 +1,4 @@
-/*	vp.c	4.6	%G%	*/
+/*	vp.c	4.7	81/03/09	*/
 
 #include "vp.h"
 #if NVP > 0
