@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_object.h	7.3 (Berkeley) %G%
+ *	@(#)vm_object.h	7.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -54,6 +54,9 @@
 struct vm_object {
 	queue_chain_t		memq;		/* Resident memory */
 	queue_chain_t		object_list;	/* list of all objects */
+	u_short			flags;		/* see below */
+	u_short			paging_in_progress; /* Paging (in or out) so
+						    don't collapse or destroy */
 	simple_lock_data_t	Lock;		/* Synchronization */
 	int			LockHolder;
 	int			ref_count;	/* How many refs?? */
@@ -63,18 +66,17 @@ struct vm_object {
 	struct vm_object	*copy;		/* Object that holds copies of
 						   my changed pages */
 	vm_pager_t		pager;		/* Where to get data */
-	boolean_t		pager_ready;	/* Have pager fields been filled? */
 	vm_offset_t		paging_offset;	/* Offset into paging space */
 	struct vm_object	*shadow;	/* My shadow */
 	vm_offset_t		shadow_offset;	/* Offset in shadow */
-	unsigned int
-				paging_in_progress:16,
-						/* Paging (in or out) - don't
-						   collapse or destroy */
-	/* boolean_t */		can_persist:1,	/* allow to persist */
-	/* boolean_t */		internal:1;	/* internally created object */
 	queue_chain_t		cached_list;	/* for persistence */
 };
+/*
+ * Flags
+ */
+#define OBJ_CANPERSIST	0x0001	/* allow to persist */
+#define OBJ_INTERNAL	0x0002	/* internally created object */
+#define OBJ_ACTIVE	0x0004	/* used to mark active objects */
 
 typedef struct vm_object	*vm_object_t;
 
