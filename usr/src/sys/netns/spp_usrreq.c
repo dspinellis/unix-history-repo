@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)spp_usrreq.c	6.9 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	6.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1248,6 +1248,7 @@ tpgone:
 
 float	spp_backoff[TCP_MAXRXTSHIFT] =
     { 1.0, 1.2, 1.4, 1.7, 2.0, 3.0, 5.0, 8.0, 16.0, 32.0 };
+int sppexprexmtbackoff = 0;
 /*
  * TCP timer processing.
  */
@@ -1283,7 +1284,7 @@ spp_timers(cb, timer)
 		(void) spp_output(cb, (struct mbuf *) 0);
 		TCPT_RANGESET(cb->s_timer[TCPT_REXMT],
 		    (int)cb->s_srtt, TCPTV_MIN, TCPTV_MAX);
-		if (tcpexprexmtbackoff) {
+		if (sppexprexmtbackoff) {
 			TCPT_RANGESET(cb->s_timer[TCPT_REXMT],
 			    cb->s_timer[TCPT_REXMT] << cb->s_rxtshift,
 			    TCPTV_MIN, TCPTV_MAX);
