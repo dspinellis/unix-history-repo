@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)proc.c	4.6 (Berkeley) 81/05/03";
+static	char *sccsid = "@(#)proc.c	4.7 (Berkeley) 82/12/30";
 
 #include "sh.h"
 #include "sh.dir.h"
@@ -26,19 +26,13 @@ pchild()
 	register int pid;
 	union wait w;
 	int jobflags;
-#ifdef VMUNIX
-	struct vtimes vt;
-#endif
+	struct rusage ru;
 
 	if (!timesdone)
 		timesdone++, times(&shtimes);
 loop:
 	pid = wait3(&w.w_status, (setintr ? WNOHANG|WUNTRACED:WNOHANG),
-#ifndef VMUNIX
-	    0);
-#else
-	    &vt);
-#endif
+	    &ru);
 	if (pid <= 0) {
 		if (errno == EINTR) {
 			errno = 0;
@@ -69,9 +63,7 @@ found:
 			pp->p_stime = shtimes.tms_cstime - oldcstimes;
 		} else
 			times(&shtimes);
-#ifdef VMUNIX
-		pp->p_vtimes = vt;
-#endif
+		pp->p_rusage = ru;
 		if (WIFSIGNALED(w)) {
 			if (w.w_termsig == SIGINT)
 				pp->p_flags |= PINTERRUPTED;
@@ -82,11 +74,7 @@ found:
 			pp->p_reason = w.w_termsig;
 		} else {
 			pp->p_reason = w.w_retcode;
-#ifdef IIASA
-			if (pp->p_reason >= 3)
-#else
 			if (pp->p_reason != 0)
-#endif
 				pp->p_flags |= PAEXITED;
 			else
 				pp->p_flags |= PNEXITED;
@@ -632,11 +620,10 @@ prcomd:
 		if (pp->p_flags&PPTIME && !(status&(PSTOPPED|PRUNNING))) {
 			if (linp != linbuf)
 				printf("\n\t");
-#ifndef VMUNIX
-			ptimes(pp->p_utime, pp->p_stime, pp->p_etime-pp->p_btime);
-#else
-			pvtimes(&zvms, &pp->p_vtimes, pp->p_etime - pp->p_btime);
-#endif
+			{ static struct rusage zru;
+			  prusage(&zru, &pp->p_rusage,
+			      pp->p_etime - pp->p_btime);
+			}
 		}
 		if (tp == pp->p_friends) {
 			if (linp != linbuf)
@@ -660,29 +647,17 @@ ptprint(tp)
 	register struct process *tp;
 {
 	time_t tetime = 0;
-#ifdef VMUNIX
-	struct vtimes vmt;
-#else
-	time_t tutime = 0, tstime = 0;
-#endif
+	struct rusage ru;
+	static struct rusage zru;
 	register struct process *pp = tp;
 
-	vmt = zvms;
+	ru = zru;
 	do {
-#ifdef VMUNIX
-		vmsadd(&vmt, &pp->p_vtimes);
-#else
-		tutime += pp->p_utime;
-		tstime += pp->p_stime;
-#endif
+		ruadd(&ru, &pp->p_rusage);
 		if (pp->p_etime - pp->p_btime > tetime)
 			tetime = pp->p_etime - pp->p_btime;
 	} while ((pp = pp->p_friends) != tp);
-#ifdef VMUNIX
-	pvtimes(&zvms, &vmt, tetime);
-#else
-	ptimes(tutime, tstime, tetime);
-#endif
+	prusage(&zru, &ru, tetime);
 }
 
 /*

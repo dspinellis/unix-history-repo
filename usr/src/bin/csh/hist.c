@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)hist.c 4.3 %G%";
+static	char *sccsid = "@(#)hist.c 4.4 %G%";
 
 #include "sh.h"
 
@@ -75,7 +75,7 @@ dohist(vp)
 	if (setintr)
 		sigrelse(SIGINT);
 	vp++;
-	while (*vp[0] == '-') {
+	while (*vp && *vp[0] == '-') {
 		if (*vp && eq(*vp, "-h")) {
 			hflg++;
 			vp++;

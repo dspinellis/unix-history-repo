@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)func.c 4.6 81/08/20";
+static	char *sccsid = "@(#)func.c 4.7 82/12/30";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -820,7 +820,6 @@ doumask(v)
 	umask(i);
 }
 
-#include <sys/vlimit.h>
 
 struct limits {
 	int	limconst;
@@ -828,13 +827,12 @@ struct limits {
 	int	limdiv;
 	char	*limscale;
 } limits[] = {
-	LIM_NORAISE,	"noraise",	1,	"",
-	LIM_CPU,	"cputime",	1,	"seconds",
-	LIM_FSIZE,	"filesize",	1024,	"kbytes",
-	LIM_DATA,	"datasize",	1024,	"kbytes",
-	LIM_STACK,	"stacksize",	1024,	"kbytes",
-	LIM_CORE,	"coredumpsize",	1024,	"kbytes",
-	LIM_MAXRSS,	"memoryuse",	1024,	"kbytes",
+	RLIMIT_CPU,	"cputime",	1,	"seconds",
+	RLIMIT_FSIZE,	"filesize",	1024,	"kbytes",
+	RLIMIT_DATA,	"datasize",	1024,	"kbytes",
+	RLIMIT_STACK,	"stacksize",	1024,	"kbytes",
+	RLIMIT_CORE,	"coredumpsize",	1024,	"kbytes",
+	RLIMIT_RSS,	"memoryuse",	1024,	"kbytes",
 	-1,		0,
 };
 
@@ -866,8 +864,6 @@ dolimit(v)
 	if (*v == 0) {
 		for (lp = limits+1; lp->limconst >= 0; lp++)
 			plim(lp);
-		if (vlimit(LIM_NORAISE, -1) && getuid())
-			printf("Limits cannot be raised\n");
 		return;
 	}
 	lp = findlim(v[0]);
@@ -895,30 +891,28 @@ getval(lp, v)
 			return ((int)(f+0.5) * lp->limdiv);
 		cp = *v;
 	}
-	if (lp->limconst == LIM_NORAISE)
-		goto badscal;
 	switch (*cp) {
 
 	case ':':
-		if (lp->limconst != LIM_CPU)
+		if (lp->limconst != RLIMIT_CPU)
 			goto badscal;
 		return ((int)(f * 60.0 + atof(cp+1)));
 
 	case 'h':
-		if (lp->limconst != LIM_CPU)
+		if (lp->limconst != RLIMIT_CPU)
 			goto badscal;
 		limtail(cp, "hours");
 		f *= 3600.;
 		break;
 
 	case 'm':
-		if (lp->limconst == LIM_CPU) {
+		if (lp->limconst == RLIMIT_CPU) {
 			limtail(cp, "minutes");
 			f *= 60.;
 			break;
 		}
 	case 'M':
-		if (lp->limconst == LIM_CPU)
+		if (lp->limconst == RLIMIT_CPU)
 			goto badscal;
 		*cp = 'm';
 		limtail(cp, "megabytes");
@@ -926,13 +920,13 @@ getval(lp, v)
 		break;
 
 	case 's':
-		if (lp->limconst != LIM_CPU)
+		if (lp->limconst != RLIMIT_CPU)
 			goto badscal;
 		limtail(cp, "seconds");
 		break;
 
 	case 'k':
-		if (lp->limconst == LIM_CPU)
+		if (lp->limconst == RLIMIT_CPU)
 			goto badscal;
 		limtail(cp, "kbytes");
 		f *= 1024;
@@ -940,7 +934,7 @@ getval(lp, v)
 
 	case 'u':
 		limtail(cp, "unlimited");
-		return (INFINITY);
+		return (RLIM_INFINITY);
 
 	default:
 badscal:
@@ -963,16 +957,16 @@ limtail(cp, str0)
 plim(lp)
 	register struct limits *lp;
 {
-	register int lim;
+	struct rlimit rlim;
 
 	printf("%s \t", lp->limname);
-	lim = vlimit(lp->limconst, -1);
-	if (lim == INFINITY)
+	getrlimit(lp->limconst, &rlim);
+	if (rlim.rlim_cur == RLIM_INFINITY)
 		printf("unlimited");
-	else if (lp->limconst == LIM_CPU)
-		psecs((long)lim);
+	else if (lp->limconst == RLIMIT_CPU)
+		psecs((long)rlim.rlim_cur);
 	else
-		printf("%d %s", lim / lp->limdiv, lp->limscale);
+		printf("%d %s", rlim.rlim_cur / lp->limdiv, lp->limscale);
 	printf("\n");
 }
 
@@ -984,20 +978,23 @@ dounlimit(v)
 	v++;
 	if (*v == 0) {
 		for (lp = limits+1; lp->limconst >= 0; lp++)
-			setlim(lp, INFINITY);
+			setlim(lp, RLIM_INFINITY);
 		return;
 	}
 	while (*v) {
 		lp = findlim(*v++);
-		setlim(lp, INFINITY);
+		setlim(lp, RLIM_INFINITY);
 	}
 }
 
 setlim(lp, limit)
 	register struct limits *lp;
 {
+	struct rlimit rlim;
 
-	if (vlimit(lp->limconst, limit) < 0)
+	getrlimit(lp->limconst, &rlim);
+	rlim.rlim_cur = limit;
+	if (setrlimit(lp->limconst, &rlim) < 0)
 		Perror(bname);
 }
 
