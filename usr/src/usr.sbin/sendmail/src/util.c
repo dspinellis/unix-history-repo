@@ -6,7 +6,7 @@
 # include <ctype.h>
 # include "sendmail.h"
 
-SCCSID(@(#)util.c	3.33		%G%);
+SCCSID(@(#)util.c	3.34		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -843,4 +843,27 @@ atobool(s)
 	if (*s == '\0' || index("tTyY", *s) != NULL)
 		return (TRUE);
 	return (FALSE);
+}
+/*
+**  ATOOCT -- convert a string representation to octal.
+**
+**	Parameters:
+**		s -- string to convert.
+**
+**	Returns:
+**		An integer representing the string interpreted as an
+**		octal number.
+**
+**	Side Effects:
+**		none.
+*/
+
+atooct(s)
+	register char *s;
+{
+	register int i = 0;
+
+	while (*s >= '0' && *s <= '7')
+		i = (i << 3) | (*s++ - '0');
+	return (i);
 }

@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.126		%G%);
+SCCSID(@(#)main.c	3.127		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -858,7 +858,7 @@ openxscrpt()
 		syserr("Can't create %s", p);
 	}
 	Transcript = p;
-	(void) chmod(p, 0600);
+	(void) chmod(p, FileMode);
 }
 /*
 **  SETSENDER -- set sendmail's idea of the sender.
