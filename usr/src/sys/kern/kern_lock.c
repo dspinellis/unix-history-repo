@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_lock.c	8.15 (Berkeley) %G%
+ *	@(#)kern_lock.c	8.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -154,6 +154,8 @@ lockmgr(lkp, flags, interlkp, p)
 	 * further requests of any sort will result in a panic. The bits
 	 * selected for these two flags are chosen so that they will be set
 	 * in memory that is freed (freed memory is filled with 0xdeadbeef).
+	 * The final release is permitted to give a new lease on life to
+	 * the lock by specifying LK_REENABLE.
 	 */
 	if (lkp->lk_flags & (LK_DRAINING|LK_DRAINED)) {
 		if (lkp->lk_flags & LK_DRAINED)
@@ -163,7 +165,8 @@ lockmgr(lkp, flags, interlkp, p)
 			panic("lockmgr: non-release on draining lock: %d\n",
 			    flags & LK_TYPE_MASK);
 		lkp->lk_flags &= ~LK_DRAINING;
-		lkp->lk_flags |= LK_DRAINED;
+		if ((flags & LK_REENABLE) == 0)
+			lkp->lk_flags |= LK_DRAINED;
 	}
 #endif DIAGNOSTIC
 
