@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfscanf.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfscanf.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/cdefs.h>
@@ -98,6 +98,8 @@ __svfscanf(fp, fmt0, ap)
 
 	nassigned = 0;
 	nread = 0;
+	base = 0;		/* XXX just to keep gcc happy */
+	ccfn = NULL;		/* XXX just to keep gcc happy */
 	for (;;) {
 		c = *fmt++;
 		if (c == 0)
