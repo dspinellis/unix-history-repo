@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	6.16 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	6.17 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	6.16 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	6.17 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -502,7 +502,7 @@ _udbx_init()
 			if (*spec == '*')
 			{
 #ifdef NAMED_BIND
-				nmx = getmxrr(spec + 1, mxhosts, "", &rcode);
+				nmx = getmxrr(spec + 1, mxhosts, FALSE, &rcode);
 #else
 				mxhosts[0] = spec + 1;
 				nmx = 1;
