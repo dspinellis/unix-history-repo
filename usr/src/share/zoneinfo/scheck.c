@@ -6,14 +6,10 @@ static char	elsieid[] = "@(#)scheck.c	8.9";
 
 /*LINTLIBRARY*/
 
-#include "stdio.h"
-#include "ctype.h"
-#include "string.h"
-#include "stdlib.h"
-#include "nonstd.h"
-
-extern char *	imalloc P((int n));
-extern void	ifree P((char * p));
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
 
 char *
 scheck(string, format)
@@ -30,7 +26,7 @@ const char * const	format;
 	result = "";
 	if (string == NULL || format == NULL)
 		return result;
-	fbuf = imalloc(2 * strlen(format) + 4);
+	fbuf = malloc(2 * strlen(format) + 4);
 	if (fbuf == NULL)
 		return result;
 	fp = format;
@@ -58,7 +54,7 @@ const char * const	format;
 	*(tp - 1) = '%';
 	*tp++ = 'c';
 	*tp = '\0';
-	if (sscanf(string, fbuf, &dummy) != 1)
+	if (sscanf((char *)string, fbuf, &dummy) != 1)
 		result = (char *) format;
 	ifree(fbuf);
 	return result;

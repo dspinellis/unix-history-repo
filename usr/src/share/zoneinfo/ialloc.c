@@ -6,9 +6,8 @@ static char	elsieid[] = "@(#)ialloc.c	8.18";
 
 /*LINTLIBRARY*/
 
-#include "string.h"
-#include "stdlib.h"
-#include "nonstd.h"
+#include <string.h>
+#include <stdlib.h>
 
 #ifdef MAL
 #define NULLMAL(x)	((x) == NULL || (x) == MAL)
@@ -18,12 +17,12 @@ static char	elsieid[] = "@(#)ialloc.c	8.18";
 
 #define nonzero(n)	(((n) == 0) ? 1 : (n))
 
-char *	icalloc P((int nelem, int elsize));
-char *	icatalloc P((char * old, const char * new));
-char *	icpyalloc P((const char * string));
-char *	imalloc P((int n));
-char *	irealloc P((char * pointer, int size));
-void	ifree P((char * pointer));
+char *	icalloc __P((int nelem, int elsize));
+char *	icatalloc __P((char * old, const char * new));
+char *	icpyalloc __P((const char * string));
+char *	imalloc __P((int n));
+char *	irealloc __P((char * pointer, int size));
+void	ifree __P((char * pointer));
 
 char *
 imalloc(n)
@@ -32,10 +31,10 @@ const int	n;
 #ifdef MAL
 	register char *	result;
 
-	result = malloc((alloc_size_t) nonzero(n));
+	result = malloc((size_t) nonzero(n));
 	return NULLMAL(result) ? NULL : result;
 #else /* !defined MAL */
-	return malloc((alloc_size_t) nonzero(n));
+	return malloc((size_t) nonzero(n));
 #endif /* !defined MAL */
 }
 
@@ -46,7 +45,7 @@ int	elsize;
 {
 	if (nelem == 0 || elsize == 0)
 		nelem = elsize = 1;
-	return calloc((alloc_size_t) nelem, (alloc_size_t) elsize);
+	return calloc((size_t) nelem, (size_t) elsize);
 }
 
 char *
@@ -56,7 +55,7 @@ const int	size;
 {
 	if (NULLMAL(pointer))
 		return imalloc(size);
-	return realloc((genericptr_t) pointer, (alloc_size_t) nonzero(size));
+	return realloc((void *) pointer, (size_t) nonzero(size));
 }
 
 char *

@@ -4,14 +4,15 @@ static char	elsieid[] = "@(#)zic.c	4.12";
 #endif /* !defined NOID */
 #endif /* !defined lint */
 
-#include "stdio.h"
-#include "tzfile.h"
-#include "ctype.h"
-#include "time.h"
-#include "string.h"
-#include "stdlib.h"
-#include "sys/stat.h"
-#include "nonstd.h"
+#include <sys/types.h>
+#include <sys/cdefs.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <tzfile.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
 
 #ifndef TRUE
 #define TRUE	1
@@ -69,63 +70,59 @@ struct zone {
 	time_t		z_untiltime;
 };
 
-extern int	emkdir P((const char * name, int mode));
-extern int	getopt P((int argc, char * argv[], const char * options));
-extern char *	icatalloc P((char * old, const char * new));
-extern char *	icpyalloc P((const char * string));
-extern void	ifree P((char * p));
-extern char *	imalloc P((int n));
-extern char *	irealloc P((char * old, int n));
-extern int	link P((const char * fromname, const char * toname));
+extern char *	icatalloc __P((char * old, const char * new));
+extern char *	icpyalloc __P((const char * string));
+extern void	ifree __P((char * p));
+extern char *	imalloc __P((int n));
+extern char *	irealloc __P((char * old, int n));
+extern int	link __P((const char * fromname, const char * toname));
 extern char *	optarg;
 extern int	optind;
-extern void	perror P((const char * string));
-extern char *	scheck P((const char * string, const char * format));
-
-static void	addtt P((time_t starttime, int type));
-static int	addtype P((long gmtoff, const char * abbr, int isdst,
-    int ttisstd));
-static void	addleap P((time_t t, int positive, int rolling));
-static void	adjleap P((void));
-static void	associate P((void));
-static int	ciequal P((const char * ap, const char * bp));
-static void	convert P((long val, char * buf));
-static void	dolink P((const char * fromfile, const char * tofile));
-static void	eat P((const char * name, int num));
-static void	eats P((const char * name, int num,
-			const char * rname, int rnum));
-static long	eitol P((int i));
-static void	error P((const char * message));
-static char **	getfields P((char * buf));
-static long	gethms P((const char * string, const char * errstrng,
-			int signable));
-static void	infile P((const char * filename));
-static void	inleap P((char ** fields, int nfields));
-static void	inlink P((char ** fields, int nfields));
-static void	inrule P((char ** fields, int nfields));
-static int	inzcont P((char ** fields, int nfields));
-static int	inzone P((char ** fields, int nfields));
-static int	inzsub P((char ** fields, int nfields, int iscont));
-static int	itsabbr P((const char * abbr, const char * word));
-static int	itsdir P((const char * name));
-static int	lowerit P((int c));
-static char *	memcheck P((char * tocheck));
-static int	mkdirs P((char * filename));
-static void	newabbr P((const char * abbr));
-static long	oadd P((long t1, long t2));
-static void	outzone P((const struct zone * zp, int ntzones));
-static void	puttzcode P((long code, FILE * fp));
-static int	rcomp P((const genericptr_t leftp, const genericptr_t rightp));
-static time_t	rpytime P((const struct rule * rp, int wantedy));
-static void	rulesub P((struct rule * rp,
-			char * loyearp, char * hiyearp,
-			char * typep, char * monthp,
-			char * dayp, char * timep));
-static void	setboundaries P((void));
-static time_t	tadd P((time_t t1, long t2));
-static void	usage P((void));
-static void	writezone P((const char * name));
-static int	yearistype P((int year, const char * type));
+extern void	perror __P((const char * string));
+extern char *	scheck __P((const char * string, const char * format));
+static void	addtt __P((time_t starttime, int type));
+static int	addtype
+		    __P((long gmtoff, const char * abbr, int isdst,
+		    int ttisstd));
+static void	addleap __P((time_t t, int positive, int rolling));
+static void	adjleap __P((void));
+static void	associate __P((void));
+static int	ciequal __P((const char * ap, const char * bp));
+static void	convert __P((long val, char * buf));
+static void	dolink __P((const char * fromfile, const char * tofile));
+static void	eat __P((const char * name, int num));
+static void	eats __P((const char * name, int num,
+		    const char * rname, int rnum));
+static long	eitol __P((int i));
+static void	error __P((const char * message));
+static char **	getfields __P((char * buf));
+static long	gethms __P((char * string, const char * errstrng,
+		    int signable));
+static void	infile __P((const char * filename));
+static void	inleap __P((char ** fields, int nfields));
+static void	inlink __P((char ** fields, int nfields));
+static void	inrule __P((char ** fields, int nfields));
+static int	inzcont __P((char ** fields, int nfields));
+static int	inzone __P((char ** fields, int nfields));
+static int	inzsub __P((char ** fields, int nfields, int iscont));
+static int	itsabbr __P((const char * abbr, const char * word));
+static int	itsdir __P((const char * name));
+static int	lowerit __P((int c));
+static char *	memcheck __P((char * tocheck));
+static int	mkdirs __P((char * filename));
+static void	newabbr __P((const char * abbr));
+static long	oadd __P((long t1, long t2));
+static void	outzone __P((const struct zone * zp, int ntzones));
+static void	puttzcode __P((long code, FILE * fp));
+static int	rcomp __P((const void *leftp, const void *rightp));
+static time_t	rpytime __P((const struct rule * rp, int wantedy));
+static void	rulesub __P((struct rule * rp, char * loyearp, char * hiyearp,
+		char * typep, char * monthp, char * dayp, char * timep));
+static void	setboundaries __P((void));
+static time_t	tadd __P((time_t t1, long t2));
+static void	usage __P((void));
+static void	writezone __P((const char * name));
+static int	yearistype __P((int year, const char * type));
 
 static int		charcnt;
 static int		errors;
@@ -246,7 +243,7 @@ struct lookup {
 	const int	l_value;
 };
 
-static struct lookup const *	byword P((const char * string,
+static struct lookup const *	byword __P((const char * string,
 					const struct lookup * lp));
 
 static struct lookup const	line_codes[] = {
@@ -421,9 +418,7 @@ char *	argv[];
 	register int	i, j;
 	register int	c;
 
-#ifdef unix
 	(void) umask(umask(022) | 022);
-#endif /* defined unix */
 	progname = argv[0];
 	while ((c = getopt(argc, argv, "d:l:p:L:vs")) != EOF)
 		switch (c) {
@@ -578,7 +573,7 @@ const char * const	name;
 {
 	struct stat	s;
 
-	return stat(name, &s) == 0 && (s.st_mode & S_IFMT) == S_IFDIR;
+	return (stat(name, &s) == 0 && S_ISDIR(s.st_mode));
 }
 
 /*
@@ -591,8 +586,8 @@ const char * const	name;
 
 static int
 rcomp(cp1, cp2)
-const genericptr_t	cp1;
-const genericptr_t	cp2;
+const void *	cp1;
+const void *	cp2;
 {
 	return strcmp(((struct rule *) cp1)->r_name,
 		((struct rule *) cp2)->r_name);
@@ -607,9 +602,8 @@ associate()
 	register int		i;
 
 	if (nrules != 0)
-		(void) qsort((genericptr_t) rules,
-			(qsort_size_t) nrules,
-			(qsort_size_t) sizeof *rules, rcomp);
+		(void) qsort((void *) rules, (size_t) nrules,
+		     (size_t) sizeof *rules, rcomp);
 	for (i = 0; i < nzones; ++i) {
 		zp = &zones[i];
 		zp->z_rules = NULL;
@@ -635,7 +629,8 @@ associate()
 			** Maybe we have a local standard time offset.
 			*/
 			eat(zp->z_filename, zp->z_linenum);
-			zp->z_stdoff = gethms(zp->z_rule, "unruly zone", TRUE);
+			zp->z_stdoff =
+			    gethms((char *)zp->z_rule, "unruly zone", TRUE);
 			/*
 			** Note, though, that if there's no rule,
 			** a '%s' in the format is a bad thing.
@@ -748,7 +743,7 @@ const char *	name;
 
 static long
 gethms(string, errstring, signable)
-const char *		string;
+char *		string;
 const char * const	errstring;
 const int		signable;
 {
@@ -951,7 +946,7 @@ const int		nfields;
 	}
 	dayoff = 0;
 	cp = fields[LP_YEAR];
-	if (sscanf(cp, scheck(cp, "%d"), &year) != 1 ||
+	if (sscanf((char *)cp, scheck(cp, "%d"), &year) != 1 ||
 		year < min_year || year > max_year) {
 			/*
 			 * Leapin' Lizards!
@@ -982,7 +977,7 @@ const int		nfields;
 		++j;
 	}
 	cp = fields[LP_DAY];
-	if (sscanf(cp, scheck(cp, "%d"), &day) != 1 ||
+	if (sscanf((char *)cp, scheck(cp, "%d"), &day) != 1 ||
 		day <= 0 || day > len_months[isleap(year)][month]) {
 			error("invalid day of month");
 			return;
@@ -1203,9 +1198,7 @@ FILE * const	fp;
 	char	buf[4];
 
 	convert(val, buf);
-	(void) fwrite((genericptr_t) buf,
-		(fwrite_size_t) sizeof buf,
-		(fwrite_size_t) 1, fp);
+	(void) fwrite((void *) buf, (size_t) sizeof buf, (size_t) 1, fp);
 }
 
 static void
@@ -1238,9 +1231,7 @@ const char * const	name;
 	convert(eitol(timecnt), tzh.tzh_timecnt);
 	convert(eitol(typecnt), tzh.tzh_typecnt);
 	convert(eitol(charcnt), tzh.tzh_charcnt);
-	(void) fwrite((genericptr_t) &tzh,
-		(fwrite_size_t) sizeof tzh,
-		(fwrite_size_t) 1, fp);
+	(void) fwrite((void *) &tzh, (size_t) sizeof tzh, (size_t) 1, fp);
 	for (i = 0; i < timecnt; ++i) {
 		j = leapcnt;
 		while (--j >= 0)
@@ -1251,18 +1242,16 @@ const char * const	name;
 		puttzcode((long) ats[i], fp);
 	}
 	if (timecnt > 0)
-		(void) fwrite((genericptr_t) types,
-			(fwrite_size_t) sizeof types[0],
-			(fwrite_size_t) timecnt, fp);
+		(void) fwrite((void *) types, (size_t) sizeof types[0],
+		    (size_t) timecnt, fp);
 	for (i = 0; i < typecnt; ++i) {
 		puttzcode((long) gmtoffs[i], fp);
 		(void) putc(isdsts[i], fp);
 		(void) putc(abbrinds[i], fp);
 	}
 	if (charcnt != 0)
-		(void) fwrite((genericptr_t) chars,
-			(fwrite_size_t) sizeof chars[0],
-			(fwrite_size_t) charcnt, fp);
+		(void) fwrite((void *) chars, (size_t) sizeof chars[0],
+			(size_t) charcnt, fp);
 	for (i = 0; i < leapcnt; ++i) {
 		if (roll[i]) {
 			if (timecnt == 0 || trans[i] < ats[0]) {
@@ -1830,21 +1819,11 @@ char * const	name;
 		return 0;
 	while ((cp = strchr(cp + 1, '/')) != 0) {
 		*cp = '\0';
-#ifndef unix
-		/*
-		** MS-DOS drive specifier?
-		*/
-		if (strlen(name) == 2 && isascii(name[0]) &&
-			isalpha(name[0]) && name[1] == ':') {
-				*cp = '/';
-				continue;
-		}
-#endif /* !defined unix */
 		if (!itsdir(name)) {
 			/*
 			** It doesn't seem to exist, so we try to create it.
 			*/
-			if (emkdir(name, 0755) != 0) {
+			if (mkdir(name, 0755) != 0) {
 				(void) fprintf(stderr,
 					"%s: Can't create directory ",
 					progname);

@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 
 # Change the line below for your time zone (after finding the zone you want in
 # the time zone files, or adding it to a time zone file).
@@ -96,7 +96,7 @@ REDO=		right_only
 # to the end of the "CFLAGS=" line
 
 .PATH:	${.CURDIR}/datfiles
-CFLAGS=	-Demkdir=mkdir -DTM_GMTOFF=tm_gmtoff -DTM_ZONE=tm_zone
+CFLAGS=	-DTM_GMTOFF=tm_gmtoff -DTM_ZONE=tm_zone
 PROG=	zic
 MAN5=	tzfile.0
 
