@@ -1,5 +1,5 @@
 #	From: @(#)Makefile	6.4 (Berkeley) 2/21/91
-#	$Id$
+#	$Id: Makefile,v 1.4 1993/08/27 23:37:06 rgrimes Exp $
 
 PROG=		gcpp
 BINDIR=		/usr/libexec
@@ -18,7 +18,10 @@ afterinstall:
 	install -c -o $(BINOWN) -g $(BINGRP) -m $(BINMODE) \
 		$(.CURDIR)/usr.bin.cpp.sh $(DESTDIR)/usr/bin/gcpp
 	@/bin/rm -rf $(DESTDIR)/usr/bin/cpp
-	@ln -s $(DESTDIR)/usr/bin/gcpp $(DESTDIR)/usr/bin/cpp
+	@cd $(DESTDIR)/usr/bin; ln -s gcpp cpp
 	@echo $(DESTDIR)/usr/bin/cpp -\> $(DESTDIR)/usr/bin/gcpp
+	@/bin/rm -rf $(DESTDIR)$(BINDIR)/cpp
+	@cd $(DESTDIR)$(BINDIR); ln -s gcpp cpp
+	@echo $(DESTDIR)$(BINDIR)/cpp -\> $(DESTDIR)$(BINDIR)/gcpp
 
 .include <bsd.prog.mk>
