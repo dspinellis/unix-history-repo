@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.58 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.59 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -724,12 +724,11 @@ openmailer(m, pvp, ctladdr, clever, e)
 	if (strcmp(m->m_mailer, "[LPC]") == 0)
 	{
 		mci = (MCI *) xalloc(sizeof *mci);
+		bzero((char *) mci, sizeof *mci);
 		mci->mci_in = stdin;
 		mci->mci_out = stdout;
-		mci->mci_pid = 0;
 		mci->mci_state = clever ? MCIS_OPENING : MCIS_OPEN;
 		mci->mci_mailer = m;
-		mci->mci_flags = 0;
 	}
 	else if (strcmp(m->m_mailer, "[IPC]") == 0 ||
 		 strcmp(m->m_mailer, "[TCP]") == 0)
@@ -806,6 +805,7 @@ openmailer(m, pvp, ctladdr, clever, e)
 			/* enter status of this host */
 			setstat(i);
 		}
+		mci->mci_pid = 0;
 #else /* no DAEMON */
 		syserr("openmailer: no IPC");
 		return NULL;
@@ -944,8 +944,10 @@ openmailer(m, pvp, ctladdr, clever, e)
 		*/
 
 		mci = (MCI *) xalloc(sizeof *mci);
+		bzero((char *) mci, sizeof *mci);
 		mci->mci_mailer = m;
 		mci->mci_state = clever ? MCIS_OPENING : MCIS_OPEN;
+		mci->mci_pid = pid;
 		(void) close(mpvect[0]);
 		mci->mci_out = fdopen(mpvect[1], "w");
 		if (clever)

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -251,7 +251,7 @@ recipient(a, sendq)
 	(void) strcpy(buf, a->q_user);
 	for (p = buf; *p != '\0' && !quoted; p++)
 	{
-		if (!isascii(*p) && (*p & 0377) != (SpaceSub & 0377))
+		if (*p == '\\')
 			quoted = TRUE;
 	}
 	stripquotes(buf);
