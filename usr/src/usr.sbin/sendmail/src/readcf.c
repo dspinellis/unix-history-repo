@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.45 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.46 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1158,6 +1158,7 @@ setoption(opt, val, sticky)
 {
 	register char *p;
 	register struct optioninfo *o;
+	char *subopt;
 	extern bool atobool();
 	extern time_t convtime();
 	extern int QueueLA;
@@ -1186,6 +1187,9 @@ setoption(opt, val, sticky)
 			*p++ = '\0';
 		while (*p == ' ')
 			p++;
+		subopt = strchr(val, '.');
+		if (subopt != NULL)
+			*subopt++ = '\0';
 		sel = NULL;
 		for (o = OptionTab; o->o_name != NULL; o++)
 		{
@@ -1233,14 +1237,18 @@ setoption(opt, val, sticky)
 			if (o->o_code == opt)
 				break;
 		}
+		subopt = NULL;
 	}
 
 	if (tTd(37, 1))
 	{
 		printf(isascii(opt) && isprint(opt) ?
-			    "setoption %s (%c)=%s" : "setoption %s (0x%x)=%s",
+			    "setoption %s (%c).%s=%s" :
+			    "setoption %s (0x%x).%s=%s",
 			o->o_name == NULL ? "<unknown>" : o->o_name,
-			opt, val);
+			opt,
+			subopt == NULL ? "" : subopt,
+			val);
 	}
 
 	/*
@@ -1563,7 +1571,10 @@ setoption(opt, val, sticky)
 		break;
 
 	  case 'r':		/* read timeout */
-		settimeouts(val);
+		if (subopt == NULL)
+			inittimeouts(val);
+		else
+			settimeout(subopt, val);
 		break;
 
 	  case 'S':		/* status file */
@@ -1582,9 +1593,9 @@ setoption(opt, val, sticky)
 		if (p != NULL)
 		{
 			*p++ = '\0';
-			TimeOuts.to_q_warning[TOC_NORMAL] = convtime(p, 'd');
+			settimeout("queuewarn", p);
 		}
-		TimeOuts.to_q_return[TOC_NORMAL] = convtime(val, 'h');
+		settimeout("queuereturn", val);
 		break;
 
 	  case 't':		/* time zone name */
@@ -1807,7 +1818,7 @@ makemapentry(line)
 	}
 }
 /*
-**  SETTIMEOUTS -- parse and set timeout values
+**  INITTIMEOUTS -- parse and set timeout values
 **
 **	Parameters:
 **		val -- a pointer to the values.  If NULL, do initial
@@ -1824,7 +1835,7 @@ makemapentry(line)
 #define MINUTES	* 60
 #define HOUR	* 3600
 
-settimeouts(val)
+inittimeouts(val)
 	register char *val;
 {
 	register char *p;
@@ -1873,7 +1884,6 @@ settimeouts(val)
 		else
 		{
 			register char *q = strchr(val, ':');
-			time_t to;
 
 			if (q == NULL && (q = strchr(val, '=')) == NULL)
 			{
@@ -1881,52 +1891,96 @@ settimeouts(val)
 				continue;
 			}
 			*q++ = '\0';
-			to = convtime(q, 'm');
-
-			if (strcasecmp(val, "initial") == 0)
-				TimeOuts.to_initial = to;
-			else if (strcasecmp(val, "mail") == 0)
-				TimeOuts.to_mail = to;
-			else if (strcasecmp(val, "rcpt") == 0)
-				TimeOuts.to_rcpt = to;
-			else if (strcasecmp(val, "datainit") == 0)
-				TimeOuts.to_datainit = to;
-			else if (strcasecmp(val, "datablock") == 0)
-				TimeOuts.to_datablock = to;
-			else if (strcasecmp(val, "datafinal") == 0)
-				TimeOuts.to_datafinal = to;
-			else if (strcasecmp(val, "command") == 0)
-				TimeOuts.to_nextcommand = to;
-			else if (strcasecmp(val, "rset") == 0)
-				TimeOuts.to_rset = to;
-			else if (strcasecmp(val, "helo") == 0)
-				TimeOuts.to_helo = to;
-			else if (strcasecmp(val, "quit") == 0)
-				TimeOuts.to_quit = to;
-			else if (strcasecmp(val, "misc") == 0)
-				TimeOuts.to_miscshort = to;
-			else if (strcasecmp(val, "ident") == 0)
-				TimeOuts.to_ident = to;
-			else if (strcasecmp(val, "fileopen") == 0)
-				TimeOuts.to_fileopen = to;
-			else if (strcasecmp(val, "queuewarn") == 0)
-				TimeOuts.to_q_warning[TOC_NORMAL] = to;
-			else if (strcasecmp(val, "queuereturn") == 0)
-				TimeOuts.to_q_return[TOC_NORMAL] = to;
-			else if (strcasecmp(val, "queuewarn.normal") == 0)
-				TimeOuts.to_q_warning[TOC_NORMAL] = to;
-			else if (strcasecmp(val, "queuereturn.normal") == 0)
-				TimeOuts.to_q_return[TOC_NORMAL] = to;
-			else if (strcasecmp(val, "queuewarn.urgent") == 0)
-				TimeOuts.to_q_warning[TOC_URGENT] = to;
-			else if (strcasecmp(val, "queuereturn.urgent") == 0)
-				TimeOuts.to_q_return[TOC_URGENT] = to;
-			else if (strcasecmp(val, "queuewarn.non-urgent") == 0)
-				TimeOuts.to_q_warning[TOC_NONURGENT] = to;
-			else if (strcasecmp(val, "queuereturn.non-urgent") == 0)
-				TimeOuts.to_q_return[TOC_NONURGENT] = to;
-			else
-				syserr("settimeouts: invalid timeout %s", val);
+			settimeout(val, q);
 		}
 	}
+}
+/*
+**  SETTIMEOUT -- set an individual timeout
+**
+**	Parameters:
+**		name -- the name of the timeout.
+**		val -- the value of the timeout.
+**
+**	Returns:
+**		none.
+*/
+
+settimeout(name, val)
+	char *name;
+	char *val;
+{
+	register char *p;
+	time_t to;
+	extern time_t convtime();
+
+	to = convtime(val, 'm');
+	p = strchr(name, '.');
+	if (p != NULL)
+		*p++ = '\0';
+
+	if (strcasecmp(name, "initial") == 0)
+		TimeOuts.to_initial = to;
+	else if (strcasecmp(name, "mail") == 0)
+		TimeOuts.to_mail = to;
+	else if (strcasecmp(name, "rcpt") == 0)
+		TimeOuts.to_rcpt = to;
+	else if (strcasecmp(name, "datainit") == 0)
+		TimeOuts.to_datainit = to;
+	else if (strcasecmp(name, "datablock") == 0)
+		TimeOuts.to_datablock = to;
+	else if (strcasecmp(name, "datafinal") == 0)
+		TimeOuts.to_datafinal = to;
+	else if (strcasecmp(name, "command") == 0)
+		TimeOuts.to_nextcommand = to;
+	else if (strcasecmp(name, "rset") == 0)
+		TimeOuts.to_rset = to;
+	else if (strcasecmp(name, "helo") == 0)
+		TimeOuts.to_helo = to;
+	else if (strcasecmp(name, "quit") == 0)
+		TimeOuts.to_quit = to;
+	else if (strcasecmp(name, "misc") == 0)
+		TimeOuts.to_miscshort = to;
+	else if (strcasecmp(name, "ident") == 0)
+		TimeOuts.to_ident = to;
+	else if (strcasecmp(name, "fileopen") == 0)
+		TimeOuts.to_fileopen = to;
+	else if (strcasecmp(name, "queuewarn") == 0)
+	{
+		to = convtime(val, 'h');
+		if (p == NULL || strcmp(p, "*") == NULL)
+		{
+			TimeOuts.to_q_warning[TOC_NORMAL] = to;
+			TimeOuts.to_q_warning[TOC_URGENT] = to;
+			TimeOuts.to_q_warning[TOC_NONURGENT] = to;
+		}
+		else if (strcasecmp(p, "normal") == 0)
+			TimeOuts.to_q_warning[TOC_NORMAL] = to;
+		else if (strcasecmp(p, "urgent") == 0)
+			TimeOuts.to_q_warning[TOC_URGENT] = to;
+		else if (strcasecmp(p, "non-urgent") == 0)
+			TimeOuts.to_q_warning[TOC_NONURGENT] = to;
+		else
+			syserr("settimeout: invalid queuewarn subtimeout %s", p);
+	}
+	else if (strcasecmp(name, "queuereturn") == 0)
+	{
+		to = convtime(val, 'd');
+		if (p == NULL || strcmp(p, "*") == 0)
+		{
+			TimeOuts.to_q_return[TOC_NORMAL] = to;
+			TimeOuts.to_q_return[TOC_URGENT] = to;
+			TimeOuts.to_q_return[TOC_NONURGENT] = to;
+		}
+		else if (strcasecmp(p, "normal") == 0)
+			TimeOuts.to_q_return[TOC_NORMAL] = to;
+		else if (strcasecmp(p, "urgent") == 0)
+			TimeOuts.to_q_return[TOC_URGENT] = to;
+		else if (strcasecmp(p, "non-urgent") == 0)
+			TimeOuts.to_q_return[TOC_NONURGENT] = to;
+		else
+			syserr("settimeout: invalid queuereturn subtimeout %s", p);
+	}
+	else
+		syserr("settimeout: invalid timeout %s", name);
 }
