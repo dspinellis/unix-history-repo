@@ -5,9 +5,9 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#  This has been tested on HP-UX 8.07 on 7xx series.
+#  This has been tested on HP-UX 9.05 on 7xx series.
 #
-#	@(#)Makefile.HP-UX	8.5 (Berkeley) %G%
+#	@(#)Makefile.HP-UX	8.6 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
