@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	1.7	83/01/13	*/
+/*	uipc_usrreq.c	1.8	83/03/23	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -184,7 +184,7 @@ uipc_usrreq(so, req, m, nam)
 	default:
 		panic("piusrreq");
 	}
-	return (0);
+	return (error);
 }
 
 int	unp_sendspace = 1024*2;
