@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chown.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)chown.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -22,8 +22,10 @@ static char sccsid[] = "@(#)chown.c	5.17 (Berkeley) %G%";
 #include <fts.h>
 #include <pwd.h>
 #include <grp.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 
 int ischown, uid, gid, fflag, rflag, retval;
@@ -65,17 +67,17 @@ main(argc, argv)
 #ifdef SUPPORT_DOT
 		if (cp = index(*argv, '.')) {
 			*cp++ = '\0';
-			setgid(cp);
+			a_gid(cp);
 		} else
 #endif
 		if (cp = index(*argv, ':')) {
 			*cp++ = '\0';
-			setgid(cp);
+			a_gid(cp);
 		} 
-		setuid(*argv);
+		a_uid(*argv);
 	}
 	else 
-		setgid(*argv);
+		a_gid(*argv);
 
 	if (rflag) {
 		if (!(fts = fts_open(++argv, FTS_NOSTAT|FTS_PHYSICAL, 0))) {
@@ -101,48 +103,51 @@ main(argc, argv)
 	exit(retval);
 }
 
-setgid(s)
+a_gid(s)
 	register char *s;
 {
-	struct group *gr, *getgrnam();
+	struct group *gr;
 
 	if (!*s) {
 		gid = -1;			/* argument was "uid." */
 		return;
 	}
-	for (gname = s; *s && isdigit(*s); ++s);
-	if (!*s)
-		gid = atoi(gname);
+	gname = s;
+	if (gr = getgrnam(s))
+		gid = gr->gr_gid;
 	else {
-		if (!(gr = getgrnam(gname))) {
+		for (; *s && isdigit(*s); ++s);
+		if (!*s)
+			gid = atoi(gname);
+		else {
 			(void)fprintf(stderr, "%s: unknown group id: %s\n",
 			    myname, gname);
 			exit(1);
 		}
-		gid = gr->gr_gid;
 	}
 }
 
-setuid(s)
+a_uid(s)
 	register char *s;
 {
-	struct passwd *pwd, *getpwnam();
-	char *beg;
+	struct passwd *pw;
+	char *uname;
 
 	if (!*s) {
 		uid = -1;			/* argument was ".gid" */
 		return;
 	}
-	for (beg = s; *s && isdigit(*s); ++s);
-	if (!*s)
-		uid = atoi(beg);
+	if (pw = getpwnam(s))
+		uid = pw->pw_uid;
 	else {
-		if (!(pwd = getpwnam(beg))) {
+		for (uname = s; *s && isdigit(*s); ++s);
+		if (!*s)
+			uid = atoi(uname);
+		else {
 			(void)fprintf(stderr,
-			    "chown: unknown user id: %s\n", beg);
+			    "chown: unknown user id: %s\n", uname);
 			exit(1);
 		}
-		uid = pwd->pw_uid;
 	}
 }
 
