@@ -1,4 +1,4 @@
-.\"	"@(#)bmac.open	2.1	%G%";
+.\"	"@(#)bmac.open	2.2	%G%";
 .\" open format troff macros
 .\" citation formatting strings
 .ds [[ [
@@ -24,10 +24,12 @@
 .ds [< " \&
 .ds >]
 .\" reference formating strings
+.ds a] " \&
+.ds b] , \&
 .ds c] , \&
 .ds n] "" and \&
 .ds m] "" and \&
-.ds a] " \&
+.ds p] .
 .\" reference formatting macros
 .de s[   \" start reference
 .nh
@@ -56,9 +58,6 @@
 .       ie \\n([E-1 \\*([E, editors.
 .       el \\*([E, editor.\}
 .br
-.if !~\\*(]A~.~ .as [A .
-.if !~\\*([A~~ \\*([A
-.br
 .if !~\\*(]T~.~ .as [T .
 .if !~\\*([T~~ \\*([T
 .br
@@ -84,7 +83,7 @@
 .       as a[ , \\*([V
 .       if !~\\*([N~~ .as a[ (\\*([N)
 .       if !~\\*([P~~ .as a[ :\\*([P\}
-.el .if !~\\*([P~~ .as a[ , pp. \\*([P
+.el .if !~\\*([P~~ .as a[ , pages \\*([P
 .if !~\\*([I~~ .as a[ , \\*([I
 .if !~\\*([D~~ .as a[ , \\*([D
 \\*(a[.
@@ -132,7 +131,7 @@ in \\fI\\*([B\\fP\c
 .if !~\\*([V~~ , Vol \\*([V\c
 .if !~\\*([E~~ \{\
 .       ie \\n([E-1 , \\*([E, editors.
-.       el , \\*([E, editor.\}
+.       el \\*([E, editor.\}
 .br
 \&.
 .br
@@ -140,7 +139,7 @@ in \\fI\\*([B\\fP\c
 .if !~\\*([C~~ , \\*([C\c
 .if !~\\*([D~~ , \\*([D\c
 \&.
-.if !~\\*([O~~ \\*([O.
+.if !~\\*([O~~ , \\*([O.
 .e[
 ..
 .de 4[ \" report
@@ -149,7 +148,7 @@ in \\fI\\*([B\\fP\c
 .if !~\\*([A~~ \\*([A
 .br
 .if !~\\*([E~~ \{\
-.       ie \\n([E-1 \\*([E, editors.
+.       ie \\n([E-1 , \\*([E, editors.
 .       el \\*([E, editor.\}
 .br
 .if !~\\*(]T~.~ .as [T .

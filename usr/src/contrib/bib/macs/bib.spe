@@ -1,5 +1,5 @@
 #
-#	"@(#)bib.spe	2.1	%G%";
+#	"@(#)bib.spe	2.2	%G%";
 #
 #  Software - Practice and Exprience format
 #
@@ -75,7 +75,7 @@ H
 .ds ['
 .ds '] '
 .ds [<
-.ds >]
+.ds >] " \&
 .ds ], ,
 .ds ]- -
 .\" reference formmating strings
@@ -83,7 +83,9 @@ H
 .ds n] "" and \&
 .ds m] "" and \&
 .ds a] " \&
-.\" reference formmating macros
+.ds b] , \&
+.ds p] .
+.\" reference formating macros
 .de s[   \" start reference
 .nh
 .IP \\*([F. 5n

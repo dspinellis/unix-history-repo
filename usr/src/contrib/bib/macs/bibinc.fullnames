@@ -1,6 +1,5 @@
 #
-#	"@(#)bibinc.fullnames	2.1	%G%";
-#
+#	"@(#)bibinc.fullnames	2.2	%G%";
 # full journal names, and other names
 #
 # journals
@@ -15,6 +14,7 @@ D COMPSUR ACM Computing Surveys
 D I&C Information and Control
 D IEEETSE IEEE Transactions on Software Engineering
 D IEEETC IEEE Transactions on Computers
+D IJCIS International Journal of Computer and Information Sciences
 D IPL Information Processing Letters
 D JACM Journal of the ACM
 D JCSS Journal of Computer and System Sciences
@@ -24,8 +24,8 @@ D SIAMJNA Siam Journal on Numerical Analysis
 D SIGACT S\&IGACT News
 D SIGPLAN SI\&GPLAN Notices
 D SIGSOFT Software Engineering Notes
-D SP&E Software\*(emPractice & Experience
-D SPE Software\*(emPractice & Experience
+D SP&E Software\(emPractice & Experience
+D SPE Software\(emPractice & Experience
 D TODS ACM Transactions on Database Systems
 D TOMS ACM Transactions on Mathematical Software
 D TOPLAS ACM Transactions on Programming Languages and Systems
@@ -57,6 +57,7 @@ D FOCS Annual SYMP on Foundations of Computer Science
 D SOSP SYMP on Operating System Principles
 D ICSE International CONF on Software Engineering
 D JICAI Joint International CONF on Artificial Intelligence
+D HICSS Hawaii International CONF on System Science
 #
 #  publishers
 #
@@ -86,4 +87,3 @@ D UATR UNIV of Arizona TR
 D DCS  DEPT of Computer Science
 D CSD Computer Science DEPT
 D DISS Dissertation
-

@@ -1,5 +1,5 @@
 #
-#	"@(#)bib.opena	2.1	%G%";
+#	"@(#)bib.opena	2.2	%G%";
 #
 #  standard open alphabetic format
 #
@@ -9,4 +9,4 @@ I BMACLIB/bibinc.fullnames
 T AT
 .so \*(l]/bmac.open
 # a[ - amount to indent reference
-.nr a[ 9
+.nr a[ 10
