@@ -2,9 +2,8 @@ tahoe/autoconf.c	standard device-driver
 tahoe/conf.c		standard
 tahoe/cons.c		standard
 tahoe/clock.c		standard
-tahoe/dkbad.c		standard
-tahoe/kdb_machdep.c	optional kdb
-tahoe/kdb_opset.c	optional kdb
+tahoe/kdb_machdep.c	optional kadb
+tahoe/kdb_opset.c	optional kadb
 tahoe/in_cksum.c	optional inet
 tahoe/machdep.c		standard config-dependent
 tahoe/mem.c		standard
