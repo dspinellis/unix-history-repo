@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.39 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.40 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.39 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.40 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -433,7 +433,8 @@ runqueue(forkflag)
 
 			pid = dowork(w->w_name + 2, ForkQueueRuns, FALSE, e);
 			errno = 0;
-			(void) waitfor(pid);
+			if (pid != 0)
+				(void) waitfor(pid);
 		}
 		free(w->w_name);
 		free((char *) w);
@@ -770,6 +771,7 @@ dowork(id, forkflag, requeueflag, e)
 		e->e_errormode = EM_MAIL;
 		e->e_id = id;
 		GrabTo = UseErrorsTo = FALSE;
+		ExitStat = EX_OK;
 		if (forkflag)
 		{
 			disconnect(1, e);
