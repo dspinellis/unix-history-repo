@@ -9,13 +9,14 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)deliver.c	5.7 (Berkeley) %G%";
+static char	SccsId[] = "@(#)deliver.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 # include <signal.h>
 # include <errno.h>
 # include "sendmail.h"
 # include <sys/stat.h>
+# include <netdb.h>
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -936,21 +937,30 @@ giveresponse(stat, m, e)
 	else if (stat == EX_TEMPFAIL)
 	{
 		(void) strcpy(buf, SysExMsg[i]);
-		if (errno != 0)
+		if (h_errno == TRY_AGAIN)
 		{
 			extern char *errstring();
 
-			statmsg = errstring(errno);
+			statmsg = errstring(h_errno+MAX_ERRNO);
 		}
 		else
 		{
-#ifdef SMTP
-			extern char SmtpError[];
+			if (errno != 0)
+			{
+				extern char *errstring();
 
-			statmsg = SmtpError;
+				statmsg = errstring(errno);
+			}
+			else
+			{
+#ifdef SMTP
+				extern char SmtpError[];
+
+				statmsg = SmtpError;
 #else SMTP
-			statmsg = NULL;
+				statmsg = NULL;
 #endif SMTP
+			}
 		}
 		if (statmsg != NULL && statmsg[0] != '\0')
 		{
@@ -995,6 +1005,7 @@ giveresponse(stat, m, e)
 		e->e_message = newstr(&statmsg[4]);
 	}
 	errno = 0;
+	h_errno = 0;
 }
 /*
 **  LOGDELIVERY -- log the delivery in the system log
