@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_7.c	2.6 84/02/03";
+static	char *sccsid = "@(#)pl_7.c	2.7 84/02/23";
 #endif
 
 #include "player.h"
@@ -15,7 +15,7 @@ static int sc_line;
 
 initscreen()
 {
-	(void) initscr();
+	/* initscr() already done in SCREENTEST() */
 	view_w = newwin(VIEW_Y, VIEW_X, VIEW_T, VIEW_L);
 	slot_w = newwin(SLOT_Y, SLOT_X, SLOT_T, SLOT_L);
 	scroll_w = newwin(SCROLL_Y, SCROLL_X, SCROLL_T, SCROLL_L);
@@ -26,8 +26,15 @@ initscreen()
 	(void) leaveok(slot_w, 1);
 	(void) leaveok(stat_w, 1);
 	(void) leaveok(turn_w, 1);
+#ifdef SIGTSTP
+	{
+		int susp();
+		(void) signal(SIGTSTP, susp);
+	}
+#endif
 	noecho();
 	crmode();
+	return 0;
 }
 
 cleanupscreen()
@@ -57,12 +64,17 @@ newturn()
 			mf->readyR = R_LOADING;
 		else
 			mf->readyR = R_LOADED;
+	if (!hasdriver)
+		Write(W_DDEAD, SHIP(0), 0, 0, 0, 0, 0);
 
 	if (sc_hasprompt) {
 		(void) wmove(scroll_w, sc_line, 0);
 		(void) wclrtoeol(scroll_w);
 	}
-	Sync();
+	if (Sync() < 0)
+		leave(LEAVE_SYNC);
+	if (!hasdriver)
+		leave(LEAVE_DRIVER);
 	if (sc_hasprompt)
 		(void) wprintw(scroll_w, "%s%s", sc_prompt, sc_buf);
 
@@ -421,3 +433,13 @@ adjustview()
 	else if (mf->col > viewcol + (VIEW_X - VIEW_X/8))
 		viewcol = mf->col - VIEW_X/8;
 }
+
+#ifdef SIGTSTP
+susp()
+{
+	blockalarm();
+	tstp();
+	(void) signal(SIGTSTP, susp);
+	unblockalarm();
+}
+#endif
