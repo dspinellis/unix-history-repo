@@ -9,10 +9,10 @@
  *
  * from: $Hdr: fb_conf.c,v 4.300 91/06/09 06:32:46 root Rel41 $ SONY
  *
- *	@(#)fb_conf.c	7.1 (Berkeley) %G%
+ *	@(#)fb_conf.c	7.2 (Berkeley) %G%
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
 #include "nwb512.h"
 #include "nwb514.h"
@@ -37,10 +37,10 @@
 #ifdef IPC_MRX
 #include "../../iop/framebuf.h"
 #else
-#include "../iop/framebuf.h"
+#include <news3400/iop/framebuf.h>
 #endif
 
-#include "../fb/fbdefs.h"
+#include <news3400/fb/fbdefs.h>
 
 #define NFBDEV \
 	NNWB225 + NNWB512 + NNWB518 + NPFBM + NPFBC + NNWB514 + NNWB251 + \

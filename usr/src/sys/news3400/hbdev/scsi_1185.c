@@ -9,7 +9,7 @@
  *
  * from: $Hdr: scsi_1185.c,v 4.300 91/06/09 06:22:20 root Rel41 $ SONY
  *
- *	@(#)scsi_1185.c	7.2 (Berkeley) %G%
+ *	@(#)scsi_1185.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -31,42 +31,35 @@
  *
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
-#include "types.h"
-#include "../include/pte.h"
-#include "../include/cpu.h"
+#include <sys/types.h>
+#include <machine/pte.h>
+#include <machine/cpu.h>
 
-#include "param.h"
-#include "systm.h"
-#include "map.h"
-#include "buf.h"
-#include "vm/vm.h"
-#include "proc.h"
-#include "user.h"
-#include "conf.h"
-#include "dkstat.h"
-#include "kernel.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/map.h>
+#include <sys/buf.h>
+#include <vm/vm.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/conf.h>
+#include <sys/dkstat.h>
+#include <sys/kernel.h>
 
-#include "../hbdev/hbvar.h"
-#include "../hbdev/screg_1185.h"
-#include "../hbdev/scsic.h"
-
-#ifdef news1200
-# include "../hbdev/dmac_0266.h"
-# ifndef NDMACMAP
-# define NDMACMAP	NVSCSIREG
-# endif
-#endif
+#include <news3400/hbdev/hbvar.h>
+#include <news3400/hbdev/screg_1185.h>
+#include <news3400/hbdev/scsic.h>
 
 #ifdef news3400
-# include "../hbdev/dmac_0448.h"
+# include <news3400/hbdev/dmac_0448.h>
 # ifndef NDMACMAP
 # define NDMACMAP	144
 # endif
 #endif
 
-#include "../iodev/scsireg.h"
+#include <news3400/iodev/scsireg.h>
 
 #ifdef mips
 #define	VOLATILE	volatile

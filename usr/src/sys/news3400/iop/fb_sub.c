@@ -9,7 +9,7 @@
  *
  * from: $Hdr: fb_sub.c,v 4.300 91/06/27 20:43:09 root Rel41 $ SONY
  *
- *	@(#)fb_sub.c	7.1 (Berkeley) %G%
+ *	@(#)fb_sub.c	7.2 (Berkeley) %G%
  */
 
 #include "fb.h"
@@ -18,25 +18,25 @@
  * Frame buffer driver
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
-#include "types.h"
-#include "../include/pte.h"
-#include "../include/cpu.h"
-#include "../include/param.h"
+#include <sys/types.h>
+#include <machine/pte.h>
+#include <machine/cpu.h>
+#include <machine/param.h>
 
-#include "param.h"
-#include "proc.h"
-#include "user.h"
-#include "buf.h"
-#include "vm/vm.h"
-#include "systm.h"
-#include "map.h"
-#include "uio.h"
-#include "kernel.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/buf.h>
+#include <vm/vm.h>
+#include <sys/systm.h>
+#include <sys/map.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
 
-#include "../iop/framebuf.h"
-#include "../iop/fbreg.h"
+#include <news3400/iop/framebuf.h>
+#include <news3400/iop/fbreg.h>
 #ifdef CPU_DOUBLE
 #ifdef IPC_MRX
 #include "../ipc/newsipc.h"

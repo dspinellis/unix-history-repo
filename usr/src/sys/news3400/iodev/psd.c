@@ -9,7 +9,7 @@
  *
  * from: $Hdr: psd.c,v 4.300 91/06/09 06:38:07 root Rel41 $ SONY
  *
- *	@(#)psd.c	7.1 (Berkeley) %G%
+ *	@(#)psd.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -24,24 +24,22 @@
  *
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
-#include "param.h"
-#include "buf.h"
-#include "proc.h"
-#include "user.h"
-#include "dkstat.h"
-#include "uio.h"
-#include "kernel.h"
-#include "ioctl.h"
-#ifdef BSD4_3
-#include "syslog.h"
-#endif
+#include <sys/param.h>
+#include <sys/buf.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/dkstat.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
+#include <sys/ioctl.h>
+#include <sys/syslog.h>
 
-#include "vm/vm.h"
+#include <vm/vm.h>
 
 #ifdef mips
-#include "../include/cpu.h"
+#include <machine/cpu.h>
 #endif
 
 #ifdef IPC_MRX
@@ -50,14 +48,14 @@
 #endif
 
 #ifdef CPU_SINGLE
-#include "../hbdev/hbvar.h"
-#include "../hbdev/scsic.h"
+#include <news3400/hbdev/hbvar.h>
+#include <news3400/hbdev/scsic.h>
 #endif
 
-#include "../iodev/scsireg.h"
-#include "../iodev/scu.h"
+#include <news3400/iodev/scsireg.h>
+#include <news3400/iodev/scu.h>
 
-#include "../iodev/ioptohb.h"
+#include <news3400/iodev/ioptohb.h>
 
 
 #define	PROBE_MAXRETRY	100

@@ -9,7 +9,7 @@
  *
  * from: $Hdr: mouse.h,v 4.300 91/06/09 06:42:56 root Rel41 $ SONY
  *
- *	@(#)mouse.h	7.1 (Berkeley) %G%
+ *	@(#)mouse.h	7.2 (Berkeley) %G%
  */
 
 #ifndef __MOUSE__
@@ -213,11 +213,7 @@ struct ms_param {
  * Mouse I/O contol commands
  */
 
-#ifdef KERNEL
-#include "ioctl.h"
-#else
 #include <sys/ioctl.h>
-#endif
 
 #define	MSIOCGETEM	_IOR('M', 0, int)	/* get current event mask */
 #define	MSIOCSETEM	_IOW('M', 1, int)	/* set event mask */

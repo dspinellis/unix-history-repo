@@ -9,7 +9,7 @@
  *
  * from: $Hdr: if_en.c,v 4.300 91/06/09 06:25:54 root Rel41 $ SONY
  *
- *	@(#)if_en.c	7.5 (Berkeley) %G%
+ *	@(#)if_en.c	7.6 (Berkeley) %G%
  */
 
 #include "en.h"
@@ -21,45 +21,45 @@
 /*
  * Interlan Ethernet Communications Controller interface
  */
-#include "types.h"
-#include "../include/fix_machine_type.h"
-#include "../include/pte.h"
+#include <sys/types.h>
+#include <machine/fix_machine_type.h>
+#include <machine/pte.h>
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "ioctl.h"
-#include "errno.h"
-#include "time.h"
-#include "cdefs.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/buf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <sys/errno.h>
+#include <sys/time.h>
+#include <sys/cdefs.h>
 
-#include "net/if.h"
-#include "net/netisr.h"
-#include "net/route.h"
+#include <net/if.h>
+#include <net/netisr.h>
+#include <net/route.h>
 
 #ifdef INET
-#include "netinet/in.h"
-#include "netinet/in_systm.h"
-#include "netinet/in_var.h"
-#include "netinet/ip.h"
-#include "netinet/if_ether.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
+#include <netinet/if_ether.h>
 #endif
 
-#include "../if/if_news.h"
-#include "../if/if_en.h"
+#include <news3400/if/if_news.h>
+#include <news3400/if/if_en.h>
 
 #ifdef CPU_SINGLE
-#include "../hbdev/hbvar.h"
+#include <news3400/hbdev/hbvar.h>
 #define	iop_device	hb_device
 #define	iop_driver	hb_driver
 #define	ii_unit		hi_unit
 #define	ii_intr		hi_intr
 #define	ii_alive	hi_alive
 #else
-#include "../iop/iopvar.h"
+#include <news3400/iop/iopvar.h>
 #endif
 
 int	enprobe(), enattach(), enrint(), enxint();
@@ -87,7 +87,7 @@ extern struct ifnet loif;
 struct en_softc en_softc[NEN];
 
 #if NBPFILTER > 0
-#include "../net/bpf.h"
+#include <net/bpf.h>
 #endif
 
 enprobe(ii)
@@ -453,7 +453,7 @@ ensetaddr(physaddr, unit)
  *	en_prom_mode()
  */
 #ifdef CPU_SINGLE
-#include "../include/cpu.h"
+#include <machine/cpu.h>
 
 en_probe(hi)
 	struct hb_device *hi;

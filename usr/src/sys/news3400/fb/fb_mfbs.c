@@ -9,15 +9,15 @@
  *
  * from: $Hdr: fb_mfbs.c,v 4.300 91/06/27 20:42:43 root Rel41 $ SONY
  *
- *	@(#)fb_mfbs.c	7.1 (Berkeley) %G%
+ *	@(#)fb_mfbs.c	7.2 (Berkeley) %G%
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
-#include "param.h"
-#include "../iop/framebuf.h"
-#include "../iop/fbreg.h"
-#include "../fb/fbdefs.h"
+#include <sys/param.h>
+#include <news3400/iop/framebuf.h>
+#include <news3400/iop/fbreg.h>
+#include <news3400/fb/fbdefs.h>
 
 u_short mfbstarttab16[16] =
     {

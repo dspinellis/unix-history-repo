@@ -9,10 +9,10 @@
  *
  * from: $Hdr: fb_probe.c,v 4.300 91/06/09 06:32:57 root Rel41 $ SONY
  *
- *	@(#)fb_probe.c	7.1 (Berkeley) %G%
+ *	@(#)fb_probe.c	7.2 (Berkeley) %G%
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
 #ifdef IPC_MRX
 #include "../../iop/framebuf.h"
@@ -20,12 +20,12 @@
 #include "exec.h"
 #include "romsw.h"
 #else
-#include "../iop/framebuf.h"
-#include "types.h"
-#include "exec.h"
+#include <news3400/iop/framebuf.h>
+#include <sys/types.h>
+#include <sys/exec.h>
 #endif
 
-#include "../fb/fbdefs.h"
+#include <news3400/fb/fbdefs.h>
 
 #ifdef CPU_SINGLE
 #define SW_CONSOLE	0x07

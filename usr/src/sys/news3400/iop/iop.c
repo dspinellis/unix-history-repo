@@ -9,41 +9,41 @@
  *
  * from: $Hdr: iop.c,v 4.300 91/06/09 06:42:37 root Rel41 $ SONY
  *
- *	@(#)iop.c	7.1 (Berkeley) %G%
+ *	@(#)iop.c	7.2 (Berkeley) %G%
  */
 
 /*
  *	iop.c / hb.c	ver 0.0
  */
 
-#include "../include/fix_machine_type.h"
-#include "../include/machConst.h"
+#include <machine/fix_machine_type.h>
+#include <machine/machConst.h>
 
-#include "param.h"
-#include "systm.h"
-#include "map.h"
-#include "buf.h"
-#include "proc.h"
-#include "user.h"
-#include "conf.h"
-#include "dkstat.h"
-#include "kernel.h"
-#include "malloc.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/map.h>
+#include <sys/buf.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/conf.h>
+#include <sys/dkstat.h>
+#include <sys/kernel.h>
+#include <sys/malloc.h>
 
-#include "../include/pte.h"
-#include "../include/cpu.h"
+#include <machine/pte.h>
+#include <machine/cpu.h>
 
 #ifndef news700
 
-#include "../iodev/scsireg.h"
+#include <news3400/iodev/scsireg.h>
 
 #ifdef CPU_DOUBLE
 #include "../iop/iopvar.h"
 #endif
 
 #ifdef CPU_SINGLE
-#include "../hbdev/hbvar.h"
-#include "../hbdev/scsic.h"
+#include <news3400/hbdev/hbvar.h>
+#include <news3400/hbdev/scsic.h>
 struct scsi_stat scsi_stat;
 #endif
 

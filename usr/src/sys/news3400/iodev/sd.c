@@ -9,7 +9,7 @@
  *
  * from: $Hdr: sd.c,v 4.300 91/06/27 20:42:56 root Rel41 $ SONY
  *
- *	@(#)sd.c	7.2 (Berkeley) %G%
+ *	@(#)sd.c	7.3 (Berkeley) %G%
  */
 #define	dkblock(bp)	bp->b_blkno
 
@@ -20,27 +20,27 @@
 #include "sd.h"
 #if NSD > 0
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
-#include "param.h"
-#include "buf.h"
-#include "proc.h"
-#include "user.h"
-#include "dkstat.h"
-#include "uio.h"
-#include "kernel.h"
-#include "reboot.h"
-#include "ioctl.h"
-#include "systm.h"
-#include "mtio.h"
-#include "stat.h"
-#include "disklabel.h"
-#include "vm/vm.h"
-#include "syslog.h"
+#include <sys/param.h>
+#include <sys/buf.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/dkstat.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
+#include <sys/reboot.h>
+#include <sys/ioctl.h>
+#include <sys/systm.h>
+#include <sys/mtio.h>
+#include <sys/stat.h>
+#include <sys/disklabel.h>
+#include <vm/vm.h>
+#include <sys/syslog.h>
 
-#include "../ufs/ffs/fs.h"
+#include <ufs/ffs/fs.h>
 
-# include "../include/cpu.h"
+# include <machine/cpu.h>
 
 #ifdef IPC_MRX
 # include "../iop/iopvar.h"
@@ -48,16 +48,16 @@
 #endif
 
 #ifdef CPU_SINGLE
-# include "../hbdev/hbvar.h"
-# include "../iodev/ioptohb.h"
+# include <news3400/hbdev/hbvar.h>
+# include <news3400/iodev/ioptohb.h>
 #endif
 
-#include "../iodev/scsireg.h"
-#include "../iodev/scu.h"
-#include "../iodev/dkio.h"
-#include "../iodev/sdreg.h"
+#include <news3400/iodev/scsireg.h>
+#include <news3400/iodev/scu.h>
+#include <news3400/iodev/dkio.h>
+#include <news3400/iodev/sdreg.h>
 /* #ifdef DISKINFO KU:XXX */
-#include "../iodev/diskinfo.h"
+#include <news3400/iodev/diskinfo.h>
 /* #endif /* DISKINFO */
 
 #define	sce_sdecode	sce_hdecode

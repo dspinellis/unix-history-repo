@@ -9,29 +9,29 @@
  *
  * from: $Hdr: scsi.c,v 4.300 91/06/27 20:42:51 root Rel41 $ SONY
  *
- *	@(#)scsi.c	7.1 (Berkeley) %G%
+ *	@(#)scsi.c	7.2 (Berkeley) %G%
  */
 
 /*
  *	scsi.c	ver 1.1		
  */
 
-#include "../include/fix_machine_type.h"
-#include "../include/param.h"
+#include <machine/fix_machine_type.h>
+#include <machine/param.h>
 
-#include "param.h"
-#include "buf.h"
-#include "proc.h"
-#include "user.h"
+#include <sys/param.h>
+#include <sys/buf.h>
+#include <sys/proc.h>
+#include <sys/user.h>
 
-# include "../include/cpu.h"
+# include <machine/cpu.h>
 
-#include "../hbdev/hbvar.h"
-#include "../hbdev/scsic.h"
-#include "../hbdev/screg_1185.h"
+#include <news3400/hbdev/hbvar.h>
+#include <news3400/hbdev/scsic.h>
+#include <news3400/hbdev/screg_1185.h>
 
-#include "../iodev/scsireg.h"
-#include "../iodev/ioptohb.h"
+#include <news3400/iodev/scsireg.h>
+#include <news3400/iodev/ioptohb.h>
 
 #define DEBUG_LOSSBSY_HUNG
 

@@ -9,10 +9,10 @@
  *
  * from: $Hdr: askrom.c,v 4.300 91/06/09 06:32:39 root Rel41 $ SONY
  *
- *	@(#)askrom.c	7.1 (Berkeley) %G%
+ *	@(#)askrom.c	7.2 (Berkeley) %G%
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
 #include "nwb514.h"
 #include "nwb251.h"
@@ -26,15 +26,14 @@
 #include "../../iop/fbreg.h"
 #else
 #include <sys/types.h>
-#include "../h/types.h"
-#include "../h/param.h"
-#include "../iop/framebuf.h"
-#include "../iop/fbreg.h"
+#include <sys/param.h>
+#include <news3400/iop/framebuf.h>
+#include <news3400/iop/fbreg.h>
 #endif
 
-#include "../fb/fbdefs.h"
+#include <news3400/fb/fbdefs.h>
 
-#include "../fb/qpdm.h"
+#include <news3400/fb/qpdm.h>
 
 extern short zero[];
 

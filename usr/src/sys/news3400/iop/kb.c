@@ -9,32 +9,32 @@
  *
  * from: $Hdr: kb.c,v 4.300 91/06/09 06:42:44 root Rel41 $ SONY
  *
- *	@(#)kb.c	7.1 (Berkeley) %G%
+ *	@(#)kb.c	7.2 (Berkeley) %G%
  */
 
 #include "kb.h"
 
 #if NKB > 0
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
-#include "param.h"
-#include "proc.h"
-#include "user.h"
-#include "ioctl.h"
-#include "buf.h"
-#include "systm.h"
-#include "map.h"
-#include "uio.h"
-#include "kernel.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/ioctl.h>
+#include <sys/buf.h>
+#include <sys/systm.h>
+#include <sys/map.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
 
-#include "../iop/keyboard.h"
-#include "../iop/kbreg.h"
+#include <news3400/iop/keyboard.h>
+#include <news3400/iop/kbreg.h>
 
 #ifdef CPU_SINGLE
-#include "tty.h"
-#include "clist.h"
-#include "../sio/scc.h"
-#include "../hbdev/hbvar.h"
+#include <sys/tty.h>
+#include <sys/clist.h>
+#include <news3400/sio/scc.h>
+#include <news3400/hbdev/hbvar.h>
 #define	iop_device	hb_device
 #define	ii_alive	hi_alive
 #else

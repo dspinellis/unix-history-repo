@@ -9,40 +9,40 @@
  *
  * from: $Hdr: vt100esc.c,v 4.300 91/06/09 06:14:59 root Rel41 $ SONY
  *
- *	@(#)vt100esc.c	7.3 (Berkeley) %G%
+ *	@(#)vt100esc.c	7.4 (Berkeley) %G%
  */
 
 /*
  *  vt100 escape sequence handler
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
 #ifdef IPC_MRX
 #include "../../h/param.h"
 #include "../../h/systm.h"
 #include "../../iop/framebuf.h"
 #else
-#include "param.h"
-#include "systm.h"
-#include "../iop/framebuf.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <news3400/iop/framebuf.h>
 #endif
 
-#include "../bm/vt100.h"
-#include "../bm/bitmapif.h"
+#include <news3400/bm/vt100.h>
+#include <news3400/bm/bitmapif.h>
 
-#include "../fb/fbdefs.h"
+#include <news3400/fb/fbdefs.h>
 
 #ifdef IPC_MRX
 #include "../../iop/kbreg.h"
 #include "../../iop/keyboard.h"
 #else
-#include "../iop/kbreg.h"
-#include "../iop/keyboard.h"
+#include <news3400/iop/kbreg.h>
+#include <news3400/iop/keyboard.h>
 #endif
 
 #if CPU_SINGLE
-#include "../sio/scc.h"
+#include <news3400/sio/scc.h>
 #endif
 
 #ifdef IPC_MRX

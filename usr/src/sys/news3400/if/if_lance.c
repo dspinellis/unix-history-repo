@@ -9,7 +9,7 @@
  *
  * from: $Hdr: if_lance.c,v 4.300 91/06/09 06:25:58 root Rel41 $ SONY
  *
- *	@(#)if_lance.c	7.2 (Berkeley) %G%
+ *	@(#)if_lance.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -24,13 +24,13 @@
 
 #if NEN > 0
 
-#include "../include/fix_machine_type.h"
-#include "../include/adrsmap.h"
+#include <machine/fix_machine_type.h>
+#include <machine/adrsmap.h>
 
-#include "param.h"
+#include <sys/param.h>
 
-#include "../if/lancereg.h"
-#include "../if/if_lance.h"
+#include <news3400/if/lancereg.h>
+#include <news3400/if/if_lance.h>
 
 #ifdef mips
 #define	VOLATILE	volatile

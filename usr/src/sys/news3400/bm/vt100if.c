@@ -9,25 +9,25 @@
  *
  * from: $Hdr: vt100if.c,v 4.300 91/06/09 06:15:02 root Rel41 $ SONY
  *
- *	@(#)vt100if.c	7.1 (Berkeley) %G%
+ *	@(#)vt100if.c	7.2 (Berkeley) %G%
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
 #ifdef IPC_MRX
 #include "types.h"
 #include "ioctl.h"
 #else /* IPC_MRX */
-#include "types.h"
+#include <sys/types.h>
 #ifdef CPU_SINGLE
-#include "param.h"
+#include <sys/param.h>
 #endif /* CPU_SINGLE */
-#include "ioctl.h"
+#include <sys/ioctl.h>
 #endif /* IPC_MRX */
 
 #if CPU_SINGLE
-#include "../sio/scc.h"
-#include "../sio/sccparam.h"
+#include <news3400/sio/scc.h>
+#include <news3400/sio/sccparam.h>
 #endif /* CPU_SINGLE */
 
 #ifdef IPC_MRX
@@ -55,11 +55,11 @@ extern int bitmap_use;
 extern int *gcpu_semadr;
 #endif /* IPC_3CPU */
 #else /* IPC_MRX */
-#include "../iop/keyboard.h"
+#include <news3400/iop/keyboard.h>
 #endif /* IPC_MRX */
 
 #ifdef CPU_SINGLE
-#include "../include/cpu.h"
+#include <machine/cpu.h>
 #define PRE_EMPT	need_resched()
 #endif
 

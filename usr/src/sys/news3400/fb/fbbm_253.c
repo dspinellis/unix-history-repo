@@ -9,23 +9,23 @@
  *
  * from: $Hdr: fbbm_253.c,v 4.300 91/06/09 06:33:12 root Rel41 $ SONY; */
  *
- *	@(#)fbbm_253.c	7.1 (Berkeley) %G%
+ *	@(#)fbbm_253.c	7.2 (Berkeley) %G%
  */
 
 /*
  * NWB-253 frame buffer driver
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
 #include "nwb253.h"
 
 #if NNWB253 > 0
-#include "param.h"
-#include "../iop/framebuf.h"
-#include "../iop/fbreg.h"
+#include <sys/param.h>
+#include <news3400/iop/framebuf.h>
+#include <news3400/iop/fbreg.h>
 
-#include "../fb/fbdefs.h"
+#include <news3400/fb/fbdefs.h>
 
 extern int error();
 extern int nofunc();

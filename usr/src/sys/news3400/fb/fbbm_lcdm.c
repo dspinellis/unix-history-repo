@@ -9,14 +9,14 @@
  *
  * from: $Hdr: fbbm_lcdm.c,v 4.300 91/06/09 06:33:38 root Rel41 $ SONY
  *
- *	@(#)fbbm_lcdm.c	7.1 (Berkeley) %G%
+ *	@(#)fbbm_lcdm.c	7.2 (Berkeley) %G%
  */
 
 /*
  * LCD frame buffer driver
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
 #include "lfbm.h"
 
@@ -27,18 +27,11 @@
 #endif /* !news3200 */
 #endif /* mips */
 
-#include "param.h"
-#include "../iop/framebuf.h"
-#include "../iop/fbreg.h"
+#include <sys/param.h>
+#include <news3400/iop/framebuf.h>
+#include <news3400/iop/fbreg.h>
 
-#include "../fb/fbdefs.h"
-
-#ifdef news1200
-#include "../hbdev/scsic.h"
-extern int pend_1185_ioptr;
-extern int val_1185_ioptr;
-extern struct scsi_stat scsi_stat;
-#endif /* news1200 */
+#include <news3400/fb/fbdefs.h>
 
 extern int nofunc();
 extern int error();
