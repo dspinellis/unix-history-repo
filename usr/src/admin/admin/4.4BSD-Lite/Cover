@@ -1,4 +1,4 @@
-.\"	@(#)Cover	1.6 (Berkeley) %G%
+.\"	@(#)Cover	1.7 (Berkeley) %G%
 .\" use deqn -Plz Cover | psroff -ms -Plz
 .\"
 .EQ
@@ -18,8 +18,8 @@ The University and UNIX System Laboratories
 have resolved the issues surrounding the second BSD Networking
 Release (Net/2) distribution (see attached press release),
 and the University is now able to release 4.4BSD-Lite.
-We strongly recommend that you replace any Net/2 source code
-that you may be using with 4.4BSD-Lite source code.
+We strongly recommend that you replace any Net/2 source or
+binary code with 4.4BSD-Lite.  
 .PP
 The 4.4BSD-Lite software is copyrighted by the University of California
 and others, but may be freely redistributed without fee.
