@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.8 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.9 %G%";
 
 #include "diff.h"
 /*
@@ -108,7 +108,6 @@ diffreg()
 		perror(diffh);
 		done();
 	}
-	dummy = malloc(1);
 	if ((stb1.st_mode & S_IFMT) == S_IFDIR)
 		file1 = splice(file1, file2);
 	else if ((stb2.st_mode & S_IFMT) == S_IFDIR)
