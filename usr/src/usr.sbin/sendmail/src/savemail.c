@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)savemail.c	5.4 (Berkeley) %G%";
+static char	SccsId[] = "@(#)savemail.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 # include <pwd.h>
@@ -61,7 +61,7 @@ savemail(e)
 
 # ifdef DEBUG
 	if (tTd(6, 1))
-		printf("\nsavemail\n");
+		printf("\nsavemail, ErrorMode = %c\n", ErrorMode);
 # endif DEBUG
 
 	if (bitset(EF_RESPONSE, e->e_flags))
@@ -123,18 +123,36 @@ savemail(e)
 		break;
 
 	  case EM_PRINT:
+	  case '\0':
 		state = ESM_QUIET;
 		break;
 
 	  case EM_QUIET:
 		/* no need to return anything at all */
 		return;
+
+	  default:
+		syserr("savemail: ErrorMode x%x\n");
+		state = ESM_MAIL;
+		break;
 	}
 
 	while (state != ESM_DONE)
 	{
+# ifdef DEBUG
+		if (tTd(6, 5))
+			printf("  state %d\n", state);
+# endif DEBUG
+
 		switch (state)
 		{
+		  case ESM_QUIET:
+			if (e->e_from.q_mailer == LocalMailer)
+				state = ESM_DEADLETTER;
+			else
+				state = ESM_MAIL;
+			break;
+
 		  case ESM_REPORT:
 
 			/*

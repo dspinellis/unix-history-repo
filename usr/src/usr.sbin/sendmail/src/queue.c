@@ -17,12 +17,12 @@
 
 # ifndef QUEUE
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.10 (Berkeley) %G%	(no queueing)";
+static char	SccsId[] = "@(#)queue.c	5.11 (Berkeley) %G%	(no queueing)";
 # endif not lint
 # else QUEUE
 
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.10 (Berkeley) %G%";
+static char	SccsId[] = "@(#)queue.c	5.11 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -784,7 +784,10 @@ printqueue()
 	printf("\t\tMail Queue (%d request%s", nrequests, nrequests == 1 ? "" : "s");
 	if (nrequests > WLSIZE)
 		printf(", only %d printed", WLSIZE);
-	printf(")\n--QID-- --Size-- -----Q-Time----- ------------Sender/Recipient------------\n");
+	if (Verbose)
+		printf(")\n--QID-- --Size-- -Priority- -----Q-Time----- --------Sender/Recipient--------\n");
+	else
+		printf(")\n--QID-- --Size-- -----Q-Time----- ------------Sender/Recipient------------\n");
 	for (w = WorkQ; w != NULL; w = w->w_next)
 	{
 		struct stat st;
@@ -822,14 +825,22 @@ printqueue()
 				break;
 
 			  case 'S':	/* sender name */
-				printf("%8ld %.16s %.45s", dfsize,
-					ctime(&submittime), &buf[1]);
+				if (Verbose)
+					printf("%8ld %10ld %.16s %.37s", dfsize,
+					    w->w_pri, ctime(&submittime),
+					    &buf[1]);
+				else
+					printf("%8ld %.16s %.45s", dfsize,
+					    ctime(&submittime), &buf[1]);
 				if (message[0] != '\0')
 					printf("\n\t\t (%.62s)", message);
 				break;
 
 			  case 'R':	/* recipient name */
-				printf("\n\t\t\t\t  %.45s", &buf[1]);
+				if (Verbose)
+					printf("\n\t\t\t\t\t     %.37s", &buf[1]);
+				else
+					printf("\n\t\t\t\t  %.45s", &buf[1]);
 				break;
 
 			  case 'T':	/* creation time */
