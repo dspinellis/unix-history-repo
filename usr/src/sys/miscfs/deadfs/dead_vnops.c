@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dead_vnops.c	7.5 (Berkeley) %G%
+ *	@(#)dead_vnops.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -99,33 +99,38 @@ dead_open(vp, mode, cred)
 /*
  * Vnode op for read
  */
-dead_read(vp, uio, offp, ioflag, cred)
+/* ARGSUSED */
+dead_read(vp, uio, ioflag, cred)
 	struct vnode *vp;
 	struct uio *uio;
-	off_t *offp;
 	int ioflag;
 	struct ucred *cred;
 {
 
-	if (!chkvnlock(vp))
+	if (chkvnlock(vp))
+		panic("dead_read: lock");
+	/*
+	 * Return EOF for character devices, EIO for others
+	 */
+	if (vp->v_type != VCHR)
 		return (EIO);
-	return (VOP_READ(vp, uio, offp, ioflag, cred));
+	return (0);
 }
 
 /*
  * Vnode op for write
  */
-dead_write(vp, uio, offp, ioflag, cred)
+/* ARGSUSED */
+dead_write(vp, uio, ioflag, cred)
 	register struct vnode *vp;
 	struct uio *uio;
-	off_t *offp;
 	int ioflag;
 	struct ucred *cred;
 {
 
-	if (!chkvnlock(vp))
-		return (EIO);
-	return (VOP_WRITE(vp, uio, offp, ioflag, cred));
+	if (chkvnlock(vp))
+		panic("dead_write: lock");
+	return (EIO);
 }
 
 /*
