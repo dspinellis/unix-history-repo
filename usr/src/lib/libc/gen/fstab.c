@@ -16,10 +16,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fstab.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstab.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <fstab.h>
+#include <unistd.h>
 #include <stdio.h>
 
 static FILE *_fs_fp;
@@ -39,15 +40,22 @@ fstabscan()
 		_fs_fstab.fs_spec = strsep(cp, ":\n");
 		_fs_fstab.fs_file = strsep((char *)NULL, ":\n");
 		_fs_fstab.fs_type = strsep((char *)NULL, ":\n");
-		if (_fs_fstab.fs_type && strcmp(_fs_fstab.fs_type, FSTAB_XX)) {
-			if (!(cp = strsep((char *)NULL, ":\n")))
+		if (_fs_fstab.fs_type) {
+			if (!strcmp(_fs_fstab.fs_type, FSTAB_XX))
 				continue;
-			_fs_fstab.fs_freq = atoi(cp);
-			if (!(cp = strsep((char *)NULL, ":\n")))
-				continue;
-			_fs_fstab.fs_passno = atoi(cp);
-			return(1);
+			if (cp = strsep((char *)NULL, ":\n")) {
+				_fs_fstab.fs_freq = atoi(cp);
+				if (cp = strsep((char *)NULL, ":\n")) {
+					_fs_fstab.fs_passno = atoi(cp);
+					return(1);
+				}
+			}
 		}
+		/* no way to distinguish between EOF and syntax error */
+		(void)write(STDERR_FILENO, "fstab: ", 7);
+		(void)write(STDERR_FILENO, _PATH_FSTAB,
+		    sizeof(_PATH_FSTAB) - 1);
+		(void)write(STDERR_FILENO, ": syntax error.\n", 16);
 	}
 	/* NOTREACHED */
 }
@@ -88,7 +96,7 @@ setfsent()
 		rewind(_fs_fp);
 		return(1);
 	}
-	return((_fs_fp = fopen(FSTAB, "r")) != NULL);
+	return((_fs_fp = fopen(_PATH_FSTAB, "r")) != NULL);
 }
 
 void
