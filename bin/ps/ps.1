@@ -96,7 +96,7 @@ Sort by memory usage, instead of by process
 .Tn ID .
 .It Fl N
 Extract the name list from the specified system instead of the default
-.Dq Pa /vmunix .
+.Dq Pa /386bsd .
 .It Fl O
 Add the information associated with the space or comma separated list
 of keywords specifed, after the process
@@ -476,7 +476,7 @@ wait channel (as a symbolic name)
 exit or stop status (valid only for stopped or zombie process)
 .El
 .Sh FILES
-.Bl -tag -width /var/run/kvm_vmunix.db -compact
+.Bl -tag -width /var/run/kvm_386bsd.db -compact
 .It Pa /dev
 special files and device names
 .It Pa /dev/drum
@@ -485,9 +485,9 @@ default swap device
 default kernel memory
 .It Pa /var/run/dev.db
 /dev name database
-.It Pa /var/run/kvm_vmunix.db
+.It Pa /var/run/kvm_386bsd.db
 system namelist database
-.It Pa /vmunix
+.It Pa /386bsd
 default system namelist
 .El
 .Sh SEE ALSO
