@@ -29,31 +29,25 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)assert.h	5.2 (Berkeley) 6/18/92
  */
 
-/*
- * Unlike other ANSI header files, <assert.h> may usefully be included
- * multiple times, with and without NDEBUG defined.
- */
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)assert.c	5.1 (Berkeley) 4/23/92";
+#endif /* LIBC_SCCS and not lint */
 
-#undef assert
+#include <sys/types.h>
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#ifdef NDEBUG
-#define	assert(e)	((void)0)
-#define	_assert(e)	((void)0)
-#else
-#define	_assert(e)	assert(e)
-#ifdef __STDC__
-#define	assert(e)	((e) ? (void)0 : __assert(__FILE__, __LINE__, #e))
-#else	/* PCC */
-#define	assert(e)	((e) ? (void)0 : __assert(__FILE__, __LINE__, "e"))
-#endif
-#endif
-
-#include <sys/cdefs.h>
-
-__BEGIN_DECLS
-void __assert __P((const char *, int, const char *));
-__END_DECLS
+void
+__assert(file, line, failedexpr)
+	const char *file, *failedexpr;
+	int line;
+{
+	(void)fprintf(stderr,
+	    "assertion \"%s\" failed: file \"%s\", line %d\n",
+	    failedexpr, file, line);
+	abort();
+	/* NOTREACHED */
+}
