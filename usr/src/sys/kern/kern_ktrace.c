@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_ktrace.c	1.2 (Berkeley) %G%
+ *	@(#)kern_ktrace.c	1.3 (Berkeley) %G%
  */
 
 #ifdef KTRACE
@@ -34,10 +34,12 @@
 #include "ktrace.h"
 #include "malloc.h"
 
-#include "../sys/syscalls.c"
+#include "syscalls.c"
 
 extern int nsysent;
 extern char *syscallnames[];
+
+int ktrace_nocheck = 1;
 
 struct ktr_header *
 ktrgetheader(type)
@@ -49,10 +51,12 @@ ktrgetheader(type)
 	if (kth == NULL)
 		return (NULL);
 	kth->ktr_type = type;
-	kth->ktr_time = time;
+	microtime(&kth->ktr_time);
 	kth->ktr_pid = u.u_procp->p_pid;
 	bcopy(u.u_comm, kth->ktr_comm, MAXCOMLEN);
 
+	if (kth == NULL)
+		printf("ktrgetheader: can't malloc header for %d\n", type);
 	return (kth);
 }
 
@@ -64,10 +68,8 @@ ktrsyscall(ip, code, narg)
 	register len = sizeof(struct ktr_syscall) + (narg * sizeof(int));
 	int 	*argp, i;
 
-	if (kth == NULL) {
-		printf("lost syscall trace - no header\n");	/* DEBUG */
+	if (kth == NULL)
 		return;
-	}
 	MALLOC(ktp, struct ktr_syscall *, len, M_TEMP, M_WAITOK);
 	if (ktp == NULL) {
 		printf("lost syscall trace - no buffer\n");	/* DEBUG */
@@ -92,10 +94,8 @@ ktrsysret(ip, code)
 	struct ktr_header *kth = ktrgetheader(KTR_SYSRET);
 	struct ktr_sysret *ktp;
 
-	if (kth == NULL) {
-		printf("lost syscall ret - no header\n");	/* DEBUG */
+	if (kth == NULL)
 		return;
-	}
 	MALLOC(ktp, struct ktr_sysret *, sizeof(struct ktr_sysret),
 		M_TEMP , M_WAITOK);
 	if (ktp == NULL) {
@@ -122,15 +122,53 @@ ktrnamei(ip, path)
 {
 	struct ktr_header *kth = ktrgetheader(KTR_NAMEI);
 
-	if (kth == NULL) {
-		printf("lost namei - no header\n");	/* DEBUG */
+	if (kth == NULL)
 		return;
-	}
 	kth->ktr_len = strlen(path);
 	kth->ktr_buf = path;
 
 	ktrwrite(ip, kth);
 	FREE(kth, M_TEMP);
+}
+
+ktrgenio(ip, fd, rw, iov, len)
+	struct inode *ip;
+	enum uio_rw rw;
+	register struct iovec *iov;
+{
+	struct ktr_header *kth = ktrgetheader(KTR_GENIO);
+	register struct ktr_genio *ktp;
+	register caddr_t cp;
+	register int resid = len, cnt;
+	
+	if (kth == NULL || u.u_error)
+		return;
+	MALLOC(ktp, struct ktr_genio *, sizeof(struct ktr_genio) + len,
+		M_TEMP, M_WAITOK);
+	if (ktp == NULL) {
+		printf("lost ktr_genio data buffer\n");
+		FREE(kth, M_TEMP);
+		return;
+	}
+	ktp->ktr_fd = fd;
+	ktp->ktr_rw = rw;
+	cp = (caddr_t)((char *)ktp + sizeof (struct ktr_genio));
+	while (resid > 0) {
+		if ((cnt = iov->iov_len) > resid)
+			cnt = resid;
+		if (copyin(iov->iov_base, cp, cnt))
+			goto done;
+		cp += cnt;
+		resid -= cnt;
+		iov++;
+	}
+	kth->ktr_buf = (caddr_t)ktp;
+	kth->ktr_len = sizeof (struct ktr_genio) + len;
+
+	ktrwrite(ip, kth);
+done:
+	FREE(kth, M_TEMP);
+	FREE(ktp, M_TEMP);
 }
 
 /*
@@ -143,17 +181,18 @@ ktrace()
 		char	*fname;
 		int	ops;
 		int	facs;
-		pid_t	pid;
+		int	pid;
 	} *uap = (struct a *)u.u_ap;
 	register struct nameidata *ndp = &u.u_nd;
 	register struct proc *p;
 	struct pgrp *pg;
 	register int ops = uap->ops&0x3;
 	register int facs = uap->facs;
+	register int ret = 0;
 
 	/*
 	 * Until security implications are thought through,
-	 * limit tracing to root.
+	 * limit tracing to root (unless ktrace_nocheck is set).
 	 */
 	if (!ktrace_nocheck && (u.u_error = suser(u.u_cred, &u.u_acflag)))
 		return;
@@ -167,6 +206,10 @@ ktrace()
 		ip = namei(ndp);
 		if (ip == NULL)
 			return;
+		if (access(ip, IWRITE)) {
+			iput(ip);
+			return;
+		}
 		if ((ip->i_mode&IFMT) != IFREG) {
 			u.u_error = EACCES;
 			iput(ip);
@@ -210,9 +253,9 @@ ktrace()
 		}
 		for (p = pg->pg_mem; p != NULL; p = p->p_pgrpnxt)
 			if (uap->ops&KTROP_INHERITFLAG)
-				ktrsetchildren(p, ops, facs, ip);
+				ret |= ktrsetchildren(p, ops, facs, ip);
 			else 
-				ktrops(p, ops, facs, ip);
+				ret |= ktrops(p, ops, facs, ip);
 					
 	} else {
 		p = pfind(uap->pid);
@@ -221,10 +264,12 @@ ktrace()
 			goto done;
 		}
 		if (uap->ops&KTROP_INHERITFLAG)
-			ktrsetchildren(p, ops, facs, ip);
+			ret |= ktrsetchildren(p, ops, facs, ip);
 		else
-			ktrops(p, ops, facs, ip);
+			ret |= ktrops(p, ops, facs, ip);
 	}
+	if (!ret)
+		u.u_error = EPERM;
 done:
 	if (ip != NULL)
 		irele(ip);
@@ -234,6 +279,9 @@ ktrops(p, ops, facs, ip)
 	struct proc *p;
 	struct inode *ip;
 {
+
+	if (u.u_uid && u.u_uid != p->p_uid)
+		return 0;
 	if (ops == KTROP_SET) {
 		if (p->p_tracep != ip) {
 			/*
@@ -253,23 +301,25 @@ ktrops(p, ops, facs, ip)
 				irele(p->p_tracep);
 				p->p_tracep = NULL;
 			}
-			p->p_flag &= SKTR;
+			p->p_flag &= ~SKTR;
 		}
 	}
+
+	return 1;
 }
-		
+
 ktrsetchildren(top, ops, facs, ip)
 	struct proc *top;
 	struct inode *ip;
 {
 	register struct proc *p;
 	register int ndx;
+	register int ret = 0;
 
 	p = top;
 	for (;;) {
-		if (ops == KTROP_SET)
+		if ((ret |= ktrops(p, ops, facs, ip)) && ops == KTROP_SET)
 			p->p_flag |= SKTR;
-		ktrops(p, ops, facs, ip);
 		/*
 		 * If this process has children, descend to them next,
 		 * otherwise do any siblings, and if done with this level,
@@ -278,19 +328,20 @@ ktrsetchildren(top, ops, facs, ip)
 		if (p->p_cptr)
 			p = p->p_cptr;
 		else if (p == top)
-			return;
+			return ret;
 		else if (p->p_osptr)
 			p = p->p_osptr;
 		else for (;;) {
 			p = p->p_pptr;
 			if (p == top)
-				return;
+				return ret;
 			if (p->p_osptr) {
 				p = p->p_osptr;
 				break;
 			}
 		}
 	}
+	/*NOTREACHED*/
 }
 
 ktrwrite(ip, kth)
@@ -300,6 +351,8 @@ ktrwrite(ip, kth)
 	int save = u.u_error;
 	int osize;
 	
+	if (ip == NULL)
+		return;
 	ilock(ip);
 	osize = ip->i_size;
 	u.u_error = 0;
