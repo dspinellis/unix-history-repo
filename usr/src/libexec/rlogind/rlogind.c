@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -184,24 +184,28 @@ doit(f, fromp)
 			}
 		}
 #endif
-	} else if (local_domain(hp->h_name)) {
-		/*
-		 * If name returned by gethostbyaddr is in our domain,
-		 * attempt to verify that we haven't been fooled by someone
-		 * in a remote net; look up the name and check that this
-		 * address corresponds to the name.
-		 */
-		strncpy(remotehost, hp->h_name, sizeof(remotehost) - 1);
-		remotehost[sizeof(remotehost) - 1] = 0;
-		hp = gethostbyname(remotehost);
-		if (hp)
-		    for (; hp->h_addr_list[0]; hp->h_addr_list++) {
-			if (!bcmp(hp->h_addr_list[0], (caddr_t)&fromp->sin_addr,
-			    sizeof(fromp->sin_addr))) {
-				hostok++;
-				break;
-			}
-		}
+	} else {
+		if (local_domain(hp->h_name)) {
+		    /*
+		     * If name returned by gethostbyaddr is in our domain,
+		     * attempt to verify that we haven't been fooled by someone
+		     * in a remote net; look up the name and check that this
+		     * address corresponds to the name.
+		     */
+		    strncpy(remotehost, hp->h_name, sizeof(remotehost) - 1);
+		    remotehost[sizeof(remotehost) - 1] = 0;
+		    hp = gethostbyname(remotehost);
+		    if (hp)
+		        for (; hp->h_addr_list[0]; hp->h_addr_list++) {
+			    if (!bcmp(hp->h_addr_list[0],
+				(caddr_t)&fromp->sin_addr,
+			        sizeof(fromp->sin_addr))) {
+				    hostok++;
+				    break;
+			    }
+		        }
+		} else
+			hostok++;
 	}
 
 	if (use_kerberos) {
