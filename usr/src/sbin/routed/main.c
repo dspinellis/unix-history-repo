@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	4.13 (Berkeley) %G%";
 #endif
 
 /*
@@ -17,7 +17,7 @@ static char sccsid[] = "@(#)main.c	4.12 (Berkeley) %G%";
 #include <syslog.h>
 
 int	supplier = -1;		/* process should supply updates */
-extern int gateway;
+int	gateway = 0;		/* 1 if we are a gateway to parts beyond */
 
 struct	rip *msg = (struct rip *)packet;
 int	hup();
@@ -64,13 +64,8 @@ main(argc, argv)
 			argv++, argc--;
 			continue;
 		}
-		if (strcmp(*argv, "-l") == 0) {
-			gateway = -1;
-			argv++, argc--;
-			continue;
-		}
 		fprintf(stderr,
-			"usage: routed [ -s ] [ -q ] [ -t ] [ -g ] [ -l ]\n");
+			"usage: routed [ -s ] [ -q ] [ -t ] [ -g ]\n");
 		exit(1);
 	}
 #ifndef DEBUG
@@ -100,7 +95,7 @@ main(argc, argv)
 		traceon(*argv);
 	/*
 	 * Collect an initial view of the world by
-	 * snooping in the kernel and the gateway kludge
+	 * checking the interface configuration and the gateway kludge
 	 * file.  Then, send a request packet on all
 	 * directly connected networks to find out what
 	 * everyone else thinks.
@@ -108,6 +103,8 @@ main(argc, argv)
 	rtinit();
 	gwkludge();
 	ifinit();
+	if (gateway > 0)
+		rtdefault();
 	if (supplier < 0)
 		supplier = 0;
 	msg->rip_cmd = RIPCMD_REQUEST;

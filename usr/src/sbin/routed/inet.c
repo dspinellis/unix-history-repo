@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid[] = "@(#)inet.c	4.2 (Berkeley) %G%";
+static char *sccsid[] = "@(#)inet.c	4.3 (Berkeley) %G%";
 #endif
 /*
  * Temporarily, copy these routines from the kernel,
@@ -7,22 +7,31 @@ static char *sccsid[] = "@(#)inet.c	4.2 (Berkeley) %G%";
  */
 #include "defs.h"
 
+extern struct interface *ifnet;
+
 /*
- * Formulate an Internet address from network + host.  Used in
- * building addresses stored in the ifnet structure.
+ * Formulate an Internet address from network + host.
  */
 struct in_addr
-if_makeaddr(net, host)
-	int net, host;
+inet_makeaddr(net, host)
+	u_long net, host;
 {
+	register struct interface *ifp;
+	register u_long mask;
 	u_long addr;
 
-	if (net < IN_CLASSA_MAX)
-		addr = (net << IN_CLASSA_NSHIFT) | host;
-	else if (net < IN_CLASSB_MAX)
-		addr = (net << IN_CLASSB_NSHIFT) | host;
+	if (IN_CLASSA(net))
+		mask = IN_CLASSA_HOST;
+	else if (IN_CLASSB(net))
+		mask = IN_CLASSB_HOST;
 	else
-		addr = (net << IN_CLASSC_NSHIFT) | host;
+		mask = IN_CLASSC_HOST;
+	for (ifp = ifnet; ifp; ifp = ifp->int_next)
+		if ((ifp->int_netmask & net) == ifp->int_net) {
+			mask = ~ifp->int_subnetmask;
+			break;
+		}
+	addr = net | (host & mask);
 	addr = htonl(addr);
 	return (*(struct in_addr *)&addr);
 }
@@ -34,40 +43,23 @@ inet_netof(in)
 	struct in_addr in;
 {
 	register u_long i = ntohl(in.s_addr);
-	register u_long net, subnet;
+	register u_long net;
 	register struct interface *ifp;
-	extern struct interface *ifnet;
 
-	if (IN_CLASSA(i)) {
-		net = (i & IN_CLASSA_NET) >> IN_CLASSA_NSHIFT;
-		if (IN_SUBNETA(i)) {
-			subnet = (i & IN_CLASSA_SUBNET) >> IN_CLASSA_SUBNSHIFT;
-			/* Fall through and check whether a subnet */
-		} else
-			return (net);
-	} else if (IN_CLASSB(i)) {
-		net = (i & IN_CLASSB_NET) >> IN_CLASSB_NSHIFT;
-		if (IN_SUBNETB(i)) {
-			subnet = (i & IN_CLASSB_SUBNET) >> IN_CLASSB_SUBNSHIFT;
-			/* Fall through and check whether a subnet */
-		} else
-			return (net);
-	} else {
-		return ((i & IN_CLASSC_NET) >> IN_CLASSC_NSHIFT);
-	}
+	if (IN_CLASSA(i))
+		net = i & IN_CLASSA_NET;
+	else if (IN_CLASSB(i))
+		net = i & IN_CLASSB_NET;
+	else
+		net = i & IN_CLASSC_NET;
 
 	/*
-	 * Check whether network is a subnet of a `local' network;
+	 * Check whether network is a subnet;
 	 * if so, return subnet number.
 	 */
-	for (ifp = ifnet; ifp; ifp = ifp->int_next) {
-		if (ifp->int_flags & IFF_LOCAL) {
-			if (ifp->int_net == net)
-				return (subnet);
-			if ((ifp->int_net >> SUBNETSHIFT) == net)
-				return (subnet);
-		}
-	}
+	for (ifp = ifnet; ifp; ifp = ifp->int_next)
+		if ((ifp->int_netmask & net) == ifp->int_net)
+			return (i & ifp->int_subnetmask);
 	return (net);
 }
 
@@ -78,40 +70,26 @@ inet_lnaof(in)
 	struct in_addr in;
 {
 	register u_long i = ntohl(in.s_addr);
-	register u_long net, host, subhost;
+	register u_long net, host;
 	register struct interface *ifp;
 
 	if (IN_CLASSA(i)) {
-		if (IN_SUBNETA(i)) {
-			net = (i & IN_CLASSA_NET) >> IN_CLASSA_NSHIFT;
-			host = i & IN_CLASSA_HOST;
-			subhost = i & IN_CLASSA_SUBHOST;
-			/* Fall through and check whether a subnet */
-		} else
-			return (i & IN_CLASSA_HOST);
+		net = i & IN_CLASSA_NET;
+		host = i & IN_CLASSA_HOST;
 	} else if (IN_CLASSB(i)) {
-		if (IN_SUBNETB(i)) {
-			net = (i & IN_CLASSB_NET) >> IN_CLASSB_NSHIFT;
-			host = i & IN_CLASSB_HOST;
-			subhost = i & IN_CLASSB_SUBHOST;
-			/* Fall through and check whether a subnet */
-		} else
-			return (i & IN_CLASSB_HOST);
+		net = i & IN_CLASSB_NET;
+		host = i & IN_CLASSB_HOST;
 	} else {
-		return (i & IN_CLASSC_HOST);
+		net = i & IN_CLASSC_NET;
+		host = i & IN_CLASSC_HOST;
 	}
 
 	/*
-	 * Check whether network is a subnet of a `local' network;
+	 * Check whether network is a subnet;
 	 * if so, use the modified interpretation of `host'.
 	 */
-	for (ifp = ifnet; ifp; ifp = ifp->int_next) {
-		if (ifp->int_flags & IFF_LOCAL) {
-			if (ifp->int_net == net)
-				return (subhost);
-			if ((ifp->int_net >> SUBNETSHIFT) == net)
-				return (subhost);
-		}
-	}
+	for (ifp = ifnet; ifp; ifp = ifp->int_next)
+		if ((ifp->int_netmask & net) == ifp->int_net)
+			return (host &~ ifp->int_subnetmask);
 	return (host);
 }
