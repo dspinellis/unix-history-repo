@@ -1,4 +1,4 @@
-/*	kern_exec.c	6.11	85/05/27	*/
+/*	kern_exec.c	6.12	85/05/27	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -107,7 +107,7 @@ execve()
 	if (u.u_error)
 		goto bad;
 #ifndef lint
-	if (resid > sizeof (exdata) - sizeof (exdata.ex_exec.a_magic) &&
+	if (resid > sizeof(exdata) - sizeof(exdata.ex_exec) &&
 	    exdata.ex_shell[0] != '#') {
 		u.u_error = ENOEXEC;
 		goto bad;
@@ -155,21 +155,14 @@ execve()
 		ndp->ni_dirp = cp;
 		while (*cp && *cp != ' ')
 			cp++;
-		sharg = NULL;
+		cfarg[0] = '\0';
 		if (*cp) {
 			*cp++ = '\0';
 			while (*cp == ' ')
 				cp++;
-			if (*cp) {
+			if (*cp)
 				bcopy((caddr_t)cp, (caddr_t)cfarg, SHSIZE);
-				sharg = cfarg;
-			}
 		}
-		if (ndp->ni_dent.d_namlen > MAXCOMLEN)
-			ndp->ni_dent.d_namlen = MAXCOMLEN;
-		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)cfname,
-		    (unsigned)(ndp->ni_dent.d_namlen + 1));
-		cfname[MAXCOMLEN] = '\0';
 		indir = 1;
 		iput(ip);
 		ndp->ni_nameiop = LOOKUP | FOLLOW;
@@ -177,6 +170,9 @@ execve()
 		ip = namei(ndp);
 		if (ip == NULL)
 			return;
+		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)cfname,
+		    MAXCOMLEN);
+		cfname[MAXCOMLEN] = '\0';
 		goto again;
 	}
 
@@ -200,7 +196,15 @@ execve()
 	 */
 	if (uap->argp) for (;;) {
 		ap = NULL;
-		if (indir && (na == 1 || na == 2 && sharg))
+		sharg = NULL;
+		if (indir && na == 0) {
+			sharg = cfname;
+			ap = (int)sharg;
+			uap->argp++;		/* ignore argv[0] */
+		} else if (indir && (na == 1 && cfarg[0])) {
+			sharg = cfarg;
+			ap = (int)sharg;
+		} else if (indir && (na == 1 || na == 2 && cfarg[0]))
 			ap = (int)uap->fname;
 		else if (uap->argp) {
 			ap = fuword((caddr_t)uap->argp);
@@ -235,11 +239,13 @@ execve()
 				bp = getblk(argdev, bno + ctod(nc/NBPG), cc);
 				cp = bp->b_un.b_addr;
 			}
-			if (indir && na == 2 && sharg != NULL)
+			if (sharg) {
 				error = copystr(sharg, cp, cc, &len);
-			else
+				sharg += len;
+			} else {
 				error = copyinstr((caddr_t)ap, cp, cc, &len);
-			ap += len;
+				ap += len;
+			}
 			cp += len;
 			nc += len;
 			cc -= len;
@@ -256,11 +262,6 @@ execve()
 		bdwrite(bp);
 	bp = 0;
 	nc = (nc + NBPW-1) & ~(NBPW-1);
-	if (indir) {
-		ndp->ni_dent.d_namlen = strlen(cfname);
-		bcopy((caddr_t)cfname, (caddr_t)ndp->ni_dent.d_name,
-		    (unsigned)(ndp->ni_dent.d_namlen + 1));
-	}
 	getxfile(ip, &exdata.ex_exec, nc + (na+4)*NBPW, uid, gid);
 	if (u.u_error) {
 badarg:
@@ -275,6 +276,8 @@ badarg:
 		}
 		goto bad;
 	}
+	iput(ip);
+	ip = NULL;
 
 	/*
 	 * Copy back arglist.
@@ -314,19 +317,54 @@ badarg:
 			panic("exec: EFAULT");
 	}
 	(void) suword((caddr_t)ap, 0);
+
+	/*
+	 * Reset caught signals.  Held signals
+	 * remain held through p_sigmask.
+	 */
+	while (u.u_procp->p_sigcatch) {
+		nc = ffs(u.u_procp->p_sigcatch);
+		u.u_procp->p_sigcatch &= ~sigmask(nc);
+		u.u_signal[nc] = SIG_DFL;
+	}
+	/*
+	 * Reset stack state to the user stack.
+	 * Clear set of signals caught on the signal stack.
+	 */
+	u.u_onstack = 0;
+	u.u_sigsp = 0;
+	u.u_sigonstack = 0;
+
+	for (nc = u.u_lastfile; nc >= 0; --nc) {
+		if (u.u_pofile[nc] & UF_EXCLOSE) {
+			closef(u.u_ofile[nc]);
+			u.u_ofile[nc] = NULL;
+			u.u_pofile[nc] = 0;
+		}
+		u.u_pofile[nc] &= ~UF_MAPPED;
+	}
+	while (u.u_lastfile >= 0 && u.u_ofile[u.u_lastfile] == NULL)
+		u.u_lastfile--;
 	setregs(exdata.ex_exec.a_entry);
 	/*
 	 * Remember file name for accounting.
 	 */
 	u.u_acflag &= ~AFORK;
-	bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)u.u_comm,
-	    (unsigned)(ndp->ni_dent.d_namlen + 1));
+	if (indir)
+		bcopy((caddr_t)cfname, (caddr_t)u.u_comm, MAXCOMLEN);
+	else {
+		if (ndp->ni_dent.d_namlen > MAXCOMLEN)
+			ndp->ni_dent.d_namlen = MAXCOMLEN;
+		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)u.u_comm,
+		    (unsigned)(ndp->ni_dent.d_namlen + 1));
+	}
 bad:
 	if (bp)
 		brelse(bp);
 	if (bno)
 		rmfree(argmap, (long)ctod(clrnd((int) btoc(NCARGS))), bno);
-	iput(ip);
+	if (ip)
+		iput(ip);
 }
 
 /*
@@ -443,47 +481,4 @@ getxfile(ip, ep, nargc, uid, gid)
 	u.u_prof.pr_scale = 0;
 bad:
 	return;
-}
-
-/*
- * Clear registers on exec
- */
-setregs(entry)
-	u_long entry;
-{
-	register int i;
-	register struct proc *p = u.u_procp;
-
-	/*
-	 * Reset caught signals.  Held signals
-	 * remain held through p_sigmask.
-	 */
-	while (p->p_sigcatch) {
-		(void) spl6();
-		i = ffs(p->p_sigcatch);
-		p->p_sigcatch &= ~(1 << (i - 1));
-		u.u_signal[i] = SIG_DFL;
-		(void) spl0();
-	}
-	/*
-	 * Reset stack state to the user stack.
-	 * Clear set of signals caught on the signal stack.
-	 */
-	u.u_onstack = 0;
-	u.u_sigsp = 0;
-	u.u_sigonstack = 0;
-#ifdef notdef
-	/* should pass args to init on the stack */
-	for (rp = &u.u_ar0[0]; rp < &u.u_ar0[16];)
-		*rp++ = 0;
-#endif
-	u.u_ar0[PC] = entry + 2;
-	for (i=0; i<NOFILE; i++) {
-		if (u.u_pofile[i]&UF_EXCLOSE) {
-			closef(u.u_ofile[i]);
-			u.u_ofile[i] = NULL;
-			u.u_pofile[i] = 0;
-		}
-		u.u_pofile[i] &= ~UF_MAPPED;
-	}
 }
