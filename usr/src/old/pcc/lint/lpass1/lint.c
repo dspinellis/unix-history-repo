@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lint.c	1.10	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lint.c	1.11	(Berkeley)	%G%";
 #endif lint
 
 # include "pass1.h"
@@ -28,17 +28,18 @@ int ALSHORT = 16;
 int ALPOINT = 16;
 int ALSTRUCT = 16;
 
-int vflag = 1;  /* tell about unused argments */
-int xflag = 0;  /* tell about unused externals */
-int argflag = 0;  /* used to turn off complaints about arguments */
-int libflag = 0;  /* used to generate library descriptions */
-int vaflag = -1;  /* used to signal functions with a variable number of args */
-int aflag = 0;  /* used to check precision of assignments */
-int zflag = 0;  /* no 'structure never defined' error */
-int Cflag = 0;  /* filter out certain output, for generating libraries */
-char *libname = 0;  /* name of the library we're generating */
+int nflag = 0;		/* avoid gripes about printf et al. */
+int vflag = 1;		/* tell about unused argments */
+int xflag = 0;		/* tell about unused externals */
+int argflag = 0;	/* used to turn off complaints about arguments */
+int libflag = 0;	/* used to generate library descriptions */
+int vaflag = -1;	/* signal functions with a variable number of args */
+int aflag = 0;		/* used to check precision of assignments */
+int zflag = 0;		/* no 'structure never defined' error */
+int Cflag = 0;	/* filter out certain output, for generating libraries */
+char *libname = 0;	/* name of the library we're generating */
 
-	/* flags for the "outdef" function */
+			/* flags for the "outdef" function */
 # define USUAL (-101)
 # define DECTY (-102)
 # define NOFILE (-103)
@@ -101,6 +102,7 @@ ecode( p ) NODE *p; {
 	fwalk( p, contx, EFF );
 	lnp = lnames;
 	lprt( p, EFF, 0 );
+	strforget();
 	}
 
 ejobcode( flag ){
@@ -212,6 +214,7 @@ bfcode( a, n ) int a[]; {
 	register struct symtab *cfp;
 	static ATYPE t;
 
+	strforget();
 	retlab = 1;
 
 	cfp = &stab[curftn];
@@ -406,6 +409,8 @@ lprt( p, down, uses ) register NODE *p; {
 			int lty;
 
 			fsave( ftitle );
+			if (hflag && !nflag)
+				doform(p, sp, acount);
 			/*
 			 * if we're generating a library -C then
 			 * we don't want to output references to functions
@@ -654,6 +659,17 @@ clocal(p) NODE *p; {
 	int s;
 
 	switch( o = p->in.op ){
+	case NAME:
+		{
+			extern int	didstr, subscr;
+			extern NODE *	strnodes[];
+
+			if (didstr) {
+				didstr = 0;
+				strnodes[subscr] = p;
+			}
+		}
+		break;
 
 	case SCONV:
 	case PCONV:
@@ -831,7 +847,432 @@ where(f){ /* print true location of error */
 branch(n){;}
 defalign(n){;}
 deflab(n){;}
-bycode(t,i){;}
+
+extern char *	strchr();
+
+#define SBUFSIZE	16
+#define SCLICK		80
+
+#ifndef size_t
+#define size_t	unsigned
+#endif /* !size_t */
+
+static char *	strings[SBUFSIZE];
+static NODE *	strnodes[SBUFSIZE];
+static int	didstr;
+static int	subscr;
+static int	strapped;
+
+bycode(t, i)
+{
+	extern char *	calloc();
+	extern char *	realloc();
+
+	if (!hflag || nflag || strapped)
+		return;
+	if (i == 0)
+		if (subscr < (SBUFSIZE - 1))
+			++subscr;
+	if (subscr >= SBUFSIZE)
+		return;
+	didstr = 1;
+	if ((i % SCLICK) == 0) {
+		strings[subscr] = (strings[subscr] == NULL) ?
+			calloc((size_t) (SCLICK + 1), 1) :
+			realloc(strings[subscr], (size_t) (i + SCLICK + 1));
+		if (strings[subscr] == NULL) {
+			strapped = 1;
+			return;
+		}
+	}
+	strings[subscr][i] = t;
+}
+
+strforget()
+{
+	didstr = subscr = 0;
+}
+
+static char *
+typestr(t)
+{
+	switch (t) {
+		case CHAR:		return "char";
+		case UCHAR:		return "unsigned char";
+		case SHORT:		return "short";
+		case USHORT:		return "unsigned short";
+		case INT:		return "int";
+		case UNSIGNED:		return "unsigned";
+		case ENUMTY:		return "enum";
+		case LONG:		return "long";
+		case ULONG:		return "unsigned long";
+		case FLOAT:		return "float";
+		case DOUBLE:		return "double";
+		case STRTY:		return "struct";
+		case UNIONTY:		return "union";
+		case PTR|CHAR:		return "char *";
+		case PTR|UCHAR:		return "unsigned char *";
+		case PTR|SHORT:		return "short *";
+		case PTR|USHORT:	return "unsigned short *";
+		case PTR|INT:		return "int *";
+		case PTR|UNSIGNED:	return "unsigned *";
+		case PTR|ENUMTY:	return "enum *";
+		case PTR|LONG:		return "long *";
+		case PTR|ULONG:		return "unsigned long *";
+		case PTR|FLOAT:		return "float *";
+		case PTR|DOUBLE:	return "double *";
+		case PTR|STRTY:		return "struct *";
+		case PTR|UNIONTY:	return "union *";
+		default:		return ISPTR(t) ?
+						"pointer" : "non-scalar";
+	}
+}
+
+NODE *
+ntharg(p, n, acount)
+NODE *		p;
+register int	n;
+register int	acount;
+{
+	if (n > acount)
+		return NULL;
+	p = p->in.right;
+	while (n != acount) {
+		p = p->in.left;
+		--acount;
+	}
+	return (n == 1) ? p : p->in.right;
+}
+
+struct entry {
+	/* If argument to print/scan is of type... */	int	argtype;
+	/* ...and this length character is used... */	char	lchar;
+	/* ...and one of these is control char... */	char *	cchars;
+	/* ...then use this format with werror... */	char *	werror;
+	/* ...(where NULL means it's hunky dory)... */
+};
+
+/*
+** Portable printf.
+** H&S says "%o" takes an unsigned argument;
+** X3J11 says "%o" takes an int argument;
+** we'll allow either here.
+*/
+
+static struct entry pprintf[] = {
+	CHAR,		'\0',	"c",		NULL, /* this is deliberate */
+	INT,		'\0',	"cdoxX",	NULL,
+	UNSIGNED,	'\0',	"uoxX",		NULL,
+	CHAR,		'\0',	"cdoxX",	NULL,
+	UCHAR,		'\0',	"udoxX",	NULL, /* yes, d is okay */
+	SHORT,		'\0',	"cdoxX",	NULL,
+	USHORT,		'\0',	"uoxX",		NULL,
+	ENUMTY,		'\0',	"duoxX",	NULL,
+	LONG,		'l',	"doxX",		NULL,
+	ULONG,		'l',	"uoxX",		NULL,
+	FLOAT,		'\0',	"eEfgG",	NULL,
+	DOUBLE,		'\0',	"eEfgG",	NULL,
+	PTR|CHAR,	'\0',	"s",		NULL,
+	UNDEF,		'\0',	"",		NULL
+};
+
+/*
+** Berkeley printf.
+** It allows %D, %O, and %U, which we deprecate.
+** Since
+**	sizeof (char *) == sizeof (int) &&
+**	sizeof (int) == sizeof (long) &&
+**	sizeof (char *) == sizeof (int *)
+** you can be lax--and we tolerate *some* laxness. 
+** g/lax/p to find lax table entries and code.
+*/
+
+static char	uppercase[] = "deprecated upper-case control character (%c)";
+#define lax	NULL
+
+static struct entry bprintf[] = {
+	CHAR,		'\0',	"c",		NULL,	/* this is deliberate */
+	INT,		'\0',	"cdoxX",	NULL,
+	INT,		'\0',	"DO",		uppercase,
+	UNSIGNED,	'\0',	"uoxX",		NULL,
+	UNSIGNED,	'\0',	"UO",		uppercase,
+	CHAR,		'\0',	"cdoxX",	NULL,
+	CHAR,		'\0',	"DO",		uppercase,
+	UCHAR,		'\0',	"duoxX",	NULL,	/* yes, d is okay */
+	UCHAR,		'\0',	"DUO",		uppercase,
+	SHORT,		'\0',	"cdoxX",	NULL,
+	SHORT,		'\0',	"DO",		uppercase,
+	USHORT,		'\0',	"duoxX",	NULL,	/* d okay on BSD */
+	USHORT,		'\0',	"DUO",		uppercase,
+	ENUMTY,		'\0',	"duoxX",	NULL,
+	ENUMTY,		'\0',	"DUO",		uppercase,
+	LONG,		'\0',	"doxX",		lax,
+	LONG,		'\0',	"DO",		uppercase,
+	LONG,		'l',	"doxX",		NULL,
+	INT,		'l',	"doxX",		lax,
+	ULONG,		'\0',	"uoxX",		lax,
+	ULONG,		'\0',	"UO",		uppercase,
+	ULONG,		'l',	"uoxX",		NULL,
+	UNSIGNED,	'l',	"uoxX",		lax,
+	FLOAT,		'\0',	"eEfgG",	NULL,
+	DOUBLE,		'\0',	"eEfgG",	NULL,
+	PTR|CHAR,	'\0',	"s",		NULL,
+	UNDEF,		'\0',	NULL,		NULL,
+};
+
+/*
+** Portable scanf.  'l' and 'h' are universally ignored preceding 'c' and 's',
+** and 'h' is universally ignored preceding 'e' and 'f',
+** but you won't find such cruft here.
+*/
+
+static struct entry pscanf[] = {
+	INT,		'\0',	"dox",	NULL,
+	UNSIGNED,	'\0',	"uox",	NULL,
+	CHAR,		'\0',	"cs[",	NULL,
+	SHORT,		'h',	"dox",	NULL,
+	USHORT,		'h',	"uox",	NULL,
+	LONG,		'l',	"dox",	NULL,
+	ULONG,		'l',	"uox",	NULL,
+	FLOAT,		'\0',	"ef",	NULL,	/* BSD doesn't handle g */
+	DOUBLE,		'l',	"ef",	NULL,
+	UNDEF,		'\0',	NULL,	NULL,
+};
+
+/*
+** Berkeley scanf.  An upper case letter equals an l plus the lower case char,
+** but this is deprecated.
+** Even though sizeof (int) == sizeof (long), we'll be picky here.
+*/
+
+static struct entry bscanf[] = {
+	INT,		'\0',	"dox",	NULL,
+	UNSIGNED,	'\0',	"uox",	NULL,
+	CHAR,		'\0',	"cs[",	NULL,
+	SHORT,		'h',	"dox",	NULL,
+	USHORT,		'h',	"uox",	NULL,
+	LONG,		'\0',	"dox",	lax,
+	LONG,		'\0',	"DOX",	uppercase,
+	LONG,		'l',	"dox",	NULL,
+	ULONG,		'\0',	"uox",	lax,
+	ULONG,		'\0',	"UOX",	uppercase,
+	ULONG,		'l',	"uox",	NULL,
+	FLOAT,		'\0',	"ef",	NULL,
+	DOUBLE,		'\0',	"EF",	uppercase,
+	DOUBLE,		'l',	"ef",	NULL,
+	UNDEF,		'\0',	NULL,	NULL,
+};
+
+static struct item {
+	char *		name;		/* such as "printf" */
+	int		isscan;		/* scanf/printf */
+	int		fmtarg;		/* number of format argument */
+	struct entry *	ptable;		/* portable checking table */
+	struct entry *	btable;		/* berkeley checking table */
+} items[] = {
+	"printf",	0,	1,	pprintf,	bprintf,	
+	"fprintf",	0,	2,	pprintf,	bprintf,
+	"sprintf",	0,	2,	pprintf,	bprintf,
+	"scanf",	1,	1,	pscanf,		bscanf,
+	"fscanf",	1,	2,	pscanf,		bscanf,
+	"sscanf",	1,	2,	pscanf,		bscanf,
+	NULL,		-1,	-1,	NULL,		NULL
+};
+
+static char	pwf[]	= "possible wild format";
+static char	pfacm[]	= "possible format/argument count mismatch";
+
+static struct entry *
+findlc(ep, lchar, cchar)
+register struct entry *	ep;
+register int		lchar;
+register int		cchar;
+{
+	for ( ; ep->argtype != UNDEF; ++ep)
+		if (ep->lchar == lchar && strchr(ep->cchars, cchar) != 0)
+			return ep;
+	return NULL;
+}
+
+static char *
+subform(p, sp, acount)
+register NODE *			p;
+register struct symtab *	sp;
+{
+	register int		i, j, isscan;
+	register NODE *		tp;
+	register char *		cp;
+	register struct entry *	basep;
+	register struct entry *	ep;
+	register struct item *	ip;
+	register int		lchar;
+	register int		cchar;
+	register int		t;
+	register int		suppressed;
+	static char		errbuf[132];
+
+	if (!hflag || nflag || strapped)
+		return NULL;
+	cp = sp->sname;
+	for (ip = items; ; ++ip)
+		if (ip->name == NULL)
+			return NULL;	/* not a print/scan function */
+		else if (strcmp(ip->name, sp->sname) == 0)
+			break;
+	isscan = ip->isscan;
+	i = ip->fmtarg;
+	if (i > acount)
+		return NULL;	/* handled in pass 2 */
+	tp = ntharg(p, i, acount);
+	if (tp->in.type != (PTR|CHAR))
+		return NULL;	/* handled in pass 2 */
+	if (tp->in.op != ICON || tp->tn.lval != 0)
+		return NULL;	/* can't check it */
+	for (j = 1; j <= subscr; ++j)
+		if (tp == strnodes[j])
+			break;
+	if (j > subscr)
+		return NULL;	/* oh well. . . */
+	cp = strings[j];
+	/*
+	** cp now points to format string.
+	*/
+	basep = pflag ? ip->ptable : ip->btable;
+	for ( ; ; ) {
+		if (*cp == '\0')
+			return (i == acount) ? NULL : pfacm;
+		if (*cp++ != '%')
+			continue;
+		if (*cp == '\0')
+			return "wild trailing %% in format";
+		if (*cp == '%') {
+			++cp;
+			continue;
+		}
+		if (isscan) {
+			suppressed = *cp == '*';
+			if (suppressed)
+				++cp;
+			while (isdigit(*cp))
+				++cp;
+			if (!suppressed && ++i <= acount) {
+				t = ntharg(p, i, acount)->in.type;
+				if (!ISPTR(t)) {
+(void) sprintf(errbuf,
+	"%s argument is type (%s) rather than pointer (arg %d)",
+	ip->name, typestr(t), i);
+					return errbuf;
+				}
+				t = DECREF(t);
+			}
+		} else {
+			int	nspace, ndash, nplus, nhash;
+
+			suppressed = 0;
+			nspace = ndash = nplus = nhash = 0;
+			for ( ; ; ) {
+				if (*cp == ' ')
+					++nspace;
+				else if (*cp == '+')
+					++nplus;
+				else if (*cp == '-')
+					++ndash;
+				else if (*cp == '#')
+					++nhash;
+				else	break;
+				++cp;
+			}
+			if (nspace > 1 || ndash > 1 || nplus > 1 || nhash > 1)
+				return "wild repeated flag character in format";
+			if (*cp == '*') {
+				++cp;
+				if (++i > acount)
+					break;
+				t = ntharg(p, i, acount)->in.type;
+				/*
+				** Width other than INT or UNSIGNED is suspect.
+				*/
+				if (t != INT && t != UNSIGNED) {
+(void) sprintf(errbuf,
+	"field width argument is type (%s) rather than (int) (arg %d)",
+	typestr(t), i);
+					return errbuf;
+				}
+			} else while (isdigit(*cp))
+				++cp;
+			if (*cp == '.') {
+				++cp;
+				if (*cp == '*') {
+					++cp;
+					if (++i > acount)
+						return pfacm;
+					t = ntharg(p, i, acount)->in.type;
+					if (t != INT && t != UNSIGNED) {
+(void) sprintf(errbuf,
+	"precision argument is type (%s) rather than (int) (arg %d)",
+	typestr(t), i);
+						return errbuf;
+					}
+				} else while (isdigit(*cp))
+					++cp;
+			}
+			if (++i <= acount)
+				t = ntharg(p, i, acount)->in.type;
+		}
+		if (*cp == 'h' || *cp == 'l')
+			lchar = *cp++;
+		else	lchar = '\0';
+		if ((cchar = *cp++) == '\0')
+			return pwf;
+		if (i > acount)
+			return (findlc(basep, lchar, cchar) == NULL) ?
+				pwf : pfacm;
+		if (!isscan && !pflag && ISPTR(t) &&
+			strchr("douxX", cchar) != 0)
+				continue;	/* lax--printf("%d", (int *)) */
+		if (suppressed) {
+			if (findlc(basep, lchar, cchar) == NULL)
+				return pwf;
+		} else for (ep = basep; ; ++ep) {
+			if (ep->argtype == UNDEF) {	/* end of table */
+				ep = findlc(basep, lchar, cchar);
+				if (ep == NULL)
+					return pwf;
+(void) sprintf(errbuf, "%s: (%s) format, (%s) arg (arg %d)",
+					ip->name,
+					typestr(ep->argtype),
+					typestr(isscan ? (t | PTR) : t), i);
+				return errbuf;
+			}
+			if (ep->argtype == t && ep->lchar == lchar &&
+				strchr(ep->cchars, cchar) != 0)
+					if (ep->werror == 0)
+						break;
+					else {
+						werror(ep->werror, cchar);
+						return NULL;
+					}
+		}
+		if (cchar != '[')
+			continue;
+		do {
+			if (*cp == '\0')
+				return "possible unmatched '[' in format";
+		} while (*cp++ != ']');
+	}
+	/*NOTREACHED*/
+}
+
+doform(p, sp, acount)
+NODE *		p;
+struct symtab *	sp;
+{
+	char *	cp;
+
+	if ((cp = subform(p, sp, acount)) != NULL)
+		werror(cp);
+}
+
 cisreg(t) TWORD t; {return(1);}  /* everyting is a register variable! */
 
 fldty(p) struct symtab *p; {
@@ -847,83 +1288,64 @@ fldal(t) unsigned t; { /* field alignment... */
 	return(ALINT);
 	}
 
-main( argc, argv ) char *argv[]; {
-	char *p;
-	int i;
+main(argc, argv)
+	int	argc;
+	char	**argv;
+{
+	extern char	*optarg;
+	extern int	optind;
+	int	ch;
 
-	/* handle options */
-
-	for( i = 1; i < argc; i++ )
-		for( p=argv[i]; *p; ++p ){
-
-			switch( *p ){
-
-			case '-':
-				continue;
-
-			case '\0':
-				break;
-
-			case 'b':
-				brkflag = 1;
-				continue;
-
-			case 'p':
-				pflag = 1;
-				continue;
-
-			case 'c':
-				cflag = 1;
-				continue;
-
-			case 's':
-				/* for the moment, -s triggers -h */
-
-			case 'h':
-				hflag = 1;
-				continue;
-
-			case 'L':
-				libflag = 1;
-			case 'v':
-				vflag = 0;
-				continue;
-
-			case 'x':
-				xflag = 1;
-				continue;
-
-			case 'a':
-				++aflag;
-			case 'u':	/* done in second pass */
-			case 'n':	/* done in shell script */
-				continue;
-
-			case 'z':
-				zflag = 1;
-				continue;
-
-			case 't':
-				werror( "option %c now default: see `man 6 lint'", *p );
-				continue;
-
-			case 'P':	/* debugging, done in second pass */
-				continue;
-
+	while ((ch = getopt(argc,argv,"C:D:I:U:LPabchnpuvxz")) != EOF)
+		switch((char)ch) {
 			case 'C':
 				Cflag = 1;
-				if( p[1] ) libname = p + 1;
-				while( p[1] ) p++;
+				libname = optarg;
 				continue;
-
+			case 'D':	/* #define */
+			case 'I':	/* include path */
+			case 'U':	/* #undef */
+			case 'P':	/* debugging, done in second pass */
+				break;
+			case 'L':
+				libflag = 1;
+				/*FALLTHROUGH*/
+			case 'v':	/* unused arguments in functions */
+				vflag = 0;
+				break;
+			case 'a':	/* long to int assignment */
+				++aflag;
+				break;
+			case 'b':	/* unreached break statements */
+				brkflag = 1;
+				break;
+			case 'c':	/* questionable casts */
+				cflag = 1;
+				break;
+			case 'h':	/* heuristics */
+				hflag = 1;
+				break;
+			case 'n':	/* standard library check */
+				nflag = 1;
+				break;
+			case 'p':	/* IBM & GCOS portability */
+				pflag = 1;
+				break;
+			case 'u':	/* 2nd pass: undefined or unused */
+				break;
+			case 'x':	/* unused externs */
+				xflag = 1;
+				break;
+			case 'z':	/* use of undefined structures */
+				zflag = 1;
+				break;
+			case '?':
 			default:
-				uerror( "illegal option: %c", *p );
-				continue;
+				fputs("usage: lint [-C lib] [-D def] [-I include] [-U undef] [-Labchnpuvx] file ...\n",stderr);
+				exit(1);
+		}
 
-				}
-			}
-
-	if( !pflag ){  /* set sizes to sizes of target machine */
+	if (!pflag) {		/* set sizes to sizes of target machine */
 # ifdef gcos
 		SZCHAR = ALCHAR = 9;
 # else
@@ -940,14 +1362,13 @@ main( argc, argv ) char *argv[]; {
 
 # ifdef pdp11
 		ALLONG = ALDOUBLE = ALFLOAT = ALINT;
-#endif
+# endif
 # ifdef ibm
 		ALSTRUCT = ALCHAR;
-#endif
-		}
-
-	return( mainp1( argc, argv ) );
+# endif
 	}
+	return(mainp1(argc,argv));
+}
 
 ctype( type ) unsigned type; { /* are there any funny types? */
 	return( type );
