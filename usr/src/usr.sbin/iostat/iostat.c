@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)iostat.c	4.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)iostat.c	4.2 (Berkeley) %G%";
 /*
  * iostat
  */
@@ -50,6 +50,7 @@ char *argv[];
 	int iter;
 	double f1, f2;
 	long t;
+	int tohdr = 1;
 
 	nlist("/vmunix", nl);
 	if(nl[X_DK_BUSY].n_type == 0) {
@@ -70,18 +71,20 @@ char *argv[];
 	read(mf, s.dk_mspw, sizeof s.dk_mspw);
 	if(argc > 2)
 		iter = atoi(argv[2]);
-	printf("      TTY");
-	for (i = 0; i < DK_NDRIVE; i++)
-		if (s.dk_mspw[i] != 0.0)
-			printf("           D%d ", i);
-	printf("         CPU\n");
-	printf(" tin tout");
-	for (i = 0; i < DK_NDRIVE; i++)
-		if (s.dk_mspw[i] != 0.0)
-			printf(" sps tps msps ");
-	printf(" us ni sy id\n");
-
 loop:
+	if (--tohdr == 0) {
+		printf("      TTY");
+		for (i = 0; i < DK_NDRIVE; i++)
+			if (s.dk_mspw[i] != 0.0)
+				printf("           D%d ", i);
+		printf("         CPU\n");
+		printf(" tin tout");
+		for (i = 0; i < DK_NDRIVE; i++)
+			if (s.dk_mspw[i] != 0.0)
+				printf(" sps tps msps ");
+		printf(" us ni sy id\n");
+		tohdr = 19;
+	}
 	lseek(mf, (long)nl[X_DK_BUSY].n_value, 0);
  	read(mf, &s.dk_busy, sizeof s.dk_busy);
  	lseek(mf, (long)nl[X_DK_TIME].n_value, 0);
