@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -77,6 +77,7 @@ usage:		fputs("usage: config [-gp] sysname\n", stderr);
 
 	dtab = NULL;
 	confp = &conf_list;
+	compp = &comp_list;
 	if (yyparse())
 		exit(3);
 	switch (machine) {
