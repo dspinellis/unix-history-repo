@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.31 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.32 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -37,11 +37,8 @@ BINMODE?=	555
 
 .if (${MACHINE} == "mips")
 NOPROFILE=1
-.s.o:
-	${AS} ${CFLAGS:M-[ID]*} ${AINC} -o ${.TARGET} ${.IMPSRC}
-	@${LD} -x -r ${.TARGET}
-	@mv a.out ${.TARGET}
-.else
+.endif
+
 .s.o:
 	${CPP} -E ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} | \
 	    ${AS} -o ${.TARGET}
@@ -53,7 +50,6 @@ NOPROFILE=1
 	    ${AS} -o ${.TARGET}
 	@${LD} -X -r ${.TARGET}
 	@mv a.out ${.TARGET}
-.endif
 
 MANALL=	${MAN1} ${MAN2} ${MAN3} ${MAN4} ${MAN5} ${MAN6} ${MAN7} ${MAN8}
 manpages: ${MANALL}
@@ -123,7 +119,7 @@ realinstall: beforeinstall
 	install -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} lib${LIB}.a \
 	    ${DESTDIR}${LIBDIR}
 	${RANLIB} -t ${DESTDIR}${LIBDIR}/lib${LIB}.a
-.if (${MACHINE} != "mips")
+.if !defined(NOPROFILE)
 	ranlib lib${LIB}_p.a
 	install -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
 	    lib${LIB}_p.a ${DESTDIR}${LIBDIR}
