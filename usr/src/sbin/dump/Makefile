@@ -25,10 +25,10 @@ all: rdump
 rdump: ${ROBJS} ${LIBC}
 	${CC} -o ${.TARGET} ${CFLAGS} ${ROBJS}
 
-dumprmain.o:
+dumprmain.o: dumpmain.o
 	${CC} -c -DRDUMP ${CFLAGS} ${.CURDIR}/dumpmain.c -o ${.TARGET}
 
-dumprtape.o:
+dumprtape.o: dumptape.o
 	${CC} -c -DRDUMP ${CFLAGS} ${.CURDIR}/dumptape.c -o ${.TARGET}
 
 afterinstall:
