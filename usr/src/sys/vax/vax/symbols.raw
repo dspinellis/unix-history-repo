@@ -1,4 +1,4 @@
-# symbols.raw 4.3 81/03/15
+# symbols.raw 4.4 81/05/03
 	_version
 #dmesg
 	_msgbuf
@@ -34,8 +34,8 @@
 	_usrpt
 	_nswap
 	_swapmap
-	_dh11
-	_ndh11
+#	_dh11
+#	_ndh11
 #vmstat
 	_cp_time
 	_rate
