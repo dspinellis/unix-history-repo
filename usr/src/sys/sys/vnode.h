@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.30 (Berkeley) %G%
+ *	@(#)vnode.h	7.31 (Berkeley) %G%
  */
 
 #include <machine/endian.h>
@@ -56,7 +56,7 @@ struct vnode {
 	union {
 		struct mount	*vu_mountedhere;/* ptr to mounted vfs (VDIR) */
 		struct socket	*vu_socket;	/* unix ipc (VSOCK) */
-		struct text	*vu_text;	/* text/mapped region (VREG) */
+		caddr_t		vu_vmdata;	/* private data for vm */
 		struct specinfo	*vu_specinfo;	/* device (VCHR, VBLK) */
 		struct fifoinfo	*vu_fifoinfo;	/* fifo (VFIFO) */
 	} v_un;
@@ -65,7 +65,7 @@ struct vnode {
 };
 #define v_mountedhere v_un.vu_mountedhere
 #define v_socket v_un.vu_socket
-#define v_text v_un.vu_text
+#define v_vmdata v_un.vu_vmdata
 #define v_specinfo v_un.vu_specinfo
 #define v_fifoinfo v_un.vu_fifoinfo
 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)malloc.h	7.18 (Berkeley) %G%
+ *	@(#)malloc.h	7.19 (Berkeley) %G%
  */
 
 #define KMEMSTATS
@@ -220,7 +220,7 @@ struct kmembuckets {
 
 extern struct kmemstats kmemstats[];
 extern struct kmemusage *kmemusage;
-extern char kmembase[];
+extern char *kmembase;
 extern struct kmembuckets bucket[];
 extern qaddr_t malloc();
 extern void free();

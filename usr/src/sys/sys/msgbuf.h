@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)msgbuf.h	7.3 (Berkeley) %G%
+ *	@(#)msgbuf.h	7.4 (Berkeley) %G%
  */
 
 #define	MSG_MAGIC	0x063061
@@ -16,5 +16,5 @@ struct	msgbuf {
 	char	msg_bufc[MSG_BSIZE];
 };
 #ifdef KERNEL
-struct	msgbuf msgbuf;
+struct	msgbuf *msgbufp;
 #endif
