@@ -10,7 +10,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)parseaddr.c	5.1 (Berkeley) %G%";
+static char	SccsId[] = "@(#)parseaddr.c	5.1.1.1 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
@@ -127,12 +127,15 @@ parseaddr(addr, a, copyf, delim)
 	}
 	else
 		a->q_paddr = addr;
+
+	if (a->q_user == NULL)
+		a->q_user = "";
+	if (a->q_host == NULL)
+		a->q_host = "";
+
 	if (copyf >= 0)
 	{
-		if (a->q_host != NULL)
-			a->q_host = newstr(a->q_host);
-		else
-			a->q_host = "";
+		a->q_host = newstr(a->q_host);
 		if (a->q_user != a->q_paddr)
 			a->q_user = newstr(a->q_user);
 	}
@@ -316,7 +319,9 @@ prescan(addr, delim, pvpbuf)
 			*q = '\0';
 			if (bslashmode)
 			{
-				c |= 0200;
+				/* kludge \! for naive users */
+				if (c != '!')
+					c |= 0200;
 				bslashmode = FALSE;
 			}
 			else if (c == '\\')
@@ -938,7 +943,7 @@ buildaddr(tv, a)
 	}
 	if (m == NULL)
 	{
-		syserr("buildaddr: unknown net %s", *tv);
+		syserr("buildaddr: unknown mailer %s", *tv);
 		return (NULL);
 	}
 	a->q_mailer = m;

@@ -9,10 +9,11 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)err.c	5.3 (Berkeley) %G%";
+static char	SccsId[] = "@(#)err.c	5.2.1.1 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
+# include <errno.h>
 
 /*
 **  SYSERR -- Print error message.
@@ -141,7 +142,7 @@ message(num, msg, a, b, c, d, e)
 **	Parameters:
 **		num -- the default ARPANET error number (in ascii)
 **		msg -- the message (printf fmt) -- if it begins
-**			with a digit, this number overrides num.
+**			with three digits, this number overrides num.
 **		a, b, c, d, e -- printf arguments
 **
 **	Returns:
@@ -250,7 +251,7 @@ fmtmsg(eb, to, num, eno, fmt, a, b, c, d, e)
 	char del;
 
 	/* output the reply code */
-	if (isdigit(*fmt))
+	if (isdigit(fmt[0]) && isdigit(fmt[1]) && isdigit(fmt[2]))
 	{
 		num = fmt;
 		fmt += 4;
@@ -310,7 +311,51 @@ errstring(errno)
 {
 	extern char *sys_errlist[];
 	extern int sys_nerr;
-	static char buf[50];
+	static char buf[100];
+# ifdef SMTP
+	extern char *SmtpPhase;
+	extern char *RealHostName;
+# endif SMTP
+
+# ifdef DAEMON
+# ifdef VMUNIX
+	/*
+	**  Handle special network error codes.
+	**
+	**	These are 4.2/4.3bsd specific; they should be in daemon.c.
+	*/
+
+	switch (errno)
+	{
+	  case ETIMEDOUT:
+	  case ECONNRESET:
+		(void) strcpy(buf, sys_errlist[errno]);
+		if (SmtpPhase != NULL)
+		{
+			(void) strcat(buf, " during ");
+			(void) strcat(buf, SmtpPhase);
+		}
+		if (RealHostName != NULL)
+		{
+			(void) strcat(buf, " with ");
+			(void) strcat(buf, RealHostName);
+		}
+		return (buf);
+
+	  case EHOSTDOWN:
+		if (RealHostName == NULL)
+			break;
+		(void) sprintf(buf, "Host %s is down", RealHostName);
+		return (buf);
+
+	  case ECONNREFUSED:
+		if (RealHostName == NULL)
+			break;
+		(void) sprintf(buf, "Connection refused by %s", RealHostName);
+		return (buf);
+	}
+# endif VMUNIX
+# endif DAEMON
 
 	if (errno > 0 && errno < sys_nerr)
 		return (sys_errlist[errno]);

@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)util.c	5.5 (Berkeley) %G%";
+static char	SccsId[] = "@(#)util.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 # include <stdio.h>
@@ -620,7 +620,11 @@ sfgets(buf, siz, fp)
 		if (setjmp(CtxReadTimeout) != 0)
 		{
 			errno = ETIMEDOUT;
-			syserr("sfgets: timeout on read (mailer may be hung)");
+			if (RealHostName == NULL)
+				syserr("timeout on read");
+			else
+				syserr("net timeout reading from %s", RealHostName);
+			errno = ETIMEDOUT;
 			buf[0] = '\0';
 			return (NULL);
 		}

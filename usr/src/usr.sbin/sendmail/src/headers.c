@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)headers.c	5.4.1.1 (Berkeley) %G%";
+static char	SccsId[] = "@(#)headers.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 # include <errno.h>
@@ -111,7 +111,8 @@ chompheader(line, def)
 		p += 7;
 	if (!def && !QueueRun && strcmp(fname, p) == 0)
 	{
-		if (strcmp(fvalue, CurEnv->e_from.q_paddr) == 0)
+		if (CurEnv->e_from.q_paddr != NULL &&
+		    strcmp(fvalue, CurEnv->e_from.q_paddr) == 0)
 			return (hi->hi_flags);
 	}
 
@@ -346,7 +347,9 @@ eatheader(e)
 	if (p != NULL)
 		e->e_class = priencode(p);
 	if (!QueueRun)
-		e->e_msgpriority = e->e_msgsize + e->e_ctime - e->e_class * WKPRIFACT;
+		e->e_msgpriority = e->e_msgsize + e->e_ctime
+				 - e->e_class * WKPRIFACT
+				 + e->e_nrcpts * WKRECIPFACT;
 
 	/* return receipt to */
 	p = hvalue("return-receipt-to");

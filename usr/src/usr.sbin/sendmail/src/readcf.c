@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)readcf.c	5.3 (Berkeley) %G%";
+static char	SccsId[] = "@(#)readcf.c	5.3.1.1 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
@@ -36,10 +36,8 @@ static char	SccsId[] = "@(#)readcf.c	5.3 (Berkeley) %G%";
 **		Sn		Use rewriting set n.
 **		Rlhs rhs	Rewrite addresses that match lhs to
 **				be rhs.
-**		Mn p f s r a	Define mailer.  n - internal name,
-**				p - pathname, f - flags, s - rewriting
-**				ruleset for sender, s - rewriting ruleset
-**				for recipients, a - argument vector.
+**		Mn arg=val...	Define mailer.  n is the internal name.
+**				Args specify mailer parameters.
 **		Oxvalue		Set option x to value.
 **		Pname=value	Set precedence name to value.
 **
@@ -672,6 +670,10 @@ setoption(opt, val, sticky)
 		NoConnect = atobool(val);
 		break;
 
+	  case 'C':		/* checkpoint after N connections */
+		CheckPointLimit = atoi(val);
+		break;
+
 	  case 'd':		/* delivery mode */
 		switch (*val)
 		{
@@ -763,6 +765,14 @@ setoption(opt, val, sticky)
 			CurEnv->e_flags |= EF_OLDSTYLE;
 		else
 			CurEnv->e_flags &= ~EF_OLDSTYLE;
+		break;
+
+	  case 'P':		/* postmaster copy address for returned mail */
+		PostMasterCopy = newstr(val);
+		break;
+
+	  case 'q':		/* slope of queue only function */
+		QueueFactor = atoi(val);
 		break;
 
 	  case 'Q':		/* queue directory */

@@ -7,7 +7,7 @@
 **  All rights reserved.  The Berkeley software License Agreement
 **  specifies the terms and conditions for redistribution.
 **
-**	@(#)conf.h	5.2 (Berkeley) %G%
+**	@(#)conf.h	5.1.1.1 (Berkeley) %G%
 */
 
 /*
@@ -25,7 +25,7 @@
 # define MAXNAME	256		/* max length of a name */
 # define MAXFIELD	2500		/* max total length of a hdr field */
 # define MAXPV		40		/* max # of parms to mailers */
-# define MAXHOP		30		/* max value of HopCount */
+# define MAXHOP		17		/* max value of HopCount */
 # define MAXATOM	100		/* max atoms per address */
 # define MAXMAILERS	25		/* maximum mailers known to system */
 # define MAXRWSETS	30		/* max # of sets of rewriting rules */
@@ -42,5 +42,6 @@
 #define SMTP		1	/* enable user and server SMTP */
 #define QUEUE		1	/* enable queueing */
 #define UGLYUUCP	1	/* output ugly UUCP From lines */
-#define DAEMON		1	/* include the daemon (requires IPC) */
+#define DAEMON		1	/* include the daemon (requires IPC & SMTP) */
 #define FLOCK		1	/* use flock file locking */
+#define SETPROCTITLE	1	/* munge argv to display current status */

@@ -17,12 +17,12 @@
 
 # ifndef QUEUE
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.4 (Berkeley) %G%	(no queueing)";
+static char	SccsId[] = "@(#)queue.c	5.5 (Berkeley) %G%	(no queueing)";
 # endif not lint
 # else QUEUE
 
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.4 (Berkeley) %G%";
+static char	SccsId[] = "@(#)queue.c	5.5 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -33,6 +33,7 @@ struct work
 {
 	char		*w_name;	/* name of control file */
 	long		w_pri;		/* priority of message, see below */
+	long		w_ctime;	/* creation time of message */
 	struct work	*w_next;	/* next in queue */
 };
 
@@ -242,7 +243,9 @@ queueup(e, queueall, announce)
 **	order and processes them.
 **
 **	Parameters:
-**		none.
+**		forkflag -- TRUE if the queue scanning should be done in
+**			a child process.  We double-fork so it is not our
+**			child and we don't have to clean up after it.
 **
 **	Returns:
 **		none.
@@ -275,6 +278,9 @@ runqueue(forkflag)
 		if (fork() != 0)
 			exit(EX_OK);
 	}
+
+	setproctitle("running queue");
+
 # ifdef LOG
 	if (LogLevel > 11)
 		syslog(LOG_DEBUG, "runqueue %s, pid=%d", QueueDir, getpid());
@@ -314,7 +320,10 @@ runqueue(forkflag)
 **  ORDERQ -- order the work queue.
 **
 **	Parameters:
-**		none.
+**		doall -- if set, include everything in the queue (even
+**			the jobs that cannot be run because the load
+**			average is too high).  Otherwise, exclude those
+**			jobs.
 **
 **	Returns:
 **		The number of request in the queue (not necessarily
@@ -335,7 +344,8 @@ static struct dir	dbuf;
 # define closedir(f)	fclose(f)
 # endif DIR
 
-orderq()
+orderq(doall)
+	bool doall;
 {
 	register struct direct *d;
 	register WORK *w;
@@ -406,9 +416,14 @@ orderq()
 		/* extract useful information */
 		while (fgets(lbuf, sizeof lbuf, cf) != NULL)
 		{
-			if (lbuf[0] == 'P')
+			switch (lbuf[0])
 			{
-				(void) sscanf(&lbuf[1], "%ld", &wlist[wn].w_pri);
+			  case 'P':
+				wlist[wn].w_pri = atol(&lbuf[1]);
+				break;
+
+			  case 'T':
+				wlist[wn].w_ctime = atol(&lbuf[1]);
 				break;
 			}
 		}
@@ -434,6 +449,7 @@ orderq()
 		w = (WORK *) xalloc(sizeof *w);
 		w->w_name = wlist[i].w_name;
 		w->w_pri = wlist[i].w_pri;
+		w->w_ctime = wlist[i].w_ctime;
 		w->w_next = NULL;
 		*wp = w;
 		wp = &w->w_next;
@@ -469,9 +485,12 @@ workcmpf(a, b)
 	register WORK *a;
 	register WORK *b;
 {
-	if (a->w_pri == b->w_pri)
+	long pa = a->w_pri + a->w_ctime;
+	long pb = b->w_pri + b->w_ctime;
+
+	if (pa == pb)
 		return (0);
-	else if (a->w_pri > b->w_pri)
+	else if (pa > pb)
 		return (-1);
 	else
 		return (1);
@@ -493,6 +512,7 @@ dowork(w)
 	register WORK *w;
 {
 	register int i;
+	extern bool shouldqueue();
 
 # ifdef DEBUG
 	if (tTd(40, 1))
@@ -500,14 +520,32 @@ dowork(w)
 # endif DEBUG
 
 	/*
+	**  Ignore jobs that are too expensive for the moment.
+	*/
+
+	if (shouldqueue(w->w_pri))
+	{
+		if (Verbose)
+			printf("\nSkipping %s\n", w->w_name);
+		return;
+	}
+
+	/*
 	**  Fork for work.
 	*/
 
-	i = fork();
-	if (i < 0)
+	if (ForkQueueRuns)
 	{
-		syserr("dowork: cannot fork");
-		return;
+		i = fork();
+		if (i < 0)
+		{
+			syserr("dowork: cannot fork");
+			return;
+		}
+	}
+	else
+	{
+		i = 0;
 	}
 
 	if (i == 0)
@@ -544,7 +582,10 @@ dowork(w)
 			if (LogLevel > 4)
 				syslog(LOG_DEBUG, "%s: locked", CurEnv->e_id);
 # endif LOG
-			exit(EX_OK);
+			if (ForkQueueRuns)
+				exit(EX_OK);
+			else
+				return;
 		}
 
 		/* do basic system initialization */
@@ -560,15 +601,20 @@ dowork(w)
 			sendall(CurEnv, SM_DELIVER);
 
 		/* finish up and exit */
-		finis();
+		if (ForkQueueRuns)
+			finis();
+		else
+			dropenvelope(CurEnv);
 	}
+	else
+	{
+		/*
+		**  Parent -- pick up results.
+		*/
 
-	/*
-	**  Parent -- pick up results.
-	*/
-
-	errno = 0;
-	(void) waitfor(i);
+		errno = 0;
+		(void) waitfor(i);
+	}
 }
 /*
 **  READQF -- read queue file and set up environment.
@@ -642,23 +688,39 @@ readqf(e, full)
 			break;
 
 		  case 'T':		/* init time */
-			(void) sscanf(&buf[1], "%ld", &e->e_ctime);
+			e->e_ctime = atol(&buf[1]);
 			break;
 
 		  case 'P':		/* message priority */
-			(void) sscanf(&buf[1], "%ld", &e->e_msgpriority);
+			e->e_msgpriority = atol(&buf[1]);
 
 			/* make sure that big things get sent eventually */
 			e->e_msgpriority -= WKTIMEFACT;
 			break;
 
+		  case '\0':		/* blank line; ignore */
+			break;
+
 		  default:
-			syserr("readqf(%s): bad line \"%s\"", e->e_id, buf);
+			syserr("readqf(%s:%d): bad line \"%s\"", e->e_id,
+				LineNumber, buf);
 			break;
 		}
 	}
 
+	fclose(qfp);
 	FileName = NULL;
+
+	/*
+	**  If we haven't read any lines, this queue file is empty.
+	**  Arrange to remove it without referencing any null pointers.
+	*/
+
+	if (LineNumber == 0)
+	{
+		errno = 0;
+		e->e_flags |= EF_CLRQUEUE | EF_FATALERRS | EF_RESPONSE;
+	}
 }
 /*
 **  PRINTQUEUE -- print out a representation of the mail queue
@@ -684,7 +746,7 @@ printqueue()
 	**  Read and order the queue.
 	*/
 
-	nrequests = orderq();
+	nrequests = orderq(TRUE);
 
 	/*
 	**  Print the work list that we have read.
@@ -708,6 +770,7 @@ printqueue()
 		long dfsize = -1;
 		char lf[20];
 		char message[MAXLINE];
+		extern bool shouldqueue();
 
 		f = fopen(w->w_name, "r");
 		if (f == NULL)
@@ -720,6 +783,8 @@ printqueue()
 		lf[0] = 'l';
 		if (stat(lf, &st) >= 0)
 			printf("*");
+		else if (shouldqueue(w->w_pri))
+			printf("X");
 		else
 			printf(" ");
 		errno = 0;
@@ -738,7 +803,7 @@ printqueue()
 				printf("%8ld %.16s %.45s", dfsize,
 					ctime(&submittime), &buf[1]);
 				if (message[0] != '\0')
-					printf("\n\t\t\t\t  (%.43s)", message);
+					printf("\n\t\t (%.62s)", message);
 				break;
 
 			  case 'R':	/* recipient name */
@@ -746,7 +811,7 @@ printqueue()
 				break;
 
 			  case 'T':	/* creation time */
-				(void) sscanf(&buf[1], "%ld", &submittime);
+				submittime = atol(&buf[1]);
 				break;
 
 			  case 'D':	/* data file name */

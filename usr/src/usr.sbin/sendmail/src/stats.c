@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)stats.c	5.5 (Berkeley) %G%";
+static char	SccsId[] = "@(#)stats.c	5.4.1.1 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
@@ -29,7 +29,9 @@ struct statistics
 };
 
 struct statistics	Stat;
-extern long		kbytes();	/* for _bf, _bt */
+
+#define ONE_K		1000		/* one thousand (twenty-four?) */
+#define KBYTES(x)	(((x) + (ONE_K - 1)) / ONE_K)
 /*
 **  MARKSTATS -- mark statistics
 */
@@ -54,7 +56,7 @@ markstats(e, to)
 	else
 	{
 		Stat.stat_nt[to->q_mailer->m_mno]++;
-		Stat.stat_bt[to->q_mailer->m_mno] += kbytes(CurEnv->e_msgsize);
+		Stat.stat_bt[to->q_mailer->m_mno] += KBYTES(CurEnv->e_msgsize);
 	}
 }
 /*
@@ -110,32 +112,4 @@ poststats(sfile)
 	(void) lseek(fd, (off_t) 0, 0);
 	(void) write(fd, (char *) &stat, sizeof stat);
 	(void) close(fd);
-}
-/*
-**  KBYTES -- given a number, returns the number of Kbytes.
-**
-**	Used in statistics gathering of message sizes to try to avoid
-**	wraparound (at least for a while.....)
-**
-**	Parameters:
-**		bytes -- actual number of bytes.
-**
-**	Returns:
-**		number of kbytes.
-**
-**	Side Effects:
-**		none.
-**
-**	Notes:
-**		This function is actually a ceiling function to
-**			the nearest K.
-**		Honestly folks, floating point might be better.
-**			Or perhaps a "statistical" log method.
-*/
-
-long
-kbytes(bytes)
-	long bytes;
-{
-	return ((bytes + 999) / 1000);
 }

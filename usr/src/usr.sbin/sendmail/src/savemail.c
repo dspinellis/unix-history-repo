@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)savemail.c	5.2 (Berkeley) %G%";
+static char	SccsId[] = "@(#)savemail.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 # include <pwd.h>
@@ -35,11 +35,24 @@ static char	SccsId[] = "@(#)savemail.c	5.2 (Berkeley) %G%";
 **		directory.
 */
 
+/* defines for state machine */
+# define ESM_REPORT	0	/* report to sender's terminal */
+# define ESM_MAIL	1	/* mail back to sender */
+# define ESM_QUIET	2	/* messages have already been returned */
+# define ESM_DEADLETTER	3	/* save in ~/dead.letter */
+# define ESM_POSTMASTER	4	/* return to postmaster */
+# define ESM_USRTMP	5	/* save in /usr/tmp/dead.letter */
+# define ESM_PANIC	6	/* leave the locked queue/transcript files */
+# define ESM_DONE	7	/* the message is successfully delivered */
+
+
 savemail(e)
 	register ENVELOPE *e;
 {
 	register struct passwd *pw;
-	register FILE *xfile;
+	register FILE *fp;
+	int state;
+	auto ADDRESS *q;
 	char buf[MAXLINE+1];
 	extern struct passwd *getpwnam();
 	register char *p;
@@ -79,49 +92,74 @@ savemail(e)
 	e->e_to = NULL;
 
 	/*
-	**  If called from Eric Schmidt's network, do special mailback.
-	**	Fundamentally, this is the mailback case except that
-	**	it returns an OK exit status (assuming the return
-	**	worked).
-	**  Also, if the from address is not local, mail it back.
+	**  Basic state machine.
+	**
+	**	This machine runs through the following states:
+	**
+	**	ESM_QUIET	Errors have already been printed iff the
+	**			sender is local.
+	**	ESM_REPORT	Report directly to the sender's terminal.
+	**	ESM_MAIL	Mail response to the sender.
+	**	ESM_DEADLETTER	Save response in ~/dead.letter.
+	**	ESM_POSTMASTER	Mail response to the postmaster.
+	**	ESM_PANIC	Save response anywhere possible.
 	*/
 
-	if (ErrorMode == EM_BERKNET)
+	/* determine starting state */
+	switch (ErrorMode)
 	{
+	  case EM_WRITE:
+		state = ESM_REPORT;
+		break;
+
+	  case EM_BERKNET:
+		/* mail back, but return o.k. exit status */
 		ExitStat = EX_OK;
-		ErrorMode = EM_MAIL;
+
+		/* fall through.... */
+
+	  case EM_MAIL:
+		state = ESM_MAIL;
+		break;
+
+	  case EM_PRINT:
+		state = ESM_QUIET;
+		break;
+
+	  case EM_QUIET:
+		/* no need to return anything at all */
+		return;
 	}
-	if (!bitset(M_LOCAL, CurEnv->e_returnto->q_mailer->m_flags))
-		ErrorMode = EM_MAIL;
 
-	/*
-	**  If writing back, do it.
-	**	If the user is still logged in on the same terminal,
-	**	then write the error messages back to hir (sic).
-	**	If not, mail back instead.
-	*/
-
-	if (ErrorMode == EM_WRITE)
+	while (state != ESM_DONE)
 	{
-		p = ttypath();
-		if (p == NULL || freopen(p, "w", stdout) == NULL)
+		switch (state)
 		{
-			ErrorMode = EM_MAIL;
-			errno = 0;
-		}
-		else
-		{
+		  case ESM_REPORT:
+
+			/*
+			**  If the user is still logged in on the same terminal,
+			**  then write the error messages back to hir (sic).
+			*/
+
+			p = ttypath();
+			if (p == NULL || freopen(p, "w", stdout) == NULL)
+			{
+				state = ESM_MAIL;
+				break;
+			}
+
 			expand("\001n", buf, &buf[sizeof buf - 1], e);
 			printf("\r\nMessage from %s...\r\n", buf);
 			printf("Errors occurred while sending mail.\r\n");
 			if (e->e_xfp != NULL)
 			{
 				(void) fflush(e->e_xfp);
-				xfile = fopen(queuename(e, 'x'), "r");
+				fp = fopen(queuename(e, 'x'), "r");
 			}
 			else
-				xfile = NULL;
-			if (xfile == NULL)
+				fp = NULL;
+			if (fp == NULL)
 			{
 				syserr("Cannot open %s", queuename(e, 'x'));
 				printf("Transcript of session is unavailable.\r\n");
@@ -129,76 +167,142 @@ savemail(e)
 			else
 			{
 				printf("Transcript follows:\r\n");
-				while (fgets(buf, sizeof buf, xfile) != NULL &&
+				while (fgets(buf, sizeof buf, fp) != NULL &&
 				       !ferror(stdout))
 					fputs(buf, stdout);
-				(void) fclose(xfile);
+				(void) fclose(fp);
 			}
+			printf("Original message will be saved in dead.letter.\r\n");
 			if (ferror(stdout))
 				(void) syserr("savemail: stdout: write err");
+			state = ESM_DEADLETTER;
+			break;
+
+		  case ESM_MAIL:
+		  case ESM_POSTMASTER:
+			/*
+			**  If mailing back, do it.
+			**	Throw away all further output.  Don't alias,
+			**	since this could cause loops, e.g., if joe
+			**	mails to joe@x, and for some reason the network
+			**	for @x is down, then the response gets sent to
+			**	joe@x, which gives a response, etc.  Also force
+			**	the mail to be delivered even if a version of
+			**	it has already been sent to the sender.
+			*/
+
+			if (state == ESM_MAIL)
+			{
+				if (e->e_errorqueue == NULL)
+					sendtolist(e->e_from.q_paddr,
+						(ADDRESS *) NULL,
+						&e->e_errorqueue);
+				q = e->e_errorqueue;
+			}
+			else
+			{
+				if (parseaddr("postmaster", &q, 0, '\0') == NULL)
+				{
+					syserr("cannot parse postmaster!");
+					ExitStat = EX_SOFTWARE;
+					state = ESM_USRTMP;
+					break;
+				}
+			}
+			if (returntosender(e->e_message != NULL ? e->e_message :
+					   "Unable to deliver mail",
+					   q, TRUE) == 0)
+			{
+				state = ESM_DONE;
+				break;
+			}
+
+			state = state == ESM_MAIL ? ESM_POSTMASTER : ESM_USRTMP;
+			break;
+
+		  case ESM_DEADLETTER:
+			/*
+			**  Save the message in dead.letter.
+			**	If we weren't mailing back, and the user is
+			**	local, we should save the message in
+			**	~/dead.letter so that the poor person doesn't
+			**	have to type it over again -- and we all know
+			**	what poor typists UNIX users are.
+			*/
+
+			p = NULL;
+			if (e->e_from.q_mailer == LocalMailer)
+			{
+				if (e->e_from.q_home != NULL)
+					p = e->e_from.q_home;
+				else if ((pw = getpwnam(e->e_from.q_user)) != NULL)
+					p = pw->pw_dir;
+			}
+			if (p == NULL)
+			{
+				syserr("Can't return mail to %s", e->e_from.q_paddr);
+				state = ESM_MAIL;
+				break;
+			}
+			if (e->e_dfp != NULL)
+			{
+				auto ADDRESS *q;
+				bool oldverb = Verbose;
+
+				/* we have a home directory; open dead.letter */
+				define('z', p, e);
+				expand("\001z/dead.letter", buf, &buf[sizeof buf - 1], e);
+				Verbose = TRUE;
+				message(Arpa_Info, "Saving message in %s", buf);
+				Verbose = oldverb;
+				e->e_to = buf;
+				q = NULL;
+				sendtolist(buf, (ADDRESS *) NULL, &q);
+				if (deliver(e, q) == 0)
+					state = ESM_DONE;
+				else
+					state = ESM_MAIL;
+			}
+			break;
+
+		  case ESM_USRTMP:
+			/*
+			**  Log the mail in /usr/tmp/dead.letter.
+			*/
+
+			fp = dfopen("/usr/tmp/dead.letter", "a");
+			if (fp == NULL)
+			{
+				state = ESM_PANIC;
+				break;
+			}
+
+			putfromline(fp, ProgMailer);
+			(*e->e_puthdr)(fp, ProgMailer, e);
+			putline("\n", fp, ProgMailer);
+			(*e->e_putbody)(fp, ProgMailer, e);
+			putline("\n", fp, ProgMailer);
+			(void) fflush(fp);
+			state = ferror(fp) ? ESM_PANIC : ESM_DONE;
+			(void) fclose(fp);
+			break;
+
+		  default:
+			syserr("savemail: unknown state %d", state);
+
+			/* fall through ... */
+
+		  case ESM_PANIC:
+			syserr("savemail: HELP!!!!");
+# ifdef LOG
+			if (LogLevel >= 1)
+				syslog(LOG_ALERT, "savemail: HELP!!!!");
+# endif LOG
+
+			/* leave the locked queue & transcript files around */
+			exit(EX_SOFTWARE);
 		}
 	}
-
-	/*
-	**  If mailing back, do it.
-	**	Throw away all further output.  Don't do aliases, since
-	**	this could cause loops, e.g., if joe mails to x:joe,
-	**	and for some reason the network for x: is down, then
-	**	the response gets sent to x:joe, which gives a
-	**	response, etc.  Also force the mail to be delivered
-	**	even if a version of it has already been sent to the
-	**	sender.
-	*/
-
-	if (ErrorMode == EM_MAIL)
-	{
-		if (returntosender("Unable to deliver mail", CurEnv->e_returnto, TRUE) == 0)
-			return;
-	}
-
-	/*
-	**  Save the message in dead.letter.
-	**	If we weren't mailing back, and the user is local, we
-	**	should save the message in dead.letter so that the
-	**	poor person doesn't have to type it over again --
-	**	and we all know what poor typists programmers are.
-	*/
-
-	p = NULL;
-	if (CurEnv->e_returnto->q_mailer == LocalMailer)
-	{
-		if (CurEnv->e_returnto->q_home != NULL)
-			p = CurEnv->e_returnto->q_home;
-		else if ((pw = getpwnam(CurEnv->e_returnto->q_user)) != NULL)
-			p = pw->pw_dir;
-	}
-	if (p == NULL)
-	{
-		syserr("Can't return mail to %s", CurEnv->e_returnto->q_paddr);
-# ifdef DEBUG
-		p = "/usr/tmp";
-# endif
-	}
-	if (p != NULL && e->e_dfp != NULL)
-	{
-		auto ADDRESS *q;
-		bool oldverb = Verbose;
-
-		/* we have a home directory; open dead.letter */
-		define('z', p, e);
-		expand("\001z/dead.letter", buf, &buf[sizeof buf - 1], e);
-		Verbose = TRUE;
-		message(Arpa_Info, "Saving message in %s", buf);
-		Verbose = oldverb;
-		e->e_to = buf;
-		q = NULL;
-		sendtolist(buf, (ADDRESS *) NULL, &q);
-		(void) deliver(e, q);
-	}
-
-	/* add terminator to writeback message */
-	if (ErrorMode == EM_WRITE)
-		printf("-----\r\n");
 }
 /*
 **  RETURNTOSENDER -- return a message to the sender with an error.
@@ -240,7 +344,7 @@ returntosender(msg, returnq, sendbody)
 	{
 		printf("Return To Sender: msg=\"%s\", depth=%d, CurEnv=%x,\n",
 		       msg, returndepth, CurEnv);
-		printf("\treturnto=");
+		printf("\treturnq=");
 		printaddr(returnq, TRUE);
 	}
 # endif DEBUG
@@ -257,6 +361,7 @@ returntosender(msg, returnq, sendbody)
 	SendBody = sendbody;
 	define('g', "\001f", CurEnv);
 	ee = newenvelope(&errenvelope);
+	define('a', "\001b", ee);
 	ee->e_puthdr = putheader;
 	ee->e_putbody = errbody;
 	ee->e_flags |= EF_RESPONSE;
@@ -267,6 +372,7 @@ returntosender(msg, returnq, sendbody)
 		if (q->q_alias == NULL)
 			addheader("to", q->q_paddr, ee);
 	}
+
 	(void) sprintf(buf, "Returned mail: %s", msg);
 	addheader("subject", buf, ee);
 

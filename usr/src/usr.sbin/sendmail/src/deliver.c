@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)deliver.c	5.4 (Berkeley) %G%";
+static char	SccsId[] = "@(#)deliver.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 # include <signal.h>
@@ -628,9 +628,9 @@ endmailer(pid, name)
 	/* see if it died a horrid death */
 	if ((st & 0377) != 0)
 	{
-		syserr("endmailer %s: stat %o", name, st);
-		ExitStat = EX_UNAVAILABLE;
-		return (EX_UNAVAILABLE);
+		syserr("mailer %s died with signal %o", name, st);
+		ExitStat = EX_TEMPFAIL;
+		return (EX_TEMPFAIL);
 	}
 
 	/* normal death -- return status */
@@ -702,6 +702,10 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 
 	if (strcmp(m->m_mailer, "[IPC]") == 0)
 	{
+#ifdef HOSTINFO
+		register STAB *st;
+		extern STAB *stab();
+#endif HOSTINFO
 #ifdef DAEMON
 		register int i;
 		register u_short port;
@@ -712,9 +716,25 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			port = atoi(pvp[2]);
 		else
 			port = 0;
+#ifdef HOSTINFO
+		/* see if we have already determined that this host is fried */
+		st = stab(pvp[1], ST_HOST, ST_FIND);
+		if (st == NULL || st->s_host.ho_exitstat == EX_OK)
+			i = makeconnection(pvp[1], port, pmfile, prfile);
+		else
+			i = st->s_host.ho_exitstat;
+#else HOSTINFO
 		i = makeconnection(pvp[1], port, pmfile, prfile);
+#endif HOSTINFO
 		if (i != EX_OK)
 		{
+#ifdef HOSTINFO
+			/* enter status of this host */
+			if (st == NULL)
+				st = stab(pvp[1], ST_HOST, ST_ENTER);
+			st->s_host.ho_exitstat = i;
+			st->s_host.ho_errno = errno;
+#endif HOSTINFO
 			ExitStat = i;
 			return (-1);
 		}
@@ -772,6 +792,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	else if (pid == 0)
 	{
 		int i;
+		extern int DtableSize;
 
 		/* child -- set up input & exec mailer */
 		/* make diagnostic output be standard output */
@@ -820,7 +841,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		}
 
 		/* arrange for all the files to be closed */
-		for (i = 3; i < 50; i++)
+		for (i = 3; i < DtableSize; i++)
 #ifdef FIOCLEX
 			(void) ioctl(i, FIOCLEX, 0);
 #else FIOCLEX
@@ -836,7 +857,8 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		printf("Cannot exec '%s' errno=%d\n", m->m_mailer, errno);
 		(void) fflush(stdout);
 #endif FIOCLEX
-		if (m == LocalMailer)
+		if (m == LocalMailer || errno == EIO || errno == EAGAIN ||
+		    errno == ENOMEM || errno == EPROCLIM)
 			_exit(EX_TEMPFAIL);
 		else
 			_exit(EX_UNAVAILABLE);
@@ -1242,9 +1264,9 @@ sendall(e, mode)
 	/* determine actual delivery mode */
 	if (mode == SM_DEFAULT)
 	{
-		extern int QueueLA;
+		extern bool shouldqueue();
 
-		if (getla() > QueueLA)
+		if (shouldqueue(e->e_msgpriority))
 			mode = SM_QUEUE;
 		else
 			mode = SendMode;
