@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)route.8	6.9 (Berkeley) %G%
+.\"	@(#)route.8	6.10 (Berkeley) %G%
 .\"
 .TH ROUTE 8 ""
 .UC 5
@@ -33,7 +33,7 @@ system routing table management daemon,
 should tend to this task.
 .PP
 .I Route
-accepts five commands:
+accepts six commands:
 .IR add ,
 to add a route,
 .IR flush ,
@@ -42,9 +42,11 @@ to remove all routes,
 to delete a specific route,
 .IR change ,
 to changes aspects of a route (such as its gateway),
+.IR get ,
+to lookup and display the route for a destination,
 and
 .IR monitor ,
-to report any changes to the routing information base,
+to continuously report any changes to the routing information base,
 routing lookup misses, or suspected network partionings.
 .PP
 The monitor command has the syntax
@@ -172,6 +174,16 @@ specify that all ensuing metrics may be locked by the
 .I -lockrest
 meta-modifier.
 .PP
+In a
+.IR change or
+.I add
+command where the destination and gateway are not sufficient to specify
+the route (as in the ISO case where several interfaces may have the
+same address), the
+.IR -ifp or
+.I -ifa
+modifiers may be used to determine the interface or interface address.
+.PP
 All symbolic names specified for a
 .I destination 
 or 
@@ -184,7 +196,7 @@ is then used to interpret the name as that of a network.
 .PP
 .I Route
 uses a routing socket and the new message types
-RTM_ADD, RTM_DELETE, and RTM_CHANGE.
+RTM_ADD, RTM_DELETE, RTM_GET, and RTM_CHANGE.
 As such, only the super-user may modify
 the routing tables.
 .PP
@@ -227,8 +239,8 @@ As above, but when deleting an entry.
 ``\fB%s %s done\fP''
 .br
 When the 
-.B \-f
-flag is specified, each routing table entry deleted
+.B flush
+command is specified, each routing table entry deleted
 is indicated with a message of this form.
 .PP
 ``\fBNetwork is unreachable\fP''
