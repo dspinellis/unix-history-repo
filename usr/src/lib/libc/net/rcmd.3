@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rcmd.3	6.5 (Berkeley) %G%
+.\"	@(#)rcmd.3	6.6 (Berkeley) %G%
 .\"
-.TH RCMD 3X ""
+.TH RCMD 3 ""
 .UC 5
 .SH NAME
 rcmd, rresvport, ruserok \- routines for returning a stream to a remote command
@@ -97,7 +97,7 @@ is allowed to bind an address of this sort to a socket.
 .PP
 .I Ruserok
 takes a remote host's name, as returned by a
-.IR gethostent (3N)
+.IR gethostbyaddr (3N)
 routine, two user names and a flag indicating if
 the local user's name is the super-user.  It then
 checks the file
@@ -115,17 +115,12 @@ returns \-1.  If the
 .I superuser
 flag is 1, the checking of the ``host.equiv'' file is
 bypassed.
+If the local domain (as obtained from \fIgethostname\fP\|(2))
+is the same as the remote domain, only the machine name need be specified.
 .SH SEE ALSO
 rlogin(1C),
 rsh(1C),
-rexec(3X),
+rexec(3),
 rexecd(8C),
 rlogind(8C),
 rshd(8C)
-.SH BUGS
-There is no way to specify options to the
-.I socket
-call
-which
-.I rcmd
-makes.

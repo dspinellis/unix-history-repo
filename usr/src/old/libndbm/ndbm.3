@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ndbm.3	6.4 (Berkeley) %G%
+.\"	@(#)ndbm.3	6.5 (Berkeley) %G%
 .\"
-.TH NDBM 3X  ""
+.TH NDBM 3  ""
 .UC 6
 .SH NAME
 dbm_open, dbm_close, dbm_fetch, dbm_store, dbm_delete, dbm_firstkey, dbm_nextkey, dbm_error, dbm_clearerr \- data base subroutines
@@ -64,10 +64,9 @@ int dbm_clearerr(db)
 These functions maintain key/content pairs in a data base.
 The functions will handle very large (a billion blocks)
 databases and will access a keyed item in one or two file system accesses.
-An advantage over the
+This package replaces the earlier
 .IR dbm (3x)
-package
-is that these functions can have more than one database open at a time.
+library, which managed only a single database.
 .PP
 .IR Key s
 and
@@ -170,3 +169,5 @@ The order of keys presented by
 and
 .I dbm_nextkey
 depends on a hashing function, not on anything interesting.
+.SH SEE ALSO
+dbm(3X)
