@@ -1,0 +1,99 @@
+[ N.B. This bug strikes on a Sun 3 running SunOS 4 with the cc -O4 option
+  as well as on the sparc.  -Mike ]
+
+Date:    Fri, 24 Feb 89 15:36:40 -0600
+To:      mike@wheaties.ai.mit.edu
+From:    Dave Cohrs <dave@cs.wisc.edu>
+Subject: bug + fix in gnu grep 1.2 (from prep.ai.mit.edu)
+
+I tried installing the GNU grep 1.2 on a Sun4 running 4.0.1 and
+"Spencer test #36" failed.  After some experimenting, I found and
+fixed the bug.  Well, actually, the bug in the the C compiler, but
+I managed a workaround.
+
+Description:
+
+The Sun4 4.0.1 C compiler with -O doesn't generate the correct for
+statements of the form
+	if("string")
+		x;
+	else
+		y;
+To be exact, "y;" gets executed, while "x;" should.  This causes the
+#define FETCH() to fail for test #36.
+
+Fix:
+
+In an #ifdef sparc in dfa.c, I made two versions of FETCH, FETCH0() and
+the regular FETCH().  The former takes only one argument, the latter
+expects its 2nd argument to contain a non-nil string.  This removes
+the need to test the constant strings, and the compiler bug isn't
+exercised.  I then changed the one instance of FETCH() with a nil
+second argument to be FETCH0() instead.
+
+dave cohrs
+
+===================================================================
+RCS file: RCS/dfa.c,v
+retrieving revision 1.1
+diff -c -r1.1 dfa.c
+*** /tmp/,RCSt1a05930	Fri Feb 24 15:32:33 1989
+--- dfa.c	Fri Feb 24 15:23:34 1989
+***************
+*** 285,293 ****
+--- 285,315 ----
+  				   is turned off). */
+  
+  /* Note that characters become unsigned here. */
++ #ifdef sparc
++ /*
++  * Sun4 4.0.1 C compiler can't compare constant strings correctly.
++  * e.g. if("test") { x; } else { y; }
++  * the compiler will not generate code to execute { x; }, but
++  * executes { y; } instead.
++  */
++ #define FETCH0(c)   		      \
++   {			   	      \
++     if (! lexleft)	   	      \
++       return _END;	   	      \
++     (c) = (unsigned char) *lexptr++;  \
++     --lexleft;		   	      \
++   }
+  #define FETCH(c, eoferr)   	      \
+    {			   	      \
+      if (! lexleft)	   	      \
++       regerror(eoferr);  	      \
++     (c) = (unsigned char) *lexptr++;  \
++     --lexleft;		   	      \
++   }
++ #else
++ #define FETCH(c, eoferr)   	      \
++   {			   	      \
++     if (! lexleft)	   	      \
+        if (eoferr)	   	      \
+  	regerror(eoferr);  	      \
+        else		   	      \
+***************
+*** 295,300 ****
+--- 317,323 ----
+      (c) = (unsigned char) *lexptr++;  \
+      --lexleft;		   	      \
+    }
++ #endif sparc
+  
+  static _token
+  lex()
+***************
+*** 303,309 ****
+--- 326,336 ----
+    int invert;
+    _charset cset;
+  
++ #ifdef sparc
++   FETCH0(c);
++ #else
+    FETCH(c, (char *) 0);
++ #endif sparc
+    switch (c)
+      {
+      case '^':
