@@ -112,8 +112,8 @@ setcor()
 		slr = cursym->n_value;
 		printf("sbr %x slr %x\n", sbr, slr);
 		lookup("_masterpaddr");
-		physrw(fcor, cursym->n_value&~0x80000000, &masterpcbb, 1);
-		masterpcbb = (masterpcbb&PG_PFNUM)*512;
+		physrw(fcor, KVTOPH(cursym->n_value), &masterpcbb, 1);
+		masterpcbb = (masterpcbb&PG_PFNUM)*NBPG;
 		getpcb();
 		findstackframe();
 		return;
@@ -152,7 +152,7 @@ setcor()
 getpcb()
 {
 
-	lseek(fcor, masterpcbb&~0x80000000, L_SET);
+	lseek(fcor, KVTOPH(masterpcbb), L_SET);
 	read(fcor, &pcb, sizeof (struct pcb));
 	pcb.pcb_p0lr &= ~AST_CLR;
 	printf("p0br %x p0lr %x p1br %x p1lr %x\n",
@@ -181,14 +181,14 @@ findstackframe()
 
 	if (lookup("_panicstr") == 0)
 		return;
-	lseek(fcor, cursym->n_value&~0x80000000, L_SET);
+	lseek(fcor, KVTOPH(cursym->n_value), L_SET);
 	read(fcor, &panicstr, sizeof (panicstr));
 	if (panicstr == 0)
 		return;
-	lseek(fcor, ((off_t)panicstr)&~0x80000000, L_SET);
+	lseek(fcor, KVTOPH((off_t)panicstr), L_SET);
 	read(fcor, buf, sizeof (buf));
 	for (cp = buf; cp < &buf[sizeof (buf)] && *cp; cp++)
-		if (!isascii(*cp) || !isprint(*cp))
+		if (!isascii(*cp) || (!isprint(*cp) && !isspace(*cp)))
 			*cp = '?';
 	if (*cp)
 		*cp = '\0';
@@ -210,7 +210,7 @@ findstackframe()
 	lookup("_u");
 	ustack = cursym->n_value + (int)&((struct user *)0)->u_stack[0];
 	eustack = cursym->n_value + ctob(UPAGES);
-	physrw(fcor, ((int)scb - sizeof (caddr_t))&~0x80000000, &addr, 1);
+	physrw(fcor, KVTOPH((int)scb - sizeof (caddr_t)), &addr, 1);
 	fp = getframe(fcor, addr);
 	if (fp == 0)
 		fp = checkintstack();
