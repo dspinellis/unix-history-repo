@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.56 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.57 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -368,7 +368,7 @@ main(argc, argv, envp)
 				printf("\ta.k.a.: %s\n", *av);
 			setclass('w', *av);
 		}
-		if (hp->h_addrtype == AF_INET && hp->h_length == 4)
+		if (hp->h_addrtype == AF_INET && hp->h_length == IPADDRSIZE)
 		{
 			register int i;
 

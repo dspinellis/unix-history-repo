@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.106 (Berkeley) %G%
+ *	@(#)conf.h	8.107 (Berkeley) %G%
  */
 
 /*
@@ -1039,6 +1039,14 @@ typedef int		pid_t;
 #ifndef __P
 # include "cdefs.h"
 #endif
+
+/*
+**  The size of an IP address -- can't use sizeof because of problems
+**  on Crays, where everything is 64 bits.  This will break if/when
+**  IP addresses are expanded to eight bytes.
+*/
+
+#define IPADDRSIZE	4
 
 /*
 **  Do some required dependencies
