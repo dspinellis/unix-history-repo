@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)envelope.c	5.11 (Berkeley) %G%";
+static char	SccsId[] = "@(#)envelope.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -38,11 +38,12 @@ newenvelope(e)
 {
 	register ENVELOPE *parent;
 	extern putheader(), putbody();
+	extern ENVELOPE BlankEnvelope;
 
 	parent = CurEnv;
 	if (e == CurEnv)
 		parent = e->e_parent;
-	clearenvelope(e);
+	clearenvelope(e, TRUE);
 	bcopy((char *) &CurEnv->e_from, (char *) &e->e_from, sizeof e->e_from);
 	e->e_parent = parent;
 	e->e_ctime = curtime();
@@ -160,6 +161,9 @@ dropenvelope(e)
 **
 **	Parameters:
 **		e -- the envelope to clear.
+**		fullclear - if set, the current envelope is total
+**			garbage and should be ignored; otherwise,
+**			release any resources it may indicate.
 **
 **	Returns:
 **		none.
@@ -169,18 +173,22 @@ dropenvelope(e)
 **		Marks the envelope as unallocated.
 */
 
-clearenvelope(e)
+clearenvelope(e, fullclear)
 	register ENVELOPE *e;
+	bool fullclear;
 {
 	register HDR *bh;
 	register HDR **nhp;
 	extern ENVELOPE BlankEnvelope;
 
-	/* clear out any file information */
-	if (e->e_xfp != NULL)
-		(void) fclose(e->e_xfp);
-	if (e->e_dfp != NULL)
-		(void) fclose(e->e_dfp);
+	if (!fullclear)
+	{
+		/* clear out any file information */
+		if (e->e_xfp != NULL)
+			(void) fclose(e->e_xfp);
+		if (e->e_dfp != NULL)
+			(void) fclose(e->e_dfp);
+	}
 
 	/* now clear out the data */
 	STRUCTCOPY(BlankEnvelope, *e);
