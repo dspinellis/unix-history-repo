@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.44 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.45 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -415,10 +415,12 @@ ifdef(`_OLD_SENDMAIL_',
 `R$* < @ $+ . $+ . UUCP > $*		$@ $1 < @ $2 . $3 . > $4',
 `R$* < @ $+ . . UUCP > $*		$@ $1 < @ $2 . > $3')')
 ')
-ifdef(`_NO_CANONIFY_', `dnl',
+ifdef(`_NO_CANONIFY_',
+`# make sure local host names appear canonical
+R$* < @ $=w > $*		$: $1 < @ $2 . > $3',
 `# pass to name server to make hostname canonical
-R$* < @ $* $~P > $*		$: $1 < @ $[ $2 $3 $] > $4
-')
+R$* < @ $* $~P > $*		$: $1 < @ $[ $2 $3 $] > $4')
+
 undivert(8)dnl
 
 # if this is the local hostname, make sure we treat is as canonical
