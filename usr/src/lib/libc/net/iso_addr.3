@@ -3,16 +3,15 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)iso_addr.3	5.2 (Berkeley) %G%
+.\"     @(#)iso_addr.3	5.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ISO_ADDR 3
-.Os BSD 4.4
+.Os
 .Sh NAME
 .Nm iso_addr ,
 .Nm iso_ntoa
-.Nd Elementary
-network address conversion routines for Open System Interconnection.
+.Nd "elementary network address conversion routines for Open System Interconnection
 .Sh SYNOPSIS
 .Fd #include <sys/types.h>
 .Fd #include <netiso/iso.h>
@@ -55,9 +54,9 @@ of the form:
 Each pair of hexadecimal digits represents a byte
 with the leading digit indicating the higher-ordered bits.
 A period following an even number of bytes has no
-effect (but may be used to increase legitibility).
+effect (but may be used to increase legibility).
 A period following an odd number of bytes has the
-effective of filling the byte of address being translated
+effect of causing the byte of address being translated
 to have its higher order bits filled with zeros.
 .Sh RETURN VALUES
 .Fn iso_ntoa
@@ -67,7 +66,7 @@ always returns a pointer to a struct iso_addr.
 (See
 .Sx BUGS . )
 .Sh SEE ALSO
-.Xr iso 4 ,
+.Xr iso 4
 .Sh HISTORY
 The
 .Fn iso_addr
@@ -78,6 +77,7 @@ functions appeared in
 .Sh BUGS
 The returned values
 reside in a static memory area.
+.Pp
 The function
 .Fn iso_addr
 should diagnose improperly formed input, and there should be an unambiguous
