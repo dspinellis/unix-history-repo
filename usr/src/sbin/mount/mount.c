@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.51 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.52 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -246,7 +246,6 @@ mountfs(spec, name, flags, type, options, mntopts)
 	if (force)
 		flags |= MNT_FORCE;
 	switch (mnttype) {
-	case MOUNT_LFS:
 	case MOUNT_UFS:
 		if (mntopts)
 			getufsopts(mntopts, &flags);
