@@ -91,7 +91,7 @@ char copyright[] =
 
 #ifndef lint
 static char sccsid[] = "@(#)slattach.c	4.6 (Berkeley) 6/1/90";
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.c,v 1.11 1993/09/16 06:33:44 rich Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.c,v 1.12 1993/09/22 23:39:19 jkh Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -326,8 +326,8 @@ void attach_line()
 		char *s;
 		s = (char*) malloc(strlen(config_cmd) + 32);
 		sprintf (s, "%s %d %d", config_cmd, unit, new_unit);
-		syslog(LOG_NOTICE,"configuring sl%d, invoking: %s",
-		       new_unit, s);
+		syslog(LOG_NOTICE, "Configuring %s (sl%d):", dev, unit);
+		syslog(LOG_NOTICE, "  '%s'", s);
 		system(s);
 		free (s);
 		unit = new_unit;
@@ -351,8 +351,8 @@ again:
 	}
 	/* invoke a shell for redial_cmd or punt. */
 	if (redial_cmd) {
-		syslog(LOG_NOTICE,"sl%d caught SIGHUP on %s, running %s",
-		       unit,dev,redial_cmd);
+		syslog(LOG_NOTICE,"SIGHUP on %s (sl%d); running %s",
+		       dev,unit,redial_cmd);
 		system(redial_cmd);
 		/* Now check again for carrier (dial command is done): */
 		if (!(modem_control & CLOCAL)) {
@@ -411,7 +411,7 @@ void sigint_handler()
 /* Signal handler for SIGTERM.  We just log and exit. */
 void sigterm_handler()
 {
-	syslog(LOG_NOTICE,"sl%d on %s caught SIGTERM, exiting.",unit,dev);
+	syslog(LOG_NOTICE,"SIGTERM on %s (sl%d); exiting",dev,unit);
 	exit_handler(0);
 }
 /* Run config_cmd if specified before exiting. */
