@@ -1,4 +1,4 @@
-/* tcp_input.c 1.4 81/10/26 */
+/* tcp_input.c 1.4 81/10/28 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -542,192 +542,115 @@ COUNT(RCV_CTLDAT);
 	}
 }
 
-rcv_text(tp, t)
+rcv_text(tp, n)
 	register struct tcb *tp;
-	register struct th *t;
+	register struct th *n;
 {
-	register i;
+	register int i;
 	register struct th *p, *q;
-	register struct mbuf *m, *n;
-	struct th *savq;
-	int last, j, k;
+	register struct mbuf *m;
+	int overage;
 COUNT(RCV_TEXT);
 
-	/* throw away any data we have already received */
-	if ((i = tp->rcv_nxt - t->t_seq) > 0)  {
-		if (i >= t->t_len)
-			return;
-		t->t_seq += i;
-		t->t_len -= i;
-		m_adj(dtom(t), i);
+	/*
+	 * Discard duplicate data already passed to user.
+	 */
+	if (n->t_seq < tp->rcv_nxt){
+		i = tp->rcv_nxt - n->t_seq;
+		if (i >= n->t_len)
+			goto dropseg;
+		n->t_seq += i;
+		n->t_len -= i;
+		m_adj(dtom(n), i);
 	}
 
-	last = t_end(t);                /* last seq # in incoming seg */
-	i = rcv_resource(tp);           /* # buffers available to con */
+	/*
+	 * Find a segment which begins after this one does.
+	 */
+	for (q = tp->t_rcv_next; q != (struct th *)tp; q = q->t_next)
+		if (q->t_seq > n->t_seq)
+			break;
 
-	/* count buffers in segment */
-
-	for (m = dtom(t), j = 0; m != NULL; m = m->m_next)
-		if (m->m_len != 0) {
-        		j++;
-			if (m->m_off > MMAXOFF)
-				j += NMBPG;
+	/*
+	 * If there is a preceding segment, it may provide some of
+	 * our data already.  If so, drop the data from the incoming
+	 * segment.  If it provides all of our data, drop us.
+	 */
+	if (q->t_prev != (struct th *)tp) {
+		i = q->t_prev->t_seq + q->t_prev->t_len - n->t_seq;
+		if (i > 0) {
+			if (i >= n->t_len)
+				goto dropseg;
+			m_adj(dtom(tp), i);
+			n->t_len -= i;
+			n->t_seq += i;
 		}
-
-	/* not enough resources to process segment */
-
-	if (j > i && netcb.n_bufs < netcb.n_lowat) {
-
-		/* if segment preceeds top of seqeuncing queue, try to take
-		   buffers from bottom of queue */
-
-                q = tp->t_rcv_next;
-		if (q != (struct th *)tp && tp->rcv_nxt < q->t_seq &&
-		    t->t_seq < q->t_seq)
-
-			for (k=j-i, p = tp->t_rcv_prev; k > 0 &&
-			     p != (struct th *)tp; k--) {
-				savq = p->t_prev;
-				tcp_deq(p);
-				i += m_freem(dtom(p));
-				p = savq;
-			}
-
-		/* if still not enough room, drop text from end of segment */
-
-		if (j > i) {
-
-			for (m = dtom(t); i > 0 && m != NULL; i--)
-				m = m->m_next;
-
-        		while (m != NULL) {
-        			t->t_len -= m->m_len;
-        			last -= m->m_len;
-        			m->m_len = 0;
-        			m = m->m_next;
-        		}
-        		tp->tc_flags |= TC_DROPPED_TXT;
-        		if (last < t->t_seq)
-        			return;
-        	}
 	}
 
-	/* merge incoming data into the sequence queue */
-
-        q = tp->t_rcv_next;             /* -> top of sequencing queue */
-
-        /* skip frags which new doesn't overlap at end */
-
-        while ((q != (struct th *)tp) && (t->t_seq > t_end(q)))
-        	q = q->t_next;
-
-        if (q == (struct th *)tp) {     /* frag at end of chain */
-
-		if (last >= tp->rcv_nxt) {
-		        tp->tc_flags |= TC_NET_KEEP;
-        	        tcp_enq(t, tp->t_rcv_prev);
+	/*
+	 * While we overlap succeeding segments trim them or,
+	 * if they are completely covered, dequeue them.
+	 */
+	while (q != (struct th *)tp && n->t_seq + n->t_len > q->t_seq) {
+		i = (n->t_seq + n->t_len) - q->t_seq;
+		if (i < q->t_len) {
+			q->t_len -= i;
+			m_adj(dtom(q), i);
+			break;
 		}
+		q = q->t_next;
+		m_freem(dtom(q->t_prev));
+		remque(q->t_prev);
+	}
 
-        } else {
-
-		/* frag doesn't overlap any on chain */
-
-        	if (last < q->t_seq) {
-			tp->tc_flags |= TC_NET_KEEP;
-        		tcp_enq(t, q->t_prev);
-
-        	/* new overlaps beginning of next frag only */
-
-        	} else if (last < t_end(q)) {
-        		if ((i = last - q->t_seq + 1) < t->t_len) {
-                		t->t_len -= i;
-        			m_adj(dtom(t), -i);
-				tp->tc_flags |= TC_NET_KEEP;
-        			tcp_enq(t, q->t_prev);
-        		}
-
-        	/* new overlaps end of previous frag */
-
-        	} else {
-        		savq = q;
-        		if (t->t_seq <= q->t_seq) {     /* complete cover */
-        			savq = q->t_prev;
-        			tcp_deq(q);
-        			m_freem(dtom(q));
-
-        		} else {                        /* overlap */
-        			if ((i = t_end(q) - t->t_seq + 1) < t->t_len) {
-                			t->t_seq += i;
-                			t->t_len -= i;
-                			m_adj(dtom(t), i);
-				} else
-					t->t_len = 0;
-        		}
-
-        	/* new overlaps at beginning of successor frags */
-
-        		q = savq->t_next;
-        		while ((q != (struct th *)tp) && (t->t_len != 0) &&
-        			(q->t_seq < last))
-
-        			/* complete cover */
-
-        			if (t_end(q) <= last) {
-        				p = q->t_next;
-        				tcp_deq(q);
-        				m_freem(dtom(q));
-        				q = p;
-
-        			} else {        /* overlap */
-
-        				if ((i = last - q->t_seq + 1) < t->t_len) {
-                				t->t_len -= i;
-                				m_adj(dtom(t), -i);
-					} else
-						t->t_len = 0;
-        				break;
-        			}
-
-        	/* enqueue whatever is left of new before successors */
-
-        		if (t->t_len != 0) {
-				tp->tc_flags |= TC_NET_KEEP;
-        			tcp_enq(t, savq);
-			}
-        	}
-        }
-
-	/* set to ack completed data (no gaps) */
-
-	tp->rcv_nxt = firstempty(tp);
-	tp->tc_flags |= TC_ACK_DUE;
+	/*
+	 * Stick new segment in its place.
+	 */
+	insque(n, q->t_prev);
+/*
+	tp->rcv_seqcnt += n->t_len;
+*/
 
 #ifdef notdef
-	/* THIS CODE CANT POSSIBLY WORK */
-	/* if any room remaining in rcv buf, take any unprocessed
-	   messages and schedule for later processing */
-
-	i = rcv_resource(tp);
-
-	while ((m = tp->t_rcv_unack) != NULL && i > 0) {
-
-		/* schedule work request */
-
-		t = (struct th *)((int)m + m->m_off);
-		j = (t->t_off << 2) + sizeof(struct ip);
-		m->m_off += j;
-		m->m_len -= j;
-		tp->t_rcv_unack = m->m_act;
-		m->m_act = (struct mbuf *)0;
-		netstat.t_unack++;
-		tcp_work(INRECV, 0, tp, t);
-
-		/* remaining buffer space */
-
-		for (n = m; n != NULL; n = n->m_next)
-			i--;
-	}
+	/*
+	 * Calculate available space and discard segments for
+	 * which there is too much.
+	 */
+	q = tp->t_rcv_prev;
+	overage = (tp->t_socket->uc_rcc + tp->rcv_seqcnt) - tp->t_socket->uc_rhiwat;
+	if (overage > 0)
+		for (;;) {
+			i = MIN(q->t_len, overage);
+			overage -= i;
+			q->t_len -= i;
+			m_adj(q, -i);
+			if (q == n)
+				tp->tc_flags |= TC_DROPPED_TXT;
+			if (q->t_len)
+				break;
+			if (q == n)
+				printf("tcp_text dropall\n");
+			q = q->t_prev;
+			remque(q->t_next);
+		}
 #endif
+
+	/*
+	 * Advance rcv_next through newly
+	 * completed sequence space and force ACK.
+	 */
+	while (n->t_seq == tp->rcv_nxt) {
+		tp->rcv_nxt += n->t_len;
+		n = n->t_next;
+		if (n == (struct th *)tp)
+			break;
+	}
+	tp->tc_flags |= (TC_ACK_DUE|TC_NET_KEEP);
+	return;
+
+dropseg:
+	/* don't set TC_NET_KEEP */
+	return;
 }
 
 present_data(tp)
