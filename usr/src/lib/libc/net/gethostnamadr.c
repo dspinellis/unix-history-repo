@@ -5,10 +5,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.17 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <ctype.h>
@@ -138,7 +138,7 @@ getanswer(msg, msglen, iquery)
 	ap = host_aliases;
 	host.h_aliases = host_aliases;
 	hap = h_addr_ptrs;
-#ifdef BSD4_3
+#if BSD >= 43
 	host.h_addr_list = h_addr_ptrs;
 #else
 	host.h_addr = h_addr_ptrs[0];
@@ -333,7 +333,7 @@ again:
 		goto again;
 	*cp++ = '\0';
 	/* THIS STUFF IS INTERNET SPECIFIC */
-#ifdef BSD4_3
+#if	BSD >= 43
 	host.h_addr_list = host_addrs;
 #endif
 	host.h_addr = hostaddr;
