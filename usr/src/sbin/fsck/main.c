@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.11 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.12 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -7,6 +7,7 @@ static	char *sccsid = "@(#)main.c	1.11 (Berkeley) %G%";
 #include "../h/dir.h"
 #include "../h/inode.h"
 #include "../h/stat.h"
+#include "../h/ostat.h"
 #include <fstab.h>
 
 typedef	int	(*SIG_TYP)();
@@ -267,7 +268,7 @@ main(argc, argv)
 blockcheck(name)
 	char *name;
 {
-	struct stat stslash, stblock, stchar;
+	struct ostat stslash, stblock, stchar;
 	char *raw;
 	int looped = 0;
 
@@ -316,7 +317,7 @@ unrawname(cp)
 	char *cp;
 {
 	char *dp = rindex(cp, '/');
-	struct stat stb;
+	struct ostat stb;
 
 	if (dp == 0)
 		return (cp);
@@ -1153,7 +1154,7 @@ setup(dev)
 	char *dev;
 {
 	dev_t rootdev;
-	struct stat statb;
+	struct ostat statb;
 	int super = bflag ? bflag : SBLOCK;
 
 	bflag = 0;
