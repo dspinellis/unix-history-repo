@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dlmpcc.8	6.1 (Berkeley) %G%
+.\"	@(#)dlmpcc.8	6.2 (Berkeley) %G%
 .\"
 .TH DLMPCC 8 ""
 .UC 7
@@ -40,5 +40,11 @@ boards 0 and 3:
 
         dlmpcc  0  3
 .fi 
+.LP
+Typically, this download function is performed at boot time from the
+/etc/rc.local file with an entry similar to:
+.nf
+        /etc/dlmpcc > /dev/console 2>&1
+.fi
 .SH SEE ALSO
 mpcctab(4)
