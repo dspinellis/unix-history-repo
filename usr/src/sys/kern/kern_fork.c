@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_fork.c	7.10 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -29,6 +29,7 @@
 #include "text.h"
 #include "file.h"
 #include "acct.h"
+#include "ktrace.h"
 #include "../ufs/quota.h"
 
 #include "machine/reg.h"
@@ -185,6 +186,8 @@ again:
 		rpp->p_ndx = rip->p_ndx;
 	} else
 		rpp->p_ndx = rpp - proc;
+	bcopy(rip->p_comm, rpp->p_comm, MAXCOMLEN+1);
+	bcopy(rip->p_logname, rpp->p_logname, MAXLOGNAME);
 	rpp->p_uid = rip->p_uid;
 	rpp->p_ruid = rip->p_ruid;
 	rpp->p_rgid = rip->p_rgid;
@@ -222,11 +225,10 @@ again:
 		forkstat.sizfork += rip->p_dsize + rip->p_ssize;
 	}
 #ifdef KTRACE
-	if (rip->p_flag&SKTR) {
-		rpp->p_flag |= SKTR;
+	if (rip->p_traceflag&KTRFAC_INHERIT) {
+		rpp->p_traceflag = rip->p_traceflag;
 		if ((rpp->p_tracep = rip->p_tracep) != NULL)
 			VREF(rpp->p_tracep);
-		rpp->p_traceflag = rip->p_traceflag;
 	} else {
 		rpp->p_tracep = NULL;
 		rpp->p_traceflag = 0;
@@ -238,9 +240,12 @@ again:
 	rpp->p_slptime = 0;
 	rpp->p_pctcpu = 0;
 	rpp->p_cpticks = 0;
-	n = PIDHASH(rpp->p_pid);
-	rpp->p_idhash = pidhash[n];
-	pidhash[n] = rpp - proc;
+	{
+	struct proc **hash = &pidhash[PIDHASH(rpp->p_pid)];
+
+	rpp->p_hash = *hash;
+	*hash = rpp;
+	}
 	multprog++;
 
 	/*
