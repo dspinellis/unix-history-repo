@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.29	82/12/05	*/
+/*	tty_pty.c	4.30	83/05/21	*/
 
 /*
  * Pseudo-teletype Driver
@@ -57,6 +57,7 @@ ptsopen(dev, flag)
 	tp = &pt_tty[minor(dev)];
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		ttychars(tp);		/* Set up default chars */
+		tp->t_ispeed = tp->t_ospeed = EXTB;
 		tp->t_flags = 0;	/* No features (nor raw mode) */
 	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
 		return (EBUSY);
