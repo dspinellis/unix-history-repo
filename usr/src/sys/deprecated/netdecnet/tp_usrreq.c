@@ -1,4 +1,4 @@
-/*	tp_usrreq.c	1.3	82/10/09	*/
+/*	tp_usrreq.c	1.4	82/12/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -58,7 +58,7 @@ tp_linit()
 	register struct tpin *t;
 	register int n;
 
-	m = m_get(0);
+	m = m_get(MT_CANTWAIT, MT_HEADER);
 	if (m == 0)
 		return (0);
 	m->m_off = MMINOFF;

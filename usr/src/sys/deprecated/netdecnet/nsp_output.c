@@ -1,4 +1,4 @@
-/*	nsp_output.c	1.4	82/10/21	*/
+/*	nsp_output.c	1.5	82/12/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -32,7 +32,7 @@ top:
 	    (np->n_flags & NF_OTHSENT) == 0) {
 		register struct nspi *n;
 
-		m = m_get(M_CANTWAIT);
+		m = m_get(M_CANTWAIT, MT_HEADER);
 		if (m == 0)
 			return (0);
 		if (np->nb_xmt)
@@ -65,7 +65,7 @@ top:
 	if (np->nf_locint == NFL_SEND && (np->n_flags & NF_OTHSENT) == 0) {
 		register struct nspls *n;
 
-		m = m_get(M_CANTWAIT);
+		m = m_get(M_CANTWAIT, MT_HEADER);
 		if (m == 0)
 			return (0);
 		m->m_len = sizeof (struct nspls);
@@ -92,7 +92,7 @@ top:
 	if (np->nf_locdat > 0 && (np->n_flags & NF_OTHSENT == 0)) {
 		register struct nspls *n;
 
-		m = m_get(M_CANTWAIT);
+		m = m_get(M_CANTWAIT, MT_HEADER);
 		if (m == 0)
 			return (0);
 		m->m_len = sizeof (struct nspls);
@@ -119,7 +119,7 @@ top:
 	if (np->n_flags & NF_OTHACK) {
 		register struct nspack *n;
 
-		m = m_get(M_CANTWAIT);
+		m = m_get(M_CANTWAIT, MT_HEADER);
 		if (m == 0)
 			return (0);
 		m->m_len = sizeof (struct nspack);
@@ -158,7 +158,7 @@ top:
 	if (np->n_flags & NF_DATACK) {
 		register struct nspack *n;
 
-		m = m_get(M_CANTWAIT);
+		m = m_get(M_CANTWAIT, MT_HEADER);
 		if (m == 0)
 			return (0);
 		m->m_len = sizeof (struct nspack);
