@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,11 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp_output.c	7.13.1.4 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"
 #include "socket.h"
@@ -72,7 +73,7 @@ tcp_output(tp)
 again:
 	sendalot = 0;
 	off = tp->snd_nxt - tp->snd_una;
-	win = MIN(tp->snd_wnd, tp->snd_cwnd);
+	win = min(tp->snd_wnd, tp->snd_cwnd);
 
 	/*
 	 * If in persist timeout with window of 0, send 1 byte.
@@ -89,7 +90,7 @@ again:
 		}
 	}
 
-	len = MIN(so->so_snd.sb_cc, win) - off;
+	len = min(so->so_snd.sb_cc, win) - off;
 	flags = tcp_outflags[tp->t_state];
 
 	if (len < 0) {
@@ -215,13 +216,12 @@ send:
 	 * be transmitted, and initialize the header from
 	 * the template for sends on this connection.
 	 */
-	MGET(m, M_DONTWAIT, MT_HEADER);
+	MGETHDR(m, M_DONTWAIT, MT_HEADER);
 	if (m == NULL)
 		return (ENOBUFS);
-#define	MAXLINKHDR	32		/* belongs elsewhere */
-#define	DATASPACE  (MMAXOFF - (MMINOFF + MAXLINKHDR + sizeof (struct tcpiphdr)))
-	m->m_off = MMINOFF + MAXLINKHDR;
+	m->m_data += max_linkhdr;
 	m->m_len = sizeof (struct tcpiphdr);
+	m->m_pkthdr.rcvif = (struct ifnet *)0;
 	ti = mtod(m, struct tcpiphdr *);
 	if (len) {
 		if (tp->t_force && len == 1)
@@ -233,7 +233,7 @@ send:
 			tcpstat.tcps_sndpack++;
 			tcpstat.tcps_sndbyte += len;
 		}
-		if (len <= DATASPACE) {
+		if (len <= MHLEN - sizeof (struct tcpiphdr) - max_linkhdr) {
 			if (m->m_next == 0)
 				len = 0;
 		}
@@ -268,7 +268,7 @@ send:
 	if (flags & TH_SYN && (tp->t_flags & TF_NOOPT) == 0) {
 		u_short mss;
 
-		mss = MIN(so->so_rcv.sb_hiwat / 2, tcp_mss(tp));
+		mss = min(so->so_rcv.sb_hiwat / 2, tcp_mss(tp));
 		if (mss > IP_MSS - sizeof(struct tcpiphdr)) {
 			opt = tcp_initopt;
 			optlen = sizeof (tcp_initopt);
@@ -399,6 +399,8 @@ send:
 	 * send to IP level.
 	 */
 	((struct ip *)ti)->ip_len = sizeof (struct tcpiphdr) + optlen + len;
+	if (m->m_flags & M_PKTHDR)
+		m->m_pkthdr.len = ((struct ip *)ti)->ip_len;
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
 #if BSD>=43
 	error = ip_output(m, tp->t_inpcb->inp_options, &tp->t_inpcb->inp_route,
