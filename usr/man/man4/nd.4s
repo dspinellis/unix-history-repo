@@ -1,0 +1,314 @@
+.TH ND 4S "15 January 1983"
+.SH NAME
+nd \- net disk driver
+.SH SYNOPSIS
+.B pseudo-device nd
+.SH DESCRIPTION
+The network disk device,
+.I /dev/nd*,
+allows a 
+.I client
+workstation to perform disk IO operations on a 
+.I server
+system, over the network.
+To the client system, this device looks like any normal disk driver:
+it allows read/write operations at a given block number and byte count.
+Note that this provides a network
+.I "disk block"
+access service rather than a network
+.I file
+access service.
+(The Sun / 4.2bsd network distributed file server is still under
+development).
+.PP
+Typically the client system will contain no disks at all.
+In this case
+.I /dev/nd0
+is the client's root file system,
+.I nd1
+is swap and
+.I nd2 
+is mounted on /usr.
+Client access to these devices is converted to
+.I "net disk protocol"
+requests and sent to the server system over the network.
+The server receives the request, performs the actual disk IO,
+and sends a response back to the client.
+.PP
+The server contains a table which lists the net address of each of
+his clients and the server disk partition which corresponds to 
+each client unit number (nd0,1,2,...).
+This table resides in the server kernel in a structure owned by
+the nd device.
+The table is initialized by running the program 
+.I /etc/nd
+with text file
+.I /etc/nd.local
+as its input.
+.I /etc/nd 
+then issues
+.IR ioctl (2)
+functions to load the table into the kernel.
+.PP
+In addition to the read/write units
+.I /dev/nd*,
+there are
+.I public
+read-only units which are named
+.I /dev/ndp*.
+The correspondence to server partitions is specified by the
+.I /etc/nd.local
+text file, in a similar manner to the private partitions.
+One possible use of the public units is to provide shared
+access to binaries or libraries (/bin, /usr/bin, /usr/ucb, /usr/lib)
+so that each diskless client does not have to waste space in his
+private partitions for these files.
+This can be done by providing a public file system at the server
+(say 
+.I /dev/ndp0
+) which is mounted on "/x" of each diskless client.
+The clients then use symbolic links to read the public files:
+/bin -> /x/bin, /usr/ucb -> /x/usr/ucb.
+One requirement in this case is that the server (who has read/write
+access to this file system) not do very much write activity with
+any public filesystem.
+This is because each client is locally cacheing blocks.
+.PP
+One last type of unit is provided.  These are called
+.I local
+units and are named
+.I /dev/ndl*.
+The SUN physical disk sector 0 label only provides a limited
+number of partitions per physical disk (eight).
+Since this number is small and these partitions have somewhat fixed
+meanings, the nd driver itself has a 
+.I subpartitioning
+capability built-in.
+This allows the large server physical disk partition (e.g.
+.I /dev/ip0g
+) to be broken up into any number of diskless client partitions.
+Of course on the client side these would be referenced as
+.I "/dev/nd0,1,..."
+; but the server needs to reference these client partitions from
+time to time, to do 
+.IR mkfs (8)
+and
+.IR fsck (8)
+for example.
+The 
+.I /dev/ndl*
+entries allow the server "local" access to his subpartitions without
+causing any net activity.
+The actual local unit number to client unit number correspondence is
+again recorded in the 
+.I /etc/nd.local
+text file.
+.PP
+The nd device driver is the same on both the client and server sides.
+There are no user level processes associated with
+either side, thus the latency and transfer rates should be close
+to maximal.
+.SH "MINOR DEVICE NUMBERS"
+The minor device encoding used is given in file
+.I /usr/include/sys/nd.h.
+The low six bits are the unit number.  The 0x40 bit indicates a
+.I public
+unit;  the 0x80 bit indicates a 
+.I local
+unit.
+.SH INITIALIZATION
+No special initialization is required on the client side;  he finds the
+server by broadcasting the initial request.  Upon getting a response,
+he locks onto that server address.
+.PP
+If the client machine contains a disk controller, the workstation cannot
+be brought up in a completely diskless mode by the default PROM boot.
+In this case the user must type the "-a" or "-as" switches to request
+"ask" mode or "ask plus standalone" mode.  The PROM command would then
+be "b nd vmunix -as".  When the kernel is finally loaded, the user
+specifies "nd0" as the root device.
+.PP
+At the server, the 
+.I /etc/rc.local
+file contains the line "/etc/nd - </etc/nd.local".
+This causes the initialization text file to be read and ioctl's issued
+to load this information into the kernel.
+.I /usr/include/sys/nd.h
+contains the ioctl definitions.
+.I /etc/nd.local
+contains comments explaining the format of the commands contained therein.
+Below is reproduced a sample file:
+.PP
+.nf
+.ft B
+# nd.local - net disk local initialization file
+# 
+# Each of the commands accepted can be given on the 
+# command line as arguments or on standard input.  
+# See also manual page nd(4).  Syntax of each command:
+# 
+# son
+#   enables this host as a net file server.
+# 
+# soff
+#   turns off server status.
+# 
+# user [ipaddr] [hisunit] [mydev] [myoff] [mysize] [mylunit]
+#   For the client of the file server at [ipaddr], transform
+#   incoming requests for [hisunit] into server device [mydev].
+#   If [myoff] is negative, then the entire filesystem [mydev]
+#   is used.  If [myoff] is positive, then [myoff],[mysize]
+#   represents a "subpartition" of filesystem [mydev].
+#   In this later case /dev/ndl[mylunit] provides a local
+#   name for the subpartition.
+# 
+#   If [ipaddr] is zero, [hisunit] refers to a public unit.
+# 
+# -
+#   "/etc/nd -" tells the program to read commands 
+#   from standard input instead of parsing the command line.
+#
+user terra 0 /dev/ip0g 0 15000 0
+user terra 1 /dev/ip0g 15000 12000 1
+user terra 2 /dev/ip0g 27000 41000 2
+user moon 0 /dev/ip0g 68000 15000 3
+user moon 1 /dev/ip0g 83000 12000 4
+user moon 2 /dev/ip0g 95000 41000 5
+user 0     0 /dev/ip0d -1 -1 -1
+son
+.fi
+.ft R
+.PP
+.SH ERRORS
+Generally physical disk IO errors detected at the server are returned
+to the client for action.  If the server is down or unaccessable,
+the client will see the console message
+.ft I
+file server not responding: still trying.
+.ft R
+The client continues (forever) making his request until he
+gets positive acknowledgement from the server.
+This means the server can crash or power down and come back up
+without any special action required of the user at the client machine.
+It also means the process performing the IO to nd will block, 
+insensitive to signals, since the process is sleeping inside the
+kernel at PRIBIO.
+.SH "PROTOCOL AND DRIVER INTERNALS"
+The protocol packet is defined in /usr/include/sys/nd.h and
+also included below:
+.PP
+.ft B
+.nf
+/*
+ * "nd" protocol packet format.
+ */
+struct ndpack {
+	struct ip np_ip;	/* ip header, proto IPPROTO_ND */
+	u_char	np_op;		/* operation code, see below */
+	u_char	np_min;		/* minor device */
+	char	np_error;	/* b_error */
+	char	np_xxx;		/* unused */
+	long	np_seq;		/* sequence number */
+	long	np_blkno;	/* b_blkno, disk block number */
+	long	np_bcount;	/* b_bcount, byte count */
+	long	np_resid;	/* b_resid, residual byte count */
+	long	np_caddr;	/* current byte offset of this packet */
+	long	np_ccount;	/* current byte count of this packet */
+}; 				/* data follows */
+
+/* np_op operation codes. */
+#define	NDOPREAD	1	/* read */
+#define	NDOPWRITE	2	/* write */
+#define	NDOPERROR	3	/* error */
+#define	NDOPCODE	7	/* op code mask */
+#define	NDOPWAIT	010	/* waiting for DONE or next request */
+#define	NDOPDONE	020	/* operation done */
+
+/* misc protocol defines. */
+#define	NDMAXDATA	1024	/* max data per packet (if 1370, would
+				   allow 4K disk block to fit in 3 ether
+				   packets;  but would mess up clusters) */
+#define	NDMAXPACKS	6	/* max packets before acknowledgement */
+#define	NDMAXIO		32*1024	/* max np_bcount */
+
+#define	NDXTIMER	4	/* seconds between rexmits */
+.fi
+.ft R
+.PP
+IP datagrams were chosen instead of UDP datagrams because only the IP
+header is checksummed, not the entire packet as in UDP.  Also the
+kernel level interface to the IP layer is simpler.
+The 
+.I min,
+.I blkno,
+and
+.I bcount
+fields are copied directly from the client's strategy request.
+The sequence number field
+.I seq
+is incremented on each new client request and is matched with incoming
+server responses.
+The server essentially echos the request header in his responses,
+altering certain fields.
+The
+.I caddr
+and
+.I ccount
+fields show the current byte address and count of the data in this
+packet, or the data expected to be sent by the other side.
+.PP
+The protocol is very simple and driven entirely from the client side.
+As soon as the client ndstrategy routine is called, the request is
+sent to the server;  this allows disk sorting to occur at the
+server as soon as possible.
+Transactions which send data (client writes on the client side,
+client reads on the server side) can only send NDMAXPACKS
+packets of NDMAXDATA bytes each, before waiting for an acknowledgement.
+The defines are currently set at 6 packets of 1K bytes each.
+This allows the normal 4K byte case to occur with just one
+"transaction".
+The NDOPWAIT bit is set in the
+.I op
+field by the sender to indicate he will send no more until
+acknowledged (or requested) by the other side.
+The NDOPDONE bit is set by the server side to indicate the
+request operation has completed;  for both the read and write
+cases this means the requested disk IO has actually occured.
+.PP
+Requests received by the server are entered on an active list which
+is timed out and discarded if not completed within NDXTIMER seconds.
+Requests received by the server allocate a 
+.I bcount
+size buffer directly in Multibus memory to minimize buffer copying.
+Contiguous DMA disk IO thus occurs in the same size chunks it would
+if requested from a local physical disk.
+.SH BOOTSTRAP
+The SUN workstation has PROM code to perform a net boot using
+this driver.  This booting performs exactly the same steps
+involved in a real disk boot which are:  (1) user types "b nd" to
+PROM monitor.  (2) PROM loads blocks 1 thru 15 of /dev/ndp0
+(bootnd) and starts it.  (3) bootnd loads "/boot" from /dev/ndp0.
+(4) /boot loads "/vmunix" from /dev/ndp0 and starts it.
+.PP
+Although this is more involved than it needs to be (the PROM
+could do all the work if we were running a 
+.I file
+server), it uses the same protocol and driver as the rest of
+the net disk system.  
+.SH "SEE ALSO"
+ioctl(2)
+.SH BUGS
+The current UCB network code assumes Class A internet address
+format and uses the low 3 bytes of IP address as the low
+3 bytes of the 6 byte ethernet address.  This will be changed
+shortly to use Plummer's ether resolution protocol.  At that
+time the way booting is done will also change; perhaps avoiding
+the IP layer entirely.
+.PP
+The size of the Multibus memory pool allocated by 
+function 
+.I mbbufall
+is critical.  If this pool is too small, the server will not
+be able to allocate a disk buffer and retransmissions will occur.
+Instead the nd driver should manage its own pool in main memory
+and try there if Multibus memory is unavailable.
