@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.7 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1109,6 +1109,7 @@ getdirentries()
 	struct file *fp;
 	struct uio auio;
 	struct iovec aiov;
+	off_t off;
 	int error;
 
 	if (error = getvnode(uap->fd, &fp))
@@ -1122,10 +1123,11 @@ getdirentries()
 	auio.uio_rw = UIO_READ;
 	auio.uio_segflg = UIO_USERSPACE;
 	auio.uio_resid = uap->count;
+	off = fp->f_offset;
 	if (error = VOP_READDIR((struct vnode *)fp->f_data, &auio,
 	    &(fp->f_offset), fp->f_cred))
 		RETURN (error);
-	error = copyout((caddr_t)&fp->f_offset, (caddr_t)uap->basep,
+	error = copyout((caddr_t)&off, (caddr_t)uap->basep,
 		sizeof(long));
 	u.u_r.r_val1 = uap->count - auio.uio_resid;
 	RETURN (error);
