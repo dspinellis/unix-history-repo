@@ -1,0 +1,537 @@
+Thu Oct 15 15:18:22 1992  Per Bothner  (bothner@cygnus.com)
+
+	* strsignal.c:  Add appropriate 'const' to sys_siglist
+	extern declaration (if __STDC__).  (Needed for Linux.)
+	* strsignal.c (strsignal): Add cast to remove const-ness.
+
+Fri Oct  9 03:22:55 1992  John Gilmore  (gnu@cygnus.com)
+
+	* Makefile.in (needed.awk, needed2.awk):  Remove erroneous \'s
+	before "'s, diagnosed by BSD 4.4 awk.
+
+Thu Oct  8 15:25:12 1992  Ian Lance Taylor  (ian@cygnus.com)
+
+	* Makefile.in: create config.h and needed-list through $(CONFIG_H)
+	and $(NEEDED_LIST), to give some hooks for xiberty.
+
+Thu Oct  1 23:31:42 1992  david d `zoo' zuhn  (zoo at cirdan.cygnus.com)
+
+	* configure.in: use cpu-vendor-triple instead of nested cases
+
+Wed Sep 30 11:26:59 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* Makefile.in, argv.c, basename.c, bcmp.c, bcopy.c, bzero.c,
+	concat.c, cplus-dem.c, fdmatch.c, getcwd.c, getopt.c, getopt1.c,
+	getpagesize.c, insque.c, memcmp.c, memcpy.c, memmove.c, memset.c,
+	obstack.c, sigsetmask.c, spaces.c, strchr.c, strerror.c,
+	strrchr.c, strsignal.c, strstr.c, vfork.c, vsprintf.c:
+	Convert from using GPL to LGPL.
+
+Sat Sep 26 04:01:30 1992  John Gilmore  (gnu@cygnus.com)
+
+	* Makefile.in (errors):  Leave dummy.o and dummy around so that
+	we can see how the needed list was generated (it's sometimes wrong).
+	(mostlyclean):  Remove them.
+
+Mon Sep 21 14:50:42 1992  Ian Lance Taylor  (ian@cygnus.com)
+
+	* getcwd.c: supply a default if MAXPATHLEN is not defined.
+
+	* config/mh-irix4: set EXTRA_OFILES to alloca.o, from WRS.
+
+Wed Sep  9 12:41:48 1992  Ian Lance Taylor  (ian@cygnus.com)
+
+	* Makefile.in: Use XTRAFLAGS when compiling, so that xiberty works
+	when cross-compiling.
+
+Thu Sep  3 13:29:39 1992  K. Richard Pixley  (rich@sendai.cygnus.com)
+
+	* cplus-dem.c: (demangle_prefix): reduction in strength of strstr
+	  as a time optimization.
+
+	* cplus-dem.c (cplus_demangle): remove strpbrk test.  Appears to
+	  be more expensive than simply demangling.
+
+	* cplus-dem.c (cplus_match): new function.
+
+Tue Sep  1 15:24:04 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* cplus-dem.c:  #include <stdio.h>, to define NULL.
+	Define current_demangling_style.
+
+Sun Aug 30 17:58:19 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* cplus-dem.c:  New file, moved from ../gdb.
+	* cplus-dem.c (set_cplus_marker_for_demangling):  New exported
+	function, to avoid compiling in target-dependency for CPLUS_MARKER.
+	* cplus-dem.c (cplus_demangle):  Allow demangling style option
+	to be passed as a parameter, but using the global variable
+	current_demangling_style as a default.
+	* Makefile.in:  Update for cplus-dem.c
+
+Sat Aug 29 10:44:09 1992  Fred Fish  (fnf@cygnus.com)
+
+	* obstack.c:  Merge in comment changes from FSF version.  Now
+	matches the FSF version exactly.
+
+Fri Aug 28 18:39:08 1992  John Gilmore  (gnu@cygnus.com)
+
+	* obstack.c (CALL_FREEFUN):  Can't use ?: with void values (at
+	least on losing DECstations!); use if-then-else instead.
+
+Wed Aug 19 14:40:34 1992  Ian Lance Taylor  (ian@cygnus.com)
+
+	* Makefile.in: always create installation directories.
+
+Mon Aug 10 17:33:40 1992  david d `zoo' zuhn  (zoo at cirdan.cygnus.com)
+
+       * Makefile.in: clean up definition of CFILES, more comments
+
+Sat Aug  8 23:10:59 1992  Fred Fish  (fnf@cygnus.com)
+
+	* getopt.c (my_index):  Make first arg const to match strchr,
+	which it sometimes is remapped to.
+
+Sat Aug  1 13:48:50 1992  Fred Fish  (fnf@cygnus.com)
+
+	* obstack.c (DEFAULT_ALIGNMENT):  Update to match FSF version.
+	* obstack.c (_obstack_begin):  Initialize use_extra_arg.
+	* obstack.c (_obstack_begin_1):  New, from FSF version.
+
+Mon Jul 20 21:07:58 1992  Fred Fish  (fnf@cygnus.com)
+
+	* obstack.c (CALL_CHECKFUN, CALL_FREEFUN):  Use use_extra_arg and
+	extra_arg.
+	* obstack.c (_obstack_begin):  Remove area_id and flags arguments
+	(previously added for mmalloc support, interface has changed).
+	Also convert flags usage to use use_extra_arg and maybe_empty_object.
+
+Fri Jul 10 00:41:53 1992  Fred Fish  (fnf@cygnus.com)
+
+	* argv.c:  Move expandargv inline and eliminate static variables.
+	Rewrite to always allocate in powers of two.  Fix to return an
+	argv with a single null string arg if passed a null string.
+
+Fri Jul  3 20:27:29 1992  Fred Fish  (fnf@cygnus.com)
+
+	* random.c, sigsetmask.c, strerror.c, strsignal.c:  Remove
+	"(void)" casts from function calls where the return value is
+	ignored, in accordance with GNU coding standards.
+
+Mon Jun 29 10:54:19 1992  Fred Fish  (fnf at cygnus.com)
+
+	* bcopy.c, strerror.c, strsignal.c:  Lint.
+
+Thu Jun 25 09:18:41 1992  K. Richard Pixley  (rich@rtl.cygnus.com)
+
+	* getopt.c: merge changes from make.
+
+Thu Jun 25 04:43:22 1992  John Gilmore  (gnu at cygnus.com)
+
+	* alloca.c:  Incorporate fixes from gdb/alloca.c.
+	FIXME:  Eventually move gdb's alloca configuration files here,
+	and remove gdb/alloca.c and its Makefile.in support.
+
+Tue Jun 23 21:56:30 1992  Fred Fish  (fnf@cygnus.com)
+
+	* dummy.c:  Define NOTHING to /*nothing*/, change return type
+	of main to int and return zero.
+	* functions.def:  Supply NOTHING as the fourth arg to macros
+	that don't have an explicit arg, to satisfy picky preprocessors.
+
+Wed Jun 17 18:13:58 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* Makefile.in:  Clean up *clean rules, as per standards.texi.
+
+Tue Jun 16 16:11:59 1992  K. Richard Pixley  (rich@rtl.cygnus.com)
+
+	* getopt.c, getopt1.c: merged largely gratuitous, mostly
+	  whitespace diffs from other prep distributions.
+
+Mon Jun 15 12:25:46 1992  Fred Fish  (fnf@cygnus.com)
+
+	* config/mh-ncr3000 (INSTALL):  Don't use /usr/ucb/install,
+	it is broken on ncr 3000's.
+
+Mon Jun 15 01:03:26 1992  John Gilmore  (gnu at cygnus.com)
+
+	* sigsetmask.c:  Rewrite.  Old one was very confused about its
+	arguments and result.  New one can't do much, but at least knows
+	what it can't do, and it's good enough for GDB's use.
+
+Sun Jun 14 15:17:40 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* functions.def:  Use proper prototype for strtoul.
+
+Fri Jun 12 19:22:40 1992  John Gilmore  (gnu at cygnus.com)
+
+	* Makefile.in:  Add random.c.
+	* config/mh-*:  Use "true" rather than "echo >/dev/null" for ranlib.
+	* configure.in:  update solaris2 config.
+
+Wed Jun 10 16:31:29 1992  Fred Fish  (fnf@cygnus.com)
+
+	* random.c:  Add for random() and srandom().
+	* functions.def:  Add random
+
+Tue Jun  9 17:27:18 1992  Fred Fish  (fnf@cygnus.com)
+
+	* config/{mh-ncr3000, mh-sysv4}:  Add definition for INSTALL
+	using /usr/ucb/install.
+
+Mon Jun  1 13:20:17 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* strerror.c:  Kludge to guard against a conflict with
+	possible declaration of sys_errlist in errno.h.
+
+Sun May 31 15:07:47 1992  Mark Eichin  (eichin at cygnus.com)
+
+	* configure.in, config/mh-solaris: add solaris2 config support.
+
+Fri May 29 17:23:23 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* sigsetmask.c:  #ifdef out sigsetmask if SIG_SETMASK
+	is not defined (should be defined in signal.h, says Posix.).
+
+Mon May 18 17:35:04 1992  K. Richard Pixley  (rich@cygnus.com)
+
+	* getopt.c: merged changes from make-3.62.11.
+
+Fri May  8 14:53:07 1992  K. Richard Pixley  (rich@cygnus.com)
+
+	* getopt.c: merged changes from bison-1.18.
+
+Tue May  5 11:51:40 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* Makefile.in:  Don't have $(EXTRA_OFILES) depend on config.h,
+	since that introduces a circular dependency.
+	($(EXTRA_OFILES) are used to build config.h.)
+
+	* strtoul.c:  Fixes to handle non-decimal bases better.
+
+Wed Apr 22 09:27:51 1992  Fred Fish  (fnf@cygnus.com)
+
+	* config/mh-ncr3000:  Replace MINUS_G with CFLAGS.
+	* Makefile.dos:  Finish MINUS_G eradication.
+	* Makefile.in (CFILES):  Add strsignal.c.
+	* Makefile.in (REQUIRED_OFILES):  Add strerror.o strsignal.o
+	* Makefile.in (needed-list):  Split creation of errors file to
+	separate make target.
+	* Makefile.in (config.h, needed2.awk, errors):  New targets.
+	* Makefile.in (clean):  Split to multiple lines, add needed2.awk
+	and config.h.
+	* dummy.c (DEFFUNC, DEFVAR):  Add defines and undefs.
+	* functions.def (strerror):  Remove from optional list.
+	* functions.def (sys_nerr, sys_errlist, sys_siglist):  DEFVAR's
+	* functions.def (strerror, psignal):  DEFFUNC's
+	* strerror.c:  Rewrite from scratch to use sys_errlist only if
+	available, add errno_max(), add strerrno(), add strtoerrno(),
+	add test driver.
+	* strsignal.c:  New file, signal equivalent to strerror.c.
+	Uses sys_siglist if available, defines signo_max(), strsignal(),
+	strsigno(), strtosigno(), psignal(), and test driver.
+
+Mon Apr 20 20:49:32 1992  K. Richard Pixley  (rich@cygnus.com)
+
+	* Makefile.in: do not print recursion line.
+
+	* Makefile.in: allow CFLAGS to be passed in from command line.
+	  Removed MINUS_G.  Default CFLAGS to -g.
+
+Mon Apr 20 12:57:46 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* config/mh-aix:  New.  EXTRA_OFILES lists copysign.o,
+	so libg++ users don't have to be inconvenienced by a
+	libc.a bug (libc.a needs copysign, but doesn't define it!).
+	* configure.in:  Use config/mh-aix.
+	* strtoul.c:  Handle '-' as required by ANSI.
+	Clean up radix handling.
+	* strstr.c:  Fix buggy algorithm.
+	* Makefile.in:  Change so that ${EXTRA_OFILES} is
+	appended to needed-list (which is used by libg++).
+
+Fri Apr 10 22:51:41 1992  Fred Fish  (fnf@cygnus.com)
+
+	* configure.in:  Recognize new ncr3000 config.
+	* config/mh-ncr3000:  New config file.
+
+Wed Apr  1 23:31:43 1992  John Gilmore  (gnu at cygnus.com)
+
+	* argv.c, dummy.c:  Lint.
+
+Tue Mar 31 18:46:44 1992  Fred Fish  (fnf@cygnus.com)
+
+	* config/mh-sysv4:  New config file.
+	* configure.in (host_makefile_frag):  Set to config/mh-sysv4 for
+	host_os == sysv4.
+	* getpagesize.c:  For SVR4, use sysconf(_SC_PAGESIZE) to get
+	pagesize.
+
+Sun Mar 29 12:26:42 1992  John Gilmore  (gnu at cygnus.com)
+
+	* getopt.c:  Lint.
+
+Fri Mar 27 08:32:55 1992  Fred Fish  (fnf@cygnus.com)
+
+	* functions.def (alloca):  Fix return type and args to avoid
+	type clash with gcc's builtin alloca.
+
+Tue Mar 24 23:33:42 1992  K. Richard Pixley  (rich@cygnus.com)
+
+	* configure.in, config/mh-irix4: irix4 support.
+
+	* Makefile.in, functions.def, alloca.c: added alloca.
+
+Tue Mar 24 17:34:46 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* obstack.c (CALL_FREEFUN):  Make it compile on DECstations.
+
+Thu Mar 19 13:57:42 1992  Fred Fish  (fnf@cygnus.com)
+
+	* argv.c:  Fix various external function definitions to be
+	correct in an ANSI compilation environment.
+
+Sat Mar 14 17:28:17 1992  Fred Fish  (fnf@cygnus.com)
+
+	* obstack.c:  Changes to support calling mmalloc functions,
+	which take an additional argument over malloc functions.
+
+Fri Mar  6 22:01:10 1992  K. Richard Pixley  (rich@cygnus.com)
+
+	* added check target.
+
+Thu Feb 27 22:19:39 1992  Per Bothner  (bothner@cygnus.com)
+
+	* argv.c:  #include alloca-conf.h (needed by AIX).
+
+Wed Feb 26 18:04:40 1992  K. Richard Pixley  (rich@cygnus.com)
+
+	* Makefile.in, configure.in: removed traces of namesubdir,
+	  -subdirs, $(subdir), $(unsubdir), some rcs triggers.  Forced
+	  copyrights to '92, changed some from Cygnus to FSF.
+
+Sat Feb 22 01:09:21 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* argv.c:  Check in Fred's version which fixes problems with
+	alloca().
+
+Fri Feb  7 21:46:08 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* makefile.dos:  Remove NUL to keep patch from failing.
+
+Thu Jan 30 22:48:41 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* getopt.c (_getopt_internal):  Fix usage of enum has_arg.
+
+Mon Jan 20 18:53:23 1992  Stu Grossman  (grossman at cygnus.com)
+
+ 	* getopt.c, getopt1.c, ../include/getopt.h:  Get latest versions.
+
+Sat Jan 18 16:53:01 1992  Fred Fish  (fnf at cygnus.com)
+
+	* argv.c:  New file to build and destroy standard argument
+	vectors from a command string.
+
+	* Makefile.in:  Add argv.c and argv.o to appropriate macros.
+
+Fri Dec 20 12:12:57 1991  Fred Fish  (fnf at cygnus.com)
+
+	* configure.in:  Change svr4 references to sysv4.
+
+	* rindex.c:  Declare return type of externally used function
+	strrchr().
+
+Thu Dec 19 18:35:03 1991  John Gilmore  (gnu at cygnus.com)
+
+	* Makefile.in:  Remove "***" in normal output, since Make produces
+	this on errors, and it's convenient to search for.
+
+Tue Dec 17 23:21:30 1991  Per Bothner  (bothner at cygnus.com)
+
+	* memcmp.c, memcpy.c, memmove.c, memset.c, strchr.c, strrchr.c:
+	New ANSI functions.  The old non-ANSI functions (such as bcopy)
+	should be avoided.
+	* bcopy.c:  Fix to correctly handle overlapping regions.
+	* index.c, rindex.c:  Re-write in terms of strchr() and strrchr().
+	* functions.def:  Add the new functions.
+	* functions.def:  Add 4th parameter to DEF macro,
+	an ansidecl.h-style prototype.
+	* dummy.c:  Use expanded DEF macro to create a dummy function
+	call, with correct parameter types.  (This avoids some
+	complaints from gcc about predefined builtins.)
+
+	Move the functionality of config/mh-default into Makefile.in.
+	This avoid duplication, and simplifies things slightly.
+	* Makefile.in:  Tweak so we don't need config/mh-default.
+	* README:  Update.
+	* configure.in:  No longer need config/mh-default.
+	* config/mh-default:  Deleted.
+	* config/mh-sysv:  Remove lines copied from old mh-default.
+
+Tue Dec 17 05:46:46 1991  John Gilmore  (gnu at cygnus.com)
+
+	* fdmatch.c (fdmatch):  Don't compare st_rdev, which is for
+	'mknod' device numbers.
+
+Mon Dec 16 12:25:34 1991  Fred Fish  (fnf at cygnus.com)
+
+	* fdmatch.c, Makefile.in:  Add new function that takes two
+	open file descriptors and returns nonzero if they refer to
+	the same file, zero otherwise.  (used in gdb)
+
+Wed Dec 11 17:40:39 1991  Steve Chamberlain  (sac at rtl.cygnus.com)
+	From DJ:
+	* msdos.c: stub functions for dos.
+	* makefile.dos, configdj.bat: new.
+	* getopt.c: Don't include alloca-conf.h in a GO32 world.
+	
+
+Tue Dec 10 04:14:49 1991  K. Richard Pixley  (rich at rtl.cygnus.com)
+
+	* Makefile.in: infodir belongs in datadir.
+
+Fri Dec  6 23:26:45 1991  K. Richard Pixley  (rich at rtl.cygnus.com)
+
+	* Makefile.in: remove spaces following hyphens because bsd make
+	  can't cope.  added standards.text support.  install using
+	  INSTALL_DATA.
+
+	* configure.in: remove commontargets as it is no longer a
+	  recognized hook.
+
+Thu Dec  5 22:46:46 1991  K. Richard Pixley  (rich at rtl.cygnus.com)
+
+	* Makefile.in: idestdir and ddestdir go away.  Added copyrights
+	  and shift gpl to v2.  Added ChangeLog if it didn't exist. docdir
+	  and mandir now keyed off datadir by default.
+
+Fri Nov 22 19:15:29 1991  John Gilmore  (gnu at cygnus.com)
+
+	* Makefile.in:  find-needed.awk does not fit in 14 chars.
+
+	* Makefile.in:  Suppress error checking when compiling the test
+	program, because Ultrix make/sh aborts there due to a bug.
+
+Fri Nov 22 12:23:17 1991  Per Bothner  (bothner at cygnus.com)
+
+	* Makefile.in:  Re-did how EXTRA_OFILES is used to be more useful.
+	* README:  Explained how the auto-configuration works,
+	and how to add new files and/or configurations.
+
+Fri Nov 22 09:45:23 1991  John Gilmore  (gnu at cygnus.com)
+
+	* strtoul.c:  Avoid defining ULONG_MAX if already defined;
+	cast a const char * to char * for pedants.
+
+	* getopt.c:  Only define "const" after local include files get to,
+	and only if they haven't defined it.
+
+Thu Nov 21 16:58:53 1991  John Gilmore  (gnu at cygnus.com)
+
+	* getcwd.c (remove getwd.c): GNU code should call getcwd().  We
+	emulate it with getwd() if available.  This avoids callers having
+	to find a MAXPATHLEN or PATH_MAX value from somewhere.
+	* Makefile.in, functions.def:  getwd->getcwd.
+	* configure.in:  Use generic case for every system.
+	* config/mh-{delta88,mach,rs6000,svr4}:  Remove.
+	* config/mh-sysv:  Use default handling, just add -DUSG.
+
+Thu Nov 14 10:58:05 1991  Per Bothner  (bothner at cygnus.com)
+
+	* Makefile.in, config/mh-default: Re-do make magic
+	so that for the default ("automatic") mode we only
+	compile the files we actually need.  Do this using
+	a recursive make:  The top-level generates the list
+	of needed files (loosely, the ones missing in libc),
+	and then passes that list to the recursive make.
+	* config/mh-mach:  Remove obsolete STRERROR-{C,O} macros.
+
+Tue Nov 12 19:10:57 1991  John Gilmore  (gnu at cygnus.com)
+
+	RS/6000 host support (grumble).
+
+	* configure.in:  Build alloca-conf.h file from alloca-norm.h
+	(everything else) or alloca-botch.h (rs/6000).
+	* Makefile.in:  Include . on the include path.
+	* getopt.c:  Use alloca-conf.h.
+	* alloca-norm.h:  How to declare alloca on reasonable machines.
+	* alloca-botch.h: How to declare alloca on braindead machines.
+
+Tue Nov 12 09:21:48 1991  Fred Fish  (fnf at cygnus.com)
+
+	* concat.c :  New file, like concat() in gdb but can take a
+	variable number of arguments rather than fixed at 3 args.  For
+	now, client applications must supply an xmalloc(), which is a
+	front end function to malloc() that deals with out-of-memory
+	conditions.
+
+	* Makefile.in:  Add concat.c and concat.o to appropriate macros.
+
+Sat Nov  9 13:29:59 1991  Fred Fish  (fnf at cygnus.com)
+
+	* config/mh-svr4:  Add sigsetmask to list of required functions.
+
+Sun Nov  3 11:57:56 1991  Per Bothner  (bothner at cygnus.com)
+
+	* vsprintf.c:  New file.
+	* functions.def, Makefile.in:  Add vsprintf.
+
+Sun Oct 27 16:31:22 1991  John Gilmore  (gnu at cygnus.com)
+
+	* configure.in, config/mh-rs6000:  Add rs/6000 host support.
+	* Makefile.in:  Compile with debug info.
+
+Fri Oct 25 17:01:12 1991  Per Bothner  (bothner at cygnus.com)
+
+	* Makefile.in, configure.in, and new files: dummy.c, functions.def,
+	config/mf-default:  Added a default configuration mode,
+	which includes into libiberty.a functions that are "missing" in libc.
+	* strdup.c, vprintf.c, vfprintf.c: New files.
+
+Thu Oct 24 02:29:26 1991  Fred Fish  (fnf at cygnus.com)
+
+	* config/hmake-svr4: New file.
+
+	* config/hmake-sysv: Add HOST_CFILES and HOST_OFILES.
+
+	* basename.c, bcmp.c, bcopy.c, bzero.c, getpagesize.c getwd.c,
+	index.c, insque.c, rindex.c, spaces.c, strstr.c, vfork.c: New
+	files containing either portable C versions or emulations using
+	native library calls.
+
+	* strerror.c:  Add copyright, internal documentation, etc.
+
+	* strtol.c:  Replace hardwired hex constants with some more
+	portable macros.  Remove illegal (according to gcc) cast.
+
+	* strtoul.c: Replace hardwired hex constant with more portable
+	macro.
+
+	* Makefile.in: Move TARGETLIB and CFLAGS where makefile fragments
+	can override them.  Add new source and object file names to CFILES
+	and OFILES respectively.
+
+	* configure.in: Add support for SVR4 makefile fragments.
+
+Tue Oct 22 19:00:23 1991  Steve Chamberlain  (steve at cygnus.com)
+
+	* Makefile.in: Move RANLIB, AR and AR_FLAGS to where they can be
+	over-ridden by config/hmake-*
+	* configure.in: added m88kcvs to sysv list
+
+Fri Oct  4 01:29:08 1991  John Gilmore  (gnu at cygnus.com)
+
+	* Makefile.in:  Most hosts need strerror, but one or two don't,
+	and they override these definitions in the host-dependent makefile
+	fragment.
+	* config/hmake-mach:  The odd man out on strerror -- it's supplied.
+	* strerror.c:  New file.
+
+	* strtol.c, strtoul.c:  Add strtol to libiberty, since Mach lacks
+	it and bfd uses it.
+	* configure.in, Makefile.in, config/hmake-mach:  Only configure
+	strtol & strotoul in on Mach.
+
+Tue Sep  3 06:36:23 1991  John Gilmore  (gnu at cygint.cygnus.com)
+
+	* obstack.c:  Merge with latest FSF version.
