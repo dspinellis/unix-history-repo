@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lint.1	4.1 (Berkeley) %G%
+.\"	@(#)lint.1	5.1 (Berkeley) %G%
 .\"
-.TH LINT 1
+.TH LINT 1 "7 March 1983"
 .UC 4
 .SH NAME
 lint \- a C program verifier
@@ -42,6 +42,24 @@ these libraries are referred to by a
 conventional name,
 such as `\-lm', in the style of
 .IR ld (1).
+Arguments ending in
+.I .ln
+are also treated as library files.  To create lint libraries,
+use the
+.B \-C
+option:
+.IP
+lint \-Cfoo files . . .
+.PP
+where
+.I files
+are the C sources of library
+.I foo.
+The result is a file
+.I llib-lfoo.ln
+in the correct library format suitable for linting programs
+using
+.I foo.
 .PP
 Any number of the options in the following list
 may be used.
@@ -100,6 +118,10 @@ on a subset of files out of a larger program).
 .TP
 .B n
 Do not check compatibility against the standard library.
+.TP
+.B z
+Do not complain about structures that are never defined (e.g.
+using a structure pointer without knowing its contents.).
 .PP
 .IR Exit (2)
 and other functions which do not return
@@ -135,13 +157,22 @@ option for the next function.
 /*LINTLIBRARY*/
 at the beginning of a file shuts off complaints about
 unused functions in this file.
+.SH AUTHOR
+S.C. Johnson.  Lint library construction implemented by Edward Wang.
 .SH FILES
-.ta \w'/usr/lib/llib-port  'u
-/usr/lib/lint/lint[12] programs
+.ta \w'/usr/lib/lint/llib-port.ln  'u
+/usr/lib/lint/lint[12]	programs
 .br
-/usr/lib/lint/llib-lc declarations for standard functions
+/usr/lib/lint/llib-lc.ln	declarations for standard functions
 .br
-/usr/lib/lint/llib-port declarations for portable functions
+/usr/lib/lint/llib-lc	human readable version of above
+.br
+/usr/lib/lint/llib-port.ln	declarations for portable functions
+.br
+/usr/lib/lint/llib-port	human readable . . .
+.br
+llib-l*.ln	library created with
+.B \-C
 .SH SEE ALSO
 cc(1)
 .br
