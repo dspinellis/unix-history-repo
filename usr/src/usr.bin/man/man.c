@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -38,10 +38,10 @@ int f_all, f_where;
 static void	 build_page __P((char *, char **));
 static void	 cat __P((char *));
 static char	*check_pager __P((char *));
-static void	 cleanup __P((void));
+static int	 cleanup __P((void));
 static void	 how __P((char *));
 static void	 jump __P((char **, char *, char *));
-static int	 manual __P((char *, ENTRY *, glob_t *));
+static int	 manual __P((char *, TAG *, glob_t *));
 static void	 onsig __P((int));
 static void	 usage __P((void));
 
@@ -52,8 +52,8 @@ main(argc, argv)
 {
 	extern char *optarg;
 	extern int optind;
-	ENTRY *defp, *defnewp;
-	ENTRY *section, *sectp, *sectnewp, *subp, *tp;
+	TAG *defp, *defnewp, *section, *sectnewp, *subp;
+	ENTRY *e_defp, *e_sectp, *e_subp, *ep;
 	glob_t pg;
 	size_t len;
 	int ch, f_cat, f_how, found;
@@ -118,13 +118,13 @@ main(argc, argv)
 	/* Read the configuration file. */
 	config(conffile);
 
-	/* If there's no _default list, create an empty one. */
-	if ((defp = getlist("_default")) == NULL)
-		defp = addlist("_default");
-
 	/* Get the machine type. */
 	if ((machine = getenv("MACHINE")) == NULL)
 		machine = MACHINE;
+
+	/* If there's no _default list, create an empty one. */
+	if ((defp = getlist("_default")) == NULL)
+		defp = addlist("_default");
 
 	/*
 	 * 1: If the user specified a MANPATH variable, or set the -M
@@ -134,24 +134,22 @@ main(argc, argv)
 	if (p_path == NULL)
 		p_path = getenv("MANPATH");
 	if (p_path != NULL) {
-		while ((tp = defp->list.qe_next) != NULL) {
-			free(tp->s);
-			queue_remove(&defp->list, tp, ENTRY *, list);
+		while ((e_defp = defp->list.tqh_first) != NULL) {
+			free(e_defp->s);
+			TAILQ_REMOVE(&defp->list, e_defp, q);
 		}
 		for (p = strtok(p_path, ":");
 		    p != NULL; p = strtok(NULL, ":")) {
 			slashp = p[strlen(p) - 1] == '/' ? "" : "/";
-			subp = getlist("_subdir");
-			if (subp != NULL)
-				subp = subp->list.qe_next;
-			for (; subp != NULL; subp = subp->list.qe_next) {
+			e_subp = (subp = getlist("_subdir")) == NULL ?
+			    NULL : subp->list.tqh_first;
+			for (; e_subp != NULL; e_subp = e_subp->q.tqe_next) {
 				(void)snprintf(buf, sizeof(buf), "%s%s%s{/%s,}",
-				    p, slashp, subp->s, machine);
-				if ((tp = malloc(sizeof(ENTRY))) == NULL ||
-				    (tp->s = strdup(buf)) == NULL)
+				    p, slashp, e_subp->s, machine);
+				if ((ep = malloc(sizeof(ENTRY))) == NULL ||
+				    (ep->s = strdup(buf)) == NULL)
 					err(1, NULL);
-				queue_enter_tail(&defp->list,
-				    tp, ENTRY *, list);
+				TAILQ_INSERT_TAIL(&defp->list, ep, q);
 			}
 		}
 	}
@@ -164,30 +162,29 @@ main(argc, argv)
 		++argv;
 	if (p_path == NULL && section == NULL) {
 		defnewp = addlist("_default_new");
-		if (defp->list.qe_next != NULL)
-			defp = defp->list.qe_next;
-		for (; defp != NULL; defp = defp->list.qe_next) {
-			slashp = defp->s[strlen(defp->s) - 1] == '/' ? "" : "/";
-			subp = getlist("_subdir");
-			if (subp != NULL)
-				subp = subp->list.qe_next;
-			for (; subp != NULL; subp = subp->list.qe_next) {
+		e_defp =
+		    defp->list.tqh_first == NULL ? NULL : defp->list.tqh_first;
+		for (; e_defp != NULL; e_defp = e_defp->q.tqe_next) {
+			slashp =
+			    e_defp->s[strlen(e_defp->s) - 1] == '/' ? "" : "/";
+			e_subp = (subp = getlist("_subdir")) == NULL ?
+			    NULL : subp->list.tqh_first;
+			for (; e_subp != NULL; e_subp = e_subp->q.tqe_next) {
 				(void)snprintf(buf, sizeof(buf), "%s%s%s{/%s,}",
-				defp->s, slashp, subp->s, machine);
-				if ((tp = malloc(sizeof(ENTRY))) == NULL ||
-				    (tp->s = strdup(buf)) == NULL)
+				e_defp->s, slashp, e_subp->s, machine);
+				if ((ep = malloc(sizeof(ENTRY))) == NULL ||
+				    (ep->s = strdup(buf)) == NULL)
 					err(1, NULL);
-				queue_enter_tail(&defnewp->list,
-				    tp, ENTRY *, list);
+				TAILQ_INSERT_TAIL(&defnewp->list, ep, q);
 			}
 		}
 		defp = getlist("_default");
-		while ((tp = defp->list.qe_next) != NULL) {
-			free(tp->s);
-			queue_remove(&defp->list, tp, ENTRY *, list);
+		while ((e_defp = defp->list.tqh_first) != NULL) {
+			free(e_defp->s);
+			TAILQ_REMOVE(&defp->list, e_defp, q);
 		}
 		free(defp->s);
-		queue_remove(&defp->tags, defp, ENTRY *, tags);
+		TAILQ_REMOVE(&head, defp, q);
 		defnewp = getlist("_default_new");
 		free(defnewp->s);
 		defnewp->s = "_default";
@@ -202,17 +199,15 @@ main(argc, argv)
 	if (p_add != NULL)
 		for (p = strtok(p_add, ":"); p != NULL; p = strtok(NULL, ":")) {
 			slashp = p[strlen(p) - 1] == '/' ? "" : "/";
-			subp = getlist("_subdir");
-			if (subp != NULL)
-				subp = subp->list.qe_next;
-			for (; subp != NULL; subp = subp->list.qe_next) {
+			e_subp = (subp = getlist("_subdir")) == NULL ?
+			    NULL : subp->list.tqh_first;
+			for (; e_subp != NULL; e_subp = e_subp->q.tqe_next) {
 				(void)snprintf(buf, sizeof(buf), "%s%s%s{/%s,}",
-				    p, slashp, subp->s, machine);
-				if ((tp = malloc(sizeof(ENTRY))) == NULL ||
-				    (tp->s = strdup(buf)) == NULL)
+				    p, slashp, e_subp->s, machine);
+				if ((ep = malloc(sizeof(ENTRY))) == NULL ||
+				    (ep->s = strdup(buf)) == NULL)
 					err(1, NULL);
-				queue_enter_head(&defp->list,
-				    tp, ENTRY *, list);
+				TAILQ_INSERT_HEAD(&defp->list, ep, q);
 			}
 		}
 
@@ -224,35 +219,31 @@ main(argc, argv)
 	 */
 	if (p_path == NULL && p_add == NULL && section != NULL) {
 		sectnewp = addlist("_section_new");
-		if ((sectp = section)->list.qe_next != NULL)
-			sectp = sectp->list.qe_next;
-		for (; sectp != NULL; sectp = sectp->list.qe_next) {
-			if (sectp->s[strlen(sectp->s) - 1] != '/') {
+		for (e_sectp = section->list.tqh_first;
+		    e_sectp != NULL; e_sectp = e_sectp->q.tqe_next) {
+			if (e_sectp->s[strlen(e_sectp->s) - 1] != '/') {
 				(void)snprintf(buf, sizeof(buf),
-				    "%s{/%s,}", sectp->s, machine);
-				if ((tp = malloc(sizeof(ENTRY))) == NULL ||
-				    (tp->s = strdup(buf)) == NULL)
+				    "%s{/%s,}", e_sectp->s, machine);
+				if ((ep = malloc(sizeof(ENTRY))) == NULL ||
+				    (ep->s = strdup(buf)) == NULL)
 					err(1, NULL);
-				queue_enter_tail(&sectnewp->list,
-				    tp, ENTRY *, list);
+				TAILQ_INSERT_TAIL(&sectnewp->list, ep, q);
 				continue;
 			}
-			subp = getlist("_subdir");
-			if (subp != NULL)
-				subp = subp->list.qe_next;
-			for (; subp != NULL; subp = subp->list.qe_next) {
-				(void)snprintf(buf, sizeof(buf),
-				    "%s%s{/%s,}", sectp->s, subp->s, machine);
-				if ((tp = malloc(sizeof(ENTRY))) == NULL ||
-				    (tp->s = strdup(buf)) == NULL)
+			e_subp = (subp = getlist("_subdir")) == NULL ?
+			    NULL : subp->list.tqh_first;
+			for (; e_subp != NULL; e_subp = e_subp->q.tqe_next) {
+				(void)snprintf(buf, sizeof(buf), "%s%s{/%s,}",
+				    e_sectp->s, e_subp->s, machine);
+				if ((ep = malloc(sizeof(ENTRY))) == NULL ||
+				    (ep->s = strdup(buf)) == NULL)
 					err(1, NULL);
-				queue_enter_tail(&sectnewp->list,
-				    tp, ENTRY *, list);
+				TAILQ_INSERT_TAIL(&sectnewp->list, ep, q);
 			}
 		}
 		sectnewp->s = section->s;
 		defp = sectnewp;
-		queue_remove(&section->tags, section, ENTRY *, tags);
+		TAILQ_REMOVE(&head, section, q);
 	}
 
 	/*
@@ -260,6 +251,7 @@ main(argc, argv)
 	 *    temporary files go away.
 	 */
 	(void)signal(SIGINT, onsig);
+	(void)signal(SIGHUP, onsig);
 
 	memset(&pg, 0, sizeof(pg));
 	for (found = 0; *argv; ++argv)
@@ -268,7 +260,7 @@ main(argc, argv)
 
 	/* 6: If nothing found, we're done. */
 	if (!found) {
-		cleanup();
+		(void)cleanup();
 		exit (1);
 	}
 
@@ -279,8 +271,7 @@ main(argc, argv)
 				continue;
 			cat(*ap);
 		}
-		cleanup();
-		exit (0);
+		exit (cleanup());
 	}
 	if (f_how) {
 		for (ap = pg.gl_pathv; *ap != NULL; ++ap) {
@@ -288,8 +279,7 @@ main(argc, argv)
 				continue;
 			how(*ap);
 		}
-		cleanup();
-		exit (0);
+		exit(cleanup());
 	}
 	if (f_where) {
 		for (ap = pg.gl_pathv; *ap != NULL; ++ap) {
@@ -297,8 +287,7 @@ main(argc, argv)
 				continue;
 			(void)printf("%s\n", *ap);
 		}
-		cleanup();
-		exit (0);
+		exit(cleanup());
 	}
 		
 	/*
@@ -311,8 +300,9 @@ main(argc, argv)
 		len += strlen(*ap) + 1;
 	}
 	if ((cmd = malloc(len)) == NULL) {
-		cleanup();
-		err(1, NULL);
+		warn(NULL);
+		(void)cleanup();
+		exit(1);
 	}
 	p = cmd;
 	len = strlen(pager);
@@ -332,8 +322,7 @@ main(argc, argv)
 	/* Use system(3) in case someone's pager is "pager arg1 arg2". */
 	(void)system(cmd);
 
-	cleanup();
-	exit(0);
+	exit(cleanup());
 }
 
 /*
@@ -341,12 +330,13 @@ main(argc, argv)
  *	Search the manuals for the pages.
  */
 static int
-manual(page, list, pg)
+manual(page, tag, pg)
 	char *page;
-	ENTRY *list;
+	TAG *tag;
 	glob_t *pg;
 {
-	ENTRY *listp, *missp, *sufp, *tp;
+	ENTRY *ep, *e_sufp, *e_tag;
+	TAG *missp, *sufp;
 	int anyfound, cnt, found;
 	char *p, buf[128];
 
@@ -354,15 +344,16 @@ manual(page, list, pg)
 	buf[0] = '*';
 
 	/* For each element in the list... */
-	if (list != NULL)
-		list = list->list.qe_next;
-	for (listp = list; listp != NULL; listp = listp->list.qe_next) {
-		(void)snprintf(buf, sizeof(buf), "%s/%s.*", listp->s, page);
+	if (tag != NULL)
+		e_tag = tag->list.tqh_first;
+	for (; e_tag != NULL; e_tag = e_tag->q.tqe_next) {
+		(void)snprintf(buf, sizeof(buf), "%s/%s.*", e_tag->s, page);
 		if (glob(buf,
 		    GLOB_APPEND | GLOB_BRACE | GLOB_NOSORT | GLOB_QUOTE,
 		    NULL, pg)) {
-			cleanup();
-			err(1, "globbing");
+			warn("globbing");
+			(void)cleanup();
+			exit(1);
 		}
 		if (pg->gl_matchc == 0)
 			continue;
@@ -384,13 +375,12 @@ manual(page, list, pg)
 			if (!fnmatch(buf, pg->gl_pathv[cnt], 0))
 				goto easy;
 
-			sufp = getlist("_suffix");
-			if (sufp != NULL)
-				sufp = sufp->list.qe_next;
+			e_sufp = (sufp = getlist("_suffix")) == NULL ?
+			    NULL : sufp->list.tqh_first;
 			for (found = 0;
-			    sufp != NULL; sufp = sufp->list.qe_next) {
+			    e_sufp != NULL; e_sufp = e_sufp->q.tqe_next) {
 				(void)snprintf(buf,
-				     sizeof(buf), "*/%s%s", page, sufp->s);
+				     sizeof(buf), "*/%s%s", page, e_sufp->s);
 				if (!fnmatch(buf, pg->gl_pathv[cnt], 0)) {
 					found = 1;
 					break;
@@ -404,18 +394,17 @@ easy:				anyfound = 1;
 			}
 
 			/* Try the _build key words next. */
-			sufp = getlist("_build");
-			if (sufp != NULL)
-				sufp = sufp->list.qe_next;
+			e_sufp = (sufp = getlist("_build")) == NULL ?
+			    NULL : sufp->list.tqh_first;
 			for (found = 0;
-			    sufp != NULL; sufp = sufp->list.qe_next) {
-				for (p = sufp->s;
+			    e_sufp != NULL; e_sufp = e_sufp->q.tqe_next) {
+				for (p = e_sufp->s;
 				    *p != '\0' && !isspace(*p); ++p);
 				if (*p == '\0')
 					continue;
 				*p = '\0';
 				(void)snprintf(buf,
-				     sizeof(buf), "*/%s%s", page, sufp->s);
+				     sizeof(buf), "*/%s%s", page, e_sufp->s);
 				if (!fnmatch(buf, pg->gl_pathv[cnt], 0)) {
 					if (!f_where)
 						build_page(p + 1,
@@ -445,12 +434,13 @@ easy:				anyfound = 1;
 	if (!anyfound) {
 		if ((missp = getlist("_missing")) == NULL)
 			missp = addlist("_missing");
-		if ((tp = malloc(sizeof(ENTRY))) == NULL ||
-		    (tp->s = strdup(page)) == NULL) {
-			cleanup();
-			err(1, NULL);
+		if ((ep = malloc(sizeof(ENTRY))) == NULL ||
+		    (ep->s = strdup(page)) == NULL) {
+			warn(NULL);
+			(void)cleanup();
+			exit(1);
 		}
-		queue_enter_tail(&missp->list, tp, ENTRY *, list);
+		TAILQ_INSERT_TAIL(&missp->list, ep, q);
 	}
 	return (anyfound);
 }
@@ -464,7 +454,8 @@ build_page(fmt, pathp)
 	char *fmt, **pathp;
 {
 	static int warned;
-	ENTRY *intmpp, *tp;
+	ENTRY *ep;
+	TAG *intmpp;
 	int fd;
 	char buf[MAXPATHLEN], cmd[MAXPATHLEN], tpath[sizeof(_PATH_TMP)];
 
@@ -487,25 +478,28 @@ build_page(fmt, pathp)
 	 */
 	(void)strcpy(tpath, _PATH_TMP);
 	if ((fd = mkstemp(tpath)) == -1) {
-		cleanup();
-		err(1, "%s", tpath);
+		warn("%s", tpath);
+		(void)cleanup();
+		exit(1);
 	}
 	(void)snprintf(buf, sizeof(buf), "%s > %s", fmt, tpath);
 	(void)snprintf(cmd, sizeof(cmd), buf, *pathp);
 	(void)system(cmd);
 	(void)close(fd);
 	if ((*pathp = strdup(tpath)) == NULL) {
-		cleanup();
-		err(1, NULL);
+		warn(NULL);
+		(void)cleanup();
+		exit(1);
 	}
 
 	/* Link the built file into the remove-when-done list. */
-	if ((tp = malloc(sizeof(ENTRY))) == NULL) {
-		cleanup();
-		err(1, NULL);
+	if ((ep = malloc(sizeof(ENTRY))) == NULL) {
+		warn(NULL);
+		(void)cleanup();
+		exit(1);
 	}
-	tp->s = *pathp;
-	queue_enter_tail(&intmpp->list, tp, ENTRY *, list);
+	ep->s = *pathp;
+	TAILQ_INSERT_TAIL(&intmpp->list, ep, q);
 }
 
 /*
@@ -516,15 +510,15 @@ static void
 how(fname)
 	char *fname;
 {
-	register FILE *fp;
+	FILE *fp;
 
-	register int lcnt, print;
-	register char *p;
-	char buf[BUFSIZ];
+	int lcnt, print;
+	char *p, buf[256];
 
 	if (!(fp = fopen(fname, "r"))) {
-		cleanup();
-		err(1, "%s", fname);
+		warn("%s", fname);
+		(void)cleanup();
+		exit (1);
 	}
 #define	S1	"SYNOPSIS"
 #define	S2	"S\bSY\bYN\bNO\bOP\bPS\bSI\bIS\bS"
@@ -560,21 +554,24 @@ static void
 cat(fname)
 	char *fname;
 {
-	register int fd, n;
-	char buf[BUFSIZ];
+	int fd, n;
+	char buf[2048];
 
 	if ((fd = open(fname, O_RDONLY, 0)) < 0) {
-		cleanup();
-		err(1, "%s", fname);
+		warn("%s", fname);
+		(void)cleanup();
+		exit(1);
 	}
 	while ((n = read(fd, buf, sizeof(buf))) > 0)
 		if (write(STDOUT_FILENO, buf, n) != n) {
-			cleanup();
-			err(1, "write");
+			warn("write");
+			(void)cleanup();
+			exit (1);
 		}
 	if (n == -1) {
-		cleanup();
-		err(1, "read");
+		warn("read");
+		(void)cleanup();
+		exit(1);
 	}
 	(void)close(fd);
 }
@@ -587,8 +584,7 @@ static char *
 check_pager(name)
 	char *name;
 {
-	register char *p;
-	char *save;
+	char *p, *save;
 
 	/*
 	 * if the user uses "more", we make it "more -s"; watch out for
@@ -640,38 +636,40 @@ static void
 onsig(signo)
 	int signo;
 {
-	cleanup();
+	(void)cleanup();
 
-	(void)signal(SIGINT, SIG_DFL);
-	(void)kill(getpid(), SIGINT);
+	(void)signal(signo, SIG_DFL);
+	(void)kill(getpid(), signo);
+
+	/* NOTREACHED */
+	exit (1);
 }
 
 /*
  * cleanup --
  *	Clean up temporary files, show any error messages.
  */
-static void
+static int
 cleanup()
 {
-	ENTRY *intmpp, *missp;
-	int sverrno;
+	TAG *intmpp, *missp;
+	ENTRY *ep;
+	int rval;
 
-	sverrno = errno;
+	rval = 0;
+	ep = (missp = getlist("_missing")) == NULL ?
+	    NULL : missp->list.tqh_first;
+	if (ep != NULL)
+		for (; ep != NULL; ep = ep->q.tqe_next) {
+			warnx("no entry for %s in the manual.", ep->s);
+			rval = 1;
+		}
 
-	missp = getlist("_missing");
-	if (missp != NULL)
-		missp = missp->list.qe_next;
-	if (missp != NULL)
-		for (; missp != NULL; missp = missp->list.qe_next)
-			warnx("no entry for %s in the manual.", missp->s);
-
-	intmpp = getlist("_intmp");
-	if (intmpp != NULL)
-		intmpp = intmpp->list.qe_next;
-	for (; intmpp != NULL; intmpp = intmpp->list.qe_next)
-		(void)unlink(intmpp->s);
-
-	errno = sverrno;
+	ep = (intmpp = getlist("_intmp")) == NULL ?
+	    NULL : intmpp->list.tqh_first;
+	for (; ep != NULL; ep = ep->q.tqe_next)
+		(void)unlink(ep->s);
+	return (rval);
 }
 
 /*
