@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffh.c 4.3 %G%";
+static	char sccsid[] = "@(#)diffh.c 4.4 %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -105,12 +105,12 @@ char **argv;
 		}
 	}
 	if(s0==NULL&&s1==NULL)
-		return(status);
+		exit(status);
 	if(s0==NULL)
 		output(-1,INF);
 	if(s1==NULL)
 		output(INF,-1);
-	return(1);
+	exit(1);
 }
 
 	/* synch on C successive matches*/
