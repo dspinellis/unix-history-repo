@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_srvcache.c	7.5 (Berkeley) %G%
+ *	@(#)nfs_srvcache.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -148,17 +148,15 @@ nfsrv_getcache(nam, xid, proc, repp)
 {
 	register struct nfsrvcache *rp;
 	register union  rhead *rh;
-	register u_long saddr;
 	struct mbuf *mb;
 	caddr_t bpos;
 	int ret;
 
 	rh = &rhead[NFSRCHASH(xid)];
-	saddr = mtod(nam, struct sockaddr_in *)->sin_addr.s_addr;
 loop:
 	for (rp = rh->rh_chain[0]; rp != (struct nfsrvcache *)rh; rp = rp->rc_forw) {
-		if (xid == rp->rc_xid && saddr == rp->rc_saddr &&
-		    proc == rp->rc_proc) {
+		if (xid == rp->rc_xid && proc == rp->rc_proc &&
+		    nfs_netaddr_match(nam, &rp->rc_nam)) {
 			if ((rp->rc_flag & RC_LOCKED) != 0) {
 				rp->rc_flag |= RC_WANTED;
 				sleep((caddr_t)rp, PZERO-1);
@@ -180,7 +178,7 @@ loop:
 				ret = RC_REPLY;
 			} else if (rp->rc_flag & RC_REPMBUF) {
 				nfsstats.srvcache_idemdonehits++;
-				*repp = NFSMCOPY(rp->rc_reply, 0, M_COPYALL,
+				*repp = m_copym(rp->rc_reply, 0, M_COPYALL,
 						M_WAIT);
 				rp->rc_timestamp = time.tv_sec;
 				ret = RC_REPLY;
@@ -212,7 +210,7 @@ loop:
 	rp->rc_flag = 0;
 	rp->rc_state = RC_INPROG;
 	rp->rc_xid = xid;
-	rp->rc_saddr = saddr;
+	bcopy((caddr_t)nam, (caddr_t)&rp->rc_nam, sizeof (struct mbuf));
 	rp->rc_proc = proc;
 	insque(rp, rh);
 	if (mb)
@@ -233,14 +231,12 @@ nfsrv_updatecache(nam, xid, proc, repvalid, repstat, repmbuf)
 {
 	register struct nfsrvcache *rp;
 	register union	rhead *rh;
-	register u_long saddr;
 
 	rh = &rhead[NFSRCHASH(xid)];
-	saddr = mtod(nam, struct sockaddr_in *)->sin_addr.s_addr;
 loop:
 	for (rp = rh->rh_chain[0]; rp != (struct nfsrvcache *)rh; rp = rp->rc_forw) {
-		if (xid == rp->rc_xid && saddr == rp->rc_saddr &&
-		    proc == rp->rc_proc) {
+		if (xid == rp->rc_xid && proc == rp->rc_proc &&
+		    nfs_netaddr_match(nam, &rp->rc_nam)) {
 			if ((rp->rc_flag & RC_LOCKED) != 0) {
 				rp->rc_flag |= RC_WANTED;
 				sleep((caddr_t)rp, PZERO-1);
@@ -250,8 +246,9 @@ loop:
 			rp->rc_state = RC_DONE;
 			/*
 			 * If we have a valid reply update status and save
-			 * the reply for non-idempotent rpc's. Otherwise
-			 * invalidate entry by setting the timestamp to nil.
+			 * the reply for non-idempotent rpc's.
+			 * Otherwise invalidate entry by setting the timestamp
+			 * to nil.
 			 */
 			if (repvalid) {
 				rp->rc_timestamp = time.tv_sec;
@@ -260,7 +257,7 @@ loop:
 						rp->rc_status = repstat;
 						rp->rc_flag |= RC_REPSTATUS;
 					} else {
-						rp->rc_reply = NFSMCOPY(repmbuf,
+						rp->rc_reply = m_copym(repmbuf,
 							0, M_COPYALL, M_WAIT);
 						rp->rc_flag |= RC_REPMBUF;
 					}

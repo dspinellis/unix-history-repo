@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsnode.h	7.9 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -43,7 +43,6 @@ struct nfsnode {
 	pid_t	n_lockholder;	/* holder of nfsnode lock */
 	pid_t	n_lockwaiter;	/* most recent waiter for nfsnode lock */
 	u_long	n_direofoffset;	/* Dir. EOF offset cache */
-	time_t	n_direofstamp;	/* Time stamp for dir. EOF offset cache */
 };
 
 #define	n_forw		n_chain[0]
@@ -62,6 +61,4 @@ struct nfsnode {
 #define	NLOCKED		0x1	/* Lock the node for other local accesses */
 #define	NWANT		0x2	/* Want above lock */
 #define	NMODIFIED	0x4	/* Might have a modified buffer in bio */
-#define	NBUFFERED	0x8	/* Might have a buffer in bio */
-#define	NPAGEDON	0x10	/* Might have associated memory pages */
-#define	NWRITEERR	0x20	/* Flag write errors so close will know */
+#define	NWRITEERR	0x8	/* Flag write errors so close will know */

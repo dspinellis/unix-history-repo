@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsm_subs.h	7.6 (Berkeley) %G%
+ *	@(#)nfsm_subs.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -30,29 +30,8 @@
  * First define what the actual subs. return
  */
 extern struct mbuf *nfsm_reqh();
-extern struct vnode *nfs_fhtovp();
 
-/*
- * To try and deal with different variants of mbuf.h, I have used the
- * following defs. If M_HASCL is not defined in an older the 4.4bsd mbuf.h,
- * you will have to use a different ifdef
- */
-#ifdef M_HASCL
-#define	NFSMCLGET(m, w)	MCLGET(m)
-#define	NFSMGETHDR(m)	MGET(m, M_WAIT, MT_DATA)
-#define	MHLEN		MLEN
-#define	NFSMINOFF(m) \
-		if (M_HASCL(m)) \
-			(m)->m_off = ((int)MTOCL(m))-(int)(m); \
-		else \
-			(m)->m_off = MMINOFF
-#define	NFSMADV(m, s)	(m)->m_off += (s)
-#define	NFSMSIZ(m)	((M_HASCL(m))?MCLBYTES:MLEN)
-#define	m_nextpkt	m_act
-#define	NFSMCOPY(m, o, l, w)	m_copy((m), (o), (l))
-#else
 #define	M_HASCL(m)	((m)->m_flags & M_EXT)
-#define	NFSMCLGET	MCLGET
 #define	NFSMGETHDR(m) \
 		MGETHDR(m, M_WAIT, MT_DATA); \
 		(m)->m_pkthdr.len = 0; \
@@ -65,16 +44,6 @@ extern struct vnode *nfs_fhtovp();
 #define	NFSMADV(m, s)	(m)->m_data += (s)
 #define	NFSMSIZ(m)	((M_HASCL(m))?MCLBYTES: \
 				(((m)->m_flags & M_PKTHDR)?MHLEN:MLEN))
-#define	NFSMCOPY	m_copym
-#endif
-
-#ifndef MCLBYTES
-#define	MCLBYTES	CLBYTES
-#endif
-
-#ifndef MT_CONTROL
-#define	MT_CONTROL	MT_RIGHTS
-#endif
 
 /*
  * Now for the macros that do the simple stuff and call the functions
@@ -209,8 +178,8 @@ extern struct vnode *nfs_fhtovp();
 
 #define nfsm_rndup(a)	(((a)+3)&(~0x3))
 
-#define	nfsm_request(v, t)	\
-		if (error = nfs_request((v), mreq, xid, 5*(t), \
+#define	nfsm_request(v, t, p)	\
+		if (error = nfs_request((v), mreq, xid, (t), (p), \
 		   (v)->v_mount, &mrep, &md, &dpos)) \
 			goto nfsmout
 
@@ -229,12 +198,6 @@ extern struct vnode *nfs_fhtovp();
 		} else if (error = nfsm_strtmbuf(&mb, &bpos, (a), (s))) { \
 			m_freem(mreq); \
 			goto nfsmout; \
-		}
-
-#define	nfsm_srverr \
-		{ \
-			m_freem(mrep); \
-			return(ENOBUFS); \
 		}
 
 #define	nfsm_srvdone \
@@ -286,7 +249,7 @@ extern struct vnode *nfs_fhtovp();
 #define	nfsm_clget \
 		if (bp >= be) { \
 			MGET(mp, M_WAIT, MT_DATA); \
-			NFSMCLGET(mp, M_WAIT); \
+			MCLGET(mp, M_WAIT); \
 			mp->m_len = NFSMSIZ(mp); \
 			if (mp3 == NULL) \
 				mp3 = mp2 = mp; \
