@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_usrreq.c	7.15 (Berkeley) %G%
+ *	@(#)pk_usrreq.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
