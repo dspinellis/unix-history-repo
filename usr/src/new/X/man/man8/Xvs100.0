@@ -1,0 +1,66 @@
+
+
+
+XVS100(8)	    UNIX Programmer's Manual		XVS100(8)
+
+
+
+NAME
+     Xvs100 - X window system VS100 implementation notes
+
+DESCRIPTION
+     The VS100 implementation of X was the first, and is com-
+     plete.  Many of the X output operations are in fact modeled
+     on the interface provided by the VS100 firmware.  The VS100
+     is a monochrome display, 864 bits high and 1088 bits wide.
+     The firmware we are currently using is version #235.
+
+     Cursors can be any size up to 64x64.  Tiles can only be
+     16x16 in size.  Brushes can be any size, but the current
+     firmware draws wide lines about an order of magnitude slower
+     than 1x1 lines.  Off-screen storage is limited to that pro-
+     vided in the VS100 itself; no attempt is made to use DMA
+     access to VAX memory for fonts and such or to dynamically
+     shuffle data back and forth.
+
+     The keyboard is controlled by the VS100 firmware.	Unfor-
+     tunately, with the current firmware, the keyboard only gives
+     up transitions for the Control, Shift, Lock, and Meta keys,
+     so chord applications won't work.
+
+     At system boot, for some reason the first three attempts to
+     down load the firmware fail.  Thus, a VS100 won't become
+     active until about 45 seconds after other terminal lines
+     activate.	Power-cycling a VS100 will cause the X server to
+     restart.  The down problem doesn't occur in this case, but
+     typically a 3 minute TCP CLOSE_WAIT will occur.
+
+SEE ALSO
+     X(8c), X(1)
+     `ddX - Device Dependent X Interface'
+
+AUTHOR
+     Copyright (c) 1985, by Massachusetts Institute of Technol-
+     ogy.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 9/15/87          26 August 1985                         1
+
+
+

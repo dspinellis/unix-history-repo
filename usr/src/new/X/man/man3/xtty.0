@@ -1,0 +1,198 @@
+
+
+
+XTTY(3X)	    UNIX Programmer's Manual		 XTTY(3X)
+
+
+
+NAME
+     Xtty - routines to provide terminal emulator windows
+
+SYNOPSIS
+     #include <X/Xlib.h>
+     #include <X/Xtty.h>
+
+     TTYWindow *CreateTTYWindow(cols, lines, x, y, normalFont,
+     boldFont, bwidth, reverse)
+     int cols, lines, x, y, bwidth, reverse;
+     char *normalFont, *boldFont;
+
+     DestroyTTYWindow(t);
+     TTYWindow *t;
+
+     TTYPutString(t, str);
+     TTYWindow *t;
+     char *str;
+
+     TTYPutChar(t, ch);
+     TTYWindow *t;
+     char ch;
+
+     TTYPrintf(t, format [ , arg ] ... )
+     TTYWindow *t;
+     char *format;
+
+     char *TTYGetString(t, string, n)
+     TTYWindow *t;
+     char *string;
+     int n;
+
+     int TTYGetChar(t)
+     TTYWindow *t;
+
+     SetStdout(t)
+     TTYWindow *t;
+
+     ResetStdout()
+
+DESCRIPTION
+     These functions allow applications to create terminal emula-
+     tor windows.  The windows are managed by creating a subpro-
+     cess _x_t_e_r_m(_1) and communicating with it through a pty.  The
+     _T_T_Y_W_i_n_d_o_w data structure is defined in <_X/_X_t_t_y._h>:
+
+     typedef struct _TTYWindow {
+	  Window w;	 /* The window id */
+	  int pid;	 /* The pid of the subprocess xterm */
+	  short file;	      /* The file id to read and write characters
+			    characters to/from */
+     } TTYWindow;
+
+
+
+Printed 9/15/87          28 January 1985			1
+
+
+
+
+
+
+XTTY(3X)	    UNIX Programmer's Manual		 XTTY(3X)
+
+
+
+     _C_r_e_a_t_e_T_T_Y_W_i_n_d_o_w creates a window that is _c_o_l_s characters
+     wide and _l_i_n_e_s characters high.  It is located with its
+     upper left hand corner located at the point _x, _y in the root
+     window.  The border is _b_w_i_d_t_h pixels wide.  Normal text is
+     displayed in _n_o_r_m_a_l_F_o_n_t and boldface text is displayed in
+     _b_o_l_d_F_o_n_t. If _b_o_l_d_F_o_n_t is NULL, the normal font is used for
+     both.  If _r_e_v_e_r_s_e is non-zero, the window is created in
+     reverse-video.
+
+     The new window is created and mapped to the screen, and emu-
+     lates a DEC VT102 terminal precisely as well as _x_t_e_r_m(_1)
+     does.
+
+     _D_e_s_t_r_o_y_T_T_Y_W_i_n_d_o_w destroys the window described by its argu-
+     ment.  The window is also destroyed if the creating process
+     terminates or is killed.  See the BUGS section, below.
+
+     _T_T_Y_P_u_t_S_t_r_i_n_g prints its string in its window.  An applica-
+     tion may instead wish to use the _f_i_l_e field of the _T_T_Y_W_i_n_d_o_w
+     directly.
+
+     _T_T_Y_P_u_t_C_h_a_r is similar to _T_e_x_t_P_u_t_S_t_r_i_n_g but only prints a
+     single character.
+
+     _T_T_Y_P_r_i_n_t_f is similar to the standard function _p_r_i_n_t_f except
+     that it prints its result in the specified window.  The
+     resulting string is passed to _T_T_Y_P_u_t_S_t_r_i_n_g. See also the
+     BUGS section, below.
+
+     _T_T_Y_G_e_t_S_t_r_i_n_g fills the array _s_t_r_i_n_g with at most _n charac-
+     ters.  _T_T_Y_G_e_t_S_t_r_i_n_g will also return before _n characters are
+     read if a newline (\n) is encountered.  An application may
+     instead wish to use the _f_i_l_e field of the _T_T_Y_W_i_n_d_o_w
+     directly.
+
+     _T_T_Y_G_e_t_C_h_a_r returns one character from the window.
+
+     _S_e_t_S_t_d_o_u_t sets things up so that the standard I/O routines
+     which write to stdout will write to the window instead.
+     This is particularly useful with the _c_u_r_s_e_s(_3_X) package
+     since it always writes to stdout.
+
+     _R_e_s_e_t_S_t_d_o_u_t resets stdout to its original value.
+
+SEE ALSO
+     printf(3S), xterm(1), Xtext(3X), curses(3X), X(8C)
+
+AUTHOR
+     Paul Asente, Stanford University
+
+BUGS
+     _T_T_Y_P_r_i_n_t_f truncates its output if the resulting string is
+
+
+
+Printed 9/15/87          28 January 1985			2
+
+
+
+
+
+
+XTTY(3X)	    UNIX Programmer's Manual		 XTTY(3X)
+
+
+
+     more than 2048 characters long.
+
+     It is impossible to make one implementation that works
+     correctly for both monochrome and color displays since you
+     cannot specify colors on a monochrome display and reverse-
+     video doesn't make much sense on a color display.	This ver-
+     sion works for monochrome displays.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 9/15/87          28 January 1985			3
+
+
+

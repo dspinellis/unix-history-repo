@@ -1,0 +1,66 @@
+
+
+
+XQVSS(8)	    UNIX Programmer's Manual		 XQVSS(8)
+
+
+
+NAME
+     Xqvss - X window system QVSS implementation notes
+
+DESCRIPTION
+     The QVSS hardware in the DEC VS1 and VS2 is monochrome.  The
+     usable size is 864 lines by 960 pixels/line.  (Future driver
+     mods will default to 1024 pixels/line on the VR260 monitor
+     of the VS2, in Ultrix 1.2; for VR260 monitors under 1.1,
+     patch the kernel variable qv_def_scrn to 2.).
+
+     Probably the most irritating problem with the QVSS hardware
+     is the cursor support, which is limited to 16x16.	As only
+     ``and'' and ``or'' operations are available in the hardware,
+     the driver inverts the cursor depending upon the pixels
+     below the cursor.	We will eventually get fed up and imple-
+     ment a software cursor.
+
+     Under Ultrix-32 release 1.1 and 4.2BSD, the window system
+     will be slightly unreliable due to a kernel problem.  Fixed
+     in Ultrix32 release 1.2.  Under Ultrix-32 1.1, your best bet
+     is to use unix domain connections (unix:0 as host spec's)
+     for local connections.
+
+     Thanks must go to Dave Carver (and others) in the DEC Works-
+     tations group for implementing the bit-blit library.  Large
+     area bit-blit code is compiled on the fly and runs at
+     optimal speed.
+
+     Performance is now tolerable, between 3400 and 4200
+     characters/second on a VS2.  Performance on a VS1 is approx-
+     imately 2000 characters/second.  Some further improvement
+     can be expected.
+
+SEE ALSO
+     X(8c), X(1)
+     `Xlib - C Language X Interface'
+     `ddX - Device Dependent X Interface'
+
+AUTHOR
+     Copyright (c) 1984, 1985, 1986 by Massachusetts Institute of
+     Technology.
+     See X(1) for a complete Copyright notice.
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 9/15/87          3 January 1985                         1
+
+
+

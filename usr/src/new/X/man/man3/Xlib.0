@@ -1,0 +1,66 @@
+
+
+
+XLIB(3X)	    UNIX Programmer's Manual		 XLIB(3X)
+
+
+
+NAME
+     Xlib - C Language X Window System Interface Library
+
+SYNOPSIS
+     #include <X/Xlib.h>
+
+DESCRIPTION
+     This library is the low level interface for C to the X pro-
+     tocol.  The list of subroutines is too long to list here,
+     comprising more than 150 subroutines.
+
+     This library gives complete access to all capability pro-
+     vided by the X window system, and is intended to be the
+     basis for other higher level libraries for use with X (See
+     _X_t_e_x_t(_3_x) for an example of such a library).
+
+     More subroutines will be added to this library with time.
+     Contributions will be gratefully accepted.
+
+FILES
+     /usr/include/X/Xlib.h, /usr/lib/libX.a
+
+SEE ALSO
+     `Xlib - C Language X Interface', X(1), X(8c), Xtext(3x),
+     Xtty(3x)
+
+AUTHORS
+     Ron Newman, Tony Della Fera, Jim Gettys (MIT Project Athena)
+     Copyright 1985, 1986, Massachusetts Institute of Technology
+     See X(1) for a full copyright notice.
+
+BUGS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 9/15/87          3 January 1986                         1
+
+
+
+
+
+
