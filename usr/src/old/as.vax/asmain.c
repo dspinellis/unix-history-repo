@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asmain.c 4.4 %G%";
+static	char sccsid[] = "@(#)asmain.c 4.5 %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -10,7 +10,7 @@ static	char sccsid[] = "@(#)asmain.c 4.4 %G%";
 #include "asscan.h"
 
 #ifdef UNIX
-#define	unix_lang_name "VAX/UNIX Assembler Vasmain.c"
+#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.5"
 #endif
 
 #ifdef VMS
@@ -22,7 +22,7 @@ static	char sccsid[] = "@(#)asmain.c 4.4 %G%";
  */
 char	*dotsname;	/*the current file name; managed by the parser*/
 int	lineno;		/*current line number; managed by the parser*/
-char	*innames[32];	/*names of the files being assembled*/
+char	**innames;	/*names of the files being assembled*/
 int	ninfiles;	/*how many interesting files there are*/
 /*
  *	Flags settable from the argv process argument list
@@ -220,9 +220,12 @@ argprocess(argc, argv)
 #ifdef DEBUG
 	debug = 0;
 #endif
+	innames = (char **)ClearCalloc(argc+1, sizeof (innames[0]));
 	dotsname = "<argv error>";
 	while (argc > 1) {
-		if (argv[1][0] == '-'){
+		if (argv[1][0] != '-')
+			innames[ninfiles++] = argv[1];
+		else {
 			cp = argv[1] + 1;
 			/*
 			 *	We can throw away single minus signs, so
@@ -288,16 +291,10 @@ argprocess(argc, argv)
 				}	/*end of the switch*/
 			}	/*end of pulling out all arguments*/
 		}	/*end of a flag argument*/
-		else {	/*file name*/
-			if (ninfiles > 32){
-				yyerror("More than 32 file names");
-				exit(3);
-			}
-			innames[ninfiles++] = argv[1];
-		}
 		--argc; ++argv;
 	   nextarg:;
 	}
+	/* innames[ninfiles] = 0; */
 }
 
 initialize()
