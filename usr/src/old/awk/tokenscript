@@ -1,0 +1,13 @@
+e y.tab.h
+1,$s/# *define *//
+1,$s/^/"/
+1,$s/ /", /
+1,$s/$/,/
+w temp
+e token.c
+/= *{$/+1,/^};$/-1d
+-r temp
+w token.c
+q
+s/tokenscript	4.1	82/05/07//
+
