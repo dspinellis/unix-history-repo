@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	7.12 (Berkeley) %G%
+#	@(#)Makefile	7.13 (Berkeley) %G%
 #
 
 RELOC=		800
@@ -107,12 +107,8 @@ depend: ${SRCS}
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} depend); done
 
 install:
-	-mkdir ${DESTDIR}/stand
-	for i in ${ALL}; do \
-		install -o bin -g bin -m 644 $$i ${DESTDIR}/stand/$$i; \
-	done
-	rm -f ${DESTDIR}/boot;
-	cp ${DESTDIR}/stand/boot ${DESTDIR}/boot
+	install -o bin -g bin -m 644 cat copy ls ${DESTDIR}/stand
+	install -o bin -g bin -m 644 boot ${DESTDIR}/
 	for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install) \
 	done
