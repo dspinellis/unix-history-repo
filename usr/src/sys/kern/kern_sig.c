@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.31 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.32 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -975,9 +975,8 @@ sigexit(p, sig)
 
 /*
  * Create a core dump.
- * The file name should probably be "core.progname"
- * (or "mos.progname", or "dram.progname", or ...).
- * Core dumps aren't created if the process 
+ * The file name is "core.progname.pid".
+ * Core dumps are not created if the process is setuid.
  */
 coredump(p)
 	register struct proc *p;
@@ -989,6 +988,7 @@ coredump(p)
 	struct vattr vattr;
 	int error;
 	struct nameidata nd;
+	char name[MAXCOMLEN+12];	/* core.progname.pid */
 
 	if (pcred->p_svuid != pcred->p_ruid ||
 	    pcred->p_svgid != pcred->p_rgid)
@@ -996,8 +996,9 @@ coredump(p)
 	if (ctob(UPAGES + vm->vm_dsize + vm->vm_ssize) >=
 	    p->p_rlimit[RLIMIT_CORE].rlim_cur)
 		return (EFAULT);
+	sprintf(name, "core.%s.%d", p->p_comm, p->p_pid);
+	nd.ni_dirp = name;
 	nd.ni_segflg = UIO_SYSSPACE;
-	nd.ni_dirp = "core";
 	if (error = vn_open(&nd, p, O_CREAT|FWRITE, 0644))
 		return (error);
 	vp = nd.ni_vp;
