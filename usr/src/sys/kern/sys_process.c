@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	7.3 (Berkeley) %G%
+ *	@(#)sys_process.c	7.4 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -174,6 +174,10 @@ procxmt()
 		if (p == &u.u_ar0[PS]) {
 			ipc.ip_data |= PSL_USERSET;
 			ipc.ip_data &=  ~PSL_USERCLR;
+#ifdef PSL_CM_CLR
+			if (ipc.ip_data & PSL_CM)
+				ipc.ip_data &= ~PSL_CM_CLR;
+#endif
 			goto ok;
 		}
 		goto error;

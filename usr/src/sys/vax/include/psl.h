@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)psl.h	7.1 (Berkeley) %G%
+ *	@(#)psl.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -31,3 +31,4 @@
 
 #define	PSL_USERSET	(PSL_PRVMOD|PSL_CURMOD)
 #define	PSL_USERCLR	(PSL_IS|PSL_IPL|PSL_MBZ)
+#define	PSL_CM_CLR	(PSL_FPD|PSL_DV|PSL_FU|PSL_IV)

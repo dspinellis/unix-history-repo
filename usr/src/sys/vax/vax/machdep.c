@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.9.1.1 (Berkeley) %G%
+ *	@(#)machdep.c	7.10 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -510,6 +510,8 @@ dorti()
 	sp += 4;
 	u.u_ar0[PS] |= PSL_USERSET;
 	u.u_ar0[PS] &= ~PSL_USERCLR;
+	if (u.u_ar0[PS] & PSL_CM)
+		u.u_ar0[PS] &= ~PSL_CM_CLR;
 	u.u_ar0[SP] = (int)sp;
 }
 #endif
