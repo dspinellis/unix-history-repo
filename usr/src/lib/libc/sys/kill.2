@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)kill.2	6.2 (Berkeley) %G%
+.\"	@(#)kill.2	6.3 (Berkeley) %G%
 .\"
 .TH KILL 2 ""
 .UC 4
@@ -30,7 +30,7 @@ This can be used to check the validity of
 The sending and receiving processes must
 have the same effective user ID, otherwise
 this call is restricted to the super-user.
-A single exception is the signal SIGCONT which may always be sent
+A single exception is the signal SIGCONT, which may always be sent
 to any child or grandchild of the current process.
 .PP
 If the process number is 0,
