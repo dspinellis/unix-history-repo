@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.80 (Berkeley) %G%
+#	@(#)termcap.src	5.81 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -401,8 +401,18 @@ I1|ibm61|ibm3161|3161|IBM 3161-11:\
 	:ce=\EI:cm=\EY%+\040%+\040:nd=\EC:up=\EA:do=\EB:\
 	:dl=\EO:dc=\EQ:kd=\EB:ku=\EA:kl=\ED:kr=\EC:kh=\EH:\
 	:us=\E4\102:ue=\E4\100:so=\E4\110:se=\E4\100:
-I3|ibm63|ibm3163|3163|i3163|IBM 3163:\
-	:tc=ibm61:
+#From seth@sirius.ctr.columbia.edu Sun May 20 11:02:34 1990
+I3|ibm3163|ibm63|i3163|3163|IBM 3163:\
+	:al=\EN:am:bs:bt=\E2:cd=\EJ:ce=\EI:cl=\EL:\
+	:cm=\EY%+\040%+\040:co#80:ct=\E 1:dc=\EQ:\
+	:dl=\EO:do=\EB:ds=\E#\072:es:fs=\E=:ho=\EH:\
+	:hs:ic=\EP:kA=\EN:kB=\E2:kC=\EQ:\
+	:kD=\EQ:kE=\EI:kI=\EI:kL=\EO:kS=\EJ:\
+	:kb=^H:kd=\EB:kl=\EB:kr=\EC:ku=\EA:\
+	:le=\ED:li#24:mb=\E4D:md=\E4H:me=\E4@:\
+	:mk=\E4P:mr=\E4A:nd=\EC:\
+	:ds=\E#\::es:fs=\E=\E#;:hs:ts=\E=:ws#80:\
+	:se=\E4@:so=\E4I:ue=\E4@:up=\EA:us=\E4B:
 I4|ibm|ibm3101|3101|i3101|IBM 3101-10:\
 	:do=^J:ct=\EH:st=\E0:\
 	:if=/usr/share/tabset/ibm3101:\
