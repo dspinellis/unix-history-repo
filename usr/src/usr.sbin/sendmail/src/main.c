@@ -3,7 +3,7 @@
 # include <sys/ioctl.h>
 # include "sendmail.h"
 
-SCCSID(@(#)main.c	3.146		%G%);
+SCCSID(@(#)main.c	3.147		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -76,6 +76,14 @@ main(argc, argv)
 	char jbuf[30];			/* holds HostName */
 	extern bool safefile();
 	extern time_t convtime();
+
+	/*
+	**  Be sure we have enough file descriptors.
+	*/
+
+	for (i = 3; i < 20; i++)
+		(void) close(i);
+	errno = 0;
 
 	/*
 	**  Do a quick prescan of the argument list.
