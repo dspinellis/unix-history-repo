@@ -1,0 +1,54 @@
+acc(4v) acc: ACC LH/DH IMP interface.
+ad(4v) ad: Data Translation A/D converter.
+autoconf(4v) autoconf: diagnostics from the autoconfiguration code.
+bk(4) bk: line discipline for machine-machine communication.
+cons(4v) cons: VAX-11 console interface.
+css(4v) css: DEC IMP-11A LH/DH IMP interface.
+ct(4v) ct: phototypesetter interface.
+dh(4v) dh/dm: DH-11/DM-11 communications multiplexer.
+dmc(4v) dmc: DEC DMC-11/DMR-11 point-to-point communications device.
+dmf(4v) dmf: DMF-32, terminal multiplexor.
+dn(4v) dn: DN-11 autocall unit interface.
+drum(4) drum: paging device.
+dz(4v) dz: DZ-11 communications multiplexer.
+ec(4v) ec: 3Com 10 Mb/s Ethernet interface.
+en(4v) en: Xerox 3 Mb/s Ethernet interface.
+fl(4v) fl: floppy interface.
+hk(4v) hk: RK6-11/RK06 and RK07 moving head disk.
+hp(4v) hp: MASSBUS disk interface.
+ht(4v) ht: TM-03/TE-16,TU-45,TU-77 MASSBUS magtape interface.
+hy(4v) hy: Network Systems Hyperchannel Interface.
+ik(4v) ik: Ikonas frame buffer, graphics device interface.
+il(4v) il: Interlan 10 Mb/s Ethernet interface.
+imp(4p) imp: IMP raw socket interface.
+imp(4v) imp: 1822 network interface.
+inet(4f) inet: Internet protocol family.
+intro(4) intro: introduction to special files and hardware support.
+intro(4n) net: introduction to networking facilities.
+intro(4v) intro: introduction to VAX devices.
+ip(4p) ip: Internet Protocol.
+lo(4) loop: software loopback network interface.
+lp(4v) lp: line printer.
+mem(4) mem, kmem: main memory.
+mt(4) mt: UNIX magtape interface.
+mt(4v) mt: TM78/TU-78 MASSBUS magtape interface.
+nd(4s) nd: net disk driver.
+null(4) null: data sink.
+ps(4v) ps: Evans and Sutherland Picture System 2 graphics device interface.
+pty(4) pty: pseudo terminal driver.
+pup(4f) pup: Xerox PUP-I protocol family.
+pup(4p) pup: raw PUP socket interface.
+rx(4v) rx: DEC RX02 floppy disk interface.
+tcp(4p) tcp: Internet Transmission Control Protocol.
+tm(4v) tm: TM-11/TE-10 magtape interface.
+ts(4v) ts: TS-11 magtape interface.
+tty(4) tty: general terminal interface.
+tu(4v) tu: VAX-11/730 TU58 console cassette interface.
+uda(4v) uda: UDA-50 disk controller interface.
+udp(4p) udp: Internet User Datagram Protocol.
+un(4v) un: Ungermann-Bass interface.
+up(4v) up: unibus storage module controller/drives.
+ut(4v) ut: UNIBUS TU45 tri-density tape drive interface.
+va(4v) va: Benson-Varian interface.
+vp(4v) vp: Versatec interface.
+vv(4v) vv: Proteon proNET 10 Megabit ring.
