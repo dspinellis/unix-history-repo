@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)sync.c	1.6 83/10/28";
+static	char *sccsid = "@(#)sync.c	1.7 83/10/28";
 #endif
 
 #include "externs.h"
@@ -195,7 +195,10 @@ int a, b, c, d;
 		ship->file->captain[sizeof ship->file->captain - 1] = 0;
 		break;
 	case W_CAPTURED:
-		ship->file->captured = SHIP(a);
+		if (a < 0)
+			ship->file->captured = 0;
+		else
+			ship->file->captured = SHIP(a);
 		break;
 	case W_CLASS:
 		ship->specs->class = a;
