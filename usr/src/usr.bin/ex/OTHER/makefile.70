@@ -50,7 +50,7 @@ OBJS=	ex.o ex_addr.o ex_cmds.o ex_cmds2.o ex_cmdsub.o \
 	ex_set.o ex_subr.o ex_temp.o ex_tty.o ex_unix.o \
 	ex_v.o ex_vadj.o ex_vget.o ex_vmain.o ex_voper.o \
 	ex_vops.o ex_vops2.o ex_vops3.o ex_vput.o ex_vwind.o \
-	${PRINTF} bcopy.o strings.o
+	${PRINTF} bcopy.o ex_extern.o strings.o
 SRCS=	ex.h ex_argv.h ex_re.h ex_temp.h ex_tty.h ex_tune.h ex_vars.h ex_vis.h\
 	ex.c ex_addr.c ex_cmds.c ex_cmds2.c ex_cmdsub.c \
 	ex_data.c ex_get.c ex_io.c ex_put.c ex_re.c \
@@ -75,7 +75,7 @@ SRCS=	ex.h ex_argv.h ex_re.h ex_temp.h ex_tty.h ex_tune.h ex_vars.h ex_vis.h\
 # 	    -Z ex_v.o ex_vget.o ex_vops.o ex_vops2.o ex_vput.o\
 # 	    -Z ex_get.o ex_io.o ex_temp.o ex_tty.o ex_unix.o ex_addr.o ex.o ex_set.o \
 # 	    -L ex_put.o ex_subr.o ${PRINTF} strings.o \
-# 	       ex_data.o ${TERMLIB} -lovc 
+# 	       ex_data.o ex_extern.o ${TERMLIB} -lovc 
 
 a.out: ${OBJS}
 	${LD} -X /lib/crt0.o ${FMT}\
@@ -84,7 +84,7 @@ a.out: ${OBJS}
 	    -L ex_addr.o ex_cmds.o ex_cmds2.o ex_cmdsub.o ex_get.o ex_temp.o\
 	       ex_v.o ex_vadj.o ex_vmain.o ex_vwind.o\
 	       ex_vput.o ex_put.o ex_subr.o ${PRINTF} strings.o \
-	       ex_data.o ${TERMLIB} -lovc 
+	       ex_data.o ex_extern.o ${TERMLIB} -lovc 
 
 all:	a.out exrecover expreserve
 
@@ -102,13 +102,13 @@ strings.o: strings
 	rm xs.s
 	
 exrecover: exrecover.o
-	${CC} ${CFLAGS} exrecover.o -o exrecover
+	${CC} ${CFLAGS} exrecover.o ex_extern.o -o exrecover
 
 exrecover.o: exrecover.c
 	${CC} ${CFLAGS} -c -O exrecover.c
 
 expreserve: expreserve.o
-	${CC} expreserve.o -o expreserve
+	${CC} expreserve.o ex_extern.o -o expreserve
 
 expreserve.o:
 	${CC} ${CFLAGS} -c -O expreserve.c
