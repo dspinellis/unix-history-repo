@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)size.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)size.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -69,6 +69,7 @@ show(count, name)
 		return (1);
 	}
 	if (read(fd, &head, sizeof(head)) != sizeof(head) || N_BADMAG(head)) {
+		(void)close(fd);
 		err("%s: not in a.out format", name);
 		return (1);
 	}
