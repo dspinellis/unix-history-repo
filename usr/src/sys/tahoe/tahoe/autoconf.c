@@ -1,4 +1,4 @@
-/*	autoconf.c	1.16	88/02/08	*/
+/*	autoconf.c	1.17	88/05/02	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -171,15 +171,22 @@ vbafind(vban, vumem, memmap)
 	/*
 	 * Grab some memory to record the address space we allocate,
 	 * so we can be sure not to place two devices at the same address.
+	 * Register I/O space is allocated in 256-byte sections,
+	 * and memory I/O space is in 4Kb sections.  We record allocations
+	 * in 256-byte sections.
 	 *
 	 * We could use just 1/8 of this (we only want a 1 bit flag) but
 	 * we are going to give it back anyway, and that would make the
 	 * code here bigger (which we can't give back), so ...
 	 */
-	valloc = (caddr_t)malloc(ctob(VBIOSIZE), M_TEMP, M_NOWAIT);
+#define	VSECT(a)	((a) / 0x100)
+#define	VSIZE(s)	(((s) + 0xff) / 0x100)
+#define	VALLOC(a)	(valloc[VSECT(vboff(a))])
+#define	VMAPSIZE	VSIZE(ctob(VBIOSIZE))
+	valloc = (caddr_t)malloc(VMAPSIZE, M_TEMP, M_NOWAIT);
 	if (valloc == (caddr_t)0)
 		panic("no mem for vbafind");
-	bzero(valloc, ctob(VBIOSIZE));
+	bzero(valloc, VMAPSIZE);
 
 	/*
 	 * Check each VERSAbus mass storage controller.
@@ -200,7 +207,7 @@ vbafind(vban, vumem, memmap)
 		addr = (long)um->um_addr;
 	    for (ap = udp->ud_addr; addr || (addr = *ap++); addr = 0) {
 		if (VBIOMAPPED(addr)) {
-			if (valloc[vboff(addr)])
+			if (VALLOC(addr))
 				continue;
 			reg = vbaddr(addr);
 		} else
@@ -271,7 +278,7 @@ vbafind(vban, vumem, memmap)
 		addr = (long)ui->ui_addr;
 	    for (ap = udp->ud_addr; addr || (addr = *ap++); addr = 0) {
 		if (VBIOMAPPED(addr)) {
-			if (valloc[vboff(addr)])
+			if (VALLOC(addr))
 				continue;
 			reg = vbaddr(addr);
 		} else
@@ -328,7 +335,8 @@ csralloc(valloc, addr, size)
 
 	if (!VBIOMAPPED(addr))
 		return;
-	p = &valloc[vboff(addr+size)];
+	size = VSIZE(size);
+	p = &VALLOC(addr) + size;
 	while (--size >= 0) {
 		if (*--p && !warned) {
 			printf(
