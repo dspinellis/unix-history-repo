@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)getNAME.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)getNAME.c	4.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -148,7 +148,28 @@ split(line, name)
 				;
 		}
 		printf("%s%s\t", sep, dp);
-		doname(name);
+		dorefname(name);
 		printf("\t%s", sp);
 	}
+}
+
+dorefname(name)
+	char *name;
+{
+	register char *dp = name, *ep;
+
+again:
+	while (*dp && *dp != '.')
+		putchar(*dp++);
+	if (*dp)
+		for (ep = dp+1; *ep; ep++)
+			if (*ep == '.') {
+				putchar(*dp++);
+				goto again;
+			}
+	putchar('.');
+	if (*dp)
+		dp++;
+	while (*dp)
+		putchar (*dp++);
 }
