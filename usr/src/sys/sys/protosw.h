@@ -1,4 +1,4 @@
-/*	protosw.h	4.6	81/11/26	*/
+/*	protosw.h	4.7	81/11/29	*/
 
 /*
  * Protocol switch table.
@@ -21,12 +21,6 @@
  *
  * The userreq routine interfaces protocols to the system and is
  * described below.
- *
- * The sense routine returns protocol status into the argument buffer.
- * This is used by the system in providing session-level abstractions
- * out of network level protocols, and may also be returned by socket ioctl's.
- * The amount of data returned by a sense is limited to the maxsense
- * value.  (The space for the sense is allocated by the caller, based on this.)
  */
 struct protosw {
 	short	pr_type;		/* socket type used for */
@@ -38,10 +32,8 @@ struct protosw {
 	int	(*pr_output)();		/* output to protocol (from above) */
 	int	(*pr_ctlinput)();	/* control input (from below) */
 	int	(*pr_ctloutput)();	/* control output (from above) */
-/* user-protocol hooks */
+/* user-protocol hook */
 	int	(*pr_usrreq)();		/* user request: see list below */
-	int	(*pr_sense)();		/* sense state of protocol */
-	int	pr_maxsense;		/* max size of sense value */
 /* utility hooks */
 	int	(*pr_init)();		/* initialization hook */
 	int	(*pr_fasttimo)();	/* fast timeout (100ms) */
@@ -78,20 +70,24 @@ struct protosw {
 #define	PRU_SEND		7	/* send this data */
 #define	PRU_ABORT		8	/* abort (fast DISCONNECT, DETATCH) */
 #define	PRU_CONTROL		9	/* control operations on protocol */
+#define	PRU_SENSE		10	/* return status into m */
+#define	PRU_RCVOOB		11	/* retrieve out of band data */
+#define	PRU_SENDOOB		12	/* send out of band data */
 /* begin for protocols internal use */
-#define	PRU_FASTTIMO		10	/* 100ms timeout */
-#define	PRU_SLOWTIMO		11	/* 500ms timeout */
-#define	PRU_PROTORCV		12	/* receive from below */
-#define	PRU_PROTOSEND		13	/* send to below */
+#define	PRU_FASTTIMO		13	/* 100ms timeout */
+#define	PRU_SLOWTIMO		14	/* 500ms timeout */
+#define	PRU_PROTORCV		15	/* receive from below */
+#define	PRU_PROTOSEND		16	/* send to below */
 /* need some stuff for splice */
 
-#define	PRU_NREQ		14
+#define	PRU_NREQ		17
 
 #ifdef PRUREQUESTS
 char *prurequests[] = {
 	"ATTACH",	"DETACH",	"CONNECT",	"ACCEPT",
 	"DISCONNECT",	"SHUTDOWN",	"RCVD",		"SEND",	
-	"ABORT",	"CONTROL",	"FASTTIMO",	"SLOWTIMO",
+	"ABORT",	"CONTROL",	"SENSE",	"RCVOOB",
+	"SENDOOB",	"FASTTIMO",	"SLOWTIMO",
 	"PROTORCV",	"PROTOSEND",
 };
 #endif

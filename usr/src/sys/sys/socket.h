@@ -1,4 +1,4 @@
-/*	socket.h	4.8	81/11/26	*/
+/*	socket.h	4.9	81/11/29	*/
 
 /*
  * Externally visible attributes of sockets.
@@ -36,19 +36,20 @@
  */
 struct sockproto {
 	short	sp_family;		/* protocol family */
-	short	sp_protocol;		/* protocol within family */
+	u_short	sp_protocol;		/* protocol within family */
 };
 
 #define	PF_UNSPEC	0		/* unspecified */
-#define	PF_LOCAL	1		/* local to host (pipes, portals) */
+#define	PF_UNIX		1		/* UNIX internal protocol */
 #define	PF_INET		2		/* internetwork: UDP, TCP, etc. */
-#define	PF_PUP		3		/* pup protocols: e.g. BSP */
-#define	PF_CHAOS	4		/* mit CHAOS protocols */
-#define	PF_OISCP	5		/* ois communication protocols */
-#define	PF_NBS		6		/* nbs protocols */
-#define	PF_ECMA		7		/* european computer manufacturers */
-#define	PF_DATAKIT	8		/* datakit protocols */
-#define	PF_CCITT	9		/* CCITT protocols, X.25 etc */
+#define	PF_IMPLINK	3		/* imp link protocols */
+#define	PF_PUP		4		/* pup protocols: e.g. BSP */
+#define	PF_CHAOS	5		/* mit CHAOS protocols */
+#define	PF_OISCP	6		/* ois communication protocols */
+#define	PF_NBS		7		/* nbs protocols */
+#define	PF_ECMA		8		/* european computer manufacturers */
+#define	PF_DATAKIT	9		/* datakit protocols */
+#define	PF_CCITT	10		/* CCITT protocols, X.25 etc */
 
 /*
  * Generic socket address format.
@@ -74,10 +75,11 @@ struct sockaddr {
 #define	AF_UNSPEC	0		/* unspecified */
 #define	AF_LOCAL	1		/* local to host (pipes, portals) */
 #define	AF_INET		2		/* internetwork: UDP, TCP, etc. */
-#define	AF_PUP		3		/* pup protocols: e.g. BSP */
-#define	AF_CHAOS	4		/* mit CHAOS protocols */
-#define	AF_OISCP	5		/* ois communication protocols */
-#define	AF_NBS		6		/* nbs protocols */
-#define	AF_ECMA		7		/* european computer manufacturers */
-#define	AF_DATAKIT	8		/* datakit protocols */
-#define	AF_CCITT	9		/* CCITT protocols, X.25 etc */
+#define	AF_IMPLINK	3		/* arpanet imp addresses */
+#define	AF_PUP		4		/* pup protocols: e.g. BSP */
+#define	AF_CHAOS	5		/* mit CHAOS protocols */
+#define	AF_OISCP	6		/* ois communication protocols */
+#define	AF_NBS		7		/* nbs protocols */
+#define	AF_ECMA		8		/* european computer manufacturers */
+#define	AF_DATAKIT	9		/* datakit protocols */
+#define	AF_CCITT	10		/* CCITT protocols, X.25 etc */
