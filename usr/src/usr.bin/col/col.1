@@ -1,73 +1,124 @@
-.\"	@(#)col.1	6.2 (Berkeley) %G%
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Michael Rendell of the Memorial University of Newfoundland.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)col.1	6.3 (Berkeley) %G%
 .\"
 .TH COL 1 ""
-.AT 3
+.UC 7
 .SH NAME
-col \- filter reverse line feeds
+col \- filter reverse line feeds from input
 .SH SYNOPSIS
-.B col
-[
-.B \-bfh
-]
+.nf
+.ft B
+col [ \-bfx ] [ \-l num ]
+.ft R
+.fi
 .SH DESCRIPTION
 .I Col
-reads the standard input and writes the standard output.
-It performs the line overlays implied by reverse line
-feeds (ESC-7 in ASCII)
-and by forward and reverse half line feeds (ESC-9 and ESC-8).
+filters out reverse (and half reverse) line feeds so that the output is
+in the correct order and contains only forward and half forward line
+feeds, and replaces white-space characters with tabs where possible.
+This can be useful in processing the output of
+.IR nroff (1)
+and
+.IR tbl (1).
+.PP
 .I Col
-is particularly useful for filtering multicolumn
-output made with the `.rt' command of
-.I nroff
-and output resulting from use of the
-.IR tbl (1)
-preprocessor.
+reads from standard input and writes to standard output.
 .PP
-Although
+The options are as follows:
+.TP
+.I \-b
+Do not output any backspaces \- print only the last character
+written to each column position.
+.TP
+.I \-f
+Forward half line feeds are permitted (``fine'' mode).
+Normally characters printed on a half line boundary are printed
+on the following line.
+.TP
+.I \-x
+Output multiple spaces instead of tabs.
+.TP
+.I "\-l num"
+Buffer at least
+.I num
+lines in memory.
+By default, 128 lines are buffered.
+.PP
+The control sequences for carriage motion that
 .I col
-accepts half line motions in its input, it normally does not
-emit them on output.
-Instead, text that would appear between lines is moved to the next lower
-full line boundary.
-This treatment can be suppressed by the
-.B \-f
-(fine) option; in this case
-the output from
-.I col
-may contain forward half line feeds (ESC-9), but will still never contain
-either kind of reverse line motion.
-.PP
-If the
-.B \-b
-option is given,
-.I col
-assumes that the output device in use is not capable of backspacing.
-In this case, if several characters are to appear in the same place,
-only the last one read will be taken.
-.PP
-The control characters SO (ASCII code 017),
-and SI (016) are assumed
-to start and end text in an alternate character set.
-The character set (primary or alternate) associated with each printing
-character read is remembered; on output, SO and SI characters are generated
-where necessary to maintain the correct treatment of each character.
-.PP
-If the
-.B \-h
-option is given,
-.I col
-converts white space to tabs to shorten printing time.
-.PP
-All control characters are removed from the input except space,
-backspace,
-tab, return, newline, ESC (033) followed by one of 7, 8, 9, SI, SO, and VT
-(013).
-This last character is an alternate form of full reverse line feed, for
-compatibility with some other hardware conventions.
-All other non-printing characters are ignored.
-.SH "SEE ALSO"
-troff(1), tbl(1)
-.SH BUGS
-Can't back up more than 128 lines.
+understands and their decimal values are listed in the following
+table:
+.sp
+.TP 17
+ESC\-7
+reverse line feed (escape then 7)
 .br
-No more than 800 characters, including backspaces, on a line.
+.ns
+.TP 17
+ESC\-8
+half reverse line feed (escape then 8)
+.br
+.ns
+.TP 17
+ESC\-9 
+half forward line feed (escape then 9)
+.br
+.ns
+.TP 17
+backspace
+moves back one column (8); ignored in the first column
+.br
+.ns
+.TP 17
+carriage return
+(13)
+.br
+.ns
+.TP 17
+newline
+forward line feed (10); also does carriage return
+.br
+.ns
+.TP 17
+shift in
+shift to normal character set (15)
+.br
+.ns
+.TP 17
+shift out
+shift to alternate character set (14)
+.br
+.ns
+.TP 17
+space
+moves forward one column (32)
+.br
+.ns
+.TP 17
+tab
+moves forward to next tab stop (9)
+.br
+.ns
+.TP 17
+vertical tab
+reverse line feed (11)
+.PP
+All unrecognized control characters and escape sequences are
+discarded.
+.PP
+.I Col
+keeps track of the character set as characters are read and makes
+sure the character set is correct when they are output.
+.PP
+If the input attempts to back up to the last flushed line,
+.I col
+will display a warning message.
+.SH "SEE ALSO"
+expand(1), nroff(1), tbl(1)
