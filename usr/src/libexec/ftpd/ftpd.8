@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ftpd.8	6.2 (Berkeley) %G%
+.\"	@(#)ftpd.8	6.3 (Berkeley) %G%
 .\"
 .TH FTPD 8C "April 27, 1985"
 .UC 5
@@ -28,16 +28,15 @@ service specification; see
 If the 
 .B \-d
 option is specified,
-debugging information is included in the "/tmp/ftplog" file when the -l
-option is also specified.
+debugging information is written to the syslog.
 .PP
 If the
 .B \-l
 option is specified,
-each ftp session is logged in a file named "/tmp/ftplog".
+each ftp session is logged in the syslog.
 .PP
 The ftp server
-will timeout an inactive session after 60 seconds.
+will timeout an inactive session after 15 minutes.
 If the
 .B \-t
 option is specified,
@@ -147,7 +146,7 @@ Make this directory mode 777 and owned by ``ftp''.  Users
 should then place files which are to be accessible via the
 anonymous account in this directory.
 .SH "SEE ALSO"
-ftp(1C),
+ftp(1C), syslogd(8)
 .SH BUGS
 The anonymous account is inherently dangerous and should
 avoided when possible.

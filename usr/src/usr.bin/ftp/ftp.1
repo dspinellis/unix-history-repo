@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ftp.1	6.4 (Berkeley) %G%
+.\"	@(#)ftp.1	6.5 (Berkeley) %G%
 .\"
 .TH FTP 1C "April 29, 1985"
 .UC 5
@@ -335,8 +335,7 @@ processed according to the
 and
 .B case
 settings).
-Variable templating is accomplished by including the sequences '$1', '$2',
-\..., '$9' in
+Variable templating is accomplished by including the sequences '$1', '$2', ..., '$9' in
 .IR inpattern .
 Use '\\' to prevent this special treatment of the '$' character.
 All other characters are treated literally, and are used to determine the
@@ -511,7 +510,7 @@ local filename for a
 .B get
 or
 .B mget
-command, a ".1" is appended to name.
+command, a ".1" is appended to the name.
 If the resulting name matches another existing file,
 a ".2" is appended to the original name.
 If this process continues up to ".99", an error
@@ -760,16 +759,11 @@ tabs, or new-lines:
 Identify a remote machine name.
 The auto-login process searches the .netrc file for a
 .B machine
-token the matches the remote machine specified on the
+token that matches the remote machine specified on the
 .I ftp
 command line or as an
 .B open
 command argument.
-Note that the matching is performed using the specified name;
-this name will not match a
-.B machine
-token referencing the same Internet address, but by a different
-name or nickname.
 Once a match is made, the subsequent .netrc tokens are processed,
 stopping when the end of file is reached or another
 .B machine
