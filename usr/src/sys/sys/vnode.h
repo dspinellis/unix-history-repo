@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.58 (Berkeley) %G%
+ *	@(#)vnode.h	7.59 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -314,6 +314,7 @@ struct file;
 struct mount;
 struct nameidata;
 struct proc;
+struct stat;
 struct ucred;
 struct uio;
 struct vattr;
