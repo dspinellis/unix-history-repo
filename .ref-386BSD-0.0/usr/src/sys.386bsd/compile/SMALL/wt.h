@@ -1,1 +1,0 @@
-#define NWT 0

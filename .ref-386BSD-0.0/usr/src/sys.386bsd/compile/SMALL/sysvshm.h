@@ -1,1 +1,0 @@
-#define NSYSVSHM 0

@@ -1,1 +1,0 @@
-#define NNE 0

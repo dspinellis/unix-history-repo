@@ -1,1 +1,0 @@
-#define NPC 1

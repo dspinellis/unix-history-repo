@@ -1,9 +1,0 @@
-daemon.o
-getloadavg.o
-login.o
-logout.o
-logwtmp.o
-kvm.o
-pty.o
-login_tty.o
-pwcache.o
