@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)traceroute.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)traceroute.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -561,6 +561,8 @@ send_probe(seq, ttl)
 	ip->ip_p = IPPROTO_UDP;
 	ip->ip_len = datalen;
 	ip->ip_ttl = ttl;
+	ip->ip_v = IPVERSION;
+	ip->ip_id = htons(ident+seq);
 
 	up->uh_sport = htons(ident);
 	up->uh_dport = htons(port+seq);
