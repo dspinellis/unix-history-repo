@@ -1,17 +1,18 @@
 #!/bin/sh -
 #
-#	@(#)run.test	8.3 (Berkeley) %G%
+#	@(#)run.test	8.4 (Berkeley) %G%
 #
 
 # db regression tests
 main()
 {
 
-	DICT=/usr/dict/words
-	PROG=dbtest
-	TMP1=t1
-	TMP2=t2
-	TMP3=t3
+DICT=/usr/share/dict/words
+#DICT=/usr/dict/words
+PROG=./dbtest
+TMP1=t1
+TMP2=t2
+TMP3=t3
 
 	if [ $# -ge 1 ]; then
 		for i in "$*"; do
