@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.38 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.39 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.38 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.39 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -100,7 +100,6 @@ smtp(e)
 	static char *skipword();
 	auto ADDRESS *vrfyqueue;
 	ADDRESS *a;
-	char *sendinghost;
 	bool gotmail;			/* mail command received */
 	bool gothello;			/* helo command received */
 	bool vrfy;			/* set if this is a vrfy command */
@@ -110,7 +109,6 @@ smtp(e)
 	char *id;
 	char inp[MAXLINE];
 	char cmdbuf[MAXLINE];
-	char hostbuf[MAXNAME];
 	extern char Version[];
 	extern char *macvalue();
 	extern ADDRESS *recipient();
@@ -196,33 +194,19 @@ smtp(e)
 		{
 		  case CMDHELO:		/* hello -- introduce yourself */
 			setproctitle("%s: %s", CurHostName, inp);
-			if (strcasecmp(p, MyHostName) == 0)
-			{
-				/*
-				**  Didn't know about alias or MX,
-				**  or connected to an echo server
-				*/
-
-				message("553 %s config error: mail loops back to myself",
-					MyHostName);
-				break;
-			}
-			(void) strcpy(hostbuf, p);
-			(void) strcat(hostbuf, " (");
-			(void) strcat(hostbuf, anynet_ntoa(&RealHostAddr));
+			define('s', newstr(p), e);
 			if (strcasecmp(p, RealHostName) != 0)
 			{
 				auth_warning(e, "Host %s claimed to be %s",
 					RealHostName, p);
-				(void) strcat(hostbuf, "; ");
-				(void) strcat(hostbuf, RealHostName);
 			}
-			(void) strcat(hostbuf, ")");
-			sendinghost = newstr(hostbuf);
+			p = macvalue('_', e);
+			if (p == NULL)
+				p = macvalue('s', e);
 
 			/* send ext. message -- old systems must ignore */
 			message("250-%s Hello %s, pleased to meet you",
-				MyHostName, sendinghost);
+				MyHostName, p);
 			if (!bitset(PRIV_NOEXPN, PrivacyFlags))
 				message("250-EXPN");
 			message("250-SIZE");
@@ -231,13 +215,13 @@ smtp(e)
 			break;
 
 		  case CMDMAIL:		/* mail -- designate sender */
-			/* force a sending host even if no HELO given */
-			if (sendinghost == NULL && macvalue('s', e) == NULL)
-				sendinghost = RealHostName;
-
 			/* check for validity of this command */
 			if (!gothello)
 			{
+				/* set sending host to our known value */
+				if (macvalue('s', e) == NULL)
+					define('s', RealHostName, e);
+
 				if (bitset(PRIV_NEEDMAILHELO, PrivacyFlags))
 				{
 					message("503 Polite people say HELO first");
@@ -265,8 +249,6 @@ smtp(e)
 			/* fork a subprocess to process this command */
 			if (runinchild("SMTP-MAIL", e) > 0)
 				break;
-			if (sendinghost != NULL)
-				define('s', sendinghost, e);
 			if (protocol == NULL)
 				protocol = "SMTP";
 			define('r', protocol, e);

@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.32 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.33 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.32 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.33 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -766,7 +766,7 @@ getauthinfo(fd)
 	{
 		RealHostName = "localhost";
 		(void) sprintf(hbuf, "%s@localhost", RealUserName);
-		if (tTd(29, 1))
+		if (tTd(9, 1))
 			printf("getauthinfo: %s\n", hbuf);
 		return hbuf;
 	}
@@ -823,7 +823,7 @@ closeident:
 		goto noident;
 	}
 
-	if (tTd(29, 1))
+	if (tTd(9, 10))
 		printf("getauthinfo: sent %s", hbuf);
 
 	/* send query */
@@ -840,7 +840,7 @@ closeident:
 		i--;
 	hbuf[++i] = '\0';
 
-	if (tTd(29, 1))
+	if (tTd(9, 3))
 		printf("getauthinfo:  got %s\n", hbuf);
 
 	/* parse result */
@@ -873,23 +873,29 @@ closeident:
 		/* malformed response */
 		goto noident;
 	}
-	p++;
+
+	/* 1413 says don't do this -- but it's broken otherwise */
+	while (isascii(*++p) && isspace(*p))
+		continue;
 
 	/* p now points to the authenticated name */
 	(void) sprintf(hbuf, "%s@%s", p, RealHostName);
+	goto finish;
+
+#endif /* IDENTPROTO */
+
+noident:
+	(void) strcpy(hbuf, RealHostName);
+
+finish:
 	if (RealHostName[0] != '[')
 	{
 		p = &hbuf[strlen(hbuf)];
 		(void) sprintf(p, " [%s]", anynet_ntoa(&RealHostAddr));
 	}
-	if (tTd(29, 1))
+	if (tTd(9, 1))
 		printf("getauthinfo: %s\n", hbuf);
 	return hbuf;
-
-#endif /* IDENTPROTO */
-
-noident:
-	return NULL;
 }
 /*
 **  MAPHOSTNAME -- turn a hostname into canonical form

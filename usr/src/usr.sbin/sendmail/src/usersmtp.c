@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.21 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.22 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.21 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.22 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -71,7 +71,7 @@ smtpinit(m, pvp)
 	ENVELOPE *e;
 {
 	register int r;
-	EVENT *gte;
+	register char *p;
 	extern STAB *stab();
 
 	if (tTd(17, 1))
@@ -136,6 +136,25 @@ smtpinit(m, pvp)
 		goto unavailable;
 	else if (REPLYTYPE(r) != 2)
 		goto tempfail1;
+
+	/*
+	**  Check to see if we actually ended up talking to ourself.
+	**  This means we didn't know about an alias or MX, or we managed
+	**  to connect to an echo server.
+	*/
+
+	p = strchr(SmtpReplyBuffer, ' ');
+	if (p != NULL)
+		*p == '\0';
+	if (strcasecmp(SmtpReplyBuffer, MyHostName) == 0)
+	{
+		syserr("553 %s config error: mail loops back to myself",
+			MyHostName);
+		mci->mci_exitstat = EX_CONFIG;
+		mci->mci_errno = 0;
+		smtpquit(m, mci, e);
+		return;
+	}
 
 	/*
 	**  If this is expected to be another sendmail, send some internal
@@ -464,6 +483,9 @@ reply(m)
 	MCI *mci;
 	ENVELOPE *e;
 {
+	char *bufp = SmtpReplyBuffer;
+	char junkbuf[MAXLINE];
+
 	(void) fflush(SmtpOut);
 
 	if (tTd(18, 1))
@@ -473,7 +495,7 @@ reply(m)
 	**  Read the input line, being careful not to hang.
 	*/
 
-	for (;;)
+	for (;; bufp = junkbuf)
 	{
 		register int r;
 		register char *p;
@@ -520,26 +542,26 @@ reply(m)
 			smtpquit(m, mci, e);
 			return (-1);
 		}
-		fixcrlf(SmtpReplyBuffer, TRUE);
+		fixcrlf(bufp, TRUE);
 
 		if (e->e_xfp != NULL && strchr("45", SmtpReplyBuffer[0]) != NULL)
 		{
 			/* serious error -- log the previous command */
-			if (SmtpMsgBuffer[0] != '\0')
-				fprintf(e->e_xfp, ">>> %s\n", SmtpMsgBuffer);
-			SmtpMsgBuffer[0] = '\0';
+			if (bufp[0] != '\0')
+				fprintf(e->e_xfp, ">>> %s\n", bufp);
+			bufp[0] = '\0';
 
 			/* now log the message as from the other side */
-			fprintf(e->e_xfp, "<<< %s\n", SmtpReplyBuffer);
+			fprintf(e->e_xfp, "<<< %s\n", bufp);
 		}
 
 		/* display the input for verbose mode */
 		if (Verbose)
-			nmessage("%s", SmtpReplyBuffer);
+			nmessage("%s", bufp);
 
 		/* if continuation is required, we can go on */
-		if (SmtpReplyBuffer[3] == '-' ||
-		    !(isascii(SmtpReplyBuffer[0]) && isdigit(SmtpReplyBuffer[0])))
+		if (bufp[3] == '-' ||
+		    !(isascii(bufp[0]) && isdigit(bufp[0])))
 			continue;
 
 		/* decode the reply code */
