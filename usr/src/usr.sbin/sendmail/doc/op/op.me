@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.43 (Berkeley) %G%
+.\"	@(#)op.me	8.44 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.43
+Version 8.44
 .sp
 For Sendmail Version 8.7
 .)l
@@ -4255,6 +4255,28 @@ if the
 method is listed in the service switch entry for the
 .q hosts
 service.
+.ip NoRecipientAction
+[no short name]
+The action to take when you receive a message that has no valid
+recipient headers (To:, Cc:, Bcc:).
+It can be
+.b None
+to pass the message on unmodified,
+which violates the protocol,
+.b Add-To
+to add a To: header with any recipients it can find in the envelope
+(which might expose Bcc: recipients),
+.b Add-Apparently-To
+to add an Apparently-To: header
+(this is only for back-compatibility
+and is officially deprecated),
+.b Add-To-Undisclosed
+to add a header
+.q "To: undisclosed-recipients:;"
+to make the header legal without disclosing anything,
+or
+.b Add-Bcc
+to add an empty Bcc: header.
 .ip OldStyleHeaders
 [o]
 Assume that the headers may be in old format,
@@ -7597,7 +7619,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.43
+.\"Version 8.44
 .\".ce 0
 .bp 2
 .rs
