@@ -1,5 +1,11 @@
-/* Copyright (c) 1981 Regents of the University of California */
-/* sccs id:	@(#)ex_vis.h	7.1	7/8/81  */
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)ex_vis.h	7.4 (Berkeley) %G%
+ */
+
 /*
  * Ex version 3
  * Mark Horton, UCB

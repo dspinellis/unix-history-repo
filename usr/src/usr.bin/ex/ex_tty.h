@@ -1,5 +1,11 @@
-/* Copyright (c) 1981 Regents of the University of California */
-/* sccs id:	@(#)ex_tty.h	5.1.1.1	%G%  */
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)ex_tty.h	7.5 (Berkeley) %G%
+ */
+
 /*
  * Capabilities from termcap
  *

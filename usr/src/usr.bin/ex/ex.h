@@ -1,5 +1,11 @@
-/* Copyright (c) 1981 Regents of the University of California */
-/* sccs id:	@(#)ex.h	5.1.1.1	%G%  */
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)ex.h	7.7 (Berkeley) %G%
+ */
+
 #ifdef V6
 #include <retrofit.h>
 #endif

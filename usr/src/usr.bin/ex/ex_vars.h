@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex_vars.h	7.3 (Berkeley) %G%
+ *	@(#)ex_vars.h	7.4 (Berkeley) %G%
  */
 
 #define AUTOINDENT      0

@@ -1,3 +1,10 @@
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)makefile.70	7.3 (Berkeley) %G%
+#
 VERSION=3.7
 #
 # Ex skeletal makefile for version 7, USGS Overlay 11/70 system

@@ -1,3 +1,10 @@
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)makeoptions	6.4 (Berkeley) %G%
+#
 
 #
 # remake options -- this isn't necessary unless you add/delete options
@@ -38,7 +45,7 @@ ex - /tmp/foo.c <<'X'
 .
 	$s/e[ 	].*[ 	]/e	NOPTS	/
 	0a
-	/*  sccs id   @(#)  ex_vars.h  @(#)makeoptions	6.3 %G%  */
+	/*  sccs id   @(#)  ex_vars.h  @(#)makeoptions	6.4 %G%  */
 .
 	w! ex_vars.h
 	q
