@@ -1,4 +1,4 @@
-.\"     @(#)I.t	1.2     89/02/23
+.\"     @(#)I.t	1.3     89/02/23
 .LP
 \fB\s+4I. Accomplishments of the Berkeley UNIX Project\fP\s-4
 .PP
@@ -17,11 +17,11 @@ named for the CCI Power 6/32 processor for which support was added.
 \fB\s+2I.1 4.3BSD\fP\s-2
 .PP
 This section summarizes the work done at Berkeley between the
-September 1983 4.2BSD distribution of
-.UX
-for the VAX\(dd
+September 1983 4.2BSD distribution of UNIX for the VAX\(dg
 .FS
-\(dd \s-2DEC\s0, \s-2VAX\s0, \s-2PDP\s0, \s-2MASSBUS\s0, \s-2UNIBUS\s0,
+.ps 9
+.vs 11
+\(dg \s-2DEC\s0, \s-2VAX\s0, \s-2PDP\s0, \s-2MASSBUS\s0, \s-2UNIBUS\s0,
 \s-2Q-bus\s0 and \s-2ULTRIX\s0
 are trademarks of Digital Equipment Corporation.
 .FE
@@ -68,9 +68,11 @@ peripherals, but not with CI bus or HSC50 disk controllers),
 new drivers for the DHU11 and DMZ32 terminal multiplexors,
 the TU81 and other TMSCP tape drives,
 the VS100 display,
-the DEUNA, Excelan 204, and Interlan NP100 Ethernet* interfaces, and
+the DEUNA, Excelan 204, and Interlan NP100 Ethernet\(dd interfaces, and
 .FS
-* Ethernet is a trademark of Xerox Corporation.
+.ps 9
+.vs 11
+\(dd Ethernet is a trademark of Xerox Corporation.
 .FE
 the ACC HDH and DDN X.25 IMP interfaces, and
 .IP \(bu 3
