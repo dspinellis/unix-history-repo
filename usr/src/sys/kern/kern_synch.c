@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.11	81/04/13	*/
+/*	kern_synch.c	4.12	81/04/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -252,6 +252,8 @@ register struct proc *pp;
 
 	p = (pp->p_cpu & 0377)/16;
 	p += PUSER + 2*(pp->p_nice - NZERO);
+	if (pp->p_rssize > pp->p_maxrss && freemem < desfree)
+		p += 2*4;	/* effectively, nice(4) */
 	if(p > 127)
 		p = 127;
 	if(p < curpri) {
