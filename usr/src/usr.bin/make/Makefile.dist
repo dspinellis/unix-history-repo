@@ -1,0 +1,8 @@
+# a very simple makefile...
+pmake:
+	@echo 'make of make and make.0 started.'
+	cc -I. -c *.c
+	cd lst.lib; cc -I.. -c *.c
+	cc *.o lst.lib/*.o -o pmake
+	nroff -h -man make.1 > make.0
+	@echo 'make of make and make.0 completed.'
