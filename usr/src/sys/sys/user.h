@@ -1,4 +1,4 @@
-/*	user.h	3.1	%H%	*/
+/*	user.h	3.2	%H%	*/
 
 #ifdef KERNEL
 #include "../h/pcb.h"
@@ -44,9 +44,11 @@ struct	user
 	int	*u_ap;			/* pointer to arglist */
 	union {				/* syscall return values */
 		struct	{
-			int	r_val1;
-			int	r_val2;
-		};
+			int	R_val1;
+			int	R_val2;
+		} u_rv;
+#define	r_val1	u_rv.R_val1
+#define	r_val2	u_rv.R_val2
 		off_t	r_off;
 		time_t	r_time;
 	} u_r;
