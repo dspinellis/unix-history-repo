@@ -1,4 +1,4 @@
-.\"     @(#)Siteinfo	1.1 (Berkeley) %G%
+.\"     @(#)Siteinfo	1.2 (Berkeley) %G%
 .ps 11
 .vs 13
 .ce 3
@@ -10,12 +10,13 @@ April 30, 1991
 .(l
 .TS
 box;
-cc
+cs
 ll.
 .ft B
-Tape Density
+Tape Format
 
-1600  \(ci	6250  \(ci  
+9 track, 1600bpi  \(ci	8mm  \(ci 
+9 track, 6250bpi  \(ci
 .ft
 .TE
 .sp 1
