@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getprotoent.3	6.2 (Berkeley) %G%
+.\"	@(#)getprotoent.3	6.3 (Berkeley) %G%
 .\"
 .TH GETPROTOENT 3N ""
 .UC 5
@@ -73,9 +73,9 @@ opens and rewinds the file.  If the
 .I stayopen
 flag is non-zero,
 the net data base will not be closed after each call to 
-.I getprotoent
-(either directly, or indirectly through one of
-the other \*(lqgetproto\*(rq calls).
+.I getprotobyname
+or
+.IR getprotobynumber .
 .PP
 .I Endprotoent
 closes the file.
