@@ -1,4 +1,16 @@
-/*	vd.c	7.1	88/05/21	*/
+/*
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)vd.c	1.26 (Berkeley) %G%
+ */
 
 #include "dk.h"
 #if NVD > 0
@@ -43,9 +55,9 @@
 struct	vba_ctlr *vdminfo[NVD];
 struct  vba_device *vddinfo[NDK];
 int	vdprobe(), vdslave(), vdattach(), vddgo(), vdstrategy();
-long	vdaddr[] = { 0xffff2000, 0xffff2100, 0xffff2200, 0xffff2300, 0 };
+long	vdstd[] = { 0xffff2000, 0xffff2100, 0xffff2200, 0xffff2300, 0 };
 struct	vba_driver vddriver =
-  { vdprobe, vdslave, vdattach, vddgo, vdaddr, "dk", vddinfo, "vd", vdminfo };
+  { vdprobe, vdslave, vdattach, vddgo, vdstd, "dk", vddinfo, "vd", vdminfo };
 
 /*
  * Per-controller state.
@@ -328,6 +340,7 @@ vdopen(dev, flags, fmt)
 	return (0);
 }
 
+/* ARGSUSED */
 vdclose(dev, flags, fmt)
 	dev_t dev;
 	int flags, fmt;
@@ -375,7 +388,7 @@ vdinit(dev, flags)
 	dk = &dksoftc[unit];
 	if (flags & O_NDELAY) {
 		dk->dk_state = OPENRAW;
-		return;
+		return (0);
 	}
 	dk->dk_state = RDLABEL;
 	lp = &dklabel[unit];
@@ -582,7 +595,6 @@ vdstart(vm)
 	register struct dksoftc *dk;
 	register struct disklabel *lp;
 	register struct dcb **dcbp;
-	struct mdcb *mdcb;
 	struct buf *dp;
 	int sn, tn;
 
@@ -655,7 +667,7 @@ loop:
 		vd->vd_dcb.trail.rwtrail.wcount = (bp->b_bcount+1) >> 1;
 setupaddr:
 		vd->vd_dcb.trail.rwtrail.memadr =
-			vbasetup(bp, &vd->vd_rbuf, lp->d_secsize);
+			vbasetup(bp, &vd->vd_rbuf, (int)lp->d_secsize);
 		break;
 
 	case VDOP_RAS:
@@ -723,7 +735,7 @@ vdintr(ctlr)
 	register struct vba_device *vi;
 	register struct vdsoftc *vd = &vdsoftc[ctlr];
 	register status;
-	int ecode, timedout;
+	int timedout;
 	struct dksoftc *dk;
 
 	if (!vm->um_tab.b_active) {
@@ -737,6 +749,7 @@ vdintr(ctlr)
 	dp = vm->um_tab.b_actf;
 	bp = dp->b_actf;
 	vi = vddinfo[vdunit(bp->b_dev)];
+	dk = &dksoftc[vi->ui_unit];
 	if (vi->ui_dk >= 0)
 		dk_busy &= ~(1<<vi->ui_dk);
 	timedout = (vd->vd_wticks >= VDMAXTIME);
@@ -752,10 +765,8 @@ vdintr(ctlr)
 		dk->dk_ecode = vd->vd_dcb.err_code;
 	}
 	if (status & VDERR_HARD || timedout) {
-		if (vd->vd_type == VDTYPE_SMDE) {
+		if (vd->vd_type == VDTYPE_SMDE)
 			uncache(&vd->vd_dcb.err_code);
-			ecode = vd->vd_dcb.err_code;
-		}
 		if (status & DCBS_WPT) {
 			/*
 			 * Give up on write locked devices immediately.
@@ -797,7 +808,7 @@ vdintr(ctlr)
 			printf("\n");
 		}
 	} else if (status & DCBS_SOFT)
-		vdsofterr(vd, bp, &vd->vd_dcb);
+		vdsofterr(bp, &vd->vd_dcb);
 	vd->vd_wticks = 0;
 	if (vm->um_tab.b_active) {
 		vm->um_tab.b_active = 0;
@@ -814,7 +825,7 @@ vdintr(ctlr)
 		 */
 		if (dp->b_actf)
 			vdustart(vi);
-		else if ((dk = &dksoftc[vi->ui_unit])->dk_openpart == 0)
+		else if (dk->dk_openpart == 0)
 			wakeup((caddr_t)dk);
 	}
 	/*
@@ -832,46 +843,40 @@ vdharderr(what, vd, bp, dcb)
 	register struct dcb *dcb;
 {
 	int unit = vdunit(bp->b_dev), status = dcb->operrsta;
-	int part = vdpart(bp->b_dev);
 	register struct disklabel *lp = &dklabel[unit];
-	char partname = 'a' + part;
-	int sn;
+	int blkdone;
 
 	if (vd->vd_wticks < VDMAXTIME)
 		status &= ~DONTCARE;
-/* generic
-	sn = bp->b_blkno + lp->d_partitions[part].p_offset;
-*/
-	sn = ((dcb->err_cyl & 0xfff) * lp->d_ntracks + dcb->err_trk)
-	    * lp->d_nsectors + dcb->err_sec;
-	printf("dk%d%c: %s bn [%d-%d) (sn %d), status %b",
-	    unit, partname, what, bp->b_blkno,
-	    bp->b_blkno + (bp->b_bcount - 1)/DEV_BSIZE, sn, status, VDERRBITS);
+	blkdone = ((((dcb->err_cyl & 0xfff) * lp->d_ntracks + dcb->err_trk)
+	    * lp->d_nsectors + dcb->err_sec) >> dksoftc[unit].dk_bshift)
+	    - lp->d_partitions[vdpart(bp->b_dev)].p_offset - bp->b_blkno;
+	diskerr(bp, "dk", what, LOG_PRINTF, blkdone, lp);
+	printf(", status %b", status, VDERRBITS);
 	if (vd->vd_type == VDTYPE_SMDE)
 		printf(" ecode %x", dcb->err_code);
-	printf("\n(error sec %d trk %d cyl %d wcount %d)", dcb->err_sec,
-	    dcb->err_trk, dcb->err_cyl, dcb->err_wcount);
 }
 
-vdsofterr(vd, bp, dcb)
-	struct vdsoftc *vd;
+vdsofterr(bp, dcb)
 	register struct buf *bp;
 	register struct dcb *dcb;
 {
-	int unit = vdunit(bp->b_dev), status = dcb->operrsta;
-	int part = vdpart(bp->b_dev);
-	char partname = 'a' + part;
-	int sn = (bp->b_blkno << dksoftc[unit].dk_bshift) +
-	    dklabel[unit].d_partitions[part].p_offset;
+	struct disklabel *lp = &dklabel[vdunit(bp->b_dev)];
+	int status = dcb->operrsta;
+	int blkdone;
 
-	if (status != (DCBS_CCD|DCBS_SOFT|DCBS_ERR|DCBS_DONE))
-		log(LOG_WARNING,
-		    "dk%d%c: soft error sn %d bn %d, status %b ecode %x\n",
-		    unit, partname, sn, bp->b_blkno, status, VDERRBITS,
+	blkdone = ((((dcb->err_cyl & 0xfff) * lp->d_ntracks + dcb->err_trk)
+	    * lp->d_nsectors + dcb->err_sec) >> dksoftc[unit].dk_bshift)
+	    - lp->d_partitions[vdpart(bp->b_dev)].p_offset - bp->b_blkno;
+
+	if (status != (DCBS_CCD|DCBS_SOFT|DCBS_ERR|DCBS_DONE)) {
+		diskerr(bp, "dk", "soft error", LOG_WARNING, blkdone, lp);
+		addlog(", status %b ecode %x\n", status, VDERRBITS,
 		    dcb->err_code);
-	else
-		log(LOG_WARNING, "dk%d%c: soft ecc sn %d bn %d\n",
-		    unit, part, sn, bp->b_blkno);
+	} else {
+		diskerr(bp, "dk", "soft ecc", LOG_WARNING, blkdone, lp);
+		addlog("\n");
+	}
 }
 
 vdioctl(dev, cmd, data, flag)
@@ -985,7 +990,7 @@ vdwatch()
 {
 	register struct vdsoftc *vd;
 	register struct vba_ctlr *vm;
-	register int ctlr, unit;
+	register int ctlr;
 	int s;
 
 	timeout(vdwatch, (caddr_t)0, hz);
