@@ -1,4 +1,4 @@
-/*	socket.h	6.4	84/09/04	*/
+/*	socket.h	6.5	84/12/20	*/
 
 /*
  * Definitions related to sockets: types, address families, options.
@@ -24,6 +24,16 @@
 #define	SO_BROADCAST	0x20		/* permit sending of broadcast msgs */
 #define	SO_USELOOPBACK	0x40		/* bypass hardware when possible */
 #define	SO_LINGER	0x80		/* linger on close if data present */
+
+/*
+ * Additional options, not kept in so_options.
+ */
+#define SO_SNDBUF	0x1001		/* send buffer size */
+#define SO_RCVBUF	0x1002		/* receive buffer size */
+#define SO_SNDLOWAT	0x1003		/* send low-water mark */
+#define SO_RCVLOWAT	0x1004		/* receive low-water mark */
+#define SO_SNDTIMEO	0x1005		/* send timeout */
+#define SO_RCVTIMEO	0x1006		/* receive timeout */
 
 /*
  * Structure used for manipulating linger option.
