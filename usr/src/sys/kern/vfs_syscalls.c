@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.32 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.33 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -56,18 +56,21 @@ int
 mount(p, uap, retval)
 	struct proc *p;
 	register struct mount_args /* {
-		syscallarg(int) type;
+		syscallarg(char *) type;
 		syscallarg(char *) path;
 		syscallarg(int) flags;
 		syscallarg(caddr_t) data;
 	} */ *uap;
 	register_t *retval;
 {
-	register struct vnode *vp;
-	register struct mount *mp;
+	struct vnode *vp;
+	struct mount *mp;
+	struct vfsconf *vfsp;
 	int error, flag;
 	struct vattr va;
+	u_long fstypenum;
 	struct nameidata nd;
+	char fstypename[MFSNAMELEN];
 
 	/*
 	 * Get vnode to be covered
@@ -145,8 +148,32 @@ mount(p, uap, retval)
 		vput(vp);
 		return (ENOTDIR);
 	}
-	if ((u_long)SCARG(uap, type) > MOUNT_MAXTYPE ||
-	    vfssw[SCARG(uap, type)] == NULL) {
+#ifdef COMPAT_43
+	/*
+	 * Historically filesystem types were identified by number. If we
+	 * get an integer for the filesystem type instead of a string, we
+	 * check to see if it matches one of the historic filesystem types.
+	 */
+	fstypenum = (u_long)SCARG(uap, type);
+	if (fstypenum < maxvfsconf) {
+		for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next)
+			if (vfsp->vfc_typenum == fstypenum)
+				break;
+		if (vfsp == NULL) {
+			vput(vp);
+			return (ENODEV);
+		}
+		strncpy(fstypename, vfsp->vfc_name, MFSNAMELEN);
+	} else
+#endif /* COMPAT_43 */
+	if (error = copyinstr(SCARG(uap, type), fstypename, MFSNAMELEN, NULL)) {
+		vput(vp);
+		return (error);
+	}
+	for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next)
+		if (!strcmp(vfsp->vfc_name, fstypename))
+			break;
+	if (vfsp == NULL) {
 		vput(vp);
 		return (ENODEV);
 	}
@@ -156,17 +183,22 @@ mount(p, uap, retval)
 	}
 
 	/*
-	 * Allocate and initialize the file system.
+	 * Allocate and initialize the filesystem.
 	 */
 	mp = (struct mount *)malloc((u_long)sizeof(struct mount),
 		M_MOUNT, M_WAITOK);
 	bzero((char *)mp, (u_long)sizeof(struct mount));
-	mp->mnt_op = vfssw[SCARG(uap, type)];
+	mp->mnt_op = vfsp->vfc_vfsops;
 	if (error = vfs_lock(mp)) {
 		free((caddr_t)mp, M_MOUNT);
 		vput(vp);
 		return (error);
 	}
+	mp->mnt_vfc = vfsp;
+	vfsp->vfc_refcount++;
+	mp->mnt_stat.f_type = vfsp->vfc_typenum;
+	mp->mnt_flag |= vfsp->vfc_flags & MNT_VISFLAGMASK;
+	strncpy(mp->mnt_stat.f_fstypename, vfsp->vfc_name, MFSNAMELEN);
 	vp->v_mountedhere = mp;
 	mp->mnt_vnodecovered = vp;
 	mp->mnt_stat.f_owner = p->p_ucred->cr_uid;
@@ -208,6 +240,7 @@ update:
 		error = VFS_START(mp, 0, p);
 	} else {
 		mp->mnt_vnodecovered->v_mountedhere = (struct mount *)0;
+		mp->mnt_vfc->vfc_refcount--;
 		vfs_unlock(mp);
 		free((caddr_t)mp, M_MOUNT);
 		vput(vp);
@@ -335,6 +368,7 @@ dounmount(mp, flags, p)
 		vrele(coveredvp);
 		TAILQ_REMOVE(&mountlist, mp, mnt_list);
 		mp->mnt_vnodecovered->v_mountedhere = (struct mount *)0;
+		mp->mnt_vfc->vfc_refcount--;
 		vfs_unlock(mp);
 		if (mp->mnt_vnodelist.lh_first != NULL)
 			panic("unmount: dangling vnode");
@@ -2101,7 +2135,7 @@ unionread:
 #	if (BYTE_ORDER != LITTLE_ENDIAN)
 		if (vp->v_mount->mnt_maxsymlinklen <= 0) {
 			error = VOP_READDIR(vp, &auio, fp->f_cred, &eofflag,
-			    (u_long *)0, 0);
+			    (int *)0, (u_long *)0);
 			fp->f_offset = auio.uio_offset;
 		} else
 #	endif
@@ -2113,7 +2147,7 @@ unionread:
 		MALLOC(dirbuf, caddr_t, SCARG(uap, count), M_TEMP, M_WAITOK);
 		kiov.iov_base = dirbuf;
 		error = VOP_READDIR(vp, &kuio, fp->f_cred, &eofflag,
-			    (u_long *)0, 0);
+			    (int *)0, (u_long *)0);
 		fp->f_offset = kuio.uio_offset;
 		if (error == 0) {
 			readcnt = SCARG(uap, count) - kuio.uio_resid;
@@ -2254,7 +2288,8 @@ unionread:
 	auio.uio_resid = SCARG(uap, count);
 	VOP_LOCK(vp);
 	loff = auio.uio_offset = fp->f_offset;
-	error = VOP_READDIR(vp, &auio, fp->f_cred, &eofflag, (u_long *)0, 0);
+	error = VOP_READDIR(vp, &auio, fp->f_cred, &eofflag,
+			    (int *)0, (u_long *)0);
 	fp->f_offset = auio.uio_offset;
 	VOP_UNLOCK(vp);
 	if (error)
