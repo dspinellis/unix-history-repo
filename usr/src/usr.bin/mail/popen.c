@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)popen.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.6 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -34,7 +34,7 @@ char	*mode;
 	int p[2];
 	register int myside, hisside;
 	int pid, doshell;
-	char *shell, buf[LINESIZE], **argv[MAXARGC];
+	char *shell, buf[LINESIZE], *argv[MAXARGC];
 
 	doshell = 1;
 	if ((shell = value("shell")) || (shell = value("SHELL"))) {
