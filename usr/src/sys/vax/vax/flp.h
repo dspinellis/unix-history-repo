@@ -1,5 +1,6 @@
-/*	flp.h	4.1	%G%	*/
+/*	flp.h	4.2	%G%	*/
 
+#if VAX==780
 /*
  * Console floppy command/status and sectoring information.
  */
@@ -41,3 +42,4 @@
  */
 #define	FL_OPEN		1
 #define	FL_BUSY		2
+#endif

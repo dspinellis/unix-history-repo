@@ -1,4 +1,4 @@
-/*	ubavar.h	4.1	%G%	*/
+/*	ubavar.h	4.2	%G%	*/
 
 /*
  * Unibus adapter
@@ -6,9 +6,9 @@
 
 #define	UBA0		0x80060000	/* sys virt i/o for UBA 0 */
 #define	UBA0_DEV (UBA0+0x2000-0160000)	/* sys virt of device regs */
-
 #define	UNIBASE 0760000	 		/* UNIBUS phys base of i/o reg's */
 
+#if VAX==780
 /* UBA Configuration Register, CNFGR */
 #define	PARFLT		0x80000000	/* SBI Parity Fault */
 #define	WSQFLT		0x40000000	/* SBI Write Sequence Fault */
@@ -66,6 +66,7 @@
 /* BR Receive Vector register, BRRVR */
 #define	AIRI		0x80000000	/* Adapter Interrupt Request */
 #define	DIV		0xffff		/* Device Interrupt Vector Field */
+#endif
  
 /* Data Path Register, DPR */
 #define	BNE		0x80000000	/* Buffer Not Empty - Purge */
@@ -88,7 +89,13 @@
 
 struct	map ubamap[UAMSIZ];
 char	bdpwant;		/* someone is waiting for buffered data path */ 
-struct	map bdpmap[15];
+#if VAX==780
+#define	NUBABDP	15
+#else
+#define	NUBABDP	3
+#endif
+
+struct	map bdpmap[NUBABDP];
 char	umrwant;		/* ... for unibus map registers */
 #endif
 

@@ -1,7 +1,11 @@
-/*	tty.h	4.1	%G%	*/
+/*	tty.h	4.2	%G%	*/
 
-#include <sgtty.h>
+#ifdef KERNEL
+#include "../h/ioctl.h"
+#else
 #include <sys/ioctl.h>
+#endif
+#include <sgtty.h>
 
 /*
  * A clist structure is the head
@@ -77,6 +81,7 @@ struct tty
 		struct tchars t_chr;
 		struct clist t_ctlq;
 	} t_un;
+	struct	buf *t_ibp, *t_obp;
 };
 
 #define	tun	tp->t_un.t_chr
@@ -124,10 +129,10 @@ short	tthiwat[NSPEEDS], ttlowat[NSPEEDS];
 #define	HUPCLS	01000		/* hang up upon last close */
 #define	TBLOCK	02000		/* tandem queue blocked */
 #define	SPEEDS	04000		/* t_ispeed and t_ospeed used by driver */
-#define	PROTO1	010000		/* reserved for line discipline */
+#define	NDQB	010000
 #define	EXTPROC	020000		/* external processor (kmc) */
 #define	FSLEEP	040000		/* Wakeup on input framing */
-#define	CNTLQ	0100000		/* interpret t_un as clist */
+#define	BEXT	0100000		/* use (external) system buffers */
 
 /* define partab character types */
 #define	ORDINARY	0
