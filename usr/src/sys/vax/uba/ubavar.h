@@ -1,4 +1,4 @@
-/*	ubavar.h	3.3	%G%	*/
+/*	ubavar.h	3.4	%G%	*/
 
 /*
  * Unibus adapter
@@ -111,3 +111,16 @@ struct uba_regs
 	int	pad2[480];
 	struct	pte uba_map[496];
 };
+
+union	ub_info {
+	struct ub_Info {
+	unsigned int	Ub_off:18,
+			Ub_npf:10,
+			Ub_bdp:4;
+	} ub_I;
+	int	ub_word;
+};
+
+#define	ub_off	ub_I.Ub_off
+#define	ub_npf	ub_I.Ub_npf
+#define	ub_bdp	ub_I.Ub_bdp
