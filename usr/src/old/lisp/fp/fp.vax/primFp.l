@@ -1,4 +1,4 @@
-(setq SCCS-primFp.l "@(#)primFp.l	1.2	%G%")
+(setq SCCS-primFp.l "@(#)primFp.l	1.3	%G%")
 ;  FP interpreter/compiler
 ;  Copyright (c) 1982  Scott B. Baden
 ;  Berkeley, California
@@ -393,9 +393,7 @@
 (defun pick$fp (sAndX)
   (let ((s (car sAndX))
 	(x (cadr sAndX)))
-       (cond (DynTraceFlg (IncrSize 'pick$fp (size x)) (IncrTimes 'pick$fp)))
-       
-       (If (or (not (fixp s)) (zerop s)) then  (bottom)
+       (If (or (not (fixp s)) (zerop s) (cddr sAndX)) then  (bottom)
 	   else
 	   
 	   (progn
@@ -411,7 +409,6 @@
 		   (let  ((len (length x)))
 			 (If (greaterp (absval s) len) then (bottom)
 			     else (nthelem (plus len 1 s) x)))))))))
-
 
 
 (defun concat$fp (x)
