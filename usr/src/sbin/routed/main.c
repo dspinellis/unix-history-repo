@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -170,7 +170,7 @@ getsocket(domain, type, sin)
 {
 	int s, on = 1;
 
-	if (s = socket(domain, type, 0)) {
+	if ((s = socket(domain, type, 0)) < 0) {
 		perror("socket");
 		syslog(LOG_ERR, "socket: %m");
 		return (-1);
