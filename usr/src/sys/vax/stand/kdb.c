@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)kdb.c	7.1 (Berkeley) %G%
+ *	@(#)kdb.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -34,8 +34,8 @@
 #define	NRSP	1
 #define	NCMD	1
 
-#include "../vax/bireg.h"
-#include "../vax/kdbreg.h"
+#include "../vaxbi/bireg.h"
+#include "../vaxbi/kdbreg.h"
 #include "../vax/mscp.h"
 
 struct kdb {
@@ -58,11 +58,8 @@ kraopen(io)
 	register int i, unit;
 	daddr_t off;
 
-	i = io->i_unit >> 3;
-	if (i >= nkdb) {
-		printf("nonexistent device");
-		return (ENXIO);
-	}
+	if ((i = io->i_unit) >= nkdb)
+		return (EUNIT);
 	kr = (struct kdb_regs *)kdbaddr[i];
 	if (kdbinit[i] == 0) {
 		kr->kdb_bi.bi_csr |= BICSR_NRST;
@@ -106,25 +103,22 @@ kraopen(io)
 		tio.i_ma = lbuf;
 		tio.i_cc = SECTSIZ;
 		tio.i_flgs |= F_RDDATA;
-		if (krastrategy(&tio, READ) != SECTSIZ) {
-			printf("can't read disk label\n");
-			return (EIO);
-		}
+		if (krastrategy(&tio, READ) != SECTSIZ)
+			return (ERDLAB);
 		*lp = *(struct disklabel *)(lbuf + LABELOFFSET);
-		if (lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC) {
-			printf("kra%d: unlabeled\n", unit);
+		if (lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC)
 #ifdef COMPAT_42
+		{
+			printf("kra%d: unlabeled\n", unit);
 			kramaptype(io, lp);
-#else
-			return (ENXIO);
-#endif
 		}
+#else
+			return (EUNLAB);
+#endif
 	}
-	if ((unsigned)io->i_boff >= lp->d_npartitions ||
-	    (io->i_boff = lp->d_partitions[io->i_boff].p_offset) == -1) {
-		printf("kra: bad partition");
-		return (EUNIT);
-	}
+	if ((unsigned)io->i_part >= lp->d_npartitions ||
+	    (io->i_boff = lp->d_partitions[io->i_part].p_offset) == -1)
+		return (EPART);
 	return (0);
 }
 
@@ -175,16 +169,6 @@ krastrategy(io, func)
 		return (-1);
 	}
 	return (io->i_cc);
-}
-
-/*ARGSUSED*/
-kraioctl(io, cmd, arg)
-	struct iob *io;
-	int cmd;
-	caddr_t arg;
-{
-
-	return (ECMD);
 }
 
 #ifdef COMPAT_42
