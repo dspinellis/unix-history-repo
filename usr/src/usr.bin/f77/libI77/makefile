@@ -1,5 +1,5 @@
 # Makefile for the f77 I/O library
-#	@(#)makefile	1.20	%G%
+#	@(#)makefile	1.21	%G%
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
@@ -12,11 +12,13 @@ LPR = lpr
 # for CFO 11's
 #ENV = ucb
 #LIBDIR = ${DESTDIR}/usr/$(ENV)/lib
+#OLDDIR = ${DESTDIR}/usr/old/lib
 #TAPE = /dev/nrmt1
 
 # for Vax
 LIBDIR = ${DESTDIR}/usr/lib
-TAPE = /dev/rnmt0.1600
+OLDDIR = ${DESTDIR}/usr/old/lib
+TAPE = /dev/rnmt1
 
 SOURCES = backspace.c close.c dfe.c due.c endfile.c err.c fmt.c \
 	fmtlib.c iio.c inquire.c lwrite.c lread.c dolio.c open.c \
@@ -45,11 +47,11 @@ $(LIB_P):	$(OBJECTS) Version
 install:	$(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB_P) $(LIBDIR)/libI66.a
 
 $(LIBDIR)/$(LIB):	$(LIB)
-	@-mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
+	@-mv $(LIBDIR)/$(LIB) $(OLDDIR)/$(LIB)
 	tar cf - $(LIB) | (cd $(LIBDIR); tar xvf - )
 
 $(LIBDIR)/$(LIB_P):	$(LIB_P)
-	@-mv $(LIBDIR)/$(LIB_P) $(LIBDIR)/$(LIB_P).old
+	@-mv $(LIBDIR)/$(LIB_P) $(OLDDIR)/$(LIB_P)
 	tar cf - $(LIB_P) | (cd $(LIBDIR); tar xvf - )
 
 $(LIBDIR)/libI66.a:	libI66.o
