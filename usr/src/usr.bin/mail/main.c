@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* notdef */
 
 #ifdef notdef
-static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -49,7 +49,6 @@ main(argc, argv)
 	register int i;
 	struct name *to, *cc, *bcc, *smopts;
 	int  mustsend, hdrstop(), (*prevint)(), f;
-	struct sgttyb tbuf;
 	extern int getopt(), optind, opterr;
 	extern char *optarg;
 
@@ -62,11 +61,6 @@ main(argc, argv)
 	mypid = getpid();
 	intty = isatty(0);
 	outtty = isatty(1);
-	if (outtty) {
-		gtty(1, &tbuf);
-		baud = tbuf.sg_ospeed;
-	} else
-		baud = B9600;
 	image = -1;
 
 	/*
@@ -304,7 +298,7 @@ hdrstop()
 }
 
 /*
- * Compute what the screen size should be.
+ * Compute what the screen size for printing headers should be.
  * We use the following algorithm for the height:
  *	If baud rate < 1200, use  9
  *	If baud rate = 1200, use 14
@@ -313,26 +307,27 @@ hdrstop()
  */
 setscreensize()
 {
+	struct sgttyb tbuf;
 #ifdef	TIOCGWINSZ
 	struct winsize ws;
 
 	if (ioctl(fileno(stdout), TIOCGWINSZ, (char *) &ws) < 0)
-		ws.ws_col = ws.ws_row = 0;
 #endif
-	if (baud < B1200)
+		ws.ws_col = ws.ws_row = 0;
+	if (outtty)
+		gtty(1, &tbuf);
+	else
+		tbuf.sg_ospeed = B9600;
+	if (tbuf.sg_ospeed < B1200)
 		screenheight = 9;
-	else if (baud == B1200)
+	else if (tbuf.sg_ospeed == B1200)
 		screenheight = 14;
-#ifdef	TIOCGWINSZ
 	else if (ws.ws_row != 0)
 		screenheight = ws.ws_row;
-#endif
 	else
 		screenheight = 24;
-#ifdef TIOCGWINSZ
-	if (ws.ws_col != 0)
-		screenwidth = ws.ws_col;
-	else
-#endif
+	if ((realscreenheight = ws.ws_row) == 0)
+		realscreenheight = 24;
+	if ((screenwidth = ws.ws_col) == 0)
 		screenwidth = 80;
 }
