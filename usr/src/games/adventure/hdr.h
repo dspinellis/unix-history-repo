@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hdr.h	5.2 (Berkeley) %G%
+ *	@(#)hdr.h	5.3 (Berkeley) %G%
  */
 
 /*   ADVENTURE -- Jim Gillogly, Jul 1977
@@ -131,6 +131,8 @@ int turns,lmwarn,iwest,knfloc,detail,   /* various flags & counters     */
 int demo,newloc,limit;
 
 char *malloc();
+char *decr();
+unsigned long crc();
 
 /* We need to get a little tricky to avoid strings */
 #define DECR(a,b,c,d,e) decr('a'+'+','b'+'-','c'+'#','d'+'&','e'+'%')
