@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.35	81/12/03	*/
+/*	tcp_input.c	1.36	81/12/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -45,7 +45,7 @@ COUNT(TCP_INPUT);
 	m = m0;
 	ti = mtod(m, struct tcpiphdr *);
 	if (ti->ti_len > sizeof (struct ip))
-		ip_stripoptions((struct ip *)ti, (char *)0);
+		ip_stripoptions((struct ip *)ti, (struct mbuf *)0);
 	if (m->m_len < sizeof (struct tcpiphdr)) {
 		if (m_pullup(m, sizeof (struct tcpiphdr)) == 0) {
 			tcpstat.tcps_hdrops++;
@@ -579,7 +579,6 @@ tcp_reass(tp, ti)
 	register struct tcpiphdr *q;
 	struct socket *so = tp->t_inpcb->inp_socket;
 	int flags = 0;		/* no FIN */
-	int overage;
 COUNT(TCP_REASS);
 
 	/*
