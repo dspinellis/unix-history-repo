@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)termcap.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)termcap.c	4.4 (Berkeley) %G%";
 #endif
 
 #define	BUFSIZ		1024
@@ -40,7 +40,6 @@ tgetent(bp, name)
 	register int c;
 	register int i = 0, cnt = 0;
 	char ibuf[BUFSIZ];
-	char *cp2;
 	int tf;
 
 	tbuf = bp;
@@ -55,16 +54,17 @@ tgetent(bp, name)
 	 * has to already have the newlines crunched out.
 	 */
 	if (cp && *cp) {
-		if (*cp!='/') {
-			cp2 = getenv("TERM");
-			if (cp2==(char *) 0 || strcmp(name,cp2)==0) {
+		if (*cp == '/') {
+			tf = open(cp, 0);
+		} else {
+			tbuf = cp;
+			c = tnamatch(name);
+			tbuf = bp;
+			if (c) {
 				strcpy(bp,cp);
 				return(tnchktc());
-			} else {
-				tf = open(E_TERMCAP, 0);
 			}
-		} else
-			tf = open(cp, 0);
+		}
 	}
 	if (tf < 0)
 		tf = open(E_TERMCAP, 0);
