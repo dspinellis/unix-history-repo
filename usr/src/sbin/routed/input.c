@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)input.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -118,10 +118,11 @@ rip_input(from, size)
 			}
 
 			/*
-			 * Update if from gateway, shorter, or getting
-			 * stale and equivalent.
+			 * Update if from gateway and different,
+			 * shorter, or getting stale and equivalent.
 			 */
-			if (equal(from, &rt->rt_router) ||
+			if ((equal(from, &rt->rt_router) &&
+			    n->rip_metric != rt->rt_metric ) ||
 			    (unsigned) (n->rip_metric) < rt->rt_metric ||
 			    (rt->rt_timer > (EXPIRE_TIME/2) &&
 			    rt->rt_metric == n->rip_metric)) {
