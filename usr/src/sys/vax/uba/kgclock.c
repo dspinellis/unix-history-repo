@@ -1,12 +1,13 @@
-/*	kgclock.c	4.2	83/03/01	*/
+/*	kgclock.c	4.3	83/03/03	*/
 
 #ifdef KGCLOCK		/* kl-11 as profiling clock */
 
+#include "../h/param.h"
 #include "../h/map.h"
 #include "../h/pte.h"
 #include "../h/buf.h"
-#include "../h/ubavar.h"
-#include "../h/psl.h"
+#include "../vaxuba/ubavar.h"
+#include "../machine/psl.h"
 
 int	phz = 0;
 int	kgprobe(), kgattach();
@@ -35,8 +36,9 @@ caddr_t reg;
 }
 
 kgattach(ui)
-struct uba_device *ui;
+	struct uba_device *ui;
 {
+
 	klbase = (struct klregs *)ui->ui_addr;
 }
 
@@ -45,17 +47,20 @@ struct uba_device *ui;
  */
 startkgclock()
 {
+
 	if (klbase)
 		klbase->tcsr = KLSTRT;	/* enable interrupts */
 }
 
 /* ARGSUSED */
 kgclock(dev, r0, r1, r2, r3, r4 ,r5, pc, ps)
-caddr_t pc;
+	caddr_t pc;
+	int ps;
 {
 	register int k;
-	static int otime = 0;
-	static int calibrate;
+	extern time_t time;
+	static time_t otime = 0;
+	static time_t calibrate;
 
 	klbase->tbuf = 0377;	/* reprime clock (scope sync too) */
 	if (phz == 0) {
@@ -71,6 +76,6 @@ caddr_t pc;
 		}
 		return;
 	}
-	gatherstats();		/* this routine lives in kern_clock.c */
+	gatherstats(pc, ps);	/* this routine lives in kern_clock.c */
 }
 #endif KGCLOCK
