@@ -1,0 +1,27 @@
+NEWALIASES(1)                BSD Reference Manual                NEWALIASES(1)
+
+NNAAMMEE
+     nneewwaalliiaasseess - rebuild the data base for the mail aliases file
+
+SSYYNNOOPPSSIISS
+     nneewwaalliiaasseess
+
+DDEESSCCRRIIPPTTIIOONN
+     NNeewwaalliiaasseess rebuilds the random access data base for the mail aliases file
+     _/_e_t_c_/_a_l_i_a_s_e_s. It must be run each time this file is changed in order for
+     the change to take effect.
+
+     NNeewwaalliiaasseess is identical to ``sendmail -bi''.
+
+     The nneewwaalliiaasseess utility exits 0 on success, and >0 if an error occurs.
+
+FFIILLEESS
+     /etc/aliases  The mail aliases file
+
+SSEEEE AALLSSOO
+     aliases(5),  sendmail(8)
+
+HHIISSTTOORRYY
+     The nneewwaalliiaasseess command appeared in 4.0BSD.
+
+4th Berkeley Distribution      February 22, 1994                             1

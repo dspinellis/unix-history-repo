@@ -1,0 +1,39 @@
+PORTMAP(8)                BSD System Manager's Manual               PORTMAP(8)
+
+NNAAMMEE
+     ppoorrttmmaapp - DARPA port to RPC program number mapper
+
+SSYYNNOOPPSSIISS
+     ppoorrttmmaapp [--dd]
+
+DDEESSCCRRIIPPTTIIOONN
+     PPoorrttmmaapp is a server that converts RPC program numbers into DARPA protocol
+     port numbers.  It must be running in order to make RPC calls.
+
+     When an RPC server is started, it will tell ppoorrttmmaapp what port number it
+     is listening to, and what RPC program numbers it is prepared to serve.
+     When a client wishes to make an RPC call to a given program number, it
+     will first contact ppoorrttmmaapp on the server machine to determine the port
+     number where RPC packets should be sent.
+
+     PPoorrttmmaapp must be started before any RPC servers are invoked.
+
+     Normally ppoorrttmmaapp forks and dissociates itself from the terminal like any
+     other daemon.  PPoorrttmmaapp then logs errors using syslog(3).
+
+     Option available:
+
+     --dd      (debug) prevents ppoorrttmmaapp from running as a daemon, and causes er-
+             rors and debugging information to be printed to the standard er-
+             ror output.
+
+SSEEEE AALLSSOO
+     inetd.conf(5),  rpcinfo(8),  inetd(8)
+
+BBUUGGSS
+     If ppoorrttmmaapp crashes, all servers must be restarted.
+
+HHIISSTTOORRYY
+     The ppoorrttmmaapp command appeared in 4.3BSD
+
+4.3 Berkeley Distribution        June 6, 1993                                1

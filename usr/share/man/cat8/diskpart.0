@@ -1,0 +1,69 @@
+DISKPART(8)               BSD System Manager's Manual              DISKPART(8)
+
+NNAAMMEE
+     ddiisskkppaarrtt - calculate default disk partition sizes
+
+SSYYNNOOPPSSIISS
+     ddiisskkppaarrtt [--pp] [--dd] [--ss _s_i_z_e] _d_i_s_k_-_t_y_p_e
+
+DDEESSCCRRIIPPTTIIOONN
+     DDiisskkppaarrtt is used to calculate the disk partition sizes based on the de-
+     fault rules used at Berkeley.
+
+     Available options and operands:
+
+     --pp          Tables suitable for inclusion in a device driver are pro-
+                 duced.
+
+     --dd          An entry suitable for inclusion in the disk description file
+                 _/_e_t_c_/_d_i_s_k_t_a_b is generated; for example, disktab(5).
+
+     --ss _s_i_z_e     The size of the disk may be limited to _s_i_z_e with the --ss op-
+                 tion.
+
+     On disks that use bad144(8) type of bad-sector forwarding, space is nor-
+     mally left in the last partition on the disk for a bad sector forwarding
+     table, although this space is not reflected in the tables produced.  The
+     space reserved is one track for the replicated copies of the table and
+     sufficient tracks to hold a pool of 126 sectors to which bad sectors are
+     mapped.  For more information, see bad144(8).  The --ss option is intended
+     for other controllers which reserve some space at the end of the disk for
+     bad-sector replacements or other control areas, even if not a multiple of
+     cylinders.
+
+     The disk partition sizes are based on the total amount of space on the
+     disk as given in the table below (all values are supplied in units of
+     sectors).  The `c' partition is, by convention, used to access the entire
+     physical disk.  The device driver tables include the space reserved for
+     the bad sector forwarding table in the `c' partition; those used in the
+     disktab and default formats exclude reserved tracks.  In normal opera-
+     tion, either the `g' partition is used, or the `d', `e', and `f' parti-
+     tions are used.  The `g' and `f' partitions are variable-sized, occupying
+     whatever space remains after allocation of the fixed sized partitions.
+     If the disk is smaller than 20 Megabytes, then ddiisskkppaarrtt aborts with the
+     message ``disk too small, calculate by hand''.
+
+     Partition   20-60 MB   61-205 MB   206-355 MB   356+ MB
+     a           15884      15884       15884        15884
+     b           10032      33440       33440        66880
+     d           15884      15884       15884        15884
+     e           unused     55936       55936        307200
+     h           unused     unused      291346       291346
+
+     If an unknown disk type is specified, ddiisskkppaarrtt will prompt for the re-
+     quired disk geometry information.
+
+SSEEEE AALLSSOO
+     disktab(5),  bad144(8)
+
+BBUUGGSS
+     Most default partition sizes are based on historical artifacts (like the
+     RP06), and may result in unsatisfactory layouts.
+
+     When using the --dd flag, alternate disk names are not included in the out-
+     put.
+
+HHIISSTTOORRYY
+     The ddiisskkppaarrtt command appeared in 4.2BSD.
+
+4th Berkeley Distribution        June 6, 1993                                2

@@ -1,0 +1,28 @@
+KVM_MKDB(8)               BSD System Manager's Manual              KVM_MKDB(8)
+
+NNAAMMEE
+     kkvvmm__mmkkddbb - create kernel database
+
+SSYYNNOOPPSSIISS
+     kkvvmm__mmkkddbb [file]
+
+DDEESSCCRRIIPPTTIIOONN
+     KKvvmm__mmkkddbb creates a database in _/_v_a_r_/_d_b containing information about the
+     specified file.  If no file is specified, _/_v_m_u_n_i_x is used by default.
+     The file is named ``kvm_filename.db'', where ``filename'' is the name of
+     the file read.  Various library routines consult this database.  The only
+     information currently stored is the kernel namelist, which is used by the
+     kvm_nlist(3) function, however, in the future the database may contain
+     other static information about the current system.
+
+FFIILLEESS
+     /vmunix
+     /var/db/kvm_vmunix.db
+
+SSEEEE AALLSSOO
+     kvm_nlist(3)
+
+HHIISSTTOORRYY
+     The kkvvmm__mmkkddbb utility first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1

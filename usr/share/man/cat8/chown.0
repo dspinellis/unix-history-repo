@@ -1,0 +1,64 @@
+CHOWN(8)                  BSD System Manager's Manual                 CHOWN(8)
+
+NNAAMMEE
+     cchhoowwnn - change file owner and group
+
+SSYYNNOOPPSSIISS
+     cchhoowwnn [--RR [--HH | --LL | --PP]] [--ff] _o_w_n_e_r [_:_g_r_o_u_p] _f_i_l_e _._._.
+     cchhoowwnn [--RR [--HH | --LL | --PP]] [--ff] _:_g_r_o_u_p _f_i_l_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     CChhoowwnn sets the user ID and/or the group ID of the specified files.
+
+     The options are as follows:
+
+     --HH      If the --RR option is specified, symbolic links on the command line
+             are followed.  (Symbolic links encountered in the tree traversal
+             are not followed.)
+
+     --LL      If the --RR option is specified, all symbolic links are followed.
+
+     --PP      If the --RR option is specified, no symbolic links are followed.
+
+     --RR      Change the user ID and/or the group ID for the file hierarchies
+             rooted in the files instead of just the files themselves.
+
+     --ff      Don't report any failure to change file owner or group, nor modi-
+             fy the exit status to reflect such failures.
+
+     Symbolic links don't have owners, so unless the --HH or --LL option is set,
+     cchhoowwnn on a symbolic link always succeeds and has no effect.  The --HH, --LL
+     and --PP options are ignored unless the --RR option is specified.  In addi-
+     tion, these options override each other and the command's actions are de-
+     termined by the last one specified.
+
+     The _o_w_n_e_r and _g_r_o_u_p operands are both optional, however, one must be
+     specified.  If the _g_r_o_u_p operand is specified, it must be preceded by a
+     colon (``:'') character.
+
+     The _o_w_n_e_r may be either a numeric user ID or a user name.  If a user name
+     is also a numeric user ID, the operand is used as a user name.  The _g_r_o_u_p
+     may be either a numeric group ID or a group name.  If a group name is al-
+     so a numeric group ID, the operand is used as a group name.
+
+     The ownership of a file may only be altered by a super-user for obvious
+     security reasons.
+
+     The cchhoowwnn utility exits 0 on success, and >0 if an error occurs.
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     Previous versions of the cchhoowwnn utility used the dot (``.'') character to
+     distinguish the group name.  This has been changed to be a colon (``:'')
+     character so that user and group names may contain the dot character.
+
+     Previous versions of the cchhoowwnn utility changed the owner of symbolic
+     links specified on the command line.  In this system, symbolic links do
+     not have owners.
+
+SSEEEE AALLSSOO
+     chgrp(1),  find(1),  chown(2),  fts(3),  symlink(7)
+
+SSTTAANNDDAARRDDSS
+     The cchhoowwnn command is expected to be POSIX 1003.2 compliant.
+
+4th Berkeley Distribution       March 31, 1994                               1
