@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)x25.h	7.7 (Berkeley) %G%
+ *	@(#)x25.h	7.8 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -32,6 +32,9 @@
 /* socket options */
 #define PK_ACCTFILE		1	/* use level = CCITTPROTO_X25 */
 #define PK_FACILITIES		2	/* use level = CCITTPROTO_X25 */
+#define PK_RTATTACH		3	/* use level = CCITTPROTO_X25 */
+#define PK_PRLISTEN		4	/* use level = CCITTPROTO_X25 */
+
 #define MAX_FACILITIES		109     /* maximum size for facilities */
 
 /*
