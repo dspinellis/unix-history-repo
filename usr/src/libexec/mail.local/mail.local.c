@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -53,7 +53,7 @@ main(argc, argv)
 	uid_t uid;
 	char *from;
 
-	openlog("mail.local", LOG_PERROR, LOG_MAIL);
+	openlog("mail.local", 0, LOG_MAIL);
 
 	from = NULL;
 	while ((ch = getopt(argc, argv, "df:r:")) != EOF)
@@ -279,9 +279,12 @@ err(isfatal, fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-#ifndef LOG_PERROR
+	/*
+	 * Don't use LOG_PERROR as an openlog() flag to do this, it's
+	 * not portable enough.
+	 */
 	(void)vfprintf(stderr, fmt, ap);
-#endif
+	(void)fprintf(stderr, "\n");
 	vsyslog(LOG_ERR, fmt, ap);
 	va_end(ap);
 	if (isfatal)
