@@ -9,8 +9,6 @@ DPADD+=		$(LIBGROFF) $(LIBMATH)
 tmacdir?=	/usr/share/tmac
 
 CLEANFILES+=	majorminor.cc
-depend:
-	@echo BROKEN MAKEDEPEND!
 
 majorminor.cc: $(.CURDIR)/../VERSION
 	@echo Making $@
