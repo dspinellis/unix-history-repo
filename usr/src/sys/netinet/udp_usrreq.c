@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)udp_usrreq.c	7.7 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -70,16 +70,19 @@ udp_input(m0, ifp)
 
 	/*
 	 * Get IP and UDP header together in first mbuf.
+	 * Note: IP leaves IP header in first mbuf.
 	 */
 	m = m0;
-	if ((m->m_off > MMAXOFF || m->m_len < sizeof (struct udpiphdr)) &&
-	    (m = m_pullup(m, sizeof (struct udpiphdr))) == 0) {
-		udpstat.udps_hdrops++;
-		return;
-	}
 	ui = mtod(m, struct udpiphdr *);
 	if (((struct ip *)ui)->ip_hl > (sizeof (struct ip) >> 2))
 		ip_stripoptions((struct ip *)ui, (struct mbuf *)0);
+	if (m->m_off > MMAXOFF || m->m_len < sizeof (struct udpiphdr)) {
+		if ((m = m_pullup(m, sizeof (struct udpiphdr))) == 0) {
+			udpstat.udps_hdrops++;
+			return;
+		}
+		ui = mtod(m, struct udpiphdr *);
+	}
 
 	/*
 	 * Make mbuf data length reflect UDP length.
