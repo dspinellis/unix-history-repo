@@ -1,1 +1,0 @@
-troff +$1 -$2 intro basinf toc ptx
