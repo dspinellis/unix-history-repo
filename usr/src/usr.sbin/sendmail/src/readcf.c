@@ -7,13 +7,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.22 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
 # include <pwd.h>
 # include <grp.h>
-#ifdef NAMED_BIND
+#if NAMED_BIND
 # include <arpa/nameser.h>
 # include <resolv.h>
 #endif
@@ -514,7 +514,7 @@ readcf(cfname)
 	{
 		/* user didn't initialize: set up host map */
 		strcpy(buf, "host host");
-#ifdef NAMED_BIND
+#if NAMED_BIND
 		if (ConfigLevel >= 2)
 			strcat(buf, " -a.");
 #endif
@@ -986,7 +986,7 @@ printrules()
 static BITMAP	StickyOpt;		/* set if option is stuck */
 
 
-#ifdef NAMED_BIND
+#if NAMED_BIND
 
 struct resolverflags
 {
@@ -1169,7 +1169,7 @@ setoption(opt, val, sticky)
 		break;
 
 	  case 'I':		/* use internet domain name server */
-#ifdef NAMED_BIND
+#if NAMED_BIND
 		UseNameServer = TRUE;
 		for (p = val; *p != 0; )
 		{

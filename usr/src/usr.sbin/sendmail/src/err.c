@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.26 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -40,7 +40,7 @@ char	MsgBuf[BUFSIZ*2];	/* text of most recent message */
 
 static void	fmtmsg();
 
-#if defined(NAMED_BIND) && !defined(NO_DATA)
+#if NAMED_BIND && !defined(NO_DATA)
 # define NO_DATA	NO_ADDRESS
 #endif
 

@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.37 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.38 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.37 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.38 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -24,7 +24,7 @@ static char sccsid[] = "@(#)daemon.c	8.37 (Berkeley) %G% (without daemon mode)";
 # include <netdb.h>
 # include <arpa/inet.h>
 
-#ifdef NAMED_BIND
+#if NAMED_BIND
 # include <arpa/nameser.h>
 # include <resolv.h>
 #endif
@@ -526,7 +526,7 @@ makeconnection(host, port, outfile, infile, usesecureport)
 	SOCKADDR addr;
 	int sav_errno;
 	int addrlen;
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	extern int h_errno;
 #endif
 
@@ -535,7 +535,7 @@ makeconnection(host, port, outfile, infile, usesecureport)
 	**	Accept "[a.b.c.d]" syntax for host name.
 	*/
 
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	h_errno = 0;
 #endif
 	errno = 0;
@@ -579,7 +579,7 @@ makeconnection(host, port, outfile, infile, usesecureport)
 gothostent:
 		if (hp == NULL)
 		{
-#ifdef NAMED_BIND
+#if NAMED_BIND
 			if (errno == ETIMEDOUT || h_errno == TRY_AGAIN)
 				return (EX_TEMPFAIL);
 
@@ -1034,7 +1034,7 @@ host_map_lookup(map, name, av, statp)
 	register STAB *s;
 	char hbuf[MAXNAME];
 	extern struct hostent *gethostbyaddr();
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	extern int h_errno;
 #endif
 
@@ -1050,7 +1050,7 @@ host_map_lookup(map, name, av, statp)
 			printf("host_map_lookup(%s) => CACHE %s\n",
 				name, s->s_namecanon.nc_cname);
 		errno = s->s_namecanon.nc_errno;
-#ifdef NAMED_BIND
+#if NAMED_BIND
 		h_errno = s->s_namecanon.nc_herrno;
 #endif
 		*statp = s->s_namecanon.nc_stat;
@@ -1091,7 +1091,7 @@ host_map_lookup(map, name, av, statp)
 			register struct hostent *hp;
 
 			s->s_namecanon.nc_errno = errno;
-#ifdef NAMED_BIND
+#if NAMED_BIND
 			s->s_namecanon.nc_herrno = h_errno;
 			if (tTd(9, 1))
 				printf("FAIL (%d)\n", h_errno);
@@ -1156,7 +1156,7 @@ host_map_lookup(map, name, av, statp)
 	/* nope -- ask the name server */
 	hp = gethostbyaddr((char *)&in_addr, sizeof(struct in_addr), AF_INET);
 	s->s_namecanon.nc_errno = errno;
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	s->s_namecanon.nc_herrno = h_errno;
 #endif
 	s->s_namecanon.nc_flags |= NCF_VALID;		/* will be soon */
@@ -1252,7 +1252,7 @@ hostnamebyanyaddr(sap)
 	register struct hostent *hp;
 	int saveretry;
 
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	/* shorten name server timeout to avoid higher level timeouts */
 	saveretry = _res.retry;
 	_res.retry = 3;
@@ -1289,7 +1289,7 @@ hostnamebyanyaddr(sap)
 		break;
 	}
 
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	_res.retry = saveretry;
 #endif /* NAMED_BIND */
 

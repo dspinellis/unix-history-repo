@@ -13,13 +13,13 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.51 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.52 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
 
 #include "sendmail.h"
-#ifdef NAMED_BIND
+#if NAMED_BIND
 #include <arpa/nameser.h>
 #include <resolv.h>
 #endif
