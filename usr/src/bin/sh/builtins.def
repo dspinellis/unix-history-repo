@@ -8,19 +8,21 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)builtins.def	5.2 (Berkeley) %G%
+#	@(#)builtins.def	5.3 (Berkeley) %G%
 
 #
 # This file lists all the builtin commands.  The first column is the name
 # of a C routine.  The -j flag, if present, specifies that this command
 # is to be excluded from systems without job control.  The rest of the line
 # specifies the command name or names used to run the command.  The entry
-# for nullcmd, which is run when the user does not specify a command, must
+# for bltincmd, which is run when the user does not specify a command, must
 # come first.
 #
 # Copyright (C) 1989 by Kenneth Almquist.  All rights reserved.
 # This file is part of ash, which is distributed under the terms specified
 # by the Ash General Public License.  See the file named LICENSE.
+#
+# NOTE: bltincmd must come first!
 
 bltincmd	command
 #alloccmd	alloc
@@ -36,15 +38,16 @@ exitcmd		exit
 expcmd		exp let
 exportcmd	export readonly
 #exprcmd	expr test [
+histcmd		fc
 fgcmd -j	fg
 getoptscmd	getopts
 hashcmd		hash
 jobidcmd	jobid
 jobscmd		jobs
-lccmd		lc
 #linecmd		line
 localcmd	local
 #nlechocmd	nlecho
+printfcmd	printf
 pwdcmd		pwd
 readcmd		read
 returncmd	return
@@ -54,5 +57,8 @@ shiftcmd	shift
 trapcmd		trap
 truecmd		: true
 umaskcmd	umask
+unaliascmd	unalias
 unsetcmd	unset
 waitcmd		wait
+#foocmd		foo
+aliascmd	alias
