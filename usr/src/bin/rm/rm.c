@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)rm.c	4.16 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.17 (Berkeley) %G%";
 
 /*
  * rm - for ReMoving files, directories & trees.
@@ -246,19 +246,15 @@ append(name)
 
 	n = strlen(name);
 	if (path == NULL) {
-		pathsz = n + 2048;
+		pathsz = MAXNAMLEN + MAXPATHLEN + 2;
 		if ((path = malloc(pathsz)) == NULL) {
 			fprintf(stderr, "rm: ran out of memory\n");
 			exit(1);
 		}
 		pathp = path;
 	} else if (pathp + n + 2 > path + pathsz) {
-		pathsz = n + 2048;
-		if ((path = realloc(path, pathsz)) == NULL) {
-			fprintf(stderr, "rm: ran out of memory\n");
-			exit(1);
-		}
-		pathp = path;
+		fprintf(stderr, "rm: path name too long: %s\n", path);
+		exit(1);
 	} else if (pathp != path && pathp[-1] != '/')
 		*pathp++ = '/';
 	strcpy(pathp, name);
