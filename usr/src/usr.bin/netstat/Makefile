@@ -1,12 +1,7 @@
-# @(#)Makefile	4.3 %G%
+# @(#)Makefile	4.4 %G%
 OBJS=	host.o inet.o if.o main.o mbuf.o route.o
 CFLAGS=-O
 DESTDIR=
-
-.c.o:
-	${CC} -S ${CFLAGS} $*.c
-	sed -f ../asm.sed $*.s | ${AS} -o $*.o
-	rm -f $*.s
 
 netstat: ${OBJS}
 	${CC} ${OBJS} -o netstat
