@@ -11,7 +11,7 @@
  * Auxiliary functions.
  */
 
-static char *SccsId = "@(#)aux.c	1.6 %G%";
+static char *SccsId = "@(#)aux.c	1.7 %G%";
 
 /*
  * Return a pointer to a dynamic copy of the argument.
@@ -395,9 +395,12 @@ source(name)
 	char name[];
 {
 	register FILE *fi;
+	register char *cp;
 
-	if ((fi = fopen(name, "r")) == NULL) {
-		perror(name);
+	if ((cp = expand(name)) == NOSTR)
+		return(1);
+	if ((fi = fopen(cp, "r")) == NULL) {
+		perror(cp);
 		return(1);
 	}
 	if (ssp >= _NFILE-2) {
