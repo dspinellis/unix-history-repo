@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.72 (Berkeley) %G%
+#	@(#)READ_ME	8.73 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -371,7 +371,6 @@ IDENTPROTO	Define this as 1 to get IDENT (RFC 1413) protocol support.
 		HP-UX, both of which have a problem in the UDP
 		implementation.  You can define it to be 0 to explicitly
 		turn off IDENT protocol support.
-MIME		Include support for MIME-encapsulated error messages.
 LOG		Set this to get syslog(3) support.  Defined by default
 		in conf.h.  You want this if at all possible.
 NETINET		Set this to get TCP/IP support.  Defined by default
@@ -901,4 +900,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.72, last update %G% 14:13:06)
+(Version 8.73, last update %G% 14:29:32)
