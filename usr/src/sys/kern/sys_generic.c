@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.31	83/02/18	*/
+/*	sys_generic.c	5.32	83/02/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -526,6 +526,8 @@ ioctl()
 		 * always gets back something deterministic.
 		 */
 		bzero((caddr_t)data, size);
+	else if (com&IOC_VOID)
+		*(caddr_t *)data = uap->cmarg;
 
 	if (fp->f_type == DTYPE_SOCKET)
 		u.u_error = soioctl(fp->f_socket, com, data);
