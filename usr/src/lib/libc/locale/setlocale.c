@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setlocale.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)setlocale.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <limits.h>
@@ -195,7 +195,7 @@ loadlocale(category)
 	/*
 	 * Some day we will actually look at this file.
 	 */
-	(void)sprintf(name, sizeof(name), "%s/%s/%s",
+	(void)snprintf(name, sizeof(name), "%s/%s/%s",
 	    PathLocale, new_categories[category], categories[category]);
 
 	switch (category) {
