@@ -1,4 +1,4 @@
-/*	if_loop.c	6.3	85/03/18	*/
+/*	if_loop.c	6.4	85/04/27	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -22,6 +22,11 @@
 
 #ifdef vax
 #include "../vax/mtpr.h"
+#endif
+
+#ifdef NS
+#include "../netns/ns.h"
+#include "../netns/ns_if.h"
 #endif
 
 #define	LONET	127
@@ -65,6 +70,19 @@ looutput(ifp, m0, dst)
 		}
 		IF_ENQUEUE(ifq, m0);
 		schednetisr(NETISR_IP);
+		break;
+#endif
+#ifdef NS
+	case AF_NS:
+		ifq = &nsintrq;
+		if (IF_QFULL(ifq)) {
+			IF_DROP(ifq);
+			m_freem(m0);
+			splx(s);
+			return (ENOBUFS);
+		}
+		IF_ENQUEUE(ifq, m0);
+		schednetisr(NETISR_NS);
 		break;
 #endif
 	default:
