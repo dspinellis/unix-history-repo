@@ -230,17 +230,7 @@ int strip = 0;			/* throw away comments?        */
 */
 
 #if unix
-#include <sys/param.h>
-#ifdef BSD
-#include <paths.h>
-#if __STDC__
-static char DIVNAM[] = _PATH_VARTMP "m40XXXXXX";
-#else
-static char DIVNAM[] = "/usr/tmp/m40XXXXXX";
-#endif
-#else 
-static char DIVNAM[] = "/usr/tmp/m40XXXXXX";
-#endif
+static char DIVNAM[] = "/tmp/m40XXXXXX";
 #else
 #if vms
 static char DIVNAM[] = "sys$login:m40XXXXXX";
