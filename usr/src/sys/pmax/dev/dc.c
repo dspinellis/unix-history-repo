@@ -12,7 +12,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dc.c	7.6 (Berkeley) %G%
+ *	@(#)dc.c	7.7 (Berkeley) %G%
  *
  * devDC7085.c --
  *
@@ -78,7 +78,7 @@ void	(*dcMouseButtons)();	/* X windows mouse buttons event routine */
 int	debugChar;
 #endif
 
-static void dcscan __P((void));
+static void dcscan __P((void *));
 static int dcMapChar __P((int));
 static void dcKBDReset __P((void));
 static void MouseInit __P((void));
@@ -391,7 +391,7 @@ dcprobe(cp)
 
 	if (dc_timer == 0) {
 		dc_timer = 1;
-		timeout(dcscan, (caddr_t)0, hz);
+		timeout(dcscan, (void *)0, hz);
 	}
 	printf("dc%d at nexus0 csr 0x%x priority %d\n",
 		cp->pmax_unit, cp->pmax_addr, cp->pmax_pri);
@@ -812,7 +812,7 @@ dcstart(tp)
 		cc = ndqb(&tp->t_outq, 0200);
 		if (cc == 0) {
 			cc = getc(&tp->t_outq);
-			timeout(ttrstrt, (caddr_t)tp, (cc & 0x7f) + 6);
+			timeout(ttrstrt, (void *)tp, (cc & 0x7f) + 6);
 			tp->t_state |= TS_TIMEOUT;
 			goto out;
 		}
@@ -939,8 +939,10 @@ dcmctl(dev, bits, how)
  * This is called by timeout() periodically.
  * Check to see if modem status bits have changed.
  */
+/* ARGSUSED */
 static void
-dcscan()
+dcscan(arg)
+	void *arg;
 {
 	register dcregs *dcaddr;
 	register struct tty *tp;
@@ -964,7 +966,7 @@ dcscan()
 	    (*linesw[tp->t_line].l_modem)(tp, 0) == 0)
 		dcaddr->dc_tcr &= ~bit;
 	splx(s);
-	timeout(dcscan, (caddr_t)0, hz);
+	timeout(dcscan, (void *)0, hz);
 }
 
 /*
