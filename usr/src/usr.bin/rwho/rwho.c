@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwho.c	4.9 (Berkeley) 85/05/07";
+static char sccsid[] = "@(#)rwho.c	4.10 (Berkeley) 85/05/28";
 #endif
 
 #include <sys/param.h>
@@ -104,7 +104,7 @@ again:
 	}
 	mp = myutmp;
 	for (i = 0; i < nusers; i++) {
-		char buf[22];
+		char buf[BUFSIZ];
 		(void)sprintf(buf, "%s:%s", mp->myhost, mp->myutmp.out_line);
 		printf("%-8.8s %-*s %.12s",
 		   mp->myutmp.out_name,
