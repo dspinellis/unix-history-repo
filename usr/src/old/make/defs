@@ -1,4 +1,4 @@
-/* defs 4.6 83/07/01 */
+/* defs 4.7 84/11/26 */
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/param.h>
@@ -8,11 +8,10 @@
 
 typedef long int TIMETYPE;
 
-#ifdef unix
-/*  to install metering, add a statement like */
-#define METERFILE "/usr/sif/make/Meter"
-/* to turn metering on, set external variable meteron to 1 */
-#endif
+/*  to install metering, add a statement like
+ * #define METERFILE "/usr/sif/make/Meter"
+ * to turn metering on, set external variable meteron to 1.
+ */
 
 /* define FSTATIC to be static on systems with C compilers
    supporting file-static; otherwise define it to be null
