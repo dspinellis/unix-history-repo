@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)nexus.h	6.3 (Berkeley) %G%
+ *	@(#)nexus.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -66,7 +66,7 @@ struct nexus nexus[MAXNNEXUS];
 #define	NEX_CFGFLT	(0xfc000000)
 
 #ifndef LOCORE
-#if VAX780
+#if defined(VAX780) || defined(VAX8600)
 #define	NEXFLT_BITS \
 "\20\40PARFLT\37WSQFLT\36URDFLT\35ISQFLT\34MXTFLT\33XMTFLT"
 #endif
