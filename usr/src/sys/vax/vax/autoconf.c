@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	6.21 (Berkeley) %G%
+ *	@(#)autoconf.c	6.22 (Berkeley) %G%
  */
 
 /*
@@ -906,6 +906,7 @@ setroot()
 	adaptor = (bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
 	part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
 	unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
+#if NMBA > 0
 	if (majdev == 0) {	/* MBA device */
 		register struct mba_device *mbap;
 
@@ -917,7 +918,9 @@ setroot()
 		if (mbap->mi_driver == 0)
 			return;
 		mindev = mbap->mi_unit;
-	} else {
+	} else
+#endif
+	{
 		register struct uba_device *ubap;
 
 		for (ubap = ubdinit; ubap->ui_driver; ubap++)
