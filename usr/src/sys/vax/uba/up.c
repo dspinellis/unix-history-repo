@@ -1,13 +1,13 @@
-/*	%H%	3.17	%G%	*/
+/*	%H%	3.18	%G%	*/
 
 /*
  * Emulex UNIBUS disk driver with overlapped seeks and ECC recovery.
  *
  * NB: This driver works reliably only on an SC-11B controller with
  *     rev. level at least J (in particular rev. level H will not work well).
- *     If you have an older controller you may be able to get by if you
- *		#define	OLDUCODE
- *     which implements larger delays for slow ucode.
+ *     If you have an newer controller you should change olducode below to:
+ *		int	olducode = 0;
+ *     which saves time by stalling less in the system.
  *
  * Controller switch settings:
  *	SW1-1	5/19 surfaces	(off, 19 surfaces on Ampex 9300)
@@ -223,14 +223,12 @@ int	up_ubinfo;		/* Information about UBA usage saved here */
  * like PRESET and DCLR.  The following variables control the delay
  * DELAY(n) is approximately n usec.
  */
+int	olducode = 1;
 int	idelay = 500;		/* Delay after PRESET or DCLR */
-#ifdef OLDUCODE
-int	sdelay = 150;		/* Delay after selecting drive in upcs2 */
-int	rdelay = 100;		/* Delay after SEARCH */
-int	asdel = 100;		/* Delay after clearing bit in upas */
-#else
-int	sdelay = 25;
-#endif
+int	osdelay = 150;		/* Old delay after selecting drive in upcs2 */
+int	ordelay = 100;		/* Old delay after SEARCH */
+int	oasdel = 100;		/* Old delay after clearing bit in upas */
+int	nsdelay = 25;
 
 #define	DELAY(N)		{ register int d; d = N; while (--d > 0); }
  
@@ -341,7 +339,7 @@ register unit;
 	dp->b_active = 1;
 	if ((upaddr->upcs2 & 07) != unit) {
 		upaddr->upcs2 = unit;
-		DELAY(sdelay);
+		DELAY(olducode ? osdelay : nsdelay);
 		nwaitcs2++;
 	} else
 		neasycs2++;
@@ -400,9 +398,8 @@ search:
 		dk_busy |= 1<<unit;
 		dk_numb[unit]++;
 	}
-#ifdef OLDUCODE
-	DELAY(rdelay);
-#endif
+	if (olducode)
+		DELAY(ordelay);
 	goto out;
 
 done:
@@ -576,7 +573,7 @@ upintr()
 			dk_busy &= ~(1<<(DK_N+unit));
 		if ((upaddr->upcs2 & 07) != unit) {
 			upaddr->upcs2 = unit;
-			DELAY(sdelay);
+			DELAY(olducode ? osdelay : nsdelay);
 			nwaitcs2++;
 		} else
 			neasycs2++;
@@ -683,9 +680,8 @@ upintr()
 		if ((as|oupsoftas) & (1<<unit)) {
 			if (as & (1<<unit)) {
 				upaddr->upas = 1<<unit;
-#ifdef OLDUCODE
-				DELAY(asdel);
-#endif
+				if (olducode)
+					DELAY(oasdel);
 			}
 			if (upustart(unit))
 				needie = 0;
