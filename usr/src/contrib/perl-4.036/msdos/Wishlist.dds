@@ -1,0 +1,17 @@
+Perl in general:
+Add ftw or find?
+Add a parsing mechanism (user specifies parse tree, perl parses).
+Arbitrary precision arithmetic.
+File calculus (e.g. file1 = file2 + file3, file1 =^ s/foo/bar/g etc.)
+
+MS-DOS version of Perl:
+Add interface to treat dBase files as associative arrays.
+Add int86x function.
+Handle the C preprocessor.
+Provide real pipes by switching the processes. (difficult)
+Provide a list of ioctl codes.
+Check the ioctl errno handling.
+I can't find an easy way in Perl to pass a number as the first argument
+  to ioctl.  This is needed for some functions of ioctl.  Either hack
+  ioctl, or change perl to ioctl interface.  Another solution would be
+  a perl pseudo array containing the filehandles indexed by fd.
