@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)malloc.h	7.33 (Berkeley) %G%
+ *	@(#)malloc.h	7.34 (Berkeley) %G%
  */
 
 #ifndef _MALLOC_H_
@@ -143,7 +143,6 @@
 	NULL, NULL, NULL, NULL, NULL, \
 	NULL, NULL, NULL, NULL, NULL, \
 	NULL, NULL, NULL, NULL, NULL, \
-	NULL, NULL, NULL, NULL, \
 	"temp",		/* 74 M_TEMP */ \
 }
 
