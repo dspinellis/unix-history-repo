@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	6.13 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	6.14 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	6.13 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	6.14 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -530,6 +530,7 @@ _udbx_init()
 					continue;
 				up->udb_type = UDB_REMOTE;
 				up->udb_addr.sin_family = h->h_addrtype;
+				up->udb_addr.sin_len = h->h_length;
 				bcopy(h->h_addr_list[0],
 				      (char *) &up->udb_addr.sin_addr,
 				      h->h_length);
@@ -580,7 +581,7 @@ _udbx_init()
 			{
 			  case UDB_REMOTE:
 				printf("REMOTE: addr %s, timeo %d\n",
-					inet_ntoa(up->udb_addr.sin_addr),
+					anynet_ntoa(&up->udb_addr),
 					up->udb_timeout);
 				break;
 

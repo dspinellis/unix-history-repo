@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.19 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.20 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.19 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.20 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -25,6 +25,10 @@ static char sccsid[] = "@(#)daemon.c	6.19 (Berkeley) %G% (without daemon mode)";
 # include <netdb.h>
 # include <sys/wait.h>
 # include <sys/time.h>
+
+#ifdef NETISO
+# include <netiso/iso.h>
+#endif
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -55,6 +59,8 @@ static char sccsid[] = "@(#)daemon.c	6.19 (Berkeley) %G% (without daemon mode)";
 **	maphostname(map, hbuf, hbufsiz, avp)
 **		Convert the entry in hbuf into a canonical form.
 */
+
+extern char	*anynet_ntoa();
 /*
 **  GETREQUESTS -- open mail IPC port and get requests.
 **
@@ -219,7 +225,6 @@ getrequests()
 			register struct hostent *hp;
 			extern char *RealHostName;	/* srvrsmtp.c */
 			char buf[MAXNAME];
-			extern char *inet_ntoa();
 
 			/*
 			**  CHILD -- return to caller.
@@ -230,14 +235,16 @@ getrequests()
 			(void) signal(SIGCHLD, SIG_DFL);
 
 			/* determine host name */
-			hp = gethostbyaddr((char *) &RealHostAddr.sin_addr, sizeof RealHostAddr.sin_addr, AF_INET);
+			hp = gethostbyaddr(RealHostAddr.sa_u.sa_data,
+					   sizeof RealHostAddr.sa_u.sa_data,
+					   RealHostAddr.sa_family);
 			if (hp != NULL)
 				(void) strcpy(buf, hp->h_name);
 			else
 			{
 				/* produce a dotted quad */
 				(void) sprintf(buf, "[%s]",
-					inet_ntoa(RealHostAddr.sin_addr));
+					anynet_ntoa(&RealHostAddr));
 			}
 
 #ifdef LOG
@@ -245,7 +252,7 @@ getrequests()
 			{
 				/* log connection information */
 				syslog(LOG_INFO, "connect from %s (%s)",
-					buf, inet_ntoa(RealHostAddr.sin_addr));
+					buf, anynet_ntoa(&RealHostAddr));
 			}
 #endif
 
@@ -305,7 +312,7 @@ clrdaemon()
 **		none.
 */
 
-struct sockaddr_in	CurHostAddr;		/* address of current host */
+SOCKADDR	CurHostAddr;		/* address of current host */
 
 int
 makeconnection(host, port, outfile, infile, usesecureport)
@@ -317,9 +324,9 @@ makeconnection(host, port, outfile, infile, usesecureport)
 {
 	register int i, s;
 	register struct hostent *hp = (struct hostent *)NULL;
-	struct sockaddr_in addr;
+	SOCKADDR addr;
 	int sav_errno;
-	extern char *inet_ntoa();
+	int addrlen;
 #ifdef NAMED_BIND
 	extern int h_errno;
 #endif
@@ -357,7 +364,9 @@ makeconnection(host, port, outfile, infile, usesecureport)
 			usrerr("553 Invalid numeric domain spec \"%s\"", host);
 			return (EX_NOHOST);
 		}
-		addr.sin_addr.s_addr = hid;
+		addr.sa_family = AF_INET;
+		addr.sa_len = sizeof hid;
+		addr.sa_u.sa_inet.sin_addr.s_addr = hid;
 	}
 	else
 	{
@@ -375,7 +384,16 @@ gothostent:
 #endif
 			return (EX_NOHOST);
 		}
-		bcopy(hp->h_addr, (char *) &addr.sin_addr, hp->h_length);
+		addr.sa_family = hp->h_addrtype;
+		addr.sa_len = hp->h_length;
+		if (addr.sa_family == AF_INET)
+			bcopy(hp->h_addr,
+				&addr.sa_u.sa_inet.sin_addr,
+				hp->h_length);
+		else
+			bcopy(hp->h_addr,
+				addr.sa_u.sa_data,
+				hp->h_length);
 		i = 1;
 	}
 
@@ -384,7 +402,7 @@ gothostent:
 	*/
 
 	if (port != 0)
-		addr.sin_port = htons(port);
+		port = htons(port);
 	else
 	{
 		register struct servent *sp = getservbyname("smtp", "tcp");
@@ -394,7 +412,27 @@ gothostent:
 			syserr("554 makeconnection: server \"smtp\" unknown");
 			return (EX_OSERR);
 		}
-		addr.sin_port = sp->s_port;
+		port = sp->s_port;
+	}
+
+	switch (addr.sa_family)
+	{
+	  case AF_INET:
+		addr.sa_u.sa_inet.sin_port = port;
+		addrlen = sizeof (struct sockaddr_in);
+		break;
+
+#ifdef NETISO
+	  case AF_ISO:
+		/* assume two byte transport selector */
+		bcopy((char *) &port, TSEL((struct sockaddr_iso *) &addr), 2);
+		addrlen = sizeof (struct sockaddr_iso);
+		break;
+#endif
+
+	  default:
+		syserr("Can't connect to address family %d", addr.sa_family);
+		return (EX_NOHOST);
 	}
 
 	/*
@@ -404,8 +442,8 @@ gothostent:
 	for (;;)
 	{
 		if (tTd(16, 1))
-			printf("makeconnection (%s [%s])\n", host,
-			    inet_ntoa(addr.sin_addr));
+			printf("makeconnection (%s [%s])\n",
+				host, anynet_ntoa(&addr));
 
 		/* save for logging */
 		CurHostAddr = addr;
@@ -440,8 +478,7 @@ gothostent:
 		if (CurEnv->e_xfp != NULL)
 			(void) fflush(CurEnv->e_xfp);		/* for debugging */
 		errno = 0;					/* for debugging */
-		addr.sin_family = AF_INET;
-		if (connect(s, (struct sockaddr *) &addr, sizeof addr) >= 0)
+		if (connect(s, (struct sockaddr *) &addr, addrlen) >= 0)
 			break;
 
 		/* couldn't connect.... figure out why */
@@ -449,9 +486,18 @@ gothostent:
 		(void) close(s);
 		if (hp && hp->h_addr_list[i])
 		{
+			extern char *errstring();
+
 			if (tTd(16, 1))
-				printf("Connect failed; trying new address....\n");
-			bcopy(hp->h_addr_list[i++], (char *) &addr.sin_addr,
+				printf("Connect failed (%s); trying new address....\n",
+					errstring(sav_errno));
+			if (addr.sa_family == AF_INET)
+				bcopy(hp->h_addr_list[i++],
+				      &addr.sa_u.sa_inet.sin_addr,
+				      hp->h_length);
+			else
+				bcopy(hp->h_addr_list[i++],
+					addr.sa_u.sa_data,
 					hp->h_length);
 			continue;
 		}
@@ -460,13 +506,6 @@ gothostent:
 	failure:
 		if (transienterror(sav_errno))
 			return EX_TEMPFAIL;
-		else if (sav_errno == EPERM)
-		{
-			/* why is this happening? */
-			syserr("makeconnection: funny failure, addr=%lx, port=%x",
-				addr.sin_addr.s_addr, addr.sin_port);
-			return (EX_TEMPFAIL);
-		}
 		else
 		{
 			extern char *errstring();
@@ -554,21 +593,20 @@ getrealhostname(fd)
 	int fd;
 {
 	register struct hostent *hp;
-	struct sockaddr_in sin;
-	int sinlen;
+	struct sockaddr sa;
+	int salen;
 	char hbuf[MAXNAME];
 	extern struct hostent *gethostbyaddr();
-	extern char *inet_ntoa();
 
-	if (getsockname(fd, (struct sockaddr *) &sin, &sinlen) < 0 ||
-	    sinlen <= 0)
+	salen = sizeof sa;
+	if (getsockname(fd, &sa, &salen) < 0 || salen <= 0)
 		return NULL;
-	hp = gethostbyaddr((char *) &sin.sin_addr, sizeof sin.sin_addr,
-			   sin.sin_family);
+	hp = gethostbyaddr(sa.sa_data, sa.sa_len,
+			   sa.sa_family);
 	if (hp != NULL)
 		(void) strcpy(hbuf, hp->h_name);
 	else
-		(void) sprintf(hbuf, "[%s]", inet_ntoa(sin.sin_addr));
+		(void) sprintf(hbuf, "[%s]", anynet_ntoa(&sa));
 	return hbuf;
 }
 /*
@@ -649,6 +687,44 @@ maphostname(map, hbuf, hbsize, avp)
 		hp->h_name[hbsize] = '\0';
 	(void) strcpy(hbuf, hp->h_name);
 	return hbuf;
+}
+/*
+**  ANYNET_NTOA -- convert a network address to printable form.
+**
+**	Parameters:
+**		sap -- a pointer to a sockaddr structure.
+**
+**	Returns:
+**		A printable version of that sockaddr.
+*/
+
+char *
+anynet_ntoa(sap)
+	register SOCKADDR *sap;
+{
+	register char *bp;
+	register char *ap;
+	int l;
+	static char buf[80];
+
+	if (sap->sa_family == AF_INET)
+	{
+		extern char *inet_ntoa();
+
+		return inet_ntoa(((struct sockaddr_in *) sap)->sin_addr);
+	}
+
+	/* unknown family -- just dump bytes */
+	(void) sprintf(buf, "Family %d: ", sap->sa_family);
+	bp = &buf[strlen(buf)];
+	ap = sap->sa_u.sa_data;
+	for (l = sap->sa_len; --l >= 0; )
+	{
+		(void) sprintf(bp, "%02x:", *ap++ & 0377);
+		bp += 3;
+	}
+	*--bp = '\0';
+	return buf;
 }
 
 # else /* DAEMON */
