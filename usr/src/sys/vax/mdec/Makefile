@@ -1,7 +1,7 @@
-#	@(#)Makefile	4.3	%G%
+#	@(#)Makefile	4.4	%G%
 #
 ALL=	hkboot hpboot htboot mtboot noboot raboot rlboot \
-	upboot utboot tmboot tsboot \
+	upboot utboot tmboot tsboot tuboot \
 	httoggle mttoggle tmtoggle tstoggle uttoggle
 
 all: ${ALL}
@@ -68,6 +68,13 @@ upboot: upboot.s
 	strip a.out
 	dd if=a.out bs=32 skip=1 of=b.out
 	dd if=b.out of=upboot conv=sync
+
+tuboot: tuboot.s
+	as tuboot.s
+	nm -u a.out
+	strip a.out
+	dd if=a.out of=b.out bs=32 skip=1
+	dd if=b.out of=tuboot conv=sync
 
 utboot: utboot.s
 	as utboot.s
