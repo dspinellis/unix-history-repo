@@ -1,6 +1,6 @@
 # !/bin/csh
 #
-#	@(#)newversion.csh	2.1 (Berkeley) 83/02/06
+#	@(#)newversion.csh	2.2 (Berkeley) 83/02/06
 #	update the version number of your argument makefile, etc.
 #
 if ( $#argv != 2 ) then
@@ -18,6 +18,6 @@ echo version $oldversion becomes $newversion automagically.
 sccs delta $makefile << EOF
 version $oldversion becomes $newversion automagically.
 EOF
-rm -f $dir/makefile
-sccs get -p $makefile > $dir/makefile
+rm -f $dir/$makefile
+sccs get -p $makefile > $dir/$makefile
 mv $dir/${whoami}${oldversion}strings $dir/${whoami}${newversion}strings
