@@ -19,7 +19,7 @@
  *
  * from hp300:	@(#)pmap.h	7.2 (Berkeley) 12/16/90
  *
- *	@(#)pmap.h	1.5 (Berkeley) %G%
+ *	@(#)pmap.h	7.1 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
@@ -95,9 +95,6 @@ unsigned int
 typedef struct pde	pd_entry_t;	/* page directory entry */
 typedef struct pte	pt_entry_t;	/* Mach page table entry */
 
-#define	PD_ENTRY_NULL	((pd_entry_t *) 0)
-#define	PT_ENTRY_NULL	((pt_entry_t *) 0)
-
 /*
  * One page directory, shared between
  * kernel and user modes.
@@ -169,7 +166,7 @@ extern pmap_t		kernel_pmap;
  * Macros for speed
  */
 #define PMAP_ACTIVATE(pmapp, pcbp) \
-	if ((pmapp) != PMAP_NULL /*&& (pmapp)->pm_pdchanged */) {  \
+	if ((pmapp) != NULL /*&& (pmapp)->pm_pdchanged */) {  \
 		(pcbp)->pcb_cr3 = \
 		    pmap_extract(kernel_pmap, (pmapp)->pm_pdir); \
 		if ((pmapp) == &curproc->p_vmspace->vm_pmap) \
