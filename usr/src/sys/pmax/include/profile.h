@@ -7,12 +7,26 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)profile.h	7.1 (Berkeley) %G%
+ *	@(#)profile.h	7.2 (Berkeley) %G%
  */
 
-#define	_MCOUNT_DECL static inline void _mcount
+#define	_MCOUNT_DECL static void _mcount
 
-#define	MCOUNT
+#define	MCOUNT \
+	asm(".globl mcount"); \
+	asm("mcount:"); \
+	asm(".set noreorder"); \
+	asm(".set noat"); \
+	asm("sw $31,4($29);"); \
+	asm("jal _mcount"); \
+	asm("sw $1,0($29);"); \
+	asm("lw $31,4($29)"); \
+	asm("lw $1,0($29)"); \
+	asm("addu $29,$29,8"); \
+	asm("j $31"); \
+	asm("move $31,$1"); \
+	asm(".set reorder"); \
+	asm(".set at");
 
 #ifdef KERNEL
 /*
