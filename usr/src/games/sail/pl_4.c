@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_4.c	1.1 83/07/20";
+static	char *sccsid = "@(#)pl_4.c	1.2 83/10/05";
 #endif
 
 #include "player.h"
@@ -133,11 +133,13 @@ char *buf;
 			*p = 0;
 			return;
 		case '\b':
-			if (p > buf)
+			if (p > buf) {
+				(void) waddstr(scroll_w, "\b \b");
 				p--;
+			}
 			break;
 		default:
-			if (p < &buf[n] - 1) {
+			if (p < buf + n - 1) {
 				*p++ = c;
 				(void) waddch(scroll_w, c);
 				(void) wrefresh(scroll_w);

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_2.c	1.3 83/07/20";
+static	char *sccsid = "@(#)pl_2.c	1.4 83/10/05";
 #endif
 
 #include "player.h"
@@ -238,7 +238,7 @@ int base, exp;
 repair()
 {
 	int buf;
-	int *repairs;
+	char *repairs;
 	struct shipspecs *ptr;
 
 	if (repaired || loaded || fired || changed || turned()) {
