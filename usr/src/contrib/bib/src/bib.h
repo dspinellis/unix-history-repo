@@ -1,5 +1,5 @@
 /*
- *	@(#)bib.h	2.5	%G%
+ *	@(#)bib.h	2.6	%G%
  */
 /*   various arguments for bib and listrefs processors */
 
@@ -8,7 +8,7 @@
 # define true  1
 # define false 0
 # define err  -1
-# define REFSIZE 1024                /* maximum size of reference string    */
+# define REFSIZE 2048                /* maximum size of reference string    */
 # define MAXFIELD 512                /* maximum size of any field in referece*/
 
 /* reference citation marker genrated in pass 1 */
