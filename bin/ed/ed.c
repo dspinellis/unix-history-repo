@@ -334,11 +334,6 @@ getone()
 }
 
 
-#define MAXMARK 26			/* max number of marks */
-
-line_t	*mark[MAXMARK];			/* line markers */
-int markno;				/* line marker count */
-
 /* getnum:  return a relative line number from the command buffer */
 long
 getnum(first)
@@ -370,7 +365,7 @@ getnum(first)
 		return first ? curln : 1;
 	case '\'':
 		ibufp++;
-		return (first && islower(*ibufp)) ? getaddr(mark[*ibufp++ - 'a']) : ERR;
+		return first ? getmark(*ibufp++) : ERR;
 	case '%':
 	case ',':
 	case ';':
@@ -644,7 +639,6 @@ docmd(glob)
 		} else if ((fnp = getfn()) == NULL)
 			return ERR;
 		VRFYCMD();
-		memset(mark, 0, sizeof mark);
 		if (lndelete(1, lastln) < 0)
 			return ERR;
 		ureset();
@@ -726,13 +720,10 @@ docmd(glob)
 		if (line2 == 0) {
 			sprintf(errmsg, "invalid address");
 			return ERR;
-		} else if (!islower(c)) {
-			sprintf(errmsg, "invalid mark character");
-			return ERR;
-		}
+		} 
 		VRFYCMD();
-		if (!mark[c - 'a']) markno++;
-		mark[c - 'a'] = getlp(line2);
+		if (putmark(c, getlp(line2)) < 0)
+			return ERR;
 		break;
 	case 'l':
 		if (ckrange(curln, curln) < 0)
@@ -1446,6 +1437,7 @@ join(from, to)
 /* move: move a range of lines */
 move(num, glob)
 	long num;
+	int glob;
 {
 	line_t *b1, *a1, *b2, *a2, *lp;
 	long n = nextln(line2, lastln);
@@ -1897,18 +1889,12 @@ void
 ureset()
 {
 	line_t *lp, *ep, *tl;
-	int i;
 
 	while (u_p--)
-		if ((ustack[u_p].type) == UDEL) {
+		if (ustack[u_p].type == UDEL) {
 			ep = ustack[u_p].t->next;
 			for (lp = ustack[u_p].h; lp != ep; lp = tl) {
-				if (markno)
-					for (i = 0; i < MAXMARK; i++)
-						if (mark[i] == lp) {
-							mark[i] = NULL;
-							markno--;
-						}
+				clrmark(lp);
 				tl = lp->next;
 				free(lp);
 			}
@@ -1918,6 +1904,55 @@ ureset()
 	ulastln = lastln;
 }
 
+
+#define MAXMARK 26			/* max number of marks */
+
+line_t	*mark[MAXMARK];			/* line markers */
+int markno;				/* line marker count */
+
+/* getmark: return address of a marked line */
+long
+getmark(n)
+	int n;
+{ 	
+	if (!islower(n)) {
+		sprintf(errmsg, "invalid mark character");
+		return ERR;
+	}
+	return getaddr(mark[n - 'a']);
+}
+
+
+/* putmark: set a line node mark */
+int
+putmark(n, lp)
+	int n;
+	line_t *lp;
+{
+	if (!islower(n)) {
+		sprintf(errmsg, "invalid mark character");
+		return ERR;
+	} else if (mark[n - 'a'] == NULL)
+		markno++;
+	mark[n - 'a'] = lp;
+	return 0;
+}
+
+
+/* clrmark: clear line node marks */
+void
+clrmark(lp)
+	line_t *lp;
+{
+	int i;
+
+	if (markno)
+		for (i = 0; i < MAXMARK; i++)
+			if (mark[i] == lp) {
+				mark[i] = NULL;
+				markno--;
+			}
+}
 
 
 /* sgetline: read a line of text up a maximum size from a file; return
@@ -2100,7 +2135,6 @@ onintr(signo)
 }
 
 
-
 void
 dohup(signo)
 	int signo;
@@ -2152,44 +2186,6 @@ dowinch(signo)
 		if (ws.ws_row > 2) rows = ws.ws_row - 2;
 		if (ws.ws_col > 8) cols = ws.ws_col - 8;
 	}
-}
-
-
-unsigned char ctab[256];		/* character translation table */
-
-/* translit: translate characters in a string */
-char *
-translit(s, len, from, to)
-	char *s;
-	int len;
-	int from;
-	int to;
-{
-	static int i = 0;
-
-	unsigned char *us;
-
-	ctab[i] = i;			/* restore table to initial state */
-	ctab[i = from] = to;
-	for (us = (unsigned char *) s; len-- > 0; us++)
-		*us = ctab[*us];
-	return s;
-}
-
-
-line_t line0;			/* initial node of line queue */
-
-/* init_buf: open scratch buffer; initialize line queue */
-void
-init_buf()
-{
-	int i = 0;
-
-	if (sbopen() < 0)
-		quit(2);
-	requeue(&line0, &line0);
-	for (i = 0; i < 256; i++)
-		ctab[i] = i;
 }
 
 
