@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)shutdown.8	4.1 (Berkeley) %G%
+.\"	@(#)shutdown.8	5.1 (Berkeley) %G%
 .\"
-.TH SHUTDOWN 8 4/1/81
+.TH SHUTDOWN 8 4/1/83
 .UC 4
 .SH NAME
 shutdown \- close down the system at a given time
@@ -30,7 +30,10 @@ not bother with niceties.
 is the time at which
 .I shutdown
 will bring the system down and
-may take two formats:
+may be the word
+.B now
+(indicating an immediate shutdown)
+or specify a future time in one of two formats:
 .BR + number
 and
 .RB hour : min.
@@ -47,7 +50,7 @@ shutdown is in less than 5 minutes, logins are disabled by
 creating
 /etc/nologin
 and writing a message there.
-If this file exists when a user logs in,
+If this file exists when a user attempts to log in,
 .IR login (1)
 prints its contents
 and exits.
@@ -62,10 +65,10 @@ Then a terminate signal is sent at
 .I init
 to bring the system down to single-user state.
 Alternatively, if
-.B -r,
-.B -h,
+.B \-r,
+.B \-h,
 or
-.B -k
+.B \-k
 was used, then
 .I shutdown
 will exec
@@ -86,11 +89,9 @@ and why it is going down (or anything else).
 .DT
 /etc/nologin	tells login not to let anyone log in
 .br
-/usr/adm/shutdownlog	log file for succesful shutdowns.
+/usr/adm/shutdownlog	log file for successful shutdowns.
 .SH "SEE ALSO"
 login(1), reboot(8)
 .SH BUGS
 Only allows you to kill the system between now and 23:59 if
 you use the absolute time for shutdown.
-.PP
-Times to shutdown are not nice and round, i.e. ``shutdown in 18 seconds''.
