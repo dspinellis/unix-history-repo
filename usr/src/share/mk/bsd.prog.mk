@@ -1,6 +1,6 @@
 # A Makefile for the BSD source tree.
 #
-#	@(#)bsd.prog.mk	5.5 (Berkeley) %G%
+#	@(#)bsd.prog.mk	5.6 (Berkeley) %G%
 #
 
 # user defines:
@@ -50,6 +50,9 @@
 
 # name of the dependency file
 DEPENDFILE=	.depend
+.if exists(.depend)
+.include ".depend"
+.endif
 
 # standard libraries
 LIBC=		/lib/libc.a
@@ -102,11 +105,11 @@ ${PROG}: ${OBJS} ${LIBC} ${SRCLIB}
 	${CC} ${LDFLAGS} -o ${.TARGET} ${OBJS} ${LDLIB}
 
 .depend: ${SRCS}
-	@set ${OBJS}
-	@for entry in ${.ALLSRC}; do
+	@set ${OBJS}; \
+	for entry in ${.ALLSRC}; do \
 		echo "$$1:" \
-		    `${CPP} -M ${CFLAGS:M-[ID]*} ${.INCLUDES} $$entry`
-		shift
+		    `${CPP} -M ${CFLAGS:M-[ID]*} ${.INCLUDES} $$entry`; \
+		shift; \
 	done > ${DEPENDFILE}
 
 ${OBJS}: ${.PREFIX}.c
@@ -121,10 +124,10 @@ MAN1=	${PROG}.0
 .endif
 
 ${PROG}: ${SRCS} ${LIBC} ${SRCLIB}
-	${CC} ${CFLAGS} -o ${.TARGET} ${SRCS} ${LDLIB}
+	${CC} ${CFLAGS} -o ${.TARGET} ${CURDIR}/${SRCS} ${LDLIB}
 
 .depend: ${SRCS}
-	echo "${PROG}:" \
+	@echo "${PROG}:" \
 	    `${CPP} -M ${CFLAGS:M-[ID]*} ${.INCLUDES} ${.ALLSRC}` \
 		    > ${DEPENDFILE}
 
