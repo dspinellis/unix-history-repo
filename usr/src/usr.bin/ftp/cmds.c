@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -95,49 +95,49 @@ setpeer(argc, argv)
 	}
 	host = hookup(argv[1], port);
 	if (host) {
-		connected = 1;
-		if (autologin) {
-			int overbose;
+		int overbose;
 
+		connected = 1;
+		if (autologin)
 			(void) login(argv[1]);
+
 #if defined(unix) && NBBY == 8
 /*
  * this ifdef is to keep someone form "porting" this to an incompatible
  * system and not checking this out. This way they have to think about it.
  */
-			overbose = verbose;
-			if (debug == 0)
-				verbose = -1;
-			if (command("SYST") == COMPLETE && overbose) {
-				register char *cp, c;
-				cp = index(reply_string+4, ' ');
-				if (cp == NULL)
-					cp = index(reply_string+4, '\r');
-				if (cp) {
-					if (cp[-1] == '.')
-						cp--;
-					c = *cp;
-					*cp = '\0';
-				}
+		overbose = verbose;
+		if (debug == 0)
+			verbose = -1;
+		if (command("SYST") == COMPLETE && overbose) {
+			register char *cp, c;
+			cp = index(reply_string+4, ' ');
+			if (cp == NULL)
+				cp = index(reply_string+4, '\r');
+			if (cp) {
+				if (cp[-1] == '.')
+					cp--;
+				c = *cp;
+				*cp = '\0';
+			}
 
-				printf("Remote system type is %s.\n",
-					reply_string+4);
-				if (cp)
-					*cp = c;
-			}
-			if (!strncmp(reply_string, "215 UNIX Type: L8", 17)) {
-				setbinary();
-				if (overbose)
-				    printf("Using %s mode to transfer files.\n",
-					typename);
-			} else if (overbose && 
-			    !strncmp(reply_string, "215 TOPS20", 10)) {
-				printf(
-"Remember to set tenex mode when transfering binary files from this machine.\n");
-			}
-			verbose = overbose;
-#endif /* unix */
+			printf("Remote system type is %s.\n",
+				reply_string+4);
+			if (cp)
+				*cp = c;
 		}
+		if (!strncmp(reply_string, "215 UNIX Type: L8", 17)) {
+			setbinary();
+			if (overbose)
+			    printf("Using %s mode to transfer files.\n",
+				typename);
+		} else if (overbose && 
+		    !strncmp(reply_string, "215 TOPS20", 10)) {
+			printf(
+"Remember to set tenex mode when transfering binary files from this machine.\n");
+		}
+		verbose = overbose;
+#endif /* unix */
 	}
 }
 
