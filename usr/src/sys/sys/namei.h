@@ -40,7 +40,7 @@ struct nameidata {
 #define	ni_resid	ni_uio.uio_resid
 
 /*
- * namei opertions
+ * namei operations and modifiers
  */
 #define	LOOKUP		0	/* perform name lookup only */
 #define	CREATE		1	/* setup for file creation */
@@ -54,9 +54,11 @@ struct nameidata {
  * This structure describes the elements in the cache of recent
  * names looked up by namei.
  */
-struct	nch {
-	struct	nch *nc_forw, *nc_back;	/* hash chain, MUST BE FIRST */
-	struct	nch *nc_nxt, **nc_prev;	/* LRU chain */
+struct	namecache {
+	struct	namecache *nc_forw;	/* hash chain, MUST BE FIRST */
+	struct	namecache *nc_back;	/* hash chain, MUST BE FIRST */
+	struct	namecache *nc_nxt;	/* LRU chain */
+	struct	namecache **nc_prev;	/* LRU chain */
 	struct	inode *nc_ip;		/* inode the name refers to */
 	ino_t	nc_ino;			/* ino of parent of name */
 	dev_t	nc_dev;			/* dev of parent of name */
@@ -66,7 +68,7 @@ struct	nch {
 #define	NCHNAMLEN	15	/* maximum name segment length we bother with */
 	char	nc_name[NCHNAMLEN];	/* segment name */
 };
-struct	nch *nch;
+struct	namecache *namecache;
 int	nchsize;
 
 /*
