@@ -9,7 +9,7 @@
 #undef isdigit
 
 /*
- * Sccs Id = "@(#)def.h	1.8 %G%";
+ * Sccs Id = "@(#)def.h	1.9 %G%";
  */
 
 /*
@@ -265,6 +265,7 @@ char	*hcontents();
 char	*netmap();
 char	*netname();
 char	*readtty();
+char	*reedit();
 char	*rename();
 char	*revarpa();
 char	*rindex();
