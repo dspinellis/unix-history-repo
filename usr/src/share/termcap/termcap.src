@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.79 (Berkeley) %G%
+#	@(#)termcap.src	5.80 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -3318,6 +3318,8 @@ Kh|h19k|h19kermit|heathkit emulation provided by Kermit (no auto margin):\
 #     dimension larger than 80 columns.
 # :k0=\E9~	map F10 to k0 - could have F0-9 -> k0-9, but ... F10 was 'k;'
 # :F1-FA			removed F11 through F20. 
+#
+# From PT Sim:  commented out :nl to make 'talk' work better.
 AA|amiga|Amiga ANSI:\
 	:co#80:li#24:am:bs:bw:\
 	:AL=\E[%dL:DC=\E[%dP:DL=\E[%dM:DO=\E[%dB:\
@@ -3327,7 +3329,7 @@ AA|amiga|Amiga ANSI:\
 	:k1=\E0~:k2=\E1~:k3=\E2~:k4=\E3~:k5=\E4~:k6=\E5~:k7=\E6~:k8=\E7~:\
 	:k9=\E8~:k0=\E9~:kb=^H:kd=\EB:kl=\ED:kr=\EC:ku=\EA:le=\E[D:\
 	:mb=\E[7;2m:md=\E[1m:me=\E[0m:mh=\E[2m:mk=\E[8m:mr=\E[7m:nd=\E[C:\
-	:nl=\E[B:rs=\Ec:se=\E[0m:sf=\E[S:so=\E[7m:sr=\E[T:ue=\E[0m:up=\E[A:\
+	:.nl=\E[B:rs=\Ec:se=\E[0m:sf=\E[S:so=\E[7m:sr=\E[T:ue=\E[0m:up=\E[A:\
 	:us=\E[4m:ve=\E[\040p:vi=\E[\060\040p:xn:
 # The pcplot IBM-PC terminal emulation program is really messed up. It is
 # supposed to emulate a vt-100, but emulates the wraparound bug incorrectly,
