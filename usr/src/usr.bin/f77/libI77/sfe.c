@@ -1,5 +1,5 @@
 /*
-char id_sfe[] = "@(#)sfe.c	1.7";
+char id_sfe[] = "@(#)sfe.c	1.8";
  *
  * sequential formatted external routines
  */
@@ -167,7 +167,7 @@ x_tab()
 	while(cursor--)
 	{	if(reading)
 		{	n = (*getn)();
-			if(n=='\n') return(F_EREREC);
+			if(n=='\n') return(cursor=0);	/* be tolerant */
 			if(n==EOF) return(EOF);
 		}
 		else	(*putn)(' ');	/* fill in the empty record */
