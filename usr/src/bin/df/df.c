@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -48,7 +48,7 @@ main(argc, argv)
 {
 	extern int errno, optind;
 	int err, ch, i;
-	long mntsize, getmntinfo();
+	long width, maxwidth, mntsize, getmntinfo();
 	char *mntpt, *mktemp();
 	struct stat stbuf;
 	struct statfs statfsbuf, *mntbuf;
@@ -79,21 +79,23 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	printf("Filesystem  %s    used   avail capacity",
-	    kflag ? "  kbytes" : "512-blks");
-	if (iflag)
-		printf(" iused   ifree  %%iused");
-	printf("  Mounted on\n");
+	mntsize = getmntinfo(&mntbuf, MNT_NOWAIT);
+	maxwidth = 0;
+	for (i = 0; i < mntsize; i++) {
+		width = strlen(mntbuf[i].f_mntfromname);
+		if (width > maxwidth)
+			maxwidth = width;
+	}
 #ifdef COMPAT_43
 	if (oflag) {
-		olddf(argv);
+		olddf(argv, maxwidth);
 		exit(0);
 	}
 #endif /* COMPAT_43 */
 	if (!*argv) {
 		mntsize = getmntinfo(&mntbuf, (nflag ? MNT_NOWAIT : MNT_WAIT));
 		for (i = 0; i < mntsize; i++)
-			prtstat(&mntbuf[i]);
+			prtstat(&mntbuf[i], maxwidth);
 		exit(0);
 	}
 	for (; *argv; argv++) {
@@ -112,7 +114,7 @@ main(argc, argv)
 				    !mount(MOUNT_UFS, mntpt, M_RDONLY, &mdev) &&
 				    !statfs(mntpt, &statfsbuf)) {
 					statfsbuf.f_mntonname[0] = '\0';
-					prtstat(&statfsbuf);
+					prtstat(&statfsbuf, maxwidth);
 				} else
 					fprintf(stderr, "df: %s: %s\n",
 					    *argv, strerror(errno));
@@ -130,7 +132,9 @@ main(argc, argv)
 			    "df: %s: %s\n", mntpt, strerror(errno));
 			continue;
 		}
-		prtstat(&statfsbuf);
+		if (argc == 1)
+			maxwidth = strlen(statfsbuf.f_mntfromname) + 1;
+		prtstat(&statfsbuf, maxwidth);
 	}
 	exit(0);
 }
@@ -153,12 +157,24 @@ getmntpt(name)
 /*
  * Print out status about a filesystem.
  */
-prtstat(sfsp)
+prtstat(sfsp, maxwidth)
 	register struct statfs *sfsp;
+	long maxwidth;
 {
 	long used, availblks, inodes;
+	static int timesthrough;
 
-	printf("%-12.12s", sfsp->f_mntfromname);
+	if (maxwidth < 11)
+		maxwidth = 11;
+	if (++timesthrough == 1) {
+		printf("%-*.*s%s    used   avail capacity",
+		    maxwidth, maxwidth, "Filesystem",
+		    kflag ? "  kbytes" : "512-blks");
+		if (iflag)
+			printf(" iused   ifree  %%iused");
+		printf("  Mounted on\n");
+	}
+	printf("%-*.*s", maxwidth, maxwidth, sfsp->f_mntfromname);
 	used = sfsp->f_blocks - sfsp->f_bfree;
 	availblks = sfsp->f_bavail + used;
 	printf("%8ld%8ld%8ld",
@@ -197,8 +213,9 @@ union {
 int	fi;
 char	*strcpy();
 
-olddf(argv)
+olddf(argv, maxwidth)
 	char *argv[];
+	long maxwidth;
 {
 	struct fstab *fsp;
 
@@ -213,19 +230,20 @@ olddf(argv)
 				continue;
 			if (root[0] == 0)
 				(void) strcpy(root, fsp->fs_spec);
-			dfree(fsp->fs_spec, 1);
+			dfree(fsp->fs_spec, 1, maxwidth);
 		}
 		(void)endfsent();
 		exit(0);
 	}
 	while (*argv)
-		dfree(*argv++, 0);
+		dfree(*argv++, 0, maxwidth);
 	exit(0);
 }
 
-dfree(file, infsent)
+dfree(file, infsent, maxwidth)
 	char *file;
 	int infsent;
+	long maxwidth;
 {
 	extern int errno;
 	struct stat stbuf;
@@ -285,7 +303,7 @@ found:
 		mntpt = "";
 	bcopy((caddr_t)mntpt, (caddr_t)&sfsp->f_mntonname[0], MNAMELEN);
 	bcopy((caddr_t)file, (caddr_t)&sfsp->f_mntfromname[0], MNAMELEN);
-	prtstat(sfsp);
+	prtstat(sfsp, maxwidth);
 	(void) close(fi);
 }
 
