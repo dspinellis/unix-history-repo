@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.48 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -710,6 +710,7 @@ errbody(mci, e, separator, flags)
 	}
 	errno = 0;
 
+#ifdef DSN
 	/*
 	**  Output machine-readable version.
 	*/
@@ -908,6 +909,7 @@ errbody(mci, e, separator, flags)
 			}
 		}
 	}
+#endif
 
 	/*
 	**  Output text of original message
