@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -155,7 +155,7 @@ printowner(uid)
 	if (cp->uid != uid || !*cp->name) {
 		/* if can't find owner, print out number instead */
 		if (!(pw = getpwuid(uid))) {
-			(void)printf("%-*.*u ", UT_NAMESIZE, UT_NAMESIZE, uid);
+			(void)printf("%-*u ", UT_NAMESIZE, uid);
 			return;
 		}
 		cp->uid = uid;
@@ -178,7 +178,7 @@ printgrp(gid)
 	if (cp->gid != gid || *cp->name) {
 		/* can't find group, print out number instead */
 		if (!(gr = getgrgid(gid))) {
-			(void)printf("%-*.*u ", UT_NAMESIZE, UT_NAMESIZE, gid);
+			(void)printf("%-*u ", UT_NAMESIZE, gid);
 			return;
 		}
 		cp->gid = gid;
