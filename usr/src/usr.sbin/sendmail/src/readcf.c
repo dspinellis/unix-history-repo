@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.17 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -85,7 +85,7 @@ readcf(cfname)
 	extern char **copyplist();
 	struct stat statb;
 	char exbuf[MAXLINE];
-	char pvpbuf[PSBUFSIZE];
+	char pvpbuf[MAXLINE + MAXATOM];
 	extern char *munchstring();
 	extern void makemapentry();
 
@@ -217,7 +217,8 @@ readcf(cfname)
 			/* expand and save the LHS */
 			*p = '\0';
 			(void) expand(&buf[1], exbuf, &exbuf[sizeof exbuf]);
-			rwp->r_lhs = prescan(exbuf, '\t', pvpbuf, NULL);
+			rwp->r_lhs = prescan(exbuf, '\t', pvpbuf,
+					     sizeof pvpbuf, NULL);
 			nfuzzy = 0;
 			if (rwp->r_lhs != NULL)
 			{
@@ -297,7 +298,8 @@ readcf(cfname)
 			while (*++p == '\t')
 				continue;
 			(void) expand(p, exbuf, &exbuf[sizeof exbuf]);
-			rwp->r_rhs = prescan(exbuf, '\t', pvpbuf, NULL);
+			rwp->r_rhs = prescan(exbuf, '\t', pvpbuf,
+					     sizeof pvpbuf, NULL);
 			if (rwp->r_rhs != NULL)
 			{
 				register char **ap;
