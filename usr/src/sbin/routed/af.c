@@ -1,16 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)af.c	4.8 %G%";
+static char sccsid[] = "@(#)af.c	4.9 %G%";
 #endif
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <net/in.h>
 #include "router.h"
-#include "rip.h"
-
-extern char packet[MAXPACKETSIZE], *sys_errlist[];
-extern int trace, errno;
-#define	tprintf	if (trace) printf
 
 /*
  * Address family support routines
@@ -57,28 +49,26 @@ inet_netmatch(sin1, sin2)
  * Verify the message is from the right port.
  */
 inet_portmatch(sin)
-	struct sockaddr_in *sin;
+	register struct sockaddr_in *sin;
 {
-	int port = sin->sin_port;
 	
 #if vax || pdp11
-	port = ntohs(port);
+	sin->sin_port = ntohs(sin->sin_port);
 #endif
-	return (port == IPPORT_ROUTESERVER || port == IPPORT_ROUTESERVER+1);
+	return (sin->sin_port == sp->s_port || sin->sin_port == sp->s_port+1);
 }
 
 /*
  * Verify the message is from a "trusted" port.
  */
 inet_portcheck(sin)
-	struct sockaddr_in *sin;
+	register struct sockaddr_in *sin;
 {
-	int port = sin->sin_port;
 
 #if vax || pdp11
-	port = ntohs(port);
+	sin->sin_port = ntohs(sin->sin_port);
 #endif
-	return (port <= IPPORT_RESERVED);
+	return (sin->sin_port <= IPPORT_RESERVED);
 }
 
 /*
@@ -93,14 +83,10 @@ inet_output(s, sin, size)
 
 	dst = *sin;
 	sin = &dst;
-	if (sin->sin_port == 0) {
-		sin->sin_port = IPPORT_ROUTESERVER;
-#if vax || pdp11
-		sin->sin_port = htons(sin->sin_port);
-#endif
-	}
+	if (sin->sin_port == 0)
+		sin->sin_port = htons(sp->s_port);
 	if (send(s, sin, packet, size) < 0)
-		tprintf("send to %x: %s\n", sin->sin_addr, sys_errlist[errno]);
+		perror("send");
 }
 
 /*
