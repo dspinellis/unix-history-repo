@@ -7,7 +7,7 @@
 #
 #	NCR 3000 support from Kevin Darcy <kevin@tech.mis.cfc.com>.
 #
-#	@(#)Makefile.NCR3000	8.5 (Berkeley) %G%
+#	@(#)Makefile.NCR3000	8.6 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -28,7 +28,7 @@ ENVDEF=	-DNCR3000
 # see also conf.h for additional compilation flags
 
 # include directories
-INCDIRS=-I/usr/ucbinclude
+INCDIRS=-I/usr/include -I/usr/ucbinclude
 
 # loader options
 LDOPTS=
