@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)telextrn.h	4.2 (Berkeley) %G%
+ *	@(#)telextrn.h	4.3 (Berkeley) %G%
  */
 
 /*
@@ -34,7 +34,6 @@ extern void
 	outputPurge(),
 	EmptyTerminal(),
 	StringToTerminal(),
-	_putchar(),
 	ExitPerror(),
 	setcommandmode();
 
