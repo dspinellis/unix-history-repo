@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -250,7 +250,7 @@ bread(fd, buf, blk, size)
 	bzero(buf, (size_t)size);
 	printf("THE FOLLOWING DISK SECTORS COULD NOT BE READ:");
 	for (cp = buf, i = 0; i < size; i += secsize, cp += secsize) {
-		if (read(fd, cp, (int)secsize) < 0) {
+		if (read(fd, cp, (int)secsize) != secsize) {
 			(void)lseek(fd, blk * dev_bsize + i + secsize, 0);
 			if (secsize != dev_bsize && dev_bsize != 1)
 				printf(" %ld (%ld),",
@@ -287,7 +287,7 @@ bwrite(fd, buf, blk, size)
 		rwerror("SEEK", blk);
 	printf("THE FOLLOWING SECTORS COULD NOT BE WRITTEN:");
 	for (cp = buf, i = 0; i < size; i += dev_bsize, cp += dev_bsize)
-		if (write(fd, cp, (int)dev_bsize) < 0) {
+		if (write(fd, cp, (int)dev_bsize) != dev_bsize) {
 			(void)lseek(fd, blk * dev_bsize + i + dev_bsize, 0);
 			printf(" %ld,", blk + i / dev_bsize);
 		}
@@ -349,14 +349,18 @@ getpathname(namebuf, curdir, ino)
 	int len;
 	register char *cp;
 	struct inodesc idesc;
+	static int busy = 0;
 	extern int findname();
 
-	if (statemap[curdir] != DSTATE && statemap[curdir] != DFOUND) {
+	if (busy ||
+	    (statemap[curdir] != DSTATE && statemap[curdir] != DFOUND)) {
 		(void)strcpy(namebuf, "?");
 		return;
 	}
+	busy = 1;
 	bzero((char *)&idesc, sizeof(struct inodesc));
 	idesc.id_type = DATA;
+	idesc.id_fix = IGNORE;
 	cp = &namebuf[MAXPATHLEN - 1];
 	*cp = '\0';
 	if (curdir != ino) {
@@ -384,6 +388,7 @@ getpathname(namebuf, curdir, ino)
 		*--cp = '/';
 		ino = idesc.id_number;
 	}
+	busy = 0;
 	if (ino != ROOTINO) {
 		(void)strcpy(namebuf, "?");
 		return;
@@ -457,6 +462,7 @@ dofix(idesc, msg)
 		return (ALTERED);
 
 	case NOFIX:
+	case IGNORE:
 		return (0);
 
 	default:
