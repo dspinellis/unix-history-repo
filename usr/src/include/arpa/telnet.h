@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)telnet.h	5.10 (Berkeley) %G%
+ *	@(#)telnet.h	5.11 (Berkeley) %G%
  */
 
 /*
@@ -37,13 +37,16 @@
 char *telcmds[] = {
 	"EOF", "SUSP", "ABORT", "EOR",
 	"SE", "NOP", "DMARK", "BRK", "IP", "AO", "AYT", "EC",
-	"EL", "GA", "SB", "WILL", "WONT", "DO", "DONT", "IAC",
+	"EL", "GA", "SB", "WILL", "WONT", "DO", "DONT", "IAC", 0,
 };
+#else
+extern char *telcmds[];
+#endif
+
 #define	TELCMD_FIRST	xEOF
 #define	TELCMD_LAST	IAC
 #define	TELCMD_OK(x)	((x) <= TELCMD_LAST && (x) >= TELCMD_FIRST)
 #define	TELCMD(x)	telcmds[(x)-TELCMD_FIRST]
-#endif
 
 /* telnet options */
 #define TELOPT_BINARY	0	/* 8-bit data path */
@@ -83,12 +86,14 @@ char *telcmds[] = {
 #define TELOPT_LINEMODE	34	/* Linemode option */
 #define TELOPT_XDISPLOC	35	/* X Display Location */
 #define TELOPT_ENVIRON	36	/* Environment variables */
-#define	TELOPT_AUTHENTICATION 45 /* XXX Auto Authenticate */
+#define	TELOPT_AUTHENTICATION 37/* Authenticate */
 #define	TELOPT_EXOPL	255	/* extended-options-list */
 
-#define	NTELOPTS	(1+TELOPT_AUTHENTICATION)
+#define	TELOPT_ENCRYPT	51	/* Encryption option - EXPERIMENTAL */
+
+#define	NTELOPTS	(1+TELOPT_ENCRYPT)
 #ifdef TELOPTS
-char *telopts[NTELOPTS] = {
+char *telopts[NTELOPTS+1] = {
 	"BINARY", "ECHO", "RCP", "SUPPRESS GO AHEAD", "NAME",
 	"STATUS", "TIMING MARK", "RCTE", "NAOL", "NAOP",
 	"NAOCRD", "NAOHTS", "NAOHTD", "NAOFFD", "NAOVTS",
@@ -97,12 +102,13 @@ char *telopts[NTELOPTS] = {
 	"SEND LOCATION", "TERMINAL TYPE", "END OF RECORD",
 	"TACACS UID", "OUTPUT MARKING", "TTYLOC",
 	"3270 REGIME", "X.3 PAD", "NAWS", "TSPEED", "LFLOW",
-	"LINEMODE", "XDISPLOC", "ENVIRON",
-	"UNKNOWN 37", "UNKNOWN 38", "UNKNOWN 39", "UNKNOWN 40", "UNKNOWN 41",
-	"UNKNOWN 42", "UNKNOWN 43", "UNKNOWN 44", "AUTHENTICATION",
+	"LINEMODE", "XDISPLOC", "ENVIRON", "AUTHENTICATION",
+	"38", "39", "40", "41", "42", "43", "44", "45", "46",
+	"47", "48", "49", "50", "X-ENCRYPT",
+	0,
 };
 #define	TELOPT_FIRST	TELOPT_BINARY
-#define	TELOPT_LAST	TELOPT_AUTHENTICATION
+#define	TELOPT_LAST	TELOPT_ENCRYPT
 #define	TELOPT_OK(x)	((x) <= TELOPT_LAST && (x) >= TELOPT_FIRST)
 #define	TELOPT(x)	telopts[(x)-TELOPT_FIRST]
 #endif
@@ -111,6 +117,7 @@ char *telopts[NTELOPTS] = {
 #define	TELQUAL_IS	0	/* option is... */
 #define	TELQUAL_SEND	1	/* send option */
 #define	TELQUAL_INFO	2	/* ENVIRON: informational version of IS */
+#define	TELQUAL_REPLY	2	/* AUTHENTICATION: client version of IS */
 
 /*
  * LINEMODE suboptions
@@ -156,9 +163,24 @@ char *telopts[NTELOPTS] = {
 
 #define	NSLC		18
 
-#define	SLC_NAMES	"0", "SYNCH", "BRK", "IP", "AO", "AYT", "EOR", \
+/*
+ * For backwards compatability, we define SLC_NAMES to be the
+ * list of names if SLC_NAMES is not defined.
+ */
+#define	SLC_NAMELIST	"0", "SYNCH", "BRK", "IP", "AO", "AYT", "EOR", \
 			"ABORT", "EOF", "SUSP", "EC", "EL", "EW", "RP", \
-			"LNEXT", "XON", "XOFF", "FORW1", "FORW2"
+			"LNEXT", "XON", "XOFF", "FORW1", "FORW2", 0,
+#ifdef	SLC_NAMES
+char *slc_names[] = {
+	SLC_NAMELIST
+};
+#else
+extern char *slc_names[];
+#define	SLC_NAMES SLC_NAMELIST
+#endif
+
+#define	SLC_NAME_OK(x)	((x) >= 0 && (x) < NSLC)
+#define SLC_NAME(x)	slc_names[x]
 
 #define	SLC_NOSUPPORT	0
 #define	SLC_CANTCHANGE	1
@@ -182,12 +204,73 @@ char *telopts[NTELOPTS] = {
  * AUTHENTICATION suboptions
  */
 
-#define	TELQUAL_AUTHTYPE_NONE		0
-#define	TELQUAL_AUTHTYPE_PRIVATE	1
-#define	TELQUAL_AUTHTYPE_KERBEROS	2
+/*
+ * Who is authenticating who ...
+ */
+#define	AUTH_WHO_CLIENT		0	/* Client authenticating server */
+#define	AUTH_WHO_SERVER		1	/* Server authenticating client */
+#define	AUTH_WHO_MASK		1
 
-/* Kerberos-specific */
+/*
+ * amount of authentication done
+ */
+#define	AUTH_HOW_ONE_WAY	0
+#define	AUTH_HOW_MUTUAL		2
+#define	AUTH_HOW_MASK		2
 
-#define	TELQUAL_AUTHTYPE_KERBEROS_V4		4
-#define	TELQUAL_AUTHTYPE_KERBEROS_V5		5
-#define	TELQUAL_AUTHTYPE_KERBEROS_USERNAME	1
+#define	AUTHTYPE_NULL		0
+#define	AUTHTYPE_KERBEROS_V4	1
+#define	AUTHTYPE_KERBEROS_V5	2
+#define	AUTHTYPE_SPX		3
+#define	AUTHTYPE_MINK		4
+#define	AUTHTYPE_CNT		5
+
+#define	AUTHTYPE_TEST		99
+
+#ifdef	AUTH_NAMES
+char *authtype_names[] = {
+	"NULL", "KERBEROS_V4", "KERBEROS_V5", "SPX", "MINK", 0,
+};
+#else
+extern char *authtype_names[];
+#endif
+
+#define	AUTHTYPE_NAME_OK(x)	((x) >= 0 && (x) < AUTHTYPE_CNT)
+#define	AUTHTYPE_NAME(x)	authtype_names[x]
+
+/*
+ * ENCRYPTion suboptions
+ */
+#define	ENCRYPT_IS		0	/* I pick encryption type ... */
+#define	ENCRYPT_SUPPORT		1	/* I support encryption types ... */
+#define	ENCRYPT_REPLY		2	/* Initial setup response */
+#define	ENCRYPT_START		3	/* Am starting to send encrypted */
+#define	ENCRYPT_END		4	/* Am ending encrypted */
+#define	ENCRYPT_REQSTART	5	/* Request you start encrypting */
+#define	ENCRYPT_REQEND		6	/* Request you send encrypting */
+#define	ENCRYPT_CNT		7
+
+#define	ENCTYPE_ANY		0
+#define	ENCTYPE_KRBDES		1
+#define	ENCTYPE_CNT		2
+
+#ifdef	ENCRYPT_NAMES
+char *encrypt_names[] = {
+	"IS", "SUPPORT", "REPLY", "START", "END",
+	"REQUEST-START", "REQUEST-END",
+	0,
+};
+char *enctype_names[] = {
+	"ANY", "KRBDES",  0,
+};
+#else
+extern char *encrypt_names[];
+extern char *enctype_names[];
+#endif
+
+
+#define	ENCRYPT_NAME_OK(x)	((x) >= 0 && (x) < ENCRYPT_CNT)
+#define	ENCRYPT_NAME(x)		encrypt_names[x]
+
+#define	ENCTYPE_NAME_OK(x)	((x) >= 0 && (x) < ENCTYPE_CNT)
+#define	ENCTYPE_NAME(x)		enctype_names[x]
