@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)opset.c 4.3 %G%";
+static	char sccsid[] = "@(#)opset.c 4.4 %G%";
 #endif lint
 /*
  *	UNIX debugger
@@ -80,7 +80,7 @@ extern	int	ty_nbyte[];
 extern	int	ty_nlg[];
 extern	char	*ty_string[];
 
-short ioptab[3][256];	/* two level index by opcode into insttab */
+short ioptab[3][256];	/* two level 1-based index by opcode into insttab */
 
 int mapescbyte(byte)
 	u_char	byte;
@@ -101,7 +101,7 @@ mkioptab()
 		mapchar = mapescbyte(p->eopcode);
 		if (ioptab[mapchar][p->popcode])
 			continue;
-		ioptab[mapchar][p->popcode] = p - insttab;
+		ioptab[mapchar][p->popcode] = (p - insttab) + 1;
 	}
 }
 
@@ -179,7 +179,7 @@ printins(fmt, Idsp, ins)
 		printf("<undefined operator byte>: %x", ins);
 		goto ret;
 	}
-	ip = &insttab[ioptab[mapchar][ins]];
+	ip = &insttab[ioptab[mapchar][ins] - 1];
 	printf("%s\t", ip->iname);
 
 	for (ap = ip->argtype, argno = 0; argno < ip->nargs; argno++, ap++) {
