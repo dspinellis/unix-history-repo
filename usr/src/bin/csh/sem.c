@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)sem.c	5.8 (Berkeley) %G%";
+static char *sccsid = "@(#)sem.c	5.9 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -73,7 +73,7 @@ execute(t, wanttty, pipein, pipeout)
 		while (t->t_dtyp == TCOM)
 			if (eq(t->t_dcom[0], "nice"))
 				if (t->t_dcom[1])
-					if (any(t->t_dcom[1][0], "+-"))
+					if (index("+-", t->t_dcom[1][0]))
 						if (t->t_dcom[2]) {
 							setname("nice");
 							t->t_nice = getn(t->t_dcom[1]);
