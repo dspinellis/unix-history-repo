@@ -5,17 +5,7 @@
  * This code is derived from software contributed to Berkeley by
  * Rick Macklem at The University of Guelph.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
@@ -25,171 +15,132 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsstat.c	5.4.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsstat.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+#if BSD >= 199103
+#define NEWVM
+#endif
+#ifndef NEWVM
 #include <sys/vmmac.h>
-#include <sys/file.h>
-#include <sys/ucred.h>
 #include <machine/pte.h>
-#include <sys/namei.h>
+#endif
 #include <sys/mount.h>
 #include <nfs/nfsv2.h>
 #include <nfs/nfs.h>
+#include <signal.h>
+#include <fcntl.h>
 #include <ctype.h>
 #include <errno.h>
 #include <nlist.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <paths.h>
-
-#define	YES	1
-#define	NO	0
 
 struct nlist nl[] = {
 #define	N_NFSSTAT	0
 	{ "_nfsstats" },
-#define	N_SYSMAP	1
-	{ "_Sysmap" },
-#define	N_SYSSIZE	2
-	{ "_Syssize" },
 	"",
 };
 
-struct	pte *Sysmap;
+char *kernel = NULL;
+char *kmemf = NULL;
 
-char	*system = _PATH_UNIX;
-char	*kmemf = _PATH_KMEM;
-int	kmem;
-int	kflag;
-int	interval;
-
-extern	char *malloc();
-extern	off_t lseek();
+void intpr(), printhdr(), sidewaysintpr(), usage();
 
 main(argc, argv)
 	int argc;
-	char *argv[];
+	char **argv;
 {
+	extern int optind;
+	extern char *optarg;
+	u_int interval;
 	int ch;
 
 	interval = 0;
-	argc--;
-	argv++;
-	if (argc > 0) {
-		interval = atoi(argv[0]);
-		if (interval <= 0)
+	while ((ch = getopt(argc, argv, "M:N:w:")) != EOF)
+		switch(ch) {
+		case 'M':
+			kmemf = optarg;
+			break;
+		case 'N':
+			kernel = optarg;
+			break;
+		case 'w':
+			interval = atoi(optarg);
+			break;
+		case '?':
+		default:
 			usage();
-		argv++, argc--;
-		if (argc > 0) {
-			system = *argv;
-			argv++, argc--;
-			if (argc > 0) {
-				kmemf = *argv;
-				kflag++;
-			}
 		}
-	}
-	if (nlist(system, nl) < 0 || nl[0].n_type == 0) {
-		fprintf(stderr, "%s: no namelist\n", system);
-		exit(1);
-	}
-	kmem = open(kmemf, O_RDONLY);
-	if (kmem < 0) {
-		perror(kmemf);
-		exit(1);
-	}
-	if (kflag) {
-		off_t off;
+	argc -= optind;
+	argv += optind;
 
-		Sysmap = (struct pte *)
-		   malloc((u_int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
-		if (!Sysmap) {
-			fputs("nfsstat: can't get memory for Sysmap.\n", stderr);
-			exit(1);
+#define	BACKWARD_COMPATIBILITY
+#ifdef	BACKWARD_COMPATIBILITY
+	if (*argv) {
+		interval = atoi(*argv);
+		if (*++argv) {
+			kernel = *argv;
+			if (*++argv)
+				kmemf = *argv;
 		}
-		off = nl[N_SYSMAP].n_value & ~KERNBASE;
-		(void)lseek(kmem, off, L_SET);
-		(void)read(kmem, (char *)Sysmap,
-			(int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
 	}
-	intpr(interval, nl[N_NFSSTAT].n_value);
+#endif
+	if (kvm_openfiles(kernel, kmemf, NULL) == -1) {
+		fprintf(stderr, "nfsstate: kvm_openfiles: %s\n", kvm_geterr());
+		exit(1);
+	}
+	if (kvm_nlist(nl) != 0) {
+		fprintf(stderr, "nfsstate: kvm_nlist: can't get names\n");
+		exit(1);
+	}
+
+	if (interval)
+		sidewaysintpr(interval, nl[N_NFSSTAT].n_value);
+	else
+		intpr(nl[N_NFSSTAT].n_value);
 	exit(0);
 }
 
 /*
- * Seek into the kernel for a value.
+ * Print a description of the network interfaces.
  */
-off_t
-klseek(fd, base, off)
-	int fd, off;
-	off_t base;
-{
-	if (kflag) {
-		/* get kernel pte */
-		base &= ~KERNBASE;
-		base = ctob(Sysmap[btop(base)].pg_pfnum) + (base & PGOFSET);
-	}
-	return (lseek(fd, base, off));
-}
-
-usage()
-{
-	fputs("Usage: nfsstat [interval [ system [ corefile ] ] ]\n", stderr);
-	exit(1);
-}
-
-/*
- * Print a description of the nfs stats.
- */
-intpr(interval, nfsstataddr)
-	int interval;
+void
+intpr(nfsstataddr)
 	off_t nfsstataddr;
 {
 	struct nfsstats nfsstats;
 
-	if (nfsstataddr == 0) {
-		printf("nfsstat: symbol not defined\n");
-		return;
-	}
-	if (interval) {
-		sidewaysintpr((unsigned)interval, nfsstataddr);
-		return;
-	}
-	klseek(kmem, nfsstataddr, 0);
-	read(kmem, (char *)&nfsstats, sizeof(struct nfsstats));
+	kvm_read((void *)nfsstataddr, (char *)&nfsstats, sizeof(struct nfsstats));
 	printf("Client Info:\n");
 	printf("Rpc Counts:\n");
 	printf("%9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s\n",
 		"Getattr", "Setattr", "Lookup", "Readlink", "Read",
 		"Write", "Create", "Remove");
 	printf("%9d %9d %9d %9d %9d %9d %9d %9d\n",
-		nfsstats.rpccnt[NFSPROC_GETATTR],
-		nfsstats.rpccnt[NFSPROC_SETATTR],
-		nfsstats.rpccnt[NFSPROC_LOOKUP],
-		nfsstats.rpccnt[NFSPROC_READLINK],
-		nfsstats.rpccnt[NFSPROC_READ],
-		nfsstats.rpccnt[NFSPROC_WRITE],
-		nfsstats.rpccnt[NFSPROC_CREATE],
-		nfsstats.rpccnt[NFSPROC_REMOVE]);
-	printf("%9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s\n",
+		nfsstats.rpccnt[1],
+		nfsstats.rpccnt[2],
+		nfsstats.rpccnt[4],
+		nfsstats.rpccnt[5],
+		nfsstats.rpccnt[6],
+		nfsstats.rpccnt[8],
+		nfsstats.rpccnt[9],
+		nfsstats.rpccnt[10]);
+	printf("%9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s\n",
 		"Rename", "Link", "Symlink", "Mkdir", "Rmdir",
-		"Readdir", "Statfs", "RdirLook");
-	printf("%9d %9d %9d %9d %9d %9d %9d %9d\n",
-		nfsstats.rpccnt[NFSPROC_RENAME],
-		nfsstats.rpccnt[NFSPROC_LINK],
-		nfsstats.rpccnt[NFSPROC_SYMLINK],
-		nfsstats.rpccnt[NFSPROC_MKDIR],
-		nfsstats.rpccnt[NFSPROC_RMDIR],
-		nfsstats.rpccnt[NFSPROC_READDIR],
-		nfsstats.rpccnt[NFSPROC_STATFS],
-		nfsstats.rpccnt[NQNFSPROC_READDIRLOOK]);
-	printf("%9.9s %9.9s %9.9s\n",
-		"GLease", "Vacate", "Evict");
-	printf("%9d %9d %9d\n",
-		nfsstats.rpccnt[NQNFSPROC_GETLEASE],
-		nfsstats.rpccnt[NQNFSPROC_VACATED],
-		nfsstats.rpccnt[NQNFSPROC_EVICTED]);
+		"Readdir", "Statfs");
+	printf("%9d %9d %9d %9d %9d %9d %9d\n",
+		nfsstats.rpccnt[11],
+		nfsstats.rpccnt[12],
+		nfsstats.rpccnt[13],
+		nfsstats.rpccnt[14],
+		nfsstats.rpccnt[15],
+		nfsstats.rpccnt[16],
+		nfsstats.rpccnt[17]);
 	printf("Rpc Info:\n");
 	printf("%9.9s %9.9s %9.9s %9.9s %9.9s\n",
 		"TimedOut", "Invalid", "X Replies", "Retries", "Requests");
@@ -227,32 +178,25 @@ intpr(interval, nfsstataddr)
 		"Getattr", "Setattr", "Lookup", "Readlink", "Read",
 		"Write", "Create", "Remove");
 	printf("%9d %9d %9d %9d %9d %9d %9d %9d\n",
-		nfsstats.srvrpccnt[NFSPROC_GETATTR],
-		nfsstats.srvrpccnt[NFSPROC_SETATTR],
-		nfsstats.srvrpccnt[NFSPROC_LOOKUP],
-		nfsstats.srvrpccnt[NFSPROC_READLINK],
-		nfsstats.srvrpccnt[NFSPROC_READ],
-		nfsstats.srvrpccnt[NFSPROC_WRITE],
-		nfsstats.srvrpccnt[NFSPROC_CREATE],
-		nfsstats.srvrpccnt[NFSPROC_REMOVE]);
-	printf("%9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s\n",
+		nfsstats.srvrpccnt[1],
+		nfsstats.srvrpccnt[2],
+		nfsstats.srvrpccnt[4],
+		nfsstats.srvrpccnt[5],
+		nfsstats.srvrpccnt[6],
+		nfsstats.srvrpccnt[8],
+		nfsstats.srvrpccnt[9],
+		nfsstats.srvrpccnt[10]);
+	printf("%9.9s %9.9s %9.9s %9.9s %9.9s %9.9s %9.9s\n",
 		"Rename", "Link", "Symlink", "Mkdir", "Rmdir",
-		"Readdir", "Statfs", "RdirLook");
-	printf("%9d %9d %9d %9d %9d %9d %9d %9d\n",
-		nfsstats.srvrpccnt[NFSPROC_RENAME],
-		nfsstats.srvrpccnt[NFSPROC_LINK],
-		nfsstats.srvrpccnt[NFSPROC_SYMLINK],
-		nfsstats.srvrpccnt[NFSPROC_MKDIR],
-		nfsstats.srvrpccnt[NFSPROC_RMDIR],
-		nfsstats.srvrpccnt[NFSPROC_READDIR],
-		nfsstats.srvrpccnt[NFSPROC_STATFS],
-		nfsstats.srvrpccnt[NQNFSPROC_READDIRLOOK]);
-	printf("%9.9s %9.9s %9.9s\n",
-		"GLease", "Vacate", "Evict");
-	printf("%9d %9d %9d\n",
-		nfsstats.srvrpccnt[NQNFSPROC_GETLEASE],
-		nfsstats.srvrpccnt[NQNFSPROC_VACATED],
-		nfsstats.srvrpccnt[NQNFSPROC_EVICTED]);
+		"Readdir", "Statfs");
+	printf("%9d %9d %9d %9d %9d %9d %9d\n",
+		nfsstats.srvrpccnt[11],
+		nfsstats.srvrpccnt[12],
+		nfsstats.srvrpccnt[13],
+		nfsstats.srvrpccnt[14],
+		nfsstats.srvrpccnt[15],
+		nfsstats.srvrpccnt[16],
+		nfsstats.srvrpccnt[17]);
 	printf("Server Ret-Failed\n");
 	printf("%17d\n", nfsstats.srvrpc_errs);
 	printf("Server Faults\n");
@@ -265,13 +209,6 @@ intpr(interval, nfsstataddr)
 		nfsstats.srvcache_idemdonehits,
 		nfsstats.srvcache_nonidemdonehits,
 		nfsstats.srvcache_misses);
-	printf("Server Lease Stats:\n");
-	printf("%9.9s %9.9s %9.9s\n",
-		"Leases", "PeakL", "GLeases");
-	printf("%9d %9d %9d\n",
-		nfsstats.srvnqnfs_leases,
-		nfsstats.srvnqnfs_maxleases,
-		nfsstats.srvnqnfs_getleases);
 }
 
 u_char	signalled;			/* set if alarm goes off "early" */
@@ -282,69 +219,79 @@ u_char	signalled;			/* set if alarm goes off "early" */
  * collected over that interval.  Assumes that interval is non-zero.
  * First line printed at top of screen is always cumulative.
  */
+void
 sidewaysintpr(interval, off)
-	unsigned interval;
+	u_int interval;
 	off_t off;
 {
 	struct nfsstats nfsstats, lastst;
-	register int line;
-	int oldmask;
-	int catchalarm();
-
-	klseek(kmem, off, 0);
+	int hdrcnt, oldmask;
+	void catchalarm();
 
 	(void)signal(SIGALRM, catchalarm);
-	signalled = NO;
+	signalled = 0;
 	(void)alarm(interval);
 	bzero((caddr_t)&lastst, sizeof(lastst));
-banner:
-	printf("        %8.8s %8.8s %8.8s %8.8s %8.8s %8.8s %8.8s %8.8s\n",
-		"Getattr", "Lookup", "Readlink", "Read",
-		"Write", "Rename", "Link", "Readdir");
-	fflush(stdout);
-	line = 0;
-loop:
-	klseek(kmem, off, 0);
-	read(kmem, (char *)&nfsstats, sizeof nfsstats);
-	printf("Client: %8d %8d %8d %8d %8d %8d %8d %8d\n",
-		nfsstats.rpccnt[1]-lastst.rpccnt[1],
-		nfsstats.rpccnt[4]-lastst.rpccnt[4],
-		nfsstats.rpccnt[5]-lastst.rpccnt[5],
-		nfsstats.rpccnt[6]-lastst.rpccnt[6],
-		nfsstats.rpccnt[8]-lastst.rpccnt[8],
-		nfsstats.rpccnt[11]-lastst.rpccnt[11],
-		nfsstats.rpccnt[12]-lastst.rpccnt[12],
-		nfsstats.rpccnt[16]-lastst.rpccnt[16]);
-	printf("Server: %8d %8d %8d %8d %8d %8d %8d %8d\n",
-		nfsstats.srvrpccnt[1]-lastst.srvrpccnt[1],
-		nfsstats.srvrpccnt[4]-lastst.srvrpccnt[4],
-		nfsstats.srvrpccnt[5]-lastst.srvrpccnt[5],
-		nfsstats.srvrpccnt[6]-lastst.srvrpccnt[6],
-		nfsstats.srvrpccnt[8]-lastst.srvrpccnt[8],
-		nfsstats.srvrpccnt[11]-lastst.srvrpccnt[11],
-		nfsstats.srvrpccnt[12]-lastst.srvrpccnt[12],
-		nfsstats.srvrpccnt[16]-lastst.srvrpccnt[16]);
-	lastst = nfsstats;
-	fflush(stdout);
-	line++;
-	oldmask = sigblock(sigmask(SIGALRM));
-	if (! signalled) {
-		sigpause(0);
+
+	for (hdrcnt = 1;;) {
+		if (!--hdrcnt) {
+			printhdr();
+			hdrcnt = 20;
+		}
+		kvm_read((void *)off, (char *)&nfsstats, sizeof nfsstats);
+		printf("Client: %8d %8d %8d %8d %8d %8d %8d %8d\n",
+		    nfsstats.rpccnt[1]-lastst.rpccnt[1],
+		    nfsstats.rpccnt[4]-lastst.rpccnt[4],
+		    nfsstats.rpccnt[5]-lastst.rpccnt[5],
+		    nfsstats.rpccnt[6]-lastst.rpccnt[6],
+		    nfsstats.rpccnt[8]-lastst.rpccnt[8],
+		    nfsstats.rpccnt[11]-lastst.rpccnt[11],
+		    nfsstats.rpccnt[12]-lastst.rpccnt[12],
+		    nfsstats.rpccnt[16]-lastst.rpccnt[16]);
+		printf("Server: %8d %8d %8d %8d %8d %8d %8d %8d\n",
+		    nfsstats.srvrpccnt[1]-lastst.srvrpccnt[1],
+		    nfsstats.srvrpccnt[4]-lastst.srvrpccnt[4],
+		    nfsstats.srvrpccnt[5]-lastst.srvrpccnt[5],
+		    nfsstats.srvrpccnt[6]-lastst.srvrpccnt[6],
+		    nfsstats.srvrpccnt[8]-lastst.srvrpccnt[8],
+		    nfsstats.srvrpccnt[11]-lastst.srvrpccnt[11],
+		    nfsstats.srvrpccnt[12]-lastst.srvrpccnt[12],
+		    nfsstats.srvrpccnt[16]-lastst.srvrpccnt[16]);
+		lastst = nfsstats;
+		fflush(stdout);
+		oldmask = sigblock(sigmask(SIGALRM));
+		if (!signalled)
+			sigpause(0);
+		sigsetmask(oldmask);
+		signalled = 0;
+		(void)alarm(interval);
 	}
-	sigsetmask(oldmask);
-	signalled = NO;
-	(void)alarm(interval);
-	if (line == 21)
-		goto banner;
-	goto loop;
 	/*NOTREACHED*/
+}
+
+void
+printhdr()
+{
+	printf("        %8.8s %8.8s %8.8s %8.8s %8.8s %8.8s %8.8s %8.8s\n",
+	    "Getattr", "Lookup", "Readlink", "Read", "Write", "Rename",
+	    "Link", "Readdir");
+	fflush(stdout);
 }
 
 /*
  * Called if an interval expires before sidewaysintpr has completed a loop.
  * Sets a flag to not wait for the alarm.
  */
+void
 catchalarm()
 {
-	signalled = YES;
+	signalled = 1;
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr,
+	    "usage: nfsstat [-M core] [-N system] [-w interval]\n");
+	exit(1);
 }
