@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getsubopt.3	5.5 (Berkeley) %G%
+.\"     @(#)getsubopt.3	5.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETSUBOPT 3
@@ -105,6 +105,7 @@ while ((ch = getopt(argc, argv, "ab:")) != \-1) {
 				else
 					error("missing sub option");
 				break;
+			}
 		}
 		break;
 	}
