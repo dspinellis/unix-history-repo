@@ -1,12 +1,13 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
- * lpc -- line printer control program
+ * lpc -- line printer control program -- commands:
  */
 
 #include "lp.h"
+#include <sys/time.h>
 
 /*
  * kill an existing daemon and disable printing.
@@ -140,35 +141,99 @@ clean(argc, argv)
 	}
 }
 
+select(d)
+struct direct *d;
+{
+	int c = d->d_name[0];
+
+	if ((c == 't' || c == 'c' || c == 'd') && d->d_name[1] == 'f')
+		return(1);
+	return(0);
+}
+
+/*
+ * Comparison routine for scandir. Sort by job number and machine, then
+ * by `cf', `tf', or `df', then by the sequence letter A-Z, a-z.
+ */
+sortq(d1, d2)
+struct direct **d1, **d2;
+{
+	int c1, c2;
+
+	if (c1 = strcmp((*d1)->d_name + 3, (*d2)->d_name + 3))
+		return(c1);
+	c1 = (*d1)->d_name[0];
+	c2 = (*d2)->d_name[0];
+	if (c1 == c2)
+		return((*d1)->d_name[2] - (*d2)->d_name[2]);
+	if (c1 == 'c')
+		return(-1);
+	if (c1 == 'd' || c2 == 'c')
+		return(1);
+	return(-1);
+}
+
+/*
+ * Remove incomplete jobs from spooling area.
+ */
 cleanpr()
 {
-	register int c;
-	register DIR *dirp;
-	register struct direct *dp;
-	char *cp, *cp1;
+	register int i, n;
+	register char *cp, *cp1, *lp;
+	struct direct **queue;
+	int nitems;
 
 	bp = pbuf;
 	if ((SD = pgetstr("sd", &bp)) == NULL)
 		SD = DEFSPOOL;
-	for (cp = line, cp1 = SD; *cp++ = *cp1++; );
-	cp[-1] = '/';
 	printf("%s:\n", printer);
 
-	if ((dirp = opendir(SD)) == NULL) {
+	for (lp = line, cp = SD; *lp++ = *cp++; )
+		;
+	lp[-1] = '/';
+
+	nitems = scandir(SD, &queue, select, sortq);
+	if (nitems < 0) {
 		printf("\tcannot examine spool directory\n");
 		return;
 	}
-	while ((dp = readdir(dirp)) != NULL) {
-		c = dp->d_name[0];
-		if ((c == 'c' || c == 't' || c == 'd') && dp->d_name[1]=='f') {
-			strcpy(cp, dp->d_name);
-			if (unlink(line) < 0)
-				printf("\tcannot remove %s\n", line);
-			else
-				printf("\tremoved %s\n", line);
+	if (nitems == 0)
+		return;
+	i = 0;
+	do {
+		cp = queue[i]->d_name;
+		if (*cp == 'c') {
+			n = 0;
+			while (i + 1 < nitems) {
+				cp1 = queue[i + 1]->d_name;
+				if (*cp1 != 'd' || strcmp(cp + 3, cp1 + 3))
+					break;
+				i++;
+				n++;
+			}
+			if (n == 0) {
+				strcpy(lp, cp);
+				unlinkf(line);
+			}
+		} else {
+			/*
+			 * Must be a df with no cf (otherwise, it would have
+			 * been skipped above) or a tf file (which can always
+			 * be removed).
+			 */
+			strcpy(lp, cp);
+			unlinkf(line);
 		}
-	}
-	closedir(dirp);
+     	} while (++i < nitems);
+}
+ 
+unlinkf(name)
+	char	*name;
+{
+	if (unlink(name) < 0)
+		printf("\tcannot remove %s\n", name);
+	else
+		printf("\tremoved %s\n", name);
 }
 
 /*
@@ -589,19 +654,22 @@ stoppr()
 		printf("\tcannot stat lock file\n");
 }
 
+struct	queue **queue;
+int	nitems;
+time_t	mtime;
+
 /*
  * Put the specified jobs at the top of printer queue.
  */
 topq(argc, argv)
 	char *argv[];
 {
-	register int status, nitems, n;
+	register int n, i;
 	struct stat stbuf;
 	register char *cfname;
-	struct queue **queue;
-	int changed = 0;
+	int status, changed;
 
-	if (argc == 1) {
+	if (argc < 3) {
 		printf("Usage: topq printer [jobnum ...] [user ...]\n");
 		return;
 	}
@@ -628,34 +696,24 @@ topq(argc, argv)
 		return;
 	}
 	nitems = getq(&queue);
-	while (--argc) {
-		if ((n = inqueue(*++argv, queue, nitems)) < 0) {
-			printf("\tjob %s is not in the queue\n", *argv);
+	if (nitems == 0)
+		return;
+	changed = 0;
+	mtime = queue[0]->q_time;
+	for (i = argc; --i; ) {
+		if (doarg(argv[i]) == 0) {
+			printf("\tjob %s is not in the queue\n", argv[i]);
 			continue;
-		}
-		/*
-		 * Reposition the job by changing the modification time of
-		 * the control file.
-		 */
-		if (touch(queue[n]->q_name)) {
-			free(queue[n]);
-			queue[n] = NULL;
+		} else
 			changed++;
-		}
 	}
-	/*
-	 * Put the remaining jobs at the end of the queue.
-	 */
-	for (n = 0; n < nitems; n++) {
-		if (queue[n] == NULL)
-			continue;
-		cfname = queue[n]->q_name;
-		if (changed)
-			touch(cfname);
-		free(cfname);
-	}
+	for (i = 0; i < nitems; i++)
+		free(queue[i]);
 	free(queue);
-	printf("\tqueue order %s\n", changed ? "changed" : "unchanged");
+	if (!changed) {
+		printf("\tqueue order unchanged\n");
+		return;
+	}
 	/*
 	 * Turn on the public execute bit of the lock file to
 	 * get lpd to rebuild the queue after the current job.
@@ -664,76 +722,85 @@ topq(argc, argv)
 		(void) chmod(LO, (stbuf.st_mode & 0777) | 01);
 } 
 
-/* 
- * Change the modification time of the file.
- *	Returns boolean if successful.  
+/*
+ * Reposition the job by changing the modification time of
+ * the control file.
  */
-touch(cfname)
-	char *cfname;
+touch(q)
+	struct queue *q;
 {
-	register int fd;
+	struct timeval tvp[2];
 
-	fd = open(cfname, O_RDWR);
-	if (fd < 0) {
-		printf("\tcannot open %s\n", cfname);
-		return(0); 
-	}
-	(void) read(fd, line, 1);
-	(void) lseek(fd, 0L, 0); 	/* set pointer back to top of file */
-	(void) write(fd, line, 1);
-	(void) close(fd);
-	sleep(1);			/* so times will be different */
-	return(1);
+	tvp[0].tv_sec = tvp[1].tv_sec = --mtime;
+	tvp[0].tv_usec = tvp[1].tv_usec = 0;
+	return(utimes(q->q_name, tvp));
 }
 
 /*
  * Checks if specified job name is in the printer's queue.
  * Returns:  negative (-1) if argument name is not in the queue.
- *     0 to n:  array index of pointer to argument name.
  */
-inqueue(job, queue, nitems)
+doarg(job)
 	char *job;
-	struct queue *queue[];
-	int nitems;
 {
-	register struct queue *q;
-	register int n, jobnum;
-	register char *cp;
+	register struct queue **qq;
+	register int jobnum, n;
+	register char *cp, *machine;
+	int cnt = 0;
 	FILE *fp;
 
-	jobnum = -1;
+	/*
+	 * Look for a job item consisting of system name, colon, number 
+	 * (example: ucbarpa:114)  
+	 */
+	if ((cp = index(job, ':')) != NULL) {
+		machine = job;
+		*cp++ = '\0';
+		job = cp;
+	} else
+		machine = NULL;
+
+	/*
+	 * Check for job specified by number (example: 112 or 235ucbarpa).
+	 */
 	if (isdigit(*job)) {
 		jobnum = 0;
 		do
 			jobnum = jobnum * 10 + (*job++ - '0');
 		while (isdigit(*job));
-	}
-
-	while (--nitems >= 0) {
-		if ((q = queue[nitems]) == NULL)
-			continue;
-		/* this needs to be fixed since the same number can be used
-		   by different machines (i.e. jobnum & machine) */
-		if (jobnum >= 0) {
+		for (qq = queue + nitems; --qq >= queue; ) {
 			n = 0;
-			for (cp = q->q_name+3; isdigit(*cp); )
+			for (cp = (*qq)->q_name+3; isdigit(*cp); )
 				n = n * 10 + (*cp++ - '0');
-			if (jobnum == n)
-				return(nitems);
-			continue;
-		}
-		/*
-		 * Read cf file for owner's name
-		 */
-		if ((fp = fopen(q->q_name, "r")) == NULL)
-			continue;
-		while (getline(fp) > 0) {
-			if (line[0] == 'P' && !strcmp(job, line+1)) {
-				(void) fclose(fp);
-				return(nitems);
+			if (jobnum != n)
+				continue;
+			if (*job && strcmp(job, cp) != 0)
+				continue;
+			if (machine != NULL && strcmp(machine, cp) != 0)
+				continue;
+			if (touch(*qq) == 0) {
+				printf("\tmoved %s\n", (*qq)->q_name);
+				cnt++;
 			}
 		}
-		(void) fclose(fp);
+		return(cnt);
 	}
-	return(-1);
+	/*
+	 * Process item consisting of owner's name (example: henry).
+	 */
+	for (qq = queue + nitems; --qq >= queue; ) {
+		if ((fp = fopen((*qq)->q_name, "r")) == NULL)
+			continue;
+		while (getline(fp) > 0)
+			if (line[0] == 'P')
+				break;
+		(void) fclose(fp);
+		if (line[0] != 'P' || strcmp(job, line+1) != 0)
+			continue;
+		if (touch(*qq) == 0) {
+			printf("\tmoved %s\n", (*qq)->q_name);
+			cnt++;
+		}
+	}
+	return(cnt);
 }
