@@ -34,12 +34,14 @@ if (-r index) then
 	    $b/vfontedpr $*:q | \
 		    /bin/sh -c "vtroff $t $wide -rx1 $o -i -mvgrind 2>> xindex"
 	else
-	    $b/vfontedpr $*:q
+	    $b/vfontedpr $*:q | cat /usr/lib/tmac/tmac.vgrind -
+	endif
 	sort -df +0 -2 xindex >index
 	rm nindex xindex
 else
 	if (f == "-f") then
 	    $b/vfontedpr $*:q | vtroff $t $wide -i $o -mvgrind
 	else
-	    $b/vfontedpr $*:q
+	    $b/vfontedpr $*:q | cat /usr/lib/tmac/tmac.vgrind -
+	endif
 endif
