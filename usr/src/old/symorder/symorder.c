@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)symorder.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)symorder.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -29,7 +29,11 @@ static char sccsid[] = "@(#)symorder.c	5.5 (Berkeley) %G%";
 #include <stdlib.h>
 #include <string.h>
 
-#define SPACE 500
+#define SPACE		500
+
+#define	OKEXIT		0
+#define	NOTFOUNDEXIT	1
+#define	ERREXIT		2
 
 struct	nlist order[SPACE];
 
@@ -52,7 +56,7 @@ main(argc, argv)
 
 	if (argc != 3) {
 		(void)fprintf(stderr, "usage: symorder orderlist file\n");
-		exit(1);
+		exit(ERREXIT);
 	}
 	if ((f = fopen(argv[1], "r")) == NULL)
 		error(argv[1]);
@@ -147,8 +151,9 @@ main(argc, argv)
 		for (i = 0; i < nsym; i++)
 			if (order[i].n_value == 0)
 				printf("%s\n", order[i].n_un.n_name);
+		exit(NOTFOUNDEXIT);
 	}
-	exit(0);
+	exit(OKEXIT);
 }
 
 reorder(st1, st2, entries)
@@ -199,7 +204,7 @@ badfmt(why)
 {
 	(void)fprintf(stderr,
 	    "symorder: %s: %s: %s\n", kfile, why, strerror(EFTYPE));
-	exit(1);
+	exit(ERREXIT);
 }
 
 error(n)
@@ -212,5 +217,5 @@ error(n)
 	if (n)
 		(void)fprintf(stderr, "%s: ", n);
 	(void)fprintf(stderr, "%s\n", strerror(sverr));
-	exit(1);
+	exit(ERREXIT);
 }
