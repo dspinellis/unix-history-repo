@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.4 (Berkeley) %G%
+ *	@(#)param.h	7.5 (Berkeley) %G%
  */
 
 #define	BSD	43		/* 4.3 * 10, as cpp doesn't do floats */
@@ -142,6 +142,23 @@
 #define MAXSYMLINKS	8
 
 /*
+ * Constants for setting the parameters of the kernel memory allocator.
+ *
+ * 2 ** MINBUCKET is the smallest unit of memory that will be
+ * allocated. It must be at least large enough to hold a pointer.
+ *
+ * Units of memory less or equal to MAXALLOCSAVE will permanently
+ * allocate physical memory; requests for these size pieces of
+ * memory are quite fast. Allocations greater than MAXALLOCSAVE must
+ * always allocate and free physical memory; requests for these
+ * size allocations should be done infrequently as they will be slow.
+ * Constraints: CLBYTES <= MAXALLOCSAVE <= 2 ** (MINBUCKET + 14)
+ * and MAXALLOCSIZE must be a power of two.
+ */
+#define MINBUCKET	4		/* 4 => min allocation of 16 bytes */
+#define MAXALLOCSAVE	(2 * CLBYTES)
+
+/*
  * bit map related macros
  */
 #define	setbit(a,i)	((a)[(i)/NBBY] |= 1<<((i)%NBBY))
@@ -162,3 +179,4 @@
 #define	howmany(x, y)	(((x)+((y)-1))/(y))
 #endif
 #define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
+#define powerof2(x)	((((x)-1)&(x))==0)
