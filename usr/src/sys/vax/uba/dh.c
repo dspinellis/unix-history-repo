@@ -1,4 +1,4 @@
-/*	dh.c	4.8	%G%	*/
+/*	dh.c	4.9	%G%	*/
 
 #include "dh.h"
 #if NDH11 > 0
@@ -159,6 +159,11 @@ int  flag;
 	d = minor(dev) & 0177;
 	tp = &dh11[d];
 	(*linesw[tp->t_line].l_close)(tp);
+	/*
+	 * Turn of the break bit in case somebody did a TIOCSBRK without
+	 * a TIOCCBRK.
+	 */
+	((struct device *)(tp->t_addr))->dhbreak &= ~(1<<(minor(dev)&017));
 	if (tp->t_state&HUPCLS || (tp->t_state&ISOPEN)==0)
 		dmctl(d, TURNOFF, DMSET);
 	ttyclose(tp);
