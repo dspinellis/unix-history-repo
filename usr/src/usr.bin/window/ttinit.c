@@ -1,15 +1,28 @@
 #ifndef lint
-static char sccsid[] = "@(#)ttinit.c	3.10 %G%";
+static char sccsid[] = "@(#)ttinit.c	3.11 %G%";
 #endif
 
 #include "ww.h"
 #include "tt.h"
+
+int tt_h19();
+int tt_h29();
+int tt_f100();
+int tt_generic();
+struct tt_tab tt_tab[] = {
+	{ "h19",	3, tt_h19 },
+	{ "h29",	3, tt_h29 },
+	{ "f100",	4, tt_f100 },
+	{ "generic",	0, tt_generic },
+	0
+};
 
 ttinit()
 {
 	register struct tt_tab *tp;
 	register char *p, *q;
 	register char *t;
+	struct winsize winsize;
 
 	tt_strp = tt_strings;
 
@@ -45,6 +58,11 @@ ttinit()
 	if ((*tp->tt_func)() < 0) {
 		wwerrno = WWE_CANTDO;
 		return -1;
+	}
+	if (ioctl(0, TIOCGWINSZ, (char *)&winsize) >= 0 && winsize.ws_row != 0
+	    && winsize.ws_col != 0) {
+		tt.tt_nrow = winsize.ws_row;
+		tt.tt_ncol = winsize.ws_col;
 	}
 	return 0;
 }

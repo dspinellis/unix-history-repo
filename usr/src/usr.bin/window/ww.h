@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.34 85/01/15		*/
+/*	@(#)ww.h	3.35 85/03/01		*/
 
 #include <sgtty.h>
 #include <setjmp.h>
@@ -13,6 +13,10 @@ struct ww_dim {
 
 	/* a coordinate */
 struct ww {
+		/* general flags and states */
+	char ww_state;		/* state of window */
+	char ww_oflags;		/* wwopen flags */
+
 		/* information for overlap */
 
 		/* sizes and positions */
