@@ -185,6 +185,14 @@ on makefiles in subdirectories and pass along useful options
 such as
 .BR \-k .
 .PP
+The environment is read by \fImake\fP.  All variables are assumed to be
+macro definitions and processed as such.  The environmental variables
+are processed before any makefile and after the internal rules; thus,
+macro assignments in a makefile override environmental variables.  The
+\fB-e\fP option causes the environment to override the macro assignments
+in a makefile.  As with macro assignments, environmental variables are
+always overriden by the command line.
+.PP
 Another special macro is `VPATH'.
 The `VPATH' macro should be set to a list of directories separated by colons.
 When
@@ -228,6 +236,9 @@ depends on the special name `.PRECIOUS'.
 .PP
 Other options:
 .TP
+.B \-e
+Environmental variables override assignments within makefiles.
+.TP
 .B \-i
 Equivalent to the special entry `.IGNORE:'.
 .TP
@@ -255,7 +266,7 @@ Equivalent to the special entry
 makefile, Makefile
 .br
 .SH "SEE ALSO"
-sh(1), touch(1), f77(1), pc(1)
+sh(1), touch(1), f77(1), pc(1), getenv(3)
 .br
 S. I. Feldman
 .I
