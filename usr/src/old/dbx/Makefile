@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.27 (Berkeley) %G%
+#	@(#)Makefile	5.28 (Berkeley) %G%
 # N.B.:
 #    My version of cerror automatically catches certain errors
 # such as out of memory, I/O error.  If you re-make this with
@@ -22,7 +22,8 @@ OBJS+=	cerror.${MACHINE}.o commands.o date.o
 LDADD=	-lcompat
 DPADD=	${LIBCOMPAT}
 CLEANFILES+=mkdate makedefs makedefs.o date.c y.tab.h dbx.5.0 \
-	${HDRS} ${MACHINE}.h runtime.${MACHINE}.h ops.${MACHINE}.h
+	${HDRS} ${MACHINE}.h runtime.${MACHINE}.h ops.${MACHINE}.h \
+	instrs.adb instrs.h
 
 .c.h:
 	./makedefs -f ${.CURDIR}/$*.c $*.h
@@ -44,9 +45,17 @@ ops.h: ops.${MACHINE}.h
 date.c: mkdate
 	./mkdate > date.c
 
+.if	${MACHINE} == "tahoe"
+instrs.adb:
+	ln -s /usr/src/bin/adb/adb.tahoe/instrs.adb ${.TARGET}
+.elif	${MACHINE} == "vax"
 INSTR=	${.CURDIR}/../as.vax/instrs
 instrs.adb: ${INSTR}
 	(echo FLAVOR ADB; cat ${INSTR}) | awk -f ${INSTR} > ${.TARGET}
+
+instrs.h:
+	ln -s ${.CURDIR}/../as.vax/instrs.h ${.TARGET}
+.endif
 
 .depend: ${HDRS} commands.o
 ${HDRS}: instrs.adb makedefs
