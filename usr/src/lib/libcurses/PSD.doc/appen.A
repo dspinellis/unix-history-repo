@@ -2,9 +2,10 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)appen.A	5.1 (Berkeley) %G%
+.\"	@(#)appen.A	6.1 (Berkeley) %G%
 .\"
-.ie t .he ''\fBAppendix A\fR''
+.ie t .oh '\*(Ln Appendix A''PS1:18-%'
+.eh 'PS1:18-%''\*(Ln Appendix A'
 .el .he ''\fIAppendix A\fR''
 .bp
 .(x
@@ -20,10 +21,13 @@
 .pp
 The description of terminals is a difficult business,
 and we only attempt to summarize the capabilities here:
-for a full description see the paper describing termcap.
+for a full description see
+.b termcap (5).
 .sh 2 Overview
 .pp
-Capabilities from termcap are of three kinds:
+Capabilities from
+.b termcap
+are of three kinds:
 string valued options,
 numeric valued options,
 and boolean options.
@@ -47,7 +51,8 @@ In some cases, the pad is better computed as some number of milliseconds
 times the number of affected lines
 (to the bottom of the screen usually,
 except when terminals have insert modes which will shift several lines.)
-This is specified as, e.g.,
+This is specified as,
+i e.g. ,
 .b 12* .
 before the capability,
 to say 12 milliseconds per affected whatever
@@ -105,23 +110,45 @@ char *	UC		Underline a single Character
 char *	UE		Underline Ending sequence
 bool	UL		UnderLining works even though !OS
 char *	UP		UPline
-char *	US		Underline Starting sequence\**
+char *	US		Underline Starting sequence
 char *	VB		Visible Bell
 char *	VE		Visual End sequence
 char *	VS		Visual Start sequence
 bool	XN		a Newline gets eaten after wrap
 .TE
-.(f
-\**
-US and UE,
-if they do not exist in the termcap entry,
-are copied from SO and SE
-in
-.Fn setterm
-.)f
 Names starting with
 .bi X
 are reserved for severely nauseous glitches
+.pp
+For purposes of
+.Fn standout ,
+if
+.Fn SG
+is not 0,
+.Fn SO
+is set to
+.Fn NULL ,
+and if
+.Fn UG
+is not
+.Fn 0 ,
+.Fn US
+is set to
+.Fn NULL .
+If, after this,
+.Fn SO
+is
+.Fn NULL ,
+and
+.Fn US
+is not,
+.Fn SO
+is set to be
+.Fn US ,
+and
+.Fn SE
+is set to be
+.Fn UE .
 .sh 2 "Variables Set By gettmode()"
 .TS H
 c s s
