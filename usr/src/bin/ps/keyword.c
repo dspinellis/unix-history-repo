@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)keyword.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)keyword.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -102,7 +102,7 @@ VAR var[] = {
 	{"pgid", "PGID", NULL, 0, evar, PIDLEN, EOFF(e_pgid), USHORT, PIDFMT},
 	{"pid", "PID", NULL, 0, pvar, PIDLEN, POFF(p_pid),SHORT, PIDFMT},
 	{"pmem", "", "%mem"},
-	{"ppid", "PPID", NULL, 0, pvar, PIDLEN, POFF(p_ppid), SHORT, PIDFMT},
+	{"ppid", "PPID", NULL, 0, evar, PIDLEN, EOFF(e_ppid), SHORT, PIDFMT},
 	{"pri", "PRI", NULL, 0, pri, 3},
 	{"re", "RE", NULL, 0, pvar, 3, POFF(p_time), CHAR, "d"},
 	{"rgid", "RGID", NULL, 0, evar, UIDLEN, EOFF(e_pcred.p_rgid),
