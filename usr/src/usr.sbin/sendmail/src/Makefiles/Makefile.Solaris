@@ -7,7 +7,7 @@
 #
 #  This has been tested on Solaris 2.1 and 2.2.
 #
-#	@(#)Makefile.Solaris	8.3 (Berkeley) %G%
+#	@(#)Makefile.Solaris	8.4 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -32,7 +32,7 @@ ENVDEF=	-DSOLARIS
 # see also conf.h for additional compilation flags
 
 # include directories
-INCDIRS=-I/usr/sww/include/db -I.
+INCDIRS=-I/usr/sww/include/db
 
 # library directories
 LIBDIRS=-L/usr/sww/lib
