@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <pwd.h>
@@ -453,10 +453,7 @@ setsender(from)
 	{
 		extern bool trusteduser();
 
-		if (!trusteduser(realname) &&
-# ifdef DEBUG
-		    (!tTd(1, 9) || getuid() != geteuid()) &&
-# endif DEBUG
+		if (!trusteduser(realname) && getuid() != geteuid() &&
 		    index(from, '!') == NULL && getuid() != 0)
 		{
 			/* network sends -r regardless (why why why?) */
@@ -538,7 +535,8 @@ setsender(from)
 	pvp = prescan(from, '\0', pvpbuf);
 	if (pvp == NULL)
 	{
-		syserr("cannot prescan from (%s)", from);
+		syslog(LOG_INFO, "cannot prescan from (%s)", from);
+		usrerr("cannot prescan from (%s)", from);
 		finis();
 	}
 	rewrite(pvp, 3);

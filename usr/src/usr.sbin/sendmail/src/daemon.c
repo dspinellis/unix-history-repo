@@ -21,9 +21,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.27 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.28 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.27 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.28 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -166,7 +166,6 @@ getrequests()
 	{
 		register int pid;
 		auto int lotherend;
-		struct sockaddr_in otherend;
 		extern int RefuseLA;
 
 		/* see if we are rejecting connections */
@@ -177,8 +176,8 @@ getrequests()
 		do
 		{
 			errno = 0;
-			lotherend = sizeof otherend;
-			t = accept(DaemonSocket, &otherend, &lotherend);
+			lotherend = sizeof RealHostAddr;
+			t = accept(DaemonSocket, &RealHostAddr, &lotherend);
 		} while (t < 0 && errno == EINTR);
 		if (t < 0)
 		{
@@ -221,24 +220,16 @@ getrequests()
 			(void) signal(SIGCHLD, SIG_DFL);
 
 			/* determine host name */
-			hp = gethostbyaddr((char *) &otherend.sin_addr, sizeof otherend.sin_addr, AF_INET);
+			hp = gethostbyaddr((char *) &RealHostAddr.sin_addr, sizeof RealHostAddr.sin_addr, AF_INET);
 			if (hp != NULL)
-			{
 				(void) strcpy(buf, hp->h_name);
-				if (NetName != NULL && NetName[0] != '\0' &&
-				    index(hp->h_name, '.') == NULL)
-				{
-					(void) strcat(buf, ".");
-					(void) strcat(buf, NetName);
-				}
-			}
 			else
 			{
 				extern char *inet_ntoa();
 
 				/* produce a dotted quad */
 				(void) sprintf(buf, "[%s]",
-					inet_ntoa(otherend.sin_addr));
+					inet_ntoa(RealHostAddr.sin_addr));
 			}
 
 			/* should we check for illegal connection here? XXX */

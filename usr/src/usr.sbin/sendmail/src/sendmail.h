@@ -15,7 +15,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)sendmail.h	5.13 (Berkeley) %G%
+ *	@(#)sendmail.h	5.14 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.13		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.14		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
