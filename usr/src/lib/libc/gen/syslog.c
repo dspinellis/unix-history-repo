@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.15 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 
@@ -43,14 +43,13 @@ static char sccsid[] = "@(#)syslog.c	5.14 (Berkeley) %G%";
 #define	MAXLINE	1024			/* max message size */
 #define NULL	0			/* manifest */
 
-#define PRIFAC(p)	(((p) & LOG_FACMASK) >> 3)
-					/* XXX should be in <syslog.h> */
 #define IMPORTANT 	LOG_ERR
 
 static char	logname[] = "/dev/log";
 static char	ctty[] = "/dev/console";
 
 static int	LogFile = -1;		/* fd for log */
+static int	connected;		/* have done connect */
 static int	LogStat	= 0;		/* status bits, set by openlog() */
 static char	*LogTag = "syslog";	/* string to tag the entry with */
 static int	LogMask = 0xff;		/* mask of priorities to be logged */
@@ -72,11 +71,11 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 	int pid, olderrno = errno;
 
 	/* see if we should just throw out this message */
-	if ((unsigned) PRIFAC(pri) >= LOG_NFACILITIES ||
-	    (LOG_MASK(pri & LOG_PRIMASK) & LogMask) == 0 ||
+	if ((unsigned) LOG_FAC(pri) >= LOG_NFACILITIES ||
+	    LOG_MASK(LOG_PRI(pri)) == 0 ||
 	    (pri &~ (LOG_PRIMASK|LOG_FACMASK)) != 0)
 		return;
-	if (LogFile < 0)
+	if (LogFile < 0 || !connected)
 		openlog(LogTag, LogStat | LOG_NDELAY, 0);
 
 	/* set default facility if none specified */
@@ -129,7 +128,7 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 		c = MAXLINE;
 
 	/* output the message to the local logger */
-	if (sendto(LogFile, outline, c, 0, &SyslogAddr, sizeof SyslogAddr) >= 0)
+	if (send(LogFile, outline, c, 0) >= 0)
 		return;
 	if (!(LogStat & LOG_CONS))
 		return;
@@ -170,14 +169,17 @@ openlog(ident, logstat, logfac)
 	LogStat = logstat;
 	if (logfac != 0 && (logfac &~ LOG_FACMASK) == 0)
 		LogFacility = logfac;
-	if (LogFile >= 0)
-		return;
-	SyslogAddr.sa_family = AF_UNIX;
-	strncpy(SyslogAddr.sa_data, logname, sizeof SyslogAddr.sa_data);
-	if (LogStat & LOG_NDELAY) {
-		LogFile = socket(AF_UNIX, SOCK_DGRAM, 0);
-		fcntl(LogFile, F_SETFD, 1);
+	if (LogFile == -1) {
+		SyslogAddr.sa_family = AF_UNIX;
+		strncpy(SyslogAddr.sa_data, logname, sizeof SyslogAddr.sa_data);
+		if (LogStat & LOG_NDELAY) {
+			LogFile = socket(AF_UNIX, SOCK_DGRAM, 0);
+			fcntl(LogFile, F_SETFD, 1);
+		}
 	}
+	if (LogFile != -1 && !connected &&
+	    connect(LogFile, &SyslogAddr, sizeof(SyslogAddr)) != -1)
+		connected = 1;
 }
 
 /*
@@ -189,6 +191,7 @@ closelog()
 
 	(void) close(LogFile);
 	LogFile = -1;
+	connected = 0;
 }
 
 /*
