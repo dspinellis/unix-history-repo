@@ -1,0 +1,26 @@
+case $1 in
+  -dev) shift
+	for d in $*; do
+		echo device_\(gs_${d}_device\) >>_temp_.dh
+	done;;
+  -include) shift
+	for d in $*; do
+		/bin/sh < ./${d}.dev
+	done;;
+  -lib) shift
+	for l in $*; do
+		/bin/sh ./echoq -l${l} >>_temp_.dlb
+	done;;
+  -obj) shift
+	for o in $*; do
+		/bin/sh ./echoq ${o} >>_temp_.dob
+	done;;
+  -oper) shift
+	for o in $*; do
+		echo oper_\(${o}_op_defs\) >>_temp_.dop
+	done;;
+  -ps) shift
+	for f in $*; do
+		echo psfile_\(\"${f}.ps\"\) >>_temp_.dps
+	done;;
+esac
