@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.15 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.16 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.15 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.16 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -275,6 +275,8 @@ punt:
 			*/
 
 			*rcode = EX_CONFIG;
+			syserr("MX list for %s points back to %s",
+				host, MyHostName);
 			return -1;
 		}
 		strcpy(MXHostBuf, host);
