@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -240,7 +240,7 @@ main(argc, argv)
 	/* NOTREACHED */
 }
 
-void
+static void
 usage()
 {
 	(void)fprintf(stderr, "usage:\t%s%s%s%s%s",
