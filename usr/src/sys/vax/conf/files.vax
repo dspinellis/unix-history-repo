@@ -36,6 +36,7 @@ vaxbi/kdb.c		optional kra device-driver
 vaxif/if_acc.c		optional acc imp device-driver
 vaxif/if_css.c		optional css imp device-driver
 vaxif/if_de.c		optional de device-driver
+vaxif/if_dp.c		optional dp device-driver
 vaxif/if_ddn.c		optional ddn device-driver
 vaxif/if_dmc.c		optional dmc device-driver
 vaxif/if_dmv.c		optional dmv device-driver
