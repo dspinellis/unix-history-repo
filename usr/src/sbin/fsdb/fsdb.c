@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fsdb.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)fsdb.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -30,11 +30,10 @@ static char sccsid[] = "@(#)fsdb.c	5.9 (Berkeley) %G%";
  */
 
 #include <sys/param.h>
-#include <sys/signal.h>
 #include <sys/file.h>
 #include <sys/dir.h>
-#include <ufs/fs.h>
-#include <ufs/dinode.h>
+#include <ufs/ufs/dinode.h>
+#include <ufs/ffs/fs.h>
 #include <stdio.h>
 #include <setjmp.h>
 #include <paths.h>
