@@ -1,4 +1,4 @@
-/*	fs.h	4.3	82/10/10	*/
+/*	fs.h	4.4	82/10/17	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -259,7 +259,7 @@ struct	cg {
 	short	cg_b[MAXCPG][NRPOS];	/* positions of free blocks */
 	char	cg_iused[MAXIPG/NBBY];	/* used inode map */
 	long	cg_magic;		/* magic number */
-	char	cg_free[1];		/* free block map */
+	u_char	cg_free[1];		/* free block map */
 /* actually longer */
 };
 
