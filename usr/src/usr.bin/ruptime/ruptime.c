@@ -111,11 +111,11 @@ again:
 	for (i = 0; i < nhosts; i++) {
 		hsp = &hs[i];
 		if (down(hsp)) {
-			printf("%-8.8s%s\n", hsp->hs_wd->wd_hostname,
+			printf("%-12.12s%s\n", hsp->hs_wd->wd_hostname,
 			    interval(now - hsp->hs_wd->wd_recvtime, "down"));
 			continue;
 		}
-		printf("%-8.8s%s,  %4d user%s  load %*.2f, %*.2f, %*.2f\n",
+		printf("%-12.12s%s,  %4d user%s  load %*.2f, %*.2f, %*.2f\n",
 		    hsp->hs_wd->wd_hostname,
 		    interval(hsp->hs_wd->wd_sendtime -
 			hsp->hs_wd->wd_boottime, "  up"),
