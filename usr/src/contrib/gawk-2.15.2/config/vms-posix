@@ -1,0 +1,11 @@
+VMS POSIX (not to be confused with native VMS...)
+STDC_HEADERS	1
+RANDOM_MISSING	1
+STRCASE_MISSING	1
+NO_TOKEN_PASTING 1
+MAKE_ALLOCA_C
+MAKE_VMS-Posix
+MAKE_CC
+#define DEFAULT_FILETYPE ".awk"
+#define getopt gnu_getopt
+#define opterr gnu_opterr
