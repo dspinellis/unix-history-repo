@@ -2,7 +2,7 @@
 
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)commands.y 1.2 %G%";
+static char sccsid[] = "@(#)commands.y 1.3 %G%";
 
 /*
  * Yacc grammar for debugger commands.
@@ -38,6 +38,7 @@ private String curformat = "X";
 %left UNARYSIGN
 %left '*' '/' DIV MOD AND
 %left NOT '(' '[' '.' '^' ARROW
+%left '\\'
 
 %union {
     Name y_name;
@@ -560,6 +561,11 @@ examine:
 {
 	$$ = build(O_EXAMINE, $3, build(O_LCON, (long) prtaddr), nil, $2);
 }
+|
+    address '=' mode
+{
+	$$ = build(O_EXAMINE, $3, $1, nil, 0);
+}
 ;
 address:
     INT
@@ -651,6 +657,11 @@ exp:
     constant
 {
 	$$ = $1;
+}
+|
+    exp '\\' symbol
+{
+	$$ = build(O_TYPERENAME, $1, $3);
 }
 |
     '+' exp %prec UNARYSIGN
