@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex.c	6.2 %G%";
+static char *sccsid = "@(#)ex.c	6.3 %G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -81,6 +81,7 @@ main(ac, av)
 	bool ivis;
 	bool itag = 0;
 	bool fast = 0;
+	int onemt();
 #ifdef TRACE
 	register char *tracef;
 #endif
@@ -143,6 +144,8 @@ main(ac, av)
 	ruptible = signal(SIGINT, SIG_IGN) == SIG_DFL;
 	if (signal(SIGTERM, SIG_IGN) == SIG_DFL)
 		signal(SIGTERM, onhup);
+	if (signal(SIGEMT, SIG_IGN) == SIG_DFL)
+		signal(SIGEMT, onemt);
 
 	/*
 	 * Initialize end of core pointers.
@@ -518,4 +521,17 @@ register char *p;
 		if (*p == '/')
 			r = p+1;
 	return(r);
+}
+
+/*
+ * The following code is defensive programming against a bug in the
+ * pdp-11 overlay implementation.  Sometimes it goes nuts and asks
+ * for an overlay with some garbage number, which generates an emt
+ * trap.  This is a less than elegant solution, but it is somewhat
+ * better than core dumping and losing your work, leaving your tty
+ * in a weird state, etc.
+ */
+onemt()
+{
+	error("emt trap@ - try again");
 }
