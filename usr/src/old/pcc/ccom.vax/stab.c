@@ -5,7 +5,7 @@
  * symbolic debugging information into the object file.
  */
 
-static char *sccsid ="@(#)stab.c	1.6 (Berkeley) %G%";
+static char *sccsid ="@(#)stab.c	1.7 (Berkeley) %G%";
 
 #include "mfile1"
 
@@ -62,6 +62,35 @@ struct symtab *p;
 }
 
 /*
+ * Determine if the given symbol is a global array with dimension 0,
+ * which only makes sense if it's dimension is to be given later.
+ * We therefore currently do not generate symbol information for
+ * such entries.
+ */
+
+#define isglobal(class) ( \
+    class == EXTDEF or class == EXTERN or class == STATIC \
+)
+
+private Boolean zero_length_array(p)
+register struct symtab *p;
+{
+    Boolean b;
+    int t;
+
+    if (not isglobal(p->sclass)) {
+	b = false;
+    } else {
+	t = p->stype;
+	if (ISFTN(t)) {
+	    t = DECREF(t);
+	}
+	b = (Boolean) (ISARY(t) and dimtab[p->dimoff] == 0);
+    }
+    return b;
+}
+
+/*
  * Generate debugging info for a given symbol.
  */
 
@@ -76,7 +105,7 @@ struct symtab *sym;
 
     if (oldway) {
 	old_outstab(sym);
-    } else if (gdebug) {
+    } else if (gdebug and not zero_length_array(sym)) {
 	if (firsttime) {
 	    firsttime = false;
 	    inittypes();
