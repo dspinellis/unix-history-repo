@@ -1,12 +1,12 @@
 #
 # make file for cribbage
 #
-# @(#)Makefile	1.2 (Berkeley) %G%
+# @(#)Makefile	1.3 (Berkeley) %G%
 #
 HDRS=	cribbage.h deck.h cribcur.h
 OBJS=	extern.o crib.o support.o cards.o score.o io.o
 CFILES=	extern.c crib.c support.c cards.c score.c io.c
-TOBJS=	test.o cards.o score.o io.o
+TOBJS=	test.o cards.o score.o io.o extern.o
 CFLAGS=	-O
 
 cribbage:	${OBJS}
@@ -17,7 +17,7 @@ all: cribbage crib.instr
 crib.o io.o support.o: cribcur.h
 
 test:		${TOBJS}
-	${CC} ${CFLAGS} -o test ${TOBJS}
+	${CC} ${CFLAGS} -o test ${TOBJS} -lcurses -ltermlib
 
 crib.instr: cribbage.n macro
 	nroff cribbage.n > crib.instr
