@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gethostname.3	5.1 (Berkeley) %G%
+.\"	@(#)gethostname.3	6.1 (Berkeley) %G%
 .\"
-.TH GETHOSTNAME 2 "12 February 1983"
+.TH GETHOSTNAME 2 ""
 .UC 5
 .SH NAME
 gethostname, sethostname \- get/set name of current host
@@ -55,4 +55,6 @@ The caller was not the super-user.
 .SH SEE ALSO
 gethostid(2)
 .SH BUGS
-Host names are limited to 255 characters.
+Host names are limited to
+.I 32
+characters.
