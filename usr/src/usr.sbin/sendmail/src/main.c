@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.135		%G%);
+SCCSID(@(#)main.c	3.136		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -522,20 +522,9 @@ main(argc, argv)
 
 			/* get our pid right */
 			MotherPid = getpid();
-# ifdef LOG
-			if (LogLevel > 11)
-				syslog(LOG_DEBUG, "background daemon, pid=%d",
-				       MotherPid);
-# endif LOG
 
 			/* disconnect from our controlling tty */
-			i = open("/dev/tty", 2);
-			if (i >= 0)
-			{
-				(void) ioctl(i, TIOCNOTTY, 0);
-				(void) close(i);
-			}
-			errno = 0;
+			disconnect(FALSE);
 		}
 # ifdef QUEUE
 		if (queuemode)
@@ -1438,4 +1427,64 @@ thaw()
 
 	(void) close(f);
 	return (TRUE);
+}
+/*
+**  DISCONNECT -- remove our connection with any foreground process
+**
+**	Parameters:
+**		all -- if set, disconnect InChannel and OutChannel also.
+**
+**	Returns:
+**		none
+**
+**	Side Effects:
+**		Trys to insure that we are immune to vagaries of
+**		the controlling tty.
+*/
+
+disconnect(all)
+	bool all;
+{
+	int fd;
+
+#ifdef TIOCNOTTY
+	/* drop our controlling TTY completely if possible */
+	fd = open("/dev/tty", 2);
+	if (fd >= 0)
+	{
+		(void) ioctl(fd, TIOCNOTTY, 0);
+		(void) close(fd);
+	}
+#endif TIOCNOTTY
+
+	/* be sure we don't get nasty signals */
+	signal(SIGHUP, SIG_IGN);
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
+
+	/* we can't communicate with our caller, so.... */
+	HoldErrs = MailBack = TRUE;
+	Verbose = FALSE;
+
+	/* all input from /dev/null */
+	if (all)
+		(void) freopen("/dev/null", "r", InChannel);
+	if (InChannel != stdin)
+		(void) freopen("/dev/null", "r", stdin);
+
+	/* output to the transcript */
+	if (all || OutChannel != stdout)
+	{
+		(void) close(1);
+		(void) dup(fileno(Xscript));
+		(void) fclose(OutChannel);
+		OutChannel = Xscript;
+	}
+
+# ifdef LOG
+	if (LogLevel > 11)
+		syslog(LOG_DEBUG, "in background, pid=%d", getpid());
+# endif LOG
+
+	errno = 0;
 }

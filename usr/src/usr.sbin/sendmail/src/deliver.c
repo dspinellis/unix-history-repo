@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.129		%G%);
+SCCSID(@(#)deliver.c	3.130		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1456,21 +1456,21 @@ sendall(e, mode)
 	{
 		register ADDRESS *q;
 
-		for (q = CurEnv->e_sendqueue; q != NULL; q = q->q_next)
+		for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 		{
 			if (!bitset(QDONTSEND, q->q_flags))
 			{
-				CurEnv->e_to = q->q_paddr;
+				e->e_to = q->q_paddr;
 				message(Arpa_Info, "queued");
 				if (LogLevel > 4)
 					logdelivery("queued");
 			}
-			CurEnv->e_to = NULL;
+			e->e_to = NULL;
 		}
 	}
 	if (mode == SM_QUEUE || mode == SM_FORK ||
 	    (mode != SM_VERIFY && SuperSafe))
-		queueup(CurEnv, TRUE);
+		queueup(e, TRUE);
 #endif QUEUE
 
 	oldverbose = Verbose;
@@ -1481,12 +1481,13 @@ sendall(e, mode)
 		break;
 
 	  case SM_QUEUE:
-		CurEnv->e_df = CurEnv->e_qf = NULL;
-		CurEnv->e_dontqueue = TRUE;
+		e->e_df = e->e_qf = NULL;
+		e->e_dontqueue = TRUE;
 		finis();
 		return;
 
 	  case SM_FORK:
+		(void) fflush(Xscript);
 		pid = fork();
 		if (pid < 0)
 		{
@@ -1494,15 +1495,21 @@ sendall(e, mode)
 			break;
 		}
 		else if (pid > 0)
+		{
+			/* be sure we leave the temp files to our child */
+			e->e_id = e->e_df = e->e_qf = NULL;
+			e->e_dontqueue = TRUE;
+			Transcript = NULL;
 			return;
+		}
 
 		/* double fork to avoid zombies */
 		if (fork() > 0)
 			exit(EX_OK);
 
-		/* now arrange to run the queue */
-		HoldErrs = MailBack = TRUE;
-		Verbose = FALSE;
+		/* be sure we are immune from the terminal */
+		disconnect(TRUE);
+
 		break;
 	}
 
@@ -1514,7 +1521,7 @@ sendall(e, mode)
 	{
 		if (mode == SM_VERIFY)
 		{
-			CurEnv->e_to = q->q_paddr;
+			e->e_to = q->q_paddr;
 			if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
 				message(Arpa_Info, "deliverable");
 		}
