@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)last.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)last.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -155,14 +155,26 @@ wtmp()
 			 * if the terminal line is '~', the machine stopped.
 			 * see utmp(5) for more info.
 			 */
-			if (!strncmp(bp->ut_line, "~", LMAX)) {
+			if (bp->ut_line[0] == '~' && !bp->ut_line[1]) {
 				/* everybody just logged out */
 				for (T = ttylist; T; T = T->next)
 					T->logout = -bp->ut_time;
 				currentout = -bp->ut_time;
-				crmsg = strncmp(bp->ut_name, "shutdown", NMAX) ? "crash" : "down ";
-				if (!bp->ut_name[0])
-					(void)strcpy(bp->ut_name, "reboot");
+				crmsg = strncmp(bp->ut_name, "shutdown", NMAX) ? "crash" : "shutdown";
+				if (want(bp, NO)) {
+					ct = ctime(&bp->ut_time);
+					printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s \n", NMAX, NMAX, bp->ut_name, LMAX, LMAX, bp->ut_line, HMAX, HMAX, bp->ut_host, ct, ct + 11);
+					if (maxrec && !--maxrec)
+						return;
+				}
+				continue;
+			}
+			/*
+			 * if the line is '{' or '|', date got set; see
+			 * utmp(5) for more info.
+			 */
+			if ((bp->ut_line[0] == '{' || bp->ut_line[0] == '|')
+			    && !bp->ut_line[1]) {
 				if (want(bp, NO)) {
 					ct = ctime(&bp->ut_time);
 					printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s \n", NMAX, NMAX, bp->ut_name, LMAX, LMAX, bp->ut_line, HMAX, HMAX, bp->ut_host, ct, ct + 11);
