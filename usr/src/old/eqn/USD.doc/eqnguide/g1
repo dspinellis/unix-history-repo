@@ -1,4 +1,4 @@
-.\"	@(#)g1	5.1 (Berkeley) %G%
+.\"	@(#)g1	6.1 (Berkeley) %G%
 .\"
 .if t .2C
 .SC Introduction
@@ -6,10 +6,9 @@
 .UC EQN
 is a
 program for typesetting mathematics
-on the Graphics Systems phototypesetters on
-.UC UNIX
-and
-.UC GCOS .
+on the Graphics Systems phototypesetters on the
+.UX
+operating system.
 The 
 .UC EQN
 language was designed to be easy to use
@@ -65,8 +64,6 @@ on
 .P1
 eqn files | troff
 .P2
-.UC GCOS
-use is discussed in section 26.
 .SC Displayed Equations
 .PP
 To tell
