@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket2.c	7.5 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,6 +25,7 @@
 #include "file.h"
 #include "inode.h"
 #include "buf.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"
 #include "socket.h"
@@ -141,7 +142,7 @@ sonewconn(head)
 	so->so_proto = head->so_proto;
 	so->so_timeo = head->so_timeo;
 	so->so_pgrp = head->so_pgrp;
-	(void) soreserve(so, head->so_snd.sb_hiwat, head->so_snd.sb_hiwat);
+	(void) soreserve(so, head->so_snd.sb_hiwat, head->so_rcv.sb_hiwat);
 	soqinsque(head, so, 0);
 	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH,
 	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0)) {
@@ -235,7 +236,7 @@ socantrcvmore(so)
 sbselqueue(sb)
 	struct sockbuf *sb;
 {
-	register struct proc *p;
+	struct proc *p;
 
 	if ((p = sb->sb_sel) && p->p_wchan == (caddr_t)&selwait)
 		sb->sb_flags |= SB_COLL;
@@ -256,10 +257,14 @@ sbwait(sb)
 
 /*
  * Wakeup processes waiting on a socket buffer.
+ * Do asynchronous notification via SIGIO
+ * if the socket has the SS_ASYNC flag set.
  */
-sbwakeup(sb)
+sowakeup(so, sb)
+	register struct socket *so;
 	register struct sockbuf *sb;
 {
+	register struct proc *p;
 
 	if (sb->sb_sel) {
 		selwakeup(sb->sb_sel, sb->sb_flags & SB_COLL);
@@ -270,20 +275,6 @@ sbwakeup(sb)
 		sb->sb_flags &= ~SB_WAIT;
 		wakeup((caddr_t)&sb->sb_cc);
 	}
-}
-
-/*
- * Wakeup socket readers and writers.
- * Do asynchronous notification via SIGIO
- * if the socket has the SS_ASYNC flag set.
- */
-sowakeup(so, sb)
-	register struct socket *so;
-	struct sockbuf *sb;
-{
-	register struct proc *p;
-
-	sbwakeup(sb);
 	if (so->so_state & SS_ASYNC) {
 		if (so->so_pgrp < 0)
 			gsignal(-so->so_pgrp, SIGIO);
@@ -303,7 +294,7 @@ sowakeup(so, sb)
  *
  * Data stored in a socket buffer is maintained as a list of records.
  * Each record is a list of mbufs chained together with the m_next
- * field.  Records are chained together with the m_act field. The upper
+ * field.  Records are chained together with the m_nextpkt field. The upper
  * level routine soreceive() expects the following conventions to be
  * observed when placing information in the receive buffer:
  *
@@ -350,7 +341,7 @@ sbreserve(sb, cc)
 	u_long cc;
 {
 
-	if (cc > (u_long)SB_MAX * CLBYTES / (2 * MSIZE + CLBYTES))
+	if (cc > (u_long)SB_MAX * MCLBYTES / (2 * MSIZE + MCLBYTES))
 		return (0);
 	sb->sb_hiwat = cc;
 	sb->sb_mbmax = MIN(cc * 2, SB_MAX);
@@ -408,8 +399,8 @@ sbappend(sb, m)
 	if (m == 0)
 		return;
 	if (n = sb->sb_mb) {
-		while (n->m_act)
-			n = n->m_act;
+		while (n->m_nextpkt)
+			n = n->m_nextpkt;
 		while (n->m_next)
 			n = n->m_next;
 	}
@@ -429,15 +420,15 @@ sbappendrecord(sb, m0)
 	if (m0 == 0)
 		return;
 	if (m = sb->sb_mb)
-		while (m->m_act)
-			m = m->m_act;
+		while (m->m_nextpkt)
+			m = m->m_nextpkt;
 	/*
 	 * Put the first mbuf on the queue.
 	 * Note this permits zero length records.
 	 */
 	sballoc(sb, m0);
 	if (m)
-		m->m_act = m0;
+		m->m_nextpkt = m0;
 	else
 		sb->sb_mb = m0;
 	m = m0->m_next;
@@ -447,19 +438,22 @@ sbappendrecord(sb, m0)
 
 /*
  * Append address and data, and optionally, rights
- * to the receive queue of a socket.  Return 0 if
+ * to the receive queue of a socket.  If present,
+ * m0 Return 0 if
  * no space in sockbuf or insufficient mbufs.
  */
 sbappendaddr(sb, asa, m0, rights0)
 	register struct sockbuf *sb;
 	struct sockaddr *asa;
-	struct mbuf *rights0, *m0;
+	struct mbuf *m0, *rights0;
 {
 	register struct mbuf *m, *n;
 	int space = sizeof (*asa);
 
-	for (m = m0; m; m = m->m_next)
-		space += m->m_len;
+if (m0 && (m0->m_flags & M_PKTHDR) == 0)
+panic("sbappendaddr");
+	if (m0)
+		space += m0->m_pkthdr.len;
 	if (rights0)
 		space += rights0->m_len;
 	if (space > sbspace(sb))
@@ -479,9 +473,9 @@ sbappendaddr(sb, asa, m0, rights0)
 	}
 	sballoc(sb, m);
 	if (n = sb->sb_mb) {
-		while (n->m_act)
-			n = n->m_act;
-		n->m_act = m;
+		while (n->m_nextpkt)
+			n = n->m_nextpkt;
+		n->m_nextpkt = m;
 	} else
 		sb->sb_mb = m;
 	if (m->m_next)
@@ -510,9 +504,9 @@ sbappendrights(sb, m0, rights)
 		return (0);
 	sballoc(sb, m);
 	if (n = sb->sb_mb) {
-		while (n->m_act)
-			n = n->m_act;
-		n->m_act = m;
+		while (n->m_nextpkt)
+			n = n->m_nextpkt;
+		n->m_nextpkt = m;
 	} else
 		sb->sb_mb = m;
 	if (m0)
@@ -535,8 +529,8 @@ sbcompress(sb, m, n)
 			m = m_free(m);
 			continue;
 		}
-		if (n && n->m_off <= MMAXOFF && m->m_off <= MMAXOFF &&
-		    (n->m_off + n->m_len + m->m_len) <= MMAXOFF &&
+		if (n && (n->m_flags & M_EXT) == 0 &&
+		    (n->m_data + n->m_len + m->m_len) < &n->m_dat[MLEN] &&
 		    n->m_type == m->m_type) {
 			bcopy(mtod(m, caddr_t), mtod(n, caddr_t) + n->m_len,
 			    (unsigned)m->m_len);
@@ -582,18 +576,18 @@ sbdrop(sb, len)
 	register struct mbuf *m, *mn;
 	struct mbuf *next;
 
-	next = (m = sb->sb_mb) ? m->m_act : 0;
+	next = (m = sb->sb_mb) ? m->m_nextpkt : 0;
 	while (len > 0) {
 		if (m == 0) {
 			if (next == 0)
 				panic("sbdrop");
 			m = next;
-			next = m->m_act;
+			next = m->m_nextpkt;
 			continue;
 		}
 		if (m->m_len > len) {
 			m->m_len -= len;
-			m->m_off += len;
+			m->m_data += len;
 			sb->sb_cc -= len;
 			break;
 		}
@@ -609,7 +603,7 @@ sbdrop(sb, len)
 	}
 	if (m) {
 		sb->sb_mb = m;
-		m->m_act = next;
+		m->m_nextpkt = next;
 	} else
 		sb->sb_mb = next;
 }
@@ -625,7 +619,7 @@ sbdroprecord(sb)
 
 	m = sb->sb_mb;
 	if (m) {
-		sb->sb_mb = m->m_act;
+		sb->sb_mb = m->m_nextpkt;
 		do {
 			sbfree(sb, m);
 			MFREE(m, mn);
