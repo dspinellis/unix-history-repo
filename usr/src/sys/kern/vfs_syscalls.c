@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.68 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.69 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -235,11 +235,7 @@ dounmount(mp, flags, p)
 	if (error = vfs_lock(mp))
 		return (error);
 
-#ifdef NVM
 	vnode_pager_umount(mp);	/* release cached vnodes */
-#else
-	xumount(mp);		/* remove unused sticky files from text table */
-#endif
 	cache_purgevfs(mp);	/* remove cache entries for this file sys */
 	if ((error = VFS_SYNC(mp, MNT_WAIT)) == 0 || (flags & MNT_FORCE))
 		error = VFS_UNMOUNT(mp, flags, p);
@@ -859,12 +855,7 @@ unlink(p, uap, retval)
 		error = EBUSY;
 		goto out;
 	}
-#ifdef NVM
 	(void) vnode_pager_uncache(vp);
-#else
-	if (vp->v_flag & VTEXT)
-		xrele(vp);	/* try once to free text */
-#endif
 out:
 	if (!error) {
 		error = VOP_REMOVE(ndp, p);
