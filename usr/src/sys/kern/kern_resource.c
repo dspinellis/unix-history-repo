@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_resource.c	7.5 (Berkeley) %G%
+ *	@(#)kern_resource.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -212,12 +212,20 @@ getrusage()
 		struct	rusage *rusage;
 	} *uap = (struct a *)u.u_ap;
 	register struct rusage *rup;
+	struct proc *p = u.u_procp;
 
 	switch (uap->who) {
 
-	case RUSAGE_SELF:
+	case RUSAGE_SELF: {
+		int s;
+
 		rup = &u.u_ru;
+		s = splclock();
+		rup->ru_stime = p->p_stime;
+		rup->ru_utime = p->p_utime;
+		splx(s);
 		break;
+	}
 
 	case RUSAGE_CHILDREN:
 		rup = &u.u_cru;
