@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.7	(Berkeley)	83/03/27";
+static char sccsid[] = "@(#)dirs.c	3.8	(Berkeley)	83/04/19";
 #endif
 
 #include "restore.h"
@@ -9,8 +9,10 @@ static char sccsid[] = "@(#)dirs.c	3.7	(Berkeley)	83/03/27";
 #include <sys/file.h>
 #include <dir.h>
 
+/*
+ * Symbol table of directories read from tape.
+ */
 #define HASHSIZE	1000
-
 #define INOHASH(val) (val % HASHSIZE)
 struct inotab {
 	struct inotab *t_next;
@@ -22,6 +24,9 @@ static struct inotab *inotab[HASHSIZE];
 extern struct inotab *inotablookup();
 extern struct inotab *allocinotab();
 
+/*
+ * Information retained about directories.
+ */
 struct modeinfo {
 	ino_t ino;
 	time_t timep[2];
@@ -30,12 +35,19 @@ struct modeinfo {
 	short gid;
 };
 
+/*
+ * Global variables for this file.
+ */
 static daddr_t	seekpt;
 static FILE	*df, *mf;
 static DIR	*dirp;
-static char	dirfile[] = "/tmp/rstaXXXXXX";
+static char	dirfile[32] = "#";	/* No file */
+static char	modefile[32] = "#";	/* No file */
 extern ino_t	search();
 
+/*
+ * Format of old style directories.
+ */
 #define ODIRSIZ 14
 struct odirect {
 	u_short	d_ino;
@@ -43,13 +55,25 @@ struct odirect {
 };
 
 /*
+ * Structure and routines associated with listing directories.
+ */
+struct afile {
+	ino_t	fnum;		/* inode number of file */
+	char	*fname;		/* file name */
+	short	fflags;		/* extraction flags, if any */
+	char	ftype;		/* file type, e.g. LEAF or NODE */
+};
+extern int fcmp();
+extern char *fmtentry();
+
+/*
  *	Extract directory contents, building up a directory structure
  *	on disk for extraction by name.
- *	If modefile is requested, save mode, owner, and times for all
+ *	If genmode is requested, save mode, owner, and times for all
  *	directories on the tape.
  */
-extractdirs(modefile)
-	char *modefile;
+extractdirs(genmode)
+	int genmode;
 {
 	register int i;
 	register struct dinode *ip;
@@ -58,7 +82,7 @@ extractdirs(modefile)
 	int putdir(), null();
 
 	vprintf(stdout, "Extract directories from tape\n");
-	(void) mktemp(dirfile);
+	(void) sprintf(dirfile, "/tmp/rstdir%d", dumpdate);
 	df = fopen(dirfile, "w");
 	if (df == 0) {
 		fprintf(stderr,
@@ -67,7 +91,8 @@ extractdirs(modefile)
 		perror("fopen");
 		done(1);
 	}
-	if (modefile != NULL) {
+	if (genmode != 0) {
+		(void) sprintf(modefile, "/tmp/rstmode%d", dumpdate);
 		mf = fopen(modefile, "w");
 		if (mf == 0) {
 			fprintf(stderr,
@@ -79,7 +104,7 @@ extractdirs(modefile)
 	}
 	nulldir.d_ino = 0;
 	nulldir.d_namlen = 1;
-	strncpy(nulldir.d_name, "/", nulldir.d_namlen);
+	(void) strncpy(nulldir.d_name, "/", (int)nulldir.d_namlen);
 	nulldir.d_reclen = DIRSIZ(&nulldir);
 	for (;;) {
 		curfile.name = "<directory file - name unknown>";
@@ -93,7 +118,8 @@ extractdirs(modefile)
 				perror("opendir");
 			if (mf != NULL)
 				(void) fclose(mf);
-			if ((i = psearch(".")) == 0 || BIT(i, dumpmap) == 0)
+			i = dirlookup(".");
+			if (i == 0)
 				panic("Root directory is not on tape\n");
 			return;
 		}
@@ -148,8 +174,8 @@ treescan(pname, ino, todo)
 	 * begin search through the directory
 	 * skipping over "." and ".."
 	 */
-	strncpy(locname, pname, MAXPATHLEN);
-	strncat(locname, "/", MAXPATHLEN);
+	(void) strncpy(locname, pname, MAXPATHLEN);
+	(void) strncat(locname, "/", MAXPATHLEN);
 	namelen = strlen(locname);
 	seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
 	dp = readdir(dirp); /* "." */
@@ -165,7 +191,7 @@ treescan(pname, ino, todo)
 			fprintf(stderr, "%s%s: name exceeds %d char\n",
 				locname, dp->d_name, MAXPATHLEN);
 		} else {
-			strncat(locname, dp->d_name, dp->d_namlen);
+			(void) strncat(locname, dp->d_name, (int)dp->d_namlen);
 			treescan(locname, dp->d_ino, todo);
 			seekdir(dirp, bpt, itp->t_seekpt);
 		}
@@ -232,7 +258,7 @@ search(inum, cp)
 		dp = readdir(dirp);
 		if (dp->d_namlen == 1 && dp->d_name[0] == '/')
 			return(0);
-	} while (dp->d_namlen != len || strncmp(dp->d_name, cp, len));
+	} while (dp->d_namlen != len || strncmp(dp->d_name, cp, len) != 0);
 	return(dp->d_ino);
 }
 
@@ -316,7 +342,7 @@ dcvt(odp, ndp)
 
 	bzero((char *)ndp, (long)(sizeof *ndp));
 	ndp->d_ino =  odp->d_ino;
-	strncpy(ndp->d_name, odp->d_name, ODIRSIZ);
+	(void) strncpy(ndp->d_name, odp->d_name, ODIRSIZ);
 	ndp->d_namlen = strlen(ndp->d_name);
 	ndp->d_reclen = DIRSIZ(ndp);
 }
@@ -377,8 +403,7 @@ readdir(dirp)
 /*
  * Set the mode, owner, and times for all new or changed directories
  */
-setdirmodes(modefile)
-	char *modefile;
+setdirmodes()
 {
 	FILE *mf;
 	struct modeinfo node;
@@ -397,8 +422,8 @@ setdirmodes(modefile)
 		if (feof(mf))
 			break;
 		ep = lookupino(node.ino);
-		if (ep == NIL) {
-			if (command == 'x')
+		if (ep == NIL || (ep->e_flags & NEW) == 0) {
+			if (command != 'r' && command != 'R')
 				continue;
 			panic("cannot find directory inode %d\n", node.ino);
 		}
@@ -406,11 +431,11 @@ setdirmodes(modefile)
 		(void) chown(cp, node.uid, node.gid);
 		(void) chmod(cp, node.mode);
 		utime(cp, node.timep);
+		ep->e_flags &= ~NEW;
 	}
 	if (ferror(mf))
 		panic("error setting directory modes\n");
 	(void) fclose(mf);
-	(void) unlink(modefile);
 }
 
 /*
@@ -453,6 +478,183 @@ genliteraldir(name, ino)
 	(void) close(dp);
 	(void) close(ofile);
 	return (GOOD);
+}
+
+/*
+ * Do an "ls" style listing of a directory
+ */
+printlist(name, ino)
+	char *name;
+	ino_t ino;
+{
+	register struct afile *fp;
+	register struct inotab *itp;
+	struct afile *dfp0, *dfplast;
+	struct afile single;
+
+	itp = inotablookup(ino);
+	if (itp == NULL) {
+		single.fnum = ino;
+		single.fname = savename(rindex(name, '/') + 1);
+		dfp0 = &single;
+		dfplast = dfp0 + 1;
+	} else {
+		seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
+		if (getdir(dirp, &dfp0, &dfplast) == FAIL)
+			return;
+	}
+	qsort((char *)dfp0, dfplast - dfp0, sizeof (struct afile), fcmp);
+	formatf(dfp0, dfplast);
+	for (fp = dfp0; fp < dfplast; fp++)
+		freename(fp->fname);
+}
+
+/*
+ * Read the contents of a directory.
+ */
+getdir(dirp, pfp0, pfplast)
+	DIR *dirp;
+	struct afile **pfp0, **pfplast;
+{
+	register struct afile *fp;
+	register struct direct *dp;
+	static struct afile *basefp = NULL;
+	static long nent = 20;
+
+	if (basefp == NULL)
+		basefp = (struct afile *)calloc((unsigned)nent,
+			sizeof (struct afile));
+	fp = *pfp0 = basefp;
+	*pfplast = *pfp0 + nent;
+	while (dp = readdir(dirp)) {
+		if (dp->d_ino == 0 && strcmp(dp->d_name, "/") == 0)
+			break;
+		if (BIT(dp->d_ino, dumpmap) == 0)
+			continue;
+		if (vflag == 0 &&
+		    (strcmp(dp->d_name, ".") == 0 ||
+		     strcmp(dp->d_name, "..") == 0))
+			continue;
+		fp->fnum = dp->d_ino;
+		fp->fname = savename(dp->d_name);
+		fp++;
+		if (fp == *pfplast) {
+			basefp = (struct afile *)realloc((char *)basefp,
+			    (unsigned)(2 * nent * sizeof (struct afile)));
+			if (basefp == 0) {
+				fprintf(stderr, "ls: out of memory\n");
+				return (FAIL);
+			}
+			*pfp0 = basefp;
+			fp = *pfp0 + nent;
+			*pfplast = fp + nent;
+			nent *= 2;
+		}
+	}
+	*pfplast = fp;
+	return (GOOD);
+}
+
+/*
+ * Print out a pretty listing of a directory
+ */
+formatf(fp0, fplast)
+	struct afile *fp0, *fplast;
+{
+	register struct afile *fp;
+	struct entry *np;
+	int width = 0, w, nentry = fplast - fp0;
+	int i, j, len, columns, lines;
+	char *cp;
+
+	if (fp0 == fplast)
+		return;
+	for (fp = fp0; fp < fplast; fp++) {
+		fp->ftype = inodetype(fp->fnum);
+		np = lookupino(fp->fnum);
+		if (np != NIL)
+			fp->fflags = np->e_flags;
+		else
+			fp->fflags = 0;
+		len = strlen(fmtentry(fp));
+		if (len > width)
+			width = len;
+	}
+	width += 2;
+	columns = 80 / width;
+	if (columns == 0)
+		columns = 1;
+	lines = (nentry + columns - 1) / columns;
+	for (i = 0; i < lines; i++) {
+		for (j = 0; j < columns; j++) {
+			fp = fp0 + j * lines + i;
+			cp = fmtentry(fp);
+			fprintf(stderr, "%s", cp);
+			if (fp + lines >= fplast) {
+				fprintf(stderr, "\n");
+				break;
+			}
+			w = strlen(cp);
+			while (w < width) {
+				w++;
+				fprintf(stderr, " ");
+			}
+		}
+	}
+}
+
+/*
+ * Comparison routine for qsort.
+ */
+fcmp(f1, f2)
+	register struct afile *f1, *f2;
+{
+
+	return (strcmp(f1->fname, f2->fname));
+}
+
+/*
+ * Format a directory entry.
+ */
+char *
+fmtentry(fp)
+	register struct afile *fp;
+{
+	static char fmtres[BUFSIZ];
+	register char *cp, *dp;
+
+	if (vflag)
+		(void) sprintf(fmtres, "%5d ", fp->fnum);
+	else
+		fmtres[0] = '\0';
+	dp = &fmtres[strlen(fmtres)];
+	if ((fp->fflags & NEW) != 0)
+		*dp++ = '*';
+	else
+		*dp++ = ' ';
+	for (cp = fp->fname; *cp; cp++)
+		if (!vflag && (*cp < ' ' || *cp >= 0177))
+			*dp++ = '?';
+		else
+			*dp++ = *cp;
+	if (fp->ftype == NODE)
+		*dp++ = '/';
+	*dp++ = 0;
+	return (fmtres);
+}
+
+/*
+ * Determine the type of an inode
+ */
+inodetype(ino)
+	ino_t ino;
+{
+	struct inotab *itp;
+
+	itp = inotablookup(ino);
+	if (itp == NULL)
+		return (LEAF);
+	return (NODE);
 }
 
 /*
@@ -508,6 +710,9 @@ done(exitcode)
 {
 
 	closemt();
-	(void) unlink(dirfile);
+	if (modefile[0] != '#')
+		(void) unlink(modefile);
+	if (dirfile[0] != '#')
+		(void) unlink(dirfile);
 	exit(exitcode);
 }

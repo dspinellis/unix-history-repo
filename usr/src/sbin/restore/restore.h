@@ -1,6 +1,6 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
-/*	@(#)restore.h	3.6	(Berkeley)	83/04/11	*/
+/*	@(#)restore.h	3.7	(Berkeley)	83/04/19	*/
 
 #include <stdio.h>
 #include <sys/param.h>
@@ -27,6 +27,7 @@ extern long	volno;		/* current volume being read */
 extern time_t	dumptime;	/* time that this dump begins */
 extern time_t	dumpdate;	/* time that this dump was made */
 extern char	command;	/* opration being performed */
+extern FILE	*terminal;	/* file descriptor for the terminal input */
 
 /*
  * Each file in the file system is described by one of these entries
@@ -93,17 +94,23 @@ struct context {
  * Other exported routines
  */
 extern ino_t psearch();
+extern ino_t dirlookup();
 extern long listfile();
+extern long deletefile();
 extern long addfile();
 extern long nodeupdates();
 extern long verifyfile();
 extern char *rindex();
 extern char *index();
 extern char *strcat();
+extern char *strncat();
 extern char *strcpy();
+extern char *strncpy();
+extern char *fgets();
 extern char *mktemp();
 extern char *malloc();
 extern char *calloc();
+extern char *realloc();
 extern long lseek();
 
 /*

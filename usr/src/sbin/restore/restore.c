@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.11	(Berkeley)	83/04/16";
+static char sccsid[] = "@(#)restore.c	3.12	(Berkeley)	83/04/19";
 #endif
 
 #include "restore.h"
@@ -56,16 +56,39 @@ addfile(name, ino, type)
 		return (descend);
 	ep = lookupino(ino);
 	if (ep != NIL) {
-		if (strcmp(name, myname(ep)) == 0)
+		if (strcmp(name, myname(ep)) == 0) {
+			ep->e_flags |= NEW;
 			return (descend);
+		}
 		type |= LINK;
 	}
 	ep = addentry(name, ino, type);
-	if (type == NODE) {
+	if (type == NODE)
 		newnode(ep);
+	ep->e_flags |= NEW;
+	return (descend);
+}
+
+/*
+ * This is used by the 'i' option to undo previous requests made by addfile.
+ * Delete entries from the request queue.
+ */
+/* ARGSUSED */
+long
+deletefile(name, ino, type)
+	char *name;
+	ino_t ino;
+	int type;
+{
+	long descend = hflag ? GOOD : FAIL;
+	struct entry *ep;
+
+	if (BIT(ino, dumpmap) == 0) {
 		return (descend);
 	}
-	ep->e_flags |= NEW;
+	ep = lookupino(ino);
+	if (ep != NIL)
+		ep->e_flags &= ~NEW;
 	return (descend);
 }
 
@@ -214,9 +237,7 @@ nodeupdates(name, ino, type)
 		ep = addentry(name, ino, type);
 		if (type == NODE)
 			newnode(ep);
-		else
-			ep->e_flags |= NEW;
-		ep->e_flags |= KEEP;
+		ep->e_flags |= NEW|KEEP;
 		dprintf(stdout, "[%s] %s: %s\n", keyval(key), name,
 			flagvalues(ep));
 		break;
@@ -315,9 +336,8 @@ nodeupdates(name, ino, type)
 			ip->e_next = removelist;
 			removelist = ip;
 			ip = addentry(name, ino, type);
-			ip->e_flags |= NEW;
 		}
-		ip->e_flags |= KEEP;
+		ip->e_flags |= NEW|KEEP;
 		dprintf(stdout, "[%s] %s: %s\n", keyval(key), name,
 			flagvalues(ip));
 		break;
@@ -364,7 +384,7 @@ keyval(key)
 {
 	static char keybuf[32];
 
-	strcpy(keybuf, "|NIL");
+	(void) strcpy(keybuf, "|NIL");
 	keybuf[0] = '\0';
 	if (key & ONTAPE)
 		(void) strcat(keybuf, "|ONTAPE");
@@ -388,7 +408,7 @@ findunreflinks()
 	vprintf(stdout, "Find unreferenced names.\n");
 	for (i = ROOTINO; i < maxino; i++) {
 		ep = lookupino(i);
-		if (ep == NIL || ep->e_type == LEAF || !BIT(i, dumpmap))
+		if (ep == NIL || ep->e_type == LEAF || !BIT(i, dumpmap) == 0)
 			continue;
 		for (np = ep->e_entries; np != NIL; np = np->e_sibling) {
 			if (np->e_flags == 0) {
@@ -564,7 +584,7 @@ createfiles()
 		} while (volno == curvol + 1);
 		/*
 		 * If volume change out of order occurred the
-		 * current state must be re calculated
+		 * current state must be recalculated
 		 */
 		if (volno != curvol)
 			continue;
@@ -572,10 +592,11 @@ createfiles()
 		 * If the current inode is greater than the one we were
 		 * looking for then we missed the one we were looking for.
 		 * Since we only attempt to extract files listed in the
-		 * dump map, the file must have been lost due to a tape
-		 * read error. Thus we report all requested files between
-		 * the one we were looking for, and the one we found as
-		 * missing, and delete their request flags.
+		 * dump map, the lost files must have been due to a tape
+		 * read error, or a file that was removed while the dump
+		 * was in progress. Thus we report all requested files
+		 * between the one we were looking for, and the one we
+		 * found as missing, and delete their request flags.
 		 */
 		while (next < curfile.ino) {
 			ep = lookupino(next);

@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.10	(Berkeley)	83/04/16";
+static char sccsid[] = "@(#)utilities.c	3.11	(Berkeley)	83/04/19";
 #endif
 
 #include "restore.h"
@@ -25,9 +25,9 @@ pathcheck(name)
 		*cp = '\0';
 		ep = lookupname(name);
 		if (ep == NIL) {
-			ep = addentry(name, ep->e_ino, NODE);
-			ep->e_flags |= KEEP;
+			ep = addentry(name, psearch(name), NODE);
 			newnode(ep);
+			ep->e_flags |= NEW|KEEP;
 		}
 		*cp = '/';
 	}
@@ -44,7 +44,7 @@ mktempname(ep)
 	if (ep->e_flags & TMPNAME)
 		badentry(ep, "mktempname: called with TMPNAME");
 	ep->e_flags |= TMPNAME;
-	strcpy(oldname, myname(ep));
+	(void) strcpy(oldname, myname(ep));
 	freename(ep->e_name);
 	ep->e_name = savename(gentempname(ep));
 	ep->e_namlen = strlen(ep->e_name);
@@ -97,7 +97,7 @@ newnode(np)
 	cp = myname(np);
 	if (mkdir(cp, 0777) < 0) {
 		fprintf(stderr, "Warning: ");
-		fflush(stderr);
+		(void) fflush(stderr);
 		perror(cp);
 		return;
 	}
@@ -121,7 +121,7 @@ removenode(ep)
 	cp = myname(ep);
 	if (rmdir(cp) < 0) {
 		fprintf(stderr, "Warning: ");
-		fflush(stderr);
+		(void) fflush(stderr);
 		perror(cp);
 		return;
 	}
@@ -143,7 +143,7 @@ removeleaf(ep)
 	cp = myname(ep);
 	if (unlink(cp) < 0) {
 		fprintf(stderr, "Warning: ");
-		fflush(stderr);
+		(void) fflush(stderr);
 		perror(cp);
 		return;
 	}
@@ -192,7 +192,7 @@ lowerbnd(start)
 
 	for ( ; start < maxino; start++) {
 		ep = lookupino(start);
-		if (ep == NIL)
+		if (ep == NIL || ep->e_type == NODE)
 			continue;
 		if (ep->e_flags & (NEW|EXTRACT))
 			return (start);
@@ -211,7 +211,7 @@ upperbnd(start)
 
 	for ( ; start > ROOTINO; start--) {
 		ep = lookupino(start);
-		if (ep == NIL)
+		if (ep == NIL || ep->e_type == NODE)
 			continue;
 		if (ep->e_flags & (NEW|EXTRACT))
 			return (start);
@@ -269,11 +269,28 @@ flagvalues(ep)
 }
 
 /*
- * canonicalize file names to always start with ``./''
+ * Check to see if a name is on a dump tape.
+ */
+ino_t
+dirlookup(name)
+	char *name;
+{
+	ino_t ino;
+
+	ino = psearch(name);
+	if (ino == 0 || BIT(ino, dumpmap) == 0)
+		fprintf(stderr, "%s is not on tape\n", name);
+	return (ino);
+}
+
+/*
+ * Canonicalize file names to always start with ``./'' and
+ * remove any imbedded ".." components.
  */
 canon(rawname, canonname)
 	char *rawname, *canonname;
 {
+	register char *cp, *np;
 	int len;
 
 	if (strcmp(rawname, ".") == 0 || strncmp(rawname, "./", 2) == 0)
@@ -286,10 +303,26 @@ canon(rawname, canonname)
 	len = strlen(canonname) - 1;
 	if (canonname[len] == '/')
 		canonname[len] = '\0';
+	/*
+	 * Eliminate extraneous ".." from pathnames.
+	 */
+	for (np = canonname; *np != '\0'; ) {
+		np++;
+		cp = np;
+		while (*np != '/' && *np != '\0')
+			np++;
+		if (np - cp == 2 && strncmp(cp, "..", 2) == 0) {
+			cp--;
+			while (cp > &canonname[1] && *--cp != '/')
+				/* find beginning of name */;
+			(void) strcpy(cp, np);
+			np = cp;
+		}
+	}
 }
 
 /*
- * elicit a reply
+ * Elicit a reply.
  */
 reply(question)
 	char *question;
@@ -299,11 +332,127 @@ reply(question)
 	fprintf(stderr, "%s? ", question);
 	do	{
 		fprintf(stderr, "[yn] ");
-		c = getchar();
-		while (c != '\n' && getchar() != '\n')
+		c = getc(terminal);
+		while (c != '\n' && getc(terminal) != '\n')
 			/* void */;
 	} while (c != 'y' && c != 'n');
 	if (c == 'y')
 		return (GOOD);
 	return (FAIL);
+}
+
+/*
+ * Read and parse an interactive command.
+ * The first word on the line is assigned to "cmd". If
+ * there are no arguments on the command line, then "curdir"
+ * is returned as the argument. If there are arguments
+ * on the line they are returned one at a time on each
+ * successive call to getcmd. Each argument is first assigned
+ * to "name". If it does not start with "/" the pathname in
+ * "curdir" is prepended to it. Finally "canon" is called to
+ * eliminate any embedded ".." components.
+ */
+getcmd(curdir, cmd, name)
+	char *curdir, *cmd, *name;
+{
+	register char *cp, *bp;
+	char output[BUFSIZ];
+	static char input[BUFSIZ];
+	static char *nextarg = NULL;
+
+	/*
+	 * Check to see if still processing arguments.
+	 */
+	if (nextarg != NULL)
+		goto getnext;
+	nextarg = NULL;
+	/*
+	 * Read a command line and trim off trailing white space.
+	 */
+	do	{
+		fprintf(stderr, "restore > ");
+		(void) fflush(stderr);
+		(void) fgets(input, BUFSIZ, terminal);
+	} while (!feof(terminal) && input[0] == '\n');
+	if (feof(terminal)) {
+		(void) strcpy(cmd, "quit");
+		return;
+	}
+	for (cp = &input[strlen(input) - 2]; *cp == ' ' || *cp == '\t'; cp--)
+		/* trim off trailing white space and newline */;
+	*++cp = '\0';
+	/*
+	 * Copy the command into "cmd".
+	 */
+	for (cp = input; *cp == ' ' || *cp == '\t'; cp++)
+		/* skip to command */;
+	for (bp = cmd; *cp != ' ' && *cp != '\t' && *cp != '\0'; )
+		*bp++ = *cp++;
+	*bp = '\0';
+	/*
+	 * If no argument, use curdir as the default.
+	 */
+	if (*cp == '\0') {
+		(void) strcpy(name, curdir);
+		return;
+	}
+	nextarg = cp;
+	/*
+	 * Find the next argument.
+	 */
+getnext:
+	for (cp = nextarg + 1; *cp == ' ' || *cp == '\t'; cp++)
+		/* skip to argument */;
+	for (bp = cp; *cp != ' ' && *cp != '\t' && *cp != '\0'; cp++)
+		/* skip to end of argument */;
+	if (*cp == '\0')
+		nextarg = NULL;
+	else
+		nextarg = cp;
+	*cp = '\0';
+	/*
+	 * If it an absolute pathname, canonicalize it and return it.
+	 */
+	if (*bp == '/') {
+		canon(bp, name);
+		return;
+	}
+	/*
+	 * For relative pathnames, prepend the current directory to
+	 * it then canonicalize and return it.
+	 */
+	(void) strcpy(output, curdir);
+	(void) strcat(output, "/");
+	(void) strcat(output, bp);
+	canon(output, name);
+}
+
+/*
+ * respond to interrupts
+ */
+onintr()
+{
+	if (reply("restore interrupted, continue") == FAIL)
+		done(1);
+	if (signal(SIGINT, onintr) == SIG_IGN)
+		(void) signal(SIGINT, SIG_IGN);
+	if (signal(SIGTERM, onintr) == SIG_IGN)
+		(void) signal(SIGTERM, SIG_IGN);
+}
+
+/*
+ * handle unexpected inconsistencies
+ */
+/* VARARGS1 */
+panic(msg, d1, d2)
+	char *msg;
+	long d1, d2;
+{
+
+	fprintf(stderr, msg, d1, d2);
+	if (reply("abort") == GOOD) {
+		if (reply("dump core") == GOOD)
+			abort();
+		done(1);
+	}
 }

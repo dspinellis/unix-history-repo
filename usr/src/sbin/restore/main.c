@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.8	(Berkeley)	83/03/27";
+static char sccsid[] = "@(#)main.c	3.9	(Berkeley)	83/04/19";
 #endif
 
 /*
@@ -17,7 +17,8 @@ static char sccsid[] = "@(#)main.c	3.8	(Berkeley)	83/03/27";
  *	tape read errors.
  *	1/19/82		by Kirk McKusick
  *
- *	Full incremental restore running entirely in user code.
+ *	Full incremental restore running entirely in user code and
+ *	interactive tape browser.
  *	1/19/83		by Kirk McKusick
  */
 
@@ -34,6 +35,7 @@ char	*clrimap;
 ino_t	maxino;
 time_t	dumptime;
 time_t	dumpdate;
+FILE 	*terminal;
 
 main(argc, argv)
 	int argc;
@@ -43,8 +45,7 @@ main(argc, argv)
 	ino_t ino;
 	char *inputdev = "/dev/rmt8";
 	char *symtbl = "./restoresymtable";
-	char *dirmodefile = "./dirmodes";
-	char name[BUFSIZ];
+	char name[MAXPATHLEN];
 	int (*signal())();
 	extern int onintr();
 
@@ -55,7 +56,12 @@ main(argc, argv)
 	setlinebuf(stderr);
 	if (argc < 2) {
 usage:
-		fprintf(stderr, "Usage: restor xtfhmsvy file file... or restor rRfsvy\n");
+		fprintf(stderr, "Usage:\n%s%s%s%s%s",
+			"\trestore tfhsvy [file file ...]\n",
+			"\trestore xfhmsvy [file file ...]\n",
+			"\trestore ifhmsvy\n",
+			"\trestore rfsvy\n",
+			"\trestore Rfsvy\n");
 		done(1);
 	}
 	argv++;
@@ -110,6 +116,7 @@ usage:
 		case 'R':
 		case 'r':
 		case 'x':
+		case 'i':
 			if (command != '\0') {
 				fprintf(stderr,
 					"%c and %c are mutually exclusive\n",
@@ -124,7 +131,7 @@ usage:
 		}
 	}
 	if (command == '\0') {
-		fprintf(stderr, "must specify t, r, R, or x\n");
+		fprintf(stderr, "must specify i, t, r, R, or x\n");
 		goto usage;
 	}
 	setinput(inputdev);
@@ -133,43 +140,18 @@ usage:
 		*--argv = ".";
 	}
 	switch (command) {
-
-	case 't':
+	/*
+	 * Interactive mode.
+	 */
+	case 'i':
 		setup();
-		extractdirs((char *)0);
-		while (argc--) {
-			canon(*argv++, name);
-			if ((ino = psearch(name)) == 0 ||
-			    BIT(ino, dumpmap) == 0) {
-				fprintf(stderr, "%s: not on tape\n", name);
-				continue;
-			}
-			treescan(name, ino, listfile);
-		}
-		done(0);
-
-	case 'x':
-		setup();
-		extractdirs(dirmodefile);
+		extractdirs(1);
 		initsymtable((char *)0);
-		while (argc--) {
-			canon(*argv++, name);
-			if ((ino = psearch(name)) == 0 ||
-			    BIT(ino, dumpmap) == 0) {
-				fprintf(stderr, "%s: not on tape\n", name);
-				continue;
-			}
-			if (mflag)
-				pathcheck(name);
-			treescan(name, ino, addfile);
-		}
-		createfiles();
-		createlinks();
-		setdirmodes(dirmodefile);
-		if (dflag)
-			checkrestore();
+		runcmdshell();
 		done(0);
-
+	/*
+	 * Incremental restoration of a file system.
+	 */
 	case 'r':
 		setup();
 		if (dumptime > 0) {
@@ -178,7 +160,7 @@ usage:
 			 */
 			vprintf(stdout, "Begin incremental restore\n");
 			initsymtable(symtbl);
-			extractdirs(dirmodefile);
+			extractdirs(1);
 			removeoldleaves();
 			vprintf(stdout, "Calculate node updates.\n");
 			treescan(".", ROOTINO, nodeupdates);
@@ -190,13 +172,13 @@ usage:
 			 */
 			vprintf(stdout, "Begin level 0 restore\n");
 			initsymtable((char *)0);
-			extractdirs(dirmodefile);
+			extractdirs(1);
 			vprintf(stdout, "Calculate extraction list.\n");
 			treescan(".", ROOTINO, nodeupdates);
 		}
 		createleaves(symtbl);
 		createlinks();
-		setdirmodes(dirmodefile);
+		setdirmodes();
 		checkrestore();
 		if (dflag) {
 			vprintf(stdout, "Verify the directory structure\n");
@@ -204,16 +186,182 @@ usage:
 		}
 		dumpsymtable(symtbl, (long)1);
 		done(0);
-
+	/*
+	 * Resume an incremental file system restoration.
+	 */
 	case 'R':
 		initsymtable(symtbl);
 		skipmaps();
 		skipdirs();
 		createleaves(symtbl);
 		createlinks();
-		setdirmodes(dirmodefile);
+		setdirmodes();
 		checkrestore();
 		dumpsymtable(symtbl, (long)1);
 		done(0);
+	/*
+	 * List contents of tape.
+	 */
+	case 't':
+		setup();
+		extractdirs(0);
+		while (argc--) {
+			canon(*argv++, name);
+			ino = dirlookup(name);
+			if (ino == 0)
+				continue;
+			treescan(name, ino, listfile);
+		}
+		done(0);
+	/*
+	 * Batch extraction of tape contents.
+	 */
+	case 'x':
+		setup();
+		extractdirs(1);
+		initsymtable((char *)0);
+		while (argc--) {
+			canon(*argv++, name);
+			ino = dirlookup(name);
+			if (ino == 0)
+				continue;
+			if (mflag)
+				pathcheck(name);
+			treescan(name, ino, addfile);
+		}
+		createfiles();
+		createlinks();
+		setdirmodes();
+		if (dflag)
+			checkrestore();
+		done(0);
 	}
+}
+
+/*
+ * Read and execute commands from the terminal.
+ */
+runcmdshell()
+{
+	register struct entry *np;
+	ino_t ino;
+	char curdir[MAXPATHLEN];
+	char name[MAXPATHLEN];
+	char cmd[BUFSIZ];
+
+	canon("/", curdir);
+loop:
+	getcmd(curdir, cmd, name);
+	switch (cmd[0]) {
+	/*
+	 * Add elements to the extraction list.
+	 */
+	case 'a':
+		ino = dirlookup(name);
+		if (ino == 0)
+			break;
+		if (mflag)
+			pathcheck(name);
+		treescan(name, ino, addfile);
+		break;
+	/*
+	 * Change working directory.
+	 */
+	case 'c':
+		ino = dirlookup(name);
+		if (ino == 0)
+			break;
+		if (inodetype(ino) == LEAF) {
+			fprintf(stderr, "%s: not a directory\n", name);
+			break;
+		}
+		(void) strcpy(curdir, name);
+		break;
+	/*
+	 * Delete elements from the extraction list.
+	 */
+	case 'd':
+		np = lookupname(name);
+		if (np == NIL || (np->e_flags & NEW) == 0) {
+			fprintf(stderr, "%s: not on extraction list\n", name);
+			break;
+		}
+		treescan(name, np->e_ino, deletefile);
+		break;
+	/*
+	 * Extract the requested list.
+	 */
+	case 'e':
+		createfiles();
+		createlinks();
+		setdirmodes();
+		if (dflag)
+			checkrestore();
+		volno = 0;
+		break;
+	/*
+	 * List available commands.
+	 */
+	case 'h':
+	case '?':
+		fprintf(stderr, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+			"Available commands are:\n",
+			"\tls [arg] - list directory\n",
+			"\tcd arg - change directory\n",
+			"\tpwd - print current directory\n",
+			"\tadd [arg] - add `arg' to list of",
+			" files to be extracted\n",
+			"\tdelete [arg] - delete `arg' from",
+			" list of files to be extracted\n",
+			"\textract - extract requested files\n",
+			"\tquit - immediately exit program\n",
+			"\tverbose - toggle verbose flag",
+			" (useful with ``ls'')\n",
+			"\thelp or `?' - print this list\n",
+			"If no `arg' is supplied, the current",
+			" directory is used\n");
+		break;
+	/*
+	 * List a directory.
+	 */
+	case 'l':
+		ino = dirlookup(name);
+		if (ino == 0)
+			break;
+		printlist(name, ino);
+		break;
+	/*
+	 * Print current directory.
+	 */
+	case 'p':
+		if (curdir[1] == '\0')
+			fprintf(stderr, "/\n");
+		else
+			fprintf(stderr, "%s\n", &curdir[1]);
+		break;
+	/*
+	 * Quit.
+	 */
+	case 'q':
+		return;
+	/*
+	 * Toggle verbose mode.
+	 */
+	case 'v':
+		if (vflag) {
+			fprintf(stderr, "verbose mode off\n");
+			vflag = 0;
+			break;
+		}
+		fprintf(stderr, "verbose mode on\n");
+		vflag++;
+		break;
+	/*
+	 * Unknown command.
+	 */
+	default:
+		fprintf(stderr, "%s: unknown command; type ? for help\n", cmd);
+		break;
+	}
+	goto loop;
 }
