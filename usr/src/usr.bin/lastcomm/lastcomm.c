@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lastcomm.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)lastcomm.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -36,6 +36,7 @@ static char sccsid[] = "@(#)lastcomm.c	5.7 (Berkeley) %G%";
 #include <struct.h>
 #include <ctype.h>
 #include <stdio.h>
+#include "pathnames.h"
 
 struct	acct buf[DEV_BSIZE / sizeof (struct acct)];
 
@@ -57,7 +58,7 @@ main(argc, argv)
 	char *acctfile, *strcpy(), *ctime();
 	long lseek();
 
-	acctfile = NULL;
+	acctfile = _PATH_ACCT;
 	while ((ch = getopt(argc, argv, "f:")) != EOF)
 		switch((char)ch) {
 		case 'f':
@@ -69,8 +70,7 @@ main(argc, argv)
 			exit(1);
 		}
 	argv += optind;
-	if (!acctfile)
-		acctfile = "/usr/adm/acct";
+
 	fd = open(acctfile, O_RDONLY);
 	if (fd < 0) {
 		perror(acctfile);
@@ -219,8 +219,8 @@ setupdevs()
 		fputs("No mem for dev table\n", stderr);
 		return;
 	}
-	if ((fd = opendir("/dev")) == NULL) {
-		perror("/dev");
+	if ((fd = opendir(_PATH_DEV)) == NULL) {
+		perror(_PATH_DEV);
 		return;
 	}
 	while (dp = readdir(fd)) {
@@ -266,7 +266,7 @@ getdev(dev)
 		}
 	for (hp = dev_chain; hp; hp = nhp) {
 		nhp = hp->dev_nxt;
-		strcpy(name, "/dev/");
+		strcpy(name, _PATH_DEV);
 		strcat(name, hp->dev_name);
 		if (stat(name, &statb) < 0)	/* name truncated usually */
 			continue;

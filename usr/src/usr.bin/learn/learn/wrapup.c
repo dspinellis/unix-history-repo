@@ -1,10 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)wrapup.c	4.3	(Berkeley)	%G%";
+static char sccsid[] = "@(#)wrapup.c	4.4	(Berkeley)	%G%";
 #endif not lint
 
-#include "signal.h"
-#include "stdio.h"
+#include <sys/signal.h>
+#include <stdio.h>
 #include "lrnref.h"
+#include "pathnames.h"
 
 extern char learnrc[];
 
@@ -21,13 +22,12 @@ int n;
 #if BSD4_2
 		if (fork() == 0) {
 			close(1);
-			open("/dev/tty", 1);
-			execl("/bin/stty", "stty", "new", 0);
+			open(_PATH_TTY, 1);
+			execl(_PATH_STTY, "stty", "new", 0);
 		}
 #endif
-		execl("/bin/rm", "rm", "-rf", dir, 0);
-		execl("/usr/bin/rm", "rm", "-rf", dir, 0);
-		perror("bin/rm");
+		execl(_PATH_RM, "rm", "-rf", dir, 0);
+		perror(_PATH_RM);
 		fprintf(stderr, "Wrapup:  can't find 'rm' command.\n");
 		exit(0);
 	}

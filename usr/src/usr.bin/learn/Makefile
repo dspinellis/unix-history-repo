@@ -14,12 +14,12 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.10 (Berkeley) %G%
+#	@(#)Makefile	4.11 (Berkeley) %G%
 #
 # Flag BSD4_2 means 4.2 or later.
 CFLAGS=	-O -DBSD4_2
 LIBC=	/lib/libc.a
-LLIB=	${DESTDIR}/usr/lib/learn/bin
+LLIB=	${DESTDIR}/usr/libdata/learn/bin
 SRCS=	copy.c dounit.c getlesson.c learn.c list.c mem.c makpipe.c maktee.c \
 	mysys.c selsub.c selunit.c start.c whatnow.c wrapup.c
 OBJS=	copy.o dounit.o getlesson.o learn.o list.o mem.o makpipe.o maktee.o \
@@ -46,26 +46,26 @@ depend: ${SRCS}
 	mkdep -a ${CFLAGS} ${SRCS} getline.c getnum.c
 
 install: ${MAN}
+	-[ -d ${DESTDIR}/var/log/learn ] || mkdir ${DESTDIR}/var/log/learn
+	-[ -d ${DESTDIR}/usr/libdata/learn ] || mkdir ${DESTDIR}/usr/libdata/learn
+	-[ -d ${DESTDIR}/usr/libdata/learn/bin ] || mkdir ${DESTDIR}/usr/libdata/learn/bin
 	install -c -s -o bin -g bin -m 755 learn ${DESTDIR}/usr/bin/learn
 	install -s -o bin -g bin -m 755 learn ${LLIB}/learn
 	install -s -o bin -g bin -m 755 lrntee ${LLIB}/lrntee
 	install -s -o bin -g bin -m 755 lcount ${LLIB}/lcount
 	install -o bin -g bin -m 644 getline.o ${LLIB}/getline.o
 	install -o bin -g bin -m 644 getnum.o ${LLIB}/getnum.o
+	install -c -o bin -g bin -m 644 learnlib/Linfo ${DESTDIR}/usr/libdata/learn/Linfo
+	install -c -o bin -g bin -m 644 learnlib/Xinfo ${DESTDIR}/usr/libdata/learn/Xinfo
+	cd learnlib; tar cf - ${LESSONS} | (cd ${DESTDIR}/usr/libdata/learn; tar xpf -);
+	chmod 755 ${LLIB}/../*/Init
+	chmod 755 ${DESTDIR}/usr/libdata/learn ${DESTDIR}/var/log/learn \
+		${DESTDIR}/usr/libdata/learn/bin
+	chown root.staff ${DESTDIR}/usr/bin/learn ${DESTDIR}/var/log/learn \
+		${DESTDIR}/usr/libdata/learn/bin
 	cd ${LLIB}; rm -f ../C/get*.o; ln getline.o getnum.o ../C
 	install -c -o bin -g bin -m 644 getline.c ${LLIB}/../C/getline.c
 	install -c -o bin -g bin -m 644 getnum.c ${LLIB}/../C/getnum.c
-	chmod 755 ${LLIB}/../*/Init
-	-[ -d ${DESTDIR}/usr/lib/learn ] || mkdir ${DESTDIR}/usr/lib/learn
-	-[ -d ${DESTDIR}/usr/lib/learn/log ] || mkdir ${DESTDIR}/usr/lib/learn/log
-	-[ -d ${DESTDIR}/usr/lib/learn/bin ] || mkdir ${DESTDIR}/usr/lib/learn/bin
-	chmod 755 ${DESTDIR}/usr/lib/learn ${DESTDIR}/usr/lib/learn/log \
-		${DESTDIR}/usr/lib/learn/bin
-	chown root.staff ${DESTDIR}/usr/lib/learn ${DESTDIR}/usr/lib/learn/log \
-		${DESTDIR}/usr/lib/learn/bin
-	install -c -o bin -g bin -m 644 learnlib/Linfo ${DESTDIR}/usr/lib/learn/Linfo
-	install -c -o bin -g bin -m 644 learnlib/Xinfo ${DESTDIR}/usr/lib/learn/Xinfo
-	cd learnlib; tar cf - ${LESSONS} | (cd ${DESTDIR}/usr/lib/learn; tar xpf -);
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 lint: ${SRCS}

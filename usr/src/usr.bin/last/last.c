@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)last.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)last.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -35,6 +35,7 @@ static char sccsid[] = "@(#)last.c	5.14 (Berkeley) %G%";
 #include <time.h>
 #include <utmp.h>
 #include <stdio.h>
+#include <paths.h>
 
 #define	SECDAY	(24*60*60)			/* seconds in a day */
 #define	NO	0				/* false/no */
@@ -61,7 +62,7 @@ TTY	*ttylist;				/* head of linked list */
 
 static long	currentout,			/* current logout value */
 		maxrec;				/* records to display */
-static char	*file = "/usr/adm/wtmp";	/* wtmp file */
+static char	*file = _PATH_WTMP;		/* wtmp file */
 
 main(argc, argv)
 	int argc;
@@ -367,7 +368,7 @@ ttyconv(arg)
 		}
 		return(mval);
 	}
-	if (!strncmp(arg, "/dev/", sizeof("/dev/") - 1))
+	if (!strncmp(arg, _PATH_DEV, sizeof(_PATH_DEV) - 1))
 		return(arg + 5);
 	return(arg);
 }
