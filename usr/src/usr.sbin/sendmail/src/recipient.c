@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.39 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -304,14 +304,14 @@ recipient(a, sendq, e)
 				printf("%s in sendq: ", a->q_paddr);
 				printaddr(q, FALSE);
 			}
-			if (!bitset(QPRIMARY, q->q_flags) ||
-			    bitset(QSELFREF, q->q_flags))
+			if (!bitset(QPRIMARY, q->q_flags))
 			{
-				if (!bitset(QDONTSEND, a->q_flags) &&
-				    !bitset(QSELFREF, q->q_flags))
+				if (!bitset(QDONTSEND, a->q_flags))
 					message("duplicate suppressed");
-				q->q_flags |= a->q_flags & ~QDONTSEND;
+				q->q_flags |= a->q_flags;
 			}
+			else if (bitset(QSELFREF, q->q_flags))
+				q->q_flags |= a->q_flags & ~QDONTSEND;
 			if (!bitset(QPSEUDO, a->q_flags))
 				q->q_flags &= ~QPSEUDO;
 			return (q);
@@ -852,7 +852,6 @@ include(fname, forwarding, ctladdr, sendq, e)
 	{
 		ctladdr->q_flags |= QQUEUEUP;
 		errno = 0;
-		usrerr("451 open timeout on %s", fname);
 
 		/* return pseudo-error code */
 		rval = EOPENTIMEOUT;
@@ -896,6 +895,9 @@ resetuid:
 
 	if (tTd(27, 9))
 		printf("include: reset uid = %d/%d\n", getuid(), geteuid());
+
+	if (rval == EOPENTIMEOUT)
+		usrerr("451 open timeout on %s", fname);
 
 	if (fp == NULL)
 		return rval;
