@@ -9,21 +9,21 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)makefile	3.3 (Berkeley) %G%
+#	@(#)makefile	3.4 (Berkeley) %G%
 #
+
 # Makefile for tn3270 and friends...
 #
-#	This is the makefile for tn3270.  Note that we use ../telnet.c
+#	This is the makefile for tn3270.  Note that we use the 4.3+ telnet
 # (compiled with special options; see below) to provide the telnet
 # support we need.
 #
 #	The following are the defines that may be passed (via the cc
 # -D option) to the compiler.
 #
-#	The first group relate only to ../telnet.c:
-#
 #	TN3270		- 	This is to be linked with tn3270.  Necessary
-#				for creating tn3270.
+#				for creating tn3270.  Only for compiling
+#				telnet.
 #
 #	NOT43		-	Allows the program to compile and run on
 #				a 4.2BSD system.
@@ -93,7 +93,7 @@ RANLIB	= ranlib
 
 
 PRINT	= print
-ACTION = sccs tell
+ACTION = @sccs tell
 
 DEFINES = ${LINT_ARGS}
 
@@ -120,17 +120,16 @@ LIBTERM		= -ltermlib
 #PC_LIBTERM	=
 
 # The source files...
-ALLH = telnet.ext
+ALLH =
 
-TNMAIN = ../telnet.c
-TNMAIN = telnet.c
 MSMAIN = ascii/mset.c
 
-ALLC = ${TNMAIN}
+ALLC =
 
-ALLO	= telnet$O mset$O
+ALLO	= mset$O
 
-ALLPRINT =	${ALLH} ${ALLC}
+ALLHC=	${ALLH} ${ALLC}
+ALLPRINT =	${ALLHC}
 
 ALLSOURCE =	${ALLPRINT} makefile makefile.mak makefile_4.2 README
 
@@ -139,7 +138,7 @@ SYS	= sys_curses
 
 # The places where the various components live...
 
-SUBDIR =	api ascii ctlr general ${SYS}
+SUBDIR =	api ascii ctlr general ${SYS} telnet
 
 # The following are directories we don't do regular make's in, but
 # we do make everywhere, print, and sourcelist in.
@@ -163,8 +162,8 @@ FRC:
 	for i in ${SUBDIR}; \
 		do (cd $$i; make ${MFLAGS} "CFLAGS=${CFLAGS}"); done
 
-tn3270$X:	telnet$O ${SUBLIB} api/apilib.a
-	${CC} ${CFLAGS} -o tn3270 telnet$O \
+tn3270$X:	telnet/telnet ${SUBLIB} api/apilib.a
+	${CC} ${CFLAGS} -o tn3270 telnet/telnet \
 		$L ${SUBLIB} api/apilib.a $(LIBCURSES) $(LIBTERM)
 
 #PC_tn3270$X:
@@ -179,9 +178,6 @@ tn3270$X:	telnet$O ${SUBLIB} api/apilib.a
 mset$X:	mset$O ascii/map3270$O
 	${CC} ${CFLAGS} -o mset mset$O ascii/map3270$O $L api/apilib.a
 
-telnet$O:	$(TNMAIN)
-	$(CC) $(CFLAGS) -DTN3270 -c $(TNMAIN)
-
 mset$O:	$(MSMAIN)
 	$(CC) $(CFLAGS) -c $(MSMAIN)
 
@@ -191,6 +187,16 @@ install:	tn3270$X mset$X
 
 action:
 	${ACTION}
+
+clist:	${ALLHC}
+	@for i in ${SUBDIR}; \
+		do (cd $$i; make ${MFLAGS} "DIRPATH=${DIRPATH}$$i/" \
+							    clist); done
+
+hclist:	${ALLHC}
+	@for i in ${SUBDIR}; \
+		do (cd $$i; make ${MFLAGS} "DIRPATH=${DIRPATH}$$i/" \
+							    hclist); done
 
 everywhere:	action
 	for i in ${SUBDIR} ${EXTRADIR}; \
@@ -215,7 +221,7 @@ print:
 			do (cd $$i; make ${MFLAGS} "PRINT=${PRINT}" print); done
 
 tags:	${ALLC} ${ALLH}
-	ctags -t ${ALLC} ${ALLH}
+	ctags -t `make ${MFLAGS} hclist`
 
 sourcelist:	${ALLSOURCE}
 	@for i in ${ALLSOURCE}; \
@@ -226,8 +232,11 @@ sourcelist:	${ALLSOURCE}
 
 lint:
 	lint ${LINTFLAGS} ${INCLUDES} ${DEFINES} -DTN3270 \
-				${TNMAIN} -lcurses
-	lint ${LINTFLAGS} ${INCLUDES} ${DEFINES} ${MSMAIN} map3270.c -lcurses
+				`make clist` -lcurses
+
+lintmset:
+	lint ${LINTFLAGS} ${INCLUDES} ${DEFINES} ${MSMAIN} \
+				ascii/map3270.c -lcurses
 
 makefiles.pc:	tools/mkmake
 	for i in . ${SUBDIR} ${EXTRADIR}; \
@@ -265,5 +274,3 @@ thisdepend:
 
 # DO NOT DELETE THIS LINE
 
-telnet$O: ascii/termin.ext ctlr/screen.h ctlr/oia.h ctlr/options.ext
-telnet$O: ctlr/outbound.ext general/globals.h telnet.ext general/general.h
