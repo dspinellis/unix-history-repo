@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_inherit.h	7.2 (Berkeley) %G%
+ *	@(#)vm_inherit.h	7.3 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -42,14 +42,6 @@
 
 #ifndef	_VM_INHERIT_
 #define	_VM_INHERIT_
-
-/*
- *	Types defined:
- *
- *	vm_inherit_t	inheritance codes.
- */
-
-typedef int		vm_inherit_t;	/* might want to change this */
 
 /*
  *	Enumeration of valid values for vm_inherit_t.
