@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"trek.h"
@@ -194,10 +194,8 @@ char	**argv;
 		f_log = fopen(av[0], opencode);
 		*/
 
-	printf("\n   * * *   S T A R   T R E K   * * *\n\n");
+	printf("\n   * * *   S T A R   T R E K   * * *\n\nPress return to continue.\n");
 
-	play_with(stdin);
-	ungetc('\n',stdin);
 	setexit();
 	if ( been_here == 1 )
 	{
@@ -212,15 +210,4 @@ char	**argv;
 	} while (getynpar("Another game"));
 
 	fflush(stdout);
-}
-
-play_with(iop)
-register	FILE	*iop;
-{
-	extern	char	_sibuf[];
-
-	iop->_cnt = 0;
-	iop->_base = _sibuf;
-	iop->_ptr = iop->_base;
-	iop->_bufsiz = BUFSIZ;
 }
