@@ -1,4 +1,4 @@
-/*	paren.c	4.1	83/02/11	*/
+/*	paren.c	4.2	83/02/12	*/
 
 # include "e.h"
 
@@ -6,8 +6,12 @@ paren(leftc, p1, rightc) int p1, leftc, rightc; {
 	int n, m, h1, j, b1, v;
 	h1 = eht[p1]; b1 = ebase[p1];
 	yyval = p1;
+#ifndef NEQN
 	lfont[yyval] = rfont[yyval] = 0;
 	n = (h1+(6*EFFPS(ps)-1))/(6*EFFPS(ps));
+#else NEQN
+	n = max(b1+VERT(1), h1-b1-VERT(1)) / VERT(1);
+#endif NEQN
 	if( n<2 ) n = 1;
 	m = n-2;
 	if (leftc=='{' || rightc == '}') {
@@ -15,9 +19,17 @@ paren(leftc, p1, rightc) int p1, leftc, rightc; {
 		if( n<3 ) n=3;
 		m = n-3;
 	}
+#ifndef NEQN
 	eht[yyval] = VERT(6 * ps * n);
 	ebase[yyval] = b1 + (eht[yyval]-h1)/2;
 	v = b1 - h1/2 + VERT( (ps*6*4)/10 );
+#else NEQN
+	eht[yyval] = VERT(2 * n);
+	ebase[yyval] = (n)/2 * VERT(2);
+	if (n%2 == 0)
+		ebase[yyval] -= VERT(1);
+	v = b1 - h1/2 + VERT(1);
+#endif NEQN
 	printf(".ds %d \\|\\v'%du'", yyval, v);
 	switch( leftc ) {
 		case 'n':	/* nothing */

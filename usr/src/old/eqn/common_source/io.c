@@ -1,4 +1,4 @@
-/*	io.c	4.1	83/02/11	*/
+/*	io.c	4.2	83/02/12	*/
 
 # include "e.h"
 #define	MAXLINE	1200	/* maximum input line */
@@ -106,12 +106,20 @@ putout(p1) int p1; {
 	eqnht = eht[p1];
 	printf(".ds %d \\x'0'", p1);
 	/* suppposed to leave room for a subscript or superscript */
+#ifndef NEQN
 	before = eht[p1] - ebase[p1] - VERT((ps*6*12)/10);
+#else NEQN
+	before = eht[p1] - ebase[p1] - VERT(3);	/* 3 = 1.5 lines */
+#endif NEQN
 	if (before > 0)
 		printf("\\x'0-%du'", before);
 	printf("\\f%c\\s%d\\*(%d%s\\s\\n(99\\f\\n(98",
 		gfont, gsize, p1, rfont[p1] == ITAL ? "\\|" : "");
+#ifndef NEQN
 	after = ebase[p1] - VERT((ps*6*2)/10);
+#else NEQN
+	after = ebase[p1] - VERT(1);
+#endif NEQN
 	if (after > 0)
 		printf("\\x'%du'", after);
 	putchar('\n');

@@ -1,4 +1,4 @@
-/*	text.c	4.1	83/02/11	*/
+/*	text.c	4.2	83/02/12	*/
 
 # include "e.h"
 # include "e.def"
@@ -18,7 +18,11 @@ text(t,p1) int t; char *p1; {
 
 	yyval = oalloc();
 	ebase[yyval] = 0;
+#ifndef NEQN
 	eht[yyval] = VERT(6 * ((ps>6)?ps:6));	/* ht in machine units */
+#else NEQN
+	eht[yyval] = VERT(2);	/* 2 half-spaces */
+#endif NEQN
 	lfont[yyval] = rfont[yyval] = ROM;
 	if (t == QTEXT)
 		p = p1;

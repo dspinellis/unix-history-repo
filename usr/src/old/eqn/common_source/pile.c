@@ -1,11 +1,15 @@
-/*	pile.c	4.1	83/02/11	*/
+/*	pile.c	4.2	83/02/12	*/
 
 # include "e.h"
 
 lpile(type, p1, p2) int type, p1, p2; {
 	int bi, hi, i, gap, h, b, nlist, nlist2, mid;
 	yyval = oalloc();
+#ifndef NEQN
 	gap = VERT( (ps*6*4)/10 ); /* 4/10 m between blocks */
+#else NEQN
+	gap = VERT(1);
+#endif NEQN
 	if( type=='-' ) gap = 0;
 	nlist = p2 - p1;
 	nlist2 = (nlist+1)/2;
@@ -18,7 +22,11 @@ lpile(type, p1, p2) int type, p1, p2; {
 	for( i=p2-1; i>mid; i-- )
 		b += eht[lp[i]] + gap;
 	ebase[yyval] = (nlist%2) ? b + ebase[lp[mid]]
+#ifndef NEQN
 			: b - VERT( (ps*6*5)/10 ) - gap;
+#else NEQN
+			: b - VERT(1) - gap;
+#endif NEQN
 	if(dbg) {
 		printf(".\tS%d <- %c pile of:", yyval, type);
 		for( i=p1; i<p2; i++)
