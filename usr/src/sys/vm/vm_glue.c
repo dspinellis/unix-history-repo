@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	8.4 (Berkeley) %G%
+ *	@(#)vm_glue.c	8.5 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -330,6 +330,12 @@ loop:
 			       ppri, cnt.v_free_count);
 #endif
 		vm_map_pageable(kernel_map, addr, addr+size, FALSE);
+		/*
+		 * Some architectures need to be notified when the
+		 * user area has moved to new physical page(s) (e.g.
+		 * see pmax/pmax/vm_machdep.c).
+		 */
+		cpu_swapin(p);
 		(void) splstatclock();
 		if (p->p_stat == SRUN)
 			setrunqueue(p);
