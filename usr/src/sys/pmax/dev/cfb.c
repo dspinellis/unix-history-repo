@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cfb.c	7.8 (Berkeley) %G%
+ *	@(#)cfb.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -351,7 +351,7 @@ cfbLoadCursor(cursor)
 		while (j < 4) {
 			out = 0;
 			for (i = 0; i < 4; i++) {
-#ifdef CURSOR_EL
+#ifndef CURSOR_EB
 				out = (out << 2) | ((ap & 0x1) << 1) |
 					(bp & 0x1);
 #else
