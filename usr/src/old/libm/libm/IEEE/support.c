@@ -13,7 +13,7 @@ From Prof. Kahan at UC at Berkeley
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)support.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)support.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 /* 
@@ -55,7 +55,7 @@ static char sccsid[] = "@(#)support.c	1.1 (Berkeley) %G%";
  */
 
 
-#ifdef VAX      /* VAX D format */
+#if (defined(VAX) || defined(TAHOE))      /* VAX D format */
     static unsigned short msign=0x7fff , mexp =0x7f80 ;
     static short  prep1=57, gap=7, bias=129           ;   
     static double novf=1.7E38, nunf=3.0E-39, zero=0.0 ;
