@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.18 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -777,6 +777,7 @@ die(sig)
 		dprintf("syslogd: going down on signal %d\n", sig);
 		flushmsg();
 		(void) sprintf(buf, "going down on signal %d", sig);
+		errno = 0;
 		logerror(buf);
 	}
 	(void) unlink(LogName);
@@ -803,6 +804,7 @@ init()
 	/*
 	 *  Close all open log files.
 	 */
+	Initialized = 0;
 	for (f = Files; f < &Files[NLOGS]; f++) {
 		switch (f->f_type) {
 		  case F_FILE:
@@ -937,6 +939,8 @@ cfline(line, f)
 	char buf[MAXLINE];
 
 	dprintf("cfline(%s)\n", line);
+
+	errno = 0;      /* keep sys_errlist stuff out of logerror messages */
 
 	/* clear out file entry */
 	bzero((char *) f, sizeof *f);
