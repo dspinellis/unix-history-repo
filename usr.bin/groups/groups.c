@@ -51,20 +51,19 @@ static char sccsid[] = "@(#)groups.c	5.4 (Berkeley) 6/1/90";
 #include <pwd.h>
 #include <stdio.h>
 
-int	groups[NGROUPS];
 
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int ngroups, i;
-	char *sep = "";
-	struct group *gr;
+	register struct passwd *pw;
 
 	if (argc > 1)
 		showgroups(argv[1]);
-	else
-		showgroups(getlogin());
+	else if((pw = getpwuid(getuid())) != NULL)
+		showgroups(pw->pw_name);
+	fprintf(stderr, "groups: no such user.\n");
+			exit(1);
 }
 
 showgroups(user)
