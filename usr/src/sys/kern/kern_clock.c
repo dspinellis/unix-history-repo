@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.32	82/06/27	*/
+/*	kern_clock.c	4.33	82/07/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -47,8 +47,11 @@
  * interrupts compressed into one (due to excessive interrupt load),
  * but that hardclock interrupts should never be lost.
  */
-#ifdef KPROF
-int	kcounts[20000];
+#ifdef GPROF
+extern	int profiling;
+extern	char *s_lowpc;
+extern	u_long s_textsize;
+extern	u_short *kcount;
 #endif
 
 /*
@@ -118,10 +121,10 @@ hardclock(pc, ps)
 		else
 			cpstate = CP_USER;
 	} else {
-#ifdef KPROF
-	int k = ((int)pc & 0x7fffffff) / 8;
-	if (k < 20000)
-		kcounts[k]++;
+#ifdef GPROF
+		int k = pc - s_lowpc;
+		if (profiling < 2 && k < s_textsize)
+			kcount[k / sizeof (*kcount)]++;
 #endif
 		cpstate = CP_SYS;
 		if (noproc) {
