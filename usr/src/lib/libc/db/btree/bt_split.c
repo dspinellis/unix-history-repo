@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_split.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_split.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -152,7 +152,7 @@ __bt_split(t, h, key, data, flags, nbytes, skip)
 			break;
 		case P_BLEAF:
 			bl = GETBLEAF(rchild, 0);
-			nbytes = NBLEAF(bl);
+			nbytes = NBINTERNAL(bl->ksize);
 			if (t->bt_pfx && (h->prevpg != P_INVALID || skip > 1) &&
 			    !(bl->flags & P_BIGKEY)) {
 				BLEAF *tbl;
@@ -482,9 +482,7 @@ bt_broot(t, h, l, r)
 	/*
 	 * If the root page was a leaf page, change it into an internal page.
 	 * We copy the key we split on (but not the key's data, in the case of
-	 * a leaf page) to the new root page.  If the key is on an overflow
-	 * page, mark the overflow chain so it isn't deleted when the leaf copy
-	 * of the key is deleted.
+	 * a leaf page) to the new root page.
 	 *
 	 * The btree comparison code guarantees that the left-most key on any
 	 * level of the tree is never used, so it doesn't need to be filled
@@ -492,7 +490,7 @@ bt_broot(t, h, l, r)
 	 * don't *have* a key to fill in.)  The right key is available because
 	 * the split code guarantees not to split on the skipped index.
 	 */
-	nbytes = LALIGN(sizeof(size_t) + sizeof(pgno_t) + sizeof(u_char));
+	nbytes = NBINTERNAL(0);
 	h->linp[0] = h->upper = t->bt_psize - nbytes;
 	dest = (char *)h + h->upper;
 	WR_BINTERNAL(dest, 0, l->pgno, 0);
@@ -506,6 +504,10 @@ bt_broot(t, h, l, r)
 		WR_BINTERNAL(dest, bl->ksize, r->pgno, 0);
 		bcopy(bl->bytes, dest, bl->ksize);
 
+		/*
+		 * If the key is on an overflow page, mark the overflow chain
+		 * so it isn't deleted when the leaf copy of the key is deleted.
+		 */
 		if (bl->flags & P_BIGKEY &&
 		    bt_preserve(t, *(pgno_t *)bl->bytes) == RET_ERROR)
 			return (RET_ERROR);
@@ -599,7 +601,7 @@ bt_psplit(t, h, l, r, pskip)
 		bcopy(src, (char *)l + l->upper, nbytes);
 
 		/* There's no empirical justification for the '3'. */
-		if (half < nbytes)
+		if (half < nbytes && skip != off + 1)
 			if (!isbigkey || bigkeycnt == 3)
 				break;
 			else
