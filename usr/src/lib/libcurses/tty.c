@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tty.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -21,6 +21,14 @@ static char sccsid[] = "@(#)tty.c	5.13 (Berkeley) %G%";
 struct termios __orig_termios;
 static struct termios norawt, rawt;
 static int useraw;
+
+#ifndef	OXTABS
+#ifdef	XTABS			/* SMI uses XTABS. */
+#define	OXTABS	XTABS
+#else
+#define	OXTABS	0
+#endif
+#endif
 
 /*
  * gettmode --
