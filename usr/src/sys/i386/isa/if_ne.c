@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ne.c	7.2 (Berkeley) %G%
+ *	@(#)if_ne.c	7.3 (Berkeley) %G%
  *
  * Parts inspired from Tim Tucker's if_wd driver for the wd8003,
  * insight on the ne2000 gained from Robert Clements PC/FTP driver.
@@ -53,6 +53,9 @@ struct	isa_driver nedriver = {
 };
 
 struct	mbuf *neget();
+
+#define ETHER_MIN_LEN 64
+#define ETHER_MAX_LEN 1536
 
 /*
  * Ethernet software status per interface.
