@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.188 (Berkeley) %G%
+ *	@(#)conf.h	8.189 (Berkeley) %G%
  */
 
 /*
@@ -467,7 +467,7 @@ typedef int		pid_t;
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
 # define BSD4_4_SOCKADDR	/* has sa_len */
-# define NETLINK		/* supports AF_LINK */
+# define NETLINK	1	/* supports AF_LINK */
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_SUBR
 # endif
@@ -488,7 +488,7 @@ typedef int		pid_t;
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
 # define BSD4_4_SOCKADDR	/* has sa_len */
-# define NETLINK		/* supports AF_LINK */
+# define NETLINK	1	/* supports AF_LINK */
 # define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_SUBR
@@ -526,7 +526,7 @@ typedef int		pid_t;
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
 # define BSD4_4_SOCKADDR	/* has sa_len */
-# define NETLINK		/* supports AF_LINK */
+# define NETLINK	1	/* supports AF_LINK */
 # define GIDSET_T	gid_t
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_SUBR
