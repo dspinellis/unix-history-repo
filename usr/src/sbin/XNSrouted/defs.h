@@ -1,7 +1,11 @@
-/*	defs.h		*/
-
 /*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)defs.h	5.3 (Berkeley) %G%";
  */
+
 #include <sys/types.h>
 #include <sys/socket.h>
 
