@@ -1,9 +1,10 @@
 #
-# grap Makefile @(#)Makefile	1.2 (CWI) 85/10/25
+# grap Makefile @(#)Makefile	1.3 (CWI) 87/04/01
 #
-DEST =
-BIN = /usr/local
-CFLAGS = -g
+DESTDIR =
+BINDIR = /usr/local
+LIBDIR = ${DESTDIR}/usr/local/lib/grap
+CFLAGS = -O
 YFLAGS = -d -D
 OFILES = main.o input.o print.o frame.o for.o coord.o ticks.o plot.o label.o misc.o
 CFILES = main.c input.c print.c frame.c for.c coord.c ticks.c plot.c label.c misc.c
@@ -26,8 +27,8 @@ prevy.tab.h:	y.tab.h
 	-cmp -s y.tab.h prevy.tab.h || cp y.tab.h prevy.tab.h
 
 install: grap
-	install -s grap $(DEST)$(BIN)/grap
-	install -c -m 644 grap.defines $(DEST)/usr/local/lib/grap/grap.defines
+	install -s grap $(DESTDIR)$(BINDIR)/grap
+	install -c -m 644 grap.defines $(DESTDIR)${LIBDIR}/grap.defines
 
 clean:
-	rm -rf grap *.o y.tab.h
+	rm -rf grap *.o y.tab.h grap.c

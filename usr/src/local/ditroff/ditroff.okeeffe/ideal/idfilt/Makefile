@@ -1,5 +1,5 @@
 #
-#	Makefile	(CWI)	1.1	85/03/01
+#	Makefile	(CWI)	1.2	87/04/01
 #
 # BINDIR is the place where ideal will be installed
 BINDIR = /usr/local
@@ -11,7 +11,7 @@ LIBDIR = ${BINDIR}/lib/ideal/lib
 # pfilt is ideal filter for plot(1)
 # tfilt is filter for ditroff
 # idsort is general sort for ideal
-OBJECTS = tfilt pfilt idsort
+OBJECTS = tfilt pfilt idsort vfilt 4filt
 
 all:	${OBJECTS}
 
@@ -34,6 +34,11 @@ pfilt	:idfilt.o pout.o
 
 har.o	:har.c idfilt.h
 
+ver.o	:ver.c idfilt.h
+
+vfilt	:idfilt.o ver.o
+	cc -o vfilt ver.o idfilt.o
+
 tfilt	:idfilt.o har.o
 	cc -o tfilt har.o idfilt.o
 
@@ -46,9 +51,11 @@ idsort	:idsort.c
 	cc -o idsort idsort.c
 
 install: all
-	install -s tfilt ${DESTDIR}/${LIBDIR}/tfilt
-	install -s pfilt ${DESTDIR}/${LIBDIR}/pfilt
-	install -s idsort ${DESTDIR}/${LIBDIR}/idsort
+	install -s tfilt ${DESTDIR}${LIBDIR}/tfilt
+	install -s 4filt ${DESTDIR}${LIBDIR}/4filt
+	install -s pfilt ${DESTDIR}${LIBDIR}/pfilt
+	install -s vfilt ${DESTDIR}${LIBDIR}/vfilt
+	install -s idsort ${DESTDIR}${LIBDIR}/idsort
 
 clean:
 	rm -f *.o ${OBJECTS}
