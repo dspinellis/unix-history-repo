@@ -1,4 +1,4 @@
-/*	proc.h	3.5	%G%	*/
+/*	proc.h	3.6	%G%	*/
 
 /*
  * One structure allocated per active
@@ -85,25 +85,27 @@ struct	proc *runq;
 #define	SSTOP	6		/* process being traced */
 
 /* flag codes */
-#define	SLOAD	0x00001		/* in core */
-#define	SSYS	0x00002		/* swapper or pager process */
-#define	SLOCK	0x00004		/* process being swapped out */
-#define	SSWAP	0x00008		/* save area flag */
-#define	STRC	0x00010		/* process is being traced */
-#define	SWTED	0x00020		/* another tracing flag */
-#define	SULOCK	0x00040		/* user settable lock in core */
-#define	SPAGE	0x00080		/* process in page wait state */
-#define	SKEEP	0x00100		/* another flag to prevent swap out */
-#define	SDLYU	0x00200		/* delayed unlock of pages */
-#define	SWEXIT	0x00400		/* working on exiting */
-#define	SPHYSIO	0x00800		/* doing physical i/o (bio.c) */
-#define	SVFORK	0x01000		/* process resulted from vfork() */
-#define	SVFDONE	0x02000		/* another vfork flag */
-#define	SNOVM	0x04000		/* no vm, parent in a vfork() */
-#define	SPAGI	0x08000		/* init data space on demand, from inode */
-#define	SANOM	0x10000		/* system detected anomalous vm behavior */
-#define	SUANOM	0x20000		/* user warned of anomalous vm behavior */
-#define	STIMO	0x40000		/* timing out during sleep */
+#define	SLOAD	0x000001	/* in core */
+#define	SSYS	0x000002	/* swapper or pager process */
+#define	SLOCK	0x000004	/* process being swapped out */
+#define	SSWAP	0x000008	/* save area flag */
+#define	STRC	0x000010	/* process is being traced */
+#define	SWTED	0x000020	/* another tracing flag */
+#define	SULOCK	0x000040	/* user settable lock in core */
+#define	SPAGE	0x000080	/* process in page wait state */
+#define	SKEEP	0x000100	/* another flag to prevent swap out */
+#define	SDLYU	0x000200	/* delayed unlock of pages */
+#define	SWEXIT	0x000400	/* working on exiting */
+#define	SPHYSIO	0x000800	/* doing physical i/o (bio.c) */
+#define	SVFORK	0x001000	/* process resulted from vfork() */
+#define	SVFDONE	0x002000	/* another vfork flag */
+#define	SNOVM	0x004000	/* no vm, parent in a vfork() */
+#define	SPAGI	0x008000	/* init data space on demand, from inode */
+#define	SANOM	0x010000	/* system detected anomalous vm behavior */
+#define	SUANOM	0x020000	/* user warned of anomalous vm behavior */
+#define	STIMO	0x040000	/* timing out during sleep */
+#define	SDETACH	0x080000	/* detached inherited by init */
+#define	SNUSIG	0x100000	/* using new signal mechanism */
 
 /*
  * parallel proc structure
