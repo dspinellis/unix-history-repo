@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)st.c	7.4 (Berkeley) %G%
+ *	@(#)st.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -197,24 +197,28 @@ stopen(dev, flag, type, p)
 	if (sc->sc_flags & STF_OPEN)
 		return(-1);
 
+	sc->sc_ctty = tprintf_open(p);
+
 	/* drive ready ? */
 	while ((stat = scsi_test_unit_rdy(ctlr, slave, 0)) != 0) {
 		scsi_request_sense(ctlr, slave, 0, sp, 8);
 
 		if (stat != STS_CHECKCOND) {
-			printf("st%d: stopen: %s\n", scsi_status(stat));
+			tprintf(sc->sc_ctty,
+				"st%d:[stopen]   %s\n", unit, scsi_status(stat));
+			tprintf_close(sc->sc_ctty);
 			return(EIO);
 		}
 
 		if (retry-- < 0) {
-			printf("st%d: stopen: %s\n", sense_key(sp->key));
+			tprintf(sc->sc_ctty,
+				"st%d:[stopen]   %s\n", unit, sense_key(sp->key));
+			tprintf_close(sc->sc_ctty);
 			return(EIO);
 		}
 
 		DELAY(1000000);
 	}
-
-	sc->sc_ctty = tprintf_open(p);
 
 	sc->sc_flags |= STF_OPEN;
 	if (flag & FWRITE)
@@ -304,7 +308,7 @@ stustart(unit)
 
 	if (bp->b_bcount % DEV_BSIZE) {
 		tprintf(sc->sc_ctty,
-			"st%d: I/O not block aligned %d/%ld\n",
+			"st%d:[stustart] I/O not block aligned %d/%ld\n",
 			unit, DEV_BSIZE, bp->b_bcount);
 
 		bp->b_flags |= B_ERROR;
@@ -442,33 +446,35 @@ stintr(unit, stat)
 		}
 
 		if (xp->filemark) {		/* End of File */
-			tprintf(sc->sc_ctty, "st%d: End of File\n", unit);
+/*
+			tprintf(sc->sc_ctty, "st%d:[stintr]   End of File\n", unit);
 			bp->b_flags |= B_ERROR;
 			bp->b_error = EIO;
+ */
 			break;
 		}
 
 		if (xp->key) {
-			tprintf(sc->sc_ctty, "st%d: %s\n", unit, sense_key(xp->key));
+			tprintf(sc->sc_ctty, "st%d:[stintr]   %s\n", unit, sense_key(xp->key));
 			bp->b_flags |= B_ERROR;
 			bp->b_error = EIO;
 			break;
 		}
 
 		if (xp->eom) {		/* End of TAPE */
-			tprintf(sc->sc_ctty, "st%d: End of Tape\n", unit);
+			tprintf(sc->sc_ctty, "st%d:[stintr]   End of Tape\n", unit);
 			bp->b_flags |= B_ERROR;
 			bp->b_error = ENOSPC;
 			break;
 		}
 
-		tprintf(sc->sc_ctty, "st%d: unknown scsi error\n", unit);
+		tprintf(sc->sc_ctty, "st%d:[stintr]   unknown scsi error\n", unit);
 		bp->b_flags |= B_ERROR;
 		bp->b_error = EIO;
 		break;
 
 	default:
-		printf("st%d: stintr unknown stat 0x%x\n", unit, stat);
+		tprintf(sc->sc_ctty, "st%d:[stintr]   stintr unknown stat 0x%x\n", unit, stat);
 		break;
 	}
 
@@ -557,9 +563,11 @@ st_rewind(dev)
 	if (stat == 0) {
 		return(1);
 	} else {
-		printf("st: rewind error\n");
+		tprintf(sc->sc_ctty, "st%d:[st_rewind]   rewind error\n", unit);
 		scsi_request_sense(ctlr, slave, 0, sp, 8);
-		printf("st: status = 0x%x, sens key = 0x%x\n", stat, sp->key);
+		tprintf(sc->sc_ctty,
+			"st%d:[st_rewind]   status = 0x%x, sens key = 0x%x\n",
+			unit, stat, sp->key);
 
 		if (retry > 0) {
 			DELAY(1000000);
@@ -600,7 +608,7 @@ st_write_EOF(dev)
 	if (stat == 0)
 		return(1);
 
-	printf("st: write EOF error\n");
+	tprintf(sc->sc_ctty, "st%d:[st_write_EOF]   write EOF error\n", unit);
 
 	return(0);
 }
