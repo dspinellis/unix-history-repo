@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_object.c	7.4 (Berkeley) %G%
+ *	@(#)vm_object.c	7.5 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -308,14 +308,14 @@ void vm_object_terminate(object)
 			queue_remove(&vm_page_queue_active, p, vm_page_t,
 						pageq);
 			p->active = FALSE;
-			vm_page_active_count--;
+			vm_stat.active_count--;
 		}
 
 		if (p->inactive) {
 			queue_remove(&vm_page_queue_inactive, p, vm_page_t,
 						pageq);
 			p->inactive = FALSE;
-			vm_page_inactive_count--;
+			vm_stat.inactive_count--;
 		}
 		vm_page_unlock_queues();
 		p = (vm_page_t) queue_next(&p->listq);
