@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)preen.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)preen.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -287,8 +287,11 @@ retry:
 		retried++;
 		goto retry;
 	}
-	printf("Can't make sense out of name %s\n", name);
-	return (0);
+	/*
+	 * Not a block or character device, just return name and
+	 * let the user decide whether to use it.
+	 */
+	return (name);
 }
 
 char *
