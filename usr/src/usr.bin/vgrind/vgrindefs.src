@@ -1,9 +1,9 @@
-# Copyright (c) 1987 The Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1987, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)vgrindefs.src	1.15 (Berkeley) %G%
+#	@(#)vgrindefs.src	8.1 (Berkeley) %G%
 #
 
 C|c:\
