@@ -1,4 +1,4 @@
-/*	@(#)kdb_machdep.c	7.2 (Berkeley) %G%	*/
+/*	@(#)kdb_machdep.c	7.3 (Berkeley) %G%	*/
 
 #include "param.h"
 #include "conf.h"
@@ -72,7 +72,7 @@ kdb_init()
 }
 
 int	kdbactive = 0;
-#define	ESC	`\033'
+#define	ESC	'\033'
 
 /*
  * Process a keyboard interrupt from the console.
