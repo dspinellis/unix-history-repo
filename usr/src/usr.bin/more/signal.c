@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)signal.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)signal.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -93,6 +93,14 @@ winch()
 #endif
 #endif
 
+static int
+purgeandquit()
+{
+
+	purge();	/* purge buffered output */
+	quit();
+}
+
 /*
  * Set up the signal handlers.
  */
@@ -106,7 +114,7 @@ init_signals(on)
 		/*
 		 * Set signal handlers.
 		 */
-		(void)signal(SIGINT, quit);
+		(void)signal(SIGINT, purgeandquit);
 #ifdef SIGTSTP
 		(void)signal(SIGTSTP, stop);
 #endif
