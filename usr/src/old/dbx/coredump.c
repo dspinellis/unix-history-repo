@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)coredump.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)coredump.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: coredump.c,v 1.5 84/12/26 10:38:56 linton Exp $";
@@ -19,13 +19,6 @@ static char rcsid[] = "$Header: coredump.c,v 1.5 84/12/26 10:38:56 linton Exp $"
 #include "machine.h"
 #include "object.h"
 #include "main.h"
-#include <sys/param.h>
-#include <sys/dir.h>
-#include <machine/psl.h>
-#include <machine/pte.h>
-#include <sys/user.h>
-#include <sys/vm.h>
-#include <machine/reg.h>
 #include <a.out.h>
 
 #ifndef public
@@ -33,8 +26,6 @@ static char rcsid[] = "$Header: coredump.c,v 1.5 84/12/26 10:38:56 linton Exp $"
 
 #include "machine.h"
 #endif
-
-#define MAXSTKADDR (0x80000000 - ctob(UPAGES))	/* highest stack address */
 
 typedef struct {
     Address begin;
@@ -45,41 +36,6 @@ typedef struct {
 private Map datamap, stkmap;
 private File objfile;
 private struct exec hdr;
-
-/*
- * Special variables for debugging the kernel.
- */
-
-private integer masterpcbb;
-private integer slr;
-private struct pte *sbr;
-private struct pcb pcb;
-
-private getpcb ()
-{
-    fseek(corefile, masterpcbb & ~0x80000000, 0);
-    get(corefile, pcb);
-    pcb.pcb_p0lr &= ~AST_CLR;
-    printf("p0br %lx p0lr %lx p1br %lx p1lr %lx\n",
-	pcb.pcb_p0br, pcb.pcb_p0lr, pcb.pcb_p1br, pcb.pcb_p1lr
-    );
-    setreg(0, pcb.pcb_r0);
-    setreg(1, pcb.pcb_r1);
-    setreg(2, pcb.pcb_r2);
-    setreg(3, pcb.pcb_r3);
-    setreg(4, pcb.pcb_r4);
-    setreg(5, pcb.pcb_r5);
-    setreg(6, pcb.pcb_r6);
-    setreg(7, pcb.pcb_r7);
-    setreg(8, pcb.pcb_r8);
-    setreg(9, pcb.pcb_r9);
-    setreg(10, pcb.pcb_r10);
-    setreg(11, pcb.pcb_r11);
-    setreg(ARGP, pcb.pcb_ap);
-    setreg(FRP, pcb.pcb_fp);
-    setreg(STKP, pcb.pcb_ksp);
-    setreg(PROGCTR, pcb.pcb_pc);
-}
 
 public coredump_getkerinfo ()
 {
@@ -100,35 +56,11 @@ public coredump_getkerinfo ()
     if (s == nil) {
 	panic("can't find 'masterpaddr'");
     }
-    fseek(
-	corefile,
-	datamap.seekaddr + s->symvalue.offset&0x7fffffff - datamap.begin,
-	0
-    );
+    fseek(corefile,
+	datamap.seekaddr + physaddr(s->symvalue.offset) - datamap.begin, 0);
     get(corefile, masterpcbb);
-    masterpcbb = (masterpcbb&PG_PFNUM)*512;
+    masterpcbb = (masterpcbb&PG_PFNUM)*NBPG;
     getpcb();
-}
-
-private copyregs (savreg, reg)
-Word savreg[], reg[];
-{
-    reg[0] = savreg[R0];
-    reg[1] = savreg[R1];
-    reg[2] = savreg[R2];
-    reg[3] = savreg[R3];
-    reg[4] = savreg[R4];
-    reg[5] = savreg[R5];
-    reg[6] = savreg[R6];
-    reg[7] = savreg[R7];
-    reg[8] = savreg[R8];
-    reg[9] = savreg[R9];
-    reg[10] = savreg[R10];
-    reg[11] = savreg[R11];
-    reg[ARGP] = savreg[AP];
-    reg[FRP] = savreg[FP];
-    reg[STKP] = savreg[SP];
-    reg[PROGCTR] = savreg[PC];
 }
 
 /*
@@ -138,7 +70,7 @@ Word savreg[], reg[];
 public coredump_xreadin(mask, reg, signo)
 int *mask;
 Word reg[];
-int *signo;
+short *signo;
 {
     register struct user *up;
     register Word *savreg;
@@ -166,8 +98,8 @@ int *signo;
 	copyregs(savreg, reg);
 	*signo = up->u_arg[0];
 	datamap.seekaddr = ctob(UPAGES);
-	stkmap.begin = MAXSTKADDR - ctob(up->u_ssize);
-	stkmap.end = MAXSTKADDR;
+	stkmap.begin = USRSTACK - ctob(up->u_ssize);
+	stkmap.end = USRSTACK;
 	stkmap.seekaddr = datamap.seekaddr + ctob(up->u_dsize);
 	switch (hdr.a_magic) {
 	    case OMAGIC:
@@ -216,82 +148,6 @@ int nbytes;
 	fseek(objfile, N_TXTOFF(hdr) + addr, 0);
 	fread(buff, nbytes, sizeof(Byte), objfile);
     }
-}
-
-/*
- * Map a virtual address to a physical address.
- */
-
-private Address vmap (addr)
-Address addr;
-{
-    Address r;
-    integer v, n;
-    struct pte pte;
-
-    r = addr & ~0xc0000000;
-    v = btop(r);
-    switch (addr&0xc0000000) {
-	case 0xc0000000:
-	case 0x80000000:
-	    /*
-	     * In system space, so get system pte.
-	     * If it is valid or reclaimable then the physical address
-	     * is the combination of its page number and the page offset
-	     * of the original address.
-	     */
-	    if (v >= slr) {
-		error("address %x out of segment", addr);
-	    }
-	    r = ((long) (sbr + v)) & ~0x80000000;
-	    goto simple;
-
-	case 0x40000000:
-	    /*
-	     * In p1 space, must not be in shadow region.
-	     */
-	    if (v < pcb.pcb_p1lr) {
-		error("address %x out of segment", addr);
-	    }
-	    r = (Address) (pcb.pcb_p1br + v);
-	    break;
-
-	case 0x00000000:
-	    /*
-	     * In p0 space, must not be off end of region.
-	     */
-	    if (v >= pcb.pcb_p0lr) {
-		error("address %x out of segment", addr);
-	    }
-	    r = (Address) (pcb.pcb_p0br + v);
-	    break;
-
-	default:
-	    /* do nothing */
-	    break;
-    }
-    /*
-     * For p0/p1 address, user-level page table should be in
-     * kernel virtual memory.  Do second-level indirect by recursing.
-     */
-    if ((r & 0x80000000) == 0) {
-	error("bad p0br or p1br in pcb");
-    }
-    r = vmap(r);
-simple:
-    /*
-     * "r" is now the address of the pte of the page
-     * we are interested in; get the pte and paste up the physical address.
-     */
-    fseek(corefile, r, 0);
-    n = fread(&pte, sizeof(pte), 1, corefile);
-    if (n != 1) {
-	error("page table botch (fread at %x returns %d)", r, n);
-    }
-    if (pte.pg_v == 0 and (pte.pg_fod != 0 or pte.pg_pfnum == 0)) {
-	error("page no valid or reclamable");
-    }
-    return (addr&PGOFSET) + ((Address) ptob(pte.pg_pfnum));
 }
 
 public coredump_readdata(buff, addr, nbytes)
