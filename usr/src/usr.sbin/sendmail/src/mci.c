@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)mci.c	8.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -341,9 +341,11 @@ mci_dump(mci, logit)
 		mci->mci_host == NULL ? "NULL" : mci->mci_host,
 		ctime(&mci->mci_lastuse));
 printit:
+#ifdef LOG
 	if (logit)
 		syslog(LOG_DEBUG, "%s", buf);
 	else
+#endif
 		printf("%s\n", buf);
 }
 /*
