@@ -4,20 +4,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_apxreg.h	7.2 (Berkeley) %G%
+ *	@(#)if_apxreg.h	7.3 (Berkeley) %G%
  */
 
 
-/* SGS Thompson MK5205 structures and registers */
+/*
+ * SGS Thompson MK5205 structures and registers
+ */
 
 /* 
- * Device Control Ports
- * (Multiplexed CSR's)
+ * Device Control Ports (Multiplexed CSR's)
  */
 struct sgcp {
 	u_short sgcp_rdp;
 	u_short sgcp_rap;
 };
+
 /*
  * Operating Parameters for timers etc.
  * (Suitable for reseting by ioctl).
@@ -33,7 +35,7 @@ struct sgop {
 };
 
 /*
- * common format for tx/rx descriptors
+ * Common format for tx/rx descriptors
  */
 
 struct sgdx {
@@ -44,7 +46,7 @@ struct sgdx {
 };
 
 /*
- * interpretation of reported errors 
+ * Interpretation of reported errors 
  */
 struct sger {
 	u_short	sger_bad;
@@ -56,7 +58,7 @@ struct sger {
 };
 
 /*
- * Status Buffer, paried bytes hi order low order
+ * Status buffer, paired bytes hi order low order
  */
 struct sgsb {
 	u_short	sgsb_vrvs;
