@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_debug.c	7.7 (Berkeley) %G%
+ *	@(#)lfs_debug.c	7.8 (Berkeley) %G%
  */
 
 #ifdef DEBUG
@@ -41,9 +41,10 @@ lfs_dump_super(lfsp)
 		"ifpb     ", lfsp->lfs_ifpb,
 		"nindir   ", lfsp->lfs_nindir);
 
-	(void)printf("%s%d\t%s%d\t%s%d\n",
+	(void)printf("%s%d\t%s%d\t%s%d\t%s%d\n",
 		"nseg     ", lfsp->lfs_nseg,
 		"nspf     ", lfsp->lfs_nspf,
+		"cleansz  ", lfsp->lfs_cleansz,
 		"segtabsz ", lfsp->lfs_segtabsz);
 
 	(void)printf("%s%lx\t%s%d\t%s%lx\t%s%d\n",
@@ -58,9 +59,11 @@ lfs_dump_super(lfsp)
 		"fbmask   ", lfsp->lfs_fbmask,
 		"fbshift  ", lfsp->lfs_fbshift);
 
-	(void)printf("%s%d\t%s%lx\n", 
+	(void)printf("%s%d\t%s%d\t%s%lx\t%s%qx\n", 
+		"sushift  ", lfsp->lfs_sushift,
 		"fsbtodb  ", lfsp->lfs_fsbtodb,
-		"cksum    ", lfsp->lfs_cksum);
+		"cksum    ", lfsp->lfs_cksum,
+		"maxfilesize ", lfsp->lfs_maxfilesize);
 
 	(void)printf("Superblock disk addresses:");
 	for (i = 0; i < LFS_MAXNUMSB; i++)
@@ -72,11 +75,13 @@ lfs_dump_super(lfsp)
 		"free     ", lfsp->lfs_free,
 		"idaddr   ", lfsp->lfs_idaddr,
 		"ifile    ", lfsp->lfs_ifile);
-	(void)printf("%s%lx\t%s%d\t%s%lx\t%s%lx\n",
+	(void)printf("%s%lx\t%s%d\t%s%lx\t%s%lx\t%s%lx\t%s%lx\n",
 		"bfree    ", lfsp->lfs_bfree,
 		"nfiles   ", lfsp->lfs_nfiles,
 		"lastseg  ", lfsp->lfs_lastseg,
-		"nextseg  ", lfsp->lfs_nextseg);
+		"nextseg  ", lfsp->lfs_nextseg,
+		"curseg   ", lfsp->lfs_curseg,
+		"offset   ", lfsp->lfs_offset);
 	(void)printf("tstamp   %lx\n", lfsp->lfs_tstamp);
 }
 
