@@ -1,4 +1,4 @@
-.\"	@(#)Cover.dist	1.3 (Berkeley) %G%
+.\"	@(#)Cover.dist	1.4 (Berkeley) %G%
 .\"
 .\" use -ms
 .\"
@@ -15,8 +15,8 @@ The 4.4BSD distribution contains the ``User Reference Manual'' (URM),
 the ``Programmer Reference Manual'' (PRM),
 and the ``System Manager's Manual'' (SMM).
 We have not reproduced the ``User Supplementary Documents'' (USD)
-and the ``Programmer Supplementary Documents'' (PSD), however,
-source for these manuals is contained on the
+and the ``Programmer Supplementary Documents'' (PSD).
+However, source for these manuals is contained on the
 distribution tape in \f(CW/usr/src/share/doc/usd\fP
 and \f(CW/usr/src/share/doc/psd\fP respectively.
 The distribution includes complete sources for the
@@ -48,9 +48,8 @@ encounter difficulties in reading the tape(s),
 please contact Pauline Schwartz at +1-510-642-7780,
 or via electronic mail at bsd-dist@CS.Berkeley.EDU.
 Technical or installation questions may also be addressed to the
-above electronic mail address, however, it is unknown for how long
-anyone with the technical expertise to answer such questions will be
-available.
+above electronic mail address, however,
+we cannot ensure that technical support will be available.
 .PP
 We have attempted to make the system as compliant with the
 POSIX 1003.1 and 1003.2 standards as was possible at the time
@@ -58,7 +57,7 @@ of its release.
 We have not been able to run it through any of the
 verification test suites, thus,
 you should not claim conformance with either standard without
-first validing the code.
+first validating the code.
 .PP
 If you redistribute or use code from this distribution in your own
 products, please remember that due credit to the University is required
