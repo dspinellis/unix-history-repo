@@ -1,0 +1,34 @@
+This directory contains the source files and the executable file for dipress 
+which converts ditroff output to interpress.  It also contains a few other 
+things necessary for the correct compilation and operation of dipress.
+
+Source files:
+
+	defs.h		constant and macro definitions for these source files
+	deviceinfo.h	file describing device/font dependent data found in
+			DESC.OUT file
+	types.h		structure declarations used by these source files
+	externs.h	external declarations of global variables
+
+	bitdraw.c	incremental bitmap drawing routines for arcs, circles,
+			ellipses and wiggly lines
+	bitmap.c	interface for building bitmap images,
+			used to build pictures for circles, ellipses,
+			arcs, and splines.
+	font.c		functions used to manipulate font tables
+	globals.c	global variables
+	ipress.c	contains most of the interpress dependent code for
+			dipress 
+	main.c		dipress main routine and command line scanning routines
+	parser.c	device independent troff command parser
+	signals.c	signal handler to insure clean exits
+
+
+Directions for Installation:
+
+You may also want to change the constant MAX_NUM_FONTS which is currently set
+to 60.  (the same way troff in System V, Rel. 2 is distributed)  This number
+should match NFONT in your troff sources.  If it doesn't match, bizzare
+things will happen... core dumps, random warnings and the like.
+
+Then, a simple "make" should produce a working dipress.
