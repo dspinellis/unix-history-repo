@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.16 84/03/23";
+static	char *sccsid = "@(#)main.c	3.17 84/03/29";
 #endif
 
 #include "defs.h"
@@ -91,6 +91,8 @@ char **argv;
 		(void) fprintf(stderr, "%s.\r\n", wwerror());
 		goto bad;
 	}
+	fgwin = framewin;
+	bgwin = &wwhead;
 
 	wwupdate();
 	wwflush();

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.15 84/03/23";
+static	char *sccsid = "@(#)lcmd1.c	3.16 84/03/29";
 #endif
 
 #include "defs.h"
@@ -119,6 +119,54 @@ register struct value *v, *a;
 	reframe();
 }
 
+struct lcmd_arg arg_foreground[] = {
+	{ "window",	1,	ARG_NUM },
+	{ "flag",	1,	ARG_ANY },
+	0
+};
+
+l_foreground(v, a)
+register struct value *v, *a;
+{
+	struct ww *w;
+	char flag;
+
+	if ((w = vtowin(a)) == 0)
+		return;
+	v->v_type = V_NUM;
+	v->v_num = isfg(w);
+	flag = vtobool(++a, 1, v->v_num);
+	if (flag == v->v_num)
+		return;
+	deletewin(w);
+	addwin(w, flag ? 0 : 1);
+	reframe();
+}
+
+struct lcmd_arg arg_background[] = {
+	{ "window",	1,	ARG_NUM },
+	{ "flag",	1,	ARG_ANY },
+	0
+};
+
+l_background(v, a)
+register struct value *v, *a;
+{
+	struct ww *w;
+	char flag;
+
+	if ((w = vtowin(a)) == 0)
+		return;
+	v->v_type = V_NUM;
+	v->v_num = isbg(w);
+	flag = vtobool(++a, 1, v->v_num);
+	if (flag == v->v_num)
+		return;
+	deletewin(w);
+	addwin(w, flag ? 3 : 2);
+	reframe();
+}
+
 struct lcmd_arg arg_terse[] = {
 	{ "flag",	1,	ARG_ANY },
 	0
@@ -142,7 +190,6 @@ struct lcmd_arg arg_source[] = {
 	0
 };
 
-/*ARGSUSED*/
 l_source(v, a)
 register struct value *v, *a;
 {
