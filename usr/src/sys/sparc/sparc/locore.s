@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)locore.s	7.2 (Berkeley) %G%
+ *	@(#)locore.s	7.3 (Berkeley) %G%
  *
- * from: $Header: locore.s,v 1.45 92/07/12 08:19:55 torek Exp $
+ * from: $Header: locore.s,v 1.46 92/08/05 04:17:58 torek Exp $
  */
 
 #define	LOCORE
@@ -2432,8 +2432,8 @@ _szicode:
  *	[%sp + NNN]	last word of saved state
  * (followed by previous stack contents or top of signal stack).
  * The address of the function to call is in %g1; the old %g1 and %o0
- * have already been saved in the sigcontext.  We are running
- * in the window that was active when the signal occurred.
+ * have already been saved in the sigcontext.  We are running in a clean
+ * window, all previous windows now being saved to the stack.
  *
  * Note that [%sp + 64 + 8] == %sp + 64 + 16.  The copy at %sp+64+8
  * will eventually be removed, with a hole left in its place, if things
@@ -2443,10 +2443,12 @@ _szicode:
 	.globl	_esigcode
 _sigcode:
 	/*
-	 * Save the %i,%l,%o registers (renaming %o as %i) and set up to
-	 * call C code (CCFSZ).  At the same time, make room on the stack
-	 * for 32 %f registers + %fsr.  This comes out to 33*4 or 132 bytes,
-	 * but this must be aligned to a multiple of 8, or 136 bytes.
+	 * XXX  the `save' and `restore' below are unnecessary: should
+	 *	replace with simple arithmetic on %sp
+	 *
+	 * Make room on the stack for 32 %f registers + %fsr.  This comes
+	 * out to 33*4 or 132 bytes, but this must be aligned to a multiple
+	 * of 8, or 136 bytes.
 	 */
 	save	%sp, -CCFSZ - 136, %sp
 	mov	%g2, %l2		! save globals in %l registers
