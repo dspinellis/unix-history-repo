@@ -1,4 +1,4 @@
-/*	if_imp.c	4.16	82/03/16	*/
+/*	if_imp.c	4.17	82/03/19	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -84,7 +84,7 @@ COUNT(IMPATTACH);
 	/* UNIT COULD BE AMBIGUOUS */
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "imp";
-	ifp->if_mtu = IMP_MTU;
+	ifp->if_mtu = IMP_MTU - sizeof (struct imp_leader);
 	ifp->if_net = ui->ui_flags;
 	/* the host and imp fields will be filled in by the imp */
 	ifp->if_addr = if_makeaddr(ifp->if_net, 0);
@@ -166,12 +166,7 @@ impinput(unit, m)
 	struct mbuf *next;
 
 COUNT(IMPINPUT);
-	/*
-	 * Verify leader length.  Be careful with control
-	 * message which don't get a length included.
-	 * We should generate a "bad leader" message
-	 * to the IMP about messages too short.
-	 */
+	/* verify leader length. */
 	if (m->m_len < sizeof(struct control_leader) &&
 	    (m = m_pullup(m, sizeof(struct control_leader))) == 0)
 		return;
@@ -182,10 +177,7 @@ COUNT(IMPINPUT);
 			return;
 	ip = mtod(m, struct imp_leader *);
 
-	/*
-	 * Check leader type -- should notify IMP
-	 * in case of failure...
-	 */
+	/* check leader type */
 	if (ip->il_format != IMP_NFF) {
 		sc->imp_if.if_collisions++;	/* XXX */
 		goto drop;
@@ -215,15 +207,7 @@ COUNT(IMPINPUT);
 
 	switch (ip->il_mtype) {
 
-	/*
-	 * Data for a protocol.  Dispatch to the appropriate
-	 * protocol routine (running at software interrupt).
-	 * If this isn't a raw interface, advance pointer
-	 * into mbuf past leader (done below).
-	 */
 	case IMPTYPE_DATA:
-		ip->il_length =
-			(ntohs(ip->il_length) >> 3) - sizeof(struct imp_leader);
 		break;
 
 	/*
@@ -338,7 +322,10 @@ COUNT(IMPINPUT);
 	}
 
 	/*
-	 * Queue on protocol's input queue.
+	 * Data for a protocol.  Dispatch to the appropriate
+	 * protocol routine (running at software interrupt).
+	 * If this isn't a raw interface, advance pointer
+	 * into mbuf past leader.
 	 */
 	switch (ip->il_link) {
 
