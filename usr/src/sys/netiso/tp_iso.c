@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_iso.c	7.11 (Berkeley) %G%
+ *	@(#)tp_iso.c	7.12 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -576,7 +576,7 @@ void
 tpiso_decbit(isop)
 	struct isopcb *isop;
 {
-	tp_quench((struct tp_pcb *)isop->isop_socket->so_tpcb, PRC_QUENCH2);
+	tp_quench((struct tp_pcb *)isop->isop_socket->so_pcb, PRC_QUENCH2);
 }
 /*
  * CALLED FROM:
@@ -588,7 +588,7 @@ void
 tpiso_quench(isop)
 	struct isopcb *isop;
 {
-	tp_quench((struct tp_pcb *)isop->isop_socket->so_tpcb, PRC_QUENCH);
+	tp_quench((struct tp_pcb *)isop->isop_socket->so_pcb, PRC_QUENCH);
 }
 
 /*
@@ -703,7 +703,7 @@ tpiso_abort(isop)
 	ENDDEBUG
 	e.ev_number = ER_TPDU;
 	e.ATTR(ER_TPDU).e_reason = ECONNABORTED;
-	return  tp_driver((struct tp_pcb *)isop->isop_socket->so_tpcb, &e);
+	return  tp_driver((struct tp_pcb *)isop->isop_socket->so_pcb, &e);
 }
 
 ProtoHook
@@ -713,7 +713,7 @@ tpiso_reset(isop)
 	struct tp_event e;
 
 	e.ev_number = T_NETRESET;
-	return tp_driver((struct tp_pcb *)isop->isop_socket->so_tpcb, &e);
+	return tp_driver((struct tp_pcb *)isop->isop_socket->so_pcb, &e);
 
 }
 
