@@ -6,7 +6,6 @@
  * William Jolitz.
  *
  *	@(#)locore.s	5.9 (Berkeley) 1/19/91
-
  */
 
 /*
@@ -94,21 +93,6 @@ start:	movw	$0x1234,%ax
 	movw	%ax,0x472	# warm boot
 	jmp	1f
 	.space	0x500		# skip over warm boot shit
-
-	/* enable a20! yecchh!! - move this to bootstrap? */
-1:	inb	$0x64,%al
-	andb	$2,%al
-	jnz	1b
-	movb	$0xd1,%al
-	NOP
-	outb	%al,$0x64
-	NOP
-1:	inb	$0x64,%al
-	andb	$2,%al
-	jnz	1b
-	movb	$0xdf,%al
-	NOP
-	outb	%al,$0x60
 
 	/*
 	 * pass parameters on stack (howto, bootdev, unit, cyloffset)
@@ -248,14 +232,9 @@ start:	movw	$0x1234,%ax
 	movl	%eax,%cr0		# NOW!
 
 	pushl	$begin				# jump to high mem!
-	ret		# jmp $begin does not work - generates relative jmp
+	ret
+
 begin: /* now running relocated at SYSTEM where the system is linked to run */
-#ifdef notyet
-	movl	$0,SYSTEM(%esi)		# destroy temp double map
-	movl	%esi,%eax		# phys address of ptd in proc 0
- 	orl	$ I386_CR3PAT,%eax
-	movl	%eax,%cr3		# load ptd addr into mmu
-#endif
 
 	.globl _Crtat
 	movl	_Crtat,%eax
@@ -308,11 +287,11 @@ __exit:
 	call _reset_cpu
 	/* NOTREACHED */
 
-	.set	exec,11
+	.set	exec,59
 	.set	exit,1
 	.globl	_icode
 	.globl	_szicode
-/* gas fucks up offset -- */
+
 #define	LCALL(x,y)	.byte 0x9a ; .long y; .word x
 /*
  * Icode is copied out to process 1 to exec /etc/init.
@@ -469,7 +448,8 @@ _bcopy:
 
 	.globl	_copyout
 _copyout:
-	movl	$cpyflt,_nofault	# in case we page/protection violate
+	movl	_curpcb,%eax
+	movl	$cpyflt,PCB_ONFAULT(%eax) # in case we page/protection violate
 	pushl	%esi
 	pushl	%edi
 	movl	12(%esp),%esi
@@ -486,12 +466,14 @@ _copyout:
 	popl	%edi
 	popl	%esi
 	xorl	%eax,%eax
-	movl	%eax,_nofault
+	movl	_curpcb,%edx
+	movl	%eax,PCB_ONFAULT(%edx)
 	ret
 
 	.globl	_copyin
 _copyin:
-	movl	$cpyflt,_nofault	# in case we page/protection violate
+	movl	_curpcb,%eax
+	movl	$cpyflt,PCB_ONFAULT(%eax) # in case we page/protection violate
 	pushl	%esi
 	pushl	%edi
 	movl	12(%esp),%esi
@@ -508,13 +490,14 @@ _copyin:
 	popl	%edi
 	popl	%esi
 	xorl	%eax,%eax
-	movl	%eax,_nofault
+	movl	_curpcb,%edx
+	movl	%eax,PCB_ONFAULT(%edx)
 	ret
 
 cpyflt: popl	%edi
 	popl	%esi
-	xorl	%eax,%eax
-	movl	%eax,_nofault
+	movl	_curpcb,%edx
+	movl	$0,PCB_ONFAULT(%edx)
 	movl	$ EFAULT,%eax
 	ret
 
@@ -619,39 +602,19 @@ _load_cr3:
 _lcr3:
 	inb	$0x84,%al	# check wristwatch
 	movl	4(%esp),%eax
-	pushfl
-	popl %ecx
-	cli
-	movl	%esp,%edx
-	movl	$tmpstk,%esp
  	orl	$ I386_CR3PAT,%eax
 	movl	%eax,%cr3
-	movl	(%edx),%eax	# touch stack
-	movl	%eax,(%edx)
-	movl	%edx,%esp
 	movl	%cr3,%eax
-	pushl %ecx
-	popfl		# turns ints on again
 	ret
 
 	# tlbflush()
 	.globl	_tlbflush
 _tlbflush:
 	inb	$0x84,%al	# check wristwatch
-	pushfl
-	popl %ecx
-	cli
-	movl	%esp,%edx
-	movl	$tmpstk,%esp
 	movl	%cr3,%eax
  	orl	$ I386_CR3PAT,%eax
 	movl	%eax,%cr3
-	movl	(%edx),%eax	# touch stack
-	movl	%eax,(%edx)
-	movl	%edx,%esp
-	movl	%cr3,%eax
-	pushl %ecx
-	popfl		# turns ints on again
+	inb	$0x84,%al	# check wristwatch
 	ret
 
 	# lcr0(cr0)
@@ -709,69 +672,73 @@ _ssdtosd:
  */
 ALTENTRY(fuiword)
 ENTRY(fuword)
-	movl	$fusufault,_nofault	# in case we page/protection violate
+	movl	_curpcb,%ecx
+	movl	$fusufault,PCB_ONFAULT(%ecx)
 	movl	4(%esp),%edx
 	# .byte	0x65		# use gs
 	movl	0(%edx),%eax
-	xorl	%edx,%edx
-	movl	%edx,_nofault
+	movl	$0,PCB_ONFAULT(%ecx)
 	ret
 	
 ENTRY(fusword)
-	movl	$fusufault,_nofault	# in case we page/protection violate
+	movl	_curpcb,%ecx
+	movl	$fusufault,PCB_ONFAULT(%ecx) #in case we page/protection violate
 	movl	4(%esp),%edx
 	# .byte	0x65		# use gs
 	movzwl	0(%edx),%eax
-	xorl	%edx,%edx
-	movl	%edx,_nofault
+	movl	$0,PCB_ONFAULT(%ecx)
 	ret
 	
 ALTENTRY(fuibyte)
 ENTRY(fubyte)
-	movl	$fusufault,_nofault	# in case we page/protection violate
+	movl	_curpcb,%ecx
+	movl	$fusufault,PCB_ONFAULT(%ecx) #in case we page/protection violate
 	movl	4(%esp),%edx
 	# .byte	0x65		# use gs
 	movzbl	0(%edx),%eax
-	xorl	%edx,%edx
-	movl	%edx,_nofault
+	movl	$0,PCB_ONFAULT(%ecx)
 	ret
 	
 fusufault:
+	movl	_curpcb,%ecx
 	xorl	%eax,%eax
-	movl	%eax,_nofault
+	movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
 	decl	%eax
 	ret
 
 ALTENTRY(suiword)
 ENTRY(suword)
-	movl	$fusufault,_nofault	# in case we page/protection violate
+	movl	_curpcb,%ecx
+	movl	$fusufault,PCB_ONFAULT(%ecx) #in case we page/protection violate
 	movl	4(%esp),%edx
 	movl	8(%esp),%eax
 	# .byte	0x65		# use gs
 	movl	%eax,0(%edx)
 	xorl	%eax,%eax
-	movl	%eax,_nofault
+	movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
 	ret
 	
 ENTRY(susword)
-	movl	$fusufault,_nofault	# in case we page/protection violate
+	movl	_curpcb,%ecx
+	movl	$fusufault,PCB_ONFAULT(%ecx) #in case we page/protection violate
 	movl	4(%esp),%edx
 	movl	8(%esp),%eax
 	# .byte	0x65		# use gs
 	movw	%ax,0(%edx)
 	xorl	%eax,%eax
-	movl	%eax,_nofault
+	movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
 	ret
 
 ALTENTRY(suibyte)
 ENTRY(subyte)
-	movl	$fusufault,_nofault	# in case we page/protection violate
+	movl	_curpcb,%ecx
+	movl	$fusufault,PCB_ONFAULT(%ecx) #in case we page/protection violate
 	movl	4(%esp),%edx
 	movl	8(%esp),%eax
 	# .byte	0x65		# use gs
 	movb	%eax,0(%edx)
 	xorl	%eax,%eax
-	movl	%eax,_nofault
+	movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
 	ret
 
 	ENTRY(setjmp)
@@ -885,7 +852,7 @@ Idle:
 idle:
 	call	_spl0
 	cmpl	$0,_whichqs
-	jne	2f
+	jne	sw1
 	hlt		# wait for interrupt
 	jmp	idle
 
@@ -939,12 +906,13 @@ ENTRY(swtch)
 	movw	%ax, PCB_IML(%ecx)	# save ipl
 
 	/* save is done, now choose a new process or idle */
+sw1:
 	cli				# XXX?
 	movl	_whichqs,%edi
 2:
 	bsfl	%edi,%eax		# find a full q
 	jz	idle			# if none, idle
-	  # XX update whichqs?
+	# XX update whichqs?
 swfnd:
 	btrl	%eax,%edi		# clear q full status
 	jnb	2b		# if it was clear, look for another
@@ -965,16 +933,12 @@ swfnd:
 	movl	P_RLINK(%ecx),%eax
 	movl	%eax,P_RLINK(%edx)
 
-#ifdef doubtful
 	cmpl	P_LINK(%ecx),%esi	# q empty
 	je	3f
-	btsl	%edx,%edi		# nope, set to indicate full
+	btsl	%ebx,%edi		# nope, set to indicate full
 3:
-	btsl	%edx,%edi		# nope, set to indicate full
 	movl	%edi,_whichqs		# update q status
-#else
-	btsl	%edx,_whichqs		# nope, set to indicate full
-#endif
+
 	movl	$0,%eax
 	movl	%ecx,_curproc
 	movl	%eax,_want_resched
@@ -988,6 +952,7 @@ swfnd:
 
 	movl	%eax,P_RLINK(%ecx) /* isolate process to run */
 	movl	P_ADDR(%ecx),%edx
+	movl	%edx,_curpcb
 	movl	PCB_CR3(%edx),%ebx
 
 	/* switch address space */
@@ -1044,7 +1009,7 @@ ENTRY(swtch_to_inactive)
 	movl	%ecx,%cr3		# good bye address space
  #write buffer?
 	movl	$tmpstk-4,%esp		# temporary stack, compensated for call
-	jmp	(%edx)			# return, execute remainder of cleanup
+	jmp	%edx			# return, execute remainder of cleanup
 
 /*
  * savectx(pcb, altreturn)
@@ -1083,6 +1048,15 @@ ENTRY(savectx)
 	subl	$_kstack, %edx		#   (sp is relative to kstack):
 	addl	%edx, %ecx		#   pcb += sp - kstack;
 	movl	%eax, (%ecx)		# write return pc at (relocated) sp@
+	# this mess deals with replicating register state gcc hides
+	movl	12(%esp),%eax
+	movl	%eax,12(%ecx)
+	movl	16(%esp),%eax
+	movl	%eax,16(%ecx)
+	movl	20(%esp),%eax
+	movl	%eax,20(%ecx)
+	movl	24(%esp),%eax
+	movl	%eax,24(%ecx)
 1:
 	xorl	%eax, %eax		# return 0
 	ret
@@ -1114,23 +1088,23 @@ ENTRY(addupc)
 	addl	PR_BASE(%ecx),%eax	/* praddr += up->pr_base; */
 
 	/* tally ticks to selected counter */
-	movl	$proffault,_nofault
+	movl	_curpcb,%ecx
+	movl	$proffault,PCB_ONFAULT(%ecx) #in case we page/protection violate
 	movl	12(%esp),%edx		/* ticks */
 	addw	%dx,(%eax)
-	movl	$0,_nofault
+	movl	$0,PCB_ONFAULT(%ecx)
 1:	ret
 
 proffault:
 	/* disable profiling if we get a fault */
 	movl	$0,PR_SCALE(%ecx) /*	up->pr_scale = 0; */
-	movl	$0,_nofault
+	movl	_curpcb,%ecx
+	movl	$0,PCB_ONFAULT(%ecx)
 	ret
 
 .data
-	.globl	_cyloffset
+	.globl	_cyloffset, _curpcb
 _cyloffset:	.long	0
-	.globl	_nofault
-_nofault:	.long	0
 	.globl	_proc0paddr
 _proc0paddr:	.long	0
 LF:	.asciz "swtch %x"
@@ -1142,9 +1116,10 @@ _astoff:
 	ret
 
 #define	IDTVEC(name)	.align 4; .globl _X/**/name; _X/**/name:
-/*#define	PANIC(msg)	xorl %eax,%eax; movl %eax,_waittime; pushl 1f; \
-			call _panic; 1: .asciz msg*/
-#define	PRINTF(n,msg)	pushal ; pushl 1f; call _printf; MSG(msg) ; popl %eax ; popal
+#define	PANIC(msg)	xorl %eax,%eax; movl %eax,_waittime; pushl 1f; \
+			call _panic; 1: .asciz msg
+#define	PRINTF(n,msg)	pushal ; pushl 1f; call _printf; MSG(msg) ; \
+			 popl %eax ; popal
 #define	MSG(msg)	.data; 1: .asciz msg; .text
 
 	.text
@@ -1152,9 +1127,9 @@ _astoff:
 /*
  * Trap and fault vector routines
  */ 
-#define	TRAP(a)		pushl $ a; jmp alltraps
+#define	TRAP(a)		pushl $a ; jmp alltraps
 #ifdef KGDB
-#define	BPTTRAP(a)	pushl $ a; jmp bpttraps
+#define	BPTTRAP(a)	pushl $a ; jmp bpttraps
 #else
 #define	BPTTRAP(a)	TRAP(a)
 #endif
@@ -1257,9 +1232,9 @@ bpttraps:
 	movw	%ax,%ds
 	movw	%ax,%es
 	movzwl	52(%esp),%eax
-	test	$3,%eax			# make sure it's a kernel trap
+	test	$3,%eax	
 	jne	calltrap
-	call	_kgdb_trap_glue		# won't return, if successful
+	call	_kgdb_trap_glue		
 	jmp	calltrap
 #endif
 
