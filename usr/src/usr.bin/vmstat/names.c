@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)names.c	5.1 (Berkeley) %G%
+ *	@(#)names.c	5.2 (Berkeley) %G%
  */
 
 #if !defined(hp300) && !defined(tahoe) && !defined(vax)
@@ -14,7 +14,7 @@ char *defdrives[] = { 0 };
 #ifdef hp300
 #include <hp300/dev/device.h>
 
-char *defdrives[] = { "rd0", "rd1", "rd2", 0 };
+char *defdrives[] = { "sd0", "sd1", "sd2", "rd0", "rd1", "rd2", 0 };
 
 void
 read_names()
@@ -37,12 +37,13 @@ read_names()
 		(void)kvm_read((void *)hp, &hdev, sizeof hdev);
 		if (hdev.hp_driver == 0)
 			break;
-		if (hdev.hp_dk < 0 || hdev.hp_alive == 0)
+		if (hdev.hp_dk < 0 || hdev.hp_alive == 0 ||
+		    hdev.hp_cdriver == 0)
 			continue;
 		(void)kvm_read(hdev.hp_driver, &hdrv, sizeof hdrv);
 		(void)kvm_read(hdrv.d_name, name, sizeof name);
 		dr_name[hdev.hp_dk] = p;
-		p += sprintf(p, "%s%d", name, hdev.hp_unit);
+		p += sprintf(p, "%s%d", name, hdev.hp_unit) + 1;
 	}
 }
 #endif /* hp300 */
