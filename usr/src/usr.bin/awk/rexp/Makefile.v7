@@ -1,0 +1,55 @@
+
+####################################
+# This is a makefile for mawk,
+# an implementation of AWK (1988).
+####################################
+#
+#
+# This builds a regular expression library
+# Remove the -DMAWK and the library has general use.
+#
+
+
+CC = cc
+# CFLAGS for typical V7 system
+CFLAGS = -O -DMAWK -Dstrchr=index -Dvoid=int
+
+O=rexp.o rexp0.o rexp1.o rexp2.o rexp3.o rexpdb.o
+
+# The following stuff is for compilers whose symbols are unique only
+# to 7 (external) or 8 (local) characters.
+
+.SUFFIXES : .cl .h .hl
+
+.cl.o:
+	hash8 encode ../TABLE <$< >$*.c
+	$(CC) $(CFLAGS) $(CFLAGS2) -c $*.c 2>&1 | hash8 decode ../TABLE
+	rm $*.c
+
+.c.o:
+	$(CC) $(CFLAGS) $(CFLAGS2) -c $*.c 2>&1 | hash8 decode ../TABLE
+
+.cl.c:
+	hash8 encode ../TABLE <$< >$*.c
+
+.hl.h:
+	hash8 encode ../TABLE <$< >$@
+
+#######################################
+
+regexp.a : $(O)
+	ar r regexp.a *.o
+	if [ -f /usr/bin/ranlib -o -f /bin/ranlib ] ; then\
+	      ranlib regexp.a ; else true ; fi
+
+rexp.o : rexp.h
+
+rexp0.o : rexp.h
+
+rexp1.o : rexp.h
+
+rexp2.o : rexp.h
+
+rexp3.o : rexp.h
+
+rexpdb.o : rexp.h

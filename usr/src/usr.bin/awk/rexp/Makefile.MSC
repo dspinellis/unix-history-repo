@@ -1,0 +1,31 @@
+# Microsoft C 6.0A for mawk, an implementation of AWK (1988).
+# This requires NMAKE
+####################################
+#
+# This builds a regular expression library
+# Remove the -DMAWK and the library has general use.
+
+CFLAGS = -O -DMSDOS_MSC -DMAWK
+#CFLAGS = -O -DMSDOS_MSC
+
+####################################
+# rules for making small-memory and large-memory object files
+#
+.c.obs:
+	cl $(CFLAGS) -AS -c -Fo$@ $<
+.c.obl:
+	cl $(CFLAGS) -AL -DLMDOS -c -Fo$@ $<
+
+OBS=rexp.obs rexp0.obs rexp1.obs rexp2.obs rexp3.obs rexpdb.obs
+OS=rexp.obs+rexp0.obs+rexp1.obs+rexp2.obs+rexp3.obs+rexpdb.obs
+
+OBL=rexp.obl rexp0.obl rexp1.obl rexp2.obl rexp3.obl rexpdb.obl
+OL=rexp.obl+rexp0.obl+rexp1.obl+rexp2.obl+rexp3.obl+rexpdb.obl
+
+regexp.lib : $(OBS)
+	-del regexp.lib
+	lib regexp/noi $(OS);
+
+lregexp.lib : $(OBL)
+	-del regexp.lib
+	lib lregexp/noi $(OL);
