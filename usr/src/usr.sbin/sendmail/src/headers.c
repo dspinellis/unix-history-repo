@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.34 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -213,7 +213,7 @@ chompheader(line, def, e)
 **
 **	Parameters:
 **		field -- the field name.
-**		e -- the envelope containing the header.
+**		header -- the header list.
 **
 **	Returns:
 **		pointer to the value part.
@@ -224,13 +224,13 @@ chompheader(line, def, e)
 */
 
 char *
-hvalue(field, e)
+hvalue(field, header)
 	char *field;
-	register ENVELOPE *e;
+	HDR *header;
 {
 	register HDR *h;
 
-	for (h = e->e_header; h != NULL; h = h->h_link)
+	for (h = header; h != NULL; h = h->h_link)
 	{
 		if (!bitset(H_DEFAULT, h->h_flags) &&
 		    strcasecmp(h->h_field, field) == 0)
@@ -307,7 +307,7 @@ eatheader(e, full)
 		define('u', NULL, e);
 
 	/* full name of from person */
-	p = hvalue("full-name", e);
+	p = hvalue("full-name", e->e_header);
 	if (p != NULL)
 		define('x', p, e);
 
@@ -389,7 +389,7 @@ eatheader(e, full)
 		e->e_hopcount = hopcnt;
 
 	/* message priority */
-	p = hvalue("precedence", e);
+	p = hvalue("precedence", e->e_header);
 	if (p != NULL)
 		e->e_class = priencode(p);
 	if (full)
@@ -398,9 +398,9 @@ eatheader(e, full)
 				 + e->e_nrcpts * WkRecipFact;
 
 	/* date message originated */
-	p = hvalue("posted-date", e);
+	p = hvalue("posted-date", e->e_header);
 	if (p == NULL)
-		p = hvalue("date", e);
+		p = hvalue("date", e->e_header);
 	if (p != NULL)
 		define('a', p, e);
 
@@ -418,7 +418,7 @@ eatheader(e, full)
 			if (bitset(H_FROM, hi->hi_flags) &&
 			    (!bitset(H_RESENT, hi->hi_flags) ||
 			     bitset(EF_RESENT, e->e_flags)) &&
-			    (p = hvalue(hi->hi_field, e)) != NULL)
+			    (p = hvalue(hi->hi_field, e->e_header)) != NULL)
 				break;
 		}
 		if (hi->hi_field != NULL)
@@ -826,6 +826,7 @@ crackaddr(addr)
 **
 **	Parameters:
 **		mci -- the connection information.
+**		h -- the header to put.
 **		e -- envelope to use.
 **
 **	Returns:
@@ -842,19 +843,20 @@ crackaddr(addr)
 # define MAX(a,b) (((a)>(b))?(a):(b))
 #endif
 
-putheader(mci, e)
+putheader(mci, h, e)
 	register MCI *mci;
+	register HDR *h;
 	register ENVELOPE *e;
 {
 	char buf[MAX(MAXLINE,BUFSIZ)];
-	register HDR *h;
 	char obuf[MAXLINE];
 
 	if (tTd(34, 1))
 		printf("--- putheader, mailer = %s ---\n",
 			mci->mci_mailer->m_name);
 
-	for (h = e->e_header; h != NULL; h = h->h_link)
+	mci->mci_flags |= MCIF_INHEADER;
+	for (; h != NULL; h = h->h_link)
 	{
 		register char *p;
 		extern bool bitintersect();

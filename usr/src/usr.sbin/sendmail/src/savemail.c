@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.33 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -376,8 +376,7 @@ savemail(e)
 				mcibuf.mci_flags |= MCIF_7BIT;
 
 			putfromline(&mcibuf, e);
-			(*e->e_puthdr)(&mcibuf, e);
-			putline("\n", &mcibuf);
+			(*e->e_puthdr)(&mcibuf, e->e_header, e);
 			(*e->e_putbody)(&mcibuf, e, NULL);
 			putline("\n", &mcibuf);
 			(void) fflush(fp);
@@ -485,9 +484,10 @@ returntosender(msg, sendbody)
 */
 
 errhdr(fp, m, xdot)
-errbody(mci, e)
+errbody(mci, e, separator)
 	register MCI *mci;
 	register ENVELOPE *e;
+	char *separator;
 {
 	char buf[MAXLINE];
 	register FILE *xfile;
@@ -495,6 +495,11 @@ errbody(mci, e)
 	char *oldfmac;
 	char *oldgmac;
 
+	if (bitset(MCIF_INHEADER, mci->mci_flags))
+	{
+		putline("", mci);
+		mci->mci_flags &= ~MCIF_INHEADER;
+	}
 	if (e->e_parent == NULL)
 	{
 		syserr("errbody: null parent");
@@ -688,12 +693,14 @@ errbody(mci, e)
 			putline("Content-Type: message/rfc822", mci);
 			putline("", mci);
 		}
-		putheader(mci, e->e_parent);
-		putline("", mci);
+		putheader(mci, e->e_parent->e_header, e->e_parent);
 		if (SendBody)
 			putbody(mci, e->e_parent, e->e_msgboundary);
 		else
+		{
+			putline("", mci);
 			putline("   ----- Message body suppressed -----", mci);
+		}
 	}
 	else
 	{

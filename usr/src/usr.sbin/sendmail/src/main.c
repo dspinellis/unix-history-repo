@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.62 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.63 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -1036,7 +1036,7 @@ main(argc, argv, envp)
 	if (OpMode != MD_VERIFY || GrabTo)
 	{
 		CurEnv->e_flags |= EF_GLOBALERRS;
-		collect(FALSE, FALSE, CurEnv);
+		collect(InChannel, FALSE, FALSE, NULL, CurEnv);
 	}
 	errno = 0;
 

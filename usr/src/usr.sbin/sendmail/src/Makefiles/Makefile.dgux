@@ -2,7 +2,7 @@
 #  Tested on DG/UX 5.4.2 by A. Bryan Curnutt <bryan@Stoner.COM>.
 #  Updated for DG/UX 5.4.3 by Mark T. Robinson <mtr@ornl.gov>.
 #
-#	@(#)Makefile.dgux	8.4 (Berkeley) %G%
+#	@(#)Makefile.dgux	8.5 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -53,7 +53,7 @@ CFLAGS=	-I. $O ${INCDIRS} ${DBMDEF} ${ENVDEF}
 
 OBJS=	alias.o arpadate.o clock.o collect.o conf.o convtime.o daemon.o \
 	deliver.o domain.o envelope.o err.o headers.o macro.o main.o \
-	map.o mci.o parseaddr.o queue.o readcf.o recipient.o \
+	map.o mci.o mime.o parseaddr.o queue.o readcf.o recipient.o \
 	savemail.o srvrsmtp.o stab.o stats.o sysexits.o \
 	trace.o udb.o usersmtp.o util.o version.o ${OBJADD}
 

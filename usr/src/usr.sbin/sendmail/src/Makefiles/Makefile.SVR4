@@ -9,7 +9,7 @@
 #	<kim@grendel.lut.fi> -- I haven't tested this myself.  It may
 #	work on other SVR4 ports.
 #
-#	@(#)Makefile.SVR4	8.3 (Berkeley) %G%
+#	@(#)Makefile.SVR4	8.4 (Berkeley) %G%
 #
 
 # make sure the shell constructs below use the right shell
@@ -62,7 +62,7 @@ CFLAGS=	-I. $O ${INCDIRS} ${DBMDEF} ${ENVDEF}
 
 OBJS=	alias.o arpadate.o clock.o collect.o conf.o convtime.o daemon.o \
 	deliver.o domain.o envelope.o err.o headers.o macro.o main.o \
-	map.o mci.o parseaddr.o queue.o readcf.o recipient.o \
+	map.o mci.o mime.o parseaddr.o queue.o readcf.o recipient.o \
 	savemail.o srvrsmtp.o stab.o stats.o sysexits.o \
 	trace.o udb.o usersmtp.o util.o version.o ${OBJADD}
 

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.20 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.21 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.20 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.21 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -308,7 +308,8 @@ smtpmailfrom(m, mci, e)
 			strcat(optbuf, " BODY=");
 			strcat(optbuf, e->e_bodytype);
 		}
-		else if (strcasecmp(e->e_bodytype, "7bit") != 0)
+		else if (!bitset(MM_CVTMIME, MimeMode) &&
+			 strcasecmp(e->e_bodytype, "7bit") != 0)
 		{
 			/* cannot just send a 7-bit version */
 			usrerr("%s does not support 8BITMIME", mci->mci_host);
@@ -507,10 +508,6 @@ smtpfinish(m, editfcn)
 	timeout += e->e_nrcpts * 90;
 	ev = setevent(timeout, datatimeout, 0);
 
-	/* now output the actual message */
-	(*e->e_puthdr)(SmtpOut, m, CurEnv);
-	putline("\n", SmtpOut, m);
-	(*e->e_putbody)(SmtpOut, m, CurEnv);
 
 	clrevent(ev);
 
