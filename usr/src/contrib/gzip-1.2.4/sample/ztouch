@@ -1,0 +1,15 @@
+#! /usr/local/bin/perl
+# Set the time stamp of a gzip'ed file from that stored in the file.
+# usage: ztouch files...
+
+foreach $file (@ARGV) {
+    open (FILE, $file);
+    read (FILE, $_, 8);
+    ($magic, $method, $flags, $time) = unpack ("A2C2V", $_);
+    if ($magic eq "\037\213") {
+	utime ($time, $time, $file);
+    }
+    else {
+	warn "$file is not compressed with gzip!\n";
+    }
+}
