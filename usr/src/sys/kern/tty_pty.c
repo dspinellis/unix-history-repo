@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tty_pty.c	7.8 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -132,11 +132,10 @@ ptsread(dev, uio, flag)
 
 again:
 	if (pti->pt_flags & PF_REMOTE) {
-		while (tp == u.u_ttyp && 
-		       u.u_procp->p_pgrp->pg_id != tp->t_pgid){
+		while (isbackground(u.u_procp, tp)) {
 			if ((u.u_procp->p_sigignore & sigmask(SIGTTIN)) ||
 			    (u.u_procp->p_sigmask & sigmask(SIGTTIN)) ||
-			    !u.u_procp->p_pgrp->pg_jobc ||
+			    u.u_procp->p_pgrp->pg_jobc == 0 ||
 			    u.u_procp->p_flag&SVFORK)
 				return (EIO);
 			pgsignal(u.u_procp->p_pgrp, SIGTTIN);
