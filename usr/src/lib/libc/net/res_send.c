@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_send.c	6.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.8 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -246,6 +246,7 @@ wait:
 	   }
 	}
 	(void) close(s);
+	s = -1;
 	if (v_circuit == 0 && gotsomewhere == 0)
 		errno = ECONNREFUSED;
 	else
