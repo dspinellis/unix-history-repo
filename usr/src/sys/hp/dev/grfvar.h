@@ -9,22 +9,30 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grfvar.h 1.1 90/07/09$
+ * from: Utah $Hdr: grfvar.h 1.9 91/01/21$
  *
- *	@(#)grfvar.h	7.2 (Berkeley) %G%
+ *	@(#)grfvar.h	7.3 (Berkeley) %G%
  */
 
+/* internal structure of lock page */
 #define GRFMAXLCK	256
+struct	grf_lockpage {
+	u_char	gl_locks[GRFMAXLCK];
+};
+#define gl_lockslot gl_locks[0]
 
 /* per display info */
 struct	grf_softc {
 	int	g_flags;		/* software flags */
 	int	g_type;			/* type of display */
-	struct	grfinfo g_display;	/* hardware description */
+	caddr_t	g_regkva;		/* KVA of registers */
+	caddr_t	g_fbkva;		/* KVA of framebuffer */
+	struct	grfinfo g_display;	/* hardware description (for ioctl) */
+	struct	grf_lockpage *g_lock;	/* lock page associated with device */
 	struct	proc *g_lockp;		/* process holding lock */
-	int	g_lockpslot;		/* g_pid entry of g_lockp */
-	u_char	*g_locks;		/* lock page associated with device */
 	short	*g_pid;			/* array of pids with device open */
+	int	g_lockpslot;		/* g_pid entry of g_lockp */
+	caddr_t	g_data;			/* device dependent data */
 };
 
 /* flags */

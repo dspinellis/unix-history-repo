@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device.h	7.2 (Berkeley) %G%
+ *	@(#)device.h	7.3 (Berkeley) %G%
  */
 
 struct driver {
@@ -47,45 +47,51 @@ struct	devqueue {
 	struct	driver *dq_driver;
 };
 
+#define	MAXCTLRS	16	/* Size of HW table (arbitrary) */
+#define	MAXSLAVES	8	/* Slaves per controller (HPIB/SCSI limit) */
+
 struct hp_hw {
-	char	*hw_addr;	/* physical address of registers */
-	short	hw_sc;		/* select code (if applicable) */
-	short	hw_type;	/* type (defined below) */
+	caddr_t	hw_pa;		/* physical address of control space */
+	int	hw_size;	/* size of control space */
+	caddr_t	hw_kva;		/* kernel virtual address of control space */
 	short	hw_id;		/* HW returned id */
-	short	hw_id2;		/* secondary HW id (displays) */
-	char	*hw_name;	/* HP product name */
+	short	hw_secid;	/* secondary HW id (displays) */
+	short	hw_type;	/* type (defined below) */
+	short	hw_sc;		/* select code (if applicable) */
 };
 
-#define	MAX_CTLR	16	/* Totally arbitrary */
-#define	MAXSLAVES	8	/* Currently the HPIB limit */
+/* bus types */
+#define	B_MASK		0xE000
+#define	B_DIO		0x2000
+#define B_DIOII		0x4000
+#define B_VME		0x6000
+/* controller types */
+#define	C_MASK		0x8F
+#define C_FLAG		0x80
+#define	C_HPIB		0x81
+#define C_SCSI		0x82
+#define C_VME		0x83
+/* device types (controllers with no slaves) */
+#define D_MASK		0x8F
+#define	D_BITMAP	0x01
+#define	D_LAN		0x02
+#define	D_FPA		0x03
+#define	D_KEYBOARD	0x04
+#define	D_COMMDCA	0x05
+#define	D_COMMDCM	0x06
+#define	D_COMMDCL	0x07
+#define	D_PPORT		0x08
+#define	D_MISC		0x7F
 
-#define	WILD_CARD_CTLR	0
-
-/* A controller is a card which can have one or more slaves attached */
-#define	CONTROLLER	0x10
-#define	HPIB		0x16
-#define	SCSI		0x17
-#define	VME		0x18
-#define	FLINK		0x19
-
-/* Slaves are devices which attach to controllers, e.g. disks, tapes */
-#define	RD		0x2a
-#define	PPI		0x2b
-#define	CT		0x2c
-
-/* These are not controllers, but may have their own HPIB address */
-#define	BITMAP		1
-#define	NET		2
-#define	FPA		4
-#define	MISC		5
-#define	KEYBOARD	6
-#define	COMMDCA		7
-#define	COMMDCM		8
-#define	COMMDCL		9
-#define	PPORT		10
+#define HW_ISCTLR(hw)	((hw)->hw_type & C_FLAG)
+#define HW_ISDIOII(hw)	((hw)->hw_type & B_DIOII)
+#define HW_ISHPIB(hw)	(((hw)->hw_type & C_MASK) == C_HPIB)
+#define HW_ISSCSI(hw)	(((hw)->hw_type & C_MASK) == C_SCSI)
+#define HW_ISDEV(hw,d)	(((hw)->hw_type & D_MASK) == (d))
 
 #ifdef KERNEL
-extern struct hp_ctlr	hp_cinit[];
-extern struct hp_device	hp_dinit[];
-extern struct hp_hw	sc_table[];
+extern struct hp_hw sc_table[];
+extern struct hp_ctlr hp_cinit[];
+extern struct hp_device hp_dinit[];
+extern caddr_t sctova(), sctopa(), iomap();
 #endif
