@@ -5,7 +5,7 @@
 # include <sysexits.h>
 # include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c	1.13 %G%";
+static char SccsId[] = "@(#)sccs.c	1.14 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -355,6 +355,7 @@ clean(really)
 	char buf[100];
 	register FILE *dirfd;
 	register char *basefile;
+	bool gotedit;
 
 	dirfd = fopen(SccsPath, "r");
 	if (dirfd == NULL)
@@ -367,6 +368,7 @@ clean(really)
 	**  Scan the SCCS directory looking for s. files.
 	*/
 
+	gotedit = FALSE;
 	while (fread(&dir, sizeof dir, 1, dirfd) != NULL)
 	{
 		if (dir.d_ino == 0 || strcmpn(dir.d_name, "s.", 2) != 0)
@@ -381,6 +383,7 @@ clean(really)
 		if (stat(buf, &stbuf) >= 0)
 		{
 			printf("%s: being editted\n", basefile);
+			gotedit = TRUE;
 			continue;
 		}
 		
@@ -394,4 +397,6 @@ clean(really)
 	}
 
 	fclose(dirfd);
+	if (!gotedit && !really)
+		printf("Nothing being editted\n");
 }
