@@ -2,12 +2,16 @@
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <signal.h>
+# include <errno.h>
 # include "sendmail.h"
+# ifdef FLOCK
+# include <sys/file.h>
+# endif FLOCK
 
 # ifdef DBM
-SCCSID(@(#)alias.c	4.9		%G%	(with DBM));
+SCCSID(@(#)alias.c	4.10		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	4.9		%G%	(without DBM));
+SCCSID(@(#)alias.c	4.10		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -157,7 +161,6 @@ initaliases(aliasfile, init)
 	int atcnt;
 	char buf[MAXNAME];
 	time_t modtime;
-	int (*oldsigint)();
 #endif DBM
 	struct stat stb;
 
@@ -216,49 +219,15 @@ initaliases(aliasfile, init)
 		}
 	}
 
-	/*
-	**  If initializing, create the new files.
-	**	We should lock the alias file here to prevent other
-	**	instantiations of sendmail from reading an incomplete
-	**	file -- or worse yet, doing a concurrent initialize.
-	*/
-
-	if (init)
-	{
-		oldsigint = signal(SIGINT, SIG_IGN);
-		(void) strcpy(buf, aliasfile);
-		(void) strcat(buf, ".dir");
-		if (close(creat(buf, DBMMODE)) < 0)
-		{
-			syserr("cannot make %s", buf);
-			(void) signal(SIGINT, oldsigint);
-			return;
-		}
-		(void) strcpy(buf, aliasfile);
-		(void) strcat(buf, ".pag");
-		if (close(creat(buf, DBMMODE)) < 0)
-		{
-			syserr("cannot make %s", buf);
-			(void) signal(SIGINT, oldsigint);
-			return;
-		}
-	}
 
 	/*
 	**  If necessary, load the DBM file.
 	**	If running without DBM, load the symbol table.
-	**	After loading the DBM file, add the distinquished alias "@".
 	*/
 
 	if (init)
 	{
-		DATUM key;
-
 		readaliases(aliasfile, TRUE);
-		key.dsize = 2;
-		key.dptr = "@";
-		store(key, key);
-		(void) signal(SIGINT, oldsigint);
 	}
 # else DBM
 	readaliases(aliasfile, init);
@@ -294,6 +263,7 @@ readaliases(aliasfile, init)
 	bool skipping;
 	int naliases, bytes, longest;
 	FILE *af;
+	int (*oldsigint)();
 	ADDRESS al, bl;
 	register STAB *s;
 	char line[BUFSIZ];
@@ -307,6 +277,50 @@ readaliases(aliasfile, init)
 		errno = 0;
 		NoAlias++;
 		return;
+	}
+
+# ifdef DBM
+# ifdef FLOCK
+	/* see if someone else is rebuilding the alias file already */
+	if (flock(fileno(af), LOCK_EX | LOCK_NB) < 0 && errno == EWOULDBLOCK)
+	{
+		/* yes, they are -- wait until done and then return */
+		message(Arpa_Info, "Alias file is already being rebuilt");
+		if (OpMode != MD_INITALIAS)
+		{
+			/* wait for other rebuild to complete */
+			(void) flock(fileno(af), LOCK_EX);
+		}
+		fclose(af);
+		errno = 0;
+		return;
+	}
+# endif FLOCK
+# endif DBM
+
+	/*
+	**  If initializing, create the new DBM files.
+	*/
+
+	if (init)
+	{
+		oldsigint = signal(SIGINT, SIG_IGN);
+		(void) strcpy(line, aliasfile);
+		(void) strcat(line, ".dir");
+		if (close(creat(line, DBMMODE)) < 0)
+		{
+			syserr("cannot make %s", line);
+			(void) signal(SIGINT, oldsigint);
+			return;
+		}
+		(void) strcpy(line, aliasfile);
+		(void) strcat(line, ".pag");
+		if (close(creat(line, DBMMODE)) < 0)
+		{
+			syserr("cannot make %s", line);
+			(void) signal(SIGINT, oldsigint);
+			return;
+		}
 	}
 
 	/*
@@ -489,6 +503,23 @@ readaliases(aliasfile, init)
 		if (rhssize > longest)
 			longest = rhssize;
 	}
+
+# ifdef DBM
+	if (init)
+	{
+		/* add the distinquished alias "@" */
+		DATUM key;
+
+		key.dsize = 2;
+		key.dptr = "@";
+		store(key, key);
+
+		/* restore the old signal */
+		(void) signal(SIGINT, oldsigint);
+	}
+# endif DBM
+
+	/* closing the alias file drops the lock */
 	(void) fclose(af);
 	CurEnv->e_to = NULL;
 	FileName = NULL;
