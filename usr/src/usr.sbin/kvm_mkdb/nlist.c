@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nlist.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -21,12 +21,18 @@ static char sccsid[] = "@(#)nlist.c	5.5 (Berkeley) %G%";
 #include <string.h>
 #include <stdlib.h>
 
+#include "extern.h"
+
 typedef struct nlist NLIST;
 #define	_strx	n_un.n_strx
 #define	_name	n_un.n_name
 
+static void badread __P((int, char *));
+static void badfmt __P((char *));
+
 static char *kfile;
 
+void
 create_knlist(name, db)
 	char *name;
 	DB *db;
@@ -46,7 +52,7 @@ create_knlist(name, db)
 	/* Read in exec structure. */
 	nr = read(fd, (char *)&ebuf, sizeof(struct exec));
 	if (nr != sizeof(struct exec))
-		badfmt(nr, "no exec header");
+		badfmt("no exec header");
 
 	/* Check magic number and symbol count. */
 	if (N_BADMAG(ebuf))
@@ -95,27 +101,24 @@ create_knlist(name, db)
 		if ((db->put)(db, &key, &data, 0))
 			error("put");
 
-		if (!strncmp((char *)key.data, VRS_SYM, sizeof(VRS_SYM) - 1)) {
-			off_t cur_off, rel_off, vers_off;
-
-			/* Offset relative to start of text image in VM. */
-			rel_off = nbuf.n_value & ~KERNBASE;
-#ifdef tahoe
-			/*
-			 * On tahoe, first 0x800 is reserved for communication
-			 * with the console processor.
-			 */
-			rel_off -= 0x800;
+		if (strcmp((char *)key.data, VRS_SYM) == 0) {
+			off_t cur_off, voff;
+#ifndef KERNTEXTOFF
+#define KERNTEXTOFF KERNBASE
 #endif
 			/*
-			 * When loaded, data is rounded to next page cluster
-			 * after text, but not in file.
+			 * Calculate offset relative to a normal (non-kernel)
+			 * a.out.  KERNTEXTOFF is where the kernel is really
+			 * loaded; N_TXTADDR is where a normal file is loaded.
+			 * From there, locate file offset in text or data.
 			 */
-			rel_off -= CLBYTES - (ebuf.a_text % CLBYTES);
-			vers_off = N_TXTOFF(ebuf) + rel_off;
-
+			voff = nbuf.n_value - KERNTEXTOFF + N_TXTADDR(ebuf);
+			if ((nbuf.n_type & N_TYPE) == N_TEXT)
+				voff += N_TXTOFF(ebuf) - N_TXTADDR(ebuf);
+			else
+				voff += N_DATOFF(ebuf) - N_DATADDR(ebuf);
 			cur_off = ftell(fp);
-			if (fseek(fp, vers_off, SEEK_SET) == -1)
+			if (fseek(fp, voff, SEEK_SET) == -1)
 				badfmt("corrupted string table");
 
 			/*
@@ -143,6 +146,7 @@ create_knlist(name, db)
 	(void)fclose(fp);
 }
 
+static void
 badread(nr, p)
 	int nr;
 	char *p;
@@ -152,6 +156,7 @@ badread(nr, p)
 	badfmt(p);
 }
 
+static void
 badfmt(p)
 	char *p;
 {
