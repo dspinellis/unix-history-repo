@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)conf.c	5.4 (Berkeley) %G%
+ *	@(#)conf.c	5.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,6 +19,7 @@
 
 int	nulldev();
 int	nodev();
+int	rawread(), rawwrite(), swstrategy();
 
 #include "wd.h"
 #if NWD > 0
@@ -32,7 +33,7 @@ int	wddump(),wdsize();
 #define	wdwrite		nodev
 #define	wdioctl		nodev
 #define	wddump		nodev
-#define	wdsize		0
+#define	wdsize		NULL
 #endif
 
 #include "xd.h"
@@ -47,7 +48,7 @@ int	xddump(),xdsize();
 #define	xdwrite		nodev
 #define	xdioctl		nodev
 #define	xddump		nodev
-#define	xdsize		0
+#define	xdsize		NULL
 #endif
 
 #include "wt.h"
@@ -62,24 +63,24 @@ int	wtdump(),wtsize();
 #define	wtwrite		nodev
 #define	wtioctl		nodev
 #define	wtdump		nodev
-#define	wtsize		0
+#define	wtsize		NULL
 #endif
 
 #include "fd.h"
 #if NFD > 0
-int	fdopen(),fdclose(),fdstrategy(),fdread(),fdwrite();
+int	Fdopen(),fdclose(),fdstrategy(),fdread(),fdwrite();
 #define	fdioctl		nodev
 #define	fddump		nodev
-#define	fdsize		0
+#define	fdsize		NULL
 #else
-#define	fdopen		nodev
+#define	Fdopen		nodev
 #define	fdclose		nodev
 #define	fdstrategy	nodev
 #define	fdread		nodev
 #define	fdwrite		nodev
 #define	fdioctl		nodev
 #define	fddump		nodev
-#define	fdsize		0
+#define	fdsize		NULL
 #endif
 
 int	swstrategy(),swread(),swwrite();
@@ -87,15 +88,15 @@ int	swstrategy(),swread(),swwrite();
 struct bdevsw	bdevsw[] =
 {
 	{ wdopen,	wdclose,	wdstrategy,	wdioctl,	/*0*/
-	  wddump,	wdsize,		0 },
+	  wddump,	wdsize,		NULL },
 	{ nodev,	nodev,		swstrategy,	nodev,		/*1*/
-	  nodev,	nodev,		0 },
-	{ fdopen,	fdclose,	fdstrategy,	fdioctl,	/*2*/
-	  fddump,	fdsize,		0 },
+	  nodev,	nodev,		NULL },
+	{ Fdopen,	fdclose,	fdstrategy,	fdioctl,	/*2*/
+	  fddump,	fdsize,		NULL },
 	{ wtopen,	wtclose,	wtstrategy,	wtioctl,	/*3*/
 	  wtdump,	wtsize,		B_TAPE },
 	{ xdopen,	xdclose,	xdstrategy,	xdioctl,	/*4*/
-	  xddump,	xdsize,		0 },
+	  xddump,	xdsize,		NULL },
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
@@ -104,7 +105,7 @@ extern	struct tty cons;
 
 int	syopen(),syread(),sywrite(),syioctl(),syselect();
 
-int 	mmread(),mmwrite();
+int 	mmrw();
 #define	mmselect	seltrue
 
 #include "pty.h"
@@ -123,7 +124,7 @@ struct	tty pt_tty[];
 #define ptcread		nodev
 #define ptcwrite	nodev
 #define ptyioctl	nodev
-#define	pt_tty		0
+#define	pt_tty		NULL
 #define	ptcselect	nodev
 #define	ptsstop		nulldev
 #endif
@@ -131,7 +132,7 @@ struct	tty pt_tty[];
 #include "com.h"
 #if NCOM > 0
 int	comopen(),comclose(),comread(),comwrite(),comioctl();
-int	comreset();
+#define comreset	nodev
 extern	struct tty com_tty[];
 #else
 #define comopen		nodev
@@ -140,7 +141,7 @@ extern	struct tty com_tty[];
 #define comwrite	nodev
 #define comioctl	nodev
 #define comreset	nodev
-#define	com_tty		0
+#define	com_tty		NULL
 #endif
 
 int	logopen(),logclose(),logread(),logioctl(),logselect();
@@ -152,40 +153,40 @@ struct cdevsw	cdevsw[] =
 {
 	cnopen,		cnclose,	cnread,		cnwrite,	/*0*/
 	cnioctl,	nulldev,	nulldev,	&cons,
-	ttselect,	nodev,
+	ttselect,	nodev,		NULL,
 	syopen,		nulldev,	syread,		sywrite,	/*1*/
-	syioctl,	nulldev,	nulldev,	0,
-	syselect,	nodev,
-	nulldev,	nulldev,	mmread,		mmwrite,	/*2*/
-	nodev,		nulldev,	nulldev,	0,
-	mmselect,	nodev,
+	syioctl,	nulldev,	nulldev,	NULL,
+	syselect,	nodev,		NULL,
+	nulldev,	nulldev,	mmrw,		mmrw,		/*2*/
+	nodev,		nulldev,	nulldev,	NULL,
+	mmselect,	nodev,		NULL,
 	wdopen,		wdclose,	wdread,		wdwrite,	/*3*/
-	wdioctl,	nodev,		nulldev,	0,
-	seltrue,	nodev,
-	nulldev,	nulldev,	swread,		swwrite,	/*4*/
-	nodev,		nodev,		nulldev,	0,
-	nodev,		nodev,
+	wdioctl,	nodev,		nulldev,	NULL,
+	seltrue,	nodev,		wdstrategy,
+	nulldev,	nulldev,	rawread,	rawwrite,	/*4*/
+	nodev,		nodev,		nulldev,	NULL,
+	nodev,		nodev,		swstrategy,
 	ptsopen,	ptsclose,	ptsread,	ptswrite,	/*5*/
-	ptyioctl,	ptsstop,	nodev,		pt_tty,
-	ttselect,	nodev,
+	ptyioctl,	ptsstop,	nulldev,	pt_tty,
+	ttselect,	nodev,		NULL,
 	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*6*/
-	ptyioctl,	nulldev,	nodev,		pt_tty,
-	ptcselect,	nodev,
+	ptyioctl,	nulldev,	nulldev,	pt_tty,
+	ptcselect,	nodev,		NULL,
 	logopen,	logclose,	logread,	nodev,		/*7*/
-	logioctl,	nodev,		nulldev,	0,
-	logselect,	nodev,
+	logioctl,	nodev,		nulldev,	NULL,
+	logselect,	nodev,		NULL,
 	comopen,	comclose,	comread,	comwrite,	/*8*/
 	comioctl,	nodev,		comreset,	com_tty,
-	ttselect,	nodev,
-	fdopen,		fdclose,	fdread,		fdwrite,	/*9*/
-	fdioctl,	nodev,		nulldev,	0,
-	seltrue,	nodev,
+	ttselect,	nodev,		NULL,
+	Fdopen,		fdclose,	fdread,		fdwrite,	/*9*/
+	fdioctl,	nodev,		nulldev,	NULL,
+	seltrue,	nodev,		fdstrategy,
 	wtopen,		wtclose,	wtread,		wtwrite,	/*A*/
-	wtioctl,	nodev,		nulldev,	0,
-	seltrue,	nodev,
+	wtioctl,	nodev,		nulldev,	NULL,
+	seltrue,	nodev,		wtstrategy,
 	xdopen,		xdclose,	xdread,		xdwrite,	/*B*/
-	xdioctl,	nodev,		nulldev,	0,
-	seltrue,	nodev,
+	xdioctl,	nodev,		nulldev,	NULL,
+	seltrue,	nodev,		xdstrategy,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
