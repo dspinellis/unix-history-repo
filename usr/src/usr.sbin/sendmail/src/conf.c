@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.129 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.130 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1146,7 +1146,8 @@ getla()
 
 #include <sys/dg_sys_info.h>
 
-int getla()
+int
+getla()
 {
 	struct dg_sys_info_load_info load_info;
 
@@ -1160,7 +1161,29 @@ int getla()
 }
 
 #else
+# ifdef __hpux
 
+#  include <sys/param.h>
+#  include <sys/pstat.h>
+
+int
+getla()
+{
+	struct pst_dynamic pstd;
+
+	if (pstat_getdynamic(&pstd, sizeof(struct pst_dynamic),
+			     (size_t) 1 ,0) == -1)
+		return 0;
+
+        if (tTd(3, 1))
+                printf("getla: %d\n", (int) (pstd.psd_avg_1_min + 0.5));
+
+	return (int) (pstd.psd_avg_1_min + 0.5);
+}
+
+# else
+
+int
 getla()
 {
 	double avenrun[3];
@@ -1176,6 +1199,7 @@ getla()
 	return ((int) (avenrun[0] + 0.5));
 }
 
+# endif /* __hpux */
 #endif /* DGUX */
 #else
 #if LA_TYPE == LA_MACH
