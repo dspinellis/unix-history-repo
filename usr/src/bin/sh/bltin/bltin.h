@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bltin.h	8.1 (Berkeley) %G%
+ *	@(#)bltin.h	8.2 (Berkeley) %G%
  */
 
 /*
