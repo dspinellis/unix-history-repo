@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.20 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -188,7 +188,8 @@ main(argc, argv)
 		goto out;
 	}
 	(void) fclose(tf);
-	dbm_close(dp);
+	if (dp != NULL)
+		dbm_close(dp);
 	if (rename(temp, passwd) < 0) {
 		perror("passwd: rename");
 	out:
