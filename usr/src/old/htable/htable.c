@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)htable.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)htable.c	4.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -17,6 +17,8 @@ static char sccsid[] = "@(#)htable.c	4.3 (Berkeley) %G%";
 #include <netinet/in.h>
 
 #define	INTERNET	10	/* gag */
+
+#define	DATELINES	3	/* these lines usually contain the date */
 
 FILE	*hf;			/* hosts file */
 FILE	*gf;			/* gateways file */
@@ -57,6 +59,7 @@ main(argc, argv)
 		exit(1);
 	}
 	copylocal(nf, "localnetworks");
+	copycomments(stdin, hf, DATELINES);
 	exit(yyparse());
 }
 
@@ -222,6 +225,23 @@ copylocal(f, filename)
 	fclose(lhf);
 }
 
+copycomments(in, out, ccount)
+	FILE *in, *out;
+	int ccount;
+{
+	char buf[BUFSIZ];
+	int length;
+	int count;
+	char *fgets();
+
+	for (count=0; count < ccount; count++) {
+		if ((fgets(buf, sizeof(buf), in) == NULL) || (buf[0] != ';'))
+			return;
+		buf[0] = '#';
+		fputs(buf, out);
+	}
+	return;
+}
 #define	UC(b)	(((int)(b))&0xff)
 
 putnet(f, v)
