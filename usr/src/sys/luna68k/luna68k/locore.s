@@ -13,7 +13,7 @@
  * from: Utah $Hdr: locore.s 1.62 92/01/20$
  * from: hp300/hp300/locore.s	7.22 (Berkeley) 2/18/93
  *
- *	@(#)locore.s	7.11 (Berkeley) %G%
+ *	@(#)locore.s	7.12 (Berkeley) %G%
  */
 
 /*
@@ -2317,6 +2317,13 @@ _doboot:
 #if defined(LUNA2)
 	cmpl	#-2,_mmutype		| 68040?
 	jne	LmotommuF		| no, skip
+
+	movl	#0x41000000,a0
+	movl	a0@,d0
+	movc	d0,isp			| set ISP
+
+	movw	#PSL_HIGHIPL,sr		| no interrupts
+
 	.word	0xf4f8			| cpusha bc
 	movl	#0,d0
 	movc	d0,cacr			| caches off
