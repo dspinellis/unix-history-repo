@@ -1,4 +1,4 @@
-/*	uu.c	4.7	83/06/16	*/
+/*	uu.c	4.8	83/07/07	*/
 
 #include "uu.h"
 #if NUU > 0
@@ -326,7 +326,7 @@ uurintr(ctlr)
 	case TUS_RCVERR:
 		if ((c & UURDB_ORUN) == 0)
 			printf("uu%d: break received, transfer restarted\n",
-								data->pk_unit);
+			    data->pk_unit);
 		uuc->tu_serrs++;
 		uu_restart(ctlr, ui);	
 		break;
@@ -435,14 +435,14 @@ uurintr(ctlr)
 			uuaddr->tcs = UUCS_INTR;
 			if ((bp = uutab->b_actf) == NULL) {
 				printf("uu%d: no bp, active %d\n", 
-					data->pk_unit, uitab[ctlr].b_active);
+				    data->pk_unit, uitab[ctlr].b_active);
 				uustart(ui);
 				return;
 			}
 			unit = UNIT(minor(bp->b_dev));
 			if (data->pk_mod > 1) {        /* hard error */
 				printf("uu%d: hard error bn%d,", unit, 
-								bp->b_blkno);
+				    bp->b_blkno);
 				printf(" pk_mod %o\n", data->pk_mod&0xff);
 				bp->b_flags |= B_ERROR;
 				uuc->tu_herrs++;
@@ -658,9 +658,11 @@ uuwatch()
 		if (uuc->tu_flag <= 40)
 			continue;
 		printf("uu%d: read stalled\n", uudata[ctlr].pk_unit);
+#ifdef notdef
 		printf("%X %X %X %X %X %X %X\n", uuc->tu_rbptr, uuc->tu_rcnt,
 		       uuc->tu_wbptr, uuc->tu_wcnt, uuc->tu_state, uuc->tu_addr,
 		       uuc->tu_count);
+#endif
 		uuc->tu_flag = 0;
 		s = splx(UUIPL);
 		i = uuaddr->rdb;		/* dummy */
