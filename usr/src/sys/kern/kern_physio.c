@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_physio.c	7.20 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
