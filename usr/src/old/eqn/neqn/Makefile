@@ -1,9 +1,20 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.1	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 COMMON=	../common_source
 CFLAGS=	-O -DNEQN -I. -I${COMMON}
@@ -27,51 +38,20 @@ e.c: ${COMMON}/e.y
 	mv y.tab.h e.def
 	mv y.tab.c e.c
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core neqn e.c e.def
 
-depend: ${SRCS} FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 neqn ${DESTDIR}/usr/bin/neqn
 
-lint: ${SRCS} FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: ${SRCS} FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-e.o: e.c ../common_source/e.h /usr/include/stdio.h
-diacrit.o: ../common_source/diacrit.c ../common_source/e.h /usr/include/stdio.h
-diacrit.o: e.def
-eqnbox.o: ../common_source/eqnbox.c ../common_source/e.h /usr/include/stdio.h
-font.o: ../common_source/font.c ../common_source/e.h /usr/include/stdio.h
-fromto.o: ../common_source/fromto.c ../common_source/e.h /usr/include/stdio.h
-funny.o: ../common_source/funny.c ../common_source/e.h /usr/include/stdio.h
-funny.o: e.def
-glob.o: ../common_source/glob.c ../common_source/e.h /usr/include/stdio.h
-integral.o: ../common_source/integral.c ../common_source/e.h
-integral.o: /usr/include/stdio.h e.def
-io.o: ../common_source/io.c ../common_source/e.h /usr/include/stdio.h
-lex.o: ../common_source/lex.c ../common_source/e.h /usr/include/stdio.h e.def
-lookup.o: ../common_source/lookup.c ../common_source/e.h /usr/include/stdio.h
-lookup.o: e.def
-mark.o: ../common_source/mark.c ../common_source/e.h /usr/include/stdio.h
-matrix.o: ../common_source/matrix.c ../common_source/e.h /usr/include/stdio.h
-move.o: ../common_source/move.c ../common_source/e.h /usr/include/stdio.h e.def
-over.o: ../common_source/over.c ../common_source/e.h /usr/include/stdio.h
-paren.o: ../common_source/paren.c ../common_source/e.h /usr/include/stdio.h
-pile.o: ../common_source/pile.c ../common_source/e.h /usr/include/stdio.h
-shift.o: ../common_source/shift.c ../common_source/e.h /usr/include/stdio.h
-shift.o: e.def
-size.o: ../common_source/size.c ../common_source/e.h /usr/include/stdio.h
-sqrt.o: ../common_source/sqrt.c ../common_source/e.h /usr/include/stdio.h
-text.o: ../common_source/text.c ../common_source/e.h /usr/include/stdio.h e.def
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
