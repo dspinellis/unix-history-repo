@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printerror.c 1.2 %G%";
+static char sccsid[] = "@(#)printerror.c 1.3 %G%";
 
 /*
  * Print out an execution time error.
@@ -19,34 +19,28 @@ static char sccsid[] = "@(#)printerror.c 1.2 %G%";
 
 printerror()
 {
-	register PROCESS *p;
-	char *filename;
-	int c;
+    register PROCESS *p;
+    char *filename;
+    int c;
 
-	p = process;
-	if (p->signo != ESIGNAL && p->signo != SIGINT) {
-		error("signal %d at px pc %d, lc %d", p->signo, p->pc, pc);
+    p = process;
+    if (p->signo != ESIGNAL && p->signo != SIGINT) {
+	error("signal %d at px pc %d, lc %d", p->signo, p->pc, pc);
+    }
+    curline = srcline(pc);
+    curfunc = whatblock(pc);
+    skimsource(srcfilename(pc));
+    if (p->signo == ESIGNAL) {
+	printf("\nerror at ");
+	printwhere(curline, cursource);
+	if (errnum != 0) {
+	    printf(":  %s", pxerrmsg[errnum]);
 	}
-	curline = srcline(pc);
-	curfunc = whatblock(pc);
-	if ((filename = srcfilename(pc)) != cursource) {
-		skimsource(filename);
-	}
-	if (p->signo == ESIGNAL) {
-		printf("\nerror at line %d", curline);
-		if (nlhdr.nfiles > 1) {
-			printf("in file %s", cursource);
-		}
-		if (errnum != 0) {
-			printf(":  %s", pxerrmsg[errnum]);
-		}
-	} else {
-		printf("\n\ninterrupt at line %d", curline);
-		if (nlhdr.nfiles > 1) {
-			printf(" in file %s", cursource);
-		}
-	}
-	putchar('\n');
-	printlines(curline, curline);
-	erecover();
+    } else {
+	printf("\n\ninterrupt at ");
+	printwhere(curline, cursource);
+    }
+    putchar('\n');
+    printlines(curline, curline);
+    erecover();
 }
