@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.108 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.109 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2472,23 +2472,23 @@ mailfile(filename, ctladdr, e)
 
 		if (!bitset(S_ISGID, mode) || setgid(stb.st_gid) < 0)
 		{
-			if (ctladdr == NULL || ctladdr->q_uid == 0)
-			{
-				(void) initgroups(DefUser, DefGid);
-			}
-			else
-			{
+			if (ctladdr != NULL && ctladdr->q_uid != 0)
 				(void) initgroups(ctladdr->q_ruser ?
 					ctladdr->q_ruser : ctladdr->q_user,
 					ctladdr->q_gid);
-			}
+			else if (FileMailer != NULL && FileMailer->m_gid != 0)
+				(void) initgroups(DefUser, FileMailer->m_gid);
+			else
+				(void) initgroups(DefUser, DefGid);
 		}
 		if (!bitset(S_ISUID, mode) || setuid(stb.st_uid) < 0)
 		{
-			if (ctladdr == NULL || ctladdr->q_uid == 0)
-				(void) setuid(DefUid);
-			else
+			if (ctladdr != NULL && ctladdr->q_uid != 0)
 				(void) setuid(ctladdr->q_uid);
+			else if (FileMailer != NULL && FileMailer->m_uid != 0)
+				(void) setuid(FileMailer->m_uid);
+			else
+				(void) setuid(DefUid);
 		}
 		FileName = filename;
 		LineNumber = 0;

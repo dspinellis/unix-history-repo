@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.52 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.53 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -747,12 +747,24 @@ writable(filename, ctladdr, flags)
 		egid = ctladdr->q_gid;
 		uname = ctladdr->q_user;
 	}
+#ifdef RUN_AS_REAL_UID
 	else
 	{
 		euid = RealUid;
 		egid = RealGid;
 		uname = RealUserName;
 	}
+#else
+	else if (FileMailer != NULL)
+	{
+		euid = FileMailer->m_uid;
+		egid = FileMailer->m_gid;
+	}
+	else
+	{
+		euid = egid = 0;
+	}
+#endif
 	if (euid == 0)
 	{
 		euid = DefUid;
@@ -999,25 +1011,27 @@ resetuid:
 	}
 	else
 	{
-		char *sh;
 		register struct passwd *pw;
 
-		sh = "/SENDMAIL/ANY/SHELL/";
 		pw = getpwuid(st.st_uid);
-		if (pw != NULL)
+		if (pw == NULL)
+			ctladdr->q_flags |= QBOGUSSHELL;
+		else
 		{
+			char *sh;
+
 			ctladdr->q_ruser = newstr(pw->pw_name);
 			if (safechown)
 				sh = pw->pw_shell;
-		}
-		if (pw == NULL)
-			ctladdr->q_flags |= QBOGUSSHELL;
-		else if(!usershellok(sh))
-		{
-			if (safechown)
-				ctladdr->q_flags |= QBOGUSSHELL;
 			else
-				ctladdr->q_flags |= QUNSAFEADDR;
+				sh = "/SENDMAIL/ANY/SHELL/";
+			if (!usershellok(sh))
+			{
+				if (safechown)
+					ctladdr->q_flags |= QBOGUSSHELL;
+				else
+					ctladdr->q_flags |= QUNSAFEADDR;
+			}
 		}
 	}
 
