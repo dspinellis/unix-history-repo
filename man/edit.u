@@ -1,0 +1,300 @@
+.TH EDIT UCB 4/8/79 UCB
+.SH NAME
+edit \- text editor (variant of the ex editor for new or casual users)
+.SH SYNOPSIS
+.B edit
+[
+.B \-r
+]
+name ...
+.SH DESCRIPTION
+.I Edit
+is a variant of the text editor
+.I ex
+recommended for new or casual users who wish to use a command oriented editor.
+The following brief introduction should help you get started with
+.I edit.
+A more complete basic introduction is provided by
+.I "Edit: A tutorial".
+A
+.I "Ex/edit command summary (version 2.0)"
+is also very useful.
+See
+.IR ex (UCB)
+for other useful documents;
+in particular, if you are using a \s-2CRT\s0 terminal you will want
+to learn about the display editor
+.I vi.
+.SH "BRIEF INTRODUCTION"
+To edit the contents of an existing file you begin with the command
+``edit name'' to the shell.
+.I Edit
+makes a copy of the file which you can then edit, and tells you how
+many lines and characters are in the file.
+To create a new file, just make up a name for the file and try to run
+.I edit
+on it; you will cause an error diagnostic, but don't worry.
+.PP
+.I Edit
+prompts for commands with the character `:', which you should see after
+starting the editor.
+If you are editing an existing file, then you will have some lines in
+.I edit's
+buffer (its name for the copy of the file you are editing).
+Most commands to
+.I edit
+use its ``current line'' if you don't tell them which line to use.
+Thus if you say
+.B print
+(which can be abbreviated \fBp\fR)
+and hit carriage return (as you should after all
+.I edit
+commands) this current line will be printed.
+If you
+.B delete
+(\fBd\fR) the current line,
+.I edit
+will print the new current line.
+When you start editing,
+.I edit
+makes the last line of the file the current line.
+If you
+.B delete
+this last line, then the new last line becomes the current one.
+In general, after a
+.B delete,
+the next line in the file becomes the current line.
+(Deleting the last line is a special case.)
+.PP
+If you start with an empty file, or wish to add some new lines, then the
+.B append
+(\fBa\fR)
+command can be used.
+After you give this command (typing a carriage return after the
+word \fBappend\fR)
+.I edit
+will read lines from your terminal until you give a line consisting
+of just a ``\fB.\fR'', placing these lines after the current line.
+The last line you type then becomes the current line.
+The command
+.B insert
+(\fBi\fR)
+is like
+.B append
+but places the lines you give before, rather than after, the current line.
+.PP
+.I Edit
+numbers the lines in the buffer, with the first line having number 1.
+If you give the command
+``1''
+then
+.I edit
+will type this first line.
+If you then give the command
+.B delete
+.I edit
+will delete the first line, and line 2 will become line 1, and
+.I edit
+will print the current line (the new line 1) so you can see where you are.
+In general, the current line will always be the last line affected by a command.
+.PP
+You can make a change to some text within the current line by using the
+.B substitute
+(\fBs\fR)
+command.
+You say ``s/\fIold\fR\|/\fInew\fR/'' where
+.I old
+is replaced by the old characters you want
+to get rid of and
+.I new
+is the new characters you want to replace it with.
+.PP
+The command
+.B file
+(\fBf\fR) will tell you how many lines there are in the buffer you are editing
+and will say ``[Modified]'' if you have changed it.
+After modifying a file you can put the buffer text back to replace the file
+by giving a
+.B write
+(\fBw\fR)
+command.
+You can then leave the editor by issuing a
+.B quit
+(\fBq\fR)
+command.
+If you run
+.I edit
+on a file, but don't change it, it is not necessary
+(but does no harm)
+to
+.B write
+the file back.
+If you try to
+.B quit
+from
+.I edit
+after modifying the buffer without writing it out, you will be warned that
+there has been ``No \fBwrite\fR since last change'' and
+.I edit
+will await another command.
+If you wish not to
+.B write
+the buffer out then you can issue another
+.B quit
+command.
+The buffer is then irretrievably discarded, and you return to the shell.
+.PP
+By using the
+.B delete
+and
+.B append
+commands,
+and giving line numbers to see lines in the file you can make any
+changes you desire.
+You should learn at least a few more things, however, if you are to use
+.I edit
+more than a few times.
+.PP
+The
+.B change
+(\fBc\fR)
+command will change the current line to a sequence of lines you supply
+(as in
+.B append
+you give lines up to a line consisting of only a ``.'').
+You can tell
+.B change
+to change more than one line by giving the line numbers of the
+lines you want to change, i.e. ``3,5change''.
+You can print lines this way too.
+Thus ``1,23p'' prints the first 23 lines of the file.
+.PP
+The
+.B undo
+(\fBu\fR)
+command will reverse the effect of the last command you gave which changed
+the buffer.
+Thus if give a 
+.B substitute
+command which doesn't do what you want, you can say
+.B undo
+and the old contents of the line will be restored.
+You can also
+.B undo
+an
+.B undo
+command so that you can continue to change your mind.
+.I Edit
+will give you a warning message when commands you do affect more than
+one line of the buffer.
+If the amount of change seems unreasonable, you should consider doing
+an
+.I undo
+and looking to see what happened.
+If you decide that the change is ok, then you can
+.I undo
+again to get it back.
+Note that commands such as
+.I write
+and
+.I quit
+cannot be undone.
+.PP
+To look at the next line in the buffer you can just hit carriage return.
+To look at a number of lines hit ^D (control key and, while it is
+held down D key, then let up both) rather than carriage return.
+This will show you a half screen of lines on a CRT or 12 lines on a hardcopy
+terminal.
+You can look at the text around where you are by giving the command ``z.''.
+The current line will then be the last line printed; you can get back
+to the line where you were before the ``z.'' command by saying ``\'\'''.
+The
+.B z
+command can also be given other following characters ``z\-'' prints
+a screen of text (or 24 lines) ending where you are;
+``z+'' prints the next screenful.
+If you want less than a screenful of lines do, e.g., ``z.12'' to get
+12 lines total.
+This method of giving counts works in general;
+thus you can delete 5 lines starting with the current line with the command
+``delete 5''.
+.PP
+To find things in the file you can use line numbers if you happen to know
+them; since the line numbers change when you insert and delete lines
+this is somewhat unreliable.
+You can search backwards and forwards in the file for strings by giving
+commands of the form
+\fB/text/\fR
+to search forward for
+.I text
+or
+\fB?text?\fR
+to search backward for
+.I text.
+If a search reaches the end of the file without finding the text it
+wraps, end around, and continues to search back to the line where you are.
+A useful feature here is a search of the form
+\fB/^text/\fR
+which searches for
+.I text
+at the beginning of a line.
+Similarly
+\fB/text$/\fR
+searches for
+.I text
+at the end of a line.
+You can leave off the trailing / or ? in these commands.
+.PP
+The current line has a symbolic name ``\fB.\fR''; this is most
+useful in a range of lines as in ``.,$print'' which prints the rest of
+the lines in the file.
+To get to the last line in the file you can refer to it by its symbolic
+name ``$''.
+Thus the command ``$ delete'' or ``$d'' deletes the last line in the
+file, no matter which line was the current line before.
+Arithmetic with line references is also possible.
+Thus the line ``$\-5'' is the fifth before the last, and
+``.+20'' is 20 lines after the present.
+.PP
+You can find out which line you are at by doing
+``.=''.
+This is useful if you wish to move or copy a section of text within a file or
+between files.
+Find out the first and last line numbers you wish to copy or move (say 10 to 20).
+For a move you can then say
+``10,20move "a''
+which deletes these lines from the file and places them in a buffer named
+.I a.
+.I Edit
+has 26 such buffers named
+.I a
+through
+.I z.
+You can later get these lines back by doing
+``"a move \fB.\fR''
+to put the contents of buffer
+.I a
+after the current line.
+If you want to move or copy these lines between files you can give an
+.B edit
+(\fBe\fR)
+command after copying the lines, following it with the name of the other
+file you wish to edit, i.e. ``edit chapter2''.
+By changing
+.I move
+to
+.I copy
+above you can get a pattern for copying lines.
+If the text you wish to move or copy is all within one file
+then you can just say
+``10,20move $''
+for example.
+It is not necessary to use named buffers in this case (but you can if you wish).
+.SH SEE\ ALSO
+ex (UCB), vi (UCB),
+`Edit: A tutorial', by Ricki Blau and James Joyce
+.SH AUTHOR
+William Joy
+.SH BUGS
+See
+.IR ex (UCB).
