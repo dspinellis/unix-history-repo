@@ -45,7 +45,7 @@ short	hpfj_off[8] =	{ 0, 19, 0, -1, -1, -1, 398, 59 };
 short	hptypes[] =
     { MBDT_RM03, MBDT_RM05, MBDT_RP06, MBDT_RM80, MBDT_RP05, MBDT_RP07,
       MBDT_ML11A, MBDT_ML11B, -1/*9755*/, -1/*9730*/, -1/*Capr*/,
-      -1/* eagle */, MBDT_RM02, 0};
+      -1/* eagle */, -1/* 48 sect eagle*/, MBDT_RM02, 0};
 
 #define RP06 (hptypes[hp_type[unit]] <= MBDT_RP06)
 #define ML11 (hptypes[hp_type[unit]] == MBDT_ML11A)
@@ -71,6 +71,7 @@ struct st hpst[] = {
 	32,	10,	32*10,	823,	si9730_off,	/* 9730 */
 	32,	16,	32*16,	1024,	hpam_off,	/* capricorn */
 	43,	20,	43*20,	842,	hpfj_off,	/* Eagle */
+	48,	20,	48*20,	842,	hpfj_off,	/* modif. eagle */
 	1,	1,	1,	1,	0,	/* rm02 - not used */
 };
 struct dkbad hpbad[MAXNMBA*8];
@@ -119,13 +120,20 @@ found:
 			break;
 		}
 
-		case 12:		/* rm02 */
+		case 13:		/* rm02 */
+
 			hpaddr->hpcs1 = HP_NOP;
 			hpaddr->hphr = HPHR_MAXTRAK;
+			
 			if (MASKREG(hpaddr->hphr) == 15)
 				i = 10;		/* ampex capricorn */
-			else
-				i = 11;		/* eagle */
+			else {
+				hpaddr->hphr = HPHR_MAXSECT;
+				if (MASKREG(hpaddr->hphr) == 47)
+					i = 12;		/* modified eagle */
+				else	
+					i = 11;		/* eagle */
+			}
 			break;
 		
 		case 6: case 7:		/* ml11a ml11b */
