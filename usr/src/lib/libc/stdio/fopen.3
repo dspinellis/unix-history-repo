@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fopen.3	4.1 (Berkeley) %G%
+.\"	@(#)fopen.3	5.1 (Berkeley) %G%
 .\"
-.TH FOPEN 3S  4/1/81
+.TH FOPEN 3S  "1 April 1981"
 .UC 4
 .SH NAME
 fopen, freopen, fdopen \- open a stream
@@ -38,8 +38,7 @@ opens the file named by
 .I filename
 and associates a stream with it.
 .I Fopen
-returns a pointer to be used to identify
-the stream in subsequent operations.
+returns a pointer to be used to identify the stream in subsequent operations.
 .PP
 .I Type
 is a character string having one of the following values:
@@ -53,31 +52,26 @@ create for writing
 .ns
 .TP 5
 "a"
-append: open for writing at end
-of file, or create for writing
+append: open for writing at end of file, or create for writing
 .PP
 In addition, each
 .I type
-may be followed by a '+' to have the file opened for
-reading and writing.  "r+" positions the 
-stream at the beginning of the file, "w+" creates
+may be followed by a '+' to have the file opened for reading and writing.
+"r+" positions the stream at the beginning of the file, "w+" creates
 or truncates it, and "a+" positions it at the end.  Both reads and writes
 may be used on read/write streams, with the limitation that an
 .I fseek, rewind,
-or reading an end-of-file must be used between a read and a write or
-vice-versa.
+or reading an end-of-file must be used between a read and a write or vice-versa.
 .PP
 .I Freopen
-substitutes the named file in place
-of the open
+substitutes the named file in place of the open
 .IR stream .
 It returns the original value of
 .IR stream .
 The original stream is closed.
 .PP
 .I Freopen
-is typically used to attach the preopened
-constant names,
+is typically used to attach the preopened constant names,
 .B stdin, stdout, stderr,
 to specified files.
 .PP
@@ -111,5 +105,4 @@ The read/write
 do not exist on all systems.  Those systems without
 read/write modes will probably treat the 
 .I type
-as if the '+' was not
-present.
+as if the '+' was not present.  These are unreliable in any event.
