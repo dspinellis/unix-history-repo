@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.54 (Berkeley) %G%
+#	@(#)Makefile	5.55 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -10,7 +10,7 @@ all clean cleandir depend lint tags:
 # Missing: mp.h
 
 FILES=	a.out.h ar.h assert.h bitstring.h ctype.h db.h dirent.h disktab.h \
-	fnmatch.h fstab.h fts.h glob.h grp.h kvm.h limits.h locale.h \
+	err.h fnmatch.h fstab.h fts.h glob.h grp.h kvm.h limits.h locale.h \
 	math.h memory.h mp.h mpool.h ndbm.h netdb.h nlist.h paths.h pwd.h \
 	ranlib.h regex.h regexp.h resolv.h setjmp.h sgtty.h signal.h \
 	stab.h stddef.h stdio.h stdlib.h string.h strings.h struct.h \
