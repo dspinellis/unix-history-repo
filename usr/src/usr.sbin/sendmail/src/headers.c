@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.57		%G%);
+SCCSID(@(#)headers.c	3.58		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -78,12 +78,14 @@ chompheader(line, def)
 	if (*fvalue == ' ')
 		fvalue++;
 
-	/* search header list for this header */
+	/* delete default value for this header */
 	for (hp = &CurEnv->e_header, h = CurEnv->e_header; h != NULL;
 		hp = &h->h_link, h = h->h_link)
 	{
-		if (strcmp(fname, h->h_field) == 0 && bitset(H_DEFAULT, h->h_flags))
-			break;
+		if (strcmp(fname, h->h_field) == 0 &&
+		    bitset(H_DEFAULT, h->h_flags) &&
+		    !bitset(H_FORCE, h->h_flags))
+			h->h_value = NULL;
 	}
 
 	/* see if it is a known type */
@@ -111,17 +113,13 @@ chompheader(line, def)
 			return (hi->hi_flags);
 	}
 
-	/* create/fill in a new node */
-	if (h == NULL || bitset(H_FORCE, h->h_flags))
-	{
-		/* create a new node */
-		h = (HDR *) xalloc(sizeof *h);
-		h->h_field = newstr(fname);
-		h->h_value = NULL;
-		h->h_link = *hp;
-		bcopy(mopts, h->h_mflags, sizeof mopts);
-		*hp = h;
-	}
+	/* create a new node */
+	h = (HDR *) xalloc(sizeof *h);
+	h->h_field = newstr(fname);
+	h->h_value = NULL;
+	h->h_link = NULL;
+	bcopy(mopts, h->h_mflags, sizeof mopts);
+	*hp = h;
 	h->h_flags = hi->hi_flags;
 	if (def)
 		h->h_flags |= H_DEFAULT;
