@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.16 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -25,23 +25,17 @@
  * the nfs op functions. They do things like create the rpc header and
  * copy data between mbuf chains and uio lists.
  */
-#include "strings.h"
 #include "param.h"
-#include "systm.h"
 #include "user.h"
 #include "proc.h"
-#include "mount.h"
-#include "../ufs/dir.h"
-#include "time.h"
-#include "errno.h"
+#include "systm.h"
 #include "kernel.h"
-#include "malloc.h"
-#include "mbuf.h"
+#include "mount.h"
 #include "file.h"
 #include "vnode.h"
-#include "uio.h"
-#include "namei.h"
-#include "ucred.h"
+#include "mbuf.h"
+#include "errno.h"
+#include "strings.h"
 #include "map.h"
 #include "rpcv2.h"
 #include "nfsv2.h"

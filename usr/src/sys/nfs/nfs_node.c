@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.21 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,8 +26,6 @@
 #include "proc.h"
 #include "mount.h"
 #include "vnode.h"
-#include "../ufs/dir.h"
-#include "namei.h"
 #include "errno.h"
 #include "nfsv2.h"
 #include "nfs.h"

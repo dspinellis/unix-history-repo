@@ -17,21 +17,16 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.15 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "signal.h"
 #include "user.h"
 #include "proc.h"
-#include "uio.h"
-#include "ucred.h"
-#include "ufs/dir.h"
-#include "namei.h"
 #include "vnode.h"
 #include "mount.h"
 #include "errno.h"
-#include "malloc.h"
 #include "buf.h"
 #include "mbuf.h"
 #undef	m_data

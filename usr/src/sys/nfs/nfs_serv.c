@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.12 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -38,21 +38,14 @@
  *	  exhaustion)
  */
 
-#include "strings.h"
-#include "time.h"
 #include "param.h"
-#include "mount.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "file.h"
 #include "user.h"
-#include "../ufs/dir.h"
+#include "file.h"
 #include "vnode.h"
-#include "uio.h"
-#include "ucred.h"
-#include "namei.h"
+#include "mount.h"
+#include "mbuf.h"
 #include "errno.h"
-#include "../ufs/inode.h"
+#include "strings.h"
 #include "nfsv2.h"
 #include "nfs.h"
 #include "xdr_subs.h"
