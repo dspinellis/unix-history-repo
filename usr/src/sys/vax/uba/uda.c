@@ -1,4 +1,4 @@
-/*	uda.c	4.18	83/02/20	*/
+/*	uda.c	4.19	83/02/23	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -316,9 +316,7 @@ loop:
 		um->um_tab.b_active = 0;
 #if defined(VAX750)
 		if (cpu == VAX_750) {
-			if (um->um_ubinfo == 0)
-				printf("uda: um_ubinfo == 0\n");
-			else
+			if (um->um_ubinfo != 0)
 				ubarelse(um->um_ubanum, &um->um_ubinfo);
 		}
 #endif
