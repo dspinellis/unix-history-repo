@@ -1,4 +1,4 @@
-/*	tty.c	6.12	84/12/20	*/
+/*	tty.c	6.13	84/12/31	*/
 
 #include "../machine/reg.h"
 
@@ -255,6 +255,7 @@ ttioctl(tp, com, data, flag)
 	case TIOCLBIC:
 	case TIOCLSET:
 	case TIOCSTI:
+	case TIOCSWINSZ:
 #define bit(a) (1<<(a-1))
 		while (tp->t_line == NTTYDISC &&
 		   u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
@@ -467,6 +468,9 @@ ttioctl(tp, com, data, flag)
 
 	/*
 	 * Allow SPGRP only if tty is ours and is open for reading.
+	 * Quick check: if we can find a process in the new pgrp,
+	 * this user must own that process.
+	 * SHOULD VERIFY THAT PGRP IS IN USE AND IS THIS USER'S.
 	 */
 	case TIOCSPGRP:
 		{
@@ -477,12 +481,28 @@ ttioctl(tp, com, data, flag)
 			return (EPERM);
 		if (u.u_uid && u.u_ttyp != tp)
 			return (EACCES);
+		p = pfind(pgrp);
+		if (p && p->p_pgrp == pgrp &&
+		    p->p_uid != u.u_uid && u.u_uid && !inferior(p))
+			return (EPERM);
 		tp->t_pgrp = pgrp;
 		break;
 		}
 
 	case TIOCGPGRP:
 		*(int *)data = tp->t_pgrp;
+		break;
+
+	case TIOCSWINSZ:
+		if (bcmp((caddr_t)&tp->t_winsize, data, 
+				sizeof(struct winsize))) {
+			tp->t_winsize = *(struct winsize *)data;
+			gsignal(tp->t_pgrp, SIGWINCH);
+		}
+		break;
+
+	case TIOCGWINSZ:
+		*(struct winsize *)data = tp->t_winsize;
 		break;
 
 	default:
@@ -562,6 +582,7 @@ ttyopen(dev, tp)
 	tp->t_state &= ~TS_WOPEN;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		tp->t_state |= TS_ISOPEN;
+		bzero((caddr_t)&tp->t_winsize, sizeof(tp->t_winsize));
 		if (tp->t_line != NTTYDISC)
 			ttywflush(tp);
 	}
