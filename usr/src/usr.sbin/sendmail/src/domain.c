@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.13 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.14 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.13 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.14 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -352,6 +352,7 @@ getcanonname(host, hbsize)
 	**  Now run through the search list for the name in question.
 	*/
 
+cnameloop:
 	dp = searchlist;
 	mxmatch = NULL;
 	qtype = T_ANY;
@@ -470,7 +471,14 @@ getcanonname(host, hbsize)
 					break;
 				(void)strncpy(host, nbuf, hbsize); /* XXX */
 				host[hbsize - 1] = '\0';
-				return TRUE;
+
+				/*
+				**  RFC 1034 section 3.6 specifies that CNAME
+				**  should point at the canonical name -- but
+				**  urges software to try again anyway.
+				*/
+
+				goto cnameloop;
 
 			  default:
 				/* not a record of interest */
