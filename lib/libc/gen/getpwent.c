@@ -33,7 +33,7 @@
 
 #if defined(LIBC_SCCS) && !defined(lint)
 /*static char *sccsid = "from: @(#)getpwent.c	5.21 (Berkeley) 3/14/91";*/
-static char *rcsid = "$Id: getpwent.c,v 1.7 1994/03/02 19:46:20 ache Exp $";
+static char *rcsid = "$Id: getpwent.c,v 1.8 1994/03/09 20:59:03 ache Exp $";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -54,7 +54,7 @@ static char *rcsid = "$Id: getpwent.c,v 1.7 1994/03/02 19:46:20 ache Exp $";
 #include <rpcsvc/ypclnt.h>
 #endif
 
-#define PW_COMPACT
+/* #define PW_COMPACT */
 /* Compact pwd.db/spwd.db structure by Alex G. Bulushev, bag@demos.su */
 
 static struct passwd _pw_passwd;	/* password structure */
