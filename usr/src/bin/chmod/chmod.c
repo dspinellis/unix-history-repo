@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chmod.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)chmod.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -35,22 +35,33 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	register FTS *fts;
+	register FTS *ftsp;
 	register FTSENT *p;
 	register int oct, omode;
 	struct stat sb;
 	mode_t *set;
-	int ch, fflag, rflag;
+	int ch, fflag, rflag, hflag, Hflag;
 	char *ep, *mode;
+	int fts_options;
 
-	fflag = rflag = 0;
-	while ((ch = getopt(argc, argv, "Rfrwx")) != EOF)
+	fts_options = FTS_PHYSICAL;
+	fflag = rflag = hflag = Hflag = 0;
+	while ((ch = getopt(argc, argv, "HRfhrwx")) != EOF)
 		switch((char)ch) {
+		case 'H':
+			Hflag = 1;
+			fts_options |= FTS_COMFOLLOW;
+			break;
 		case 'R':
 			rflag = 1;
 			break;
 		case 'f':		/* no longer documented */
 			fflag = 1;
+			break;
+		case 'h':
+			hflag = 1;
+			fts_options &= ~FTS_PHYSICAL;
+			fts_options |= FTS_LOGICAL;
 			break;
 		case 'r':		/* "-[rwx]" are valid file modes */
 		case 'w':
@@ -80,36 +91,31 @@ done:	argv += optind;
 	}
 
 	retval = 0;
-	if (rflag) {
-		if ((fts = fts_open(++argv,
-		    oct ? FTS_NOSTAT|FTS_PHYSICAL : FTS_PHYSICAL, 0)) == NULL)
+	if (oct)
+		fts_options |= FTS_NOSTAT;
+	if ((ftsp = fts_open(++argv, fts_options, 0)) == NULL)
 			err("%s", strerror(errno));
-		while (p = fts_read(fts))
-			switch(p->fts_info) {
-			case FTS_D:
-				break;
-			case FTS_DNR:
-			case FTS_ERR:
-			case FTS_NS:
-				err("%s: %s", p->fts_path, strerror(errno));
-			default:
-				if (chmod(p->fts_accpath, oct ? omode :
-				    getmode(set, p->fts_statp->st_mode)) &&
-				    !fflag)
-					error(p->fts_path);
-				break;
-			}
-		exit(retval);
-	}
-	if (oct) {
-		while (*++argv)
-			if (chmod(*argv, omode) && !fflag)
-				error(*argv);
-	} else
-		while (*++argv)
-			if ((lstat(*argv, &sb) ||
-			    chmod(*argv, getmode(set, sb.st_mode))) && !fflag)
-				error(*argv);
+	while (p = fts_read(ftsp))
+		switch(p->fts_info) {
+		case FTS_D:
+			if (!rflag)
+				fts_set(ftsp, p, FTS_SKIP);
+			break;
+		case FTS_DNR:
+		case FTS_ERR:
+		case FTS_NS:
+			err("%s: %s", p->fts_path, strerror(errno));
+		default:	
+			if (p->fts_info == FTS_SL && 
+			    !(hflag || 
+			    (Hflag && p->fts_level == FTS_ROOTLEVEL)))
+				continue;
+			if (chmod(p->fts_accpath, oct ? omode :
+			    getmode(set, p->fts_statp->st_mode)) &&
+			    !fflag)
+				error(p->fts_path);
+			break;
+		}
 	exit(retval);
 }
 
@@ -124,7 +130,7 @@ error(name)
 void
 usage()
 {
-	(void)fprintf(stderr, "usage: chmod [-R] mode file ...\n");
+	(void)fprintf(stderr, "usage: chmod [-HRh] mode file ...\n");
 	exit(1);
 }
 
