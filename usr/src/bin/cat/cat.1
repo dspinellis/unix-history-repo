@@ -13,15 +13,15 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)cat.1	6.5 (Berkeley) %G%
+.\"	@(#)cat.1	6.6 (Berkeley) %G%
 .\"
 .TH CAT 1 ""
 .UC 1
 .SH NAME
 cat \- concatenate and print files
 .SH SYNOPSIS
-.nf
-cat [-benstuv] [-] [file ...]
+\fBcat [ \fI-benstuv\fB ] [ \fI-\fB ] [ \fIfile ...\fB ]
+.ft R
 .SH DESCRIPTION
 The
 .I cat
@@ -76,6 +76,9 @@ file1 and file2 and places the result in file3.
 Because of the shell language mechanism used to perform output
 redirection, the command ``cat file1 file 2 > file1'' will cause
 the original data in file1 to be destroyed!
+.PP
+.I Cat
+exits 0 on success, >0 if an error occurred.
 .SH "SEE ALSO"
 head(1), more(1), pr(1), tail(1)
 .br
