@@ -1,5 +1,5 @@
 #
-static	char sccsid[] = "@(#)c20.c 4.3 %G%";
+static	char sccsid[] = "@(#)c20.c 4.4 %G%";
 /* char C20[] = {"@(#)c20.c 1.35 80/08/26 14:13:40"}; /* sccs ident */
 /*
  *	 C object code improver
@@ -376,7 +376,7 @@ opsetup()
 	register struct optab *optp, **ophp;
 	register int i,t;
 
-	for(i=NREG+5;--i>=0;) regs[i]=alloc(20);
+	for(i=NREG+5;--i>=0;) regs[i]=alloc(C2_ASIZE);
 	for (optp = optab; optp->opstring[0]; optp++) {
 		t=7; i=0; while (--t>=0) i+= i+optp->opstring[t];
 		ophp = &ophash[i % OPHS];
@@ -397,7 +397,7 @@ oplook()
 	register struct optab *optp,**ophp;
 	register char *p,*p2;
 	register int t;
-	char tempop[20];
+	char tempop[C2_ASIZE];
 	static struct optab OPNULL={"",0};
 
 	for (p=line, p2=tempop; *p && !isspace(*p); *p2++= *p++); *p2=0; p2=p;

@@ -1,4 +1,4 @@
-/*static	char sccsid[] = "@(#)c2.h 4.2 %G%";*/
+/*static	char sccsid[] = "@(#)c2.h 4.3 %G%";*/
 /* @(#)c2.h 1.19 80/08/26 13:39:07 */
 /*
  * Header for object code improver
@@ -98,6 +98,8 @@
 #define T(a,b) (a|((b)<<8))
 #define U(a,b) (a|((b)<<4))
 
+#define C2_ASIZE 64
+
 struct optab {
 	char	opstring[7];
 	short	opcode;
@@ -150,9 +152,9 @@ char	*firstr;
 char	revbr[];
 #define	NREG	12
 char	*regs[NREG+5]; /* 0-11, 4 for operands, 1 for running off end */
-char	conloc[20];
-char	conval[20];
-char	ccloc[20];
+char	conloc[C2_ASIZE];
+char	conval[C2_ASIZE];
+char	ccloc[C2_ASIZE];
 
 #define	RT1	12
 #define	RT2	13
