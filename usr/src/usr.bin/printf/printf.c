@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)printf.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)printf.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -126,7 +126,7 @@ next:		for (start = fmt;; ++fmt) {
 			PF(start, p);
 			break;
 		}
-		case 'd': case 'o': case 'u': case 'x': case 'X': {
+		case 'd': case 'i': case 'o': case 'u': case 'x': case 'X': {
 			char *f = mklong(start, convch);
 			long p = getlong();
 			PF(f, p);
