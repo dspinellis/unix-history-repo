@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dump.8	6.4 (Berkeley) %G%
+.\"	@(#)dump.8	6.5 (Berkeley) %G%
 .\"
 .TH DUMP 8 ""
 .UC 4
@@ -83,6 +83,14 @@ is taken from the next
 .I argument.
 This is used in calculating the amount of tape
 used per reel. The default is 1600.
+.TP 5
+.B b
+The number of kilobytes per dump record.
+.TP 5
+.B B
+The number of dump records per volume.
+This option overrides the calculation of tape size
+based on length and density.
 .TP 5
 .B W
 .I Dump
