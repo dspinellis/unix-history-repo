@@ -1,3 +1,3 @@
-#	@(#)Makefile.inc	5.2 (Berkeley) %G%
+#	@(#)Makefile.inc	8.1 (Berkeley) %G%
 
 SRCS+=	abs.s
