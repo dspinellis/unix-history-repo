@@ -1,12 +1,13 @@
 # include	"curses.ext"
 # include	<signal.h>
+# include	<sys/param.h>
 
 extern char	*getenv();
 
 /*
  *	This routine initializes the current and standard screen.
  *
- * %G% (Berkeley) @(#)initscr.c	1.2
+ * %G% (Berkeley) @(#)initscr.c	1.3
  */
 WINDOW *
 initscr() {
@@ -17,8 +18,16 @@ initscr() {
 # ifdef DEBUG
 	fprintf(outf, "INITSCR()\n");
 # endif
-	if (!My_term && isatty(2)) {
-		_tty_ch = 2;
+	if (My_term)
+		setterm(Def_term);
+	else {
+		if (isatty(2))
+			_tty_ch = 2;
+		else {
+			for (_tty_ch = 0; _tty_ch < NOFILE; _tty_ch++)
+				if (isatty(_tty_ch))
+					break;
+		}
 		gettmode();
 		if ((sp = getenv("TERM")) == NULL)
 			sp = Def_term;
@@ -27,8 +36,6 @@ initscr() {
 		fprintf(outf, "INITSCR: term = %s\n", sp);
 # endif
 	}
-	else
-		setterm(Def_term);
 	_puts(TI);
 	_puts(VS);
 # ifdef SIGTSTP
