@@ -1,25 +1,19 @@
 /*
- * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
+ * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_subr.c	7.15 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.13.1.2 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "malloc.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -52,10 +46,6 @@ tcp_init()
 
 	tcp_iss = 1;		/* wrong */
 	tcb.inp_next = tcb.inp_prev = &tcb;
-	if (max_protohdr < sizeof(struct tcpiphdr))
-		max_protohdr = sizeof(struct tcpiphdr);
-	if (max_linkhdr + sizeof(struct tcpiphdr) > MHLEN)
-		panic("tcp_init");
 }
 
 /*
@@ -76,6 +66,7 @@ tcp_template(tp)
 		m = m_get(M_DONTWAIT, MT_HEADER);
 		if (m == NULL)
 			return (0);
+		m->m_off = MMAXOFF - sizeof (struct tcpiphdr);
 		m->m_len = sizeof (struct tcpiphdr);
 		n = mtod(m, struct tcpiphdr *);
 	}
@@ -111,13 +102,13 @@ tcp_template(tp)
  * In any case the ack and sequence number of the transmitted
  * segment are as specified by the parameters.
  */
-tcp_respond(tp, ti, m, ack, seq, flags)
+tcp_respond(tp, ti, ack, seq, flags)
 	struct tcpcb *tp;
 	register struct tcpiphdr *ti;
-	register struct mbuf *m;
 	tcp_seq ack, seq;
 	int flags;
 {
+	register struct mbuf *m;
 	int win = 0, tlen;
 	struct route *ro = 0;
 
@@ -125,8 +116,8 @@ tcp_respond(tp, ti, m, ack, seq, flags)
 		win = sbspace(&tp->t_inpcb->inp_socket->so_rcv);
 		ro = &tp->t_inpcb->inp_route;
 	}
-	if (m == 0) {
-		m = m_gethdr(M_DONTWAIT, MT_HEADER);
+	if (flags == 0) {
+		m = m_get(M_DONTWAIT, MT_HEADER);
 		if (m == NULL)
 			return;
 #ifdef TCP_COMPAT_42
@@ -135,14 +126,14 @@ tcp_respond(tp, ti, m, ack, seq, flags)
 		tlen = 0;
 #endif
 		m->m_len = sizeof (struct tcpiphdr) + tlen;
-		m->m_data += max_linkhdr;
 		*mtod(m, struct tcpiphdr *) = *ti;
 		ti = mtod(m, struct tcpiphdr *);
 		flags = TH_ACK;
 	} else {
+		m = dtom(ti);
 		m_freem(m->m_next);
 		m->m_next = 0;
-		m->m_data = (caddr_t)ti;
+		m->m_off = (int)ti - (int)m;
 		tlen = 0;
 		m->m_len = sizeof (struct tcpiphdr);
 #define xchg(a,b,type) { type t; t=a; a=b; b=t; }
@@ -299,7 +290,9 @@ tcp_ctlinput(cmd, sa)
 	case PRC_REDIRECT_HOST:
 	case PRC_REDIRECT_TOSNET:
 	case PRC_REDIRECT_TOSHOST:
+#if BSD>=43
 		in_pcbnotify(&tcb, &sin->sin_addr, 0, in_rtchange);
+#endif
 		break;
 
 	default:
@@ -309,6 +302,15 @@ tcp_ctlinput(cmd, sa)
 			tcp_notify);
 	}
 }
+
+#if BSD<43
+/* XXX fake routine */
+tcp_abort(inp)
+	struct inpcb *inp;
+{
+	return;
+}
+#endif
 
 /*
  * When a source quench is received, close congestion window

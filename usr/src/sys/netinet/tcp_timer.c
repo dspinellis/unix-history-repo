@@ -3,18 +3,13 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_timer.c	7.14 (Berkeley) %G%
+ *	@(#)tcp_timer.c	7.11.1.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -40,9 +35,7 @@
 #include "tcp_var.h"
 #include "tcpip.h"
 
-int	tcp_keepidle = TCPTV_KEEP_IDLE;
-int	tcp_keepintvl = TCPTV_KEEPINTVL;
-int	tcp_maxidle;
+int	tcpnodelack = 0;
 /*
  * Fast timeout routine for processing delayed acks
  */
@@ -77,7 +70,6 @@ tcp_slowtimo()
 	int s = splnet();
 	register int i;
 
-	tcp_maxidle = TCPTV_KEEPCNT * tcp_keepintvl;
 	/*
 	 * Search through tcb's and update active timers.
 	 */
@@ -149,8 +141,8 @@ tcp_timers(tp, timer)
 	 */
 	case TCPT_2MSL:
 		if (tp->t_state != TCPS_TIME_WAIT &&
-		    tp->t_idle <= tcp_maxidle)
-			tp->t_timer[TCPT_2MSL] = tcp_keepintvl;
+		    tp->t_idle <= TCPTV_MAXIDLE)
+			tp->t_timer[TCPT_2MSL] = TCPTV_KEEP;
 		else
 			tp = tcp_close(tp);
 		break;
@@ -181,7 +173,9 @@ tcp_timers(tp, timer)
 		 * retransmit times until then.
 		 */
 		if (tp->t_rxtshift > TCP_MAXRXTSHIFT / 4) {
+#if BSD>=43
 			in_losing(tp->t_inpcb);
+#endif
 			tp->t_rttvar += (tp->t_srtt >> 2);
 			tp->t_srtt = 0;
 		}
@@ -246,7 +240,7 @@ tcp_timers(tp, timer)
 			goto dropit;
 		if (tp->t_inpcb->inp_socket->so_options & SO_KEEPALIVE &&
 		    tp->t_state <= TCPS_CLOSE_WAIT) {
-		    	if (tp->t_idle >= tcp_keepidle + tcp_maxidle)
+		    	if (tp->t_idle >= TCPTV_MAXIDLE)
 				goto dropit;
 			/*
 			 * Send a packet designed to force a response
@@ -272,9 +266,8 @@ tcp_timers(tp, timer)
 			tcp_respond(tp, tp->t_template,
 			    tp->rcv_nxt, tp->snd_una - 1, 0);
 #endif
-			tp->t_timer[TCPT_KEEP] = tcp_keepintvl;
-		} else
-			tp->t_timer[TCPT_KEEP] = tcp_keepidle;
+		}
+		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		break;
 	dropit:
 		tcpstat.tcps_keepdrops++;
