@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)as.1	6.5 (Berkeley) %G%
+.\"     @(#)as.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt AS 1
@@ -28,22 +28,20 @@ The
 .Nm as
 assembler produces an object file from the given source files
 or from the standard input.
-.Tp Fl a
+.Bl -tag -width flag
+.It Fl a
 Specifies the alignment
 .Ar value
 of procedures and data blocks.
 It is given as a power of two; thus an alignment of 3
 causes alignment on an eight byte boundary.
 The default is
-.Cx Fl a
-.Li 2
-.Cx ,
-.Cx
+.Fl a Ns Li 2 , 
 the minumum value is
 .Li 1 ,
 the maximum value
 .Li 16 .
-.Tp Fl d
+.It Fl d
 Displacement offset in bytes for displacement values
 not defined in the first pass or unspecified in the assembly language.
 Possible values are
@@ -51,36 +49,33 @@ Possible values are
 or
 .Li 4 .
 The default is
-.Cx Fl d
-.Li 4
-.Cx ,
-.Cx
+.Fl d Ns Li 4 , 
 if
 .Fl d
 is not given.
-.Tp Fl L
+.It Fl L
 Save defined labels beginning with a
 \*(LqL\*(Rq, which are normally discarded
 to save space in the resultant symbol table.
 The compilers generate such temporary labels.
-.Tp Fl V
+.It Fl V
 Use virtual memory for some intermediate storage,
 rather than a temporary file.
-.Tp Fl W
+.It Fl W
 Do not complain about errors.
-.Tp Fl J
+.It Fl J
 Use long branches to resolve jumps when byte-displacement branches are
 insufficient.  This must be used when a compiler-generated assembly contains
 branches of more than 32k bytes.
-.Tp Fl R
+.It Fl R
 Make initialized data segments read-only, by concatenating them to
 the text segments.
 This obviates the need to run editor scripts on assembly
 code to make initialized data read-only and shared.
-.Tp Fl t
+.It Fl t
 Specifies a directory to receive the temporary file, other than
 the default /tmp.
-.Tp
+.El
 .Pp
 Symbols remaining undefined upon completion are assumed global
 .Pp
@@ -90,33 +85,34 @@ if given, or sent
 placed in
 .Pa a.out .
 .Sh FILES
-.Dw /tmp/as*
-.Di L
-.Dp Pa tmp/as\(**
-default temporary files
-.Dp Pa a.out
-default resultant object file
-.Dp
+.Bl -tag -width /tmp/as* -compact
+.It Pa tmp/as\(**
+Default temporary files.
+.It Pa a.out
+Default resultant object file.
+.El
 .Sh SEE ALSO
 .Xr a.out 5 ,
 .Xr adb 1 ,
 .Xr dbx 1 ,
 .Xr ld 1 ,
 .Xr nm 1
-.Pp
-Auxiliary documentation
-.Em Assembler Reference Manual .
+.Rs
+.%T "Assembler Reference Manual" .
+.Re
 .Sh AUTHORS
 John F. Reiser
-.br
 Robert R. Henry
 .Sh HISTORY
-.Nm As
-appeared
-in Version 6 AT&T UNIX.  The version decsribed here is derived from
-Version 7 AT&T
+An
+.Nm as
+command appeared in
+.At v6 .
+The version described here is derived from the
+.At v7
 .Nm as .
 .Sh BUGS
+The flag
 .Fl J
 should be eliminated; the assembler should automatically choose among
 byte, word and long branches.
