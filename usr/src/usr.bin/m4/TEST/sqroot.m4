@@ -1,13 +1,13 @@
 #
-# Copyright (c) 1989 The Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1989, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # This code is derived from software contributed to Berkeley by
 # Ozan Yigit.
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)sqroot.m4	5.2 (Berkeley) %G%
+#	@(#)sqroot.m4	8.1 (Berkeley) %G%
 #
 
 define(square_root, 
