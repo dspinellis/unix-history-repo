@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)houses.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)houses.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include	"monop.ext"
@@ -90,7 +90,8 @@ over:
 			temp[i] = 5;
 			continue;
 		}
-		sprintf(cur_prop, "%s (%d): ", mp->sq[i]->name, pp->houses);
+		(void)sprintf(cur_prop, "%s (%d): ",
+			mp->sq[i]->name, pp->houses);
 		input[i] = get_int(cur_prop);
 		temp[i] = input[i] + pp->houses;
 		if (temp[i] > 5) {
@@ -188,9 +189,10 @@ over:
 			continue;
 		}
 		if (pp->houses < 5)
-			sprintf(cur_prop,"%s (%d): ",mp->sq[i]->name,pp->houses);
+			(void)sprintf(cur_prop,"%s (%d): ",
+				mp->sq[i]->name,pp->houses);
 		else
-			sprintf(cur_prop,"%s (H): ",mp->sq[i]->name);
+			(void)sprintf(cur_prop,"%s (H): ",mp->sq[i]->name);
 		input[i] = get_int(cur_prop);
 		temp[i] = pp->houses - input[i];
 		if (temp[i] < 0) {
