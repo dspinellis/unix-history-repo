@@ -6,19 +6,21 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass4.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass4.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
+
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
-#include <stdlib.h>
+
+#include <err.h>
 #include <string.h>
+
 #include "fsck.h"
 
-int	pass4check();
-
+void
 pass4()
 {
 	register ino_t inumber;
@@ -71,12 +73,13 @@ pass4()
 			break;
 
 		default:
-			errexit("BAD STATE %d FOR INODE I=%d",
+			errx(EEXIT, "BAD STATE %d FOR INODE I=%d",
 			    statemap[inumber], inumber);
 		}
 	}
 }
 
+int
 pass4check(idesc)
 	register struct inodesc *idesc;
 {

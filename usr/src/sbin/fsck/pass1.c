@@ -6,23 +6,26 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
+
 #include <ufs/ufs/dinode.h>
 #include <ufs/ufs/dir.h>
 #include <ufs/ffs/fs.h>
-#include <stdlib.h>
+
+#include <err.h>
 #include <string.h>
+
 #include "fsck.h"
 
 static ufs_daddr_t badblk;
 static ufs_daddr_t dupblk;
-int pass1check();
-struct dinode *getnextinode();
+static void checkinode __P((ino_t inumber, struct inodesc *));
 
+void
 pass1()
 {
 	ino_t inumber;
@@ -61,6 +64,7 @@ pass1()
 	freeinodebuf();
 }
 
+static void
 checkinode(inumber, idesc)
 	ino_t inumber;
 	register struct inodesc *idesc;
@@ -119,7 +123,7 @@ checkinode(inumber, idesc)
 			if (bread(fsreadfd, symbuf,
 			    fsbtodb(&sblock, dp->di_db[0]),
 			    (long)secsize) != 0)
-				errexit("cannot read symlink");
+				errx(EEXIT, "cannot read symlink");
 			if (debug) {
 				symbuf[dp->di_size] = 0;
 				printf("convert symlink %d(%s) of size %d\n",
@@ -181,7 +185,7 @@ checkinode(inumber, idesc)
 		if (zlnp == NULL) {
 			pfatal("LINK COUNT TABLE OVERFLOW");
 			if (reply("CONTINUE") == 0)
-				errexit("");
+				exit(EEXIT);
 		} else {
 			zlnp->zlncnt = inumber;
 			zlnp->next = zlnhead;
@@ -233,6 +237,7 @@ unknown:
 	}
 }
 
+int
 pass1check(idesc)
 	register struct inodesc *idesc;
 {
@@ -250,7 +255,7 @@ pass1check(idesc)
 			if (preen)
 				printf(" (SKIPPING)\n");
 			else if (reply("CONTINUE") == 0)
-				errexit("");
+				exit(EEXIT);
 			return (STOP);
 		}
 	}
@@ -268,14 +273,14 @@ pass1check(idesc)
 				if (preen)
 					printf(" (SKIPPING)\n");
 				else if (reply("CONTINUE") == 0)
-					errexit("");
+					exit(EEXIT);
 				return (STOP);
 			}
 			new = (struct dups *)malloc(sizeof(struct dups));
 			if (new == NULL) {
 				pfatal("DUP TABLE OVERFLOW.");
 				if (reply("CONTINUE") == 0)
-					errexit("");
+					exit(EEXIT);
 				return (STOP);
 			}
 			new->dup = blkno;

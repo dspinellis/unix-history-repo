@@ -6,15 +6,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass3.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass3.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
+
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
+
 #include "fsck.h"
 
+void
 pass3()
 {
 	register struct inoinfo **inpp, *inp;

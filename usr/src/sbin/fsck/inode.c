@@ -6,21 +6,27 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inode.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)inode.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
+
 #include <ufs/ufs/dinode.h>
 #include <ufs/ufs/dir.h>
 #include <ufs/ffs/fs.h>
+
+#include <err.h>
 #include <pwd.h>
-#include <stdlib.h>
 #include <string.h>
+
 #include "fsck.h"
 
 static ino_t startinum;
 
+static int iblock __P((struct inodesc *, long ilevel, quad_t isize));
+
+int
 ckinode(dp, idesc)
 	struct dinode *dp;
 	register struct inodesc *idesc;
@@ -73,6 +79,7 @@ ckinode(dp, idesc)
 	return (KEEPON);
 }
 
+static int
 iblock(idesc, ilevel, isize)
 	struct inodesc *idesc;
 	long ilevel;
@@ -84,7 +91,6 @@ iblock(idesc, ilevel, isize)
 	int i, n, (*func)(), nif;
 	quad_t sizepb;
 	char buf[BUFSIZ];
-	extern int dirscan(), pass1check();
 
 	if (idesc->id_type == ADDR) {
 		func = idesc->id_func;
@@ -138,6 +144,7 @@ iblock(idesc, ilevel, isize)
  * Check that a block in a legal block number.
  * Return 0 if in range, 1 if out of range.
  */
+int
 chkrange(blk, cnt)
 	ufs_daddr_t blk;
 	int cnt;
@@ -181,7 +188,7 @@ ginode(inumber)
 	ufs_daddr_t iblk;
 
 	if (inumber < ROOTINO || inumber > maxino)
-		errexit("bad inode number %d to ginode\n", inumber);
+		errx(EEXIT, "bad inode number %d to ginode", inumber);
 	if (startinum == 0 ||
 	    inumber < startinum || inumber >= startinum + INOPB(&sblock)) {
 		iblk = ino_to_fsba(&sblock, inumber);
@@ -210,7 +217,7 @@ getnextinode(inumber)
 	static struct dinode *dp;
 
 	if (inumber != nextino++ || inumber > maxino)
-		errexit("bad inode number %d to nextinode\n", inumber);
+		errx(EEXIT, "bad inode number %d to nextinode", inumber);
 	if (inumber >= lastinum) {
 		readcnt++;
 		dblk = fsbtodb(&sblock, ino_to_fsba(&sblock, lastinum));
@@ -227,6 +234,7 @@ getnextinode(inumber)
 	return (dp++);
 }
 
+void
 resetinodebuf()
 {
 
@@ -247,11 +255,12 @@ resetinodebuf()
 	}
 	if (inodebuf == NULL &&
 	    (inodebuf = (struct dinode *)malloc((unsigned)inobufsize)) == NULL)
-		errexit("Cannot allocate space for inode buffer\n");
+		errx(EEXIT, "Cannot allocate space for inode buffer");
 	while (nextino < ROOTINO)
 		(void)getnextinode(nextino);
 }
 
+void
 freeinodebuf()
 {
 
@@ -267,6 +276,7 @@ freeinodebuf()
  *
  * Enter inodes into the cache.
  */
+void
 cacheino(dp, inumber)
 	register struct dinode *dp;
 	ino_t inumber;
@@ -300,7 +310,7 @@ cacheino(dp, inumber)
 		inpsort = (struct inoinfo **)realloc((char *)inpsort,
 		    (unsigned)listmax * sizeof(struct inoinfo *));
 		if (inpsort == NULL)
-			errexit("cannot increase directory list");
+			errx(EEXIT, "cannot increase directory list");
 	}
 	inpsort[inplast++] = inp;
 }
@@ -319,13 +329,14 @@ getinoinfo(inumber)
 			continue;
 		return (inp);
 	}
-	errexit("cannot find inode %d\n", inumber);
+	errx(EEXIT, "cannot find inode %d", inumber);
 	return ((struct inoinfo *)0);
 }
 
 /*
  * Clean up all the inode cache structure.
  */
+void
 inocleanup()
 {
 	register struct inoinfo **inpp;
@@ -339,12 +350,14 @@ inocleanup()
 	inphead = inpsort = NULL;
 }
 	
+void
 inodirty()
 {
 	
 	dirty(pbp);
 }
 
+void
 clri(idesc, type, flag)
 	register struct inodesc *idesc;
 	char *type;
@@ -369,6 +382,7 @@ clri(idesc, type, flag)
 	}
 }
 
+int
 findname(idesc)
 	struct inodesc *idesc;
 {
@@ -380,6 +394,7 @@ findname(idesc)
 	return (STOP|FOUND);
 }
 
+int
 findino(idesc)
 	struct inodesc *idesc;
 {
@@ -395,6 +410,7 @@ findino(idesc)
 	return (KEEPON);
 }
 
+void
 pinode(ino)
 	ino_t ino;
 {
@@ -420,6 +436,7 @@ pinode(ino)
 	printf("MTIME=%12.12s %4.4s ", &p[4], &p[20]);
 }
 
+void
 blkerror(ino, type, blk)
 	ino_t ino;
 	char *type;
@@ -443,7 +460,7 @@ blkerror(ino, type, blk)
 		return;
 
 	default:
-		errexit("BAD STATE %d TO BLKERR", statemap[ino]);
+		errx(EEXIT, "BAD STATE %d TO BLKERR", statemap[ino]);
 		/* NOTREACHED */
 	}
 }
@@ -500,11 +517,11 @@ allocino(request, type)
 /*
  * deallocate an inode
  */
+void
 freeino(ino)
 	ino_t ino;
 {
 	struct inodesc idesc;
-	extern int pass4check();
 	struct dinode *dp;
 
 	bzero((char *)&idesc, sizeof(struct inodesc));
