@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)make.1	5.3 (Berkeley) %G%
+.\"     @(#)make.1	5.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAKE 1
@@ -35,7 +35,7 @@ and makefiles, please refer to
 .Pp
 The options are as follows:
 .Tw Ds
-.Tp Cx Fl
+.Tp Cx Fl D
 .Ar variable
 .Cx
 Define
@@ -76,6 +76,9 @@ Print debugging information about target list maintenance.
 .Tp Ic v
 Print debugging information about variable assignment.
 .Tp
+.Tp Fl e
+Specify that environmental variables override macro assignments within
+makefiles.
 .Tp Cx Fl f
 .Ar makefile
 .Cx
