@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)su.1	6.7 (Berkeley) %G%
+.\"	@(#)su.1	6.8 (Berkeley) %G%
 .\"
 .TH SU 1 ""
 .UC
@@ -21,11 +21,15 @@
 su \- substitute user id
 .SH SYNOPSIS
 .B su
-[-flm] [login]
+[-flmn] [login]
 .SH DESCRIPTION
-\fISu\fP requests the password for \fIlogin\fP (or for ``root'', if no
-login is provided), and switches to that user and group ID.  A shell is
-then invoked.
+\fISu\fP requests the Kerberos password
+for \fIlogin\fP (or for ``\fIlogin\fP.root'', if no
+login is provided), and switches to that user and group ID after
+issueing a Kerberos ticket granting ticket.
+A shell is then invoked .
+\fISu\fP will resort to the local password file to find the password
+for \fIlogin\fP if there is a Kerberos error or if the \fB-n\fP flag is given.
 .PP
 By default, your environment is unmodified with the exception of
 \fIUSER\fP, \fIHOME\fP, and \fISHELL\fP.  \fIHOME\fP and \fISHELL\fP
