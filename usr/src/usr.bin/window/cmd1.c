@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	1.5 83/07/28";
+static	char *sccsid = "@(#)cmd1.c	1.6 83/07/28";
 #endif
 
 #include "defs.h"
@@ -12,10 +12,14 @@ dowindow()
 	int id;
 
 	if ((id = findid()) < 0) {
-		wwputs("Too many windows.  ", cmdwin);
+		if (terse)
+			Ding();
+		else
+			wwputs("Too many windows.  ", cmdwin);
 		return;
 	}
-	wwputs("Upper left corner: ", cmdwin);
+	if (!terse)
+		wwputs("Upper left corner: ", cmdwin);
 	col = 0;
 	row = 1;
 	for (;;) {
@@ -25,7 +29,8 @@ dowindow()
 		switch (getpos(&row, &col, 0, 0)) {
 		case -1:
 			WBoxActive = 0;
-			wwputs("\r\nCancelled.  ", cmdwin);
+			if (!terse)
+				wwputs("\r\nCancelled.  ", cmdwin);
 			return;
 		case 1:
 			break;
@@ -34,7 +39,8 @@ dowindow()
 		}
 		break;
 	}
-	wwputs("\r\nLower right corner: ", cmdwin);
+	if (!terse)
+		wwputs("\r\nLower right corner: ", cmdwin);
 	xcol = col + 1;
 	xrow = row + 1;
 	for (;;) {
@@ -46,7 +52,8 @@ dowindow()
 		switch (getpos(&xrow, &xcol, row + 1, col + 1)) {
 		case -1:
 			WBoxActive = 0;
-			wwputs("\r\nCancelled.  ", cmdwin);
+			if (!terse)
+				wwputs("\r\nCancelled.  ", cmdwin);
 			return;
 		case 1:
 			break;
@@ -56,10 +63,14 @@ dowindow()
 		break;
 	}
 	WBoxActive = 0;
-	wwputs("\r\n", cmdwin);
+	if (!terse)
+		wwputs("\r\n", cmdwin);
 	wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
 	if (doopen(id, xrow-row+1, xcol-col+1, row, col) == 0)
-		wwputs("Can't open window.  ", cmdwin);
+		if (terse)
+			Ding();
+		else
+			wwputs("Can't open window.  ", cmdwin);
 }
 
 findid()
@@ -67,7 +78,6 @@ findid()
 	register id;
 	char ids[10];
 	register struct ww *w;
-#define NWINDOW 9
 
 	for (id = 1; id <= NWINDOW; id++)
 		ids[id] = 0;
@@ -131,7 +141,8 @@ register int *row, *col, minrow, mincol;
 		case '\r':
 			return 1;
 		default:
-			wwputs("\r\nType [hjklHJKL] to move, return to enter position, escape to cancel.", cmdwin);
+			if (!terse)
+				wwputs("\r\nType [hjklHJKL] to move, return to enter position, escape to cancel.", cmdwin);
 			Ding();
 		}
 	}
@@ -156,7 +167,7 @@ int id, nrow, ncol, row, col;
 	wwflush();
 	switch (wwfork(w)) {
 	case -1:
-		doclose(CLOSE_ONE, w);
+		doclose(w);
 		return 0;
 	case 0:
 		execl("/bin/csh", "csh", 0);

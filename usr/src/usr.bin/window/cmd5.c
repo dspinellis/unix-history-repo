@@ -1,25 +1,23 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd5.c	1.5 83/07/28";
+static	char *sccsid = "@(#)cmd5.c	1.6 83/07/28";
 #endif
 
 #include "defs.h"
 
-struct ww *openwin();
 struct ww *doopen();
 struct ww *idtowin();
 
-static char *sourcefilename;
-static int lineno;			/* current line number in source file */
+int lineno;				/* current line number in source file */
 static char *argv[100];			/* one line broken up into words */
 static int argc;
-static struct ww *errwin;		/* window for error reporting */
-static int errlineno;			/* lineno in errwin */
-static char baderrwin;			/* can't open errwin */
 
 int s_window();
 int s_select();
 int s_escape();
 int s_label();
+int s_terse();
+int s_refresh();
+
 struct scmd {
 	char *s_name;			/* name of command */
 	int s_len;			/* number of characters to check */
@@ -32,6 +30,8 @@ static struct scmd scmd[] = {
 	"%",		1, 0, 0, s_select,
 	"escape",	1, 1, 1, s_escape,
 	"label",	1, 2, 2, s_label,
+	"terse",	1, 0, 1, s_terse,
+	"refresh",	1, 1, 2, s_refresh,
 	0
 };
 
@@ -45,12 +45,12 @@ char *filename;
 		return;
 	beginerror(filename);
 	for (lineno = 1; fgets(buf, sizeof buf, f) != 0; lineno++)
-		doline(buf);
+		dolongcmd(buf);
 	enderror();
 	return 0;
 }
 
-doline(line)
+dolongcmd(line)
 char *line;
 {
 	register struct scmd *sp;
@@ -74,74 +74,6 @@ char *line;
 			(*sp->s_func)();
 	} else
 		error("%s: Unknown command.", *argv);
-}
-
-s_window()
-{
-	register char **pp = argv;
-	register struct ww *w;
-	int col, row, ncol, nrow, id;
-
-	if ((id = findid()) < 0) {
-		error("Too many windows.");
-		return;
-	}
-	if (**++pp == '*')
-		row = 0;
-	else
-		row = atoi(*pp);
-	if (**++pp == '*')
-		col = 0;
-	else
-		col = atoi(*pp);
-	if (**++pp == '*')
-		nrow = wwnrow - row;
-	else
-		nrow = atoi(*pp);
-	if (**++pp == '*')
-		ncol = wwncol - col;
-	else
-		ncol = atoi(*pp);
-	w = doopen(id, nrow, ncol, row, col);
-	if (w == 0)
-		error("Can't open window: row %d col %d, %d rows %d cols.",
-			row, col, nrow, ncol);
-}
-
-s_select()
-{
-	struct ww *w;
-
-	if ((w = idtowin(*argv + 1)) == 0)
-		return;
-	setselwin(w);
-}
-
-s_escape()
-{
-	setescape(argv[1]);
-}
-
-s_label()
-{
-	struct ww *w;
-
-	if ((w = idtowin(argv[1])) == 0)
-		return;
-	setlabel(w, argv[2]);
-}
-
-struct ww *
-idtowin(idstr)
-char *idstr;
-{
-	int id;
-	struct ww *w = 0;
-
-	id = atoi(idstr);
-	if (id < 1 || id > 9 || (w = wwfind(id)) == 0)
-		error("%d: No such window.", id);
-	return w;
 }
 
 makeargv(p)
@@ -204,51 +136,98 @@ register char *p;
 	argc = pp - argv;
 }
 
-/*VARARGS1*/
-static
-error(fmt, a, b, c, d, e, f, g, h)
-char *fmt;
+s_window()
 {
-	if (sourcefilename == 0) {
-		wwprintf(cmdwin, fmt, a, b, c, d, e, f, g, h);
-		wwprintf(cmdwin, ".  ");
+	register char **pp = argv;
+	register struct ww *w;
+	int col, row, ncol, nrow, id;
+
+	if ((id = findid()) < 0) {
+		error("Too many windows.");
 		return;
 	}
-#define ERRLINES 10
-	if (errwin == 0 && !baderrwin) {
-		char buf[512];
-
-		(void) sprintf(buf, "Errors from %s", sourcefilename);
-		if ((errwin = openwin(ERRLINES, buf)) == 0) {
-			wwprintf(cmdwin, "Can't open error window.  ");
-			baderrwin++;
-			return;
-		}
-		errlineno = 0;
-	}
-	if (errlineno++ > ERRLINES - 4) {
-		waitnl(errwin);
-		wwprintf(errwin, "\r\n");
-		errlineno = 0;
-	}
-	wwprintf(errwin, "line %d: ", lineno);
-	wwprintf(errwin, fmt, a, b, c, d, e, f, g, h);
-	wwprintf(errwin, "\r\n");
+	if (**++pp == '*')
+		row = 0;
+	else
+		row = atoi(*pp);
+	if (**++pp == '*')
+		col = 0;
+	else
+		col = atoi(*pp);
+	if (**++pp == '*')
+		nrow = wwnrow - row;
+	else
+		nrow = atoi(*pp);
+	if (**++pp == '*')
+		ncol = wwncol - col;
+	else
+		ncol = atoi(*pp);
+	w = doopen(id, nrow, ncol, row, col);
+	if (w == 0)
+		error("Can't open window: row %d col %d, %d rows %d cols.",
+			row, col, nrow, ncol);
 }
 
-beginerror(filename)
-char *filename;
+s_select()
 {
-	sourcefilename = filename;
+	struct ww *w;
+
+	if ((w = idtowin(*argv + 1)) == 0)
+		return;
+	setselwin(w);
 }
 
-enderror()
+s_escape()
 {
-	if (errwin != 0) {
-		waitnl(errwin);
-		closewin(errwin);
-		errwin = 0;
-	} else
-		baderrwin = 0;
-	sourcefilename = 0;
+	setescape(argv[1]);
+}
+
+s_label()
+{
+	struct ww *w;
+
+	if ((w = idtowin(argv[1])) == 0)
+		return;
+	setlabel(w, argv[2]);
+}
+
+s_terse()
+{
+	if (argc < 2)
+		terse = 1;
+	else if (strcmp(argv[1], "off") == 0)
+		terse = 0;
+	else
+		terse = 1;
+	if (terse)
+		Whide(cmdwin->ww_win);
+	else
+		Wunhide(cmdwin->ww_win);
+}
+
+s_refresh()
+{
+	struct ww *w;
+
+	if ((w = idtowin(argv[1])) == 0)
+		return;
+	if (argc < 3)
+		w->ww_refresh = 1;
+	else if (strcmp(argv[2], "off") == 0)
+		w->ww_refresh = 0;
+	else
+		w->ww_refresh = 1;
+}
+
+struct ww *
+idtowin(idstr)
+char *idstr;
+{
+	int id;
+	struct ww *w = 0;
+
+	id = atoi(idstr);
+	if (id < 1 || id > 9 || (w = wwfind(id)) == 0)
+		error("%d: No such window.", id);
+	return w;
 }

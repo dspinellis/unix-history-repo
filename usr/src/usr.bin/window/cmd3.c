@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd3.c	1.5 83/07/28";
+static	char *sccsid = "@(#)cmd3.c	1.6 83/07/28";
 #endif
 
 #include "defs.h"
@@ -46,6 +46,7 @@ register struct ww *w;
 		reframe();
 }
 
+/*
 doescape()
 {
 	char buf[2];
@@ -58,6 +59,7 @@ doescape()
 	setescape(buf);
 	wwputs("\r\n", cmdwin);
 }
+*/
 
 setescape(esc)
 register char *esc;
@@ -71,6 +73,7 @@ register char *esc;
 		escapec = *esc;
 }
 
+/*
 dolabel()
 {
 	register struct ww *w;
@@ -84,6 +87,7 @@ dolabel()
 	setlabel(w, buf);
 	wwputs("\r\n", cmdwin);
 }
+*/
 
 setlabel(w, label)
 register struct ww *w;
