@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Rodney Ruddock of the University of Guelph.
@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)c.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)c.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
