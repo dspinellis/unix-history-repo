@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)msgs.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)msgs.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -679,7 +679,9 @@ char *prompt;
 	printf("%s ", prompt);
 	fflush(stdout);
 	intrpflg = NO;
-	gets(inbuf);
+	(void) fgets(inbuf, sizeof inbuf, stdin);
+	if ((n = strlen(inbuf)) > 0 && inbuf[n - 1] == '\n')
+		inbuf[n - 1] = '\0';
 	if (intrpflg)
 		inbuf[0] = 'x';
 
