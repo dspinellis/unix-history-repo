@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1992, 1993
+ * Copyright (c) 1992, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,18 +7,19 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1992, 1993\n\
+"@(#) Copyright (c) 1992, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chflags.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)chflags.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
 
 #include <err.h>
+#include <errno.h>
 #include <fts.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,30 +34,32 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	register FTS *ftsp;
-	register FTSENT *p;
-	register int oct;
+	FTS *ftsp;
+	FTSENT *p;
 	u_long clear, set;
-	int ch, fts_options, retval, rflag, hflag, Hflag;
+	long val;
+	int Hflag, Lflag, Pflag, Rflag, ch, fts_options, oct, rval;
 	char *flags, *ep;
 
-	rflag = hflag = Hflag = 0;
-	fts_options = FTS_PHYSICAL;
-	while ((ch = getopt(argc, argv, "HRh")) != EOF)
-		switch((char)ch) {
+	Hflag = Lflag = Pflag = Rflag = 0;
+	while ((ch = getopt(argc, argv, "HLPR")) != EOF)
+		switch (ch) {
 		case 'H':
 			Hflag = 1;
-			fts_options |= FTS_COMFOLLOW;
+			Lflag = Pflag = 0;
+			break;
+		case 'L':
+			Lflag = 1;
+			Hflag = Pflag = 0;
+			break;
+		case 'P':
+			Pflag = 1;
+			Hflag = Lflag = 0;
 			break;
 		case 'R':
-			rflag = 1;
+			Rflag = 1;
 			break;
-		case 'h':
-			hflag = 1;
-			fts_options &= ~FTS_PHYSICAL;
-			fts_options |= FTS_LOGICAL;
-			break;
-      		case '?':
+		case '?':
 		default:
 			usage();
 		}
@@ -66,12 +69,27 @@ main(argc, argv)
 	if (argc < 2)
 		usage();
 
+	fts_options = FTS_PHYSICAL;
+	if (Rflag) {
+		if (Hflag)
+			fts_options |= FTS_COMFOLLOW;
+		if (Lflag) {
+			fts_options &= ~FTS_PHYSICAL;
+			fts_options |= FTS_LOGICAL;
+		}
+	}
+
 	flags = *argv;
 	if (*flags >= '0' && *flags <= '7') {
-		set = (int)strtol(flags, &ep, 8);
-                if (set < 0 || *ep)
+		errno = 0;
+		val = strtol(flags, &ep, 8);
+		if (val < 0)
+			errno = ERANGE;
+		if (errno)
+                        err(1, "invalid flags: %s", flags);
+                if (*ep)
                         errx(1, "invalid flags: %s", flags);
-		fts_options |= FTS_NOSTAT;
+		set = val;
                 oct = 1;
 	} else {
 		if (string_to_flags(&flags, &set, &clear))
@@ -81,43 +99,58 @@ main(argc, argv)
 	}
 
 	if ((ftsp = fts_open(++argv, fts_options , 0)) == NULL)
-		err(1, "");
+		err(1, NULL); 
 
-	for (retval = 0; p = fts_read(ftsp);)
-		switch(p->fts_info) {
+	for (rval = 0; (p = fts_read(ftsp)) != NULL;) {
+		switch (p->fts_info) {
 		case FTS_D:
-			if (!rflag)
-				fts_set(ftsp, p, FTS_SKIP);
-			break;
-		case FTS_DNR:
-		case FTS_ERR:
-		case FTS_NS:
-			err(1, "%s", p->fts_path);
-		default:
-                        if (p->fts_info == FTS_SL &&
-                            !(hflag ||
-                            (Hflag && p->fts_level == FTS_ROOTLEVEL)))
+			if (Rflag)		/* Change it at FTS_DP. */
 				continue;
-			if (oct) {
-				if (!chflags(p->fts_accpath, set))
-					break;
-			} else {
-				p->fts_statp->st_flags |= set;
-				p->fts_statp->st_flags &= clear;
-				if (!chflags(p->fts_accpath,
-				    p->fts_statp->st_flags))
-					break;
-			}
+			fts_set(ftsp, p, FTS_SKIP);
+			break;
+		case FTS_DC:			/* Ignore. */
+			continue;
+		case FTS_DNR:			/* Warn, chflag, continue. */
+			errno = p->fts_errno;
 			warn("%s", p->fts_path);
-			retval = 1;
+			rval = 1;
+			break;
+		case FTS_ERR:			/* Warn, continue. */
+		case FTS_NS:
+			errno = p->fts_errno;
+			warn("%s", p->fts_path);
+			rval = 1;
+			continue;
+		case FTS_SL:			/* Ignore. */
+		case FTS_SLNONE:
+			/*
+			 * The only symlinks that end up here are ones that
+			 * don't point to anything and ones that we found
+			 * doing a physical walk.
+			 */
+			continue;
+		default:
 			break;
 		}
-	exit(retval);
+		if (oct) {
+			if (!chflags(p->fts_accpath, set))
+				continue;
+		} else {
+			p->fts_statp->st_flags |= set;
+			p->fts_statp->st_flags &= clear;
+			if (!chflags(p->fts_accpath, p->fts_statp->st_flags))
+				continue;
+		}
+		warn("%s", p->fts_path);
+		rval = 1;
+	}
+	exit(rval);
 }
 
 void
 usage()
 {
-	(void)fprintf(stderr, "usage: chflags [-HRh] flags file ...\n");
+	(void)fprintf(stderr,
+	    "usage: chflags [-R [-H | -L | -P]] flags file ...\n");
 	exit(1);
 }
