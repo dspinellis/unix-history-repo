@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)ascode.c 4.8 %G%";
+static char sccsid[] = "@(#)ascode.c 4.9 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -255,7 +255,7 @@ PASS2:
 					yywarning("%s: destination label is external",
 						ITABFETCH(opcode)->s_name);
 				if (!ISBYTE(argtype))
-					yyerror("%s: Branch too far: %d",
+					yyerror("%s: Branch too far(%db): try -J flag",
 						ITABFETCH(opcode)->s_name,
 						argtype);
 				break;
@@ -268,7 +268,7 @@ PASS2:
 						ITABFETCH(opcode)->s_name);
 				xp->e_xtype = XABS;
 				if (!ISWORD(argtype))
-					yyerror("%s: Branch too far: %d",
+					yyerror("%s: Branch too far(%db): try -J flag",
 						ITABFETCH(opcode)->s_name,
 						argtype);
 				xp->e_xvalue = argtype>>8;
