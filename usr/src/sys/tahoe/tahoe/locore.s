@@ -1,4 +1,4 @@
-/*	locore.s	1.10	86/11/09	*/
+/*	locore.s	1.11	86/11/25	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -490,6 +490,11 @@ SCBVEC(bptflt):
 	pushl $0;
 	SAVE_FPSTAT(8)
 	TRAP(BPTFLT)
+SCBVEC(kdbintr):
+	CHECK_SFE(4);
+	pushl $0;
+	SAVE_FPSTAT(8);
+	TRAP(KDBTRAP);
 SCBVEC(tracep):
 	CHECK_SFE(4)
 	pushl $0;
@@ -648,10 +653,18 @@ start:
 	ACBL($MAXMEM*1024-1,$64*1024,r7,1b)
 9:
 /* clear memory from kernel bss and pages for proc 0 u. and page table */
-	movab	_edata,r6
-	movab	_end,r5
-	andl2	$~SYSTEM,r6
-	andl2	$~SYSTEM,r5
+	movab	_edata,r6; andl2 $~SYSTEM,r6
+	movab	_end,r5; andl2 $~SYSTEM,r5
+#ifdef KDB
+	subl2	$4,r5
+1:	clrl	(r6); ACBL(r5,$4,r6,1b)		# clear just bss
+	addl2	$4,r5
+	bbc	$6,r11,0f			# check RB_KDB
+	andl3	$~SYSTEM,r9,r5			# skip symbol & string tables
+	andl3	$~SYSTEM,r9,r6
+#endif
+0:	orl3	$SYSTEM,r5,r9			# convert to virtual address
+	addl2	$NBPG-1,r9			# roundup to next page
 	addl2	$(UPAGES*NBPG)+NBPG+NBPG,r5
 1:	clrl	(r6); ACBL(r5,$4,r6,1b)
 /* trap(), syscall(), and fpemulate() save r0-r12 in the entry mask */
@@ -683,8 +696,7 @@ start:
 1:	orl3	$PG_V|PG_KR,r2,_Sysmap[r2]
 	aoblss r1,r2,1b
 /* make kernel data, bss, read-write */
-	movab	_end+NBPG-1,r1
-	andl2	$~SYSTEM,r1
+	andl3	$~SYSTEM,r9,r1
 	shrl 	$PGSHIFT,r1,r1
 1:	orl3	$PG_V|PG_KW,r2,_Sysmap[r2]
 	aoblss r1,r2,1b
@@ -703,7 +715,7 @@ start:
 	movl	_maxmem,_physmem
 	movl	_maxmem,_freemem
 /* setup context for proc[0] == scheduler */
-	movab	_end-SYSTEM+NBPG-1,r6
+	andl3	$~SYSTEM,r9,r6			# convert to physical
 	andl2	$~(NBPG-1),r6			# make page boundary
 /* setup page table for proc[0] */
 	shrl	$PGSHIFT,r6,r3			# r3 = btoc(r6)
@@ -743,6 +755,8 @@ start:
 	mfpr	$P2BR,PCB_P2BR(r1)
 	mfpr	$P2LR,PCB_P2LR(r1)
 	movl	$CLSIZE,PCB_SZPT(r1)		# init u.u_pcb.pcb_szpt
+	movl	r9,PCB_R9(r1)			# r9 obtained from boot
+	movl	r10,PCB_R10(r1)			# r10 obtained from boot
 	movl	r11,PCB_R11(r1)			# r11 obtained from CP on boot
 	movab	1f,PCB_PC(r1)			# initial pc
 	clrl	PCB_PSL(r1)			# kernel mode, ipl=0
@@ -760,8 +774,10 @@ start:
 	movl	r10,_bootdev
 /* save reboot flags in global _boothowto */
 	movl	r11,_boothowto
+/* save end of symbol & string table in global _bootesym */
+	subl3	$NBPG-1,r9,_bootesym
 /* calculate firstaddr, and call main() */
-	movab	_end-SYSTEM+NBPG-1,r0
+	andl3	$~SYSTEM,r9,r0
 	shrl	$PGSHIFT,r0,-(sp)
 	addl2	$UPAGES+1,(sp)			# first physical unused page
 	callf 	$8,_main
@@ -1160,6 +1176,7 @@ ENTRY(longjmp, 0)
 newpc:	.space	4
 newfp:	.space	4
 4:	.asciz	"longjmp"
+	.text
 
 /*
  * setjmp that saves all registers as the call frame may not
@@ -1175,6 +1192,42 @@ ENTRY(savectx, 0)
 	movl	-8(fp),(r2)			# pc
 	clrl	r0
 	ret
+
+#ifdef KDB
+/*
+ * C library -- reset, setexit
+ *
+ *	reset(x)
+ * will generate a "return" from
+ * the last call to
+ *	setexit()
+ * by restoring r2 - r12, fp
+ * and doing a return.
+ * The returned value is x; on the original
+ * call the returned value is 0.
+ */
+ENTRY(setexit, 0)
+	movab	setsav,r0
+	storer	$0x1ffc, (r0)
+	movl	(fp),44(r0)		# fp
+	moval	4(fp),48(r0)		# sp
+	movl	-8(fp),52(r0)		# pc
+	clrl	r0
+	ret
+
+ENTRY(reset, 0)
+	movl	4(fp),r0	# returned value
+	movab	setsav,r1
+	loadr	$0x1ffc,(r1)
+	movl	44(r1),fp
+	movl	48(r1),sp
+	jmp 	*52(r1)
+
+	.data
+	.align	2
+setsav:	.space	14*4
+	.text
+#endif
 
 	.globl	_whichqs
 	.globl	_qs
@@ -1248,6 +1301,7 @@ rem3:	.asciz	"remrq"
  */
 	.globl	_masterpaddr
 	.data
+	.align	2
 _masterpaddr: .long	0
 
 	.text
