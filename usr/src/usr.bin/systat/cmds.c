@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdlib.h>
@@ -150,29 +150,6 @@ status()
 
         error("Showing %s, refresh every %d seconds.",
           curcmd->c_name, naptime);
-}
-
-void
-suspend(signo)
-	int signo;
-{
-	extern sig_t sigtstpdfl;
-        int oldmask;
-
-	alarm(0);
-        move(CMDLINE, 0);
-        refresh();
-        echo();
-        nocrmode();
-        (void)signal(SIGTSTP, sigtstpdfl);
-        oldmask = sigsetmask(0);
-        kill(getpid(), SIGTSTP);
-        sigsetmask(oldmask);
-        (void)signal(SIGTSTP, suspend);
-        crmode();
-        noecho();
-        move(CMDLINE, col);
-	alarm(naptime);
 }
 
 int
