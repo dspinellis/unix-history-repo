@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)date.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	4.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -64,6 +64,7 @@ main(argc, argv)
 	int wf;
 	int timed_ack;
 	register char *tzn;
+	extern int errno;
 	int bytenetorder(), bytehostorder();
 
 	(void) gettimeofday(&tv, &tz);
