@@ -1,0 +1,16 @@
+
+  The Search  function  will look  for a  given  object contained in
+ the "Search Area". Pressing 's'  will  initiate a search. This will
+ require you to enter a value  into  the  "Search For" field  first.
+ This describes some value or aspect of  the  object  that  you wish
+ to search for.
+
+  Associated  with  this  value  is  a  type,  shown  in  the "Type"
+ field, which describes  the  class  of  object  being searched for.
+ For example if the target object  is  that  of  "Polonius  Plum", a
+ person,  then  the  correct  associated  type  would  be  "Person".
+ The currently displayed type can  be  changed by pressing 't' (note
+ that the correct type must be selected BEFORE a value is  entered).
+
+  Once a  value  has  been  entered  the  search  proper  will
+ commence, returning a list of matching entries.
