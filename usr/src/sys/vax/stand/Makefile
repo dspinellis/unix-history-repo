@@ -3,10 +3,10 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.11 (Berkeley) %G%
+#	@(#)Makefile	6.12 (Berkeley) %G%
 #
 DESTDIR=/
-INCPATH=-I..
+INCPATH=-I. -I../h
 CFLAGS=	-O ${INCPATH} -DSTANDALONE ${COPTS} 
 COPTS=	-DVAX780 -DVAX750 -DVAX730 -DVAX8600
 730OPTS=-O ${INCPATH} -DSTANDALONE -DVAX730
@@ -14,9 +14,8 @@ RELOC=	70000
 
 SRCS=	sys.c conf.c prf.c machdep.c \
 	autoconf.c hp.c hpmaptype.c ht.c idc.c mba.c mt.c rk.c \
-	rl.c tm.c ts.c \
-	up.c upmaptype.c uba.c uda.c ut.c \
-	drtest.c format.c up.old.c hp.old.c
+	rl.c tm.c ts.c up.c upmaptype.c uba.c uda.c ut.c \
+	drtest.c format.c up.old.c hp.old.c ../vax/dkbad.c
 DUMMIES= bootxx.c confxx.c
 DRIVERS=autoconf.o hp.o hpmaptype.o ht.o idc.o mba.o mt.o \
 	rk.o rl.o tm.o ts.o \
@@ -281,123 +280,127 @@ depend:
 # DO NOT DELETE THIS LINE -- make depend uses it
 
 
-sys.o: sys.c ./../h/param.h ../machine/machparam.h /usr/include/signal.h
+sys.o: sys.c ./../h/param.h /usr/include/machine/machparam.h ../h/signal.h
 sys.o: /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h ./../h/dir.h
 sys.o: ./saio.h
 
-conf.o: conf.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
-conf.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
-conf.o: ./../h/fs.h ./../vaxmba/mbareg.h ./saio.h
+conf.o: conf.c ./../machine/pte.h ./../h/param.h
+conf.o: /usr/include/machine/machparam.h ../h/signal.h /usr/include/sys/types.h
+conf.o: ./../h/inode.h ./../h/fs.h ./../vaxmba/mbareg.h ./saio.h
 
-prf.o: prf.c ./../h/param.h ../machine/machparam.h /usr/include/signal.h
+prf.o: prf.c ./../h/param.h /usr/include/machine/machparam.h ../h/signal.h
 prf.o: /usr/include/sys/types.h ./../vax/mtpr.h ./../vax/cons.h
 
-machdep.o: machdep.c ./../h/param.h ../machine/machparam.h
-machdep.o: /usr/include/signal.h /usr/include/sys/types.h ./../vax/mtpr.h
+machdep.o: machdep.c ./../h/param.h /usr/include/machine/machparam.h
+machdep.o: ../h/signal.h /usr/include/sys/types.h ./../vax/mtpr.h
 
-autoconf.o: autoconf.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
-autoconf.o: /usr/include/signal.h /usr/include/sys/types.h ./../vax/cpu.h
-autoconf.o: ./../vax/nexus.h ./../vaxuba/ubareg.h ./../vaxmba/mbareg.h
-autoconf.o: ./../vax/mtpr.h ./savax.h
+autoconf.o: autoconf.c ./../machine/pte.h ./../h/param.h
+autoconf.o: /usr/include/machine/machparam.h ../h/signal.h
+autoconf.o: /usr/include/sys/types.h ./../vax/cpu.h ./../vax/nexus.h
+autoconf.o: ./../vaxuba/ubareg.h ./../vaxmba/mbareg.h ./../vax/mtpr.h ./savax.h
 
-hp.o: hp.c ./../h/param.h ../machine/machparam.h /usr/include/signal.h
+hp.o: hp.c ./../h/param.h /usr/include/machine/machparam.h ../h/signal.h
 hp.o: /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h ./../h/dkbad.h
 hp.o: ./../vax/pte.h ./../vaxmba/hpreg.h ./../vaxmba/mbareg.h ./saio.h
 hp.o: ./savax.h
 
 hpmaptype.o: hpmaptype.c ./../machine/pte.h ./../h/param.h
-hpmaptype.o: ../machine/machparam.h /usr/include/signal.h
+hpmaptype.o: /usr/include/machine/machparam.h ../h/signal.h
 hpmaptype.o: /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
 hpmaptype.o: ./../vaxmba/hpreg.h ./../vaxmba/mbareg.h ./saio.h ./savax.h
 
-ht.o: ht.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
-ht.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+ht.o: ht.c ./../machine/pte.h ./../h/param.h /usr/include/machine/machparam.h
+ht.o: ../h/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
 ht.o: ./../vaxmba/htreg.h ./../vaxmba/mbareg.h ./saio.h ./savax.h
 
-idc.o: idc.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
-idc.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
-idc.o: ./../h/fs.h ./../vaxuba/idcreg.h ./../vaxuba/ubareg.h ./saio.h ./savax.h
+idc.o: idc.c ./../machine/pte.h ./../h/param.h /usr/include/machine/machparam.h
+idc.o: ../h/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+idc.o: ./../vaxuba/idcreg.h ./../vaxuba/ubareg.h ./saio.h ./savax.h
 
-mba.o: mba.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
-mba.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
-mba.o: ./../h/fs.h ./../h/vm.h /usr/include/sys/vmparam.h ../machine/vmparam.h
+mba.o: mba.c ./../machine/pte.h ./../h/param.h /usr/include/machine/machparam.h
+mba.o: ../h/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+mba.o: ./../h/vm.h /usr/include/sys/vmparam.h /usr/include/machine/vmparam.h
 mba.o: /usr/include/sys/vmmac.h /usr/include/sys/vmmeter.h
 mba.o: /usr/include/sys/vmsystm.h ./../vax/mtpr.h ./../vaxmba/mbareg.h
 mba.o: ./../vaxmba/hpreg.h ./saio.h ./savax.h
 
-mt.o: mt.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
-mt.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+mt.o: mt.c ./../machine/pte.h ./../h/param.h /usr/include/machine/machparam.h
+mt.o: ../h/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
 mt.o: ./../vaxmba/mtreg.h ./../vaxmba/mbareg.h ./saio.h ./savax.h
 
-rk.o: rk.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
-rk.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+rk.o: rk.c ./../machine/pte.h ./../h/param.h /usr/include/machine/machparam.h
+rk.o: ../h/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
 rk.o: ./../vaxuba/ubareg.h ./../vaxuba/rkreg.h ./saio.h ./savax.h
 
-rl.o: rl.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
-rl.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+rl.o: rl.c ./../machine/pte.h ./../h/param.h /usr/include/machine/machparam.h
+rl.o: ../h/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
 rl.o: ./../vaxuba/rlreg.h ./../vaxuba/ubareg.h ./saio.h ./savax.h
 
-tm.o: tm.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
-tm.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+tm.o: tm.c ./../machine/pte.h ./../h/param.h /usr/include/machine/machparam.h
+tm.o: ../h/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
 tm.o: ./../vaxuba/ubareg.h ./../vaxuba/tmreg.h ./saio.h ./savax.h
 
-ts.o: ts.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
-ts.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+ts.o: ts.c ./../machine/pte.h ./../h/param.h /usr/include/machine/machparam.h
+ts.o: ../h/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
 ts.o: ./../vaxuba/tsreg.h ./../vaxuba/ubareg.h ./saio.h ./savax.h
 
-up.o: up.c ./../h/param.h ../machine/machparam.h /usr/include/signal.h
+up.o: up.c ./../h/param.h /usr/include/machine/machparam.h ../h/signal.h
 up.o: /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h ./../h/dkbad.h
 up.o: ./../h/vmmac.h ./../vax/pte.h ./../vaxuba/upreg.h ./../vaxuba/ubareg.h
 up.o: ./saio.h ./savax.h
 
-upmaptype.o: upmaptype.c ./../h/param.h ../machine/machparam.h
-upmaptype.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
-upmaptype.o: ./../h/fs.h ./../h/dkbad.h ./../h/vmmac.h ./../vax/pte.h
-upmaptype.o: ./../vaxuba/upreg.h ./../vaxuba/ubareg.h ./saio.h ./savax.h
+upmaptype.o: upmaptype.c ./../h/param.h /usr/include/machine/machparam.h
+upmaptype.o: ../h/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+upmaptype.o: ./../h/dkbad.h ./../h/vmmac.h ./../vax/pte.h ./../vaxuba/upreg.h
+upmaptype.o: ./../vaxuba/ubareg.h ./saio.h ./savax.h
 
-uba.o: uba.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
-uba.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
-uba.o: ./../h/vm.h /usr/include/sys/vmparam.h ../machine/vmparam.h
+uba.o: uba.c ./../machine/pte.h ./../h/param.h /usr/include/machine/machparam.h
+uba.o: ../h/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/vm.h
+uba.o: /usr/include/sys/vmparam.h /usr/include/machine/vmparam.h
 uba.o: /usr/include/sys/vmmac.h /usr/include/sys/vmmeter.h
 uba.o: /usr/include/sys/vmsystm.h ./../h/fs.h ./../vax/cpu.h
 uba.o: ./../vaxuba/ubareg.h ./saio.h ./savax.h
 
-uda.o: uda.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
-uda.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
-uda.o: ./../h/fs.h ./saio.h ./savax.h ./../vaxuba/udareg.h ./../vaxuba/ubareg.h
+uda.o: uda.c ./../machine/pte.h ./../h/param.h /usr/include/machine/machparam.h
+uda.o: ../h/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+uda.o: ./saio.h ./savax.h ./../vaxuba/udareg.h ./../vaxuba/ubareg.h
 uda.o: ./../vax/mscp.h
 
-ut.o: ut.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
-ut.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+ut.o: ut.c ./../machine/pte.h ./../h/param.h /usr/include/machine/machparam.h
+ut.o: ../h/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
 ut.o: ./../vaxuba/ubareg.h ./../vaxuba/utreg.h ./saio.h ./savax.h
 
-drtest.o: drtest.c ./../h/param.h ../machine/machparam.h /usr/include/signal.h
-drtest.o: /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h ./saio.h
+drtest.o: drtest.c ./../h/param.h /usr/include/machine/machparam.h
+drtest.o: ../h/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+drtest.o: ./saio.h
 
-format.o: format.c ./../h/param.h ../machine/machparam.h /usr/include/signal.h
-format.o: /usr/include/sys/types.h ./../h/fs.h ./../h/inode.h ./../h/dkbad.h
-format.o: ./../h/vmmac.h ./saio.h ./savax.h
+format.o: format.c ./../h/param.h /usr/include/machine/machparam.h
+format.o: ../h/signal.h /usr/include/sys/types.h ./../h/fs.h ./../h/inode.h
+format.o: ./../h/dkbad.h ./../h/vmmac.h ./saio.h ./savax.h
 
-up.old.o: up.old.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
-up.old.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
-up.old.o: ./../h/fs.h ./../vaxuba/upreg.h ./../vaxuba/ubareg.h ./saio.h
-up.old.o: ./savax.h
+up.old.o: up.old.c ./../machine/pte.h ./../h/param.h
+up.old.o: /usr/include/machine/machparam.h ../h/signal.h
+up.old.o: /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+up.old.o: ./../vaxuba/upreg.h ./../vaxuba/ubareg.h ./saio.h ./savax.h
 
-hp.old.o: hp.old.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
-hp.old.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
-hp.old.o: ./../h/fs.h ./../vaxmba/hpreg.h ./../vaxmba/mbareg.h ./saio.h
-hp.old.o: ./savax.h
+hp.old.o: hp.old.c ./../machine/pte.h ./../h/param.h
+hp.old.o: /usr/include/machine/machparam.h ../h/signal.h
+hp.old.o: /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+hp.old.o: ./../vaxmba/hpreg.h ./../vaxmba/mbareg.h ./saio.h ./savax.h
 
-bootxx.o: bootxx.c ./../h/param.h ../machine/machparam.h /usr/include/signal.h
-bootxx.o: /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h ./../h/vm.h
-bootxx.o: /usr/include/sys/vmparam.h ../machine/vmparam.h
+dkbad.o: ../vax/dkbad.c ../h/param.h /usr/include/machine/machparam.h
+dkbad.o: ../h/signal.h /usr/include/sys/types.h ../h/buf.h ../h/dkbad.h
+
+bootxx.o: bootxx.c ./../h/param.h /usr/include/machine/machparam.h
+bootxx.o: ../h/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+bootxx.o: ./../h/vm.h /usr/include/sys/vmparam.h /usr/include/machine/vmparam.h
 bootxx.o: /usr/include/sys/vmmac.h /usr/include/sys/vmmeter.h
 bootxx.o: /usr/include/sys/vmsystm.h /usr/include/a.out.h
 bootxx.o: /usr/include/sys/exec.h ./saio.h ./../h/reboot.h
 
-confxx.o: confxx.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
-confxx.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
-confxx.o: ./../h/fs.h ./saio.h
+confxx.o: confxx.c ./../machine/pte.h ./../h/param.h
+confxx.o: /usr/include/machine/machparam.h ../h/signal.h
+confxx.o: /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h ./saio.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above
