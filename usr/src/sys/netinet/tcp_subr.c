@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.27	82/06/20	*/
+/*	tcp_subr.c	4.28	82/06/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -20,7 +20,7 @@
 #include "../net/tcp_timer.h"
 #include "../net/tcp_var.h"
 #include "../net/tcpip.h"
-#include "../errno.h"
+#include <errno.h>
 
 /*
  * Tcp initialization

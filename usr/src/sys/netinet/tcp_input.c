@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.69	82/06/24	*/
+/*	tcp_input.c	1.70	82/06/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -20,7 +20,7 @@
 #include "../net/tcp_var.h"
 #include "../net/tcpip.h"
 #include "../net/tcp_debug.h"
-#include "../errno.h"
+#include <errno.h>
 
 int	tcpprintfs = 0;
 int	tcpcksum = 1;

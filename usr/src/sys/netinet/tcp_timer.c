@@ -1,4 +1,4 @@
-/*	tcp_timer.c	4.23	82/06/20	*/
+/*	tcp_timer.c	4.24	82/06/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -19,7 +19,7 @@
 #include "../net/tcp_timer.h"
 #include "../net/tcp_var.h"
 #include "../net/tcpip.h"
-#include "../errno.h"
+#include <errno.h>
 
 int	tcpnodelack = 0;
 /*
