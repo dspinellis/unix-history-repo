@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.30 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.31 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -106,13 +106,13 @@ tlen(p) NODE *p;
 
 		case SHORT:
 		case USHORT:
-			return(2);
+			return(SZSHORT/SZCHAR);
 
 		case DOUBLE:
-			return(8);
+			return(SZDOUBLE/SZCHAR);
 
 		default:
-			return(4);
+			return(SZINT/SZCHAR);
 		}
 }
 
@@ -267,7 +267,7 @@ zzzcode( p, c ) register NODE *p; {
 		register NODE *r;
 		if (xdebug) eprint(p, 0, &val, &val);
 		r = p->in.right;
-		if( tlen(r) == sizeof(int) && r->in.type != FLOAT )
+		if( tlen(r) == SZINT/SZCHAR && r->in.type != FLOAT )
 			putstr("movl");
 		else {
 			putstr(ISUNSIGNED(r->in.type) ? "movz" : "cvt");
