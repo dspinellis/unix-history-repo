@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)plot.3	6.1 (Berkeley) %G%
+.\"	@(#)plot.3	6.2 (Berkeley) %G%
 .\"
 .TH PLOT 3F ""
 .UC 6
@@ -19,6 +19,12 @@ libraries.
 .B character str*(*)
 .PP
 .B call line(ix1, iy1, ix2, iy2)
+.PP
+.B call box(ix1, iy1, ix2, iy2)
+.fi
+Draw a rectangle and leave the cursor at (
+.IR ix2 , iy2 ).
+.nf
 .PP
 .B call circle(ix, iy, ir)
 .PP
@@ -55,9 +61,13 @@ The
 subroutine names are the same as the
 .I C
 function names except that
-.IR linemod and closepl
+.I linemod
+and
+.I closepl
 have been shortened to
-.IR linemd and clospl .
+.I linemd
+and
+.I clospl .
 See
 .IR  plot (5)
 and
@@ -79,9 +89,8 @@ for example, to compile and load a FORTRAN program in
 to run on a Tektronix 4014 terminal:
 .br
 .RS
-.B
 
-f77 prog.f -lf77plot -l4014
+.B f77 prog.f -lf77plot -l4014
 
 .RE
 .br
