@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)gprof.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)gprof.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "gprof.h"
@@ -45,7 +45,12 @@ main(argc, argv)
 	    bflag = FALSE;
 	    break;
 	case 'c':
+#if defined(vax) || defined(tahoe)
 	    cflag = TRUE;
+#else
+	    fprintf(stderr, "gprof: -c isn't supported on this architecture yet\n");
+	    exit(1);
+#endif
 	    break;
 	case 'd':
 	    dflag = TRUE;
