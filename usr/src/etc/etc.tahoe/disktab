@@ -140,7 +140,7 @@ mxd|Mxd|MXD|380 Mb MAXTOR:\
 #	:pg#95040:og#0:bg#8192:fg#1024:\
 #	:ph#47520:oh#0:bh#8192:fh#1024:
 
-ncc|nec800|800 Mb NEC:\
+ncc|nec2362|nec800|800 Mb NEC:\
 	:ty=winchester:ns#66:nt#23:nc#850:rm#3600:se#512:\
 	:dt=SMD:\
 	:d0#0:d1#40960:\
@@ -148,3 +148,12 @@ ncc|nec800|800 Mb NEC:\
 	:pb#92598:ob#97152:bb#8192:fb#1024:tb=swap:\
 	:pc#1092960:oc#189750:bc#8192:fc#1024:\
 	:ph#1282710:oh#0:bh#8192:fh#1024:
+
+ncd|nec2363|1000 Mb NEC:\
+	:ty=winchester:ns#66:nt#27:nc#1024:rm#3600:se#512:\
+	:dt=SMD:\
+	:d0#0:d1#40960:\
+	:pa#178200:oa#0:ba#8192:fa#1024:\
+	:pb#178200:ob#178200:bb#8192:fb#1024:tb=swap:\
+	:pc#1459458:oc#356400:bc#8192:fc#1024:\
+	:pd#1815858:od#0:bd#8192:fd#1024:
