@@ -1,4 +1,4 @@
-/*	ffs_vnops.c	4.57	83/05/27	*/
+/*	ffs_vnops.c	4.58	83/05/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -873,11 +873,33 @@ rename()
 	dp = u.u_pdir;
 	/*
 	 * If ".." must be changed (ie the directory gets a new
-	 * parent) then the user must have write permission.
+	 * parent) then the source directory must not be in the
+	 * directory heirarchy above the target, as this would
+	 * orphan everything below the source directory. Also
+	 * the user must have write permission in the source so
+	 * as to be able to change "..". We must repeat the call 
+	 * to namei, as the parent directory is unlocked by the
+	 * call to checkpath().
 	 */
 	parentdifferent = oldparent != dp->i_number;
-	if (doingdirectory && parentdifferent && access(ip, IWRITE))
-		goto bad;
+	if (doingdirectory && parentdifferent) {
+		if (access(ip, IWRITE))
+			goto bad;
+		do {
+			dp = u.u_pdir;
+			if (xp != NULL)
+				iput(xp);
+			u.u_error = checkpath(ip, dp);
+			if (u.u_error)
+				goto out;
+			u.u_dirp = (caddr_t)uap->to;
+			xp = namei(uchar, CREATE | LOCKPARENT, 0);
+			if (u.u_error) {
+				error = u.u_error;
+				goto out;
+			}
+		} while (dp != u.u_pdir);
+	}
 	/*
 	 * 2) If target doesn't exist, link the target
 	 *    to the source and unlink the source. 
@@ -888,13 +910,6 @@ rename()
 	if (xp == NULL) {
 		if (dp->i_dev != ip->i_dev) {
 			error = EXDEV;
-			goto bad;
-		}
-		/*
-		 * Disallow rename(foo, foo/bar).
-		 */
-		if (dp->i_number == ip->i_number) {
-			error = EEXIST;
 			goto bad;
 		}
 		/*
