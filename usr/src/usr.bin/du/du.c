@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)du.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -102,7 +102,7 @@ du(arg)
 	u_long total, descend();
 
 	if (lstat(arg, &info)) {
-		(void)fprintf(stderr, "du: %s: %s\n", path, strerror(errno));
+		(void)fprintf(stderr, "du: %s: %s\n", arg, strerror(errno));
 		return;
 	}
 	if ((info.st_mode&S_IFMT) != S_IFDIR) {
