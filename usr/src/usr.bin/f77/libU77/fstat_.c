@@ -1,10 +1,10 @@
 /*
-char id_fstat[] = "@(#)fstat_.c	1.2";
+char id_fstat[] = "@(#)fstat_.c	1.3";
  *
  * get file status
  *
  * calling sequence:
- *	integer fstat, statb(11)
+ *	integer fstat, statb(12)
  *	call fstat (name, statb)
  * where:
  *	'statb' will receive the stat structure for file 'name'.
@@ -39,6 +39,7 @@ long *lunit, *stbuf;
 		*stbuf++ = statb.st_atime;
 		*stbuf++ = statb.st_mtime;
 		*stbuf++ = statb.st_ctime;
+		*stbuf++ = statb.st_blksize;
 		return(0L);
 	}
 	return ((long)errno);

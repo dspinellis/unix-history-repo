@@ -1,10 +1,10 @@
 /*
-char id_stat[] = "@(#)stat_.c	1.1";
+char id_stat[] = "@(#)stat_.c	1.2";
  *
  * get file status
  *
  * calling sequence:
- *	integer stat, statb(11)
+ *	integer stat, statb(12)
  *	call stat (name, statb)
  * where:
  *	'statb' will receive the stat structure for file 'name'.
@@ -17,7 +17,7 @@ char id_stat[] = "@(#)stat_.c	1.1";
 long stat_(name, stbuf, namlen)
 char *name; long *stbuf, namlen;
 {
-	char buf[128];
+	char buf[256];
 	struct stat statb;
 
 	if (namlen >= sizeof buf)
@@ -36,6 +36,7 @@ char *name; long *stbuf, namlen;
 		*stbuf++ = statb.st_atime;
 		*stbuf++ = statb.st_mtime;
 		*stbuf++ = statb.st_ctime;
+		*stbuf++ = statb.st_blksize;
 		return(0L);
 	}
 	return ((long)errno);
