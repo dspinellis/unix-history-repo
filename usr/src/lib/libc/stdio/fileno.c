@@ -9,27 +9,18 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setbuffer.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)fileno.c	5.1 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
-#include <stdlib.h>
-
-void
-setbuffer(fp, buf, size)
-	register FILE *fp;
-	char *buf;
-	int size;
-{
-	(void) setvbuf(fp, buf, buf ? _IONBF : _IOFBF, size);
-}
 
 /*
- * set line buffering
+ * A subroutine version of the macro fileno.
  */
-setlinebuf(fp)
+#undef fileno
+
+fileno(fp)
 	FILE *fp;
 {
-	(void) setvbuf(fp, (char *)NULL, _IOLBF, (size_t)0);
-	return (0);	/* ??? */
+	return (__sfileno(fp));
 }

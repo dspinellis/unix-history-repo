@@ -9,16 +9,19 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setbuf.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)putc.c	5.1 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
-#include "local.h"
 
-void
-setbuf(fp, buf)
-	FILE *fp;
-	char *buf;
+/*
+ * A subroutine version of the macro putc.
+ */
+#undef putc
+
+putc(c, fp)
+	int c;
+	register FILE *fp;
 {
-	(void) setvbuf(fp, buf, buf ? _IOFBF : _IONBF, BUFSIZ);
+	return (__sputc(c, fp));
 }

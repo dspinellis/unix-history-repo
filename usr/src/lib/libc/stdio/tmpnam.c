@@ -9,16 +9,21 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setbuf.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tmpnam.c	5.1 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/param.h>
 #include <stdio.h>
-#include "local.h"
 
-void
-setbuf(fp, buf)
-	FILE *fp;
-	char *buf;
+char *
+tmpnam(s)
+	char *s;
 {
-	(void) setvbuf(fp, buf, buf ? _IOFBF : _IONBF, BUFSIZ);
+	static char buf[MAXPATHLEN];
+	char *mktemp();
+
+	if (s == NULL)
+		s = buf;
+	(void) sprintf(s, "%s/XXXXXX", P_tmpdir);
+	return (mktemp(s));
 }

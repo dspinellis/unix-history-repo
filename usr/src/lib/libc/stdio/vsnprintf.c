@@ -9,23 +9,25 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vsprintf.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)vsnprintf.c	5.1 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
-#include <limits.h>
 
-vsprintf(str, fmt, ap)
+vsnprintf(str, n, fmt, ap)
 	char *str;
+	size_t n;
 	char *fmt;
 	_VA_LIST_ ap;
 {
 	int ret;
 	FILE f;
 
+	if ((int)n < 1)
+		return (EOF);
 	f._flags = __SWR | __SSTR;
 	f._bf._base = f._p = (unsigned char *)str;
-	f._bf._size = f._w = INT_MAX;
+	f._bf._size = f._w = n - 1;
 	ret = vfprintf(&f, fmt, ap);
 	*f._p = 0;
 	return (ret);

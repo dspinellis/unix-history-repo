@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)sprintf.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)fscanf.c	5.1 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -18,32 +18,25 @@ static char sccsid[] = "@(#)sprintf.c	5.7 (Berkeley) %G%";
 #else
 #include <varargs.h>
 #endif
-#include <limits.h>
-#include "local.h"
 
 #if __STDC__
-sprintf(char *str, char const *fmt, ...)
+fscanf(FILE *fp, char const *fmt, ...) {
+	int ret;
+	va_list ap;
+
+	va_start(ap, fmt);
 #else
-sprintf(str, fmt, va_alist)
-	char *str;
+fscanf(fp, fmt, va_alist)
+	FILE *fp;
 	char *fmt;
 	va_dcl
-#endif
 {
 	int ret;
 	va_list ap;
-	FILE f;
 
-	f._flags = __SWR | __SSTR;
-	f._bf._base = f._p = (unsigned char *)str;
-	f._bf._size = f._w = INT_MAX;
-#if __STDC__
-	va_start(ap, fmt);
-#else
 	va_start(ap);
 #endif
-	ret = vfprintf(&f, fmt, ap);
+	ret = __svfscanf(fp, fmt, ap);
 	va_end(ap);
-	*f._p = 0;
 	return (ret);
 }
