@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.52		%G%);
+SCCSID(@(#)recipient.c	3.53		%G%);
 
 /*
 **  SENDTOLIST -- Designate a send list.
@@ -96,9 +96,10 @@ sendtolist(list, ctladdr, sendq)
 	while (al != NULL)
 	{
 		register ADDRESS *a = al;
+		extern ADDRESS *recipient();
 
 		al = a->q_next;
-		recipient(a, sendq);
+		a = recipient(a, sendq);
 
 		/* arrange to inherit full name */
 		if (a->q_fullname == NULL && ctladdr != NULL)
@@ -119,12 +120,14 @@ sendtolist(list, ctladdr, sendq)
 **			in this queue.
 **
 **	Returns:
-**		none.
+**		The actual address in the queue.  This will be "a" if
+**		the address is not a duplicate, else the original address.
 **
 **	Side Effects:
 **		none.
 */
 
+ADDRESS *
 recipient(a, sendq)
 	register ADDRESS *a;
 	register ADDRESS **sendq;
@@ -153,7 +156,7 @@ recipient(a, sendq)
 	if (AliasLevel > MAXRCRSN)
 	{
 		usrerr("aliasing/forwarding loop broken");
-		return;
+		return (a);
 	}
 
 	/*
@@ -206,7 +209,7 @@ recipient(a, sendq)
 				message(Arpa_Info, "duplicate suppressed");
 			if (!bitset(QPRIMARY, q->q_flags))
 				q->q_flags |= a->q_flags;
-			return;
+			return (q);
 		}
 	}
 
@@ -298,6 +301,7 @@ recipient(a, sendq)
 			}
 		}
 	}
+	return (a);
 }
 /*
 **  FINDUSER -- find the password entry for a user.
