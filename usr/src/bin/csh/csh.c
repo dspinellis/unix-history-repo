@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)csh.c	5.17 (Berkeley) %G%";
+static char *sccsid = "@(#)csh.c	5.18 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -496,7 +496,7 @@ srcunit(unit, onlyown, hflg)
 	reenter++;
 	if (reenter == 1) {
 		/* Setup the new values of the state stuff saved above */
-		copy((char *)&saveB, (char *)&B, sizeof saveB);
+		bcopy((char *)&B, (char *)&saveB, sizeof saveB);
 		fbuf = (char **) 0;
 		fseekp = feobp = fblocks = 0;
 		oSHIN = SHIN, SHIN = unit, arginp = 0, onelflg = 0;
@@ -528,7 +528,7 @@ srcunit(unit, onlyown, hflg)
 		xfree((char *)fbuf);
 
 		/* Reset input arena */
-		copy((char *)&B, (char *)&saveB, sizeof B);
+		bcopy((char *)&saveB, (char *)&B, sizeof B);
 
 		(void) close(SHIN), SHIN = oSHIN;
 		arginp = oarginp, onelflg = oonelflg;
