@@ -1,5 +1,5 @@
 /*
-char id_open[] = "@(#)open.c	1.9";
+char id_open[] = "@(#)open.c	1.10";
  *
  * open.c  -  f77 file open routines
  */
@@ -13,7 +13,7 @@ char id_open[] = "@(#)open.c	1.9";
 #define NEW	(st=='n')
 #define OLD	(st=='o')
 #define OPEN	(b->ufd)
-#define FROM_OPEN	"\1"	/* for use in f_clos() */
+#define FROM_OPEN	"\2"	/* for use in f_clos() */
 
 extern char *tmplate;
 extern char *fortfile;
