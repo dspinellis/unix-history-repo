@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)mount.h	7.22 (Berkeley) 6/3/91
- *	$Id$
+ *	$Id: mount.h,v 1.4 1993/10/16 17:17:14 rgrimes Exp $
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -108,10 +108,7 @@ struct mount {
 #define	MNT_NOSUID	0x00000008	/* don't honor setuid bits on fs */
 #define	MNT_NODEV	0x00000010	/* don't interpret special files */
 #define MNT_NOCORE	0x00000020	/* don't create core files */
-#ifdef ISOFS
-#define ISOFSMNT_NORRIP       0x00000040      /* disable Rock Ridge Ext.*/
-#endif
-
+#define MNT_NORRIP	0x00000040	/* disable Rock Ridge Ext.*/
 
 /*
  * exported mount flags.
