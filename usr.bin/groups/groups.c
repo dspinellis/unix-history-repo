@@ -46,6 +46,7 @@ static char sccsid[] = "@(#)groups.c	5.4 (Berkeley) 6/1/90";
  */
 
 #include <sys/param.h>
+#include <unistd.h>
 #include <grp.h>
 #include <pwd.h>
 #include <stdio.h>
@@ -62,17 +63,8 @@ main(argc, argv)
 
 	if (argc > 1)
 		showgroups(argv[1]);
-	ngroups = getgroups(NGROUPS, groups);
-	for (i = 0; i < ngroups; i++) {
-		gr = getgrgid(groups[i]);
-		if (gr == NULL)
-			printf("%s%d", sep, groups[i]);
-		else
-			printf("%s%s", sep, gr->gr_name);
-		sep = " ";
-	}
-	printf("\n");
-	exit(0);
+	else
+		showgroups(getlogin());
 }
 
 showgroups(user)
@@ -83,6 +75,10 @@ showgroups(user)
 	register char **cp;
 	char *sep = "";
 
+	if (!user) {
+		fprintf(stderr, "groups: no user name.\n");
+		exit(1);
+	}
 	if ((pw = getpwnam(user)) == NULL) {
 		fprintf(stderr, "groups: no such user.\n");
 		exit(1);
