@@ -7,7 +7,7 @@ CFLAGS+=-I. -I${.CURDIR} -I${.CURDIR}/ex -I${.CURDIR}/vi
 #STRIP=
 .PATH:	${.CURDIR}/docs ${.CURDIR}/ex ${.CURDIR}/sex ${.CURDIR}/vi \
 	${.CURDIR}/svi ${.CURDIR}/xaw
-CLEANFILES+=ex
+#CLEANFILES+=ex
 
 # General sources.
 SRCS=	ascii.c cut.c delete.c exf.c intr.c line.c log.c main.c \
