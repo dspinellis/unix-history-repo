@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)device_pager.h	7.1 (Berkeley) 12/5/90
- *	$Id$
+ *	$Id: device_pager.h,v 1.2 1993/10/16 16:20:12 rgrimes Exp $
  */
 
 #ifndef	_DEVICE_PAGER_
@@ -65,15 +65,8 @@ void		dev_pager_dealloc();
 boolean_t	dev_pager_getpage(), dev_pager_putpage();
 boolean_t	dev_pager_haspage();
 
-struct pagerops devicepagerops = {
-	dev_pager_init,
-	dev_pager_alloc,
-	dev_pager_dealloc,
-	dev_pager_getpage,
-	dev_pager_putpage,
-	dev_pager_haspage
-};
+extern struct pagerops devicepagerops;
 
-#endif
+#endif /* KERNEL */
 
 #endif	/* _DEVICE_PAGER_ */

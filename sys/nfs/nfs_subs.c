@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	From:	@(#)nfs_subs.c	7.41 (Berkeley) 5/15/91
- *	$Id$
+ *	$Id: nfs_subs.c,v 1.2 1993/09/09 22:06:08 rgrimes Exp $
  */
 
 /*
@@ -70,6 +70,8 @@
 
 #define TRUE	1
 #define	FALSE	0
+
+struct nfsstats nfsstats;
 
 /*
  * Data items converted to xdr at startup, since they are constant

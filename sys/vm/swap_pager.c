@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *	from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
- *	$Id$
+ *	$Id: swap_pager.c,v 1.2 1993/10/16 16:20:19 rgrimes Exp $
  */
 
 /*
@@ -69,6 +69,10 @@
 #include "vm_pageout.h"
 #include "swap_pager.h"
 
+#include "dmap.h"
+struct dmap zdmap;		/* not used */
+int dmmin, dmmax, dmtext;	/* dmtext not used */
+
 #define NSWSIZES	16	/* size of swtab */
 #define NPENDINGIO	64	/* max # of pending cleans */
 #define MAXDADDRS	64	/* max # of disk addrs for fixed allocations */
@@ -86,6 +90,15 @@ int	swpagerdebug = 0 /*0x100*/;
 #define SDB_ANOM	0x100
 #define SDB_ANOMPANIC	0x200
 #endif
+
+struct pagerops swappagerops = {
+	swap_pager_init,
+	swap_pager_alloc,
+	swap_pager_dealloc,
+	swap_pager_getpage,
+	swap_pager_putpage,
+	swap_pager_haspage
+};
 
 struct swpagerclean {
 	queue_head_t		spc_list;
@@ -128,7 +141,6 @@ swap_pager_init()
 {
 	register swp_clean_t spc;
 	register int i, bsize;
-	extern int dmmin, dmmax;
 	int maxbsize;
 
 #ifdef DEBUG

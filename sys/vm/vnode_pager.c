@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode_pager.c	7.5 (Berkeley) 4/20/91
- *	$Id$
+ *	$Id: vnode_pager.c,v 1.2 1993/10/16 16:21:02 rgrimes Exp $
  */
 
 /*
@@ -63,6 +63,15 @@
 #include "vm_object.h"
 #include "vm_page.h"
 #include "vnode_pager.h"
+
+struct pagerops vnodepagerops = {
+	vnode_pager_init,
+	vnode_pager_alloc,
+	vnode_pager_dealloc,
+	vnode_pager_getpage,
+	vnode_pager_putpage,
+	vnode_pager_haspage
+};
 
 queue_head_t	vnode_pager_list;	/* list of managed vnodes */
 

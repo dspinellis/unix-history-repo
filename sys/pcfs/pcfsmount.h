@@ -15,8 +15,11 @@
  *
  *  October 1992
  *
- *	$Id$
+ *	$Id: pcfsmount.h,v 1.2 1993/10/16 19:29:41 rgrimes Exp $
  */
+
+#ifndef _PCFS_PCFSMOUNT_H_
+#define _PCFS_PCFSMOUNT_H_ 1
 
 /*
  *  Layout of the mount control block for a msdos
@@ -140,3 +143,4 @@ int pcfs_sync __P((struct mount *mp, int waitfor));
 int pcfs_fhtovp __P((struct mount *mp, struct fid *fhp, struct vnode **vpp));
 int pcfs_vptofh __P((struct vnode *vp, struct fid *fhp));
 int pcfs_init __P(());
+#endif /* _PCFS_PCFSMOUNT_H_ */

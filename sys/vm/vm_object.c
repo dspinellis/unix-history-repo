@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
- *	$Id$
+ *	$Id: vm_object.c,v 1.6 1993/10/16 16:20:40 rgrimes Exp $
  */
 
 /*
@@ -101,6 +101,18 @@
  *		pager routine		locked by object's lock
  *
  */
+
+queue_head_t	vm_object_cached_list;	/* list of objects persisting */
+int		vm_object_cached;	/* size of cached list */
+simple_lock_data_t	vm_cache_lock;	/* lock for object cache */
+
+queue_head_t	vm_object_list;		/* list of allocated objects */
+long		vm_object_count;	/* count of all objects */
+simple_lock_data_t	vm_object_list_lock;
+					/* lock for object list and count */
+
+vm_object_t	kernel_object;		/* the single kernel object */
+vm_object_t	kmem_object;
 
 struct vm_object	kernel_object_store;
 struct vm_object	kmem_object_store;

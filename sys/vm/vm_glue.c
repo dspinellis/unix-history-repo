@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_glue.c	7.8 (Berkeley) 5/15/91
- *	$Id: vm_glue.c,v 1.8 1993/10/16 16:20:25 rgrimes Exp $
+ *	$Id: vm_glue.c,v 1.9 1993/10/19 00:54:49 nate Exp $
  */
 
 /*
@@ -73,6 +73,7 @@
 #include "vm.h"
 #include "vm_page.h"
 #include "vm_kern.h"
+#include "machine/stdarg.h"
 
 int	avefree = 0;		/* XXX */
 int	readbuffers = 0;	/* XXX allow kgdb to read kernel buffer pool */
@@ -543,18 +544,26 @@ thread_wakeup(event)
 int indent = 0;
 
 /*ARGSUSED2*/
-iprintf(a, b, c, d, e, f, g, h)
-	char *a;
+void
+iprintf(const char *a, ...)
 {
-	register int i;
+	va_list args;
+	int i, j = 0;
+	char indentbuf[indent + 1];
 
+	va_start(args, a);
 	i = indent;
 	while (i >= 8) {
-		printf("\t");
-		i -= 8;
+	  indentbuf[j++] = '\t';
+	  i -= 8;
 	}
 	for (; i > 0; --i)
-		printf(" ");
-	printf(a, b, c, d, e, f, g, h);
+	  indentbuf[j++] = ' ';
+
+	indentbuf[j++] = '\0';
+
+	printf("%s%r", indentbuf, a, args);
+	va_end(args);
 }
 #endif	/* defined(DEBUG) || (NDDB > 0) */
+

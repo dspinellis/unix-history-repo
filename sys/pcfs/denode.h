@@ -15,8 +15,11 @@
  *
  *  October 1992
  *
- *	$Id$
+ *	$Id: denode.h,v 1.2 1993/10/16 19:29:26 rgrimes Exp $
  */
+
+#ifndef _PCFS_DENODE_H_
+#define _PCFS_DENODE_H_ 1
 
 /*
  *  This is the pc filesystem specific portion of the
@@ -246,3 +249,4 @@ int pcfs_advlock __P((struct vnode *vp, caddr_t id, int op, struct flock *fl,
 int deget __P((struct pcfsmount *pmp, u_long dirclust, u_long diroffset,
 	struct direntry *direntptr, struct denode **depp));
 #endif /* defined(KERNEL) */
+#endif /* _PCFS_DENODE_H_ */

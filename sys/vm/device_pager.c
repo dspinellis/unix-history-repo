@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)device_pager.c	7.2 (Berkeley) 4/20/91
- *	$Id$
+ *	$Id: device_pager.c,v 1.4 1993/10/16 16:20:10 rgrimes Exp $
  */
 
 /*
@@ -57,6 +57,15 @@
 #include "device_pager.h"
 #include "vnode.h"
 #include "specdev.h"
+
+struct pagerops devicepagerops = {
+	dev_pager_init,
+	dev_pager_alloc,
+	dev_pager_dealloc,
+	dev_pager_getpage,
+	dev_pager_putpage,
+	dev_pager_haspage
+};
 
 queue_head_t	dev_pager_list;	/* list of managed devices */
 

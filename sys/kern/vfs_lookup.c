@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_lookup.c	7.32 (Berkeley) 5/21/91
- *	$Id$
+ *	$Id: vfs_lookup.c,v 1.2 1993/10/16 15:25:23 rgrimes Exp $
  */
 
 #include "param.h"
@@ -48,6 +48,8 @@
 #ifdef KTRACE
 #include "ktrace.h"
 #endif
+
+u_long nextvnodeid;
 
 /*
  * Convert a pathname into a pointer to a locked inode.

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)uipc_mbuf.c	7.19 (Berkeley) 4/20/91
- *	$Id$
+ *	$Id: uipc_mbuf.c,v 1.3 1993/10/16 15:25:07 rgrimes Exp $
  */
 
 #include "param.h"
@@ -45,6 +45,15 @@
 #include "domain.h"
 #include "protosw.h"
 #include "vm/vm.h"
+
+/* From sys/mbuf.h */
+struct 	mbstat mbstat;
+int	nmbclusters;
+union	mcluster *mclfree;
+int	max_linkhdr;
+int	max_protohdr;
+int	max_hdr;
+int	max_datalen;
 
 extern	vm_map_t mb_map;
 struct	mbuf *mbutl;

@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)mfsnode.h	7.3 (Berkeley) 4/16/91
- *	$Id$
+ *	$Id: mfsnode.h,v 1.2 1993/10/16 18:17:46 rgrimes Exp $
  */
+
+#ifndef _UFS_MFSNODE_H_
+#define _UFS_MFSNODE_H_ 1
 
 /*
  * This structure defines the control data for the memory
@@ -195,3 +198,4 @@ int	mfs_print __P((
 		int op, \
 		struct flock *fl, \
 		int flags))) mfs_badop)
+#endif /* _UFS_MFSNODE_H_ */

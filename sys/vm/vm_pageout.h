@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_pageout.h	7.3 (Berkeley) 4/21/91
- *	$Id$
+ *	$Id: vm_pageout.h,v 1.2 1993/10/16 16:20:49 rgrimes Exp $
  */
 
 /*
@@ -64,6 +64,9 @@
  * rights to redistribute these changes.
  */
 
+#ifndef _VM_VM_PAGEOUT_H_
+#define _VM_VM_PAGEOUT_H_ 1
+
 /*
  *	Header file for pageout daemon.
  */
@@ -73,7 +76,7 @@
  */
 
 extern int	vm_pages_needed;	/* should be some "event" structure */
-simple_lock_data_t	vm_pages_needed_lock;
+extern simple_lock_data_t	vm_pages_needed_lock;
 
 
 /*
@@ -90,3 +93,4 @@ simple_lock_data_t	vm_pages_needed_lock;
 			thread_sleep((int)&vm_page_free_count, \
 				&vm_pages_needed_lock, FALSE); \
 			}
+#endif /* _VM_VM_PAGEOUT_H_ */

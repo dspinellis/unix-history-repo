@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)dinode.h	7.10 (Berkeley) 5/8/91
- *	$Id$
+ *	$Id: dinode.h,v 1.3 1993/10/16 18:17:35 rgrimes Exp $
  */
+
+#ifndef _UFS_DINODE_H_
+#define _UFS_DINODE_H_ 1
 
 /*
  * A dinode contains all the meta-data associated with a UFS file.
@@ -102,3 +105,4 @@ struct dinode {
 	((((di).di_mode & IFMT) == IFLNK) && \
 	 ((di).di_size <= MAXFASTLINK) && \
 	 ((di).di_size == (di).di_spare[0]))
+#endif /* _UFS_DINODE_H_ */

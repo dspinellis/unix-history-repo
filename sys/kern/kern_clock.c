@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_clock.c	7.16 (Berkeley) 5/9/91
- *	$Id: kern_clock.c,v 1.4 1993/10/19 09:05:51 davidg Exp $
+ *	$Id: kern_clock.c,v 1.6 1993/10/25 02:02:51 davidg Exp $
  */
 
 #include "param.h"
@@ -50,6 +50,10 @@
 #ifdef GPROF
 #include "gprof.h"
 #endif
+
+/* From callout.h */
+struct callout *callfree, *callout, calltodo;
+int ncallout;
 
 /*
  * Clock handling routines.

@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode_pager.h	7.1 (Berkeley) 12/5/90
- *	$Id$
+ *	$Id: vnode_pager.h,v 1.2 1993/10/16 16:21:03 rgrimes Exp $
  */
 
 #ifndef	_VNODE_PAGER_
@@ -62,18 +62,12 @@ typedef struct vnpager	*vn_pager_t;
 void		vnode_pager_init();
 vm_pager_t	vnode_pager_alloc();
 void		vnode_pager_dealloc();
-int		vnode_pager_getpage(), vnode_pager_putpage();
+int		vnode_pager_getpage();
+int		vnode_pager_putpage();
 boolean_t	vnode_pager_haspage();
 
-struct pagerops vnodepagerops = {
-	vnode_pager_init,
-	vnode_pager_alloc,
-	vnode_pager_dealloc,
-	vnode_pager_getpage,
-	vnode_pager_putpage,
-	vnode_pager_haspage
-};
+extern struct pagerops vnodepagerops;
 
-#endif
+#endif /* KERNEL */
 
 #endif	/* _VNODE_PAGER_ */

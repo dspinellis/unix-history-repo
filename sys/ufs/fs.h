@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)fs.h	7.12 (Berkeley) 5/8/91
- *	$Id$
+ *	$Id: fs.h,v 1.2 1993/10/16 18:17:38 rgrimes Exp $
  */
+
+#ifndef _UFS_FS_H_
+#define _UFS_FS_H_ 1
 
 /*
  * Each disk drive contains some number of file systems.
@@ -439,3 +442,4 @@ struct	ocg {
  * NINDIR is the number of indirects in a file system block.
  */
 #define	NINDIR(fs)	((fs)->fs_nindir)
+#endif /* _UFS_FS_H_ */

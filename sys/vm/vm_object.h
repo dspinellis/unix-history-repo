@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.h	7.3 (Berkeley) 4/21/91
- *	$Id$
+ *	$Id: vm_object.h,v 1.2 1993/10/16 16:20:43 rgrimes Exp $
  */
 
 /*
@@ -114,21 +114,21 @@ struct vm_object_hash_entry {
 typedef struct vm_object_hash_entry	*vm_object_hash_entry_t;
 
 #ifdef	KERNEL
-queue_head_t	vm_object_cached_list;	/* list of objects persisting */
-int		vm_object_cached;	/* size of cached list */
-simple_lock_data_t	vm_cache_lock;	/* lock for object cache */
+extern queue_head_t	vm_object_cached_list; /* list of objects persisting */
+extern int		vm_object_cached; /* size of cached list */
+extern simple_lock_data_t	vm_cache_lock;	/* lock for object cache */
 
-queue_head_t	vm_object_list;		/* list of allocated objects */
-long		vm_object_count;	/* count of all objects */
-simple_lock_data_t	vm_object_list_lock;
+extern queue_head_t	vm_object_list;		/* list of allocated objects */
+extern long		vm_object_count;	/* count of all objects */
+extern simple_lock_data_t	vm_object_list_lock;
 					/* lock for object list and count */
 
-vm_object_t	kernel_object;		/* the single kernel object */
-vm_object_t	kmem_object;
+extern vm_object_t	kernel_object;		/* the single kernel object */
+extern vm_object_t	kmem_object;
 
 #define	vm_object_cache_lock()		simple_lock(&vm_cache_lock)
 #define	vm_object_cache_unlock()	simple_unlock(&vm_cache_lock)
-#endif	KERNEL
+#endif /* KERNEL */
 
 /*
  *	Declare procedures that operate on VM objects.
@@ -161,13 +161,13 @@ void		vm_object_print();
 #define	vm_object_lock_try(object)	(simple_lock_try(&(object)->Lock) ? ( ((object)->LockHolder = (int) current_thread()) , TRUE) : FALSE)
 #define	vm_object_sleep(event, object, interruptible) \
 					{ (object)->LockHolder = 0; thread_sleep((event), &(object)->Lock, (interruptible)); }
-#else	VM_OBJECT_DEBUG
+#else  /* VM_OBJECT_DEBUG */
 #define	vm_object_lock_init(object)	simple_lock_init(&(object)->Lock)
 #define	vm_object_lock(object)		simple_lock(&(object)->Lock)
 #define	vm_object_unlock(object)	simple_unlock(&(object)->Lock)
 #define	vm_object_lock_try(object)	simple_lock_try(&(object)->Lock)
 #define	vm_object_sleep(event, object, interruptible) \
 					thread_sleep((event), &(object)->Lock, (interruptible))
-#endif	VM_OBJECT_DEBUG
+#endif /* VM_OBJECT_DEBUG */
 
-#endif	_VM_OBJECT_
+#endif /* _VM_OBJECT_ */

@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_fault.c	7.6 (Berkeley) 5/7/91
- *	$Id$
+ *	$Id: vm_fault.c,v 1.5 1993/10/16 16:20:24 rgrimes Exp $
  */
 
 /*
@@ -73,6 +73,8 @@
 #include "vm.h"
 #include "vm_page.h"
 #include "vm_pageout.h"
+
+vm_statistics_data_t vm_stat;
 
 /*
  *	vm_fault:

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_inode.c	7.40 (Berkeley) 5/8/91
- *	$Id$
+ *	$Id: ufs_inode.c,v 1.3 1993/10/16 18:17:52 rgrimes Exp $
  */
 
 #include "param.h"
@@ -55,6 +55,8 @@
 #else
 #define	INOHASH(dev,ino)	(((unsigned)((dev)+(ino)))%INOHSZ)
 #endif
+
+u_long	nextgennumber;		/* next generation number to assign */
 
 union ihead {
 	union  ihead *ih_head[2];

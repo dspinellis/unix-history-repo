@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)inode.h	7.17 (Berkeley) 5/8/91
- *	$Id$
+ *	$Id: inode.h,v 1.3 1993/10/16 18:17:40 rgrimes Exp $
  */
+
+#ifndef _UFS_INODE_H_
+#define _UFS_INODE_H_ 1
 
 #ifdef KERNEL
 #include "../ufs/dinode.h"
@@ -121,7 +124,7 @@ extern int		vttoif_tab[];
 
 #define MAKEIMODE(indx, mode)	(int)(VTTOIF(indx) | (mode))
 
-u_long	nextgennumber;		/* next generation number to assign */
+extern u_long	nextgennumber;	/* next generation number to assign */
 
 extern ino_t	dirpref();
 
@@ -232,3 +235,4 @@ int ufs_islocked __P((struct vnode *vp));
 int ufs_advlock __P((struct vnode *vp, caddr_t id, int op, struct flock *fl,
 	int flags));
 #endif /* KERNEL */
+#endif /* _UFS_INODE_H_ */

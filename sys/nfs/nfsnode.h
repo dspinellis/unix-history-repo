@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	From:	@(#)nfsnode.h	7.12 (Berkeley) 4/16/91
- *	$Id: nfsnode.h,v 1.2 1993/09/09 22:06:24 rgrimes Exp $
+ *	$Id: nfsnode.h,v 1.3 1993/10/20 07:31:16 davidg Exp $
  */
 
 #ifndef __h_nfsnode
@@ -87,6 +87,7 @@ struct nfsnode {
 /*
  * Prototypes for NFS vnode operations
  */
+#ifdef KERNEL
 int	nfs_lookup __P((
 		struct vnode *vp,
 		struct nameidata *ndp,
@@ -226,4 +227,5 @@ int	nfs_advlock __P((
 		int flags));
 
 void	nfs_nput __P((struct vnode *));
+#endif /* KERNEL */
 #endif /* __h_nfsnode */

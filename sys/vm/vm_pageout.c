@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_pageout.c	7.4 (Berkeley) 5/7/91
- *	$Id$
+ *	$Id: vm_pageout.c,v 1.2 1993/10/16 16:20:47 rgrimes Exp $
  */
 
 /*
@@ -75,6 +75,7 @@
 #include "vm_pageout.h"
 #include "vmmeter.h"
 
+simple_lock_data_t	vm_pages_needed_lock;
 int	vm_pages_needed;		/* Event on which pageout daemon sleeps */
 int	vm_pageout_free_min = 0;	/* Stop pageout to wait for pagers at this free level */
 

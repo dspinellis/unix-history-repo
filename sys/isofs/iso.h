@@ -1,6 +1,9 @@
 /*
- *	$Id: iso.h,v 1.3 1993/07/19 13:40:01 cgd Exp $
+ *	$Id: iso.h,v 1.2 1993/07/20 03:27:24 jkh Exp $
  */
+
+#ifndef _ISOFS_ISO_H_
+#define _ISOFS_ISO_H_ 1
 
 #define ISODCL(from, to) (to - from + 1)
 
@@ -111,3 +114,4 @@ int isofs_fhtovp __P((struct mount *mp, struct fid *fhp, struct vnode **vpp));
 int isofs_vptofh __P((struct vnode *vp, struct fid *fhp));
 int isofs_init __P(());
 
+#endif /* _ISOFS_ISO_H_ */

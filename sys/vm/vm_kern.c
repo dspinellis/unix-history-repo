@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_kern.c	7.4 (Berkeley) 5/7/91
- *	$Id$
+ *	$Id: vm_kern.c,v 1.3 1993/10/16 16:20:30 rgrimes Exp $
  */
 
 /*
@@ -76,6 +76,12 @@
 #include "vm_page.h"
 #include "vm_pageout.h"
 #include "vm_kern.h"
+
+vm_map_t	kernel_map;
+vm_map_t	mb_map;
+vm_map_t	kmem_map;
+vm_map_t	phys_map;
+vm_map_t	buffer_map;
 
 /*
  *	kmem_alloc_pageable:

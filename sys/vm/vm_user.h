@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_user.h	7.2 (Berkeley) 4/21/91
- *	$Id$
+ *	$Id: vm_user.h,v 1.2 1993/10/16 16:21:00 rgrimes Exp $
  */
 
 /*
@@ -71,10 +71,23 @@
 #ifndef	_VM_USER_
 #define	_VM_USER_
 
+#include <sys/cdefs.h>
+
+#ifdef KERNEL
 int	vm_allocate();
 int	vm_deallocate();
 int	vm_inherit();
 int	vm_protect();
 int	vm_statistics();
+#else
+__BEGIN_DECLS
 
-#endif	_VM_USER_
+int	vm_allocate();
+int	vm_deallocate();
+int	vm_inherit();
+int	vm_protect();
+
+__END_DECLS
+#endif
+
+#endif /* _VM_USER_ */

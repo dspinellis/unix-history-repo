@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_meter.c	7.11 (Berkeley) 4/20/91
- *	$Id$
+ *	$Id: vm_meter.c,v 1.2 1993/10/16 16:20:37 rgrimes Exp $
  */
 
 #include "param.h"
@@ -41,6 +41,22 @@
 
 #include "vm_param.h"
 #include "vmmeter.h"
+
+struct vmtotal total;
+struct vmmeter cnt, rate, sum;
+
+#include "dkstat.h"		/* a convenient place to put these */
+long cp_time[CPUSTATES];	/* cpu time per state */
+int dk_busy;			/* number of busy disks */
+long dk_time[DK_NDRIVE];	/* access time per disk */
+long dk_seek[DK_NDRIVE];	/* seeks per disk */
+long dk_wds[DK_NDRIVE];		/*  */
+long dk_wpms[DK_NDRIVE];	/*  */
+long dk_xfer[DK_NDRIVE];	/*  */
+long tk_nin;			/* total characters in */
+long tk_nout;			/* total characters out */
+long tk_cancc;			/* total canonical characters */
+long tk_rawcc;			/* total raw characters */
 
 fixpt_t	averunnable[3];		/* load average, of runnable procs */
 

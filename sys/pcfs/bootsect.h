@@ -15,8 +15,11 @@
  *
  *  October 1992
  *
- *	$Id$
+ *	$Id: bootsect.h,v 1.2 1993/10/16 19:29:24 rgrimes Exp $
  */
+
+#ifndef _PCFS_BOOTSECT_H_
+#define _PCFS_BOOTSECT_H_ 1
 
 /*
  *  Format of a boot sector.  This is the first sector
@@ -70,3 +73,4 @@ union bootsector {
 #define	bsHeads		bsBPB.bpbHeads
 #define	bsHiddenSecs	bsBPB.bpbHiddenSecs
 #define	bsHugeSectors	bsBPB.bpbHugeSectors
+#endif /* _PCFS_BOOTSECT_H_ */

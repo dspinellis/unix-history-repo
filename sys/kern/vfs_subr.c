@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_subr.c	7.60 (Berkeley) 6/21/91
- *	$Id: vfs_subr.c,v 1.3 1993/10/16 15:25:25 rgrimes Exp $
+ *	$Id: vfs_subr.c,v 1.4 1993/10/18 14:22:16 davidg Exp $
  */
 
 /*
@@ -49,6 +49,8 @@
 #include "buf.h"
 #include "errno.h"
 #include "malloc.h"
+
+struct vnode *speclisth[SPECHSZ]; /* device special file vnode hash table */
 
 /*
  * Remove a mount point from the list of mounted filesystems.

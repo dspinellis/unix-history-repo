@@ -91,7 +91,7 @@ typedef struct slock	*simple_lock_t;
  */
 
 struct lock {
-#ifdef	vax
+#if defined(vax)
 	/*
 	 *	Efficient VAX implementation -- see field description below.
 	 */
@@ -103,8 +103,7 @@ struct lock {
 			:0;
 
 	simple_lock_data_t	interlock;
-#else	vax
-#ifdef	ns32000
+#elif defined(ns32000)
 	/*
 	 *	Efficient ns32000 implementation --
 	 *	see field description below.
@@ -117,7 +116,7 @@ struct lock {
 			can_sleep:1,
 			:0;
 
-#else	ns32000
+#else /* neither vax nor ns32000 */
 	/*	Only the "interlock" field is used for hardware exclusion;
 	 *	other fields are modified with normal instructions after
 	 *	acquiring the interlock bit.
@@ -129,7 +128,6 @@ struct lock {
 	boolean_t	waiting;	/* Someone is sleeping on lock */
 	boolean_t	can_sleep;	/* Can attempts to lock go to sleep */
 	int		read_count;	/* Number of accepted readers */
-#endif	/* ns32000 */
 #endif	/* vax */
 	char		*thread;	/* Thread that has lock, if recursive locking allowed */
 					/* (should be thread_t, but but we then have mutually
@@ -145,7 +143,7 @@ void		simple_lock_init();
 void		simple_lock();
 void		simple_unlock();
 boolean_t	simple_lock_try();
-#else	NCPUS > 1
+#else  /* NCPUS == 1 */
 /*
  *	No multiprocessor locking is necessary.
  */
