@@ -1,0 +1,462 @@
+
+
+
+DIG(1)                 BSD Reference Manual                DIG(1)
+
+
+NNAAMMEE
+       dig - send domain name query packets to name servers
+
+SSYYNNOOPPSSIISS
+       ddiigg   [_@_s_e_r_v_e_r]   _d_o_m_a_i_n   [_<_q_u_e_r_y_-_t_y_p_e_>]  [_<_q_u_e_r_y_-_c_l_a_s_s_>]
+       [_+_<_q_u_e_r_y_-_o_p_t_i_o_n_>] [_-_<_d_i_g_-_o_p_t_i_o_n_>] [_%_c_o_m_m_e_n_t]
+
+DDEESSCCRRIIPPTTIIOONN
+       _D_i_g (domain information groper) is a flexible command line
+       tool  which  can  be  used  to gather information from the
+       Domain Name System servers.  _D_i_g  has  two  modes:  simple
+       interactive  mode  which  makes  a single query, and batch
+       which executes a query for each in a list of several query
+       lines.  All  query options are accessible from the command
+       line.
+
+       The usual simple use of _d_i_g will take the form:
+
+            dig  @server  domain   query-type  query-class
+
+       where:
+
+       _s_e_r_v_e_r may be either  a  domain  name  or  a  dot-notation
+              Internet  address.  If this optional field is omit­
+              ted, _d_i_g will  attempt  to  use  the  default  name
+              server for your machine.
+
+              NNoottee::  If  a domain name is specified, this will be
+              resolved using  the  domain  name  system  resolver
+              (i.e.,  BIND). If your system does not support DNS,
+              you may _h_a_v_e to  specify  a  dot-notation  address.
+              Alternatively,  if  there  is a server at your dis­
+              posal somewhere,  all  that  is  required  is  that
+              /etc/resolv.conf  be present and indicate where the
+              default name  servers   reside,   so  that   _s_e_r_v_e_r
+              itself  can be resolved. See _r_e_s_o_l_v_e_r(5) for infor­
+              mation  on  /etc/resolv.conf.   (WARNING:  Changing
+              /etc/resolv.conf will affect the standard  resolver
+              library and  potentially several programs which use
+              it.) As an option, the user may set the environment
+              variable LOCALRES to name a file  which  is  to  be
+              used  instead of /etc/resolv.conf (LOCALRES is spe­
+              cific to the _d_i_g resolver and   not  referenced  by
+              the standard resolver). If the LOCALRES variable is
+              not  set  or  the  file  is   not   readable   then
+              /etc/resolv.conf will be used.
+
+       _d_o_m_a_i_n is  the  domain  name  for which you are requesting
+              information.  See OPTIONS [-x] for  convenient  way
+              to specify inverse address query.
+
+
+
+
+4.4BSD                   August 30, 1990                        1
+
+
+
+
+
+
+
+
+DIG(1)                 BSD Reference Manual                DIG(1)
+
+
+       _q_u_e_r_y_-_t_y_p_e
+              is  the  type  of information (DNS query type) that
+              you are requesting. If omitted, the default is  "a"
+              (T_A  =  address).   The following types are recog­
+              nized:
+
+              a      T_A      network address
+              any    T_ANY    all/any information about specified domain
+              mx     T_MX     mail exchanger for the domain
+              ns     T_NS     name servers
+              soa    T_SOA    zone of authority record
+              hinfo  T_HINFO  host information
+              axfr   T_AXFR   zone transfer
+                               (must ask an authoritative server)
+              txt    T_TXT    arbitrary number of strings
+
+              (See RFC 1035 for the complete list.)
+
+       _q_u_e_r_y_-_c_l_a_s_s
+              is the network class requested  in  the  query.  If
+              omitted,  the  default  is  "in" (C_IN = Internet).
+              The following classes are recognized:
+
+              in     C_IN     Internet class domain
+              any    C_ANY    all/any class information
+
+              (See RFC 1035 for the complete list.)
+
+              NNoottee:: "Any" can be used to specify a class and/or a
+              type  of query. _D_i_g will parse the first occurrence
+              of "any" to mean query-type  =  T_ANY.  To  specify
+              query-class  =  C_ANY you must either specify "any"
+              twice, or set query-class using  "-c"  option  (see
+              below).
+
+OOTTHHEERR OOPPTTIIOONNSS
+       %ignored-comment
+              "%"  is used to included an argument that is simply
+              not parsed.  This may be useful  if running _d_i_g  in
+              batch  mode.  Instead  of  resolving every @server-
+              domain-name in a list of queries, you can avoid the
+              overhead  of  doing  so,  and still have the domain
+              name on the command line as a reference. Example:
+
+                     dig    @128.9.0.32    %venera.isi.edu     mx
+              isi.edu
+
+
+       -<dig option>
+              "-"  is used to specify an option which effects the
+              operation  of  _d_i_g.  The  following   options   are
+
+
+
+4.4BSD                   August 30, 1990                        2
+
+
+
+
+
+
+
+
+DIG(1)                 BSD Reference Manual                DIG(1)
+
+
+              currently  available (although not guaranteed to be
+              useful):
+
+              -x _d_o_t_-_n_o_t_a_t_i_o_n_-_a_d_d_r_e_s_s
+                     Convenient form to specify  inverse  address
+                     mapping.   Instead  of  "dig  32.0.9.128.in-
+                     addr.arpa"   one   can   simply   "dig    -x
+                     128.9.0.32".
+
+              -f _f_i_l_e
+                     File for _d_i_g batch mode. The file contains a
+                     list of query  specifications  (_d_i_g  command
+                     lines)  which  are  to  be  executed succes­
+                     sively. Lines beginning with  ';',  '#',  or
+                     '\n'  are  ignored.  Other options may still
+                     appear on  command  line,  and  will  be  in
+                     effect for each batch query.
+
+              -T _t_i_m_e
+                     Time  in seconds between start of successive
+                     queries when running in batch mode.  Can  be
+                     used  to keep two or more batch _d_i_g commands
+                     running roughly in sync. Default is zero.
+
+              -p _p_o_r_t
+                     Port number. Query a name  server  listening
+                     to  a  non-standard  port number. Default is
+                     53.
+
+              -P[_p_i_n_g_-_s_t_r_i_n_g]
+                     After query returns, execute a _p_i_n_g(8)  com­
+                     mand  for  response  time  comparison.  This
+                     rather  unelegantly  makes  a  call  to  the
+                     shell. The last three lines of statistics is
+                     printed for the command:
+
+                            ping -s server_name 56 3
+
+                     If the optional "ping string" is present, it
+                     replaces "ping -s" in the shell command.
+
+              -t _q_u_e_r_y_-_t_y_p_e
+                     Specify type of query. May specify either an
+                     integer value to be  included  in  the  type
+                     field  or  use  the  abbreviated mnemonic as
+                     discussed above (i.e., mx  = T_MX).
+
+              -c _q_u_e_r_y_-_c_l_a_s_s
+                     Specify class of query. May  specify  either
+                     an integer value to be included in the class
+                     field or use  the  abbreviated  mnemonic  as
+
+
+
+4.4BSD                   August 30, 1990                        3
+
+
+
+
+
+
+
+
+DIG(1)                 BSD Reference Manual                DIG(1)
+
+
+                     discussed above (i.e., in = C_IN).
+
+              -envsav
+                     This flag specifies that the _d_i_g environment
+                     (defaults, print options, etc.),  after  all
+                     of the arguments are parsed, should be saved
+                     to a file to become the default environment.
+                     Useful  if  you do not like the standard set
+                     of defaults and do not desire to  include  a
+                     large  number  of  options  each time _d_i_g is
+                     used.  The environment consists of  resolver
+                     state  variable  flags, timeout, and retries
+                     as well as the flags  detailing  _d_i_g  output
+                     (see below).  If the shell environment vari­
+                     able LOCALDEF is set to the name of a  file,
+                     this is where the default _d_i_g environment is
+                     saved. If not, the file "DiG.env" is created
+                     in the current working directory.
+
+                     NNoottee::   LOCALDEF  is  specific  to  the  _d_i_g
+                     resolver, and will not affect  operation  of
+                     the standard resolver library.
+
+                     Each  time  _d_i_g  is  executed,  it looks for
+                     "./DiG.env" or the  file  specified  by  the
+                     shell environment variable LOCALDEF. If such
+                     file exists and is readable, then the  envi­
+                     ronment  is  restored  from this file before
+                     any arguments are parsed.
+
+              -envset
+                     This flag only  affects  batch  query  runs.
+                     When  "-envset"  is specified on a line in a
+                     _d_i_g batch file, the  _d_i_g  environment  after
+                     the   arguments   are  parsed,  becomes  the
+                     default environment for the duration of  the
+                     batch  file,  or  until  the next line which
+                     specifies "-envset".
+
+              -[no]stick
+                     This flag only affects batch query runs.  It
+                     specifies  that the _d_i_g environment (as read
+                     initially or set by "-envset" switch) is  to
+                     be  restored  before  each query (line) in a
+                     _d_i_g  batch  file.   The  default  "-nostick"
+                     means  that  the  _d_i_g  environment  does not
+                     stick, hence options specified on  a  single
+                     line  in  a  _d_i_g  batch  file will remain in
+                     effect for subsequent lines (i.e.  they  are
+                     not restored to the "sticky" default).
+
+
+
+
+4.4BSD                   August 30, 1990                        4
+
+
+
+
+
+
+
+
+DIG(1)                 BSD Reference Manual                DIG(1)
+
+
+       +<query option>
+              "+"  is  used to specify an option to be changed in
+              the query packet or to change _d_i_g output specifics.
+              Many  of  these are the same parameters accepted by
+              _n_s_l_o_o_k_u_p(1).  If an option  requires  a  parameter,
+              the form is as follows:
+
+                     +keyword[=value]
+
+              Most  keywords  can be abbreviated.  Parsing of the
+              "+" options  is very  simplistic --  a  value  must
+              not  be  separated from its keyword by white space.
+              The following keywords are currently available:
+
+              Keyword      Abbrev. Meaning [default]
+
+              [no]debug    (deb)   turn on/off debugging mode [deb]
+              [no]d2               turn on/off extra debugging mode [nod2]
+              [no]recurse  (rec)   use/don't use recursive lookup [rec]
+              retry=#      (ret)   set number of retries to # [4]
+              time=#       (ti)    set timeout length to # seconds [4]
+              [no]ko               keep open option (implies vc) [noko]
+              [no]vc               use/don't use virtual circuit [novc]
+              [no]defname  (def)   use/don't use default domain name [def]
+              [no]search   (sea)   use/don't use domain search list [sea]
+              domain=NAME  (do)    set default domain name to NAME
+              [no]ignore   (i)     ignore/don't ignore trunc. errors [noi]
+              [no]primary  (pr)     use/don't use primary server [nopr]
+              [no]aaonly   (aa)    authoritative query only flag [noaa]
+              [no]sort     (sor)   sort resource records [nosor]
+              [no]cmd              echo parsed arguments [cmd]
+              [no]stats    (st)    print query statistics [st]
+              [no]Header   (H)     print basic header [H]
+              [no]header   (he)    print header flags [he]
+              [no]ttlid    (tt)    print TTLs [tt]
+              [no]cl               print class info [nocl]
+              [no]qr               print outgoing query [noqr]
+              [no]reply    (rep)   print reply [rep]
+              [no]ques     (qu)    print question section [qu]
+              [no]answer   (an)    print answer section [an]
+              [no]author   (au)    print authoritative section [au]
+              [no]addit    (ad)    print additional section [ad]
+              pfdef                set to default print flags
+              pfmin                set to minimal default print flags
+              pfset=#              set print flags to #
+                                   (# can be hex/octal/decimal)
+              pfand=#              bitwise and print flags with #
+              pfor=#               bitwise or print flags with #
+
+              The retry and time options affect  the  retransmis­
+              sion strategy used by resolver library when sending
+
+
+
+4.4BSD                   August 30, 1990                        5
+
+
+
+
+
+
+
+
+DIG(1)                 BSD Reference Manual                DIG(1)
+
+
+              datagram queries. The algorithm is as follows:
+
+                   for i = 0 to retry - 1
+                       for j = 1 to num_servers
+                                send_query
+                                wait((time * (2**i)) / num_servers)
+                       end
+                   end
+
+              (Note:  _d_i_g  always  uses  a   value   of   1   for
+              num_servers.)
+
+DDEETTAAIILLSS
+       _D_i_g  once required a slightly modified version of the BIND
+       _r_e_s_o_l_v_e_r(3) library.  BIND's resolver has (as of BIND 4.9)
+       been  augmented  to  work properly with _D_i_g.  Essentially,
+       _D_i_g is a straight-forward (albeit not  pretty)  effort  of
+       parsing arguments and setting appropriate parameters.  _D_i_g
+       uses   resolver   routines   res_init(),    res_mkquery(),
+       res_send() as well as accessing _res structure.
+
+FFIILLEESS
+       /etc/resolv.conf  initial domain name and name server
+                         addresses
+
+EENNVVIIRROONNMMEENNTT
+       LOCALRES          file to use in place of /etc/resolv.conf
+       LOCALDEF          default environment file
+
+AAUUTTHHOORR
+       Steve Hotz hotz@isi.edu
+
+AACCKKNNOOWWLLEEDDGGMMEENNTTSS
+       _D_i_g uses functions from  _n_s_l_o_o_k_u_p(1)  authored  by  Andrew
+       Cherenson.
+
+BBUUGGSS
+       _D_i_g  has  a  serious  case  of "creeping featurism" -- the
+       result of considering several potential uses  during  it's
+       development.   It  would  probably benefit from a rigorous
+       diet.  Similarly, the print flags and granularity  of  the
+       items  they specify make evident their rather ad hoc gene­
+       sis.
+
+       _D_i_g does not consistently exit  nicely  (with  appropriate
+       status)  when  a  problem occurs somewhere in the resolver
+       (NOTE: most of the common exit cases are  handled).   This
+       is  particularly  annoying when running in batch mode.  If
+       it exits abnormally (and is not caught), the entire  batch
+       aborts;  when such an event is trapped, _d_i_g simply contin­
+       ues with the next query.
+
+
+
+4.4BSD                   August 30, 1990                        6
+
+
+
+
+
+
+
+
+DIG(1)                 BSD Reference Manual                DIG(1)
+
+
+SSEEEE AALLSSOO
+       named(8),  resolver(3),  resolver(5),  nslookup(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4.4BSD                   August 30, 1990                        7
+
+
+
+
+

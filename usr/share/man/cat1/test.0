@@ -1,0 +1,114 @@
+TEST(1)                      BSD Reference Manual                      TEST(1)
+
+NNAAMMEE
+     tteesstt - condition evaluation utility
+
+SSYYNNOOPPSSIISS
+     tteesstt _e_x_p_r_e_s_s_i_o_n
+
+DDEESSCCRRIIPPTTIIOONN
+     The tteesstt utility evaluates the expression and, if it evaluates to true,
+     returns a zero (true) exit status; otherwise it returns 1 (false).  If
+     there is no expression, test also returns 1 (false).
+
+     All operators and flags are separate arguments to the tteesstt utility.
+
+     The following primaries are used to construct expression:
+
+     --bb _f_i_l_e       True if _f_i_l_e exists and is a block special file.
+
+     --cc _f_i_l_e       True if _f_i_l_e exists and is a character special file.
+
+     --dd _f_i_l_e       True if _f_i_l_e exists and is a directory.
+
+     --ee _f_i_l_e       True if _f_i_l_e exists (regardless of type).
+
+     --ff _f_i_l_e       True if _f_i_l_e exists and is a regular file.
+
+     --gg _f_i_l_e       True if _f_i_l_e exists and its set group ID flag is set.
+
+     --hh _f_i_l_e       True if _f_i_l_e exists and is a symbolic link.
+
+     --nn _s_t_r_i_n_g     True if the length of _s_t_r_i_n_g is nonzero.
+
+     --pp _f_i_l_e       True if _f_i_l_e is a named pipe (FIFO).
+
+     --rr _f_i_l_e       True if _f_i_l_e _e_x_i_s_t_s _a_n_d _i_s _r_e_a_d_a_b_l_e_.
+
+     --ss _f_i_l_e       True if _f_i_l_e exists and has a size greater than zero.
+
+     --tt _[_f_i_l_e___d_e_s_c_r_i_p_t_o_r_]
+                   True if the file whose file descriptor number is
+                   _f_i_l_e___d_e_s_c_r_i_p_t_o_r (default 1) is open and is associated with
+                   a terminal.
+
+     --uu _f_i_l_e       True if _f_i_l_e exists and its set user ID flag is set.
+
+     --ww _f_i_l_e       True if _f_i_l_e exists and is writable.  True indicates only
+                   that the write flag is on.  The file is not writable on a
+                   read-only file system even if this test indicates true.
+
+     --xx _f_i_l_e       True if _f_i_l_e exists and is executable.  True indicates only
+                   that the execute flag is on.  If _f_i_l_e is a directory, true
+                   indicates that _f_i_l_e can be searched.
+
+     --zz _s_t_r_i_n_g     True if the length of _s_t_r_i_n_g is zero.
+
+     _s_t_r_i_n_g        True if _s_t_r_i_n_g is not the null string.
+
+     _s_1 == _s_2       True if the strings _s_1 and _s_2 are identical.
+
+     _s_1 !!== _s_2      True if the strings _s_1 and _s_2 are not identical.
+
+     _n_1 --eeqq _n_2     True if the integers _n_1 and _n_2 are algebraically equal.
+
+     _n_1 --nnee _n_2     True if the integers _n_1 and _n_2 are not algebraically equal.
+
+
+     _n_1 --ggtt _n_2     True if the integer _n_1 is algebraically greater than the
+                   integer _n_2.
+
+     _n_1 --ggee _n_2     True if the integer _n_1 is algebraically greater than or
+                   equal to the integer _n_2.
+
+     _n_1 --lltt _n_2     True if the integer _n_1 is algebraically less than the inte-
+                   ger _n_2.
+
+     _n_1 --llee _n_2     True if the integer _n_1 is algebraically less than or equal
+                   to the integer _n_2.
+
+     These primaries can be combined with the following operators:
+
+     !! _e_x_p_r_e_s_s_i_o_n  True if _e_x_p_r_e_s_s_i_o_n is false.
+
+     _e_x_p_r_e_s_s_i_o_n_1 --aa _e_x_p_r_e_s_s_i_o_n_2
+                   True if both _e_x_p_r_e_s_s_i_o_n_1 and _e_x_p_r_e_s_s_i_o_n_2 are true.
+
+     _e_x_p_r_e_s_s_i_o_n_1 --oo _e_x_p_r_e_s_s_i_o_n_2
+                   True if either _e_x_p_r_e_s_s_i_o_n_1 or _e_x_p_r_e_s_s_i_o_n_2 are true.
+
+     ((_e_x_p_r_e_s_s_i_o_n))  True if expression is true.
+
+     The --aa operator has higher precedence than the --oo operator.
+
+GGRRAAMMMMAARR AAMMBBIIGGUUIITTYY
+     The tteesstt grammar is inherently ambiguous.  In order to assure a degree of
+     consistency, the cases described in the IEEE Std1003.2 (``POSIX''), sec-
+     tion D11.2/4.62.4, standard are evaluated consistently according to the
+     rules specified in the standards document.  All other cases are subject
+     to the ambiguity in the command semantics.
+
+RREETTUURRNN VVAALLUUEESS
+     The tteesstt utility exits with one of the following values:
+
+     0       expression evaluated to true.
+
+     1       expression evaluated to false or expression was missing.
+
+     >1      An error occurred.
+
+SSTTAANNDDAARRDDSS
+     The tteesstt function is expected to be IEEE Std1003.2 (``POSIX'') compati-
+     ble.
+
+4.4BSD                           May 31, 1993                                2

@@ -1,0 +1,25 @@
+SYNC(8)                   BSD System Manager's Manual                  SYNC(8)
+
+NNAAMMEE
+     ssyynncc - force completion of pending disk writes (flush cache)
+
+SSYYNNOOPPSSIISS
+     ssyynncc
+
+DDEESSCCRRIIPPTTIIOONN
+     SSyynncc can be called to insure that all disk writes have been completed be-
+     fore the processor is halted in a way not suitably done by reboot(8) or
+     halt(8).  Generally, it is preferable to use reboot or halt to shut down
+     the system, as they may perform additional actions such as resynchroniz-
+     ing the hardware clock and flushing internal caches before performing a
+     final ssyynncc.
+
+     SSyynncc utilizes the sync(2) function call.
+
+SSEEEE AALLSSOO
+     sync(2),  fsync(2),  halt(8),  reboot(8),  update(8)
+
+HHIISSTTOORRYY
+     A ssyynncc command appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        May 31, 1993                                1

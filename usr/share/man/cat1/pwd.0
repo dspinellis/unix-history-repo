@@ -1,0 +1,26 @@
+PWD(1)                       BSD Reference Manual                       PWD(1)
+
+NNAAMMEE
+     ppwwdd - return working directory name
+
+SSYYNNOOPPSSIISS
+     ppwwdd
+
+DDEESSCCRRIIPPTTIIOONN
+     PPwwdd writes the absolute pathname of the current working directory to the
+     standard output.
+
+     The pwd utility exits 0 on success, and >0 if an error occurs.
+
+SSTTAANNDDAARRDDSS
+     The ppwwdd command is expected to be IEEE Std1003.2 (``POSIX'') compatible .
+
+SSEEEE AALLSSOO
+     cd(1),  csh(1),  getwd(3)
+
+BBUUGGSS
+     In csh(1) the command ddiirrss is always faster (although it can give a dif-
+     ferent answer in the rare case that the current directory or a containing
+     directory was moved after the shell descended into it).
+
+4th Berkeley Distribution        May 31, 1993                                1

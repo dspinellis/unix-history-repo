@@ -1,0 +1,53 @@
+CAT(1)                       BSD Reference Manual                       CAT(1)
+
+NNAAMMEE
+     ccaatt - concatenate and print files
+
+SSYYNNOOPPSSIISS
+     ccaatt [--bbeennssttuuvv] [--] [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     The ccaatt utility reads files sequentially, writing them to the standard
+     output.  The _f_i_l_e operands are processed in command line order.  A single
+     dash represents the standard input.
+
+     The options are as follows:
+
+     --bb      Implies the --nn option but doesn't number blank lines.
+
+     --ee      Implies the --vv option, and displays a dollar sign (`$') at the
+             end of each line as well.
+
+     --nn      Number the _o_u_t_p_u_t lines, starting at 1.
+
+     --ss      Squeeze multiple adjacent empty lines, causing the output to be
+             single spaced.
+
+     --tt      Implies the --vv option, and displays tab characters as (`^I') as
+             well.
+
+     --uu      The --uu option guarantees that the output is unbuffered.
+
+     --vv      Displays non-printing characters so they are visible.  Control
+             characters print as `^X' for control-X; the delete character (oc-
+             tal 0177) prints as `^?' Non-ascii characters (with the high bit
+             set) are printed as `M-' (for meta) followed by the character for
+             the low 7 bits.
+
+     The ccaatt utility exits 0 on success, and >0 if an error occurs.
+
+BBUUGGSS
+     Because of the shell language mechanism used to perform output redirec-
+     tion, the command ``cat file1 file 2 > file1'' will cause the original
+     data in file1 to be destroyed!
+
+SSEEEE AALLSSOO
+     head(1),  more(1),  pr(1),  tail(1)
+
+     Rob Pike, "UNIX Style, or cat -v Considered Harmful", _U_S_E_N_I_X _S_u_m_m_e_r
+     _C_o_n_f_e_r_e_n_c_e _P_r_o_c_e_e_d_i_n_g_s, 1983.
+
+HHIISSTTOORRYY
+     A ccaatt command appeared in Version 6 AT&T UNIX.
+
+3rd Berkeley Distribution        June 29, 1993                               1

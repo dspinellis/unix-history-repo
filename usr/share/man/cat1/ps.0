@@ -1,0 +1,307 @@
+PS(1)                        BSD Reference Manual                        PS(1)
+
+NNAAMMEE
+     ppss - process status
+
+SSYYNNOOPPSSIISS
+     ppss [--aaCCeehhjjllmmrrSSTTuuvvwwxx] [--MM _c_o_r_e] [--NN _s_y_s_t_e_m] [--OO _f_m_t] [--oo _f_m_t] [--pp _p_i_d] [--tt
+        _t_t_y] [--WW _s_w_a_p]
+     ppss [--LL]
+
+DDEESSCCRRIIPPTTIIOONN
+     PPss displays a header line followed by lines containing information about
+     your processes that have controlling terminals.  This information is
+     sorted by process ID.
+
+     The information displayed is selected based on a set of keywords (see the
+     --LL --OO and --oo options).  The default output format includes, for each pro-
+     cess, the process' ID, controlling terminal, cpu time (including both us-
+     er and system time), state, and associated command.
+
+     The options are as follows:
+
+     --aa      Display information about other users' processes as well as your
+             own.
+
+     --CC      Change the way the cpu percentage is calculated by using a
+             ``raw'' cpu calculation that ignores ``resident'' time (this nor-
+             mally has no effect).
+
+     --ee      Display the environment as well.
+
+     --hh      Repeat the information header as often as necessary to guarantee
+             one header per page of information.
+
+     --jj      Print information associated with the following keywords: user,
+             pid, ppid, pgid, sess, jobc, state, tt, time and command.
+
+     --LL      List the set of available keywords.
+
+     --ll      Display information associated with the following keywords: uid,
+             pid, ppid, cpu, pri, nice, vsz, rss, wchan, state, tt, time and
+             command.
+
+     --MM      Extract values associated with the name list from the specified
+             core instead of the default ``_/_d_e_v_/_k_m_e_m''.
+
+     --mm      Sort by memory usage, instead of by process ID.
+
+     --NN      Extract the name list from the specified system instead of the
+             default ``_/_v_m_u_n_i_x''.
+
+     --OO      Add the information associated with the space or comma separated
+             list of keywords specifed, after the process ID, in the default
+             information display.  Keywords may be appended with an equals
+             (``='') sign and a string.  This causes the printed header to use
+             the specified string instead of the standard header.
+
+     --oo      Display information associated with the space or comma separated
+             list of keywords specifed.  Keywords may be appended with an
+             equals (``='') sign and a string.  This causes the printed header
+             to use the specified string instead of the standard header.
+
+     --pp      Display information associated with the specified process ID.
+
+
+     --rr      Sort by current cpu usage, instead of by process ID.
+
+     --SS      Change the way the process time is calculated by summing all ex-
+             ited children to their parent process.
+
+     --TT      Display information about processes attached to the device asso-
+             ciated with the standard input.
+
+     --tt      Display information about processes attached to the specified
+             terminal device.
+
+     --uu      Display information associated with the following keywords: user,
+             pid, %cpu, %mem, vsz, rss, tt, state, start, time and command.
+             The --uu option implies the --rr option.
+
+     --vv      Display information associated with the following keywords: pid,
+             state, time, sl, re, pagein, vsz, rss, lim, tsiz, %cpu, %mem and
+             command.  The --vv option implies the --mm option.
+
+     --WW      Extract swap information from the specified file instead of the
+             default ``_/_d_e_v_/_s_w_a_p''.
+
+     --ww      Use 132 columns to display information, instead of the default
+             which is your window size.  If the --ww option is specified more
+             than once, ppss will use as many columns as necessary without re-
+             gard for your window size.
+
+     --xx      Display information about processes without controlling termi-
+             nals.
+
+     A complete list of the available keywords are listed below.  Some of
+     these keywords are further specifed as follows:
+
+     %cpu    The cpu utilization of the process; this is a decaying average
+             over up to a minute of previous (real) time.  Since the time base
+             over which this is computed varies (since processes may be very
+             young) it is possible for the sum of all %CPU fields to exceed
+             100%.
+
+     %mem    The percentage of real memory used by this process.
+
+     flags   The flags (in hexadecimal) associated with the process as in the
+             include file <_s_y_s_/_p_r_o_c_._h>:
+
+             SLOAD         0x0000001     in core
+             SSYS          0x0000002     swapper or pager process
+             SLOCK         0x0000004     process being swapped out
+             SSWAP         0x0000008     save area flag
+             STRC          0x0000010     process is being traced
+             SWTED         0x0000020     another tracing flag
+             SSINTR        0x0000040     sleep is interruptible
+             SKEEP         0x0000100     another flag to prevent swap out
+             SOMASK        0x0000200     restore old mask after taking signal
+             SWEXIT        0x0000400     working on exiting
+             SPHYSIO       0x0000800     doing physical I/O
+             SVFORK        0x0001000     process resulted from vfork(2)
+             SVFDONE       0x0002000     another vfork flag
+             SNOVM         0x0004000     no vm, parent in a vfork
+             SPAGV         0x0008000     init data space on demand, from vnode
+             SSEQL         0x0010000     user warned of sequential vm behavior
+             SUANOM        0x0020000     user warned of random vm behavior
+             STIMO         0x0040000     timing out during sleep
+             SNOCLDSTOP    0x0080000     no SIGCHLD when children stop
+             SCTTY         0x0100000     has a controlling terminal
+             SOWEUPC       0x0200000     owe process an addupc() call at next
+
+                                         ast
+             SSEL          0x0400000     selecting; wakeup/waiting danger
+             SEXEC         0x0800000     process called exec(2)
+             SHPUX         0x1000000     HP-UX process (HPUXCOMPAT)
+             SULOCK        0x2000000     locked in core after swap error
+             SPTECHG       0x4000000     pte's for process have changed
+
+     lim     The soft limit on memory used, specified via a call to
+             setrlimit(2).
+
+     lstart  The exact time the command started, using the ``%C'' format de-
+             scribed in strftime(3).
+
+     nice    The process scheduling increment (see setpriority(2)).
+
+     rss     the real memory (resident set) size of the process (in 1024 byte
+             units).
+
+     start   The time the command started.  If the command started less than
+             24 hours ago, the start time is displayed using the ``%l:ps.1p''
+             format described in strftime(3).  If the command started less
+             than 7 days ago, the start time is displayed using the
+             ``%a6.15p'' format.  Otherwise, the start time is displayed using
+             the ``%e%b%y'' format.
+
+     state   The state is given by a sequence of letters, for example,
+             ``RWNA''. The first letter indicates the run state of the pro-
+             cess:
+
+             D       Marks a process in disk (or other short term, uninter-
+                     ruptable) wait.
+             I       Marks a process that is idle (sleeping for longer than
+                     about 20 seconds).
+             R       Marks a runnable process.
+             S       Marks a process that is sleeping for less than about 20
+                     seconds.
+             T       Marks a stopped process.
+             Z       Marks a dead process (a ``zombie'').
+
+             Additional characters after these, if any, indicate additional
+             state information:
+
+             +       The process is in the foreground process group of its
+                     control terminal.
+             <       The process has raised CPU scheduling priority.
+             >       The process has specified a soft limit on memory require-
+                     ments and is currently exceeding that limit; such a pro-
+                     cess is (necessarily) not swapped.
+             A       the process has asked for random page replacement
+                     (VA_ANOM, from vadvise(2),  for example, lisp(1) in a
+                     garbage collect).
+             E       The process is trying to exit.
+             L       The process has pages locked in core (for example, for
+                     raw I/O).
+             N       The process has reduced CPU scheduling priority (see
+                     setpriority(2)).
+             S       The process has asked for FIFO page replacement (VA_SEQL,
+                     from vadvise(2),  for example, a large image processing
+                     program using virtual memory to sequentially address vo-
+                     luminous data).
+             s       The process is a session leader.
+             V       The process is suspended during a vfork.
+             W       The process is swapped out.
+             X       The process is being traced or debugged.
+
+
+
+     tt      An abbreviation for the pathname of the controlling terminal, if
+             any.  The abbreviation consists of the two letters following
+             ``_/_d_e_v_/_t_t_y'', or, for the console, ``co''.  This is followed by a
+             ``-'' if the process can no longer reach that controlling termi-
+             nal (i.e., it has been revoked).
+
+     wchan   The event (an address in the system) on which a process waits.
+             When printed numerically, the initial part of the address is
+             trimmed off and the result is printed in hex, for example,
+             0x80324000 prints as 324000.
+
+     When printing using the command keyword, a process that has exited and
+     has a parent that has not yet waited for the process (in other words, a
+     zombie) is listed as ``<defunct>'', and a process which is blocked while
+     trying to exit is listed as ``<exiting>''.  PPss makes an educated guess as
+     to the file name and arguments given when the process was created by ex-
+     amining memory or the swap area.  The method is inherently somewhat unre-
+     liable and in any event a process is entitled to destroy this informa-
+     tion, so the names cannot be depended on too much.  The ucomm (account-
+     ing) keyword can, however, be depended on.
+
+KKEEYYWWOORRDDSS
+     The following is a complete list of the available keywords and their
+     meanings.  Several of them have aliases (keywords which are synonyms).
+
+     %cpu       percentage cpu usage (alias pcpu)
+     %mem       percentage memory usage (alias pmem)
+     acflag     accounting flag (alias acflg)
+     command    command and arguments
+     cpu        short-term cpu usage factor (for scheduling)
+     flags      the process flags, in hexadecimal (alias f)
+     inblk      total blocks read (alias inblock)
+     jobc       job control count
+     ktrace     tracing flags
+     ktracep    tracing vnode
+     lim        memoryuse limit
+     logname    login name of user who started the process
+     lstart     time started
+     majflt     total page faults
+     minflt     total page reclaims
+     msgrcv     total messages received (reads from pipes/sockets)
+     msgsnd     total messages sent (writes on pipes/sockets)
+     nice       nice value (alias ni)
+     nivcsw     total involuntary context switches
+     nsigs      total signals taken (alias nsignals)
+     nswap      total swaps in/out
+     nvcsw      total voluntary context switches
+     nwchan     wait channel (as an address)
+     oublk      total blocks written (alias oublock)
+     p_ru       resource usage (valid only for zombie)
+     paddr      swap address
+     pagein     pageins (same as majflt)
+     pgid       process group number
+     pid        process ID
+     poip       pageouts in progress
+     ppid       parent process ID
+     pri        scheduling priority
+     re         core residency time (in seconds; 127 = infinity)
+     rgid       real group ID
+     rlink      reverse link on run queue, or 0
+     rss        resident set size
+     rsz        resident set size + (text size / text use count) (alias rs-
+                size)
+
+
+     ruid       real user ID
+     ruser      user name (from ruid)
+     sess       session pointer
+     sig        pending signals (alias pending)
+     sigcatch   caught signals (alias caught)
+     sigignore  ignored signals (alias ignored)
+     sigmask    blocked signals (alias blocked)
+     sl         sleep time (in seconds; 127 = infinity)
+     start      time started
+     state      symbolic process state (alias stat)
+     svgid      saved gid from a setgid executable
+     svuid      saved uid from a setuid executable
+     tdev       control terminal device number
+     time       accumulated cpu time, user + system (alias cputime)
+     tpgid      control terminal process group ID
+     tsess      control terminal session pointer
+     tsiz       text size (in Kbytes)
+     tt         control terminal name (two letter abbreviation)
+     tty        full name of control terminal
+     uprocp     process pointer
+     ucomm      name to be used for accounting
+     uid        effective user ID
+     upr        scheduling priority on return from system call (alias usrpri)
+     user       user name (from uid)
+     vsz        virtual size in Kbytes (alias vsize)
+     wchan      wait channel (as a symbolic name)
+     xstat      exit or stop status (valid only for stopped or zombie process)
+
+FFIILLEESS
+     /dev                    special files and device names
+     /dev/drum               default swap device
+     /dev/kmem               default kernel memory
+     /var/run/dev.db         /dev name database
+     /var/run/kvm_vmunix.db  system namelist database
+     /vmunix                 default system namelist
+
+SSEEEE AALLSSOO
+     kill(1),  w(1),  kvm(3),  strftime(3),  pstat(8)
+
+BBUUGGSS
+     Since ppss cannot run faster than the system and is run as any other sched-
+     uled process, the information it displays can never be exact.
+
+4th Berkeley Distribution        May 31, 1993                                5

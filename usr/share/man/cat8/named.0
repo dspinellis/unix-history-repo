@@ -1,0 +1,462 @@
+
+
+
+NAMED(8)           BSD System Manager's Manual           NAMED(8)
+
+
+NNAAMMEE
+       named - Internet domain name server
+
+SSYYNNOOPPSSIISS
+       nnaammeedd [ --dd _d_e_b_u_g_l_e_v_e_l ] [ --pp _p_o_r_t_# ] [{-b} _b_o_o_t_f_i_l_e ] [ --qq
+       ]
+
+DDEESSCCRRIIPPTTIIOONN
+       _N_a_m_e_d is the Internet domain name server.  See RFC's 1033,
+       1034,  and 1035 for more information on the Internet name-
+       domain system.  Without any arguments, _n_a_m_e_d will read the
+       default  boot  file _/_e_t_c_/_n_a_m_e_d_._b_o_o_t, read any initial data
+       and listen for queries.
+
+       Options are:
+
+       --dd     Print debugging information.  A  number  after  the
+              ``d'' determines the level of messages printed.
+
+       --pp     Use  a  different  port number.  The default is the
+              standard port  number  as  returned  by  getservby­
+              name(3) for service ``domain''.
+
+       --bb     Use  an  alternate boot file.  This is optional and
+              allows you to specify a file with a leading dash.
+
+       --qq     Trace all incoming queries if _n_a_m_e_d has  been  com­
+              piled with _Q_R_Y_L_O_G defined.
+
+       Any  additional  argument is taken as the name of the boot
+       file.  If multiple boot files are specified, only the last
+       is used.
+
+       The  boot  file  contains information about where the name
+       server is to get its initial data.  Lines in the boot file
+       cannot be continued on subsequent lines.  The following is
+       a small example:
+
+         ;
+         ;    boot file for name server
+         ;
+         directory /usr/local/adm/named
+
+         ; type     domain                source host/file          backup file
+
+         cache      .                                               root.cache
+         primary    Berkeley.EDU          berkeley.edu.zone
+         primary    32.128.IN-ADDR.ARPA   ucbhosts.rev
+         secondary  CC.Berkeley.EDU       128.32.137.8 128.32.137.3 cc.zone.bak
+         secondary  6.32.128.IN-ADDR.ARPA 128.32.137.8 128.32.137.3 cc.rev.bak
+         primary    0.0.127.IN-ADDR.ARPA                            localhost.rev
+
+
+
+4th Berkeley Distribution April 17, 1993                        1
+
+
+
+
+
+
+
+
+NAMED(8)           BSD System Manager's Manual           NAMED(8)
+
+
+         forwarders 10.0.0.78 10.2.0.78
+         ; slave
+
+       The ``directory'' line causes the  server  to  change  its
+       working directory to the directory specified.  This can be
+       important for the correct processing of $INCLUDE files  in
+       primary zone files.
+
+       The  ``cache''  line specifies that data in ``root.cache''
+       is to be placed in the backup cache.  Its main use  is  to
+       specify  data  such  as  locations of root domain servers.
+       This cache is not used during  normal  operation,  but  is
+       used  as  ``hints'' to find the current root servers.  The
+       file ``root.cache'' is in  the  same  format  as  ``berke­
+       ley.edu.zone''.  There can be more than one ``cache'' file
+       specified.  The ``root.cache'' file  should  be  retrieved
+       periodically  from FTP.RS.INTERNIC.NET since it contains a
+       list of root servers, and this list changes  periodically.
+
+       The  first  example  ``primary'' line states that the file
+       ``berkeley.edu.zone'' contains authoritative data for  the
+       ``Berkeley.EDU''  zone.   The  file  ``berkeley.edu.zone''
+       contains data in  the  master  file  format  described  in
+       RFC883.   All  domain names are relative to the origin, in
+       this case, ``Berkeley.EDU'' (see below for a more detailed
+       description).  The second ``primary'' line states that the
+       file ``ucbhosts.rev'' contains authoritative data for  the
+       domain ``32.128.IN-ADDR.ARPA,'' which is used to translate
+       addresses in network 128.32  to  hostnames.   Each  master
+       file  should  begin  with  an SOA record for the zone (see
+       below).
+
+       The first example ``secondary'' line  specifies  that  all
+       authoritative  data  under  ``CC.Berkeley.EDU''  is  to be
+       transferred from the name server at 128.32.137.8.  If  the
+       transfer  fails it will try 128.32.137.3 and continue try­
+       ing the addresses, up to 10, listed  on  this  line.   The
+       secondary  copy  is  also  authoritative for the specified
+       domain.  The first non-dotted-quad address  on  this  line
+       will  be taken as a filename in which to backup the trans­
+       fered zone.  The name server will load the zone from  this
+       backup  file  if it exists when it boots, providing a com­
+       plete copy even if the  master  servers  are  unreachable.
+       Whenever a new copy of the domain is received by automatic
+       zone transfer from one of the master  servers,  this  file
+       will  be  updated.   If no file name is given, a temporary
+       file will be used, and will be deleted after each success­
+       ful  zone transfer.  This is not recommended since it is a
+       needless waste of bandwidth.  The  second  example  ``sec­
+       ondary''  line states that the address-to-hostname mapping
+       for the subnet 128.32.136 should be obtained from the same
+
+
+
+4th Berkeley Distribution April 17, 1993                        2
+
+
+
+
+
+
+
+
+NAMED(8)           BSD System Manager's Manual           NAMED(8)
+
+
+       list of master servers as the previous zone.
+
+       The   ``forwarders''   line  specifies  the  addresses  of
+       sitewide servers that will accept recursive  queries  from
+       other  servers.   If  the  boot file specifies one or more
+       forwarders, then the server will send all queries for data
+       not  in the cache to the forwarders first.  Each forwarder
+       will be asked in turn until an answer is returned  or  the
+       list  is  exhausted.   If  no answer is forthcoming from a
+       forwarder, the server will continue as it would have with­
+       out  the  forwarders  line unless it is in ``slave'' mode.
+       The  forwarding  facility  is  useful  to  cause  a  large
+       sitewide  cache to be generated on a master, and to reduce
+       traffic over links to outside servers.   It  can  also  be
+       used  to  allow  servers  to  run  that do not have access
+       directly to the Internet, but wish to act as  though  they
+       do.
+
+       The  ``slave''  line  (shown commented out) is used to put
+       the server in slave mode.  In this mode, the  server  will
+       only  make queries to forwarders.  This option is normally
+       used on machine that wish to run a server but for physical
+       or  administrative  reasons  cannot be given access to the
+       Internet, but have access to a host that does have access.
+
+       The  ``sortlist''  line  can  be used to indicate networks
+       that are to be preferred over other networks  Queries  for
+       host  addresses  from  hosts  on  the  same network as the
+       server will receive responses with local network addresses
+       listed  first, then addresses on the sort list, then other
+       addresses.
+
+       The ``xfrnets'' directive  (not  shown)  can  be  used  to
+       implement  primative access control.  If this directive is
+       given, then your name server will only answer zone  trans­
+       fer  requests  from  hosts which are on networks listed in
+       your ``xfrnets'' directives.  This directive may  also  be
+       given  as ``tcplist'' for compatibility with older, inter­
+       rim servers.
+
+       The ``include'' directive (not shown) can be used to  pro­
+       cess  the  contents  of  some  other  file  as though they
+       appeared in place of the ``include'' directive.   This  is
+       useful  if  you have a lot of zones or if you have logical
+       groupings of zones which are maintained by different  peo­
+       ple.   The  ``include'' directive takes one argument, that
+       being the name of  the  file  whose  contents  are  to  be
+       included.   No quotes are neccessary around the file name.
+
+       The ``bogusns'' directive (not shown) tells BIND  that  no
+       queries  are  to  be  sent  to  the  specified name server
+
+
+
+4th Berkeley Distribution April 17, 1993                        3
+
+
+
+
+
+
+
+
+NAMED(8)           BSD System Manager's Manual           NAMED(8)
+
+
+       addresses (which are specified as  dotted  quads,  not  as
+       domain  names).   This  is  useful when you know that some
+       popular server has bad data in a zone or  cache,  and  you
+       want  to  avoid  contamination  while the problem is being
+       fixed.
+
+       The master file consists of control information and a list
+       of resource records for objects in the zone of the forms:
+
+              $INCLUDE <filename> <opt_domain>
+              $ORIGIN <domain>
+              <domain> <opt_ttl> <opt_class> <type> <resource_record_data>
+
+       where  _d_o_m_a_i_n is "." for root, "@" for the current origin,
+       or a standard domain name. If _d_o_m_a_i_n is a standard  domain
+       name  that  does not end with ``.'', the current origin is
+       appended to the domain. Domain names ending with ``.'' are
+       unmodified.   The  _o_p_t___d_o_m_a_i_n  field  is used to define an
+       origin for the data in an included file.  It is equivalent
+       to  placing  a  $ORIGIN statement before the first line of
+       the included file.  The field is  optional.   Neither  the
+       _o_p_t___d_o_m_a_i_n  field  nor  $ORIGIN statements in the included
+       file modify the current origin for this file.  The _o_p_t___t_t_l
+       field  is  an optional integer number for the time-to-live
+       field.  It defaults to zero,  meaning  the  minimum  value
+       specified  in  the SOA record for the zone.  The _o_p_t___c_l_a_s_s
+       field is the object address type; currently only one  type
+       is  supported,  IINN,  for  objects  connected  to the DARPA
+       Internet.  The _t_y_p_e field contains one  of  the  following
+       tokens;  the  data  expected  in  the _r_e_s_o_u_r_c_e___r_e_c_o_r_d___d_a_t_a
+       field is in parentheses.
+
+       A        a host address (dotted quad)
+
+       NS       an authoritative name server (domain)
+
+       MX       a mail exchanger (domain), preceded by a  prefer­
+                ence  value (0..32767), with lower numeric values
+                representing higher logical preferences.
+
+       CNAME    the canonical name for an alias (domain)
+
+       SOA      marks the start of a zone of authority (domain of
+                originating host, domain address of maintainer, a
+                serial number and  the  following  parameters  in
+                seconds:  refresh,  retry, expire and minimum TTL
+                (see RFC883)).
+
+       NULL     a null resource record (no format or data)
+
+       RP       a  Responsible  Person  for  some   domain   name
+
+
+
+4th Berkeley Distribution April 17, 1993                        4
+
+
+
+
+
+
+
+
+NAMED(8)           BSD System Manager's Manual           NAMED(8)
+
+
+                (mailbox, TXT-referral)
+
+       PTR      a domain name pointer (domain)
+
+       HINFO    host information (cpu_type OS_type)
+
+       Resource  records  normally  end at the end of a line, but
+       may be continued across lines between opening and  closing
+       parentheses.   Comments  are  introduced by semicolons and
+       continue to the end of the line.
+
+       Note that there are other resource record types, not shown
+       here.   You  should  consult  the  BIND  Operations  Guide
+       (``BOG'') for the complete  list.   Some  resource  record
+       types  may  have  been standardized in newer RFC's but not
+       yet implemented in this version of BIND.
+
+       Each master zone file should begin with an SOA record  for
+       the zone.  An example SOA record is as follows:
+
+       @    IN   SOA  ucbvax.Berkeley.EDU. rwh.ucbvax.Berkeley.EDU. (
+                           1989020501     ; serial
+                           10800     ; refresh
+                           3600 ; retry
+                           3600000   ; expire
+                           86400 )   ; minimum
+
+       The SOA specifies a serial number, which should be changed
+       each time the master  file  is  changed.   Note  that  the
+       serial number can be given as a dotted number, but this is
+       a _v_e_r_y unwise thing to do since the translation to  normal
+       integers  is  via concatenation rather than multiplication
+       and addition.  You can spell out the year, month,  day  of
+       month,  and  0..99 version number and still fit inside the
+       unsigned 32-bit size of this field.   It's  true  that  we
+       will  have  to  rethink  this  strategy  in  the year 4294
+       (Greg.) but we're not worried about it.  Secondary servers
+       check  the  serial  number  at  intervals specified by the
+       refresh time in seconds; if the serial number  changes,  a
+       zone  transfer  will  be  done to load the new data.  If a
+       master server cannot be contacted when a refresh  is  due,
+       the  retry  time specifies the interval at which refreshes
+       should be attempted.  If a master server  cannot  be  con­
+       tacted  within  the interval given by the expire time, all
+       data from the zone is discarded by secondary servers.  The
+       minimum  value  is  the  time-to-live  (``TTL'')  used  by
+       records in the file with no explicit time-to-live value.
+
+NNOOTTEESS
+       The boot file directives ``domain'' and ``suffixes''  have
+       been   obsoleted   by   a   more   useful   resolver-based
+
+
+
+4th Berkeley Distribution April 17, 1993                        5
+
+
+
+
+
+
+
+
+NAMED(8)           BSD System Manager's Manual           NAMED(8)
+
+
+       implementation of suffixing for partially qualified domain
+       names.   The prior mechanisms could fail under a number of
+       situations, especially when then local nameserver did  not
+       have complete information.
+
+       The  following signals have the specified effect when sent
+       to the server process using the _k_i_l_l(1) command.
+
+       SIGHUP Causes  server  to  read  named.boot   and   reload
+              database.    If   the  server  is  built  with  the
+              FORCED_RELOAD compile-time option, then SIGHUP will
+              also cause the server to check the serial number on
+              all secondary zones.  Normally the  serial  numbers
+              are only checked at the SOA-specified intervals.
+
+       SIGINT Dumps    current    data    base   and   cache   to
+              /var/tmp/named_dump.db
+
+       SIGIOT Dumps statistics data into /var/tmp/named.stats  if
+              the server is compiled -DSTATS.  Statistics data is
+              appended to the file.
+
+       SIGSYS Dumps the profiling data in /var/tmp if the  server
+              is  compiled  with  profiling (server forks, chdirs
+              and exits).
+
+       SIGTERM
+              Dumps the primary  and  secondary  database  files.
+              Used  to  save  modified  data  on  shutdown if the
+              server is compiled with dynamic updating enabled.
+
+       SIGUSR1
+              Turns on debugging; each SIGUSR1  increments  debug
+              level.  (SIGEMT on older systems without SIGUSR1)
+
+       SIGUSR2
+              Turns  off  debugging completely.  (SIGFPE on older
+              systems without SIGUSR2)
+
+       SIGWINCH
+              Toggles logging of all incoming  queries  via  sys­
+              log(8) (requires server to have been built with the
+              QRYLOG option).
+
+FFIILLEESS
+       /etc/named.boot          name server configuration boot file
+       /etc/named.pid           the process id (/var/run/named.pid on newer systems)
+       /var/tmp/named.run       debug output
+       /var/tmp/named_dump.db   dump of the name server database
+       /var/tmp/named.stats     nameserver statistics data
+
+
+
+
+4th Berkeley Distribution April 17, 1993                        6
+
+
+
+
+
+
+
+
+NAMED(8)           BSD System Manager's Manual           NAMED(8)
+
+
+SSEEEE AALLSSOO
+       kill(1),   gethostbyname(3N),   signal(3c),   resolver(3),
+       resolver(5),  hostname(7),  RFC 882, RFC 883, RFC 973, RFC
+       974, RFC 1033, RFC 1034, RFC 1035, RFC 1123,  _N_a_m_e  _S_e_r_v_e_r
+       _O_p_e_r_a_t_i_o_n_s _G_u_i_d_e _f_o_r _B_I_N_D
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4th Berkeley Distribution April 17, 1993                        7
+
+
+
+
+

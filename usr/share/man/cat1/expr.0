@@ -1,0 +1,132 @@
+
+
+
+EXPR(1)                BSD Reference Manual               EXPR(1)
+
+
+NNAAMMEE
+       expr - evaluate arguments as an expression
+
+SSYYNNOOPPSSIISS
+       eexxpprr arg ......
+
+DDEESSCCRRIIPPTTIIOONN
+       The  arguments  are taken as an expression.  After evalua-
+       tion, the result is written on the standard output.   Each
+       token of the expression is a separate argument.
+
+       The  operators and keywords are listed below.  The list is
+       in order of increasing precedence, with  equal  precedence
+       operators grouped.
+
+       _e_x_p_r _| _e_x_p_r
+              yields  the  first  _e_x_p_r  if it is neither null nor
+              `0', otherwise yields the second _e_x_p_r_.
+
+       _e_x_p_r _& _e_x_p_r
+              yields the first _e_x_p_r if neither _e_x_p_r  is  null  or
+              `0', otherwise yields `0'.
+
+       _e_x_p_r _r_e_l_o_p _e_x_p_r
+              where _r_e_l_o_p _i_s _o_n_e _o_f < <= = != >= >, yields `1' if
+              the indicated comparison is  true,  `0'  if  false.
+              The  comparison  is  numeric if both _e_x_p_r are inte-
+              gers, otherwise lexicographic.
+
+       _e_x_p_r + _e_x_p_r
+       _e_x_p_r - _e_x_p_r
+              addition or subtraction of the arguments.
+
+       _e_x_p_r * _e_x_p_r
+       _e_x_p_r / _e_x_p_r
+       _e_x_p_r % _e_x_p_r
+              multiplication, division, or remainder of the argu-
+              ments.
+
+       _e_x_p_r : _e_x_p_r
+              The  matching  operator  compares  the string first
+              argument with the regular expression  second  argu-
+              ment; regular expression syntax is the same as that
+              of _e_d(1).  The \\((......\\)) pattern symbols can be  used
+              to  select a portion of the first argument.  Other-
+              wise, the matching operator yields  the  number  of
+              characters matched (`0' on failure).
+
+       ( _e_x_p_r )
+              parentheses for grouping.
+
+
+
+
+7th Edition                May 31, 1993                         1
+
+
+
+
+
+
+
+
+EXPR(1)                BSD Reference Manual               EXPR(1)
+
+
+       Examples:
+
+       To add 1 to the Shell variable _a:
+
+              a=`expr $a + 1`
+
+       To  find the filename part (least significant part) of the
+       pathname stored in variable _a_, which may or may  not  con-
+       tain `/':
+
+              expr $a : '.*/\(.*\)' '|' $a
+
+       Note the quoted Shell metacharacters.
+
+SSEEEE AALLSSOO
+       sh(1), test(1)
+
+DDIIAAGGNNOOSSTTIICCSS
+       _E_x_p_r returns the following exit codes:
+
+            0    if the expression is neither null nor `0',
+            1    if the expression is null or `0',
+            2    for invalid expressions.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7th Edition                May 31, 1993                         2
+
+
+
+
+

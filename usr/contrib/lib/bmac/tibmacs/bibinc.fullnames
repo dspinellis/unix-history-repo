@@ -1,0 +1,862 @@
+I bibinc.fulllocal
+D a_um \"{a}
+D e_um \"{e}
+D o_um \"{o}
+D u_um \"{u}
+D A_um \"{A}
+D O_um \"{O}
+D U_um \"{U}
+D o_sl \o
+D TCOLADA $\mbox{TCOL}_\mbox{Ada}$
+D dash --
+D hyphen \-
+D AMP \&
+D NO \#
+D TEX \TeX
+D fuer f|u_um|r
+D ARCH   Architecture
+D COMP   Computer
+D COMPs  Computers
+D COMPg  Computing
+D CONF   Conference
+D CORP   Corporation
+D CS     |COMP| |SCI|
+D CSD    |CS| |DEPT|
+D DCS    |DEPT| of |CS|
+D DEPT   Department
+D DISS   Dissertation
+D ENG    Engineering
+D EE     Electrical |ENG|
+D INTL   International
+D JOUR   Journal
+D LANG   Language
+D LANGs  Languages
+D NATL   National
+D PHD    PhD |DISS|
+D PROC   Proceedings
+D PROG   Program
+D PRing  |PROG|ming
+D PROCSIGPLAN  |PROC| of the ACM-SIGPLAN
+D SCI    Science
+D SCIs          Sciences
+D SOFT   Software
+D SYMP   Symposium
+D SYS    System
+D SYSs          Systems
+D TRANS  Transactions
+D TR     Technical Report
+D UNIV   University
+D UNIVCA |UNIV| of California
+D ACMCS  ACM |COMPg| Surveys
+D ACTA  Acta Informatica
+D AT&TTJ AT|AMP|T Technical Journal
+D BIT  BIT
+D BSTJ  Bell |SYS| Technical |JOUR|
+D CACM  Communications of the ACM
+D CAN  |COMP| |ARCH| News
+D COMPJOUR  The |COMP| |JOUR|
+D COMPLANG  |JOUR| of |COMP| |LANGs|
+D COMPSUR  |ACMCS|
+D HCI Human-|COMP| Interaction
+D HUMFACT Human Factors
+D I&C Information and Control
+D IBMJRD  IBM |JOUR| of Research and Development
+D IBMSJ  IBM |SYSs| |JOUR|
+D IEEEC  IEEE |COMP|
+D IEEEIT  IEEE |TRANS| on Information Theory
+D IEEEM  IEEE Micro
+D IEEESW  IEEE |SOFT|
+D IEEETC  IEEE |TRANS| on |COMPs|
+D IEEETIT  |IEEEIT|
+D IEEETSE  IEEE |TRANS| on |SOFT| |ENG|
+D IEEETSMC IEEE |TRANS| on |SYSs|, Man, and Information |SCIs|
+D IJCAI |INTL| Joint |CONF| on Artificial Intelligence
+D IJCIS  |INTL| |JOUR| of |COMP| and Information |SCIs|
+D IJCM  |INTL| |JOUR| of |COMP| Mathematics
+D IJMMS  |INTL| |JOUR| of Man-Machine Studies
+D IPL  Information Processing Letters
+D JACM  |JOUR| of the ACM
+D JALG  |JOUR| of Algorithms
+D JCSS  |JOUR| of |COMP| and |SYS| |SCIs|
+D JPhil  |JOUR| of Philosophy
+D JS&S |JOUR| of |SYSs| and |SOFT|
+D MATHST  Mathematics |SYSs| Theory
+D NMATH  Numerical Mathematics
+D PerfEv  Performance Evaluation
+D SIAMJAM  SIAM |JOUR| on Applied Mathematics
+D SIAMJC  SIAM |JOUR| on |COMPg|
+D SIAMJNA  SIAM |JOUR| on Numerical Analysis
+D SIGACT  SIGACT News
+D SIGCHI ACM SIGCHI Bulletin
+D SIGPLAN  SIGPLAN Notices
+D SIGSOFT  |SOFT| |ENG| Notes
+D SP&E  |SOFT||dash|Practice |AMP| Experience
+D SPE |SP&E|
+D TIPSJ  |TRANS| of the Information Processing Society of Japan (Japanese)
+D TOCS  ACM |TRANS| on |COMP| |SYSs|
+D TODS  ACM |TRANS| on Database |SYSs|
+D TOG   ACM |TRANS| on Graphics
+D TOIS ACM |TRANS| on Information |SYSs|
+D TOMS  ACM |TRANS| on Mathematical |SOFT|
+D TOOIS  ACM |TRANS| on Office Information |SYSs|
+D TOPLAS  ACM |TRANS| on |PRing| |LANGs| and |SYSs|
+D TSE |IEEETSE|
+D ACC4  |PROC| 4th Australian |COMP| |CONF|\
+%C Adelaide, South Australia\
+%D 1969
+D ACMANNCONF  |PROC| ACM Annual |CONF|
+D ACMNATCONF  |PROC| ACM National |CONF|
+D ADA80  |ADAPL80|
+D ADAINUSE  Ada In Use: |PROC| of the Ada |INTL| |CONF|\
+%D |MAY| 1985\
+%C Paris, France
+D ADAPL80  |PROCSIGPLAN| |SYMP| on the Ada |PRing| |LANG|, |SIGPLAN|\
+%V 15\
+%N 11\
+%C Boston, MA\
+%D |DEC| 1980
+D ADATEC82  AdaTEC |CONF| on Ada\
+%C Arlington, VA\
+%D |OCT| 1982
+D AFIPS  AFIPS
+D NCC  NCC
+D FJCC  FJCC
+D SJCC  SJCC
+D AFIPScity  Montvale,  NJ\
+%I AFIPS Press
+D AFIPSa  |PROC| AFIPS |NATL| |COMP| |CONF|\
+%C |AFIPScity|
+D FJCCa  |PROC| AFIPS Fall Joint |COMP| |CONF|\
+%C |AFIPScity|
+D FJCC66  |FJCCa|\
+%V 29\
+%D 1966
+D FJCC67  |FJCCa|\
+%V 31\
+%D 1967
+D FJCC68  |FJCCa|\
+%V 33\
+%D 1968
+D FJCC69  |FJCCa|\
+%V 35\
+%D 1969
+D FJCC72  |FJCCa|\
+%V 41\
+%D 1972
+D AFIPS73  |AFIPSa|\
+%V 42\
+%D 1973
+D AFIPS74  |AFIPSa|\
+%V 43\
+%D 1974
+D AFIPS75  |AFIPSa|\
+%V 44\
+%D 1975
+D AFIPS76  |AFIPSa|\
+%V 45\
+%D 1976
+D AFIPS77  |AFIPSa|\
+%V 46\
+%D 1977
+D AFIPS78  |AFIPSa|\
+%V 47\
+%D 1978
+D AFIPS79  |AFIPSa|\
+%V 48\
+%D 1979
+D AFIPS80  |AFIPSa|\
+%V 49\
+%D 1980
+D AFIPS81  |AFIPSa|\
+%V 50\
+%D 1981
+D AFIPS82  |AFIPSa|\
+%V 51\
+%D 1982
+D AFIPS83  |AFIPSa|\
+%V 52\
+%D 1983
+D AFIPS84  |AFIPSa|\
+%V 53\
+%D 1984
+D AFIPS85  |AFIPSa|\
+%V 54\
+%D 1985
+D AFIPS86  |AFIPSa|\
+%V 55\
+%D 1986
+D AFIPS87  |AFIPSa|\
+%V 56\
+%D 1987
+D SJCCa  |PROC| AFIPS Spring Joint |COMP| |CONF|\
+%C |AFIPScity|
+D SJCC67  |SJCCa|\
+%V 30\
+%D 1967
+D SJCC68  |SJCCa|\
+%V 32\
+%D 1968
+D SJCC69  |SJCCa|\
+%V 34\
+%D 1969
+D SJCC72  |SJCCa|\
+%V 40\
+%D 1972
+D NCC73  |AFIPS73|
+D NCC74  |AFIPS74|
+D NCC75  |AFIPS75|
+D NCC76  |AFIPS76|
+D NCC77  |AFIPS77|
+D NCC78  |AFIPS78|
+D NCC79  |AFIPS79|
+D NCC80  |AFIPS80|
+D NCC81  |AFIPS81|
+D NCC82  |AFIPS82|
+D NCC83  |AFIPS83|
+D NCC84  |AFIPS84|
+D NCC85  |AFIPS85|
+D NCC86  |AFIPS86|
+D NCC87  |AFIPS87|
+D APE86  |INTL| Workshop on Advanced |PRing| Environments\
+%I |SPRINGER|\
+%D 1986
+D ASPLOS |SYMP| on Architectural Support for |PRing| |LANGs| and Operating |SYSs|
+D ASPLOS82  |ASPLOS| ACM |SIGPLAN|\
+%C Palo Alto, CA\
+%D |MAR| 1982\
+%V 17\
+%N 4
+D ASPLOS87  |ASPLOS|\
+%C Palo Alto, CA\
+%D |OCT| 5-8, 1987
+D ASPLOS89 |ASPLOS|\
+%C Boston, MA\
+%D |APR| 3-6, 1989
+D CAAP Colloquium on Trees in Algebra and |PRing|
+D ESOP European |SYMP| on |PRing|
+D CAAP90 Fifteenth |CAAP|, Third |ESOP|\
+%C Copenhagen, DK\
+%D |MAY| 15-18, 1990
+D CCC  |SYMP| on Compiler Construction, |SIGPLAN|
+D CCC79  |PROCSIGPLAN| 1979 |CCC|\
+%C Denver, CO\
+%D |AUG| 1979\
+%V 14\
+%N 8
+D CCC82  |PROCSIGPLAN| 1982 |CCC|\
+%C Boston, MA\
+%D |JUN| 1982\
+%V 17\
+%N 6
+D CCC84  |PROCSIGPLAN| 1984 |CCC|\
+%C Montreal, Quebec\
+%D |JUN| 1984\
+%V 19\
+%N 6
+D CCC86  |PROCSIGPLAN| 1986 |CCC|\
+%C Palo Alto, California\
+%D |JUN| 1986\
+%V 21\
+%N 7
+D CCC88 |SIGPLAN88|
+D SIGPLAN88 SIGPLAN '88 |CONF| on |PRing| |LANG| Design and Implementation\
+%D |JUN| 22-24, 1988\
+%C Atlanta, Georgia\
+%V 23\
+%N 7
+D CCC89 |SIGPLAN89|
+D SIGPLAN89 SIGPLAN '89 |CONF| on |PRing| |LANG| Design and Implementation\
+%D |JUN| 21-23, 1989\
+%C Portland, Oregon\
+%V 24\
+%N 7
+D CHI |PROC| SIGCHI |CONF| on Human Factors in |COMPg| |SYSs|
+D CHI83  |CHI|\
+%C Boston, MA\
+%D |DEC| 1983
+D CHI85 |CHI|\
+%C San Francisco, CA\
+%D |APR| 1985
+D CHI86 |CHI|\
+%C Boston, MA\
+%D |APR| 1986
+D CHI87 |CHI|\
+%C Toronto, Canada\
+%D |APR| 1987
+D CHI88 |CHI|\
+%C Washington, DC\
+%D |MAY| 1988
+D CHI89 |CHI|\
+%C Austin, TX\
+%D |MAY| 1989
+D CHI90 |CHI|\
+%C Seattle, WA\
+%D |APR| 1990
+D COMPARCH  Annual |SYMP| on |COMP| |ARCH|
+D COMPARCH4  |PROC| 4th |COMPARCH|\
+%D |MAR| 1977
+D COMPARCH6  |PROC| 6th |COMPARCH|\
+%D |APR| 1979
+D COMPARCH8  |PROC| 8th |COMPARCH|\
+%D 1981\
+%V 9
+D COMPARCH9  |PROC| 9th |COMPARCH|\
+%D |APR| 1982\
+%V 10\
+%N 3
+D COMPARCH10  |PROC| 10th |COMPARCH|\
+%C Stockholm, Sweden\
+%D |JUN| 1983
+D COMPARCH11  |PROC| 11th |COMPARCH|\
+%D |JUN| 1984
+D COMPARCH12  |PROC| 12th |COMPARCH|\
+%D |JUN| 1985
+D COMPARCH13  |PROC| 13th |COMPARCH|\
+%D |JUN| 1986
+D COMPCON  Annual IEEE |COMP| Society |INTL| |CONF|
+D COMPSAC  IEEE |COMP| Society's |INTL| |COMP| |SOFT| and Applications |CONF|\
+%C Chicago, IL
+D COMPSAC5  |PROC| 5th |COMPSAC|\
+%D |NOV| 1981
+D COMPSAC8  |PROC| 8th |COMPSAC|\
+%D |NOV| 1984
+D COMPSAC9  |PROC| 9th |COMPSAC|\
+%D |NOV| 1985
+D CPMME  |PROC| |INTL| |SYMP| on |COMP| Performance \
+Modeling, Measurement and Evaluation\
+%C Cambridge, Mass.\
+%D 1976
+D CSM |CONF| on |SOFT| Maintenance
+D CSM88 |PROC| |CSM|\
+%C Phoenix, Arizona\
+%D |OCT| 1988
+D FOCS  Annual |SYMP| on Foundations of |CS|
+D HICSS  HICSS
+D HICSSa  Hawaii |INTL| |CONF| on |SYSs| |SCIs|
+D HICSS7  HICS74
+D HICSS18  |HICSS85|
+D HICSS19  |HICSS86|
+D HICSS74  |PROC| 7th |HICSSa|\
+%D |JAN| 1974
+D HICSS85  |PROC| 18th |HICSSa|\
+%D |JAN| 1985
+D HICSS86  |PROC| 19th |HICSSa|\
+%D |JAN| 1986
+D HICSS88  |PROC| 21st |HICSSa|\
+%D |JAN| 1988
+D HLD83  |PROC| of the ACM SIGSOFT/SIGPLAN |SOFT| |ENG| \
+|SYMP| on High Level Debugging \
+%D |AUG| 1983\
+%V 18\
+%N 8
+D HYPERTEXT87 |PROC| Hypertext '87\
+%C Chapel Hill, NC\
+%D |NOV| 13-15, 1987
+D HYPERTEXT89 |PROC| Hypertext '89\
+%C Pittsburgh, PA\
+%D |NOV| 5-8, 1989
+D ICCD83  |PROC| IEEE |INTL| |CONF| on |COMP| Design\
+%C Port Chester, NY\
+%D |OCT| 1983
+D ICPP83  |PROC| 1983 |INTL| |CONF| on Parallel Processing\
+%C Bellaire, MI\
+%D |AUG| 1983
+D ICPP84  |PROC| 1984 |INTL| |CONF| on Parallel Processing\
+%C St. Charles, IL\
+%D |AUG| 1985
+D ICSE  |INTL| |CONF| on |SOFT| |ENG|
+D ICSE2  |PROC| 2nd |ICSE|\
+%C San Francisco, Calif.\
+%D |OCT| 1976
+D ICSE3  |PROC| 3rd |ICSE|\
+%D |MAY| 1978
+D ICSE4  |PROC| 4th |ICSE|\
+%D 1979
+D ICSE5  |PROC| 5th |ICSE|\
+%C San Diego, CA\
+%D |MAR| 1981
+D ICSE6  |PROC| 6th |ICSE|\
+%C Tokyo, Japan\
+%D |SEP| 1982
+D ICSE7  |PROC| 7th |ICSE|\
+%C Orlando, FL\
+%D |APR| 1984
+D ICSE8  |PROC| 8th |ICSE|\
+%C London\
+%D |AUG| 1985
+D ICSE9  |PROC| 9th |ICSE|\
+%C Monterey, CA\
+%D March 1987
+D ICSE10 |PROC| 10th |ICSE|\
+%C Singapore\
+%D |APR| 1988
+D ICSE11 |PROC| 11th |ICSE|\
+%C Pittsburgh, PA\
+%D |MAY| 1989
+D ICSS1  |PROC| 1st |INTL| |CONF| on Supercomputing |SYSs|\
+%C St. Petersburg, FL\
+%D |DEC| 1985
+D IEEEL |PROC| IEEE |COMP| Society |INTL| |CONF| on |COMP| |LANGs|
+D IEEEL90 |IEEEL|\
+%C New Orleans, LA\
+%D |MAR| 1990
+D IFIP  IFIP
+D IFIPa  Information Processing, |PROC| IFIP Congress
+D IP62  |IFIPa| 62\
+%I |NHOLL|\
+%D 1962
+D IP74  |IFIPa| 74\
+%I |NHOLL|\
+%D 1974
+D IP75  |IFIPa| 75\
+%I |NHOLL|\
+%D 1975
+D IP76  |IFIPa| 76\
+%I |NHOLL|\
+%D 1976
+D IP77  |IFIPa| 77\
+%I |NHOLL|\
+%D 1977
+D IP78  |IFIPa| 78\
+%I |NHOLL|\
+%D 1978
+D IP79  |IFIPa| 79\
+%I |NHOLL|\
+%D 1979
+D IP80  |IFIPa| 80\
+%E S. H. Lavington\
+%I |NHOLL|\
+%D 1980
+D IP81  |IFIPa| 81\
+%I |NHOLL|\
+%D 1981
+D IP82  |IFIPa| 82\
+%I |NHOLL|\
+%D 1982
+D IP83  |IFIPa| 83\
+%I |NHOLL|\
+%D 1983
+D IP84  |IFIPa| 84\
+%I |NHOLL|\
+%D 1984
+D IP85  |IFIPa| 85\
+%I |NHOLL|\
+%D 1985
+D IP86  |IFIPa| 86\
+%I |NHOLL|\
+%D 1986
+D III5 |PROC| of the 5th Annual III |CONF|\
+%I IRISA\
+%D |MAY| 1977
+D JER3  |PROC| Third Jerusalem |CONF| on Information Technology\
+%C Jerusalem, Israel\
+%D |AUG| 1978
+D JICAI  Joint |INTL| |CONF| on Artificial Intelligence
+D JICAI5  |PROC| 5th |JICAI|\
+%C Cambridge, MA\
+%D |AUG| 1977
+D JICAI6  |PROC| 6th |JICAI|\
+%C Tokyo\
+%D |AUG| 1979
+D JICAI7  |PROC| 7th |JICAI|\
+%D |AUG| 1981
+D JICAI8 |PROC| 8th |JICAI|\
+%O (need data)
+D JICAI9 |PROC| 9th |JICAI|\
+%C Los Angeles, CA\
+%D |AUG| 1985
+D LDRS77 |PROC| of an ACM |CONF| on |LANG| Design for Reliable |SOFT|\
+%C Raleigh, NC\
+%D |MAR| 28-30, 1977
+D LIPE85  |PROC| SIGPLAN |SYMP| on |LANG| Issues in |PRing| Environments\
+%V 20\
+%N 7\
+%D |JUL| 1985\
+%C Seattle, Washington
+D LISP80  |SYMP| on LISP and Functional |PRing|\
+%D |AUG| 25-27 1980\
+%C Stanford
+D LISP82  |SYMP| on LISP and Functional |PRing|\
+%D 1982
+D LISP84  |SYMP| on LISP and Functional |PRing|\
+%D |AUG| 1984
+D LISP88  |SYMP| on LISP and Functional |PRing|\
+%D |JUL| 1988\
+%C Snowbird, UT
+D LNCS16 ???\
+%I |LNCS|\
+%V 16\
+%D 1974
+D LNCS19 ???\
+%I |LNCS|\
+%V 19\
+%D 1974
+D LNCS66 |LNCS|\
+%V 66\
+%D 1978
+D LNCS67 Theoretical Computer Science, 4th GI |CONF|, Berlin\
+%I |LNCS|\
+%V 67\
+%D 1979
+D LNCS69 |PROG| Construction: |INTL| Summer School\
+%I |LNCS|\
+%V 69\
+%D 1979
+D LNCS107 Formalization of |PRing| Concepts\
+%I |LNCS|\
+%V 107\
+%D 1981\
+%E J. Diaz\
+%E I. Ramos
+D LNCS124 |LNCS|\
+%V 124\
+%D 1981
+D LNCS141 |LNCS|\
+%V 141\
+%D 1981
+D LNCS162 ???\
+%I |LNCS|\
+%V 162\
+%D ????
+D LNCS189 |LNCS|\
+%V 189\
+%D 1985
+D LNCS202 Rewriting Techniques and Applications\
+%I |LNCS|\
+%V 202\
+%D 1985
+D LNCS204 ???\
+%I |LNCS|\
+%V 204\
+%D 1985
+D LNCS208 ???\
+%I |LNCS|\
+%V 208\
+%D 1985
+D LNCS209 ???\
+%I |LNCS|\
+%V 209\
+%D ????
+D LNCS213 European Symposium on |PRing|\
+%I |LNCS|\
+%V 213\
+%D 1986
+D LNCS241 ???\
+%I |LNCS|\
+%V 241\
+%D 1986
+D LNCS249 TAPSOFT '87\
+%I |LNCS|\
+%V 249\
+%D 1987
+D LNCS250 ???\
+%I |LNCS|\
+%V 250\
+%D ????
+D MFOCS5  |PROC| 5th IBM |SYMP| on Mathematical Foundations of |CS|\
+%D |MAY| 1980
+D MMCS83  |PROC| of the ACM SIGMETRICS |CONF| on \
+Measurement and Modeling of |COMP| |SYSs|\
+%C Minneapolis, MN\
+%D |AUG| 1983
+D SIGMETRICS83 |MMCS83|
+D MMCS89  |PROC| of the ACM SIGMETRICS |CONF| on \
+Measurement and Modeling of |COMP| |SYSs|\
+%C Berkeley, CA\
+%D |MAY| 1989
+D SIGMETRICS89 |MMCS89|
+D OIS82 |PROC| SIGOA |CONF| on Office Information |SYSs|\
+%C Philadelphia, PA\
+%D |JUN| 1982
+D OIS84 PROC Second ACM-SIGOA |CONF| on Office Information |SYSs|\
+%C Toronto, Canada\
+%D |JUN| 1984
+D OIS86 PROC Third ACM-SIGOIS |CONF| on Office Information |SYSs|\
+%C Providence, RI\
+%D |OCT| 1986
+D OOPS86 |OOPSLA86|
+D OOPS87 |OOPSLA87|
+D OOPSLA Object-Oriented |PRing| |SYSs|, |LANGs| and Applications |CONF| |PROC|
+D OOPSLA86  |OOPSLA|\
+%C Portland, Oregon\
+%D |SEP| 1986
+D OOPSLA87 |OOPSLA|\
+%C Orlando, FL\
+%D |OCT| 1987
+D OOPSLA89 |OOPSLA|\
+%C New Orleans, LA\
+%D |OCT| 1989
+D OOPW86 Object-Oriented |PRing| Workshop, SIGPLAN\
+%V 21\
+%N 10\
+%C Yorktown Heights, NY\
+%D |OCT| 1986
+D PICCS  |PROC| |INTL| |COMP| |SYMP|\
+%D |APR| 1977\
+%C Liege, Belgium
+D PIEEE  |PROC| of the IEEE
+D PROCIRE  |PROC| IRE
+D PLISS83  |PROCSIGPLAN| 1983 |SYMP| on |PRing| |LANG| Issues in |SOFT| |SYSs|, |SIGPLAN|\
+%C San Francisco, CA\
+%D |JUN| 1983\
+%V 18\
+%N 6
+D POPL  ACM |SYMP| on Principles of |PRing| |LANGs|
+D POPL1  |CONF| Record of the First |POPL|\
+%D |OCT| 1973
+D POPL2  |CONF| Record of the Second |POPL|\
+%D |JAN| 1975
+D POPL3  |CONF| Record of the Third |POPL|\
+%D |JAN| 1976
+D POPL4  |CONF| Record of the Fourth |POPL|\
+%D |JAN| 1977
+D POPL5  |CONF| Record of the Fifth |POPL|\
+%C Tucson, AZ\
+%D |JAN| 1978
+D POPL6  |CONF| Record of the Sixth |POPL|\
+%C San Antonio, TX\
+%D |JAN| 1979
+D POPL7  |CONF| Record of the Seventh |POPL|\
+%C Las Vegas, NV\
+%D |JAN| 1980
+D POPL8  |CONF| Record of the Eighth |POPL|\
+%C Williamsburg, VA\
+%D |JAN| 1981
+D POPL9  |CONF| Record of the Ninth |POPL|\
+%C Albuquerque, NM\
+%D |JAN| 1982
+D POPL10  |CONF| Record of the Tenth |POPL|\
+%C Austin, TX\
+%D |JAN| 1983
+D POPL11  |CONF| Record of the Eleventh |POPL|\
+%C Salt Lake City, UT\
+%D |JAN| 1984
+D POPL12  |CONF| Record of the Twelfth |POPL|\
+%C New Orleans, LA\
+%D |JAN| 1985
+D POPL13  |CONF| Record of the Thirteenth |POPL|\
+%C Tampa Bay, FL\
+%D |JAN| 1986
+D POPL14  |CONF| Record of the Fourteenth |POPL|\
+%C |Munich|\
+%D |JAN| 1987
+D POPL15  |CONF| Record of the Fifteenth |POPL|\
+%C San Diego, CA\
+%D |JAN| 1988
+D POPL16  |CONF| Record of the Sixteenth |POPL|\
+%D 1989
+D POPL17  |CONF| Record of the Seventeenth |POPL|\
+%C San Francisco, CA\
+%D |JAN| 1990
+D PPOP ACM SIGPLAN |SYMP| on Principles and Practice of Parallel |PRing|, |SIGPLAN|
+D PPOP90 |PROC| 2nd |PPOP|\
+%V 25\
+%N 4\
+%C Seattle, WA\
+%D |MAR| 1990
+D PRINCETON5  |PROC| 5th Annual Princeton |CONF|\
+%I Princeton |UNIV|\
+%D |MAR| 1971
+D PSDEa  |PROC| of the ACM SIGSOFT/SIGPLAN |SOFT| |ENG| |SYMP| on \
+Practical |SOFT| Development Environments
+D PSDE84  |PSDEa|\
+%C Pittsburgh, PA\
+%V 19\
+%N 5\
+%D |MAY| 1984
+D PSDE86  |PSDEa|\
+%C Palo Alto, CA\
+%D |DEC| 1986
+D PSDE88 |SDE88|
+D SDE88 |PROC| ACM SIGSOFT '88: Third |SYMP| on |SOFT| Development Environments\
+%D |NOV| 1988
+D SCM |INTL| Workshop on |SOFT| Configuration Management
+D SCM2 |PROC| of the 2nd |SCM|\
+%C Princeton, NJ\
+%D |OCT| 1989
+D SEEPIL Workshop on |SOFT| |ENG| Environments for |PRing|-in-the-Large\
+%C Harwichport, MA\
+%D |JUN| 1985
+D SIGMOD |PROC| ACM SIGMOD |INTL| |CONF| on Management of Data
+D SIGMOD84 |SIGMOD|\
+%D |MAY| 1984
+D SIGMOD86 |SIGMOD|\
+%C Washington, DC\
+%D  |MAY| 1986
+D SIGMOD87 |SIGMOD|\
+%D 1987
+D SIGPLAN83 |PLISS83|
+D SIGPLAN85 |LIPE85|
+D SIGPLAN87 |IIT87|
+D IIT87 |PROCSIGPLAN| 1987 |SYMP| on Interpreters and Interpretive Techniques\
+%C St. Paul, Minnesota\
+%D |JUN| 1987\
+%V 22\
+%N 7
+D SIGPLAN89 |PLDI89|
+D PLDI89 |PROCSIGPLAN| '89 |CONF| on |PRing| |LANG| Design and Implementation\
+%C Portland, Oregon\
+%D |JUN| 1989\
+%V 24\
+%N 7
+D PLDI89 |PROCSIGPLAN| '89 |CONF| on |PRing| |LANG| Design and Implementation\
+%D |JUN| 1989\
+%V 24\
+%N 7
+D SOSP  |SYMP| on Operating |SYS| Principles
+D SOSP1  |PROC| of the 1st |SOSP|\
+%C Gatlinburg, Tenn.\
+%D 1967
+D SOSP2  |PROC| of the 2nd |SOSP|\
+%C Princeton |UNIV|\
+%D |OCT| 1969
+D SOSP3  |PROC| of the 3rd |SOSP|\
+%C |STAN|\
+%D |OCT| 1971
+D SOSP6  |PROC| of the 6th |SOSP|\
+%C West Lafayette\
+%D |NOV| 1977
+D SOSP7  |PROC| of the 7th |SOSP|\
+%C Pacific Grove\
+%D |DEC| 1979
+D SOSP8  |PROC| of the 8th |SOSP|\
+%C Pacific Grove, CA\
+%D |DEC| 1981
+D SOSP9  |PROC| of the 9th |SOSP|\
+%D |OCT| 1983
+D SOSP10  |PROC| of the 10th |SOSP|\
+%D |DEC| 1985
+D STOC  Annual ACM |SYMP| on Theory of |COMPg|
+D SYMPAM  |PROC| of |SYMP| in Applied Mathematics
+D TAV |SYMP| on |SOFT| Testing, Analysis, and Verification
+D TAV3 |PROC| of the Third |TAV|\
+%C Key West, FL\
+%D |DEC| 13-15, 1989
+D TEXT81  |PROCSIGPLAN| SIGOA |SYMP| on Text Manipulation\
+%C Portland, OR\
+%D |JUN| 1981
+D VL IEEE Workshop on Visual |LANGs|
+D VL86 |PROC| |VL|\
+%C Dallas, TX\
+%D |JUN| 1986
+D VL87 |PROC| |VL|\
+%C Link|o_um|ping, Sweden\
+%D 1987
+D VL88 |PROC| |VL|\
+%C Pittsburgh, PA\
+%D |OCT| 1988
+D WJCC  |PROC| Western Joint |COMP| |CONF|
+D ABLEX Ablex Publishing\
+%C Norwood, NJ
+D ACADEMIC  |ACPRESS|
+D ACPRESS  Academic Press\
+%C |NYC|
+D ADDISON  Addison Wesley\
+%C Reading, MA
+D ANSI  American National Standards Institute
+D CSPRESS  |CS| Press\
+%C Woodland Hills, CA
+D DIGITAL  Digital Press
+D ELSEVIER  American Elsevier
+D ERLBAUM  Lawrence Erlbaum Associates\
+%C Hillsdale, NJ
+D FREEMAN  W. H. Freeman and Company\
+%C San Francisco, CA
+D GPO  U. S. Government Printing Office
+D HOLT  Holt, Rinehart, and Winston
+D IEEEP  IEEE Press\
+%C Montvale, NJ
+D LNCS  |SPRINGER|\
+%S Lecture Notes in |CS|
+D MCGRAW  McGraw-Hill
+D MGHILL  McGraw-Hill\
+%C |NYC|
+D MITP  MIT Press\
+%C Cambridge, MA
+D NHOLL  North-Holland\
+%C |NYC|, Amsterdam
+D NYC  New York, NY
+D PRENTICE  |PRHALL|
+D PRHALL  Prentice Hall\
+%C Englewood Cliffs, NJ
+D SPRINGER  Springer Verlag\
+%C Berlin
+D SRA  |SCI| Research Associates
+D UMI  UMI Research Press\
+%C Ann Arbor, MI
+D WILEY  John Wiley |AMP| Sons\
+%C |NYC|
+D WINTH  Winthrop Publishers
+D JAN  January
+D FEB  February
+D MAR  March
+D APR  April
+D MAY  May
+D JUN  June
+D JUL  July
+D AUG  August
+D SEP  September
+D OCT  October
+D NOV  November
+D DEC  December
+D BTLHO  Bell Laboratories\
+%C Holmdel, NJ
+D BTLMH  Bell Laboratories\
+%C Murray Hill, NJ
+D CMU  Carnegie-Mellon |UNIV|\
+%C Pittsburgh, PA
+D CMUCS  |CSD|, |CMU|
+D COURANT  Courant Institute of Mathematical |SCIs|, NYU
+D CSLI Center for the Study of |LANG| and Information\
+%C Stanford, CA
+D CSLSU  |COMP| |SYSs| Lab., Stanford Electronics Lab., |DEPT| of |EE| and |CS|
+D DECSRC  Digital Equipment |CORP|, |SYSs| Research Center
+D DG  Data General
+D ERL  Electronics Research Laboratory
+D ETH  Institut |fuer| Informatik, ETH
+D IBMRD IBM |CORP|, Research Division\
+%C Yorktown Heights, NY
+D IBMY  |IBMRD|
+D ICASE  Institute for |COMP| Applications in |SCI| and |ENG|
+D ICOT  Institute for New Generation |COMP| Technology
+D IFI   Institut |fuer| Informatik
+D INRIA  Institut National de Recherche en Informatique et en Automatique
+D Karlsruhe Karlsr|u_um|he
+D Universitat Universit|a_um|t
+D KARLSRUHE  |IFI|, |Universitat| |Karlsruhe|\
+%C |Karlsruhe|, West Germany
+D KESTRAL  Kestral Institute\
+%C Palo Alto, CA
+D LFCS  Laboratory for Foundations of |CS|
+D MCCSTP |SOFT| Technology |PROG|, MCC\
+%C Austin, TX
+D MITAI  MIT Artificial Intelligence Laboratory\
+%C Cambridge, MA
+D MITLCS  MIT Laboratory for |CS|\
+%C Cambridge, MA
+D RICE  Rice |UNIV|
+D RICECS |DCS|, Rice |UNIV|
+D SUCS  |CSD|, |STAN|
+D SUCSL |CSLSU|
+D STAN Stanford |UNIV|
+D SUEE  |DEPT| of |EE|, |STAN|
+D MIT Massachusetts Institute of Technology
+D Munich M|u_um|nchen, W. Germany
+D TUM  Technische |Universitat|, |Munich|
+D UATR  |UNIV| of Arizona |TR|
+D UC |UNIVCA|
+D UCB  |UNIVCA|, Berkeley
+D UCBCS  |CS| Division, EECS, |UCB|
+D UCBCSD |UCBCS|
+D UCBCSTR |UCBCSDTR|
+D UCBCSDTR |UCBCSD|\
+%R |TR| UCB/CSD
+D UCBERL  |ERL|, EECS, |UCB|
+D UCLA |UNIVCA|, Los Angeles
+D UCSD  |UNIVCA|, San Diego
+D UNIVIUC  |UNIV| of Illinois at Urbana-Champaign\
+%C Urbana, Illinois
+D UW |UNIV| of Washington
+D XEROXISL Intelligent |SYSs| Laboratory, |XEROXPARC|
+D XEROXPARC Xerox Palo Alto Research Center\
+%C Palo Alto, CA

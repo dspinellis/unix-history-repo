@@ -1,0 +1,26 @@
+ECHO(1)                      BSD Reference Manual                      ECHO(1)
+
+NNAAMMEE
+     eecchhoo - write arguments to the standard output
+
+SSYYNNOOPPSSIISS
+     eecchhoo [--nn] [string ...]
+
+DDEESSCCRRIIPPTTIIOONN
+     The eecchhoo utility writes any specified operands, separated by single blank
+     (`` '') characters) and followed by a newline (``\n'') character, to the
+     standard output.
+
+     The following option is available:
+
+     --nn    Do not print the trailing newline character.
+
+     The eecchhoo utility exits 0 on success, and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     printf(1)
+
+SSTTAANNDDAARRDDSS
+     The eecchhoo utility is expected to be IEEE Std1003.2 (``POSIX'') compatible.
+
+4.4BSD                           May 31, 1993                                1

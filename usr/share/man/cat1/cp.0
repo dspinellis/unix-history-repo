@@ -1,0 +1,93 @@
+CP(1)                        BSD Reference Manual                        CP(1)
+
+NNAAMMEE
+     ccpp - copy files
+
+SSYYNNOOPPSSIISS
+     ccpp [--HHRRffhhiipp] _s_o_u_r_c_e___f_i_l_e _t_a_r_g_e_t___f_i_l_e
+     ccpp [--HHRRffhhiipp] _s_o_u_r_c_e___f_i_l_e _._._. _t_a_r_g_e_t___d_i_r_e_c_t_o_r_y
+
+DDEESSCCRRIIPPTTIIOONN
+     In the first synopsis form, the ccpp utility copies the contents of the
+     _s_o_u_r_c_e___f_i_l_e to the _t_a_r_g_e_t___f_i_l_e. In the second synopsis form, the contents
+     of each named _s_o_u_r_c_e___f_i_l_e is copied to the destination _t_a_r_g_e_t___d_i_r_e_c_t_o_r_y.
+     The names of the files themselves are not changed.  If ccpp detects an at-
+     tempt to copy a file to itself, the copy will fail.
+
+     The following options are available:
+
+     --HH    When encountering a symbolic link on the command line, follow it.
+           All other symbolic links encountered in the traversal are not fol-
+           lowed.  Provided for the --RR option which does not follow symbolic
+           links by default.
+
+     --RR    If _s_o_u_r_c_e___f_i_l_e designates a directory, ccpp copies the directory and
+           the entire subtree connected at that point.  This option also caus-
+           es symbolic links to be copied, rather than indirected through, and
+           for ccpp to create special files rather than copying them as normal
+           files.  Created directories have the same mode as the corresponding
+           source directory, unmodified by the process' umask.
+
+     --ff    For each existing destination pathname, remove it and create a new
+           file, without prompting for confirmation regardless of its permis-
+           sions.  (The --ii option is ignored if the --ff option is specified.)
+
+     --hh    When encountering a symbolic link anywhere in the traversal, follow
+           it.  Provided for the --RR option which does not follow symbolic
+           links by default.
+
+     --ii    Causes ccpp to write a prompt to the standard error output before
+           copying a file that would overwrite an existing file.  If the re-
+           sponse from the standard input begins with the character `y', the
+           file is copied if permissions allow the copy.
+
+     --pp    Causes ccpp to preserve in the copy as many of the modification time,
+           access time, file flags, file mode, user ID, and group ID as al-
+           lowed by permissions.
+
+           If the user ID and group ID cannot be preserved, no error message
+           is displayed and the exit value is not altered.
+
+           If the source file has its set user ID bit on and the user ID can-
+           not be preserved, the set user ID bit is not preserved in the
+           copy's permissions.  If the source file has its set group ID bit on
+           and the group ID cannot be preserved, the set group ID bit is not
+           preserved in the copy's permissions.  If the source file has both
+           its set user ID and set group ID bits on, and either the user ID or
+           group ID cannot be preserved, neither the set user ID or set group
+           ID bits are preserved in the copy's permissions.
+
+     For each destination file that already exists, its contents are overwrit-
+     ten if permissions allow, but its mode, user ID, and group ID are un-
+     changed.
+
+     In the second synopsis form, _t_a_r_g_e_t___d_i_r_e_c_t_o_r_y must exist unless there is
+     only one named _s_o_u_r_c_e___f_i_l_e which is a directory and the --RR flag is speci-
+     fied.
+
+     If the destination file does not exist, the mode of the source file is
+     used as modified by the file mode creation mask (uummaasskk, see csh(1)).  If
+     the source file has its set user ID bit on, that bit is removed unless
+     both the source file and the destination file are owned by the same user.
+     If the source file has its set group ID bit on, that bit is removed un-
+     less both the source file and the destination file are in the same group
+     and the user is a member of that group.  If both the set user ID and set
+     group ID bits are set, all of the above conditions must be fulfilled or
+     both bits are removed.
+
+     Appropriate permissions are required for file creation or overwriting.
+
+     Symbolic links are always followed unless the --RR flag is set in which
+     case symbolic links are not followed by default.  However, the --HH or --hh
+     flags (in conjuction with the --RR flag) cause symbolic link following as
+     detailed above.
+
+     CCpp exits 0 on success, >0 if an error occurred.
+
+SSEEEE AALLSSOO
+     mv(1),  rcp(1),  umask(2),  fts(3),  symlink(7)
+
+HHIISSTTOORRYY
+     The ccpp command is expected to be IEEE Std1003.2 (``POSIX'') compatible.
+
+4th Berkeley Distribution        May 31, 1993                                2
