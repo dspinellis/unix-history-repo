@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.t	6.2 (Berkeley) %G%
+.\"	@(#)1.t	6.3 (Berkeley) %G%
 .\"
 .NH 1
 Overview
@@ -45,6 +45,6 @@ provides the authoritative definition of
 the format of this data base, as well as
 specifying default values for important items
 such as the directory in which spooling is performed.
-This document highlights the important
+This document introduces some of the
 information that may be placed
 .IR printcap .

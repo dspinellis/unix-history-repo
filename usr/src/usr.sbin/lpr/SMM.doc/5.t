@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)5.t	6.3 (Berkeley) %G%
+.\"	@(#)5.t	6.4 (Berkeley) %G%
 .\"
 .NH 1
 Output filter specifications
 .PP
-The filters supplied with 4.2BSD
+The filters supplied with 4.3BSD
 handle printing and accounting for most common
 line printers, the Benson-Varian, the wide (36") and
 narrow (11") Versatec printer/plotters. For other devices or accounting
@@ -17,7 +17,8 @@ Filters are spawned by \fIlpd\fP
 with their standard input the data to be printed, and standard output
 the printer.  The standard error is attached to the
 .B lf
-file for logging errors.  A filter must return a 0 exit
+file for logging errors or \fIsyslogd\fP may be used for logging errors.
+A filter must return a 0 exit
 code if there were no errors, 1 if the job should be reprinted,
 and 2 if the job should be thrown away.
 When \fIlprm\fP
