@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pigs.c	1.2 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)pigs.c	1.3 (Lucasfilm) %G%";
 #endif
 
 #include "systat.h"
@@ -140,13 +140,15 @@ initpigs()
         if (procp == NULL) {
                 procp = getw(nlst[X_PROC].n_value);
                 nproc = getw(nlst[X_NPROC].n_value);
-                kprocp = (struct proc *)malloc(sizeof (*kprocp) * nproc);
         }
+	if (kprocp == NULL)
+                kprocp = (struct proc *)calloc(nproc, sizeof (struct proc));
         if (usrpt != NULL)
 		return;
 	usrpt = (struct pte *)nlst[X_USRPT].n_value;
 	Usrptma = (struct pte *)nlst[X_USRPTMAP].n_value;
-	pt = (struct p_times *)malloc(nproc * sizeof (struct p_times));
+	if (pt == NULL)
+		pt = (struct p_times *)calloc(nproc, sizeof (struct p_times));
 }
 
 fetchpigs()
@@ -156,6 +158,16 @@ fetchpigs()
         register float time;
         register struct proc *pp;
 
+	if (kprocp == NULL) {
+		kprocp = (struct proc *)calloc(nproc, sizeof (struct proc));
+		if (kprocp == NULL)
+			return;
+	}
+	if (pt == NULL) {
+		pt = (struct p_times *)calloc(nproc, sizeof (struct p_times));
+		if (pt == NULL)
+			return;
+	}
         prt = pt;
         lseek(kmem, procp, L_SET);
         read(kmem, kprocp, sizeof (struct proc) * nproc);
