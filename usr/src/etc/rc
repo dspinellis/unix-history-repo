@@ -1,4 +1,4 @@
-#	@(#)rc	5.20 (Berkeley) %G%
+#	@(#)rc	5.21 (Berkeley) %G%
 
 # System startup script run by init on autoboot
 # or after single-user.
@@ -56,19 +56,19 @@ swapon -a
 
 umount -a >/dev/null 2>&1
 mount -a -t nonfs
-rm -f /fastboot		# XXX
-
-# clean up left-over files
-rm -f /etc/nologin
-rm -f /var/spool/uucp/LCK.*
-rm -f /var/spool/uucp/STST/*
-(cd /var/run; rm -rf *; cp /dev/null utmp; chmod 644 utmp)
+rm -f /fastboot		# XXX (root now writeable)
 
 # set hostname, turn on network
 echo 'starting network'
 . /etc/netstart
 
 mount -a -t nfs >/dev/null 2>&1 &	# XXX shouldn't need background
+
+# clean up left-over files
+rm -f /etc/nologin
+rm -f /var/spool/uucp/LCK.*
+rm -f /var/spool/uucp/STST/*
+(cd /var/run && { rm -rf *; cp /dev/null utmp; chmod 644 utmp; })
 
 echo -n 'starting system logger'
 rm -f /dev/log
@@ -106,15 +106,15 @@ then
 fi
 
 echo preserving editor files
-(cd /var/tmp; /usr/libexec/ex3.7preserve -a)
-(cd /var/tmp; rm -f Ex[0-9][0-9][0-9][0-9][0-9] Rx[0-9][0-9][0-9][0-9][0-9])
+(cd /var/tmp && /usr/libexec/ex3.7preserve -a &&
+     rm -f Ex[0-9][0-9][0-9][0-9][0-9] Rx[0-9][0-9][0-9][0-9][0-9])
 
 echo clearing /tmp
 
 # prune quickly with one rm, then use find to clean up /tmp/[lq]*
 # (not needed with mfs /tmp, but doesn't hurt there...)
-(cd /tmp; rm -rf [a-km-pr-zA-Z]* )
-(cd /tmp; find . ! -name . ! -name lost+found ! -name quotas -exec rm -rf {} \;)
+(cd /tmp && rm -rf [a-km-pr-zA-Z]* &&
+    find . ! -name . ! -name lost+found ! -name quotas -exec rm -rf {} \;)
 
 echo 'turning on accounting';	accton /var/account/acct
 
@@ -129,7 +129,7 @@ echo -n starting network daemons:
 # If $gated == YES, gated is used; otherwise routed.
 # If $routedflags == NO, routed isn't run.
 if [ X${gated} = X"YES" -a -r /etc/gated.conf ]; then
-	echo -n ' gated';	gated $gateedflags
+	echo -n ' gated';	gated $gatedflags
 elif [ X${routedflags} != X"NO" ]; then
 	echo -n ' routed';	routed $routedflags
 fi
