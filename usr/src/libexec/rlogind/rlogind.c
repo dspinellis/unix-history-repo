@@ -1,12 +1,12 @@
 #ifndef lint
-static	char sccsid[] = "@(#)rlogind.c	4.22 (Berkeley) %G%";
+static	char sccsid[] = "@(#)rlogind.c	4.23 (Berkeley) %G%";
 #endif
 
 /*
  * remote login server:
  *	remuser\0
  *	locuser\0
- *	terminal type\0
+ *	terminal info\0
  *	data
  */
 
@@ -15,6 +15,7 @@ static	char sccsid[] = "@(#)rlogind.c	4.22 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#include <sys/file.h>
 
 #include <netinet/in.h>
 
@@ -25,11 +26,12 @@ static	char sccsid[] = "@(#)rlogind.c	4.22 (Berkeley) %G%";
 #include <stdio.h>
 #include <netdb.h>
 #include <syslog.h>
+#include <strings.h>
 
 extern	errno;
 int	reapchild();
 struct	passwd *getpwnam();
-char	*crypt(), *rindex(), *index(), *malloc(), *ntoa();
+char	*crypt(), *malloc();
 
 main(argc, argv)
 	int argc;
@@ -51,8 +53,6 @@ main(argc, argv)
 	doit(0, &from);
 }
 
-char	locuser[32], remuser[32];
-char	buf[BUFSIZ];
 int	child;
 int	cleanup();
 int	netf;
@@ -63,10 +63,9 @@ doit(f, fromp)
 	int f;
 	struct sockaddr_in *fromp;
 {
-	char c;
-	int i, p, cc, t, pid;
-	int stop = TIOCPKT_DOSTOP;
+	int i, p, t, pid, on = 1;
 	register struct hostent *hp;
+	char c;
 
 	alarm(60);
 	read(f, &c, 1);
@@ -80,7 +79,7 @@ doit(f, fromp)
 		char buf[BUFSIZ];
 
 		fatal(f, sprintf(buf, "Host name for your address (%s) unknown",
-			ntoa(fromp->sin_addr)));
+			inet_ntoa(fromp->sin_addr)));
 	}
 	if (fromp->sin_family != AF_INET ||
 	    fromp->sin_port >= IPPORT_RESERVED)
@@ -122,114 +121,152 @@ gotpty:
 	pid = fork();
 	if (pid < 0)
 		fatalperror(f, "", errno);
-	if (pid) {
-		char pibuf[1024], fibuf[1024], *pbp, *fbp;
-		register pcc = 0, fcc = 0;
-		int on = 1;
-/* FILE *console = fopen("/dev/console", "w");  */
-/* setbuf(console, 0); */
-
-/* fprintf(console, "f %d p %d\r\n", f, p); */
+	if (pid == 0) {
+		close(f), close(p);
+		dup2(t, 0), dup2(t, 1), dup2(t, 2);
 		close(t);
-		ioctl(f, FIONBIO, &on);
-		ioctl(p, FIONBIO, &on);
-		ioctl(p, TIOCPKT, &on);
-		signal(SIGTSTP, SIG_IGN);
-		signal(SIGCHLD, cleanup);
-		for (;;) {
-			int ibits = 0, obits = 0;
+		execl("/bin/login", "login", "-r", hp->h_name, 0);
+		fatalperror(2, "/bin/login", errno);
+		/*NOTREACHED*/
+	}
+	close(t);
+	ioctl(f, FIONBIO, &on);
+	ioctl(p, FIONBIO, &on);
+	ioctl(p, TIOCPKT, &on);
+	signal(SIGTSTP, SIG_IGN);
+	signal(SIGCHLD, cleanup);
+	protocol(f, p);
+	cleanup();
+}
 
-			if (fcc)
-				obits |= (1<<p);
+char	magic[2] = { 0377, 0377 };
+
+/*
+ * Handle a "control" request (signaled by magic being present)
+ * in the data stream.  For now, we are only willing to handle
+ * window size changes.
+ */
+control(pty, cp, n)
+	int pty;
+	char *cp;
+	int n;
+{
+	struct winsize *wp;
+
+	if (n < 4+sizeof (*wp) || cp[2] != 's' || cp[3] != 's')
+		return (0);
+	wp = (struct winsize *)(cp+4);
+	wp->ws_row = ntohs(wp->ws_row);
+	wp->ws_col = ntohs(wp->ws_col);
+	wp->ws_xpixel = ntohs(wp->ws_xpixel);
+	wp->ws_ypixel = ntohs(wp->ws_ypixel);
+	(void)ioctl(pty, TIOCSWINSZ, wp);
+	return (4+sizeof (*wp));
+}
+
+/*
+ * rlogin "protocol" machine.
+ */
+protocol(f, p)
+	int f, p;
+{
+	char pibuf[1024], fibuf[1024], *pbp, *fbp;
+	register pcc = 0, fcc = 0;
+	int cc, stop = TIOCPKT_DOSTOP;
+
+	for (;;) {
+		int ibits = 0, obits = 0;
+
+		if (fcc)
+			obits |= (1<<p);
+		else
+			ibits |= (1<<f);
+		if (pcc >= 0)
+			if (pcc)
+				obits |= (1<<f);
 			else
-				ibits |= (1<<f);
-			if (pcc >= 0)
-				if (pcc)
-					obits |= (1<<f);
-				else
-					ibits |= (1<<p);
-/* fprintf(console, "ibits from %d obits from %d\r\n", ibits, obits); */
-			if (select(16, &ibits, &obits, 0, 0) < 0) {
-				if (errno == EINTR)
-					continue;
-				fatalperror(f, "select", errno);
+				ibits |= (1<<p);
+		if (select(16, &ibits, &obits, 0, 0) < 0) {
+			if (errno == EINTR)
+				continue;
+			fatalperror(f, "select", errno);
+		}
+		if (ibits == 0 && obits == 0) {
+			/* shouldn't happen... */
+			sleep(5);
+			continue;
+		}
+		if (ibits & (1<<f)) {
+			fcc = read(f, fibuf, sizeof (fibuf));
+			if (fcc < 0 && errno == EWOULDBLOCK)
+				fcc = 0;
+			else {
+				register char *cp;
+				int left, n;
+
+				if (fcc <= 0)
+					break;
+				fbp = fibuf;
+			top:
+				for (cp = fibuf; cp < fibuf+fcc; cp++)
+					if (cp[0] == magic[0] &&
+					    cp[1] == magic[1]) {
+						left = fcc - (cp-fibuf);
+						n = control(p, cp, left);
+						if (n) {
+							left -= n;
+							if (left > 0)
+								bcopy(cp, cp+n, left);
+							fcc -= n;
+							goto top; /* n^2 */
+						}
+					}
 			}
-/* fprintf(console, "ibits %d obits %d\r\n", ibits, obits); */
-			if (ibits == 0 && obits == 0) {
-				/* shouldn't happen... */
+		}
+		if (ibits & (1<<p)) {
+			pcc = read(p, pibuf, sizeof (pibuf));
+			pbp = pibuf;
+			if (pcc < 0 && errno == EWOULDBLOCK)
+				pcc = 0;
+			else if (pcc <= 0)
+				break;
+			else if (pibuf[0] == 0)
+				pbp++, pcc--;
+			else {
+#define	pkcontrol(c)	((c)&(TIOCPKT_FLUSHWRITE|TIOCPKT_NOSTOP|TIOCPKT_DOSTOP))
+				if (pkcontrol(pibuf[0])) {
+				/* The following 3 lines do nothing. */
+					int nstop = pibuf[0] &
+					    (TIOCPKT_NOSTOP|TIOCPKT_DOSTOP);
+
+					if (nstop)
+						stop = nstop;
+					pibuf[0] |= nstop;
+					send(f, &pibuf[0], 1, MSG_OOB);
+				}
+				pcc = 0;
+			}
+		}
+		if ((obits & (1<<f)) && pcc > 0) {
+			cc = write(f, pbp, pcc);
+			if (cc < 0 && errno == EWOULDBLOCK) {
+				/* also shouldn't happen */
 				sleep(5);
 				continue;
 			}
-			if (ibits & (1<<f)) {
-				fcc = read(f, fibuf, sizeof (fibuf));
-/* fprintf(console, "%d from f\r\n", fcc); */
-				if (fcc < 0 && errno == EWOULDBLOCK)
-					fcc = 0;
-				else {
-					if (fcc <= 0)
-						break;
-					fbp = fibuf;
-				}
-			}
-			if (ibits & (1<<p)) {
-				pcc = read(p, pibuf, sizeof (pibuf));
-/* fprintf(console, "%d from p, buf[0] %x, errno %d\r\n", pcc, buf[0], errno); */
-				pbp = pibuf;
-				if (pcc < 0 && errno == EWOULDBLOCK)
-					pcc = 0;
-				else if (pcc <= 0)
-					break;
-				else if (pibuf[0] == 0)
-					pbp++, pcc--;
-				else {
-					if (pibuf[0]&(TIOCPKT_FLUSHWRITE|
-						      TIOCPKT_NOSTOP|
-						      TIOCPKT_DOSTOP)) {
-					/* The following 3 lines do nothing. */
-						int nstop = pibuf[0] &
-						    (TIOCPKT_NOSTOP|
-						     TIOCPKT_DOSTOP);
-						if (nstop)
-							stop = nstop;
-						pibuf[0] |= nstop;
-						send(f,&pibuf[0],1,MSG_OOB);
-					}
-					pcc = 0;
-				}
-			}
-			if ((obits & (1<<f)) && pcc > 0) {
-				cc = write(f, pbp, pcc);
-				if (cc < 0 && errno == EWOULDBLOCK) {
-					/* also shouldn't happen */
-					sleep(5);
-					continue;
-				}
-/* fprintf(console, "%d of %d to f\r\n", cc, pcc); */
-				if (cc > 0) {
-					pcc -= cc;
-					pbp += cc;
-				}
-			}
-			if ((obits & (1<<p)) && fcc > 0) {
-				cc = write(p, fbp, fcc);
-/* fprintf(console, "%d of %d to p\r\n", cc, fcc); */
-				if (cc > 0) {
-					fcc -= cc;
-					fbp += cc;
-				}
+			if (cc > 0) {
+				pcc -= cc;
+				pbp += cc;
 			}
 		}
-		cleanup();
+		if ((obits & (1<<p)) && fcc > 0) {
+			cc = write(p, fbp, fcc);
+			if (cc > 0) {
+				fcc -= cc;
+				fbp += cc;
+			}
+		}
 	}
-	close(f);
-	close(p);
-	dup2(t, 0);
-	dup2(t, 1);
-	dup2(t, 2);
-	close(t);
-	execl("/bin/login", "login", "-r", hp->h_name, 0);
-	fatalperror(2, "/bin/login", errno);
-	/*NOTREACHED*/
 }
 
 cleanup()
@@ -263,7 +300,7 @@ fatalperror(f, msg, errno)
 	extern int sys_nerr;
 	extern char *sys_errlist[];
 
-	if ((unsigned) errno < sys_nerr)
+	if ((unsigned)errno < sys_nerr)
 		(void) sprintf(buf, "%s: %s", msg, sys_errlist[errno]);
 	else
 		(void) sprintf(buf, "%s: Error %d", msg, errno);
@@ -283,12 +320,12 @@ rmut()
 	register f;
 	int found = 0;
 
-	f = open(utmp, 2);
+	f = open(utmp, O_RDWR);
 	if (f >= 0) {
 		while(read(f, (char *)&wtmp, sizeof(wtmp)) == sizeof(wtmp)) {
 			if (SCMPN(wtmp.ut_line, line+5) || wtmp.ut_name[0]==0)
 				continue;
-			lseek(f, -(long)sizeof(wtmp), 1);
+			lseek(f, -(long)sizeof(wtmp), L_INCR);
 			SCPYN(wtmp.ut_name, "");
 			SCPYN(wtmp.ut_host, "");
 			time(&wtmp.ut_time);
@@ -298,13 +335,13 @@ rmut()
 		close(f);
 	}
 	if (found) {
-		f = open(wtmpf, 1);
+		f = open(wtmpf, O_WRONLY);
 		if (f >= 0) {
 			SCPYN(wtmp.ut_line, line+5);
 			SCPYN(wtmp.ut_name, "");
 			SCPYN(wtmp.ut_host, "");
 			time(&wtmp.ut_time);
-			lseek(f, (long)0, 2);
+			lseek(f, (long)0, L_XTND);
 			write(f, (char *)&wtmp, sizeof(wtmp));
 			close(f);
 		}
@@ -314,21 +351,4 @@ rmut()
 	line[strlen("/dev/")] = 'p';
 	chmod(line, 0666);
 	chown(line, 0, 0);
-}
-
-/*
- * Convert network-format internet address
- * to base 256 d.d.d.d representation.
- */
-char *
-ntoa(in)
-	struct in_addr in;
-{
-	static char b[18];
-	register char *p;
-
-	p = (char *)&in;
-#define	UC(b)	(((int)b)&0xff)
-	sprintf(b, "%d.%d.%d.%d", UC(p[0]), UC(p[1]), UC(p[2]), UC(p[3]));
-	return (b);
 }
