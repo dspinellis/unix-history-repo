@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 1.14 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.15 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -220,15 +220,14 @@ bool	Enoline;
 
 /*
  * The basic namelist structure.
- * There are also two other variants, defining the real
- * field as longs or integers given below.
+ * There is a union of data types defining the stored information
+ * as pointers, integers, longs, or a double.
  *
  * The array disptab defines the hash header for the symbol table.
  * Symbols are hashed based on the low 6 bits of their pointer into
  * the string table; see the routines in the file "lookup.c" and also "fdec.c"
  * especially "funcend".
  */
-extern struct	nl *Fp;
 extern int	pnumcnt;
 
 #ifdef PTREE
@@ -236,55 +235,33 @@ extern int	pnumcnt;
 #endif PTREE
 struct	nl {
 	char	*symbol;
-	char	class, nl_flags;
-#ifdef PC
-	char	extra_flags;	/* for where things are */
-#endif PC
+	char	info[4];
 	struct	nl *type;
 	struct	nl *chain, *nl_next;
-	int	value[5];
+	union {
+		int	*un_ptr[5];
+		int	un_value[5];
+		long	un_range[2];
+		double	un_real;
+	} nl_un;
 #	ifdef PTREE
 	    pPointer	inTree;
 #	endif PTREE
-} *nlp, *disptab[077+1];
+};
 
+#define class info[0]
+#define nl_flags info[1]
+#define nl_block info[1]
+#define extra_flags info[2]
+
+#define range nl_un.un_range
+#define value nl_un.un_value
+#define ptr nl_un.un_ptr
+#define real nl_un.un_real
+
+extern struct nl *nlp, *disptab[077+1], *Fp;
 extern struct nl nl[INL];
 
-struct {
-	char	*symbol;
-	char	class, nl_flags;
-#ifdef PC
-	char	extra_flags;
-#endif
-	struct	nl *type;
-	struct	nl *chain, *nl_next;
-	double	real;
-};
-
-struct {
-	char	*symbol;
-	char	class, nl_block;
-#ifdef PC
-	char	extra_flags;
-#endif
-	struct	nl *type;
-	struct	nl *chain, *nl_next;
-	long	range[2];
-};
-
-struct {
-	char	*symbol;
-	char	class, nl_flags;
-#ifdef PC
-	char	extra_flags;
-#endif
-	struct	nl *type;
-	struct	nl *chain, *nl_next;
-	int	*ptr[4];
-#ifdef PI
-	int	entloc;
-#endif PI
-};
 
 /*
  * NL FLAGS BITS
@@ -330,7 +307,8 @@ struct {
 #define NL_NLSTRT 2
 #define	NL_LINENO 3
 #define	NL_FVAR	3
-#define	NL_FCHAIN 4
+#define	NL_ENTLOC 4	/* FUNC, PROC - entry point */
+#define	NL_FCHAIN 4	/* FFUNC, FPROC - ptr to formals */
 
 #define NL_GOLEV 2
 #define NL_GOLINE 3
@@ -341,7 +319,7 @@ struct {
 #define	NL_VTOREC 2
 #define	NL_TAG	3
 
-#define	NL_ELABEL	4
+#define	NL_ELABEL 4	/* SCAL - ptr to definition of enums */
 
 /*
  * For BADUSE nl structures, NL_KINDS is a bit vector

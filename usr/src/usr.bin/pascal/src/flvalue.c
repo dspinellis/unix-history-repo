@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static char sccsid[] = "@(#)flvalue.c 1.11 %G%";
+static char sccsid[] = "@(#)flvalue.c 1.12 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -78,7 +78,7 @@ flvalue( r , formalp )
 #		    ifdef OBJ
 			put(2 , O_LV | cbn << 8 + INDX ,
 				(int)tempnlp -> value[ NL_OFFS ] );
-			put(2, O_FSAV | bn << 8, (long)p->entloc);
+			put(2, O_FSAV | bn << 8, (long)p->value[NL_ENTLOC]);
 #		    endif OBJ
 #		    ifdef PC
 			putleaf( P2ICON , 0 , 0 ,

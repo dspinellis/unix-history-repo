@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)lab.c 1.11 %G%";
+static char sccsid[] = "@(#)lab.c 1.12 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -65,7 +65,7 @@ label(r, l)
 		p->chain = lp;
 		p->nl_flags |= (NFORWD|NMOD);
 		p->value[NL_GOLEV] = NOTYET;
-		p->entloc = l;
+		p->value[NL_ENTLOC] = l;
 		lp = p;
 #		ifdef OBJ
 		    /*
@@ -121,7 +121,7 @@ gotoop(s)
 	if (p == NIL)
 		return (NIL);
 #	ifdef OBJ
-	    put(2, O_TRA4, (long)p->entloc);
+	    put(2, O_TRA4, (long)p->value[NL_ENTLOC]);
 #	endif OBJ
 #	ifdef PC
 	    if ( cbn != bn ) {
@@ -184,7 +184,7 @@ labeled(s)
 	}
 	p->nl_flags &= ~NFORWD;
 #	ifdef OBJ
-	    patch4(p->entloc);
+	    patch4(p->value[NL_ENTLOC]);
 #	endif OBJ
 #	ifdef PC
 	    extlabname( extname , p -> symbol , bn );
