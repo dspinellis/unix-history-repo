@@ -1,6 +1,6 @@
-.\"	@(#)getc.3	4.1 (Berkeley) %G%
+.\"	@(#)getc.3	5.1 (Berkeley) %G%
 .\"
-.TH GETC 3S 
+.TH GETC 3S  "19 January 1983"
 .AT 3
 .SH NAME
 getc, getchar, fgetc, getw \- get character or word from stream
@@ -31,19 +31,19 @@ getc, getchar, fgetc, getw \- get character or word from stream
 returns the next character from the named input
 .IR stream .
 .PP
-.I Getchar()
+.IR Getchar ()
 is identical to 
-.IR getc(stdin) .
+.IR getc ( stdin ) .
 .PP
 .I Fgetc
 behaves like 
-.I getc,
+.IR getc ,
 but is a genuine function, not a macro;
 it may be used to save object text.
 .PP
 .I Getw
 returns the next
-word (32-bit integer on a VAX-11) from the named input
+word (in a 32-bit integer on a VAX-11) from the named input
 .IR stream .
 It returns the constant
 .SM
@@ -52,16 +52,18 @@ upon end of file or error, but since that is a good
 integer value,
 .I feof
 and
-.IR  ferror (3)
+.IR  ferror (3S)
 should be used to check the success of
 .IR getw .
 .I Getw
 assumes no special alignment in the file.
 .SH "SEE ALSO"
-fopen(3), putc(3),
-gets(3), scanf(3),
-fread(3),
-ungetc(3)
+fopen(3S),
+putc(3S),
+gets(3S),
+scanf(3S),
+fread(3S),
+ungetc(3S)
 .SH DIAGNOSTICS
 These functions return the integer constant
 .SM
