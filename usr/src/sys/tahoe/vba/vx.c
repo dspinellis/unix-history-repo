@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vx.c	7.4 (Berkeley) %G%
+ *	@(#)vx.c	7.5 (Berkeley) %G%
  */
 
 #include "vx.h"
@@ -45,6 +45,7 @@
 #include "../tahoe/pte.h"
 
 #include "../tahoevba/vbavar.h"
+#include "../tahoevba/vbaparam.h"
 #include "../tahoevba/vxreg.h"
 #include "../tahoevba/scope.h"
 
@@ -135,13 +136,19 @@ vxprobe(reg, vi)
 	struct vba_device *vi;
 {
 	register int br, cvec;			/* must be r12, r11 */
-	register struct vxdevice *vp = (struct vxdevice *)reg;
+	register struct vxdevice *vp;
 	register struct vx_softc *vs;
+	struct pte *dummypte;
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
 	vackint(0); vunsol(0); vcmdrsp(0); vxfreset(0);
 #endif
+	if (!VBIOMAPPED(reg) && !vbmemalloc(16, reg, &dummypte, &reg)) {
+		printf("vx%d: vbmemalloc failed.\n", vi->ui_unit);
+		return(0);
+	}
+	vp = (struct vxdevice *)reg;
 	if (badaddr((caddr_t)vp, 1))
 		return (0);
 	vp->v_fault = 0;
