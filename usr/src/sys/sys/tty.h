@@ -4,10 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.h	7.13 (Berkeley) %G%
+ *	@(#)tty.h	7.14 (Berkeley) %G%
  */
 
 #include <sys/termios.h>
+#include <sys/select.h>			/* for struct selinfo */
 
 /*
  * Clists are character lists, which is a variable length linked list
