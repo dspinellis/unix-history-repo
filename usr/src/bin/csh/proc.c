@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -705,7 +705,7 @@ pprint(pp, flag)
                             && (reason != SIGPIPE
                                 || (pp->p_flags & PPOU) == 0))) {
 			(void) fprintf(cshout, format, 
-				       sys_signame[pp->p_reason]);
+				       sys_siglist[pp->p_reason]);
 			hadnl = 0;
 		    }
 		    break;
