@@ -10,21 +10,23 @@
 #ifndef _SYS_TIME_H_
 #define _SYS_TIME_H_
 
+#include <sys/types.h>
+
 /*
  * Structure returned by gettimeofday(2) system call,
  * and used in other calls.
  */
 struct timeval {
-	long	tv_sec;		/* seconds */
-	long	tv_usec;	/* and microseconds */
+	int32_t	tv_sec;		/* seconds */
+	int32_t	tv_usec;	/* and microseconds */
 };
 
 /*
  * Structure defined by POSIX.4 to be like a timeval.
  */
 struct timespec {
-	long	ts_sec;		/* seconds */
-	long	ts_nsec;	/* and nanoseconds */
+	int32_t	ts_sec;		/* seconds */
+	int32_t	ts_nsec;	/* and nanoseconds */
 };
 
 #define	TIMEVAL_TO_TIMESPEC(tv, ts) {					\
