@@ -10,7 +10,7 @@
 #define	ClearElement(x)		bzero((char *)&x, sizeof x)
 #define	ClearArray(x)		bzero((char *)x, sizeof x)
 #else	/* defined(unix) */
-#define	ClearStructure(x)	memset((char *)&x, 0, sizeof x)
+#define	ClearElement(x)	memset((char *)&x, 0, sizeof x)
 #define	ClearArray(x)		memset((char *)x, 0, sizeof x)
 #endif	/* defined(unix) */
 
