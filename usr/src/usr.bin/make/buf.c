@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)buf.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)buf.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)buf.c	5.5 (Berkeley) %G%";
  */
 
 #include    "sprite.h"
+#include    "make.h"
 #include    "buf.h"
 
 #ifndef max
@@ -65,7 +66,7 @@ static char sccsid[] = "@(#)buf.c	5.5 (Berkeley) %G%";
 void
 Buf_OvAddByte (bp, byte)
     register Buffer bp;
-    Byte    byte;
+    int    byte;
 {
 
     bp->left = 0;
@@ -102,7 +103,7 @@ Buf_AddBytes (bp, numBytes, bytesPtr)
 
     BufExpand (bp, numBytes);
 
-    bcopy (bytesPtr, bp->inPtr, numBytes);
+    memcpy (bp->inPtr, bytesPtr, numBytes);
     bp->inPtr += numBytes;
     bp->left -= numBytes;
 
@@ -128,7 +129,7 @@ Buf_AddBytes (bp, numBytes, bytesPtr)
 void
 Buf_UngetByte (bp, byte)
     register Buffer bp;
-    Byte    byte;
+    int    byte;
 {
 
     if (bp->outPtr != bp->buffer) {
@@ -150,8 +151,7 @@ Buf_UngetByte (bp, byte)
 	Byte	  *newBuf;
 
 	newBuf = (Byte *)emalloc(bp->size + BUF_UNGET_INC);
-	bcopy ((char *)bp->outPtr,
-			(char *)(newBuf+BUF_UNGET_INC), numBytes+1);
+	memcpy ((char *)(newBuf+BUF_UNGET_INC), (char *)bp->outPtr, numBytes+1);
 	bp->outPtr = newBuf + BUF_UNGET_INC;
 	bp->inPtr = bp->outPtr + numBytes;
 	free ((char *)bp->buffer);
@@ -185,7 +185,7 @@ Buf_UngetBytes (bp, numBytes, bytesPtr)
 
     if (bp->outPtr - bp->buffer >= numBytes) {
 	bp->outPtr -= numBytes;
-	bcopy (bytesPtr, bp->outPtr, numBytes);
+	memcpy (bp->outPtr, bytesPtr, numBytes);
     } else if (bp->outPtr == bp->inPtr) {
 	Buf_AddBytes (bp, numBytes, bytesPtr);
     } else {
@@ -194,7 +194,7 @@ Buf_UngetBytes (bp, numBytes, bytesPtr)
 	int 	  newBytes = max(numBytes,BUF_UNGET_INC);
 
 	newBuf = (Byte *)emalloc (bp->size + newBytes);
-	bcopy((char *)bp->outPtr, (char *)(newBuf+newBytes), curNumBytes+1);
+	memcpy((char *)(newBuf+newBytes), (char *)bp->outPtr, curNumBytes+1);
 	bp->outPtr = newBuf + newBytes;
 	bp->inPtr = bp->outPtr + curNumBytes;
 	free ((char *)bp->buffer);
@@ -202,7 +202,7 @@ Buf_UngetBytes (bp, numBytes, bytesPtr)
 	bp->size += newBytes;
 	bp->left = bp->size - (bp->inPtr - bp->buffer);
 	bp->outPtr -= numBytes;
-	bcopy ((char *)bytesPtr, (char *)bp->outPtr, numBytes);
+	memcpy ((char *)bp->outPtr, (char *)bytesPtr, numBytes);
     }
 }
 
@@ -264,7 +264,7 @@ Buf_GetBytes (bp, numBytes, bytesPtr)
     if (bp->inPtr - bp->outPtr < numBytes) {
 	numBytes = bp->inPtr - bp->outPtr;
     }
-    bcopy (bp->outPtr, bytesPtr, numBytes);
+    memcpy (bytesPtr, bp->outPtr, numBytes);
     bp->outPtr += numBytes;
 
     if (bp->outPtr == bp->inPtr) {

@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lst.h	5.3 (Berkeley) %G%
+ *	@(#)lst.h	5.4 (Berkeley) %G%
  */
 
 /*-
@@ -20,6 +20,9 @@
 #define _LST_H_
 
 #include	<sprite.h>
+#if __STDC__
+#include	<stdlib.h>
+#endif
 
 /*
  * basic typedef. This is what the Lst_ functions handle

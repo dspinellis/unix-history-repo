@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compat.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)compat.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -29,12 +29,14 @@ static char sccsid[] = "@(#)compat.c	5.9 (Berkeley) %G%";
 
 #include    <stdio.h>
 #include    <sys/types.h>
-#include    <sys/stat.h>
+#include    <sys/signal.h>
 #include    <sys/wait.h>
 #include    <sys/errno.h>
-#include    <signal.h>
 #include    <ctype.h>
 #include    "make.h"
+#include    "hash.h"
+#include    "dir.h"
+#include    "job.h"
 extern int errno;
 
 /*
@@ -48,7 +50,9 @@ static char 	    meta[256];
 
 static GNode	    *curTarg = NILGNODE;
 static GNode	    *ENDNode;
-static int  	    CompatRunCommand();
+static void CompatInterrupt __P((int));
+static int CompatRunCommand __P((char *, GNode *));
+static int CompatMake __P((GNode *, GNode *));
 
 /*-
  *-----------------------------------------------------------------------
@@ -70,13 +74,11 @@ CompatInterrupt (signo)
     int	    signo;
 {
     GNode   *gn;
-    struct stat sb;
     
     if ((curTarg != NILGNODE) && !Targ_Precious (curTarg)) {
 	char 	  *file = Var_Value (TARGET, curTarg);
 
-	if (!stat(file, &sb) && S_ISREG(sb.st_mode) &&
-	    unlink (file) == SUCCESS) {
+	if (unlink (file) == SUCCESS) {
 	    printf ("*** %s removed\n", file);
 	}
 
@@ -119,7 +121,6 @@ CompatRunCommand (cmd, gn)
     union wait 	  reason;   	/* Reason for child's death */
     int	    	  status;   	/* Description of child's death */
     int	    	  cpid;	    	/* Child actually found */
-    int	    	  numWritten;	/* Number of bytes written for error message */
     ReturnStatus  stat;	    	/* Status of fork */
     LstNode 	  cmdNode;  	/* Node where current command is located */
     char    	  **av;	    	/* Argument vector for thing to exec */
@@ -132,7 +133,7 @@ CompatRunCommand (cmd, gn)
     errCheck = !(gn->type & OP_IGNORE);
 
     cmdNode = Lst_Member (gn->commands, (ClientData)cmd);
-    cmdStart = Var_Subst (cmd, gn, FALSE);
+    cmdStart = Var_Subst (NULL, cmd, gn, FALSE);
 
     /*
      * brk_string will return an argv with a NULL in av[1], thus causing
@@ -171,7 +172,7 @@ CompatRunCommand (cmd, gn)
      * characters, there's no need to execute a shell to execute the
      * command.
      */
-    for (cp = cmd; !meta[*cp]; cp++) {
+    for (cp = cmd; !meta[(unsigned char)*cp]; cp++) {
 	continue;
     }
 
@@ -229,8 +230,8 @@ CompatRunCommand (cmd, gn)
     if (cpid == 0) {
 	if (local) {
 	    execvp(av[0], av);
-	    numWritten = write (2, av[0], strlen (av[0]));
-	    numWritten = write (2, ": not found\n", sizeof(": not found"));
+	    (void) write (2, av[0], strlen (av[0]));
+	    (void) write (2, ": not found\n", sizeof(": not found"));
 	} else {
 	    (void)execv(av[0], av);
 	}
@@ -460,6 +461,8 @@ CompatMake (gn, pgn)
 	    if (noExecute || Dir_MTime(gn) == 0) {
 		gn->mtime = now;
 	    }
+	    if (gn->cmtime > gn->mtime)
+		gn->mtime = gn->cmtime;
 	    if (DEBUG(MAKE)) {
 		printf("update time: %s\n", Targ_FmtTime(gn->mtime));
 	    }
@@ -501,6 +504,8 @@ CompatMake (gn, pgn)
 		    Make_TimeStamp(pgn, gn);
 		}
 		break;
+	    default:
+		break;
 	}
     }
 
@@ -525,7 +530,7 @@ Compat_Run(targs)
     Lst	    	  targs;    /* List of target nodes to re-create */
 {
     char    	  *cp;	    /* Pointer to string of shell meta-characters */
-    GNode   	  *gn;	    /* Current root target */
+    GNode   	  *gn = NULL;/* Current root target */
     int	    	  errors;   /* Number of targets not remade due to errors */
 
     if (signal(SIGINT, SIG_IGN) != SIG_IGN) {
@@ -542,7 +547,7 @@ Compat_Run(targs)
     }
 
     for (cp = "#=|^(){};&<>*?[]:$`\\\n"; *cp != '\0'; cp++) {
-	meta[*cp] = 1;
+	meta[(unsigned char) *cp] = 1;
     }
     /*
      * The null character serves as a sentinel in the string.

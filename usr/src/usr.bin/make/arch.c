@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)arch.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)arch.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -65,10 +65,12 @@ static char sccsid[] = "@(#)arch.c	5.7 (Berkeley) %G%";
 #include    <sys/time.h>
 #include    <ctype.h>
 #include    <ar.h>
-#include <ranlib.h>
+#include    <ranlib.h>
 #include    <stdio.h>
 #include    "make.h"
 #include    "hash.h"
+#include    "dir.h"
+#include    "config.h"
 
 static Lst	  archives;   /* Lst of archives we've already examined */
 
@@ -78,7 +80,9 @@ typedef struct Arch {
 			       * by <name, struct ar_hdr *> key/value pairs */
 } Arch;
 
-static FILE *ArchFindMember();
+static int ArchFindArchive __P((Arch *, char *));
+static struct ar_hdr *ArchStatMember __P((char *, char *, Boolean));
+static FILE *ArchFindMember __P((char *, char *, struct ar_hdr *, char *));
 
 /*-
  *-----------------------------------------------------------------------
@@ -107,7 +111,7 @@ Arch_ParseArchive (linePtr, nodeLst, ctxt)
     GNode	    *gn;     	    /* New node */
     char	    *libName;  	    /* Library-part of specification */
     char	    *memName;  	    /* Member-part of specification */
-    char	    nameBuf[BSIZE]; /* temporary place for node name */
+    char	    nameBuf[MAKE_BSIZE]; /* temporary place for node name */
     char	    saveChar;  	    /* Ending delimiter of member-name */
     Boolean 	    subLibName;	    /* TRUE if libName should have/had
 				     * variable substitution performed on it */
@@ -142,11 +146,11 @@ Arch_ParseArchive (linePtr, nodeLst, ctxt)
 
     *cp++ = '\0';
     if (subLibName) {
-	libName = Var_Subst(libName, ctxt, TRUE);
+	libName = Var_Subst(NULL, libName, ctxt, TRUE);
     }
     
 
-    while (1) {
+    for (;;) {
 	/*
 	 * First skip to the start of the member's name, mark that
 	 * place and skip to the end of it (either white-space or
@@ -221,7 +225,7 @@ Arch_ParseArchive (linePtr, nodeLst, ctxt)
 	    char    *sacrifice;
 	    char    *oldMemName = memName;
 	    
-	    memName = Var_Subst(memName, ctxt, TRUE);
+	    memName = Var_Subst(NULL, memName, ctxt, TRUE);
 
 	    /*
 	     * Now form an archive spec and recurse to deal with nested
@@ -232,7 +236,7 @@ Arch_ParseArchive (linePtr, nodeLst, ctxt)
 
 	    sprintf(buf, "%s(%s)", libName, memName);
 
-	    if (index(memName, '$') && strcmp(memName, oldMemName) == 0) {
+	    if (strchr(memName, '$') && strcmp(memName, oldMemName) == 0) {
 		/*
 		 * Must contain dynamic sources, so we can't deal with it now.
 		 * Just create an ARCHV node for the thing and let
@@ -401,7 +405,7 @@ ArchStatMember (archive, member, hash)
      * to point 'member' to the final component, if there is one, to make
      * the comparisons easier...
      */
-    cp = rindex (member, '/');
+    cp = strrchr (member, '/');
     if (cp != (char *) NULL) {
 	member = cp + 1;
     }
@@ -490,7 +494,7 @@ ArchStatMember (archive, member, hash)
 	    he = Hash_CreateEntry (&ar->members, strdup (memName),
 				   (Boolean *)NULL);
 	    Hash_SetValue (he, (ClientData)emalloc (sizeof (struct ar_hdr)));
-	    bcopy ((Address)&arh, (Address)Hash_GetValue (he), 
+	    memcpy ((Address)Hash_GetValue (he), (Address)&arh, 
 		sizeof (struct ar_hdr));
 	}
 	/*
@@ -573,7 +577,7 @@ ArchFindMember (archive, member, arhPtr, mode)
      * to point 'member' to the final component, if there is one, to make
      * the comparisons easier...
      */
-    cp = rindex (member, '/');
+    cp = strrchr (member, '/');
     if (cp != (char *) NULL) {
 	member = cp + 1;
     }
@@ -774,8 +778,8 @@ Arch_MemMTime (gn)
 	     * child. We keep searching its parents in case some other
 	     * parent requires this child to exist...
 	     */
-	    nameStart = index (pgn->name, '(') + 1;
-	    nameEnd = index (nameStart, ')');
+	    nameStart = strchr (pgn->name, '(') + 1;
+	    nameEnd = strchr (nameStart, ')');
 
 	    if (pgn->make &&
 		strncmp(nameStart, gn->name, nameEnd - nameStart) == 0) {

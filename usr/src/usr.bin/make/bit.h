@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bit.h	5.3 (Berkeley) %G%
+ *	@(#)bit.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -71,4 +71,4 @@ extern Boolean 	  Bit_Union();
 extern Boolean 	  Bit_AnySet();
 extern int  	  *Bit_Expand();
 	 
-#endif _BIT
+#endif /* _BIT */
