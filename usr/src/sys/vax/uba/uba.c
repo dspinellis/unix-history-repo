@@ -1,4 +1,4 @@
-/*	uba.c	4.22	81/03/09	*/
+/*	uba.c	4.23	81/03/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -320,7 +320,7 @@ ubainit(uba)
 
 	switch (cpu) {
 #if VAX780
-	case VAX780:
+	case VAX_780:
 		uba->uba_cr = UBACR_ADINIT;
 		uba->uba_cr = UBACR_IFS|UBACR_BRIE|UBACR_USEFIE|UBACR_SUEFIE;
 		while ((uba->uba_cnfgr & UBACNFGR_UBIC) == 0)
@@ -328,7 +328,7 @@ ubainit(uba)
 		break;
 #endif
 #if VAX750
-	case VAX750:
+	case VAX_750:
 		mtpr(IUR, 1);
 		/* give devices time to recover from power fail */
 		DELAY(5000000);
@@ -411,7 +411,7 @@ ubaerror(uban, uh, xx, uvec, uba)
 	if (uba->uba_cnfgr & NEX_CFGFLT) {
 		printf("uba%d: sbi fault sr=%b cnfgr=%b\n",
 		    uban, uba->uba_sr, ubasr_bits,
-		    uba->uba_cnfgr, nexflt_bits);
+		    uba->uba_cnfgr, NEXFLT_BITS);
 		ubareset(uban);
 		uvec = 0;
 		return;
