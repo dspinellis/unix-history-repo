@@ -32,9 +32,10 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         3       00023
+ * CURRENT PATCH LEVEL:         4       00029
  * --------------------         -----   ----------------------
  *
+ * 15 Aug 92	David Dawes		SIGTERM + 10 seconds before SIGKILL
  * 24 Jul 92	Nate Williams		Fixed utmp removal, wtmp info
  * 31 Jul 92	Christoph Robitschko	Fixed run level change code
  * 04 Sep 92	Paul Kranenburg		Fixed kill -1 and kill -15 for
@@ -122,6 +123,10 @@ sterm(sig)
 			free(tt->tt_type);
 		}
 		ttytabend = ttytab;
+		/* give processes time to exit cleanly */	/* 15 Aug 92*/
+		kill(-1, SIGTERM);
+		sleep(10);
+		/* Now murder them */
 		kill(-1, SIGKILL);
 		kill(-1, SIGCONT);
 		signal(SIGALRM, salrm);
