@@ -40,6 +40,7 @@ lib/libcrypt (non-US)   Geoff Rehmet            csgr@cs.ru.ac.za
 lib/libcurses           Andrew Chernov          ache@astral.msk.su
 lib/libkrb	        Garrett Wollman         wollman@lcs.mit.edu
 lib/libpthread          Chris Provenzano        proven@mit.edu
+lib/libskey             Guido van Rooij		guido@gvr.win.tue.nl
 lib/libtelnet           Garrett Wollman         wollman@lcs.mit.edu
 misc/manctl             Geoff Rehmet            csgr@cs.ru.ac.za
 misc/configit           Gary Clark II           gclarkii@freefall.cdrom.com
