@@ -1,0 +1,78 @@
+%    Copyright (C) 1992 Aladdin Enterprises.  All rights reserved.
+%    Distributed by Free Software Foundation, Inc.
+%
+% This file is part of Ghostscript.
+%
+% Ghostscript is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+% to anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.  Refer
+% to the Ghostscript General Public License for full details.
+%
+% Everyone is granted permission to copy, modify and redistribute
+% Ghostscript, but only under the conditions described in the Ghostscript
+% General Public License.  A copy of this license is supposed to have been
+% given to you along with Ghostscript so you can know your rights and
+% responsibilities.  It should be in a file named COPYING.  Among other
+% things, the copyright notice and this notice must be preserved on all
+% copies.
+
+% showpbm.ps
+% Display a PBM/PGM/PPM file.  Currently only handles "raw" formats (P4-P6).
+
+/s 100 string def
+/readmaxv
+ { f s readline pop cvx exec /maxv exch def
+ } def
+/pdict 6 dict def
+pdict begin
+  /P1 [ { /rsize w 7 add 8 idiv def }
+	{ }
+      ] def
+  /P2 [ { readmaxv /rsize w def }
+	{ }
+      ] def
+  /P3 [ { readmaxv /rsize w 3 mul def }
+	{ }
+      ] def
+  /P4 [ { /rsize w 7 add 8 idiv def }
+	{ true exch { f row readstring pop } imagemask }
+      ] def
+  /P5 [ { readmaxv /rsize w def }
+	{ 8 exch { f row readstring pop } image }
+      ] def
+  /P6 [ { readmaxv /rsize w 3 mul def }
+	{ 8 exch { f row readstring pop } false 3 colorimage }
+      ] def
+end
+/showpbm		% filename ->
+ { (r) file /f exch def
+   f s readline pop cvn /pn exch def		% Pn
+   f s readline pop		% check for comment
+   (#) anchorsearch
+    { pop pop f s readline pop }
+   if
+   cvx exec /h exch def /w exch def
+   pdict pn get dup /rprocs exch def
+     0 get exec
+   /row rsize string def
+   [1 0 0 -1 0 h] setmatrix
+   erasepage
+   0 setgray
+   w h [1 0 0 -1 0 h] rprocs 1 get exec
+   showpage
+ } def
+
+% If the program was invoked from the command line, run it now.
+[ shellarguments
+ { counttomark 1 eq
+    { showpbm
+    }
+    { cleartomark
+      (Usage: showpbm filename.p*m\n) print
+      ( e.g.: showpbm my.ppm\n) print flush
+      mark
+    }
+   ifelse
+ }
+if pop
