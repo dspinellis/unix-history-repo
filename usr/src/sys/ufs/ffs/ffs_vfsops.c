@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.22 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.23 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -269,7 +269,7 @@ ffs_reload(mountp, cred, p)
 	struct fs *fs, *newfs;
 	struct partinfo dpart;
 	int i, blks, size, error;
-	long *lp;
+	int32_t *lp;
 
 	if ((mountp->mnt_flag & MNT_RDONLY) == 0)
 		return (EINVAL);
