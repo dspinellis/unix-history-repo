@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_input.c	7.19 (Berkeley) %G%
+ *	@(#)ip_input.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -111,8 +111,8 @@ ip_init()
 	ipintrq.ifq_maxlen = ipqmaxlen;
 #ifdef GATEWAY
 	i = (if_index + 1) * (if_index + 1) * sizeof (u_long);
-	if ((ip_ifmatrix = (u_long *) malloc(i, M_RTABLE, M_WAITOK)) == 0)
-		panic("no memory for ip_ifmatrix");
+	ip_ifmatrix = (u_long *) malloc(i, M_RTABLE, M_WAITOK);
+	bzero((char *)ip_ifmatrix, i);
 #endif
 }
 
