@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)pwcache.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pwcache.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -26,6 +26,9 @@ static char sccsid[] = "@(#)pwcache.c	5.1 (Berkeley) %G%";
 
 #define	NCACHE	64			/* power of 2 */
 #define	MASK	NCACHE - 1		/* bits to store with */
+
+static	int pwopen = 0;
+static	int gropen = 0;
 
 char *
 user_from_uid(uid)
@@ -41,6 +44,10 @@ user_from_uid(uid)
 
 	cp = c_uid + (uid & MASK);
 	if (cp->uid != uid || !*cp->name) {
+		if (pwopen == 0) {
+			setpassent(1);
+			pwopen++;
+		}
 		/* if can't find owner, use user id instead */
 		if (!(pw = getpwuid(uid))) {
 			(void)sprintf(nbuf, "%u", uid);
@@ -67,6 +74,10 @@ group_from_gid(gid)
 
 	cp = c_gid + (gid & MASK);
 	if (cp->gid != gid || !*cp->name) {
+		if (gropen == 0) {
+			setgroupent(1);
+			gropen++;
+		}
 		/* if can't find group, use group id instead */
 		if (!(gr = getgrgid(gid))) {
 			(void)sprintf(nbuf, "%u", gid);
