@@ -6,14 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)log.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <math.h>
 #include <errno.h>
 
 #include "log_table.h"
-#include "dmath.h"
+#include "mathimpl.h"
 
 /* Table-driven natural logarithm.
  *
