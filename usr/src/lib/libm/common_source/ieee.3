@@ -1,0 +1,88 @@
+From Prof. Kahan at UC at Berkeley
+.TH IEEE 3M  "8 May 1985"
+.UC 4
+.SH NAME
+copysign, drem, logb, scalb \- copysign, remainder, exponent manipulations
+.SH SYNOPSIS
+.nf
+.B #include <math.h>
+.PP
+.B double copysign(x, y)
+.B double x, y;
+.PP
+.B double drem(x, y)
+.B double x, y;
+.PP
+.B double logb(x)
+.B double x;
+.PP
+.B double scalb(x, n)
+.B double x;
+.B int n;
+.fi
+.SH DESCRIPTION
+These functions are necessary for, or recommended by the IEEE standard
+754 for floating-point arithmetic.
+.PP
+.I Copysign(x,y)
+returns
+.I x
+with the sign of
+.I y.
+.PP
+.I Drem(x,y)
+returns
+.I r
+when
+.I y
+is not equal to 0; the remainder
+.I r
+is defined by the mathematical relation
+.I r=x\-y*n
+where
+.I n
+is the integer nearest the exact value
+.I x/y;
+whenever
+.I |n\-x/y|=1/2,
+then
+.I n
+is even.
+Thus, the remainder is always exact.
+.PP
+.I Logb(x)
+returns the exponent of
+.I x,
+a signed integer in double precision.
+When
+.I x
+is positive, the expression
+.I scalb(x,(int)(\-logb(x)))
+lies strictly between 1 and 2; the expression equals 1 only if
+.I x
+is a power of 2.
+.PP
+.I Scalb(x,n)
+returns
+.I  x*2\u\s8n\s10\d,
+for integer values
+.I n
+without computing
+.I 2\u\s8n\s10\d.
+.SH SEE ALSO
+intro(3M)
+.SH DIAGNOSTICS
+.I Drem(x,y)
+returns the reserved operand on the VAX when y is equal to 0.
+.I Logb(x)
+returns the hugest negative number on the VAX when x is equal to 0.
+If the correct value would overflow,
+.I scalb(x,n)
+returns the reserved operand on the VAX
+and sets
+.I errno
+to ERANGE.
+.SH AUTHOR
+Kwok-Choi Ng
+.SH BUGS
+Logb(0) should return \-infinity.
