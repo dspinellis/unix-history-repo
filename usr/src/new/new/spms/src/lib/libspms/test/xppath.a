@@ -1,0 +1,163 @@
+!<arch>
+Ixppath         418696458   968   27    100644  168       `
+~
+^
+/
+^^
+~root
+...
+..
+...^test
+...^mumble
+....
+../../../..
+....^libspms
+^libspms^test
+^libspms^test/xppath.a
+^libspms
+^libspms^test^work
+^libspms^test/
+test
+?
+^libspms
+Oxppath         421781669   968   10    100644  1707      `
+Txppath: ~ --> ../../../..
+../../../..
+../../../..
+root project directory
+Txppath: ^ --> ../../../..
+../../../..
+../../../..
+root project directory
+Txppath: / --> /
+/
+/
+root project directory
+Txppath: ^^ --> ../../../..
+../../../..
+../../../..
+root project directory
+Txppath: ~root --> /
+/
+/
+root project directory
+Txppath: ... --> ..
+..
+..
+project root directory
+Txppath: .. --> ..
+..
+..
+regular
+Txppath: ...^test --> ../test
+..
+../test
+project directory
+Txppath: ...^mumble --> .././
+Txppath: ...^mumble: no such project directory
+Txppath: .... --> ../../../..
+../../../..
+../../../..
+project root directory
+Txppath: ../../../.. --> ../../../..
+..
+../../../..
+regular
+Txppath: ....^libspms --> ../../../../src/lib/libspms
+../../../../src/lib/libspms
+../../../../src/lib/libspms
+project root directory
+Txppath: ^libspms^test --> ../../../../src/lib/libspms/test
+../../../../src/lib/libspms
+../../../../src/lib/libspms/test
+project directory
+Txppath: ^libspms^test/xppath.a --> ../../../../src/lib/libspms/test/xppath.a
+../../../../src/lib/libspms
+../../../../src/lib/libspms/test/xppath.a
+regular
+Txppath: ^libspms --> ../../../../src/lib/libspms
+../../../../src/lib/libspms
+../../../../src/lib/libspms
+project root directory
+Txppath: ^libspms^test^work --> ../../../../src/lib/libspms/test
+Txppath: ^libspms^test^work: no such file, directory, or project
+Txppath: ^libspms^test/ --> ../../../../src/lib/libspms/test
+../../../../src/lib/libspms
+../../../../src/lib/libspms/test
+project directory
+Txppath: test --> ../test
+..
+../test
+project directory
+Txppath: ? --> ?
+..
+?
+new
+Txppath: ^libspms --> ../../../../src/lib/libspms
+../../../../src/lib/libspms
+../../../../src/lib/libspms
+project root directory
+
+Txppath.c       418696461   968   27    100644  1056      `
+/*
+ * xppath()
+ * patherr()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "yesno.h"
+
+char *PGN = "Txppath";			/* program name */
+
+main()
+{
+	extern int PPDEBUG;		/* project pathname debug flag */
+	char *gets();			/* get line from stdin */
+	char ppathname[PPATHSIZE];	/* project pathname */
+	FILE *fp;			/* file pointer */
+	int xppath();			/* expand project pathname */
+	PATH pathbuf;			/* pathname buffer */
+
+	PPDEBUG = YES;
+	fp = freopen("Ixppath", "r", stdin);
+
+	while (gets(ppathname) != NULL)
+		{
+		if (xppath(ppathname, &pathbuf) == -1)
+			patherr(ppathname);
+		else	{
+			printf("%s\n", pathbuf.p_project);
+			printf("%s\n", pathbuf.p_path);
+			switch (P_IFMT&pathbuf.p_mode)
+				{
+				case P_IFNEW:
+					printf("new\n");
+					break;
+				case P_IFREG:
+					printf("regular\n");
+					break;
+				case P_IFHOME:
+					printf("root project directory\n");
+					break;
+				case P_IFPDIR:
+					printf("project directory\n");
+					break;
+				case P_IFPROOT:
+					printf("project root directory\n");
+					break;
+				}
+			fflush(stdout);
+			}
+		}
+	exit(0);
+}
+Txppath.sh      418870329   968   27    100755  111       `
+#!/bin/csh -f
+#
+# xppath()
+#
+setenv HOME ../../../..
+setenv PROJECT ..
+Txppath |& diff - Oxppath
+exit($status)
+
