@@ -1,0 +1,47 @@
+MAIL.LOCAL(8)             BSD System Manager's Manual            MAIL.LOCAL(8)
+
+NNAAMMEE
+     mmaaiill..llooccaall - store mail in a mailbox
+
+SSYYNNOOPPSSIISS
+     mmaaiill..llooccaall [--ff _f_r_o_m] _u_s_e_r _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     MMaaiill..llooccaall reads the standard input up to an end-of-file and appends it
+     to each _u_s_e_r _'_s _m_a_i_l file.  The _u_s_e_r must be a valid user name.
+
+     The options are as follows:
+
+     --ff _f_r_o_m  Specify the sender's name.
+
+     Individual mail messages in the mailbox are delimited by an empty line
+     followed by a line beginning with the string ``From ''.  A line contain-
+     ing the string ``From '', the sender's name and a time stamp is prepended
+     to each delivered mail message.  A blank line is appended to each mes-
+     sage.  A greater-than character (``>'') is prepended to any line in the
+     message which could be mistaken for a ``From '' delimiter line.
+
+     The mail files are exclusively locked with flock(2) while mail is append-
+     ed.
+
+     If the ``biff'' service is returned by getservbyname(3),  the biff server
+     is notified of delivered mail.
+
+     The mmaaiill..llooccaall utility exits 0 on success, and >0 if an error occurs.
+
+EENNVVIIRROONNMMEENNTT
+     TZ      Used to set the appropriate time zone on the timestamp.
+
+FFIILLEESS
+     /tmp/local.XXXXXX  temporary files
+     /var/mail/user     user's mailbox directory
+
+SSEEEE AALLSSOO
+     mail(1),  xsend(1),  flock(2),  getservbyname(3),  comsat(8),  send-
+     mail(8)
+
+HHIISSTTOORRYY
+     A superset of mmaaiill..llooccaall (handling mailbox reading as well as mail deliv-
+     ery) appeared in Version 7 AT&T UNIX.  as the program mmaaiill.
+
+4.4BSD                           June 4, 1993                                1
