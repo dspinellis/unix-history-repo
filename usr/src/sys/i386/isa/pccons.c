@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pccons.c	5.8 (Berkeley) %G%
+ *	@(#)pccons.c	5.9 (Berkeley) %G%
  */
 
 /*
@@ -597,7 +597,7 @@ u_char c, ca;
 #define	FUNC		0x0100	/* function key */
 #define	SCROLL		0x0200	/* scroll lock key */
 
-unsigned	__debug = 0xffe; /*0xffe */;
+unsigned	__debug = 0; /*0xffe */;
 u_short action[] = {
 0,     ASCII, ASCII, ASCII, ASCII, ASCII, ASCII, ASCII,		/* scan  0- 7 */
 ASCII, ASCII, ASCII, ASCII, ASCII, ASCII, ASCII, ASCII,		/* scan  8-15 */
