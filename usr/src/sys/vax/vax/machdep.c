@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982,1986,1988 Regents of the University of California.
+ * Copyright (c) 1982,1986,1988,1990 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
@@ -43,6 +43,8 @@
 
 #include "../vaxuba/ubavar.h"
 #include "../vaxuba/ubareg.h"
+
+#define RETURN(value)   { u.u_error = (value); return; }
 
 /*
  * Declare these as initialized data so we can patch them.
@@ -103,6 +105,7 @@ startup(firstaddr)
 
 #ifdef KADB
 	kdb_init();
+	(void) cnopen(makedev(0, 0), 0);	/* open console XXX */
 #endif
 	/*
 	 * Good {morning,afternoon,evening,night}.
@@ -425,15 +428,12 @@ sigreturn()
 
 	scp = ((struct a *)(u.u_ap))->sigcntxp;
 	if (useracc((caddr_t)scp, sizeof (*scp), B_WRITE) == 0)
-		return;
+		RETURN (EINVAL);
 	if ((scp->sc_ps & (PSL_MBZ|PSL_IPL|PSL_IS)) != 0 ||
 	    (scp->sc_ps & (PSL_PRVMOD|PSL_CURMOD)) != (PSL_PRVMOD|PSL_CURMOD) ||
 	    ((scp->sc_ps & PSL_CM) &&
-	     (scp->sc_ps & (PSL_FPD|PSL_DV|PSL_FU|PSL_IV)) != 0)) {
-		u.u_error = EINVAL;
-		return;
-	}
-	u.u_eosys = JUSTRETURN;
+	     (scp->sc_ps & (PSL_FPD|PSL_DV|PSL_FU|PSL_IV)) != 0))
+		RETURN (EINVAL);
 	u.u_onstack = scp->sc_onstack & 01;
 	u.u_procp->p_sigmask = scp->sc_mask &~ sigcantmask;
 	regs[FP] = scp->sc_fp;
@@ -441,6 +441,7 @@ sigreturn()
 	regs[SP] = scp->sc_sp;
 	regs[PC] = scp->sc_pc;
 	regs[PS] = scp->sc_ps;
+	RETURN (EJUSTRETURN);
 }
 
 /*
