@@ -1,15 +1,15 @@
 # include	<signal.h>
 
-# ifdef SIGTSTP
-
 # include	"curses.ext"
 
 /*
  * handle stop and start signals
  *
- * %G% (Berkeley) @(#)tstp.c	1.1
+ * %G% (Berkeley) @(#)tstp.c	1.2
  */
 tstp() {
+
+# ifdef SIGTSTP
 
 	SGTTY	tty;
 # ifdef DEBUG
@@ -25,5 +25,5 @@ tstp() {
 	_tty = tty;
 	stty(_tty_ch, &_tty);
 	wrefresh(curscr);
+# endif	SIGTSTP
 }
-# endif
