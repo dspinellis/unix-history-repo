@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_mkquery.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_mkquery.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -38,7 +38,7 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 #ifdef DEBUG
 	if (_res.options & RES_DEBUG)
 		printf("res_mkquery(%d, %s, %d, %d)\n", op, dname, class, type);
-#endif
+#endif DEBUG
 	/*
 	 * Initialize header fields.
 	 */
@@ -63,7 +63,7 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	 * If the domain name contains no dots (single label), then
 	 * append the default domain name to the one given.
 	 */
-	if ((_res.options & RES_DEFNAMES) && dname[0] != '\0' &&
+	if ((_res.options & RES_DEFNAMES) && dname != 0 && dname[0] != '\0' &&
 	    index(dname, '.') == NULL) {
 		if (!(_res.options & RES_INIT))
 			if (res_init() == -1)
