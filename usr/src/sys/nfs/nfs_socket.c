@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.20 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.21 (Berkeley) %G%
  */
 
 /*
@@ -26,6 +26,7 @@
 #include "socket.h"
 #include "socketvar.h"
 #include "syslog.h"
+#include "tprintf.h"
 #include "../netinet/in.h"
 #include "../netinet/tcp.h"
 
@@ -232,13 +233,8 @@ nfs_reconnect(rep, nmp)
 	register struct nfsreq *rp;
 	int error;
 
-	if (rep->r_procp)
-		tprintf(rep->r_procp->p_session,
-			"Nfs server %s, trying reconnect\n",
-			nmp->nm_mountp->mnt_stat.f_mntfromname);
-	else
-		tprintf(NULL, "Nfs server %s, trying a reconnect\n",
-			nmp->nm_mountp->mnt_stat.f_mntfromname);
+	nfs_msg(rep->r_procp, nmp->nm_mountp->mnt_stat.f_mntfromname,
+	    "trying reconnect");
 	while (error = nfs_connect(nmp)) {
 #ifdef lint
 		error = error;
@@ -247,13 +243,8 @@ nfs_reconnect(rep, nmp)
 			return (EINTR);
 		(void) tsleep((caddr_t)&lbolt, PSOCK, "nfscon", 0);
 	}
-	if (rep->r_procp)
-		tprintf(rep->r_procp->p_session,
-			"Nfs server %s, reconnected\n",
-			nmp->nm_mountp->mnt_stat.f_mntfromname);
-	else
-		tprintf(NULL, "Nfs server %s, reconnected\n",
-			nmp->nm_mountp->mnt_stat.f_mntfromname);
+	nfs_msg(rep->r_procp, nmp->nm_mountp->mnt_stat.f_mntfromname,
+	    "reconnected");
 
 	/*
 	 * Loop through outstanding request list and fix up all requests
@@ -357,7 +348,7 @@ nfs_receive(so, aname, mp, rep)
 	caddr_t fcp, tcp;
 	u_long len;
 	struct mbuf **getnam;
-	int error, siz, mlen, soflags, rcvflg = MSG_WAITALL;
+	int error, siz, mlen, soflags, rcvflg;
 
 	/*
 	 * Set up arguments for soreceive()
@@ -410,17 +401,25 @@ tryagain:
 			auio.uio_offset = 0;
 			auio.uio_resid = sizeof(u_long);
 			do {
-			   error = soreceive(so, (struct mbuf **)0, &auio,
+			    rcvflg = MSG_WAITALL;
+			    error = soreceive(so, (struct mbuf **)0, &auio,
 				(struct mbuf **)0, (struct mbuf **)0, &rcvflg);
-			   if (error == EWOULDBLOCK && rep) {
+			    if (error == EWOULDBLOCK && rep) {
 				if (rep->r_flags & R_SOFTTERM)
 					return (EINTR);
 				if (rep->r_flags & R_MUSTRESEND)
 					goto tryagain;
-			   }
+			    }
 			} while (error == EWOULDBLOCK);
-			if (!error && auio.uio_resid > 0)
-				error = EPIPE;
+			if (!error && auio.uio_resid > 0) {
+			    if (rep)
+				log(LOG_INFO,
+				   "short receive (%d/%d) from nfs server %s\n",
+				   sizeof(u_long) - auio.uio_resid,
+				   sizeof(u_long),
+				 rep->r_nmp->nm_mountp->mnt_stat.f_mntfromname);
+			    error = EPIPE;
+			}
 			if (error)
 				goto errout;
 			len = ntohl(len) & ~0x80000000;
@@ -429,20 +428,33 @@ tryagain:
 			 * and forcing a disconnect/reconnect is all I can do.
 			 */
 			if (len > NFS_MAXPACKET) {
-				error = EFBIG;
-				goto errout;
+			    if (rep)
+				log(LOG_ERR, "%s (%d) from nfs server %s\n",
+				    "impossible packet length",
+				    len,
+				 rep->r_nmp->nm_mountp->mnt_stat.f_mntfromname);
+			    error = EFBIG;
+			    goto errout;
 			}
 			auio.uio_resid = len;
 			do {
+			    rcvflg = MSG_WAITALL;
 			    error =  soreceive(so, (struct mbuf **)0,
 				&auio, mp, (struct mbuf **)0, &rcvflg);
 			} while (error == EWOULDBLOCK || error == EINTR ||
 				 error == ERESTART);
-			if (!error && auio.uio_resid > 0)
-				error = EPIPE;
+			if (!error && auio.uio_resid > 0) {
+			    if (rep)
+				log(LOG_INFO,
+				   "short receive (%d/%d) from nfs server %s\n",
+				   len - auio.uio_resid, len,
+				 rep->r_nmp->nm_mountp->mnt_stat.f_mntfromname);
+			    error = EPIPE;
+			}
 		} else {
 			auio.uio_resid = len = 1000000;	/* Anything Big */
 			do {
+			    rcvflg = 0;
 			    error =  soreceive(so, (struct mbuf **)0,
 				&auio, mp, (struct mbuf **)0, &rcvflg);
 			    if (error == EWOULDBLOCK && rep) {
@@ -460,6 +472,11 @@ errout:
 		if (error && rep && error != EINTR && error != ERESTART) {
 			m_freem(*mp);
 			*mp = (struct mbuf *)0;
+			if (error != EPIPE && rep)
+				log(LOG_INFO,
+				    "receive error %d from nfs server %s\n",
+				    error,
+				 rep->r_nmp->nm_mountp->mnt_stat.f_mntfromname);
 			nfs_disconnect(rep->r_nmp);
 			error = nfs_reconnect(rep, rep->r_nmp);
 			if (!error)
@@ -472,6 +489,7 @@ errout:
 			getnam = aname;
 		auio.uio_resid = len = 1000000;
 		do {
+			rcvflg = 0;
 			error =  soreceive(so, getnam, &auio, mp,
 				(struct mbuf **)0, &rcvflg);
 			if (error == EWOULDBLOCK && rep &&
@@ -794,15 +812,9 @@ nfs_request(vp, mreq, xid, procnum, procp, tryhard, mp, mrp, mdp, dposp)
 	 * If there was a successful reply and a tprintf msg.
 	 * tprintf a response.
 	 */
-	if (!error && (rep->r_flags & R_TPRINTFMSG)) {
-		if (rep->r_procp)
-			tprintf(rep->r_procp->p_session,
-				"Nfs server %s, is alive again\n",
-				rep->r_nmp->nm_mountp->mnt_stat.f_mntfromname);
-		else
-			tprintf(NULL, "Nfs server %s, is alive again\n",
-				rep->r_nmp->nm_mountp->mnt_stat.f_mntfromname);
-	}
+	if (!error && (rep->r_flags & R_TPRINTFMSG))
+		nfs_msg(rep->r_procp, nmp->nm_mountp->mnt_stat.f_mntfromname,
+		    "is alive again");
 	m_freem(rep->r_mreq);
 	mrep = rep->r_mrep;
 	FREE((caddr_t)rep, M_NFSREQ);
@@ -1097,14 +1109,9 @@ nfs_timer()
 		 */
 		if ((rep->r_flags & R_TPRINTFMSG) == 0 &&
 		     rep->r_rexmit > NFS_FISHY) {
-			if (rep->r_procp && rep->r_procp->p_session)
-				tprintf(rep->r_procp->p_session,
-					"Nfs server %s, not responding\n",
-					nmp->nm_mountp->mnt_stat.f_mntfromname);
-			else
-				tprintf(NULL,
-					"Nfs server %s, not responding\n",
-					nmp->nm_mountp->mnt_stat.f_mntfromname);
+			nfs_msg(rep->r_procp,
+			    nmp->nm_mountp->mnt_stat.f_mntfromname,
+			    "not responding");
 			rep->r_flags |= R_TPRINTFMSG;
 		}
 		if (rep->r_rexmit >= rep->r_retry) {	/* too many */
@@ -1276,6 +1283,20 @@ nfs_sigintr(p)
 		return (1);
 	else
 		return (0);
+}
+
+nfs_msg(p, server, msg)
+	struct proc *p;
+	char *server, *msg;
+{
+	tpr_t tpr;
+
+	if (p)
+		tpr = tprintf_open(p);
+	else
+		tpr = NULL;
+	tprintf(tpr, "nfs server %s: %s\n", server, msg);
+	tprintf_close(tpr);
 }
 
 /*
