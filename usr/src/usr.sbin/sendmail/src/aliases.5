@@ -1,0 +1,57 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)aliases.5	4.1 (Berkeley) %G%
+.\"
+.TH ALIASES 5
+.UC 4
+.SH NAME
+aliases \- aliases file for delivermail
+.SH SYNOPSIS
+.B /usr/lib/aliases
+.SH DESCRIPTION
+This file describes user id aliases
+that will be used
+by
+.I /etc/delivermail.
+It is formatted as a series of lines
+of the form
+.in +0.5i
+name:addr1,addr2,...addrn
+.in
+The
+.I name
+is the name to alias,
+and the
+.I addri
+are the addresses to send the message to.
+Lines beginning with white space
+are continuation lines.
+Lines beginning with `\|#\|'
+are comments.
+.PP
+Aliasing occurs only on local names.
+Loops can not occur,
+since no message will be sent to any person
+more than once.
+.PP
+This is only the raw data file; the actual aliasing information is
+placed into a binary format in the files
+/usr/lib/aliases.dir
+and
+/usr/lib/aliases.pag
+using the program
+.IR newaliases (5).
+A
+.I newaliases
+command should be executed each time the aliases file is changed for the
+change to take effect.
+.SH SEE\ ALSO
+newaliases(1), dbm(3), delivermail(8)
+.SH BUGS
+Because of restrictions in
+.IR dbm (3)
+a single alias cannot contain more than about 1000 bytes of information.
+You can get longer aliases by ``chaining''; i.e. make the last name in
+the alias by a dummy name which is a continuation alias.
