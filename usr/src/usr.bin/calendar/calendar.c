@@ -22,13 +22,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)calendar.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)calendar.c	4.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <sys/file.h>
+#include <sys/uio.h>
 #include <pwd.h>
 #include <errno.h>
 #include <tzfile.h>
@@ -36,9 +37,9 @@ static char sccsid[] = "@(#)calendar.c	4.8 (Berkeley) %G%";
 #include <ctype.h>
 #include <unistd.h>
 #include <string.h>
-#include <paths.h>
 #include "pathnames.h"
 
+extern int errno;
 struct passwd *pw;
 int doall;
 
@@ -46,7 +47,7 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int errno, optind;
+	extern int optind;
 	int ch;
 
 	while ((ch = getopt(argc, argv, "-a")) != EOF)
@@ -109,6 +110,16 @@ cal()
 	closecal(fp);
 }
 
+struct iovec header[] = {
+	"From: ", 6,
+	NULL, 0,
+	" (Reminder Service)\nTo: ", 24,
+	NULL, 0,
+	"\nSubject: ", 10,
+	NULL, 0,
+	"'s Calendar\nPrecedence: bulk\n\n",  30,
+};
+
 /* 1-based month, 0-based days, cumulative */
 int daytab[][14] = {
 	0, 0, 30, 58, 89, 119, 150, 180, 211, 242, 272, 303, 333, 364,
@@ -133,7 +144,8 @@ settime()
 	}
 	/* Friday displays Monday's events */
 	offset = tp->tm_wday == 6 ? 3 : 1;
-	(void)strftime(dayname, sizeof(dayname), "%A", tp);
+	header[5].iov_base = dayname;
+	header[5].iov_len = strftime(dayname, sizeof(dayname), "%A", tp);
 }
 
 /*
@@ -256,6 +268,7 @@ opencal()
 	}
 	/* parent -- set stdin to pipe output */
 	(void)dup2(pdes[0], STDIN_FILENO);
+	(void)close(pdes[0]);
 	(void)close(pdes[1]);
 
 	/* not reading all calendar files, just set output to stdout */
@@ -273,7 +286,6 @@ closecal(fp)
 	FILE *fp;
 {
 	struct stat sbuf;
-	FILE *iop;
 	int nread, pdes[2], status;
 	char buf[1024], *mktemp();
 
@@ -297,18 +309,18 @@ closecal(fp)
 			(void)close(pdes[0]);
 		}
 		(void)close(pdes[1]);
-		execl(_PATH_SENDMAIL, "-i", "-t", "-F",
-		    "\"Reminder Service\"", "-f", "root");
+		execl(_PATH_SENDMAIL, "sendmail", "-i", "-t", "-F",
+		    "\"Reminder Service\"", "-f", "root", NULL);
+		(void)fprintf(stderr, "calendar: %s: %s.\n", 
+		    _PATH_SENDMAIL, strerror(errno));
 		_exit(1);
 	}
-	/* parent -- rewind file, write to pipe input */
+	/* parent -- write to pipe input */
 	(void)close(pdes[0]);
 
-	iop = fdopen(pdes[1], "w");
-	(void)fprintf(iop,
-"From: %s (Reminder Service)\nTo: %s\nSubject: %s's Calendar\nPrecedence: bulk\n\n",
-	    pw->pw_name, pw->pw_name, dayname);
-	(void)fflush(iop);
+	header[1].iov_base = header[3].iov_base = pw->pw_name;
+	header[1].iov_len = header[3].iov_len = strlen(pw->pw_name);
+	writev(pdes[1], header, 7);
 	while ((nread = read(fileno(fp), buf, sizeof(buf))) > 0)
 		(void)write(pdes[1], buf, nread);
 	(void)close(pdes[1]);
