@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.4 (Berkeley) %G%
+ *	@(#)tty.c	7.5 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -1274,24 +1274,28 @@ checktandem:
  * (from uprintf/tprintf).  Allow some space over the normal
  * hiwater mark so we don't lose messages due to normal flow
  * control, but don't let the tty run amok.
+ * Sleeps here are not interruptible, but we return prematurely
+ * if new signals come in.
  */
 ttycheckoutq(tp, wait)
 	register struct tty *tp;
 	int wait;
 {
-	int hiwat, s;
+	int hiwat, s, oldsig;
 
 	hiwat = TTHIWAT(tp);
 	s = spltty();
+	oldsig = u.u_procp->p_sig;
 	if (tp->t_outq.c_cc > hiwat + 200)
 		while (tp->t_outq.c_cc > hiwat) {
 			ttstart(tp);
-			if (wait == 0) {
+			if (wait == 0 || u.u_procp->p_sig != oldsig) {
 				splx(s);
 				return (0);
 			}
+			timeout(wakeup, (caddr_t)&tp->t_outq, hz);
 			tp->t_state |= TS_ASLEEP;
-			sleep((caddr_t)&tp->t_outq, TTOPRI);
+			sleep((caddr_t)&tp->t_outq, PZERO - 1);
 		}
 	splx(s);
 	return (1);
