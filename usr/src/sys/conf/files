@@ -17,6 +17,7 @@ kern/kern_subr.c	standard
 kern/kern_synch.c	standard
 kern/kern_time.c	standard
 kern/kern_xxx.c		standard
+kern/dead_vnops.c	standard
 kern/spec_vnops.c	standard
 kern/subr_log.c		standard
 kern/subr_mcount.c	optional profiling-routine
