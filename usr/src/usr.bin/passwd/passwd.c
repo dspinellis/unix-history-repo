@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -142,7 +142,7 @@ bad:		fprintf(stderr, "; password unchanged.\n");
 	 */
 	(void)setpriority(PRIO_PROCESS, 0, -20);
 	fend = strcpy(from, temp) + strlen(temp);
-	tend = strcpy(to, passwd) + strlen(passwd);
+	tend = strcpy(to, _PATH_PASSWD) + strlen(_PATH_PASSWD);
 	bcopy(".dir", fend, 5);
 	bcopy(".dir", tend, 5);
 	if ((fd = open(from, O_RDONLY, 0)) >= 0)
