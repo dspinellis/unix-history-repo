@@ -1,4 +1,4 @@
-/*	ht.c	4.25	82/08/01	*/
+/*	ht.c	4.26	82/08/13	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -26,6 +26,7 @@
 #include "../h/mtio.h"
 #include "../h/cmap.h"
 #include "../h/cpu.h"
+#include "../h/uio.h"
 
 #include "../h/htreg.h"
 
@@ -410,27 +411,29 @@ htndtint(mi)
 	return (MBN_RETRY);
 }
 
-htread(dev)
+htread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 
-	htphys(dev);
+	u.u_error = htphys(dev, uio);
 	if (u.u_error)
 		return;
-	physio(htstrategy, &rhtbuf[HTUNIT(dev)], dev, B_READ, minphys);
+	physio(htstrategy, &rhtbuf[HTUNIT(dev)], dev, B_READ, minphys, uio);
 }
 
 htwrite(dev)
 {
 
-	htphys(dev);
+	htphys(dev, 0);
 	if (u.u_error)
 		return;
-	physio(htstrategy, &rhtbuf[HTUNIT(dev)], dev, B_WRITE, minphys);
+	physio(htstrategy, &rhtbuf[HTUNIT(dev)], dev, B_WRITE, minphys, 0);
 }
 
-htphys(dev)
+htphys(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register int htunit;
 	register struct tu_softc *sc;
@@ -440,12 +443,16 @@ htphys(dev)
 	htunit = HTUNIT(dev);
 	if (htunit >= NHT || (mi = htinfo[htunit]) == 0 || mi->mi_alive == 0) {
 		u.u_error = ENXIO;
-		return;
+		return (ENXIO);
 	}
-	a = u.u_offset >> 9;
+	if (uio)
+		a = uio->uio_offset >> 9;
+	else
+		a = u.u_offset >> 9;
 	sc = &tu_softc[TUUNIT(dev)];
 	sc->sc_blkno = bdbtofsb(a);
 	sc->sc_nxrec = bdbtofsb(a)+1;
+	return (0);
 }
 
 /*ARGSUSED*/

@@ -1,4 +1,4 @@
-/*	mt.c	4.6	82/08/01	*/
+/*	mt.c	4.7	82/08/13	*/
 
 #include "mu.h"
 #if NMT > 0
@@ -27,6 +27,7 @@
 #include "../h/mtio.h"
 #include "../h/cmap.h"
 #include "../h/cpu.h"
+#include "../h/uio.h"
 
 #include "../h/mtreg.h"
 
@@ -78,7 +79,7 @@ mtattach(mi)
 	struct mba_device *mi;
 {
 #ifdef lint
-	mtread(0); mtwrite(0); mtioctl(0, 0, 0, 0);
+	mtread(0, 0); mtwrite(0); mtioctl(0, 0, 0, 0);
 #endif
 }
 
@@ -453,27 +454,29 @@ mtndtint(mi)
 	/* NOTREACHED */
 }
 
-mtread(dev)
+mtread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 
-	mtphys(dev);
+	u.u_error = mtphys(dev, uio);
 	if (u.u_error)
 		return;
-	physio(mtstrategy, &rmtbuf[MTUNIT(dev)], dev, B_READ, minphys);
+	physio(mtstrategy, &rmtbuf[MTUNIT(dev)], dev, B_READ, minphys, uio);
 }
 
 mtwrite(dev)
 {
 
-	mtphys(dev);
+	mtphys(dev, 0);
 	if (u.u_error)
 		return;
-	physio(mtstrategy, &rmtbuf[MTUNIT(dev)], dev, B_WRITE, minphys);
+	physio(mtstrategy, &rmtbuf[MTUNIT(dev)], dev, B_WRITE, minphys, 0);
 }
 
-mtphys(dev)
+mtphys(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register int mtunit;
 	register struct mu_softc *sc;
@@ -483,12 +486,16 @@ mtphys(dev)
 	mtunit = MTUNIT(dev);
 	if (mtunit >= NMT || (mi = mtinfo[mtunit]) == 0 || mi->mi_alive == 0) {
 		u.u_error = ENXIO;
-		return;
+		return (ENXIO);
 	}
-	a = u.u_offset >> 9;
+	if (uio)
+		a = uio->uio_offset >> 9;
+	else
+		a = u.u_offset >> 9;
 	sc = &mu_softc[MUUNIT(dev)];
 	sc->sc_blkno = bdbtofsb(a);
 	sc->sc_nxrec = bdbtofsb(a)+1;
+	return (0);
 }
 
 /*ARGSUSED*/
