@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	7.38 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.39 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -155,7 +155,7 @@ mfs_strategy(ap)
 	} else if (mfsp->mfs_pid == p->p_pid) {
 		mfs_doio(bp, mfsp->mfs_baseoff);
 	} else {
-		bp->av_forw = mfsp->mfs_buflist;
+		bp->b_actf = mfsp->mfs_buflist;
 		mfsp->mfs_buflist = bp;
 		wakeup((caddr_t)vp);
 	}
@@ -305,7 +305,7 @@ mfs_close(ap)
 	 * Finish any pending I/O requests.
 	 */
 	while (bp = mfsp->mfs_buflist) {
-		mfsp->mfs_buflist = bp->av_forw;
+		mfsp->mfs_buflist = bp->b_actf;
 		mfs_doio(bp, mfsp->mfs_baseoff);
 		wakeup((caddr_t)bp);
 	}

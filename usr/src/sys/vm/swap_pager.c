@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *
- *	@(#)swap_pager.c	7.14 (Berkeley) %G%
+ *	@(#)swap_pager.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -555,7 +555,7 @@ swap_pager_io(swp, m, flags)
 	 * Get a swap buffer header and perform the IO
 	 */
 	s = splbio();
-	while (bswlist.av_forw == NULL) {
+	while (bswlist.b_actf == NULL) {
 #ifdef DEBUG
 		if (swpagerdebug & SDB_ANOM)
 			printf("swap_pager_io: wait on swbuf for %x (%d)\n",
@@ -564,8 +564,8 @@ swap_pager_io(swp, m, flags)
 		bswlist.b_flags |= B_WANTED;
 		sleep((caddr_t)&bswlist, PSWP+1);
 	}
-	bp = bswlist.av_forw;
-	bswlist.av_forw = bp->av_forw;
+	bp = bswlist.b_actf;
+	bswlist.b_actf = bp->b_actf;
 	splx(s);
 	bp->b_flags = B_BUSY | (flags & B_READ);
 	bp->b_proc = &proc0;	/* XXX (but without B_PHYS set this is ok) */
@@ -653,8 +653,8 @@ swap_pager_io(swp, m, flags)
 #endif
 	rv = (bp->b_flags & B_ERROR) ? VM_PAGER_ERROR : VM_PAGER_OK;
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_PAGET|B_UAREA|B_DIRTY);
-	bp->av_forw = bswlist.av_forw;
-	bswlist.av_forw = bp;
+	bp->b_actf = bswlist.b_actf;
+	bswlist.b_actf = bp;
 	if (bp->b_vp)
 		brelvp(bp);
 	if (bswlist.b_flags & B_WANTED) {
@@ -875,8 +875,8 @@ swap_pager_iodone(bp)
 	}
 		
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_PAGET|B_UAREA|B_DIRTY);
-	bp->av_forw = bswlist.av_forw;
-	bswlist.av_forw = bp;
+	bp->b_actf = bswlist.b_actf;
+	bswlist.b_actf = bp;
 	if (bp->b_vp)
 		brelvp(bp);
 	if (bswlist.b_flags & B_WANTED) {

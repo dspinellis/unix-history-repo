@@ -44,8 +44,7 @@ disksort(dp, bp)
 	ap = dp->b_actf;
 	if(ap == NULL) {
 		dp->b_actf = bp;
-		dp->b_actl = bp;
-		bp->av_forw = NULL;
+		bp->b_actf = NULL;
 		return;
 	}
 	/*
@@ -54,13 +53,13 @@ disksort(dp, bp)
 	 * and add ourselves to it.
 	 */
 	if (bp->b_cylin < ap->b_cylin) {
-		while (ap->av_forw) {
+		while (ap->b_actf) {
 			/*
 			 * Check for an ``inversion'' in the
 			 * normally ascending cylinder numbers,
 			 * indicating the start of the second request list.
 			 */
-			if (ap->av_forw->b_cylin < ap->b_cylin) {
+			if (ap->b_actf->b_cylin < ap->b_cylin) {
 				/*
 				 * Search the second request list
 				 * for the first request at a larger
@@ -68,16 +67,16 @@ disksort(dp, bp)
 				 * if there is no such request, we go at end.
 				 */
 				do {
-					if (bp->b_cylin < ap->av_forw->b_cylin)
+					if (bp->b_cylin < ap->b_actf->b_cylin)
 						goto insert;
-					if (bp->b_cylin == ap->av_forw->b_cylin &&
-					    bp->b_blkno < ap->av_forw->b_blkno)
+					if (bp->b_cylin == ap->b_actf->b_cylin &&
+					    bp->b_blkno < ap->b_actf->b_blkno)
 						goto insert;
-					ap = ap->av_forw;
-				} while (ap->av_forw);
+					ap = ap->b_actf;
+				} while (ap->b_actf);
 				goto insert;		/* after last */
 			}
-			ap = ap->av_forw;
+			ap = ap->b_actf;
 		}
 		/*
 		 * No inversions... we will go after the last, and
@@ -89,19 +88,19 @@ disksort(dp, bp)
 	 * Request is at/after the current request...
 	 * sort in the first request list.
 	 */
-	while (ap->av_forw) {
+	while (ap->b_actf) {
 		/*
 		 * We want to go after the current request
 		 * if there is an inversion after it (i.e. it is
 		 * the end of the first request list), or if
 		 * the next request is a larger cylinder than our request.
 		 */
-		if (ap->av_forw->b_cylin < ap->b_cylin ||
-		    bp->b_cylin < ap->av_forw->b_cylin ||
-		    (bp->b_cylin == ap->av_forw->b_cylin &&
-		    bp->b_blkno < ap->av_forw->b_blkno))
+		if (ap->b_actf->b_cylin < ap->b_cylin ||
+		    bp->b_cylin < ap->b_actf->b_cylin ||
+		    (bp->b_cylin == ap->b_actf->b_cylin &&
+		    bp->b_blkno < ap->b_actf->b_blkno))
 			goto insert;
-		ap = ap->av_forw;
+		ap = ap->b_actf;
 	}
 	/*
 	 * Neither a second list nor a larger
@@ -109,10 +108,8 @@ disksort(dp, bp)
 	 * which is the same as the end of the whole schebang.
 	 */
 insert:
-	bp->av_forw = ap->av_forw;
-	ap->av_forw = bp;
-	if (ap == dp->b_actl)
-		dp->b_actl = bp;
+	bp->b_actf = ap->b_actf;
+	ap->b_actf = bp;
 }
 
 /*
