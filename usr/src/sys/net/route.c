@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.c	7.17 (Berkeley) %G%
+ *	@(#)route.c	7.18 (Berkeley) %G%
  */
 #include "machine/reg.h"
  
@@ -296,7 +296,7 @@ struct sockaddr	*dst, *gateway;
 	return (ifa);
 }
 
-#define ROUNDUP(a) (1 + (((a) - 1) | (sizeof(long) - 1)))
+#define ROUNDUP(a) (a>0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
 
 rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 	int req, flags;
@@ -374,7 +374,6 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 		rt->rt_ifa = ifa;
 		rt->rt_ifp = ifa->ifa_ifp;
 		rt->rt_flags = RTF_UP | flags;
-		rn->rn_key = (caddr_t) ndst; /* == rt_dst */
 		rt->rt_gateway = (struct sockaddr *)
 					(rn->rn_key + ROUNDUP(dst->sa_len));
 		Bcopy(gateway, rt->rt_gateway, gateway->sa_len);
@@ -419,6 +418,8 @@ rtinit(ifa, cmd, flags)
 	register struct ifaddr *ifa;
 	int cmd, flags;
 {
-	return rtrequest(cmd, ifa->ifa_dstaddr, ifa->ifa_addr,
-		    ifa->ifa_netmask, flags | ifa->ifa_flags, &ifa->ifa_rt);
+	return
+	    rtrequest(cmd, flags & RTF_HOST ? ifa->ifa_dstaddr : ifa->ifa_addr,
+			ifa->ifa_addr, ifa->ifa_netmask,
+			flags | ifa->ifa_flags, &ifa->ifa_rt);
 }
