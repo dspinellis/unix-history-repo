@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.15 (Berkeley) %G%
+#	@(#)Makefile	5.16 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -36,6 +36,7 @@ distribution:
 	install -c -o ${BINOWN} -g ${BINGRP} -m 555 \
 	     MAKEDEV.local etc.${MACHINE}/MAKEDEV ${DESTDIR}/dev
 	(cd /dev && ./MAKEDEV std)
+	install -c -o ${BINOWN} -g ${BINGRP} -m 444 COPYRIGHT ${DESTDIR}/
 	install -c -o ${BINOWN} -g ${BINGRP} -m 644 ${BIN1} ${DESTDIR}/etc
 	install -c -o ${BINOWN} -g ${BINGRP} -m 666 ${BIN2} ${DESTDIR}/etc
 	(cd root; \
