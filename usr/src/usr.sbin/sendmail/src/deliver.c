@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sendmail.h>
@@ -360,8 +360,6 @@ deliver(e, firstto)
 	**	If we are running SMTP, we just need to clean up.
 	*/
 
-	message(Arpa_Info, "Connecting to %s.%s...", host, m->m_name);
-
 	if (ctladdr == NULL)
 		ctladdr = &e->e_from;
 #ifdef SMTP
@@ -374,7 +372,8 @@ deliver(e, firstto)
 		}
 		else if ((Nmx = getmxrr(host, MxHosts, buf, &rcode)) >= 0 &&
 		    (rcode = smtpinit(m, pv)) == EX_OK) {
-
+			message(Arpa_Info, "Connecting to %s.%s...", MxHosts[0],
+			    m->m_name);
 			/* send the recipient list */
 			tobuf[0] = '\0';
 			for (to = tochain; to; to = to->q_tchain) {
@@ -407,7 +406,10 @@ deliver(e, firstto)
 	}
 	else
 #endif /* SMTP */
+	{
+		message(Arpa_Info, "Connecting to %s.%s...", host, m->m_name);
 		rcode = sendoff(e, m, pv, ctladdr);
+	}
 
 	/*
 	**  Do final status disposal.
@@ -419,10 +421,8 @@ deliver(e, firstto)
 	if (tobuf[0] != '\0')
 		giveresponse(rcode, m, e);
 	if (rcode != EX_OK)
-	{
 		for (to = tochain; to != NULL; to = to->q_tchain)
 			markfailure(e, to, rcode);
-	}
 
 	errno = 0;
 	define('g', (char *) NULL, e);
