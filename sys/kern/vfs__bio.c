@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: vfs__bio.c,v 1.13 1993/11/27 17:07:05 davidg Exp $
+ *	$Id: vfs__bio.c,v 1.14 1993/12/30 05:20:12 davidg Exp $
  */
 
 #include "param.h"
@@ -355,14 +355,14 @@ start:
 
 /*#define notyet*/
 #ifndef notyet
-		if ((addr = malloc (sz, M_TEMP, M_WAITOK)) == 0) goto tryfree;
+		if ((addr = malloc (sz, M_IOBUF, M_WAITOK)) == 0) goto tryfree;
 #else /* notyet */
 		/* get new memory buffer */
 		if (round_page(sz) == sz)
 			addr = (caddr_t) kmem_alloc_wired_wait(buffer_map, sz);
 		else
-			addr = (caddr_t) malloc (sz, M_TEMP, M_WAITOK);
-	/*if ((addr = malloc (sz, M_TEMP, M_NOWAIT)) == 0) goto tryfree;*/
+			addr = (caddr_t) malloc (sz, M_IOBUF, M_WAITOK);
+	/*if ((addr = malloc (sz, M_IOBUF, M_NOWAIT)) == 0) goto tryfree;*/
 		bzero(addr, sz);
 #endif /* notyet */
 		freebufspace -= sz;
@@ -522,12 +522,12 @@ allocbuf(register struct buf *bp, int size)
 
 	/* get new memory buffer */
 #ifndef notyet
-	newcontents = (caddr_t) malloc (size, M_TEMP, M_WAITOK);
+	newcontents = (caddr_t) malloc (size, M_IOBUF, M_WAITOK);
 #else /* notyet */
 	if (round_page(size) == size)
 		newcontents = (caddr_t) kmem_alloc_wired_wait(buffer_map, size);
 	else
-		newcontents = (caddr_t) malloc (size, M_TEMP, M_WAITOK);
+		newcontents = (caddr_t) malloc (size, M_IOBUF, M_WAITOK);
 #endif /* notyet */
 
 	/* copy the old into the new, up to the maximum that will fit */
@@ -535,12 +535,12 @@ allocbuf(register struct buf *bp, int size)
 
 	/* return old contents to free heap */
 #ifndef notyet
-	free (bp->b_un.b_addr, M_TEMP);
+	free (bp->b_un.b_addr, M_IOBUF);
 #else /* notyet */
 	if (round_page(bp->b_bufsize) == bp->b_bufsize)
 		kmem_free_wakeup(buffer_map, bp->b_un.b_addr, bp->b_bufsize);
 	else
-		free (bp->b_un.b_addr, M_TEMP);
+		free (bp->b_un.b_addr, M_IOBUF);
 #endif /* notyet */
 
 	/* adjust buffer cache's idea of memory allocated to buffer contents */
