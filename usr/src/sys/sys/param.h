@@ -3,8 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	6.12 (Berkeley) %G%
+ *	@(#)param.h	6.13 (Berkeley) %G%
  */
+
+#define	BSD	4.3
+#define BSD4_3
 
 /*
  * Machine type dependent parameters.
@@ -87,12 +90,6 @@
 #define	clbase(i)	((i) &~ (CLSIZE-1))
 /* round a number of clicks up to a whole cluster */
 #define	clrnd(i)	(((i) + (CLSIZE-1)) &~ (CLSIZE-1))
-#endif
-
-#ifndef INTRLVE
-/* macros replacing interleaving functions */
-#define	dkblock(bp)	((bp)->b_blkno)
-#define	dkunit(bp)	(minor((bp)->b_dev) >> 3)
 #endif
 
 #define	CBSIZE	28		/* number of chars in a clist block */
