@@ -1,4 +1,4 @@
-/*	cmds.c	4.9	82/07/29	*/
+/*	cmds.c	4.10	82/09/02	*/
 #include "tip.h"
 /*
  * tip
@@ -612,7 +612,7 @@ variable()
  */
 genbrk()
 {
-#ifdef VMUNIX
+#ifdef TIOCSBRK
 	ioctl(FD, TIOCSBRK, NULL);
 	sleep(1);
 	ioctl(FD, TIOCCBRK, NULL);
