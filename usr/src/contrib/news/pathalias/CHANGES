@@ -1,0 +1,43 @@
+Internet connectivity (-I option).  Arpatxt decommissioned.
+Nets without names.
+Allow negative cost components; prohibit negative costs.
+New input syntax: adjust {host, ...}; kill -a option.
+New input syntax: file {filename}.
+New input syntax: delete {host, host!neighbor}.
+Terminal nets.
+Prevent back links to domains.
+
+-- mod.sources, 10/87 -- version 9
+Terminal edges and domains (<host> syntax and -D option).
+Dead hosts and edges in the input stream.
+Empty private list ends scope of privates.
+First hop cost in output (-f option).
+Penalize deprecated hosts (-a option).
+
+-- mod.sources, 4.3bsd, 1/86 -- version 8
+Improved alias treatment.
+Routes to domain gateways.
+Leading dot in name implies domain.
+Link/host tracing (-t option).
+Use getopt().
+
+-- mod.sources, 8/85 -- version 7
+Private hosts documented.
+Homegrown scanner -- it was true what they said about lex.
+Makedb.
+Domains and gateways.
+DEAD back link.
+
+-- net.sources, 1/85 -- version 6
+No ! in dbm key.
+Network character must be one of !@%: -- dot is dead.
+Private hosts.
+Discourage hybrid addresses.  
+Magic @ <-> % rule.
+
+-- 1983-1984 -- version 5
+Reverse sense of the -c (cost) flag.
+Use cheapest among duplicate links.
+Elide network names in output.
+
+-- epoch (smb version) -- versions 1-4

@@ -1,0 +1,36 @@
+From citi.umich.edu!honey Sun Jun  2 00:34:54 1991
+Date: Sun, 2 Jun 91 00:34 EDT
+From: honey@citi.umich.edu
+To: whom it may concern
+Subject: release notes
+
+---> compilation instructions
+edit config.h
+make
+
+if getopt is undefined, obtain a copy from a usenet sources archive site and
+adjust Makefile.
+
+---> using pathalias
+pathalias, written by steve bellovin and peter honeyman, is in the public
+domain, and may be used by any person or organization, in any way and for
+any purpose.  
+
+i.e., you can use it, you can change it, you can sell it, you can take our
+names off of it (but this would be rude), whatever.  why can't it be this
+simple for other "free" software?
+
+however ...
+
+There is no warranty of merchantability nor any warranty of fitness for a par-
+ticular purpose nor any other warranty, either express or implied, as to the
+accuracy of the enclosed materials or as to their suitability for any particu-
+lar purpose.  Accordingly, the authors assume no responsibility for their use
+by the recipient.   Further, the authors assume no obligation to furnish any
+assistance of any kind whatsoever, or to furnish any additional information or
+documentation.  
+
+the preceeding paragraph was copied without permission from an old crypt(1)
+man page.
+
+pathalias input is regularly published in a usenet newsgroup.
