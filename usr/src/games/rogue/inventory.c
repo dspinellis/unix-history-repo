@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inventory.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)inventory.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rogue.h"
@@ -140,9 +140,9 @@ struct id_com_s com_id_tab[COMS] = {
 	'b',	"b       down & left",
 	'c',	"c       call object",
 	'n',	"n       down & right",
-	'300',	"<SHIFT><dir>: run that way",
+	NULL,	"<SHIFT><dir>: run that way",
 	')',	")       print current weapon",
-	'300',	"<CTRL><dir>: run till adjacent",
+	NULL,	"<CTRL><dir>: run till adjacent",
 	']',	"]       print current armor",
 	'f',	"f<dir>  fight till death or near death",
 	'=',	"=       print current rings",
