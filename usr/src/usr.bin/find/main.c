@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -41,15 +41,18 @@ main(argc, argv)
 
 	p = start = argv;
 	ftsoptions = FTS_NOSTAT|FTS_PHYSICAL;
-	while ((ch = getopt(argc, argv, "df:sXx")) != EOF)
+	while ((ch = getopt(argc, argv, "Hdf:hXx")) != EOF)
 		switch(ch) {
+		case 'H':
+			ftsoptions |= FTS_COMFOLLOW;
+			break;
 		case 'd':
 			isdepth = 1;
 			break;
 		case 'f':
 			*p++ = optarg;
 			break;
-		case 's':
+		case 'h':
 			ftsoptions &= ~FTS_PHYSICAL;
 			ftsoptions |= FTS_LOGICAL;
 			break;
@@ -90,6 +93,15 @@ static void
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: find [-dsXx] [-f file] [file ...] expression\n");
+	    "usage: find [-HdhXx] [-f file] [file ...] expression\n");
 	exit(1);
 }
+
+
+
+
+
+
+
+
+
