@@ -8,14 +8,14 @@
 .\"*		Electronics Research Laboratory				*
 .\"*		U.C. Berkeley.						*
 .\"*									*
-.\"*	VERSION 2.2	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.3	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
 .\"
-.\"	@(#)tmac.orig_me	2.2	%G%
+.\"	@(#)tmac.orig_me	2.3	%G%
 .\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
@@ -568,10 +568,10 @@
 ..
 .\"		*** FLOATING TABLES AND NONFLOATING BLOCKS ***
 .de (z			\" &&& begin floating keep
-.rn (z @T
+.rn (z @V
 .so \\*(||/float.me
 .(z \\$1 \\$2
-.rm @T
+.rm @V
 ..
 .de )z			\" &&& end floating keep
 .tm Line \\n(c. -- unmatched .)z
@@ -692,10 +692,10 @@
 .rm @T
 ..
 .de TS			\" &&& begin table
-.rn TS @T
+.rn TS @W
 .so \\*(||/tbl.me
 .TS \\$1 \\$2
-.rm @T
+.rm @W
 ..
 .\"		*** FONT AIDS ***
 .de sz			\" *** set point size and vertical spacing
@@ -768,10 +768,10 @@
 ..
 .\"		*** FOOTNOTING ***
 .de (f			\" &&& begin footnote
-.rn (f @T
+.rn (f @U
 .so \\*(||/footnote.me
 .(f \\$1 \\$2
-.rm @T
+.rm @U
 ..
 .de )f			\" &&& end footnote
 .tm Line \\n(c. -- unmatched .)f
@@ -783,20 +783,20 @@
 ..
 .\"		*** DELAYED TEXT ***
 .de (d			\" &&& begin delayed text
-.rn (d @T
+.rn (d @U
 .so \\*(||/deltext.me
 .(d \\$1 \\$2
-.rm @T
+.rm @U
 ..
 .de )d			\" &&& end delayed text
 .tm Line \\n(c. -- unmatched .)d
 ..
 .\"		*** INDEXES (TABLE OF CONTENTS) ***
 .de (x			\" &&& begin index
-.rn (x @T
+.rn (x @U
 .so \\*(||/index.me
 .(x \\$1 \\$2
-.rm @T
+.rm @U
 ..
 .de )x			\" &&& end index entry
 .tm Line \\n(c. -- unmatched .)x
