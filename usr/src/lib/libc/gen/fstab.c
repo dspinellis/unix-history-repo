@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)fstab.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstab.c	4.4 (Berkeley) %G%";
 #endif
 
 #include <fstab.h>
@@ -73,7 +73,7 @@ setfsent()
 
 	if (fs_file)
 		endfsent();
-	if ((fs_file = fopen(FSTAB, "r")) == NULL){
+	if ((fs_file = fopen(FSTAB, "r")) == NULL) {
 		fs_file = 0;
 		return (0);
 	}
@@ -83,8 +83,10 @@ setfsent()
 endfsent()
 {
 
-	if (fs_file)
+	if (fs_file) {
 		fclose(fs_file);
+		fs_file = 0;
+	}
 	return (1);
 }
 
