@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.42 (Berkeley) %G%
+		@(#)README	8.43 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -185,7 +185,7 @@ RELAY_MAILER_ARGS	[IPC $h] The arguments passed to the relay mailer.
 UUCP_MAILER_FLAGS	[undefined] Flags added to UUCP mailer.  Default
 			flags are `DFMhuU' (and `m' for suucp mailer, minus
 			`U' for uucp-dom mailer).
-UUCP_MAILER_ARGS	[uux - -r -z -a$f -gC $h!rmail ($u)] The arguments
+UUCP_MAILER_ARGS	[uux - -r -z -a$g -gC $h!rmail ($u)] The arguments
 			passed to the UUCP mailer.
 UUCP_MAX_SIZE		[100000] The maximum size message accepted for
 			transmission by the UUCP mailers.
@@ -475,6 +475,14 @@ subdomains.
 +--------------------+
 | SITE CONFIGURATION |
 +--------------------+
+
+    *****************************************************
+    * This section is really obsolete, and is preserved	*
+    * only for back compatibility.  You should plan on	*
+    * using mailertables for new installations.	  In	*
+    * particular, it doesn't work for the newer forms	*
+    * of UUCP mailers, such as uucp-uudom.		*
+    *****************************************************
 
 Complex sites will need more local configuration information, such as
 lists of UUCP hosts they speak with directly.  This can get a bit more
