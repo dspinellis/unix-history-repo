@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -43,7 +43,7 @@ static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 char	usagestr[] =
 	"pxp [ -acdefjntuw_ ] [ -23456789 ] [ -z [ name ... ] ] name.p";
 char	*howfile =	"/usr/lib/how_pxp";
-char	*stdoutn =	"Standard output";
+char	stdoutn[20] =	"Standard output";
 
 int	unit =	4;
 
@@ -192,7 +192,7 @@ usage:
 	if (onefile) {
 		int onintr();
 
-		cp = (stdoutn = "/tmp/pxp00000") + 13;
+		cp = strcpy(stdoutn, "/tmp/pxp00000") + 13;
 		signal(2, onintr);
 		for (c = getpid(); c; c /= 10)
 			*--cp |= (c % 10);
