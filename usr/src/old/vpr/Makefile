@@ -9,10 +9,14 @@ sidebyside: sidebyside.c
 	cc -O -o sidebyside sidebyside.c
 vcat: vcat.c
 	cc -O -o vcat vcat.c
-vfontedpr: vfontedpr.c vgrindefs.c regexp.c
-	cc -O -o vfontedpr vfontedpr.c vgrindefs.c regexp.c
-retest: retest.c regexp.c
-	cc -g -o retest retest.c regexp.c
+vfontedpr: vfontedpr.c vgrindefs.o regexp.o
+	cc -O -o vfontedpr vfontedpr.c vgrindefs.o regexp.o
+retest: retest.c regexp.o
+	cc -g -o retest retest.c regexp.o
+vgrindefs.o: vgrindefs.c
+	cc -O -c vgrindefs.c
+regexp.o: regexp.c
+	cc -O -c regexp.c
 vpac: vpac.c
 	cc -O -o vpac vpac.c
 vad: vpd.c
