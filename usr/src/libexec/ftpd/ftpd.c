@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	4.12 (Berkeley) %G%";
 #endif
 
 /*
@@ -118,7 +118,7 @@ main(argc, argv)
 		perror("ftpd: bind");
 		sleep(5);
 	}
-	signal(SIGCHLD, reapchild);
+	sigset(SIGCHLD, reapchild);
 	listen(s, 10);
 	for (;;) {
 		int hisaddrlen = sizeof (his_addr);
