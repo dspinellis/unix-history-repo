@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.24 %G%";
+static char sccsid[] = "@(#)routed.c	4.25 %G%";
 #endif
 
 /*
@@ -330,9 +330,9 @@ gwkludge()
 	bzero((char *)&dst, sizeof (dst));
 	bzero((char *)&gate, sizeof (gate));
 	dst.sin_family = gate.sin_family = AF_INET;
-	/* format: dst {net | host} XX gateway XX metric DD [passive]\n */
+	/* format: {net | host} XX gateway XX metric DD [passive]\n */
 #define	readentry(fp) \
-	fscanf((fp), "dst %s %s gateway %s metric %d %s\n", \
+	fscanf((fp), "%s %s gateway %s metric %d %s\n", \
 		type, dname, gname, &metric, qual)
 	for (;;) {
 		struct hostent *host;
