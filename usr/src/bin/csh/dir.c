@@ -29,6 +29,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00013
+ * --------------------         -----   ----------------------
+ *
+ * 19 Aug 92	Kevin Lahey		Fixed csh segmentation violation
  */
 
 #ifndef lint
@@ -876,7 +883,7 @@ dcanon(cp, p)
 	     */
 	    p2 = cp + Strlen(p2);
 	    sp = newcp = (Char *) xmalloc((size_t)
-					  ((cc + Strlen(p2)) * sizeof(Char)));
+/* 19 Sep 92*/			  ((cc + Strlen(p2) + 1) * sizeof(Char)));
 	    while (*p1)
 		*sp++ = *p1++;
 	    while (*p2)
