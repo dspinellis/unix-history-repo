@@ -42,6 +42,13 @@
 #	msdos		-	Compiles in msdos specific stuff.
 #
 
+# msdos versus unix defines
+O	= .o
+PC_O	= .obj
+
+X	=
+PC_X	= .exe
+
 CC	= cc
 PRINT	= print
 ACTION = sccs tell
@@ -78,7 +85,7 @@ MSMAIN = ascii/mset.c
 
 ALLC = ${TNMAIN}
 
-ALLO	= telnet.o mset.o
+ALLO	= telnet$O mset$O
 
 ALLPRINT =	${ALLH} ${ALLC}
 
@@ -103,23 +110,23 @@ SUBLIB =	ctlr/ctlrlib.a sys/syslib.a \
 .s.o:
 	/lib/cpp -E $< | as -o $@
 
-all:	FRC tn3270 mset
+all:	FRC tn3270$X mset$X
 
 FRC:
 	for i in ${SUBDIR}; \
 		do (cd $$i; make ${MFLAGS} "CFLAGS=${CFLAGS}"); done
 
-tn3270:	telnet.o ${SUBLIB}
-	${CC} ${CFLAGS} -o tn3270 telnet.o \
+tn3270$X:	telnet$O ${SUBLIB}
+	${CC} ${CFLAGS} -o tn3270 telnet$O \
 		${SUBLIB} apilib/apilib.a $(LIBCURSES) $(LIBTERM)
 
-mset:	mset.o ascii/map3270.o
-	${CC} ${CFLAGS} -o mset mset.o ascii/map3270.o apilib/apilib.a
+mset$X:	mset$O ascii/map3270$O
+	${CC} ${CFLAGS} -o mset mset$O ascii/map3270$O apilib/apilib.a
 
-telnet.o:	$(TNMAIN)
+telnet$O:	$(TNMAIN)
 	$(CC) $(CFLAGS) -DTN3270 -c $(TNMAIN)
 
-mset.o:	$(MSMAIN)
+mset$O:	$(MSMAIN)
 	$(CC) $(CFLAGS) -c $(MSMAIN)
 
 install:
@@ -166,6 +173,12 @@ lint:
 				${TNMAIN} -lcurses
 	lint ${LINTFLAGS} ${INCLUDES} ${DEFINES} ${MSMAIN} map3270.c -lcurses
 
+makefile.mak:	makefile
+	for i in . ${SUBDIR} ${EXTRADIR}; \
+	do (sed -e "s/lib\.a/.lib/g" -e "s/^PC_//" < $$i/makefile | \
+			    mkmake | sed -e "sx/x\\\\x" > $$i/makefile.mak); \
+	    done
+
 .DEFAULT:
 	sccs get $<
 
@@ -173,9 +186,10 @@ depend:	thisdepend
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} depend); done
 
 thisdepend:
-	grep '^#include' ${ALLC} | grep -v '<' | \
+	echo > eddep.c
+	grep '^#include' ${ALLC} eddep.c | grep -v '<' | \
 	sed -e 's/:[^"]*"\([^"]*\)".*/: \1/' \
-	    -e 's/\.c/.o/' | \
+	    -e 's/\.c/$$O/' | \
 	awk ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
 		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
 		       else rec = rec " " $$2 } } \
@@ -186,10 +200,9 @@ thisdepend:
 	echo 'w' >>eddep
 	cp makefile makefile.bak
 	ed - makefile < eddep
-	rm eddep makedep
+	rm eddep makedep eddep.c
 
 # DO NOT DELETE THIS LINE
 
-telnet.o: ctlr/screen.h general/globals.h telnet.ext ctlr/options.ext
-telnet.o: ctlr/outbound.ext ascii/termin.ext general/general.h
-ascii/mset.o: state.h ../general/globals.h map3270.ext
+telnet$O: ascii/termin.ext ctlr/screen.h ctlr/oia.h ctlr/options.ext
+telnet$O: ctlr/outbound.ext general/globals.h telnet.ext general/general.h
