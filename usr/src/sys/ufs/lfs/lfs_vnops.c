@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vnops.c	7.42 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.43 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -739,6 +739,8 @@ ufs_write(vp, uio, ioflag, cred)
 		uio->uio_offset -= resid - uio->uio_resid;
 		uio->uio_resid = resid;
 	}
+	if (!error && (ioflag & IO_SYNC))
+		error = iupdat(ip, &time, &time, 1);
 	return (error);
 }
 
