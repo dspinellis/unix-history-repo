@@ -1,4 +1,4 @@
-#	Makefile	4.20	83/01/18
+#	Makefile	4.21	83/01/20
 
 DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
@@ -156,8 +156,9 @@ print:
 
 clean:
 	rm -f *.o *.exe *.i errs
-	rm -f a.out b.out boot cat tpboot tpcopy
+	rm -f a.out b.out boot cat tpboot tpcopy copy
 	rm -f boot[a-z]? conf[a-wyz][a-z].c
+	rm -f *chk *drtest core sboot bootconf.c
 
 lint:
 	lint ${COPTS} -hxbn boot.c ${SRCS} | \
