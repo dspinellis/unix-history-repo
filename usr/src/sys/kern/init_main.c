@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	7.28 (Berkeley) %G%
+ *	@(#)init_main.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -97,7 +97,6 @@ main(firstaddr)
 	 * handled when copying the u. area in newproc().
 	 */
 	ndinit(&u.u_nd);
-	u.u_ap = u.u_arg;
 
 	u.u_cmask = cmask;
 	u.u_lastfile = -1;
