@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.9 (Berkeley) %G%
+#	@(#)Makefile	4.10 (Berkeley) %G%
 #
 #
 CFLAGS=	-O -w
@@ -25,7 +25,7 @@ SRCS=	setbrk.c builtin.c blok.c stak.c cmd.c fault.c main.c word.c \
 OBJS=	setbrk.o builtin.o blok.o stak.o cmd.o fault.o main.o word.o \
 	string.o name.o args.o xec.o service.o error.o io.o print.o \
 	macro.o expand.o ctype.o msg.o
-MAN=	sh.0
+MAN=	cd.0 intro.0 sh.0 wait.0
 
 all: sh
 
