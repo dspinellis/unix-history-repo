@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttgeneric.c	3.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttgeneric.c	3.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -178,18 +178,11 @@ gen_delline(n)
 gen_putc(c)
 register char c;
 {
-	if (tt.tt_ninsert != tt.tt_insert)
-		gen_setinsert(tt.tt_ninsert);
+	if (tt.tt_insert)
+		gen_setinsert(0);
 	if (tt.tt_nmodes != tt.tt_modes)
 		gen_setmodes(tt.tt_nmodes);
-	if (tt.tt_insert) {
-		if (gen_IC)
-			tttputs(gen_IC, gen_CO - tt.tt_col);
-		ttputc(c);
-		if (gen_IP)
-			tttputs(gen_IP, gen_CO - tt.tt_col);
-	} else
-		ttputc(c);
+	ttputc(c);
 	if (++tt.tt_col == gen_CO)
 		if (gen_XN)
 			tt.tt_col = tt.tt_row = -10;
@@ -203,23 +196,12 @@ gen_write(p, n)
 	register char *p;
 	register n;
 {
-	if (tt.tt_ninsert != tt.tt_insert)
-		gen_setinsert(tt.tt_ninsert);
+	if (tt.tt_insert)
+		gen_setinsert(0);
 	if (tt.tt_nmodes != tt.tt_modes)
 		gen_setmodes(tt.tt_nmodes);
-	if (tt.tt_insert && (gen_IC || gen_IP)) {
-		while (--n >= 0) {
-			if (gen_IC)
-				tttputs(gen_IC, gen_CO - tt.tt_col);
-			ttputc(*p++);
-			if (gen_IP)
-				tttputs(gen_IP, gen_CO - tt.tt_col);
-			tt.tt_col++;
-		}
-	} else {
-		tt.tt_col += n;
-		ttwrite(p, n);
-	}
+	ttwrite(p, n);
+	tt.tt_col += n;
 	if (tt.tt_col == gen_CO)
 		if (gen_XN)
 			tt.tt_col = tt.tt_row = -10;
@@ -286,12 +268,14 @@ gen_start()
 		ttxputs(gen_TI);
 	ttxputs(gen_CL);
 	tt.tt_col = tt.tt_row = 0;
-	tt.tt_ninsert = tt.tt_insert = 0;
+	tt.tt_insert = 0;
 	tt.tt_nmodes = tt.tt_modes = 0;
 }
 
 gen_end()
 {
+	if (tt.tt_insert)
+		gen_setinsert(0);
 	if (gen_TE)
 		ttxputs(gen_TE);
 	if (gen_VE)
@@ -319,7 +303,28 @@ gen_clear()
 	ttxputs(gen_CL);
 }
 
-gen_inschar(n)
+gen_inschar(c)
+register char c;
+{
+	if (!tt.tt_insert)
+		gen_setinsert(1);
+	if (tt.tt_nmodes != tt.tt_modes)
+		gen_setmodes(tt.tt_nmodes);
+	if (gen_IC)
+		tttputs(gen_IC, gen_CO - tt.tt_col);
+	ttputc(c);
+	if (gen_IP)
+		tttputs(gen_IP, gen_CO - tt.tt_col);
+	if (++tt.tt_col == gen_CO)
+		if (gen_XN)
+			tt.tt_col = tt.tt_row = -10;
+		else if (gen_AM)
+			tt.tt_col = 0, tt.tt_row++;
+		else
+			tt.tt_col--;
+}
+
+gen_insspace(n)
 {
 	if (gen_ICn)
 		ttpgoto(gen_ICn, 0, n, gen_CO - tt.tt_col);
@@ -465,9 +470,9 @@ tt_generic()
 		gen_US = 0;
 
 	if (gen_IM)
-		tt.tt_setinsert = gen_setinsert;
-	else if (gen_IC)
 		tt.tt_inschar = gen_inschar;
+	else if (gen_IC)
+		tt.tt_insspace = gen_insspace;
 	if (gen_DC)
 		tt.tt_delchar = gen_delchar;
 	if (gen_AL)

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tt.h	3.22 (Berkeley) %G%
+ *	@(#)tt.h	3.23 (Berkeley) %G%
  */
 
 /*
@@ -30,6 +30,7 @@ struct tt {
 	int (*tt_insline)();
 	int (*tt_delline)();
 	int (*tt_inschar)();
+	int (*tt_insspace)();
 	int (*tt_delchar)();
 	int (*tt_write)();		/* write a whole block */
 	int (*tt_putc)();		/* write one character */
@@ -39,7 +40,6 @@ struct tt {
 	int (*tt_scroll_down)();
 	int (*tt_scroll_up)();
 	int (*tt_setscroll)();		/* set scrolling region */
-	int (*tt_setinsert)();		/* set insert mode */
 	int (*tt_setmodes)();		/* set display modes */
 	int (*tt_set_token)();		/* define a token */
 	int (*tt_put_token)();		/* refer to a defined token */
@@ -48,7 +48,6 @@ struct tt {
 	char tt_modes;			/* the current display modes */
 	char tt_nmodes;			/* the new modes for next write */
 	char tt_insert;			/* currently in insert mode */
-	char tt_ninsert;		/* insert mode on next write */
 	int tt_row;			/* cursor row */
 	int tt_col;			/* cursor column */
 	int tt_scroll_top;		/* top of scrolling region */

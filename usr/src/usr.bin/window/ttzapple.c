@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttzapple.c	3.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttzapple.c	3.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -229,7 +229,7 @@ zz_clear()
 	tt.tt_col = tt.tt_row = 0;
 }
 
-zz_inschar(n)
+zz_insspace(n)
 {
 	if (n != 1) {
 		esc1();
@@ -334,7 +334,7 @@ zz_put_token(t, s, n)
 
 tt_zapple()
 {
-	tt.tt_inschar = zz_inschar;
+	tt.tt_insspace = zz_insspace;
 	tt.tt_delchar = zz_delchar;
 	tt.tt_insline = zz_insline;
 	tt.tt_delline = zz_delline;

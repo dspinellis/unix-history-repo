@@ -14,12 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)xx.h	3.1 (Berkeley) %G%
+ *	@(#)xx.h	3.2 (Berkeley) %G%
  */
 
 struct xx {
-	enum { xc_move, xc_scroll, xc_delchar, xc_inschar, xc_clear, xc_clreos,
-		xc_clreol, xc_write } cmd;
+	enum { xc_move, xc_scroll, xc_inschar, xc_insspace, xc_delchar,
+		xc_clear, xc_clreos, xc_clreol, xc_write } cmd;
 	int arg0;
 	int arg1;
 	int arg2;

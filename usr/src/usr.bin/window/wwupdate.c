@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwupdate.c	3.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwupdate.c	3.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -221,28 +221,25 @@ simple:
 			}
 			if (wwwrap
 			    && i == wwnrow - 1 && q - buf + c == wwncol) {
-				if (tt.tt_setinsert) {
+				if (tt.tt_inschar) {
 					if (q - buf != 1) {
 						xxwrite(i, c, buf + 1,
 							q - buf - 1, m);
-						xxinschar(i, c, *buf |
-							m << WWC_MSHIFT);
+						xxinschar(i, c, *buf, m);
 					} else {
 						xxwrite(i, c - 1, buf, 1, m);
 						xxinschar(i, c - 1,
-							ns[-2].c_w);
+							ns[-2].c_c, ns[-2].c_m);
 					}
-				} else if (tt.tt_inschar) {
+				} else if (tt.tt_insspace) {
 					if (q - buf != 1) {
 						xxwrite(i, c, buf + 1,
 							q - buf - 1, m);
-						xxinschar(i, c, *buf |
-							m << WWC_MSHIFT);
+						xxinsspace(i, c);
 						xxwrite(i, c, buf, 1, m);
 					} else {
 						xxwrite(i, c - 1, buf, 1, m);
-						xxinschar(i, c - 1,
-							ns[-2].c_w);
+						xxinsspace(i, c - 1);
 						xxwrite(i, c - 1, &ns[-2].c_c,
 							1, ns[-2].c_m);
 					}
