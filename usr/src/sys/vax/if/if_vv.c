@@ -1,4 +1,4 @@
-/*	if_vv.c	4.9	82/10/31	*/
+/*	if_vv.c	4.10	82/12/14	*/
 
 /*
  * Proteon 10 Meg Ring Driver.
@@ -238,7 +238,7 @@ vvidentify(unit)
 	addr = (struct vvreg *)ui->ui_addr;
 	attempts = 0;		/* total attempts, including bad msg type */
 	retrying = 0;		/* first time through */
-	m = m_get(M_DONTWAIT);
+	m = m_get(M_DONTWAIT, MT_HEADER);
 	if (m == 0) {
 		printf("vvinit: can't get mbuf");
 		return (0);
@@ -598,7 +598,7 @@ gottype:
 	 */
 	if (m->m_off > MMAXOFF ||
 	    MMINOFF + sizeof (struct vv_header) > m->m_off) {
-		m = m_get(M_DONTWAIT);
+		m = m_get(M_DONTWAIT, MT_HEADER);
 		if (m == 0) {
 			error = ENOBUFS;
 			goto bad;

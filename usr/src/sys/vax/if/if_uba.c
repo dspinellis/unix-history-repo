@@ -1,4 +1,4 @@
-/*	if_uba.c	4.14	82/10/10	*/
+/*	if_uba.c	4.15	82/12/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -115,7 +115,7 @@ if_rubaget(ifu, totlen, off0)
 	top = 0;
 	mp = &top;
 	while (totlen > 0) {
-		MGET(m, 0);
+		MGET(m, M_DONTWAIT, MT_DATA);
 		if (m == 0)
 			goto bad;
 		if (off) {

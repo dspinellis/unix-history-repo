@@ -1,4 +1,4 @@
-/*	if_ec.c	4.29	82/11/13	*/
+/*	if_ec.c	4.30	82/12/14	*/
 
 #include "ec.h"
 
@@ -559,7 +559,7 @@ gottype:
 	 */
 	if (m->m_off > MMAXOFF ||
 	    MMINOFF + sizeof (struct ec_header) > m->m_off) {
-		m = m_get(M_DONTWAIT);
+		m = m_get(M_DONTWAIT, MT_HEADER);
 		if (m == 0) {
 			error = ENOBUFS;
 			goto bad;
@@ -695,7 +695,7 @@ ecget(ecbuf, totlen, off0)
 		register int words;
 		u_char *mcp;
 
-		MGET(m, 0);
+		MGET(m, M_DONTWAIT, MT_DATA);
 		if (m == 0)
 			goto bad;
 		if (off) {

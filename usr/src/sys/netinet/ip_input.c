@@ -1,4 +1,4 @@
-/*	ip_input.c	1.58	82/11/03	*/
+/*	ip_input.c	1.59	82/12/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -234,7 +234,7 @@ ip_reass(ip, fp)
 	 * If first fragment to arrive, create a reassembly queue.
 	 */
 	if (fp == 0) {
-		if ((t = m_get(M_WAIT)) == NULL)
+		if ((t = m_get(M_WAIT, MT_FTABLE)) == NULL)
 			goto dropfrag;
 		fp = mtod(t, struct ipq *);
 		insque(fp, &ipq);
@@ -612,7 +612,7 @@ ip_forward(ip)
 		goto sendicmp;
 	}
 	ip->ip_ttl -= IPTTLDEC;
-	mopt = m_get(M_DONTWAIT);
+	mopt = m_get(M_DONTWAIT, MT_DATA);
 	if (mopt == 0) {
 		m_freem(dtom(ip));
 		return;

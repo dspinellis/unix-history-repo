@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.82	82/10/30	*/
+/*	tcp_input.c	1.83	82/12/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -98,7 +98,7 @@ tcp_input(m0)
 			goto drop;
 		}
 		ti = mtod(m, struct tcpiphdr *);
-		om = m_get(M_DONTWAIT);
+		om = m_get(M_DONTWAIT, MT_DATA);
 		if (om == 0)
 			goto drop;
 		om->m_len = off - sizeof (struct tcphdr);
@@ -196,7 +196,7 @@ tcp_input(m0)
 	 * segment in this state.
 	 */
 	case TCPS_LISTEN: {
-		struct mbuf *am = m_get(M_DONTWAIT);
+		struct mbuf *am = m_get(M_DONTWAIT, MT_SONAME);
 		register struct sockaddr_in *sin;
 
 		if (am == 0)

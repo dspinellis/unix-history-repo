@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.65	82/12/05	*/
+/*	uipc_socket.c	4.66	82/12/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -44,7 +44,7 @@ socreate(dom, aso, type, proto, opt)
 		return (EPROTONOSUPPORT);
 	if (prp->pr_type != type)
 		return (EPROTOTYPE);
-	m = m_getclr(M_WAIT);
+	m = m_getclr(M_WAIT, MT_SOCKET);
 	if (m == 0)
 		return (ENOBUFS);
 	so = mtod(m, struct socket *);
@@ -330,7 +330,7 @@ again:
 				panic("sosend");
 			continue;
 		}
-		MGET(m, 1);
+		MGET(m, M_WAIT, MT_DATA);
 		if (m == NULL) {
 			error = ENOBUFS;			/* SIGPIPE? */
 			goto release;
@@ -375,7 +375,7 @@ soreceive(so, aname, uio, flags)
 	int eor, s, error = 0, moff, tomark;
 
 	if (flags & SOF_OOB) {
-		m = m_get(M_WAIT);
+		m = m_get(M_WAIT, MT_DATA);
 		error = (*so->so_proto->pr_usrreq)(so, PRU_RCVOOB,
 		    m, (struct mbuf *)0, (struct socketopt *)0);
 		if (error)

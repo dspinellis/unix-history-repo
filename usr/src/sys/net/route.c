@@ -1,4 +1,4 @@
-/*	route.c	4.13	82/10/17	*/
+/*	route.c	4.14	82/12/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -153,7 +153,7 @@ rtrequest(req, entry)
 				goto bad;
 			}
 		}
-		m = m_get(M_DONTWAIT);
+		m = m_get(M_DONTWAIT, MT_RTABLE);
 		if (m == 0) {
 			error = ENOBUFS;
 			goto bad;

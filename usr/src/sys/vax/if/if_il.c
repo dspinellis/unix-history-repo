@@ -1,4 +1,4 @@
-/*	if_il.c	4.14	82/11/13	*/
+/*	if_il.c	4.15	82/12/14	*/
 
 #include "il.h"
 
@@ -510,7 +510,7 @@ gottype:
 	 */
 	if (m->m_off > MMAXOFF ||
 	    MMINOFF + sizeof (struct il_xheader) > m->m_off) {
-		m = m_get(M_DONTWAIT);
+		m = m_get(M_DONTWAIT, MT_HEADER);
 		if (m == 0) {
 			error = ENOBUFS;
 			goto bad;

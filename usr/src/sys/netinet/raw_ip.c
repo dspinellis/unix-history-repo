@@ -1,4 +1,4 @@
-/*	raw_ip.c	4.15	82/10/17	*/
+/*	raw_ip.c	4.16	82/12/14	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -58,7 +58,7 @@ rip_output(m0, so)
 	 */
 	for (m = m0; m; m = m->m_next)
 		len += m->m_len;
-	m = m_get(M_DONTWAIT);
+	m = m_get(M_DONTWAIT, MT_HEADER);
 	if (m == 0) {
 		error = ENOBUFS;
 		goto bad;

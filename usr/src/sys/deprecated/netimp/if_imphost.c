@@ -1,4 +1,4 @@
-/*	if_imphost.c	4.15	82/10/09	*/
+/*	if_imphost.c	4.16	82/12/14	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -80,7 +80,7 @@ hostenter(addr)
 	 * chain of mbuf's, allocate another.
 	 */
 	if (hp0 == 0) {
-		m = m_getclr(M_DONTWAIT);
+		m = m_getclr(M_DONTWAIT, MT_HTABLE);
 		if (m == 0) {
 			splx(s);
 			return (0);

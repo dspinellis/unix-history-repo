@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.25	82/11/13	*/
+/*	ip_icmp.c	4.26	82/12/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -47,7 +47,7 @@ icmp_error(oip, type, code)
 	/*
 	 * First, formulate icmp message
 	 */
-	m = m_get(M_DONTWAIT);
+	m = m_get(M_DONTWAIT, MT_HEADER);
 	if (m == 0)
 		goto free;
 	m->m_len = oiplen + 8 + ICMP_MINLEN;

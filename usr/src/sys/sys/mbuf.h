@@ -1,4 +1,4 @@
-/*	mbuf.h	4.15	82/10/20	*/
+/*	mbuf.h	4.16	82/12/14	*/
 
 /*
  * Constants related to memory allocator.
@@ -29,10 +29,24 @@ struct mbuf {
 	struct	mbuf *m_next;		/* next buffer in chain */
 	u_long	m_off;			/* offset of data */
 	short	m_len;			/* amount of data in this mbuf */
-	short	m_free;			/* is mbuf free? (consistency check) */
+	short	m_type;			/* mbuf type (0 == free) */
 	u_char	m_dat[MLEN];		/* data storage */
 	struct	mbuf *m_act;		/* link in higher-level mbuf list */
 };
+
+/* mbuf types */
+#define	MT_FREE		0	/* should be on free list */
+#define	MT_DATA		1	/* dynamic (data) allocation */
+#define	MT_HEADER	2	/* packet header */
+#define	MT_SOCKET	3	/* socket structure */
+#define	MT_PCB		4	/* protocol control block */
+#define	MT_RTABLE	5	/* routing tables */
+#define	MT_HTABLE	6	/* IMP host tables */
+#define	MT_ATABLE	7	/* address resolution tables */
+#define	MT_SONAME	8	/* socket name */
+#define	MT_ZOMBIE	9	/* zombie proc status */
+#define	MT_SOOPTS	10	/* socket options */
+#define	MT_FTABLE	11	/* fragment reassembly header */
 
 /* flags to m_get */
 #define	M_DONTWAIT	0
@@ -46,14 +60,15 @@ struct mbuf {
 /* length to m_copy to copy all */
 #define	M_COPYALL	1000000000
 
-#define	MGET(m, i) \
+#define	MGET(m, i, t) \
 	{ int ms = splimp(); \
 	  if ((m)=mfree) \
-		{ if ((m)->m_free == 0) panic("mget"); (m)->m_free = 0; \
-		  mbstat.m_mbfree--; mfree = (m)->m_next; (m)->m_next = 0; \
+		{ if ((m)->m_type != MT_FREE) panic("mget"); (m)->m_type = t; \
+		  mbstat.m_mbfree--; mbstat.m_mtypes[t]++; \
+		  mfree = (m)->m_next; (m)->m_next = 0; \
 		  (m)->m_off = MMINOFF; } \
 	  else \
-		(m) = m_more(i); \
+		(m) = m_more(i, t); \
 	  splx(ms); }
 #define	MCLGET(m, i) \
 	{ int ms = splimp(); \
@@ -62,7 +77,8 @@ struct mbuf {
 	  splx(ms); }
 #define	MFREE(m, n) \
 	{ int ms = splimp(); \
-	  if ((m)->m_free) panic("mfree"); (m)->m_free = 1; \
+	  if ((m)->m_type == MT_FREE) panic("mfree"); \
+	  mbstat.m_mtypes[(m)->m_type]--; (m)->m_type = MT_FREE; \
 	  if ((m)->m_off > MSIZE) { \
 		(n) = (struct mbuf *)(mtod(m, int)&~0x3ff); \
 		if (--mclrefcnt[mtocl(n)] == 0) \
@@ -76,11 +92,12 @@ struct mbuf {
  * Mbuf statistics.
  */
 struct mbstat {
-	short	m_mbufs;		/* mbufs obtained from page pool */
-	short	m_mbfree;		/* mbufs on our free list */
-	short	m_clusters;		/* clusters obtained from page pool */
-	short	m_clfree;		/* free clusters */
-	short	m_drops;		/* times failed to find space */
+	short	m_mbufs;	/* mbufs obtained from page pool */
+	short	m_mbfree;	/* mbufs on our free list */
+	short	m_clusters;	/* clusters obtained from page pool */
+	short	m_clfree;	/* free clusters */
+	short	m_drops;	/* times failed to find space */
+	short	m_mtypes[32];	/* type specific mbuf allocations */
 };
 
 #ifdef	KERNEL

@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.40	82/11/03	*/
+/*	udp_usrreq.c	4.41	82/12/14	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -170,7 +170,7 @@ udp_output(inp, m0)
 	 */
 	for (m = m0; m; m = m->m_next)
 		len += m->m_len;
-	m = m_get(M_DONTWAIT);
+	m = m_get(M_DONTWAIT, MT_HEADER);
 	if (m == 0) {
 		m_freem(m0);
 		return (ENOBUFS);

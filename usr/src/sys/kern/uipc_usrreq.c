@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	1.4	82/11/23	*/
+/*	uipc_usrreq.c	1.5	82/12/14	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -201,7 +201,7 @@ unp_attach(so)
 	error = soreserve(so, unp_sendspace, unp_recvspace);
 	if (error)
 		goto bad;
-	m = m_getclr(M_DONTWAIT);
+	m = m_getclr(M_DONTWAIT, MT_PCB);
 	if (m == 0) {
 		error = ENOBUFS;
 		goto bad;
