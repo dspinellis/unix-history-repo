@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_kern.c	7.9 (Berkeley) %G%
+ *	@(#)vm_kern.c	7.10 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -150,7 +150,7 @@ vm_offset_t kmem_alloc(map, size)
 			vm_object_lock(kernel_object);
 		}
 		vm_page_zero_fill(mem);
-		mem->busy = FALSE;
+		mem->flags &= ~PG_BUSY;
 	}
 	vm_object_unlock(kernel_object);
 		
@@ -391,7 +391,7 @@ kmem_malloc(map, size, canwait)
 #if 0
 		vm_page_zero_fill(m);
 #endif
-		m->busy = FALSE;
+		m->flags &= ~PG_BUSY;
 	}
 	vm_object_unlock(kmem_object);
 

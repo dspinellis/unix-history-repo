@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pager.c	7.8 (Berkeley) %G%
+ *	@(#)vm_pager.c	7.9 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -190,14 +190,14 @@ vm_pager_map_page(m)
 	vm_offset_t kva;
 
 #ifdef DEBUG
-	if (!m->busy || m->active)
+	if (!(m->flags & PG_BUSY) || (m->flags & PG_ACTIVE))
 		panic("vm_pager_map_page: page active or not busy");
-	if (m->pagerowned)
+	if (m->flags & PG_PAGEROWNED)
 		printf("vm_pager_map_page: page %x already in pager\n", m);
 #endif
 	kva = kmem_alloc_wait(pager_map, PAGE_SIZE);
 #ifdef DEBUG
-	m->pagerowned = 1;
+	m->flags |= PG_PAGEROWNED;
 #endif
 	pmap_enter(vm_map_pmap(pager_map), kva, VM_PAGE_TO_PHYS(m),
 		   VM_PROT_DEFAULT, TRUE);
@@ -216,8 +216,8 @@ vm_pager_unmap_page(kva)
 	pmap_remove(vm_map_pmap(pager_map), kva, kva + PAGE_SIZE);
 	kmem_free_wakeup(pager_map, kva, PAGE_SIZE);
 #ifdef DEBUG
-	if (m->pagerowned)
-		m->pagerowned = 0;
+	if (m->flags & PG_PAGEROWNED)
+		m->flags &= ~PG_PAGEROWNED;
 	else
 		printf("vm_pager_unmap_page: page %x(%x/%x) not owned\n",
 		       m, kva, VM_PAGE_TO_PHYS(m));

@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device_pager.c	7.6 (Berkeley) %G%
+ *	@(#)device_pager.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -152,7 +152,7 @@ dev_pager_alloc(handle, size, prot)
 			page->phys_addr =
 				pmap_phys_address((*mapfunc)(dev, off, nprot));
 			page->wire_count = 1;
-			page->fictitious = TRUE;
+			page->flags |= PG_FICTITIOUS;
 			PAGE_WAKEUP(page);
 			vm_object_unlock(object);
 			off += PAGE_SIZE;

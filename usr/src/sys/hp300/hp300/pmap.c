@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.12 (Berkeley) %G%
+ *	@(#)pmap.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -2223,7 +2223,7 @@ pmap_enter_ptpage(pmap, va)
 #endif
 		ptpa = pmap_extract(kernel_pmap, va);
 #ifdef DEBUG
-		PHYS_TO_VM_PAGE(ptpa)->ptpage = TRUE;
+		PHYS_TO_VM_PAGE(ptpa)->flags |= PG_PTPAGE;
 #endif
 	}
 #if defined(HP380)
