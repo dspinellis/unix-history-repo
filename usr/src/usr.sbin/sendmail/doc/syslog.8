@@ -1,5 +1,5 @@
 .TH SYSLOG 8
-.\"	@(#)syslog.8	1.1		%G%
+.\"	@(#)syslog.8	1.2		%G%
 .SH NAME
 syslog \- log systems messages
 .SH SYNOPSIS
@@ -7,11 +7,12 @@ syslog \- log systems messages
 .BI \-m N
 ] [
 .BI \-f name
+] [
+.B \-d
 ]
 .SH DESCRIPTION
 .I Syslog
-creates and reads the mpx file
-.I /dev/log
+reads a datagram socket
 and logs each line it reads into a set of files
 described by the configuration file
 /etc/syslog.conf.
@@ -73,7 +74,7 @@ It is expected that the kernel will not log anything below
 LOG_ERR priority.
 .PP
 The configuration file is in two sections
-seperated by a blank line.
+separated by a blank line.
 The first section defines files that
 .I syslog
 will log into.
@@ -137,14 +138,36 @@ to reconfigure
 (equivalent to a hangup signal).
 This can be used in a shell file run automatically
 early in the morning to truncate the log.
+.PP
+.I Syslog
+creates the file
+/etc/syslog.pid
+if possible
+containing a single line
+with its process id.
+This can be used to kill or reconfigure
+.I syslog.
+.PP
+.I Syslog
+can also be compiled to use
+.IR mpx (2)
+files instead of datagrams
+if you are running V7.
+In this case it creates and reads the file
+/dev/log.
 .SH FILES
 /etc/syslog.conf \- the configuration file
+.br
+/etc/syslog.pid \- the process id
+.br
+/dev/log \- under V7, the mpx file
 .SH BUGS
 LOG_ALERT and LOG_SUBALERT messages
 should only be allowed to privileged programs.
 .PP
 Actually,
 .I syslog
-is not clever enough to deal with kernel error messages.
+is not clever enough to deal with kernel error messages
+in the current implementation.
 .SH SEE\ ALSO
 syslog(3)
