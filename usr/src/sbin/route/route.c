@@ -42,7 +42,7 @@ static char sccsid[] = "@(#)route.c	5.13 (Berkeley) %G%";
 
 struct	rtentry route;
 int	s;
-int	forcehost, forcenet, doflush, nflag, xnsflag;
+int	forcehost, forcenet, doflush, nflag, xnsflag, qflag;
 struct	sockaddr_in sin = { sizeof(sin), AF_INET };
 struct	in_addr inet_makeaddr();
 char	*malloc(), *vmunix = "/vmunix";
@@ -76,6 +76,9 @@ main(argc, argv)
 				break;
 			case 'x':
 				xnsflag++;
+				break;
+			case 'q':
+				qflag++;
 				break;
 			case 'k':
 				vmunix = *++argv;
@@ -176,75 +179,76 @@ again:
 	return;
 }
 
+struct rtbatch {
+	struct	rtbatch *nb;
+	int	ifree;
+	struct	rtentry rt[100];
+} firstbatch, *curbatch = &firstbatch;
+
 treestuff(rtree)
 off_t rtree;
 {
 	struct radix_node_head *rnh, head;
+	register struct rtbatch *b;
+	register int i;
 	    
 	for (kget(rtree, rnh); rnh; rnh = head.rnh_next) {
 		kget(rnh, head);
 		if (head.rnh_af) {
-			printf("\nFlushing routes for protocol family %d:\n",
-								head.rnh_af);
-			f_tree(head.rnh_treetop);
+			w_tree(head.rnh_treetop);
 		}
 	}
+	for (b = &firstbatch; b; b = b->nb)
+		for (i = 0; i < b->ifree; i++)
+			d_rtentry(b->rt + i);
 }
 
-/*
- * This is not a simple tree walk
- * because the deleting a leaf may change the value of pointers
- * up the tree from us.
- */
-
-f_tree(rn)
+w_tree(rn)
 struct radix_node *rn;
 {
-	struct radix_node rnode, *found;
-	struct nrtentry nrtentry;
-	int doinghost;
 
-	while (find1(rn, &found)) {
-		kget(found, nrtentry);
-		doinghost = nrtentry.nrt_nodes[0].rn_mask ? 0 : 1;
-		d_rtentry(&nrtentry.nrt_rt, doinghost);
-	}
-}
-
-find1(rn, rnp)
-struct radix_node *rn, **rnp;
-{
 	struct radix_node rnode;
 	struct nrtentry nrtentry;
 
 	kget(rn, rnode);
 	if (rnode.rn_b < 0) {
-		if (rnode.rn_dupedkey && find1(rnode.rn_dupedkey, rnp))
-			return 1;
 		if ((rnode.rn_flags & RNF_ROOT) == 0) {
+			register struct rtbatch *b = curbatch;
 			if ((rnode.rn_flags & RNF_ACTIVE) == 0) {
 				printf("Dead entry in tree: %x\n", rn);
 				exit(1);
 			}
 			kget(rn, nrtentry);
-			if (nrtentry.nrt_rt.rt_flags & RTF_GATEWAY) {
-				*rnp = rn;
-				return 1;
+			if (b->ifree >= 100) {
+				Malloc(b->nb, struct rtbatch *,
+						sizeof (*b));
+				if (b->nb) {
+					b = b->nb;
+					Bzero(b, sizeof(*b));
+					curbatch = b;
+				} else {
+					printf("out of space\n");
+					exit(1);
+				}
 			}
+			b->rt[b->ifree++] = nrtentry.nrt_rt;
 		}
+		if (rnode.rn_dupedkey)
+			w_tree(rnode.rn_dupedkey);
 	} else {
-		if (rnode.rn_l && find1(rnode.rn_l, rnp))
-			return 1;
-		if (rnode.rn_r && find1(rnode.rn_r, rnp))
-			return 1;
+		rn = rnode.rn_r;
+		w_tree(rnode.rn_l);
+		w_tree(rn);
 	}
-	return 0;
 }
 
-d_rtentry(rt, doinghost)
+d_rtentry(rt)
 register struct rtentry *rt;
 {
+	int doinghost = rt->rt_flags & RTF_HOST;
+
 	if (rt->rt_flags & RTF_GATEWAY) {
+	   if (qflag == 0) {
 		printf("%-20.20s ", doinghost ?
 		    routename(&rt->rt_dst) :
 		    netname(&rt->rt_dst));
@@ -254,6 +258,8 @@ register struct rtentry *rt;
 			error("delete");
 		} else
 			printf("done\n");
+	    } else
+		(void) ioctl(s, SIOCDELRT, (caddr_t)rt);
 	}
 }
 
@@ -492,17 +498,19 @@ error(cmd)
 
 	switch(errno) {
 	case ESRCH:
-		fprintf(stderr, "not in table\n");
+		printf("not in table\n");
 		break;
 	case EBUSY:
-		fprintf(stderr, "entry in use\n");
+		printf("entry in use\n");
 		break;
 	case ENOBUFS:
-		fprintf(stderr, "routing table overflow\n");
+		printf("routing table overflow\n");
 		break;
 	default:
 		perror(cmd);
 	}
+	fflush(stdout);
+	errno = 0;
 }
 
 char *
