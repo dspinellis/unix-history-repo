@@ -1,7 +1,8 @@
 # Copyright (c) 1982 Regents of the University of California
 #
-#	@(#)Makefile	1.4	%G%
+#	@(#)Makefile	1.5	%G%
 #
+DESTDIR=
 OBJS = y.tab.o main.o lex.yy.o mkioconf.o mkmakefile.o mkubglue.o mkheaders.o
 CFLAGS=-w
 LDFLAGS=-ll
@@ -21,4 +22,4 @@ clean:
 	rm -f $(OBJS) lex.yy.c y.tab.c y.tab.h config
 
 install:
-	cp config /etc/config
+	install config $(DESTDIR)/etc/config
