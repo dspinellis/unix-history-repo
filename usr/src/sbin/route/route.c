@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <paths.h>
@@ -66,7 +66,9 @@ int	pid, rtm_addrs;
 int	s;
 int	forcehost, forcenet, doflush, nflag, af, qflag, Cflag, keyword();
 int	iflag, verbose, aflen = sizeof (struct sockaddr_in);
+int	locking, lockrest, debugonly;
 struct	sockaddr_in sin = { sizeof(sin), AF_INET };
+struct	rt_metrics rt_metrics;
 struct	in_addr inet_makeaddr();
 char	*malloc(), *routename(), *netname();
 extern	char *iso_ntoa(), *link_ntoa();
@@ -381,6 +383,30 @@ netname(sa)
 	return (line);
 }
 
+set_metric(value, key)
+char *value;
+{
+	int flag = 0; 
+	u_long noval, *valp = &noval;
+
+	switch (key) {
+#define caseof(x, y, z)	case x: valp = &rt_metrics.z; flag = y; break
+	caseof(K_MTU, RTV_MTU, rmx_mtu);
+	caseof(K_HOPCOUNT, RTV_HOPCOUNT, rmx_hopcount);
+	caseof(K_EXPIRE, RTV_EXPIRE, rmx_expire);
+	caseof(K_RECVPIPE, RTV_RPIPE, rmx_recvpipe);
+	caseof(K_SENDPIPE, RTV_SPIPE, rmx_sendpipe);
+	caseof(K_SSTHRESH, RTV_SSTHRESH, rmx_ssthresh);
+	caseof(K_RTT, RTV_RTT, rmx_rtt);
+	caseof(K_RTTVAR, RTV_RTTVAR, rmx_rttvar);
+	}
+	if (lockrest || locking)
+		rt_metrics.rmx_locks |= flag;
+	if (locking)
+		locking = 0;
+	*valp = atoi(value);
+}
+
 newroute(argc, argv)
 	int argc;
 	register char **argv;
@@ -388,13 +414,14 @@ newroute(argc, argv)
 	struct sockaddr_in *sin;
 	char *cmd, *dest, *gateway, *mask;
 	int ishost, metric = 0, ret, attempts, oerrno, flags = 0, next;
+	int key;
 	struct hostent *hp = 0;
 	extern int errno;
 
 	cmd = argv[0];
 	while (--argc > 0) {
 		if (**(++argv)== '-') {
-			switch(keyword(1 + *argv)) {
+			switch(key = keyword(1 + *argv)) {
 			case K_LINK:
 				af = AF_LINK;
 				aflen = sizeof(struct sockaddr_dl);
@@ -413,7 +440,14 @@ newroute(argc, argv)
 				aflen = sizeof(struct sockaddr_ns);
 				break;
 			case K_IFACE:
+			case K_INTERFACE:
 				iflag++;
+				break;
+			case K_LOCK:
+				locking = 1;
+				break;
+			case K_LOCKREST:
+				lockrest = 1;
 				break;
 			case K_HOST:
 				forcehost++;
@@ -425,9 +459,26 @@ newroute(argc, argv)
 			case K_NET:
 				forcenet++;
 				break;
+			case K_CLONING:
+				flags |= RTF_CLONING;
+				break;
+			case K_XRESOLVE:
+				flags |= RTF_XRESOLVE;
+				break;
 			case K_GENMASK:
 				argc--;
 				(void) getaddr(RTA_GENMASK, *++argv, 0);
+				break;
+			case K_MTU:
+			case K_HOPCOUNT:
+			case K_EXPIRE:
+			case K_RECVPIPE:
+			case K_SENDPIPE:
+			case K_SSTHRESH:
+			case K_RTT:
+			case K_RTTVAR:
+				argc--;
+				set_metric(*++argv, key);
 				break;
 			default:
 				usage(1+*argv);
@@ -460,7 +511,7 @@ newroute(argc, argv)
 		ishost = 1;
 	if (forcenet)
 		ishost = 0;
-	flags = RTF_UP;
+	flags |= RTF_UP;
 	if (ishost)
 		flags |= RTF_HOST;
 	if (iflag == 0)
@@ -786,6 +837,7 @@ rtmsg(cmd, flags)
 	m_rtmsg.m_rtm.rtm_version = RTM_VERSION;
 	m_rtmsg.m_rtm.rtm_seq = ++seq;
 	m_rtmsg.m_rtm.rtm_addrs = rtm_addrs;
+	m_rtmsg.m_rtm.rtm_rmx = rt_metrics;
 
 #define ROUND(a) (1 + (((a) - 1) | (sizeof(long) - 1)))
 #define NEXTADDR(w, u) { if (rtm_addrs & (w)) {l = (u).sa.sa_len;\
@@ -800,6 +852,8 @@ rtmsg(cmd, flags)
 	m_rtmsg.m_rtm.rtm_type = cmd;
 	if (verbose)
 		print_rtmsg(&m_rtmsg.m_rtm, l);
+	if (debugonly)
+		return 0;
 	if ((rlen = write(s, (char *)&m_rtmsg, l)) < 0) {
 		perror("writing to routing socket");
 		printf("got only %d for rlen\n", rlen);
@@ -841,7 +895,9 @@ char *msgtypes[] = {
 0, };
 
 char metricnames[] =
-"\010rttvar\7rtt\6ssthresh\7sendpipe\4recvpipe\3expire\2hopcount\1mtu";
+"\010rttvar\7rtt\6ssthresh\5sendpipe\4recvpipe\3expire\2hopcount\1mtu";
+char routeflags[] = 
+"\1UP\2GATEWAY\3HOST\5DYNAMIC\6MODIFIED\7DONE\010MASK_PRESENT\011CLONING\012XRESOLVE";
 
 #define ROUNDUP(a) ((char *)(1 + (((((int)a)) - 1) | (sizeof(long) - 1))))
 
@@ -861,8 +917,7 @@ register struct rt_msghdr *rtm;
 	    printf("%s\npid: %d, len %d, seq %d, errno %d, flags:",
 		    msgtypes[rtm->rtm_type], rtm->rtm_pid, rtm->rtm_msglen,
 		    rtm->rtm_seq, rtm->rtm_errno); 
-	    bprintf(stdout, rtm->rtm_flags,
-		"\1UP\2GATEWAY\3HOST\5DYNAMIC\6MODIFIED\7DONE\010MASK_PRESENT");
+	    bprintf(stdout, rtm->rtm_flags, routeflags);
 	    printf("\nlocks: "); bprintf(stdout, rtm->rtm_rmx.rmx_locks, metricnames);
 	    printf(" inits: "); bprintf(stdout, rtm->rtm_inits, metricnames);
 	    printf("\nsockaddrs: ");
