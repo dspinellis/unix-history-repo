@@ -1,0 +1,13 @@
+procedure main()
+   wchar := &lcase ++ &ucase ++ '\'-'
+   while line := read() do {
+      i := 1
+      dashes := repl(" ",*line)
+      while j := upto(wchar,line,i) do {
+         i := many(wchar,line,j)
+         dashes[i:j] := repl("-",i - j)
+         }
+      write(line)
+      write(dashes)
+      }
+end
