@@ -2,7 +2,7 @@
 # include <pwd.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	1.4	%G%";
+static char	SccsId[] = "@(#)savemail.c	2.1	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error

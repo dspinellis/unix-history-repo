@@ -3,7 +3,7 @@
 # include <pwd.h>
 # include "dlvrmail.h"
 
-static char SccsId[] = "@(#)alias.c	1.8	%G%";
+static char SccsId[] = "@(#)alias.c	2.1	%G%";
 
 /*
 **  ALIAS -- Compute aliases.

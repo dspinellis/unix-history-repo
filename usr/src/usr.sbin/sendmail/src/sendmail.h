@@ -3,7 +3,7 @@
 **
 **	Most of these are actually allocated in globals.c
 **
-**	@(#)sendmail.h	1.6	%G%
+**	@(#)sendmail.h	2.1	%G%
 */
 
 

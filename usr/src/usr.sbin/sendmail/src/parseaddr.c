@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	1.7	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	2.1	%G%";
 
 /*
 **  PARSE -- Parse an address

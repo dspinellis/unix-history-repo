@@ -1,6 +1,6 @@
 # include <time.h>
 
-static char SccsId[] = "@(#)arpadate.c	1.4	%G%";
+static char SccsId[] = "@(#)arpadate.c	2.1	%G%";
 
 /*
 **  ARPADATE -- Create date in ARPANET format

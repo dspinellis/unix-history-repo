@@ -1,7 +1,7 @@
 /*
 **  USEFUL.H -- Some useful stuff.
 **
-**	@(#)useful.h	1.3	%G%
+**	@(#)useful.h	2.1	%G%
 */
 
 # define bool	char
