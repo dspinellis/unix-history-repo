@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm.h	8.4 (Berkeley) %G%
+ *	@(#)vm.h	8.5 (Berkeley) %G%
  */
 
 #ifndef VM_H
@@ -31,7 +31,7 @@ struct pager_struct;
 typedef struct pager_struct *vm_pager_t;
 
 /*
- *	MACH VM locking primitives mappings to kernel locking primitives.
+ *	MACH VM locking type mappings to kernel types
  */
 typedef struct simplelock	simple_lock_data_t;
 typedef struct simplelock	*simple_lock_t;
@@ -40,8 +40,8 @@ typedef struct lock		*lock_t;
 
 #include <sys/vmmeter.h>
 #include <sys/queue.h>
-#include <sys/lock.h>
 #include <vm/vm_param.h>
+#include <sys/lock.h>
 #include <vm/vm_prot.h>
 #include <vm/vm_inherit.h>
 #include <vm/vm_map.h>
