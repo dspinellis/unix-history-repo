@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)disklabel.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.16 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -382,19 +382,6 @@ gettype(t, names)
 	if (isdigit(*t))
 		return (atoi(t));
 	return (0);
-}
-
-dkcksum(lp)
-	register struct disklabel *lp;
-{
-	register u_short *start, *end;
-	register u_short sum = 0;
-
-	start = (u_short *)lp;
-	end = (u_short *)&lp->d_partitions[lp->d_npartitions];
-	while (start < end)
-		sum ^= *start++;
-	return (sum);
 }
 
 static
