@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -31,11 +31,6 @@ static char sccsid[] = "@(#)conf.c	5.15 (Berkeley) %G%";
 **	Defines the configuration of this installation.
 **
 **	Compilation Flags:
-**		V6 -- running on a version 6 system.  This determines
-**			whether to define certain routines between
-**			the two systems.  If you are running a funny
-**			system, e.g., V6 with long tty names, this
-**			should be checked carefully.
 **		VMUNIX -- running on a Berkeley UNIX system.
 **
 **	Configuration Variables:
@@ -158,164 +153,6 @@ setdefaults()
 	DefUid = 1;
 	DefGid = 1;
 }
-
-# ifdef V6
-/*
-**  TTYNAME -- return name of terminal.
-**
-**	Parameters:
-**		fd -- file descriptor to check.
-**
-**	Returns:
-**		pointer to full path of tty.
-**		NULL if no tty.
-**
-**	Side Effects:
-**		none.
-*/
-
-char *
-ttyname(fd)
-	int fd;
-{
-	register char tn;
-	static char pathn[] = "/dev/ttyx";
-
-	/* compute the pathname of the controlling tty */
-	if ((tn = ttyn(fd)) == NULL)
-	{
-		errno = 0;
-		return (NULL);
-	}
-	pathn[8] = tn;
-	return (pathn);
-}
-/*
-**  FDOPEN -- Open a stdio file given an open file descriptor.
-**
-**	This is included here because it is standard in v7, but we
-**	need it in v6.
-**
-**	Algorithm:
-**		Open /dev/null to create a descriptor.
-**		Close that descriptor.
-**		Copy the existing fd into the descriptor.
-**
-**	Parameters:
-**		fd -- the open file descriptor.
-**		type -- "r", "w", or whatever.
-**
-**	Returns:
-**		The file descriptor it creates.
-**
-**	Side Effects:
-**		none
-**
-**	Called By:
-**		deliver
-**
-**	Notes:
-**		The mode of fd must match "type".
-*/
-
-FILE *
-fdopen(fd, type)
-	int fd;
-	char *type;
-{
-	register FILE *f;
-
-	f = fopen("/dev/null", type);
-	(void) close(fileno(f));
-	fileno(f) = fd;
-	return (f);
-}
-/*
-**  INDEX -- Return pointer to character in string
-**
-**	For V7 compatibility.
-**
-**	Parameters:
-**		s -- a string to scan.
-**		c -- a character to look for.
-**
-**	Returns:
-**		If c is in s, returns the address of the first
-**			instance of c in s.
-**		NULL if c is not in s.
-**
-**	Side Effects:
-**		none.
-*/
-
-char *
-index(s, c)
-	register char *s;
-	register char c;
-{
-	while (*s != '\0')
-	{
-		if (*s++ == c)
-			return (--s);
-	}
-	return (NULL);
-}
-/*
-**  UMASK -- fake the umask system call.
-**
-**	Since V6 always acts like the umask is zero, we will just
-**	assume the same thing.
-*/
-
-/*ARGSUSED*/
-umask(nmask)
-{
-	return (0);
-}
-
-
-/*
-**  GETRUID -- get real user id.
-*/
-
-getruid()
-{
-	return (getuid() & 0377);
-}
-
-
-/*
-**  GETRGID -- get real group id.
-*/
-
-getrgid()
-{
-	return (getgid() & 0377);
-}
-
-
-/*
-**  GETEUID -- get effective user id.
-*/
-
-geteuid()
-{
-	return ((getuid() >> 8) & 0377);
-}
-
-
-/*
-**  GETEGID -- get effective group id.
-*/
-
-getegid()
-{
-	return ((getgid() >> 8) & 0377);
-}
-
-# endif V6
-
-# ifndef V6
 
 /*
 **  GETRUID -- get real user id (V7)
@@ -342,8 +179,7 @@ getrgid()
 		return (getgid());
 }
 
-# endif V6
-/*
+/*
 **  USERNAME -- return the user id of the logged in user.
 **
 **	Parameters:

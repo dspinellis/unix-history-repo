@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -843,17 +843,9 @@ setoption(opt, val, sticky)
 
 	  case 'T':		/* queue timeout */
 		TimeOut = convtime(val);
-		break;
+		/*FALLTHROUGH*/
 
 	  case 't':		/* time zone name */
-# ifdef V6
-		StdTimezone = newstr(val);
-		DstTimezone = index(StdTimeZone, ',');
-		if (DstTimezone == NULL)
-			syserr("bad time zone spec");
-		else
-			*DstTimezone++ = '\0';
-# endif V6
 		break;
 
 	  case 'u':		/* set default uid */

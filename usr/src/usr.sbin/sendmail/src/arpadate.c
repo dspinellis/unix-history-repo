@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)arpadate.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)arpadate.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "conf.h"
@@ -24,16 +24,11 @@ static char sccsid[] = "@(#)arpadate.c	5.7 (Berkeley) %G%";
 # else
 # include "conf.h"
 # include <sys/time.h>
-# ifndef V6
 # include <sys/types.h>
 # include <sys/timeb.h>
-# endif V6
 # endif USG
 # include "useful.h"
 
-# ifdef V6
-# define OLDTIME
-# endif V6
 # ifdef USG
 # define OLDTIME
 # endif USG
@@ -82,9 +77,6 @@ arpadate(ud)
 	struct timeb t;
 	extern struct timeb *ftime();
 # endif OLDTIME
-# ifdef V6
-	extern char *StdTimezone, *DstTimezone;
-# endif V6
 # ifdef USG
 	extern char *tzname[2];
 # endif USG
@@ -142,12 +134,6 @@ arpadate(ud)
 		*q++ = *p++;
 
 				/* -PST or -PDT */
-# ifdef V6
-	if (localtime(&t)->tm_isdst)
-		p = DstTimezone;
-	else
-		p = StdTimezone;
-# else
 # ifdef USG
 	if (localtime(&t)->tm_isdst)
 		p = tzname[1];
@@ -156,7 +142,6 @@ arpadate(ud)
 # else
 	p = localtime(&t.time)->tm_zone;
 # endif USG
-# endif V6
 	if ((strncmp(p, "GMT", 3) == 0 || strncmp(p, "gmt", 3) == 0) &&
 	    p[3] != '\0')
 	{
