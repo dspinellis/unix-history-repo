@@ -1,0 +1,2400 @@
+This is a list of frequently asked questions (FAQ) about GNU Emacs with
+answers.  This list is designed to cut down on the noise in the
+gnu.emacs.help newsgroup (which is also the help-gnu-emacs mailing list)
+that results from people repeatedly asking many of the same questions.
+
+This list is maintained by me, Joe Wells.  My e-mail address is
+jbw@bu.edu.  If jbw@bu.edu doesn't work try jbw@bucsf.bu.edu.
+
+Feel free to contribute text for the answers that I haven't written yet,
+to suggest new questions, to suggest changes in the wording, to suggest
+deletions, etc.  Please include either "FAQ" or "frequently asked
+questions" in the subject of messages you send to me to help keep me from
+accidentally filing your message in the wrong mail folder.
+
+Here is a short list of new questions and questions that are now answered:
+
+New questions:
+
+  Why doesn't "C-c C-c" interrupt subprocesses under HP/UX?
+  How do I make Emacs send 8-bit characters to my terminal?
+  Why does ispell sometimes ignore the local dictionary?
+  Where can I get Emacs with NeWS support?
+
+Questions with improved answers:
+
+  Has someone written an GNU Emacs Lisp package that does XXX?
+  How do I get Emacs running on VMS under DECwindows?
+  Why does Emacs crash from a bus error in XLookupString under OpenLook?
+  Why does Emacs hang with message "Unknown XMenu" with X11R4?
+  How do I use regexps (regular expressions) in Emacs?
+  How do I make Emacs "typeover" or "overwrite" when I type instead of
+   always inserting?
+  How do I get Emacs for my PC?
+  How can I highlight a region?
+  Where can I get GNU Emacs Lisp packages that don't come with Emacs?
+  Where can I get the latest VM, Supercite, GNUS, Calc, Calendar, or Patch?
+
+Minor changes:
+
+  Where does the name "Emacs" come from?
+  In C mode, can I show just the lines that will be left after #ifdef
+   commands are handled by the compiler?
+  What does "M-x command" mean?
+  How do I get a printed copy of the GNU Emacs manual?
+  What do things like this mean: C-h, M-C-a, RET, etc.?
+  Why doesn't GNUS work anymore via NNTP?
+  What does Emacs do every time it starts up?
+  
+Enjoy,
+
+-- 
+Joe Wells <jbw@bu.edu>
+-------------------------------------------------
+GNU Emacs Frequently Asked Questions with Answers (part 1 of 2)
+
+Sat Dec  8 01:30:53 1990
+
+
+If you are viewing this file in a GNU Emacs Buffer, you can type "M-2 C-x
+$" to get an overview of just the questions.  Then, when you want to look
+at the text of the answers, just type "C-x $".
+
+To search for a question numbered XXX, type "M-C-s ^XXX:", followed by a
+C-r if that doesn't work, then type ESC to end the search.
+
+
+Notation Used in the Answers (READ THIS SECTION FIRST!)
+
+  You may skip this section if you are reasonably familiar with GNU Emacs.
+  Some of these are not actually frequently asked questions, but knowing
+  them is important for understanding the answers to the rest of the
+  questions.
+
+1: What do things like this mean: C-h, M-C-a, RET, etc.?
+  
+  C-a means while holding down the "Control" key press the "a" key.  The
+  ASCII code this sends will generally be the value that would be sent by
+  pressing just "a" minus 96 or 64.  Either way it will be a number from 0
+  to 31.
+  
+  M-a means while holding down the "Meta" key press the "a" key.  The
+  ASCII code this sends is the sum of the ASCII code that would be sent by
+  pressing just "a" and 128.
+  
+  M-C-a means while holding down both the "Control" key and the "Meta" key
+  press the "a" key.
+  
+  C-M-a is a synonym for M-C-a.
+  
+  RET means press the "Return" key.  RET is the same as C-m.  This sends
+  ASCII code 13.
+  
+  LFD means press the "Linefeed" key.  LFD is also the same as C-j.  This
+  sends ASCII code 10.  Under Unix, ASCII code 10 is more often called
+  "Newline".
+  
+  DEL means press the "Delete" key.  DEL is the same as C-?.  This sends
+  ASCII code 127.
+  
+  ESC means press the "Escape" key.  ESC is the same as C-[.  This sends
+  ASCII code 27.
+  
+  SPC means press the "Space" key.  This send ASCII code 32.
+  
+  TAB means press the "Tab" key.  TAB is the same as C-i.  This send ASCII
+  code 9.
+  
+  To read more about this online, type "C-h i m emacs RET m characters
+  RET", and also "C-h i m emacs RET m keys RET".
+  
+2: What do you mean when you write things like this: type "ESC a"?
+  
+  I will enclose key sequences that are longer than one key inside double
+  quotes.  These notations refer to single keys (some with modifiers):
+  
+    C-x, M-x, M-C-x
+    RET, LFD, DEL, ESC, SPC, TAB
+  
+  I separate these from other keys within double quotes by spaces.  Any
+  real spaces that I write inside double quotes can be ignored, only SPC
+  means press the space key.  All other characters within double quotes
+  represent single keys (some shifted).
+  
+3: What if I don't have a Meta key?
+  
+  Instead of typing M-a, you can type "ESC a" instead.  In fact, Emacs
+  converts M-a internally into "ESC a" anyway.
+  
+4: What if I don't have an Escape key?
+  
+  Type C-[ instead.  This should send ASCII code 27 just like an Escape
+  key would.
+  
+5: What does "M-x command" mean?
+  
+  "M-x command" means type M-x, then type the name of the command, then
+  type RET.
+  
+  M-x is simply the default key sequence that invokes the command
+  "execute-extended-command".  This command allows you to run any Emacs
+  command if you can remember the command's name.  If you can't remember
+  the command's name, you can type TAB and SPC for completion, and ? for a
+  list of possibilities.  An Emacs "command" is any "interactive" Emacs
+  function.
+  
+  NOTE: Your system administrator may have bound other key sequences to
+  invoke execute-extended-command.  A function key labeled "Do" is a good
+  candidate for this.
+  
+  To run non-interactive Emacs functions, use M-ESC instead and type a
+  Lisp form.
+  
+6: What do things like this mean: etc/SERVICE, src/config.h,
+ lisp/default.el?
+  
+  These are the names of files that are part of the GNU Emacs
+  distribution.  The GNU Emacs distribution is so big that it is divided
+  into several subdirectories; the important subdirectories are named
+  "etc", "lisp", and "src".
+  
+  If you use GNU Emacs, but don't know where it is kept on your system,
+  start Emacs, then type "C-h v exec-directory RET".  The directory name
+  that is displayed by this will be the full pathname of the "etc"
+  directory of your installed GNU Emacs distribution.
+  
+  Some of these files are available individually via FTP or e-mail, see
+  question 16.
+  
+7: What are FSF, LPF, OSF, GNU, RMS, FTP, BTW, and GPL?
+  
+  FSF == Free Software Foundation
+  LPF == League for Programming Freedom
+  OSF == Open Software Foundation
+  GNU == GNU's Not Unix
+  RMS == Richard M. Stallman
+  FTP == File Transfer Protocol
+  BTW == By the way
+  GPL == GNU General Public Licence
+  
+  NOTE: Avoid confusing the FSF, the LPF, and the OSF.  The LPF only
+  opposes look-and-feel copyrights and software patents.  The FSF aims to
+  make high quality free software available for everyone.  The OSF is a
+  commercial organization which wants to provide an alternative,
+  standardized version of Unix not controlled by AT&T.
+  
+
+
+Sources of Information and Help
+
+8: I'm just starting GNU Emacs; how do I do basic editing?
+  
+  Type "C-h t" to invoke the self-paced tutorial.  Typing just C-h is
+  how to enter the help system.
+  
+  WARNING: your system administrator may have changed C-h to act like DEL.
+  You can use M-x help-for-help instead to invoke help.  To discover what
+  key (if any) invokes help on your system, type "M-x where-is RET
+  help-for-help RET".  This will print a comma-separated list of key
+  sequences in the echo area.  Ignore the last character in each key
+  sequence listed.  Each of the resulting key sequences invokes help.
+  
+  NOTE: Emacs's help facility works best if help is invoked by a single
+  key.  The variable help-char should hold the value of this character.
+  
+9: How do I find out how to do something in GNU Emacs?
+  
+  There are several methods for finding out how to do things in Emacs.
+  
+  You should become familiar with the online documentation for Emacs.  The
+  complete text of the Emacs manual is available online in a hypertext
+  format via the "Info" manual reader.  Type "C-h i" to invoke Info.
+  
+  You can order a hardcopy of the manual from the FSF.  See question 12.
+  
+  You can list all of the commands whose names contain a certain word
+  (actually which match a regular expression) using the "command-apropos"
+  command.  Type "C-h a" to invoke this command.
+  
+  You can list all of the functions and variables whose names contain a
+  certain word using the "apropos" command.  M-x apropos invokes this
+  command.
+  
+  You may find that command-apropos and apropos are extremely slow on your
+  system.  This will be fixed in Emacs 19.  If you can't wait that long,
+  I can send you the "fast-apropos.el" file that contains the fix.  This
+  file also contains a "super-apropos" command that will list all the
+  functions and variables whose documentation strings contain a certain
+  word.
+  
+  There are many other commands in Emacs for getting help and information.
+  To get a list of these commands, type "C-h C-h C-h".
+  
+10: Where can I get GNU Emacs on the net (or by snail mail)?
+  
+  Look in the files etc/DISTRIB and etc/FTP for information.  If you don't
+  already have GNU Emacs, see question 16.
+  
+11: Where can I get help in installing GNU Emacs?
+  
+  Look in the file etc/SERVICE for names of companies and individuals who
+  will sell you this type of service.
+  
+  This file in the version 18.55 distribution is not completely up to
+  date.  The imminent release of 18.56 will help that.  An up-to-date
+  version of the SERVICE file is available on prep.ai.mit.edu.  See
+  question 16 for how to retrieve this file.
+  
+12: How do I get a printed copy of the GNU Emacs manual?
+  
+  You can order a printed copy of the GNU Emacs manual from the FSF for
+  $15.  A set of 6 manuals is $60.
+  
+  The full TeX source for the manual also comes with Emacs, if you're
+  daring enough to try to print out this 300 page manual yourself.  (We're
+  talking about killing an entire tree here.  This kind of printer usage
+  can make you very unpopular.  Besides, if you order it from the FSF, the
+  price may be tax-deductible as a business expense.)
+  
+  If you absolutely have to print your own copy, and you don't have TeX,
+  you can get a PostScript version from:
+  
+  Anonymous FTP:
+  site: abcfd20.larc.nasa.gov
+  file: /pub/docs/emacs-18.55.PS.Z (size: 472K)
+  
+  Carl Witty <cwitty@cs.stanford.edu> writes:
+  
+  The Emacs manual is also available online in the Info system, which is
+  available by typing "C-h i".  In this form, it has hypertext links and
+  is very easy to browse or search; many people prefer it to the printed
+  manual.
+  
+13: Has someone written an GNU Emacs Lisp package that does XXX?
+  
+  Probably.  A listing of Emacs Lisp packages, called the Lisp Code
+  Directory, is being maintained by Dave Brennan <brennan@dg-rtp.dg.com>.
+  You can search through this list to find if someone has written
+  something that fits your needs.
+  
+  This list is file "LCD-datafile.Z" in the Emacs Lisp Archive.  (See
+  question 14.)  The files "lispdir.el.Z" and "lispdir.doc.Z"
+  in the archive contain information to help you use the list.
+  
+14: Where can I get GNU Emacs Lisp packages that don't come with Emacs?
+  
+  First, check the Lisp Code Directory to find the name of the package you
+  are looking for.  (See question 13).  Then check local archives and
+  the Emacs Lisp Archive to find a copy of the relevant files.  Then, if
+  you still haven't found it, you can send e-mail to the author asking for
+  a copy.
+  
+  You can access the Emacs Lisp Archive via:
+  
+  Anonymous FTP:
+  site: tut.cis.ohio-state.edu
+  directory: /pub/gnu/emacs/elisp-archive
+  file: README.Z
+  
+  NOTE: Any files with names ending in ".Z" are compressed, and you should
+  use "binary" mode in FTP to retrive them.  You should also use binary
+  mode whenever you retrieve any files with names ending in ".elc".
+  
+  Submissions for the archive should be sent to Dave Sill <de5@ornl.gov>.
+  If you have ftp access, the submission can be deposited in the directory
+  /pub/gnu/emacs/elisp-archive/incoming on tut.cis.ohio-state.edu.
+  Whenever possible submissions should contain an LCD-datafile entry since
+  this helps reduce administrative overhead for the maintainers.  Before
+  submitting anything, first read the file "guidelines.Z", which is
+  available in the archive.
+  
+15: Where can I get documentation on GNU Emacs Lisp?
+  
+  Obtain the GNU Emacs Lisp Reference Manual for Emacs 18 under Unix.  It
+  is available from the FSF for $50.  The latest revision is edition 1.02
+  dated July 1990.
+  
+  Within Emacs, you can type "C-h f" to get the documentation for a
+  function, "C-h v" for a variable.
+  
+  Also, as a popular USENET saying goes, "Use the Force, Read the Source".
+  
+  You can also get the Texinfo source for the manual, if you are daring
+  enough to try to print this 550 page manual out yourself.  This is
+  available in the Emacs Lisp Archive and also via:
+  
+  Anonymous FTP:
+  site: prep.ai.mit.edu
+  file: /pub/gnu/elisp.tar.Z
+  
+  A set of pregenerated Info files comes with the Texinfo source for the
+  Emacs Lisp manual, so you don't have to format it yourself for online
+  use.  (You can create the Info files from the Texinfo source.)  See
+  question 21 for details on how to install these files online.
+  
+16: What informational files are available?
+  
+  This isn't a frequently asked question, but it should be!
+  
+  The following files are available in the "etc" directory of the GNU
+  Emacs distribution, and also the latest versions are available
+  individually via:
+  
+  Anonymous FTP:
+  site: prep.ai.mit.edu
+  directory: /pub/gnu/etc
+  
+    APPLE -- Special Report: Apple's New Look and Feel
+    DISTRIB -- GNU Emacs Availability Information,
+      including the popular "Free Software Foundation Order Form"
+    FTP -- How to get GNU Software by Internet FTP or by UUCP
+    GNU -- The GNU Manifesto
+    INTERVIEW -- Richard Stallman discusses his public-domain
+		       UNIX-compatible software system
+			      with BYTE editors
+    MACHINES -- Status of GNU Emacs on Various Machines and Systems
+    MAILINGLISTS -- GNU Project Electronic Mailing Lists
+    SERVICE -- GNU Service Directory
+    SUN-SUPPORT -- includes the popular "Using Emacstool with GNU Emacs"
+  
+  These files are available in the "etc" directory of the GNU Emacs
+  distribution:
+  
+    DIFF -- Differences between GNU Emacs and Twenex Emacs
+    CCADIFF -- Differences between GNU Emacs and CCA Emacs
+    GOSDIFF -- Differences between GNU Emacs and Gosling (Unipress??) Emacs
+    COPYING -- GNU General Public License
+    NEWS -- GNU Emacs News, a history of user-visible changes
+  
+  In addition, all of the above files are available directly from the FSF
+  via e-mail.  Of course, please try to get them from a local source
+  first.
+  
+  These files are available from the FSF via e-mail:
+  
+    * GNU's Bulletin, June, 1990 -- this file includes:
+	GNU'S Who
+	What Is the Free Software Foundation?
+	What Is Copyleft?
+	GNUs Flashes
+	Possible New Terms for GNU Libraries	by Richard Stallman
+	"League for Programming Freedom" by Michael Bloom and Richard Stallman
+	Free Software Support
+	GNU Project Status Report
+	GNU Wish List
+	GNU Documentation
+	GNU Software Available Now
+	   Contents of the Emacs Release Tape
+	   Contents of the Pre-Release Tape
+	   Contents of the X11 Tapes
+	   VMS Emacs and Compiler Tapes
+	How to Get GNU Software
+	Freemacs, an Extensible Editor for MS-DOS
+	Thank GNUs
+	FSF Order Form
+    * GNU Task List
+    * GNU Coding Standards
+    * Legal issues about contributing code to GNU
+    * GNU Project Status Report
+  
+17: What is the current address of the FSF?
+  
+  Snail mail address:
+    Free Software Foundation
+    675 Massachusetts Avenue
+    Cambridge, MA 02139, USA
+  
+  Phone number:
+    (617) 876-3296
+  
+  E-mail addresses:
+    gnu@prep.ai.mit.edu {probably read by Len Tower}
+    gnulists@prep
+  
+18: What is the current address of the LPF?
+  
+  Snail mail address:
+    League for Programming Freedom
+    1 Kendall Square, Number 143
+    Post Office Box 9171
+    Cambridge, MA 02139, USA
+  
+  Phone number:
+    (617) 243-4061 { or 243-4091, I'm not sure ... }
+  
+  E-mail address:
+    league@prep.ai.mit.edu
+  
+19: Where can I get the up-to-date GNU stuff?
+  
+  The most up-to-date official GNU stuff is normally kept on
+  prep.ai.mit.edu and is available for anonymous FTP.  See the files
+  etc/DISTRIB and etc/FTP for more information.  (To get copies of these
+  files, see question 16.)
+  
+20: Where can I get the latest VM, Supercite, GNUS, Calc, Calendar, or Patch?
+  
+  1. VM:
+  
+     Author: Kyle Jones <kyle@xanth.cs.odu.edu>
+  
+     Mailing lists: info-vm-request@uunet.uu.net
+                    info-vm@uunet.uu.net
+                    bug-vm-request@uunet.uu.net
+                    bug-vm@uunet.uu.net
+  
+     Anonymous FTP:
+  
+     Last released version: 4.41
+     site: tut.cis.ohio-state.edu
+     file: /pub/gnu/vm/vm-4.41.tar.Z
+  
+     Beta test version: 5.18
+     site: abcfd20.larc.nasa.gov
+     directory: /pub/vm
+  
+  2. Supercite:
+  
+     Author: Barry Warsaw <warsaw@warsaw.nlm.nih.gov>
+  
+     Latest version: 2.1
+  
+     Mailing lists: supercite@warsaw.nlm.nih.gov
+		    supercite-request@warsaw.nlm.nih.gov
+  
+     Anonymous FTP:
+     site: durer.cme.nist.gov [129.6.32.4]
+     files:/pub/gnu/elisp/supercite-2.1.shar.0# (where # is replaced by 1 or 2)
+  
+     NOTE: Superyank is an old version of Supercite.
+  
+  3. GNUS:
+  
+     Author: Masanobu Umeda
+  
+     Latest version: 3.13
+  
+     Anonymous FTP:
+     site: tut.cis.ohio-state.edu
+     files: /pub/gnu/gnus/3.13.##-of-11.Z (where ## is replaced by 00 -- 11)
+  
+  4. Calc:
+  
+     Author: Dave Gillespie <daveg@csvax.cs.caltech.edu>
+  
+     Latest version: 1.06
+  
+     Anonymous FTP:
+     site: csvax.cs.caltech.edu [131.215.131.131]
+           or any comp.sources.misc archive
+  
+  5. Calendar/Diary
+  
+     Author: Ed Reingold <reingold@cs.uiuc.edu>
+  
+     Latest version: 4
+  
+     E-mail:
+     Subject: send-emacs-cal
+     body: your best internet e-mail address
+  
+  6. Patch
+  
+     Author: Larry Wall <lwall@jpl-devvax.jpl.nasa.gov>
+  
+     Latest version: 2.0 patchlevel 12
+  
+     Anonymous FTP:
+     site: any comp.sources.unix archive
+  
+     or, for Europeans:
+  
+     site: archive.cs.ruu.nl [131.211.80.5]
+     file: /pub/UNIX/patch-2.0.tar.Z
+  
+21: How do I install a piece of Texinfo documentation?
+  
+  First create Info files from the Texinfo files with M-x
+  texinfo-format-buffer.  There is also a program called "makeinfo" that
+  provides better error checking and runs faster.  Currently, it comes
+  with the Emacs Lisp manual (which comes on the GNU Emacs tape).
+  
+  For information about the Texinfo format, read the Texinfo manual which
+  comes with Emacs.  This manual also comes installed in Info format, so
+  you can read it online.
+  
+  Neither texinfo-format-buffer nor the makeinfo program install the
+  resulting Info files in Emacs's Info tree.  To install Info files:
+  
+  1. Move the files to the "info" directory in the installed Emacs
+     distribution.  See question 6 if you don't know where that
+     is.
+  
+  2. Edit the file info/dir in the installed Emacs distribution, and add a
+     line for the top level node in the Info package that you are
+     installing.
+  
+22: What is the real legal meaning of the GNU copyleft?
+  
+  RMS writes:
+  
+  The legal meaning of the GNU copyleft is less important than the spirit,
+  which is that Emacs is a free software project and that work pertaining
+  to Emacs should also be free software.  "Free" means that all users have
+  the freedom to study, share, change and improve Emacs.  To make sure
+  everyone has this freedom, pass along source code when you distribute
+  any version of Emacs or a related program, and give the recipients the
+  same freedom that you enjoyed.
+  
+  If you still want to find out about the legal meaning of the copyleft,
+  please ask yourself if this means you are not paying attention to the
+  spirit.
+  
+23: What are appropriate messages for gnu.emacs.help/gnu.emacs.bug/comp.emacs
+ etc.?
+  
+  The file etc/MAILINGLISTS discusses the purpose of each GNU
+  mailing-list.  (See question 16 on how to get a copy.)  For
+  those which are gatewayed with newsgroups, it lists both the newsgroup
+  name and the mailing list address.
+  
+  comp.emacs is for discussion of Emacs programs in general.  This
+  includes GNU Emacs along with various other implementations like JOVE,
+  MicroEmacs, Freemacs, MG, Unipress, CCA, etc.
+  
+  Many people post GNU Emacs questions to comp.emacs because they don't
+  receive any of the gnu.* newsgroups.  Arguments have been made both for
+  and against posting GNU-Emacs-specific material to comp.emacs.  You have
+  to decide for yourself.
+  
+24: Should I send questions directly to people who post a lot on the net,
+ instead of posting myself?
+  
+  I don't know about the others, but please don't send such messages to me
+  just because you don't want to disturb a lot of people.  Send messages
+  to individuals that concern things that individual has written.
+  
+
+
+GNU Emacs, all its Variants, and other Editors
+
+25: Where does the name "Emacs" come from?
+  
+  EMACS originally was an acronym for Editor MACroS.  The first Emacs was
+  a set of macros written by Richard Stallman for the editor TECO (Tape
+  Editor and COrrector {Text Editor and COrrector?}) on a PDP-10.
+  (Amusing fact: many people have told me that TECO code looks a lot like
+  line noise.)
+  
+26: What is the latest version of GNU Emacs?
+  
+  GNU Emacs 18.55.  GNU Emacs 18.56 is coming out with some bug fixes, but
+  no additional functionality.
+  
+27: When will GNU Emacs 19 be available?
+  
+  Good question, I don't know.  For that matter, neither do the
+  developers.  It will undoubtedly be available sometime in the 1990s.
+  
+28: What will be different about GNU Emacs 19?
+  
+  From the latest "GNU's Bulletin":
+  
+  Version 19 approaches release with a host of new features: before and
+  after change hooks; X selection processing (including CLIPBOARD
+  selections); scrollbars; support for European character sets; floating
+  point numbers; per-buffer mouse commands; interfacing with the X
+  resource manager; mouse-tracking; Lisp-level binding of function keys;
+  and multiple X windows (`screens' to Emacs).
+  
+  Thanks go to Alan Carroll and the people who worked on Epoch for
+  generating initial feedback to a multi-windowed Emacs.  Emacs 19
+  supports two styles of multiple windows, one with a separate screen for
+  the minibuffer, and another with a minibuffer attached to each screen.
+  
+  More features of Version 19 are buffer allocation, which uses a new
+  mechanism capable of returning storage to the system when a buffer is
+  killed, and a new input system---all input now arrives in the form of
+  Lisp objects.
+  
+  Other features being considered for Version 19 include:
+  
+  * Associating property lists with regions of text in a buffer.
+  * Multiple font, color, and pixmaps defined by those properties.
+  * Different visibility conditions for the regions, and for the various
+    windows showing one buffer.
+  * Incremental syntax analysis for various programming languages.
+  * Hooks to be run if point or mouse moves outside a certain range.
+  * Source-level debugging for Emacs Lisp.
+  * Incrementally saving undo history in a file, so that recover-file also
+    reinstalls buffer's undo history.
+  * Static menu bars, and better pop-up menus.
+  * A more sophisticated emacsclient/server model, which would provide
+    network transparent Emacs widget functionality.
+  
+  Also, Emacs 19 will have a Emacs Lisp source code debugger.
+  
+29: Is there an Emacs that has better mouse and X window support?
+  
+  Emacs 18 has some limited X Window System support, but there are
+  problems.  Emacs 19 will have amazing mouse and window support.  Right
+  now, there is a modified version of Emacs 18.55 called "Epoch" which has
+  greatly improved mouse and window support.  The latest version of Epoch
+  is available via:
+  
+  Anonymous FTP:
+  site: cs.uiuc.edu
+  directory: pub/epoch-files/epoch
+  file: epoch-3.2b  (b stands for beta)
+  
+  NOTE: Epoch only works with the X Window System; it does not work on
+  ordinary terminals.
+  
+30: How do I get Emacs for my PC?
+  
+  GNU Emacs won't run on a PC directly under MS-DOS.  There have been
+  reports of people running GNU Emacs under a special program under MS-DOS
+  on 286 or 386 machines, but I don't know the details.
+  
+  You can try a variety of similar programs such as MG, MicroEmacs,
+  Freemacs, etc.
+  
+  Russ Nelson <nelson@sun.soe.clarkson.edu>, the author, describes
+  Freemacs:
+  
+  * Freemacs is free, and it was designed from the start to be
+    programmable.
+  * Freemacs is the only IBM-PC editor that tries to be like GNU Emacs.
+  * Freemacs can only edit files less than 64K in length.
+  * Freemacs doesn't have undo.
+  
+  Carl Witty <cwitty@cs.stanford.edu> writes about Freemacs:
+  
+  Better is Freemacs, which follows the tradition of ITS and GNU Emacs
+  by having an full, turing-complete extension language which is
+  incompatible with everything else.  In fact, it's even closer to ITS
+  Emacs than GNU Emacs is, because Mint (Freemacs' extension language)
+  is absolutely illegible without weeks of study, much like TECO.
+  
+  You can get Freemacs several ways:
+  
+  1. Anonymous FTP:
+     site: simtel20.army.mil, directory: PD:<MSDOS.FREEMACS>
+     site: grape.ecs.clarkson.edu [128.153.13.196], directory: /e/freemacs
+  
+  2. E-mail:
+     address: archive-server@sun.soe.clarkson.edu, or
+              archive-server%sun.soe@omnigate (BITNET), or
+              {smart-host}!sun.soe.clarkson.edu!archive-server (UUCP)
+     body: help
+  
+  3. Snail mail:
+     address: Russell Nelson, 11 Grant St., Potsdam, NY 13676
+     Send $15 copying fee, and specify preferred floppy disk format:
+       5.25", 1.2 Meg, or 5.25", 360K, or 3.50", 720K
+  
+  I don't know much about MicroEmacs.  All I know is that the latest
+  version is 3.10 and it is available via:
+  
+  Anonymous FTP:
+  site: durer.cme.nist.gov
+  
+  Another Emacs for small machines is Jove (Jonathan's Own Version of
+  Emacs).  The latest version is 4.9.  It is available via:
+  
+  Anonymous FTP:
+  sites: hipl.psych.nyu.edu, cs.toronto.edu, cayuga.cs.rochester.edu
+  
+  Yet another Emacs is "mg", which used to stand for MicroGNUEmacs, but
+  now just stands for "mg".  It is available via:
+  
+  Anonymous FTP:
+  site: snow.white.toronto.edu
+  
+31: Where can I get Emacs for my Atari ST?
+  
+  The latest version for the ST is available via:
+  
+  Anonymous FTP:
+  site: cs.uni-sb.de [134.96.7.254]
+  directory: /pub/atari/emacs
+  
+32: Where can I get Emacs with NeWS support?
+  
+  Chris Maio's NeWS support package for GNU Emacs is available via:
+  
+  Anonymous FTP:
+  site: columbia.edu
+  file: /pub/ps-emacs.tar.Z
+  
+  site: tut.cis.ohio-state.edu
+  file: /pub/gnu/emacs/ps-emacs.tar.Z
+  
+
+
+Binding Keys to Commands
+
+33: Why does my key binding fail?
+  
+  Most likely, it failed because "ESC [" was already defined.  Evaluate
+  this form first:
+  
+    (define-key esc-map "[" nil)
+  
+34: Why doesn't this [terminal or window-system setup] code work in my
+ .emacs file, but it works just fine after Emacs starts up?
+  
+  This is because you're trying to do something in your .emacs file that
+  needs to be postponed until after the terminal/window-system setup code
+  is loaded.  This is a result of the order in which things are done
+  during the startup of Emacs.
+  
+  In order to postpone the execution of Emacs Lisp code until after the
+  terminal/window-system setup, set the value of the variable
+  term-setup-hook or window-setup-hook to be a function which does what
+  you want.
+  
+  See question 72 for a complete explanation of what Emacs
+  does every time it is started.
+  
+  Here is a simple example of how to set term-setup-hook:
+  
+    (setq term-setup-hook
+	  (function
+	   (lambda ()
+	     (if (string-match "^vt220" (or (getenv "TERM") ""))
+		 ;; Make vt220's "Do" key behave like M-x:
+		 (define-key CSI-map "29~" 'execute-extended-command)))))
+  
+35: How do I use function keys under X Windows?
+  
+  If compiled on a Sun, Emacs recognizes the function keys that are
+  normally on a Sun keyboard, and you can bind them the same way you
+  normally bind Sun keys.  Each function key will generate a key sequence
+  that looks like "ESC [ ### z", where ### is replaced by a number.
+  
+  If not compiled on a Sun, the function keys will appear to Emacs in a
+  way remarkably similar to the keys of a VT220 terminal.  Each function
+  key will generate a key sequence that looks like "ESC [ ### ~".
+  
+  For the complete list of the numbers which are generated by the function
+  keys, look in the file src/x11term.c.
+  
+  However, this may be inadequate for you if you have function keys Emacs
+  doesn't know about.  Johan Vromans <jv@mh.nl> explains:
+  
+  There are a number of tricks that can be helpful. The most elegant
+  solution, however, is to use the function "x-rebind-key". This function
+  is commented out in the source for good reasons --- it's buggy.
+  
+  It is rather easy to replace this function with the function
+  epoch:rebind-key from the Epoch distribution.
+  
+  After implementing this, all keyboard keys can be configured to send
+  user definable sequences, e.g.
+  
+      (x-rebind-key "KP_F1" 0 "\033OP")
+  
+  This will have the keypad key PF1 send the sequence \eOP, just like an
+  ordinary VTxxx terminal.
+  
+  Another method is to handle the keys in the C source. Although this may
+  be slightly more efficient, it is much less flexible.
+  
+  Finally, some people have established a convention to have the special
+  keys send a sequence of characters that indicate the key and its
+  modifiers instead of a plain escape sequence. This is also a good
+  method. The advantage of sending the plain escape sequences is that you
+  require only one setup for Emacs running under X and on normal
+  terminals, e.g.
+  
+      (x-rebind-key "KP_F1" 0 "\033OP")
+  
+  will have key PF1 send \eOP, and, probably in another setup file:
+  
+      (global-set-key "\eOP" 'specific-function)
+  
+  to bind PF1 to a function. The last statement applies for normal VTxxx
+  terminal also.
+  
+36: How do I tell what characters my function keys emit?
+  
+  Use this function by Randal L. Schwartz <merlyn@iwarp.intel.com>:
+  
+    (defun see-chars ()
+      "Displays characters typed, terminated by a 3-second timeout."
+      (interactive)
+      (let ((chars "")
+	    (inhibit-quit t))
+	(message "Enter characters, terminated by 3-second timeout.")
+	(while (not (sit-for 3))
+	  (setq chars (concat chars (list (read-char)))
+		quit-flag nil))		; quit-flag maybe set by C-g
+	(message "Characters entered: %s" (key-description chars))))
+  
+
+
+Problems with Key Bindings and Input
+
+37: Why does Emacs spontaneously go into "I-search:" mode?
+  
+  Your terminal (or something between your terminal and the computer) is
+  sending C-s and C-q for flow control, and Emacs is receiving these
+  characters and interpreting them as commands.  (The C-s character
+  normally invokes the isearch-forward command.)
+  
+  For a more detailed discussion, read the file PROBLEMS in the Emacs
+  distribution.
+  
+38: What do I do if my terminal is sending C-s and C-q for flow control and
+ I can't disable it?
+  
+  Use this piece of Emacs Lisp:
+  
+    (set-input-mode nil t)
+  
+39: How do I make Emacs use C-s and C-q for flow control instead of for
+ commands?
+  
+  Same answer as previous question.
+  
+40: How do I use commands bound to C-s and C-q (or any key) if these keys
+ are filtered out?
+  
+  I suggest swapping C-s with C-\ and C-q with C-^:
+  
+    (swap-keys ?\C-s ?\C-\\)
+    (swap-keys ?\C-q ?\C-^)
+  
+  See question 41 for the implementation of swap-keys.
+  
+41: How do I "swap" two keys?
+  
+  When Emacs receives a character, you can make Emacs behave as though it
+  received another character by setting the value of
+  keyboard-translate-table.  The following Emacs Lisp will do this for
+  you, allowing you to "swap" keys.
+  
+  WARNING: the value of C-g (7) is hard coded in several places both
+  before and after the translation specified by keyboard-translate-table
+  is carried out.  Thus, swapping C-g with another key may cause problems;
+  rebinding C-g may also cause problems.  (Well, I've never done it, so I
+  don't know for sure.)
+  
+    (defun swap-keys (key1 key2)
+      "Swap keys KEY1 and KEY2 using map-key."
+      (map-key key1 key2 t)
+      (map-key key2 key1))
+  
+    (defvar map-keys-alist nil
+      "Association list of key mappings currently in effect.
+    If (FROM . TO) is an element, that means key FROM is currently mapped to TO.")
+  
+    (defun map-key (from to &optional no-update)
+      "Make key FROM behave as though key TO was typed instead.
+    If optional argument NO-UPDATE is non-nil, the key-mapping does not take
+    effect until a subsequent map-key or unmap-key."
+      (let ((alist-entry (assq from map-keys-alist)))
+	(if alist-entry
+	    (setcdr alist-entry to)
+	  (setq map-keys-alist (cons (cons from to) map-keys-alist))))
+      (or no-update (map-keys-update)))
+  
+    (defun unmap-key (key)
+      "Undo any mapping of key KEY."
+      (setq map-keys-alist (delq (assq key map-keys-alist) map-keys-alist))
+      (map-keys-update))
+  
+    ;; Makes keyboard-translate-table reflect the key mappings in
+    ;; map-keys-alist.
+  
+    (defun map-keys-update ()
+      (if (null map-keys-alist)
+	  ;; Emacs runs fasted if keyboard-translate-table is nil
+	  (setq keyboard-translate-table nil)
+	(let ((max-key-mapped
+	       ;; Find the mapped key with largest value
+	       (apply 'max
+		      (mapcar
+		       (function
+			(lambda (x)
+			  (car x)))
+		       map-keys-alist)))
+	      (i 0))
+	  ;; keyboard-translate-table doesn't have to be any longer than
+	  ;; necessary.  This speeds up Emacs.
+	  (setq keyboard-translate-table (make-string (1+ max-key-mapped) 0))
+	  (while (<= i max-key-mapped)
+	    (aset keyboard-translate-table i (or (cdr (assq i map-keys-alist)) i))
+	    (setq i (1+ i))))))
+  
+42: Why does the "Backspace" key invoke help?
+  
+  The Backspace key (on every keyboard I've used) sends ASCII code 8.  C-h
+  sends the same code.  In Emacs by default C-h invokes "help-command".
+  The easiest solution to this problem is to use C-h (and Backspace) for
+  help and DEL (the Delete key) for deleting the previous character.
+  
+  For some people this solution may be problematic:
+  
+  1. They normally use Backspace outside of Emacs for deleting the
+     previous character typed.  This can be solved by making DEL be the
+     command for deleting the previous character outside of Emacs.  This
+     command will do this on many Unix systems:
+  
+       stty erase ^?
+  
+  2. The person may prefer using the Backspace key for deleting the
+     previous character because it is more conveniently located on their
+     keyboard or because they don't even have a separate Delete key.  In
+     this case, the best solution is to swap C-h and DEL:
+  
+       (swap-keys ?\C-h ?\C-?)
+  
+     See question 41 for the implementation of swap-keys.
+  
+43: How do I type DEL on PC terminal emulators?
+  
+  Someone whose name I forgot wrote:
+  
+  Most PCs have deficient keyboards that don't have both Backspace and
+  Delete keys.  Whether C-h (backspace) or DEL is generated by the
+  "Backspace" key varies from one terminal emulator to another.  If you're
+  lucky, you can reconfigure the keyboard so that it generates DEL.  If
+  not, you will have to hunt to figure out what keystroke will do it ---
+  possibilities include various shifted and controlled versions of
+  "Backspace", the "Del" key on the numeric keypad (which might depend on
+  "Shift" or "NumLock"), or perhaps C-? (Control-?).
+  
+  If this is too hard, you may want to swap the delete key with some other
+  key.  See question 42.
+  
+
+
+Building/Installing/Porting Emacs and Machine/OS-Specific Bugs:
+
+44: Why do I get an "f68881_used undefined" error, when I build Emacs on my
+ Sun 3?
+  
+  Barry A. Warsaw <warsaw@cme.nist.gov> writes:
+  
+  Some of the code that is being linked on the "ld" line of emacs'
+  build command has been compiled with the -f68881 option.  Most
+  common reason is that you're linking with X libraries which were
+  built with -f68881 option set.  You need to either remove all
+  dependencies to the 68881 (may mean a recompile of the X libraries
+  with -fswitch or -fsoft option), or you need to link emacs with
+  the 68881 startup file /usr/lib/Mcrt1.o.  Make this change to
+  src/ymakefile:
+  
+	  change: #define START_FILES crt0.o
+	  to:     #define START_FILES crt0.o /usr/lib/Mcrt1.o
+  
+  The order of these start files is critical.
+  
+45: Why does Emacs crash under SunOS 4.1?
+  
+  Under SunOS 4.1, Emacs dies with this message:
+  
+    Fatal error (6).Abort
+  
+  There is a bug in the "localtime" routine supplied with SunOS 4.1.
+  A private function called by tzsetwall zeroes the byte just past an
+  eight byte region it mallocs.  This corrupts GNU malloc's memory pool.
+  
+  Put "#define SYSTEM_MALLOC" in src/config.h.
+  
+  Or, for the purists:
+  
+  Put "#define SUNOS_LOCALTIME_BUG" in src/config.h and apply the following
+  patch to src/malloc.c.
+  
+  (Patch by Eirik Fuller <eirik@elf.tn.cornell.edu>.)
+  
+  >*** malloc.c~   Fri Apr  7 22:12:10 1989
+  >--- malloc.c    Tue May  8 07:07:22 1990
+  >***************
+  >*** 476,482 ****
+  >--- 476,487 ----
+  >       multiple of 8, then figure out which nestf[] area to use.
+  >       Both the beginning of the header and the beginning of the
+  >       block should be on an eight byte boundary.  */
+  >+ #ifdef SUNOS_LOCALTIME_BUG
+  >+   /* SunOS 4.1 localtime scribbles on the ninth byte.  */
+  >+   nbytes = (n + ((sizeof *p + 15) & ~15) + EXTRA + 15) & ~15;
+  >+ #else
+  >    nbytes = (n + ((sizeof *p + 7) & ~7) + EXTRA + 7) & ~7;
+  >+ #endif
+  >    {
+  >      register unsigned int   shiftr = (nbytes - 1) >> 2;
+  >  
+  
+46: Why does Emacs occasionally cause segmentation faults and machine
+ panics on my DECstation 3100?
+  
+  Bruce Cole <cole@dip.cs.wisc.edu> writes:
+  
+   > We're running Emacs 18.54 on an Ultrix Risc DECsystem 5400. Three
+   > times we've had the machine hang with the following message:
+   >
+   >   panic: tblmod on invalid pte
+   >
+   > Ultrix support tells us this is caused by Emacs. Has anyone
+   > experienced this? DEC says it only happens on RISC boxes.
+  
+  This is due to a MIPS specific Ultrix kernel bug.  I sent DEC a
+  description of the bug with a bug fix.  The Kernel bug manifests itself
+  with Emacs since Emacs uses a non-standard data start address on Ultrix
+  MIPS machines.
+  
+  I haven't often seen Emacs cause MIPS machines to panic.  Usually you
+  just see one of the following errors when you try to start up Emacs:
+  
+	  segmentation fault (core dumped)
+	  emacs: Bad address
+	  Out of memory
+	  data size rlimit exceeded, pid 6523, process tcsh (for example)
+  
+  Until DEC fixes their kernel, you can avoid the bug by changing the data
+  start address used by Emacs.
+  
+   > I have built two newer versions of GNU Emacs and it still happens.  I
+   > should also mention that these faults happen quite rarely to some
+   > users (I may see it once a month), while other users see it a few
+   > times a week or even daily!
+  
+  The problem only occurs when a MIPS machine is doing a lot of paging.
+  Users who don't cause their workstation to page will not see this
+  problem.
+  
+  Patch to GNU Emacs 18.55:
+  
+  >*** m-pmax.h	Thu Jun  8 11:53:55 1989
+  >--- m-pmax.h.new	Mon Jul  9 10:21:21 1990
+  >***************
+  >*** 1,3 ****
+  >--- 1,7 ----
+  >  #include "m-mips.h"
+  >  #undef LIBS_MACHINE
+  >  #undef BIG_ENDIAN
+  >+ #undef LD_SWITCH_MACHINE
+  >+ #undef DATA_START
+  >+ #define DATA_START 0x10000000
+  >+ #define DATA_SEG_BITS 0x10000000
+  
+47: How do I get Emacs running on VMS under DECwindows?
+  
+  Hal R. Brand <BRAND@addvax.llnl.gov> is said to have a VMS save set with
+  a ready-to-run VMS version of Emacs for X Windows.  It is available via:
+  
+  Anonymous FTP:
+  site: addvax.llnl.gov
+  
+  Johan Vromans <jv@mh.nl> writes:
+  
+  Getting Emacs to run on VMS with DECwindows requires a number of changes
+  to the sources. Fortunately this has been done already.  Joshua Marantz
+  <josh@viewlogic.com> did most of the work for Emacs 18.52, and the mods
+  were ported to 18.55 by Johan Vromans <jv@mh.nl>. Also included is the
+  handling of DEC's LK201 keyboard.  You need to apply the changes to a
+  fresh Emacs 18.55 distribution on a Unix system, and then you can copy
+  the sources to VMS to perform the compile/link/build.
+  
+  The set of changes have been posted a number of times three times the
+  last 12 months, so they should be widely available.
+  
+48: Why won't src/alloc.c compile on a SPARCstation?
+  
+  {Could someone send me a better description of the symptoms ...  Does it
+  really not compile, or does it refuse to link, or does it die when it's
+  run?}
+  
+  An object in src/alloc.c is declared as an array of char.  However, on a
+  SPARCstation, this object must be aligned on a longword boundary.
+  gcc will align this object not on a longword boundary because it thinks
+  this is ok because the object is an array of char.
+  
+  Here is a solution:
+  
+  (Patch from the Epoch source code.)
+  
+  >*** dist-18.55.dist/src/alloc.c	Mon Feb 13 05:23:35 1989
+  >--- dist-18.55/src/alloc.c	Mon Nov 27 23:30:13 1989
+  >***************
+  >*** 665,673 ****
+  >  #define NSTATICS 200
+  >  
+  >- char staticvec1[NSTATICS * sizeof (Lisp_Object *)] = {0};
+  >- 
+  >  int staticidx = 0;
+  >  
+  >  #define staticvec ((Lisp_Object **) staticvec1)
+  >  
+  >  /* Put an entry in staticvec, pointing at the variable whose address is given */
+  >--- 665,676 ----
+  >  #define NSTATICS 200
+  >  
+  >  int staticidx = 0;
+  >  
+  >+ #ifdef __GNUC__
+  >+ Lisp_Object *staticvec[NSTATICS] = {0};
+  >+ #else
+  >+ char staticvec1[NSTATICS * sizeof (Lisp_Object *)] = {0};
+  >  #define staticvec ((Lisp_Object **) staticvec1)
+  >+ #endif
+  >  
+  >  /* Put an entry in staticvec, pointing at the variable whose address is given */
+  
+  {Does anyone understand why one might want to declare staticvec as an
+  array of char instead of an array of LispObject?}
+  
+49: Why do shells started from Emacs suspend themselves under SunOS 4.1?
+  
+  In SunOS 4.1, when subprocesses are started by an Emacs process started
+  by "rsh", the process stops with a message like this:
+  
+    Process shell stopped (tty input)
+  
+  SunOS 4.1 uses the POSIX standard's specification for job control.
+  Basically, a process must be a session leader to acquire a new
+  controlling terminal.
+  
+  A quick fix is to run Emacs as "/usr/etc/setsid emacs" instead.
+  
+  To fix it in Emacs, use this patch:
+  
+  (Patch by Eirik Fuller <eirik@elf.tn.cornell.edu>.)
+  
+  >*** /tmp/,RCSt1a12635	Fri Jul  6 11:29:10 1990
+  >--- process.c	Sat Jun 16 14:04:55 1990
+  >***************
+  >*** 1031,1036 ****
+  >--- 1031,1039 ----
+  >  	    int j = open ("/dev/tty", O_RDWR, 0);
+  >  	    ioctl (j, TIOCNOTTY, 0);
+  >  	    close (j);
+  >+ #ifndef USG
+  >+ 	    setpgrp (0, 0);
+  >+ #endif
+  >  	  }
+  >  #endif /* TIOCNOTTY */
+  >  
+  
+50: Why does Emacs crash from a bus error in XLookupString under OpenLook?
+  
+  The Sun OpenLook libraries use the XComposeStatus parameter on
+  XLookupString for composing key sequences.  I'm told this is actually
+  supposed to be an optional parameter.
+  
+  (Patch by David J. MacKenzie <djm@eng.umd.edu>.)
+  
+  >*** dist-18.55.dist/src/x11term.c	Wed Aug  2 21:56:42 1989
+  >--- dist-18.55/src/x11term.c	Fri Jul 13 19:22:32 1990
+  >***************
+  >*** 1213,1216 ****
+  >--- 1213,1218 ----
+  >  #endif /* not sun */
+  >  	
+  >+ static XComposeStatus status;
+  >+ 
+  >  internal_socket_read(bufp, numchars)
+  >  	register unsigned char *bufp;
+  >***************
+  >*** 1223,1227 ****
+  >    BLOCK_INPUT_DECLARE ();
+  >    XEvent event;
+  >-   XComposeStatus status;
+  >    KeySym keysym;
+  >  
+  >--- 1225,1228 ----
+  >***************
+  >*** 1330,1334 ****
+  >        nbytes = XLookupString (&event,
+  >  			      mapping_buf, 20, &keysym,
+  >! 			      0);
+  >        /* Someday this will be unnecessary as we will
+  >  	 be able to use XRebindKeysym so XLookupString
+  >--- 1331,1335 ----
+  >        nbytes = XLookupString (&event,
+  >  			      mapping_buf, 20, &keysym,
+  >! 			      &status);
+  >        /* Someday this will be unnecessary as we will
+  >  	 be able to use XRebindKeysym so XLookupString
+  
+51: Why doesn't "C-c C-c" interrupt subprocesses under HP/UX?
+  
+  Paul Stravers <stravers@dutentb.tudelft.nl> writes:
+  
+  In HP/UX we can (must) combine the two distinct calls
+          1.    ioctl (fildes, TIOCGPGRP, &gid);
+          2.    kill (-gid, signo);
+  into the single call
+          1+2.  ioctl (fildes, TIOCSIGSEND, signo);
+  
+  This is apparently the case under at least HP/UX versions 6.5 and 7.0.
+  
+  Here is a set of patches courtesy of Piet van Oostrum <piet@cs.ruu.nl>
+  that fixes these problems:
+  
+  1. Signals to child processes work now (like the C-c C-c mentioned above)
+  
+  2. When running under X11, C-g now correctly interrupts long-running commands
+  
+  3. When running under X11, the window is redislayed even if emacs is doing
+  some work (e.g. if your window becomes visible after being behind another
+  one.
+  
+  4. A nasty bug in alloca is solved. This bug is very infrequent unless you
+  apply the other patches.
+  
+  {I don't know for sure whether all of these patches are applicable only
+  under HP/UX.  Perhaps someone can tell me.}
+  
+  >*** alloca.s.~1~	Fri Sep 15 16:35:39 1989
+  >--- alloca.s	Tue May  1 17:18:08 1990
+  >***************
+  >*** 92,103 ****
+  >  	sub.l	&MAXREG*4,%d1	# space for saving registers
+  >  	mov.l	%d1,%sp		# save new value of sp
+  >  	tst.b	PROBE(%sp)	# create pages (sigh)
+  >  	move.w	&MAXREG-1,%d0
+  >  copy_regs_loop:			/* save caller's saved registers */
+  >! 	mov.l	(%a1)+,(%sp)+
+  >  	dbra	%d0,copy_regs_loop
+  >! 	mov.l	%sp,%d0		# return value
+  >! 	mov.l	%d1,%sp
+  >  	add.l	&-4,%sp		# adjust tos
+  >  	jmp	(%a0)		# rts
+  >  #endif /* new hp assembler */
+  >--- 92,105 ----
+  >  	sub.l	&MAXREG*4,%d1	# space for saving registers
+  >  	mov.l	%d1,%sp		# save new value of sp
+  >  	tst.b	PROBE(%sp)	# create pages (sigh)
+  >+ 	mov.l	%a2,%d1		# save reg a2
+  >+ 	mov.l	%sp,%a2
+  >  	move.w	&MAXREG-1,%d0
+  >  copy_regs_loop:			/* save caller's saved registers */
+  >! 	mov.l	(%a1)+,(%a2)+
+  >  	dbra	%d0,copy_regs_loop
+  >! 	mov.l	%a2,%d0		# return value
+  >! 	mov.l	%d1,%a2		# restore a2
+  >  	add.l	&-4,%sp		# adjust tos
+  >  	jmp	(%a0)		# rts
+  >  #endif /* new hp assembler */
+  
+  >*** keyboard.c.~1~	Wed Apr  4 14:53:49 1990
+  >--- keyboard.c	Thu Apr 26 14:46:27 1990
+  >***************
+  >*** 719,724 ****
+  >--- 719,773 ----
+  >    errno = old_errno;
+  >  }
+  >  
+  >+ #ifdef HPUX
+  >+ /* tells if an alarm is outstanding for emptying the socket */
+  >+ int socket_alarm;
+  >+ 
+  >+ static void
+  >+ empty_socket_interrupt()
+  >+ {
+  >+   int nread;
+  >+   char buf[256 * BUFFER_SIZE_FACTOR];
+  >+   register int i;
+  >+   int old_errno = errno;
+  >+ 
+  >+   if (waiting_for_input) return;
+  >+ 
+  >+   fcntl (fileno (stdin), F_SETFL, O_NDELAY);
+  >+ 
+  >+   /* Read what is waiting.  */
+  >+ 
+  >+     nread = (*read_socket_hook) (0, buf, sizeof buf);
+  >+ 
+  >+ #ifdef EBADSLT
+  >+   if (nread == -1 && (errno == EAGAIN || errno == EBADSLT))
+  >+ #else
+  >+   if (nread == -1 && errno == EAGAIN)
+  >+ #endif
+  >+     nread = 0;
+  >+ 
+  >+   fcntl (fileno (stdin), F_SETFL, 0);
+  >+ 
+  >+   /* Scan the chars for C-g and store them in kbd_buffer.  */
+  >+   kbd_ptr = kbd_buffer;
+  >+   for (i = 0; i < nread; i++)
+  >+     {
+  >+       kbd_buffer_store_char (buf[i]);
+  >+       /* Don't look at input that follows a C-g too closely.
+  >+ 	 This reduces lossage due to autorepeat on C-g.  */
+  >+       if (buf[i] == Ctl ('G'))
+  >+ 	break;
+  >+     }
+  >+ 
+  >+   /* reestablish interrupt */
+  >+   signal (SIGALRM, empty_socket_interrupt);
+  >+   alarm (1);
+  >+ 
+  >+   errno = old_errno;
+  >+ }
+  >+ 
+  >+ #endif /* HPUX */
+  >+ 
+  >  /* read a character from the keyboard; call the redisplay if needed */
+  >  /* commandflag 0 means do not do auto-saving, but do do redisplay.
+  >     -1 means do not do redisplay, but do do autosaving.
+  >***************
+  >*** 733,738 ****
+  >--- 782,794 ----
+  >    Lisp_Object tem;
+  >    extern request_echo ();
+  >  
+  >+ #ifdef HPUX
+  >+   if (socket_alarm) {
+  >+       alarm (0);
+  >+       socket_alarm = 0;
+  >+   }      
+  >+ #endif
+  >+ 
+  >    if ((c = unread_command_char) >= 0)
+  >      {
+  >        unread_command_char = -1;
+  >***************
+  >*** 869,874 ****
+  >--- 925,938 ----
+  >  	}
+  >      }
+  >  
+  >+ #ifdef HPUX
+  >+   if (read_socket_hook) {
+  >+       socket_alarm = 1;
+  >+       signal (SIGALRM, empty_socket_interrupt);
+  >+       alarm (1);
+  >+   }      
+  >+ #endif
+  >+ 
+  >    return c;
+  >  }
+  >  
+  >***************
+  >*** 1094,1119 ****
+  >  
+  >  #else /* no FIONREAD */
+  >  #ifdef USG
+  >    if (kbd_count)
+  >      abort ();
+  >  
+  >    fcntl (fileno (stdin), F_SETFL, O_NDELAY);
+  >!   kbd_ptr = kbd_buffer;
+  >    if (read_socket_hook)
+  >!     {
+  >!       kbd_count = (*read_socket_hook) (0, kbd_buffer, sizeof kbd_buffer);
+  >!     }
+  >    else
+  >!     {
+  >!       kbd_count = read (fileno (stdin), kbd_buffer, sizeof kbd_buffer);
+  >!     }
+  >  #ifdef EBADSLT
+  >!   if (kbd_count == -1 && (errno == EAGAIN || errno == EBADSLT))
+  >  #else
+  >!   if (kbd_count == -1 && errno == EAGAIN)
+  >  #endif
+  >!     kbd_count = 0;
+  >    fcntl (fileno (stdin), F_SETFL, 0);
+  >  #else /* not USG */
+  >    you lose
+  >  #endif /* not USG */
+  >--- 1158,1209 ----
+  >  
+  >  #else /* no FIONREAD */
+  >  #ifdef USG
+  >+   char buf[256 * BUFFER_SIZE_FACTOR];
+  >+   register int i;
+  >+ #ifdef HPUX
+  >+   int mask;
+  >+ #endif
+  >+ 
+  >    if (kbd_count)
+  >      abort ();
+  >  
+  >+ #ifdef HPUX
+  >+   if (socket_alarm)
+  >+       mask = sigblock (sigmask (SIGALRM));
+  >+ #endif
+  >+ 
+  >    fcntl (fileno (stdin), F_SETFL, O_NDELAY);
+  >! 
+  >!   /* Read what is waiting.  */
+  >    if (read_socket_hook)
+  >!     nread = (*read_socket_hook) (0, buf, sizeof buf);
+  >    else
+  >!     nread = read (fileno(stdin), buf, sizeof buf);
+  >  #ifdef EBADSLT
+  >!   if (nread == -1 && (errno == EAGAIN || errno == EBADSLT))
+  >  #else
+  >!   if (nread == -1 && errno == EAGAIN)
+  >  #endif
+  >!     nread = 0;
+  >! 
+  >    fcntl (fileno (stdin), F_SETFL, 0);
+  >+ 
+  >+   /* Scan the chars for C-g and store them in kbd_buffer.  */
+  >+   kbd_ptr = kbd_buffer;
+  >+   for (i = 0; i < nread; i++)
+  >+     {
+  >+       kbd_buffer_store_char (buf[i]);
+  >+       /* Don't look at input that follows a C-g too closely.
+  >+ 	 This reduces lossage due to autorepeat on C-g.  */
+  >+       if (buf[i] == Ctl ('G'))
+  >+ 	break;
+  >+     }
+  >+ 
+  >+ #ifdef HPUX
+  >+   if (socket_alarm)
+  >+       sigsetmask(mask);
+  >+ #endif
+  >+ 
+  >  #else /* not USG */
+  >    you lose
+  >  #endif /* not USG */
+  
+  >*** x11term.h~	Fri Sep 15 15:20:26 1989
+  >--- x11term.h	Thu Apr 26 14:03:25 1990
+  >***************
+  >*** 11,17 ****
+  >--- 11,22 ----
+  >  #define sigmask(no) (1L << ((no) - 1))
+  >  #endif
+  >  
+  >+ #ifdef HPUX
+  >  #define BLOCK_INPUT_DECLARE() int BLOCK_INPUT_mask
+  >+ #define BLOCK_INPUT() BLOCK_INPUT_mask = sigblock (sigmask (SIGALRM))
+  >+ #define UNBLOCK_INPUT() sigsetmask (BLOCK_INPUT_mask)
+  >+ #else /* not HPUX */
+  >+ #define BLOCK_INPUT_DECLARE() int BLOCK_INPUT_mask
+  >  #ifdef SIGIO
+  >  #define BLOCK_INPUT() BLOCK_INPUT_mask = sigblock (sigmask (SIGIO))
+  >  #define UNBLOCK_INPUT() sigsetmask (BLOCK_INPUT_mask)
+  >***************
+  >*** 19,23 ****
+  >--- 24,29 ----
+  >  #define BLOCK_INPUT()
+  >  #define UNBLOCK_INPUT()
+  >  #endif /* SIGIO */
+  >+ #endif /* HPUX */
+  >  
+  >  #define CLASS  "emacs"	/* class id for GNU Emacs, used in .Xdefaults, etc. */
+  
+  >*** process.c.orig	Fri Sep 15 16:28:36 1989
+  >--- process.c	Fri Apr 20 13:17:06 1990
+  >***************
+  >*** 1057,1062 ****
+  >--- 1057,1079 ----
+  >  	  signal (SIGHUP, SIG_DFL);
+  >  #endif
+  >  #endif /* HAVE_PTYS */
+  >+ 
+  >+ 	/* Give child clean slate for signals */
+  >+ #ifdef SIGCHLD
+  >+ #ifdef BSD4_1
+  >+ 	sigrelse (SIGCHLD);
+  >+ #else /* not BSD4_1 */
+  >+ #ifdef HPUX
+  >+ 	sigsetmask (0);
+  >+ #endif /* HPUX */
+  >+ #if defined (BSD) || defined (UNIPLUS)
+  >+ 	sigsetmask (0);
+  >+ #else /* ordinary USG */
+  >+ 	signal (SIGCHLD, sigchld);
+  >+ #endif /* ordinary USG */
+  >+ #endif /* not BSD4_1 */
+  >+ #endif /* SIGCHLD */
+  >+ 
+  >  	child_setup_tty (xforkout);
+  >  	child_setup (xforkin, xforkout, xforkout, new_argv, env);
+  >        }
+  >***************
+  >*** 1413,1427 ****
+  >        if (read_kbd && kbd_count)
+  >  	nfds = 0;
+  >        else
+  >! #ifdef IBMRTAIX
+  >  	nfds = select (MAXDESC, &Available, 0, 0, &timeout);
+  >  #else
+  >- #ifdef HPUX
+  >- 	nfds = select (MAXDESC, &Available, 0, 0, &timeout);
+  >- #else
+  >  	nfds = select (MAXDESC, &Available, 0, &Exception, &timeout);
+  >  #endif
+  >- #endif
+  >        xerrno = errno;
+  >  
+  >        if (fix_screen_hook)
+  >--- 1430,1440 ----
+  >        if (read_kbd && kbd_count)
+  >  	nfds = 0;
+  >        else
+  >! #if defined (IBMRTAIX) || defined (HPUX)
+  >  	nfds = select (MAXDESC, &Available, 0, 0, &timeout);
+  >  #else
+  >  	nfds = select (MAXDESC, &Available, 0, &Exception, &timeout);
+  >  #endif
+  >        xerrno = errno;
+  >  
+  >        if (fix_screen_hook)
+  >***************
+  >*** 1771,1776 ****
+  >--- 1784,1790 ----
+  >      error ("Process %s is not active",
+  >  	   XSTRING (p->name)->data);
+  >  
+  >+ #ifndef HPUX /* Can't get gid of tty's controlling session */
+  >  #ifdef TIOCGPGRP		/* Not sure about this! (fnf) */
+  >    /* If we are using pgrps, get a pgrp number and make it negative.  */
+  >    if (!NULL (current_group))
+  >***************
+  >*** 1785,1790 ****
+  >--- 1799,1805 ----
+  >       the child itself heads the pgrp.  */
+  >    gid = - XFASTINT (p->pid);
+  >  #endif /* not using pgrps */
+  >+ #endif /* not HPUX */
+  >  
+  >    switch (signo)
+  >      {
+  >***************
+  >*** 1800,1805 ****
+  >--- 1815,1827 ----
+  >        flush_pending_output (XFASTINT (p->infd));
+  >        break;
+  >      }
+  >+ 
+  >+ #ifdef HPUX
+  >+   if (!NULL (current_group))
+  >+     ioctl (XFASTINT (p->infd), TIOCSIGSEND, signo);
+  >+   else
+  >+     kill (XFASTINT (p->pid), signo);
+  >+ #else /* not HPUX */
+  >    /* gid may be a pid, or minus a pgrp's number */
+  >  #ifdef BSD
+  >    /* On bsd, [man says] kill does not accept a negative number to kill a pgrp.
+  >***************
+  >*** 1808,1813 ****
+  >--- 1830,1836 ----
+  >  #else /* Not BSD.  */
+  >    kill (gid, signo);
+  >  #endif /* Not BSD.  */
+  >+ #endif /* Not HPUX  */
+  >  
+  >    /* Put notices in buffers now, since it is safe now.
+  >       Because of this, we know that a process we have just killed
+  >% 
+  
+  This is a separate patch to process.c, distinct from the immediately
+  preceding one.  Both should be applied.
+  
+  >*** process.c.~1~	Fri Apr 20 13:17:06 1990
+  >--- process.c	Wed Oct 24 16:38:15 1990
+  >***************
+  >*** 1085,1095 ****
+  >    /* If the subfork execv fails, and it exits,
+  >       this close hangs.  I don't know why.
+  >       So have an interrupt jar it loose.  */
+  >!   signal (SIGALRM, create_process_1);
+  >!   alarm (1);
+  >!   if (forkin >= 0)
+  >!     close (forkin);
+  >!   alarm (0);
+  >    if (forkin != forkout && forkout >= 0)
+  >      close (forkout);
+  >  
+  >--- 1085,1100 ----
+  >    /* If the subfork execv fails, and it exits,
+  >       this close hangs.  I don't know why.
+  >       So have an interrupt jar it loose.  */
+  >! 
+  >!   {  int old_trap = signal (SIGALRM, create_process_1);
+  >!      int old_alarm = alarm (1);
+  >!      if (forkin >= 0)
+  >!        close (forkin);
+  >!      alarm (0);
+  >!      signal (SIGALRM, old_trap);
+  >! 				/* don't bother with possible 1 sec loss */
+  >!      if (old_alarm) alarm (old_alarm);
+  >!   }
+  >    if (forkin != forkout && forkout >= 0)
+  >      close (forkout);
+  
+52: What should I do if I have trouble building Emacs?
+  
+  RMS writes:
+  
+  If you try to build Emacs and it does not run, the first thing to do is
+  look in the file called PROBLEMS to see if a solution is given there.
+  
+  If none is given, then please send a report by mail to
+  bug-gnu-emacs@prep.ai.mit.edu.  Please do not send it to
+  help-gnu-emacs@prep.ai.mit.edu.
+  
+  Sending to help-gnu-emacs (which has the effect of posting on
+  gnu.emacs.help) is undesirable because it takes the time of an
+  unnecessarily large group of people, most of whom are just users and
+  have no idea how to fix these problem.  bug-gnu-emacs reaches a much
+  smaller group of people who are more likely to know what to do and have
+  expressed a wish to receive more messages about Emacs than the others.
+
+Weird/Confusing Problems:
+
+53: Does Emacs have problems with files larger than 8 Megs?
+  
+  Most installed versions of GNU Emacs will use 24 bit signed integers
+  (and 24 bit pointers!) internally.  This limits the file size that Emacs
+  can handle to 8388608 bytes.
+  
+  Leonard N. Zubkoff <lnz@lucid.com> writes:
+  
+  Putting the following two lines in src/config.h before compiling Emacs
+  allows for 26 bit integers and pointers:
+  
+    #define VALBITS 26
+    #define GCTYPEBITS 5
+  
+  See question 54 for an explanation.
+  
+54: Why does Emacs use 24 bit integers and pointers?
+  
+  David Gillespie <daveg@csvax.cs.caltech.edu> writes:
+  
+  Emacs is largely written in a dialect of Lisp; Lisp is a freely-typed
+  language in the sense that you can put any value of any type into any
+  variable, or return it from a function, and so on.  So each value must
+  carry a "tag" along with it identifying what kind of thing it is, e.g.,
+  integer, pointer to a list, pointer to an editing buffer, and so on.
+  Emacs uses standard 32-bit integers for data objects, taking the top 8
+  bits for the tag and the bottom 24 bits for the value.  So integers (and
+  pointers) are somewhat restricted compared to true C integers and
+  pointers.
+  
+  Emacs uses 8-bit tags because that's a little faster on byte-oriented
+  machines, but there are only really enough tags to require 6 bits.  See
+  question 53 to find how to recompile Emacs with 6-bit tags and
+  26-bit integers and pointers if space is at a premium for you.
+  
+55: Why does Emacs start up using the wrong directory?
+  
+  Most likely, you have an environment variable named PWD that is set to a
+  value other than the name of your current directory.  This is most
+  likely caused by using two different shell programs.  "ksh" and (some
+  versions of) "csh" set and maintain the value of the PWD environment
+  variable, but "sh" doesn't.  If you start sh from ksh, change your
+  current directory inside sh, and then start Emacs from inside sh, PWD
+  will have the wrong value but Emacs will use this value.  See question
+  72.
+  
+56: How do I edit a file with a "$" in its name?
+  
+  When entering a filename in the minibuffer, Emacs will attempt to expand
+  a "$" followed by a word as an environment variable.  To suppress this
+  behavior, type "$$" instead.
+  
+57: Why does Shell Mode lose track of the shell's current directory?
+  
+  Emacs has no way of knowing when the shell actually changes its
+  directory.  So it tries to guess by recognizing cd commands.  A number
+  of fixes and enhancements to Shell Mode have been written, check the
+  Emacs Lisp Archive (question 14).
+  
+58: Why doesn't Emacs expand my aliases when sending mail?
+  
+  First, you must separate multiple addresses with commas.
+  
+  Emacs normally only reads the ".mailrc" file once per session, when you
+  start to compose your first mail message.  If you edit .mailrc, you can
+  type "M-ESC (build-mail-aliases) RET" to make Emacs reread .mailrc.
+  
+59: Why doesn't setting default-directory always work?
+  
+  There is a separate value of default-directory for each Emacs buffer.
+  The value in the current buffer is the one that is used.
+  
+60: Why does my change to load-path not work?
+  
+  If you added file names with tildes (~) in them to your load-path,
+  you'll need to do something like this:
+  
+    (setq-default load-path (mapcar 'expand-file-name load-path))
+  
+61: Why does the cursor always go to the wrong column when I move up or
+ down one line?
+  
+  You have inadvertently typed "C-x C-n" (set-goal-column) which sets the
+  "goal-column" to the column where the cursor was.  To undo this type
+  "C-u C-x C-n".
+  
+  If you make this mistake frequently, you might want to unbind this
+  command by doing (define-key ctl-x-map "\C-n" nil).
+  
+62: Why don't the command line switches documented in the man page work?
+  
+  The "man page", ie. the file etc/emacs.1, hasn't been updated in a
+  while.  The command line switches that it says work with X Windows are
+  for X10.  See question 72 for details on what switches are
+  available using X11.  {Would someone like to rewrite the man page?  RMS
+  asked me and I haven't had time yet.}
+  
+63: Why does gnus-Subject-mail-reply chop off the last character of the
+ article headers?
+  
+  There is a bug in some rnews functions that GNUS uses.  Here is a patch:
+  
+  (Patch supplied by Karl Kleinpaste <karl_kleinpaste@cis.ohio-state.edu>.)
+  
+  >*** rnewspost.el.orig   Thu Oct  5 10:32:47 1989
+  >--- rnewspost.el        Thu Oct  5 10:32:47 1989
+  >***************
+  >*** 252,258 ****
+  >      (save-restriction
+  >        (narrow-to-region (point-min) (progn (goto-line (point-min))
+  >                                           (search-forward "\n\n")
+  >!                                          (- (point) 2)))
+  >        (setq from (mail-fetch-field "from")
+  >            subject (mail-fetch-field "subject")
+  >            reply-to (mail-fetch-field "reply-to")
+  >--- 252,258 ----
+  >      (save-restriction
+  >        (narrow-to-region (point-min) (progn (goto-line (point-min))
+  >                                           (search-forward "\n\n")
+  >!                                          (- (point) 1)))
+  >        (setq from (mail-fetch-field "from")
+  >            subject (mail-fetch-field "subject")
+  >            reply-to (mail-fetch-field "reply-to")
+  >***************
+  >*** 289,295 ****
+  >                                        ;@@     but rnews.el lacks support
+  >                 (narrow-to-region (point-min) (progn (goto-char (point-min))
+  >                                                      (search-forward "\n\n")
+  >!                                                     (- (point) 2)))))
+  >          (setq from (mail-fetch-field "from")
+  >                news-reply-yank-from from
+  >                ;; @@ not handling old Title: field
+  >--- 289,295 ----
+  >                                        ;@@     but rnews.el lacks support
+  >                 (narrow-to-region (point-min) (progn (goto-char (point-min))
+  >                                                      (search-forward "\n\n")
+  >!                                                     (- (point) 1)))))
+  >          (setq from (mail-fetch-field "from")
+  >                news-reply-yank-from from
+  >                ;; @@ not handling old Title: field
+  >***************
+  >*** 365,371 ****
+  >                                        ;@@     but rnews.el lacks support
+  >                 (narrow-to-region (point-min) (progn (goto-char (point-min))
+  >                                                      (search-forward "\n\n")
+  >!                                                     (- (point) 2)))))
+  >          (setq news-reply-yank-from (mail-fetch-field "from")
+  >                ;; @@ not handling old Article-I.D.: field
+  >                news-reply-yank-message-id (mail-fetch-field "message-id")))
+  >--- 365,371 ----
+  >                                        ;@@     but rnews.el lacks support
+  >                 (narrow-to-region (point-min) (progn (goto-char (point-min))
+  >                                                      (search-forward "\n\n")
+  >!                                                     (- (point) 1)))))
+  >          (setq news-reply-yank-from (mail-fetch-field "from")
+  >                ;; @@ not handling old Article-I.D.: field
+  >                news-reply-yank-message-id (mail-fetch-field "message-id")))
+  
+64: Why does Emacs hang with message "Unknown XMenu" with X11R4?
+  
+  Many different X errors can produce this message.  Here is the solution
+  to one problem:
+  
+  X11 Release 4 now enforces some conditions in the X protocol that were
+  previously allowed to pass unnoticed.  You need to put the X11R4 server
+  into X11R3 bug compatibility mode for Emacs's Xmenu code to work.  You
+  can do this with the command "xset bc".
+  
+65: Why isn't the load average displayed by display-time?
+  
+  The most likely cause of the problem is that "loadst" can't read the
+  special file /dev/kmem.  To properly install loadst, it should be either
+  setuid to the owner of /dev/kmem, or is should be setgid to the group to
+  which /dev/kmem belongs.  In either case, /dev/kmem should be readable by
+  its owner or its group, respectively.
+  
+  Another possibility is that your version of Unix doesn't have the load
+  average data available in /dev/kmem.  Your version of Unix might have a
+  special system call to retrieve this information (eg., inq_stats under
+  UMAX).
+  
+66: Why doesn't GNUS work anymore via NNTP?
+  
+  There is a bug in NNTP version 1.5.10, such that when multiple requests
+  are sent to the NNTP server, the server only handles the first one before
+  blocking waiting for more input which never comes.
+  
+  You can work around the bug inside Emacs like this:
+  
+    (setq nntp-maximum-request 1)
+    (setq nntp-buggy-select t)
+  
+  Or you could fix the NNTP server in one of these ways:
+  
+  1. Test whether there is data in stdin's stdio buffer before calling
+     "select" using something like "((fileptr)->_cnt > 0)".  Best choice.
+  2. Remove call to select by not defining "TIMEOUT" in "common/conf.h".
+  3. Put "setbuf (stdin, NULL)" in the NNTP server in the right spot.
+     This would be very inefficient.
+  4. Rewrite the server to use an alarm instead of "select".
+  
+67: Why can't I paste a selection I made in Emacs into my xterm window?
+  
+  A person whose name I lost writes:
+  
+  The strange interaction between Emacs, xterm, and the cut buffers is
+  because most xterm clients use selections instead of (well, superceding)
+  cut buffers.  If there is a selection around, xterms will use that
+  instead of the cut buffer.  Emacs doesn't know about selections, but you
+  can convince xterm to always use the cut buffer instead of selections by
+  adding this to your .Xdefaults:
+  
+  ! Solution by Thomas Narten, should work under X11R3 and later
+  ! GNU Emacs only copies to CUT_BUFFER0.  xterm by default wants to paste
+  ! from the PRIMARY selection.
+  XTerm*VT100.Translations: #override \
+      ~Meta <Btn2Up>: insert-selection(CUT_BUFFER0)
+  
+
+68: Why does ispell sometimes ignore the local dictionary?
+  
+  You need to update the version of ispell to 2.0.02.  A patch is
+  available via:
+  
+  Anonymous FTP:
+  site: tut.cis.ohio-state.edu
+  file: /pub/gnu/ispell/patch2.Z
+  
+  You also need to change a line in ispell.el from:
+  
+    (defconst ispell-version "2.0.01") ;; Check against output of "ispell -v".
+  
+  to:
+  
+    (defconst ispell-version "2.0.02") ;; Check against output of "ispell -v".
+  
+
+
+Configuring Emacs for yourself:
+
+69: How do I set up a .emacs file properly?
+  
+  I'm going to be sending out a sample .emacs file in a separate message
+  later this month.  It will be based largely on AT&T's sample .emacs
+  file, which was sent to me by Dan Jacobson.  In fact it might be
+  identical.
+  
+70: How do you debug a .emacs file?
+  
+  First start Emacs with the "-q" command line option.  Then, in the
+  *scratch* buffer, type the following:
+  
+    (setq debug-on-error t) C-j
+    (load-file "~/.emacs") C-j
+  
+  (C-j stands for Control-J, ie., hold the control key and press J.)
+  
+  If you have an error in your .emacs file, this will invoke the debugger
+  when the error occurs.  If you don't know how to use the debugger do
+  (setq stack-trace-on-error t) instead.
+  
+  WARNING: this will not discover errors caused by trying to do something
+  that requires the terminal/window-system initialization code to have
+  been loaded.  See question 34.
+  
+71: How do I turn on abbrevs by default just in mode XXX?
+  
+  Put this in your .emacs file:
+  
+    (condition-case ()
+	(read-abbrev-file nil t)
+      (file-error nil))
+  
+    (setq XXX-mode-hook
+	  (function
+	   (lambda ()
+	     (setq abbrev-mode t))))
+  
+72: What does Emacs do every time it starts up?
+  
+  This question is not itself frequently asked, but helps to answer other
+  questions.
+  
+  Here is a complete explanation of the order in which things are done
+  during startup.
+  
+   1. These command line switches are handled, only if they appear before
+      all other command line arguments, and only if they appear in this
+      order:
+  
+      "-map".  Only under VMS.  Instead of "undumping", under VMS the
+         contents of a dump file are mapped over a section of memory (very
+         quickly initializing lots of variables).
+  
+      "-t".  The next argument is treated as the name of a terminal to use
+         instead of whatever is connected to the stdin, stdout, and stderr
+         FILE pointers.
+  
+      "-display" (synonym: "-d").  The next argument is treated as the
+         name of an X Window System server with which to connect.  This
+         overrides the DISPLAY environment variable.
+  
+      "-nw".  This means don't connect to an X Window server even if the
+         DISPLAY environment variable was set or the "-display" switch was
+         specified.  Instead, Emacs talks to a regular dumb terminal.
+  
+      "-batch".  Emacs is noninteractive.  The variable "noninteractive"
+         is t.  This disables any full screen interaction either with a
+         dumb terminal or with a window system.  In addition, Emacs will
+         die after processing all command line arguments.
+  
+  All of Emacs's internal data structures are initialized between steps 2
+  and 5.
+  
+   2. The "*scratch*" buffer is created and its value of default-directory
+      is set from the result of calling the "getwd" library routine.
+      (getwd does what the "pwd" program does.)
+  
+   3. If X11 is being used, Emacs determines the name under which it looks
+      for X resource values.  (I haven't checked how it does this under
+      X10.)
+  
+      1. If there is a "-rn" command line switch, it is handled now, no
+	 matter where it is on the command line.  (Later it will be
+	 processed again and ignored.)  The next argument is used as
+	 Emacs's resource name.
+  
+      2. If the "-rn" switch was missing, Emacs looks for the WM_RES_NAME
+         environment variable.
+  
+      3. If neither of the previous two steps succeed, Emacs uses the
+         filename with which it was invoked as its resource name.
+  
+   4. If X11 is being used, these command line switches are handled now,
+      no matter where they appear in the command line.  (Under X10, they
+      are not handled until step 13.)  WARNING: this can cause strange
+      interactions with the processing of the remaining command line
+      arguments in step 13.
+  
+      In addition, under both X11 and X10, X resources (ie. the stuff in
+      an .Xdefaults file) are handled now.  Command line switches take
+      precedence over resources.
+  
+      After each command line switch are given the equivalent resource
+      names in this format: (X10 name / X11 instance name / X11 class name).
+  
+      "-r".  Reverse video.  (ReverseVideo/reverseVideo/ReverseVideo)
+      "-font" (synonym: "-fn").  Font.  (BodyFont/font/Font)
+      "-wn".  Window name (X11 only).  (/title/Title)
+      "-in".  Icon name (X11 only).  (/iconName/Title)
+      "-i".  Use built-in icon bitmap.  (BitMapIcon//)
+  
+      "-b".  Border width (in pixels).
+         (BorderWidth/borderWidth/BorderWidth)
+  
+      "-ib".  Internal border width (in pixels) (default: 1).
+         (/internalBorder/BorderWidth)
+  
+      "-geometry" (synonym: "-w").  Window shape and size.  "-geometry" is
+         X11 only, but its synonym "-w" was available under X10.
+         (/geometry/Geometry)
+  
+      Color options only:
+  
+      "-fg".  Foreground color.  (Foreground/foreground/Foreground)
+      "-bg".  Background color.  (Background/background/Background)
+      "-bd".  Border color.  (Border/borderColor/BorderColor)
+      "-cr".  Cursor color.  (Cursor/cursorColor/Foreground)
+      "-ms".  Mouse pointer color.  (Mouse/pointerColor/Foreground)
+  
+      In addition, under X10, the resource "Keymap" was handled now.
+  
+   5. If your Emacs isn't "dumped", the default Lisp libraries are
+      "loaded" now.
+  
+   6. Emacs enters a "recursive edit".  The first time Emacs does a
+      recursive edit, steps 7 through 15 are followed, and then Emacs
+      enters its normal editing mode.
+  
+   7. If the environment variable PWD exists, the value of
+      default-directory in the *scratch* buffer is set to the value of
+      PWD.  This often causes problems and confusion when the value of PWD
+      doesn't actually contain the pathname of the current directory.
+  
+   8. Now the "-no-init-file" (synonym: "-q") and "-user" (synonym: "-u")
+      command line switches are handled.  They must follow the switches
+      mentioned in step 1, and must precede any other command line
+      arguments.  Actually, both of these options can be specified;
+      whichever is last on the command line wins.
+  
+   9. The user's ".emacs" file is loaded now, if the -no-init-file option
+      was not specified.  If the -user option was specified, that user's
+      .emacs file is loaded instead.  A user's .emacs file is a file named
+      ".emacs" in the user's "home" directory.  If no such file exists,
+      this step has no effect.
+  
+  10. The system wide "default" file is loaded now, if the variable
+      inhibit-default-init is nil.  The user can set this variable in the
+      .emacs file to skip this step.
+  
+  11. If the *scratch* buffer still exists now, the value of
+      initial-major-mode is called as a function in this buffer.
+      Normally, this puts this buffer in Lisp Interaction mode.
+  
+  12. Now the terminal/window-system setup file is loaded.  The name of
+      this file is determined as follows:
+  
+      1. It starts with the value of term-file-prefix.  Normally this is
+         "term/", but the user can set it to another value.  If this
+         variable is nil, this entire step is skipped.
+  
+      2. For a window system, the prefix is followed by the name of the
+         value of the variable window-system, followed by "-win".  For X
+         Windows, this means the name is "term/x-win".
+  
+      3. For a terminal, the prefix is followed by the value of the
+         environment variable TERM, for example, "term/vt200".  If Emacs
+         cannot find such a file to load, it retries by stripping off
+         suffixes that begin with a hyphen.  For example, if TERM is
+         "vt200-40", first Emacs will try "term/vt200-40", and if that
+         fails it will try "term/vt200".
+  
+  13. The rest of the command line arguments are handled at this point, in
+      the order they appear:
+  
+      "-funcall" (synonyms: "-f", "-e").  The next argument is treated as
+         the name of a function, which is called with no arguments.
+  
+      "-load" (synonym: "-l").  The next argument is treated as the name
+         of a file to load.  NOTE: the value of the variable load-path
+         will be restored after this file is done loading.  Thus, trying
+         to change load-path in such a file will fail!!
+  
+      "-kill".  When this argument is handled, Emacs kills itself.
+  
+      "+DDD", where D is a digit.  DDD is used as a line number to go to.
+         When the next ordinary file argument on the command line is
+         handled, Emacs positions point in that file on line DDD.
+  
+      An ordinary filename.  Emacs edits this file using the function
+         find-file.  If the filename is not an "absolute" filename, it is
+         expanded relative to the value that default-directory in the
+         *scratch* buffer had at the beginning of step 11.  The buffer
+         visiting this file becomes the current buffer.
+  
+      "-insert" (synonym: "-i").  The next argument is treated as the name
+         of a file.  This file is inserted in the current buffer.
+         Initially, this is the *scratch* buffer.  Otherwise it is the
+         buffer visiting the file most recently specified on the command
+         line.  WARNING: the synonym "-i" doesn't work under X11.
+  
+      Other command line switches may have been created by modifying the
+      value of the variable command-switch-alist.  If X Windows is being
+      used, all X-specific switches mentioned above in steps 3 and 4 will
+      be processed.  Under X11, they will have already been handled, and
+      will be ignored now.  Under X10, they are being handled for the
+      first time.
+  
+  14. The values of the variables term-setup-hook and window-setup-hook
+      are called as functions with no arguments, in the order listed.
+  
+  15. If the user did not specify any of the command line options handled
+      in step 13, and the variable inhibit-startup-message is still nil,
+      the familiar Emacs startup message is displayed.
+  
+73: What are the valid X resource settings (ie., stuff in .Xdefaults file)?
+  
+  See question 72.
+  
+  WARNING: Don't pay any attention to the documentation in etc/XDOC or
+  etc/emacs.1.  It's way out of date.  {Would someone like to rewrite it?
+  RMS asked me and I haven't had time yet.}
+  
+74: How do I turn down the bell volume in Emacs running under X Windows?
+  
+  Under Epoch you can do:
+  
+    (setq epoch::bell-volume 20)
+  
+  Under normal GNU Emacs you must modify the XTfeep function in
+  src/x11term.c, and change the number 50 to some other number:
+  
+    XTfeep ()
+    {
+	    BLOCK_INPUT_DECLARE ();
+    #ifdef XDEBUG
+	    fprintf (stderr, "XTfeep\n");
+    #endif
+	    BLOCK_INPUT ();
+	    XBell (XXdisplay,50);	/* change this 50 */
+	    UNBLOCK_INPUT ();
+    }
+  
+75: How do I make Emacs send 8-bit characters to my terminal?
+  
+  Johan Widen <jw@sics.se> writes:
+  
+  A patch for emacs-18.55 is available by ftp and mail-server from
+  sics.se.
+  
+  Anonymous FTP:
+  site: sics.se [192.16.123.90]
+  file: archive/emacs-18.55-8bit-diff
+  
+  E-mail:
+  To: mail-server@sics.se
+  body: send emacs-18.55-8bit-diff
+  
+
+
+Emacs Lisp programming:
+
+76: What dialect of Lisp is Emacs Lisp?
+  
+  It's the dialect of Lisp called Emacs Lisp.  (No joke!)  People also
+  call it elisp or e-lisp.  (NOTE: The term "Elisp" is trademarked by
+  someone else.)
+  
+77: How close is Emacs Lisp to Common Lisp?
+  
+  Pretty far.  GNU Emacs Lisp is case-sensitive, uses dynamic scoping,
+  doesn't have packages, doesn't have multiple return values, doesn't have
+  reader macros, etc.  For people used to Common Lisp, some of the
+  functions in Common Lisp that are not in Emacs Lisp by default are
+  provided in the file lisp/cl.el.  There is a Texinfo manual describing
+  these functions in man/cl.texinfo.
+  
+78: How do I execute a piece of Emacs Lisp code?
+  
+  There are a number of ways to execute (called "evaluate") an Emacs Lisp
+  "form":
+  
+  * If you want it evaluated every time you run Emacs, put it in a file
+    named ".emacs" in your home directory.
+  
+  * You can type the form in the "*scratch*" buffer, and then type C-j
+    after it.  The result of evaluating the form will be inserted in the
+    buffer.
+  
+  * In in Emacs-Lisp mode, typing M-C-x evaluates a top-level form before
+    or around point.
+  
+  * Typing "C-x C-e" in any buffer evaluates the Lisp form immediately
+    before point and prints its value in the echo area.
+  
+  * Typing M-ESC or M-x eval-expression allows you to type a Lisp form in
+    the minibuffer which will be evaluated.
+  
+  * You can use M-x load-file to have Emacs evaluate all the Lisp forms in
+    a file.  (To do this from Lisp use the function "load" instead.)
+  
+79: How do I make a set of operations fully local to a region?
+  
+  Use narrow-to-region inside of save-restriction.
+  
+80: How can I highlight a region?
+  
+  There are ways to get highlighting in GNU Emacs 18.55, but they all
+  require patching the C code of Emacs and rebuilding.  They are also slow
+  and the highlighting disappears if you scroll or redraw the screen.  One
+  patch is by Kenichi Handa <handa@etl.go.jp>.
+  
+  You can hightlight regions in a variety of ways in Epoch.  GNU Emacs 19
+  will have everything you need, but won't be out soon.
+  
+81: How do I change Emacs's idea of the tab character's length?
+  
+  Example: (setq default-tab-width 10).
+  
+82: What is the difference between (interactive "P") and (interactive "p")?
+  
+  The value that is a result of "P" can be a list, a symbol, or an
+  integer; the value that is a result of "p" is always an integer:
+  
+    Prefix keys typed       result of:   "P"        "p"
+      nothing                            nil         1
+      "M-1"                              1           1
+      "C-u 1"                            1           1
+      "M--"                              '-         -1
+      "C-u -"                            '-         -1
+      "C-u"                              (4)         4
+      "C-u C-u"                          (16)       16
+  
+
+
+Carrying Out Common Tasks:
+
+83: How do I insert ">"'s in the beginning of every line in a buffer?
+  
+  Type "M-x replace-regexp RET ^ RET > RET".  ("replace-regexp" can be
+  shortened to "repl TAB r".)
+  
+  To do this only in the region, type "C-x n M-x replace-regexp RET ^ RET
+  > RET C-x w".  (You're going to remember that, right?)
+  
+84: How do I insert "_^H" characters before each character in a
+ paragraph to get an underlined paragraph?
+  
+  M-x underline-region.
+  
+85: How do I repeat a command as many times as possible?
+  
+  Make a keyboard macro that invokes the command and then type "M-0 C-x
+  e".  WARNING: any messages your command prints in the echo area will be
+  suppressed.
+  
+86: How do I search for an unprintable (8-bit) character that appears
+ in a buffer as \237?
+  
+  C-s C-q 2 3 7
+  
+  (This assumes the value of search-quote-char is 17 (C-q).)
+  
+87: How do I tell Emacs to automatically indent a new line to the
+ indentation of the previous line?
+  
+  M-x indented-text-mode.  (This is a major mode.)
+  
+  If you have auto-fill mode on (minor mode), you can tell Emacs to prefix
+  every line with a certain character sequence, the "fill prefix".  Type
+  the prefix at the beginning of a line, position point after it, and then
+  type "C-x ." (set-fill-prefix) to set the fill prefix.  Thereafter,
+  auto-filling will automatically put the fill prefix at the beginning of
+  new lines, and M-q (fill-paragraph) will maintain any fill prefix when
+  refilling the paragraph.
+  
+88: How do I make Emacs "typeover" or "overwrite" when I type instead of
+ always inserting?
+  
+  M-x overwrite-mode (minor mode).  
+  
+  WARNING: delete-backward-char (usually the delete key) doesn't work
+  properly in overwrite mode.  It deletes the character to the left,
+  rather than replacing it with a space.
+  
+89: How do I show which parenthesis matches the one I'm looking at?
+  
+  If you're looking at a right parenthesis (or brace or bracket) you can
+  delete it and reinsert it.
+  
+  M-C-f (forward-sexp) and M-C-b (backward-sexp) will skip over balanced
+  parentheses, so you can see which parentheses match.  (You can train it
+  to skip over balanced brackets and braces at the same time by modifying
+  the syntax table.)
+  
+  Here is some Emacs Lisp that will make the % key show the matching
+  parenthese, like in vi.  In addition, if the cursor isn't over a
+  parenthese, it simply inserts a % like normal.
+  
+  (By an unknown contributor.)
+  
+    (global-set-key "%" 'match-paren)
+  
+    (defun match-paren (arg)
+      "Go to the matching parenthesis if on parenthesis otherwise insert %."
+      (interactive "p")
+      (cond ((looking-at "[([{]") (forward-sexp 1) (backward-char))
+	    ((looking-at "[])}]") (forward-char) (backward-sexp 1))
+	    (t (self-insert-command (or arg 1)))))
+  
+90: How do I make Emacs behave like this: when I go up or down, the cursor
+ should stay in the same column even if the line is too short?
+  
+  M-x picture-mode.  (This is a minor mode, in theory anyway ...)
+  
+91: How do I read news under Emacs?
+  
+  There are at least three news reading packages that operate inside
+  Emacs.  "rnews" comes with Emacs.  "GNUS" and "Gnews" come separately.
+  
+  {I've never used rnews; could someone write a description?  BTW, rnews
+  will be replaced with GNUS in Emacs 19.}
+  
+  Both GNUS and Gnews handle reading news over NNTP.  I think both can
+  also read from a local news spool.  GNUS also supports reading mail
+  stored in MH folders or articles saved by GNUS.
+  
+  GNUS is written (mostly) by Masanobu Umeda.  His (?) latest e-mail
+  address was umerin@tc.nagasaki.go.jp, but I don't think he has an e-mail
+  address right now.  The latest version is GNUS 3.13.  There is a
+  newsgroup for discussion of GNUS called gnu.emacs.gnus.  This newsgroup
+  is gatewayed with the mailing list info-gnus-english to subscribe send
+  mail to info-gnus-english-request@cis.ohio-state.edu.  There is also a
+  mailing list called info-gnus, which includes discussion in Japanese.
+  
+  Gnews was written by Matthew Wiener <e-mail address?>.  {Could someone
+  tell me the # of the latest version, and how long it has been since
+  anyone has heard from Matthew?}.  There is a newsgroup for Gnews called
+  gnu.emacs.gnews.
+  
+92: In C mode, can I show just the lines that will be left after #ifdef
+ commands are handled by the compiler?
+  
+  M-x hide-ifdef-mode.  (This is a minor mode.)
+  
+  You may have to (load "hideif") first.  If you want to do this
+  regularly, put this in your .emacs file:
+  
+    (autoload 'hide-ifdef-mode "hideif" nil t)
+  
+93: Is there an equivalent to the "." (dot) command of vi?
+  
+  ("." is the redo command in vi.  It redoes the last insertion/deletion.)
+  
+  No, not really.
+  
+  You can type "C-x ESC" (repeat-complex-command) to reinvoke commands
+  that used the minibuffer to get arguments.  In repeat-complex-command
+  you can type M-p and M-n to scan through all the different complex
+  commands you've typed.
+  
+  To repeat something on each line I recommend using keyboard macros.
+  
+94: How do I use emacstool under SunView?
+  
+  The file etc/SUN-SUPPORT includes the document "Using Emacstool with GNU
+  Emacs".  Also read the man page for emacstool (etc/emacstool.1).
+  
+95: How do I get Emacs to display the current line number on the mode line?
+  
+  There is no "correct" way to constantly display the current line number
+  on the mode line in Emacs 18.  Emacs is not a line-oriented editor, and
+  really has no idea what "lines" of the buffer are displayed in the
+  window.  It would require a lot of work at the C code level to make
+  Emacs keep track of this.
+  
+  Emacs 19 will probably be able to do this, but probably not with great
+  efficiency.
+  
+  To find out what line of the buffer you are on right now, do "M-x
+  what-line".  Typing "C-x l" will also tell you what line you are on,
+  provided the buffer isn't separated into "pages" with C-l characters.
+  In that case, it will only tell you what line of the current "page" you
+  are on.  WARNING: "C-x l" gives the wrong value when point is at the
+  beginning of a line.
+  
+  People have written various kludges to display the current line number
+  on the mode line.  Look in the Lisp Code Directory.  (See question 13.)
+  
+96: How do I tell Emacs to iconify itself?
+  
+  You need to modify C source and recompile.  Either that or get Epoch
+  instead.  For the interested I have a patch to allow Emacs to iconify
+  itself.
+  
+97: How do I use regexps (regular expressions) in Emacs?
+  
+  This is documented in the Emacs manual.  To read the manual section
+  online, type "C-h i m emacs RET m regexps RET".
+  
+  WARNING: Unlike in Unix grep, sed, etc., a complement character set
+  ([^...]) can match a Newline, unless Newline is mentioned as one of the
+  characters not to match.
+
