@@ -1,5 +1,6 @@
+#! /bin/csh -f
 #
-#	@(#)vpr.sh	1.4	(Berkeley)	%G%
+#	@(#)vpr.sh	1.5	(Berkeley)	%G%
 #
 # vpr.sh - Use on machines without raster plotters
 #
