@@ -1,14 +1,14 @@
 # include "sendmail.h"
 # include <sys/stat.h>
-# include <dir.h>
+# include <sys/dir.h>
 # include <signal.h>
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.75		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.76		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.75		%G%);
+SCCSID(@(#)queue.c	3.76		%G%);
 
 /*
 **  Work queue.
