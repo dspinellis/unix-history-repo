@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)strip.1	6.2 (Berkeley) %G%
+.\"	@(#)strip.1	6.3 (Berkeley) %G%
 .\"
 .TH STRIP 1 ""
 .AT 3
@@ -29,5 +29,9 @@ removes the relocation information and symbol table used by
 assemblers and loaders.
 This save disk space by decreasing the size of the installed binaries.
 It also significantly decreases the usefulness of debuggers.
+.PP
+.I Strip
+exits 0 on success (or if the file had already been stripped), 1 if
+an error occurred.
 .SH "SEE ALSO"
 as(1), cc(1), install(1), ld(1)
