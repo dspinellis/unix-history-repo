@@ -1,4 +1,4 @@
-#	@(#)gettytab	5.13 (Berkeley) %G%
+#	@(#)gettytab	5.14 (Berkeley) %G%
 #
 # Most of the table entries here are just copies of the old getty table,
 # it is by no means certain, or even likely, that any of them are optimal
@@ -104,6 +104,9 @@ l|lsi chess terminal:\
 
 X|Xwindow|X window system:\
 	:fd@:nd@:cd@:rw:sp#9600:
+
+P|Pc|Pc console:\
+	:np:ap:sp#9600:
 
 #
 # Wierdo special case for fast crt's with hardcopy devices
