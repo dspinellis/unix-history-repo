@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -78,6 +78,7 @@ static void       mcleanup __P((int));
 static void       doit __P((void));
 static void       startup __P((void));
 static void       chkhost __P((struct sockaddr_in *));
+static int	  ckqueue __P((char *));
 
 int
 main(argc, argv)
@@ -404,7 +405,7 @@ startup()
 	 * Restart the daemons.
 	 */
 	while (cgetnext(&buf, printcapdb) > 0) {
-		if (ckqueue() <= 0) {
+		if (ckqueue(buf) <= 0) {
 			free(buf);
 			continue;	/* no work to do for this printer */
 		}
@@ -432,13 +433,15 @@ startup()
 /*
  * Make sure there's some work to do before forking off a child
  */
-ckqueue()
+static int
+ckqueue(cap)
+	char *cap;
 {
 	register struct dirent *d;
 	DIR *dirp;
 	char *spooldir;
 
-	if (cgetstr(bp, "sd", &spooldir) == -1)
+	if (cgetstr(cap, "sd", &spooldir) == -1)
 		spooldir = _PATH_DEFSPOOL;
 	if ((dirp = opendir(spooldir)) == NULL)
 		return (-1);

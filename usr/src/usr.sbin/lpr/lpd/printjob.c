@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -1260,17 +1260,20 @@ opennet(cp)
 {
 	register int i;
 	int resp, port;
+	char save_ch;
 
-	*cp++ = '\0';
-	port = atoi(cp);
+	save_ch = *cp;
+	*cp = '\0';
+	port = atoi(LP);
 	if (port <= 0) {
-		syslog(LOG_ERR, "%s: bad port number: %s", printer, cp);
+		syslog(LOG_ERR, "%s: bad port number: %s", printer, LP);
 		exit(1);
 	}
+	*cp++ = save_ch;
 
 	for (i = 1; ; i = i < 256 ? i << 1 : i) {
 		resp = -1;
-		pfd = getport(LP, port);
+		pfd = getport(cp, port);
 		if (pfd < 0 && errno == ECONNREFUSED)
 			resp = 1;
 		else if (pfd >= 0) {
@@ -1290,8 +1293,7 @@ opennet(cp)
 		}
 		sleep(i);
 	}
-	pstatus("sending to %s port %d", LP, port);
-	*(--cp) = '@';	/* restore LP parameter in case we are called again */
+	pstatus("sending to %s port %d", cp, port);
 }
 
 /*
