@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: support.s,v 1.7 1994/05/03 00:00:53 ats Exp $
+ *	$Id: support.s,v 1.8 1994/06/01 03:12:39 davidg Exp $
  */
 
 #include "assym.s"				/* system definitions */
@@ -353,8 +353,8 @@ bcopyw:
 	movl	20(%esp),%ecx
 	cmpl	%esi,%edi			/* potentially overlapping? */
 	jnb	1f
-	cld					/* nope, copy forwards */
 	shrl	$1,%ecx				/* copy by 16-bit words */
+	cld					/* nope, copy forwards */
 	rep
 	movsw
 	adc	%ecx,%ecx			/* any bytes left? */
@@ -368,10 +368,10 @@ bcopyw:
 1:
 	addl	%ecx,%edi			/* copy backwards */
 	addl	%ecx,%esi
-	std
 	andl	$1,%ecx				/* any fractional bytes? */
 	decl	%edi
 	decl	%esi
+	std
 	rep
 	movsb
 	movl	20(%esp),%ecx			/* copy remainder by 16-bit words */
@@ -407,8 +407,8 @@ bcopy:
 	movl	20(%esp),%ecx
 	cmpl	%esi,%edi			/* potentially overlapping? */
 	jnb	1f
-	cld					/* nope, copy forwards */
 	shrl	$2,%ecx				/* copy by 32-bit words */
+	cld					/* nope, copy forwards */
 	rep
 	movsl
 	movl	20(%esp),%ecx
@@ -423,10 +423,10 @@ bcopy:
 1:
 	addl	%ecx,%edi			/* copy backwards */
 	addl	%ecx,%esi
-	std
 	andl	$3,%ecx				/* any fractional bytes? */
 	decl	%edi
 	decl	%esi
+	std
 	rep
 	movsb
 	movl	20(%esp),%ecx			/* copy remainder by 32-bit words */
@@ -576,9 +576,9 @@ ENTRY(copyout)					/* copyout(from_kernel, to_user, len) */
 
 	/* bcopy(%esi, %edi, %ebx) */
 3:
-	cld
 	movl	%ebx,%ecx
 	shrl	$2,%ecx
+	cld
 	rep
 	movsl
 	movb	%bl,%cl
@@ -845,6 +845,7 @@ ENTRY(copyoutstr)
 	movl	12(%esp),%esi			/* %esi = from */
 	movl	16(%esp),%edi			/* %edi = to */
 	movl	20(%esp),%edx			/* %edx = maxlen */
+	cld
 
 #if defined(I386_CPU)
 
@@ -978,6 +979,7 @@ ENTRY(copyinstr)
 	movl	__udatasel,%eax
 	movl	%ax,%gs
 	incl	%edx
+	cld
 1:
 	decl	%edx
 	jz	2f
@@ -1026,7 +1028,7 @@ ENTRY(copystr)
 	movl	16(%esp),%edi			/* %edi = to */
 	movl	20(%esp),%edx			/* %edx = maxlen */
 	incl	%edx
-
+	cld
 1:
 	decl	%edx
 	jz	4f

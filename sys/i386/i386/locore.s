@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)locore.s	7.3 (Berkeley) 5/13/91
- *	$Id: locore.s,v 1.15 1994/02/01 04:08:54 davidg Exp $
+ *	$Id: locore.s,v 1.16 1994/04/02 07:00:24 davidg Exp $
  */
 
 /*
@@ -163,6 +163,7 @@ NON_GPROF_ENTRY(btext)
 	movl	_nfs_diskless_size-KERNBASE,%ecx
 	movl	20(%esp),%esi
 	movl	$(_nfs_diskless-KERNBASE),%edi
+	cld
 	rep
 	movsb
 #endif
@@ -367,6 +368,7 @@ NON_GPROF_ENTRY(btext)
 	movl	$_gdt-KERNBASE,%edi
 	movl	%edi,2(%esp)
 	movl	$8*18/4,%ecx
+	cld
 	rep					/* copy gdt */
 	movsl
 	movl	$_gdt-KERNBASE,-8+2(%edi)	/* adjust gdt self-ptr */
@@ -388,6 +390,7 @@ NON_GPROF_ENTRY(btext)
 	movl	$_idt-KERNBASE,%edi
 	movl	%edi,6+2(%esp)
 	movl	$8*4/4,%ecx
+	cld
 	rep					/* copy idt */
 	movsl
 
