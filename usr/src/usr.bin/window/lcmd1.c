@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.9 83/11/30";
+static	char *sccsid = "@(#)lcmd1.c	3.10 83/12/06";
 #endif
 
 #include "defs.h"
@@ -35,7 +35,7 @@ register struct value *v;
 	if (openwin(id, row, col, nrow, ncol, nline, label) == 0)
 		return;
 	v->v_type = V_NUM;
-	v->v_num = id;
+	v->v_num = id + 1;
 }
 
 struct lcmd_arg arg_buffer[] = {
@@ -63,7 +63,7 @@ struct value *v;
 	struct ww *w;
 
 	v->v_type = V_NUM;
-	v->v_num = selwin ? selwin->ww_id : -1;
+	v->v_num = selwin ? selwin->ww_id + 1 : -1;
 	if (arg_select[0].arg_vtype == V_ERR)
 		return;
 	if ((w = vtowin(&arg_select[0].arg_val)) == 0)
@@ -179,6 +179,22 @@ struct value *v;
 		c_close((struct ww *)0);
 	else if ((w = vtowin(&a->arg_val)) != 0)
 		c_close(w);
+}
+
+struct lcmd_arg arg_cursormodes[] = {
+	{ "modes",	1,	ARG_NUM },
+	{ 0,		0,	0 }
+};
+
+l_cursormodes(v)
+register struct value *v;
+{
+	register struct lcmd_arg *a = arg_cursormodes;
+
+	v->v_type = V_NUM;
+	v->v_num = wwcursormodes;
+	if (a->arg_vtype != V_ERR)
+		wwsetcursormodes(a->arg_num);
 }
 
 struct ww *
