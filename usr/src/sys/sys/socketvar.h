@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)socketvar.h	7.8 (Berkeley) %G%
+ *	@(#)socketvar.h	7.9 (Berkeley) %G%
  */
 
 /*
