@@ -17,12 +17,12 @@
 
 # ifndef QUEUE
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.19 (Berkeley) %G%	(no queueing)";
+static char	SccsId[] = "@(#)queue.c	5.20 (Berkeley) %G%	(no queueing)";
 # endif not lint
 # else QUEUE
 
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.19 (Berkeley) %G%";
+static char	SccsId[] = "@(#)queue.c	5.20 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -160,7 +160,8 @@ queueup(e, queueall, announce)
 	/* output list of error recipients */
 	for (q = e->e_errorqueue; q != NULL; q = q->q_next)
 	{
-		fprintf(tfp, "E%s\n", q->q_paddr);
+		if (!bitset(QDONTSEND, q->q_flags))
+			fprintf(tfp, "E%s\n", q->q_paddr);
 	}
 
 	/*
@@ -705,6 +706,10 @@ readqf(e, full)
 		printf("\nRunning %s\n", e->e_id);
 	while (fgetfolded(buf, sizeof buf, qfp) != NULL)
 	{
+# ifdef DEBUG
+		if (tTd(40, 4))
+			printf("+++++ %s\n", buf);
+# endif DEBUG
 		switch (buf[0])
 		{
 		  case 'R':		/* specify recipient */
