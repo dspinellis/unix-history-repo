@@ -1,36 +1,70 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.5	(Berkeley)	83/01/16";
+static char sccsid[] = "@(#)utilities.c	3.1	(Berkeley)	83/02/18";
 #endif
 
 #include "restore.h"
 
 /*
+ * Move the contents of a directory to a new directory.
+ */
+movecontents(from, to)
+	struct entry *from, *to;
+{
+	register struct entry *ep;
+	struct entry *np;
+	register char *targetp;
+	char target[BUFSIZ];
+
+	strcpy(target, myname(to));
+	targetp = &target[strlen(target)];
+	*targetp++ = '/';
+	for (ep = from->e_entries; ep != NIL; ) {
+		strcpy(targetp, ep->e_name);
+		if (ep->e_flags & TMPNAME)
+			badentry(ep, "movecontents: found TMPNAME");
+		np = lookupname(target);
+		if (np != NIL)
+			mktempname(np);
+		renameit(myname(ep), target);
+		np = ep->e_sibling;
+		moveentry(ep, target);
+		ep = np;
+	}
+}
+
+/*
  * Insure that all the components of a pathname exist.
  */
-pathcheck(name)
+struct entry *
+pathcheck(name, type)
 	char *name;
+	char type;
 {
 	register char *cp;
 	struct entry *ep;
-	char *start;
+	char *start, *last;
 
 	start = index(name, '/');
-	if (start == 0)
-		return;
+	last = rindex(name, '/');
+	if (last == 0)
+		panic("bad name %s to pathcheck\n", name);
+	if (start == last)
+		return (lookupino(ROOTINO));
 	for (cp = start; *cp != '\0'; cp++) {
 		if (*cp != '/')
 			continue;
 		*cp = '\0';
 		ep = lookupname(name);
 		if (ep == NIL) {
-			ep = addentry(name, ep->e_ino, NODE);
-			ep->e_flags |= KEEP;
+			ep = addentry(name, (ino_t)0, NODE);
+			ep->e_flags |= type;
 			newnode(ep);
 		}
 		*cp = '/';
 	}
+	return (ep);
 }
 
 /*
@@ -74,11 +108,7 @@ newnode(np)
 	if (np->e_type != NODE)
 		badentry(np, "newnode: not a node");
 	cp = myname(np);
-	if (mkdir(cp, 0777) < 0) {
-		if (command == 'x') {
-			perror(cp);
-			return;
-		}
+	if (mkdir(cp, 0666) < 0) {
 		perror("newnode");
 		panic("Cannot make node %s\n", cp);
 	}
@@ -103,7 +133,7 @@ removenode(ep)
 		panic("Cannot remove node %s\n", cp);
 	}
 	ep->e_flags |= REMOVED;
-	ep->e_flags &= ~TMPNAME;
+	ep->e_flags &= ~(TMPNAME|TMPNODE);
 	vprintf(stdout, "Remove node %s\n", cp);
 }
 
@@ -167,7 +197,7 @@ lowerbnd(start)
 		ep = lookupino(start);
 		if (ep == NIL)
 			continue;
-		if (ep->e_flags & (NEW|EXTRACT))
+		if (ep->e_flags & (NEW|EXTRACT|CHANGE))
 			return (start);
 	}
 	return (start);
@@ -186,7 +216,7 @@ upperbnd(start)
 		ep = lookupino(start);
 		if (ep == NIL)
 			continue;
-		if (ep->e_flags & (NEW|EXTRACT))
+		if (ep->e_flags & (NEW|EXTRACT|CHANGE))
 			return (start);
 	}
 	return (start);
@@ -203,6 +233,8 @@ badentry(ep, msg)
 
 	fprintf(stderr, "bad entry: %s\n", msg);
 	fprintf(stderr, "name: %s\n", myname(ep));
+	if (ep->e_newname != NULL)
+		fprintf(stderr, "new name: %s\n", ep->e_newname);
 	fprintf(stderr, "parent name %s\n", myname(ep->e_parent));
 	if (ep->e_sibling != NIL)
 		fprintf(stderr, "sibling name: %s\n", myname(ep->e_sibling));
@@ -210,19 +242,27 @@ badentry(ep, msg)
 		fprintf(stderr, "next entry name: %s\n", myname(ep->e_entries));
 	if (ep->e_links != NIL)
 		fprintf(stderr, "next link name: %s\n", myname(ep->e_links));
-	if (ep->e_next != NIL)
-		fprintf(stderr, "next hashchain name: %s\n", myname(ep->e_next));
 	fprintf(stderr, "entry type: %s\n",
 		ep->e_type == NODE ? "NODE" : "LEAF");
 	fprintf(stderr, "inode number: %ld\n", ep->e_ino);
 	strcpy(flagbuf, "|NIL");
 	flagbuf[0] = '\0';
+	if (ep->e_flags & REMOVE)
+		strcat(flagbuf, "|REMOVE");
 	if (ep->e_flags & REMOVED)
 		strcat(flagbuf, "|REMOVED");
+	if (ep->e_flags & RENAME)
+		strcat(flagbuf, "|RENAME");
 	if (ep->e_flags & TMPNAME)
 		strcat(flagbuf, "|TMPNAME");
+	if (ep->e_flags & TMPNODE)
+		strcat(flagbuf, "|TMPNODE");
 	if (ep->e_flags & EXTRACT)
 		strcat(flagbuf, "|EXTRACT");
+	if (ep->e_flags & RENUMBER)
+		strcat(flagbuf, "|RENUMBER");
+	if (ep->e_flags & CHANGE)
+		strcat(flagbuf, "|CHANGE");
 	if (ep->e_flags & NEW)
 		strcat(flagbuf, "|NEW");
 	if (ep->e_flags & KEEP)
@@ -231,23 +271,27 @@ badentry(ep, msg)
 }
 
 /*
- * canonicalize file names to always start with ``./''
+ * respond to interrupts
  */
-canon(rawname, canonname)
-	char *rawname, *canonname;
+onintr()
 {
-	int len;
+	if (reply("restore interrupted, continue"))
+		return;
+	done(1);
+}
 
-	if (strcmp(rawname, ".") == 0 || strncmp(rawname, "./", 2) == 0)
-		(void) strcpy(canonname, "");
-	else if (rawname[0] == '/')
-		(void) strcpy(canonname, ".");
-	else
-		(void) strcpy(canonname, "./");
-	(void) strcat(canonname, rawname);
-	len = strlen(canonname) - 1;
-	if (canonname[len] == '/')
-		canonname[len] = '\0';
+/*
+ * handle unexpected inconsistencies
+ */
+/* VARARGS1 */
+panic(msg, d1, d2)
+	char *msg;
+	long d1, d2;
+{
+
+	fprintf(stderr, msg, d1, d2);
+	if (reply("abort"))
+		abort();
 }
 
 /*
