@@ -4,13 +4,13 @@
 .\"
 .\"	@(#)leave.1	6.1 (Berkeley) %G%
 .\"
-.TH LEAVE 1
+.TH LEAVE 1 ""
 .UC
 .SH NAME
 leave \- remind you when you have to leave
 .SH SYNOPSIS
 .B leave
-[ hhmm ]
+[ [+]hhmm ]
 .SH DESCRIPTION
 .I Leave
 waits until the specified time, then reminds you that you
@@ -26,6 +26,9 @@ The time of day is in the form hhmm where hh is a time in
 hours (on a 12 or 24 hour clock).
 All times are converted to a 12 hour clock, and assumed to
 be in the next 12 hours.
+.PP
+If the time is preceeded by `+', the alarm will go off in hours and minutes
+from the current time.
 .PP
 If no argument is given,
 .I leave
