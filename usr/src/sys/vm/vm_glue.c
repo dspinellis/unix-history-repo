@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	7.14 (Berkeley) %G%
+ *	@(#)vm_glue.c	7.15 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -34,21 +34,22 @@
  * rights to redistribute these changes.
  */
 
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
-#include "resourcevar.h"
-#include "buf.h"
-#include "user.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/resourcevar.h>
+#include <sys/buf.h>
+#include <sys/user.h>
 
-#include "vm.h"
-#include "vm_page.h"
-#include "vm_kern.h"
+#include <vm/vm.h>
+#include <vm/vm_page.h>
+#include <vm/vm_kern.h>
 
 int	avefree = 0;		/* XXX */
 unsigned maxdmap = MAXDSIZ;	/* XXX */
 int	readbuffers = 0;	/* XXX allow kgdb to read kernel buffer pool */
 
+int
 kernacc(addr, len, rw)
 	caddr_t addr;
 	int len, rw;
@@ -75,6 +76,7 @@ kernacc(addr, len, rw)
 	return(rv == TRUE);
 }
 
+int
 useracc(addr, len, rw)
 	caddr_t addr;
 	int len, rw;
@@ -93,6 +95,7 @@ useracc(addr, len, rw)
  * (presumably so debugger can plant a breakpoint).
  * All addresses are assumed to reside in the Sysmap,
  */
+void
 chgkprot(addr, len, rw)
 	register caddr_t addr;
 	int len, rw;
@@ -104,6 +107,7 @@ chgkprot(addr, len, rw)
 }
 #endif
 
+void
 vslock(addr, len)
 	caddr_t	addr;
 	u_int	len;
@@ -112,6 +116,7 @@ vslock(addr, len)
 			round_page(addr+len-1), FALSE);
 }
 
+void
 vsunlock(addr, len, dirtied)
 	caddr_t	addr;
 	u_int	len;
@@ -135,6 +140,7 @@ vsunlock(addr, len, dirtied)
  * after cpu_fork returns in the child process.  We do nothing here
  * after cpu_fork returns.
  */
+int
 vm_fork(p1, p2, isvfork)
 	register struct proc *p1, *p2;
 	int isvfork;
@@ -211,6 +217,7 @@ not yet clear, yet it does... */
  * Set default limits for VM system.
  * Called for proc 0, and then inherited by all others.
  */
+void
 vm_init_limits(p)
 	register struct proc *p;
 {
@@ -247,6 +254,7 @@ int	swapdebug = 0;
  *	2. If not enough memory, wake the pageout daemon and let it
  *	   clear some space.
  */
+void
 sched()
 {
 	register struct proc *p;
@@ -337,6 +345,7 @@ loop:
  * they are swapped.  Else, we swap the longest-sleeping or stopped process,
  * if any, otherwise the longest-resident process.
  */
+void
 swapout_threads()
 {
 	register struct proc *p;
@@ -393,6 +402,7 @@ swapout_threads()
 	}
 }
 
+void
 swapout(p)
 	register struct proc *p;
 {
@@ -515,6 +525,7 @@ int indent = 0;
 #include <machine/stdarg.h>		/* see subr_prf.c */
 
 /*ARGSUSED2*/
+void
 #if __STDC__
 iprintf(const char *fmt, ...)
 #else
