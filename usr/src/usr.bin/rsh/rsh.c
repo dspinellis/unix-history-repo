@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)rsh.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -61,7 +61,7 @@ main(argc, argv)
 	struct passwd *pw;
 	struct servent *sp;
 	long omask;
-	int argoff, asrsh, ch, dflag, nflag, one, pid, rem;
+	int argoff, asrsh, ch, dflag, nflag, one, pid, rem, uid;
 	register char *p;
 	char *args, *host, *user, *copyargs();
 	void sendsig();
@@ -139,7 +139,7 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	if (!(pw = getpwuid(getuid()))) {
+	if (!(pw = getpwuid(uid = getuid()))) {
 		(void)fprintf(stderr, "rsh: unknown user id.\n");
 		exit(1);
 	}
@@ -167,7 +167,7 @@ main(argc, argv)
 #endif
 
 	if (sp == NULL) {
-		(void)fprintf(stderr, "rsh: shell/tcp: unknown service\n");
+		(void)fprintf(stderr, "rsh: shell/tcp: unknown service.\n");
 		exit(1);
 	}
 
@@ -223,14 +223,13 @@ try_connect:
 		    sizeof(one)) < 0)
 			(void)fprintf(stderr, "rsh: setsockopt: %s.\n",
 			    strerror(errno));
-			perror("setsockopt (stdin)");
 		if (setsockopt(rfd2, SOL_SOCKET, SO_DEBUG, &one,
 		    sizeof(one)) < 0)
 			(void)fprintf(stderr, "rsh: setsockopt: %s.\n",
 			    strerror(errno));
 	}
 
-	(void)setuid(getuid());
+	(void)setuid(uid);
 	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGTERM));
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		(void)signal(SIGINT, sendsig);
