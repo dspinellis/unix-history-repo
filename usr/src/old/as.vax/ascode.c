@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)ascode.c 4.2 %G%";
+static	char sccsid[] = "@(#)ascode.c 4.3 %G%";
 #include <stdio.h>
 #include "as.h"
 #include "assyms.h"
@@ -49,9 +49,15 @@ argcompat(act, exp, i)
 		yyerror("arg %d, branch displacement must be an expression",i);
 		return;
 	}
-	if ((exp & ACCA) && (atm == AREG)) {
-		yyerror("arg %d, addressing a register",i);
-		return;
+	if (exp & ACCA){
+		if (atm == AREG) {
+			yyerror("arg %d, addressing a register",i);
+			return;
+		}
+		if ( (atm == AIMM) && !(at & ASTAR) ){
+			yyerror("arg %d, addressing an immediate operand",i);
+			return;
+		}
 	}
 	if ((exp&ACCW) && (atm==AIMM) && !(at&ASTAR)) {
 		yyerror("arg %d, modifying a constant",i);
@@ -215,7 +221,7 @@ PASS2:
 		case ADECR: 		/* -(%r) */
 			ap->a_areg1 |= 0x70;
 			break; 
-		case AINCR:		/* (%r) */
+		case AINCR:		/* (%r)+ */
 			ap->a_areg1 |= 0x80;
 			break;
 		case AEXP: /* expr */
