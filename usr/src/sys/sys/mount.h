@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	8.4 (Berkeley) %G%
+ *	@(#)mount.h	8.5 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -113,6 +113,7 @@ struct mount {
 #define	MNT_NOSUID	0x00000008	/* don't honor setuid bits on fs */
 #define	MNT_NODEV	0x00000010	/* don't interpret special files */
 #define	MNT_UNION	0x00000020	/* union with underlying filesystem */
+#define	MNT_ASYNC	0x00000040	/* file system written asynchronously */
 
 /*
  * exported mount flags.
