@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -95,16 +95,16 @@ makefile()
 	struct opt *op;
 
 	read_files();
-	strcpy(line, "../conf/makefile.");
+	strcpy(line, "../conf/Makefile.");
 	(void) strcat(line, machinename);
 	ifp = fopen(line, "r");
 	if (ifp == 0) {
 		perror(line);
 		exit(1);
 	}
-	ofp = fopen(path("makefile"), "w");
+	ofp = fopen(path("Makefile"), "w");
 	if (ofp == 0) {
-		perror(path("makefile"));
+		perror(path("Makefile"));
 		exit(1);
 	}
 	fprintf(ofp, "IDENT=-D%s", raise(ident));
@@ -133,10 +133,8 @@ makefile()
 	} else if (maxusers < 8) {
 		printf("minimum of 8 maxusers assumed\n");
 		maxusers = 8;
-	} else if (maxusers > 128) {
-		printf("maxusers truncated to 128\n");
-		maxusers = 128;
-	}
+	} else if (maxusers > 1024)
+		printf("warning: maxusers > 1024 (%d)\n", maxusers);
 #endif
 	fprintf(ofp, "PARAM=-DTIMEZONE=%d -DDST=%d -DMAXUSERS=%d\n",
 	    timezone, dst, maxusers);
@@ -193,9 +191,10 @@ read_files()
 	FILE *fp;
 	register struct file_list *tp;
 	register struct device *dp;
+	register struct opt *op;
 	char *wd, *this, *needs, *devorprof;
 	char fname[32];
-	int nreqs, first = 1, configdep;
+	int nreqs, first = 1, configdep, isdup;
 
 	ftab = 0;
 	(void) strcpy(fname, "files");
@@ -236,11 +235,10 @@ next:
 		    fname, this);
 		exit(1);
 	}
-	if (fl_lookup(this)) {
-		printf("%s: Duplicate file %s.\n",
-		    fname, this);
-		exit(1);
-	}
+	if ((tp = fl_lookup(this)) && (tp->f_type != INVISIBLE || tp->f_flags))
+		isdup = 1;
+	else
+		isdup = 0;
 	tp = 0;
 	if (first == 3 && (tp = fltail_lookup(this)) != 0)
 		printf("%s: Local file %s overrides %s.\n",
@@ -269,18 +267,29 @@ nextopt:
 		goto save;
 	}
 	nreqs++;
-	if (needs == 0)
+	if (needs == 0 && nreqs == 1)
 		needs = ns(wd);
+	if (isdup)
+		goto invis;
 	for (dp = dtab; dp != 0; dp = dp->d_next)
 		if (eq(dp->d_name, wd))
 			goto nextopt;
+	for (op = opt; op != 0; op = op->op_next)
+		if (op->op_value == 0 && opteq(op->op_name, wd)) {
+			if (nreqs == 1) {
+				free(needs);
+				needs = 0;
+			}
+			goto nextopt;
+		}
+invis:
 	while ((wd = get_word(fp)) != 0)
 		;
-	if (tp == 0)
-		tp = new_fent();
+	tp = new_fent();
 	tp->f_fn = this;
 	tp->f_type = INVISIBLE;
 	tp->f_needs = needs;
+	tp->f_flags = isdup;
 	goto next;
 
 doneopt:
@@ -311,8 +320,7 @@ save:
 	}
 	if (eq(devorprof, "profiling-routine") && profiling == 0)
 		goto next;
-	if (tp == 0)
-		tp = new_fent();
+	tp = new_fent();
 	tp->f_fn = this;
 	if (eq(devorprof, "device-driver"))
 		tp->f_type = DRIVER;
@@ -325,6 +333,23 @@ save:
 		tp->f_flags |= CONFIGDEP;
 	tp->f_needs = needs;
 	goto next;
+}
+
+opteq(cp, dp)
+	char *cp, *dp;
+{
+	char c, d;
+
+	for (; ; cp++, dp++) {
+		if (*cp != *dp) {
+			c = isupper(*cp) ? tolower(*cp) : *cp;
+			d = isupper(*dp) ? tolower(*dp) : *dp;
+			if (c != d)
+				return (0);
+		}
+		if (*cp == 0)
+			return (1);
+	}
 }
 
 do_objs(fp)
@@ -530,7 +555,7 @@ do_systemspec(f, fl, first)
 	int first;
 {
 
-	fprintf(f, "%s: makefile", fl->f_needs);
+	fprintf(f, "%s: Makefile", fl->f_needs);
 	if (machine == MACHINE_VAX)
 		fprintf(f, " ../%s/inline/inline", machinename);
 	fprintf(f, " locore.o ${OBJS} param.o ioconf.o swap%s.o\n", fl->f_fn);
