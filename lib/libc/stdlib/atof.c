@@ -32,7 +32,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)atof.c	5.2 (Berkeley) 6/1/90";
+static char sccsid[] = "@(#)atof.c	5.3 (Berkeley) 1/8/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdlib.h>
@@ -40,7 +40,7 @@ static char sccsid[] = "@(#)atof.c	5.2 (Berkeley) 6/1/90";
 
 double
 atof(ascii)
-	char *ascii;
+	const char *ascii;
 {
-	return(strtod(ascii, (char **)NULL));
+	return (strtod(ascii, NULL));
 }
