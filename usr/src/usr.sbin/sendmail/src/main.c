@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.139		%G%);
+SCCSID(@(#)main.c	3.140		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -441,7 +441,6 @@ main(argc, argv)
 			register char **pvp;
 			char *q;
 			extern char **prescan();
-			extern char **rewrite();
 			extern char *DelimChar;
 
 			printf("> ");

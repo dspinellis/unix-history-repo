@@ -2,10 +2,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.37		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.38		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.37		%G%);
+SCCSID(@(#)srvrsmtp.c	3.38		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -88,11 +88,11 @@ smtp()
 	int rcps;			/* number of recipients */
 	auto ADDRESS *vrfyqueue;
 	bool onexact = FALSE;		/* one transaction this connection */
-	bool firsttime = TRUE;		/* this is the first transaction */
 	char inp[MAXLINE];
 	extern char Version[];
 	extern tick();
 	extern bool iswiz();
+	extern char *arpadate();
 
 	hasmail = FALSE;
 	rcps = 0;
@@ -103,7 +103,7 @@ smtp()
 		(void) dup(fileno(OutChannel));
 	}
 	message("220", "%s Sendmail %s ready at %s", HostName,
-			Version, arpadate(NULL));
+			Version, arpadate((char *) NULL));
 	(void) setjmp(TopFrame);
 	QuickAbort = FALSE;
 	for (;;)
@@ -157,8 +157,6 @@ smtp()
 			break;
 
 		  case CMDMAIL:		/* mail -- designate sender */
-			firsttime = FALSE;
-
 			/* check for validity of this command */
 			if (hasmail)
 			{

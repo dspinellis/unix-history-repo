@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)clock.c	3.11		%G%);
+SCCSID(@(#)clock.c	3.12		%G%);
 
 /*
 **  SETEVENT -- set an event to happen at a specific time.
@@ -32,7 +32,7 @@ setevent(intvl, func, arg)
 	if (intvl <= 0)
 	{
 		syserr("setevent: intvl=%ld\n", intvl);
-		return;
+		return (NULL);
 	}
 # endif DEBUG
 
@@ -100,7 +100,7 @@ clrevent(ev)
 	if (*evp != NULL)
 	{
 		*evp = ev->ev_link;
-		free(ev);
+		free((char *) ev);
 	}
 
 	/* restore clocks and pick up anything spare */
@@ -151,7 +151,7 @@ tick()
 		/* we must be careful in here because ev_func may not return */
 		f = ev->ev_func;
 		a = ev->ev_arg;
-		free(ev);
+		free((char *) ev);
 		if (ev->ev_pid != getpid())
 			continue;
 		if (EventQueue != NULL)
@@ -195,7 +195,7 @@ sleep(intvl)
 	if (intvl == 0)
 		return;
 	SleepDone = FALSE;
-	setevent(intvl, endsleep, 0);
+	(void) setevent(intvl, endsleep, 0);
 	while (!SleepDone)
 		pause();
 }

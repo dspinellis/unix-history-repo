@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.46		%G%);
+SCCSID(@(#)readcf.c	3.47		%G%);
 
 /*
 **  READCF -- read control file.
@@ -54,12 +54,13 @@ readcf(cfname, safe)
 	int ruleset = 0;
 	char *q;
 	char **pv;
+	struct rewrite *rwp = NULL;
 	char buf[MAXLINE];
 	register char *p;
-	struct rewrite *rwp = NULL;
 	extern char **prescan();
 	extern char **copyplist();
 	char exbuf[MAXLINE];
+	extern char *fgetfolded();
 
 	cf = fopen(cfname, "r");
 	if (cf == NULL)

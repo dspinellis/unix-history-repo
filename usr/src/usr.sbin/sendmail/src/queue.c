@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.52		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.53		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.52		%G%);
+SCCSID(@(#)queue.c	3.53		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -36,7 +36,6 @@ queueup(df)
 	register FILE *f;
 	register HDR *h;
 	register ADDRESS *q;
-	register int i;
 
 	/*
 	**  Create control file.
@@ -141,7 +140,7 @@ runqueue(forkflag)
 				i = wait(&stat);
 			} while (i >= 0 && i != pid);
 			if (QueueIntvl != 0)
-				setevent(QueueIntvl, runqueue, TRUE);
+				(void) setevent(QueueIntvl, runqueue, TRUE);
 			return;
 		}
 		/* child -- double fork */
@@ -389,7 +388,7 @@ dowork(w)
 
 		/* don't use the headers from sendmail.cf... */
 		CurEnv->e_header = NULL;
-		chompheader("from: $q", TRUE);
+		(void) chompheader("from: $q", TRUE);
 
 		/* create the link to the control file during processing */
 		openxscrpt();
@@ -440,8 +439,7 @@ readqf(cf)
 {
 	register FILE *f;
 	char buf[MAXFIELD];
-	register char *p;
-	register int i;
+	extern char *fgetfolded();
 
 	/*
 	**  Open the file created by queueup.
