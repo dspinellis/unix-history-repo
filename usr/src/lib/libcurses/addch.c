@@ -3,7 +3,7 @@
 /*
  *	This routine adds the character to the current position
  *
- * @(#)addch.c	1.5 (Berkeley) %G%
+ * @(#)addch.c	1.6 (Berkeley) %G%
  */
 waddch(win, c)
 reg WINDOW	*win;
@@ -92,10 +92,10 @@ WINDOW		*orig; {
 		return;
 	if (win->_y[y][x] != ch) {
 		if (win->_firstch[y] == _NOCHANGE)
-			win->_firstch[y] = win->_lastch[y] = x;
+			win->_firstch[y] = win->_lastch[y] = x + win->_ch_off;
 		else if (x < win->_firstch[y])
-			win->_firstch[y] = x;
+			win->_firstch[y] = x + win->_ch_off;
 		else if (x > win->_lastch[y])
-			win->_lastch[y] = x;
+			win->_lastch[y] = x + win->_ch_off;
 	}
 }
