@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.16 (Berkeley) %G%
+#	@(#)Makefile	4.17 (Berkeley) %G%
 #
 #	Makefile	4.15	84/12/03
 #
@@ -16,12 +16,12 @@ WORK=	aard ddl mpu
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	adventure backgammon battlestar boggle compat cribbage doctor fortune \
-	hangman hunt mille monop quiz robots rogue sail snake trek zork
+SUBDIR=	adventure backgammon battlestar boggle ching compat cribbage doctor \
+	fortune hangman hunt mille monop quiz robots rogue sail snake trek zork
 
 # Shell scripts that need only be installed and are never removed.
 #
-#SCRIPT=	
+SCRIPT=	wargames
 
 # C programs that live in the current directory and do not need
 # explicit make lines.
@@ -44,7 +44,8 @@ ${STD}:
 install:
 	-for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
-#	-for i in ${SCRIPT}; do (install -c $$i ${DESTDIR}/usr/games/$$i); done
+	-for i in ${SCRIPT}; do \
+		(install -c $$i.sh ${DESTDIR}/usr/games/$$i); done
 	-for i in ${STD} ${NSTD}; do \
 		(install -s $$i ${DESTDIR}/usr/games/$$i); done
 	install -c chess.bin ${DESTDIR}/usr/games/lib/chess
