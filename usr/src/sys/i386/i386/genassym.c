@@ -7,11 +7,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	5.10 (Berkeley) %G%
+ *	@(#)genassym.c	5.11 (Berkeley) %G%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)genassym.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)genassym.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sys/param.h"
@@ -71,7 +71,6 @@ main()
 	printf("#define\tV_FASTPGREC %d\n", &vm->v_fastpgrec);
 	printf("#define\tUPAGES %d\n", UPAGES);
 	printf("#define\tHIGHPAGES %d\n", HIGHPAGES);
-	printf("#define\tP1PAGES %d\n", P1PAGES);
 	printf("#define\tCLSIZE %d\n", CLSIZE);
 	printf("#define\tNBPG %d\n", NBPG);
 	printf("#define\tNPTEPG %d\n", NPTEPG);
