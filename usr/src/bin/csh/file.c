@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)file.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)file.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef FILEC
@@ -60,10 +60,10 @@ static void	 catn __P((Char *, Char *, int));
 static void	 copyn __P((Char *, Char *, int));
 static Char	 filetype __P((Char *, Char *));
 static void	 print_by_column __P((Char *, Char *[], int));
-static Char 	*tilde __P((Char *, Char *));
+static Char	*tilde __P((Char *, Char *));
 static void	 retype __P((void));
 static void	 beep __P((void));
-static void 	 print_recognized_stuff __P((Char *));
+static void	 print_recognized_stuff __P((Char *));
 static void	 extract_dir_and_name __P((Char *, Char *, Char *));
 static Char	*getentry __P((DIR *, int));
 static void	 free_items __P((Char **));
@@ -269,7 +269,8 @@ tilde(new, old)
     if (old[0] != '~')
 	return (Strcpy(new, old));
 
-    for (p = person, o = &old[1]; *o && *o != '/'; *p++ = *o++);
+    for (p = person, o = &old[1]; *o && *o != '/'; *p++ = *o++)
+	continue;
     *p = '\0';
     if (person[0] == '\0')
 	(void) Strcpy(new, value(STRhome));
@@ -490,7 +491,7 @@ again:				/* search for matches */
 	return (numitems);
     }
     else {			/* LIST */
-	qsort((ptr_t) items, numitems, sizeof(items[0]), 
+	qsort((ptr_t) items, numitems, sizeof(items[0]),
 	      (int (*)(const void *, const void *)) sortscmp);
 	print_by_column(looking_for_lognames ? NULL : tilded_dir,
 			items, numitems);
@@ -520,7 +521,8 @@ recognize(extended_name, entry, name_length, numitems)
 	register int len = 0;
 
 	x = extended_name;
-	for (ent = entry; *x && *x == *ent++; x++, len++);
+	for (ent = entry; *x && *x == *ent++; x++, len++)
+	    continue;
 	*x = '\0';		/* Shorten at 1st Char diff */
 	if (len == name_length)	/* Ambiguous to prefix? */
 	    return (-1);	/* So stop now and save time */
@@ -554,8 +556,10 @@ is_suffix(check, template)
 {
     register Char *c, *t;
 
-    for (c = check; *c++;);
-    for (t = template; *t++;);
+    for (c = check; *c++;)
+	continue;
+    for (t = template; *t++;)
+	continue;
     for (;;) {
 	if (t == template)
 	    return 1;

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -38,7 +38,7 @@ static int	 pprint __P((struct process *, int));
 static void	 ptprint __P((struct process *));
 static void	 pads __P((Char *));
 static void	 pkill __P((Char **v, int));
-static struct	process 
+static struct	process
 		*pgetcurr __P((struct process *));
 static void	 okpcntl __P((void));
 
@@ -254,7 +254,7 @@ pjwait(pp)
 	if ((jobflags & PRUNNING) == 0)
 	    break;
 #ifdef JOBDEBUG
-	(void) fprintf(csherr, "starting to sigpause for  SIGCHLD on %d\n", 
+	(void) fprintf(csherr, "starting to sigpause for  SIGCHLD on %d\n",
 		       fp->p_pid);
 #endif				/* JOBDEBUG */
 	(void) sigpause(omask & ~sigmask(SIGCHLD));
@@ -443,7 +443,8 @@ palloc(pid, t)
 	pp->p_index = pcurrjob->p_index;
 	pp->p_friends = pcurrjob;
 	pp->p_jobid = pcurrjob->p_pid;
-	for (fp = pcurrjob; fp->p_friends != pcurrjob; fp = fp->p_friends);
+	for (fp = pcurrjob; fp->p_friends != pcurrjob; fp = fp->p_friends)
+	    continue;
 	fp->p_friends = pp;
     }
     else {
@@ -642,7 +643,7 @@ pprint(pp, flag)
     do {
 	jobflags |= pp->p_flags;
 	pstatus = pp->p_flags & PALLSTATES;
-	if (tp != pp && !hadnl && !(flag & FANCY) && 
+	if (tp != pp && !hadnl && !(flag & FANCY) &&
 	    ((pstatus == status && pp->p_reason == reason) ||
 	     !(flag & REASON))) {
 	    (void) fputc(' ', cshout);
@@ -704,7 +705,7 @@ pprint(pp, flag)
                             && reason != SIGINT
                             && (reason != SIGPIPE
                                 || (pp->p_flags & PPOU) == 0))) {
-			(void) fprintf(cshout, format, 
+			(void) fprintf(cshout, format,
 				       sys_siglist[pp->p_reason]);
 			hadnl = 0;
 		    }
@@ -949,7 +950,7 @@ dokill(v, t)
 	    if (!strncasecmp(name, "sig", 3))
 		name += 3;
 
-	    for (signum = 1; signum < NSIG; signum++) 
+	    for (signum = 1; signum < NSIG; signum++)
 		if (!strcasecmp(sys_signame[signum], name))
 		    break;
 
@@ -1002,7 +1003,7 @@ pkill(v, signum)
 	    case SIGTTIN:
 	    case SIGTTOU:
 		if ((jobflags & PRUNNING) == 0) {
-		    (void) fprintf(csherr, "%s: Already suspended\n", 
+		    (void) fprintf(csherr, "%s: Already suspended\n",
 				   short2str(cp));
 		    err1++;
 		    goto cont;
@@ -1017,7 +1018,7 @@ pkill(v, signum)
 		goto cont;
 	    }
 	    if (killpg((pid_t) pp->p_jobid, signum) < 0) {
-		(void) fprintf(csherr, "%s: %s\n", short2str(cp), 
+		(void) fprintf(csherr, "%s: %s\n", short2str(cp),
 			       strerror(errno));
 		err1++;
 	    }

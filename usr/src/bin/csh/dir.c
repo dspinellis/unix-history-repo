@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,13 +27,13 @@ static char sccsid[] = "@(#)dir.c	5.15 (Berkeley) %G%";
 
 /* Directory management. */
 
-static struct directory 	
+static struct directory
 		*dfind __P((Char *));
-static Char 	*dfollow __P((Char *));
-static void 	 printdirs __P((void));
-static Char 	*dgoto __P((Char *));
-static void 	 dnewcwd __P((struct directory *));
-static void 	 dset __P((Char *));
+static Char	*dfollow __P((Char *));
+static void	 printdirs __P((void));
+static Char	*dgoto __P((Char *));
+static void	 dnewcwd __P((struct directory *));
+static void	 dset __P((Char *));
 
 struct directory dhead;		/* "head" of loop */
 int     printd;			/* force name to be printed */
@@ -115,7 +115,7 @@ Char *dp;
 {
     /*
      * Don't call set() directly cause if the directory contains ` or
-     * other junk characters glob will fail. 
+     * other junk characters glob will fail.
      */
     register Char **vec = (Char **) xmalloc((size_t) (2 * sizeof(Char **)));
 
@@ -363,17 +363,21 @@ dgoto(cp)
 	register Char *p, *q;
 	int     cwdlen;
 
-	for (p = dcwd->di_name; *p++;);
+	for (p = dcwd->di_name; *p++;)
+	    continue;
 	if ((cwdlen = p - dcwd->di_name - 1) == 1)	/* root */
 	    cwdlen = 0;
-	for (p = cp; *p++;);
+	for (p = cp; *p++;)
+	    continue;
 	dp = (Char *) xmalloc((size_t)((cwdlen + (p - cp) + 1) * sizeof(Char)));
-	for (p = dp, q = dcwd->di_name; *p++ = *q++;);
+	for (p = dp, q = dcwd->di_name; *p++ = *q++;)
+	    continue;
 	if (cwdlen)
 	    p[-1] = '/';
 	else
 	    p--;		/* don't add a / after root */
-	for (q = cp; *p++ = *q++;);
+	for (q = cp; *p++ = *q++;)
+	    continue;
 	xfree((ptr_t) cp);
 	cp = dp;
 	dp += cwdlen;
@@ -420,9 +424,11 @@ dfollow(cp)
 	Char    buf[MAXPATHLEN];
 
 	for (cdp = c->vec; *cdp; cdp++) {
-	    for (dp = buf, p = *cdp; *dp++ = *p++;);
+	    for (dp = buf, p = *cdp; *dp++ = *p++;)
+		continue;
 	    dp[-1] = '/';
-	    for (p = cp; *dp++ = *p++;);
+	    for (p = cp; *dp++ = *p++;)
+		continue;
 	    if (chdir(short2str(buf)) >= 0) {
 		printd = 1;
 		xfree((ptr_t) cp);
@@ -631,9 +637,10 @@ dcanon(cp, p)
     while (*p) {		/* for each component */
 	sp = p;			/* save slash address */
 	while (*++p == '/')	/* flush extra slashes */
-	    ;
+	    continue;
 	if (p != ++sp)
-	    for (p1 = sp, p2 = p; *p1++ = *p2++;);
+	    for (p1 = sp, p2 = p; *p1++ = *p2++;)
+		continue;
 	p = sp;			/* save start of component */
 	slash = 0;
 	while (*++p)		/* find next slash or end of path */
@@ -650,7 +657,8 @@ dcanon(cp, p)
 		*sp = '\0';
 	else if (sp[0] == '.' && sp[1] == 0) {
 	    if (slash) {
-		for (p1 = sp, p2 = p + 1; *p1++ = *p2++;);
+		for (p1 = sp, p2 = p + 1; *p1++ = *p2++;)
+		    continue;
 		p = --sp;
 	    }
 	    else if (--sp != cp)
@@ -679,13 +687,15 @@ dcanon(cp, p)
 		/*
 		 * find length of p
 		 */
-		for (p1 = p; *p1++;);
+		for (p1 = p; *p1++;)
+		    continue;
 		if (*link != '/') {
 		    /*
 		     * Relative path, expand it between the "yyy/" and the
 		     * "/..". First, back sp up to the character past "yyy/".
 		     */
-		    while (*--sp != '/');
+		    while (*--sp != '/')
+			continue;
 		    sp++;
 		    *sp = 0;
 		    /*
@@ -697,9 +707,12 @@ dcanon(cp, p)
 		    /*
 		     * Copy new path into newcp
 		     */
-		    for (p2 = cp; *p1++ = *p2++;);
-		    for (p1--, p2 = link; *p1++ = *p2++;);
-		    for (p1--, p2 = p; *p1++ = *p2++;);
+		    for (p2 = cp; *p1++ = *p2++;)
+			continue;
+		    for (p1--, p2 = link; *p1++ = *p2++;)
+			continue;
+		    for (p1--, p2 = p; *p1++ = *p2++;)
+			continue;
 		    /*
 		     * Restart canonicalization at expanded "/xxx".
 		     */
@@ -714,8 +727,10 @@ dcanon(cp, p)
 		    /*
 		     * Copy new path into newcp
 		     */
-		    for (p2 = link; *p1++ = *p2++;);
-		    for (p1--, p2 = p; *p1++ = *p2++;);
+		    for (p2 = link; *p1++ = *p2++;)
+			continue;
+		    for (p1--, p2 = p; *p1++ = *p2++;)
+			continue;
 		    /*
 		     * Restart canonicalization at beginning
 		     */
@@ -727,9 +742,11 @@ dcanon(cp, p)
 	    }
 	    *sp = '/';
 	    if (sp != cp)
-		while (*--sp != '/');
+		while (*--sp != '/')
+		    continue;
 	    if (slash) {
-		for (p1 = sp + 1, p2 = p + 1; *p1++ = *p2++;);
+		for (p1 = sp + 1, p2 = p + 1; *p1++ = *p2++;)
+		    continue;
 		p = sp;
 	    }
 	    else if (cp == sp)
@@ -760,14 +777,16 @@ dcanon(cp, p)
 		/*
 		 * find length of p
 		 */
-		for (p1 = p; *p1++;);
+		for (p1 = p; *p1++;)
+		    continue;
 		if (*link != '/') {
 		    /*
 		     * Relative path, expand it between the "yyy/" and the
 		     * remainder. First, back sp up to the character past
 		     * "yyy/".
 		     */
-		    while (*--sp != '/');
+		    while (*--sp != '/')
+			continue;
 		    sp++;
 		    *sp = 0;
 		    /*
@@ -779,9 +798,12 @@ dcanon(cp, p)
 		    /*
 		     * Copy new path into newcp
 		     */
-		    for (p2 = cp; *p1++ = *p2++;);
-		    for (p1--, p2 = link; *p1++ = *p2++;);
-		    for (p1--, p2 = p; *p1++ = *p2++;);
+		    for (p2 = cp; *p1++ = *p2++;)
+			continue;
+		    for (p1--, p2 = link; *p1++ = *p2++;)
+			continue;
+		    for (p1--, p2 = p; *p1++ = *p2++;)
+			continue;
 		    /*
 		     * Restart canonicalization at expanded "/xxx".
 		     */
@@ -796,8 +818,10 @@ dcanon(cp, p)
 		    /*
 		     * Copy new path into newcp
 		     */
-		    for (p2 = link; *p1++ = *p2++;);
-		    for (p1--, p2 = p; *p1++ = *p2++;);
+		    for (p2 = link; *p1++ = *p2++;)
+			continue;
+		    for (p1--, p2 = p; *p1++ = *p2++;)
+			continue;
 		    /*
 		     * Restart canonicalization at beginning
 		     */

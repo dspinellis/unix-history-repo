@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -56,9 +56,11 @@ strsave(s)
 
     if (s == NULL)
 	s = "";
-    for (p = s; *p++;);
+    for (p = s; *p++;)
+	continue;
     n = p = (char *) xmalloc((size_t) ((p - s) * sizeof(char)));
-    while (*p++ = *s++);
+    while (*p++ = *s++)
+	continue;
     return (n);
 }
 
@@ -175,11 +177,15 @@ strspl(cp, dp)
 	cp = "";
     if (!dp)
 	dp = "";
-    for (p = cp; *p++;);
-    for (q = dp; *q++;);
+    for (p = cp; *p++;)
+	continue;
+    for (q = dp; *q++;)
+	continue;
     ep = (char *) xmalloc((size_t) (((p - cp) + (q - dp) - 1) * sizeof(char)));
-    for (p = ep, q = cp; *p++ = *q++;);
-    for (p--, q = dp; *p++ = *q++;);
+    for (p = ep, q = cp; *p++ = *q++;)
+	continue;
+    for (p--, q = dp; *p++ = *q++;)
+	continue;
     return (ep);
 }
 

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -35,19 +35,19 @@ static Char	*word __P((void));
 static int	 getC1 __P((int));
 static void	 getdol __P((void));
 static void	 getexcl __P((int));
-static struct Hist 
+static struct Hist
 		*findev __P((Char *, bool));
 static void	 setexclp __P((Char *));
 static int	 bgetc __P((void));
 static void	 bfree __P((void));
-static struct wordent 
+static struct wordent
 		*gethent __P((int));
 static int	 matchs __P((Char *, Char *));
 static int	 getsel __P((int *, int *, int));
-static struct wordent 
+static struct wordent
 		*getsub __P((struct wordent *));
-static Char 	*subword __P((Char *, int, bool *));
-static struct wordent 
+static Char	*subword __P((Char *, int, bool *));
+static struct wordent
 		*dosub __P((int, struct wordent *, bool));
 
 /*
@@ -218,7 +218,8 @@ word()
     wp = wbuf;
     i = BUFSIZ - 4;
 loop:
-    while ((c = getC(DOALL)) == ' ' || c == '\t');
+    while ((c = getC(DOALL)) == ' ' || c == '\t')
+	continue;
     if (cmap(c, _META | _ESC))
 	switch (c) {
 	case '&':
@@ -755,7 +756,7 @@ getsub(en)
 		    break;
 #ifdef notdef
 		if (c == '~') {
-		    if (&cp[Strlen(orhsb)] > &rhsb[sizeof(rhsb) / 
+		    if (&cp[Strlen(orhsb)] > &rhsb[sizeof(rhsb) /
 						   sizeof(Char) - 2])
 			goto toorhs;
 		    (void) Strcpy(cp, orhsb);
@@ -1241,7 +1242,7 @@ top:
     aret = F_SEEK;
     if (alvecp) {
 	aret = A_SEEK;
-	if (c = *alvecp++) 
+	if (c = *alvecp++)
 	    return (c);
 	if (alvec && *alvec) {
 		alvecp = *alvec++;
@@ -1316,7 +1317,7 @@ reread:
 		    tpgrp != ctpgrp) {
 		    (void) tcsetpgrp(FSHTTY, tpgrp);
 		    (void) killpg((pid_t) ctpgrp, SIGHUP);
-		    (void) fprintf(csherr, "Reset tty pgrp from %d to %d\n", 
+		    (void) fprintf(csherr, "Reset tty pgrp from %d to %d\n",
 				   ctpgrp, tpgrp);
 		    goto reread;
 		}
@@ -1483,7 +1484,7 @@ bseek(l)
 	alvec = l->a_seek;
 	alvecp = (Char *) l->f_seek;
 	return;
-    case F_SEEK:	
+    case F_SEEK:
 	fseekp = l->f_seek;
 	return;
     default:

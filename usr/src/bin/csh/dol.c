@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dol.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)dol.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -58,7 +58,7 @@ static int dolnmod;		/* Number of modifiers */
 static int dolmcnt;		/* :gx -> 10000, else 1 */
 
 static void	 Dfix2 __P((Char **));
-static Char 	*Dpack __P((Char *, Char *));
+static Char	*Dpack __P((Char *, Char *));
 static int	 Dword __P((void));
 static void	 dolerror __P((Char *));
 static int	 DgetC __P((int));
@@ -513,7 +513,8 @@ Dgetdol()
 	if (Isdigit(*np)) {
 	    int     i;
 
-	    for (i = 0; Isdigit(*np); i = i * 10 + *np++ - '0');
+	    for (i = 0; Isdigit(*np); i = i * 10 + *np++ - '0')
+		continue;
 	    if ((i < 0 || i > upb) && !any("-*", *np)) {
 		dolerror(vp->v_name);
 		return;
