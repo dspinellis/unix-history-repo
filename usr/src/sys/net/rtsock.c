@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.19 (Berkeley) %G%
+ *	@(#)rtsock.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -550,7 +550,7 @@ kinfo_rtable(op, where, given, arg, needed)
 	int	*given, *needed;
 {
 	register struct radix_node_head *rnh;
-	int	s, error = 0;
+	int	s, error = 0, i;
 	u_char  af = ki_af(op);
 	struct	walkarg w;
 
@@ -568,12 +568,10 @@ kinfo_rtable(op, where, given, arg, needed)
 	w.w_rtm.rtm_type = RTM_GET;
 
 	s = splnet();
-	for (rnh = radix_node_head; rnh; rnh = rnh->rnh_next) {
-		if (rnh->rnh_af == 0)
+	for (i = 0; i <= AF_MAX; i++) {
+		if ((rnh = rt_tables[i]) == 0 || i == 0 || (af && af != i))
 			continue;
-		if (af && af != rnh->rnh_af)
-			continue;
-		error = rt_walk(rnh->rnh_treetop, rt_dumpentry, &w);
+		error = rnh->rnh_walk(rnh->rnh_treetop, rt_dumpentry, &w);
 		if (error)
 			break;
 	}
@@ -585,26 +583,6 @@ kinfo_rtable(op, where, given, arg, needed)
 	*needed = w.w_needed;
 	splx(s);
 	return (error);
-}
-
-rt_walk(rn, f, w)
-	register struct radix_node *rn;
-	register int (*f)();
-	struct walkarg *w;
-{
-	int error;
-	for (;;) {
-		while (rn->rn_b >= 0)
-			rn = rn->rn_l;	/* First time through node, go left */
-		if (error = (*f)(rn, w))
-			return (error);	/* Process Leaf */
-		while (rn->rn_p->rn_r == rn) {	/* if coming back from right */
-			rn = rn->rn_p;		/* go back up */
-			if (rn->rn_flags & RNF_ROOT)
-				return 0;
-		}
-		rn = rn->rn_p->rn_r;		/* otherwise, go right*/
-	}
 }
 
 /*
