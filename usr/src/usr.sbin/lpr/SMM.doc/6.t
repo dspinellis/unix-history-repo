@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)6.t	6.3 (Berkeley) %G%
+.\"	@(#)6.t	6.4 (Berkeley) %G%
 .\"
 .NH 1
 Line printer Administration
@@ -64,4 +64,4 @@ spool queue while a printer is
 places jobs at the top of a printer queue.  This can be used
 to reorder high priority jobs since
 .I lpr
-only only provides first-come-first-serve ordering of jobs.
+only provides first-come-first-serve ordering of jobs.

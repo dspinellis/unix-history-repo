@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)4.t	6.3 (Berkeley) %G%
+.\"	@(#)4.t	6.4 (Berkeley) %G%
 .\"
 .NH 1
 Setting up
@@ -67,7 +67,10 @@ The last entry causes errors
 to be written to the file ``/usr/adm/lpd-errs''
 instead of the console.  Most errors from \fIlpd\fP are logged using
 \fIsyslogd\fP\|(8) and will not be logged in the specified file.  The
-filters may use either method of reporting errors.
+filters should use \fIsyslogd\fP to report errors; only those that
+write to standard error output will end up with errors in the \fBlf\fP file.
+(Occasionally errors sent to standard error output have not appeared
+in the log file; the use of \fIsyslogd\fP is highly recommended.)
 .NH 3
 Remote printers
 .PP
@@ -84,7 +87,7 @@ lp|default line printer:\e
 The
 .B rm
 entry is the name of the remote machine to connect to; this name must
-appear in the /etc/hosts database, see \fIhosts\fP\|(5).
+be a known host name for a machine on the network.
 The
 .B rp
 capability indicates
@@ -101,8 +104,8 @@ Output filters
 Filters are used to handle device dependencies and to
 do accounting functions.  The output filtering of
 .B of
-is for when accounting is
-not used or when all text data must be passed through a filter.
+is used when accounting is
+not being done or when all text data must be passed through a filter.
 It is not intended to do accounting since it is started only once,
 all text files are filtered through it, and no provision is made for passing
 owners' login name, identifying the beginning and ending of jobs, etc.
