@@ -14,10 +14,10 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 LIBC=	/lib/libc.a
-AS=	../../as/as.vax
+AS=	../../../pgrm/as/as.vax
 VPATH=	../adb
 CFLAGS=	-I. -I../adb -I${AS} -O
 SRCS=	access.c command.c expr.c format.c kstack.c machdep.c main.c \
