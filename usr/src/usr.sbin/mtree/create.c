@@ -16,27 +16,50 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)create.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)create.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include <dirent.h>
 #include <stdio.h>
-#include <string.h>
 #include "mtree.h"
 
+extern char path[];
+extern ENTRY *root;
+
+create()
+{
+	time_t clock, time();
+	char curp[MAXPATHLEN], *ctime(), *getlogin();
+
+	if (!getwd(curp)) {
+		(void)fprintf(stderr, "mtree: %s\n", curp);
+		exit(1);
+	}
+	(void)time(&clock);
+	(void)printf("#\n#\t%s\n#\tby: %s\n#\t%s#\n",
+	    curp, getlogin(), ctime(&clock));
+
+	cwalk((ENTRY *)NULL, path + 1);
+	shostats();
+	pwalk(root, 0);
+	exit(0);
+}
+
+static
 cwalk(parent, tail)
 	ENTRY *parent;
 	register char *tail;
 {
 	extern ENTRY *root;
-	extern dev_t device;
-	extern int dflag, xflag, errno, alphasort();
+	extern int dflag, xflag, alphasort();
 	extern char path[];
 	register ENTRY *centry, *level;
 	struct dirent *dp, **dir_list;
 	struct stat sbuf;
+	dev_t device;
 	int cnt, dir_cnt;
 	char *emalloc(), *rlink();
 
@@ -141,6 +164,8 @@ extern mode_t dmode;				/* default directory mode */
 extern mode_t fmode;				/* default file mode */
 uid_t uid, gid;					/* default owner, group */
 u_int type;
+
+static
 pwalk(level, tabs)
 	ENTRY *level;
 	int tabs;
@@ -202,6 +227,7 @@ ID *ghead;
 u_long dmodes[0777 + 1];
 u_long fmodes[0777 + 1];
 
+static
 stats(ip)
 	INFO *ip;
 {
@@ -235,6 +261,7 @@ stats(ip)
 		}
 }
 
+static
 shostats()
 {
 	extern int dflag;

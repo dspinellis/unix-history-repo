@@ -16,13 +16,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compare.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)compare.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include <stdio.h>
-#include <string.h>
 #include "mtree.h"
 
 #define	LABEL { \
@@ -35,7 +35,7 @@ compare(name, s1, s2)
 	register INFO *s1;
 	register struct stat *s2;
 {
-	extern int errno, exitval, uflag;
+	extern int exitval, uflag;
 	extern char path[];
 	int label;
 	char *p, *ftype(), *inotype(), *rlink();
