@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.16 (Berkeley) %G%
+ *	@(#)machdep.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -73,13 +73,6 @@ startup(firstaddr)
 	register caddr_t v;
 	int maxbufs, base, residual;
 
-#if VAX630 || VAX650
-	/*
- 	 * Leave last 5k of phys. memory as console work area.
-	 */
-	if (cpu == VAX_630 || cpu == VAX_650)
-		maxmem -= 10;
-#endif
 	/*
 	 * Initialize error message buffer (at end of core).
 	 */
