@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.45 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.46 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -52,9 +52,15 @@ static char sccsid[] = "@(#)vfprintf.c	5.45 (Berkeley) %G%";
 int
 printf(const char *fmt, ...) {
 	FILE f;
+	va_list ap;
+	int ret;
 
+	va_start(ap, fmt);
 	f._flags = __SWR;
-	return (vfprintf(&f, fmt, (va_list)(&fmt + 1)));
+	f._write = NULL;
+	ret = vfprintf(&f, fmt, ap);
+	va_end(ap);
+	return ret;
 }
 #else
 int
