@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)mount.c	4.6 (Berkeley) %G%";
+static char *sccsid = "@(#)mount.c	4.7 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 
@@ -78,12 +78,10 @@ top:
 	}
 	if (argc < 2 || argc > 3) {
 argcnt:
-		printf("arg count\n");
+		fprintf(stderr,
+	    "usage: mount [ -a ] [ -r ] [ -f ] [ -v ] [ special dir ]\n");
 		exit(1);
 	}
-	ro = 0;
-	if(argc > 3)
-		ro++;
 	mountfs(argv[1], argv[2], ro);
 }
 
