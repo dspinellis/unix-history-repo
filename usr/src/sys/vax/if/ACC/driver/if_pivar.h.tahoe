@@ -1,0 +1,119 @@
+/*************************************************************************/
+/*	if_pivar.h		V1.1		26 Jun 1989		 */
+/*************************************************************************/
+/*                                                                       */
+/*                                                                       */
+/*       ________________________________________________________        */
+/*      /                                                        \       */
+/*     |          AAA          CCCCCCCCCCCCCC    CCCCCCCCCCCCCC   |      */
+/*     |         AAAAA        CCCCCCCCCCCCCCCC  CCCCCCCCCCCCCCCC  |      */
+/*     |        AAAAAAA       CCCCCCCCCCCCCCCCC CCCCCCCCCCCCCCCCC |      */
+/*     |       AAAA AAAA      CCCC              CCCC              |      */
+/*     |      AAAA   AAAA     CCCC              CCCC              |      */
+/*     |     AAAA     AAAA    CCCC              CCCC              |      */
+/*     |    AAAA       AAAA   CCCC              CCCC              |      */
+/*     |   AAAA  AAAAAAAAAAA  CCCCCCCCCCCCCCCCC CCCCCCCCCCCCCCCCC |      */
+/*     |  AAAA    AAAAAAAAAAA CCCCCCCCCCCCCCCC  CCCCCCCCCCCCCCCC  |      */
+/*     | AAAA      AAAAAAAAA   CCCCCCCCCCCCCC    CCCCCCCCCCCCCC   |      */
+/*      \________________________________________________________/       */
+/*                                                                       */
+/*  	Copyright (c) 1988 by Advanced Computer Communications           */
+/*  	720 Santa Barbara Street, Santa Barbara, California  93101       */
+/*  	(805) 963-9431                                                   */
+/*                                                                       */
+/*                                                                       */
+/*  File:		if_pivar.h                                       */
+/*                                                                       */
+/*  Author:		Brad Engstrom.                                   */
+/*                                                                       */
+/*  Project:		UNIX DDA-X.25 Network Programmers                */
+/*                      Interface for ACP 5250 and ACP 6250              */
+/*                                                                       */
+/*  Function:		This file contains definitions of the PI         */
+/*			data structures and ioctl indicators.            */
+/*                                                                       */
+/*  Revision History:                                                    */
+/*                                                                       */
+/*  06-Sep-1988: V1.0 - Brad Engstrom					 */
+/*		 First generated	                                 */
+/*  26-Jun-1989: V1.1 - Paul Traina					 */
+/*		 Updated ioctl defines for 4.3-tahoe & newer CPP	 */
+/*									 */
+/*************************************************************************/
+
+/*
+ * Ioctl's have the command encoded in the lower word,
+ * and the size of any in or out parameters in the upper
+ * word.  The high 2 bits of the upper word are used
+ * to encode the in/out status of the parameter; for now
+ * we restrict parameters to at most 128 bytes.
+ */
+
+/* this structure is used when writing or reading data data */
+struct pi_dblock
+{
+    caddr_t         dataptr;	/* pointer to user data to be written */
+    u_int           length;	/* length of data pointed to by dataptr */
+    u_short         lcn;	/* logical channel to send data out on */
+    u_char	    func;       /* read status , write function value */
+    u_char          subfunc;	/* read substatus, write subfunction value */
+    u_short         flags;	/* special flags */
+};
+
+/* pi_dblock.flags:  The follwing values can be used to set bits */
+#define	DB_NONBLOCK	0x01	/* non-blocking read or write */
+
+typedef struct proto_range
+{
+    u_char          lower;	/* lower bound on protocol range (inclusive) */
+    u_char          upper;	/* upper bound on protocol range (inclusive) */
+}               proto_range;
+
+/* data write */
+#define	XIOWRITE	_IOWR('t', 1, struct pi_dblock)
+
+/* data read */
+#define	XIOREAD		_IOWR('t', 2, struct pi_dblock)
+
+/* see if data is ready to be read on a particular channel.  
+ * The field will return the number of pending data bytes.
+ */
+#define	XIORPEND	_IOR('t', 3, int)
+
+/* allow rings on this minor device.  The proto_range structure specifies
+ * the lower and upper bounds on the protocol byte of incomming calls
+ */
+#define	XIOACCRING	_IOW('t', 4, proto_range)
+
+/* specify that a protocol not requested by anyone else will be accepted on
+ * this channel.
+ */
+#define	XIOANYPROTO	_IO('t', 5)
+
+/* reserve an lcn for use by this channel (minor device).  The number of the
+ * lcn is returned the the character passed
+ */
+#define	XIOGETLCN	_IOR('t', 6, u_char)
+
+/* free an lcn specified by the u_char parameter.  This should be called for all
+ * lcn's obtained with XIOGETLCN before the channel is closed.
+ */
+#define	XIOFREELCN	_IOW('t', 11, u_char)
+
+/* clear any data associated with a channel.  The lcn is passed.  Note that
+ * this does not clear the circut.  It only flushes queued data stored in the
+ * driver
+ */
+#define	XIOCLRCHAN	_IO('t', 7)
+
+/* disallow incomming calls on this channel */
+#define	XIONORING	_IO('t', 9)
+
+/* specify a signal to be sent to the process when there  is data ready to
+ * be read on a particular channel.  The u_int specifies the signal to be
+ * sent.
+ */
+#define	XIORSIG		_IOW('t', 10, u_int)
+
+/* abort all output for the given lcn. */
+#define	XIOABORT	_IOW('t', 12, u_char)
