@@ -188,7 +188,8 @@ int
     segread(&segregs);		/* read the current segment register */
 
     scrwait();
-    movedata(segregs.ds, source, scrseg(), offset, length);
+    movedata(segregs.ds, source, scrseg(), sizeof *source*offset,
+						sizeof *source*length);
 }
 
 static void
@@ -200,36 +201,39 @@ ScreenBuffer *buffer;
     segread(&segregs);		/* read the current segment register */
 
     scrwait();
-    movedata(scrseg(), 0, segregs.ds, buffer, scrseg(), 0, crt_cols*crt_lins*2);
+    movedata(scrseg(), 0, segregs.ds, buffer, crt_cols*crt_lins*2);
 }
 
 static void
 scrrest(buffer)
 ScreenBuffer *buffer;
 {
-    scrwrite(buffer, 2*crt_cols*crt_lins, 0);
+    scrwrite(buffer, crt_cols*crt_lins, 0);
 }
 
 static void
 TryToSend()
 {
-#define	STANDOUT	0x0a
+#define	STANDOUT	0x0a	/* Highlighted mode */
 #define	NORMAL		0x02	/* Normal mode */
+#define	NONDISPLAY	0x00	/* Don't display */
 
-#define	DoAttribute(a) 	    if (IsHighlightedAttr(a)) { \
-				a = STANDOUT; \
-			    } else { \
-				a = NORMAL; \
-			    } \
-			    if (IsNonDisplayAttr(a)) { \
-				a = 0; 	/* zero == don't display */ \
-			    } \
-			    if (!FormattedScreen()) { \
-				a = 1;	/* one ==> do display on unformatted */\
+#define	DoAttribute(a) 	    \
+			    if (screenIsFormatted) { \
+				if (IsNonDisplayAttr(a)) { \
+				    a = NONDISPLAY; 	/* don't display */ \
+				} else if (IsHighlightedAttr(a)) { \
+				    a = STANDOUT; \
+				} else { \
+				    a = NORMAL; \
+				} \
+			    } else  { \
+				a = NORMAL;	/* do display on unformatted */\
 			    }
     ScreenImage *p, *upper;
     ScreenBuffer *sp;
     int fieldattr;		/* spends most of its time == 0 or 1 */
+    int screenIsFormatted = FormattedScreen();
 
 /* OK.  We want to do this a quickly as possible.  So, we assume we
  * only need to go from Lowest to Highest.  However, if we find a
@@ -238,14 +242,11 @@ TryToSend()
  * In particular, we separate out the two cases from the beginning.
  */
     if ((Highest != HighestScreen()) || (Lowest != LowestScreen())) {
-	register int columnsleft;
-
 	sp = &Screen[Lowest];
 	p = &Host[Lowest];
 	upper = &Host[Highest];
 	fieldattr = FieldAttributes(Lowest);
 	DoAttribute(fieldattr);	/* Set standout, non-display status */
-	columnsleft = NumberColumns-ScreenLineOffset(p-Host);
 
 	while (p <= upper) {
 	    if (IsStartFieldPointer(p)) {	/* New field? */
@@ -254,17 +255,12 @@ TryToSend()
 		TryToSend();		/* Recurse */
 		return;
 	    } else if (fieldattr) {	/* Should we display? */
-		sp->data = disp_asc[p->data];	/* Display translated data */
-		sp->attr = fieldattr;
+				/* Display translated data */
+		sp->data = disp_asc[GetHostPointer(p)];
 	    } else {
 		sp->data = ' ';
-		sp->attr = NORMAL;
 	    }
-			/* If the physical screen is larger than what we
-			 * are using, we need to make sure that each line
-			 * starts at the beginning of the line.  Otherwise,
-			 * we will just string all the lines together.
-			 */
+	    sp->attr = fieldattr;
 	    p++;
 	    sp++;
 	}
@@ -280,27 +276,25 @@ TryToSend()
 	    if (IsStartFieldPointer(p)) {	/* New field? */
 		fieldattr = FieldAttributesPointer(p);	/* Get attributes */
 		DoAttribute(fieldattr);	/* Set standout, non-display */
-	    } else {
-		if (fieldattr) {	/* Should we display? */
-				/* Display translated data */
-		    sp->data = disp_asc[p->data];
-		    sp->attr = fieldattr;
-		} else {
-		    sp->data = ' ';
-		    sp->attr = NORMAL;
-		}
 	    }
-			/* If the physical screen is larger than what we
-			 * are using, we need to make sure that each line
-			 * starts at the beginning of the line.  Otherwise,
-			 * we will just string all the lines together.
-			 */
+	    if (fieldattr) {	/* Should we display? */
+			    /* Display translated data */
+		sp->data = disp_asc[GetHostPointer(p)];
+	    } else {
+		sp->data = ' ';
+	    }
+	    sp->attr = fieldattr;
 	    p++;
 	    sp++;
 	}
     }
     terminalCursorAddress = CorrectTerminalCursor();
-    scrwrite(Screen+Lowest, sizeof Screen[0]*(Highest-Lowest), Lowest);
+    /*
+     * We might be here just to update the cursor address.
+     */
+    if (Highest >= Lowest) {
+	scrwrite(Screen+Lowest, (1+Highest-Lowest), Lowest);
+    }
     setcursor(ScreenLine(terminalCursorAddress),
 		    ScreenLineOffset(terminalCursorAddress), 0);
     Lowest = HighestScreen()+1;

@@ -1,29 +1,29 @@
 ;
-; The code in this file complete the spawn_int calls
+; The code in this file complete the spint calls
 ;
 
-spawn	struc
+spint	struc
 ; union REGS
-spawn_ax	dw	1
-spawn_bx	dw	1
-spawn_cx	dw	1
-spawn_dx	dw	1
-spawn_si	dw	1
-spawn_di	dw	1
-spawn_cflag	dw	1
+spint_ax	dw	1
+spint_bx	dw	1
+spint_cx	dw	1
+spint_dx	dw	1
+spint_si	dw	1
+spint_di	dw	1
+spint_cflag	dw	1
 ; struct SREGS
-spawn_es	dw	1
-spawn_cs	dw	1
-spawn_ss	dw	1
-spawn_ds	dw	1
+spint_es	dw	1
+spint_cs	dw	1
+spint_ss	dw	1
+spint_ds	dw	1
 ; int intno
-spawn_intno	dw	1
+spint_intno	dw	1
 ; int done
-spawn_done	dw	1
+spint_done	dw	1
 ; int rc
-spawn_rc	dw	1
+spint_rc	dw	1
 ;
-spawn	ends
+spint	ends
 
 
 ENTER	MACRO
@@ -42,15 +42,17 @@ ENTER	MACRO
 	push	es
 	pushf
 
-	mov	cs:save_sp, sp
-	mov	cs:save_ss, ss
+	mov	cs:start_sp, sp
+	mov	cs:start_ss, ss
 	; End enter
 	ENDM
 
 LEAVE	MACRO
 	; Begin leave
-	mov	sp, cs:save_sp
-	mov	ss, cs:save_ss
+	cli
+	mov	sp, cs:start_sp
+	mov	ss, cs:start_ss
+	sti
 
 	popf
 	pop	es
@@ -71,19 +73,19 @@ LEAVE	MACRO
 
 GETREGS	MACRO	wherefrom
 	mov	si, wherefrom
-	mov	spawn_segment, ds
-	mov	spawn_offset, si
+	mov	spint_segment, ds
+	mov	spint_offset, si
 
-	mov	ax, spawn_ax[si]
-	mov	bx, spawn_bx[si]
-	mov	cx, spawn_cx[si]
-	mov	dx, spawn_dx[si]
-	; XXX mov	si, spawn_si[si]
-	mov	di, spawn_di[si]
-	mov	es, spawn_es[si]
+	mov	ax, spint_ax[si]
+	mov	bx, spint_bx[si]
+	mov	cx, spint_cx[si]
+	mov	dx, spint_dx[si]
+	; XXX mov	si, spint_si[si]
+	mov	di, spint_di[si]
+	mov	es, spint_es[si]
 	; Now, need to do DS, SI
-	push	spawn_ds[si]
-	mov	si, spawn_si[si]
+	push	spint_ds[si]
+	mov	si, spint_si[si]
 	pop	ds
 	ENDM
 
@@ -92,26 +94,26 @@ SETREGS	MACRO
 	mov	cs:old_si, si
 	mov	cs:old_ds, ds
 
-	mov	ds, cs:spawn_segment
-	mov	si, cs:spawn_offset
+	mov	ds, cs:spint_segment
+	mov	si, cs:spint_offset
 
-	mov	spawn_ax[si], ax
-	mov	spawn_bx[si], bx
-	mov	spawn_cx[si], cx
-	mov	spawn_dx[si], dx
+	mov	spint_ax[si], ax
+	mov	spint_bx[si], bx
+	mov	spint_cx[si], cx
+	mov	spint_dx[si], dx
 
-	mov	spawn_si[si], si
-	mov	spawn_di[si], di
+	mov	spint_si[si], si
+	mov	spint_di[si], di
 
-	mov	spawn_cs[si], cs
-	mov	spawn_ds[si], ds
-	mov	spawn_es[si], es
-	mov	spawn_ss[si], ss
+	mov	spint_cs[si], cs
+	mov	spint_ds[si], ds
+	mov	spint_es[si], es
+	mov	spint_ss[si], ss
 	; now, need to do SI, DS
 	mov	ax, old_si
-	mov	spawn_si[si], ax
+	mov	spint_si[si], ax
 	mov	ax, old_ds
-	mov	spawn_ds[si], ax
+	mov	spint_ds[si], ax
 	ENDM
 
 
@@ -133,68 +135,85 @@ DGROUP	group	CONST, _BSS, _DATA
 
 _TEXT	segment
 
-save_sp		dw	1		; For use in our 'longjmp'
-save_ss		dw	1		; For use in our 'longjmp'
+start_sp	dw	1 dup (?)	; For use in our 'longjmp'
+start_ss	dw	1 dup (?)	; For use in our 'longjmp'
 
-spawn_segment	dw	1		; Segment of spawn control block
-spawn_offset	dw	1		; Offset of spawn control block
+spint_segment	dw	1 dup (?)	; Segment of spawn control block
+spint_offset	dw	1 dup (?)	; Offset of spawn control block
 
-old_si		dw	1		; SI of interrupt issuer (temporary)
-old_ds		dw	1		; DS of interrupt issuer (temporary)
+old_si		dw	1 dup (?)	; SI of interrupt issuer (temporary)
+old_ds		dw	1 dup (?)	; DS of interrupt issuer (temporary)
 
-issuer_sp	dw	1		; sp of person who called us (permanent)
+issuer_ss	dw	1 dup (?)	; ss of person who called us (permanent)
+issuer_sp	dw	1 dup (?)	; sp of person who called us (permanent)
+
+int21_stack	db	100 dup (?)	; Stack for int21.
 
 ;
-; int_spawn gets control on an interrupt.  It switches the stack
-; and does a 'return' from start_spawn.
+; _spint_int gets control on an interrupt.  It switches the stack
+; and does a 'return' from _spint_start.
 ;
-	public	_int_spawn
+	public	__spint_int
 
-_int_spawn	proc	near
+__spint_int	proc	near
 	mov	cs:issuer_sp, sp
+	mov	cs:issuer_ss, ss
+	sti
 
 	SETREGS
 
 	LEAVE
-_int_spawn	endp
+__spint_int	endp
 
 ;
-; start_spawn issues the dos interrupt after setting up the passed
-; registers.  When control returns to it, it sets spawn->done to non-zero.
+; _spint_start issues the dos interrupt after setting up the passed
+; registers.  When control returns to it, it sets spint->done to non-zero.
 ;
-	public	_start_spawn
+	public	__spint_start
 
-_start_spawn	proc	near
+__spint_start	proc	near
 	ENTER
 
 	GETREGS	4[bp]
+
+	; Now, switch to a different (short) stack.  This is so
+	; that our games won't mess up the stack int 21 (hardware and,
+	; possibly, software) stores things on.
+
+	cli
+	mov	cs:int21_stack, cs
+	mov	ss, cs:int21_stack
+	mov	sp, offset int21_stack
+	add	sp, (length int21_stack) - 4
+	sti
 
 	int	21H		; Issue DOS interrupt
 
 	SETREGS
 
-	mov	ds, cs:spawn_segment
-	mov	si, cs:spawn_offset
-	mov	spawn_done[si], 1	; We are done
+	mov	ds, cs:spint_segment
+	mov	si, cs:spint_offset
+	mov	spint_done[si], 1	; We are done
 
 	LEAVE
-_start_spawn	endp
+__spint_start	endp
 
 ;
-; After int_spawn has faked a return from start_spawn, we come here to
+; After _spint_int has faked a return from start_spawn, we come here to
 ; return to the interrupt issuer.
 ;
-	public	_continue_spawn
+	public	__spint_continue
 
-_continue_spawn	proc	near
+__spint_continue	proc	near
 	ENTER
 
 	GETREGS	4[bp]
 
 	mov	sp, cs:issuer_sp		; Restore SP
+	mov	ss, cs:issuer_ss		; Restore SS
 
 	iret
-_continue_spawn	endp
+__spint_continue	endp
 
 _TEXT	ends
 

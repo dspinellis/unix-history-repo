@@ -11,4 +11,4 @@ typedef struct {
     int			int_no;	/* Which interrupt to wait on */
     int			done;	/* Are we done, or just took an interrupt? */
     int			rc;	/* return code */
-} Spawn;
+} Spint;
