@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: iso_pcb.h,v 4.3 88/06/29 15:00:01 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/iso_pcb.h,v $ */
-/*	@(#)iso_pcb.h	7.3 (Berkeley) %G% */
+/*	@(#)iso_pcb.h	7.4 (Berkeley) %G% */
 
 #define	MAXX25CRUDLEN	16	/* 16 bytes of call request user data */
 
@@ -47,8 +47,8 @@ struct isopcb {
 	struct	mbuf			*isop_options;		/* CLNP options */
 	struct	mbuf			*isop_optindex;		/* CLNP options index */
 	struct	mbuf			*isop_clnpcache;	/* CLNP cached hdr */
-	u_int			isop_chanmask;		/* which ones used - max 32 supported */
-	u_int			isop_negchanmask;	/* which ones used - max 32 supported */
+	caddr_t					isop_chan;		/* actually struct pklcb * */
+	u_short					isop_refcnt;		/* mult TP4 tpcb's -> here */
 	u_short					isop_lport;			/* MISLEADLING work var */
 	int						isop_x25crud_len;	/* x25 call request ud */
 	char					isop_x25crud[MAXX25CRUDLEN];
