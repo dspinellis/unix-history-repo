@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.9	(Berkeley)	83/05/03";
+static char sccsid[] = "@(#)dirs.c	3.10	(Berkeley)	83/05/14";
 #endif
 
 #include "restore.h"
@@ -104,7 +104,7 @@ extractdirs(genmode)
 	}
 	nulldir.d_ino = 0;
 	nulldir.d_namlen = 1;
-	(void) strncpy(nulldir.d_name, "/", (int)nulldir.d_namlen);
+	(void) strcpy(nulldir.d_name, "/");
 	nulldir.d_reclen = DIRSIZ(&nulldir);
 	for (;;) {
 		curfile.name = "<directory file - name unknown>";
@@ -152,9 +152,10 @@ treescan(pname, ino, todo)
 	long (*todo)();
 {
 	register struct inotab *itp;
+	register struct direct *dp;
+	register struct entry *np;
 	int namelen;
 	daddr_t bpt;
-	register struct direct *dp;
 	char locname[MAXPATHLEN + 1];
 
 	itp = inotablookup(ino);
@@ -179,13 +180,27 @@ treescan(pname, ino, todo)
 	namelen = strlen(locname);
 	seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
 	dp = readdir(dirp); /* "." */
-	dp = readdir(dirp); /* ".." */
-	dp = readdir(dirp); /* first real entry */
+	if (dp != NULL && strcmp(dp->d_name, ".") == 0) {
+		dp = readdir(dirp); /* ".." */
+	} else {
+		np = lookupino(ino);
+		if (np == NULL)
+			panic("corrupted symbol table\n");
+		fprintf(stderr, ". missing from directory %s\n", myname(np));
+	}
+	if (dp != NULL && strcmp(dp->d_name, "..") == 0) {
+		dp = readdir(dirp); /* first real entry */
+	} else {
+		np = lookupino(ino);
+		if (np == NULL)
+			panic("corrupted symbol table\n");
+		fprintf(stderr, ".. missing from directory %s\n", myname(np));
+	}
 	bpt = telldir(dirp);
 	/*
-	 * "/" signals end of directory
+	 * a zero inode signals end of directory
 	 */
-	while (dp != NULL && !(dp->d_namlen == 1 && dp->d_name[0] == '/')) {
+	while (dp != NULL && dp->d_ino != 0) {
 		locname[namelen] = '\0';
 		if (namelen + dp->d_namlen >= MAXPATHLEN) {
 			fprintf(stderr, "%s%s: name exceeds %d char\n",
@@ -256,8 +271,8 @@ search(inum, cp)
 	len = strlen(cp);
 	do {
 		dp = readdir(dirp);
-		if (dp->d_namlen == 1 && dp->d_name[0] == '/')
-			return(0);
+		if (dp == NULL || dp->d_ino == 0)
+			return (0);
 	} while (dp->d_namlen != len || strncmp(dp->d_name, cp, len) != 0);
 	return(dp->d_ino);
 }
@@ -384,8 +399,10 @@ readdir(dirp)
 		if (dirp->dd_loc == 0) {
 			dirp->dd_size = read(dirp->dd_fd, dirp->dd_buf, 
 			    DIRBLKSIZ);
-			if (dirp->dd_size <= 0)
+			if (dirp->dd_size <= 0) {
+				dprintf(stderr, "error reading directory\n");
 				return NULL;
+			}
 		}
 		if (dirp->dd_loc >= dirp->dd_size) {
 			dirp->dd_loc = 0;
@@ -393,9 +410,19 @@ readdir(dirp)
 		}
 		dp = (struct direct *)(dirp->dd_buf + dirp->dd_loc);
 		if (dp->d_reclen == 0 ||
-		    dp->d_reclen > DIRBLKSIZ + 1 - dirp->dd_loc)
+		    dp->d_reclen > DIRBLKSIZ + 1 - dirp->dd_loc) {
+			dprintf(stderr, "corrupted directory: bad reclen %d\n",
+				dp->d_reclen);
 			return NULL;
+		}
 		dirp->dd_loc += dp->d_reclen;
+		if (dp->d_ino == 0 && strcmp(dp->d_name, "/") != 0)
+			continue;
+		if (dp->d_ino < 0 || dp->d_ino >= maxino) {
+			dprintf(stderr, "corrupted directory: bad inum %d\n",
+				dp->d_ino);
+			continue;
+		}
 		return (dp);
 	}
 }
@@ -527,9 +554,9 @@ getdir(dirp, pfp0, pfplast)
 	fp = *pfp0 = basefp;
 	*pfplast = *pfp0 + nent;
 	while (dp = readdir(dirp)) {
-		if (dp->d_ino == 0 && strcmp(dp->d_name, "/") == 0)
+		if (dp == NULL || dp->d_ino == 0)
 			break;
-		if (BIT(dp->d_ino, dumpmap) == 0)
+		if (!dflag && BIT(dp->d_ino, dumpmap) == 0)
 			continue;
 		if (vflag == 0 &&
 		    (strcmp(dp->d_name, ".") == 0 ||
@@ -628,7 +655,9 @@ fmtentry(fp)
 	else
 		fmtres[0] = '\0';
 	dp = &fmtres[strlen(fmtres)];
-	if ((fp->fflags & NEW) != 0)
+	if (dflag && BIT(fp->fnum, dumpmap) == 0)
+		*dp++ = '^';
+	else if ((fp->fflags & NEW) != 0)
 		*dp++ = '*';
 	else
 		*dp++ = ' ';
