@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.33	83/01/04	*/
+/*	uipc_socket2.c	4.34	83/01/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -119,7 +119,7 @@ sonewconn(head)
 	so->so_type = head->so_type;
 	so->so_options = head->so_options &~ SO_ACCEPTCONN;
 	so->so_linger = head->so_linger;
-	so->so_state = head->so_state;
+	so->so_state = head->so_state | SS_NOFDREF;
 	so->so_proto = head->so_proto;
 	so->so_timeo = head->so_timeo;
 	so->so_pgrp = head->so_pgrp;
