@@ -34,27 +34,42 @@ static struct nlist nl[] = {{"_swapmap"},  /* list of free swap areas */
 #define VM_DMMAX	4
 			    {""}};
 
-char       *getbsize __P((char *, int *, long *));
+char    *getbsize __P((char *, int *, long *));
+void	 usage __P((void));
+int	 kflag;
 
 main (argc, argv)
 int	argc;
 char	**argv;
 {
 	int	i, total_avail, total_free, total_partitions, *by_device, 
-		use_k = 1,  /* used as a divisor, so 1 == blocks, 2 == K */
-		nswap, nswdev, dmmax;
+		nswap, nswdev, dmmax, ch;
 	struct swdevt	*swdevt;
 	struct rlist	head;
 	static long blocksize;
         static int headerlen;
         static char *header;
+        char  **save;
 
 	/* We are trying to be simple here: */
 
-	if (argc > 1)
-	{
-		fprintf (stderr, "Usage:  swapinfo\n");
-		exit (1);
+	save = argv;
+	kflag = 0;
+	while ((ch = getopt(argc, argv, "k")) != EOF)
+		switch(ch) {
+		case 'k':
+			kflag = 1;
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argv += optind;
+
+	if (!*argv) {
+		argv = save;
+		argv[0] = ".";
+		argv[1] = NULL;
 	}
 
 	/* Open up /dev/kmem for reading. */
@@ -162,7 +177,7 @@ char	**argv;
 	for (total_avail = total_partitions = i = 0; i < nswdev; i++) {
 		printf ("/dev/%-5s %10d ",
 			devname (swdevt [i].sw_dev, S_IFBLK), 
-			swdevt [i].sw_nblks / use_k);
+			swdevt [i].sw_nblks / (blocksize/512));
 
 		/*
 		 * Don't report statistics for partitions which have not
@@ -175,8 +190,8 @@ char	**argv;
 			total_partitions++;
 			total_avail += swdevt [i].sw_nblks;
 			printf ("%10d %10d %7.0f%%\n", 
-				(swdevt [i].sw_nblks - by_device [i]) / use_k,
-				by_device [i] / use_k,
+				(swdevt [i].sw_nblks - by_device [i]) / (blocksize/512),
+				by_device [i] / (blocksize/512),
 				(double) (swdevt [i].sw_nblks - 
 					  by_device [i]) / 
 				(double) swdevt [i].sw_nblks * 100.0);
@@ -190,11 +205,20 @@ char	**argv;
 
 	if (total_partitions > 1)
 		printf ("%-10s %10d %10d %10d %7.0f%%\n", "Total", 
-			total_avail / use_k, 
-			(total_avail - total_free) / use_k, 
-			total_free / use_k,
+			total_avail / (blocksize/512), 
+			(total_avail - total_free) / (blocksize/512), 
+			total_free / (blocksize/512),
 			(double) (total_avail - total_free) / 
 			(double) total_avail * 100.0);
 
 	exit (0);
 }
+
+void
+usage()
+{
+	(void)fprintf(stderr, "usage: swapinfo [-k]\n");
+	exit(1);
+}
+
+
