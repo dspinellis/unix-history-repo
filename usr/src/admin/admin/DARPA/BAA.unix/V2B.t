@@ -1,6 +1,8 @@
-.\"     @(#)V2B.t	1.1     89/02/23
+.\"     @(#)V2B.t	1.2     89/03/09
 .LP
 \fB\s+4B. Budget\fP\s-4
+.nr PS 10
+.nr VS 12
 .LP
 .ce2
 UNIX BUDGET
@@ -13,8 +15,8 @@ A. SALARIES AND WAGES
 
      1. Academic (Assistant Research Engineer @ 100%)	$ 54,389
      2. Technical (Programmer V @ 100%)	$ 59,392
-     3. Clerical Assistance (Assistant III @ 10%, Assistant II @ 45%)	$ 13,574
-     4. Administrative Services 	$ 12,197
+     3. Clerical Assistance (Assistant III @ 10%, Secretary @ 50%)	$ 14,771
+     4. Administrative Services 	$ 11,000
 
      TOTAL SALARIES AND WAGES	$ 139,552
 
@@ -38,7 +40,7 @@ C. EQUIPMENT
 D. TRAVEL
 
      1. 9 R/Ts to the East Coast @ $700/trip
-     2. 2 R/Ts to Europe @ $1,760/trip
+     2. 2 R/Ts to Europe (IEEE 1003 [POSIX], IETF) @ $1,760/trip
 
      TOTAL TRAVEL	$ 9,820
 
