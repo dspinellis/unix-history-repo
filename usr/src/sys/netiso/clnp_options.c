@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_options.c,v 5.1 89/02/09 16:20:37 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_options.c,v $ */
-/*	@(#)clnp_options.c	7.5 (Berkeley) %G% */
+/*	@(#)clnp_options.c	7.6 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_options.c,v 5.1 89/02/09 16:20:37 hagens Exp $";
@@ -125,11 +125,11 @@ struct iso_addr		*isoa;		/* ptr to our address for this ifp */
 	if (oidx->cni_recrtp) {
 		char 	*opt;			/* ptr to beginning of recrt option */
 		u_char	off;			/* offset from opt of first free byte */
-		char	*rec_start;		/* beginning of first record rt option */
+		char	*rec_start;		/* beginning of new rt recorded */
 
 		opt = CLNP_OFFTOOPT(options, oidx->cni_recrtp);
 		off = *(opt + 1);
-		rec_start = opt + 2;
+		rec_start = opt + off - 1;
 
 		IFDEBUG(D_OPTIONS)
 			printf("clnp_dooptions: record route: option x%x for %d bytes\n",
@@ -142,34 +142,24 @@ struct iso_addr		*isoa;		/* ptr to our address for this ifp */
 
 		/* proceed only if recording has not been terminated */
 		if (off != 0xff) {
+			int new_addrlen = isoa->isoa_len + 1;
 			/* 
 			 *	if there is insufficient room to store the next address,
 			 *	then terminate recording. Plus 1 on isoa_len is for the
 			 *	length byte itself
 			 */
-			if (oidx->cni_recrt_len - off < isoa->isoa_len+1) {
+			if (oidx->cni_recrt_len - (off - 1) < new_addrlen) {
 				*(opt + 1) = 0xff;	/* terminate recording */
 			} else {
-				int new_addrlen = isoa->isoa_len + 1;
-				IFDEBUG(D_OPTIONS)
-					printf("clnp_dooptions: clnp_ypocb(x%x, x%x, %d)\n",
-						rec_start, rec_start + new_addrlen, off - 3);
-				ENDDEBUG
-						
-				/* move existing records over */
-				clnp_ypocb(rec_start, rec_start + new_addrlen, off - 3);
-
 				IFDEBUG(D_OPTIONS)
 					printf("clnp_dooptions: new addr at x%x for %d\n",
 						rec_start, new_addrlen);
 				ENDDEBUG
 
-				/* add new record */
-				*rec_start = isoa->isoa_len;
-				bcopy((caddr_t)isoa, rec_start + 1, isoa->isoa_len);
+				bcopy((caddr_t)isoa, rec_start, new_addrlen);
 
 				/* update offset field */
-				*(opt + 1) = off + new_addrlen;
+				*(opt + 1) += new_addrlen;
 
 				IFDEBUG(D_OPTIONS)
 					printf("clnp_dooptions: new option dump:\n");
@@ -321,14 +311,14 @@ struct clnp_optidx	*oidx;	/* RETURN: filled in with option idx info */
 			return(GEN_INCOMPLETE);
 
 		switch (opcode) {
-			case CLNPOVAL_PAD: {
+			case CLNPOVAL_PAD:
 				/*
 				 *	Padding: increment pointer by length of padding
 				 */
 				if (pad++)						/* duplicate ? */
 					return(GEN_DUPOPT);
 				opts += oplen;
-			} break;
+				break;
 
 			case CLNPOVAL_SECURE: {
 				u_char	format = *opts;

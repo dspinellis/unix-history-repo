@@ -27,7 +27,7 @@ SOFTWARE.
 /* 
  * $Header: iso_chksum.c,v 4.7 88/07/29 15:31:26 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/iso_chksum.c,v $
- *	@(#)iso_chksum.c	7.3 (Berkeley) %G% *
+ *	@(#)iso_chksum.c	7.4 (Berkeley) %G% *
  *
  * ISO CHECKSUM
  *
@@ -169,7 +169,7 @@ iso_gen_csum(m,n,l)
 	while(i < l) {
 		len = MIN(m->m_len, CLBYTES);
 		/* RAH: don't cksum more than l bytes */
-		len = MIN(len, l);
+		len = MIN(len, l - i);
 
 		cum +=len;
 		p = mtod(m, u_char *);

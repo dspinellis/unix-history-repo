@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_input.c,v $ */
-/*	@(#)clnp_input.c	7.7 (Berkeley) %G% */
+/*	@(#)clnp_input.c	7.8 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $";
@@ -514,8 +514,9 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		/*
 		 *	Forward back to sender
 		 */
- 		clnp_forward(m, (int)(clnp->cnf_type & CNF_SEG_OK?seg_part.cng_tot_len : seg_len),
-			&src, oidxp, seg_off, shp);
+		clnp_forward(m, (int)
+			(clnp->cnf_type & CNF_SEG_OK ? seg_part.cng_tot_len : seg_len),
+			&src, oidxp, seg_off, 0);
 		break;
 
 	default:
