@@ -1,5 +1,5 @@
 #
-#	Makefile	1.12	89/05/11
+#	Makefile	1.13	90/02/20
 #
 # Makefile for tahoe pcc
 #
@@ -63,7 +63,8 @@ rodata.c cgram.c: ${MIP}/cgram.y pcctokens
 	cat pcctokens ${MIP}/cgram.y > gram.in
 	${YACC} gram.in
 	${RM} rodata.c
-	sh :yyfix yyexca yyact yypact yypgo yyr1 yyr2 yychk yydef
+	sh :yyfix yylhs yylen yydefred yydgoto yysindex yyrindex \
+		yygindex yytable yycheck
 	mv y.tab.c cgram.c
 comm1.o: ${MIP}/common.c
 	ln ${MIP}/common.c comm1.c
