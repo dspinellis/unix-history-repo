@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.18 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.19 (Berkeley) %G%
  */
 
 /*
@@ -859,6 +859,7 @@ vclean(vp, flags)
 		panic("vclean: cannot reclaim");
 	if (active)
 		vrele(vp);
+	cache_purge(vp);
 
 	/*
 	 * Done with purge, notify sleepers of the grim news.
