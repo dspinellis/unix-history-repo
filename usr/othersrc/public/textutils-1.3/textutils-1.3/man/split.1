@@ -1,0 +1,69 @@
+.TH SPLIT 1L \" -*- nroff -*-
+.SH NAME
+split \- split a file into pieces
+.SH SYNOPSIS
+.B split
+[\-lines] [\-l lines] [\-b bytes[bkm]] [\-C bytes[bkm]] [\-\-lines=lines]
+[\-\-bytes=bytes[bkm]] [\-\-line-bytes=bytes[bkm]] [infile [outfile-prefix]]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR split .
+.B split
+creates one or more output files (as many as necessary) containing
+consecutive sections of the
+.IR infile ,
+or the standard input if none is given or the name `\-' is given.
+By default,
+.B split
+puts 1000 lines of the input file, or whatever is left if it is less
+than that, into each output file.
+.PP
+The output file names consist of a prefix followed by a group of
+letters, chosen so that concatenating the output files in sorted order
+by file name produces the original input file, in order.  The default
+output file name prefix is `x'.  If the
+.I outfile-prefix
+argument is given, it is used as the output file name prefix instead.
+.SS OPTIONS
+.TP
+.I "\-lines, \-l lines, \-\-lines=lines"
+Put
+.I lines
+lines of the input file into each output file.
+.TP
+.I "\-b bytes[bkm], \-\-bytes=bytes[bkm]"
+Put
+.I bytes
+bytes of the input file into each output file.
+.I bytes
+is a nonzero integer, optionally followed by one
+of the following characters to specify a different unit.
+.RS
+.IP b
+512-byte blocks.
+.IP k
+1-kilobyte blocks.
+.IP m
+1-megabyte blocks.
+.RE
+.TP
+.I "\-C bytes[bkm], \-\-line-bytes=bytes[bkm]"
+Put into each output file as many complete lines of the input file as
+is possible without exceeding
+.I bytes
+bytes.  If a line that is longer than
+.I bytes
+bytes occurs, put
+.I bytes
+bytes of it into each output file until less than
+.I bytes
+bytes of the line are left, then continue normally.
+.I bytes
+has the same format as for the
+.I \-\-bytes
+option.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.
