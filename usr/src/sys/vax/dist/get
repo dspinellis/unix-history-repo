@@ -1,11 +1,11 @@
-#	@(#)get	4.1	%G%
+#! /bin/sh -x
+#	@(#)get	4.2	%G%
 # Shell script to build a mini-root file system
 # in preparation for building a distribution tape.
 # The file system created here is image copied onto
 # tape, then image copied onto disk as the "first"
 # step in a cold boot of 4.1b-4.2 systems.
 #
-set -x
 if [ `pwd` = '/' ]
 then
 	echo You just '(almost)' destroyed the root
@@ -75,7 +75,7 @@ cd dev
 ./MAKEDEV ts0; mv rmt12 ts0; rm *mt*;
 ./MAKEDEV tm0; mv rmt12 tm0; rm *mt*;
 ./MAKEDEV ht0; mv rmt12 ht0; rm *mt*;
-./MAKEDEV ut0; mv rmt12 jt0; rm *ut*; mv jt0 ut0
+./MAKEDEV ut0; mv rmt12 ut0; rm *mt*;
 ./MAKEDEV mt0; mv rmt4 xt0; rm *mt*; mv xt0 mt0
 cd ..
 sync

@@ -1,4 +1,5 @@
-#	@(#)MAKEDEV	4.1	%G%
+#! /bin/sh
+#	@(#)MAKEDEV	4.2	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices (for 730 must be followed by tu0 & tu1)
@@ -67,7 +68,7 @@ ht*|tm*|ts*|mt*|ut*)
 		/etc/mknod rmt$four	c $chr $four
 		/etc/mknod rmt$eight	c $chr $eight
 		/etc/mknod rmt$twelve	c $chr $twelve
-		if [ $name = ut ] 
+		if [ $i = ut ] 
 		then
 			/etc/mknod mt$twelve	b $blk $twenty
 			/etc/mknod rmt$twenty	c $chr $twenty
