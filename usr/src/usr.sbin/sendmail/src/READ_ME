@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.47 (Berkeley) %G%
+#	@(#)READ_ME	8.48 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -178,12 +178,6 @@ HASUNAME	Set if you have the "uname" system call.  Implied by
 		SYSTEM5.
 HASUNSETENV	Define this if your system library has the "unsetenv"
 		subroutine.
-HASSTATFS	Define this if you have the statfs(2) system call.  It's
-		not a disaster to get this wrong -- but you do lose the
-		queue free space code.
-HASUSTAT	Define this if you have the ustat(2) system call.  It's
-		not a disaster to get this wrong -- but you do lose the
-		queue free space code.
 HASSETSID	Define this if you have the setsid(2) system call.  This
 		is implied if your system appears to be POSIX compliant.
 HASINITGROUPS	Define this if you have the initgroups(3) routine.
@@ -257,6 +251,17 @@ LA_TYPE		The type of load average your kernel supports.  These
 		use LA_ZERO (1) -- it always returns the load average as
 		"zero" (and does so on all architectures).  The actual
 		code is in conf.c -- it can be tweaked if you are brave.
+SFS_TYPE	Encodes how your kernel can locate the amount of free
+		space on a disk partition.  This can be set to SFS_NONE
+		(0) if you have no way of getting this information,
+		SFS_USTAT (1) if you have the ustat(2) system call,
+		SFS_4ARGS (2) if you have a four-argument statfs(2)
+		system call (and the include file is <sys/statfs.h>),
+		and SFS_VFS (3), SFS_MOUNT (4), or SFS_STATFS (5) if
+		you have the two-argument statfs(2) system call, with
+		includes in <sys/vfs.h>, <sys/mount.h>, or <sys/statfs.h>
+		respectively.  The default if nothing is defined is
+		SFS_NONE.
 ERRLIST_PREDEFINED
 		If set, assumes that some header file defines sys_errlist.
 		This may be needed if you get type conflicts on this
@@ -716,4 +721,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.47, last update %G% 06:00:13)
+(Version 8.48, last update %G% 12:39:32)
