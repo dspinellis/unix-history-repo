@@ -1,4 +1,0 @@
-Mcomm	comm.c	/^main(argc, argv)$/
-file	comm.c	/^file(name)$/
-show	comm.c	/^show(fp, offset, buf)$/
-usage	comm.c	/^usage()$/
