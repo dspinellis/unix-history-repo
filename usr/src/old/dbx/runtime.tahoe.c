@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)runtime.tahoe.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)runtime.tahoe.c	5.3 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: runtime.c,v 1.5 84/12/26 10:41:52 linton Exp $";
+static char rcsid[] = "$Header: runtime.tahoe.c,v 1.6 88/01/11 21:26:56 donn Exp $";
 
 /*
  * Runtime organization dependent routines, mostly dealing with
@@ -46,7 +46,7 @@ private Boolean walkingstack = false;
 
 #define frameeq(f1, f2) ((f1)->save_fp == (f2)->save_fp)
 
-#define isstackaddr(addr) \
+#define inSignalHandler(addr) \
     (((addr) < 0xc0000000) and ((addr) > 0xc0000000 - 0x400 * UPAGES))
 
 typedef struct {
@@ -112,7 +112,7 @@ Frame frp;
     Frame newfrp;
     struct Frame frame;
     long x;
-    Address prev_frame, callpc; 
+    Address prev_frame, callpc;
     static integer ntramp = 0;
 
     newfrp = frp;
@@ -149,7 +149,7 @@ nextf:
     }
     if (frame.save_fp == nil or frame.save_pc == (Address) -1) {
 	newfrp = nil;
-    } else if (isstackaddr(callpc)) {
+    } else if (inSignalHandler(callpc)) {
 	ntramp++;
 	prev_frame = frame.save_fp;
 	goto nextf;
@@ -397,9 +397,11 @@ public Word argn(n, frp)
 integer n;
 Frame frp;
 {
+    Address argaddr;
     Word w;
 
-    dread(&w, args_base(frp) + (n * sizeof(Word)), sizeof(w));
+    argaddr = args_base(frp) + (n * sizeof(Word));
+    dread(&w, argaddr, sizeof(w));
     return w;
 }
 
@@ -647,7 +649,7 @@ Symbol f;
     if (isinternal(f)) {
 	f->symvalue.funcv.beginaddr += 15;
     } else {
-	f->symvalue.funcv.beginaddr += 2;
+	f->symvalue.funcv.beginaddr += FUNCOFFSET;
     }
 }
 
@@ -676,13 +678,14 @@ Symbol f;
 
 public runtofirst()
 {
-    Address addr;
+    Address addr, endaddr;
 
     addr = pc;
-    while (linelookup(addr) == 0 and addr < objsize) {
+    endaddr = objsize + CODESTART;
+    while (linelookup(addr) == 0 and addr < endaddr) {
 	++addr;
     }
-    if (addr < objsize) {
+    if (addr < endaddr) {
 	stepto(addr);
     }
 }
@@ -711,7 +714,7 @@ public Address lastaddr()
  * Presumably information evaluated while walking the stack is active.
  */
 
-public Boolean isactive(f)
+public Boolean isactive (f)
 Symbol f;
 {
     Boolean b;
@@ -719,7 +722,7 @@ Symbol f;
     if (isfinished(process)) {
 	b = false;
     } else {
-	if (walkingstack or f == program or
+	if (walkingstack or f == program or f == nil or
 	  (ismodule(f) and isactive(container(f)))) {
 	    b = true;
 	} else {
@@ -761,6 +764,7 @@ boolean isfunc;
     pushenv();
     pc = codeloc(proc);
     argc = pushargs(proc, arglist);
+    setreg(FRP, 1);	/* have to ensure it's non-zero for return_addr() */
     beginproc(proc, argc);
     event_once(
 	build(O_EQ, build(O_SYM, pcsym), build(O_SYM, retaddrsym)),
@@ -941,6 +945,28 @@ Node arglist;
     return count;
 }
 
+/*
+ * Evaluate an argument list without any type checking.
+ * This is only useful for procedures with a varying number of
+ * arguments that are compiled -g.
+ */
+
+private integer unsafe_evalargs (proc, arglist)
+Symbol proc;
+Node arglist;
+{
+    Node p;
+    integer count;
+
+    count = 0;
+    for (p = arglist; p != nil; p = p->value.arg[1]) {
+	assert(p->op == O_COMMA);
+	eval(p->value.arg[0]);
+	++count;
+    }
+    return count;
+}
+
 public procreturn(f)
 Symbol f;
 {
@@ -968,7 +994,7 @@ Symbol f;
     } else {
 	putchar('\n');
 	printname(stdout, f);
-	printf(" returns successfully\n", symname(f));
+	printf(" returns successfully\n");
     }
     erecover();
 }
