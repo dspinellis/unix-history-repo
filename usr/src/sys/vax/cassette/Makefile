@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.3 (Berkeley) %G%
+#	@(#)Makefile	6.4 (Berkeley) %G%
 #
 # Make a 750/730 tu58 cassette
 # 
@@ -13,9 +13,11 @@ DEFBOO=	defboo.rb defboo.rl defboo.hk defboo.up defboo.ra
 DEVBOO=	rbmboo.cmd rbsboo.cmd rlsboo.cmd hkmboo.cmd hksboo.cmd \
 	upmboo.cmd upsboo.cmd ramboo.cmd rasboo.cmd
 UTILS=	format.730 format.750 copy.730 copy.750 drtest.730 drtest.750
+
 # order is NOT random...
 OBJS=	boot ${STDBOO} ${DEFBOO} ${DEVBOO} format copy drtest
 FROMDEC=d[lmq]* cs* *boo.* boot.exe vmb.exe
+
 CASSETTE=/dev/tu0
 
 all:	cassette
@@ -52,6 +54,11 @@ update:	copy.730 drtest.730
 	cp drtest.730 drtest
 	arff mrf ${CASSETTE} ${OBJS}
 
+defboo.cmd:
+	@echo You must copy one of ${DEFBOO} to defboo.cmd.
+	@echo See installing and operating guide for details.
+	@/bin/false	#force exits
+
 clean:
-	rm -f ${BOOTS} ${UTILS} cassette form50 boot50 copy50
+	rm -f ${BOOTS} ${UTILS} cassette form50 boot50 copy50 defboo.cmd
 	rm -f boot format copy drtest
