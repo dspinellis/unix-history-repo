@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)krcmd.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)krcmd.c	1.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -18,6 +18,7 @@ static char sccsid[] = "@(#)krcmd.c	1.5 (Berkeley) %G%";
  *	kfall Exp Locker: kfall $";
  */
 
+#ifdef KERBEROS
 #include <sys/types.h>
 #include <stdio.h>
 #include <kerberosIV/des.h>
@@ -71,6 +72,7 @@ krcmd(ahost, rport, remuser, cmd, fd2p, realm)
 	return(sock);
 }
 
+#ifdef CRYPT
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -118,3 +120,5 @@ krcmd_mutual(ahost, rport, remuser, cmd, fd2p, realm, cred, sched)
 		return (-1);
 	return(sock);
 }
+#endif /* CRYPT */
+#endif /* KERBEROS */
