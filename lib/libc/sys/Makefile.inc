@@ -12,7 +12,7 @@ SRCS+=	Ovfork.s brk.s cerror.s exect.s fork.s pipe.s ptrace.s reboot.s \
 ASM=	accept.o access.o acct.o adjtime.o async_daemon.o bind.o chdir.o \
 	chflags.o chmod.o chown.o chroot.o close.o connect.o dup.o dup2.o \
 	execve.o fchdir.o fchflags.o fchmod.o fchown.o fcntl.o flock.o \
-	fstat.o fstatfs.o fsync.o ftruncate.o getdirentries.o \
+	fstat.o fstatfs.o fsync.o ftruncate.o getdirentries.o getdomainname.o \
 	getdtablesize.o getegid.o geteuid.o getfh.o getfsstat.o getgid.o \
 	getgroups.o gethostid.o gethostname.o getitimer.o getkerninfo.o \
 	getpagesize.o getpeername.o getpgrp.o getpid.o getppid.o \
@@ -21,8 +21,8 @@ ASM=	accept.o access.o acct.o adjtime.o async_daemon.o bind.o chdir.o \
 	lseek.o lstat.o madvise.o mincore.o mkdir.o mkfifo.o mknod.o \
 	mmap.o mount.o mprotect.o msync.o munmap.o nfssvc.o open.o \
 	profil.o quotactl.o read.o readlink.o readv.o recvfrom.o recvmsg.o \
-	rename.o revoke.o rmdir.o select.o sendmsg.o sendto.o setegid.o \
-	seteuid.o setgid.o setgroups.o sethostid.o sethostname.o \
+	rename.o revoke.o rmdir.o select.o sendmsg.o sendto.o setdomainname.o \
+	setegid.o seteuid.o setgid.o setgroups.o sethostid.o sethostname.o \
 	setitimer.o setpgid.o setpriority.o setregid.o setreuid.o \
 	setrlimit.o setsid.o setsockopt.o settimeofday.o setuid.o shmsys.o \
 	shutdown.o sigaction.o sigstack.o socket.o socketpair.o stat.o \
@@ -69,7 +69,8 @@ MAN2+=	sys/accept.2 sys/access.2 sys/acct.2 sys/adjtime.2 sys/async_daemon.2 \
 	sys/bind.2 sys/brk.2 sys/chdir.2 sys/chflags.2 sys/chmod.2 sys/chown.2 \
 	sys/chroot.2 sys/close.2 sys/connect.2 sys/dup.2 sys/execve.2 \
 	sys/_exit.2 sys/fcntl.2 sys/flock.2 sys/fork.2 sys/fsync.2 \
-	sys/getdirentries.2 sys/getdtablesize.2 sys/getfh.2 sys/getfsstat.2 \
+	sys/getdirentries.2 sys/getdomainname.2 sys/getdtablesize.2 \
+	sys/getfh.2 sys/getfsstat.2 \
 	sys/getgid.2 sys/getgroups.2 sys/gethostid.2 sys/gethostname.2 \
 	sys/getitimer.2 sys/getlogin.2 sys/getpagesize.2 sys/getpeername.2 \
 	sys/getpgrp.2 sys/getpid.2 sys/getpriority.2 sys/getrlimit.2 \
@@ -84,7 +85,7 @@ MAN2+=	sys/accept.2 sys/access.2 sys/acct.2 sys/adjtime.2 sys/async_daemon.2 \
 	sys/sigaction.2 sys/sigprocmask.2 sys/sigreturn.2 sys/sigstack.2 \
 	sys/sigsuspend.2 sys/socket.2 sys/socketpair.2 sys/stat.2 \
 	sys/statfs.2 sys/swapon.2 sys/symlink.2 sys/sync.2 sys/syscall.2 \
-	sys/truncate.2 sys/umask.2 sys/unlink.2 sys/utimes.2 \
+	sys/truncate.2 sys/umask.2 sys/uname.2 sys/unlink.2 sys/utimes.2 \
 	sys/vfork.2 sys/wait.2 sys/write.2
 
 MLINKS+=brk.2 sbrk.2
@@ -93,6 +94,7 @@ MLINKS+=chdir.2 fchdir.2
 MLINKS+=chflags.2 fchflags.2
 MLINKS+=chmod.2 fchmod.2
 MLINKS+=chown.2 fchown.2
+MLINKS+=getdomainname.2 setdomainname.2
 MLINKS+=getgid.2 getegid.2
 MLINKS+=gethostid.2 sethostid.2
 MLINKS+=gethostname.2 sethostname.2
