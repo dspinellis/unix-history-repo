@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)checknr.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)checknr.c	4.7 (Berkeley) %G%";
 #endif
 /*
  * checknr: check an nroff/troff input file for matching macro calls.
@@ -491,7 +491,12 @@ char *mac;
 {
 	register char **src, **dest, **loc;
 
-	binsrch(mac);	/* it's OK to redefine something */
+	if (binsrch(mac) >= 0){	/* it's OK to redefine something */
+#ifdef DEBUG
+		printf("binsrch(%s) -> already in table\n", mac);
+#endif DEBUG
+		return;
+	}
 	/* binsrch sets slot as a side effect */
 #ifdef DEBUG
 printf("binsrch(%s) -> %d\n", mac, slot);
