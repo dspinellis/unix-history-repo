@@ -1,5 +1,5 @@
 #ifndef lint
-static char SccsId[] = "@(#)syslogd.c	4.1 (Berkeley) %G%";
+static char SccsId[] = "@(#)syslogd.c	4.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -157,9 +157,6 @@ main(argc, argv)
 	  	}
 	}
 	signal(SIGTERM, die);
-	signal(SIGALRM, domark);
-	alarm(MarkIntvl * 60);
-	
 	funix = socket(AF_UNIX, SOCK_DGRAM, 0);
 	if (funix >= 0 && bind(funix, &sun,
 	    sizeof(sun.sun_family)+strlen(sun.sun_path)) < 0) {
@@ -204,6 +201,9 @@ main(argc, argv)
 	for (i = 0; i < NLOGS; i++)
 		Files[i].f_file = -1;
 	init();
+	signal(SIGALRM, domark);
+	alarm(MarkIntvl * 60);
+
 	for (;;) {
 		int domain, nfds, readfds = defreadfds;
 
@@ -532,7 +532,7 @@ wallmsg(pri, msg)
 	time(&now);
 	gethostname(hbuf, sizeof hbuf);
 	sprintf(line,
-	    "\r\n\007Broadcast message from syslog@%s at %.24s ...\r\n%s\r",
+	    "\r\n\007Message from syslogd@%s at %.24s ...\r\n%s\r",
 		hbuf, ctime(&now), msg);
 	len = strlen(line);
 
@@ -601,6 +601,8 @@ domark()
 
 	time(&now);
 	for (f = Files; f < &Files[NLOGS]; f++) {
+		if (!(f->f_flags & F_MARK))
+			continue;
 		if (f->f_file < 0 || fstat(f->f_file, &stb) < 0)
 			continue;
 		if (stb.st_mtime >= now - MarkIntvl * 60)
