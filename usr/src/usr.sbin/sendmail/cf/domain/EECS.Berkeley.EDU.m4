@@ -7,6 +7,6 @@ divert(-1)
 # %sccs.include.redist.sh%
 #
 divert(0)
-VERSIONID(@(#)EECS.Berkeley.EDU.m4	2.1 (Berkeley) %G%)
+VERSIONID(`@(#)EECS.Berkeley.EDU.m4	2.2 (Berkeley) %G%')
 DOMAIN(Berkeley)dnl
 define(`MASQUERADE_NAME', `EECS.Berkeley.EDU')dnl

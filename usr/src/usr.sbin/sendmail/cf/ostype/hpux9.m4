@@ -6,7 +6,7 @@ divert(-1)
 #
 # %sccs.include.redist.sh%
 #
-VERSIONID(@(#)hpux9.m4	2.3 (Berkeley) %G%)
+VERSIONID(`@(#)hpux9.m4	2.4 (Berkeley) %G%')
 #
 
 define(`_HPUX_', `')dnl
