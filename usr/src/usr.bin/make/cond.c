@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cond.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cond.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -574,6 +574,7 @@ do_compare:
 		     */
 		    char    *string;
 		    char    *cp, *cp2;
+		    int	    qt;
 		    Buffer  buf;
 
 do_string_compare:
@@ -584,9 +585,12 @@ do_string_compare:
 		    }
 
 		    buf = Buf_Init(0);
+		    qt = *rhs == '"' ? 1 : 0;
 		    
-		    for (cp = &rhs[*rhs == '"' ? 1 : 0]; 
-			 (*cp != '"') && (*cp != '\0'); cp++) {
+		    for (cp = &rhs[qt]; 
+			 ((qt && (*cp != '"')) || 
+			  (!qt && strchr(" \t)", *cp) == NULL)) && 
+			 (*cp != '\0'); cp++) {
 			if ((*cp == '\\') && (cp[1] != '\0')) {
 			    /*
 			     * Backslash escapes things -- skip over next
@@ -633,7 +637,10 @@ do_string_compare:
 		    }
 		    free(string);
 		    if (rhs == condExpr) {
-			condExpr = cp + 1;
+		    	if (!qt && *cp == ')')
+			    condExpr = cp;
+			else
+			    condExpr = cp + 1;
 		    }
 		} else {
 		    /*
