@@ -1,4 +1,4 @@
-/*	cons.c	4.9	81/05/05	*/
+/*	cons.c	4.10	81/05/09	*/
 
 /*
  * Vax console driver and floppy interface
@@ -163,7 +163,7 @@ register struct tty *tp;
 	if (consdone == 0)
 		return;
 	c = getc(&tp->t_outq);
-	if (tp->t_flags&RAW)
+	if (tp->t_flags&RAW || tp->t_local&LLITOUT)
 		mtpr(TXDB, c&0xff);
 	else if (c<=0177)
 		mtpr(TXDB, (c | (partab[c]&0200))&0xff);
