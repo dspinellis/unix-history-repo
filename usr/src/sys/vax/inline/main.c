@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	1.11 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -69,8 +69,8 @@ main(argc, argv)
 	int subset = 0;
 
 	whoami = argv[0];
-	while (argc > 0 && argv[0][0] == '-') {
-		switch(argv[0][1]) {
+	while (argc > 1 && argv[1][0] == '-') {
+		switch(argv[1][1]) {
 
 		case 's':
 			subset++;
