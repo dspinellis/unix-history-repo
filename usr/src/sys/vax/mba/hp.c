@@ -1,4 +1,4 @@
-/*	hp.c	3.18	%G%	*/
+/*	hp.c	3.19	%G%	*/
 
 #include "../conf/hp.h"
 #if NHP > 0
@@ -213,7 +213,7 @@ register unit;
 	daddr_t bn;
 	int sn, cn, csn;
 
-	((struct mba_regs *)MBA0)->mba_cr |= MBAIE;
+	((struct mba_regs *)HPMBA)->mba_cr |= MBAIE;
 	hpaddr = mbadev(HPMBA, 0);
 	hpaddr->hpas = 1<<unit;
 
