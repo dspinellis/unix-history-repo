@@ -1,11 +1,16 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-char version[] = "@(#)main.c 2.3 %G%";
+#ifndef lint
+char version[] = "@(#)main.c 2.4 %G%";
+#endif
 
 /*	Modified to include h option (recursively extract all files within
  *	a subtree) and m option (recreate the heirarchical structure of
  *	that subtree and move extracted files to their proper homes).
  *	8/29/80		by Mike Litzkow
+ *
+ *	Modified to work on the new file system
+ *	1/19/82		by Kirk McKusick
  *
  *	Includes the s (skip files) option for use with multiple dumps on
  *	a single tape.
@@ -39,13 +44,11 @@ struct odirect {
 #define	BIC(i,w)	(MWORD(w,i) &= ~MBIT(i))
 #define	BIT(i,w)	(MWORD(w,i) & MBIT(i))
 
-ino_t	ino, maxi;
-struct inode *cur_ip;
+ino_t	ino;
 
 int	eflag = 0, hflag = 0, mflag = 0, cvtdir = 0;
 
 long	fssize;
-dev_t	dev = 0;
 char	tapename[] = "/dev/rmt8";
 char	*magtape = tapename;
 int	mt;
@@ -85,20 +88,19 @@ struct xtrlist {
 } *xtrlist[MAXINO];
 int xtrcnt = 0;
 
-int	msiz;
 char	*dumpmap;
 char	*clrimap;
 
 char	clearedbuf[MAXBSIZE];
 
 extern char *ctime();
+extern int seek();
 ino_t search();
 int dirwrite();
 
-main(argc, argv, arge)
+main(argc, argv)
 	int argc;
 	char *argv[];
-	char **arge;
 {
 	register char *cp;
 	char command;
@@ -174,7 +176,7 @@ doit(command, argc, argv)
 		if (ioctl(mt,MTIOCTOP,&tcom) < 0)
 			perror("ioctl MTFSF");
 	}
-	blkclr(clearedbuf, MAXBSIZE);
+	blkclr(clearedbuf, (long)MAXBSIZE);
 	switch(command) {
 	case 't':
 		if (readhdr(&spcl) == 0) {
@@ -542,7 +544,7 @@ getleaves(ino, pname)
 {
 	register struct inotab *itp;
 	int namelen;
-	long bpt;
+	daddr_t bpt;
 	register struct direct *dp;
 	char locname[BUFSIZ + 1];
 
@@ -659,7 +661,7 @@ found:
  */
 getfile(f1, f2, size)
 	int	(*f2)(), (*f1)();
-	long	size;
+	off_t	size;
 {
 	register int i;
 	char buf[MAXBSIZE / TP_BSIZE][TP_BSIZE];
@@ -730,6 +732,9 @@ xtrskip(buf, size)
 	char *buf;
 	long size;
 {
+#ifdef lint
+	buf = buf;
+#endif
 	if (lseek(ofile, size, 1) == -1) {
 		perror("extract seek");
 		done(1);
@@ -741,7 +746,7 @@ xtrcvtdir(buf, size)
 	long size;
 {
 	struct odirect *odp, *edp;
-	struct direct *dp, cvtbuf;
+	struct direct cvtbuf;
 
 	edp = &buf[size / sizeof(struct odirect)];
 	for (odp = buf; odp < edp; odp++) {
@@ -775,6 +780,9 @@ xtrlnkskip(buf, size)
 	char *buf;
 	long size;
 {
+#ifdef lint
+	buf = buf, size = size;
+#endif
 	fprintf(stderr, "unallocated block in symbolic link\n");
 	done(1);
 }
@@ -788,7 +796,7 @@ null() {;}
 readtape(b)
 	char *b;
 {
-	register int i;
+	register long i;
 	struct s_spcl tmpbuf;
 	char c;
 
@@ -809,6 +817,10 @@ readtape(b)
 				done(1);
 			i = NTREC*TP_BSIZE;
 			blkclr(tbf, i);
+			if (lseek(mt, i, 1) < 0) {
+				fprintf(stderr, "continuation failed\n");
+				done(1);
+			}
 		}
 		if (i == 0) {
 			bct = NTREC + 1;
@@ -835,7 +847,7 @@ loop:
 			return;
 		}
 	}
-	blkcpy(&tbf[(bct++*TP_BSIZE)], b, TP_BSIZE);
+	blkcpy(&tbf[(bct++*TP_BSIZE)], b, (long)TP_BSIZE);
 }
 
 flsht()
@@ -845,15 +857,21 @@ flsht()
 
 blkcpy(from, to, size)
 	char *from, *to;
-	int size;
+	long size;
 {
+#ifdef lint
+	from = from, to = to, size = size;
+#endif
 	asm("	movc3	12(ap),*4(ap),*8(ap)");
 }
 
 blkclr(buf, size)
 	char *buf;
-	int size;
+	long size;
 {
+#ifdef lint
+	buf = buf, size = size;
+#endif
 	asm("movc5	$0,(r0),$0,8(ap),*4(ap)");
 }
 
@@ -940,7 +958,7 @@ readbits(mapp)
 	i = spcl.c_count;
 
 	if (*mapp == 0)
-		*mapp = (char *)(calloc(i, (TP_BSIZE/(NBBY/BITS))));
+		*mapp = (char *)calloc(i, (TP_BSIZE/(NBBY/BITS)));
 	m = *mapp;
 	while (i--) {
 		readtape((char *) m);
@@ -1039,7 +1057,7 @@ putent(dp, wrtfunc)
 		return;
 	for (;;) {
 		if (dp->d_reclen < DIRBLKSIZ - dirloc) {
-			blkcpy(dp, dirbuf + dirloc, dp->d_reclen);
+			blkcpy((char *)dp, dirbuf + dirloc, (long)dp->d_reclen);
 			prev = dirloc;
 			dirloc += dp->d_reclen;
 			return;
@@ -1073,9 +1091,7 @@ dcvt(odp, ndp)
 	register struct odirect *odp;
 	register struct direct *ndp;
 {
-	struct inotab *itp;
-
-	blkclr(ndp, sizeof *ndp);
+	blkclr((char *)ndp, (long)(sizeof *ndp));
 	ndp->d_ino =  odp->d_ino;
 	strncpy(ndp->d_name, odp->d_name, ODIRSIZ);
 	ndp->d_namlen = strlen(ndp->d_name);
@@ -1106,7 +1122,7 @@ opendir(name)
 	dirp = (DIR *)malloc(sizeof(DIR));
 	dirp->dd_fd = open(name, 0);
 	if (dirp->dd_fd == -1) {
-		free(dirp);
+		free((char *)dirp);
 		return NULL;
 	}
 	dirp->dd_loc = 0;
@@ -1121,14 +1137,14 @@ opendir(name)
 void
 seekdir(dirp, loc, base)
 	register DIR *dirp;
-	long loc, base;
+	daddr_t loc, base;
 {
 	if (loc == telldir(dirp))
 		return;
 	loc -= base;
 	if (loc < 0)
 		fprintf(stderr, "bad seek pointer to seekdir %d\n", loc);
-	lseek(dirp->dd_fd, base + (loc & ~(DIRBLKSIZ - 1)), 0);
+	(void)lseek(dirp->dd_fd, base + (loc & ~(DIRBLKSIZ - 1)), 0);
 	dirp->dd_loc = loc & (DIRBLKSIZ - 1);
 	if (dirp->dd_loc != 0)
 		dirp->dd_size = read(dirp->dd_fd, dirp->dd_buf, DIRBLKSIZ);
