@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)optr.c	1.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)optr.c	1.6 (Berkeley) %G%";
 
 #include "dump.h"
 
@@ -382,7 +382,7 @@ lastdump(arg)
 		  fprintf(stdout,"%c %8s\t(%6s) Last dump: Level %c, Date %s\n",
 			dumpme && (arg != 'w') ? '>' : ' ',
 			itwalk->id_name,
-			dt ? dt->fs_file : 0,
+			dt ? dt->fs_file : "",
 			itwalk->id_incno,
 			date
 		    );

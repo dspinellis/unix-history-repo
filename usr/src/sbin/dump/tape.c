@@ -1,8 +1,28 @@
-static	char *sccsid = "@(#)tape.c	1.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)tape.c	1.6 (Berkeley) %G%";
 #include "dump.h"
 
-char	tblock[NTREC][TP_BSIZE];
+char	(*tblock)[TP_BSIZE];	/* Pointer to malloc()ed buffer for tape */
+int	writesize;		/* Size of malloc()ed buffer for tape */
 int	trecno = 0;
+extern int ntrec;		/* blocking factor on tape */
+
+/*
+ * Allocate the buffer for tape operations.
+ *
+ * Depends on global variable ntrec, set from 'b' option in command line.
+ * Returns 1 if successful, 0 if failed.
+ *
+ * For later kernel performance improvement, this buffer should be allocated
+ * on a page boundary.
+ */
+alloctape()
+{
+
+	writesize = ntrec * TP_BSIZE;
+	tblock = (char (*)[TP_BSIZE])malloc(writesize);
+	return (tblock != NULL);
+}
+
 
 taprec(dp)
 	char *dp;
@@ -13,7 +33,7 @@ taprec(dp)
 		tblock[trecno][i] = *dp++;
 	trecno++;
 	spcl.c_tapea++;
-	if(trecno >= NTREC)
+	if(trecno >= ntrec)
 		flusht();
 }
 
@@ -25,7 +45,7 @@ dmpblk(blkno, size)
 
 	if (size % TP_BSIZE != 0)
 		msg("bad size to dmpblk: %d\n", size);
-	avail = NTREC - trecno;
+	avail = ntrec - trecno;
 	dblkno = fsbtodb(sblock, blkno);
 	for (tpblks = size / TP_BSIZE; tpblks > avail; ) {
 		bread(dblkno, tblock[trecno], TP_BSIZE * avail);
@@ -34,12 +54,12 @@ dmpblk(blkno, size)
 		flusht();
 		dblkno += avail * (TP_BSIZE / DEV_BSIZE);
 		tpblks -= avail;
-		avail = NTREC - trecno;
+		avail = ntrec - trecno;
 	}
 	bread(dblkno, tblock[trecno], TP_BSIZE * tpblks);
 	trecno += tpblks;
 	spcl.c_tapea += tpblks;
-	if(trecno >= NTREC)
+	if(trecno >= ntrec)
 		flusht();
 }
 
@@ -51,7 +71,7 @@ flusht()
 	daddr_t d;
 
 	trecno = 0;
-	if (write(to, tblock[0], sizeof(tblock)) != sizeof(tblock) ){
+	if (write(to, tblock[0], writesize) != writesize){
 		msg("Tape write error on tape %d\n", tapeno);
 		broadcast("TAPE ERROR!\n");
 		if (query("Do you want to restart?")){
@@ -73,9 +93,9 @@ flusht()
 		}
 	}
 
-	asize += sizeof(tblock)/density;
+	asize += writesize/density;
 	asize += 7;
-	blockswritten += NTREC;
+	blockswritten += ntrec;
 	if (asize > tsize) {
 		close_rewind();
 		otape();
