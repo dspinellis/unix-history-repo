@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_debug.c	7.3 (Berkeley) %G%
+ *	@(#)pk_debug.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -57,7 +57,7 @@ char *dir;
 		++cnt;
 	}
 	printf ("LCN=%d %s:	%s	#=%d, len=%d ",
-		xp -> logical_channel_number, dir, pk_name[i], cnt, len);
+		LCN(xp), dir, pk_name[i], cnt, len);
 	for (s = (char *) xp, i = 0; i < 5; ++i, ++s)
 		printf ("%x ", (int) * s & 0xff);
 	printf ("\n");
