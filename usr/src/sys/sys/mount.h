@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.17 (Berkeley) %G%
+ *	@(#)mount.h	7.18 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -226,4 +226,18 @@ extern void	vfs_unlock();		/* unlock a vfs */
 extern struct	mount *getvfs();	/* return vfs given fsid */
 extern struct	mount *rootfs;		/* ptr to root mount structure */
 extern struct	vfsops *vfssw[];	/* mount filesystem type switch table */
+#else
+
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int	fstatfs __P((int, struct statfs *));
+int	getfh __P((const char *, struct fhandle_t *));
+int	getfsstat __P((struct statfs **, long, int));
+int	getmntinfo __P((struct statfs **, int));
+int	mount __P((int, const char *, int, caddr_t));
+int	statfs __P((const char *, struct statfs *));
+int	unmount __P((const char *, int));
+__END_DECLS
+
 #endif
