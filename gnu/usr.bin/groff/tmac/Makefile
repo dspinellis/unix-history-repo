@@ -5,7 +5,7 @@ TMACGRP?=	bin
 TMACMODE?=	444
 TMACDIR?=	/usr/share/tmac
 
-MAN7=		groff_ms.0 
+MAN7=		groff_ms.7 
 MLINKS=		groff_ms.7 ms.7
 
 FILES=		tmac.pic tmac.ps tmac.psnew tmac.psold tmac.pspic tmac.psatk\

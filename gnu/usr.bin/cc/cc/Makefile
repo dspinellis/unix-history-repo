@@ -2,7 +2,7 @@
 
 PROG=           gcc
 SRCS=           gcc.c version.c obstack.c
-MAN1=		gcc.0 g++.0
+MAN1=		gcc.1 g++.1
 BINDIR=		/usr/bin
 CFLAGS+=        -I$(.CURDIR) -I$(.CURDIR)/../common
 .PATH:          $(.CURDIR)/../common 

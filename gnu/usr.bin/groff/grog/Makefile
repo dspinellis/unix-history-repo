@@ -1,4 +1,4 @@
-MAN1=		grog.0
+MAN1=		grog.1
 
 afterinstall:
 	install -c -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
