@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.57 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.58 (Berkeley) %G%
  */
 
 /*
@@ -827,7 +827,7 @@ nfs_remove(ndp, p)
 
 	if (vp->v_usecount > 1) {
 		if (!np->n_sillyrename)
-			error = nfs_sillyrename(ndp, REMOVE, p);
+			error = nfs_sillyrename(ndp, p);
 	} else {
 		nfsstats.rpccnt[NFSPROC_REMOVE]++;
 		nfsm_reqhead(nfs_procids[NFSPROC_REMOVE], ndp->ni_cred,
@@ -858,8 +858,8 @@ nfs_remove(ndp, p)
 /*
  * nfs file remove rpc called from nfs_inactive
  */
-nfs_removeit(ndp, p)
-	register struct nameidata *ndp;
+nfs_removeit(sp, p)
+	register struct sillyrename *sp;
 	struct proc *p;
 {
 	register u_long *tl;
@@ -871,13 +871,13 @@ nfs_removeit(ndp, p)
 	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 
 	nfsstats.rpccnt[NFSPROC_REMOVE]++;
-	nfsm_reqhead(nfs_procids[NFSPROC_REMOVE], ndp->ni_cred,
-		NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(ndp->ni_dent.d_namlen));
-	nfsm_fhtom(ndp->ni_dvp);
-	nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
-	nfsm_request(ndp->ni_dvp, NFSPROC_REMOVE, p, 1);
+	nfsm_reqhead(nfs_procids[NFSPROC_REMOVE], sp->s_cred,
+		NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(sp->s_namlen));
+	nfsm_fhtom(sp->s_dvp);
+	nfsm_strtom(sp->s_name, sp->s_namlen, NFS_MAXNAMLEN);
+	nfsm_request(sp->s_dvp, NFSPROC_REMOVE, p, 1);
 	nfsm_reqdone;
-	VTONFS(ndp->ni_dvp)->n_flag |= NMODIFIED;
+	VTONFS(sp->s_dvp)->n_flag |= NMODIFIED;
 	return (error);
 }
 
@@ -934,8 +934,9 @@ nfs_rename(sndp, tndp, p)
 /*
  * nfs file rename rpc called from nfs_remove() above
  */
-nfs_renameit(sndp, tndp, p)
-	register struct nameidata *sndp, *tndp;
+nfs_renameit(sndp, sp, p)
+	register struct nameidata *sndp;
+	register struct sillyrename *sp;
 	struct proc *p;
 {
 	register u_long *tl;
@@ -947,17 +948,17 @@ nfs_renameit(sndp, tndp, p)
 	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 
 	nfsstats.rpccnt[NFSPROC_RENAME]++;
-	nfsm_reqhead(nfs_procids[NFSPROC_RENAME], tndp->ni_cred,
+	nfsm_reqhead(nfs_procids[NFSPROC_RENAME], sp->s_cred,
 		(NFSX_FH+NFSX_UNSIGNED)*2+nfsm_rndup(sndp->ni_dent.d_namlen)+
-		nfsm_rndup(tndp->ni_dent.d_namlen)); /* or sndp->ni_cred?*/
+		nfsm_rndup(sp->s_namlen)); /* or sndp->ni_cred?*/
 	nfsm_fhtom(sndp->ni_dvp);
 	nfsm_strtom(sndp->ni_dent.d_name,sndp->ni_dent.d_namlen,NFS_MAXNAMLEN);
-	nfsm_fhtom(tndp->ni_dvp);
-	nfsm_strtom(tndp->ni_dent.d_name,tndp->ni_dent.d_namlen,NFS_MAXNAMLEN);
+	nfsm_fhtom(sp->s_dvp);
+	nfsm_strtom(sp->s_name, sp->s_namlen, NFS_MAXNAMLEN);
 	nfsm_request(sndp->ni_dvp, NFSPROC_RENAME, p, 1);
 	nfsm_reqdone;
 	VTONFS(sndp->ni_dvp)->n_flag |= NMODIFIED;
-	VTONFS(tndp->ni_dvp)->n_flag |= NMODIFIED;
+	VTONFS(sp->s_dvp)->n_flag |= NMODIFIED;
 	return (error);
 }
 
@@ -1341,52 +1342,51 @@ static char hextoasc[] = "0123456789abcdef";
  * to create the same funny name between the nfs_lookitup() fails and the
  * nfs_rename() completes, but...
  */
-nfs_sillyrename(ndp, flag, p)
+nfs_sillyrename(ndp, p)
 	register struct nameidata *ndp;
-	int flag;
 	struct proc *p;
 {
 	register struct nfsnode *np;
 	register struct sillyrename *sp;
-	register struct nameidata *tndp;
 	int error;
 	short pid;
 
 	np = VTONFS(ndp->ni_dvp);
 	cache_purge(ndp->ni_dvp);
 	MALLOC(sp, struct sillyrename *, sizeof (struct sillyrename),
-		M_TEMP, M_WAITOK);
-	sp->s_flag = flag;
+		M_NFSREQ, M_WAITOK);
 	bcopy((caddr_t)&np->n_fh, (caddr_t)&sp->s_fh, NFSX_FH);
 	np = VTONFS(ndp->ni_vp);
-	tndp = &sp->s_namei;
-	tndp->ni_cred = crdup(ndp->ni_cred);
+	sp->s_cred = crdup(ndp->ni_cred);
+	sp->s_dvp = ndp->ni_dvp;
+	VREF(sp->s_dvp);
 
 	/* Fudge together a funny name */
 	pid = p->p_pid;
-	bcopy(".nfsAxxxx4.4", tndp->ni_dent.d_name, 13);
-	tndp->ni_dent.d_namlen = 12;
-	tndp->ni_dent.d_name[8] = hextoasc[pid & 0xf];
-	tndp->ni_dent.d_name[7] = hextoasc[(pid >> 4) & 0xf];
-	tndp->ni_dent.d_name[6] = hextoasc[(pid >> 8) & 0xf];
-	tndp->ni_dent.d_name[5] = hextoasc[(pid >> 12) & 0xf];
+	bcopy(".nfsAxxxx4.4", sp->s_name, 13);
+	sp->s_namlen = 12;
+	sp->s_name[8] = hextoasc[pid & 0xf];
+	sp->s_name[7] = hextoasc[(pid >> 4) & 0xf];
+	sp->s_name[6] = hextoasc[(pid >> 8) & 0xf];
+	sp->s_name[5] = hextoasc[(pid >> 12) & 0xf];
 
 	/* Try lookitups until we get one that isn't there */
-	while (nfs_lookitup(ndp->ni_dvp, tndp, (nfsv2fh_t *)0, p) == 0) {
-		tndp->ni_dent.d_name[4]++;
-		if (tndp->ni_dent.d_name[4] > 'z') {
+	while (nfs_lookitup(sp, (nfsv2fh_t *)0, p) == 0) {
+		sp->s_name[4]++;
+		if (sp->s_name[4] > 'z') {
 			error = EINVAL;
 			goto bad;
 		}
 	}
-	if (error = nfs_renameit(ndp, tndp, p))
+	if (error = nfs_renameit(ndp, sp, p))
 		goto bad;
-	nfs_lookitup(ndp->ni_dvp, tndp, &np->n_fh, p);
+	nfs_lookitup(sp, &np->n_fh, p);
 	np->n_sillyrename = sp;
 	return (0);
 bad:
-	crfree(tndp->ni_cred);
-	free((caddr_t)sp, M_TEMP);
+	vrele(sp->s_dvp);
+	crfree(sp->s_cred);
+	free((caddr_t)sp, M_NFSREQ);
 	return (error);
 }
 
@@ -1396,12 +1396,12 @@ bad:
  * into the nfsnode table.
  * If fhp != NULL it copies the returned file handle out
  */
-nfs_lookitup(vp, ndp, fhp, p)
-	register struct vnode *vp;
-	register struct nameidata *ndp;
+nfs_lookitup(sp, fhp, p)
+	register struct sillyrename *sp;
 	nfsv2fh_t *fhp;
 	struct proc *p;
 {
+	register struct vnode *vp = sp->s_dvp;
 	register u_long *tl;
 	register caddr_t cp;
 	register long t1, t2;
@@ -1412,12 +1412,10 @@ nfs_lookitup(vp, ndp, fhp, p)
 	long len;
 
 	nfsstats.rpccnt[NFSPROC_LOOKUP]++;
-	ndp->ni_dvp = vp;
-	ndp->ni_vp = NULL;
-	len = ndp->ni_dent.d_namlen;
-	nfsm_reqhead(nfs_procids[NFSPROC_LOOKUP], ndp->ni_cred, NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(len));
+	len = sp->s_namlen;
+	nfsm_reqhead(nfs_procids[NFSPROC_LOOKUP], sp->s_cred, NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(len));
 	nfsm_fhtom(vp);
-	nfsm_strtom(ndp->ni_dent.d_name, len, NFS_MAXNAMLEN);
+	nfsm_strtom(sp->s_name, len, NFS_MAXNAMLEN);
 	nfsm_request(vp, NFSPROC_LOOKUP, p, 1);
 	if (fhp != NULL) {
 		nfsm_disect(cp, caddr_t, NFSX_FH);
