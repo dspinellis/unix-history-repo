@@ -1,4 +1,4 @@
-/*	locore.s	4.83	83/06/19	*/
+/*	locore.s	4.84	83/07/07	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
