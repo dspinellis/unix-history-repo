@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_subr.c	7.16 (Berkeley) %G%
+ *	@(#)pk_subr.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -984,63 +984,4 @@ abort:
 		m_freem (m);
 	}
 	return ENOBUFS;
-}
-
-struct mbuf *
-m_split (m0, len0, wait)
-register struct mbuf *m0;
-int len0;
-{
-	register struct mbuf *m, *n;
-	unsigned len = len0, remain;
-
-	for (m = m0; m && len > m -> m_len; m = m -> m_next)
-		len -= m -> m_len;
-	if (m == 0)
-		return (0);
-	remain = m -> m_len - len;
-	if (m0 -> m_flags & M_PKTHDR) {
-		MGETHDR(n, wait, m0 -> m_type);
-		if (n == 0)
-			return (0);
-		n -> m_pkthdr.rcvif = m0 -> m_pkthdr.rcvif;
-		n -> m_pkthdr.len = m0 -> m_pkthdr.len - len0;
-		m0 -> m_pkthdr.len = len0;
-		if (m -> m_flags & M_EXT)
-			goto extpacket;
-		if (remain > MHLEN) {
-			/* m can't be the lead packet */
-			MH_ALIGN(n, 0);
-			n -> m_next = m_split (m, len, wait);
-			if (n -> m_next == 0) {
-				(void) m_free (n);
-				return (0);
-			} else
-				return (n);
-		} else
-			MH_ALIGN(n, remain);
-	} else if (remain == 0) {
-		n = m -> m_next;
-		m -> m_next = 0;
-		return (n);
-	} else {
-		MGET(n, wait, m -> m_type);
-		if (n == 0)
-			return (0);
-		M_ALIGN(n, remain);
-	}
-extpacket:
-	if (m -> m_flags & M_EXT) {
-		n -> m_flags |= M_EXT;
-		n -> m_ext = m -> m_ext;
-		mclrefcnt[mtocl (m -> m_ext.ext_buf)]++;
-		n -> m_data = m -> m_data + len;
-	} else {
-		bcopy (mtod (m, caddr_t) + len, mtod (n, caddr_t), remain);
-	}
-	n -> m_len = remain;
-	m -> m_len = len;
-	n -> m_next = m -> m_next;
-	m -> m_next = 0;
-	return (n);
 }
