@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1984, 1985, 1986, 1987 Regents of the University of California.
+ * Copyright (c) 1984, 1988  Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -41,10 +41,7 @@ struct  ns_epidp {
 				   some intermediate gateway.  The error
 				   parameter field contains the max packet
 				   size that can be accommodated */
-#define NS_ERR_ATHOST	4
-#define NS_ERR_ENROUTE	5
-#define NS_ERR_MAX (NS_ERR_ATHOST + NS_ERR_ENROUTE + 1)
-#define ns_err_x(c) (((c)&0x200) ? ((c) - 0x200 + NS_ERR_ATHOST) : c )
+#define NS_ERR_MAX 20
 
 /*
  * Variables related to this implementation
@@ -63,6 +60,8 @@ struct	ns_errstat {
 	int	ns_es_badlen;		/* calculated bound mismatch */
 	int	ns_es_reflect;		/* number of responses */
 	int	ns_es_inhist[NS_ERR_MAX];
+	u_short	ns_es_codes[NS_ERR_MAX];/* which error code for outhist
+					   since we might not know all */
 };
 
 #ifdef KERNEL
