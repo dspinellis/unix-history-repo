@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)route.c	7.13 (Berkeley) %G%
+ *	@(#)route.c	7.14 (Berkeley) %G%
  */
 #include "machine/reg.h"
  
@@ -378,7 +378,8 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 		rt->rt_gateway = (struct sockaddr *)
 					(rn->rn_key + ROUNDUP(dst->sa_len));
 		Bcopy(gateway, rt->rt_gateway, gateway->sa_len);
-		rt->rt_llinfo = ROUNDUP(gateway->sa_len) + (caddr_t)gateway;
+		rt->rt_llinfo = ROUNDUP(gateway->sa_len)
+					+ (caddr_t)rt->rt_gateway;
 		if (ifa->ifa_rtrequest)
 			ifa->ifa_rtrequest(RTM_ADD, rt, (struct sockaddr *)0);
 		break;
@@ -391,12 +392,20 @@ bad:
 rt_maskedcopy(src, dst, netmask)
 struct sockaddr *src, *dst, *netmask;
 {
-	register caddr_t cp1 = (caddr_t)src, cp2 = (caddr_t)dst,
-	    cp3 = 2 + (caddr_t)netmask, cplim = cp1 + *(u_char *)cp1;
+	register u_char *cp1 = (u_char *)src;
+	register u_char *cp2 = (u_char *)dst;
+	register u_char *cp3 = (u_char *)netmask;
+	u_char *cplim = cp2 + *cp3;
+	u_char *cplim2 = cp2 + *cp1;
 
 	*cp2++ = *cp1++; *cp2++ = *cp1++; /* copies sa_len & sa_family */
-	while (cp1 < cplim)
+	cp3 += 2;
+	if (cplim > cplim2)
+		cplim = cplim2;
+	while (cp2 < cplim)
 		*cp2++ = *cp1++ & *cp3++;
+	if (cp2 < cplim2)
+		bzero((caddr_t)cp2, (unsigned)(cplim2 - cp2));
 }
 /*
  * Set up a routing table entry, normally
