@@ -1,4 +1,4 @@
-/*	tcp_var.h	4.11	81/12/02	*/
+/*	tcp_var.h	4.12	81/12/09	*/
 
 /*
  * Kernel variables for tcp.
@@ -39,7 +39,7 @@ struct tcpcb {
 	tcp_seq	iss;			/* initial send sequence number */
 /* receive sequence variables */
 	tcp_seq	rcv_nxt;		/* receive next */
-	u_short	rcv_wnd;		/* receive window */
+	short	rcv_wnd;		/* receive window */
 	tcp_seq	rcv_up;			/* receive urgent pointer */
 	tcp_seq	irs;			/* initial receive sequence number */
 /*
