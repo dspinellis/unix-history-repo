@@ -9,7 +9,7 @@
 #include <whoami.h>
 #include <sysexits.h>
 
-static char SccsId[] = "@(#)mail.local.c	4.3	%G%";
+static char SccsId[] = "@(#)mail.local.c	4.4	%G%";
 
 #define DELIVERMAIL	"/etc/delivermail"
 
@@ -671,7 +671,7 @@ char *fromaddr;
 		strcat(file, name);
 	}
 	mask = umask(MAILMODE);
-	if (stat(file, &stat) >= 0 && stat.st_nlink != 1) {
+	if (stat(file, &statb) >= 0 && statb.st_nlink != 1) {
 		fprintf(stdout, "mail: %s's mail file has more than one link\n", name);
 		return(0);
 	}
