@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *
- *	@(#)swap_pager.c	8.7 (Berkeley) %G%
+ *	@(#)swap_pager.c	8.8 (Berkeley) %G%
  */
 
 /*
@@ -705,13 +705,10 @@ swap_pager_io(swp, mlist, npages, flags)
 		spc->spc_swp = swp;
 		spc->spc_kva = kva;
 		/*
-		 * Record the first page.  This allows swap_pager_finish
+		 * Record the first page.  This allows swap_pager_clean
 		 * to efficiently handle the common case of a single page.
 		 * For clusters, it allows us to locate the object easily
 		 * and we then reconstruct the rest of the mlist from spc_kva.
-		 *
-		 * XXX
-		 * swap_pager_finish no longer exists.
 		 */
 		spc->spc_m = m;
 		spc->spc_npages = npages;
