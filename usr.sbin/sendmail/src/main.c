@@ -39,14 +39,13 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.46 (Berkeley) 1/9/94";
+static char sccsid[] = "@(#)main.c	8.52 (Berkeley) 3/11/94";
 #endif /* not lint */
 
 #define	_DEFINE
 
 #include "sendmail.h"
-#include <sgtty.h>
-#ifdef NAMED_BIND
+#if NAMED_BIND
 #include <arpa/nameser.h>
 #include <resolv.h>
 #endif
@@ -321,7 +320,7 @@ main(argc, argv, envp)
 	OpMode = MD_DELIVER;
 	FullName = getenv("NAME");
 
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	if (tTd(8, 8))
 		_res.options |= RES_DEBUG;
 #endif
@@ -443,6 +442,9 @@ main(argc, argv, envp)
 			  case MD_TEST:
 			  case MD_INITALIAS:
 			  case MD_PRINT:
+#ifdef MAYBE_NEXT_RELEASE
+			  case MD_ARPAFTP:
+#endif
 				OpMode = j;
 				break;
 
@@ -707,13 +709,6 @@ main(argc, argv, envp)
 	  case MD_DAEMON:
 		/* remove things that don't make sense in daemon mode */
 		FullName = NULL;
-		break;
-
-	  case MD_SMTP:
-		if (RealUid != 0)
-			auth_warning(CurEnv,
-				"%s owned process doing -bs",
-				RealUserName);
 		break;
 	}
 
@@ -1297,6 +1292,7 @@ disconnect(droplev, e)
 	HoldErrs = TRUE;
 	CurEnv->e_errormode = EM_MAIL;
 	Verbose = FALSE;
+	DisConnected = TRUE;
 
 	/* all input from /dev/null */
 	if (InChannel != stdin)
@@ -1360,7 +1356,7 @@ obsolete(argv)
 		/* skip over options that do have a value */
 		op = strchr(OPTIONS, ap[1]);
 		if (op != NULL && *++op == ':' && ap[2] == '\0' &&
-		    argv[1] != NULL && argv[1][0] != '-')
+		    ap[1] != 'd' && argv[1] != NULL && argv[1][0] != '-')
 		{
 			argv++;
 			continue;

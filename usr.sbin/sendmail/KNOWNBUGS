@@ -1,23 +1,17 @@
 
 
 	     K N O W N   B U G S   I N   S E N D M A I L
-			     (for 8.6.5)
+			     (for 8.6.7)
 
 
 The following are bugs or deficiencies in sendmail that I am aware of
 but which have not been fixed in the current release.  You probably
 want to get the most up to date version of this from FTP.CS.Berkeley.EDU
-in /ucb/sendmail/KNOWNBUGS.
+in /ucb/sendmail/KNOWNBUGS.  For descriptions of bugs that have been
+fixed, see the file RELEASE_NOTES (in the root directory of the sendmail
+distribution).
 
-This list is not guaranteed to be complete, especially for fixed bugs.
-Many bugs are reported and fixed without ever making it as far as this
-file.  See the file RELEASE_NOTES (in the root directory of the sendmail
-distribution) for more details.
-
-
-+----------------------------------------------+
-| THE FOLLOWING PROBLEMS ARE STILL OUTSTANDING |
-+----------------------------------------------+
+This list is not guaranteed to be complete.
 
 
 * Null bytes are not handled properly.
@@ -125,47 +119,13 @@ distribution) for more details.
   You can eliminate this by adding commas at the end of each line
   of the :include: file.
 
+* Excessive mailing list nesting can run out of file descriptors.
 
-+-------------------------------------------+
-| THE FOLLOWING PROBLEMS ARE FIXED IN 8.6.5 |
-+-------------------------------------------+
+  If you have a mailing list that includes lots of other mailing
+  lists, each of which has a separate owner, you can run out of
+  file descriptors.  Each mailing list with a separate owner uses
+  one open file descriptor (prior to 8.6.6 it was three open
+  file descriptors per list).  This is particularly egregious if
+  you have your connection cache set to be large.
 
-* Route-addrs missing angle brackets.
-
-  There are cases where route-addrs do not get angle brackets around them,
-  such as in the "-r" flag on mailers or in the From_ line created when
-  mailing to files.
-
-* No "exposed users" in "nullrelay" configuration.
-
-  The "nullrelay" configuration hides all addresses behind the mail
-  hub name.  Some sites might prefer to expose some names such as
-  root.  This information is always available in Received: lines.
-
-* owner-* alias that uses :include: broken.
-
-  If you have aliases set up as:
-
-	owner-listname:		:include:/some/file
-
-  sendmail will break because it considers this a "sender address",
-  which is not permitted to use the :include: syntax.  The easiest
-  workaround is to change this to:
-
-	owner-listname:		:include:/some/file,
-
-  (note the trailing comma); a somewhat cleaner solution is to use:
-
-	owner-listname:		listname-request
-	listname-request:	:include:/some/file
-
-* "SYSERR: openmailer(local): fd 1 not open" message
-
-  File descriptor 1 (standard output) should not be closed during normal
-  processing.  This is checked periodically, and sometimes this condition
-  is found and this message is produced.  Sendmail repairs the problem,
-  and the mail is still delivered, but I still don't know why it happens.
-  (There was a bug that was fixed in 8.6.beta.13 that might be related,
-  but I think this bug still exists.)
-
-(Version 8.15, last updated 1/12/94)
+(Version 8.18, last updated 3/14/94)

@@ -30,7 +30,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-#	@(#)READ_ME	8.47 (Berkeley) 1/12/94
+#	@(#)READ_ME	8.58 (Berkeley) 3/13/94
 #
 
 This directory contains the source files for sendmail.
@@ -138,6 +138,12 @@ use the version from the Net2 distribution!  However, if you are on
 BSD/386 or 386BSD-based systems, use the one that already exists
 on your system.  You may need to define OLD_NEWDB to do this.]
 
+[NOTE WELL: it is CRITICAL that you remove ndbm.o from libdb.a and
+ndbm.h from the appropriate include directories if you want to get
+ndbm support.  These files OVERRIDE calls to ndbm routines -- in
+particular, if you leave ndbm.h in, you can find yourself using
+the new db package even if you don't define NEWDB.]
+
 If NEWDB and NDBM are defined (but not NIS), then sendmail will read
 NDBM format alias files, but the next time a newaliases is run the
 format will be converted to NEWDB; that format will be used forever
@@ -179,6 +185,7 @@ NeXT		Define this if you are on a NeXT box.  (This one may
 		have to make -- see below.
 _AIX3		Define this if you are IBM AIX 3.x.
 RISCOS		Define this if you are running RISC/os from MIPS.
+IRIX		Define this if you are running IRIX from SGI.
 _SCO_unix_	Define this if you are on SCO UNIX.
 _SCO_unix_4_2	Define this if you are on SCO Open Server 3.2v4.
 
@@ -204,12 +211,6 @@ HASUNAME	Set if you have the "uname" system call.  Implied by
 		SYSTEM5.
 HASUNSETENV	Define this if your system library has the "unsetenv"
 		subroutine.
-HASSTATFS	Define this if you have the statfs(2) system call.  It's
-		not a disaster to get this wrong -- but you do lose the
-		queue free space code.
-HASUSTAT	Define this if you have the ustat(2) system call.  It's
-		not a disaster to get this wrong -- but you do lose the
-		queue free space code.
 HASSETSID	Define this if you have the setsid(2) system call.  This
 		is implied if your system appears to be POSIX compliant.
 HASINITGROUPS	Define this if you have the initgroups(3) routine.
@@ -270,19 +271,36 @@ ARBPTR_T	The type of an arbitrary pointer -- defaults to "void *".
 		If you are an very old compiler you may need to define
 		this to be "char *".
 LA_TYPE		The type of load average your kernel supports.  These
-		can be LA_SUBR (4) if you have the getloadavg(3) routine,
+		can be one of:
+		LA_ZERO (1) -- it always returns the load average as
+			"zero" (and does so on all architectures).
+		LA_SUBR (4) if you have the getloadavg(3) routine,
 		LA_MACH (5) to use MACH-style load averages (calls
-		processor_set_info()), LA_FLOAT (3) if you read kmem and
-		interpret the value as a floating point number, LA_INT (2)
-		to interpret as a long integer, or LA_SHORT (6) to
-		interpret as a short integer.  These last three have
-		several other parameters that they try to divine: the
-		name of your kernel, the name of the variable in the
-		kernel to examine, the number of bits of precision in
-		a fixed point load average, and so forth.  In desparation,
-		use LA_ZERO (1) -- it always returns the load average as
-		"zero" (and does so on all architectures).  The actual
-		code is in conf.c -- it can be tweaked if you are brave.
+			processor_set_info()),
+		LA_PROCSTR (7) to read /proc/loadavg and interpret it
+			as a string representing a floating-point
+			number (Linux-style),
+		LA_FLOAT (3) if you read kmem and interpret the value
+			as a floating point number,
+		LA_INT (2) to interpret as a long integer,
+		LA_SHORT (6) to interpret as a short integer.
+		These last three have several other parameters that they
+		try to divine: the name of your kernel, the name of the
+		variable in the kernel to examine, the number of bits of
+		precision in a fixed point load average, and so forth.
+		In desperation, use LA_ZERO.  The actual code is in
+		conf.c -- it can be tweaked if you are brave.
+SFS_TYPE	Encodes how your kernel can locate the amount of free
+		space on a disk partition.  This can be set to SFS_NONE
+		(0) if you have no way of getting this information,
+		SFS_USTAT (1) if you have the ustat(2) system call,
+		SFS_4ARGS (2) if you have a four-argument statfs(2)
+		system call (and the include file is <sys/statfs.h>),
+		and SFS_VFS (3), SFS_MOUNT (4), or SFS_STATFS (5) if
+		you have the two-argument statfs(2) system call, with
+		includes in <sys/vfs.h>, <sys/mount.h>, or <sys/statfs.h>
+		respectively.  The default if nothing is defined is
+		SFS_NONE.
 ERRLIST_PREDEFINED
 		If set, assumes that some header file defines sys_errlist.
 		This may be needed if you get type conflicts on this
@@ -301,6 +319,12 @@ SYSLOG_BUFSIZE	You can define this to be the size of the buffer that
 		e-mail message will log many more messages, since it
 		will log each piece of information as a separate line
 		in syslog.
+BROKEN_RES_SEARCH
+		On Ultrix (and maybe other systems?) if you use the
+		res_search routine with an unknown host name, it returns
+		-1 but sets h_errno to 0 instead of HOST_NOT_FOUND.  If
+		you set this, sendmail considers 0 to be the same as
+		HOST_NOT_FOUND.
 
 
 +-----------------------+
@@ -371,7 +395,7 @@ help to link with "-l44bsd" to solve this problem.
 the header files you used -- some people have used the 4.9 headers
 and linked with BIND 4.8 or vice versa, and it doesn't work.
 Unfortunately, it doesn't fail in an obvious way -- things just
-subtlely don't work.
+subtly don't work.
 
 
 +-------------------------------------+
@@ -440,6 +464,10 @@ SunOS 4.x (Solaris 1.x)
 Solaris 2.x (SunOS 5.x)
 	To compile for Solaris, be sure you use -DSOLARIS.
 
+	To the best of my knowledge, Solaris does not have the
+	gethostbyname problem described above.  However, it does
+	have another one:
+
 	From a correspondent:
 
 	   For solaris 2.2, I have 
@@ -450,17 +478,41 @@ Solaris 2.x (SunOS 5.x)
 	   qualified host name. I think "files" has to be before "dns"
 	   in /etc/nsswitch.conf during bootup.
 
-	To the best of my knowledge, Solaris does not have the
-	gethostbyname problem described above.
+	From another correspondent:
+
+	   When running sendmail under Solaris, the gethostbyname()
+	   hack in conf.c which should perform proper canonicalization
+	   of host names could fail.  Result: the host name is not
+	   canonicalized despite the hack, and you'll have to define $j
+	   and $m in sendmail.cf somewhere.
+
+	   The reason could be that /etc/nsswitch.conf is improperly
+	   configured (at least from sendmail's point of view).  For
+	   example, the line
+
+		hosts:      files nisplus dns
+
+	   will make gethostbyname() look in /etc/hosts first, then ask
+	   nisplus, then dns.  However, if /etc/hosts does not contain
+	   the full canonicalized hostname, then no amount of
+	   gethostbyname()s will work.
+
+	   Solution (or rather, a workaround): Ask nisplus first, then
+	   dns, then local files:
+
+		hosts:      nisplus dns [NOTFOUND=return] files
 
 	The Solaris "syslog" function is apparently limited to something
 	about 90 characters because of a kernel limitation.  If you have
-	source code, you can probably up this number.  The syslogd patch
-	is included in kernel jumbo patch for Solaris 2.2 as of revision
-	-39 or so.  At least one person is running with patch 100999-45
-	and their long lost sendmail logging is finally showing up.  At
-	least one other person is running with patch 101318 installed
-	under Solaris 2.3 with success.
+	source code, you can probably up this number.  You can get patches
+	that fix this problem: the patch ids are:
+
+		Solaris 2.1	100834
+		Solaris 2.2	100999
+		Solaris 2.3	101318
+
+	Be sure you have the appropriate patch installed or you won't
+	see system logging.
 
 OSF/1
 	If you are compiling on OSF/1 (DEC Alpha), you must use 
@@ -470,6 +522,17 @@ OSF/1
 	
 	Also, the enclosed makefile removed /usr/sbin/smtpd; if you need
 	it, just create the link to the sendmail binary.
+
+IRIX
+	The header files on SGI IRIX are completely prototyped, and as
+	a result you can sometimes get some warning messages during
+	compilation.  These can be ignored.  There are two errors in
+	deliver only if you are using gcc, both of the form ``warning:
+	passing arg N of `execve' from incompatible pointer type''.
+	Also, if you compile with -DNIS, you will get a complaint
+	about a declaration of struct dom_binding in a prototype
+	when compiling map.c; this is not important because the
+	function being prototyped is not used in that file.
 
 NeXT
 	If you are compiling on NeXT, you will have to create an empty
@@ -560,6 +623,50 @@ DG/UX
 	DG/UX -- the person who has this working, Douglas Anderson
 	<dlander@afterlife.ncsc.mil>, used procmail instead.
 
+Apollo DomainOS
+	If you are compiling on Apollo, you will have to create an empty
+	file "unistd.h" and create a file "dirent.h" containing:
+
+		#include <sys/dir.h>
+		#define dirent	direct
+
+	(The Makefile.DomainOS will attempt to do both of these for you.)
+
+HP-UX 8.00
+	Date: Mon, 24 Jan 1994 13:25:45 +0200
+	From: Kimmo Suominen <Kimmo.Suominen@lut.fi>
+	Subject: 8.6.5 w/ HP-UX 8.00 on s300
+
+	Just compiled and fought with sendmail 8.6.5 on a HP9000/360 (ie. a
+	series 300 machine) running HP-UX 8.00.
+
+	I was getting segmentation fault when delivering to a local user.
+	With debugging I saw it was faulting when doing _free@libc... *sigh*
+	It seems the new implementation of malloc on s300 is buggy as of 8.0,
+	so I tried out the one in -lmalloc (malloc(3X)).  With that it seems
+	to work just dandy.
+
+	When linking, you will get the following error:
+
+	ld: multiply defined symbol _freespace in file /usr/lib/libmalloc.a
+
+	but you can just ignore it.  You might want to add this info to the
+	README file for the future...
+
+Linux
+	Something broke between versions 0.99.13 and 0.99.14 of Linux:
+	the flock() system call gives errors.  If you are running .14,
+	you must not use flock.  You can do this with -DHASFLOCK=0.
+
+AIX
+	This version of sendmail does not support MB, MG, and MR resource
+	records, which are supported by AIX sendmail.
+
+RISC/os
+	RISC/os from MIPS is a merged AT&T/Berkeley system.  When you
+	compile on that platform you will get duplicate definitions
+	on many files.  You can ignore these.
+
 System V Release 4 Based Systems
 	There is a single Makefile that is intended for all SVR4-based
 	systems (called Makefile.SVR4).  It defines __svr4__, which is
@@ -641,6 +748,18 @@ Both NEWDB and NDBM
 GNU getopt
 	I'm told that GNU getopt has a problem in that it gets confused
 	by the double call.  Use the version in conf.c instead.
+
+BIND 4.9.2 and Ultrix
+	If you are running on Ultrix, be sure you read the conf/Info.Ultrix
+	carefully -- there is information in there that you need to know
+	in order to avoid errors of the form:
+
+		/lib/libc.a(gethostent.o): sethostent: multiply defined
+		/lib/libc.a(gethostent.o): endhostent: multiply defined
+		/lib/libc.a(gethostent.o): gethostbyname: multiply defined
+		/lib/libc.a(gethostent.o): gethostbyaddr: multiply defined
+
+	during the link stage.
 
 
 +--------------+
@@ -742,4 +861,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.47, last update 1/12/94 05:59:56)
+(Version 8.58, last update 3/13/94 09:38:06)

@@ -1,4 +1,5 @@
 	SUMMARY OF CHANGES BETWEEN SENDMAIL V5 and V8
+		@(#)CHANGES-R5-R8	8.1 (Berkeley) 2/26/94
 
 The following is a summary of the changes between the last commonly
 available version of sendmail from Berkeley (5.67) and the latest
@@ -138,7 +139,7 @@ Keyed Files
 
    Version 8 includes an "NIS" map class to support NIS/YP maps.
 
-Multi-Word Classes
+Multi-Word Classes & Macros in Classes
 
    Classes can now be multiple words.  For example,
 
@@ -146,6 +147,12 @@ Multi-Word Classes
 
    allows you to match the entire string ``hofmann.CS.Berkeley.EDU''
    using the single construct ``$=S''.
+
+   Class definitions are now allowed to include macros -- for example:
+
+	Cw$k
+
+   is legal.
 
 Deferred Macro Expansion
 
@@ -277,29 +284,53 @@ Extended Options
    The `A' (alias file) option has been extended to allow multiple
    alias files of different types.
 
+New Mailer Keyletters
+
+   L=	Set the allowable line length.  In V5, the L mailer flag implied
+	a line length limit of 990 characters; this is now settable to
+	an arbitrary value.
+
 New Mailer Flags
 
-   a	Try to use ESMTP.  It will fall back to SMTP if the initial
+   F=a	Try to use ESMTP.  It will fall back to SMTP if the initial
   	EHLO packet is rejected.
 
-   b	Ensure a blank line at the end of messages.  Useful on the
+   F=b	Ensure a blank line at the end of messages.  Useful on the
 	*file* mailer.
 
-   c	Strip all comments from addresses; this should only be used as
+   F=c	Strip all comments from addresses; this should only be used as
   	a last resort when dealing with cranky mailers.
 
-   g	Never use the null sender as the envelope sender, even when
+   F=g	Never use the null sender as the envelope sender, even when
 	running SMTP.  This violates RFC 1123.
 
-   7	Strip all output to this mailer to 7 bits.
+   F=7	Strip all output to this mailer to 7 bits.
 
-New Pre-Defined Macros
+Changed Mailer Flags
+
+   F=L	Used to set the line limit to 990 bytes for SMTP compatibility.
+	It now does that only if the L= keyletter is not specified.
+	This flag is obsolete and should not be used.
+
+New or Changed Pre-Defined Macros
 
    $k	UUCP node name from uname(2).
 
    $m	Domain part of our full hostname.
 
    $_	RFC 1413-provided sender address.
+
+   $w	Previously was sometimes the full domain name, sometimes
+	just the first word.  Now guaranteed to be the first word
+	of the domain name (i.e., the host name).
+
+   $j	Previously had to be defined -- it is now predefined to be
+	the full domain name, if that can be determined.  That is,
+	it is equivalent to $w.$m.
+
+New Classes
+
+   $=k	Initialized to contain $k.
 
 New LHS Token
 
@@ -377,6 +408,25 @@ Portability and Security Enhancements
    A number of internal changes have been made to enhance portability.
 
    Several fixes have been made to increase the paranoia factor.
+
+   In particular, the permissions required for .forward and :include:
+   files have been tightened up considerably.  V5 would pretty much
+   read any file it could get to as root, which exposed some security
+   holes.  V8 insists that all directories leading up to the .forward
+   or :include: file be searchable ("x" permission) by the controlling
+   user" (defined below), that the file itself be readable by the
+   controlling user, and that .forward files be owned by the user
+   who is being forwarded to or root.
+
+   The "controlling user" is the user on whose behalf the mail is
+   being delivered.  For example, if you mail to "user1" then the
+   controlling user for ~user1/.forward and any mailers invoked
+   by that .forward file, including :include: files.
+
+   Previously, anyone who had a home directory could create a .forward
+   could forward to a program.  Now, sendmail checks to make sure
+   that they have an "approved shell", that is, a shell listed in
+   the /etc/shells file.
 
 Miscellaneous Enhancements
 

@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.21 (Berkeley) 1/12/94
+		@(#)README	8.27 (Berkeley) 3/12/94
 
 
 This document describes the sendmail configuration files being used
@@ -13,7 +13,7 @@ there is an ``OLDSENDMAIL'' mode, they haven't really been tested on
 old versions of sendmail and cannot be expected to work well.
 
 These configuration files are probably not as general as previous
-versions, and don't handle as many of the wierd cases automagically.
+versions, and don't handle as many of the weird cases automagically.
 I was able to simplify by them for two reasons.  First, the network
 has become more consistent -- for example, at this point, everyone
 on the internet is supposed to be running a name server, so hacks to
@@ -23,8 +23,8 @@ a long-haul protocol.  I realize that this is not universal, but it
 does describe the vast majority of sites with which I am familiar,
 including those outside the US.
 
-Of course, the downside of this is that if you do live in a wierd
-world, things are going to get wierder for you.  I'm sorry about that,
+Of course, the downside of this is that if you do live in a weird
+world, things are going to get weirder for you.  I'm sorry about that,
 but at the time we at Berkeley had a problem, and it seemed like the
 right thing to do.
 
@@ -163,8 +163,12 @@ USENET_MAILER_PATH	[/usr/lib/news/inews] The name of the program
 USENET_MAILER_FLAGS	[rlsDFMmn] The mailer flags for the usenet mailer.
 USENET_MAILER_ARGS	[-m -h -n] The command line arguments for the
 			usenet mailer.
+USENET_MAILER_MAX	[100000] The maximum size of messages that will
+			be accepted by the usenet mailer.
 SMTP_MAILER_FLAGS	[undefined] Flags added to SMTP mailer.  Default
 			flags are `mDFMUX' (and `a' for esmtp mailer).
+SMTP_MAILER_MAX		[undefined] The maximum size of messages that will
+			be transported using the smtp or esmtp mailers.
 UUCP_MAILER_FLAGS	[undefined] Flags added to UUCP mailer.  Default
 			flags are `DFMhuU' (and `m' for suucp mailer, minus
 			`U' for uucp-dom mailer).
@@ -172,11 +176,10 @@ UUCP_MAILER_ARGS	[uux - -r -z -a$f -gC $h!rmail ($u)] The arguments
 			passed to the UUCP mailer.
 UUCP_MAX_SIZE		[100000] The maximum size message accepted for
 			transmission by the UUCP mailers.
-HOSTMAP_SPEC		[dbm -o /etc/hostmap] The value for the builtin
-			hostmap key definition.  You can redefine this
-			to change the class, flags, and filename of
-			the hostmap.  The default flag (-o) makes this
-			map optional.
+FAX_MAILER_PATH		[/usr/local/lib/fax/mailfax] The program used to
+			submit FAX messages.
+FAX_MAILER_MAX		[100000] The maximum size message accepted for
+			transmission by FAX.
 
 +---------+
 | DOMAINS |
@@ -410,6 +413,20 @@ Complex sites will need more local configuration information, such as
 lists of UUCP hosts they speak with directly.  This can get a bit more
 tricky.  For an example of a "complex" site, see cf/ucbvax.mc.
 
+If your host is known by several different names, you need to augment
+the $=w class.  This is a list of names by which you are known, and
+anything sent to an address using a host name in this list will be
+treated as local mail.  You can do this in two ways: either create
+the file /etc/sendmail.cw containing a list of your aliases (one per
+line), and use ``FEATURE(use_cw_file)'' in the .mc file, or add the
+line:
+
+	Cw alias.host.name
+
+at the end of that file.  See the ``vangogh.mc'' file for an example.
+Be sure you use the fully-qualified name of the host, rather than a
+short name.
+
 The SITECONFIG macro allows you to indirectly reference site-dependent
 configuration information stored in the siteconfig subdirectory.  For
 example, the line
@@ -418,17 +435,25 @@ example, the line
 
 reads the file uucp.ucbvax for local connection information.  The
 second parameter is the local name (in this case just "ucbvax" since
-it is locally connected, and hence a UUCP hostname) and the name of
-the class in which to store the host information.  Another SITECONFIG
-line reads
+it is locally connected, and hence a UUCP hostname).  The third
+parameter is the name of both a macro to store the local name (in
+this case, $U) and the name of the class (e.g., $=U) in which to store
+the host information read from the file.  Another SITECONFIG line reads
 
 	SITECONFIG(uucp.ucbarpa, ucbarpa.Berkeley.EDU, W)
 
 This says that the file uucp.ucbarpa contains the list of UUCP sites
 connected to ucbarpa.Berkeley.EDU.  The $=W class will be used to
-store this list.  [The machine ucbarpa is gone now, but I've left
+store this list, and $W is defined to be ucbarpa.Berkeley.EDU, that
+is, the name of the relay to which the hosts listed in uucp.ucbarpa
+are connected.  [The machine ucbarpa is gone now, but I've left
 this out-of-date configuration file around to demonstrate how you
 might do this.]
+
+Note that the case of SITECONFIG with a third parameter of ``U'' is
+special; the second parameter is assumed to be the UUCP name of the
+local site, rather than the name of a remote site, and the UUCP name
+is entered into $=w (the list of local hostnames) as $U.UUCP.
 
 The siteconfig file (e.g., siteconfig/uucp.ucbvax.m4) contains nothing
 more than a sequence of SITE macros describing connectivity.  For
@@ -547,7 +572,7 @@ will cause addresses of the form "decvax!user" and "research!user"
 to be converted to "user@decvax.dec.com" and "user@research.att.com"
 respectively.
 
-This could also be used to look hosts in a database map:
+This could also be used to look up hosts in a database map:
 
 	LOCAL_RULE_3
 	R$* < @ $+ > $*		$: $1 < @ $(hostmap $2 $) > $3
@@ -559,7 +584,7 @@ For example, new rules are needed to parse hostnames that you accept
 via MX records.  For example, you might have:
 
 	LOCAL_RULE_0
-	R$+ < @ cnmat.Berkeley.EDU >	$#uucp $@ cnmat $: $1
+	R$+ <@ host.dom.ain.>	$#uucp $@ cnmat $: $1 < @ host.dom.ain.>
 
 You would use this if you had installed an MX record for cnmat.Berkeley.EDU
 pointing at this host; this rule catches the message and forwards it on
@@ -585,9 +610,9 @@ You can have your host masquerade as another using
 
 	MASQUERADE_AS(host.domain)
 
-This causes outgoing SMTP mail to be labelled as coming from the
+This causes outgoing SMTP mail to be labeled as coming from the
 indicated domain, rather than $j.  One normally masquerades as one
-of your own subdomains (for example, it's unlikely that I would
+of one's own subdomains (for example, it's unlikely that I would
 choose to masquerade as an MIT site).
 
 The masquerade name is not normally canonified, so it is important
@@ -628,9 +653,11 @@ shared /var/spool/mail scheme, use
 	define(`MAIL_HUB', mailer:hostname)
 
 Again, ``mailer:'' defaults to "smtp".  If you define both LOCAL_RELAY
-and MAIL_HUB, unqualified names and names in class L will be sent to
-the LOCAL_RELAY and other local names will be sent to MAIL_HUB.  For
-example, if are on machine mastodon.CS.Berkeley.EDU, the following
+and MAIL_HUB, unqualified names will be sent to the LOCAL_RELAY and
+other local names will be sent to MAIL_HUB.  Names in $=L will be
+delivered locally, so you MUST have aliases or .forward files for them.
+
+For example, if are on machine mastodon.CS.Berkeley.EDU, the following
 combinations of settings will have the indicated effects:
 
 email sent to....	eric			  eric@mastodon.CS.Berkeley.EDU
@@ -786,7 +813,7 @@ Sam Leffler's FlexFAX software is still in beta test -- but he expects a
 public version out "later this week" [as of 3/1/93].  The following
 blurb is direct from Sam:
 
-	$Header: /a/cvs/386BSD/src/usr.sbin/sendmail/cf/README,v 1.6 1993/12/21 03:05:54 alm Exp $
+	$Header: /usr/people/sam/fax/RCS/HOWTO,v 1.14 93/05/24 11:42:16 sam Exp $
 
 	How To Obtain This Software (in case all you get is this file)
 	--------------------------------------------------------------
@@ -1081,7 +1108,7 @@ feature		These hold special orthogonal features that you might
 hack		Local hacks.  These can be referenced using the HACK
 		macro.  They shouldn't be of more than voyeuristic
 		interest outside the .Berkeley.EDU domain, but who knows?
-		We've all got our own peccadilloes.
+		We've all got our own peccadillos.
 
 siteconfig	Site configuration -- e.g., tables of locally connected
 		UUCP sites.
@@ -1197,5 +1224,5 @@ M4 DIVERSIONS
    5	locally interpreted names (overrides $R)
    6	local configuration (at top of file)
    7	mailer definitions
-   8	special local name recognition (late in ruleset 3)
+   8
    9	special local rulesets (1 and 2)

@@ -39,16 +39,15 @@ ifdef(`POP_MAILER_ARGS',, `define(`POP_MAILER_ARGS', `pop $u')')
 
 POPDIVERT
 
-LOCAL_CONFIG
-# POP mailer is a pseudo-domain
-CPPOP
-POPDIVERT
-
 ####################################
 ###   POP Mailer specification   ###
 ####################################
 
-VERSIONID(`@(#)pop.m4	8.1 (Berkeley) 12/15/93')
+VERSIONID(`@(#)pop.m4	8.2 (Berkeley) 2/19/94')
 
 Mpop,		P=POP_MAILER_PATH, F=CONCAT(`lsDFM', POP_MAILER_FLAGS), S=10, R=20/40,
 		A=POP_MAILER_ARGS
+
+LOCAL_CONFIG
+# POP mailer is a pseudo-domain
+CPPOP

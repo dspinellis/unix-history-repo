@@ -34,7 +34,7 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)uucpdomain.m4	8.4 (Berkeley) 11/30/93')
+VERSIONID(`@(#)uucpdomain.m4	8.6 (Berkeley) 2/19/94')
 divert(-1)
 
 
@@ -43,7 +43,7 @@ Kuudomain ifelse(_ARG_, `', `hash -o /etc/uudomain', `_ARG_')
 POPDIVERT
 
 
-PUSHDIVERT(8)
+PUSHDIVERT(2)
 # handle UUCP mapping
-R$* < @ $+ .UUCP. > $*		$: $1 < @ $(uudomain $2 $: $2.UUCP. $) > $3
+R$* < @ $+ .UUCP > $*		$: $1 < @ $(uudomain $2 $: $2.UUCP $) > $3
 POPDIVERT

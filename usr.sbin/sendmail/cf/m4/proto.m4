@@ -34,7 +34,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.30 (Berkeley) 1/12/94')
+VERSIONID(`@(#)proto.m4	8.45 (Berkeley) 3/4/94')
 
 MAILER(local)dnl
 
@@ -118,12 +118,12 @@ DR`'ifdef(`LOCAL_RELAY', LOCAL_RELAY)
 # who gets all local email traffic ($R has precedence for unqualified names)
 DH`'ifdef(`MAIL_HUB', MAIL_HUB)
 
-# who I masquerade as (can be $j)
-DM`'ifdef(`MASQUERADE_NAME', MASQUERADE_NAME, $j)
+# who I masquerade as (null for no masquerading)
+DM`'ifdef(`MASQUERADE_NAME', MASQUERADE_NAME)
 
 # class L: names that should be delivered locally, even if we have a relay
 # class E: names that should be exposed as from this host, even if we masquerade
-CLroot
+#CLroot
 CEroot
 undivert(5)dnl
 
@@ -171,7 +171,7 @@ O7`'confSEVEN_BIT_INPUT
 Oa`'confALIAS_WAIT
 
 # location of alias file
-OA`'ifdef(`ALIAS_FILE', ALIAS_FILE, /etc/aliases)
+OA`'ifdef(`ALIAS_FILE', `ALIAS_FILE', /etc/aliases)
 
 # minimum number of free blocks on filesystem
 Ob`'confMIN_FREE_BLOCKS
@@ -360,7 +360,7 @@ Tuucp
 #########################
 
 H?P?Return-Path: $g
-HReceived: $?sfrom $s $.$?_($_) $.by $j ($v/$Z)$?r with $r$. id $i$?u for $u$.; $b
+HReceived: $?sfrom $s $.$?_($?s$|from $.$_) $.by $j ($v/$Z)$?r with $r$. id $i$?u for $u$.; $b
 H?D?Resent-Date: $a
 H?D?Date: $a
 H?F?Resent-From: $q
@@ -443,9 +443,9 @@ R$* < @ localhost > $*		$: $1 < @ $j . > $2		no domain at all
 R$* < @ localhost . $m > $*	$: $1 < @ $j . > $2		local domain
 ifdef(`_NO_UUCP_', `dnl',
 `R$* < @ localhost . UUCP > $*	$: $1 < @ $j . > $2		.UUCP domain')
-R$* < @ [ $+ ] > $*		$: $1 < @ [[ $2 ]] > $3		catch [a.b.c.d]
-R$* < @ [ $=w ] > $*		$: $1 < @ $j . > $3		self-literal
-R$* < @ [[ $+ ]] > $*		$: $1 < @ [ $2 ] > $3		strip dbl [[]]
+R$* < @ [ $+ ] > $*		$: $1 < @@ [ $2 ] > $3		mark [a.b.c.d]
+R$* < @@ $=w > $*		$: $1 < @ $j . > $3		self-literal
+R$* < @@ $+ > $*		$@ $1 < @ $2 > $3		canon IP addr
 ifdef(`DOMAIN_TABLE', `
 # look up unqualified domains in the domain table
 R$* < @ $- > $*			$: $1 < @ $(domaintable $2 $) > $3',
@@ -483,8 +483,6 @@ R$* < @ $=w > $*		$: $1 < @ $2 . > $3
 R$* < @ $* $=P > $*		$: $1 < @ $2 $3 . > $4
 R$* < @ $* . . > $*		$1 < @ $2 . > $3
 
-undivert(8)dnl
-
 # if this is the local hostname, make sure we treat is as canonical
 R$* < @ $j > $*			$: $1 < @ $j . > $2
 
@@ -495,9 +493,6 @@ R$* < @ $j > $*			$: $1 < @ $j . > $2
 S4
 
 R$*<@>			$@ $1				handle <> and list:;
-
-# resolve numeric addresses to name if possible
-R$* < @ [ $+ ] > $*	$: $1 < @ $[ [$2] $] > $3	lookup numeric internet addr
 
 # strip trailing dot off possibly canonical name
 R$* < @ $+ . > $*	$1 < @ $2 > $3
@@ -533,13 +528,12 @@ R$*			$@ $>0 $1
 S0
 
 R<@>			$#_LOCAL_ $: <>			special case error msgs
-R$*:;<@>		$#error $@ USAGE $: "list:; syntax illegal for recipient addresses"
+R$* : $* ;		$#error $@ USAGE $: "list:; syntax illegal for recipient addresses"
 R<@ $+>			$#error $@ USAGE $: "user address required"
+R<$* : $* >		$#error $@ USAGE $: "colon illegal in host name part"
 
 ifdef(`_MAILER_smtp_',
 `# handle numeric address spec
-ifdef(`_NO_CANONIFY_', `dnl',
-`R$* < @ [ $+ ] > $*	$: $1 < @ $[ [$2] $] > $3	numeric internet addr')
 R$* < @ [ $+ ] > $*	$: $>_SET_98_ $1 < @ [ $2 ] > $3	numeric internet spec
 R$* < @ [ $+ ] > $*	$#_SMTP_ $@ [$2] $: $1 < @ [$2] > $3	still numeric: send',
 	`dnl')
@@ -551,15 +545,6 @@ R$* $=O $* < @ $=w . >	$@ $>_SET_97_ $1 $2 $3		...@here -> ...
 
 # handle local hacks
 R$*			$: $>_SET_98_ $1
-ifdef(`MAILER_TABLE',
-`
-# try mailer table lookup
-R$* <@ $+ > $*		$: < $2 > $1 < @ $2 > $3	extract host name
-R< $+ . > $*		$: < $1 > $2			strip trailing dot
-R< $+ > $*		$: < $(mailertable $1 $) > $2	lookup
-R< $- : $+ > $*		$# $1 $@ $2 $: $3		check -- resolved?
-R< $+ > $*		$: $>90 <$1> $2			try domain',
-`dnl')
 
 # short circuit local delivery so forwarded email works
 ifdef(`_LOCAL_NOT_STICKY_',
@@ -572,6 +557,15 @@ R$+ < $+ @ $+ >		$#relay $@ $3 $: $1 < $2 >	yep ....
 R$+ < $+ @ >		$#_LOCAL_ $: $1			nope, local address',
 `R$+ < $+ @ $+ >		$#_LOCAL_ $: $1			yep ....
 R$+ < $+ @ >		$#_LOCAL_ $: @ $1			nope, local address')')
+ifdef(`MAILER_TABLE',
+`
+# not local -- try mailer table lookup
+R$* <@ $+ > $*		$: < $2 > $1 < @ $2 > $3	extract host name
+R< $+ . > $*		$: < $1 > $2			strip trailing dot
+R< $+ > $*		$: < $(mailertable $1 $) > $2	lookup
+R< $- : $+ > $*		$# $1 $@ $2 $: $3		check -- resolved?
+R< $+ > $*		$: $>90 <$1> $2			try domain',
+`dnl')
 undivert(4)dnl
 
 ifdef(`_NO_UUCP_', `dnl',
@@ -608,7 +602,7 @@ R$* < @ $+ .UUCP. > $*		$#uucp $@ $2 $: $1 < @ $2 .UUCP. > $3	user@host.UUCP',
 	`dnl')')
 ifdef(`_MAILER_usenet_', `
 # addresses sent to net.group.USENET will get forwarded to a newsgroup
-R$+ . USENET.		$#usenet $: $1',
+R$+ . USENET		$#usenet $: $1',
 	`dnl')
 
 ifdef(`_LOCAL_RULES_',
@@ -646,8 +640,11 @@ R$+			$#_LOCAL_ $: $1			regular local names
 S5
 
 # see if we have a relay or a hub
-R$+			$: $>_SET_95_ < $R > $1			try relay
-R$+			$: $>_SET_95_ < $H > $1			try hub')
+R$+			$: < $R > $1			try relay
+R< > $+			$: < $H > $1			try hub
+R< > $+			$@ $1				nope, give up
+R< $- : $+ > $+		$: $>_SET_95_ < $1 : $2 > $3 < @ $2 >
+R< $+ > $+		$@ $>_SET_95_ < $1 > $2 < @ $1 >')
 ifdef(`MAILER_TABLE',
 `
 
@@ -657,10 +654,12 @@ ifdef(`MAILER_TABLE',
 ###################################################################
 
 S90
-R<$- . $+ > $*		$: < $(mailertable .$2 $@ $1 $) > $3	lookup
-R<$- : $+ > $*		$# $1 $@ $2 $: $3		check -- resolved?
-R< . $+ > $*		$@ $>90 <$1> $2			no -- strip & try again
-R<$*> $*		$@ $2				no match',
+R$* <$- . $+ > $*	$: $1$2 < $(mailertable .$3 $@ $1$2 $@ $2 $) > $4
+R$* <$- : $+ > $*	$# $2 $@ $3 $: $4		check -- resolved?
+R$* < . $+ > $*		$@ $>90 $1 . <$2> $3		no -- strip & try again
+R$* < $* > $*		$: < $(mailertable . $@ $1$2 $) > $3	try "."
+R<$- : $+ > $*		$# $1 $@ $2 $: $3		"." found?
+R< $* > $*		$@ $2				no mailertable match',
 `dnl')
 
 ###################################################################

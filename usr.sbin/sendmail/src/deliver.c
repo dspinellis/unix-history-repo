@@ -33,13 +33,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.62 (Berkeley) 1/12/94";
+static char sccsid[] = "@(#)deliver.c	8.78 (Berkeley) 3/11/94";
 #endif /* not lint */
 
 #include "sendmail.h"
 #include <netdb.h>
 #include <errno.h>
-#ifdef NAMED_BIND
+#if NAMED_BIND
 #include <arpa/nameser.h>
 #include <resolv.h>
 
@@ -124,9 +124,11 @@ sendall(e, mode)
 	if (e->e_hopcount > MaxHopCount)
 	{
 		errno = 0;
+		e->e_flags |= EF_FATALERRS|EF_PM_NOTIFY|EF_CLRQUEUE;
 		syserr("554 too many hops %d (%d max): from %s via %s, to %s",
 			e->e_hopcount, MaxHopCount, e->e_from.q_paddr,
-			RealHostName, e->e_sendqueue->q_paddr);
+			RealHostName == NULL ? "localhost" : RealHostName,
+			e->e_sendqueue->q_paddr);
 		return;
 	}
 
@@ -247,10 +249,16 @@ sendall(e, mode)
 			
 			for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 				if (q->q_owner == owner)
+				{
 					q->q_flags |= QDONTSEND;
+					q->q_flags &= ~QQUEUEUP;
+				}
 			for (q = ee->e_sendqueue; q != NULL; q = q->q_next)
 				if (q->q_owner != owner)
+				{
 					q->q_flags |= QDONTSEND;
+					q->q_flags &= ~QQUEUEUP;
+				}
 
 			if (e->e_df != NULL && mode != SM_VERIFY)
 			{
@@ -263,13 +271,10 @@ sendall(e, mode)
 						e->e_df, ee->e_df);
 				}
 			}
-
-			if (mode != SM_VERIFY)
-				openxscript(ee);
 #ifdef LOG
 			if (LogLevel > 4)
-				syslog(LOG_INFO, "%s: clone %s",
-					ee->e_id, e->e_id);
+				syslog(LOG_INFO, "%s: clone %s, owner=%s",
+					ee->e_id, e->e_id, owner);
 #endif
 		}
 	}
@@ -309,15 +314,15 @@ sendall(e, mode)
 		for (ee = splitenv; ee != NULL; ee = ee->e_sibling)
 		{
 			CurEnv = ee;
+			if (mode != SM_VERIFY)
+				openxscript(ee);
 			sendenvelope(ee, mode);
+			dropenvelope(ee);
 		}
 
 		CurEnv = e;
 	}
 	sendenvelope(e, mode);
-
-	for (; splitenv != NULL; splitenv = splitenv->e_sibling)
-		dropenvelope(splitenv);
 }
 
 sendenvelope(e, mode)
@@ -360,7 +365,7 @@ sendenvelope(e, mode)
 		if (e->e_xfp != NULL)
 			(void) fflush(e->e_xfp);
 
-# ifndef HASFLOCK
+# if !HASFLOCK
 		/*
 		**  Since fcntl locking has the interesting semantic that
 		**  the lock is owned by a process, not by an open file
@@ -401,15 +406,26 @@ sendenvelope(e, mode)
 				(void) xfclose(e->e_dfp, "sendenvelope", e->e_df);
 			e->e_dfp = NULL;
 			e->e_id = e->e_df = NULL;
+
+			/* catch intermediate zombie */
+			(void) waitfor(pid);
 			return;
 		}
 
 		/* double fork to avoid zombies */
-		if (fork() > 0)
+		pid = fork();
+		if (pid > 0)
 			exit(EX_OK);
 
 		/* be sure we are immune from the terminal */
 		disconnect(1, e);
+
+		/* prevent parent from waiting if there was an error */
+		if (pid < 0)
+		{
+			e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
+			finis();
+		}
 
 		/*
 		**  Close any cached connections.
@@ -604,7 +620,7 @@ deliver(e, firstto)
 	if (bitset(QDONTSEND|QBADADDR|QQUEUEUP, to->q_flags))
 		return (0);
 
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	/* unless interactive, try twice, over a minute */
 	if (OpMode == MD_DAEMON || OpMode == MD_SMTP)
 	{
@@ -620,8 +636,8 @@ deliver(e, firstto)
 	SmtpError[0] = '\0';
 
 	if (tTd(10, 1))
-		printf("\n--deliver, mailer=%d, host=`%s', first user=`%s'\n",
-			m->m_mno, host, to->q_user);
+		printf("\n--deliver, id=%s, mailer=%s, host=`%s', first user=`%s'\n",
+			e->e_id, m->m_name, host, to->q_user);
 	if (tTd(10, 100))
 		printopenfds(FALSE);
 
@@ -916,10 +932,11 @@ deliver(e, firstto)
 	*/
 
 	/*XXX this seems a bit wierd */
-	if (ctladdr == NULL && bitset(QGOODUID, e->e_from.q_flags))
+	if (ctladdr == NULL && m != ProgMailer &&
+	    bitset(QGOODUID, e->e_from.q_flags))
 		ctladdr = &e->e_from;
 
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	if (ConfigLevel < 2)
 		_res.options &= ~(RES_DEFNAMES | RES_DNSRCH);	/* XXX */
 #endif
@@ -1047,7 +1064,7 @@ tryhost:
 				bitnset(M_SECURE_PORT, m->m_flags));
 			mci->mci_exitstat = i;
 			mci->mci_errno = errno;
-#ifdef NAMED_BIND
+#if NAMED_BIND
 			mci->mci_herrno = h_errno;
 #endif
 			if (i == EX_OK)
@@ -1223,7 +1240,8 @@ tryhost:
 				}
 				(void) close(rpvect[1]);
 			}
-			else if (OpMode == MD_SMTP || OpMode == MD_DAEMON || HoldErrs)
+			else if (OpMode == MD_SMTP || OpMode == MD_DAEMON ||
+				  HoldErrs || DisConnected)
 			{
 				/* put mailer output in transcript */
 				if (dup2(fileno(e->e_xfp), STDOUT_FILENO) < 0)
@@ -1260,12 +1278,20 @@ tryhost:
 					(void) fcntl(i, F_SETFD, j | 1);
 			}
 
-			/* set up the mailer environment */
+			/*
+			**  Set up the mailer environment
+			**	TZ is timezone information.
+			**	SYSTYPE is Apollo software sys type (required).
+			**	ISP is Apollo hardware system type (required).
+			*/
+
 			i = 0;
 			env[i++] = "AGENT=sendmail";
 			for (ep = environ; *ep != NULL; ep++)
 			{
-				if (strncmp(*ep, "TZ=", 3) == 0)
+				if (strncmp(*ep, "TZ=", 3) == 0 ||
+				    strncmp(*ep, "ISP=", 4) == 0 ||
+				    strncmp(*ep, "SYSTYPE=", 8) == 0)
 					env[i++] = *ep;
 			}
 			env[i++] = NULL;
@@ -1344,7 +1370,7 @@ tryhost:
 		/* couldn't open the mailer */
 		rcode = mci->mci_exitstat;
 		errno = mci->mci_errno;
-#ifdef NAMED_BIND
+#if NAMED_BIND
 		h_errno = mci->mci_herrno;
 #endif
 		if (rcode == EX_OK)
@@ -1366,10 +1392,10 @@ tryhost:
 		**  Format and send message.
 		*/
 
-		putfromline(mci->mci_out, m, e);
-		(*e->e_puthdr)(mci->mci_out, m, e);
-		putline("\n", mci->mci_out, m);
-		(*e->e_putbody)(mci->mci_out, m, e, NULL);
+		putfromline(mci, e);
+		(*e->e_puthdr)(mci, e);
+		putline("\n", mci);
+		(*e->e_putbody)(mci, e, NULL);
 
 		/* get the exit status */
 		rcode = endmailer(mci, e, pv);
@@ -1437,7 +1463,7 @@ tryhost:
 		goto give_up;
 	}
 #endif /* SMTP */
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	if (ConfigLevel < 2)
 		_res.options |= RES_DEFNAMES | RES_DNSRCH;	/* XXX */
 #endif
@@ -1667,7 +1693,7 @@ giveresponse(stat, m, mci, ctladdr, e)
 	else if (stat == EX_TEMPFAIL)
 	{
 		(void) strcpy(buf, SysExMsg[i] + 1);
-#ifdef NAMED_BIND
+#if NAMED_BIND
 		if (h_errno == TRY_AGAIN)
 			statmsg = errstring(h_errno+E_DNSBASE);
 		else
@@ -1691,7 +1717,7 @@ giveresponse(stat, m, mci, ctladdr, e)
 		}
 		statmsg = buf;
 	}
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	else if (stat == EX_NOHOST && h_errno != 0)
 	{
 		statmsg = errstring(h_errno + E_DNSBASE);
@@ -1717,7 +1743,7 @@ giveresponse(stat, m, mci, ctladdr, e)
 	{
 		extern char MsgBuf[];
 
-		message(&statmsg[4], errstring(errno));
+		message("%s", &statmsg[4]);
 		if (stat == EX_TEMPFAIL && e->e_xfp != NULL)
 			fprintf(e->e_xfp, "%s\n", &MsgBuf[4]);
 	}
@@ -1737,6 +1763,10 @@ giveresponse(stat, m, mci, ctladdr, e)
 	if (LogLevel > ((stat == EX_TEMPFAIL) ? 8 : (stat == EX_OK) ? 7 : 6))
 		logdelivery(m, mci, &statmsg[4], ctladdr, e);
 
+	if (tTd(11, 2))
+		printf("giveresponse: stat=%d, e->e_message=%s\n",
+			stat, e->e_message);
+
 	if (stat != EX_TEMPFAIL)
 		setstat(stat);
 	if (stat != EX_OK && (stat != EX_TEMPFAIL || e->e_message == NULL))
@@ -1746,7 +1776,7 @@ giveresponse(stat, m, mci, ctladdr, e)
 		e->e_message = newstr(&statmsg[4]);
 	}
 	errno = 0;
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	h_errno = 0;
 #endif
 }
@@ -1820,9 +1850,9 @@ logdelivery(m, mci, stat, ctladdr, e)
 		(void) strcat(bp, mci->mci_host);
 
 # ifdef DAEMON
-		(void) strcat(bp, " (");
+		(void) strcat(bp, " [");
 		(void) strcat(bp, anynet_ntoa(&CurHostAddr));
-		(void) strcat(bp, ")");
+		(void) strcat(bp, "]");
 # endif
 	}
 	else
@@ -1876,7 +1906,7 @@ logdelivery(m, mci, stat, ctladdr, e)
 
 #  else		/* we have a very short log buffer size */
 
-	l = SYSLOG_BUFSIZE - 80;
+	l = SYSLOG_BUFSIZE - 85;
 	p = e->e_to;
 	while (strlen(p) >= l)
 	{
@@ -1914,19 +1944,21 @@ logdelivery(m, mci, stat, ctladdr, e)
 		sprintf(bp, ", mailer=%s", m->m_name);
 		bp += strlen(bp);
 	}
+	syslog(LOG_INFO, "%s: %s", e->e_id, buf);
 
+	buf[0] = '\0';
 	if (mci != NULL && mci->mci_host != NULL)
 	{
 # ifdef DAEMON
 		extern SOCKADDR CurHostAddr;
 # endif
 
-		sprintf(bp, ", relay=%s", mci->mci_host);
+		sprintf(buf, "relay=%s", mci->mci_host);
 
 # ifdef DAEMON
-		(void) strcat(bp, " (");
-		(void) strcat(bp, anynet_ntoa(&CurHostAddr));
-		(void) strcat(bp, ")");
+		(void) strcat(buf, " [");
+		(void) strcat(buf, anynet_ntoa(&CurHostAddr));
+		(void) strcat(buf, "]");
 # endif
 	}
 	else
@@ -1934,9 +1966,10 @@ logdelivery(m, mci, stat, ctladdr, e)
 		char *p = macvalue('h', e);
 
 		if (p != NULL && p[0] != '\0')
-			sprintf(bp, ", relay=%s", p);
+			sprintf(buf, "relay=%s", p);
 	}
-	syslog(LOG_INFO, "%s: %s", e->e_id, buf);
+	if (buf[0] != '\0')
+		syslog(LOG_INFO, "%s: %s", e->e_id, buf);
 
 	syslog(LOG_INFO, "%s: stat=%s", e->e_id, shortenstring(stat, 63));
 #  endif /* short log buffer */
@@ -1953,8 +1986,8 @@ logdelivery(m, mci, stat, ctladdr, e)
 **	this kind of antique garbage????
 **
 **	Parameters:
-**		fp -- the file to output to.
-**		m -- the mailer describing this entry.
+**		mci -- the connection information.
+**		e -- the envelope.
 **
 **	Returns:
 **		none
@@ -1963,19 +1996,18 @@ logdelivery(m, mci, stat, ctladdr, e)
 **		outputs some text to fp.
 */
 
-putfromline(fp, m, e)
-	register FILE *fp;
-	register MAILER *m;
+putfromline(mci, e)
+	register MCI *mci;
 	ENVELOPE *e;
 {
 	char *template = "\201l\n";
 	char buf[MAXLINE];
 
-	if (bitnset(M_NHDR, m->m_flags))
+	if (bitnset(M_NHDR, mci->mci_mailer->m_flags))
 		return;
 
 # ifdef UGLYUUCP
-	if (bitnset(M_UGLYUUCP, m->m_flags))
+	if (bitnset(M_UGLYUUCP, mci->mci_mailer->m_flags))
 	{
 		char *bang;
 		char xbuf[MAXLINE];
@@ -1996,14 +2028,13 @@ putfromline(fp, m, e)
 	}
 # endif /* UGLYUUCP */
 	expand(template, buf, &buf[sizeof buf - 1], e);
-	putline(buf, fp, m);
+	putline(buf, mci);
 }
 /*
 **  PUTBODY -- put the body of a message.
 **
 **	Parameters:
-**		fp -- file to output onto.
-**		m -- a mailer descriptor to control output format.
+**		mci -- the connection information.
 **		e -- the envelope to put out.
 **		separator -- if non-NULL, a message separator that must
 **			not be permitted in the resulting message.
@@ -2015,9 +2046,8 @@ putfromline(fp, m, e)
 **		The message is written onto fp.
 */
 
-putbody(fp, m, e, separator)
-	FILE *fp;
-	MAILER *m;
+putbody(mci, e, separator)
+	register MCI *mci;
 	register ENVELOPE *e;
 	char *separator;
 {
@@ -2037,25 +2067,26 @@ putbody(fp, m, e, separator)
 				e->e_df, e->e_to, e->e_from.q_paddr);
 		}
 		else
-			putline("<<< No Message Collected >>>", fp, m);
+			putline("<<< No Message Collected >>>", mci);
 	}
 	if (e->e_dfp != NULL)
 	{
 		rewind(e->e_dfp);
-		while (!ferror(fp) && fgets(buf, sizeof buf, e->e_dfp) != NULL)
+		while (!ferror(mci->mci_out) && fgets(buf, sizeof buf, e->e_dfp) != NULL)
 		{
-			if (buf[0] == 'F' && bitnset(M_ESCFROM, m->m_flags) &&
+			if (buf[0] == 'F' &&
+			    bitnset(M_ESCFROM, mci->mci_mailer->m_flags) &&
 			    strncmp(buf, "From ", 5) == 0)
-				(void) putc('>', fp);
+				(void) putc('>', mci->mci_out);
 			if (buf[0] == '-' && buf[1] == '-' && separator != NULL)
 			{
 				/* possible separator */
 				int sl = strlen(separator);
 
 				if (strncmp(&buf[2], separator, sl) == 0)
-					(void) putc(' ', fp);
+					(void) putc(' ', mci->mci_out);
 			}
-			putline(buf, fp, m);
+			putline(buf, mci);
 		}
 
 		if (ferror(e->e_dfp))
@@ -2066,11 +2097,12 @@ putbody(fp, m, e, separator)
 	}
 
 	/* some mailers want extra blank line at end of message */
-	if (bitnset(M_BLANKEND, m->m_flags) && buf[0] != '\0' && buf[0] != '\n')
-		putline("", fp, m);
+	if (bitnset(M_BLANKEND, mci->mci_mailer->m_flags) &&
+	    buf[0] != '\0' && buf[0] != '\n')
+		putline("", mci);
 
-	(void) fflush(fp);
-	if (ferror(fp) && errno != EPIPE)
+	(void) fflush(mci->mci_out);
+	if (ferror(mci->mci_out) && errno != EPIPE)
 	{
 		syserr("putbody: write error");
 		ExitStat = EX_IOERR;
@@ -2135,6 +2167,7 @@ mailfile(filename, ctladdr, e)
 	{
 		/* child -- actually write to file */
 		struct stat stb;
+		MCI mcibuf;
 
 		(void) setsignal(SIGINT, SIG_DFL);
 		(void) setsignal(SIGHUP, SIG_DFL);
@@ -2197,11 +2230,17 @@ mailfile(filename, ctladdr, e)
 			exit(EX_CANTCREAT);
 		}
 
-		putfromline(f, FileMailer, e);
-		(*e->e_puthdr)(f, FileMailer, e);
-		putline("\n", f, FileMailer);
-		(*e->e_putbody)(f, FileMailer, e, NULL);
-		putline("\n", f, FileMailer);
+		bzero(&mcibuf, sizeof mcibuf);
+		mcibuf.mci_mailer = FileMailer;
+		mcibuf.mci_out = f;
+		if (bitnset(M_7BITS, FileMailer->m_flags))
+			mcibuf.mci_flags |= MCIF_7BIT;
+
+		putfromline(&mcibuf, e);
+		(*e->e_puthdr)(&mcibuf, e);
+		putline("\n", &mcibuf);
+		(*e->e_putbody)(&mcibuf, e, NULL);
+		putline("\n", &mcibuf);
 		if (ferror(f))
 		{
 			message("451 I/O error: %s", errstring(errno));
@@ -2260,7 +2299,7 @@ hostsignature(m, host, e)
 	register STAB *s;
 	int i;
 	int len;
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	int nmx;
 	auto int rcode;
 	char *hp;
@@ -2292,7 +2331,7 @@ hostsignature(m, host, e)
 	**  Not already there -- create a signature.
 	*/
 
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	if (ConfigLevel < 2)
 	{
 		oldoptions = _res.options;
@@ -2315,7 +2354,7 @@ hostsignature(m, host, e)
 			mci = mci_get(hp, m);
 			mci->mci_exitstat = rcode;
 			mci->mci_errno = errno;
-#ifdef NAMED_BIND
+#if NAMED_BIND
 			mci->mci_herrno = h_errno;
 #endif
 

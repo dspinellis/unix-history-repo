@@ -33,11 +33,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.28 (Berkeley) 1/9/94";
+static char sccsid[] = "@(#)envelope.c	8.33 (Berkeley) 2/10/94";
 #endif /* not lint */
 
 #include "sendmail.h"
-#include <sys/time.h>
 #include <pwd.h>
 
 /*
@@ -585,7 +584,7 @@ setsender(from, e, delimptr, internal)
 	*/
 
 	if (bitset(EF_QUEUERUN, e->e_flags) || OpMode == MD_SMTP ||
-	    OpMode == MD_DAEMON)
+	    OpMode == MD_ARPAFTP || OpMode == MD_DAEMON)
 		realname = from;
 	if (realname == NULL || realname[0] == '\0')
 		realname = username();
@@ -694,9 +693,11 @@ setsender(from, e, delimptr, internal)
 			**  Process passwd file entry.
 			*/
 
-
 			/* extract home directory */
-			e->e_from.q_home = newstr(pw->pw_dir);
+			if (strcmp(pw->pw_dir, "/") == 0)
+				e->e_from.q_home = newstr("");
+			else
+				e->e_from.q_home = newstr(pw->pw_dir);
 			define('z', e->e_from.q_home, e);
 
 			/* extract user and group id */
@@ -720,7 +721,12 @@ setsender(from, e, delimptr, internal)
 	else if (!internal && OpMode != MD_DAEMON)
 	{
 		if (e->e_from.q_home == NULL)
+		{
 			e->e_from.q_home = getenv("HOME");
+			if (e->e_from.q_home != NULL &&
+			    strcmp(e->e_from.q_home, "/") == 0)
+				e->e_from.q_home++;
+		}
 		e->e_from.q_uid = RealUid;
 		e->e_from.q_gid = RealGid;
 		e->e_from.q_flags |= QGOODUID;

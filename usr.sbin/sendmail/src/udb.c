@@ -36,15 +36,14 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	8.4 (Berkeley) 11/25/93 (with USERDB)";
+static char sccsid [] = "@(#)udb.c	8.6 (Berkeley) 3/11/94 (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	8.4 (Berkeley) 11/25/93 (without USERDB)";
+static char sccsid [] = "@(#)udb.c	8.6 (Berkeley) 3/11/94 (without USERDB)";
 #endif
 #endif
 
 #ifdef USERDB
 
-#include <sys/time.h>
 #include <errno.h>
 #include <netdb.h>
 #include <db.h>
@@ -571,7 +570,7 @@ _udbx_init()
 		  case '*':	/* search remote database (expand MX) */
 			if (*spec == '*')
 			{
-#ifdef NAMED_BIND
+#if NAMED_BIND
 				nmx = getmxrr(spec + 1, mxhosts, FALSE, &rcode);
 #else
 				mxhosts[0] = spec + 1;

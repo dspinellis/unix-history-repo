@@ -32,7 +32,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-#       @(#)makesendmail	8.3 (Berkeley) 9/26/93
+#       @(#)makesendmail	8.5 (Berkeley) 2/27/94
 #
 
 #
@@ -45,6 +45,8 @@ arch=`uname -m`
 case $arch
 in
   sun4*)	arch=sun4;;
+
+  9000/*)	arch=`echo $arch | sed -e 's/9000.//' -e 's/..$/xx/'`;;
 esac
 
 # determine operating system type
@@ -52,31 +54,59 @@ os=`uname -s`
 
 # determine operating system release
 rel=`uname -r`
+rbase=`echo $rel | sed 's/\..*//''`
 
 # now try to find a reasonable object directory
 if [ -r obj.$os.$arch.$rel ]; then
 	obj=obj.$os.$arch.$rel
+elif [ -r obj.$os.$arch.$rbase.x ]; then
+	obj=obj.$os.$arch.$rbase.x
 elif [ -r obj.$os.$rel ]; then
 	obj=obj.$os.$rel
+elif [ -r obj.$os.$rbase.x ]; then
+	obj=obj.$os.$rbase.x
 elif [ -r obj.$os.$arch ]; then
 	obj=obj.$os.$arch
 elif [ -r obj.$arch.$rel ]; then
 	obj=obj.$arch.$rel
+elif [ -r obj.$arch.$rbase.x ]; then
+	obj=obj.$arch.$rbase.x
 elif [ -r obj.$os ]; then
 	obj=obj.$os
 elif [ -r obj.$arch ]; then
 	obj=obj.$arch
 elif [ -r obj.$rel ]; then
 	obj=obj.$rel
-elif [ -r Makefile.$os ]; then
-	obj=obj.$os.$arch.$rel
-	echo "Creating $obj using Makefile.$os"
-	mkdir $obj
-	(cd $obj; ln -s ../*.[ch158] ../sendmail.hf .; ln -s ../Makefile.$os Makefile)
 else
-	echo "Warning: no recognized support for $arch.$os.$rel"
-	echo "	... winging it ..."
-	obj=.
+	# no existing obj directory -- try to create one if Makefile found
+	obj=obj.$os.$arch.$rel
+	if [ -r Makefile.$os.$arch.$rel ]; then
+		makefile=Makefile.$os.$arch.$rel
+	elif [ -r Makefile.$os.$arch.$rbase.x ]; then
+		makefile=Makefile.$os.$arch.$rbase.x
+	elif [ -r Makefile.$os.$rel ]; then
+		makefile=Makefile.$os.$rel
+	elif [ -r Makefile.$os.$rbase.x ]; then
+		makefile=Makefile.$os.$rbase.x
+	elif [ -r Makefile.$os.$arch ]; then
+		makefile=Makefile.$os.$arch
+	elif [ -r Makefile.$arch.$rel ]; then
+		makefile=Makefile.$arch.$rel
+	elif [ -r Makefile.$arch.$rbase.x ]; then
+		makefile=Makefile.$arch.$rbase.x
+	elif [ -r Makefile.$os ]; then
+		makefile=Makefile.$os
+	elif [ -r Makefile.$arch ]; then
+		makefile=Makefile.$arch
+	elif [ -r Makefile.$rel ]; then
+		makefile=Makefile.$rel
+	else
+		echo "Cannot determine how to support $arch.$os.$rel"
+		exit 1
+	fi
+	echo "Creating $obj using $makefile"
+	mkdir $obj
+	(cd $obj; ln -s ../*.[ch158] ../sendmail.hf .; ln -s ../$makefile Makefile)
 fi
 echo "Making in $obj"
 cd $obj

@@ -10,20 +10,6 @@ Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
 Content-Length: 69132     
 
-Previously, Eric Allman forwarded to me:
-> To: sendmail@vangogh.CS.Berkeley.EDU
-> Subject: pseudo-bug
-> Date: Thu, 22 Jul 1993 10:22:27 -0700
-> From: Adam Glass <glass@sun-lamp.cs.berkeley.edu>
-> 
-> When you distribute the contrib stuff, some of it is kept under RCS by
-> the authors.  This is obvious from the $Header$, $Log$ type stuff in
-> the files.  Problem: because these files are distributed this way,when
-> they are checked into our CVS tree (RCS based), those parts of the
-> contrib stuff will be altered.  I recommend that you get your
-> RCS-using contributors to use the '-kv' option to RCS's co command to
-> freeze their RCS information, so that it isn't corrupted by us.
-
 OK. Here is a new shell archive.
 
 Cheers,

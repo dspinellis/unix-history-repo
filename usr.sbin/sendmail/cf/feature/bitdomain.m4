@@ -34,7 +34,7 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)bitdomain.m4	8.4 (Berkeley) 11/30/93')
+VERSIONID(`@(#)bitdomain.m4	8.6 (Berkeley) 2/19/94')
 divert(-1)
 
 
@@ -43,7 +43,7 @@ Kbitdomain ifelse(_ARG_, `', `hash -o /etc/bitdomain', `_ARG_')
 POPDIVERT
 
 
-PUSHDIVERT(8)
+PUSHDIVERT(2)
 # handle BITNET mapping
-R$* < @ $+ .BITNET. > $*	$: $1 < @ $(bitdomain $2 $: $2.BITNET. $) > $3
+R$* < @ $+ .BITNET > $*		$: $1 < @ $(bitdomain $2 $: $2.BITNET $) > $3
 POPDIVERT

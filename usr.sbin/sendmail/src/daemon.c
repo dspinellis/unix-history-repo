@@ -37,19 +37,18 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.30 (Berkeley) 1/8/94 (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.39 (Berkeley) 3/13/94 (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.30 (Berkeley) 1/8/94 (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.39 (Berkeley) 3/13/94 (without daemon mode)";
 #endif
 #endif /* not lint */
 
 #ifdef DAEMON
 
 # include <netdb.h>
-# include <sys/time.h>
 # include <arpa/inet.h>
 
-#ifdef NAMED_BIND
+#if NAMED_BIND
 # include <arpa/nameser.h>
 # include <resolv.h>
 #endif
@@ -302,10 +301,15 @@ getrequests()
 			*/
 
 			(void) setsignal(SIGCHLD, SIG_DFL);
+			DisConnected = FALSE;
+
+			setproctitle("startup with %s",
+				anynet_ntoa(&RealHostAddr));
 
 			/* determine host name */
 			p = hostnamebyanyaddr(&RealHostAddr);
 			RealHostName = newstr(p);
+			setproctitle("startup with %s", p);
 
 #ifdef LOG
 			if (LogLevel > 11)
@@ -545,7 +549,7 @@ makeconnection(host, port, mci, usesecureport)
 	SOCKADDR addr;
 	int sav_errno;
 	int addrlen;
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	extern int h_errno;
 #endif
 
@@ -554,7 +558,7 @@ makeconnection(host, port, mci, usesecureport)
 	**	Accept "[a.b.c.d]" syntax for host name.
 	*/
 
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	h_errno = 0;
 #endif
 	errno = 0;
@@ -577,6 +581,12 @@ makeconnection(host, port, mci, usesecureport)
 			{
 				/* try it as a host name (avoid MX lookup) */
 				hp = gethostbyname(&host[1]);
+				if (hp == NULL && p[-1] == '.')
+				{
+					p[-1] = '\0';
+					hp = gethostbyname(&host[1]);
+					p[-1] = '.';
+				}
 				*p = ']';
 				goto gothostent;
 			}
@@ -594,11 +604,19 @@ makeconnection(host, port, mci, usesecureport)
 	}
 	else
 	{
+		register char *p = &host[strlen(host) - 1];
+
 		hp = gethostbyname(host);
+		if (hp == NULL && *p == '.')
+		{
+			*p = '\0';
+			hp = gethostbyname(host);
+			*p = '.';
+		}
 gothostent:
 		if (hp == NULL)
 		{
-#ifdef NAMED_BIND
+#if NAMED_BIND
 			if (errno == ETIMEDOUT || h_errno == TRY_AGAIN)
 				return (EX_TEMPFAIL);
 
@@ -844,9 +862,6 @@ myhostname(hostbuf, size)
 **
 **	Returns:
 **		The user@host information associated with this descriptor.
-**
-**	Side Effects:
-**		Sets RealHostName to the name of the host at the other end.
 */
 
 #if IDENTPROTO
@@ -884,18 +899,16 @@ getauthinfo(fd)
 	if (getpeername(fd, &fa.sa, &falen) < 0 || falen <= 0 ||
 	    fa.sa.sa_family == 0)
 	{
-		RealHostName = "localhost";
 		(void) sprintf(hbuf, "%s@localhost", RealUserName);
 		if (tTd(9, 1))
 			printf("getauthinfo: %s\n", hbuf);
 		return hbuf;
 	}
 
-	p = hostnamebyanyaddr(&fa);
-	RealHostName = newstr(p);
-	RealHostAddr = fa;
-
 #if IDENTPROTO
+	if (TimeOuts.to_ident == 0)
+		goto noident;
+
 	lalen = sizeof la;
 	if (fa.sa.sa_family != AF_INET ||
 	    getsockname(fd, &la.sa, &lalen) < 0 || lalen <= 0 ||
@@ -940,10 +953,7 @@ getauthinfo(fd)
 	if (bind(s, &la.sa, sizeof la.sin) < 0 ||
 	    connect(s, &fa.sa, sizeof fa.sin) < 0)
 	{
-closeident:
-		(void) close(s);
-		clrevent(ev);
-		goto noident;
+		goto closeident;
 	}
 
 	if (tTd(9, 10))
@@ -1002,16 +1012,27 @@ closeident:
 		continue;
 
 	/* p now points to the authenticated name */
-	(void) sprintf(hbuf, "%s@%s", p, RealHostName);
+	(void) sprintf(hbuf, "%s@%s",
+		p, RealHostName == NULL ? "localhost" : RealHostName);
 	goto finish;
+
+closeident:
+	(void) close(s);
+	clrevent(ev);
 
 #endif /* IDENTPROTO */
 
 noident:
+	if (RealHostName == NULL)
+	{
+		if (tTd(9, 1))
+			printf("getauthinfo: NULL\n");
+		return NULL;
+	}
 	(void) strcpy(hbuf, RealHostName);
 
 finish:
-	if (RealHostName[0] != '[')
+	if (RealHostName != NULL && RealHostName[0] != '[')
 	{
 		p = &hbuf[strlen(hbuf)];
 		(void) sprintf(p, " [%s]", anynet_ntoa(&RealHostAddr));
@@ -1055,7 +1076,9 @@ host_map_lookup(map, name, av, statp)
 	register STAB *s;
 	char hbuf[MAXNAME];
 	extern struct hostent *gethostbyaddr();
+#if NAMED_BIND
 	extern int h_errno;
+#endif
 
 	/*
 	**  See if we have already looked up this name.  If so, just
@@ -1069,7 +1092,9 @@ host_map_lookup(map, name, av, statp)
 			printf("host_map_lookup(%s) => CACHE %s\n",
 				name, s->s_namecanon.nc_cname);
 		errno = s->s_namecanon.nc_errno;
+#if NAMED_BIND
 		h_errno = s->s_namecanon.nc_herrno;
+#endif
 		*statp = s->s_namecanon.nc_stat;
 		if (CurEnv->e_message == NULL && *statp == EX_TEMPFAIL)
 		{
@@ -1107,10 +1132,11 @@ host_map_lookup(map, name, av, statp)
 		{
 			register struct hostent *hp;
 
+			s->s_namecanon.nc_errno = errno;
+#if NAMED_BIND
+			s->s_namecanon.nc_herrno = h_errno;
 			if (tTd(9, 1))
 				printf("FAIL (%d)\n", h_errno);
-			s->s_namecanon.nc_errno = errno;
-			s->s_namecanon.nc_herrno = h_errno;
 			switch (h_errno)
 			{
 			  case TRY_AGAIN:
@@ -1137,6 +1163,11 @@ host_map_lookup(map, name, av, statp)
 				*statp = EX_UNAVAILABLE;
 				break;
 			}
+#else
+			if (tTd(9, 1))
+				printf("FAIL\n");
+			*statp = EX_NOHOST;
+#endif
 			s->s_namecanon.nc_stat = *statp;
 			if (*statp != EX_TEMPFAIL || UseNameServer)
 				return NULL;
@@ -1167,7 +1198,9 @@ host_map_lookup(map, name, av, statp)
 	/* nope -- ask the name server */
 	hp = gethostbyaddr((char *)&in_addr, sizeof(struct in_addr), AF_INET);
 	s->s_namecanon.nc_errno = errno;
+#if NAMED_BIND
 	s->s_namecanon.nc_herrno = h_errno;
+#endif
 	s->s_namecanon.nc_flags |= NCF_VALID;		/* will be soon */
 	if (hp == NULL)
 	{
@@ -1261,7 +1294,7 @@ hostnamebyanyaddr(sap)
 	register struct hostent *hp;
 	int saveretry;
 
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	/* shorten name server timeout to avoid higher level timeouts */
 	saveretry = _res.retry;
 	_res.retry = 3;
@@ -1298,7 +1331,7 @@ hostnamebyanyaddr(sap)
 		break;
 	}
 
-#ifdef NAMED_BIND
+#if NAMED_BIND
 	_res.retry = saveretry;
 #endif /* NAMED_BIND */
 

@@ -1,4 +1,7 @@
-#	@(#)Makefile	8.3 (Berkeley) 12/20/93
+#
+#  Makefile for FreeBSD
+#
+#	@(#)Makefile.FreeBSD	8.1 (Berkeley) 2/26/94
 
 PROG=	sendmail
 
@@ -21,10 +24,9 @@ SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
 	util.c version.c
 DPADD=	
 LDADD=	$(LIBUTIL)
-MAN1=	newaliases.1
+MAN1=	mailq.1 newaliases.1
 MAN5=	aliases.5
 MAN8=	sendmail.8 
-MLINKS=	sendmail.8 mailq.8
 LINKS=	/usr/sbin/sendmail /usr/bin/newaliases \
 	/usr/sbin/sendmail /usr/bin/mailq
 BINDIR=	/usr/sbin

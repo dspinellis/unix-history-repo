@@ -35,14 +35,14 @@
 #include "sendmail.h"
 
 #ifndef lint
-#ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.10 (Berkeley) 12/21/93 (with name server)";
+#if NAMED_BIND
+static char sccsid[] = "@(#)domain.c	8.19 (Berkeley) 3/11/94 (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.10 (Berkeley) 12/21/93 (without name server)";
+static char sccsid[] = "@(#)domain.c	8.19 (Berkeley) 3/11/94 (without name server)";
 #endif
 #endif /* not lint */
 
-#ifdef NAMED_BIND
+#if NAMED_BIND
 
 #include <errno.h>
 #include <arpa/nameser.h>
@@ -67,6 +67,10 @@ static char	MXHostBuf[MAXMXHOSTS*PACKETSZ];
 
 #ifndef NO_DATA
 # define NO_DATA	NO_ADDRESS
+#endif
+
+#ifndef HEADERSZ
+# define HEADERSZ	sizeof(HEADER)
 #endif
 
 /* don't use sizeof because sizeof(long) is different on 64-bit machines */
@@ -116,6 +120,9 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 	int weight[MAXMXHOSTS];
 	extern bool getcanonname();
 
+	if (tTd(8, 2))
+		printf("getmxrr(%s, droplocalhost=%d)\n", host, droplocalhost);
+
 	if (fallbackMX != NULL)
 	{
 		if (firsttime && res_query(FallBackMX, C_IN, T_A,
@@ -156,6 +163,10 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 			goto punt;
 
 		  case HOST_NOT_FOUND:
+#ifdef BROKEN_RES_SEARCH
+			/* Ultrix resolver returns failure w/ h_errno=0 */
+		  case 0:
+#endif
 			/* the host just doesn't exist */
 			*rcode = EX_NOHOST;
 
@@ -174,6 +185,12 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 			/* it might come up later; better queue it up */
 			*rcode = EX_TEMPFAIL;
 			break;
+
+		  default:
+			syserr("getmxrr: res_search (%s) failed with impossible h_errno (%d)\n",
+				host, h_errno);
+			*rcode = EX_OSERR;
+			break;
 		}
 
 		/* irreconcilable differences */
@@ -182,7 +199,7 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 
 	/* find first satisfactory answer */
 	hp = (HEADER *)&answer;
-	cp = (u_char *)&answer + sizeof(HEADER);
+	cp = (u_char *)&answer + HEADERSZ;
 	eom = (u_char *)&answer + n;
 	for (qdcount = ntohs(hp->qdcount); qdcount--; cp += n + QFIXEDSZ)
 		if ((n = dn_skipname(cp, eom)) < 0)
@@ -216,6 +233,9 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 		    (st = stab(bp, ST_CLASS, ST_FIND)) != NULL &&
 		    bitnset('w', st->s_class))
 		{
+			if (tTd(8, 3))
+				printf("found localhost (%s) in MX list, pref=%d\n",
+					bp, pref);
 			if (!seenlocal || pref < localpref)
 				localpref = pref;
 			seenlocal = TRUE;
@@ -283,6 +303,8 @@ punt:
 			*/
 
 			*rcode = EX_CONFIG;
+			syserr("MX list for %s points back to %s",
+				host, MyHostName);
 			return -1;
 		}
 		strcpy(MXHostBuf, host);
@@ -365,7 +387,7 @@ mxrand(host)
 
 		if (isascii(c) && isupper(c))
 			c = tolower(c);
-		hfunc = ((hfunc << 1) + c) % 2003;
+		hfunc = ((hfunc << 1) ^ c) % 2003;
 	}
 
 	hfunc &= 0xff;
@@ -478,6 +500,10 @@ cnameloop:
 	{
 		*dp++ = _res.defdname;
 	}
+	else if (*cp == '.')
+	{
+		*cp = '\0';
+	}
 	*dp = NULL;
 
 	/*
@@ -546,7 +572,7 @@ cnameloop:
 		*/
 
 		hp = (HEADER *) &answer;
-		ap = (u_char *) &answer + sizeof(HEADER);
+		ap = (u_char *) &answer + HEADERSZ;
 		eom = (u_char *) &answer + ret;
 
 		/* skip question part of response -- we know what we asked */
@@ -597,9 +623,19 @@ cnameloop:
 			  case T_CNAME:
 				if (loopcnt++ > MAXCNAMEDEPTH)
 				{
-					syserr("DNS failure: CNAME loop for %s",
+					/*XXX should notify postmaster XXX*/
+					message("DNS failure: CNAME loop for %s",
 						host);
-					continue;
+					if (CurEnv->e_message == NULL)
+					{
+						char ebuf[MAXLINE];
+
+						sprintf(ebuf, "Deferred: DNS failure: CNAME loop for %s",
+							host);
+						CurEnv->e_message = newstr(ebuf);
+					}
+					h_errno = NO_RECOVERY;
+					return FALSE;
 				}
 
 				/* value points at name */

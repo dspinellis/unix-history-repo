@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.28 (Berkeley) 1/4/94";
+static char sccsid[] = "@(#)util.c	8.34 (Berkeley) 3/11/94";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -644,8 +644,16 @@ dfopen(filename, omode, cmode)
 		fd = open(filename, omode, cmode);
 		if (fd >= 0)
 			break;
-		if (errno != ENFILE && errno != EINTR)
-			break;
+		switch (errno)
+		{
+		  case ENFILE:		/* system file table full */
+		  case EINTR:		/* interrupted syscall */
+#ifdef ETXTBSY
+		  case ETXTBSY:		/* Apollo: net file locked */
+#endif
+			continue;
+		}
+		break;
 	}
 	if (fd >= 0 && fstat(fd, &st) >= 0 && S_ISREG(st.st_mode))
 	{
@@ -672,8 +680,7 @@ dfopen(filename, omode, cmode)
 **
 **	Parameters:
 **		l -- line to put.
-**		fp -- file to put it onto.
-**		m -- the mailer used to control output.
+**		mci -- the mailer connection information.
 **
 **	Returns:
 **		none
@@ -682,16 +689,16 @@ dfopen(filename, omode, cmode)
 **		output of l to fp.
 */
 
-putline(l, fp, m)
+putline(l, mci)
 	register char *l;
-	FILE *fp;
-	MAILER *m;
+	register MCI *mci;
 {
 	register char *p;
 	register char svchar;
+	int slop = 0;
 
 	/* strip out 0200 bits -- these can look like TELNET protocol */
-	if (bitnset(M_7BITS, m->m_flags))
+	if (bitset(MCIF_7BIT, mci->mci_flags))
 	{
 		for (p = l; (svchar = *p) != '\0'; ++p)
 			if (bitset(0200, svchar))
@@ -709,40 +716,45 @@ putline(l, fp, m)
 			fprintf(TrafficLogFile, "%05d >>> ", getpid());
 
 		/* check for line overflow */
-		while (m->m_linelimit > 0 && (p - l) > m->m_linelimit)
+		while (mci->mci_mailer->m_linelimit > 0 &&
+		       (p - l + slop) > mci->mci_mailer->m_linelimit)
 		{
-			register char *q = &l[m->m_linelimit - 1];
+			register char *q = &l[mci->mci_mailer->m_linelimit - slop - 1];
 
 			svchar = *q;
 			*q = '\0';
-			if (l[0] == '.' && bitnset(M_XDOT, m->m_flags))
+			if (l[0] == '.' && slop == 0 &&
+			    bitnset(M_XDOT, mci->mci_mailer->m_flags))
 			{
-				(void) putc('.', fp);
+				(void) putc('.', mci->mci_out);
 				if (TrafficLogFile != NULL)
 					(void) putc('.', TrafficLogFile);
 			}
-			fputs(l, fp);
-			(void) putc('!', fp);
-			fputs(m->m_eol, fp);
+			fputs(l, mci->mci_out);
+			(void) putc('!', mci->mci_out);
+			fputs(mci->mci_mailer->m_eol, mci->mci_out);
+			(void) putc(' ', mci->mci_out);
 			if (TrafficLogFile != NULL)
-				fprintf(TrafficLogFile, "%s!\n%05d >>> ",
+				fprintf(TrafficLogFile, "%s!\n%05d >>>  ",
 					l, getpid());
 			*q = svchar;
 			l = q;
+			slop = 1;
 		}
 
 		/* output last part */
-		if (l[0] == '.' && bitnset(M_XDOT, m->m_flags))
+		if (l[0] == '.' && slop == 0 &&
+		    bitnset(M_XDOT, mci->mci_mailer->m_flags))
 		{
-			(void) putc('.', fp);
+			(void) putc('.', mci->mci_out);
 			if (TrafficLogFile != NULL)
 				(void) putc('.', TrafficLogFile);
 		}
 		if (TrafficLogFile != NULL)
 			fprintf(TrafficLogFile, "%.*s\n", p - l, l);
 		for ( ; l < p; ++l)
-			(void) putc(*l, fp);
-		fputs(m->m_eol, fp);
+			(void) putc(*l, mci->mci_out);
+		fputs(mci->mci_mailer->m_eol, mci->mci_out);
 		if (*l == '\n')
 			++l;
 	} while (l[0] != '\0');
@@ -835,6 +847,12 @@ sfgets(buf, siz, fp, timeout, during)
 {
 	register EVENT *ev = NULL;
 	register char *p;
+
+	if (fp == NULL)
+	{
+		buf[0] = '\0';
+		return NULL;
+	}
 
 	/* set the timeout */
 	if (timeout != 0)
@@ -1309,7 +1327,7 @@ dumpfd(fd, printclosed, logit)
 		p += strlen(p);
 		goto defprint;
 
-#ifdef S_IFIFO
+#if defined(S_IFIFO) && (!defined(S_IFSOCK) || S_IFIFO != S_IFSOCK)
 	  case S_IFIFO:
 		sprintf(p, "FIFO: ");
 		p += strlen(p);
