@@ -13,36 +13,36 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	7.4 (Berkeley) %G%
+ *	@(#)cpu.h	7.5 (Berkeley) %G%
  *
- * from: $Header: cpu.h,v 1.11 92/11/26 02:04:33 torek Exp $ (LBL)
+ * from: $Header: cpu.h,v 1.12 93/05/25 10:36:34 torek Exp $ (LBL)
  */
 
 #ifndef _CPU_H_
 #define _CPU_H_
 
-#include <machine/psl.h>
-#include <sparc/sparc/intreg.h>
+/*
+ * CTL_MACHDEP definitinos.
+ */
+#define	CPU_MAXID	1	/* no valid machdep ids */
 
+#define	CTL_MACHDEP_NAMES { \
+	{ 0, 0 }, \
+}
+
+#ifdef KERNEL
 /*
  * Exported definitions unique to SPARC cpu support.
  */
+
+#include <machine/psl.h>
+#include <sparc/sparc/intreg.h>
 
 /*
  * definitions of cpu-dependent requirements
  * referenced in generic code
  */
 #define	COPY_SIGCODE		/* copy sigcode above user stack in exec */
-
-/*
- * function vs. inline configuration;
- * these are defined to get generic functions
- * rather than inline or machine-dependent implementations
- */
-#define	NEED_MINMAX		/* need {,i,l,ul}{min,max} functions */
-#undef	NEED_FFS		/* don't need ffs function */
-#define	NEED_BCMP		/* need bcmp function */
-#define	NEED_STRLEN		/* need strlen function */
 
 #define	cpu_exec(p)	/* nothing */
 #define	cpu_wait(p)	/* nothing */
@@ -135,4 +135,5 @@ void	intr_establish __P((int level, struct intrhand *));
  */
 void	intr_fasttrap __P((int level, void (*vec)(void)));
 
-#endif _CPU_H_
+#endif /* KERNEL */
+#endif /* _CPU_H_ */
