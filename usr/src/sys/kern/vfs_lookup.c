@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	6.7	84/06/27	*/
+/*	vfs_lookup.c	6.8	84/07/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -390,8 +390,7 @@ searchloop:
 
 		/*
 		 * If still looking for a slot, and at a DIRBLKSIZE
-		 * boundary, have to start looking for free space
-		 * again.
+		 * boundary, have to start looking for free space again.
 		 */
 		if (slotstatus == NONE &&
 		    (entryoffsetinblock&(DIRBLKSIZ-1)) == 0) {
@@ -400,23 +399,17 @@ searchloop:
 		}
 
 		/*
-		 * Get pointer to next entry, and do consistency checking:
-		 *	record length must be multiple of 4
-		 *	record length must not be zero
-		 *	entry must fit in rest of this DIRBLKSIZ block
-		 *	record must be large enough to contain name
-		 * When dirchk is set we also check:
-		 *	name is not longer than MAXNAMLEN
-		 *	name must be as long as advertised, and null terminated
-		 * Checking last two conditions is done only when dirchk is
-		 * set, to save time.
+		 * Get pointer to next entry.
+		 * Full validation checks are slow, so we only check
+		 * enough to insure forward progress through the
+		 * directory. Complete checks can be run by patching
+		 * "dirchk" to be true.
 		 */
 		ep = (struct direct *)(bp->b_un.b_addr + entryoffsetinblock);
-		i = DIRBLKSIZ - (entryoffsetinblock & (DIRBLKSIZ - 1));
-		if ((ep->d_reclen & 0x3) || ep->d_reclen == 0 ||
-		    ep->d_reclen > i || DIRSIZ(ep) > ep->d_reclen ||
-		    dirchk && (ep->d_namlen > MAXNAMLEN || dirbadname(ep))) {
+		if (ep->d_reclen <= 0 ||
+		    dirchk && dirbadentry(ep, entryoffsetinblock)) {
 			dirbad(dp, "mangled entry");
+			i = DIRBLKSIZ - (entryoffsetinblock & (DIRBLKSIZ - 1));
 			u.u_offset += i;
 			entryoffsetinblock += i;
 			continue;
@@ -813,11 +806,25 @@ dirbad(ip, how)
 	    ip->i_fs->fs_fsmnt, ip->i_number, u.u_offset, how);
 }
 
-dirbadname(ep)
+/*
+ * Do consistency checking on a directory entry:
+ *	record length must be multiple of 4
+ *	record length must not be non-negative
+ *	entry must fit in rest of its DIRBLKSIZ block
+ *	record must be large enough to contain entry
+ *	name is not longer than MAXNAMLEN
+ *	name must be as long as advertised, and null terminated
+ */
+dirbadentry(ep, entryoffsetinblock)
 	register struct direct *ep;
+	int entryoffsetinblock;
 {
 	register int i;
 
+	if ((ep->d_reclen & 0x3) != 0 || ep->d_reclen <= 0 ||
+	    ep->d_reclen > DIRBLKSIZ - (entryoffsetinblock & (DIRBLKSIZ - 1)) ||
+	    ep->d_reclen < DIRSIZ(ep) || ep->d_namlen > MAXNAMLEN)
+		return (1);
 	for (i = 0; i < ep->d_namlen; i++)
 		if (ep->d_name[i] == 0)
 			return (1);
