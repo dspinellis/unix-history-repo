@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mount.h	7.13 (Berkeley) %G%
+ *	@(#)mount.h	7.14 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -197,7 +197,9 @@ typedef union nfsv2fh nfsv2fh_t;
  * Arguments to mount NFS
  */
 struct nfs_args {
-	struct sockaddr_in	*addr;		/* file server address */
+	struct sockaddr		*addr;		/* file server address */
+	int			sotype;		/* Socket type */
+	int			proto;		/* and Protocol */
 	nfsv2fh_t		*fh;		/* File handle to be mounted */
 	int			flags;		/* flags */
 	int			wsize;		/* write size in bytes */
@@ -209,13 +211,17 @@ struct nfs_args {
 /*
  * NFS mount option flags
  */
-#define	NFSMNT_SOFT	0x001	/* soft mount (hard is default) */
-#define	NFSMNT_WSIZE	0x002	/* set write size */
-#define	NFSMNT_RSIZE	0x004	/* set read size */
-#define	NFSMNT_TIMEO	0x008	/* set initial timeout */
-#define	NFSMNT_RETRANS	0x010	/* set number of request retrys */
-#define	NFSMNT_HOSTNAME	0x020	/* set hostname for error printf */
-#define	NFSMNT_INT	0x040	/* allow interrupts on hard mount */
+#define	NFSMNT_SOFT	0x0001	/* soft mount (hard is default) */
+#define	NFSMNT_WSIZE	0x0002	/* set write size */
+#define	NFSMNT_RSIZE	0x0004	/* set read size */
+#define	NFSMNT_TIMEO	0x0008	/* set initial timeout */
+#define	NFSMNT_RETRANS	0x0010	/* set number of request retrys */
+#define	NFSMNT_HOSTNAME	0x0020	/* set hostname for error printf */
+#define	NFSMNT_INT	0x0040	/* allow interrupts on hard mount */
+#define	NFSMNT_NOCONN	0x0080	/* Don't Connect the socket */
+#define	NFSMNT_SCKLOCK	0x0100	/* Lock socket against others */
+#define	NFSMNT_WANTSCK	0x0200	/* Want a socket lock */
+#define	NFSMNT_LOCKBITS	(NFSMNT_SCKLOCK | NFSMNT_WANTSCK)
 #endif NFS
 
 #ifdef KERNEL
