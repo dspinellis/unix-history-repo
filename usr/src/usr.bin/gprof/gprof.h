@@ -1,4 +1,4 @@
-    /* sccsid:  @(#)gprof.h	1.3 (Berkeley) %G% */
+    /* sccsid:  @(#)gprof.h	1.4 (Berkeley) %G% */
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -111,7 +111,9 @@ int	debug;
  */
 unsigned UNIT	*samples;
 
-unsigned lowpc, highpc;		/* range profiled */
+unsigned long	s_lowpc;	/* lowpc from the profile file */
+unsigned long	s_highpc;	/* highpc from the profile file */
+unsigned lowpc, highpc;		/* range profiled, in UNIT's */
 unsigned sampbytes;		/* number of bytes of samples */
 int	nsamples;		/* number of samples */
 double	actime;			/* accumulated time thus far for putprofline */
