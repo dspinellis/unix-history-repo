@@ -43,14 +43,22 @@ if [ -f /usr/lib/uucp/clean.weekly ]; then
 fi
 echo ""
 
-echo "Rotating messages:"
+echo ""
+echo -n "Rotating log files:"
 cd /var/log
-if [ -f messages.2 ]; then mv -f messages.2 messages.3; fi
-if [ -f messages.1 ]; then mv -f messages.1 messages.2; fi
-if [ -f messages.0 ]; then mv -f messages.0 messages.1; fi
-mv -f messages   messages.0
-cp /dev/null  messages
-chmod 644 messages
+for i in amd messages; do
+	echo -n " $i"
+	if [ -f $i.5 ]; then mv -f $i.5 $i.6; fi
+	if [ -f $i.4 ]; then mv -f $i.4 $i.5; fi
+	if [ -f $i.3 ]; then mv -f $i.3 $i.4; fi
+	if [ -f $i.2 ]; then mv -f $i.2 $i.3; fi
+	if [ -f $i.1 ]; then mv -f $i.1 $i.2; fi
+	if [ -f $i.0 ]; then mv -f $i.0 $i.1; fi
+	if [ -f $i ]; then mv -f $i $i.0; fi
+	>$i
+done
+echo ""
+
 kill -1 `cat /var/run/syslog.pid`
 cd /
 
