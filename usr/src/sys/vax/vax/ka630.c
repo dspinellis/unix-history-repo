@@ -1,5 +1,5 @@
 /*
- *	@(#)ka630.c	7.1 (Berkeley) %G%
+ *	@(#)ka630.c	7.2 (Berkeley) %G%
  */
 #if defined(VAX630)
 /* ka630.c routines for the ka630 clock chip... */
@@ -20,8 +20,8 @@
  * Will Unix still be here then??
  */
 
-struct cldevice cldevice;
-struct ka630cpu ka630cpu;
+extern struct cldevice cldevice;
+extern struct ka630cpu ka630cpu;
 
 short dayyr[12] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, };
 /* Starts the tod clock. Called from clkstart... */
@@ -29,15 +29,13 @@ ka630tod(base)
 	time_t base;
 {
 	register int tmp1, tmp2;
-	struct pte *pte = &Clockmap[0];
 	register struct cldevice *claddr = &cldevice;
 	struct ka630cpu *ka630addr = &ka630cpu;
 
 	/* Enable system page for registers */
-	*(int *)pte = PG_V|PG_KW|btop(0x200b8000);
-	pte = &Ka630map[0];
-	*(int *)pte = PG_V|PG_KW|btop(0x20080000);
-	mtpr(TBIA, 0);
+	ioaccess(0x200b8000, &Clockmap[0], sizeof(struct cldevice));
+	ioaccess(0x20080000, &Ka630map[0], sizeof(struct ka630cpu));
+
 	/*
 	 * Clear restart and boot in progress flags in the CPMBX. This has
 	 * nothing to do with the clock except that it the CPMBX reg. is a
