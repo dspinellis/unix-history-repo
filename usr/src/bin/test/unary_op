@@ -1,0 +1,24 @@
+# List of unary operators used by test/expr.
+#
+# Copyright (C) 1989 by Kenneth Almquist.  All rights reserved.
+# This file is part of ash, which is distributed under the terms specified
+# by the Ash General Public License.  See the file named LICENSE.
+
+NOT	 !	3
+ISBLOCK	 -b	12   OP_FILE
+ISCHAR	 -c	12   OP_FILE
+ISDIR	 -d	12   OP_FILE
+ISEXIST  -e	12   OP_FILE
+ISFILE	 -f	12   OP_FILE
+ISSETGID -g	12   OP_FILE
+ISSTICKY -k	12   OP_FILE
+STRLEN	 -n	12   OP_STRING
+ISFIFO	 -p	12   OP_FILE
+ISREAD	 -r	12   OP_FILE
+ISSIZE	 -s	12   OP_FILE
+ISTTY	 -t	12   OP_INT
+ISSETUID -u	12   OP_FILE
+ISWRITE  -w	12   OP_FILE
+ISEXEC	 -x	12   OP_FILE
+NULSTR	 -z	12   OP_STRING
+
