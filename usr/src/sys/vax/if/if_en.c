@@ -1,4 +1,4 @@
-/*	if_en.c	4.37	82/03/09	*/
+/*	if_en.c	4.38	82/03/13	*/
 
 #include "en.h"
 
@@ -408,7 +408,8 @@ COUNT(ENRINT);
 		pupproto.sp_protocol = pup->pup_type;
 		pupdst.spup_addr = pup->pup_dport;
 		pupsrc.spup_addr = pup->pup_sport;
-		raw_input(m, &pupproto, &pupdst, &pupsrc);
+		raw_input(m, &pupproto, (struct sockaddr *)&pupdst,
+		 (struct sockaddr *)&pupsrc);
 		goto setup;
 		}
 	}

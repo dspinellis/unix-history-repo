@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.16	82/03/11	*/
+/*	tcp_subr.c	4.17	82/03/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -124,7 +124,7 @@ COUNT(TCP_RESPOND);
 	ti->ti_seq = seq;
 	ti->ti_ack = ack;
 #if vax
-	ti->ti_len = htons(ti->ti_len);
+	ti->ti_len = htons((u_short)ti->ti_len);
 	ti->ti_seq = htonl(ti->ti_seq);
 	ti->ti_ack = htonl(ti->ti_ack);
 #endif

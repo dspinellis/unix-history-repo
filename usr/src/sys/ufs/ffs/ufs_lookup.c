@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	4.12	82/03/12	*/
+/*	ufs_lookup.c	4.13	82/03/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -200,14 +200,16 @@ dirloop:
 				iput(pdp);
 				goto out;
 			}
-			bcopy(ocp, nbp->b_un.b_addr+dp->i_size, cp-ocp);
+			bcopy(ocp, nbp->b_un.b_addr+dp->i_size,
+			  (unsigned)(cp-ocp));
 			bp = bread(dp->i_dev, bmap(dp, (daddr_t)0, B_READ));
 			if (bp->b_flags & B_ERROR) {
 				brelse(bp);
 				iput(pdp);
 				goto out;
 			}
-			bcopy(bp->b_un.b_addr, nbp->b_un.b_addr, dp->i_size);
+			bcopy(bp->b_un.b_addr, nbp->b_un.b_addr,
+			  (unsigned)dp->i_size);
 			brelse(bp);
 			cp = nbp->b_un.b_addr;
 			iput(dp);

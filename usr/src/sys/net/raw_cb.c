@@ -1,4 +1,4 @@
-/*	raw_cb.c	4.4	82/03/05	*/
+/*	raw_cb.c	4.5	82/03/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -73,7 +73,7 @@ COUNT(RAW_ATTACH);
 	rp->rcb_pcb = 0;
 
 	if (addr)
-		bcopy(addr, &so->so_addr, sizeof(*addr));
+		bcopy((caddr_t)addr, (caddr_t)&so->so_addr, sizeof(*addr));
 	return (0);
 bad2:
 	sbrelease(&so->so_snd);
@@ -95,7 +95,7 @@ COUNT(RAW_DETACH);
 	so->so_pcb = 0;
 	sofree(so);
 	remque(rp);
-	(void) m_freem(dtom(rp));
+	m_freem(dtom(rp));
 }
 
 /*
@@ -119,6 +119,6 @@ raw_connaddr(rp, addr)
 	struct sockaddr *addr;
 {
 COUNT(RAW_CONNADDR);
-	bcopy(addr, &rp->rcb_addr, sizeof(struct sockaddr));
+	bcopy((caddr_t)addr, (caddr_t)&rp->rcb_addr, sizeof(struct sockaddr));
 	rp->rcb_flags |= RAW_ADDR;
 }

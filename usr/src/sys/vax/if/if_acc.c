@@ -1,4 +1,4 @@
-/*	if_acc.c	4.8	82/03/12	*/
+/*	if_acc.c	4.9	82/03/13	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -162,7 +162,8 @@ COUNT(ACCINIT);
 	 * sizeof(struct imp_leader), then the if_ routines
 	 * would asssume we handle it on input and output.
 	 */
-	if (if_ubainit(&sc->acc_ifuba, ui->ui_ubanum, 0, btoc(IMP_MTU)) == 0) {
+	if (if_ubainit(&sc->acc_ifuba, ui->ui_ubanum, 0,
+	     (int)btoc(IMP_MTU)) == 0) {
 		printf("acc%d: can't initialize\n", unit);
 		goto down;
 	}
@@ -300,7 +301,6 @@ accrint(unit)
 {
 	register struct acc_softc *sc = &acc_softc[unit];
 	register struct accdevice *addr;
-	register struct ifqueue *inq;
     	struct mbuf *m;
 	int len, info;
 

@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.17	82/03/03	*/
+/*	uipc_proto.c	4.18	82/03/13	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -31,8 +31,7 @@ int	udp_init();
 int	tcp_input(),tcp_ctlinput();
 int	tcp_usrreq();
 int	tcp_init(),tcp_fasttimo(),tcp_slowtimo(),tcp_drain();
-int	rip_input(),rip_output(),rip_ctlinput();
-int	rip_usrreq(),rip_slowtimo();
+int	rip_input(),rip_output(),rip_ctlinput(),rip_usrreq();
 
 /*
  * IMP protocol family: raw interface

@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.3	82/02/15	*/
+/*	if_dmc.c	4.4	82/03/13	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -228,9 +228,9 @@ dmcload(sc, type, w0, w1)
 	if ((n = sc->sc_que.c_cc) == 0)
 		addr->bsel0 = type | DMC_RQI;
 	else
-		putc(type | DMC_RQI, &sc->sc_que);
-	putw(w0, &sc->sc_que);
-	putw(w1, &sc->sc_que);
+		(void) putc(type | DMC_RQI, &sc->sc_que);
+	(void) putw(w0, &sc->sc_que);
+	(void) putw(w1, &sc->sc_que);
 	if (n == 0)
 		dmcrint(unit);
 	splx(sps);

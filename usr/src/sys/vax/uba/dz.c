@@ -1,4 +1,4 @@
-/*	dz.c	4.34	82/03/12	*/
+/*	dz.c	4.35	82/03/13	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -13,6 +13,7 @@
 #include "../h/tty.h"
 #include "../h/dir.h"
 #include "../h/user.h"
+#include "../h/proc.h"
 #include "../h/map.h"
 #include "../h/pte.h"
 #include "../h/buf.h"
@@ -215,7 +216,7 @@ dzopen(dev, flag)
 		u.u_error = EBUSY;
 		return;
 	}
-	dzmctl(dev, DZ_ON, DMSET);
+	(void) dzmctl(dev, DZ_ON, DMSET);
 	(void) spl5();
 	while ((tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
@@ -240,11 +241,11 @@ dzclose(dev, flag)
 	(*linesw[tp->t_line].l_close)(tp);
 	dzaddr = dzpdma[unit].p_addr;
 	if (dzaddr->dzcsr&DZ_32)
-		dzmctl(dev, DZ_BRK, DMBIC);
+		(void) dzmctl(dev, DZ_BRK, DMBIC);
 	else
 		dzaddr->dzbrk = (dz_brk[dz] &= ~(1 << (unit&07)));
 	if ((tp->t_state&TS_HUPCLS) || (tp->t_state&TS_ISOPEN) == 0)
-		dzmctl(dev, DZ_OFF, DMSET);
+		(void) dzmctl(dev, DZ_OFF, DMSET);
 	ttyclose(tp);
 }
  
@@ -361,40 +362,40 @@ dzioctl(dev, cmd, addr, flag)
 	case TIOCSBRK:
 		dzaddr = ((struct pdma *)(tp->t_addr))->p_addr;
 		if (dzaddr->dzcsr&DZ_32)
-			dzmctl(dev, DZ_BRK, DMBIS);
+			(void) dzmctl(dev, DZ_BRK, DMBIS);
 		else
 			dzaddr->dzbrk = (dz_brk[dz] |= 1 << (unit&07));
 		break;
 	case TIOCCBRK:
 		dzaddr = ((struct pdma *)(tp->t_addr))->p_addr;
 		if (dzaddr->dzcsr&DZ_32)
-			dzmctl(dev, DZ_BRK, DMBIC);
+			(void) dzmctl(dev, DZ_BRK, DMBIC);
 		else
 			dzaddr->dzbrk = (dz_brk[dz] &= ~(1 << (unit&07)));
 		break;
 	case TIOCSDTR:
-		dzmctl(dev, DZ_DTR|DZ_RTS, DMBIS);
+		(void) dzmctl(dev, DZ_DTR|DZ_RTS, DMBIS);
 		break;
 	case TIOCCDTR:
-		dzmctl(dev, DZ_DTR|DZ_RTS, DMBIC);
+		(void) dzmctl(dev, DZ_DTR|DZ_RTS, DMBIC);
 		break;
 	case TIOCMSET:
 		if (copyin(addr, (caddr_t) &temp, sizeof(temp)))
 			u.u_error = EFAULT;
 		else
-			dzmctl(dev, dmtodz(temp), DMSET);
+			(void) dzmctl(dev, dmtodz(temp), DMSET);
 		break;
 	case TIOCMBIS:
 		if (copyin(addr, (caddr_t) &temp, sizeof(temp)))
 			u.u_error = EFAULT;
 		else
-			dzmctl(dev, dmtodz(temp), DMBIS);
+			(void) dzmctl(dev, dmtodz(temp), DMBIS);
 		break;
 	case TIOCMBIC:
 		if (copyin(addr, (caddr_t) &temp, sizeof(temp)))
 			u.u_error = EFAULT;
 		else
-			dzmctl(dev, dmtodz(temp), DMBIC);
+			(void) dzmctl(dev, dmtodz(temp), DMBIC);
 		break;
 	case TIOCMGET:
 		temp = dztodm(dzmctl(dev, 0, DMGET));
@@ -444,7 +445,7 @@ dzparam(unit)
 	dzaddr->dzcsr = DZ_IEN;
 	dzact |= (1<<(unit>>3));
 	if (tp->t_ispeed == 0) {
-		dzmctl(unit, DZ_OFF, DMSET);	/* hang up line */
+		(void) dzmctl(unit, DZ_OFF, DMSET);	/* hang up line */
 		return;
 	}
 	lpr = (dz_speeds[tp->t_ispeed]<<8) | (unit & 07);
@@ -688,7 +689,7 @@ dzreset(uban)
 		tp = &dz_tty[unit];
 		if (tp->t_state & (TS_ISOPEN|TS_WOPEN)) {
 			dzparam(unit);
-			dzmctl(unit, DZ_ON, DMSET);
+			(void) dzmctl(unit, DZ_ON, DMSET);
 			tp->t_state &= ~TS_BUSY;
 			dzstart(tp);
 		}

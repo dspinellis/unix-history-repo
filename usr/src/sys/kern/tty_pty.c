@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.18	82/03/11	*/
+/*	tty_pty.c	4.19	82/03/13	*/
 
 /*
  * Pseudo-teletype Driver
@@ -219,11 +219,11 @@ ptcread(dev)
 	pti = &pt_ioctl[minor(dev)];
 	if (pti->pt_flags & PF_PKT) {
 		if (pti->pt_send) {
-			passc(pti->pt_send);
+			(void) passc(pti->pt_send);
 			pti->pt_send = 0;
 			return;
 		}
-		passc(0);
+		(void) passc(0);
 	}
 	while (tp->t_outq.c_cc == 0 || (tp->t_state&TS_TTSTOP)) {
 		if (pti->pt_flags&PF_NBIO) {
@@ -335,8 +335,8 @@ again:
 				sleep((caddr_t)&tp->t_rawq.c_cf, TTOPRI);
 				goto again;
 			}
-			b_to_q(cp, cc, &tp->t_rawq);
-			putc(0, &tp->t_rawq);
+			(void) b_to_q(cp, cc, &tp->t_rawq);
+			(void) putc(0, &tp->t_rawq);
 			wakeup((caddr_t)&tp->t_rawq);
 			return;
 		}
@@ -372,7 +372,7 @@ ptyioctl(dev, cmd, addr, flag)
 	if (cdevsw[major(dev)].d_open == ptcopen) {
 		if (cmd == TIOCPKT) {
 			int packet;
-			if (copyin((caddr_t)addr, &packet, sizeof (packet))) {
+			if (copyin((caddr_t)addr, (caddr_t)&packet, sizeof (packet))) {
 				u.u_error = EFAULT;
 				return;
 			}
@@ -384,7 +384,7 @@ ptyioctl(dev, cmd, addr, flag)
 		}
 		if (cmd == TIOCREMOTE) {
 			int remote;
-			if (copyin((caddr_t)addr, &remote, sizeof (remote))) {
+			if (copyin((caddr_t)addr, (caddr_t)&remote, sizeof (remote))) {
 				u.u_error = EFAULT;
 				return;
 			}
@@ -397,7 +397,7 @@ ptyioctl(dev, cmd, addr, flag)
 		}
 		if (cmd == FIONBIO) {
 			int nbio;
-			if (copyin(addr, &nbio, sizeof (nbio))) {
+			if (copyin((caddr_t)addr, (caddr_t)&nbio, sizeof (nbio))) {
 				u.u_error = EFAULT;
 				return;
 			}

@@ -1,4 +1,4 @@
-/*	uipc_pipe.c	4.10	81/12/02	*/
+/*	uipc_pipe.c	4.11	82/03/13	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -139,6 +139,7 @@ COUNT(PIUSRREQ);
 	return (0);
 }
 
+#ifdef notdef
 psndrcv(snd, rcv)
 	struct sockbuf *snd, *rcv;
 {
@@ -150,3 +151,4 @@ psndrcv(snd, rcv)
 	    rcv->sb_cc, rcv->sb_hiwat, rcv->sb_mbcnt, rcv->sb_mbmax);
 	printf("m %x, m->m_len %d\n", rcv->sb_mb, rcv->sb_mb ? rcv->sb_mb->m_len : 0);
 }
+#endif
