@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)stat.c 1.11 %G%";
+static char sccsid[] = "@(#)stat.c 1.12 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -238,7 +238,12 @@ withop(s)
 	putline();
 	swl = withlist;
 	for (p = s[2]; p != NIL; p = p[2]) {
-		tempnlp = tmpalloc(sizeof(int *), INT_TYP, REGOK);
+		    /*
+		     *	no one uses the allocated temporary namelist entry,
+		     *	since we have to use it before we know its type;
+		     *	but we use its runtime location for the with pointer.
+		     */
+		tempnlp = tmpalloc(sizeof(int *), nl + TPTR, REGOK);
 #		ifdef OBJ
 		    put(2, O_LV | cbn <<8+INDX, tempnlp -> value[ NL_OFFS ] );
 #		endif OBJ
