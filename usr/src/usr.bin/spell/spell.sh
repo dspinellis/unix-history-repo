@@ -1,11 +1,11 @@
 #!/bin/sh -
 #
-# Copyright (c) 1983 The Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1983, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # %sccs.include.proprietary.sh%
 #
-#	@(#)spell.sh	1.7 (Berkeley) %G%
+#	@(#)spell.sh	8.1 (Berkeley) %G%
 #
 
 : V data for -v, B flags, D dictionary, S stop, H history, F files, T temp
