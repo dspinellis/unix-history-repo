@@ -3,9 +3,8 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mail9.nr	8.1 (Berkeley) %G%
+.\"	@(#)mail9.nr	8.2 (Berkeley) %G%
 .\"
-.bp
 .sh 1 "Summary of commands, options, and escapes"
 .pp
 This section gives a quick summary of the
@@ -73,7 +72,6 @@ write	Append messages to a file, don't include headers
 xit	Same as \fBexit\fP
 z	Scroll to next/previous screenful of headers
 .TE
-.bp
 .(b
 .pp
 The following table describes the options.  Each option is

@@ -3,9 +3,8 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mail8.nr	8.1 (Berkeley) %G%
+.\"	@(#)mail8.nr	8.2 (Berkeley) %G%
 .\"
-.bp
 .sh 1 "Glossary"
 .pp
 This section contains the definitions of a few phrases
