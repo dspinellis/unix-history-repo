@@ -1,22 +1,7 @@
 #!/bin/sh -
 #
-#	@(#)security	5.21 (Berkeley) %G%
+#	@(#)security	5.22 (Berkeley) %G%
 #
-
-# Script to check basic system security.  Checks included are:
-#	Password and group file check.
-#	Root umask, dot in root's path.
-#	Root and uucp in /etc/ftpusers.
-#	Entry for uudecode in /etc/aliases, if uudecode is setuid.
-#	Hosts.equiv syntax.
-#	Special users that have .rhosts files, .rhosts file syntax.
-#	Home directory and dot-file ownership and permissions.
-#	Mailbox ownership and permissions.
-#	Globally exported NFS file systems.
-#	Changes in setuid and device files.
-#	Block and character disk device ownership and permissions.
-#	File list from /etc/mtree/special.
-#	System binaries as described by files in /etc/mtree.
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 
@@ -31,7 +16,7 @@ OUTPUT=/tmp/_secure6.$$
 
 trap 'rm -f $ERR $TMP1 $TMP2 $TMP3 $LIST $OUTPUT' 0
 
-# Check the password file syntax.
+# Check the master password file syntax.
 MP=/etc/master.passwd
 awk -F: '{
 	if ($0 ~ /^[	 ]*$/) {
@@ -103,6 +88,9 @@ if [ -s $OUTPUT ] ; then
 fi
 
 # Check for root paths, umask values in startup files.
+# The check for the root paths is problematical -- it's likely to fail
+# in other environments.  Once the shells have been modified to warn
+# of '.' in the path, the path tests should go away.
 > $OUTPUT
 rhome=/root
 umaskset=no
@@ -201,12 +189,12 @@ else
 	printf "\nUucp not listed in /etc/ftpusers file.\n"
 fi
 
-# Uudecode should not be in the aliases file.
+# Uudecode should not be in the /etc/aliases file.
 if grep -w uudecode /etc/aliases; then
 	printf "\nThere is an entry for uudecode in the /etc/aliases file.\n"
 fi
 
-# Check for plus signs in /etc/hosts.equiv.
+# There should be no plus signs in /etc/hosts.equiv.
 if egrep '\+|^$' /etc/hosts.equiv > /dev/null ; then
 	printf "\nEmpty line or + in /etc/hosts.equiv file.\n"
 fi
@@ -240,8 +228,8 @@ if [ -s $OUTPUT ] ; then
 	cat $OUTPUT
 fi
 
-# Check home directories, dot files.
-# Directories should not be owned by someone else or writeable.
+# Check home directories.  Directories should not be owned by someone else
+# or writeable.
 awk -F: '{ print $1 " " $6 }' /etc/passwd | \
 while read uid homedir; do
 	if [ -d ${homedir}/ ] ; then
@@ -305,7 +293,7 @@ if [ -s $OUTPUT ] ; then
 	cat $OUTPUT
 fi
 
-# Check mailbox ownership and permissions.
+# Mailboxes should be owned by user and unreadable.
 ls -l /var/mail | sed 1d | \
 awk '$3 != $9 \
 	{ print "user " $9 " mailbox is owned by " $3 }
@@ -316,7 +304,7 @@ if [ -s $OUTPUT ] ; then
 	cat $OUTPUT
 fi
 
-# Check for globally exported file systems.
+# File systems should not be globally exported.
 awk '{
 	readonly = 0;
 	for (i = 2; i <= NF; ++i) {
@@ -335,7 +323,7 @@ if [ -s $OUTPUT ] ; then
 	cat $OUTPUT
 fi
 
-# Display setuid and device changes.
+# Display any changes in setuid files and devices.
 printf "\nChecking setuid files and devices:\n"
 (find / ! -fstype local -a -prune -o \
     \( -perm -u+s -o -perm -g+s -o ! -type d -a ! -type f -a ! -type l -a \
@@ -351,7 +339,6 @@ fi
 
 # Display any changes in the setuid file list.
 egrep -v '^[bc]' $LIST > $TMP1
-
 if [ -s $TMP1 ] ; then
 	# Check to make sure uudecode isn't setuid.
 	if grep -w uudecode $TMP1 > /dev/null ; then
@@ -399,7 +386,7 @@ if [ -s $TMP1 ] ; then
 	fi
 fi
 
-# Check for block and character disk devices, that are readable or writeable
+# Check for block and character disk devices that are readable or writeable
 # or not owned by root.operator.
 egrep '^b' $LIST > $TMP1
 egrep '^c.*/rdk[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
@@ -428,8 +415,8 @@ if [ -s $OUTPUT ] ; then
 	printf "\n"
 fi
 
-egrep '^[bc]' $LIST | sort +10 > $TMP1
 # Display any changes in the device file list.
+egrep '^[bc]' $LIST | sort +10 > $TMP1
 if [ -s $TMP1 ] ; then
 	CUR=/var/backups/device.current
 	BACK=/var/backups/device.backup
@@ -490,7 +477,6 @@ fi
 # the hacker can modify the tree specification to match the replaced binary.
 # For details on really protecting yourself against modified binaries, see
 # the mtree(8) manual page.
-
 if cd /etc/mtree; then
 	mtree -e -p / -f /etc/mtree/special > $OUTPUT
 	if [ -s $OUTPUT ] ; then
