@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_bio.c	7.20 (Berkeley) %G%
+ *	@(#)vfs_bio.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -669,7 +669,10 @@ vinvalbuf(vp, save)
 				(void) bwrite(bp);
 				break;
 			}
-			bp->b_flags |= B_INVAL;
+			if (bp->b_vp != vp)
+				reassignbuf(bp, bp->b_vp);
+			else
+				bp->b_flags |= B_INVAL;
 			brelse(bp);
 		}
 	}
