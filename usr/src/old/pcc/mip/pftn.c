@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)pftn.c	1.4 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.5 (Berkeley) %G%";
 # include "mfile1"
 
 unsigned int offsz;
@@ -1631,14 +1631,18 @@ fixclass( class, type ) TWORD type; {
 				uerror( "fortran function has wrong type" );
 				}
 			}
-	case STNAME:
-	case UNAME:
-	case ENAME:
 	case EXTERN:
 	case STATIC:
 	case EXTDEF:
 	case TYPEDEF:
 	case USTATIC:
+		if( blevel == 1 ){
+			uerror( "illegal class" );
+			return( PARAM );
+			}
+	case STNAME:
+	case UNAME:
+	case ENAME:
 		return( class );
 
 	default:
