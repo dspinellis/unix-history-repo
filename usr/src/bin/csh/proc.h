@@ -1,4 +1,4 @@
-/* proc.h 4.4 %G% */
+/* @(#)proc.h	4.5 (Berkeley) %G% */
 
 /*
  * C shell - process structure declarations
@@ -25,8 +25,6 @@ struct process	{
 	struct	timeval p_btime;	/* begin time */
 	struct	timeval p_etime;	/* end time */
 	struct	rusage p_rusage;
-	long	p_utime;	/* XXX */
-	long	p_stime;	/* XXX */
 	char	*p_command;		/* first PMAXLEN chars of command */
 };
 
@@ -73,8 +71,6 @@ struct	process	*pcurrent;		/* current job in table */
 struct	process *pprevious;		/* previous job in table */
 
 short	pmaxindex;			/* current maximum job index */
-
-bool	timesdone;			/* shtimes buffer full ? */
 
 int	psigint();
 struct	process	*pgetcurr();

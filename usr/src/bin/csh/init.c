@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)init.c 4.3 %G%";
+#ifndef lint
+static	char *sccsid = "@(#)init.c	4.4 (Berkeley) %G%";
+#endif
 
 #include "sh.local.h"
 
@@ -76,9 +78,7 @@ struct	biltins {
 } bfunc[] = {
 	"@",		dolet,		0,	INF,
 	"alias",	doalias,	0,	INF,
-#ifdef debug
 	"alloc",	showall,	0,	1,
-#endif
 	"bg",		dobg,		0,	INF,
 	"break",	dobreak,	0,	0,
 	"breaksw",	doswbrk,	0,	0,
@@ -146,8 +146,8 @@ struct	biltins {
 	"unsetenv",	dounsetenv,	1,	INF,
 	"wait",		dowait,		0,	0,
 	"while",	dowhile,	1,	INF,
-	0,		0,		0,	0,
 };
+int nbfunc = sizeof bfunc / sizeof *bfunc;
 
 #define	ZBREAK		0
 #define	ZBRKSW		1
@@ -190,8 +190,8 @@ struct srch {
 	"set",		ZSET,
 	"switch",	ZSWITCH,
 	"while",	ZWHILE,
-	0,		0,
 };
+int nsrchn = sizeof srchn / sizeof *srchn;
 
 struct	mesg {
 	char	*iname;
@@ -213,18 +213,18 @@ struct	mesg {
 	"PIPE",	"Broken pipe",
 	"ALRM",	"Alarm clock",
 	"TERM",	"Terminated",
-	0,	"Signal 16",
+	"URG",	"Urgent I/O condition",
 	"STOP",	"Stopped (signal)",
 	"TSTP",	"Stopped",
 	"CONT",	"Continued",
 	"CHLD",	"Child exited",
 	"TTIN", "Stopped (tty input)",
 	"TTOU", "Stopped (tty output)",
-	"TINT", "Tty input interrupt",
+	"IO",	"I/O possible",
 	"XCPU",	"Cputime limit exceeded",
 	"XFSZ", "Filesize limit exceeded",
-	0,	"Signal 26",
-	0,	"Signal 27",
+	"VTALRM","Virtual timer expired",
+	"PROF",	"Profiling timer expired",
 	0,	"Signal 28",
 	0,	"Signal 29",
 	0,	"Signal 30",

@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)exp.c 4.1 %G%";
+#ifndef lint
+static	char *sccsid = "@(#)exp.c	4.2 (Berkeley) %G%";
+#endif
 
 #include "sh.h"
 
@@ -512,31 +514,42 @@ isa(cp, what)
 	if (cp == 0)
 		return ((what & RESTOP) != 0);
 	if (cp[1] == 0) {
-		if ((what & ADDOP) && any(cp[0], "+-"))
+		if (what & ADDOP && (*cp == '+' || *cp == '-'))
 			return (1);
-		if ((what & MULOP) && any(cp[0], "*/%"))
+		if (what & MULOP && (*cp == '*' || *cp == '/' || *cp == '%'))
 			return (1);
-		if ((what & RESTOP) && any(cp[0], "()!~^"))
+		if (what & RESTOP && (*cp == '(' || *cp == ')' || *cp == '!' ||
+				      *cp == '~' || *cp == '^' || *cp == '"'))
 			return (1);
+	} else if (cp[2] == 0) {
+		if (what & RESTOP) {
+			if (cp[0] == '|' && cp[1] == '&')
+				return (1);
+			if (cp[0] == '<' && cp[1] == '<')
+				return (1);
+			if (cp[0] == '>' && cp[1] == '>')
+				return (1);
+		}
+		if (what & EQOP) {
+			if (cp[0] == '=') {
+				if (cp[1] == '=')
+					return (EQEQ);
+				if (cp[1] == '~')
+					return (EQMATCH);
+			} else if (cp[0] == '!') {
+				if (cp[1] == '=')
+					return (NOTEQ);
+				if (cp[1] == '~')
+					return (NOTEQMATCH);
+			}
+		}
 	}
-	if ((what & RESTOP) && (any(cp[0], "|&") || eq(cp, "<<") || eq(cp, ">>")))
-		return (1);
-	if (what & EQOP) {
-		if (eq(cp, "=="))
-			return (EQEQ);
-		if (eq(cp, "!="))
-			return (NOTEQ);
-		if (eq(cp, "=~"))
-			return (EQMATCH);
-		if (eq(cp, "!~"))
-			return (NOTEQMATCH);
+	if (what & RELOP) {
+		if (*cp == '<')
+			return (LSS);
+		if (*cp == '>')
+			return (GTR);
 	}
-	if (!(what & RELOP))
-		return (0);
-	if (*cp == '<')
-		return (LSS);
-	if (*cp == '>')
-		return (GTR);
 	return (0);
 }
 

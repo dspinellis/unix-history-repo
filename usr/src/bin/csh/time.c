@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)time.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)time.c	4.6 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -7,16 +7,14 @@ static char sccsid[] = "@(#)time.c	4.5 (Berkeley) %G%";
 /*
  * C Shell - routines handling process timing and niceing
  */
-struct	tms times0;
-struct	tms timesdol;
 
 settimes()
 {
 	struct rusage ruch;
 
-	gettimeofday(&time0, (struct timezone *)0);
-	getrusage(RUSAGE_SELF, &ru0);
-	getrusage(RUSAGE_CHILDREN, &ruch);
+	(void) gettimeofday(&time0, (struct timezone *)0);
+	(void) getrusage(RUSAGE_SELF, &ru0);
+	(void) getrusage(RUSAGE_CHILDREN, &ruch);
 	ruadd(&ru0, &ruch);
 }
 
@@ -29,10 +27,10 @@ dotime()
 	struct timeval timedol;
 	struct rusage ru1, ruch;
 
-	getrusage(RUSAGE_SELF, &ru1);
-	getrusage(RUSAGE_CHILDREN, &ruch);
+	(void) getrusage(RUSAGE_SELF, &ru1);
+	(void) getrusage(RUSAGE_CHILDREN, &ruch);
 	ruadd(&ru1, &ruch);
-	gettimeofday(&timedol, (struct timezone *)0);
+	(void) gettimeofday(&timedol, (struct timezone *)0);
 	prusage(&ru0, &ru1, &timedol, &time0);
 }
 
@@ -101,7 +99,7 @@ prusage(r0, r1, e, b)
 		break;
 
 	case 'E':
-		psecs(ms / 100);
+		psecs((long)(ms / 100));
 		break;
 
 	case 'P':

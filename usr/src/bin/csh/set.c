@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)set.c 4.3 %G%";
+#ifndef lint
+static	char *sccsid = "@(#)set.c	4.4 (Berkeley) %G%";
+#endif
 
 #include "sh.h"
 
@@ -79,6 +81,10 @@ setsyn:
 			setenv("TERM", value(vp));
 		else if (eq(vp, "home"))
 			setenv("HOME", value(vp));
+#ifdef FILEC
+		else if (eq(vp, "filec"))
+			filec = 1;
+#endif
 	} while (p = *v++);
 }
 
@@ -110,6 +116,7 @@ asx(vp, subscr, p)
 
 struct varent *
 getvx(vp, subscr)
+	char *vp;
 {
 	register struct varent *v = adrof(vp);
 
@@ -121,7 +128,6 @@ getvx(vp, subscr)
 }
 
 char	plusplus[2] = { '1', 0 };
-
 
 dolet(v)
 	char **v;
@@ -195,11 +201,13 @@ letsyn:
 #endif
 			else
 				set(vp, operate(op, value(vp), p));
-		if (strcmp(vp, "path") == 0)
+		if (eq(vp, "path")) {
+			exportpath(adrof("path")->vec);
 			dohash();
-		xfree(vp);
+		}
+		XFREE(vp)
 		if (c != '=')
-			xfree(p);
+			XFREE(p)
 	} while (p = *v++);
 }
 
@@ -243,35 +251,6 @@ operate(op, vp, p)
 	if (*vecp)
 		bferr("Expression syntax");
 	return (putn(i));
-}
-
-onlyread(cp)
-	char *cp;
-{
-	extern char end[];
-
-	return (cp < end);
-}
-
-xfree(cp)
-	char *cp;
-{
-	extern char end[];
-
-	if (cp >= end && cp < (char *) &cp)
-		free(cp);
-}
-
-char *
-savestr(s)
-	register char *s;
-{
-	register char *n;
-
-	if (s == 0)
-		s = "";
-	strcpy(n = calloc(1, strlen(s) + 1), s);
-	return (n);
 }
 
 static	char *putp;
@@ -338,14 +317,6 @@ badnum:
 }
 
 char *
-value(var)
-	char *var;
-{
-
-	return (value1(var, &shvhed));
-}
-
-char *
 value1(var, head)
 	char *var;
 	struct varent *head;
@@ -356,61 +327,49 @@ value1(var, head)
 	return (vp == 0 || vp->vec[0] == 0 ? "" : vp->vec[0]);
 }
 
-static	struct varent *shprev;
-
 struct varent *
-adrof(var)
-	char *var;
-{
-
-	return (adrof1(var, &shvhed));
-}
-
-struct varent *
-madrof(pat, head)
+madrof(pat, vp)
 	char *pat;
-	struct varent *head;
-{
 	register struct varent *vp;
+{
+	register struct varent *vp1;
 
-	shprev = head;
-	for (vp = shprev->link; vp != 0; vp = vp->link) {
-		if (Gmatch(vp->name, pat))
-			return (vp);
-		shprev = vp;
+	for (; vp; vp = vp->v_right) {
+		if (vp->v_left && (vp1 = madrof(pat, vp->v_left)))
+			return vp1;
+		if (Gmatch(vp->v_name, pat))
+			return vp;
 	}
-	return (0);
+	return vp;
 }
 
 struct varent *
-adrof1(var, head)
-	char *var;
-	struct varent *head;
+adrof1(name, v)
+	register char *name;
+	register struct varent *v;
 {
-	register struct varent *vp;
-	int cmp;
+	register cmp;
 
-	shprev = head;
-	for (vp = shprev->link; vp != 0; vp = vp->link) {
-		cmp = strcmp(vp->name, var);
-		if (cmp == 0)
-			return (vp);
-		else if (cmp > 0)
-			return (0);
-		shprev = vp;
-	}
-	return (0);
+	v = v->v_left;
+	while (v && ((cmp = *name - *v->v_name) ||
+		     (cmp = strcmp(name, v->v_name))))
+		if (cmp < 0)
+			v = v->v_left;
+		else
+			v = v->v_right;
+	return v;
 }
 
 /*
  * The caller is responsible for putting value in a safe place
  */
-set(var, value)
-	char *var, *value;
+set(var, val)
+	char *var, *val;
 {
-	register char **vec = (char **) calloc(2, sizeof (char **));
+	register char **vec = (char **) xalloc(2 * sizeof (char **));
 
-	vec[0] = onlyread(value) ? savestr(value) : value;
+	vec[0] = onlyread(val) ? savestr(val) : val;
+	vec[1] = 0;
 	set1(var, vec, &shvhed);
 }
 
@@ -418,10 +377,9 @@ set1(var, vec, head)
 	char *var, **vec;
 	struct varent *head;
 {
-
 	register char **oldv = vec;
 
-	gflag = 0; rscan(oldv, tglob);
+	gflag = 0; tglob(oldv);
 	if (gflag) {
 		vec = glob(oldv);
 		if (vec == 0) {
@@ -435,27 +393,35 @@ set1(var, vec, head)
 	setq(var, vec, head);
 }
 
-setq(var, vec, head)
-	char *var, **vec;
-	struct varent *head;
+setq(name, vec, p)
+	char *name, **vec;
+	register struct varent *p;
 {
-	register struct varent *vp;
+	register struct varent *c;
+	register f;
 
-	vp = adrof1(var, head);
-	if (vp == 0) {
-		vp = (struct varent *) calloc(1, sizeof *vp);
-		vp->name = savestr(var);
-		vp->link = shprev->link;
-		shprev->link = vp;
+	f = 0;			/* tree hangs off the header's left link */
+	while (c = p->v_link[f]) {
+		if ((f = *name - *c->v_name) == 0 &&
+		    (f = strcmp(name, c->v_name)) == 0) {
+			blkfree(c->vec);
+			goto found;
+		}
+		p = c;
+		f = f > 0;
 	}
-	if (vp->vec)
-		blkfree(vp->vec);
-	scan(vec, trim);
-	vp->vec = vec;
+	p->v_link[f] = c = (struct varent *)xalloc(sizeof (struct varent));
+	c->v_name = savestr(name);
+	c->v_bal = 0;
+	c->v_left = c->v_right = 0;
+	c->v_parent = p;
+	balance(p, f, 0);
+found:
+	trim(c->vec = vec);
 }
 
 unset(v)
-	register char *v[];
+	char *v[];
 {
 
 	unset1(v, &shvhed);
@@ -463,47 +429,79 @@ unset(v)
 		HIST = '!';
 		HISTSUB = '^';
 	}
+#ifdef FILEC
+	if (adrof("filec") == 0)
+		filec = 0;
+#endif
 }
 
 unset1(v, head)
 	register char *v[];
 	struct varent *head;
 {
-	register char *var;
 	register struct varent *vp;
 	register int cnt;
 
-	v++;
-	while (var = *v++) {
+	while (*++v) {
 		cnt = 0;
-		while (vp = madrof(var, head))
-			unsetv1(vp->name, head), cnt++;
+		while (vp = madrof(*v, head->v_left))
+			unsetv1(vp), cnt++;
 		if (cnt == 0)
-			setname(var);
+			setname(*v);
 	}
 }
 
 unsetv(var)
 	char *var;
 {
-
-	unsetv1(var, &shvhed);
-}
-
-unsetv1(var, head)
-	char *var;
-	struct varent *head;
-{
 	register struct varent *vp;
 
-	vp = adrof1(var, head);
-	if (vp == 0)
+	if ((vp = adrof1(var, &shvhed)) == 0)
 		udvar(var);
-	vp = shprev->link;
-	shprev->link = vp->link;
-	blkfree(vp->vec);
-	xfree(vp->name);
-	xfree((char *)vp);
+	unsetv1(vp);
+}
+
+unsetv1(p)
+	register struct varent *p;
+{
+	register struct varent *c, *pp;
+	register f;
+
+	/*
+	 * Free associated memory first to avoid complications.
+	 */
+	blkfree(p->vec);
+	XFREE(p->v_name);
+	/*
+	 * If p is missing one child, then we can move the other
+	 * into where p is.  Otherwise, we find the predecessor
+	 * of p, which is guaranteed to have no right child, copy
+	 * it into p, and move it's left child into it.
+	 */
+	if (p->v_right == 0)
+		c = p->v_left;
+	else if (p->v_left == 0)
+		c = p->v_right;
+	else {
+		for (c = p->v_left; c->v_right; c = c->v_right)
+			;
+		p->v_name = c->v_name;
+		p->vec = c->vec;
+		p = c;
+		c = p->v_left;
+	}
+	/*
+	 * Move c into where p is.
+	 */
+	pp = p->v_parent;
+	f = pp->v_right == p;
+	if (pp->v_link[f] = c)
+		c->v_parent = pp;
+	/*
+	 * Free the deleted node, and rebalance.
+	 */
+	XFREE((char *)p);
+	balance(pp, f, 1);
 }
 
 setNS(cp)
@@ -524,7 +522,7 @@ shift(v)
 	if (name == 0)
 		name = "argv";
 	else
-		strip(name);
+		(void) strip(name);
 	argv = adrof(name);
 	if (argv == 0)
 		udvar(name);
@@ -537,7 +535,6 @@ exportpath(val)
 char **val;
 {
 	char exppath[BUFSIZ];
-	register char *dir;
 
 	exppath[0] = 0;
 	if (val)
@@ -546,10 +543,153 @@ char **val;
 				printf("Warning: ridiculously long PATH truncated\n");
 				break;
 			}
-			strcat(exppath, *val++);
+			(void) strcat(exppath, *val++);
 			if (*val == 0 || eq(*val, ")"))
 				break;
-			strcat(exppath, ":");
+			(void) strcat(exppath, ":");
 		}
 	setenv("PATH", exppath);
+}
+
+	/* macros to do single rotations on node p */
+#define rright(p) (\
+	t = (p)->v_left,\
+	(t)->v_parent = (p)->v_parent,\
+	((p)->v_left = t->v_right) ? (t->v_right->v_parent = (p)) : 0,\
+	(t->v_right = (p))->v_parent = t,\
+	(p) = t)
+#define rleft(p) (\
+	t = (p)->v_right,\
+	(t)->v_parent = (p)->v_parent,\
+	((p)->v_right = t->v_left) ? (t->v_left->v_parent = (p)) : 0,\
+	(t->v_left = (p))->v_parent = t,\
+	(p) = t)
+
+/*
+ * Rebalance a tree, starting at p and up.
+ * F == 0 means we've come from p's left child.
+ * D == 1 means we've just done a delete, otherwise an insert.
+ */
+balance(p, f, d)
+	register struct varent *p;
+	register f;
+{
+	register struct varent *pp;
+	register struct varent *t;		/* used by the rotate macros */
+	register ff;
+
+	/*
+	 * Ok, from here on, p is the node we're operating on;
+	 * pp is it's parent; f is the branch of p from which we have come;
+	 * ff is the branch of pp which is p.
+	 */
+	for (; pp = p->v_parent; p = pp, f = ff) {
+		ff = pp->v_right == p;
+		if (f ^ d) {		/* right heavy */
+			switch (p->v_bal) {
+			case -1:		/* was left heavy */
+				p->v_bal = 0;
+				break;
+			case 0:			/* was balanced */
+				p->v_bal = 1;
+				break;
+			case 1:			/* was already right heavy */
+				switch (p->v_right->v_bal) {
+				case 1:			/* sigle rotate */
+					pp->v_link[ff] = rleft(p);
+					p->v_left->v_bal = 0;
+					p->v_bal = 0;
+					break;
+				case 0:			/* single rotate */
+					pp->v_link[ff] = rleft(p);
+					p->v_left->v_bal = 1;
+					p->v_bal = -1;
+					break;
+				case -1:		/* double rotate */
+					rright(p->v_right);
+					pp->v_link[ff] = rleft(p);
+					p->v_left->v_bal =
+						p->v_bal < 1 ? 0 : -1;
+					p->v_right->v_bal =
+						p->v_bal > -1 ? 0 : 1;
+					p->v_bal = 0;
+					break;
+				}
+				break;
+			}
+		} else {		/* left heavy */
+			switch (p->v_bal) {
+			case 1:			/* was right heavy */
+				p->v_bal = 0;
+				break;
+			case 0:			/* was balanced */
+				p->v_bal = -1;
+				break;
+			case -1:		/* was already left heavy */
+				switch (p->v_left->v_bal) {
+				case -1:		/* single rotate */
+					pp->v_link[ff] = rright(p);
+					p->v_right->v_bal = 0;
+					p->v_bal = 0;
+					break;
+				case 0:			/* signle rotate */
+					pp->v_link[ff] = rright(p);
+					p->v_right->v_bal = -1;
+					p->v_bal = 1;
+					break;
+				case 1:			/* double rotate */
+					rleft(p->v_left);
+					pp->v_link[ff] = rright(p);
+					p->v_left->v_bal =
+						p->v_bal < 1 ? 0 : -1;
+					p->v_right->v_bal =
+						p->v_bal > -1 ? 0 : 1;
+					p->v_bal = 0;
+					break;
+				}
+				break;
+			}
+		}
+		/*
+		 * If from insert, then we terminate when p is balanced.
+		 * If from delete, then we terminate when p is unbalanced.
+		 */
+		if ((p->v_bal == 0) ^ d)
+			break;
+	}
+}
+
+plist(p)
+	register struct varent *p;
+{
+	register struct varent *c;
+	register len;
+
+	if (setintr)
+		(void) sigsetmask(sigblock(0) & ~ sigmask(SIGINT));
+	for (;;) {
+		while (p->v_left)
+			p = p->v_left;
+	x:
+		if (p->v_parent == 0)		/* is it the header? */
+			return;
+		len = blklen(p->vec);
+		printf(p->v_name);
+		putchar('\t');
+		if (len != 1)
+			putchar('(');
+		blkpr(p->vec);
+		if (len != 1)
+			putchar(')');
+		putchar('\n');
+		if (p->v_right) {
+			p = p->v_right;
+			continue;
+		}
+		do {
+			c = p;
+			p = p->v_parent;
+		} while (p->v_right == c);
+		goto x;
+	}
 }

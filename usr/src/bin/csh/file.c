@@ -1,7 +1,8 @@
 #ifndef lint
-static	char *sccsid = "@(#)file.c 1.5 (Berkeley from Hp Labs) %G%";
+static	char *sccsid = "@(#)file.c	1.6 (Berkeley from Hp Labs) %G%";
 #endif
 
+#ifdef FILEC
 /*
  * Tenex style file name recognition, .. and more.
  * History:
@@ -9,28 +10,27 @@ static	char *sccsid = "@(#)file.c 1.5 (Berkeley from Hp Labs) %G%";
  *	Finally got around to adding to the Cshell., Ken Greer, Dec. 1981.
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
+#include "sh.h"
 #include <sgtty.h>
 #include <sys/dir.h>
-#include <signal.h>
 #include <pwd.h>
-
-extern short SHIN, SHOUT;
 
 #define TRUE	1
 #define FALSE	0
 #define ON	1
 #define OFF	0
-#define FILSIZ	512			/* Max reasonable file name length */
 
 #define ESC	'\033'
 
 typedef enum {LIST, RECOGNIZE} COMMAND;
 
-#define equal(a, b)	(strcmp(a, b) == 0)
-
 static struct tchars  tchars;		/* INT, QUIT, XON, XOFF, EOF, BRK */
+
+/*
+ * Put this here so the binary can be patched with adb to enable file
+ * completion by default.
+ */
+bool filec = 0;
 
 static
 setup_tty(on)
@@ -41,9 +41,9 @@ setup_tty(on)
 
 	omask = sigblock(sigmask(SIGINT));
 	if (on) {
-		ioctl(SHIN, TIOCGETC, &tchars);
+		(void) ioctl(SHIN, TIOCGETC, (char *)&tchars);
 		tchars.t_brkc = ESC;
-		ioctl(SHIN, TIOCSETC, &tchars);
+		(void) ioctl(SHIN, TIOCSETC, (char *)&tchars);
 		/*
 		 * This is a useful feature in it's own right...
 		 * The shell makes sure that the tty is not in some weird state
@@ -51,16 +51,16 @@ setup_tty(on)
 		 * tenex routine will not work correctly in CBREAK or RAW mode
 		 * so this code below is, therefore, mandatory.
 		 */
-		ioctl(SHIN, TIOCGETP, &sgtty);
+		(void) ioctl(SHIN, TIOCGETP, (char *)&sgtty);
 		if (sgtty.sg_flags & (RAW|CBREAK)) {
 			 sgtty.sg_flags &= ~(RAW|CBREAK);
-			 ioctl(SHIN, TIOCSETP, &sgtty);
+			 (void) ioctl(SHIN, TIOCSETP, (char *)&sgtty);
 		}
 	} else {
 		tchars.t_brkc = -1;
-		ioctl(SHIN, TIOCSETC, &tchars);
+		(void) ioctl(SHIN, TIOCSETC, (char *)&tchars);
 	}
-	sigsetmask (omask);
+	(void) sigsetmask (omask);
 }
 
 /*
@@ -73,13 +73,13 @@ back_to_col_1()
 	int omask;
 
 	omask = sigblock(sigmask(SIGINT));
-	ioctl(SHIN, TIOCGETP, &tty);
+	(void) ioctl(SHIN, TIOCGETP, (char *)&tty);
 	tty_normal = tty;
 	tty.sg_flags &= ~CRMOD;
-	ioctl(SHIN, TIOCSETN, &tty);
+	(void) ioctl(SHIN, TIOCSETN, (char *)&tty);
 	(void) write(SHOUT, "\r", 1);
-	ioctl(SHIN, TIOCSETN, &tty_normal);
-	sigsetmask(omask);
+	(void) ioctl(SHIN, TIOCSETN, (char *)&tty_normal);
+	(void) sigsetmask(omask);
 }
 
 /*
@@ -94,15 +94,15 @@ pushback(string)
 	int omask;
 
 	omask = sigblock(sigmask(SIGINT));
-	ioctl(SHOUT, TIOCGETP, &tty);
+	(void) ioctl(SHOUT, TIOCGETP, (char *)&tty);
 	tty_normal = tty;
 	tty.sg_flags &= ~ECHO;
-	ioctl(SHOUT, TIOCSETN, &tty);
+	(void) ioctl(SHOUT, TIOCSETN, (char *)&tty);
 
 	for (p = string; *p; p++)
-		ioctl(SHOUT, TIOCSTI, p);
-	ioctl(SHOUT, TIOCSETN, &tty_normal);
-	sigsetmask(omask);
+		(void) ioctl(SHOUT, TIOCSTI, p);
+	(void) ioctl(SHOUT, TIOCSETN, (char *)&tty_normal);
+	(void) sigsetmask(omask);
 }
 
 /*
@@ -162,10 +162,9 @@ filetype(dir, file)
 {
 	char path[512];
 	struct stat statb;
-	extern char *strcpy ();
 
 	if (dir) {
-		catn(strcpy (path, dir), file, sizeof path);
+		catn(strcpy(path, dir), file, sizeof path);
 		if (stat(path, &statb) >= 0) {
 			if (statb.st_mode & S_IFDIR)
 				return ('/');
@@ -222,8 +221,6 @@ tilde(new, old)
 	register char *o, *p;
 	register struct passwd *pw;
 	static char person[40];
-	extern char *strcpy();
-	extern struct passwd *getpwuid(), *getpwnam();
 
 	if (old[0] != '~')
 		return (strcpy(new, old));
@@ -237,7 +234,7 @@ tilde(new, old)
 		pw = getpwnam(person);
 	if (pw == NULL)
 		return (NULL);
-	strcpy(new, pw->pw_dir);
+	(void) strcpy(new, pw->pw_dir);
 	(void) strcat(new, o);
 	return (new);
 }
@@ -250,7 +247,7 @@ retype()
 {
 	int pending_input = LPENDIN;
 
-	ioctl(SHOUT, TIOCLBIS, &pending_input);
+	(void) ioctl(SHOUT, TIOCLBIS, (char *)&pending_input);
 }
 
 static
@@ -296,9 +293,8 @@ extract_dir_and_name(path, dir, name)
 	char *path, *dir, *name;
 {
 	register char  *p;
-	extern char *rindex();
 
-	p = rindex (path, '/');
+	p = rindex(path, '/');
 	if (p == NULL) {
 		copyn(name, path, MAXNAMLEN);
 		dir[0] = '\0';
@@ -314,7 +310,6 @@ getentry(dir_fd, looking_for_lognames)
 {
 	register struct passwd *pw;
 	register struct direct *dirp;
-	extern struct passwd *getpwent();
 
 	if (looking_for_lognames) {
 		if ((pw = getpwent ()) == NULL)
@@ -334,7 +329,7 @@ free_items(items)
 
 	for (i = 0; items[i]; i++)
 		free(items[i]);
-	free(items);
+	free((char *)items);
 }
 
 #define FREE_ITEMS(items) { \
@@ -343,7 +338,7 @@ free_items(items)
 	omask = sigblock(sigmask(SIGINT));\
 	free_items(items);\
 	items = NULL;\
-	sigsetmask(omask);\
+	(void) sigsetmask(omask);\
 }
 
 /*
@@ -357,7 +352,7 @@ search(word, command, max_word_length)
 	static char **items = NULL;
 	register DIR *dir_fd;
 	register numitems, name_length, looking_for_lognames;
-	char tilded_dir[FILSIZ + 1], dir[FILSIZ + 1];
+	char tilded_dir[MAXPATHLEN + 1], dir[MAXPATHLEN + 1];
 	char name[MAXNAMLEN + 1], extended_name[MAXNAMLEN+1];
 	char *entry;
 #define MAXITEMS 1024
@@ -367,7 +362,7 @@ search(word, command, max_word_length)
 
 	looking_for_lognames = (*word == '~') && (index(word, '/') == NULL);
 	if (looking_for_lognames) {
-		setpwent();
+		(void) setpwent();
 		copyn(name, &word[1], MAXNAMLEN);	/* name sans ~ */
 	} else {
 		extract_dir_and_name(word, dir, name);
@@ -386,8 +381,6 @@ search(word, command, max_word_length)
 		    !looking_for_lognames)
 			continue;
 		if (command == LIST) {
-			extern char *malloc ();
-
 			if (numitems >= MAXITEMS) {
 				printf ("\nYikes!! Too many %s!!\n",
 				    looking_for_lognames ?
@@ -400,7 +393,7 @@ search(word, command, max_word_length)
 				if (items == NULL)
 					break;
 			}
-			items[numitems] = malloc(strlen(entry) + 1);
+			items[numitems] = malloc((unsigned)strlen(entry) + 1);
 			if (items[numitems] == NULL) {
 				printf("out of mem\n");
 				break;
@@ -413,7 +406,7 @@ search(word, command, max_word_length)
 				break;
 	}
 	if (looking_for_lognames)
-		endpwent();
+		(void) endpwent();
 	else
 		closedir(dir_fd);
 	if (command == RECOGNIZE && numitems > 0) {
@@ -427,9 +420,7 @@ search(word, command, max_word_length)
 		return (numitems);
 	}
 	if (command == LIST) {
-		register int i;
-
-		qsort(items, numitems, sizeof(items[1]), fcompare);
+		qsort((char *)items, numitems, sizeof(items[1]), fcompare);
 		print_by_column(looking_for_lognames ? NULL : tilded_dir,
 		    items, numitems);
 		if (items != NULL)
@@ -549,3 +540,4 @@ tenex(inputline, inputline_size)
 	setup_tty (OFF);
 	return (num_read);
 }
+#endif FILEC

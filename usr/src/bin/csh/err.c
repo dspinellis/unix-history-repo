@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)err.c 4.1 %G%";
+#ifndef lint
+static	char *sccsid = "@(#)err.c	4.2 (Berkeley) %G%";
+#endif
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -20,6 +22,7 @@ char	*onev[2] = { one, NOSTR };
  * be closed in the routine process in sh.c which is the only
  * place error unwinds are ever caught.
  */
+/*VARARGS1*/
 error(s, arg)
 	char *s;
 {
@@ -70,7 +73,7 @@ error(s, arg)
 
 	setq("status", onev, &shvhed);
 	if (tpgrp > 0)
-		ioctl(FSHTTY, TIOCSPGRP, &tpgrp);
+		(void) ioctl(FSHTTY, TIOCSPGRP, (char *)&tpgrp);
 	reset();		/* Unwind */
 }
 
@@ -89,7 +92,7 @@ Perror(s)
 	if (!didfds) {
 		register int oerrno = errno;
 
-		dcopy(SHDIAG, 2);
+		(void) dcopy(SHDIAG, 2);
 		errno = oerrno;
 	}
 	perror(s);

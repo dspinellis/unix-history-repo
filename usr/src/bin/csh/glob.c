@@ -1,6 +1,9 @@
-static	char *sccsid = "@(#)glob.c 4.6 %G%";
+#ifndef lint
+static	char *sccsid = "@(#)glob.c	4.7 (Berkeley) %G%";
+#endif
 
 #include "sh.h"
+#include "sh.char.h"
 #include <sys/dir.h>
 
 /*
@@ -8,8 +11,6 @@ static	char *sccsid = "@(#)glob.c 4.6 %G%";
  */
 
 int	globcnt;
-
-char	*globchars =	"`{[*?";
 
 char	*gpath, *gpathp, *lastgpathp;
 int	globbed;
@@ -63,7 +64,7 @@ collect(as)
 #ifdef GDEBUG
 		printf("doing backp of %s\n", as);
 #endif
-		dobackp(as, 0);
+		(void) dobackp(as, 0);
 #ifdef GDEBUG
 		printf("backp done, acollect'ing\n");
 #endif
@@ -135,13 +136,13 @@ expand(as)
 				*gpathp = 0;
 				if (gethdir(gpath + 1))
 					error("Unknown user: %s", gpath + 1);
-				strcpy(gpath, gpath + 1);
+				(void) strcpy(gpath, gpath + 1);
 			} else
-				strcpy(gpath, value("home"));
+				(void) strcpy(gpath, value("home"));
 			gpathp = strend(gpath);
 		}
 	}
-	while (!any(*cs, globchars)) {
+	while (!cmap(*cs, _GLOB)) {
 		if (*cs == 0) {
 			if (!globbed)
 				Gcat(gpath, "");
@@ -160,7 +161,7 @@ expand(as)
 		cs++, gpathp++;
 	*gpathp = 0;
 	if (*oldcs == '{') {
-		execbrc(cs, NOSTR);
+		(void) execbrc(cs, NOSTR);
 		return;
 	}
 	matchdir(cs);
@@ -174,8 +175,7 @@ matchdir(pattern)
 {
 	struct stat stb;
 	register struct direct *dp;
-	DIR *dirp;
-	register int cnt;
+	register DIR *dirp;
 
 	dirp = opendir(gpath);
 	if (dirp == NULL) {
@@ -260,8 +260,8 @@ pend:
 doit:
 		savec = *pm;
 		*pm = 0;
-		strcpy(lm, pl);
-		strcat(restbuf, pe + 1);
+		(void) strcpy(lm, pl);
+		(void) strcat(restbuf, pe + 1);
 		*pm = savec;
 		if (s == 0) {
 			sgpathp = gpathp;
@@ -442,14 +442,24 @@ Gmatch(s, p)
 }
 
 Gcat(s1, s2)
-	register char *s1, *s2;
+	char *s1, *s2;
 {
+	register char *p, *q;
+	int n;
 
-	gnleft -= strlen(s1) + strlen(s2) + 1;
+	for (p = s1; *p++;)
+		;
+	for (q = s2; *q++;)
+		;
+	gnleft -= (n = (p - s1) + (q - s2) - 1);
 	if (gnleft <= 0 || ++gargc >= GAVSIZ)
 		error("Arguments too long");
 	gargv[gargc] = 0;
-	gargv[gargc - 1] = strspl(s1, s2);
+	p = gargv[gargc - 1] = xalloc((unsigned)n);
+	for (q = s1; *p++ = *q++;)
+		;
+	for (p--, q = s2; *p++ = *q++;)
+		;
 }
 
 addpath(c)
@@ -466,52 +476,37 @@ rscan(t, f)
 	register char **t;
 	int (*f)();
 {
+	register char *p;
+
+	while (p = *t++)
+		while (*p)
+			(*f)(*p++);
+}
+
+trim(t)
+	register char **t;
+{
+	register char *p;
+
+	while (p = *t++)
+		while (*p++ &= TRIM)
+			;
+}
+
+tglob(t)
+	register char **t;
+{
 	register char *p, c;
 
 	while (p = *t++) {
-		if (f == tglob)
-			if (*p == '~')
-				gflag |= 2;
-			else if (eq(p, "{") || eq(p, "{}"))
-				continue;
+		if (*p == '~')
+			gflag |= 2;
+		else if (*p == '{' && (p[1] == '\0' || p[1] == '}' && p[2] == '\0'))
+			continue;
 		while (c = *p++)
-			(*f)(c);
+			if (cmap(c, _GLOB))
+				gflag |= c == '{' ? 2 : 1;
 	}
-}
-
-scan(t, f)
-	register char **t;
-	int (*f)();
-{
-	register char *p, c;
-
-	while (p = *t++)
-		while (c = *p)
-			*p++ = (*f)(c);
-}
-
-tglob(c)
-	register char c;
-{
-
-	if (any(c, globchars))
-		gflag |= c == '{' ? 2 : 1;
-	return (c);
-}
-
-trim(c)
-	char c;
-{
-
-	return (c & TRIM);
-}
-
-tback(c)
-	char c;
-{
-
-	if (c == '`')
-		gflag = 1;
 }
 
 char *
@@ -525,7 +520,7 @@ globone(str)
 	gv[0] = str;
 	gv[1] = 0;
 	gflag = 0;
-	rscan(gv, tglob);
+	tglob(gv);
 	if (gflag) {
 		gvp = glob(gv);
 		if (gvp == 0) {
@@ -548,7 +543,7 @@ globone(str)
 */
 		xfree((char *)gargv); gargv = 0;
 	} else {
-		scan(gv, trim);
+		trim(gv);
 		cp = savestr(gv[0]);
 	}
 	return (cp);
@@ -650,14 +645,14 @@ backeval(cp, literal)
 		struct wordent paraml;
 		struct command *t;
 
-		close(pvec[0]);
-		dmove(pvec[1], 1);
-		dmove(SHDIAG, 2);
+		(void) close(pvec[0]);
+		(void) dmove(pvec[1], 1);
+		(void) dmove(SHDIAG, 2);
 		initdesc();
 		arginp = cp;
 		while (*cp)
 			*cp++ &= TRIM;
-		lex(&paraml);
+		(void) lex(&paraml);
 		if (err)
 			error(err);
 		alias(&paraml);
@@ -666,14 +661,14 @@ backeval(cp, literal)
 			error(err);
 		if (t)
 			t->t_dflg |= FPAR;
-		signal(SIGTSTP, SIG_IGN);
-		signal(SIGTTIN, SIG_IGN);
-		signal(SIGTTOU, SIG_IGN);
+		(void) signal(SIGTSTP, SIG_IGN);
+		(void) signal(SIGTTIN, SIG_IGN);
+		(void) signal(SIGTTOU, SIG_IGN);
 		execute(t, -1);
 		exitstat();
 	}
 	xfree(cp);
-	close(pvec[1]);
+	(void) close(pvec[1]);
 	do {
 		int cnt = 0;
 		for (;;) {
@@ -721,7 +716,7 @@ backeval(cp, literal)
 	printf("done in backeval, pvec: %d %d\n", pvec[0], pvec[1]);
 	printf("also c = %c <%o>\n", c, c);
 #endif
-	close(pvec[0]);
+	(void) close(pvec[0]);
 	pwait();
 	prestjob();
 }

@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)misc.c 4.3 %G%";
+#ifndef lint
+static	char *sccsid = "@(#)misc.c	4.4 (Berkeley) %G%";
+#endif
 
 #include "sh.h"
 
@@ -37,36 +39,76 @@ any(c, s)
 	return(0);
 }
 
+onlyread(cp)
+	char *cp;
+{
+	extern char end[];
+
+	return (cp < end);
+}
+
+xfree(cp)
+	char *cp;
+{
+	extern char end[];
+
+	if (cp >= end && cp < (char *) &cp)
+		free(cp);
+}
+
+char *
+savestr(s)
+	register char *s;
+{
+	char *n;
+	register char *p;
+
+	if (s == 0)
+		s = "";
+	for (p = s; *p++;)
+		;
+	n = p = xalloc((unsigned) (p - s));
+	while (*p++ = *s++)
+		;
+	return (n);
+}
+
 char *
 calloc(i, j)
 	register unsigned i;
 	unsigned j;
 {
 	register char *cp, *dp;
-#ifdef debug
-	static char *av[2] = {0, 0};
-#endif
 
 	i *= j;
-	cp = (char *) malloc(i);
-	if (cp == 0) {
-		child++;
-#ifndef debug
-		error("Out of memory");
-#else
-		showall(av);
-		printf("i=%d, j=%d: ", i/j, j);
-		printf("Out of memory\n");
-		chdir("/usr/bill/cshcore");
-		abort();
-#endif
-	}
-	dp = cp;
+	dp = cp = xalloc(i);
 	if (i != 0)
 		do
 			*dp++ = 0;
 		while (--i);
 	return (cp);
+}
+
+nomem(i)
+	unsigned i;
+{
+#ifdef debug
+	static char *av[2] = {0, 0};
+#endif
+
+	child++;
+#ifndef debug
+	error("Out of memory");
+#ifdef lint
+	i = i;
+#endif
+#else
+	showall(av);
+	printf("i=%d: Out of memory\n", i);
+	chdir("/usr/bill/cshcore");
+	abort();
+#endif
+	return 0;		/* fool lint */
 }
 
 char **
@@ -117,7 +159,7 @@ blkcat(up, vp)
 	char **up, **vp;
 {
 
-	blkcpy(blkend(up), vp);
+	(void) blkcpy(blkend(up), vp);
 	return (up);
 }
 
@@ -126,17 +168,17 @@ blkfree(av0)
 {
 	register char **av = av0;
 
-	while (*av)
-		xfree(*av++);
-	xfree((char *)av0);
+	for (; *av; av++)
+		XFREE(*av)
+	XFREE((char *)av0)
 }
 
 char **
 saveblk(v)
 	register char **v;
 {
-	register int len = blklen(v) + 1;
-	register char **newv = (char **) calloc(len, sizeof (char **));
+	register char **newv =
+		(char **) calloc((unsigned) (blklen(v) + 1), sizeof (char **));
 	char **onewv = newv;
 
 	while (*v)
@@ -146,12 +188,20 @@ saveblk(v)
 
 char *
 strspl(cp, dp)
-	register char *cp, *dp;
+	char *cp, *dp;
 {
-	register char *ep = calloc(1, strlen(cp) + strlen(dp) + 1);
+	char *ep;
+	register char *p, *q;
 
-	strcpy(ep, cp);
-	strcat(ep, dp);
+	for (p = cp; *p++;)
+		;
+	for (q = dp; *q++;)
+		;
+	ep = xalloc((unsigned) ((p - cp) + (q - dp) - 1));
+	for (p = ep, q = cp; *p++ = *q++;)
+		;
+	for (p--, q = dp; *p++ = *q++;)
+		;
 	return (ep);
 }
 
@@ -159,9 +209,11 @@ char **
 blkspl(up, vp)
 	register char **up, **vp;
 {
-	register char **wp = (char **) calloc(blklen(up) + blklen(vp) + 1, sizeof (char **));
+	register char **wp =
+		(char **) calloc((unsigned) (blklen(up) + blklen(vp) + 1),
+			sizeof (char **));
 
-	blkcpy(wp, up);
+	(void) blkcpy(wp, up);
 	return (blkcat(wp, vp));
 }
 
@@ -187,31 +239,15 @@ closem()
 	for (f = 0; f < NOFILE; f++)
 		if (f != SHIN && f != SHOUT && f != SHDIAG && f != OLDSTD &&
 		    f != FSHTTY)
-			close(f);
-}
-
-/*
- * Close files before executing a file.
- * We could be MUCH more intelligent, since (on a version 7 system)
- * we need only close files here during a source, the other
- * shell fd's being in units 16-19 which are closed automatically!
- */
-closech()
-{
-	register int f;
-
-	if (didcch)
-		return;
-	didcch = 1;
-	SHIN = 0; SHOUT = 1; SHDIAG = 2; OLDSTD = 0;
-	for (f = 3; f < NOFILE; f++)
-		close(f);
+			(void) close(f);
 }
 
 donefds()
 {
 
-	close(0), close(1), close(2);
+	(void) close(0);
+	(void) close(1);
+	(void) close(2);
 	didfds = 0;
 }
 
@@ -226,15 +262,13 @@ dmove(i, j)
 
 	if (i == j || i < 0)
 		return (i);
-#ifdef V7
 	if (j >= 0) {
-		dup2(i, j);
+		(void) dup2(i, j);
 		return (j);
-	} else
-#endif
-		j = dcopy(i, j);
+	}
+	j = dcopy(i, j);
 	if (j != i)
-		close(i);
+		(void) close(i);
 	return (j);
 }
 
@@ -244,13 +278,11 @@ dcopy(i, j)
 
 	if (i == j || i < 0 || j < 0 && i > 2)
 		return (i);
-#ifdef V7
 	if (j >= 0) {
-		dup2(i, j);
+		(void) dup2(i, j);
 		return (j);
 	}
-#endif
-	close(j);
+	(void) close(j);
 	return (renum(i, j));
 }
 
@@ -265,7 +297,7 @@ renum(i, j)
 		return (k);
 	if (k != j) {
 		j = renum(k, j);
-		close(k);
+		(void) close(k);
 		return (j);
 	}
 	return (k);
@@ -297,7 +329,7 @@ lshift(v, c)
 
 	while (*u && --c >= 0)
 		xfree(*u++);
-	blkcpy(v, u);
+	(void) blkcpy(v, u);
 }
 
 number(cp)
@@ -318,7 +350,8 @@ char **
 copyblk(v)
 	register char **v;
 {
-	register char **nv = (char **) calloc(blklen(v) + 1, sizeof (char **));
+	register char **nv =
+		(char **) calloc((unsigned) (blklen(v) + 1), sizeof (char **));
 
 	return (blkcpy(nv, v));
 }
