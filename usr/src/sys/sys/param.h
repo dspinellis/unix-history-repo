@@ -1,4 +1,4 @@
-/*	param.h	3.2	%H%	*/
+/*	param.h	3.3	%H%	*/
 
 /*
  * tunable variables
@@ -159,8 +159,6 @@
 #define	fsbtodb(b)	((b)*CLSIZE)
 #define	dbtofsb(b)	((b)/CLSIZE)
 
-/* BSLOP can be 0 unless you have a TIU/Spider */
-#define	BSLOP	0		/* In case some device needs bigger buffers */
 #define	NINDIR	(BSIZE/sizeof(daddr_t))
 
 #define	CBSIZE	28		/* number of chars in a clist block */
