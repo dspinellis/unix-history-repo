@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_vfsops.c	7.9 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -71,7 +71,6 @@ mountfs(dev, ronly, ip)
 {
 	register struct mount *mp;
 	struct mount *fmp = NULL;
-	struct buf *tp = NULL;
 	register struct buf *bp = NULL;
 	register struct fs *fs;
 	struct partinfo dpart;
@@ -112,12 +111,12 @@ mountfs(dev, ronly, ip)
 		size = dpart.disklab->d_secsize;
 	} else
 		size = DEV_BSIZE;
-	tp = bread(dev, SBLOCK, SBSIZE);
-	if (tp->b_flags & B_ERROR) {
+	bp = bread(dev, SBLOCK, SBSIZE);
+	if (bp->b_flags & B_ERROR) {
 		mp->m_fs = NULL;
 		goto out;
 	}
-	fs = tp->b_un.b_fs;
+	fs = bp->b_un.b_fs;
 	if (fs->fs_magic != FS_MAGIC || fs->fs_bsize > MAXBSIZE ||
 	    fs->fs_bsize < sizeof(struct fs)) {
 		mp->m_fs = NULL;
@@ -125,10 +124,10 @@ mountfs(dev, ronly, ip)
 		goto out;
 	}
 	mp->m_fs = (struct fs *)malloc(fs->fs_sbsize, M_SUPERBLK, M_WAITOK);
-	bcopy((caddr_t)tp->b_un.b_addr, (caddr_t)mp->m_fs,
+	bcopy((caddr_t)bp->b_un.b_addr, (caddr_t)mp->m_fs,
 	   (u_int)fs->fs_sbsize);
-	brelse(tp);
-	tp = NULL;
+	brelse(bp);
+	bp = NULL;
 	fs = mp->m_fs;
 	fs->fs_ronly = (ronly != 0);
 	if (ronly == 0)
@@ -149,16 +148,16 @@ mountfs(dev, ronly, ip)
 		size = fs->fs_bsize;
 		if (i + fs->fs_frag > blks)
 			size = (blks - i) * fs->fs_fsize;
-		tp = bread(dev, fsbtodb(fs, fs->fs_csaddr + i), size);
-		if (tp->b_flags&B_ERROR) {
+		bp = bread(dev, fsbtodb(fs, fs->fs_csaddr + i), size);
+		if (bp->b_flags&B_ERROR) {
 			free(base, M_SUPERBLK);
 			goto out;
 		}
-		bcopy((caddr_t)tp->b_un.b_addr, space, (u_int)size);
+		bcopy((caddr_t)bp->b_un.b_addr, space, (u_int)size);
 		fs->fs_csp[fragstoblks(fs, i)] = (struct csum *)space;
 		space += size;
-		brelse(tp);
-		tp = NULL;
+		brelse(bp);
+		bp = NULL;
 	}
 	mp->m_inodp = ip;
 	if (ip) {
@@ -179,8 +178,8 @@ out:
 		free((caddr_t)mp->m_fs, M_SUPERBLK);
 		mp->m_fs = NULL;
 	}
-	if (tp)
-		brelse(tp);
+	if (bp)
+		brelse(bp);
 	u.u_error = error ? error : EIO;			/* XXX */
 	return ((struct fs *) NULL);
 }

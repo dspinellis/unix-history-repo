@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *      @(#)ns_pcb.c	7.3 (Berkeley) %G%
+ *      @(#)ns_pcb.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -101,7 +101,6 @@ ns_pcbconnect(nsp, nam)
 {
 	struct ns_ifaddr *ia;
 	register struct sockaddr_ns *sns = mtod(nam, struct sockaddr_ns *);
-	struct sockaddr_ns *ifaddr;
 	register struct ns_addr *dst;
 
 	if (nam->m_len != sizeof (*sns))
