@@ -1,19 +1,23 @@
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 Please delete one version of the first paragraph, fill in the parenthesized
 items, print out a copy and return it to us.
 
 
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 
 							(date)
 
-Keith Bostic
-457 Evans Hall
+Marshall Kirk McKusick
+317 Soda Hall
 Computer Systems Research Group
 Computer Science Division
+EECS Department
 University of California
-Berkeley, CA  94720
+Berkeley, CA  94720-1776
 
-Dear Mr. Bostic:
+Dear Dr. McKusick:
 
 Enclosed you will find the material known as (application) for inclusion
 in Berkeley Software Distributions if you find it useful.
@@ -37,8 +41,9 @@ University of California.
 
 It is further understood that licensees of Berkeley Software Distributions
 have the right to sublicense Berkeley Software Distributions, with or
-without modifications they may wish to make, provided that their legal
-obligations to AT&T are met.
+without modifications they may wish to make. Those basing distributions
+on Encumbered Berkeley distributions will also be required to meet their
+legal obligations to AT&T/USL/Novell.
 
 We also understand that you will attempt to ensure that the enclosed material
 is distributed with the same provision regarding proper credit that is used
