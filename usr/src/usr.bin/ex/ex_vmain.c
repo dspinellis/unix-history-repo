@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vmain.c	5.1 %G%";
+static char *sccsid = "@(#)ex_vmain.c	5.2 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -807,8 +807,7 @@ pfixup:
 		 *		"No Write" diagnostic.
 		 */
 		case CTRL(^):
-			if (hadcnt)
-				vsetsiz(cnt);
+			forbid (hadcnt);
 			vsave();
 			ckaw();
 			oglobp = globp;
@@ -868,8 +867,7 @@ gogo:
 		 *		execute it in command mode.
 		 */
 		case ':':
-			if (hadcnt)
-				vsetsiz(cnt);
+			forbid (hadcnt);
 			vsave();
 			i = tchng;
 			addr = dot;

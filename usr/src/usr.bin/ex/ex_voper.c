@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_voper.c	4.2 %G%";
+static char *sccsid = "@(#)ex_voper.c	5.1 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -245,8 +245,7 @@ ein:
 	case ']':
 		if (!vglobp)
 			forbid(getkey() != c);
-		if (Xhadcnt)
-			vsetsiz(Xcnt);
+		forbid (Xhadcnt);
 		vsave();
 		i = lbrack(c, opf);
 		getDOT();
@@ -561,8 +560,7 @@ errlab:
 		forbid (c == 0);
 		wdot = getmark(c);
 		forbid (wdot == NOLINE);
-		if (Xhadcnt)
-			vsetsiz(Xcnt);
+		forbid (Xhadcnt);
 		vmoving = 0;
 		wcursor = d == '`' ? ncols[c - 'a'] : 0;
 		if (opf == vmove && (wdot != dot || (d == '`' && wcursor != cursor)))
@@ -599,8 +597,7 @@ errlab:
 	 */
 	case '/':
 	case '?':
-		if (Xhadcnt)
-			vsetsiz(Xcnt);
+		forbid (Xhadcnt);
 		vsave();
 		ocurs = cursor;
 		odot = dot;
