@@ -1,4 +1,4 @@
-/*	ffs_inode.c	6.1	83/07/29	*/
+/*	ffs_inode.c	6.2	84/02/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -270,6 +270,11 @@ irele(ip)
 		}
 		ip->i_freef = NULL;
 		ifreet = &ip->i_freef;
+	} else if ((ip->i_flag & (IUPD|IACC|ICHG)) &&
+	    ((ip->i_flag & ILOCKED) == 0)) {
+		ip->i_flag |= ILOCKED;
+		iupdat(ip, &time, &time, 0);
+		iunlock(ip);
 	}
 	ip->i_count--;
 }
