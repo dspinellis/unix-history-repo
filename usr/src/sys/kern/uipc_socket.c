@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_socket.c	6.16 (Berkeley) %G%
+ *	@(#)uipc_socket.c	6.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -218,13 +218,19 @@ soconnect(so, nam)
 	int s = splnet();
 	int error;
 
-	if (so->so_state & (SS_ISCONNECTED|SS_ISCONNECTING)) {
+	/*
+	 * If protocol is connection-based, can only connect once.
+	 * Otherwise, if connected, try to disconnect first.
+	 * This allows user to disconnect by connecting to, e.g.,
+	 * a null address.
+	 */
+	if (so->so_state & (SS_ISCONNECTED|SS_ISCONNECTING) &&
+	    ((so->so_proto->pr_flags & PR_CONNREQUIRED) ||
+	    (error = sodisconnect(so))))
 		error = EISCONN;
-		goto bad;
-	}
-	error = (*so->so_proto->pr_usrreq)(so, PRU_CONNECT,
-	    (struct mbuf *)0, nam, (struct mbuf *)0);
-bad:
+	else
+		error = (*so->so_proto->pr_usrreq)(so, PRU_CONNECT,
+		    (struct mbuf *)0, nam, (struct mbuf *)0);
 	splx(s);
 	return (error);
 }
@@ -411,7 +417,7 @@ soreceive(so, aname, uio, flags, rightsp)
 	if (flags & MSG_OOB) {
 		m = m_get(M_WAIT, MT_DATA);
 		error = (*pr->pr_usrreq)(so, PRU_RCVOOB,
-		    m, (struct mbuf *)0, (struct mbuf *)0);
+		    m, (struct mbuf *)(flags & MSG_PEEK), (struct mbuf *)0);
 		if (error)
 			goto bad;
 		do {
@@ -713,6 +719,11 @@ sogetopt(so, level, optname, mp)
 			*mtod(m, int *) = so->so_options & optname;
 			break;
 
+		case SO_ERROR:
+			*mtod(m, int *) = so->so_error;
+			so->so_error = 0;
+			break;
+
 		case SO_SNDBUF:
 			*mtod(m, int *) = so->so_snd.sb_hiwat;
 			break;
@@ -755,4 +766,9 @@ sohasoutofband(so)
 		gsignal(-so->so_pgrp, SIGURG);
 	else if (so->so_pgrp > 0 && (p = pfind(so->so_pgrp)) != 0)
 		psignal(p, SIGURG);
+	if (so->so_rcv.sb_sel) {
+		selwakeup(so->so_rcv.sb_sel, so->so_rcv.sb_flags & SB_COLL);
+		so->so_rcv.sb_sel = 0;
+		so->so_rcv.sb_flags &= ~SB_COLL;
+	}
 }

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_socket.c	6.5 (Berkeley) %G%
+ *	@(#)sys_socket.c	6.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -114,6 +114,15 @@ soo_select(fp, which)
 			return (1);
 		}
 		sbselqueue(&so->so_snd);
+		break;
+
+	case 0:
+		if (so->so_oobmark ||
+		    (so->so_state & SS_RCVATMARK)) {
+			splx(s);
+			return (1);
+		}
+		sbselqueue(&so->so_rcv);
 		break;
 	}
 	splx(s);
