@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket.c	7.20 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -500,10 +500,19 @@ restart:
 	s = splnet();
 
 	m = so->so_rcv.sb_mb;
-	if (m == 0 || (so->so_rcv.sb_cc < uio->uio_resid && 
-	    so->so_rcv.sb_cc < so->so_rcv.sb_lowat) ||
-	    ((flags & MSG_WAITALL) && so->so_rcv.sb_cc < uio->uio_resid &&
-	    so->so_rcv.sb_hiwat >= uio->uio_resid && !sosendallatonce(so))) {
+	/*
+	 * If we have less data than requested, block awaiting more
+	 * (subject to any timeout) if:
+	 *   1. the current count is less than the low water mark, or
+	 *   2. MSG_WAITALL is set, and it is possible to do the entire
+	 *	receive operation at once if we block (resid <= hiwat).
+	 * If MSG_WAITALL is set but resid is larger than the receive buffer,
+	 * we have to do the receive in sections, and thus risk returning
+	 * a short count if a timeout or signal occurs after we start.
+	 */
+	if (m == 0 || so->so_rcv.sb_cc < uio->uio_resid && 
+	    (so->so_rcv.sb_cc < so->so_rcv.sb_lowat ||
+	    ((flags & MSG_WAITALL) && uio->uio_resid <= so->so_rcv.sb_hiwat))) {
 #ifdef DIAGNOSTIC
 		if (m == 0 && so->so_rcv.sb_cc)
 			panic("receive 1");
@@ -534,10 +543,6 @@ restart:
 		goto restart;
 	}
 	u.u_ru.ru_msgrcv++;
-#ifdef DIAGNOSTIC
-if (m->m_type == 0)
-panic("receive 3a");
-#endif
 	nextrecord = m->m_nextpkt;
 	if (pr->pr_flags & PR_ADDR) {
 #ifdef DIAGNOSTIC
@@ -586,7 +591,8 @@ panic("receive 3a");
 			controlp = &(*controlp)->m_next;
 	}
 	if (m) {
-		m->m_nextpkt = nextrecord;
+		if ((flags & MSG_PEEK) == 0)
+			m->m_nextpkt = nextrecord;
 		type = m->m_type;
 	}
 	moff = 0;
