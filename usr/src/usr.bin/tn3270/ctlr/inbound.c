@@ -27,7 +27,7 @@ static	char	sccsid[] = "@(#)inbound.c	3.1  10/29/86";
 
 #include <stdio.h>
 
-#include "../general.h"
+#include "../general/general.h"
 #include "function.h"
 #include "hostctlr.h"
 #include "scrnctlr.h"
@@ -36,7 +36,7 @@ static	char	sccsid[] = "@(#)inbound.c	3.1  10/29/86";
 #include "dctype.h"
 #include "ebc_disp.h"
 
-#include "../system/globals.h"
+#include "../general/globals.h"
 #include "inbound.ext"
 #include "outbound.ext"
 #include "../telnet.ext"

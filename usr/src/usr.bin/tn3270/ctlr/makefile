@@ -28,12 +28,12 @@ ALLO =	dctype.o ebc_disp.o inbound.o oia.o options.o outbound.o
 .s.o:
 	/lib/cpp -E $< | as -o $@
 
-ctlrlib:	${ALLO}
-	ar cr ctlrlib ${ALLO}
-	ranlib ctlrlib
+ctlr.lib:	${ALLO}
+	ar cr ctlr.lib ${ALLO}
+	ranlib ctlr.lib
 
 clean:
-	rm -f $(ALLO) mset tn3270 prt3270 m4.out errs makefile.bak ctlrlib
+	rm -f $(ALLO) mset tn3270 prt3270 m4.out errs makefile.bak ctlr.lib
 	rm -f kbd.out TMPfunc.out TMPfunc.c
 
 print:
@@ -80,9 +80,11 @@ depend:
 # DO NOT DELETE THIS LINE
 
 dctype.o: dctype.h
-inbound.o: ../general.h function.h hostctlr.h scrnctlr.h screen.h options.h
-inbound.o: dctype.h ebc_disp.h ../system/globals.h inbound.ext outbound.ext
-inbound.o: ../telnet.ext kbd.out
-options.o: options.h ../system/globals.h options.ext
-outbound.o: hostctlr.h screen.h ebc_disp.h ../system/globals.h options.ext
-outbound.o: ../telnet.ext inbound.ext outbound.ext
+inbound.o: ../general/general.h function.h hostctlr.h scrnctlr.h screen.h
+inbound.o: options.h dctype.h ebc_disp.h ../general/globals.h inbound.ext
+inbound.o: outbound.ext ../telnet.ext kbd.out
+oia.o: oia.h
+options.o: options.h ../general/globals.h options.ext
+outbound.o: ../general/general.h hostctlr.h screen.h ebc_disp.h
+outbound.o: ../general/globals.h options.ext ../telnet.ext inbound.ext
+outbound.o: outbound.ext ../general/bsubs.ext
