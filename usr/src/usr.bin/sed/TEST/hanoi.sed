@@ -1,6 +1,6 @@
 # Towers of Hanoi in sed.
 #
-#	@(#)hanoi.sed	5.1 (Berkeley) %G%
+#	@(#)hanoi.sed	8.1 (Berkeley) %G%
 #
 #
 # Ex:
