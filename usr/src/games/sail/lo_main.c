@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lo_main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)lo_main.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -27,6 +27,7 @@ static char sccsid[] = "@(#)lo_main.c	5.4 (Berkeley) %G%";
 #include <sys/types.h>
 #include <pwd.h>
 #include "externs.h"
+#include "pathnames.h"
 
 char *title[] = {
 	"Admiral", "Commodore", "Captain", "Captain",
@@ -43,8 +44,8 @@ lo_main()
 	struct logs log;
 	struct ship *ship;
 
-	if ((fp = fopen(LOGFILE, "r")) == 0) {
-		perror(LOGFILE);
+	if ((fp = fopen(_PATH_LOGFILE, "r")) == 0) {
+		perror(_PATH_LOGFILE);
 		exit(1);
 	}
 	switch (fread((char *)&people, sizeof people, 1, fp)) {
@@ -54,7 +55,7 @@ lo_main()
 	case 1:
 		break;
 	default:
-		perror(LOGFILE);
+		perror(_PATH_LOGFILE);
 		exit(1);
 	}
 	while (fread((char *)&log, sizeof log, 1, fp) == 1 &&
