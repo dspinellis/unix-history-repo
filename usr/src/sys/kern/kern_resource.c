@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_resource.c	7.10 (Berkeley) %G%
+ *	@(#)kern_resource.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -195,7 +195,7 @@ setrlimit(p, uap, retval)
 			alim.rlim_max = maxdmap;
 		break;
 	}
-	*alimp = alim;
+	p->p_rlimit[uap->which] = alim;
 	return (0);
 }
 
