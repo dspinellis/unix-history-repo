@@ -1,4 +1,4 @@
-/*	cy.c	7.9	90/06/22	*/
+/*	cy.c	7.10	90/06/30	*/
 
 /*
  * Cypher tape driver. Stand alone version.
@@ -8,9 +8,6 @@
 
 #include "sys/param.h"
 #include "sys/time.h"
-#include "sys/vnode.h"
-#include "ufs/inode.h"
-#include "ufs/fs.h"
 
 #include "saio.h"
 

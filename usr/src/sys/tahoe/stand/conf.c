@@ -4,14 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	1.9 (Berkeley) %G%
+ *	@(#)conf.c	1.10 (Berkeley) %G%
  */
 
 #include "sys/param.h"
 #include "sys/time.h"
-#include "sys/vnode.h"
-#include "ufs/inode.h"
-#include "ufs/fs.h"
 #include "saio.h"
 
 extern int	nullsys(), nodev(), noioctl();
