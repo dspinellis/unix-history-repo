@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)vmstat.c	4.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)vmstat.c	4.6 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/vm.h>
@@ -332,13 +332,11 @@ read_names()
 
 	mp = (struct mba_device *) nl[X_MBDINIT].n_value;
 	up = (struct uba_device *) nl[X_UBDINIT].n_value;
-	if (mp == 0 || up == 0)
-	{
+	if (up == 0) {
 		fprintf(stderr, "iostat: Disk init info not in namelist\n");
 		exit(1);
 	}
-	while(1)
-	{
+	if (mp) for (;;) {
 		steal(mp++, mdev);
 		if (mdev.mi_driver == 0)
 			break;
@@ -349,8 +347,7 @@ read_names()
 		sprintf(dr_name[mdev.mi_dk], "%c%c", cp[0], cp[1]);
 		dr_unit[mdev.mi_dk] = mdev.mi_unit;
 	}
-	while(1)
-	{
+	for (;;) {
 		steal(up++, udev);
 		if (udev.ui_driver == 0)
 			break;
