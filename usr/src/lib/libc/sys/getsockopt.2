@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getsockopt.2	6.3 (Berkeley) %G%
+.\"	@(#)getsockopt.2	6.4 (Berkeley) %G%
 .\"
 .TH GETSOCKOPT 2 ""
 .UC 5
@@ -42,7 +42,7 @@ To manipulate options at the ``socket'' level,
 is specified as SOL_SOCKET.  To manipulate options at any
 other level the protocol number of the appropriate protocol
 controlling the option is supplied.  For example,
-to indicate an option is to be interpreted by the TCP protocol,
+to indicate that an option is to be interpreted by the TCP protocol,
 .I level
 should be set to the protocol number of TCP; see
 .IR getprotoent (3N).
