@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)install.1	6.6 (Berkeley) %G%
+.\"	@(#)install.1	6.7 (Berkeley) %G%
 .\"
 .TH INSTALL 1 ""
 .UC 5
@@ -45,6 +45,9 @@ allow.
 The mode is set to 755; the
 .I -m
 option may be used to specify an alternate mode.
+The specified mode may be either an octal or symbolic value; see
+.IR chmod (1)
+for a description of possible mode values.
 .PP
 The
 .I -o
