@@ -1,0 +1,764 @@
+%    Copyright (C) 1990, 1991 Aladdin Enterprises.  All rights reserved.
+%    Distributed by Free Software Foundation, Inc.
+%
+% This file is part of Ghostscript.
+%
+% Ghostscript is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+% to anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.  Refer
+% to the Ghostscript General Public License for full details.
+%
+% Everyone is granted permission to copy, modify and redistribute
+% Ghostscript, but only under the conditions described in the Ghostscript
+% General Public License.  A copy of this license is supposed to have been
+% given to you along with Ghostscript so you can know your rights and
+% responsibilities.  It should be in a file named COPYING.  Among other
+% things, the copyright notice and this notice must be preserved on all
+% copies.
+
+% bdftops.ps
+% Convert a BDF file (possibly with (an) associated AFM file(s))
+% to a Ghostscript font.
+
+% Ghostscript fonts are in the same format as Adobe Type 1 fonts,
+% except that they do not use eexec encryption.
+% See gs_fonts.ps for more information.
+
+/envBDF 120 dict def
+envBDF begin
+
+% "Import" the font-writing package.
+   (wrfont.ps) run
+
+% Define lenIV (the number of initial random bytes in the encoded outlines).
+% This should be zero, but we set it to 4 for compatibility with PostScript.
+   /lenIV 4 def
+
+% Invert the StandardEncoding vector.
+   256 dict dup begin
+   0 1 255 { dup StandardEncoding exch get exch def } for
+   end /decoding exch def
+
+% Define the dictionary equivalent of ].
+   /dicttomark
+    { counttomark 2 idiv dup dict begin
+       { def } repeat
+      pop currentdict end 
+    } bind def
+
+% Define the properties copied to FontInfo.
+   mark
+     (COPYRIGHT) /Notice
+     (FAMILY_NAME) /FamilyName
+     (FULL_NAME) /FullName
+     (WEIGHT_NAME) /Weight
+   dicttomark /properties exch def
+
+% Define the character sequences used to fill in some undefined entries
+% in the standard encoding.
+   mark
+     (exclamdown) [/exclam]
+     (fraction) [/slash]
+     (florin) [/f]
+     (quotesingle) [/quoteright]
+     (quotedblleft) [/quotedbl]
+     (guillemotleft) [/less /less]
+     (guilsinglleft) [/less]
+     (guilsinglright) [/greater]
+     (fi) [/f /i]
+     (fl) [/f /l]
+     (endash) [/hyphen /hyphen]
+     (periodcentered) [/asterisk]
+     (bullet) [/asterisk]
+     (quotesinglbase) [/quotesingle]
+     (quotedblbase) [/quotedbl]
+     (quotedblright) [/quotedbl]
+     (guillemotright) [/greater /greater]
+     (ellipsis) [/period /period /period]
+     (questiondown) [/question]
+     (grave) [/quoteleft]
+     (acute) [/quoteright]
+     (circumflex) [/asciicircum]
+     (tilde) [/asciitilde]
+     (dieresis) [/quotedbl]
+     (cedilla) [/comma]
+     (hungarumlaut) [/quotedbl]
+     (emdash) [/hyphen /hyphen /hyphen]
+     (AE) [/A /E]
+     (OE) [/O /E]
+     (ae) [/a /e]
+     (dotlessi) [/i]
+     (oe) [/o /e]
+     (germandbls) [/s /s]
+   dicttomark /composites exch def
+
+% Note the characters that must be defined as subroutines.
+   96 dict begin
+     0 composites
+      { exch pop
+         { dup currentdict exch known
+	    { pop }
+	    { 1 index def 1 add }
+	   ifelse
+	 }
+	forall
+      }
+     forall pop
+     currentdict
+   end /subrchars exch def
+
+% Define the overstruck characters that can be synthesized with seac.
+   mark
+    [ /Aacute /Acircumflex /Adieresis /Agrave /Aring /Atilde
+      /Ccedilla
+      /Eacute /Ecircumflex /Edieresis /Egrave
+      /Iacute /Icircumflex /Idieresis /Igrave
+      /Ntilde
+      /Oacute /Ocircumflex /Odieresis /Ograve /Otilde
+      /Scaron
+      /Uacute /Ucircumflex /Udieresis /Ugrave
+      /Yacute /Ydieresis
+      /Zcaron
+      /aacute /acircumflex /adieresis /agrave /aring /atilde
+      /ccedilla
+      /eacute /ecircumflex /edieresis /egrave
+      /iacute /icircumflex /idieresis /igrave
+      /ntilde
+      /oacute /ocircumflex /odieresis /ograve /otilde
+      /scaron
+      /uacute /ucircumflex /udieresis /ugrave
+      /yacute /ydieresis
+      /zcaron
+    ]
+    { dup dup length string cvs
+      [ exch dup 0 1 getinterval
+        exch dup length 1 sub 1 exch getinterval
+      ]
+    } forall
+     /cent [/c /slash]
+     /sterling [/L /hyphen]
+     /yen [/Y /equal]
+     /daggerdbl [/bar /equal]
+   dicttomark /accentedchars exch def
+
+% Define the Type 1 opcodes we care about.
+   /c_callsubr 10 def   /s_callsubr <0a> def
+   /c_return 11 def
+   /c_escape 12 def
+     /ce_seac 6 def   /s_seac <0c06> def
+     /ce_sbw 7 def   /s_sbw <0c07> def
+     /ce_setcurrentpoint 33 def   /s_setcurrentpoint <0c21> def
+   /c_hsbw 13 def   /s_hsbw <0d> def
+   /c_endchar 14 def   /s_endchar <0e> def
+   /c_hmoveto 22 def
+     /s_setcurrentpoint_hmoveto s_setcurrentpoint <8b16> concatstrings def
+
+% ------ BDF file parsing utilities ------ %
+
+% Define a buffer for reading the BDF file.
+   /buffer 400 string def
+
+% Read a line from the BDF file into the buffer.
+% Define /keyword as the first word on the line.
+% Define /args as the remainder of the line.
+% If the keyword is equal to commentword, skip the line.
+% (If commentword is equal to a space, never skip.)
+   /nextline
+    { bdfile buffer readline not
+       { (Premature EOF\n) print stop } if
+      ( ) search
+       { /keyword exch def pop }
+       { /keyword exch def () }
+      ifelse
+      /args exch def
+      keyword commentword eq { nextline } if
+    } bind def
+
+% Get a word argument from args.  We do *not* copy the string.
+   /warg		% warg -> string
+    { args ( ) search
+       { exch pop exch }
+       { () }
+      ifelse  /args exch def
+    } bind def
+
+% Get an integer argument from args.
+   /iarg		% iarg -> int
+    { warg cvi
+    } bind def
+
+% Get a numeric argument from args.
+   /narg		% narg -> int|real
+    { warg cvr
+      dup dup cvi eq { cvi } if
+    } bind def
+
+% Convert the remainder of args into a string.
+   /remarg		% remarg -> string
+    { args copystring
+    } bind def
+
+% Get a string argument that occupies the remainder of args.
+   /sarg		% sarg -> string
+    { args (") anchorsearch
+       { pop /args exch def } { pop } ifelse
+      args args length 1 sub get (") 0 get eq
+       { args 0 args length 1 sub getinterval /args exch def } if
+      args copystring
+    } bind def
+
+% Check that the keyword is the expected one.
+   /checkline		% (EXPECTED-KEYWORD) checkline ->
+    { dup keyword ne
+       { (Expected ) print =
+         (Line=) print keyword print ( ) print args print (\n) print stop
+       } if
+      pop
+    } bind def
+
+% Read a line and check its keyword.
+   /getline		% (EXPECTED-KEYWORD) getline ->
+    { nextline checkline
+    } bind def
+
+% Find the first/last non-zero bit of a non-zero byte.
+   /fnzb
+    { 0 { exch dup 128 ge { pop exit } { dup add exch 1 add } ifelse }
+      loop
+    } bind def
+   /lnzb
+    { 7 { exch dup 1 and 0 ne { pop exit } { -1 bitshift exch 1 sub } ifelse }
+      loop
+    } bind def
+
+% ------ Type 1 encoding utilities ------ %
+
+% Parse the side bearing and width information that begins a CharString.
+% Arguments: charstring.  Result: mark sbx wx substring *or*
+% mark sbx sby wx wy substring.
+   /parsesbw
+    { mark exch lenIV
+       {		% stack: mark ... string dropcount
+         dup 2 index length exch sub getinterval
+	 dup 0 get dup 32 lt { pop exit } if
+	 dup 246 le
+	  { 139 sub exch 1 }
+	  { dup 250 le
+	     { 247 sub 8 bitshift 108 add 1 index 1 get add exch 2 }
+	     { dup 254 le
+	        { 251 sub 8 bitshift 108 add 1 index 1 get add neg exch 2 }
+		{ pop dup 1 get 128 xor 128 sub
+		  8 bitshift 1 index 2 get add
+		  8 bitshift 1 index 3 get add
+		  8 bitshift 1 index 4 get add exch 5
+		} ifelse
+	     } ifelse
+	  } ifelse
+       } loop
+    } bind def 
+
+% Find the side bearing and width information that begins a CharString.
+% Arguments: charstring.  Result: charstring sizethroughsbw.
+   /findsbw
+    { dup parsesbw counttomark 1 add 1 roll cleartomark skipsbw
+    } bind def
+   /skipsbw		% charstring sbwprefix -> sizethroughsbw
+    { length 1 index length exch sub
+      2 copy get 12 eq { 2 } { 1 } ifelse add
+    } bind def
+
+% Encode a number, and append it to a string.
+% Arguments: str num.  Result: newstr.
+   /concatnum
+    { dup dup -107 ge exch 107 le and
+       { 139 add 1 string dup 0 3 index put }
+       { dup dup -1131 ge exch 1131 le and
+          { dup 0 ge { 16#f694 } { neg 16#fa94 } ifelse add
+	    2 string dup 0 3 index -8 bitshift put
+	    dup 1 3 index 255 and put
+	  }
+	  { 5 string dup 0 255 put exch
+	    2 copy 1 exch -24 bitshift 255 and put
+	    2 copy 2 exch -16 bitshift 255 and put
+	    2 copy 3 exch -8 bitshift 255 and put
+	    2 copy 4 exch 255 and put
+	    exch
+	  }
+	 ifelse
+       }
+      ifelse exch pop concatstrings
+    } bind def
+
+% Encode a subroutine call for a given character, appending it to a string.
+% Arguments: str subrindex.  Result: newstr.
+   /concatcall
+    { () exch concatnum
+      s_callsubr concatstrings concatstrings
+    } bind def
+
+% ------ Point arithmetic utilities ------ %
+
+   /ptadd { exch 4 -1 roll add 3 1 roll add } bind def
+
+   /ptexch { 4 2 roll } bind def
+
+   /ptneg { neg exch neg exch } bind def
+
+   /ptsub { ptneg ptadd } bind def
+
+% ------ The main program ------ %
+
+   /readBDF		% infilename outfilename fontname encodingname
+			%   uniqueID readBDF -> font
+    { /uniqueID exch def
+      /encoding exch def
+      /fontname exch def
+      /psname exch def
+      /bdfname exch def
+      gsave		% so we can set the CTM to the font matrix
+
+%  Open the input files.  We don't open the output file until
+%  we've done a minimal validity check on the input.
+      bdfname (r) file /bdfile exch def
+      /commentword ( ) def
+
+%  Check for the STARTFONT.
+      (STARTFONT) getline
+      args (2.1) ne { (Not version 2.1\n) print stop } if
+
+%  Initialize the font.
+      /Font 20 dict def
+      Font begin
+      /FontName fontname def
+      /PaintType 0 def
+      /FontType 1 def
+      /UniqueID uniqueID def
+      /Encoding encoding cvx exec def
+      /FontInfo 20 dict def
+      /Private 20 dict def
+      currentdict end currentdict end
+      exch begin begin		% insert font above environment
+
+%  Initialize the Private dictionary in the font.
+      Private begin
+      /-! {string currentfile exch readhexstring pop} readonly def
+      /-| {string currentfile exch readstring pop} readonly def
+      /|- {readonly def} readonly def
+      /| {readonly put} readonly def
+      /BlueValues [] def
+      /lenIV lenIV def
+      /MinFeature {16 16} def
+      /password 5839 def
+      /UniqueID uniqueID def
+      end		% Private
+
+%  Now open the output file.
+      psname (w) file /psfile exch def
+
+%  Put out a header compatible with the Adobe "standard".
+      (%!FontType1-1.0: ) ws fontname wt (000.000) wl
+      (% This is a font description converted from ) ws
+        bdfname wl
+      (%   by bdftops running on revision ) ws
+      revision wt (of (a) ) ws
+      statusdict /product get ws (.) wl
+
+%  Copy the initial comments, up to FONT.
+      true
+      { nextline
+        keyword (COMMENT) ne {exit} if
+	{ (% Here are the initial comments from the BDF file:\n%) wl
+	} if false
+	(%) ws remarg wl
+      } loop pop
+      /commentword (COMMENT) def	% do skip comments from now on
+
+%  Read and process the FONT, SIZE, and FONTBOUNDINGBOX.
+      % If we cared about FONT, we'd use it here.  If the BDF files
+      % from MIT had PostScript names rather than X names, we would
+      % care; but what's there is unusable, so we discard FONT.
+      (FONT) checkline
+      (SIZE) getline
+        /pointsize iarg def   /xres iarg def   /yres iarg def
+      (FONTBOUNDINGBOX) getline
+        /fbbw iarg def   /fbbh iarg def   /fbbxo iarg def   /fbbyo iarg def
+	/fraster fbbw 7 add 8 idiv def
+      nextline
+
+% Allocate the buffers for the bitmap and the outline,
+% according to the font bounding box.
+      /bits fraster fbbh mul 200 max 65535 min string def
+      /outline bits length 6 mul 65535 min string def
+
+%  The Type 1 font machinery really only works with a 1000 unit
+%  character coordinate system.  Set this up here.
+
+% Compute the factor to make the X entry in the FontMatrix
+% come out at exactly 0.001.
+      /fontscale   72 pointsize div xres div 1000 mul   def
+      Font /FontBBox
+       [ fbbxo fontscale mul
+	 fbbyo fontscale mul
+	 fbbxo fbbw add fontscale mul
+	 fbbyo fbbh add fontscale mul
+       ] cvx readonly
+      put
+
+%  Read and process the properties.  We only care about a few of them.
+      keyword (STARTPROPERTIES) eq
+       { iarg
+          { nextline
+	    properties keyword known
+	     { FontInfo properties keyword get sarg readonly put
+	     } if
+	  } repeat
+         (ENDPROPERTIES) getline
+	 nextline
+       } if
+
+%  Compute and set the FontMatrix.
+      Font /FontMatrix
+       [ 0.001 0 0 0.001 xres mul yres div 0 0 ] readonly
+      dup setmatrix put
+
+%  Read and process the header for the bitmaps.
+      (CHARS) checkline
+        /ccount iarg def
+
+%  Initialize the character subroutine table and the CharStrings dictionary.
+      /subrs subrchars length array def
+      /subrsbw subrchars length array def
+      /subrcount 0 def
+      /charstrings ccount composites length add
+        accentedchars length add 1 add dict def		% 1 add for .notdef
+      /isfixedwidth true def
+      /fixedwidth null def
+
+%  Read and process the bitmap data.  This reads the remainder of the file.
+      ccount -1 1
+       { (STARTCHAR) getline
+           /charname remarg def
+	 (/) print charname print
+	   10 mod 1 eq { (\n) print flush } if
+	 (ENCODING) getline		% Ignore, assume StandardEncoding
+	 (SWIDTH) getline
+	   /swx iarg pointsize mul 1000 div xres mul 72 div def
+	   /swy iarg pointsize mul 1000 div xres mul 72 div def
+	 (DWIDTH) getline		% Ignore, use SWIDTH instead
+	 (BBX) getline
+	   /bbw iarg def  /bbh iarg def  /bbox iarg def  /bboy iarg def
+	 nextline
+	 keyword (ATTRIBUTES) eq
+	  { nextline
+	  } if
+	 (BITMAP) checkline
+
+%  Read the bits for this character.
+	 bbw 7 add 8 idiv /raster exch def
+% The bitmap handed to type1imagepath must have the correct height,
+% because type1imagepath uses this to compute the scale factor,
+% so we have to clear the unused parts of it.
+	 bits dup 0 1 raster fbbh mul 1 sub
+	  { 0 put dup } for
+	 pop pop
+	 raster fbbh bbh sub mul   raster   raster fbbh 1 sub mul
+	  { bits exch raster getinterval
+	    bdfile buffer readline not
+	     { (EOF in bitmap\n) print stop } if
+		% stack has <bits.interval> <buffer.interval>
+	    0 () /SubFileDecode filter
+	    exch 2 copy readhexstring pop pop pop closefile
+	  } for
+	 (ENDCHAR) getline
+
+%  Compute the font entry, converting the bitmap to an outline.
+	 bits 0 raster fbbh mul getinterval	% the bitmap image
+	 bbw   fbbh				% bitmap width & height
+	 swx   swy				% width x & y
+	 bbox neg   bboy neg			% origin x & y
+	 	% Account for lenIV when converting the outline.
+	 outline  lenIV  outline length lenIV sub  getinterval
+	 type1imagepath
+	 length lenIV add
+	 outline exch 0 exch getinterval
+
+% Check for a fixed width font.
+	 isfixedwidth
+	  { fixedwidth null eq
+	     { /fixedwidth swx def }
+	     { fixedwidth swx ne { /isfixedwidth false def } if }
+	    ifelse
+	  } if
+
+% Check whether this character must be a subroutine.
+% If so, strip off the initial [h]sbw, replace the endchar by a return,
+% and put the charstring in the Subrs array.
+	 subrchars charname known
+	  { /charstr exch def
+	    /csindex subrchars charname get def
+	    charstr parsesbw counttomark 1 add 1 roll
+	      counttomark 2 eq { 0 exch 0 } if ]
+	      subrsbw exch csindex exch put
+	      charstr exch skipsbw /charend exch def pop
+	    charstr charstr length 1 sub c_return put
+	    subrs   csindex
+	      charstr   charend lenIV sub   dup charstr length exch sub
+	        getinterval copystring
+	    put
+	    charstr 0 charend getinterval
+	      () subrchars charname get concatcall s_endchar concatstrings
+	      concatstrings
+	    /subrcount subrcount 1 add def
+	  }
+	  { copystring }
+	 ifelse
+	 charname exch charstrings 3 1 roll put
+       } for
+      (ENDFONT) getline
+
+%  Synthesize missing characters out of available ones.
+%  For fixed-width fonts, only do this in the 1-for-1 case.
+      composites
+       { 1 index charstrings exch known
+          { pop pop }
+	  { dup isfixedwidth
+	     { dup length 1 eq }
+	     { true }
+	    ifelse
+	    exch { charstrings exch known and } forall
+	     { ( /) print 1 index bits cvs print
+	       dup length 1 eq
+	        { 0 get charstrings exch get copystring }
+		{ % Top of stack is array of characters to combine.
+		  % Convert to an array of subr indices.
+		  [ exch { subrchars exch get } forall ]
+		  % The final width is the sum of the widths of all
+		  % the characters, minus the side bearings of all the
+		  % characters except the first.  After each character
+		  % except the last, do a setcurrentpoint of its width
+		  % minus its side bearing (except for the first character);
+		  % before each character except the first, do a 0 hmoveto.
+		  % Fortunately, all this information is available in subrsbw.
+		  /combine exch def
+		  lenIV string
+		  % Compute the total width.
+		  subrsbw combine 0 get get aload pop pop pop 2 copy
+		  combine
+		   { subrsbw exch get
+		     aload pop ptexch ptsub ptadd
+		   } forall
+		  % Encode the combined side bearing and width.
+		  dup 3 index or 0 eq
+		   { pop exch pop 2 array astore s_hsbw }
+		   { 4 array astore s_sbw }
+		  ifelse
+		  3 1 roll { concatnum } forall exch concatstrings
+		  % Encode the subroutine calls, except the last.
+		  subrsbw combine 0 get get aload pop ptexch pop pop
+		  0 1 combine length 2 sub
+		   { combine exch get /ccsi exch def
+		     2 copy 5 -1 roll ccsi concatcall
+		     3 -1 roll concatnum exch concatnum
+		     s_setcurrentpoint_hmoveto concatstrings
+		     subrsbw ccsi get aload pop ptexch ptsub
+		     5 -2 roll ptadd
+		   } for
+		  % Encode the last call.
+		  pop pop
+		  combine dup length 1 sub get concatcall
+		  s_endchar concatstrings
+		} ifelse
+	       charstrings 3 1 roll put
+	     }
+	     { pop pop }
+	    ifelse
+	  }
+	 ifelse
+       }
+      forall flush
+
+%  Synthesize accented characters with seac if needed and possible.
+      accentedchars
+       { aload pop /accent exch def /base exch def
+         buffer cvs /accented exch def
+	 charstrings accented known not
+	 charstrings base known and
+	 charstrings accent known and
+	  { ( /) print accented print
+	    charstrings base get findsbw 0 exch getinterval
+	    /acstring exch def		% start with sbw of base
+	    charstrings accent get parsesbw
+	    counttomark 1 sub { pop } repeat	% just leave mark & sbx
+	    acstring exch concatnum exch pop	% pop the mark
+	    0 concatnum 0 concatnum		% adx ady
+	    decoding base get concatnum		% bchar
+	    decoding accent get concatnum	% achar
+	    s_seac concatstrings
+	    charstrings exch accented copystring exch put
+	  } if
+       } forall
+
+%  Make a CharStrings entry for .notdef.
+      outline lenIV <8b8b0d0e> putinterval	% 0 0 hsbw endchar
+      charstrings /.notdef outline 0 lenIV 4 add getinterval copystring put
+
+%  Encrypt the CharStrings and Subrs (in place).
+      charstrings dup begin
+       { 4330 exch dup type1encrypt exch pop
+         readonly def
+       }
+      forall end
+      0 1 subrs length 1 sub
+       { dup subrs exch get dup null ne
+	  { 4330 exch dup type1encrypt exch pop
+	    subrs 3 1 roll put
+	  }
+	  { pop pop }
+	 ifelse
+       }
+      for
+
+%  Make most of the remaining entries in the font dictionaries.
+      Font /CharStrings charstrings readonly put
+      FontInfo /FullName known not
+       { % Some programs insist on FullName being present.
+         FontInfo /FullName FontName dup length string cvs put
+       }
+      if
+      FontInfo /isFixedPitch isfixedwidth put
+      subrcount 0 gt
+       { Private /Subrs subrs readonly put
+       } if
+
+%  Determine the italic angle and underline position
+%  by actually installing the font.
+      save
+      /_temp_ Font definefont setfont
+      [1000 0 0 1000 0 0] setmatrix		% mitigate rounding problems
+% The italic angle is the multiple of -5 degrees
+% that minimizes the width of the 'I'.
+      0 9999 0 5 85
+       { dup rotate
+         newpath 0 0 moveto (I) false charpath
+	 dup neg rotate
+         pathbbox pop exch pop exch sub
+	 dup 3 index lt { 4 -2 roll } if
+	 pop pop
+       }
+      for pop
+% The underline position is halfway between the bottom of the 'A'
+% and the bottom of the FontBBox.
+      newpath 0 0 moveto (A) false charpath
+      FontMatrix concat
+      pathbbox pop pop exch pop
+%  Put the values in FontInfo.
+      3 -1 roll restore
+      Font /FontBBox get 1 get add 2 div cvi
+      dup FontInfo /UnderlinePosition 3 -1 roll put
+      2 div abs FontInfo /UnderlineThickness 3 -1 roll put
+      FontInfo /ItalicAngle 3 -1 roll put
+
+%  Clean up and finish.
+      grestore
+      bdfile closefile
+      Font currentdict end end begin		% remove font from dict stack
+      (\n) print flush
+
+    } bind def
+
+% ------ Reader for AFM files ------ %
+
+% Dictionary for looking up character keywords
+   /cmdict 6 dict dup begin
+      /C { /c iarg def } def
+      /N { /n warg copystring def } def
+      /WX { /w narg def } def
+      /W0X /WX load def
+      /W /WX load def
+      /W0 /WX load def
+   end def
+
+   /readAFM		% fontdict afmfilename readAFM -> fontdict
+    { (r) file /bdfile exch def
+      /Font exch def
+      /commentword (Comment) def
+
+%  Check for the StartFontMetrics.
+      (StartFontMetrics) getline
+      args cvr 2.0 lt { (Not version 2.0 or greater\n) print stop } if
+
+%  Look for StartCharMetrics, then parse the character metrics.
+%  The only information we care about is the X width.
+      /metrics 0 dict def
+       { nextline
+         keyword (EndFontMetrics) eq { exit } if
+	 keyword (StartCharMetrics) eq
+	  { iarg dup dict /metrics exch def
+	     { /c -1 def /n null def /w null def
+	       nextline buffer
+	        { token not { exit } if
+		  dup cmdict exch known
+		   { exch /args exch def   cmdict exch get exec   args }
+		   { pop }
+		  ifelse
+		} loop
+	       c 0 ge n null ne or w null ne and
+	        { n null eq { /n Font /Encoding get c get def } if
+		  metrics n w put
+		}
+	       if
+	     }
+	    repeat
+	    (EndCharMetrics) getline
+	  } if
+       } loop
+
+%  Insert the metrics in the font.
+       metrics length 0 ne
+        { Font /Metrics metrics readonly put
+	} if
+      Font
+    } bind def
+
+end		% envBDF
+
+% Enter the main program in the current dictionary.
+/bdftops
+ { [] exch bdfafmtops
+ } bind def
+/bdfafmtops		% infilename afmfilename* outfilename fontname
+			%   encoding uniqueID
+ { envBDF begin
+     6 -2 roll exch 6 2 roll	% afm* in out fontname encoding uniqueID
+     readBDF		% afm* font
+     exch { readAFM } forall
+     save exch
+     dup /FontName get exch definefont
+     setfont
+     psfile writefont
+     restore
+     psfile closefile
+   end
+ } bind def
+
+% If the program was invoked from the command line, run it now.
+[ shellarguments
+ { counttomark 4 ge
+    { dup 0 get
+      dup 48 ge exch 57 le and		% last arg starts with a digit?
+       { cvi /StandardEncoding }		% no encodingname
+       { cvn exch cvi exch }			% have encodingname
+      ifelse
+      counttomark 4 roll
+      counttomark 5 sub array astore
+      6 -4 roll exch
+      bdfafmtops
+    }
+    { cleartomark
+      (Usage: bdftops xx.bdf [yy1.afm ...] zz.gsf fontname uniqueID [encodingname]\n) print flush
+      mark
+    }
+   ifelse
+ }
+if pop
