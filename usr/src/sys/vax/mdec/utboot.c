@@ -1,4 +1,12 @@
-/*	utboot.c	6.2	83/09/29	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+_sccsid:.asciz	"@(#)utboot.c	6.3 (Berkeley) %G%"
+#endif not lint
 
 /*
  * VAX tape boot block for distribution tapes
