@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2047,6 +2047,36 @@ user_map_lookup(map, key, av, statp)
 		return map_rewrite(map, rwval, strlen(rwval), av);
 	}
 }
+/*
+**  BESTMX -- find the best MX for a name
+**
+**	This is really a hack, but I don't see any obvious way
+**	to generalize it at the moment.
+*/
+
+#if NAMED_BIND
+
+char *
+bestmx_map_lookup(map, name, av, statp)
+	MAP *map;
+	char *name;
+	char **av;
+	int *statp;
+{
+        int nmx;
+        auto int rcode;
+        char *mxhosts[MAXMXHOSTS + 1];
+
+	nmx = getmxrr(name, mxhosts, FALSE, &rcode);
+	if (nmx <= 0)
+		return NULL;
+	if (bitset(MF_MATCHONLY, map->map_mflags))
+		return map_rewrite(map, name, strlen(name), NULL);
+	else
+		return map_rewrite(map, mxhosts[0], strlen(mxhosts[0]), av);
+}
+
+#endif
 /*
 **  Sequenced map type.
 **
