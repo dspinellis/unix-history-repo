@@ -3,7 +3,7 @@
 **
 **	Most of these are actually allocated in globals.c
 **
-**	@(#)sendmail.h	3.2	%G%
+**	@(#)sendmail.h	3.3	%G%
 */
 
 
@@ -86,6 +86,7 @@ struct address
 	char		*q_user;	/* user name */
 	char		*q_host;	/* host name */
 	struct mailer	*q_mailer;	/* mailer to use */
+	int		q_rmailer;	/* real mailer (before mapping) */
 	struct address	*q_next;	/* chain */
 	struct address	*q_prev;	/* back pointer */
 };
