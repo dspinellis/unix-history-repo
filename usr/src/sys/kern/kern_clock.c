@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.34	82/07/21	*/
+/*	kern_clock.c	4.35	82/07/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -20,6 +20,10 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../net/if.h"
+#ifdef MUSH
+#include "../h/quota.h"
+#include "../h/share.h"
+#endif
 
 #include "bk.h"
 #include "dh.h"
@@ -73,6 +77,7 @@ hardclock(pc, ps)
 	register struct callout *p1;
 	register struct proc *pp;
 	register int s, cpstate;
+	extern double avenrun[];
 
 	/*
 	 * reprime clock
@@ -148,6 +153,11 @@ hardclock(pc, ps)
 		pp->p_cpticks++;
 		if(++pp->p_cpu == 0)
 			pp->p_cpu--;
+#ifdef MUSH
+		pp->p_quota->q_cost += (pp->p_nice > NZERO ?
+		    (shconsts.sc_tic * ((2*NZERO)-pp->p_nice)) / NZERO :
+		    shconsts.sc_tic) * (((int)avenrun[0]+2)/3);
+#endif
 		if(pp->p_cpu % 4 == 0) {
 			(void) setpri(pp);
 			if (pp->p_pri >= PUSER)
@@ -206,6 +216,14 @@ double	avenrun[];
  * in process table (used by ps au).
  */
 double	ccpu = 0.95122942450071400909;		/* exp(-1/20) */
+
+#ifdef MELB
+/*
+ * Automatic niceness rate & max constants
+ */
+#define	MAXNICE	(8 + NZERO)	/* maximum auto nice value */
+#define	NFACT	(40 * hz)	/* nice++ every 40 secs cpu+sys time */
+#endif
 
 /*
  * Software clock interrupt.
@@ -334,6 +352,14 @@ softclock(pc, ps)
 		 */
 		for (pp = proc; pp < procNPROC; pp++)
 		if (pp->p_stat && pp->p_stat!=SZOMB) {
+#ifdef MUSH
+			/*
+			 * Charge process for memory in use
+			 */
+			if (pp->p_quota->q_uid)
+				pp->p_quota->q_cost +=
+				    shconsts.sc_click * pp->p_rssize;
+#endif
 			/*
 			 * Increase resident time, to max of 127 seconds
 			 * (it is kept in a character.)  For
@@ -394,8 +420,13 @@ softclock(pc, ps)
 			 * is in the range 0 to 255, to fit in a character.
 			 */
 			pp->p_cpticks = 0;
+#ifdef MUSH
+			a = ave((pp->p_cpu & 0377), avenrun[0]*nrscale) +
+			     pp->p_nice - NZERO + pp->p_quota->q_nice;
+#else
 			a = ave((pp->p_cpu & 0377), avenrun[0]*nrscale) +
 			     pp->p_nice - NZERO;
+#endif
 			if (a < 0)
 				a = 0;
 			if (a > 255)
@@ -449,6 +480,30 @@ softclock(pc, ps)
 		if (bclnlist != NULL)
 			wakeup((caddr_t)&proc[2]);
 
+#ifdef MELB
+		/*
+		 * If a process was running, see if time to make it nicer
+		 */
+		if (!noproc) {
+			pp = u.u_procp;
+			if (pp->p_uid
+#ifdef MUSH
+				&& !(pp->p_flag & SLOGIN)
+#else
+				     /* this is definitely not good enough */
+				&& (pp->p_pid != pp->p_pgrp || pp->p_ppid != 1)
+#endif
+				&& (u.u_vm.vm_utime + u.u_vm.vm_stime) >
+					(pp->p_nice-NZERO+1)*NFACT
+				&& pp->p_nice >= NZERO
+				&& pp->p_nice < MAXNICE
+			) {
+				pp->p_nice++;
+				(void) setpri(pp);
+				pp->p_pri = pp->p_usrpri;
+			}
+		}
+#else
 		/*
 		 * If the trap occurred from usermode,
 		 * then check to see if it has now been
@@ -464,6 +519,7 @@ softclock(pc, ps)
 			(void) setpri(pp);
 			pp->p_pri = pp->p_usrpri;
 		}
+#endif
 	}
 	/*
 	 * If trapped user-mode, give it a profiling tick.
