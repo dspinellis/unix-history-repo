@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.58	82/03/10	*/
+/*	tcp_input.c	1.59	82/03/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -810,7 +810,7 @@ tcp_pulloutofband(so, ti)
 	struct tcpiphdr *ti;
 {
 	register struct mbuf *m;
-	int cnt = sizeof (struct tcpiphdr) + ti->ti_urp - 1;
+	int cnt = ti->ti_urp - 1;
 	
 	m = dtom(ti);
 	while (cnt >= 0) {

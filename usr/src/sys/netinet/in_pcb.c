@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.18	82/03/03	*/
+/*	in_pcb.c	4.19	82/03/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,6 +11,7 @@
 #include "../net/in_systm.h"
 #include "../net/if.h"
 #include "../net/in_pcb.h"
+#include "../h/protosw.h"
 
 /*
  * Routines to manage internet protocol control blocks.
@@ -73,14 +74,18 @@ COUNT(IN_PCBATTACH);
 		lport = sin->sin_port;
 		if (lport) {
 			u_short aport = lport;
+			int wild = 0;
 #if vax
 			aport = htons(aport);
 #endif
 			/* GROSS */
 			if (aport < IPPORT_RESERVED && u.u_uid != 0)
 				return (EPERM);
+			if ((so->so_proto->pr_flags & PR_CONNREQUIRED) == 0 ||
+			    (so->so_options & SO_ACCEPTCONN) == 0)
+				wild = INPLOOKUP_WILDCARD;
 			if (in_pcblookup(head,
-			    zeroin_addr, 0, sin->sin_addr, lport, 0))
+			    zeroin_addr, 0, sin->sin_addr, lport, wild))
 				return (EADDRINUSE);
 		}
 	}
@@ -115,6 +120,12 @@ bad:
 	return (ENOBUFS);
 }
 
+/*
+ * Connect from a socket to a specified address.
+ * Both address and port must be specified in argument sin.
+ * If don't have a local address for this socket yet,
+ * then pick one.
+ */
 in_pcbconnect(inp, sin)
 	struct inpcb *inp;
 	struct sockaddr_in *sin;
@@ -132,7 +143,11 @@ COUNT(IN_PCBCONNECT);
 			ifp = ifnet;
 	}
 	if (in_pcblookup(inp->inp_head,
-	    sin->sin_addr, sin->sin_port, inp->inp_laddr, inp->inp_lport, 0))
+	    sin->sin_addr,
+	    sin->sin_port,
+	    inp->inp_laddr.s_addr ? inp->inp_laddr : ifp->if_addr,
+	    inp->inp_lport,
+	    0))
 		return (EADDRINUSE);
 	if (inp->inp_laddr.s_addr == 0)
 		inp->inp_laddr = ifp->if_addr;
@@ -175,7 +190,8 @@ in_pcbdetach(inp)
 }
 
 /*
- * Look for a control block to accept a segment.
+ * Look for a control block to accept a segment, or to make
+ * sure 
  * First choice is an exact address match.
  * Second choice is a match with either the foreign or the local
  * address specified.
@@ -197,14 +213,18 @@ in_pcblookup(head, faddr, fport, laddr, lport, flags)
 			continue;
 		wildcard = 0;
 		if (inp->inp_laddr.s_addr != 0) {
-			if (inp->inp_laddr.s_addr != laddr.s_addr)
+			if (laddr.s_addr == 0)
+				wildcard++;
+			else if (inp->inp_laddr.s_addr != laddr.s_addr)
 				continue;
 		} else {
 			if (laddr.s_addr != 0)
 				wildcard++;
 		}
 		if (inp->inp_faddr.s_addr != 0) {
-			if (inp->inp_faddr.s_addr != faddr.s_addr ||
+			if (faddr.s_addr == 0)
+				wildcard++;
+			else if (inp->inp_faddr.s_addr != faddr.s_addr ||
 			    inp->inp_fport != fport)
 				continue;
 		} else {
