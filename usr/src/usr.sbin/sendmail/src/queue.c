@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.47 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.48 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.47 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.48 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -950,7 +950,19 @@ dowork(id, forkflag, requeueflag, e)
 		/* don't use the headers from sendmail.cf... */
 		e->e_header = NULL;
 
-		sendall(e, SM_DELIVER);
+			e->e_flags |= EF_KEEPQUEUE;
+			if (Verbose || tTd(40, 8))
+				printf("%s: too young (%s)\n",
+					e->e_id, howlong);
+#ifdef LOG
+			if (LogLevel > 19)
+				syslog(LOG_DEBUG, "%s: too young (%s)",
+					e->e_id, howlong);
+#endif
+		}
+		else
+		{
+			eatheader(e, requeueflag);
 		if (forkflag)
 			finis();
 		else
@@ -1005,9 +1017,7 @@ readqf(e)
 	if (!lockfile(fileno(qfp), qf, NULL, LOCK_EX|LOCK_NB))
 	{
 		/* being processed by another queuer */
-		if (tTd(40, 8))
-			printf("readqf(%s): locked\n", qf);
-		if (Verbose)
+		if (Verbose || tTd(40, 8))
 			printf("%s: locked\n", e->e_id);
 # ifdef LOG
 		if (LogLevel > 19)
