@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in.c	7.18 (Berkeley) %G%
+ *	@(#)in.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -225,7 +225,6 @@ in_control(so, cmd, data, ifp)
 	register struct ifaddr *ifa;
 	struct in_ifaddr *oia;
 	struct in_aliasreq *ifra = (struct in_aliasreq *)data;
-	struct mbuf *m;
 	struct sockaddr_in oldaddr;
 	int error, hostIsNew, maskIsNew;
 	u_long i;
@@ -261,16 +260,18 @@ in_control(so, cmd, data, ifp)
 		if (ifp == 0)
 			panic("in_control");
 		if (ia == (struct in_ifaddr *)0) {
-			m = m_getclr(M_WAIT, MT_IFADDR);
-			if (m == (struct mbuf *)NULL)
+			oia = (struct in_ifaddr *)
+				malloc(sizeof *oia, M_IFADDR, M_WAITOK);
+			if (oia == (struct in_ifaddr *)NULL)
 				return (ENOBUFS);
+			bzero((caddr_t)oia, sizeof *oia);
 			if (ia = in_ifaddr) {
 				for ( ; ia->ia_next; ia = ia->ia_next)
 					;
-				ia->ia_next = mtod(m, struct in_ifaddr *);
+				ia->ia_next = oia;
 			} else
-				in_ifaddr = mtod(m, struct in_ifaddr *);
-			ia = mtod(m, struct in_ifaddr *);
+				in_ifaddr = oia;
+			ia = oia;
 			if (ifa = ifp->if_addrlist) {
 				for ( ; ifa->ifa_next; ifa = ifa->ifa_next)
 					;
@@ -423,7 +424,7 @@ in_control(so, cmd, data, ifp)
 			else
 				printf("Didn't unlink inifadr from list\n");
 		}
-		(void) m_free(dtom(oia));
+		IFAFREE((&oia->ia_ifa));
 		break;
 
 	default:
