@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)user.h	7.5 (Berkeley) %G%
+ *	@(#)user.h	7.6 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -65,6 +65,7 @@ struct	user {
 	char	u_eosys;		/* special action on end of syscall */
 
 /* 1.1 - processes and protection */
+	char	u_logname[MAXLOGNAME];	/* login name, if available */
 #define	u_ruid	u_cred->cr_ruid		/* real user id */
 	gid_t	u_rgid;			/* real group id */
 #define u_cred u_nd.ni_cred
@@ -112,7 +113,6 @@ struct	user {
 	struct	rusage u_ru;		/* stats for this proc */
 	struct	rusage u_cru;		/* sum of stats for reaped children */
 	struct	itimerval u_timer[3];
-	char	u_logname[MAXLOGNAME];	/* login name, if available */
 	struct	timeval u_start;
 	short	u_acflag;
 
@@ -131,6 +131,7 @@ struct	user {
 /* namei & co. */
 	struct	nameidata u_nd;
 
+	long	u_spare[8];
 	int	u_stack[1];
 };
 
