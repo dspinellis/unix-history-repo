@@ -34,7 +34,7 @@
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "From: @(#)setrgid.c	5.5 (Berkeley) 2/23/91";
 static const char rcsid[] =
-	"$Id: setrgid.c,v 1.2 1994/04/04 19:33:57 wollman Exp $";
+	"$Id: setrgid.c,v 1.4 1994/04/23 20:39:02 wollman Exp $";
 #endif /* LIBC_SCCS and not lint */
 
 #include <unistd.h>
@@ -52,7 +52,7 @@ setrgid(rgid)
 #endif
 {
 	extern char *__progname;
-	writye(2, __progname, strlen(__progname));
+	write(2, __progname, strlen(__progname));
 	write(2, MESSAGE, sizeof(MESSAGE) - 1);
 	return (setregid(rgid, -1));
 }
