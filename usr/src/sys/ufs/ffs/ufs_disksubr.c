@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_disksubr.c	7.17 (Berkeley) %G%
+ *	@(#)ufs_disksubr.c	7.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>
