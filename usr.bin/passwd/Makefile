@@ -6,10 +6,13 @@ CFLAGS+=-I${.CURDIR} -DYP
 .PATH:  ${.CURDIR}/../../usr.bin/chpass ${.CURDIR}/../../usr.sbin/vipw \
 	${.CURDIR}/../rlogin ${.CURDIR}/../../lib/libc/gen
 
+DPADD+= ${LIBRPCSVC} #${LIBKRB}
+LDADD+= -lrpcsvc #-lkrb
+
 .if exists(/usr/lib/libcrypt.a)
 #CFLAGS+=-DKERBEROS
-DPADD+= ${LIBRPCSVC} ${LIBCRYPT} #${LIBKRB}
-LDADD+= -lrpcsvc -lcrypt #-lkrb
+DPADD+= ${LIBCRYPT}
+LDADD+= -lcrypt
 .endif
 
 getpwent.o: getpwent.c
