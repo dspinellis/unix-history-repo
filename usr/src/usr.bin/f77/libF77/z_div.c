@@ -3,12 +3,15 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)z_div.c	5.1	%G%
+ *	@(#)z_div.c	5.2	%G%
  */
 
 #include "complex"
 #include <stdio.h>
 #include <errno.h>
+#ifdef tahoe
+#include <tahoemath/FP.h>
+#endif tahoe
 
 z_div(c, a, b)
 dcomplex *a, *b, *c;
@@ -16,10 +19,17 @@ dcomplex *a, *b, *c;
 double ratio, den;
 double abr, abi;
 
+#ifndef tahoe
 if( (abr = b->dreal) < 0.)
 	abr = - abr;
 if( (abi = b->dimag) < 0.)
 	abi = - abi;
+#else tahoe
+if( (abr = b->dreal) < 0.)
+	*((long int *)&abr) ^= SIGN_BIT;
+if( (abi = b->dimag) < 0.)
+	*((long int *)&abi) ^= SIGN_BIT;
+#endif tahoe
 if( abr <= abi )
 	{
 	if(abi == 0) {
