@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)locore.s	7.1 (Berkeley) %G%
+ *	@(#)locore.s	7.2 (Berkeley) %G%
  */
 
 
@@ -449,6 +449,29 @@ _bcopy:
 	xorl	%eax,%eax
 	ret
 
+	#
+	# ovbcopy (src,dst,cnt)
+	# NOTE: does not (yet) work doing words at a time
+	#
+
+	.globl	_ovbcopy
+_ovbcopy:
+	pushl	%esi
+	pushl	%edi
+	movl	12(%esp),%esi
+	movl	16(%esp),%edi
+	movl	20(%esp),%ecx
+	addl	%ecx,%esi	/* copy from end to beginning */
+	addl	%ecx,%edi
+	decl	%esi
+	decl	%edi
+	std			/* decrementing as we go */
+	rep
+	movsb
+	xorl	%eax,%eax
+	cld
+	ret
+
 	.globl	_copyout
 _copyout:
 	movl	_curpcb,%eax
@@ -873,8 +896,7 @@ ENTRY(swtch)
 
 	/* switch to new process. first, save context as needed */
 
-	movl	_curproc,%ecx
-	movl	P_ADDR(%ecx),%ecx
+	movl	_curpcb,%ecx
 
 	movl	(%esp),%eax		# Hardware registers
 	movl	%eax, PCB_EIP(%ecx)

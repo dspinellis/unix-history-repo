@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	5.9 (Berkeley) %G%
+ *	@(#)machdep.c	7.1 (Berkeley) %G%
  */
 
 
@@ -28,15 +28,9 @@
 #include "mbuf.h"
 #include "msgbuf.h"
 #include "net/netisr.h"
-
-#define	MAXMEM	64*1024*CLSIZE	/* XXX - from cmap.h */
 #include "vm/vm.h"
 #include "vm/vm_kern.h"
 #include "vm/vm_page.h"
-/*#include "vm/vm_param.h"
-#include "vm/vm_map.h"
-#include "vm/vm_object.h"
-#include "vm/pmap.h"*/
 
 vm_map_t buffer_map;
 extern vm_offset_t avail_end;
@@ -66,64 +60,25 @@ int	msgbufmapped;		/* set when safe to use msgbuf */
 /*
  * Machine-dependent startup code
  */
-#define	SYSTEM	0xfe000000
-/* extern struct pte	EMCmap[];
-extern char		EMCbase[]; */
 int boothowto = 0, Maxmem = 0;
 extern int bootdev;
-#ifdef SMALL
-extern int forcemaxmem;
-#endif
+int forcemaxmem;
 int biosmem;
 
 extern cyloffset;
 
-startup(firstaddr)
-	int firstaddr;
+cpu_startup()
 {
 	register int unixsize;
 	register unsigned i;
 	register struct pte *pte;
 	int mapaddr, j;
 	register caddr_t v;
-	int maxbufs, base, residual;
+	int firstaddr, maxbufs, base, residual;
 	extern long Usrptsize;
 	vm_offset_t minaddr, maxaddr;
 	vm_size_t size;
-#ifdef DEBUG
-	extern int pmapdebug;
-	int opmapdebug = pmapdebug;
-#endif
 
-	/*
-	 * Initialize the console before we print anything out.
-	 */
-	/*cninit();*/
-
-	/*
-	 * Bounds check memory size information against bios values
-	 * use the lesser of the two
-	 */
-	biosmem = rtcin(RTC_BASELO)+ (rtcin(RTC_BASEHI)<<8);
-printf("Maxmem %x howto %x bootdev %x cyloff %x firstaddr %x bios %d %d\n",
-		Maxmem, boothowto, bootdev, cyloffset, firstaddr,
-biosmem, 
-rtcin(RTC_EXTLO) + (rtcin(RTC_EXTHI)<<8)
-);
-	/*maxmem = Maxmem-1;
-
-	if(biosmem != 640)
-		panic("does not have 640K of base memory");
-
-	biosmem = 1024;
-	biosmem += rtcin(RTC_EXTLO) + (rtcin(RTC_EXTHI)<<8);
-	biosmem = biosmem/4 - 1 ;
-	if (biosmem < maxmem) maxmem=biosmem;
-
-#ifdef SMALL
-if(forcemaxmem && maxmem > forcemaxmem)
-	maxmem = forcemaxmem-1;
-#endif*/
 
 	/*
 	 * Initialize error message buffer (at end of core).
@@ -134,12 +89,6 @@ if(forcemaxmem && maxmem > forcemaxmem)
 		pmap_enter(pmap_kernel(), msgbufp, avail_end + i * NBPG,
 			   VM_PROT_ALL, TRUE);
 	msgbufmapped = 1;
-#ifdef notdef
-	/* XXX EMC */
-	pte = EMCmap;
-	*(int *)pte = PG_V | PG_UW | 0xc0000000;
-	printf("EMC at %x\n", EMCbase);
-#endif
 
 #ifdef KDB
 	kdb_init();			/* startup kernel debugger */
@@ -277,9 +226,6 @@ again:
 	for (i = 1; i < ncallout; i++)
 		callout[i-1].c_next = &callout[i];
 
-#ifdef DEBUG
-	pmapdebug = opmapdebug;
-#endif
 	printf("avail mem = %d\n", ptoa(vm_page_free_count));
 	printf("using %d buffers containing %d bytes of memory\n",
 		nbuf, bufpages * CLBYTES);
@@ -867,7 +813,10 @@ init386(first) { extern ssdtosd(), lgdt(), lidt(), lldt(), etext;
 	extern int sigcode,szsigcode;
 
 	proc0.p_addr = proc0paddr;
-	cninit (SYSTEM+0xa0000);
+	/*
+	 * Initialize the console before we print anything out.
+	 */
+
 /*pg("init386 first %x &x %x Maxmem %x", first, &x, Maxmem);
 pg("init386 PTmap[0] %x PTD[0] %x", *(int *)PTmap, *(int *)PTD);*/
 
@@ -938,6 +887,9 @@ pg("init386 PTmap[0] %x PTD[0] %x", *(int *)PTmap, *(int *)PTD);*/
 			if (probemem(i) == 0) break;
 	}
 	maxmem = i / NBPG;
+	if(forcemaxmem && maxmem > forcemaxmem)
+		maxmem = forcemaxmem-1;
+	cninit (KERNBASE+0xa0000);
 #else
 Maxmem = 8192 *1024 /NBPG;
 	maxmem = Maxmem;
@@ -957,10 +909,8 @@ Maxmem = 8192 *1024 /NBPG;
 	} else	maxmem = 640/4;
 	maxmem = maxmem-1;
 	physmem = maxmem - (0x100 -0xa0);
-/*pg("maxmem %dk", 4*maxmem);*/
 
 	/* call pmap initialization to make new kernel address space */
-/*pg("pmap_bootstrap");*/
 	pmap_bootstrap (first, 0);
 	/* now running on new page tables, configured,and u/iom is accessible */
 
@@ -968,7 +918,6 @@ Maxmem = 8192 *1024 /NBPG;
 	proc0.p_addr->u_pcb.pcb_tss.tss_esp0 = (int) kstack + UPAGES*NBPG;
 	proc0.p_addr->u_pcb.pcb_tss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL) ;
 	_gsel_tss = GSEL(GPROC0_SEL, SEL_KPL);
-/*pg("ltr");*/
 	ltr(_gsel_tss);
 
 	/* make a call gate to reenter kernel with */
@@ -989,7 +938,7 @@ Maxmem = 8192 *1024 /NBPG;
 	_udatasel = LSEL(LUDATA_SEL, SEL_UPL);
 
 	/* setup proc 0's pcb */
-	bcopy(&sigcode, proc0.p_addr->u_pcb.pcb_sigc, szicode);
+	bcopy(&sigcode, proc0.p_addr->u_pcb.pcb_sigc, szsigcode);
 	proc0.p_addr->u_pcb.pcb_flags = 0;
 	proc0.p_addr->u_pcb.pcb_ptd = IdlePTD;
 }
@@ -1011,14 +960,9 @@ extern caddr_t		CADDR1, CADDR2;
 clearseg(n) {
 
 	*(int *)CMAP2 = PG_V | PG_KW | ctob(n);
-/*printf( " CMAP2 %x * %x CADDR2 %x\n", (int) CMAP2, *(int *) CMAP2, (int)CADDR2);
-*/
 	load_cr3(rcr3());
-/*printf("*CADDR2 %x", * (int *) CADDR2);*/
 	bzero(CADDR2,NBPG);
-/*printf("*CADDR2 %x", * (int *) CADDR2);
 	*(int *) CADDR2 = 0;
-printf("*CADDR2 %x", * (int *) CADDR2);*/
 }
 
 /*
@@ -1138,27 +1082,4 @@ copystr(fromaddr, toaddr, maxlength, lencopied) u_int *lencopied, maxlength;
 	}
 	if(lencopied) *lencopied = tally;
 	return(ENAMETOOLONG);
-}
-
-/* 
- * ovbcopy - like bcopy, but recognizes overlapping ranges and handles 
- *           them correctly.
- */
-void
-ovbcopy(from, to, bytes)
-	void *from, *to;
-	u_int bytes;			/* num bytes to copy */
-{
-	/* Assume that bcopy copies left-to-right (low addr first). */
-	if (from + bytes <= to || to + bytes <= from || to == from)
-		bcopy(from, to, bytes);	/* non-overlapping or no-op*/
-	else if (from > to)
-		bcopy(from, to, bytes);	/* overlapping but OK */
-	else {
-		/* to > from: overlapping, and must copy right-to-left. */
-		from += bytes - 1;
-		to += bytes - 1;
-		while (bytes-- > 0)
-			*(u_char *)to-- = *(u_char *)from--;
-	}
 }

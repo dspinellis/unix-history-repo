@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	7.1 (Berkeley) %G%
+ *	@(#)trap.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -37,6 +37,7 @@
 #include "machine/trap.h"
 #include "machine/dbg.h"
 
+
 struct	sysent sysent[];
 int	nsysent;
 /*
@@ -47,6 +48,7 @@ int	nsysent;
  * frame after the exception has been processed. Note that the
  * effect is as if the arguments were passed call by reference.
  */
+extern caddr_t edata;
 unsigned rcr2(), Sysbase;
 extern short cpl;
 int um;
@@ -60,10 +62,8 @@ trap(frame)
 	register int i;
 	register struct proc *p = curproc;
 	struct timeval syst;
-	extern int nofault;
 	int ucode, type, code, eva;
 
-#define DEBUG
 #ifdef DEBUG
 /*dprintf(DALLTRAPS, "\n%d(%s). trap",p->p_pid, p->p_comm);*/
 dprintf(DALLTRAPS, " pc:%x cs:%x ds:%x eflags:%x isp %x\n",
@@ -79,12 +79,12 @@ dprintf(DALLTRAPS, "sig %x %x %x \n",
 		p->p_sigignore, p->p_sigcatch, p->p_sigmask); */
 dprintf(DALLTRAPS, " ec %x type %x cpl %x ",
 		frame.tf_err&0xffff, frame.tf_trapno, cpl);
-pg("trap cr2 %x", rcr2());
+printf("trap cr2 %x ", rcr2());
 #endif
 
 /*if(um && frame.tf_trapno == 0xc && (rcr2()&0xfffff000) == 0){
 	if (ISPL(locr0[tCS]) != SEL_UPL) {
-		if(nofault) goto anyways;
+		if(curpcb->pcb_onfault) goto anyways;
 		locr0[tEFLAGS] |= PSL_T;
 		*(int *)PTmap |= 1; load_cr3(rcr3());
 		return;
@@ -100,14 +100,17 @@ if(pc == 0) um++;*/
 
 	frame.tf_eflags &= ~PSL_NT;	/* clear nested trap XXX */
 	type = frame.tf_trapno;
-	if(nofault && frame.tf_trapno != 0xc)
-		{ frame.tf_eip = nofault; return;}
+	if(curpcb->pcb_onfault && frame.tf_trapno != 0xc)
+		{ frame.tf_eip = (int)curpcb->pcb_onfault; return;}
 
 	syst = p->p_stime;
 	if (ISPL(frame.tf_cs) == SEL_UPL) {
-		type |= USER;
+		type |= T_USER;
 		p->p_regs = (int *)&frame;
+		curpcb->pcb_flags |= FM_TRAP;	/* used by sendsig */
 	}
+if((caddr_t)p < edata) printf("trap with curproc garbage ");
+if((caddr_t)p->p_regs < edata) printf("trap with pregs garbage ");
 
 	ucode=0;
 	eva = rcr2();
@@ -125,26 +128,26 @@ bit_sucker:
 			frame.tf_trapno, frame.tf_err, frame.tf_eip,
 			frame.tf_cs, frame.tf_eflags);
 		printf("cr2 %x cpl %x\n", eva, cpl);
-		type &= ~USER;
+		type &= ~T_USER;
 		panic("trap");
 		/*NOTREACHED*/
 
-	case T_SEGNPFLT + USER:
-	case T_PROTFLT + USER:		/* protection fault */
+	case T_SEGNPFLT + T_USER:
+	case T_PROTFLT + T_USER:		/* protection fault */
 copyfault:
 		ucode = code + BUS_SEGM_FAULT ;
 		i = SIGBUS;
 		break;
 
-	case T_PRIVINFLT + USER:	/* privileged instruction fault */
-	case T_RESADFLT + USER:		/* reserved addressing fault */
-	case T_RESOPFLT + USER:		/* reserved operand fault */
-	case T_FPOPFLT + USER:		/* coprocessor operand fault */
-		ucode = type &~ USER;
+	case T_PRIVINFLT + T_USER:	/* privileged instruction fault */
+	case T_RESADFLT + T_USER:		/* reserved addressing fault */
+	case T_RESOPFLT + T_USER:		/* reserved operand fault */
+	case T_FPOPFLT + T_USER:		/* coprocessor operand fault */
+		ucode = type &~ T_USER;
 		i = SIGILL;
 		break;
 
-	case T_ASTFLT + USER:		/* Allow process switch */
+	case T_ASTFLT + T_USER:		/* Allow process switch */
 	case T_ASTFLT:
 		astoff();
 		if ((p->p_flag & SOWEUPC) && p->p_stats->p_prof.pr_scale) {
@@ -153,7 +156,7 @@ copyfault:
 		}
 		goto out;
 
-	case T_DNA + USER:
+	case T_DNA + T_USER:
 #ifdef	NPX
 		/* if a transparent fault (due to context switch "late") */
 		if (npxdna()) return;
@@ -162,22 +165,22 @@ copyfault:
 		i = SIGFPE;
 		break;
 
-	case T_BOUND + USER:
+	case T_BOUND + T_USER:
 		ucode = FPE_SUBRNG_TRAP;
 		i = SIGFPE;
 		break;
 
-	case T_OFLOW + USER:
+	case T_OFLOW + T_USER:
 		ucode = FPE_INTOVF_TRAP;
 		i = SIGFPE;
 		break;
 
-	case T_DIVIDE + USER:
+	case T_DIVIDE + T_USER:
 		ucode = FPE_INTDIV_TRAP;
 		i = SIGFPE;
 		break;
 
-	case T_ARITHTRAP + USER:
+	case T_ARITHTRAP + T_USER:
 		ucode = code;
 		i = SIGFPE;
 		break;
@@ -185,7 +188,7 @@ copyfault:
 	case T_PAGEFLT:			/* allow page faults in kernel mode */
 		if (code & PGEX_P) goto bit_sucker;
 		/* fall into */
-	case T_PAGEFLT + USER:		/* page fault */
+	case T_PAGEFLT + T_USER:		/* page fault */
 	    {
 		register vm_offset_t va;
 		register struct vmspace *vm = p->p_vmspace;
@@ -198,13 +201,13 @@ copyfault:
 		va = trunc_page((vm_offset_t)eva);
 		/*
 		 * It is only a kernel address space fault iff:
-		 * 	1. (type & USER) == 0  and
-		 * 	2. nofault not set or
-		 *	3. nofault set but supervisor space data fault
+		 * 	1. (type & T_USER) == 0  and
+		 * 	2. pcb_onfault not set or
+		 *	3. pcb_onfault set but supervisor space fault
 		 * The last can occur during an exec() copyin where the
 		 * argument space is lazy-allocated.
 		 */
-		/*if (type == T_PAGEFLT && !nofault)*/
+		/*if (type == T_PAGEFLT && !curpcb->pcb_onfault)*/
 		if (type == T_PAGEFLT && va >= 0xfe000000)
 			map = kernel_map;
 		else
@@ -261,7 +264,7 @@ pg("stk fuck");
 nogo:
 /*pg("nogo");*/
 		if (type == T_PAGEFLT) {
-			if (nofault)
+			if (curpcb->pcb_onfault)
 				goto copyfault;
 			printf("vm_fault(%x, %x, %x, 0) -> %x\n",
 			       map, va, ftype, rv);
@@ -280,8 +283,8 @@ if (um) {*(int *)PTmap &= 0xfffffffe; load_cr3(rcr3()); }
 			/* Q: how do we turn it on again? */
 		return;
 	
-	case T_BPTFLT + USER:		/* bpt instruction fault */
-	case T_TRCTRAP + USER:		/* trace trap */
+	case T_BPTFLT + T_USER:		/* bpt instruction fault */
+	case T_TRCTRAP + T_USER:		/* trace trap */
 		frame.tf_eflags &= ~PSL_T;
 		i = SIGTRAP;
 		break;
@@ -289,7 +292,7 @@ if (um) {*(int *)PTmap &= 0xfffffffe; load_cr3(rcr3()); }
 #include "isa.h"
 #if	NISA > 0
 	case T_NMI:
-	case T_NMI + USER:
+	case T_NMI + T_USER:
 		/* machine/parity/power fail/"kitchen sink" faults */
 		if(isa_nmi(code) == 0) return;
 		else goto bit_sucker;
@@ -302,7 +305,7 @@ if (um) {*(int *)PTmap &= 0xfffffffe; load_cr3(rcr3()); }
 	}
 }*/
 	trapsignal(p, i, ucode);
-	if ((type & USER) == 0)
+	if ((type & T_USER) == 0)
 		return;
 out:
 	while (i = CURSIG(p))
@@ -341,6 +344,7 @@ out:
 		}
 	}
 	curpri = p->p_pri;
+	curpcb->pcb_flags &= ~FM_TRAP;	/* used by sendsig */
 	spl0(); /*XXX*/
 }
 
@@ -372,7 +376,7 @@ int code;
 
 	code = frame.sf_eax;
 	p->p_regs = (int *)&frame;
-	params = (caddr_t)frame.sf_esp + sizeof(int);
+	params = (caddr_t)frame.sf_esp + sizeof (int) ;
 
 	/*
 	 * Reconstruct pc, assuming lcall $X,y is 7 bytes, as it is always.
@@ -381,7 +385,7 @@ int code;
 	callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
 	if (callp == sysent) {
 		i = fuword(params);
-		params += sizeof(int);
+		params += sizeof (int);
 		callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
 	}
 dprintf(DALLSYSC,"%d. call %d ", p->p_pid, code);
