@@ -1,4 +1,4 @@
-/*	pwd.h	4.1	83/05/03	*/
+/*	pwd.h	4.2	83/12/02	*/
 
 struct	passwd { /* see getpwent(3) */
 	char	*pw_name;
