@@ -1,4 +1,19 @@
-/*	cy.c	7.1	88/05/21	*/
+/*
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)cy.c	1.16 (Berkeley) %G%
+ */
 
 #include "yc.h"
 #if NCY > 0
@@ -288,7 +303,6 @@ cyopen(dev, flag)
 	register int ycunit;
 	register struct vba_device *vi;
 	register struct yc_softc *yc;
-	int s;
 
 	ycunit = YCUNIT(dev);
 	if (ycunit >= NYC || (vi = ycdinfo[ycunit]) == 0 || vi->ui_alive == 0)
@@ -597,8 +611,8 @@ loop:
 		cyldmba(cy->cy_tpb.tpdata, (caddr_t)addr);
 		cy->cy_tpb.tprec = 0;
 		if (cmd == CY_BRCOM)
-			cy->cy_tpb.tpsize = htoms(min(yc->yc_blksize,
-			    bp->b_bcount));
+			cy->cy_tpb.tpsize = htoms(imin(yc->yc_blksize,
+			    (int)bp->b_bcount));
 		else
 			cy->cy_tpb.tpsize = htoms(bp->b_bcount);
 		cyldmba(cy->cy_tpb.tplink, (caddr_t)0);
@@ -627,7 +641,7 @@ loop:
 		bp->b_command = CY_SREV;
 		cy->cy_tpb.tprec = htoms(blkno - bp->b_blkno);
 	}
-	yc->yc_timo = imin(imax(10 * htoms(cy->cy_tpb.tprec), 60), 5*60);
+	yc->yc_timo = imin(imax((int)(10 * htoms(cy->cy_tpb.tprec)), 60), 5*60);
 dobpcmd:
 	/*
 	 * Do the command in bp.  Reverse direction commands
@@ -1094,7 +1108,7 @@ cywait(cp)
  * Load a 20 bit pointer into a Tapemaster pointer.
  */
 cyldmba(reg, value)
-	register caddr_t reg;
+	register u_char *reg;
 	caddr_t value;
 {
 	register int v = (int)value;
