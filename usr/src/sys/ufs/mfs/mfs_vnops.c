@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vnops.c	7.11 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -126,14 +126,18 @@ mfs_ioctl(vp, com, data, fflag, cred)
 mfs_strategy(bp)
 	register struct buf *bp;
 {
-	register struct mfsnode *mfsp = VTOMFS(bp->b_vp);
+	register struct mfsnode *mfsp;
+	struct vnode *vp;
 
+	if (vfinddev(bp->b_dev, VBLK, &vp) || vp->v_usecount == 0)
+		panic("mfs_strategy: bad dev");
+	mfsp = VTOMFS(vp);
 	if (mfsp->mfs_pid == u.u_procp->p_pid) {
 		mfs_doio(bp, mfsp->mfs_baseoff);
 	} else {
 		bp->av_forw = mfsp->mfs_buflist;
 		mfsp->mfs_buflist = bp;
-		wakeup((caddr_t)bp->b_vp);
+		wakeup((caddr_t)vp);
 	}
 	return (0);
 }
