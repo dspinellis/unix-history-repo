@@ -3,28 +3,25 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)4.t	6.16 (Berkeley) %G%
+.\"	@(#)4.t	6.17 (Berkeley) %G%
 .\"
 .ds LH "Installing/Operating \*(4B
 .ds CF \*(Dy
 .ds RH "System setup
-.NH 1
-System Setup
+.Sh 1 "System setup"
 .PP
 This section describes procedures used to set up a \*(4B UNIX system.
 These procedures are used when a system is first installed
 or when the system configuration changes.  Procedures for normal
 system operation are described in the next section.
-.NH 2
-Kernel configuration
+.Sh 2 "Kernel configuration"
 .PP
 This section briefly describes the layout of the kernel code and
 how files for devices are made.
 For a full discussion of configuring
 and building system images, consult the document ``Building
 4.3BSD UNIX Systems with Config'' (SMM:2).
-.NH 3
-Kernel organization
+.Sh 3 "Kernel organization"
 .PP
 As distributed, the kernel source is in a
 separate tar image.  The source may be physically
@@ -113,8 +110,7 @@ compile	area to compile kernels
 conf	machine-independent configuration files
 stand	machine-independent standalone code
 .TE
-.NH 3
-Devices and device drivers
+.Sh 3 "Devices and device drivers"
 .PP
 Devices supported by UNIX are implemented in the kernel
 by drivers whose source is kept in
@@ -162,8 +158,7 @@ You can then do
 \fB#\fP \fIsync\fP
 .DE
 to install the new device directory.
-.NH 3
-Building new system images
+.Sh 3 "Building new system images"
 .PP
 The kernel configuration of each UNIX system is described by
 a single configuration file, stored in the
@@ -200,8 +195,7 @@ After having booted and tested the new system, it should be installed as
 before going into multiuser operation.
 A systematic scheme for numbering and saving old versions
 of the system may be useful.
-.NH 2
-Configuring terminals
+.Sh 2 "Configuring terminals"
 .PP
 If UNIX is to support simultaneous
 access from directly-connected terminals other than the console,
@@ -330,8 +324,7 @@ Change this and you may be sorry later, as the heuristic
 uses based on these conventions will then break down and
 .Xr ps
 will run MUCH slower.
-.NH 2
-Adding users
+.Sh 2 "Adding users"
 .PP
 The procedure for adding a new user is described in
 .Xr adduser (8).
@@ -345,8 +338,7 @@ Bell Laboratories, and others
 who have done major work on UNIX in the past.  You can delete these accounts,
 or leave them on the system if you expect that these people would have
 occasion to login as guests on your system.
-.NH 2
-Site tailoring
+.Sh 2 "Site tailoring"
 .PP
 All programs that require the site's name, or some similar
 characteristic, obtain the information through system calls
@@ -376,8 +368,7 @@ and
 .Xr uucp (1)
 use this system call so that the binary images are site
 independent.
-.NH 2
-Setting up the line printer system
+.Sh 2 "Setting up the line printer system"
 .PP
 The line printer system consists of at least
 the following files and commands:
@@ -428,8 +419,7 @@ A call to the
 .Xr lpd
 program should be present in
 .Pn /etc/rc .
-.NH 2
-Setting up the mail system
+.Sh 2 "Setting up the mail system"
 .PP
 The mail system consists of the following commands:
 .DS
@@ -487,8 +477,7 @@ for your installation, creating mail groups as appropriate.
 For more informations see
 ``Sendmail Installation and Operation Guide'' (SMM:8) and
 ``Sendmail \- An Internetwork Mail Router'' (SMM:9).
-.NH 3
-Setting up a UUCP connection
+.Sh 3 "Setting up a UUCP connection"
 .LP
 The version of
 .Xr uucp
