@@ -1,0 +1,106 @@
+Mmain	main.c	/^main(argc, argv)$/
+UC	ftp.c	/^#define	UC(b)	(((int)b)&0xff)$/
+abort_remote	ftp.c	/^abort_remote(din)$/
+abortpt	ftp.c	/^abortpt()$/
+abortrecv	ftp.c	/^abortrecv()$/
+abortsend	ftp.c	/^abortsend()$/
+account	cmds.c	/^account(argc,argv)$/
+another	cmds.c	/^another(pargc, pargv, prompt)$/
+cd	cmds.c	/^cd(argc, argv)$/
+cdup	cmds.c	/^cdup(argc, argv)$/
+changetype	cmds.c	/^changetype(newtype, show)$/
+cmdabort	ftp.c	/^cmdabort()$/
+cmdscanner	main.c	/^cmdscanner(top)$/
+command	ftp.c	/^command(va_alist)$/
+confirm	cmds.c	/^confirm(cmd, file)$/
+dataconn	ftp.c	/^dataconn(lmode)$/
+delete	cmds.c	/^delete(argc, argv)$/
+disconnect	cmds.c	/^disconnect(argc, argv)$/
+do_chmod	cmds.c	/^do_chmod(argc, argv)$/
+do_umask	cmds.c	/^do_umask(argc, argv)$/
+domacro	domacro.c	/^domacro(argc, argv)$/
+domap	cmds.c	/^domap(name)$/
+doproxy	cmds.c	/^doproxy(argc, argv)$/
+dotrans	cmds.c	/^dotrans(name)$/
+empty	ftp.c	/^empty(mask, sec)$/
+fatal	cmds.c	/^fatal(msg)$/
+get	cmds.c	/^get(argc, argv)$/
+getcmd	main.c	/^getcmd(name)$/
+getit	cmds.c	/^getit(argc, argv, restartit, mode)$/
+getreply	ftp.c	/^getreply(expecteof)$/
+globulize	cmds.c	/^globulize(cpp)$/
+gunique	ftp.c	/^gunique(local)$/
+help	main.c	/^help(argc, argv)$/
+hookup	ftp.c	/^hookup(host, port)$/
+idle	cmds.c	/^idle(argc, argv)$/
+initconn	ftp.c	/^initconn()$/
+intr	main.c	/^intr()$/
+lcd	cmds.c	/^lcd(argc, argv)$/
+login	ftp.c	/^login(host)$/
+lostpeer	main.c	/^lostpeer()$/
+ls	cmds.c	/^ls(argc, argv)$/
+mabort	cmds.c	/^mabort(signo)$/
+macdef	cmds.c	/^macdef(argc, argv)$/
+makeargv	main.c	/^makeargv()$/
+makedir	cmds.c	/^makedir(argc, argv)$/
+mdelete	cmds.c	/^mdelete(argc, argv)$/
+mget	cmds.c	/^mget(argc, argv)$/
+mls	cmds.c	/^mls(argc, argv)$/
+modtime	cmds.c	/^modtime(argc, argv)$/
+mput	cmds.c	/^mput(argc, argv)$/
+newer	cmds.c	/^newer(argc, argv)$/
+nz	ftp.c	/^#define	nz(x)	((x) == 0 ? 1 : (x))$/
+onoff	cmds.c	/^onoff(bool)$/
+proxabort	cmds.c	/^proxabort()$/
+proxtrans	ftp.c	/^proxtrans(cmd, local, remote)$/
+psabort	ftp.c	/^psabort()$/
+pswitch	ftp.c	/^pswitch(flag)$/
+ptransfer	ftp.c	/^ptransfer(direction, bytes, t0, t1)$/
+put	cmds.c	/^put(argc, argv)$/
+pwd	cmds.c	/^pwd(argc, argv)$/
+quit	cmds.c	/^quit(argc, argv)$/
+quote	cmds.c	/^quote(argc, argv)$/
+quote1	cmds.c	/^quote1(initial, argc, argv)$/
+recvrequest	ftp.c	/^recvrequest(cmd, local, remote, lmode, printnames)/
+reget	cmds.c	/^reget(argc, argv)$/
+remglob	cmds.c	/^remglob(argv,doswitch)$/
+removedir	cmds.c	/^removedir(argc, argv)$/
+renamefile	cmds.c	/^renamefile(argc, argv)$/
+reset	ftp.c	/^reset(argc, argv)$/
+restart	cmds.c	/^restart(argc, argv)$/
+rmthelp	cmds.c	/^rmthelp(argc, argv)$/
+rmtstatus	cmds.c	/^rmtstatus(argc, argv)$/
+ruserpass	ruserpass.c	/^ruserpass(host, aname, apass, aacct)$/
+sendrequest	ftp.c	/^sendrequest(cmd, local, remote, printnames)$/
+setascii	cmds.c	/^setascii(argc, argv)$/
+setbell	cmds.c	/^setbell(argc, argv)$/
+setbinary	cmds.c	/^setbinary(argc, argv)$/
+setcase	cmds.c	/^setcase(argc, argv)$/
+setcr	cmds.c	/^setcr(argc, argv)$/
+setdebug	cmds.c	/^setdebug(argc, argv)$/
+setform	cmds.c	/^setform(argc, argv)$/
+setftmode	cmds.c	/^setftmode(argc, argv)$/
+setglob	cmds.c	/^setglob(argc, argv)$/
+sethash	cmds.c	/^sethash(argc, argv)$/
+setnmap	cmds.c	/^setnmap(argc, argv)$/
+setntrans	cmds.c	/^setntrans(argc,argv)$/
+setpassive	cmds.c	/^setpassive(argc, argv)$/
+setpeer	cmds.c	/^setpeer(argc, argv)$/
+setport	cmds.c	/^setport(argc, argv)$/
+setprompt	cmds.c	/^setprompt(argc, argv)$/
+setrunique	cmds.c	/^setrunique(argc, argv)$/
+setstruct	cmds.c	/^setstruct(argc, argv)$/
+setsunique	cmds.c	/^setsunique(argc, argv)$/
+settenex	cmds.c	/^settenex(argc, argv)$/
+settrace	cmds.c	/^settrace(argc, argv)$/
+settype	cmds.c	/^settype(argc, argv)$/
+setverbose	cmds.c	/^setverbose(argc, argv)$/
+shell	cmds.c	/^shell(argc, argv)$/
+site	cmds.c	/^site(argc, argv)$/
+sizecmd	cmds.c	/^sizecmd(argc, argv)$/
+slurpstring	main.c	/^slurpstring()$/
+status	cmds.c	/^status(argc, argv)$/
+syst	cmds.c	/^syst(argc, argv)$/
+token	ruserpass.c	/^token()$/
+tvsub	ftp.c	/^tvsub(tdiff, t1, t0)$/
+user	cmds.c	/^user(argc, argv)$/

@@ -1,0 +1,2 @@
+Mnice	nice.c	/^main(argc, argv)$/
+usage	nice.c	/^usage()$/
