@@ -15,18 +15,18 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vm_machdep.c	7.2 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "cmap.h"
 #include "mount.h"
+#include "../ufs/ufsmount.h"
 #include "vm.h"
 #include "text.h"
 #include "kernel.h"
@@ -117,7 +117,7 @@ chgprot(addr, tprot)
 	if (pte->pg_fod == 0 && pte->pg_pfnum) {
 		c = &cmap[pgtocm(pte->pg_pfnum)];
 		if (c->c_blkno && c->c_mdev != MSWAPX)
-			munhash(mount[c->c_mdev].m_dev,
+			munhash(mounttab[c->c_mdev].um_devvp,
 			    (daddr_t)(u_long)c->c_blkno);
 	}
 	*(int *)pte &= ~PG_PROT;

@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mp.c	7.9 (Berkeley) %G%
+ *	@(#)mp.c	7.10 (Berkeley) %G%
  */
 
 #include "mp.h"
@@ -29,13 +29,11 @@
 #include "param.h"
 #include "ioctl.h"
 #include "tty.h"
-#include "dir.h"
 #include "user.h"
 #include "map.h"
 #include "buf.h"
 #include "conf.h"
 #include "file.h"
-#include "uio.h"
 #include "errno.h"
 #include "syslog.h"
 #include "vmmac.h"
@@ -1311,7 +1309,7 @@ mpdlwrite(dev, uio)
 	dl = &ms->ms_mb->mb_dl;
 	dl->mpdl_count = uio->uio_iov->iov_len;
 	dl->mpdl_data = (caddr_t) kvtophys(mpdlbuf);
-	if (error = uiomove(mpdlbuf, (int)dl->mpdl_count, UIO_WRITE, uio))
+	if (error = uiomove(mpdlbuf, (int)dl->mpdl_count, uio))
 		return (error);
 	uio->uio_resid -= dl->mpdl_count;    /* set up return from write */
 	dl->mpdl_cmd = MPDLCMD_NORMAL;
