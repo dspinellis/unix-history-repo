@@ -1,4 +1,4 @@
-/*	tty_tty.c	4.9	82/03/31	*/
+/*	tty_tty.c	4.10	82/08/22	*/
 
 /*
  * Indirect driver for controlling tty.
@@ -12,6 +12,7 @@
 #include "../h/user.h"
 #include "../h/tty.h"
 #include "../h/proc.h"
+#include "../h/uio.h"
 
 /*ARGSUSED*/
 syopen(dev, flag)
@@ -25,25 +26,29 @@ syopen(dev, flag)
 }
 
 /*ARGSUSED*/
-syread(dev)
+syread(dev, uio)
+	dev_t dev;
+	struct uio *uio;
 {
 
 	if (u.u_ttyp == NULL) {
 		u.u_error = ENXIO;
 		return;
 	}
-	(*cdevsw[major(u.u_ttyd)].d_read)(u.u_ttyd);
+	(*cdevsw[major(u.u_ttyd)].d_read)(u.u_ttyd, uio);
 }
 
 /*ARGSUSED*/
-sywrite(dev)
+sywrite(dev, uio)
+	dev_t dev;
+	struct uio *uio;
 {
 
 	if (u.u_ttyp == NULL) {
 		u.u_error = ENXIO;
 		return;
 	}
-	(*cdevsw[major(u.u_ttyd)].d_write)(u.u_ttyd);
+	(*cdevsw[major(u.u_ttyd)].d_write)(u.u_ttyd, uio);
 }
 
 /*ARGSUSED*/
