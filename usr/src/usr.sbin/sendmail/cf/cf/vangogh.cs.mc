@@ -8,7 +8,7 @@ divert(-1)
 #
 
 include(`../m4/cf.m4')
-VERSIONID(`@(#)vangogh.cs.mc	2.7 (Berkeley) %G%')
+VERSIONID(`@(#)vangogh.cs.mc	6.1 (Berkeley) %G%')
 DOMAIN(cs.exposed)dnl
 OSTYPE(bsd4.4)dnl
 MAILER(local)dnl

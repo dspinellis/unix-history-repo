@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	5.21 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	6.1 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	5.21 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	6.1 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 

@@ -8,7 +8,7 @@ divert(-1)
 #
 
 include(`../m4/cf.m4')
-VERSIONID(`@(#)s2k-ultrix4.mc	2.1 (Berkeley) %G%')
+VERSIONID(`@(#)s2k-ultrix4.mc	6.1 (Berkeley) %G%')
 OLDSENDMAIL
 OSTYPE(ultrix4.1)dnl
 DOMAIN(s2000)dnl

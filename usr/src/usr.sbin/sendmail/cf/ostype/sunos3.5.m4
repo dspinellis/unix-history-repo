@@ -8,4 +8,4 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)sunos3.5.m4	2.4 (Berkeley) %G%')
+VERSIONID(`@(#)sunos3.5.m4	6.1 (Berkeley) %G%')

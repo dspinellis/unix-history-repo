@@ -7,7 +7,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)makeinfo.sh	2.1 (Berkeley) %G%
+#	@(#)makeinfo.sh	6.1 (Berkeley) %G%
 #
 
 echo '#####' built by `whoami` on `date`

@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mailstats.h	5.4 (Berkeley) %G%
+ *	@(#)mailstats.h	6.1 (Berkeley) %G%
  */
 
 /*
