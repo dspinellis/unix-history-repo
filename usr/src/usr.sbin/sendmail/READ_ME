@@ -1,5 +1,5 @@
 /*-
- *	@(#)READ_ME	8.12 (Berkeley) %G%
+ *	@(#)READ_ME	8.13 (Berkeley) %G%
  */
 
 			SENDMAIL RELEASE 8
@@ -143,17 +143,8 @@ about NEWDB and NDBM coexisting.
 
 
 +--------------------+
-| Host Name Services |
+| HOST NAME SERVICES |
 +--------------------+
-
-If you compile with NAMED_BIND (the default) sendmail will use
-DNS (the Domain Name System) for most host name lookups.  If
-you do not have DNS running at your site you may have to turn
-this off to cause sendmail to use NIS and/or the /etc/hosts file.
-In particular, on SunOS you have to choose to use DNS (which
-you should do if you are attached to the Internet, otherwise
-you lose MX records, which are required) or NIS -- there is no
-way to try both.
 
 If you are using NIS and /etc/hosts, it is critical that you
 list the long (fully qualified) name first in the /etc/hosts file
@@ -181,6 +172,23 @@ are running MH you may wish to install the patch in contrib/mh.patch
 that will prevent these warning reports.  This patch also works
 with the old version of sendmail, so it's safe to go ahead and
 install it.
+
+
++----------------+
+| USE WITH IDENT |
++----------------+
+
+Sendmail 8 supports the IDENT protocol, as defined by RFC 1413.
+No ident server is included with this distribution.  I have found
+copies available on:
+
+  ftp.lysator.liu.se		/pub/ident/servers
+  romulus.ucs.uoknor.edu	/networking/ident/servers
+  ftp.cyf-kr.edu.pl		/agh/uciagh/network/ident
+
+If you want to run an IDENT server, I suggest getting a copy from
+one of those sites.  Versions are available for several different
+systems, including Apollo, BSD, NeXT, AIX, TOPS20, and VMS.
 
 
 +-----------+
