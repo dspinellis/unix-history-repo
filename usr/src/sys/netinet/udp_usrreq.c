@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.17	81/12/12	*/
+/*	udp_usrreq.c	4.18	81/12/23	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -42,10 +42,10 @@ COUNT(UDP_INPUT);
 	 * Get IP and UDP header together in first mbuf.
 	 */
 	m = m0;
-	if (m->m_len < sizeof (struct udpiphdr) &&
-	    m_pullup(m, sizeof (struct udpiphdr)) == 0) {
+	if ((m->m_off > MMAXOFF || m->m_len < sizeof (struct udpiphdr)) &&
+	    (m = m_pullup(m, sizeof (struct udpiphdr))) == 0) {
 		udpstat.udps_hdrops++;
-		goto bad;
+		return;
 	}
 	ui = mtod(m, struct udpiphdr *);
 	if (((struct ip *)ui)->ip_hl > (sizeof (struct ip) >> 2))
