@@ -1,4 +1,4 @@
-/*	tty.c	6.2	83/09/09	*/
+/*	tty.c	6.3	83/09/25	*/
 
 #include "../machine/reg.h"
 
@@ -250,16 +250,18 @@ ttioctl(tp, com, data, flag)
 	case TIOCLBIC:
 	case TIOCLSET:
 	case TIOCSTI:
+#define bit(a) (1<<(a-1))
 		while (tp->t_line == NTTYDISC &&
 		   u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
 		   (u.u_procp->p_flag&SVFORK) == 0 &&
-		   u.u_signal[SIGTTOU] != SIG_IGN &&
-		   u.u_signal[SIGTTOU] != SIG_HOLD) {
+		   !(u.u_procp->p_sigignore & bit(SIGTTOU)) &&
+		   !(u.u_procp->p_sigmask & bit(SIGTTOU))) {
 			gsignal(u.u_procp->p_pgrp, SIGTTOU);
 			sleep((caddr_t)&lbolt, TTOPRI);
 		}
 		break;
 	}
+#undef	bit
 
 	/*
 	 * Process the ioctl.
@@ -276,7 +278,7 @@ ttioctl(tp, com, data, flag)
 		register int t = *(int *)data;
 		int error = 0;
 
-		if (t >= nldisp)
+		if ((unsigned) t >= nldisp)
 			return (ENXIO);
 		s = spl5();
 		if (tp->t_line)
