@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	1.5 83/07/22";
+static	char *sccsid = "@(#)wwopen.c	1.6 83/07/29";
 #endif
 
 #include "ww.h"
@@ -19,7 +19,7 @@ wwopen(mode, id, nrow, ncol, row, col)
 	case WW_PTY:
 		if (wwgetpty(w) < 0)
 			goto bad;
-		if (wwsettty(w->ww_pty, &wwoldtty) < 0)
+		if (wwsettty(w->ww_pty, &wwwintty) < 0)
 			goto bad;
 		break;
 	case WW_SOCKET:
