@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
 MAN1=	kdestroy.0 kerberos.0 kinit.0 klist.0 ksrvtgt.0
 MAN3=	acl_check.0 des_crypt.0 kerberos.0 krb_realmofhost.0 krb_sendauth.0 \
@@ -9,12 +9,5 @@ MLINKS+=krb_realmofhost.3 realm.3
 MLINKS+=des_crypt.3 des.3
 MLINKS+=kerberos.3
 MLINKS+=krb_sendauth.3 ksend.3
-
-all: ${MAN1} ${MAN3} ${MAN5} ${MAN8}
-
-clean depend lint tags:
-
-cleandir:
-	rm -f ${MAN3}
 
 .include <bsd.prog.mk>
