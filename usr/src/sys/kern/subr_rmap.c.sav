@@ -1,4 +1,4 @@
-/*	subr_rmap.c.sav	4.2	%G%	*/
+/*	subr_rmap.c.sav	4.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -230,7 +230,7 @@ rmfree(mp, size, addr)
 		 * and move the last entry back one.
 		 */
 		bp--;
-		printf("%s rmap overflow, lost [%d,%d)\n", mp->m_name,
+		printf("%s: rmap ovflo, lost [%d,%d)\n", mp->m_name,
 		    (bp-1)->m_addr, (bp-1)->m_addr+(bp-1)->m_size);
 		bp[-1] = bp[0];
 		bp[0].m_size = bp[0].m_addr = 0;
