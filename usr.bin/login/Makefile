@@ -1,11 +1,14 @@
 #	@(#)Makefile	5.6 (Berkeley) 6/24/90
 
 PROG=	login
-SRCS=	klogin.c login.c
-DPADD=	${LIBUTIL}
-LDADD=	-lutil
+MAN5=	login.access.5
+SRCS=	klogin.c login.c login_access.c login_skey.c 
+DPADD=	${LIBUTIL} /usr/lib/libskey.a
+LDADD=	-lutil -lskey
 BINOWN=	root
 BINMODE=4555
+#CFLAGS+=-DLOGIN_ACCESS -DSKEY -DLOGALL -I${.CURDIR}/../../lib
+CFLAGS+=-DLOGIN_ACCESS -DSKEY -I${.CURDIR}/../../lib
 
 .if exists(${DESTDIR}/usr/lib/libcrypt.a)
 DPADD+= ${LIBCRYPT}
