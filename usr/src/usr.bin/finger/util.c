@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -80,9 +80,12 @@ userinfo(pn, pw)
 		else
 			++t;
 	pn->realname = strdup(name);
-	pn->office = (p = strsep((char *)NULL, ",")) ? strdup(p) : NULL;
-	pn->officephone = (p = strsep((char *)NULL, ",")) ? strdup(p) : NULL;
-	pn->homephone = (p = strsep((char *)NULL, ",")) ? strdup(p) : NULL;
+	pn->office = ((p = strsep((char *)NULL, ",")) && *p) ?
+	    strdup(p) : NULL;
+	pn->officephone = ((p = strsep((char *)NULL, ",")) && *p) ?
+	    strdup(p) : NULL;
+	pn->homephone = ((p = strsep((char *)NULL, ",")) && *p) ?
+	    strdup(p) : NULL;
 }
 
 match(pw, user)
