@@ -1,4 +1,4 @@
-static char Sccsid[] "@(#)imatch	2.1";
+static char Sccsid[] = "@(#)imatch.c	1.2	%G%";
 /*
 	initial match
 	if `prefix' is a prefix of `string' return 1

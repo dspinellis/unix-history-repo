@@ -1,4 +1,4 @@
-static char Sccsid[] "@(#)userdir	2.1";
+static char Sccsid[] = "@(#)userdir.c	1.2	%G%";
 /*
 	Gets user's login directory.
 	The argument must be an integer.

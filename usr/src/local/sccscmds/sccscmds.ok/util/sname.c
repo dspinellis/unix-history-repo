@@ -1,4 +1,4 @@
-static char Sccsid[] "@(#)sname	2.2";
+static char Sccsid[] = "@(#)sname.c	1.2	%G%";
 /*
 	Returns pointer to "simple" name of path name; that is,
 	pointer to first character after last "/".  If no slashes,

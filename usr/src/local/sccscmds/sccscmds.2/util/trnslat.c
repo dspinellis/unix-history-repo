@@ -1,4 +1,4 @@
-static char Sccsid[] "@(#)trnslat	2.2";
+static char Sccsid[] = "@(#)trnslat.c	1.2	%G%";
 /*
 	Copy `str' to `result' replacing any character found
 	in both `str' and `old' with the corresponding character from `new'.
