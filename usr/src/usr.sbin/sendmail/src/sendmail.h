@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.90 (Berkeley) %G%
+ *	@(#)sendmail.h	8.43.1.2 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.90		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.43.1.2		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -46,10 +46,10 @@ static char SmailSccsId[] =	"@(#)sendmail.h	8.90		%G%";
 **  Data structure for bit maps.
 **
 **	Each bit in this map can be referenced by an ascii character.
-**	This is 256 possible bits, or 32 8-bit bytes.
+**	This is 128 possible bits, or 12 8-bit bytes.
 */
 
-#define BITMAPBYTES	32	/* number of bytes in a bit map */
+#define BITMAPBYTES	16	/* number of bytes in a bit map */
 #define BYTEBITS	8	/* number of bits in a byte */
 
 /* internal macros */
@@ -81,7 +81,7 @@ struct address
 	char		*q_ruser;	/* real user name, or NULL if q_user */
 	char		*q_host;	/* host name */
 	struct mailer	*q_mailer;	/* mailer to use */
-	u_long		q_flags;	/* status flags, see below */
+	u_short		q_flags;	/* status flags, see below */
 	uid_t		q_uid;		/* user-id of receiver (if known) */
 	gid_t		q_gid;		/* group-id of receiver (if known) */
 	char		*q_home;	/* home dir (local mailer only) */
@@ -90,34 +90,23 @@ struct address
 	struct address	*q_alias;	/* address this results from */
 	char		*q_owner;	/* owner of q_alias */
 	struct address	*q_tchain;	/* temporary use chain */
-	char		*q_orcpt;	/* ORCPT parameter from RCPT TO: line */
-	char		*q_status;	/* status code for DSNs */
-	char		*q_fstatus;	/* final status code for DSNs */
-	char		*q_rstatus;	/* remote status message for DSNs */
-	time_t		q_statdate;	/* date of status messages */
-	char		*q_statmta;	/* MTA generating q_rstatus */
+	time_t		q_timeout;	/* timeout for this address */
 };
 
 typedef struct address ADDRESS;
 
-# define QDONTSEND	0x00000001	/* don't send to this address */
-# define QBADADDR	0x00000002	/* this address is verified bad */
-# define QGOODUID	0x00000004	/* the q_uid q_gid fields are good */
-# define QPRIMARY	0x00000008	/* set from argv */
-# define QQUEUEUP	0x00000010	/* queue for later transmission */
-# define QSENT		0x00000020	/* has been successfully delivered */
-# define QNOTREMOTE	0x00000040	/* address not for remote forwarding */
-# define QSELFREF	0x00000080	/* this address references itself */
-# define QVERIFIED	0x00000100	/* verified, but not expanded */
-# define QREPORT	0x00000200	/* report this addr in return message */
-# define QBOGUSSHELL	0x00000400	/* user has no valid shell listed */
-# define QUNSAFEADDR	0x00000800	/* address aquired via unsafe path */
-# define QPINGONSUCCESS	0x00001000	/* give return on successful delivery */
-# define QPINGONFAILURE	0x00002000	/* give return on failure */
-# define QPINGONDELAY	0x00004000	/* give return on message delay */
-# define QHAS_RET_PARAM	0x00008000	/* RCPT command had RET argument */
-# define QRET_HDRS	0x00010000	/* don't return message body */
-# define QRELAYED	0x00020000	/* relayed to non-DSN aware mailer */
+# define QDONTSEND	000001	/* don't send to this address */
+# define QBADADDR	000002	/* this address is verified bad */
+# define QGOODUID	000004	/* the q_uid q_gid fields are good */
+# define QPRIMARY	000010	/* set from argv */
+# define QQUEUEUP	000020	/* queue for later transmission */
+# define QSENT		000040	/* has been successfully delivered */
+# define QNOTREMOTE	000100	/* not an address for remote forwarding */
+# define QSELFREF	000200	/* this address references itself */
+# define QVERIFIED	000400	/* verified, but not expanded */
+# define QREPORT	001000	/* report this address in return message */
+# define QBOGUSSHELL	002000	/* this entry has an invalid shell listed */
+# define QUNSAFEADDR	004000	/* address aquired through an unsafe path */
 
 # define NULLADDR	((ADDRESS *) NULL)
 /*
@@ -136,9 +125,6 @@ struct mailer
 {
 	char	*m_name;	/* symbolic name of this mailer */
 	char	*m_mailer;	/* pathname of the mailer to use */
-	char	*m_mtatype;	/* type of this MTA */
-	char	*m_addrtype;	/* type for addresses */
-	char	*m_diagtype;	/* type for diagnostics */
 	BITMAP	m_flags;	/* status flags, see below */
 	short	m_mno;		/* mailer number internally */
 	char	**m_argv;	/* template argument vector */
@@ -150,20 +136,15 @@ struct mailer
 	long	m_maxsize;	/* size limit on message to this mailer */
 	int	m_linelimit;	/* max # characters per line */
 	char	*m_execdir;	/* directory to chdir to before execv */
-	uid_t	m_uid;		/* UID to run as */
-	gid_t	m_gid;		/* GID to run as */
-	char	*m_defcharset;	/* default character set */
 };
 
 typedef struct mailer	MAILER;
 
 /* bits for m_flags */
 # define M_ESMTP	'a'	/* run Extended SMTP protocol */
-# define M_ALIASABLE	'A'	/* user can be LHS of an alias */
 # define M_BLANKEND	'b'	/* ensure blank line at end of message */
 # define M_NOCOMMENT	'c'	/* don't include comment part of address */
 # define M_CANONICAL	'C'	/* make addresses canonical "u@dom" */
-# define M_NOBRACKET	'd'	/* never angle bracket envelope route-addrs */
 		/*	'D'	/* CF: include Date: */
 # define M_EXPENSIVE	'e'	/* it costs to use this mailer.... */
 # define M_ESCFROM	'E'	/* escape From lines to >From */
@@ -172,35 +153,25 @@ typedef struct mailer	MAILER;
 # define M_NO_NULL_FROM	'g'	/* sender of errors should be $g */
 # define M_HST_UPPER	'h'	/* preserve host case distinction */
 # define M_PREHEAD	'H'	/* MAIL11V3: preview headers */
-# define M_UDBENVELOPE	'i'	/* do udbsender rewriting on envelope */
 # define M_INTERNAL	'I'	/* SMTP to another sendmail site */
-# define M_NOLOOPCHECK	'k'	/* don't check for loops in HELO command */
 # define M_LOCALMAILER	'l'	/* delivery is to this host */
 # define M_LIMITS	'L'	/* must enforce SMTP line limits */
 # define M_MUSER	'm'	/* can handle multiple users at once */
 		/*	'M'	/* CF: include Message-Id: */
 # define M_NHDR		'n'	/* don't insert From line */
 # define M_MANYSTATUS	'N'	/* MAIL11V3: DATA returns multi-status */
-# define M_RUNASRCPT	'o'	/* always run mailer as recipient */
 # define M_FROMPATH	'p'	/* use reverse-path in MAIL FROM: */
 		/*	'P'	/* CF: include Return-Path: */
 # define M_ROPT		'r'	/* mailer takes picky -r flag */
 # define M_SECURE_PORT	'R'	/* try to send on a reserved TCP port */
 # define M_STRIPQ	's'	/* strip quote chars from user/host */
-# define M_SPECIFIC_UID	'S'	/* run as specific uid/gid */
+# define M_RESTR	'S'	/* must be daemon to execute */
 # define M_USR_UPPER	'u'	/* preserve user case distinction */
 # define M_UGLYUUCP	'U'	/* this wants an ugly UUCP from line */
 		/*	'V'	/* UIUC: !-relativize all addresses */
-# define M_HASPWENT	'w'	/* check for /etc/passwd entry */
 		/*	'x'	/* CF: include Full-Name: */
 # define M_XDOT		'X'	/* use hidden-dot algorithm */
-# define M_TRYRULESET5	'5'	/* use ruleset 5 after local aliasing */
 # define M_7BITS	'7'	/* use 7-bit path */
-# define M_8BITS	'8'	/* force "just send 8" behaviour */
-# define M_CHECKINCLUDE	':'	/* check for :include: files */
-# define M_CHECKPROG	'|'	/* check for |program addresses */
-# define M_CHECKFILE	'/'	/* check for /file addresses */
-# define M_CHECKUDB	'@'	/* user can be user database key */
 
 EXTERN MAILER	*Mailer[MAXMAILERS+1];
 
@@ -239,21 +210,18 @@ struct hdrinfo
 extern struct hdrinfo	HdrInfo[];
 
 /* bits for h_flags and hi_flags */
-# define H_EOH		0x0001	/* this field terminates header */
-# define H_RCPT		0x0002	/* contains recipient addresses */
-# define H_DEFAULT	0x0004	/* if another value is found, drop this */
-# define H_RESENT	0x0008	/* this address is a "Resent-..." address */
-# define H_CHECK	0x0010	/* check h_mflags against m_flags */
-# define H_ACHECK	0x0020	/* ditto, but always (not just default) */
-# define H_FORCE	0x0040	/* force this field, even if default */
-# define H_TRACE	0x0080	/* this field contains trace information */
-# define H_FROM		0x0100	/* this is a from-type field */
-# define H_VALID	0x0200	/* this field has a validated value */
-# define H_RECEIPTTO	0x0400	/* this field has return receipt info */
-# define H_ERRORSTO	0x0800	/* this field has error address info */
-# define H_CTE		0x1000	/* this field is a content-transfer-encoding */
-# define H_CTYPE	0x2000	/* this is a content-type field */
-# define H_STRIPVAL	0x4000	/* strip value from header (Bcc:) */
+# define H_EOH		00001	/* this field terminates header */
+# define H_RCPT		00002	/* contains recipient addresses */
+# define H_DEFAULT	00004	/* if another value is found, drop this */
+# define H_RESENT	00010	/* this address is a "Resent-..." address */
+# define H_CHECK	00020	/* check h_mflags against m_flags */
+# define H_ACHECK	00040	/* ditto, but always (not just default) */
+# define H_FORCE	00100	/* force this field, even if default */
+# define H_TRACE	00200	/* this field contains trace information */
+# define H_FROM		00400	/* this is a from-type field */
+# define H_VALID	01000	/* this field has a validated value */
+# define H_RECEIPTTO	02000	/* this field has return receipt info */
+# define H_ERRORSTO	04000	/* this field has error address info */
 /*
 **  Information about currently open connections to mailers, or to
 **  hosts that we have looked up recently.
@@ -275,24 +243,20 @@ MCI
 	char		*mci_phase;	/* SMTP phase string */
 	struct mailer	*mci_mailer;	/* ptr to the mailer for this conn */
 	char		*mci_host;	/* host name */
-	char		*mci_status;	/* DSN status to be copied to addrs */
 	time_t		mci_lastuse;	/* last usage time */
 };
 
 
 /* flag bits */
-#define MCIF_VALID	0x0001		/* this entry is valid */
-#define MCIF_TEMP	0x0002		/* don't cache this connection */
-#define MCIF_CACHED	0x0004		/* currently in open cache */
-#define MCIF_ESMTP	0x0008		/* this host speaks ESMTP */
-#define MCIF_EXPN	0x0010		/* EXPN command supported */
-#define MCIF_SIZE	0x0020		/* SIZE option supported */
-#define MCIF_8BITMIME	0x0040		/* BODY=8BITMIME supported */
-#define MCIF_7BIT	0x0080		/* strip this message to 7 bits */
-#define MCIF_MULTSTAT	0x0100		/* MAIL11V3: handles MULT status */
-#define MCIF_INHEADER	0x0200		/* currently outputing header */
-#define MCIF_CVT8TO7	0x0400		/* convert from 8 to 7 bits */
-#define MCIF_DSN	0x0800		/* DSN extension supported */
+#define MCIF_VALID	000001		/* this entry is valid */
+#define MCIF_TEMP	000002		/* don't cache this connection */
+#define MCIF_CACHED	000004		/* currently in open cache */
+#define MCIF_ESMTP	000010		/* this host speaks ESMTP */
+#define MCIF_EXPN	000020		/* EXPN command supported */
+#define MCIF_SIZE	000040		/* SIZE option supported */
+#define MCIF_8BITMIME	000100		/* BODY=8BITMIME supported */
+#define MCIF_7BIT	000200		/* strip this message to 7 bits */
+#define MCIF_MULTSTAT	000400		/* MAIL11V3: handles MULT status */
 
 /* states */
 #define MCIS_CLOSED	0		/* no traffic on this connection */
@@ -333,7 +297,6 @@ ENVELOPE
 /* values for e_flags */
 #define EF_OLDSTYLE	0x0000001	/* use spaces (not commas) in hdrs */
 #define EF_INQUEUE	0x0000002	/* this message is fully queued */
-#define EF_NORETURN	0x0000004	/* don't return the message on error */
 #define EF_CLRQUEUE	0x0000008	/* disk copy is no longer needed */
 #define EF_SENDRECEIPT	0x0000010	/* send a return receipt */
 #define EF_FATALERRS	0x0000020	/* fatal errors occured */
@@ -348,9 +311,6 @@ ENVELOPE
 #define EF_METOO	0x0004000	/* send to me too */
 #define EF_LOGSENDER	0x0008000	/* need to log the sender */
 #define EF_NORECEIPT	0x0010000	/* suppress all return-receipts */
-#define EF_HAS8BIT	0x0020000	/* at least one 8-bit char in body */
-#define EF_NL_NOT_EOL	0x0040000	/* don't accept raw NL as EOLine */
-#define EF_CRLF_NOT_EOL	0x0080000	/* don't accept CR-LF as EOLine */
 
 EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
 /*
@@ -496,7 +456,7 @@ extern void		stabapply __P((void (*)(STAB *, int), int));
 struct event
 {
 	time_t		ev_time;	/* time of the function call */
-	void		(*ev_func)__P((int));
+	int		(*ev_func)__P((int));
 					/* function to call */
 	int		ev_arg;		/* argument to ev_func */
 	int		ev_pid;		/* pid that set this event */
@@ -507,7 +467,7 @@ typedef struct event	EVENT;
 
 EXTERN EVENT	*EventQueue;		/* head of event queue */
 /*
-**  Operation, send, error, and MIME modes
+**  Operation, send, and error modes
 **
 **	The operation mode describes the basic operation of sendmail.
 **	This can be set from the command line, and is "send mail" by
@@ -552,31 +512,6 @@ EXTERN char	OpMode;		/* operation mode, see below */
 #define EM_WRITE	'w'		/* write back errors */
 #define EM_BERKNET	'e'		/* special berknet processing */
 #define EM_QUIET	'q'		/* don't print messages (stat only) */
-
-
-/* MIME processing mode */
-EXTERN int	MimeMode;
-
-/* bit values for MimeMode */
-#define MM_CVTMIME	0x0001		/* convert 8 to 7 bit MIME */
-#define MM_PASS8BIT	0x0002		/* just send 8 bit data blind */
-#define MM_MIME8BIT	0x0004		/* convert 8-bit data to MIME */
-
-/* queue sorting order algorithm */
-EXTERN int	QueueSortOrder;
-
-#define QS_BYPRIORITY	0		/* sort by message priority */
-#define QS_BYHOST	1		/* sort by first host name */
-
-
-/* how to handle messages without any recipient addresses */
-EXTERN int		NoRecipientAction;
-
-#define NRA_NO_ACTION		0	/* just leave it as is */
-#define NRA_ADD_TO		1	/* add To: header */
-#define NRA_ADD_APPARENTLY_TO	2	/* add Apparently-To: header */
-#define NRA_ADD_BCC		3	/* add empty Bcc: header */
-#define NRA_ADD_TO_UNDISCLOSED	4	/* add To: undisclosed:; header */
 /*
 **  Additional definitions
 */
@@ -588,16 +523,16 @@ EXTERN int		NoRecipientAction;
 */
 
 #define PRIV_PUBLIC		0	/* what have I got to hide? */
-#define PRIV_NEEDMAILHELO	0x0001	/* insist on HELO for MAIL, at least */
-#define PRIV_NEEDEXPNHELO	0x0002	/* insist on HELO for EXPN */
-#define PRIV_NEEDVRFYHELO	0x0004	/* insist on HELO for VRFY */
-#define PRIV_NOEXPN		0x0008	/* disallow EXPN command entirely */
-#define PRIV_NOVRFY		0x0010	/* disallow VRFY command entirely */
-#define PRIV_AUTHWARNINGS	0x0020	/* flag possible authorization probs */
-#define PRIV_NORECEIPTS		0x0040	/* disallow return receipts */
-#define PRIV_RESTRICTMAILQ	0x1000	/* restrict mailq command */
-#define PRIV_RESTRICTQRUN	0x2000	/* restrict queue run */
-#define PRIV_GOAWAY		0x0fff	/* don't give no info, anyway, anyhow */
+#define PRIV_NEEDMAILHELO	00001	/* insist on HELO for MAIL, at least */
+#define PRIV_NEEDEXPNHELO	00002	/* insist on HELO for EXPN */
+#define PRIV_NEEDVRFYHELO	00004	/* insist on HELO for VRFY */
+#define PRIV_NOEXPN		00010	/* disallow EXPN command entirely */
+#define PRIV_NOVRFY		00020	/* disallow VRFY command entirely */
+#define PRIV_AUTHWARNINGS	00040	/* flag possible authorization probs */
+#define PRIV_NORECEIPTS		00100	/* disallow return receipts */
+#define PRIV_RESTRICTMAILQ	01000	/* restrict mailq command */
+#define PRIV_RESTRICTQRUN	02000	/* restrict queue run */
+#define PRIV_GOAWAY		00777	/* don't give no info, anyway, anyhow */
 
 /* struct defining such things */
 struct prival
@@ -611,12 +546,12 @@ struct prival
 **  Flags passed to remotename, parseaddr, allocaddr, and buildaddr.
 */
 
-#define RF_SENDERADDR		0x001	/* this is a sender address */
-#define RF_HEADERADDR		0x002	/* this is a header address */
-#define RF_CANONICAL		0x004	/* strip comment information */
-#define RF_ADDDOMAIN		0x008	/* OK to do domain extension */
-#define RF_COPYPARSE		0x010	/* copy parsed user & host */
-#define RF_COPYPADDR		0x020	/* copy print address */
+#define RF_SENDERADDR		0001	/* this is a sender address */
+#define RF_HEADERADDR		0002	/* this is a header address */
+#define RF_CANONICAL		0004	/* strip comment information */
+#define RF_ADDDOMAIN		0010	/* OK to do domain extension */
+#define RF_COPYPARSE		0020	/* copy parsed user & host */
+#define RF_COPYPADDR		0040	/* copy print address */
 #define RF_COPYALL		(RF_COPYPARSE|RF_COPYPADDR)
 #define RF_COPYNONE		0
 
@@ -629,7 +564,6 @@ struct prival
 #define SFF_MUSTOWN		0x0001	/* user must own this file */
 #define SFF_NOSLINK		0x0002	/* file cannot be a symbolic link */
 #define SFF_ROOTOK		0x0004	/* ok for root to own this file */
-#define SFF_NOPATHCHECK		0x0010	/* don't bother checking dir path */
 
 
 /*
@@ -658,27 +592,6 @@ union bigsockaddr
 };
 
 #define SOCKADDR	union bigsockaddr
-
-
-/*
-**  Vendor codes
-**
-**	Vendors can customize sendmail to add special behaviour,
-**	generally for back compatibility.  Ideally, this should
-**	be set up in the .cf file using the "V" command.  However,
-**	it's quite reasonable for some vendors to want the default
-**	be their old version; this can be set using
-**		-DVENDOR_DEFAULT=VENDOR_xxx
-**	in the Makefile.
-**
-**	Vendors should apply to sendmail@CS.Berkeley.EDU for
-**	unique vendor codes.
-*/
-
-#define VENDOR_BERKELEY	1	/* Berkeley-native configuration file */
-#define VENDOR_SUN	2	/* Sun-native configuration file */
-
-EXTERN int	VendorCode;	/* vendor-specific operation enhancements */
 /*
 **  Global variables.
 */
@@ -689,6 +602,7 @@ EXTERN bool	IgnrDot;	/* don't let dot end messages */
 EXTERN bool	SaveFrom;	/* save leading "From" lines */
 EXTERN bool	Verbose;	/* set if blow-by-blow desired */
 EXTERN bool	GrabTo;		/* if set, get recipients from msg */
+EXTERN bool	NoReturn;	/* don't return letter to sender */
 EXTERN bool	SuprErrs;	/* set if we are suppressing errors */
 EXTERN bool	HoldErrs;	/* only output errors to transcript */
 EXTERN bool	NoConnect;	/* don't connect to non-local mailers */
@@ -696,10 +610,8 @@ EXTERN bool	SuperSafe;	/* be extra careful, even if expensive */
 EXTERN bool	AutoRebuild;	/* auto-rebuild the alias database as needed */
 EXTERN bool	CheckAliases;	/* parse addresses during newaliases */
 EXTERN bool	NoAlias;	/* suppress aliasing */
-EXTERN bool	UseNameServer;	/* using DNS -- interpret h_errno & MX RRs */
-EXTERN bool	UseHesiod;	/* using Hesiod -- interpret Hesiod errors */
-EXTERN bool	SevenBitInput;	/* force 7-bit data on input */
-EXTERN bool	HasEightBits;	/* has at least one eight bit input byte */
+EXTERN bool	UseNameServer;	/* use internet domain name server */
+EXTERN bool	SevenBit;	/* force 7-bit data */
 EXTERN time_t	SafeAlias;	/* interval to wait until @:@ in alias file */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */
@@ -711,6 +623,7 @@ EXTERN char	*DefUser;	/* default user to run as (from DefUid) */
 EXTERN int	OldUmask;	/* umask when sendmail starts up */
 EXTERN int	Errors;		/* set if errors (local to single pass) */
 EXTERN int	ExitStat;	/* exit status code */
+EXTERN int	AliasLevel;	/* depth of aliasing */
 EXTERN int	LineNumber;	/* line number in current input */
 EXTERN int	LogLevel;	/* level of logging to perform */
 EXTERN int	FileMode;	/* mode on files */
@@ -728,6 +641,7 @@ EXTERN bool	SendMIMEErrors;	/* send error messages in MIME format */
 EXTERN bool	MatchGecos;	/* look for user names in gecos field */
 EXTERN bool	UseErrorsTo;	/* use Errors-To: header (back compat) */
 EXTERN bool	TryNullMXList;	/* if we are the best MX, try host directly */
+extern bool	CheckLoopBack;	/* check for loopback on HELO packet */
 EXTERN bool	InChild;	/* true if running in an SMTP subprocess */
 EXTERN bool	DisConnected;	/* running with OutChannel redirected to xf */
 EXTERN char	SpaceSub;	/* substitution for <lwsp> */
@@ -759,16 +673,10 @@ EXTERN struct
 	time_t	to_quit;	/* QUIT command */
 	time_t	to_miscshort;	/* misc short commands (NOOP, VERB, etc) */
 	time_t	to_ident;	/* IDENT protocol requests */
-	time_t	to_fileopen;	/* opening :include: and .forward files */
 			/* following are per message */
-	time_t	to_q_return[MAXTOCLASS];	/* queue return timeouts */
-	time_t	to_q_warning[MAXTOCLASS];	/* queue warning timeouts */
+	time_t	to_q_return;	/* queue return timeout */
+	time_t	to_q_warning;	/* queue warning timeout */
 } TimeOuts;
-
-/* timeout classes for return and warning timeouts */
-# define TOC_NORMAL	0	/* normal delivery */
-# define TOC_URGENT	1	/* urgent delivery */
-# define TOC_NONURGENT	2	/* non-urgent delivery */
 
 
 /*
@@ -807,7 +715,7 @@ extern ADDRESS		*parseaddr __P((char *, ADDRESS *, int, int, char **, ENVELOPE *
 extern char		*xalloc __P((int));
 extern bool		sameaddr __P((ADDRESS *, ADDRESS *));
 extern FILE		*dfopen __P((char *, int, int));
-extern EVENT		*setevent __P((time_t, void(*)(), int));
+extern EVENT		*setevent __P((time_t, int(*)(), int));
 extern char		*sfgets __P((char *, int, FILE *, time_t, char *));
 extern char		*queuename __P((ENVELOPE *, int));
 extern time_t		curtime __P(());
@@ -816,12 +724,10 @@ extern const char	*errstring __P((int));
 extern void		expand __P((char *, char *, char *, ENVELOPE *));
 extern void		define __P((int, char *, ENVELOPE *));
 extern char		*macvalue __P((int, ENVELOPE *));
-extern char		*macname __P((int));
-extern int		macid __P((char *, char **));
 extern char		**prescan __P((char *, int, char[], int, char **));
 extern int		rewrite __P((char **, int, int, ENVELOPE *));
 extern char		*fgetfolded __P((char *, int, FILE *));
-extern ADDRESS		*recipient __P((ADDRESS *, ADDRESS **, int, ENVELOPE *));
+extern ADDRESS		*recipient __P((ADDRESS *, ADDRESS **, ENVELOPE *));
 extern ENVELOPE		*newenvelope __P((ENVELOPE *, ENVELOPE *));
 extern void		dropenvelope __P((ENVELOPE *));
 extern void		clearenvelope __P((ENVELOPE *, int));
@@ -841,19 +747,6 @@ extern sigfunc_t	setsignal __P((int, sigfunc_t));
 extern char		*shortenstring __P((char *, int));
 extern bool		usershellok __P((char *));
 extern void		commaize __P((HDR *, char *, int, MCI *, ENVELOPE *));
-extern char		*hvalue __P((char *, HDR *));
-extern char		*defcharset __P((ENVELOPE *));
-extern bool		emptyaddr __P((ADDRESS *));
-extern int		sendtolist __P((char *, ADDRESS *, ADDRESS **, int, ENVELOPE *));
-extern bool		wordinclass __P((char *, char));
-extern char		*denlstring __P((char *));
-extern void		printaddr __P((ADDRESS *, bool));
-extern void		makelower __P((char *));
-extern void		rebuildaliases __P((MAP *, bool));
-extern void		readaliases __P((MAP *, FILE *, bool, bool));
-extern void		finis __P(());
-extern void		clrevent __P((EVENT *));
-extern void		setsender __P((char *, ENVELOPE *, char **, bool));
 
 /* ellipsis is a different case though */
 #ifdef __STDC__
