@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.7 %G%"
+SCCSID = "@(#)Makefile 1.8 %G%"
 
 MKSTR = /usr/ucb/mkstr
 EYACC = /usr/ucb/eyacc
@@ -103,7 +103,7 @@ print:	sources
 install: a.out
 	sccs check
 	cp ${ERRORSTRINGS} ${LIBDIR}/${ERRORSTRINGS}
-	-mv ${INSTALLDIR}/pc0 ${INSTALLDIR}/pc0.bak
+	cp ${INSTALLDIR}/pc0 ${INSTALLDIR}/pc0.bak
 	cp a.out ${INSTALLDIR}/pc0
 
 depend:	sources
