@@ -1,4 +1,4 @@
-\"	@(#)present.me	1.6	%G%
+\"	@(#)present.me	1.7	%G%
 .sh 1 "Data Presentation"
 .pp
 The data is presented to the user in two different formats.
@@ -34,7 +34,7 @@ but we are limited by the two-dimensional nature of our output
 devices.
 We cannot assume that a call graph is planar,
 and even if it is, that we can print a planar version of it.
-Instead, we choose to print each routine,
+Instead, we choose to list each routine,
 together with information about
 the routines that are its direct parents and children.
 This listing presents a window into the call graph.
@@ -138,9 +138,12 @@ Since Sub2 is called a total of five times,
 20% of its self and descendant time is propagated to Example's
 descendant time field.
 Because Sub1 is a member of \fIcycle 1\fR,
-the self and descendant times are those for the cycle as a whole.
-Since Sub1 is called a total of forty times from outside
-of its cycle, it propagates 50% of the cycle's self and descendant
+the self and descendant times
+and call count fraction
+are those for the cycle as a whole.
+Since cycle 1 is called a total of forty times
+(not counting calls among members of the cycle),
+it propagates 50% of the cycle's self and descendant
 time to Example's descendant time field.
 Finally each name is followed by an index that shows
 where on the listing to find the entry for that routine.
