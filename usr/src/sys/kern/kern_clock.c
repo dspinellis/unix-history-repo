@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.10	%G%	*/
+/*	kern_clock.c	4.11	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,6 +16,7 @@
 #include "../h/vlimit.h"
 #include "../h/mtpr.h"
 #include "../h/clock.h"
+#include "../h/cpu.h"
 
 #include "dh.h"
 #include "dz.h"
@@ -120,8 +121,8 @@ out:
 		}
 	}
 	++lbolt;
-#if VAX==780
-	if (!BASEPRI(ps))
+#if VAX780
+	if (cpu == VAX_780 && !BASEPRI(ps))
 		unhang();
 #endif
 	setsoftclock();
