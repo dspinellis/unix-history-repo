@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	4.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	4.16 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -59,7 +59,7 @@ hookup(host, port)
 	}
 	hostname = hp->h_name;
 	hisctladdr.sin_family = hp->h_addrtype;
-	s = socket(hp->h_addrtype, SOCK_STREAM, 0, 0);
+	s = socket(hp->h_addrtype, SOCK_STREAM, 0);
 	if (s < 0) {
 		perror("ftp: socket");
 		return (0);
@@ -488,7 +488,7 @@ noport:
 		data_addr.sin_port = 0;	/* let system pick one */ 
 	if (data != -1)
 		(void) close (data);
-	data = socket(AF_INET, SOCK_STREAM, 0, 0);
+	data = socket(AF_INET, SOCK_STREAM, 0);
 	if (data < 0) {
 		perror("ftp: socket");
 		return (1);
