@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	8.12 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	8.13 (Berkeley) %G%
  */
 
 /*
@@ -1285,12 +1285,9 @@ nfs_link(ap)
 	int error = 0;
 	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 
-	if (vp->v_mount != tdvp->v_mount) {
-		/*VOP_ABORTOP(vp, cnp);*/
-		if (tdvp == vp)
-			vrele(vp);
-		else
-			vput(vp);
+	if (tdvp->v_mount != vp->v_mount) {
+		VOP_ABORTOP(tdvp, cnp);
+		vput(tdvp);
 		return (EXDEV);
 	}
 
@@ -1299,21 +1296,21 @@ nfs_link(ap)
 	 * doesn't get "out of sync" with the server.
 	 * XXX There should be a better way!
 	 */
-	VOP_FSYNC(tdvp, cnp->cn_cred, MNT_WAIT, cnp->cn_proc);
+	VOP_FSYNC(vp, cnp->cn_cred, MNT_WAIT, cnp->cn_proc);
 
 	nfsstats.rpccnt[NFSPROC_LINK]++;
-	nfsm_reqhead(tdvp, NFSPROC_LINK,
+	nfsm_reqhead(vp, NFSPROC_LINK,
 		NFSX_FH*2+NFSX_UNSIGNED+nfsm_rndup(cnp->cn_namelen));
-	nfsm_fhtom(tdvp);
 	nfsm_fhtom(vp);
+	nfsm_fhtom(tdvp);
 	nfsm_strtom(cnp->cn_nameptr, cnp->cn_namelen, NFS_MAXNAMLEN);
-	nfsm_request(tdvp, NFSPROC_LINK, cnp->cn_proc, cnp->cn_cred);
+	nfsm_request(vp, NFSPROC_LINK, cnp->cn_proc, cnp->cn_cred);
 	nfsm_reqdone;
 	FREE(cnp->cn_pnbuf, M_NAMEI);
-	VTONFS(tdvp)->n_attrstamp = 0;
-	VTONFS(tdvp)->n_flag |= NMODIFIED;
 	VTONFS(vp)->n_attrstamp = 0;
-	vrele(vp);
+	VTONFS(vp)->n_flag |= NMODIFIED;
+	VTONFS(tdvp)->n_attrstamp = 0;
+	vput(tdvp);
 	/*
 	 * Kludge: Map EEXIST => 0 assuming that it is a reply to a retry.
 	 */

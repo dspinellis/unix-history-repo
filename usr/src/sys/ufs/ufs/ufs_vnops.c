@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	8.18 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	8.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -643,42 +643,42 @@ ufs_link(ap)
 	if ((cnp->cn_flags & HASBUF) == 0)
 		panic("ufs_link: no name");
 #endif
-	if (vp->v_mount != tdvp->v_mount) {
-		VOP_ABORTOP(vp, cnp);
+	if (tdvp->v_mount != vp->v_mount) {
+		VOP_ABORTOP(tdvp, cnp);
 		error = EXDEV;
 		goto out2;
 	}
-	if (vp != tdvp && (error = VOP_LOCK(tdvp))) {
-		VOP_ABORTOP(vp, cnp);
+	if (tdvp != vp && (error = VOP_LOCK(vp))) {
+		VOP_ABORTOP(tdvp, cnp);
 		goto out2;
 	}
-	ip = VTOI(tdvp);
+	ip = VTOI(vp);
 	if ((nlink_t)ip->i_nlink >= LINK_MAX) {
-		VOP_ABORTOP(vp, cnp);
+		VOP_ABORTOP(tdvp, cnp);
 		error = EMLINK;
 		goto out1;
 	}
 	if (ip->i_flags & (IMMUTABLE | APPEND)) {
-		VOP_ABORTOP(vp, cnp);
+		VOP_ABORTOP(tdvp, cnp);
 		error = EPERM;
 		goto out1;
 	}
 	ip->i_nlink++;
 	ip->i_flag |= IN_CHANGE;
 	tv = time;
-	error = VOP_UPDATE(tdvp, &tv, &tv, 1);
+	error = VOP_UPDATE(vp, &tv, &tv, 1);
 	if (!error)
-		error = ufs_direnter(ip, vp, cnp);
+		error = ufs_direnter(ip, tdvp, cnp);
 	if (error) {
 		ip->i_nlink--;
 		ip->i_flag |= IN_CHANGE;
 	}
 	FREE(cnp->cn_pnbuf, M_NAMEI);
 out1:
-	if (vp != tdvp)
-		VOP_UNLOCK(tdvp);
+	if (tdvp != vp)
+		VOP_UNLOCK(vp);
 out2:
-	vput(vp);
+	vput(tdvp);
 	return (error);
 }
 
