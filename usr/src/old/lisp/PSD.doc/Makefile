@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.1 (Berkeley) %G%
+#	@(#)Makefile	6.2 (Berkeley) %G%
 #
 # $Header: Makefile 1.4 83/07/21 21:27:16 sklower Exp $
 #	makefile for the franz lisp manual
@@ -25,6 +25,7 @@
 #	   ch14.n stepper 
 #	   ch15.n fixit package
 #	   ch16.n lisp editor
+#	   ch17.n hash tables
 #	   chb.n special symbols
 #	   chc.n  short subjects
 
@@ -61,7 +62,8 @@ CopyTo = /dev/null
 TROFF=	ditroff
 TBL=	dtbl
 NROFF=  nroff
-O = -Pdp
+PRINTER = -Pdp
+O = 
 Append = ${LibDir}/append
 # Rmt = is unecessary; you can say, make rall NROFF="'dali nroff'".
 # better to just copy the doc directory to the remote machine and
@@ -77,6 +79,11 @@ MacroSrc = lmacs
 RootGenSrc = ch0 ch1 ch2 ch3 ch4 ch5 ch6 ch61 ch7 ch8 \
       ch9 ch10 ch11 ch12 ch13 ch14 ch15 ch16 ch17 chb chc
 
+DocSrc= ch0.n ch1.n ch2.n ch3.n ch4.n ch5.n ch6.n ch7.n ch8.n \
+	ch9.n ch10.n ch11.n ch12.n ch13.n ch14.n ch15.n ch16.n ch17.n
+
+DocApp= chb.n chc.n
+
 UtilSrc = Makefile indexsed mantags extrnames.awk fixmks.sed \
 	franz.n
 
@@ -84,8 +91,24 @@ UtilSrc = Makefile indexsed mantags extrnames.awk fixmks.sed \
 #   append to add .n to RootGenSrc
 
 
+doc: paper app
+
+paper:	paper.${PRINTER}
+	lpr ${PRINTER} -n paper.${PRINTER}
+
+paper.${PRINTER}: ${DocSrc} ${MacroSrc}
+	${TBL} ${PRINTER} ${MacroSrc} ${DocSrc} | \
+		${TROFF} -t -me 1> paper.${PRINTER} 2> tindex
+
+app: app.${PRINTER}
+	lpr ${PRINTER} -n app.${PRINTER}
+
+app.${PRINTER}: tindex ${MacroSrc} ${DocApp}
+	echo ".Ib" | sort +2 tindex - | sed -f indexsed | \
+		${TROFF} -t -me ${MacroSrc} - ${DocApp} > app.${PRINTER}
+
 all:
-	make vall
+	make rall
 
 rall: ${Append}
 	make NROFF=${NROFF} O=${O} `${Append} .r ${RootGenSrc}` helpindex
@@ -113,27 +136,28 @@ spall: ${Append}
 # only a few files describe functions which are indexed.
 
 .t.v:
-	pr ${O} -t $*.t
+	lpr ${PRINTER} -n $*.t
 
 .n.t:	
-	${TBL} ${O} lmacs $*.n | ${TROFF} -me ${O} -t 1> $*.t 2> $*.x
+	${TBL} ${PRINTER} lmacs $*.n | \
+		${TROFF} -me ${O} ${PRINTER} -t 1> $*.t 2> $*.x
 
 .n.p:
-	${TBL} ${O} lmacs $*.n | ${TROFF} -me ${O} 2> $*.x
+	${TBL} ${PRINTER} lmacs $*.n | ${TROFF} -me ${O} ${PRINTER} 2> $*.x
 
 .n.x:
-	${TBL} ${O} lmacs $*.n | ${TROFF} -me -z 2> $*.x
+	${TBL} ${PRINTER} lmacs $*.n | ${TROFF} -me ${O} ${PRINTER} -z 2> $*.x
 
 .n.r:
-	${TBL} ${O} lmacs $*.n | ${NROFF} -rb3 -me ${O} 1> $*.r 2> $*.rx
+	tbl lmacs $*.n | ${NROFF} -rb3 -me ${O} 1> $*.r 2> $*.rx
 	rm -f helpindex
 
 .n.rx:
-	${TBL} ${O} lmacs $*.n | ${NROFF} -rb3 -me 1> $*.r 2> $*.rx
+	tbl lmacs $*.n | ${NROFF} -rb3 -me ${O} 1> $*.r 2> $*.rx
 	rm -f helpindex
 
 .n.q:
-	${TBL} ${O} lmacs $*.n | ${NROFF} -me -T37 2> $*.qx | col > $*.q
+	tbl lmacs $*.n | ${NROFF} -me -T37 ${O} 2> $*.qx | col > $*.q
 
 .n.sp:
 	spell $*.n > $*.sp
@@ -143,9 +167,11 @@ install:
 	cp `${Append} .r ${RootGenSrc}` helpindex ${LibDir}/manual
 
 clean:
+	-rm -f paper.-[PT]* app.-[PT]* errs Errs make.out
 	-rm -f *.r 
 	-rm -f *.rx 
 	-rm -f helpindex 
+	-rm -f tindex 
 	-rm -f *.t 
 	-rm -f *.q 
 	-rm -f *.x
