@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.49 (Berkeley) %G%
+		@(#)README	8.50 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -220,13 +220,13 @@ UUCP_RELAY	The host that will forward UUCP-addressed email.
 		connected.
 BITNET_RELAY	The host that will forward BITNET-addressed email.
 		If not defined, the .BITNET pseudo-domain won't work.
-LOCAL_RELAY	The site that will handle unqualified names -- that
-		is, names with out an @domain extension.  If not set,
-		they are assumed to belong on this machine.  This
-		allows you to have a central site to store a
+LOCAL_RELAY	DEPRECATED.  The site that will handle unqualified
+		names -- that is, names with out an @domain extension.
+		If not set, they are assumed to belong on this machine.
+		This allows you to have a central site to store a
 		company- or department-wide alias database.  This
-		only works at small sites, and there are better
-		methods.
+		only works at small sites, and only with some user
+		agents.
 LUSER_RELAY	The site that will handle lusers -- that is, apparently
 		local names that aren't local accounts or aliases.
 
@@ -748,23 +748,28 @@ shared /var/spool/mail scheme, use
 	define(`MAIL_HUB', mailer:hostname)
 
 Again, ``mailer:'' defaults to "smtp".  If you define both LOCAL_RELAY
-and MAIL_HUB, unqualified names will be sent to the LOCAL_RELAY and
-other local names will be sent to MAIL_HUB.  Names in $=L will be
-delivered locally, so you MUST have aliases or .forward files for them.
+and MAIL_HUB _AND_ you have FEATURE(stickyhost), unqualified names will
+be sent to the LOCAL_RELAY and other local names will be sent to MAIL_HUB.
+Names in $=L will be delivered locally, so you MUST have aliases or
+.forward files for them.
 
-For example, if are on machine mastodon.CS.Berkeley.EDU, the following
-combinations of settings will have the indicated effects:
+For example, if are on machine mastodon.CS.Berkeley.EDU and you have
+FEATURE(stickyhost), the following combinations of settings will have the
+indicated effects:
 
 email sent to....	eric			  eric@mastodon.CS.Berkeley.EDU
 
 LOCAL_RELAY set to	mail.CS.Berkeley.EDU	  (delivered locally)
-mail.CS.Berkeley.EDU
+mail.CS.Berkeley.EDU	  (no local aliasing)	    (aliasing done)
 
 MAIL_HUB set to		mammoth.CS.Berkeley.EDU	  mammoth.CS.Berkeley.EDU
-mammoth.CS.Berkeley.EDU
+mammoth.CS.Berkeley.EDU	  (aliasing done)	    (aliasing done)
 
 Both LOCAL_RELAY and	mail.CS.Berkeley.EDU	  mammoth.CS.Berkeley.EDU
-MAIL_HUB set as above
+MAIL_HUB set as above	  (no local aliasing)	    (aliasing done)
+
+If you do not have FEATURE(stickyhost) set, then LOCAL_RELAY and
+MAIL_HUB act identically, with MAIL_HUB taking precedence.
 
 If you want all outgoing mail to go to a central relay site, define
 SMART_HOST as well.  Briefly:
