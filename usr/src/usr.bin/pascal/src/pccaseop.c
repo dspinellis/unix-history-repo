@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pccaseop.c 1.2 %G%";
+static	char sccsid[] = "@(#)pccaseop.c 1.3 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -288,8 +288,8 @@ bsrecur( deflabel , ctab , count )
 	int	gtrlabel = getlab();
 
 	putprintf( "	cmpl	%s,$%d" , 0 , FORCENAME , ctab[ half ].cconst );
-	putprintf( "	jeql	L%d" , 0 , ctab[ half ].clabel );
 	putprintf( "	jgtr	L%d" , 0 , gtrlabel );
+	putprintf( "	jeql	L%d" , 0 , ctab[ half ].clabel );
 	bsrecur( deflabel , &ctab[0] , half - 1 );
 	putprintf( "L%d:" , 0 , gtrlabel );
 	bsrecur( deflabel , &ctab[ half ] , count - half );
