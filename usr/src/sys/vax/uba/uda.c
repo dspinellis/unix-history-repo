@@ -1,4 +1,4 @@
-/*	uda.c	4.21	83/05/12	*/
+/*	uda.c	4.22	83/05/14	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -149,7 +149,7 @@ udattach(ui)
 	register struct uba_device *ui;
 {
 
-	if (ui->ui_dk > 0)
+	if (ui->ui_dk >= 0)
 		dk_mspw[ui->ui_dk] = 1.0 / (60 * 31 * 256);	/* approx */
 	ui->ui_flags = 0;
 	udip[ui->ui_ctlr][ui->ui_slave] = ui;
