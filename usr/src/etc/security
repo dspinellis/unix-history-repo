@@ -1,78 +1,130 @@
 #!/bin/sh -
 #
-#	@(#)security	5.12 (Berkeley) %G%
+#	@(#)security	5.13 (Berkeley) %G%
 #
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 
-host=`hostname`
 umask 22
 
-DONE=/tmp/_secure1.$$
-LIST=/tmp/_secure2.$$
-TMP=/tmp/_secure3.$$
+ERR=/tmp/_secure1.$$
+TMP1=/tmp/_secure2.$$
+TMP2=/tmp/_secure3.$$
+LIST=/tmp/_secure4.$$
 
-trap 'rm -f $DONE $LIST $TMP' 0
+trap 'rm -f $ERR $LIST $TMP1 $TMP2' 0
 
+# Display uids of 0.
 echo ""
 echo "Checking for uids of 0:"
 awk -F: "\$3==\"0\" {print \"user: \" \$1 \", uid: \" \$3 }" /etc/master.passwd
 
+# Display uids without passwords.
 echo ""
 echo "Checking for uids without passwords:"
 awk -F: "\$2==\"\" {print \"user: \" \$1 \", uid: \" \$3 }" /etc/master.passwd
 
+# Display setuid and device changes.
 echo ""
 echo "Checking setuid files and devices:"
-(find / \( ! -fstype local \) -a -prune -o \
+(find / ! -fstype local -a -prune -o \
     \( -perm -u+s -o -perm -g+s -o ! -type d -a ! -type f -a ! -type l \) | \
-    sort | sed -e 's/^/ls -lgT /' | sh >$LIST) 2>$TMP
+    sort | sed -e 's/^/ls -lgT /' | sh >$TMP1) 2>$ERR
 
-if [ -s $TMP ] ; then
-	echo "$host setuid/device find errors:"
-	cat $TMP
+# Display any errors that occurred during system file walk.
+if [ -s $ERR ] ; then
+	echo "Setuid/device find errors:"
+	cat $ERR
 	echo ""
 fi
 
+# Display any changes in the setuid file list.
+egrep -v '^[bc]' $TMP1 > $LIST
 if [ -s $LIST ] ; then
-	SETCUR=/var/log/setuid.current
-	SETBACK=/var/log/setuid.backup
+	CUR=/var/log/setuid.current
+	BACK=/var/log/setuid.backup
 
-	if [ -s $SETCUR ] ; then
-		if cmp -s $SETCUR $LIST ; then
+	if [ -s $CUR ] ; then
+		if cmp -s $CUR $LIST ; then
 			:
 		else
-			:> $DONE
-			join -110 -210 -v2 $SETCUR $LIST >$TMP
-			if [ -s $TMP ] ; then
-				echo "$host setuid/device additions:"
-				tee -a $DONE < $TMP
+			:> $TMP1
+			join -110 -210 -v2 $CUR $LIST >$TMP2
+			if [ -s $TMP2 ] ; then
+				echo "Setuid additions:"
+				tee -a $TMP1 < $TMP2
 				echo ""
 			fi
 
-			join -110 -210 -v1 $SETCUR $LIST >$TMP
-			if [ -s $TMP ] ; then
-				echo "$host setuid/device deletions:"
-				tee -a $DONE < $TMP
+			join -110 -210 -v1 $CUR $LIST >$TMP2
+			if [ -s $TMP2 ] ; then
+				echo "Setuid deletions:"
+				tee -a $TMP1 < $TMP2
 				echo ""
 			fi
 
-			sort +9 $DONE $SETCUR $LIST | uniq -u >$TMP
-			if [ -s $TMP ] ; then
-				echo "$host setuid/device changes:"
-				cat $TMP
+			sort +9 $TMP1 $CUR $LIST | \
+			    sed -e 's/[	 ][	 ]*/ /g' | uniq -u >$TMP2
+			if [ -s $TMP2 ] ; then
+				echo "Setuid changes:"
+				column $TMP2
 				echo ""
 			fi
 
-			mv $SETCUR $SETBACK
-			mv $LIST $SETCUR
+			mv $CUR $BACK
+			mv $LIST $CUR
 		fi
 	else
-		echo "$host setuid/device additions:"
+		echo "Setuid additions:"
 		cat $LIST
 		echo ""
-		mv $LIST $SETCUR
+		mv $LIST $CUR
 	fi
 fi
+
+# Display any changes in the device file list.
+egrep '^[bc]' $TMP1 > $LIST
+if [ -s $LIST ] ; then
+	CUR=/var/log/device.current
+	BACK=/var/log/device.backup
+
+	if [ -s $CUR ] ; then
+		if cmp -s $CUR $LIST ; then
+			:
+		else
+			:> $TMP1
+			join -111 -211 -v2 $CUR $LIST >$TMP2
+			if [ -s $TMP2 ] ; then
+				echo "Device additions:"
+				tee -a $TMP1 < $TMP2
+				echo ""
+			fi
+
+			join -111 -211 -v1 $CUR $LIST >$TMP2
+			if [ -s $TMP2 ] ; then
+				echo "Device deletions:"
+				tee -a $TMP1 < $TMP2
+				echo ""
+			fi
+
+			sort +10 $TMP1 $CUR $LIST | \
+			    sed -e 's/[	 ][	 ]*/ /g' | uniq -u >$TMP2
+			if [ -s $TMP2 ] ; then
+				echo "Device changes:"
+				column $TMP2
+				echo ""
+			fi
+
+			mv $CUR $BACK
+			mv $LIST $CUR
+		fi
+	else
+		echo "Device additions:"
+		cat $LIST
+		echo ""
+		mv $LIST $CUR
+	fi
+fi
+exit
 
 # Check the system binaries.
 # Create the mtree tree specifications using:
