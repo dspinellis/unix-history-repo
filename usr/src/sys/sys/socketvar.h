@@ -4,8 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socketvar.h	7.20 (Berkeley) %G%
+ *	@(#)socketvar.h	7.21 (Berkeley) %G%
  */
+
+#include <sys/select.h>			/* for struct selinfo */
 
 /*
  * Kernel structure per socket.
