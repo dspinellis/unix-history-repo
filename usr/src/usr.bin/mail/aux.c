@@ -10,7 +10,7 @@
  * Auxiliary functions.
  */
 
-static char *SccsId = "@(#)aux.c	2.8 %G%";
+static char *SccsId = "@(#)aux.c	2.9 %G%";
 
 /*
  * Return a pointer to a dynamic copy of the argument.
@@ -546,21 +546,29 @@ skin(name)
 
 	if (name == NOSTR)
 		return(NOSTR);
-	if (index(name, '(') == NOSTR && index(name, '<') == NOSTR)
+	if (index(name, '(') == NOSTR && index(name, '<') == NOSTR
+	&& index(name, ' ') == NOSTR)
 		return(name);
 	gotlt = 0;
 	lastsp = 0;
-	for (cp = name, cp2 = nbuf, c = *cp++; *cp; c = *cp++) {
+	for (cp = name, cp2 = nbuf; c = *cp++; ) {
 		switch (c) {
 		case '(':
 			while (*cp != ')' && *cp != 0)
 				cp++;
 			if (*cp)
 				cp++;
+			lastsp = 0;
 			break;
 
 		case ' ':
-			lastsp = 1;
+			if (cp[0] == 'a' && cp[1] == 't' && cp[2] == ' ')
+				cp += 3, *cp2++ = '@';
+			else
+			if (cp[0] == '@' && cp[1] == ' ')
+				cp += 2, *cp2++ = '@';
+			else
+				lastsp = 1;
 			break;
 
 		case '<':
