@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)termcap.3	5.1 (Berkeley) %G%
+.\"	@(#)termcap.3	6.1 (Berkeley) %G%
 .\"
-.TH TERMCAP 3X "9 February 1983"
+.TH TERMCAP 3X ""
 .UC 4
 .SH NAME
 tgetent, tgetnum, tgetflag, tgetstr, tgoto, tputs \- terminal independent operation routines
@@ -86,16 +86,18 @@ returning \-1 if is not given for the terminal.
 returns 1 if the specified capability is present in
 the terminal's entry, 0 if it is not.
 .I Tgetstr
-gets the string value of capability
+returns the string value of the capability
 .I id,
-placing it in the buffer at
+places it in the buffer at
 .I area,
-advancing the
+and advances the
 .I area
 pointer.
 It decodes the abbreviations for this field described in
 .IR termcap (5),
 except for cursor addressing and padding information.
+.I Tgetstr
+returns NULL if the capability was not found.
 .PP
 .I Tgoto
 returns a cursor addressing string decoded from
