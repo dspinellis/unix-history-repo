@@ -1,11 +1,10 @@
 
-static char sccsid[] = "	chess.c	4.1	82/10/24	";
+static char sccsid[] = "	chess.c	4.2	88/10/19	";
 
 #include <stdio.h>
 main()
 {
 	execl("/usr/games/lib/compat", "chess", "/usr/games/lib/chess", 0);
-	execl("/usr/games/DUNGEON", "chess", "/usr/games/lib/chess", 0);
-	printf(stderr, "Sorry, not today\n");
+	fprintf(stderr, "chess: can't find /usr/games/lib/compat.\n");
 	exit(1);
 }
