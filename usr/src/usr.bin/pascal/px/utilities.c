@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)utilities.c 1.8 %G%";
+static char sccsid[] = "@(#)utilities.c 1.9 %G%";
 
 #include	<signal.h>
 #include	"whoami.h"
@@ -53,8 +53,8 @@ stats()
 skipprof:
 #	endif PROFILE
 	fprintf(stderr,
-		"\n%1ld statements executed in %04d.%02d seconds cpu time.\n",
-		_stcnt, ru.ru_utime.tv_sec, ru.ru_utime.tv_usec / 1000);
+		"\n%1ld statements executed in %d.%02d seconds cpu time.\n",
+		_stcnt, ru.ru_utime.tv_sec, ru.ru_utime.tv_usec / 10000);
 }
 
 backtrace(type)
