@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.14 (Berkeley) %G%
+ *	@(#)sendmail.h	8.15 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.14		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.15		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -790,7 +790,6 @@ EXTERN bool	TryNullMXList;	/* if we are the best MX, try host directly */
 EXTERN char	SpaceSub;	/* substitution for <lwsp> */
 EXTERN int	PrivacyFlags;	/* privacy flags */
 extern char	*ConfFile;	/* location of configuration file [conf.c] */
-extern char	*FreezeFile;	/* location of frozen memory image [conf.c] */
 extern char	*PidFile;	/* location of proc id file [conf.c] */
 extern ADDRESS	NullAddress;	/* a null (template) address [main.c] */
 EXTERN long	WkClassFact;	/* multiplier for message class -> priority */

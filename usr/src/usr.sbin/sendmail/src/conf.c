@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.21 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -102,7 +102,6 @@ struct hdrinfo	HdrInfo[] =
 */
 
 char	*ConfFile =	_PATH_SENDMAILCF;	/* runtime configuration */
-char	*FreezeFile =	_PATH_SENDMAILFC;	/* frozen version of above */
 char	*PidFile =	_PATH_SENDMAILPID;	/* stores daemon proc id */
 
 
