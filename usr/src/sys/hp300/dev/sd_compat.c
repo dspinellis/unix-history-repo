@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd_compat.c	7.1 (Berkeley) %G%
+ *	@(#)sd_compat.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -38,7 +38,7 @@
 struct partition sddefaultpart[] = {
 	{  16384,   1024, 1024, FS_BSDFFS, 8 },
 	{  65536,  17408,    0, FS_SWAP,   0 },
-	{      0,      0, 1024, FS_BSDFFS, 8 },
+	{      0,      0,    0, FS_BOOT,   0 },
 	{  98304,  17408,    0, FS_SWAP,   0 },
 	{ 102400, 115712, 1024, FS_BSDFFS, 8 },
 	{      0, 218112, 1024, FS_BSDFFS, 8 },
