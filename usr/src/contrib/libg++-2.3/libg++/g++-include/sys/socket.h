@@ -31,13 +31,13 @@ int       listen(int, int);
 #ifndef hpux
 int       rcmd _G_ARGS((char**, int, const char*, const char*, const char*, int*));
 #endif
-ssize_t	  recv(int, void*, int, int);
-ssize_t	  recvfrom _G_ARGS((int, void*, int, int, struct sockaddr *, int *));
+ssize_t	  recv(int, void*, size_t, int);
+ssize_t	  recvfrom _G_ARGS((int, void*, size_t, int, struct sockaddr *, int *));
 ssize_t	  recvmsg(int, struct msghdr*, int);
 int       rexec(char**, int, const char*, const char*, const char*, int*);
 int       rresvport(int*);
-ssize_t	  send _G_ARGS((int, const void*, int, int));
-ssize_t	  sendto _G_ARGS((int, const void*, int, int, const struct sockaddr*, int));
+ssize_t	  send _G_ARGS((int, const void*, size_t, int));
+ssize_t	  sendto _G_ARGS((int, const void*, size_t, int, const struct sockaddr*, int));
 ssize_t	  sendmsg _G_ARGS((int, const struct msghdr*, int));
 int       setsockopt _G_ARGS((int, int, int, const void *, int));
 int       shutdown(int, int);
