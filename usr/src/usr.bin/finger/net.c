@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)net.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)net.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -86,16 +86,12 @@ netfinger(name)
 	(void)write(s, "\r\n", 2);
 
 	/*
-	 * read back what we get from the remote system.
+	 * Read from the remote system; once we're connected, we assume some
+	 * data.  If none arrives, we hang until the user interrupts.
 	 *
-	 * Note: once we connected to the remote site, we assume some data.
-	 * If it can't/won't send any data, we hang here until Mr. User
-	 * gets sufficiently bored to hit ^C.
-	 *
-	 * Some systems use the return key as a line terminator.  These
-	 * systems tend to also set the parity bit on every byte.  If we
-	 * see a <CR> with the 8th bit set, treat it as a newline character.
-	 * 0x8d == <CR> with high bit set.
+	 * If we see a <CR> or a <CR> with the high bit set, treat it as
+	 * a newline; if followed by a newline character, only output one
+	 * newline.
 	 *
 	 * Otherwise, all high bits are stripped; if it isn't printable and
 	 * it isn't a space, we can simply set the 7th bit.  Every ASCII
@@ -103,12 +99,20 @@ netfinger(name)
 	 */ 
 	if (fp = fdopen(s, "r"))
 		while ((c = getc(fp)) != EOF) {
-			if (c == 0x8d)
-				c = '\n';
 			c &= 0x7f;
-			if (!isprint(c) && !isspace(c))
-				c |= 0x40;
-			lastc = c;
+			if (c == 0x0d) {
+				c = '\n';
+				lastc = '\r';
+			} else {
+				if (!isprint(c) && !isspace(c))
+					c |= 0x40;
+				if (lastc != '\r' || c != '\n')
+					lastc = c;
+				else {
+					lastc = '\n';
+					continue;
+				}
+			}
 			putchar(c);
 		}
 	if (lastc != '\n')
