@@ -5,8 +5,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.1 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)route.c	5.2 85/06/15";
+#endif
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -16,11 +16,13 @@ static char sccsid[] = "@(#)route.c	5.1 (Berkeley) %G%";
 #include <net/route.h>
 #include <netinet/in.h>
 
+#include <netns/ns.h>
+
 #include <netdb.h>
 
 extern	int kmem;
 extern	int nflag;
-extern	char *routename(), *netname();
+extern	char *routename(), *netname(), *ns_print();
 
 /*
  * Definitions for showing gateway flags.
@@ -79,10 +81,14 @@ again:
 		m = routehash[i];
 		while (m) {
 			struct sockaddr_in *sin;
+			struct sockaddr_ns *sns;
+			long *l = (long *)&rt->rt_dst;
 
 			klseek(kmem, m, 0);
 			read(kmem, &mb, sizeof (mb));
 			rt = mtod(&mb, struct rtentry *);
+			switch(rt->rt_dst.sa_family) {
+		case AF_INET:
 			sin = (struct sockaddr_in *)&rt->rt_dst;
 			printf("%-15.15s ",
 			    (sin->sin_addr.s_addr == 0) ? "default" :
@@ -90,6 +96,18 @@ again:
 			    routename(sin->sin_addr) : netname(sin->sin_addr, 0));
 			sin = (struct sockaddr_in *)&rt->rt_gateway;
 			printf("%-15.15s ", routename(sin->sin_addr));
+			break;
+		case AF_NS:
+			printf("%-15s ",
+			    ns_print((struct sockaddr_ns *)&rt->rt_dst));
+			printf("%-15s ",
+			    ns_print((struct sockaddr_ns *)&rt->rt_gateway));
+			break;
+		default:
+			printf("%8.8x %8.8x %8.8x %8.8x",*l, l[1], l[2], l[3]);
+			l = (long *)&rt->rt_gateway;
+			printf("%8.8x %8.8x %8.8x %8.8x",*l, l[1], l[2], l[3]);
+			}
 			for (flags = name, p = bits; p->b_mask; p++)
 				if (p->b_mask & rt->rt_flags)
 					*flags++ = p->b_val;
@@ -219,4 +237,49 @@ rt_stats(off)
 		rtstat.rts_unreach, plural(rtstat.rts_unreach));
 	printf("\t%d use%s of a wildcard route\n",
 		rtstat.rts_wildcard, plural(rtstat.rts_wildcard));
+}
+short ns_bh[] = {-1,-1,-1};
+
+char *
+ns_print(sns)
+struct sockaddr_ns *sns;
+{
+	register struct ns_addr *dna = &sns->sns_addr;
+	long net = ntohl(ns_netof(*dna));
+	static char mybuf[50];
+	register char *p = mybuf;
+	short port = dna->x_port;
+
+	sprintf(p,"%ld:", net);
+
+	while(*p)p++; /* find end of string */
+
+	if (strncmp(ns_bh,dna->x_host.c_host,6)==0)
+		sprintf(p,"any");
+	else
+		sprintf(p,"%x.%x.%x.%x.%x.%x",
+			    dna->x_host.c_host[0], dna->x_host.c_host[1],
+			    dna->x_host.c_host[2], dna->x_host.c_host[3],
+			    dna->x_host.c_host[4], dna->x_host.c_host[5]);
+	if (port) {
+	while(*p)p++; /* find end of string */
+		printf(":%d",port);
+	}
+	return(mybuf);
+}
+char *
+ns_phost(sns)
+struct sockaddr_ns *sns;
+{
+	register struct ns_addr *dna = &sns->sns_addr;
+	long net = ntohl(ns_netof(*dna));
+	static char mybuf[50];
+	register char *p = mybuf;
+	if (strncmp(ns_bh,dna->x_host.c_host,6)==0)
+		sprintf(p,"any");
+	else
+		sprintf(p,"%x,%x,%x",
+			   dna->x_host.s_host[0], dna->x_host.s_host[1],
+			    dna->x_host.s_host[2]);
+	return(mybuf);
 }
