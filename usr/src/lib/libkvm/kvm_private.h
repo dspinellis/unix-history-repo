@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kvm_private.h	5.1 (Berkeley) %G%
+ *	@(#)kvm_private.h	5.2 (Berkeley) %G%
  */
 
 struct __kvm {
@@ -16,7 +16,7 @@ struct __kvm {
 	const char *program;
 	char	*errp;		/* XXX this can probably go away */
 	char	errbuf[_POSIX2_LINE_MAX];
-	DBM	*db;
+	DB	*db;
 #define ISALIVE(kd) ((kd)->vmfd >= 0)
 	int	pmfd;		/* physical memory file (or crashdump) */
 	int	vmfd;		/* virtual memory file (-1 if crashdump) */
@@ -39,11 +39,13 @@ struct __kvm {
 /*
  * Functions used internally by kvm, but across kvm modules.
  */
-int _kvm_kvatop __P((kvm_t *, u_long, u_long *));
-int _kvm_uvatop __P((kvm_t *, const struct proc *, u_long, u_long *));
-int _kvm_initvtop __P((kvm_t *));
-void _kvm_freevtop __P((kvm_t *));
-void _kvm_err __P((kvm_t *kd, const char *program, const char *fmt, ...));
-void _kvm_syserr __P((kvm_t *kd, const char *program, const char *fmt, ...));
-void *_kvm_malloc __P((kvm_t *kd, size_t));
-void _kvm_freeprocs __P((kvm_t *kd));
+void	 _kvm_err __P((kvm_t *kd, const char *program, const char *fmt, ...));
+void	 _kvm_freeprocs __P((kvm_t *kd));
+void	 _kvm_freevtop __P((kvm_t *));
+int	 _kvm_initvtop __P((kvm_t *));
+int	 _kvm_kvatop __P((kvm_t *, u_long, u_long *));
+void	*_kvm_malloc __P((kvm_t *kd, size_t));
+void	*_kvm_realloc __P((kvm_t *kd, void *, size_t));
+void	 _kvm_syserr
+	    __P((kvm_t *kd, const char *program, const char *fmt, ...));
+int	 _kvm_uvatop __P((kvm_t *, const struct proc *, u_long, u_long *));
