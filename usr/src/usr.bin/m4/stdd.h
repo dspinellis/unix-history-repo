@@ -3,11 +3,11 @@
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Ozan Yigit.
+ * Ozan Yigit at York University.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdd.h	5.1 (Berkeley) %G%
+ *	@(#)stdd.h	5.2 (Berkeley) %G%
  */
 
 /*
