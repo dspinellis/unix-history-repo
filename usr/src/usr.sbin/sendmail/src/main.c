@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.17	%G%";
+static char	SccsId[] = "@(#)main.c	3.18	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -167,6 +167,7 @@ main(argc, argv)
 	char tbuf[10];			/* holds "current" time */
 	char cbuf[5];			/* holds hop count */
 	char dbuf[30];			/* holds ctime(tbuf) */
+	bool aliasinit = FALSE;
 
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		(void) signal(SIGINT, finis);
@@ -294,6 +295,12 @@ main(argc, argv)
 			NoAlias++;
 			break;
 
+# ifdef DBM
+		  case 'I':	/* initialize alias DBM file */
+			aliasinit = TRUE;
+			break;
+# endif DBM
+
 		  case 'm':	/* send to me too */
 			MeToo++;
 			break;
@@ -367,7 +374,11 @@ main(argc, argv)
 	}
 # endif V6
 
-	initaliases(aliasname);
+	initaliases(aliasname, aliasinit);
+# ifdef DBM
+	if (aliasinit)
+		exit(EX_OK);
+# endif DBM
 
 # ifdef DEBUG
 	if (Debug > 15)
