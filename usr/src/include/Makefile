@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -26,7 +26,7 @@ STD=	a.out.h ar.h assert.h ctype.h curses.h dbm.h ndbm.h \
 LINKS=	errno.h signal.h syslog.h
 MACHINE=vax
 MACHDEP=${MACHINE} vaxif vaxmba vaxuba
-NETDIRS=net netimp netinet netpup
+NETDIRS=net netimp netinet
 SYSDIRS=${NETDIRS} stand ${MACHDEP}
 SHARED=	symlinks
 TAGSFILE=tags
@@ -35,7 +35,8 @@ all:
 
 install: ${SHARED}
 	-for i in ${STD}; do \
-		install -c -m 444 $$i ${DESTDIR}/usr/include/$$i; \
+		cmp -s $$i ${DESTDIR}/usr/include/$$i || \
+		    install -c -m 444 $$i ${DESTDIR}/usr/include/$$i; \
 	done
 	-for i in ${SUBDIRS}; do \
 		if [ ! -d ${DESTDIR}/usr/include/$$i ]; \
@@ -43,6 +44,7 @@ install: ${SHARED}
 			mkdir ${DESTDIR}/usr/include/$$i; \
 		fi; \
 		(cd $$i; for j in *.[ih]; do \
+			cmp -s $$j ${DESTDIR}/usr/include/$$i/$$j || \
 			install -c -m 444 $$j ${DESTDIR}/usr/include/$$i/$$j; \
 		done); \
 	done
@@ -67,7 +69,7 @@ copies:
 	for i in ${SYSDIRS}; do \
 		rm -rf ${DESTDIR}/usr/include/$$i; \
 		cd /sys; \
-		tar cf - $$i/*.h | (cd /usr/include; tar xpf -); \
+		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpf -); \
 	done
 	rm -rf ${DESTDIR}/usr/include/sys;
 	mkdir ${DESTDIR}/usr/include/sys; 
