@@ -5,11 +5,37 @@
  * This code is derived from software contributed to Berkeley by
  * Casey Leedom of Lawrence Livermore National Laboratory.
  *
- * %sccs.include.redist.c%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getcap.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)getcap.c	5.1 (Berkeley) 8/6/92";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -31,6 +57,7 @@ static char sccsid[] = "@(#)getcap.c	5.1 (Berkeley) %G%";
 
 static size_t	 topreclen;	/* toprec length */
 static char	*toprec;	/* Additional record specified by cgetset() */
+static int	 gottoprec;	/* Flag indicating retrieval of toprecord */
 
 static int getent __P((char **, u_int *, char **, int, char *, int));
 
@@ -170,7 +197,7 @@ getent(cap, len, db_array, fd, name, depth)
 	/*
 	 * Check if we have a top record from cgetset().
          */
-	if (depth == 0 && toprec != NULL) {
+	if (depth == 0 && toprec != NULL && !gottoprec) {
 		if ((record = malloc (topreclen + BFRAG)) == NULL) {
 			errno = ENOMEM;
 			return (-2);
@@ -276,7 +303,8 @@ getent(cap, len, db_array, fd, name, depth)
 				 * some more.
 				 */
 				if (rp >= r_end) {
-					u_int pos, newsize;
+					u_int pos;
+					size_t newsize;
 
 					pos = rp - record;
 					newsize = r_end - record + BFRAG;
@@ -398,7 +426,8 @@ tc_exp:	{
 			 */
 			diff = newilen - tclen;
 			if (diff >= r_end - rp) {
-				u_int pos, newsize, tcpos, tcposend;
+				u_int pos, tcpos, tcposend;
+				size_t newsize;
 
 				pos = rp - record;
 				newsize = r_end - record + diff + BFRAG;
@@ -443,7 +472,7 @@ tc_exp:	{
 		(void)close(fd);
 	*len = rp - record - 1;	/* don't count NUL */
 	if (r_end > rp)
-		record = realloc(record, (u_int)(rp - record));
+		record = realloc(record, (size_t)(rp - record));
 	*cap = record;
 	return (0);
 }
@@ -494,6 +523,16 @@ int
 cgetfirst(buf, db_array)
 	char **buf, **db_array;
 {
+	if (toprec) {
+		if ((*buf = malloc(topreclen + 1)) == NULL) {
+			errno = ENOMEM;
+			return(-2);
+		}
+		strcpy(*buf, toprec);
+		(void)cgetclose();
+		gottoprec = 1;
+		return(1);
+	}
 	(void)cgetclose();
 	return (cgetnext(buf, db_array));
 }
@@ -510,8 +549,9 @@ cgetclose()
 		pfp = NULL;
 	}
 	dbp = NULL;
+	gottoprec = 0;
 	slash = 0;
-	return (0);
+	return(0);
 }
 
 /*
@@ -528,32 +568,36 @@ cgetnext(bp, db_array)
 	int status;
 	char *cp, *line, *rp, buf[BSIZE];
 
-	if (dbp == NULL)
+	if (dbp == NULL) {
+		if (toprec && !gottoprec) {
+			if ((*bp = malloc(topreclen + 1)) == NULL) {
+				errno = ENOMEM;
+				return(-2);
+			}
+			strcpy(*bp, toprec);
+			gottoprec = 1;
+			return(1);
+		}
 		dbp = db_array;
-
-	if (pfp == NULL && (pfp = fopen(*dbp, "r")) == NULL)
+	}
+	if (pfp == NULL && (pfp = fopen(*dbp, "r")) == NULL) {
+		(void)cgetclose();
 		return (-1);
-
+	}
 	for(;;) {
 		line = fgetline(pfp, &len);
 		if (line == NULL) {
 			(void)fclose(pfp);
 			if (ferror(pfp)) {
-				pfp = NULL;
-				dbp = NULL;
-				slash = 0;
+				(void)cgetclose();
 				return (-1);
 			} else {
 				dbp++;
 				if (*dbp == NULL) {
-					pfp = NULL;
-					dbp = NULL;
-					slash = 0;
+					(void)cgetclose();
 					return (0);
 				} else if ((pfp = fopen(*dbp, "r")) == NULL) {
-					pfp = NULL;
-					dbp = NULL;
-					slash = 0;
+					(void)cgetclose();
 					return (-1);
 				} else
 					continue;
@@ -586,9 +630,7 @@ cgetnext(bp, db_array)
 		if (status == 0)
 			return (1);
 		if (status == -2 || status == -3) {
-			pfp = NULL;
-			dbp = NULL;
-			slash = 0;
+			(void)cgetclose();
 			return (status + 1);
 		}
 	}
@@ -697,7 +739,7 @@ cgetstr(buf, cap, str)
 		 * buffer, try to get some more.
 		 */
 		if (m_room == 0) {
-			u_int size = mp - mem;
+			size_t size = mp - mem;
 
 			if ((mem = realloc(mem, size + SFRAG)) == NULL)
 				return (-2);
@@ -713,7 +755,7 @@ cgetstr(buf, cap, str)
 	 * Give back any extra memory and return value and success.
 	 */
 	if (m_room != 0)
-		mem = realloc(mem, (u_int)(mp - mem));
+		mem = realloc(mem, (size_t)(mp - mem));
 	*str = mem;
 	return (len);
 }
@@ -769,7 +811,7 @@ cgetustr(buf, cap, str)
 		 * buffer, try to get some more.
 		 */
 		if (m_room == 0) {
-			u_int size = mp - mem;
+			size_t size = mp - mem;
 
 			if ((mem = realloc(mem, size + SFRAG)) == NULL)
 				return (-2);
@@ -785,7 +827,7 @@ cgetustr(buf, cap, str)
 	 * Give back any extra memory and return value and success.
 	 */
 	if (m_room != 0)
-		mem = realloc(mem, (u_int)(mp - mem));
+		mem = realloc(mem, (size_t)(mp - mem));
 	*str = mem;
 	return (len);
 }
