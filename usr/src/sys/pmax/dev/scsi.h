@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi.h	7.1 (Berkeley) %G%
+ *	@(#)scsi.h	7.2 (Berkeley) %G%
  *
  * scsi.h --
  *
@@ -403,22 +403,30 @@ typedef struct ScsiInquiryData {
 #define SCSI_SOFT_RESET		0x01
 
 /*
- * Standard header for SCSI_MODE_SELECT commands for tapes.
+ * Standard header for SCSI_MODE_SENSE and SCSI_MODE_SELECT commands for tapes.
  */
 typedef struct ScsiTapeModeSelectHdr {
+	u_char	len;		/* length */
+	u_char	media;		/* media type */
 #if BYTE_ORDER == BIG_ENDIAN
-	u_char	reserved[2];	/* Reserved. */
-	u_char	reserved2:1;	/*  "" */
+	u_char	writeprot:1;	/* Write protected media */
 	u_char	bufferedMode:3;	/* Type of buffer to be done. */
 	u_char	speed:4;	/* Drive speed. */
-	u_char	length;		/* Block descriptor length. */
 #else
-	u_char	reserved[2];	/* Reserved. */
 	u_char	speed:4;	/* Drive speed. */
 	u_char	bufferedMode:3;	/* Type of buffer to be done. */
-	u_char	reserved2:1;	/*  "" */
-	u_char	length;		/* Block descriptor length. */
+	u_char	writeprot:1;	/* Write protected media */
 #endif
+	u_char	length;		/* Block descriptor length. */
+	u_char	density;	/* tape density code */
+	u_char	blocks_2;	/* number of blocks (MSB) */
+	u_char	blocks_1;	/* number of blocks */
+	u_char	blocks_0;	/* number of blocks (LSB) */
+	u_char	reserved;	/* */
+	u_char	block_size2;	/* Tape block size (MSB) */
+	u_char	block_size1;	/* Tape block size */
+	u_char	block_size0;	/* Tape block size (LSB) */
+	u_char	vendor[6];	/* vendor specific data */
 } ScsiTapeModeSelectHdr;
 
 /*
