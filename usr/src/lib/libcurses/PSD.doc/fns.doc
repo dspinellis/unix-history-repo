@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)fns.doc	8.1 (Berkeley) %G%
+.\"     @(#)fns.doc	8.2 (Berkeley) %G%
 .\"
 .Ds
 .Fn addch "char ch" \(dg
@@ -281,6 +281,7 @@ This will eventually signal to
 .Fn refresh
 that it is all right to use the insert and delete line sequences
 when updating the window.
+.ne 1i
 .Ds
 .Fn inch "" \(dg
 .De
@@ -488,6 +489,7 @@ Turn echoing of characters off.
 .De
 Unset the terminal to from nl mode.  See 
 .Fn nl .
+.ne 1i
 .Ds
 .Fn noraw "" \(dg
 .De
@@ -609,6 +611,7 @@ It does this using consecutive calls to
 (or
 .Fn wgetch ).
 \*(Es
+.ne 1i
 .Ds
 .Fn scroll "WINDOW *win"
 .De
@@ -718,6 +721,7 @@ Characters are 8 bits long.
 .De
 Returns the length of the ASCII representation of 
 .Vn ch .
+.ne 1i
 .Ds
 .Fn vwprintw "WINDOW *win" "const char *fmt" "va_list ap"
 .De

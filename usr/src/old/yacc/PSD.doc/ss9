@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)ss9	8.1 (Berkeley) %G%
+.\"	@(#)ss9	8.2 (Berkeley) %G%
 .\"
 .SH
 9: Hints for Preparing Specifications
@@ -63,6 +63,7 @@ seq	:	item
 	|	seq  item
 	;
 .DE
+.ne 1i
 In each of these cases, the first rule
 will be reduced for the first item only, and the second rule
 will be reduced for the second and all succeeding items.

@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)ss4	8.1 (Berkeley) %G%
+.\"	@(#)ss4	8.2 (Berkeley) %G%
 .\"
 .SH
 4: How the Parser Works
@@ -98,6 +98,7 @@ refers to
 refers to
 .I state
 34.
+.ne 1i
 .PP
 Suppose the rule being reduced is
 .DS

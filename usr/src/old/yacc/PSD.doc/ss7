@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)ss7	8.1 (Berkeley) %G%
+.\"	@(#)ss7	8.2 (Berkeley) %G%
 .\"
 .SH
 7: Error Handling
@@ -75,6 +75,7 @@ and gives no message; this is clearly unacceptable.
 For this reason, there is a mechanism that
 can be used to force the parser
 to believe that an error has been fully recovered from.
+.ne 1i
 The statement
 .DS
 yyerrok ;
