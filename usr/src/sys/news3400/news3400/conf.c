@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.2 (Berkeley) %G%
+ *	@(#)conf.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -145,6 +145,8 @@ cdev_decl(no);			/* dummy declarations */
 #include "rs.h"
 cdev_decl(rs);
 cdev_decl(vc);
+
+#include "bm.h"
 cdev_decl(cn);
 
 cdev_decl(ctty);
@@ -312,7 +314,7 @@ struct cdevsw	cdevsw[] =
 	cdev_notdef(),			/* 19: vme */
 	cdev_notdef(),			/* 20: gpib */
 	cdev_notdef(),			/* 21: rd */
-	cdev_tty_init(1,cn),		/* 22: console display device*/
+	cdev_tty_init(NBM,cn),		/* 22: console display device */
 	cdev_notdef(),			/* 23: ether */
 	cdev_bpf_init(NBPFILTER,bpf),	/* 24: berkeley packet filter */
 	cdev_notdef(),			/* 25 */
