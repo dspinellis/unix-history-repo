@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.72 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.73 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -658,7 +658,7 @@ fileclass(class, filename, fmt, safe, optional)
 	bool optional;
 {
 	FILE *f;
-	struct stat stbuf;
+	int sff;
 	char buf[MAXLINE];
 
 	if (tTd(37, 2))
@@ -670,26 +670,11 @@ fileclass(class, filename, fmt, safe, optional)
 			class, filename);
 		return;
 	}
-	if (stat(filename, &stbuf) < 0)
-	{
-		if (tTd(37, 2))
-			printf("  cannot stat (%s)\n", errstring(errno));
-		if (!optional)
-			syserr("fileclass: cannot stat %s", filename);
-		return;
-	}
-	if (!S_ISREG(stbuf.st_mode))
-	{
-		syserr("fileclass: %s not a regular file", filename);
-		return;
-	}
-	if (!safe && access(filename, R_OK) < 0)
-	{
-		syserr("fileclass: access denied on %s", filename);
-		return;
-	}
-	f = fopen(filename, "r");
-	if (f == NULL)
+	sff = SFF_REGONLY;
+	if (safe)
+		sff |= SFF_OPENASROOT;
+	f = safefopen(filename, O_RDONLY, 0, sff);
+	if (f == NULL && !optional)
 	{
 		syserr("fileclass: cannot open %s", filename);
 		return;

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.56 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.57 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -510,6 +510,9 @@ safefile(fn, uid, gid, uname, flags, mode, st)
 			*p = '\0';
 			if (stat(fn, &stbuf) < 0)
 				break;
+			if (uid == 0 && bitset(S_IWGRP|S_IWOTH, stbuf.st_mode))
+				message("051 WARNING: writable directory %s",
+					fn);
 			if (uid == 0 && !bitset(SFF_ROOTOK, flags))
 			{
 				if (bitset(S_IXOTH, stbuf.st_mode))
@@ -600,13 +603,17 @@ safefile(fn, uid, gid, uname, flags, mode, st)
 		return EPERM;
 	}
 #endif
-
+	if (bitset(SFF_REGONLY, flags) && !S_ISREG(st->st_mode))
+	{
+		if (tTd(54, 4))
+			printf("\t[non-reg mode %o]\tEPERM\n", st->st_mode);
+		return EPERM;
+	}
 	if (bitset(S_IWUSR|S_IWGRP|S_IWOTH, mode) && bitset(0111, st->st_mode))
 	{
 		if (tTd(29, 5))
 			printf("failed (mode %o: x bits)\n", st->st_mode);
-		errno = EPERM;
-		return FALSE;
+		return EPERM;
 	}
 
 	if (bitset(SFF_SETUIDOK, flags))
@@ -708,7 +715,11 @@ safefopen(fn, omode, cmode, sff)
 		smode = 0;
 		break;
 	}
-	rval = safefile(fn, RealUid, RealGid, RealUserName, sff, smode, &stb);
+	if (bitset(SFF_OPENASROOT, sff))
+		rval = safefile(fn, 0, 0, NULL, sff, smode, &stb);
+	else
+		rval = safefile(fn, RealUid, RealGid, RealUserName,
+				sff, smode, &stb);
 	if (rval != 0)
 	{
 		errno = rval;
@@ -730,8 +741,8 @@ safefopen(fn, omode, cmode, sff)
 	    sta.st_gid != stb.st_gid)
 	{
 		syserr("554 cannot open: file %s changed after open", fn);
-		errno = EPERM;
 		fclose(fp);
+		errno = EPERM;
 		return NULL;
 	}
 	return fp;

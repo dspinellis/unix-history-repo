@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.88 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.89 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -717,23 +717,6 @@ main(argc, argv, envp)
 	if (MeToo)
 		BlankEnvelope.e_flags |= EF_METOO;
 
-# ifdef QUEUE
-	if (queuemode && RealUid != 0 && bitset(PRIV_RESTRICTQRUN, PrivacyFlags))
-	{
-		struct stat stbuf;
-
-		/* check to see if we own the queue directory */
-		if (stat(QueueDir, &stbuf) < 0)
-			syserr("main: cannot stat %s", QueueDir);
-		if (stbuf.st_uid != RealUid)
-		{
-			/* nope, really a botch */
-			usrerr("You do not have permission to process the queue");
-			exit (EX_NOPERM);
-		}
-	}
-# endif /* QUEUE */
-
 	switch (OpMode)
 	{
 	  case MD_DAEMON:
@@ -833,6 +816,23 @@ main(argc, argv, envp)
 		syserr("cannot chdir(%s)", QueueDir);
 		ExitStat = EX_SOFTWARE;
 	}
+
+# ifdef QUEUE
+	if (queuemode && RealUid != 0 && bitset(PRIV_RESTRICTQRUN, PrivacyFlags))
+	{
+		struct stat stbuf;
+
+		/* check to see if we own the queue directory */
+		if (stat(".", &stbuf) < 0)
+			syserr("main: cannot stat %s", QueueDir);
+		if (stbuf.st_uid != RealUid)
+		{
+			/* nope, really a botch */
+			usrerr("You do not have permission to process the queue");
+			exit (EX_NOPERM);
+		}
+	}
+# endif /* QUEUE */
 
 	/* if we've had errors so far, exit now */
 	if (ExitStat != EX_OK && OpMode != MD_TEST)

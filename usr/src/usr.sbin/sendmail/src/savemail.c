@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.53 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.54 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -370,7 +370,7 @@ savemail(e, sendbody)
 				break;
 			}
 			fp = safefopen(buf, O_WRONLY|O_CREAT|O_APPEND,
-					FileMode, SFF_NOSLINK);
+					FileMode, SFF_NOSLINK|SFF_REGONLY);
 			if (fp == NULL)
 			{
 				state = ESM_PANIC;
