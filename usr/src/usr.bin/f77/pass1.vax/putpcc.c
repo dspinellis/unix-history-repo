@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)putpcc.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)putpcc.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,8 +16,16 @@ static char sccsid[] = "@(#)putpcc.c	5.1 (Berkeley) %G%";
  *
  * University of Utah CS Dept modification history:
  *
- * $Header: putpcc.c,v 3.2 85/03/25 09:35:57 root Exp $
+ * $Header: putpcc.c,v 5.2 86/03/04 17:49:38 donn Exp $
  * $Log:	putpcc.c,v $
+ * Revision 5.2  86/03/04  17:49:38  donn
+ * Change putct1() to emit the memoffset before the vleng -- the memoffset
+ * may define a temporary which is used by the vleng to avoid repeated
+ * evaluation of an expression with side effects.
+ * 
+ * Revision 5.1  85/08/10  03:49:26  donn
+ * 4.3 alpha
+ * 
  * Revision 3.2  85/03/25  09:35:57  root
  * fseek return -1 on error.
  * 
@@ -1149,12 +1157,13 @@ if(q->tag==TEXPR && q->exprblock.opcode==OPCONCAT)
 else
 	{
 	i = (*ip)++;
-	lp1 = (Addrp) cpexpr(lp);
-	lp1->memoffset = mkexpr(OPPLUS,lp1->memoffset, ICON(i*SZLENG));
 	cp1 = (Addrp) cpexpr(cp);
 	cp1->memoffset = mkexpr(OPPLUS, cp1->memoffset, ICON(i*SZADDR));
-	putassign( lp1, cpexpr(q->headblock.vleng) );
-	putassign( cp1, addrof(putch1(q,ncommap)) );
+	lp1 = (Addrp) cpexpr(lp);
+	lp1->memoffset = mkexpr(OPPLUS,lp1->memoffset, ICON(i*SZLENG));
+	putassign( cp1, addrof(putch1(cpexpr(q),ncommap)) );
+	putassign( lp1, q->headblock.vleng );
+	free( (charptr) q );
 	*ncommap += 2;
 	}
 }
