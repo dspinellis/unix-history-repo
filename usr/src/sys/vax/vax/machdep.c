@@ -1,4 +1,4 @@
-/*	machdep.c	4.12	81/02/15	*/
+/*	machdep.c	4.13	81/02/16	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -24,7 +24,7 @@
 int	coresw = 0;
 int	printsw = 0;
 
-char	version[] = "VM/UNIX (Berkeley Version 4.12) 81/02/15 12:18:16 \n";
+char	version[] = "VM/UNIX (Berkeley Version 4.13) 81/02/16 20:50:04 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -97,7 +97,7 @@ startup(firstaddr)
 	tocons(TXDB_CWSI);
 	tocons(TXDB_CCSI);
 
-	timeout(memchk, (caddr_t)0, 60);	/* it will pick its own intvl */
+	timeout(memchk, (caddr_t)0, HZ);	/* it will pick its own intvl */
 }
 
 /*
