@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)newfs.8	6.1 (Berkeley) %G%
+.\"	@(#)newfs.8	6.2 (Berkeley) %G%
 .\"
 .TH NEWFS 8 ""
 .UC 5
@@ -11,6 +11,8 @@ newfs \- construct a new file system
 .SH SYNOPSIS
 .B /etc/newfs
 [
+.B \-N
+] [
 .B \-v
 ] [
 .B \-n
@@ -40,6 +42,10 @@ The
 .B \-n
 option prevents the 
 bootstrap programs from being installed.
+The
+.B \-N
+option causes the file system parameters to be printed out
+without actually creating the file system.
 .PP
 If the 
 .B \-v
@@ -73,6 +79,14 @@ The default value used is 16.
 The percentage of space reserved from normal users; the minimum
 free space threshhold.  The default value used is 10%.
 .TP 10
+.B \-o optimization preference (``space'' or ``time'')
+The file system can either be instructed to try to minimize the time spent
+allocating blocks, or to try to minimize the space fragmentation on the disk.
+If the value of minfree (see above) is less than 10%,
+the default is to optimize for space;
+if the value of minfree greater than or equal to 10%,
+the default is to optimize for time.
+.TP 10
 .B \-r revolutions/minute
 The speed of the disk in revolutions per minute (normally 3600).
 .TP 10
@@ -99,8 +113,10 @@ format(8),
 mkfs(8),
 tunefs(8)
 .PP
-McKusick, Joy, Leffler; "A Fast File System for Unix",
-Computer Systems Research Group, Dept of EECS, Berkeley, CA 94720;
-TR #7, September 1982.
+M. McKusick, W. Joy, S. Leffler, R. Fabry,
+``A Fast File System for UNIX'',
+\fIACM Transactions on Computer Systems 2\fP, 3.
+pp 181-197, August 1984.
+(reprinted in the System Manager's Manual and in Volume 2c)
 .SH BUGS
 Should figure out the type of the disk without the user's help.
