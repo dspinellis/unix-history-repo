@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.20 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.21 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.20 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.21 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -744,6 +744,7 @@ host_map_lookup(map, name, av, statp)
 	char *cp;
 	int i;
 	register STAB *s;
+	char *timeoutmsg = "Recipient domain nameserver timed out";
 	char hbuf[MAXNAME];
 	extern struct hostent *gethostbyaddr();
 	extern int h_errno;
@@ -762,6 +763,8 @@ host_map_lookup(map, name, av, statp)
 		errno = s->s_namecanon.nc_errno;
 		h_errno = s->s_namecanon.nc_herrno;
 		*statp = s->s_namecanon.nc_stat;
+		if (CurEnv->e_message == NULL && *statp == EX_TEMPFAIL)
+			CurEnv->e_message = newstr(timeoutmsg);
 		return s->s_namecanon.nc_cname;
 	}
 
@@ -801,11 +804,9 @@ host_map_lookup(map, name, av, statp)
 			  case TRY_AGAIN:
 				if (UseNameServer)
 				{
-					char *msg = "Recipient domain nameserver timed out";
-
-					message(msg);
+					message(timeoutmsg);
 					if (CurEnv->e_message == NULL)
-						CurEnv->e_message = newstr(msg);
+						CurEnv->e_message = newstr(timeoutmsg);
 				}
 				*statp = EX_TEMPFAIL;
 				break;
