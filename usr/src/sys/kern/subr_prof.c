@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prof.c	7.18 (Berkeley) %G%
+ *	@(#)subr_prof.c	7.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -39,6 +39,7 @@ kmstartup()
 	printf("Profiling kernel, textsize=%d [%x..%x]\n",
 	       p->textsize, p->lowpc, p->highpc);
 	p->kcountsize = p->textsize / HISTFRACTION;
+	p->hashfraction = HASHFRACTION;
 	p->fromssize = p->textsize / HASHFRACTION;
 	p->tolimit = p->textsize * ARCDENSITY / 100;
 	if (p->tolimit < MINARCS)
@@ -90,6 +91,8 @@ sysctl_doprof(name, namelen, oldp, oldlenp, newp, newlen, p)
 	case GPROF_TOS:
 		return (sysctl_struct(oldp, oldlenp, newp, newlen,
 		    gp->tos, gp->tossize));
+	case GPROF_GMONPARAM:
+		return (sysctl_rdstruct(oldp, oldlenp, newp, gp, sizeof *gp));
 	default:
 		return (EOPNOTSUPP);
 	}
