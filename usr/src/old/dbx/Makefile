@@ -13,8 +13,7 @@
 .SUFFIXES:
 .SUFFIXES: .h .c .s .o
 
-#MACHINE	= vax
-MACHINE	= tahoe
+MACHINE	= unknown
 AOUT	= tdbx
 DESTDIR	=
 DEST	= /usr/ucb/dbx
