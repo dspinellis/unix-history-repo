@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.5	81/04/17	*/
+/*	vm_meter.c	4.6	81/04/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,19 +10,114 @@
 #include "../h/vm.h"
 #include "../h/cmap.h"
 
-int	maxpgio = MAXPGIO;
 int	maxslp = MAXSLP;
-int	minfree = MINFREE;
-int	desfree = DESFREE;
-int	lotsfree = 0;		/* set to LOTSFREE in main unless adbed */
 int	saferss = SAFERSS;
-int	slowscan = SLOWSCAN;
-int	fastscan = FASTSCAN;
+
+/*
+ * The following parameters control operation of the page replacement
+ * algorithm.  They are initialized to 0, and then computed at boot time
+ * based on the size of the system.  If they are patched non-zero in
+ * a loaded vmunix they are left alone and may thus be changed per system
+ * using adb on the loaded system.
+ */
+int	maxpgio = 0;
+int	minfree = 0;
+int	desfree = 0;
+int	lotsfree = 0;
+int	slowscan = 0;
+int	fastscan = 0;
 int	klin = KLIN;
+int	klseql = KLSEQL;
+int	kltxt = KLTXT;
 int	klout = KLOUT;
 int	multprog = -1;		/* so we don't count process 2 */
 
 double	avenrun[3];		/* load average, of runnable procs */
+
+/*
+ * Setup the paging constants for the clock algorithm.
+ * Called after the system is initialized and the amount of memory
+ * and number of paging devices is known.
+ */
+setupclock()
+{
+	int nclust, nkb;
+
+	/*
+	 * Setup thresholds for paging:
+	 *	lotsfree	is threshold where paging daemon turns on
+	 *	desfree		is amount of memory desired free.  if less
+	 *			than this for extended period, do swapping
+	 *	minfree		is minimal amount of free memory which is
+	 *			tolerable.
+	 *
+	 * Strategy of 4/22/81:
+	 *	lotsfree is 1/4 of memory free.
+	 *	desfree is 200k bytes, but at most 1/8 of memory
+	 *	minfree is 32k bytes.
+	 */
+	if (lotsfree == 0)
+		lotsfree = LOOPPAGES / 4;
+	if (desfree == 0) {
+		desfree = (200*1024) / NBPG;
+		if (desfree > LOOPPAGES / 8)
+			desfree = LOOPPAGES / 8;
+	}
+	if (minfree == 0)
+		minfree = (32*1024) / NBPG;
+
+	/*
+	 * Maxpgio thresholds how much paging is acceptable.
+	 * This figures that 2/3 busy on an arm is all that is
+	 * tolerable for paging.  We assume one operation per disk rev.
+	 */
+	if (maxpgio == 0)
+		maxpgio = (DISKRPM * 2) / 3;
+
+	/*
+	 * Clock to scan using max of 10% of processor time for sampling,
+	 *     this estimated to allow maximum of 400 samples per second.
+	 * Allow slighly higher angular velocity if 2 or more swap devices,
+	 *     allow max of 600 samples per second (but only >= 2m)
+	 * Basic scan time for ``fastscan'', the time for a clock rev
+	 * with given memory and CLSIZE=2:
+	 *	swap ilv	<=1m	2m	3m	4m	6m	8m
+	 * 	one-way		4s	5s	7s	XXX	XXX	XXX
+	 * 	two-way		4s	4s	5s	6s	10s	13s
+	 * XXXs here are situations we should not be in.
+	 */
+	if (fastscan == 0) {
+		nclust = LOOPPAGES / CLSIZE;
+		nkb = (LOOPPAGES * NBPG) / 1024;
+		if (nswdev == 1 && nkb >= 2*1024)
+			printf("WARNING: should run interleaved swap with >= 2Mb\n");
+		if (nswdev == 1 || nkb < 2*1024)
+			fastscan = nclust / 400;
+		else {
+			maxpgio = (maxpgio * 3) / 2;
+			fastscan = nclust / 600;
+		}
+	}
+	if (fastscan < 4)
+		fastscan = 4;
+	if (fastscan > maxslp)
+		fastscan = maxslp;
+
+	/*
+	 * Set slow scan time to 1/3 the fast scan time but at most
+	 * maxslp (a macroscopic slow).
+	 */
+	if (slowscan == 0)
+		slowscan = 3 * fastscan;
+	if (slowscan > maxslp)
+		slowscan = maxslp;
+#ifdef defined(BERT) || defined(ERNIE)
+	printf("slowscan %d, fastscan %d, maxpgio %d\n",
+	    slowscan, fastscan, maxpgio);
+	printf("lotsfree %d, desfree %d, minfree %d\n",
+	    lotsfree, desfree, minfree);
+#endif
+}
 
 /*
  * The main loop of the scheduling (swapping) process.
@@ -75,17 +170,22 @@ sched()
 	 * Check if paging rate is too high, or average of
 	 * free list very low and if so, adjust multiprogramming
 	 * load by swapping someone out.
-	 *
-	 * Avoid glitches: don't hard swap the only process,
-	 * and don't swap based on paging rate if there is a reasonable
-	 * amount of free memory.
 	 */
 loop:
 	wantin = 0;
 	deservin = 0;
 	sleeper = 0;
 	p = 0;
-	if (kmapwnt || (multprog > 1 && avefree < desfree &&
+	/*
+	 * Conditions for hard outswap are:
+	 *	if need kernel map (mix it up).
+	 * or
+	 *	1. if there are at least 2 runnable processes (on the average)
+	 * and	2. the paging rate is excessive or memory is now VERY low.
+	 * and	3. the short (5-second) and longer (30-second) average
+	 *	   memory is less than desirable.
+	 */
+	if (kmapwnt || (avenrun[0] >= 2 && max(avefree, avefree30) < desfree &&
 	    (rate.v_pgin + rate.v_pgout > maxpgio || avefree < minfree))) {
 		desperate = 1;
 		goto hardswap;
@@ -100,7 +200,8 @@ loop:
 
 	case SRUN:
 		if ((rp->p_flag&SLOAD) == 0) {
-			rppri = rp->p_time - rp->p_swrss / nz((maxpgio/2) * CLSIZE) +
+			rppri = rp->p_time -
+			    rp->p_swrss / nz((maxpgio/2) * (klin * CLSIZE)) +
 			    rp->p_slptime - (rp->p_nice-NZERO)*8;
 			if (rppri > outpri) {
 				if (rp->p_poip)
@@ -165,6 +266,7 @@ loop:
 	needs = p->p_swrss;
 	if (p->p_textp && p->p_textp->x_ccount == 0)
 		needs += p->p_textp->x_swrss;
+	needs = imin(needs, lotsfree);
 	if (freemem - deficit > needs / divisor) {
 		deficit += needs;
 		if (swapin(p))
@@ -256,6 +358,7 @@ hardswap:
 			gives = p->p_rssize;
 			if (p->p_textp)
 				gives += p->p_textp->x_rssize / p->p_textp->x_ccount;
+			gives = min(gives, lotsfree);
 			deficit += gives;
 		} else
 			gives = 0;	/* someone else taketh away */
@@ -278,8 +381,10 @@ vmmeter()
 {
 	register unsigned *cp, *rp, *sp;
 
-	deficit -= imin(deficit, imax(deficit / 10, maxpgio / 2));
+	deficit -= imin(deficit,
+	    imax(deficit / 10, ((klin * CLSIZE) / 2) * maxpgio / 2));
 	ave(avefree, freemem, 5);
+	ave(avefree30, freemem, 30);
 	/* v_pgin is maintained by clock.c */
 	cp = &cnt.v_first; rp = &rate.v_first; sp = &sum.v_first;
 	while (cp <= &cnt.v_last) {
@@ -325,7 +430,7 @@ vmpago()
 	if (freemem >= lotsfree)
 		return;
 	scanrate = (slowscan * vavail + fastscan * (lotsfree - vavail)) / nz(lotsfree);
-	desscan = LOOPSIZ / nz(scanrate);
+	desscan = (LOOPPAGES / CLSIZE) / nz(scanrate);
 	/*
 	 * DIVIDE BY 4 TO ACCOUNT FOR RUNNING 4* A SECOND (see clock.c)
 	 */
