@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)traverse.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)traverse.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
@@ -275,8 +275,9 @@ dumpino(dp, ino)
 	register struct dinode *dp;
 	ino_t ino;
 {
-	int mode, ind_level, cnt;
+	int ind_level, cnt;
 	long size;
+	char buf[TP_BSIZE];
 
 	if (newtape) {
 		newtape = 0;
@@ -286,14 +287,46 @@ dumpino(dp, ino)
 	spcl.c_dinode = *dp;
 	spcl.c_type = TS_INODE;
 	spcl.c_count = 0;
-	/*
-	 * Check for freed inode.
-	 */
-	if ((mode = (dp->di_mode & IFMT)) == 0)
+	switch (IFTODT(dp->di_mode)) {
+
+	case DT_UNKNOWN:
+		/*
+		 * Freed inode.
+		 */
 		return;
-	if ((mode != IFDIR && mode != IFREG && mode != IFLNK) ||
-	    dp->di_size == 0) {
+
+	case DT_LNK:
+		/*
+		 * Check for short symbolic link.
+		 */
+		if (dp->di_size > 0 &&
+		    dp->di_size < sblock->fs_maxsymlinklen) {
+			spcl.c_addr[0] = 1;
+			spcl.c_count = 1;
+			writeheader(ino);
+			bcopy((caddr_t)dp->di_shortlink, buf,
+			    (u_long)dp->di_size);
+			buf[dp->di_size] = '\0';
+			writerec(buf, 0);
+			return;
+		}
+		/* fall through */
+
+	case DT_DIR:
+	case DT_REG:
+		if (dp->di_size > 0)
+			break;
+		/* fall through */
+
+	case DT_FIFO:
+	case DT_SOCK:
+	case DT_CHR:
+	case DT_BLK:
 		writeheader(ino);
+		return;
+
+	default:
+		msg("Warning: undefined file type 0%o\n", dp->di_mode & IFMT);
 		return;
 	}
 	if (dp->di_size > NDADDR * sblock->fs_bsize)
@@ -397,7 +430,7 @@ dumpmap(map, type, ino)
 	spcl.c_count = howmany(mapsize * sizeof(char), TP_BSIZE);
 	writeheader(ino);
 	for (i = 0, cp = map; i < spcl.c_count; i++, cp += TP_BSIZE)
-		writerec(cp);
+		writerec(cp, 0);
 }
 
 /*
@@ -422,7 +455,7 @@ writeheader(ino)
 		sum += *lp++;
 	}
 	spcl.c_checksum = CHECKSUM - sum;
-	writerec((char *)&spcl);
+	writerec((char *)&spcl, 1);
 }
 
 struct dinode *
