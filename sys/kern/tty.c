@@ -32,7 +32,33 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.24 1994/03/21 21:12:55 ache Exp $
+ *	$Id: tty.c,v 1.25 1994/03/21 21:50:30 ache Exp $
+ */
+
+/*-
+ * TODO:
+ *    o Fix or remove TS_WOPEN.  It's only used for forcing a HUPCL
+ *      when a port is closed without being fully opened (this is
+ *      better decided by noticing if the close is a device close)
+ *      and for distinguishing the first CD change from later ones
+ *      for MDMBUF handling.  TS_WOPEN is broken for multiple opens
+ *      and for non-blocking opens.
+ *    o Fix races in ttnread().
+ *    o Do ttymodem() and nullmodem() in the same order and with
+ *      early returns instead of inconsistent elses.
+ *    o Some or all of the t_out wakeups need to do a selwakeup()
+ *      since ttselect() now blocks when ttwrite() would be blocked
+ *      by lack of carrier.
+ *    o Fix various flags races in sio.  E.g., the CLOCAL locking is
+ *      harmed by the wakeups for delta-CLOCAL, the carrier wait loop
+ *      needs to start nearer the top of sioopen(), and the there may
+ *      need to be a wakeup on t_raw in comhardclose() to kick other
+ *      processes out of the wait loop.  "take it from the top" code
+ *      gives DTR glitch in usual case (!com->active).  bidir open
+ *      doesn't set TS_WOPEN and triggers ttymodem() warning.  com->
+ *      active may help recover.  bidir open doesn't set CLOCAL early
+ *      enough.
+ *    o Call suser() to log privileged CLOCAL changes.
  */
 
 #include "param.h"
@@ -204,8 +230,7 @@ ttywait(tp)
 	int error = 0, s = spltty();
 
 	while ((RB_LEN(tp->t_out) || tp->t_state&TS_BUSY) &&
-	    (tp->t_state&TS_CARR_ON || tp->t_cflag&CLOCAL) && 
-	    tp->t_oproc) {
+	       CAN_DO_IO(tp) && tp->t_oproc) {
 		/*
 		 * XXX temporary fix for deadlock.
 		 *
@@ -223,7 +248,7 @@ ttywait(tp)
 
 		(*tp->t_oproc)(tp);
 		if ((RB_LEN(tp->t_out) || tp->t_state&TS_BUSY) &&
-		    (tp->t_state&TS_CARR_ON || tp->t_cflag&CLOCAL)) {
+		    CAN_DO_IO(tp)) {
 			tp->t_state |= TS_ASLEEP;
 			if (error = ttysleep(tp, (caddr_t)tp->t_out,
 			    TTOPRI | PCATCH, "ttywai", 0))
@@ -550,41 +575,26 @@ ttioctl(tp, com, data, flag)
 				ttyflush(tp, FREAD);
 		}
 		if ((t->c_cflag&CIGNORE) == 0) {
+			tcflag_t old_cflag;
+
 			/*
 			 * set device hardware
 			 */
 			if (tp->t_param && (error = (*tp->t_param)(tp, t))) {
 				splx(s);
 				return (error);
-			} else {
-				/*
-				 * XXX doubtful.  We mostly check both CLOCAL
-				 * and TS_CARR_ON before doing anything, and
-				 * changing TS_ISOPEN here just give another
-				 * flag to worry about, and is probably
-				 * inconsistent with not changing TS_ISOPEN
-				 * when carrier drops or CLOCAL rises.  OTOH
-				 * we should maintain a flag to keep track
-				 * of the combination of CLOCAL and TS_CARR_ON.
-				 * This could be just TS_CARR_ON (if we don't
-				 * need to 
-				 *
-				 * XXX ttselect() doesn't worry about
-				 * TS_ISOPEN, so it is inconsistent with
-				 * ttread() after TS_ISOPEN gets cleared here.
-				 */
-				if ((tp->t_state&TS_CARR_ON) == 0 &&
-				    (tp->t_cflag&CLOCAL) &&
-				    (t->c_cflag&CLOCAL) == 0) {
-					tp->t_state &= ~TS_ISOPEN;
-					tp->t_state |= TS_WOPEN;
-					ttwakeup(tp);
-				}
-				tp->t_cflag = t->c_cflag;
-				tp->t_ispeed = t->c_ispeed;
-				tp->t_ospeed = t->c_ospeed;
 			}
+			old_cflag = tp->t_cflag;
+			tp->t_cflag = t->c_cflag;
+			tp->t_ispeed = t->c_ispeed;
+			tp->t_ospeed = t->c_ospeed;
 			ttsetwater(tp);
+			if (tp->t_cflag & CLOCAL)
+				tp->t_state &= ~TS_ZOMBIE;
+			if ((tp->t_cflag ^ old_cflag) & CLOCAL) {
+				ttwakeup(tp);
+				wakeup((caddr_t)tp->t_out);
+			}
 		}
 		if (com != TIOCSETAF) {
 			if ((t->c_lflag&ICANON) != (tp->t_lflag&ICANON))
@@ -671,9 +681,7 @@ ttioctl(tp, com, data, flag)
 
 	case TIOCCONS:
 		if (*(int *)data) {
-			if (constty && constty != tp &&
-			    (constty->t_state & (TS_CARR_ON|TS_ISOPEN)) ==
-			    (TS_CARR_ON|TS_ISOPEN))
+			if (constty && constty != tp && CAN_DO_IO(constty))
 				return (EBUSY);
 #ifndef	UCONSOLE
 			if (error = suser(p->p_ucred, &p->p_acflag))
@@ -724,16 +732,13 @@ ttselect(dev, rw, p)
 	struct proc *p;
 {
 	register struct tty *tp = cdevsw[major(dev)].d_ttys[minor(dev)];
-	int nread;
 	int s = spltty();
 	struct proc *selp;
 
 	switch (rw) {
 
 	case FREAD:
-		nread = ttnread(tp);
-		if (nread > 0 || 
-		   ((tp->t_cflag&CLOCAL) == 0 && (tp->t_state&TS_CARR_ON) == 0))
+		if (ttnread(tp) > 0 || tp->t_state & TS_ZOMBIE)
 			goto win;
 		if (tp->t_rsel && (selp = pfind(tp->t_rsel)) && selp->p_wchan == (caddr_t)&selwait)
 			tp->t_state |= TS_RCOLL;
@@ -742,7 +747,8 @@ ttselect(dev, rw, p)
 		break;
 
 	case FWRITE:
-		if (RB_LEN(tp->t_out) <= tp->t_lowat)
+		if (RB_LEN(tp->t_out) <= tp->t_lowat && CAN_DO_IO(tp)
+		    || tp->t_state & TS_ZOMBIE)
 			goto win;
 		if (tp->t_wsel && (selp = pfind(tp->t_wsel)) && selp->p_wchan == (caddr_t)&selwait)
 			tp->t_state |= TS_WCOLL;
@@ -824,6 +830,8 @@ ttymodem(tp, flag)
 	int flag;
 {
 
+	if ((tp->t_state & (TS_ISOPEN | TS_WOPEN)) == 0)
+		printf("ttymodem: not open\n");
 	if ((tp->t_state&TS_WOPEN) == 0 && (tp->t_lflag&MDMBUF)) {
 		/*
 		 * MDMBUF: do flow control according to carrier flag
@@ -841,6 +849,7 @@ ttymodem(tp, flag)
 		 */
 		tp->t_state &= ~TS_CARR_ON;
 		if (tp->t_state&TS_ISOPEN && (tp->t_cflag&CLOCAL) == 0) {
+			tp->t_state |= TS_ZOMBIE;
 			if (tp->t_session && tp->t_session->s_leader)
 				psignal(tp->t_session->s_leader, SIGHUP);
 			ttyflush(tp, FREAD|FWRITE);
@@ -869,11 +878,15 @@ nullmodem(tp, flag)
 	register struct tty *tp;
 	int flag;
 {
+
+	if ((tp->t_state & (TS_ISOPEN | TS_WOPEN)) == 0)
+		printf("nullmodem: not open\n");
 	if (flag)
 		tp->t_state |= TS_CARR_ON;
 	else {
 		tp->t_state &= ~TS_CARR_ON;
-		if ((tp->t_cflag&CLOCAL) == 0) {
+		if (tp->t_state&TS_ISOPEN && (tp->t_cflag&CLOCAL) == 0) {
+			tp->t_state |= TS_ZOMBIE;
 			if (tp->t_session && tp->t_session->s_leader)
 				psignal(tp->t_session->s_leader, SIGHUP);
 			return (0);
@@ -1468,16 +1481,16 @@ loop:
 		int carrier;
 
 sleep:
+		if (tp->t_state & TS_ZOMBIE) {
+			splx(s);
+			return (0);     /* EOF */
+		}
 		/*
 		 * If there is no input, sleep on rawq
 		 * awaiting hardware receipt and notification.
 		 * If we have data, we don't need to check for carrier.
 		 */
-		carrier = (tp->t_state&TS_CARR_ON) || (tp->t_cflag&CLOCAL);
-		if (!carrier && tp->t_state&TS_ISOPEN) {
-			splx(s);
-			return (0);	/* EOF */
-		}
+		carrier = CAN_DO_IO(tp);
 		if (flag & IO_NDELAY) {
 			splx(s);
 			return (EWOULDBLOCK);
@@ -1653,11 +1666,12 @@ ttwrite(tp, uio, flag)
 	error = 0;
 loop:
 	s = spltty();
-	if ((tp->t_state&TS_CARR_ON) == 0 && (tp->t_cflag&CLOCAL) == 0) {
-		if (tp->t_state&TS_ISOPEN) {
-			splx(s);
-			return (EIO);
-		} else if (flag & IO_NDELAY) {
+	if (tp->t_state & TS_ZOMBIE) {
+		splx(s);
+		goto out;
+	}
+	if (!CAN_DO_IO(tp)) {
+		if (flag & IO_NDELAY) {
 			splx(s);
 			error = EWOULDBLOCK;
 			goto out;
@@ -2263,7 +2277,7 @@ tputchar(c, tp)
 {
 	register s = spltty();
 
-	if ((tp->t_state & (TS_CARR_ON|TS_ISOPEN)) == (TS_CARR_ON|TS_ISOPEN)) {
+	if (CAN_DO_IO(tp)) {
 		if (c == '\n')
 			(void) ttyoutput('\r', tp);
 		(void) ttyoutput(c, tp);

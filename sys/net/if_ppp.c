@@ -70,7 +70,7 @@
  */
 
 /*
- *	$Id: if_ppp.c,v 1.8 1994/03/02 20:28:53 guido Exp $
+ *	$Id: if_ppp.c,v 1.10 1994/03/22 01:16:04 ache Exp $
  * 	From: if_ppp.c,v 1.22 1993/08/31 23:20:40 paulus Exp
  *	From: if_ppp.c,v 1.21 1993/08/29 11:22:37 paulus Exp
  *	From: if_sl.c,v 1.11 84/10/04 12:54:47 rick Exp 
@@ -347,7 +347,7 @@ pppread(tp, uio, flag)
     register int s;
     int error = 0;
 
-    if ((tp->t_state & TS_CARR_ON)==0)
+    if (!CAN_DO_IO(tp))
 	return (EIO);
     s = splimp();
     while (sc->sc_inq.ifq_head == NULL && tp->t_line == PPPDISC) {
@@ -393,7 +393,7 @@ pppwrite(tp, uio, flag)
     struct ppp_header *ph1, *ph2;
     int len, error;
 
-    if ((tp->t_state & TS_CARR_ON)==0)
+    if (!CAN_DO_IO(tp))
 	return (EIO);
     if (tp->t_line != PPPDISC)
 	return (EINVAL);
@@ -589,7 +589,7 @@ pppoutput(ifp, m0, dst, rt)
 	error = ENETDOWN;	/* sort of */
 	goto bad;
     }
-    if ((sc->sc_ttyp->t_state & TS_CARR_ON) == 0) {
+    if (!CAN_DO_IO(sc->sc_ttyp)) {
 	error = EHOSTUNREACH;
 	goto bad;
     }

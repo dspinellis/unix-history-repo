@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.h	7.10 (Berkeley) 6/26/91
- *	$Id: tty.h,v 1.8 1994/01/28 23:15:17 ache Exp $
+ *	$Id: tty.h,v 1.9 1994/03/02 20:29:03 guido Exp $
  */
 
 #ifndef _SYS_TTY_H_
@@ -150,7 +150,7 @@ extern	struct ttychars ttydefaults;
 #define	TS_ASLEEP	0x000040UL	/* wakeup when output done */
 #define	TS_XCLUDE	0x000080UL	/* exclusive-use flag against open */
 #define	TS_TTSTOP	0x000100UL	/* output stopped by ctl-s */
-/* was	TS_HUPCLS	0x000200UL 	 * hang up upon last close */
+#define	TS_ZOMBIE	0x000200UL	/* carrier dropped */
 #define	TS_TBLOCK	0x000400UL	/* tandem queue blocked */
 #define	TS_RCOLL	0x000800UL	/* collision in read select */
 #define	TS_WCOLL	0x001000UL	/* collision in write select */
@@ -168,6 +168,13 @@ extern	struct ttychars ttydefaults;
 
 #define	TS_HW_IFLOW	(TS_DTR_IFLOW | TS_RTS_IFLOW)
 #define	TS_LOCAL	(TS_BKSL|TS_ERASE|TS_LNCH|TS_TYPEN|TS_CNTTB)
+
+/*
+ * XXX maintain a single flag to keep track of this combination and fix all
+ * the places that check TS_CARR_ON without checking CLOCAL or TS_ZOMBIE.
+ */
+#define CAN_DO_IO(tp) (((tp)->t_state & (TS_CARR_ON | TS_ZOMBIE)) \
+			 == TS_CARR_ON || (tp)->t_cflag & CLOCAL)
 
 /* define partab character types */
 #define	ORDINARY	0
@@ -221,7 +228,9 @@ extern int ttwflush(struct tty *);
 extern int ttywait(struct tty *);
 extern void ttyflush(struct tty *, int);
 extern void ttstart(struct tty *);
+#if 0 /* XXX not used */
 extern void ttrstrt(struct tty *);
+#endif
 extern int ttioctl(struct tty *, int, caddr_t, int);
 extern int ttnread(struct tty *);
 extern int ttselect(int /*dev_t*/, int, struct proc *);
@@ -247,7 +256,9 @@ extern void ttyfree(struct tty *);
 extern int putc(int, struct ringb *);
 extern int getc(struct ringb *);
 extern int nextc(char **, struct ringb *);
+#if 0 /* XXX not used */
 extern int ungetc(int, struct ringb *);
+#endif
 extern int unputc(struct ringb *);
 extern void initrb(struct ringb *);
 extern void catb(struct ringb *, struct ringb *);
