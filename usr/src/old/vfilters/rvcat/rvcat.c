@@ -15,7 +15,7 @@
  *	0116 - lead 64* following byte
  */ 
 
-static char *sccsid ="@(#)rvcat.c	4.1 (Berkeley) %G%";
+static char *sccsid ="@(#)rvcat.c	4.2 (Berkeley) %G%";
 
 int	prtmode[] = {VPRINT, 0, 0};
 int	pltmode[] = {VPLOT, 0, 0};
