@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.25	82/12/09	*/
+/*	sys_generic.c	5.26	82/12/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -257,6 +257,7 @@ rwip(ip, uio, rw)
 				if (diff < n)
 					n = diff;
 			}
+			u.u_error = 0;		/* XXX */
 			bn = fsbtodb(fs,
 			    bmap(ip, lbn, rw == UIO_WRITE ? B_WRITE: B_READ, (int)(on+n)));
 			if (u.u_error || rw == UIO_WRITE && (long)bn<0)
