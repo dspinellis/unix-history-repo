@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_output.c	7.33 (Berkeley) %G%
+ *	@(#)ip_output.c	7.34 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -29,9 +29,9 @@
 #include <machine/mtpr.h>
 #endif
 
-struct	mbuf *ip_insertoptions __P((struct mbuf *, struct mbuf *, int *));
-static	void ip_mloopback __P((struct ifnet *, struct mbuf *,
-	    struct sockaddr_in *));
+static struct mbuf *ip_insertoptions __P((struct mbuf *, struct mbuf *, int *));
+static void ip_mloopback
+	__P((struct ifnet *, struct mbuf *, struct sockaddr_in *));
 
 /*
  * IP output.  The packet in mbuf chain m contains a skeletal IP
@@ -366,7 +366,7 @@ bad:
  * Adjust IP destination as required for IP source routing,
  * as indicated by a non-zero in_addr at the start of the options.
  */
-struct mbuf *
+static struct mbuf *
 ip_insertoptions(m, opt, phlen)
 	register struct mbuf *m;
 	struct mbuf *opt;
@@ -1032,6 +1032,6 @@ ip_mloopback(ifp, m, dst)
 		ip->ip_off = htons((u_short)ip->ip_off);
 		ip->ip_sum = 0;
 		ip->ip_sum = in_cksum(copym, ip->ip_hl << 2);
-		(void) looutput(ifp, copym, (struct sockaddr *)dst);
+		(void) looutput(ifp, copym, (struct sockaddr *)dst, NULL);
 	}
 }
