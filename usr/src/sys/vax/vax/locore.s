@@ -1,4 +1,4 @@
-/*	locore.s	4.67	82/08/04	*/
+/*	locore.s	4.68	82/09/04	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -8,6 +8,7 @@
 #include "../h/nexus.h"
 #include "../h/ubareg.h"
 #include "../h/cons.h"
+#include "../vax/clock.h"
 #include "../net/in_systm.h"
 
 #include "dz.h"
@@ -164,6 +165,7 @@ SCBVEC(cnxint):
 	PUSHR; calls $0,_cnxint; POPR; incl _cnt+V_INTR; rei
 SCBVEC(hardclock):
 	PUSHR
+	mtpr $ICCS_RUN|ICCS_IE|ICCS_INT|ICCS_ERR,$ICCS
 	pushl 4+6*4(sp); pushl 4+6*4(sp);
 	calls $2,_hardclock			# hardclock(pc,psl)
 	POPR;
@@ -545,31 +547,6 @@ _badaddr:
 	addl2	(sp)+,sp		# discard mchchk trash
 	movab	2b,(sp)
 	rei
-
-_addupc:	.globl	_addupc
-	.word	0x0
-	movl	8(ap),r2		# &u.u_prof
-	subl3	8(r2),4(ap),r0		# corrected pc
-	blss	9f
-	extzv	$1,$31,r0,r0		# logical right shift
-	extzv	$1,$31,12(r2),r1	# ditto for scale
-	emul	r1,r0,$0,r0
-	ashq	$-14,r0,r0
-	tstl	r1
-	bneq	9f
-	incl	r0
-	bicl2	$1,r0
-	cmpl	r0,4(r2)		# length
-	bgequ	9f
-	addl2	(r2),r0			# base
-	probew	$3,$2,(r0)
-	beql	8f
-	addw2	12(ap),(r0)
-9:
-	ret
-8:
-	clrl	12(r2)
-	ret
 
 _Copyin:	.globl	_Copyin		# <<<massaged for jsb by asm.sed>>>
 	movl	12(sp),r0		# copy length
