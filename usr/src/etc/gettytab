@@ -2,7 +2,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)gettytab	5.8 (Berkeley) %G%
+#	@(#)gettytab	5.9 (Berkeley) %G%
 #
 #
 # Most of the table entries here are just copies of the
@@ -62,6 +62,16 @@ d110|Dial-110:\
 	:nx=d300:tc=300-baud:
 
 #
+# Fast dialup terminals, 2400/1200/300 rotary (can start either way)
+#
+D2400|d2400|Fast-Dial-2400:\
+	:nx=D1200:tc=2400-baud:
+3|D1200|Fast-Dial-1200:\
+	:nx=D300:tc=1200-baud:
+5|D300|Fast-Dial-300:\
+	:nx=D2400:tc=300-baud:
+
+#
 # Odd special case terminals
 #
 -|tty33|asr33|Pity the poor user of this beast:\
@@ -83,16 +93,6 @@ X|Xwindow|X window system:\
 	:fd@:nd@:cd@:rw:sp#9600:
 
 #
-# Fast dialup terminals, 2400/1200/300 rotary (can start either way)
-#
-D2400|Fast-Dial-2400:\
-	:nx=D1200:tc=2400-baud:
-3|D1200|Fast-Dial-1200:\
-	:nx=D300:tc=1200-baud:
-5|D300|Fast-Dial-300:\
-	:nx=D2400:tc=300-baud:
-
-#
 # Wierdo special case for fast crt's with hardcopy devices
 #
 8|T9600|CRT with hardcopy:\
@@ -103,12 +103,14 @@ D2400|Fast-Dial-2400:\
 #
 # Plugboard, and misc other terminals
 #
-p|P9600|Plugboard-9600:\
-	:nx=P300:tc=9600-baud:
+plug-9600|Plugboard-9600:\
+	:pf#1:tc=9600-baud:
+p|P9600|Plugboard-9600-rotary:\
+	:pf#1:nx=P300:tc=9600-baud:
 q|P300|Plugboard-300:\
-	:nx=P1200:tc=300-baud:
+	:pf#1:nx=P1200:tc=300-baud:
 r|P1200|Plugboard-1200:\
-	:nx=P9600:tc=1200-baud:
+	:pf#1:nx=P9600:tc=1200-baud:
 
 #
 # XXXX Port selector
