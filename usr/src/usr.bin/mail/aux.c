@@ -10,7 +10,7 @@
  * Auxiliary functions.
  */
 
-static char *SccsId = "@(#)aux.c	2.6 %G%";
+static char *SccsId = "@(#)aux.c	2.7 %G%";
 
 /*
  * Return a pointer to a dynamic copy of the argument.
@@ -120,20 +120,6 @@ isdir(name)
 	if (stat(name, &sbuf) < 0)
 		return(0);
 	return((sbuf.st_mode & S_IFMT) == S_IFDIR);
-}
-
-/*
- * Compute the size in characters of the passed message
- */
-
-unsigned int
-msize(messp)
-	struct message *messp;
-{
-	register struct message *mp;
-
-	mp = messp;
-	return(mp->m_size);
 }
 
 /*
@@ -767,18 +753,6 @@ strncmp(as1, as2, an)
 			return(0);
 	return(n<0 ? 0 : *s1 - *--s2);
 }
-
-#ifndef SIGRETRO
-
-/*
- * This routine is used by the sigretro package to
- * reset held signals to ignored signals.  If you're not
- * using sigretro, you don't need to do anything, but you DO
- * need this stub to keep everyone happy.
- */
-sigchild() {}
-
-#endif SIGRETRO
 
 /*
  * See if the given header field is supposed to be ignored.
