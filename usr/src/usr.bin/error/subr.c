@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)subr.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)subr.c	1.3 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include "error.h"
@@ -71,6 +71,7 @@ int position(string, ch)
 	reg	char	ch;
 {
 	reg	int	i;
+	if (string)
 	for (i=1; *string; string++, i++){
 		if (*string == ch)
 			return(i);
@@ -86,6 +87,7 @@ char *substitute(string, chold, chnew)
 {
 	reg	char	*cp = string;
 
+	if (cp)
 	while (*cp){
 		if (*cp == chold){
 			*cp = chnew;
@@ -100,6 +102,7 @@ char lastchar(string)
 	char	*string;
 {
 	int	length;
+	if (string == 0) return('\0');
 	length = strlen(string);
 	if (length >= 1)
 		return(string[length-1]);
@@ -110,13 +113,17 @@ char lastchar(string)
 char firstchar(string)
 	char	*string;
 {
-	return(string[0]);
+	if (string)
+		return(string[0]);
+	else
+		return('\0');
 }
 
 char	next_lastchar(string)
 	char	*string;
 {
 	int	length;
+	if (string == 0) return('\0');
 	length = strlen(string);
 	if (length >= 2)
 		return(string[length - 2]);
@@ -127,8 +134,9 @@ char	next_lastchar(string)
 clob_last(string, newstuff)
 	char	*string, newstuff;
 {
-	int	length;
-	length = strlen(string);
+	int	length = 0;
+	if (string)
+		length = strlen(string);
 	if (length >= 1)
 		string[length - 1] = newstuff;
 }
@@ -142,9 +150,10 @@ boolean persperdexplode(string, r_perd, r_pers)
 	char	**r_perd, **r_pers;
 {
 	reg	char	*cp;
-		int	length;
+		int	length = 0;
 
-	length = strlen(string);
+	if (string)
+		length = strlen(string);
 	if (   (length >= 4)
 	    && (string[length - 1] == ')' ) ){
 		for (cp = &string[length - 2];
@@ -172,9 +181,10 @@ boolean qpersperdexplode(string, r_perd, r_pers)
 	char	**r_perd, **r_pers;
 {
 	reg	char	*cp;
-		int	length;
+		int	length = 0;
 
-	length = strlen(string);
+	if (string)
+		length = strlen(string);
 	if (   (length >= 4)
 	    && (string[length - 1] == ')' ) ){
 		for (cp = &string[length - 2];
@@ -319,6 +329,8 @@ int wordvcmp(wordv1, wordc, wordv2)
 	reg	int i;
 		int	back;
 	for (i = 0; i < wordc; i++){
+		if (wordv1[i] == 0 || wordv2[i] == 0)
+				return(-1);
 		if (back = strcmp(wordv1[i], wordv2[i])){
 			return(back);
 		}

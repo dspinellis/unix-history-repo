@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)unexpand.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)unexpand.c	4.2 (Berkeley) %G%";
 /*
  * unexpand - put tabs into a file replacing blanks
  */
@@ -15,7 +15,7 @@ main(argc, argv)
 	register char *cp;
 
 	argc--, argv++;
-	if (argv[0][0] == '-') {
+	if (argc > 0 && argv[0][0] == '-') {
 		if (strcmp(argv[0], "-a") != 0) {
 			fprintf(stderr, "usage: unexpand [ -a ] file ...\n");
 			exit(1);
@@ -61,8 +61,8 @@ tabify(c)
 			break;
 
 		case '\t':
-			dcol =+ 8;
-			dcol =& ~07;
+			dcol += 8;
+			dcol &= ~07;
 			break;
 
 		default:
@@ -70,8 +70,8 @@ tabify(c)
 				if (ocol + 1 == dcol)
 					break;
 				*dp++ = '\t';
-				ocol =+ 8;
-				ocol =& ~07;
+				ocol += 8;
+				ocol &= ~07;
 			}
 			while (ocol < dcol) {
 				*dp++ = ' ';

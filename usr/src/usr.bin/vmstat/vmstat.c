@@ -1,12 +1,20 @@
-static	char *sccsid = "@(#)vmstat.c	4.8 (Berkeley) %G%";
+#ifndef lint
+static	char *sccsid = "@(#)vmstat.c	4.9 (Berkeley) %G%";
+#endif
+
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/vm.h>
 #include <sys/dk.h>
 #include <nlist.h>
 #include <sys/buf.h>
+#ifdef vax
 #include <vaxuba/ubavar.h>
 #include <vaxmba/mbavar.h>
+#endif
+#ifdef sun
+#include <sundev/mbvar.h>
+#endif
 
 struct nlist nl[] = {
 #define	X_CPTIME	0
@@ -29,17 +37,23 @@ struct nlist nl[] = {
 	{ "_boottime" },
 #define	X_DKXFER	9
 	{ "_dk_xfer" },
-#define X_MBDINIT	10
-	{ "_mbdinit" },
-#define X_UBDINIT	11
-	{ "_ubdinit" },
-#define X_REC		12
+#define X_REC		10
 	{ "_rectime" },
-#define X_PGIN		13
+#define X_PGIN		11
 	{ "_pgintime" },
-#define X_HZ		14
+#define X_HZ		12
 	{ "_hz" },
-	{ 0 },
+#ifdef vax
+#define X_MBDINIT	13
+	{ "_mbdinit" },
+#define X_UBDINIT	14
+	{ "_ubdinit" },
+#endif
+#ifdef sun
+#define X_MBDINIT	13
+	{ "_mbdinit" },
+#endif
+	{ "" },
 };
 
 char dr_name[DK_NDRIVE][10];
@@ -64,13 +78,16 @@ struct
 #define	sum		s.Sum
 #define	forkstat	s.Forkstat
 
+struct	vmmeter osum;
 int	zero;
 int	deficit;
 double	etime;
 int 	mf;
+int	swflag;
 
 main(argc, argv)
-char **argv;
+	int argc;
+	char **argv;
 {
 	time_t now;
 	int lines;
@@ -82,6 +99,9 @@ char **argv;
 	long t;
 	extern char _sobuf[];
 
+#ifdef sun
+	swflag = 1;
+#endif
 	setbuf(stdout, _sobuf);
 	nlist("/vmunix", nl);
 	if(nl[0].n_type == 0) {
@@ -100,9 +120,15 @@ char **argv;
 		argc--;
 		while (*++cp) switch (*cp) {
 
+		case 'S':
+			swflag = 1 - swflag;
+			break;
+
+
 		case 't':
 			dotimes();
 			exit(0);
+
 		case 'z':
 			close(mf);
 			mf = open("/dev/kmem", 2);
@@ -149,8 +175,9 @@ reprint:
 	/* s1 = z; */
 printf("\
  procs     memory                       page      disk  faults          cpu\n\
- r b w   avm  fre  re at  pi  po  fr  de  sr %c%d %c%d %c%d %c%d  in  sy  cs us sy id\n\
-", dr_name[0][0], dr_unit[0], dr_name[1][0], dr_unit[1], dr_name[2][0], dr_unit[2], dr_name[3][0], dr_unit[3]);
+ r b w   avm  fre  %5s  pi  po  fr  de  sr %c%d %c%d %c%d %c%d  in  sy  cs us sy id\n\
+", swflag ? "si so" : "re at",
+ dr_name[0][0], dr_unit[0], dr_name[1][0], dr_unit[1], dr_name[2][0], dr_unit[2], dr_name[3][0], dr_unit[3]);
 loop:
 	lseek(mf, (long)nl[X_CPTIME].n_value, 0);
  	read(mf, s.time, sizeof s.time);
@@ -165,6 +192,9 @@ loop:
 	}
 	lseek(mf, (long)nl[X_TOTAL].n_value, 0);
 	read(mf, &total, sizeof total);
+	osum = sum;
+	lseek(mf, (long)nl[X_SUM].n_value, 0);
+	read(mf, &sum, sizeof sum);
 	lseek(mf, (long)nl[X_DEFICIT].n_value, 0);
 	read(mf, &deficit, sizeof deficit);
 	etime = 0;
@@ -182,16 +212,27 @@ loop:
 	if(etime == 0.)
 		etime = 1.;
 	printf("%2d%2d%2d", total.t_rq, total.t_dw+total.t_pw, total.t_sw);
-	printf("%6d%5d", total.t_avm/2, total.t_free/2);
-	printf("%4d%3d%4d",
-	    (rate.v_pgrec - (rate.v_xsfrec+rate.v_xifrec))/nintv,
-	    (rate.v_xsfrec+rate.v_xifrec)/nintv, rate.v_pgpgin/2/nintv);
-	printf("%4d%4d%4d%4d", rate.v_pgpgout/2/nintv,
-	    rate.v_dfree/2/nintv, deficit/2, rate.v_scan/nintv);
+#define pgtok(a) ((a)*NBPG/1024)
+	printf("%6d%5d", pgtok(total.t_avm), pgtok(total.t_free));
+	printf("%4d%3d",
+	    swflag ?
+	        sum.v_swpin-osum.v_swpin :
+	        (rate.v_pgrec - (rate.v_xsfrec+rate.v_xifrec))/nintv,
+	    swflag ?
+		sum.v_swpout-osum.v_swpout :
+	        (rate.v_xsfrec+rate.v_xifrec)/nintv);
+	printf("%4d", pgtok(rate.v_pgpgin)/nintv);
+	printf("%4d%4d%4d%4d", pgtok(rate.v_pgpgout)/nintv,
+	    pgtok(rate.v_dfree)/nintv, pgtok(deficit), rate.v_scan/nintv);
 	etime /= 60.;
 	for(i=0; i<4; i++)
 		stats(i);
+#ifdef sun
+	printf("%4d%4d", (rate.v_intr/nintv), rate.v_syscall/nintv);
+#endif
+#ifdef vax
 	printf("%4d%4d", (rate.v_intr/nintv) - hz, rate.v_syscall/nintv);
+#endif
 	printf("%4d", rate.v_swtch/nintv);
 	for(i=0; i<CPUSTATES; i++) {
 		float f = stat1(i);
@@ -267,7 +308,6 @@ dosum()
 	printf("%9d system calls\n", sum.v_syscall);
 }
 
-
 doforkst()
 {
 
@@ -313,12 +353,11 @@ pct(top, bot)
 	return ((top * 100) / bot);
 }
 
+#define steal(where, var) lseek(mf, where, 0); read(mf, &var, sizeof var);
 /*
  * Read the drive names out of kmem.
- * ARGH ARGH ARGH ARGH !!!!!!!!!!!!
  */
-
-#define steal(where, var) lseek(mf, where, 0); read(mf, &var, sizeof var);
+#ifdef vax
 read_names()
 {
 	struct mba_device mdev;
@@ -332,7 +371,7 @@ read_names()
 	mp = (struct mba_device *) nl[X_MBDINIT].n_value;
 	up = (struct uba_device *) nl[X_UBDINIT].n_value;
 	if (up == 0) {
-		fprintf(stderr, "iostat: Disk init info not in namelist\n");
+		fprintf(stderr, "vmstat: Disk init info not in namelist\n");
 		exit(1);
 	}
 	if (mp) for (;;) {
@@ -358,3 +397,32 @@ read_names()
 		dr_unit[udev.ui_dk] = udev.ui_unit;
 	}
 }
+#endif
+
+#ifdef sun
+read_names()
+{
+	struct mb_device mdev;
+	register struct mb_device *mp;
+	struct mb_driver mdrv;
+	short two_char;
+	char *cp = (char *) &two_char;
+
+	mp = (struct mb_device *) nl[X_MBDINIT].n_value;
+	if (mp == 0) {
+		fprintf(stderr, "iostat: Disk init info not in namelist\n");
+		exit(1);
+	}
+	for (;;) {
+		steal(mp++, mdev);
+		if (mdev.md_driver == 0)
+			break;
+		if (mdev.md_dk < 0 || mdev.md_alive == 0)
+			continue;
+		steal(mdev.md_driver, mdrv);
+		steal(mdrv.mdr_dname, two_char);
+		sprintf(dr_name[mdev.md_dk], "%c%c%d", cp[0], cp[1]);
+		dr_unit[mdev.md_dk] = mdev.md_unit;
+	}
+}
+#endif

@@ -8,7 +8,7 @@
 
 #include "rcv.h"
 
-static char *SccsId = "@(#)tty.c	2.3 %G%";
+static char *SccsId = "@(#)tty.c	2.4 %G%";
 
 static	int	c_erase;		/* Current erase char */
 static	int	c_kill;			/* Current kill char */
@@ -115,8 +115,8 @@ char *
 readtty(pr, src)
 	char pr[], src[];
 {
-	char canonb[BUFSIZ];
-	int c, ch, signull();
+	char ch, canonb[BUFSIZ];
+	int c, signull();
 	register char *cp, *cp2;
 
 	fputs(pr, stdout);
@@ -139,7 +139,8 @@ readtty(pr, src)
 			ch = '\\';
 			ioctl(0, TIOCSTI, &ch);
 		}
-		ioctl(0, TIOCSTI, &c);
+		ch = c;
+		ioctl(0, TIOCSTI, &ch);
 	}
 	cp = canonb;
 	*cp = 0;
