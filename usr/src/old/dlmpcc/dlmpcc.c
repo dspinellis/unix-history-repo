@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dlmpcc.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)dlmpcc.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -446,7 +446,7 @@ download(mpccnum)
 	if (*cf.loadname == '3')
 		sprintf(fullname, "/etc/mpcc32");
 	else
-		sprintf(fullname, "/etc/mpcc%s", cf.loadname);
+		sprintf(fullname, "/etc/mpccdl");
 	if ((cf.loadname[0]) == '\0')
 		return (-1);
 	if ((dlfd = open(dlname, O_RDWR)) == MP_DLERROR) {
