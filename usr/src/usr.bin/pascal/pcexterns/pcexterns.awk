@@ -1,10 +1,13 @@
+#!/bin/sh -
 #
-# Copyright (c) 1982 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1982 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)pcexterns.awk	5.1 (Berkeley) %G%
+# %sccs.include.redist.sh%
 #
+#	@(#)pcexterns.awk	5.2 (Berkeley) %G%
+#
+
 # This generates .stabs for all the global routines and variables
 # in a library. The format of a stab can be found in man5/stab.5.
 #

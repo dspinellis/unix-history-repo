@@ -1,12 +1,13 @@
-/*
- * Copyright (c) 1979, 1984 Regents of the University of California 
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1979, 1984 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)langpats.c	5.5 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)langpats.c	5.6 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "inline.h"
 
