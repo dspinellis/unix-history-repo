@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)systat.1	8.1 (Berkeley) %G%
+.\"	@(#)systat.1	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SYSTAT 1
@@ -157,17 +157,17 @@ Toggle the display of average seek time (the default is to
 not display seek times).
 .El
 .It Ic swap
-Display, in the lower window, swap space in use on each swap
-device configured.  Two sets of bar graphs are shown.  The
-upper graph displays swap space allocated to pure text segments
-(code), the lower graph displays space allocated to stack and
-data segments.  Allocated space is sorted by its size into buckets
-of size dmmin, dmmin*2, dmmin*4, up to dmmax (to reflect allocation
-policies imposed by the system).  The disk segment size, in sectors,
-is displayed along the left hand side of the text,
-and data and stack graphs.
-Space allocated to the user structure and page
-tables is not currently accounted for.
+Show information about swap space usage on all the 
+swap areas compiled into the kernel.
+The first column is the device name of the partition.
+The next column is the total space available in the partition.
+The 
+.Ar Used
+column indicates the total blocks used so far;
+the graph shows the percentage of space in use on each partition.
+If there are more than one swap partition in use,
+a total line is also shown.
+Areas known to the kernel, but not in use are shown as not available.
 .It Ic mbufs
 Display, in the lower window, the number of mbufs allocated
 for particular uses, i.e. data, socket structures, etc.
@@ -318,7 +318,7 @@ Display only network connections using the indicated protocol
 .It Cm ignore Op Ar items
 Do not display information about connections associated with
 the specified hosts or ports.  Hosts and ports may be specified
-by name (``ucbmonet'', ``ftp''), or numerically.  Host addresses
+by name (``vangogh'', ``ftp''), or numerically.  Host addresses
 use the Internet dot notation (``128.32.0.9'').  Multiple items
 may be specified with a single command by separating them with
 spaces.
@@ -389,14 +389,9 @@ The
 program appeared in
 .Bx 4.3 .
 .Sh BUGS
-Takes 2-10 percent of the cpu.  Certain displays presume
-a 24 line by 80 character terminal.  The swap space display
-should account for space allocated to the user structure and
-page tables.  The
+Takes 2-10 percent of the cpu.
+Certain displays presume a minimum of 80 characters per line.
+The
 .Ic vmstat
 display looks out of place because it is (it was added in as
 a separate display rather than create a new program).
-.Pp
-The whole
-thing is pretty hokey and was included in the distribution under
-serious duress.
