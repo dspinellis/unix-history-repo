@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)whois.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)whois.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -63,24 +63,24 @@ main(argc, argv)
 	s = socket(hp->h_addrtype, SOCK_STREAM, 0);
 	if (s < 0) {
 		perror("whois: socket");
-		exit(2);
+		exit(1);
 	}
 	bzero((caddr_t)&sin, sizeof (sin));
 	sin.sin_family = hp->h_addrtype;
 	if (bind(s, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
 		perror("whois: bind");
-		exit(3);
+		exit(1);
 	}
 	bcopy(hp->h_addr, (char *)&sin.sin_addr, hp->h_length);
 	sp = getservbyname("whois", "tcp");
 	if (sp == NULL) {
 		(void)fprintf(stderr, "whois: whois/tcp: unknown service\n");
-		exit(4);
+		exit(1);
 	}
 	sin.sin_port = sp->s_port;
-	if (connect(s, &sin, sizeof(sin)) < 0) {
+	if (connect(s, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
 		perror("whois: connect");
-		exit(5);
+		exit(1);
 	}
 	sfi = fdopen(s, "r");
 	sfo = fdopen(s, "w");
