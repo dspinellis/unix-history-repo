@@ -12,4 +12,17 @@
 >0	byte			^0x80		executable
 >16	long			>0		not stripped
 
+0000010b	BSD demand paged executable
+000000cc	BSD compact demand paged executable
+
+008600cc	BSD/i386 compact demand paged executable
+808600cc	BSD/i386 compact demand paged dynamic executable
+8086010b	BSD/i386 demand paged dynamic executable
+
+# Network byte-order now:  DDIIMMMM
+# DD=dynamically loaded
+# II=machine id (86=i386)
+# MMMM = magic number (00cc=QMAGIC 010b=ZMAGIC)
+0086010b	BSD/i386 compact demand paged executable
+8086010b	BSD/i386 compact demand paged dynamic executable
 
