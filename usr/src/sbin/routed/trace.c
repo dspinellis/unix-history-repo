@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)trace.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)trace.c	4.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -129,8 +129,9 @@ traceaction(fd, action, rt)
 	fprintf(fd, "%s ", action);
 	dst = (struct sockaddr_in *)&rt->rt_dst;
 	gate = (struct sockaddr_in *)&rt->rt_router;
-	fprintf(fd, "dst %x, router %x, metric %d, flags", dst->sin_addr,
-		gate->sin_addr, rt->rt_metric);
+	fprintf(fd, "dst %s, ", inet_ntoa(dst->sin_addr));
+	fprintf(fd, "router %s, metric %d, flags",
+	     inet_ntoa(gate->sin_addr), rt->rt_metric);
 	cp = " %s";
 	for (first = 1, p = flagbits; p->t_bits > 0; p++) {
 		if ((rt->rt_flags & p->t_bits) == 0)
@@ -210,11 +211,11 @@ dumppacket(fd, dir, who, cp, size)
 	register struct netinfo *n;
 
 	if (msg->rip_cmd && msg->rip_cmd < RIPCMD_MAX)
-		fprintf(fd, "%s %s %x.%d", ripcmds[msg->rip_cmd],
-			dir, who->sin_addr, ntohs(who->sin_port));
+		fprintf(fd, "%s %s %s.%d", ripcmds[msg->rip_cmd],
+		    dir, inet_ntoa(who->sin_addr), ntohs(who->sin_port));
 	else {
 		fprintf(fd, "Bad cmd 0x%x %s %x.%d\n", msg->rip_cmd,
-			dir, who->sin_addr, ntohs(who->sin_port));
+		    dir, inet_ntoa(who->sin_addr), ntohs(who->sin_port));
 		fprintf(fd, "size=%d cp=%x packet=%x\n", size, cp, packet);
 		return;
 	}
@@ -228,9 +229,10 @@ dumppacket(fd, dir, who, cp, size)
 		for (; size > 0; n++, size -= sizeof (struct netinfo)) {
 			if (size < sizeof (struct netinfo))
 				break;
-			fprintf(fd, "\tdst %x metric %d\n",
-				((struct sockaddr_in *)&n->rip_dst)->sin_addr,
-				n->rip_metric);
+			fprintf(fd, "\tdst %s metric %d\n",
+#define	satosin(sa)	((struct sockaddr_in *)&sa)
+			     inet_ntoa(satosin(n->rip_dst)->sin_addr),
+			     ntohl(n->rip_metric));
 		}
 		break;
 
