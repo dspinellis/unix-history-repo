@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.8 (Berkeley) %G%
+ *	@(#)if_le.c	7.9 (Berkeley) %G%
  */
 
 #include <le.h>
@@ -135,6 +135,7 @@ void copytobuf_gap16(), copyfrombuf_gap16(), bzerobuf_gap16();
 
 extern int pmax_boardtype;
 extern u_long le_iomem;
+extern u_long asic_base;
 
 /*
  * Test to see if device is present.
@@ -165,15 +166,15 @@ leprobe(dp)
 		break;
 	case DS_3MIN:
 	case DS_MAXINE:
+	case DS_3MAXPLUS:
 		if (dp->pmax_unit == 0) {
 			volatile u_int *ssr, *ldp;
 
 			le->sc_r1 = ler1 = (volatile struct lereg1 *)
-				MACH_PHYS_TO_UNCACHED(KMIN_SYS_LANCE);
+				ASIC_SYS_LANCE(asic_base);
+			cp = (u_char *)ASIC_SYS_ETHER_ADDRESS(asic_base);
 			le->sc_r2 = (volatile void *)
 				MACH_PHYS_TO_UNCACHED(le_iomem);
-			cp = (u_char *)MACH_PHYS_TO_UNCACHED(
-				KMIN_SYS_ETHER_ADDRESS);
 			le->sc_ler2pad = 1;
 			le->sc_copytobuf = copytobuf_gap16;
 			le->sc_copyfrombuf = copyfrombuf_gap16;
@@ -182,10 +183,9 @@ leprobe(dp)
 			/*
 			 * And enable Lance dma through the asic.
 			 */
-			ssr = (volatile u_int *)
-				MACH_PHYS_TO_UNCACHED(KMIN_REG_CSR);
+			ssr = (volatile u_int *)ASIC_REG_CSR(asic_base);
 			ldp = (volatile u_int *)
-				MACH_PHYS_TO_UNCACHED(KMIN_REG_LANCE_DMAPTR);
+				ASIC_REG_LANCE_DMAPTR(asic_base);
 			*ldp = (le_iomem << 3);	/* phys addr << 3 */
 			*ssr |= ASIC_CSR_DMAEN_LANCE;
 			break;

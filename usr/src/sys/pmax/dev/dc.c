@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dc.c	7.11 (Berkeley) %G%
+ *	@(#)dc.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -150,6 +150,14 @@ dcprobe(cp)
 	if (badaddr(cp->pmax_addr, 2))
 		return (0);
 
+	/*
+	 * For a remote console, wait a while for previous output to
+	 * complete.
+	 */
+	if (major(cn_tab.cn_dev) == DCDEV && cp->pmax_unit == 0 &&
+		cn_tab.cn_screen == 0)
+		DELAY(10000);
+
 	/* reset chip */
 	dcaddr = (dcregs *)cp->pmax_addr;
 	dcaddr->dc_csr = CSR_CLR;
@@ -174,8 +182,6 @@ dcprobe(cp)
 		dc_timer = 1;
 		timeout(dcscan, (void *)0, hz);
 	}
-	printf("dc%d at nexus0 csr 0x%x priority %d\n",
-		cp->pmax_unit, cp->pmax_addr, cp->pmax_pri);
 
 	/*
 	 * Special handling for consoles.
@@ -188,6 +194,7 @@ dcprobe(cp)
 			dcaddr->dc_lpr = LPR_RXENAB | LPR_B4800 | LPR_OPAR |
 				LPR_PARENB | LPR_8_BIT_CHAR | DCMOUSE_PORT;
 			MachEmptyWriteBuffer();
+			DELAY(1000);
 			KBDReset(makedev(DCDEV, DCKBD_PORT), dcPutc);
 			MouseInit(makedev(DCDEV, DCMOUSE_PORT), dcPutc, dcGetc);
 			splx(s);
@@ -196,10 +203,13 @@ dcprobe(cp)
 			dcaddr->dc_lpr = LPR_RXENAB | LPR_8_BIT_CHAR |
 				LPR_B9600 | minor(cn_tab.cn_dev);
 			MachEmptyWriteBuffer();
+			DELAY(1000);
 			cn_tab.cn_disabled = 0;
 			splx(s);
 		}
 	}
+	printf("dc%d at nexus0 csr 0x%x priority %d\n",
+		cp->pmax_unit, cp->pmax_addr, cp->pmax_pri);
 	return (1);
 }
 

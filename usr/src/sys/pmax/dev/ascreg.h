@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ascreg.h	7.2 (Berkeley) %G%
+ *	@(#)ascreg.h	7.3 (Berkeley) %G%
  */
 
 /* 
@@ -70,6 +70,31 @@
  * 	courtesy of NCR.  Thanks Ken !
  */
 
+#define ASC_OFFSET_53C94	0x0		/* from module base */
+#define ASC_OFFSET_DMAR		0x40000		/* DMA Address Register */
+#define ASC_OFFSET_RAM		0x80000		/* SRAM Buffer */
+#define ASC_OFFSET_ROM		0xc0000		/* Diagnostic ROM */
+
+#define	ASC_RAM_SIZE		0x20000		/* 128k (32k*32) */
+#define PER_TGT_DMA_SIZE	((ASC_RAM_SIZE/7) & ~(sizeof(int)-1))
+#define ASC_NCMD		7
+
+/*
+ * DMA Address Register
+ */
+#define ASC_DMAR_MASK		0x1ffff		/* 17 bits, 128k */
+#define ASC_DMAR_WRITE		0x80000000	/* DMA direction bit */
+#define	ASC_DMA_ADDR(x)		((unsigned)(x) & ASC_DMAR_MASK)
+
+/*
+ * Synch xfer parameters, and timing conversions
+ */
+#define SCSI_MIN_PERIOD		50	/* in 4 nsecs units */
+#define ASC_MIN_PERIOD25	5	/* in CLKS/BYTE, 1 CLK = 40nsecs */
+#define ASC_MIN_PERIOD12	3	/* in CLKS/BYTE, 1 CLK = 80nsecs */
+#define ASC_MAX_PERIOD25	35	/* in CLKS/BYTE, 1 CLK = 40nsecs */
+#define ASC_MAX_PERIOD12	18	/* in CLKS/BYTE, 1 CLK = 80nsecs */
+#define ASC_MAX_OFFSET		15	/* pure number */
 /*
  * Register map, padded as needed
  */

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fb.c	7.1 (Berkeley) %G%
+ *	@(#)fb.c	7.2 (Berkeley) %G%
  */
 
 /* 
@@ -52,11 +52,9 @@
 
 #include <machine/machConst.h>
 #include <machine/pmioctl.h>
-#include <machine/dc7085cons.h>
 
 #include <pmax/dev/device.h>
 #include <pmax/dev/font.c>
-#include <pmax/dev/sccreg.h>
 #include <pmax/dev/fbreg.h>
 
 #include <pmax/stand/dec_prom.h>
@@ -64,17 +62,25 @@
 #include <pmax/pmax/cons.h>
 #include <pmax/pmax/pmaxtype.h>
 
+#include <dc.h>
+#include <scc.h>
+#include <dtop.h>
+
 void fbKbdEvent(), fbMouseEvent(), fbMouseButtons(), fbScroll();
 void fbBlitc(), fbPutc();
 extern int pmax_boardtype;
 extern struct consdev cn_tab;
-#include "dc.h"
 #if NDC > 0
+#include <machine/dc7085cons.h>
 extern int dcGetc(), dcparam();
 extern void dcPutc();
 #endif
-#include "scc.h"
+#if NDTOP > 0
+#include <pmax/dev/dtopreg.h>
+extern void dtopKBDPutc();
+#endif
 #if NSCC > 0
+#include <pmax/dev/sccreg.h>
 extern int sccGetc(), sccparam();
 extern void sccPutc();
 #endif
@@ -571,8 +577,8 @@ fbMouseButtons(newRepPtr, fp)
 		eventPtr->time = TO_MS(time);
 		eventPtr->x = fp->fbu->scrInfo.mouse.x;
 		eventPtr->y = fp->fbu->scrInfo.mouse.y;
+		fp->fbu->scrInfo.qe.eTail = i;
 	}
-	fp->fbu->scrInfo.qe.eTail = i;
 	selwakeup(&fp->selp);
 
 	lastRep = *newRepPtr;
@@ -1000,4 +1006,39 @@ KBDGetc()
 			break;
 	}
 	return (c);
+}
+
+/*
+ * Configure the keyboard/mouse based on machine type for turbochannel
+ * display boards.
+ */
+tb_kbdmouseconfig(fp)
+	struct pmax_fb *fp;
+{
+
+	switch (pmax_boardtype) {
+#if NDC > 0
+	case DS_3MAX:
+		fp->KBDPutc = dcPutc;
+		fp->kbddev = makedev(DCDEV, DCKBD_PORT);
+		break;
+#endif
+#if NSCC > 0
+	case DS_3MIN:
+	case DS_3MAXPLUS:
+		fp->KBDPutc = sccPutc;
+		fp->kbddev = makedev(SCCDEV, SCCKBD_PORT);
+		break;
+#endif
+#if NDTOP > 0
+	case DS_MAXINE:
+		fp->KBDPutc = dtopKBDPutc;
+		fp->kbddev = makedev(DTOPDEV, DTOPKBD_PORT);
+		break;
+#endif
+	default:
+		printf("Can't configure keyboard/mouse\n");
+		return (1);
+	};
+	return (0);
 }

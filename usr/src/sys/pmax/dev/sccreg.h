@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sccreg.h	7.1 (Berkeley) %G%
+ *	@(#)sccreg.h	7.2 (Berkeley) %G%
  */
 
 /* 
@@ -348,6 +348,6 @@ typedef struct {
  * B channels for the comm port(s).
  */
 #define	SCCCOMM2_PORT	0x0
-#define	SCCKBD_PORT	0x1
+#define	SCCMOUSE_PORT	0x1
 #define	SCCCOMM3_PORT	0x2
-#define	SCCMOUSE_PORT	0x3
+#define	SCCKBD_PORT	0x3

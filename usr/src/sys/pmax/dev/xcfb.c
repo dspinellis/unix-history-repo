@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)xcfb.c	7.1 (Berkeley) %G%
+ *	@(#)xcfb.c	7.2 (Berkeley) %G%
  */
 
 /* 
@@ -250,7 +250,6 @@ xcfbioctl(dev, cmd, data, flag)
 		break;
 
 	case QIOCKPCMD:
-#ifdef notyet
 	    {
 		pmKpCmd *kpCmdPtr;
 		unsigned char *cp;
@@ -268,7 +267,6 @@ xcfbioctl(dev, cmd, data, flag)
 			(*fp->KBDPutc)(fp->kbddev, (int)*cp);
 		}
 	    }
-#endif /* notyet */
 	    break;
 
 	case QIOCADDR:
@@ -481,7 +479,14 @@ void
 xcfbPosCursor(x, y)
 	register int x, y;
 {
+	register struct pmax_fb *fp = &xcfbfb;
 
+	if (y < fp->fbu->scrInfo.min_cur_y || y > fp->fbu->scrInfo.max_cur_y)
+		y = fp->fbu->scrInfo.max_cur_y;
+	if (x < fp->fbu->scrInfo.min_cur_x || x > fp->fbu->scrInfo.max_cur_x)
+		x = fp->fbu->scrInfo.max_cur_x;
+	fp->fbu->scrInfo.cursor.x = x;		/* keep track of real cursor */
+	fp->fbu->scrInfo.cursor.y = y;		/* position, indep. of mouse */
 	ims332_write_register(IMS332_REG_CURSOR_LOC,
 		((x & 0xfff) << 12) | (y & 0xfff));
 }
@@ -553,8 +558,9 @@ xcfbLoadCursor(cursor)
 		while (j < 2) {
 			out = 0;
 			for (i = 0; i < 8; i++) {
-				out = (out << 2) | ((ap & 0x1) << 1) |
-					(bp & 0x1);
+				out = ((out >> 2) & 0x3fff) |
+					((ap & 0x1) << 15) |
+					((bp & 0x1) << 14);
 				ap >>= 1;
 				bp >>= 1;
 			}
@@ -577,7 +583,6 @@ xcfbLoadCursor(cursor)
 
 /*
  * Initialization
- * (For some reason, X runs faster with the frame buffer cached?)
  */
 int
 xcfbinit()
@@ -586,9 +591,22 @@ xcfbinit()
 	register struct pmax_fb *fp = &xcfbfb;
 
 	fp->isMono = 0;
+
+	/*
+	 * Or Cached? A comment in the Mach driver suggests that the X server
+	 * runs faster in cached address space, but the X server is going
+	 * to blow away the data cache whenever it updates the screen, so..
+	 */
 	fp->fr_addr = (char *)
-		MACH_PHYS_TO_CACHED(XINE_PHYS_CFB_START + VRAM_OFFSET);
-	fp->fbu = &xcfbu;
+		MACH_PHYS_TO_UNCACHED(XINE_PHYS_CFB_START + VRAM_OFFSET);
+
+	/*
+	 * Must be in Uncached space or the Xserver sees a stale version of
+	 * the event queue and acts totally wacko. I don't understand this,
+	 * since the R3000 uses a physical address cache?
+	 */
+	fp->fbu = (struct fbuaccess *)
+		MACH_PHYS_TO_UNCACHED(MACH_CACHED_TO_PHYS(&xcfbu));
 	fp->posCursor = xcfbPosCursor;
 	fp->KBDPutc = dtopKBDPutc;
 	fp->kbddev = makedev(DTOPDEV, DTOPKBD_PORT);
@@ -636,8 +654,8 @@ xcfbinit()
 	fp->fbu->scrInfo.max_col = 80;
 	fp->fbu->scrInfo.max_x = 1024;
 	fp->fbu->scrInfo.max_y = 768;
-	fp->fbu->scrInfo.max_cur_x = 1023;
-	fp->fbu->scrInfo.max_cur_y = 767;
+	fp->fbu->scrInfo.max_cur_x = 1008;
+	fp->fbu->scrInfo.max_cur_y = 752;
 	fp->fbu->scrInfo.version = 11;
 	fp->fbu->scrInfo.mthreshold = 4;	
 	fp->fbu->scrInfo.mscale = 2;
