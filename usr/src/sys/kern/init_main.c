@@ -2,7 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	7.40 (Berkeley) %G%
+ *	@(#)init_main.c	7.41 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -104,6 +104,7 @@ main()
 	/*
 	 * Setup credentials
 	 */
+	cred0.p_refcnt = 1;
 	p->p_cred = &cred0;
 	p->p_ucred = crget();
 	p->p_ucred->cr_ngroups = 1;	/* group 0 */
