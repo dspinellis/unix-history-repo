@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -839,7 +839,6 @@ commaize(h, p, fp, oldstyle, m, e)
 		{
 			char *oldp;
 			char pvpbuf[PSBUFSIZE];
-			extern bool isatword();
 			extern char **prescan();
 
 			(void) prescan(p, oldstyle ? ' ' : ',', pvpbuf);
@@ -850,7 +849,7 @@ commaize(h, p, fp, oldstyle, m, e)
 			while (*p != '\0' && isascii(*p) && isspace(*p))
 				p++;
 
-			if (*p != '@' && !isatword(p))
+			if (*p != '@')
 			{
 				p = oldp;
 				break;
@@ -913,27 +912,37 @@ commaize(h, p, fp, oldstyle, m, e)
 	putline(obuf, fp, m);
 }
 /*
-**  ISATWORD -- tell if the word we are pointing to is "at".
+**  COPYHEADER -- copy header list
+**
+**	This routine is the equivalent of newstr for header lists
 **
 **	Parameters:
-**		p -- word to check.
+**		header -- list of header structures to copy.
 **
 **	Returns:
-**		TRUE -- if p is the word at.
-**		FALSE -- otherwise.
+**		a copy of 'header'.
 **
 **	Side Effects:
 **		none.
 */
 
-bool
-isatword(p)
-	register char *p;
+HDR *
+copyheader(header)
+	register HDR *header;
 {
-	extern char lower();
+	register HDR *newhdr;
+	HDR *ret;
+	register HDR **tail = &ret;
 
-	if (lower(p[0]) == 'a' && lower(p[1]) == 't' &&
-	    p[2] != '\0' && isascii(p[2]) && isspace(p[2]))
-		return (TRUE);
-	return (FALSE);
+	while (header != NULL)
+	{
+		newhdr = (HDR *) xalloc(sizeof(HDR));
+		STRUCTCOPY(*header, *newhdr);
+		*tail = newhdr;
+		tail = &newhdr->h_link;
+		header = header->h_link;
+	}
+	*tail = NULL;
+	
+	return ret;
 }

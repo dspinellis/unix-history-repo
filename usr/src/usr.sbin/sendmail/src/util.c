@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -168,6 +168,45 @@ copyplist(list, copycont)
 	}
 
 	return (newvp);
+}
+/*
+**  COPYQUEUE -- copy address queue.
+**
+**	This routine is the equivalent of newstr for address queues
+**	addresses marked with QDONTSEND aren't copied
+**
+**	Parameters:
+**		addr -- list of address structures to copy.
+**
+**	Returns:
+**		a copy of 'addr'.
+**
+**	Side Effects:
+**		none.
+*/
+
+ADDRESS *
+copyqueue(addr)
+	ADDRESS *addr;
+{
+	register ADDRESS *newaddr;
+	ADDRESS *ret;
+	register ADDRESS **tail = &ret;
+
+	while (addr != NULL)
+	{
+		if (!bitset(QDONTSEND, addr->q_flags))
+		{
+			newaddr = (ADDRESS *) xalloc(sizeof(ADDRESS));
+			STRUCTCOPY(*addr, *newaddr);
+			*tail = newaddr;
+			tail = &newaddr->q_next;
+		}
+		addr = addr->q_next;
+	}
+	*tail = NULL;
+	
+	return ret;
 }
 /*
 **  PRINTAV -- print argument vector.
