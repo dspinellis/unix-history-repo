@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)lfs_alloc.c 1.8 %G%";
+static char vers[] = "@(#)lfs_alloc.c 1.9 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -45,6 +45,8 @@ alloc(dev, ip, bpref, size)
 	    fs->fs_cstotal.cs_nbfree * FRAG + fs->fs_cstotal.cs_nffree <
 	      fs->fs_dsize * minfree / 100)
 		goto nospace;
+	if (bpref >= fs->fs_size)
+		bpref = 0;
 	if (bpref == 0)
 		cg = itog(ip->i_number, fs);
 	else
@@ -94,6 +96,8 @@ realloccg(dev, ip, bprev, bpref, osize, nsize)
 		blkclr(bp->b_un.b_addr + osize, nsize - osize);
 		return (bp);
 	}
+	if (bpref >= fs->fs_size)
+		bpref = 0;
 	bno = hashalloc(dev, fs, cg, (long)bpref, nsize, alloccg);
 	if (bno != 0) {
 		/*
@@ -134,6 +138,8 @@ ialloc(dev, ipref, mode)
 	fs = getfs(dev);
 	if (fs->fs_cstotal.cs_nifree == 0)
 		goto noinodes;
+	if (ipref >= fs->fs_ncg * fs->fs_ipg)
+		ipref = 0;
 	cg = itog(ipref, fs);
 	ino = hashalloc(dev, fs, cg, (long)ipref, mode, ialloccg);
 	if (ino == 0)
