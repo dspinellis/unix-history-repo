@@ -1,4 +1,4 @@
-/*	kdb_input.c	7.1	86/11/20	*/
+/*	kdb_input.c	7.2	86/11/20	*/
 
 #include "../kdb/defs.h"
 
@@ -115,7 +115,7 @@ getformat(deformat)
 	register char *fptr;
 	register int quote;
 
-	fptr=deformat; quote=FALSE;
+	fptr=deformat; quote=0;
 	while ((quote ? readchar()!=EOR : !eol(readchar())))
 		if ((*fptr++ = lastc)=='"')
 			quote = ~quote;
