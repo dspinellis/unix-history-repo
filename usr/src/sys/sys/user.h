@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)user.h	7.8 (Berkeley) %G%
+ *	@(#)user.h	7.9 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -38,15 +38,10 @@
  * isn't needed in core when the process is swapped out.
  */
  
-#define	MAXCOMLEN	16		/* <= MAXNAMLEN, >= sizeof(ac_comm) */
-#define	MAXLOGNAME	12		/* >= UT_NAMESIZE */
- 
 struct	user {
 	struct	pcb u_pcb;
 	struct	proc *u_procp;		/* pointer to proc structure */
 	int	*u_ar0;			/* address of users saved R0 */
-	char	u_comm[MAXCOMLEN + 1];
-
 /* syscall parameters, results and catches */
 	int	u_arg[8];		/* arguments to current system call */
 	int	*u_ap;			/* pointer to arglist */
@@ -65,7 +60,6 @@ struct	user {
 	char	u_eosys;		/* special action on end of syscall */
 
 /* 1.1 - processes and protection */
-	char	u_logname[MAXLOGNAME];	/* login name, if available */
 #define	u_ruid	u_procp->p_ruid		/* real user id - XXX */
 #define	u_rgid	u_procp->p_rgid		/* real group id - XXX */
 #define u_cred u_nd.ni_cred
@@ -106,8 +100,6 @@ struct	user {
 #define	UF_MAPPED 	0x2		/* mapped from device */
 #define u_cdir u_nd.ni_cdir		/* current directory */
 #define u_rdir u_nd.ni_rdir		/* root directory of current process */
-	struct	tty *u_ttyp;		/* controlling tty pointer */
-	dev_t	u_ttyd;			/* controlling tty dev */
 	short	u_cmask;		/* mask for file creation */
 
 /* 1.5 - timing and statistics */
