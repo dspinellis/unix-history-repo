@@ -1,4 +1,4 @@
-/* "@(#)defs.h 4.2 %G%" */
+/* "@(#)defs.h 4.3 %G%" */
 #
 /*
  *
@@ -32,7 +32,7 @@
 
 #include <sys/param.h>
 #include <sys/dir.h>
-#include <sys/psl.h>
+#include <machine/psl.h>
 #include <sys/user.h>
 #include "mac.h"
 #include "mode.h"
