@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
@@ -281,6 +281,7 @@ putdir(buf, size)
 	struct odirect *eodp;
 	register struct direct *dp;
 	long loc, i;
+	extern int Bcvt;
 
 	if (cvtflag) {
 		eodp = (struct odirect *)&buf[size];
@@ -292,6 +293,9 @@ putdir(buf, size)
 	} else {
 		for (loc = 0; loc < size; ) {
 			dp = (struct direct *)(buf + loc);
+			if (Bcvt) {
+				swabst("l2s", (char *) dp);
+			}
 			i = DIRBLKSIZ - (loc & (DIRBLKSIZ - 1));
 			if (dp->d_reclen == 0 || dp->d_reclen > i) {
 				loc += i;
