@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dmc.4	6.1 (Berkeley) %G%
+.\"	@(#)dmc.4	6.2 (Berkeley) %G%
 .\"
 .TH DMC 4 ""
 .UC 5
@@ -28,7 +28,7 @@ to 7 for the DMC.
 .PP
 The configuration flags specify how to set up the device, 
 .br
-0 -- full duplex DDCMP
+0 -- full duplex DDCMP (normal mode)
 .br
 1 -- DDCMP Maintence mode (generally useless)
 .br
@@ -43,12 +43,16 @@ DMC11 technical manual.
 .PP
 The host's address must be specified with an SIOCSIFADDR ioctl,
 and the destination address specified with a SIOCSIFDSTADDR ioctl,
-before the interface will transmit or recive any packets.
+before the interface will transmit or receive any packets.
 .SH ROUTING
 The driver places a HOST entry in the kernel routing tables for the
 address given in the SIOCSIFDSTADDR ioctl.  To use the DMC as a
-link between localnets, you must explicitly add the route with
-the route(8) command.
+link between local nets, the route to the remote net must be added manually
+with the
+.IR route (8)
+command, or by the use of the routing process
+.IR routed (8)
+on each end of the link.
 .SH DIAGNOSTICS
 .BR "dmc%d: bad control %o" .
 A bad parameter was passed to the
@@ -59,10 +63,10 @@ routine.
 An input packet was received which contained a type of
 address unknown to the driver.
 .PP
-.BR "DMC FATAL ERROR 0%o" .
+.BR "DMC fatal error 0%o" .
 A fatal error in DDMCP occured, causing the device to be restarted.
 .PP
-.BR "DMC SOFT ERROR 0%o" .
+.BR "DMC soft error 0%o" .
 A non-fatal error in DDMCP has occured. 
 .PP
 .BR "dmc%d: af%d not supported" . 
@@ -70,3 +74,8 @@ The interface was handed a message which has
 addresses formatted in an unsuitable address family.
 .SH SEE ALSO
 intro(4N), inet(4F)
+.SH BUGS
+The current version of the driver uses a link-level encapsulation
+so that multiple protocol types may be used.
+It is thus incompatible with earlier drivers,
+including the 4.2BSD version.
