@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.16 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/cdefs.h>
@@ -137,14 +137,14 @@ fts_load(sp, p)
 	FTS *sp;
 	register FTSENT *p;
 {
-	static int need_to_cd;
 	register int len;
 	register char *cp;
 
 	/*
-	 * If changing the root level node, load the stream structure for the
-	 * next traversal; set the fts_accpath field specially so the chdir
-	 * gets done to the right place and the user can access the first node.
+	 * Load the stream structure for the next traversal.  Since we don't
+	 * actually enter the directory until after the preorder visit, set
+	 * the fts_accpath field specially so the chdir gets done to the right
+	 * place and the user can access the first node.
 	 */
 	len = p->fts_pathlen = p->fts_namelen;
 	bcopy(p->fts_name, sp->fts_path, len + 1);
@@ -156,15 +156,6 @@ fts_load(sp, p)
 	p->fts_accpath = p->fts_path = sp->fts_path;
 
 	sp->rdev = p->fts_statb.st_dev;
-
-	/*
-	 * If not the first time, and it's not an absolute pathname, get back
-	 * to starting directory.  If that fails, we're dead.
-	 */
-	if (need_to_cd && p->fts_path[0] != '/' && FCHDIR(sp, sp->fts_rfd))
-		return(0);
-	need_to_cd = 1;
-
 	p->fts_info = fts_stat(sp, p, 0);
 	return(1);
 }
@@ -279,10 +270,12 @@ fts_read(sp)
 		 * Cd to the subdirectory, reading it if haven't already.  If
 		 * the read fails for any reason, or the directory is empty,
 		 * the fts_info field of the current node is set by fts_build.
-		 * If have already read and fail to chdir, do some quick
-		 * whacking to make the names come out right, and set the
-		 * parent state so the application will eventually get an
-		 * error condition.
+		 * If have already read and now fail to chdir, whack the list
+		 * to make the names come out right, and set the parent state
+		 * so the application will eventually get an error condition.
+		 * If haven't read and fail to chdir, check to see if we're
+		 * at the root node -- if so, we have to get back or the root
+		 * node may be inaccessible.
 		 */
 		if (sp->fts_child) {
 			if (CHDIR(sp, p->fts_accpath)) {
@@ -291,8 +284,16 @@ fts_read(sp)
 					p->fts_accpath =
 					    p->fts_parent->fts_accpath;
 			}
-		} else if (!(sp->fts_child = fts_build(sp, BREAD)))
-			return(ISSET(FTS_STOP) ? NULL : p);
+		} else if (!(sp->fts_child = fts_build(sp, BREAD))) {
+			if ISSET(FTS_STOP)
+				return(NULL);
+			if (p->fts_level == FTS_ROOTLEVEL &&
+			    FCHDIR(sp, sp->fts_rfd)) {
+				SET(FTS_STOP);
+				return(NULL);
+			}
+			return(p);
+		}
 		p = sp->fts_child;
 		sp->fts_child = NULL;
 		goto name;
@@ -305,10 +306,8 @@ next:	tmp = p;
 
 		/* If reached the top, load the paths for the next root. */
 		if (p->fts_level == FTS_ROOTLEVEL) {
-			if (!fts_load(sp, p)) {
-				SET(FTS_STOP);
+			if (!fts_load(sp, p))
 				return(NULL);
-			}
 			return(sp->fts_cur = p);
 		}
 
@@ -326,7 +325,7 @@ name:		t = sp->fts_path + NAPPEND(p->fts_parent);
 		return(sp->fts_cur = p);
 	}
 
-	/* Move to parent. */
+	/* Move up to the parent node. */
 	p = tmp->fts_parent;
 	free(tmp);
 
@@ -343,28 +342,38 @@ name:		t = sp->fts_path + NAPPEND(p->fts_parent);
 	sp->fts_path[p->fts_pathlen] = '\0';
 
 	/*
-	 * If had a chdir error, set the info field to reflect this, and
-	 * restore errno.  The error indicator has to be reset to 0 so that
-	 * if the user does an FTS_AGAIN, it all works.  Can't cd up on
-	 * the post-order visit to the root node, otherwise will be in the
-	 * wrong directory.
+	 * Cd back up to the parent directory.  If at a root node, have to cd
+	 * back to the original place, otherwise may not be able to access the
+	 * original node on post-order.
+	 */
+	if (p->fts_level == FTS_ROOTLEVEL) {
+		if (FCHDIR(sp, sp->fts_rfd)) {
+			SET(FTS_STOP);
+			return(NULL);
+		}
+	}
+	else if (CHDIR(sp, "..")) {
+		SET(FTS_STOP);
+		return(NULL);
+	}
+
+	/* 
+	 * If had a chdir error when trying to get into the directory, set the
+	 * info field to reflect this, and restore errno.  The error indicator
+	 * has to be reset to 0 so that if the user does an FTS_AGAIN, it all
+	 * works.
 	 */
 	if (p->fts_cderr) {
 		errno = p->fts_cderr;
 		p->fts_cderr = 0;
 		p->fts_info = FTS_ERR;
-	} else {
-		if (p->fts_level != FTS_ROOTLEVEL && CHDIR(sp, "..")) {
-			SET(FTS_STOP);
-			return(NULL);
-		}
+	} else
 		p->fts_info = FTS_DP;
-	}
 	return(sp->fts_cur = p);
 }
 
 /*
- * fts_set takes the stream as an argument although it's not used in this
+ * Fts_set takes the stream as an argument although it's not used in this
  * implementation; it would be necessary if anyone wanted to add global
  * semantics to fts using fts_set.  An error return is allowed for similar
  * reasons.
