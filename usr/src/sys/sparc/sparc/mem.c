@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mem.c	7.1 (Berkeley) %G%
+ *	@(#)mem.c	7.2 (Berkeley) %G%
  *
  * from: $Header: mem.c,v 1.8 92/06/17 05:22:16 torek Exp $
  */
@@ -75,7 +75,7 @@ mmrw(dev, uio, flags)
 				goto unlock;
 			}
 			o = (int)uio->uio_offset & PGOFSET;
-			c = MIN(uio->uio_resid, (u_int)(NBPG - o));
+			c = min(uio->uio_resid, (u_int)(NBPG - o));
 			error = uiomove(&va[o], (int)c, uio);
 			pmap_remove(kernel_pmap,
 			    (vm_offset_t)va, (vm_offset_t)va + PAGE_SIZE);
@@ -84,7 +84,7 @@ mmrw(dev, uio, flags)
 /* minor device 1 is kernel memory */
 		case 1:
 			va = (caddr_t)uio->uio_offset;
-			c = MIN(iov->iov_len, MAXPHYS);
+			c = min(iov->iov_len, MAXPHYS);
 			if (!kernacc(va, c,
 			    uio->uio_rw == UIO_READ ? B_READ : B_WRITE))
 				return (EFAULT);
@@ -110,7 +110,7 @@ mmrw(dev, uio, flags)
 				    M_TEMP, M_WAITOK);
 				bzero(zbuf, CLBYTES);
 			}
-			c = MIN(iov->iov_len, CLBYTES);
+			c = min(iov->iov_len, CLBYTES);
 			error = uiomove(zbuf, (int)c, uio);
 			continue;
 
