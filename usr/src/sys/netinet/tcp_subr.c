@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.22	82/04/04	*/
+/*	tcp_subr.c	4.23	82/04/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -217,8 +217,8 @@ COUNT(TCP_CLOSE);
 		(void) m_free(dtom(tp->t_ipopt));
 	(void) m_free(dtom(tp));
 	inp->inp_ppcb = 0;
-	in_pcbdetach(inp);
 	soisdisconnected(so);
+	in_pcbdetach(inp);
 }
 
 tcp_drain()
