@@ -477,6 +477,7 @@ findpcb:
 		sin->sin_len = sizeof(*sin);
 		sin->sin_addr = ti->ti_src;
 		sin->sin_port = ti->ti_sport;
+		bzero((caddr_t)sin->sin_zero, sizeof(sin->sin_zero));
 		laddr = inp->inp_laddr;
 		if (inp->inp_laddr.s_addr == INADDR_ANY)
 			inp->inp_laddr = ti->ti_dst;
