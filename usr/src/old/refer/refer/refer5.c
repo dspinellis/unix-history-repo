@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)refer5.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)refer5.c	4.2 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
@@ -21,6 +21,8 @@ char *flds[], *nstline, *endline;
 	char t[100], t1[100], t2[100], format[10], *sd, *stline;
 	int addon, another = 0;
 	static FILE *fhide = 0;
+	int i;
+	char tag;
 
 	if (labels) {
 		if (nf == 0)	/* old */
@@ -61,9 +63,12 @@ char *flds[], *nstline, *endline;
 					*sd = 0;
 				}
 			}
-			if (!keywant || addon)
-				if (!science)
-					addch(t, keylet(t, nref));
+			if ((!keywant || addon) && !science) {
+			    addch(t, keylet(t, nref));
+			}
+			else {
+			    tokeytab (t,nref);
+			}
 		}
 	}
 	else {
@@ -163,9 +168,13 @@ char *flds[], *out;
 				mycpy2(out, p, 20);
 				return(out);
 			}
-			for(s = p = flds[i]+2; *p; p++);
-			while (p > s && *p != ' ')
-				p--;
+			/* if its not 'L' then use just the last word */
+			s = p = flds[i]+2;
+			if (c != 'L') {
+			    for(; *p; p++);
+			    while (p > s && *p != ' ')
+				    p--;
+			}
 			/* special wart for authors */
 			if (c == 'A' && (p[-1] == ',' || p[1] =='(')) {
 				p--;
@@ -210,19 +219,26 @@ char *flds[], *keystr;
 	}
 }
 
+
+tokeytab (t, nref)
+char *t;
+{
+	strcpy(labtab[nref]=lbp, t);
+	while (*lbp++)
+		;
+}
+
 keylet(t, nref)
 char *t;
 {
 	int i;
-	int x = 'a'-1;
+	int x = -1;
 
 	for(i = 1; i < nref; i++) {
 		if (strcmp(labtab[i], t) == 0)
 			x = labc[i];
 	}
-	strcpy(labtab[nref]=lbp, t);
-	while (*lbp++)
-		;
+	tokeytab (t, nref);
 	if (lbp-bflab > NFLAB)
 		err("bflab overflow (%d)", NFLAB);
 	if (nref > NLABC)
