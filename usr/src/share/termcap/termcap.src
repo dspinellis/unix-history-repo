@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.27	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.28	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -2209,10 +2209,20 @@ zn|trs100|Radio Shack Model 100:\
 	:ku=^^:kd=^_:kl=^]:kr=^\:up=\EA:nd=\EC:ho=\EH:ce=\EK:\
 	:cd=\EJ:cl=\EE:xt:cm=\EY%+ %+ :\
 	:so=\Ep:se=\Eq:al=\EL:dl=\EM:
-k1|kermit:\
-	:pt@:sr@:tc=vt52:
-k2|pckermit|kermit on IBM PC:\
-	:pt@:sr@:li#25:tc=vt52:
+# KERMIT standard all versions.  (gts 9-25-84)
+# Straight ascii keyboard. :sr=\EI: not avail. many versions + bug prone in vi.
+K0|kermit|standard kermit:\
+	:bs:cd=\EJ:ce=\EK:cl=\EE:cm=\EY%+ %+ :co#80:ho=\EH:li#24:nd=\EC:up=\EA:\
+	:ku=^K:kd=^J:kl=^H:kr=^L:kh=^^:ma=h\012jklH:\
+	:is=K0 Standard Kermit  9-25-84\n:
+K1|kermitam|standard kermit plus am:\
+	:am:is=K1 Standard Kermit plus Automatic Margins\n:tc=kermit:
+# IBMPC Kermit 1.2.  (gts 8-30-84)
+# Bugs :cd:ce: do not work except at beginning of line!  :cl: does not work,
+# but fake with :cl=\EH\EJ (since :cd=\EJ: works at beginning of line).
+K2|pckermit|pckermit12|UCB IBMPC Kermit 1.2:\
+	:am:li#25:cd@:ce@:cl=\EH\EJ:\
+	:is=K2 UCB IBMPC Kermit 1.2  8-30-84\n:tc=kermit:
 #
 # END OF TERMCAP
 #  ------------------------
