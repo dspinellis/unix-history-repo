@@ -1,4 +1,4 @@
-/*	dver.c	1.8	83/08/19
+/*	dver.c	1.9	83/10/22
  *
  * Versatec driver for the new troff
  *
@@ -61,7 +61,8 @@ x ..\n	device control functions:
 #include "dev.h"
 
 
-#define DEBUGABLE		/* Yes, debugable... */
+/* #define DEBUGABLE		/* No, not debugable... */
+#define DRIVER			/* Yes, we're driving directly */
 #define	NFONTS	60		/* total number of fonts useable */
 #define	MAXSTATE 6		/* number of environments rememberable */
 #define OPENREAD 0		/* mode for openning files */
@@ -78,7 +79,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + (n))
 
 
-char	SccsId[]= "dver.c	1.8	83/08/19";
+char	SccsId[]= "dver.c	1.9	83/10/22";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -90,7 +91,6 @@ struct	font	*fontbase[NFONTS+1];
 short *	pstab;		/* point size table pointer */
 int	nsizes;		/* number of sizes device is capable of printing */
 int	nfonts;		/* number of fonts device is capable of printing */
-int	smnt;		/* index of first special font */
 int	nchtab;
 char *	chname;
 short *	chtab;
@@ -99,11 +99,7 @@ char *	widtab[NFONTS+1];	/* width table for each font */
 char *	codetab[NFONTS+1];	/* device codes */
 char *	fontdir = FONTDIR;	/* place to find devxxx directories */
 char *	bitdir = BITDIR;	/* place to find raster fonts and fontmap */
-
-struct {			/* table of what font */
-	char *name;		/*   name is on what */
-	int number;		/*   position in font tables */
-} fontname[NFONTS+1];
+char *	fontname[NFONTS+1];	/* list of what font is on what position */
 struct {			/* table of what font */
 	char fname[3];		/*   name maps to what */
 	char *ffile;		/*   filename in bitdirectory */
@@ -130,12 +126,13 @@ int	lastw;		/* width of last character printed */
 #define	RES		200		/* resolution of the device (dots/in) */
 #define RASTER_LENGTH	7040		/* device line length */
 #define BYTES_PER_LINE	(RASTER_LENGTH/8)
-#define BAND		3			/* length of a band in inches */
-#define NLINES		(int)(BAND * RES)	/* 3" long bands */
+#define BAND		2			/* length of a band in inches */
+#define NLINES		(int)(BAND * RES)	/* BAND" long bands */
 #define BUFFER_SIZE	(NLINES*BYTES_PER_LINE)	/* number of chars in picture */
 
 #define BUFTOP		(&buffer[0])
 #define BUFBOTTOM	(&buffer[BUFFER_SIZE] - 1)
+#define buf0p		BUFTOP			/* vorigin in circular buffer */
 #define PAGEEND		1			/* flags to "outband" to tell */
 #define OVERBAND	0			/* whether to fill out a page */
 
@@ -143,13 +140,13 @@ int	lastw;		/* width of last character printed */
 int	pltmode[] = { VPLOT };
 int	prtmode[] = { VPRINT };
 char	buffer[BUFFER_SIZE];	/* versatec-wide NLINES buffer */
-char *	buf0p = BUFTOP;		/* vorigin in circular buffer */
 int	vorigin = 0;		/* where on the page startbuf maps to */
 int	pagelen = 0;		/* how long the current "page" has printed */
 
 char *	calloc();
 char *	nalloc();
 char *	allpanic();
+char *	operand();
 
 struct header {
 	short	magic;
@@ -170,14 +167,11 @@ struct	dispatch{
 };
 
 struct	fontdes {
-	int	fnum;
+	int	fnum;			/* if == -1, this position unused */
 	int	psize;
 	struct	dispatch *disp;
 	char	*bits;
-} fontdes[NFONTS] = {
-	-1,
-	-1
-};
+} fontdes[NFONTS+1];			/* is initialized at start of main */
 
 struct dispatch *dispatch;
 int	cfnum = -1;
@@ -193,55 +187,83 @@ int	npsize = 10;
 main(argc, argv)
 char *argv[];
 {
-	FILE *fp;
+	register FILE *fp;
+	register int i;
 
-	while (argc > 1 && argv[1][0] == '-') {
-		switch (argv[1][1]) {
+	for (i = 0; i <= NFONTS; fontdes[i++].fnum = -1);
+	while (--argc > 0 && **++argv == '-') {
+		switch ((*argv)[1]) {
 		case 'F':
-			bitdir = &argv[1][2];
+			bitdir = operand(&argc, &argv);
 			break;
 		case 'f':
-			fontdir = &argv[1][2];
+			fontdir = operand(&argc, &argv);
 			break;
 		case 'o':
-			outlist(&argv[1][2]);
+			outlist(operand(&argc, &argv));
 			break;
 #ifdef DEBUGABLE
 		case 'd':
-			dbg = atoi(&argv[1][2]);
+			dbg = atoi(operand(&argc, &argv));
 			if (dbg == 0) dbg = 1;
 			break;
 #endif
 		case 's':
-			spage = atoi(&argv[1][2]);
+			spage = atoi(operand(&argc, &argv));
 			if (spage <= 0)
 				spage = 9999;
 			break;
 		}
-		argc--;
-		argv++;
 	}
+#ifdef DRIVER
+	ioctl(OUTFILE, VSETSTATE, pltmode);
+#endif
 
-/*nov	ioctl(OUTFILE, VSETSTATE, pltmode);  */
-
-	if (argc <= 1)
+	if (argc < 1)
 		conv(stdin);
 	else
-		while (--argc > 0) {
-			if (strcmp(*++argv, "-") == 0)
+		while (argc-- > 0) {
+			if (strcmp(*argv, "-") == 0)
 				fp = stdin;
 			else if ((fp = fopen(*argv, "r")) == NULL)
 				error(FATAL, "can't open %s", *argv);
 			conv(fp);
 			fclose(fp);
+			argv++;
 		}
 	exit(0);
 }
 
+
+/*----------------------------------------------------------------------------*
+ | Routine:	char  * operand (& argc,  & argv)
+ |
+ | Results:	returns address of the operand given with a command-line
+ |		option.  It uses either "-Xoperand" or "-X operand", whichever
+ |		is present.  The program is terminated if no option is present.
+ |
+ | Side Efct:	argc and argv are updated as necessary.
+ *----------------------------------------------------------------------------*/
+
+char *operand(argcp, argvp)
+int * argcp;
+char ***argvp;
+{
+	if ((**argvp)[2]) return(**argvp + 2); /* operand immediately follows */
+	if ((--*argcp) <= 0) {			/* no operand */
+	    error (FATAL, "command-line option operand missing.");
+	}
+	return(*(++(*argvp)));			/* operand next word */
+}
+
+
 outlist(s)	/* process list of page numbers to be printed */
 char *s;
 {
-	int n1, n2, i;
+	int n1, n2;
+#ifdef DEBUGABLE
+	int i;
+#endif
 
 	nolist = 0;
 	while (*s) {
@@ -309,11 +331,11 @@ register FILE *fp;
 			put1s(str);
 			break;
 		case 't':	/* straight text */
-			fgets(buf, sizeof(buf), fp);
+			(void) fgets(buf, sizeof(buf), fp);
 			t_text(buf);
 			break;
 		case 'D':	/* draw function */
-			fgets(buf, sizeof(buf), fp);
+			(void) fgets(buf, sizeof(buf), fp);
 			switch (buf[0]) {
 			case 'l':	/* draw a line */
 			    sscanf(buf+1, "%d %d", &n, &m);
@@ -388,7 +410,7 @@ register FILE *fp;
 			vmot(n);
 			break;
 		case 'P':	/* new spread */
-			outband(OVERBAND);
+			if (output) outband(OVERBAND);
 			break;
 		case 'p':	/* new page */
 			fscanf(fp, "%d", &n);
@@ -438,7 +460,7 @@ FILE *fp;
 		break;
 	case 'f':	/* font used */
 		fscanf(fp, "%d %s", &n, str);
-		fgets(buf, sizeof buf, fp);	/* in case there's a filename */
+		(void) fgets(buf, sizeof buf, fp);   /* in case of filename */
 		ungetc('\n', fp);		/* fgets goes too far */
 		str1[0] = 0;			/* in case nothing comes in */
 		sscanf(buf, "%s", str1);
@@ -505,15 +527,17 @@ fileinit()
 #endif
 
 
-	sprintf(temp, "%s/devver/DESC.out", fontdir);
+	sprintf(temp, "%s/devvp/DESC.out", fontdir);
 	if ((fin = open(temp, 0)) < 0)
 		error(FATAL, "can't open tables for %s", temp);
-	read(fin, &dev, sizeof(struct dev));
+	if (read(fin, &dev, sizeof(struct dev)) != sizeof(struct dev))
+		error(FATAL, "can't read header for %s", temp);
 	nfonts = dev.nfonts;
 	nsizes = dev.nsizes;
 	nchtab = dev.nchtab;
 	filebase = calloc(1, dev.filesize);	/* enough room for whole file */
-	read(fin, filebase, dev.filesize);	/* all at once */
+	if (read(fin, filebase, dev.filesize) != dev.filesize)	/* at once */
+		error(FATAL, "can't read width table for %s", temp);
 	pstab = (short *) filebase;
 	chtab = pstab + nsizes + 1;
 	chname = (char *) (chtab + dev.nchtab);
@@ -521,9 +545,7 @@ fileinit()
 	for (i = 1; i <= nfonts; i++) {
 		fontbase[i] = (struct font *) p;
 		nw = *p & BMASK;		/* 1st thing is width count */
-		if (smnt == 0 && fontbase[i]->specfont == 1)
-			smnt = i;		/* first special font */
-		p += sizeof(struct font);	/* that is on the beginning */
+		p += sizeof(struct font);
 		widtab[i] = p;
 		codetab[i] = p + 2 * nw;
 		fitab[i] = p + 3 * nw;
@@ -540,6 +562,7 @@ fileinit()
 	close(fin);
 }
 
+#ifdef DEBUGABLE
 fontprint(i)	/* debugging print of font i (0,...) */
 {
 	int j, n;
@@ -568,6 +591,7 @@ fontprint(i)	/* debugging print of font i (0,...) */
 	}
 	fprintf(stderr,"\n");
 }
+#endif
 
 
 loadfont(n, s, s1)	/* load font info for font s on position n (0...) */
@@ -582,13 +606,14 @@ char *s, *s1;
 	if (strcmp(s, fontbase[n]->namefont) == 0)
 		return;
 	if (s1 == NULL || s1[0] == '\0')
-		sprintf(temp, "%s/devver/%s.out", fontdir, s);
+		sprintf(temp, "%s/devvp/%s.out", fontdir, s);
 	else
 		sprintf(temp, "%s/%s.out", s1, s);
 	if ((fin = open(temp, 0)) < 0)
 		error(FATAL, "can't open font table %s", temp);
 	norig = fontbase[n]->nwfont & BMASK;
-	read(fin, fontbase[n], 3*norig + nchtab+128-32 + sizeof(struct font));
+	if (read(fin,fontbase[n],3*norig+nchtab+128-32+sizeof(struct font)) < 0)
+		error(FATAL, "Can't read in font %s on position %d", s, n);
 	if ((fontbase[n]->nwfont & BMASK) > norig)
 		error(FATAL, "Font %s too big for position %d", s, n);
 	close(fin);
@@ -609,17 +634,15 @@ error(f, s, a1, a2, a3, a4, a5, a6, a7) {
 	fprintf(stderr, "dver: ");
 	fprintf(stderr, s, a1, a2, a3, a4, a5, a6, a7);
 	fprintf(stderr, "\n");
-	if (f)
-		exit(1);
+	if (f) exit(ABORT);
 }
 
 
 t_init()	/* initialize device */
 {
-	int i;
+	vorigin = pagelen = maxv = hpos = vpos = 0;
 
-	maxv = hpos = vpos = 0;
-
+	output = 0;		/* don't output anything yet */
 	setsize(t_size(10));	/* start somewhere */
 	setfont(1);
 }
@@ -666,13 +689,8 @@ t_page(n)	/* do whatever new page functions */
 	int i;
 
 
-	if (output) {
-		if (++scount >= spage) {
-			scount = 0;
-			t_reset('p');
-		} else
-			outband(PAGEEND);
-	}
+	if (output) outband(PAGEEND);
+
 	maxv = vpos = 0;
 
 	output = 1;
@@ -692,13 +710,14 @@ int page;
 {
     register int outsize;
 
-    if (page == PAGEEND) {		/* set to inch boundary */
-	if ((outsize = maxv - ++pagelen) < 1) return;
-	outsize = ((outsize + RES - 1) / RES) * RES * BYTES_PER_LINE;
-	vwrite(buf0p, outsize);
-	vclear(buf0p, outsize);
-	vorigin = 0;
-	pagelen = 0;
+    if (page == PAGEEND) {		/* set outsize to inch boundary */
+	outsize = (maxv + (RES - 1) - pagelen) / RES;
+	if (outsize < 1) return;	/* if outsize <= zero, forget it */
+
+	outsize *= RES * BYTES_PER_LINE;	/* are assured that outsize */
+	vwrite(buf0p, outsize);			/* will NOT be > BUFFER_SIZE */
+	vclear(buf0p, outsize);			/* since vsort makes sure of */
+	vorigin = pagelen = 0;			/* putting P commands in */
     } else {
 	vorigin += NLINES;
 	pagelen += NLINES;
@@ -727,6 +746,7 @@ int n;
 	return(i);
 }
 
+/*ARGSUSED*/
 t_charht(n)	/* set character height to n */
 int n;
 {
@@ -735,6 +755,7 @@ int n;
 #endif
 }
 
+/*ARGSUSED*/
 t_slant(n)	/* set slant to n */
 int n;
 {
@@ -789,14 +810,12 @@ char *s;
 
 t_reset(c)
 {	
-	output = 1;
 	switch(c){
-	case 'p':
-		outband(PAGEEND);
-		break;
 	case 's':
-		outband(PAGEEND);
-/*nov		ioctl(OUTFILE, VSETSTATE, prtmode); */
+		t_page(0);
+#ifdef DRIVER
+		ioctl(OUTFILE, VSETSTATE, prtmode);
+#endif
 		break;
 	}
 }
@@ -851,8 +870,8 @@ int c;
 	if (i != 0) {			/* it's on this font */
 		p = codetab[font];	/* get the printing value of ch */
 		pw = widtab[font];	/* get the width */
-	} else if (smnt > 0) {		/* on special (we hope) */
-		for (k=smnt, j=0; j <= nfonts; j++, k = (k+1) % (nfonts+1)){
+	} else		/* on another font (we hope) */
+		for (k=font, j=0; j <= nfonts; j++, k = (k+1) % (nfonts+1)){
 			if (fitab[k] == 0)
 				continue;
 			if ((i = fitab[k][c] & BMASK) != 0) {
@@ -862,7 +881,7 @@ int c;
 				break;
 			}
 		}
-	}
+
 	if (i == 0 || (code = p[i] & BMASK) == 0 || k > nfonts) {
 #ifdef DEBUGABLE
 		if (dbg) fprintf(stderr,"not found 0%o\n", c+32);
@@ -895,8 +914,9 @@ int n;
 		size = n;
 }
 
+/*ARGSUSED*/
 t_fp(n, s, si)	/* font position n now contains font s, intname si */
-int n;
+int n;		/* internal name is ignored */
 char *s, *si;
 {
 	register int i;
@@ -915,12 +935,10 @@ char *s, *si;
 		}
 	}
 
-	fontname[n].name = s;
-	fontname[n].number = atoi(si);
-	for(i = 0;i < NFONTS;i++)	/* free the bits of that font */
+	fontname[n] = s;
+	for(i = 0;i <= NFONTS;i++)	/* free the bits of that font */
 		if (fontdes[i].fnum == n){
 			nfree(fontdes[i].bits);
-			fontdes[i].bits = 0;
 			fontdes[i].fnum = -1;
 		}
 }
@@ -943,7 +961,7 @@ register int fsize;
 	fontwanted = 0;
 	if (fnum == cfnum && fsize == cpsize)
 		return(0);
-	for (i = 0; i < NFONTS; i++) {
+	for (i = 0; i <= NFONTS; i++) {
 		if (fontdes[i].fnum == fnum && fontdes[i].psize == fsize) {
 			cfnum = fontdes[i].fnum;
 			cpsize = fontdes[i].psize;
@@ -954,7 +972,7 @@ register int fsize;
 		}
 	}
 		/* this is a new font */
-	if (fnum < 0 || fnum > NFONTS || fontname[fnum].name == 0) {
+	if (fnum < 0 || fnum > NFONTS || fontname[fnum] == 0) {
 #ifdef DEBUGABLE
 	    if (dbg) error(!FATAL, "illegal font %d size %d", fnum, fsize);
 #endif
@@ -974,7 +992,7 @@ getfont()
 	register int fsize;
 	register int fontd;
 	register int d;
-	register int savesize = size;
+	register int sizehunt = size;
 	char cbuf[BUFSIZ];
 
 
@@ -984,18 +1002,18 @@ getfont()
 			/* a file of same style, different size to substitute */
 	d = -1;	/* direction to look in pstab (smaller first) */
 	do {
-	    sprintf(cbuf, "%s/%s.%d", bitdir, fontname[fnum].name, fsize);
+	    sprintf(cbuf, "%s/%s.%d", bitdir, fontname[fnum], fsize);
 	    fontd = open(cbuf, OPENREAD);
 	    if (fontd == -1) {		/* File wasn't found. Try another ps */
-		size += d;
-		if (size < 0) {		/* past beginning - look higher */
+		sizehunt += d;
+		if (sizehunt < 0) {	/* past beginning - look higher */
 		    d = 1;
-		    size = savesize + 1;
+		    sizehunt = size + 1;
 		}
-		if (size > nsizes) {	/* past top - forget it */
+		if (sizehunt > nsizes) {	/* past top - forget it */
 		    d = 0;
 		} else {
-		    fsize = pstab[size];
+		    fsize = pstab[sizehunt];
 		}
 	    }
 	} while (fontd == -1 && d != 0);
@@ -1003,7 +1021,7 @@ getfont()
 	if (fontd == -1) {		/* completely unsuccessful */
 	    perror(cbuf);
 	    error(!FATAL,"fnum = %d, psize = %d, name = %s",
-		fnum, npsize, fontname[fnum].name);
+		fnum, npsize, fontname[fnum]);
 	    fontwanted = 0;
 	    return (-1);
 	}
@@ -1014,8 +1032,7 @@ getfont()
 		cfont = relfont();
 		if ((bits=nalloc(header.size+DSIZ+1,1))== NULL)
 			if ((bits=allpanic(header.size+DSIZ+1))== NULL) {
-				fprintf(stderr,"%s: ran out of memory\n", cbuf);
-				exit(ABORT);
+				error(FATAL, "%s: ran out of memory", cbuf);
 			}
 
 			/*
@@ -1054,11 +1071,10 @@ relfont()
     register int newfont;
 
     for (newfont = 0; newfont < NFONTS; newfont++)
-	if (fontdes [newfont].bits == (char *) -1  ||  !fontdes [newfont].bits)
+	if (fontdes [newfont].fnum == -1)
 	    break;
-    if (fontdes [newfont].bits != (char *) -1  &&  fontdes [newfont].bits) {
+    if (fontdes [newfont].fnum != -1) {
 	nfree (fontdes [newfont].bits);
-	fontdes [newfont].bits = (char *)0;
 #ifdef DEBUGABLE
 	if (dbg) fprintf (stderr, "freeing position %d\n", newfont);
     } else {
@@ -1066,7 +1082,7 @@ relfont()
 	    fprintf (stderr, "taking, not freeing, position %d\n", newfont);
 #endif
     }
-    fontdes[newfont].bits = 0;
+    fontdes[newfont].fnum = -1;
     return (newfont);
 }
 
@@ -1075,12 +1091,9 @@ int nbytes;
 {
 	register int i;
 
-	for (i = 0; i <= NFONTS; i++)
-	    if (fontdes[i].bits != (char *)-1 && fontdes[i].bits != (char *)0)
-		nfree(fontdes[i].bits);
 	for (i = 0; i <= NFONTS; i++) {
+		if (fontdes[i].fnum != -1) nfree(fontdes[i].bits);
 		fontdes[i].fnum = fontdes[i].psize = -1;
-		fontdes[i].bits = 0;
 		cfnum = cpsize = -1;
 	}
 	return(nalloc(nbytes,1));
@@ -1108,20 +1121,21 @@ int code;		/* character to print */
     register int off8;		/* offset + 8 */
 
     if (fontwanted)
-	getfont();
+	if (getfont()) return;
     dis = dispatch + code;
     if (dis->nbytes) {
 	addr = bits + dis->addr;
 	llen = (dis->left + dis->right + 7) / 8;
 	nlines = dis->up + dis->down;
 	if ((i = vpos + dis->down) > maxv) maxv = i;
-	scanp = buf0p + (vpos - (vorigin + dis->up + 1)) * BYTES_PER_LINE
+	scanp = buf0p + (vpos - (vorigin + dis->up)) * BYTES_PER_LINE
 			+ (hpos - dis->left) / 8;
 	scanp_inc = BYTES_PER_LINE - llen;
 	offset = - ((hpos - dis->left) &07);
 	off8 = offset + 8;
 	for (i = 0; i < nlines; i++) {
-	    if (scanp + (count = llen) > BUFBOTTOM) return;
+	    if ((unsigned) (scanp + (count = llen)) > (unsigned) BUFBOTTOM)
+		return;
 	    if (scanp >= BUFTOP) {
 		do {
 		    fontdata = *(unsigned *)addr;
@@ -1138,19 +1152,17 @@ int code;		/* character to print */
 	    scanp += scanp_inc+count;
 	    addr += count;
 	}
-	return;
     }
-    return;
 }
 
 
 vwrite(buf,usize)
 char *buf;
-unsigned usize;
+int usize;
 {
 	register int tsize = 0;
 
-	while (usize){
+	while (usize) {
 		buf += tsize;
 		tsize = usize > MAXWRIT ? MAXWRIT : usize;
 #ifdef DEBUGABLE
@@ -1166,7 +1178,7 @@ unsigned usize;
 
 vclear (ptr, nbytes)
 char	*ptr;
-unsigned nbytes;
+int nbytes;
 {
     register tsize = 0;
 
@@ -1186,7 +1198,7 @@ unsigned nbytes;
 
 /*ARGSUSED*/
 clear(lp, nbytes)
-int *lp;
+char *lp;
 int nbytes;
 {
 	asm("movc5 $0,(sp),$0,8(ap),*4(ap)");
