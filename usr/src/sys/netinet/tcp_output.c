@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_output.c	7.10 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -85,25 +85,18 @@ again:
 		/*
 		 * If FIN has been sent but not acked,
 		 * but we haven't been called to retransmit,
-		 * len will be -1; transmit if acking, otherwise no need.
-		 * Otherwise, window shrank after we sent into it.
-		 * If window shrank to 0, cancel pending retransmit
-		 * and pull snd_nxt back to (closed) window.
-		 * We will enter persist state below.
-		 * If the window didn't close completely,
+		 * len will be -1.  Otherwise, window shrank
+		 * after we sent into it.  If window shrank to 0,
+		 * cancel pending retransmit and pull snd_nxt
+		 * back to (closed) window.  We will enter persist
+		 * state below.  If the window didn't close completely,
 		 * just wait for an ACK.
 		 */
-		if (flags & TH_FIN) {
-			if (tp->t_flags & TF_ACKNOW)
-				len = 0;
-			else
-				return (0);
-		} else if (win == 0) {
+		len = 0;
+		if (win == 0) {
 			tp->t_timer[TCPT_REXMT] = 0;
 			tp->snd_nxt = tp->snd_una;
-			len = 0;
-		} else
-			return (0);
+		}
 	}
 	if (len > tp->t_maxseg) {
 		len = tp->t_maxseg;
@@ -159,15 +152,16 @@ again:
 	/*
 	 * Compare available window to amount of window
 	 * known to peer (as advertised window less
-	 * next expected input.)  If the difference is 35% or more of the
-	 * maximum possible window, then want to send a window update to peer.
+	 * next expected input).  If the difference is at least two
+	 * max size segments or at least 35% of the maximum possible
+	 * window, then want to send a window update to peer.
 	 */
 	if (win > 0) {
 		int adv = win - (tp->rcv_adv - tp->rcv_nxt);
 
-		if (100 * adv / so->so_rcv.sb_hiwat >= 35)
+		if (so->so_rcv.sb_cc == 0 && adv >= 2 * tp->t_maxseg)
 			goto send;
-		if (adv >= 2 * tp->t_maxseg && so->so_rcv.sb_cc == 0)
+		if (100 * adv / so->so_rcv.sb_hiwat >= 35)
 			goto send;
 	}
 
