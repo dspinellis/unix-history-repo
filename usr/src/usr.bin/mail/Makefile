@@ -1,4 +1,4 @@
-#	Makefile	2.16	84/07/19
+#	Makefile	2.17	84/07/26
 #
 # Berkeley Mail
 #
@@ -7,12 +7,7 @@ XSTR=	/usr/ucb/xstr
 DESTDIR=
 CTAGS=	/usr/ucb/ctags -w
 VPRINT=	/usr/ucb/print
-CGRAF=	/ja/rigel/rigel/bin/cgraf
-CGRAPH=	/ja/rigel/rigel/bin/cgraph
-NMKINDEX=/ja/rigel/rigel/bin/nmkindex
-DIRTCLOD=/ja/rigel/rigel/bin/dirtclod
 LIBES=
-ED=	-ed
 AS=	-as
 RM=	-rm
 OBJS=	version.o aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o \
@@ -44,9 +39,6 @@ Mail:	$S $(OBJS)
 	@echo Loading ...
 	@$(CC) -n -o Mail $(OBJS) $(LIBES)
 	@size Mail
-
-mail.g:	$(SRCS)
-	$(CGRAF) $(SRCS) > mail.g
 
 install: all
 	install -s Mail ${DESTDIR}/usr/ucb/Mail
@@ -88,11 +80,7 @@ cmdtab.o: cmdtab.c
 	$(CC) -R -c $(CFLAGS) cmdtab.c
 
 print:	$S fmt.c
-	$(CGRAPH) > mail.g;
-	$(NMKINDEX) > mail.i;
-	$(DIRTCLOD) -x mail.i -p mail.g > mail.x
-	@$(VPRINT) Makefile mail.x rcv.h def.h glob.h local.h v7.local.h \
-	    $(SRCS) fmt.c;
+	@$(VPRINT) Makefile rcv.h def.h glob.h local.h v7.local.h $(SRCS) fmt.c
 
 wc:
 	@wc rcv.h def.h glob.h local.h v7.local.h $(SRCS)
