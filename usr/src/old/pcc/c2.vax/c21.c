@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)c21.c 4.5 %G%";
+static	char sccsid[] = "@(#)c21.c 4.6 %G%";
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
 /*
@@ -489,8 +489,9 @@ mov:
 	case BIT:
 		splitrand(p);
 		/* fool repladdr into doing right number of operands */
-		if (p->op==CASE || p->op==MOVC3 || p->op==PROBER || p->op==PROBEW)
-			lastrand=regs[RT4];
+		if (p->op==CASE || p->op==PROBER || p->op==PROBEW) lastrand=regs[RT4];
+		else if (p->op==CMPV || p->op==CMPZV) lastrand=regs[RT4+1];
+		else if (p->op==MOVC3) lastrand=regs[RT1];
 		else lastrand=regs[RT3];
 		repladdr(p);
 		if (p->op==CALLS || p->op==MOVC3) clearreg();
