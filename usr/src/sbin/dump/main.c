@@ -5,10 +5,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include "dump.h"
+#include "pathnames.h"
 
 int	notify = 0;	/* notify operator flag */
 int	blockswritten = 0;	/* number of blocks written on current tape */
@@ -37,8 +38,8 @@ main(argc, argv)
 	tsize = 0;	/* Default later, based on 'c' option for cart tapes */
 	tape = TAPE;
 	disk = DISK;
-	increm = NINCREM;
-	temp = TEMP;
+	increm = _PATH_DUMPDATES;
+	temp = _PATH_DTMP;
 	if (TP_BSIZE / DEV_BSIZE == 0 || TP_BSIZE % DEV_BSIZE != 0) {
 		msg("TP_BSIZE must be a multiple of DEV_BSIZE\n");
 		dumpabort();
