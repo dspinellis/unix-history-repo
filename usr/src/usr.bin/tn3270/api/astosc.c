@@ -5,7 +5,6 @@
 #include "../ctlr/function.h"
 
 #include "astosc.h"
-#include "state.h"
 
 struct astosc astosc[256] = {
 #include "astosc.out"
@@ -43,8 +42,8 @@ register char *string2;
 
 /*
  * This routine takes a string and returns an integer.  It may return
- * STATE_NULL if there is no other integer which corresponds to the
- * string.  STATE_NULL implies an error.
+ * -1 if there is no other integer which corresponds to the
+ * string.  -1 implies an error.
  */
 
 int
@@ -58,5 +57,5 @@ register char *string;
 	    return this-astosc;
 	}
     }
-    return STATE_NULL;
+    return -1;
 }
