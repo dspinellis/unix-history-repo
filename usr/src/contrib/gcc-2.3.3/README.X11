@@ -1,0 +1,203 @@
+How to compile X11R5 (patch level 11) with GCC version 2:
+
+The patches include support for building the shared libraries with GCC 2 on 
+the Sparc and 68k machines.  NOTE: Such shared libraries DO NOT WORK
+with executables previously linked using Sun CC!  This is because
+neither those executables nor the gcc-compiled shared libraries contain
+libgcc.a.  The shared libraries do work with executables linked using
+GCC (running the Sun linker, of course) because GCC tells the linker to
+link in libgcc.a.  Because of these limitations the default behavior is
+to NOT build the shared libraries with gcc.  If you want the gcc-compiled
+shared libraries turn on "Gcc2BuildLibs" in site.def
+
+If you want to build a shared library that works with executables
+linked with Sun CC, you will have to arrange to include libgcc.a in
+the shared libraries.  The instructions below do not handle this.
+
+Sun forgot to include a static version of libdl.a with some versions
+of SunOS (4.1 mainly).  If you see undefined symbols _dlopen, _dlsym,
+or _dlclose when linking with -lX11, compile and link against the file
+mit/util/misc/dlsym.c in the MIT X11R5 distribution.
+
+mit/config/Imake.tmpl -- Do not set -fstrength-reduce if we have GCC 2.  If
+-fstrength-reduce (or any other -f option) is a major win, then it will
+most likely be turned on by -O2 optimization.
+
+mit/config/sunLib.rules -- If HasGcc2 and Gcc2BuildLibs are defined, then 
+use gcc -fpic to generate PIC code.  Make sure that gcc does not use gas (the 
+GNU assembler) when compiling PIC code; gas does not assemble it correctly.  
+If you have gas installed where gcc uses it by default, you might have to add
+-B/bin/ to the PositionIndependentCFlags.
+
+mit/config/site.def -- Define HasGcc2 to be YES.
+
+mit/config/sun.cf -- When compiling with GCC 2, use -O2 optimization.
+
+mit/rgb/Imakefile -- No longer need to compile some modules with 
+cc on the Sparc since GCC 2 produces proper -fpcc-struct-return code.
+
+mit/server/os/Imakefile -- Likewise.
+
+mit/clients/twm/Imakefile -- fix bad decls of malloc, realloc in gram.c.
+
+*** mit/config/Imake.tmpl.ORIG	Tue Dec 31 11:07:56 1991
+--- mit/config/Imake.tmpl	Tue Dec 31 12:30:47 1991
+***************
+*** 499,508 ****
+--- 499,512 ----
+  #define HasGcc NO
+  #endif
+  #ifndef CcCmd
++ #if HasGcc2
++ #define CcCmd gcc -fpcc-struct-return
++ #else
+  #if HasGcc
+  #define CcCmd gcc -fstrength-reduce -fpcc-struct-return 
+  #else
+  #define CcCmd cc
++ #endif
+  #endif
+  #endif
+  #if HasFortran
+*** mit/config/sunLib.rules.ORIG	Tue Dec 31 11:11:24 1991
+--- mit/config/sunLib.rules	Tue May  5 12:26:12 1992
+***************
+*** 23,30 ****
+--- 23,34 ----
+  #define SharedLibraryLoadFlags -assert pure-text
+  #endif
+  #ifndef PositionIndependentCFlags
++ #if defined(HasGcc2) && defined (Gcc2BuildLibs)
++ #define PositionIndependentCFlags -fpic
++ #else
+  #define PositionIndependentCFlags -pic
+  #endif
++ #endif
+  
+  /*
+   * InstallSharedLibrary - generate rules to install the shared library.
+*** mit/config/site.def.ORIG	Tue Dec 31 11:13:49 1991
+--- mit/config/site.def	Tue Dec 31 12:02:59 1991
+***************
+*** 25,31 ****
+  
+  #ifdef BeforeVendorCF
+  
+! /* #define HasGcc YES */
+  
+  #endif /* BeforeVendorCF */
+  
+--- 25,33 ----
+  
+  #ifdef BeforeVendorCF
+  
+! #define HasGcc YES 
+! #define HasGcc2 YES
+! /* #define Gcc2BuildLibs YES */
+  
+  #endif /* BeforeVendorCF */
+  
+*** mit/config/sun.cf.ORIG	Tue Dec 31 11:13:57 1991
+--- mit/config/sun.cf	Tue May  5 12:29:50 1992
+***************
+*** 34,42 ****
+--- 41,61 ----
+  
+  #if HasGcc
+  
++ #if defined(HasGcc2) 
++ #define OptimizedCDebugFlags -O2 
++ /* Leave Alone XXX */
++ #else 
++ #define OptimizedCDebugFlags -O
+  #define SharedLibraryCcCmd cc
+  #define ExtraLoadFlags -B/usr/bin/
+  #define AllocateLocalDefines /**/
++ #endif
++ 
++ #if !defined(Gcc2BuildLibs)
++ #define SharedLibraryCcCmd cc
++ #define ExtraLoadFlags -B/usr/bin/
++ #define AllocateLocalDefines /**/
++ #endif
+  
+  .c.o:
+  	$(CC) -c $(CFLAGS) $*.c
+*** mit/rgb/Imakefile.ORIG	Wed Jan 15 16:43:18 1992
+--- mit/rgb/Imakefile	Thu Jan  2 13:34:09 1992
+***************
+*** 17,23 ****
+  #if !(defined(SGIArchitecture) || SystemV4)
+         DBMLIB = -ldbm
+  #endif
+! #if defined(SparcArchitecture) && HasGcc
+             CC = cc
+      CCOPTIONS = /**/
+      EXTRA_LOAD_FLAGS = /**/
+--- 17,23 ----
+  #if !(defined(SGIArchitecture) || SystemV4)
+         DBMLIB = -ldbm
+  #endif
+! #if defined(SparcArchitecture) && HasGcc && !defined(HasGcc2)
+             CC = cc
+      CCOPTIONS = /**/
+      EXTRA_LOAD_FLAGS = /**/
+*** mit/server/os/Imakefile.ORIG	Wed Jan 15 16:46:23 1992
+--- mit/server/os/Imakefile	Wed Jan 15 16:46:48 1992
+***************
+*** 132,138 ****
+  SpecialObjectRule(osinit.o,$(ICONFIGFILES),$(ADM_DEFINES))
+  SpecialObjectRule(WaitFor.o,$(ICONFIGFILES),$(EXT_DEFINES))
+  SpecialObjectRule(fonttype.o,$(ICONFIGFILES),$(FONT_DEFINES))
+! #if defined(SparcArchitecture) && HasGcc
+  oscolor.o: $(ICONFIGFILES)
+  	$(RM) $@
+  	cc -c $(DBM_DEFINES) $(CDEBUGFLAGS) $(ALLDEFINES) $*.c
+--- 132,138 ----
+  SpecialObjectRule(osinit.o,$(ICONFIGFILES),$(ADM_DEFINES))
+  SpecialObjectRule(WaitFor.o,$(ICONFIGFILES),$(EXT_DEFINES))
+  SpecialObjectRule(fonttype.o,$(ICONFIGFILES),$(FONT_DEFINES))
+! #if defined(SparcArchitecture) && HasGcc && !defined(HasGcc2)
+  oscolor.o: $(ICONFIGFILES)
+  	$(RM) $@
+  	cc -c $(DBM_DEFINES) $(CDEBUGFLAGS) $(ALLDEFINES) $*.c
+*** 1.1 1992/09/08 19:52:07
+--- mit/server/ddx/sun/Imakefile        1992/09/08 21:10:22
+***************
+*** 43,48 ****
+--- 43,53 ----
+  LinkFile(sunGX.o,sunGX.o.dist)
+  #endif
+
++ #if HasGcc2
++ SpecialObjectRule(sunCG2C.o,sunCG2C.c,-fvolatile)
++ SpecialObjectRule(sunCG2M.o,sunCG2M.c,-fvolatile)
++ #endif
++ 
+  sunInitExtMono.o: $(ICONFIGFILES)
+  ObjectFromSpecialSource(sunInitExtMono,../mi/miinitext,-UPEXEXT)
+  ObjectFromSpecialSource(sunInitMono,sunInit,-DMONO_ONLY)
+
+*** /tmp/RCSAa24446     Tue Sep 15 12:23:32 1992
+--- mit/clients/twm/Imakefile   Thu Aug 13 18:18:07 1992
+***************
+*** 32,41 ****
+--- 32,48 ----
+  ComplexProgramTarget(twm)
+  InstallNonExecFile(system.twmrc,$(TWMDIR))
+  
++ #if HasGcc2 && defined (SunArchitecture)
+  gram.h gram.c: gram.y
+        yacc $(YFLAGS) gram.y
++       sed -e 's/^extern char \*malloc(), \*realloc();//g' y.tab.c >gram.c
++       $(MV) y.tab.h gram.h
++ #else
++ gram.h gram.c: gram.y
++       yacc $(YFLAGS) gram.y
+        $(MV) y.tab.c gram.c
+        $(MV) y.tab.h gram.h
++ #endif
+  
+  clean::
+        $(RM) y.tab.h y.tab.c lex.yy.c gram.h gram.c lex.c deftwmrc.c 
+
