@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1989, 1991 The Regents of the University of California.
+ * Copyright (c) 1991 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_debug.c	5.4 (Berkeley) %G%
+ *	@(#)lfs_debug.c	7.1 (Berkeley) %G%
  */
 
 #ifdef DEBUG
@@ -12,15 +12,15 @@
 #include <sys/namei.h>
 #include <sys/vnode.h>
 
-#include <ufs/quota.h>
-#include <ufs/inode.h>
+#include <ufs/ufs/quota.h>
+#include <ufs/ufs/inode.h>
 
-#include <lfs/lfs.h>
-#include <lfs/lfs_extern.h>
+#include <ufs/lfs/lfs.h>
+#include <ufs/lfs/lfs_extern.h>
 
 void 
 lfs_dump_super(lfsp)
-	LFS *lfsp;
+	struct lfs *lfsp;
 {
 	int i;
 
