@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rmt.c	4.3 82/05/19";
+static char sccsid[] = "@(#)rmt.c	4.4 (Berkeley) 84/11/15";
 #endif
 
 /*
@@ -28,6 +28,9 @@ char	*sprintf();
 long	lseek();
 
 FILE	*debug;
+#define	DEBUG(f)	if (debug) fprintf(debug, f)
+#define	DEBUG1(f,a)	if (debug) fprintf(debug, f, a)
+#define	DEBUG2(f,a1,a2)	if (debug) fprintf(debug, f, a1, a2)
 
 main(argc, argv)
 	int argc;
@@ -54,37 +57,37 @@ top:
 	case 'O':
 		if (tape >= 0)
 			(void) close(tape);
-		gets(device); gets(mode);
-if (debug) fprintf(debug, "rmtd: O %s %s\n", device, mode);
+		getstring(device); getstring(mode);
+		DEBUG2("rmtd: O %s %s\n", device, mode);
 		tape = open(device, atoi(mode));
 		if (tape < 0)
 			goto ioerror;
 		goto respond;
 
 	case 'C':
-if (debug) fprintf(debug, "rmtd: C\n");
-		gets(device);		/* discard */
+		DEBUG("rmtd: C\n");
+		getstring(device);		/* discard */
 		if (close(tape) < 0)
 			goto ioerror;
 		tape = -1;
 		goto respond;
 
 	case 'L':
-		gets(count); gets(pos);
-if (debug) fprintf(debug, "rmtd: L %s %s\n", count, pos);
+		getstring(count); getstring(pos);
+		DEBUG2("rmtd: L %s %s\n", count, pos);
 		rval = lseek(tape, (long) atoi(count), atoi(pos));
 		if (rval < 0)
 			goto ioerror;
 		goto respond;
 
 	case 'W':
-		gets(count);
+		getstring(count);
 		n = atoi(count);
-if (debug) fprintf(debug, "rmtd: W %s\n", count);
+		DEBUG1("rmtd: W %s\n", count);
 		for (i = 0; i < n; i += cc) {
 			cc = read(0, &record[i], n - i);
 			if (cc <= 0) {
-if (debug) fprintf(debug, "rmtd: premature eof\n");
+				DEBUG("rmtd: premature eof\n");
 				exit(1);
 			}
 		}
@@ -94,8 +97,8 @@ if (debug) fprintf(debug, "rmtd: premature eof\n");
 		goto respond;
 
 	case 'R':
-		gets(count);
-if (debug) fprintf(debug, "rmtd: R %s\n", count);
+		getstring(count);
+		DEBUG1("rmtd: R %s\n", count);
 		n = atoi(count);
 		if (n > sizeof (record))
 			n = sizeof (record);
@@ -108,8 +111,8 @@ if (debug) fprintf(debug, "rmtd: R %s\n", count);
 		goto top;
 
 	case 'I':
-		gets(op); gets(count);
-if (debug) fprintf(debug, "rmtd: I %s %s\n", op, count);
+		getstring(op); getstring(count);
+		DEBUG2("rmtd: I %s %s\n", op, count);
 		{ struct mtop mtop;
 		  mtop.mt_op = atoi(op);
 		  mtop.mt_count = atoi(count);
@@ -120,7 +123,7 @@ if (debug) fprintf(debug, "rmtd: I %s %s\n", op, count);
 		goto respond;
 
 	case 'S':		/* status */
-if (debug) fprintf(debug, "rmtd: S\n");
+		DEBUG("rmtd: S\n");
 		{ struct mtget mtget;
 		  if (ioctl(tape, MTIOCGET, (char *)&mtget) < 0)
 			goto ioerror;
@@ -130,11 +133,11 @@ if (debug) fprintf(debug, "rmtd: S\n");
 		}
 
 	default:
-if (debug) fprintf(debug, "rmtd: garbage command %c\n", c);
+		DEBUG1("rmtd: garbage command %c\n", c);
 		exit(1);
 	}
 respond:
-if (debug) fprintf(debug, "rmtd: A %d\n", rval);
+	DEBUG1("rmtd: A %d\n", rval);
 	(void) sprintf(resp, "A%d\n", rval);
 	(void) write(1, resp, strlen(resp));
 	goto top;
@@ -143,7 +146,7 @@ ioerror:
 	goto top;
 }
 
-gets(bp)
+getstring(bp)
 	char *bp;
 {
 	int i;
@@ -162,7 +165,7 @@ error(num)
 	int num;
 {
 
-if (debug) fprintf(debug, "rmtd: E %d (%s)\n", num, sys_errlist[num]);
+	DEBUG2("rmtd: E %d (%s)\n", num, sys_errlist[num]);
 	(void) sprintf(resp, "E%d\n%s\n", num, sys_errlist[num]);
 	(void) write(1, resp, strlen (resp));
 }
