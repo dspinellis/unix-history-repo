@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysctl.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysctl.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -117,7 +117,7 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	if (Aflag || aflag) {
+	if (argc == 0 && (Aflag || aflag)) {
 		debuginit();
 		vfsinit();
 		for (lvl1 = 1; lvl1 < CTL_MAXID; lvl1++)
