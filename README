@@ -1,0 +1,36 @@
+This is a distribution kit for the first release of the BSD networking
+software.  This software is
+	Copyright (c) 1989 The Regents of the University of California,
+but may be used and redistributed freely with due credit to the University;
+see the license agreement and/or the copyright notices in the individual files
+for details.
+
+Each program is in a separate directory which contains both the source
+and the manual page(s) for the program.  The kernel-related sources are
+under the sys directory, the include files meant for /usr/include are in
+the include directory, and the library routines are in the lib directory.
+Additional documentation is in the doc and man directories.
+
+Makefiles:
+	-- the Makefiles in these directories use the command mkdep(1)
+	-- they also presume a built-in rule in make that knows how to
+	   format manual pages, i.e. use "nroff -man -h" to convert the
+	   suffixes .1-.8 into the suffix .0.  Diffs for this change
+	   are supplied in the make directory.
+	-- as part of moving the manual pages into the source tree we
+	   removed /usr/man/man* and change the man(1) program to look
+	   for manual pages in /usr/man/cat* ONLY.  These makefiles
+	   expect the directories /usr/man/cat[1-8] to exist.
+
+Mkdep:
+	-- is simply a shell script that formats the output of the -M
+	   flag to the compiler and installs the result in a file named
+	   ".depend" in the current directory.  This assumes that make
+	   reads this file.  If it doesn't, you may wish to use mkdep.append
+	   which edits the dependencies into the Makefile itself.  Diffs
+	   for this change are supplied in the make directory.
+	-- if your compiler doesn't have the -M flag, add it.  If you
+	   can't add it, there's a version of mkdep in the mkdep directory
+	   that makes an attempt to work anyway.  Ultrix uses the '-Em'
+	   flag, there's a version that works with that, also.
+
