@@ -55,7 +55,9 @@ static char *bindirs[] = {
 	"/usr/old",
 	"/usr/contrib",
 	"/usr/games",
+	"/usr/gnu",
 	"/usr/local",
+	"/usr/local/bin",
 	"/usr/libexec",
 	"/usr/include",
 	"/usr/hosts",
@@ -80,17 +82,28 @@ static char *bindirs[] = {
 };
 /* This needs to be redone - man pages live with sources */
 static char *mandirs[] = {
-	"/usr/man/man1",
-	"/usr/man/man2",
-	"/usr/man/man3",
-	"/usr/man/man4",
-	"/usr/man/man5",
-	"/usr/man/man6",
-	"/usr/man/man7",
-	"/usr/man/man8",
-	"/usr/man/manl",
-	"/usr/man/mann",
-	"/usr/man/mano",
+	"/usr/share/man/man1",
+	"/usr/share/man/man2",
+	"/usr/share/man/man3",
+	"/usr/share/man/man4",
+	"/usr/share/man/man5",
+	"/usr/share/man/man6",
+	"/usr/share/man/man7",
+	"/usr/share/man/man8",
+	"/usr/share/man/manl",
+	"/usr/share/man/mann",
+	"/usr/share/man/mano",
+	"/usr/local/man/man1",
+	"/usr/local/man/man2",
+	"/usr/local/man/man3",
+	"/usr/local/man/man4",
+	"/usr/local/man/man5",
+	"/usr/local/man/man6",
+	"/usr/local/man/man7",
+	"/usr/local/man/man8",
+	"/usr/local/man/manl",
+	"/usr/local/man/mann",
+	"/usr/local/man/mano",
 	0
 };
 static char *srcdirs[]  = {
@@ -115,6 +128,7 @@ static char *srcdirs[]  = {
 	"/usr/src/root",
 	"/usr/src/old",
 	"/usr/src/include",
+	"/usr/src/gnu",
 	/* still need libs */
 #ifdef notdef /* before reorg */
 	"/usr/src/bin",
