@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)files.c	4.18 (Berkeley) 88/09/13";
+static	char *sccsid = "@(#)files.c	4.19 (Berkeley) 90/01/30";
 #include <fcntl.h>
 
 /* UNIX DEPENDENT PROCEDURES */
@@ -224,7 +224,7 @@ struct dirhdr *od;
 struct pattern *patp;
 struct varblock *cp, *varptr();
 char *path, pth[BUFSIZ], *strcpy();
-struct direct *dptr;
+struct dirent *dptr;
 
 
 thisdbl = 0;
