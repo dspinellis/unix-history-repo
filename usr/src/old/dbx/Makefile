@@ -3,8 +3,8 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 # make file for debugger "dbx"
 #
@@ -19,7 +19,6 @@
 .SUFFIXES:
 .SUFFIXES: .h .c .s .o
 
-MACHINE	= unknown
 AOUT	= tdbx
 DESTDIR	=
 DEST	= /usr/ucb/dbx
