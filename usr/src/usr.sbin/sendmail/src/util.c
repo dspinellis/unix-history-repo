@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.28		%G%);
+SCCSID(@(#)util.c	3.29		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -578,7 +578,7 @@ xunlink(f)
 	i = unlink(f);
 # ifdef LOG
 	if (i < 0 && LogLevel > 21)
-		syslog(LOG_DEBUG, "%s: unlink-fail %e");
+		syslog(LOG_DEBUG, "%s: unlink-fail %d", f, errno);
 # endif LOG
 }
 /*
@@ -597,7 +597,7 @@ xunlink(f)
 **		none.
 */
 
-jmp_buf	TimeoFrame;
+static bool	TimeoutFlag;
 
 char *
 sfgets(buf, siz, fp)
@@ -605,14 +605,18 @@ sfgets(buf, siz, fp)
 	int siz;
 	FILE *fp;
 {
-	register EVENT *ev;
+	register EVENT *ev = NULL;
 	register char *p;
 	extern readtimeout();
 
-	if (setjmp(TimeoFrame) != 0)
-		return (NULL);
-	ev = setevent(ReadTimeout, readtimeout, 0);
-	p = fgets(buf, siz, fp);
+	if (ReadTimeout != 0)
+		ev = setevent(ReadTimeout, readtimeout, 0);
+	TimeoutFlag = FALSE;
+	do
+	{
+		errno = 0;
+		p = fgets(buf, siz, fp);
+	} while (!(p != NULL || TimeoutFlag || errno != EINTR));
 	clrevent(ev);
 	return (p);
 }
@@ -620,7 +624,7 @@ sfgets(buf, siz, fp)
 static
 readtimeout()
 {
-	longjmp(TimeoFrame, 1);
+	TimeoutFlag = TRUE;
 }
 /*
 **  FGETFOLDED -- like fgets, but know about folded lines.

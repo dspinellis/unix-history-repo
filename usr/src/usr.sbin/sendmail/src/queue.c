@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.39		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.40		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.39		%G%);
+SCCSID(@(#)queue.c	3.40		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -182,13 +182,10 @@ queueup(e, queueall)
 **		runs things in the mail queue.
 */
 
-bool	ReorderQueue;		/* if set, reorder the send queue */
-int	QueuePid;		/* pid of child running queue */
-
 runqueue(forkflag)
 	bool forkflag;
 {
-	extern reordersig();
+	register int i;
 
 	/*
 	**  See if we want to go off and do other useful work.
@@ -196,18 +193,29 @@ runqueue(forkflag)
 
 	if (forkflag)
 	{
-		QueuePid = dofork();
-		if (QueuePid > 0)
+		int pid;
+
+		pid = dofork();
+		if (pid != 0)
 		{
-			/* parent */
+			/* parent -- pick up intermediate zombie */
+			do
+			{
+				auto int stat;
+
+				i = wait(&stat);
+			} while (i >= 0 && i != pid);
 			if (QueueIntvl != 0)
-				setevent(QueueIntvl, reordersig, TRUE);
+				setevent(QueueIntvl, runqueue, TRUE);
 			return;
 		}
+		/* child -- double fork */
+		if (fork() != 0)
+			exit(EX_OK);
 	}
 # ifdef LOG
 	if (LogLevel > 11)
-		syslog(LOG_DEBUG, "runqueue, pid=%d", getpid());
+		syslog(LOG_DEBUG, "runqueue %s, pid=%d", QueueDir, getpid());
 # endif LOG
 
 	/*
@@ -215,96 +223,22 @@ runqueue(forkflag)
 	**	First, read and sort the entire queue.
 	**	Then, process the work in that order.
 	**		But if you take too long, start over.
-	**	There is a race condition at the end -- we could get
-	**		a reorder signal after finishing the queue.
-	**		In this case we will hang for one more queue
-	**		interval -- clearly a botch, but rare and
-	**		relatively innocuous.
 	*/
 
-	for (;;)
+	/* order the existing work requests */
+	orderq();
+
+	/* process them once at a time */
+	while (WorkQ != NULL)
 	{
-		/* order the existing work requests */
-		orderq();
+		WORK *w = WorkQ;
 
-		/* arrange to reorder later */
-		ReorderQueue = FALSE;
-		if (QueueIntvl != 0)
-			setevent(QueueIntvl, reordersig, FALSE);
-
-		/* process them once at a time */
-		while (WorkQ != NULL)
-		{
-			WORK *w = WorkQ;
-
-			WorkQ = WorkQ->w_next;
-			dowork(w);
-			free(w->w_name);
-			free((char *) w);
-			if (ReorderQueue)
-				break;
-		}
-
-		/* if we are just doing one pass, then we are done */
-		if (QueueIntvl == 0)
-			finis();
-
-		/* wait for work -- note (harmless) race condition here */
-		while (!ReorderQueue)
-		{
-			if (forkflag)
-				finis();
-			pause();
-		}
+		WorkQ = WorkQ->w_next;
+		dowork(w);
+		free(w->w_name);
+		free((char *) w);
 	}
-}
-/*
-**  REORDERSIG -- catch the reorder signal and tell sendmail to reorder queue.
-**
-**	Parameters:
-**		parent -- if set, called from parent (i.e., not
-**			really doing the work).
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		sets the "reorder work queue" flag.
-*/
-
-reordersig(parent)
-	bool parent;
-{
-	if (!parent)
-	{
-		/* we are in a child doing queueing */
-		ReorderQueue = TRUE;
-
-		/* arrange to get this signal again */
-		setevent(QueueIntvl, reordersig, FALSE);
-	}
-	else
-	{
-		/*
-		**  In parent.  If the child still exists, we want
-		**  to do nothing.  If the child is gone, we will
-		**  start up a new one.
-		**  If the child exists, it is responsible for
-		**  doing a queue reorder.
-		**  This code really sucks.
-		*/
-
-		if (kill(QueuePid, SIGALRM) < 0)
-		{
-			/* no child -- get zombie & start new one */
-			static int st;
-
-			(void) wait(&st);
-			runqueue(TRUE);
-		}
-		else
-			setevent(QueueIntvl, reordersig, TRUE);
-	}
+	finis();
 }
 /*
 **  ORDERQ -- order the work queue.
