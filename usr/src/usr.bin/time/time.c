@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)time.c	4.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)time.c	4.2 (Berkeley) %G%";
 /* time command */
 
 #include <stdio.h>
@@ -39,10 +39,10 @@ char **argv;
 	if((status&0377) != 0)
 		fprintf(stderr,"Command terminated abnormally.\n");
 	times(&buffer);
-	fprintf(stderr,"\n");
 	printt("real", (after-before) * 60);
 	printt("user", buffer.tms_cutime - obuffer.tms_cutime);
 	printt("sys ", buffer.tms_cstime - obuffer.tms_cstime);
+	fprintf(stderr, "\n");
 	exit(status>>8);
 }
 
@@ -64,7 +64,6 @@ long a;
 		digit[i] = a % quant[i];
 		a /= quant[i];
 	}
-	fprintf(stderr,s);
 	nonzero = 0;
 	while(--i>0) {
 		c = digit[i]!=0 ? digit[i]+'0':
@@ -77,5 +76,5 @@ long a;
 		if (c)
 		fprintf(stderr,"%c",c);
 	}
-	fprintf(stderr,"\n");
+	fprintf(stderr," %s ",s);
 }
