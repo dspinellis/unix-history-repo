@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-char version[] = "@(#)main.c 1.16 %G%";
+char version[] = "@(#)main.c 2.1 %G%";
 
 /*	Modified to include h option (recursively extract all files within
  *	a subtree) and m option (recreate the heirarchical structure of
@@ -22,13 +22,13 @@ char version[] = "@(#)main.c 1.16 %G%";
 #include <stdio.h>
 #include <signal.h>
 #endif
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#include "../h/buf.h"
-#include "../h/ndir.h"
-#include "../h/user.h"
-#include "../h/dumprestor.h"
+#include <sys/param.h>
+#include <sys/inode.h>
+#include <sys/fs.h>
+#include <sys/buf.h>
+#include <sys/ndir.h>
+#include <sys/user.h>
+#include <dumprestor.h>
 #include <sys/mtio.h>
 
 #define ODIRSIZ 14
