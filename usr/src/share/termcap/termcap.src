@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.87 (Berkeley) %G%
+#	@(#)termcap.src	5.88 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -3084,6 +3084,17 @@ z7|trs2|trsII|trs80II|Radio Shack Model II using P&T CP/M:\
 	:nl=^_:al=^D:am:bs:cd=^B:ce=^A:cl=^L:cm=\EY%+ %+ :co#80:\
 	:dl=^K:do=^_:ho=^F:li#24:nd=^]:ms:pt:se=^O:so=^N:up=^^:\
 	:kb=^H:kd=^_:kl=^\:kr=^]:ku=^^:
+#From: ksb@mentor.cc.purdue.edu (Kevin Braunsdorf)
+z8|trs16|trs-80 model 16 console:\
+	:al=\EL:am:bs:cd=\EJ:ce=\EK:cl=^L:cm=\EY%+ %+ :co#80:dc=\EQ:dl=\EM:\
+	:do=\EB:ei=:ic=\EP:ho=\EH:im=:kb=^H:kd=\EB:kl=\ED:kn#2:kr=\EC:\
+	:ku=\EA:k0=^A:k1=^B:l0=f1:l1=f2:li#24:nd=\EC:pt:se=\ER@:sg#0:so=\ERD:\
+	:k2=^D:k3=^L:k4=^U:k5=^P:k6=^N:k7=^S:\
+	:l2=f3:l3=f4:l4=f5:l5=f6:l6=f7:l7=f8:\
+	:up=\EA:GS=\ERG:GE=\ERg:GV=s:GH=u:GU=e:GD=c:G1=`:G2=_:G3=b:G4=a:\
+	:BN=\E[?33h:BF=\E[?33l:UC=\E[_\040q:BC=\E[\177\040q:\
+	:PN=\E]=:PS=\E]+:\
+	:CN=\ERC:CF=\ERc:NR=\ERD:NM=\ER@:
 #From {pbrown,ctl}@ocf.berkeley.edu, 12 Mar 90
 zp|coco3|os9LII|Tandy CoCo3 24*80 OS9 Level II:\
 	:am:bs:cl=5*^L:li#24:co#80:ho=^A:\
