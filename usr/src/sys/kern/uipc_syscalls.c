@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	6.5	84/09/04	*/
+/*	uipc_syscalls.c	6.6	84/11/27	*/
 
 #include "param.h"
 #include "systm.h"
@@ -249,6 +249,15 @@ socketpair()
 	u.u_error = soconnect2(so1, so2);
 	if (u.u_error)
 		goto free4;
+	if (uap->type == SOCK_DGRAM) {
+		/*
+		 * Datagram socket connection is asymmetric.
+		 */
+		 u.u_error = soconnect2(so2, so1);
+		 if (u.u_error)
+			goto free4;
+	}
+	u.u_r.r_val1 = 0;
 	(void) copyout((caddr_t)sv, (caddr_t)uap->rsv, 2 * sizeof (int));
 	return;
 free4:
