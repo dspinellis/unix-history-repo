@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.31 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -486,12 +486,6 @@ finduser(name, fuzzyp)
 	if (tTd(29, 4))
 		printf("finduser(%s): ", name);
 
-	/* map upper => lower case */
-	for (p = name; *p != '\0'; p++)
-	{
-		if (isascii(*p) && isupper(*p))
-			*p = tolower(*p);
-	}
 	*fuzzyp = FALSE;
 
 	/* look up this login name using fast path */
