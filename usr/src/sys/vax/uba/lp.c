@@ -1,6 +1,6 @@
-/*	lp.c	4.2	%G%	*/
+/*	lp.c	4.3	%G%	*/
 
-#include "../conf/lp.h"
+#include "lp.h"
 #if NLP > 0
 /*
  * LP-11 Line printer driver

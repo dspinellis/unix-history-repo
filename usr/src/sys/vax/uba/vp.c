@@ -1,6 +1,6 @@
-/*	vp.c	4.2	%G%	*/
+/*	vp.c	4.3	%G%	*/
 
-#include "../conf/vp.h"
+#include "vp.h"
 #if NVP > 0
 /*
  * Versatec matrix printer/plotter
