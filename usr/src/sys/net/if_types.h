@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_types.h	8.2 (Berkeley) %G%
+ *	@(#)if_types.h	8.3 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@
 #define	IFT_ISO88026	0xa		/* MAN */
 #define	IFT_STARLAN	0xb
 #define	IFT_P10		0xc		/* Proteon 10MBit ring */
-#define	IFT_P80		0xd		/* Proteon 10MBit ring */
+#define	IFT_P80		0xd		/* Proteon 80MBit ring */
 #define	IFT_HY		0xe		/* Hyperchannel */
 #define	IFT_FDDI	0xf
 #define	IFT_LAPB	0x10
