@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)chpass.1	5.1 (Berkeley) %G%
+.\"	@(#)chpass.1	5.2 (Berkeley) %G%
 .\"
 .TH CHPASS 1 ""
 .UC 4
@@ -40,9 +40,91 @@ with the user.
 .PP
 Only the information that the user is allowed to change is displayed.
 .PP
+Possible display items are as follows:
+.PP
+.RS
+ Login:			user's login name
+ Uid:			user's id
+ Gid:			user's login group id
+ Change:			password change time
+ Expire:			account expiration time
+ Class:			user's general classification
+ Home Directory:	user's home directory
+ Shell:			user's login shell
+ Full Name:		user's real name
+ Location:		user's normal location
+ Home Phone:		user's home phone
+ Office Phone:		user's office phone
+.RE
+.PP
+.PP
+The
+.I name
+field is the login used to access the computer account, and the
+.I uid
+field is the number associated with it.  They should both be unique
+across the system (and often across a group of systems) since they
+control file access.
+.PP
+While it is possible to have multiple entries with identical login names
+and/or identical user id's, it is usually a mistake to do so.  Routines
+that manipulate these files will often return only one of the multiple
+entries, and that one by random selection.
+.PP
+The
+.I group
+field is the group that the user will be placed in upon login.
+Since this system supports multiple groups (see
+.IR groups (1))
+this field currently has little special meaning.
+This field may be filled in with either a number or a group name (see
+.IR group (5)).
+.PP
+The
+.I change
+field is the number in seconds, GMT, from the epoch, until the
+password for the account must be changed.
+.PP
+The
+.I expire
+field is the number in seconds, GMT, from the epoch, until the
+account expires.
+.PP
+Both the
+.I change
+and
+.I expire
+fields should be entered in the form
+.I dd month [yy]yy
+where
+.I dd
+is the day of the month,
+.I month
+is the month name (the first three characters are sufficient) and
+.I yy
+is the year (either ``89'' or ``1989'' is sufficient).
+.PP
+The
+.I class
+field is currently unused.  In the near future it will be a key to
+a
+.IR termcap (5)
+style database of user attributes.
+.PP
+The user's home directory is the full UNIX path name where the user
+will be placed on login.
+.PP
+The shell field is the command interpreter the user prefers.
+If the
+.I shell
+field is empty, the Bourne shell (\fI/bin/sh\fP) is assumed.
+.PP
 When altering a login shell, and not the super-user, the user must
 select an approved shell from the list in
 .IR /etc/shells .
+.PP
+The last four fields are for storing the user's full name, office
+location, and home and work telephone numbers.
 .PP
 Additions to the user database will be given an illegal passwd
 (``NOLOGIN'') which should be updated using the
@@ -67,3 +149,5 @@ login(1), finger(1), getusershell(3), passwd(5), mkpasswd(8), vipw(8)
 .br
 Robert Morris and Ken Thompson,
 .I UNIX password security
+.SH BUGS
+User information should (and eventually will) be stored elsewhere.
