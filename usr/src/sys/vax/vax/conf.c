@@ -1,4 +1,4 @@
-/*	conf.c	4.47	82/02/06	*/
+/*	conf.c	4.48	82/02/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -19,12 +19,13 @@ int	nodev();
 
 #include "hp.h"
 #if NHP > 0
-int	hpstrategy(),hpread(),hpwrite(),hpdump();
+int	hpstrategy(),hpread(),hpwrite(),hpdump(),hpioctl();
 #else
 #define	hpstrategy	nodev
 #define	hpread		nodev
 #define	hpwrite		nodev
 #define	hpdump		nodev
+#define	hpioctl		nodev
 #endif
  
 #include "tu.h"
@@ -318,7 +319,7 @@ struct cdevsw	cdevsw[] =
 	nodev,		nulldev,	nulldev,	0,
 	mmselect,
 	nulldev,	nulldev,	hpread,		hpwrite,	/*4*/
-	nodev,		nodev,		nulldev,	0,
+	hpioctl,	nodev,		nulldev,	0,
 	seltrue,
 	htopen,		htclose,	htread,		htwrite,	/*5*/
 	htioctl,	nodev,		nulldev,	0,
