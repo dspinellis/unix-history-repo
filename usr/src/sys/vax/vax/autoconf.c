@@ -1,4 +1,4 @@
-/*	autoconf.c	4.26	81/03/09	*/
+/*	autoconf.c	4.27	81/03/13	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -13,10 +13,7 @@
  * and
  *	#if VAX750
  * which may be incorrect after more processors are introduced if they
- * are like either of these machines.  Thus the exact form of these
- * lines may change.  Will future machines have configuration registers
- * in the adapters and probable nexus space (like the 780), or wired
- * addresses (like the 750)?  It remains to be seen.
+ * are like either of these machines.
  */
 
 #include "mba.h"
@@ -57,16 +54,6 @@ int	(*mbaintv[4])() =	{ Xmba0int, Xmba1int, Xmba2int, Xmba3int };
 #endif
 #if VAX780
 int	(*ubaintv[4])() =	{ Xua0int, Xua1int, Xua2int, Xua3int };
-/*
- * These are the (fixed) addresses of the (last 8k bytes of) unibus memory for
- * each of the 4 possible unibus adapters.  Note that the unibus memory
- * addresses are actually indexed by the unibus adapter type code,
- * and are unrelated to tr (nexus) number.
- */
-caddr_t	umaddr780[4] = {
-	(caddr_t) 0x2013e000, (caddr_t) 0x2017e000,
-	(caddr_t) 0x201be000, (caddr_t) 0x201fe000
-};
 #endif
 
 /*
@@ -74,39 +61,6 @@ caddr_t	umaddr780[4] = {
  * such as buffered data path usage.
  */
 struct	uba_hd uba_hd[MAXNUBA];
-
-/*
- * The bits which decode the fault bits in the configuration register
- * of nexus's are reusable per nexus-type, so we declare them once here
- * to avoid replication.
- */
-#if VAX780
-char	nexflt_bits[] = NEXFLT_BITS;
-#endif
-
-/*
- * Per-processor type initialization routines and data.
- * It would be nice to parameterize initialization more,
- * but the 780 and 750 are really quite different at this
- * level.  We await future machines before attempting 
- * any significant parameterization.
- */
-#if VAX780
-int	c780();
-#endif
-#if VAX750
-int	c750();
-#endif
-
-struct percpu percpu[] = {
-#if VAX780
-	c780, VAX_780,
-#endif
-#if VAX750
-	c750, VAX_750,
-#endif
-};
-#define	NCPU	(sizeof(percpu)/sizeof(struct percpu))
 
 /*
  * Determine mass storage and memory configuration for a machine.
@@ -121,9 +75,9 @@ configure()
 	extern char Sysbase[];
 
 	cpusid.cpusid = mfpr(SID);
-	for (ocp = percpu; ocp < &percpu[NCPU]; ocp++)
+	for (ocp = percpu; ocp->pc_cputype; ocp++)
 		if (ocp->pc_cputype == cpusid.cpuany.cp_type) {
-			(*ocp->pc_config)(ocp);
+			probenexus(ocp);
 			/*
 			 * Write protect the scb.  It is strange
 			 * that this code is here, but this is as soon
@@ -144,26 +98,28 @@ configure()
 	asm("halt");
 }
 
-#if VAX780
 /*
- * Build configuration table for a 780, by looking
- * at the things (mbas and ubas) in the nexus slots
- * and initialzing each appropriately.
+ * Probe nexus space, finding the interconnects
+ * and setting up and probing mba's and uba's for devices.
  */
 /*ARGSUSED*/
-c780(pcpu)
+probenexus(pcpu)
 	register struct percpu *pcpu;
 {
 	register struct nexus *nxv;
-	struct nexus *nxp = NEX780;
+	struct nexus *nxp = pcpu->pc_nexbase;
 	union nexcsr nexcsr;
 	int i, ubawatch();
 	
-	for (nexnum = 0,nxv = nexus; nexnum < NNEX780; nexnum++,nxp++,nxv++) {
+	nexnum = 0, nxv = nexus;
+	for (; nexnum < pcpu->pc_nnexus; nexnum++, nxp++, nxv++) {
 		nxaccess(nxp, Nexmap[nexnum]);
 		if (badaddr((caddr_t)nxv, 4))
 			continue;
-		nexcsr = nxv->nexcsr;
+		if (pcpu->pc_nextype && pcpu->pc_nextype[nexnum] != NEX_ANY)
+			nexcsr.nex_csr = pcpu->pc_nextype[nexnum];
+		else
+			nexcsr = nxv->nexcsr;
 		if (nexcsr.nex_csr&NEX_APD)
 			continue;
 		switch (nexcsr.nex_type) {
@@ -192,9 +148,11 @@ c780(pcpu)
 			setscbnex(ubaintv[numuba]);
 			i = nexcsr.nex_type - NEX_UBA0;
 			unifind((struct uba_regs *)nxv, (struct uba_regs *)nxp,
-			    umem[i], umaddr780[i]);
-			((struct uba_regs *)nxv)->uba_cr =
-			    UBACR_IFS|UBACR_BRIE|UBACR_USEFIE|UBACR_SUEFIE;
+			    umem[i], pcpu->pc_umaddr[i]);
+			if (cpu == VAX_780)
+				((struct uba_regs *)nxv)->uba_cr =
+				    UBACR_IFS|UBACR_BRIE|
+				    UBACR_USEFIE|UBACR_SUEFIE;
 			numuba++;
 			break;
 
@@ -234,43 +192,6 @@ unconfig:
 	}
 	timeout(ubawatch, (caddr_t)0, hz);
 }
-#endif
-
-#if VAX750
-/*
- * Configure a 750.  There are four possible mba's,
- * one standard UNIBUS, and a memory controller.
- */
-c750(pcpu)
-	struct percpu *pcpu;
-{
-	register struct nexus *nxv = nexus;
-	struct nexus *nxp = NEX750;
-
-	printf("mcr at %x\n", MCR_750);
-	nxaccess((struct nexus *)MCR_750, Nexmap[nexnum]);
-	mcraddr[nmcr++] = (struct mcr *)nxv;
-	for (nexnum = 0; nexnum < NNEX750; nexnum++, nxp++, nxv++) {
-		nxaccess(nxp, Nexmap[nexnum]);
-		if (badaddr((caddr_t)nxv, 4))
-			continue;
-		printf("mba%d at %x\n", nummba, nxp);
-		if (nummba >= NMBA) {
-			printf("%d mba(s) not configured\n", nummba+1);
-			continue;
-		}
-#if NMBA > 0
-		mbafind(nxv, nxp);
-		nummba++;
-#endif
-	}
-	printf("uba at %x\n", nxp);
-	nxaccess(nxp, Nexmap[nexnum++]);
-	unifind((struct uba_regs *)nxv, (struct uba_regs *)nxp,
-	    umem[0], UMEM750);
-	numuba = 1;
-}
-#endif
 
 #if NMBA > 0
 struct	mba_device *mbaconfig();
