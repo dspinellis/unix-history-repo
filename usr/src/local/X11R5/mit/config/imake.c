@@ -579,7 +579,7 @@ char *CleanCppInput(Imakefile)
 		LogFatal("Cannot open %s for input.", Imakefile);
 	fstat(infd, &st);
 	buf = Emalloc(st.st_size+1);
-	if (read(infd, buf, st.st_size) != st.st_size)
+	if (read(infd, buf, (size_t) st.st_size) != st.st_size)
 		LogFatal("Cannot read all of %s:", Imakefile);
 	close(infd);
 	buf[ st.st_size ] = '\0';
