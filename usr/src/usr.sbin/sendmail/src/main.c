@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -454,18 +454,6 @@ main(argc, argv, envp)
 			OpMode = MD_INITALIAS;
 			break;
 # endif /* DBM */
-
-		  case 'R':	/* log raw recipient info */
-			p += 2;
-			if (*p == '\0' && ((p = *++av) == NULL || *p == '-'))
-			{
-				usrerr("Bad -R flag");
-				ExitStat = EX_USAGE;
-				av--;
-				break;
-			}
-			RcptLogFile = newstr(p);
-			break;
 		}
 	}
 	}
