@@ -1,0 +1,89 @@
+Things to add to sample DDL dungeon:
+
+	A point to the whole thing.
+
+	A redressing of the Temple to Elbereth.  The Tolkien reference
+	is pointless.  There should be more motifs of paganism
+	throughout the area (which is why the locals burned the place).
+
+	In fact, depending on your philosophical/political bent, you
+	could have the original owner of the house being held prisoner
+	by the local Calvinists in the church up the road.  Your
+	mission is to rescue him.  Your "score" can be used to
+	purchase some useful item rather than being an end in itself.
+
+	The forest and cornfields are pointless.  Something should
+	be done about that.
+
+	The sandy beach should lead to some caverns which ultimately
+	get you to a large lake.  Somehow, the ship should be
+	removed from the Bottle for transit on this lake. (I'd hate
+	to Shrink again, tho).  For example, maybe the innocent-looking
+	lake is really filled with deadly acid, which even burns
+	through the Bottle.  So you toss the bottle into the lake
+	and suddenly freed, the magic ship grows, extends a gangplank...
+	Of course, there may be something else aboard, too.
+
+	Getting the Globe into those caves should be problematical.
+
+	The Glowing crystal shouldn't be the only one that only works
+	a limited number of times.
+
+	Another mechanism for getting that hole into the ice would
+	be nice.  The Saw is too general a tool.
+		(DONE.  Present version has you dropping a heavy
+		 object onto the ice.  A useless heavy object is
+		 available)
+
+	Speaking of general tools, what's the knife for?
+
+	Beyond the icy lake lives a cavebear.  When you leave
+	your junk lying around for too long on the lake, he comes
+	by and swipes stuff (driven by a fuse).  He leaves footprints,
+	but finding him and subduing him should be another problem.  
+	Some fillip should be added for him to be more than just 
+	a recostuming of the Pirate.
+
+	The riverbed should go somewhere.  There's that deadly lake,
+	of course.
+
+	The caverns above the really DARK caverns probably adjoin
+	the Sandy Beach system somehow.
+
+	The Dark Caves should have some point.
+
+	The mural really leads to a desert (under some circumstances).
+	In the desert, the "hwy8" trick can be extended for 2-d movement.
+	Crossing before thirst sets in should be the problem.  A
+	water-detector (you're getting warmer...colder...right here!)
+	should be available in the basement.  Crossing the desert
+	should lead to a ruined city, with some stuff, then a road,
+	back to ... highway 8 ( a *long* way down the road).
+
+	More treasure!  More treasure!  Greed!!!
+
+	Player should have to SAY something somewhere, to demonstrate
+	that feature.  Better be simple, tho.
+		(DONE.  Current incantation is "ShaZam")
+
+	For elegance, the BEAM and GRAB (and maybe a new PROP command
+	to turn on some object property) should only work if you do
+	some simple Wizardly trick.  It should let you know you've
+	done this.  This trick should be revealed within the game
+	to cognescenti.
+		(DONE.  Say Shazam.  Also, the GLOW and Open tricks
+		 have been added)
+
+	While each crystal is worth $25, there should be some stunt
+	that involves using the explosive power of destroying a crystal.
+	Say, an indestructible chamber in which one of the crystals
+	is placed.  Push a button, and the contents are normally reduced
+	to powder.  Put a crystal in, and the power of the explosion drives
+	some kind of mechanism/magic that provides more treasure.  Or,
+	now that the crystal can be broken harmlessly, maybe a small
+	fragment remaining can be placed into some small aperture
+	that obviously requires a crystal, thus triggering some mechanism.
+	Some harmless stone or something should be made available to
+	the player to demonstrate the crusher's use.  It's a crock in
+	even Zork that you sometimes have to die or destroy treasure
+	to test things out.

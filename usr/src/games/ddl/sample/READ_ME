@@ -1,0 +1,19 @@
+   Caveat Ludor (or something like that).
+
+   The sample DDL dungeon in this directory cannot even remotely
+be considered a complete scenario.  At every turn, there are
+pointless areas of terrain, objects with no use, and verbs that
+don't work.  The scenario is intended primarily to demonstrate
+(originally to TEST) some of the things that can be done in DDL,
+and some of the features of the system, like fuses and DWIMming.
+   This is not to discourage play; there are one or two very
+nice stunts in the scenario.  Some ideas for extending the
+scenario are in sample.ideas.  The prospective DDL programmer
+is encouraged to examine the DDL sources for this scenario,
+and initially experiment with adding stunts and scenery to 
+its many dead-ends, rather than attempting to create an entire
+original world from scratch.  DDL's purpose is to allow
+people's ingenious ideas to be conveniently realized.  
+New scenarios, or additions to this sample, should be sent
+electronically to ucla-vax!mike (via UCB's uucp hookup) or
+mike@ucla-security (via the Arpanet).

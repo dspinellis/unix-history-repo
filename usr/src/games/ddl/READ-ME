@@ -1,0 +1,22 @@
+
+		D D L   Packaging
+
+   This directory contains an unrestricted distribution of
+the UCLA Dungeon Definition Language processor which includes
+no sources for ddlrun and ddlcomp.
+
+   The directory contains the following files and subdirectories:
+
+	Files:
+READ-ME:		This file.
+aard.ddl:		A complete, but slightly uninspired, DDL dungeon
+ddlcomp:		Binary (Vax VMUnix) for the DDL "compiler"
+ddlrun:			Binary (Vax VMUnix) for the DDL runtime processor
+
+	Directories:
+doc:			Documentation
+sample:			Sources for a incomplete dungeon demonstrating some
+			   more sophisticated uses of DDL
+
+The documentation files doc.ms and builtins.ms should be run
+through tbl and troff (eg tbl doc.ms builtins.ms|troff -ms).
