@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)option.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)option.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -23,8 +23,10 @@ static char sccsid[] = "@(#)option.c	8.1 (Berkeley) %G%";
 
 #include "find.h"
 
+static OPTION *option __P((char *));
+
 /* NB: the following table must be sorted lexically. */
-static OPTION options[] = {
+static OPTION const options[] = {
 	{ "!",		N_NOT,		c_not,		O_ZERO },
 	{ "(",		N_OPENPAREN,	c_openparen,	O_ZERO },
 	{ ")",		N_CLOSEPAREN,	c_closeparen,	O_ZERO },
@@ -102,7 +104,7 @@ find_create(argvp)
 	return (new);
 }
 
-OPTION *
+static OPTION *
 option(name)
 	char *name;
 {
