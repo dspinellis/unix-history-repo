@@ -3,6 +3,7 @@
 DIR=	smm/08.sendmailop
 SRCS=	op.me
 MACROS=	-me
+CLEANFILES= *.ps
 
 all: op.ps
 

@@ -3,6 +3,7 @@
 DIR=	smm/09.sendmail
 SRCS=	intro.me
 MACROS=	-me
+CLEANFILES= *.ps
 
 all: intro.ps
 

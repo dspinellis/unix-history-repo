@@ -2,6 +2,7 @@
 
 SRCS=	usenix.me
 MACROS=	-me
+CLEANFILES= *.ps
 
 all: usenix.ps
 
