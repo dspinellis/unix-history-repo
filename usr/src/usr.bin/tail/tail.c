@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tail.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tail.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /* tail command 
@@ -36,9 +36,9 @@ static char sccsid[] = "@(#)tail.c	5.1 (Berkeley) %G%";
 #include	<sys/file.h>
 #include	<errno.h>
 
-#define LBIN 8193
+#define LBIN 32769
 #undef	BUFSIZ
-#define	BUFSIZ	LBIN-1
+#define	BUFSIZ	8192
 struct	stat	statb;
 int	follow;
 int	piped;
@@ -155,7 +155,7 @@ keep:
 	if(!piped) {
 		(void)fstat(0,&statb);
 		/* If by lines, back up 1 buffer: else back up as needed */
-		di = bylines?BUFSIZ:n;
+		di = bylines?LBIN-1:n;
 		if(statb.st_size > di)
 			(void)lseek(0,(off_t)-di,L_XTND);
 		if(!bylines)
