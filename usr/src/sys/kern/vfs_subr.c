@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.33 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.34 (Berkeley) %G%
  */
 
 /*
@@ -117,8 +117,8 @@ void vattr_null(vap)
 	vap->va_type = VNON;
 	vap->va_mode = vap->va_nlink = vap->va_uid = vap->va_gid =
 		vap->va_fsid = vap->va_fileid = vap->va_size =
-		vap->va_size1 = vap->va_blocksize = vap->va_rdev =
-		vap->va_bytes = vap->va_bytes1 =
+		vap->va_size_rsv = vap->va_blocksize = vap->va_rdev =
+		vap->va_bytes = vap->va_bytes_rsv =
 		vap->va_atime.tv_sec = vap->va_atime.tv_usec =
 		vap->va_mtime.tv_sec = vap->va_mtime.tv_usec =
 		vap->va_ctime.tv_sec = vap->va_ctime.tv_usec =
