@@ -6,7 +6,7 @@
 %{
 
 #ifndef lint
-static	char sccsid[] = "@(#)ftpcmd.y	4.12 (Berkeley) %G%";
+static	char sccsid[] = "@(#)ftpcmd.y	4.13 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -529,7 +529,7 @@ getline(s, n, iop)
 			break;
 	}
 	if (c < 0 && cs == s)
-		exit(1);
+		return (NULL);
 	*cs++ = '\0';
 	if (debug) {
 		fprintf(stderr, "FTPD: command: %s", s);
