@@ -1,6 +1,7 @@
 # Makefile %G%
 ALL=	rip.h routed.c query.c trace.c
 CFLAGS=	-O
+DESTDIR=
 LDFLAGS=
 
 .c.o:
@@ -8,7 +9,7 @@ LDFLAGS=
 	sed -f ../asm.sed $*.s | ${AS} -o $*.o
 	rm -f $*.s
 
-all:	routed query trace
+all:	routed
 
 routed: routed.o af.o
 	${CC} -o routed ${LDFLAGS} routed.o af.o -ljobs
@@ -16,14 +17,15 @@ routed: routed.o af.o
 routed.o query.o: rip.h
 routed.o af.o: router.h
 
+# test programs and utilities
 query:	query.o
 	${CC} -o query ${LDFLAGS} query.o
 
 trace:	trace.o
 	${CC} -o trace ${LDFLAGS} trace.o
 
-install: routed trace query
-	install -s routed /etc
+install: routed
+	install -s routed ${DESTDIR}/etc
 
 lint:
 	lint -hbxn routed.c af.c
