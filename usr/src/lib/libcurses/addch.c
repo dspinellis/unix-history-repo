@@ -3,7 +3,7 @@
 /*
  *	This routine adds the character to the current position
  *
- * %G% (Berkeley) @(#)addch.c	1.2
+ * %G% (Berkeley) @(#)addch.c	1.3
  */
 waddch(win, c)
 reg WINDOW	*win;
@@ -44,10 +44,9 @@ char		c;
 		}
 		win->_y[y][x++] = c;
 		if (x >= win->_maxx) {
-newline:
 			x = 0;
-nonewline:
-			if (++y + 1 == win->_maxy)
+newline:
+			if (++y >= win->_maxy)
 				if (win->_scroll) {
 					wrefresh(win);
 					scroll(win);
@@ -62,10 +61,9 @@ nonewline:
 		break;
 	  case '\n':
 		wclrtoeol(win);
-		if (NONL)
-			goto nonewline;
-		else
-			goto newline;
+		if (!NONL)
+			x = 0;
+		goto newline;
 	  case '\r':
 		x = 0;
 		break;
