@@ -1,0 +1,41 @@
+cc -c -O lmain.c
+"lmain.c", line 123: warning: illegal pointer combination
+"lmain.c", line 124: warning: illegal pointer combination
+"lmain.c", line 126: warning: illegal pointer combination
+"lmain.c", line 139: warning: illegal pointer combination
+"lmain.c", line 140: warning: illegal pointer combination
+"lmain.c", line 142: warning: illegal pointer combination
+"lmain.c", line 143: warning: illegal pointer combination
+"lmain.c", line 144: warning: illegal pointer combination
+"lmain.c", line 147: warning: illegal pointer combination
+"lmain.c", line 148: warning: illegal pointer combination
+"lmain.c", line 171: warning: illegal pointer combination
+"lmain.c", line 172: warning: illegal pointer combination
+"lmain.c", line 173: warning: illegal pointer combination
+"lmain.c", line 193: warning: illegal combination of pointer and integer
+"lmain.c", line 202: warning: illegal combination of pointer and integer
+cc -O -c y.tab.c
+"y.tab.c", line 63: warning: illegal combination of pointer and integer
+"y.tab.c", line 66: warning: illegal combination of pointer and integer
+"y.tab.c", line 68: warning: illegal pointer combination
+"y.tab.c", line 69: warning: illegal pointer combination
+"y.tab.c", line 70: warning: illegal pointer combination
+"y.tab.c", line 72: warning: illegal pointer combination
+"y.tab.c", line 220: warning: illegal combination of pointer and integer
+"y.tab.c", line 233: warning: illegal combination of pointer and integer
+"y.tab.c", line 384: warning: illegal combination of pointer and integer
+"y.tab.c", line 410: warning: illegal combination of pointer and integer
+"y.tab.c", line 454: warning: illegal combination of pointer and integer
+"y.tab.c", line 456: warning: illegal combination of pointer and integer
+"y.tab.c", line 475: warning: illegal combination of pointer and integer
+"parser.y", line 92: warning: illegal combination of pointer and integer
+cc -c -O sub1.c
+"sub1.c", line 488: warning: illegal combination of pointer and integer
+cc -c -O sub2.c
+"sub2.c", line 25: warning: illegal combination of pointer and integer
+"sub2.c", line 39: warning: illegal combination of pointer and integer
+"sub2.c", line 172: warning: illegal combination of pointer and integer
+"sub2.c", line 240: warning: illegal combination of pointer and integer
+"sub2.c", line 851: warning: illegal pointer combination
+cc -c -O header.c
+cc lmain.o y.tab.o sub1.o sub2.o header.o -o lex
