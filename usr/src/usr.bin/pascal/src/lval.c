@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)lval.c 1.3 %G%";
+static	char sccsid[] = "@(#)lval.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -52,6 +52,10 @@ lvalue(r, modflag , required )
 		 */
 	    return pclvalue( r , modflag , required );
 #	endif PC
+#	ifdef OBJ
+		/*
+		 *	pi uses the rest of the function
+		 */
 	firstp = p = lookup(r[2]);
 	if (p == NIL) {
 		return (NIL);
@@ -266,6 +270,7 @@ lvalue(r, modflag , required )
 bad:
 	cerror("Error occurred on qualification of %s", r[2]);
 	return (NIL);
+#	endif OBJ
 }
 
 lptr(c)
