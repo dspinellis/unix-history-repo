@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)server.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)server.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include "defs.h"
@@ -381,7 +381,7 @@ sendf(rname, opts)
 		sizerr = (readlink(target, buf, BUFSIZ) != stb.st_size);
 		(void) write(rem, buf, stb.st_size);
 		if (debug)
-			printf("readlink = %.*s\n", stb.st_size, buf);
+			printf("readlink = %.*s\n", (int)stb.st_size, buf);
 		goto done;
 
 	case S_IFREG:
