@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mail.1	8.7 (Berkeley) %G%
+.\"	@(#)mail.1	8.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAIL 1
@@ -82,7 +82,7 @@ writes undeleted messages back to this file.
 .It Fl u
 Is equivalent to:
 .Pp
-.Dl mail -f /var/spool/mail/user
+.Dl mail -f /var/mail/user
 .El
 .Ss Sending mail
 To send a message to one or more people,
@@ -984,7 +984,7 @@ and
 environment variables.
 .Sh FILES
 .Bl -tag -width /usr/share/misc/Mail.help* -compact
-.It Pa /var/spool/mail/*
+.It Pa /var/mail/*
 Post office.
 .It ~/mbox
 User's old mail.
