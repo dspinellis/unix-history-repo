@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -325,9 +325,25 @@ recipient(a, sendq)
 			alias(a, sendq);
 
 # ifdef USERDB
-			/* if not  aliased, look it up in the user database */
+			/* if not aliased, look it up in the user database */
 			if (!bitset(QDONTSEND|QNOTREMOTE, a->q_flags))
-				udbexpand(a, sendq);
+			{
+				extern int udbexpand();
+
+				if (udbexpand(a, sendq) == EX_TEMPFAIL)
+				{
+					a->q_flags |= QQUEUEUP;
+					if (CurEnv->e_message == NULL)
+						CurEnv->e_message = newstr("Deferred: user database error");
+# ifdef LOG
+					if (LogLevel > 3)
+						syslog(LOG_INFO, "%s: deferred: udbexpand",
+							CurEnv->e_id);
+# endif
+					message(Arpa_Info, "queued (user database error)");
+					return (a);
+				}
+			}
 # endif
 		}
 	}

@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	5.13 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	5.14 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	5.13 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	5.14 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -20,6 +20,7 @@ static char sccsid [] = "@(#)udb.c	5.13 (Berkeley) %G% (without USERDB)";
 
 #include <sys/file.h>
 #include <sys/time.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <db.h>
@@ -86,7 +87,9 @@ struct option
 **		sendq -- pointer to head of sendq to put the expansions in.
 **
 **	Returns:
-**		none.
+**		EX_TEMPFAIL -- if something "odd" happened -- probably due
+**			to accessing a file on an NFS server that is down.
+**		EX_OK -- otherwise.
 **
 **	Side Effects:
 **		Modifies sendq.
@@ -98,7 +101,7 @@ int	UdbTimeout = 10;
 struct udbent	UdbEnts[MAXUDBENT + 1];
 int		UdbSock = -1;
 
-void
+int
 udbexpand(a, sendq)
 	register ADDRESS *a;
 	ADDRESS **sendq;
@@ -119,29 +122,30 @@ udbexpand(a, sendq)
 
 	/* make certain we are supposed to send to this address */
 	if (bitset(QDONTSEND, a->q_flags))
-		return;
+		return EX_OK;
 	CurEnv->e_to = a->q_paddr;
 
 	/* on first call, locate the database */
 	if (firstcall)
 	{
-		extern void _udbx_init();
+		extern int _udbx_init();
 
-		_udbx_init();
+		if (_udbx_init() == EX_TEMPFAIL)
+			return EX_TEMPFAIL;
 		firstcall = FALSE;
 	}
 
 	/* short circuit the process if no chance of a match */
 	if (UdbSpec == NULL || UdbSpec[0] == '\0')
-		return;
+		return EX_OK;
 
 	/* if name is too long, assume it won't match */
 	if (strlen(a->q_user) > sizeof keybuf - 12)
-		return;
+		return EX_OK;
 
 	/* if name begins with a colon, it indicates our metadata */
 	if (a->q_user[0] == ':')
-		return;
+		return EX_OK;
 
 	/* build actual database key */
 	(void) strcpy(keybuf, a->q_user);
@@ -169,10 +173,8 @@ udbexpand(a, sendq)
 			key.data = keybuf;
 			key.size = keylen;
 			i = (*up->udb_dbp->seq)(up->udb_dbp, &key, &info, R_CURSOR);
-			if (i != 0 || info.size <= 0)
+			if (i > 0 || info.size <= 0)
 			{
-				if (i < 0)
-					syserr("udbexpand: db-get stat %s");
 				if (tTd(28, 2))
 					printf("expand: no match on %s\n", keybuf);
 				continue;
@@ -199,6 +201,11 @@ udbexpand(a, sendq)
 
 				/* get the next record */
 				i = (*up->udb_dbp->seq)(up->udb_dbp, &key, &info, R_NEXT);
+			}
+			if (i < 0)
+			{
+				syserr("udbexpand: db-get stat %s");
+				return EX_TEMPFAIL;
 			}
 			break;
 
@@ -231,11 +238,12 @@ udbexpand(a, sendq)
 			continue;
 		}
 	}
+	return EX_OK;
 }
 
 #define MAXUDBOPTS	27
 
-void
+int
 _udbx_init()
 {
 	register char *p;
@@ -347,9 +355,14 @@ _udbx_init()
 
 		  case '/':	/* look up remote name */
 			up->udb_dbname = spec;
+			errno = 0;
 			up->udb_dbp = dbopen(spec, O_RDONLY, 0644, DB_BTREE, NULL);
 			if (up->udb_dbp == NULL)
+			{
+				if (errno != ENOENT && errno != EACCES)
+					return EX_TEMPFAIL;
 				break;
+			}
 			up->udb_type = UDB_LOOKUP;
 			up++;
 			break;
@@ -364,7 +377,7 @@ _udbx_init()
 			switch (up->udb_type)
 			{
 			  case UDB_EOLIST:
-				return;
+				return EX_OK;
 
 			  case UDB_REMOTE:
 				printf("REMOTE: addr %s, timeo %d\n",
@@ -422,12 +435,12 @@ _udb_parsespec(udbspec, opt, maxopts)
 
 #else /* not USERDB */
 
-void
+int
 udbexpand(a, sendq)
 	ADDRESS *a;
 	ADDRESS **sendq;
 {
-	return;
+	return EX_OK;
 }
 
 #endif /* USERDB */
