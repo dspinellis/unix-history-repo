@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)print.c 4.7 %G%";
+static	char sccsid[] = "@(#)print.c 4.8 %G%";
 /*
  *
  *	UNIX debugger
@@ -141,7 +141,8 @@ printtrace(modif)
 		THEN	stack = 1;
 		ELSE	stack = 0; lp--;
 		FI
-							/* fall through */
+		/* fall thru... */
+
 	    case '>':
 		{CHAR		file[64];
 		CHAR		Ifile[128];
@@ -195,11 +196,10 @@ printtrace(modif)
 		break;
 
 	    case 'p':
-		IF kernel == 0 THEN
-			printf("not debugging kernel\n");
-		ELSE
-			IF adrflg THEN
-				int pte = access(RD, dot, DSP, 0);
+		IF kernel == 0
+		THEN	printf("not debugging kernel\n");
+		ELSE	IF adrflg
+			THEN	int pte = access(RD, dot, DSP, 0);
 				masterpcbb = (pte&PG_PFNUM)*512;
 			FI
 			getpcb();
@@ -207,10 +207,13 @@ printtrace(modif)
 		break;
 
 	    case 'd':
-		if (adrflg) {
-			if (adrval<2 || adrval>16) {printf("must have 2 <= radix <= 16"); break;}
+		IF adrflg
+		THEN	IF adrval < 2 ORF adrval > 16
+			THEN	printf("must have 2 <= radix <= 16");
+				break;
+			FI
 			printf("radix=%d base ten",radix=adrval);
-		}
+		FI
 		break;
 
 	    case 'q': case 'Q': case '%':
@@ -227,10 +230,10 @@ printtrace(modif)
 	    case 'v': case 'V':
 		prints("variables\n");
 		FOR i=0;i<=35;i++
-		DO IF var[i]
-		   THEN printc((i<=9 ? '0' : 'a'-10) + i);
-			printf(" = %X\n",var[i]);
-		   FI
+		DO	IF var[i]
+			THEN printc((i<=9 ? '0' : 'a'-10) + i);
+				printf(" = %X\n",var[i]);
+			FI
 		OD
 		break;
 
@@ -252,17 +255,23 @@ printtrace(modif)
 
 	    case 'c': case 'C':
 		IF adrflg
-		THEN frame=adrval;
+		THEN	frame=adrval;
 			word=get(adrval+6,DSP)&0xFFFF;
 			IF word&0x2000
-			THEN /* 'calls', can figure out argp */
+			THEN	/* 'calls', can figure out argp */
 				argp=adrval+20+((word>>14)&3); word &= 0xFFF;
-				WHILE word DO IF word&1 THEN argp+=4; FI word>>=1; OD
-			ELSE /* 'callg', can't tell where argp is */ argp=frame;
+				WHILE word
+				DO	IF word&1
+					THEN	argp+=4;
+					FI
+					word>>=1;
+				OD
+			ELSE	/* 'callg', can't tell where argp is */
+				argp=frame;
 			FI
 			callpc=get(frame+16,DSP);
-		ELIF kcore THEN
-			argp = pcb.pcb_ap;
+		ELIF kcore
+		THEN	argp = pcb.pcb_ap;
 			frame = pcb.pcb_fp;
 			callpc = pcb.pcb_pc;
 		ELSE	argp= *(ADDR *)(((ADDR)&u)+AP);
@@ -274,55 +283,65 @@ printtrace(modif)
 		WHILE cntval--
 		DO	char *name;
 			chkerr();
-			if (callpc > 0x80000000 - 0x200 * UPAGES) {
-				name = "sigtramp";
+			IF callpc > 0x80000000 - 0x200 * UPAGES
+			THEN	name = "sigtramp";
 				ntramp++;
-			} else {
-				ntramp = 0;
+			ELSE	ntramp = 0;
 				findsym(callpc,ISYM);
-				if (cursym &&
-				    !strcmp(cursym->n_un.n_name, "start")) 
-					break;
-				if (cursym)
-					name = cursym->n_un.n_name;
-				else
-					name = "?";
-			}
+				IF cursym ANDF
+				    !strcmp(cursym->n_un.n_name, "start")
+				THEN break;
+				FI
+				IF cursym
+				THEN name = cursym->n_un.n_name;
+				ELSE name = "?";
+				FI
+			FI
 			printf("%s(", name);
 			narg = get(argp,DSP); IF narg&~0xFF THEN narg=0; FI
-			LOOP IF narg==0 THEN break; FI
+			LOOP	IF narg==0 THEN break; FI
 				printf("%R", get(argp += 4, DSP));
 				IF --narg!=0 THEN printc(','); FI
 			POOL
-			printf(") from %X\n",callpc);  /* jkf mod */
+			printf(") from %X\n",callpc);
 
 			IF modif=='C'
-			THEN WHILE localsym(frame,argp)
-			     DO word=get(localval,DSP);
-				printf("%8t%s:%10t", cursym->n_un.n_name);
-				IF errflg THEN prints("?\n"); errflg=0; ELSE printf("%R\n",word); FI
-			     OD
+			THEN	WHILE localsym(frame,argp)
+				DO	word=get(localval,DSP);
+					printf("%8t%s:%10t",
+					    cursym->n_un.n_name);
+					IF errflg
+					THEN prints("?\n"); errflg=0;
+					ELSE printf("%R\n",word);
+					FI
+				OD
 			FI
 
-			if (ntramp == 1)
-				callpc=get(frame+84, DSP);
-			else
-				callpc=get(frame+16, DSP);
+			IF ntramp == 1
+			THEN callpc=get(frame+84, DSP);
+			ELSE callpc=get(frame+16, DSP);
+			FI
 			argp=get(frame+8, DSP);
 			lastframe=frame;
 			frame=get(frame+12, DSP)&EVEN;
-			IF frame==0 ORF (!adrflg ANDF !INSTACK(frame))
-			THEN break;
+			IF frame==0 THEN break; FI
+			IF !adrflg ANDF !INSTACK(frame)
+			THEN	IF !kcore ORF !kstackaddr(frame)
+				THEN break;
+				FI
 			FI
 		OD
 		break;
 
 	    /*print externals*/
 	    case 'e': case 'E':
-		for (sp = symtab; sp < esymtab; sp++) {
-		   if (sp->n_type==(N_DATA|N_EXT) ORF sp->n_type==(N_BSS|N_EXT))
-		   	printf("%s:%12t%R\n", sp->n_un.n_name, get(sp->n_value,DSP));
-		}
+		FOR sp = symtab; sp < esymtab; sp++
+		DO	IF sp->n_type == (N_DATA|N_EXT) ORF
+			   sp->n_type == (N_BSS|N_EXT)
+			THEN printf("%s:%12t%R\n", sp->n_un.n_name,
+				    get(sp->n_value,DSP));
+			FI
+		OD
 		break;
 
 	    case 'a': case 'A':
@@ -332,16 +351,18 @@ printtrace(modif)
 	    /*print breakpoints*/
 	    case 'b': case 'B':
 		printf("breakpoints\ncount%8tbkpt%24tcommand\n");
-		for (bkptr=bkpthead; bkptr; bkptr=bkptr->nxtbkpt)
-			if (bkptr->flag) {
-		   		printf("%-8.8d",bkptr->count);
+		FOR bkptr=bkpthead; bkptr; bkptr=bkptr->nxtbkpt
+		DO	IF bkptr->flag
+			THEN	printf("%-8.8d",bkptr->count);
 				psymoff(leng(bkptr->loc),ISYM,"%24t");
 				comptr=bkptr->comm;
 				WHILE *comptr DO printc(*comptr++); OD
-			}
+			FI
+		OD
 		break;
 
-	    default: error(BADMOD);
+	    default:
+		error(BADMOD);
 	}
 
 }
@@ -351,7 +372,8 @@ STRING	s; MAP *amap;
 {
 	int file;
 	file=amap->ufd;
-	printf("%s%12t`%s'\n",s,(file<0 ? "-" : (file==fcor ? corfil : symfil)));
+	printf("%s%12t`%s'\n", s,
+	    (file<0 ? "-" : (file==fcor ? corfil : symfil)));
 	printf("b1 = %-16R",amap->b1);
 	printf("e1 = %-16R",amap->e1);
 	printf("f1 = %-16R",amap->f1);
