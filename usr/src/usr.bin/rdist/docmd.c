@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.15 (Berkeley) 84/02/24";
+static	char *sccsid = "@(#)docmd.c	4.16 (Berkeley) 84/03/13";
 #endif
 
 #include "defs.h"
@@ -67,7 +67,9 @@ doarrow(files, rhost, cmds)
 
 	ddir = files->n_next != NULL;	/* destination is a directory */
 
-	if (!nflag) {
+	if (nflag)
+		printf("updating host %s\n", rhost);
+	else {
 		if (setjmp(env) != 0)
 			goto done;
 		signal(SIGPIPE, lostconn);
