@@ -1,15 +1,14 @@
-/*	main.c	1.5	(Berkeley) 83/08/12
+/*	main.c	1.6	(Berkeley) 83/08/23
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
  * input go by to standard output, only interpretting things between .GS
  * and .GE lines.  Default values may be overridden, as in gprint, on the
- * command line and are further overridden by commands in the input.
+ * command line and are further overridden by commands in the input.  A
+ * description of the command-line options are listed below.  A space is
+ * NOT required for the operand of an option.
  *
  *	command options are:
- *
- *	-1 #	sets point size 1 to #.  also for -2, -3, -4.  Defaults
- *		are 12, 16, 24, 36.
  *
  *	-r ss	sets gremlin's roman font to troff font ss.  Also for -i,
  *		-b and -s for italics, bold, and special fonts.  This does
@@ -17,12 +16,15 @@
  *		instance, will get the italics font regardless of what -i
  *		is set to.
  *
+ *	-1 #	sets point size 1 to #.  also for -2, -3, -4.  Defaults
+ *		are 12, 16, 24, 36.
+ *
  *	-n #	set narrow line thickness to # pixels.  Also for -m (medium)
  *		and -t (thick).  Defaults are 1, 3, and 5 pixels.
  *
  *	-x #	scale the picture by x (integer or decimal).
  *
- *	-Tdev	Prepare output for "dev" printer.  Default is for the varian
+ *	-T dev	Prepare output for "dev" printer.  Default is for the varian
  *		and versatec printers.  Devices acceptable are:  ver, var, ip.
  *
  *	-p	prompt user for fonts, sizes and thicknesses.
@@ -43,8 +45,6 @@ extern ELT *DBInit(), *DBRead();
 extern POINT *PTInit(), *PTMakePoint();
 
 
-char *doinput();
-
 #define GREMLIB		"/usr/local/gremlib/"
 #define DEVDIR		"/usr/lib/font/dev"
 #define DEFAULTDEV	"var"
@@ -61,7 +61,7 @@ char *doinput();
 #define JRIGHT		1		/*    get placed within the line */
 
 
-char	SccsId[] = "main.c	1.5	83/08/12";
+char	SccsId[] = "main.c	1.6	83/08/23";
 
 char	*printer = DEFAULTDEV;	/* device to look up resolution of */
 double	res;			/* that printer's resolution goes here */
@@ -124,6 +124,8 @@ char	*c3 = inputline + 2;		/* ".GS" by looking individually */
 char	GScommand[MAXINLINE];		/* put user's ".GS" command line here */
 char	gremlinfile[50];		/* filename to use for a picture */
 
+char *doinput();
+
 
 /*----------------------------------------------------------------------------*
  | Routine:	main (argument_count, argument_pointer)
@@ -144,78 +146,61 @@ char **argv;
 	register FILE *fp = stdin;
 	register int k;
 	register char c;
-	char *file[50], string[50], *arg;
+	char *file[50], string[50];
 	float mult;
 	int brsh, gfil = 0;
 
+	char *operand();
 
-	argc--;
-	argv++;
-	while (argc--) {
-	    if (*(arg = *argv++) != '-')
-		file[gfil++] = arg;
-	    else switch (c = *++arg) {
+
+	while (--argc) {
+	    if (**++argv != '-')
+		file[gfil++] = *argv;
+	    else
+	      switch (c = (*argv)[1]) {
 
 		case '1':	/* select sizes */
 		case '2':
 		case '3':
 		case '4':
-			if (*++arg == '\0' && argc--)
-			    arg = *argv++;
-			strcpy(defstring[c + FONTS - '1'], arg);
+			strcpy(defstring[c + FONTS-'1'], operand(&argc, &argv));
 			break;
 		case 'r':	/* select Roman font */
-			if (*++arg == '\0' && argc--)
-			    arg = *argv++;
-			strcpy(defstring[0], arg);
+			strcpy(defstring[0], operand(&argc, &argv));
 			break;
 		case 'i':	/* select italics font */
-			if (*++arg == '\0' && argc--)
-			    arg = *argv++;
-			strcpy(defstring[1], arg);
+			strcpy(defstring[1], operand(&argc, &argv));
 			break;
 		case 'b':	/* select bold font */
-			if (*++arg == '\0' && argc--)
-			    arg = *argv++;
-			strcpy(defstring[2], arg);
+			strcpy(defstring[2], operand(&argc, &argv));
 			break;
 		case 's':	/* select special font */
-			if (*++arg == '\0' && argc--)
-			    arg = *argv++;
-			strcpy(defstring[3], arg);
+			strcpy(defstring[3], operand(&argc, &argv));
 			break;
 		case 'n':	/* select narrow brush width */
-			if (*++arg == '\0' && argc--)
-			    arg = *argv++;
-			(void) sscanf(arg, "%d", &brsh);
-			defthick[0]=defthick[1]=defthick[3]=defthick[4] = brsh;
+			(void) sscanf(operand(&argc, &argv), "%d", &brsh);
+			defthick[0]=defthick[1]=defthick[3]=defthick[4]=brsh;
 			break;
 		case 't':	/* select thick brush width */
-			if (*++arg == '\0' && argc--)
-			    arg = *argv++;
-			(void) sscanf(arg, "%d", &brsh);
+			(void) sscanf(operand(&argc, &argv), "%d", &brsh);
 			defthick[2] = brsh;
 			break;
 		case 'm':	/* select medium brush width */
-			if (*++arg == '\0' && argc--)
-			    arg = *argv++;
-			(void) sscanf(arg, "%d", &brsh);
+			(void) sscanf(operand(&argc, &argv), "%d", &brsh);
 			defthick[5] = brsh;
 			break;
 		case 'x':	/* select scale */
-			if (*++arg == '\0' && argc--)
-			    arg = *argv++;
-			sscanf(arg,"%f", &mult);
+			sscanf(operand(&argc, &argv),"%f", &mult);
 			scale *= mult;
 			break;
 		case 'T':	/* final output typesetter name */
-			printer = arg + 1;
+			printer = operand(&argc, &argv);
 			break;
 		case 'p':	/* prompt for font and size parameters */
 			for (k = 0; k < 8; k++) {
-			    fprintf(stderr, prompt[k], string[k]);
+			    fprintf(stderr, prompt[k], defstring[k]);
 			    gets(string);
-			    if (*string != '\0') strcpy(string[k], string);
+			    if (*string != '\0') strcpy(defstring[k], string);
 			}
 			fprintf(stderr,"narrow brush size? (%d): ",defthick[0]);
 			gets(string);
@@ -248,17 +233,12 @@ char **argv;
 		file[0] = NULL;
 		gfil++;
 	}
+
 	for (k=0; k<gfil; k++) {
 		if (file[k] != NULL) {
 			if ((fp = fopen(file[k], "r")) == NULL) {
 			    fprintf(stderr, "grn: can't open %s\n", file[k]);
 			    continue;
-			}
-			if (k == 0) {
-				if ((arg = rindex(file[k], '/')) == NULL)
-					arg = file[k];
-				else
-					arg++;
 			}
 		} else {
 			fp = stdin;
@@ -272,6 +252,29 @@ char **argv;
 		    }
 		}
 	}
+}
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	char  * operand (& argc,  & argv)
+ |
+ | Results:	returns address of the operand given with a command-line
+ |		option.  It uses either "-Xoperand" or "-X operand", whichever
+ |		is present.  The program is terminated if no option is present.
+ |
+ | Side Efct:	argc and argv are updated as necessary.
+ *----------------------------------------------------------------------------*/
+
+char *operand(argcp, argvp)
+int * argcp;
+char ***argvp;
+{
+	if ((**argvp)[2]) return(**argvp + 2); /* operand immediately follows */
+	if ((--*argcp) <= 0) {			/* no operand */
+	    fprintf (stderr, "command-line option operand missing.\n");
+	    exit(1);
+	}
+	return(*(++(*argvp)));			/* operand is next word */
 }
 
 
