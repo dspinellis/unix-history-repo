@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.30		%G%);
+SCCSID(@(#)util.c	3.31		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -202,10 +202,13 @@ printav(av)
 {
 	while (*av != NULL)
 	{
-		printf("\t%08x=", *av);
+		if (tTd(0, 44))
+			printf("\n\t%08x=", *av);
+		else
+			putchar(' ');
 		xputs(*av++);
-		putchar('\n');
 	}
+	putchar('\n');
 }
 # endif DEBUG
 /*
@@ -253,6 +256,7 @@ xputs(s)
 		printf("<null>");
 		return;
 	}
+	putchar('"');
 	while ((c = *s++) != '\0')
 	{
 		if (!isascii(c))
@@ -267,6 +271,7 @@ xputs(s)
 		}
 		putchar(c);
 	}
+	putchar('"');
 	(void) fflush(stdout);
 }
 # endif DEBUG
