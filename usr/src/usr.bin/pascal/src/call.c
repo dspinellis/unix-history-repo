@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.16 %G%";
+static	char sccsid[] = "@(#)call.c 1.17 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -30,6 +30,9 @@ static	char sccsid[] = "@(#)call.c 1.16 %G%";
  *	formal functions do this because we have to save the result
  *	around a call to the runtime routine which restores the display,
  *	so we can't just leave the result lying around in registers.
+ *	formal calls save the address of the descriptor in a local
+ *	temporary, so it can be addressed for the call which restores
+ *	the display (FRTN).
  *	calls to formal parameters pass the formal as a hidden argument 
  *	to a special entry point for the formal call.
  *	[this is somewhat dependent on the way arguments are addressed.]
@@ -38,11 +41,11 @@ static	char sccsid[] = "@(#)call.c 1.16 %G%";
  *	structure FUNCs look like
  *		(temp = p(...args...),&temp)
  *	formal FPROCs look like
- *		( p -> entryaddr )(...args...,p),FRTN( p ))
+ *		( t=p,( t -> entryaddr )(...args...,t),FRTN( t ))
  *	formal scalar FFUNCs look like
- *		(temp = ( p -> entryaddr )(...args...,p),FRTN( p ),temp)
+ *		( t=p,temp=( t -> entryaddr )(...args...,t),FRTN( t ),temp)
  *	formal structure FFUNCs look like
- *		(temp = ( p -> entryaddr )(...args...,p),FRTN( p ),&temp)
+ *		(t=p,temp = ( t -> entryaddr )(...args...,t),FRTN( t ),&temp)
  */
 struct nl *
 call(p, argv, porf, psbn)
@@ -66,6 +69,7 @@ call(p, argv, porf, psbn)
 	    long	p_type_width;
 	    long	p_type_align;
 	    char	extname[ BUFSIZ ];
+	    struct nl	*tempdescrp;
 #	endif PC
 
 #	ifdef OBJ
@@ -81,6 +85,21 @@ call(p, argv, porf, psbn)
 	    }
 #	endif OBJ
 #	ifdef PC
+		/*
+		 *	if this is a formal call,
+		 *	stash the address of the descriptor
+		 *	in a temporary so we can find it
+		 *	after the FCALL for the call to FRTN
+		 */
+	    if ( p -> class == FFUNC || p -> class == FPROC ) {
+		tempdescrp = tmpalloc(sizeof( struct formalrtn *) , NIL ,
+					REGOK );
+		putRV( 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
+			tempdescrp -> extra_flags , P2PTR|P2STRTY );
+		putRV( 0 , psbn , p -> value[ NL_OFFS ] ,
+			p -> extra_flags , P2PTR|P2STRTY );
+		putop( P2ASSIGN , P2PTR | P2STRTY );
+	    }
 		/*
 		 *	if we have to store a temporary,
 		 *	temptype will be its type,
@@ -126,11 +145,12 @@ call(p, argv, porf, psbn)
 		    break;
 		case FFUNC:
 		case FPROC:
+
 			    /*
-			     *	... ( p -> entryaddr )( ...
+			     *	... ( t -> entryaddr )( ...
 			     */
-			putRV( 0 , psbn , p -> value[ NL_OFFS ] ,
-				p -> extra_flags , P2PTR | P2STRTY );
+			putRV( 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
+				tempdescrp -> extra_flags , P2PTR | P2STRTY );
 			if ( FENTRYOFFSET != 0 ) {
 			    putleaf( P2ICON , FENTRYOFFSET , 0 , P2INT , 0 );
 			    putop( P2PLUS , 
@@ -300,8 +320,8 @@ call(p, argv, porf, psbn)
 		 *	space into which to save the display.
 		 */
 	    if ( p -> class == FFUNC || p -> class == FPROC ) {
-		putRV( 0 , psbn , p -> value[ NL_OFFS ] ,
-			p -> extra_flags , P2PTR|P2STRTY );
+		putRV( 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
+			tempdescrp -> extra_flags , P2PTR|P2STRTY );
 		if ( !noarguments ) {
 		    putop( P2LISTOP , P2INT );
 		}
@@ -310,7 +330,7 @@ call(p, argv, porf, psbn)
 		/*
 		 *	do the actual call:
 		 *	    either	... p( ... ) ...
-		 *	    or		... ( p -> entryaddr )( ... ) ...
+		 *	    or		... ( t -> entryaddr )( ... ) ...
 		 *	and maybe an assignment.
 		 */
 	    if ( porf == FUNC ) {
@@ -339,13 +359,14 @@ call(p, argv, porf, psbn)
 		putop( ( noarguments ? P2UNARY P2CALL : P2CALL ) , P2INT );
 	    }
 		/*
-		 *	... , FRTN( p ) ...
+		 *	( t=p , ... , FRTN( t ) ...
 		 */
 	    if ( p -> class == FFUNC || p -> class == FPROC ) {
+		putop( P2COMOP , P2INT );
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) ,
 			"_FRTN" );
-		putRV( 0 , psbn , p -> value[ NL_OFFS ] ,
-			p -> extra_flags , P2PTR | P2STRTY );
+		putRV( 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
+			tempdescrp -> extra_flags , P2PTR | P2STRTY );
 		putop( P2CALL , P2INT );
 		putop( P2COMOP , P2INT );
 	    }
