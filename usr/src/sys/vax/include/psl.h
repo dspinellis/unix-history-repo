@@ -1,4 +1,4 @@
-/*	psl.h	4.3	81/02/23	*/
+/*	psl.h	4.4	81/04/22	*/
 
 /*
  * VAX program status longword
@@ -20,4 +20,8 @@
 #define	PSL_FPD		0x08000000	/* first part done */
 #define	PSL_TP		0x40000000	/* trace pending */
 #define	PSL_CM		0x80000000	/* compatibility mode */
-#define	PSL_USERCLR	0x3c20ff00	/* bits must be clear in user mode */
+
+#define	PSL_MBZ		0x3020ff00	/* must be zero bits */
+
+#define	PSL_USERSET	(PSL_PRVMOD|PSL_CURMOD)
+#define	PSL_USERCLR	(PSL_IS|PSL_IPL|PSL_MBZ)
