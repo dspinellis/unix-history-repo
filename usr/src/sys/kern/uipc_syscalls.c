@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_syscalls.c	6.12 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	6.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -349,11 +349,6 @@ sendmsg()
 	if (u.u_error)
 		return;
 	msg.msg_iov = aiov;
-#ifdef notdef
-printf("sendmsg name %x namelen %d iov %x iovlen %d accrights %x &len %d\n",
-msg.msg_name, msg.msg_namelen, msg.msg_iov, msg.msg_iovlen,
-msg.msg_accrights, msg.msg_accrightslen);
-#endif
 	sendit(uap->s, &msg, uap->flags);
 }
 
@@ -378,7 +373,7 @@ sendit(s, mp, flags)
 	auio.uio_offset = 0;			/* XXX */
 	auio.uio_resid = 0;
 	iov = mp->msg_iov;
-	for (i = 0; i < mp->msg_iovlen; i++) {
+	for (i = 0; i < mp->msg_iovlen; i++, iov++) {
 		if (iov->iov_len < 0) {
 			u.u_error = EINVAL;
 			return;
@@ -390,7 +385,6 @@ sendit(s, mp, flags)
 			return;
 		}
 		auio.uio_resid += iov->iov_len;
-		iov++;
 	}
 	if (mp->msg_name) {
 		u.u_error =
@@ -525,7 +519,7 @@ recvit(s, mp, flags, namelenp, rightslenp)
 	auio.uio_offset = 0;			/* XXX */
 	auio.uio_resid = 0;
 	iov = mp->msg_iov;
-	for (i = 0; i < mp->msg_iovlen; i++) {
+	for (i = 0; i < mp->msg_iovlen; i++, iov++) {
 		if (iov->iov_len < 0) {
 			u.u_error = EINVAL;
 			return;
@@ -537,7 +531,6 @@ recvit(s, mp, flags, namelenp, rightslenp)
 			return;
 		}
 		auio.uio_resid += iov->iov_len;
-		iov++;
 	}
 	len = auio.uio_resid;
 	u.u_error =
