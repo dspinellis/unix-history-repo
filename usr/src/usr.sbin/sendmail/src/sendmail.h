@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.60 (Berkeley) %G%
+ *	@(#)sendmail.h	6.61 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.60		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.61		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -571,6 +571,9 @@ EXTERN char	*TrustedUsers[MAXTRUST+1];	/* list of trusted users */
 EXTERN jmp_buf	TopFrame;	/* branch-to-top-of-loop-on-error frame */
 EXTERN bool	QuickAbort;	/*  .... but only if we want a quick abort */
 EXTERN bool	LogUsrErrs;	/* syslog user errors (e.g., SMTP RCPT cmd) */
+EXTERN bool	SendMIMEErrors;	/* send error messages in MIME format */
+EXTERN bool	MatchGecos;	/* look for user names in gecos field */
+EXTERN char	SpaceSub;	/* substitution for <lwsp> */
 EXTERN int	PrivacyFlags;	/* privacy flags */
 extern char	*ConfFile;	/* location of configuration file [conf.c] */
 extern char	*FreezeFile;	/* location of frozen memory image [conf.c] */
