@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rename.2	6.3 (Berkeley) %G%
+.\"	@(#)rename.2	6.4 (Berkeley) %G%
 .\"
 .TH RENAME 2 ""
 .UC 5
@@ -36,6 +36,12 @@ guarantees that an instance of
 .I to
 will always exist, even if the system should crash in
 the middle of the operation.
+.PP
+If the final component of
+.I from
+is a symbolic link,
+the symbolic link is renamed,
+not the file or directory to which it points.
 .SH CAVEAT
 The system can deadlock if a loop in the file system graph is present.
 This loop takes the form of an entry in directory \*(lqa\*(rq,
