@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.33 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.34 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.33 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.34 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -441,17 +441,18 @@ runqueue(forkflag)
 	if (forkflag)
 	{
 		int pid;
+#ifdef SIGCHLD
+		extern void reapchild();
+
+		(void) setsignal(SIGCHLD, reapchild);
+#endif
 
 		pid = dofork();
 		if (pid != 0)
 		{
-			extern void reapchild();
-
 			/* parent -- pick up intermediate zombie */
 #ifndef SIGCHLD
 			(void) waitfor(pid);
-#else /* SIGCHLD */
-			(void) setsignal(SIGCHLD, reapchild);
 #endif /* SIGCHLD */
 			if (QueueIntvl != 0)
 				(void) setevent(QueueIntvl, runqueue, TRUE);
