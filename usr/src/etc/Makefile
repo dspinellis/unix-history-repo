@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.25 (Berkeley) %G%
+#	@(#)Makefile	5.26 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -44,7 +44,6 @@ distribution:
 	install -c -o root -g wheel -m 600 master.passwd ${DESTDIR}/etc
 	install -c -o ${BINOWN} -g ${BINGRP} -m 644 ${BIN1} ${DESTDIR}/etc
 	install -c -o ${BINOWN} -g ${BINGRP} -m 666 ${BIN2} ${DESTDIR}/etc
-	(cd /etc && rm -f rmt && ln -s /usr/sbin/rmt rmt)
 	(cd root; \
 		install -c -o root -g wheel -m 644 dot.cshrc \
 		    ${DESTDIR}/root/.cshrc; \
@@ -90,6 +89,8 @@ distribution:
 	# There are certain symbolic links we have to have, and
 	# no other place to have install them.
 	(cd / && rm -f sys && ln -s /usr/src/sys sys)
+	(cd /etc && rm -f rmt && ln -s /usr/sbin/rmt rmt)
+	(cd /etc && rm -f termcap && ln -s /usr/share/misc/termcap termcap)
 	(cd /usr/bin && rm -f X11 && ln -s /usr/X11R4/bin X11)
 	(cd /usr/lib && rm -f X && ln -s /usr/hpux/lib/X X)
 	(cd /usr/lib && rm -f X11 && ln -s /usr/X11R4/lib X11)
