@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_cons.c	7.9 (Berkeley) %G%
+ *	@(#)if_cons.c	7.10 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -293,24 +293,22 @@ cons_init()
 #endif
 }
 
-tp_incoming(lcp, m0)
+tp_incoming(lcp, m)
 struct pklcd *lcp;
-struct mbuf *m0;
+register struct mbuf *m;
 {
-	register struct mbuf *m = m0->m_next; /* m0 has calling sockaddr_x25 */
 	register struct isopcb *isop;
 	extern struct isopcb tp_isopcb;
 	int cons_tpinput();
 
 	if (iso_pcballoc((struct socket *)0, &tp_incoming_pending)) {
-		m_freem(m);
-		pk_clear(lcp);
+		pk_close(lcp);
 		return;
 	}
 	isop = tp_incoming_pending.isop_next;
-	pk_output(lcp); /* Confirms call */
 	lcp->lcd_upper = cons_tpinput;
 	lcp->lcd_upnext = (caddr_t)isop;
+	lcp->lcd_send(lcp); /* Confirms call */
 	isop->isop_chan = (caddr_t)lcp;
 	isop->isop_laddr = &isop->isop_sladdr;
 	isop->isop_faddr = &isop->isop_sfaddr;
@@ -318,7 +316,6 @@ struct mbuf *m0;
 	DTEtoNSAP(isop->isop_faddr, &lcp->lcd_faddr);
 	parse_facil(isop, lcp, &(mtod(m, struct x25_packet *)->packet_data),
 		m->m_pkthdr.len - PKHEADERLN);
-	m_freem(m);
 }
 
 cons_tpinput(lcp, m0)
@@ -385,6 +382,7 @@ cons_connect(isop)
 	register struct pklcd *lcp = (struct pklcd *)isop->isop_chan;
 	register struct mbuf 	*m;
 	struct ifaddr 			*ifa;
+	int error;
 
 	IFDEBUG(D_CCONN)
 		printf("cons_connect(0x%x): ", isop);
@@ -402,8 +400,9 @@ cons_connect(isop)
 			&lcp->lcd_faddr, &lcp->lcd_laddr, 
 			isop->isop_socket->so_proto->pr_protocol); 
 	ENDDEBUG
-	return (make_partial_x25_packet(isop, lcp, m) ||
-		 pk_connect(lcp, &lcp->lcd_faddr));
+	if ((error = make_partial_x25_packet(isop, lcp, m)) == 0)
+		error = pk_connect(lcp, &lcp->lcd_faddr);
+	return error;
 }
 
 /*
@@ -571,7 +570,7 @@ make_partial_x25_packet(isop, lcp)
 		lcp->lcd_facilities = 0;
 		return 0;
 	}
-	MGET(m, MT_DATA, M_WAITOK);
+	MGETHDR(m, MT_DATA, M_WAITOK);
 	if (m == 0)
 		return ENOBUFS;
 	buf = mtod(m, caddr_t);
@@ -579,18 +578,22 @@ make_partial_x25_packet(isop, lcp)
 	
 	/* ptr now points to facil length (len of whole facil field in OCTETS */
 	facil_len = ptr ++;
+	m->m_len = 0;
+	pk_build_facilities(m, &lcp->lcd_faddr, 0);
 
 	IFDEBUG(D_CADDR)
 		printf("make_partial  calling: ptr 0x%x, len 0x%x\n", ptr, 
 				isop->isop_laddr->siso_addr.isoa_len);
 	ENDDEBUG
 	if (cons_use_facils) {
+		*ptr++ = 0;	 /* Marker to separate X.25 facitilies from CCITT ones */
+		*ptr++ = 0x0f;
 		*ptr = 0xcb; /* calling facility code */
 		ptr ++;
 		ptr ++; /* leave room for facil param len (in OCTETS + 1) */
 		ptr ++; /* leave room for the facil param len (in nibbles),
-				* high two bits of which indicate full/partial NSAP
-				*/
+				 * high two bits of which indicate full/partial NSAP
+				 */
 		len = isop->isop_laddr->siso_addr.isoa_len;
 		bcopy( isop->isop_laddr->siso_data, ptr, len);
 		*(ptr-2) = len+1; /* facil param len in octets */
@@ -605,8 +608,8 @@ make_partial_x25_packet(isop, lcp)
 		ptr ++;
 		ptr ++; /* leave room for facil param len (in OCTETS + 1) */
 		ptr ++; /* leave room for the facil param len (in nibbles),
-				* high two bits of which indicate full/partial NSAP
-				*/
+				 * high two bits of which indicate full/partial NSAP
+				 */
 		len = isop->isop_faddr->siso_nlen;
 		bcopy(isop->isop_faddr->siso_data, ptr, len);
 		*(ptr-2) = len+1; /* facil param len = addr len + 1 for each of these
@@ -642,7 +645,7 @@ make_partial_x25_packet(isop, lcp)
 	if (buflen > MHLEN)
 		return E_CO_PNA_LONG;
 
-	m->m_len = buflen;
+	m->m_pkthdr.len = m->m_len = buflen;
 	lcp->lcd_facilities = m;
 	return  0;
 }
