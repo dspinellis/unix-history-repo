@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)service.c	4.2 %G%";
+static char sccsid[] = "@(#)service.c	4.3 %G%";
 #endif
 
 #
@@ -239,7 +239,11 @@ VOID	await(i)
 
 		BEGIN
 		   REG INT	*pw=pwlist;
-		   p=wait(&w);
+ 		   IF setjmp(INTbuf) == 0
+ 		   THEN	trapjmp[INTR] = 1; p=wait(&w);
+ 		   ELSE	p = -1;
+ 		   FI
+ 		   trapjmp[INTR] = 0;
 		   WHILE pw <= &pwlist[ipwc]
 		   DO IF *pw==p
 		      THEN *pw=0; pwc--;
