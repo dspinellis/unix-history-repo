@@ -1,5 +1,5 @@
 # Makefile for f77 system lib, libU77.a
-# @(#)Makefile	1.1 (Berkeley) %G%
+# @(#)Makefile	1.2 (Berkeley) %G%
 
 CFLAGS	      = -O
 
@@ -46,6 +46,7 @@ OBJS	      = access_.o \
 		iargc_.o \
 		idate_.o \
 		ierrno_.o \
+		ioinit.o \
 		isatty_.o \
 		itime_.o \
 		kill_.o \
@@ -101,6 +102,7 @@ SRCS	      = access_.c \
 		iargc_.c \
 		idate_.c \
 		ierrno_.c \
+		ioinit.f \
 		isatty_.c \
 		itime_.c \
 		kill_.c \
@@ -158,10 +160,8 @@ extract:;	@ar xo $(DEST)/$(LIBRARY); rm -f __.SYMDEF
 index:;		@ctags -wx $(HDRS) $(SRCS)
 
 install:	$(LIBRARY) $(LIBRARY_P)
-		@-mv $(DEST)/$(LIBRARY) $(OLDDIR)/$(LIBRARY)
 		install -m 644 $(LIBRARY) $(DEST)/$(LIBRARY)
 		ranlib $(DEST)/$(LIBRARY)
-		@-mv $(DEST)/$(LIBRARY_P) $(OLDDIR)/$(LIBRARY_P)
 		install -m 644 $(LIBRARY_P) $(DEST)/$(LIBRARY_P)
 		ranlib $(DEST)/$(LIBRARY_P)
 
@@ -182,5 +182,13 @@ $(DEST)/$(LIBRARY): $(SRCS) $(HDRS) $(EXTHDRS)
 		-ld -x -r $*.o
 		mv a.out profiled/$*.o
 		$(CC) $(CFLAGS) -c $*.c
+		-ld -x -r $*.o
+		mv a.out $*.o
+
+.f.o:
+		$(FC) -p $(FFLAGS) -c $*.f
+		-ld -x -r $*.o
+		mv a.out profiled/$*.o
+		$(FC) $(FFLAGS) -c $*.f
 		-ld -x -r $*.o
 		mv a.out $*.o
