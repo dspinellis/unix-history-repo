@@ -1,4 +1,4 @@
-/*	socketvar.h	4.13	82/01/19	*/
+/*	socketvar.h	4.14	82/01/19	*/
 
 /*
  * Kernel structure per socket.
@@ -66,9 +66,9 @@ struct socket {
 
 /* can we write something to so? */
 #define	sowriteable(so) \
-    ((sbspace(&(so)->so_snd) > 0 && \
+    (sbspace(&(so)->so_snd) > 0 && \
 	(((so)->so_state&SS_ISCONNECTED) || \
-	  (so)->so_proto->pr_flags&PR_CONNREQUIRED)==0) || \
+	  ((so)->so_proto->pr_flags&PR_CONNREQUIRED)==0) || \
      ((so)->so_state & SS_CANTSENDMORE))
 
 /* adjust counters in sb reflecting allocation of m */
