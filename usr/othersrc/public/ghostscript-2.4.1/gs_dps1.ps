@@ -1,0 +1,241 @@
+%    Copyright (C) 1990, 1991 Aladdin Enterprises.  All rights reserved.
+%    Distributed by Free Software Foundation, Inc.
+%
+% This file is part of Ghostscript.
+%
+% Ghostscript is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+% to anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.  Refer
+% to the Ghostscript General Public License for full details.
+%
+% Everyone is granted permission to copy, modify and redistribute
+% Ghostscript, but only under the conditions described in the Ghostscript
+% General Public License.  A copy of this license is supposed to have been
+% given to you along with Ghostscript so you can know your rights and
+% responsibilities.  It should be in a file named COPYING.  Among other
+% things, the copyright notice and this notice must be preserved on all
+% copies.
+
+% Initialization file for Ghostscript analogs of Display PostScript
+% functions that are also included in Level 2.
+% When this is run, systemdict is still writable.
+
+% ------ Binary token support ------ %
+
+% Initialization for the system name table.
+
+mark
+% 0
+	/abs /add /aload /anchorsearch /and
+	/arc /arcn /arct /arcto /array
+	/ashow /astore /awidthshow /begin /bind
+	/bitshift /ceiling /charpath /clear /cleartomark
+% 20
+	/clip /clippath /closepath /concat /concatmatrix
+	/copy /count /counttomark /currentcmykcolor /currentdash
+	/currentdict /currentfile /currentfont /currentgray /currentgstate
+	/currenthsbcolor /currentlinecap /currentlinejoin /currentlinewidth /currentmatrix
+% 40
+	/currentpoint /currentrgbcolor /currentshared /curveto /cvi
+	/cvlit /cvn /cvr /cvrs /cvs
+	/cvx /def /defineusername /dict /div
+	/dtransform /dup /end /eoclip /eofill
+% 60
+	/eoviewclip /eq /exch /exec /exit
+	/file /fill /findfont /flattenpath /floor
+	/flush /flushfile /for /forall /eg
+	/get /getinterval /grestore /gsave /gstate
+% 80
+	/gt /identmatrix /idiv /idtransform /if
+	/ifelse /image /imagemask /index /ineofill
+	/infill /initviewclip /inueofill /inufill /invertmatrix
+	/itransform /known /le /length /lineto
+% 100
+	/load /loop /lt /makefont /matrix
+	/maxlength /mod /moveto /mul /ne
+	/neg /newpath /not /null /or
+	/pathbbox /pathfoall /pop /print /printobject
+% 120
+	/put /putinterval /rcurveto /read /readhexstring
+	/readline /readstring /rectclip /rectfill /rectstroke
+	/rectviewclip /repeat /restore /rlineto /rmoveto
+	/roll /rotate /round /save /scale
+% 140
+	/scalefont /search /selectfont /setbbox /setcachedevice
+	/setcachedevice2 /setcharwidth /setcmykcolor /setdash /setfont
+	/setgray /setgstate /sethsbcolor /setlinecap /setlinejoin
+	/setlinewidth /setmatrix /setrgbcolor /setshared /shareddict
+% 160
+	/show /showpage /stop /stopped /store
+	/string /stringwidth /stroke /strokepath /sub
+	/systemdict /token /transform /translate /truncate
+	/type /uappend /ucache /ueofill /ufill
+% 180
+	/undef /upath /userdict /ustroke /viewclip
+	/viewclippath /where /widthshow /write /writehexstring
+	/writeobject /writestring /wtranslation /xor /xshow
+	/xyshow /yshow /FontDirectory /SharedFontDirectory /Courier
+% 200
+	/Courier-Bold /Courier-BoldOblique /Courier-Oblique /Helvetica /Helvetica-Bold
+	/Helvetica-BoldOblique /Helvetica-Oblique /Symbol /Times-Bold /Times-BoldItalic
+	/Times-Italic /Times-Roman /execuserobject /currentcolor /currentcolorspace
+	/currentglobal /execform /filter /findresource /globaldict
+% 220
+	/makepattern /setcolor /setcolorspace /setglobal /setpagedevice
+	/setpattern
+% pad to 256
+	counttomark 256 exch sub { 0 } repeat
+% 256
+	/= /== /ISOLatin1Encoding /StandardEncoding
+% 260
+	/[ /] /atan /banddevice /bytesavailable
+	/cachestatus /closefile /colorimage /condition /copypage
+	/cos /countdictstack /countexecstack /cshow /currentblackgeneration
+	/currentcacheparams /currentcolorscreen /currentcolortransfer /currentcontext /currentflat
+% 280
+	/currenthalftone /currenthalftonephase /currentmiterlimit /currentobjectformat /currentpacking
+	/currentscreen /currentstrokeadjust /currenttransfer /currentundercolorremoval /defaultmatrix
+	/definefont /deletefile /detach /deviceinfo /dictstack
+	/echo /erasepage /errordict /execstack /executeonly
+% 300
+	/exp /false /filenameforall /fileposition /fork
+	/framedevice /grestoreall /handleerror /initclip /initgraphics
+	/initmatrix /instroke /inustroke /join /kshow
+	/ln /lock /log /mark /monitor
+% 320
+	/noaccess /notify /nulldevice /packedarray /quit
+	/rand /rcheck /readonly /realtime /renamefile
+	/renderbands /resetfile /reversepath /rootfont /rrand
+	/run /scheck /setblackgeneration /setcachelimit /setcacheparams
+% 340
+	/setcolorscreen /setcolortransfer /setfileposition /setflat /sethalftone
+	/sethalftonephase /setmiterlimit /setobjectformat /setpacking /setscreen
+	/setstrokeadjust /settransfer /setucacheparams /setundercolorremoval /sin
+	/sqrt /srand /stack /status /statusdict
+% 360
+	/true /ucachestatus /undefinefont /usertime /ustrokepath
+	/version /vmreclaim /vmstatus /wait /wcheck
+	/xcheck /yield /defineuserobject /undefineuserobject /UserObjects
+	/cleardictstack
+% 376
+	/A /B /C /D /E /F /G /H /I /J /K /L /M
+	/N /O /P /Q /R /S /T /U /V /W /X /Y /Z
+	/a /b /c /d /e /f /g /h /i /j /k /l /m
+	/n /o /p /q /r /s /t /u /v /w /x /y /z
+% 428
+	/setvmthreshold (<<) cvn
+	(>>) cvn /currentcolorrendering /currentdevparams /currentoverprint /currentpagedevice
+	/currentsystemparams /currentuserparams /defineresource /findencoding /gcheck
+% 440
+	/glyphshow /languagelevel /product /pstack /resourceforall
+	/resourcestatus /revision /serialnumber /setcolorrendering /setdevparams
+	/setoverprint /setsystemparams /setuserparams /startjob /undefineresource
+	/GlobalFontDirectory /ASCII85Decode /ASCII85Encode /ASCIIHexDecode /ASCIIHexEncode
+% 460
+	/CCITTFaxDecode /CCITTFaxEncode /DCTDecode /DCTEncode /LZWDecode
+	/LZWEncode /NullEncode /RunLengthDecode /RunLengthEncode /SubFileDecode
+	/CIEBasedA /CIEBasedABC /DeviceCMYK /DeviceGray /DeviceRGB
+	/Indexed /Pattern /Separation
+% 478 -- end
+counttomark packedarray exch pop
+
+% Install the system and user name tables.
+% The user name table is read-only for ordinary programs,
+% since it doesn't obey save/restore and must be managed specially.
+ 
+dup /SystemNames exch def
+100 array readonly dup /UserNames exch def
+.installnames
+
+% ------ Fonts ------ %
+
+/selectfont
+	{ exch findfont exch
+	  dup type /arraytype eq { makefont } { scalefont } ifelse
+	  setfont
+	} odef
+/undefinefont
+	{ FontDirectory exch undef
+	} odef
+
+% ------ Halftones ------ %
+
+%**************** These are pretty much stubs ****************%
+% since they only recognize a subset of the halftone types,
+% and don't return the actual frequency and angle.
+
+/currenthalftone
+	{ currentscreen 4 dict begin
+	  /HalftoneType 1 def
+	  /SpotFunction exch def
+	  /Angle exch def
+	  /Frequency exch def
+	  currentdict end
+	} odef
+/getall		% dict keyarray -> values
+	{ 1 index exch { get exch dup } forall pop pop
+	} bind def
+/.sethalftone1
+	{ { /Frequency /Angle /SpotFunction } getall setscreen
+	} bind def
+/.sethalftone2
+	{ { /RedFrequency /RedAngle /RedSpotFunction
+	    /GreenFrequency /GreenAngle /GreenSpotFunction
+	    /BlueFrequency /BlueAngle /BlueSpotFunction
+	    /GrayFrequency /GrayAngle /GraySpotFunction
+	  } getall setcolorscreen
+	} bind def
+/sethalftone
+	{ dup /HalftoneType get 1 sub
+	   { .sethalftone1 .sethalftone2 .sethalftone3 .sethalftone4
+	     .sethalftone5
+	   } exch get cvx exec
+	} odef
+
+% ------ User objects ------ %
+
+/defineuserobject
+	{ userdict /UserObjects known
+	   { 1 index userdict /UserObjects get length ge
+	      { 1 index 1 add array userdict /UserObjects get
+	        1 index copy pop
+	        userdict /UserObjects 3 -1 roll put
+	      } if }
+	   { userdict /UserObjects 3 index 1 add array put }
+	  ifelse
+	  userdict /UserObjects get 3 1 roll put
+	} odef
+/execuserobject
+	{ userdict /UserObjects get exch get exec
+	} odef
+/undefineuserobject
+	{ userdict /UserObjects get exch null put
+	} odef
+
+% ------ User paths ------ %
+
+/upath
+	{ [ exch {/ucache cvx} if pathbbox /setbbox cvx
+	  {/moveto cvx} {/lineto cvx} {/curveto cvx} {/closepath cvx}
+	  pathforall ] cvx
+	} odef
+
+% Dummy definitions for cache control operators
+
+/ucachestatus
+	{ mark 0 0 0 0 0 } odef
+/setucacheparams
+	{ cleartomark } odef
+
+% ------ Virtual memory ------ %
+
+%**************** Everything here is a stub. ****************%
+
+/currentshared { false } odef
+/scheck { pop false } odef
+/setshared { pop } odef
+/setvmthreshold { pop } odef
+/shareddict userdict def
+/SharedFontDirectory FontDirectory def
+/vmreclaim { pop } odef
