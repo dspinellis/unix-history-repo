@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.41	%G%";
+static char SccsId[] = "@(#)deliver.c	3.42	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -384,14 +384,17 @@ sendoff(m, pvp, editfcn, ctladdr)
 		(void) close(pvect[1]);
 		if (!bitset(M_RESTR, m->m_flags))
 		{
-			extern int DefUid, DefGid;
-
-			(void) setuid(ctladdr->q_uid);
-			(void) setgid(ctladdr->q_gid);
-			if (getruid() == 0)
+			if (ctladdr->q_uid == 0)
 			{
-				setuid(DefUid);
-				setgid(DefGid);
+				extern int DefUid, DefGid;
+
+				(void) setgid(DefGid);
+				(void) setuid(DefUid);
+			}
+			else
+			{
+				(void) setgid(ctladdr->q_gid);
+				(void) setuid(ctladdr->q_uid);
 			}
 		}
 # ifndef VFORK
@@ -711,6 +714,7 @@ mailfile(filename, ctladdr)
 	{
 		/* child -- actually write to file */
 		struct stat stb;
+		extern int DefUid, DefGid;
 
 		(void) signal(SIGINT, SIG_DFL);
 		(void) signal(SIGHUP, SIG_DFL);
@@ -723,9 +727,19 @@ mailfile(filename, ctladdr)
 		if (ctladdr == NULL)
 			ctladdr = &From;
 		if (!bitset(S_ISGID, stb.st_mode) || setgid(stb.st_gid) < 0)
-			(void) setgid(ctladdr->q_gid);
+		{
+			if (ctladdr->q_uid == 0)
+				(void) setgid(DefGid);
+			else
+				(void) setgid(ctladdr->q_gid);
+		}
 		if (!bitset(S_ISUID, stb.st_mode) || setuid(stb.st_uid) < 0)
-			(void) setuid(ctladdr->q_uid);
+		{
+			if (ctladdr->q_uid == 0)
+				(void) setuid(DefUid);
+			else
+				(void) setuid(ctladdr->q_uid);
+		}
 		f = fopen(filename, "a");
 		if (f == NULL)
 			exit(EX_CANTCREAT);
@@ -734,6 +748,9 @@ mailfile(filename, ctladdr)
 		fputs("\n", f);
 		(void) fclose(f);
 		(void) fflush(stdout);
+
+		/* reset ISUID & ISGID bits */
+		(void) chmod(filename, stb.st_mode);
 		exit(EX_OK);
 		/*NOTREACHED*/
 	}
