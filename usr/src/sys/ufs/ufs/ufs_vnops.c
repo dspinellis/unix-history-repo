@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.73 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.74 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -623,7 +623,8 @@ relookup(dvp, vpp, cnp)
 	 */
 	wantparent = cnp->cn_flags & (LOCKPARENT|WANTPARENT);
 	docache = (cnp->cn_flags & NOCACHE) ^ NOCACHE;
-	if (cnp->cn_nameiop == DELETE || (wantparent && cnp->cn_nameiop != CREATE))
+	if (cnp->cn_nameiop == DELETE ||
+	    (wantparent && cnp->cn_nameiop != CREATE))
 		docache = 0;
 	rdonly = cnp->cn_flags & RDONLY;
 	cnp->cn_flags &= ~ISSYMLINK;
