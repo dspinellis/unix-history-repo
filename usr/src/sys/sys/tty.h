@@ -3,16 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.h	7.3 (Berkeley) %G%
+ *	@(#)tty.h	7.4 (Berkeley) %G%
  */
 
 #ifdef KERNEL
-#include "ttychars.h"
-#include "ttydev.h"
 #include "termios.h"
 #else
-#include <sys/ttychars.h>
-#include <sys/ttydev.h>
 #include <sys/termios.h>
 #endif
 
@@ -36,37 +32,20 @@ struct clist {
  * (low, high, timeout).
  */
 struct tty {
-	union {
-		struct {
-			struct	clist T_rawq;
-			struct	clist T_canq;
-		} t_t;
-#define	t_rawq	t_nu.t_t.T_rawq		/* raw characters or partial line */
-#define	t_canq	t_nu.t_t.T_canq		/* canonicalized lines */
-		struct {
-			struct	buf *T_bufp;
-			char	*T_cp;
-			int	T_inbuf;
-			int	T_rec;
-		} t_n;
-#define	t_bufp	t_nu.t_n.T_bufp		/* buffer allocated to protocol */
-#define	t_cp	t_nu.t_n.T_cp		/* pointer into the ripped off buffer */
-#define	t_inbuf	t_nu.t_n.T_inbuf	/* number chars in the buffer */
-#define	t_rec	t_nu.t_n.T_rec		/* have a complete record */
-	} t_nu;
+	struct	clist t_rawq;
+	struct	clist t_canq;
 	struct	clist t_outq;		/* device */
 	int	(*t_oproc)();		/* device */
 	int	(*t_param)();		/* device */
 	struct	proc *t_rsel;		/* tty */
 	struct	proc *t_wsel;
-			caddr_t	T_LINEP;	/* ### */
+	caddr_t	T_LINEP; 		/* XXX */
 	caddr_t	t_addr;			/* ??? */
 	dev_t	t_dev;			/* device */
-	int	t_flags;		/* (old) some of both */
+	int	t_flags;		/* (compat) some of both */
 	int	t_state;		/* some of both */
-	struct session *t_session;	/* tty */
+	struct	session *t_session;	/* tty */
 	pid_t	t_pgid;			/* tty */
-	char	t_delct;		/* tty */
 	char	t_line;			/* glue */
 	char	t_col;			/* tty */
 	char	t_rocount, t_rocol;	/* tty */
@@ -92,7 +71,6 @@ struct tty {
 #define	TTOPRI	29
 
 /* limits */
-#define	NSPEEDS	16
 #define	TTMASK	15
 #define	OBUFSIZ	100
 #define	TTYHOG	255
@@ -136,3 +114,24 @@ extern	struct ttychars ttydefaults;
 #define	TAB		4
 #define	VTAB		5
 #define	RETURN		6
+
+struct speedtab {
+        int sp_speed;
+        int sp_code;
+};
+/*
+ * Flags on character passed to ttyinput
+ */
+#define TTY_CHARMASK    0x000000ff      /* Character mask */
+#define TTY_QUOTE       0x00000100      /* Character quoted */
+#define TTY_ERRORMASK   0xff000000      /* Error mask */
+#define TTY_FE          0x01000000      /* Framing error or BREAK condition */
+#define TTY_PE          0x02000000      /* Parity error */
+
+/*
+ * Modem control commands (driver).
+ */
+#define	DMSET		0
+#define	DMBIS		1
+#define	DMBIC		2
+#define	DMGET		3
