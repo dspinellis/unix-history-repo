@@ -1,4 +1,4 @@
-/*	Locore.c	4.10	81/05/05	*/
+/*	Locore.c	4.11	81/05/15	*/
 
 #include "dz.h"
 
@@ -24,6 +24,8 @@ struct	scb scb;
 int	(*UNIvec[128])();
 struct	rpb rpb;
 int	intstack[3*128];
+
+int	masterpaddr;		/* p_addr of current process on master cpu */
 
 struct	user u;
 
