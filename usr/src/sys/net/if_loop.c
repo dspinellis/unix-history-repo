@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_loop.c	7.8 (Berkeley) %G%
+ *	@(#)if_loop.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -99,6 +99,7 @@ if (mlen != m->m_pkthdr.len) {
 
 	s = splimp();
 	ifp->if_opackets++;
+	ifp->if_obytes += m->m_pkthdr.len;
 	switch (dst->sa_family) {
 
 #ifdef INET
@@ -148,6 +149,7 @@ if (mlen != m->m_pkthdr.len) {
 		return (EAFNOSUPPORT);
 	}
 	ifp->if_ipackets++;
+	ifp->if_ibytes += m->m_pkthdr.len;
 	splx(s);
 	return (0);
 }
