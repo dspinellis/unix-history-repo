@@ -1,0 +1,32 @@
+*** PORT/db/btree/bt_open.c.orig	Thu Sep 16 14:42:22 1993
+--- PORT/db/btree/bt_open.c	Mon Nov  8 07:03:40 1993
+***************
+*** 256,262 ****
+--- 256,266 ----
+  		 * Don't overflow the page offset type.
+  		 */
+  		if (b.psize == 0) {
++ #ifndef sgi
+  			b.psize = sb.st_blksize;
++ #else
++ 			b.psize = 4096;
++ #endif /* sgi */
+  			if (b.psize < MINPSIZE)
+  				b.psize = MINPSIZE;
+  			if (b.psize > MAX_PAGE_OFFSET + 1)
+*** PORT/db/hash/hash.c.orig	Thu Nov  4 15:32:16 1993
+--- PORT/db/hash/hash.c	Mon Nov  8 07:05:12 1993
+***************
+*** 301,307 ****
+--- 301,311 ----
+  	if (file != NULL) {
+  		if (stat(file, &statbuf))
+  			return (NULL);
++ #ifndef sgi
+  		hashp->BSIZE = statbuf.st_blksize;
++ #else
++ 		hashp->BSIZE = 4096;
++ #endif /* sgi */
+  		hashp->BSHIFT = __log2(hashp->BSIZE);
+  	}
+  
