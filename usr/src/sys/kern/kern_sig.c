@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.13	82/12/17	*/
+/*	kern_sig.c	5.14	82/12/19	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -163,7 +163,7 @@ ossig()
 	 */
 	(void) spl6();
 	sigmask = 1L << (a-1);
-	if (u.u_signal[a] == SIG_IGN)
+	if (f == SIG_IGN)
 		p->p_sig &= ~sigmask;		/* never to be seen again */
 	u.u_signal[a] = f;
 	if (f != SIG_DFL && f != SIG_IGN && f != SIG_HOLD)
