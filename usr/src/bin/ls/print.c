@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -42,7 +42,7 @@ void
 printscol(dp)
 	DISPLAY *dp;
 {
-	register FTSENT *p;
+	FTSENT *p;
 
 	for (p = dp->list; p; p = p->fts_link) {
 		if (IS_NOPRINT(p))
@@ -56,8 +56,8 @@ void
 printlong(dp)
 	DISPLAY *dp;
 {
-	register FTSENT *p;
-	register struct stat *sp;
+	struct stat *sp;
+	FTSENT *p;
 	NAMES *np;
 	char buf[20];
 
@@ -112,8 +112,8 @@ printcol(dp)
 	extern int termwidth;
 	static FTSENT **array;
 	static int lastentries = -1;
-	register FTSENT *p;
-	register int base, chcnt, cnt, col, colwidth, num;
+	FTSENT *p;
+	int base, chcnt, cnt, col, colwidth, num;
 	int endcol, numcols, numrows, row;
 
 	/*
@@ -176,7 +176,7 @@ printcol(dp)
  */
 static int
 printaname(p, inodefield, sizefield)
-	register FTSENT *p;
+	FTSENT *p;
 	u_long sizefield, inodefield;
 {
 	struct stat *sp;

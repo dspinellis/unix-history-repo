@@ -12,16 +12,12 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pwd.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pwd.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/types.h>
-
 #include <err.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
 void usage __P((void));
@@ -64,6 +60,7 @@ main(argc, argv)
 void
 usage()
 {
+
 	(void)fprintf(stderr, "usage: pwd\n");
 	exit(1);
 }

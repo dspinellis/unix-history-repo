@@ -9,23 +9,22 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)move.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <unistd.h>
-#include <stdio.h>
+
 #include <ar.h>
+#include <dirent.h>
+#include <err.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <unistd.h>
+
 #include "archive.h"
 #include "extern.h"
 #include "pathnames.h"
-
-extern CHDR chdr;			/* converted header */
-extern char *archive;			/* archive name */
-extern char *tname;                     /* temporary file "name" */
 
 /*
  * move --
@@ -34,10 +33,10 @@ extern char *tname;                     /* temporary file "name" */
  *	option selected members go after 'posname'.  If no options, members
  *	are moved to end of archive.
  */
+int
 move(argv)
 	char **argv;
 {
-	extern char *posarg, *posname;	/* positioning file names */
 	CF cf;
 	off_t size, tsize;
 	int afd, curfd, mods, tfd1, tfd2, tfd3;
@@ -83,10 +82,9 @@ move(argv)
 	}
 
 	if (mods) {
-		(void)fprintf(stderr, "ar: %s: archive member not found.\n",
-		    posarg);
+		warnx("%s: archive member not found", posarg);
 		close_archive(afd);
-		return(1);
+		return (1);
 	}
 	(void)lseek(afd, (off_t)SARMAG, SEEK_SET);
 
@@ -110,7 +108,7 @@ move(argv)
 
 	if (*argv) {
 		orphans(argv);
-		return(1);
+		return (1);
 	}
-	return(0);
+	return (0);
 }	

@@ -9,35 +9,35 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)append.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)append.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/errno.h>
+
+#include <err.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "archive.h"
 #include "extern.h"
-
-extern char *archive;			/* archive name */
 
 /*
  * append --
  *	Append files to the archive - modifies original archive or creates
  *	a new archive if named archive does not exist.
  */
+int
 append(argv)
 	char **argv;
 {
-	register int fd, afd;
-	register char *file;
-	struct stat sb;
+	int afd, fd, eval;
+	char *file;
 	CF cf;
-	int eval;
+	struct stat sb;
 
 	afd = open_archive(O_CREAT|O_RDWR);
 	if (lseek(afd, (off_t)0, SEEK_END) == (off_t)-1)
@@ -47,8 +47,7 @@ append(argv)
 	SETCF(0, 0, afd, archive, WPAD);
 	for (eval = 0; file = *argv++;) {
 		if ((fd = open(file, O_RDONLY)) < 0) {
-			(void)fprintf(stderr,
-			    "ar: %s: %s.\n", file, strerror(errno));
+			warn("%s", file);
 			eval = 1;
 			continue;
 		}
@@ -60,5 +59,5 @@ append(argv)
 		(void)close(fd);
 	}
 	close_archive(afd);
-	return(eval);	
+	return (eval);	
 }

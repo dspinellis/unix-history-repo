@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -29,11 +29,10 @@ print(tp, wp, ldisc, fmt)
 	int ldisc;
 	enum FMT fmt;
 {
-	register struct cchar *p;
-	register long tmp;
-	register int cnt;
-	register u_char *cc;
-	int ispeed, ospeed;
+	struct cchar *p;
+	long tmp;
+	u_char *cc;
+	int cnt, ispeed, ospeed;
 	char buf1[100], buf2[100];
 
 	cnt = 0;
@@ -180,6 +179,7 @@ static void
 binit(lb)
 	char *lb;
 {
+
 	if (col) {
 		(void)printf("\n");
 		col = 0;
@@ -191,6 +191,7 @@ static void
 bput(s)
 	char *s;
 {
+
 	if (col == 0) {
 		col = printf("%s: %s", label, s);
 		return;

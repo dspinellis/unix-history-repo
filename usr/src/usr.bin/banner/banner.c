@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)banner.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)banner.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -20,7 +20,11 @@ static char sccsid[] = "@(#)banner.c	8.1 (Berkeley) %G%";
  * banner [-w#] [-d] [-t] message ...
  */
 
+#include <err.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #define MAXMSG 1024
 #define DWIDTH 132
@@ -987,31 +991,21 @@ char data_table[NBYTES] = {
 /* 9270 */   193
 };
 
-int i,j;
-int width = DWIDTH;	/* -w option: scrunch letters to 80 columns */
-int debug;
-int trace;
-char line[DWIDTH];
-char print[DWIDTH];
-char message[MAXMSG];
-int nchars;
-int linen;
-int x,y;
-int term;
-int pc;
-int max;
+char	line[DWIDTH];
+char	message[MAXMSG];
+char	print[DWIDTH];
+int	debug, i, j, linen, max, nchars, pc, term, trace, x, y;
+int	width = DWIDTH;	/* -w option: scrunch letters to 80 columns */
 
+int
 main(argc, argv)
 	int argc;
 	char **argv;
 { 
-	extern char *optarg;
-	extern int optind;
 	int ch;
-	char *strcpy(), *strcat();
 
 	while ((ch = getopt(argc, argv, "w:td")) != EOF)
-		switch((char)ch) {
+		switch(ch) {
 		case 'w':
 			width = atoi(optarg);
 			if (width <= 0)
@@ -1031,29 +1025,10 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	for (i=0; i<width; i++) {
+	for (i = 0; i < width; i++) {
 		j = i * 132 / width;
 		print[j] = 1;
 	}
-
-#ifdef notdef
-	{
-#define dir(f) "/e1/mrh/ucb/lib/f"
-#define INDTBL dir(ban.dat.indtbl)
-#define OBJECT dir(ban.dat.object)
-		FILE *fd;
-
-		fd = fopen(INDTBL, "r");
-		for (i=0; i<NCHARS; i++) {
-			fscanf(fd, "%d", &asc_ptr[i]);
-		}
-		fclose(fd);
-
-		fd = fopen(OBJECT, "r");
-		fread(data_table, 1, NBYTES, fd);
-		fclose(fd);
-	}
-#endif
 
 	/* Have now read in the data. Next get the message to be printed. */
 	if (*argv) {
@@ -1073,18 +1048,18 @@ main(argc, argv)
 	/* some debugging print statements */
 	if (debug) {
 		printf("int asc_ptr[128] = {\n");
-		for (i=0; i<128; i++) {
+		for (i = 0; i < 128; i++) {
 			printf("%4d,   ",asc_ptr[i]);
 			if ((i+1) % 8 == 0)
 				printf("\n");
 		}
 		printf("};\nchar data_table[NBYTES] = {\n");
 		printf("  /*   ");
-		for (i=0; i<10; i++) printf(" %3d  ",i);
+		for (i = 0; i < 10; i++) printf(" %3d  ",i);
 		printf("   */\n");
-		for (i=0; i<NBYTES; i += 10) {
+		for (i = 0; i < NBYTES; i += 10) {
 			printf("/* %4d */  ",i);
-			for (j=i; j<i+10; j++) { 
+			for (j = i; j < i+10; j++) { 
 				x = data_table[j] & 0377;
 				printf(" %3d, ",x);
 			}
@@ -1095,27 +1070,30 @@ main(argc, argv)
 
 	/* check message to make sure it's legal */
 	j = 0;
-	for (i=0; i<nchars; i++)
-		if (asc_ptr[message[i]] == 0) {
-			printf("The character '%c' is not in my character set.\n",message[i]);
+	for (i = 0; i < nchars; i++)
+		if ((u_char) message[i] >= NCHARS ||
+		    asc_ptr[(u_char) message[i]] == 0) {
+			warnx("The character '%c' is not in my character set",
+				message[i]);
 			j++;
 		}
-	if (j) exit(1);
+	if (j)
+		exit(1);
 
 	if (trace)
 		printf("Message '%s' is OK\n",message);
 	/* Now have message. Print it one character at a time.  */
 
-	for (i=0; i<nchars; i++) {
+	for (i = 0; i < nchars; i++) {
 		if (trace)
 			printf("Char #%d: %c\n", i, message[i]);
-		for (j=0; j<DWIDTH; j++) line[j] = ' ';
-		pc = asc_ptr[message[i]];
+		for (j = 0; j < DWIDTH; j++) line[j] = ' ';
+		pc = asc_ptr[(u_char) message[i]];
 		term = 0;
 		max = 0;
 		linen = 0;
-		while ( !term ) {
-			if (pc<0 || pc > NBYTES) {
+		while (!term) {
+			if (pc < 0 || pc > NBYTES) {
 				printf("bad pc: %d\n",pc);
 				exit(1);
 			}
@@ -1127,13 +1105,13 @@ main(argc, argv)
 				x = x & 63;
 				while (x--) {
 					if (print[linen++]) {
-						for (j=0; j<=max; j++)
+						for (j=0; j <= max; j++)
 							if (print[j])
 								putchar(line[j]);
 						putchar('\n');
 					}
 				}
-				for (j=0; j<DWIDTH; j++) line[j] = ' ';
+				for (j = 0; j < DWIDTH; j++) line[j] = ' ';
 				pc++;
 			}
 			else {

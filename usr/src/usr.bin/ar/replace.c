@@ -9,24 +9,22 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)replace.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)replace.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <errno.h>
-#include <unistd.h>
+
 #include <ar.h>
+#include <dirent.h>
+#include <err.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+
 #include "archive.h"
 #include "extern.h"
-
-extern CHDR chdr;			/* converted header */
-extern char *archive;			/* archive name */
-extern char *tname;                     /* temporary file "name" */
 
 /*
  * replace --
@@ -35,19 +33,17 @@ extern char *tname;                     /* temporary file "name" */
  *	the key entry, based on the a, b and i options.  If the u option
  *	is specified, modification dates select for replacement.
  */
+int
 replace(argv)
 	char **argv;
 {
-	extern char *posarg, *posname;	/* positioning file name */
-	register char *file;
-	register int afd, curfd, mods, sfd;
+	char *file;
+	int afd, curfd, errflg, exists, mods, sfd, tfd1, tfd2;
 	struct stat sb;
 	CF cf;
 	off_t size, tsize;
-	int err, exists, tfd1, tfd2;
-	char *rname();
 
-	err = 0;
+	errflg = 0;
 	/*
 	 * If doesn't exist, simply append to the archive.  There's
 	 * a race here, but it's pretty short, and not worth fixing.
@@ -75,9 +71,8 @@ replace(argv)
 	for (curfd = tfd1; get_arobj(afd);) {
 		if (*argv && (file = files(argv))) {
 			if ((sfd = open(file, O_RDONLY)) < 0) {
-				err = 1;
-				(void)fprintf(stderr, "ar: %s: %s.\n",
-				    file, strerror(errno));
+				errflg = 1;
+				warn("%s", file);
 				goto useold;
 			}
 			(void)fstat(sfd, &sb);
@@ -112,10 +107,9 @@ useold:			SETCF(afd, archive, curfd, tname, RPAD|WPAD);
 	}
 
 	if (mods) {
-		(void)fprintf(stderr, "ar: %s: archive member not found.\n",
-		    posarg);
+		warnx("%s: archive member not found", posarg);
                 close_archive(afd);
-                return(1);
+                return (1);
         }
 
 	/* Append any left-over arguments to the end of the after file. */
@@ -123,9 +117,8 @@ append:	while (file = *argv++) {
 		if (options & AR_V)
 			(void)printf("a - %s\n", file);
 		if ((sfd = open(file, O_RDONLY)) < 0) {
-			err = 1;
-			(void)fprintf(stderr, "ar: %s: %s.\n",
-			    file, strerror(errno));
+			errflg = 1;
+			warn("%s", file);
 			continue;
 		}
 		(void)fstat(sfd, &sb);
@@ -153,5 +146,5 @@ append:	while (file = *argv++) {
 
 	(void)ftruncate(afd, tsize + SARMAG);
 	close_archive(afd);
-	return(err);
+	return (errflg);
 }	
