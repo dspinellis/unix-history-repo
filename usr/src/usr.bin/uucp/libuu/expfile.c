@@ -1,9 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)expfile.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)expfile.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <sys/stat.h>
+
+/*LINTLIBRARY*/
 
 /*
  *	expand file name
@@ -26,7 +28,7 @@ char *file;
 		return 1;
 	case '~':
 		for (fpart = file + 1, up = user; *fpart != '\0'
-			&& *fpart != '/' && up < user+sizeof(user)-1; fpart++)
+			&& *fpart != '/'; fpart++)
 				*up++ = *fpart;
 		*up = '\0';
 		if (!*user || gninfo(user, &uid, full) != 0) {
