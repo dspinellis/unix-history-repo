@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_4.c	1.2 83/10/05";
+static	char *sccsid = "@(#)pl_4.c	1.3 83/10/10";
 #endif
 
 #include "player.h"
@@ -154,6 +154,7 @@ char *buf;
 newturn()
 {
 	repaired = loaded = fired = changed = 0;
+	movebuf[0] = '\0';
 
 	(void) alarm(0);
 	if (mf->readyL & R_LOADING)
@@ -166,16 +167,11 @@ newturn()
 			mf->readyR = R_LOADING;
 		else
 			mf->readyR = R_LOADED;
-	movebuf[0] = '\0';
 	Sync();
 	if (turn % 50 == 0)		/* still playing */
-		Write(W_TIME, SHIP(0), 0, 1, 0, 0, 0); /* XXX */
-	windspeed = cc->windspeed;
-	winddir = cc->winddir;
-	turn = cc->turn;
+		Write(W_ALIVE, SHIP(0), 0, 0, 0, 0, 0); /* XXX */
 	if (mf->FS == 1)
 		Write(W_FS, ms, 0, 2, 0, 0, 0);
-	readpos();
 	adjustview();
 
 	screen();

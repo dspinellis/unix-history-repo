@@ -1,5 +1,5 @@
 /*
- * @(#)extern.h	1.6 83/10/05
+ * @(#)extern.h	1.7 83/10/10
  */
 #include <stdio.h>
 #include <signal.h>
@@ -64,7 +64,7 @@
 #define W_LAST		13
 #define W_OBP		14
 #define W_PCREW		15
-#define W_PEOPLE	16
+/* 16 */
 #define W_POINTS	17
 #define W_QUAL		18
 /* 19 */
@@ -76,7 +76,7 @@
 #define W_SINK		25
 #define W_STRUCK	26
 #define W_TA		27
-#define W_TIME		28
+#define W_ALIVE		28
 #define W_TURN		29
 #define W_WIND		30
 #define W_FS		31
@@ -85,6 +85,8 @@
 #define W_RIG2		34
 #define W_RIG3		35
 #define W_RIG4		36
+#define W_BEGIN		37
+#define W_END		38
 
 struct logs {
 	char l_name[20];
@@ -160,9 +162,6 @@ struct scenario {
 	char winddir;			/* 0 */
 	char windspeed;			/* 2 */
 	char windchange;		/* 4 */
-	short turn;			/* 6 */
-	char people;			/* 8 */
-	char time;			/* 10 */
 	char vessels;			/* 12 */
 	char *name;			/* 14 */
 	struct ship ship[NSHIP];	/* 16 */
@@ -225,11 +224,12 @@ char rangeofshot[];
 
 char dr[], dc[];
 
-long lastsync;
-int winddir, windspeed, turn;
+int winddir;
+int windspeed;
+int turn;
 int game;
-char Outbuf[BUFSIZE];
-FILE *syncfile;
+int alive;
+int people;
 
 char *info();
 char *quality();

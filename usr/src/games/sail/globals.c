@@ -1,6 +1,6 @@
 /*LINTLIBRARY*/
 #ifndef lint
-static	char *sccsid = "@(#)globals.c	1.5 83/10/05";
+static	char *sccsid = "@(#)globals.c	1.6 83/10/10";
 #endif
 
 #include "externs.h"
@@ -10,24 +10,21 @@ struct scenario scene[] = {
 	 * int winddir;
 	 * int windspeed;
 	 * int windchange;
-	 * int turn;
-	 * int people;
-	 * int time;
 	 * int vessels;
 	 * char *name;
 	 * struct ship ship[NSHIP];
 	 */
-	5, 3, 5, 0, 1, 0, 2, "Ranger vs. Drake",
+	5, 3, 5, 2, "Ranger vs. Drake",
 	{
 		{ "Ranger",		specs+0,  N_A,  7, 20, 4, 0 },
 		{ "Drake",		specs+1,  N_B,  7, 31, 5, 0 }
 	},
-	1, 3, 6, 0, 1, 0, 2, "The Battle of Flamborough Head",
+	1, 3, 6, 2, "The Battle of Flamborough Head",
 	{
 		{ "Bonhomme Rich",	specs+2,  N_A, 13, 40, 2, 0 },
 		{ "Serapis",		specs+3,  N_B,  2, 42, 2, 0 }
 	},
-	5, 5, 5, 0, 1, 0, 10, "Arbuthnot and Des Touches",
+	5, 5, 5, 10, "Arbuthnot and Des Touches",
 	{
 		{ "America",		specs+4,  N_B,  7, 37, 4, 0 },
 		{ "Befford",		specs+5,  N_B,  5, 35, 4, 0 },
@@ -40,7 +37,7 @@ struct scenario scene[] = {
 		{ "Provence",		specs+11, N_F, 12, 50, 4, 0 },
 		{ "Romulus",		specs+12, N_F, 20, 58, 4, 0 }
 	},
-	1, 3, 5, 0, 1, 0, 10, "Suffren and Hughes",
+	1, 3, 5, 10, "Suffren and Hughes",
 	{
 		{ "Monmouth",		specs+52, N_B,  9, 45, 2, 0 },
 		{ "Hero",		specs+5,  N_B, 13, 49, 2, 0 },
@@ -53,32 +50,32 @@ struct scenario scene[] = {
 		{ "Brilliant",		specs+49, N_F, -1, 51, 4, 0 },
 		{ "Sphinx",		specs+51, N_F, -5, 47, 4, 0 }
 	},
-	1, 3, 4, 0, 1, 0, 2, "Nymphe vs. Cleopatre",
+	1, 3, 4, 2, "Nymphe vs. Cleopatre",
 	{
 		{ "Nymphe",		specs+14, N_B, 13, 30, 2, 0 },
 		{ "Cleopatre",		specs+15, N_F,  3, 41, 2, 0 }
 	},
-	1, 3, 5, 0, 1, 0, 2, "Mars vs. Hercule",
+	1, 3, 5, 2, "Mars vs. Hercule",
 	{
 		{ "Mars",		specs+16, N_B, 13, 30, 2, 0 },
 		{ "Hercule",		specs+17, N_F,  3, 41, 2, 0 }
 	},
-	5, 3, 5, 0, 1, 0, 2, "Ambuscade vs. Baionnaise",
+	5, 3, 5, 2, "Ambuscade vs. Baionnaise",
 	{
 		{ "Ambuscade",		specs+18, N_B, 13, 30, 2, 0 },
 		{ "Baionnaise",		specs+19, N_F,  3, 41, 2, 0 }
 	},
-	1, 5, 6, 0, 1, 0, 2, "Constellation vs. Insurgent",
+	1, 5, 6, 2, "Constellation vs. Insurgent",
 	{
 		{ "Constellation",	specs+20, N_A,  9, 50, 8, 0 },
 		{ "Insurgent",		specs+22, N_F,  4, 24, 2, 0 }
 	},
-	1, 3, 5, 0, 1, 0, 2, "Constellation vs. Vengeance",
+	1, 3, 5, 2, "Constellation vs. Vengeance",
 	{
 		{ "Constellation",	specs+20, N_A, 12, 40, 2, 0 },
 		{ "Vengeance",		specs+21, N_F,  1, 43, 2, 0 }
 	},
-	1, 3, 6, 0, 1, 0, 10, "The Battle of Lissa",
+	1, 3, 6, 10, "The Battle of Lissa",
 	{
 		{ "Amphion",		specs+23, N_B,  8, 50, 4, 0 },
 		{ "Active",		specs+24, N_B,  6, 48, 4, 0 },
@@ -91,27 +88,27 @@ struct scenario scene[] = {
 		{ "Corona",		specs+29, N_F, 12, 31, 2, 0 },
 		{ "Carolina",		specs+30, N_F, 15, 28, 2, 0 }
 	},
-	2, 5, 6, 0, 1, 0, 2, "Constitution vs. Guerriere",
+	2, 5, 6, 2, "Constitution vs. Guerriere",
 	{
 		{ "Constitution",	specs+31, N_A,  7, 35, 1, 0 },
 		{ "Guerriere",		specs+32, N_B,  7, 47, 4, 0 }
 	},
-	1, 3, 5, 0, 1, 0, 2, "United States vs. Macedonian",
+	1, 3, 5, 2, "United States vs. Macedonian",
 	{
 		{ "United States",	specs+33, N_A,  1, 52, 6, 0 },
 		{ "Macedonian",		specs+34, N_B, 14, 40, 1, 0 }
 	},
-	1, 3, 6, 0, 1, 0, 2, "Constitution vs. Java",
+	1, 3, 6, 2, "Constitution vs. Java",
 	{
 		{ "Constitution",	specs+31, N_A,  1, 40, 2, 0 },
 		{ "Java",		specs+35, N_B, 11, 40, 2, 0 }
 	},
-	1, 3, 5, 0, 1, 0, 2, "Chesapeake vs. Shannon",
+	1, 3, 5, 2, "Chesapeake vs. Shannon",
 	{
 		{ "Chesapeake",		specs+36, N_A, 13, 40, 2, 0 },
 		{ "Shannon",		specs+37, N_B,  1, 42, 2, 0 }
 	},
-	1, 1, 6, 0, 1, 0, 5, "The Battle of Lake Erie",
+	1, 1, 6, 5, "The Battle of Lake Erie",
 	{
 		{ "Lawrence",		specs+38, N_A,  4, 55, 8, 0 },
 		{ "Niagara",		specs+42, N_A,  7, 61, 8, 0 },
@@ -119,24 +116,24 @@ struct scenario scene[] = {
 		{ "Detroit",		specs+40, N_B,  7, 22, 2, 0 },
 		{ "Q. Charlotte",	specs+41, N_B, 10, 19, 2, 0 }
 	},
-	1, 1, 5, 0, 1, 0, 2, "Wasp vs. Reindeer",
+	1, 1, 5, 2, "Wasp vs. Reindeer",
 	{
 		{ "Wasp",		specs+42, N_A,  3, 41, 2, 0 },
 		{ "Reindeer",		specs+43, N_B, 10, 48, 2, 0 }
 	},
-	1, 2, 5, 0, 1, 0, 3, "Constitution vs. Cyane and Levant",
+	1, 2, 5, 3, "Constitution vs. Cyane and Levant",
 	{
 		{ "Constitution",	specs+31, N_A, 10, 45, 2, 0 },
 		{ "Cyane",		specs+44, N_B,  3, 37, 2, 0 },
 		{ "Levant",		specs+45, N_B,  5, 35, 2, 0 }
 	},
-	5, 5, 5, 0, 1, 0, 3, "Pellew vs. Droits de L'Homme",
+	5, 5, 5, 3, "Pellew vs. Droits de L'Homme",
 	{
 		{ "Indefatigable",	specs+46, N_B, 12, 45, 6, 0 },
 		{ "Amazon",		specs+47, N_B,  9, 48, 6, 0 },
 		{ "Droits L'Hom",	specs+48, N_F,  3, 28, 5, 0 }
 	},
-	2, 2, 3, 0, 1, 0, 10, "Algeciras",
+	2, 2, 3, 10, "Algeciras",
 	{
 		{ "Caesar",		specs+49, N_B,  7, 70, 6, 0 },
 		{ "Pompee",		specs+50, N_B,  5, 72, 6, 0 },
@@ -149,7 +146,7 @@ struct scenario scene[] = {
 		{ "Indomptable",	specs+51, N_F,  7, 23, 5, 0 },
 		{ "Desaix",		specs+52, N_F,  7, 27, 7, 0 }
 	},
-	5, 3, 6, 0, 1, 0, 7, "Lake Champlain",
+	5, 3, 6, 7, "Lake Champlain",
 	{
 		{ "Saratoga",		specs+60, N_A,  8, 10, 1, 0 },
 		{ "Eagle",		specs+61, N_A,  9, 13, 2, 0 },
@@ -159,31 +156,31 @@ struct scenario scene[] = {
 		{ "Linnet",		specs+58, N_B,  7, 68, 6, 0 },
 		{ "Chubb",		specs+59, N_B, 10, 65, 6, 0 }
 	},
-	5, 3, 6, 0, 1, 0, 4, "Last Voyage of the USS President",
+	5, 3, 6, 4, "Last Voyage of the USS President",
 	{
 		{ "President",		specs+67, N_A, 12, 42, 5, 0 },
 		{ "Endymion",		specs+64, N_B,  5, 42, 5, 0 },
 		{ "Pomone",		specs+65, N_B,  7, 82, 6, 0 },
 		{ "Tenedos",		specs+66, N_B,  7, -1, 4, 0 }
 	},
-	7, 5, 5, 0, 1, 0, 2, "Hornblower and the Natividad",
+	7, 5, 5, 2, "Hornblower and the Natividad",
 	{
 		{ "Lydia",		specs+68, N_B, 12, 40, 2, 0 },
 		{ "Natividad",		specs+69, N_S,  2, 40, 4, 0 }
 	},
-	1, 3, 6, 0, 1, 0, 2, "Curse of the Flying Dutchman",
+	1, 3, 6, 2, "Curse of the Flying Dutchman",
 	{
 		{ "Piece of Cake",	specs+19, N_S,  7, 40, 2, 0 },
 		{ "Flying Dutchy",	specs+71, N_F,  7, 41, 1, 0 }
 	},
-	1, 4, 1, 0, 1, 0, 4, "The South Pacific",
+	1, 4, 1, 4, "The South Pacific",
 	{
 		{ "USS Scurvy",		specs+70, N_A,  7, 40, 1, 0 },
 		{ "HMS Tahiti",		specs+71, N_B, 12, 60, 1, 0 },
 		{ "Australian",		specs+18, N_S,  5, 20, 8, 0 },
 		{ "Bikini Atoll",	specs+63, N_F,  2, 60, 4, 0 }
 	},
-	7, 3, 6, 0, 1, 0, 5, "Hornblower and the battle of Rosas bay",
+	7, 3, 6, 5, "Hornblower and the battle of Rosas bay",
 	{
 		{ "Sutherland",		specs+5,  N_B, 13, 30, 2, 0 },
 		{ "Turenne",		specs+10, N_F,  9, 35, 6, 0 },
@@ -191,7 +188,7 @@ struct scenario scene[] = {
 		{ "Paris",		specs+53, N_F,  3, 45, 4, 0 },
 		{ "Napolean",		specs+56, N_F,  1, 40, 6, 0 }
 	},
-	6, 4, 7, 0, 1, 0, 5, "Cape Horn",
+	6, 4, 7, 5, "Cape Horn",
 	{
 		{ "Concord",		specs+51, N_A,  3, 20, 4, 0 },
 		{ "Berkeley",		specs+7,  N_A,  5, 50, 5, 0 },
@@ -199,32 +196,32 @@ struct scenario scene[] = {
 		{ "Madrid",		specs+53, N_S, 13, 60, 8, 0 },
 		{ "Musket",		specs+10, N_F, 10, 60, 7, 0 }
 	},
-	8, 3, 7, 0, 1, 0, 3, "New Orleans",
+	8, 3, 7, 3, "New Orleans",
 	{
 		{ "Alligator",		specs+71, N_A, 13,  5, 1, 0 },
 		{ "Firefly",		specs+50, N_B, 10, 20, 8, 0 },
 		{ "Cypress",		specs+46, N_B,  5, 10, 6, 0 }
 	},
-	5, 3, 7, 0, 1, 0, 3, "Botany Bay",
+	5, 3, 7, 3, "Botany Bay",
 	{
 		{ "Shark",		specs+11, N_B,  6, 15, 4, 0 },
 		{ "Coral Snake",	specs+31, N_F,  3, 30, 6, 0 },
 		{ "Sea Lion",		specs+33, N_F, 13, 50, 8, 0 }
 	},
-	4, 3, 6, 0, 1, 0, 4, "Voyage to the Bottom of the Sea",
+	4, 3, 6, 4, "Voyage to the Bottom of the Sea",
 	{
 		{ "Seaview",		specs+71, N_A,  6, 3,  3, 0 },
 		{ "Flying Sub",		specs+64, N_A,  8, 3,  3, 0 },
 		{ "Mermaid",		specs+70, N_B,  2, 5,  5, 0 },
 		{ "Giant Squid",	specs+53, N_S, 10, 30, 8, 0 }
 	},
-	7, 3, 6, 0, 1, 0, 3, "Frigate Action",
+	7, 3, 6, 3, "Frigate Action",
 	{
 		{ "Killdeer",		specs+21, N_A,  7, 20, 8, 0 },
 		{ "Sandpiper",		specs+27, N_B,  5, 40, 8, 0 },
 		{ "Curlew",		specs+34, N_S, 10, 60, 8, 0 }
 	},
-	7, 2, 5, 0, 1, 0, 6, "The Battle of Midway",
+	7, 2, 5, 6, "The Battle of Midway",
 	{
 		{ "Enterprise",		specs+49, N_A, 10, 70, 8, 0 },
 		{ "Yorktown",		specs+51, N_A,  3, 70, 7, 0 },
@@ -234,7 +231,7 @@ struct scenario scene[] = {
 		{ "Soryu",		specs+55, N_J,  2, 14, 4, 0 }
 	},
 	/*
-	4, 3, 4, 0, 1, 0, 8, "Star Trek",
+	4, 3, 4, 8, "Star Trek",
 	{
 		{ "Enterprise",		specs+72, N_A, 20,  4, 2, 0 },
 		{ "Yorktown",		specs+72, N_A, 19,  2, 2, 0 },
@@ -248,7 +245,6 @@ struct scenario scene[] = {
 	*/
 };
 
-/* happy */
 struct shipspecs specs[] = {
 /*      bs fs ta guns   hull  crew1   crew3    gunR  carR   rig2  rig4 pts */
 /*                 class   qual   crew2    gunL   carL   rig1  rig3        */

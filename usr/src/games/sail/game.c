@@ -1,20 +1,20 @@
 #ifndef lint
-static	char *sccsid = "@(#)game.c	1.4 83/07/20";
+static	char *sccsid = "@(#)game.c	1.5 83/10/10";
 #endif
 
 #include "externs.h"
 
-maxturns(ship)
+maxturns(ship, af)
 register struct ship *ship;
+char *af;
 {
 	register int turns;
 
 	turns = ship->specs->ta;
-	if (ship->file->drift > 1 && turns) {
+	if (*af = (ship->file->drift > 1 && turns)) {
 		turns--;
 		if (ship->file->FS == 1)
 			turns = 0;
-		turns |= 0100000;
 	}
 	return turns;
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_3.c	1.1 83/07/20";
+static	char *sccsid = "@(#)pl_3.c	1.2 83/10/10";
 #endif
 
 #include "player.h"
@@ -299,7 +299,7 @@ register struct ship *ship;
 
 	if (ship == 0)
 		Signal("No more ships left.", (struct ship *)0);
-	else if (ship->shipdir) {
+	else if (ship->file->dir != 0) {
 		Signal("Sail ho! (range %d, %s)",
 			(struct ship *)0, range(ms, ship), saywhat(ship, 0));
 		i = portside(ms, ship, 1) - mf->dir;

@@ -1,8 +1,72 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	1.4 83/07/20";
+static	char *sccsid = "@(#)dr_1.c	1.5 83/10/10";
 #endif
 
 #include "driver.h"
+
+main(argc, argv)
+int argc;
+char **argv;
+{
+	register int n;
+	register struct ship *sp;
+	int nat[NNATION];
+
+	if (argc != 2)
+		exit(1);
+	(void) signal(SIGINT, SIG_IGN);
+	(void) signal(SIGQUIT, SIG_IGN);
+	(void) srand(getpid());
+	/* ;;; add code here to check the game number. */
+	game = atoi(argv[1]);
+	cc = &scene[game];
+	ls = &cc->ship[cc->vessels];
+	if (sync_open() < 0) {
+		perror("driver: syncfile");
+		exit(1);
+	}
+	for (n = 0; n < NNATION; n++)
+		nat[n] = 0;
+	foreachship(sp) {
+		sp->file = (struct File *) calloc(1, sizeof (struct File));
+		if (sp == NULL) {
+			(void) printf("driver: OUT OF MEMORY\n");
+			exit(0);
+		}
+		sp->file->loadL = L_ROUND;
+		sp->file->loadR = L_ROUND;
+		sp->file->readyR = R_LOADED|R_INITIAL;
+		sp->file->readyL = R_LOADED|R_INITIAL;
+		sp->file->stern = nat[sp->nationality]++;
+		sp->file->dir = sp->shipdir;
+		sp->file->row = sp->shiprow;
+		sp->file->col = sp->shipcol;
+	}
+	windspeed = cc->windspeed;
+	winddir = cc->winddir;
+	for (;;) {
+		Sync();
+		next();
+		unfoul();
+		checkup();
+		prizecheck();
+		moveall();
+		/*
+		readpos();
+		*/
+		thinkofgrapples();
+		boardcomp();
+		compcombat();
+		/*
+		readpos();
+		*/
+		resolve();
+		reload();
+		checksails();
+		Sync();
+		sleep(7);
+	}
+}
 
 unfoul()
 {
@@ -351,17 +415,12 @@ compcombat()
 next()
 {
 	if (++turn % 55 == 0)
-		if (cc->time)
-			cc->time = 0;
+		if (alive)
+			alive = 0;
 		else
-			cc->people = 0;		/* die if no one */
-	if (cc->people <= 0 || windspeed == 7) {
-		char string[25];
-
-		(void) fclose(syncfile);
-		(void) sprintf(string, "/tmp/.%d", game);
-		if (unlink(string) == -1)
-			perror(string);
+			people = 0;
+	if (people <= 0 || windspeed == 7) {
+		sync_close(1);
 		exit(0);
 	}
 	Write(W_TURN, SHIP(0), 0, turn, 0, 0, 0);
@@ -405,68 +464,5 @@ next()
 				windspeed++;
 			Write(W_WIND, SHIP(0), 0, winddir, windspeed, 0, 0);
 		}
-	}
-}
-
-main(argc, argv)
-int argc;
-char **argv;
-{
-	register int n;
-	char file[25];
-	register struct ship *sp;
-	int nat[NNATION];
-
-	if (argc != 2)
-		exit(1);
-	(void) signal(SIGINT, SIG_IGN);
-	(void) signal(SIGQUIT, SIG_IGN);
-	(void) srand(getpid());
-	/* ;;; add code here to check the game number. */
-	(void) sprintf(file, "/tmp/.%s", argv[1]);
-	for (n = 0; access(file, 0) < 0 && n < 20; n++)
-		sleep(5);
-	syncfile = fopen(file, "r+");
-	if (syncfile == NULL) {
-		perror(file);
-		exit(1);
-	}
-	game = atoi(argv[1]);
-	cc = &scene[game];
-	ls = &cc->ship[cc->vessels];
-	for (n = 0; n < NNATION; n++)
-		nat[n] = 0;
-	foreachship(sp) {
-		sp->file = (struct File *) calloc(1, sizeof (struct File));
-		if (sp == NULL) {
-			(void) printf("driver: OUT OF MEMORY\n");
-			exit(0);
-		}
-		sp->file->loadL = L_ROUND;
-		sp->file->loadR = L_ROUND;
-		sp->file->readyR = R_LOADED|R_INITIAL;
-		sp->file->readyL = R_LOADED|R_INITIAL;
-		sp->file->stern = nat[sp->nationality]++;
-	}
-	for (;;) {
-		Sync();
-		windspeed = cc->windspeed;
-		winddir = cc->winddir;
-		turn = cc->turn;
-		next();
-		unfoul();
-		checkup();
-		prizecheck();
-		moveall();
-		readpos();
-		thinkofgrapples();
-		boardcomp();
-		compcombat();
-		readpos();
-		resolve();
-		reload();
-		checksails();
-		Sync();
-		sleep(7);
 	}
 }
