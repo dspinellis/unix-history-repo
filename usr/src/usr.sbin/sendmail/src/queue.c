@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.58 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.59 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.58 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.59 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -456,7 +456,7 @@ runqueue(forkflag)
 	**  Make sure the alias database is open.
 	*/
 
-	initaliases(FALSE, e);
+	initmaps(FALSE, e);
 
 	/*
 	**  Start making passes through the queue.

@@ -11,11 +11,11 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	6.50 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	6.51 (Berkeley) %G%";
 #endif /* not lint */
 
 
-MAP	AliasDB[MAXALIASDB + 1];	/* actual database list */
+MAP	*AliasDB[MAXALIASDB + 1];	/* actual database list */
 int	NAliasDBs;			/* number of alias databases */
 /*
 **  ALIAS -- Compute aliases.
@@ -155,7 +155,7 @@ aliaslookup(name, e)
 	{
 		auto int stat;
 
-		map = &AliasDB[dbno];
+		map = AliasDB[dbno];
 		if (!bitset(MF_OPEN, map->map_mflags))
 			continue;
 		p = (*map->map_class->map_lookup)(map, name, NULL, &stat);
@@ -189,6 +189,8 @@ setalias(spec)
 
 	for (p = spec; p != NULL; )
 	{
+		char aname[50];
+
 		while (isspace(*p))
 			p++;
 		if (*p == '\0')
@@ -200,7 +202,10 @@ setalias(spec)
 			syserr("Too many alias databases defined, %d max", MAXALIASDB);
 			return;
 		}
-		map = &AliasDB[NAliasDBs];
+		(void) sprintf(aname, "Alias%d", NAliasDBs);
+		s = stab(aname, ST_MAP, ST_ENTER);
+		map = &s->s_map;
+		AliasDB[NAliasDBs] = map;
 		bzero(map, sizeof *map);
 
 		p = strpbrk(p, " ,/:");
@@ -243,72 +248,6 @@ setalias(spec)
 				map->map_mflags |= MF_VALID|MF_ALIAS;
 				NAliasDBs++;
 			}
-		}
-	}
-}
-/*
-**  INITALIASES -- initialize for aliasing
-**
-**	Very different depending on whether we are running NDBM or not.
-**
-**	Parameters:
-**		rebuild -- if TRUE, this rebuilds the cached versions.
-**		e -- current envelope.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		initializes aliases:
-**		if NDBM:  opens the database.
-**		if ~NDBM: reads the aliases into the symbol table.
-*/
-
-initaliases(rebuild, e)
-	bool rebuild;
-	register ENVELOPE *e;
-{
-	int dbno;
-	register MAP *map;
-
-	CurEnv = e;
-	for (dbno = 0; dbno < NAliasDBs; dbno++)
-	{
-		map = &AliasDB[dbno];
-		if (!bitset(MF_VALID, map->map_mflags))
-			continue;
-
-		if (tTd(27, 2))
-			printf("initaliases(%s:%s)\n",
-				map->map_class->map_cname, map->map_file);
-
-		/* if already open, close it (for nested open) */
-		if (bitset(MF_OPEN, map->map_mflags))
-		{
-			map->map_class->map_close(map);
-			map->map_mflags &= ~(MF_OPEN|MF_WRITABLE);
-		}
-
-		if (rebuild)
-		{
-			if (bitset(MCF_REBUILDABLE, map->map_class->map_cflags))
-				rebuildaliases(map, FALSE);
-		}
-		else
-		{
-			if (map->map_class->map_open(map, O_RDONLY))
-			{
-				if (tTd(27, 4))
-					printf("%s:%s: valid\n",
-						map->map_class->map_cname,
-						map->map_file);
-				map->map_mflags |= MF_OPEN;
-			}
-			else if (tTd(27, 4))
-				printf("%s:%s: invalid: %s\n",
-					map->map_class->map_cname,
-					map->map_file,
-					errstring(errno));
 		}
 	}
 }
