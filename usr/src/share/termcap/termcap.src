@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.113 (Berkeley) %G%
+#	@(#)termcap.src	5.114 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -951,7 +951,28 @@ wsiris|iris40|iris emulating a 40 line visual 50 (approximately):\
 	:HS=\E7F2:HE=\E7F7:\
 	:us=\E7R2\E9P:ue=\E7R3\E0@:\
 	:CT#2:CZ=*Bblack,red,green,yellow,blue,magenta,cyan,*Fwhite:
-	
+# davis@unidata.ucar.edu
+iris-ansi|iris-ansi-net|IRIS emulating ANSI terminal:\
+	:am:co#80:it#8:li#40:bl=^G:md=\E[1m:cl=\E[H\E[2J:\
+	:ve=\E[9/y\E[12/y\E[=6l:cr=\r:LE=\E[%dD:\
+	:le=\E[D:DO=\E[%dB:do=\n:RI=\E[%dC:\
+	:nd=\E[C:cm=\E[%i%d;%dH:UP=\E[%dA:\
+	:up=\E[A:vs=\E[10/y\E[=1h\E[=2l\E[=6h:\
+	:DL=\E[%dM:dl=\E[M:cd=\E[J:ce=\E[K:cb=\E[1K:\
+	:ho=\E[H:ta=\t:st=\EH:AL=\E[%dL:al=\E[L:\
+	:sf=\ED:is=\E[?1l\E>\E[?7h\E[100g\E[0m\E7\E[r\E8:\
+	:*4=\E[P:*7=\E[147q:#2=\E[143q:#4=\E[158q:\
+	:%f=\E[210q:%i=\E[167q:!2=\E[218q:kb=\b:\
+	:kB=\E[Z:kl=\E[D:kd=\E[B:kr=\E[C:\
+	:ku=\E[A:kD=\177:@7=\E[146q:@8=\r:\
+	:k1=\E[001q:k;=\EOQ:F1=\EOR:F2=\EOS:\
+	:k2=\E[002q:k3=\E[003q:k4=\E[004q:k5=\E[005q:\
+	:k6=\E[006q:k7=\E[007q:k8=\E[008q:k9=\EOP:\
+	:kh=\E[H:kI=\E[139q:kN=\E[154q:kP=\E[150q:\
+	:%9=\E[209q:kM=\E[146q:&7=\E[217q:nw=\EE:\
+	:pk=\EP101;%d.y%s\E\\:rc=\E8:mr=\E[7m:\
+	:sr=\EM:se=\E[m:ue=\E[m:sc=\E7:me=\E[m:\
+	:so=\E[1;7m:us=\E[4m:ct=\E[3g:
 # # --------------------------------
 #
 # N: ANN ARBOR
