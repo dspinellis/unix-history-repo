@@ -1,4 +1,4 @@
-/*	%H%	3.15	kern_clock.c	*/
+/*	%H%	3.16	kern_clock.c	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -237,7 +237,7 @@ out:
 			(void) setpri(pp);
 			pp->p_pri = pp->p_usrpri;
 #endif
-			if (u.u_vm.vm_utime+u.u_vm.vm_stime > u.u_limit[LIM_CPU])
+			if ((u.u_vm.vm_utime+u.u_vm.vm_stime)/HZ > u.u_limit[LIM_CPU])
 				psignal(pp, SIGXCPU);
 		}
 	}
