@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_extern.h	8.4 (Berkeley) %G%
+ *	@(#)vm_extern.h	8.5 (Berkeley) %G%
  */
 
 struct buf;
@@ -37,8 +37,6 @@ void		 assert_wait __P((void *, boolean_t));
 int		 grow __P((struct proc *, vm_offset_t));
 void		 iprintf __P((const char *, ...));
 int		 kernacc __P((caddr_t, int, int));
-int		 kinfo_loadavg __P((int, char *, int *, int, int *));
-int		 kinfo_meter __P((int, caddr_t, int *, int, int *));
 vm_offset_t	 kmem_alloc __P((vm_map_t, vm_size_t));
 vm_offset_t	 kmem_alloc_pageable __P((vm_map_t, vm_size_t));
 vm_offset_t	 kmem_alloc_wait __P((vm_map_t, vm_size_t));
@@ -86,6 +84,8 @@ int		 vm_mmap __P((vm_map_t, vm_offset_t *, vm_size_t,
 int		 vm_protect __P((vm_map_t,
 		    vm_offset_t, vm_size_t, boolean_t, vm_prot_t));
 void		 vm_set_page_size __P((void));
+int		 vm_sysctl __P((int *, u_int, void *, size_t *, void *,
+		    size_t, struct proc *));
 void		 vmmeter __P((void));
 struct vmspace	*vmspace_alloc __P((vm_offset_t, vm_offset_t, int));
 struct vmspace	*vmspace_fork __P((struct vmspace *));
