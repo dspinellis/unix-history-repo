@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.56 (Berkeley) %G%
+.\"	@(#)op.me	8.57 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.56
+Version 8.57
 .sp
 For Sendmail Version 8.7
 .)l
@@ -4392,6 +4392,24 @@ Units default to seconds, so
 uses a five second delay.
 Defaults to zero
 (no retry).
+.ip DontExpandCnames
+[no short name]
+The standards say that all host addresses used in a mail message
+must be fully canonical.
+For example, if your host is named
+.q Cruft.Foo.ORG
+and also has an alias of
+.q FTP.Foo.ORG ,
+the former name must be used at all times.
+This is enforced during host name canonification
+($[ ... $] lookups).
+If this option is set, the protocols are ignored and the
+.q wrong
+thing is done.
+However, the IETF is moving toward changing this standard,
+so the behaviour may become acceptable.
+Please note that hosts downstream may still rewrite the address
+to be the true canonical name however.
 .ip DontPruneRoutes
 [R]
 Normally,
@@ -7414,7 +7432,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.56
+.\"Version 8.57
 .\".ce 0
 .bp 2
 .rs

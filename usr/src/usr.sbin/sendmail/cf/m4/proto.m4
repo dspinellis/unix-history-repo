@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.79 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.80 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -366,6 +366,9 @@ _OPTION(ColonOkInAddr, `confCOLON_OK_IN_ADDR')
 
 # how many jobs can you process in the queue?
 _OPTION(MaxQueueRunSize, `confMAX_QUEUE_RUN_SIZE', 10000)
+
+# shall I avoid expanding CNAMEs (violates protocols)?
+_OPTION(DontExpandCnames, `confDONT_EXPAND_CNAMES')
 
 ###########################
 #   Message precedences   #
