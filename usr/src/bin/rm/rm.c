@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)rm.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.3 (Berkeley) %G%";
 int	errcode;
 
 #include <stdio.h>
@@ -79,12 +79,12 @@ char arg[];
 				return;
 			}
 			if(iflg && level!=0) {
-				printf("directory %s: ", arg);
+				printf("remove directory %s? ", arg);
 				if(!yes())
 					return;
 			}
 			if((d=open(arg, 0)) < 0) {
-				printf("rm: %s: cannot read\n", arg);
+				printf("rm: cannot read %s?\n", arg);
 				exit(1);
 			}
 			while(read(d, (char *)&direct, sizeof(direct)) == sizeof(direct)) {
@@ -103,13 +103,13 @@ char arg[];
 	}
 
 	if(iflg) {
-		printf("%s: ", arg);
+		printf("rm: remove %s? ", arg);
 		if(!yes())
 			return;
 	}
 	else if(!fflg) {
 		if (access(arg, 02)<0) {
-			printf("rm: %s %o mode ", arg, buf.st_mode&0777);
+			printf("rm: override protection %o for %s? ", buf.st_mode&0777, arg);
 			if(!yes())
 				return;
 		}
@@ -142,7 +142,7 @@ char *f;
 	if(dotname(f))
 		return(0);
 	if(iflg) {
-		printf("%s: ", f);
+		printf("rm: remove %s? ", f);
 		if(!yes())
 			return(0);
 	}
