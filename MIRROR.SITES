@@ -28,6 +28,9 @@ Hong Kong	ftp.cs.cuhk.hk:/pub/FreeBSD
 Netherlands	ftp.nl.net:/pub/os/FreeBSD
 		<archive@nl.net>
 
+Russia		ftp.kiae.su:/FreeBSD
+		<arcman@kiae.su>
+
 UK		src.doc.ic.ac.uk:/packages/FreeBSD
 		<unknown>
 
@@ -35,4 +38,4 @@ USA		ftp.dsu.edu:/pub/FreeBSD
 		<ghelmer@alpha.dsu.edu>
 
 
-$Id: MIRROR.SITES,v 1.6 1994/02/02 04:07:37 rgrimes Exp $
+$Id: MIRROR.SITES,v 1.7 1994/02/22 18:23:27 rgrimes Exp $
