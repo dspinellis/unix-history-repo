@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	7.19 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -122,14 +122,14 @@ newproc(isvfork)
 	 */
 	mpid++;
 retry:
-	if (mpid >= 30000) {
+	if (mpid >= PID_MAX) {
 		mpid = 100;
 		pidchecked = 0;
 	}
 	if (mpid >= pidchecked) {
 		int doingzomb = 0;
 
-		pidchecked = 30000;
+		pidchecked = PID_MAX;
 		/*
 		 * Scan the proc table to check whether this pid
 		 * is in use.  Remember the lowest pid that's greater
