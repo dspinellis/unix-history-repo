@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)signal.h	7.16 (Berkeley) 3/17/91
- *	$Id: signal.h,v 1.4 1994/01/31 10:27:49 davidg Exp $
+ *	$Id: signal.h,v 1.6 1994/02/07 06:24:49 nate Exp $
  */
 
 #ifndef	_SIGNAL_H_
@@ -115,7 +115,7 @@ __END_DECLS
  * Signal vector "template" used in sigaction call.
  */
 struct	sigaction {
-	__sighandler_t  sa_handler;     /* signal handler */
+	__sighandler_t	sa_handler;	/* signal handler */
 	sigset_t sa_mask;		/* signal mask to apply */
 	int	sa_flags;		/* see signal options below */
 };
@@ -175,20 +175,20 @@ struct	sigcontext {
 	int	sc_mask;		/* signal mask to restore */
 # ifdef i386
 	int	sc_esp;			/* machine state */
-	int     sc_ebp;
-	int     sc_isp;
-	int     sc_eip;
-	int     sc_efl;
-	int     sc_es;
-	int     sc_ds;
-	int     sc_cs;
-	int     sc_ss;
-	int     sc_edi;
-	int     sc_esi;
-	int     sc_ebx;
-	int     sc_edx;
-	int     sc_ecx;
-	int     sc_eax;
+	int	sc_ebp;
+	int	sc_isp;
+	int	sc_eip;
+	int	sc_efl;
+	int	sc_es;
+	int	sc_ds;
+	int	sc_cs;
+	int	sc_ss;
+	int	sc_edi;
+	int	sc_esi;
+	int	sc_ebx;
+	int	sc_edx;
+	int	sc_ecx;
+	int	sc_eax;
 #  define sc_sp sc_esp
 #  define sc_fp sc_ebp
 #  define sc_pc sc_eip
@@ -203,7 +203,7 @@ struct	sigcontext {
 #define sigmask(m)	(1 << ((m)-1))
 
 #endif /* !_POSIX_SOURCE */
-  
+
 #define	SIG_ERR		((__sighandler_t) -1)
 #define	SIG_DFL		((__sighandler_t) 0)
 #define	SIG_IGN		((__sighandler_t) 1)
