@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	8.20 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	8.21 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	8.20 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	8.21 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -289,7 +289,13 @@ udbexpand(a, sendq, aliaslevel, e)
 					keybuf, keylen);
 			/* look up the key via hesiod */
 			i = hes_udb_get(&key, &info);
-			if (i > 0 || info.size <= 0)
+			if (i < 0)
+			{
+				syserr("udbexpand: hesiod-get %.*s stat %d",
+					key.size, key.data, i);
+				return EX_TEMPFAIL;
+			}
+			else if (i > 0 || info.size <= 0)
 			{
 				if (tTd(28, 2))
 				printf("udbexpand: no match on %s (%d)\n",
@@ -305,7 +311,6 @@ udbexpand(a, sendq, aliaslevel, e)
 			{
 				a->q_flags |= QVERIFIED;
 				e->e_nrcpts++;
-				free(info.data);
 				return EX_OK;
 			}
 
@@ -316,7 +321,6 @@ udbexpand(a, sendq, aliaslevel, e)
 				user = xalloc(info.size + 1);
 			bcopy(info.data, user, info.size);
 			user[info.size] = '\0';
-			free(info.data);
 
 			message("hesioded to %s", user);
 #ifdef LOG
@@ -338,12 +342,6 @@ udbexpand(a, sendq, aliaslevel, e)
 				}
 				a->q_flags |= QDONTSEND;
 			}
-			if (i < 0)
-			{
-				syserr("udbexpand: hesiod-get %.*s stat %d",
-					key.size, key.data, i);
-				return EX_TEMPFAIL;
-			}
 
 			/*
 			**  If this address has a -request address, reflect
@@ -361,7 +359,6 @@ udbexpand(a, sendq, aliaslevel, e)
 			a->q_owner = xalloc(info.size + 1);
 			bcopy(info.data, a->q_owner, info.size);
 			a->q_owner[info.size] = '\0';
-			free(info.data);
 			break;
 #endif /* HESIOD */
 
@@ -520,11 +517,9 @@ udbmatch(user, field)
 			p = xalloc(info.size + 1);
 			bcopy(info.data, p, info.size);
 			p[info.size] = '\0';
-			free(info.data);
 			if (tTd(28, 1))
 				printf("udbmatch ==> %s\n", p);
 			return p;
-			break;
 #endif /* HESIOD */
 		}
 	}
@@ -611,7 +606,6 @@ udbmatch(user, field)
 				up->udb_default = xalloc(info.size + 1);
 				bcopy(info.data, up->udb_default, info.size);
 				up->udb_default[info.size] = '\0';
-				free(info.data);
 			}
 			else if (up->udb_default[0] == '\0')
 				continue;
@@ -626,7 +620,6 @@ udbmatch(user, field)
 				continue;
 			}
 
-			free(info.data);
 			/* they exist -- build the actual address */
 			p = xalloc(strlen(user) + strlen(up->udb_default) + 2);
 			(void) strcpy(p, user);
@@ -984,14 +977,11 @@ hes_udb_get(key, info)
 	{
 		/*
 		**  If there are multiple matches, just return the
-		**  first one and free the others.
+		**  first one.
 		**
 		**  XXX These should really be returned; for example,
 		**  XXX it is legal for :maildrop to be multi-valued.
 		*/
-
-		for (p = hp[1]; p; p++)
-			free(p);
 
 		info->data = hp[0];
 		info->size = (size_t) strlen(info->data);
