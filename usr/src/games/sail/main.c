@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "externs.h"
@@ -29,9 +29,7 @@ main(argc, argv)
 {
 	register char *p;
 	int i;
-	extern char _sobuf[];
 
-	setbuf(stdout, _sobuf);
 	(void) srand(getpid());
 	issetuid = getuid() != geteuid();
 	if (p = rindex(*argv, '/'))
