@@ -1,4 +1,4 @@
-/*	fstab.h	4.1	83/05/03	*/
+/*	fstab.h	4.2	83/05/19	*/
 
 /*
  * File system table, see fstab (5)
@@ -11,12 +11,6 @@
  */
 
 #define	FSTAB		"/etc/fstab"
-#define	FSNMLG		32
-
-#define	FSTABFMT	"%32s:%32s:%2s:%d:%d\n"
-#define	FSTABARG(p)	(p)->fs_spec, (p)->fs_file, \
-			(p)->fs_type, &(p)->fs_freq, &(p)->fs_passno
-#define FSTABNARGS	5
 
 #define	FSTAB_RW	"rw"	/* read write device */
 #define	FSTAB_RO	"ro"	/* read only device */
@@ -24,9 +18,10 @@
 #define	FSTAB_XX	"xx"	/* ignore totally */
 
 struct	fstab{
-	char	fs_spec[FSNMLG];	/* block special device name */
-	char	fs_file[FSNMLG];	/* file system path prefix */
-	char	fs_type[3];		/* rw,ro,sw or xx */
+	char	*fs_spec;		/* block special device name */
+	char	*fs_file;		/* file system path prefix */
+	char	*fs_type;		/* rw,ro,sw or xx */
+	char	*fs_quotafile;		/* name of quota file if used */
 	int	fs_freq;		/* dump frequency, in days */
 	int	fs_passno;		/* pass number on parallel dump */
 };
