@@ -1,11 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
  * FTP User Program -- Command Routines.
  */
 #include <sys/param.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 
 #include <arpa/ftp.h>
@@ -14,7 +15,6 @@ static char sccsid[] = "@(#)cmds.c	4.7 (Berkeley) %G%";
 #include <stdio.h>
 #include <errno.h>
 #include <netdb.h>
-#include <stat.h>
 
 #include "ftp_var.h"
 
