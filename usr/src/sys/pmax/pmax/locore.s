@@ -22,7 +22,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	7.5 (Berkeley) %G%
+ *	@(#)locore.s	7.6 (Berkeley) %G%
  */
 
 /*
@@ -1067,7 +1067,7 @@ MachUTLBMiss:
 	j	k0
 	rfe
 1:
-	j	SlowFault			# handle cache miss
+	j	UtlbFault			# handle the rest
 	nop
 	.set	reorder
 	.set	at
@@ -1109,12 +1109,34 @@ MachException:
 MachExceptionEnd:
 
 /*
+ * Handle the rest of the UTLB miss.
+ */
+UtlbFault:
+	.set	noreorder
+	.set	noat
+	mfc0	k0, MACH_COP_0_BAD_VADDR	# get the virtual address
+	nop
+	srl	k0, k0, PMAP_HASH_SHIFT1	# get page in low bits
+	srl	k1, k0, PMAP_HASH_SHIFT2 - PMAP_HASH_SHIFT1
+	and	k0, k0, PMAP_HASH_MASK1
+	and	k1, k1, PMAP_HASH_MASK2
+	or	k1, k1, k0
+	sll	k1, k1, PMAP_HASH_SIZE_SHIFT	# compute index
+	lw	k0, PMAP_HASH_LOW_OFFSET+8(k1)	# get cached low PTE entry
+	lw	k1, PMAP_HASH_HIGH_OFFSET+8(k1)	# get cached high PTE entry
+	mtc0	k0, MACH_COP_0_TLB_LOW
+	mfc0	k0, MACH_COP_0_TLB_HI		# get actual high PTE entry
+	nop
+	bne	k0, k1, SlowFault		# non-matching PTE
+	mfc0	k0, MACH_COP_0_EXC_PC		# get return address
+	tlbwr					# update TLB
+	j	k0
+	rfe
+/*
  * We couldn't find a TLB entry.
  * Find out what mode we came from and call the appropriate handler.
  */
 SlowFault:
-	.set	noat
-	.set	noreorder
 	mfc0	k0, MACH_COP_0_STATUS_REG
 	nop
 	and	k0, k0, MACH_SR_KU_PREV
