@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)locate.c	2.2	%G%";
+static char sccsid[] = "@(#)locate.c	2.3	%G%";
 #endif not lint
 #
 
@@ -25,6 +25,7 @@ int   fetchref();
     NB A zero length string returned if nothing is found.
        A NULL pointer indicates an error accessing the file "name".
 */
+int fflag;	/* set if want the reference string to have the file name*/
 char *locate(keys,name,max_klen,common)
 char *keys, *name, *common;
 int  max_klen;          /* max key length */
@@ -140,6 +141,9 @@ int  max_klen;          /* max key length */
 
     total= 0;
     for (i=0; i<refcnt; i++)    total += refs[i].length+1;
+    if (fflag){
+	total += strlen(refs[i].reffile) + 1;
+    }
 
     allrefs= malloc(total+1);
     if (allrefs==NULL)
@@ -170,6 +174,12 @@ int  max_klen;          /* max key length */
                     }
                 }
             fseek(text, refs[i].start, 0);
+	    if (fflag){
+		strcat(next, refs[i].reffile);
+		next += strlen(next);
+		*next++ = '\n';
+		*next = 0;
+	    }
             for (j=0; j<refs[i].length; j++)    *next++ = getc(text);
             *next++ = '\n';
         }
