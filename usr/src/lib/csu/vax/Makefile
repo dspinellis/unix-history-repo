@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 #	crt0	Normal C run time startoff
 #	mcrt0	C run time start off for profiling, ``prof'' conventions
@@ -42,14 +42,14 @@ mcrt0.o: moncrt0.o mon.o
 	ld -x -r -o mcrt0.o moncrt0.o mon.o
 
 mon.o: mon.c mon.ex
-	cc -S ${DFLAGS} mon.c
+	cc -S ${DEFS} ${DFLAGS} mon.c
 	ex - mon.s < mon.ex
 	as -o x.o mon.s
 	ld -x -r -o mon.o x.o
 	rm -f x.o mon.s
 
 gmon.o: gmon.c gmon.h gmon.ex
-	cc -S ${DFLAGS} gmon.c
+	cc -S ${DEFS} ${DFLAGS} gmon.c
 	ex - gmon.s < gmon.ex
 	as -o x.o gmon.s
 	ld -x -r -o gmon.o x.o
