@@ -1,0 +1,35 @@
+#print
+So far you only know how to copy and print existing files
+in the editor, and not how to get started from scratch.
+The 'a' (append) command lets you type in new text.
+For example, the sequence
+  ed file
+  a
+  this is a new line of text
+  .
+  w
+  q
+will append the line
+  this is a new line of text
+to the editor buffer, and then write it on "file".
+(If "file" doesn't already exist, the editor will
+warn you, but it's not an error.)
+Note that the material being added ends with the
+line that just contains a single '.' and that normal
+editor commands then resume.  Following this pattern,
+make a file named "pres" that contains the
+line
+
+franklin delano roosevelt
+
+and, after you have written it with a 'w' command,
+and done your 'q', try saying "cat pres" to check that
+you did it right.
+Then type "ready".
+#create Ref
+franklin delano roosevelt
+#user
+#cmp pres Ref
+#log
+#next
+15.1b 10

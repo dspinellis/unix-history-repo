@@ -1,0 +1,32 @@
+#once #create message
+.ND
+.EQ
+delim $$
+.EN
+.LP
+Try another example with braces, for practice.
+Make the file "Example" produce output that looks
+like this line, then type "ready".
+(The character $rho$ is "rho".)
+.pl 1
+#once #create Ref
+.LP
+.EQ
+alpha sub i sup {pi + rho + 1} ~=~ 1
+.EN
+.pl 1
+#once #create Example
+.LP
+.EQ
+replace me
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$term %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log
+#next
+5.1c 10

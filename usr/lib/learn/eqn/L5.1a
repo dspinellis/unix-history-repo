@@ -1,0 +1,45 @@
+#once #create message
+.ND
+.EQ
+delim $$
+.EN
+.LP
+So far we have carefuly skirted around a potential
+problem; maybe you've wondered about it.
+Suppose we want to produce an equation that looks
+like this:
+.EQ
+x sup { pi + 1 }
+.EN
+The superscript is complicated, in that it contains
+both a $pi$ and a +1, which has to be separated
+from the $pi$ by a blank.
+But I already told you that a blank terminates
+the superscript.  What's going on?
+
+As the first step to finding out, will the input
+equation
+
+  x sup pi + 1
+
+produce the output
+
+  $x sup {pi + 1}$ ?
+Answer yes or no.
+(You can play with the file "Example" if you like.)
+.pl 1
+#once #create Example
+.LP
+.EQ
+replace me
+.EN
+.pl 1
+#
+#once neqn message | nroff -T$term %s/tinyms -
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+5.1b
