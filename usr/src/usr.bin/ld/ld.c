@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	6.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	6.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Linker `ld' for GNU
@@ -2108,8 +2108,13 @@ symdef_library (desc, entry, member_length)
 	    /* If we find a symbol that appears to be needed, think carefully
 	       about the archive member that the symbol is in.  */
 
-	    if (sp && ((sp->referenced && !sp->defined)
-		       || (sp->defined && sp->max_common_size)))
+	    /*
+	     * Per Mike Karels' recommendation, we no longer load library
+	     * files if the only reference(s) that would be satisfied are
+	     * 'common' references.  This prevents some problems with name
+	     * pollution (e.g. a global common 'utime' linked to a function).
+	     */
+	    if (sp && sp->referenced && !sp->defined)
 	      {
 		int junk;
 		register int j;
@@ -2281,8 +2286,11 @@ subfile_wanted_p (entry)
 
 	  if (!sp) continue;
 
-	  if ((sp->referenced && !sp->defined)
-	      || (sp->defined && sp->max_common_size))
+	  /*
+	   * We don't load a file if it merely satisfies a common reference
+	   * (see explanation above in symdef_library()).
+	   */
+	  if (sp->referenced && !sp->defined)
 	    {
 	      /* This is a symbol we are looking for.  It is either
 	         not yet defined or defined as a common.  */
