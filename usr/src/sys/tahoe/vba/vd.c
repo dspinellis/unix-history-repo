@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vd.c	7.13 (Berkeley) %G%
+ *	@(#)vd.c	7.14 (Berkeley) %G%
  */
 
 #include "dk.h"
@@ -1251,7 +1251,7 @@ vdreset_ctlr(vm)
 	if (vdinit_ctlr(vm, vd) == 0)
 		return;
 	for (unit = 0; unit < NDK; unit++)
-		if ((vi = vddinfo[unit])->ui_mi == vm && vi->ui_alive)
+		if (vi = vddinfo[unit] && vi->ui_mi == vm && vi->ui_alive)
 			(void) vdreset_drive(vi);
 }
 
