@@ -1,4 +1,4 @@
-.\"	@(#)mktemp.3	6.3 (Berkeley) %G%
+.\"	@(#)mktemp.3	6.4 (Berkeley) %G%
 .\"
 .TH MKTEMP 3  ""
 .AT 3
@@ -18,14 +18,14 @@ the template.  The template should contain a file name with trailing
 \fIX\fP's, normally something like \fI/tmp/tempXXXXXX\fP.  The \fIX\fP's
 are replaced by the current process number and/or a unique letter
 combination.  \fIMkstemp\fP makes the same replacement to the template
-but opens the template file and returns a file descriptor open for
-reading and writing.  \fIMkstemp\fP avoids the race between testing
+but creates the template file, mode 0600, and returns a file descriptor
+open for reading and writing.  \fIMkstemp\fP avoids the race between testing
 whether the file exists and opening it for use.  The number of file
 name combinations \fImktemp\fP and \fImkstemp\fP will try depends on
 the number of \fIX\fP's placed on the end of the template; six \fIX\fP's
 will result in them trying roughly 26 ** 6 combinations.
 .SH "SEE ALSO"
-access(2), getpid(2), open(2)
+chmod(2), getpid(2), open(2), stat(2)
 .SH DIAGNOSTICS
 \fIMktemp\fP returns NULL on failure, \fImkstemp\fP returns -1 if no
 suitable file could be created.
