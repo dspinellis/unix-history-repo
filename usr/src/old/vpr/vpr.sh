@@ -1,14 +1,14 @@
 #
-#	@(#)vpr.sh	1.1	(Berkeley)	%G%
+#	@(#)vpr.sh	1.2	(Berkeley)	%G%
 #
 # vpr.sh - Use on machines without raster plotters
 #
 set remote = ucbernie
 set execdir = /usr/ucb
 if ($remote != `hostname`) then
-	set cmd = "/usr/ucb/rsh $remote"
+	set cmd = "/usr/ucb/rsh $remote $execdir"
 else
-	set cmd = ""
+	set cmd = "/usr/lib"
 endif
 set flags=() files=()
 top:
@@ -19,6 +19,20 @@ top:
 			echo "Sorry, the '$argv[1]' flag is not supported."
 			shift argv
 			goto top
+
+		case -1:
+		case -2:
+		case -3:
+		case -4:
+			if ($#argv > 1) then
+				set flags = ($flags $argv[1] $argv[2])
+				shift argv
+				shift argv
+				goto top
+			else
+				echo $argv[1] takes following font name.
+				exit(1)
+			endif
 
 		case -*:
 			set flags = ($flags $argv[1])
@@ -35,8 +49,8 @@ top:
 
 if ($#files) then
 	foreach i ($files)
-		$cmd $execdir/vpr $flags < $i
+		$cmd/vpr $flags < $i
 	end
 else
-	$cmd $execdir/vpr $flags
+	$cmd/vpr $flags
 endif
