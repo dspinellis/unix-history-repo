@@ -5,8 +5,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)libcpats.c	1.3 (Berkeley) 6/8/85";
-#endif not lint
+static char sccsid[] = "@(#)libcpats.c	1.2 (Berkeley) %G%";
+#endif
 
 #include "inline.h"
 
@@ -15,7 +15,7 @@ static char sccsid[] = "@(#)libcpats.c	1.3 (Berkeley) 6/8/85";
  */
 struct pats libc_ptab[] = {
 
-#ifdef vax
+#if defined(vax)
 	{ "1,_fgetc\n",
 "	sobgeq	*(sp),1f\n\
 	calls	$1,__filbuf\n\
@@ -43,11 +43,11 @@ struct pats libc_ptab[] = {
 	locc	$0,$65535,(r1)\n\
 	jeql	1b\n\
 	subl3	r5,r1,r0\n" },
-#endif vax
+#endif
 
-#ifdef mc68000
+#if defined(mc68000)
 /* someday... */
-#endif mc68000
+#endif
 
 	{ "", "" }
 };

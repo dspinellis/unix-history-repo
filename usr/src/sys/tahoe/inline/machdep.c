@@ -5,8 +5,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)machdep.c	1.6 (Berkeley) 6/8/85";
-#endif not lint
+static char sccsid[] = "@(#)machdep.c	1.2 (Berkeley) %G%";
+#endif
 
 #include <stdio.h>
 #include <ctype.h>
@@ -17,7 +17,7 @@ static char sccsid[] = "@(#)machdep.c	1.6 (Berkeley) 6/8/85";
  * for each new machine that this program is ported to.
  */
 
-#ifdef vax
+#if defined(vax)
 /*
  * Instruction stop table.
  * All instructions that implicitly modify any of the temporary
@@ -71,7 +71,60 @@ doreplaceon(cp)
 		return (cp + 7);
 	return (0);
 }
+#endif
 
+#if defined(tahoe)
+/*
+ * Instruction stop table.
+ * All instructions that implicitly modify any of the temporary
+ * registers, change control flow, or implicitly loop must be
+ * listed in this table. It is used to find the end of a basic
+ * block when scanning backwards through the instruction stream
+ * trying to merge the inline expansion.
+ */
+struct inststoptbl inststoptable[] = {
+/* control */
+	{ "bbssi" }, { "bcc" }, { "bcs" }, { "beql" }, { "beqlu" },
+	{ "bgeq" }, { "bgequ" }, { "bgtr" }, { "bgtru" }, { "bleq" },
+	{ "blequ" }, { "blss" }, { "blssu" }, { "bneq" }, { "bnequ" },
+	{ "brb" }, { "brw" }, { "bvc" }, { "bvs" }, { "jmp" },
+/* jump versions of control */
+	{ "jbc" }, { "jbs" }, { "jeql" }, { "jeqlu" },
+	{ "jgeq" }, { "jgequ" }, { "jgtr" }, { "jgtru" }, { "jleq" },
+	{ "jlequ" }, { "jlss" }, { "jlssu" }, { "jneq" }, { "jnequ" },
+	{ "jcc" }, { "jcs" }, { "jvc" }, { "jvs" }, { "jbr" },
+/* multiple registers */
+	{ "loadr" },
+/* bit field */
+	{ "bbc" }, { "bbs" },
+/* character string and block move */
+	{ "cmps2" }, { "cmps3" }, { "movblk" }, { "movs2" }, { "movs3" },
+/* procedure call */
+	{ "callf" }, { "calls" }, { "ret" },
+/* loop control */
+	{ "aobleq" }, { "aoblss" }, { "casel" },
+/* privileged and miscellaneous */
+	{ "bpt" }, { "halt" }, { "kcall" }, { "ldpctx" }, { "rei" },
+	{ "svpctx" },
+	{ "" }
+};
+
+/*
+ * Check to see if a line is a candidate for replacement.
+ * Return pointer to name to be looked up in pattern table.
+ */
+char *
+doreplaceon(cp)
+	char *cp;
+{
+
+	if (bcmp(cp, "callf\t$", 7) == 0)
+		return (cp + 7);
+	return (0);
+}
+#endif
+
+#if defined(vax) || defined(tahoe)
 /*
  * Find the next argument to the function being expanded.
  */
@@ -92,7 +145,7 @@ nextarg(argc, argv)
 /*
  * Determine whether the current line pushes an argument.
  */
- ispusharg(argc, argv)
+ispusharg(argc, argv)
 	int argc;
 	char *argv[];
 {
@@ -114,11 +167,11 @@ modifies(argc, argv)
 	int argc;
 	char *argv[];
 {
-	/*
-	 * For the VAX all we care about are r0 to r5
-	 */
 	register char *lastarg = argv[argc - 1];
 
+	/*
+	 * For the VAX or TAHOE all we care about are r0 to r5
+	 */
 	if (lastarg[0] == 'r' && isdigit(lastarg[1]) && lastarg[2] == '\0')
 		return (lastarg[1] - '0');
 	return (-1);
@@ -186,9 +239,9 @@ cleanup(numargs)
 
 	return;
 }
-#endif vax
+#endif
 
-#ifdef mc68000
+#if defined(mc68000)
 /*
  * Instruction stop table.
  * All instructions that implicitly modify any of the temporary
@@ -356,4 +409,4 @@ cleanup(numargs)
 	 */
 	fgets(line[bufhead], MAXLINELEN, stdin);
 }
-#endif mc68000
+#endif
