@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid[] = "@(#)expr.c	5.6 (Berkeley) %G%";
+static char *sccsid[] = "@(#)expr.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,6 +16,10 @@ static char *sccsid[] = "@(#)expr.c	5.6 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  *
  * $Log:	expr.c,v $
+ * Revision 5.10  86/04/26  13:24:30  donn
+ * Someone forgot about comparisons of logical constants in consbinop() --
+ * the results of such tests were garbage.
+ * 
  * Revision 5.9  86/02/20  23:38:31  donn
  * Fix memory management problem with reordering of array dimension and
  * substring code in mklhs().
@@ -2759,6 +2763,11 @@ switch(opcode)
 			case TYDCOMPLEX:
 				if(ap->cd[0] == bp->cd[0] &&
 				   ap->cd[1] == bp->cd[1] )
+					k = 0;
+				else	k = 1;
+				break;
+			case TYLOGICAL:
+				if(ap->ci == bp->ci)
 					k = 0;
 				else	k = 1;
 				break;
