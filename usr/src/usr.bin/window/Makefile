@@ -1,9 +1,15 @@
 #
 # Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# All rights reserved.
 #
-#	@(#)Makefile	3.6	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific prior written permission. This software
+# is provided ``as is'' without express or implied warranty.
+#
+#	@(#)Makefile	3.7 (Berkeley) %G%
 #
 CFLAGS=	-O -R
 LIBC=	/lib/libc.a
@@ -178,7 +184,7 @@ wwbox.o: /usr/include/setjmp.h tt.h
 wwchild.o: wwchild.c ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
 wwchild.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 wwchild.o: /usr/include/setjmp.h /usr/include/sys/types.h
-wwchild.o: /usr/include/sys/wait.h /usr/include/machine/machparam.h
+wwchild.o: /usr/include/sys/wait.h /usr/include/machine/endian.h
 wwclose.o: wwclose.c ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
 wwclose.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 wwclose.o: /usr/include/setjmp.h /usr/include/signal.h
