@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	4.15 83/06/02";
+static char sccsid[] = "@(#)rlogind.c	4.16 83/06/12";
 #endif
 
 #include <stdio.h>
@@ -87,7 +87,7 @@ main(argc, argv)
 		perror("rlogind: bind");
 		exit(1);
 	}
-	sigset(SIGCHLD, reapchild);
+	signal(SIGCHLD, reapchild);
 	listen(f, 10);
 	for (;;) {
 		int s, len = sizeof (from);
@@ -198,7 +198,7 @@ gotpty:
 		ioctl(p, FIONBIO, &on);
 		ioctl(p, TIOCPKT, &on);
 		signal(SIGTSTP, SIG_IGN);
-		sigset(SIGCHLD, cleanup);
+		signal(SIGCHLD, cleanup);
 		for (;;) {
 			int ibits = 0, obits = 0;
 
