@@ -167,14 +167,14 @@ print:
 	@${PR} *.h *.c
 vgrind:
 	tee index < /dev/null
-#	${VGRIND} -h ${VHDR} ${HDRS}
-#	${VGRIND} -h ${VHDR} ${SRC1}
-#	${VGRIND} -h ${VHDR} ${SRC2}
+	${VGRIND} -h ${VHDR} ${HDRS}
+	${VGRIND} -h ${VHDR} ${SRC1}
+	${VGRIND} -h ${VHDR} ${SRC2}
 	${VGRIND} -h ${VHDR} ${SRC3}
 	${VGRIND} -h ${VHDR} ${SRC4}
 	${VGRIND} -h ${VHDR} ${SRC5}
 	${VGRIND} -h ${VHDR} ${SRC6}
-#	${VGRIND} -n -h ${VHDR} ${MISC}
+	${VGRIND} -n -h ${VHDR} ${MISC}
 	${VGRIND} -i -h ${VHDR} index
 
 ex.c: SCCS/s.ex.c ${HDRS}; rm -f ex.c; sccs get ex.c 
