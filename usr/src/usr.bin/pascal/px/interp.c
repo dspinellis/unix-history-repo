@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.21 %G%";
+static char sccsid[] = "@(#)interp.c 1.22 %G%";
 
 #include <math.h>
 #include "whoami.h"
@@ -70,7 +70,7 @@ struct iorechd	input = {
 	OUTPUT,			/* fchain  */
 	STDLVL,			/* flev    */
 	"standard input",	/* pfname  */
-	FTEXT | FREAD | SYNC,	/* funit   */
+	FTEXT|FREAD|SYNC|EOLN,	/* funit   */
 	0,			/* fblk    */
 	1			/* fsize   */
 };
