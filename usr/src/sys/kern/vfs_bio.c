@@ -1,4 +1,4 @@
-/*	vfs_bio.c	4.6	%G%	*/
+/*	vfs_bio.c	4.7	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -36,8 +36,8 @@
 
 #define	BUFHSZ	63
 struct	bufhd bufhash[BUFHSZ];
-#define	BUFHASH(dev,blkno)	\
-		((struct buf *)&bufhash[((int)dev+(int)blkno) % BUFHSZ])
+#define	BUFHASH(dev, dblkno)	\
+		((struct buf *)&bufhash[((int)(dev)+(int)(dblkno)) % BUFHSZ])
 
 /*
  * Initialize hash links for buffers.
@@ -299,7 +299,7 @@ daddr_t blkno;
 	register struct buf *dp;
 	register int dblkno = fsbtodb(blkno);
 
-	dp = BUFHASH(dev, blkno);
+	dp = BUFHASH(dev, dblkno);
 	for (bp = dp->b_forw; bp != dp; bp = bp->b_forw)
 		if (bp->b_blkno == dblkno && bp->b_dev == dev &&
 		    !(bp->b_flags & B_INVAL))
