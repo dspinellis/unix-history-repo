@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.33		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.34		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.33		%G%);
+SCCSID(@(#)usersmtp.c	3.34		%G%);
 
 
 
@@ -57,6 +57,7 @@ smtpinit(m, pvp, ctladdr)
 	*/
 
 	SmtpIn = SmtpOut = NULL;
+	SmtpClosing = FALSE;
 	SmtpPid = openmailer(m, pvp, ctladdr, TRUE, &SmtpOut, &SmtpIn);
 	if (SmtpPid < 0)
 	{
@@ -240,18 +241,23 @@ smtpquit(name)
 {
 	int i;
 
-	if (SmtpClosing)
-	{
-		SmtpClosing = FALSE;
+	/* if the connection is already closed, don't bother */
+	if (SmtpIn == NULL)
 		return;
+
+	/* send the quit message if not a forced quit */
+	if (!SmtpClosing)
+	{
+		smtpmessage("QUIT");
+		(void) reply();
 	}
 
-	smtpmessage("QUIT");
-	i = reply();
-	if (i != 221)
-		syserr("smtpquit %s: reply %d", name, i);
+	/* now actually close the connection */
 	(void) fclose(SmtpIn);
 	(void) fclose(SmtpOut);
+	SmtpIn = SmtpOut = NULL;
+
+	/* and pick up the zombie */
 	i = endmailer(SmtpPid, name);
 	if (i != EX_OK)
 		syserr("smtpquit %s: stat %d", name, i);
@@ -297,7 +303,15 @@ reply()
 		p = sfgets(SmtpReplyBuffer, sizeof SmtpReplyBuffer, SmtpIn);
 		if (p == NULL)
 		{
-			syserr("reply: read error");
+			extern char MsgBuf[];		/* err.c */
+			extern char Arpa_TSyserr[];	/* conf.c */
+
+			message(Arpa_TSyserr, "reply: read error");
+# ifdef LOG
+			syslog(LOG_ERR, "%s", &MsgBuf[4]);
+# endif LOG
+			SmtpClosing = TRUE;
+			smtpquit("reply error");
 			return (-1);
 		}
 		fixcrlf(SmtpReplyBuffer, TRUE);
