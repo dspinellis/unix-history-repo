@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_acct.c	7.18 (Berkeley) 5/11/91
- *	$Id: kern_acct.c,v 1.4 1993/10/19 01:07:21 nate Exp $
+ *	$Id: kern_acct.c,v 1.5 1993/10/19 05:46:05 davidg Exp $
  */
 
 #include "param.h"
@@ -57,7 +57,7 @@
  */
 int	acctsuspend = 2;	/* stop accounting when < 2% free space left */
 int	acctresume = 4;		/* resume when free space risen to > 4% */
-struct	timeval chk = { 15, 0 };/* frequency to check space for accounting */
+struct  timeval chk;            /* frequency to check space for accounting */
 struct  vnode *acctp = NULL;	/* file to which to do accounting */
 struct  vnode *savacctp = NULL;	/* file to which to do accounting when space */
 
@@ -165,6 +165,7 @@ acctwatch(resettime)
 	struct timeval *resettime;
 {
 	struct statfs sb;
+	int s;
 
 	if (savacctp) {
 		(void)VFS_STATFS(savacctp->v_mount, &sb, (struct proc *)0);
@@ -183,6 +184,8 @@ acctwatch(resettime)
 		acctp = NULL;
 		log(LOG_NOTICE, "Accounting suspended\n");
 	}
+	s = splhigh(); *resettime = time; slpx(s);
+	resettime->tv_sec += 15;
 	timeout(acctwatch, (caddr_t)resettime, hzto(resettime));
 }
 
