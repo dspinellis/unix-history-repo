@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)genassym.c	7.1 (Berkeley) %G%
+ *	@(#)genassym.c	7.2 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -88,4 +88,5 @@ main()
 	printf("asm(\".set\tU_ARG,%d\");\n", up->u_arg);
 	printf("asm(\".set\tU_QSAVE,%d\");\n", &up->u_qsave);
 	printf("#endif\n");
+	exit(0);
 }
