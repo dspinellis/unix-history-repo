@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	4.11 (Berkeley) %G%";
 #endif
 
 /*
@@ -384,6 +384,7 @@ chkhost(f)
 	register FILE *hostf;
 	register char *cp;
 	char ahost[50];
+	int first = 1;
 	extern char *inet_ntoa();
 
 	f->sin_port = ntohs(f->sin_port);
@@ -400,14 +401,23 @@ chkhost(f)
 		return;
 
 	hostf = fopen("/etc/hosts.equiv", "r");
-	while (fgets(ahost, sizeof(ahost), hostf)) {
-		if (cp = index(ahost, '\n'))
-			*cp = '\0';
-		cp = index(ahost, ' ');
-		if (!strcmp(from, ahost) && cp == NULL) {
-			(void) fclose(hostf);
-			return;
+again:
+	if (hostf) {
+		while (fgets(ahost, sizeof (ahost), hostf)) {
+			if (cp = index(ahost, '\n'))
+				*cp = '\0';
+			cp = index(ahost, ' ');
+			if (!strcmp(from, ahost) && cp == NULL) {
+				(void) fclose(hostf);
+				return;
+			}
 		}
+		(void) fclose(hostf);
+	}
+	if (first == 1) {
+		first = 0;
+		hostf = fopen("/etc/hosts.lpd", "r");
+		goto again;
 	}
 	fatal("Your host does not have line printer access");
 }
