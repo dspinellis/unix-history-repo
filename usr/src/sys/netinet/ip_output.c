@@ -1,4 +1,4 @@
-/*	ip_output.c	1.22	81/12/11	*/
+/*	ip_output.c	1.23	82/01/19	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -71,7 +71,7 @@ COUNT(IP_OUTPUT);
 	m->m_len -= sizeof (struct ip);
 	m->m_off += sizeof (struct ip);
 	for (off = 0; off < ip->ip_len; off += len) {
-		struct mbuf *mh = m_get(0);
+		struct mbuf *mh = m_get(M_DONTWAIT);
 		struct ip *mhip;
 
 		if (mh == 0)

@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.11	81/12/22	*/
+/*	ip_icmp.c	4.12	82/01/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -42,7 +42,7 @@ COUNT(ICMP_ERROR);
 	 * of the mbuf, followed by the old IP header and 8 bytes
 	 * of its data.
 	 */
-	m = m_get(0);
+	m = m_get(M_DONTWAIT);
 	if (m == 0)
 		goto free;
 	m->m_off = MMAXOFF - (oiplen + 8);

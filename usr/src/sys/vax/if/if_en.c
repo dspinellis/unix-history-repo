@@ -1,4 +1,4 @@
-/*	if_en.c	4.29	82/01/19	*/
+/*	if_en.c	4.30	82/01/19	*/
 
 #include "en.h"
 
@@ -460,7 +460,7 @@ gottype:
 	 */
 	if (m->m_off > MMAXOFF ||
 	    MMINOFF + sizeof (struct en_header) > m->m_off) {
-		m = m_get(0);
+		m = m_get(M_DONTWAIT);
 		if (m == 0) {
 			m_freem(m0);
 			return (0);
