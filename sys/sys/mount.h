@@ -114,6 +114,10 @@ struct mount {
 #define	MNT_NOEXEC	0x00000004	/* can't exec from filesystem */
 #define	MNT_NOSUID	0x00000008	/* don't honor setuid bits on fs */
 #define	MNT_NODEV	0x00000010	/* don't interpret special files */
+#ifdef ISOFS
+#define ISOFSMNT_NORRIP       0x00000040      /* disable Rock Ridge Ext.*/
+#endif
+
 
 /*
  * exported mount flags.
