@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bib.c	2.11	%G%";
+static char sccsid[] = "@(#)bib.c	2.12	%G%";
 #endif not lint
 /*
         Bib - bibliographic formatter
@@ -62,7 +62,7 @@ main(argc, argv)
    int argc;
    char **argv;
 {  int rcomp();
-   int intr();
+   void intr();
 
    /* the file INDEX in the current directory is the default index,
       if it is present */
@@ -127,6 +127,7 @@ main(argc, argv)
    cleanup(0);
 }
 /* interrupt processing */
+void
 intr()
 {
    cleanup(1);
