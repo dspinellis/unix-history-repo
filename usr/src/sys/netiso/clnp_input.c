@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_input.c,v $ */
-/*	@(#)clnp_input.c	7.10 (Berkeley) %G% */
+/*	@(#)clnp_input.c	7.11 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $";
@@ -488,7 +488,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 			printf("clnp_input: raw input of %d bytes\n",
 				clnp->cnf_type & CNF_SEG_OK ? seg_part.cng_tot_len : seg_len);
 		ENDDEBUG
-		(*isosw[clnp_protox[ISOPROTO_RAW]].pr_input)(m, &src, &dst,
+		(*isosw[clnp_protox[ISOPROTO_RAW]].pr_input)(m, &source, &target,
 					clnp->cnf_hdr_len);
 		break;
 

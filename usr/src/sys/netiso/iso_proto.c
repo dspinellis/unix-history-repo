@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: iso_proto.c,v 4.4 88/09/08 08:38:42 hagens Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/iso_proto.c,v $ 
- *	@(#)iso_proto.c	7.4 (Berkeley) %G% *
+ *	@(#)iso_proto.c	7.5 (Berkeley) %G% *
  *
  * iso_proto.c : protocol switch tables in the ISO domain
  *
@@ -93,7 +93,7 @@ struct protosw isosw[] = {
 /* raw clnp */
 { SOCK_RAW,		&isodomain,		ISOPROTO_RAW,		PR_ATOMIC|PR_ADDR,
   rclnp_input,	rclnp_output,	0,					rclnp_ctloutput,
-  raw_usrreq,
+  clnp_usrreq,
   0,			0,				0,					0
 },
 

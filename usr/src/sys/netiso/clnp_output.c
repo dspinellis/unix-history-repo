@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_output.c,v 5.0 89/02/08 12:00:15 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_output.c,v $ */
-/*	@(#)clnp_output.c	7.6 (Berkeley) %G% */
+/*	@(#)clnp_output.c	7.7 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_output.c,v 5.0 89/02/08 12:00:15 hagens Exp $";
@@ -152,8 +152,15 @@ int					flags;		/* flags */
 	struct clnp_cache			*clcp = NULL;	/* ptr to clc */
 	int							hdrlen = 0;
 
-	src = &isop->isop_laddr->siso_addr;
 	dst = &isop->isop_faddr->siso_addr;
+	if (isop->isop_laddr == 0) {
+		struct iso_ifaddr *ia = 0;
+		clnp_route(dst, &isop->isop_route, flags, 0, &ia);
+		if (ia == 0 || ia->ia_ifa.ifa_addr->sa_family != AF_ISO)
+			return (ENETUNREACH);
+		src = &ia->ia_addr.siso_addr;
+	} else
+		src = &isop->isop_laddr->siso_addr;
 
 	IFDEBUG(D_OUTPUT)
 		printf("clnp_output: to %s", clnp_iso_addrp(dst));
