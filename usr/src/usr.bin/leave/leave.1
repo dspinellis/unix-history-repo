@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)leave.1	6.3 (Berkeley) %G%
+.\"     @(#)leave.1	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LEAVE 1
@@ -12,7 +12,7 @@
 .Nd remind you when you have to leave
 .Sh SYNOPSIS
 .Nm leave
-.Op Op \&+ Ar hhmm
+.Op [\&+] Ar hhmm
 .Sh DESCRIPTION
 .Nm Leave
 waits until the specified time, then reminds you that you
@@ -24,11 +24,20 @@ When you log off,
 exits just before it would have
 printed the next message.
 .Pp
-The time of day is in the form hhmm where hh is a time in
-hours (on a 12 or 24 hour clock).
+Options:
+.Pp
+.Tw Fl
+.Tp Ar hhmm
+The time of day is in the form
+.Ar hhmm
+where
+.Ar hh
+is a time in
+hours (on a 12 or 24 hour clock), and
+.Ar mm
+are minutes.
 All times are converted to a 12 hour clock, and assumed to
 be in the next 12 hours.
-.Tw Ds
 .Tp Ic \&+
 If the time is preceeded by `+', the alarm will go off in hours and minutes
 from the current time.
@@ -48,7 +57,7 @@ or
 .Pp
 Leave ignores interrupts, quits, and terminates.
 To get rid of it you should either log off or use
-.Dq Li kill \-9
+.Ql kill \-9
 giving its process id.
 .Sh SEE ALSO
 .Xr calendar 1

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"     @(#)ld.1	6.3 (Berkeley) %G%
+.\"     @(#)ld.1	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LD 1
@@ -32,7 +32,7 @@ run.
 (In the latter case, the
 .Fl r
 option must be given
-to preserve the relocation bits.)\
+to preserve the relocation bits.)
 The output of
 .Nm ld
 is left on
@@ -131,8 +131,11 @@ is a string.
 searches for libraries first in any directories
 specified with
 .Fl L
-options, then in the standard directories `/lib', `/usr/lib', and
-`/usr/local/lib'.
+options, then in the standard directories
+.Pa /lib ,
+.Pa /usr/lib ,
+and
+.Pa /usr/local/lib .
 A library is searched when its name is encountered,
 so the placement of a
 .Fl l

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)error.1	6.4 (Berkeley) %G%
+.\"     @(#)error.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ERROR 1
@@ -30,6 +30,7 @@ permits error messages and source code to be viewed simultaneously
 without machinations of multiple windows in a screen editor.
 .Pp
 Options are:
+.Tw Ds
 .Tp Fl n
 Do
 .Em not
@@ -48,15 +49,15 @@ are to be touched.
 .Tp Fl v
 After all files have been touched,
 overlay the visual editor
-.Xr vi
+.Xr vi 1
 with it set up to edit all files touched,
 and positioned in the first touched file at the first error.
 If
-.Xr vi
+.Xr vi 1
 can't be found, try
-.Xr ex
+.Xr ex 1
 or
-.Xr ed
+.Xr ed 1
 from standard places.
 .Tp Fl t
 Take the following argument as a suffix list.
@@ -106,7 +107,7 @@ For example, when using the
 .Xr csh 1
 syntax,
 .Pp
-.Dl make \-s lint \& error \-q \-v
+.Dl make \-s lint \&| error \-q \-v
 .Pp
 will analyze all the error messages produced
 by whatever programs
@@ -231,7 +232,7 @@ will orderly terminate what it is doing.
 .Sh FILES
 .Dw ~/.errorrc
 .Di L
-.Dp ~/.errorrc
+.Dp Pa ~/.errorrc
 function names to ignore for
 .Xr lint 1
 error messages

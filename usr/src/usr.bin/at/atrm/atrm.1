@@ -3,14 +3,15 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)atrm.1	6.3 (Berkeley) %G%
+.\"     @(#)atrm.1	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ATRM 1
 .Os BSD 4.3
 .Sh NAME
 .Nm atrm
-.Nd remove jobs spooled by at
+.Nd remove jobs spooled by
+.Xr at 1
 .Sh SYNOPSIS
 .Nm atrm
 .Op Fl f
@@ -27,6 +28,8 @@
 removes jobs that were created with the
 .Xr at 1
 command.
+.Pp
+Options available are:
 .Pp
 .Tp Fl f
 all information regarding the
@@ -54,10 +57,11 @@ This form of invoking
 .Nm atrm
 is useful only to the super-user.
 .Sh FILES
-.Tw /usr/spool/at
-.Tp /usr/spool/at
+.Dw /usr/spool/at
+.Di L
+.Dp Pa /usr/spool/at
 spool area
-.Tp
+.Dp
 .Sh SEE ALSO
 .Xr at 1 ,
 .Xr atq 1 ,

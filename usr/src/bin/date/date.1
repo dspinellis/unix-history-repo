@@ -3,18 +3,11 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)date.1	6.7 (Berkeley) %G%
+.\"     @(#)date.1	6.8 (Berkeley) %G%
 .\"
 .Dd 
-.\" .Os BSD 4.4
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
-.\"
-.\"	@(#)date.1	6.6 (Berkeley) 4/1/87
-.\"
 .Dt DATE 1
-.Os BSD 4
+.Os BSD 4.4
 .Sh NAME
 .Nm date
 .Nd display or set date and time
@@ -23,33 +16,38 @@
 .Op Fl nu
 .Op Fl d Ar dst
 .Op Fl t Ar minutes_west
-.Op yymmddhhmm Op ss
+.Op yymmddhhmm [\&.ss]
 .Sh DESCRIPTION
 .Nm Date
 displays today's date and time when invoked without
 arguments.  Providing an argument will set the desired date;
-only the superuser can set the date. The
+only the superuser can set the date.
+.Pp
+Options are:
+.Pp
+.Tw Ds
 .Tp Fl d
 Set the kernel's values for daylight savings time.
 If
 .Ar dst
 is non-zero, future calls
 to
-.Ar gettimeofday
-2  will return a non-zero
-.Ar tz_dsttime  .
+.Xr gettimeofday 2
+will return a non-zero
+.Ql tz_dsttime  .
 .Tp Fl t
 Set the kernel's values for minutes west of GMT.
 .Ar Minutes_west
 provides the number of minutes returned by future calls to
-.Ar gettimeofday
-2  in
-.Ar tz_minuteswest  .
+.Xr gettimeofday 2
+in
+.Ql tz_minuteswest  .
 .Tp Fl u
 Display or set the date in GMT (universal) time.
 .Tp
 .Pp
 The canonical representation for setting the date and time:
+.Dw Ds
 .Dp Ar yy
 Year in abbreviated form (.e.g 89 for 1989).
 .Dp Ar mm
@@ -81,7 +79,7 @@ Providing a system stays running, date will handle
 time changes for daylight/standards savings time and leap times.
 .Pp
 If
-.Ar timed 8
+.Xr timed 8
 is running to synchronize the clocks of machines in a local
 area network,
 .Nm date
@@ -90,31 +88,31 @@ machines unless the
 .Fl n
 option is given.
 .Sh FILES
-.Dw Pa /usr/adm/messages
+.Dw /var/log/messages
 .Di L
-.Dp Pa /usr/adm/wtmp
+.Dp Pa /var/log/wtmp
 A record of date resets and time changes.
-.Dp Pa /usr/adm/messages,
+.Dp Pa /var/log/messages
 A record of the name of the user
 setting the time.
 .Sh SEE ALSO
 .Xr gettimeofday 2 ,
 .Xr utmp 5 ,
-.Xr timed 8 ,
+.Xr timed 8
 .br
 .Em TSP:\ The\ Time\ Synchronization Protocol
 .Em for UNIX 4.3BSD ,
 R. Gusella
 and\ S.\ Zatti
 .Sh HISTORY
-.Nm
+.Nm Date
 appeared in Version 6 AT&T UNIX.
 .Sh DIAGNOSTICS
 Exit status is 0 on success, 1 on complete failure to set the date,
 and 2 on successfully setting the local date but failing globally.
 .Pp
 Occasionally, when
-.Ar timed
+.Xr timed
 synchronizes the time on many hosts,
 the setting of a new time value may require more than a few seconds.
 On these occasions,
@@ -124,7 +122,7 @@ The message `Communication error with timed' occurs when the communication
 between
 .Nm date
 and
-.Ar timed
+.Xr timed
 fails.
 .Sh BUGS
 The system attempts to keep the date in a format closely compatible

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)install.1	6.8 (Berkeley) %G%
+.\"     @(#)install.1	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt INSTALL 1
@@ -17,9 +17,12 @@
 .Op.Fl m Ar mode
 .Op Fl o Ar owner
 .Op Fl g Ar group
-.Ar file1 file2 ;
-or
-.if n .br
+.Ar file1 file2
+.Nm install
+.Op Fl cs
+.Op.Fl m Ar mode
+.Op Fl o Ar owner
+.Op Fl g Ar group
 .Ar file1
 \&...
 .Ar fileN directory
@@ -58,7 +61,7 @@ number of systems and binary types.
 refuses to move a file onto itself.
 .Pp
 Installing
-.Pa dev/null
+.Pa /dev/null
 creates an empty file.
 .Pp
 Upon successful completion a value of 0 is returned.

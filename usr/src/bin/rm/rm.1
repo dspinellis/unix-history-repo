@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)rm.1	6.3 (Berkeley) %G%
+.\"     @(#)rm.1	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RM 1
@@ -21,6 +21,7 @@ The rm utility removes the directory entry specified by each
 file argument.
 .Pp
 The following options are available:
+.Tw 8n
 .Tp Fl f
 Force each specified directory entry to be removed
 without prompting for confirmation, regardless of
@@ -33,14 +34,14 @@ requesting confirmation before removing each existing
 directory entry, regardless of the permissions
 of the file to which it refers.
 .Tp Fl R
-Permit directories to be removed.
+Permit directories to be removed (recursively).
 .Pp
 .Tp Fl r
 Equivalent to
-.FL R.
+.Fl R .
 .Tp
 .Pp
-The following operands are available:
+The following argument is available:
 .Tw Fl
 .Tp Ar file
 A pathname of a directory entry to be removed.
@@ -55,8 +56,8 @@ All the named directory entries were removed.
 .Tp Li >0
 An error occurred.
 .Tp
-.Sh ENVIRONMENT
 .Sh SEE ALSO
+.Xr rmdir 1
 .Sh STANDARDS
 The
 .Nm rm

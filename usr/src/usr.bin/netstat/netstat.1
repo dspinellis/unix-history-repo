@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)netstat.1	6.10 (Berkeley) %G%
+.\"     @(#)netstat.1	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NETSTAT 1
@@ -61,7 +61,7 @@ for debugging.
 With the default display,
 show the state of all sockets; normally sockets used by
 server processes are not shown.
-.Fl d
+.Tp Fl d
 With either interface display (option
 .Fl i
 or an interval, as described below),
@@ -121,14 +121,14 @@ The following address families
 are recognized:
 .Ar inet  ,
 for
-.Li AF _INET  ,
+.Li AF_INET  ,
 .Ar ns ,
 for
-.Li AF _NS  ,
+.Li AF_NS  ,
 and
 .Ar unix  ,
 for
-.Li AF _UNIX  .
+.Li AF_UNIX  .
 .Tp
 .Pp
 The arguments,

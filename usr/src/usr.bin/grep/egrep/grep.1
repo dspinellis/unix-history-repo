@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)grep.1	6.4 (Berkeley) %G%
+.\"     @(#)grep.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GREP 1
@@ -108,7 +108,7 @@ Pathnames are
 listed once per file searched.
 If the standard
 input is searched, the pathname
-.Fl
+.Sq Fl
 is written.
 .Tp Fl n
 Each output line is preceded by its relative line
@@ -151,14 +151,14 @@ standard input is used.
 The
 .Nm grep
 utility exits with one of the following values:
-.Tw Ds
-.Tp Li \&0
+.Dw Ds
+.Dp Li \&0
 One or more lines were selected.
-.Tp Li \&1
+.Dp Li \&1
 No lines were selected.
-.Tp Li \&>1
+.Dp Li \&>1
 An error occurred.
-.Tp
+.Dp
 .Sh EXTENDED REGULAR EXPRESSIONS
 The following characters are interpreted by
 .Nm egrep :
@@ -185,11 +185,13 @@ the set of {$,.,^,[,],|,?,+,*,(,)}.
 .Tp
 .Sh EXAMPLES
 To find all occurances of the word patricia in a file:
+.Pp
 .Dl grep patricia myfile
 .Pp
 To find all occurences to the pattern
 .Sq Li \&.Pp
 at the beginning of a line:
+.Pp
 .Dl grep '^\e.Pp'
 .Pp
 The apostrophys assure the entire expression is evaluated by
@@ -207,6 +209,7 @@ escapes the
 which would otherwise match any character.
 .Pp
 A simple example of an extended regular expression:
+.Pp
 .Dl egrep '19|20|25' calendar
 .Pp
 Peruses the file calendar looking for either 19, 20

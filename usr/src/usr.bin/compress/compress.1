@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)compress.1	6.7 (Berkeley) %G%
+.\"     @(#)compress.1	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt COMPRESS 1
@@ -40,7 +40,7 @@ Whenever possible,
 each
 .Ar file
 is replaced by one with the extension
-.Sy \&.Z ,
+.Ar \&.Z ,
 while keeping the same ownership modes, access and modification times.
 If no files are specified, the standard input is compressed to the
 standard output.
@@ -77,10 +77,8 @@ is identical to that of
 Specify
 .Ar bits
 code limit (see below).
-The
 .Tp Fl v
-option causes
-the printing of the percentage reduction of each file.
+Print the percentage reduction of each file.
 .Tp
 .Pp
 .Nm Compress
@@ -252,5 +250,5 @@ should be used for file transfer to architectures with
 a small process data space (64KB or less, as exhibited by the DEC PDP
 series, the Intel 80286, etc.)
 .Pp
-.Nm compress
+.Nm Compress
 should be more flexible about the existence of the `.Z' suffix.

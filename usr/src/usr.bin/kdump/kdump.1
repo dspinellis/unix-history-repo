@@ -1,52 +1,80 @@
-.TH KDUMP 1
-.SH NAME
-.I kdump
-\- display kernel trace data
-.SH SYNOPSIS
-.B kdump
-[
-.B -dnlTR
-]
-.B -f 
-trfile ]
-[
-.B -t 
-trstr ]
-.SH DESCRIPTION
-.I Kdump
-displays kernel trace files produced with ktrace(1) in a human readable format.
-Without the -f flag, kdump reads the file "ktrace.out" in the current
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)kdump.1	1.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt KDUMP 1
+.Sh NAME
+.Nm kdump
+.Nd display kernel trace data
+.Sh SYNOPSIS
+.Nm kdump
+.Op Fl dnlTR
+.Op Fl f Ar trfile
+.Op Fl t Ar trstr
+.Sh DESCRIPTION
+.Nm Kdump
+displays kernel trace files produced with
+.Xr ktrace 1
+in a human readable format.
+Without the
+.Fl f
+flag,
+.Nm kdump
+reads the file
+.Sq Pa ktrace.out
+in the current
 directory.
-Following is a description of the options:
-.br
-.TP
-.B \-d
+.Pp
+Options:
+.Tw Fl
+.Tp Fl d
 Display all numbers in decimal.
-.TP
-.B \-n
-Suppress ad hoc translations.  Normally kdump tries to decode many
+.Tp Fl n
+Suppress ad hoc translations.  Normally
+.Nm kdump
+tries to decode many
 system calls into a more human readable format.  For example, ioctl
 values are replaced with the macro name and errno values are replaced
-with the sys_errlist string.  Suppressing this feature yields a more consistent
+with the
+.Li sys_errlist
+string.  Suppressing this feature yields a more consistent
 output format and is easily amenable to further processing.
-.TP
-.B \-l
+.Tp Fl l
 Loop reading end-of-file.
-.TP
-.B \-T
+.Tp Fl T
 Display absolute timestamps for each entry (seconds since epoch).
-.TP
-.B \-R
+.Tp Fl R
 Display relative timestamps (time since previous entry).
-.TP
-.B \-t trstr
-See -t in ktrace(1).
-.TP
-.B \-f trfile
-See -t in ktrace(1).
-.TP
-.B \-m maxdata
-Display at most \fBmaxdata\fP bytes when decoding i/o.
-.SH SEE ALSO
-.IR ktrace(1)
+.Tc Fl t
+.Ws
+.Ar trstr
+.Cx
+See
+.Fl t
+in
+.Xr ktrace 1 .
+.Tc Fl f
+.Ws
+.Ar trfile
+.Cx
+See
+.Fl t
+in
+.Xr ktrace 1 .
+.Tc Fl m
+.Ws
+.Ar maxdata
+.Cx
+Display at most
+.Ar maxdata
+bytes when decoding i/o.
+.Tp
+.Sh SEE ALSO
+.Xr ktrace 1
 \- enable kernel process tracing.
+.Sh HISTORY
+4.4 BSD.

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)chmod.1	6.9 (Berkeley) %G%
+.\"     @(#)chmod.1	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHMOD 1
@@ -25,6 +25,7 @@ as specified by the
 operand.
 .Pp
 The options are as follows:
+.Tw Ds
 .Tp Fl f
 .Nm chmod
 will still exit 0 and not complain if it fails to change the mode
@@ -52,6 +53,8 @@ An absolute mode is an octal number constructed by
 .Cx 'ing
 .Cx
 the following values:
+.Df I
+.Dw Fl
 .Dp Li 4000
 set-user-ID-on-execution
 .Dp Li 2000
@@ -69,6 +72,7 @@ read, write, execute/search by group
 .Dp Li 0007
 read, write, execute/search by others
 .Dp
+.De
 .Pp
 The read, write, and execute/search values for group and others
 are encoded as described for owner.
@@ -107,7 +111,7 @@ symbol ``a'' is equivalent to ``ugo''.
 The
 .Ar perm
 symbols represent the portions of the mode bits as follows:
-.Dw Fl
+.Dw Ds
 .Dp r
 The read bits.
 .Dp s
@@ -131,7 +135,7 @@ symbol ``+'', and it is ignored in all other cases.
 The
 .Ar op
 symbols represent the operation performed, as follows:
-.Tw Fl
+.Tw Ds
 .Tp \&+
 If no value is supplied for
 .Ar perm ,
@@ -190,7 +194,7 @@ Operations upon the other permissions only (specified by the symbol
 .Ar perm
 symbols ``s'' or ``t'', are ignored.
 .Sh EXAMPLES
-.Tw Fl
+.Tw Ar
 .Tp ``644''
 make a file readable by anyone and writable by the owner only.
 .Tp ``go-w''
@@ -210,11 +214,10 @@ clear all mode bits for group and others.
 There's no
 .Ar perm
 option for the naughty bits.
-.Sh ENVIRONMENT
 .Sh SEE ALSO
 .Xr install 1 ,
 .Xr chmod 2 ,
-.Xr fts 3 ,
+.Xr fts 2 ,
 .Xr stat 2 ,
 .Xr umask 2 ,
 .Xr setmode 3 ,
@@ -222,7 +225,7 @@ option for the naughty bits.
 .Sh STANDARDS
 The
 .Nm chmod
-function is expected to be POSIX 1003.2 compatible with the exception
+utility is expected to be POSIX 1003.2 compatible with the exception
 of the
 .Ar perm
 symbols ``t'' and ``X'' which are not included in that standard.

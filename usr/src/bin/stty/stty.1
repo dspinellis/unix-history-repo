@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)stty.1	6.6 (Berkeley) %G%
+.\"     @(#)stty.1	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STTY 1
@@ -29,6 +29,7 @@ Some combinations of arguments are mutually
 exclusive on some terminal types.
 .Pp
 The following options are available:
+.Tw Ds
 .Tp Fl a
 Write to standard output all the current settings
 for the terminal.
@@ -336,16 +337,19 @@ the speed information is displayed as follows:
 .Ds I
 "speed %d baud;", <speed>
 .De
+.Pp
 Otherwise speeds are displayed as:
 .Pp
 .Ds I
 "ispeed %d baud; ospeed %d baud;", <ispeed>, <ospeed>
 .De
+.Pp
 Control characters are displayed as:
 .Pp
 .Ds I
 "%s = %s;", <control-character name>, <value>
 .De
+.Pp
 where value is either the character, or some visual
 representation of the character if it is non-printing, or
 the string "<undef>" if the character is disabled.

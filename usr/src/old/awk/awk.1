@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"     @(#)awk.1	6.3 (Berkeley) %G%
+.\"     @(#)awk.1	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt AWK 1
@@ -15,12 +15,8 @@
 .Oo
 .Op Fl \&F Ar \&c
 .Oo
-.\".Op Op Fl \&f Ar file Op Ar prog
-.Cx \&[
-.Op Fl f Ar file
+.Op Fl f Ar prog_file
 .Op Ar prog
-.Cx \&]
-.Cx
 .Ar
 .Sh DESCRIPTION
 .Nm Awk
@@ -41,7 +37,7 @@ specified as
 .Fl f
 .Ar file .
 .Pp
-.Tw Fl
+.Tw Ds
 .Tp Cx Fl F
 .Ar c
 .Cx
@@ -49,7 +45,7 @@ Specify a field separator of
 .Ar c .
 .Tp Fl f
 Use 
-.Ar file
+.Ar prog_file
 as an input
 .Ar prog
 (an awk script).
@@ -58,7 +54,7 @@ as an input
 Files are read in order;
 if there are no files, the standard input is read.
 The file name
-.Fl
+.Sq Fl
 means the standard input.
 Each line is matched against the
 pattern portion of every pattern-action statement;
@@ -142,12 +138,7 @@ and
 .Ic int .
 The last truncates its argument to an integer.
 The function
-.Cx Ic substr
-.Cx (
-.Ar s ,
-.Ar \& m ,
-.Ar \& n )
-.Cx
+.Fn substr s m n
 returns the
 .Cx Ar n
 .Cx \-
@@ -157,14 +148,9 @@ substring of
 .Ar s
 that begins at position
 .Ar m .
-The function
-.Cx Ic sprintf
-.Cx (
-.Ar fmt ,
-.Ar \& expr ,
-.Ar \& expr ,
-.Ar \& ... )
-.Cx
+The
+.Fn sprintf fmt expr expr \&...
+function
 formats the expressions
 according to the
 .Xr printf 3
@@ -190,7 +176,8 @@ between an occurrence of the first pattern
 and the next occurrence of the second.
 .Pp
 A relational expression is one of the following:
-.Ds
+.Pp
+.Ds I
 expression matchop regular-expression
 expression relop expression
 .De
@@ -290,6 +277,5 @@ is a derivative of the original and not the Toolchest version.
 .Sh BUGS
 There are no explicit conversions between numbers and strings.
 To force an expression to be treated as a number add 0 to it;
-to force it to be treated as a string concatenate
-.Dq
-to it.
+to force it to be treated as a string concatenate "" (an empty
+string) to it.

@@ -3,28 +3,32 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)pr.1	6.2 (Berkeley) %G%
+.\"     @(#)pr.1	6.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt PR 1
-.Os BSD 4.4
+.Os BSD 4.3+Reno
 .Sh NAME
 .Nm pr
 .Nd Print files.
 .Sh SYNOPSIS
-.Ar pr
-.Op +page
+.Nm pr
 .Oo
+.Op Cm \&+ Ar page
 .Op Fl Ar column
+.Oo
 .Op Fl f
 .Op Fl hheader
 .Op Fl llines
 .Op Fl m
-.Op Fl s Ar char
-.Op Fl t
-.Op Fl w Ar width
-.Ar
 .Oo
+.Op Fl s Ar char
+.Oo
+.Op Fl t
+.Oo
+.Op Fl w Ar width
+.Oo
+.Ar
 .Sh DESCRIPTION
 The
 .Nm pr
@@ -42,20 +46,29 @@ Lines that do not fit into
 a text column are truncated.
 If standard output is associated
 with a terminal, diagnostic messages are suppressed
-until the pr utility has completed processing.
+until the
+.Nm
+utility has completed processing.
 .Pp
 The following options are available:
 .Tw Fl
-.Tp Ar +page
+.Tc Cm \&+
+.Ar page
+.Cx
 Begin output at page number page of the
 formatted input.
-.Tp Ar \-column
+.Tc Fl
+.Ar column
+.Cx
 Produce output that is columns wide (default
 is 1) and is in text column rank order.
 This
-option should not be used with \-m.
+option should not be used with
+.Fl m .
 When
-used with \-t, use the minimum number of lines
+used with
+.Fl t ,
+use the minimum number of lines
 to display the output.
 .Tp Fl f
 Use <form-feed> character for new pages,
@@ -77,7 +90,8 @@ page length to lines.
 If lines is smaller
 than the sum of both the header and trailer
 depths (in lines), the pr utility suppresses
-both the header and trailer, as if the \-t
+both the header and trailer, as if the
+.Fl t
 option were in effect.
 .Tp Fl m
 Merge files.
@@ -116,11 +130,13 @@ A pathname of a file to be printed.
 .Tp
 .Pp
 If no file
-operands are specified, or if a file operand is \-,
+operands are specified, or if a file operand is
+.Sq Fl ,
 the standard input is used.
 .Pp
 The standard input is used only if no file operands are
-specified, or if a file operand is \-.
+specified, or if a file operand is
+.Sq Fl .
 .Pp
 If pr receives an interrupt while printing to a terminal, it
 flushes all accumulated error messages to the screen before
@@ -131,7 +147,9 @@ file (or files).
 This pagination is optionally done using
 <form-feed>s or a sequence of <newline>s.
 Page headers are
-generated unless the \-t option is specified.
+generated unless the
+.Fl t
+option is specified.
 .Pp
 The
 .Nm pr
@@ -141,7 +159,8 @@ Error
 messages are written to standard error during the printing
 process (if output is redirected) or after all successful
 file printing is complete (when printing to a terminal).
-.Sh FILES
+.Sh SEE ALSO
+.Xr more 1
 .Sh STANDARDS
 The
 .Nm pr

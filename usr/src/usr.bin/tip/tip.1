@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)tip.1	6.5 (Berkeley) %G%
+.\"     @(#)tip.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TIP 1
@@ -49,7 +49,8 @@ interface is included for those people attached to the
 describes only
 .Nm tip  .
 .Pp
-Options:
+Available Option:
+.Tw Ds
 .Tp Fl v
 Set verbose mode.
 .Tp
@@ -68,7 +69,9 @@ remote machine).
 .Cx \&\ \&
 .Op Ar name
 .Cx
-Change directory to name (no argument
+Change directory to
+.Ar name
+(no argument
 implies change to your home directory).
 .Tp Ic \&~!
 Escape to a shell (exiting the shell will
@@ -137,7 +140,9 @@ Get a summary of the tilde escapes
 .Tp
 .Pp
 .Nm Tip
-uses the file /etc/remote to find how to reach a particular
+uses the file
+.Pa /etc/remote
+to find how to reach a particular
 system and to find out how it should operate while talking
 to the system;
 refer to
@@ -152,7 +157,8 @@ When
 establishes a connection it sends out a
 connection message to the remote system; the default value, if any,
 is defined in
-.Pa /etc/remote (see
+.Pa /etc/remote
+(see
 .Xr remote 5 ) .
 .Pp
 When
@@ -341,14 +347,15 @@ and more.
 .Tp
 .Sh ENVIRONMENT
 .Nm Tip
-uses the followinf environment variables:
-.Tp Ar SHELL
+uses the following environment variables:
+.Tw Fl
+.Tp Ev SHELL
 (str) The name of the shell to use for the ~! command; default
 value is ``/bin/sh'', or taken from the environment.
-.Tp Ar HOME
+.Tp Ev HOME
 (str) The home directory to use for the ~c command; default
 value is taken from the environment.
-.Tp Ar HOST
+.Tp Ev HOST
 Check for a default host if none specified.
 .Tp
 .Pp
@@ -370,6 +377,8 @@ private system descriptions
 private phone numbers
 .Dp ~/.tiprc
 initialization file.
+.Dp Pa tip.record
+record file
 .Dp /var/log/aculog
 line access log
 .Dp Pa /var/spool/uucp/LCK..*

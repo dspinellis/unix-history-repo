@@ -1,116 +1,144 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983, 1990 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)roffbib.1	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH ROFFBIB 1 ""
-.UC 5
-.SH NAME
-roffbib \- run off bibliographic database
-.SH SYNOPSIS
-.B roffbib
-[
-.B \-e
-] [
-.B \-h
-] [
-.B \-n
-] [
-.B \-o
-] [
-.B \-r
-] [
-.B \-s
-] [
-.BI \-T term
-] [
-.B \-x
-] [
-.B \-m
-.I mac
-] [
-.B \-V
-] [
-.B \-Q
-] [ file ... ]
-.SH DESCRIPTION
-.I Roffbib
-prints out all records in a bibliographic database,
+.\"     @(#)roffbib.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ROFFBIB 1
+.Os BSD 4.2
+.Sh NAME
+.Nm roffbib
+.Nd run off bibliographic database
+.Sh SYNOPSIS
+.Nm roffbib
+.Op Fl e
+.Op Fl h
+.Op Fl n
+.Op Fl o
+.Op Fl r
+.Op Fl s
+.Oo
+.Op Fl T Ar term
+.Oo
+.Op Fl x
+.Op Fl m Ar mac
+.Op Fl V
+.Op Fl Q
+.Ar
+.Sh DESCRIPTION
+.Nm Roffbib
+is a shell script which prints out all records in a bibliographic database,
 in bibliography format rather than as footnotes or endnotes.
 Generally it is used in conjunction with
-.IR sortbib :
-.LP
-.RS
-sortbib  database | roffbib
-.RE
-.LP
-.I Roffbib
+.Xr sortbib  :
+.Pp
+.Dl sortbib  database \&| roffbib
+.Pp
+.Nm Roffbib
 accepts most of the options understood by
-.IR nroff (1),
-most importantly the
-.B \-T
+.Xr nroff  1  ,
+such as the
+.Fl T
 flag to specify terminal type.
-.PP
-If abstracts or comments are entered following the %X field key,
-.I roffbib
+.Pp
+If abstracts or comments are entered in the database following the %X field key,
+.Nm roffbib
 will format them into paragraphs for an annotated bibliography.
 Several %X fields may be given if several
 annotation paragraphs are desired.
-The
-.B \-x
-flag will suppress the printing of these abstracts.
-.PP
-A user-defined set of macros
-may be specified after the
-.B \-m
+.Pp
+Options exclusive to
+.Nm roffbib :
+.Tp Fl x
+Suppresses the printing of %X abstracts.
+.Tp Fl V
+Send output to the Versatec (use vtroff).
+.Tp Fl Q
+Queue the output to the default troff device.
+.Tp
+.Pp
+If neither the
+.Fl Q
+or
+.Fl V
+flags are given,
+.Nm
+sends the output to the standard output.
+The default macros for
+.Nm
+are in 
+.Pa /usr/share/tmac/tmac.bib .
+These can be over ridden by
+specifying a user-defined set with the
+.Fl m
 option.
-There should be a space between the
-.B \-m
-and the macro filename.
-This set of macros will replace the ones
-defined in /usr/lib/tmac/tmac.bib.
-The
-.B \-V
-flag will send output to the Versatec; the
-.B \-Q
-flag will queue output for the phototypesetter.
-.PP
+.Pp
 Four command-line registers control formatting style
 of the bibliography, much like the number registers of
-.IR ms (7).
+.Xr ms  7  .
 The command-line argument
-.BR \-r N1
+.Cx Fl r
+.Ar N1
+.Cx
 will number
-the references starting at one (1).
+the references starting at one  1 .
 The flag
-.BR \-r V2
+.Cx Fl r
+.Ar V2
+.Cx
 will double space the biblio\%graphy,
 while
-.BR \-r V1
+.Cx Fl r
+.Ar V1
+.Cx
 will double space references
 but single space annotation paragraphs.
 The line length can be changed from the default 6.5 inches
 to 6 inches with the
-.BR \-r L6i
+.Cx Fl r
+.Ar L6i
+.Cx
 argument,
 and the page offset can be set from the default of 0
 to one inch by specifying
-.BR \-r O1i
+.Cx Fl r
+.Ar O1i
+.Cx
 (capital O, not zero).
 Note: with the
-.B \-V
+.Fl V
 and
-.B \-Q
+.Fl Q
 flags
 the default page offset is already one inch.
-.SH FILES
-.ta \w'/usr/lib/tmac/tmac.bib\0\0'u
-.nf
-/usr/lib/tmac/tmac.bib	file of macros used by \fInroff/troff\fP
-.fi
-.SH SEE ALSO
-refer(1), addbib(1), sortbib(1), indxbib(1), lookbib(1)
-.SH BUGS
+.Pp
+.Nm Roffbib
+is limited, but it is a good script to copy and adopt
+for one's own needs, as it does demonstrate usage of
+.Xr refer 1 .
+.Sh FILES
+.Dw /usr/share/tmac/tmac.bib
+.Di L
+.Dp Pa /usr/bin/roffbib
+.Nm
+script.
+.Dp Pa /usr/share/tmac/tmac.bib
+file of macros used by
+.Xr nroff 1
+and
+.Xr troff 1
+.Dp
+.Sh SEE ALSO
+.Xr refer 1 ,
+.Xr addbib 1 ,
+.Xr sortbib 1 ,
+.Xr indxbib 1 ,
+.Xr lookbib 1
+.Sh HISTORY
+.Nm Roffbib
+appeared in 4.2 BSD.
+.Sh BUGS
 Users have to rewrite macros
 to create customized formats.

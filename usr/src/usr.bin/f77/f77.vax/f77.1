@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"     @(#)f77.1	6.6 (Berkeley) %G%
+.\"     @(#)f77.1	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt F77 1
@@ -25,7 +25,7 @@ Fortran 77 source programs;
 they are compiled, and
 each object program is left on the file in the current directory
 whose name is that of the source with `.o' substituted
-for '.f'.
+for `.f'.
 .Pp
 Arguments whose names end with `.F' are also taken to be Fortran 77 source
 programs; these are first processed by the C preprocessor before being
@@ -34,7 +34,8 @@ compiled by
 .Pp
 Arguments whose names end with `.r' or `.e' are taken to be Ratfor
 or EFL source programs respectively; these are first transformed by the
-appropriate preprocessor, then compiled by f77.
+appropriate preprocessor, then compiled by
+.Nm f77 .
 .Pp
 Arguments whose names end with `.c' or `.s' are taken to be C or assembly
 source programs and are compiled or assembled, producing a `.o' file.
@@ -160,27 +161,27 @@ Use the string
 .Ar x
 as a Ratfor option in processing `.r' files.
 .Tc Fl N
-.Op Ar qxscn
+.Op Cm qxscn
 .Ar nnn
 .Cx
 Make static tables in the compiler bigger. The compiler will complain
 if it overflows its tables and suggest you apply one or more of these
 flags. These flags have the following meanings:
 .Tw Ds
-.Tp r q
+.Tp Cm r q
 Maximum number of equivalenced variables. Default is 150.
-.Tp Ar x
+.Tp Cm x
 Maximum number of external names (common block names, subroutine and
 function names). Default is 200.
-.Tp Ar s
+.Tp Cm s
 Maximum number of statement numbers. Default is 401.
-.Tp Ar c
+.Tp Cm c
 Maximum depth of nesting for control statements (e.g. DO loops). Default is
 20.
 .Tp Ar n
 Maximum number of identifiers. Default is 1009.
 .Tp
-Tp Fl U
+.Tp Fl U
 Do not convert upper case letters to lower case. The default is to convert
 Fortran programs to lower case except within character string constants.
 .Tp
@@ -201,14 +202,14 @@ Programs compiled with
 produce memory dumps in file
 .Pa core
 upon abnormal termination if the
-.Fl
+.Sq Fl
 flag was specified during loading.
 If the environment variable
 .Ev f77_dump_flag
 is set to a value beginning with
-.Ar y
+.Sq Ar y
 or
-.Ar n  ,
+.Sq Ar n  ,
 dumps for abnormal terminations are respectively forced or
 suppressed.
 .Sh FILES
@@ -256,12 +257,6 @@ file produced for analysis by
 .Xr gprof 1 .
 .Dp
 .Sh SEE ALSO
-S. I. Feldman, P. J. Weinberger, J. Berkman,
-.Em A Portable Fortran 77 Compiler
-.br
-D. L. Wasley, J. Berkman,
-.Em Introduction to the f77 I/.Xr O Library
-.br
 .Xr fpr 1 ,
 .Xr fsplit 1 ,
 .Xr ld 1 ,
@@ -275,6 +270,12 @@ D. L. Wasley, J. Berkman,
 .Xr prof 1 ,
 .Xr gprof 1 ,
 .Xr cc 1
+.br
+S. I. Feldman, P. J. Weinberger, J. Berkman,
+.Em A Portable Fortran 77 Compiler
+.br
+D. L. Wasley, J. Berkman,
+.Em Introduction to the f77 I/.Xr O Library
 .Sh DIAGNOSTICS
 The diagnostics produced by
 .Nm f77

@@ -3,14 +3,16 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)atq.1	6.3 (Berkeley) %G%
+.\"     @(#)atq.1	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ATQ 1
 .Os BSD 4.3
 .Sh NAME
 .Nm atq
-.Nd print the queue of jobs waiting to be run
+.Nd display the
+.Xr at 1
+job queue
 .Sh SYNOPSIS
 .Nm atq
 .Op Fl c
@@ -18,12 +20,16 @@
 .Op Ar name ...
 .Sh DESCRIPTION
 .Nm Atq
-prints the queue of jobs that are waiting to be run
-at a later date. These jobs were created with the
+displays the queue of jobs, created by the
 .Xr at 1
-command.
+command,
+which are currently awaiting execution.
 With no flags, the queue is sorted in the order that
 the jobs will be executed.
+.Pp
+Options available are:
+.Pp
+.Tw Ds
 .Tp Fl c
 the queue is sorted by the time that the
 .Li at
@@ -36,10 +42,11 @@ in the queue are printed.
 If a name(s) is provided, only those files belonging to that user(s) are
 displayed.
 .Sh FILES
-.Tw /var/spool/at
-.Tp /var/spool/at
+.Dw /var/spool/at
+.Di L
+.Dp Pa /var/spool/at
 spool area
-.Tp
+.Dp
 .Sh SEE ALSO
 .Xr at 1 ,
 .Xr atrm 1 ,

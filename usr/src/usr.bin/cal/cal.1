@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)cal.1	6.6 (Berkeley) %G%
+.\"     @(#)cal.1	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CAL 1
@@ -21,10 +21,10 @@
 .Sh DESCRIPTION
 .Nm Cal
 displays a simple calendar.
-If no options or arguments are given,
-.Nm cal
-displays the current month.
+If arguments are not specified,
+the current month is displayed.
 The options are as follows:
+.Tw Ds
 .Tp Fl j
 Display julian dates (days one-based, numbered from January 1).
 .Tp Fl y
@@ -41,8 +41,8 @@ displayed.
 .Pp
 A year starts on Jan 1.
 .Pp
-The Gregorian Reformation is assumed to have occurred on 3rd of September
-in 1752.
+The Gregorian Reformation is assumed to have occurred
+in 1972 on the 3rd of September.
 By this time, most countries had recognized the reformation (although
 a few did not recognize it until the early 1900's.)
 Ten days following that date were eliminated by

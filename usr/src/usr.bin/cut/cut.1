@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)cut.1	5.2 (Berkeley) %G%
+.\"     @(#)cut.1	5.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CUT 1
@@ -33,10 +33,10 @@ standard output.
 The items specified by
 .Ar list
 can be in terms of column position or in terms of fields delimited
-by a special character.
+by a special character. Column numbering starts from 1.
 .Pp
 .Ar List
-is a comma or whitespace separated set of one-based numbers and/or
+is a comma or whitespace separated set of increasing numbers and/or
 number ranges.
 Number ranges consist of a number, a dash
 .Li (``\-'') ,
@@ -81,7 +81,7 @@ Unless specified, lines with no delimiters are passed through unmodified.
 .Tp
 .Pp
 .Nm Cut
-exit 0 on success, 1 if an error occurred.
+exits 0 on success, 1 if an error occurred.
 .Sh SEE ALSO
 .Xr paste 1
 .Sh STANDARDS

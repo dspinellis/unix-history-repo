@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)printf.1	5.7 (Berkeley) %G%
+.\"     @(#)printf.1	5.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt PRINTF 1
@@ -74,7 +74,7 @@ Write a backslash character.
 .Tp Cx Cm \e
 .Ar num
 .Cx
-Write an 8-bit character whose numeric value is the 1-, 2-, or 3-digit
+Write an 8-bit character whose ASCII value is the 1-, 2-, or 3-digit
 octal number
 .Ar num  .
 .Tp
@@ -182,8 +182,8 @@ The
 is printed in the style `[\-]ddd.ddd' where the number of d's
 after the decimal point is equal to the precision specification for
 the argument.
-If the precision is missing, 6 digits are printed after the decimal point;
-if the precision is explicitly 0, no digits and no decimal point are printed.
+If the precision is missing, 6 digits are given; if the precision
+is explicitly 0, no digits and no decimal point are printed.
 .Tp Cm eE
 The
 .Ar argument
@@ -195,7 +195,7 @@ is printed in the style
 where there
 is one digit before the decimal point and the number after is equal to
 the precision specification for the argument; when the precision is
-missing, 6 digits are printed after the decimal point.
+missing, 6 digits are produced.
 An upper-case E is used for an `E' format.
 .Tp Cm gG
 The
@@ -229,12 +229,10 @@ exits 0 on success, 1 on failure.
 .Sh SEE ALSO
 .Xr printf 3
 .Sh HISTORY
-.Nm printf
-as a command is new to 4.4 BSD.  It is modeled
-after the
-.Xr printf 3
-function which appeared in
-Version 6 AT&T UNIX.
+.Nm Printf
+as a command, appears in 4.3+Reno BSD.  It is modeled
+after the standard library function,
+.Xr printf 3 .
 .Sh BUGS
 Since the number is translated from ASCII to floating-point, and
 then back again, floating-point precision may be lost.

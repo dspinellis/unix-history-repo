@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)mail.1	6.15 (Berkeley) %G%
+.\"     @(#)mail.1	6.16 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAIL 1
@@ -34,6 +34,7 @@ a command syntax reminiscent of
 .Xr ed 1
 with lines replaced by messages.
 .Pp
+.Tw Ds
 .Tp Fl v
 Verbose mode. The details of
 delivery are displayed on the users terminal.
@@ -49,14 +50,16 @@ input isn't a terminal.  In particular, the
 special
 character when sending mail is only active in interactive mode.
 .Tp Fl n
-Inhibits reading /usr/share/misc/Mail.rc upon startup.
+Inhibits reading
+.Pa /usr/share/misc/Mail.rc
+upon startup.
 .Tp Fl N
 Inhibits the initial display of message headers
 when reading mail or editing a mail folder.
 .Tp Fl s
 Specify subject on command line
 (only the first argument after the
-Fl s
+.Fl s
 flag is used as a subject; be careful to quote subjects
 containing spaces.)
 .Tp Fl c
@@ -99,7 +102,7 @@ In normal usage
 .Nm mail
 is given no arguments and checks your mail out of the
 post office, then
-prints out a one line header of each message there.
+prints out a one line header of each message found.
 The current message is initially the first message (numbered 1)
 and can be printed using the
 .Ic print
@@ -234,7 +237,8 @@ The current list of such aliases can be displayed with the
 command in
 .Nm mail  .
 System wide distribution lists can be created by editing
-/usr/lib/aliases, see
+.Pa /etc/aliases ,
+see
 .Xr aliases  5
 and
 .Xr sendmail  8  ;
@@ -539,7 +543,7 @@ or
 or never referenced
 in his system mailbox, and removing all other messages from his system
 mailbox.  If new mail has arrived during the session, the message
-.Dq LI You have new mail
+.Dq Li You have new mail
 is given.  If given while editing a
 mailbox file with the
 .Fl f
@@ -594,7 +598,7 @@ option.  Arguments are of the form
 .Ar option .
 Quotation marks may be placed around any part of the assignment statement to
 quote blanks or tabs, i.e.
-.Dq Li set indentprefix=\*(Lq \*(Rq
+.Dq Li set indentprefix="->"
 .Tp Ic saveignore
 .Ic Saveignore
 is to
@@ -771,7 +775,7 @@ command) are not included.
 .Ar messages
 .Cx
 Identical to
-Ic \&~f ,
+.Ic \&~f ,
 except all message headers are included.
 .Tp Ic \&~h
 Edit the message header fields by typing each one in turn and allowing
@@ -809,8 +813,9 @@ is set.
 .Ar filename
 .Cx
 Read the named file into the message.
-.Tp Ic \&~s
-string
+.Tp Cx Ic \&~s
+.Ar string
+.Cx
 Cause the named string to become the current subject field.
 .Tp Cx Ic \&~\&t
 .Ar name ...
@@ -827,7 +832,7 @@ text to the end of your message.
 .Ar filename
 .Cx
 Write the message onto the named file.
-.Tp Cx Ic \&~\\
+.Tp Cx Ic \&~\&|
 .Ar command
 .Cx
 Pipe the message through the command as a filter.  If the command gives
@@ -861,7 +866,8 @@ The binary options include the following:
 Causes messages saved in
 .Ar mbox
 to be appended to the end rather than prepended.
-This should always be set (perhaps in /usr/lib/Mail.rc).
+This should always be set (perhaps in
+.Pa /usr/share/misc/Mail.rc ) .
 .Tp Ar ask
 Causes
 .Nm mail

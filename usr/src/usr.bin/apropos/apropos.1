@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)apropos.1	6.8 (Berkeley) %G%
+.\"     @(#)apropos.1	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt APROPOS 1
@@ -44,7 +44,7 @@ searches for a database named
 The supplied
 .Ar path
 must be a colon (\*(Lq:\*(Rq) separated list of directories.
-This search path may also be set using the environmental variable
+This search path may also be set using the environment variable
 .Ev MANPATH .
 .Tp Fl m
 Augment the list of standard directories where
@@ -70,10 +70,11 @@ environmental variable.
 The format of the path is a colon (\*(Lq:\*(Rq) separated list of directories.
 .Tp
 .Sh FILES
-.Tw whatis.db
-.Tp Pa whatis.db
+.Dw whatis.db
+.Di L
+.Dp Pa whatis.db
 name of the apropos database
-.Tp
+.Dp
 .Sh SEE ALSO
 .Xr man 1 ,
 .Xr whatis 1 ,

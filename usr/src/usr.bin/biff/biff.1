@@ -3,14 +3,14 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)biff.1	6.3 (Berkeley) %G%
+.\"     @(#)biff.1	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt BIFF 1
 .Os BSD 4
 .Sh NAME
 .Nm biff
-.Nd be notified if mail arrives and who it is from
+.Nd be\ notified\ if mail arrives and who it is from
 .Sh SYNOPSIS
 .Nm biff
 .Op Cm yn
@@ -30,13 +30,11 @@ disables it.
 When mail notification is enabled, the header and first few lines of
 the message will be printed on your screen whenever mail arrives.
 A
-.Li ``biff y''
+.Ql biff y
 command is often included in the file
-.Pa \&
-login
+.Pa \&.login
 or
-.Pa \&
-profile
+.Pa \&.profile
 to be executed at each login.
 .Pp
 .Nm Biff

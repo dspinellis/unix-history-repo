@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)csh.1	6.13 (Berkeley) %G%
+.\"     @(#)csh.1	6.14 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CSH 1
@@ -30,7 +30,7 @@ and a C-like syntax. It is used both as an interactive
 login shell and a shell script command processor.
 .Ss Argument list processing
 If the first argument (argument 0) to the shell is
-.Fl
+.Sq Fl
 then this
 is a login shell.
 The flag arguments are interpreted as follows:
@@ -81,7 +81,8 @@ variable to be set, so that commands are echoed immediately before execution.
 .Tp Fl V
 Causes the
 .Ar verbose
-variable to be set even before `\&.cshrc' is executed.
+variable to be set even before
+.Pa \&.cshrc is executed.
 .Tp Fl X
 Is to
 .Fl x
@@ -97,7 +98,7 @@ After processing of flag arguments, if arguments remain but none of the
 .Fl s ,
 or
 .Fl t
-options was given, the first argument is taken as the name of a file of
+options were given, the first argument is taken as the name of a file of
 commands to be executed.
 The shell opens this file, and saves its name for possible resubstitution
 by `$0'.
@@ -108,7 +109,7 @@ is not a `#', i.e. if the script does not start with a comment.
 Remaining arguments initialize the variable
 .Ar argv .
 .Pp
-.\" An instance of
+An instance of
 .Nm csh
 begins by executing commands from the file
 .Pa /etc/csh.cshrc
@@ -151,9 +152,9 @@ directory and
 The shell splits input lines into words at blanks and tabs with the
 following exceptions.
 The characters
-`&' `' `;' `<' `>' `(' `)'
+`&' `\&|' `;' `<' `>' `(' `)'
 form separate words.
-If doubled in `&&', `\\', `<<' or `>>' these pairs form single words.
+If doubled in `&&', `\&|\&|', `<<' or `>>' these pairs form single words.
 These parser metacharacters may be made part of other words, or prevented their
 special meaning, by preceding them with `\e'.
 A newline preceded by a `\e' is equivalent to a blank.
@@ -175,7 +176,7 @@ and in quotations using `\`', `\'', and `"'.
 A simple command is a sequence of words, the first of which
 specifies the command to be executed.
 A simple command or
-a sequence of simple commands separated by `' characters
+a sequence of simple commands separated by `\&|' characters
 forms a pipeline.
 The output of each command in a pipeline is connected to the input of the next.
 Sequences of pipelines may be separated by `;', and are then executed
@@ -185,11 +186,11 @@ waiting for it to terminate by following it with an `&'.
 .Pp
 Any of the above may be placed in `(' `)' to form a simple command (which
 may be a component of a pipeline, etc.)
-It is also possible to separate pipelines with `\\' or `&&' indicating,
+It is also possible to separate pipelines with `\&|\&|' or `&&' indicating,
 as in the C language,
 that the second is to be executed only if the first fails or succeeds
 respectively. (See
-.Ar Expressions . )
+.Em Expressions . )
 .Ss Jobs
 The shell associates a
 .Ar job
@@ -487,12 +488,12 @@ abbreviates
 .Ar `\&0\-y\'
 .Dp \&*
 abbreviates `\*(ua\-$', or nothing if only 1 word in event
-.Dp Ar x\*
+.Dp Ar x\&*
 abbreviates
 .Ar `x\-$\'
 .Dp Ar x\-
 like
-.Ar `x\*\'
+.Ar `x\&*\'
 but omitting word `$'
 .Dp
 .Pp
@@ -509,7 +510,7 @@ Remove a trailing pathname component, leaving the head.
 Remove a trailing `.xxx' component, leaving the root name.
 .Dp e
 Remove all but the extension `.xxx' part.
-.Cx s/
+.Dp Cx s/
 .Ar l
 .Cx \/
 .Ar r
@@ -580,7 +581,7 @@ if necessary to insulate it from the characters which follow.
 Thus, after `ls \-ld ~paul' we might do `!{l}a' to do `ls \-ld ~paula',
 while `!la' would look for a command starting `la'.
 .Pp
-.Ss Quotations with \' and \*(Lq
+.Ss Quotations with \' and \&"
 The quotation of strings by `\'' and `"' can be used
 to prevent all or some of the remaining substitutions.
 Strings enclosed in `\'' are prevented any further interpretation.
@@ -588,7 +589,7 @@ Strings enclosed in `"' may be expanded as described below.
 .Pp
 In both cases the resulting text becomes (all or part of) a single word;
 only in one special case (see
-.Nm "Command Substitition"
+.Em Command Substitition
 below) does a `"' quoted string yield parts of more than one word;
 `\'' quoted strings never do.
 .Ss Alias substitution
@@ -621,7 +622,7 @@ by flagging it to prevent further aliasing.
 Other loops are detected and cause an error.
 .Pp
 Note that the mechanism allows aliases to introduce parser metasyntax.
-Thus we can `alias print \'pr \e!* \\ lpr\'' to make a command which
+Thus we can `alias print \'pr \e!* \&| lpr\'' to make a command which
 .Ar pr 's
 its arguments to the line printer.
 .Ss Variable substitution
@@ -689,6 +690,7 @@ The following metasequences are provided for introducing variable values into
 the shell input.
 Except as noted, it is an error to reference a variable which is not set.
 .Dw Ds
+.Di L
 .Dp $name
 .Dp ${name}
 Are replaced by the words of the value of variable
@@ -707,6 +709,7 @@ that value is returned (but
 .Nm :
 modifiers and the other forms
 given below are not available in this case).
+.Pp
 .Dp Cx $name
 .Op selector
 .Cx
@@ -724,6 +727,7 @@ If the last member of a range is omitted it defaults to `$#name'.
 The selector `*' selects all words.
 It is not an error for a range to be empty if the second argument is omitted
 or in range.
+.Pp
 .Dp $#name
 .Dp ${#name}
 Gives the number of words in the variable.
@@ -732,9 +736,11 @@ This is useful for later use in a
 .Op selector
 .Cx \' .
 .Cx
+.Pp
 .Dp $0
 Substitutes the name of the file from which command input is being read.
 An error occurs if the name is not known.
+.Pp
 .Dp $number
 .Dp ${number}
 Equivalent to
@@ -742,26 +748,34 @@ Equivalent to
 .Op number
 .Cx \' .
 .Cx
+.Pp
+.Dp $*
 Equivalent to
 .Cx `$argv
 .Op *
 .Cx \' .
 .Cx
-.Pp
 The modifiers `:e', `:h', `:t', `:r', `:q' and `:x' may be applied to
 the substitutions above as may `:gh', `:gt' and `:gr'.
 If braces `{' '}' appear in the command form then the modifiers
 must appear within the braces.
 The current implementation allows only one `:' modifier on each `$' expansion.
+.Dp
 .Pp
 The following substitutions may not be modified with `:' modifiers.
+.Pp
+.Dw Ds
+.Di L
 .Dp $?name
 .Dp ${?name}
 Substitutes the string `1' if name is set, `0' if it is not.
+.Pp
 .Dp $?0
 Substitutes `1' if the current input filename is known, `0' if it is not.
+.Pp
 .Dp $$
 Substitute the (decimal) process number of the (parent) shell.
+.Pp
 .Dp $<
 Substitutes a line from the standard
 input, with no further interpretation thereafter.  It can be used
@@ -788,8 +802,7 @@ In any case, the single final newline does not force a new word.
 Note that it is thus possible for a command substitution to yield
 only part of a word, even if the command outputs a complete line.
 .Ss Filename substitution
-If a word contains any of the characters `*', `?', `
-.Op ' or `{'
+If a word contains any of the characters `*', `?', `[' or `{'
 or begins with the character `~', then that word is a candidate for
 filename substitution, also known as `globbing'.
 This word is then regarded as a pattern, and replaced with an alphabetically
@@ -797,8 +810,7 @@ sorted list of file names which match the pattern.
 In a list of words specifying filename substitution it is an error for
 no pattern to match an existing file name, but it is not required
 for each pattern to match.
-Only the metacharacters `*', `?' and `
-.Op ' imply pattern matching,
+Only the metacharacters `*', `?' and `[' imply pattern matching,
 the characters `~' and `{' being more akin to abbreviations.
 .Pp
 In matching filenames, the character `.' at the beginning of a filename
@@ -807,12 +819,11 @@ be matched explicitly.
 The character `*' matches any string of characters, including the null
 string.
 The character `?' matches any single character.
-The sequence `
-.Op ...
-' matches any one of the characters enclosed.
-Within `
-.Op ...
-',
+The sequence
+.Sq Op ...
+matches any one of the characters enclosed.
+Within
+.Sq Op ... ,
 a pair of characters separated by `\-' matches any character lexically between
 the two.
 .Pp
@@ -844,11 +855,13 @@ As a special case `{', `}' and `{}' are passed undisturbed.
 The standard input and standard output of a command may be redirected
 with the following syntax:
 .Dw Ds
+.Di L
 .Dp < name
 Open file
 .Ar name
 (which is first variable, command and filename expanded) as the standard
 input.
+.Pp
 .Dp << word
 Read the shell input up to a line which is identical to
 .Ar word .
@@ -865,6 +878,7 @@ Commands which are substituted have all blanks, tabs, and newlines
 preserved, except for the final newline which is dropped.
 The resultant text is placed in an anonymous temporary file which
 is given to the command as standard input.
+.Pp
 .Dp > name
 .Dp >! name
 .Dp >& name
@@ -886,6 +900,7 @@ The forms involving `&' route the diagnostic output into the specified
 file as well as the standard output.
 .Ar Name
 is expanded in the same way as `<' input filenames are.
+.Pp
 .Dp >> name
 .Dp >>& name
 .Dp >>! name
@@ -921,7 +936,7 @@ will block and the user will be notified (see
 above).
 .Pp
 Diagnostic output may be directed through a pipe with the standard output.
-Simply use the form `\&' rather than just `'.
+Simply use the form `\&|&' rather than just `\&|'.
 .Ss Expressions
 A number of the builtin commands (to be described subsequently)
 take expressions, in which the operators are similar to those of C, with
@@ -936,7 +951,7 @@ commands.
 The following operators are available:
 .Pp
 .Ds I
-\\  &&  \*(ua  &  ==  !=  =~  !~  <=  >=  <  >
+\&|\&|  &&  \&| *(ua  &  ==  !=  =~  !~  <=  >=  <  >
 <<  >>  +  \-  *  /  %  !  ~  (  )
 .De
 .Pp
@@ -964,7 +979,7 @@ The result of all expressions are strings,
 which represent decimal numbers.
 It is important to note that no two components of an expression can appear
 in the same word; except when adjacent to components of expressions which
-are syntactically significant to the parser (`&' `' `<' `>' `(' `)')
+are syntactically significant to the parser (`&' `\&|' `<' `>' `(' `)')
 they should be surrounded by spaces.
 .Pp
 Also available in expressions as primitive operands are command executions
@@ -1029,7 +1044,7 @@ Builtin commands are executed within the shell.
 If a builtin command occurs as any component of a pipeline
 except the last then it is executed in a subshell.
 .Dw Ds
-.Ds L
+.Di L
 .Dp Ic alias
 .Dp Cx Ic alias
 .Cx \&\ \&
@@ -1052,6 +1067,7 @@ is not allowed to be
 .Ar alias
 or
 .Ar unalias .
+.Pp
 .Dp Ic alloc
 Shows the amount of dynamic memory acquired, broken down into used and
 free memory.
@@ -1059,12 +1075,14 @@ With an argument shows the number of free and used blocks in each size
 category.  The categories start at size 8 and double at each step.
 This command's output may vary across system types, since
 systems other than the VAX may use a different memory allocator.
+.Pp
 .Dp Ic bg
 .Dp Cx Ic bg \&%
 .Ar job ...
 .Cx
 Puts the current or specified jobs into the background, continuing them
 if they were stopped.
+.Pp
 .Dp Ic break
 Causes execution to resume after the
 .Ic end
@@ -1074,11 +1092,13 @@ or
 .Ic while .
 The remaining commands on the current line are executed.
 Multi-level breaks are thus possible by writing them all on one line.
+.Pp
 .Dp Ic breaksw
 Causes a break from a
 .Ic switch ,
 resuming after the
 .Ic endsw .
+.Pp
 .Dp Cx Ic case
 .Cx \&\ \&
 .Ar label :
@@ -1086,6 +1106,7 @@ resuming after the
 A label in a
 .Ic switch
 statement as discussed below.
+.Pp
 .Dp Ic cd
 .Dp Cx Ic cd
 .Cx \&\ \&
@@ -1111,12 +1132,14 @@ Finally, if all else fails but
 .Ar name
 is a shell variable whose value begins with `/', then this
 is tried to see if it is a directory.
+.Pp
 .Dp Ic continue
 Continue execution of the nearest enclosing
 .Ic while
 or
 .Ic foreach .
 The rest of the commands on the current line are executed.
+.Pp
 .Dp Ic default :
 Labels the default case in a
 .Ic switch
@@ -1124,9 +1147,11 @@ statement.
 The default should come after all
 .Ic case
 labels.
+.Pp
 .Dp Ic dirs
 Prints the directory stack; the top of the stack is at the left,
 the first directory in the stack being the current directory.
+.Pp
 .Dp Cx Ic echo
 .Cx \&\ \&
 .Ar  wordlist
@@ -1141,6 +1166,7 @@ The specified words are written to the shells standard output, separated
 by spaces, and terminated with a newline unless the
 .Fl n
 option is specified.
+.Pp
 .Dp Ic else
 .Dp Ic end
 .Dp Ic endif
@@ -1152,6 +1178,7 @@ See the description of the
 and
 .Ic while
 statements below.
+.Pp
 .Dp Cx Ic eval
 .Cx \&\ \&
 .Ar arg ...
@@ -1166,11 +1193,13 @@ parsing occurs before these substitutions.  See
 .Xr tset  1
 for an example of using
 .Ic eval .
+.Pp
 .Dp Cx Ic exec
 .Cx \&\ \&
 .Ar command
 .Cx
 The specified command is executed in place of the current shell.
+.Pp
 .Dp Ic exit
 .Dp Cx Ic exit
 .Cx \&\ \&
@@ -1181,12 +1210,14 @@ The shell exits either with the value of the
 variable (first form) or with the value of the specified
 .Ic expr
 (second form).
+.Pp
 .Dp Ic fg
 .Dp Cx Ic fg \&%
 .Ar job ...
 .Cx
 Brings the current or specified jobs into the foreground, continuing them if
 they were stopped.
+.Pp
 .Dp Cx Ic foreach
 .Cx \&\ \&
 .Ar name (wordlist)
@@ -1214,6 +1245,7 @@ to terminate it prematurely.
 When this command is read from the terminal, the loop is read up once
 prompting with `?' before any statements in the loop are executed.
 If you make a mistake typing in a loop at the terminal you can rub it out.
+.Pp
 .Dp Cx Ic glob
 .Cx \&\ \&
 .Ar wordlist
@@ -1224,6 +1256,7 @@ but no `\e' escapes are recognized and words are delimited
 by null characters in the output.
 Useful for programs which wish to use the shell to filename expand a list
 of words.
+.Pp
 .Dp Cx Ic goto
 .Cx \&\ \&
 .Ar word
@@ -1235,6 +1268,7 @@ The shell rewinds its input as much as possible
 and searches for a line of the form `label:'
 possibly preceded by blanks or tabs.
 Execution continues after the specified line.
+.Pp
 .Dp Ic hashstat
 Print a statistics line indicating how effective the internal hash
 table has been at locating commands (and avoiding
@@ -1247,6 +1281,7 @@ is attempted for each component of the
 .Em path
 where the hash function indicates a possible hit, and in each component
 which does not begin with a `/'.
+.Pp
 .Dp Ic history
 .Dp Cx Ic history
 .Cx \&\ \&
@@ -1279,6 +1314,7 @@ option causes the history list to be printed without leading numbers.
 This is used to produce files suitable for sourceing using the \-h
 option to
 .Ic source  .
+.Pp
 .Dp Cx Ic if
 .Cx \&\ \&
 .Cx \&(
@@ -1303,6 +1339,7 @@ Input/output redirection occurs even if
 is false, when command is
 .Sy not
 executed (this is a bug).
+.Pp
 .Dp Cx Ic if
 .Cx \&\ \&
 .Cx \&(
@@ -1351,6 +1388,7 @@ the
 .Ic if
 must appear alone on its input line or after an
 .Ic else . )
+.Pp
 .Dp Ic jobs
 .Dp Cx Ic jobs
 .Cx \&\ \&
@@ -1359,6 +1397,7 @@ must appear alone on its input line or after an
 Lists the active jobs; given the
 .Fl l
 options lists process id's in addition to the normal information.
+.Pp
 .Dp Cx Ic kill  %
 .Ar job
 .Cx
@@ -1385,6 +1424,7 @@ There is no default, saying just `kill' does not
 send a signal to the current job.
 If the signal being sent is TERM (terminate) or HUP (hangup),
 then the job or process will be sent a CONT (continue) signal as well.
+.Pp
 .Dp Ic limit
 .Dp Cx Ic limit
 .Cx \&\ \&
@@ -1462,16 +1502,19 @@ For both
 .Ar resource
 names and scale factors, unambiguous prefixes
 of the names suffice.
+.Pp
 .Dp Ic login
 Terminate a login shell, replacing it with an instance of
 .Pa /bin/login.
 This is one way to log off, included for compatibility with
 .Xr sh  1  .
+.Pp
 .Dp Ic logout
 Terminate a login shell.
 Especially useful if
 .Ic ignoreeof
 is set.
+.Pp
 .Dp Ic nice
 .Dp Cx Ic nice
 .Cx \&\ \&
@@ -1490,7 +1533,8 @@ scheduling priority
 for this shell to 4.
 The second form sets the
 priority
-to the given number.
+to the given
+.Ar number .
 The final two forms run command at priority 4 and
 .Ar number
 respectively.
@@ -1500,6 +1544,7 @@ Command is always executed in a sub-shell, and the restrictions
 placed on commands in simple
 .Ic if
 statements apply.
+.Pp
 .Dp Ic nohup
 .Dp Cx Ic nohup
 .Cx \&\ \&
@@ -1513,6 +1558,7 @@ All processes detached with `&' are effectively
 .Cx Ic nohup
 .Cx \'ed .
 .Cx
+.Pp
 .Dp Ic notify
 .Dp Cx Ic notify %
 .Cx \&\ \&
@@ -1523,6 +1569,7 @@ current or specified jobs changes; normally notification is presented
 before a prompt.  This is automatic if the shell variable
 .Ic notify
 is set.
+.Pp
 .Dp Ic onintr
 .Dp Cx Ic onintr
 .Cx \&\ \&
@@ -1546,6 +1593,7 @@ being ignored, all forms of
 .Ic onintr
 have no meaning and interrupts
 continue to be ignored by the shell and all invoked commands.
+.Pp
 .Dp Ic popd
 .Dp Cx Ic popd
 .Cx \&\ \&
@@ -1564,6 +1612,7 @@ discards the
 .Cx
 entry in the stack.
 The elements of the directory stack are numbered from 0 starting at the top.
+.Pp
 .Dp Ic pushd
 .Dp Cx Ic pushd
 .Cx \&\ \&
@@ -1594,6 +1643,7 @@ With a numeric argument, rotates the
 argument of the directory
 stack around to be the top element and changes to it.  The members
 of the directory stack are numbered from the top starting at 0.
+.Pp
 .Dp Ic rehash
 Causes the internal hash table of the contents of the directories in
 the
@@ -1604,6 +1654,7 @@ to directories in the
 while you are logged in.  This should only be necessary if you add
 commands to one of your own directories, or if a systems programmer
 changes the contents of one of the system directories.
+.Pp
 .Dp Cx Ic repeat
 .Cx \&\ \&
 .Ar count command
@@ -1622,6 +1673,7 @@ times.
 I/O redirections occur exactly once, even if
 .Ar count
 is 0.
+.Pp
 .Dp Ic set
 .Dp Cx Ic set
 .Cx \&\ \&
@@ -1667,6 +1719,7 @@ In all cases the value is command and filename expanded.
 These arguments may be repeated to set multiple values in a single set command.
 Note however, that variable expansion happens for all arguments before any
 setting occurs.
+.Pp
 .Dp Ic setenv
 .Dp Cx Ic setenv
 .Cx \&\ \&
@@ -1684,7 +1737,11 @@ to be
 a single string.  The second form sets
 .Ar name
 to an empty string.
-The most commonly used environment variable USER, TERM, and PATH
+The most commonly used environment variable
+.Ev USER ,
+.Ev TERM ,
+and
+.Ev PATH
 are automatically imported to and exported from the
 .Nm csh
 variables
@@ -1695,6 +1752,7 @@ and
 there is no need to use
 .Ic setenv
 for these.
+.Pp
 .Dp Ic shift
 .Dp Cx Ic shift
 .Cx \&\ \&
@@ -1710,6 +1768,7 @@ It is an error for
 .Ic argv
 not to be set or to have less than one word as value.
 The second form performs the same function on the specified variable.
+.Pp
 .Dp Cx Ic source
 .Cx \&\ \&
 .Ar name
@@ -1735,17 +1794,20 @@ Normally input during
 commands is not placed on the history list;
 the \-h option causes the commands to be placed in the
 history list without being executed.
+.Pp
 .Dp Ic stop
 .Dp Cx Ic stop %
 .Ar job ...
 .Cx
 Stops the current or specified job which is executing in the background.
+.Pp
 .Dp Ic suspend
 Causes the shell to stop in its tracks, much as if it had been sent a stop
 signal with
 .Ic ^Z .
 This is most often used to stop shells started by
-.Xr su  1  .
+.Xr su  1 .
+.Pp
 .Dp Cx Ic switch
 .Cx \&\ \&
 .Ar (string)
@@ -1764,11 +1826,7 @@ This is most often used to stop shells started by
 Each case label is successively matched, against the specified
 .Ar string
 which is first command and filename expanded.
-The file metacharacters `*', `?' and
-.Cx \&\ \&
-.Op \&...
-.Cx \'
-.Cx
+The file metacharacters `*', `?' and `[...]'
 may be used in the case labels,
 which are variable expanded.
 If none of the labels match before a `default' label is found, then
@@ -1782,6 +1840,7 @@ Otherwise control may fall through case labels and default labels as in C.
 If no label matches and there is no default, execution continues after
 the
 .Ic endsw .
+.Pp
 .Dp Ic time
 .Dp Cx Ic time
 .Cx \&\ \&
@@ -1795,6 +1854,7 @@ as described under the
 .Ic time
 variable is printed.  If necessary, an extra shell is created to print the time
 statistic when the command completes.
+.Pp
 .Dp Ic umask
 .Dp Cx Ic umask
 .Cx \&\ \&
@@ -1805,6 +1865,7 @@ value (second form).  The mask is given in octal.  Common values for
 the mask are 002 giving all access to the group and read and execute
 access to others or 022 giving all access except no write access for
 users in the group or others.
+.Pp
 .Dp Cx Ic unalias
 .Cx \&\ \&
 .Ar pattern
@@ -1813,9 +1874,11 @@ All aliases whose names match the specified pattern are discarded.
 Thus all aliases are removed by `unalias *'.
 It is not an error for nothing to be
 .Ic unaliased .
+.Pp
 .Dp Ic unhash
 Use of the internal hash table to speed location of executed programs
 is disabled.
+.Pp
 .Dp Ic unlimit
 .Dp Cx Ic unlimit
 .Cx \&\ \&
@@ -1841,6 +1904,7 @@ limitations are removed.  If
 .Fl h
 is given, the corresponding hard limits are removed.  Only the
 super-user may do this.
+.Pp
 .Dp Cx Ic unset
 .Cx \&\ \&
 .Ar pattern 
@@ -1850,6 +1914,7 @@ Thus all variables are removed by `unset *'; this has noticeably
 distasteful side-effects.
 It is not an error for nothing to be
 .Ic unset .
+.Pp
 .Dp Cx Ic unsetenv
 .Cx \&\ \&
 .Ar pattern
@@ -1859,11 +1924,13 @@ environment.  See also the
 .Ic setenv
 command above and
 .Xr printenv  1  .
+.Pp
 .Dp Ic wait
 All background jobs are waited for.
 It the shell is interactive, then an interrupt can disrupt the wait,
 at which time the shell prints names and job numbers of all jobs
 known to be outstanding.
+.Pp
 .Dp Cx Ic while
 .Cx \&\ \&
 .Ar (expr)
@@ -1886,11 +1953,13 @@ must appear alone on their input lines.)
 Prompting occurs here the first time through the loop as for the
 .Ic foreach
 statement if the input is a terminal.
+.Pp
 .Dp Cx Ic %
 .Cx \&\ \&
 .Ar job
 .Cx
 Brings the specified job into the foreground.
+.Pp
 .Dp Cx Ic %
 .Cx \&\ \&
 .Ar job
@@ -1898,6 +1967,7 @@ Brings the specified job into the foreground.
 .Ic &
 .Cx
 Continues the specified job in the background.
+.Pp
 .Dp Ic @
 .Dp Cx Ic @
 .Cx \&\ \&
@@ -1940,7 +2010,7 @@ Spaces are, however, mandatory in separating components of
 .Ar expr
 which would otherwise be single words.
 .Pp
-Special postfix `++' and `\-\\-' operators increment and decrement
+Special postfix `++' and `\-\-' operators increment and decrement
 .Ar name
 respectively, i.e. `@  i++'.
 .Ss Pre-defined and environment variables
@@ -1963,18 +2033,24 @@ this setting occurs only at initialization;
 these variables will not then be modified unless this is done
 explicitly by the user.
 .Pp
-This shell copies the environment variable USER into the variable
+This shell copies the environment variable
+.Ev USER
+into the variable
 .Ar user ,
-TERM into
+.Ev TERM
+into
 .Ar term ,
 and
-HOME into
+.Ev HOME
+into
 .Ar home ,
 and copies these back into the environment whenever the normal
 shell variables are reset.
-The environment variable PATH is likewise handled; it is not
+The environment variable
+.Ev PATH
+is likewise handled; it is not
 necessary to worry about its setting other than in the file
-.Ar \& .cshrc
+.Ar \&.cshrc
 as inferior
 .Nm csh
 processes will import the definition of
@@ -1983,10 +2059,7 @@ from the environment, and re-export it if you then change it.
 .Tp Ic argv
 Set to the arguments to the shell, it is from this variable that
 positional parameters are substituted, i.e. `$1' is replaced by
-.Cx $argv
-.Op 1
-.Cx \' ,
-.Cx
+`$argv[1]',
 etc.
 .Tp Ic cdpath
 Gives a list of alternate directories searched to find subdirectories
@@ -2009,8 +2082,8 @@ Enable file name completion.
 .Tp Ic histchars
 Can be given a string value to change the characters used in history
 substitution.  The first character of its value is used as the
-history substitution character, replacing the default character !.
-The second character of its value replaces the character \(ua in
+history substitution character, replacing the default character `!'.
+The second character of its value replaces the character `\(ua' in
 quick substitutions.
 .Tp Ic history
 Can be given a numeric value to control the size of the history list.
@@ -2089,7 +2162,7 @@ nor the
 option will normally hash the contents of the directories in the
 .Ar path
 variable after reading
-.Ar \& .cshrc ,
+.Ar \&.cshrc ,
 and each time the
 .Ar path
 variable is reset.  If new commands are added to these directories
@@ -2103,7 +2176,7 @@ If a `!' appears in the string it will be replaced by the current event number
 unless a preceding `\e' is given.
 Default is `% ', or `# ' for the super-user.
 .Tp Ic savehist
-is given a numeric value to control the number of entries of the
+Is given a numeric value to control the number of entries of the
 history list that are saved in ~/.history when the user logs out.
 Any command which has been referenced in this many events will be saved.
 During start up the shell sources ~/.history into the history list
@@ -2166,10 +2239,18 @@ the shell concatenates with the given command name to form a path name
 of a file which it then attempts to execute.
 .Pp
 Parenthesized commands are always executed in a subshell.
-Thus `(cd ; pwd) ; pwd' prints the
+Thus
+.Pp
+.Dl (cd ; pwd) ; pwd
+.Pp
+prints the
 .Ar home
 directory; leaving you where you were (printing this after the home directory),
-while `cd ; pwd' leaves you in the
+while
+.Pp
+.Dl cd ; pwd
+.Pp
+leaves you in the
 .Ar home
 directory.
 Parenthesized commands are most often used to prevent
@@ -2198,14 +2279,16 @@ and only allows words to be prepended to the argument list without modification.
 The shell normally ignores
 .Ar quit
 signals.
-Jobs running detached (either by `&' or the
+Jobs running detached (either by
+.Ic \&&
+or the
 .Ic bg
 or
 .Ic %... &
 commands) are immune to signals generated from the keyboard, including
 hangups.
 Other signals have the values which the shell inherited from its parent.
-The shells handling of interrupts and terminate signals
+The shell's handling of interrupts and terminate signals
 in shell scripts can be controlled by
 .Ic onintr .
 Login shells catch the
@@ -2278,7 +2361,7 @@ and a C-like syntax.
 There are now many shells which also have these mechanisms, plus
 a few more (and maybe some bugs too), which are available thru
 the internet, or as contributed software such as the
-.Xr ksh (korn\ shell) .
+.Xr ksh korn\ shell .
 .Sh BUGS
 When a command is restarted from a stop,
 the shell prints the directory it started in if this is different
@@ -2307,7 +2390,7 @@ Commands within loops, prompted for by `?', are not placed in the
 list.
 Control structure should be parsed rather than being recognized as built-in
 commands.  This would allow control commands to be placed anywhere,
-to be combined with `', and to be used with `&' and `;' metasyntax.
+to be combined with `\&|', and to be used with `&' and `;' metasyntax.
 .Pp
 It should be possible to use the `:' modifiers on the output of command
 substitutions.

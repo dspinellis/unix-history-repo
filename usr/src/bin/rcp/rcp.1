@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)rcp.1	6.10 (Berkeley) %G%
+.\"     @(#)rcp.1	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RCP 1
@@ -93,7 +93,7 @@ are on the current machine.
 .Sh HISTORY
 .Nm Rcp
 appeared in 4.2 BSD.  The version of rcp described here
-is new with 4.4BSD and is part of Kerberos.
+has been reimplemented with Kerberos in 4.3+Reno BSD.
 .Sh BUGS
 Doesn't detect all cases where the target of a copy might
 be a file in cases where only a directory should be legal.

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ln.1	6.4 (Berkeley) %G%
+.\"     @(#)ln.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LN 1
@@ -13,23 +13,32 @@
 .Nd make links
 .Sh SYNOPSIS
 .Nm ln
-.Op Fl s Ar source_file
-.Op  target_file
+.Op Fl s
+.Ar source_file
+.Op target_file
 .Nm ln
 .Op Fl s
-.Ar source_file ... target_dir
+.Ar source_file ...
+.Op target_dir
 .Sh DESCRIPTION
 The
 .Nm ln
 utility creates a new
-directory entry (a link)
-for a file which
-inherits the same modes.
-The entry behaves in most cases as if it were the
-original file.
-It is useful for keeping groups of files together
-in directories, but with out multiple copies of the same file.
-There are two kinds of links: hard links and symbolic links.
+directory entry (linked file)
+which inherits the same modes as the orginal
+file.
+It is useful for maintaining multiple copies of a file in
+many places at once - without the `copies'; instead,
+a link `points' to the original copy.
+There are two types of links; hard links and symbolic links.
+How a link `points' to a file is one of the differences
+between a hard or symbolic link.
+.Pp
+Option available:
+.Tw Ds
+.Tp Fl s
+Create a symbolic link.
+.Tp
 .Pp
 By default
 .Nm ln
@@ -43,9 +52,6 @@ to reference the file.  Hard links may not refer to directories
 (unless the proper incantations are supplied) and may not span
 file systems.
 .Pp
-Options:
-.Tp Fl s
-Create symbolic links.
 A symbolic link contains the name of the file to
 which it is linked.  The referenced file is used when an
 .Xr open  2
@@ -59,7 +65,6 @@ The
 .Xr readlink  2
 call may be used to read the contents of a symbolic link.
 Symbolic links may span file systems and may refer to directories.
-.Tp
 .Pp
 Given one or two arguments,
 .Nm ln

@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)more.1	5.12 (Berkeley) %G%
+.\"     @(#)more.1	5.13 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MORE 1
@@ -71,7 +71,10 @@ Suppressing line numbers with the
 .Fl n
 flag will avoid this problem.
 Using line numbers means: the line number will be displayed in the
-= command, and the v command will pass the current line number to the editor.
+.Cm =
+command, and the
+.Cm v
+command will pass the current line number to the editor.
 .Tp Fl s
 The
 .Fl s
@@ -153,7 +156,7 @@ The entire N lines are displayed, even if N is more than the screen size.
 .Tp Ic k
 Scroll backward N lines, default 1.
 The entire N lines are displayed, even if N is more than the screen size.
-.Tp Ic d
+.Tp Cx Ic d
 .Ws
 .Cx or
 .Ws
@@ -162,7 +165,7 @@ The entire N lines are displayed, even if N is more than the screen size.
 Scroll forward N lines, default one half of the screen size.
 If N is specified, it becomes the new default for
 subsequent d and u commands.
-.Tp Ic u
+.Tp Cx Ic u
 .Ws
 .Cx or
 .Ws
@@ -175,7 +178,7 @@ subsequent d and u commands.
 Go to line N in the file, default 1 (beginning of file).
 .Tp Ic G
 Go to line N in the file, default the end of the file.
-.Tp Ic p
+.Tp Cx Ic p
 .Ws
 .Cx or
 .Ws
@@ -186,7 +189,7 @@ and 100.  (This works if standard input is being read, but only if
 .Nm more
 has already read to the end of the file.  It is always fast, but
 not always useful.)
-.Tp Ic r
+.Tp Cx Ic r
 .Ws
 .Cx or
 .Ws
@@ -215,17 +218,17 @@ N defaults to 1.
 The pattern is a regular expression, as recognized by
 .Xr ed .
 The search starts at the second line displayed.
-.Tp Cx Ic \&?
+.Tp Cx Ic \&\?
 .Ar pattern
 .Cx
 Search backward in the file for the N-th line containing the pattern.
 The search starts at the line immediately before the top line displayed.
-.Tp Ic \&/!
+.Tp Cx Ic \&/\&!
 .Ar pattern
 .Cx
 Like /, but the search is for the N-th line
 which does NOT contain the pattern.
-.Tp Ic \&?!
+.Tp Cx Ic \&?\&!
 .Ar pattern
 .Cx
 Like ?, but the search is for the N-th line
@@ -297,12 +300,19 @@ Exits
 .Tp
 .Sh ENVIRONMENT
 .Nm More
-uses the following environment variables:
-.Ev MORE ,
-.Ev EDITOR ,
-.Ev SHELL
-and
-.Ev TERM .
+utilizes the following environment variables, if they exist:
+.Tw Fl
+.Tp Ev MORE
+This variable may be set with favored options to
+.Nm more .
+.Tp Ev EDITOR
+Specify default editor.
+.Tp Ev SHELL
+Current shell in use (normally set by the shell at login time).
+.Tp Ev TERM
+Specifies terminal type, used by more to get the terminal
+characteristics necessary to manipulate the screen.
+.Tp
 .Sh SEE ALSO
 .Xr ctags 1 ,
 .Xr vi 1

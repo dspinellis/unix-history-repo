@@ -3,12 +3,12 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)od.1	5.2 (Berkeley) %G%
+.\"     @(#)od.1	5.3 (Berkeley) %G%
 .\"
 .Dd %Q
 .Os BSD 4.4
 .Dt OD 1
-.SH NAME
+.Sh NAME
 .Nm od
 .Nd octal, decimal, hex, ascii dump
 .Sh SYNOPSIS
@@ -27,12 +27,12 @@ provides compatibility for the options listed above.
 .Pp
 It does not provide compatibility for the options ``-s'' and ``-w'',
 nor is compatibility provided for the extended argument syntax of
-``[
-.Cx Op Sy \&+
+.Cx ``[
+.Op Sy \&+
 .Li offset
 .Op Sy \&.
 .Op Sy b
-.Cx [label] ]''.
+.Cx [label]]''.
 .Cx
 .Sh SEE ALSO
 .Xr hexdump 1

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"     @(#)adb.1	5.8 (Berkeley) %G%
+.\"     @(#)adb.1	5.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ADB 1
@@ -69,9 +69,9 @@ The
 .Fl I
 option specifies a directory where files to be read
 with
-.Li $<
+.Ic $<
 or
-.Li $<<
+.Ic $<<
 (see below) will be sought; the default is
 .Pa /usr/lib/adb .
 .Pp
@@ -165,7 +165,7 @@ hexadecimal radix.  Thus
 If no prefix appears, then the
 .Em default radix
 is used; see the
-.Li $d
+.Ic $d
 command.  The default radix is initially hexadecimal.
 The hexadecimal digits are
 .Li 0123456789abcdefABCDEF
@@ -197,7 +197,7 @@ is a register name then the value of the register is obtained from
 the system header in
 .Ar corfil .
 The register names are those printed by the
-.Li $r
+.Ic $r
 command.
 .Tp Va symbol
 A
@@ -393,7 +393,7 @@ to quote the three numeric formats.
 .Cx
 Print 1 byte in the current radix
 (which may be either signed or unsigned; see the
-.Li $d
+.Ic $d
 command).
 .Dp Cx Ic 2
 .Cx \&\ \ \&
@@ -503,7 +503,10 @@ Print 1 byte as a character.
 .Cx
 Print 1 byte as a character, using
 the standard escape convention where control characters
-are printed as ^X and the delete character is printed as ^?.
+are printed as
+.Cx \&^ Ar X
+.Cx
+and the delete character is printed as ^?.
 .Dp Cx Ic s
 .Cx \&\ \ \&
 .Va n
@@ -513,8 +516,9 @@ Print the addressed characters until a zero character is reached.
 .Cx \&\ \ \&
 .Va n
 .Cx
-Print a string using the ^
-.Ar X
+Print a string using the
+.Cx \&^ Ar X
+.Cx
 escape convention (see
 .Ar C
 above).
@@ -580,17 +584,17 @@ Print a space.
 .Va 0
 .Cx
 Print a newline.
-.Dp Ic \*(Rq...\*(Lq
+.Dp Ic \*(Lq...\*(Rq
 .Va 0
-\&\ \ \&
+.br
 Print the enclosed string.
-.Dp ^
+.Dp Ic \&^
 .Ad Dot
 is decremented by the current increment.  Nothing is printed.
-.Dp +
+.Dp Ic \&+
 .Ad Dot
 is incremented by 1.  Nothing is printed.
-.Dp \-
+.Dp Ic \&\-
 .Ad Dot
 is decremented by 1.  Nothing is printed.
 .Dp newline
@@ -642,7 +646,7 @@ when writing to the subprocess address space.
 .Op Ic ?/
 .Cx
 New values for
-.Ad  ( b1 , e1 , f1 )
+.Pf \&( Ad b1 , e1 , f1 )
 are recorded.  If less than three expressions are given then
 the remaining map parameters are left unchanged.
 If the
@@ -652,20 +656,20 @@ or
 is followed by
 .Li *
 then
-the second segment (
-.Ad  ( b2 , e2 , f2 )
+the second segment
+.Pf \&( Ad b2 , e2 , f2 )
 of the mapping is changed.
 If the list is terminated by
 .Ic ?
 or
 .Ic /
 then the file
-.Ar ( objfil
+.Pf \&( Ar objfil
 or
 .Ar corfil
 respectively) is used for subsequent requests.
 For example,
-.Li /m?
+.Sq Li /m?
 will cause
 .Ic /
 to refer to
@@ -677,9 +681,7 @@ to refer to
 is assigned to the variable or register named.
 .Tp Ic \&!
 A shell
-.Cx \&(
-.Pa /bin/sh )
-.Cx
+.Pf \&( Pa /bin/sh )
 is called to read the rest of the line following
 .Ic \&! .
 .Tp Cx Cm $
@@ -789,7 +791,7 @@ Print all non zero variables in octal.
 .Tp Cm m
 Print the address map.
 .Tp Cm p
-.Em ( Kernel debugging )
+.Pf \&( Em Kernel debugging )
 Change the current kernel memory mapping to map the designated
 .Sy user structure
 to the address given by the symbol
@@ -911,9 +913,9 @@ The text segment size.
 The address in a file associated with
 a written address is determined by a mapping associated with that file.
 Each mapping is represented by two triples
-.Ad ( b1 , e1 , f1 )
+.Pf \&( Ad b1 , e1 , f1 )
 and
-.Ad ( b2 , e2 , f2 )
+.Pf \&( Ad b2 , e2 , f2 )
 and the
 .Ad file
 .Ad address
@@ -984,6 +986,7 @@ file can be examined with no address translation.
 .Pp
 .Sh FILES
 .Dw a.out
+.Di L
 .Dp Pa a.out
 .Dp Pa core
 .Dp

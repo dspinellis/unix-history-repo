@@ -3,11 +3,11 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)cpio.1	5.4 (Berkeley) %G%
+.\"     @(#)cpio.1	5.5 (Berkeley) %G%
 .\"
-.Dd 
 .\"	@(#)cpio.1	5.3 (Berkeley) 3/29/88
 .\"
+.Dd 
 .Dt CPIO 1
 .Os BSD 4.4
 .Sh NAME
@@ -32,6 +32,7 @@
 has three functional modes; copy out, copy in and pass.
 .Pp
 Functional Options:
+.Tw Ds
 .Tp Fl o
 Copy out \- reads the standard input to obtain a list
 of path names and copies those files onto the standard
@@ -46,11 +47,17 @@ which is assumed to be the product of a previous
 Only files with names that match patterns are selected.
 Patterns are given in the name-generating notation of
 .Xr sh 1 .
-In patterns, meta-characters ?, *, and
-.Op ...
+In patterns, meta-characters
+.Sq Li \&? ,
+.Sq Li \&* ,
+and
+.Sq Li [...]
 match the
-slash / character.  Multiple patterns may be specified and
-if no patterns are specified, the default for patterns is *
+slash
+.Sq Li \&/
+character.  Multiple patterns may be specified and
+if no patterns are specified, the default for patterns is
+.Sq Li \&*
 (i.e., select all files).  The extracted files are
 conditionally created and copied into the current directory
 tree based upon the options described below.  The
@@ -73,6 +80,7 @@ options described below.
 .Tp
 .Pp
 Options for the above functional options:
+.Tw Ds
 .Tp Fl a
 Reset access times of input files after they have been
 copied.
@@ -99,7 +107,7 @@ replace a newer file with the same name).
 Verbose: causes a list of file names to be printed.
 When used with the t option, the table of contents
 looks like the output of an
-.Li ls -l
+.Ql ls -l
 command (see
 .Xr ls 1 ) .
 .Tp Fl l
@@ -127,7 +135,7 @@ option.
 .Tp Fl 6
 Process an old (i.e., UNIX System Sixth Edition format)
 file.  Only useful with
-.FL i
+.Fl i
 (copy in).
 .Tp
 .Sh EXAMPLES
@@ -135,14 +143,14 @@ The first example below copies the contents of a directory
 into an archive; the second duplicates a directory
 hierarchy:
 .Pp
-.Dl ls  cpio -o >/dev/rmt/0m
+.Dl ls  \&| cpio -o >/dev/rmt/0m
 .Pp
 .Dl cd olddir
-.Dl find . -depth -print  cpio -pdl newdir
+.Dl find . -depth -print \&|  cpio -pdl newdir
 .Pp
 The trivial case
 .Pp
-.Dl find . -depth -print  cpio -oB >/dev/fmt/0m
+.Dl find . -depth -print \&|  cpio -oB >/dev/fmt/0m
 .Pp
 can be handled more efficiently by:
 .Pp
@@ -151,9 +159,8 @@ can be handled more efficiently by:
 .Sh SEE ALSO
 .Xr ar 1 ,
 .Xr find 1 ,
-.Xr ls 1 .
+.Xr ls 1 ,
 .Xr cpio 4
-in the UNIX System User Reference Manual.
 .Sh HISTORY
 The
 .Nm cpio

@@ -1,29 +1,67 @@
-.\" Copyright (c) 1987, 1990 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1987, 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"     @(#)mesg.1	6.4 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH MESG 1 "%Q"
-.AT 3
-.SH NAME
-mesg \- permit or deny messages
-.SH SYNOPSIS
-.B mesg
-[
-.B n
-] [
-.B y
-]
-.SH DESCRIPTION
-\fIMesg\fP with argument \fBn\fP forbids messages via \fIwrite\fP
-and \fItalk\fP by revoking non-user write permission on the user's
-terminal.  \fIMesg\fP with argument \fBy\fP reinstates permission.
-\fIMesg\fP without arguments reports the current state without
-changing it.
-.SH FILES
-/dev/tty*
-.SH "SEE ALSO"
-write(1), talk(1)
-.SH DIAGNOSTICS
-Exit status is 0 if messages are receivable, 1 if not, -1 on error.
+.\"     @(#)mesg.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MESG 1
+.Os BSD 4.4
+.Sh NAME
+.Nm mesg
+.Nd  Display (do not display) messages from other users
+.Sh SYNOPSIS
+.Nm mesg
+.Op Cm n Li \&| Cm y
+.Sh DESCRIPTION
+The
+.Nm mesg
+utility allows a user to decide if other users may write
+messages to his or her screen.  Programs such as
+.Xr talk 1 ,
+.Xr write 1
+and
+.Xr echo 1
+are social and display a message on the target user's terminal.
+Sometimes this is inconvenient.
+.Pp
+Options:
+.Tw Ds
+.Tp Cm n
+Disallow messages, providing peace, and informing the contacting
+party
+that `Your party is refusing messages'.
+.Tp Cm y
+Allow messages to be displayed.
+.Tp
+.Pp
+If no arguments are given,
+.Nm mesg
+displays the present message status.
+.Pp
+The
+.Nm mesg
+utility exits with one of the following values:
+.Dw Ds
+.Dp Li \&\ 0
+messages are allowed
+.Dp Li \&\ 1
+messages are not allowed
+.Dp Li \&\-\&1
+An error has occurred.
+.Dp
+.Sh FILES
+.Dw /dev/[pt]ty[pq]?
+.Di L
+.Dp Pa /dev/[pt]ty[pq]?
+.Dp
+.Sh SEE ALSO
+.Xr write 1 ,
+.Xr talk 1 ,
+.Xr echo 1 ,
+.Xr biff 1
+.Sh HISTORY
+A
+.Nm mesg
+command appeared in Version 6 AT&T Unix.

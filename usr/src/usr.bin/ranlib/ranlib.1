@@ -1,33 +1,39 @@
 .\" Copyright (c) 1990 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" All rights reserved.
 .\"
-.\"     @(#)ranlib.1	6.3 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
+.\"     @(#)ranlib.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
 .Dt RANLIB 1
-.Os ATT 7th
+.BSD 4.4
 .Sh NAME
 .Nm ranlib
-.Nd convert archives to random libraries
+.Nd preprocess archives for efficient linking
 .Sh SYNOPSIS
 .Nm ranlib
 .Op Fl t
-.Ar archive ...
+.Ar archive_file ...
 .Sh DESCRIPTION
 .Nm Ranlib
-converts each
-.Ar archive
-to a form which the loader can load more rapidly.
+is a preprocessor for the loading utility
+.Xr ld 1 .
 .Nm Ranlib
-does this by adding a table of contents called
+creates a randomized library from the given
+.Ar archive_file
+with
+the file entry named
 .Sy \&__.SYMDEF
-to the beginning of the archive.
-.Nm Ranlib
-uses
-.Xr ar  1
-to reconstruct the archive, so that sufficient temporary file space must
-be available in the file system which contains the current directory.
-.Pp
+prepended.
+The
+.Sy \&__.SYMDEF
+file entry is a dictionary the loader can detect and interpret
+to resolve external references at link time.
+To generate the library, the
+.Xr ar 1
+utility is used.
+.Tw 8n
 .Tp Fl t
 Ranlib only "touches" the archives and does not modify them.
 This is useful after copying an archive
@@ -43,20 +49,16 @@ an
 symbol table.
 .Tp
 .Sh SEE ALSO
-.Xr ld 1 ,
 .Xr ar 1 ,
+.Xr ld 1 ,
 .Xr lorder 1 ,
-.Xr make 1
+.Xr make 1 ,
+.Xr nm 1
 .Sh HISTORY
 .Nm Ranlib
 appeared in Version 7 AT&T UNIX.
 .Sh BUGS
-Because generation of a library by
-.Xr ar
-and randomization of the library by
-.Nm ranlib
-are separate processes, phase errors are possible.  The loader,
-.Xr ld  ,
-warns when the modification date of a library is more recent than the
-creation date of its dictionary;  but this means that you get the
-warning even if you only copy the library.
+The archiving is a separate process and phase
+errors may occur (see the
+.Fl t
+option above).
