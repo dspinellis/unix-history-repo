@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)udiv.s	5.3 (Berkeley) %G%"
+	.asciz "@(#)udiv.s	5.4 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -42,21 +42,25 @@ Lone:
 
 ASENTRY(audiv,0)
 	movl	DIVISOR,r2
-	jlss	Laeasy		# big divisor: settle by comparison
+	jlss	La_easy		# big divisor: settle by comparison
 	movl	DIVIDEND,r3
 	movl	(r3),r0
-	jlss	Lahard		# big dividend: extended division
-	divl3	r2,r0,(r3)	# small divisor and dividend: signed division
+	jlss	La_hard		# big dividend: extended division
+	divl2	r2,r0		# small divisor and dividend: signed division
+	movl	r0,(r3)		# leave the value of the assignment in r0
 	ret
-Lahard:
+La_hard:
 	clrl	r1
-	ediv	r2,r0,(r3),r1
+	ediv	r2,r0,r0,r1
+	movl	r0,(r3)
 	ret
-Laeasy:
+La_easy:
 	cmpl	(r3),r2
-	jgequ	Laone		# if dividend is as big or bigger, store 1
-	clrl	(r3)		# else store 0
+	jgequ	La_one		# if dividend is as big or bigger, return 1
+	clrl	r0		# else return 0
+	clrl	(r3)
 	ret
-Laone:
-	movl	$1,(r3)
+La_one:
+	movl	$1,r0
+	movl	r0,(r3)
 	ret
