@@ -500,12 +500,21 @@
 .rr _0
 ..
 .de np			\" *** numbered paragraph
-.nr $p +1
-.ip "\0(\\n($p)" \w'\0(000)\0'u
+.if \\n($p<0 \
+.	nr $p 0			\" reset number after .bu
+.nr $p +1			\" increment paragraph number
+.@p \w'\0(000)\0'u
+.ti -\w'\0(000)\0'u
+\0(\\n($p)\h'|\w'\0(000)\0'u'\c
 ..
 .de bu			\" *** bulleted paragraph
-.ns
-.ip "\0\(bu" \w'\0\(bu\0'u
+.br
+.if \\n($p<0 \
+.	ns			\" don't space between .bu paragraphs
+.nr $p 0-1			\" mark "bulleted paragraph" mode
+.@p \w'\0\(bu\0'u
+.ti -\w'\0\(bu\0'u
+\0\(bu\0\c
 ..
 .de @p			\" --- initialize for paragraph
 .@I				\" initialize macro processor
