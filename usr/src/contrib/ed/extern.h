@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.2 (Berkeley) %G%
+ *	@(#)extern.h	5.3 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -68,6 +68,7 @@ void	 t __P((FILE *, int *));
 void	 u __P((FILE *, int *));
 void	 u_add_stk __P((LINE **));
 void	 u_clr_stk __P((void));
+void	 u_pop_n_swap __P((LINE **));
 void	 undo __P((void));
 __dead void do_hup __P((void));
 void	 w __P((FILE *, int *));
