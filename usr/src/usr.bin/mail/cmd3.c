@@ -9,7 +9,7 @@
  * Still more user commands.
  */
 
-static char *SccsId = "@(#)cmd3.c	2.6 %G%";
+static char *SccsId = "@(#)cmd3.c	2.7 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,
@@ -33,6 +33,7 @@ shell(str)
 		sig[t-2] = sigset(t, SIG_IGN);
 	t = vfork();
 	if (t == 0) {
+		sigchild();
 		for (t = 2; t < 4; t++)
 			if (sig[t-2] != SIG_IGN)
 				sigsys(t, SIG_DFL);
@@ -66,6 +67,7 @@ dosh(str)
 		sig[t-2] = sigset(t, SIG_IGN);
 	t = vfork();
 	if (t == 0) {
+		sigchild();
 		for (t = 2; t < 4; t++)
 			if (sig[t-2] != SIG_IGN)
 				sigsys(t, SIG_DFL);

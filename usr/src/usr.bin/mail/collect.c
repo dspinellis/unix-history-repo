@@ -7,7 +7,7 @@
  * ~ escapes.
  */
 
-static char *SccsId = "@(#)collect.c	2.8 %G%";
+static char *SccsId = "@(#)collect.c	2.9 %G%";
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -527,6 +527,7 @@ mesedit(ibuf, obuf, c)
 		edit = c == 'e' ? EDITOR : VISUAL;
 	pid = vfork();
 	if (pid == 0) {
+		sigchild();
 		if (sig != SIG_IGN)
 			sigsys(SIGINT, SIG_DFL);
 		execl(edit, edit, tempEdit, 0);
@@ -628,6 +629,7 @@ mespipe(ibuf, obuf, cmd)
 		 * stdout = new message.
 		 */
 
+		sigchild();
 		close(0);
 		dup(fileno(ibuf));
 		close(1);
