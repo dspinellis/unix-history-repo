@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_icmp.h	6.2 (Berkeley) %G%
+ *	@(#)ip_icmp.h	6.3 (Berkeley) %G%
  */
 
 /*
@@ -42,11 +42,13 @@ struct icmp {
 			struct ip idi_ip;
 			/* options and then 64 bits of data */
 		} id_ip;
+		u_long	id_mask;
 	} icmp_dun;
 #define	icmp_otime	icmp_dun.id_ts.its_otime
 #define	icmp_rtime	icmp_dun.id_ts.its_rtime
 #define	icmp_ttime	icmp_dun.id_ts.its_ttime
 #define	icmp_ip		icmp_dun.id_ip.idi_ip
+#define	icmp_mask	icmp_dun.id_mask
 };
 
 /*
@@ -59,6 +61,7 @@ struct icmp {
  */
 #define	ICMP_MINLEN	8				/* abs minimum */
 #define	ICMP_TSLEN	(8 + 3 * sizeof (n_time))	/* timestamp */
+#define	ICMP_MASKLEN	12				/* address mask */
 #define	ICMP_ADVLENMIN	(8 + sizeof (struct ip) + 8)	/* min */
 #define	ICMP_ADVLEN(p)	(8 + ((p)->icmp_ip.ip_hl << 2) + 8)
 	/* N.B.: must separately check that ip_hl >= 5 */
@@ -89,3 +92,7 @@ struct icmp {
 #define	ICMP_TSTAMPREPLY	14		/* timestamp reply */
 #define	ICMP_IREQ		15		/* information request */
 #define	ICMP_IREQREPLY		16		/* information reply */
+#define	ICMP_MASKREQ		17		/* address mask request */
+#define	ICMP_MASKREPLY		18		/* address mask reply */
+
+#define	ICMP_MAXTYPE		18
