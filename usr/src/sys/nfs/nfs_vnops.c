@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.12 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -182,7 +182,10 @@ nfs_null(vp, cred)
 	struct vnode *vp;
 	struct ucred *cred;
 {
-	nfsm_vars;
+	caddr_t bpos, dpos;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb;
 	
 	nfsm_reqhead(nfs_procids[NFSPROC_NULL], cred, 0);
 	nfsm_request(vp);
@@ -238,6 +241,7 @@ found:
  * nfs open vnode op
  * Just check to see if the type is ok
  */
+/* ARGSUSED */
 nfs_open(vp, mode, cred)
 	struct vnode *vp;
 	int mode;
@@ -256,13 +260,13 @@ nfs_open(vp, mode, cred)
  * nfs close vnode op
  * For reg files, invalidate any buffer cache entries.
  */
+/* ARGSUSED */
 nfs_close(vp, fflags, cred)
 	register struct vnode *vp;
 	int fflags;
 	struct ucred *cred;
 {
-	struct nfsnode *np = VTONFS(vp);
-	dev_t dev;
+	register struct nfsnode *np = VTONFS(vp);
 	int error = 0;
 
 	if (vp->v_type == VREG && ((np->n_flag & NMODIFIED) ||
@@ -284,11 +288,16 @@ nfs_close(vp, fflags, cred)
  * nfs getattr call from vfs.
  */
 nfs_getattr(vp, vap, cred)
-	struct vnode *vp;
-	register struct vattr *vap;
+	register struct vnode *vp;
+	struct vattr *vap;
 	struct ucred *cred;
 {
-	nfsm_vars;
+	register caddr_t cp;
+	register long t1;
+	caddr_t bpos, dpos;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 	
 	/* First look in the cache.. */
 	if (nfs_getattrcache(vp, vap) == 0)
@@ -306,12 +315,17 @@ nfs_getattr(vp, vap, cred)
  * nfs setattr call.
  */
 nfs_setattr(vp, vap, cred)
-	struct vnode *vp;
+	register struct vnode *vp;
 	register struct vattr *vap;
 	struct ucred *cred;
 {
 	register struct nfsv2_sattr *sp;
-	nfsm_vars;
+	register caddr_t cp;
+	register long t1;
+	caddr_t bpos, dpos;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 	struct nfsnode *np;
 
 	nfsstats.rpccnt[NFSPROC_SETATTR]++;
@@ -357,13 +371,17 @@ nfs_lookup(vp, ndp)
 	register struct nameidata *ndp;
 {
 	register struct vnode *vdp;
-	nfsm_vars;
+	register u_long *p;
+	register caddr_t cp;
+	register long t1, t2;
+	caddr_t bpos, dpos, cp2;
+	u_long xid;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 	struct vnode *newvp;
 	long len;
 	nfsv2fh_t *fhp;
 	struct nfsnode *np;
-	int lockparent, wantparent, flag;
-	dev_t rdev;
+	int lockparent, wantparent, flag, error = 0;
 
 	ndp->ni_dvp = vp;
 	ndp->ni_vp = NULL;
@@ -520,11 +538,17 @@ nfsmout:
  * nfs readlink call
  */
 nfs_readlink(vp, uiop, cred)
-	struct vnode *vp;
+	register struct vnode *vp;
 	struct uio *uiop;
 	struct ucred *cred;
 {
-	nfsm_vars;
+	register u_long *p;
+	register caddr_t cp;
+	register long t1;
+	caddr_t bpos, dpos, cp2;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 	long len;
 
 	nfsstats.rpccnt[NFSPROC_READLINK]++;
@@ -541,12 +565,18 @@ nfs_readlink(vp, uiop, cred)
  * nfs read call
  */
 nfs_readrpc(vp, uiop, offp, cred)
-	struct vnode *vp;
+	register struct vnode *vp;
 	struct uio *uiop;
 	off_t *offp;
 	struct ucred *cred;
 {
-	nfsm_vars;
+	register u_long *p;
+	register caddr_t cp;
+	register long t1;
+	caddr_t bpos, dpos, cp2;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 	struct nfsmount *nmp;
 	long len, retlen, tsiz;
 
@@ -580,12 +610,18 @@ nfsmout:
  * nfs write call
  */
 nfs_writerpc(vp, uiop, offp, cred)
-	struct vnode *vp;
+	register struct vnode *vp;
 	struct uio *uiop;
 	off_t *offp;
 	struct ucred *cred;
 {
-	nfsm_vars;
+	register u_long *p;
+	register caddr_t cp;
+	register long t1;
+	caddr_t bpos, dpos;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 	struct nfsmount *nmp;
 	long len, tsiz;
 
@@ -634,7 +670,13 @@ nfs_create(ndp, vap)
 	register struct vattr *vap;
 {
 	register struct nfsv2_sattr *sp;
-	nfsm_vars;
+	register u_long *p;
+	register caddr_t cp;
+	register long t1, t2;
+	caddr_t bpos, dpos, cp2;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 
 	nfsstats.rpccnt[NFSPROC_CREATE]++;
 	nfsm_reqhead(nfs_procids[NFSPROC_CREATE], ndp->ni_cred,
@@ -679,7 +721,13 @@ nfs_remove(ndp)
 {
 	register struct vnode *vp = ndp->ni_vp;
 	register struct nfsnode *np = VTONFS(ndp->ni_vp);
-	nfsm_vars;
+	register u_long *p;
+	register caddr_t cp;
+	register long t1, t2;
+	caddr_t bpos, dpos;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 
 	if (vp->v_type == VREG) {
 		if (np->n_flag & (NMODIFIED|NBUFFERED)) {
@@ -715,7 +763,13 @@ nfs_remove(ndp)
 nfs_removeit(ndp)
 	register struct nameidata *ndp;
 {
-	nfsm_vars;
+	register u_long *p;
+	register caddr_t cp;
+	register long t1, t2;
+	caddr_t bpos, dpos;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 
 	nfsstats.rpccnt[NFSPROC_REMOVE]++;
 	nfsm_reqhead(nfs_procids[NFSPROC_REMOVE], ndp->ni_cred,
@@ -733,7 +787,13 @@ nfs_removeit(ndp)
 nfs_rename(sndp, tndp)
 	register struct nameidata *sndp, *tndp;
 {
-	nfsm_vars;
+	register u_long *p;
+	register caddr_t cp;
+	register long t1, t2;
+	caddr_t bpos, dpos;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 
 	nfsstats.rpccnt[NFSPROC_RENAME]++;
 	nfsm_reqhead(nfs_procids[NFSPROC_RENAME], tndp->ni_cred,
@@ -761,7 +821,13 @@ nfs_rename(sndp, tndp)
 nfs_renameit(sndp, tndp)
 	register struct nameidata *sndp, *tndp;
 {
-	nfsm_vars;
+	register u_long *p;
+	register caddr_t cp;
+	register long t1, t2;
+	caddr_t bpos, dpos;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 
 	nfsstats.rpccnt[NFSPROC_RENAME]++;
 	nfsm_reqhead(nfs_procids[NFSPROC_RENAME], tndp->ni_cred,
@@ -780,10 +846,16 @@ nfs_renameit(sndp, tndp)
  * nfs hard link create call
  */
 nfs_link(vp, ndp)
-	struct vnode *vp;
+	register struct vnode *vp;
 	register struct nameidata *ndp;
 {
-	nfsm_vars;
+	register u_long *p;
+	register caddr_t cp;
+	register long t1, t2;
+	caddr_t bpos, dpos;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 
 	if (ndp->ni_dvp != vp)
 		nfs_lock(vp);
@@ -810,7 +882,13 @@ nfs_symlink(ndp, vap, nm)
 	char *nm;		/* is this the path ?? */
 {
 	register struct nfsv2_sattr *sp;
-	nfsm_vars;
+	register u_long *p;
+	register caddr_t cp;
+	register long t1, t2;
+	caddr_t bpos, dpos;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 
 	nfsstats.rpccnt[NFSPROC_SYMLINK]++;
 	nfsm_reqhead(nfs_procids[NFSPROC_SYMLINK], ndp->ni_cred,
@@ -835,11 +913,17 @@ nfs_symlink(ndp, vap, nm)
  * nfs make dir call
  */
 nfs_mkdir(ndp, vap)
-	struct nameidata *ndp;
+	register struct nameidata *ndp;
 	struct vattr *vap;
 {
 	register struct nfsv2_sattr *sp;
-	nfsm_vars;
+	register u_long *p;
+	register caddr_t cp;
+	register long t1, t2;
+	caddr_t bpos, dpos, cp2;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 
 	nfsstats.rpccnt[NFSPROC_MKDIR]++;
 	nfsm_reqhead(nfs_procids[NFSPROC_MKDIR], ndp->ni_cred,
@@ -866,7 +950,13 @@ nfs_mkdir(ndp, vap)
 nfs_rmdir(ndp)
 	register struct nameidata *ndp;
 {
-	nfsm_vars;
+	register u_long *p;
+	register caddr_t cp;
+	register long t1, t2;
+	caddr_t bpos, dpos;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 
 	if (ndp->ni_dvp == ndp->ni_vp) {
 		vrele(ndp->ni_dvp);
@@ -894,14 +984,20 @@ nfs_rmdir(ndp)
  * Ultrix implementation of NFS.
  */
 nfs_readdir(vp, uiop, offp, cred)
-	struct vnode *vp;
+	register struct vnode *vp;
 	struct uio *uiop;
 	off_t *offp;
 	struct ucred *cred;
 {
 	register long len;
 	register struct direct *dp;
-	nfsm_vars;
+	register u_long *p;
+	register caddr_t cp;
+	register long t1;
+	caddr_t bpos, dpos, cp2;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 	struct mbuf *md2;
 	caddr_t dpos2;
 	int siz;
@@ -927,6 +1023,8 @@ nfs_readdir(vp, uiop, offp, cred)
 	md2 = md;
 
 	/* loop thru the dir entries, doctoring them to 4bsd form */
+	savoff = off = 0;
+	savdp = dp = NULL;
 	while (more_dirs && siz < uiop->uio_resid) {
 		savoff = off;		/* Hold onto offset and dp */
 		savdp = dp;
@@ -994,12 +1092,17 @@ nfs_statfs(mp, sbp)
 	struct mount *mp;
 	register struct statfs *sbp;
 {
+	register struct vnode *vp;
 	register struct nfsv2_statfs *sfp;
-	nfsm_vars;
+	register caddr_t cp;
+	register long t1;
+	caddr_t bpos, dpos, cp2;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 	struct nfsmount *nmp;
 	struct ucred *cred;
 	struct nfsnode *np;
-	struct vnode *vp;
 
 	nmp = vfs_to_nfs(mp);
 	if (error = nfs_nget(mp, &nmp->nm_fh, &np))
@@ -1028,7 +1131,7 @@ nfs_statfs(mp, sbp)
 	return (error);
 }
 
-#define	HEXTOASC(x)	"0123456789abcdef"[x]
+static char hextoasc[] = "0123456789abcdef";
 
 /*
  * Silly rename. To make the NFS filesystem that is stateless look a little
@@ -1039,7 +1142,7 @@ nfs_statfs(mp, sbp)
  * nfs_rename() completes, but...
  */
 nfs_sillyrename(ndp, flag)
-	struct nameidata *ndp;
+	register struct nameidata *ndp;
 	int flag;
 {
 	register struct nfsnode *np;
@@ -1062,10 +1165,10 @@ nfs_sillyrename(ndp, flag)
 	pid = u.u_procp->p_pid;
 	bcopy(".nfsAxxxx4.4", tndp->ni_dent.d_name, 13);
 	tndp->ni_dent.d_namlen = 12;
-	tndp->ni_dent.d_name[8] = HEXTOASC(pid & 0xf);
-	tndp->ni_dent.d_name[7] = HEXTOASC((pid >> 4) & 0xf);
-	tndp->ni_dent.d_name[6] = HEXTOASC((pid >> 8) & 0xf);
-	tndp->ni_dent.d_name[5] = HEXTOASC((pid >> 12) & 0xf);
+	tndp->ni_dent.d_name[8] = hextoasc[pid & 0xf];
+	tndp->ni_dent.d_name[7] = hextoasc[(pid >> 4) & 0xf];
+	tndp->ni_dent.d_name[6] = hextoasc[(pid >> 8) & 0xf];
+	tndp->ni_dent.d_name[5] = hextoasc[(pid >> 12) & 0xf];
 
 	/* Try lookitups until we get one that isn't there */
 	while (nfs_lookitup(ndp->ni_dvp, tndp, (nfsv2fh_t *)0) == 0) {
@@ -1097,7 +1200,13 @@ nfs_lookitup(vp, ndp, fhp)
 	register struct nameidata *ndp;
 	nfsv2fh_t *fhp;
 {
-	nfsm_vars;
+	register u_long *p;
+	register caddr_t cp;
+	register long t1, t2;
+	caddr_t bpos, dpos, cp2;
+	u_long xid;
+	int error = 0;
+	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 	long len;
 
 	nfsstats.rpccnt[NFSPROC_LOOKUP]++;
@@ -1326,6 +1435,7 @@ nfs_doio(bp)
  * 	Walk through the buffer pool and push any dirty pages
  *	associated with the vnode.
  */
+/* ARGSUSED */
 nfs_fsync(vp, fflags, cred)
 	register struct vnode *vp;
 	int fflags;
