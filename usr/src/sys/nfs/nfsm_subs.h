@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsm_subs.h	7.1 (Berkeley) %G%
+ *	@(#)nfsm_subs.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -63,7 +63,7 @@ struct vnode *nfs_fhtovp();
 		else \
 			(m)->m_data = (m)->m_dat
 #define	NFSMADV(m, s)	(m)->m_data += (s)
-#define	NFSMSIZ(m)	((M_HASCL(m))?(MCLBYTES-max_hdr): \
+#define	NFSMSIZ(m)	((M_HASCL(m))?MCLBYTES: \
 				(((m)->m_flags & M_PKTHDR)?MHLEN:MLEN))
 #define	NFSMCOPY	m_copym
 #endif

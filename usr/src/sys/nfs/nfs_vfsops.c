@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.1 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,7 +26,7 @@
 #include "proc.h"
 #include "uio.h"
 #include "ucred.h"
-#include "dir.h"
+#include "../ufs/dir.h"
 #include "namei.h"
 #include "vnode.h"
 #include "mount.h"
@@ -131,7 +131,9 @@ mountnfs(argp, mp, saddr, pth, hst)
 {
 	register struct nfsmount *nmp;
 	struct nfsnode *np;
+#ifdef notdef
 	struct statfs statf, *sbp;
+#endif
 	int error;
 
 	nmp = (struct nfsmount *)malloc(sizeof (struct nfsmount), M_NFSMNT,
@@ -170,6 +172,7 @@ mountnfs(argp, mp, saddr, pth, hst)
 	bcopy((caddr_t)argp->fh, (caddr_t)&nmp->nm_fh, sizeof(nfsv2fh_t));
 	bcopy(pth, nmp->nm_path, MNAMELEN);
 	bcopy(hst, nmp->nm_host, MNAMELEN);
+#ifdef notdef
 	sbp = &statf;
 	/*
 	 * Kludge City...
@@ -210,6 +213,13 @@ mountnfs(argp, mp, saddr, pth, hst)
 		mp->m_bsize = sbp->f_bsize;
 	else
 		mp->m_bsize = CLBYTES;
+#else
+	/*
+	 * Set to CLBYTES so that vinifod() doesn't get confused.
+	 * Actually any exact multiple of CLBYTES will do
+	 */
+	mp->m_bsize = mp->m_fsize = CLBYTES;
+#endif
 	return (0);
 bad:
 	m_freem(saddr);

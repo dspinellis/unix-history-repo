@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.2 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,7 +26,7 @@
 #include "proc.h"
 #include "mount.h"
 #include "vnode.h"
-#include "dir.h"
+#include "../ufs/dir.h"
 #include "namei.h"
 #include "errno.h"
 #include "nfsv2.h"
@@ -137,7 +137,7 @@ loop:
 				np->n_freeb = NULL;
 			}
 			np->n_flag |= NLOCKED;
-			vp->v_count++;
+			VREF(vp);
 			*npp = np;
 			return(0);
 		}
@@ -208,7 +208,7 @@ nfs_ngrab(np)
 		np->n_freef = NULL;
 		np->n_freeb = NULL;
 	}
-	vp->v_count++;
+	VREF(vp);
 	np->n_flag |= NLOCKED;
 }
 

@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.2 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -29,7 +29,7 @@
 #include "types.h"
 #include "param.h"
 #include "mount.h"
-#include "dir.h"
+#include "../ufs/dir.h"
 #include "time.h"
 #include "errno.h"
 #include "kernel.h"
@@ -95,7 +95,11 @@ struct mbuf *nfsm_reqh(prog, vers, proc, cred, hsiz, bpos, mb, retxid)
 
 	NFSMGETHDR(mreq);
 	asiz = (((cred->cr_ngroups > 10) ? 10 : cred->cr_ngroups)<<2);
+#ifdef FILLINHOST
 	asiz += nfsm_rndup(hostnamelen)+(9*NFSX_UNSIGNED);
+#else
+	asiz += 9*NFSX_UNSIGNED;
+#endif
 
 	/* If we need a lot, alloc a cluster ?? */
 	if ((asiz+hsiz+RPC_SIZ) > MHLEN)
@@ -511,17 +515,25 @@ static char *nfs_unixauth(cr)
 
 	/* Maybe someday there should be a cache of AUTH_SHORT's */
 	if ((p = rpc_uidp) == NULL) {
+#ifdef FILLINHOST
 		i = nfsm_rndup(hostnamelen)+(19*NFSX_UNSIGNED);
+#else
+		i = 19*NFSX_UNSIGNED;
+#endif
 		MALLOC(p, u_long *, i, M_TEMP, M_WAITOK);
 		bzero((caddr_t)p, i);
 		rpc_unixauth = (caddr_t)p;
 		*p++ = txdr_unsigned(RPCAUTH_UNIX);
 		p++;	/* Fill in size later */
 		*p++ = hostid;
+#ifdef FILLINHOST
 		*p++ = txdr_unsigned(hostnamelen);
 		i = nfsm_rndup(hostnamelen);
 		bcopy(hostname, (caddr_t)p, hostnamelen);
 		p += (i>>2);
+#else
+		*p++ = 0;
+#endif
 		rpc_uidp = p;
 	}
 	*p++ = txdr_unsigned(cr->cr_uid);
@@ -619,10 +631,6 @@ nfs_getattrcache(vp, vap)
 	}
 }
 
-#ifndef OPFLAG
-#define	OPFLAG	(CREATE | DELETE | LOOKUP)
-#endif
-
 /*
  * nfs_namei - a liitle like namei(), but for one element only
  *	essentially look up file handle, fill in ndp and call VOP_LOOKUP()
@@ -687,7 +695,7 @@ nfs_namei(ndp, fhp, len, mdp, dposp)
 	ndp->ni_namelen = i;
 	ndp->ni_dent.d_namlen = i;
 	ndp->ni_dent.d_name[i] = '\0';
-	ndp->ni_pathlen = 0;
+	ndp->ni_pathlen = 1;
 	ndp->ni_dirp = ndp->ni_ptr = &ndp->ni_dent.d_name[0];
 	ndp->ni_next = &ndp->ni_dent.d_name[i];
 	ndp->ni_loopcnt = 0;	/* Not actually used for now */
@@ -699,44 +707,25 @@ nfs_namei(ndp, fhp, len, mdp, dposp)
 	ndp->ni_isdotdot = (i == 2 && 
 		ndp->ni_dent.d_name[1] == '.' && ndp->ni_dent.d_name[0] == '.');
 
-	/*
-	 * Must remember if this is root so that cr_uid can be set to
-	 * mp->m_exroot at mount points
-	 * Then call nfsrv_fhtovp() to get the locked directory vnode
-	 */
-	if (ndp->ni_cred->cr_uid == 0)
-		rootflg++;
 	if (error = nfsrv_fhtovp(fhp, TRUE, &dp, ndp->ni_cred))
 		return (error);
+	if (dp->v_type != VDIR) {
+		vput(dp);
+		return (ENOTDIR);
+	}
+	ndp->ni_cdir = dp;
+	ndp->ni_rdir = (struct vnode *)0;
 
 	/*
-	 * Handle "..": two special cases.
-	 * 1. If at root directory (e.g. after chroot)
-	 *    then ignore it so can't get out.
-	 * 2. If this vnode is the root of a mounted
-	 *    file system, then replace it with the
-	 *    vnode which was mounted on so we take the
-	 *    .. in the other file system.
+	 * Handle "..":
+	 * If this vnode is the root of the mounted
+	 *    file system, then ignore it so can't get out
 	 */
-	if (ndp->ni_isdotdot) {
-		for (;;) {
-			if (dp == rootdir) {
-				ndp->ni_dvp = dp;
-				dp->v_count++;
-				goto nextname;
-			}
-			if ((dp->v_flag & VROOT) == 0)
-				break;
-			tdp = dp;
-			dp = dp->v_mount->m_vnodecovered;
-			vput(tdp);
-			if ((dp->v_mount->m_flag & M_EXPORTED) == 0)
-				return (EACCES);
-			VOP_LOCK(dp);
-			dp->v_count++;
-			if (rootflg)
-				ndp->ni_cred->cr_uid = dp->v_mount->m_exroot;
-		}
+	if (ndp->ni_isdotdot && (dp->v_flag & VROOT)) {
+		ndp->ni_dvp = dp;
+		ndp->ni_vp = dp;
+		VREF(dp);
+		goto nextname;
 	}
 
 	/*
@@ -761,77 +750,12 @@ nfs_namei(ndp, fhp, len, mdp, dposp)
 		return (0);	/* should this be ENOENT? */
 	}
 
-	/*
-	 * Check for symbolic link
-	 */
 	dp = ndp->ni_vp;
-#ifdef notdef
-	if ((dp->v_type == VLNK) &&
-	    (ndp->ni_nameiop & FOLLOW)) {
-		struct iovec aiov;
-		struct uio auio;
-		int linklen;
-
-		if (++ndp->ni_loopcnt > MAXSYMLINKS) {
-			error = ELOOP;
-			goto bad2;
-		}
-		MALLOC(cp, char *, MAXPATHLEN, M_NAMEI, M_WAITOK);
-		aiov.iov_base = cp;
-		aiov.iov_len = MAXPATHLEN;
-		auio.uio_iov = &aiov;
-		auio.uio_iovcnt = 1;
-		auio.uio_offset = 0;
-		auio.uio_rw = UIO_READ;
-		auio.uio_segflg = UIO_SYSSPACE;
-		auio.uio_resid = MAXPATHLEN;
-		if (error = VOP_READLINK(dp, &auio, ndp->ni_cred)) {
-			free(cp, M_NAMEI);
-			goto bad2;
-		}
-		linklen = MAXPATHLEN - auio.uio_resid;
-		if (linklen + ndp->ni_pathlen >= MAXPATHLEN) {
-			free(cp, M_NAMEI);
-			error = ENAMETOOLONG;
-			goto bad2;
-		}
-		bcopy(ndp->ni_next, cp + linklen, ndp->ni_pathlen);
-		ndp->ni_pnbuf = cp;
-		} else
-			ndp->ni_pnbuf[linklen] = '\0';
-		ndp->ni_ptr = cp;
-		ndp->ni_pathlen += linklen;
-		vput(dp);
-		dp = ndp->ni_dvp;
-		goto start;
-	}
-#endif
-
-	/*
-	 * Check to see if the vnode has been mounted on;
-	 * if so find the root of the mounted file system.
-	 * Ignore NFS mount points
-	 */
-mntloop:
-	while (dp->v_type == VDIR && (mp = dp->v_mountedhere) &&
-		mp->m_fsid.val[1] != MOUNT_NFS) {
-		while(mp->m_flag & M_MLOCK) {
-			mp->m_flag |= M_MWAIT;
-			sleep((caddr_t)mp, PVFS);
-			goto mntloop;
-		}
-		error = VFS_ROOT(mp, &tdp);
-		if (error || (mp->m_flag & M_EXPORTED) == 0)
-			goto bad2;
-		vput(dp);
-		ndp->ni_vp = dp = tdp;
-		if (rootflg)
-			ndp->ni_cred->cr_uid = mp->m_exroot;
-	}
 
 nextname:
+	ndp->ni_ptr = ndp->ni_next;
 	/*
-	 * Check for read-only file systems.
+	 * Check for read-only file systems
 	 */
 	if (flag == DELETE || flag == RENAME) {
 		/*
@@ -839,22 +763,14 @@ nextname:
 		 * file systems.
 		 */
 		if ((dp->v_mount->m_flag & (M_RDONLY|M_EXRDONLY)) ||
-		    (wantparent && (ndp->ni_dvp->v_mount->m_flag & M_RDONLY))) {
+		    (wantparent && (ndp->ni_dvp->v_mount->m_flag & (M_RDONLY|M_EXRDONLY)))) {
 			error = EROFS;
 			goto bad2;
 		}
 	}
 
-	/*
-	 * Kludge city... This is hokey, but since ufs_rename() calls
-	 * namei() and namei() expects ni_cdir to be set, what can I
-	 * do. Fortunately rename() holds onto the parent so I don't
-	 * have to increment the v_count.
-	 */
 	if (!wantparent)
 		vrele(ndp->ni_dvp);
-	else
-		ndp->ni_cdir = ndp->ni_dvp;
 
 	if ((ndp->ni_nameiop & LOCKLEAF) == 0)
 		VOP_UNLOCK(dp);

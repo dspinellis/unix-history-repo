@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_socket.c	7.1 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -688,6 +688,9 @@ nfs_timer()
 				m = NFSMCOPY(rep->r_mreq, 0, M_COPYALL, M_DONTWAIT);
 				if (m != NULL) {
 					nfsstats.rpcretries++;
+					rep->r_timeout <<= 2; /* x4 backoff */
+					if (rep->r_timeout > NFS_MAXTIMEO)
+						rep->r_timeout = NFS_MAXTIMEO;
 					rep->r_timer = rep->r_timeout;
 					if (rep->r_retry != VNOVAL)
 						rep->r_retry--;
@@ -703,7 +706,7 @@ nfs_timer()
 		rep = rep->r_next;
 	}
 	splx(s);
-	timeout(nfs_timer, (caddr_t)0, hz);
+	timeout(nfs_timer, (caddr_t)0, hz/10);
 }
 
 /*

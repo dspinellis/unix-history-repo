@@ -17,18 +17,19 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs.h	7.1 (Berkeley) %G%
+ *	@(#)nfs.h	7.2 (Berkeley) %G%
  */
 
 /*
  * Tunable constants for nfs
  */
 #define	MAX_IOVEC	10
-#define	NFS_TIMEO	10	/* Timeout in .01 sec intervals */
+#define	NFS_TIMEO	10	/* Timeout in .1 sec intervals */
+#define	NFS_MAXTIMEO	600	/* Max timeout to backoff too in .1 sec */
 #define	NFS_ATTRTIMEO	5	/* Attribute cache timeout in sec */
 #define	NFS_RETRANS	10	/* Num of retrans for soft mounts */
-#define	NFS_WSIZE	8196	/* Max. write data size <= 8192 */
-#define	NFS_RSIZE	8196	/* Max. read data size <= 8192 */
+#define	NFS_WSIZE	8192	/* Max. write data size <= 8192 */
+#define	NFS_RSIZE	8192	/* Max. read data size <= 8192 */
 #define	MAX_READDIR	NFS_RSIZE	/* Max. size of directory read */
 
 /*
