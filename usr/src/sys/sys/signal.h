@@ -3,11 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)signal.h	7.5 (Berkeley) %G%
+ *	@(#)signal.h	7.6 (Berkeley) %G%
  */
 
 #ifndef	NSIG
-#define NSIG	32		/* could be 33, as masks hold 1-32 */
+#define NSIG	32		/* counting 0; could be 33 (mask is 1-32) */
 
 #ifndef _POSIX_SOURCE
 #ifdef KERNEL
@@ -69,10 +69,10 @@ typedef	void (*sig_t)();
 void	(*signal())();
 #endif /* KERNEL */
 
-typedef int sigset_t;
+typedef unsigned int sigset_t;
 
-#define sigemptyset(set)	{ *(set) = 0; }
-#define sigfillset(set)		{ *(set) = 0xffff; }
+#define sigemptyset(set)	( *(set) = 0 )
+#define sigfillset(set)		( *(set) = ~(sigset_t)0 )
 #define sigaddset(set, signo)	( *(set) |= 1 << ((signo) - 1), 0)
 #define sigdelset(set, signo)	( *(set) &= ~(1 << ((signo) - 1)), 0)
 #define sigismember(set, signo)	( (*(set) & (1 << ((signo) - 1))) != 0)
@@ -152,5 +152,11 @@ struct	sigcontext {
 #ifdef KERNEL
 #define	SIG_CATCH	(void (*)())2
 #define	SIG_HOLD	(void (*)())3
+
+#define	sigcantmask	(sigmask(SIGKILL)|sigmask(SIGSTOP))
+/*
+ * get signal action for process and signal; currently only for current process
+ */
+#define SIGACTION(p, sig)	(u.u_signal[(sig)])
 #endif
 #endif
