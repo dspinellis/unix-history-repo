@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
  *
- *	@(#)sysv_shm.c	7.14 (Berkeley) %G%
+ *	@(#)sysv_shm.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -319,7 +319,7 @@ shmat(p, uap, retval)
 		flags |= MAP_FIXED;
 	else
 		uva = (caddr_t)0x1000000;	/* XXX */
-	error = vm_mmap(p->p_vmspace->vm_map, &uva, (vm_size_t)size, prot,
+	error = vm_mmap(&p->p_vmspace->vm_map, &uva, (vm_size_t)size, prot,
 	    flags, ((struct shmhandle *)shp->shm_handle)->shmh_id, 0);
 	if (error)
 		return(error);
@@ -420,7 +420,7 @@ shmufree(p, shmd)
 	register struct shmid_ds *shp;
 
 	shp = &shmsegs[shmd->shmd_id % SHMMMNI];
-	(void) vm_deallocate(p->p_vmspace->vm_map, shmd->shmd_uva,
+	(void) vm_deallocate(&p->p_vmspace->vm_map, shmd->shmd_uva,
 			     ctob(clrnd(btoc(shp->shm_segsz))));
 	shmd->shmd_id = 0;
 	shmd->shmd_uva = 0;
@@ -435,7 +435,6 @@ shmufree(p, shmd)
 shmfree(shp)
 	register struct shmid_ds *shp;
 {
-	caddr_t kva;
 
 	if (shp->shm_handle == NULL)
 		panic("shmfree");
