@@ -9,11 +9,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fsinfo.c	8.1 (Berkeley) %G%
+ *	@(#)fsinfo.c	5.5 (Berkeley) %G%
  *
  * $Id: fsinfo.c,v 5.2.2.1 1992/02/09 15:09:33 jsp beta $
  *
  */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1993 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
 
 /*
  * fsinfo
