@@ -1,0 +1,237 @@
+
+    This file describes the changes which have been made in NNTP
+since the initial release.  Individuals who either reported or
+inspired the bug/bug fix are in square brackets.
+
+1.4	October 15, 1987
+
+	Reorganized documentation directory.  Thanks for the
+	extraction stuff, Stan.  [Stan Barber, sob%%soma.uucp@rice.edu]
+
+	Added transfer timeouts.  [Steve Schoch, schoch@ames.arpa]
+
+	Fixed a problem with IHAVE which allowed a remote machine to
+	repeatedly feed you articles that you expired (although all
+	you'd do with them is throw them away).
+	[Fred Avolio, avolio@decuac.dec.com]
+
+	DECNet support (see server/dnet_access.c and common/clientlib.c).
+        [Matt Thomas, thomas%syrah.dec@decwrl.dec.com]
+
+	Fixed serious joe code in distribution checks in NEWNEWS.
+
+	NEWNEWS statistics.
+
+	Newsgroup security.
+
+	Performance enhancements (about 2x better for article xfers).
+
+	xhdr command added to improve performance on subject searches.
+
+	Compiled-in server name no longer supported.
+
+	common/clientlib.c/getserverbyfile() now looks at the
+	environment variable NNTPSERVER before checking the file.
+
+	inews/inews.c now limits .signature files to MAX_SIGNATURE lines.
+
+	server/misc.c/spawn() now returns the error output of rnews/inews
+	alone with the posting failed code.  This is in turn printed by
+	inews/inews.c so the user has some idea of why his article wasn't
+	accepted.
+
+	rn patches now for patchlevel #40
+		Bug fix: rrn no longer leaves droppings in /tmp
+		"Skipping unavailable article" problems fixed
+		Support for 4.3 TIOCGWINSZ ioctl [sam@okeeffe.berkeley.edu]
+		Configure asks for domains
+		Pnews/Rnmail understand hostnames with .'s in them.
+		Makefile fixes [harvard!lownlab!kiely]
+
+	PYRAMID #defines removed, as it is all being done by default now.
+
+	inews/inews.c now exits 0, since before it had a random exit
+	status, causing pyramids to choke.  [forys@boulder.colorado.edu]
+
+	server/server.c now logs user/system/elapsed time as floats
+	instead of ints.  [rick@seismo.css.gov]
+
+	server/ihave.c no longer logs every message id transfered but
+	instead keeps statistics which are logged at the end.
+	[rick@seismo.css.gov]
+
+	server/serve.c now times out after TIMEOUT seconds of idleness.
+
+	server/access.c converts remote hostname to lower case
+	when logging, in case you have a nameserver which is helping you.
+
+	server/misc.c/getartbyid now reports message-id's when
+	it encounters a malformed line in the history file.
+	[gds@spam.istc.sri.com]
+
+	inews/inews.c had an uninitialized variable, which
+	could cause trouble.  [jwp%chem@sdcsvax.ucsd.edu]
+
+	common/clientlib.c now understands 4.3 nameserver
+	multiple addresses, and tries them all before
+	giving up.
+
+	common/clientlib.c has has 2 new functions:
+	"getserverbyfile" opens a given file and returns
+	the name of the server given in the file to use
+	for news.  "handle_server_response" prints informative
+	messages based on the initial connection response code.
+
+	server/access.c now is case insensitive when checking
+	for host read/xfer permissions.
+
+	server/misc.c/spawn didn't check for a closed connection
+	while receiving input from client.  As a result, truncated
+	news articles could be received.
+
+	server/newnews.c had a printf which was missing an
+	argument.  [louie@trantor.umd.edu]
+
+	Added fake syslog facility to server.  Code is in
+	server/fakesyslog.c.  [mckenny@sri-unix.arpa]
+
+	Fixed length argument to accept() in server/main.c
+	[mckenny@sri-unix.arpa]
+
+	Now uses pipe to rnews so as to get rnews output for debugging.
+	Also chowns temporary file to POSTER's uid and gid.
+	[mckenny@sri-unix.arpa]
+
+	Fixed bugs in server/netaux.c to close syslog fd.
+	[mckenny@sri-unix.arpa]
+
+	Made bcopy() standard in server/misc.c  [kre@munnari.OZ]
+
+	Documentation changes to make certain things about client
+	installation clearer.  [munnari!charlie.oz!craig]
+
+1.3	30 June 1986
+
+	rrn is no longer included as complete source, but
+	rather as a set of context diffs and a program to
+	apply them to your rn source.  Many thanks go to
+	Gene Spafford for an outstanding job doing this.
+	[spaf@gatech.csnet]
+
+	The dreaded kill/save bug is fixed; rn was passing
+	/bin/sh too many open file descriptors.  Thanks and a tip of the
+	proverbial hat to Chris Maio!  Change to rrn/util.c.
+	[chris@columbia.edu]	
+
+	Fixed a bug in rrn/artio.c which caused an assertion
+	failure on line 114 of artio.c; artopen was returning
+	Nullfp without closing the fp associated with the
+	bogus article.  [genrad!ens@eddie.mit.edu, beorn@ic.berkeley.edu]
+
+	Added #define PYRAMID in common/conf.h, added some
+	#ifdef PYRAMID code in server/misc.c to deal with
+	Pyramids not initializing static data to 0, as well
+	as an fseek problem.  [spaf@gatech.CSNET]
+
+	Another wait bug fixed in spawn() in server/misc.c.
+
+	Added a required \r in post.c.
+
+	Added signal(SIGCHLD, SIG_IGN) to server/serve.c,
+	to fix exit status problem with ALONE defined.
+
+	Statistics logging now returns sum of the nntpd and
+	its children for process time.  server/main.c
+	[fair@ucbarpa.berkeley.edu]
+
+	Subnet support for access file finally added.
+	server/subnet.c added, common/conf.h now has
+	#defines for SUBNET, DAMAGED_NETMASK.
+
+	inews/inews.c now generates a from line with the UUCP
+	name instead of always using gethostname().  common/conf.h
+	changed to add #defines for UUNAME, GHNAME.
+	[jwang@atrp.mit.edu]
+
+	Added LIBS to Makefile. [soma!sob@rice.edu]
+
+1.2c	17 May 1986
+
+	Support for Masscomp added (#define MASSCOMP in ../common/conf.h).
+	[soma!sob@rice.edu]
+
+	Syslog output now requires SYSLOG to be defined in ../common/conf.h.
+	This is handy on systems which, for some reason or another,
+	don't have syslog.  [soma!sob@rice.edu]
+
+	server/post.c had arguments reversed in a printf.  [salex@rice.edu]
+
+	rrn/common.h had PIPESAVER misdefined. [cspencer@bbncc5.arpa]
+
+	server/group.c was missing a \r in a printf.  [lear@rutgers.edu]
+
+	xmit/nntpxmit.c is a new version.  Highlights include
+	improved error reactions and logging info.  [fair@ucbarpa.berkeley.edu]
+
+	xmit/nntpsend is a shell script for sending news via nntp
+	in a sane manner, with locking.  [pleasant@topaz.rutgers.edu,
+	fair@ucbarpa.berkeley.edu]  The locking mechanism is provided
+	courtesy of Mr. Fair's "shlock.c", in xmit/shlock.c.
+
+	support/nntp_awk produces weekly reports from the nntp server
+	logging output.  [fair@ucbarpa.berkeley.edu]
+
+	Makefile (in this directory) would do a "make install" as
+	the default action; it now prints a helpful message.
+	[arnold@cgl.ucsf.edu]
+
+	server/Makefile and support/Makefile had needless dependencies
+	in them; if you didn't do a make depend, you'd have problems
+	on a 4.2 system.  The server and support stuff now depend only
+	on their own .h files.  [arnold@cgl.ucsf.edu]
+
+1.2b	13 April 1986
+
+	common/clientlib.c stupidly had some debugging printfs
+	enabled.
+
+	rrn/{artio.c,head.c} had sprintf("... %d", foo) where "foo"
+	was a long.  %d -> %ld.  [cspencer@bbncc5.arpa]
+
+	server/time.c had an order of evaluation problem in the
+	macro "twodigtoi".  [fletcher@tzec.cs.utexas.edu, among others.]
+
+	server/common.h included <dbm.h> if DBM was defined,
+	caused multiply-defined NULL's.  [cda@opal.berkeley.edu,
+	pleasant@topaz.rutgers.edu, among others.]
+
+	server/active.c would lose because variable "i" would be
+	at the end of the group array if it was called on a timer
+	interrupt.  "i" now set to zero properly.  This only occurs
+	if FASTFORK is defined.  [cda@opal.berkeley.edu]
+
+1.2a	20 March 1986
+
+	common/conf.h defined MAX_GROUPS as 300; this was too low on
+	some machines.  Upped to 450.  [solex@rice.edu, beorn@ic.berkeley.edu]
+
+	rrn/Makefile.sh had .c instead of .o for OBJS and SRCS
+	respectively.  Also had cc -o ../common/clientlib.o (see below).
+
+	inews/inews.c had (char *) 0 for gets(), which made SUN's upset.
+	Changed to simply NULL. [brian@sdcsvax.ucsd.edu]
+
+	inews/Makefile had cc -o ../common/clientlib.o which some
+	machines don't do.  [brian@sdcsvax.ucsd.edu]
+
+	common/clientlib.c has "untp" instead of "nntp".
+
+	server/active.c made more robust about reading active file
+	if active file is longer than MAX_GROUPS.
+
+	server/common.h included common/conf.h after checking for
+	DBM, which caused some problems.  [soma!sob@rice.edu]
+
+1.2	15 March 1986
+
+	Released.

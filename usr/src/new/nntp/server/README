@@ -1,0 +1,86 @@
+     Caveat: Before compiling anything here, go look at README and conf.h
+in the "common" directory.  Fix conf.h up, and then come back here.
+
+     Back already?  Ok.  Now following the bouncing numbers:
+
+	1. Create the access file with the proper entries.
+	   This file goes wherever you said ACCESS_FILE
+	   was supposed to be in common/conf.h.  It's format is
+	   explained in the manual entry for nntpd.8c.
+	   A sample access file is in ../support/access_file.
+	   If you don't care who (ab)uses your news server,
+	   you can have the line "default read post" in your access
+	   file, which will allow anyone on the network to
+	   read and post news via your server.  See the manual
+	   page for a better explanation.
+
+Parts two and three are necessary if you're running with TCP:
+
+	2. Make an entry for "nntp" in /etc/services.  Should
+	   be port number 119, tcp.  I.e., should look something like:
+
+nntp		119/tcp		readnews	# Network News Transfer Protocol
+
+	   Sun users running yp should yppush this file to make sure all
+	   the clients get it.
+
+	3. Check ../common/conf.h to make sure you're set to do what
+	   you want to do with inetd (i.e., #define ALONE or #undef ALONE).
+	   If you are using inetd,
+
+	   a. Add a line to /etc/inetd.conf, or whatever your
+	      configuration file is, to reflect the presence
+	      of the news server.  On 4.3 BSD machines this should
+	      look like:
+
+nntp	stream	tcp	nowait	root	/etc/nntpd	nntpd
+
+	      while under Ultrix or 4.2 BSD machines:
+
+nntp	stream	tcp	nowait	/etc/nntpd	nntpd
+
+	      On a Sun, the file is /etc/servers; the line looks like:
+
+nntp	tcp	/usr/etc/in.nntpd
+
+	      Be sure to yppush your /etc/servers file if you run
+	      yellow pages.
+
+	      Don't forget to kill -HUP your inetd.
+
+	   If you're NOT using inetd,
+
+	   a. Edit ../common/conf.h to have the line
+
+			#define ALONE
+
+	      to compile in code for the stand alone server.
+
+	   b. You may as well also define "FASTFORK" in
+	      ../common/conf.h.  This causes the server not to
+	      read in the active file every time it forks, but
+	      rather to stat it every READINTVL seconds, and if
+	      the file has changed since the last read, to
+	      read it in again.  This makes the children run
+	      faster, since they don't have to read the active
+	      file every time the parent forks off a child, but
+	      the parent server will eat more cpu, doing
+	      stat()s every 10 minutes or so.  If your server machine
+	      is heavily loaded, you might leave this out.
+
+	   c. Change /etc/rc.local to start the server at
+	      boot time.
+
+Else, if you're using decnet:
+
+	2. && 3. Define the NNTP object with ncp:
+
+ncp define object NNTP number 0 file /etc/nntpd
+ncp define object NNTP default user guest type stream
+
+ncp set object NNTP all			# just once for the running system
+
+	4. Compile the server by doing "make".
+
+	5. Cd .. and continue with the rest of the stuff; you'll
+	   wind up doing a make install later.

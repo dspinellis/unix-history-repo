@@ -1,0 +1,161 @@
+NNTP README		October 15, 1987	For version 1.4 NNTP package
+
+[See the file CHANGES to see differences between this version and
+older versions.]
+
+     This package contains everything (well, most of it, I hope) that
+you'll need to implement a remote news server running the NNTP protocol.
+
+     A brief tour of the directories and their programs:
+
+	server		Source for the NNTP news server daemon.
+
+	rrn		Patches to "rn" to allow remote news reading.
+			These patches courtesy of Gene Spafford.
+
+	inews		A "mini-inews" written by Steven Grady
+			<grady@ingres.berkeley.edu> which allows
+		 	remote posting without changing much else.
+
+	xmit		An active transmission client for transferring
+			news, written by Erik Fair; see note below.
+
+	common		Common stuff (response codes, configuration info,
+			and some client library routines) for the
+			the news server and the clients.  The "conf.h"
+			file here needs to be edited to reflect
+			the peculiarities of your system.
+
+	support		Some support files that make the nntpd's
+			life considerably easier.
+
+	doc		Documentation on the server, including manual
+			pages.  Manual pages for rrn are in rrn/.
+
+	xfer		A passive reception client which uses the
+			NEWNEWS command to retrieve news from a remote
+			server.  Written by Brian Kantor, this software
+			is UNSUPPORTED.
+
+     Each directory has associated with it a README file (except
+for rrn -- rrn has a bunch of 'em.  The one you want is README_RRN).
+As you go through the system customizing things, you should read
+the README for each directory to get an idea of what traps await
+you in that area.  You may also want to print a copy of doc/rfc977,
+which describes the NNTP protocol.
+
+     TWO IMPORTANT NOTES:
+
+	1. The NNTP server assumes that the history file format
+	   is 2.11 or 2.10.3; therefore you need 2.11 news.
+
+	2. If you want to transfer news with NNTP, you'll be using
+	   the "nntpxmit" program in the "xmit" directory.
+	   This requires routines in 2.11 news source, and must
+	   be compiled there.  See xmit/README for more info.
+
+     >>>>> Get 2.11 news if you don't have it.
+
+     So, time for a general and cohesive Plan:
+
+     1. Look at common/README.  This will explain the stuff which
+	needs to be tailored for your system in common/conf.h.
+	Make the necessary changes to reflect your system.
+
+     2. Look at server/README; there shouldn't be much to do here,
+	as the configuration stuff should have been taken care of
+	when you edited common/conf.h.
+
+	Do a "make", and see if things work ok -- they should
+	(comforting, right?)
+
+     3. Check out support/README and learn about the support programs.
+	Again, there should be no configuration changes, as that's
+	what common/conf.h is for.  You will need to edit the Makefile
+	here to reflect where you want your binaries to be installed,
+	however.
+
+	Do a "make" here, too.
+
+     4. Look at inews/README.  This is for the pseudo-inews which
+	gets installed on client news machines.  If you don't want
+	your clients to be able to post, don't worry about this.
+	But I suggest you do.  Again, there shouldn't be any
+	configuration futzing to be dealt with.
+
+	Alas, do a make here, too.
+
+     5. The big one: rrn.  Read rrn/README_RRN, which explains
+	Gene's patches and what to do, and do what it suggests.
+
+     6. It would be nice if you could do a "make install" at this point,
+	but you can't: if you compile this on the NNTP server machine,
+	you don't want rrn objects installed.  On the other hand,
+	if you compile this on a client machine, you don't want
+	server objects installed.  So, from this (nntp) directory:
+
+	Server?  Type "make install_server".  This installs "server"
+		 and "support".
+
+	Client?  Type "make install_client".  This installs "rrn"
+		 and "inews"
+
+	>>> A full client installation of NNTP requires the following
+	    files (suitable for rdist, assuming standard directories):
+
+NEWS = ( /usr/local/{Pnews,Rnmail,inews,rn,rrn,newsetup,newsgroups,lib/rn}
+	/usr/man/catl/{Pnews,Rnmail,rn,newsetup,newsgroups}.1 )
+
+	    You DO NOT need any of the normal news junk (e.g.,
+	    /usr/lib/news, postnews, checknews, readnews) on CLIENT
+	    systems.
+
+	    You DO need these on SERVER systems.
+
+     Problems?  You can get to me via electronic mail at the
+following addresses:
+
+	Internet:		phil@ucbvax.berkeley.edu
+	UUCP:			...!ucbvax!phil
+	Telephone (home):	(415) 848-8409
+	Telephone (work):	(415) 642-6792 or (415) 642-7447
+
+     I'm very interested in learning what hacks need to be made to
+nntpd to get it to work on various systems, and certainly, if there
+are outright bugs, please let me know.
+
+     Also, please send me electronic mail if you decide to use this
+package, as that way I can mail out bug reports and fixes.  Be sure
+to include a reply-able address if your mailer doesn't generate
+one for you.
+
+     One note, though -- as for "rrn", I'll support bugs caused
+by my additions/mods to it (hopefully Larry Wall will be supporting
+this soon...) but please don't send me reports about things which
+were already in rn 4.3.  Thanks.
+
+     [Those who had the pleasure of dealing with the kill/save bug,
+it's gone now, thanks to Chris Maio.]
+
+     Finally, I'd like to thank the various people who both inspired
+and helped to make this project a reality:  Erik Fair, whose criticism
+and suggestions helped mold NNTP (and who wrote the active transmission
+client); Brian Kantor, who really got me motivated enough to go and
+finish the thing, and whose work on the RFC was *tremendous*; Steven
+Grady, who wrote the inews interface (and wasted countless hours only
+to have his work dashed periodically...); Mike Meyer, who beta tested
+the software and pointed out numerous problems; Bob Henry, who let me
+have the resources so that it got done; Peter Yee, who repeated enough
+good ideas to get me to include them; all the folks who had patience
+with me and didn't go off and write this themselves (jsq, you
+listening?  My thanks.); Chuq von Rospach and the members of lan-news;
+Gene Spafford for eliminating having to include 1 MB of source to rn
+by a set of patches; Matt Thomas for adding support for DECNET;
+the kind folks who beta tested version 1.4 and put up with stupid
+bugs and provided helpful feedback, notably Craig Leres, Matt Thomas,
+Wengyik Yeong, and Stan Barber; all the individuals who have reported
+bugs or suggested improvements (see CHANGES for a list); and probably a
+lot of other people I've neglected to mention.  My thanks to all.
+
+						Phil Lapsley
+						15 October 1987
