@@ -3,15 +3,15 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 CFLAGS	      = -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM \
-		-DUCBPASS2 -DNAMELIST -I../../include
+		-DUCBPASS2 -DNAMELIST -I../include
 
 DEST	      = $(DESTDIR)/usr/lib
 
-EXTHDRS	      = ../../include/defines.h \
-		../../include/machdefs.h \
+EXTHDRS	      = ../include/defines.h \
+		../include/machdefs.h \
 		/usr/include/a.out.h \
 		/usr/include/ctype.h \
 		/usr/include/signal.h \
@@ -140,37 +140,37 @@ tokdefs.h: tokens
 	grep -n . <tokens | sed "s/\([^:]*\):\(.*\)/#define \2 \1/" >tokdefs.h
 ###
 bb.o: /usr/include/stdio.h /usr/include/ctype.h ftypes.h \
-	../../include/defines.h ../../include/machdefs.h defs.h optim.h
-conv.o: defs.h ../../include/machdefs.h conv.h
-data.o: defs.h ../../include/machdefs.h data.h
-equiv.o: defs.h ../../include/machdefs.h /usr/include/a.out.h \
+	../include/defines.h ../include/machdefs.h defs.h optim.h
+conv.o: defs.h ../include/machdefs.h conv.h
+data.o: defs.h ../include/machdefs.h data.h
+equiv.o: defs.h ../include/machdefs.h /usr/include/a.out.h \
 	/usr/include/stab.h
-error.o: defs.h ../../include/machdefs.h
-exec.o: defs.h ../../include/machdefs.h optim.h
-expr.o: defs.h ../../include/machdefs.h
-fmt.o: defs.h format.h ../../include/machdefs.h
-gram.o: defs.h ../../include/machdefs.h data.h /usr/include/a.out.h \
+error.o: defs.h ../include/machdefs.h
+exec.o: defs.h ../include/machdefs.h optim.h
+expr.o: defs.h ../include/machdefs.h
+fmt.o: defs.h format.h ../include/machdefs.h
+gram.o: defs.h ../include/machdefs.h data.h /usr/include/a.out.h \
 	/usr/include/stab.h
-init.o: defs.h ../../include/machdefs.h io.h /usr/include/sys/file.h
-intr.o: defs.h ../../include/machdefs.h
-io.o: defs.h ../../include/machdefs.h io.h
-lex.o: defs.h ../../include/machdefs.h tokdefs.h
-main.o: defs.h ../../include/machdefs.h /usr/include/signal.h \
+init.o: defs.h ../include/machdefs.h io.h /usr/include/sys/file.h
+intr.o: defs.h ../include/machdefs.h
+io.o: defs.h ../include/machdefs.h io.h
+lex.o: defs.h ../include/machdefs.h tokdefs.h
+main.o: defs.h ../include/machdefs.h /usr/include/signal.h \
 	/usr/include/a.out.h /usr/include/stab.h
-misc.o: defs.h ../../include/machdefs.h
-optcse.o: defs.h ../../include/machdefs.h optim.h
-optim.o: defs.h ../../include/machdefs.h optim.h
-optloop.o: defs.h ../../include/machdefs.h optim.h
-paramset.o: defs.h ../../include/machdefs.h data.h
-proc.o: defs.h ../../include/machdefs.h /usr/include/a.out.h \
+misc.o: defs.h ../include/machdefs.h
+optcse.o: defs.h ../include/machdefs.h optim.h
+optim.o: defs.h ../include/machdefs.h optim.h
+optloop.o: defs.h ../include/machdefs.h optim.h
+paramset.o: defs.h ../include/machdefs.h data.h
+proc.o: defs.h ../include/machdefs.h /usr/include/a.out.h \
 	/usr/include/stab.h
-put.o: defs.h ../../include/machdefs.h /usr/include/pcc.h
-putpcc.o: defs.h ../../include/machdefs.h /usr/include/pcc.h
-regalloc.o: defs.h ../../include/machdefs.h optim.h
-setfmt.o: defs.h format.h ../../include/machdefs.h
-stab.o: defs.h ../../include/machdefs.h /usr/include/sys/types.h \
+put.o: defs.h ../include/machdefs.h /usr/include/pcc.h
+putpcc.o: defs.h ../include/machdefs.h /usr/include/pcc.h
+regalloc.o: defs.h ../include/machdefs.h optim.h
+setfmt.o: defs.h format.h ../include/machdefs.h
+stab.o: defs.h ../include/machdefs.h /usr/include/sys/types.h \
 	/usr/include/a.out.h /usr/include/stab.h
-vax.o: defs.h ../../include/machdefs.h /usr/include/a.out.h \
+vax.o: defs.h ../include/machdefs.h /usr/include/a.out.h \
 	/usr/include/stab.h /usr/include/pcc.h
-vaxx.o: /usr/include/stdio.h ../../include/defines.h \
-	../../include/machdefs.h
+vaxx.o: /usr/include/stdio.h ../include/defines.h \
+	../include/machdefs.h
