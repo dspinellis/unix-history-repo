@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)keyword.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)keyword.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -304,7 +304,7 @@ findvar(p)
 
 	key.name = p;
 	v = (VAR *)bsearch(&key, var,
-	    sizeof(var)/sizeof(VAR), sizeof(VAR), vcmp);
+		sizeof(var)/sizeof(VAR) - 1, sizeof(VAR), vcmp);
 
 	if (v && v->alias) {
 		if (hp) {
