@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)eval.c 1.8 %G%";
+static char sccsid[] = "@(#)eval.c 1.9 %G%";
 
 /*
  * Tree evaluation.
@@ -1003,11 +1003,22 @@ Node cond;
     Node event;
     Command action;
 
-    p = (place == nil) ? tcontainer(exp) : place->value.sym;
-    if (p == nil) {
-	p = program;
+    if (place == nil) {
+	if (exp->op == O_LCON) {
+	    p = program;
+	} else {
+	    p = tcontainer(exp);
+	    if (p == nil) {
+		p = program;
+	    }
+	}
+    } else {
+	p = place->value.sym;
     }
-    action = build(O_IF, cond, buildcmdlist(build(O_STOPIFCHANGED, exp)));
+    action = build(O_STOPIFCHANGED, exp);
+    if (cond != nil) {
+	action = build(O_IF, cond, buildcmdlist(action));
+    }
     action = build(O_TRACEON, (op == O_STOPI), buildcmdlist(action));
     event = build(O_EQ, build(O_SYM, procsym), build(O_SYM, p));
     action->value.trace.event = addevent(event, buildcmdlist(action));
@@ -1058,51 +1069,6 @@ Node exp;
     }
 }
 
-#define DEF_EDITOR  "vi"
-
-/*
- * Invoke an editor on the given file.  Which editor to use might change
- * installation to installation.  For now, we use "vi".  In any event,
- * the environment variable "EDITOR" overrides any default.
- */
-
-public edit(filename)
-String filename;
-{
-    extern String getenv();
-    String ed, src;
-    File f;
-    Symbol s;
-    Address addr;
-    char buff[10];
-
-    ed = getenv("EDITOR");
-    if (ed == nil) {
-	ed = DEF_EDITOR;
-    }
-    if (filename == nil) {
-	call(ed, stdin, stdout, cursource, nil);
-    } else {
-	f = fopen(filename, "r");
-	if (f == nil) {
-	    s = which(identname(filename, true));
-	    if (not isblock(s)) {
-		error("can't read \"%s\"", filename);
-	    }
-	    addr = firstline(s);
-	    if (addr == NOADDR) {
-		error("no source for \"%s\"", filename);
-	    }
-	    src = srcfilename(addr);
-	    sprintf(buff, "+%d", srcline(addr));
-	    call(ed, stdin, stdout, buff, src, nil);
-	} else {
-	    fclose(f);
-	    call(ed, stdin, stdout, filename, nil);
-	}
-    }
-}
-
 /*
  * Send some nasty mail to the current support person.
  */
@@ -1111,16 +1077,23 @@ public gripe()
 {
     typedef Operation();
     Operation *old;
+    int pid, status;
 
-    char *maintainer = "linton@ucbarpa";
+    char *maintainer = "linton@berkeley";
 
     puts("Type control-D to end your message.  Be sure to include");
     puts("your name and the name of the file you are debugging.");
     putchar('\n');
     old = signal(SIGINT, SIG_DFL);
-    call("Mail", stdin, stdout, maintainer, nil);
+    pid = back("Mail", stdin, stdout, "-s", "dbx gripe", maintainer, nil);
+    signal(SIGINT, SIG_IGN);
+    pwait(pid, &status);
     signal(SIGINT, old);
-    puts("Thank you.");
+    if (status == 0) {
+	puts("Thank you.");
+    } else {
+	puts("\nMail not sent.");
+    }
 }
 
 /*
