@@ -1,4 +1,4 @@
-.\"	@(#)3.t	1.1	(Copyright 1989 M. K. McKusick)	89/02/18
+.\"	@(#)3.t	1.2	(Copyright 1989 M. K. McKusick)	89/02/19
 .NH
 System Release
 .PP
@@ -13,6 +13,21 @@ Projects that are not selected for completion are mothballed
 so that they can be restarted in the future.
 The remaining unfinished projects are
 brought to an orderly completion.
+.PP
+Developments from
+.SM CSRG
+are released in three steps: alpha, beta, and final.
+Alpha and beta releases are not true distributions\(emthey
+are test systems.
+Alpha releases are normally available to only a few sites,
+mostly those that are working directly with
+.SM CSRG .
+More sites get beta releases,
+as the system is closer to completion,
+so needs wider testing to find more obscure problems.
+For example,
+\*(b3 beta ran at more than 100 sites, but there were only about
+15 alpha sites.
 .NH 2
 The Alpha Distribution
 .PP
@@ -35,7 +50,7 @@ This prototype will eventually turn into the master for the
 final distribution.
 During the period that the alpha distribution is being created,
 .PN /nbsd
-is mounted read/write, and is highly fluid.
+is mounted read-write, and is highly fluid.
 Programs are created and deleted,
 new versions are dropped in,
 and the correspondence between the sources and binaries
@@ -56,10 +71,10 @@ Unfortunately, this change broke the
 program that could no longer interpret the new diff output.
 Since both changes had originated outside Berkeley,
 .SM CSRG
-had to coordinate the authors of these two programs
-to get them to work together harmoniously.
+had to get the authors of these two programs
+to make the programs work together harmoniously.
 .PP
-Once we are satisfied with the state of the sources,
+Once the state of the sources has stabilized,
 an attempt is made to build the entire source tree.
 Often this turns up errors because of changed header files,
 or use of obsoleted C library interfaces.
@@ -86,6 +101,15 @@ an alpha distribution tape is made
 from the contents of
 .PN /nbsd .
 .PP
+The alpha distribution is sent out to a small set of test sites.
+These test sites are selected to have a
+sophisticated user population that can not only find bugs,
+but can also determine the cause and find a fix to the problem.
+These sites are mostly composed of the groups
+that are involved in contributing software to the distribution.
+.NH 2
+The Beta Distribution
+.PP
 After the alpha tape is made,
 the distribution filesystem is changed over to read-only.
 Further changes are requested in a change log rather than
@@ -94,18 +118,9 @@ The change requests are inspected and run by a
 .SM CSRG
 staff person, followed by a compilation of the affected
 programs to ensure that they still build correctly.
-Notably, once the alpha tape has been cut,
+Once the alpha tape has been cut,
 changes to the distribution are no longer made by people outside
 .SM CSRG .
-.PP
-The alpha distribution is sent out to a select set of test sites.
-These test sites are selected to have a
-sophisticated user population that can not only find bugs,
-but can also determine the cause and find a fix to the problem.
-These sites are mostly composed of the groups
-that are involved in contributing software to the distribution.
-.NH 2
-The Beta Distribution
 .PP
 As the alpha sites install and begin running the alpha tape,
 they monitor the problems that they encounter.
@@ -118,12 +133,14 @@ they often have accounts on, and access to, the primary
 .SM CSRG
 development machine.
 Thus, they are able to directly install the fix themselves,
-and simply notify us when they have fixed the problem.
+and simply notify
+.SM CSRG
+when they have fixed the problem.
 After verifying the fix, the affected files are added to
 the list to be updated on
 .PN /nbsd .
 .PP
-The more important task of the beta sites is to test out the
+The more important task of the alpha sites is to test out the
 new facilities that have been added to the system.
 The alpha sites often manage to find major design flaws
 or operational shortcomings of the facilities.
@@ -138,12 +155,13 @@ the alpha release of the networking did not have connection queueing.
 This shortcoming prevented the networking from handling many
 connections to a single server.
 The result was that the networking interface had to be
-rearchitected to allow connection queueing.
+rearchitected to provide connection queueing.
 .PP
 The alpha sites are also responsible for ferreting out interoperability
 problems with the different utilities.
-The sites are selected with different types of user populations so
-that the utilities will be exercised in ways that differ
+The user populations of the test sites differ from the user population at
+.SM CSRG ,
+so the utilities are exercised in ways that differ
 from the ways that they are used at
 .SM CSRG .
 These differences in usage patterns turn up problems that
@@ -161,12 +179,15 @@ to avoid spurious and voluminous reports.
 The direct alpha sites sift through the reports to find those that
 are relevant, and usually verify the suggested fix if one is given,
 or develop a fix if none is provided.
-The tree structured testing process ensures that the small group
-of people at
+The tree structured testing process allows
+bug reports, fixes, and new software
+to be collected, evaluated, and checked for redundancies
+by first-level sites before forwarding to
+.SM CSRG .
+The alpha-test tree allows the developers at
 .SM CSRG
-are not swamped by an overwhelming influx of reports.
-Instead, they can concentrate on tracking the changes being made
-to the system to ensure as high a level of consistency as possible.
+to concentrate on tracking the changes being made to the system
+rather than sifting through details from every alpha-test site.
 .PP
 Once the major problems have been attended to,
 the focus turns to getting the documentation synchronized
@@ -190,7 +211,7 @@ have contributed complete software packages
 .PN RCS
 or
 .PN MH )
-in the past to see if they wish to
+in previous releases to see if they wish to
 make any revisions to their software.
 For those that do,
 the new software has to be obtained,
@@ -202,11 +223,14 @@ across the network.
 .PP
 After the stream of bug reports has slowed down
 to a reasonable level,
-we begin a carefully review of all the changes to the
+.SM CSRG
+begins a carefully review of all the changes to the
 system since the previous release.
 The review is done by running a recursive
 .PN diff
-of the entire source tree.
+of the entire source tree\(emhere, of
+.PN /nbsd
+with 4.2\s-1BSD\s+1.
 All the changes are checked to ensure that they are reasonable,
 and have been properly documented.
 The process often turns up questionable changes.
@@ -219,14 +243,35 @@ the person responsible for the change is asked to explain
 what they were trying to accomplish.
 If the reason is not compelling,
 the change is backed out.
+Facilities deemed inappropriate in \*(b3 included new options to
+the directory-listing command and a changed return value for the
+.RN fseek
+library routine;
+the changes were removed from the source before final distribution.
 Although this process is long and tedious,
-it forces us to get a picture of the entire set of
-changes to the system into out head.
+it forces the developers to get a picture of the entire set of
+changes to the system.
 This exercise often turns up inconsistencies that would
 otherwise never be found.
 .PP
+The outcome of the comparison results in
+a pair of documents detailing
+changes to every user-level command
+.[
+Bug Fixes and Changes
+.]
+and to every kernel source file.
+.[
+Changes to the Kernel
+.]
+These documents are delivered with the final distribution.
+A user can look up any command by name and see immediately
+what has changed,
+and a developer can similarly look up any kernel
+file by name and get a summary of that file's changes.
+.PP
 Having completed the review of the entire system,
-we begin the preparation of the beta distribution.
+the preparation of the beta distribution is started.
 Unlike the alpha distribution, where pieces of the system
 may be unfinished and the documentation incomplete,
 the beta distribution is put together as if it were
@@ -236,15 +281,16 @@ is completed.
 Once the beta tape has been prepared,
 no further changes are permitted to
 .PN /nbsd
-without careful review as spurious changes made after the system has been
-.PN diff 'ed
+without careful review,
+as spurious changes made after the system has been
+.PN diff ed
 are unlikely to be caught.
 .NH 2
 The Final Distribution
 .PP
 The beta distribution goes to a larger set of sites than the
 alpha distribution for two main reasons.
-First, since it closer to the final release more sites are willing
+First, since it closer to the final release, more sites are willing
 to run it in a production environment without fear of catastrophic failures.
 Second, more commercial sites with
 .SM BSD
@@ -282,14 +328,14 @@ on the distribution has the proper owner, group, and modes.
 All source files must be checked to be sure that they have
 appropriate source code control system headers.
 Any unwanted error or temporary files must be removed.
-Finally we have to ensure that the installed binaries correspond
+Finally, the installed binaries must be checked to ensure that they correspond
 exactly to the sources and libraries that are on the distribution.
 .PP
-This is a formidable task given that there are over 20,000 files on
+This checking is a formidable task given that there are over 20,000 files on
 a typical distribution.
 Much of the checking can be done by a set of programs set to scan
 over the distribution tree.
-Unfortunately the exception list is long, and requires
+Unfortunately, the exception list is long, and requires
 hours of tedious hand checking.
 .PP
 Once the final set of checks has been run,
