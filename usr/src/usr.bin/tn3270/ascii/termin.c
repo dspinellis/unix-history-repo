@@ -67,6 +67,21 @@ static state
 
 
 /*
+ * init_keyboard()
+ *
+ * Initialize the keyboard variables.
+ */
+
+void
+init_keyboard()
+{
+    ourPHead = ourPTail = ourBuffer;
+    InControl = 0;
+    WaitingForSynch = 0;
+}
+
+
+/*
  * Initialize the keyboard mapping file.
  */
 
@@ -143,13 +158,6 @@ FlushChar()
     ourPTail = ourBuffer;
     ourPHead = ourBuffer;
 }
-
-terminit()
-{
-    FlushChar();
-    InControl = WaitingForSynch = 0;
-}
-
 
 int
 TerminalIn()

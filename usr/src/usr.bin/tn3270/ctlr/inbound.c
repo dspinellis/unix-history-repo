@@ -82,6 +82,23 @@ extern int TransparentClock, OutputClock;
 
 extern int UnLocked;		/* keyboard is UnLocked? */
 
+
+/*
+ * init_inbound :
+ *
+ * Reset variables to initial state.
+ */
+
+void
+init_inbound()
+{
+    ourPHead = ourPTail = ourBuffer;
+    HadAid = 0;
+    shifted = alted = 0;
+    InsertMode = 0;
+}
+
+
 /* Tab() - sets cursor to the start of the next unprotected field */
 static void
 Tab()

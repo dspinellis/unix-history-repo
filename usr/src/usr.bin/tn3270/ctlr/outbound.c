@@ -67,15 +67,19 @@ char CIABuffer[64] = {
 };
 
 /*
- * ctlrinit()
+ * init_ctlr()
  *
  *	Initialize all data from the 'data' portion to their startup values.
  */
 
 void
-ctlrinit()
+init_ctlr()
 {
     LastWasTerminated = 1;
+#if	!defined(PURE3274)
+    OutputClock = TransparentClock = 0;
+#endif	/* !defined(PURE3274) */
+    init_inbound();
 }
 
 /* What we know is that table is of size ScreenSize */
