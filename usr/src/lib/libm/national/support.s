@@ -1,7 +1,6 @@
-; @(#)support.s	1.2 (ucb.elefunt) %G%
+; @(#)support.s	1.3 (ucb.elefunt) %G%
 ; 
 ; IEEE recommended functions
-;
 ; 
 ; double copysign(x,y)
 ; double x,y;
@@ -83,8 +82,6 @@ L5:
 	movl	0f1.0e300,f0
 	mull	0f-1.0e300,f0	; multiply two big numbers to get -INF
 	ret	0
-L64:	.double	0,0x43f00000	; L64=2**64
-	
 ; 
 ; double rint(x)
 ; double x;
@@ -224,3 +221,197 @@ L19:		; subnormal number
 end:	ret	0
 L30:	.double	0x0,0x3bf00000	; floating point 2**-64
 L32:	.double	0x0,0x43f00000	; floating point 2**64
+; 
+; double drem(x,y)
+; double x,y;
+; IEEE double remainder function, return x-n*y, where n=x/y rounded to 
+; nearest integer (half way case goes to even). Result exact.
+; Coded by K.C. Ng in National 32k assembly, 11/19/85.
+;
+	.vers	2
+	.text
+	.align	2
+	.globl	_drem
+_drem:
+;
+; glossaries:	
+;		r2 = high part of x
+;		r3 = exponent of x
+;		r4 = high part of y
+;		r5 = exponent of y
+;		r6 = sign of x
+;		r7 = constant 0x7ff00000
+;
+;  16(fp) : y
+;   8(fp) : x
+; -12(fp) : adjustment on y when y is subnormal
+; -16(fp) : fsr
+; -20(fp) : nx
+; -28(fp) : t
+; -36(fp) : t1
+; -40(fp) : nf
+; 
+;
+	enter	[r3,r4,r5,r6,r7],40
+	movl	f6,tos
+	movl	f4,tos
+	movl	0f0,-12(fp)
+	movd	0,-20(fp)
+	movd	0,-40(fp)
+	movd	0x7ff00000,r7	; initialize r7=0x7ff00000
+	movd	12(fp),r2	; r2 = high(x)
+	movd	r2,r3
+	andd	r7,r3		; r3 = xexp
+	cmpd	r7,r3
+; if x is NaN or INF goto L1
+	beq	L1		
+	movd	20(fp),r4
+	bicd	[31],r4		; r4 = high part of |y|
+	movd	r4,20(fp)	; y = |y|
+	movd	r4,r5
+	andd	r7,r5		; r5 = yexp
+	cmpd	r7,r5
+	beq	L2		; if y is NaN or INF goto L2
+	cmpd	0x04000000,r5	; 
+	bgt	L3		; if y is tiny goto L3
+;
+; now y != 0 , x is finite
+;
+L10:
+	movd	r2,r6
+	andd	0x80000000,r6	; r6 = sign(x)
+	bicd	[31],r2		; x <- |x|
+	sfsr	r1
+	movd	r1,-16(fp)	; save fsr in -16(fp)
+	bicd	[5],r1
+	lfsr	r1		; disable inexact interupt
+	movd	16(fp),r0	; r0 = low part of y
+	movd	r0,r1		; r1 = r0 = low part of y
+	andd	0xf8000000,r1	; mask off the lsb 27 bits of y
+
+	movd	r2,12(fp)	; update x to |x|
+	movd	r0,-28(fp)	; 
+	movd	r4,-24(fp)	; t  = y
+	movd	r4,-32(fp)	; 
+	movd	r1,-36(fp)	; t1 = y with trialing 27 zeros
+	movd	0x01900000,r1	; r1 = 25 in exponent field
+LOOP:
+	movl	8(fp),f0	; f0 = x
+	movl	16(fp),f2	; f2 = y
+	cmpl	f0,f2
+	ble	fnad		; goto fnad (final adjustment) if x <= y
+	movd	r4,-32(fp)
+	movd	r3,r0
+	subd	r5,r0		; xexp - yexp
+	subd	r1,r0		; r0 = xexp - yexp - m25
+	cmpqd	0,r0		; r0 > 0 ?
+	bge	1f
+	addd	r4,r0		; scale up (high) y
+	movd	r0,-24(fp)	; scale up t
+	movl	-28(fp),f2	; t
+	movd	r0,-32(fp)	; scale up t1
+1:
+	movl	-36(fp),f4	; t1
+	movl	f0,f6
+	divl	f2,f6		; f6 = x/t
+	floorld	f6,r0		; r0 = [x/t]
+	movdl	r0,f6		; f6 = n
+	subl	f4,f2		; t = t - t1 (tail of t1)
+	mull	f6,f4		; f4 = n*t1	...exact
+	subl	f4,f0		; x = x - n*t1
+	mull	f6,f2		; n*(t-t1)	...exact
+	subl	f2,f0		; x = x - n*(t-t1)
+; update xexp
+	movl	f0,8(fp)
+	movd	12(fp),r3	
+	andd	r7,r3
+	jump	LOOP
+fnad:
+	cmpqd	0,-20(fp)	; 0 = nx?
+	beq	final
+	mull	-12(fp),8(fp)	; scale up x the same amount as y
+	movd	0,-20(fp)
+	movd	12(fp),r2
+	movd	r2,r3
+	andd	r7,r3		; update exponent of x
+	jump	LOOP
+
+final:
+	movl	16(fp),f2	; f2 = y (f0=x, r0=n)
+	subd	0x100000,r4	; high y /2
+	movd	r4,-24(fp)
+	movl	-28(fp),f4	; f4 = y/2
+	cmpl	f0,f4		; x > y/2 ?
+	bgt	1f
+	bne	2f
+	andd	1,r0		; n is odd or even
+	cmpqd	0,r0
+	beq	2f
+1:
+	subl	f2,f0		; x = x - y
+2:
+	cmpqd	0,-40(fp)
+	beq	3f
+	divl	-12(fp),f0	; scale down the answer
+3:
+	movl	f0,tos
+	xord	r6,tos
+	movl	tos,f0
+	movd	-16(fp),r0
+	lfsr	r0		; restore the fsr
+
+end:	movl	tos,f4
+	movl	tos,f6
+	exit	[r3,r4,r5,r6,r7]
+	ret	0
+;
+; y is NaN or INF
+;
+L2:	
+	movd	16(fp),r0	; r0 = low part of y
+	andd	0xfffff,r4	; r4 = high part of y & 0x000fffff
+	ord	r4,r0
+	cmpqd	0,r0
+	beq	L4
+	movl	16(fp),f0	; y is NaN, return y
+	jump	end
+L4:	movl	8(fp),f0	; y is inf, return x
+	jump	end
+;
+; exponent of y is less than 64, y may be zero or subnormal
+;
+L3:
+	movl	16(fp),f0
+	cmpl	0f0,f0
+	bne	L5
+	divl	f0,f0		; y is 0, return NaN by doing 0/0
+	jump	end
+;
+; subnormal y or tiny y
+;
+L5:	
+	movd	0x04000000,-20(fp)	; nx = 64 in exponent field
+	movl	L64,f2
+	movl	f2,-12(fp)
+	mull	f2,f0
+	cmpl	f0,LTINY
+	bgt	L6
+	mull	f2,f0
+	addd	0x04000000,-20(fp)	; nx = nx + 64 in exponent field
+	mull	f2,-12(fp)
+L6:
+	movd	-20(fp),-40(fp)
+	movl	f0,16(fp)
+	movd	20(fp),r4
+	movd	r4,r5
+	andd	r7,r5		; exponent of new y
+	jump	L10
+;
+; x is NaN or INF, return x-x
+;
+L1:
+	movl	8(fp),f0
+	subl	f0,f0		; if x is INF, then INF-INF is NaN
+	ret	0
+L64:	.double 0x0,0x43f00000	; L64 = 2**64
+LTINY:	.double 0x0,0x04000000	; LTINY = 2**-959
