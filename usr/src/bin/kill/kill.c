@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kill.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)kill.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <signal.h>
@@ -85,7 +85,7 @@ main(argc, argv)
 			    "kill: illegal process id %s\n", *argv);
 			continue;
 		}
-		if (kill(atoi(*argv), numsig) == -1) {
+		if (kill(pid, numsig) == -1) {
 			(void)fprintf(stderr,
 			    "kill: %s: %s\n", *argv, strerror(errno));
 			errors = 1;
