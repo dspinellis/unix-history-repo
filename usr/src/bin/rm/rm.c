@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)rm.c	4.10 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.11 (Berkeley) %G%";
 int	errcode;
 
 #include <stdio.h>
@@ -95,7 +95,18 @@ char arg[];
 				}
 			}
 			closedir(dirp);
-			errcode += rmdir(arg, iflg);
+			if (dotname(arg))
+				return;
+			if (iflg) {
+				printf("rm: remove %s? ", arg);
+				if (!yes())
+					return;
+			}
+			if (rmdir(arg) < 0) {
+				fprintf("rm: ");
+				perror(arg);
+				errcode++;
+			}
 			return;
 		}
 		printf("rm: %s directory\n", arg);
@@ -133,30 +144,6 @@ char *s;
 		else if(s[1] == '\0')
 			return(1);
 	return(0);
-}
-
-rmdir(f, iflg)
-char *f;
-{
-	int status, i;
-
-	if(dotname(f))
-		return(0);
-	if(iflg) {
-		printf("rm: remove %s? ", f);
-		if(!yes())
-			return(0);
-	}
-	while((i=fork()) == -1)
-		sleep(3);
-	if(i) {
-		wait(&status);
-		return(status);
-	}
-	execl("/bin/rmdir", "rmdir", f, 0);
-	execl("/usr/bin/rmdir", "rmdir", f, 0);
-	printf("rm: can't find rmdir\n");
-	exit(1);
 }
 
 yes()
