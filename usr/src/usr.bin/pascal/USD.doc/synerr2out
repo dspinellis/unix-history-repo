@@ -1,0 +1,22 @@
+Berkeley Pascal PI -- Version 3.1 (6/6/93)
+
+Tue May 24 14:54 1994  synerr2.p
+
+     1  program synerr2(input,outpu);
+     2  integer a(10)
+E \l'\w`w `u-\w`E `u '\l'\w`     2  `u-\w`w `u\&\(rh'\l'(\w`i`u-\w`^`u)/2 '\(ua\l'(\w`i`u-\w`^`u)/2 '\l'\w`---`u\&\(rh' Malformed declaration
+     3  begin
+     4          read(b);
+E \l'\w`w `u-\w`E `u '\l'\w`     4          read(`u-\w`w `u\&\(rh'\l'(\w`b`u-\w`^`u)/2 '\(ua\l'(\w`b`u-\w`^`u)/2 '\l'\w`---`u\&\(rh' Undefined variable
+     5          for c := 1 to 10 do
+E \l'\w`w `u-\w`E `u '\l'\w`     5          for `u-\w`w `u\&\(rh'\l'(\w`c`u-\w`^`u)/2 '\(ua\l'(\w`c`u-\w`^`u)/2 '\l'\w`---`u\&\(rh' Undefined variable
+     6                  a(c) := b * c;
+E \l'\w`w `u-\w`E `u '\l'\w`     6                  `u-\w`w `u\&\(rh'\l'(\w`a`u-\w`^`u)/2 '\(ua\l'(\w`a`u-\w`^`u)/2 '\l'\w`---`u\&\(rh' Undefined procedure
+E \l'\w`w `u-\w`E `u '\l'\w`     6                  a(c) `u-\w`w `u\&\(rh'\l'(\w`:`u-\w`^`u)/2 '\(ua\l'(\w`:`u-\w`^`u)/2 '\l'\w`---`u\&\(rh' Malformed statement
+     7  end.
+E 1 - File outpu listed in program statement but not declared
+In program synerr2:
+  E - a undefined on lines 6
+  E - b undefined on line 4
+  E - c undefined on line 5 6
+Execution suppressed due to compilation errors

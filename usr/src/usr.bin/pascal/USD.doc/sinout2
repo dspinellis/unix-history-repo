@@ -1,0 +1,2 @@
+Tue May 24 14:54 1994  sin2.p:
+E 12 - sin's argument must be integer or real, not char
