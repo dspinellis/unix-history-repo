@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)np.c	7.6 (Berkeley) %G%
+ *	@(#)np.c	7.7 (Berkeley) %G%
  *
  * From:
  *	np.c version 1.5
@@ -971,21 +971,6 @@ int unit;
 		}
 
 
-#ifdef mc500
-	if(setjmp(u.u_tsav) == 0) {
-		u.u_nofault = TRUE;
-		status = RCSR1(mp->iobase);
-		u.u_nofault = FALSE;
-	}
-	else {
-		np__addr[unit] = 0;
-		mp->flags |= BADBOARD;
-		u.u_error = ENXIO;
-		printf("\nNP100 Unit %x not here!\n",unit);
-		return(0);
-	}
-#endif
-
 	if(NpDebug & DEBENTRY)
 		printf("Resetting the NP100 Board at %x\n",mp->iobase);
 
@@ -1022,7 +1007,6 @@ int unit;
 
 	if(!(RCSR1(mp->iobase) & NPHOK)) {
 		mp->flags |= BADBOARD;
-		u.u_error = EIO;
 		printf("NP100 Unit %d Failed diagnostics!\n",unit);
 		printf("Status from CSR0: %x.\n",status);
 		return(EIO);
@@ -1100,11 +1084,9 @@ int unit;
 
 	if(!(mp->flags & AVAILABLE)) {
 
-		if((mp->shmemp->statblock.sb_dpm) && (!(mp->flags & BRDRESET))){
+		if((mp->shmemp->statblock.sb_dpm) && (!(mp->flags & BRDRESET)))
 
 			mp->flags = AVAILABLE;
-			printf("\nNP100 unit #%d available!\n",mp->unit);
-		}
 	}
 
 	/* Honor service requests from the device */
@@ -1427,7 +1409,6 @@ struct npmaster *mp;
 	if(*temp) {			/* Should never happen */
 
 		printf("No more room on Command Queue!\n");
-		u.u_error = EIO;
 		return;
 	}
 	else *temp = cqe_offset;	/* Enter this request's offset */
