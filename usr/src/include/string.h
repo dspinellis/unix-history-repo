@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)string.h	5.7 (Berkeley) %G%
+ *	@(#)string.h	5.8 (Berkeley) %G%
  */
 
 #ifndef _STRING_H_
@@ -48,9 +48,9 @@ size_t	 strxfrm __P((char *, const char *, size_t));
 
 /* Nonstandard routines */
 #ifndef _ANSI_SOURCE
-int	 bcmp __P((const char *, const char *, size_t));
-void	 bcopy __P((const char *, char *, size_t));
-void	 bzero __P((char *, size_t));
+int	 bcmp __P((const void *, const void *, size_t));
+void	 bcopy __P((const void *, void *, size_t));
+void	 bzero __P((void *, size_t));
 int	 ffs __P((int));
 char	*index __P((const char *, int));
 void	*memccpy __P((void *, const void *, int, size_t));
