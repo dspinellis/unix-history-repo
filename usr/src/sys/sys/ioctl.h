@@ -1,4 +1,4 @@
-/*	ioctl.h	4.12	82/01/17	*/
+/*	ioctl.h	4.13	82/01/17	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -84,6 +84,12 @@ struct ltchars {
 #define	TIOCOUTQ	(('t'<<8)|115)	/* number of chars in output queue */
 #define	TIOCSTI		(('t'<<8)|114)	/* simulate a terminal in character */
 #define	TIOCNOTTY	(('t'<<8)|113)	/* get rid of tty association */
+#define	TIOCPKT		(('t'<<8)|112)	/* on pty: set/clear packet mode */
+#define		TIOCPKT_DATA		0	/* data packet */
+#define		TIOCPKT_FLUSHREAD	1	/* flush packet */
+#define		TIOCPKT_FLUSHWRITE	2	/* flush packet */
+#define		TIOCPKT_STOP		4	/* stop output */
+#define		TIOCPKT_START		8	/* start output */
 
 #define	OTTYDISC	0		/* old, v7 std tty driver */
 #define	NETLDISC	1		/* line discip for berk net */
