@@ -1,7 +1,7 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
 #ifndef lint
-char version[] = "@(#)main.c 2.8 %G%";
+char version[] = "@(#)main.c 2.9 %G%";
 #endif
 
 /*	Modified to include h option (recursively extract all files within
@@ -219,12 +219,17 @@ doit(command, argc, argv)
 #endif
 	}
 	blkclr(clearedbuf, (long)MAXBSIZE);
-	switch(command) {
-	case 't':
+	if (readhdr(&spcl) == 0) {
+		bct--; /* push back this block */
+		cvtflag++;
 		if (readhdr(&spcl) == 0) {
 			fprintf(stderr, "Tape is not a dump tape\n");
 			done(1);
 		}
+		fprintf(stderr, "Converting to new file system format.\n");
+	}
+	switch(command) {
+	case 't':
 		fprintf(stdout, "Dump   date: %s", ctime(&spcl.c_date));
 		fprintf(stdout, "Dumped from: %s", ctime(&spcl.c_ddate));
 		return;
@@ -269,10 +274,6 @@ extractfiles(argc, argv)
 	fssize = stbuf.st_blksize;
 	 */
 	fssize = MAXBSIZE;
-	if (readhdr(&spcl) == 0) {
-		fprintf(stderr, "Tape is not a dump tape\n");
-		done(1);
-	}
 	if (checkvol(&spcl, 1) == 0) {
 		fprintf(stderr, "Tape is not volume 1 of the dump\n");
 	}
@@ -281,7 +282,6 @@ extractfiles(argc, argv)
 	pass1(1);  /* This sets the various maps on the way by */
 	while (argc--) {
 		if ((d = psearch(*argv)) == 0 || BIT(d,dumpmap) == 0) {
-			printf("d = %d\n", d);
 			fprintf(stdout, "%s: not on tape\n", *argv++);
 			continue;
 		}
@@ -1048,12 +1048,12 @@ gethead(buf)
 
 	if (!cvtflag) {
 		readtape((char *)buf);
-		if (buf->c_magic != MAGIC || checksum((int *)buf) == 0)
+		if (buf->c_magic != NFS_MAGIC || checksum((int *)buf) == 0)
 			return(0);
 		return(1);
 	}
 	readtape((char *)(&u_ospcl.s_ospcl));
-	if (u_ospcl.s_ospcl.c_magic != MAGIC ||
+	if (u_ospcl.s_ospcl.c_magic != OFS_MAGIC ||
 	    checksum((int *)(&u_ospcl.s_ospcl)) == 0)
 		return(0);
 	blkclr((char *)buf, TP_BSIZE);
@@ -1063,7 +1063,7 @@ gethead(buf)
 	buf->c_volume = u_ospcl.s_ospcl.c_volume;
 	buf->c_tapea = u_ospcl.s_ospcl.c_tapea;
 	buf->c_inumber = u_ospcl.s_ospcl.c_inumber;
-	buf->c_magic = u_ospcl.s_ospcl.c_magic;
+	buf->c_magic = NFS_MAGIC;
 	buf->c_checksum = u_ospcl.s_ospcl.c_checksum;
 	buf->c_dinode.di_mode = u_ospcl.s_ospcl.c_dinode.odi_mode;
 	buf->c_dinode.di_nlink = u_ospcl.s_ospcl.c_dinode.odi_nlink;
@@ -1086,7 +1086,7 @@ ishead(buf)
 	struct s_spcl *buf;
 {
 
-	if (buf->c_magic != MAGIC)
+	if (buf->c_magic != NFS_MAGIC)
 		return(0);
 	return(1);
 }
