@@ -19,7 +19,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)config.h	5.6 (Berkeley) %G%
+ *	@(#)config.h	5.7 (Berkeley) %G%
  */
 
 #define	DEFSHELL	1			/* Bourne shell */
@@ -50,14 +50,6 @@
  */
 #define INCLUDES
 #define LIBRARIES
-
-/*
- * DEF_OLD_VARS
- *	If defined, variable substitution follows the make style. PMake-style
- *	substitution cannot be turned on. In addition, pmake will never
- *	generate a warning for an undefined variable.
- */
-/*#define DEF_OLD_VARS*/
 
 /*
  * LIBSUFF
