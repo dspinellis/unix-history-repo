@@ -1,4 +1,4 @@
-/*	inode.h	4.15	82/10/10	*/
+/*	inode.h	4.16	82/10/20	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -83,9 +83,9 @@ struct dinode {
 #define	di_rdev		di_ic.ic_db[0]
 
 #ifdef KERNEL
-extern	struct inode *inode;		/* The inode table itself */
-extern	struct inode *inodeNINODE;	/* The end of the inode table */
-extern	int ninode;			/* number of slots in the table */
+struct inode *inode;		/* the inode table itself */
+struct inode *inodeNINODE;	/* the end of the inode table */
+int	ninode;			/* number of slots in the table */
 
 struct	inode *rootdir;			/* pointer to inode of root directory */
 

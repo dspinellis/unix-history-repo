@@ -1,4 +1,4 @@
-/*	if_imp.c	4.40	82/10/13	*/
+/*	if_imp.c	4.41	82/10/20	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -15,21 +15,23 @@
 #include "../h/buf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
-#include "../h/ubareg.h"
-#include "../h/ubavar.h"
-#include "../h/cpu.h"
-#include "../vax/mtpr.h"
 #include "../h/vmmac.h"
+
+#include "../vax/cpu.h"
+#include "../vax/mtpr.h"
+#include "../vax/ubareg.h"
+#include "../vax/ubavar.h"
+
+#include "../net/if.h"
+#include "../net/route.h"
+#include "../net/netisr.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
-#include "../net/if.h"
-#include "../net/netisr.h"
+#include "../netinet/ip.h"
+#include "../netinet/ip_var.h"
 /* define IMPLEADERS here to get leader printing code */
 #include "../netimp/if_imp.h"
 #include "../netimp/if_imphost.h"
-#include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
-#include "../net/route.h"
 #include <errno.h>
 
 /*
@@ -263,7 +265,8 @@ impinput(unit, m)
 	case IMPTYPE_HOSTDEAD:
 	case IMPTYPE_HOSTUNREACH: {
 		int s = splnet();
-		impnotify(ip->il_mtype, ip, hostlookup(addr));
+		impnotify((int)ip->il_mtype, (struct control_leader *)ip,
+		    hostlookup(addr));
 		splx(s);
 		goto rawlinkin;
 	}

@@ -1,4 +1,4 @@
-/*	uba.c	4.52	82/10/17	*/
+/*	uba.c	4.53	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -370,6 +370,7 @@ ubainit(uba)
 	}
 }
 
+#ifdef notdef
 #if VAX780
 /*
  * Check to make sure the UNIBUS adaptor is not hung,
@@ -470,6 +471,7 @@ ubaerror(uban, uh, xx, uvec, uba)
 	return;
 }
 #endif
+#endif notdef
 
 #ifdef notdef
 /*

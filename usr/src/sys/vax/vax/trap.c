@@ -1,4 +1,4 @@
-/*	trap.c	4.19	82/10/17	*/
+/*	trap.c	4.20	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -185,7 +185,7 @@ syscall(sp, type, code, pc, psl)
 asm("ok:");						/* GROT */
 		asm("movc3 r9,(r10),_u+U_ARG");		/* GROT */
 #else
-		bcopy(params, u.u_arg, i);
+		bcopy(params, u.u_arg, (u_int)i);
 #endif
 	}
 	u.u_ap = u.u_arg;
@@ -205,7 +205,9 @@ asm("ok:");						/* GROT */
 	else if (u.u_eosys == SIMULATERTI)
 		dorti();
 	else if (u.u_error) {
+#ifndef lint
 bad:
+#endif
 		locr0[R0] = u.u_error;
 		locr0[PS] |= PSL_C;	/* carry bit */
 	} else {

@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.67	82/10/17	*/
+/*	tcp_usrreq.c	1.68	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,11 +6,12 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/protosw.h"
-#include "../netinet/in.h"
+
+#include "../net/if.h"
 #include "../net/route.h"
+#include "../netinet/in.h"
 #include "../netinet/in_pcb.h"
 #include "../netinet/in_systm.h"
-#include "../net/if.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netinet/tcp.h"

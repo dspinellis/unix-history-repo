@@ -1,4 +1,4 @@
-/*	in.c	4.6	82/10/17	*/
+/*	in.c	4.7	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -18,7 +18,10 @@ inet_hash(sin, hp)
 {
 
 	hp->afh_nethash = in_netof(sin->sin_addr);
-	hp->afh_hosthash = ntohl(sin->sin_addr.s_addr);
+	hp->afh_hosthash = sin->sin_addr.s_addr;
+#if vax || pdp11 || ns16032
+	hp->afh_hosthash = ntohl((u_long)hp->afh_hosthash);
+#else
 }
 
 inet_netmatch(sin1, sin2)
@@ -39,11 +42,11 @@ if_makeaddr(net, host)
 	u_long addr;
 
 	if (net < 128)
-		addr = (net << IN_CLASSANSHIFT) | host;
+		addr = (net << IN_CLASSA_NSHIFT) | host;
 	else if (net < 65536)
-		addr = (net << IN_CLASSBNSHIFT) | host;
+		addr = (net << IN_CLASSB_NSHIFT) | host;
 	else
-		addr = (net << IN_CLASSCNSHIFT) | host;
+		addr = (net << IN_CLASSC_NSHIFT) | host;
 #ifdef vax || pdp11 || ns16032
 	addr = htonl(addr);
 #endif
@@ -56,17 +59,17 @@ if_makeaddr(net, host)
 in_netof(in)
 	struct in_addr in;
 {
-	register u_int i = in.s_addr;
+	register u_long i = in.s_addr;
 
 #ifdef vax || pdp11 || ns16032
 	i = ntohl(i);
 #endif
 	if (IN_CLASSA(i))
-		return (((i)&IN_CLASSANET) >> IN_CLASSANSHIFT);
+		return (((i)&IN_CLASSA_NET) >> IN_CLASSA_NSHIFT);
 	else if (IN_CLASSB(i))
-		return (((i)&IN_CLASSBNET) >> IN_CLASSBNSHIFT);
+		return (((i)&IN_CLASSB_NET) >> IN_CLASSB_NSHIFT);
 	else
-		return (((i)&IN_CLASSCNET) >> IN_CLASSCNSHIFT);
+		return (((i)&IN_CLASSC_NET) >> IN_CLASSC_NSHIFT);
 }
 
 /*
@@ -75,17 +78,17 @@ in_netof(in)
 in_lnaof(in)
 	struct in_addr in;
 {
-	register u_int i = in.s_addr;
+	register u_long i = in.s_addr;
 
 #ifdef vax || pdp11 || ns16032
 	i = ntohl(i);
 #endif
 	if (IN_CLASSA(i))
-		return ((i)&IN_CLASSAHOST);
+		return ((i)&IN_CLASSA_HOST);
 	else if (IN_CLASSB(i))
-		return ((i)&IN_CLASSBHOST);
+		return ((i)&IN_CLASSB_HOST);
 	else
-		return ((i)&IN_CLASSCHOST);
+		return ((i)&IN_CLASSC_HOST);
 }
 
 /*

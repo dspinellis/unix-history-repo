@@ -1,4 +1,4 @@
-/*	systm.h	4.28	82/09/08	*/
+/*	systm.h	4.29	82/10/20	*/
 
 /*
  * Random set of variables
@@ -6,8 +6,6 @@
  * routine.
  */
 int	hz;			/* frequency of the clock */
-int	timezone;		/* minutes west from greenwich */
-int	dstflag;		/* daylight savings time in effect? */
 char	version[];		/* system version */
 int	hand;			/* current index into coremap used by daemon */
 
@@ -48,7 +46,6 @@ dev_t	dumpdev;		/* device to take dumps on */
 long	dumplo;			/* offset into dumpdev */
 dev_t	swapdev;		/* swapping device */
 dev_t	argdev;			/* device for argument lists */
-dev_t	pipedev;		/* pipe device */
 
 extern	int icode[];		/* user init code */
 extern	int szicode;		/* its size */

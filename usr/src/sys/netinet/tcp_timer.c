@@ -1,4 +1,4 @@
-/*	tcp_timer.c	4.27	82/10/17	*/
+/*	tcp_timer.c	4.28	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,11 +6,13 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/protosw.h"
-#include "../netinet/in.h"
+#include <errno.h>
+
+#include "../net/if.h"
 #include "../net/route.h"
+#include "../netinet/in.h"
 #include "../netinet/in_pcb.h"
 #include "../netinet/in_systm.h"
-#include "../net/if.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netinet/tcp.h"
@@ -19,7 +21,6 @@
 #include "../netinet/tcp_timer.h"
 #include "../netinet/tcp_var.h"
 #include "../netinet/tcpip.h"
-#include <errno.h>
 
 int	tcpnodelack = 0;
 /*
@@ -73,7 +74,7 @@ tcp_slowtimo()
 				(void) tcp_usrreq(tp->t_inpcb->inp_socket,
 				    PRU_SLOWTIMO, (struct mbuf *)0,
 				    (struct mbuf *)i,
-				    (struct sockopt *)0);
+				    (struct socketopt *)0);
 				if (ipnxt->inp_prev != ip)
 					goto tpgone;
 			}

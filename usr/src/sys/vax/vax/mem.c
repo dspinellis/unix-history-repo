@@ -1,4 +1,4 @@
-/*	mem.c	4.7	82/10/17	*/
+/*	mem.c	4.8	82/10/20	*/
 
 /*
  * Memory special file
@@ -62,8 +62,8 @@ mmrw(dev, uio, rw)
 			*(int *)mmap = v | (PG_V | PG_KR);
 			mtpr(TBIS, vmmap);
 			o = (int)uio->uio_offset & PGOFSET;
-			c = min((unsigned)(NBPG - o), iov->iov_len);
-			c = min(c, (unsigned)(NBPG - ((int)iov->iov_base&PGOFSET)));
+			c = min((u_int)(NBPG - o), (u_int)iov->iov_len);
+			c = min(c, (u_int)(NBPG - ((int)iov->iov_base&PGOFSET)));
 			error = uiomove((caddr_t)&vmmap[o], c, rw, uio);
 			continue;
 
@@ -96,7 +96,7 @@ mmrw(dev, uio, rw)
 			if (!useracc(iov->iov_base, c, rw == UIO_READ ? B_WRITE : B_READ))
 				goto fault;
 			error = UNIcpy((caddr_t)uio->uio_offset, iov->iov_base,
-			    c, rw);
+			    (int)c, rw);
 			break;
 		}
 		if (error)
@@ -116,7 +116,7 @@ fault:
  */
 UNIcpy(uniadd, usradd, n, rw)
 	caddr_t uniadd, usradd;
-	register u_int n;
+	register int n;
 	enum uio_rw rw;
 {
 	register short *from, *to;

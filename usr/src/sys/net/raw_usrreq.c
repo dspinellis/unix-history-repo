@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.20	82/10/17	*/
+/*	raw_usrreq.c	4.21	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -10,8 +10,6 @@
 #include "../net/netisr.h"
 #include "../net/raw_cb.h"
 #include <errno.h>
-
-int	rawqmaxlen = IFQ_MAXLEN;
 
 /*
  * Initialize raw connection block q.

@@ -1,4 +1,4 @@
-/*	if.c	4.21	82/10/17	*/
+/*	if.c	4.22	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -167,5 +167,5 @@ if_slowtimo()
 			}
 			(*ifp->if_watchdog)(ifp->if_unit);
 		}
-	timeout(if_slowtimo, 0, hz / IFNET_SLOWHZ);
+	timeout(if_slowtimo, (caddr_t)0, hz / IFNET_SLOWHZ);
 }
