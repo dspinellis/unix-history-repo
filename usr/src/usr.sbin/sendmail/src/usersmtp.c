@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.41 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.42 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.41 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.42 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -302,7 +302,7 @@ helo_options(line, firstline, m, mci, e)
 	}
 	else if (strcasecmp(line, "expn") == 0)
 		mci->mci_flags |= MCIF_EXPN;
-	else if (strcasecmp(line, "x-dsn-3") == 0)
+	else if (strcasecmp(line, "x-dsn-03") == 0)
 		mci->mci_flags |= MCIF_DSN;
 }
 /*
