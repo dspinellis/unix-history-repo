@@ -216,22 +216,22 @@ install: ${ALL}
 	cp boot a.out; strip a.out; \
 		dd if=a.out of=../floppy/boot bs=32 skip=1
 	cp 730boot a.out; strip a.out; \
-		dd if=a.out of=../cassette/boot bs=32 skip=1
+		dd if=a.out of=../cassette/boot.730 bs=32 skip=1
 	cp ../floppy/boot ../cassette/boot.750
 	cp copy a.out; strip a.out; \
 		dd if=a.out of=../floppy/copy bs=32 skip=1
 	cp 730copy a.out; strip a.out; \
-		dd if=a.out of=../cassette/copy bs=32 skip=1
+		dd if=a.out of=../cassette/copy.730 bs=32 skip=1
 	cp ../floppy/copy ../cassette/copy.750
 	cp format a.out; strip a.out; \
 		dd if=a.out of=../floppy/format bs=32 skip=1
 	cp 730format a.out; strip a.out; \
-		dd if=a.out of=../cassette/format bs=32 skip=1
+		dd if=a.out of=../cassette/format.730 bs=32 skip=1
 	cp ../floppy/format ../cassette/format.750
 	cp drtest a.out; strip a.out; \
 		dd if=a.out of=../floppy/drtest bs=32 skip=1
 	cp 730drtest a.out; strip a.out; \
-		dd if=a.out of=../cassette/drtest bs=32 skip=1
+		dd if=a.out of=../cassette/drtest.730 bs=32 skip=1
 	cp ../floppy/drtest ../cassette/drtest.750
 	cp bootup boothk boothp bootra bootrl ${DESTDIR}/usr/mdec
 
