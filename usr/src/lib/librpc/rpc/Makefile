@@ -21,6 +21,8 @@ OBJ=	auth_none.o auth_unix.o authunix_prot.o clnt_perror.o clnt_raw.o\
 INC=	auth.h auth_unix.h clnt.h pmap_clnt.h\
 	pmap_prot.h rpc.h rpc_msg.h svc.h svc_auth.h types.h xdr.h
 
+MAN=	portmap.0 rpcinfo.0
+
 CFLAGS= -O -I.
 
 .c.o:
@@ -31,7 +33,7 @@ CFLAGS= -O -I.
 	-ld -x -r $*.o
 	mv a.out $*.o
 
-all: rpclib portmap rpcinfo
+all: rpclib portmap rpcinfo ${MAN}
 
 portmap: portmap.o
 	cc $(CFLAGS) portmap.o rpclib -o portmap
@@ -46,17 +48,23 @@ rpclib rpclib_p: ${OBJ}
 	@ar cru rpclib ${OBJ}
 	ranlib rpclib
 
+rpcinfo.0: doc/rpcinfo.8
+	nroff -man -h doc/rpcinfo.8 > rpcinfo.0
+
+portmap.0: doc/portmap.8c
+	nroff -man -h doc/portmap.8c > portmap.0
+
 install: all
 	-mkdir ${DESTDIR}/usr/include/rpc && \
 		chmod 755 ${DESTDIR}/usr/include/rpc
 	-for i in *.h; do \
-		(install -c -m 644 $$i ${DESTDIR}/usr/include/rpc) done
-	install rpclib ${DESTDIR}/usr/new/lib/librpc.a
-	ranlib ${DESTDIR}/usr/new/lib/librpc.a
-	install -s portmap ${DESTDIR}/usr/new/portmap
-	install -s rpcinfo ${DESTDIR}/usr/new/rpcinfo
-	install -c -m 444 doc/rpcinfo.8 ${DESTDIR}/usr/man/mann/rpcinfo.n
-	install -c -m 444 doc/portmap.8c ${DESTDIR}/usr/man/mann/portmap.n
+		(install -c -m 444 $$i ${DESTDIR}/usr/include/rpc) done
+	install rpclib ${DESTDIR}/usr/lib/librpc.a
+	ranlib ${DESTDIR}/usr/lib/librpc.a
+	install -s portmap ${DESTDIR}/usr/sbin/portmap
+	install -c -o bin -g bin -m 444 portmap.0 ${DESTDIR}/usr/share/man/cat8
+#	install -s rpcinfo ${DESTDIR}/usr/sbin/rpcinfo
+#	install -c -o bin -g bin -m 444 rpcinfo.0 ${DESTDIR}/usr/share/man/cat8
 
 tags: $(SRC) $(KSRC) $(INC)
 	ctags -tw $(SRC) $(KSRC) $(INC)
