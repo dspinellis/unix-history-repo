@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)at.c	4.8	(Berkeley)	%G%";
+static char sccsid[] = "@(#)at.c	4.9	(Berkeley)	%G%";
 #endif not lint
 
 /*
@@ -18,6 +18,7 @@ static char sccsid[] = "@(#)at.c	4.8	(Berkeley)	%G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
+#include <pwd.h>
 #include <sys/time.h>
 #include <sys/file.h>
 
@@ -134,6 +135,7 @@ char **argv;
 	char line[100];			/* a line from input file */
 	char pwbuf[100];		/* the current working directory */
 	char *jobfile = "stdin";	/* file containing job to be run */
+	char *getname();		/* get the login name of a user */
 	FILE *pwfil;			/* "pwd" process (used to get the
 					   current working directory */
 
@@ -325,6 +327,7 @@ char **argv;
 	 * This info is used by the other "at"-oriented programs (atq,
 	 * atrm, atrun).
 	 */
+	fprintf(spoolfile, "# owner: %s\n",getname(getuid()));
 	fprintf(spoolfile, "# jobname: %s\n",jobfile);
 	fprintf(spoolfile, "# shell: %s\n",(shell == 1) ? "csh" : "sh");
 	fprintf(spoolfile, "# notify by mail: %s\n",(mailflag) ? "yes" : "no");
@@ -370,12 +373,11 @@ char **argv;
 	}
 
 	/*
-	 * Close all files and change the mode and the owner of the spoolfile.
+	 * Close all files and change the mode of the spoolfile.
 	 */
 	fclose(inputfile);
 	fclose(spoolfile);
-	chmod(atfile,0644);
-	chown(atfile,getuid(),getgid());
+	chmod(atfile,0444);
 
 	exit(0);
 
@@ -818,6 +820,26 @@ struct times *attime;
 	attime->min = val%100;
 }
 
+/*
+ * Get the full login name of a person using his/her user id.
+ */
+char *
+getname(uid)
+int uid;
+{
+	struct passwd *pwdinfo;			/* password info structure */
+	
+
+	if ((pwdinfo = getpwuid(uid)) == 0) {
+		perror(uid);
+		exit(1);
+	}
+	return(pwdinfo->pw_name);
+}
+
+/*
+ * Do general cleanup.
+ */
 cleanup()
 {
 	fclose(inputfile);
@@ -827,6 +849,9 @@ cleanup()
 	exit(1);
 }
 
+/*
+ * Print usage info and exit.
+ */
 usage()
 {
 	fprintf(stderr,"usage: at [-c] [-s] [-m] ");
