@@ -5,8 +5,8 @@ SUBDIR=	ar basename biff cal calendar checknr chpass cksum cmp col \
 	colcrt colrm column comm compress cpio crontab ctags cut dirname \
 	du elvis elvisrecover env error expand false file find finger fmt \
 	fold fpr from fsplit fstat ftp gprof groups head hexdump id indent \
-	join ktrace last lastcomm ld leave lex locate lock logger \
-	login logname look lorder m4 machine mail make man mesg mkdep mkfifo \
+	join ktrace last lastcomm leave lex locate lock logger login \
+	logname look lorder m4 machine mail make man mesg mkdep mkfifo \
 	mkstr more msgs mt netstat nfsstat nice nm nohup pagesize \
 	passwd paste printenv printf quota ranlib rdist ref renice rev rlogin \
 	rsh ruptime rwho sccs script sed shar showmount size soelim split \
