@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -39,7 +39,7 @@ int xdr_dir();
 char	*index();
 #endif
 int	vflag, all, errs;
-char	*rindex(), *getmntinfo();
+char	*rindex(), *getmntname();
 #define MNTON	1
 #define MNTFROM	2
 
@@ -154,21 +154,21 @@ umountfs(name)
 #endif
 
 	if (stat(name, &stbuf) < 0) {
-		if ((mntpt = getmntinfo(name, MNTON)) == 0)
+		if ((mntpt = getmntname(name, MNTON)) == 0)
 			return (0);
 	} else if ((stbuf.st_mode & S_IFMT) == S_IFBLK) {
-		if ((mntpt = getmntinfo(name, MNTON)) == 0)
+		if ((mntpt = getmntname(name, MNTON)) == 0)
 			return (0);
 	} else if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
 		mntpt = name;
-		if ((name = getmntinfo(mntpt, MNTFROM)) == 0)
+		if ((name = getmntname(mntpt, MNTFROM)) == 0)
 			return (0);
 	} else {
 		fprintf(stderr, "%s: not a directory or special device\n",
 			name);
 		return (0);
 	}
-	if (umount(mntpt, MNT_NOFORCE) < 0) {
+	if (unmount(mntpt, MNT_NOFORCE) < 0) {
 		perror(mntpt);
 		return (0);
 	}
@@ -209,32 +209,17 @@ umountfs(name)
 }
 
 char *
-getmntinfo(name, what)
+getmntname(name, what)
 	char *name;
 	int what;
 {
 	int mntsize, i;
 	struct statfs *mntbuf;
 
-	if ((mntsize = getfsstat((struct statfs *)0, 0)) < 0) {
+	if ((mntsize = getmntinfo(&mntbuf)) == 0) {
 		perror("umount");
 		return (0);
 	}
-	mntbuf = 0;
-	do {
-		if (mntbuf)
-			free((char *)mntbuf);
-		i = (mntsize + 1) * sizeof(struct statfs);
-		if ((mntbuf = (struct statfs *)malloc((unsigned)i)) == 0) {
-			fprintf(stderr,
-				"no space for umount table buffer\n");
-			return (0);
-		}
-		if ((mntsize = getfsstat(mntbuf, i)) < 0) {
-			perror("umount");
-			return (0);
-		}
-	} while (i == mntsize * sizeof(struct statfs));
 	for (i = 0; i < mntsize; i++) {
 		if (what == MNTON && !strcmp(mntbuf[i].f_mntfromname, name))
 			return (mntbuf[i].f_mntonname);
