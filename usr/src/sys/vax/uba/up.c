@@ -1,4 +1,4 @@
-/*	up.c	4.56	82/07/15	*/
+/*	up.c	4.57	82/08/13	*/
 
 #include "up.h"
 #if NSC > 0
@@ -26,6 +26,7 @@
 #include "../h/ubavar.h"
 #include "../h/ubareg.h"
 #include "../h/cmap.h"
+#include "../h/uio.h"
 
 #include "../h/upreg.h"
 
@@ -656,15 +657,16 @@ doattn:
 		upaddr->upcs1 = UP_IE;
 }
 
-upread(dev)
+upread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NUP)
 		u.u_error = ENXIO;
 	else
-		physio(upstrategy, &rupbuf[unit], dev, B_READ, minphys);
+		physio(upstrategy, &rupbuf[unit], dev, B_READ, minphys, uio);
 }
 
 upwrite(dev)
@@ -675,7 +677,7 @@ upwrite(dev)
 	if (unit >= NUP)
 		u.u_error = ENXIO;
 	else
-		physio(upstrategy, &rupbuf[unit], dev, B_WRITE, minphys);
+		physio(upstrategy, &rupbuf[unit], dev, B_WRITE, minphys, 0);
 }
 
 /*

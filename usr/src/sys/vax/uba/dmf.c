@@ -1,4 +1,4 @@
-/*	dmf.c	4.5	82/08/01	*/
+/*	dmf.c	4.6	82/08/13	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -30,6 +30,7 @@
 #include "../h/bk.h"
 #include "../h/clist.h"
 #include "../h/file.h"
+#include "../h/uio.h"
 
 /*
  * Definition of the driver for the auto-configuration program.
@@ -298,13 +299,14 @@ dmfclose(dev, flag)
 	ttyclose(tp);
 }
 
-dmfread(dev)
+dmfread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register struct tty *tp;
 
 	tp = &dmf_tty[minor(dev)];
-	(*linesw[tp->t_line].l_read)(tp);
+	return ((*linesw[tp->t_line].l_read)(tp, uio));
 }
 
 dmfwrite(dev)

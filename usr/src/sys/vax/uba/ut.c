@@ -1,4 +1,4 @@
-/*	ut.c	4.15	82/08/01	*/
+/*	ut.c	4.16	82/08/13	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -25,6 +25,7 @@
 #include "../h/mtio.h"
 #include "../h/cmap.h"
 #include "../h/cpu.h"
+#include "../h/uio.h"
 
 #include "../h/utreg.h"
 
@@ -646,32 +647,36 @@ uttimer(dev)
 /*
  * Raw interface for a read
  */
-utread(dev)
+utread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
-	utphys(dev);
+
+	u.u_error = utphys(dev, uio);
 	if (u.u_error)
 		return;
-	physio(utstrategy, &rutbuf[UTUNIT(dev)], dev, B_READ, minphys);
+	physio(utstrategy, &rutbuf[UTUNIT(dev)], dev, B_READ, minphys, uio);
 }
 
 /*
  * Raw interface for a write
  */
 utwrite(dev)
+	dev_t dev;
 {
-	utphys(dev);
+	utphys(dev, 0);
 	if (u.u_error)
 		return;
-	physio(utstrategy, &rutbuf[UTUNIT(dev)], dev, B_WRITE, minphys);
+	physio(utstrategy, &rutbuf[UTUNIT(dev)], dev, B_WRITE, minphys, 0);
 }
 
 /*
  * Check for valid device number dev and update our notion
  * of where we are on the tape
  */
-utphys(dev)
+utphys(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register int tjunit = TJUNIT(dev);
 	register struct tj_softc *sc;
@@ -682,7 +687,10 @@ utphys(dev)
 		return;
 	}
 	sc = &tj_softc[tjunit];
-	sc->sc_blkno = bdbtofsb(u.u_offset>>9);
+	if (uio)
+		sc->sc_blkno = bdbtofsb(uio->uio_offset>>9);
+	else
+		sc->sc_blkno = bdbtofsb(u.u_offset>>9);
 	sc->sc_nxrec = sc->sc_blkno+1;
 }
 

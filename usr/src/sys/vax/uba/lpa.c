@@ -1,4 +1,4 @@
-/*	lpa.c	4.3	82/08/01	*/
+/*	lpa.c	4.4	82/08/13	*/
 #include "lpa.h"
 #if NLPA > 0
 
@@ -9,6 +9,7 @@
 #include "../h/ubavar.h"
 #include "../h/proc.h"
 #include "../h/ioctl.h"
+#include "../h/uio.h"
 
 /*
  *	LPA driver for 4.1BSD
@@ -479,8 +480,9 @@ TRACER("IOCTL OUT\n");
  *	read
  *		read 1 character only - the next available buffer number
  */
-lparead(dev)
+lparead(dev, uio)
 dev_t dev;
+struct uio *uio;
 {
 	register int unit = LPAUNIT(dev);
 	register struct lpa_softc *sc = &lpa_softc[unit];
@@ -516,7 +518,7 @@ TRACER("SLEEP\n");
 		(void) spl0();
 	}
 TRACERN("READ %d\n", sc->sc_ubufn);
-	iomove(&sc->sc_ubufn, 1, B_READ);
+	uiomove(&sc->sc_ubufn, 1, B_READ, uio);
 }
 
 /*

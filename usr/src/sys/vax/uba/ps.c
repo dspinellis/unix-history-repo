@@ -1,4 +1,4 @@
-/*	ps.c	4.3	82/08/01	*/
+/*	ps.c	4.4	82/08/13	*/
 
 /*
  * Evans and Sutherland Picture System 2 driver
@@ -26,6 +26,7 @@
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/psreg.h"
+#include "../h/uio.h"
 
 int	psprobe(), psattach(), psintr();
 struct	uba_device *psdinfo[NPS];
@@ -161,14 +162,16 @@ psclose(dev)
 }
 
 /*ARGSUSED*/
-psread(dev)
+psread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 }
 
 /*ARGSUSED*/
-pswrite(dev)
+pswrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 }
 

@@ -1,4 +1,4 @@
-/*	tty_bk.c	4.2	82/08/01	*/
+/*	tty_bk.c	4.3	82/08/13	*/
 
 #include "bk.h"
 
@@ -13,6 +13,7 @@
 #include "../h/file.h"
 #include "../h/conf.h"
 #include "../h/buf.h"
+#include "../h/uio.h"
 
 /*
  * Line discipline for Berkeley network.
@@ -84,8 +85,9 @@ register struct tty *tp;
  * is waiting.  Our clearing tp->t_rec here allows further input
  * to accumulate.
  */
-bkread(tp)
-register struct tty *tp;
+bkread(tp, uio)
+	register struct tty *tp;
+	struct uio *uio;
 {
 	register int i;
 	register s;
@@ -98,14 +100,7 @@ register struct tty *tp;
 	splx(s);
 	if (tp->t_line != NETLDISC)
 		return (-1);
-	i = MIN(tp->t_inbuf, (int)u.u_count);
-	if (copyout(tp->t_bufp->b_un.b_addr, u.u_base, (unsigned)i)) {
-		u.u_error = EFAULT;
-		return (-1);
-	}
-	u.u_count -= i;
-	u.u_base += i;
-	u.u_offset += i;
+	u.u_error = copyuout(uio, tp->t_bufp->b_un.b_addr, tp->t_inbuf);
 	tp->t_cp = (char *)tp->t_bufp->b_un.b_addr;
 	tp->t_inbuf = 0;
 	tp->t_rec = 0;
