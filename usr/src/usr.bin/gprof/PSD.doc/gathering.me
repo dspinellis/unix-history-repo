@@ -1,4 +1,4 @@
-\"	@(#)gathering.me	1.4 %G%
+\"	@(#)gathering.me	1.5 %G%
 .sh 1 "Gathering Profile Data"
 .pp
 Routine calls or statement executions can be measured by having a
@@ -23,6 +23,9 @@ change the compiler or recompile the program.
 We have exploited this approach;
 our compilers for C, Fortran77, and Pascal can insert calls to a
 monitoring routine in the prologue for each routine.
+Use of the monitoring routine requires no planning on part of a
+programmer other than to request that augmented routine
+prologues be produced during compilation.
 .pp
 We are interested in gathering three pieces of information during
 program execution: call counts and execution times for 
