@@ -1,4 +1,4 @@
-/*	uu.c	4.5	83/06/08	*/
+/*	uu.c	4.6	83/06/11	*/
 
 #include "uu.h"
 #if NUU > 0
@@ -59,16 +59,14 @@ struct uu_softc {
 	int	tu_cerrs;	/* count of checksum errors */
 	int	tu_herrs;	/* count of hard errors */
 	char    tu_dopen[2];	/* drive is open */
-};
-
-struct uu_softc uu_softc[NUU];
+} uu_softc[NUU];
 
 #if defined(VAX750) || defined(VAX730)
 extern char *tustates[];
 #else
 char *tustates[TUS_NSTATES] = {
 	"INIT1", "INIT2", "IDLE", "SENDH", "SENDD", "SENDC", "SENDR",
-	"SENDW", "GETH", "GETD", "GETC", "GET", "WAIT"
+	"SENDW", "GETH", "GETD", "GETC", "GET", "WAIT", "RCVERR", "CHKERR"
 };
 #endif
 
@@ -116,7 +114,7 @@ uuopen(dev, flag)
 	int flag;	
 {
 	register struct uba_device *ui;
-	register struct tu *uuc;
+	register struct uu_softc *uuc;
 	register struct uudevice *uuaddr;
 	int ctlr, unit = UNIT(dev), s;
 
@@ -132,6 +130,13 @@ uuopen(dev, flag)
 	uuc->tu_dopen[unit&UMASK]++;
 	uuaddr = (struct uudevice *)ui->ui_addr;
 	s = splx(UUIPL);
+	/*
+	 * If the other device on this controller
+	 * is already active, just return
+	 */
+	if (uuc->tu_dopen[0] && uuc->tu_dopen[1])
+		return;
+
 	/*
 	 * If the unit already initialized,
 	 * just enable interrupts and return.
@@ -166,7 +171,7 @@ uuclose(dev, flag)
 	dev_t dev;
 	int flag;
 {
-	register struct tu *uuc;
+	register struct uu_softc *uuc;
 	int unit = UNIT(dev);
 	int ctlr = unit/NDPC;
 
@@ -187,12 +192,11 @@ uuclose(dev, flag)
 uureset(ctlr)
 	int ctlr;
 {
-	register struct tu *uuc = &uu_softc[ctlr];
+	register struct uu_softc *uuc = &uu_softc[ctlr];
 	register struct packet *cmd = &uucmd[ctlr];
 	struct uba_device *ui = uudinfo[ctlr];
 	register struct uudevice *uuaddr = (struct uudevice *)ui->ui_addr;
 
-	printf ("uureset\n");
 	uitab[ctlr].b_active++;
 	uuc->tu_state = TUS_INIT1;
 	uuc->tu_wbptr = uunull;
@@ -253,7 +257,7 @@ uustart(ui)
 	register struct uba_device *ui;
 {
 	register struct buf *bp;
-	register struct tu *uuc;
+	register struct uu_softc *uuc;
 	struct packet *cmd;
 	int ctlr = ui->ui_unit;
 
@@ -289,13 +293,18 @@ uustart(ui)
 }
 
 /*
- * TU58 receiver interrupt
+ * TU58 receiver interrupt,
+ * handles whatever condition the
+ * pseudo DMA routine in locore is 
+ * unable to handle, or, if UUDMA is
+ * undefined, handle all receiver interrupt
+ * processing
  */
 uurintr(ctlr)
 	int ctlr;
 {
 	struct uba_device *ui = uudinfo[ctlr];
-	register struct tu *uuc = &uu_softc[ctlr];
+	register struct uu_softc *uuc = &uu_softc[ctlr];
 	register struct uudevice *uuaddr = (struct uudevice *)ui->ui_addr;
 	register struct buf *uutab = &uitab[ctlr];
 	struct packet *data, *cmd;
@@ -304,35 +313,38 @@ uurintr(ctlr)
 
 	c = uuaddr->rdb;
 	data = &uudata[ctlr];
-	if (c & UURDB_ERROR) {
+	cmd = &uucmd[ctlr];
+#if !defined(UUDMA)
+	if (c & UURDB_ERROR)
+		uuc->tu_state = TUS_RCVERR;
+	else {
+		if (uuc->tu_rcnt) {
+			*uuc->tu_rbptr++ = c;
+			if (--uuc->tu_rcnt)
+				return;
+		}
+	}
+#endif
+
+	/*
+	 * Switch on the tu_state of the transfer.
+	 */
+	switch(uuc->tu_state) {
+
+	/*
+	 * A data error occured in uudma
+	 * (either overrun or break)
+	 */
+	case TUS_RCVERR:
 		if (c & UURDB_ORUN) 
 			printf("uu(%d): data overrun, bytes left: %d",
 			  ui->ui_unit, 
 			  uuc->tu_count + uuc->tu_rcnt - data->pk_mcount);
 		else
 			printf("uu(%d): break received", ui->ui_unit);
-		printf(", device reset, state="); 
-		printstate(uuc->tu_state);
-		uureset(ctlr);
-		printf("\n");
-		timeout(uustart, (caddr_t)ui, hz/2);	/* start uustart when */
-							/* reset is done */
-		return;
-	}
-top:
-	c &= UUDB_DMASK;
-	if (uuc->tu_rcnt) {		/* still waiting for data? */
-		*uuc->tu_rbptr++ = c;	/* yup, put it there */
-		if (--uuc->tu_rcnt)	/* decrement count, any left? */
-			return;		/* get some more */
-	}
-	cmd = &uucmd[ctlr];
-
-	/*
-	 * We got all the data we were expecting for now,
-	 * switch on the tu_state of the transfer.
-	 */
-	switch(uuc->tu_state) {
+		printf(", transfer restarted\n"); 
+		uu_restart(ctlr, ui);	
+		break;
 
 	/*
 	 * If we get an unexpected "continue",
@@ -368,10 +380,11 @@ top:
 		case TUF_CMD:   /* sending us an END packet...error */
 			uuc->tu_state = TUS_GET;
 			uuc->tu_rbptr = (u_char *)data;
-			uuc->tu_rcnt = sizeof (*data);
+			uuc->tu_rcnt = sizeof (*data) - 1;
 			uuc->tu_flag = 1;
 			uuaddr->tcs = 0;
-			goto top;
+			*uuc->tu_rbptr++ = c & UUDB_DMASK;
+			break;
 
 		case TUF_INITF:
 			uureset(ctlr);
@@ -386,18 +399,16 @@ top:
 	case TUS_SENDW:
 		if (c != TUF_CONT && c != TUF_INITF)
 			goto bad;
-		uureset(ctlr);
+		uu_restart(ctlr, ui);
 		break;
 
 	/*
 	 * Got header, now get data; amount to
 	 * fetch is included in packet.
+	 * (data packets are handled entirely
+	 * in uudma)
 	 */
 	case TUS_GETH:
-		if (data->pk_flag == TUF_DATA) {
-			uu_getblk((u_char *)uuc->tu_addr, data, uuaddr);
-			goto getc;
-		} 
 		uuc->tu_rcnt = data->pk_mcount;
 		uuc->tu_state = TUS_GETD;
 		break;
@@ -411,17 +422,16 @@ top:
 		uuc->tu_state = TUS_GETC;
 		break;
 
-	case TUS_GET:
 	case TUS_GETC:
-getc:
 		/* got entire packet */
-#ifdef notdef
 		if (data->pk_chksum !=
 		    tuchk(*((short *)data), (u_short *)
-		     (data->pk_flag == TUF_DATA ? uuc->tu_addr : &data->pk_op),
+		     (data->pk_flag == TUF_DATA ?
+		     (u_short *)  uuc->tu_addr : (u_short *)&data->pk_op),
 		     (int)data->pk_mcount))
+	case TUS_CHKERR:
 			uuc->tu_cerrs++;
-#endif
+	case TUS_GET:
 		if (data->pk_flag == TUF_DATA) {
 			/* data packet, advance to next */
 			uuc->tu_addr += data->pk_mcount;
@@ -442,10 +452,11 @@ getc:
 			}
 			unit = UNIT(minor(bp->b_dev));
 			if (data->pk_mod > 1) {        /* hard error */
+				printf("uu%d: hard error bn%d,", unit, 
+								bp->b_blkno);
+				printf(" pk_mod %o\n", data->pk_mod&0xff);
 				bp->b_flags |= B_ERROR;
 				uuc->tu_herrs++;
-				harderr(bp, "uu");
-				printf(" pk_mod %o\n", data->pk_mod&0xff);
 			} else if (data->pk_mod != 0)	/* soft error */
 				uuc->tu_serrs++;
 			uutab->b_active = NULL;
@@ -454,13 +465,13 @@ getc:
 			if ((bp->b_flags&B_READ) == 0)
 				tu_vee(&pcnt[unit]);
 			iodone(bp);
-			printf(".");
 			uustart(ui);
 		} else {
 			printf("neither data nor end: %o %o\n",
 			    data->pk_flag&0xff, data->pk_op&0xff);
 			uuaddr->rcs = 0;		/* flush the rest */
 			uuc->tu_state = TUS_INIT1;
+			uu_restart(ctlr, ui);
 		}
 		break;
 
@@ -488,7 +499,7 @@ bad:
 			printf("uu%d receive state error, state=", 
 				unit);
 			printstate(uuc->tu_state);
-			printf(", byte=%x\n", c);
+			printf(", byte=%x\n", c & 0xff);
 #ifdef notdef
 			uuc->tu_state = TUS_INIT1;
 #endif
@@ -497,33 +508,6 @@ bad:
 	}
 }
 
-/*
- * Simulate DMA input from the TU58,
- * usually 128 bytes plus the 2 byte checksum
- * will be read, leaving the CPU `dead' for 
- * approximately 0.135 seconds @ 9600 baud
- */
-uu_getblk(buffer, data, uuaddr)
-	register u_char *buffer;
-	register struct uudevice *uuaddr;
-	struct packet *data;
-{
-	int s;
-	int count = (unsigned) data->pk_mcount + 2;
-
-	s = spl5();		/* make sure we don't get interrupted by */
-				/* disk i/o */
-	uuaddr->rcs = 0;	/* disable interrupts temporarily */
-	while (count--) {
-		while ((uuaddr->rcs & UUCS_READY) == 0)
-			;	
-		*buffer++ = uuaddr->rdb & UUDB_DMASK;
-		if (count == 2)
-			buffer = (u_char *)&data->pk_chksum;
-	}
-	uuaddr->rcs = UUCS_INTR;
-	(void) splx(s);
-}
 
 /*
  * TU58 transmitter interrupt
@@ -531,7 +515,7 @@ uu_getblk(buffer, data, uuaddr)
 uuxintr(ctlr)
 	int ctlr;
 {
-	register struct tu *uuc = &uu_softc[ctlr];
+	register struct uu_softc *uuc = &uu_softc[ctlr];
 	register struct uudevice *uuaddr;
 	register struct packet *data;
 	struct uba_device *ui = uudinfo[ctlr];
@@ -654,7 +638,7 @@ top:
 
 uuwatch()
 {
-	register struct tu *uuc;
+	register struct uu_softc *uuc;
 	register struct uudevice *uuaddr;
 	struct uba_device *ui;
 	struct buf *bp, *uutab;
@@ -790,3 +774,10 @@ uuioctl(dev, cmd, data, flag)
 
 #endif
 
+uu_restart(ctlr, ui)
+	int ctlr;
+	struct uba_device *ui;
+{
+	uureset(ctlr);
+	timeout(uustart, (caddr_t)ui, hz * 3);
+}
