@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include	"mille.h"
@@ -39,7 +39,7 @@ char	*str;
 	stdscr = Score;
 	mvprintw(ERR_Y, ERR_X, str, arg);
 	clrtoeol();
-	putchar('');
+	putchar('\07');
 	refresh();
 	stdscr = Board;
 	return FALSE;
@@ -68,7 +68,7 @@ getcard()
 			c = 0;
 			break;
 		  default:
-			putchar('');
+			putchar('\07');
 			addch('\b');
 			if (!isprint(c))
 				addch('\b');
@@ -87,7 +87,7 @@ getcard()
 					goto cont;
 				}
 				else
-					write(0, "", 1);
+					write(0, "\07", 1);
 			return c;
 		}
 cont:		;
@@ -178,7 +178,7 @@ register int	promptno; {
 		  default:
 			addstr(unctrl(c));
 			refresh();
-			putchar('');
+			putchar('\07');
 			break;
 		}
 	}

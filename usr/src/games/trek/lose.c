@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lose.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)lose.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"trek.h"
@@ -34,7 +34,7 @@ char	*Losemsg[] =
 	"You have been caught in a supernova",
 	"You just suffocated in outer space",
 	"You could not be rematerialized",
-	"\n\032\014 *** Ship's hull has imploded ***",
+	"\n\032\014 ***\07 Ship's hull has imploded\07 ***",
 	"You have burned up in a star",
 	"Well, you destroyed yourself, but it didn't do any good",
 	"You have been captured by Klingons and mercilessly tortured",
