@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.77 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.78 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.77 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.78 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -186,7 +186,7 @@ smtp(e)
 
 		/* read the input line */
 		SmtpPhase = "server cmd read";
-		setproctitle("server %s cmd read", CurHostName);
+		setproctitle("server %s cmd read", CurSmtpClient);
 		p = sfgets(inp, sizeof inp, InChannel, TimeOuts.to_nextcommand,
 				SmtpPhase);
 
@@ -310,7 +310,7 @@ smtp(e)
 			{
 				auth_warning(e,
 					"Host %s didn't use HELO protocol",
-					peerhostname);
+					CurSmtpClient);
 			}
 #ifdef PICKY_HELO_CHECK
 			if (strcasecmp(sendinghost, peerhostname) != 0 &&
@@ -318,7 +318,7 @@ smtp(e)
 			     strcasecmp(sendinghost, MyHostName) != 0))
 			{
 				auth_warning(e, "Host %s claimed to be %s",
-					peerhostname, sendinghost);
+					CurSmtpClient, sendinghost);
 			}
 #endif
 
@@ -754,7 +754,7 @@ doquit:
 			if (LogLevel > 0)
 				syslog(LOG_CRIT,
 				    "\"%s\" command from %s (%s)",
-				    c->cmdname, peerhostname,
+				    c->cmdname, CurSmtpClient,
 				    anynet_ntoa(&RealHostAddr));
 # endif
 			/* FALL THROUGH */
@@ -1153,7 +1153,7 @@ runinchild(label, e)
 			auto int st;
 
 			/* parent -- wait for child to complete */
-			setproctitle("server %s child wait", CurHostName);
+			setproctitle("server %s child wait", CurSmtpClient);
 			st = waitfor(childpid);
 			if (st == -1)
 				syserr("451 %s: lost child", label);
