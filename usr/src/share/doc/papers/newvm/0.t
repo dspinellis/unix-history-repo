@@ -2,8 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	1.1 (Berkeley) %G%
+.\"	@(#)0.t	1.2 (Berkeley) %G%
 .\"
+.rm CM
 .TL
 A New Virtual Memory Implementation for Berkeley
 .UX
@@ -34,7 +35,7 @@ into their address space, to map device memory into their address
 space, and to share memory with other processes. The shared address
 space may either be obtained by mapping a file into (possibly
 different) parts of their address space, or by arranging to share
-`anonymous memory' (that is memory that is zero fill on demand, and
+``anonymous memory'' (that is memory that is zero fill on demand, and
 whose contents are lost when the last process unmaps the memory) with
 another process as is done in System V.
 .PP
