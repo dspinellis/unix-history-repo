@@ -1,10 +1,10 @@
-#	@(#)keywords	5.4 (Berkeley) %G%
+#	@(#)keywords	5.5 (Berkeley) %G%
 
 add
 change
 cloning
 delete
-destination
+dst
 expire
 flush
 gateway
@@ -14,7 +14,8 @@ host
 hopcount
 iface
 interface
-ifaddr
+ifa
+ifp
 inet
 iso
 link
