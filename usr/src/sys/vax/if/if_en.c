@@ -1,4 +1,4 @@
-/*	if_en.c	4.35	82/03/03	*/
+/*	if_en.c	4.36	82/03/03	*/
 
 #include "en.h"
 
@@ -26,6 +26,7 @@
 #include "../net/if_uba.h"
 #include "../net/ip.h"
 #include "../net/ip_var.h"
+#include "../net/pup.h"
 
 #define	ENMTU	(1024+512)
 
@@ -296,6 +297,9 @@ COUNT(ENCOLLIDE);
 }
 
 int	enprintierrors;
+struct	sockaddr_pup pupsrc = { AF_PUP };
+struct	sockaddr_pup pupdst = { AF_PUP };
+struct	sockproto pupproto = { PF_PUP };
 /*
  * Ethernet interface receiver interrupt.
  * If input error just drop packet.
@@ -358,11 +362,16 @@ COUNT(ENRINT);
 		len = htons((u_short)endataaddr(en, off ? off+2 : 0, struct ip *)->ip_len);
 		if (off)
 			len += 2;
-		setipintr();
-		inq = &ipintrq;
 		break;
 #endif
-
+#ifdef PUP
+	case ENPUP_PUPTYPE:
+		len = endataaddr(en, off, struct pup_header *)->pup_length;
+		if (off)
+			len -= 2;
+		break;
+#endif
+		
 	default:
 		printf("en%d: unknown pkt type 0x%x\n", unit, en->en_type);
 		goto setup;
@@ -382,6 +391,24 @@ COUNT(ENRINT);
 	if (off) {
 		m->m_off += 2;
 		m->m_len -= 2;
+	}
+	switch (en->en_type) {
+
+#ifdef INET
+	case ENPUP_IPTYPE:
+		setipintr();
+		inq = &ipintrq;
+		break;
+#endif
+	case ENPUP_PUPTYPE: {
+		struct pup_header *pup = mtod(m, struct pup_header *);
+
+		pupproto.sp_protocol = pup->pup_type;
+		pupdst.spup_addr = pup->pup_dport;
+		pupsrc.spup_addr = pup->pup_sport;
+		raw_input(m, &pupproto, &pupdst, &pupsrc);
+		goto setup;
+		}
 	}
 	IF_ENQUEUE(inq, m);
 
@@ -434,6 +461,24 @@ COUNT(ENOUTPUT);
 		}
 #endif
 		type = ENPUP_IPTYPE;
+		off = 0;
+		goto gottype;
+		}
+#endif
+#ifdef PUP
+	case PF_PUP: {
+		register struct pup_header *pup = mtod(m, struct pup_header *);
+
+		dest = pup->pup_dhost;
+		off = pup->pup_length - m->m_len;
+		if (off > 0 && (off & 0x1ff) == 0 && m->m_off >= MMINOFF + 2) {
+			type = ENPUP_TRAIL + (off>>9);
+			m->m_off -= 2;
+			m->m_len += 2;
+			*mtod(m, u_short *) = ENPUP_PUPTYPE;
+			goto gottrailertype;
+		}
+		type = ENPUP_PUPTYPE;
 		off = 0;
 		goto gottype;
 		}
