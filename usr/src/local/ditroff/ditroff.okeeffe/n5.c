@@ -1,22 +1,16 @@
 #ifndef lint
-static char sccsid[] = "@(#)n5.c	1.1 (CWI) 85/07/17";
+static char sccsid[] = "@(#)n5.c	2.1 (CWI) 85/07/18";
 #endif lint
-
 #include "tdef.h"
 #include <sgtty.h>
-extern
-#include "d.h"
-extern
-#include "v.h"
-#include "s.h"
+#include "ext.h"
 
 /*
-troff5.c
+ * troff5.c
+ * 
+ * misc processing requests
+ */
 
-misc processing requests
-*/
-
-#include "ext.h"
 int	iflist[NIF];
 int	ifx;
 
@@ -73,9 +67,6 @@ casenf()
 {
 	tbreak();
 	fi = 0;
-	/* can't do while oline is only LNSIZE
-	lnsize = LNSIZE + WDSIZE;
-*/
 }
 
 
@@ -100,7 +91,7 @@ int	c;
 		ch = i;
 		return(c);
 	} else 
-		return(i & BMASK);
+		return(i & BYTEMASK);
 }
 
 
@@ -280,8 +271,8 @@ casepl()
 		pl = 11 * INCH; /*11in*/
 	else 
 		pl = i;
-	if (v.nl > pl)
-		v.nl = pl;
+	if (numtab[NL].val > pl)
+		numtab[NL].val = pl;
 }
 
 
@@ -305,7 +296,7 @@ casewh()
 			break;
 	if (k == NTRAP) {
 		flusho();
-		fprintf(stderr, "troff: cannot plant trap.\n");
+		errprint("cannot plant trap.");
 		return;
 	}
 	mlist[k] = j;
@@ -353,7 +344,7 @@ casepn()
 
 	skip();
 	noscale++;
-	i = max(inumb(&v.pn), 0);
+	i = max(inumb(&numtab[PN].val), 0);
 	noscale = 0;
 	if (!nonumb) {
 		npn = i;
@@ -371,7 +362,7 @@ casebp()
 		return;
 	savframe = frame;
 	skip();
-	if ((i = inumb(&v.pn)) < 0)
+	if ((i = inumb(&numtab[PN].val)) < 0)
 		i = 0;
 	tbreak();
 	if (!nonumb) {
@@ -383,25 +374,27 @@ casebp()
 }
 
 
-casetm(x) 
-int	x;
+casetm(ab) 
+	int ab;
 {
 	register i;
 	char	tmbuf[NTM];
 
 	lgf++;
 	copyf++;
-	if (skip() && x)
-		fprintf(stderr, "troff: user Abort.");
+	skip();
 	for (i = 0; i < NTM - 2; )
 		if ((tmbuf[i++] = getch()) == '\n')
 			break;
 	if (i == NTM - 2)
 		tmbuf[i++] = '\n';
 	tmbuf[i] = 0;
+	if (ab)	/* truncate output */
+		obufp = obuf;	/* should be a function in n2.c */
 	flusho();
-	fprintf(stderr, "%s", tmbuf);
+	fdprintf(stderr, "%s", tmbuf);
 	copyf--;
+	lgf--;
 }
 
 
@@ -429,7 +422,7 @@ int	a;
 	if (dip != d)
 		i = dip->dnl; 
 	else 
-		i = v.nl;
+		i = numtab[NL].val;
 	if ((i + j) < 0)
 		j = -i;
 	lss = j;
@@ -446,7 +439,7 @@ casert()
 	if (dip != d)
 		p = &dip->dnl; 
 	else 
-		p = &v.nl;
+		p = &numtab[NL].val;
 	a = vnumb(p);
 	if (nonumb)
 		a = dip->mkline;
@@ -475,7 +468,6 @@ casefl()
 caseev()
 {
 	register nxev;
-	extern int	block;
 
 	if (skip()) {
 e0:
@@ -492,7 +484,7 @@ e0:
 	flushi();
 	if ((nxev >= NEV) || (nxev < 0) || (evi >= EVLSZ)) {
 		flusho();
-		fprintf(stderr, "troff: cannot do ev.\n");
+		errprint("cannot do ev.");
 		if (error)
 			done2(040);
 		else 
@@ -503,10 +495,10 @@ e0:
 e1:
 	if (ev == nxev)
 		return;
-	lseek(ibf, (long)(ev * EVS), 0);
-	write(ibf, (char *) & block, EVS);
-	lseek(ibf, (long)(nxev * EVS), 0);
-	read(ibf, (char *) & block, EVS);
+	lseek(ibf, ev * (long)sizeof(env), 0);
+	write(ibf, (char *) & env, sizeof(env));
+	lseek(ibf, nxev * (long)sizeof(env), 0);
+	read(ibf, (char *) & env, sizeof(env));
 	ev = nxev;
 }
 
@@ -524,7 +516,7 @@ caseel()
 caseie()
 {
 	if (ifx >= NIF) {
-		fprintf(stderr, "troff: if-else overflow.\n");
+		errprint("if-else overflow.");
 		ifx = 0;
 		edone(040);
 	}
@@ -537,7 +529,7 @@ caseif(x)
 int	x;
 {
 	extern int falsef;
-	register j, notflag, true;
+	register notflag, true;
 	tchar i;
 
 	if (x == 2) {
@@ -560,13 +552,13 @@ int	x;
 		goto i1;
 	}
 	i = getch();
-	switch (j = cbits(i)) {
+	switch (cbits(i)) {
 	case 'e':
-		if (!(v.pn & 01))
+		if (!(numtab[PN].val & 01))
 			true++;
 		break;
 	case 'o':
-		if (v.pn & 01)
+		if (numtab[PN].val & 01)
 			true++;
 		break;
 #ifdef NROFF
@@ -590,10 +582,8 @@ i1:
 		iflist[ifx] = !true;
 	if (true) {
 i2:
-		do {
-			v.hp = 0;
-			pinchar = inchar;	/* XXX */
-		} while ((cbits(i = getch())) == ' ');
+		while ((cbits(i = getch())) == ' ')
+			;
 		if (cbits(i) == LEFT)
 			goto i2;
 		ch = i;
@@ -601,39 +591,38 @@ i2:
 	} else {
 		copyf++;
 		falsef++;
-		if (eat(LEFT) == LEFT) {
-			while (eatblk(RIGHT, LEFT) != RIGHT)
-				nlflg = 0;
-		}
+		eatblk(0);
 		copyf--;
 		falsef--;
 	}
 }
 
-eat0(c)
-int	c;
-{
-	register i;
+eatblk(inblk)
+int inblk;
+{	register int cnt, i;
 
-	while ((i = cbits(getch0())) != c &&  (i != '\n'))
-		;
-	return(i);
-}
-
-eatblk(right, left)
-int	right, left;
-{
-	register i;
-
-e0:
-	while ((i = cbits(getch())) != right && i != left && i != '\n')
-		;
-	if (i == left) {
-		while ((i = eatblk(right, left)) != right)
-			nlflg = 0;
-		goto e0;
-	}
-	return(i);
+	cnt = 0;
+	do {
+		if (ch)	{
+			i = cbits(ch);
+			ch = 0;
+		} else
+			i = cbits(getch0());
+		if (i == ESC)
+			cnt++;
+		else {
+			if (cnt == 1)
+				switch (i) {
+				case '{':  i = LEFT; break;
+				case '}':  i = RIGHT; break;
+				case '\n': i = 'x'; break;
+				}
+			cnt = 0;
+		}
+		if (i == LEFT) eatblk(1);
+	} while ((!inblk && (i != '\n')) || (inblk && (i != RIGHT)));
+	if (i == '\n')
+		nlflg++;
 }
 
 
@@ -641,40 +630,33 @@ cmpstr(c)
 tchar c;
 {
 	register j, delim;
-	tchar i;
-	register filep p;
-	extern filep alloc();
-	extern filep incoff();
-	filep begin;
-	int	cnt, k;
-	int	savapts, savapts1, savfont, savfont1,
-	savpts, savpts1;
+	register tchar i;
+	register val;
+	int savapts, savapts1, savfont, savfont1, savpts, savpts1;
+	tchar string[1280];
+	register tchar *sp;
 
 	if (ismot(c))
 		return(0);
 	delim = cbits(c);
-	if (dip != d)
-		wbfl();
-	if ((offset = begin = alloc()) == (filep)0)
-		return(0);
-	cnt = 0;
-	v.hp = 0;
-	pinchar = inchar;	/* XXX */
 	savapts = apts;
 	savapts1 = apts1;
 	savfont = font;
 	savfont1 = font1;
 	savpts = pts;
 	savpts1 = pts1;
-	while ((j = cbits(i = getch())) != delim && j != '\n') {
-		wbf(i);
-		cnt++;
+	sp = string;
+	while ((j = cbits(i = getch()))!=delim && j!='\n' && sp<&string[1280-1])
+		*sp++ = i;
+	if (sp >= string + 1280) {
+		errprint("too-long string compare.");
+		edone(0100);
 	}
-	wbt((tchar)0);
-	k = !cnt;
-	if (nlflg)
+	if (nlflg) {
+		val = sp==string;
 		goto rtn;
-	p = begin;
+	}
+	*sp++ = 0;
 	apts = savapts;
 	apts1 = savapts1;
 	font = savfont;
@@ -682,17 +664,18 @@ tchar c;
 	pts = savpts;
 	pts1 = savpts1;
 	mchbits();
-	v.hp = 0;
-	pinchar = inchar;	/* XXX */
+	val = 1;
+	sp = string;
 	while ((j = cbits(i = getch())) != delim && j != '\n') {
-		if (rbf0(p) != i) {
+		if (*sp != i) {
 			eat(delim);
-			k = 0;
-			break;
+			val = 0;
+			goto rtn;
 		}
-		p = incoff(p);
-		k = !(--cnt);
+		sp++;
 	}
+	if (*sp)
+		val = 0;
 rtn:
 	apts = savapts;
 	apts1 = savapts1;
@@ -701,9 +684,7 @@ rtn:
 	pts = savpts;
 	pts1 = savpts1;
 	mchbits();
-	offset = dip->op;
-	ffree(begin);
-	return(k);
+	return(val);
 }
 
 
@@ -718,18 +699,18 @@ caserd()
 			ttys.sg_flags &= ~ECHO;
 			stty(0, &ttys);
 			flusho();
-			fprintf(stderr, "\007"); /*bell*/
+			fdprintf(stderr, "\007"); /*bell*/
 		} else {
 			if (nextf[0]) {
-				fprintf(stderr, "%s:", nextf);
+				fdprintf(stderr, "%s:", nextf);
 			} else {
-				fprintf(stderr, "\007"); /*bell*/
+				fdprintf(stderr, "\007"); /*bell*/
 			}
 		}
 	}
 	collect();
 	tty++;
-	pushi((filep) - 1);
+	pushi(NBLIST*BLK, PAIR('r','d'));
 }
 
 
@@ -776,7 +757,7 @@ caseta()
 	for (i = 0; ((i < (NTAB - 1)) && !nonumb); i++) {
 		if (skip())
 			break;
-		tabtab[i] = max(hnumb(&tabtab[max(i-1,0)]), 0) & TMASK;
+		tabtab[i] = max(hnumb(&tabtab[max(i-1,0)]), 0) & TABMASK;
 		if (!nonumb) 
 			switch (cbits(ch)) {
 			case 'C':
@@ -868,14 +849,13 @@ caseuf()
 	register i, j;
 
 	if (skip() || !(i = getrq()) || i == 'S' ||  (j = findft(i))  == -1)
-		ulfont = FT + 1; /*default position 2*/
+		ulfont = ULFONT; /*default underline position*/
 	else 
 		ulfont = j;
 #ifdef NROFF
-	if (ulfont == 1)
-		ulfont = 2;
+	if (ulfont == FT)
+		ulfont = ULFONT;
 #endif
-	ulbit = ulfont << 9;	/* certain to fail in tchar version */
 }
 
 
@@ -920,14 +900,14 @@ casemk()
 	if (dip != d)
 		j = dip->dnl; 
 	else 
-		j = v.nl;
+		j = numtab[NL].val;
 	if (skip()) {
 		dip->mkline = j;
 		return;
 	}
 	if ((i = getrq()) == 0)
 		return;
-	vlist[findr(i)] = j;
+	numtab[findr(i)].val = j;
 }
 
 
@@ -968,9 +948,9 @@ casenm()
 		return;
 	lnmod++;
 	noscale++;
-	i = inumb(&v.ln);
+	i = inumb(&numtab[LN].val);
 	if (!nonumb)
-		v.ln = max(i, 0);
+		numtab[LN].val = max(i, 0);
 	getnm(&ndf, 1);
 	getnm(&nms, 0);
 	getnm(&ni, 0);
@@ -1006,7 +986,5 @@ casenn()
 caseab()
 {
 	casetm(1);
-	done2(0);
+	done3(0);
 }
-
-

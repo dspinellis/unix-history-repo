@@ -1,22 +1,21 @@
 #ifndef lint
-static char sccsid[] = "@(#)n8.c	1.1 (CWI) 85/07/17";
+static char sccsid[] = "@(#)n8.c	2.1 (CWI) 85/07/18";
 #endif lint
-
 #include	<ctype.h>
 #include	"tdef.h"
+#include <sgtty.h>
+#include "ext.h"
 #define	HY_BIT	0200	/* stuff in here only works for ascii */
 
 /*
-troff8.c
+ * troff8.c
+ * 
+ * hyphenation
+ */
 
-hyphenation
-*/
-
-#include <sgtty.h>
-#include "ext.h"
 char	hbuf[NHEX];
 char	*nexth = hbuf;
-tchar *hyend;
+tchar	*hyend;
 
 hyphen(wp)
 	tchar *wp;
@@ -85,7 +84,6 @@ alph(i)
 		return(0);
 }
 
-
 /*
  * set the hyphenation algorithm
  *
@@ -100,11 +98,11 @@ caseha()
 	else {
 		noscale++;
 		noscale = 0;
-		i = max(atoi(),0);
+		i = max(atoi(), 0);
 		if (nonumb)
 			return;
 		if (i > MAXDIALECTS) {
-			fprintf(stderr, "Unknown dialect %d.\n", i);
+			errprint("Unknown dialect %d", i);
 			return;
 		}
 	}
@@ -113,7 +111,6 @@ caseha()
 	if( hyalg == DUTCH)
 		thresh = DUTCH_THRESH;
 }
-
 
 caseht()
 {
@@ -125,11 +122,11 @@ caseht()
 			thresh = DUTCH_THRESH;
 			break;
 	}
-	if (skip() )
+	if (skip())
 		return;
 	noscale++;
-	if( hyalg == DUTCH)
-		thresh = max(atoi(),1);
+	if (hyalg == DUTCH)
+		thresh = max(atoi(), 1);
 	else
 		thresh = atoi();
 	noscale = 0;
@@ -171,7 +168,7 @@ casehw()
 	}
 	return;
 full:
-	fprintf(stderr, "troff: exception word list full.\n");
+	errprint("exception word list full.");
 	*nexth = 0;
 }
 
@@ -195,7 +192,7 @@ exword()
 		if (!*e) {
 			if (w-1 == hyend ||
 			   (hyalg == ORIGINAL /* s-extension only in original */
-				 && (w == wdend && maplow(cbits(*w)) == 's'))) {
+				&& (w == wdend && maplow(cbits(*w)) == 's'))) {
 				w = wdstart;
 				for (e = save; *e; e++) {
 					if (*e & HY_BIT)
@@ -269,7 +266,7 @@ mark:
 
 
 maplow(i)
-int	i;
+register int	i;
 {
 	if (isupper(i)) 
 		i = tolower(i);
@@ -384,6 +381,10 @@ char	t[26][13];
 #define LETTERX 57
 #define LETTERZ 58
 
+/*
+ * split(..) needs to be cleaned up, could install hjt's version...
+ */
+
 split( aword, anend ) register tchar *aword, *anend;
 {	register tchar *place;
 	extern tchar *bestsplit1();
@@ -417,7 +418,7 @@ tchar *tosplit, *aend;
  */
 	extern char translate[], comprimation[][14], consonant[][23],
 		prefix[][3] ;
-	short word[ MAXLETT +1], reference[ MAXLETT +1], vowel[ MAXSYLL ],
+	short woord[ MAXLETT +1], reference[ MAXLETT +1], vowel[ MAXSYLL ],
             turn[ MAXSYLL ] , letter, nextlett, vowel1, vowel2,
             l0, l1, l2 ;
         short numlett, numsyll, turnindex, differ, start1, start2, stop,
@@ -426,12 +427,12 @@ tchar *tosplit, *aend;
 	short size = aend - tosplit + 1;
 
 	/* translate into bestsplit code : */
-	word[0] = 0 ;
+	woord[0] = 0 ;
 	i = 1 ;
 	help = -1 ;
 	while ( (++help < size) && (i <  MAXLETT ) ) {
 		reference[i] = i;
-		word[i++] = translate[maplow(cbits(tosplit[help])) - 'a'] ;
+		woord[i++] = translate[maplow(cbits(tosplit[help])) - 'a'] ;
 	}
 	/* end of translation : */
 
@@ -440,27 +441,27 @@ tchar *tosplit, *aend;
 	i = j = 1 ;
 	help = 0 ;
 	while ( i < numlett ) {
-		letter = word[i] ;
+		letter = woord[i] ;
  		/* comprimation of vowels : */
  		if ( (25 < letter) && (letter < 41) ) {
- 			nextlett = word[i+1] ;
+ 			nextlett = woord[i+1] ;
  			if ( (28 < nextlett) && (nextlett < 43) ) {
  				letter = comprimation[letter-26][nextlett-29] ;
  				if (letter > 0) {
  					i++ ;
  					help++ ;
- 					word[i] = letter ;
+ 					woord[i] = letter ;
 					continue ;
  				}
  			}
  		} /* end of comprimation */
 
- 		word[j] = word[i] ;
+ 		woord[j] = woord[i] ;
  		j++ ;
  		i++ ;
  		reference[j] += help ;
 	}
-	word[j] = word[numlett] ;
+	woord[j] = woord[numlett] ;
 	numlett = j ;
 
 
@@ -468,7 +469,7 @@ tchar *tosplit, *aend;
 	j = -1 ;
 	i = 0 ;
 	while ( ( ++i <= numlett ) && ( j < MAXSYLL ) ) {
-		if (word[i] < 39) {
+		if (woord[i] < 39) {
 			j++ ;
 			vowel[j] = i ;
 		}
@@ -520,7 +521,7 @@ next :
 	switch ( level ) {
 	case 1 :
 		for ( j = vowel2-2 ; j >= vowel1+1 ; j-- ) {
-			help = consonant[word[j]-39][word[j+1]-39] ;
+			help = consonant[woord[j]-39][woord[j+1]-39] ;
 			if ( abs(help) == 1 ) goto splitafterj ;
 			if ( help < 0 ) goto next ;
 		}
@@ -528,7 +529,7 @@ next :
 
 	case 2 :
 		for ( i = vowel2-2 ; i >= vowel1+1 ; i-- ) {
-			help = consonant[word[i]-39][word[i+1]-39] ;
+			help = consonant[woord[i]-39][woord[i+1]-39] ;
 			if ( abs(help) == 2 ) {
 				j = i ;
 				goto splitafterj ;
@@ -538,7 +539,7 @@ next :
 					j = vowel1 ;
 					goto splitafterj ;
 				}
-				help = abs(consonant[word[i-1]-39][word[i]-39]) ;
+				help = abs(consonant[woord[i-1]-39][woord[i]-39]) ;
 				if ( help == 2 ) {
 					j = i - 1 ;
 					goto splitafterj ;
@@ -559,18 +560,18 @@ next :
 
 	case 3 :
 		j = vowel1 ;
-		help = word[j+1] ;
+		help = woord[j+1] ;
 		if ( (help == LETTERJ) || (help == LETTERV) ||  
 				  (help == LETTERZ) ) goto splitafterj ;
 		if ( help == LETTERX ) goto next ;
-		l1 = word[j] ;
+		l1 = woord[j] ;
 		if ( l1 == LETTEREE ) goto next ;
 		if ( ( l1 > 24 ) && ( l1 < 29 ) ) {
 			j++ ;
 			goto splitafterj ;
 		}
-		l0 = word[j-1] ;
-		l2 = word[j+1] ;
+		l0 = woord[j-1] ;
+		l2 = woord[j+1] ;
 		for ( i = 0 ; i < 7 ; i++ )
 			if ( ( l0 == prefix[i][0] ) &&
 			     ( l1 == prefix[i][1] ) &&

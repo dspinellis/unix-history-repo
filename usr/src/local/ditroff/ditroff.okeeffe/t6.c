@@ -1,92 +1,109 @@
 #ifndef lint
-static char sccsid[] = "@(#)t6.c	1.1 (CWI) 85/07/17";
+static char sccsid[] = "@(#)t6.c	2.1 (CWI) 85/07/18";
 #endif lint
+/*
+ * t6.c
+ * 
+ * width functions, sizes and fonts
+ */
 
 #include "tdef.h"
-extern
-#include "d.h"
-extern
-#include "v.h"
 #include "dev.h"
-#include <ctype.h>
-/*
-troff6.c
-
-width functions, sizes and fonts
-*/
-
 #include <sgtty.h>
+#include <ctype.h>
 #include "ext.h"
-int	trflg;
+
 /* fitab[f][c] is 0 if c is not on font f
 	/* if it's non-zero, c is in fontab[f] at position
 	/* fitab[f][c].
 	*/
-int	fontlab[MAXFONTS+1];	/* Need 1 extra for the fontcache */
+extern	struct Font *fontbase[NFONT+1];
+extern	char *codetab[NFONT+1];
+extern int nchtab;
+
+int	fontlab[MAXFONTS+1];
 short	*pstab;
-int	cstab[MAXFONTS+1], ccstab[MAXFONTS+1];
+int	cstab[MAXFONTS+1];
+int	ccstab[MAXFONTS+1];
 int	bdtab[MAXFONTS+1];
 int	sbold = 0;
 
 width(j)
-tchar j;
+register tchar j;
 {
 	register i, k;
 
-	k = 0;
-	i = cbits(j);
-	if (ismot(j)) {
+	if (j & (ZBIT|MOT)) {
+		if (iszbit(j))
+			return(0);
 		if (isvmot(j))
-			goto rtn;
+			return(0);
 		k = absmot(j);
 		if (isnmot(j))
 			k = -k;
-		goto rtn;
+		return(k);
 	}
-	if (i == '\b') {
-		k = -widthp;
-		goto rtn;
+	i = cbits(j);
+	if (i < ' ') {
+		if (i == '\b')
+			return(-widthp);
+		if (i == PRESC)
+			i = eschar;
+		else if (iscontrol(i))
+			return(0);
 	}
-	if (i == PRESC)
-		i = eschar;
-	else if (i == ohc || iscontrol(i))
-		goto rtn;
+	if (i==ohc)
+		return(0);
+	i = trtab[i];
+	if (i < 32)
+		return(0);
 	if (sfbits(j) == oldbits) {
 		xfont = pfont;
 		xpts = ppts;
 	} else 
-		xbits(j);
-	if (iszbit(j))
-		goto rtn;
-	if (!trflg)
-		i = trtab[i];
-	if ((i -= 32) < 0)
-		goto rtn;
-	k = getcw(i);
-	if (bd)
-		k += (bd - 1) * HOR;
-	if (cs)
-		k = cs;
+		xbits(j, 0);
+	if (widcache[i-32].fontpts == (xfont<<8) + xpts && !setwdf)
+		k = widcache[i-32].width;
+	else {
+		k = getcw(i-32);
+		if (bd)
+			k += (bd - 1) * HOR;
+		if (cs)
+			k = cs;
+	}
 	widthp = k;
-rtn:
-	xbitf = trflg = 0;
 	return(k);
 }
 
+/*
+ * clear width cache-- s means just space
+ */
+zapwcache(s)
+{
+	register i;
+
+	if (s) {
+		widcache[0].fontpts = 0;
+		return;
+	}
+	for (i=0; i<NWIDCACHE; i++)
+		widcache[i].fontpts = 0;
+}
 
 getcw(i)
 register int	i;
 {
 	register int	k;
 	register char	*p;
-	int	x, j;
+	register int	x, j;
+	int nocache = 0;
 	int	savxfont = 0, savsbold = 0, savulfont = 0;
 
 	/*
-	 * Here comes the kludgy bug fix itself
+	 * Here comes first part of bug fix
 	 */
 
-	if( xfont > nfonts) {		/* not mounted font */
+	if( xfont > nfonts) {		/* font is not mounted */
 		savxfont = xfont;
 		if( xfont == sbold) {
 			savsbold = sbold;
@@ -97,65 +114,68 @@ register int	i;
 			ulfont = 0;
 		}
 		xfont = 0;
-		setfp(0, fontlab[savxfont]);
-		bdtab[0] = bdtab[savxfont];	/* Just */
-		cstab[0] = cstab[savxfont];	/*  in  */
-		ccstab[0] = ccstab[savxfont];	/* case */
+		setfp(0, fontlab[savxfont], 0);
+		bdtab[0] = bdtab[savxfont];	/* Save */
+		cstab[0] = cstab[savxfont];	/*  as  */
+		ccstab[0] = ccstab[savxfont];	/* well */
 	}
+	/* End */
+
 
 	bd = 0;
+	if (i >= nchtab + 128-32) {
+		j = abscw(i + 32 - (nchtab+128));
+		goto g0;
+	}
 	if (i == 0) {	/* a blank */
 		k = (fontab[xfont][0] * spacesz + 6) / 12;
 		/* this nonsense because .ss cmd uses 1/36 em as its units */
 		/* and default is 12 */
 		goto g1;
 	}
-	if ((j = fitab[xfont][i] & BMASK) == 0) {	/* it's not on current font */
+	if ((j = fitab[xfont][i] & BYTEMASK) == 0) {	/* it's not on current font */
 		/* search through search list of xfont
 		/* to see what font it ought to be on.
-		/* for now, searches S, then remaining fonts in wraparound
-		 * order (but only when a special font is mounted!!)
+		/* searches S, then remaining fonts in wraparound order.
 		*/
+		nocache = 1;
 		if (smnt) {
-			int	ii, jj;
+			int ii, jj;
 			for (ii=smnt, jj=0; jj < nfonts; jj++, ii=ii % nfonts + 1) {
-				j = fitab[ii][i] & BMASK;
+				j = fitab[ii][i] & BYTEMASK;
 				if (j != 0) {
 					p = fontab[ii];
 					k = *(p + j);
-					if (xfont == sbold && ii >= smnt)
-						/* Oops, only set bd
-						 * when it is a special
-						 * font!!
-						 */
+					if (xfont == sbold)
 						bd = bdtab[ii];
 					if (setwdf)
-						v.ct |= kerntab[ii][j];
+						numtab[CT].val |= kerntab[ii][j];
 					goto g1;
 				}
 			}
 		}
-		code = 0;
 		k = fontab[xfont][0];	/* leave a space-size space */
 		goto g1;
 	}
+ g0:
 	p = fontab[xfont];
 	if (setwdf)
-		v.ct |= kerntab[xfont][j];
+		numtab[CT].val |= kerntab[xfont][j];
 	k = *(p + j);
-g1:
+ g1:
 	if (!bd)
 		bd = bdtab[xfont];
 	if (cs = cstab[xfont]) {
+		nocache = 1;
 		if (ccs = ccstab[xfont])
 			x = ccs; 
 		else 
 			x = xpts;
 		cs = (cs * EMPTS(x)) / 36;
 	}
-
+	k = ((k&BYTEMASK) * xpts + (Unitwidth / 2)) / Unitwidth;
 	/*
-	 * undo the kludge
+	 * undo the fontswap
 	 */
 	if(savxfont) {
 		xfont = savxfont;
@@ -163,9 +183,19 @@ g1:
 			sbold = savsbold;
 		if(savulfont)
 			ulfont = savulfont;
+		/*
+		 * H'm, I guess we should not put
+		 * this width in the cache
+		 */
+		nocache = 1;
 	}
-
-	return(((k&BMASK) * xpts + (Unitwidth / 2)) / Unitwidth);
+	if (nocache|bd)
+		widcache[i].fontpts = 0;
+	else {
+		widcache[i].fontpts = (xfont<<8) + xpts;
+		widcache[i].width = k;
+	}
+	return(k);
 	/* Unitwidth is Units/Point, where
 	/* Units is the fundamental digitization
 	/* of the character set widths, and
@@ -176,11 +206,20 @@ g1:
 	*/
 }
 
+abscw(n)	/* return index of abs char n in fontab[], etc. */
+{	register int i, ncf;
 
-xbits(i)
-tchar i;
+	ncf = fontbase[xfont]->nwfont & BYTEMASK;
+	for (i = 0; i < ncf; i++)
+		if (codetab[xfont][i] == n)
+			return i;
+	return 0;
+}
+
+xbits(i, bitf)
+register tchar i;
 {
-	register j, k;
+	register k;
 
 	xfont = fbits(i);
 	k = sbits(i);
@@ -189,9 +228,9 @@ tchar i;
 		oldbits = sfbits(i);
 		pfont = xfont;
 		ppts = xpts;
-		goto rtn;
+		return;
 	}
-	switch (xbitf) {
+	switch (bitf) {
 	case 0:
 		xfont = font;
 		xpts = pts;
@@ -204,8 +243,6 @@ tchar i;
 		xfont = mfont;
 		xpts = mpts;
 	}
-rtn:
-	xbitf = 0;
 }
 
 
@@ -228,17 +265,38 @@ tchar setch()
 	return(0);
 }
 
-
-tchar absch()	/* absolute character number */
+tchar setabs()		/* set absolute char from \C'...' */
 {
-	fprintf(stderr, "troff: no \\C yet (How do you know about it?)\n");
-	return(0);
-}
+	int i, n, nf;
+	extern int	nchtab;
 
-/*****
+	getch();
+	n = 0;
+	n = inumb(&n);
+	getch();
+	if (nonumb)
+		return 0;
+	return n + nchtab + 128;
+}
+/*
+ * I (jaap) expand fontlab to the maximum of fonts troff can
+ * handle. The maximum number i, due to the two chars
+ * fontname limit, is 99.
+ * If we don't use the (named) font in one of the
+ * standard position, we install the name in the next
+ * free slot. Whenever we need info about the font, we
+ * read in the data at position zero, and secretly use
+ * the data (actually only necessary for the width
+ * and ligature info). The ptfont() (t10.c) routine will tell
+ * the device filter to put the font always at position
+ * zero if xfont > nfonts, so no need to change these filters.
+ * Yes, this is a bit kludgy.
+ *
+ * This gives the new specs of findft:
+ *
  * find the font name i, where i also can be a number.
  *
- * Installs the font i when not present
+ * Installs the font(name) i when not present
  *
  * returns -1 on error
  */
@@ -247,15 +305,15 @@ findft(i)
 register int	i;
 {
 	register k;
-	char	name[2];
+	register char *p;
+	extern char * unpair();
 
-	name[0] = i & BMASK;
-	name[1] = i >> BYTE;
+	p = unpair(i);
 
-	if( isdigit(name[0])) {		/* first look for numbers */
-		k = name[0] - '0';
-		if( name[1] > 0 && isdigit(name[1]))
-			k = 10 * k + ( name[1] - '0');
+	if( isdigit(p[0])) {		/* first look for numbers */
+		k = p[0] - '0';
+		if( p[1] > 0 && isdigit(p[1]))
+			k = 10 * k + ( p[1] - '0');
 
 		/*
 		fprintf(ptid, "x xxx it's a number: %d\n", k);
@@ -285,7 +343,7 @@ register int	i;
 		if (k > MAXFONTS +1)	/* the +1 is for the ``font cache'' */
 			return(-1);	/* running out of fontlab space */
 		if ( !fontlab[k] ) {	/* passed all existing names */
-			if(setfp(0, i) < 0)
+			if(setfp(0, i, 0) < 0)
 				return(-1);
 			else {
 				/*
@@ -320,8 +378,16 @@ caseps()
 casps1(i)
 register int	i;
 {
+
+/*
+ * in olden times, it used to ignore changes to 0 or negative.
+ * this is meant to allow the requested size to be anything,
+ * in particular so eqn can generate lots of \s-3's and still
+ * get back by matching \s+3's.
+
 	if (i <= 0)
 		return;
+*/
 	apts1 = apts;
 	apts = i;
 	pts1 = pts;
@@ -335,12 +401,11 @@ register int	i;
 {
 	register j, k;
 
-	for (j = 0; i > (k = pstab[j]); j++)
-		if (!k) {
-			k = pstab[--j];
-			break;
-		}
-	return(k);
+	for (j=k=0 ; pstab[j] != 0 ; j++)
+		if (abs(pstab[j]-i) < abs(pstab[k]-i))
+			k = j;
+
+	return(pstab[k]);
 }
 
 
@@ -358,33 +423,41 @@ mchbits()
 	setsbits(chbits, ++j);
 	setfbits(chbits, font);
 	sps = width(' ' | chbits);
+	zapwcache(1);
 }
-
 
 setps()
 {
-	register i, j;
+	register int i, j;
 
-	if (((i = cbits(getch())) == '+' || i == '-') && (j = cbits(ch = getch()) - '0') >= 0 && j <= 9) {
+	i = cbits(getch());
+	if (isdigit(i)) {		/* \sd or \sdd */
+		i -= '0';
+		if (i == 0)		/* \s0 */
+			j = apts1;
+		else if (i <= 3 && isdigit(j = cbits(ch=getch()))) {	/* \sdd */
+			j = 10 * i + j - '0';
+			ch = 0;
+		} else		/* \sd */
+			j = i;
+	} else if (i == '(') {		/* \s(dd */
+		j = cbits(getch()) - '0';
+		j = 10 * j + cbits(getch()) - '0';
+		if (j == 0)		/* \s(00 */
+			j = apts1;
+	} else if (i == '+' || i == '-') {	/* \s+, \s- */
+		j = cbits(getch());
+		if (isdigit(j)) {		/* \s+d, \s-d */
+			j -= '0';
+		} else if (j == '(') {		/* \s+(dd, \s-(dd */
+			j = cbits(getch()) - '0';
+			j = 10 * j + cbits(getch()) - '0';
+		}
 		if (i == '-')
 			j = -j;
-		ch = 0;
-		casps1(apts + j);
-		return;
+		j += apts;
 	}
-	if ((i -= '0') == 0) {
-		casps1(apts1);
-		return;
-	}
-	if (i > 0 && i <= 9) {
-		/* removed if (i <= 3 && */
-		/* didn't work!!!! */
-		if (i <= 3 && (j = cbits(ch = getch()) - '0') >= 0 && j <= 9) {
-			i = 10 * i + j;
-			ch = 0;
-		}
-		casps1(i);
-	}
+	casps1(j);
 }
 
 
@@ -439,22 +512,14 @@ int	a;
 	else 
 		i = getsn();
 	if (!i || i == 'P') {
-				/*
-				 * when .ft <zero argument or the
-				 	     argument is the non-documented P,>
-				 * pop previous font.
-				 * Alas, if the current font is in the
-				 * font cache already, we have to be
-				 * be very careful. No solution yet
-				 * for this bug.
-				 */
 		j = font1;
 		goto s0;
 	}
 	if (i == 'S' || i == '0')
 		return;
 	if ((j = findft(i)) == -1)
-			return;		/* unable to find or mount font */
+		if ((j = setfp(0, i, 0)) == -1)	/* try to put it in position 0 */
+			return;
 s0:
 	font1 = font;
 	font = j;
@@ -465,22 +530,16 @@ s0:
 setwd()
 {
 	register base, wid;
-	tchar i;
-	int	delim, em, k;
-	int	savlevel, savhp, savapts, savapts1, savfont, savfont1, savpts, savpts1;
-	tchar *savpinchar, *p, *q, tempinchar[LNSIZE];	/* XXX */
+	register tchar i;
+	int	delim, emsz, k;
+	int	savhp, savapts, savapts1, savfont, savfont1, savpts, savpts1;
 
-	base = v.st = v.sb = wid = v.ct = 0;
+	base = numtab[ST].val = numtab[ST].val = wid = numtab[CT].val = 0;
 	if (ismot(i = getch()))
 		return;
 	delim = cbits(i);
-	savhp = v.hp;
-	savpinchar = pinchar;	/* XXX */
-	for (p=inchar, q=tempinchar; p < pinchar; )	/* XXX */
-		*q++ = *p++;	/* XXX */
-	pinchar = inchar;	/* XXX */
-	savlevel = level;
-	v.hp = level = 0;
+	savhp = numtab[HP].val;
+	numtab[HP].val = 0;
 	savapts = apts;
 	savapts1 = apts1;
 	savfont = font;
@@ -489,29 +548,26 @@ setwd()
 	savpts1 = pts1;
 	setwdf++;
 	while (cbits(i = getch()) != delim && !nlflg) {
-		wid += width(i);
+		k = width(i);
+		wid += k;
+		numtab[HP].val += k;
 		if (!ismot(i)) {
-			em = POINT * xpts;
+			emsz = POINT * xpts;
 		} else if (isvmot(i)) {
 			k = absmot(i);
 			if (isnmot(i))
 				k = -k;
 			base -= k;
-			em = 0;
+			emsz = 0;
 		} else 
 			continue;
-		if (base < v.sb)
-			v.sb = base;
-		if ((k = base + em) > v.st)
-			v.st = k;
+		if (base < numtab[SB].val)
+			numtab[SB].val = base;
+		if ((k = base + emsz) > numtab[ST].val)
+			numtab[ST].val = k;
 	}
-	nform = 0;
-	setn1(wid);
-	v.hp = savhp;
-	pinchar = savpinchar;	/* XXX */
-	for (p=inchar, q=tempinchar; p < pinchar; )	/* XXX */
-		*p++ = *q++;	/* XXX */
-	level = savlevel;
+	setn1(wid, 0, (tchar) 0);
+	numtab[HP].val = savhp;
 	apts = savapts;
 	apts1 = savapts1;
 	font = savfont;
@@ -540,8 +596,8 @@ tchar hmot()
 
 tchar mot()
 {
-	register short j, n;
-	tchar i;
+	register int j, n;
+	register tchar i;
 
 	j = HOR;
 	getch(); /*eat delim*/
@@ -577,9 +633,9 @@ int	k;
 
 
 tchar makem(i)
-int	i;
+register int	i;
 {
-	tchar j;
+	register tchar j;
 
 	if ((j = i) < 0)
 		j = -j;
@@ -596,17 +652,9 @@ tchar getlg(i)
 tchar i;
 {
 	tchar j, k;
-	register int lf, tmp;
+	register int lf;
 
-	tmp = fbits(i);
-	if(tmp > nfonts) {
-		if( setfp(0, fontlab[tmp]) < 0)
-			return(i);
-		else
-			tmp = 0;
-	}
-
-	if ((lf = fontbase[tmp]->ligfont) == 0)	/* the font has no ligatures */
+	if ((lf = fontbase[fbits(i)]->ligfont) == 0) /* font lacks ligatures */
 		return(i);
 	j = getch0();
 	if (cbits(j) == 'i' && (lf & LFI))
@@ -621,13 +669,13 @@ tchar i;
 			else if (cbits(k)=='l' && (lf&LFFL))
 				j = LIG_FFL;
 			else {
-				ch0 = k;
+				*pbp++ = k;
 				j = LIG_FF;
 			}
 		} else 
 			j = LIG_FF;
 	} else {
-		ch0 = j;
+		*pbp++ = j;
 		j = i;
 	}
 	return(i & SFMASK | j);
@@ -646,58 +694,57 @@ caselg()
 
 casefp()
 {
-	register i, j;
-	register char *p;
-	char dir[50];
+	register int i, j;
+	register char *s;
 
 	skip();
 	if ((i = cbits(getch()) - '0') <= 0 || i > nfonts)
-		fprintf(stderr, "troff: fp: bad font position %d\n", i);
+		errprint("fp: bad font position %d", i);
 	else if (skip() || !(j = getrq()))
-		fprintf(stderr, "troff: fp: no font name\n"); 
-	else {
-		/* should check for third argument, (directory)
-		 * doesn't work at all */
-		skip();
-		setfp(i, j);
-	}
+		errprint("fp: no font name"); 
+	else if (skip() || !getname())
+		setfp(i, j, 0);
+	else		/* 3rd argument = filename */
+		setfp(i, j, nextf);
 }
 
-setfp(pos, f)	/* mount font f at position pos[0...nfonts] */
+setfp(pos, f, truename)	/* mount font f at position pos[0...nfonts] */
 int pos, f;
+char *truename;
 {
-	register i, j, k;
+	register k;
 	int n;
-	char	longname[NS], shortname[10], *p;
-	extern int	nchtab;
+	char longname[NS], shortname[20];
+	extern int nchtab;
 
-	if( fontlab[pos] == f)			/* f already mounted at pos, */
-		return(pos);			/* don't remount it */
-	shortname[0] = f & BMASK;
-	shortname[1] = f >> BYTE;
-	shortname[2] = '\0';
+	if (fontlab[pos] == f)		/* if f already mounted at pos, */
+		return(pos);		/* don't remount it */
+	zapwcache(0);
+	if (truename)
+		strcpy(shortname, truename);
+	else {
+		shortname[0] = f & BYTEMASK;
+		shortname[1] = f >> BYTE;
+		shortname[2] = '\0';
+	}
 	sprintf(longname, "%s/dev%s/%s.out", fontfile, devname, shortname);
-
 	if ((k = open(longname, 0)) < 0) {
-		fprintf(stderr, "troff: Can't open %s\n", longname);
+		errprint("Can't open %s", longname);
 		return(-1);
 	}
-	n = fontbase[pos]->nwfont & BMASK;
-	read(k, fontbase[pos], 3*n + nchtab + 128 - 32 + sizeof(struct font));
-	kerntab[pos] = (char *) fontab[pos] + (fontbase[pos]->nwfont & BMASK);
+	n = fontbase[pos]->nwfont & BYTEMASK;
+	read(k, (char *) fontbase[pos], 3*n + nchtab + 128 - 32 + sizeof(struct Font));
+	kerntab[pos] = (char *) fontab[pos] + (fontbase[pos]->nwfont & BYTEMASK);
 	/* have to reset the fitab pointer because the width may be different */
-	fitab[pos] = (char *) fontab[pos] + 3 * (fontbase[pos]->nwfont & BMASK);
-	if ((fontbase[pos]->nwfont & BMASK) > n) {
-		fprintf(stderr, "troff: Font %s too big for position %d\n", shortname, pos);
+	fitab[pos] = (char *) fontab[pos] + 3 * (fontbase[pos]->nwfont & BYTEMASK);
+	if ((fontbase[pos]->nwfont & BYTEMASK) > n) {
+		errprint("Font %s too big for position %d", shortname, pos);
 		return(-1);
 	}
 	fontbase[pos]->nwfont = n;	/* so can load a larger one again later */
 	close(k);
 	if (pos == smnt) {
-		smnt = 0;	/* Small bug here, we should test for
-				 * other special fonts mounted, needs
-				 * to be fixed in future
-				 */
+		smnt = 0; 
 		sbold = 0; 
 	}
 	if ((fontlab[pos] = f) == 'S')
@@ -713,47 +760,10 @@ int pos, f;
 		/* comes out too soon.  pushing back FONTPOS doesn't work */
 		/* with .ft commands because input is flushed after .xx cmds */
 
-		/* Trying to fix this problem:
-		 *
-		 * I expand fontlab to the maximum of fonts troff can
-		 * handle. The maximum number i, due to the two chars
-		 * fontname limit, is 99.
-		 * If we don't use the (named) font in one of the
-		 * standard position, we install the name in the next
-		 * free slot. Whenever we need info about the font, we
-		 * read in the data at position zero, and secretly use
-		 * the data (actually only necessary for the width
-		 *  and ligature info). The ptfont() routine will tell
-		 * the device filter to put the font always at position
-		 * zero, so no need to change these filters.
-		 * Yes, this is a bit kludgy.
-		 *
-		 * BTW, I removed the directory stuff completly since
-		 * setfp is always called as setfp(x, y, 0).
-		 *
-		 * TODO: It must be possible to do this with all the
-		 * font positions. Dynamically switch the ``mounted''
-		 * fonts in a LRU style, whithout bothering the user
-		 * with it. Then they never have to use the .fp
-		 * request. For compatibilty reason we could leave it
-		 * in (it can shuffle the date in the fontlab table),
-		 * or make it a NOOP.
-		 * Of course we do not touch positions with a ``Special'' font.
-		 *
-		 * Simple things TODO
-		 * 	A routine to extract two characters troff
-		 *	  names is handy.
-		 *	A routine to find out whether a font discription
-		 *	  file is available, currently setfp(...)
-		 *	  handle this and read in the font when
-		 *	  appropriate. (Proposing ftstat() here).
-		 *	Fix the ``smnt info''.
+		/*
+		 * Trying to fix this FONTPOS problem: See findft()
 		 */
-
-	/*
-	 * In case we are mounting a font to a standard position ...
-	 */
-	if( pos > 0 && pos <= nfonts)
+	if ( pos > 0 && pos <= nfonts)
 		ptfpcmd(pos, shortname);
 	return(pos);
 }
@@ -776,6 +786,7 @@ casecs()
 	else
 		ccstab[i] = findps(j);
 rtn:
+	zapwcache(0);
 	noscale = 0;
 }
 
@@ -784,6 +795,7 @@ casebd()
 {
 	register i, j, k;
 
+	zapwcache(0);
 	k = 0;
 bd0:
 	if (skip() || !(i = getrq()) || (j = findft(i)) == -1) {
@@ -799,9 +811,6 @@ bd0:
 	if (k) {
 		sbold = j;
 		j = k;
-		/* Undocumented feature here, you can only do .bd S F N,
-		 * for one font F.
-		 */
 	}
 bd1:
 	skip();
@@ -839,6 +848,7 @@ casess()
 	skip();
 	if (i = atoi()) {
 		spacesz = i & 0177;
+		zapwcache(0);
 		sps = width(' ' | chbits);
 	}
 	noscale = 0;
@@ -854,7 +864,6 @@ tchar xlss()
 	/* decoding is done in n2.c by pchar().
 	*/
 	int	i;
-	tchar c;
 
 	getch();
 	dfact = lss;
@@ -862,10 +871,19 @@ tchar xlss()
 	dfact = 1;
 	getch();
 	if (i >= 0)
-		ch0 = MOT | VMOT | i;
+		*pbp++ = MOT | VMOT | i;
 	else
-		ch0 = MOT | VMOT | NMOT | -i;
-	c = HX;
-	dummy();
-	return(c);
+		*pbp++ = MOT | VMOT | NMOT | -i;
+	return(HX);
+}
+
+char *
+unpair(i)
+register int i;
+{	static char name[3];
+
+	name[0] = i & BYTEMASK;
+	name[1] = i >> BYTE;
+	name[2] = 0;
+	return (name);
 }

@@ -1,17 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)n7.c	1.1 (CWI) 85/07/17";
+static char sccsid[] = "@(#)n7.c	2.1 (CWI) 85/07/18";
 #endif lint
-
 #include "tdef.h"
-extern
-#include "d.h"
-extern
-#include "v.h"
 #ifdef NROFF
-extern
 #include "tw.h"
 #endif
-#include "s.h"
 #ifdef NROFF
 #define GETCH gettch
 #endif
@@ -20,25 +13,26 @@ extern
 #endif
 
 /*
-troff7.c
-
-text
-*/
+ * troff7.c
+ * 
+ * text
+ */
 
 #include <sgtty.h>
+#include <ctype.h>
 #include "ext.h"
 int	brflg;
 
 tbreak()
 {
 	register pad, k;
-	tchar	*i, j;
-	int	res;
+	register tchar	*i, j;
+	register int resol = 0;
 
 	trap = 0;
 	if (nb)
 		return;
-	if ((dip == d) && (v.nl == -1)) {
+	if (dip == d && numtab[NL].val == -1) {
 		newline(1);
 		return;
 	}
@@ -64,33 +58,29 @@ tbreak()
 	if (brflg != 1) {
 		totout = 0;
 	} else if (ad) {
-		if ((lastl = (ll - un)) < ne)
+		if ((lastl = ll - un) < ne)
 			lastl = ne;
 	}
 	if (admod && ad && (brflg != 2)) {
 		lastl = ne;
 		adsp = adrem = 0;
-#ifdef NROFF
 		if (admod == 1)
-			un +=  quant(nel / 2, t.Adj);
-#endif
-#ifndef NROFF
-		if (admod == 1)
-			un += nel / 2;
-#endif
+			un +=  quant(nel / 2, HOR);
 		else if (admod == 2)
 			un += nel;
 	}
 	totout++;
 	brflg = 0;
-	if ((lastl + un) > dip->maxl)
-		dip->maxl = (lastl + un);
+	if (lastl + un > dip->maxl)
+		dip->maxl = lastl + un;
 	horiz(un);
 #ifdef NROFF
 	if (adrem % t.Adj)
-		res = t.Hor; 
+		resol = t.Hor; 
 	else 
-		res = t.Adj;
+		resol = t.Adj;
+#else
+	resol = HOR;
 #endif
 	for (i = line; nc > 0; ) {
 		if ((cbits(j = *i++)) == ' ') {
@@ -104,20 +94,11 @@ tbreak()
 			--nwd;
 			if (adrem) {
 				if (adrem < 0) {
-#ifdef NROFF
-					pad -= res;
-					adrem += res;
-				} else if ((totout & 01) ||  ((adrem / res) >= (nwd))) {
-					pad += res;
-					adrem -= res;
-#endif
-#ifndef NROFF
-					pad--;
-					adrem++;
-				} else {
-					pad++;
-					adrem--;
-#endif
+					pad -= resol;
+					adrem += resol;
+				} else if ((totout & 01) || adrem / resol >= nwd) {
+					pad += resol;
+					adrem -= resol;
 				}
 			}
 			pchar((tchar) WORDSP);
@@ -144,8 +125,8 @@ tbreak()
 		if (dip->dnl > dip->hnl)
 			dip->hnl = dip->dnl;
 	} else {
-		if (v.nl > dip->hnl)
-			dip->hnl = v.nl;
+		if (numtab[NL].val > dip->hnl)
+			dip->hnl = numtab[NL].val;
 	}
 	for (k = ls - 1; k > 0 && !trap; k--)
 		newline(0);
@@ -163,32 +144,33 @@ donum()
 		nn--;
 		goto d1;
 	}
-	if (v.ln % ndf) {
-		v.ln++;
+	if (numtab[LN].val % ndf) {
+		numtab[LN].val++;
 d1:
 		un += nw * (3 + nms + ni);
 		return;
 	}
 	i = 0;
-	if (v.ln < 100)
+	if (numtab[LN].val < 100)
 		i++;
-	if (v.ln < 10)
+	if (numtab[LN].val < 10)
 		i++;
 	horiz(nw * (ni + i));
 	nform = 0;
-	fnumb(v.ln, pchar);
+	fnumb(numtab[LN].val, pchar);
 	un += nw * nms;
-	v.ln++;
+	numtab[LN].val++;
 }
 
 
 text()
 {
-	tchar i;
+	register tchar i;
 	static int	spcnt;
 
 	nflush++;
-	if ((dip == d) && (v.nl == -1)) {
+	numtab[HP].val = 0;
+	if ((dip == d) && (numtab[NL].val == -1)) {
 		newline(1); 
 		return;
 	}
@@ -207,8 +189,11 @@ text()
 	pendt++;
 	if (spcnt)
 		goto t2;
-	while ((cbits(i = GETCH())) == ' ')
+	while ((cbits(i = GETCH())) == ' ') {
 		spcnt++;
+		numtab[HP].val += sps;
+		widthp = sps;
+	}
 	if (nlflg) {
 t1:
 		nflush = pendt = ch = spcnt = 0;
@@ -247,10 +232,8 @@ t5:
 			adsp = nel; 
 		else 
 			adsp = nel / (nwd - 1);
-#ifdef NROFF
-		adsp = (adsp / t.Adj)*t.Adj;
-#endif
-		adrem = nel -adsp*(nwd-1);
+		adsp = (adsp / HOR) * HOR;
+		adrem = nel - adsp*(nwd-1);
 	}
 	brflg = 1;
 	tbreak();
@@ -270,7 +253,7 @@ rtn:
 nofill()
 {
 	register j;
-	tchar i;
+	register tchar i;
 
 	if (!pendnf) {
 		over = 0;
@@ -295,7 +278,10 @@ nofill()
 			ckul();
 			return;
 		}
-		storeline(i, -1);
+		j = width(i);
+		widthp = j;
+		numtab[HP].val += j;
+		storeline(i, j);
 	}
 	if (ce) {
 		ce--;
@@ -338,14 +324,12 @@ ckul()
 
 
 storeline(c, w)
-tchar c;
+register tchar c;
 {
-	register i;
-
 	if (linep >= line + lnsize - 1) {
 		if (!over) {
 			flusho();
-			fprintf(stderr, "troff: Line overflow.\n");
+			errprint("Line overflow.");
 			over++;
 			c = LEFTHAND;
 			w = -1;
@@ -389,7 +373,7 @@ int	a;
 			dip->dnl += dip->alss;
 			dip->alss = 0;
 		}
-		if (dip->ditrap && !dip->ditf &&  (dip->dnl >= dip->ditrap) && dip->dimac)
+		if (dip->ditrap && !dip->ditf && dip->dnl >= dip->ditrap && dip->dimac)
 			if (control(dip->dimac, 0)) {
 				trap++; 
 				dip->ditf++;
@@ -400,7 +384,7 @@ int	a;
 	if (flss)
 		lss = flss;
 	nlss = dip->alss + dip->blss + lss;
-	v.nl += nlss;
+	numtab[NL].val += nlss;
 #ifndef NROFF
 	if (ascii) {
 		dip->alss = dip->blss = 0;
@@ -409,10 +393,10 @@ int	a;
 	pchar1((tchar)'\n');
 	flss = 0;
 	lss = j;
-	if (v.nl < pl)
+	if (numtab[NL].val < pl)
 		goto nl2;
 nl1:
-	ejf = dip->hnl = v.nl = 0;
+	ejf = dip->hnl = numtab[NL].val = 0;
 	ejl = frame;
 	if (donef) {
 		if ((!nc && !wch) || ndone)
@@ -422,14 +406,14 @@ nl1:
 		if (frame == stk)
 			nflush++;
 	}
-	opn = v.pn;
-	v.pn++;
+	opn = numtab[PN].val;
+	numtab[PN].val++;
 	if (npnflg) {
-		v.pn = npn;
+		numtab[PN].val = npn;
 		npn = npnflg = 0;
 	}
 nlpn:
-	if (v.pn == pfrom) {
+	if (numtab[PN].val == pfrom) {
 		print++;
 		pfrom = -1;
 	} else if (opn == pto) {
@@ -439,7 +423,7 @@ nlpn:
 		goto nlpn;
 	}
 	if (print)
-		newpage(v.pn);	/* supposedly in a clean state so can pause */
+		newpage(numtab[PN].val);	/* supposedly in a clean state so can pause */
 	if (stop && print) {
 		dpn++;
 		if (dpn >= stop) {
@@ -449,13 +433,13 @@ nlpn:
 	}
 nl2:
 	trap = 0;
-	if (v.nl == 0) {
+	if (numtab[NL].val == 0) {
 		if ((j = findn(0)) != NTRAP)
 			trap = control(mlist[j], 0);
-	} else if ((i = findt(v.nl - nlss)) <= nlss) {
-		if ((j = findn1(v.nl - nlss + i)) == NTRAP) {
+	} else if ((i = findt(numtab[NL].val - nlss)) <= nlss) {
+		if ((j = findn1(numtab[NL].val - nlss + i)) == NTRAP) {
 			flusho();
-			fprintf(stderr, "troff: Trap botch.\n");
+			errprint("Trap botch.");
 			done2(-5);
 		}
 		trap = control(mlist[j], 0);
@@ -503,7 +487,7 @@ int	a;
 
 	k = 32767;
 	if (dip != d) {
-		if (dip->dimac && ((i = dip->ditrap - a) > 0))
+		if (dip->dimac && (i = dip->ditrap - a) > 0)
 			k = i;
 		return(k);
 	}
@@ -511,7 +495,7 @@ int	a;
 		if (mlist[i]) {
 			if ((j = nlist[i]) < 0)
 				j += pl;
-			if ((j -= a)  <=  0)
+			if ((j -= a) <= 0)
 				continue;
 			if (j < k)
 				k = j;
@@ -531,7 +515,7 @@ findt1()
 	if (dip != d)
 		i = dip->dnl;
 	else 
-		i = v.nl;
+		i = numtab[NL].val;
 	return(findt(i));
 }
 
@@ -552,10 +536,10 @@ struct s *a;
 		return;
 e1:
 	savlss = lss;
-	lss = findt(v.nl);
+	lss = findt(numtab[NL].val);
 	newline(0);
 	lss = savlss;
-	if (v.nl && !trap)
+	if (numtab[NL].val && !trap)
 		goto e1;
 }
 
@@ -563,30 +547,32 @@ e1:
 movword()
 {
 	register w;
-	tchar i, *wp;
+	register tchar i, *wp;
 	int	savwch, hys;
 
 	over = 0;
 	wp = wordp;
 	if (!nwd) {
-		while ((cbits(i = *wp++)) == ' ') {
+		while (cbits(i = *wp++) == ' ') {
 			wch--;
-			wne -= width(i);
+			wne -= sps;
 		}
 		wp--;
 	}
-	if ((wne > nel) &&  !hyoff && hyf &&  (!nwd || (nel > 3 * sps)) &&  (!(hyf & 02) || (findt1() > lss)))
+	if (wne > nel && !hyoff && hyf && (!nwd || nel > 3 * sps) &&
+	   (!(hyf & 02) || (findt1() > lss)))
 		hyphen(wp);
 	savwch = wch;
 	hyp = hyptr;
 	nhyp = 0;
-	while (*hyp && (*hyp <= wp))
+	while (*hyp && *hyp <= wp)
 		hyp++;
 	while (wch) {
-		if ((hyoff != 1) && (*hyp == wp)) {
+		if (hyoff != 1 && *hyp == wp) {
 			hyp++;
-			if (!wdstart ||  ((wp > (wdstart + 1)) &&  (wp < wdend) &&  (!(hyf & 04) || (wp < (wdend - 1))) &&
-			    (!(hyf & '\b') || wp > wdstart + 2))) {
+			if (!wdstart || (wp > wdstart + 1 && wp < wdend &&
+			   (!(hyf & 04) || wp < wdend - 1) &&		/* 04 => last 2 */
+			   (!(hyf & 010) || wp > wdstart + 2))) {	/* 010 => 1st 2 */
 				nhyp++;
 				storeline((tchar)IMP, 0);
 			}
@@ -599,9 +585,11 @@ movword()
 	}
 	if (nel >= 0) {
 		nwd++;
-		return(0);
+		return(0);	/* line didn't fill up */
 	}
-	xbitf = 1;
+#ifndef NROFF
+	xbits((tchar)HYPHEN, 1);
+#endif
 	hys = width((tchar)HYPHEN);
 m1:
 	if (!nhyp) {
@@ -620,7 +608,7 @@ m1:
 		goto m1;
 	}
 m2:
-	if ((i = cbits(*(linep - 1))) != '-' &&  (i != EMDASH)) {
+	if ((i = cbits(*(linep - 1))) != '-' && i != EMDASH) {
 		*linep = (*(linep - 1) & SFMASK) | HYPHEN;
 		w = width(*linep);
 		nel -= w;
@@ -631,7 +619,7 @@ m3:
 	nwd++;
 m4:
 	wordp = wp;
-	return(1);
+	return(1);	/* line filled up */
 m5:
 	nc--;
 	w = width(*linep);
@@ -670,9 +658,9 @@ setnel()
 getword(x)
 int	x;
 {
-	register j, swp;
-	tchar i;
-	int	noword;
+	register int j, k;
+	register tchar i, *wp;
+	int noword;
 
 	noword = 0;
 	if (x)
@@ -686,7 +674,7 @@ int	x;
 	wordp = word;
 	over = wne = wch = 0;
 	hyoff = 0;
-	while (1) {
+	while (1) {	/* picks up 1st char of word */
 		j = cbits(i = GETCH());
 		if (j == '\n') {
 			wne = wch = 0;
@@ -694,22 +682,22 @@ int	x;
 			goto rtn;
 		}
 		if (j == ohc) {
-			hyoff = 1;
+			hyoff = 1;	/* 1 => don't hyphenate */
 			continue;
 		}
 		if (j == ' ') {
-			storeword(i, width(i));
+			numtab[HP].val += sps;
+			widthp = sps;
+			storeword(i, sps);
 			continue;
 		}
 		break;
 	}
-	swp = widthp;
-	storeword(' ' | chbits, -1);
+	storeword(' ' | chbits, sps);
 	if (spflg) {
-		storeword(' ' | chbits, -1);
+		storeword(' ' | chbits, sps);
 		spflg = 0;
 	}
-	widthp = swp;
 g0:
 	if (j == CONT) {
 		pendw = wordp;
@@ -725,7 +713,7 @@ g0:
 				hyp = hyptr + NHYP - 1;
 			goto g1;
 		}
-		if ((j == '-') ||  (j == EMDASH))
+		if (j == '-' || j == EMDASH)
 			if (wordp > word + 1) {
 				hyoff = 2;
 				*hyp++ = wordp + 1;
@@ -733,35 +721,40 @@ g0:
 					hyp = hyptr + NHYP - 1;
 			}
 	}
-	storeword(i, width(i));
+	j = width(i);
+	numtab[HP].val += j;
+	storeword(i, j);
 g1:
 	j = cbits(i = GETCH());
 	if (j != ' ') {
+		static char *sentchar = ".?!";	/* sentence terminators */
 		if (j != '\n')
 			goto g0;
-						/* fix bwk
-						 * improve the quality by
-						 * look for special cases
-						 * ("'\)]) at end of
-						 * sentence
-						 */
-		    {	tchar *wp = wordp-1;
-			while (wp >= word) {
-				j = cbits(*wp--);
-				if (j=='"' || j=='\'' || j==')' ||j==']')
-					continue;
-						/* This the real fix, don't
-						 * raise the spaceflg i these
-						 * cases
-						 */
-				if (j == '.' || j == '!' || j == '?')
+		wp = wordp-1;	/* handle extra space at end of sentence */
+		while (wp >= word) {
+			j = cbits(*wp--);
+			if (j=='"' || j=='\'' || j==')' || j==']' || j=='*' || j==DAGGER)
+				continue;
+			for (k = 0; sentchar[k]; k++)
+				if (j == sentchar[k]) {
 					spflg++;
-				break;
-			}
-		    }
+					break;
+				}
+			break;
+		}
 	}
 	*wordp = 0;
+	numtab[HP].val += sps;
 rtn:
+	for (wp = word; *wp; wp++) {
+		j = cbits(*wp);
+		if (j == ' ')
+			continue;
+		if (!isdigit(j) && j != '-')
+			break;
+	}
+	if (*wp == 0)	/* all numbers, so don't hyphenate */
+		hyoff = 1;
 	wdstart = 0;
 	wordp = word;
 	pendw = 0;
@@ -772,14 +765,14 @@ rtn:
 
 
 storeword(c, w)
-tchar c;
-int	w;
+register tchar c;
+register int	w;
 {
 
-	if (wordp >= &word[WDSIZE - 1]) {
+	if (wordp >= &word[WDSIZE - 3]) {
 		if (!over) {
 			flusho();
-			fprintf(stderr, "troff: Word overflow.\n");
+			errprint("Word overflow.");
 			over++;
 			c = LEFTHAND;
 			w = -1;
@@ -790,6 +783,7 @@ int	w;
 s1:
 	if (w == -1)
 		w = width(c);
+	widthp = w;
 	wne += w;
 	*wordp++ = c;
 	wch++;
@@ -799,19 +793,31 @@ s1:
 #ifdef NROFF
 tchar gettch()
 {
+	extern int c_isalnum;
 	tchar i;
 	int j;
 
 	i = getch();
 	j = cbits(i);
-	if (ismot(i) || i & ulbit)
+	if (ismot(i) || fbits(i) != ulfont)
 		return(i);
-	if (cu && trtab[j] == ' ') {
-		setcbits(i, '_');
-		i &= ~ulbit;
+	if (cu) {
+		if (trtab[j] == ' ') {
+			setcbits(i, '_');
+			setfbits(i, FT);	/* default */
+		}
+		return(i);
 	}
-	if (!cu && j > 32 && !iscontrol(j) && !(*t.codetab[j-32] & 0200))
-		i &= ~ulbit;
+	/* should test here for characters that ought to be underlined */
+	/* in the old nroff, that was the 200 bit on the width! */
+	/* for now, just do letters, digits and certain special chars */
+	if (j <= 127) {
+		if (!isalnum(j))
+			setfbits(i, FT);
+	} else {
+		if (j < c_isalnum)
+			setfbits(i, FT);
+	}
 	return(i);
 }
 

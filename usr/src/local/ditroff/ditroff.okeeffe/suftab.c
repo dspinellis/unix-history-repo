@@ -1,7 +1,6 @@
 #ifndef lint
-static char sccsid[] = "@(#)suftab.c	1.1 (CWI) 85/07/17";
+static char sccsid[] = "@(#)suftab.c	2.1 (CWI) 85/07/18";
 #endif lint
-
 /*
  * Suffix table
  */
@@ -299,7 +298,7 @@ static	char sufl[] = {
 	04,0200+'t','e','l',	/* -TELL */
 	05,0200+'s','h','e','l',	/* -SHELL */
 	05,0200+'s','t','a','l',	/* -STALL */
-	04,0200+'s','t','a',	/* -STAL */
+	04,'s',0200+'t','a',	/* S-TAL */
 	04,0200+'b','a','l',	/* -BALL */
 	04,0200+'c','a','l',	/* -CALL */
 	03,'v',0200+'e',	/* V-EL */
@@ -355,6 +354,7 @@ static	char sufm[] = {
 };
 
 static	char sufn[] = {
+	05,0200+'k','n','o','w', /* -KNOWN */
 	04,0200+'t','o','w',	/* -TOWN */
 	04,0200+'d','o','w',	/* -DOWN */
 	04,0200+'t','u','r',	/* -TURN */
@@ -425,7 +425,6 @@ static	char sufr[] = {
 	040+04,0200+'r','i',0200+'o',	/* -RI-OR */
 	04,'i','z',0200+'e',	/* IZ-ER */
 	05,0200+'c','o','v',0200+'e',	/* -COV-ER */
-/*	04,'o',0200+'v','e',	/* O-VER */
 	04,0200+'o','v','e',	/* -OVER */
 	04,0200+'e','v',0200+'e',	/* -EV-ER */
 	8,0200+'c','o','m',0200+'p','u','t',0200+'e',	/* -COM-PUT-ER */

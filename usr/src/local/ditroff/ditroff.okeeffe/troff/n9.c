@@ -1,24 +1,18 @@
 #ifndef lint
-static char sccsid[] = "@(#)n9.c	1.1 (CWI) 85/07/17";
+static char sccsid[] = "@(#)n9.c	2.1 (CWI) 85/07/18";
 #endif lint
-
 #include "tdef.h"
-extern
-#include "d.h"
-extern
-#include "v.h"
 #ifdef NROFF
-extern
 #include "tw.h"
 #endif
-/*
-troff9.c
-
-misc functions
-*/
-
 #include <sgtty.h>
 #include "ext.h"
+
+/*
+ * troff9.c
+ * 
+ * misc functions
+ */
 
 tchar setz()
 {
@@ -29,13 +23,13 @@ tchar setz()
 	return(i);
 }
 
-
 setline()
 {
 	register tchar *i;
 	tchar c;
 	int	length;
 	int	w, cnt, delim, rem, temp;
+	tchar linebuf[NC];
 
 	if (ismot(c = getch()))
 		return;
@@ -55,7 +49,7 @@ s0:
 	} else if (cbits(c) == FILLER)
 		goto s0;
 	w = width(c);
-	i = cbuf;
+	i = linebuf;
 	if (length < 0) {
 		*i++ = makem(length);
 		length = -length;
@@ -79,12 +73,12 @@ s0:
 s1:
 	*i++ = 0;
 	eat(delim);
-	cp = cbuf;
+	pushback(linebuf);
 }
 
 
 eat(c)
-int	c;
+register int	c;
 {
 	register i;
 
@@ -97,8 +91,8 @@ int	c;
 setov()
 {
 	register j, k;
-	tchar i, *p, o[NOV];
-	int	delim, w[NOV];
+	tchar i, o[NOV];
+	int delim, w[NOV];
 
 	if (ismot(i = getch()))
 		return;
@@ -125,14 +119,14 @@ setov()
 		}
 	else 
 		return;
-	p = cbuf;
-	for (k = 0; o[k]; k++) {
-		*p++ = o[k];
-		*p++ = makem(-((w[k] + w[k+1]) / 2));
+	*pbp++ = makem(w[0] / 2);
+	for (k = 0; o[k]; k++)
+		;
+	while (k>0) {
+		k--;
+		*pbp++ = makem(-((w[k] + w[k+1]) / 2));
+		*pbp++ = o[k];
 	}
-	*p++ = makem(w[0] / 2);
-	*p = 0;
-	cp = cbuf;
 }
 
 
@@ -141,11 +135,12 @@ setbra()
 	register k;
 	tchar i, *j, dwn;
 	int	cnt, delim;
+	tchar brabuf[NC];
 
 	if (ismot(i = getch()))
 		return;
 	delim = cbits(i);
-	j = cbuf + 1;
+	j = brabuf + 1;
 	cnt = 0;
 #ifdef NROFF
 	dwn = (2 * t.Halfline) | MOT | VMOT;
@@ -153,7 +148,7 @@ setbra()
 #ifndef NROFF
 	dwn = EM | MOT | VMOT;
 #endif
-	while (((k = cbits(i = getch())) != delim) && (k != '\n') &&  (j <= (cbuf + NC - 4))) {
+	while (((k = cbits(i = getch())) != delim) && (k != '\n') &&  (j <= (brabuf + NC - 4))) {
 		*j++ = i | ZBIT;
 		*j++ = dwn;
 		cnt++;
@@ -166,21 +161,23 @@ setbra()
 	}
 	*j = 0;
 #ifdef NROFF
-	*--j = *cbuf = (cnt * t.Halfline) | MOT | NMOT | VMOT;
+	*--j = *brabuf = (cnt * t.Halfline) | MOT | NMOT | VMOT;
 #endif
 #ifndef NROFF
-	*--j = *cbuf = (cnt * EM) / 2 | MOT | NMOT | VMOT;
+	*--j = *brabuf = (cnt * EM) / 2 | MOT | NMOT | VMOT;
 #endif
 	*--j &= ~ZBIT;
-	cp = cbuf;
+	pushback(brabuf);
 }
 
 
 setvline()
 {
 	register i;
-	tchar c, *k, rem, ver, neg;
+	tchar c, rem, ver, neg;
 	int	cnt, delim, v;
+	tchar vlbuf[NC];
+	register tchar *vlp;
 
 	if (ismot(c = getch()))
 		return;
@@ -213,45 +210,51 @@ setvline()
 	cnt = i / v;
 	rem = makem(i % v) | neg;
 	ver = makem(v) | neg;
-	k = cbuf;
+	vlp = vlbuf;
 	if (!neg)
-		*k++ = ver;
+		*vlp++ = ver;
 	if (absmot(rem) != 0) {
-		*k++ = c;
-		*k++ = rem;
+		*vlp++ = c;
+		*vlp++ = rem;
 	}
-	while ((k < (cbuf + NC - 3)) && cnt--) {
-		*k++ = c;
-		*k++ = ver;
+	while ((vlp < (vlbuf + NC - 3)) && cnt--) {
+		*vlp++ = c;
+		*vlp++ = ver;
 	}
-	*(k - 2) &= ~ZBIT;
+	*(vlp - 2) &= ~ZBIT;
 	if (!neg)
-		k--;
-	*k = 0;
-	cp = cbuf;
+		vlp--;
+	*vlp++ = 0;
+	pushback(vlbuf);
 	vflag = 0;
 }
 
+#define	NPAIR	(NC/2-6)	/* max pairs in spline, etc. */
 
 setdraw()	/* generate internal cookies for a drawing function */
 {
-	int i, j, k, dx[100], dy[100], delim, type, temp;
-	tchar c;
-	/* input is \D'f x y x y ... c' (or at least it had better be) */
-	/* this does drawing function f with character c and the */
-	/* specified x,y pairs interpreted as appropriate */
+	int i, j, k, dx[NPAIR], dy[NPAIR], delim, type;
+	tchar c, drawbuf[NC];
 
-	/* l x y:	line from here by x,y */
+	/* input is \D'f dx dy dx dy ... c' (or at least it had better be) */
+	/* this does drawing function f with character c and the */
+	/* specified dx,dy pairs interpreted as appropriate */
+	/* pairs are deltas from last point, except for radii */
+
+	/* l dx dy:	line from here by dx,dy */
 	/* c x:		circle of diameter x, left side here */
 	/* e x y:	ellipse of diameters x,y, left side here */
-	/* a x y r:	arc to x,y with radius r (ccw) */
-	/* ~ x y ...:	wiggly line */
+	/* a dx1 dy1 dx2 dy2:
+			ccw arc: ctr at dx1,dy1, then end at dx2,dy2 from there */
+	/* ~ dx1 dy1 dx2 dy2...:
+			spline to dx1,dy1 to dx2,dy2 ... */
+	/* f dx dy ...:	f is any other char:  like spline */
 
 	if (ismot(c = getch()))
 		return;
 	delim = cbits(c);
 	type = cbits(getch());
-	for (i = 0; i < 50 ; i++) {
+	for (i = 0; i < NPAIR ; i++) {
 		c = getch();
 		if (cbits(c) == delim)
 			break;
@@ -280,20 +283,20 @@ setdraw()	/* generate internal cookies for a drawing function */
 	dfact = 1;
 	vflag = 0;
 #ifndef NROFF
-	cbuf[0] = DRAWFCN | chbits | ZBIT;
-	cbuf[1] = type | chbits | ZBIT;
-	cbuf[2] = '.' | chbits | ZBIT;	/* indicates to use default drawing character */
+	drawbuf[0] = DRAWFCN | chbits | ZBIT;
+	drawbuf[1] = type | chbits | ZBIT;
+	drawbuf[2] = '.' | chbits | ZBIT;	/* use default drawing character */
 	for (k = 0, j = 3; k < i; k++) {
-		cbuf[j++] = MOT | ((dx[k] >= 0) ? dx[k] : (NMOT | -dx[k]));
-		cbuf[j++] = MOT | VMOT | ((dy[k] >= 0) ? dy[k] : (NMOT | -dy[k]));
+		drawbuf[j++] = MOT | ((dx[k] >= 0) ? dx[k] : (NMOT | -dx[k]));
+		drawbuf[j++] = MOT | VMOT | ((dy[k] >= 0) ? dy[k] : (NMOT | -dy[k]));
 	}
 	if (type == DRAWELLIPSE) {
-		cbuf[5] = cbuf[4] | NMOT;	/* so the net vertical is zero */
+		drawbuf[5] = drawbuf[4] | NMOT;	/* so the net vertical is zero */
 		j = 6;
 	}
-	cbuf[j++] = '.' | chbits | ZBIT;	/* marks end for ptout */
-	cbuf[j] = 0;
-	cp = cbuf;
+	drawbuf[j++] = DRAWFCN | chbits | ZBIT;	/* marks end for ptout */
+	drawbuf[j] = 0;
+	pushback(drawbuf);
 #endif
 }
 
@@ -303,26 +306,31 @@ casefc()
 	register i;
 	tchar j;
 
+	gchtab[fc] &= ~FCBIT;
 	fc = IMP;
 	padc = ' ';
 	if (skip() || ismot(j = getch()) || (i = cbits(j)) == '\n')
 		return;
 	fc = i;
+	gchtab[fc] |= FCBIT;
 	if (skip() || ismot(ch) || (ch = cbits(ch)) == fc)
 		return;
 	padc = ch;
 }
 
 
-tchar setfield(x)
+tchar
+setfield(x)
 int	x;
 {
-	tchar ii, jj, *fp;
+	register tchar ii, jj, *fp;
 	register i, j;
-	int	length, ws, npad, temp, type;
-	tchar * *pp, *padptr[NPP];
-	static tchar fbuf[FBUFSZ];
-	int	savfc, savtc, savlc;
+	int length, ws, npad, temp, type;
+	tchar **pp, *padptr[NPP];
+	tchar fbuf[FBUFSZ];
+	int savfc, savtc, savlc;
+	tchar rchar;
+	int savepos;
 
 	if (x == tabch) 
 		rchar = tabc | chbits;
@@ -333,23 +341,31 @@ int	x;
 	savtc = tabch;
 	savlc = ldrch;
 	tabch = ldrch = fc = IMP;
+	savepos = numtab[HP].val;
+	gchtab[tabch] &= ~TABBIT;
+	gchtab[ldrch] &= ~LDRBIT;
+	gchtab[fc] &= ~FCBIT;
+	gchtab[IMP] |= TABBIT|LDRBIT|FCBIT;
 	for (j = 0; ; j++) {
-		if ((tabtab[j] & TMASK) == 0) {
+		if ((tabtab[j] & TABMASK) == 0) {
 			if (x == savfc)
-				fprintf(stderr, "troff: zero field width.\n");
+				errprint("zero field width.");
 			jj = 0;
 			goto rtn;
 		}
-		v.hp = sumhp();	/* XXX */
-		if ((length = ((tabtab[j] & TMASK) - v.hp)) > 0 )
+		if ((length = ((tabtab[j] & TABMASK) - numtab[HP].val)) > 0 )
 			break;
 	}
-	type = tabtab[j] & (~TMASK);
+	type = tabtab[j] & (~TABMASK);
 	fp = fbuf;
 	pp = padptr;
 	if (x == savfc) {
 		while (1) {
-			if (((j = cbits(ii = getch()))) == padc) {
+			j = cbits(ii = getch());
+			jj = width(ii);
+			widthp = jj;
+			numtab[HP].val += jj;
+			if (j == padc) {
 				npad++;
 				*pp++ = fp;
 				if (pp > (padptr + NPP - 1))
@@ -362,7 +378,7 @@ int	x;
 				nlflg = 0;
 				break;
 			}
-			ws += width(ii);
+			ws += jj;
 s1:
 			*fp++ = ii;
 			if (fp > (fbuf + FBUFSZ - 3))
@@ -389,14 +405,17 @@ s1:
 				(*(*pp)) += HOR;
 			}
 		}
-		cp = fbuf;
+		pushback(fbuf);
 		jj = 0;
 	} else if (type == 0) {
 		/*plain tab or leader*/
-		if ((j = width(rchar)) == 0)
-			nchar = 0;
-		else {
-			nchar = length / j;
+		if ((j = width(rchar)) > 0) {
+			int nchar = length / j;
+			while (nchar-->0 && pbp < &pbbuf[NC-3]) {
+				numtab[HP].val += j;
+				widthp = j;
+				*pbp++ = rchar;
+			}
 			length %= j;
 		}
 		if (length)
@@ -407,7 +426,10 @@ s1:
 		/*center tab*/
 		/*right tab*/
 		while (((j = cbits(ii = getch())) != savtc) &&  (j != '\n') && (j != savlc)) {
-			ws += width(ii);
+			jj = width(ii);
+			ws += jj;
+			numtab[HP].val += jj;
+			widthp = jj;
 			*fp++ = ii;
 			if (fp > (fbuf + FBUFSZ - 3)) 
 				break;
@@ -418,21 +440,28 @@ s1:
 			length -= ws;
 		else 
 			length -= ws / 2; /*CTAB*/
-		if (((j = width(rchar)) == 0) || (length <= 0))
-			nchar = 0;
-		else {
-			nchar = length / j;
+		pushback(fbuf);
+		if ((j = width(rchar)) != 0 && length > 0) {
+			int nchar = length / j;
+			while (nchar-- > 0 && pbp < &pbbuf[NC-3])
+				*pbp++ = rchar;
 			length %= j;
 		}
 		length = (length / HOR) * HOR;
 		jj = makem(length);
-		cp = fbuf;
 		nlflg = 0;
 	}
 rtn:
+	gchtab[fc] &= ~FCBIT;
+	gchtab[tabch] &= ~TABBIT;
+	gchtab[ldrch] &= ~LDRBIT;
 	fc = savfc;
 	tabch = savtc;
 	ldrch = savlc;
+	gchtab[fc] |= FCBIT;
+	gchtab[tabch] = TABBIT;
+	gchtab[ldrch] |= LDRBIT;
+	numtab[HP].val = savepos;
 	return(jj);
 }
 
