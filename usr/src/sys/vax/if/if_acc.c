@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_acc.c	6.7 (Berkeley) %G%
+ *	@(#)if_acc.c	6.8 (Berkeley) %G%
  */
 
 #include "acc.h"
@@ -345,7 +345,7 @@ accrint(unit)
 	 * The offset parameter is always 0 since using
 	 * trailers on the ARPAnet is insane.
 	 */
-	m = if_rubaget(&sc->acc_ifuba, len, 0, &sc->acc_if);
+	m = if_rubaget(&sc->acc_ifuba, len, 0, sc->acc_if);
 	if (m == 0)
 		goto setup;
 	if ((addr->icsr & IN_EOM) == 0) {
