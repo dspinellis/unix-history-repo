@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* !lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.9 (Berkeley) %G%";
 #endif /* !lint */
 
 /*
@@ -93,7 +93,7 @@ union {
 
 extern int	errno;
 static off_t	procp;
-static int	fflg, vflg;
+static int	fflg, hadfflg, vflg;
 static int	kmem, mem, nproc, swap;
 static char	*uname;
 
@@ -143,9 +143,12 @@ main(argc, argv)
 		}
 
 	for (argv += optind; *argv; ++argv) {
-		fflg = 1;
-		getfname(*argv);
+		hadfflg = 1;
+		if (getfname(*argv))
+			fflg = 1;
 	}
+	if (hadfflg && !fflg)	/* file(s) specified, but none accessable */
+		exit(1);
 
 	printf("USER\t CMD\t      PID    FD\tDEVICE\tINODE\t  SIZE TYPE");
 	if (fflg)
@@ -543,7 +546,7 @@ getfname(filename)
 
 	if (stat(filename, &statbuf)) {
 		perror(filename);
-		exit(1);
+		return(0);
 	}
 	if ((cur = (DEVS *)malloc(sizeof(DEVS))) == NULL) {
 		fprintf(stderr, "fstat: out of space.\n");
@@ -562,6 +565,7 @@ getfname(filename)
 		cur->dev = statbuf.st_rdev;
 	}
 	cur->name = filename;
+	return(1);
 }
 
 static
