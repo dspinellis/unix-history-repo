@@ -1,15 +1,18 @@
 /*
  * Copyright (c) University of British Columbia, 1984
- * Copyright (c) 1990 The Regents of the University of California.
+ * Copyright (C) Computer Science Department IV, 
+ * 		 University of Erlangen-Nuremberg, Germany, 1992
+ * Copyright (c) 1991, 1992  The Regents of the University of California.
  * All rights reserved.
  *
- * This code is derived from software contributed to Berkeley by
- * the Laboratory for Computation Vision and the Computer Science Department
- * of the University of British Columbia.
+ * This code is derived from software contributed to Berkeley by the
+ * Laboratory for Computation Vision and the Computer Science Department
+ * of the the University of British Columbia and the Computer Science
+ * Department (IV) of the University of Erlangen-Nuremberg, Germany.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_subr.c	7.22 (Berkeley) %G%
+ *	@(#)pk_subr.c	7.23 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -24,15 +27,30 @@
 
 #include <net/if.h>
 
+#include <netccitt/dll.h>
 #include <netccitt/x25.h>
+#include <netccitt/x25err.h>
 #include <netccitt/pk.h>
 #include <netccitt/pk_var.h>
-#include <netccitt/x25err.h>
 
 int     pk_sendspace = 1024 * 2 + 8;
 int     pk_recvspace = 1024 * 2 + 8;
 
 struct pklcd_q pklcd_q = {&pklcd_q, &pklcd_q};
+
+struct x25bitslice x25_bitslice[] = {
+/*	  mask, shift value */
+	{ 0xf0, 0x4 },
+	{ 0xf,  0x0 },
+	{ 0x80, 0x7 },
+	{ 0x40, 0x6 },
+	{ 0x30, 0x4 },
+	{ 0xe0, 0x5 },
+	{ 0x10, 0x4 },
+	{ 0xe,  0x1 },
+	{ 0x1,  0x0 }
+};
+
 
 /* 
  *  Attach X.25 protocol to socket, allocate logical channel descripter
@@ -123,7 +141,21 @@ struct pklcd *lcp;
 {
 	register struct socket *so = lcp -> lcd_so;
 
-	pk_freelcd (lcp);
+	/*
+	 * If the X.25 connection is torn down due to link
+	 * level failure (e.g. LLC2 FRMR) and at the same the user
+	 * level is still filling up the socket send buffer that
+	 * send buffer is locked. An attempt to sbflush() that send
+	 * buffer will lead us into - no, not temptation but - panic!
+	 * So - we'll just check wether the send buffer is locked
+	 * and if that's the case we'll mark the lcp as zombie and 
+	 * have the pk_timer() do the cleaning ...
+	 */
+	
+	if (so && so -> so_snd.sb_flags & SB_LOCK)
+		lcp -> lcd_state = LCN_ZOMBIE;
+	else
+		pk_freelcd (lcp);
 
 	if (so == NULL)
 		return;
@@ -163,7 +195,7 @@ int lcn, type;
 	xp = mtod (m, struct x25_packet *);
 	*(long *)xp = 0;		/* ugly, but fast */
 /*	xp -> q_bit = 0;*/
-	xp -> fmt_identifier = 1;
+	X25SBITS(xp -> bits, fmt_identifier, 1);
 /*	xp -> lc_group_number = 0;*/
 
 	SET_LCN(xp, lcn);
@@ -190,23 +222,33 @@ int restart_cause;
 	/* Restart all logical channels. */
 	if (pkp -> pk_chan == 0)
 		return;
-	for (i = 1; i <= pkp -> pk_maxlcn; ++i)
-		if ((lcp = pkp -> pk_chan[i]) != NULL) {
-			if (lcp -> lcd_so) {
-				lcp -> lcd_so -> so_error = ENETRESET;
-				pk_close (lcp);
-			} else {
-				pk_flush (lcp);
-				lcp -> lcd_state = READY;
-				if (lcp -> lcd_upper)
-					lcp -> lcd_upper (lcp, 0);
+
+	/*
+	 * Don't do this if we're doing a restart issued from
+	 * inside pk_connect() --- which is only done if and
+	 * only if the X.25 link is down, i.e. a RESTART needs
+	 * to be done to get it up.
+	 */
+	if (!(pkp -> pk_dxerole & DTE_CONNECTPENDING)) {
+		for (i = 1; i <= pkp -> pk_maxlcn; ++i)
+			if ((lcp = pkp -> pk_chan[i]) != NULL) {
+				if (lcp -> lcd_so) {
+					lcp -> lcd_so -> so_error = ENETRESET;
+					pk_close (lcp);
+				} else {
+					pk_flush (lcp);
+					lcp -> lcd_state = READY;
+					if (lcp -> lcd_upper)
+						lcp -> lcd_upper (lcp, 0);
+				}
 			}
-		}
+	}
 
 	if (restart_cause < 0)
 		return;
 
 	pkp -> pk_state = DTE_SENT_RESTART;
+	pkp -> pk_dxerole &= ~(DTE_PLAYDCE | DTE_PLAYDTE);
 	lcp = pkp -> pk_chan[0];
 	m = lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_RESTART);
 	m -> m_pkthdr.len = m -> m_len += 2;
@@ -241,6 +283,12 @@ register struct pklcd *lcp;
  *  Call User Data field.
  */
 
+#define XTRACTPKP(rt)	((rt)->rt_flags & RTF_GATEWAY ? \
+			 ((rt)->rt_llinfo ? \
+			  (struct pkcb *) ((struct rtentry *)((rt)->rt_llinfo))->rt_llinfo : \
+			  (struct pkcb *) NULL) : \
+			 (struct pkcb *)((rt)->rt_llinfo))
+
 pk_bind (lcp, nam)
 struct pklcd *lcp;
 struct mbuf *nam;
@@ -248,6 +296,7 @@ struct mbuf *nam;
 	register struct pkcb *pkp;
 	register struct pklcd *pp;
 	register struct sockaddr_x25 *sa;
+	register struct rtentry *rt;
 
 	if (nam == NULL)
 		return (EADDRNOTAVAIL);
@@ -262,13 +311,9 @@ struct mbuf *nam;
 	 * net (net != 0), make sure the net is known
 	 */
 
-	if (sa -> x25_net)
-		for (pkp = pkcbhead; ; pkp = pkp -> pk_next) {
-			if (pkp == 0)
-				return (ENETUNREACH);
-			if (pkp -> pk_xcp -> xc_addr.x25_net == sa -> x25_net)
-				break;
-		}
+	if ( !(rt =  rtalloc1(sa, 1)))
+		return (ENETUNREACH);
+	pkp = XTRACTPKP(rt);
 
 	/*
 	 * For ISO's sake permit default listeners, but only one such . . .
@@ -378,39 +423,140 @@ register struct pklcd *lcp;
 register struct sockaddr_x25 *sa;
 {
 	register struct pkcb *pkp;
+	register struct rtentry *rt;
+	register struct rtentry *nrt;
+
+	struct rtentry *npaidb_enter();
+	struct pkcb *pk_newlink();
 
 	if (sa -> x25_addr[0] == '\0')
 		return (EDESTADDRREQ);
-	if (lcp -> lcd_pkp == 0)
-	    for (pkp = pkcbhead; ; pkp = pkp -> pk_next) {
-		if (pkp == 0)
-			return (ENETUNREACH);
-		/*
-		 * use first net configured (last in list
-		 * headed by pkcbhead) if net is zero
-		 *
-		 * This is clearly bogus for many llc2's sharing
-		 * the same xcp; we will replace this with a
-		 * routing lookup.
-		 */
-		if (sa -> x25_net == 0 && pkp -> pk_next == 0)
-			break;
-		if (sa -> x25_net == pkp -> pk_xcp -> xc_addr.x25_net)
-			break;
+
+	/*
+	 * Is the destination address known?
+	 */
+	if (!(rt = rtalloc1 (sa, 1)))
+		return (ENETUNREACH);
+
+	if (!(pkp = XTRACTPKP(rt)))
+		pkp = pk_newlink((struct x25_ifaddr *) (rt -> rt_ifa), 
+				 (caddr_t) 0);
+
+	/*
+	 * Have we entered the LLC address?
+	 */
+	if (nrt = npaidb_enter(rt -> rt_gateway, rt_key(rt), rt, 0))
+		pkp -> pk_llrt = nrt;
+
+	/*
+	 * Have we allocated an LLC2 link yet?
+	 */
+	if (pkp->pk_llnext == (caddr_t)0 && pkp->pk_llctlinput) {
+		struct dll_ctlinfo ctlinfo;
+
+		ctlinfo.dlcti_rt = rt;
+		ctlinfo.dlcti_pcb = (caddr_t) pkp;
+		ctlinfo.dlcti_conf = 
+			(struct dllconfig *) (&((struct x25_ifaddr *)(rt->rt_ifa))->ia_xc);
+		pkp->pk_llnext = 
+			(pkp->pk_llctlinput)(PRC_CONNECT_REQUEST, 0, &ctlinfo);
 	}
 
-	if (pkp -> pk_state != DTE_READY)
-		return (ENETDOWN);
+	if (pkp -> pk_state != DTE_READY && pkp -> pk_state != DTE_WAITING)
+			return (ENETDOWN);
 	if ((lcp -> lcd_lcn = pk_getlcn (pkp)) == 0)
 		return (EMFILE);
+
 	lcp -> lcd_faddr = *sa;
 	lcp -> lcd_ceaddr = & lcp -> lcd_faddr;
 	pk_assoc (pkp, lcp, lcp -> lcd_ceaddr);
+
+	/*
+	 * If the link is not up yet, initiate an X.25 RESTART
+	 */
+	if (pkp -> pk_state == DTE_WAITING) {
+		pkp -> pk_dxerole |= DTE_CONNECTPENDING;
+		pk_ctlinput(PRC_LINKUP, (struct sockaddr *)0, pkp);
+		if (lcp -> lcd_so)
+			soisconnecting (lcp -> lcd_so);
+		return 0;
+	}
+
 	if (lcp -> lcd_so)
 		soisconnecting (lcp -> lcd_so);
 	lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_CALL);
 	pk_callrequest (lcp, lcp -> lcd_ceaddr, pkp -> pk_xcp);
 	return (*pkp -> pk_ia -> ia_start) (lcp);
+}
+
+/*
+ * Complete all pending X.25 call requests --- this gets called after
+ * the X.25 link has been restarted.
+ */
+#define RESHUFFLELCN(maxlcn, lcn) ((maxlcn) - (lcn) + 1)
+
+pk_callcomplete(pkp)
+	register struct pkcb *pkp;
+{
+	register struct pklcd *lcp;
+	register int i;
+	register int ni;
+	
+
+	if (pkp -> pk_dxerole & DTE_CONNECTPENDING) 
+		pkp -> pk_dxerole &= ~DTE_CONNECTPENDING;
+	else return;
+
+	if (pkp -> pk_chan == 0)
+		return;
+	
+	/*
+	 * We pretended to be a DTE for allocating lcns, if
+	 * it turns out that we are in reality performing as a
+	 * DCE we need to reshuffle the lcps.
+	 *			        	  	      
+         *             /+---------------+--------     -	      
+	 *            / | a  (maxlcn-1) |              \      
+	 *           /  +---------------+              	\     
+	 *     +--- *   | b  (maxlcn-2) |         	 \    
+	 *     |     \  +---------------+         	  \   
+	 *   r |      \ | c  (maxlcn-3) |         	   \  
+	 *   e |       \+---------------+         	    | 
+	 *   s |        |	 .                	    |  
+	 *   h |        |        .                	    | m
+	 *   u |        |	 .      	  	    | a
+	 *   f |        |	 .      	  	    | x
+	 *   f |        |	 .                	    | l
+	 *   l |       /+---------------+         	    | c
+	 *   e |      / | c' (   3    ) |         	    | n
+	 *     |     /  +---------------+         	    | 
+	 *     +--> *   | b' (   2    ) |         	   /
+	 *           \  +---------------+         	  / 
+	 *            \ | a' (   1    ) |         	 /  
+    	 *             \+---------------+               /   
+         *              | 0             |              /    
+	 *              +---------------+--------     -     
+	 *	    
+	 */	    
+	if (pkp -> pk_dxerole & DTE_PLAYDCE) {
+		/* Sigh, reshuffle it */
+		for (i = pkp -> pk_maxlcn; i > 0; --i)
+			if (pkp -> pk_chan[i]) {
+				ni = RESHUFFLELCN(pkp -> pk_maxlcn, i);
+				pkp -> pk_chan[ni] = pkp -> pk_chan[i];
+				pkp -> pk_chan[i] = NULL;
+				pkp -> pk_chan[ni] -> lcd_lcn = ni;
+			}
+	}
+
+	for (i = 1; i <= pkp -> pk_maxlcn; ++i)
+		if ((lcp = pkp -> pk_chan[i]) != NULL) {
+			/* if (lcp -> lcd_so)
+				soisconnecting (lcp -> lcd_so); */
+			lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_CALL);
+			pk_callrequest (lcp, lcp -> lcd_ceaddr, pkp -> pk_xcp);
+			(*pkp -> pk_ia -> ia_start)(lcp);
+		}
 }
 
 struct bcdinfo {
@@ -433,12 +579,12 @@ register struct x25config *xcp;
 	struct bcdinfo b;
 
 	if (lcp -> lcd_flags & X25_DBIT)
-		xp -> d_bit = 1;
+		X25SBITS(xp -> bits, d_bit, 1);
 	a = (struct x25_calladdr *) &xp -> packet_data;
 	b.cp = (octet *) a -> address_field;
 	b.posn = 0;
-	a -> called_addrlen = to_bcd (&b, sa, xcp);
-	a -> calling_addrlen = to_bcd (&b, &xcp -> xc_addr, xcp);
+	X25SBITS(a -> addrlens, called_addrlen, to_bcd (&b, sa, xcp));
+	X25SBITS(a -> addrlens, calling_addrlen, to_bcd (&b, &xcp -> xc_addr, xcp));
 	if (b.posn & 0x01)
 		*b.cp++ &= 0xf0;
 	m -> m_pkthdr.len = m -> m_len += b.cp - (octet *) a;
@@ -528,7 +674,9 @@ register struct x25config *xcp;
 
 /* 
  *  This routine gets the  first available logical channel number.  The
- *  search is from the highest number to lowest number (DTE).
+ *  search is 
+ *  		- from the highest number to lowest number if playing DTE, and
+ *		- from lowest to highest number if playing DCE.
  */
 
 pk_getlcn (pkp)
@@ -538,11 +686,17 @@ register struct pkcb *pkp;
 
 	if (pkp -> pk_chan == 0)
 		return (0);
-	for (i = pkp -> pk_maxlcn; i > 0; --i)
-		if (pkp -> pk_chan[i] == NULL)
-			break;
+	if ( pkp -> pk_dxerole & DTE_PLAYDCE ) {
+		for (i = 1; i <= pkp -> pk_maxlcn; ++i)
+			if (pkp -> pk_chan[i] == NULL)
+				break;
+	} else { 
+		for (i = pkp -> pk_maxlcn; i > 0; --i)
+			if (pkp -> pk_chan[i] == NULL)
+				break;
+	}
+	i = ( i > pkp -> pk_maxlcn ? 0 : i );
 	return (i);
-
 }
 
 /* 
@@ -649,9 +803,9 @@ register struct pklcd *lcp;
 		m_freem (lcp -> lcd_facilities);
 		lcp -> lcd_facilities = 0;
 	}
-	if (so = lcp -> lcd_so) {
+	if (so = lcp -> lcd_so) 
 		sbflush (&so -> so_snd);
-	} else 
+	else 
 		sbflush (&lcp -> lcd_sb);
 }
 
@@ -713,7 +867,8 @@ unsigned pr;
 	if (lcp -> lcd_window_condition == TRUE)
 		lcp -> lcd_window_condition = FALSE;
 
-	if (so && (so -> so_snd.sb_flags & SB_NOTIFY))
+	if (so && ((so -> so_snd.sb_flags & SB_WAIT) || 
+		   (so -> so_snd.sb_flags & SB_NOTIFY)))
 		sowwakeup (so);
 
 	return (PACKET_OK);
@@ -729,7 +884,7 @@ register struct x25_packet *xp;
 {
 	register int type;
 
-	if (xp -> fmt_identifier != 1)
+	if (X25GBITS(xp -> bits, fmt_identifier) != 1)
 		return (INVALID_PACKET);
 #ifdef ancient_history
 	/* 
@@ -911,12 +1066,12 @@ char *fmt;
 {
 
 	if (lcn)
-		if (pkcbhead -> pk_next)
+		if (!PQEMPTY)
 			printf ("X.25(%s): lcn %d: ", format_ntn (xcp), lcn);
 		else
 			printf ("X.25: lcn %d: ", lcn);
 	else
-		if (pkcbhead -> pk_next)
+		if (!PQEMPTY)
 			printf ("X.25(%s): ", format_ntn (xcp));
 		else
 			printf ("X.25: ");
@@ -937,7 +1092,7 @@ register struct pklcd *lcp;
 
 	if (m == 0)
 		return 0;
-	if ((m -> m_flags & M_PKTHDR) == 0)
+	if (m -> m_flags & M_PKTHDR == 0)
 		panic ("pk_fragment");
 	totlen = m -> m_pkthdr.len;
 	m -> m_act = 0;
@@ -958,15 +1113,15 @@ register struct pklcd *lcp;
 		xp = mtod (m, struct x25_packet *);
 		0[(char *)xp] = 0;
 		if (qbit)
-			xp -> q_bit = 1;
+			X25SBITS(xp -> bits, q_bit, 1);
 		if (lcp -> lcd_flags & X25_DBIT)
-			xp -> d_bit = 1;
-		xp -> fmt_identifier = 1;
+			X25SBITS(xp -> bits, d_bit, 1);
+		X25SBITS(xp -> bits, fmt_identifier, 1);
 		xp -> packet_type = X25_DATA;
 		SET_LCN(xp, lcp -> lcd_lcn);
 		if (next || (mbit && (totlen == psize ||
 				      (lcp -> lcd_flags & X25_DBIT))))
-			MBIT(xp) = 1;
+			SMBIT(xp, 1);
 	} while (m = next);
 	for (m = head; m; m = next) {
 		next = m -> m_act;

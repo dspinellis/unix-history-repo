@@ -1,15 +1,18 @@
 /*
  * Copyright (c) University of British Columbia, 1984
- * Copyright (c) 1990 The Regents of the University of California.
+ * Copyright (C) Computer Science Department IV, 
+ * 		 University of Erlangen-Nuremberg, Germany, 1992
+ * Copyright (c) 1991, 1992  The Regents of the University of California.
  * All rights reserved.
  *
- * This code is derived from software contributed to Berkeley by
- * the Laboratory for Computation Vision and the Computer Science Department
- * of the University of British Columbia.
+ * This code is derived from software contributed to Berkeley by the
+ * Laboratory for Computation Vision and the Computer Science Department
+ * of the the University of British Columbia and the Computer Science
+ * Department (IV) of the University of Erlangen-Nuremberg, Germany.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_output.c	7.12 (Berkeley) %G%
+ *	@(#)pk_output.c	7.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -85,10 +88,10 @@ register struct pklcd *lcp;
 			break;
 
 		case DATA + DATA_TRANSFER: 
-			PS(xp) = lcp -> lcd_ssn;
+			SPS(xp, lcp -> lcd_ssn);
 			lcp -> lcd_input_window =
 				(lcp -> lcd_rsn + 1) % MODULUS;
-			PR(xp) = lcp -> lcd_input_window;
+			SPR(xp, lcp -> lcd_input_window);
 			lcp -> lcd_last_transmitted_pr = lcp -> lcd_input_window;
 			lcp -> lcd_ssn = (lcp -> lcd_ssn + 1) % MODULUS;
 			if (lcp -> lcd_ssn == ((lcp -> lcd_output_window + lcp -> lcd_windowsize) % MODULUS))
@@ -109,7 +112,7 @@ register struct pklcd *lcp;
 		case RNR + DATA_TRANSFER: 
 			lcp -> lcd_input_window =
 				(lcp -> lcd_rsn + 1) % MODULUS;
-			PR(xp) = lcp -> lcd_input_window;
+			SPR(xp, lcp -> lcd_input_window);
 			lcp -> lcd_last_transmitted_pr = lcp -> lcd_input_window;
 			break;
 
@@ -150,7 +153,7 @@ register struct pklcd *lcp;
 			m->m_flags |= 0x08;
 			mbuf_cache(&pk_input_cache, m);
 		}
-		(*pkp -> pk_lloutput) (pkp -> pk_llnext, m);
+		(*pkp -> pk_lloutput) (pkp -> pk_llnext, m, pkp -> pk_rt);
 	}
 }
 
