@@ -1,9 +1,20 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.3	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -11,6 +22,7 @@ RSRCS=	retest.c regexp.c
 ROBJS=	retest.o regexp.o
 VSRCS=	regexp.c vfontedpr.c vgrindefs.c
 VOBJS=	regexp.o vfontedpr.o vgrindefs.o
+MAN=	vgrind.0
 
 all: retest vfontedpr
 
@@ -20,36 +32,29 @@ vfontedpr: ${VOBJS} ${LIBC}
 retest: ${ROBJS} ${LIBC}
 	${CC} ${CFLAGS} -o $@ ${ROBJS}
 
-clean: FRC
+clean:
 	rm -f ${OBJS} ${ROBJS} ${VOBJS} core retest vfontedpr
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${RSRCS} ${VSRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 vfontedpr ${DESTDIR}/usr/lib/vfontedpr
 	install -c -o bin -g bin -m 755 vgrind.sh ${DESTDIR}/usr/ucb/vgrind
 	install -c -o bin -g bin -m 755 vgrindefs.src ${DESTDIR}/usr/lib/vgrindefs
 	install -c -o bin -g bin -m 755 tmac.vgrind ${DESTDIR}/usr/lib/tmac/tmac.vgrind
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${RSRCS}
 	lint ${CFLAGS} ${VSRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${RSRCS}
 	ctags -a ${VSRCS}
 	sort -o tags tags
 
 FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-retest.o: retest.c /usr/include/ctype.h
-regexp.o: regexp.c /usr/include/ctype.h regexp.c /usr/include/ctype.h
-vfontedpr.o: vfontedpr.c /usr/include/ctype.h /usr/include/stdio.h
-vfontedpr.o: /usr/include/sys/types.h /usr/include/sys/stat.h
-vgrindefs.o: vgrindefs.c /usr/include/ctype.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
