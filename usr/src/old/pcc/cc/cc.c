@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)cc.c 4.9 %G%";
+static	char sccsid[] = "@(#)cc.c 4.10 %G%";
 /*
  * cc - front end for C compiler
  */
@@ -57,7 +57,6 @@ main(argc, argv)
 				switch (getsuf(outfile)) {
 
 				case 'c':
-				case 'o':
 					error("-o would overwrite %s",
 					    outfile);
 					exit(8);
@@ -211,8 +210,13 @@ main(argc, argv)
 			cflag++;
 			continue;
 		}
-		if (sflag)
-			assource = tmp3 = setsuf(clist[i], 's');
+		if (sflag) {
+			if (nc==1 && outfile)
+				tmp3 = outfile;
+			else
+				tmp3 = setsuf(clist[i], 's');
+			assource = tmp3;
+		}
 		av[0] = "ccom"; av[1] = tmp4; av[2] = oflag?tmp5:tmp3; na = 3;
 		if (proflag)
 			av[na++] = "-XP";
@@ -241,7 +245,11 @@ main(argc, argv)
 			continue;
 	assemble:
 		cunlink(tmp1); cunlink(tmp2); cunlink(tmp4);
-		av[0] = "as"; av[1] = "-o"; av[2] = setsuf(clist[i], 'o');
+		av[0] = "as"; av[1] = "-o";
+		if (cflag && nc==1 && outfile)
+			av[2] = outfile;
+		else
+			av[2] = setsuf(clist[i], 'o');
 		na = 3;
 		if (Rflag)
 			av[na++] = "-R";
