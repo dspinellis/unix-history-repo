@@ -6,11 +6,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)inet_makeaddr.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet_makeaddr.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 /*
  * Formulate an Internet address from network + host.  Used in

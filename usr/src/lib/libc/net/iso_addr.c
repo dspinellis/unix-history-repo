@@ -6,11 +6,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)iso_addr.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)iso_addr.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <netiso/iso.h>
+#include <string.h>
+
 /* States*/
 #define VIRGIN	0
 #define GOTONE	1
@@ -22,7 +24,7 @@ static char sccsid[] = "@(#)iso_addr.c	5.3 (Berkeley) %G%";
 
 struct iso_addr *
 iso_addr(addr)
-register char *addr;
+	register const char *addr;
 {
 	static struct iso_addr out_addr;
 	register char *cp = out_addr.isoa_genaddr;
@@ -66,7 +68,7 @@ static char hexlist[] = "0123456789abcdef";
 
 char *
 iso_ntoa(isoa)
-struct iso_addr *isoa;
+	const struct iso_addr *isoa;
 {
 	static char obuf[64];
 	register char *out = obuf; 

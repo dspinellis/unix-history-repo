@@ -6,30 +6,27 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rcmd.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcmd.c	5.23 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <stdio.h>
-#include <ctype.h>
-#include <pwd.h>
 #include <sys/param.h>
-#include <sys/file.h>
-#include <sys/signal.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
-
 #include <netinet/in.h>
-
+#include <arpa/inet.h>
+#include <signal.h>
+#include <fcntl.h>
 #include <netdb.h>
+#include <pwd.h>
 #include <errno.h>
-
-extern	errno;
-char	*index();
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
 
 rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 	char **ahost;
 	u_short rport;
-	char *locuser, *remuser, *cmd;
+	const char *locuser, *remuser, *cmd;
 	int *fd2p;
 {
 	int s, timo = 1, pid;
@@ -62,7 +59,7 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 		sin.sin_family = hp->h_addrtype;
 		bcopy(hp->h_addr_list[0], (caddr_t)&sin.sin_addr, hp->h_length);
 		sin.sin_port = rport;
-		if (connect(s, (caddr_t)&sin, sizeof (sin), 0) >= 0)
+		if (connect(s, (struct sockaddr *)&sin, sizeof(sin)) >= 0)
 			break;
 		(void) close(s);
 		if (errno == EADDRINUSE) {
@@ -124,7 +121,7 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 			(void) close(s2);
 			goto bad;
 		}
-		s3 = accept(s2, &from, &len, 0);
+		s3 = accept(s2, (struct sockaddr *)&from, &len);
 		(void) close(s2);
 		if (s3 < 0) {
 			perror("accept");
@@ -180,7 +177,7 @@ rresvport(alport)
 		return (-1);
 	for (;;) {
 		sin.sin_port = htons((u_short)*alport);
-		if (bind(s, (caddr_t)&sin, sizeof (sin)) >= 0)
+		if (bind(s, (struct sockaddr *)&sin, sizeof (sin)) >= 0)
 			return (s);
 		if (errno != EADDRINUSE) {
 			(void) close(s);
@@ -198,9 +195,8 @@ rresvport(alport)
 int	_check_rhosts_file = 1;
 
 ruserok(rhost, superuser, ruser, luser)
-	char *rhost;
+	const char *rhost, *ruser, *luser;
 	int superuser;
-	char *ruser, *luser;
 {
 	FILE *hostf;
 	char fhost[MAXHOSTNAMELEN];
@@ -208,7 +204,7 @@ ruserok(rhost, superuser, ruser, luser)
 	register char *sp, *p;
 	int baselen = -1;
 
-	sp = rhost;
+	sp = (char *)rhost;
 	p = fhost;
 	while (*sp) {
 		if (*sp == '.') {
@@ -262,9 +258,9 @@ _validuser(hostf, rhost, luser, ruser, baselen)
 	FILE *hostf;
 	int baselen;
 {
-	char *user;
-	char ahost[MAXHOSTNAMELEN];
 	register char *p;
+	char *user, ahost[MAXHOSTNAMELEN];
+	static int _checkhost();
 
 	while (fgets(ahost, sizeof (ahost), hostf)) {
 		p = ahost;

@@ -6,12 +6,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_comp.c	6.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_comp.c	6.20 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <stdio.h>
 #include <arpa/nameser.h>
+#include <netinet/in.h>
+#include <resolv.h>
+#include <stdio.h>
 
 static dn_find();
 
@@ -23,7 +25,8 @@ static dn_find();
  * Return size of compressed name or -1 if there was an error.
  */
 dn_expand(msg, eomorig, comp_dn, exp_dn, length)
-	u_char *msg, *eomorig, *comp_dn, *exp_dn;
+	const u_char *msg, *eomorig, *comp_dn;
+	u_char *exp_dn;
 	int length;
 {
 	register u_char *cp, *dn;
@@ -32,7 +35,7 @@ dn_expand(msg, eomorig, comp_dn, exp_dn, length)
 	int len = -1, checked = 0;
 
 	dn = exp_dn;
-	cp = comp_dn;
+	cp = (u_char *)comp_dn;
 	eom = exp_dn + length;
 	/*
 	 * fetch next label in domain name
@@ -66,7 +69,7 @@ dn_expand(msg, eomorig, comp_dn, exp_dn, length)
 		case INDIR_MASK:
 			if (len < 0)
 				len = cp - comp_dn + 1;
-			cp = msg + (((n & 0x3f) << 8) | (*cp & 0xff));
+			cp = (u_char *)msg + (((n & 0x3f) << 8) | (*cp & 0xff));
 			if (cp < msg || cp >= eomorig)	/* out of range */
 				return(-1);
 			checked += 2;
@@ -102,16 +105,16 @@ dn_expand(msg, eomorig, comp_dn, exp_dn, length)
  * is NULL, we don't update the list.
  */
 dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr)
-	u_char *exp_dn, *comp_dn;
+	const u_char *exp_dn;
+	u_char *comp_dn, **dnptrs, **lastdnptr;
 	int length;
-	u_char **dnptrs, **lastdnptr;
 {
 	register u_char *cp, *dn;
 	register int c, l;
 	u_char **cpp, **lpp, *sp, *eob;
 	u_char *msg;
 
-	dn = exp_dn;
+	dn = (u_char *)exp_dn;
 	cp = comp_dn;
 	eob = cp + length;
 	if (dnptrs != NULL) {

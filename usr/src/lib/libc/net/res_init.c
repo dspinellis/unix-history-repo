@@ -6,15 +6,19 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_init.c	6.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_init.c	6.15 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <stdio.h>
+#include <arpa/inet.h>
 #include <arpa/nameser.h>
 #include <resolv.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*
  * Resolver state default settings
@@ -43,10 +47,6 @@ res_init()
 	register char *cp, **pp;
 	register int n;
 	char buf[BUFSIZ];
-	extern u_long inet_addr();
-	extern char *index();
-	extern char *strcpy(), *strncpy();
-	extern char *getenv();
 	int nserv = 0;    /* number of nameserver records read from file */
 	int haveenv = 0;
 	int havesearch = 0;

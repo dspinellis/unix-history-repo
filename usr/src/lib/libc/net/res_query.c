@@ -6,20 +6,19 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_query.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_query.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
-#include <sys/socket.h>
 #include <netinet/in.h>
-#include <ctype.h>
-#include <netdb.h>
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
 #include <arpa/inet.h>
 #include <arpa/nameser.h>
+#include <netdb.h>
 #include <resolv.h>
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 
 #if PACKETSZ > 1024
 #define MAXPACKET	PACKETSZ
@@ -27,7 +26,6 @@ static char sccsid[] = "@(#)res_query.c	5.8 (Berkeley) %G%";
 #define MAXPACKET	1024
 #endif
 
-extern int errno;
 int h_errno;
 
 /*
@@ -66,7 +64,7 @@ res_query(name, class, type, answer, anslen)
 		h_errno = NO_RECOVERY;
 		return (n);
 	}
-	n = res_send(buf, n, answer, anslen);
+	n = res_send(buf, n, (char *)answer, anslen);
 	if (n < 0) {
 #ifdef DEBUG
 		if (_res.options & RES_DEBUG)

@@ -9,25 +9,28 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ns_addr.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ns_addr.c	6.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <netns/ns.h>
+#include <stdio.h>
+#include <string.h>
 
 static struct ns_addr addr, zero_addr;
 
+static void Field(), cvtbase();
+
 struct ns_addr 
 ns_addr(name)
-	char *name;
+	const char *name;
 {
-	char separator = '.';
+	char separator;
 	char *hostname, *socketname, *cp;
 	char buf[50];
-	extern char *index();
 
-	addr = zero_addr;
-	(void)strncpy(buf, name, 49);
+	(void)strncpy(buf, name, sizeof(buf - 1));
+	buf[sizeof(buf - 1)] = '\0';
 
 	/*
 	 * First, figure out what he intends as a field separtor.
@@ -40,13 +43,16 @@ ns_addr(name)
 	else {
 		hostname = index(buf, '.');
 		if ((cp = index(buf, ':')) &&
-		    ( (hostname && cp < hostname) || (hostname == 0))) {
+		    ((hostname && cp < hostname) || (hostname == 0))) {
 			hostname = cp;
 			separator = ':';
-		}
+		} else
+			separator = '.';
 	}
 	if (hostname)
 		*hostname++ = 0;
+
+	addr = zero_addr;
 	Field(buf, addr.x_net.c_net, 4);
 	if (hostname == 0)
 		return (addr);  /* No separator means net only */
@@ -62,11 +68,11 @@ ns_addr(name)
 	return (addr);
 }
 
-static
+static void
 Field(buf, out, len)
-char *buf;
-u_char *out;
-int len;
+	char *buf;
+	u_char *out;
+	int len;
 {
 	register char *bp = buf;
 	int i, ibase, base16 = 0, base10 = 0, clen = 0;
@@ -166,7 +172,7 @@ int len;
 	cvtbase((long)ibase, 256, hb, i, out, len);
 }
 
-static
+static void
 cvtbase(oldbase,newbase,input,inlen,result,reslen)
 	long oldbase;
 	int newbase;

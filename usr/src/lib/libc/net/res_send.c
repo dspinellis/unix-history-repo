@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_send.c	6.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.27 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -18,16 +18,15 @@ static char sccsid[] = "@(#)res_send.c	6.26 (Berkeley) %G%";
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <netinet/in.h>
+#include <arpa/nameser.h>
 #include <stdio.h>
 #include <errno.h>
-#include <arpa/nameser.h>
 #include <resolv.h>
-
-extern int errno;
+#include <unistd.h>
+#include <string.h>
 
 static int s = -1;	/* socket used for communications */
 static struct sockaddr no_addr;
-  
 
 #ifndef FD_SET
 #define	NFDBITS		32
@@ -39,7 +38,7 @@ static struct sockaddr no_addr;
 #endif
 
 res_send(buf, buflen, answer, anslen)
-	char *buf;
+	const char *buf;
 	int buflen;
 	char *answer;
 	int anslen;
@@ -99,8 +98,9 @@ res_send(buf, buflen, answer, anslen)
 #endif DEBUG
 					continue;
 				}
-				if (connect(s, &(_res.nsaddr_list[ns]),
-				   sizeof(struct sockaddr)) < 0) {
+				if (connect(s,
+				    (struct sockaddr *)&(_res.nsaddr_list[ns]),
+				    sizeof(struct sockaddr)) < 0) {
 					terrno = errno;
 #ifdef DEBUG
 					if (_res.options & RES_DEBUG)
@@ -117,7 +117,7 @@ res_send(buf, buflen, answer, anslen)
 			len = htons((u_short)buflen);
 			iov[0].iov_base = (caddr_t)&len;
 			iov[0].iov_len = sizeof(len);
-			iov[1].iov_base = buf;
+			iov[1].iov_base = (char *)buf;
 			iov[1].iov_len = buflen;
 			if (writev(s, iov, 2) != sizeof(len) + buflen) {
 				terrno = errno;
@@ -242,7 +242,7 @@ res_send(buf, buflen, answer, anslen)
 				 * from another server.
 				 */
 				if (connected == 0) {
-					if (connect(s, &_res.nsaddr_list[ns],
+			if (connect(s, (struct sockaddr *)&_res.nsaddr_list[ns],
 					    sizeof(struct sockaddr)) < 0) {
 #ifdef DEBUG
 						if (_res.options & RES_DEBUG)
@@ -271,7 +271,7 @@ res_send(buf, buflen, answer, anslen)
 				}
 #endif BSD
 				if (sendto(s, buf, buflen, 0,
-				    &_res.nsaddr_list[ns],
+				    (struct sockaddr *)&_res.nsaddr_list[ns],
 				    sizeof(struct sockaddr)) != buflen) {
 #ifdef DEBUG
 					if (_res.options & RES_DEBUG)

@@ -6,14 +6,15 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_mkquery.c	6.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_mkquery.c	6.15 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <stdio.h>
 #include <sys/param.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
 #include <resolv.h>
+#include <stdio.h>
+#include <string.h>
 
 /*
  * Form all types of queries.
@@ -21,11 +22,11 @@ static char sccsid[] = "@(#)res_mkquery.c	6.14 (Berkeley) %G%";
  */
 res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	int op;			/* opcode of query */
-	char *dname;		/* domain name */
+	const char *dname;		/* domain name */
 	int class, type;	/* class and type of query */
-	char *data;		/* resource record data */
+	const char *data;		/* resource record data */
 	int datalen;		/* length of data */
-	struct rrec *newrr;	/* new rr for modify or append */
+	const struct rrec *newrr;	/* new rr for modify or append */
 	char *buf;		/* buffer to put query */
 	int buflen;		/* size of buffer */
 {
@@ -33,7 +34,6 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	register char *cp;
 	register int n;
 	char *dnptrs[10], **dpp, **lastdnptr;
-	extern char *index();
 
 #ifdef DEBUG
 	if (_res.options & RES_DEBUG)
@@ -64,7 +64,8 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	case QUERY:
 		if ((buflen -= QFIXEDSZ) < 0)
 			return(-1);
-		if ((n = dn_comp(dname, cp, buflen, dnptrs, lastdnptr)) < 0)
+		if ((n = dn_comp((u_char *)dname, (u_char *)cp, buflen,
+		    (u_char **)dnptrs, (u_char **)lastdnptr)) < 0)
 			return (-1);
 		cp += n;
 		buflen -= n;
@@ -79,7 +80,8 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 		 * Make an additional record for completion domain.
 		 */
 		buflen -= RRFIXEDSZ;
-		if ((n = dn_comp(data, cp, buflen, dnptrs, lastdnptr)) < 0)
+		if ((n = dn_comp((u_char *)data, (u_char *)cp, buflen,
+		    (u_char **)dnptrs, (u_char **)lastdnptr)) < 0)
 			return (-1);
 		cp += n;
 		buflen -= n;

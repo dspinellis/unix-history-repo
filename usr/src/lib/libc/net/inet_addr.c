@@ -6,12 +6,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)inet_addr.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet_addr.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
-#include <ctype.h>
+#include <sys/param.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 /*
  * Ascii internet address interpretation routine.
@@ -19,7 +19,7 @@ static char sccsid[] = "@(#)inet_addr.c	5.8 (Berkeley) %G%";
  */
 u_long
 inet_addr(cp)
-	register char *cp;
+	register const char *cp;
 {
 	struct in_addr val;
 

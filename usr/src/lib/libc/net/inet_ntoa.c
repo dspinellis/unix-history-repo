@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)inet_ntoa.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet_ntoa.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -15,6 +15,8 @@ static char sccsid[] = "@(#)inet_ntoa.c	5.5 (Berkeley) %G%";
  */
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
+#include <stdio.h>
 
 char *
 inet_ntoa(in)
@@ -25,6 +27,7 @@ inet_ntoa(in)
 
 	p = (char *)&in;
 #define	UC(b)	(((int)b)&0xff)
-	sprintf(b, "%d.%d.%d.%d", UC(p[0]), UC(p[1]), UC(p[2]), UC(p[3]));
+	(void)snprintf(b, sizeof(b),
+	    "%d.%d.%d.%d", UC(p[0]), UC(p[1]), UC(p[2]), UC(p[3]));
 	return (b);
 }

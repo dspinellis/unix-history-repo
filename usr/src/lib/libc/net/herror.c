@@ -6,11 +6,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)herror.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)herror.c	6.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/uio.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <string.h>
 
 char	*h_errlist[] = {
 	"Error 0",
@@ -27,14 +30,15 @@ extern int	h_errno;
  * herror --
  *	print the error indicated by the h_errno value.
  */
+void
 herror(s)
-	char *s;
+	const char *s;
 {
 	struct iovec iov[4];
 	register struct iovec *v = iov;
 
 	if (s && *s) {
-		v->iov_base = s;
+		v->iov_base = (char *)s;
 		v->iov_len = strlen(s);
 		v++;
 		v->iov_base = ": ";
@@ -47,5 +51,5 @@ herror(s)
 	v++;
 	v->iov_base = "\n";
 	v->iov_len = 1;
-	writev(2, iov, (v - iov) + 1);
+	writev(STDERR_FILENO, iov, (v - iov) + 1);
 }
