@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.32 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.33 (Berkeley) %G%
  */
 
 /*
@@ -41,7 +41,6 @@
 #define	TRUE	1
 #define	FALSE	0
 
-int netnetnet = sizeof (struct netaddrhash);
 /*
  * Estimate rto for an nfs rpc sent via. an unreliable datagram.
  * Use the mean and mean deviation of rtt for the appropriate type of rpc
