@@ -1,4 +1,4 @@
-/*	tcp_output.c	6.7	84/11/14	*/
+/*	tcp_output.c	6.8	85/05/27	*/
 
 #include "param.h"
 #include "systm.h"
@@ -54,19 +54,34 @@ tcp_output(tp)
 again:
 	sendalot = 0;
 	off = tp->snd_nxt - tp->snd_una;
-	win = MIN(tp->snd_wnd, tp->snd_cwnd) + tp->t_force;
+	win = MIN(tp->snd_wnd, tp->snd_cwnd);
+	/*
+	 * If in persist timeout with window of 0, send 1 byte.
+	 * Otherwise, window is small but nonzero
+	 * and timer expired, go to transmit state.
+	 */
+	if (tp->t_force) {
+		if (win == 0) 
+			win = 1;
+		else {
+			tp->t_timer[TCPT_PERSIST] = 0;
+			tp->t_rxtshift = 0;
+		}
+	}
 	len = MIN(so->so_snd.sb_cc, win) - off;
 	if (len < 0)
 		return (0);	/* ??? */	/* past FIN */
 	if (len > tp->t_maxseg) {
 		len = tp->t_maxseg;
 		/*
-		 * Don't send more than one segment if retransmitting.
+		 * Don't send more than one segment if retransmitting
+		 * (or persisting, but then we shouldn't be here).
 		 */
 		if (tp->t_rxtshift == 0)
 			sendalot = 1;
 	}
 
+	win = sbspace(&so->so_rcv);
 	flags = tcp_outflags[tp->t_state];
 	if (tp->snd_nxt + len < tp->snd_una + so->so_snd.sb_cc)
 		flags &= ~TH_FIN;
@@ -80,6 +95,8 @@ again:
 	 * and can send all data, a maximum segment,
 	 * at least a maximum default-size segment do it,
 	 * or are forced, do it; otherwise don't bother.
+	 * If retransmitting (possibly after persist timer forced us
+	 * to send into a small window), then must resend.
 	 */
 	if (len) {
 		if (len == tp->t_maxseg || len >= so->so_snd.sb_cc) /* off = 0*/
@@ -87,6 +104,8 @@ again:
 		if (len >= TCP_MSS)	/* a lot */
 			goto send;
 		if (tp->t_force)
+			goto send;
+		if (SEQ_LT(tp->snd_nxt, tp->snd_max))
 			goto send;
 	}
 
@@ -124,13 +143,14 @@ again:
 	 *	is set when we are retransmitting
 	 * The output side is idle when both timers are zero.
 	 *
-	 * If send window is closed, there is data to transmit, and no
-	 * retransmit or persist is pending, then go to persist state,
-	 * arranging to force out a byte to get more current window information
-	 * if nothing happens soon.
+	 * If send window is too small, there is data to transmit, and no
+	 * retransmit or persist is pending, then go to persist state.
+	 * If nothing happens soon, send when timer expires:
+	 * if window is nonzero, transmit what we can,
+	 * otherwise force out a byte.
 	 */
-	if (tp->snd_wnd == 0 && so->so_snd.sb_cc &&
-	    tp->t_timer[TCPT_REXMT] == 0 && tp->t_timer[TCPT_PERSIST] == 0) {
+	if (so->so_snd.sb_cc && tp->t_timer[TCPT_REXMT] == 0 &&
+	    tp->t_timer[TCPT_PERSIST] == 0) {
 		tp->t_rxtshift = 0;
 		tcp_setpersist(tp);
 	}
@@ -212,10 +232,7 @@ send:
 	}
 noopt:
 	ti->ti_flags = flags;
-	win = sbspace(&so->so_rcv);
-	if (win < so->so_rcv.sb_hiwat / 4)	/* avoid silly window */
-		win = 0;
-	if (win > 0)
+	if (win >= so->so_rcv.sb_hiwat / 4)	/* avoid silly window */
 		ti->ti_win = htons((u_short)win);
 	if (SEQ_GT(tp->snd_up, tp->snd_nxt)) {
 		ti->ti_urp = tp->snd_up - tp->snd_nxt;
@@ -249,10 +266,9 @@ noopt:
 
 	/*
 	 * In transmit state, time the transmission and arrange for
-	 * the retransmit.  In persist state, reset persist time for
-	 * next persist.
+	 * the retransmit.  In persist state, just set snd_max.
 	 */
-	if (tp->t_force == 0) {
+	if (tp->t_force == 0 || tp->t_timer[TCPT_PERSIST] == 0) {
 		/*
 		 * Advance snd_nxt over sequence space of this segment.
 		 */
@@ -272,7 +288,8 @@ noopt:
 		}
 
 		/*
-		 * Set retransmit timer if not currently set.
+		 * Set retransmit timer if not currently set,
+		 * and not doing a keep-alive probe.
 		 * Initial value for retransmit timer to tcp_beta*tp->t_srtt.
 		 * Initialize shift counter which is used for exponential
 		 * backoff of retransmit time.
