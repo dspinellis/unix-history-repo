@@ -1,4 +1,4 @@
-/*	ps.c	6.1	83/07/29	*/
+/*	ps.c	4.10	83/08/13	*/
 
 /*
  * Evans and Sutherland Picture System 2 driver
@@ -51,14 +51,15 @@ struct ps {
 	char		ps_open;
 	short int 	ps_uid;
 	struct {
-		enum { SINGLE_STEP_RF, AUTO_RF } state;
-		enum { RUNNING_RF, SYNCING_RF, WAITING_MAP } mode;
+		enum { SINGLE_STEP_RF, AUTO_RF, TIME_RF } state;
+		enum { RUNNING_RF, SYNCING_RF, WAITING_MAP, STOPPED_RF } mode;
 		unsigned short int sraddrs[MAXAUTOREFRESH];
 		short int nsraddrs;
 		short int srcntr;
 		char waiting;
 		char stop;
 		int icnt;
+		int timecnt;
 	} ps_refresh;
 	struct {
 		enum { ON_DB, OFF_DB } state;
@@ -88,6 +89,7 @@ struct ps {
 	int ps_strayintr;
 	int last_request;
 	int strayrequest;
+	int ps_icnt;
 } ps[NPS];
 
 psprobe(reg)
@@ -143,6 +145,7 @@ psopen(dev)
 	psp->ps_map.stop = 0;
 	psp->ps_clock.ticked = 0;
 	psp->ps_refresh.icnt = psp->ps_map.icnt = psp->ps_clock.icnt = 0;
+	psp->ps_icnt = 0;
 	maptouser(ui->ui_addr);
 	return (0);
 }
@@ -249,11 +252,19 @@ psioctl(dev, cmd, data, flag)
 		    psp->ps_dbuffer.dbaddrs[0]+arg;
 		psp->ps_dbuffer.state = ON_DB;
 		psp->ps_dbuffer.rbuffer = 0;
-		}
 		break;
 
 	case PSIOSINGLEBUFFER:
 		psp->ps_dbuffer.state = OFF_DB;
+		break;
+
+	case PSIOTIMEREFRESH:
+		if (psp->ps_refresh.state != SINGLE_STEP_RF)
+			return(EINVAL);
+		if ((arg = fuword(waddr++)) == -1)
+			return(EFAULT);
+		psp->ps_refresh.state = TIME_RF;
+		psp->ps_refresh.timecnt = arg;
 		break;
 
 	case PSIOWAITREFRESH:
@@ -261,14 +272,22 @@ psioctl(dev, cmd, data, flag)
 			return (0);				/* dont wait */
 		/* fall into ... */
 
-	case PSSIOTOPREFRESH:
-		if (cmd == PSSTOPREFRESH)
+	case PSIOSTOPREFRESH:
+		if (cmd == PSIOSTOPREFRESH) {
+			if (psp->ps_refresh.mode == STOPPED_RF
+					&& psp->ps_refresh.state != TIME_RF)
+				return (0);
 			psp->ps_refresh.stop = 1;
+		}
 		spl5();
 		psp->ps_refresh.waiting = 1;
 		while (psp->ps_refresh.waiting)
 			sleep(&psp->ps_refresh.waiting, PSPRI);
 		spl0();
+		if (cmd == PSIOSTOPREFRESH)
+			psp->ps_refresh.mode = STOPPED_RF;
+		if (psp->ps_refresh.state == TIME_RF)
+			psp->ps_refresh.state = SINGLE_STEP_RF;
 		break;
 
 	case PSIOWAITMAP:
@@ -277,7 +296,7 @@ psioctl(dev, cmd, data, flag)
 		/* fall into ... */
 
 	case PSIOSTOPMAP:
-		if (cmd == PSSTOPMAP)
+		if (cmd == PSIOSTOPMAP)
 			psp->ps_map.stop = 1;
 		spl5();
 		psp->ps_map.waiting = 1;
@@ -314,7 +333,8 @@ psclockintr(dev)
 	SAVEPSADDR();
 #ifndef EXTERNAL_SYNC
 	if (psp->ps_refresh.state == AUTO_RF) {
-		if (psp->ps_refresh.mode == SYNCING_RF) {
+		if (psp->ps_refresh.mode == SYNCING_RF
+					&& psp->ps_refresh.state != TIME_RF) {
 			psrfnext(psp, psaddr);
 		} else {
 			psp->ps_clock.ticked++;
@@ -341,11 +361,12 @@ pssystemintr(dev)
 
 	if (!psp->ps_open)
 		return;
+	psp->ps_icnt++;
 	SAVEPSADDR();
 	PSWAIT();
 	psaddr->ps_addr = SYSREQ;
 	PSWAIT();
-	request = psaddr->ps_data;
+	request = psaddr->ps_data&0377;
 	psp->last_request = request;
 	PSWAIT();
 	psaddr->ps_addr = SYSREQ;
@@ -382,6 +403,9 @@ pssystemintr(dev)
 tryrf:
 	if (request & RFSTOP_REQ) {		/* Refresh stopped */
 		psp->ps_refresh.icnt++;
+		if (psp->ps_refresh.state == TIME_RF)
+			if(--psp->ps_refresh.timecnt > 0)
+				goto tryhit;
 		psrfstop(psaddr, psp);
 		if (psp->ps_refresh.waiting) {
 			psp->ps_refresh.waiting = 0;
@@ -579,7 +603,8 @@ psextsync(PC, PS) {
 	for (psp = ps, n = 0; n < NPS; psp++, n++) {
 		if (!psp->ps_open)
 			continue;
-		if (psp->ps_refresh.mode == SYNCING_RF) {
+		if(psp->ps_refresh.mode == SYNCING_RF
+					&& psp->ps_refresh.state != TIME_RF) {
 			psaddr = (struct psdevice *) psdinfo[n]->ui_addr;
 			SAVEPSADDR();
 			psrfnext(psp, psaddr);

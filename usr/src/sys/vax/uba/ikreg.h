@@ -1,4 +1,4 @@
-/*	ikreg.h	6.1	83/07/29	*/
+/*	ikreg.h	4.4	83/08/13	*/
 
 struct ikdevice {
 	short	ik_wc;			/* Unibus word count reg */
@@ -8,7 +8,7 @@ struct ikdevice {
 	u_short	ik_xaddr;		/* X address in frame buffer */
 	u_short	ik_yaddr;		/* Y address in frame buffer */
 	u_short	ik_istat;		/* Ikonas status/command reg */
-	u_short	ik_dummy;
+	u_short	ik_chan;		/* Channel control register */
 };
 
 #define IK_GETADDR 	IKIOGETADDR
