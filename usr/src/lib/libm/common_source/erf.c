@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)erf.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)erf.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Modified Nov 30, 1992 P. McILROY:
@@ -54,6 +54,7 @@ static char sccsid[] = "@(#)erf.c	5.6 (Berkeley) %G%";
  *          erf(x) = (2/sqrt(pi))*(x - x^3/3 + x^5/10 - x^7/42 + ....)
  *	   and that
  *          2/sqrt(pi) = 1.128379167095512573896158903121545171688
+ *	   is close to one. The interval is chosen because the fixed
  *	   point of erf(x) is near 0.6174 (i.e., erf(x)=x when x is
  *	   near 0.6174), and by some experiment, 0.84375 is chosen to
  * 	   guarantee the error is less than one ulp for erf.
@@ -70,7 +71,8 @@ static char sccsid[] = "@(#)erf.c	5.6 (Berkeley) %G%";
  *			erf(1+s) - (c = (single)0.84506291151)
  *	   Note that |P1/Q1|< 0.078 for x in [0.84375,1.25]
  *	   where 
- *		P1(s) = degree 7 poly in s
+ *		P1(s) = degree 6 poly in s
+ *		Q1(s) = degree 6 poly in s
  *
  *	4. For x in [1.25, 2]; [2, 4]
  *         	erf(x)  = 1.0 - tiny
