@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmd.c	3.30 %G%";
+static char sccsid[] = "@(#)cmd.c	3.31 %G%";
 #endif
 
 #include "defs.h"
@@ -72,8 +72,15 @@ docmd()
 				break;
 			case 'M':
 				if ((w = getwin()) != 0)
-					movewin(w, w->ww_altpos.r,
-						w->ww_altpos.c);
+					movewin(w, w->ww_alt.t, w->ww_alt.l);
+				break;
+			case 's':
+				if ((w = getwin()) != 0)
+					c_size(w);
+				break;
+			case 'S':
+				if ((w = getwin()) != 0)
+					sizewin(w, w->ww_alt.nr, w->ww_alt.nc);
 				break;
 			case ':':
 				c_colon();
@@ -109,12 +116,27 @@ docmd()
 				wwscroll(selwin, - selwin->ww_w.nr);
 				break;
 			case ctrl(s):
-				(void) write(selwin->ww_pty,
-					&wwwintty.ww_tchars.t_stopc, 1);
+				if (selwin->ww_pty < 0)
+					break;
+				if (selwin->ww_ispty) {
+					(void) ioctl(selwin->ww_pty, TIOCSTOP,
+						(char *)0);
+					selwin->ww_stopped = 1;
+				} else
+					(void) write(selwin->ww_pty,
+						&wwwintty.ww_tchars.t_stopc, 1);
 				break;
 			case ctrl(q):
-				(void) write(selwin->ww_pty,
-					&wwwintty.ww_tchars.t_startc, 1);
+				if (selwin->ww_pty < 0)
+					break;
+				if (selwin->ww_ispty) {
+					(void) ioctl(selwin->ww_pty, TIOCSTART,
+						(char *)0);
+					selwin->ww_stopped = 0;
+				} else
+					(void) write(selwin->ww_pty,
+						&wwwintty.ww_tchars.t_startc,
+						1);
 				break;
 			case ctrl(l):
 				wwredraw();
