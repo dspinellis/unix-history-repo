@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.48	%G%";
+static char SccsId[] = "@(#)deliver.c	3.49	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -61,7 +61,7 @@ deliver(to, editfcn)
 # ifdef DEBUG
 	if (Debug)
 		printf("\n--deliver, mailer=%d, host=`%s', first user=`%s'\n",
-			to->q_mailer, to->q_host, to->q_user);
+			to->q_mailer->m_mno, to->q_host, to->q_user);
 # endif DEBUG
 
 	/*
@@ -73,7 +73,7 @@ deliver(to, editfcn)
 	**	manifest lower limit of 4 for MAXPV.
 	*/
 
-	m = Mailer[to->q_mailer];
+	m = to->q_mailer;
 	host = to->q_host;
 
 	/* rewrite from address, using rewriting rules */
@@ -153,7 +153,7 @@ deliver(to, editfcn)
 			continue;
 
 		/* compute effective uid/gid when sending */
-		if (to->q_mailer == MN_PROG)
+		if (to->q_mailer == ProgMailer)
 			ctladdr = getctladdr(to);
 
 		user = to->q_user;
@@ -204,8 +204,8 @@ deliver(to, editfcn)
 			continue;
 
 		/* save statistics.... */
-		Stat.stat_nt[to->q_mailer]++;
-		Stat.stat_bt[to->q_mailer] += kbytes(MsgSize);
+		Stat.stat_nt[to->q_mailer->m_mno]++;
+		Stat.stat_bt[to->q_mailer->m_mno] += kbytes(MsgSize);
 
 		/*
 		**  See if this user name is "special".
@@ -217,7 +217,7 @@ deliver(to, editfcn)
 		**	with the others, so we fudge on the To person.
 		*/
 
-		if (m == Mailer[MN_LOCAL])
+		if (m == LocalMailer)
 		{
 			if (index(user, '/') != NULL)
 			{
@@ -882,7 +882,7 @@ sendall(verifyonly)
 				To = q->q_paddr;
 				if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
 				{
-					if (q->q_mailer == MN_LOCAL || q->q_mailer == MN_PROG)
+					if (bitset(M_LOCAL, q->q_mailer->m_flags))
 						message(Arpa_Info, "deliverable");
 					else
 						message(Arpa_Info, "queueable");

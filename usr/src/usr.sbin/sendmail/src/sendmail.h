@@ -6,7 +6,7 @@
 
 # ifdef _DEFINE
 # define EXTERN
-static char SmailSccsId[] =	"@(#)sendmail.h	3.48	%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.49	%G%";
 # else  _DEFINE
 # define EXTERN extern
 # endif _DEFINE
@@ -54,7 +54,7 @@ struct address
 	char		*q_paddr;	/* the printname for the address */
 	char		*q_user;	/* user name */
 	char		*q_host;	/* host name */
-	short		q_mailer;	/* mailer to use */
+	struct mailer	*q_mailer;	/* mailer to use */
 	short		q_rmailer;	/* real mailer (before mapping) */
 	u_short		q_flags;	/* status flags, see below */
 	short		q_uid;		/* user-id of receiver (if known) */
@@ -125,13 +125,10 @@ typedef struct mailer	MAILER;
 
 # define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM|M_MSGID)
 
-EXTERN MAILER *Mailer[MAXMAILERS+1];
+EXTERN MAILER	*Mailer[MAXMAILERS+1];
 
-/* special mailer numbers */
-# define MN_LOCAL	0	/* local mailer */
-# define MN_PROG	1	/* program mailer */
-/* mailers from 2 on are arbitrary */
-
+EXTERN MAILER	*LocalMailer;		/* ptr to local mailer */
+EXTERN MAILER	*ProgMailer;		/* ptr to program mailer */
 
 
 /*

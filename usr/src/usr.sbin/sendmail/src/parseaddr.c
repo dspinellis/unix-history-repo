@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.30	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.31	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -89,7 +89,7 @@ parse(addr, a, copyf)
 	a = buildaddr(pvp, a);
 	if (a == NULL)
 		return (NULL);
-	m = Mailer[a->q_mailer];
+	m = a->q_mailer;
 
 	/*
 	**  Make local copies of the host & user and then
@@ -756,7 +756,7 @@ buildaddr(tv, a)
 		usrerr(buf);
 		return (NULL);
 	}
-	for (mp = Mailer, i = 0; (m = *mp++) != NULL; i++)
+	for (mp = Mailer; (m = *mp++) != NULL; )
 	{
 		if (strcmp(m->m_name, *tv) == 0)
 			break;
@@ -766,7 +766,7 @@ buildaddr(tv, a)
 		syserr("buildaddr: unknown net %s", *tv);
 		return (NULL);
 	}
-	a->q_mailer = i;
+	a->q_mailer = m;
 
 	/* figure out what host (if any) */
 	tv++;
@@ -869,7 +869,7 @@ sameaddr(a, b, wildflg)
 		return (FALSE);
 
 	/* if the mailer ignores hosts, we have succeeded! */
-	if (bitset(M_LOCAL, Mailer[a->q_mailer]->m_flags))
+	if (bitset(M_LOCAL, a->q_mailer->m_flags))
 		return (TRUE);
 
 	/* otherwise compare hosts (but be careful for NULL ptrs) */
@@ -905,7 +905,7 @@ printaddr(a, follow)
 		printf("%x=", a);
 		(void) fflush(stdout);
 		printf("%s: mailer %d (%s), host `%s', user `%s'\n", a->q_paddr,
-		       a->q_mailer, Mailer[a->q_mailer]->m_name, a->q_host, a->q_user);
+		       a->q_mailer->m_mno, a->q_mailer->m_name, a->q_host, a->q_user);
 		printf("\tnext=%x, flags=%o, rmailer %d\n", a->q_next,
 		       a->q_flags, a->q_rmailer);
 

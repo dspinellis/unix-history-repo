@@ -3,7 +3,7 @@
 # include <sys/stat.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.26	%G%";
+static char SccsId[] = "@(#)recipient.c	3.27	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -126,7 +126,7 @@ recipient(a)
 	extern ADDRESS *getctladdr();
 
 	To = a->q_paddr;
-	m = Mailer[a->q_mailer];
+	m = a->q_mailer;
 	errno = 0;
 # ifdef DEBUG
 	if (Debug)
@@ -147,12 +147,11 @@ recipient(a)
 	**  Do sickly crude mapping for program mailing, etc.
 	*/
 
-	if (a->q_mailer == MN_LOCAL)
+	if (a->q_mailer == LocalMailer)
 	{
 		if (a->q_user[0] == '|')
 		{
-			a->q_mailer = MN_PROG;
-			m = Mailer[MN_PROG];
+			a->q_mailer = m = ProgMailer;
 			a->q_user++;
 			if (a->q_alias == NULL && Debug == 0)
 			{
@@ -200,7 +199,7 @@ recipient(a)
 	**  Alias the name and handle :include: specs.
 	*/
 
-	if (a->q_mailer == MN_LOCAL)
+	if (a->q_mailer == LocalMailer)
 	{
 		if (strncmp(a->q_user, ":include:", 9) == 0)
 		{
@@ -226,7 +225,7 @@ recipient(a)
 	**  the user (which is probably correct anyway).
 	*/
 
-	if (!bitset(QDONTSEND, a->q_flags) && a->q_mailer == MN_LOCAL)
+	if (!bitset(QDONTSEND, a->q_flags) && a->q_mailer == LocalMailer)
 	{
 		char buf[MAXNAME];
 		register char *p;

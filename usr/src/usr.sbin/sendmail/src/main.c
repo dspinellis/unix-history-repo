@@ -8,7 +8,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.45	%G%";
+static char	SccsId[] = "@(#)main.c	3.46	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -141,6 +141,7 @@ main(argc, argv)
 	bool aliasinit = FALSE;
 	extern char *ttyname();
 	extern bool safefile();
+	STAB *st;
 	bool canrename;
 
 	argv[argc] = NULL;
@@ -399,11 +400,26 @@ main(argc, argv)
 
 	/*
 	**  Read system control file.
+	**	Extract special fields for local use.
 	*/
 
 	readcf(ConfFile, safecf);
+
+	/* our name for SMTP codes */
 	(void) expand("$i", ibuf, &ibuf[sizeof ibuf - 1]);
 	HostName = ibuf;
+
+	/* the indices of local and program mailers */
+	st = stab("local", ST_MAILER, ST_FIND);
+	if (st == NULL)
+		syserr("No local mailer defined");
+	else
+		LocalMailer = st->s_mailer;
+	st = stab("prog", ST_MAILER, ST_FIND);
+	if (st == NULL)
+		syserr("No prog mailer defined");
+	else
+		ProgMailer = st->s_mailer;
 
 	/*
 	**  Initialize aliases.
@@ -491,8 +507,8 @@ main(argc, argv)
 	errno = 0;
 
 	/* collect statistics */
-	Stat.stat_nf[From.q_mailer]++;
-	Stat.stat_bf[From.q_mailer] += kbytes(MsgSize);
+	Stat.stat_nf[From.q_mailer->m_mno]++;
+	Stat.stat_bf[From.q_mailer->m_mno] += kbytes(MsgSize);
 
 	/*
 	**  Arrange that the person who is sending the mail
