@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hpmaptype.c	7.10 (Berkeley) %G%
+ *	@(#)hpmaptype.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -11,15 +11,15 @@
  * Used for compatibility with unlabeled disks.
  */
 #ifdef COMPAT_42
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "disklabel.h"
+#include "sys/param.h"
+#include "sys/disklabel.h"
 
-#include "../vaxmba/hpreg.h"
-#include "../vaxmba/mbareg.h"
+#include "../mba/hpreg.h"
+#include "../mba/mbareg.h"
 
-#include "saio.h"
+#include "stand/saio.h"
 
 short	rp06_off[8] =	{ 0, 38, 0, -1, -1, -1, 118, -1 };
 short	rm03_off[8] =	{ 0, 100, 0, -1, -1, -1, 309, -1 };

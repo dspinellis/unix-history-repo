@@ -3,12 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)prf.c	7.6 (Berkeley) %G%
+ *	@(#)prf.c	7.7 (Berkeley) %G%
  */
 
-#include "param.h"
+#include "sys/param.h"
 
-#include "../vax/mtpr.h"
+#include "../include/mtpr.h"
 #include "../vax/cons.h"
 
 /*

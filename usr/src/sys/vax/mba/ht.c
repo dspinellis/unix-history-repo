@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ht.c	7.12 (Berkeley) %G%
+ *	@(#)ht.c	7.13 (Berkeley) %G%
  */
 
 #include "tu.h"
@@ -17,23 +17,23 @@
  *	see how many rewind interrups we get if we kick when not at BOT
  *	fixup rle error on block tape code
  */
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "conf.h"
-#include "file.h"
-#include "user.h"
-#include "proc.h"
-#include "map.h"
-#include "ioctl.h"
-#include "mtio.h"
-#include "cmap.h"
-#include "tty.h"
-#include "syslog.h"
-#include "tprintf.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/buf.h"
+#include "sys/conf.h"
+#include "sys/file.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/map.h"
+#include "sys/ioctl.h"
+#include "sys/mtio.h"
+#include "sys/cmap.h"
+#include "sys/tty.h"
+#include "sys/syslog.h"
+#include "sys/tprintf.h"
 
-#include "machine/pte.h"
-#include "../vax/cpu.h"
+#include "../include/pte.h"
+#include "../include/cpu.h"
 #include "mbareg.h"
 #include "mbavar.h"
 #include "htreg.h"
@@ -69,7 +69,7 @@ struct	tu_softc {
 	u_short	sc_dsreg;
 	short	sc_resid;
 	short	sc_dens;
-	caddr_t	sc_tpr;		/* tprintf handle for errors to user */
+	tpr_t	sc_tpr;		/* tprintf handle for errors to user */
 	int	sc_blks;	/* number of I/O operations since open */
 	int	sc_softerrs;	/* number of soft I/O errors since open */
 } tu_softc[NTU];

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: ite.c 1.19 89/08/22$
  *
- *	@(#)ite.c	7.1 (Berkeley) %G%
+ *	@(#)ite.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -21,11 +21,11 @@
 
 #ifdef ITECONSOLE
 
-#include "param.h"
-#include "machine/cons.h"
-#include "../hpdev/device.h"
-#include "../hpdev/itevar.h"
-#include "../hpdev/grfvar.h"
+#include "sys/param.h"
+#include "../hp300/cons.h"
+#include "../dev/device.h"
+#include "../dev/itevar.h"
+#include "../dev/grfvar.h"
 
 int nodev();
 

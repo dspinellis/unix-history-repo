@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	7.3 (Berkeley) %G%
+ *	@(#)sd.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -20,23 +20,23 @@
 static char rcsid[] = "$Header: sd.c,v 1.3 90/10/10 14:55:10 mike Exp $";
 #endif
 
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "errno.h"
-#include "dkstat.h"
-#include "disklabel.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/buf.h"
+#include "sys/errno.h"
+#include "sys/dkstat.h"
+#include "sys/disklabel.h"
 #include "device.h"
-#include "malloc.h"
+#include "sys/malloc.h"
 #include "scsireg.h"
 
-#include "user.h"
-#include "proc.h"
-#include "uio.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/uio.h"
 
-#include "../vm/vm_param.h"
-#include "../vm/pmap.h"
-#include "../vm/vm_prot.h"
+#include "vm/vm_param.h"
+#include "vm/pmap.h"
+#include "vm/vm_prot.h"
 
 extern int scsi_test_unit_rdy();
 extern int scsi_request_sense();

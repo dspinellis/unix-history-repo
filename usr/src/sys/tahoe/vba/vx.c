@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vx.c	7.11 (Berkeley) %G%
+ *	@(#)vx.c	7.12 (Berkeley) %G%
  */
 
 #include "vx.h"
@@ -19,25 +19,25 @@
 #define	DOSCOPE
 #endif
 
-#include "param.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "user.h"
-#include "map.h"
-#include "buf.h"
-#include "conf.h"
-#include "file.h"
-#include "proc.h"
-#include "vm.h"
-#include "kernel.h"
-#include "syslog.h"
+#include "sys/param.h"
+#include "sys/ioctl.h"
+#include "sys/tty.h"
+#include "sys/user.h"
+#include "sys/map.h"
+#include "sys/buf.h"
+#include "sys/conf.h"
+#include "sys/file.h"
+#include "sys/proc.h"
+#include "sys/vm.h"
+#include "sys/kernel.h"
+#include "sys/syslog.h"
 
-#include "../tahoe/pte.h"
+#include "../include/pte.h"
 
-#include "../tahoevba/vbavar.h"
-#include "../tahoevba/vbaparam.h"
-#include "../tahoevba/vxreg.h"
-#include "../tahoevba/scope.h"
+#include "../vba/vbavar.h"
+#include "../vba/vbaparam.h"
+#include "../vba/vxreg.h"
+#include "../vba/scope.h"
 
 #ifdef VX_DEBUG
 long	vxintr4 = 0;

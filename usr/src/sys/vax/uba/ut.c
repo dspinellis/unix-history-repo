@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ut.c	7.11 (Berkeley) %G%
+ *	@(#)ut.c	7.12 (Berkeley) %G%
  */
 
 #include "tj.h"
@@ -16,24 +16,24 @@
  *	check out attention processing
  *	try reset code and dump code
  */
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "conf.h"
-#include "errno.h"
-#include "file.h"
-#include "map.h"
-#include "ioctl.h"
-#include "mtio.h"
-#include "cmap.h"
-#include "time.h"
-#include "uio.h"
-#include "kernel.h"
-#include "syslog.h"
-#include "tprintf.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/buf.h"
+#include "sys/conf.h"
+#include "sys/errno.h"
+#include "sys/file.h"
+#include "sys/map.h"
+#include "sys/ioctl.h"
+#include "sys/mtio.h"
+#include "sys/cmap.h"
+#include "sys/time.h"
+#include "sys/uio.h"
+#include "sys/kernel.h"
+#include "sys/syslog.h"
+#include "sys/tprintf.h"
 
-#include "machine/pte.h"
-#include "../vax/cpu.h"
+#include "../include/pte.h"
+#include "../include/cpu.h"
 #include "ubareg.h"
 #include "ubavar.h"
 #include "utreg.h"

@@ -3,26 +3,26 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.10 (Berkeley) %G%
+ *	@(#)trap.c	7.11 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "user.h"
-#include "proc.h"
-#include "seg.h"
-#include "acct.h"
-#include "kernel.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/seg.h"
+#include "sys/acct.h"
+#include "sys/kernel.h"
 
-#include "psl.h"
-#include "reg.h"
-#include "pte.h"
-#include "mtpr.h"
+#include "../include/psl.h"
+#include "../include/reg.h"
+#include "../include/pte.h"
+#include "../include/mtpr.h"
 #ifdef KTRACE
-#include "ktrace.h"
+#include "sys/ktrace.h"
 #endif
 
-#include "../tahoe/trap.h"
+#include "../include/trap.h"
 
 #define	USER	040		/* user-mode flag added to type */
 

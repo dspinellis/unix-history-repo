@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: ite.c 1.1 90/07/09$
  *
- *	@(#)ite.c	7.3 (Berkeley) %G%
+ *	@(#)ite.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -27,21 +27,21 @@
 #undef NITE
 #define NITE	NGRF
 
-#include "param.h"
-#include "conf.h"
-#include "user.h"
-#include "proc.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "systm.h"
-#include "uio.h"
-#include "malloc.h"
+#include "sys/param.h"
+#include "sys/conf.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/ioctl.h"
+#include "sys/tty.h"
+#include "sys/systm.h"
+#include "sys/uio.h"
+#include "sys/malloc.h"
 
 #include "itevar.h"
 #include "iteioctl.h"
 #include "kbdmap.h"
 
-#include "machine/cpu.h"
+#include "../include/cpu.h"
 
 #define set_attr(ip, attr)	((ip)->attribute |= (attr))
 #define clr_attr(ip, attr)	((ip)->attribute &= ~(attr))
@@ -739,7 +739,7 @@ ite_clrtoeos(ip, sp)
 /*
  * Console functions
  */
-#include "machine/cons.h"
+#include "../hp300/cons.h"
 #include "grfioctl.h"
 #include "grfvar.h"
 

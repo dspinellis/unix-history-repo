@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hd.c	7.9 (Berkeley) %G%
+ *	@(#)hd.c	7.10 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -15,9 +15,9 @@
 #include "sys/buf.h"
 #include "sys/ioctl.h"
 #include "sys/disklabel.h"
-#include "saio.h"
-#include "tahoe/mtpr.h"
-#include "tahoevba/hdreg.h"
+#include "stand/saio.h"
+#include "../include/mtpr.h"
+#include "../vba/hdreg.h"
 
 static struct registers *hdc_regs[HDC_MAXCTLR][HDC_MAXBUS];
 static struct disklabel dklabel[HDC_MAXDRIVE][HDC_MAXCTLR][HDC_MAXBUS];

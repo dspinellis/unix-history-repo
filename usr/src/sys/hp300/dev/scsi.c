@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi.c	7.2 (Berkeley) %G%
+ *	@(#)scsi.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -20,16 +20,17 @@
 static char rcsid[] = "$Header: scsi.c,v 1.3 90/10/10 14:55:08 mike Exp $";
 #endif
 
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/buf.h"
 #include "device.h"
+
 #include "scsivar.h"
 #include "scsireg.h"
 #include "dmavar.h"
 
-#include "machine/cpu.h"
-#include "machine/isr.h"
+#include "../include/cpu.h"
+#include "../hp300/isr.h"
 
 extern void isrlink();
 extern void printf();

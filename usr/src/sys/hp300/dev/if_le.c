@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.1 (Berkeley) %G%
+ *	@(#)if_le.c	7.2 (Berkeley) %G%
  */
 
 #include "le.h"
@@ -18,41 +18,41 @@
  * with VAXen, SUNs, and others that handle and benefit from them.
  * This reasoning is dubious.
  */
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "syslog.h"
-#include "ioctl.h"
-#include "errno.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/mbuf.h"
+#include "sys/buf.h"
+#include "sys/protosw.h"
+#include "sys/socket.h"
+#include "sys/syslog.h"
+#include "sys/ioctl.h"
+#include "sys/errno.h"
 
-#include "../net/if.h"
-#include "../net/netisr.h"
-#include "../net/route.h"
+#include "net/if.h"
+#include "net/netisr.h"
+#include "net/route.h"
 
 #ifdef INET
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/in_var.h"
-#include "../netinet/ip.h"
-#include "../netinet/if_ether.h"
+#include "netinet/in.h"
+#include "netinet/in_systm.h"
+#include "netinet/in_var.h"
+#include "netinet/ip.h"
+#include "netinet/if_ether.h"
 #endif
 
 #ifdef NS
-#include "../netns/ns.h"
-#include "../netns/ns_if.h"
+#include "netns/ns.h"
+#include "netns/ns_if.h"
 #endif
 
 #ifdef RMP
-#include "../netrmp/rmp.h"
-#include "../netrmp/rmp_var.h"
+#include "netrmp/rmp.h"
+#include "netrmp/rmp_var.h"
 #endif
 
-#include "machine/cpu.h"
-#include "machine/isr.h"
-#include "machine/mtpr.h"
+#include "../include/cpu.h"
+#include "../hp300/isr.h"
+#include "../include/mtpr.h"
 #include "device.h"
 #include "if_lereg.h"
 

@@ -3,16 +3,16 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)drtest.c	7.4 (Berkeley) %G%
+ *	@(#)drtest.c	7.5 (Berkeley) %G%
  */
 
 /*
  * Standalone program to test a disk and driver
  * by reading the disk a track at a time.
  */
-#include "param.h"
-#include "disklabel.h"
-#include "saio.h"
+#include "sys/param.h"
+#include "sys/disklabel.h"
+#include "stand/saio.h"
 
 #define SECTSIZ	512
 

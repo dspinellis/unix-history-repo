@@ -3,20 +3,20 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_machdep.c	7.5 (Berkeley) %G%
+ *	@(#)sys_machdep.c	7.6 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "user.h"
-#include "ioctl.h"
-#include "file.h"
-#include "proc.h"
-#include "kernel.h"
-#include "mtio.h"
-#include "buf.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/ioctl.h"
+#include "sys/file.h"
+#include "sys/proc.h"
+#include "sys/kernel.h"
+#include "sys/mtio.h"
+#include "sys/buf.h"
 
-#include "pte.h"
+#include "../include/pte.h"
 
 #ifdef TRACE
 int	nvualarm;

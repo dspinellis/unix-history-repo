@@ -23,28 +23,28 @@ int	cydebug = 0;
 #define dlog(params)	/* */
 #endif
 
-#include "param.h"
-#include "systm.h"
-#include "vm.h"
-#include "buf.h"
-#include "file.h"
-#include "signal.h"
-#include "ioctl.h"
-#include "mtio.h"
-#include "errno.h"
-#include "cmap.h"
-#include "time.h"
-#include "kernel.h"
-#include "syslog.h"
-#include "tprintf.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/vm.h"
+#include "sys/buf.h"
+#include "sys/file.h"
+#include "sys/signal.h"
+#include "sys/ioctl.h"
+#include "sys/mtio.h"
+#include "sys/errno.h"
+#include "sys/cmap.h"
+#include "sys/time.h"
+#include "sys/kernel.h"
+#include "sys/syslog.h"
+#include "sys/tprintf.h"
 
-#include "../tahoe/cpu.h"
-#include "../tahoe/mtpr.h"
-#include "../tahoe/pte.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
+#include "../include/pte.h"
 
-#include "../tahoevba/vbavar.h"
+#include "../vba/vbavar.h"
 #define	CYERROR
-#include "../tahoevba/cyreg.h"
+#include "../vba/cyreg.h"
 
 /*
  * There is a ccybuf per tape controller.

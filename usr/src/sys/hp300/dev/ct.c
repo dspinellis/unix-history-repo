@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ct.c	7.1 (Berkeley) %G%
+ *	@(#)ct.c	7.2 (Berkeley) %G%
  */
 
 #include "ct.h"
@@ -23,16 +23,16 @@
  *	finish support of 9145
  */
 
-#include "param.h"
-#include "buf.h"
-#include "ioctl.h"
-#include "mtio.h"
-#include "errno.h"
+#include "sys/param.h"
+#include "sys/buf.h"
+#include "sys/ioctl.h"
+#include "sys/mtio.h"
+#include "sys/errno.h"
 #include "ctreg.h"
 #include "device.h"
-#include "user.h"
-#include "tty.h"
-#include "proc.h"
+#include "sys/user.h"
+#include "sys/tty.h"
+#include "sys/proc.h"
 
 /* number of eof marks to remember */
 #define EOFS	128

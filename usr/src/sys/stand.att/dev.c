@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dev.c	7.8 (Berkeley) %G%
+ *	@(#)dev.c	7.9 (Berkeley) %G%
  */
 
 #include "sys/param.h"
-#include "saio.h"
+#include "stand/saio.h"			/* used from machine/stand dir */
 
 /*
  * NB: the value "io->i_dev", used to offset the devsw[] array

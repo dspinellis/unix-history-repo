@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dz.c	7.9 (Berkeley) %G%
+ *	@(#)dz.c	7.10 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -13,26 +13,26 @@
  *
  * This driver mimics dh.c; see it for explanation of common code.
  */
-#include "param.h"
-#include "systm.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "user.h"
-#include "proc.h"
-#include "map.h"
-#include "buf.h"
-#include "vm.h"
-#include "conf.h"
-#include "bkmac.h"
-#include "file.h"
-#include "uio.h"
-#include "kernel.h"
-#include "syslog.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/ioctl.h"
+#include "sys/tty.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/map.h"
+#include "sys/buf.h"
+#include "sys/vm.h"
+#include "sys/conf.h"
+#include "sys/bkmac.h"
+#include "sys/file.h"
+#include "sys/uio.h"
+#include "sys/kernel.h"
+#include "sys/syslog.h"
 
 #include "pdma.h"
 #include "ubavar.h"
 #include "dzreg.h"
-#include "machine/pte.h"
+#include "../include/pte.h"
 
 /*
  * Driver information for auto-configuration stuff.

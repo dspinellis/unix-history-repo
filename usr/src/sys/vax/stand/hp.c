@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.11 (Berkeley) %G%
+ *	@(#)hp.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -11,16 +11,16 @@
  * Also supports header io operations and commands to write check
  * header and data.
  */
-#include "param.h"
-#include "dkbad.h"
-#include "disklabel.h"
+#include "sys/param.h"
+#include "sys/dkbad.h"
+#include "sys/disklabel.h"
 
-#include "../vax/pte.h"
+#include "../include/pte.h"
 
-#include "../vaxmba/hpreg.h"
-#include "../vaxmba/mbareg.h"
+#include "../mba/hpreg.h"
+#include "../mba/mbareg.h"
 
-#include "saio.h"
+#include "stand/saio.h"
 #include "savax.h"
 
 #define	RETRIES		27

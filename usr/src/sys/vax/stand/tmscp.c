@@ -1,5 +1,5 @@
 
-/*	@(#)tmscp.c	7.5 (Berkeley) %G% */
+/*	@(#)tmscp.c	7.6 (Berkeley) %G% */
 
 /****************************************************************
  *                                                              *
@@ -43,12 +43,12 @@ static char *sccsid = "@(#)tmscp.c	1.5	(ULTRIX)	4/18/86";
  * ------------------------------------------------------------------------
  */
  
-#include "param.h"
+#include "sys/param.h"
 
-#include "../vax/pte.h"
+#include "../include/pte.h"
 
+#include "stand/saio.h"
 #include "savax.h"
-#include "saio.h"
  
 /*
  * Parameters for the communications area
@@ -59,8 +59,8 @@ static char *sccsid = "@(#)tmscp.c	1.5	(ULTRIX)	4/18/86";
 #define	NRSP	(1<<NRSPL2)
 #define	NCMD	(1<<NCMDL2)
  
-#include "../vaxuba/tmscpreg.h"
-#include "../vaxuba/ubareg.h"
+#include "../uba/tmscpreg.h"
+#include "../uba/ubareg.h"
 #include "../vax/tmscp.h"
  
 #define	MAXCTLR		1		/* all addresses must be specified */

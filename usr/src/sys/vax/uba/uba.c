@@ -4,23 +4,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uba.c	7.9 (Berkeley) %G%
+ *	@(#)uba.c	7.10 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "map.h"
-#include "buf.h"
-#include "vm.h"
-#include "user.h"
-#include "proc.h"
-#include "conf.h"
-#include "dkstat.h"
-#include "kernel.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/map.h"
+#include "sys/buf.h"
+#include "sys/vm.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/conf.h"
+#include "sys/dkstat.h"
+#include "sys/kernel.h"
 
-#include "../vax/pte.h"
-#include "../vax/cpu.h"
-#include "../vax/mtpr.h"
+#include "../include/pte.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
 #include "../vax/nexus.h"
 #include "ubareg.h"
 #include "ubavar.h"

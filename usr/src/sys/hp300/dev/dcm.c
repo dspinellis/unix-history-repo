@@ -11,7 +11,7 @@
  *
  * from: $Hdr: dcm.c 1.1 90/07/09$
  *
- *	@(#)dcm.c	7.9 (Berkeley) %G%
+ *	@(#)dcm.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -25,22 +25,22 @@
 /*
  *  98642/MUX
  */
-#include "param.h"
-#include "systm.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "user.h"
-#include "conf.h"
-#include "file.h"
-#include "uio.h"
-#include "kernel.h"
-#include "syslog.h"
-#include "time.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/ioctl.h"
+#include "sys/tty.h"
+#include "sys/user.h"
+#include "sys/conf.h"
+#include "sys/file.h"
+#include "sys/uio.h"
+#include "sys/kernel.h"
+#include "sys/syslog.h"
+#include "sys/time.h"
 
 #include "device.h"
 #include "dcmreg.h"
-#include "machine/cpu.h"
-#include "machine/isr.h"
+#include "../include/cpu.h"
+#include "../hp300/isr.h"
 
 #ifndef DEFAULT_BAUD_RATE
 #define DEFAULT_BAUD_RATE 9600
@@ -1045,7 +1045,7 @@ dcmsetischeme(brd, flags)
 /*
  * Following are all routines needed for DCM to act as console
  */
-#include "machine/cons.h"
+#include "../hp300/cons.h"
 
 dcmcnprobe(cp)
 	struct consdev *cp;

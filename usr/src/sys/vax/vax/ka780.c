@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ka780.c	7.2 (Berkeley) %G%
+ *	@(#)ka780.c	7.3 (Berkeley) %G%
  */
 
 #if VAX780
@@ -12,11 +12,11 @@
  * 780-specific code.
  */
 
-#include "param.h"
+#include "sys/param.h"
 
-#include "cpu.h"
+#include "../include/cpu.h"
 #include "mem.h"
-#include "mtpr.h"
+#include "../include/mtpr.h"
 
 /*
  * Memory controller register usage varies per controller.

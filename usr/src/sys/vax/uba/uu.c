@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uu.c	7.4 (Berkeley) %G%
+ *	@(#)uu.c	7.5 (Berkeley) %G%
  */
 
 #include "uu.h"
@@ -27,18 +27,18 @@
  *
  */
 
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "conf.h"
-#include "time.h"
-#include "kernel.h"
-#include "errno.h"
-#include "file.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/buf.h"
+#include "sys/conf.h"
+#include "sys/time.h"
+#include "sys/kernel.h"
+#include "sys/errno.h"
+#include "sys/file.h"
 
-#include "../vax/cpu.h"
+#include "../include/cpu.h"
 #include "../vax/nexus.h"
 #include "../vax/rsp.h"
 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_vv.c	7.9 (Berkeley) %G%
+ *	@(#)if_vv.c	7.10 (Berkeley) %G%
  */
 
 #include "vv.h"
@@ -47,38 +47,38 @@
  * which was implemented in March, 1982. Most such CTLs have received
  * this ECO.
  */
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "time.h"
-#include "kernel.h"
-#include "protosw.h"
-#include "socket.h"
-#include "syslog.h"
-#include "vmmac.h"
-#include "errno.h"
-#include "ioctl.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/mbuf.h"
+#include "sys/buf.h"
+#include "sys/time.h"
+#include "sys/kernel.h"
+#include "sys/protosw.h"
+#include "sys/socket.h"
+#include "sys/syslog.h"
+#include "sys/vmmac.h"
+#include "sys/errno.h"
+#include "sys/ioctl.h"
 
-#include "../net/if.h"
-#include "../net/if_types.h"
-#include "../net/netisr.h"
-#include "../net/route.h"
+#include "net/if.h"
+#include "net/if_types.h"
+#include "net/netisr.h"
+#include "net/route.h"
 
 #ifdef	INET
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/in_var.h"
-#include "../netinet/ip.h"
+#include "netinet/in.h"
+#include "netinet/in_systm.h"
+#include "netinet/in_var.h"
+#include "netinet/ip.h"
 #endif
 
-#include "../vax/pte.h"
-#include "../vax/cpu.h"
-#include "../vax/mtpr.h"
+#include "../include/pte.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
 #include "if_vv.h"
 #include "if_uba.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
+#include "../uba/ubareg.h"
+#include "../uba/ubavar.h"
 
 /*
  *    maximum transmission unit definition --

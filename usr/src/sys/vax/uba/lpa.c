@@ -3,18 +3,18 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lpa.c	7.4 (Berkeley) %G%
+ *	@(#)lpa.c	7.5 (Berkeley) %G%
  */
 
 #include "lpa.h"
 #if NLPA > 0
 
-#include "param.h"
-#include "user.h"
-#include "buf.h"
-#include "proc.h"
-#include "ioctl.h"
-#include "uio.h"
+#include "sys/param.h"
+#include "sys/user.h"
+#include "sys/buf.h"
+#include "sys/proc.h"
+#include "sys/ioctl.h"
+#include "sys/uio.h"
 
 #include "ubavar.h"
 

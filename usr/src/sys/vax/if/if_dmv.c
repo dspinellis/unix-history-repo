@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_dmv.c	7.11 (Berkeley) %G%
+ *	@(#)if_dmv.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -19,36 +19,36 @@
 #include "dmv.h"
 #if NDMV > 0
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "ioctl.h"		/* must precede tty.h */
-#include "tty.h"
-#include "protosw.h"
-#include "socket.h"
-#include "syslog.h"
-#include "vmmac.h"
-#include "errno.h"
-#include "time.h"
-#include "kernel.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/mbuf.h"
+#include "sys/buf.h"
+#include "sys/ioctl.h"		/* must precede tty.h */
+#include "sys/tty.h"
+#include "sys/protosw.h"
+#include "sys/socket.h"
+#include "sys/syslog.h"
+#include "sys/vmmac.h"
+#include "sys/errno.h"
+#include "sys/time.h"
+#include "sys/kernel.h"
 
-#include "../net/if.h"
-#include "../net/netisr.h"
-#include "../net/route.h"
+#include "net/if.h"
+#include "net/netisr.h"
+#include "net/route.h"
 
 #ifdef	INET
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/in_var.h"
-#include "../netinet/ip.h"
+#include "netinet/in.h"
+#include "netinet/in_systm.h"
+#include "netinet/in_var.h"
+#include "netinet/ip.h"
 #endif
 
-#include "../vax/cpu.h"
-#include "../vax/mtpr.h"
-#include "../vax/pte.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
+#include "../include/pte.h"
+#include "../uba/ubareg.h"
+#include "../uba/ubavar.h"
 #include "if_uba.h"
 #include "if_dmv.h"
 

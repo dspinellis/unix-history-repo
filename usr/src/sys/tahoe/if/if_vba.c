@@ -4,25 +4,25 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_vba.c	1.3 (Berkeley) %G%
+ *	@(#)if_vba.c	1.4 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "cmap.h"
-#include "vmmac.h"
-#include "socket.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/mbuf.h"
+#include "sys/buf.h"
+#include "sys/cmap.h"
+#include "sys/vmmac.h"
+#include "sys/socket.h"
 
-#include "../tahoe/mtpr.h"
-#include "../tahoe/pte.h"
+#include "../include/mtpr.h"
+#include "../include/pte.h"
 
-#include "../tahoevba/vbavar.h"
+#include "../vba/vbavar.h"
 
-#include "../net/if.h"
-#include "../netinet/in.h"
-#include "../netinet/if_ether.h"
+#include "net/if.h"
+#include "netinet/in.h"
+#include "netinet/if_ether.h"
 
 #include "if_vba.h"
 

@@ -3,21 +3,21 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tm.c	7.6 (Berkeley) %G%
+ *	@(#)tm.c	7.7 (Berkeley) %G%
  */
 
 /*
  * TM11/TE??
  */
 
-#include "param.h"
+#include "sys/param.h"
 
-#include "../vax/pte.h"
+#include "../include/pte.h"
 
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/tmreg.h"
+#include "../uba/ubareg.h"
+#include "../uba/tmreg.h"
 
-#include "saio.h"
+#include "stand/saio.h"
 #include "savax.h"
 
 #define	MAXCTLR		1		/* all addresses must be specified */

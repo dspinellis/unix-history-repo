@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ka820.c	7.3 (Berkeley) %G%
+ *	@(#)ka820.c	7.4 (Berkeley) %G%
  */
 
 #if VAX8200
@@ -17,19 +17,19 @@
  * a KA8200.  Sigh.)
  */
 
-#include "param.h"
-#include "time.h"
-#include "kernel.h"
-#include "vmmac.h"
+#include "sys/param.h"
+#include "sys/time.h"
+#include "sys/kernel.h"
+#include "sys/vmmac.h"
 
-#include "cpu.h"
-#include "clock.h"
+#include "../include/cpu.h"
+#include "../include/clock.h"
 #include "ka820.h"
 #include "mem.h"
-#include "mtpr.h"
-#include "pte.h"
+#include "../include/mtpr.h"
+#include "../include/pte.h"
 
-#include "../vaxbi/bireg.h"
+#include "../bi/bireg.h"
 
 extern struct pte Clockmap[];
 extern struct pte RX50map[];

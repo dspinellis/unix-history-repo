@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_tty.c 1.1 90/07/09$
  *
- *	@(#)hpux_tty.c	7.5 (Berkeley) %G%
+ *	@(#)hpux_tty.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -19,17 +19,17 @@
  */
 #ifdef HPUXCOMPAT
 
-#include "param.h"
-#include "systm.h"
-#include "user.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "proc.h"
-#include "file.h"
-#include "conf.h"
-#include "buf.h"
-#include "uio.h"
-#include "kernel.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/ioctl.h"
+#include "sys/tty.h"
+#include "sys/proc.h"
+#include "sys/file.h"
+#include "sys/conf.h"
+#include "sys/buf.h"
+#include "sys/uio.h"
+#include "sys/kernel.h"
 
 #include "hpux.h"
 #include "hpux_termio.h"

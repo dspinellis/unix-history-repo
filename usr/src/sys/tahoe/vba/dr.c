@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dr.c	7.8 (Berkeley) %G%
+ *	@(#)dr.c	7.9 (Berkeley) %G%
  */
 
 #include "dr.h"
@@ -17,21 +17,21 @@
  *
  * UNTESTED WITH 4.3
  */
-#include "machine/mtpr.h"
-#include "machine/pte.h"
+#include "../include/mtpr.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "conf.h"
-#include "user.h"
-#include "proc.h"
-#include "map.h"
-#include "ioctl.h"
-#include "buf.h"
-#include "vm.h"
-#include "kernel.h"
+#include "sys/param.h"
+#include "sys/conf.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/map.h"
+#include "sys/ioctl.h"
+#include "sys/buf.h"
+#include "sys/vm.h"
+#include "sys/kernel.h"
 
-#include "../tahoevba/vbavar.h"
-#include "../tahoevba/drreg.h"
+#include "../vba/vbavar.h"
+#include "../vba/drreg.h"
 
 #define YES 1
 #define NO  0

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: sd.c 1.2 90/01/23$
  *
- *	@(#)sd.c	7.2 (Berkeley) %G%
+ *	@(#)sd.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -21,7 +21,7 @@
 #include "saio.h"
 #include "samachdep.h"
 
-#include "../hpdev/scsireg.h"
+#include "../dev/scsireg.h"
 
 struct	sd_softc {
 	char	sc_retry;

@@ -3,20 +3,20 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uda.c	7.10 (Berkeley) %G%
+ *	@(#)uda.c	7.11 (Berkeley) %G%
  */
 
 /*
  * UDA50/RAxx disk device driver
  */
 
-#include "param.h"
-#include "buf.h"
-#include "disklabel.h"
+#include "sys/param.h"
+#include "sys/buf.h"
+#include "sys/disklabel.h"
 
-#include "../vax/pte.h"
+#include "../include/pte.h"
 
-#include "saio.h"
+#include "stand/saio.h"
 #include "savax.h"
 
 /*
@@ -25,9 +25,9 @@
 #define NRSP	1
 #define NCMD	1
 
-#include "../vaxuba/udareg.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
+#include "../uba/udareg.h"
+#include "../uba/ubareg.h"
+#include "../uba/ubavar.h"
 #include "../vax/mscp.h"
 
 #define	NRA		8	/* max. unit number on controller */

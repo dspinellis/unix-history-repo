@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mp.c	7.15 (Berkeley) %G%
+ *	@(#)mp.c	7.16 (Berkeley) %G%
  */
 
 #include "mp.h"
@@ -16,25 +16,25 @@
  * Multi Protocol Communications Controller (MPCC).
  * Asynchronous Terminal Protocol Support.
  */
-#include "param.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "user.h"
-#include "map.h"
-#include "buf.h"
-#include "conf.h"
-#include "file.h"
-#include "errno.h"
-#include "syslog.h"
-#include "vmmac.h"
-#include "kernel.h"
-#include "clist.h"
+#include "sys/param.h"
+#include "sys/ioctl.h"
+#include "sys/tty.h"
+#include "sys/user.h"
+#include "sys/map.h"
+#include "sys/buf.h"
+#include "sys/conf.h"
+#include "sys/file.h"
+#include "sys/errno.h"
+#include "sys/syslog.h"
+#include "sys/vmmac.h"
+#include "sys/kernel.h"
+#include "sys/clist.h"
 
-#include "machine/pte.h"
-#include "machine/mtpr.h"
+#include "../include/pte.h"
+#include "../include/mtpr.h"
 
-#include "../tahoevba/vbavar.h"
-#include "../tahoevba/mpreg.h"
+#include "../vba/vbavar.h"
+#include "../vba/mpreg.h"
 
 #define	MPCHUNK	16
 #define	MPPORT(n)	((n) & 0xf)

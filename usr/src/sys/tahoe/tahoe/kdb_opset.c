@@ -3,10 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_opset.c	7.6 (Berkeley) %G%
+ *	@(#)kdb_opset.c	7.7 (Berkeley) %G%
  */
 
-#include "../kdb/defs.h"
+#include "kdb/defs.h"
 
 /*
  * Instruction printing.
@@ -60,7 +60,7 @@ struct optab {
 static	struct optab *ioptab[256];	/* index by opcode to optab */
 static	struct optab optab[] = {	/* opcode table */
 #define OP(a,b,c,d,e,f,g,h,i) {a,b,c,d,e,f,g,h,i}
-#include "../tahoe/kdb_instrs"
+#include "kdb_instrs"
 0};
 static	char *regname[] = {
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",

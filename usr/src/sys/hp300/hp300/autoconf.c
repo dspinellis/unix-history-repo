@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.25 89/10/07$
  *
- *	@(#)autoconf.c	7.3 (Berkeley) %G%
+ *	@(#)autoconf.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -22,20 +22,20 @@
  * and the drivers are initialized.
  */
 
-#include "param.h"
-#include "systm.h"
-#include "map.h"
-#include "buf.h"
-#include "dkstat.h"
-#include "conf.h"
-#include "dmap.h"
-#include "reboot.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/map.h"
+#include "sys/buf.h"
+#include "sys/dkstat.h"
+#include "sys/conf.h"
+#include "sys/dmap.h"
+#include "sys/reboot.h"
 
-#include "cpu.h"
+#include "../include/cpu.h"
 #include "isr.h"
-#include "../hpdev/device.h"
-#include "../hpdev/grfioctl.h"
-#include "../hpdev/grfvar.h"
+#include "../dev/device.h"
+#include "../dev/grfioctl.h"
+#include "../dev/grfvar.h"
 
 /*
  * The following several variables are related to
@@ -737,7 +737,7 @@ find_devs()
 }
 
 #if NCD > 0
-#include "../hpdev/cdvar.h"
+#include "../dev/cdvar.h"
 
 find_cdevices()
 {

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ik.c	7.6 (Berkeley) %G%
+ *	@(#)ik.c	7.7 (Berkeley) %G%
  */
 
 #include "ik.h"
@@ -12,26 +12,26 @@
 /*
  * PS300/IKON DR-11W Device Driver.
  */
-#include "param.h"
-#include "buf.h"
-#include "cmap.h"
-#include "conf.h"
-#include "dkstat.h"
-#include "map.h"
-#include "systm.h"
-#include "user.h"
-#include "vmmac.h"
-#include "proc.h"
-#include "kernel.h"
-#include "syslog.h"
+#include "sys/param.h"
+#include "sys/buf.h"
+#include "sys/cmap.h"
+#include "sys/conf.h"
+#include "sys/dkstat.h"
+#include "sys/map.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/vmmac.h"
+#include "sys/proc.h"
+#include "sys/kernel.h"
+#include "sys/syslog.h"
 
-#include "../tahoe/mtpr.h"
-#include "../tahoe/pte.h"
+#include "../include/mtpr.h"
+#include "../include/pte.h"
 
-#include "../tahoevba/vbavar.h"
-#include "../tahoevba/ikreg.h"
-#include "../tahoevba/psreg.h"
-#include "../tahoevba/psproto.h"
+#include "../vba/vbavar.h"
+#include "../vba/ikreg.h"
+#include "../vba/psreg.h"
+#include "../vba/psproto.h"
 
 int	ikprobe(), ikattach(), iktimer();
 struct	vba_device *ikinfo[NIK];

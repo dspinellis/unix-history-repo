@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_css.c	7.8 (Berkeley) %G%
+ *	@(#)if_css.c	7.9 (Berkeley) %G%
  */
 
 #include "css.h"
@@ -34,25 +34,25 @@
  * If you get it wrong, it will still autoconfig, but will just
  * sit there with RECEIVE IDLE indicated on the front panel.
  */
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "vmmac.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/mbuf.h"
+#include "sys/buf.h"
+#include "sys/protosw.h"
+#include "sys/socket.h"
+#include "sys/vmmac.h"
 
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "../net/if.h"
-#include "../netimp/if_imp.h"
+#include "net/if.h"
+#include "netimp/if_imp.h"
 
-#include "../vax/cpu.h"
-#include "../vax/mtpr.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
 #include "if_cssreg.h"
 #include "if_uba.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
+#include "../uba/ubareg.h"
+#include "../uba/ubavar.h"
 
 int     cssprobe(), cssattach(), cssrint(), cssxint();
 struct  uba_device *cssinfo[NCSS];

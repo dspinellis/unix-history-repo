@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ka750.c	7.2 (Berkeley) %G%
+ *	@(#)ka750.c	7.3 (Berkeley) %G%
  */
 
 #if VAX750
@@ -12,11 +12,11 @@
  * 750-specific code.
  */
 
-#include "param.h"
+#include "sys/param.h"
 
-#include "cpu.h"
+#include "../include/cpu.h"
 #include "mem.h"
-#include "mtpr.h"
+#include "../include/mtpr.h"
 
 struct	mcr750 {
 	int	mc_err;			/* error bits */

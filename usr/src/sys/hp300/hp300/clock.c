@@ -11,20 +11,20 @@
  *
  * from: Utah $Hdr: clock.c 1.17 89/11/30$
  *
- *	@(#)clock.c	7.3 (Berkeley) %G%
+ *	@(#)clock.c	7.4 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "user.h"
-#include "kernel.h"
-#include "../hpdev/hilreg.h"
+#include "sys/param.h"
+#include "sys/user.h"
+#include "sys/kernel.h"
+#include "../dev/hilreg.h"
 #include "clockreg.h"
 
-#include "machine/psl.h"
-#include "machine/cpu.h"
+#include "../include/psl.h"
+#include "../include/cpu.h"
 
 #if defined(GPROF) && defined(PROFTIMER)
-#include "gprof.h"
+#include "sys/gprof.h"
 #endif
 
 int    clkstd[1];
@@ -116,16 +116,16 @@ clkread()
  * (PROFTIMER code above).  Care should be taken when both uses are
  * configured as only a token effort is made to avoid conflicting use.
  */
-#include "proc.h"
-#include "ioctl.h"
-#include "malloc.h"
+#include "sys/proc.h"
+#include "sys/ioctl.h"
+#include "sys/malloc.h"
 #include "clockioctl.h"
-#include "../vm/vm_param.h"
-#include "../vm/vm_pager.h"
-#include "../vm/vm_prot.h"
-#include "specdev.h"
-#include "vnode.h"
-#include "mman.h"
+#include "vm/vm_param.h"
+#include "vm/vm_pager.h"
+#include "vm/vm_prot.h"
+#include "sys/specdev.h"
+#include "sys/vnode.h"
+#include "sys/mman.h"
 
 int clockon = 0;		/* non-zero if high-res timer enabled */
 #ifdef PROFTIMER

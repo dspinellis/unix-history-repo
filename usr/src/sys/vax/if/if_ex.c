@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ex.c	7.8 (Berkeley) %G%
+ *	@(#)if_ex.c	7.9 (Berkeley) %G%
  */
 
 #include "ex.h"
@@ -20,47 +20,47 @@
  *	Excelan Inc.
  */
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "vmmac.h"
-#include "ioctl.h"
-#include "syslog.h"
-#include "errno.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/mbuf.h"
+#include "sys/buf.h"
+#include "sys/protosw.h"
+#include "sys/socket.h"
+#include "sys/vmmac.h"
+#include "sys/ioctl.h"
+#include "sys/syslog.h"
+#include "sys/errno.h"
 
-#include "../net/if.h"
-#include "../net/netisr.h"
-#include "../net/route.h"
+#include "net/if.h"
+#include "net/netisr.h"
+#include "net/route.h"
 
 #ifdef	INET
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/in_var.h"
-#include "../netinet/ip.h"
-#include "../netinet/if_ether.h"
+#include "netinet/in.h"
+#include "netinet/in_systm.h"
+#include "netinet/in_var.h"
+#include "netinet/ip.h"
+#include "netinet/if_ether.h"
 #endif
 
 #ifdef NS
-#include "../netns/ns.h"
-#include "../netns/ns_if.h"
+#include "netns/ns.h"
+#include "netns/ns_if.h"
 #endif
 
 #ifdef ISO
-#include "../netiso/iso.h"
-#include "../netiso/iso_var.h"
+#include "netiso/iso.h"
+#include "netiso/iso_var.h"
 extern char all_es_snpa[], all_is_snpa[];
 #endif
 
-#include "../vax/pte.h"
-#include "../vax/cpu.h"
-#include "../vax/mtpr.h"
+#include "../include/pte.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
 #include "if_exreg.h"
 #include "if_uba.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
+#include "../uba/ubareg.h"
+#include "../uba/ubavar.h"
 
 /* #define DEBUG			/* check for "impossible" events */
 

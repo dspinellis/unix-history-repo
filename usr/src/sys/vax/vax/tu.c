@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tu.c	7.4 (Berkeley) %G%
+ *	@(#)tu.c	7.5 (Berkeley) %G%
  */
 
 #if defined(VAX750) || defined(VAX730)
@@ -24,15 +24,15 @@
  *	 to crash your system if you are running multiuser.
  *	 	******FOR SINGLE USER USE ONLY*****
  */
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "conf.h"
-#include "user.h"
-#include "kernel.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/buf.h"
+#include "sys/conf.h"
+#include "sys/user.h"
+#include "sys/kernel.h"
 
-#include "cpu.h"
-#include "mtpr.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
 #include "rsp.h"
 
 #define	printd	if(tudebug) printf

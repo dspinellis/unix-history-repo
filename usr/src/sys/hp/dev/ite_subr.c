@@ -11,25 +11,25 @@
  *
  * from: Utah $Hdr: ite_subr.c 1.1 90/07/09$
  *
- *	@(#)ite_subr.c	7.2 (Berkeley) %G%
+ *	@(#)ite_subr.c	7.3 (Berkeley) %G%
  */
 
 #include "ite.h"
 #if NITE > 0
 
-#include "param.h"
-#include "conf.h"
-#include "user.h"
-#include "proc.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "systm.h"
-#include "uio.h"
+#include "sys/param.h"
+#include "sys/conf.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/ioctl.h"
+#include "sys/tty.h"
+#include "sys/systm.h"
+#include "sys/uio.h"
 
 #include "itevar.h"
 #include "itereg.h"
 
-#include "machine/cpu.h"
+#include "../include/cpu.h"
 
 ite_devinfo(ip)
 	struct ite_softc *ip;

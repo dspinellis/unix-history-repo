@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns_output.c	7.7 (Berkeley) %G%
+ *	@(#)ns_output.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -23,7 +23,7 @@
 #include "idp_var.h"
 
 #ifdef vax
-#include "../vax/mtpr.h"
+#include "vax/include/mtpr.h"
 #endif
 int ns_hold_output = 0;
 int ns_copy_output = 0;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)psreg.h	7.4 (Berkeley) %G%
+ *	@(#)psreg.h	7.5 (Berkeley) %G%
  */
 
 #ifndef _PSREG_
@@ -12,11 +12,7 @@
 /*
  * PS300 definitions.
  */
-#ifndef KERNEL
 #include <sys/ioctl.h>
-#else
-#include "ioctl.h"
-#endif
 
 struct  pslookup {
         int     pl_len;                 /* length of name string */

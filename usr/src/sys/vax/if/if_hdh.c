@@ -1,4 +1,4 @@
-/*	@(#)if_hdh.c	7.6 (Berkeley) %G% */
+/*	@(#)if_hdh.c	7.7 (Berkeley) %G% */
 
 
 /************************************************************************\
@@ -63,23 +63,23 @@ Revision History:
  *
  */
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "vmmac.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/mbuf.h"
+#include "sys/buf.h"
+#include "sys/protosw.h"
+#include "sys/socket.h"
+#include "sys/vmmac.h"
 
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "../net/if.h"
-#include "../netimp/if_imp.h"
+#include "net/if.h"
+#include "netimp/if_imp.h"
 
-#include "../vax/cpu.h"
-#include "../vax/mtpr.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
+#include "../uba/ubareg.h"
+#include "../uba/ubavar.h"
 
 #include "if_hdhreg.h"
 #include "if_uba.h"

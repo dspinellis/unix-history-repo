@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.18 (Berkeley) %G%
+ *	@(#)param.h	7.19 (Berkeley) %G%
  */
 
 #define	BSD	199006		/* June, 1990 system version (year & month) */
@@ -47,31 +47,21 @@
 
 #define	NZERO	0
 
-#ifndef KERNEL
-#include	<sys/types.h>
-#else
 #ifndef LOCORE
-#include	"types.h"
-#endif
+#include	<sys/types.h>
 #endif
 
 /*
  * Signals
  */
-#ifdef KERNEL
-#include "signal.h"
-#else
 #include <sys/signal.h>
-#endif
 
 /*
  * Machine type dependent parameters.
  */
-#ifdef KERNEL
-#include "machine/machparam.h"
-#else
-#include <machine/machparam.h>
-#endif
+#include <machine/param.h>
+#include <machine/endian.h>
+#include <machine/limits.h>
 
 #define	NBPW	sizeof(int)	/* number of bytes in an integer */
 

@@ -1,4 +1,4 @@
-/* @(#)vs.c	7.7 (MIT) %G% */
+/* @(#)vs.c	7.8 (MIT) %G% */
  /****************************************************************************
  *									    *
  *  Copyright (c) 1983, 1984 by						    *
@@ -24,28 +24,28 @@
 #include "vs.h"
 #if NVS > 0
 
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "user.h"
-#include "buf.h"
-#include "systm.h"
-#include "map.h"
-#include "kernel.h"
-#include "ioctl.h"
+#include "sys/param.h"
+#include "sys/user.h"
+#include "sys/buf.h"
+#include "sys/systm.h"
+#include "sys/map.h"
+#include "sys/kernel.h"
+#include "sys/ioctl.h"
 
 #include "vsio.h" 
 
-#include "proc.h"
-#include "uio.h"
-#include "vmmac.h"
-#include "file.h"
+#include "sys/proc.h"
+#include "sys/uio.h"
+#include "sys/vmmac.h"
+#include "sys/file.h"
 
 #include "ubareg.h"
 #include "ubavar.h"
 #include "vsreg.h"
 
-#include "../vax/mtpr.h"
+#include "../include/mtpr.h"
 
 #define	VSWAITPRI	(PZERO+1)
 #define	VSMAXEVQ	64	/* must be power of 2 */

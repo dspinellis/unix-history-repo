@@ -3,33 +3,33 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)Locore.c	7.3 (Berkeley) %G%
+ *	@(#)Locore.c	7.4 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "user.h"
-#include "vm.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "proc.h"
-#include "buf.h"
-#include "msgbuf.h"
-#include "mbuf.h"
-#include "protosw.h"
-#include "domain.h"
-#include "map.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/vm.h"
+#include "sys/ioctl.h"
+#include "sys/tty.h"
+#include "sys/proc.h"
+#include "sys/buf.h"
+#include "sys/msgbuf.h"
+#include "sys/mbuf.h"
+#include "sys/protosw.h"
+#include "sys/domain.h"
+#include "sys/map.h"
 
-#include "cpu.h"
-#include "mtpr.h"
-#include "trap.h"
-#include "psl.h"
-#include "pte.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
+#include "../include/trap.h"
+#include "../include/psl.h"
+#include "../include/pte.h"
 #include "scb.h"
 #include "cp.h"
 #include "mem.h"
 
-#include "../tahoemath/fp.h"
+#include "../math/fp.h"
 
 /*
  * Pseudo file for lint to show what is used/defined in locore.s.

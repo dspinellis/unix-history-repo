@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ace.c	7.7 (Berkeley) %G%
+ *	@(#)if_ace.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -16,41 +16,41 @@
 #include "ace.h"
 #if NACE > 0
 
-#include "param.h"
-#include "systm.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "vmmac.h"
-#include "ioctl.h"
-#include "errno.h"
-#include "vmparam.h"
-#include "syslog.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/malloc.h"
+#include "sys/mbuf.h"
+#include "sys/buf.h"
+#include "sys/protosw.h"
+#include "sys/socket.h"
+#include "sys/vmmac.h"
+#include "sys/ioctl.h"
+#include "sys/errno.h"
+#include "sys/vmparam.h"
+#include "sys/syslog.h"
 
-#include "../net/if.h"
-#include "../net/netisr.h"
-#include "../net/route.h"
+#include "net/if.h"
+#include "net/netisr.h"
+#include "net/route.h"
 #ifdef INET
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/in_var.h"
-#include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
-#include "../netinet/if_ether.h"
+#include "netinet/in.h"
+#include "netinet/in_systm.h"
+#include "netinet/in_var.h"
+#include "netinet/ip.h"
+#include "netinet/ip_var.h"
+#include "netinet/if_ether.h"
 #endif
 #ifdef NS
-#include "../netns/ns.h"
-#include "../netns/ns_if.h"
+#include "netns/ns.h"
+#include "netns/ns_if.h"
 #endif
 
-#include "machine/cpu.h"
-#include "machine/pte.h"
+#include "../include/cpu.h"
+#include "../include/pte.h"
 
-#include "../tahoe/mtpr.h"
-#include "../tahoeif/if_acereg.h"
-#include "../tahoevba/vbavar.h"
+#include "../include/mtpr.h"
+#include "../if/if_acereg.h"
+#include "../vba/vbavar.h"
 
 int	aceprobe(), aceattach(), acerint(), acecint(), acestart();
 struct	vba_device *aceinfo[NACE];

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ka730.c	7.2 (Berkeley) %G%
+ *	@(#)ka730.c	7.3 (Berkeley) %G%
  */
 
 #if VAX730
@@ -12,11 +12,11 @@
  * 730-specific code.
  */
 
-#include "param.h"
+#include "sys/param.h"
 
-#include "cpu.h"
+#include "../include/cpu.h"
 #include "mem.h"
-#include "mtpr.h"
+#include "../include/mtpr.h"
 
 struct	mcr730 {
 	int	mc_addr;		/* address and syndrome */

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mba.c	7.4 (Berkeley) %G%
+ *	@(#)mba.c	7.5 (Berkeley) %G%
  */
 
 #include "mba.h"
@@ -11,18 +11,18 @@
 /*
  * Massbus driver, arbitrates a massbus among attached devices.
  */
-#include "machine/pte.h"
+#include "../include/pte.h"
 
-#include "param.h"
-#include "systm.h"
-#include "dkstat.h"
-#include "buf.h"
-#include "conf.h"
-#include "user.h"
-#include "proc.h"
-#include "map.h"
-#include "../vax/mtpr.h"
-#include "vm.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/dkstat.h"
+#include "sys/buf.h"
+#include "sys/conf.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/map.h"
+#include "../include/mtpr.h"
+#include "sys/vm.h"
 
 #include "mbareg.h"
 #include "mbavar.h"

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf_dv.c 1.1 90/07/09$
  *
- *	@(#)grf_dv.c	7.2 (Berkeley) %G%
+ *	@(#)grf_dv.c	7.3 (Berkeley) %G%
  */
 
 #include "grf.h"
@@ -20,14 +20,14 @@
 /*
  * Graphics routines for the DaVinci, HP98730/98731 Graphics system.
  */
-#include "param.h"
-#include "errno.h"
+#include "sys/param.h"
+#include "sys/errno.h"
 
 #include "grfioctl.h"
 #include "grfvar.h"
 #include "grf_dvreg.h"
 
-#include "machine/cpu.h"
+#include "../include/cpu.h"
 
 /*
  * Initialize hardware.

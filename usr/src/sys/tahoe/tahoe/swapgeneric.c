@@ -3,22 +3,22 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)swapgeneric.c	7.6 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.7 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "conf.h"
-#include "buf.h"
-#include "vm.h"
-#include "systm.h"
-#include "reboot.h"
+#include "sys/param.h"
+#include "sys/conf.h"
+#include "sys/buf.h"
+#include "sys/vm.h"
+#include "sys/systm.h"
+#include "sys/reboot.h"
 
-#include "pte.h"
-#include "cpu.h"
+#include "../include/pte.h"
+#include "../include/cpu.h"
 #include "cp.h"
-#include "mtpr.h"
+#include "../include/mtpr.h"
 
-#include "../tahoevba/vbavar.h"
+#include "../vba/vbavar.h"
 
 /*
  * Generic configuration;  all in one

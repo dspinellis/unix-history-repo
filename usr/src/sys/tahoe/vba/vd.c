@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vd.c	7.12 (Berkeley) %G%
+ *	@(#)vd.c	7.13 (Berkeley) %G%
  */
 
 #include "dk.h"
@@ -15,29 +15,29 @@
 /*
  * Versabus VDDC/SMDE driver.
  */
-#include "param.h"
-#include "buf.h"
-#include "cmap.h"
-#include "conf.h"
-#include "dkstat.h"
-#include "disklabel.h"
-#include "map.h"
-#include "file.h"
-#include "systm.h"
-#include "user.h"
-#include "vmmac.h"
-#include "proc.h"
-#include "syslog.h"
-#include "kernel.h"
-#include "ioctl.h"
-#include "stat.h"
+#include "sys/param.h"
+#include "sys/buf.h"
+#include "sys/cmap.h"
+#include "sys/conf.h"
+#include "sys/dkstat.h"
+#include "sys/disklabel.h"
+#include "sys/map.h"
+#include "sys/file.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/vmmac.h"
+#include "sys/proc.h"
+#include "sys/syslog.h"
+#include "sys/kernel.h"
+#include "sys/ioctl.h"
+#include "sys/stat.h"
 
-#include "../tahoe/cpu.h"
-#include "../tahoe/mtpr.h"
-#include "../tahoe/pte.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
+#include "../include/pte.h"
 
-#include "../tahoevba/vbavar.h"
-#include "../tahoevba/vdreg.h"
+#include "../vba/vbavar.h"
+#include "../vba/vdreg.h"
 
 #ifndef	COMPAT_42
 #define	COMPAT_42

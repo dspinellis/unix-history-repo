@@ -9,14 +9,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.1 (Berkeley) %G%
+ *	@(#)dca.c	7.2 (Berkeley) %G%
  */
 
 #ifdef DCACONSOLE
-#include "../sys/param.h"
-#include "../hpdev/dcareg.h"
-#include "machine/cpu.h"
-#include "machine/cons.h"
+#include "sys/param.h"
+#include "../dev/dcareg.h"
+#include "../include/cpu.h"
+#include "../hp300/cons.h"
 
 #define CONSDEV	(0)
 #define CONSOLE ((struct dcadevice *)(EXTIOBASE + (9 * IOCARDSIZE)))

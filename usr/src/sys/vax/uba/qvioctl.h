@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- * 		@(#)qvioctl.h	1.4  Berkeley  %G%
+ * 		@(#)qvioctl.h	1.5  Berkeley  %G%
  * 
  *	derived from: @(#)qvioctl.h	1.7 (ULTRIX) 6/11/85
  */
@@ -11,13 +11,13 @@
  * Ioctl definitions for the qvss.
  */
 #ifdef KERNEL
-#include "ioctl.h"
+#include "sys/ioctl.h"
 #include "qvreg.h"
 #include "qevent.h"
 #else
 #include <sys/ioctl.h>
-#include <vaxuba/qvreg.h>
-#include <vaxuba/qevent.h>
+#include <vax/uba/qvreg.h>
+#include <vax/uba/qevent.h>
 #endif
 
 struct qv_kpcmd {

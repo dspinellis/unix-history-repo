@@ -3,23 +3,23 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cons.c	7.10 (Berkeley) %G%
+ *	@(#)cons.c	7.11 (Berkeley) %G%
  */
 
 /*
  * VAX console driver (and floppy interface)
  */
-#include "param.h"
-#include "conf.h"
-#include "user.h"
-#include "proc.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "systm.h"
+#include "sys/param.h"
+#include "sys/conf.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/ioctl.h"
+#include "sys/tty.h"
+#include "sys/systm.h"
 
-#include "cpu.h"
+#include "../include/cpu.h"
 #include "cons.h"
-#include "mtpr.h"
+#include "../include/mtpr.h"
 
 /*
  * On some machines (e.g. MicroVAX), a secondary console

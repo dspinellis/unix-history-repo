@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	7.13 (Berkeley) %G%
+#	@(#)Makefile	7.14 (Berkeley) %G%
 #
 
 RELOC=		800
@@ -25,9 +25,9 @@ LDTSYSOPT=	-T ${BOOTRELOC} -x
 LDTOPT=		-T ${RELOC} -e _entry -x
 
 DESTDIR=
-VPATH=	../stand
+VPATH=	../../stand
 LIBS=	libsa.a ${DESTDIR}/usr/lib/libc.a
-COPTS=	-O -I. -I../stand -I..
+COPTS=	-O -I. -I../..
 CFLAGS=	-DSTANDALONE -DCOMPAT_42 -DTAHOE -DRELOC=0x${RELOC} ${COPTS}
 SUBDIR=	vdformat
 ALL=	boot cat copy ls
@@ -42,7 +42,7 @@ all: srt0.o libsa.a ${ALL}
 ${SUBDIR}:
 	cd $@; make ${MFLAGS}
 
-machdep.o: machdep.c ../tahoe/mtpr.h ../tahoe/mem.h ../tahoe/SYS.h
+machdep.o: machdep.c ../include/mtpr.h ../tahoe/mem.h ../tahoe/SYS.h
 	${CC} -E ${CFLAGS} machdep.c | ${AS}  -o machdep.o
 
 libsa.a: conf.o dev.o getfile.o gets.o machdep.o prf.o printn.o sys.o \

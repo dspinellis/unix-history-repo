@@ -25,11 +25,7 @@ typedef	unsigned int	u_int;
 typedef	unsigned long	u_long;
 typedef	unsigned short	ushort;		/* Sys V compatibility */
 
-#ifdef KERNEL
-#include "machine/machtypes.h"
-#else
-#include <machine/machtypes.h>
-#endif
+#include <machine/types.h>
 
 #ifdef	_CLOCK_T_
 typedef	_CLOCK_T_	clock_t;

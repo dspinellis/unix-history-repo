@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns_cksum.c	7.1 (Berkeley) %G%
+ *	@(#)ns_cksum.c	7.2 (Berkeley) %G%
  */
 
-#include "types.h"
-#include "mbuf.h"
+#include "sys/types.h"
+#include "sys/mbuf.h"
 
 
 /*

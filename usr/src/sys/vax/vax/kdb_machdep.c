@@ -1,23 +1,23 @@
-/*	@(#)kdb_machdep.c	7.7 (Berkeley) %G%	*/
+/*	@(#)kdb_machdep.c	7.8 (Berkeley) %G%	*/
 
-#include "param.h"
-#include "conf.h"
-#include "user.h"
-#include "proc.h"
-#include "uio.h"
-#include "systm.h"
-#include "reboot.h"
-#include "vmmac.h"
-#include "ioctl.h"
-#include "tty.h"
+#include "sys/param.h"
+#include "sys/conf.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/uio.h"
+#include "sys/systm.h"
+#include "sys/reboot.h"
+#include "sys/vmmac.h"
+#include "sys/ioctl.h"
+#include "sys/tty.h"
 
-#include "cpu.h"
-#include "mtpr.h"
-#include "psl.h"
-#include "pte.h"
-#include "reg.h"
-#include "trap.h"
-#include "kdbparam.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
+#include "../include/psl.h"
+#include "../include/pte.h"
+#include "../include/reg.h"
+#include "../include/trap.h"
+#include "../include/kdbparam.h"
 
 #define	KDBSPACE	1024	/* 1K of memory for breakpoint table */
 static	char kdbbuf[KDBSPACE];

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)raw_hy.c	7.3 (Berkeley) %G%
+ *	@(#)raw_hy.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -24,20 +24,20 @@
 #include "hy.h"
 #if NHY > 0
 
-#include "param.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "protosw.h"
-#include "socketvar.h"
-#include "errno.h"
+#include "sys/param.h"
+#include "sys/mbuf.h"
+#include "sys/socket.h"
+#include "sys/protosw.h"
+#include "sys/socketvar.h"
+#include "sys/errno.h"
 
-#include "../net/if.h"
-#include "../net/route.h"
-#include "../net/raw_cb.h"
+#include "net/if.h"
+#include "net/route.h"
+#include "net/raw_cb.h"
 
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/in_var.h"
+#include "netinet/in.h"
+#include "netinet/in_systm.h"
+#include "netinet/in_var.h"
 #include "if_hy.h"
 
 /*

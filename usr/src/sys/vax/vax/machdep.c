@@ -3,46 +3,46 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.31 (Berkeley) %G%
+ *	@(#)machdep.c	7.32 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "user.h"
-#include "kernel.h"
-#include "malloc.h"
-#include "map.h"
-#include "vm.h"
-#include "proc.h"
-#include "buf.h"
-#include "reboot.h"
-#include "conf.h"
-#include "file.h"
-#include "text.h"
-#include "clist.h"
-#include "callout.h"
-#include "cmap.h"
-#include "mbuf.h"
-#include "msgbuf.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/kernel.h"
+#include "sys/malloc.h"
+#include "sys/map.h"
+#include "sys/vm.h"
+#include "sys/proc.h"
+#include "sys/buf.h"
+#include "sys/reboot.h"
+#include "sys/conf.h"
+#include "sys/file.h"
+#include "sys/text.h"
+#include "sys/clist.h"
+#include "sys/callout.h"
+#include "sys/cmap.h"
+#include "sys/mbuf.h"
+#include "sys/msgbuf.h"
 #ifdef SYSVSHM
-#include "shm.h"
+#include "sys/shm.h"
 #endif
 
-#include "reg.h"
-#include "pte.h"
-#include "psl.h"
-#include "frame.h"
-#include "clock.h"
+#include "../include/reg.h"
+#include "../include/pte.h"
+#include "../include/psl.h"
+#include "../include/frame.h"
+#include "../include/clock.h"
 #include "cons.h"
-#include "cpu.h"
+#include "../include/cpu.h"
 #include "mem.h"
-#include "mtpr.h"
+#include "../include/mtpr.h"
 #include "rpb.h"
 #include "ka630.h"
 #include "ka650.h"
 
-#include "../vaxuba/ubavar.h"
-#include "../vaxuba/ubareg.h"
+#include "../uba/ubavar.h"
+#include "../uba/ubareg.h"
 
 /*
  * Declare these as initialized data so we can patch them.

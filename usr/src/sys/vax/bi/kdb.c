@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kdb.c	7.9 (Berkeley) %G%
+ *	@(#)kdb.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -42,33 +42,33 @@
 #define NCMDL2	5		/* log2 number of command packets */
 #define	MAXUNIT	8		/* maximum allowed unit number */
 
-#include "param.h"
-#include "systm.h"
-#include "malloc.h"
-#include "map.h"
-#include "buf.h"
-#include "conf.h"
-#include "user.h"
-#include "proc.h"
-#include "vm.h"
-#include "dkstat.h"
-#include "cmap.h"
-#include "syslog.h"
-#include "kernel.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/malloc.h"
+#include "sys/map.h"
+#include "sys/buf.h"
+#include "sys/conf.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/vm.h"
+#include "sys/dkstat.h"
+#include "sys/cmap.h"
+#include "sys/syslog.h"
+#include "sys/kernel.h"
 
 #define	NRSP	(1 << NRSPL2)
 #define	NCMD	(1 << NCMDL2)
 
-#include "../vax/pte.h"
-#include "../vax/cpu.h"
+#include "../include/pte.h"
+#include "../include/cpu.h"
 #include "../vax/mscp.h"
 #include "../vax/mscpvar.h"
-#include "../vax/mtpr.h"
+#include "../include/mtpr.h"
 
 #include "bireg.h"
 #include "kdbreg.h"
 
-#include "../vaxuba/ubavar.h"
+#include "../uba/ubavar.h"
 
 /*
  * Conversions from kernel virtual to physical and page table addresses.

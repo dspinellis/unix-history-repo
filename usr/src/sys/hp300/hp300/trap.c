@@ -11,31 +11,31 @@
  *
  * from: Utah $Hdr: trap.c 1.28 89/09/25$
  *
- *	@(#)trap.c	7.8 (Berkeley) %G%
+ *	@(#)trap.c	7.9 (Berkeley) %G%
  */
 
-#include "cpu.h"
-#include "psl.h"
-#include "reg.h"
-#include "mtpr.h"
+#include "../include/cpu.h"
+#include "../include/psl.h"
+#include "../include/reg.h"
+#include "../include/mtpr.h"
 
-#include "param.h"
-#include "systm.h"
-#include "user.h"
-#include "proc.h"
-#include "seg.h"
-#include "trap.h"
-#include "acct.h"
-#include "kernel.h"
-#include "syslog.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/seg.h"
+#include "../include/trap.h"
+#include "sys/acct.h"
+#include "sys/kernel.h"
+#include "sys/syslog.h"
 #ifdef KTRACE
-#include "ktrace.h"
+#include "sys/ktrace.h"
 #endif
 
-#include "../vm/vm_param.h"
-#include "../vm/pmap.h"
-#include "../vm/vm_map.h"
-#include "vmmeter.h"
+#include "vm/vm_param.h"
+#include "vm/pmap.h"
+#include "vm/vm_map.h"
+#include "sys/vmmeter.h"
 
 #ifdef HPUXCOMPAT
 #include "../hpux/hpux.h"
@@ -516,7 +516,7 @@ done:
 	 * What should really be done is to clean up the signal handling
 	 * so that this is not a problem.
 	 */
-#include "syscall.h"
+#include "sys/syscall.h"
 	if (code != SYS_sigreturn && (i = CURSIG(p)))
 		psig(i);
 	p->p_pri = p->p_usrpri;

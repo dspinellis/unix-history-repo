@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)upmaptype.c	7.5 (Berkeley) %G%
+ *	@(#)upmaptype.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -11,16 +11,16 @@
  * driver: drive type mapping routine.
  */
 #ifdef COMPAT_42
-#include "param.h" 
-#include "dkbad.h"
-#include "disklabel.h"
-#include "vmmac.h"
+#include "sys/param.h" 
+#include "sys/dkbad.h"
+#include "sys/disklabel.h"
+#include "sys/vmmac.h"
 
-#include "../vax/pte.h"
-#include "../vaxuba/upreg.h"
-#include "../vaxuba/ubareg.h"
+#include "../include/pte.h"
+#include "../uba/upreg.h"
+#include "../uba/ubareg.h"
 
-#include "saio.h"
+#include "stand/saio.h"
 #include "savax.h"
 
 static short	up9300_off[] = { 0,  27,  0,  -1,  -1,  -1, 562, 82 };

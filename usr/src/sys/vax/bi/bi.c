@@ -7,19 +7,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bi.c	7.3 (Berkeley) %G%
+ *	@(#)bi.c	7.4 (Berkeley) %G%
  */
 
 /*
  * VAXBI specific routines.
  */
 
-#include "param.h"
-
-#include "../vax/cpu.h"
-#include "../vax/mtpr.h"
+#include "sys/param.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
 #include "../vax/nexus.h"
-
 #include "bireg.h"
 
 bi_reset(bi)

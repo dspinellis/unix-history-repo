@@ -11,12 +11,12 @@
  *
  * from: Utah $Hdr: cons.c 1.5 89/08/22$
  *
- *	@(#)cons.c	7.2 (Berkeley) %G%
+ *	@(#)cons.c	7.3 (Berkeley) %G%
  */
 
-#include "param.h"
+#include "sys/param.h"
 #include "samachdep.h"
-#include "machine/cons.h"
+#include "../hp300/cons.h"
 
 int	nodev();
 #ifdef ITECONSOLE

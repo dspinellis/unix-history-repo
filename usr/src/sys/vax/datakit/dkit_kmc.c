@@ -1,7 +1,7 @@
 /*
  * Datakit driver
  * KMC assistance, with or without DR11C
- *	@(#)dkit_kmc.c	1.3 (Berkeley) %G%
+ *	@(#)dkit_kmc.c	1.4 (Berkeley) %G%
  */
 
 #include "dkitkmc.h"
@@ -9,19 +9,19 @@
 
 #include "datakit.h"
 
-#include "../machine/pte.h"
-#include "param.h"
-#include "syslog.h"
-#include "time.h"
-#include "kernel.h"
-#include "buf.h"
-#include "mbuf.h"
-#include "errno.h"
-#include "socket.h"
-#include "../net/if.h"
-#include "../vaxif/if_uba.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
+#include "../include/pte.h"
+#include "sys/param.h"
+#include "sys/syslog.h"
+#include "sys/time.h"
+#include "sys/kernel.h"
+#include "sys/buf.h"
+#include "sys/mbuf.h"
+#include "sys/errno.h"
+#include "sys/socket.h"
+#include "net/if.h"
+#include "../if/if_uba.h"
+#include "../uba/ubareg.h"
+#include "../uba/ubavar.h"
 
 #include "dkit.h"
 #include "dkkmc.h"

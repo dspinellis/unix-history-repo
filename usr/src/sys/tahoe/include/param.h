@@ -3,19 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.6 (Berkeley) %G%
+ *	@(#)param.h	7.7 (Berkeley) %G%
  */
 
 /*
  * Machine dependent constants for TAHOE.
  */
 #define	MACHINE	"tahoe"
-
-#ifndef BYTE_ORDER
-#include <machine/endian.h>
-#endif
-
-#include <machine/machlimits.h>
 
 /*
  * Round p (pointer or byte index) up to a correctly-aligned value

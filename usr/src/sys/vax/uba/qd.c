@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)qd.c	1.16 (Berkeley) %G%
+ *	@(#)qd.c	1.17 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -36,27 +36,26 @@
 #include "qd.h"
 
 #if NQD > 0
-#include "types.h"
-#include "machine/pte.h"
-#include "machine/mtpr.h"
-#include "machine/cpu.h"
-#include "param.h"
-#include "conf.h"
-#include "user.h"
+#include "../include/pte.h"
+#include "../include/mtpr.h"
+#include "sys/param.h"
+#include "../include/cpu.h"
+#include "sys/conf.h"
+#include "sys/user.h"
 #include "qdioctl.h"
-#include "tty.h"
-#include "map.h"
-#include "buf.h"
-#include "vm.h"
-#include "clist.h"
-#include "file.h"
-#include "uio.h"
-#include "kernel.h"
-#include "exec.h"
-#include "proc.h"
+#include "sys/tty.h"
+#include "sys/map.h"
+#include "sys/buf.h"
+#include "sys/vm.h"
+#include "sys/clist.h"
+#include "sys/file.h"
+#include "sys/uio.h"
+#include "sys/kernel.h"
+#include "sys/exec.h"
+#include "sys/proc.h"
 #include "ubareg.h"
 #include "ubavar.h"
-#include "syslog.h"
+#include "sys/syslog.h"
 #include "qduser.h"	/* definitions shared with user level client */
 #include "qdreg.h"	/* QDSS device register structures */
 

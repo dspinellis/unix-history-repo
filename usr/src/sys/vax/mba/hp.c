@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.20 (Berkeley) %G%
+ *	@(#)hp.c	7.21 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -21,24 +21,24 @@ int	hpbdebug;
  * TODO:
  *	see if DCLR and/or RELEASE set attention status
  */
-#include "param.h"
-#include "systm.h"
-#include "dkstat.h"
-#include "buf.h"
-#include "conf.h"
-#include "file.h"
-#include "user.h"
-#include "map.h"
-#include "../vax/mtpr.h"
-#include "vm.h"
-#include "cmap.h"
-#include "dkbad.h"
-#include "disklabel.h"
-#include "ioctl.h"
-#include "syslog.h"
-#include "stat.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/dkstat.h"
+#include "sys/buf.h"
+#include "sys/conf.h"
+#include "sys/file.h"
+#include "sys/user.h"
+#include "sys/map.h"
+#include "../include/mtpr.h"
+#include "sys/vm.h"
+#include "sys/cmap.h"
+#include "sys/dkbad.h"
+#include "sys/disklabel.h"
+#include "sys/ioctl.h"
+#include "sys/syslog.h"
+#include "sys/stat.h"
 
-#include "machine/pte.h"
+#include "../include/pte.h"
 #include "../vax/dkio.h"
 #include "mbareg.h"
 #include "mbavar.h"

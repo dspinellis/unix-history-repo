@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_enp.c	7.7 (Berkeley) %G%
+ *	@(#)if_enp.c	7.8 (Berkeley) %G%
  */
 
 #include "enp.h"
@@ -15,41 +15,41 @@
 /*
  * CMC ENP-20 Ethernet Controller.
  */
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "vmmac.h"
-#include "ioctl.h"
-#include "errno.h"
-#include "vmparam.h"
-#include "syslog.h"
-#include "uio.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/mbuf.h"
+#include "sys/buf.h"
+#include "sys/protosw.h"
+#include "sys/socket.h"
+#include "sys/vmmac.h"
+#include "sys/ioctl.h"
+#include "sys/errno.h"
+#include "sys/vmparam.h"
+#include "sys/syslog.h"
+#include "sys/uio.h"
 
-#include "../net/if.h"
-#include "../net/netisr.h"
-#include "../net/route.h"
+#include "net/if.h"
+#include "net/netisr.h"
+#include "net/route.h"
 #ifdef INET
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/in_var.h"
-#include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
-#include "../netinet/if_ether.h"
+#include "netinet/in.h"
+#include "netinet/in_systm.h"
+#include "netinet/in_var.h"
+#include "netinet/ip.h"
+#include "netinet/ip_var.h"
+#include "netinet/if_ether.h"
 #endif
 #ifdef NS
-#include "../netns/ns.h"
-#include "../netns/ns_if.h"
+#include "netns/ns.h"
+#include "netns/ns_if.h"
 #endif
 
-#include "../tahoe/cpu.h"
-#include "../tahoe/pte.h"
-#include "../tahoe/mtpr.h"
+#include "../include/cpu.h"
+#include "../include/pte.h"
+#include "../include/mtpr.h"
 
-#include "../tahoevba/vbavar.h"
-#include "../tahoeif/if_enpreg.h"
+#include "../vba/vbavar.h"
+#include "../if/if_enpreg.h"
 
 #define ENPSTART	0xf02000	/* standard enp start addr */
 #define	ENPUNIT(dev)	(minor(dev))	/* for enp ram devices */

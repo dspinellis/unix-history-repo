@@ -3,40 +3,40 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.14 (Berkeley) %G%
+ *	@(#)machdep.c	7.15 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "user.h"
-#include "kernel.h"
-#include "map.h"
-#include "vm.h"
-#include "proc.h"
-#include "buf.h"
-#include "reboot.h"
-#include "conf.h"
-#include "file.h"
-#include "text.h"
-#include "clist.h"
-#include "callout.h"
-#include "cmap.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "msgbuf.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/kernel.h"
+#include "sys/map.h"
+#include "sys/vm.h"
+#include "sys/proc.h"
+#include "sys/buf.h"
+#include "sys/reboot.h"
+#include "sys/conf.h"
+#include "sys/file.h"
+#include "sys/text.h"
+#include "sys/clist.h"
+#include "sys/callout.h"
+#include "sys/cmap.h"
+#include "sys/malloc.h"
+#include "sys/mbuf.h"
+#include "sys/msgbuf.h"
 #ifdef SYSVSHM
-#include "shm.h"
+#include "sys/shm.h"
 #endif
 
-#include "cpu.h"
-#include "reg.h"
-#include "pte.h"
-#include "psl.h"
+#include "../include/cpu.h"
+#include "../include/reg.h"
+#include "../include/pte.h"
+#include "../include/psl.h"
 #include "mem.h"
-#include "mtpr.h"
+#include "../include/mtpr.h"
 #include "cp.h"
 
-#include "../tahoevba/vbavar.h"
+#include "../vba/vbavar.h"
 
 /*
  * Declare these as initialized data so we can patch them.
@@ -54,7 +54,7 @@ int	bufpages = 0;
 #endif
 #include "yc.h"
 #if NCY > 0
-#include "../tahoevba/cyreg.h"
+#include "../vba/cyreg.h"
 #endif
 int	msgbufmapped;		/* set when safe to use msgbuf */
 int	physmem = MAXMEM;	/* max supported memory, changes to actual */

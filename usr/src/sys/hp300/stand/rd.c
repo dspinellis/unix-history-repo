@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: rd.c 1.14 89/02/27$
  *
- *	@(#)rd.c	7.1 (Berkeley) %G%
+ *	@(#)rd.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -20,7 +20,7 @@
 #include "saio.h"
 #include "samachdep.h"
 
-#include "../hpdev/rdreg.h"
+#include "../dev/rdreg.h"
 
 struct	rd_iocmd rd_ioc;
 struct	rd_rscmd rd_rsc;

@@ -4,27 +4,27 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_uba.c	7.15 (Berkeley) %G%
+ *	@(#)if_uba.c	7.16 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "map.h"
-#include "buf.h"
-#include "cmap.h"
-#include "vmmac.h"
-#include "socket.h"
-#include "syslog.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/malloc.h"
+#include "sys/mbuf.h"
+#include "sys/map.h"
+#include "sys/buf.h"
+#include "sys/cmap.h"
+#include "sys/vmmac.h"
+#include "sys/socket.h"
+#include "sys/syslog.h"
 
-#include "../net/if.h"
+#include "net/if.h"
 
-#include "../vax/pte.h"
-#include "../vax/mtpr.h"
+#include "../include/pte.h"
+#include "../include/mtpr.h"
 #include "if_uba.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
+#include "../uba/ubareg.h"
+#include "../uba/ubavar.h"
 
 /*
  * Routines supporting UNIBUS network interfaces.

@@ -3,21 +3,21 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rk.c	7.8 (Berkeley) %G%
+ *	@(#)rk.c	7.9 (Berkeley) %G%
  */
 
 /*
  * RK611/RK07
  */
-#include "param.h"
-#include "disklabel.h"
+#include "sys/param.h"
+#include "sys/disklabel.h"
 
-#include "../vax/pte.h"
+#include "../include/pte.h"
 
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/rkreg.h"
+#include "../uba/ubareg.h"
+#include "../uba/rkreg.h"
 
-#include "saio.h"
+#include "stand/saio.h"
 #include "savax.h"
 
 #define	SECTSIZ		512		/* sector size in bytes */

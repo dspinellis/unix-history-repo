@@ -3,19 +3,19 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vm_machdep.c	7.9 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.10 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "user.h"
-#include "proc.h"
-#include "cmap.h"
-#include "vm.h"
-#include "text.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/cmap.h"
+#include "sys/vm.h"
+#include "sys/text.h"
 
-#include "pte.h"
-#include "mtpr.h"
+#include "../include/pte.h"
+#include "../include/mtpr.h"
 
 /*
  * Set a red zone in the kernel stack after the u. area.

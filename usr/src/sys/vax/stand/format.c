@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)format.c	7.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)format.c	7.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /* 
@@ -23,15 +23,15 @@ static char sccsid[] = "@(#)format.c	7.5 (Berkeley) %G%";
  *		(rearranging replacements ala bad144 -a)
  *	multi-pass format for disks with skip-sector capability
  */
-#include "param.h"
-#include "dkbad.h"
-#include "vmmac.h"
-#include "disklabel.h"
+#include "sys/param.h"
+#include "sys/dkbad.h"
+#include "sys/vmmac.h"
+#include "sys/disklabel.h"
 
-#include "../vax/cpu.h"
-#include "../vax/mtpr.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
 
-#include "saio.h"
+#include "stand/saio.h"
 #include "savax.h"
 
 #define MAXBADDESC	126		/* size of bad block table */

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf_rb.c 1.1 90/07/09$
  *
- *	@(#)grf_rb.c	7.3 (Berkeley) %G%
+ *	@(#)grf_rb.c	7.4 (Berkeley) %G%
  */
 
 #include "grf.h"
@@ -20,14 +20,14 @@
 /*
  * Graphics routines for the Renaissance, HP98720 Graphics system.
  */
-#include "param.h"
-#include "errno.h"
+#include "sys/param.h"
+#include "sys/errno.h"
 
 #include "grfioctl.h"
 #include "grfvar.h"
 #include "grf_rbreg.h"
 
-#include "machine/cpu.h"
+#include "../include/cpu.h"
 
 /*
  * Initialize hardware.

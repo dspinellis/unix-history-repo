@@ -7,34 +7,34 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hd.c	7.11 (Berkeley) %G%
+ *	@(#)hd.c	7.12 (Berkeley) %G%
  */
 
 #include "hd.h"
 
 #if NHD > 0
-#include "param.h"
-#include "buf.h"
-#include "conf.h"
-#include "dkstat.h"
-#include "disklabel.h"
-#include "file.h"
-#include "systm.h"
-#include "vmmac.h"
-#include "time.h"
-#include "proc.h"
-#include "uio.h"
-#include "syslog.h"
-#include "kernel.h"
-#include "ioctl.h"
-#include "stat.h"
-#include "errno.h"
+#include "sys/param.h"
+#include "sys/buf.h"
+#include "sys/conf.h"
+#include "sys/dkstat.h"
+#include "sys/disklabel.h"
+#include "sys/file.h"
+#include "sys/systm.h"
+#include "sys/vmmac.h"
+#include "sys/time.h"
+#include "sys/proc.h"
+#include "sys/uio.h"
+#include "sys/syslog.h"
+#include "sys/kernel.h"
+#include "sys/ioctl.h"
+#include "sys/stat.h"
+#include "sys/errno.h"
 
-#include "../tahoe/cpu.h"
-#include "../tahoe/mtpr.h"
+#include "../include/cpu.h"
+#include "../include/mtpr.h"
 
-#include "../tahoevba/vbavar.h"
-#include "../tahoevba/hdreg.h"
+#include "../vba/vbavar.h"
+#include "../vba/hdreg.h"
 
 #define	b_cylin	b_resid
 

@@ -3,23 +3,23 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.12 (Berkeley) %G%
+ *	@(#)autoconf.c	7.13 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "reboot.h"
+#include "sys/param.h"
+#include "sys/reboot.h"
 
-#include "../vax/cpu.h"
+#include "../include/cpu.h"
 #include "../vax/nexus.h"
-#include "../vax/pte.h"
-#include "../vax/mtpr.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxmba/mbareg.h"
+#include "../include/pte.h"
+#include "../include/mtpr.h"
+#include "../uba/ubareg.h"
+#include "../mba/mbareg.h"
 
 #include "savax.h"
 
 #ifdef VAX8200
-#include "../vaxbi/bireg.h"
+#include "../bi/bireg.h"
 #endif
 
 #if VAX8600 || VAX8200 || VAX780

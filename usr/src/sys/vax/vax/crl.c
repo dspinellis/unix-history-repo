@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)crl.c	7.3 (Berkeley) %G%
+ *	@(#)crl.c	7.4 (Berkeley) %G%
  */
 /*
  * TO DO (tef  7/18/85):
@@ -11,16 +11,16 @@
  */
 
 #if VAX8600
-#include "param.h"
-#include "systm.h"
-#include "conf.h"
-#include "user.h"
-#include "buf.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/conf.h"
+#include "sys/user.h"
+#include "sys/buf.h"
 
 #include "cons.h"
-#include "cpu.h"
+#include "../include/cpu.h"
 #include "crl.h"
-#include "mtpr.h"
+#include "../include/mtpr.h"
 
 struct {
 	short	crl_state;		/* open and busy flags */

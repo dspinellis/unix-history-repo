@@ -4,14 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hpib.c	7.2 (Berkeley) %G%
+ *	@(#)hpib.c	7.3 (Berkeley) %G%
  */
 
 /*
  * HPIB driver
  */
-#include "reboot.h"
-#include "../hpdev/device.h"
+#include "sys/reboot.h"
+#include "../dev/device.h"
 #include "hpibvar.h"
 
 #include "saio.h"
