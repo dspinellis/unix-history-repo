@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.111 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.112 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -895,7 +895,7 @@ out:
 	return (error);
 }
 
-struct __lseek_args {
+struct lseek_args {
 	int	fdes;
 	int	pad;
 	off_t	off;
@@ -907,7 +907,7 @@ struct __lseek_args {
  */
 lseek(p, uap, retval)
 	struct proc *p;
-	register struct __lseek_args *uap;
+	register struct lseek_args *uap;
 	int *retval;
 {
 	struct ucred *cred = p->p_ucred;
@@ -949,24 +949,24 @@ lseek(p, uap, retval)
 /*
  * Old lseek system call.
  */
-struct lseek_args {
+struct olseek_args {
 	int	fdes;
 	long	off;
 	int	sbase;
 };
 olseek(p, uap, retval)
 	struct proc *p;
-	register struct lseek_args *uap;
+	register struct olseek_args *uap;
 	int *retval;
 {
-	struct __lseek_args nuap;
+	struct lseek_args nuap;
 	off_t qret;
 	int error;
 
 	nuap.fdes = uap->fdes;
 	nuap.off = uap->off;
 	nuap.sbase = uap->sbase;
-	error = __lseek(p, &nuap, &qret);
+	error = lseek(p, &nuap, &qret);
 	*(long *)retval = qret;
 	return (error);
 }
@@ -1532,7 +1532,7 @@ out:
 	return (error);
 }
 
-struct __truncate_args {
+struct truncate_args {
 	char	*fname;
 	int	pad;
 	off_t	length;
@@ -1544,7 +1544,7 @@ struct __truncate_args {
 /* ARGSUSED */
 truncate(p, uap, retval)
 	struct proc *p;
-	register struct __truncate_args *uap;
+	register struct truncate_args *uap;
 	int *retval;
 {
 	register struct vnode *vp;
@@ -1573,7 +1573,7 @@ out:
 	return (error);
 }
 
-struct __ftruncate_args {
+struct ftruncate_args {
 	int	fd;
 	int	pad;
 	off_t	length;
@@ -1585,7 +1585,7 @@ struct __ftruncate_args {
 /* ARGSUSED */
 ftruncate(p, uap, retval)
 	struct proc *p;
-	register struct __ftruncate_args *uap;
+	register struct ftruncate_args *uap;
 	int *retval;
 {
 	struct vattr vattr;
@@ -1618,41 +1618,41 @@ out:
 /*
  * Truncate a file given its path name.
  */
-struct truncate_args {
+struct otruncate_args {
 	char	*fname;
 	long	length;
 };
 /* ARGSUSED */
 otruncate(p, uap, retval)
 	struct proc *p;
-	register struct truncate_args *uap;
+	register struct otruncate_args *uap;
 	int *retval;
 {
-	struct __truncate_args nuap;
+	struct truncate_args nuap;
 
 	nuap.fname = uap->fname;
 	nuap.length = uap->length;
-	return (__truncate(p, &nuap, retval));
+	return (truncate(p, &nuap, retval));
 }
 
 /*
  * Truncate a file given a file descriptor.
  */
-struct ftruncate_args {
+struct oftruncate_args {
 	int	fd;
 	long	length;
 };
 /* ARGSUSED */
 oftruncate(p, uap, retval)
 	struct proc *p;
-	register struct ftruncate_args *uap;
+	register struct oftruncate_args *uap;
 	int *retval;
 {
-	struct __ftruncate_args nuap;
+	struct ftruncate_args nuap;
 
 	nuap.fd = uap->fd;
 	nuap.length = uap->length;
-	return (__ftruncate(p, &nuap, retval));
+	return (ftruncate(p, &nuap, retval));
 }
 #endif /* COMPAT_43 || COMPAT_SUNOS */
 
