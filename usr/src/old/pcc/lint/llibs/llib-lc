@@ -1,4 +1,4 @@
-/*	llib-lc	1.28	85/11/28	*/
+/*	llib-lc	1.29	86/01/07	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -43,9 +43,9 @@ int	fsync( f ) { return 0; }
 int	fstat(f, b) struct stat *b; { return(0); }
 int	ftruncate( d, l) off_t l; { return 0;}
 int	getdtablesize() { return 20 ; }
-int	getegid() { return(1); }
-int	geteuid() { return(1); }
-int	getgid() { return(1); }
+gid_t	getegid() { return((gid_t)1); }
+uid_t	geteuid() { return((uid_t)1); }
+gid_t	getgid() { return((gid_t)1); }
 int	getgroups( n, g ) int *n, *g; { return 0; }
 long	gethostid() { return 1L; }
 int	gethostname( n, l ) char *n; int l; { return 0 ;}
@@ -60,7 +60,7 @@ int	getrusage( res, rip) struct rusage *rip; { return 0;}
 int	getsockname(s, name, namelen) char *name; int *namelen; { return(0); }
 int	getsockopt( s, level, opt, buf, len ) { return 0;}
 int	gettimeofday( t, z ) struct timeval *t; struct timezone *z; { return 0;}
-int	getuid() { return(1); }
+uid_t	getuid() { return((uid_t)1); }
 int	ioctl( d, r, p) char *p; { return 0;}
 int	kill(p, s) { return(0); }
 int	killpg( pg, s) { return 0;}
@@ -107,8 +107,8 @@ int	sethostname( n, l ) char *n; int l; { return 0 ;}
 int	setitimer( w, v, ov ) struct itimerval *v, *ov; { return 0; }
 int	setpgrp( g, pg) { return 0; }
 int	setpriority( w, who, pri ) { return 1;}
-int	setregid( r, e){ return 0; }
-int	setreuid( r, e){ return 0; }
+int	setregid( r, e) gid_t r, e; { return 0; }
+int	setreuid( r, e) uid_t r, e; { return 0; }
 int	setrlimit( res, rip) struct rlimit *rip; { return 0;}
 	/* VARARGS */
 int	setsockopt( s, level, opt, buf, len ) char *buf; { return 0;}
@@ -220,13 +220,13 @@ int	scandir(d, n, s, c) char *d; struct direct *(*n[]); int (*s)(),(*c)();
 void	seekdir( p, l) DIR *p; long l; {}
 int	setfsent() { return 0; }
 int	setgrent() { return 0; }
-int	setgid(g) { return(0); }
+int	setgid(g) gid_t g; { return(0); }
 int	setjmp(e) jmp_buf e; { return(0); }
 	setkey(k) char *k; {}
 int	setlogmask(m) { return(0); }
 	setpwent() {}
 long *	setstate( st ) long *st; { return st; }
-int	setuid(u) { return(0); }
+int	setuid(u) uid_t u; { return(0); }
 	sleep(i) unsigned i; {}
 int	srand(s){ return s; }
 char *	strcat(a, b) char *a, *b; { return a; }
