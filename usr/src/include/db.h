@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.23 (Berkeley) %G%
+ *	@(#)db.h	5.24 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -98,6 +98,7 @@ typedef struct {
 #define	R_SNAPSHOT	0x04	/* snapshot the input */
 	u_long	 flags;
 	int	 cachesize;	/* bytes to cache */
+	int	 psize;		/* page size */
 	int	 lorder;	/* byte order */
 	size_t	 reclen;	/* record length (fixed-length records) */
 	u_char	 bval;		/* delimiting byte (variable-length records */
