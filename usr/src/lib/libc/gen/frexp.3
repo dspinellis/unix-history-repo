@@ -1,4 +1,4 @@
-.\"	@(#)frexp.3	6.1 (Berkeley) %G%
+.\"	@(#)frexp.3	6.2 (Berkeley) %G%
 .\"
 .TH FREXP 3 ""
 .AT 3
@@ -27,13 +27,15 @@ and stores an integer
 such that
 .I value
 =
-\fIx\fP\|\(**\|2\u\fIn\fP\d
+.if t \fIx\fP\|\(**\|2\u\fIn\fP\d
+.if n \fIx\fP * 2 ** \fIn\fP
 indirectly through 
 .I eptr.
 .PP
 .I Ldexp
 returns the quantity
-\fIvalue\|\(**\|2\u\fIexp\fP\d.
+.if t \fIvalue\|\(**\|2\u\fIexp\fP\d.
+.if n \fIvalue\fP * 2 ** \fIexp\fP.
 .PP
 .I Modf
 returns the positive fractional part of
