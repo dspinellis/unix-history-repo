@@ -1,27 +1,32 @@
 #
-# Copyright (c) 1980 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1988 Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific prior written permission. This software
+# is provided ``as is'' without express or implied warranty.
+#
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 #	crt0	Normal C run time startoff
 #	mcrt0	C run time start off for profiling, ``prof'' conventions
 #	gcrt0	C run time start off for profiling, ``gprof'' conventions
 #
-DESTDIR=
 SRCS=	crt0.c mon.c gmon.c
 OBJS=	crt0.o mcrt0.o gcrt0.o mon.o gmon.o
 TAGSFILE=tags
 
-all: ${OBJS}
+all link: ${OBJS}
 
-install: ${OBJS}
+install:
 	install -o bin -g bin -m 444 crt0.o ${DESTDIR}/lib/crt0.o
 	install -o bin -g bin -m 444 mcrt0.o ${DESTDIR}/lib/mcrt0.o
 	install -o bin -g bin -m 444 gcrt0.o ${DESTDIR}/usr/lib/gcrt0.o
 
-crt0.o:	crt0.c
+crt0.o: crt0.c
 	${CC} -S ${DFLAGS} -DCRT0 crt0.c
 	/lib/cpp crt0.s > x.s
 	as -o x.o x.s
@@ -62,7 +67,7 @@ tags:
 	done
 
 clean:
-	rm -f ${OBJS} *.o *.s core errs tags
+	rm -f *.o a.out core ${TAGSFILE}
 
 lint:	crt0.c
 	lint crt0.c -DMCRT0

@@ -9,26 +9,27 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 CFLAGS=	-O ${DEFS}
-SRCS=
-OBJS=
+SRCS=	ecvt.c gcvt.c sibuf.c sobuf.c strout.c
+OBJS=	ecvt.o gcvt.o sibuf.o sobuf.o strout.o
 TAGSFILE=tags
 
 .c.o:
-	${CC} -p ${CFLAGS} -c $*.c
-	-ld -X -r $*.o
-	mv a.out profiled/$*.o
+	@${CC} -p ${CFLAGS} -c $*.c
+	@-ld -X -o profiled/$*.o -r $*.o
 	${CC} ${CFLAGS} -c $*.c
-	-ld -x -r $*.o
-	mv a.out $*.o
+	@-ld -x -r $*.o
+	@mv a.out $*.o
 
-compat-4.3lib compat-4.3lib_p: ${OBJS}
-	@echo "building profiled compat-4.3lib"
-	@cd profiled; ar cru ../compat-4.3lib_p ${OBJS}
-	@echo "building normal compat-4.3lib"
-	@ar cru compat-4.3lib ${OBJS}
+all: ${OBJS}
+
+link: ${OBJS}
+	(cd ../library; rm -f ${OBJS})
+	(cd ../profiled; rm -f ${OBJS})
+	ln ${OBJS} ../library
+	(cd profiled; ln ${OBJS} ../../profiled)
 
 tags:
 	cwd=`pwd`; \
@@ -37,7 +38,7 @@ tags:
 	done
 
 clean:
-	rm -f compat-4.3lib compat-4.3lib_p *.o profiled/*.o tags
+	rm -f *.o profiled/* a.out core ${TAGSFILE}
 
 depend:
 	mkdep ${CFLAGS} ${SRCS}
@@ -45,3 +46,10 @@ depend:
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
+ecvt.o: ecvt.c
+gcvt.o: gcvt.c
+sibuf.o: sibuf.c /usr/include/stdio.h
+sobuf.o: sobuf.c /usr/include/stdio.h
+strout.o: strout.c /usr/include/stdio.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
