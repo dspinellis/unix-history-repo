@@ -1,6 +1,6 @@
 divert(0)dnl
 #
-# Copyright (c) 1983 Eric P. Allman
+# Copyright (c) 1983, 1995 Eric P. Allman
 # Copyright (c) 1988, 1993
 #	The Regents of the University of California.  All rights reserved.
 #
@@ -120,4 +120,4 @@ define(`confMIME_FORMAT_ERRORS', `True')
 define(`confFORWARD_PATH', `$z/.forward.$w:$z/.forward')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	8.15 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	8.16 (Berkeley) %G%')
