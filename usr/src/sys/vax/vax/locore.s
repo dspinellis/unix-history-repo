@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.16 (Berkeley) %G%
+ *	@(#)locore.s	7.17 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -864,7 +864,7 @@ _/**/mname:	.globl	_/**/mname;		\
 	/*
 	 * Used by the nfs_strategy() routine for physical I/O
 	 */
-	SYSMAP(Nfsiomap, nfsiobuf	,MAXPHYS/NBPG+1 )
+	SYSMAP(Nfsiomap ,nfsiobuf	,MAXPHYS/NBPG+1 )
 #endif /* NFS */
 	SYSMAP(ekmempt	,kmemlimit	,0		)
 
@@ -1112,11 +1112,11 @@ l1:	pushl	$2
 	pushl	r0
 	chmk	$exit
 
-init:	.asciz	"/etc/init"
+init:	.asciz	"/sbin/init"
 	.align	2
 _initflags:
 	.long	0
-argv:	.long	init+5-_icode
+argv:	.long	init+6-_icode
 	.long	_initflags-_icode
 	.long	0
 _szicode:
