@@ -1,4 +1,4 @@
-/*	if_acc.c	4.24	82/10/21	*/
+/*	if_acc.c	4.25	82/10/22	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -112,7 +112,7 @@ accattach(ui)
 	ip->ic_init = accinit;
 	ip->ic_start = accstart;
 	sc->acc_ifuba.ifu_ubareset = accreset;
-	sc->acc_ifuba.ifu_flags = UBA_CANTWAIT;
+	sc->acc_if->ifu_flags = UBA_CANTWAIT;
 #ifdef notdef
 	sc->acc_ifuba.ifu_flags |= UBA_NEEDBDP;
 #endif

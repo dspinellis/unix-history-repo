@@ -1,4 +1,4 @@
-/*	dmf.c	4.13	82/10/21	*/
+/*	dmf.c	4.14	82/10/22	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -187,6 +187,8 @@ dmfprobe(reg, ctlr)
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
+	dmfxint(0); dmfrint(0);
+	dmfsrint(); dmfsxint(); dmfdaint(); dmfdbint(); dmflint();
 #endif
 	br = 0x15;
 	cvec = (uba_hd[numuba].uh_lastiv -= 4*8);
