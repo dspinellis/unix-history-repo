@@ -1,4 +1,6 @@
-/*	t8.c	4.1	83/02/12	*/
+#ifndef lint
+static char sccsid[] = "@(#)t8.c	4.2 %G%";
+#endif
 
  /* t8.c: write out one line of output table */
 # include "t..c"

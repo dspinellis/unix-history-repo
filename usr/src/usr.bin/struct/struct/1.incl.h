@@ -1,6 +1,5 @@
-/*
- *	@(#)1.incl.h	4.1	(Berkeley)	83/02/11
- */
+/*	1.incl.h	4.2	83/08/11	*/
+
 #define maxlsw		10	/* max number of switches and labels per statement */
 #define implicit 0L		/* "label" of following line so all flow can be treated as jump to label */
 struct lablist	{long labelt;  struct lablist *nxtlab; };

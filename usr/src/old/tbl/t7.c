@@ -1,4 +1,6 @@
-/*	t7.c	4.2	83/02/12	*/
+#ifndef lint
+static char sccsid[] = "@(#)t7.c	4.3 %G%";
+#endif
 
  /* t7.c: control to write table entries */
 # include "t..c"

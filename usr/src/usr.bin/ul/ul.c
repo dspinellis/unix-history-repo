@@ -1,5 +1,6 @@
-/*	@(#)ul.c	4.4	%G%	*/
-static char SccsId[] =	"@(#)ul.c	4.4 (Berkeley) %G%";
+#ifndef lint
+static char sccsid[] =	"@(#)ul.c	4.5 (Berkeley) %G%";
+#endif
 
 #include <stdio.h>
 

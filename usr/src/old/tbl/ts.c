@@ -1,4 +1,6 @@
-/*	ts.c	4.1	83/02/12	*/
+#ifndef lint
+static char sccsid[] = "@(#)ts.c	4.2 %G%";
+#endif
 
  /* ts.c: minor string processing subroutines */
 match (s1, s2)

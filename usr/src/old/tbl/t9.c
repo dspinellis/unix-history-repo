@@ -1,4 +1,6 @@
-/*	t9.c	4.1	83/02/12	*/
+#ifndef lint
+static char sccsid[] = "@(#)t9.c	4.2 %G%";
+#endif
 
  /* t9.c: write lines for tables over 200 lines */
 # include "t..c"

@@ -1,6 +1,5 @@
-/*
- *	@(#)tdef.h	4.4 %G%
- */
+/*	tdef.h	4.5	83/08/11	*/
+
 #define MAXPTR 0x7fffffff	/* max value of any pointer variable */
 #ifdef NROFF	/*NROFF*/
 #define EM t.Em

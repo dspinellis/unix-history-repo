@@ -1,6 +1,5 @@
-/*
- *	@(#)3.def.h	4.1	(Berkeley)	83/02/11
- */
+/*	3.def.h	4.2	83/08/11	*/
+
 #define RECURSE(p,v,r)	{ for (r = 0; r < CHILDNUM(v); ++r) if (DEFINED(LCHILD(v,r))) p(LCHILD(v,r)); if (DEFINED(RSIB(v))) p(RSIB(v)); }
 
 #define IFTHEN(v)		( NTYPE(v) == IFVX && !DEFINED(LCHILD(v,ELSE)))

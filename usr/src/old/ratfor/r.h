@@ -1,5 +1,6 @@
 Original BTL Ratfor System for 4.2
-/* @(#)r.h	1.1 (Berkeley) %G% */
+/*	r.h	1.2	83/08/11	*/
+
 #include <stdio.h>
 #include "y.tab.h"
 

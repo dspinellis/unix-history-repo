@@ -1,4 +1,6 @@
-/*	groups.c	4.6	83/06/29	*/
+#ifndef lint
+static char sccsid[] = "@(#)groups.c	4.7 (Berkeley) %G%";
+#endif
 
 /*
  * groups

@@ -1,4 +1,6 @@
-/*	t6.c	4.1	83/02/12	*/
+#ifndef lint
+static char sccsid[] = "@(#)t6.c	4.2 %G%";
+#endif
 
  /* t6.c: compute tab stops */
 # define tx(a) (a>0 && a<128)

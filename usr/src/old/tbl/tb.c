@@ -1,4 +1,6 @@
-/*	tb.c	4.1	83/02/12	*/
+#ifndef lint
+static char sccsid[] = "@(#)tb.c	4.2 %G%";
+#endif
 
  /* tb.c: check which entries exist, also storage allocation */
 # include "t..c"

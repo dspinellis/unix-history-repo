@@ -1,4 +1,6 @@
-/*	t4.c	4.1	83/02/12	*/
+#ifndef lint
+static char sccsid[] = "@(#)t4.c	4.2 %G%";
+#endif
 
  /* t4.c: read table specification */
 # include "t..c"

@@ -1,4 +1,6 @@
-/*	ti.c	4.1	83/02/12	*/
+#ifndef lint
+static char sccsid[] = "@(#)ti.c	4.2 %G%";
+#endif
 
  /* ti.c: classify line intersections */
 # include "t..c"

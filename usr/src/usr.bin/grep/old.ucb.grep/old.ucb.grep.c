@@ -1,4 +1,6 @@
-/*	old.ucb.grep.c	4.2	83/04/29	*/
+#ifndef lint
+static char sccsid[] = "@(#)old.ucb.grep.c	4.3 (Berkeley) %G%";
+#endif
 
 #include <stdio.h>
 /*
