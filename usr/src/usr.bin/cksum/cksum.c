@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cksum.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cksum.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
@@ -67,21 +67,21 @@ main(argc, argv)
 	argv += optind;
 
 	fd = STDIN_FILENO;
-	fn = "stdin";
+	fn = NULL;
 	rval = 0;
 	do {
 		if (*argv) {
 			fn = *argv++;
 			if ((fd = open(fn, O_RDONLY, 0)) < 0) {
-				(void)fprintf(stderr,
-				    "cksum: %s: %s\n", fn, strerror(errno));
+				(void)fprintf(stderr, "cksum: %s: %s\n",
+				    fn, strerror(errno));
 				rval = 1;
 				continue;
 			}
 		}
 		if (cfncn(fd, &val, &len)) {
-			(void)fprintf(stderr,
-			    "cksum: %s: %s\n", fn, strerror(errno));
+			(void)fprintf(stderr, "cksum: %s: %s\n",
+			    fn ? fn : "stdin", strerror(errno));
 			rval = 1;
 		} else
 			pfncn(fn, val, len);
