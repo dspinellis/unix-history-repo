@@ -2,35 +2,36 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getty.8	5.1 (Berkeley) %G%
+.\"	@(#)getty.8	6.1 (Berkeley) %G%
 .\"
-.TH GETTY 8  "18 July 1983"
+.TH GETTY 8  ""
 .UC 4
 .SH NAME
 getty  \- set terminal mode
 .SH SYNOPSIS
 .B /etc/getty
-[ type ]
+[ type ] [ tty ]
 .SH DESCRIPTION
 .I Getty
-is invoked by
+is usually invoked by
 .IR  init (8)
-immediately after a terminal is opened,
-following the making of a connection.
-While reading the name
+to intialize the tty line, read a login name, and invoke
+.IR login (1).
 .I getty
 attempts to adapt the system to the speed and type of terminal
 being used.
 .PP
-.I Init
-calls
+The argument
+.I tty
+is the special device file in /dev to open for the terminal (e.g., 'ttyh0').
+If there is no argument or the argument is
+"\-", the tty line is assumed to be open as file descriptor 0.
+.PP
+The
+.I type
+argument can be used to make
 .I getty
-with an argument specified by the
-.I ttys
-file entry for the terminal line.
-The argument can be used to make
-.I getty
-treat the line specially.
+treat the terminal line specially.
 This argument is used as an index into the
 .IR gettytab (5)
 database, to determine the characteristics of the line.
@@ -69,7 +70,9 @@ and if the name is nonempty, the
 system is told to map any future upper-case characters
 into the corresponding lower-case characters.
 .PP
-Finally, login is called with the user's name as argument.
+Finally,
+.I login
+is called with the user's name as an argument.
 .PP
 Most of the default actions of
 .I getty
@@ -86,10 +89,3 @@ if the login name is not entered reasonably quickly.
 .SH "SEE ALSO"
 gettytab(5), init(8), login(1), ioctl(2), tty(4), ttys(5).
 .SH BUGS
-Currently, the format of
-.B /etc/ttys
-limits the permitted table names to a single character,
-this should be expanded.
-.PP
-.B /etc/ttys
-should be replaced completely.
