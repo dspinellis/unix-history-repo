@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)file.c	4.3 (Berkeley) 4.3";
+static	char sccsid[] = "@(#)file.c	4.4 (Berkeley) 4.4";
 /*
  * file - determine type of file
  */
@@ -68,7 +68,7 @@ char *file;
 	struct stat mbuf;
 
 	ifile = -1;
-	if(stat(file, &mbuf) < 0) {
+	if (lstat(file, &mbuf) < 0) {
 		printf("cannot stat\n");
 		return;
 	}
@@ -78,16 +78,12 @@ char *file;
 		printf("character");
 		goto spcl;
 
+	case S_IFLNK:
+		printf("symbolic link\n");
+		return;
+
 	case S_IFDIR:
 		printf("directory\n");
-		return;
-
-	case S_IFMPC:
-		printf("char multiplexor\n");
-		return;
-
-	case S_IFMPB:
-		printf("block multiplexor\n");
 		return;
 
 	case S_IFBLK:
