@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.25 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.26 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -1181,7 +1181,7 @@ optim2( p ) register NODE *p; {
 	/* do local tree transformations and optimizations */
 
 	int o;
-	int i;
+	int i, mask;
 	register NODE *l, *r;
 
 	switch( o = p->in.op ) {
@@ -1199,12 +1199,30 @@ optim2( p ) register NODE *p; {
 		if( r->in.op==ICON && r->in.name[0]==0 ) {
 			/* check for degenerate operations */
 			l = p->in.left;
-			if( (i = (r->tn.lval & (1 << tlen(l) * SZCHAR) - 1)) == 0 )
-				goto zero;
-			else if( i == (1 << tlen(l) * SZCHAR) - 1 ) {
-				r->in.op = FREE;
-				ncopy(p, l);
-				l->in.op = FREE;
+			mask = (1 << tlen(l) * SZCHAR) - 1;
+			if( ISUNSIGNED(r->in.type) ) {
+				i = (r->tn.lval & mask);
+				if( i == mask ) {
+					r->in.op = FREE;
+					ncopy(p, l);
+					l->in.op = FREE;
+					break;
+					}
+				else if( i == 0 )
+					goto zero;
+				else
+					r->tn.lval = i;
+				}
+			else if( r->tn.lval == mask &&
+				 tlen(l) < SZINT/SZCHAR ) {
+				r->in.op = SCONV;
+				r->in.left = l;
+				r->in.right = 0;
+				r->in.type = ENUNSIGN(l->in.type);
+				r->in.su = l->in.su > 1 ? l->in.su : 1;
+				ncopy(p, r);
+				p->in.left = r;
+				p->in.type = INT;
 				break;
 				}
 			/* complement constant */
@@ -1369,14 +1387,14 @@ optim2( p ) register NODE *p; {
 		if( !asgop( o ) )
 			if( tshape(l, SAREG|SNAME|SCON|SOREG|STARNM) ) {
 				/* no side effects */
-				l->in.op = FREE;
+				tfree(l);
 				ncopy(p, r);
 				r->in.op = FREE;
 				p->tn.lval = 0;
 				}
 			else {
 				p->in.op = COMOP;
-				r->in.lval = 0;
+				r->tn.lval = 0;
 				}
 		else {
 			p->in.op = ASSIGN;
@@ -1420,7 +1438,7 @@ degenerate(p) register NODE *p; {
 		upper = (1 << SZSHORT) - 1;
 		break;
 	default:
-		cerror("unsupported OPLOG in optim2");
+		cerror("unsupported type in degenerate()");
 		}
 	i = r->tn.lval;
 	switch( o = p->in.op ) {
@@ -1471,7 +1489,7 @@ degenerate(p) register NODE *p; {
 		}
 	else if( o != ASG DIV && tshape(l, SAREG|SNAME|SCON|SOREG|STARNM) ) {
 		/* no side effects */
-		l->in.op = FREE;
+		tfree(l);
 		ncopy(p, r);
 		r->in.op = FREE;
 		p->tn.lval = result;
