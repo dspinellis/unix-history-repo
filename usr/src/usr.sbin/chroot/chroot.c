@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chroot.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)chroot.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -31,26 +31,33 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	char *shell, *getenv();
+	extern int errno;
+	char *shell, *getenv(), *strerror();
 
-	if (argc != 2) {
-		fprintf(stderr, "usage: chroot directory\n");
+	if (argc < 2) {
+		fprintf(stderr, "usage: chroot newroot [command]\n");
 		exit(1);
 	}
-	if (chdir(argv[1])) {
-		fprintf(stderr, "chdir: %s: ", argv[1]);
-		perror((char *)NULL);
-		exit(1);
-	}
-	if (chroot(argv[1])) {
-		fprintf(stderr, "chroot: %s: ", argv[1]);
-		perror((char *)NULL);
-		exit(1);
-	}
+	if (chdir(argv[1]) || chroot(argv[1]))
+		fatal(argv[1]);
 	setuid(getuid());
-	if (!(shell = getenv("SHELL")))
-		shell = "/bin/sh";
-	execlp(shell, shell, "-i", (char *)NULL);
-	fprintf(stderr, "chroot: no shell %s", shell);
+	if (argv[2]) {
+		execvp(argv[2], &argv[2]);
+		fatal(argv[2]);
+	} else {
+		if (!(shell = getenv("SHELL")))
+			shell = "/bin/sh";
+		execlp(shell, shell, "-i", (char *)NULL);
+		fatal(shell);
+	}
+	/* NOTREACHED */
+}
+
+fatal(msg)
+	char *msg;
+{
+	extern int errno;
+
+	fprintf(stderr, "chroot: %s: %s\n", msg, strerror(errno));
 	exit(1);
 }
