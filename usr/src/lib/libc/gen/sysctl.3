@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sysctl.3	6.1 (Berkeley) %G%
+.\"	@(#)sysctl.3	6.2 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt SYSCTL 2
@@ -14,7 +14,7 @@
 .Sh SYNOPSIS
 .Fd #include <sys/sysctl.h>
 .Ft int
-.Fn sysctl "int *name" "u_int namelen" "void *old" "u_int *oldlenp" "void *new" "u_int newlen"
+.Fn sysctl "int *name" "u_int namelen" "void *old" "size_t *oldlenp" "void *new" "size_t newlen"
 .Sh DESCRIPTION
 The
 .Fn sysctl
@@ -65,11 +65,12 @@ For example, to retrieve the maximum number of processes allowed
 in the system, one would use the follow request:
 .sp
 .Bd -literal -offset indent -compact
-int name[2], len, maxproc;
+int name[2], maxproc;
+size_t len;
 
 name[0] = CTL_KERN;
 name[1] = KERN_MAXPROC;
-len = sizeof maxproc;
+len = sizeof(maxproc);
 sysctl(name, 2, &maxproc, &len, NULL, 0);
 .Ed
 .Sh RETURN VALUES
