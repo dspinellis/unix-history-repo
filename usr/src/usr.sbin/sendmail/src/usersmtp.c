@@ -4,10 +4,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-static char	SccsId[] =	"@(#)usersmtp.c	3.6	%G%	(no SMTP)";
+SCCSID(@(#)usersmtp.c	3.7		%G%	(no SMTP));
 # else SMTP
 
-static char	SccsId[] =	"@(#)usersmtp.c	3.6	%G%";
+SCCSID(@(#)usersmtp.c	3.7		%G%);
 
 /*
 **  SMTPINIT -- initialize SMTP.

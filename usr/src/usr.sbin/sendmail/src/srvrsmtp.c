@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-static char	SccsId[] =	"@(#)srvrsmtp.c	3.12	%G%	(no SMTP)";
+SCCSID(@(#)srvrsmtp.c	3.13		%G%	(no SMTP));
 # else SMTP
 
-static char	SccsId[] =	"@(#)srvrsmtp.c	3.12	%G%";
+SCCSID(@(#)srvrsmtp.c	3.13		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -70,7 +70,6 @@ smtp()
 	bool hasmail;			/* mail command received */
 	int rcps;			/* number of recipients */
 	auto ADDRESS *vrfyqueue;
-	ADDRESS *prev;
 
 	hasmail = FALSE;
 	rcps = 0;

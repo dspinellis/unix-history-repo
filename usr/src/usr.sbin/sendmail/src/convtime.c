@@ -1,10 +1,18 @@
-# include <sys/types.h>
 # include <ctype.h>
+# include "useful.h"
 
-static char	SccsId[] =	"@(#)convtime.c	3.1	%G%";
+SCCSID(@(#)convtime.c	3.2		%G%);
 
 /*
 **  CONVTIME -- convert time
+**
+**	Takes a time as an ascii string with a trailing character
+**	giving units:
+**	  s -- seconds
+**	  m -- minutes
+**	  h -- hours
+**	  d -- days (default)
+**	  w -- weeks
 **
 **	Parameters:
 **		p -- pointer to ascii time.
@@ -20,30 +28,38 @@ time_t
 convtime(p)
 	char *p;
 {
-	register time_t t;
+	register time_t t, r;
 
-	t = 0;
-	while (isdigit(*p))
-		t = t * 10 + (*p++ - '0');
-	switch (*p)
+	r = 0;
+	while (*p != '\0')
 	{
-	  case 'w':		/* weeks */
-		t *= 7;
+		t = 0;
+		while (isdigit(*p))
+			t = t * 10 + (*p++ - '0');
+		switch (*p++)
+		{
+		  case 'w':		/* weeks */
+			t *= 7;
 
-	  case 'd':		/* days */
-	  case '\0':
-	  default:
-		t *= 24;
+		  case '\0':
+			p--;
+			/* fall through... */
 
-	  case 'h':		/* hours */
-		t *= 60;
+		  case 'd':		/* days */
+		  default:
+			t *= 24;
 
-	  case 'm':		/* minutes */
-		t *= 60;
+		  case 'h':		/* hours */
+			t *= 60;
 
-	  case 's':		/* seconds */
-		break;
+		  case 'm':		/* minutes */
+			t *= 60;
+
+		  case 's':		/* seconds */
+			break;
+		}
+		r += t;
 	}
 
-	return (t);
+	return (r);
 }

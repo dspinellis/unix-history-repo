@@ -1,7 +1,7 @@
 /*
 **  USEFUL.H -- Some useful stuff.
 **
-**	@(#)useful.h	3.6	%G%
+**	@(#)useful.h	3.7		%G%
 */
 
 # ifndef makedev
@@ -19,6 +19,25 @@ typedef char	bool;
 
 /* bit hacking */
 # define bitset(bit, word)	((word) & (bit))
+
+/* assertions */
+# ifndef NASSERT
+# define ASSERT(expr, msg, parm)\
+	if (!(expr))\
+	{\
+		fprintf(stderr, "assertion botch: %s:%d: ", __FILE__, __LINE__);\
+		fprintf(stderr, msg, parm);\
+	}
+# else NASSERT
+# define ASSERT(expr, msg, parm)
+# endif NASSERT
+
+/* sccs id's */
+# ifndef lint
+# define SCCSID(arg)	static char SccsId[] = "arg";
+# else lint
+# define SCCSID(arg)
+# endif lint
 
 /* define the types of some common functions */
 extern char	*strcpy(), *strncpy();

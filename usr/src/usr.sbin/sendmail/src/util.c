@@ -1,12 +1,11 @@
 # include <stdio.h>
-# include <pwd.h>
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <sysexits.h>
 # include "useful.h"
 # include <ctype.h>
 
-static char	SccsId[] = "@(#)util.c	3.12.1.1	%G%";
+SCCSID(@(#)util.c	3.13		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -342,11 +341,15 @@ clear(p, l)
 		*p++ = 0;
 }
 /*
-**  FULLNAME -- extract full name from a passwd file entry.
+**  BUILDFNAME -- build full name from gecos style entry.
+**
+**	This routine interprets the strange entry that would appear
+**	in the GECOS field of the password file.
 **
 **	Parameters:
-**		pw -- password entry to start from.
-**		buf -- buffer to store result in.
+**		p -- name to build.
+**		login -- the login name of this user (for &).
+**		buf -- place to put the result.
 **
 **	Returns:
 **		none.
@@ -355,12 +358,12 @@ clear(p, l)
 **		none.
 */
 
-fullname(pw, buf)
-	register struct passwd *pw;
+buildfname(p, login, buf)
+	register char *p;
+	char *login;
 	char *buf;
 {
 	register char *bp = buf;
-	register char *p = pw->pw_gecos;
 
 	if (*p == '*')
 		p++;
@@ -368,7 +371,7 @@ fullname(pw, buf)
 	{
 		if (*p == '&')
 		{
-			(void) strcpy(bp, pw->pw_name);
+			(void) strcpy(bp, login);
 			*bp = toupper(*bp);
 			while (*bp != '\0')
 				bp++;
