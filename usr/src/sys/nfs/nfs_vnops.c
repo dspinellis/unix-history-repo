@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.13 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -1001,7 +1001,7 @@ nfs_readdir(vp, uiop, offp, cred)
 	struct mbuf *md2;
 	caddr_t dpos2;
 	int siz;
-	int more_dirs, eofflg;
+	int more_dirs;
 	off_t off, savoff;
 	struct direct *savdp;
 
@@ -1050,33 +1050,22 @@ nfs_readdir(vp, uiop, offp, cred)
 	/*
 	 * If at end of rpc data, get the eof boolean
 	 */
-	if (!more_dirs) {
+	if (!more_dirs)
 		nfsm_disecton(p, u_long *, NFSX_UNSIGNED);
-		eofflg = fxdr_unsigned(long, *p);
-	}
 	/*
 	 * If there is too much to fit in the data buffer, use savoff and
 	 * savdp to trim off the last record.
 	 * --> we are not at eof
 	 */
 	if (siz > uiop->uio_resid) {
-		eofflg = FALSE;
 		off = savoff;
 		siz -= dp->d_reclen;
 		dp = savdp;
 	}
 	if (siz > 0) {
-#ifdef notdef
-		if (!eofflg)
-			dp->d_reclen += (uiop->uio_resid-siz);
-#endif
 		md = md2;
 		dpos = dpos2;
 		nfsm_mtouio(uiop, siz);
-#ifdef notdef
-		if (!eofflg)
-			uiop->uio_resid = 0;
-#endif
 		*offp = off;
 	}
 	nfsm_reqdone;
