@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ioctl.h	7.17 (Berkeley) %G%
+ *	@(#)ioctl.h	7.18 (Berkeley) %G%
  */
 
 #ifndef	_IOCTL_H_
@@ -123,6 +123,7 @@ struct ttysize {
 #define	TIOCSCTTY	_IO('t', 97)		/* become controlling tty */
 #define	TIOCEXT		_IOW('t', 96, int)	/* pty: external processing */
 #define	TIOCSIG		_IO('t', 95)		/* pty: generate signal */
+#define TIOCDRAIN	_IO('t', 94)		/* wait till output drained */
 
 #define TTYDISC		0		/* termios tty line discipline */
 #define	TABLDISC	3		/* tablet discipline */
