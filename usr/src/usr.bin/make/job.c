@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)job.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)job.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -71,17 +71,16 @@ static char sccsid[] = "@(#)job.c	8.2 (Berkeley) %G%";
  */
 
 #include <sys/types.h>
+#include <sys/signal.h>
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <sys/time.h>
 #include <sys/wait.h>
-
-#include <errno.h>
 #include <fcntl.h>
-#include <signal.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <signal.h>
 #include "make.h"
 #include "hash.h"
 #include "dir.h"
@@ -176,10 +175,10 @@ static char   	*shellPath = (char *) NULL,	  /* full pathname of
 
 static int  	maxJobs;    	/* The most children we can run at once */
 static int  	maxLocal;    	/* The most local ones we can have */
-static int     	nJobs;	    	/* The number of children currently running */
-static int  	nLocal;    	/* The number of local children */
-static Lst     	jobs;		/* The structures that describe them */
-static Boolean	jobFull;    	/* Flag to tell when the job table is full. It
+int     	nJobs;	    	/* The number of children currently running */
+int  		nLocal;    	/* The number of local children */
+Lst     	jobs;		/* The structures that describe them */
+Boolean		jobFull;    	/* Flag to tell when the job table is full. It
 				 * is set TRUE when (1) the total number of
 				 * running jobs equals the maximum allowed or
 				 * (2) a job can only be run locally, but
@@ -189,9 +188,9 @@ static fd_set  	outputs;    	/* Set of descriptors of pipes connected to
 				 * the output channels of children */
 #endif
 
-static GNode   	*lastNode;	/* The node for which output was most recently
+GNode   	*lastNode;	/* The node for which output was most recently
 				 * produced. */
-static char    	*targFmt;   	/* Format string to use to head output from a
+char    	*targFmt;   	/* Format string to use to head output from a
 				 * job when it's not the most-recent job heard
 				 * from */
 #define TARG_FMT  "--- %s ---\n" /* Default format */
@@ -202,7 +201,7 @@ static char    	*targFmt;   	/* Format string to use to head output from a
  * been migrated home, the job is placed on the stoppedJobs queue to be run
  * when the next job finishes. 
  */
-static Lst    stoppedJobs;	/* Lst of Job structures describing
+Lst		stoppedJobs;	/* Lst of Job structures describing
 				 * jobs that were stopped due to concurrency
 				 * limits or migration home */
 
@@ -217,11 +216,11 @@ static Lst    stoppedJobs;	/* Lst of Job structures describing
 # endif
 #endif
 
-static int JobCondPassSig __P((Job *, int));
+static int JobCondPassSig __P((ClientData, ClientData));
 static void JobPassSig __P((int));
-static int JobCmpPid __P((Job *, int));
-static int JobPrintCommand __P((char *, Job *));
-static int JobSaveCommand __P((char *, GNode *));
+static int JobCmpPid __P((ClientData, ClientData));
+static int JobPrintCommand __P((ClientData, ClientData));
+static int JobSaveCommand __P((ClientData, ClientData));
 static void JobFinish __P((Job *, union wait));
 static void JobExec __P((Job *, char **));
 static void JobMakeArgv __P((Job *, char **));
@@ -246,10 +245,12 @@ static void JobInterrupt __P((int));
  *-----------------------------------------------------------------------
  */
 static int
-JobCondPassSig(job, signo)
-    Job	    	*job;	    /* Job to biff */
-    int	    	signo;	    /* Signal to send it */
+JobCondPassSig(jobp, signop)
+    ClientData	    	jobp;	    /* Job to biff */
+    ClientData	    	signop;	    /* Signal to send it */
 {
+    Job	*job = (Job *) jobp;
+    int	signo = *(int *) signop;
 #ifdef RMT_WANTS_SIGNALS
     if (job->flags & JOB_REMOTE) {
 	(void)Rmt_Signal(job, signo);
@@ -286,7 +287,7 @@ JobPassSig(signo)
 {
     int	    mask;
     
-    Lst_ForEach(jobs, JobCondPassSig, (ClientData)signo);
+    Lst_ForEach(jobs, JobCondPassSig, (ClientData)(long)signo);
 
     /*
      * Deal with proper cleanup based on the signal received. We only run
@@ -318,7 +319,8 @@ JobPassSig(signo)
 
     kill(getpid(), signo);
 
-    Lst_ForEach(jobs, JobCondPassSig, (ClientData)SIGCONT);
+    signo = SIGCONT;
+    Lst_ForEach(jobs, JobCondPassSig, (ClientData) &signo);
 
     sigsetmask(mask);
     signal(signo, JobPassSig);
@@ -341,10 +343,10 @@ JobPassSig(signo)
  */
 static int
 JobCmpPid (job, pid)
-    int             pid;	/* process id desired */
-    Job            *job;	/* job to examine */
+    ClientData        job;	/* job to examine */
+    ClientData        pid;	/* process id desired */
 {
-    return (pid - job->pid);
+    return ( *(int *) pid - ((Job *) job)->pid);
 }
 
 /*-
@@ -375,9 +377,9 @@ JobCmpPid (job, pid)
  *-----------------------------------------------------------------------
  */
 static int
-JobPrintCommand (cmd, job)
-    char     	  *cmd;	    	    /* command string to print */
-    Job           *job;	    	    /* job for which to print it */
+JobPrintCommand (cmdp, jobp)
+    ClientData    cmdp;	    	    /* command string to print */
+    ClientData    jobp;	    	    /* job for which to print it */
 {
     Boolean	  noSpecials;	    /* true if we shouldn't worry about
 				     * inserting special commands into
@@ -391,6 +393,8 @@ JobPrintCommand (cmd, job)
 				     * command */
     char    	  *cmdStart;	    /* Start of expanded command */
     LstNode 	  cmdNode;  	    /* Node for replacing the command */
+    char     	  *cmd = (char *) cmdp;
+    Job           *job = (Job *) jobp;	
 
     noSpecials = (noExecute && ! (job->node->type & OP_MAKE));
 
@@ -530,11 +534,11 @@ JobPrintCommand (cmd, job)
  */
 static int
 JobSaveCommand (cmd, gn)
-    char    *cmd;
-    GNode   *gn;
+    ClientData   cmd;
+    ClientData   gn;
 {
-    cmd = Var_Subst (NULL, cmd, gn, FALSE);
-    (void)Lst_AtEnd (postCommands->commands, (ClientData)cmd);
+    cmd = (ClientData) Var_Subst (NULL, (char *) cmd, (GNode *) gn, FALSE);
+    (void)Lst_AtEnd (postCommands->commands, cmd);
     return (0);
 }
 
@@ -878,7 +882,7 @@ Boolean
 Job_CheckCommands (gn, abortProc)
     GNode          *gn;	    	    /* The target whose commands need
 				     * verifying */
-    void    	  (*abortProc) __P((const char *, ...));   
+    void    	  (*abortProc) __P((char *, ...));   
 			/* Function to abort with message */
 {
     if (OP_NOP(gn->type) && Lst_IsEmpty (gn->commands) &&
@@ -888,6 +892,7 @@ Job_CheckCommands (gn, abortProc)
 	 * commands 
 	 */
 	if ((DEFAULT != NILGNODE) && !Lst_IsEmpty(DEFAULT->commands)) {
+	    char *p1;
 	    /*
 	     * Make only looks for a .DEFAULT if the node was never the
 	     * target of an operator, so that's what we do too. If
@@ -898,7 +903,9 @@ Job_CheckCommands (gn, abortProc)
 	     * .DEFAULT itself.
 	     */
 	    Make_HandleUse(DEFAULT, gn);
-	    Var_Set (IMPSRC, Var_Value (TARGET, gn), gn);
+	    Var_Set (IMPSRC, Var_Value (TARGET, gn, &p1), gn);
+	    if (p1)
+		free(p1);
 	} else if (Dir_MTime (gn) == 0) {
 	    /*
 	     * The node wasn't the target of an operator we have no .DEFAULT
@@ -1335,7 +1342,7 @@ JobRestart(job)
 static int
 JobStart (gn, flags, previous)
     GNode         *gn;	      /* target to create */
-    short	  flags;      /* flags for the job to override normal ones.
+    int	  	   flags;      /* flags for the job to override normal ones.
 			       * e.g. JOB_SPECIAL or JOB_IGNDOTS */
     Job 	  *previous;  /* The previous Job structure for this node,
 			       * if any. */
@@ -1923,11 +1930,11 @@ Job_CatchChildren (block)
 	    printf("Process %d exited or stopped.\n", pid);
 	    
 
-	jnode = Lst_Find (jobs, (ClientData)pid, JobCmpPid);
+	jnode = Lst_Find (jobs, (ClientData)&pid, JobCmpPid);
 
 	if (jnode == NILLNODE) {
 	    if (WIFSIGNALED(status) && (status.w_termsig == SIGCONT)) {
-		jnode = Lst_Find(stoppedJobs, (ClientData)pid, JobCmpPid);
+		jnode = Lst_Find(stoppedJobs, (ClientData) &pid, JobCmpPid);
 		if (jnode == NILLNODE) {
 		    Error("Resumed child (%d) not in table", pid);
 		    continue;
@@ -2326,7 +2333,7 @@ Job_ParseShell (line)
     while (isspace (*line)) {
 	line++;
     }
-    words = brk_string (line, &wordCount);
+    words = brk_string (line, &wordCount, TRUE);
 
     memset ((Address)&newShell, 0, sizeof(newShell));
     
@@ -2453,7 +2460,6 @@ JobInterrupt (runINTERRUPT)
     LstNode 	  ln;		/* element in job table */
     Job           *job;	    	/* job descriptor in that element */
     GNode         *interrupt;	/* the node describing the .INTERRUPT target */
-    struct stat sb;
     
     aborting = ABORT_INTERRUPT;
 
@@ -2465,8 +2471,9 @@ JobInterrupt (runINTERRUPT)
 	    char  	*file = (job->node->path == (char *)NULL ?
 				 job->node->name :
 				 job->node->path);
-	    if (!stat(file, &sb) && S_ISREG(sb.st_mode) &&
-		unlink (file) == 0) {
+	    struct stat st;
+	    if (!noExecute && lstat(file, &st) != -1 && !S_ISDIR(st.st_mode) && 
+		unlink(file) != -1) {
 		Error ("*** %s removed", file);
 	    }
 	}

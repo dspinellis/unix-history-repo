@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compat.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)compat.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -27,15 +27,13 @@ static char sccsid[] = "@(#)compat.c	8.2 (Berkeley) %G%";
  *	    	  	    thems as need creatin'
  */
 
-#include    <sys/types.h>
-#include    <sys/stat.h>
-#include    <sys/wait.h>
-
-#include    <ctype.h>
-#include    <errno.h>
-#include    <signal.h>
 #include    <stdio.h>
-
+#include    <sys/types.h>
+#include    <sys/signal.h>
+#include    <sys/wait.h>
+#include    <sys/errno.h>
+#include    <sys/stat.h>
+#include    <ctype.h>
 #include    "make.h"
 #include    "hash.h"
 #include    "dir.h"
@@ -54,8 +52,8 @@ static char 	    meta[256];
 static GNode	    *curTarg = NILGNODE;
 static GNode	    *ENDNode;
 static void CompatInterrupt __P((int));
-static int CompatRunCommand __P((char *, GNode *));
-static int CompatMake __P((GNode *, GNode *));
+static int CompatRunCommand __P((ClientData, ClientData));
+static int CompatMake __P((ClientData, ClientData));
 
 /*-
  *-----------------------------------------------------------------------
@@ -76,16 +74,19 @@ static void
 CompatInterrupt (signo)
     int	    signo;
 {
-    struct stat sb;
     GNode   *gn;
     
     if ((curTarg != NILGNODE) && !Targ_Precious (curTarg)) {
-	char 	  *file = Var_Value (TARGET, curTarg);
+	char	  *p1;
+	char 	  *file = Var_Value (TARGET, curTarg, &p1);
+	struct stat st;
 
-	if (!stat(file, &sb) && S_ISREG(sb.st_mode) &&
-	    unlink (file) == SUCCESS) {
+	if (!noExecute && lstat(file, &st) != -1 && !S_ISDIR(st.st_mode) && 
+	    unlink(file) != -1) {
 	    printf ("*** %s removed\n", file);
 	}
+	if (p1)
+	    free(p1);
 
 	/*
 	 * Run .INTERRUPT only if hit with interrupt signal
@@ -96,8 +97,9 @@ CompatInterrupt (signo)
 		Lst_ForEach(gn->commands, CompatRunCommand, (ClientData)gn);
 	    }
 	}
+
     }
-    exit (0);
+    exit (signo);
 }
 
 /*-
@@ -115,9 +117,9 @@ CompatInterrupt (signo)
  *-----------------------------------------------------------------------
  */
 static int
-CompatRunCommand (cmd, gn)
-    char    	  *cmd;	    	/* Command to execute */
-    GNode   	  *gn;    	/* Node from which the command came */
+CompatRunCommand (cmdp, gnp)
+    ClientData    cmdp;	    	/* Command to execute */
+    ClientData    gnp;    	/* Node from which the command came */
 {
     char    	  *cmdStart;	/* Start of expanded command */
     register char *cp;
@@ -133,16 +135,17 @@ CompatRunCommand (cmd, gn)
 				 * dynamically allocated */
     Boolean 	  local;    	/* TRUE if command should be executed
 				 * locally */
+    char	  *cmd = (char *) cmdp;
+    GNode	  *gn = (GNode *) gnp;
 
-    /*  
+    /* 
      * Avoid clobbered variable warnings by forcing the compiler
      * to ``unregister'' variables
-     */ 
+     */
 #if __GNUC__
-    (void) &av; 
+    (void) &av;
     (void) &errCheck;
-#endif 
-
+#endif
     silent = gn->type & OP_SILENT;
     errCheck = !(gn->type & OP_IGNORE);
 
@@ -157,6 +160,7 @@ CompatRunCommand (cmd, gn)
      */
      
     if (*cmdStart == '\0') {
+	free(cmdStart);
 	Error("%s expands to empty string", cmd);
 	return(0);
     } else {
@@ -231,7 +235,7 @@ CompatRunCommand (cmd, gn)
 	 * brk_string sticks our name in av[0], so we have to
 	 * skip over it...
 	 */
-	av = brk_string(cmd, &argc);
+	av = brk_string(cmd, &argc, TRUE);
 	av += 1;
     }
     
@@ -254,16 +258,13 @@ CompatRunCommand (cmd, gn)
 	}
 	exit(1);
     }
+    free(cmdStart);
+    Lst_Replace (cmdNode, (ClientData) NULL);
     
     /*
      * The child is off and running. Now all we can do is wait...
      */
     while (1) {
-	int 	  id;
-
-	if (!local) {
-	    id = 0;
-	}
 
 	while ((stat = wait((int *)&reason)) != cpid) {
 	    if (stat == -1 && errno != EINTR) {
@@ -328,10 +329,12 @@ CompatRunCommand (cmd, gn)
  *-----------------------------------------------------------------------
  */
 static int
-CompatMake (gn, pgn)
-    GNode   	  *gn;	    /* The node to make */
-    GNode   	  *pgn;	    /* Parent to abort if necessary */
+CompatMake (gnp, pgnp)
+    ClientData	gnp;	    /* The node to make */
+    ClientData  pgnp;	    /* Parent to abort if necessary */
 {
+    GNode *gn = (GNode *) gnp;
+    GNode *pgn = (GNode *) pgnp;
     if (gn->type & OP_USE) {
 	Make_HandleUse(gn, pgn);
     } else if (gn->made == UNMADE) {
@@ -354,7 +357,10 @@ CompatMake (gn, pgn)
 	}
 
 	if (Lst_Member (gn->iParents, pgn) != NILLNODE) {
-	    Var_Set (IMPSRC, Var_Value(TARGET, gn), pgn);
+	    char *p1;
+	    Var_Set (IMPSRC, Var_Value(TARGET, gn, &p1), pgn);
+	    if (p1)
+		free(p1);
 	}
 	
 	/*
@@ -502,7 +508,10 @@ CompatMake (gn, pgn)
 	pgn->make = FALSE;
     } else {
 	if (Lst_Member (gn->iParents, pgn) != NILLNODE) {
-	    Var_Set (IMPSRC, Var_Value(TARGET, gn), pgn);
+	    char *p1;
+	    Var_Set (IMPSRC, Var_Value(TARGET, gn, &p1), pgn);
+	    if (p1)
+		free(p1);
 	}
 	switch(gn->made) {
 	    case BEINGMADE:

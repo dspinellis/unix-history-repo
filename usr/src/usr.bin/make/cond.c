@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cond.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cond.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -70,7 +70,7 @@ typedef enum {
  */
 static int CondGetArg __P((char **, char **, char *, Boolean));
 static Boolean CondDoDefined __P((int, char *));
-static int CondStrMatch __P((char *, char *));
+static int CondStrMatch __P((ClientData, ClientData));
 static Boolean CondDoMake __P((int, char *));
 static Boolean CondDoExists __P((int, char *));
 static Boolean CondDoTarget __P((int, char *));
@@ -251,14 +251,17 @@ CondDoDefined (argLen, arg)
     char    *arg;
 {
     char    savec = arg[argLen];
+    char    *p1;
     Boolean result;
 
     arg[argLen] = '\0';
-    if (Var_Value (arg, VAR_CMD) != (char *)NULL) {
+    if (Var_Value (arg, VAR_CMD, &p1) != (char *)NULL) {
 	result = TRUE;
     } else {
 	result = FALSE;
     }
+    if (p1)
+	free(p1);
     arg[argLen] = savec;
     return (result);
 }
@@ -279,10 +282,10 @@ CondDoDefined (argLen, arg)
  */
 static int
 CondStrMatch(string, pattern)
-    char    *string;
-    char    *pattern;
+    ClientData    string;
+    ClientData    pattern;
 {
-    return(!Str_Match(string,pattern));
+    return(!Str_Match((char *) string,(char *) pattern));
 }
 
 /*-
@@ -506,7 +509,8 @@ CondToken(doEval)
 		}
 		condExpr += varSpecLen;
 
-		if (!isspace(*condExpr) && strchr("!=><", *condExpr) == NULL) {
+		if (!isspace((unsigned char) *condExpr) &&
+		    strchr("!=><", *condExpr) == NULL) {
 		    Buffer buf;
 		    char *cp;
 
@@ -518,7 +522,8 @@ CondToken(doEval)
 		    if (doFree)
 			free(lhs);
 
-		    for (;*condExpr && !isspace(*condExpr); condExpr++)
+		    for (;*condExpr && !isspace((unsigned char) *condExpr);
+			 condExpr++)
 			Buf_AddByte(buf, (Byte)*condExpr);
 
 		    Buf_AddByte(buf, (Byte)'\0');
@@ -531,7 +536,7 @@ CondToken(doEval)
 		/*
 		 * Skip whitespace to get to the operator
 		 */
-		while (isspace(*condExpr))
+		while (isspace((unsigned char) *condExpr))
 		    condExpr++;
 
 		/*
@@ -557,7 +562,7 @@ CondToken(doEval)
 
 			goto do_compare;
 		}
-		while (isspace(*condExpr)) {
+		while (isspace((unsigned char) *condExpr)) {
 		    condExpr++;
 		}
 		if (*condExpr == '\0') {
@@ -677,7 +682,8 @@ do_string_compare:
 			    /*
 			     * Skip over the right-hand side
 			     */
-			    while(!isspace(*condExpr) && (*condExpr != '\0')) {
+			    while(!isspace((unsigned char) *condExpr) &&
+				  (*condExpr != '\0')) {
 				condExpr++;
 			    }
 			}
@@ -784,9 +790,8 @@ error:
 		    for (arglen = 0;
 			 condExpr[arglen] != '(' && condExpr[arglen] != '\0';
 			 arglen += 1)
-		    {
-			/* void */ ;
-		    }
+			continue;
+
 		    if (condExpr[arglen] != '\0') {
 			val = Var_Parse(&condExpr[arglen - 1], VAR_CMD,
 					doEval, &length, &doFree);
@@ -798,7 +803,7 @@ error:
 			     * spaces... 4/15/92, christos
 			     */
 			    char *p;
-			    for (p = val; *p && isspace(*p); p++)
+			    for (p = val; *p && isspace((unsigned char)*p); p++)
 				continue;
 			    t = (*p == '\0') ? True : False;
 			}

@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)buf.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)buf.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -68,9 +68,9 @@ Buf_OvAddByte (bp, byte)
     register Buffer bp;
     int    byte;
 {
-
+    int nbytes = 1;
     bp->left = 0;
-    BufExpand (bp, 1);
+    BufExpand (bp, nbytes);
 
     *bp->inPtr++ = byte;
     bp->left--;

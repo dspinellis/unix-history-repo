@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)make.1	8.5 (Berkeley) %G%
+.\"	@(#)make.1	8.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAKE 1
@@ -48,8 +48,7 @@ and makefiles, please refer to
 The options are as follows:
 .Bl -tag -width Ds
 .It Fl D Ar variable
-Define
-.Ar variable
+Define Ar variable
 to be 1, in the global context.
 .It Fl d Ar flags
 Turn on debugging, and specify which portions of
@@ -253,13 +252,13 @@ between the previous contents of the variable and the appended value.
 Variables are expanded by surrounding the variable name with either
 curly braces
 .Pq Ql {}
-or parenthesis
+or parentheses
 .Pq Ql ()
 and preceding it with
 a dollar sign
 .Pq Ql \&$ .
 If the variable name contains only a single letter, the surrounding
-braces or parenthesis are not required.
+braces or parentheses are not required.
 This shorter form is not recommended.
 .Pp
 Variable substitution occurs at two distinct times, depending on where
@@ -528,7 +527,7 @@ Test the value of a variable.
 .Oo \&! Oc Ns Ar target
 .Op Ar operator target ...
 .Xc
-Test the the target being built.
+Test the target being built.
 .It Xo
 .Ic .ifnmake
 .Oo \&! Oc Ar target
@@ -603,7 +602,7 @@ As in C,
 .Nm make
 will only evaluate a conditional as far as is necessary to determine
 its value.
-Parentheses may be used to change the order of evaluation.
+Parenthesis may be used to change the order of evaluation.
 The boolean operator
 .Ql Ic \&!
 may be used to logically negate an entire

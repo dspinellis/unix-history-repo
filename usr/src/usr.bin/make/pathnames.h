@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	8.1 (Berkeley) %G%
+ *	@(#)pathnames.h	8.2 (Berkeley) %G%
  */
 
 #define	_PATH_OBJDIR		"obj"
