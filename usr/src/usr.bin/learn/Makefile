@@ -1,58 +1,75 @@
-#	@(#)Makefile	4.5	(Berkeley)	87/05/31
 #
-DESTDIR=
-
-# The vi lessons come with the user-contributed software.
-LESSONS = files editor morefiles macros eqn C
-
-FILES = lrnref.h \
-	copy.c dounit.c getlesson.c learn.c list.c \
-	makpipe.c maktee.c mem.c mysys.c selsub.c selunit.c \
-	start.c whatnow.c wrapup.c \
-	lcount.c lrntee.c \
-	makefile
-
-OBJECTS = copy.o dounit.o getlesson.o learn.o list.o mem.o \
-	makpipe.o maktee.o mysys.o selsub.o selunit.o \
-	start.o whatnow.o wrapup.o
-
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	4.6	(Berkeley)	%G%
+#
 # Flag BSD4_2 means 4.2 or later.
-CFLAGS = -O -DBSD4_2
-LIBRARY =
-LLIB	= $(DESTDIR)/usr/lib/learn/bin
+CFLAGS=	-O -DBSD4_2
+LIBC=	/lib/libc.a
+LLIB=	${DESTDIR}/usr/lib/learn/bin
+SRCS=	copy.c dounit.c getlesson.c learn.c list.c mem.c makpipe.c maktee.c \
+	mysys.c selsub.c selunit.c start.c whatnow.c wrapup.c
+OBJS=	copy.o dounit.o getlesson.o learn.o list.o mem.o makpipe.o maktee.o \
+	mysys.o selsub.o selunit.o start.o whatnow.o wrapup.o
 
-all:	learn lrntee lcount
+all: learn lrntee lcount
 
-install:	all
-	install -c -s learn $(DESTDIR)/usr/bin
-	install -s learn $(LLIB)
-	install -s lrntee $(LLIB)
-	install -s lcount $(LLIB)
+learn: ${OBJS} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJS}
 
-clean:
-	rm -f *.o learn lrntee lcount errs
+lcount: lcount.c ${LIBC}
+	${CC} ${CFLAGS} -o $@ lcount.c
 
-cmp:	all
-	cmp learn $(DESTDIR)/usr/bin/learn
-	cmp learn $(LLIB)/learn
-	cmp lrntee $(LLIB)/lrntee
-	cmp lcount $(LLIB)/lcount
-	rm learn lrntee lcount *.o
+lrntee: lrntee.c ${LIBC}
+	${CC} ${CFLAGS} -o $@ lrntee.c
 
-learn: $(OBJECTS)
-	cc -o learn $(CFLAGS) $(OBJECTS) $(LIBRARY)
+clean: FRC
+	rm -f ${OBJS} core learn lrntee lcount
 
-$(OBJECTS): lrnref.h
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS} lcount.c lrntee.c
 
-lcount lrntee:
-	cc $(CFLAGS) $@.c -o $@ $(LIBRARY)
+install: FRC
+	install -c -s -o bin -g bin -m 755 learn ${DESTDIR}/usr/bin/learn
+	install -s -o bin -g bin -m 755 learn ${LLIB}/learn
+	install -s -o bin -g bin -m 755 lrntee ${LLIB}/lrntee
+	install -s -o bin -g bin -m 755 lcount ${LLIB}/lcount
 
-log:
-	-rm -r $(LLIB)/../log; mkdir $(LLIB)/../log; chmod +w $(LLIB)/../log
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
+	lint ${CFLAGS} lcount.c
+	lint ${CFLAGS} lrntee.c
 
-check:
-	-@test -r $(LLIB)/lrntee || echo 'lrntee not present; make lrntee'
-	-@test -r $(LLIB)/lcount || echo 'lcount not present; make lcount'
-	-@test -r $(LLIB)/../log || echo 'log directory not present; make log if you want logging'
+tags: FRC
+	ctags ${SRCS}
+	ctags -a lcount.c
+	ctags -a lrntee.c
+	sort -o tags tags
 
-depend:
+FRC:
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+copy.o: copy.c /usr/include/stdio.h /usr/include/signal.h lrnref.h
+dounit.o: dounit.c /usr/include/stdio.h lrnref.h
+getlesson.o: getlesson.c /usr/include/stdio.h lrnref.h
+learn.o: learn.c /usr/include/stdio.h lrnref.h /usr/include/signal.h
+list.o: list.c /usr/include/stdio.h lrnref.h /usr/include/signal.h
+mem.o: mem.c /usr/include/stdio.h lrnref.h
+makpipe.o: makpipe.c /usr/include/stdio.h
+maktee.o: maktee.c /usr/include/stdio.h /usr/include/signal.h lrnref.h
+mysys.o: mysys.c /usr/include/stdio.h /usr/include/signal.h
+selsub.o: selsub.c /usr/include/stdio.h /usr/include/sys/types.h
+selsub.o: /usr/include/sys/stat.h lrnref.h /usr/include/sys/dir.h
+selunit.o: selunit.c /usr/include/stdio.h lrnref.h
+start.o: start.c /usr/include/stdio.h lrnref.h /usr/include/sys/types.h
+start.o: /usr/include/sys/dir.h
+whatnow.o: whatnow.c /usr/include/stdio.h lrnref.h
+wrapup.o: wrapup.c /usr/include/signal.h /usr/include/stdio.h lrnref.h
+lcount.o: lcount.c /usr/include/stdio.h
+lrntee.o: lrntee.c
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
