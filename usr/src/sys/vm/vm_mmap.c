@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	7.13 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -99,7 +99,7 @@ osmmap(p, uap, retval)
 		int	prot;
 		int	flags;
 		int	fd;
-		off_t	pos;		/* XXX becomes long */
+		long	pos;
 	} *uap;
 	int *retval;
 {
@@ -138,9 +138,6 @@ osmmap(p, uap, retval)
 	if (uap->flags & OMAP_INHERIT)
 		nargs.flags |= MAP_INHERIT;
 	nargs.fd = uap->fd;
-	spos = uap->pos >> 32;		/* XXX */
-	if (spos > 0)			/* XXX */
-		uap->pos = spos;	/* XXX */
 	nargs.pos = uap->pos;
 	return (smmap(p, &nargs, retval));
 }
