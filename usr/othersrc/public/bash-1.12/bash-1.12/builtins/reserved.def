@@ -1,0 +1,128 @@
+This file is reserved.def, in which the shell reserved words are defined.
+It has no direct C file production, but defines builtins for the help
+command.
+
+Copyright (C) 1987, 1989, 1991 Free Software Foundation, Inc.
+
+This file is part of GNU Bash, the Bourne Again SHell.
+
+Bash is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any later
+version.
+
+Bash is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with Bash; see the file COPYING.  If not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+$BUILTIN for
+$SHORT_DOC for NAME [in WORDS ... ;] do COMMANDS; done
+The `for' loop executes a sequence of commands for each member in a
+list of items.  If `in WORDS ...;' is not present, then `in "$@"' is
+assumed.  For each element in WORDS, NAME is set to that element, and
+the COMMANDS are executed.
+$END
+
+$BUILTIN case
+$SHORT_DOC case WORD in [PATTERN [| PATTERN]...) COMMANDS ;;]... esac
+Selectively execute COMMANDS based upon WORD matching PATTERN.  The
+`|' is used to separate multiple patterns.
+$END
+
+$BUILTIN if
+$SHORT_DOC if COMMANDS; then COMMANDS; [else COMMANDS;] fi
+`if' executes the `then' COMMANDS only if the final command in the
+`if' COMMANDS has an exit status of zero.
+$END
+
+$BUILTIN while
+$SHORT_DOC while COMMANDS; do COMMANDS; done
+Expand and execute COMMANDS as long as the final command in the
+`while' COMMANDS has an exit status of zero.
+$END
+
+$BUILTIN until
+$SHORT_DOC until COMMANDS; do COMMANDS; done
+Expand and execute COMMANDS as long as the final command in the
+`until' COMMANDS has an exit status which is not zero.
+$END
+
+$BUILTIN function
+$SHORT_DOC function NAME { COMMANDS ; } or NAME () { COMMANDS ; }
+Create a simple command invoked by NAME which runs COMMANDS.
+Arguments on the command line along with NAME are passed to the
+function as $0 .. $n.
+$END
+
+$BUILTIN { ... }
+$DOCNAME grouping_braces
+$SHORT_DOC { COMMANDS }
+Run a set of commands in a group.  This is one way to redirect an
+entire set of commands.
+$END
+
+$BUILTIN %
+$DOCNAME fg_percent
+$SHORT_DOC %[DIGITS | WORD] [&]
+This is similar to the `fg' command.  Resume a stopped or background
+job.  If you specifiy DIGITS, then that job is used.  If you specify
+WORD, then the job whose name begins with WORD is used.  Following the
+job specification with a `&' places the job in the background.
+$END
+
+$BUILTIN Variables
+$DOCNAME variable_help
+$SHORT_DOC Variable names and meanings
+BASH_VERSION    The version numbers of this Bash.
+CDPATH          A colon separated list of directories to search
+		when the argument to `cd' is not found in the current
+		directory.
+HISTFILE        The name of the file where your command history is stored.
+HISTFILESIZE    The maximum number of lines this file can contain.
+HISTSIZE        The maximum number of history lines that a running
+		shell can access.
+HOME            The complete pathname to your login directory.
+HOSTTYPE        The type of CPU and OS this version of Bash is running
+		under.
+PATH            A colon separated list of directories to search when
+		looking for commands.
+PROMPT_COMMAND  A command to be executed before the printing of each
+		primary prompt.
+PS1             The primary prompt string.
+TERM            The name of the current terminal type (/etc/termcap).
+auto_resume     Non-null means a command word appearing on a line by
+		itself is first looked for in the list of currently
+		stopped jobs.  If found there, that job is foregrounded.
+histchars       Characters controlling history expansion and quick
+		substitution.  The first character is the history
+		substitution character, usually `!'.  The second is
+		the `quick substition' character, usually `^'.
+history_control Set to a value of "ignorespace", it means don't enter
+		lines which begin with a SPC on the history list.  Set
+		to a value of "ignoredups", it means don't enter lines
+		which match the last entered line.  Unset, or any
+		other value than those above mean to save all lines
+		on the history list.
+hostname_completion_file
+		Contains the name of a file in the same format as
+		`/etc/hosts' that should be read when Bash needs to
+		complete a hostname.
+ignoreeof       Controls the action of the shell on receipt of an EOF
+		character as the sole input.  If set, then the value
+		of it is the number of EOF characters that can be seen
+		in a row as sole input characters before the shell
+		will exit (default 10).  When unset, EOF signifies the
+		end of input.
+no_exit_on_failed_exec
+		If this variable exists, the shell will not exit in
+		the case that it couldn't execute the file specified
+		in the `exec' command.
+notify          notify of job termination immediately.
+$END
+
+
