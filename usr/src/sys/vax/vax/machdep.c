@@ -1,4 +1,4 @@
-/*	machdep.c	6.4	84/02/02	*/
+/*	machdep.c	6.5	84/03/22	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -501,8 +501,11 @@ memerr()
 			if (M750_ERR(mcr)) {
 				struct mcr amcr;
 				amcr.mc_reg[0] = mcr->mc_reg[0];
-				printf("mcr%d: soft ecc addr %x syn %x\n",
-				    m, M750_ADDR(&amcr), M750_SYN(&amcr));
+				printf("mcr%d: %s",
+				    m, (amcr.mc_reg[0] & M750_UNCORR) ?
+				    "hard error" : "soft ecc");
+				printf(" addr %x syn %x\n",
+				    M750_ADDR(&amcr), M750_SYN(&amcr));
 				M750_INH(mcr);
 			}
 			break;
