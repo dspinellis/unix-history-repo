@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)scan.c	1.1 (Berkeley) %G%";
+static char *sccsid ="@(#)scan.c	1.2 (Berkeley) %G%";
 # include "mfile1"
 # include <a.out.h>
 # include <stab.h>
@@ -58,6 +58,7 @@ char * lxgcp;
 
 extern int proflg;
 extern int gdebug;
+extern int oldway;
 #ifndef LINT
 extern int lastloc;
 #endif
@@ -107,6 +108,10 @@ mainp1( argc, argv ) int argc; char *argv[]; {  /* control multiple files */
 					break;
 				case 'g':
 					++gdebug;
+					break;
+				case 'G':
+					++gdebug;
+					oldway = 1;
 					break;
 					}
 				}
