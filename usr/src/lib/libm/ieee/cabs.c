@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)cabs.c	1.2 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
+"@(#)cabs.c	1.2 (Berkeley) 8/21/85; 1.5 (ucb.elefunt) %G%";
 #endif not lint
 
 /* CABS(Z)
@@ -122,9 +122,11 @@ double x, y;
 	double copysign(),scalb(),logb(),sqrt(),t,r;
 	int finite(), exp;
 
+#if (!defined(VAX)&&!defined(TAHOE))
 	if(finite(x))
 	    if(finite(y))
 	    {	
+#endif
 		x=copysign(x,one);
 		y=copysign(y,one);
 		if(y > x) 
@@ -149,6 +151,7 @@ double x, y;
 		r=y/r;
 		return(x+r);
 
+#if (!defined(VAX)&&!defined(TAHOE))
 	    }
 
 	    else if(y==y)   	   /* y is +-INF */
@@ -162,6 +165,7 @@ double x, y;
 	         return(x);		   /* x is NaN, y is finite */
 	else if(y!=y) return(y);  /* x and y is NaN */
 	else return(copysign(y,one));   /* y is INF */
+#endif
 }
 
 /* A faster but less accurate version of cabs(x,y) */
