@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	4.1 (Berkeley) %G%
+#	@(#)makefile	4.2 (Berkeley) %G%
 #
 # msdos versus unix defines
 O	= .o
@@ -68,9 +68,9 @@ CFLAGS	= $(OPTIMIZE) $(INCLUDES) $(DEFINES)
 LINTFLAGS	= -hbxaz
 
 # Which keyboard are we emulating.
-KBD	= 3180.kbd
-KBD	= 3270pc.kbd
-KBD	= unix.kbd
+KBD	= ${.CURDIR}/3180.kbd
+KBD	= ${.CURDIR}/3270pc.kbd
+KBD	= ${.CURDIR}/unix.kbd
 
 # The source files...
 ALLH =	api.h declare.h externs.h function.h hostctlr.h oia.h \
@@ -89,8 +89,8 @@ ALLSOURCE =	${ALLPRINT} makefile makefile.mak
 .s.o:
 	/lib/cpp -E $< | as -o $@
 
-.c.obj:
-	${CC} ${CFLAGS} -c $<
+#.c.obj:
+#	${CC} ${CFLAGS} -c $<
 
 ctlrlib.a:	${ALLO}
 	${RM} $@
@@ -134,10 +134,11 @@ lint:
 	sccs get $<
 
 kbd.out:	$(KBD) hostctlr.h
-	(cd ../tools; make mkhits$X )
+	(cd ${.CURDIR}/../tools; make mkhits$X )
 	${RM} $@ TMPfunc.out
-	$(CC) $(CFLAGS) -E function.c > TMPfunc.out
-	../tools/mkhits - ../ctlr/TMPfunc.out < $(KBD) > $@
+	$(CC) $(CFLAGS) -E ${.CURDIR}/function.c > TMPfunc.out
+	../tools/mkhits ${.CURDIR}/../ctlr/hostctlr.h \
+				../ctlr/TMPfunc.out < $(KBD) > $@
 	${RM} TMPfunc.out
 
 depend:

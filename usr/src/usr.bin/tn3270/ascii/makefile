@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	4.1 (Berkeley) %G%
+#	@(#)makefile	4.2 (Berkeley) %G%
 #
 # msdos versus unix defines
 O	= .o
@@ -88,8 +88,8 @@ ALLSOURCE =	${ALLPRINT} makefile makefile.mak
 .s.o:
 	/lib/cpp -E $< | as -o $@
 
-.c.obj:
-	${CC} ${CFLAGS} -c $<
+#.c.obj:
+#	${CC} ${CFLAGS} -c $<
 
 asciilib.a:	$(ALLO)
 	${RM} $@
