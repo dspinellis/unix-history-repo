@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_xxx.c	7.11 (Berkeley) %G%
+ *	@(#)kern_xxx.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -24,40 +24,52 @@
 #include "proc.h"
 #include "reboot.h"
 
-gethostid()
+/* ARGSUSED */
+gethostid(p, uap, retval)
+	struct proc *p;
+	void *uap;
+	long *retval;
 {
 
-	u.u_r.r_val1 = hostid;
+	*retval = hostid;
 	RETURN (0);
 }
 
-sethostid()
-{
-	struct a {
+sethostid(p, uap, retval)
+	struct proc *p;
+	struct args {
 		long	hostid;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	int error;
 
 }
 
-gethostname()
-{
-	register struct a {
+/* ARGSUSED */
+gethostname(p, uap, retval)
+	struct proc *p;
+	struct args {
 		char	*hostname;
 		u_int	len;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 
 	if (uap->len > hostnamelen + 1)
 		uap->len = hostnamelen + 1;
 	RETURN (copyout((caddr_t)hostname, (caddr_t)uap->hostname, uap->len));
 }
 
-sethostname()
-{
-	register struct a {
+/* ARGSUSED */
+sethostname(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		char	*hostname;
 		u_int	len;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	int error;
 
 	if (error = suser(u.u_cred, &u.u_acflag))
@@ -70,11 +82,14 @@ sethostname()
 	RETURN (error);
 }
 
-reboot()
-{
-	struct a {
+/* ARGSUSED */
+reboot(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	opt;
-	};
+	} *uap;
+	int *retval;
+{
 	int error;
 
 }
