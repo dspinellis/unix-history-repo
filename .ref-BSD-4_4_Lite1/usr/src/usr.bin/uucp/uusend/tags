@@ -1,5 +1,0 @@
-Muusend	uusend.c	/^main(argc, argv)$/
-getfname	uusend.c	/^getfname(p)$/
-index	uusend.c	/^index(sp, c)$/
-makedir	uusend.c	/^makedir(dirname, mode)$/
-while	uusend.c	/^	while ((c=getc(in)) != EOF) {$/

@@ -1,5 +1,0 @@
-Mworms	worms.c	/^main(argc, argv)$/
-cursor	worms.c	/^#define	cursor(c, r)	tputs(tgoto(CM, c, r), 1, fpu/
-fputchar	worms.c	/^fputchar(c)$/
-nomem	worms.c	/^nomem()$/
-onsig	worms.c	/^onsig(signo)$/

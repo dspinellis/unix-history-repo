@@ -1,6 +1,0 @@
-Mmount_nfs	mount_nfs.c	/^main(argc, argv)$/
-getmntopts	../mount/getmntopts.c	/^getmntopts(options, m0, flagp)$/
-getnfsargs	mount_nfs.c	/^getnfsargs(spec, nfsargsp)$/
-usage	mount_nfs.c	/^usage()$/
-xdr_dir	mount_nfs.c	/^xdr_dir(xdrsp, dirp)$/
-xdr_fh	mount_nfs.c	/^xdr_fh(xdrsp, np)$/
