@@ -1,26 +1,16 @@
 .\" Copyright (c) 1989 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)nfsd.8	5.5 (Berkeley) %G%
+.\"	@(#)nfsd.8	5.6 (Berkeley) %G%
 .\"
 .TH NFSD 8 ""
 .UC 7
 .SH NAME
 nfsd \- remote NFS server
 .SH SYNOPSIS
-.B /sbin/nfsd
+.B nfsd
 [
 .B \-u
 .I msk,mtch,numprocs
@@ -106,7 +96,7 @@ is not specified, it defaults to 1.
 .LP
 For example:
 .sp
-/sbin/nfsd \-u 255.255.255.0,131.104.48.0,4 \-t 255.255.0.0,131.104.0.0,131.102.31.2
+nfsd \-u 255.255.255.0,131.104.48.0,4 \-t 255.255.0.0,131.104.0.0,131.102.31.2
 .IP "- "
 Serves UDP and TCP transports. For UDP,
 it runs 4 daemons that accept requests
@@ -114,18 +104,18 @@ from any client on subnet 131.104.48.
 For TCP, it accepts connections from any client on network 131.104
 plus the client with the address 131.102.31.2.
 .LP
-/sbin/nfsd \-u 255.255.240.0,131.104.0.0,6 \-t 0,0
+nfsd \-u 255.255.240.0,131.104.0.0,6 \-t 0,0
 .IP "- "
 Serves UDP and TCP transports.
 For UDP, it runs 6 daemons that accept requests from clients with
 addresses in the range 131.104.0.x - 131.104.15.x.
 For TCP, it accepts connections from any client.
 .LP
-/sbin/nfsd \-u 0,0,4
+nfsd \-u 0,0,4
 .IP "- "
 Serves any UDP client with 4 servers, only.
 .LP
-/sbin/nfsd 4
+nfsd 4
 .IP "- "
 Serves any UDP client with 4 servers, only. (Compatibility)
 .LP
