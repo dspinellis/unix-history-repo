@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)itime.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)itime.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
@@ -21,6 +21,7 @@ static char sccsid[] = "@(#)itime.c	5.12 (Berkeley) %G%";
 #include <ufs/fs.h>
 #else
 #include <sys/param.h>
+#include <sys/time.h>
 #include <ufs/ufs/dinode.h>
 #endif
 #include <fcntl.h>
