@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)iostat.8	6.5 (Berkeley) %G%
+.\"	@(#)iostat.8	6.6 (Berkeley) %G%
 .\"
 .TH IOSTAT 8 ""
 .UC 4
@@ -19,20 +19,8 @@ iostat [ \-c count ] [ \-M core ] [ \-N system ]
 .fi
 .SH DESCRIPTION
 .I Iostat
-iteratively reports the number of characters read and written to terminals
-per second, and, for each disk, the number of transfers per second,
-kilobytes transferred per second, and the milliseconds per average seek.
-It also gives the percentage of time the system has spent in user mode,
-in user mode running low priority (niced) processes, in system mode, and
-idling.
-.PP
-To compute this information, for each disk, seeks and data transfer
-completions and number of words transferred are counted; for terminals
-collectively, the number of input and output characters are counted.
-Also, each sixtieth of a second, the state of each disk is examined and
-a tally is made if the disk is active.
-From these numbers and given the transfer rates of the devices it is
-possible to determine average seek times for each device.
+reports certain kernel statistics kept about terminal, disk and cpu
+activity.
 .PP
 The options are as follows:
 .TP
@@ -40,8 +28,8 @@ The options are as follows:
 Repeat the display
 .I count
 times.
-The first dislpay is for all time since a reboot and each subsequent report
-is for the time period since the last display.
+The first display is for the time since a reboot and each subsequent
+report is for the time period since the last display.
 .TP
 \-M
 Extract values associated with the name list from the specified core
@@ -56,16 +44,46 @@ Pause
 .I wait
 seconds between each display.
 .PP
-If more than 4 disk drives are configured in the system,
+.I Iostat
+displays its information in the following format:
+.TP
+tty
+.nf
+.RS
+tin	characters read from terminals
+tout	characters written to terminals
+.RE
+.fi
+.TP
+disks
+Disk operations (this field is system dependent). 
+The header of the field is the disk name and unit number.
+If more than four disk drives are configured in the system,
 .I iostat
-displays only the first 4 drives, with priority given to Massbus disk
-drives (i.e. if both Unibus and Massbus drives are present and the total
-number of drives exceeds 4, then some number of Unibus drives will not be
-displayed in favor of the Massbus drives).
+displays only the first four drives.
 To force
 .I iostat
 to display specific drives, their names may be supplied on the command
 line.
+.sp
+.nf
+.RS
+sps	sectors transferred per second
+tps	transfers per second
+msps	milliseconds per average seek (including implied
+	seeks and rotational latency)
+.RE
+.fi
+.TP
+cpu
+.nf
+.RS
+us	% of cpu time in user mode
+ni	% of cpu time in user mode running niced processes
+sy	% of cpu time in system mode
+id	% of cpu time in idle mode
+.RE
+.fi
 .SH FILES
 .ta \w'/dev/kmem  'u
 /vmunix	default kernel namelist

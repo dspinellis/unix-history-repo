@@ -2,7 +2,7 @@
  * Copyright (c) 1986, 1991 The Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.proprietary.c%
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
@@ -12,10 +12,10 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/buf.h>
 #include <sys/dkstat.h>
 #include <signal.h>
@@ -103,7 +103,7 @@ main(argc, argv)
 	long tmp;
 	int ch, hdrcnt, reps, interval, phz, ndrives;
 	char **cp, *memfile, *namelist, buf[30];
-	void printhdr(), read_names(), stats(), stat1(), usage(), error();
+	void cpustats(), dkstats(), phdr(), read_names(), usage(), error();
 
 	interval = reps = 0;
 	namelist = memfile = NULL;
@@ -220,11 +220,11 @@ main(argc, argv)
 		++ndrives;
 	}
 
-	(void)signal(SIGCONT, printhdr);
+	(void)signal(SIGCONT, phdr);
 
 	for (hdrcnt = 1;;) {
 		if (!--hdrcnt) {
-			printhdr();
+			phdr();
 			hdrcnt = 20;
 		}
 		(void)nlread(X_DK_BUSY, cur.dk_busy);
@@ -267,11 +267,8 @@ main(argc, argv)
 		etime /= (float)hz;
 		(void)printf("%4.0f%5.0f",
 		    cur.tk_nin / etime, cur.tk_nout / etime);
-		for (i = 0; i < dk_ndrive; i++)
-			if (dr_select[i])
-				stats(i);
-		for (i = 0; i < CPUSTATES; i++)
-			stat1(i);
+		dkstats(i);
+		cpustats(i);
 		(void)printf("\n");
 		(void)fflush(stdout);
 
@@ -284,7 +281,7 @@ main(argc, argv)
 }
 
 void
-printhdr()
+phdr()
 {
 	register int i;
 
@@ -295,48 +292,52 @@ printhdr()
 	(void)printf("         cpu\n tin tout");
 	for (i = 0; i < dk_ndrive; i++)
 		if (dr_select[i])
-			(void)printf(" bps tps msps ");
+			(void)printf(" sps tps msps ");
 	(void)printf(" us ni sy id\n");
 }
 
 void
-stats(dn)
-	int dn;
+dkstats()
 {
-	double atime, words, xtime, itime;
+	register int dn;
+	double atime, itime, msps, words, xtime;
 
-	if (dk_wpms[dn] == 0) {
-		(void)printf("%4.0f%4.0f%5.1f ", 0.0, 0.0, 0.0);
-		return;
+	for (dn = 0; dn < dk_ndrive; ++dn) {
+		if (!dr_select[dn])
+			continue;
+		words = cur.dk_wds[dn] * 32;		/* words xfer'd */
+		(void)printf("%4.0f",			/* sectors */
+		    words / (DEV_BSIZE / 2) / etime);
+
+		(void)printf("%4.0f", cur.dk_xfer[dn] / etime);
+
+		if (dk_wpms[dn] && cur.dk_xfer[dn]) {
+			atime = cur.dk_time[dn];	/* ticks disk busy */
+			atime /= (float)hz;		/* ticks to seconds */
+			xtime = words / dk_wpms[dn];	/* transfer time */
+			itime = atime - xtime;		/* time not xfer'ing */
+			if (itime < 0)
+				msps = 0;
+			else 
+				msps = itime * 1000 / cur.dk_xfer[dn];
+		} else
+			msps = 0;
+		(void)printf("%5.1f ", msps);
 	}
-	atime = cur.dk_time[dn];
-	atime /= (float)hz;
-	words = cur.dk_wds[dn] * 32.0;	/* number of words transferred */
-	xtime = words / dk_wpms[dn];	/* transfer time */
-	itime = atime - xtime;		/* time not transferring */
-	if (xtime < 0)
-		itime += xtime, xtime = 0;
-	if (itime < 0)
-		xtime += itime, itime = 0;
-	(void)printf("%4.0f", words / 512 / etime);
-	(void)printf("%4.0f", cur.dk_xfer[dn] / etime);
-	(void)printf("%5.1f ",
-	    cur.dk_seek[dn] ? itime * 1000. / cur.dk_seek[dn] : 0.0);
 }
 
 void
-stat1(state)
-	int state;
+cpustats()
 {
-	register int i;
+	register int state;
 	double time;
 
 	time = 0;
-	for (i = 0; i < CPUSTATES; i++)
-		time += cur.cp_time[i];
-	if (time == 0.0)
-		time = 1.0;
-	(void)printf("%3.0f", 100. * cur.cp_time[state] / time);
+	for (state = 0; state < CPUSTATES; ++state)
+		time += cur.cp_time[state];
+	for (state = 0; state < CPUSTATES; ++state)
+		(void)printf("%3.0f",
+		    100. * cur.cp_time[state] / (time ? time : 1));
 }
 
 void
