@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)comm.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)comm.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 #define LB 256
 int	one;
@@ -160,7 +160,7 @@ char *s;
 	if(s[0]=='-' && s[1]==0)
 		b = stdin;
 	else if((b=fopen(s,"r")) == NULL) {
-		fprintf(stderr,"comm: cannot open %s\n",s);
+		perror(s);
 		exit(1);
 	}
 	return(b);

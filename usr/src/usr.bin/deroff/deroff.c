@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)deroff.c	4.3	(Berkeley)	82/11/06";
+static char sccsid[] = "@(#)deroff.c	4.4	(Berkeley)	83/04/29";
 #endif not lint
 
 #include <stdio.h>
@@ -221,8 +221,11 @@ register char *p;
 {
 	FILE *fd;
 
-	if( (fd = fopen(p, "r")) == NULL)
-		fatal("Cannot open file %s\n", p);
+	if( (fd = fopen(p, "r")) == NULL) {
+		fprintf(stderr, "Deroff: ");
+		perror(p);
+		exit(1);
+	}
 
 	return(fd);
 }
