@@ -1,193 +1,186 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1991 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)exec.3	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH EXECL 3 ""
+.\"	@(#)exec.3	6.3 (Berkeley) %G%
+.\"
+.TH EXEC 3 ""
 .UC 5
 .SH NAME
-execl, execv, execle, execlp, execvp, exec, execve, exect, environ \- execute a file
+execl, execlp, execle, exect, execv, execvp \- execute a file
 .SH SYNOPSIS
 .nf
-.B execl(name, arg0, arg1, ..., argn, 0)
-.B char *name, *arg0, *arg1, ..., *argn;
-.PP
-.B execv(name, argv)
-.B char *name, *argv[];
-.PP
-.B "execle(name, arg0, arg1, ..., argn, 0, envp)"
-.B "char *name, *arg0, *arg1, ..., *argn, *envp[];"
-.PP
-.B "exect(name, argv, envp)
-.B "char *name, *argv[], *envp[];
-.PP
-.B extern char **environ;
+.ft B
+extern char **environ;
+.sp
+execl(const char *path, const char *arg, ...);
+execlp(const char *file, const char *arg, ...);
+execle(const char *path, const char *arg, ...,
+.ti +5
+char *const envp[]);
+exect(const char *path, char *const argv[],
+.ti +5
+char *const envp[]);
+execv(const char *path, char *const argv[]);
+execvp(const char *file, char *const argv[]);
+.ft R
 .fi
 .SH DESCRIPTION
-These routines provide various interfaces to the
-.I execve 
-system call.  Refer to 
-.IR  execve (2)
-for a description of their properties; only
-brief descriptions are provided here.
+The exec family of functions replaces the current process image with a
+new process image.
+The functions described in this manual page are front-ends for the function
+.IR execve (2).
+(See the manual page for
+.I execve
+for detailed information about the replacement of the current process.)
 .PP
-.I Exec
-in all its forms
-overlays the calling process with the named file, then
-transfers to the
-entry point of the core image of the file.
-There can be no return from a successful exec; the calling
-core image is lost.
+The initial argument for these functions is the pathname of a file which
+is to be executed.
+.PP
+The ``const char *arg'' and subsequent ellipses in the
+.IR execl ,
+.IR execlp ,
+and
+.I execle
+functions can be thought of as
+.IR arg0 ,
+.IR arg1 ,
+\&...,
+.IR argn .
+Together they describe a list of one or more pointers to null-terminated
+strings that represent the argument list available to the executed program.
+The first argument, by convention, should point to the file name associated
+with the file being executed.
+The list of arguments
+.B must
+be terminated by a NULL pointer.
 .PP
 The
-.I name
-argument
-is a pointer to the name of the file
-to be executed.
-The pointers
-.IR arg [ 0 ],
-.IR arg [ 1 "] ..."
-address null-terminated strings.
-Conventionally
-.IR arg [ 0 ]
-is the name of the
-file.
-.PP
-Two interfaces are available.
-.I execl
-is useful when a known file with known arguments is
-being called;
-the arguments to
-.I execl
-are the character strings
-constituting the file and the arguments;
-the first argument is conventionally
-the same as the file name (or its last component).
-A 0 argument must end the argument list.
-.PP
-The
-.I execv
-version is useful when the number of arguments is unknown
-in advance;
-the arguments to
-.I execv
-are the name of the file to be
-executed and a vector of strings containing
-the arguments.
-The last argument string must be followed
-by a 0 pointer.
-.PP
-The
-.I exect
-version is used when the executed file is to be
-manipulated with 
-.IR ptrace (2).
-The program is forced to single step a single
-instruction giving the parent an opportunity to
-manipulate its state.  On the VAX-11 this is done
-by setting the trace bit in the process status
-longword.
-.PP
-When a C program is executed,
-it is called as follows:
-.PP
-.nf
-	main(argc, argv, envp)
-	int argc;
-	char **argv, **envp;
-.fi
-.PP
-where
-.I argc
-is the argument count
-and
-.I argv 
-is an array of character pointers
-to the arguments themselves.
-As indicated,
-.I argc
-is conventionally at least one
-and the first member of the array points to a
-string containing the name of the file.
-.PP
-.I Argv
-is directly usable in another
-.I execv
-because
-.IR argv [ argc ]
-is 0.
-.PP
-.I Envp
-is a pointer to an array of strings that constitute
-the
-.I environment
-of the process.
-Each string consists of a name, an \*(lq=\*(rq, and a null-terminated value.
-The array of pointers is terminated by a null pointer.
-The shell
-.IR sh (1)
-passes an environment entry for each global shell variable
-defined when the program is called.
-See
-.IR environ (7)
-for some conventionally
-used names.
-The C run-time start-off routine places a copy of
-.I envp
-in the global cell
-.IR environ ,
-which is used
-by
-.I execv
-and
-.I execl
-to pass the environment to any subprograms executed by the
-current program.
-.PP
-.I Execlp
-and
-.I execvp
-are called with the same arguments as
-.I execl
-and
+.IR exect ,
 .IR execv ,
-but duplicate the shell's actions in searching for an executable
-file in a list of directories.
-The directory list is obtained from the environment.
-.SH FILES
-.ta \w'/bin/sh  'u
-/bin/sh	shell, invoked if command file found
-by
-.I execlp
-or
-.I execvp
-.SH "SEE ALSO"
-execve(2),
-fork(2),
-environ(7),
-csh(1)
-.SH DIAGNOSTICS
-If the file cannot be found,
-if it is not executable,
-if it does not start with a valid magic number (see
-.IR a.out (5)),
-if maximum memory is exceeded,
-or if the arguments require too much space,
-a return
-constitutes the diagnostic;
-the return value is \-1.
-Even for the super-user,
-at least one of the execute-permission bits must be set for
-a file to be executed.
-.SH BUGS
-If
-.I execvp
-is called to execute a file that turns out to be a shell
-command file,
-and if it is impossible to execute the shell,
-the values of
-.I argv[0]
 and
-.I argv[\-1]
-will be modified before return.
+.I execvp
+functions provide an array of pointers to null-terminated strings that
+represent the argument list available to the new program.
+The first argument, by convention, should point to the file name associated
+with the file begin executed.
+The array of pointers
+.B must
+be terminated by a NULL pointer.
+.PP
+The
+.I execle
+and
+.I exect
+functions also specify the environment of the executed process by following
+the NULL pointer that terminates the list of arguments in the parameter list
+or the pointer to the argv array with an additional parameter.
+This additional parameter is an array of pointers to null-terminated strings
+and
+.B must
+be terminated by a NULL pointer.
+The other functions take the environment for the new process image from the
+external variable
+.I environ
+in the current process.
+.PP
+Some of these functions have special semantics.
+.PP
+The functions
+.I execlp
+and
+.I execvp
+will duplicate the actions of the shell in searching for an executable file
+if the specified file name does not contain a slash (``/'') character.
+The search path is the path specified in the environment by ``PATH'' variable.
+If this variable isn't specified, the default path ``/bin:/usr/bin:'' is
+used.
+In addtion, certain errors are treated specially.
+.PP
+If permission is denied for a file (the attempted
+.I execve
+returned EACCES), these functions will continue searching the rest of
+the search path.
+If no other file is found, however, they will return with
+.I errno
+set to EACCES.
+.PP
+If the header of a file isn't recognized (the attempted
+.I execve
+returned ENOEXEC), these functions will execute the shell with the path of
+the file as its first argument.
+(If this attempt fails, no further searching is done.)
+.PP
+If the file is currently busy (the attempted
+.I execve
+returned ETXTBUSY), these functions will sleep for several seconds,
+periodically re-attempting to execute the file.
+.PP
+The function
+.I exect
+executes a file with the program tracing facilities enabled (see
+.IR ptrace (2)).
+.SH "RETURN VALUE"
+If any of the
+.I exec
+functions returns, an error will have occurred.
+The return value is -1, and
+.I errno
+will be set to indicate the error.
+.SH ERRORS
+.IR Execl ,
+.IR execle ,
+.I execlp
+and
+.I execvp
+may fail and set
+.I errno
+for any of the errors specified for the library functions
+.IR execve (2)
+and
+.IR malloc (3).
+.PP
+.I Exect
+and
+.I execv
+may fail and set
+.I errno
+for any of the errors specified for the library function
+.IR execve (2).
+.SH FILES
+/bin/sh		The shell.
+.SH "SEE ALSO"
+sh(1), execve(2), fork(2),  ptrace(2), environ(7),
+.SH COMPATIBILITY
+Historically, the default path for the
+.I execlp
+and
+.I execvp
+functions was ``:/bin:/usr/bin''.
+This was changed to place the current directory last to enhance system
+security.
+.PP
+The behavior of
+.I execlp
+and
+.I execvp
+when errors occur while attempting to execute the file is historic
+practice, but has not traditionally been documented and is not specified
+by the POSIX standard.
+.PP
+Traditionally, the functions
+.I execlp
+and
+.I execvp
+ignored all errors except for the ones described above and ENOMEM and
+E2BIG, upon which they returned.
+They now return if any error other than the ones described above occurs.
+.SH STANDARDS
+.IR Execl ,
+.IR execv ,
+.IR execle ,
+.IR execlp
+and
+.I execvp
+conform to IEEE Std 1003.1-1988 (``POSIX'').
