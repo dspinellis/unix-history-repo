@@ -54,8 +54,15 @@
 .\" NS iI local register (indent for inline debug mode)
 .\" NS mN name of calling request (set in each user requestable macro)
 .de aV
-.nr aC+1
-.ds A\\n(aC \\$1
+.nr aC \\n(aC+1
+.ie "\\$1"|" \{\
+.	if "\\*(mN"Op" .ds A\\n(aC \fR\\$1\fP
+.	if "\\*(mN"Ar" .ds A\\n(aC \fR\\$1\fP
+.	if "\\*(mN"Fl" .ds A\\n(aC \fR\\$1\fP
+.	if "\\*(mN"Cm" .ds A\\n(aC \fR\\$1\fP
+.	if "\\*(mN"It" .ds A\\n(aC \fR\\$1\fP
+.\}
+.el .ds A\\n(aC \\$1
 .aU \\n(aC
 .nr C\\n(aC \\n(aT
 .s\\n(aT
@@ -105,7 +112,14 @@
 .el .aV \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
 ..
 .de fV
-.nr aC+1
+.nr aC \\n(aC+1
+.if "\\*(A\\n(aC"|" \{\
+.	if "\\*(mN"Op" .ds A\\n(aC \fR\\*(A\\n(aC\fP
+.	if "\\*(mN"Ar" .ds A\\n(aC \fR\\*(A\\n(aC\fP
+.	if "\\*(mN"Fl" .ds A\\n(aC \fR\\*(A\\n(aC\fP
+.	if "\\*(mN"Cm" .ds A\\n(aC \fR\\*(A\\n(aC\fP
+.	if "\\*(mN"It" .ds A\\n(aC \fR\\*(A\\n(aC\fP
+.\}
 .aU \\n(aC
 .nr C\\n(aC \\n(aT
 .s\\n(aT
@@ -154,27 +168,28 @@
 .	\}
 .\}
 .el \{\
-.	nr fV-1
+.	nr fV \\n(fV-1
 .	fV
 .\}
 ..
 .\" NS aX macro - stuff saved strings into `b1' (used by -diag list)
 .de aX
-.nr aP+1
+.nr aP \\n(aP+1
 .as b1 \&\\*(A\\n(aP
 .ie \\n(fV==1 \{\
 .	nr aP 0
 .	nr fV 0
 .\}
 .el \{\
-.	nr fV-1
+.	as b1 \&\\*(sV
+.	nr fV \\n(fV-1
 .	aX
 .\}
 ..
 .\" NS aI macro - append arg to arg vector: .aI [arg] [type] (used by .En only)
 .de aI
 .ie \\n(aC<9 \{\
-.	nr aC+1
+.	nr aC \\n(aC+1
 .	ds A\\n(aC \\$1
 .	nr C\\n(aC \\$2
 .	s\\$2
@@ -228,7 +243,7 @@
 .\" NS b2 string save of buffer
 .\" NS lK register count of lines read from input file
 .de x1
-.nr dZ+1
+.nr dZ \\n(dZ+1
 .ds b2 \\*(b1
 .ds b1
 .nr lK \\n(.c
@@ -250,7 +265,7 @@
 .el .ds b1 \\*(b2\\*(b1
 \&\\*(b1
 .rm eB b2 b0 b1
-.nr dZ-1
+.nr dZ \\n(dZ-1
 ..
 .\" NS Fl macro - flags (appends - and prints flags)
 .\" NS cF register save current font
@@ -273,7 +288,7 @@
 .		aZ
 .	\}
 .	el \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		ie \\n(C\\n(aP==1 \{\
 .			as b1 \&\|\-\fP\s0
 .			\\*(A\\n(aP
@@ -314,7 +329,7 @@
 .		aZ
 .	\}
 .	el \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		ie ((\\n(C\\n(aP==3)&(\\n(C\\n(jN==4)) .as b1 \&\|\-
 .		el .as b1 \&\\*(S\\n(jN
 .		fR \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
@@ -342,7 +357,7 @@
 .		aZ
 .	\}
 .	el \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		as b1 \&\\*(S\\n(jN
 .		nR
 .	\}
@@ -369,7 +384,7 @@
 .		aZ
 .	\}
 .	el \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		ie \\n(C\\n(aP==1 \{\
 .			as b1 \&file\ ...\fP\s0
 .			\\*(A\\n(aP
@@ -396,7 +411,7 @@
 .\}
 .if \\n(aC>\\n(aP \{\
 .	as b1 \\*(aD
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       nR
@@ -425,23 +440,24 @@
 .br
 .if \\n(aC>\\n(aP \{\
 .	as b1 \\*(nM
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
-.	if \\n(nS \{\
+.	ie \\n(nS \{\
 .		if "\\*(mN"Cd" \{\
 .			rs
-.			in -\\n(iSu
 .			ie \\n(nS>1 .br
 .			el \{\
-.				if \\n(iS==0 .nr iS Dsu
+.				if \\n(iS==0 .nr iS \\n(Dsu
 .			\}
 .			in +\\n(iSu
 .			ti -\\n(iSu
 .			nr nS \\n(nS+1
 .		\}
+.	nR
+.	in -\\n(iSu
 .	\}
-.       nR
+.	el .nR
 .\}
 ..
 .\" NS Cm macro - Interactive command modifier (flag)
@@ -450,12 +466,22 @@
 .       ie \\n(.$==0 .tm Usage: .Cm Interactive command modifier ... \\*(Pu (#\\n(.c)
 .	el \{\
 .		ds mN Cm
-.		aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.               ds A1 \\$1
+.               ds A2 \\$2
+.               ds A3 \\$3
+.               ds A4 \\$4
+.               ds A5 \\$5
+.               ds A6 \\$6
+.               ds A7 \\$7
+.               ds A8 \\$8
+.               ds A9 \\$9
+.		nr fV \\n(.$
+.		fV
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
 .	as b1 \\*(cM
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       nR
@@ -472,7 +498,7 @@
 .\}
 .if \\n(aC>\\n(aP \{\
 .	as b1 \\*(eR
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       nR
@@ -501,7 +527,7 @@
 .\}
 .if \\n(aC>\\n(aP \{\
 .	as b1 \\*(eM
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       nR
@@ -518,7 +544,7 @@
 .\}
 .if \\n(aC>\\n(aP \{\
 .	as b1 \\*(eR
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       nR
@@ -535,7 +561,7 @@
 .\}
 .if \\n(aC>\\n(aP \{\
 .	as b1 \\*(eV
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       nR
@@ -543,11 +569,17 @@
 ..
 .\" NS Fd macro - function declaration - not callable (& no err check)
 .\" NS fD register subroutine test (in synopsis only)
-.\" NS fY register subroutine count (in synopsis only)
+.\" NS fY register subroutine count (in synopsis only) (fortran only)
 .\" NS fZ register also subroutine count (in synopsis only)
 .de Fd
 .ds mN Fd
 .if \\n(nS>0 \{\
+.\"	if a variable type was the last thing given, want vertical space
+.	if \\n(fX>0 \{\
+.		Pp
+.		nr fX 0
+.	\}
+.\"	if a subroutine was the last thing given, want vertical space
 .	if \\n(fZ>0 \{\
 .		ie \\n(fD==0 \{\
 .			Pp
@@ -555,9 +587,7 @@
 .		\}
 .		el .br
 .	\}
-.	nr fD+1
-.	nr fZ+1
-.	nr fY+1
+.	nr fD \\n(fD+1
 .\}
 .nr cF \\n(.f
 .nr cZ \\n(.s
@@ -577,7 +607,7 @@
 .\}
 .if \\n(aC>\\n(aP \{\
 .	as b1 \\*(aR
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       nR
@@ -594,7 +624,7 @@
 .\}
 .if \\n(aC>\\n(aP \{\
 .	as b1 \\*(iC
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       nR
@@ -621,7 +651,24 @@
 .\}
 .if \\n(aC>\\n(aP \{\
 .	as b1 \\*(lI
-.	nr aP+1
+.	nr aP \\n(aP+1
+.       nr cF \\n(.f
+.	nr cZ \\n(.s
+.       nR
+.\}
+..
+.\" NS Or macro - Pipe symbol (OR)
+.de Or
+.if \\n(aC==0 \{\
+.       ie \\n(.$==0 .tm Usage: .Or ... \\*(Pu (#\\n(.c)
+.	el \{\
+.		ds mN Or
+.		aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.	\}
+.\}
+.if \\n(aC>\\n(aP \{\
+.	as b1 \\*(iC
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       nR
@@ -638,7 +685,7 @@
 .\}
 .if \\n(aC>\\n(aP \{\
 .	as b1 \\*(sY
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       nR
@@ -648,7 +695,6 @@
 .\" NS n1 string - save first invocation of .Nm
 .\" NS iS register - indent second command line in a synopsis
 .de Nm
-.as b1 \\*(nM
 .if \\n(aC==0 \{\
 .	ie \\n(.$==0 \{\
 .		ie "\\*(n1"" .tm Usage: .Nm Name(s) ... \\*(Pu (#\\n(.c)
@@ -675,7 +721,8 @@
 .		aZ
 .	\}
 .	el \{\
-.		nr aP+1
+.		as b1 \\*(nM
+.		nr aP \\n(aP+1
 .		ie \\n(C\\n(aP==1 \{\
 .			as b1 \&\\*(n1\fP\s0
 .			\\*(A\\n(aP
@@ -718,7 +765,7 @@
 .\}
 .if \\n(aC>\\n(aP \{\
 .	as b1 \\*(pA
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       nR
@@ -745,7 +792,7 @@
 .\}
 .if \\n(aC>\\n(aP \{\
 .	as b1 \\*(sY
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       nR
@@ -762,7 +809,7 @@
 .\}
 .if \\n(aC>\\n(aP \{\
 .	as b1 \\*(tN
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       nR
@@ -779,7 +826,7 @@
 .\}
 .if \\n(aC>\\n(aP \{\
 .	as b1 \\*(tN
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       rR
@@ -796,7 +843,7 @@
 .\}
 .if \\n(aC>\\n(aP \{\
 .	as b1 \\*(vA
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       nR
@@ -814,7 +861,7 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.       nr aP+1
+.	nr aP \\n(aP+1
 .       ie \\n(C\\n(aP==1 \{\
 .		\\*(A\\n(aP
 .       \}
@@ -893,9 +940,9 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	nr aP+1
+.	nr aP \\n(aP+1
 .	ds qL \\*(A\\n(aP
-.	nr aP+1
+.	nr aP \\n(aP+1
 .	ds qR \\*(A\\n(aP
 .	ie \\n(aC>\\n(aP .c\\n(C\\n(aP
 .	el .aZ
@@ -915,7 +962,7 @@
 .		pB
 .	\}
 .	el \{\
-.		as mN (En)
+.\".		as mN (En)
 .		aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
 .	\}
 .\}
@@ -928,14 +975,15 @@
 .		ie \\n(C\\n(aC==3 \{\
 .			nr aJ \\n(aC-1
 .			vR
-.			nr aJ+1
+.			nr aJ \\n(aJ+1
 .			ds A\\n(aJ \&\\*(qR\\*(A\\n(aJ
+.			nr aJ 0
 .		\}
 .		el .aI \&\\*(qR 3
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		if \\n(C\\n(aP==1 .\\*(A\\n(aP
 .		if \\n(C\\n(aP>1 \{\
-.			nr aP-1
+.			nr aP \\n(aP-1
 .			No
 .		\}
 .	\}
@@ -944,7 +992,7 @@
 .\" NS vR macro - vector routine (for En, trace backwards past trail punct)
 .de vR
 .if \\n(C\\n(aJ==3 \{\
-.	nr aJ-1
+.	nr aJ \\n(aJ-1
 .	vR
 .\}
 ..
@@ -1035,10 +1083,9 @@
 ..
 .\" NS eO macro - enclose string open
 .\" NS oM register (extension possible)
-.nr oM 0
 .de eO
 .as b1 \\*(qL
-.nr oM+1
+.nr oM \\n(oM+1
 .\" .tm eO last arg==A[\\n(aC]==\\*(A\\n(aC; aP==\\n(aP; oM==\\n(oM; dZ==\\n(dZ;
 .if \\n(aC==0 \{\
 .       ie \\n(.$>0 \{\
@@ -1046,7 +1093,7 @@
 .       \}
 .	el \{\
 .		if (\\n(dZ==0)&(\\n(sM==1) \{\
-.			nr dZ+1
+.			nr dZ \\n(dZ+1
 .			ds b2 \\*(b1
 .			ds b1
 .			nr lK \\n(.c
@@ -1058,10 +1105,10 @@
 .\}
 .ie \\n(aC>0 \{\
 .	if \\n(aC>\\n(aP \{\
-.		nr aP +1
+.		nr aP \\n(aP+1
 .		ie \\n(C\\n(aP==1 .\\*(A\\n(aP
 .		el  \{\
-.			nr aP-1
+.			nr aP \\n(aP-1
 .			No
 .		\}
 .	\}
@@ -1080,8 +1127,8 @@
 .\" NS eC macro - enclose string close
 .\" NS aa local register
 .de eC
-.nr oM-1
-.\" .tm eO last arg==A[\\n(aC]==\\*(A\\n(aC; aP==\\n(aP; oM==\\n(oM; dZ==\\n(dZ;
+.nr oM \\n(oM-1
+.\" .tm eC last arg==A[\\n(aC]==\\*(A\\n(aC; aP==\\n(aP; oM==\\n(oM; dZ==\\n(dZ;
 .as b1 \\*(qR
 .if \\n(aC==0 \{\
 .       ie \\n(.$>0 \{\
@@ -1133,7 +1180,7 @@
 .\}
 .el \{\
 .	ie (\\n(aC-\\n(aP)>1 \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		as b1 \&\\*(A\\n(aP
 .	\}
 .	el .tm Warning: trailing prefix Pf)
@@ -1141,7 +1188,7 @@
 .if \\n(aC>0 \{\
 .	ie (\\n(aC-\\n(aP)==0 .aZ
 .	el \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		c\\n(C\\n(aP
 .	\}
 .\}
@@ -1190,7 +1237,7 @@
 .	\}
 .\}
 .if \\n(aC>0 \{\
-.	nr aP+1
+.	nr aP \\n(aP+1
 .	if "\\*(A\\n(aP"on" \{\
 .		ds sV \\*(iV
 .		nr sM 1
@@ -1258,7 +1305,7 @@
 .\" NS xX local register
 .\" NS aa local register
 .de s0
-.tm MDOC-ERROR: bogus type 0 (can't set space  \\*(A\\n(aC) (#\\n(.c)
+.tm MDOC-ERROR: bogus type 0 (can't set space '\\*(A\\n(aC') (#\\n(.c)
 ..
 .de s1
 .if \\n(\\*(A\\n(aC==3 \{\
@@ -1292,21 +1339,21 @@
 .\" NS c3 macro - call .No if type 3
 .\" NS c4 macro - call .No if type 4
 .de c0
-.tm MDOC-ERROR: bogus class 0 (can't determine \\*(A\\n(aC) (#\\n(.c)
+.tm MDOC-ERROR: bogus class 0 (can't determine '\\*(A\\n(aC') (#\\n(.c)
 ..
 .de c1
 .\\*(A\\n(aP
 ..
 .de c2
-.nr aP-1
+.nr aP \\n(aP-1
 .No
 ..
 .de c3
-.nr aP-1
+.nr aP \\n(aP-1
 .No
 ..
 .de c4
-.nr aP-1
+.nr aP \\n(aP-1
 .No
 ..
 .\" NS y1 macro - ignore if class 1
@@ -1321,12 +1368,12 @@
 ..
 .de y3
 .as b1 \\*(A\\n(aP
-.nr aP+1
+.nr aP \\n(aP+1
 .n\\C\\n(aP
 ..
 .de y4
 .as b1 \\*(A\\n(aP
-.nr aP+1
+.nr aP \\n(aP+1
 .n\\C\\n(aP
 ..
 .\"--------------------------------------------------------------------------
@@ -1337,12 +1384,12 @@
 .ie \\n(.$>0 \{\
 .	nr bF \\n(.f
 .	nr bZ \\n(.s
-.	if "\\$1"Em" \&\\*(eM
-.	if "\\$1"Li" \&\\*(lI
-.	if "\\$1"Sy" \&\\*(sY
-.	if "\\$1"-emphasis" \&\\*(eM
-.	if "\\$1"-literal" \&\\*(lI
-.	if "\\$1"-symbolic" \&\\*(sY
+.	if "\\$1"Em" \&\\*(eM\c
+.	if "\\$1"Li" \&\\*(lI\c
+.	if "\\$1"Sy" \&\\*(sY\c
+.	if "\\$1"-emphasis" \&\\*(eM\c
+.	if "\\$1"-literal" \&\\*(lI\c
+.	if "\\$1"-symbolic" \&\\*(sY\c
 .\}
 .el .tm Usage .Bf [Em | emphasis | Li | literal | Sy | symbolic] (#\\n(.c)
 ..
@@ -1382,15 +1429,15 @@
 .de Bd
 .ds mN Bd
 .ie \\n(.$==0 \{\
-.tm Usage: .Bd [-literal | -filled | -ragged ] [-offset [string]] [-compact] (#\\n(.c)
+.tm Usage: .Bd [-literal | -filled | -ragged | -unfilled] [-offset [string]] [-compact] (#\\n(.c)
 .\}
 .el \{\
 .	ds aa
 .	nr bV 0
 .       nr iD 0
-.       nr dP+1
+.	nr dP \\n(dP+1
 .       if "\\$1"-literal" \{\
-.               nr iD+1
+.		nr iD \\n(iD+1
 .               ds d\\n(dP dL
 .		nr cF \\n(.f
 .		nr cZ \\n(.s
@@ -1403,13 +1450,18 @@
 .		nf
 .       \}
 .       if "\\$1"-filled" \{\
-.               nr iD+1
+.		nr iD \\n(iD+1
 .               ds d\\n(dP dF
 .		br
 .       \}
 .       if "\\$1"-ragged" \{\
-.               nr iD+1
+.		nr iD \\n(iD+1
 .               ds d\\n(dP dR
+.		na
+.       \}
+.       if "\\$1"-unfilled" \{\
+.		nr iD \\n(iD+1
+.               ds d\\n(dP dU
 .		nf
 .       \}
 .\" .tm Here is argc: \\n(.$ and here is iD \\n(iD
@@ -1417,8 +1469,11 @@
 .		bV \\$2 \\$3 \\$4
 .	\}
 .	if \\n(O\\n(dP>0 'in \\n(.iu+\\n(O\\n(dPu
-.	if (\\n(bV==0)&(\\n(nS==0) \{\
-'		sp \\n(dVu
+.	if (\\n(bV==0) \{\
+.		if (\\n(nS==0) \{\
+.			ie "\\*(d\\n(dP"dR" .sp \\n(dVu
+.			el 'sp \\n(dVu
+.		\}
 .	\}
 .	if \\n(cR==0 .ne 2v
 .	nr bV 0
@@ -1433,30 +1488,30 @@
 .if "\\$1"-offset" \{\
 .	ds bY \\$2
 .	if "\\*(bY"left" \{\
-.		nr iD+1
+.		nr iD \\n(iD+1
 .		nr O\\n(dP 0
 .	\}
 .	if "\\*(bY"right" \{\
-.		nr iD+1
+.		nr iD \\n(iD+1
 .		nr O\\n(dP (\\n(.l/3)u
 .	\}
 .	if "\\*(bY"center" \{\
-.		nr iD+1
+.		nr iD \\n(iD+1
 .		nr O\\n(dP (\\n(.l-\\n(.i)/4u
 .	\}
 .	if "\\*(bY"indent" \{\
-.		nr iD+1
+.		nr iD \\n(iD+1
 .		nr O\\n(dP \\n(dIu
 .	\}
 .	if "\\*(bY"indent-two" \{\
-.		nr iD+1
+.		nr iD \\n(iD+1
 .		nr O\\n(dP \\n(dIu+\\n(dIu
 .	\}
 .	if \\n(iD==1 \{\
-.		nr iD+1
+.		nr iD \\n(iD+1
 .		sW "\\*(bY"
 .		ie \\n(sW>2 \{\
-.			ie ((\\*(bY>9n)&(\\$3<100n)) \{\
+.			ie ((\\*(bY>9n)&(\\*(bY<100n)) \{\
 .				nr O\\n(dP \\*(bY
 .			\}
 .			el .nr O\\n(dP (\\n(sW)*\\n(fWu
@@ -1495,6 +1550,7 @@
 .rm d\\n(dP
 .nr dP \\n(dP-1
 .fi
+.if t .ad
 ..
 .\"--------------------------------------------------------------------------
 .\" NS Bl macro - begin list (.Bl list-type)
@@ -1506,7 +1562,7 @@
 .el \{\
 .	ds mN Bl
 .	nr aP 0
-.	nr lC+1
+.	nr lC \\n(lC+1
 .	ds A1 \\$2
 .	ds A2 \\$3
 .	ds A3 \\$4
@@ -1517,56 +1573,62 @@
 .	ds A8 \\$9
 .	nr fV \\n(.$-1
 .	if "\\$1"-hang" \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		ds L\\n(lC hL
 .		nr w\\n(lC 6n
 .		nr tC  1
 .	\}
 .	if "\\$1"-tag" \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		ds L\\n(lC tL
 .		nr tC  1
 .	\}
 .	if "\\$1"-item" \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		ds L\\n(lC iT
 .		nr tC  1
 .	\}
 .	if "\\$1"-enum" \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		ds L\\n(lC nU
 .		nr w\\n(lC 2n
 .		nr tC  1
 .	\}
 .	if "\\$1"-bullet" \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		ds L\\n(lC bU
 .		nr w\\n(lC 2n
 .		nr tC  1
 .	\}
 .	if "\\$1"-dash" \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
+.		ds L\\n(lC hU
+.		nr w\\n(lC 2n
+.		nr tC  1
+.	\}
+.	if "\\$1"-hyphen" \{\
+.		nr aP \\n(aP+1
 .		ds L\\n(lC hU
 .		nr w\\n(lC 2n
 .		nr tC  1
 .	\}
 .	if "\\$1"-inset" \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		ds L\\n(lC lL
 .		nr tC  1
 .	\}
 .	if "\\$1"-diag" \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		ds L\\n(lC mL
 .		nr mL 1
 .	\}
 .	if "\\$1"-ohang" \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		ds L\\n(lC oL
 .		nr tC 1
 .	\}
 .	if "\\$1"-column" \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		ds L\\n(lC cL
 .	\}
 .	ie \\n(aP==0 \{\
@@ -1594,13 +1656,14 @@
 .		\}
 .	\}
 .	nr aP 0
+.\" .	ds b1
 .	aY
 .\" .tm Here is L[\\n(lC]==\\*(L\\n(lC
 .\}
 ..
 .\" NS lV macro - resolve remaining .Bl arguments
 .de lV
-.nr aP+1
+.nr aP \\n(aP+1
 .if \\n(fV>=\\n(aP \{\
 .	nr iD 0
 .	if "\\*(A\\n(aP"-compact" \{\
@@ -1609,7 +1672,7 @@
 .	\}
 .	if "\\*(A\\n(aP"-width" \{\
 .		nr iD 1
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		nr tW 1
 .		ds t\\n(lC TagwidtH
 .		ds tS \\*(A\\n(aP
@@ -1635,7 +1698,7 @@
 .	\}
 .	if "\\*(A\\n(aP"-offset" \{\
 .		nr iD 1
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		ie "\\*(A\\n(aP"indent" \{\
 .			nr o\\n(lC \\n(Dsu
 .		\}
@@ -1656,7 +1719,7 @@
 .	\}
 .	if \\n(iD==0 \{\
 .		if "\\*(L\\n(lC"cL" \{\
-.			nr wV+1
+.			nr wV \\n(wV+1
 .			ds A\\n(wV \\*(A\\n(aP
 .		\}
 .	\}
@@ -1682,25 +1745,28 @@
 .	if \\n(mL>0 \{\
 .		nr iD 1
 .		nr mL 0
+.		tZ
+.		nr lC \\n(lC-1
+.		tY
 .	\}
 .	if "\\*(L\\n(lC"iT" \{\
 '		in \\n(.iu-\\n(o\\n(lCu
 .		tZ
-.		nr lC-1
+.		nr lC \\n(lC-1
 .		tY
 .		nr iD 1
 .	\}
 .	if "\\*(L\\n(lC"oL" \{\
 '		in \\n(.iu-\\n(o\\n(lCu
 .		tZ
-.		nr lC-1
+.		nr lC \\n(lC-1
 .		tY
 .		nr iD 1
 .	\}
 .	if "\\*(L\\n(lC"lL" \{\
 '		in \\n(.iu-\\n(o\\n(lCu
 .		tZ
-.		nr lC-1
+.		nr lC \\n(lC-1
 .		tY
 .		nr iD 1
 .	\}
@@ -1756,9 +1822,9 @@
 .		fV
 .\" .tm It list-type==\\*(L\\n(lC, aP==\\n(aP
 .\" .tm It beg arg(A[1])==\\*(A1; oM==\\n(oM; dZ==\\n(dZ; Xt==\\n(Xt; aC==\\n(aC
-.		nr oM+1
+.		nr oM \\n(oM+1
 .		nr tP 1
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		nr tX \\n(C\\n(aP
 .		ds tX \\*(A\\n(aP
 .		if \\n(nF==1 \{\
@@ -1769,7 +1835,7 @@
 .			\\*(A\\n(aP
 .		\}
 .		el \{\
-.			nr aP-1
+.			nr aP \\n(aP-1
 .			No
 .		\}
 .		ie \\n(Xt==1 .ds xB \&\\*(L\\n(lC
@@ -1784,9 +1850,9 @@
 .lY
 .br
 \&\\*(b1
-.nr oM-1
+.nr oM \\n(oM-1
 .nr tP 0
-.dZ+1
+.\" .nr dZ \\n(dZ+1
 .ds b1
 .aY
 'fi
@@ -1799,8 +1865,8 @@
 .\" .ie \w'\\*(b1'u>=(\\n(w\\n(lCu) \&\\*(b1\\*(lS
 .ie \w\\*(b1u>=(\\n(w\\n(lCu) \&\\*(b1
 .el \&\\*(b1\h'|\\n(bbu'\c
-.nr oM-1
-.dZ+1
+.nr oM \\n(oM-1
+.\" .nr dZ \\n(dZ+1
 .ds b1
 .nr tP 0
 .aY
@@ -1811,8 +1877,8 @@
 .lY
 \&\\*(b1
 .br
-.nr oM-1
-.dZ+1
+.nr oM \\n(oM-1
+.\" .nr dZ \\n(dZ+1
 .ds b1
 .nr tP 0
 .aY
@@ -1822,6 +1888,7 @@
 .de iT
 .lY
 .br
+.\" .ds b1
 .aY
 'fi
 ..
@@ -1830,20 +1897,20 @@
 .\" NS hU macro - Hyphen paragraph list (sub bullet list)
 .\" NS bU macro - Bullet paragraph list
 .de nU
-.nr oM+1
-.nr nU+1
+.nr oM \\n(oM+1
+.nr nU \\n(nU+1
 .ds b1 \&\\n(nU
 .uL
 ..
 .de bU
-.nr oM+1
-.nr bU+1
+.nr oM \\n(oM+1
+.nr bU \\n(bU+1
 .ds b1 \&\\*(sY\&\(bu\fP
 .uL
 ..
 .de hU
-.nr oM+1
-.nr bU+1
+.nr oM \\n(oM+1
+.nr bU \\n(bU+1
 .ds b1 \&\\*(sY\&\-\fP
 .uL
 ..
@@ -1855,8 +1922,8 @@
 .ie \w\\*(b1u>=(\\n(w\\n(lCu) \&\\*(b1
 .\" .ie \w'\\*(b1'u>=(\\n(w\\n(lCu) \&\\*(b1\0
 .el \&\\*(b1\h'|\\n(bbu'\c
-.nr oM-1
-.dZ+1
+.nr oM \\n(oM-1
+.\" .nr dZ \\n(dZ+1
 .ds b1
 .nr tP 0
 .aY
@@ -1895,9 +1962,9 @@
 .if \\n(nF==1 \{\
 .	if n .ds pA \\*(aA
 .\}
-.nr oM-1
+.nr oM \\n(oM-1
 .nr tP 0
-.dZ+1
+.\" .nr dZ \\n(dZ+1
 .ds b1
 .aY
 'fi
@@ -1983,9 +2050,9 @@
 .	rr o\\n(lC
 .\}
 .el 'in \\n(.iu-\\n(w\\n(lCu-\\n(lSu
-.if \\n(lC<=0 .tm Extraneous .Bl or .El call (#\\n(.c)
+.if \\n(lC<=0 .tm Extraneous .El call (#\\n(.c)
 .tZ
-.nr lC-1
+.nr lC \\n(lC-1
 .tY
 ..
 .\" NS tY macro - set up next block for list
@@ -2007,7 +2074,7 @@
 .rr o\\n(tY
 .rm t\\n(tY
 .rr v\\n(tY
-.nr tY-1
+.nr tY \\n(tY-1
 ..
 .\" initial values
 .nr w1 0
@@ -2026,17 +2093,17 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	nr aP+1
+.	nr aP \\n(aP+1
 .	ie \\n(C\\n(aP==1 .tm Usage: .Xr manpage_name [section#] \\*(Pu (#\\n(.c)
 .	el \{\
 .		ie \\n(C\\n(aP>2 .y\\n(C\\n(aP
 .		el \{\
 .			as b1 \&\\*(xR\\*(A\\n(aP\fP\s0
 .			if \\n(aC>\\n(aP \{\
-.				nr aP+1
+.				nr aP \\n(aP+1
 .				if \\n(C\\n(aP==2 \{\
 .					as b1 \&(\\*(A\\n(aP)
-.					nr aP+1
+.					nr aP \\n(aP+1
 .				\}
 .				if \\n(aC>=\\n(aP \{\
 .					c\\n(C\\n(aP
@@ -2058,7 +2125,7 @@
 .\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	nr aP+1
+.	nr aP \\n(aP+1
 .	as b1 \\*(sX
 .	nr cF \\n(.f
 .	nr cZ \\n(.s
@@ -2074,7 +2141,7 @@
 .ta .5i 1i 1.5i 2i 2.5i 3i 3.5i 4i 4.5i 5i 5.5i 6i 6.5i
 .fi
 .tZ
-.nr lC-1
+.nr lC \\n(lC-1
 .tY
 ..
 .de W1
@@ -2117,7 +2184,7 @@
 .\}
 .ti -\\n(eWu
 .fV
-.nr aP+1
+.nr aP \\n(aP+1
 .ie \\n(aC>=\\n(aP  \{\
 .	if "\\*(A\\n(aP"Ta" \{\
 .		nr jJ \\n(aP-1
@@ -2131,7 +2198,7 @@
 .\" NS Ta macro - append tab (\t)
 .de Ta
 .ie \\n(aC>0 \{\
-.	nr aP+1
+.	nr aP \\n(aP+1
 .	ie \\n(aC>=\\n(aP \{\
 .		if "\\*(A\\n(aP"Ta" \{\
 .			nr jJ \\n(aP-1
@@ -2146,6 +2213,7 @@
 .		rm S\\n(aP
 .		pB
 .		aY
+.\" .		ds b1
 .	\}
 .\}
 .el \{\
@@ -2205,7 +2273,7 @@
 .               ds A9 \\$9
 .		nr fV \\n(.$
 .		fV
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		ie \\n(C\\n(aP==1 .\\*(A\\n(aP
 .		el .No
 .	\}
@@ -2227,10 +2295,26 @@
 .\"
 .\" NS Vt macro - Variable type (for forcing old style variable declarations)
 .de Vt
+.\" if a function declaration was the last thing given, want vertical space
+.if \\n(fD>0 \{\
+.	Pp
+.	nr fD 0
+.\}
+.\"	if a subroutine was the last thing given, want vertical space
+.if \\n(fZ>0 \{\
+.	ie \\n(fX==0 \{\
+.		Pp
+.		rs
+.	\}
+.	el .br
+.\}
+.nr fX \\n(fX+1
 .nr cF \\n(.f
-.ft \\n(vT
-\&\\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.nr cZ \\n(.s
+\\*(fT\&\\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.br
 .ft \\n(cF
+.fs \\n(cZ
 ..
 .\"
 .\" NS Ft macro - Function type
@@ -2239,25 +2323,46 @@
 .if \\n(nS>0 \{\
 .	if \\n(fZ>0 \{\
 .		Pp
+.		nr fD 0
+.		nr fX 0
 .	\}
-.	nr fZ+1
-.	nr fY+1
+.	if \\n(fD>0 \{\
+.		Pp
+.		nr fD 0
+.		nr fX 0
+.	\}
+.	if \\n(fX>0 \{\
+.		Pp
+.		nr fX 0
+.	\}
+.	nr fY 1
 .\}
 .nr cF \\n(.f
 .nr cZ \\n(.s
-.\" .ft \\n(fT
 \&\\*(fT\\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
 .ft \\n(cF
 .fs \\n(cZ
-.br
+.\" .br
 ..
 .\"
 .\" NS Ot macro - Old Function type (fortran - no newline)
 .de Ot
 .if \\n(nS>0 \{\
-.	if \\n(fZ>0 .Pp
-.	nr fZ+1
-.	nr fY+1
+.	if \\n(fZ>0 \{\
+.		Pp
+.		nr fD 0
+.		nr fX 0
+.	\}
+.	if \\n(fD>0 \{\
+.		Pp
+.		nr fD 0
+.		nr fX 0
+.	\}
+.	if \\n(fX>0 \{\
+.		Pp
+.		nr fX 0
+.	\}
+.	nr fY 1
 .\}
 .nr cF \\n(.f
 .ft \\n(fT
@@ -2276,7 +2381,7 @@
 .\}
 .if \\n(aC>\\n(aP \{\
 .	as b1 \\*(fA
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       nR
@@ -2308,34 +2413,51 @@
 .	\}
 .\}
 .if \\n(nS>0 \{\
-.	if (\\n(fY==0) \{\
-.		if \\n(fZ>0 .Pp
-.		nr fZ+1
+.\" if there is/has been more than one subroutine declaration
+.	if \\n(fY==0 \{\
+.		if \\n(fZ>0 \{\
+.			Pp
+.			nr fX 0
+.			nr fD 0
+.		\}
 .	\}
-.	nr fD 0
-.\}
-.if \\n(nS \{\
-.	if "\\*(mN"Fn" \{\
-.		rs
-.	        ie \\n(nS>1 .br
-.	        el \{\
-.			if \\n(iS==0 \{\
-.	                        nr iS ((6)*\\n(fW)u
-.	               \}
-.	        \}
-.	        in +\\n(iSu
-.	        ti -\\n(iSu
-.	        nr nS \\n(nS+1
-.        \}
+.	if \\n(fY==1 \{\
+.		br
+.		nr fX 0
+.		nr fD 0
+.		nr fY 0
+.	\}
+.	if \\n(fD>0 \{\
+.		Pp
+.		nr fX 0
+.	\}
+.	if \\n(fX>0 \{\
+.		Pp
+.		nr fD 0
+.	\}
+.	nr fZ \\n(fZ+1
+.	nr fY 0
+.\" .	if "\\*(mN"Fn" \{\
+.	rs
+.	ie \\n(nS>1 .br
+.	el \{\
+.		if \\n(iS==0 \{\
+.			nr iS ((8)*\\n(fW)u
+.		\}
+.	\}
+.        in +\\n(iSu
+.        ti -\\n(iSu
+.        nr nS \\n(nS+1
+.\" .        \}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	nr aP+1
+.	nr aP \\n(aP+1
 .	nr cF \\n(.f
 .	nr cZ \\n(.s
 .	as b1 \\*(fN\\*(A\\n(aP\fP\s0\\*(lp
 .	ie \\n(aC>\\n(aP \{\
 .		as b1 \\*(fA
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		f\\n(C\\n(aP
 .	\}
 .	el \{\
@@ -2357,10 +2479,20 @@
 .\\*(A\\n(aP
 ..
 .de f2
+.if \\n(nS>0 \{\
+.	ds Fb
+.	nr fB 0
+.	nr Fb 0
+.	fB \\*(A\\n(aP
+.	if \\n(fB>1 \{\
+.		rm A\\n(aP
+.		rn Fb A\\n(aP
+.	\}
+.\}
 .as b1 \\*(A\\n(aP
 .ie \\n(aC>\\n(aP \{\
 .	nr aa \\n(aP
-.	nr aP+1
+.	nr aP \\n(aP+1
 .	if \\n(C\\n(aP==2 \{\
 .		as b1 \&\|\f\\n(cF\s\\n(cZ,\\*(S\\n(aa\fP\s0\|
 .	\}
@@ -2381,10 +2513,28 @@
 .de f4
 .as b1 \\*(rp\f\\n(cF\s\\n(cZ\\*(S\\n(aP\\*(A\\n(aP
 .ie \\n(aC>\\n(aP \{\
-.	nr aP+1
+.	nr aP \\n(aP+1
 .	No
 .\}
 .el .aZ
+..
+.\" NS fb macro - if SYNOPSIS, set hard space inbetween function args
+.\" NS fb register - count of words in a function argument
+.\" NS Fb register - counter
+.\" NS Fb string - temporary string
+.de fB
+.\" .tm fB==\\n(fB, Fb==\\n(Fb, 1==\\$1 2==\\$2 3==\\$3 4==\\$4 5==\\$5 6==\\$6
+.if \\n(fB==0 \{\
+.	nr fB \\n(.$
+.	nr Fb 0
+.	ds Fb
+.\}
+.nr Fb \\n(Fb+1
+.as Fb \&\\$1
+.if \\n(Fb<\\n(fB \{\
+.	as Fb \&\\*(hV
+.	fB \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.\}
 ..
 .\" NS Fc - Function close - not implemented yet
 .\" NS Fo - Function open - not implemented yet
@@ -2424,9 +2574,10 @@
 .nr vK 0
 .nr dK 0
 .nr pK 0
+.nr bK 0
 .ds rS
 .rm U1 U2 U3 U4 U5 U6 U7 U8
-.rm uK jK nK oK rK qK tK vK dK pK
+.rm uK jK nK oK rK qK tK vK dK pK bK
 ..
 .\" NS rZ macro - reference print
 .de rZ
@@ -2435,10 +2586,10 @@
 .	if (\\n(uK>1 \{\
 .		aK
 .	\}
-.	nr Kl-\\n(uK
+.	nr Kl -\\n(uK
 .\}
 .if \\n(tK \{\
-.	nr Kl-1
+.	nr Kl \\n(Kl-1
 .	if \\n(Kl==0 \{\
 .		ie (\\n(jK==1):(\\n(bK==1) \{\&\\*q\\*(tK\\*q.
 .		\}
@@ -2453,47 +2604,47 @@
 .	\}
 .\}
 .if \\n(bK \{\
-.	nr Kl-1
+.	nr Kl \\n(Kl-1
 .	if \\n(Kl==0 \&\\*(eM\\*(bK\\*(nO.
 .	if \\n(Kl>0 \&\\*(eM\\*(bK\\*(nO,
 .\}
 .if \\n(jK \{\
-.	nr Kl-1
+.	nr Kl \\n(Kl-1
 .	if \\n(Kl==0 \&\\*(eM\\*(jK\\*(nO.
 .	if \\n(Kl>0 \&\\*(eM\\*(jK\\*(nO,
 .\}
 .if \\n(rK \{\
-.	nr Kl-1
+.	nr Kl \\n(Kl-1
 .	if \\n(Kl==0 \&\\*(rK.
 .	if \\n(Kl>0 \&\\*(rK,
 .\}
 .if \\n(nK \{\
-.	nr Kl-1
+.	nr Kl \\n(Kl-1
 .	if \\n(Kl==0 \&\\*(nK.
 .	if \\n(Kl>0 \&\\*(nK,
 .\}
 .if \\n(vK \{\
-.	nr Kl-1
+.	nr Kl \\n(Kl-1
 .	if \\n(Kl==0 \&\\*(vK.
 .	if \\n(Kl>0 \&\\*(vK,
 .\}
 .if \\n(pK \{\
-.	nr Kl-1
+.	nr Kl \\n(Kl-1
 .	if \\n(Kl==0 \&\\*(pK.
 .	if \\n(Kl>0 \&\\*(pK,
 .\}
 .if \\n(qK \{\
-.	nr Kl-1
+.	nr Kl \\n(Kl-1
 .	if \\n(Kl==0 \&\\*(qK.
 .	if \\n(Kl>0 \&\\*(qK,
 .\}
 .if \\n(dK \{\
-.	nr Kl-1
+.	nr Kl \\n(Kl-1
 .	if \\n(Kl==0 \&\\*(dK.
 .	if \\n(Kl>0 \&\\*(dK,
 .\}
 .if \\n(oK \{\
-.	nr Kl-1
+.	nr Kl \\n(Kl-1
 .	if \\n(Kl==0 \&\\*(oK.
 .	if \\n(Kl>0 \&\\*(oK,
 .\}
@@ -2501,7 +2652,7 @@
 ..
 .\" NS aK macro - print out reference authors
 .de aK
-.nr aK+1
+.nr aK \\n(aK+1
 .ie (\\n(uK-\\n(aK)==0 \{\&and \\*(U\\n(aK,
 .\}
 .el \{\&\\*(U\\n(aK,
@@ -2515,15 +2666,15 @@
 .if \\n(aC==0 \{\
 .       ie \\n(.$==0 .tm Usage: .%A Author_name (#\\n(.c)
 .	el \{\
-.		nr uK+1
-.		nr Kl+1
+.		nr uK \\n(uK+1
+.		nr Kl \\n(Kl+1
 .		ds rS U\\n(uK
 .		ds mN %A
 .		aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       rR
@@ -2537,8 +2688,8 @@
 .       ie \\n(.$==0 .tm Usage: .%B Book Name (#\\n(.c)
 .       el \{\
 .		ds mN %B
-.		nr bK+1
-.		nr Kl+1
+.		nr bK \\n(bK+1
+.		nr Kl \\n(Kl+1
 .		ds rS bK
 .               ds A1 \\$1
 .               ds A2 \\$2
@@ -2554,7 +2705,7 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       rR
@@ -2568,8 +2719,8 @@
 .       ie \\n(.$==0 .tm Usage: .%D Date (#\\n(.c)
 .       el \{\
 .		ds mN %D
-.		nr dK+1
-.		nr Kl+1
+.		nr dK \\n(dK+1
+.		nr Kl \\n(Kl+1
 .		ds rS dK
 .               ds A1 \\$1
 .               ds A2 \\$2
@@ -2585,7 +2736,7 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       rR
@@ -2599,9 +2750,9 @@
 .       ie \\n(.$==0 .tm Usage: .%J Journal Name (#\\n(.c)
 .       el \{\
 .		ds mN %J
-.		nr jK+1
+.		nr jK \\n(jK+1
 .		ds rS jK
-.		nr Kl+1
+.		nr Kl \\n(Kl+1
 .               ds A1 \\$1
 .               ds A2 \\$2
 .               ds A3 \\$3
@@ -2616,7 +2767,7 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       rR
@@ -2629,15 +2780,15 @@
 .if \\n(aC==0 \{\
 .       ie \\n(.$==0 .tm Usage: .%N issue number (#\\n(.c)
 .	el \{\
-.		nr nK+1
-.		nr Kl+1
+.		nr nK \\n(nK+1
+.		nr Kl \\n(Kl+1
 .		ds rS nK
 .		ds mN %N
 .		aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       rR
@@ -2651,8 +2802,8 @@
 .       ie \\n(.$==0 .tm Usage: .%O optional information ... \\*(Pu (#\\n(.c)
 .       el \{\
 .		ds mN %O
-.		nr oK+1
-.		nr Kl+1
+.		nr oK \\n(oK+1
+.		nr Kl \\n(Kl+1
 .		ds rS oK
 .               ds A1 \\$1
 .               ds A2 \\$2
@@ -2668,7 +2819,7 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       rR
@@ -2682,8 +2833,8 @@
 .       ie \\n(.$==0 .tm Usage: .%P page numbers ... \\*(Pu (#\\n(.c)
 .       el \{\
 .		ds mN %P
-.		nr pK+1
-.		nr Kl+1
+.		nr pK \\n(pK+1
+.		nr Kl \\n(Kl+1
 .		ds rS pK
 .               ds A1 \\$1
 .               ds A2 \\$2
@@ -2699,7 +2850,7 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       rR
@@ -2713,8 +2864,8 @@
 .       ie \\n(.$==0 .tm Usage: .%Q Corporate or Foreign Author (#\\n(.c)
 .       el \{\
 .		ds mN %Q
-.		nr qK+1
-.		nr Kl+1
+.		nr qK \\n(qK+1
+.		nr Kl \\n(Kl+1
 .		ds rS qK
 .               ds A1 \\$1
 .               ds A2 \\$2
@@ -2730,7 +2881,7 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       rR
@@ -2744,8 +2895,8 @@
 .       ie \\n(.$==0 .tm Usage: .%R reference report (#\\n(.c)
 .       el \{\
 .		ds mN %R
-.		nr rK+1
-.		nr Kl+1
+.		nr rK \\n(rK+1
+.		nr Kl \\n(Kl+1
 .		ds rS rK
 .               ds A1 \\$1
 .               ds A2 \\$2
@@ -2761,7 +2912,7 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       rR
@@ -2776,8 +2927,8 @@
 .       el \{\
 .		ds mN %T
 .		if \\n(rS>0 \{\
-.			nr tK+1
-.			nr Kl+1
+.			nr tK \\n(tK+1
+.			nr Kl \\n(Kl+1
 .			ds rS tK
 .		\}
 .               ds A1 \\$1
@@ -2802,7 +2953,7 @@
 .\" .		En \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
 .\" .	\}
 .\" .	el \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		nr cF \\n(.f
 .		nr cZ \\n(.s
 .		ie \\n(rS==0 \{\
@@ -2821,14 +2972,14 @@
 .       ie \\n(.$==0 .tm Usage: .%V Volume , ... \\*(Pu (#\\n(.c)
 .	el \{\
 .		ds mN %V
-.		nr vK+1
-.		nr Kl+1
+.		nr vK \\n(vK+1
+.		nr Kl \\n(Kl+1
 .		ds rS vK
 .		aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	nr aP+1
+.	nr aP \\n(aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
 .       rR
@@ -2861,7 +3012,7 @@
 .		rD
 .	\}
 .	el \{\
-.		nr aP+1
+.		nr aP \\n(aP+1
 .		as b1 \&\\*(S\\n(jN
 .		rR
 .	\}
@@ -2898,19 +3049,63 @@ File:
 .fz \\n(cZ
 .Pp
 ..
-.\" NS An macro - author name (for AUTHOR section only)
+.\" NS An macro - author name
 .\" NS aN register
 .nr aN 0
 .de An
-.ie \\n(aN==1 \{\
-.	br
+.if \\n(nY==1 \{\
+.	ie \\n(aN==1 \{\
+.		br
+.	\}
+.	el \{\
+.		nr aN 1
+.	\}
 .\}
-.el \{\
-.	nr aN 1
+.if \\n(aC==0 \{\
+.       ie \\n(.$==0 .tm Usage: .An author_name ... \\*(Pu (#\\n(.c)
+.	el \{\
+.		ds mN An
+.		aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.	\}
 .\}
-\&\\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.if \\n(aC>\\n(aP \{\
+.	nr aP \\n(aP+1
+.       nr cF \\n(.f
+.	nr cZ \\n(.s
+.       nR
+.\}
 ..
 .\" NS Sf macro -defunct
 .de Sf
 .tm .Sf defunct, use prefix or Ns
+..
+.ds rV "function returns the value 0 if successful; otherwise the value -1 is returned and the global variable \\*(vAerrno\fP is set to indicate the error.
+.\" Ns Rv macro - return values
+.\" Ns rV string - standard return message
+.de Rv
+.ie \\n(.$==0 \{\
+.tm Usage: .Rv [-std] (#\\n(.c)
+.\}
+.el \{\
+.	ds mN Rv
+.\" .	nr aP 0
+.\" .	nr lR \\n(lR+1
+.\" .	ds A1 \\$2
+.\" .	ds A2 \\$3
+.\" .	ds A3 \\$4
+.\" .	ds A4 \\$5
+.\" .	ds A5 \\$6
+.\" .	ds A6 \\$7
+.\" .	ds A7 \\$8
+.\" .	ds A8 \\$9
+.\" .	nr fV \\n(.$-1
+.	if "\\$1"-std" \{\
+.	nr cH \\*(cH
+.	if (\\n(cH<2):(\\n(cH>3) .tm Usage: .Rv -std sections 2 and 3 only
+.		br
+\&The
+.Fn \\$2
+\&\\*(rV
+.	\}
+.\}
 ..

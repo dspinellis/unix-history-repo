@@ -8,60 +8,71 @@
 .\"     %beginstrip%
 .\" NS Ux macro - UNIX
 .de Ux
+.nr cF \\n(.f
+.nr cZ \\n(.s
+.ds aa \&\f\\n(cF\s\\n(cZ
 .if \\n(aC==0 \{\
-.       ie \\n(.$==0 \&\fRU\s-2NIX\fP\s0
+.       ie \\n(.$==0 \&U\\*(tNNIX\\*(aa
 .       el .aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
 .\}
-.\" .   as b1 \\*(S\\n(aP
 .if \\n(aC>\\n(aP \{\
-.       as b1 \fRU\s-2NIX\s0
-.       nr aP+1
-.       nr cF \\n(.f
-.       nr cZ \\n(.s
+.       as b1 \&U\\*(tNNIX\\*(aa
+.       nr aP \\n(aP+1
 .       nR
 .\}
 ..
 .\" NS Bx macro -BSD UNIX (fix smaller nroff version)
 .de Bx
+.nr cF \\n(.f
+.nr cZ \\n(.s
+.ds aa \&\f\\n(cF\s\\n(cZ
 .if \\n(aC==0 \{\
-.       ie \\n(.$==0 \&\fRBSD U\s-2NIX\fP\s0
+.       ie \\n(.$==0 \&\\*(tNBSD\\*(aa U\\*(tNNIX\\*(aa
 .       el .aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
 .\}
+.if "\\$1"-alpha" \{\
+\&currently in alpha test.
+.	aY
+.\}
+.if "\\$1"-beta" \{\
+\&currently in beta test.
+.	aY
+.\}
+.if "\\$1"-devel" \{\
+\&currently under development.
+.	aY
+.\}
 .if \\n(aC>\\n(aP \{\
-.       nr aP+1
+.       nr aP \\n(aP+1
 .	ie \\n(C\\n(aP==2 \{\
-.		as b1 \fR\\*(A\\n(aP\s-2BSD\s0
+.		as b1 \&\\*(A\\n(aP\&\\*(tNBSD\\*(aa
 .		ie \\n(aC>\\n(aP \{\
 .			nr jj \\n(aP+1
 .			ie \\n(C\\n(jj==2 \{\
 .				if "\\*(A\\n(jj"Reno" \{\
-.					nr aP+1
+.					nr aP \\n(aP+1
 .					as b1 \&\-\\*(A\\n(jj
 .				\}
 .				if "\\*(A\\n(jj"reno" \{\
-.					nr aP+1
+.					nr aP \\n(aP+1
 .					as b1 \&\-Reno
 .				\}
 .				if "\\*(A\\n(jj"Tahoe" \{\
-.					nr aP+1
+.					nr aP \\n(aP+1
 .					as b1 \&\-\\*(A\\n(jj
 .				\}
 .				if "\\*(A\\n(jj"tahoe" \{\
-.					nr aP+1
+.					nr aP \\n(aP+1
 .					as b1 \&\-Tahoe
 .				\}
 .				ie \\n(aC>\\n(aP \{\
-.					nr aP+1
-.					nr cF \\n(.f
-.					nr cZ \\n(.s
+.					nr aP \\n(aP+1
 .					nR
 .				\}
 .				el .aZ
 .			\}
 .			el \{\
-.				nr aP+1
-.				nr cF \\n(.f
-.				nr cZ \\n(.s
+.				nr aP \\n(aP+1
 .				nR
 .			\}
 .			rr jj
@@ -69,22 +80,113 @@
 .		el .aZ
 .	\}
 .	el \{\
-.	       as b1 \fR\s-2BSD\s0 U\s-2NIX\s0
-.	       nr cF \\n(.f
-.	       nr cZ \\n(.s
+.	       as b1 \&\\*(tNBSD\\*(aa U\\*(tNNIX\\*(aa
 .	       nR
 .	\}
 .\}
 ..
-.\" Ns Ud macro - prints "is currently under development." (HISTORY section)
+.\" Ns Ud macro - prints "currently under development" (HISTORY section)
 .de Ud
-\&is currently under development.
+\&currently under development.
 ..
-.\" Ns At macro - prints "is currently in alpha test." (HISTORY section)
+.\" Ns At macro - AT&T UNIX
 .de At
-\&is currently in alpha test.
+.nr cF \\n(.f
+.nr cZ \\n(.s
+.ds aa \&\f\\n(cF\s\\n(cZ
+.if \\n(.$==2 \{\
+.	if "\\$1"32v" \&Version 32V \\*(tNAT&T UNIX\\*(aa\\$2
+.	if "\\$1"v6"  \&Version 6 \\*(tNAT&T UNIX\\*(aa\\$2
+.	if "\\$1"v7"  \&Version 7 \\*(tNAT&T UNIX\\*(aa\\$2
+.	if "\\$1"V"  \&\\*(tNAT&T\\*(aa System V \\*(tNUNIX\\*(aa\\$2
+.	if "\\$1"V.1"  \&\\*(tNAT&T\\*(aa System V.1 \\*(tNUNIX\\*(aa\\$2
+.\}
+.if \\n(.$==1 \{\
+.	if "\\$1"32v" \&Version 32V \\*(tNAT&T UNIX\\*(aa
+.	if "\\$1"v6"  \&Version 6 \\*(tNAT&T UNIX\\*(aa
+.	if "\\$1"v7"  \&Version 7 \\*(tNAT&T UNIX\\*(aa
+.	if "\\$1"V"  \&\\*(tNAT&T\\*(aa System V \\*(tNUNIX\\*(aa
+.	if "\\$1"V.1"  \&\\*(tNAT&T\\*(aa System V.1 \\*(tNUNIX\\*(aa
+.\}
 ..
+.\" The Bt macro should go away now
 .\" Ns Bt macro - prints "is currently in beta test." (HISTORY section)
 .de Bt
 \&is currently in beta test.
+..
+.\" NS St macro - standards (posix, ansi - formal standard names)
+.ds Px \\*(tNPOSIX
+.ds Ai \\*(tNANSI
+.de St
+.if \\n(aC==0 \{\
+.	ie \\n(.$==0 \{\
+.tm Usage: .St [-p1003.1-88 | -p1003.2 | -ansiC-89 | -iso ] \\*(Pu ... (#\\n(.c)
+.	\}
+.	el \{\
+.		ds mN St
+.		nr aP 0
+.		ds A1 \\$1
+.		ds A2 \\$2
+.		ds A3 \\$3
+.		ds A4 \\$4
+.		ds A5 \\$5
+.		ds A6 \\$6
+.		ds A7 \\$7
+.		ds A8 \\$8
+.		ds A9 \\$9
+.		nr fV \\n(.$
+.		fV 
+.	\}
+.\}
+.if \\n(aC>\\n(aP \{\
+.	nr cF \\n(.f
+.	nr cZ \\n(.s
+.	ds aa \&\f\\n(cF\s\\n(cZ
+.	nr aP \\n(aP+1
+.       if "\\*(A\\n(aP"-p1003.1-88" \{\
+.		ie \\n(sT==1 \{\
+.			ds b1 \&\\*(tNIEEE Std\\*(aa1003.1-1988\\*(sV
+.			as b1 (``\\*(tN\\*(Px\\*(aa'')
+.		\}
+.		el \{\
+.			ds b1 \&\\*(tNIEEE Std\\*(aa1003.1-1988\\*(sV
+.			as b1 (``\\*(tN\\*(Px\\*(aa'')
+.		\}
+.       \}
+.       if "\\*(A\\n(aP"-p1003.2" \{\
+.		ie \\n(sT==1 \{\
+.			ds b1 \&\\*(tNIEEE Std\\*(aa1003.2
+.			as b1 (``\\*(tN\\*(Px\\*(aa'')
+.		\}
+.		el \{\
+.			ds b1 \&\\*(tNIEEE Std\\*(aa1003.2\\*(sV
+.			as b1 (``\\*(tN\\*(Px\\*(aa'')
+.		\}
+.       \}
+.       if "\\*(A\\n(aP"-ansiC" \{\
+.		ie \\n(sT==1 \{\
+.			ds b1 \&\\*(tNANSI C\\*(aa3.159-1989\\*(sV
+.			as b1 (``\\*(tNANSI C\\*(aa'')
+.		\}
+.		el \{\
+.			ds b1 \&\\*(tNANSI C\\*(aa3.159-1989\\*(sV
+.			as b1 (``\\*(tNANSI C\\*(aa'')
+.		\}
+.       \}
+.       if "\\*(A\\n(aP"-ansiC-89" \{\
+.		ie \\n(sT==1 \{\
+.			ds b1 \&\\*(tNANSI C\\*(aa3.159-1989\\*(sV
+.			as b1 (``\\*(tNANSI C\\*(aa'')
+.		\}
+.		el \{\
+.			ds b1 \&\\*(tNANSI C\\*(aa3.159-1989\\*(sV
+.			as b1 (``\\*(tNANSI C\\*(aa'')
+.		\}
+.       \}
+.	ie \\n(aC>\\n(aP \{\
+.		nr aP \\n(aP+1
+.		nR
+.	\}
+.	el .aZ
+.\}
 ..

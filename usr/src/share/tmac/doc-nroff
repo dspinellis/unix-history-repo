@@ -76,6 +76,17 @@
 .ds sL `
 .ds sR '
 .ds q \&"
+.\" Math stuff
+.ds Pi pi
+.ds Ne !=
+.ds Le <=
+.ds Ge >=
+.ds Lt <
+.ds Gt >
+.ds Pm +-
+.ds If infinity
+.ds Na \fINaN\fP
+
 .\"
 .de hK
 .nr % 1
@@ -133,9 +144,15 @@
 .ds qR \&\\*(sR
 .En \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
 ..
+.\" NS Sh macro - Section Headers
+.\" NS nS register - Section Header SYNOPSIS flag
+.\" NS nF register - Section Header FILES flag
+.\" NS nA register - Section Header SEE ALSO flag
+.\" NS nT register - Section Header STANDARDS flag
 .de Sh
 .nr nS 0
 .nr sE 0
+.nr iS 0
 .ie "\\$1"NAME" \{\
 .       hK
 '       in 0
@@ -144,11 +161,22 @@
 .       nr nS 0
 .       nr nA 0
 .       nr nF 0
-.       if "\\$1"SYNOPSIS" .nr nS 1
+.       nr nT 0
+.       nr nY 0
+.       nr aN 0
 .       if "\\$1"SEE" .nr nA 1
 .       if "\\$1"FILES" .nr nF 1
+.       if "\\$1"STANDARDS" .nr nT 1
+.       if "\\$1"SYNOPSIS" .nr nS 1
+.       if "\\$1"DESCRIPTION" \{\
+.               rr fB
+.               rr Fb
+.               ds Fb
+.               nr fY 0
+.               nr fZ 0
+.       \}
+.	if "\\$1"AUTHORS" .nr nY 1
 .       in 0
-.       nr aN 0
 .\}
 .pL
 'sp
