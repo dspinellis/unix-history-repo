@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)order.c	1.16 (Berkeley) %G%";
+static char *sccsid ="@(#)order.c	1.17 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -272,21 +272,21 @@ offstar( p ) register NODE *p; {
 			return;
 		}
 		if( p->in.left->in.op==LS && 
-		  (p->in.left->in.left->in.op!=REG || tlen(p->in.left->in.left)!=sizeof(int) ) ) {
+		  (p->in.left->in.left->in.op!=REG || tlen(p->in.left->in.left)!=SZINT/SZCHAR ) ) {
 			order( p->in.left->in.left, INTAREG|INAREG );
 			return;
 		}
 		if( p->in.right->in.op==LS &&
-		  (p->in.right->in.left->in.op!=REG || tlen(p->in.right->in.left)!=sizeof(int) ) ) {
+		  (p->in.right->in.left->in.op!=REG || tlen(p->in.right->in.left)!=SZINT/SZCHAR ) ) {
 			order( p->in.right->in.left, INTAREG|INAREG );
 			return;
 		}
 		if( p->in.type == (PTR|CHAR) || p->in.type == (PTR|UCHAR) ) {
-			if( p->in.left->in.op!=REG || tlen(p->in.left)!=sizeof(int) ) {
+			if( p->in.left->in.op!=REG || tlen(p->in.left)!=SZINT/SZCHAR ) {
 				order( p->in.left, INTAREG|INAREG );
 				return;
 			}
-			else if( p->in.right->in.op!=REG || tlen(p->in.right)!=sizeof(int) ) {
+			else if( p->in.right->in.op!=REG || tlen(p->in.right)!=SZINT/SZCHAR ) {
 				order(p->in.right, INTAREG|INAREG);
 				return;
 			}
