@@ -1,8 +1,8 @@
-#	Makefile	4.8	81/04/03
+#	Makefile	4.9	81/04/15
 
 DESTDIR=
 CFLAGS=	-O -DSTANDALONE ${COPTS}
-COPTS=	-DVAX780 -DVAX750 -DVAX730
+COPTS=	-DVAX780 -DVAX750 -DVAX7ZZ
 RELOC=	70000
 SRCS=	sys.c conf.c prf.c machdep.c \
 	autoconf.c hp.c ht.c mba.c rk.c tm.c ts.c up.c uba.c
