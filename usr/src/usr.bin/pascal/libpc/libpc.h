@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)libpc.h 1.4 %G%"; */
+/* static char sccsid[] = "@(#)libpc.h 1.5 %G%"; */
 
 extern FILE *ACTFILE();
 extern long *ADDT();
@@ -46,7 +46,7 @@ extern long SUBSC();
 extern long SUBSCZ();
 extern long *SUBT();
 extern long SUCC();
-extern long TELL();
+extern struct seekptr TELL();
 extern bool TEOF();
 extern bool TEOLN();
 extern long TRUNC();
