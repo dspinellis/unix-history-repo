@@ -1,21 +1,16 @@
-static	char *sccsid = "@(#)dcheck.c	2.3 (Berkeley) %G%";
+#ifndef lint
+static	char *sccsid = "@(#)dcheck.c	2.4 (Berkeley) %G%";
+#endif
 /*
  * dcheck - check directory consistency
  */
 #define	NB	10
 #define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
 
-#ifndef SIMFS
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
-#include <dir.h>
-#else
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#include "../h/ndir.h"
-#endif
+#include <sys/dir.h>
 #include <stdio.h>
 
 union {

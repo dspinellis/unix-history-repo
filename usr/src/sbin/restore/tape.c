@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.19	(Berkeley)	83/06/19";
+static char sccsid[] = "@(#)tape.c	3.20	(Berkeley)	83/07/01";
 #endif
 
 #include "restore.h"
@@ -10,7 +10,7 @@ static char sccsid[] = "@(#)tape.c	3.19	(Berkeley)	83/06/19";
 #include <sys/mtio.h>
 #include <sys/file.h>
 #include <setjmp.h>
-#include <stat.h>
+#include <sys/stat.h>
 
 static long	fssize;
 static int	mt = -1;
