@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_input.c	6.6 (Berkeley) %G%
+ *	@(#)ns_input.c	6.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -66,7 +66,7 @@ nsintr()
 {
 	register struct idp *idp;
 	register struct mbuf *m;
-	struct nspcb *nsp;
+	register struct nspcb *nsp;
 	struct mbuf *m0;
 	register int i;
 	int len, s, error;
@@ -172,25 +172,32 @@ next:
 		idp_forward(idp);
 		goto next;
 	}
-	if (oddpacketp) {
-		m_adj(m0, -1);
-	}
+	/*
+	 * Locate pcb for datagram.
+	 */
+	nsp = ns_pcblookup(&idp->idp_sna, idp->idp_dna.x_port, NS_WILDCARD);
+	/*
+	 * Switch out to protocol's input routine.
+	 */
+	nsintr_swtch++;
+	if (nsp) {
+		if (oddpacketp) {
+			m_adj(m0, -1);
+		}
+		if ((nsp->nsp_flags & NSP_ALL_PACKETS)==0)
+			switch (idp->idp_pt) {
 
-	 /*
-	  * Switch out to protocol's input routine.
-	  */
+			    case NSPROTO_SPP:
+				    spp_input(m,nsp);
+				    goto next;
 
-	switch (idp->idp_pt) {
-
-		case NSPROTO_SPP:
-			spp_input(m);
-			break;
-
-		case NSPROTO_ERROR:
-			ns_err_input(m);
-			break;
-		default:
-			idp_input(m, 0);
+			    case NSPROTO_ERROR:
+				    ns_err_input(m);
+				    goto next;
+			}
+		idp_input(m,nsp);
+	} else {
+		ns_error(m, NS_ERR_NOSOCK, 0);
 	}
 	goto next;
 
