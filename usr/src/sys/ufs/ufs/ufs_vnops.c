@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	4.55	83/04/01	*/
+/*	ufs_vnops.c	4.56	83/05/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -508,7 +508,8 @@ stat1(ip, ub)
 		ds.st_blksize = MAXBSIZE;
 	else
 		ds.st_blksize = ip->i_fs->fs_bsize;
-	ds.st_spare4[0] = ds.st_spare4[1] = ds.st_spare4[2] = 0;
+	ds.st_blocks = ip->i_blocks;
+	ds.st_spare4[0] = ds.st_spare4[1] = 0;
 	u.u_error = copyout((caddr_t)&ds, (caddr_t)ub, sizeof(ds));
 }
 
@@ -599,11 +600,6 @@ chmod1(ip, mode)
 		mode &= ~ISVTX;
 		if (!groupmember(ip->i_gid))
 			mode &= ~ISGID;
-#ifdef MUSH
-		if (u.u_quota->q_syflags & QF_UMASK && 
-		    (ip->i_mode & IFMT) != IFCHR)
-			mode &= ~u.u_cmask;
-#endif
 	}
 	ip->i_mode |= mode&07777;
 	ip->i_flag |= ICHG;
@@ -676,32 +672,12 @@ chown1(ip, uid, gid)
 	if (gid == -1)
 		gid = ip->i_gid;
 #ifdef QUOTA
-	/*
-	 * This doesn't allow for holes in files (which hopefully don't
-	 * happen often in files that we chown), and is not accurate anyway
-	 * (eg: it totally ignores 3 level indir blk files - but hopefully
-	 * noone who can make a file that big will have a quota)
-	 */
-	if (ip->i_uid == uid)
+	if (ip->i_uid != uid)		/* this just speeds things a little */
 		change = 0;
-	else {
-		register struct fs *fs = ip->i_fs;
-
-		if (ip->i_size > (change = NDADDR * fs->fs_bsize)) {
-			register off_t size;
-
-			size = blkroundup(fs, ip->i_size) - change;
-			change += size;
-			change += fs->fs_bsize;
-			/* this assumes NIADDR <= 2 */
-			if (size > NINDIR(fs) * fs->fs_bsize)
-				change += fs->fs_bsize;
-		} else
-			change = fragroundup(fs, ip->i_size);
-		change /= DEV_BSIZE;
-	}
-	(void)chkdq(ip, -change, 1);
-	(void)chkiq(ip->i_dev, ip, ip->i_uid, 1);
+	else
+		change = ip->i_blocks;
+	(void) chkdq(ip, -change, 1);
+	(void) chkiq(ip->i_dev, ip, ip->i_uid, 1);
 	dqrele(ip->i_dquot);
 #endif
 	ip->i_uid = uid;
@@ -711,11 +687,12 @@ chown1(ip, uid, gid)
 		ip->i_mode &= ~(ISUID|ISGID);
 #ifdef QUOTA
 	ip->i_dquot = inoquota(ip);
-	(void)chkdq(ip, change, 1);
-	(void)chkiq(ip->i_dev, (struct inode *)NULL, uid, 1);
-	return (u.u_error);
-#endif
+	(void) chkdq(ip, change, 1);
+	(void) chkiq(ip->i_dev, (struct inode *)NULL, uid, 1);
+	return (u.u_error);		/* should == 0 ALWAYS !! */
+#else
 	return (0);
+#endif
 }
 
 #ifndef NOCOMPAT
