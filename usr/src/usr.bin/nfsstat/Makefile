@@ -2,6 +2,8 @@
 
 PROG=	nfsstat
 CFLAGS+=-DNFS
+DPADD=  ${LIBUTIL}
+LDADD= -lutil
 BINGRP=	kmem
 BINMODE=2555
 
