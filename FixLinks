@@ -4,9 +4,12 @@
 # import/ checkout.  These need to be made by the Makefiles, this
 # is just here as a stop gap solution.
 #
-# $Header: /a/cvs/386BSD/src/FixLinks,v 1.4 1993/07/03 02:01:30 root Exp $
+# $Header: /a/cvs/386BSD/src/FixLinks,v 1.5 1993/07/08 17:58:20 nate Exp $
 #
 # $Log: FixLinks,v $
+# Revision 1.5  1993/07/08  17:58:20  nate
+# Removed Fixed Links
+#
 # Revision 1.4  1993/07/03  02:01:30  root
 # Updated since the links for the gnu stuff are no longer needed.
 #
@@ -22,7 +25,7 @@
 # the make files.
 # 
 
-pushd sys.386bsd/netccitt ; ln -s x25.h x25_sockaddr.h ; popd
+pushd sys/netccitt ; ln -s x25.h x25_sockaddr.h ; popd
 pushd lib/libc/db ; ln -s VERSION README ; popd
 pushd lib/libc/db/PORT ; ln -s include sys ; popd
 pushd libexec/uucp ; ln -s sys1.unx sys1.c ; popd
@@ -32,12 +35,12 @@ pushd libexec/uucp ; ln -s sys5.unx sys5.c ; popd
 pushd libexec/uucp ; ln -s sys6.unx sys6.c ; popd
 pushd libexec/uucp ; ln -s sys7.unx sys7.c ; popd
 pushd libexec/uucp ; ln -s sysh.unx sysdep.h ; popd
-pushd usr.bin/yacc/test ; ln -s ../../../libexec/ftpd/ftpcmd.y ftp.y ; popd
-pushd usr.sbin/named ; ln -s /usr/include/arpa/nameser.h nameser.h ; popd
-pushd usr.sbin/named ; ln -s /usr/include/resolv.h resolv.h ; popd
-pushd usr.sbin/sendmail ; ln -s ../../libexec/mail.local mail.local ; popd
-pushd usr.sbin/sendmail ; ln -s ../../bin/rmail rmail ; popd
+#pushd usr.bin/yacc/test ; ln -s ../../../libexec/ftpd/ftpcmd.y ftp.y ; popd
+#pushd usr.sbin/named ; ln -s /usr/include/arpa/nameser.h nameser.h ; popd
+#pushd usr.sbin/named ; ln -s /usr/include/resolv.h resolv.h ; popd
+#pushd usr.sbin/sendmail ; ln -s ../../libexec/mail.local mail.local ; popd
+#pushd usr.sbin/sendmail ; ln -s ../../bin/rmail rmail ; popd
 pushd share/doc/usd/10.etiq ; ln -s ../../smm/10.newsop/tmac.n tmac.n ; popd
 pushd share/doc/usd/09.newsread ; ln -s ../../smm/10.newsop/tmac.n tmac.n ; popd
-pushd games/chess ; ln -s DOCUMENTATION/MAN-PAGE chess.6 ; popd
+#pushd games/chess ; ln -s DOCUMENTATION/MAN-PAGE chess.6 ; popd
 pushd games/fortune/datfiles ; ln -s fortunes-o.real.rot13 fortunes-o ; popd
