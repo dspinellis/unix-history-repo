@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)qv.c	1.10 (Berkeley) %G%
+ *	@(#)qv.c	1.11 (Berkeley) %G%
  */
 
 /*
@@ -118,7 +118,6 @@
 #include "map.h"
 #include "buf.h"
 #include "vm.h"
-#include "bk.h"
 #include "clist.h"
 #include "file.h"
 #include "uio.h"
@@ -911,7 +910,7 @@ qvstart(tp)
 	 * If there are sleepers, and output has drained below low
 	 * water mark, wake up the sleepers.
 	 */
-	if ( tp->t_outq.c_cc<=TTLOWAT(tp) ) {
+	if ( tp->t_outq.c_cc<= tp->t_lowat ) {
 		if (tp->t_state&TS_ASLEEP){
 			tp->t_state &= ~TS_ASLEEP;
 			wakeup((caddr_t)&tp->t_outq);
