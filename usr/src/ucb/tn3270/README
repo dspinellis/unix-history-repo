@@ -1,0 +1,51 @@
+This is the source directory for the tn3270, and the associated mset, command.
+
+Tn3270, etc., talk to IBM hosts running the VM/CMS operating system,
+with the University of Wisconsin developed TCP/IP code (this code is
+available at a VERY reasonable price to universities direct from the
+University of Wisconsin (lhl@wisconsin.arpa is the contact); commercial
+customers need to buy the package from IBM).  We use
+an ethernet connection to our 3081 (via IBM's DACU), though the Wisconsin
+code also supports a proteon ring, and TCP/IP over X.25.
+
+It would be nice if the other TCP/IP on IBM (the UCLA code for MVS, and
+Spartacus code for VM) talked the same 3270-over-telnet protocol.
+
+It would be nice if all "3270 emulators" used the same file format
+for describing the mapping of key-strokes to 3270 keys (which file format
+might or might not be the one we currently use).
+
+It would be nice if the entire MAP3270/mset/"/etc/map3270"/etc. thing
+were generalized in some way.
+
+Anyway...
+
+The makefile is, hopefully, self-explanatory.  The one slightly tricky
+point is that there are two .s files which are coded for a vax, and
+should be used on a vax version of the program.  These routines are
+coded in C in "genbsubs.c" for other architecture machines.
+
+We use curses, and the program is designed to talk over a relatively
+slow connection between the CPU and the terminal (say 9600 baud).
+On single user systems (say a microVax II) with DMA access to memory,
+one would probably want to throw away all this optimization, since it
+is very CPU intensive.
+
+If you are using this program on a remote machine (though rlogin) note
+that boundary conditions (starting up, ending) may look a bit trimmed; the
+pty driver is quite aggressive in flushing output on IOCTLs.
+
+Tn3270 needs the 4.3 version of curses in order to run.  In particular,
+there is a curses routine with a name which conflicts with an entry
+point in tn3270.c.  This was done on purpose, since we want all references
+to use our version rather than the one in curses.  In the 4.3 curses, this
+doesn't cause any problems.  In other curses, you may get a multiply
+defined reference.
+
+Please let me know of any other bugs.
+
+Greg Minshall
+...ucbvax!minshall, or
+minshall@berkeley.edu
+
+(415) 642-0530
