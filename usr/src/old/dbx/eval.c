@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)eval.c	1.14 (Berkeley) %G%";
+static	char sccsid[] = "@(#)eval.c	1.15 (Berkeley) %G%";
+
+static char rcsid[] = "$Header: eval.c,v 1.5 84/12/26 10:39:08 linton Exp $";
 
 /*
  * Tree evaluation.
@@ -9,6 +11,7 @@ static	char sccsid[] = "@(#)eval.c	1.14 (Berkeley) %G%";
 #include "defs.h"
 #include "tree.h"
 #include "operators.h"
+#include "debug.h"
 #include "eval.h"
 #include "events.h"
 #include "symbols.h"
@@ -75,6 +78,25 @@ public Boolean useInstLoc = false;
 #define Boolrep char	/* underlying representation type for booleans */
 
 /*
+ * Command-level evaluation.
+ */
+
+public Node topnode;
+
+public topeval (p)
+Node p;
+{
+    if (traceeval) {
+	fprintf(stderr, "topeval(");
+	prtree(stderr, p);
+	fprintf(stderr, ")\n");
+	fflush(stderr);
+    }
+    topnode = p;
+    eval(p);
+}
+
+/*
  * Evaluate a parse tree leaving the value on the top of the stack.
  */
 
@@ -86,14 +108,15 @@ register Node p;
     Address addr;
     long i, n;
     int len;
-    Symbol s, f;
+    Symbol s;
     Node n1, n2;
-    Boolean b;
+    boolean b;
     File file;
+    String str;
 
     checkref(p);
-    if (debug_flag[2]) {
-	fprintf(stderr," evaluating %s \n",showoperator(p->op));
+    if (traceeval) {
+	fprintf(stderr, "begin eval %s\n", opname(p->op));
     }
     switch (degree(p->op)) {
 	case BINARY:
@@ -113,21 +136,26 @@ register Node p;
 	    s = p->value.sym;
 	    if (s == retaddrsym) {
 		push(long, return_addr());
-	    } else {
-		if (isvariable(s)) {
-		    if (s != program and not isactive(container(s))) {
-			error("\"%s\" is not active", symname(s));
-		    }
-		    push(long, address(s, nil));
-		} else if (isblock(s)) {
-		    push(Symbol, s);
-		} else {
-		    error("can't evaluate a %s", classname(s));
+	    } else if (isvariable(s)) {
+		if (s != program and not isactive(container(s))) {
+		    error("\"%s\" is not active", symname(s));
 		}
+		if (isvarparam(s) and not isopenarray(s)) {
+		    rpush(address(s, nil), sizeof(Address));
+		} else {
+		    push(Address, address(s, nil));
+		}
+	    } else if (isblock(s)) {
+		push(Symbol, s);
+	    } else if (isconst(s)) {
+		eval(constval(s));
+	    } else {
+		error("can't evaluate a %s", classname(s));
 	    }
 	    break;
 
 	case O_LCON:
+	case O_CCON:
 	    r0 = p->value.lcon;
 	    pushsmall(p->nodetype, r0);
 	    break;
@@ -143,15 +171,19 @@ register Node p;
 	    break;
 
 	case O_INDEX:
-	    n = pop(long);
-	    i = evalindex(p->value.arg[0]->nodetype,
-		popsmall(p->value.arg[1]->nodetype));
-	    push(long, n + i*size(p->nodetype));
+	    s = p->value.arg[0]->nodetype;
+	    p->value.arg[0]->nodetype = t_addr;
+	    eval(p->value.arg[0]);
+	    p->value.arg[0]->nodetype = s;
+	    n = pop(Address);
+	    eval(p->value.arg[1]);
+	    evalindex(s, n, popsmall(p->value.arg[1]->nodetype));
 	    break;
 
 	case O_DOT:
 	    s = p->value.arg[1]->value.sym;
-	    n = lval(p->value.arg[0]);
+	    eval(p->value.arg[0]);
+	    n = pop(long);
 	    push(long, n + (s->symvalue.field.offset div 8));
 	    break;
 
@@ -166,25 +198,33 @@ register Node p;
 	    if (addr == 0) {
 		error("reference through nil pointer");
 	    }
-	    if (p->op == O_INDIR) {
-		len = sizeof(long);
-	    } else {
-		len = size(p->nodetype);
-	    }
+	    len = size(p->nodetype);
 	    rpush(addr, len);
 	    break;
 
 	/*
-	 * Effectively, we want to pop n bytes off for the evaluated subtree
-	 * and push len bytes on for the new type of the same tree.
+	 * Move the stack pointer so that the top of the stack has
+	 * something corresponding to the size of the current node type.
+	 * If this new type is bigger than the subtree (len > 0),
+	 * then the stack is padded with nulls.  If it's smaller,
+	 * the stack is just dropped by the appropriate amount.
 	 */
 	case O_TYPERENAME:
-	    n = size(p->value.arg[0]->nodetype);
-	    len = size(p->nodetype);
-	    sp = sp - n + len;
+	    len = size(p->nodetype) - size(p->value.arg[0]->nodetype);
+	    if (len > 0) {
+		for (n = 0; n < len; n++) {
+		    *sp++ = '\0';
+		}
+	    } else if (len < 0) {
+		sp += len;
+	    }
 	    break;
 
 	case O_COMMA:
+	    eval(p->value.arg[0]);
+	    if (p->value.arg[1] != nil) {
+		eval(p->value.arg[1]);
+	    }
 	    break;
 
 	case O_ITOF:
@@ -316,51 +356,11 @@ register Node p;
 	    break;
 
 	case O_LIST:
-	    if (p->value.arg[0]->op == O_SYM) {
-		f = p->value.arg[0]->value.sym;
-		addr = firstline(f);
-		if (addr == NOADDR) {
-		    error("no source lines for \"%s\"", symname(f));
-		}
-		setsource(srcfilename(addr));
-		r0 = srcline(addr) - 5;
-		r1 = r0 + 10;
-		if (r0 < 1) {
-		    r0 = 1;
-		}
-	    } else {
-		eval(p->value.arg[0]);
-		r0 = pop(long);
-		eval(p->value.arg[1]);
-		r1 = pop(long);
-	    }
-	    printlines((Lineno) r0, (Lineno) r1);
+	    list(p);
 	    break;
 
 	case O_FUNC:
-	    if (p->value.arg[0] == nil) {
-		printname(stdout, curfunc);
-		putchar('\n');
-	    } else {
-		s = p->value.arg[0]->value.sym;
-		if (isroutine(s)) {
-		    setcurfunc(s);
-		} else {
-		    find(f, s->name) where isroutine(f) endfind(f);
-		    if (f == nil) {
-			error("%s is not a procedure or function", symname(s));
-		    }
-		    setcurfunc(f);
-		}
-		addr = codeloc(curfunc);
-		if (addr != NOADDR) {
-		    setsource(srcfilename(addr));
-		    cursrcline = srcline(addr) - 5;
-		    if (cursrcline < 1) {
-			cursrcline = 1;
-		    }
-		}
-	    }
+	    func(p->value.arg[0]);
 	    break;
 
 	case O_EXAMINE:
@@ -434,17 +434,17 @@ register Node p;
 
 	case O_WHEREIS:
 	    if (p->value.arg[0]->op == O_SYM) {
-		printwhereis(stdout,p->value.arg[0]->value.sym);
+		printwhereis(stdout, p->value.arg[0]->value.sym);
 	    } else {
-		printwhereis(stdout,p->value.arg[0]->nodetype);
+		printwhereis(stdout, p->value.arg[0]->nodetype);
 	    }
 	    break;
 
 	case O_WHICH:
 	    if (p->value.arg[0]->op == O_SYM) {
-		printwhich(stdout,p->value.arg[0]->value.sym);
+		printwhich(stdout, p->value.arg[0]->value.sym);
 	    } else {
-		printwhich(stdout,p->value.arg[0]->nodetype);
+		printwhich(stdout, p->value.arg[0]->nodetype);
 	    }
 	    putchar('\n');
 	    break;
@@ -452,21 +452,46 @@ register Node p;
 	case O_ALIAS:
 	    n1 = p->value.arg[0];
 	    n2 = p->value.arg[1];
-	    if (n1 == nil) {
-		print_alias(nil);
-	    } else if (n2 == nil) {
-		print_alias(n1->value.name);
+	    if (n2 == nil) {
+		if (n1 == nil) {
+		    alias(nil, nil, nil);
+		} else {
+		    alias(n1->value.name, nil, nil);
+		}
+	    } else if (n2->op == O_NAME) {
+		str = ident(n2->value.name);
+		alias(n1->value.name, nil, strdup(str));
 	    } else {
-		enter_alias(n1->value.name, n2);
+		if (n1->op == O_COMMA) {
+		    alias(
+			n1->value.arg[0]->value.name,
+			(List) n1->value.arg[1],
+			n2->value.scon
+		    );
+		} else {
+		    alias(n1->value.name, nil, n2->value.scon);
+		}
 	    }
 	    break;
 
+	case O_UNALIAS:
+	    unalias(p->value.arg[0]->value.name);
+	    break;
+
+	case O_CALLPROC:
+	    callproc(p, false);
+	    break;
+
 	case O_CALL:
-	    callproc(p->value.arg[0], p->value.arg[1]);
+	    callproc(p, true);
 	    break;
 
 	case O_CATCH:
-	    catchsigs(p->value.arg[0]);
+	    if (p->value.lcon == 0) {
+		printsigscaught(process);
+	    } else {
+		psigtrace(process, p->value.lcon, true);
+	    }
 	    break;
 
 	case O_EDIT:
@@ -484,7 +509,16 @@ register Node p;
 	    break;
 
 	case O_DUMP:
-	    dump();
+	    if (p->value.arg[0] == nil) {
+		dumpall();
+	    } else {
+		s = p->value.arg[0]->value.sym;
+		if (s == curfunc) {
+		    dump(nil);
+		} else {
+		    dump(s);
+		}
+	    }
 	    break;
 
 	case O_GRIPE:
@@ -496,7 +530,11 @@ register Node p;
 	    break;
 
 	case O_IGNORE:
-	    ignoresigs(p->value.arg[0]);
+	    if (p->value.lcon == 0) {
+		printsigsignored(process);
+	    } else {
+		psigtrace(process, p->value.lcon, false);
+	    }
 	    break;
 
 	case O_RETURN:
@@ -510,6 +548,14 @@ register Node p;
 
 	case O_RUN:
 	    run();
+	    break;
+
+	case O_SET:
+	    set(p->value.arg[0], p->value.arg[1]);
+	    break;
+
+	case O_SEARCH:
+	    search(p->value.arg[0]->value.lcon, p->value.arg[1]->value.scon);
 	    break;
 
 	case O_SOURCE:
@@ -528,6 +574,10 @@ register Node p;
 	case O_STOP:
 	case O_STOPI:
 	    stop(p);
+	    break;
+
+	case O_UNSET:
+	    undefvar(p->value.arg[0]->value.name);
 	    break;
 
 	case O_UP:
@@ -593,8 +643,10 @@ register Node p;
 		    printf("tracei: ");
 		    printinst(pc, pc);
 		} else {
-		    printf("trace:  ");
-		    printlines(curline, curline);
+		    if (canReadSource()) {
+			printf("trace:  ");
+			printlines(curline, curline);
+		    }
 		}
 	    } else {
 		printsrcpos();
@@ -631,10 +683,9 @@ register Node p;
 	default:
 	    panic("eval: bad op %d", p->op);
     }
- if(debug_flag[2]) { 
-	fprintf(stderr," evaluated %s \n",showoperator(p->op));
- }
-           
+    if (traceeval) { 
+	fprintf(stderr, "end eval %s\n", opname(p->op));
+    }
 }
 
 /*
@@ -716,23 +767,26 @@ long v;
 public long popsmall(t)
 Symbol t;
 {
+    register integer n;
     long r;
 
-    switch (size(t)) {
-	case sizeof(char):
+    n = size(t);
+    if (n == sizeof(char)) {
+	if (t->class == RANGE and t->symvalue.rangev.lower >= 0) {
+	    r = (long) pop(unsigned char);
+	} else {
 	    r = (long) pop(char);
-	    break;
-
-	case sizeof(short):
+	}
+    } else if (n == sizeof(short)) {
+	if (t->class == RANGE and t->symvalue.rangev.lower >= 0) {
+	    r = (long) pop(unsigned short);
+	} else {
 	    r = (long) pop(short);
-	    break;
-
-	case sizeof(long):
-	    r = pop(long);
-	    break;
-
-	default:
-	    panic("popsmall: size is %d", size(t));
+	}
+    } else if (n == sizeof(long)) {
+	r = pop(long);
+    } else {
+	error("[internal error: size %d in popsmall]", n);
     }
     return r;
 }
@@ -848,7 +902,7 @@ Node cond;
     Event e;
 
     if (exp->op == O_LCON) {
-	wh = build(O_QLINE, build(O_SCON, cursource), exp);
+	wh = build(O_QLINE, build(O_SCON, strdup(cursource)), exp);
     } else {
 	wh = exp;
     }
@@ -1091,48 +1145,131 @@ Node exp;
     long lvalue;
     float fvalue;
 
-    if (not compatible(var->nodetype, exp->nodetype)) {
-	error("incompatible types");
-    }
-    addr = lval(var);
-    varsize = size(var->nodetype);
-    expsize = size(exp->nodetype);
-    eval(exp);
-    if (varsize == sizeof(float) and expsize == sizeof(double)) {
-	fvalue = (float) pop(double);
-	dwrite(&fvalue, addr, sizeof(fvalue));
+    if (var->op == O_SYM and regnum(var->value.sym) != -1) {
+	eval(exp);
+	setreg(regnum(var->value.sym), pop(Address));
     } else {
-	if (varsize < sizeof(long)) {
-	    lvalue = 0;
-	    popn(expsize, &lvalue);
-	    switch (varsize) {
-		case sizeof(char):
+	addr = lval(var);
+	varsize = size(var->nodetype);
+	expsize = size(exp->nodetype);
+	eval(exp);
+	if (varsize == sizeof(float) and expsize == sizeof(double)) {
+	    fvalue = (float) pop(double);
+	    dwrite(&fvalue, addr, sizeof(fvalue));
+	} else {
+	    if (varsize < sizeof(long)) {
+		lvalue = 0;
+		popn(expsize, &lvalue);
+		if (varsize == sizeof(char)) {
 		    cvalue = lvalue;
 		    dwrite(&cvalue, addr, sizeof(cvalue));
-		    break;
-
-		case sizeof(short):
+		} else if (varsize == sizeof(short)) {
 		    svalue = lvalue;
 		    dwrite(&svalue, addr, sizeof(svalue));
-		    break;
-
-		default:
-		    panic("bad size %d", varsize);
-	    }
-	} else {
-	    if (expsize <= varsize) {
-		sp -= expsize;
-		dwrite(sp, addr, expsize);
+		} else {
+		    error("[internal error: bad size %d in assign]", varsize);
+		}
 	    } else {
-		sp -= expsize;
-		dwrite(sp, addr, varsize);
+		if (expsize <= varsize) {
+		    sp -= expsize;
+		    dwrite(sp, addr, expsize);
+		} else {
+		    sp -= expsize;
+		    dwrite(sp, addr, varsize);
+		}
 	    }
 	}
     }
 }
 
 /*
- * Send some nasty mail to the current support person.
+ * Set a debugger variable.
+ */
+
+private set (var, exp)
+Node var, exp;
+{
+    Symbol t;
+
+    if (var == nil) {
+	defvar(nil, nil);
+    } else if (exp == nil) {
+	defvar(var->value.name, nil);
+    } else if (var->value.name == identname("$frame", true)) {
+	t = exp->nodetype;
+	if (not compatible(t, t_int) and not compatible(t, t_addr)) {
+	    error("$frame must be an address");
+	}
+	eval(exp);
+	getnewregs(pop(Address));
+    } else {
+	defvar(var->value.name, unrval(exp));
+    }
+}
+
+/*
+ * Execute a list command.
+ */
+
+private list (p)
+Node p;
+{
+    Symbol f;
+    Address addr;
+    Lineno line, l1, l2;
+
+    if (p->value.arg[0]->op == O_SYM) {
+	f = p->value.arg[0]->value.sym;
+	addr = firstline(f);
+	if (addr == NOADDR) {
+	    error("no source lines for \"%s\"", symname(f));
+	}
+	setsource(srcfilename(addr));
+	line = srcline(addr);
+	getsrcwindow(line, &l1, &l2);
+    } else {
+	eval(p->value.arg[0]);
+	l1 = (Lineno) (pop(long));
+	eval(p->value.arg[1]);
+	l2 = (Lineno) (pop(long));
+    }
+    printlines(l1, l2);
+}
+
+/*
+ * Execute a func command.
+ */
+
+private func (p)
+Node p;
+{
+    Symbol s, f;
+    Address addr;
+
+    if (p == nil) {
+	printname(stdout, curfunc);
+	putchar('\n');
+    } else {
+	s = p->value.sym;
+	if (isroutine(s)) {
+	    setcurfunc(s);
+	} else {
+	    find(f, s->name) where isroutine(f) endfind(f);
+	    if (f == nil) {
+		error("%s is not a procedure or function", symname(s));
+	    }
+	    setcurfunc(f);
+	}
+	addr = codeloc(curfunc);
+	if (addr != NOADDR) {
+	    setsource(srcfilename(addr));
+	    cursrcline = srcline(addr);
+	}
+    }
+}
+
+/*
+ * Send a message to the current support person.
  */
 
 public gripe()
@@ -1142,14 +1279,13 @@ public gripe()
     int pid, status;
     extern int versionNumber;
     char subject[100];
-    char *maintainer = "linton@berkeley";
 
     puts("Type control-D to end your message.  Be sure to include");
     puts("your name and the name of the file you are debugging.");
     putchar('\n');
     old = signal(SIGINT, SIG_DFL);
-    sprintf(subject, "dbx (version %d) gripe", versionNumber);
-    pid = back("Mail", stdin, stdout, "-s", subject, maintainer, nil);
+    sprintf(subject, "dbx (version 3.%d) gripe", versionNumber);
+    pid = back("Mail", stdin, stdout, "-s", subject, MAINTAINER, nil);
     signal(SIGINT, SIG_IGN);
     pwait(pid, &status);
     signal(SIGINT, old);
@@ -1185,46 +1321,6 @@ public help()
     puts("list <line>, <line>    - list source lines");
     puts("gripe                  - send mail to the person in charge of dbx");
     puts("quit                   - exit dbx");
-}
-
-/*
- * Mark one or more signals to be
- * intercepted by the debugger.
- */
-private catchsigs(p)
-register Node p;
-{
-
-    if (p == nil) {
-	printsigscaught(process);
-	return;
-    }
-    while (p != nil) {
-	eval(p->value.arg[0]);
-	psigtrace(process, popsmall(p->value.arg[0]->nodetype), true);
-	p = p->value.arg[1];
-    }
-}
-
-/*
- * Mark one or more signals to
- * be ignored by the debugger
- * (and automatically passed through
- * to the running process).
- */
-private ignoresigs(p)
-register Node p;
-{
-
-    if (p == nil) {
-	printsigsignored(process);
-	return;
-    }
-    while (p != nil) {
-	eval(p->value.arg[0]);
-	psigtrace(process, popsmall(p->value.arg[0]->nodetype), false);
-	p = p->value.arg[1];
-    }
 }
 
 /*

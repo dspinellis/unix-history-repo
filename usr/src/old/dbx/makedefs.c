@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)makedefs.c	1.3 (Berkeley) %G%";
+static	char sccsid[] = "@(#)makedefs.c	1.4 (Berkeley) %G%";
+
+static char rcsid[] = "$Header: makedefs.c,v 1.4 84/12/26 10:40:22 linton Exp $";
 
 /*
  * Create a definitions file (e.g. .h) from an implementation file (e.g. .c).

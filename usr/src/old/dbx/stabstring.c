@@ -1,6 +1,10 @@
+/* Copyright (c) 1982 Regents of the University of California */
+
 #ifndef lint
-static	char sccsid[] = "@(#)stabstring.c	1.1 (Berkeley) %G%"; /* from 1.4 84/03/27 10:24:04 linton Exp */
+static	char sccsid[] = "@(#)stabstring.c	1.2 (Berkeley) %G%"; /* from 1.4 84/03/27 10:24:04 linton Exp */
 #endif
+
+static char rcsid[] = "$Header: stabstring.c,v 1.6 84/12/26 10:42:17 linton Exp $";
 
 /*
  * String information interpretation
@@ -15,6 +19,7 @@ static	char sccsid[] = "@(#)stabstring.c	1.1 (Berkeley) %G%"; /* from 1.4 84/03/
 #include "symbols.h"
 #include "names.h"
 #include "languages.h"
+#include "tree.h"
 #include <a.out.h>
 #include <ctype.h>
 
@@ -25,6 +30,7 @@ static	char sccsid[] = "@(#)stabstring.c	1.1 (Berkeley) %G%"; /* from 1.4 84/03/
  * Special characters in symbol table information.
  */
 
+#define CONSTNAME 'c'
 #define TYPENAME 't'
 #define TAGNAME 'T'
 #define MODULEBEGIN 'm'
@@ -48,7 +54,10 @@ static	char sccsid[] = "@(#)stabstring.c	1.1 (Berkeley) %G%"; /* from 1.4 84/03/
 
 #define T_SUBRANGE 'r'
 #define T_ARRAY 'a'
-#define T_OPENARRAY 'A'
+#define T_OLDOPENARRAY 'A'
+#define T_OPENARRAY 'O'
+#define T_DYNARRAY 'D'
+#define T_SUBARRAY 'E'
 #define T_RECORD 's'
 #define T_UNION 'u'
 #define T_ENUM 'e'
@@ -58,6 +67,7 @@ static	char sccsid[] = "@(#)stabstring.c	1.1 (Berkeley) %G%"; /* from 1.4 84/03/
 #define T_IMPORTED 'i'
 #define T_SET 'S'
 #define T_OPAQUE 'o'
+#define T_FILE 'd'
 
 /*
  * Table of types indexed by per-file unique identification number.
@@ -135,7 +145,7 @@ public entersym (name, np)
 String name;
 struct nlist *np;
 {
-    Symbol s;
+    Symbol s, t;
     char *p;
     register Name n;
     char c;
@@ -147,25 +157,32 @@ struct nlist *np;
     chkUnnamedBlock();
     curchar = p + 2;
     switch (c) {
+	case CONSTNAME:
+	    newSym(s, n);
+	    constName(s);
+	    break;
+
 	case TYPENAME:
 	    newSym(s, n);
 	    typeName(s);
 	    break;
 
 	case TAGNAME:
-	    newSym(s, n);
+	    s = symbol_alloc();
+	    s->name = n;
+	    s->level = curblock->level + 1;
+	    s->language = curlang;
+	    s->block = curblock;
 	    tagName(s);
 	    break;
 
 	case MODULEBEGIN:
-	    newSym(s, n);
-	    publicRoutine(s, MODULE, np->n_value);
+	    publicRoutine(&s, n, MODULE, np->n_value, false);
 	    curmodule = s;
 	    break;
 
 	case EXTPROCEDURE:
-	    newSym(s, n);
-	    publicRoutine(s, PROC, np->n_value);
+	    publicRoutine(&s, n, PROC, np->n_value, false);
 	    break;
 
 	case PRIVPROCEDURE:
@@ -173,14 +190,11 @@ struct nlist *np;
 	    break;
 
 	case INTPROCEDURE:
-	    newSym(s, n);
-	    markInternal(s);
-	    publicRoutine(s, PROC, np->n_value);
+	    publicRoutine(&s, n, PROC, np->n_value, true);
 	    break;
 
 	case EXTFUNCTION:
-	    newSym(s, n);
-	    publicRoutine(s, FUNC, np->n_value);
+	    publicRoutine(&s, n, FUNC, np->n_value, false);
 	    break;
 
 	case PRIVFUNCTION:
@@ -188,21 +202,11 @@ struct nlist *np;
 	    break;
 
 	case INTFUNCTION:
-	    newSym(s, n);
-	    markInternal(s);
-	    publicRoutine(s, FUNC, np->n_value);
+	    publicRoutine(&s, n, FUNC, np->n_value, true);
 	    break;
 
 	case EXTVAR:
-	    find(s, n) where
-		s->level == program->level and s->class == VAR
-	    endfind(s);
-	    if (s == nil) {
-		makeVariable(s, n, np->n_value);
-		s->level = program->level;
-		s->block = program;
-		getExtRef(s);
-	    }
+	    extVar(&s, n, np->n_value);
 	    break;
 
 	case MODULEVAR:
@@ -243,6 +247,84 @@ struct nlist *np;
 	printdecl(s);
 	fflush(stdout);
     }
+}
+
+/*
+ * Enter a named constant.
+ */
+
+private constName (s)
+Symbol s;
+{
+    integer i;
+    double d;
+    char *p, buf[1000];
+
+    s->class = CONST;
+    skipchar(curchar, '=');
+    p = curchar;
+    ++curchar;
+    switch (*p) {
+	case 'b':
+	    s->type = t_boolean;
+	    s->symvalue.constval = build(O_LCON, getint());
+	    break;
+
+	case 'c':
+	    s->type = t_char;
+	    s->symvalue.constval = build(O_LCON, getint());
+	    break;
+
+	case 'i':
+	    s->type = t_int;
+	    s->symvalue.constval = build(O_LCON, getint());
+	    break;
+
+	case 'r':
+	    sscanf(curchar, "%lf", &d);
+	    while (*curchar != '\0' and *curchar != ';') {
+		++curchar;
+	    }
+	    --curchar;
+	    s->type = t_real;
+	    s->symvalue.constval = build(O_FCON, d);
+	    break;
+
+	case 's':
+	    p = &buf[0];
+	    skipchar(curchar, '\'');
+	    while (*curchar != '\'') {
+		*p = *curchar;
+		++p;
+		++curchar;
+	    }
+	    *p = '\0';
+	    s->symvalue.constval = build(O_SCON, strdup(buf));
+	    s->type = s->symvalue.constval->nodetype;
+	    break;
+
+	case 'e':
+	    getType(s);
+	    skipchar(curchar, ',');
+	    s->symvalue.constval = build(O_LCON, getint());
+	    break;
+
+	case 'S':
+	    getType(s);
+	    skipchar(curchar, ',');
+	    i = getint(); /* set size */
+	    skipchar(curchar, ',');
+	    i = getint(); /* number of bits in constant */
+	    s->symvalue.constval = build(O_LCON, 0);
+	    break;
+
+	default:
+	    s->type = t_int;
+	    s->symvalue.constval = build(O_LCON, 0);
+	    printf("[internal error: unknown constant type '%c']", *p);
+	    break;
+    }
+    s->symvalue.constval->nodetype = s->type;
 }
 
 /*
@@ -317,15 +399,52 @@ Symbol s;
 
 /*
  * Setup a symbol entry for a public procedure or function.
+ *
+ * If it contains nested procedures, then it may already be defined
+ * in the current block as a MODULE.
  */
 
-private publicRoutine (s, class, addr)
-Symbol s;
+private publicRoutine (s, n, class, addr, isinternal)
+Symbol *s;
+Name n;
 Symclass class;
 Address addr;
+boolean isinternal;
 {
-    enterRoutine(s, class);
-    s->level = program->level;
+    Symbol nt, t;
+
+    newSym(nt, n);
+    if (isinternal) {
+	markInternal(nt);
+    }
+    enterRoutine(nt, class);
+    find(t, n) where
+	t != nt and t->class == MODULE and t->block == nt->block
+    endfind(t);
+    if (t == nil) {
+	t = nt;
+    } else {
+	t->language = nt->language;
+	t->class = nt->class;
+	t->type = nt->type;
+	t->chain = nt->chain;
+	t->symvalue = nt->symvalue;
+	nt->class = EXTREF;
+	nt->symvalue.extref = t;
+	delete(nt);
+	curparam = t;
+	changeBlock(t);
+    }
+    if (t->block == program) {
+	t->level = program->level;
+    } else if (t->class == MODULE) {
+	t->level = t->block->level;
+    } else if (t->block->class == MODULE) {
+	t->level = t->block->block->level;
+    } else {
+	t->level = t->block->level + 1;
+    }
+    *s = t;
 }
 
 /*
@@ -397,6 +516,33 @@ Symclass class;
 	enterblock(s);
     }
     curparam = s;
+}
+
+/*
+ * Handling an external variable is tricky, since we might already
+ * know it but need to define it's type for other type information
+ * in the file.  So just in case we read the type information anyway.
+ */
+
+private extVar (symp, n, off)
+Symbol *symp;
+Name n;
+integer off;
+{
+    Symbol s, t;
+
+    find(s, n) where
+	s->level == program->level and s->class == VAR
+    endfind(s);
+    if (s == nil) {
+	makeVariable(s, n, off);
+	s->level = program->level;
+	s->block = curmodule;
+	getExtRef(s);
+    } else {
+	t = constype(nil);
+    }
+    *symp = s;
 }
 
 /*
@@ -526,22 +672,6 @@ Symbol s;
 
 /*
  * Construct a type out of a string encoding.
- *
- * The forms of the string are
- *
- *	<number>
- *	<number>=<type>
- *	r<type>;<number>;<number>		-- subrange
- *	a<type>;<type>				-- array[index] of element
- *      A<type>					-- open array
- *	s<size>{<name>:<type>;<number>;<number>}-- record
- *	u<size>{<name>:<type>;<number>;<number>}-- union
- *	*<type>					-- pointer
- *	f<type>,<integer>;<paramlist>		-- function variable
- *	p<integer>;<paramlist>			-- procedure variable
- *	S<type>					-- set of type
- *	o<name>[,<type>]			-- opaque type
- *	i<name>,<type>				-- imported type
  */
 
 private Rangetype getRangeBoundType();
@@ -552,7 +682,17 @@ Symbol type;
     register Symbol t;
     register integer n;
     char class;
+    char *p;
 
+    while (*curchar == '@') {
+	p = index(curchar, ';');
+	if (p == nil) {
+	    fflush(stdout);
+	    fprintf(stderr, "missing ';' after type attributes");
+	} else {
+	    curchar = p + 1;
+	}
+    }
     if (isdigit(*curchar)) {
 	n = getint();
 	if (n >= NTYPES) {
@@ -597,10 +737,24 @@ Symbol type;
 		t->type = constype(nil);
 		break;
 
-	    case T_OPENARRAY:
-		t->class = ARRAY;
-		t->chain = t_open;
+	    case T_OLDOPENARRAY:
+		t->class = DYNARRAY;
+		t->symvalue.ndims = 1;
 		t->type = constype(nil);
+		t->chain = t_int;
+		break;
+
+	    case T_OPENARRAY:
+	    case T_DYNARRAY:
+		consDynarray(t);
+		break;
+
+	    case T_SUBARRAY:
+		t->class = SUBARRAY;
+		t->symvalue.ndims = getint();
+		skipchar(curchar, ',');
+		t->type = constype(nil);
+		t->chain = t_int;
 		break;
 
 	    case T_RECORD:
@@ -648,6 +802,11 @@ Symbol type;
 
 	    case T_OPAQUE:
 		consOpaqType(t);
+		break;
+
+	    case T_FILE:
+		t->class = FILET;
+		t->type = constype(nil);
 		break;
 
 	    default:
@@ -710,6 +869,20 @@ private Rangetype getRangeBoundType ()
 	    break;
     }
     return r;
+}
+
+/*
+ * Construct a dynamic array descriptor.
+ */
+
+private consDynarray (t)
+register Symbol t;
+{
+    t->class = DYNARRAY;
+    t->symvalue.ndims = getint();
+    skipchar(curchar, ',');
+    t->type = constype(nil);
+    t->chain = t_int;
 }
 
 /*
@@ -783,7 +956,7 @@ Symbol t;
 	u->level = curblock->level + 1;
 	u->block = curblock;
 	u->type = t;
-	u->symvalue.iconval = getint();
+	u->symvalue.constval = build(O_LCON, (long) getint());
 	++count;
 	skipchar(curchar, ',');
 	chkcont(curchar);
@@ -842,10 +1015,11 @@ Symbol t;
     }
     t->class = TYPEREF;
     t->symvalue.typeref = curchar;
-    curchar = p + 1;
     if (*p == ',') {
 	curchar = p + 1;
 	tmp = constype(nil);
+    } else {
+	curchar = p;
     }
     skipchar(curchar, ';');
     *p = '\0';

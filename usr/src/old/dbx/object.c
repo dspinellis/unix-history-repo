@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)object.c	1.15 (Berkeley) %G%";
+static	char sccsid[] = "@(#)object.c	1.16 (Berkeley) %G%";
+
+static char rcsid[] = "$Header: object.c,v 1.6 84/12/26 10:40:51 linton Exp $";
 
 /*
  * Object code interface, mainly for extraction of symbolic information.
@@ -86,6 +88,17 @@ Symbol b;
     }
 }
 
+/*
+ * Change the current block with saving the previous one,
+ * since it is assumed that the symbol for the current one is to be deleted.
+ */
+
+public changeBlock (b)
+Symbol b;
+{
+    curblock = b;
+}
+
 public enterblock (b)
 Symbol b;
 {
@@ -159,10 +172,17 @@ String file;
 	fatal("can't open %s", file);
     }
     read(f, &hdr, sizeof(hdr));
-    objsize = hdr.a_text;
-    nlhdr.nsyms = hdr.a_syms / sizeof(nlist);
-    nlhdr.nfiles = nlhdr.nsyms;
-    nlhdr.nlines = nlhdr.nsyms;
+    if (N_BADMAG(hdr)) {
+	objsize = 0;
+	nlhdr.nsyms = 0;
+	nlhdr.nfiles = 0;
+	nlhdr.nlines = 0;
+    } else {
+	objsize = hdr.a_text;
+	nlhdr.nsyms = hdr.a_syms / sizeof(nlist);
+	nlhdr.nfiles = nlhdr.nsyms;
+	nlhdr.nlines = nlhdr.nsyms;
+    }
     if (nlhdr.nsyms > 0) {
 	lseek(f, (long) N_STROFF(hdr), 0);
 	read(f, &(nlhdr.stringsize), sizeof(nlhdr.stringsize));
@@ -175,8 +195,27 @@ String file;
 	ordfunctab();
 	setnlines();
 	setnfiles();
+    } else {
+	initsyms();
     }
     close(f);
+}
+
+/*
+ * Found the beginning of the externals in the object file
+ * (signified by the "-lg" or find an external), close the
+ * block for the last procedure.
+ */
+
+private foundglobals ()
+{
+    if (curblock->class != PROG) {
+	exitblock();
+	if (curblock->class != PROG) {
+	    exitblock();
+	}
+    }
+    enterline(0, (linep-1)->addr + 1);
 }
 
 /*
@@ -233,17 +272,13 @@ Fileid f;
 	    enter_nl(name, np);
 	} else if (name[0] == '-') {
 	    afterlg = true;
-	    if (curblock->class != PROG) {
-		exitblock();
-		if (curblock->class != PROG) {
-		    exitblock();
-		}
-	    }
-	    enterline(0, (linep-1)->addr + 1);
+	    foundglobals();
 	} else if (afterlg) {
-	    if (name[0] == '_') {
-		check_global(&name[1], np);
-	    }
+	    check_global(name, np);
+	} else if ((np->n_type&N_EXT) == N_EXT) {
+	    afterlg = true;
+	    foundglobals();
+	    check_global(name, np);
 	} else if (name[0] == '_') {
 	    check_local(&name[1], np);
 	} else if ((np->n_type&N_TEXT) == N_TEXT) {
@@ -251,9 +286,6 @@ Fileid f;
 	}
 	++curnp;
 	np = curnp;
-    }
-    if (not afterlg) {
-	fatal("not linked for debugging, use \"cc -g ...\"");
     }
     dispose(namelist);
 }
@@ -294,12 +326,6 @@ private initsyms ()
     findbeginning(program);
     enterblock(program);
     curmodule = program;
-    t_boolean = maketype("$boolean", 0L, 1L);
-    t_int = maketype("$integer", 0x80000000L, 0x7fffffffL);
-    t_char = maketype("$char", 0L, 255L);
-    t_real = maketype("$real", 8L, 0L);
-    t_nil = maketype("$nil", 0L, 0L);
-    t_open = maketype("integer", 0L, -1L);
 }
 
 /*
@@ -309,9 +335,9 @@ private initsyms ()
 public objfree ()
 {
     symbol_free();
-    keywords_free();
-    names_free();
-    dispose(stringtab);
+    /* keywords_free(); */
+    /* names_free(); */
+    /* dispose(stringtab); */
     clrfunctab();
 }
 
@@ -428,27 +454,112 @@ register struct nlist *np;
 }
 
 /*
- * Try to find the symbol that is referred to by the given name.
- * Since it's an external, we may want to follow a level of indirection.
+ * Try to find the symbol that is referred to by the given name.  Since it's
+ * an external, we need to follow a level or two of indirection.
  */
 
-private Symbol findsym (n)
+private Symbol findsym (n, var_isextref)
 Name n;
+boolean *var_isextref;
 {
     register Symbol r, s;
 
+    *var_isextref = false;
     find(s, n) where
-	s->level == program->level and
-	    (s->class == EXTREF or s->class == VAR or
-	     s->class == PROC or s->class == FUNC)
+	(
+	    s->level == program->level and (
+		s->class == EXTREF or s->class == VAR or
+		s->class == PROC or s->class == FUNC
+	    )
+	) or (
+	    s->block == program and s->class == MODULE
+	)
     endfind(s);
-    if (s != nil and s->class == EXTREF) {
+    if (s == nil) {
+	r = nil;
+    } else if (s->class == EXTREF) {
+	*var_isextref = true;
 	r = s->symvalue.extref;
 	delete(s);
+
+	/*
+	 * Now check for another level of indirection that could come from
+	 * a forward reference in procedure nesting information.  In this case
+	 * the symbol has already been deleted.
+	 */
+	if (r != nil and r->class == EXTREF) {
+	    r = r->symvalue.extref;
+	}
+/*
+    } else if (s->class == MODULE) {
+	s->class = FUNC;
+	s->level = program->level;
+	r = s;
+ */
     } else {
 	r = s;
     }
     return r;
+}
+
+/*
+ * Create a symbol for a text symbol with no source information.
+ * We treat it as an assembly language function.
+ */
+
+private Symbol deffunc (n)
+Name n;
+{
+    Symbol f;
+
+    f = insert(n);
+    f->language = findlanguage(".s");
+    f->class = FUNC;
+    f->type = t_int;
+    f->block = curblock;
+    f->level = program->level;
+    f->symvalue.funcv.src = false;
+    f->symvalue.funcv.inline = false;
+    return f;
+}
+
+/*
+ * Create a symbol for a data or bss symbol with no source information.
+ * We treat it as an assembly language variable.
+ */
+
+private Symbol defvar (n)
+Name n;
+{
+    Symbol v;
+
+    v = insert(n);
+    v->language = findlanguage(".s");
+    v->class = VAR;
+    v->type = t_int;
+    v->level = program->level;
+    v->block = curblock;
+    return v;
+}
+
+/*
+ * Update a symbol entry with a text address.
+ */
+
+private updateTextSym (s, name, addr)
+Symbol s;
+char *name;
+Address addr;
+{
+    if (s->class == VAR) {
+	s->symvalue.offset = addr;
+    } else {
+	s->symvalue.funcv.beginaddr = addr;
+	if (name[0] == '_') {
+	    newfunc(s, codeloc(s));
+	    findbeginning(s);
+	}
+    }
 }
 
 /*
@@ -462,27 +573,46 @@ register struct nlist *np;
 {
     register Name n;
     register Symbol t, u;
+    char buf[4096];
+    boolean isextref;
+    integer count;
 
-    if (not streq(name, "end")) {
-	n = identname(name, true);
-	if ((np->n_type&N_TYPE) == N_TEXT) {
-	    t = findsym(n);
-	    if (t == nil) {
-		t = insert(n);
-		t->language = findlanguage(".s");
-		t->class = FUNC;
-		t->type = t_int;
-		t->block = curblock;
-		t->level = program->level;
-		t->symvalue.funcv.src = false;
-		t->symvalue.funcv.inline = false;
+    if (not streq(name, "_end")) {
+	if (name[0] == '_') {
+	    n = identname(&name[1], true);
+	} else {
+	    n = identname(name, true);
+	    if (lookup(n) != nil) {
+		sprintf(buf, "$%s", name);
+		n = identname(buf, false);
 	    }
-	    if (t->class == VAR) {
-		t->symvalue.offset = np->n_value;
-	    } else {
-		t->symvalue.funcv.beginaddr = np->n_value;
-		newfunc(t, codeloc(t));
-		findbeginning(t);
+	}
+	if ((np->n_type&N_TYPE) == N_TEXT) {
+	    count = 0;
+	    t = findsym(n, &isextref);
+	    while (isextref) {
+		++count;
+		updateTextSym(t, name, np->n_value);
+		t = findsym(n, &isextref);
+	    }
+	    if (count == 0) {
+		if (t == nil) {
+		    t = deffunc(n);
+		    updateTextSym(t, name, np->n_value);
+		    if (tracesyms) {
+			printdecl(t);
+		    }
+		} else {
+		    if (t->class == MODULE) {
+			u = t;
+			t = deffunc(n);
+			t->block = u;
+			if (tracesyms) {
+			    printdecl(t);
+			}
+		    }
+		    updateTextSym(t, name, np->n_value);
+		}
 	    }
 	} else if ((np->n_type&N_TYPE) == N_BSS) {
 	    find(t, n) where
@@ -508,24 +638,54 @@ register struct nlist *np;
  * If not, create a variable for the entry.  In any case,
  * set the offset of the variable according to the value field
  * in the entry.
+ *
+ * If the external name has been referred to by several other symbols,
+ * we must update each of them.
  */
 
 private check_var (np, n)
 struct nlist *np;
 register Name n;
 {
-    register Symbol t;
+    register Symbol t, u, next;
+    Symbol conflict;
 
-    t = findsym(n);
+    t = lookup(n);
     if (t == nil) {
-	t = insert(n);
-	t->language = findlanguage(".s");
-	t->class = VAR;
-	t->type = t_int;
-	t->level = program->level;
-	t->block = curblock;
+	t = defvar(n);
+	t->symvalue.offset = np->n_value;
+	if (tracesyms) {
+	    printdecl(t);
+	}
+    } else {
+	conflict = nil;
+	do {
+	    next = t->next_sym;
+	    if (t->name == n) {
+		if (t->class == MODULE and t->block == program) {
+		    conflict = t;
+		} else if (t->class == EXTREF and t->level == program->level) {
+		    u = t->symvalue.extref;
+		    while (u != nil and u->class == EXTREF) {
+			u = u->symvalue.extref;
+		    }
+		    u->symvalue.offset = np->n_value;
+		    delete(t);
+		} else if (t->level == program->level and
+		    (t->class == VAR or t->class == PROC or t->class == FUNC)
+		) {
+		    conflict = nil;
+		    t->symvalue.offset = np->n_value;
+		}
+	    }
+	    t = next;
+	} while (t != nil);
+	if (conflict != nil) {
+	    u = defvar(n);
+	    u->block = conflict;
+	    u->symvalue.offset = np->n_value;
+	}
     }
-    t->symvalue.offset = np->n_value;
 }
 
 /*
@@ -573,7 +733,8 @@ String name;
 {
     register String mname;
     register integer i;
-    register Symbol s;
+    Name n;
+    Symbol s;
 
     mname = strdup(name);
     i = strlen(mname) - 2;
@@ -583,11 +744,15 @@ String name;
 	while (mname[i] != '/' and i >= 0) {
 	    --i;
 	}
-	s = insert(identname(&mname[i+1], true));
-	s->language = findlanguage(".s");
-	s->class = MODULE;
-	s->symvalue.funcv.beginaddr = 0;
-	findbeginning(s);
+	n = identname(&mname[i+1], true);
+	find(s, n) where s->block == program and s->class == MODULE endfind(s);
+	if (s == nil) {
+	    s = insert(n);
+	    s->language = findlanguage(".s");
+	    s->class = MODULE;
+	    s->symvalue.funcv.beginaddr = 0;
+	    findbeginning(s);
+	}
 	if (curblock->class != PROG) {
 	    exitblock();
 	    if (curblock->class != PROG) {

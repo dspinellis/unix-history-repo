@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)ops.c	1.4 (Berkeley) %G%";
+static	char sccsid[] = "@(#)ops.c	1.5 (Berkeley) %G%";
+
+static char rcsid[] = "$Header: ops.c,v 1.5 84/12/26 10:41:07 linton Exp $";
 
 /*
  * Machine operators.

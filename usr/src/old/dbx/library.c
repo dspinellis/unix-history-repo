@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)library.c	1.5 (Berkeley) %G%";
+static	char sccsid[] = "@(#)library.c	1.6 (Berkeley) %G%";
+
+static char rcsid[] = "$Header: library.c,v 1.5 84/12/26 10:39:52 linton Exp $";
 
 /*
  * General purpose routines.
@@ -392,6 +394,20 @@ public catcherrs()
 {
     _mycerror();
     initErrInfo();
+}
+
+/*
+ * Turn off the error catching mechanism completely by having all errors
+ * ignored.  This is most useful between a fork and an exec.
+ */
+
+public nocatcherrs()
+{
+    integer i;
+
+    for (i = 0; i < sys_nerr; i++) {
+	errinfo[i].func = ERR_IGNORE;
+    }
 }
 
 /*

@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)source.c	1.11 (Berkeley) %G%";
+static	char sccsid[] = "@(#)source.c	1.12 (Berkeley) %G%";
+
+static char rcsid[] = "$Header: source.c,v 1.4 84/06/07 16:29:38 linton Exp $";
 
 /*
  * Source file management.
@@ -11,6 +13,9 @@ static	char sccsid[] = "@(#)source.c	1.11 (Berkeley) %G%";
 #include "object.h"
 #include "mappings.h"
 #include "machine.h"
+#include "keywords.h"
+#include "tree.h"
+#include "eval.h"
 #include <sys/file.h>
 
 #ifndef public
@@ -26,6 +31,8 @@ Lineno cursrcline;
 
 List sourcepath;
 #endif
+
+extern char *re_comp();
 
 private Lineno lastlinenum;
 private String prevsource = nil;
@@ -48,7 +55,7 @@ private String prevsource = nil;
 
 typedef long Seekaddr;
 
-#define NSLOTS 20
+#define NSLOTS 40
 #define NLINESPERSLOT 500
 
 #define slotno(line)    ((line) div NLINESPERSLOT)
@@ -58,6 +65,25 @@ typedef long Seekaddr;
 
 private File srcfp;
 private Seekaddr *seektab[NSLOTS];
+
+/*
+ * Determine if the current source file is available.
+ */
+
+public boolean canReadSource ()
+{
+    boolean b;
+
+    if (cursource == nil) {
+	b = false;
+    } else if (cursource != prevsource) {
+	skimsource();
+	b = (boolean) (lastlinenum != 0);
+    } else {
+	b = true;
+    }
+    return b;
+}
 
 /*
  * Print out the given lines from the source.
@@ -81,8 +107,8 @@ Lineno l1, l2;
 	    beginerrmsg();
 	    fprintf(stderr, "couldn't read \"%s\"\n", cursource);
 	} else {
-	    lb = (l1 == 0) ? lastlinenum : l1;
-	    ub = (l2 == 0) ? lastlinenum : l2;
+	    lb = (l1 == LASTLINE) ? lastlinenum : l1;
+	    ub = (l2 == LASTLINE) ? lastlinenum : l2;
 	    if (lb < 1) {
 		beginerrmsg();
 		fprintf(stderr, "line number must be positive\n");
@@ -307,71 +333,135 @@ String filename;
     } else {
 	sprintf(lineno, "+1");
     }
-    call(ed, stdin, stdout, lineno, src, nil);
+    if (streq(ed, "vi") or streq(ed, "ex")) {
+	call(ed, stdin, stdout, lineno, src, nil);
+    } else {
+	call(ed, stdin, stdout, src, nil);
+    }
 }
 
-#include "re.h"
 /*
- * Search the current file with
- * a regular expression.
+ * Strip away portions of a given pattern not part of the regular expression.
  */
-public search(forward, re)
-	Boolean forward;
-	String re;
+
+private String getpattern (pattern)
+String pattern;
 {
-	register String p;
-	register File f;
-	register Lineno line;
-	Lineno l1, l2;
-	Boolean matched;
-	Char buf[512];
-	
-	if (cursource == nil) {
-		beginerrmsg();
-		fprintf(stderr, "No source file.\n");
-		return;
+    register char *p, *r;
+
+    p = pattern;
+    while (*p == ' ' or *p == '\t') {
+	++p;
+    }
+    r = p;
+    while (*p != '\0') {
+	++p;
+    }
+    --p;
+    if (*p == '\n') {
+	*p = '\0';
+	--p;
+    }
+    if (*p == *r) {
+	*p = '\0';
+	--p;
+    }
+    return r + 1;
+}
+
+/*
+ * Search the current file for a regular expression.
+ */
+
+public search (direction, pattern)
+char direction;
+String pattern;
+{
+    register String p;
+    register File f;
+    String re, err;
+    Lineno line;
+    boolean matched;
+    char buf[512];
+    
+    if (cursource == nil) {
+	beginerrmsg();
+	fprintf(stderr, "no source file\n");
+    } else {
+	if (cursource != prevsource) {
+	    skimsource();
 	}
-	if (cursource != prevsource)
-		skimsource();
 	if (lastlinenum == 0) {
-		beginerrmsg();
-		fprintf(stderr, "Couldn't read \"%s\"\n", cursource);
-		return;
-	}
-	circf = 0;
-	if (re != nil && *re != '\0')
-		recompile(re);
-	matched = false;
-	f = srcfp;
-	line = cursrcline;
-	do {
-		if (forward) {
-			line++;
-			if (line > lastlinenum)
-				line = 1;
+	    beginerrmsg();
+	    fprintf(stderr, "couldn't read \"%s\"\n", cursource);
+	} else {
+	    re = getpattern(pattern);
+	    /* circf = 0; */
+	    if (re != nil and *re != '\0') {
+		err = re_comp(re);
+		if (err != nil) {
+		    error(err);
+		}
+	    }
+	    matched = false;
+	    f = srcfp;
+	    line = cursrcline;
+	    do {
+		if (direction == '/') {
+		    ++line;
+		    if (line > lastlinenum) {
+			line = 1;
+		    }
 		} else {
-			line--;
-			if (line < 1)
-				line = lastlinenum;
+		    --line;
+		    if (line < 1) {
+			line = lastlinenum;
+		    }
 		}
 		fseek(f, srcaddr(line), L_SET);
-		for (p = buf; (*p = getc(f)) != '\n'; p++)
-			if (*p == EOF)
-				error("Unexpected EOF.");
+		p = buf;
+		*p = getc(f);
+		while ((*p != '\n') and (*p != EOF)) {
+		    ++p;
+		    *p = getc(f);
+		}
 		*p = '\0';
-		matched = (Boolean)rematch(buf);
-		if (matched)
-			break;
-	} while (line != cursrcline);
-	if (!matched)
-		error("No match");
-#define	WINDOW	10		/* should be used globally */
-	l1 = line - WINDOW / 2;
-	if (l1 < 1)
-		l1 = 1;
-	l2 = line + WINDOW / 2;
-	if (l2 > lastlinenum)
-		l2 = lastlinenum;
-	printlines(l1, l2);
-	cursrcline = line;	/* override printlines */
+		matched = (boolean) re_exec(buf);
+	    } while (not matched and line != cursrcline);
+	    if (not matched) {
+		beginerrmsg();
+		fprintf(stderr, "no match\n");
+	    } else {
+		printlines(line, line);
+		cursrcline = line;
+	    }
+	}
+    }
+}
+
+/*
+ * Compute a small window around the given line.
+ */
+
+public getsrcwindow (line, l1, l2)
+Lineno line, *l1, *l2;
+{
+    Node s;
+    integer size;
+
+    s = findvar(identname("$listwindow", true));
+    if (s == nil) {
+	size = 10;
+    } else {
+	eval(s);
+	size = pop(integer);
+    }
+    *l1 = line - (size div 2);
+    if (*l1 < 1) {
+	*l1 = 1;
+    }
+    *l2 = *l1 + size;
+    if (lastlinenum != LASTLINE and *l2 > lastlinenum) {
+	*l2 = lastlinenum;
+    }
 }

@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)vax.c	1.12 (Berkeley) %G%";
+static	char sccsid[] = "@(#)vax.c	1.13 (Berkeley) %G%";
+
+static char rcsid[] = "$Header: machine.c,v 1.5 84/12/26 10:40:05 linton Exp $";
 
 /*
  * Target machine dependent stuff.
@@ -16,6 +18,7 @@ static	char sccsid[] = "@(#)vax.c	1.12 (Berkeley) %G%";
 #include "source.h"
 #include "mappings.h"
 #include "object.h"
+#include "keywords.h"
 #include "ops.h"
 #include <signal.h>
 
@@ -289,7 +292,15 @@ int mode;
 	    printf("%x", argval);
 	}
     } else {
-	printf("%d(%s)", argval, reg);
+	if (varIsSet("$hexoffsets")) {
+	    if (argval < 0) {
+		printf("-%x(%s)", -(argval), reg);
+	    } else {
+		printf("%x(%s)", argval, reg);
+	    }
+	} else {
+	    printf("%d(%s)", argval, reg);
+	}
     }
     return argval;
 }
@@ -472,24 +483,27 @@ public printerror()
 {
     extern Integer sys_nsig;
     extern String sys_siglist[];
-    Integer err;
+    integer err;
 
     if (isfinished(process)) {
 	err = exitcode(process);
-	printf("\"%s\" terminated", objname);
-	if (err)
-	    printf("abnormally (exit code %d)", err);
-	putchar('\n');
+	if (err == 0) {
+	    printf("\"%s\" terminated normally\n", objname);
+	} else {
+	    printf("\"%s\" terminated abnormally (exit code %d)\n",
+		objname, err
+	    );
+	}
 	erecover();
     }
     if (runfirst) {
-	fprintf(stderr, "Entering debugger ...");
+	fprintf(stderr, "Entering debugger ...\n");
 	init();
-	fprintf(stderr, " type 'help' for help\n");
     }
     err = errnum(process);
     putchar('\n');
     printsig(err);
+    putchar(' ');
     printloc();
     putchar('\n');
     if (curline > 0) {
@@ -500,48 +514,49 @@ public printerror()
     erecover();
 }
 
+/*
+ * Print out a signal.
+ */
+
 private String illinames[] = {
-	"reserved addressing fault",
-	"priviliged instruction fault",
-	"reserved operand fault"
+    "reserved addressing fault",
+    "priviliged instruction fault",
+    "reserved operand fault"
 };
+
 private String fpenames[] = {
-	nil,
-	"integer overflow trap",
-	"integer divide by zero trap",
-	"floating overflow trap",
-	"floating/decimal divide by zero trap",
-	"floating underflow trap",
-	"decimal overflow trap",
-	"subscript out of range trap",
-	"floating overflow fault",
-	"floating divide by zero fault",
-	"floating undeflow fault"
+    nil,
+    "integer overflow trap",
+    "integer divide by zero trap",
+    "floating overflow trap",
+    "floating/decimal divide by zero trap",
+    "floating underflow trap",
+    "decimal overflow trap",
+    "subscript out of range trap",
+    "floating overflow fault",
+    "floating divide by zero fault",
+    "floating undeflow fault"
 };
 
-public printsig(signo)
-    Integer signo;
+public printsig (signo)
+integer signo;
 {
-    Integer sigcode;
+    integer code;
 
-    if (0 < signo && signo < sys_nsig)
-	printf("%s ", sys_siglist[signo]);
-    else
-	printf("signal %d ", signo);
-    sigcode = errcode(process);
-    switch (signo) {
-
-    case SIGFPE:
-	    if (sigcode > 0 &&
-		sigcode < sizeof fpenames / sizeof fpenames[0])
-		    printf("(%s) ",  fpenames[sigcode]);
-	    break;
-
-    case SIGILL:
-	    if (sigcode >= 0 &&
-		sigcode < sizeof illinames / sizeof illinames[0])
-		    printf("(%s) ", illinames[sigcode]);
-	    break;
+    if (signo < 0 or signo > sys_nsig) {
+	printf("[signal %d]", signo);
+    } else {
+	printf("%s", sys_siglist[signo]);
+    }
+    code = errcode(process);
+    if (signo == SIGILL) {
+	if (code >= 0 and code < sizeof(illinames) / sizeof(illinames[0])) {
+	    printf(" (%s)", illinames[code]);
+	}
+    } else if (signo == SIGFPE) {
+	if (code > 0 and code < sizeof(fpenames) / sizeof(fpenames[0])) {
+	    printf(" (%s)", fpenames[code]);
+	}
     }
 }
 
@@ -559,10 +574,11 @@ public endprogram()
     stepto(nextaddr(pc, true));
     printnews();
     exitcode = argn(1, nil);
-    printf("\nexecution completed");
-    if (exitcode)
-	printf(" (exit code %d)", exitcode);
-    putchar('\n');
+    if (exitcode != 0) {
+	printf("\nexecution completed (exit code %d)\n", exitcode);
+    } else {
+	printf("\nexecution completed\n");
+    }
     getsrcpos();
     erecover();
 }
@@ -572,7 +588,6 @@ public endprogram()
  * is true).  If "isnext" is true, skip over procedure calls.
  */
 
-private Address findnextaddr();
 private Address getcall();
 
 public dostep(isnext)
@@ -581,24 +596,19 @@ Boolean isnext;
     register Address addr;
     register Lineno line;
     String filename;
-    Address startaddr, prevaddr;
+    Address startaddr;
 
     startaddr = pc;
-    prevaddr = startaddr;
     addr = nextaddr(pc, isnext);
     if (not inst_tracing and nlhdr.nlines != 0) {
 	line = linelookup(addr);
 	while (line == 0) {
-	    prevaddr = addr;
-	    addr = findnextaddr(addr, isnext);
+	    addr = nextaddr(addr, isnext);
 	    line = linelookup(addr);
 	}
 	curline = line;
     } else {
 	curline = 0;
-    }
-    if (addr == startaddr) {
-	stepto(prevaddr);
     }
     stepto(addr);
     filename = srcfilename(addr);
@@ -617,6 +627,8 @@ Boolean isnext;
  * that branches is the branch address (or relative offset).
  */
 
+private Address findnextaddr();
+
 public Address nextaddr(startaddr, isnext)
 Address startaddr;
 boolean isnext;
@@ -628,6 +640,27 @@ boolean isnext;
 	addr = findnextaddr(startaddr, isnext);
     }
     return addr;
+}
+
+/*
+ * Determine if it's ok to skip function f entered by instruction ins.
+ * If so, we're going to compute the return address and step to it.
+ * Therefore we cannot skip over a function entered by a jsb or bsb,
+ * since the return address is not easily computed for them.
+ */
+
+private boolean skipfunc (ins, f)
+VaxOpcode ins;
+Symbol f;
+{
+    boolean b;
+
+    b = (boolean) (
+	ins != O_JSB and ins != O_BSBB and ins != O_BSBW and
+	not inst_tracing and nlhdr.nlines != 0 and
+	nosource(curfunc) and canskip(curfunc)
+    );
+    return b;
 }
 
 private Address findnextaddr(startaddr, isnext)
@@ -648,55 +681,64 @@ Boolean isnext;
     addr = startaddr;
     iread(&ins, addr, sizeof(ins));
     switch (ins) {
+	/*
+	 * It used to be that unconditional jumps and branches were handled
+	 * by taking their destination address as the next address.  While
+	 * saving the cost of starting up the process, this approach
+	 * doesn't work when jumping indirect (since the value in the
+	 * register might not yet have been set).
+	 *
+	 * So unconditional jumps and branches are now handled the same way
+	 * as conditional jumps and branches.
+	 *
 	case O_BRB:
 	case O_BRW:
 	    addrstatus = BRANCH;
 	    break;
+	 *
+	 */
 	    
 	case O_BSBB:
 	case O_BSBW:
 	case O_JSB:
 	case O_CALLG:
 	case O_CALLS:
-	    if (isnext) {
-		addrstatus = SEQUENTIAL;
-	    } else {
+	    addrstatus = KNOWN;
+	    stepto(addr);
+	    pstep(process, DEFSIG);
+	    addr = reg(PROGCTR);
+	    pc = addr;
+	    setcurfunc(whatblock(pc));
+	    if (not isbperr()) {
+		printstatus();
+		/* NOTREACHED */
+	    }
+	    bpact();
+	    if (isnext or skipfunc(ins, curfunc)) {
 		addrstatus = KNOWN;
+		addr = return_addr();
 		stepto(addr);
-		pstep(process, DEFSIG);
-		addr = reg(PROGCTR);
-		pc = addr;
-		setcurfunc(whatblock(pc));
-		if (not isbperr()) {
-		    printstatus();
-		    /* NOTREACHED */
-		}
 		bpact();
-		if (nosource(curfunc) and canskip(curfunc) and
-		  nlhdr.nlines != 0) {
-		    addrstatus = KNOWN;
-		    addr = return_addr();
-		    stepto(addr);
-		    bpact();
-		} else {
-		    callnews(/* iscall = */ true);
-		}
+	    } else {
+		callnews(/* iscall = */ true);
 	    }
 	    break;
 
 	case O_RSB:
 	case O_RET:
 	    addrstatus = KNOWN;
+	    stepto(addr);
 	    callnews(/* iscall = */ false);
-	    addr = return_addr();
-	    if (addr == pc) {	/* recursive ret to self */
-		pstep(process, DEFSIG);
-	    } else {
-		stepto(addr);
+	    pstep(process, DEFSIG);
+	    addr = reg(PROGCTR);
+	    pc = addr;
+	    if (not isbperr()) {
+		printstatus();
 	    }
 	    bpact();
 	    break;
 
+	case O_BRB: case O_BRW:
 	case O_JMP: /* because it may be jmp (r1) */
 	case O_BNEQ: case O_BEQL: case O_BGTR:
 	case O_BLEQ: case O_BGEQ: case O_BLSS:
@@ -938,16 +980,6 @@ Address addr;
 	prev = s;
     }
     panic("unsetbp: couldn't find address %d", addr);
-}
-
-/*
- * Predicate to test if the reason the process stopped was because
- * of a breakpoint.
- */
-
-public Boolean isbperr()
-{
-    return (Boolean) (not isfinished(process) and errnum(process) == SIGTRAP);
 }
 
 /*

@@ -1,4 +1,4 @@
-/*	defs.h	1.3	84/08/12	*/
+/*	defs.h	1.4	85/03/01	*/
 
 /*
  * Public definitions, common to all.
@@ -51,7 +51,6 @@ typedef char *String;
 
 #define strdup(s)       strcpy(malloc((unsigned) strlen(s) + 1), s)
 #define streq(s1, s2)   (strcmp(s1, s2) == 0)
-#define strneq(s1, s2, n)   (strncmp(s1, s2, n) == 0)
 
 typedef FILE *File;
 typedef int Fileid;

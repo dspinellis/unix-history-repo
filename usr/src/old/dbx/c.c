@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)c.c	1.8 (Berkeley) %G%";
+static	char sccsid[] = "@(#)c.c	1.9 (Berkeley) %G%";
+
+static char rcsid[] = "$Header: c.c,v 1.5 84/12/26 10:38:23 linton Exp $";
 
 /*
  * C-dependent symbol routines.
@@ -80,6 +82,10 @@ Symbol type1, type2;
 	    ) or (
 		t1->class == RANGE and isdouble(t1) and t2 == t_real->type
 	    ) or (
+		t1->class == RANGE and t2->class == RANGE and
+		t1->symvalue.rangev.lower == t2->symvalue.rangev.lower and
+		t1->symvalue.rangev.upper == t2->symvalue.rangev.upper
+	    ) or (
 		t1->type == t2->type and (
 		    (t1->class == t2->class) or
 		    (t1->class == SCAL and t2->class == CONST) or
@@ -90,31 +96,6 @@ Symbol type1, type2;
 		t2->class == ARRAY and c_typematch(t2->type, t_char) and
 		t2->language == primlang
 	    )
-	);
-    }
-    return b;
-}
-
-/*
- * Decide if a field is a bit field.
- */
-
-private Boolean isbitfield(s)
-register Symbol s;
-{
-    Boolean b;
-    register Integer off, len;
-    register Symbol t;
-
-    off = s->symvalue.field.offset;
-    len = s->symvalue.field.length;
-    if ((off mod BITSPERBYTE) != 0 or (len mod BITSPERBYTE) != 0) {
-	b = true;
-    } else {
-	t = rtype(s->type);
-	b = (Boolean)
-	    (t->class == SCAL and len != (sizeof(int)*BITSPERBYTE) or
-	    len != (size(t)*BITSPERBYTE)
 	);
     }
     return b;
@@ -148,8 +129,9 @@ Integer indent;
     switch (s->class) {
 	case CONST:
 	    if (s->type->class == SCAL) {
-		printf("(enumeration constant, ord %ld)",
-		    s->symvalue.iconval);
+		printf("enumeration constant with value ");
+		eval(s->symvalue.constval);
+		c_printval(s);
 	    } else {
 		printf("const %s = ", symname(s));
 		printval(s);
@@ -158,12 +140,8 @@ Integer indent;
 
 	case TYPE:
 	case VAR:
-	    if (s->class != TYPE) {
-		if (s->level == 1 and s->block != program) {
-		    printf("static ");
-		} else if (s->level < 0) {
-		    printf("register ");
-		}
+	    if (s->class != TYPE and s->level < 0) {
+		printf("register ");
 	    }
 	    if (s->type->class == ARRAY) {
 		printtype(s->type, s->type->type, indent);
@@ -212,8 +190,13 @@ Integer indent;
 	case RECORD:
 	case VARNT:
 	case PTR:
+	case FFUNC:
 	    semicolon = false;
 	    printtype(s, s, indent);
+	    break;
+
+	case SCAL:
+	    printf("(enumeration constant, value %d)", s->symvalue.iconval);
 	    break;
 
 	case PROC:
@@ -245,7 +228,8 @@ Integer indent;
 	    break;
 
 	default:
-	    error("class %s in c_printdecl", classname(s));
+	    printf("[%s]", classname(s));
+	    break;
     }
     if (semicolon) {
 	putchar(';');
@@ -463,9 +447,9 @@ Symbol s;
 		i &= ((1 << s->symvalue.field.length) - 1);
 		t = rtype(s->type);
 		if (t->class == SCAL) {
-		    printenum(i, t);
+		    printEnum(i, t);
 		} else {
-		    printrange(i, t);
+		    printRangeVal(i, t);
 		}
 	    } else {
 		c_printval(s->type);
@@ -479,7 +463,11 @@ Symbol s;
 	    ) {
 		len = size(s);
 		sp -= len;
-		printf("\"%.*s\"", len, sp);
+		if (s->language == primlang) {
+		    printf("%.*s", len, sp);
+		} else {
+		    printf("\"%.*s\"", len, sp);
+		}
 	    } else {
 		printarray(s);
 	    }
@@ -490,11 +478,11 @@ Symbol s;
 	    break;
 
 	case RANGE:
-	    if (istypename(s->type, "boolean")) {
-		printrange(popsmall(s), s);
-	    } else if (istypename(s->type, "char")) {
-		printrange(pop(char), s);
-	    } else if (isdouble(s)) {
+	    if (s == t_boolean->type or istypename(s->type, "boolean")) {
+		printRangeVal(popsmall(s), s);
+	    } else if (s == t_char->type or istypename(s->type, "char")) {
+		printRangeVal(pop(char), s);
+	    } else if (s == t_real->type or isdouble(s)) {
 		switch (s->symvalue.rangev.lower) {
 		    case sizeof(float):
 			prtreal(pop(float));
@@ -509,7 +497,7 @@ Symbol s;
 			break;
 		}
 	    } else {
-		printrange(popsmall(s), s);
+		printRangeVal(popsmall(s), s);
 	    }
 	    break;
 
@@ -519,7 +507,7 @@ Symbol s;
 	    if (a == 0) {
 		printf("(nil)");
 	    } else if (t->class == RANGE and istypename(t->type, "char")) {
-		printstring(a);
+		printString(a, (boolean) (s->language != primlang));
 	    } else {
 		printf("0x%x", a);
 	    }
@@ -527,7 +515,15 @@ Symbol s;
 
 	case SCAL:
 	    i = pop(Integer);
-	    printenum(i, s);
+	    printEnum(i, s);
+	    break;
+
+	/*
+	 * Unresolved structure pointers?
+	 */
+	case BADUSE:
+	    a = pop(Address);
+	    printf("@%x", a);
 	    break;
 
 	default:
@@ -544,12 +540,12 @@ Symbol s;
  * Print out a C structure.
  */
 
-private c_printstruct(s)
+private c_printstruct (s)
 Symbol s;
 {
-    register Symbol f;
-    register Stack *savesp;
-    register Integer n, off, len;
+    Symbol f;
+    Stack *savesp;
+    integer n, off, len;
 
     sp -= size(s);
     savesp = sp;
@@ -568,84 +564,6 @@ Symbol s;
 	printf(", ");
     }
     printf(")");
-}
-
-/*
- * Print out a range type (integer, char, or boolean).
- */
-
-private printrange(i, t)
-Integer i;
-register Symbol t;
-{
-    if (istypename(t->type, "boolean")) {
-	printf(((Boolean) i) == true ? "true" : "false");
-    } else if (istypename(t->type, "char")) {
-	putchar('\'');
-	printchar(i);
-	putchar('\'');
-    } else if (t->symvalue.rangev.lower >= 0) {
-	printf("%lu", i);
-    } else {
-	printf("%ld", i);
-    }
-}
-
-/*
- * Print out a null-terminated string (pointer to char)
- * starting at the given address.
- */
-
-private printstring(addr)
-Address addr;
-{
-    register Address a;
-    register Integer i, len;
-    register Boolean endofstring;
-    union {
-	char ch[sizeof(Word)];
-	int word;
-    } u;
-
-    putchar('"');
-    a = addr;
-    endofstring = false;
-    while (not endofstring) {
-	dread(&u, a, sizeof(u));
-	i = 0;
-	do {
-	    if (u.ch[i] == '\0') {
-		endofstring = true;
-	    } else {
-		printchar(u.ch[i]);
-	    }
-	    ++i;
-	} while (i < sizeof(Word) and not endofstring);
-	a += sizeof(Word);
-    }
-    putchar('"');
-}
-
-/*
- * Print out an enumerated value by finding the corresponding
- * name in the enumeration list.
- */
-
-private printenum(i, t)
-Integer i;
-Symbol t;
-{
-    register Symbol e;
-
-    e = t->chain;
-    while (e != nil and e->symvalue.iconval != i) {
-	e = e->chain;
-    }
-    if (e != nil) {
-	printf("%s", symname(e));
-    } else {
-	printf("%d", i);
-    }
 }
 
 /*
@@ -675,23 +593,22 @@ Symbol s;
     }
     return str;
 }
+
 public Node c_buildaref(a, slist)
 Node a, slist;
 {
     register Symbol t;
     register Node p;
     Symbol etype, atype, eltype;
-    Node esub, r;
+    Node r, esub;
 
-    r = a;
     t = rtype(a->nodetype);
     eltype = t->type;
     if (t->class == PTR) {
 	p = slist->value.arg[0];
 	if (not compatible(p->nodetype, t_int)) {
 	    beginerrmsg();
-	    fprintf(stderr, "bad type for subscript of ");
-	    prtree(stderr, a);
+	    fprintf(stderr, "subscript must be integer-compatible");
 	    enderrmsg();
 	}
 	r = build(O_MUL, p, build(O_LCON, (long) size(eltype)));
@@ -699,10 +616,12 @@ Node a, slist;
 	r->nodetype = eltype;
     } else if (t->class != ARRAY) {
 	beginerrmsg();
+	fprintf(stderr, "\"");
 	prtree(stderr, a);
-	fprintf(stderr, " is not an array");
+	fprintf(stderr, "\" is not an array");
 	enderrmsg();
     } else {
+	r = a;
 	p = slist;
 	t = t->chain;
 	for (; p != nil and t != nil; p = p->value.arg[1], t = t->chain) {
@@ -711,9 +630,9 @@ Node a, slist;
 	    atype = rtype(t);
 	    if (not compatible(atype, etype)) {
 		beginerrmsg();
-		fprintf(stderr, "subscript ");
+		fprintf(stderr, "subscript \"");
 		prtree(stderr, esub);
-		fprintf(stderr, " is the wrong type");
+		fprintf(stderr, "\" is the wrong type");
 		enderrmsg();
 	    }
 	    r = build(O_INDEX, r, esub);
@@ -722,11 +641,12 @@ Node a, slist;
 	if (p != nil or t != nil) {
 	    beginerrmsg();
 	    if (p != nil) {
-		fprintf(stderr, "too many subscripts for ");
+		fprintf(stderr, "too many subscripts for \"");
 	    } else {
-		fprintf(stderr, "not enough subscripts for ");
+		fprintf(stderr, "not enough subscripts for \"");
 	    }
 	    prtree(stderr, a);
+	    fprintf(stderr, "\"");
 	    enderrmsg();
 	}
     }
@@ -737,19 +657,22 @@ Node a, slist;
  * Evaluate a subscript index.
  */
 
-public int c_evalaref(s, i)
+public c_evalaref(s, base, i)
 Symbol s;
+Address base;
 long i;
 {
+    Symbol t;
     long lb, ub;
 
-    s = rtype(s)->chain;
+    t = rtype(s);
+    s = t->chain;
     lb = s->symvalue.rangev.lower;
     ub = s->symvalue.rangev.upper;
     if (i < lb or i > ub) {
 	error("subscript out of range");
     }
-    return (i - lb);
+    push(long, base + (i - lb) * size(t->type));
 }
 
 /*

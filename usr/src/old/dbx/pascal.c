@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pascal.c	1.3 (Berkeley) %G%";
+static	char sccsid[] = "@(#)pascal.c	1.4 (Berkeley) %G%";
+
+static char rcsid[] = "$Header: pascal.c,v 1.5 84/12/26 10:41:18 linton Exp $";
 
 /*
  * Pascal-dependent symbol routines.
@@ -21,6 +23,7 @@ static	char sccsid[] = "@(#)pascal.c	1.3 (Berkeley) %G%";
 #endif
 
 private Language pasc;
+private boolean initialized;
 
 /*
  * Initialize Pascal information.
@@ -37,58 +40,176 @@ public pascal_init()
     language_setop(pasc, L_MODINIT, pascal_modinit);
     language_setop(pasc, L_HASMODULES, pascal_hasmodules);
     language_setop(pasc, L_PASSADDR, pascal_passaddr);
-    initTypes();
+    initialized = false;
 }
 
 /*
- * Compatible tests if two types are compatible.  The issue
- * is complicated a bit by ranges.
- *
- * Integers and reals are not compatible since they cannot always be mixed.
+ * Typematch tests if two types are compatible.  The issue
+ * is a bit complicated, so several subfunctions are used for
+ * various kinds of compatibility.
  */
 
-public Boolean pascal_typematch(type1, type2)
-Symbol type1, type2;
+private boolean builtinmatch (t1, t2)
+register Symbol t1, t2;
 {
-    Boolean b;
-    register Symbol t1, t2;
+    boolean b;
 
-    t1 = rtype(t1);
-    t2 = rtype(t2);
-    b = (Boolean)
-	(t1->type == t2->type and (
-	    (t1->class == RANGE and t2->class == RANGE) or
-	    (t1->class == SCAL and t2->class == CONST) or
-	    (t1->class == CONST and t2->class == SCAL) or
-	    (t1->type == t_char and t1->class == ARRAY and t2->class == ARRAY)
-	) or
+    b = (boolean) (
+	(
+	    t2 == t_int->type and
+	    t1->class == RANGE and istypename(t1->type, "integer")
+	) or (
+	    t2 == t_char->type and
+	    t1->class == RANGE and istypename(t1->type, "char")
+	) or (
+	    t2 == t_real->type and
+	    t1->class == RANGE and istypename(t1->type, "real")
+	) or (
+	    t2 == t_boolean->type and
+	    t1->class == RANGE and istypename(t1->type, "boolean")
+	)
+    );
+    return b;
+}
+
+private boolean rangematch (t1, t2)
+register Symbol t1, t2;
+{
+    boolean b;
+    register Symbol rt1, rt2;
+
+    if (t1->class == RANGE and t2->class == RANGE) {
+	rt1 = rtype(t1->type);
+	rt2 = rtype(t2->type);
+	b = (boolean) (rt1->type == rt2->type);
+    } else {
+	b = false;
+    }
+    return b;
+}
+
+private boolean nilMatch (t1, t2)
+register Symbol t1, t2;
+{
+    boolean b;
+
+    b = (boolean) (
 	(t1 == t_nil and t2->class == PTR) or
 	(t1->class == PTR and t2 == t_nil)
     );
     return b;
 }
 
-public pascal_printdecl(s)
+private boolean enumMatch (t1, t2)
+register Symbol t1, t2;
+{
+    boolean b;
+
+    b = (boolean) (
+	(t1->class == SCAL and t2->class == CONST and t2->type == t1) or
+	(t1->class == CONST and t2->class == SCAL and t1->type == t2)
+    );
+    return b;
+}
+
+private boolean isConstString (t)
+register Symbol t;
+{
+    boolean b;
+
+    b = (boolean) (
+	t->language == primlang and t->class == ARRAY and t->type == t_char
+    );
+    return b;
+}
+
+private boolean stringArrayMatch (t1, t2)
+register Symbol t1, t2;
+{
+    boolean b;
+
+    b = (boolean) (
+	(
+	    isConstString(t1) and
+	    t2->class == ARRAY and compatible(t2->type, t_char->type)
+	) or (
+	    isConstString(t2) and
+	    t1->class == ARRAY and compatible(t1->type, t_char->type)
+	)
+    );
+    return b;
+}
+
+public boolean pascal_typematch (type1, type2)
+Symbol type1, type2;
+{
+    boolean b;
+    Symbol t1, t2, tmp;
+
+    t1 = rtype(type1);
+    t2 = rtype(type2);
+    if (t1 == t2) {
+	b = true;
+    } else {
+	if (t1 == t_char->type or t1 == t_int->type or
+	    t1 == t_real->type or t1 == t_boolean->type
+	) {
+	    tmp = t1;
+	    t1 = t2;
+	    t2 = tmp;
+	}
+	b = (Boolean) (
+	    builtinmatch(t1, t2) or rangematch(t1, t2) or
+	    nilMatch(t1, t2) or enumMatch(t1, t2) or
+	    stringArrayMatch(t1, t2)
+	);
+    }
+    return b;
+}
+
+/*
+ * Indent n spaces.
+ */
+
+private indent (n)
+int n;
+{
+    if (n > 0) {
+	printf("%*c", n, ' ');
+    }
+}
+
+public pascal_printdecl (s)
 Symbol s;
 {
     register Symbol t;
     Boolean semicolon;
 
     semicolon = true;
+    if (s->class == TYPEREF) {
+	resolveRef(t);
+    }
     switch (s->class) {
 	case CONST:
 	    if (s->type->class == SCAL) {
-		printf("(enumeration constant, ord %ld)",
-		    s->symvalue.iconval);
+		semicolon = false;
+		printf("enum constant, ord ");
+		eval(s->symvalue.constval);
+		pascal_printval(s);
 	    } else {
 		printf("const %s = ", symname(s));
-		printval(s);
+		eval(s->symvalue.constval);
+		pascal_printval(s);
 	    }
 	    break;
 
 	case TYPE:
 	    printf("type %s = ", symname(s));
-	    printtype(s, s->type);
+	    printtype(s, s->type, 0);
+	    break;
+
+	case TYPEREF:
+	    printf("type %s", symname(s));
 	    break;
 
 	case VAR:
@@ -97,12 +218,12 @@ Symbol s;
 	    } else {
 		printf("var %s : ", symname(s));
 	    }
-	    printtype(s, s->type);
+	    printtype(s, s->type, 0);
 	    break;
 
 	case REF:
 	    printf("(var parameter) %s : ", symname(s));
-	    printtype(s, s->type);
+	    printtype(s, s->type, 0);
 	    break;
 
 	case RANGE:
@@ -110,18 +231,19 @@ Symbol s;
 	case RECORD:
 	case VARNT:
 	case PTR:
-	    printtype(s, s);
+	case FILET:
+	    printtype(s, s, 0);
 	    semicolon = false;
 	    break;
 
 	case FVAR:
 	    printf("(function variable) %s : ", symname(s));
-	    printtype(s, s->type);
+	    printtype(s, s->type, 0);
 	    break;
 
 	case FIELD:
 	    printf("(field) %s : ", symname(s));
-	    printtype(s, s->type);
+	    printtype(s, s->type, 0);
 	    break;
 
 	case PROC:
@@ -131,25 +253,35 @@ Symbol s;
 
 	case PROG:
 	    printf("program %s", symname(s));
-	    t = s->chain;
-	    if (t != nil) {
-		printf("(%s", symname(t));
-		for (t = t->chain; t != nil; t = t->chain) {
-		    printf(", %s", symname(t));
-		}
-		printf(")");
-	    }
+	    listparams(s);
 	    break;
 
 	case FUNC:
 	    printf("function %s", symname(s));
 	    listparams(s);
 	    printf(" : ");
-	    printtype(s, s->type);
+	    printtype(s, s->type, 0);
+	    break;
+
+	case MODULE:
+	    printf("module %s", symname(s));
+	    break;
+
+	  /*
+	   * the parameter list of the following should be printed
+	   * eventually
+	   */
+	case  FPROC:
+	    printf("procedure %s()", symname(s));
+	    break;
+	
+	case FFUNC:
+	    printf("function %s()", symname(s));
 	    break;
 
 	default:
-	    error("class %s in printdecl", classname(s));
+	    printf("%s : (class %s)", symname(s), classname(s));
+	    break;
     }
     if (semicolon) {
 	putchar(';');
@@ -159,18 +291,22 @@ Symbol s;
 
 /*
  * Recursive whiz-bang procedure to print the type portion
- * of a declaration.  Doesn't work quite right for variant records.
+ * of a declaration.
  *
  * The symbol associated with the type is passed to allow
  * searching for type names without getting "type blah = blah".
  */
 
-private printtype(s, t)
+private printtype (s, t, n)
 Symbol s;
 Symbol t;
+int n;
 {
     register Symbol tmp;
 
+    if (t->class == TYPEREF) {
+	resolveRef(t);
+    }
     switch (t->class) {
 	case VAR:
 	case CONST:
@@ -184,7 +320,7 @@ Symbol t;
 	    tmp = t->chain;
 	    if (tmp != nil) {
 		for (;;) {
-		    printtype(tmp, tmp);
+		    printtype(tmp, tmp, n);
 		    tmp = tmp->chain;
 		    if (tmp == nil) {
 			break;
@@ -193,85 +329,147 @@ Symbol t;
 		}
 	    }
 	    printf("] of ");
-	    printtype(t, t->type);
+	    printtype(t, t->type, n);
 	    break;
 
 	case RECORD:
-	    printf("record\n");
-	    if (t->chain != nil) {
-		printtype(t->chain, t->chain);
-	    }
-	    printf("end");
+	    printRecordDecl(t, n);
 	    break;
 
 	case FIELD:
 	    if (t->chain != nil) {
-		printtype(t->chain, t->chain);
+		printtype(t->chain, t->chain, n);
 	    }
 	    printf("\t%s : ", symname(t));
-	    printtype(t, t->type);
+	    printtype(t, t->type, n);
 	    printf(";\n");
 	    break;
 
-	case RANGE: {
-	    long r0, r1;
-
-	    r0 = t->symvalue.rangev.lower;
-	    r1 = t->symvalue.rangev.upper;
-	    if (t == t_char or istypename(t,"char")) {
-		if (r0 < 0x20 or r0 > 0x7e) {
-		    printf("%ld..", r0);
-		} else {
-		    printf("'%c'..", (char) r0);
-		}
-		if (r1 < 0x20 or r1 > 0x7e) {
-		    printf("\\%lo", r1);
-		} else {
-		    printf("'%c'", (char) r1);
-		}
-	    } else if (r0 > 0 and r1 == 0) {
-		printf("%ld byte real", r0);
-	    } else if (r0 >= 0) {
-		printf("%lu..%lu", r0, r1);
-	    } else {
-		printf("%ld..%ld", r0, r1);
-	    }
+	case RANGE:
+	    printRangeDecl(t);
 	    break;
-	}
 
 	case PTR:
-	    putchar('*');
-	    printtype(t, t->type);
+	    printf("^");
+	    printtype(t, t->type, n);
 	    break;
 
 	case TYPE:
-	    if (symname(t) != nil) {
-		printf("%s", symname(t));
+	    if (t->name != nil and ident(t->name)[0] != '\0') {
+		printname(stdout, t);
 	    } else {
-		printtype(t, t->type);
+		printtype(t, t->type, n);
 	    }
 	    break;
 
 	case SCAL:
-	    printf("(");
-	    t = t->chain;
-	    if (t != nil) {
-		printf("%s", symname(t));
-		t = t->chain;
-		while (t != nil) {
-		    printf(", %s", symname(t));
-		    t = t->chain;
-		}
-	    } else {
-		panic("empty enumeration");
-	    }
-	    printf(")");
+	    printEnumDecl(t, n);
+	    break;
+
+	case SET:
+	    printf("set of ");
+	    printtype(t, t->type, n);
+	    break;
+
+	case FILET:
+	    printf("file of ");
+	    printtype(t, t->type, n);
+	    break;
+
+	case TYPEREF:
+	    break;
+	
+	case FPROC:
+	    printf("procedure");
+	    break;
+	    
+	case FFUNC:
+	    printf("function");
 	    break;
 
 	default:
 	    printf("(class %d)", t->class);
 	    break;
     }
+}
+
+/*
+ * Print out a record declaration.
+ */
+
+private printRecordDecl (t, n)
+Symbol t;
+int n;
+{
+    register Symbol f;
+
+    if (t->chain == nil) {
+	printf("record end");
+    } else {
+	printf("record\n");
+	for (f = t->chain; f != nil; f = f->chain) {
+	    indent(n+4);
+	    printf("%s : ", symname(f));
+	    printtype(f->type, f->type, n+4);
+	    printf(";\n");
+	}
+	indent(n);
+	printf("end");
+    }
+}
+
+/*
+ * Print out the declaration of a range type.
+ */
+
+private printRangeDecl (t)
+Symbol t;
+{
+    long r0, r1;
+
+    r0 = t->symvalue.rangev.lower;
+    r1 = t->symvalue.rangev.upper;
+    if (t == t_char or istypename(t, "char")) {
+	if (r0 < 0x20 or r0 > 0x7e) {
+	    printf("%ld..", r0);
+	} else {
+	    printf("'%c'..", (char) r0);
+	}
+	if (r1 < 0x20 or r1 > 0x7e) {
+	    printf("\\%lo", r1);
+	} else {
+	    printf("'%c'", (char) r1);
+	}
+    } else if (r0 > 0 and r1 == 0) {
+	printf("%ld byte real", r0);
+    } else if (r0 >= 0) {
+	printf("%lu..%lu", r0, r1);
+    } else {
+	printf("%ld..%ld", r0, r1);
+    }
+}
+
+/*
+ * Print out an enumeration declaration.
+ */
+
+private printEnumDecl (e, n)
+Symbol e;
+int n;
+{
+    Symbol t;
+
+    printf("(");
+    t = e->chain;
+    if (t != nil) {
+	printf("%s", symname(t));
+	t = t->chain;
+	while (t != nil) {
+	    printf(", %s", symname(t));
+	    t = t->chain;
+	}
+    }
+    printf(")");
 }
 
 /*
@@ -290,14 +488,6 @@ Symbol s;
 	    switch (t->class) {
 		case REF:
 		    printf("var ");
-		    break;
-
-		case FPROC:
-		    printf("procedure ");
-		    break;
-
-		case FFUNC:
-		    printf("function ");
 		    break;
 
 		case VAR:
@@ -321,28 +511,44 @@ Symbol s;
  * in the format for the type of the given symbol.
  */
 
-public pascal_printval(s)
+public pascal_printval (s)
 Symbol s;
+{
+    prval(s, size(s));
+}
+
+private prval (s, n)
+Symbol s;
+integer n;
 {
     Symbol t;
     Address a;
-    int len;
+    integer len;
     double r;
+    integer i;
 
+    if (s->class == TYPEREF) {
+	resolveRef(s);
+    }
     switch (s->class) {
 	case CONST:
 	case TYPE:
-	case VAR:
 	case REF:
+	case VAR:
 	case FVAR:
 	case TAG:
+	    prval(s->type, n);
+	    break;
+
 	case FIELD:
-	    pascal_printval(s->type);
+		prval(s->type, n);
 	    break;
 
 	case ARRAY:
 	    t = rtype(s->type);
-	    if (t->class==RANGE and istypename(t->type,"char")) {
+	    if (t == t_char->type or
+		(t->class == RANGE and istypename(t->type, "char"))
+	    ) {
 		len = size(s);
 		sp -= len;
 		printf("'%.*s'", len, sp);
@@ -357,91 +563,186 @@ Symbol s;
 	    break;
 
 	case VARNT:
-	    error("can't print out variant records");
+	    printf("[variant]");
 	    break;
 
-
 	case RANGE:
-	    if (s == t_boolean) {
-		printf(((Boolean) popsmall(s)) == true ? "true" : "false");
-	    } else if (s == t_char or istypename(s,"char")) {
-		printf("'%c'", pop(char));
-	    } else if (s->symvalue.rangev.upper == 0 and
-			s->symvalue.rangev.lower > 0) {
-		switch (s->symvalue.rangev.lower) {
-		    case sizeof(float):
-			prtreal(pop(float));
-			break;
-
-		    case sizeof(double):
-			prtreal(pop(double));
-			break;
-
-		    default:
-			panic("bad real size %d", s->symvalue.rangev.lower);
-			break;
-		}
-	    } else if (s->symvalue.rangev.lower >= 0) {
-		printf("%lu", popsmall(s));
-	    } else {
-		printf("%ld", popsmall(s));
-	    }
+	    printrange(s, n);
 	    break;
 
 	case FILET:
-	case PTR: {
-	    Address addr;
-
-	    addr = pop(Address);
-	    if (addr == 0) {
-		printf("0, (nil)");
+	    a = pop(Address);
+	    if (a == 0) {
+		printf("nil");
 	    } else {
-		printf("0x%x, 0%o", addr, addr);
+		printf("0x%x", a);
 	    }
 	    break;
-	}
 
-
-	case SCAL: {
-	    int scalar;
-	    Boolean found;
-
-	    scalar = popsmall(s);
-	    found = false;
-	    for (t = s->chain; t != nil; t = t->chain) {
-		if (t->symvalue.iconval == scalar) {
-		    printf("%s", symname(t));
-		    found = true;
-		    break;
-		}
-	    }
-	    if (not found) {
-		printf("(scalar = %d)", scalar);
+	case PTR:
+	    a = pop(Address);
+	    if (a == 0) {
+		printf("nil");
+	    } else {
+		printf("0x%x", a);
 	    }
 	    break;
-	}
+
+	case SCAL:
+	    i = 0;
+	    popn(n, &i);
+	    if (s->symvalue.iconval < 256) {
+		i &= 0xff;
+	    } else if (s->symvalue.iconval < 65536) {
+		i &= 0xffff;
+	    }
+	    printEnum(i, s);
+	    break;
 
 	case FPROC:
 	case FFUNC:
-	{
-	    Address a;
-
-	    a = fparamaddr(pop(long));
+	    a = pop(long);
 	    t = whatblock(a);
 	    if (t == nil) {
-		printf("(proc %d)", a);
+		printf("(proc 0x%x)", a);
 	    } else {
 		printf("%s", symname(t));
 	    }
 	    break;
-	}
+
+	case SET:
+	    printSet(s);
+	    break;
 
 	default:
 	    if (ord(s->class) < ord(BADUSE) or ord(s->class) > ord(TYPEREF)) {
 		panic("printval: bad class %d", ord(s->class));
 	    }
-	    error("don't know how to print a %s", classname(s));
-	    /* NOTREACHED */
+	    printf("[%s]", classname(s));
+	    break;
+    }
+}
+
+/*
+ * Print out the value of a scalar (non-enumeration) type.
+ */
+
+private printrange (s, n)
+Symbol s;
+integer n;
+{
+    double d;
+    float f;
+    integer i;
+
+    if (s->symvalue.rangev.upper == 0 and s->symvalue.rangev.lower > 0) {
+	if (n == sizeof(float)) {
+	    popn(n, &f);
+	    d = f;
+	} else {
+	    popn(n, &d);
+	}
+	prtreal(d);
+    } else {
+	i = 0;
+	popn(n, &i);
+	printRangeVal(i, s);
+    }
+}
+
+/*
+ * Print out a set.
+ */
+
+private printSet (s)
+Symbol s;
+{
+    Symbol t;
+    integer nbytes;
+
+    nbytes = size(s);
+    t = rtype(s->type);
+    printf("[");
+    sp -= nbytes;
+    if (t->class == SCAL) {
+	printSetOfEnum(t);
+    } else if (t->class == RANGE) {
+	printSetOfRange(t);
+    } else {
+	error("internal error: expected range or enumerated base type for set");
+    }
+    printf("]");
+}
+
+/*
+ * Print out a set of an enumeration.
+ */
+
+private printSetOfEnum (t)
+Symbol t;
+{
+    register Symbol e;
+    register integer i, j, *p;
+    boolean first;
+
+    p = (int *) sp;
+    i = *p;
+    j = 0;
+    e = t->chain;
+    first = true;
+    while (e != nil) {
+	if ((i&1) == 1) {
+	    if (first) {
+		first = false;
+		printf("%s", symname(e));
+	    } else {
+		printf(", %s", symname(e));
+	    }
+	}
+	i >>= 1;
+	++j;
+	if (j >= sizeof(integer)*BITSPERBYTE) {
+	    j = 0;
+	    ++p;
+	    i = *p;
+	}
+	e = e->chain;
+    }
+}
+
+/*
+ * Print out a set of a subrange type.
+ */
+
+private printSetOfRange (t)
+Symbol t;
+{
+    register integer i, j, *p;
+    long v;
+    boolean first;
+
+    p = (int *) sp;
+    i = *p;
+    j = 0;
+    v = t->symvalue.rangev.lower;
+    first = true;
+    while (v <= t->symvalue.rangev.upper) {
+	if ((i&1) == 1) {
+	    if (first) {
+		first = false;
+		printf("%ld", v);
+	    } else {
+		printf(", %ld", v);
+	    }
+	}
+	i >>= 1;
+	++j;
+	if (j >= sizeof(integer)*BITSPERBYTE) {
+	    j = 0;
+	    ++p;
+	    i = *p;
+	}
+	++v;
     }
 }
 
@@ -457,15 +758,15 @@ Node a, slist;
     Symbol etype, atype, eltype;
     Node esub, r;
 
-    r = a;
     t = rtype(a->nodetype);
-    eltype = t->type;
     if (t->class != ARRAY) {
 	beginerrmsg();
 	prtree(stderr, a);
 	fprintf(stderr, " is not an array");
 	enderrmsg();
     } else {
+	r = a;
+	eltype = t->type;
 	p = slist;
 	t = t->chain;
 	for (; p != nil and t != nil; p = p->value.arg[1], t = t->chain) {
@@ -500,19 +801,21 @@ Node a, slist;
  * Evaluate a subscript index.
  */
 
-public int pascal_evalaref (s, i)
+public pascal_evalaref (s, base, i)
 Symbol s;
+Address base;
 long i;
 {
+    Symbol t;
     long lb, ub;
 
-    s = rtype(rtype(s)->chain);
-    lb = s->symvalue.rangev.lower;
-    ub = s->symvalue.rangev.upper;
+    t = rtype(s);
+    s = rtype(t->chain);
+    findbounds(s, &lb, &ub);
     if (i < lb or i > ub) {
 	error("subscript %d out of range [%d..%d]", i, lb, ub);
     }
-    return (i - lb);
+    push(long, base + (i - lb) * size(t->type));
 }
 
 /*
@@ -521,31 +824,35 @@ long i;
 
 #define NTYPES 4
 
-private Symbol inittype[NTYPES];
-private integer count;
+private Symbol inittype[NTYPES + 1];
 
-private addType (s, lower, upper)
+private addType (n, s, lower, upper)
+integer n;
 String s;
 long lower, upper;
 {
     register Symbol t;
 
-    if (count > NTYPES) {
-	panic("too many initial types");
+    if (n > NTYPES) {
+	panic("initial Pascal type number too large for '%s'", s);
     }
-    t = maketype(s, lower, upper);
+    t = insert(identname(s, true));
     t->language = pasc;
-    inittype[count] = t;
-    ++count;
+    t->class = TYPE;
+    t->type = newSymbol(nil, 0, RANGE, t, nil);
+    t->type->symvalue.rangev.lower = lower;
+    t->type->symvalue.rangev.upper = upper;
+    t->type->language = pasc;
+    inittype[n] = t;
 }
 
 private initTypes ()
 {
-    count = 1;
-    addType("integer", 0x80000000L, 0x7fffffffL);
-    addType("char", 0L, 255L);
-    addType("boolean", 0L, 1L);
-    addType("real", 4L, 0L);
+    addType(1, "boolean", 0L, 1L);
+    addType(2, "char", 0L, 255L);
+    addType(3, "integer", 0x80000000L, 0x7fffffffL);
+    addType(4, "real", 8L, 0L);
+    initialized = true;
 }
 
 /*
@@ -557,7 +864,11 @@ Symbol typetable[];
 {
     register integer i;
 
-    for (i = 1; i < NTYPES; i++) {
+    if (not initialized) {
+	initTypes();
+	initialized = true;
+    }
+    for (i = 1; i <= NTYPES; i++) {
 	typetable[i] = inittype[i];
     }
 }

@@ -1,7 +1,10 @@
 %{
+
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)commands.y	1.13 (Berkeley) %G%";
+static	char sccsid[] = "@(#)commands.y	1.14 (Berkeley) %G%";
+
+static char rcsid[] = "$Header: commands.y,v 1.5 84/12/26 10:38:41 linton Exp $";
 
 /*
  * Yacc grammar for debugger commands.
@@ -14,9 +17,9 @@ static	char sccsid[] = "@(#)commands.y	1.13 (Berkeley) %G%";
 #include "process.h"
 #include "source.h"
 #include "scanner.h"
+#include "keywords.h"
 #include "names.h"
 #include "lists.h"
-#include <signal.h>
 
 private String curformat = "X";
 
@@ -25,12 +28,12 @@ private String curformat = "X";
 %term
     ALIAS AND ASSIGN AT CALL CATCH CONT DEBUG DELETE DIV DOWN DUMP
     EDIT FILE FUNC GRIPE HELP IF IGNORE IN LIST MOD NEXT NEXTI NIL NOT OR
-    PRINT PSYM QUIT RERUN RETURN RUN SH SKIP SOURCE STATUS STEP STEPI
-    STOP STOPI TRACE TRACEI UP
-    USE WHATIS WHEN WHERE WHEREIS WHICH
+    PRINT PSYM QUIT RERUN RETURN RUN SET SH SKIP SOURCE STATUS STEP STEPI
+    STOP STOPI TRACE TRACEI UNALIAS UNSET UP USE
+    WHATIS WHEN WHERE WHEREIS WHICH
 
-%term INT REAL NAME STRING
-%term LFORMER RFORMER ABSTRACTION ARROW
+%term INT CHAR REAL NAME STRING
+%term ARROW
 
 %right INT
 %binary REDIRECT
@@ -38,8 +41,8 @@ private String curformat = "X";
 %left '+' '-' OR
 %left UNARYSIGN
 %left '*' '/' DIV MOD AND
-%left NOT '(' '[' '.' '^' ARROW
 %left '\\'
+%left NOT '(' '[' '.' '^' ARROW
 
 %union {
     Name y_name;
@@ -48,6 +51,7 @@ private String curformat = "X";
     Integer y_int;
     Operator y_op;
     long y_long;
+    char y_char;
     double y_real;
     String y_string;
     Boolean y_bool;
@@ -56,67 +60,50 @@ private String curformat = "X";
 };
 
 %type <y_op>	    trace stop
-%type <y_long>	    INT count
+%type <y_long>	    INT count signal
+%type <y_char>	    CHAR
 %type <y_real>	    REAL
 %type <y_string>    STRING redirectout filename opt_filename mode
 %type <y_name>	    ALIAS AND ASSIGN AT CALL CATCH CONT
 %type <y_name>	    DEBUG DELETE DIV DOWN DUMP
 %type <y_name>	    EDIT FILE FUNC GRIPE HELP IF IGNORE IN LIST MOD
 %type <y_name>	    NEXT NEXTI NIL NOT OR
-%type <y_name>	    PRINT PSYM QUIT RERUN RETURN RUN SH SKIP SOURCE STATUS
+%type <y_name>	    PRINT PSYM QUIT RERUN RETURN RUN SET SH SKIP SOURCE STATUS
 %type <y_name>	    STEP STEPI STOP STOPI TRACE TRACEI
-%type <y_name>	    UP USE WHATIS WHEN WHERE WHEREIS WHICH
+%type <y_name>	    UNALIAS UNSET UP USE WHATIS WHEN WHERE WHEREIS WHICH
 %type <y_name>	    name NAME keyword
 %type <y_node>      opt_qual_symbol symbol
 %type <y_node>	    command rcommand cmd step what where examine
 %type <y_node>	    event opt_exp_list opt_cond
 %type <y_node>	    exp_list exp term boolean_exp constant address
 %type <y_node>	    integer_list alias_command list_command line_number
-%type <y_node>	    something search_command pattern
-%type <y_node>	    signal_list signal
 %type <y_cmdlist>   actions
-%type <y_list>      sourcepath
+%type <y_list>      sourcepath name_list
 
 %%
 
 input:
     input command_nl
-{
-	endshellmode();
-	startaliasing();
-}
 |
     /* empty */
 ;
-
 command_nl:
     command_line '\n'
-{
-	if (istty()) {
-		printf("(%s) ", cmdname);
-		fflush(stdout);
-	}
-}
 |
     command_line ';'
+{
+	chkalias = true;
+}
 |
     '\n'
-{
-	if (istty()) {
-		printf("(%s) ", cmdname);
-		fflush(stdout);
-	}
-}
 ;
 
 command_line:
     command
 {
 	if ($1 != nil) {
-            if(debug_flag[2]) {dumptree(stderr,$1); fflush (stderr);}
-	    eval($1);
+	    topeval($1);
 	}
-	startaliasing();
 }
 |
     rcommand redirectout
@@ -124,15 +111,12 @@ command_line:
 	if ($1 != nil) {
 	    if ($2 != nil) {
 		setout($2);
-                if(debug_flag[2]) {dumptree(stderr,$1); fflush (stderr);}
-		eval($1);
+		topeval($1);
 		unsetout();
 	    } else {
-                if(debug_flag[2]) {dumptree(stderr,$1); fflush (stderr);}
-		eval($1);
+		topeval($1);
 	    }
 	}
-	startaliasing();
 }
 ;
 redirectout:
@@ -156,19 +140,19 @@ command:
 	$$ = $1;
 }
 |
-    ASSIGN stopaliasing term '=' exp
+    ASSIGN exp '=' exp
 {
-	$$ = build(O_ASSIGN, $3, $5);
+	$$ = build(O_ASSIGN, unrval($2), $4);
+}
+|
+    CATCH signal
+{
+	$$ = build(O_CATCH, $2);
 }
 |
     CATCH
 {
-	$$ = build(O_CATCH, nil);
-}
-|
-    CATCH stopaliasing signal_list
-{
-	$$ = build(O_CATCH, $3);
+	$$ = build(O_CATCH, 0);
 }
 |
     CONT
@@ -176,7 +160,7 @@ command:
 	$$ = build(O_CONT, (long) DEFSIG);
 }
 |
-    CONT INT
+    CONT signal
 {
 	$$ = build(O_CONT, $2);
 }
@@ -211,9 +195,9 @@ command:
 	$$ = build(O_FUNC, nil);
 }
 |
-    FUNC stopaliasing symbol
+    FUNC opt_qual_symbol
 {
-	$$ = build(O_FUNC, $3);
+	$$ = build(O_FUNC, $2);
 }
 |
     GRIPE
@@ -226,14 +210,14 @@ command:
 	$$ = build(O_HELP);
 }
 |
-    IGNORE
+    IGNORE signal
 {
-	$$ = build(O_IGNORE, nil);
+	$$ = build(O_IGNORE, $2);
 }
 |
-    IGNORE stopaliasing signal_list
+    IGNORE
 {
-	$$ = build(O_IGNORE, $3);
+	$$ = build(O_IGNORE, 0);
 }
 |
     list_command
@@ -241,9 +225,9 @@ command:
 	$$ = $1;
 }
 |
-    PSYM stopaliasing term
+    PSYM exp
 {
-	$$ = build(O_PSYM, $3);
+	$$ = build(O_PSYM, unrval($2));
 }
 |
     QUIT
@@ -260,15 +244,30 @@ command:
 	$$ = build(O_RETURN, nil);
 }
 |
-    RETURN stopaliasing opt_qual_symbol
+    RETURN opt_qual_symbol
 {
-	$$ = build(O_RETURN, $3);
+	$$ = build(O_RETURN, $2);
 }
 |
     runcommand
 {
 	run();
 	/* NOTREACHED */
+}
+|
+    SET name '=' exp
+{
+	$$ = build(O_SET, build(O_NAME, $2), $4);
+}
+|
+    SET name
+{
+	$$ = build(O_SET, build(O_NAME, $2), nil);
+}
+|
+    SET
+{
+	$$ = build(O_SET, nil, nil);
 }
 |
     SH
@@ -322,6 +321,16 @@ command:
 	$$ = build($1, nil, nil, $2);
 }
 |
+    UNALIAS name
+{
+	$$ = build(O_UNALIAS, build(O_NAME, $2));
+}
+|
+    UNSET name
+{
+	$$ = build(O_UNSET, build(O_NAME, $2));
+}
+|
     UP
 {
 	$$ = build(O_UP, build(O_LCON, (long) 1));
@@ -350,96 +359,62 @@ command:
 	}
 }
 |
-    WHATIS stopaliasing term
+    WHATIS opt_qual_symbol
 {
-	$$ = build(O_WHATIS, $3);
+	$$ = build(O_WHATIS, $2);
 }
 |
-    WHEN stopaliasing event '{' actions '}'
+    WHEN event '{' actions '}'
 {
-	$$ = build(O_ADDEVENT, $3, $5);
+	$$ = build(O_ADDEVENT, $2, $4);
 }
 |
-    WHEREIS stopaliasing symbol
+    WHEREIS name
 {
-	$$ = build(O_WHEREIS, $3);
+	$$ = build(O_WHEREIS, build(O_SYM, lookup($2)));
 }
 |
-    WHICH stopaliasing symbol
+    WHICH symbol
 {
-	$$ = build(O_WHICH, $3);
+	$$ = build(O_WHICH, $2);
 }
 |
-    search_command
+    '/'
 {
-	$$ = $1;
+	$$ = build(O_SEARCH,
+	    build(O_LCON, (long) '/'),
+	    build(O_SCON, strdup(scanner_linebuf))
+	);
+	gobble();
+	insertinput("\n");
+}
+|
+    '?'
+{
+	$$ = build(O_SEARCH,
+	    build(O_LCON, (long) '?'),
+	    build(O_SCON, strdup(scanner_linebuf))
+	);
+	gobble();
+	insertinput("\n");
 }
 ;
-
-
-search_command:
-    '/' pattern
-{
-	$$ = build(O_SEARCH, build(O_LCON, 1), $2);
-}
-|
-    '?' pattern
-{
-	$$ = build(O_SEARCH, build(O_LCON, 0), $2);
-}
-;
-
-pattern:
-    STRING
-{
-	$$ = build(O_SCON, $1);
-}
-;
-
-integer_list:
-    INT
-{
-	$$ = build(O_LCON, $1);
-}
-|
-    INT integer_list
-{
-	$$ = build(O_COMMA, build(O_LCON, $1), $2);
-}
-;
-
-signal_list:
-     signal
-{
-	$$ = build(O_COMMA, $1, nil);
-}
-|
-    signal signal_list
-{
-	$$ = build(O_COMMA, $1, $2);
-}
-;
-
 signal:
     INT
 {
-	if ($1 < 1 || $1 > NSIG)
-		error("Invalid signal %d.", $1);
-	$$ = build(O_LCON, $1);
+	$$ = $1;
 }
 |
-    NAME
+    name
 {
-	$$ = build(O_LCON, signalname(ident($1)));
+	$$ = siglookup(ident($1));
 }
 ;
-
 runcommand:
     run arglist
 |
     run
 ;
-
 run:
     RUN shellmode
 {
@@ -458,12 +433,12 @@ arglist:
     arg
 ;
 arg:
-     NAME
+    NAME
 {
 	newarg(ident($1));
 }
 |
-     STRING
+    STRING
 {
 	newarg($1);
 }
@@ -479,22 +454,22 @@ arg:
 }
 ;
 step:
-    STEP stopaliasing
+    STEP
 {
 	$$ = build(O_STEP, true, false);
 }
 |
-    STEPI stopaliasing
+    STEPI
 {
 	$$ = build(O_STEP, false, false);
 }
 |
-    NEXT stopaliasing
+    NEXT
 {
 	$$ = build(O_STEP, true, true);
 }
 |
-    NEXTI stopaliasing
+    NEXTI
 {
 	$$ = build(O_STEP, false, true);
 }
@@ -503,7 +478,6 @@ shellmode:
     /* empty */
 {
 	beginshellmode();
-	stopaliasing();
 }
 ;
 sourcepath:
@@ -546,9 +520,9 @@ cmd:
  * Redirectable commands.
  */
 rcommand:
-    PRINT stopaliasing exp_list
+    PRINT exp_list
 {
-	$$ = build(O_PRINT, $3);
+	$$ = build(O_PRINT, $2);
 }
 |
     WHERE
@@ -561,9 +535,9 @@ rcommand:
 	$$ = $1;
 }
 |
-    CALL stopaliasing term '(' opt_exp_list ')'
+    CALL term '(' opt_exp_list ')'
 {
-	$$ = build(O_CALL, $3, $5);
+	$$ = build(O_CALLPROC, $2, $4);
 }
 |
     DEBUG INT
@@ -571,9 +545,24 @@ rcommand:
  	$$ = build(O_DEBUG, $2);
 }
 |
+    DEBUG '-' INT
+{
+	$$ = build(O_DEBUG, -$3);
+}
+|
+    DUMP opt_qual_symbol
+{
+	$$ = build(O_DUMP, $2);
+}
+|
+    DUMP '.'
+{
+	$$ = build(O_DUMP, nil);
+}
+|
     DUMP
 {
-	$$ = build(O_DUMP);
+	$$ = build(O_DUMP, build(O_SYM, curfunc));
 }
 |
     STATUS
@@ -582,51 +571,65 @@ rcommand:
 }
 ;
 alias_command:
-    alias name something
+    ALIAS name name
 {
-	$$ = build(O_ALIAS, build(O_NAME, $2), $3);
+	$$ = build(O_ALIAS, build(O_NAME, $2), build(O_NAME, $3));
 }
 |
-    alias name
+    ALIAS name STRING
+{
+	$$ = build(O_ALIAS, build(O_NAME, $2), build(O_SCON, $3));
+}
+|
+    ALIAS name '(' name_list ')' STRING
+{
+	$$ = build(O_ALIAS,
+	    build(O_COMMA, build(O_NAME, $2), (Node) $4),
+	    build(O_SCON, $6)
+	);
+}
+|
+    ALIAS name
 {
 	$$ = build(O_ALIAS, build(O_NAME, $2), nil);
 }
 |
-    alias
+    ALIAS
 {
 	$$ = build(O_ALIAS, nil, nil);
 }
 ;
-
-alias:
-     ALIAS stopaliasing
-;
-
-stopaliasing:
-    /* empty */
+name_list:
+    name_list ',' name
 {
-	stopaliasing();
+	$$ = $1;
+	list_append(list_item($3), nil, $$);
+}
+|
+    name
+{
+	$$ = list_alloc();
+	list_append(list_item($1), nil, $$);
 }
 ;
-
 trace:
-    TRACE stopaliasing
+    TRACE
 {
 	$$ = O_TRACE;
 }
 |
-    TRACEI stopaliasing
+    TRACEI
 {
 	$$ = O_TRACEI;
 }
 ;
 stop:
-    STOP stopaliasing
+    STOP
 {
 	$$ = O_STOP;
 }
 |
-    STOPI stopaliasing
+    STOPI
 {
 	$$ = O_STOPI;
 }
@@ -643,14 +646,14 @@ what:
 }
 ;
 where:
-    IN term
+    IN exp
 {
-	$$ = $2;
+	$$ = unrval($2);
 }
 |
     AT line_number
 {
-	$$ = build(O_QLINE, build(O_SCON, cursource), $2);
+	$$ = build(O_QLINE, build(O_SCON, strdup(cursource)), $2);
 }
 |
     AT STRING ':' line_number
@@ -687,7 +690,7 @@ opt_exp_list:
 }
 ;
 list_command:
-    list
+    LIST
 {
 	$$ = build(O_LIST,
 	    build(O_LCON, (long) cursrcline),
@@ -695,26 +698,32 @@ list_command:
 	);
 }
 |
-    list line_number
+    LIST line_number
 {
 	$$ = build(O_LIST, $2, $2);
 }
 |
-    list line_number ',' line_number
+    LIST line_number ',' line_number
 {
 	$$ = build(O_LIST, $2, $4);
 }
 |
-    list symbol
+    LIST opt_qual_symbol
 {
-	$$ = build(O_LIST, $2, nil);
+	$$ = build(O_LIST, $2);
 }
 ;
-
-list:
-    LIST stopaliasing
+integer_list:
+    INT
+{
+	$$ = build(O_LCON, $1);
+}
+|
+    INT integer_list
+{
+	$$ = build(O_COMMA, build(O_LCON, $1), $2);
+}
 ;
-
 line_number:
     INT
 {
@@ -737,25 +746,25 @@ examine:
 	$$ = build(O_EXAMINE, $5, $1, $3, 0);
 }
 |
-    '/' stopaliasing count mode
-{
-	$$ = build(O_EXAMINE, $4, build(O_LCON, (long) prtaddr), nil, $3);
-}
-|
     address '=' mode
 {
 	$$ = build(O_EXAMINE, $3, $1, nil, 0);
 }
 ;
 address:
-    INT stopaliasing
+    INT
 {
 	$$ = build(O_LCON, $1);
 }
 |
-    '&' stopaliasing term
+    '.'
 {
-	$$ = amper($3);
+	$$ = build(O_LCON, (long) prtaddr);
+}
+|
+    '&' term
+{
+	$$ = amper($2);
 }
 |
     address '+' address
@@ -773,14 +782,40 @@ address:
 	$$ = build(O_MUL, $1, $3);
 }
 |
-    '*' stopaliasing address %prec UNARYSIGN
+    '*' address %prec UNARYSIGN
 {
-	$$ = build(O_INDIR, $3);
+	$$ = build(O_INDIR, $2);
 }
 |
-    '(' stopaliasing exp ')'
+    '-' address %prec UNARYSIGN
 {
-	$$ = $3;
+	$$ = build(O_NEG, $2);
+}
+|
+    '(' exp ')'
+{
+	$$ = $2;
+}
+;
+term:
+    symbol
+{
+	$$ = $1;
+}
+|
+    term '.' name
+{
+	$$ = unrval(dot($1, $3));
+}
+|
+    term ARROW name
+{
+	$$ = unrval(dot($1, $3));
+}
+|
+    term '[' exp_list ']'
+{
+	$$ = unrval(subscript($1, $3));
 }
 ;
 count:
@@ -829,19 +864,54 @@ exp_list:
 }
 ;
 exp:
-    term
+    symbol
 {
 	$$ = build(O_RVAL, $1);
 }
 |
-    constant
+    exp '[' exp_list ']'
 {
-	$$ = $1;
+	$$ = subscript(unrval($1), $3);
+}
+|
+    exp '.' name
+{
+	$$ = dot($1, $3);
+}
+|
+    exp ARROW name
+{
+	$$ = dot($1, $3);
+}
+|
+    '*' exp %prec UNARYSIGN
+{
+	$$ = build(O_INDIR, $2);
+}
+|
+    exp '^' %prec UNARYSIGN
+{
+	$$ = build(O_INDIR, $1);
 }
 |
     exp '\\' opt_qual_symbol
 {
 	$$ = build(O_TYPERENAME, $1, $3);
+}
+|
+    exp '\\' '&' opt_qual_symbol %prec '\\'
+{
+	$$ = renameptr($1, $4);
+}
+|
+    exp '(' opt_exp_list ')'
+{
+	$$ = build(O_CALL, unrval($1), $3);
+}
+|
+    constant
+{
+	$$ = $1;
 }
 |
     '+' exp %prec UNARYSIGN
@@ -944,57 +1014,6 @@ exp:
 	$$ = $2;
 }
 ;
-term:
-    symbol
-{
-	$$ = $1;
-}
-|
-    term '[' exp_list ']'
-{
-	$$ = subscript($1, $3);
-}
-|
-    term '.' name
-{
-	$$ = dot($1, $3);
-}
-|
-    term ARROW name
-{
-	$$ = dot($1, $3);
-}
-|
-    '*' term %prec UNARYSIGN
-{
-	$$ = build(O_INDIR, $2);
-}
-|
-    '*' '(' exp ')' %prec UNARYSIGN
-{
-	$$ = build(O_INDIR, $3);
-}
-|
-    term '^' %prec UNARYSIGN
-{
-	$$ = build(O_INDIR, $1);
-}
-|
-    '#' term %prec UNARYSIGN
-{
-	$$ = concrete($2);
-}
-|
-    '#' '(' exp ')' %prec UNARYSIGN
-{
-	$$ = concrete($3);
-}
-|
-    term '(' opt_exp_list ')'
-{
-	$$ = build(O_CALL, $1, $3);
-}
-;
 boolean_exp:
     exp
 {
@@ -1006,6 +1025,11 @@ constant:
     INT
 {
 	$$ = build(O_LCON, $1);
+}
+|
+    CHAR
+{
+	$$ = build(O_CCON, $1);
 }
 |
     REAL
@@ -1032,7 +1056,10 @@ opt_qual_symbol:
 symbol:
     name
 {
-	$$ = build(O_SYM, which($1));
+	$$ = findvar($1);
+	if ($$ == nil) {
+	    $$ = build(O_SYM, which($1));
+	}
 }
 |
     '.' name
@@ -1054,24 +1081,7 @@ keyword:
     ALIAS | AND | ASSIGN | AT | CALL | CATCH | CONT | DEBUG | DELETE | DIV | 
     DOWN | DUMP | EDIT | FILE | FUNC | GRIPE | HELP | IGNORE | IN | LIST |
     MOD | NEXT | NEXTI | NIL | NOT | OR | PRINT | PSYM | QUIT |
-    RERUN | RETURN | RUN | SH | SKIP | SOURCE | STATUS | STEP | STEPI |
-    STOP | STOPI | TRACE | TRACEI | UP |
-    USE | WHATIS | WHEN | WHERE | WHEREIS | WHICH
-;
-
-something:
-    NAME
-{
-	$$ = build(O_NAME, $1);
-}
-|
-    keyword
-{
-	$$ = build(O_NAME, $1);
-}
-|
-    STRING
-{
-	$$ = build(O_SCON, $1);
-}
+    RERUN | RETURN | RUN | SET | SH | SKIP | SOURCE | STATUS | STEP | STEPI |
+    STOP | STOPI | TRACE | TRACEI | UNALIAS | UNSET | UP | USE |
+    WHATIS | WHEN | WHERE | WHEREIS | WHICH
 ;

@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)names.c	1.4 (Berkeley) %G%";
+static	char sccsid[] = "@(#)names.c	1.5 (Berkeley) %G%";
+
+static char rcsid[] = "$Header: names.c,v 1.4 84/12/26 10:40:47 linton Exp $";
 
 /*
  * Name are the internal representation for identifiers.
@@ -130,35 +132,21 @@ match:
 }
 
 /*
- * Return the identifier associated with a name.
- *
- * Currently compiled inline.
- *
- *
- * public String ident(n)
-Name n;
-{
-    return (n == nil) ? "(noname)" : n->identifier;
-}
- *
- */
-
-/*
  * Deallocate the name table.
  */
 
 public names_free()
 {
-    register int i;
-    register Name n, next;
+    Namepool n, m;
+    register integer i;
 
+    n = namepool;
+    while (n != nil) {
+	m = n->prevpool;
+	dispose(n);
+	n = m;
+    }
     for (i = 0; i < HASHTABLESIZE; i++) {
-	n = nametable[i];
-	while (n != nil) {
-	    next = n->chain;
-	    dispose(n);
-	    n = next;
-	}
 	nametable[i] = nil;
     }
     namepool = nil;

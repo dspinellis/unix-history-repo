@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)mappings.c	1.5 (Berkeley) %G%";
+static	char sccsid[] = "@(#)mappings.c	1.6 (Berkeley) %G%";
+
+static char rcsid[] = "$Header: mappings.c,v 1.4 84/12/26 10:40:25 linton Exp $";
 
 /*
  * Source-to-object and vice versa mappings.
@@ -80,11 +82,12 @@ Address addr;
  * Find the line associated with the given address.
  * If the second parameter is true, then the address must match
  * a source line exactly.  Otherwise the nearest source line
- * below the given address is returned.  In any case, if no suitable
- * line exists, 0 is returned.
+ * below the given address is returned.
+ *
+ * Return the index of the line table entry or -1 if none suitable.
  */
 
-private Lineno findline(addr, exact)
+private integer findline (addr, exact)
 Address addr;
 Boolean exact;
 {
@@ -93,16 +96,16 @@ Boolean exact;
     register Address a;
 
     if (nlhdr.nlines == 0 or addr < linetab[0].addr) {
-	r = 0;
+	r = -1;
     } else {
 	i = 0;
 	j = nlhdr.nlines - 1;
 	if (addr == linetab[i].addr) {
-	    r = linetab[i].line;
+	    r = i;
 	} else if (addr == linetab[j].addr) {
-	    r = linetab[j].line;
+	    r = j;
 	} else if (addr > linetab[j].addr) {
-	    r = exact ? 0 : linetab[j].line;
+	    r = exact ? -1 : j;
 	} else {
 	    do {
 		k = (i + j) div 2;
@@ -115,13 +118,13 @@ Boolean exact;
 		}
 	    } while (i <= j);
 	    if (a == addr) {
-		r = linetab[k].line;
+		r = k;
 	    } else if (exact) {
-		r = 0;
+		r = -1;
 	    } else if (addr > linetab[i].addr) {
-		r = linetab[i].line;
+		r = i;
 	    } else {
-		r = linetab[i-1].line;
+		r = i - 1;
 	    }
 	}
     }
@@ -129,13 +132,42 @@ Boolean exact;
 }
 
 /*
- * Lookup the source line number nearest from below to an address.
+ * Lookup the source line number nearest (from below) to an address.
+ *
+ * It is possible (unfortunately) that the compiler will generate
+ * code before line number for a procedure.  Therefore we check
+ * to see that the found line is in the same procedure as the given address.
+ * If it isn't, then we walk forward until the first suitable line is found.
  */
 
 public Lineno srcline(addr)
 Address addr;
 {
-    return findline(addr, false);
+    integer i;
+    Lineno r;
+    Symbol f1, f2;
+
+    i = findline(addr, false);
+    if (i == -1) {
+	r = 0;
+    } else {
+	r = linetab[i].line;
+	if (linetab[i].addr != addr) {
+	    f1 = whatblock(addr);
+	    if (nosource(f1)) {
+		r = 0;
+	    } else {
+		f2 = whatblock(linetab[i].addr + 1);
+		if (f1 != f2) {
+		    do {
+			++i;
+		    } while (linetab[i].addr < addr and i < nlhdr.nlines);
+		    r = linetab[i].line;
+		}
+	    }
+	}
+    }
+    return r;
 }
 
 /*
@@ -145,7 +177,16 @@ Address addr;
 public Lineno linelookup(addr)
 Address addr;
 {
-    return findline(addr, true);
+    integer i;
+    Lineno r;
+
+    i = findline(addr, true);
+    if (i == -1) {
+	r = 0;
+    } else {
+	r = linetab[i].line;
+    }
+    return r;
 }
 
 /*
@@ -189,7 +230,7 @@ String name;
 	}
     }
     if (not foundfile) {
-	error("unknown source file \"%s\"", name);
+	error("source file \"%s\" not compiled with -g", name);
     }
     return NOADDR;
 }
@@ -198,19 +239,19 @@ String name;
  * Table for going from object addresses to the functions in which they belong.
  */
 
-#define MAXNFUNCS 1001      /* maximum number of functions allowed */
+#define NFUNCS 500	/* initial size of function table */
 
 typedef struct {
     Symbol func;
     Address addr;
 } AddrOfFunc;
 
-private AddrOfFunc functab[MAXNFUNCS];
-private int nfuncs;
+private AddrOfFunc *functab;
+private int nfuncs = 0;
+private int functablesize = 0;
 
 /*
  * Insert a new function into the table.
- * The table is ordered by object address.
  */
 
 public newfunc(f, addr)
@@ -218,9 +259,20 @@ Symbol f;
 Address addr;
 {
     register AddrOfFunc *af;
+    register int i;
+    AddrOfFunc *newfunctab;
 
-    if (nfuncs >= MAXNFUNCS) {
-	panic("too many procedures/functions");
+    if (nfuncs >= functablesize) {
+	if (functablesize == 0) {
+	    functab = newarr(AddrOfFunc, NFUNCS);
+	    functablesize = NFUNCS;
+	} else {
+	    functablesize *= 2;
+	    newfunctab = newarr(AddrOfFunc, functablesize);
+	    bcopy(functab, newfunctab, nfuncs * sizeof(AddrOfFunc));
+	    dispose(functab);
+	    functab = newfunctab;
+	}
     }
     af = &functab[nfuncs];
     af->func = f;

@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)tree.c	1.7 (Berkeley) %G%";
+static	char sccsid[] = "@(#)tree.c	1.8 (Berkeley) %G%";
+
+static char rcsid[] = "$Header: tree.c,v 1.5 84/12/26 10:42:55 linton Exp $";
 
 /*
  * Parse tree management.
@@ -9,6 +11,7 @@ static	char sccsid[] = "@(#)tree.c	1.7 (Berkeley) %G%";
 #include "defs.h"
 #include "tree.h"
 #include "operators.h"
+#include "debug.h"
 #include "eval.h"
 #include "events.h"
 #include "symbols.h"
@@ -103,7 +106,10 @@ Operator op;
 
 	case O_DEBUG:
 	case O_LCON:
+	case O_CCON:
 	case O_CONT:
+	case O_CATCH:
+	case O_IGNORE:
 	case O_TRACEOFF:
 	    p->value.lcon = nextarg(long);
 	    break;
@@ -120,22 +126,26 @@ Operator op;
 	    break;
 
 	case O_RVAL:
-	    q = nextarg(Node);
-	    if (q->op == O_CALL) {
-		*p = *q;
-		dispose(q);
-	    } else {
-		p->value.arg[0] = q;
-	    }
+	case O_INDIR:
+	    p->value.arg[0] = nextarg(Node);
 	    break;
 
-	case O_INDIR:
+	case O_CALL:
 	    q = nextarg(Node);
-	    if (q != nil and q->op == O_RVAL) {
+	    if (q->op == O_SYM and
+		(q->value.sym->class == TYPE or q->value.sym->class == TAG)
+	    ) {
+		p->op = O_TYPERENAME;
+		p->value.arg[0] = nextarg(Node);
+		p->value.arg[1] = q;
+		q = p->value.arg[0];
+		if (q->value.arg[1] != nil) {
+		    error("too many arguments to type rename");
+		}
 		p->value.arg[0] = q->value.arg[0];
-		dispose(q);
 	    } else {
 		p->value.arg[0] = q;
+		p->value.arg[1] = nextarg(Node);
 	    }
 	    break;
 
@@ -172,25 +182,51 @@ Operator op;
     }
     check(p);
     assigntypes(p);
-    if(debug_flag[5]) {     
-  	fprintf(stderr," built %s node %d with arg0 %d arg1 %d \n",
-  	        showoperator(p->op), p, p->value.arg[0],p->value.arg[1]);
+    if (tracetree) {     
+	printf("built %s node 0x%x with arg[0] 0x%x arg[1] 0x%x\n",
+	    opname(p->op), p, p->value.arg[0], p->value.arg[1]);
+	fflush(stdout);
     }
     return p;
 }
 
 /*
- * Create a command list from a single command.
+ * Strip away indirection from a node, thus returning a node for
+ * interpreting the expression as an lvalue.
  */
 
-public Cmdlist buildcmdlist(cmd)
-Command cmd;
+public Node unrval (exp)
+Node exp;
 {
-    Cmdlist cmdlist;
+    Node p;
+    Symbol t;
 
-    cmdlist = list_alloc();
-    cmdlist_append(cmd, cmdlist);
-    return cmdlist;
+    if (exp->op == O_RVAL) {
+	p = exp->value.arg[0];
+	dispose(exp);
+    } else if (exp->op == O_INDIR) {
+	p = exp->value.arg[0];
+	if (p->op == O_RVAL) {
+	    p->op = O_INDIR;
+	    p->nodetype = exp->nodetype;
+	}
+	dispose(exp);
+    } else {
+	p = exp;
+    }
+    return p;
+}
+
+/*
+ * Create a node for renaming a node to a pointer type.
+ */
+
+public Node renameptr (p, t)
+Node p;
+Node t;
+{
+    t->nodetype = newSymbol(nil, 0, PTR, t->nodetype, nil);
+    p = build(O_TYPERENAME, p, t);
 }
 
 /*
@@ -205,12 +241,15 @@ Node p;
     checkref(p);
     switch (p->op) {
 	case O_RVAL:
+	case O_INDIR:
 	    r = p->value.arg[0];
+	    r->nodetype = t_addr;
+	    dispose(p);
 	    break;
 
-	case O_CALL:
-	    r = build(O_LCON, codeloc(p->value.arg[0]->value.sym));
-	    tfree(p);
+	case O_TYPERENAME:
+	    r = p;
+	    r->nodetype = newSymbol(nil, 0, PTR, r->nodetype, nil);
 	    break;
 
 	case O_SYM:
@@ -219,27 +258,24 @@ Node p;
 	    } else {
 		r = build(O_LCON, address(p->value.sym, nil));
 	    }
-	    tfree(p);
+	    r->nodetype = t_addr;
+	    dispose(p);
 	    break;
 
 	case O_DOT:
 	    r = p;
-	    break;
-
-	case O_INDIR:
-	    r = p->value.arg[0];
-	    dispose(p);
+	    r->nodetype = t_addr;
 	    break;
 
 	default:
 	    beginerrmsg();
-	    fprintf(stderr, "expected variable, found ");
+	    fprintf(stderr, "expected variable, found \"");
 	    prtree(stderr, p);
+	    fprintf(stderr, "\"");
 	    tfree(p);
 	    enderrmsg();
 	    /* NOTREACHED */
     }
-    r->nodetype = t_int;
     return r;
 }
 
@@ -254,6 +290,20 @@ Node p;
 {
     findtype(p->nodetype);
     return build(O_INDIR, p);
+}
+
+/*
+ * Create a command list from a single command.
+ */
+
+public Cmdlist buildcmdlist(cmd)
+Command cmd;
+{
+    Cmdlist cmdlist;
+
+    cmdlist = list_alloc();
+    cmdlist_append(cmd, cmdlist);
+    return cmdlist;
 }
 
 /*
@@ -314,6 +364,8 @@ Command cmd;
 	    fprintf(f, "%s", cmd->value.scon);
 	    break;
 
+	case O_CATCH:
+	case O_IGNORE:
 	case O_TRACEOFF:
 	    fprintf(f, "%d", cmd->value.lcon);
 	    break;
@@ -442,11 +494,11 @@ register Node p;
 		break;
 
 	    case O_LCON:
-		if (compatible(p->nodetype, t_char)) {
-		    fprintf(f, "'%c'", p->value.lcon);
-		} else {
-		    fprintf(f, "%d", p->value.lcon);
-		}
+		fprintf(f, "%d", p->value.lcon);
+		break;
+
+	    case O_CCON:
+		fprintf(f, "'%c'", p->value.lcon);
 		break;
 
 	    case O_FCON:
@@ -473,13 +525,6 @@ register Node p;
 		break;
 
 	    case O_RVAL:
-		if (p->value.arg[0]->op == O_SYM) {
-		    printname(f, p->value.arg[0]->value.sym);
-		} else {
-		    prtree(f, p->value.arg[0]);
-		}
-		break;
-
 	    case O_ITOF:
 		prtree(f, p->value.arg[0]);
 		break;
@@ -494,29 +539,20 @@ register Node p;
 		break;
 
 	    case O_INDIR:
-		q = p->value.arg[0];
-		if (isvarparam(q->nodetype)) {
-		    prtree(f, q);
-		} else {
-		    if (q->op == O_SYM or q->op == O_LCON or q->op == O_DOT) {
-			prtree(f, q);
-			fprintf(f, "^");
-		    } else {
-			fprintf(f, "*(");
-			prtree(f, q);
-			fprintf(f, ")");
-		    }
-		}
+		prtree(f, p->value.arg[0]);
+		fprintf(f, "^");
 		break;
 
 	    case O_DOT:
-		q = p->value.arg[0];
-		if (q->op == O_INDIR) {
-		    prtree(f, q->value.arg[0]);
-		} else {
-		    prtree(f, q);
-		}
+		prtree(f, p->value.arg[0]);
 		fprintf(f, ".%s", symname(p->value.arg[1]->value.sym));
+		break;
+
+	    case O_TYPERENAME:
+		prtree(f, p->value.arg[1]);
+		fprintf(f, "(");
+		prtree(f, p->value.arg[0]);
+		fprintf(f, ")");
 		break;
 
 	    default:
@@ -533,7 +569,12 @@ register Node p;
 			break;
 
 		    default:
-			error("internal error: bad op %d in prtree", op);
+			if (opinfo[ord(op)].opstring == nil) {
+			    fprintf(f, "[op %d]", ord(op));
+			} else {
+			    fprintf(f, "%s", opinfo[ord(op)].opstring);
+			}
+			break;
 		}
 		break;
 	}
@@ -572,68 +613,4 @@ Node p;
 	    break;
     }
     dispose(p);
-}
-
-/*
- * A recursive tree search routine to test if two trees are equivalent.
- */
-
-public Boolean tr_equal(t1, t2)
-register Node t1;
-register Node t2;
-{
-    register Boolean b;
-
-    if (t1 == nil and t2 == nil) {
-	b = true;
-    } else if (t1 == nil or t2 == nil) {
-	b = false;
-    } else if (t1->op != t2->op or degree(t1->op) != degree(t2->op)) {
-	b = false;
-    } else {
-	switch (degree(t1->op)) {
-	    case LEAF:
-		switch (t1->op) {
-		    case O_NAME:
-			b = (Boolean) (t1->value.name == t2->value.name);
-			break;
-
-		    case O_SYM:
-			b = (Boolean) (t1->value.sym == t2->value.sym);
-			break;
-
-		    case O_LCON:
-			b = (Boolean) (t1->value.lcon == t2->value.lcon);
-			break;
-
-		    case O_FCON:
-			b = (Boolean) (t1->value.fcon == t2->value.fcon);
-			break;
-
-		    case O_SCON:
-			b = (Boolean) (t1->value.scon == t2->value.scon);
-			break;
-
-		    default:
-			panic("tr_equal: leaf %d\n", t1->op);
-		}
-		/*NOTREACHED*/
-
-	    case BINARY:
-		if (not tr_equal(t1->value.arg[0], t2->value.arg[0])) {
-		    b = false;
-		} else {
-		    b = tr_equal(t1->value.arg[1], t2->value.arg[1]);
-		}
-		break;
-
-	    case UNARY:
-		b = tr_equal(t1->value.arg[0], t2->value.arg[0]);
-		break;
-
-	    default:
-		panic("tr_equal: bad degree for op %d\n", t1->op);
-	}
-    }
-    return b;
 }

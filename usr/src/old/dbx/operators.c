@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)operators.c	1.8 (Berkeley) %G%";
+static	char sccsid[] = "@(#)operators.c	1.9 (Berkeley) %G%";
+
+static char rcsid[] = "$Header: operators.c,v 1.5 84/12/26 10:41:01 linton Exp $";
 
 /*
  * Tree node classes.
@@ -18,7 +20,7 @@ typedef struct {
 
 typedef enum {
     O_NOP,
-    O_NAME, O_SYM, O_LCON, O_FCON, O_SCON,
+    O_NAME, O_SYM, O_LCON, O_CCON, O_FCON, O_SCON,
     O_RVAL, O_INDEX, O_INDIR, O_DOT,
     O_COMMA,
 
@@ -48,7 +50,6 @@ typedef enum {
     O_PRINT,		/* print the values of a list of expressions */
     O_PSYM,		/* print symbol information */
     O_RUN,		/* start up program */
-    O_SEARCH,		/* regular expression search of source file */
     O_SKIP,		/* skip the current line */
     O_SOURCE,		/* read commands from a file */
     O_STATUS,		/* display currently active trace/stop's */
@@ -71,7 +72,7 @@ typedef enum {
     O_PRINTIFCHANGED,	/* print the value of the argument if it has changed */
     O_PRINTRTN,		/* print out the routine and value that just returned */
     O_PRINTSRCPOS,	/* print out the current source position */
-    O_PROCRTN,		/* CALLPROC completed */
+    O_PROCRTN,		/* call completed */
     O_QLINE,		/* filename, line number */
     O_STOPIFCHANGED,	/* stop if the value of the argument has changed */
     O_STOPX,		/* stop execution */
@@ -83,6 +84,11 @@ typedef enum {
     O_RETURN,		/* continue execution until procedure returns */
     O_UP,		/* move current function up the call stack */
     O_DOWN,		/* move current function down the call stack */
+    O_CALLPROC,		/* call command */
+    O_SEARCH,		/* regular expression pattern search through source */
+    O_SET,		/* set a debugger variable */
+    O_UNSET,		/* unset a debugger variable */
+    O_UNALIAS,		/* remove an alias */
 
     O_LASTOP
 } Operator;
@@ -121,13 +127,14 @@ public Opinfo opinfo[] ={
 /* O_NAME */		-1,	LEAF,		0,
 /* O_SYM */		-1,	LEAF,		0,
 /* O_LCON */		-1,	LEAF,		0,
+/* O_CCON */		-1,	LEAF,		0,
 /* O_FCON */		-1,	LEAF,		0,
 /* O_SCON */		-1,	LEAF,		0,
 /* O_RVAL */		1,	UNARY,		0,
-/* O_INDEX */		2,	BINARY,		0,
+/* O_INDEX */		2,	null,		0,
 /* O_INDIR */		1,	UNARY,		"^",
 /* O_DOT */		2,	null,		".",
-/* O_COMMA */		2,	BINARY,		",",
+/* O_COMMA */		2,	null,		",",
 /* O_ITOF */		1,	UNARY|INTOP,	0,
 /* O_ADD */		2,	BINARY|INTOP,	"+",
 /* O_ADDF */		2,	BINARY|REALOP,	"+",
@@ -156,24 +163,23 @@ public Opinfo opinfo[] ={
 /* O_NEF */		2,	BINARY|REALOP,	" <> ",
 
 /* O_ALIAS */		2,	null,		"alias",
-/* O_ASSIGN */		2,	BINARY,		" := ",
+/* O_ASSIGN */		2,	null,		" := ",
 /* O_CALL */		2,	null,		"call",
-/* O_CATCH */		1,	null,		"catch",
+/* O_CATCH */		0,	null,		"catch",
 /* O_CHFILE */		0,	null,		"file",
 /* O_CONT */		0,	null,		"cont",
 /* O_DEBUG */		0,	null,		"debug",
 /* O_DELETE */		1,	null,		"delete",
-/* O_DUMP */		0,	null,		"dump",
+/* O_DUMP */		1,	null,		"dump",
 /* O_EDIT */		0,	null,		"edit",
 /* O_FUNC */		1,	null,		"func",
 /* O_GRIPE */		0,	null,		"gripe",
 /* O_HELP */		0,	null,		"help",
-/* O_IGNORE */		1,	null,		"ignore",
+/* O_IGNORE */		0,	null,		"ignore",
 /* O_LIST */		2,	null,		"list",
 /* O_PRINT */		1,	null,		"print",
 /* O_PSYM */		1,	null,		"psym",
 /* O_RUN */		0,	null,		"run",
-/* O_SEARCH */		2,	null,		"search",
 /* O_SKIP */		0,	null,		"skip",
 /* O_SOURCE */		0,	null,		"source",
 /* O_STATUS */		0,	null,		"status",
@@ -202,9 +208,14 @@ public Opinfo opinfo[] ={
 /* O_STOPX */		0,	null,		"stop",
 /* O_TRACEON */		1,	null,		"traceon",
 /* O_TRACEOFF */	1,	null,		"traceoff",
-/* O_TYPERENAME */	2,	UNARY,		"typerename",
+/* O_TYPERENAME */	2,	UNARY,		"type rename",
 /* O_RERUN */		0,	null,		"rerun",
 /* O_RETURN */		1,	null,		"return",
 /* O_UP */		1,	UNARY,		"up",
 /* O_DOWN */		1,	UNARY,		"down",
+/* O_CALLPROC */	2,	null,		"call",
+/* O_SEARCH */		2,	null,		"search",
+/* O_SET */		2,	null,		"set",
+/* O_UNSET */		1,	null,		"unset",
+/* O_UNALIAS */		1,	null,		"unalias",
 };

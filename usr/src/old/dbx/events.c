@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)events.c	1.6 (Berkeley) %G%";
+static	char sccsid[] = "@(#)events.c	1.7 (Berkeley) %G%";
+
+static char rcsid[] = "$Header: events.c,v 1.5 84/12/26 10:39:26 linton Exp $";
 
 /*
  * Event/breakpoint managment.
@@ -23,9 +25,9 @@ static	char sccsid[] = "@(#)events.c	1.6 (Berkeley) %G%";
 typedef struct Event *Event;
 typedef struct Breakpoint *Breakpoint;
 
-Boolean inst_tracing;
-Boolean single_stepping;
-Boolean isstopped;
+boolean inst_tracing;
+boolean single_stepping;
+boolean isstopped;
 
 #include "symbols.h"
 
@@ -41,7 +43,7 @@ Symbol retaddrsym;
 
 struct Event {
     unsigned int id;
-    Boolean temporary;
+    boolean temporary;
     Node condition;
     Cmdlist actions;
 };
@@ -51,6 +53,7 @@ struct Breakpoint {
     Address bpaddr;	
     Lineno bpline;
     Cmdlist actions;
+    boolean temporary;
 };
 
 typedef List Eventlist;
@@ -61,8 +64,9 @@ typedef List Bplist;
 
 private Eventlist eventlist;		/* list of active events */
 private Bplist bplist;			/* list of active breakpoints */
-private Integer eventid;		/* id number of next allocated event */
-private Integer trid;			/* id number of next allocated trace */
+private Event curevent;			/* most recently created event */
+private integer eventid;		/* id number of current event */
+private integer trid;			/* id number of current trace */
 
 typedef struct Trcmd {
     Integer trid;
@@ -113,23 +117,20 @@ public bpinit()
  */
 
 public Event event_alloc(istmp, econd, cmdlist)
-Boolean istmp;
+boolean istmp;
 Node econd;
 Cmdlist cmdlist;
 {
     register Event e;
 
     e = new(Event);
-    e->id = ++eventid;
+    ++eventid;
+    e->id = eventid;
     e->temporary = istmp;
     e->condition = econd;
     e->actions = cmdlist;
-    if (tracebpts) {
-	debugevent("event_alloc: new", e);
-	putchar('\n');
-	fflush(stdout);
-    }
     eventlist_append(e, eventlist);
+    curevent = e;
     translate(e);
     return e;
 }
@@ -153,8 +154,10 @@ unsigned int id;
 	    found = true;
 	    foreach (Breakpoint, bp, bplist)
 		if (bp->event == e) {
-		    if (tracebpts)
-			debugbpt("delevent: deleting", bp);
+		    if (tracebpts) {
+			printf("deleting breakpoint at 0x%x\n", bp->bpaddr);
+			fflush(stdout);
+		    }
 		    list_delete(list_curitem(bplist), bplist);
 		}
 	    endfor
@@ -322,11 +325,11 @@ Node exp;
  * This can only be done if there are no breakpoints within the function.
  */
 
-public Boolean canskip(f)
+public boolean canskip(f)
 Symbol f;
 {
     Breakpoint p;
-    Boolean ok;
+    boolean ok;
 
     ok = true;
     foreach (Breakpoint, p, bplist)
@@ -444,8 +447,15 @@ Cmdlist actions;
     p->bpaddr = addr;
     p->bpline = line;
     p->actions = actions;
-    if (tracebpts)
-	debugbpt("bp_alloc: new", p);
+    p->temporary = false;
+    if (tracebpts) {
+	if (e == nil) {
+	    printf("new bp at 0x%x for event ??\n", addr, e->id);
+	} else {
+	    printf("new bp at 0x%x for event %d\n", addr, e->id);
+	}
+	fflush(stdout);
+    }
     bplist_append(p, bplist);
     return p;
 }
@@ -472,22 +482,33 @@ public bpfree()
  * and if so do the associated commands.
  */
 
-public Boolean bpact()
+public boolean bpact()
 {
     register Breakpoint p;
-    Boolean found;
+    boolean found;
     integer eventId;
 
     found = false;
     foreach (Breakpoint, p, bplist)
 	if (p->bpaddr == pc) {
-	    if (tracebpts)
-		debugbpt("bpact: found", p);
+	    if (tracebpts) {
+		printf("breakpoint for event %d found at location 0x%x\n",
+		    p->event->id, pc);
+	    }
 	    found = true;
+	    if (p->event->temporary) {
+		if (not delevent(p->event->id)) {
+		    printf("!! dbx.bpact: can't find event %d\n",
+			p->event->id);
+		}
+	    }
 	    evalcmdlist(p->actions);
-	    eventId = p->event->id;
-	    if (p->event->temporary and not delevent(p->event->id))
-		printf("!! dbx.bpact: can't find event %d\n", eventId);
+	    if (isstopped) {
+		eventId = p->event->id;
+	    }
+	    if (p->temporary) {
+		list_delete(list_curitem(bplist), bplist);
+	    }
 	}
     endfor
     if (isstopped) {
@@ -510,20 +531,26 @@ public Boolean bpact()
  */
 
 public traceon(inst, event, cmdlist)
-Boolean inst;
+boolean inst;
 Event event;
 Cmdlist cmdlist;
 {
     register Trcmd trcmd;
+    Breakpoint bp;
     Cmdlist actions;
     Address ret;
+    Event e;
 
+    if (event == nil) {
+	e = curevent;
+    } else {
+	e = event;
+    }
     trcmd = new(Trcmd);
-    trcmd->trid = ++trid;
-    trcmd->event = event;
+    ++trid;
+    trcmd->trid = trid;
+    trcmd->event = e;
     trcmd->cmdlist = cmdlist;
-    if (tracebpts)
-	debugtrace("traceon: adding", trcmd);
     single_stepping = true;
     if (inst) {
 	inst_tracing = true;
@@ -533,16 +560,12 @@ Cmdlist cmdlist;
     }
     ret = return_addr();
     if (ret != 0) {
-	/*
-	 * Must create new temporary event for traceoff action;
-	 * otherwise traceoff will take place but the breakpoint
-	 * won't be deleted.  This results in a panic the next
-	 * time we enter the region where tracing takes place since
-	 * the associate trace id (of the traceoff command) no
-	 * longer exists.
-	 */
-	event_once(build(O_EQ, build(O_SYM, pcsym), build(O_LCON, ret)),
-	    buildcmdlist(build(O_TRACEOFF, trcmd->trid)));
+	actions = buildcmdlist(build(O_TRACEOFF, trcmd->trid));
+	bp = bp_alloc(e, (Address) ret, 0, actions);
+	bp->temporary = true;
+    }
+    if (tracebpts) {
+	printf("adding trace %d for event %d\n", trcmd->trid, e->id);
     }
 }
 
@@ -555,7 +578,7 @@ public traceoff(id)
 Integer id;
 {
     register Trcmd t;
-    register Boolean found;
+    register boolean found;
 
     found = false;
     foreach (Trcmd, t, eachline)
@@ -576,8 +599,8 @@ Integer id;
 	    }
 	endfor
 	if (not found) {
-	    debugallevents("traceoff");
-	    panic("missing trid %d", id);
+	    beginerrmsg();
+	    fprintf(stderr, "[internal error: trace id %d not found]\n", id);
 	}
     }
     if (list_size(eachinst) == 0) {
@@ -595,120 +618,13 @@ Integer id;
 private printrmtr(t)
 Trcmd t;
 {
-    if (tracebpts)
-	debugtrace("removing", t);
-}
-
-/*
- * Debugging routines.
- */
-debugallevents(s)
-String s;
-{
-    register Trcmd t;
-    register Event e;
-    register Breakpoint bp;
-
-    if (s)
-	printf("%s:\n", s);
-    if (eachline) {
-	printf("Traces (eachline):\n");
-	foreach (Trcmd, t, eachline)
-	    debugtrace("\t", t);
-	endfor
+    if (tracebpts) {
+	printf("removing trace %d", t->trid);
+	if (t->event != nil) {
+	    printf(" for event %d", t->event->id);
+	}
+	printf("\n");
     }
-    if (eachinst) {
-	printf("Trace (eachinst):\n");
-	foreach (Trcmd, t, eachinst)
-	    debugtrace("\t", t);
-	endfor
-    }
-    if (bplist) {
-	printf("Breakpoints:\n");
-	foreach (Breakpoint, bp, bplist)
-	    debugbpt("\t", bp);
-	endfor
-    }
-    if (eventlist) {
-	printf("Events:\n");
-	foreach (Event, e, eventlist)
-	    debugevent("\t", e);
-	    putchar('\n');
-	endfor
-    }
-    fflush(stdout);
-}
-
-private debugtrace(s, t)
-String s;
-Trcmd t;
-{
-
-    if (s)
-	printf("%s ", s);
-    printf("trace %d ", t->trid);
-    debugevent("for", t->event);
-    printf("\n");
-    fflush(stdout);
-}
-
-private debugbpt(s, bp)
-String s;
-Breakpoint bp;
-{
-
-    if (s)
-	printf("%s ", s);
-    debugevent("breakpoint for", bp->event);
-    printf("; loc 0x%x", bp->bpaddr);
-    if (bp->actions)
-	debugactions(" ", bp->actions, nil);
-    putchar('\n');
-    fflush(stdout);
-}
-
-private debugevent(s, e)
-String s;
-Event e;
-{
-
-    if (s)
-	printf("%s ", s);
-    if (e == nil) {
-	printf("nil event");
-	return;
-    }
-    if (e->temporary)
-	printf("temporary ");
-    printf("event %d", e->id);
-}
-
-debugactions(s, cl, condition)
-String s;
-Cmdlist cl;
-Node condition;
-{
-    Command c;
-
-    if (s)
-	printf("%s ", s);
-    c = list_element(Command, list_head(cl));
-    if (c->op == O_PRINTCALL) {
-	printf("trace ");
-	printname(stdout, c->value.sym);
-	return;
-    }
-    if (list_size(cl) > 1)
-	printf("{ ");
-    foreach (Command, c, cl)
-	printcmd(stdout, c);
-	if (not list_islast())
-	    printf("; ");
-    endfor
-    if (list_size(cl) > 1)
-	printf(" }");
-    if (condition)
-	printcond(condition);
 }
 
 /*
@@ -733,19 +649,19 @@ public printnews()
  * note it if we're tracing lines.
  */
 
-private Boolean chklist();
+private boolean chklist();
 
 public callnews(iscall)
-Boolean iscall;
+boolean iscall;
 {
     if (not chklist(eachline, iscall)) {
 	chklist(eachinst, iscall);
     }
 }
 
-private Boolean chklist(list, iscall)
+private boolean chklist(list, iscall)
 List list;
-Boolean iscall;
+boolean iscall;
 {
     register Trcmd t;
     register Command cmd;
@@ -799,7 +715,7 @@ private Trinfo findtrinfo(p)
 Node p;
 {
     register Trinfo tp;
-    Boolean isnew;
+    boolean isnew;
 
     isnew = true;
     if (trinfolist == nil) {
@@ -827,12 +743,6 @@ Node p;
     return tp;
 }
 
-#define	cast(size, loc, val) \
-    switch (size) { \
-	case sizeof (char): *(char *)(loc) = (val); break; \
-	case sizeof (short): *(short *)(loc) = (val); break; \
-	default: *(int *)(loc) = (val); break; \
-    }
 /*
  * Print out the value of a variable if it has changed since the
  * last time we checked.
@@ -844,22 +754,20 @@ Node p;
     register Trinfo tp;
     register int n;
     char buff[MAXTRSIZE];
+    Filename curfile;
     static Lineno prevline;
+    static Filename prevfile;
 
     tp = findtrinfo(p);
     n = size(p->nodetype);
-    if (p->op == O_SYM and isreg(p->value.sym)) {
-	int regval = address(p->value.sym, nil);
-
-	cast(n, buff, regval);
-    } else
-	dread(buff, tp->traddr, n);
+    dread(buff, tp->traddr, n);
+    curfile = srcfilename(pc);
     if (tp->trvalue == nil) {
 	tp->trvalue = newarr(char, n);
 	mov(buff, tp->trvalue, n);
 	mov(buff, sp, n);
 	sp += n;
-	printf("initially (at line %d):\t", curline);
+	printf("initially (at line %d in \"%s\"):\t", curline, curfile);
 	prtree(stdout, p);
 	printf(" = ");
 	printval(p->nodetype);
@@ -868,13 +776,14 @@ Node p;
 	mov(buff, tp->trvalue, n);
 	mov(buff, sp, n);
 	sp += n;
-	printf("after line %d:\t", prevline);
+	printf("after line %d in \"%s\":\t", prevline, prevfile);
 	prtree(stdout, p);
 	printf(" = ");
 	printval(p->nodetype);
 	putchar('\n');
     }
     prevline = curline;
+    prevfile = curfile;
 }
 
 /*

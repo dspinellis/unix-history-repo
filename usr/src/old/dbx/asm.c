@@ -1,6 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)asm.c	1.3 (Berkeley) %G%";
+static	char sccsid[] = "@(#)asm.c	1.4 (Berkeley) %G%";
+
+static char rcsid[] = "$Header: asm.c,v 1.5 84/12/26 10:38:19 linton Exp $";
 
 /*
  * Assembly language dependent symbol routines.
@@ -34,6 +36,8 @@ public asm_init()
     language_setop(lang, L_PRINTDECL, asm_printdecl);
     language_setop(lang, L_PRINTVAL, asm_printval);
     language_setop(lang, L_TYPEMATCH, asm_typematch);
+    language_setop(lang, L_BUILDAREF, asm_buildaref);
+    language_setop(lang, L_EVALAREF, asm_evalaref);
     language_setop(lang, L_HASMODULES, asm_hasmodules);
     language_setop(lang, L_PASSADDR, asm_passaddr);
 }
@@ -55,6 +59,10 @@ public asm_printdecl(s)
 Symbol s;
 {
     switch (s->class) {
+	case CONST:
+	    printf("%s = %d", symname(s), s->symvalue.constval->value.lcon);
+	    break;
+
 	case VAR:
 	case REF:
 	    printf("&%s = 0x%x", symname(s), s->symvalue.offset);
@@ -65,8 +73,17 @@ Symbol s;
 	    printf("%s (0x%x):", symname(s), codeloc(s));
 	    break;
 
+	case TYPE:
+	    printf("%s", symname(s));
+	    break;
+
+	case ARRAY:
+	    printf("$string");
+	    break;
+
 	default:
-	    error("class %s in c_printdecl", classname(s));
+	    printf("[%s]", classname(s));
+	    break;
     }
     putchar('\n');
 }
@@ -98,6 +115,40 @@ register Symbol s;
 	    printf("0x%x", pop(Integer));
 	    break;
     }
+}
+
+/*
+ * Treat subscripting as indirection through pointer to integer.
+ */
+
+public Node asm_buildaref(a, slist)
+Node a, slist;
+{
+    Symbol t, eltype;
+    Node p, r;
+
+    t = rtype(a->nodetype);
+    eltype = t->type;
+    p = slist->value.arg[0];
+    r = build(O_MUL, p, build(O_LCON, (long) size(eltype)));
+    r = build(O_ADD, build(O_RVAL, a), r);
+    r->nodetype = eltype;
+    return r;
+}
+
+/*
+ * Evaluate a subscript index.  Assumes dimension is [0..n].
+ */
+
+public asm_evalaref(s, base, i)
+Symbol s;
+Address base;
+long i;
+{
+    Symbol t;
+
+    t = rtype(s);
+    push(long, base + i * size(t->type));
 }
 
 public boolean asm_hasmodules ()
