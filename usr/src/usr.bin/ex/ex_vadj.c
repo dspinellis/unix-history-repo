@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_vadj.c	7.2	%G%";
+static char *sccsid = "@(#)ex_vadj.c	7.3	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -263,7 +263,7 @@ vinslin(p, cnt, l)
 		for (i = cnt - 1; i > 0; i--) {
 			vgoto(outline+1, 0);
 			if (VA)
-				vputp(tgoto(VA, 0, outline+1), WECHO + 1 - outline);
+				vputp(tgoto(VA, 0, outline), WECHO + 1 - outline);
 			else
 				vputp(AL, WECHO + 1 - outline);
 			if ((hold & HOLDAT) == 0)
