@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_get.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_get.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -34,7 +34,8 @@ static char sccsid[] = "@(#)bt_get.c	5.3 (Berkeley) %G%";
 int
 __bt_get(dbp, key, data, flags)
 	const DB *dbp;
-	DBT *key, *data;
+	const DBT *key;
+	DBT *data;
 	u_int flags;
 {
 	BTREE *t;
@@ -57,7 +58,7 @@ __bt_get(dbp, key, data, flags)
 	 * A special case is if we found the record but it's flagged for
 	 * deletion.  In this case, we want to find another record with the
 	 * same key, if it exists.  Rather than look around the tree we call
-	 * __bt_first and have it redo the search as __bt_first will not
+	 * __bt_first and have it redo the search, as __bt_first will not
 	 * return keys marked for deletion.  Slow, but should never happen.
 	 */
 	if (ISSET(t, BTF_DELCRSR) && e->page->pgno == t->bt_bcursor.pgno &&
@@ -69,25 +70,25 @@ __bt_get(dbp, key, data, flags)
 			return (RET_SPECIAL);
 	}
 
-	status = __bt_ret(t, e, data, key);
+	status = __bt_ret(t, e, NULL, data);
 	mpool_put(t->bt_mp, e->page, 0);
 	return (status);
 }
 
 /*
- * __BT_FIRST -- Find the first record in the tree matching the key.
+ * __BT_FIRST -- Find the first entry.
  *
  * Parameters:
  *	t:	the tree
  *	key:	the key
  *
  * Returns:
- *	The first matching record.
+ *	The first entry in the tree greater than or equal to key.
  */
 EPG *
 __bt_first(t, key, exactp)
 	BTREE *t;
-	DBT *key;
+	const DBT *key;
 	int *exactp;
 {
 	register PAGE *h;
@@ -99,14 +100,13 @@ __bt_first(t, key, exactp)
 
 	/*
 	 * Find any matching record; __bt_search pins the page.  Only exact
-	 * matches are interesting.
+	 * matches are tricky, otherwise just return the location of the key
+	 * if it were to be inserted into the tree.
 	 */
 	if ((e = __bt_search(t, key, exactp)) == NULL)
 		return (NULL);
-	if (!*exactp) {
-		mpool_put(t->bt_mp, e->page, 0);
+	if (!*exactp)
 		return (e);
-	}
 
 	if (ISSET(t, BTF_DELCRSR)) {
 		cpgno = t->bt_bcursor.pgno;
