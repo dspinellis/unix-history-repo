@@ -60,3 +60,23 @@ ldl|LDL:\
 	newnode nextcom nil null parent plus precnl prevcom prog progn\
 	quote reglob return rightsibling self set setattr setfield setq\
 	stjoin sub1 t times tnull tokno ttype:
+Icon|icon|I:\
+	:pb=^\d?procedure\d\p\d?\(\a?\):\
+	:bb=(^\d?procedure\d\p\d?\(\a?\))|{:be=}|(^\d?end\d?$):\
+	:cb=#:ce=$:\
+	:sb=":se=\e":lb=':le=\e':tl:\
+	:kw=break by case create default do dynamic else end every external\
+	fail global if initial local next not of procedure record\
+	repeat return static suspend then to until using while\
+	&ascii &clock &cset &date &dateline &errout &fail &host &input\
+	&lcase &level &main &null &output &pos &random &source &subject\
+	&time &trace &ucase &version:
+ratfor|rat|r:\
+	:pb=(subroutine|function)\d\p\d?\(\a?\):\
+	:bb=(subroutine|function)\d\p\d?\(\a?\):be=^\d?end:\
+	:cb=#:ce=$:\
+	:sb=":se=\e":lb=':le=\e':oc:\
+	:kw=DRETURN DRIVER arith break case character default define do\
+	else elsedef enddef filedes for function goto if ifdef ifelse\
+	ifnotdef include incr integer linepointer next opeq pointer\
+	real repeat return select string subroutine substr until:
