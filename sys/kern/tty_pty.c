@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty_pty.c	7.21 (Berkeley) 5/30/91
- *	$Id: tty_pty.c,v 1.5 1993/11/25 01:33:29 wollman Exp $
+ *	$Id: tty_pty.c,v 1.6 1993/12/19 00:51:41 wollman Exp $
  */
 
 /*
@@ -295,7 +295,6 @@ ptcclose(dev)
 	tp->t_oproc = 0;		/* mark closed */
 	tp->t_session = 0;
 
-/* XXX -hv- 6.Oct.92 this prevents the "hanging console bug" with X11 */
 	if (constty==tp)
 		constty = 0;
 
