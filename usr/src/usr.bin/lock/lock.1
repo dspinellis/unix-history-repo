@@ -1,14 +1,13 @@
 .\" Copyright (c) 1987, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)lock.1	6.8 (Berkeley) %G%
+.\"	@(#)lock.1	6.9 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt LOCK 1
+.Os
 .Sh NAME
 .Nm lock
 .Nd reserve a terminal
@@ -24,22 +23,20 @@ repeated.
 There are two other conditions under which it will terminate: it
 will timeout after some interval of time and it may be killed by someone
 with the appropriate permission.
-.Po
+.Pp
 Options:
 .Pp
-.Tw Fl
-.Tc Fl t
-.Ws
-.Ar timeout
-.Cx
+.Bl -tag -width Fl
+.It Fl p
+A password is not requested, instead the user's current login password
+is used.
+.It Fl t Ar timeout 
 The time limit (default 15 minutes) is changed to
 .Ar timeout
 minutes.
-.Tp Fl p
-Causes
-.Nm lock
-to use the user's current password instead of requesting another one.
-.Tp
+.El
 .Sh HISTORY
-.Nm Lock
-appeared in 3 BSD.
+The
+.Nm lock
+command appeared in
+.Bx 3.0 .
