@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	4.17	81/03/09	*/
+/*	vfs_cluster.c	4.18	81/03/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -105,8 +105,8 @@ daddr_t blkno;
 
 	bp = getblk(dev, blkno);
 	if (bp->b_flags&B_DONE) {
-#ifdef	EPAWNJ
-		trace(TR_BREAD|TR_HIT, dev, blkno);
+#ifdef	TRACE
+		trace(TR_BREADHIT, dev, blkno);
 #endif
 #ifdef	DISKMON
 		io_info.ncache++;
@@ -116,8 +116,8 @@ daddr_t blkno;
 	bp->b_flags |= B_READ;
 	bp->b_bcount = BSIZE;
 	(*bdevsw[major(dev)].d_strategy)(bp);
-#ifdef	EPAWNJ
-	trace(TR_BREAD|TR_MISS, dev, blkno);
+#ifdef	TRACE
+	trace(TR_BREADMISS, dev, blkno);
 #endif
 #ifdef	DISKMON
 	io_info.nread++;
@@ -145,32 +145,32 @@ daddr_t blkno, rablkno;
 			bp->b_flags |= B_READ;
 			bp->b_bcount = BSIZE;
 			(*bdevsw[major(dev)].d_strategy)(bp);
-#ifdef	EPAWNJ
-			trace(TR_BREAD|TR_MISS, dev, blkno);
+#ifdef	TRACE
+			trace(TR_BREADMISS, dev, blkno);
 #endif
 #ifdef	DISKMON
 			io_info.nread++;
 #endif
 			u.u_vm.vm_inblk++;		/* pay for read */
 		}
-#ifdef	EPAWNJ
+#ifdef	TRACE
 		else
-			trace(TR_BREAD|TR_HIT, dev, blkno);
+			trace(TR_BREADHIT, dev, blkno);
 #endif
 	}
 	if (rablkno && !incore(dev, rablkno)) {
 		rabp = getblk(dev, rablkno);
 		if (rabp->b_flags & B_DONE) {
 			brelse(rabp);
-#ifdef	EPAWNJ
-			trace(TR_BREAD|TR_HIT|TR_RA, dev, blkno);
+#ifdef	TRACE
+			trace(TR_BREADHITRA, dev, blkno);
 #endif
 		} else {
 			rabp->b_flags |= B_READ|B_ASYNC;
 			rabp->b_bcount = BSIZE;
 			(*bdevsw[major(dev)].d_strategy)(rabp);
-#ifdef	EPAWNJ
-			trace(TR_BREAD|TR_MISS|TR_RA, dev, rablock);
+#ifdef	TRACE
+			trace(TR_BREADMISSRA, dev, rablock);
 #endif
 #ifdef	DISKMON
 			io_info.nreada++;
@@ -201,7 +201,7 @@ register struct buf *bp;
 #endif
 	if ((flag&B_DELWRI) == 0)
 		u.u_vm.vm_oublk++;		/* noone paid yet */
-#ifdef	EPAWNJ
+#ifdef	TRACE
 	trace(TR_BWRITE, bp->b_dev, dbtofsb(bp->b_blkno));
 #endif
 	(*bdevsw[major(bp->b_dev)].d_strategy)(bp);
@@ -390,7 +390,7 @@ daddr_t blkno;
 		bwrite(bp);
 		goto loop;
 	}
-#ifdef EPAWNJ
+#ifdef TRACE
 	trace(TR_BRELSE, bp->b_dev, dbtofsb(bp->b_blkno));
 #endif
 	bp->b_flags = B_BUSY;
@@ -432,7 +432,7 @@ loop:
 		bwrite(bp);
 		goto loop;
 	}
-#ifdef EPAWNJ
+#ifdef TRACE
 	trace(TR_BRELSE, bp->b_dev, dbtofsb(bp->b_blkno));
 #endif
 	bp->b_flags = B_BUSY|B_INVAL;
