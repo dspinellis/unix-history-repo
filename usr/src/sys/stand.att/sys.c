@@ -1,4 +1,4 @@
-/*	sys.c	4.9	83/01/16	*/
+/*	sys.c	4.10	83/02/16	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -18,14 +18,16 @@ openi(n, io)
 	register struct iob *io;
 {
 	register struct dinode *dp;
+	int cc;
 
 	io->i_offset = 0;
 	io->i_bn = fsbtodb(&io->i_fs, itod(&io->i_fs, n)) + io->i_boff;
 	io->i_cc = io->i_fs.fs_bsize;
 	io->i_ma = io->i_buf;
-	devread(io);
+	cc = devread(io);
 	dp = (struct dinode *)io->i_buf;
 	io->i_ino.i_ic = dp[itoo(&io->i_fs, n)].di_ic;
+	return (cc);
 }
 
 static
@@ -42,7 +44,10 @@ find(path, file)
 		return (0);
 	}
 
-	openi((ino_t) ROOTINO, file);
+	if (openi((ino_t) ROOTINO, file) < 0) {
+		printf("can't read root inode\n");
+		return (0);
+	}
 	while (*path) {
 		while (*path == '/')
 			path++;
@@ -52,15 +57,16 @@ find(path, file)
 		c = *q;
 		*q = '\0';
 
-		if ((n=dlook(path, file))!=0) {
-			if (c=='\0')
+		if ((n = dlook(path, file)) != 0) {
+			if (c == '\0')
 				break;
-			openi(n, file);
+			if (openi(n, file) < 0)
+				return (0);
 			*q = c;
 			path = q;
 			continue;
 		} else {
-			printf("%s not found\n",path);
+			printf("%s not found\n", path);
 			return (0);
 		}
 	}
@@ -124,7 +130,12 @@ sbmap(io, bn)
 			io->i_bn = fsbtodb(&io->i_fs, nb) + io->i_boff;
 			io->i_ma = b[j];
 			io->i_cc = io->i_fs.fs_bsize;
-			devread(io);
+			if (devread(io) != io->i_fs.fs_bsize) {
+				if (io->i_error)
+					errno = io->i_error;
+				printf("bn %D: read error\n", io->i_bn);
+				return ((daddr_t)0);
+			}
 			blknos[j] = nb;
 		}
 		bap = (daddr_t *)b[j];
@@ -187,7 +198,7 @@ readdir(dirp)
 	io = dirp->io;
 	for(;;) {
 		if (dirp->loc >= io->i_ino.i_size)
-			return NULL;
+			return (NULL);
 		off = blkoff(&io->i_fs, dirp->loc);
 		if (off == 0) {
 			lbn = lblkno(&io->i_fs, dirp->loc);
@@ -197,7 +208,11 @@ readdir(dirp)
 			io->i_bn = fsbtodb(&io->i_fs, d) + io->i_boff;
 			io->i_ma = io->i_buf;
 			io->i_cc = blksize(&io->i_fs, &io->i_ino, lbn);
-			devread(io);
+			if (devread(io) < 0) {
+				errno = io->i_error;
+				printf("bn %D: read error\n", io->i_bn);
+				return (NULL);
+			}
 		}
 		dp = (struct direct *)(io->i_buf + off);
 		dirp->loc += dp->d_reclen;
@@ -265,7 +280,10 @@ getc(fdesc)
 		}
 		io->i_ma = io->i_buf;
 		io->i_cc = size;
-		devread(io);
+		if (devread(io) < 0) {
+			errno = io->i_error;
+			return (-1);
+		}
 		if ((io->i_flgs & F_FILE) != 0) {
 			if (io->i_offset - off + size >= io->i_ino.i_size)
 				io->i_cc = diff + off;
@@ -464,7 +482,11 @@ badoff:
 	file->i_cc = SBSIZE;
 	file->i_bn = SBLOCK + file->i_boff;
 	file->i_offset = 0;
-	devread(file);
+	if (devread(file) < 0) {
+		errno = file->i_error;
+		printf("super block read error\n");
+		return (-1);
+	}
 	if ((i = find(cp, file)) == 0) {
 		file->i_flgs = 0;
 		errno = ESRCH;
@@ -476,7 +498,10 @@ badoff:
 		errno = EIO;
 		return (-1);
 	}
-	openi(i, file);
+	if (openi(i, file) < 0) {
+		errno = file->i_error;
+		return (-1);
+	}
 	file->i_offset = 0;
 	file->i_cc = 0;
 	file->i_flgs |= F_FILE | (how+1);
