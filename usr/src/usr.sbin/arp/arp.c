@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)arp.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)arp.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -37,18 +37,33 @@ static char sccsid[] = "@(#)arp.c	8.2 (Berkeley) %G%";
 
 #include <arpa/inet.h>
 
-#include <netdb.h>
+#include <err.h>
 #include <errno.h>
+#include <netdb.h>
 #include <nlist.h>
 #include <kvm.h>
-#include <stdio.h>
 #include <paths.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
-extern int errno;
 static int pid;
 static int nflag;
 static int s = -1;
 
+int	delete __P((char *, char *));
+void	dump __P((u_long));
+int	ether_aton __P((char *, u_char *));
+void	ether_print __P((u_char *));
+int	file __P((char *));
+void	get __P((char *));
+void	getsocket __P((void));
+int	rtmsg __P((int));
+int	set __P((int, char **));
+void	usage __P((void));
+
+int
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -80,12 +95,13 @@ main(argc, argv)
 	if (argc != 2)
 		usage();
 	get(argv[1]);
-	exit(0);
+	return (0);
 }
 
 /*
  * Process a file to set standard arp entries
  */
+int
 file(name)
 	char *name;
 {
@@ -118,6 +134,7 @@ file(name)
 	return (retval);
 }
 
+void
 getsocket() {
 	if (s < 0) {
 		s = socket(PF_ROUTE, SOCK_RAW, 0);
@@ -140,6 +157,7 @@ struct	{
 /*
  * Set an individual arp entry 
  */
+int
 set(argc, argv)
 	int argc;
 	char **argv;
@@ -225,12 +243,12 @@ overwrite:
 /*
  * Display an individual arp entry
  */
+void
 get(host)
 	char *host;
 {
 	struct hostent *hp;
 	struct sockaddr_inarp *sin = &sin_m;
-	u_char *ea;
 
 	sin_m = blank_sin;
 	sin->sin_addr.s_addr = inet_addr(host);
@@ -254,6 +272,7 @@ get(host)
 /*
  * Delete an arp entry 
  */
+int
 delete(host, info)
 	char *host;
 	char *info;
@@ -262,8 +281,6 @@ delete(host, info)
 	register struct sockaddr_inarp *sin = &sin_m;
 	register struct rt_msghdr *rtm = &m_rtmsg.m_rtm;
 	struct sockaddr_dl *sdl;
-	u_char *ea;
-	char *eaddr;
 
 	if (info && strncmp(info, "pro", 3) )
 		export_only = 1;
@@ -307,19 +324,22 @@ delete:
 		printf("cannot locate %s\n", host);
 		return (1);
 	}
-	if (rtmsg(RTM_DELETE) == 0)
-		printf("%s (%s) deleted\n", host, inet_ntoa(sin->sin_addr));
+	if (rtmsg(RTM_DELETE))
+		return (1);
+	printf("%s (%s) deleted\n", host, inet_ntoa(sin->sin_addr));
+	return (0);
 }
 
 /*
  * Dump the entire arp table
  */
+void
 dump(addr)
-u_long addr;
+	u_long addr;
 {
 	int mib[6];
 	size_t needed;
-	char *host, *malloc(), *lim, *buf, *next;
+	char *host, *lim, *buf, *next;
 	struct rt_msghdr *rtm;
 	struct sockaddr_inarp *sin;
 	struct sockaddr_dl *sdl;
@@ -340,7 +360,7 @@ u_long addr;
 		}
 		printf("%s (%s) at ", host, inet_ntoa(sin->sin_addr));
 		if (sdl->sdl_alen)
-			ether_print(LLADDR(sdl));
+			ether_print((u_char *)LLADDR(sdl));
 		else
 			printf("(incomplete)");
 		if (rtm->rtm_rmx.rmx_expire == 0)
@@ -363,6 +383,7 @@ ether_print(cp)
 	printf("%x:%x:%x:%x:%x:%x", cp[0], cp[1], cp[2], cp[3], cp[4], cp[5]);
 }
 
+int
 ether_aton(a, n)
 	char *a;
 	u_char *n;
@@ -380,6 +401,7 @@ ether_aton(a, n)
 	return (0);
 }
 
+void
 usage()
 {
 	printf("usage: arp hostname\n");
@@ -390,7 +412,9 @@ usage()
 	exit(1);
 }
 
+int
 rtmsg(cmd)
+	int cmd;
 {
 	static int seq;
 	int rlen;
@@ -453,11 +477,4 @@ doit:
 		(void) fprintf(stderr, "arp: read from routing socket: %s\n",
 		    strerror(errno));
 	return (0);
-}
-
-quit(msg)
-char *msg;
-{
-	fprintf(stderr, "%s\n", msg);
-	exit(1);
 }
