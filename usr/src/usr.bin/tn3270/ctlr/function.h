@@ -1,12 +1,24 @@
 /*
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)function.h	3.2 (Berkeley) %G%
+ */
+
+/*
  * The following are the various functions which the keyboard can ask
  * the controller to perform.
  *
  * Note that this file (the following entries) are scanned by mkhit.c,
  * and that the format must remain more-or-less consistent
  * [ \t]*TOKEN
- *
- * @(#)function.h	3.1 (Berkeley) %G%
  */
 
 enum ctlrfcn {
