@@ -1,5 +1,5 @@
 # Dump kmem statistics
-#	@(#)kdump	7.1 (Berkeley) %G%
+#	@(#)kdump	8.1 (Berkeley) %G%
 
 set $last=75
 set $seg=43
