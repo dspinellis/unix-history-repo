@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)@(#)usleep.3	6.2 (Berkeley) %G%
+.\"	@(#)@(#)usleep.3	6.3 (Berkeley) %G%
 .\"
 .TH USLEEP 3  ""
 .UC 6
@@ -17,7 +17,8 @@ usleep \- suspend execution for interval
 The current process is suspended from execution for the number
 of microseconds specified by the argument.
 The actual suspension time may be an arbitrary amount longer
-because of other activity in the system.
+because of other activity in the system
+or because of the time spent in processing the call.
 .PP
 The routine is implemented by setting an interval timer
 and pausing until it occurs.
@@ -25,12 +26,15 @@ The previous state of this timer is saved and restored.
 If the sleep time exceeds the time to the expiration of the
 previous timer,
 the process sleeps only until the signal would have occurred, and the
-signal is sent 2 system clock ticks later.
-.SH BUGS
-This routine is expensive to use because it is implemented using 
-.IR setitimer (2)
-and does eight system calls each time it is invoked.
-It should be implemented using 
-.IR select (2).
+signal is sent a short time later.
+.PP
+This routine is implemented using 
+.IR setitimer (2);
+it requires eight system calls each time it is invoked.
+A similar but less compatible function can be obtained with a single
+.IR select (2);
+it would not restart after signals, but would not interfere
+with other uses of
+.IR setitimer . 
 .SH "SEE ALSO"
 setitimer(2), getitimer(2), sigpause(2), ualarm(3), sleep(3), alarm(3)
