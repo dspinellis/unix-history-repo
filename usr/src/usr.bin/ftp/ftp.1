@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)ftp.1	6.12 (Berkeley) %G%
+.\"	@(#)ftp.1	6.12.1.1 (Berkeley) %G%
 .\"
 .TH FTP 1 "February 23, 1989"
 .UC 5
@@ -341,12 +341,6 @@ and
 .I nmap
 settings.
 .TP
-\fBnewer\fP \fIfile-name\fP
-Get the file only if the modification time of the remote file is more
-recent that the file on the current system. If the file does not
-exist on the current system, the remote file is considered \fInewer\fP.
-Otherwise, this command is identical to \fBget\fP.
-.TP
 \fBnlist\fP [ \fIremote-directory\fP ] [ \fIlocal-file\fP ]
 Print a  list of the files of a
 directory on the remote machine.  If
@@ -534,14 +528,6 @@ server.
 \fBrecv\fP \fIremote-file\fP [ \fIlocal-file\fP ]
 A synonym for get.
 .TP
-\fBreget\fP \fIremote-file\fP [ \fIlocal-file\fP ]
-Reget acts like get, except that if \fIlocal-file\fP exists and is
-smaller than \fIremote-file\fP, \fIlocal-file\fP is presumed to be
-a partially transferred copy of \fIremote-file\fP and the transfer
-is continued from the apparent point of failure. This command
-is useful when transferring very large files over networks that
-are prone to dropping connections.
-.TP
 \fBremotehelp\fP [ \fIcommand-name\fP ]
 Request help from the remote FTP server.  If a 
 .I command-name
@@ -563,11 +549,6 @@ This command re-synchronizes command/reply sequencing with the remote
 ftp server.
 Resynchronization may be necessary following a violation of the ftp protocol
 by the remote server.
-.TP
-.BI restart " marker"
-Restart the immediately following \fBget\fP or \fBput\fP at the
-indicated \fImarker\fP. On UNIX systems, marker is usually a byte
-offset into the file.
 .TP
 .BI rmdir " directory-name"
 Delete a directory on the remote machine.
