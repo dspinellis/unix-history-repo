@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)utilities.c	3.6 (Berkeley) %G%";
+static char version[] = "@(#)utilities.c	3.7 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -108,11 +108,11 @@ flush(fcp, bp)
 		pfatal("WRITING ZERO'ED BLOCK %d TO DISK\n", bp->b_bno);
 	bp->b_dirty = 0;
 	bp->b_errs = 0;
-	(void)bwrite(fcp, bp->b_un.b_buf, bp->b_bno, (long)bp->b_size);
+	bwrite(fcp, bp->b_un.b_buf, bp->b_bno, (long)bp->b_size);
 	if (bp != &sblk)
 		return;
 	for (i = 0, j = 0; i < sblock.fs_cssize; i += sblock.fs_bsize, j++) {
-		(void)bwrite(&dfile, (char *)sblock.fs_csp[j],
+		bwrite(&dfile, (char *)sblock.fs_csp[j],
 		    fsbtodb(&sblock, sblock.fs_csaddr + j * sblock.fs_frag),
 		    sblock.fs_cssize - i < sblock.fs_bsize ?
 		    sblock.fs_cssize - i : sblock.fs_bsize);
@@ -164,13 +164,15 @@ bread(fcp, buf, blk, size)
 	if (lseek(fcp->rfdes, (long)dbtob(blk), 0) < 0)
 		rwerr("SEEK", blk);
 	errs = 0;
+	pfatal("THE FOLLOWING SECTORS COULD NOT BE READ:");
 	for (cp = buf, i = 0; i < size; i += DEV_BSIZE, cp += DEV_BSIZE) {
 		if (read(fcp->rfdes, cp, DEV_BSIZE) < 0) {
+			printf(" %d,", blk + i / DEV_BSIZE);
 			bzero(cp, DEV_BSIZE);
 			errs++;
 		}
 	}
-	pwarn("%d SECTORS REPLACED WITH ZERO'ED BLOCKS\n", errs);
+	printf("\n");
 	return (errs);
 }
 
@@ -180,17 +182,26 @@ bwrite(fcp, buf, blk, size)
 	daddr_t blk;
 	long size;
 {
+	int i;
+	char *cp;
 
 	if (fcp->wfdes < 0)
-		return (0);
+		return;
 	if (lseek(fcp->wfdes, (long)dbtob(blk), 0) < 0)
 		rwerr("SEEK", blk);
 	else if (write(fcp->wfdes, buf, (int)size) == size) {
 		fcp->mod = 1;
-		return (1);
+		return;
 	}
 	rwerr("WRITE", blk);
-	return (0);
+	if (lseek(fcp->wfdes, (long)dbtob(blk), 0) < 0)
+		rwerr("SEEK", blk);
+	pfatal("THE FOLLOWING SECTORS COULD NOT BE WRITTEN:");
+	for (cp = buf, i = 0; i < size; i += DEV_BSIZE, cp += DEV_BSIZE)
+		if (write(fcp->wfdes, cp, DEV_BSIZE) < 0)
+			printf(" %d,", blk + i / DEV_BSIZE);
+	printf("\n");
+	return;
 }
 
 /*
