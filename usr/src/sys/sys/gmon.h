@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)gmon.h	7.6 (Berkeley) %G%
+ *	@(#)gmon.h	7.7 (Berkeley) %G%
  */
 
 #ifndef _GMON_H_
