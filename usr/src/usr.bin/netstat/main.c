@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.1 82/08/25";
+static char sccsid[] = "@(#)main.c	4.2 82/10/06";
 #endif
 
 #include <sys/param.h>
@@ -130,6 +130,7 @@ use:
 		if (interval <= 0)
 			goto use;
 		argv++, argc--;
+		iflag++;
 	}
 	if (argc > 0) {
 		system = *argv;
@@ -167,18 +168,16 @@ use:
 		mbpr(nl[N_MBSTAT].n_value);
 		exit(0);
 	}
-	if (iflag) {
-		intpr(interval, nl[N_IFNET].n_value);
-		exit(0);
-	}
 	/*
 	 * Keep file descriptors open to avoid overhead
 	 * of open/close on each call to get* routines.
 	 */
-	setprotoent(1);
 	sethostent(1);
 	setnetent(1);
-	setservent(1);
+	if (iflag) {
+		intpr(interval, nl[N_IFNET].n_value);
+		exit(0);
+	}
 	if (hflag) {
 		hostpr(nl[N_HOSTS].n_value);
 		exit(0);
@@ -187,6 +186,8 @@ use:
 		routepr(nl[N_RTHOST].n_value, nl[N_RTNET].n_value);
 		exit(0);
 	}
+	setprotoent(1);
+	setservent(1);
 	while (p = getprotoent()) {
 		register struct protox *tp;
 
