@@ -1,0 +1,17 @@
+Mdiff3	diff3.c	/^main(argc,argv)$/
+change	diff3.c	/^change(i,rold,dup)$/
+digit	diff3.c	/^digit(c)$/
+duplicate	diff3.c	/^duplicate(r1,r2)$/
+edit	diff3.c	/^edit(diff,dup,j)$/
+edscript	diff3.c	/^edscript(n)$/
+getchange	diff3.c	/^getchange(b)$/
+getline	diff3.c	/^getline(b)$/
+keep	diff3.c	/^keep(i,rnew)$/
+merge	diff3.c	/^merge(m1,m2)$/
+number	diff3.c	/^number(lc)$/
+prange	diff3.c	/^prange(rold)$/
+readin	diff3.c	/^readin(name,dd)$/
+repos	diff3.c	/^repos(nchar)$/
+separate	diff3.c	/^separate(s)$/
+skip	diff3.c	/^skip(i,from,pr)$/
+trouble	diff3.c	/^trouble()$/

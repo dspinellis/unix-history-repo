@@ -1,0 +1,36 @@
+Mlearn	learn.c	/^main(argc,argv)$/
+abs	selunit.c	/^abs(x)$/
+action	mem.c	/^int *action(s)$/
+already	mem.c	/^already(lesson)$/
+chgenv	mysys.c	/^chgenv()$/
+chknam	selsub.c	/^chknam(name)$/
+cmp	copy.c	/^cmp(r)	\/* compare two files for status; #cmp f1 f/
+cntlessons	selsub.c	/^cntlessons(sname)	\/* return number of entries in /
+copy	copy.c	/^copy(prompt, fin)$/
+dounit	dounit.c	/^dounit()$/
+fcopy	start.c	/^fcopy(new,old)$/
+getargs	mysys.c	/^getargs(s, v)$/
+getlesson	getlesson.c	/^getlesson()$/
+grand	selunit.c	/^grand()$/
+hangup	learn.c	/^hangup()$/
+intrpt	learn.c	/^intrpt()$/
+list	list.c	/^list(r)$/
+lstart	start.c	/^lstart(lesson)$/
+makpipe	makpipe.c	/^makpipe()$/
+maktee	maktee.c	/^maktee()$/
+mysys	mysys.c	/^mysys(s)$/
+pgets	copy.c	/^pgets(s, prompt, f)$/
+scopy	copy.c	/^scopy(fi, fo)	\/* copy fi to fo until a line with /
+selsub	selsub.c	/^selsub(argc,argv)$/
+selunit	selunit.c	/^selunit()$/
+setdid	mem.c	/^setdid(lesson, sequence)$/
+stop	list.c	/^stop()$/
+system	mysys.c	/^system(s)$/
+tellwhich	mem.c	/^tellwhich()$/
+trim	copy.c	/^trim(s)$/
+unhook	copy.c	/^unhook()$/
+unsetdid	mem.c	/^unsetdid(lesson)$/
+untee	maktee.c	/^untee()$/
+whatnow	whatnow.c	/^whatnow()$/
+wordb	copy.c	/^wordb(s, t)	\/* in s, t is prefix; return tail *\//
+wrapup	wrapup.c	/^wrapup(n)$/

@@ -1,0 +1,3 @@
+Mlocate	locate.c	/^main(argc, argv)$/
+fastfind	locate.c	/^fastfind(pathpart)$/
+patprep	locate.c	/^patprep(name)$/

@@ -1,0 +1,9 @@
+Mfile	file.c	/^main(argc, argv)$/
+ascom	file.c	/^ascom(){$/
+ccom	file.c	/^ccom(){$/
+english	file.c	/^english (bp, n)$/
+lookup	file.c	/^lookup(tab)$/
+shell	file.c	/^shell(bp, n, tab)$/
+shellscript	file.c	/^shellscript(buf, sb)$/
+troffint	file.c	/^troffint(bp, n)$/
+type	file.c	/^type(file)$/

@@ -1,0 +1,4 @@
+Mlogger	logger.c	/^main(argc, argv)$/
+decode	logger.c	/^decode(name, codetab)$/
+pencode	logger.c	/^pencode(s)$/
+usage	logger.c	/^usage()$/

@@ -1,0 +1,10 @@
+Mold.ucb.grep	old.ucb.grep.c	/^main(argc, argv)$/
+advance	old.ucb.grep.c	/^advance(alp, aep)$/
+cclass	old.ucb.grep.c	/^cclass(aset, ac, af)$/
+compile	old.ucb.grep.c	/^compile(astr)$/
+digit	old.ucb.grep.c	/^digit(c)$/
+execute	old.ucb.grep.c	/^execute(file)$/
+letter	old.ucb.grep.c	/^letter(c)$/
+same	old.ucb.grep.c	/^same(a, b)$/
+succeed	old.ucb.grep.c	/^succeed(f)$/
+uletter	old.ucb.grep.c	/^#define	uletter(c)	(letter(c) || c == '_')$/

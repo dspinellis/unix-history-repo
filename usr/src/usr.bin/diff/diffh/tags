@@ -1,0 +1,13 @@
+Mdiffh	diffh.c	/^main(argc,argv)$/
+change	diffh.c	/^change(a,b,c,d,s)$/
+clrl	diffh.c	/^clrl(f,n)$/
+cmp	diffh.c	/^cmp(s,t)$/
+dopen	diffh.c	/^FILE *dopen(f1,f2)$/
+easysynch	diffh.c	/^easysynch()$/
+error	diffh.c	/^error(s,t)$/
+getl	diffh.c	/^char *getl(f,n)$/
+hardsynch	diffh.c	/^hardsynch()$/
+movstr	diffh.c	/^movstr(s,t)$/
+output	diffh.c	/^output(a,b)$/
+progerr	diffh.c	/^progerr(s)$/
+range	diffh.c	/^range(a,b)$/
