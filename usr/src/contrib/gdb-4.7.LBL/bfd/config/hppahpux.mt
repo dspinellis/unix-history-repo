@@ -1,0 +1,1 @@
+TDEFAULTS = -DDEFAULT_VECTOR=hppa_vec
