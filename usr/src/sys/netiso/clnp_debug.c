@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clnp_debug.c	7.5 (Berkeley) %G%
+ *	@(#)clnp_debug.c	7.6 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -141,7 +141,7 @@ struct iso_addr *isoa;
 	char	*cp;
 
 	/* print length */
-	clnp_sprintf(iso_addr_b, "[%d] ", isoa->isoa_len);
+	sprintf(iso_addr_b, "[%d] ", isoa->isoa_len);
 
 	/* set cp to end of what we have */
 	cp = iso_addr_b;
@@ -185,7 +185,7 @@ struct iso_addr *isoa;
 				cp = clnp_hexp(&o986->o986_vers, 1, cp);
 				*cp++ = DELIM;
 #ifdef  vax
-				clnp_sprintf(cp, "%d.%d.%d.%d.%d", 
+				sprintf(cp, "%d.%d.%d.%d.%d", 
 				o986->o986_inetaddr[0] & 0xff,
 				o986->o986_inetaddr[1] & 0xff,
 				o986->o986_inetaddr[2] & 0xff,
@@ -231,95 +231,5 @@ register struct sockaddr_iso *s;
 	return (iso_addr_b);
 }
 
-
-/*
- *		The following hacks are a trimmed down version of sprintf.
- */
-/*VARARGS1*/
-/*ARGSUSED*/
-clnp_sprintf(buf, fmt, x1, x2)
-	register char *buf, *fmt;
-	unsigned x1, x2;
-{
-	clnp_prf(buf, fmt, (unsigned int *)&x1);
-}
-
-clnp_prf(buf, fmt, adx)
-	register char	*buf;
-	register char *fmt;
-	register unsigned int *adx;
-{
-	register int b, c, i;
-	char *s;
-	char *clnp_printn();
-
-loop:
-	while ((c = *fmt++) != '%') {
-		if(c == '\0') {
-			*buf++ = (char)0;
-			return;
-		}
-		*buf++ = c;
-	}
-again:
-	c = *fmt++;
-	switch (c) {
-	case 'l':
-		goto again;
-	case 'x': case 'X':
-		b = 16;
-		goto number;
-	case 'd': case 'D':
-	case 'u':		/* what a joke */
-		b = 10;
-		goto number;
-	case 'o': case 'O':
-		b = 8;
-number:
-		buf = clnp_printn((unsigned long)*adx, b, buf);
-		break;
-	case 'c':
-		b = *adx;
-		for (i = 24; i >= 0; i -= 8)
-			if (c = (b >> i) & 0x7f)
-				*buf++ = c;
-		break;
-
-	case 's':
-		s = (char *)*adx;
-		while (*s)
-			*buf++ = *s++;
-		break;
-
-	case '%':
-		*buf++ = '%';
-		break;
-	}
-	adx++;
-	goto loop;
-}
-
-char *
-clnp_printn(n, b, where)
-unsigned long	n;
-int		b;
-char	*where;
-{
-	char prbuf[11];
-	register char *cp;
-
-	if (b == 10 && (int)n < 0) {
-		*where++ = '-';
-		n = (unsigned)(-(int)n);
-	}
-	cp = prbuf;
-	do {
-		*cp++ = "0123456789abcdef"[n%b];
-		n /= b;
-	} while (n);
-	do {
-		*where++ = *--cp;
-	} while (cp > prbuf);
-	return(where);
-}
+#include "subr_prf.sprintf"
 #endif	ARGO_DEBUG
