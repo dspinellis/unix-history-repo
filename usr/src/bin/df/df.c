@@ -22,20 +22,23 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * df
  */
-#include <stdio.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
+#include <sys/file.h>
+#include <stdio.h>
+#include <strings.h>
+#include <unistd.h>
 #include "pathnames.h"
 
 char	*getmntpt();
-int	iflag;
+int	iflag, kflag;
 #ifdef COMPAT_43
 int	oflag;
 #endif /* COMPAT_43 */
@@ -46,31 +49,36 @@ main(argc, argv)
 {
 	extern int errno, optind;
 	int err, ch, i;
-	long mntsize;
-	char *mntpt;
+	long mntsize, getmntinfo();
+	char *mntpt, *mktemp();
 	struct stat stbuf;
 	struct statfs statfsbuf, *mntbuf;
 	struct ufs_args mdev;
 
-	while ((ch = getopt(argc, argv, "io")) != EOF)
+	while ((ch = getopt(argc, argv, "iko")) != EOF)
 		switch(ch) {
 		case 'i':
-			iflag++;
+			iflag = 1;
+			break;
+		case 'k':
+			kflag = 1;
 			break;
 #ifdef COMPAT_43
 		case 'o':
-			oflag++;
+			oflag = 1;
 			break;
 #endif /* COMPAT_43 */
 		case '?':
 		default:
-			fprintf(stderr, "usage: df [-i] [filsys ...]\n");
+			fprintf(stderr,
+			    "usage: df [-ik] [file | file_system ...]\n");
 			exit(1);
 		}
 	argc -= optind;
 	argv += optind;
 
-	printf("Filesystem    kbytes    used   avail capacity");
+	printf("Filesystem  %s    used   avail capacity",
+	    kflag ? "  kbytes" : "512-blks");
 	if (iflag)
 		printf(" iused   ifree  %%iused");
 	printf("  Mounted on\n");
@@ -90,29 +98,30 @@ main(argc, argv)
 		if (stat(*argv, &stbuf) < 0) {
 			err = errno;
 			if ((mntpt = getmntpt(*argv)) == 0) {
-				errno = err;
-				perror(*argv);
+				fprintf(stderr, "df: %s: %s\n", *argv,
+				    strerror(err));
 				continue;
 			}
 		} else if ((stbuf.st_mode & S_IFMT) == S_IFBLK) {
 			if ((mntpt = getmntpt(*argv)) == 0)
-				mntpt = "/tmp/.mnt";
+				mntpt = mktemp("/df.XXXXXX");
 				mdev.fspec = *argv;
 				if (!mkdir(mntpt) &&
 				    !mount(MOUNT_UFS, mntpt, M_RDONLY, &mdev) &&
 				    !statfs(mntpt, &statfsbuf)) {
 					statfsbuf.f_mntonname[0] = '\0';
 					prtstat(&statfsbuf);
-				} else {
-					perror(*argv);
-				}
-				umount(mntpt, MNT_NOFORCE);
-				rmdir(mntpt);
+				} else
+					fprintf(stderr, "df: %s: %s\n",
+					    *argv, strerror(errno));
+				(void)umount(mntpt, MNT_NOFORCE);
+				(void)rmdir(mntpt);
 				continue;
 		} else
 			mntpt = *argv;
 		if (statfs(mntpt, &statfsbuf) < 0) {
-			perror(mntpt);
+			fprintf(stderr,
+			    "df: %s: %s\n", mntpt, strerror(errno));
 			continue;
 		}
 		prtstat(&statfsbuf);
@@ -120,6 +129,7 @@ main(argc, argv)
 	exit(0);
 }
 
+long
 getmntinfo(mntbufp)
 	struct statfs **mntbufp;
 {
@@ -143,7 +153,7 @@ getmntinfo(mntbufp)
 		i = (mntsize + 1) * sizeof(struct statfs);
 		if ((mntbuf = (struct statfs *)malloc((unsigned)i)) == 0) {
 			fprintf(stderr,
-				"no space for mount table buffer\n");
+			    "df: no space for mount table buffer\n");
 			exit(1);
 		}
 		if ((mntsize = getfsstat(mntbuf, i)) < 0) {
@@ -181,8 +191,10 @@ prtstat(sfsp)
 	printf("%-12.12s", sfsp->f_mntfromname);
 	used = sfsp->f_blocks - sfsp->f_bfree;
 	availblks = sfsp->f_bavail + used;
-	printf("%8ld%8ld%8ld", sfsp->f_blocks * sfsp->f_fsize / 1024,
-	    used * sfsp->f_fsize / 1024, sfsp->f_bavail * sfsp->f_fsize / 1024);
+	printf("%8ld%8ld%8ld",
+	    sfsp->f_blocks * sfsp->f_fsize / (kflag ? 1024 : 512),
+	    used * sfsp->f_fsize / (kflag ? 1024 : 512),
+	    sfsp->f_bavail * sfsp->f_fsize / (kflag ? 1024 : 512));
 	printf("%6.0f%%",
 	    availblks == 0 ? 100.0 : (double)used / (double)availblks * 100.0);
 	if (iflag) {
@@ -200,12 +212,11 @@ prtstat(sfsp)
  * This code constitutes the old df code for extracting
  * information from filesystem superblocks.
  */
-#include <sys/param.h>
 #include <ufs/fs.h>
 #include <errno.h>
 #include <fstab.h>
 
-char	root[32];
+char	root[MAXPATHLEN];
 
 union {
 	struct fs iu_fs;
@@ -220,7 +231,6 @@ olddf(argv)
 	char *argv[];
 {
 	struct fstab *fsp;
-	char *strerror();
 
 	sync();
 	if (!*argv) {
@@ -252,13 +262,13 @@ dfree(file, infsent)
 	struct statfs statfsbuf;
 	register struct statfs *sfsp;
 	struct fstab *fsp;
-	char *mntpt, *strerror();
+	char *mntpt;
 
 	if (stat(file, &stbuf) == 0 &&
 	    (stbuf.st_mode&S_IFMT) != S_IFCHR &&
 	    (stbuf.st_mode&S_IFMT) != S_IFBLK) {
 		if (infsent) {
-			fprintf(stderr, "%s: screwy fstab entry\n", file);
+			fprintf(stderr, "df: %s: screwy fstab entry\n", file);
 			return;
 		}
 		(void)setfsent();
@@ -273,11 +283,11 @@ dfree(file, infsent)
 			}
 		}
 		(void)endfsent();
-		fprintf(stderr, "%s: mounted on unknown device\n", file);
+		fprintf(stderr, "df: %s: mounted on unknown device\n", file);
 		return;
 	}
 found:
-	if ((fi = open(file, 0)) < 0) {
+	if ((fi = open(file, O_RDONLY)) < 0) {
 		fprintf(stderr, "df: %s: %s\n", file, strerror(errno));
 		return;
 	}
@@ -318,7 +328,7 @@ bread(off, buf, cnt)
 	int n;
 	extern errno;
 
-	(void) lseek(fi, off, 0);
+	(void) lseek(fi, off, SEEK_SET);
 	if ((n=read(fi, buf, cnt)) != cnt) {
 		/* probably a dismounted disk if errno == EIO */
 		if (errno != EIO) {
