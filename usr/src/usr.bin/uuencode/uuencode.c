@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuencode.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuencode.c	5.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -37,8 +37,10 @@ char **argv;
 	}
 
 	/* figure out the input file mode */
-	fstat(fileno(in), &sbuf);
-	mode = sbuf.st_mode & 0777;
+	if (fstat(fileno(in), &sbuf) < 0 || !isatty(fileno(in)))
+		mode = 0666 & ~umask(0666);
+	else
+		mode = sbuf.st_mode & 0777;
 	printf("begin %o %s\n", mode, argv[1]);
 
 	encode(in, stdout);
