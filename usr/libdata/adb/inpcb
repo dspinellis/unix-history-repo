@@ -1,0 +1,4 @@
+.>5
+*.>6
+<5/"next"16t"prev"16t"head"16tnXXXn"faddr"16t"fport"16t"laddr"16t"lport"16tnXXXX"socket"16t"ppcb"16t"rtentry"16t"rtdst"nXXX4+X8+"flags"16t"ip_tos"16t"ip_ttl"16t"options"nX+b16t6+b16t11+Xn
+<6,<9-1$<inpcb
