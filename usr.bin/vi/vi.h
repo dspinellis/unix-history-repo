@@ -34,7 +34,7 @@
  */
 
 /* System includes. */
-#include <sys/queue.h>		/* Required by screen.h. */
+#include <queue.h>		/* Required by screen.h. */
 #include <sys/time.h>		/* Required by screen.h. */
 
 #include <bitstring.h>		/* Required by screen.h. */
