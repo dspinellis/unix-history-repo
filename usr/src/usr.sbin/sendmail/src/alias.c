@@ -25,15 +25,15 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.34 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.35 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.34 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.35 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.34 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.35 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.34 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.35 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -962,7 +962,7 @@ forward(user, sendq, e)
 				syslog(LOG_NOTICE, "%s: forward %s: transient error: %e",
 					e->e_id, buf);
 #endif
-			message("%s: %s: message queued", buf, strerror(err));
+			message("%s: %s: message queued", buf, errstring(err));
 			user->q_flags |= QQUEUEUP|QDONTSEND;
 			return;
 		}
