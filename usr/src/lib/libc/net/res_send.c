@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_send.c	6.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.18 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -48,7 +48,7 @@ res_send(buf, buflen, answer, anslen)
 {
 	register int n;
 	int retry, v_circuit, resplen, ns;
-	int gotsomewhere = 0;
+	int gotsomewhere = 0, connected = 0;
 	u_short id, len;
 	char *cp;
 	fd_set dsmask;
@@ -57,6 +57,7 @@ res_send(buf, buflen, answer, anslen)
 	HEADER *anhp = (HEADER *) answer;
 	struct iovec iov[2];
 	int terrno = ETIMEDOUT;
+	char junk[512];
 
 #ifdef DEBUG
 	if (_res.options & RES_DEBUG) {
@@ -78,9 +79,11 @@ res_send(buf, buflen, answer, anslen)
 #ifdef DEBUG
 		if (_res.options & RES_DEBUG)
 			printf("Querying server (# %d) address = %s\n", ns+1,
-			      inet_ntoa(_res.nsaddr_list[ns].sin_addr.s_addr));
+			      inet_ntoa(_res.nsaddr_list[ns].sin_addr));
 #endif DEBUG
 		if (v_circuit) {
+			int truncated = 0;
+
 			/*
 			 * Use virtual circuit.
 			 */
@@ -145,7 +148,15 @@ res_send(buf, buflen, answer, anslen)
 				continue;
 			}
 			cp = answer;
-			resplen = len = ntohs(*(u_short *)cp);
+			if ((resplen = ntohs(*(u_short *)cp)) > anslen) {
+#ifdef DEBUG
+				if (_res.options & RES_DEBUG)
+					fprintf(stderr, "response truncated\n");
+#endif DEBUG
+				len = anslen;
+				truncated = 1;
+			} else
+				len = resplen;
 			while (len != 0 &&
 			   (n = read(s, (char *)cp, (int)len)) > 0) {
 				cp += n;
@@ -161,6 +172,22 @@ res_send(buf, buflen, answer, anslen)
 				s = -1;
 				continue;
 			}
+			if (truncated) {
+				/*
+				 * Flush rest of answer
+				 * so connection stays in synch.
+				 */
+				anhp->tc = 1;
+				len = resplen - anslen;
+				while (len != 0) {
+					n = (len > sizeof(junk) ?
+					    sizeof(junk) : len);
+					if ((n = read(s, junk, n)) > 0)
+						len -= n;
+					else
+						break;
+				}
+			}
 		} else {
 			/*
 			 * Use datagrams.
@@ -174,12 +201,21 @@ res_send(buf, buflen, answer, anslen)
 				 * still receive a response
 				 * from another server.
 				 */
-				if (connect(s, &_res.nsaddr_list[ns],
-				    sizeof(struct sockaddr)) < 0 ||
-				    send(s, buf, buflen, 0) != buflen) {
+				if (connected == 0) {
+					if (connect(s, &_res.nsaddr_list[ns],
+					    sizeof(struct sockaddr)) < 0) {
+#ifdef DEBUG
+						if (_res.options & RES_DEBUG)
+							perror("connect");
+#endif DEBUG
+						continue;
+					}
+					connected = 1;
+				}
+				if (send(s, buf, buflen, 0) != buflen) {
 #ifdef DEBUG
 					if (_res.options & RES_DEBUG)
-						perror("connect");
+						perror("send");
 #endif DEBUG
 					continue;
 				}
@@ -226,9 +262,11 @@ wait:
 				 * Disconnect if we want to listen
 				 * for responses from more than one server.
 				 */
-				if (_res.nscount > 1 && retry == _res.retry)
+				if (_res.nscount > 1 && connected) {
 					(void) connect(s, &no_addr,
 					    sizeof(no_addr));
+					connected = 0;
+				}
 				gotsomewhere = 1;
 				continue;
 			}
