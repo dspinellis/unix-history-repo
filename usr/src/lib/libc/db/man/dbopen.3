@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	5.23 (Berkeley) %G%
+.\"	@(#)dbopen.3	5.24 (Berkeley) %G%
 .\"
 .TH DBOPEN 3 ""
 .UC 7
@@ -157,19 +157,6 @@ R_CURSOR
 Replace the key/data pair referenced by the cursor.
 The cursor must have previously been initialized.
 .TP
-R_CURSORLOG
-Store the data into the tree after the record referenced by the cursor,
-creating a new key/data pair if the database is empty or if the cursor
-references the last entry in the database, otherwise overwriting the
-record after the cursor.
-If the cursor is unitialized, the first record in the database is
-created or overwritten.
-In any case, the cursor is set to reference the stored record, and the
-record number of the stored record is returned in the
-.I key
-structure.
-(Applicable only to the DB_RECNO access method.)
-.TP
 R_IAFTER
 Append the data immediately after the data referenced by
 .IR key ,
@@ -201,7 +188,7 @@ R_SETCURSOR is available only for the DB_BTREE and DB_RECNO access
 methods because it implies that the keys have an inherent order
 which does not change.
 .IP
-R_CURSORLOG, R_IAFTER and R_IBEFORE are available only for the DB_RECNO
+R_IAFTER and R_IBEFORE are available only for the DB_RECNO
 access method because they each imply that the access method is able to
 create new keys.
 This is only true if the keys are ordered and independent, record numbers
