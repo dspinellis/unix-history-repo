@@ -1,5 +1,5 @@
 /*
- * main.c	1.1	81/02/24
+ * main.c	1.2	81/02/25
  * Config
  *	Do system configuration for VAX/UNIX
  *		1) Build system data structures
@@ -22,6 +22,7 @@ char **argv;
 	fprintf(stderr, "usage: config <sysname>\n");
 	exit(1);
     }
+    PREFIX = argv[1];
     if (freopen(argv[1], "r", stdin) == NULL)
     {
 	perror(argv[1]);
@@ -73,4 +74,20 @@ register FILE *fp;
 	return EOF;
     ungetc(ch, fp);
     return line;
+}
+
+/*
+ * path:
+ *	Prepend the path to a filename
+ */
+
+path(file)
+char *file;
+{
+    register char *cp;
+
+    cp = malloc(strlen(PREFIX)+strlen(file)+1);
+    strcpy(cp, PREFIX);
+    strcpy(cp, file);
+    return cp;
 }

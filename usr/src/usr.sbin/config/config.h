@@ -1,11 +1,9 @@
 /*
- * config.h	1.1	81/02/25
+ * config.h	1.2	81/02/25
  * Definitions that everybody needs to know
  */
 
 #define eq(a,b) (strcmp(a,b) == 0)
-#define PREFIX "_unix/"
-#define path(file) "_unix/file"
 #define TRUE 1
 #define FALSE 0
 #define DRIVER 1
@@ -48,3 +46,4 @@ struct device *dtab;
 char errbuf[80];
 int yyline;
 struct file_list *ftab, *conf_list, *confp;
+char *PREFIX;
