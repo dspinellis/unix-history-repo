@@ -1,32 +1,39 @@
 # msdos versus unix defines
 O	= .o
-PC_O	= .obj
+#PC_O	= .obj
 
 X	=
-PC_X	= .exe
+#PC_X	= .exe
+
+L	=
+#PC_L	= -link
 
 CC	= cc
-PC_CC	= cl
+#PC_CC	= cl
 
 MV	= mv
-PC_MV	= rename
+#PC_MV	= rename
 
 RM	= rm -f
-PC_RM= erase
+#PC_RM= erase
 
 LINT_ARGS =
-PC_LINT_ARGS = -DLINT_ARGS
+#PC_LINT_ARGS = -DLINT_ARGS
 
 DEBUG_FLAGS = -g
-PC_DEBUG_FLAGS = -Zi -Od
+#PC_DEBUG_FLAGS = -Zi -Od
 
 AR	= ar
-C	=
-PC_AR	= lib
-PC_C	= +
+AR1	= cr
+AR2	=
+AR3	=
+#PC_AR	= lib
+#PC_AR1	=
+#PC_AR2	= +
+#PC_AR3	= ";"
 
 RANLIB	= ranlib
-PC_RANLIB = echo "Done with "
+#PC_RANLIB = echo "Done with "
 
 PRINT	= print
 
@@ -67,12 +74,12 @@ ALLSOURCE =	${ALLPRINT} makefile makefile.mak
 
 ctlrlib.a:	${ALLO}
 	${RM} $@
-	for i in ${ALLO}; do (${AR} cr $@ $C $$i); done
+	for i in ${ALLO}; do (${AR} ${AR1} $@ ${AR2} $$i${AR3}); done
 	${RANLIB} $@
 
 clean:
 	for i in $(ALLO) mset tn3270 prt3270 m4.out errs \
-		makefile.bak ctlrlib.a kbd.out TMPfunc.out TMPfunc.c; \
+		makefile.bak ctlrlib.a kbd.out TMPfunc.out; \
 			do (${RM} $$i); done
 
 sccsclean:
@@ -100,11 +107,10 @@ lint:
 
 kbd.out:	$(KBD) hostctlr.h
 	(cd ../tools; make mkhits )
-	${RM} $@ TMPfunc.out TMPfunc.c
-	/bin/echo \#include \"function.h\" > TMPfunc.c
-	$(CC) $(CFLAGS) -E TMPfunc.c > TMPfunc.out
+	${RM} $@ TMPfunc.out
+	$(CC) $(CFLAGS) -E function.h > TMPfunc.out
 	../tools/mkhits - ../ctlr/TMPfunc.out < $(KBD) > $@
-	${RM} TMPfunc.out TMPfunc.c
+	${RM} TMPfunc.out
 
 depend:
 	grep '^#include' ${ALLC} | grep -v '<' | \
