@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.60 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.61 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -2034,3 +2034,37 @@ ni_propval(directory, propname)
 }
 
 #endif /* NETINFO */
+/*
+**  HARD_SYSLOG -- call syslog repeatedly until it works
+**
+**	Needed on HP-UX, which apparently doesn't guarantee that
+**	syslog succeeds during interrupt handlers.
+*/
+
+#ifdef __hpux
+
+# define MAXSYSLOGTRIES	100
+# undef syslog
+
+# ifdef __STDC__
+hard_syslog(int pri, char *msg, ...)
+# else
+hard_syslog(pri, msg, va_alist)
+	int pri;
+	char *msg;
+	va_dcl
+# endif
+{
+	int i;
+	char buf[SYSLOG_BUFSIZE * 2];
+	VA_LOCAL_DECL;
+
+	VA_START(msg);
+	vsprintf(buf, msg, ap);
+	VA_END;
+
+	for (i = MAXSYSLOGTRIES; --i >= 0 && syslog(pri, "%s", buf) < 0; )
+		continue;
+}
+
+#endif
