@@ -1,0 +1,97 @@
+DEFERSIG	signal.h	?^#define	DEFERSIG(x)	(int (*)())((int)(x) | 1)$?
+Mdeliv1	deliv1.c	?^main(argc,argv)$?
+Mhunt1	hunt1.c	?^main(argc,argv)$?
+Minv1	inv1.c	?^main(argc, argv)$?
+Mmkey1	mkey1.c	?^main (argc,argv)$?
+Mrefer1	refer1.c	?^main(argc,argv)$?
+SIGISDEFER	signal.h	?^#define	SIGISDEFER(x)	(((int)(x) & 1) != 0)$?
+SIGUNDEFER	signal.h	?^#define	SIGUNDEFER(x)	(int (*)())((int)(x) &~ 1)$?
+addch	refer8.c	?^addch(s, c)$?
+append	refer4.c	?^append(s)$?
+artskp	refer5.c	?^artskp(s)$?
+auxil	hunt6.c	?^auxil( res, output)$?
+baddrop	hunt6.c	?^baddrop(master, nf, fc, nitem, qitem, rprog, full)?
+c_look	mkey3.c	?^c_look (s, fl)$?
+callhunt	glue3.c	?^callhunt(in, out, arg, outlen)$?
+caps	refer6.c	?^caps(a, b)$?
+cfail	glue5.c	?^cfail() {$?
+cgotofn	glue5.c	?^cgotofn() {$?
+chkdup	refer7.c	?^chkdup ( tag )$?
+chkey	mkey2.c	?^chkey (c, name)$?
+choices	refer2.c	?^choices( buff )$?
+ckexist	hunt8.c	?^ckexist(s, t)$?
+class	refer6.c	?^class (nt, tv)$?
+cleanup	refer1.c	?^cleanup()$?
+clfgrep	glue4.c	?^clfgrep()$?
+cominit	mkey3.c	?^cominit()$?
+common	mkey3.c	?^common (s)$?
+control	refer2.c	?^control(c)$?
+corout	glue3.c	?^corout(in, out, rprog, arg, outlen)$?
+dodeliv	glue3.c	?^dodeliv(in, out, arg, outlen)$?
+dofile	mkey2.c	?^dofile(f, name)$?
+doquery	hunt2.c	?^doquery(hpt, nhash, fb, nitem, qitem, master)$?
+doref	refer2.c	?^doref(firline)$?
+dumpold	refer7.c	?^dumpold()$?
+err	deliv2.c	?^err (s, a)$?
+execute	glue5.c	?^execute()$?
+expkey	refer5.c	?^expkey (or, nr, fwrite)$?
+fgrep	glue5.c	?^fgrep(argc, argv)$?
+findline	hunt7.c	?^findline(argin, out, outlen, indexdate)$?
+flout	refer4.c	?^flout()$?
+fpar	refer5.c	?^fpar (nf, flds, out, c, seq, prepend)$?
+gch	glue5.c	?^gch()$?
+gdate	hunt5.c	?^long gdate(f)$?
+getargs	inv3.c	?^}$?
+getl	hunt2.c	?^getl(fb)$?
+getq	hunt3.c	?^getq(v)$?
+grec	mkey2.c	?^long grec (s, f)$?
+grepcall	glue4.c	?^grepcall (in, out, arg)$?
+hash	deliv2.c	?^hash (s)$?
+hastype	refer6.c	?^hastype (nt, tv, c)$?
+hcomp	hunt2.c	?^hcomp( n1, n2)$?
+hexch	hunt2.c	?^hexch( n1, n2 )$?
+huntmain	glue1.c	?^huntmain(argc,argv)$?
+if	glue5.c	?^			if (c==0) {$?
+initadd	refer5.c	?^initadd(to, from, stop)$?
+input	refer8.c	?^input (s)$?
+intr	refer1.c	?^intr()$?
+iopen	hunt8.c	?^iopen (s, t)$?
+keycomp	hunt3.c	?^keycomp(v,n) /* compress keys */$?
+keylet	refer5.c	?^keylet(t, nref)$?
+last	refer6.c	?^last(s)$?
+lfirst	refer5.c	?^lfirst(s)$?
+lookat	refer8.c	?^lookat()$?
+makefgrep	hunt8.c	?^makefgrep(indexname)$?
+mindex	deliv2.c	?^mindex(s, c)$?
+mycpy	refer5.c	?^mycpy(s,t)$?
+mycpy2	refer5.c	?^mycpy2 (s, t, n)$?
+new	glue5.c	?^new (x)$?
+newkeys	inv2.c	?^newkeys (outf, inf, recf, nhash, fd, iflong)$?
+newline	refer2.c	?^newline(s)$?
+outkey	mkey2.c	?^outkey( ky, lead, trail)$?
+output	refer4.c	?^output (s)$?
+overflo	glue5.c	?^overflo() {$?
+prefix	deliv2.c	?^prefix(t, s)$?
+putkey	refer5.c	?^putkey(nf, flds, nref, keystr)$?
+putl	hunt2.c	?^putl(ll, f)$?
+putref	refer6.c	?^putref (n, tvec)$?
+putsig	refer5.c	?^putsig (nf, flds, nref, nstline, endline)$?
+recopy	inv5.c	?^recopy (ft, fb, fa, nhash)$?
+remote	hunt9.c	?^}$?
+restodir	glue2.c	?^restodir()$?
+result	hunt5.c	?^result(master, nf, fc)$?
+revauth	refer6.c	?^revauth(s, b)$?
+runbib	hunt8.c	?^runbib (s)$?
+savedir	glue2.c	?^savedir()$?
+setfrom	glue1.c	?^setfrom(c)$?
+shell	shell.c	?^);$?
+signal	signal.h	?^int	(*signal())();$?
+signals	refer1.c	?^signals()$?
+tabs	refer6.c	?^tabs (sv, line)$?
+tick	tick.c	?^tick()$?
+tock	tick.c	?^tock()$?
+todir	glue1.c	?^todir(t)$?
+trimnl	inv2.c	?^trimnl(p)$?
+unopen	glue1.c	?^# define unopen(fil) {if (fil!=NULL) {fclose(fil);?
+whash	inv6.c	?^whash(ft, fa, fb, nhash, iflong, ptotct, phused)$?
+zalloc	deliv2.c	?^zalloc(m,n)$?
