@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hpib.c	7.4 (Berkeley) %G%
+ *	@(#)hpib.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -131,14 +131,15 @@ hpibpptest(unit, slave)
 }
 
 hpibawait(unit)
+	int unit;
 {
 	register struct hpib_softc *hs = &hpib_softc[unit];
 
 	hs->sc_flags |= HPIBF_PPOLL;
 	if (hs->sc_type == HPIBC)
-		fhpibppwatch(unit);
+		fhpibppwatch((void *)unit);
 	else
-		nhpibppwatch(unit);
+		nhpibppwatch((void *)unit);
 }
 
 hpibswait(unit, slave)
