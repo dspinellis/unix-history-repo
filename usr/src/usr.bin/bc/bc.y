@@ -1,5 +1,5 @@
 %{
-static char *sccsid = "@(#)bc.y	4.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)bc.y	4.2 (Berkeley) 81/02/28";
 	int *getout();
 %}
 %right '='
@@ -406,8 +406,8 @@ restart:
 		default:   return( '=' );
 			  gotit:     peekc = -1; return(c);
 		  }
-	case '+':	return( cpeek( '+', INCR, '+' ) );
-	case '-':	return( cpeek( '-', DECR, '-' ) );
+	case '+':	return( cpeek( '+', INCR, cpeek( '=', EQPL, '+') ) );
+	case '-':	return( cpeek( '-', DECR, cpeek( '=', EQMI, '-') ) );
 	case '<':	return( cpeek( '=', LE, '<' ) );
 	case '>':	return( cpeek( '=', GE, '>' ) );
 	case '!':	return( cpeek( '=', NE, '!' ) );
@@ -418,7 +418,17 @@ restart:
 			peekc = -1;
 			goto restart;
 		}
+		else if (peekc == '=') {
+			c=EQDIV;
+			goto gotit;
+		}
 		else return(c);
+	case '*':
+		return( cpeek( '=', EQMUL, '*' ) );
+	case '%':
+		return( cpeek( '=', EQREM, '%' ) );
+	case '^':
+		return( cpeek( '=', EQEXP, '^' ) );
 	case '"':	
 		 yylval = str;
 		 while((c=getch()) != '"'){*str++ = c;
