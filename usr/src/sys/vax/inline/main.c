@@ -1,7 +1,7 @@
 /* Copyright (c) 1984 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.4	(Berkeley)	%G%";
+static char sccsid[] = "@(#)main.c	1.5	(Berkeley)	%G%";
 #endif not lint
 
 #include <stdio.h>
@@ -18,6 +18,17 @@ struct pats *inittables[] = {
 	0
 };
 
+/*
+ * Statistics collection
+ */
+struct stats {
+	int	attempted;	/* number of expansion attempts */
+	int	finished;	/* expansions done before end of basic block */
+	int	lostmodified;	/* mergers inhibited by intervening mod */
+	int	savedpush;	/* successful push/pop merger */
+} stats;
+int dflag;
+
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -30,6 +41,8 @@ main(argc, argv)
 	int size;
 	extern char *index();
 
+	if (argc > 1 && bcmp(argv[1], "-d", 3) == 0)
+		dflag++, argc--, argv++;
 	if (argc > 1)
 		freopen(argv[1], "r", stdin);
 	if (argc > 2)
@@ -91,6 +104,12 @@ main(argc, argv)
 		}
 	}
 	emptyqueue();
+	if (dflag)
+		fprintf(stderr, "inline: %s %d, %s %d, %s %d, %s %d\n",
+			"attempts", stats.attempted,
+			"finished", stats.finished,
+			"inhibited", stats.lostmodified,
+			"merged", stats.savedpush);
 	exit(0);
 }
 
@@ -105,7 +124,8 @@ expand(replace)
 	int argc, argreg, foundarg, mod = 0;
 	char parsebuf[BUFSIZ];
 
-	for (curptr = bufhead; curptr != buftail; ) {
+	stats.attempted++;
+	for (curptr = bufhead; ; ) {
 		nextreplace = copyline(replace, line[bufhead]);
 		argc = parseline(line[bufhead], argv, parsebuf);
 		argreg = nextarg(argc, argv);
@@ -124,16 +144,20 @@ expand(replace)
 			break;
 		replace = nextreplace;
 		if (mod & (1 << argreg)) {
+			stats.lostmodified++;
 			if (curptr == buftail) {
 				(void)newline();
 				break;
 			}
 			(void)newline();
 		} else {
+			stats.savedpush++;
 			rewrite(line[curptr], argc, argv, argreg);
 			mod |= 1 << argreg;
 		}
 	}
+	if (argreg == -1)
+		stats.finished++;
 	emptyqueue();
 	fputs(replace, stdout);
 }
