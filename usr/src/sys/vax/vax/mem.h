@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mem.h	6.4 (Berkeley) %G%
+ *	@(#)mem.h	6.5 (Berkeley) %G%
  */
 
 /*
@@ -34,6 +34,57 @@ struct	mcr {
  *	M???_SYN(mcr)		gives the syndrome bits of the error
  *	M???_ADDR(mcr)		gives the address of the error
  */
+
+#if VAX8600
+/*
+ * 8600 register bit definitions
+ */
+#define	M8600_ICRD	0x400		/* inhibit crd interrupts */
+#define M8600_TB_ERR	0xf00		/* translation buffer error mask */
+/*
+ * MDECC register
+ */
+#define	M8600_ADDR_PE	0x080000	/* address parity error */
+#define M8600_DBL_ERR	0x100000	/* data double bit error */
+#define	M8600_SNG_ERR	0x200000	/* data single bit error */
+#define	M8600_BDT_ERR	0x400000	/* bad data error */
+
+/*
+ * ESPA register is used to address scratch pad registers in the Ebox.
+ * To access a register in the scratch pad, write the ESPA with the address
+ * and then read the ESPD register.  
+ *
+ * NOTE:  In assmebly code, the the mfpr instruction that reads the ESPD
+ *	  register must immedately follow the mtpr instruction that setup
+ *	  the ESPA register -- per the VENUS processor register spec.
+ *
+ * The scratchpad registers that are supplied for a single bit ECC 
+ * error are:
+ */
+#define	SPAD_MSTAT1	0x25		/* scratch pad mstat1 register	*/
+#define SPAD_MSTAT2	0x26		/* scratch pad mstat2 register	*/
+#define SPAD_MDECC	0x27		/* scratch pad mdecc register	*/
+#define SPAD_MEAR	0x2a		/* scratch pad mear register	*/
+
+#define M8600_MEMERR(mdecc) ((mdecc) & 0x780000)
+#define M8600_HRDERR(mdecc) ((mdecc) & 0x580000)
+#define M8600_ENA (mtpr(MERG, (mfpr(MERG) & ~M8600_ICRD)))
+#define M8600_INH (mtpr(EHSR, 0), mtpr(MERG, (mfpr(MERG) | M8600_ICRD)))
+#define M8600_SYN(mdecc) (((mdecc) >> 9) & 0x3f)
+#define M8600_ADDR(mear) ((mear) & 0x3ffffffc)
+#define M8600_ARRAY(mear) (((mear) >> 22) & 0x0f)
+
+#define M8600_MDECC_BITS "\20\27BAD_DT_ERR\26SNG_BIT_ERR\25DBL_BIT_ERR\
+\24ADDR_PE"
+#define M8600_MSTAT1_BITS "\20\30CPR_PE_A\27CPR_PE_B\26ABUS_DT_PE\
+\25ABUS_CTL_MSK_PE\24ABUS_ADR_PE\23ABUS_C/A_CYCLE\22ABUS_ADP_1\21ABUS_ADP_0\
+\20TB_MISS\17BLK_HIT\16C0_TAG_MISS\15CHE_MISS\14TB_VAL_ERR\13TB_PTE_B_PE\
+\12TB_PTE_A_PE\11TB_TAG_PE\10WR_DT_PE_B3\7WR_DT_PE_B2\6WR_DT_PE_B1\
+\5WR_DT_PE_B0\4CHE_RD_DT_PE\3CHE_SEL\2ANY_REFL\1CP_BW_CHE_DT_PE"
+#define M8600_MSTAT2_BITS "\20\20CP_BYT_WR\17ABUS_BD_DT_CODE\10MULT_ERR\
+\7CHE_TAG_PE\6CHE_TAG_W_PE\5CHE_WRTN_BIT\4NXM\3CP-IO_BUF_ERR\2MBOX_LOCK"
+#endif VAX8600
+
 #if VAX780
 #define	M780_ICRD	0x40000000	/* inhibit crd interrupts, in [2] */
 #define	M780_HIER	0x20000000	/* high error rate, in reg[2] */
