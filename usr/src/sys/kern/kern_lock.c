@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_lock.c	8.11 (Berkeley) %G%
+ *	@(#)kern_lock.c	8.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -19,6 +19,12 @@
  * Locking primitives implementation.
  * Locks provide shared/exclusive sychronization.
  */
+
+#ifdef DEBUG
+#define COUNT(p, x) if (p) (p)->p_locks += (x)
+#else
+#define COUNT(p, x)
+#endif
 
 #if NCPUS > 1
 
@@ -180,6 +186,7 @@ lockmgr(lkp, flags, interlkp, p)
 			if (error)
 				break;
 			lkp->lk_sharecount++;
+			COUNT(p, 1);
 			break;
 		}
 		/*
@@ -187,6 +194,7 @@ lockmgr(lkp, flags, interlkp, p)
 		 * An alternative would be to fail with EDEADLK.
 		 */
 		lkp->lk_sharecount++;
+		COUNT(p, 1);
 		/* fall into downgrade */
 
 	case LK_DOWNGRADE:
@@ -208,6 +216,7 @@ lockmgr(lkp, flags, interlkp, p)
 		 */
 		if (lkp->lk_flags & LK_WANT_UPGRADE) {
 			lkp->lk_sharecount--;
+			COUNT(p, -1);
 			error = EBUSY;
 			break;
 		}
@@ -225,6 +234,7 @@ lockmgr(lkp, flags, interlkp, p)
 		if (lkp->lk_lockholder == pid || lkp->lk_sharecount <= 0)
 			panic("lockmgr: upgrade exclusive lock");
 		lkp->lk_sharecount--;
+		COUNT(p, -1);
 		/*
 		 * If we are just polling, check to see if we will block.
 		 */
@@ -250,6 +260,7 @@ lockmgr(lkp, flags, interlkp, p)
 			if (lkp->lk_exclusivecount != 0)
 				panic("lockmgr: non-zero exclusive count");
 			lkp->lk_exclusivecount = 1;
+			COUNT(p, 1);
 			break;
 		}
 		/*
@@ -269,6 +280,7 @@ lockmgr(lkp, flags, interlkp, p)
 			if ((extflags & LK_CANRECURSE) == 0)
 				panic("lockmgr: locking against myself");
 			lkp->lk_exclusivecount++;
+			COUNT(p, 1);
 			break;
 		}
 		/*
@@ -301,6 +313,7 @@ lockmgr(lkp, flags, interlkp, p)
 		if (lkp->lk_exclusivecount != 0)
 			panic("lockmgr: non-zero exclusive count");
 		lkp->lk_exclusivecount = 1;
+		COUNT(p, 1);
 		break;
 
 	case LK_RELEASE:
@@ -310,12 +323,15 @@ lockmgr(lkp, flags, interlkp, p)
 				    pid, "exclusive lock holder",
 				    lkp->lk_lockholder);
 			lkp->lk_exclusivecount--;
+			COUNT(p, -1);
 			if (lkp->lk_exclusivecount == 0) {
 				lkp->lk_flags &= ~LK_HAVE_EXCL;
 				lkp->lk_lockholder = LK_NOPROC;
 			}
-		} else if (lkp->lk_sharecount != 0)
+		} else if (lkp->lk_sharecount != 0) {
 			lkp->lk_sharecount--;
+			COUNT(p, -1);
+		}
 		if (lkp->lk_waitcount)
 			wakeup((void *)lkp);
 		break;
@@ -356,6 +372,7 @@ lockmgr(lkp, flags, interlkp, p)
 		lkp->lk_flags |= LK_DRAINING | LK_HAVE_EXCL;
 		lkp->lk_lockholder = pid;
 		lkp->lk_exclusivecount = 1;
+		COUNT(p, 1);
 		break;
 
 	default:
@@ -410,15 +427,19 @@ simple_lock_init(alp)
 }
 
 void
-simple_lock(alp)
+_simple_lock(alp, id, l)
 	__volatile struct simplelock *alp;
+	const char *id;
+	int l;
 {
 
 	if (alp->lock_data == 1) {
 		if (lockpausetime == -1)
-			panic("simple_lock: lock held");
-		if (lockpausetime > 0) {
-			printf("simple_lock: lock held...");
+			panic("%s:%d: simple_lock: lock held", id, l);
+		if (lockpausetime == 0) {
+			printf("%s:%d: simple_lock: lock held\n", id, l);
+		} else if (lockpausetime > 0) {
+			printf("%s:%d: simple_lock: lock held...", id, l);
 			tsleep(&lockpausetime, PCATCH | PPAUSE, "slock",
 			    lockpausetime * hz);
 			printf(" continuing\n");
@@ -428,34 +449,47 @@ simple_lock(alp)
 }
 
 int
-simple_lock_try(alp)
+_simple_lock_try(alp, id, l)
 	__volatile struct simplelock *alp;
+	const char *id;
+	int l;
 {
 
+	/*
 	if (alp->lock_data == 1) {
 		if (lockpausetime == -1)
-			panic("simple_lock_try: lock held");
-		if (lockpausetime > 0) {
-			printf("simple_lock_try: lock held...");
+			panic("%s:%d: simple_lock_try: lock held", id, l);
+		if (lockpausetime == 0) {
+			printf("%s:%d: simple_lock_try: lock held\n", id, l);
+		} else if (lockpausetime > 0) {
+			printf("%s:%d: simple_lock_try: lock held...", id, l);
 			tsleep(&lockpausetime, PCATCH | PPAUSE, "slock",
 			    lockpausetime * hz);
 			printf(" continuing\n");
 		}
 	}
+	*/
+	if (alp->lock_data)
+		return (0);
+
 	alp->lock_data = 1;
 	return (1);
 }
 
 void
-simple_unlock(alp)
+_simple_unlock(alp, id, l)
 	__volatile struct simplelock *alp;
+	const char *id;
+	int l;
 {
 
 	if (alp->lock_data == 0) {
 		if (lockpausetime == -1)
-			panic("simple_unlock: lock not held");
-		if (lockpausetime > 0) {
-			printf("simple_unlock: lock not held...");
+			panic("%s:%d: simple_unlock: lock not held", id, l);
+		if (lockpausetime == 0) {
+			printf("%s:%d: simple_unlock: lock not held\n", id, l);
+		} else if (lockpausetime > 0) {
+			printf("%s:%d: simple_unlock: lock not held...", id, l);
 			tsleep(&lockpausetime, PCATCH | PPAUSE, "sunlock",
 			    lockpausetime * hz);
 			printf(" continuing\n");
