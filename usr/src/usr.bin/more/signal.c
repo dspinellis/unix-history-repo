@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)signal.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)signal.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -31,13 +31,13 @@ static char sccsid[] = "@(#)signal.c	5.4 (Berkeley) %G%";
  * the signal is received, we call intread to interrupt the iread.
  */
 
-#include "less.h"
+#include <less.h>
 #include <signal.h>
 
 /*
  * "sigs" contains bits indicating signals which need to be processed.
  */
-public int sigs;
+int sigs;
 
 #ifdef SIGTSTP
 #define	S_STOP		02
@@ -57,10 +57,10 @@ extern int reading;
 /*
  * "Stop" (^Z) signal handler.
  */
-	static HANDLER
+static
 stop()
 {
-	(void) signal(SIGTSTP, stop);
+	(void)signal(SIGTSTP, stop);
 	sigs |= S_STOP;
 	if (reading)
 		intread();
@@ -71,10 +71,9 @@ stop()
 /*
  * "Window" change handler
  */
-	public HANDLER
 winch()
 {
-	signal(SIGWINCH, winch);
+	(void)signal(SIGWINCH, winch);
 	sigs |= S_WINCH;
 	if (reading)
 		intread();
@@ -84,10 +83,9 @@ winch()
 /*
  * "Window" change handler
  */
-	public HANDLER
 winch()
 {
-	signal(SIGWIND, winch);
+	(void)signal(SIGWIND, winch);
 	sigs |= S_WINCH;
 	if (reading)
 		intread();
@@ -98,24 +96,25 @@ winch()
 /*
  * Set up the signal handlers.
  */
-	public void
 init_signals(on)
 	int on;
 {
+	int quit();
+
 	if (on)
 	{
 		/*
 		 * Set signal handlers.
 		 */
-		(void) signal(SIGINT, quit);
+		(void)signal(SIGINT, quit);
 #ifdef SIGTSTP
-		(void) signal(SIGTSTP, stop);
+		(void)signal(SIGTSTP, stop);
 #endif
 #ifdef SIGWINCH
-		(void) signal(SIGWINCH, winch);
+		(void)signal(SIGWINCH, winch);
 #else
 #ifdef SIGWIND
-		(void) signal(SIGWIND, winch);
+		(void)signal(SIGWIND, winch);
 #endif
 #endif
 	} else
@@ -123,15 +122,15 @@ init_signals(on)
 		/*
 		 * Restore signals to defaults.
 		 */
-		(void) signal(SIGINT, SIG_DFL);
+		(void)signal(SIGINT, SIG_DFL);
 #ifdef SIGTSTP
-		(void) signal(SIGTSTP, SIG_DFL);
+		(void)signal(SIGTSTP, SIG_DFL);
 #endif
 #ifdef SIGWINCH
-		(void) signal(SIGWINCH, SIG_IGN);
+		(void)signal(SIGWINCH, SIG_IGN);
 #endif
 #ifdef SIGWIND
-		(void) signal(SIGWIND, SIG_IGN);
+		(void)signal(SIGWIND, SIG_IGN);
 #endif
 	}
 }
@@ -140,7 +139,6 @@ init_signals(on)
  * Process any signals we have received.
  * A received signal cause a bit to be set in "sigs".
  */
-	public int
 psignals()
 {
 	register int tsignals;
@@ -173,25 +171,25 @@ psignals()
 		 * Clean up the terminal.
 		 */
 #ifdef SIGTTOU
-		signal(SIGTTOU, SIG_IGN);
+		(void)signal(SIGTTOU, SIG_IGN);
 #endif
 		lower_left();
 		clear_eol();
 		deinit();
-		flush();
+		(void)flush();
 		raw_mode(0);
 #ifdef SIGTTOU
-		signal(SIGTTOU, SIG_DFL);
+		(void)signal(SIGTTOU, SIG_DFL);
 #endif
-		signal(SIGTSTP, SIG_DFL);
-		kill(getpid(), SIGTSTP);
+		(void)signal(SIGTSTP, SIG_DFL);
+		(void)kill(getpid(), SIGTSTP);
 		/*
 		 * ... Bye bye. ...
 		 * Hopefully we'll be back later and resume here...
 		 * Reset the terminal and arrange to repaint the
 		 * screen when we get back to the main command loop.
 		 */
-		signal(SIGTSTP, stop);
+		(void)signal(SIGTSTP, stop);
 		raw_mode(1);
 		init();
 		screen_trashed = 1;

@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)screen.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)screen.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -28,11 +28,8 @@ static char sccsid[] = "@(#)screen.c	5.3 (Berkeley) %G%";
  * {{ Someday this should be rewritten to use curses. }}
  */
 
-#include "less.h"
-#if XENIX
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#endif
+#include <stdio.h>
+#include <less.h>
 
 #if TERMIO
 #include <termio.h>
@@ -71,19 +68,19 @@ static char
 	*sc_u_out,		/* Exit underline mode */
 	*sc_b_in,		/* Enter bold mode */
 	*sc_b_out,		/* Exit bold mode */
-	*sc_visual_bell,	/* Visual bell (flash screen) sequence */
 	*sc_backspace,		/* Backspace cursor */
 	*sc_init,		/* Startup terminal initialization */
 	*sc_deinit;		/* Exit terminal de-intialization */
 
-public int auto_wrap;		/* Terminal does \r\n when write past margin */
-public int ignaw;		/* Terminal ignores \n immediately after wrap */
-public int erase_char, kill_char; /* The user's erase and line-kill chars */
-public int sc_width, sc_height;	/* Height & width of screen */
-public int sc_window = -1;	/* window size for forward and backward */
-public int bo_width, be_width;	/* Printing width of boldface sequences */
-public int ul_width, ue_width;	/* Printing width of underline sequences */
-public int so_width, se_width;	/* Printing width of standout sequences */
+int auto_wrap;			/* Terminal does \r\n when write past margin */
+int ignaw;			/* Terminal ignores \n immediately after wrap */
+				/* The user's erase and line-kill chars */
+int erase_char, kill_char, werase_char;
+int sc_width, sc_height = -1;	/* Height & width of screen */
+int sc_window = -1;		/* window size for forward and backward */
+int bo_width, be_width;		/* Printing width of boldface sequences */
+int ul_width, ue_width;		/* Printing width of underline sequences */
+int so_width, se_width;		/* Printing width of standout sequences */
 
 /*
  * These two variables are sometimes defined in,
@@ -93,8 +90,6 @@ public int so_width, se_width;	/* Printing width of standout sequences */
 /*extern*/ short ospeed;	/* Terminal output baud rate */
 /*extern*/ char PC;		/* Pad character */
 
-extern int quiet;		/* If VERY_QUIET, use visual bell for bell */
-extern int know_dumb;		/* Don't complain about a dumb terminal */
 extern int back_scroll;
 char *tgetstr();
 char *tgoto();
@@ -110,7 +105,6 @@ char *tgoto();
  *	   etc. are NOT disabled.
  * It doesn't matter whether an input \n is mapped to \r, or vice versa.
  */
-	public void
 raw_mode(on)
 	int on;
 {
@@ -123,7 +117,7 @@ raw_mode(on)
 		/*
 		 * Get terminal modes.
 		 */
-		ioctl(2, TCGETA, &s);
+		(void)ioctl(2, TCGETA, &s);
 
 		/*
 		 * Save modes and set certain variables dependent on modes.
@@ -132,6 +126,7 @@ raw_mode(on)
 		ospeed = s.c_cflag & CBAUD;
 		erase_char = s.c_cc[VERASE];
 		kill_char = s.c_cc[VKILL];
+		werase_char = s.c_cc[VWERASE];
 
 		/*
 		 * Set the modes to the way we want them.
@@ -148,7 +143,7 @@ raw_mode(on)
 		 */
 		s = save_term;
 	}
-	ioctl(2, TCSETAW, &s);
+	(void)ioctl(2, TCSETAW, &s);
 #else
 	struct sgttyb s;
 	static struct sgttyb save_term;
@@ -158,7 +153,7 @@ raw_mode(on)
 		/*
 		 * Get terminal modes.
 		 */
-		ioctl(2, TIOCGETP, &s);
+		(void)ioctl(2, TIOCGETP, &s);
 
 		/*
 		 * Save modes and set certain variables dependent on modes.
@@ -167,6 +162,7 @@ raw_mode(on)
 		ospeed = s.sg_ospeed;
 		erase_char = s.sg_erase;
 		kill_char = s.sg_kill;
+		werase_char = -1;
 
 		/*
 		 * Set the modes to the way we want them.
@@ -180,21 +176,15 @@ raw_mode(on)
 		 */
 		s = save_term;
 	}
-	ioctl(2, TIOCSETN, &s);
+	(void)ioctl(2, TIOCSETN, &s);
 #endif
 }
 
-	static void
+static
 cannot(s)
 	char *s;
 {
 	char message[100];
-
-	if (know_dumb)
-		/* 
-		 * He knows he has a dumb terminal, so don't tell him. 
-		 */
-		return;
 
 	(void)sprintf(message, "WARNING: terminal cannot \"%s\"", s);
 	error(message);
@@ -203,7 +193,6 @@ cannot(s)
 /*
  * Get terminal capabilities via termcap.
  */
-	public void
 get_term()
 {
 	char termbuf[2048];
@@ -232,21 +221,20 @@ get_term()
 	/*
 	 * Get size of the screen.
 	 */
+	if (sc_height == -1)
 #ifdef TIOCGWINSZ
-	if (ioctl(2, TIOCGWINSZ, &w) == 0 && w.ws_row > 0)
-		sc_height = w.ws_row;
-	else
+		if (ioctl(2, TIOCGWINSZ, &w) == 0 && w.ws_row > 0)
+			sc_height = w.ws_row;
 #else
 #ifdef WIOCGETD
-	if (ioctl(2, WIOCGETD, &w) == 0 && w.uw_height > 0)
-		sc_height = w.uw_height/w.uw_vs;
-	else
+		if (ioctl(2, WIOCGETD, &w) == 0 && w.uw_height > 0)
+			sc_height = w.uw_height/w.uw_vs;
 #endif
 #endif
- 		sc_height = tgetnum("li");
- 	hard = (sc_height < 0 || tgetflag("hc"));
-	if (hard)
-	{
+		else
+			sc_height = tgetnum("li");
+	hard = (sc_height < 0 || tgetflag("hc"));
+	if (hard) {
 		/* Oh no, this is a hardcopy terminal. */
 		sc_height = 24;
 	}
@@ -348,10 +336,6 @@ get_term()
 			sc_b_out = "";
 	}
 
-	sc_visual_bell = tgetstr("vb", &sp);
-	if (hard || sc_visual_bell == NULL)
-		sc_visual_bell = "";
-
 	sc_home = tgetstr("ho", &sp);
 	if (hard || sc_home == NULL || *sc_home == '\0')
 	{
@@ -429,11 +413,11 @@ get_term()
  * terminal-specific screen manipulation.
  */
 
+int putchr();
 
 /*
  * Initialize terminal
  */
-	public void
 init()
 {
 	tputs(sc_init, sc_height, putchr);
@@ -442,7 +426,6 @@ init()
 /*
  * Deinitialize terminal
  */
-	public void
 deinit()
 {
 	tputs(sc_deinit, sc_height, putchr);
@@ -451,7 +434,6 @@ deinit()
 /*
  * Home cursor (move to upper left corner of screen).
  */
-	public void
 home()
 {
 	tputs(sc_home, 1, putchr);
@@ -461,7 +443,6 @@ home()
  * Add a blank line (called with cursor at home).
  * Should scroll the display down.
  */
-	public void
 add_line()
 {
 	tputs(sc_addline, sc_height, putchr);
@@ -470,7 +451,6 @@ add_line()
 /*
  * Move cursor to lower left corner of screen.
  */
-	public void
 lower_left()
 {
 	tputs(sc_lower_left, 1, putchr);
@@ -479,30 +459,14 @@ lower_left()
 /*
  * Ring the terminal bell.
  */
-	public void
 bell()
 {
-	if (quiet == VERY_QUIET)
-		vbell();
-	else
-		putchr('\7');
-}
-
-/*
- * Output the "visual bell", if there is one.
- */
-	public void
-vbell()
-{
-	if (*sc_visual_bell == '\0')
-		return;
-	tputs(sc_visual_bell, sc_height, putchr);
+	putchr('\7');
 }
 
 /*
  * Clear the screen.
  */
-	public void
 clear()
 {
 	tputs(sc_clear, sc_height, putchr);
@@ -512,7 +476,6 @@ clear()
  * Clear from the cursor to the end of the cursor's line.
  * {{ This must not move the cursor. }}
  */
-	public void
 clear_eol()
 {
 	tputs(sc_eol_clear, 1, putchr);
@@ -521,7 +484,6 @@ clear_eol()
 /*
  * Begin "standout" (bold, underline, or whatever).
  */
-	public void
 so_enter()
 {
 	tputs(sc_s_in, 1, putchr);
@@ -530,7 +492,6 @@ so_enter()
 /*
  * End "standout".
  */
-	public void
 so_exit()
 {
 	tputs(sc_s_out, 1, putchr);
@@ -540,7 +501,6 @@ so_exit()
  * Begin "underline" (hopefully real underlining, 
  * otherwise whatever the terminal provides).
  */
-	public void
 ul_enter()
 {
 	tputs(sc_u_in, 1, putchr);
@@ -549,7 +509,6 @@ ul_enter()
 /*
  * End "underline".
  */
-	public void
 ul_exit()
 {
 	tputs(sc_u_out, 1, putchr);
@@ -558,7 +517,6 @@ ul_exit()
 /*
  * Begin "bold"
  */
-	public void
 bo_enter()
 {
 	tputs(sc_b_in, 1, putchr);
@@ -567,7 +525,6 @@ bo_enter()
 /*
  * End "bold".
  */
-	public void
 bo_exit()
 {
 	tputs(sc_b_out, 1, putchr);
@@ -577,7 +534,6 @@ bo_exit()
  * Erase the character to the left of the cursor 
  * and move the cursor left.
  */
-	public void
 backspace()
 {
 	/* 
@@ -591,7 +547,6 @@ backspace()
 /*
  * Output a plain backspace, without erasing the previous char.
  */
-	public void
 putbs()
 {
 	tputs(sc_backspace, 1, putchr);

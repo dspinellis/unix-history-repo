@@ -18,16 +18,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tags.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tags.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
 #include <stdio.h>
-#include "less.h"
+#include <less.h>
 
 #define	WHITESP(c)	((c)==' ' || (c)=='\t')
 
-public char *tagfile;
-public char *tagpattern;
+char *tagfile;
+char *tagpattern;
 
 static char *tags = "tags";
 
@@ -41,7 +42,6 @@ extern char *line;
  * and "tagpattern" to the search pattern which should be used
  * to find the tag.
  */
-	public int
 findtag(tag)
 	register char *tag;
 {
@@ -118,10 +118,10 @@ findtag(tag)
 			p--;
 		*p = '\0';
 
-		fclose(f);
+		(void)fclose(f);
 		return;
 	}
-	fclose(f);
+	(void)fclose(f);
 	error("No such tag in tags file");
 	tagfile = NULL;
 }
@@ -135,13 +135,12 @@ findtag(tag)
  *	regcmp vs. re_comp) behave differently in the presence of 
  *	parentheses (which are almost always found in a tag).
  */
-	public int
 tagsearch()
 {
-	POSITION pos, linepos;
+	off_t pos, linepos, forw_raw_line();
 	int linenum;
 
-	pos = (POSITION)0;
+	pos = (off_t)0;
 	linenum = find_linenum(pos);
 
 	for (;;)
