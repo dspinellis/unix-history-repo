@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)netstat.1	8.2 (Berkeley) %G%
+.\"	@(#)netstat.1	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NETSTAT 1
@@ -13,12 +13,12 @@
 .Nd show network status
 .Sh SYNOPSIS
 .Nm netstat
-.Op Fl ABan
+.Op Fl Aan
 .Op Fl f Ar address_family
-.Op Ar system
-.Op Ar core
+.Op Fl M Ar core
+.Op Fl N Ar system
 .Nm netstat
-.Op Fl Bimnrs
+.Op Fl Bhimnrs
 .Op Fl f Ar address_family
 .Op Fl M Ar core
 .Op Fl N Ar system
@@ -57,27 +57,36 @@ The options have the following meaning:
 With the default display,
 show the address of any protocol control blocks associated with sockets; used
 for debugging.
-.It Fl B
-With the default display,
-show the multicast routing tables.
-When
-.Fl s
-is also present, show multicast routing statistics instead.
 .It Fl a
 With the default display,
 show the state of all sockets; normally sockets used by
 server processes are not shown.
+.It Fl B
+By default, show the IP Multicast virtual-interface and routing tables.
+If the
+.Fl s
+option is also present, show multicast routing statistics.
 .It Fl d
 With either interface display (option
 .Fl i
 or an interval, as described below),
 show the number of dropped packets.
+.It Fl h
+Show the state of the
+.Tn IMP
+host table (obsolete).
 .It Fl i
 Show the state of interfaces which have been auto-configured
 (interfaces statically configured into a system, but not
 located at boot time are not shown).
-.It Fl I Ar interface
-Show information only about this interface;
+If the
+.Fl a
+options is also present, multicast addresses currently in use are shown
+for each Ethernet interface and for each IP interface address.
+Multicast addresses are shown on separate lines following the interface
+address with which they are associated.
+.It Fl I Ar interface 
+Show information about the specified interface;
 used with a
 .Ar wait
 interval as described below.
@@ -97,7 +106,7 @@ Show network addresses as numbers (normally
 interprets addresses and attempts to display them
 symbolically).
 This option may be used with any of the display formats.
-.It Fl p Ar protocol
+.It Fl p Ar protocol 
 Show statistics about
 .Ar protocol  ,
 which is either a well-known name for a protocol or an alias for it.  Some
@@ -110,12 +119,13 @@ The program will complain if
 is unknown or if there is no statistics routine for it.
 .It Fl s
 Show per-protocol statistics.
+If this option is repeated, counters with a value of zero are suppressed.
 .It Fl r
 Show the routing tables.
 When
 .Fl s
 is also present, show routing statistics instead.
-.It Fl f Ar address_family
+.It Fl f Ar address_family 
 Limit statistics or address control block reports to those
 of the specified
 .Ar address family  .
@@ -131,6 +141,10 @@ and
 .Ar unix  ,
 for
 .Dv AF_UNIX  .
+.It Fl w Ar wait
+Show network interface statistics at intervals of
+.Ar wait
+seconds.
 .El
 .Pp
 The default display, for active sockets, shows the local
@@ -180,10 +194,14 @@ interface utilized for the route.
 .Pp
 When
 .Nm netstat
-is invoked with a
+is invoked with the
+.Fl w
+option and a
 .Ar wait
 interval argument, it displays a running count of statistics related to
 network interfaces.
+An obsolescent version of this option used a numeric parameter
+with no option, and is currently supported for backward compatibility.
 This display consists of a column for the primary interface (the first
 interface found during autoconfiguration) and a column summarizing
 information for all interfaces.
@@ -218,6 +236,3 @@ command appeared in
 .\" .El
 .Sh BUGS
 The notion of errors is ill-defined.
-.Pp
-Collisions mean something else for the
-.Tn IMP .
