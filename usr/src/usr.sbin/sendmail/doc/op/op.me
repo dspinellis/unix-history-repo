@@ -1,6 +1,6 @@
 .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 3.2'DRAFT'Last Mod %G%'
+.fo 'Version 3.3'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -25,7 +25,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.2
+Version 3.3
 .)l
 .sp 3
 .pp
@@ -2198,31 +2198,26 @@ For example,
 .)b
 will run the queue
 and flush anything that is one day old.
-.sh 2 "Default Operation Mode"
+.sh 2 "Delivery Mode"
 .pp
-There are a number of default modes that
+There are a number of delivery modes that
 .i sendmail
-can operate in.
-Some of these
-(e.g., daemon mode,
-test mode,
-and verify mode)
-are not acceptable as defaults,
-since they do not actually cause mail
-to be delivered.
-However,
-there are other modes
-that specify how quickly mail will be delivered.
-These modes are:
+can operate in,
+set by the
+.q d
+configuration option.
+These modes
+specify how quickly mail will be delivered.
+Legal modes are:
 .(b
 .ta 4n
-a	read, verify, and deliver
-f	read and verify, but deliver in a subprocess
-q	read, verify, and queue (don't deliver)
+i	deliver interactively (synchronously)
+b	deliver in background (asynchronously)
+q	queue only (don't deliver)
 .)b
 There are tradeoffs.
 Mode
-.q a
+.q i
 passes the maximum amount of information to the sender,
 but is hardly ever necessary.
 Mode
@@ -2230,7 +2225,7 @@ Mode
 puts the minimum load on your machine,
 but means that delivery may be delayed for up to the queue interval.
 Mode
-.q f
+.q b
 is probably a good compromise.
 .sh 2 "Log Level"
 .pp
@@ -2532,10 +2527,25 @@ The
 line will be deleted before sending.
 Any addresses in the argument vector will be deleted
 from the send list.
-.ip \-a
-Do special processing for the
-ARPANET.
-This includes reading the
+.ip \-b\fIx\fP
+Set operation mode to
+.i x .
+Operation modes are:
+.(b
+.ta 4n
+m	Deliver mail (default)
+a	Run in arpanet mode (see below)
+s	Speak SMTP on input side
+d	Run as a daemon
+t	Run in test mode
+v	Just verify addresses, don't collect or deliver
+i	Initialize the alias database
+p	Print the mail queue
+z	Freeze the configuration file
+.)b
+The special processing for the
+ARPANET
+includes reading the
 .q "From:"
 line from the header to find the sender,
 printing
@@ -2545,9 +2555,6 @@ style messages
 the FTP protocol
 [Neigus73, Postel74, Postel77]),
 and ending lines of error messages with <CRLF>.
-.ip \-a\&s
-Take input over an SMTP connection on standard input and output.
-This does everything the \-a flag does also.
 .ip \-q\fItime\fP
 Try to process the queued up mail.
 If the time is given,
@@ -2566,9 +2573,10 @@ to the specified
 These options are described in Appendix B.
 .pp
 There are a number of options that may be specified as
-primitive flags.
-These are provided for compatibility.
-These are the b, c, e, i, m, T, and v options.
+primitive flags
+(provided for compatibility with
+.i delivermail ).
+These are the e, i, m, and v options.
 Also,
 the f option
 may be specified as the
@@ -2599,28 +2607,22 @@ entry to exist in the alias database
 before starting up.
 If it does not appear in five minutes,
 rebuild the database.
-.ip b\fIx\fP
-Run in mode
-.i x .
-Legal modes are:
-.(b
-.ta 4n
-a	Do all delivery synchronously
-d	Run as a daemon
-f	Fork before doing delivery
-q	Just queue up the message
-t	Run in test mode
-v	Just verify addresses, don't collect or deliver
-i	Initialize the alias database
-p	Print the mail queue
-z	Freeze the configuration file
-.)b
 .ip c
 If an outgoing mailer is marked as being expensive,
 don't connect immediately.
 This requires that queueing be compiled in,
 since it will depend on a queue run process to
 actually send the mail.
+.ip d\fIx\fP
+Deliver in mode
+.i x .
+Legal modes are:
+.(b
+.ta 4n
+i	Deliver interactively (synchronously)
+b	Deliver in background (asynchronously)
+q	Just queue the message (deliver during queue run)
+.)b
 .ip D
 If set,
 rebuild the alias database if necessary and possible.
@@ -3353,7 +3355,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.2
+Version 3.3
 .ce 0
 .bp 1
 .ce
