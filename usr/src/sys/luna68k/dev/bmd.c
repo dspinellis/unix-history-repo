@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bmd.c	7.2 (Berkeley) %G%
+ *	@(#)bmd.c	7.3 (Berkeley) %G%
  */
 /*
 
@@ -24,16 +24,6 @@
 extern u_short bmdfont[][20];
 
 #define isprint(c)	( c < 0x20 ? 0 : 1)
-
-/*
- *  RFCNT register
- */
-
-struct bmd_rfcnt {
-	short	rfc_hcnt;
-	short	rfc_vcnt;
-};
-
 
 /*
  *  Width & Hight
@@ -223,21 +213,18 @@ bmd_escape_1(c)
 
 bmdinit()
 {
-	volatile register struct bmd_rfcnt *bmd_rfcnt = (struct bmd_rfcnt *) 0xB1000000;
 	register struct bmd_softc *bp = &bmd_softc;
 	register struct bmd_linec *bq;
 	register int i;
-	struct bmd_rfcnt rfcnt;
+
+	bp->bc_raddr = (char *) 0xB10C0008;		/* plane-0 hardware address */
+	bp->bc_waddr = (char *) 0xB1080008;		/* common bitmap hardware address */
 
 	/*
 	 *  adjust plane position
 	 */
 
-	bp->bc_raddr = (char *) 0xB10C0008;		/* plane-0 hardware address */
-	bp->bc_waddr = (char *) 0xB1080008;		/* common bitmap hardware address */
-	rfcnt.rfc_hcnt = 7;				/* shift left   16 dot */
-	rfcnt.rfc_vcnt = -27;				/* shift down    1 dot */
-	*bmd_rfcnt = rfcnt;
+	fb_adjust(7, -27);
 
 	bp->bc_stat  = STAT_NORMAL;
 
@@ -269,20 +256,6 @@ bmdinit()
 	bmd_reverse_char(bp->bc_raddr,
 			 bp->bc_waddr,
 			 bq->bl_col, bp->bc_row);
-}
-
-bmdadjust(hcnt, vcnt)
-	short hcnt, vcnt;
-{
-	volatile register struct bmd_rfcnt *bmd_rfcnt = (struct bmd_rfcnt *) 0xB1000000;
-	struct bmd_rfcnt rfcnt;
-
-	printf("bmdadjust: hcnt = %d, vcnt = %d\n", hcnt, vcnt);
-
-	rfcnt.rfc_hcnt = hcnt;			/* shift left   16 dot */
-	rfcnt.rfc_vcnt = vcnt;			/* shift down    1 dot */
-
-	*bmd_rfcnt = rfcnt;
 }
 
 bmdputc(c)
