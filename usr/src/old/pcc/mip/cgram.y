@@ -1,58 +1,11 @@
-%term NAME	2		/* identifier */
-%term STRING	3		/* string constant, "..." */
-%term ICON	4		/* integer constant */
-%term FCON	5		/* single precision floating point constant */
-%term DCON	6		/* double precision floating point constant */
-/* 8 is used in the 2nd pass reader for BITYPE */
-%term PLUS	9		/* + */
-%term MINUS	11		/* - */
-%term MUL	14		/* * */
-%term AND	17		/* & */
-%term OR	20		/* | */
-%term ER	22		/* ^ */
-%term QUEST	24		/* ? */
-%term COLON	25		/* : */
-%term ANDAND	26		/* && */
-%term OROR	27		/* || */
+/*	cgram.y	4.3	85/03/19	*/
 
-%term ASOP	28		/* =, =ops */
-%term RELOP	29		/* LE, LT, GE, GT */
-%term EQUOP	30		/* EQ, NE */
-%term DIVOP	31		/* DIV, MOD */
-%term SHIFTOP	32		/* LS, RS */
-%term INCOP	33		/* INCR, DECR */
-%term UNOP	34		/* NOT, COMPL */
-%term STROP	35		/* DOT, STREF */
+/*
+ * Grammar for the C compiler.
+ *
+ * This grammar requires definitions of terminals extracted from pcclocal.h.
+ */
 
-/* reserved words, etc */
-%term TYPE	36		/* symbol type */
-%term CLASS	37		/* storage type */
-%term STRUCT	38		/* struct */
-%term RETURN	39		/* return */
-%term GOTO	40		/* goto */
-%term IF	41		/* if */
-%term ELSE	42		/* else */
-%term SWITCH	43		/* switch */
-%term BREAK	44		/* break */
-%term CONTINUE	45		/* continue */
-%term WHILE	46		/* while */
-%term DO	47		/* do */
-%term FOR	48		/* for */
-%term DEFAULT	49		/* default */
-%term CASE	50		/* case */
-%term SIZEOF	51		/* sizeof */
-%term ENUM	52		/* enum */
-
-/* little symbols, etc. */
-%term LP	53		/* ( */
-%term RP	54		/* ) */
-%term LC	55		/* { */
-%term RC	56		/* } */
-%term LB	57		/* [ */
-%term RB	58		/* ] */
-%term CM	59		/* , */
-%term SM	60		/* ; */
-%term ASSIGN	61		/* = */
 
 /* at last count, there were 7 shift/reduce, 1 reduce/reduce conflicts
 /* these involved:
@@ -78,7 +31,7 @@
 %right INCOP SIZEOF
 %left LB LP STROP
 %{
-# include "mfile1"
+# include "pass1.h"
 %}
 
 	/* define types */

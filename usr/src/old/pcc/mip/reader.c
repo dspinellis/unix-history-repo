@@ -1,8 +1,8 @@
 #ifndef lint
-static char *sccsid ="@(#)reader.c	4.2 (Berkeley) %G%";
+static char *sccsid ="@(#)reader.c	4.3 (Berkeley) %G%";
 #endif lint
 
-# include "mfile2"
+# include "pass2.h"
 
 /*	some storage declarations */
 

@@ -1,8 +1,8 @@
 #ifndef lint
-static char *sccsid ="@(#)xdefs.c	4.2 (Berkeley) %G%";
+static char *sccsid ="@(#)xdefs.c	4.3 (Berkeley) %G%";
 #endif lint
 
-# include "mfile1"
+# include "pass1.h"
 
 /*	communication between lexical routines	*/
 
