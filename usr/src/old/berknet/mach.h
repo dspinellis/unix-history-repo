@@ -1,4 +1,4 @@
-/*	@(#)mach.h	4.4	(Berkeley)	%G%	*/
+/*	@(#)mach.h	4.5	(Berkeley)	%G%	*/
 
 /* sccs id variable */
 static char *mach_h_sid = "@(#)mach.h	1.11";
@@ -354,7 +354,7 @@ definition for "VANILLA7" which indicates the v7 UNIX options.
 # ifndef V6
 # include <sys/param.h>
 # include <sys/stat.h>
-# include <sys/dir.h>
+# include <dir.h>
 # include <sys/times.h>
 # include <ctype.h>
 # include <sgtty.h>
