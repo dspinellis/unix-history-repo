@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)fstat.1	8.2 (Berkeley) %G%
+.\"     @(#)fstat.1	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FSTAT 1
@@ -32,8 +32,9 @@ reports on all open files in the system.
 Options:
 .Bl -tag -width Ds
 .It Fl f
-If additional filename arguments are present, restrict examination to files
-open in the same filesystem as the named file arguments.
+Restrict examination to files open in the same filesystems as
+the named file arguments, or to the filesystem containing the
+current directory if there are no additional filename arguments.
 For example, to find all files open in the filesystem where the
 directory
 .Pa /usr/src
