@@ -1,4 +1,4 @@
-/*	tm.c	4.35	81/04/14	*/
+/*	tm.c	4.36	81/04/15	*/
 
 #include "te.h"
 #include "ts.h"
@@ -563,19 +563,21 @@ tmintr(tm11)
 	bp = dp->b_actf;
 	teunit = TEUNIT(bp->b_dev);
 	addr = (struct device *)tedinfo[teunit]->ui_addr;
+	sc = &te_softc[teunit];
 	/*
 	 * If last command was a rewind, and tape is still
 	 * rewinding, wait for the rewind complete interrupt.
 	 */
 	if (um->um_tab.b_active == SREW) {
 		um->um_tab.b_active = SCOM;
-		if (addr->tmer&TMER_RWS)
+		if (addr->tmer&TMER_RWS) {
+			sc->sc_timo = 5*60;		/* 5 minutes */
 			return;
+		}
 	}
 	/*
 	 * An operation completed... record status
 	 */
-	sc = &te_softc[teunit];
 	sc->sc_timo = INF;
 	sc->sc_dsreg = addr->tmcs;
 	sc->sc_erreg = addr->tmer;
