@@ -1,6 +1,7 @@
 #ifndef lint
-static char sccsid[] = "@(#)print.c	2.1 (CWI) 85/07/23";
+static char sccsid[] = "@(#)print.c	3.1 (CWI) 85/07/30";
 #endif lint
+
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
@@ -91,7 +92,7 @@ print()
                         if (p->o_attr & INVIS)
                                 move(x1, y1);
 			else if (p->o_type == SPLINE)
-				spline(ox, oy, p->o_val[4], &p->o_val[5]);
+				spline(ox, oy, p->o_val[4], &p->o_val[5], p->o_attr & (DOTBIT|DASHBIT), p->o_ddval);
 			else {
 				dx = ox;
 				dy = oy;

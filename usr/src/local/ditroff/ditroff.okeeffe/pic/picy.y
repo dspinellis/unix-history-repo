@@ -223,6 +223,8 @@ position:		/* absolute, not relative */
 	| position '-' expr ',' expr		{ $$ = fixpos($1, -$3, -$5); }
 	| position '+' '(' expr ',' expr ')'	{ $$ = fixpos($1, $4, $6); }
 	| position '-' '(' expr ',' expr ')'	{ $$ = fixpos($1, -$4, -$6); }
+	| position '+' place			{ $$ = addpos($1, $3); }
+	| position '-' place			{ $$ = subpos($1, $3); }
 	| '(' place ',' place ')'	{ $$ = makepos(getcomp($2,DOTX), getcomp($4,DOTY)); }
 	| expr LT position ',' position GT	{ $$ = makebetween($1, $3, $5); }
 	| expr BETWEEN position AND position	{ $$ = makebetween($1, $3, $5); }
@@ -278,7 +280,7 @@ expr:
 					yyerror("division by 0"); $3 = 1; }
 				  $$ = $1 / $3; }
 	| expr '%' expr		{ if ((long)$3 == 0) {
-					yyerror("mod does division by 0"); $3 = 1; }
+					yyerror("mod division by 0"); $3 = 1; }
 				  $$ = (long)$1 % (long)$3; }
 	| '-' expr %prec UMINUS	{ $$ = -$2; }
 	| '(' expr ')'		{ $$ = $2; }
@@ -287,6 +289,9 @@ expr:
 	| place DOTHT		{ $$ = getcomp($1, $2); }
 	| place DOTWID		{ $$ = getcomp($1, $2); }
 	| place DOTRAD		{ $$ = getcomp($1, $2); }
+	| PLACENAME '.' VARNAME	{ y = getvar($1); $$ = getblkvar(y.o, $3); }
+	| last BLOCK '.' VARNAME { $$ = getblkvar(getlast($1,$2), $4); }
+	| NTH BLOCK '.' VARNAME	{ $$ = getblkvar(getfirst($1,$2), $4); }
 	| expr GT expr		{ $$ = $1 > $3; }
 	| expr LT expr		{ $$ = $1 < $3; }
 	| expr LE expr		{ $$ = $1 <= $3; }

@@ -1,6 +1,7 @@
 #ifndef lint
-static char sccsid[] = "@(#)circgen.c	2.1 (CWI) 85/07/23";
+static char sccsid[] = "@(#)circgen.c	3.1 (CWI) 85/07/30";
 #endif lint
+
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"

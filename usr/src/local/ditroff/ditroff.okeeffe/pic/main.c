@@ -1,6 +1,7 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	2.1 (CWI) 85/07/23";
+static char sccsid[] = "@(#)main.c	3.1 (CWI) 85/07/30";
 #endif lint
+
 #include	<stdio.h>
 #include	<signal.h>
 #include	"pic.h"
@@ -10,7 +11,7 @@ obj	**objlist = 0;	/* store the elements here */
 int	nobjlist = 0;		/* size of objlist array */
 int	nobj	= 0;
 
-Attr	*attr;	/* attributes stored here as collected */
+Attr	*attr;	/*;attributes stored here as collected */
 int	nattrlist = 0;
 int	nattr	= 0;	/* number of entries in attr_list */
 

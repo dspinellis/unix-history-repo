@@ -1,6 +1,7 @@
 #ifndef lint
-static char sccsid[] = "@(#)linegen.c	2.1 (CWI) 85/07/23";
+static char sccsid[] = "@(#)linegen.c	3.1 (CWI) 85/07/30";
 #endif lint
+
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
@@ -149,17 +150,19 @@ obj *linegen(type)
 	if (chop) {
 		if (chop == 1 && chop1 == 0)	/* just said "chop", so use default */
 			chop1 = chop2 = getfval("circlerad");
-		theta = atan2((float) defy, (float) defx);
+		theta = atan2(dy[0], dx[0]);
 		x0 = chop1 * cos(theta);
 		y0 = chop1 * sin(theta);
 		curx += x0;
 		cury += y0;
+		dx[0] -= x0;
+		dy[0] -= y0;
+
+		theta = atan2(dy[ndxy-1], dx[ndxy-1]);
 		x1 = chop2 * cos(theta);
 		y1 = chop2 * sin(theta);
 		nx -= x1;
 		ny -= y1;
-		dx[0] -= x0;
-		dy[0] -= y0;
 		dx[ndxy-1] -= x1;
 		dy[ndxy-1] -= y1;
 		dprintf("chopping %g %g %g %g; cur=%g,%g end=%g,%g\n",

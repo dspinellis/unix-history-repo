@@ -1,4 +1,7 @@
 #define	dprintf	if(dbg)printf
+#ifndef PI
+#define	PI	3.141592654
+#endif
 
 #define	DEFAULT	0
 
@@ -7,9 +10,6 @@
 #define	HEAD12	(HEAD1+HEAD2)
 #define	INVIS	4
 #define	CW_ARC	8	/* clockwise arc */
-#ifndef PI
-#define	PI	3.141592654
-#endif
 #define	DOTBIT	16
 #define	DASHBIT	32
 
@@ -137,7 +137,7 @@ extern	float	curx, cury;
 extern	int	hvmode;
 extern	int	codegen;
 extern	char	*malloc(), *realloc(), *tostring(), *grow();
-extern	float	getfval(), getcomp();
+extern	float	getfval(), getcomp(), getblkvar();
 extern	YYSTYPE	getvar();
 extern	struct symtab *lookup(), *makevar();
 extern	char	*ifstat(), *delimstr(), *sprintgen();
