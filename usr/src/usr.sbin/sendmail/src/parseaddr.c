@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1852,13 +1852,8 @@ printaddr(a, follow)
 **		name -- the name to translate.
 **		m -- the mailer that we want to do rewriting relative
 **			to.
-**		senderaddress -- if set, uses the sender rewriting rules
-**			rather than the recipient rewriting rules.
-**		header -- set if this address is in the header, rather
-**			than an envelope header.
-**		canonical -- if set, strip out any comment information,
-**			etc.
-**		adddomain -- if set, OK to do domain extension.
+**		flags -- fine tune operations.
+**		pstat -- pointer to status word.
 **		e -- the current envelope.
 **
 **	Returns:
@@ -1874,13 +1869,11 @@ printaddr(a, follow)
 */
 
 char *
-remotename(name, m, senderaddress, header, canonical, adddomain, e)
+remotename(name, m, flags, pstat, e)
 	char *name;
 	MAILER *m;
-	bool senderaddress;
-	bool header;
-	bool canonical;
-	bool adddomain;
+	int flags;
+	int *pstat;
 	register ENVELOPE *e;
 {
 	register char **pvp;
@@ -1903,7 +1896,7 @@ remotename(name, m, senderaddress, header, canonical, adddomain, e)
 	**	This will leave the name as a comment and a $g macro.
 	*/
 
-	if (canonical || bitnset(M_NOCOMMENT, m->m_flags))
+	if (bitset(RF_CANONICAL, flags) || bitnset(M_NOCOMMENT, m->m_flags))
 		fancy = "\201g";
 	else
 		fancy = crackaddr(name);
@@ -1919,8 +1912,9 @@ remotename(name, m, senderaddress, header, canonical, adddomain, e)
 	pvp = prescan(name, '\0', pvpbuf, NULL);
 	if (pvp == NULL)
 		return (name);
-	(void) rewrite(pvp, 3, e);
-	if (adddomain && e->e_fromdomain != NULL)
+	if (rewrite(pvp, 3, e) == EX_TEMPFAIL)
+		*pstat = EX_TEMPFAIL;
+	if (bitset(RF_ADDDOMAIN, flags) && e->e_fromdomain != NULL)
 	{
 		/* append from domain to this address */
 		register char **pxp = pvp;
@@ -1935,7 +1929,8 @@ remotename(name, m, senderaddress, header, canonical, adddomain, e)
 
 			while ((*pxp++ = *qxq++) != NULL)
 				continue;
-			(void) rewrite(pvp, 3, e);
+			if (rewrite(pvp, 3, e) == EX_TEMPFAIL)
+				*pstat = EX_TEMPFAIL;
 		}
 	}
 
@@ -1947,10 +1942,10 @@ remotename(name, m, senderaddress, header, canonical, adddomain, e)
 	**	Then run it through any receiving-mailer-specific rulesets.
 	*/
 
-	if (senderaddress)
 	else
 	if (rwset > 0)
-		(void) rewrite(pvp, rwset, e);
+		if (rewrite(pvp, rwset, e) == EX_TEMPFAIL)
+			*pstat = EX_TEMPFAIL;
 
 	/*
 	**  Do any final sanitation the address may require.
@@ -1959,7 +1954,8 @@ remotename(name, m, senderaddress, header, canonical, adddomain, e)
 	**	may be used as a default to the above rules.
 	*/
 
-	(void) rewrite(pvp, 4, e);
+	if (rewrite(pvp, 4, e) == EX_TEMPFAIL)
+		*pstat = EX_TEMPFAIL;
 
 	/*
 	**  Now restore the comment information we had at the beginning.

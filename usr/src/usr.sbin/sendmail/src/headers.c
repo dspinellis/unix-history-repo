@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.30 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -846,6 +846,8 @@ commaize(h, p, fp, oldstyle, m, e)
 		register char *name;
 		register int c;
 		char savechar;
+		int flags;
+		auto int stat;
 		extern char *remotename();
 
 		/*
@@ -894,8 +896,11 @@ commaize(h, p, fp, oldstyle, m, e)
 		*p = '\0';
 
 		/* translate the name to be relative */
-		name = remotename(name, m, bitset(H_FROM, h->h_flags),
-				  TRUE, FALSE, TRUE, e);
+		flags = RF_HEADERADDR|RF_ADDDOMAIN;
+		if (bitset(H_FROM, h->h_flags))
+			flags |= RF_SENDERADDR;
+		stat = EX_OK;
+		name = remotename(name, m, flags, &stat, e);
 		if (*name == '\0')
 		{
 			*p = savechar;
