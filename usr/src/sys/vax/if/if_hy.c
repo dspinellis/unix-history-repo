@@ -1,4 +1,4 @@
-/*	if_hy.c	4.8	83/06/13	*/
+/*	if_hy.c	4.9	83/06/19	*/
 
 #include "hy.h"
 #if NHY > 0
@@ -963,7 +963,7 @@ actloop:
 
 	case XMITSENT:
 		if (is->hy_flags & RQ_XASSOC) {
-			register unsigned len;
+			register int len;
 
 			is->hy_flags &= ~RQ_XASSOC;
 			is->hy_state = XMITDATASENT;
