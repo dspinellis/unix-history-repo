@@ -4,17 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- * All recipients should regard themselves as participants in an ongoing
- * research project and hence should feel obligated to report their
- * experiences (good or bad) with these elementary function codes, using
- * the sendbug(8) program, to the authors.
- *
- *	@(#)infnan.s	5.4 (Berkeley) %G%
+ *	@(#)infnan.s	5.5 (Berkeley) %G%
  */
 	.data
 	.align	2
 _sccsid:
-.asciz	"@(#)infnan.s	1.1 (Berkeley) 8/21/85; 5.4 (ucb.elefunt) %G%"
+.asciz	"@(#)infnan.s	1.1 (Berkeley) 8/21/85; 5.5 (ucb.elefunt) %G%"
 
 /*
  * infnan(arg) int arg;
