@@ -15,15 +15,16 @@ static char sccsid[] = "@(#)swab.c	5.10 (Berkeley) %G%";
 #include <string.h>
 
 void
-swab(from, to, n)
+swab(from, to, len)
 	const void *from;
 	void *to;
-	register size_t n;
+	size_t len;
 {
-	register char *fp, *tp;
 	register unsigned long temp;
+	register int n;
+	register char *fp, *tp;
 
-	n >>= 1; n++;
+	n = (len >> 1) + 1;
 	fp = (char *)from;
 	tp = (char *)to;
 #define	STEP	temp = *fp++,*tp++ = *fp++,*tp++ = temp
