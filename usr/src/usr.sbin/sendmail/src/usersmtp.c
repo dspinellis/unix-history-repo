@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	5.20.1.2 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.21 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	5.20.1.2 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.21 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -55,15 +55,15 @@ int	SmtpPid;			/* pid of mailer */
 
 jmp_buf	CtxGreeting;
 
-smtpinit(m, mci, pvp)
+MCONINFO *
+smtpinit(m, pvp, e)
 	struct mailer *m;
-	MCONINFO *mci;
 	char **pvp;
+	ENVELOPE *e;
 {
 	register int r;
 	EVENT *gte;
-	register STAB *st;
-	char buf[MAXNAME];
+	MCONINFO *mci;
 	static int greettimeout();
 	extern STAB *stab();
 	extern MCONINFO *openmailer();
@@ -72,20 +72,21 @@ smtpinit(m, mci, pvp)
 	**  Open the connection to the mailer.
 	*/
 
-	if (mci->mci_state == MCIS_OPEN)
-		syserr("smtpinit: already open");
-
-	mci->mci_state = MCIS_CLOSED;
 	SmtpError[0] = '\0';
-	SmtpPhase = "user open";
-	setproctitle("%s %s: %s", CurEnv->e_id, pvp[1], SmtpPhase);
+	setproctitle("%s %s: %s", e->e_id, pvp[1], "user open");
 	mci = openmailer(m, pvp, (ADDRESS *) NULL, TRUE);
-	if (SmtpPid < 0)
+	if (mci == NULL)
+		return NULL;
+	if (mci->mci_state != MCIS_OPENING && mci->mci_state != MCIS_CLOSED)
+		return mci;
+	mci->mci_phase = "user open";
+	mci->mci_state = MCIS_OPENING;
+	if (mci->mci_pid < 0)
 	{
 		if (tTd(18, 1))
 			printf("smtpinit: cannot open %s: stat %d errno %d\n",
 			   pvp[0], ExitStat, errno);
-		if (CurEnv->e_xfp != NULL)
+		if (e->e_xfp != NULL)
 		{
 			register char *p;
 			extern char *errstring();
@@ -94,22 +95,22 @@ smtpinit(m, mci, pvp)
 			if (errno == 0)
 			{
 				p = statstring(ExitStat);
-				fprintf(CurEnv->e_xfp,
+				fprintf(e->e_xfp,
 					"%.3s %s.%s... %s\n",
 					p, pvp[1], m->m_name, p);
 			}
 			else
 			{
 				r = errno;
-				fprintf(CurEnv->e_xfp,
+				fprintf(e->e_xfp,
 					"421 %s.%s... Deferred: %s\n",
 					pvp[1], m->m_name, errstring(errno));
 				errno = r;
 			}
 		}
-		return (ExitStat);
+		mci->mci_exitstat = ExitStat;
+		return mci;
 	}
-	mci->mci_state = MCIS_OPEN;
 
 	/*
 	**  Get the greeting message.
@@ -120,9 +121,9 @@ smtpinit(m, mci, pvp)
 	if (setjmp(CtxGreeting) != 0)
 		goto tempfail1;
 	gte = setevent((time_t) 300, greettimeout, 0);
-	SmtpPhase = "greeting wait";
-	setproctitle("%s %s: %s", CurEnv->e_id, CurHostName, SmtpPhase);
-	r = reply(m, mci);
+	mci->mci_phase = "greeting wait";
+	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
+	r = reply(m, mci, e);
 	clrevent(gte);
 	if (r < 0 || REPLYTYPE(r) != 2)
 		goto tempfail1;
@@ -132,10 +133,10 @@ smtpinit(m, mci, pvp)
 	**	My mother taught me to always introduce myself.
 	*/
 
-	smtpmessage("HELO %s", m, MyHostName);
-	SmtpPhase = "HELO wait";
-	setproctitle("%s %s: %s", CurEnv->e_id, CurHostName, SmtpPhase);
-	r = reply(m, mci);
+	smtpmessage("HELO %s", m, mci, MyHostName);
+	mci->mci_phase = "HELO wait";
+	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
+	r = reply(m, mci, e);
 	if (r < 0)
 		goto tempfail1;
 	else if (REPLYTYPE(r) == 5)
@@ -151,17 +152,44 @@ smtpinit(m, mci, pvp)
 	if (bitnset(M_INTERNAL, m->m_flags))
 	{
 		/* tell it to be verbose */
-		smtpmessage("VERB", m);
-		r = reply(m, mci);
+		smtpmessage("VERB", m, mci);
+		r = reply(m, mci, e);
 		if (r < 0)
 			goto tempfail2;
 
 		/* tell it we will be sending one transaction only */
-		smtpmessage("ONEX", m);
-		r = reply(m, mci);
+		smtpmessage("ONEX", m, mci);
+		r = reply(m, mci, e);
 		if (r < 0)
 			goto tempfail2;
 	}
+
+	mci->mci_state = MCIS_OPEN;
+	return mci;
+
+  tempfail1:
+  tempfail2:
+	mci->mci_exitstat = EX_TEMPFAIL;
+	mci->mci_errno = errno;
+	smtpquit(m, mci, e);
+	mci->mci_state = MCIS_TEMPFAIL;
+	return mci;
+
+  unavailable:
+	mci->mci_exitstat = EX_UNAVAILABLE;
+	mci->mci_errno = errno;
+	smtpquit(m, mci, e);
+	mci->mci_state = MCIS_ERROR;
+	return mci;
+}
+
+smtpmailfrom(m, mci, e)
+	struct mailer *m;
+	MCONINFO *mci;
+	ENVELOPE *e;
+{
+	int r;
+	char buf[MAXNAME];
 
 	/*
 	**  Send the HOPS command.
@@ -176,45 +204,49 @@ smtpinit(m, mci, pvp)
 	**	Designates the sender.
 	*/
 
-	expand("\001<", buf, &buf[sizeof buf - 1], CurEnv);
-	if (CurEnv->e_from.q_mailer == LocalMailer ||
+	mci->mci_state = MCIS_ACTIVE;
+
+	expand("\001<", buf, &buf[sizeof buf - 1], e);
+	if (e->e_from.q_mailer == LocalMailer ||
 	    !bitnset(M_FROMPATH, m->m_flags))
 	{
-		smtpmessage("MAIL From:<%s>", m, buf);
+		smtpmessage("MAIL From:<%s>", m, mci, buf);
 	}
 	else
 	{
-		smtpmessage("MAIL From:<@%s%c%s>", m, MyHostName,
+		smtpmessage("MAIL From:<@%s%c%s>", m, mci, MyHostName,
 			buf[0] == '@' ? ',' : ':', buf);
 	}
-	SmtpPhase = "MAIL wait";
-	setproctitle("%s %s: %s", CurEnv->e_id, CurHostName, SmtpPhase);
-	r = reply(m, mci);
+	mci->mci_phase = "MAIL wait";
+	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
+	r = reply(m, mci, e);
 	if (r < 0 || REPLYTYPE(r) == 4)
-		goto tempfail2;
+	{
+		mci->mci_exitstat = EX_TEMPFAIL;
+		mci->mci_errno = errno;
+		smtpquit(m, mci, e);
+		mci->mci_state = MCIS_TEMPFAIL;
+		return EX_TEMPFAIL;
+	}
 	else if (r == 250)
-		return (EX_OK);
+	{
+		mci->mci_exitstat = EX_OK;
+		return EX_OK;
+	}
 	else if (r == 552)
-		goto unavailable;
+	{
+		/* signal service unavailable */
+		mci->mci_exitstat = EX_UNAVAILABLE;
+		smtpquit(m, mci, e);
+		mci->mci_state = MCIS_ERROR;
+		return EX_UNAVAILABLE;
+	}
 
 	/* protocol error -- close up */
-	smtpquit(m, mci);
-	return (EX_PROTOCOL);
-
-  tempfail1:
-	/* log this as an error to avoid sure-to-be-void connections */
-	mci->mci_exitstat = EX_TEMPFAIL;
-	mci->mci_errno = errno;
-
-  tempfail2:
-	/* signal a temporary failure */
-	smtpquit(m, mci);
-	return (EX_TEMPFAIL);
-
-  unavailable:
-	/* signal service unavailable */
-	smtpquit(m, mci);
-	return (EX_UNAVAILABLE);
+	smtpquit(m, mci, e);
+	mci->mci_exitstat = EX_PROTOCOL;
+	mci->mci_state = MCIS_ERROR;
+	return EX_PROTOCOL;
 }
 
 
@@ -238,19 +270,20 @@ greettimeout()
 **		Sends the mail via SMTP.
 */
 
-smtprcpt(to, m, mci)
+smtprcpt(to, m, mci, e)
 	ADDRESS *to;
 	register MAILER *m;
 	MCONINFO *mci;
+	ENVELOPE *e;
 {
 	register int r;
 	extern char *remotename();
 
-	smtpmessage("RCPT To:<%s>", m, to->q_user);
+	smtpmessage("RCPT To:<%s>", m, mci, to->q_user);
 
-	SmtpPhase = "RCPT wait";
-	setproctitle("%s %s: %s", CurEnv->e_id, CurHostName, SmtpPhase);
-	r = reply(m, mci);
+	mci->mci_phase = "RCPT wait";
+	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
+	r = reply(m, mci, e);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
 	else if (REPLYTYPE(r) == 2)
@@ -291,10 +324,10 @@ smtpdata(m, mci, e)
 	*/
 
 	/* send the command and check ok to proceed */
-	smtpmessage("DATA", m);
-	SmtpPhase = "DATA wait";
-	setproctitle("%s %s: %s", CurEnv->e_id, CurHostName, SmtpPhase);
-	r = reply(m, mci);
+	smtpmessage("DATA", m, mci);
+	mci->mci_phase = "DATA wait";
+	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
+	r = reply(m, mci, e);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
 	else if (r == 554)
@@ -303,9 +336,9 @@ smtpdata(m, mci, e)
 		return (EX_PROTOCOL);
 
 	/* now output the actual message */
-	(*e->e_puthdr)(mci->mci_out, m, CurEnv);
+	(*e->e_puthdr)(mci->mci_out, m, e);
 	putline("\n", mci->mci_out, m);
-	(*e->e_putbody)(mci->mci_out, m, CurEnv);
+	(*e->e_putbody)(mci->mci_out, m, e);
 
 	/* terminate the message */
 	fprintf(mci->mci_out, ".%s", m->m_eol);
@@ -313,10 +346,13 @@ smtpdata(m, mci, e)
 		nmessage(Arpa_Info, ">>> .");
 
 	/* check for the results of the transaction */
-	SmtpPhase = "result wait";
-	setproctitle("%s %s: %s", CurEnv->e_id, CurHostName, SmtpPhase);
-	r = reply(m, mci);
-	if (r < 0 || REPLYTYPE(r) == 4)
+	mci->mci_phase = "result wait";
+	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
+	r = reply(m, mci, e);
+	if (r < 0)
+		return (EX_TEMPFAIL);
+	mci->mci_state = MCIS_OPEN;
+	if (REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
 	else if (r == 250)
 		return (EX_OK);
@@ -337,9 +373,10 @@ smtpdata(m, mci, e)
 **		sends the final protocol and closes the connection.
 */
 
-smtpquit(mci, m)
-	register MCONINFO *mci;
+smtpquit(m, mci, e)
 	register MAILER *m;
+	register MCONINFO *mci;
+	ENVELOPE *e;
 {
 	int i;
 
@@ -348,10 +385,10 @@ smtpquit(mci, m)
 		return;
 
 	/* send the quit message if not a forced quit */
-	if (mci->mci_state == MCIS_OPEN || mci->mci_state == MCIS_SSD)
+	if (mci->mci_state != MCIS_ERROR)
 	{
-		smtpmessage("QUIT", m);
-		(void) reply(m, mci);
+		smtpmessage("QUIT", m, mci);
+		(void) reply(m, mci, e);
 		if (mci->mci_state == MCIS_CLOSED)
 			return;
 	}
@@ -374,9 +411,10 @@ smtpquit(mci, m)
 **		flushes the mail file.
 */
 
-reply(mci, m)
-	MCONINFO *mci;
+reply(m, mci, e)
 	MAILER *m;
+	MCONINFO *mci;
+	ENVELOPE *e;
 {
 	(void) fflush(mci->mci_out);
 
@@ -391,10 +429,11 @@ reply(mci, m)
 	{
 		register int r;
 		register char *p;
+		extern time_t curtime();
 
 		/* actually do the read */
-		if (CurEnv->e_xfp != NULL)
-			(void) fflush(CurEnv->e_xfp);	/* for debugging */
+		if (e->e_xfp != NULL)
+			(void) fflush(e->e_xfp);	/* for debugging */
 
 		/* if we are in the process of closing just give the code */
 		if (mci->mci_state == MCIS_CLOSED)
@@ -402,6 +441,8 @@ reply(mci, m)
 
 		/* get the line from the other side */
 		p = sfgets(SmtpReplyBuffer, sizeof SmtpReplyBuffer, mci->mci_in);
+		mci->mci_lastuse = curtime();
+
 		if (p == NULL)
 		{
 			extern char MsgBuf[];		/* err.c */
@@ -423,20 +464,20 @@ reply(mci, m)
 			syslog(LOG_INFO, "%s", &MsgBuf[4]);
 # endif LOG
 			mci->mci_state = MCIS_CLOSED;
-			smtpquit(m);
+			smtpquit(m, mci, e);
 			return (-1);
 		}
 		fixcrlf(SmtpReplyBuffer, TRUE);
 
-		if (CurEnv->e_xfp != NULL && index("45", SmtpReplyBuffer[0]) != NULL)
+		if (e->e_xfp != NULL && index("45", SmtpReplyBuffer[0]) != NULL)
 		{
 			/* serious error -- log the previous command */
 			if (SmtpMsgBuffer[0] != '\0')
-				fprintf(CurEnv->e_xfp, ">>> %s\n", SmtpMsgBuffer);
+				fprintf(e->e_xfp, ">>> %s\n", SmtpMsgBuffer);
 			SmtpMsgBuffer[0] = '\0';
 
 			/* now log the message as from the other side */
-			fprintf(CurEnv->e_xfp, "<<< %s\n", SmtpReplyBuffer);
+			fprintf(e->e_xfp, "<<< %s\n", SmtpReplyBuffer);
 		}
 
 		/* display the input for verbose mode */
@@ -459,7 +500,7 @@ reply(mci, m)
 		{
 			/* send the quit protocol */
 			mci->mci_state = MCIS_SSD;
-			smtpquit(m);
+			smtpquit(m, mci, e);
 		}
 
 		/* save temporary failure messages for posterity */

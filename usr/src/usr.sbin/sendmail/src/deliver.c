@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.54.1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.56 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -385,6 +385,8 @@ deliver(e, firstto)
 #ifdef SMTP
 	if (clever)
 	{
+		register MCONINFO *mci;
+
 		rcode = EX_OK;
 #ifdef NAMED_BIND
 		if (host[0] && host[0] != '[')
@@ -400,9 +402,13 @@ deliver(e, firstto)
 		}
 		if (Nmx >= 0)
 		{
-			message(Arpa_Info, "Connecting to %s (%s)...",
-			    MxHosts[0], m->m_name);
-			if ((rcode = smtpinit(m, mci, pv)) == EX_OK)
+			extern MCONINFO *smtpinit();
+
+			mci = smtpinit(m, pv, e);
+			if (mci != NULL &&
+			    mci->mci_state == MCIS_OPEN &&
+			    mci->mci_exitstat == EX_OK &&
+			    smtpmailfrom(m, mci, e) == EX_OK)
 			{
 				register char *t = tobuf;
 				register int i;
@@ -412,7 +418,7 @@ deliver(e, firstto)
 				for (to = tochain; to != NULL; to = to->q_tchain)
 				{
 					e->e_to = to->q_paddr;
-					if ((i = smtprcpt(to, m, mci)) != EX_OK)
+					if ((i = smtprcpt(to, m, mci, e)) != EX_OK)
 					{
 						markfailure(e, to, i);
 						giveresponse(i, m, e);
@@ -434,7 +440,7 @@ deliver(e, firstto)
 				}
 
 				/* now close the connection */
-				smtpquit(m);
+				smtpquit(m, mci, e);
 			}
 		}
 	}
@@ -668,7 +674,7 @@ endmailer(mci, name)
 	mci->mci_in = mci->mci_out = NULL;
 	mci->mci_state = MCIS_CLOSED;
 	if (bitset(MCIF_TEMP, mci->mci_flags))
-		xfree(mci);
+		free(mci);
 
 	/* in the IPC case there is nothing to wait for */
 	if (mci->mci_pid == 0)
@@ -750,6 +756,7 @@ openmailer(m, pvp, ctladdr, clever)
 		mci->mci_out = stdout;
 		mci->mci_pid = 0;
 		mci->mci_state = MCIS_OPEN;
+		mci->mci_mailer = m;
 		return mci;
 	}
 
@@ -777,9 +784,10 @@ openmailer(m, pvp, ctladdr, clever)
 				  ST_MCONINFO + m->m_mno,
 				  ST_ENTER);
 			mci = &st->s_mci;
-			if (mci->mci_state != MCIS_CLOSED)
+			if (mci->mci_state == MCIS_OPEN)
 				return mci;
-			if (mci->mci_exitstat == EX_OK)
+			mci->mci_mailer = m;
+			if (mci->mci_state == MCIS_CLOSED)
 			{
 				/* try the connection */
 				message(Arpa_Info, "Connecting to %s (%s)...",
@@ -788,6 +796,12 @@ openmailer(m, pvp, ctladdr, clever)
 					bitnset(M_SECURE_PORT, m->m_flags));
 				mci->mci_exitstat = i;
 				mci->mci_errno = errno;
+				if (i == EX_TEMPFAIL)
+					mci->mci_state = MCIS_TEMPFAIL;
+				else if (i != EX_OK)
+					mci->mci_state = MCIS_ERROR;
+				else
+					mci->mci_state = MCIS_OPENING;
 			}
 			else
 			{
@@ -941,6 +955,7 @@ openmailer(m, pvp, ctladdr, clever)
 	*/
 
 	mci = (MCONINFO *) xalloc(sizeof *mci);
+	mci->mci_mailer = m;
 	(void) close(mpvect[0]);
 	mci->mci_out = fdopen(mpvect[1], "w");
 	if (clever)
