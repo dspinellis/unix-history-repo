@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_machdep.c 1.21 91/04/06$
  *
- *	@(#)vm_machdep.c	7.4 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -117,13 +117,20 @@ cpu_exit(p)
 
 /*
  * Dump the machine specific header information at the start of a core dump.
- * XXX should snapshot FPU here?
  */
 cpu_coredump(p, vp, cred)
 	struct proc *p;
 	struct vnode *vp;
 	struct ucred *cred;
 {
+	extern struct proc *machFPCurProcPtr;
+
+	/*
+	 * Copy floating point state from the FP chip if this process
+	 * has state stored there.
+	 */
+	if (p == machFPCurProcPtr)
+		MachSaveCurFPState(p);
 
 	return (vn_rdwr(UIO_WRITE, vp, (caddr_t)p->p_addr, ctob(UPAGES),
 	    (off_t)0, UIO_SYSSPACE, IO_NODELOCKED|IO_UNIT, cred, (int *)NULL,
