@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)atrun.c	4.7	(Berkeley)	%G%";
+static char sccsid[] = "@(#)atrun.c	4.8	(Berkeley)	%G%";
 #endif not lint
 /*
  *	Synopsis: atrun
@@ -18,6 +18,8 @@ static char sccsid[] = "@(#)atrun.c	4.7	(Berkeley)	%G%";
 # include <sys/dir.h>
 # include <sys/file.h>
 # include <sys/time.h>
+# include <sys/param.h>
+# include <sys/quota.h>
 # include <sys/stat.h>
 # include <pwd.h>
 
@@ -282,14 +284,16 @@ char *spoolfile;
 	/*
 	 * Run the job as the owner of the jobfile
 	 */
+	quota(Q_SETUID,jobbuf.st_uid,0,0);
 	setgid(jobbuf.st_gid);
+	initgroups(getname(jobbuf.st_uid),jobbuf.st_gid);
 	setuid(jobbuf.st_uid);
 
 	/*
 	 * Close all open files so that we can reopen a temporary file
 	 * for stdout and sterr.
 	 */
-	for (i=0; i<15; i++)
+	for (i = getdtablesize(); --i >= 0;)
 		close(i);
 
 	/*
@@ -301,7 +305,7 @@ char *spoolfile;
 	 *	
 	 */
 	open("/dev/null", 0);
-	open("/dev/null", 0);
+	open("/dev/null", 1);
 	open(errfile,O_CREAT|O_WRONLY,00644);
 
 	/*
@@ -329,6 +333,7 @@ char *spoolfile;
 	 * so we'll send the owner some mail.
 	 */
 	fprintf(stderr, "%s: Can't execl shell\n",shell);
+	exit(1);
 }
 
 /*
