@@ -1,4 +1,10 @@
-/*	kdb_expr.c	7.3	86/11/23	*/
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)kdb_expr.c	7.4 (Berkeley) %G%
+ */
 
 #include "../kdb/defs.h"
 
@@ -25,31 +31,43 @@ char	lastc, peekc;
 long	ditto;
 long	expv;
 
+static long
+round(a,b)
+	register long a, b;
+{
+	register long w;
+
+	w = (a/b)*b;
+	if (a!=w)
+		w += b;
+	return (w);
+}
+
 /* term | term dyadic expr |  */
 expr(a)
 {
 	register rc;
 	register long lhs;
 
-	rdc(); lp--; rc=term(a);
+	(void) rdc(); lp--; rc=term(a);
 
 	while (rc) {
 		lhs = expv;
 		switch ((int)readchar()) {
 		case '+':
-			term(a|1); expv += lhs; break;
+			(void) term(a|1); expv += lhs; break;
 		case '-':
-			term(a|1); expv = lhs - expv; break;
+			(void) term(a|1); expv = lhs - expv; break;
 		case '#':
-			term(a|1); expv = round(lhs,expv); break;
+			(void) term(a|1); expv = round(lhs,expv); break;
 		case '*':
-			term(a|1); expv *= lhs; break;
+			(void) term(a|1); expv *= lhs; break;
 		case '%':
-			term(a|1); expv = lhs/expv; break;
+			(void) term(a|1); expv = lhs/expv; break;
 		case '&':
-			term(a|1); expv &= lhs; break;
+			(void) term(a|1); expv &= lhs; break;
 		case '|':
-			term(a|1); expv |= lhs; break;
+			(void) term(a|1); expv |= lhs; break;
 		case ')':
 			if ((a&2)==0)
 				error(BADKET);
@@ -68,22 +86,22 @@ term(a)
 
 	switch ((int)readchar()) {
 	case '*':
-		term(a|1); expv=chkget(expv,DSP);
+		(void) term(a|1); expv=chkget(expv,DSP);
 		return(1);
 	case '@':
-		term(a|1); expv=chkget(expv,ISP);
+		(void) term(a|1); expv=chkget(expv,ISP);
 		return(1);
 	case '-':
-		term(a|1); expv = -expv;
+		(void) term(a|1); expv = -expv;
 		return(1);
 	case '~':
-		term(a|1); expv = ~expv;
+		(void) term(a|1); expv = ~expv;
 		return(1);
 	case '#':
-		term(a|1); expv = !expv;
+		(void) term(a|1); expv = !expv;
 		return(1);
 	case '(':
-		expr(2);
+		(void) expr(2);
 		if (*lp!=')')
 			error(BADSYN);
 		lp++;
@@ -102,7 +120,7 @@ item(a)
 	register long frame;
 	register struct nlist *symp;
 
-	readchar();
+	(void) readchar();
 	if (symchar(0)) {
 		readsym();
 		if (lastc=='.') {
@@ -110,7 +128,7 @@ item(a)
 			callpc = pcb.pcb_pc;
 			while (!errflg) {
 				savpc = callpc;
-				findsym(callpc,ISYM);
+				(void) findsym((long)callpc,ISYM);
 				if (eqsym(cursym->n_un.n_name,isymbol,'~'))
 					break;
 				callpc = getprevpc(frame);
@@ -120,7 +138,7 @@ item(a)
 					error(NOCFN);
 			}
 			savlastf = lastframe; savframe = frame;
-			readchar();
+			(void) readchar();
 			if (symchar(0))
 				chkloc(expv=frame);
 		} else if ((symp=lookup(isymbol))==0)
@@ -134,10 +152,10 @@ item(a)
 		return (1);
 	switch (lastc) {
 	case '.':
-		readchar();
+		(void) readchar();
 		if (symchar(0)) {
 			lastframe=savlastf; callpc=savpc;
-			chkloc(savframe);
+			chkloc((long)savframe);
 		} else
 			expv=dot;
 		lp--;
@@ -200,14 +218,14 @@ getnum()
 			expv *= base;
 		if ((d=convdig(lastc))>=base || d<0)
 			error(BADSYN);
-		expv += d; readchar();
+		expv += d; (void) readchar();
 		if (expv==0) {
 			if (lastc=='x' || lastc=='X') {
-				 base=16; readchar();
+				 base=16; (void) readchar();
 			} else if (lastc=='t' || lastc=='T') {
-				 base=10; readchar();
+				 base=10; (void) readchar();
 			} else if (lastc=='o' || lastc=='O') {
-				 base=8; readchar();
+				 base=8; (void) readchar();
 			}
 		}
 	}
@@ -232,9 +250,9 @@ readsym()
 
 	p = isymbol;
 	do {
-	    if (p < &isymbol[sizeof(isymbol)-1])
-		    *p++ = lastc;
-	    readchar();
+		if (p < &isymbol[sizeof(isymbol)-1])
+			*p++ = lastc;
+		(void) readchar();
 	} while (symchar(1));
 	*p++ = 0;
 }
@@ -255,7 +273,7 @@ symchar(dig)
 {
 
 	if (lastc=='\\') {
-		readchar();
+		(void) readchar();
 		return (1);
 	}
 	return (isalpha(lastc) || lastc=='_' || dig && isdigit(lastc));
@@ -304,16 +322,4 @@ streq(s1, s2)
 		if (*s1++ == '\0')
 			return (1);
 	return (0);
-}
-
-static
-round(a,b)
-	register long a, b;
-{
-	register long w;
-
-	w = (a/b)*b;
-	if (a!=w)
-		w += b;
-	return (w);
 }

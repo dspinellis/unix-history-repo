@@ -1,4 +1,4 @@
-/*	vm_machdep.c	1.6	86/11/03	*/
+/*	vm_machdep.c	1.7	86/12/15	*/
 
 #include "../machine/pte.h"
 
@@ -67,7 +67,7 @@ mapout(pte, size)
 chksize(ts, ids, uds, ss)
 	register unsigned ts, ids, uds, ss;
 {
-	extern int maxtsize;
+	extern unsigned maxtsize;
 
 	if (ctob(ts) > maxtsize ||
 	    ctob(ids) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||

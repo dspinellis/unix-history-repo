@@ -1,4 +1,10 @@
-/*	kdb_command.c	7.2	86/11/20	*/
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)kdb_command.c	7.3 (Berkeley) %G%
+ */
 
 #include "../kdb/defs.h"
 
@@ -89,7 +95,7 @@ command(buf, defcom)
 				if (eqcom)
 					error(BADEQ);
 				dotinc=(longpr?4:2); savdot=dot;
-				expr(1); locval=expv;
+				(void) expr(1); locval=expv;
 				if (expr(0))
 					locmsk=expv;
 				else
@@ -117,11 +123,11 @@ command(buf, defcom)
 			case 'w':
 				if (eqcom)
 					error(BADEQ);
-				wformat[0]=lastc; expr(1);
+				wformat[0]=lastc; (void) expr(1);
 				do {
 					savdot=dot;
 					psymoff(dot,ptype,":%16t");
-					exform(1,wformat,itype,ptype);
+					(void) exform(1,wformat,itype,ptype);
 					errflg=0; dot=savdot;
 					if (longpr)
 						put(dot,itype,expv);
@@ -130,7 +136,7 @@ command(buf, defcom)
 						    itol(expv,get(dot,itype)));
 					savdot=dot;
 					printf("=%8t");
-					exform(1,wformat,itype,ptype);
+					(void) exform(1,wformat,itype,ptype);
 					printc(EOR);
 				} while (expr(0) && errflg==0);
 				dot=savdot;

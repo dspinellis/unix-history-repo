@@ -1,4 +1,4 @@
-/*	ik.c	1.3	86/12/11	*/
+/*	ik.c	1.4	86/12/15	*/
 
 #include "ik.h"
 #if NIK > 0
@@ -73,6 +73,10 @@ ikprobe(reg, vi)
 	register int br, cvec;		/* r12, r11 */
 	register struct ikdevice *ik;
 
+#ifdef lint
+	br = 0; cvec = br; br = cvec;
+	ikintr(0);
+#endif
 	if (badaddr(reg, 2))
 		return (0);
 	ik = (struct ikdevice *)reg;
@@ -137,14 +141,14 @@ ikopen(dev, flag)
 	if (unit >= NIK || (vi = ikinfo[unit]) == 0 || vi->ui_alive == 0)
 		return (ENXIO);
 	sc = &ik_softc[unit];
-	if (sc->is_uid != -1 && sc->is_uid != u.u_uid)
+	if (sc->is_uid != (uid_t)-1 && sc->is_uid != u.u_uid)
 		return (EBUSY);
-	if (sc->is_uid == -1) {
+	if (sc->is_uid == (uid_t)-1) {
 		sc->is_buf = (caddr_t)wmemall(vmemall, PS_MAXDMA);
 		if (sc->is_buf == 0)
 			return (ENOMEM);
 		sc->is_timeout = 0;
-		timeout(iktimer, unit, hz);
+		timeout(iktimer, (caddr_t)unit, hz);
 		/*
 		 * Perform PS300 attach for first process.
 		 */
@@ -159,7 +163,7 @@ ikopen(dev, flag)
 				ik = (struct ikdevice *)ikinfo[unit]->ui_addr;
 				if (!reset++ && psreset(ik, 0))
 					goto again;
-				untimeout(iktimer, unit);
+				untimeout(iktimer, (caddr_t)unit);
 				wmemfree(sc->is_buf, PS_MAXDMA);
 				sc->is_buf = 0;
 				return (EIO);
@@ -185,7 +189,7 @@ ikclose(dev, flag)
 		wmemfree(sc->is_buf, PS_MAXDMA);
 		sc->is_buf = 0;
 	}
-	untimeout(iktimer, unit);
+	untimeout(iktimer, (caddr_t)unit);
 }
 
 ikread(dev, uio)
@@ -264,7 +268,7 @@ ikrw(dev, uio, rw)
 		ap->wc = (iov->iov_len + 1) >> 1;
 		if (rw == B_WRITE) {
 			error = copyin(iov->iov_base, (caddr_t)&ap[1],
-			    iov->iov_len);
+			    (unsigned)iov->iov_len);
 			if (!error)
 				error = ikcommand(dev, wrcmd,
 				    iov->iov_len + sizeof (*ap));
@@ -278,7 +282,7 @@ ikrw(dev, uio, rw)
 				mtpr(P1DC, cp);
 			if (!error)
 				error = copyout((caddr_t)&ap[1], iov->iov_base,
-				    iov->iov_len);
+				    (unsigned)iov->iov_len);
 		}
 		(void) splbio();
 		if (bp->b_flags&B_WANTED)
@@ -355,7 +359,6 @@ ikstart(dp)
 	register struct buf *bp;
 	register struct ikdevice *ik;
 	register struct ik_softc *sc;
-	register struct psalist *ap;
 	u_short bc, csr;
 	u_int addr;
 	int unit;
@@ -375,7 +378,7 @@ loop:
 	unit = IKUNIT(bp->b_dev);
 	sc = &ik_softc[unit];
 	ik = (struct ikdevice *)ikinfo[unit]->ui_addr;
-	switch (bp->b_command) {
+	switch ((int)bp->b_command) {
 
 	case PS_ATTACH:		/* logical unit attach */
 	case PS_DETACH:		/* logical unit detach */
@@ -387,12 +390,12 @@ loop:
 		 * Handshake command and, optionally,
 		 * byte count and byte swap flag.
 		 */
-		if (sc->is_error = diowrite(ik, bp->b_command))
+		if (sc->is_error = diowrite(ik, (u_short)bp->b_command))
 			goto bad;
 		if (bp->b_command < PS_DETACH) {
-			if (sc->is_error = diowrite(ik, bp->b_bcount))
+			if (sc->is_error = diowrite(ik, (u_short)bp->b_bcount))
 				goto bad;
-			if (sc->is_error = diowrite(ik, 0 /* !swab */))
+			if (sc->is_error = diowrite(ik, (u_short)0 /* !swab */))
 				goto bad;
 		}
 		/*
@@ -417,7 +420,7 @@ loop:
 		goto bad;
 	}
 	/* initiate dma transfer */
-	addr = vtoph((struct proc *)0, sc->is_buf);
+	addr = vtoph((struct proc *)0, (unsigned)sc->is_buf);
 	ik->ik_bahi = addr >> 17;
 	ik->ik_balo = (addr >> 1) & 0xffff;
 	ik->ik_wc = ((bc + 1) >> 1) - 1;	/* round & convert */
@@ -433,8 +436,6 @@ bad:
 }
 
 #define FETCHWORD(i) { \
-	int v; \
-\
 	v = dioread(ik); \
 	if (v == -1) { \
 		sc->is_error = PSERROR_NAMETIMO; \
@@ -453,7 +454,7 @@ ikintr(ikon)
 	register struct buf *bp, *dp;
 	struct ik_softc *sc;
 	register u_short data;
-	u_short i, v;
+	int v;
 
 	/* should go by controller, but for now... */
 	if (ikinfo[ikon] == 0)
@@ -590,7 +591,7 @@ iktimer(unit)
 		}
 		splx(s);
 	}
-	timeout(iktimer, unit, hz);
+	timeout(iktimer, (caddr_t)unit, hz);
 }
 
 /*
@@ -599,10 +600,10 @@ iktimer(unit)
 dioread(ik)
 	register struct ikdevice *ik;
 {
-	register int timeout;
+	register int t;
 	u_short data;
 
-	for (timeout = ikdiotimo; timeout > 0; timeout--)
+	for (t = ikdiotimo; t > 0; t--)
 		if ((ik->ik_csr&(IKCSR_ATTF|IKCSR_STATC)) == IKCSR_ATTF) {
 			data = ik->ik_data;
 			ik->ik_csr = IKCSR_RATTF|IKCSR_RDMAF|IKCSR_FNC1;
@@ -623,7 +624,7 @@ diowrite(ik, v)
 	register struct ikdevice *ik;
 	u_short v;
 {
-	register int timeout;
+	register int t;
 	register u_short csr;
 
 top:
@@ -633,7 +634,7 @@ top:
 	ik->ik_data = v;
 	ik->ik_csr = IKCSR_RDMAF|IKCSR_RATTF;
 	ik->ik_pulse = IKPULSE_FNC2;
-	for (timeout = ikdiotimo; timeout > 0; timeout--) {
+	for (t = ikdiotimo; t > 0; t--) {
 		csr = ik->ik_csr;
 #define IKCSR_DONE	(IKCSR_STATA|IKCSR_STATC)
 		if ((csr&IKCSR_DONE) == IKCSR_DONE) {
@@ -682,7 +683,7 @@ ikioctl(dev, cmd, data, flag)
 		}
 		splx(s);
 		bp->b_flags = B_BUSY | B_WRITE;
-		error = copyin(lp->pl_name, sc->is_buf, lp->pl_len);
+		error = copyin(lp->pl_name, sc->is_buf, (unsigned)lp->pl_len);
 		if (error == 0) {
 			if (lp->pl_len&1)
 				sc->is_buf[lp->pl_len] = '\0';

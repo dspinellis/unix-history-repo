@@ -1,4 +1,4 @@
-/*	vbaparam.h	1.2	86/12/08	*/
+/*	vbaparam.h	1.3	86/12/15	*/
 
 /*
  * Parameters related to the VERSAbus i/o configuration.
@@ -37,10 +37,10 @@ extern	caddr_t vbbase, vbend;
  * zero in the upper 2 bits; e.g. a reference to physical address fe000000
  * results in a VERSAbus address of 3e000000.
  */
-#define	VBIO16BIT(a)	(0xfffe0000 <= ((unsigned)(a)))
-#define	VBIO24BIT(a) \
-    (0xff000000 <= ((unsigned)(a)) && ((unsigned)(a)) < 0xfffe0000)
-#define	VBIO32BIT(a)	(((unsigned)(a)) < 0xff000000)
+#define	VBIO16BIT(a)	((unsigned)0xfffe0000 <= ((unsigned)(a)))
+#define	VBIO24BIT(a)	((unsigned)0xff000000 <= ((unsigned)(a)) && \
+			 ((unsigned)(a)) < (unsigned)0xfffe0000)
+#define	VBIO32BIT(a)	(((unsigned)(a)) < (unsigned)0xff000000)
 
 /* 
  * The following constants define the fixed size map of the
@@ -53,8 +53,8 @@ extern	caddr_t vbbase, vbend;
 /* number of entries in the system page table for i/o space */
 #define VBIOSIZE	btoc(VBIOEND-VBIOBASE)
 /* is device in mapped region */
-#define	VBIOMAPPED(a) \
-    (VBIOBASE <= ((unsigned)(a)) && ((unsigned)(a)) <= VBIOEND) 
+#define	VBIOMAPPED(a)	((unsigned)VBIOBASE <= ((unsigned)(a)) && \
+			 ((unsigned)(a)) <= (unsigned)VBIOEND) 
 #define	vboff(addr)	((int)(((caddr_t)(addr)) - VBIOBASE))
 
 /*

@@ -1,4 +1,10 @@
-/*	kdb_trap.c	7.4	86/11/23	*/
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)kdb_trap.c	7.5 (Berkeley) %G%
+ */
 
 /*
  * Trap handler - command loop entry point.
@@ -30,7 +36,7 @@ kdb(type, code, curproc)
 	var[varchk('t')] = type;
 	var[varchk('c')] = code;
 	var[varchk('p')] = (int)curproc;
-	printtrap(type, code);
+	printtrap((long)type, (long)code);
 	userpc = dot = pcb.pcb_pc;
 	switch (setexit()) {
 
@@ -40,7 +46,7 @@ kdb(type, code, curproc)
 	case CONTIN:
 		return (1);
 	case 0:
-		if (nextpcs(type, 0))
+		if (nextpcs(type))
 			printf("breakpoint%16t");
 		else
 			printf("stopped at%16t");
@@ -62,8 +68,8 @@ kdb(type, code, curproc)
 			printf(DBNAME);
 		}
 		kdbwrite("kdb> ", 5);
-		lp=0; rdc(); lp--;
-		command(0, lastcom);
+		lp=0; (void) rdc(); lp--;
+		(void) command((char *)0, lastcom);
 		if (lp && lastc!='\n')
 			error(NOEOR);
 	}

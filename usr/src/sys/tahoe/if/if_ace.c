@@ -1,4 +1,4 @@
-/*	if_ace.c	1.11	86/11/29	*/
+/*	if_ace.c	1.12	86/12/15	*/
 
 /*
  * ACC VERSAbus Ethernet controller
@@ -88,6 +88,7 @@ aceprobe(reg, vi)
 	struct ace_softc *is = &ace_softc[vi->ui_unit];
 
 #ifdef lint
+	br = 0; cvec = br; br = cvec;
 	acerint(0); acecint(0);
 #endif
 	if (badaddr(reg, 2))
@@ -124,7 +125,6 @@ aceattach(ui)
 	register struct ifnet *ifp = &is->is_if;
 	register struct acedevice *addr = (struct acedevice *)ui->ui_addr;
 	register short *wp, i;
-	char *cp;
 
 	ifp->if_unit = unit;
 	ifp->if_name = "ace";
@@ -808,7 +808,7 @@ aceioctl(ifp, cmd, data)
 acesetaddr(unit, addr, station)
 	short unit;
 	struct acedevice *addr;
-	char *station;
+	u_char *station;
 {
 	struct ace_softc *is = &ace_softc[unit];
 	register short *wp, i;

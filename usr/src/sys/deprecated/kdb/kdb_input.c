@@ -1,11 +1,16 @@
-/*	kdb_input.c	7.2	86/11/20	*/
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)kdb_input.c	7.3 (Berkeley) %G%
+ */
 
 #include "../kdb/defs.h"
 
 char	line[LINSIZ];
 char	*lp;
 char	peekc,lastc = EOR;
-int	eof;
 
 /* input routines */
 
@@ -18,7 +23,7 @@ eol(c)
 rdc()
 {
 	do
-		readchar();
+		(void) readchar();
 	while (lastc==SP || lastc==TB);
 	return (lastc);
 }
@@ -32,7 +37,7 @@ readchar()
 		do {
 			(void) kdbreadc(lp);
 			if (mkfault)
-				error(0);
+				error((char *)0);
 			switch (*lp) {
 			case CTRL(h): case 0177:
 				if (lp > line)

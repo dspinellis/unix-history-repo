@@ -1,4 +1,10 @@
-/*	kdb_print.c	7.4	86/11/23	*/
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)kdb_print.c	7.5 (Berkeley) %G%
+ */
 
 #include "../kdb/defs.h"
 
@@ -28,7 +34,7 @@ printtrace(modif)
 	register char *comptr;
 	register ADDR argp, frame;
 	register struct nlist *sp;
-	int stack, ntramp;
+	int ntramp;
 	register struct  proc *p;
 	extern struct proc *allproc;
 
@@ -93,7 +99,7 @@ printtrace(modif)
 				ntramp++;
 			} else {
 				ntramp = 0;
-				findsym(callpc, ISYM);
+				(void) findsym((long)callpc, ISYM);
 				if (cursym)
 					name = cursym->n_un.n_name;
 				else
@@ -105,16 +111,17 @@ printtrace(modif)
 			if (ntramp != 1)
 				while (narg) {
 					printf("%R",
-					    get(argp = nextarg(argp), DSP));
+					    get((off_t)(argp = nextarg(argp)),
+					        DSP));
 					if (--narg != 0)
 						printc(',');
 				}
 			printf(") at ");
-			psymoff(callpc, ISYM, "\n");
+			psymoff((long)callpc, ISYM, "\n");
 
 			if (modif=='C') {
-				while (localsym(frame, argp)) {
-					word = get(localval, DSP);
+				while (localsym((long)frame)) {
+					word = get((off_t)localval, DSP);
 					printf("%8t%s:%10t",
 					    cursym->n_un.n_name);
 					if (errflg) {
@@ -141,7 +148,7 @@ printtrace(modif)
 			if (sp->n_type==(N_DATA|N_EXT) ||
 			    sp->n_type==(N_BSS|N_EXT))
 				printf("%s:%12t%R\n", sp->n_un.n_name,
-					get(sp->n_value,DSP));
+					get((off_t)sp->n_value, DSP));
 		break;
 
 		/*print breakpoints*/
@@ -150,7 +157,7 @@ printtrace(modif)
 		for (bkptr=bkpthead; bkptr; bkptr=bkptr->nxtbkpt)
 			if (bkptr->flag) {
 		   		printf("%-8.8d",bkptr->count);
-				psymoff(bkptr->loc,ISYM,"%24t");
+				psymoff((long)bkptr->loc,ISYM,"%24t");
 				comptr=bkptr->comm;
 				while (*comptr)
 					printc(*comptr++);
@@ -166,7 +173,7 @@ printtrace(modif)
 				p->p_stat == SSTOP ? 'T' : '?');
 			if (p->p_wchan) {
 				printf(" wait ");
-				psymoff(p->p_wchan, ISYM, "");
+				psymoff((long)p->p_wchan, ISYM, "");
 			}
 			printc(EOR);
 		}
@@ -188,7 +195,7 @@ printregs(c)
 			continue;
 		v = *p->rkern;
 		printf("%s%6t%R %16t", p->rname, v);
-		valpr(v, p->rkern == &pcb.pcb_pc ? ISYM : DSYM);
+		valpr((long)v, p->rkern == &pcb.pcb_pc ? ISYM : DSYM);
 		printc(EOR);
 	}
 	printpc();
@@ -222,7 +229,7 @@ getreg(regnam)
 printpc()
 {
 
-	psymoff(pcb.pcb_pc, ISYM, ":%16t");
-	printins(ISP, chkget(pcb.pcb_pc, ISP));
+	psymoff((long)pcb.pcb_pc, ISYM, ":%16t");
+	printins(ISP, (long)chkget((off_t)pcb.pcb_pc, ISP));
 	printc(EOR);
 }

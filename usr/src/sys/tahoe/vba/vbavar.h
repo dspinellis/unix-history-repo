@@ -1,4 +1,4 @@
-/*	vbavar.h	1.3	86/01/20	*/
+/*	vbavar.h	1.4	86/12/15	*/
 
 /*
  * This file contains definitions related to the kernel structures
@@ -118,7 +118,6 @@ extern	struct	vba_device vbdinit[];
  * into virtual address vmem[][].
  */
 extern	struct pte VMEMmap[];	/* vba device addr pte's */
-extern	char vmem[];		/* vba device addr space */
-
+extern	caddr_t vmem;		/* vba device addr space */
 #endif KERNEL
 #endif !LOCORE

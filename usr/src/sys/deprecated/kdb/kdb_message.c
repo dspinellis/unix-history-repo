@@ -1,4 +1,10 @@
-/*	kdb_message.c	7.2	86/11/20	*/
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)kdb_message.c	7.3 (Berkeley) %G%
+ */
 
 #include "../kdb/redef.h"
 
@@ -10,8 +16,6 @@ char	*NOMATCH =  "cannot locate value";
 char	*BADKET	=  "unexpected ')'";
 char	*NOADR	=  "address expected";
 char	*BADVAR	=  "bad variable";
-char	*BADTXT	=  "text address not found";
-char	*BADDAT	=  "data address not found";
 char	*ADWRAP	=  "address wrap around";
 char	*BADEQ	=  "unexpected `='";
 char	*BADSYN	=  "syntax error";

@@ -1,4 +1,4 @@
-/*	cy.c	1.7	86/11/03	*/
+/*	cy.c	1.8	86/12/15	*/
 
 #include "yc.h"
 #if NCY > 0
@@ -24,6 +24,7 @@ int	cydebug = 0;
 #include "cmap.h"
 #include "kernel.h"
 #include "syslog.h"
+#include "tty.h"
 
 #include "../tahoe/cpu.h"
 #include "../tahoe/mtpr.h"
@@ -126,8 +127,11 @@ cyprobe(reg, vm)
 	struct vba_ctlr *vm;
 {
 	register br, cvec;			/* must be r12, r11 */
-	struct cy_softc *cy;
 
+#ifdef lint
+	br = 0; cvec = br; br = cvec;
+	cyintr(0);
+#endif
 	if (badcyaddr(reg+1))
 		return (0);
 	if (vm->um_ctlr > NCYSCP || cyscp[vm->um_ctlr] == 0)	/* XXX */
@@ -336,7 +340,6 @@ cycommand(dev, com, count)
 	dev_t dev;
 	int com, count;
 {
-	register int unit = CYUNIT(dev);
 	register struct buf *bp;
 	int s;
 	
@@ -433,7 +436,6 @@ cystart(vm)
 	register struct buf *bp, *dp;
 	register struct yc_softc *yc;
 	register struct cy_softc *cy;
-	register struct vba_device *vi;
 	int ycunit;
 	daddr_t blkno;
 
@@ -648,7 +650,7 @@ cyintr(cipher)
 	 */
 	cy = &cy_softc[vm->um_ctlr];
 	cy->cy_ccb.cbcw = CBCW_CLRINT;
-	cyldmba(cy->cy_ccb.cbtpb, &cy->cy_nop);
+	cyldmba(cy->cy_ccb.cbtpb, (caddr_t)&cy->cy_nop);
 	cy->cy_ccb.cbgate = GATE_CLOSED;
 	CY_GO(vm->um_addr);
 	if ((dp = vm->um_tab.b_actf) == NULL) {
@@ -659,6 +661,7 @@ cyintr(cipher)
 	cyunit = CYUNIT(bp->b_dev);
 	cy = &cy_softc[cyunit];
 	cyuncachetpb(cy);
+	yc = &yc_softc[YCUNIT(bp->b_dev)];
 	/*
 	 * If last command was a rewind and tape is
 	 * still moving, wait for the operation to complete.
@@ -673,7 +676,6 @@ cyintr(cipher)
 	/*
 	 * An operation completed...record status.
 	 */
-	yc = &yc_softc[YCUNIT(bp->b_dev)];
 	yc->yc_timo = INF;
 	yc->yc_control = cy->cy_tpb.tpcontrol;
 	yc->yc_status = cy->cy_tpb.tpstatus;
@@ -776,16 +778,17 @@ ignoreerr:
 		/*
 		 * For forward/backward space record update current position.
 		 */
-		if (bp == &ccybuf[CYUNIT(bp->b_dev)]) switch (bp->b_command) {
+		if (bp == &ccybuf[CYUNIT(bp->b_dev)])
+			switch ((int)bp->b_command) {
 
-		case CY_SFORW:
-			yc->yc_blkno -= bp->b_repcnt;
-			break;
+			case CY_SFORW:
+				yc->yc_blkno -= bp->b_repcnt;
+				break;
 
-		case CY_SREV:
-			yc->yc_blkno += bp->b_repcnt;
-			break;
-		}
+			case CY_SREV:
+				yc->yc_blkno += bp->b_repcnt;
+				break;
+			}
 		goto opdone;
 	
 	case SSEEK:
@@ -1062,7 +1065,7 @@ cydump(dev)
 	register struct cy_softc *cy;
 	register int bs, num, start;
 	register caddr_t addr;
-	int unit = CYUNIT(dev), ctlr, error;
+	int unit = CYUNIT(dev), error;
 
 	if (unit >= NCY || cyminfo[unit] == 0 ||
 	    (cy = &cy_softc[unit])->cy_bs == 0 || YCUNIT(dev) >= NYC)
@@ -1070,7 +1073,7 @@ cydump(dev)
 	if (cywait(&cy->cy_ccb))
 		return (EFAULT);
 #define	phys(a)	((caddr_t)((int)(a)&~0xc0000000))
-	addr = phys(cyminfo[ctlr]->um_addr);
+	addr = phys(cyminfo[unit]->um_addr);
 	num = maxfree, start = NBPG*2;
 	while (num > 0) {
 		bs = num > btoc(CYMAXIO) ? btoc(CYMAXIO) : num;

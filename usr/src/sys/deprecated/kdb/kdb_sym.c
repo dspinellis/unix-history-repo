@@ -1,4 +1,10 @@
-/*	kdb_sym.c	7.1	86/11/20	*/
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)kdb_sym.c	7.2 (Berkeley) %G%
+ */
 
 /*
  * adb - symbol table routines
@@ -10,12 +16,11 @@
  * Initialize the symbol table.
  */
 setsym(sym, esym, strtab, strsize)
-	struct nlist *sym, *esym;
-	char *strtab;
+	char *sym, *esym, *strtab;
 {
 	register struct nlist *sp;
 
-	symtab = sym, esymtab = esym;
+	symtab = (struct nlist *)sym, esymtab = (struct nlist *)esym;
 	for (sp = symtab; sp < esymtab; sp++)
 		if (sp->n_un.n_strx) {
 			if (sp->n_un.n_strx > strsize) {
@@ -52,7 +57,7 @@ lookup(symstr)
  * Leave a pointer to the symbol found as cursym.
  */
 findsym(val, type)
-	register val;
+	register long val;
 	int type;
 {
 	register diff;
@@ -81,7 +86,7 @@ findsym(val, type)
  * Return 0 at end of file.
  */
 localsym(cframe)
-	ADDR cframe;
+	long cframe;
 {
 	register int type;
 	register struct nlist *sp;
@@ -130,7 +135,7 @@ localsym(cframe)
  * bytes into kernel space.
  */
 psymoff(v, type, s)
-	register v;
+	register long v;
 	int type;
 	char *s;
 {
@@ -154,6 +159,7 @@ psymoff(v, type, s)
  * Used in printing out registers $r.
  */
 valpr(v, idsp)
+	long v;
 {
 	register off_t d;
 
