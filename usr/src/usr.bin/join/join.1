@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)join.1	8.1 (Berkeley) %G%
+.\"	@(#)join.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt JOIN 1
@@ -58,6 +58,9 @@ The following options are available:
 In addition to the default output, produce a line for each unpairable
 line in file
 .Ar file_number .
+(The argument to
+.Fl a
+must not be preceded by a space; see the COMPATIBILITY section.)
 .It Fl e Ar string
 Replace empty output fields with
 .Ar string .
@@ -139,6 +142,10 @@ the following options are available:
 .It Fl a
 In addition to the default output, produce a line for each unpairable line
 in both file 1 and file 2.
+(To distinguish between this and
+.Fl a Ar file_number ,
+.Nm join
+currently requires that the latter not include any white space.)
 .It Fl j1 Ar field
 Join on the
 .Ar field Ns 'th
