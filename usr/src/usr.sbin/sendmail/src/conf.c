@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.73 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.74 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1684,7 +1684,7 @@ transienterror(err)
 #ifdef EADDRNOTAVAIL
 	  case EADDRNOTAVAIL:		/* Can't assign requested address */
 #endif
-#ifdef ETXTBSY:
+#ifdef ETXTBSY
 	  case ETXTBSY:			/* (Apollo) file locked */
 #endif
 #if defined(ENOSR) && (!defined(ENOBUFS) || (ENOBUFS != ENOSR))
