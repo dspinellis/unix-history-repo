@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.23 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.24 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -122,13 +122,15 @@ lfs_vflush(vp)
 	++fs->lfs_iocount;
 	splx(s);
 
-	if (vp->v_dirtyblkhd != NULL)
-		lfs_writefile(fs, sp, vp);
 	ip = VTOI(vp);
-	(void) lfs_writeinode(fs, sp, ip);
-	ip->i_flags &= ~(IMOD | IACC | IUPD | ICHG);
+	do {
+		do {
+			if (vp->v_dirtyblkhd != NULL)
+				lfs_writefile(fs, sp, vp);
+		} while (lfs_writeinode(fs, sp, ip));
+		ip->i_flags &= ~(IMOD | IACC | IUPD | ICHG);
 
-	(void)lfs_writeseg(fs, sp);
+	} while (lfs_writeseg(fs, sp) && ip->i_number == LFS_IFILE_INUM);
 
 	/*
 	 * If the I/O count is non-zero, sleep until it reaches zero.  At the
@@ -237,21 +239,18 @@ lfs_segwrite(mp, do_ckp)
 	 * final decrement, avoiding the wakeup in the callback routine.
 	 */
 	s = splbio();
-	fs->lfs_iocount++;
+	++fs->lfs_iocount;
 	splx(s);
 
 	lfs_writevnodes(fs, mp, sp, 0);
-	s = splbio();
 	fs->lfs_writer = 1;
 	if (fs->lfs_dirops && (error =
 	    tsleep(&fs->lfs_writer, PRIBIO + 1, "lfs writer", 0))) {
 		free(sp->bpp, M_SEGMENT);
 		free(sp, M_SEGMENT); 
 		fs->lfs_writer = 0;
-		splx(s);
-		return(error);
+		return (error);
 	}
-	splx(s);
 
 	lfs_writevnodes(fs, mp, sp, 1);
 
@@ -282,12 +281,12 @@ redo:
 	 * If the I/O count is non-zero, sleep until it reaches zero.  At the
 	 * moment, the user's process hangs around so we can sleep.
 	 */
-	s = splbio();
-	--fs->lfs_iocount;
 	fs->lfs_writer = 0;
 	fs->lfs_doifile = 0;
 	wakeup(&fs->lfs_dirops);
 
+	s = splbio();
+	--fs->lfs_iocount;
 	if (do_ckp) {
 		if (fs->lfs_iocount && (error =
 		    tsleep(&fs->lfs_iocount, PRIBIO + 1, "lfs sync", 0))) {
@@ -449,7 +448,7 @@ lfs_writeinode(fs, sp, ip)
 		redo_ifile |= 
 		    (ino == LFS_IFILE_INUM && !(bp->b_flags & B_GATHERED));
 	}
-	return(redo_ifile);
+	return (redo_ifile);
 }
 
 void
@@ -747,7 +746,7 @@ lfs_writeseg(fs, sp)
 #endif
 	/* Checkpoint always writes superblock, even if no data blocks. */
 	if ((nblocks = sp->cbpp - sp->bpp) == 0 && !(sp->seg_flags & SEGM_CKP))
-		return;
+		return (0);
 
 	/*
 	 * Compute checksum across data and then across summary; the first
@@ -830,7 +829,7 @@ lfs_writeseg(fs, sp)
 		vop_strategy_a.a_bp = cbp;
 		(strategy)(&vop_strategy_a);
 	}
-	return(do_again);
+	return (do_again);
 }
 
 void
