@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_close.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_close.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -30,9 +30,20 @@ int
 __rec_close(dbp)
 	DB *dbp;
 {
+	BTREE *t;
+	int rval;
+
 	if (__rec_sync(dbp) == RET_ERROR)
 		return (RET_ERROR);
-	return (__bt_close(dbp));
+
+	/* Committed to closing. */
+	t = dbp->internal;
+	rval = t->bt_rfp == NULL ? close(t->bt_rfd) : fclose(t->bt_rfp);
+
+	if (__bt_close(dbp) == RET_ERROR)
+		return (RET_ERROR);
+
+	return (rval ? RET_ERROR : RET_SUCCESS);
 }
 
 /*
