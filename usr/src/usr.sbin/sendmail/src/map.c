@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	6.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -310,21 +310,22 @@ map_parseargs(map, pp)
 		while (*p != '\0' && !(isascii(*p) && isspace(*p)))
 			p++;
 		if (*p != '\0')
-			*p++ = 0;
+			*p++ = '\0';
 	}
 	if (map->map_app != NULL)
 		map->map_app = newstr(map->map_app);
 	if (map->map_domain != NULL)
 		map->map_domain = newstr(map->map_domain);
 
-	if (*p == '\0')
-		return NULL;
-	map->map_file = p;
-	while (*p != '\0' && !(isascii(*p) && isspace(*p)))
-		p++;
 	if (*p != '\0')
-		*p++ = '\0';
-	map->map_file = newstr(map->map_file);
+	{
+		map->map_file = p;
+		while (*p != '\0' && !(isascii(*p) && isspace(*p)))
+			p++;
+		if (*p != '\0')
+			*p++ = '\0';
+		map->map_file = newstr(map->map_file);
+	}
 	*pp = p;
 }
 
