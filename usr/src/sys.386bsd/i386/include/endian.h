@@ -31,6 +31,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)endian.h	7.8 (Berkeley) 4/3/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00093
+ * --------------------         -----   ----------------------
+ *
+ * 27 Feb 93    Charles Hannum		Better byte-swapping macros for
+ *					i386/i486.
  */
 
 /*
@@ -47,12 +55,39 @@
 #include <sys/cdefs.h>
 #endif
 
-__BEGIN_DECLS
-unsigned long	htonl __P((unsigned long));
-unsigned short	htons __P((unsigned short));
-unsigned long	ntohl __P((unsigned long));
-unsigned short	ntohs __P((unsigned short));
-__END_DECLS
+#define __word_swap_long(x) \
+({ register u_long X = (x); \
+   asm ("rorl $16, %1" \
+	: "=r" (X) \
+	: "0" (X)); \
+   X; })
+#if __GNUC__ >= 2
+#define __byte_swap_long(x) \
+({ register u_long X = (x); \
+   asm ("xchgb %h1, %b1\n\trorl $16, %1\n\txchgb %h1, %b1" \
+	: "=q" (X) \
+	: "0" (X)); \
+   X; })
+#define __byte_swap_word(x) \
+({ register u_short X = (x); \
+   asm ("xchgb %h1, %b1" \
+	: "=q" (X) \
+	: "0" (X)); \
+   X; })
+#else /* __GNUC__ >= 2 */
+#define __byte_swap_long(x) \
+({ register u_long X = (x); \
+   asm ("rorw $8, %w1\n\trorl $16, %1\n\trorw $8, %w1" \
+	: "=r" (X) \
+	: "0" (X)); \
+   X; })
+#define __byte_swap_word(x) \
+({ register u_short X = (x); \
+   asm ("rorw $8, %w1" \
+	: "=r" (X) \
+	: "0" (X)); \
+   X; })
+#endif /* __GNUC__ >= 2 */
 
 /*
  * Macros for network/external number representation conversion.
@@ -69,6 +104,11 @@ __END_DECLS
 #define	HTONS(x)	(x)
 
 #else
+
+#define	ntohl	__byte_swap_long
+#define	ntohs	__byte_swap_word
+#define	htonl	__byte_swap_long
+#define	htons	__byte_swap_word
 
 #define	NTOHL(x)	(x) = ntohl((u_long)x)
 #define	NTOHS(x)	(x) = ntohs((u_short)x)

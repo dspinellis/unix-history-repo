@@ -31,11 +31,20 @@
  * SUCH DAMAGE.
  *
  *	@(#)db.h	5.10 (Berkeley) 4/2/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00093
+ * --------------------         -----   ----------------------
+ *
+ * 27 Feb 93    Charles Hannum		Better byte-swapping macros for
+ *					i386/i486.
  */
 
 #ifndef _DB_H_
 #define	_DB_H_
 
+#include <machine/endian.h>
 #include <sys/cdefs.h>
 
 /* flags for DB.put() call */
@@ -120,31 +129,12 @@ typedef struct {
 } RECNOKEY;
 
 /* Little endian <--> big endian long swap macros. */
-#define BLSWAP(a) { \
-	u_long _tmp = a; \
-	((char *)&a)[0] = ((char *)&_tmp)[3]; \
-	((char *)&a)[1] = ((char *)&_tmp)[2]; \
-	((char *)&a)[2] = ((char *)&_tmp)[1]; \
-	((char *)&a)[3] = ((char *)&_tmp)[0]; \
-}
-#define	BLSWAP_COPY(a,b) { \
-	((char *)&(b))[0] = ((char *)&(a))[3]; \
-	((char *)&(b))[1] = ((char *)&(a))[2]; \
-	((char *)&(b))[2] = ((char *)&(a))[1]; \
-	((char *)&(b))[3] = ((char *)&(a))[0]; \
-}
-
+#define BLSWAP(X) {(X) = __byte_swap_long(X);}
+#define BLSWAP_COPY(X,Y) {(Y) = __byte_swap_long(X);}
 
 /* Little endian <--> big endian short swap macros. */
-#define BSSWAP(a) { \
-	u_short _tmp = a; \
-	((char *)&a)[0] = ((char *)&_tmp)[1]; \
-	((char *)&a)[1] = ((char *)&_tmp)[0]; \
-}
-#define BSSWAP_COPY(a,b) { \
-	((char *)&(b))[0] = ((char *)&(a))[1]; \
-	((char *)&(b))[1] = ((char *)&(a))[0]; \
-}
+#define BSSWAP(X) {(X) = __byte_swap_word(X);}
+#define BSSWAP_COPY(X,Y) {(Y) = __byte_swap_word(X);}
 
 __BEGIN_DECLS
 DB	*btree_open
