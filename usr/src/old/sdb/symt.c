@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)symt.c 4.1 %G%";
+static	char sccsid[] = "@(#)symt.c 4.2 %G%";
 #include "head.h"
 #include <a.out.h>
 #include <stab.h>
@@ -228,7 +228,7 @@ struct proct *
 curproc() {
 	register ADDR addr;
 
-	addr = getaddr("", fline);
+	addr = getaddr("", fline ? fline : 1);
 	if (addr == -1) return(badproc);
 	return(adrtoprocp(addr));
 
@@ -257,6 +257,8 @@ struct filet *
 findfile(s)
 char *s; {
 	register struct filet *f;
+	if (s == 0 || *s == 0)
+		return(files);		/* start at beginning if no cur file */
 	for (f=files; f->sfilename[0]; f++) {
 		if (eqpat(f->sfilename, s)) { 
 			for( ; f->lineflag; f--) ;
@@ -323,10 +325,12 @@ long poffset; char *pat, *comblk; {
 			level--;
 			break;
 		case N_ECOMM:
+			i = 0;
 #ifndef FLEXNAMES
 			for (q = &stentry.n_un.n_name[7]; q>=stentry.n_un.n_name; q--) {
 				if (*q == '_') {
 					*q = '\0';
+					i++;
 					break;
 				}
 			}
@@ -334,10 +338,12 @@ long poffset; char *pat, *comblk; {
 			for (q = stentry.n_un.n_name; *q; q++)
 				continue;
 			if (*--q == '_')
-				*q = 0;
+				*q = 0, i++;
 #endif
 			if (eqpat(comblk, stentry.n_un.n_name))
 				comfound = 1;
+			if (i)
+				*q = '_';
 			incomm = 1;
 		case N_ECOML:
 			clevel++;
@@ -804,6 +810,7 @@ g1:		if (bread(&sbuf, &stentry, sizeof stentry) < sizeof stentry)
 docomm(offset)
 long offset; {
 	struct nlist stentry;
+	ADDR addr;
 
 	for (;;) {
 		if (bread(&sbuf, &stentry, sizeof stentry) < sizeof stentry) {
@@ -812,7 +819,10 @@ long offset; {
 		}
 		sl_class = N_GSYM;
 		if ((stentry.n_type & STABMASK) == N_ECOMM) {
-			sl_addr += extaddr(stentry.n_un.n_name);
+			addr = extaddr(stentry.n_un.n_name);
+			if (addr == -1)
+				error("Lost common block");
+			sl_addr +=addr;
 			blseek(&sbuf, offset, 0);
 			return;
 		}
