@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include	<signal.h>
@@ -70,7 +70,7 @@ backtrace(type)
 	register struct blockmark *ap;
 	register char *cp;
 	register long i, linum;
-	struct display disp;
+	union display disp;
 
 	if (_lino <= 0) {
 		fputs("Program was not executed.\n",stderr);
