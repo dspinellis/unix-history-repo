@@ -1,5 +1,5 @@
 /*
-char id_fgetc[] = "@(#)fgetc_.c	1.2";
+char id_fgetc[] = "@(#)fgetc_.c	1.3";
  *
  * get a character from a logical unit bypassing formatted I/O
  *
@@ -19,18 +19,22 @@ extern unit units[];	/* logical units table from iolib */
 long fgetc_(u, c, clen)
 long *u; char *c; long clen;
 {
-	int i;
+	int	i;
+	unit	*lu;
 
 	if (*u < 0 || *u >= MXUNIT)
 		return((long)(errno=F_ERUNIT));
-	if (!units[*u].ufd)
+	lu = &units[*u];
+	if (!lu->ufd)
 		return((long)(errno=F_ERNOPEN));
-	if ((i = getc (units[*u].ufd)) < 0)
+	if (lu->uwrt)
+		nowreading(lu);
+	if ((i = getc (lu->ufd)) < 0)
 	{
-		if (feof(units[*u].ufd))
+		if (feof(lu->ufd))
 			return(-1L);
 		i = errno;
-		clearerr(units[*u].ufd);
+		clearerr(lu->ufd);
 		return((long)i);
 	}
 	*c = i & 0177;

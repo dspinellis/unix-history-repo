@@ -1,5 +1,5 @@
 /*
-char id_getc[] = "@(#)getc_.c	1.1";
+char id_getc[] = "@(#)getc_.c	1.2";
  *
  * get a character from the standard input
  *
@@ -19,16 +19,20 @@ extern unit units[];	/* logical units table from iolib */
 long getc_(c, clen)
 char *c; long clen;
 {
-	int i;
+	int	i;
+	unit	*lu;
 
-	if (!units[STDIN].ufd)
+	lu = &units[STDIN];
+	if (!lu->ufd)
 		return((long)(errno=F_ERNOPEN));
-	if ((i = getc (units[STDIN].ufd)) < 0)
+	if (lu->uwrt)
+		nowreading(lu);
+	if ((i = getc (lu->ufd)) < 0)
 	{
-		if (feof(units[STDIN].ufd))
+		if (feof(lu->ufd))
 			return(-1L);
 		i = errno;
-		clearerr(units[STDIN].ufd);
+		clearerr(lu->ufd);
 		return((long)i);
 	}
 	*c = i & 0177;
