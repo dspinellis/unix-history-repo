@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_stub.c	7.6 (Berkeley) %G%
+ *	@(#)kgdb_stub.c	7.7 (Berkeley) %G%
  */
 /*
  * "Stub" to allow remote cpu to debug over a serial line using gdb.
@@ -41,6 +41,7 @@ int kgdb_dev = KGDBDEV;		/* remote debugging device (-1 if none) */
 int kgdb_rate = KGDBRATE;	/* remote debugging baud rate */
 int kgdb_active = 0;            /* remote debugging active if != 0 */
 int kgdb_debug_init = 0;	/* != 0 waits for remote at system init */
+int kgdb_debug_panic = 1;	/* != 0 waits for remote on panic */
 int kgdb_debug = 0;
 
 #define GETC	((*kgdb_getc)(kgdb_dev))
@@ -205,6 +206,32 @@ computeSignal(type)
 }
 
 /*
+ * Trap into kgdb to Wait for debugger to connect, 
+ * noting on the console why nothing else is going on.
+ */
+kgdb_connect(verbose)
+	int verbose;
+{
+
+	if (verbose)
+		printf("kgdb waiting...");
+	/* trap into kgdb */
+	asm("trap #15;");
+	if (verbose)
+		printf("connected.\n");
+}
+
+/*
+ * Decide what to do on panic.
+ */
+kgdb_panic()
+{
+
+	if (kgdb_active == 0 && kgdb_debug_panic)
+		kgdb_connect(1);
+}
+
+/*
  * Definitions exported from gdb.
  */
 #define NUM_REGS 18
@@ -257,8 +284,13 @@ kgdb_trap(int type, struct frame *frame)
 			/* No debugger active -- let trap handle this. */
 			return (0);
 		}
-		kgdb_getc = constab[major(kgdb_dev)].cn_getc;
-		kgdb_putc = constab[major(kgdb_dev)].cn_putc;
+		kgdb_getc = 0;
+		for (inlen = 0; constab[inlen].cn_probe; inlen++)
+		    if (major(constab[inlen].cn_dev) == major(kgdb_dev)) {
+			kgdb_getc = constab[inlen].cn_getc;
+			kgdb_putc = constab[inlen].cn_putc;
+			break;
+		}
 		if (kgdb_getc == 0 || kgdb_putc == 0)
 			return (0);
 		/*
