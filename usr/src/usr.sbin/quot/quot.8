@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)quot.8	6.1 (Berkeley) %G%
+.\"	@(#)quot.8	6.2 (Berkeley) %G%
 .\"
 .TH QUOT 8 ""
 .UC 4
@@ -10,8 +10,7 @@
 quot \- summarize file system ownership
 .SH SYNOPSIS
 .B /etc/quot
-[ option ] ...
-[ filesystem ]
+[ -ncf ] [ filesystem ... ]
 .SH DESCRIPTION
 .I Quot
 prints the number of blocks in the named
@@ -19,7 +18,7 @@ prints the number of blocks in the named
 currently owned by each user.
 If no 
 .I filesystem
-is named, a default name is assumed.
+is named, the file systems listed in \fI/etc/fstab\fP are used.
 The following options are available:
 .TP
 .B \-n
@@ -34,9 +33,5 @@ in that size or smaller file.
 .TP
 .B \-f
 Print count of number of files as well as space owned by each user.
-.SH FILES
-Default file system varies with system.
-.br
-/etc/passwd	to get user names
 .SH "SEE ALSO"
 ls(1), du(1)
