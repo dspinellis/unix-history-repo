@@ -250,7 +250,7 @@ genrange(s)
 	char *savestart;
 
 	savestart = s->str;
-	stopval = *++s->str == '\\' ? backslash(s) : *s->str;
+	stopval = *++s->str == '\\' ? backslash(s) : *s->str++;
 	if (stopval < s->lastch) {
 		s->str = savestart;
 		return (0);
