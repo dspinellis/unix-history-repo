@@ -1,7 +1,7 @@
 #
 # Unix version 7.
 #
-# Sccs Id = "@(#)Makefile	2.3.2.1 %G%";
+# Sccs Id = "@(#)Makefile	2.3.2.2 %G%";
 #
 
 CFLAGS=-O -DVMUNIX -DV7
@@ -53,7 +53,7 @@ install:
 	cd ${DESTDIR}/usr/ucb; rm -f mail; ln Mail mail
 
 $S:
-	sccs get $@
+	sccs get $@;
 
 srcs:	$S
 
