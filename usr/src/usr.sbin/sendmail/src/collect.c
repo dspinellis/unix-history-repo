@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.19	%G%";
+static char	SccsId[] = "@(#)collect.c	3.20	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -59,11 +59,13 @@ collect()
 
 	if (fgets(buf, sizeof buf, stdin) == NULL)
 		return;
+# ifndef NOTUNIX
 	if (strncmp(buf, "From ", 5) == 0)
 	{
 		eatfrom(buf);
 		(void) fgets(buf, sizeof buf, stdin);
 	}
+# endif NOTUNIX
 
 	/*
 	**  Copy stdin to temp file & do message editting.
@@ -124,12 +126,14 @@ collect()
 		if (!IgnrDot && buf[0] == '.' && (buf[1] == '\n' || buf[1] == '\0'))
 			break;
 
+# ifndef NOTUNIX
 		/* Hide UNIX-like From lines */
 		if (strncmp(buf, "From ", 5) == 0)
 		{
 			fputs(">", tf);
 			MsgSize++;
 		}
+# endif NOTUNIX
 
 		/*
 		**  Figure message length, output the line to the temp
@@ -269,6 +273,8 @@ collect()
 **		such as the date.
 */
 
+# ifndef NOTUNIX
+
 char	*DowList[] =
 {
 	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", NULL
@@ -329,3 +335,5 @@ eatfrom(fm)
 		define('d', q);
 	}
 }
+
+# endif NOTUNIX
