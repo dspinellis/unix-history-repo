@@ -2,12 +2,13 @@
 # include <pwd.h>
 # include <signal.h>
 # include <ctype.h>
+# include <errno.h>
 # include "sendmail.h"
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.19	%G%";
+static char SccsId[] = "@(#)deliver.c	3.20	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -281,7 +282,6 @@ sendoff(m, pvp, editfcn)
 	int pvect[2];
 	FILE *mfile;
 	extern putmessage();
-	extern pipesig();
 	extern FILE *fdopen();
 
 # ifdef DEBUG
@@ -366,7 +366,7 @@ sendoff(m, pvp, editfcn)
 
 	/* write out message to mailer */
 	(void) close(pvect[0]);
-	(void) signal(SIGPIPE, pipesig);
+	(void) signal(SIGPIPE, SIG_IGN);
 	mfile = fdopen(pvect[1], "w");
 	if (editfcn == NULL)
 		editfcn = putmessage;
@@ -546,31 +546,12 @@ putmessage(fp, m)
 	while (!ferror(fp) && (i = fread(buf, 1, BUFSIZ, stdin)) > 0)
 		(void) fwrite(buf, 1, i, fp);
 
-	if (ferror(fp))
+	if (ferror(fp) && errno != EPIPE)
 	{
 		syserr("putmessage: write error");
 		setstat(EX_IOERR);
 	}
-}
-/*
-**  PIPESIG -- Handle broken pipe signals
-**
-**	This just logs an error.
-**
-**	Parameters:
-**		none
-**
-**	Returns:
-**		none
-**
-**	Side Effects:
-**		logs an error message.
-*/
-
-pipesig()
-{
-	syserr("Broken pipe");
-	(void) signal(SIGPIPE, SIG_IGN);
+	errno = 0;
 }
 /*
 **  SENDTO -- Designate a send list.
