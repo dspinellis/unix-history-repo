@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.4 %G%";
+static	char sccsid[] = "@(#)call.c 1.5 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -12,8 +12,8 @@ static	char sccsid[] = "@(#)call.c 1.4 %G%";
 #   include "pcops.h"
 #endif PC
 
-bool	slenflag = 0;
-bool	floatflag = 0;
+short	slenline = 0;
+short	floatline = 0;
 
 /*
  * Call generates code for calls to
@@ -23,6 +23,26 @@ bool	floatflag = 0;
  * of the procedure/function symbol,
  * and porf is PROC or FUNC.
  * Psbn is the block number of p.
+ *
+ *	the idea here is that regular scalar functions are just called,
+ *	while structure functions and formal functions have their results
+ *	stored in a temporary after the call.
+ *	structure functions do this because they return pointers
+ *	to static results, so we copy the static
+ *	and return a pointer to the copy.
+ *	formal functions do this because we have to save the result
+ *	around a call to the runtime routine which restores the display,
+ *	so we can't just leave the result lying around in registers.
+ *	so PROCs and scalar FUNCs look like
+ *		p(...args...)
+ *	structure FUNCs look like
+ *		(temp = p(...args...),&temp)
+ *	formal FPROCs look like
+ *		((FCALL( p ))(...args...),FRTN( p ))
+ *	formal scalar FFUNCs look like
+ *		(temp = (FCALL( p ))(...args...),FRTN( p ),temp)
+ *	formal structure FFUNCs look like
+ *		(temp = (FCALL( p ))(...args...),FRTN( p ),&temp)
  */
 struct nl *
 call(p, argv, porf, psbn)
@@ -31,14 +51,23 @@ call(p, argv, porf, psbn)
 {
 	register struct nl *p1, *q;
 	int *r;
+	struct nl	*p_type_class = classify( p -> type );
 
 #	ifdef OBJ
 	    int		cnt;
 #	endif OBJ
 #	ifdef PC
-	    long	temp;
-	    int		firsttime;
-	    int		rettype;
+	    long	p_p2type = p2type( p );
+	    long	p_type_p2type = p2type( p -> type );
+	    bool	noarguments;
+	    long	calltype;	/* type of the call */
+		/*
+		 *	these get used if temporaries and structures are used
+		 */
+	    long	tempoffset;
+	    long	temptype;	/* type of the temporary */
+	    long	p_type_width;
+	    long	p_type_align;
 #	endif PC
 
 #	ifdef OBJ
@@ -52,24 +81,49 @@ call(p, argv, porf, psbn)
 		    put2(O_PUSH, even(-width(p->type)));
 #	endif OBJ
 #	ifdef PC
+		/*
+		 *	if we have to store a temporary,
+		 *	temptype will be its type,
+		 *	otherwise, it's P2UNDEF.
+		 */
+	    temptype = P2UNDEF;
+	    calltype = P2INT;
 	    if ( porf == FUNC ) {
-		switch( classify( p -> type ) ) {
+		p_type_width = width( p -> type );
+		switch( p_type_class ) {
 		    case TSTR:
 		    case TSET:
 		    case TREC:
 		    case TFILE:
 		    case TARY:
-			temp = sizes[ cbn ].om_off -= width( p -> type );
-			putlbracket( ftnno , -sizes[cbn].om_off );
-			if (sizes[cbn].om_off < sizes[cbn].om_max) {
-				sizes[cbn].om_max = sizes[cbn].om_off;
+			calltype = temptype = P2STRTY;
+			p_type_align = align( p -> type );
+			break;
+		    default:
+			if ( p -> class == FFUNC ) {
+			    calltype = temptype = p2type( p -> type );
 			}
-			putRV( 0 , cbn , temp , P2STRTY );
+			break;
+		}
+		if ( temptype != P2UNDEF ) {
+		    tempoffset = sizes[ cbn ].om_off -= p_type_width;
+		    putlbracket( ftnno , -tempoffset );
+		    if ( tempoffset < sizes[cbn].om_max) {
+			    sizes[cbn].om_max = tempoffset;
+		    }
+			/*
+			 *	temp
+			 *	for (temp = ...
+			 */
+		    putRV( 0 , cbn , tempoffset , temptype );
 		}
 	    }
 	    switch ( p -> class ) {
 		case FUNC:
 		case PROC:
+			/*
+			 *	... p( ...
+			 */
 		    {
 			char	extname[ BUFSIZ ];
 			char	*starthere;
@@ -93,25 +147,23 @@ call(p, argv, porf, psbn)
 		case FFUNC:
 		case FPROC:
 			    /*
-			     *	start one of these:
-			     *	FRTN( frtn , ( *FCALL( frtn ) )(...args...) )
+			     *	... (FCALL( p ))( ...
 			     */
-			putleaf( P2ICON , 0 , 0 , p2type( p ) , "_FRTN" );
-			putRV( 0 , cbn , p -> value[NL_OFFS] , P2PTR|P2STRTY );
 		    	putleaf( P2ICON , 0 , 0
-			    , ADDTYPE( P2PTR , ADDTYPE( P2FTN , p2type( p ) ) )
+			    , ADDTYPE( ADDTYPE( p_p2type , P2FTN ) , P2PTR )
 			    , "_FCALL" );
 			putRV( 0 , cbn , p -> value[NL_OFFS] , P2PTR|P2STRTY );
-			putop( P2CALL , p2type( p ) );
+			putop( P2CALL , p_p2type );
 			break;
 		default:
 			panic("call class");
 	    }
-	    firsttime = TRUE;
+	    noarguments = TRUE;
 #	endif PC
 	/*
 	 * Loop and process each of
 	 * arguments to the proc/func.
+	 *	... ( ... args ... ) ...
 	 */
 	if ( p -> class == FUNC || p -> class == PROC ) {
 	    for (p1 = p->chain; p1 != NIL; p1 = p1->chain) {
@@ -229,8 +281,8 @@ call(p, argv, porf, psbn)
 			 *	if this is the nth (>1) argument,
 			 *	hang it on the left linear list of arguments
 			 */
-		    if ( firsttime ) {
-			    firsttime = FALSE;
+		    if ( noarguments ) {
+			    noarguments = FALSE;
 		    } else {
 			    putop( P2LISTOP , P2INT );
 		    }
@@ -266,14 +318,10 @@ call(p, argv, porf, psbn)
 		    codeon();
 		    switch( classify( p1 ) ) {
 			case TSTR:
-			    if ( p1 -> class == STR && slenflag == 0 ) {
-				if ( opt( 's' ) ) {
-				    standard();
-				} else {
-				    warning();
-				}
+			    if ( p1 -> class == STR && slenline != line ) {
+				slenline = line;
+				( opt( 's' ) ? (standard()): (warning()) );
 				error("Implementation can't construct equal length strings");
-				slenflag++;
 			    }
 			    /* and fall through */
 			case TFILE:
@@ -283,14 +331,10 @@ call(p, argv, porf, psbn)
 			    q = rvalue( argv[1] , p1 , LREQ );
 			    break;
 			case TINT:
-			    if ( floatflag == 0 ) {
-				if ( opt( 's' ) ) {
-				    standard();
-				} else {
-				    warning();
-				}
+			    if ( floatline != line ) {
+				floatline = line;
+				( opt( 's' ) ? (standard()) : (warning()) );
 				error("Implementation can't coerice integer to real");
-				floatflag++;
 			    }
 			    /* and fall through */
 			case TSCAL:
@@ -313,8 +357,8 @@ call(p, argv, porf, psbn)
 			 *	if this is the nth (>1) argument,
 			 *	hang it on the left linear list of arguments
 			 */
-		    if ( firsttime ) {
-			    firsttime = FALSE;
+		    if ( noarguments ) {
+			    noarguments = FALSE;
 		    } else {
 			    putop( P2LISTOP , P2INT );
 		    }
@@ -334,57 +378,61 @@ call(p, argv, porf, psbn)
 	    }
 #	endif OBJ
 #	ifdef PC
+		/*
+		 *	do the actual call:
+		 *	    either	... p( ... ) ...
+		 *	    or		... ( ...() )( ... ) ...
+		 *	and maybe an assignment.
+		 */
 	    if ( porf == FUNC ) {
-		rettype = p2type( p -> type );
-		switch ( classify( p -> type ) ) {
+		switch ( p_type_class ) {
 		    case TBOOL:
 		    case TCHAR:
 		    case TINT:
 		    case TSCAL:
 		    case TDOUBLE:
 		    case TPTR:
-			if ( firsttime ) {
-				putop( P2UNARY P2CALL , rettype );
-			} else {
-				putop( P2CALL , rettype );
-			}
-			if (p -> class == FFUNC || p -> class == FPROC ) {
-			    putop( P2LISTOP , P2INT );
-			    putop( P2CALL , rettype );
+			putop( ( noarguments ? P2UNARY P2CALL : P2CALL ) ,
+				p_type_p2type );
+			if ( p -> class == FFUNC ) {
+			    putop( P2ASSIGN , p_type_p2type );
 			}
 			break;
 		    default:
-			if ( firsttime ) {
-				putstrop( P2UNARY P2STCALL
-					, ADDTYPE( rettype , P2PTR )
-					, lwidth( p -> type )
-					, align( p -> type ) );
-			} else {
-				putstrop( P2STCALL
-					, ADDTYPE( rettype , P2PTR )
-					, lwidth( p -> type )
-					, align( p -> type ) );
-			}
-			if (p -> class == FFUNC || p -> class == FPROC ) {
-			    putop( P2LISTOP , P2INT );
-			    putop( P2CALL , ADDTYPE( rettype , P2PTR ) );
-			}
-			putstrop( P2STASG , rettype , lwidth( p -> type )
+			putstrop( ( noarguments ? P2UNARY P2STCALL : P2STCALL ),
+				ADDTYPE( p_type_p2type , P2PTR ) ,
+				p_type_width , p_type_align );
+			putstrop( P2STASG , p_type_p2type , lwidth( p -> type )
 				, align( p -> type ) );
-			putLV( 0 , cbn , temp , rettype );
-			putop( P2COMOP , P2INT );
 			break;
 		}
 	    } else {
-		if ( firsttime ) {
-			putop( P2UNARY P2CALL , P2INT );
+		putop( ( noarguments ? P2UNARY P2CALL : P2CALL ) , P2INT );
+	    }
+		/*
+		 *	... , FRTN( p ) ...
+		 */
+	    if ( p -> class == FFUNC || p -> class == FPROC ) {
+		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) ,
+			"_FRTN" );
+		putRV( 0 , cbn , p -> value[ NL_OFFS ] , P2PTR | P2STRTY );
+		putop( P2CALL , P2INT );
+		putop( P2COMOP , P2INT );
+	    }
+		/*
+		 *	if required:
+		 *	either	... , temp )
+		 *	or	... , &temp )
+		 */
+	    if ( porf == FUNC && temptype != P2UNDEF ) {
+		if ( temptype != P2STRTY ) {
+		    putRV( 0 , cbn , tempoffset , p_type_p2type );
 		} else {
-			putop( P2CALL , P2INT );
+		    putLV( 0 , cbn , tempoffset , p_type_p2type );
 		}
-		if (p -> class == FFUNC || p -> class == FPROC ) {
-		    putop( P2LISTOP , P2INT );
-		    putop( P2CALL , P2INT );
-		}
+		putop( P2COMOP , P2INT );
+	    }
+	    if ( porf == PROC ) {
 		putdot( filename , line );
 	    }
 #	endif PC
