@@ -1,31 +1,31 @@
 /*
  *  Include file for HCX Disk Controller (HDC).
  *
- *	@(#)hdreg.h	7.1 (Berkeley) %G%
+ *	@(#)hdreg.h	7.2 (Berkeley) %G%
  */
 
 #define	TRUE		1
-#define FALSE		0
-#define HDC_READ	0
-#define HDC_WRITE	1
-#define HDC_MAXBUS	2		/* max# buses                       */
-#define HDC_MAXCTLR	21		/* max# hdc controllers per bus     */
-#define HDC_MAXDRIVE	4		/* max# drives per hdc controller   */
-#define HDC_UNIT(x)	(minor(x) >> 3) /* the hdc unit number (0-31)       */
-#define HDC_PARTITION(x) (minor(x)&0x07)/* the hdc partition number (0-7)   */
-#define HDC_DEFPART	GB_MAXPART-1	/* partition# of def and diag cyls  */
-#define HDC_SPB		2		/* sectors per block for hdc's      */
-#define HDC_MID		HID_HDC		/* module id code for hdc's         */
-#define HDC_REMOVABLE	80		/* lowest model# for removable disks*/
-#define HDC_PHIO_SIZE	256		/* lword size of physical io buffer */
-#define HDC_VDATA_SIZE	16		/* vendor data size (long words)    */
-#define HDC_XSTAT_SIZE	128		/* size of extended status (lwords) */
-#define HDC_MAXCHAIN	33		/* maximum number of data chains    */
-#define HDC_MAXBC	64*1024		/* maximum byte count per data chain*/
-#define HDC_MAXMCBS	32		/* max# mcb's the hdc can handle    */
-#define HDC_MAXFLAWS	8000		/* max number of flaws per hdc disk */
-#define HDC_REGISTER(x)	(hc->registers->x) /* io to an hdc register         */
-#define HDC_DUMPSIZE	HDC_MAXBC/DEV_BSIZE*HDC_MAXCHAIN
+#define	FALSE		0
+#define	HDC_READ	0
+#define	HDC_WRITE	1
+#define	HDC_MAXBUS	2		/* max# buses */
+#define	HDC_MAXCTLR	21		/* max# hdc controllers per bus */
+#define	HDC_MAXDRIVE	4		/* max# drives per hdc controller */
+#define	HDC_UNIT(x)	(minor(x) >> 3) /* the hdc unit number (0-31) */
+#define	HDC_PARTITION(x) (minor(x)&0x07)/* the hdc partition number (0-7) */
+#define	HDC_DEFPART	GB_MAXPART-1	/* partition# of def and diag cyls */
+#define	HDC_SPB		2		/* sectors per block for hdc's */
+#define	HDC_MID		HID_HDC		/* module id code for hdc's */
+#define	HDC_REMOVABLE	80		/* lowest model# for removable disks */
+#define	HDC_PHIO_SIZE	256		/* lword size of physical io buffer */
+#define	HDC_VDATA_SIZE	16		/* vendor data size (long words) */
+#define	HDC_XSTAT_SIZE	128		/* size of extended status (lwords) */
+#define	HDC_MAXCHAIN	33		/* maximum number of data chains */
+#define	HDC_MAXBC	64*1024		/* maximum byte count per data chain */
+#define	HDC_MAXMCBS	32		/* max# mcb's the hdc can handle */
+#define	HDC_MAXFLAWS	8000		/* max number of flaws per hdc disk */
+#define	HDC_REGISTER(x)	(hc->registers->x) /* io to an hdc register */
+#define	HDC_DUMPSIZE	HDC_MAXBC/DEV_BSIZE*HDC_MAXCHAIN
 					/* number of blocks per dump record */
 
 /*
@@ -36,12 +36,12 @@
  * Note that b_upte and B_NOT1K are never used by the handler.
  */
 
-#define B_LOCALIO	B_NOT1K
+#define	B_LOCALIO	B_NOT1K
 
-#define b_hdccommand	b_upte[0]
-#define b_cyl		b_upte[1]
-#define b_head		b_upte[2]
-#define b_sector	b_upte[3]
+#define	b_hdccommand	b_upte[0]
+#define	b_cyl		b_upte[1]
+#define	b_head		b_upte[2]
+#define	b_sector	b_upte[3]
 
 /*
  * These are the 4 hdc i/o register addresses.
@@ -55,10 +55,10 @@
  */
 
 typedef struct {
-	unsigned long	master_mcb_reg;	/* set the master mcb address       */
-	unsigned long	module_id_reg;	/* returns hdc's module id (hdc_mid)*/
-	unsigned long	soft_reset_reg;	/* a write here shuts down the hdc  */
-	unsigned long	hard_reset_reg;	/* send a system reset to the hdc   */
+	unsigned long	master_mcb_reg;	/* set the master mcb address */
+	unsigned long	module_id_reg;	/* returns hdc's module id (hdc_mid) */
+	unsigned long	soft_reset_reg;	/* a write here shuts down the hdc */
+	unsigned long	hard_reset_reg;	/* send a system reset to the hdc */
 } hdc_regs_type;
 
 /*
@@ -67,10 +67,10 @@ typedef struct {
  */
 
 typedef struct {
-	unsigned char	module_id;	/* module id; hdc's return HDC_MID  */
-	unsigned char	reserved;	/*                                  */
-	unsigned char	code_rev;	/* micro-code rev#; FF= not loaded  */
-	unsigned char	fit;		/* FIT test result; FF= no error    */
+	unsigned char	module_id;	/* module id; hdc's return HDC_MID */
+	unsigned char	reserved;
+	unsigned char	code_rev;	/* micro-code rev#; FF= not loaded */
+	unsigned char	fit;		/* FIT test result; FF= no error */
 } hdc_mid_type;
 
 /*
@@ -96,43 +96,43 @@ typedef struct {
  */
 
 typedef struct {
-	long	lwc;			/* long word count & data chain bit*/
-	long	ta;			/* transfer address                */
+	long	lwc;			/* long word count & data chain bit */
+	long	ta;			/* transfer address */
 } data_chain_type;
 
-#define LWC_DATA_CHAIN	0x80000000	/* mask for data chain bit in lwc  */
+#define LWC_DATA_CHAIN	0x80000000	/* mask for data chain bit in lwc */
 
-struct mcb_struct ;
-typedef struct mcb_struct mcb_type ;
+struct mcb_struct;
+typedef struct mcb_struct mcb_type;
 struct mcb_struct {
-					/* this part used only by software  */
-	mcb_type	*forw_mcb;	/* pointer to next mcb in chain     */
+					/* this part used only by software */
+	mcb_type	*forw_mcb;	/* pointer to next mcb in chain */
 	mcb_type	*back_mcb;	/* pointer to previous mcb in chain */
-	struct buf	*buf_ptr;	/* ptr to buf structure for this mcb*/
-	long		mcb_phaddr;	/* phaddr of hw's part of this mcb  */
+	struct buf	*buf_ptr;	/* ptr to buf structure for this mcb */
+	long		mcb_phaddr;	/* phaddr of hw's part of this mcb */
 
-	                                /* this part is sent to the hdc hw  */
-	unsigned long	forw_phaddr;	/* phys address of next mcb         */
-	unsigned	priority  :  8;	/* device control word #1           */
-	unsigned	interrupt :  1;	/*        "                         */
-	unsigned	drive     :  7;	/*        "                         */
-	unsigned	command   : 16;	/*        "             (see HCMD_) */
-	unsigned	cyl       : 13;	/* device control word #2           */
-	unsigned	head      :  9;	/*        "                         */
-	unsigned	sector    : 10;	/*        "                         */
-	unsigned long	reserved[2];	/*                                  */
-	unsigned long	context;	/* software context word            */
-	data_chain_type chain[HDC_MAXCHAIN];/* data chain and lword count   */
-} ;
-					/* defines for the "command"s       */
-#define HCMD_STATUS	0x40		/* command: read drive status       */
-#define HCMD_READ	0x60		/* command: read data               */
-#define HCMD_VENDOR	0x6A		/* command: read vendor data        */
-#define HCMD_VERIFY	0x6D		/* command: verify a track          */
-#define HCMD_WRITE	0x70		/* command: write data              */
-#define HCMD_FORMAT	0x7E		/* command: format a track          */
-#define HCMD_CERTIFY	0x7F		/* command: certify a track         */
-#define HCMD_WCS	0xD0		/* command: write control store     */
+					/* this part is sent to the hdc hw */
+	unsigned long	forw_phaddr;	/* phys address of next mcb */
+	unsigned	priority  :  8;	/* device control word #1 */
+	unsigned	interrupt :  1;	/*        "               */
+	unsigned	drive     :  7;	/*        "               */
+	unsigned	command   : 16;	/*        "   (see HCMD_) */
+	unsigned	cyl       : 13;	/* device control word #2 */
+	unsigned	head      :  9;	/*        "               */
+	unsigned	sector    : 10;	/*        "               */
+	unsigned long	reserved[2];	/*                        */
+	unsigned long	context;	/* software context word */
+	data_chain_type chain[HDC_MAXCHAIN];/* data chain and lword count */
+};
+					/* defines for the "command"s */
+#define	HCMD_STATUS	0x40		/* command: read drive status */
+#define	HCMD_READ	0x60		/* command: read data */
+#define	HCMD_VENDOR	0x6A		/* command: read vendor data */
+#define	HCMD_VERIFY	0x6D		/* command: verify a track */
+#define	HCMD_WRITE	0x70		/* command: write data */
+#define	HCMD_FORMAT	0x7E		/* command: format a track */
+#define	HCMD_CERTIFY	0x7F		/* command: certify a track */
+#define	HCMD_WCS	0xD0		/* command: write control store */
 
 /*
  * This structure defines the master mcb - one per hdc controller.
@@ -159,25 +159,25 @@ struct mcb_struct {
  */
 
 typedef struct {
-	unsigned long	mcl;		/* W  module control lword (MCL_)   */
-	unsigned long	interrupt;	/* W  interrupt acknowledge word    */
+	unsigned long	mcl;		/* W  module control lword (MCL_) */
+	unsigned long	interrupt;	/* W  interrupt acknowledge word */
 	unsigned long	forw_phaddr;	/* W  physical address of first mcb */
-	unsigned long	reserve1;	/*                                  */
-	unsigned long	reserve2;	/*                                  */
+	unsigned long	reserve1;
+	unsigned long	reserve2;
 	unsigned long	mcs;		/* R  status for last completed mcb */
-	unsigned long	cmcb_phaddr;	/* W  physical addr of completed mcb*/
-	unsigned long	context;	/* R  software context word         */
-	unsigned long	xstatus[HDC_XSTAT_SIZE];/* R  xstatus of last mcb   */
+	unsigned long	cmcb_phaddr;	/* W  physical addr of completed mcb */
+	unsigned long	context;	/* R  software context word */
+	unsigned long	xstatus[HDC_XSTAT_SIZE];/* R  xstatus of last mcb */
 } master_mcb_type;
 
-					/* definition of master mcb "mcl"   */
-#define MCL_QUEUED	0x00000010	/* start queued execution of mcb's  */
-#define MCL_IMMEDIATE	0x00000001	/* start immediate xqt of an mcb    */
+					/* definition of master mcb "mcl" */
+#define	MCL_QUEUED	0x00000010	/* start queued execution of mcb's */
+#define	MCL_IMMEDIATE	0x00000001	/* start immediate xqt of an mcb */
 
-					/* definition of master mcb "mcs"   */
-#define MCS_DONE	0x00000080	/* an mcb is done; status is valid  */
-#define MCS_FATALERROR	0x00000002	/* a fatal error occurred	    */
-#define MCS_SOFTERROR	0x00000001	/* a recoverable error occurred     */
+					/* definition of master mcb "mcs" */
+#define	MCS_DONE	0x00000080	/* an mcb is done; status is valid */
+#define	MCS_FATALERROR	0x00000002	/* a fatal error occurred */
+#define	MCS_SOFTERROR	0x00000001	/* a recoverable error occurred */
 
 /*
  * This structure defines the information returned by the hdc
@@ -187,57 +187,57 @@ typedef struct {
  */
 
 typedef struct {
-	unsigned long	drs;		/* drive status (see DRS_ below)    */
-	unsigned long	r1;		/*                                  */
-	unsigned long	r2;		/*                                  */
-	unsigned long	r3;		/*                                  */
-	unsigned short	max_cyl;	/* max logical cylinder address     */
-	unsigned short	max_head;	/* max logical head address         */
-	unsigned short	r4;		/*                                  */
-	unsigned short	max_sector;	/* max logical sector address       */
-	unsigned short	def_cyl;	/* definition track cylinder address*/
-	unsigned short	def_cyl_count;	/* definition track cylinder count  */
-	unsigned short	diag_cyl;	/* diagnostic track cylinder address*/
-	unsigned short	diag_cyl_count;	/* diagnostic track cylinder count  */
-	unsigned short	max_phys_cyl;	/* max physical cylinder address    */
-	unsigned short	max_phys_head;	/* max physical head address        */
-	unsigned short	r5;		/*                                  */
-	unsigned short	max_phys_sector;/* max physical sector address      */
-	unsigned short	r6;		/*                                  */
-	unsigned short	id;		/* drive id (drive model)           */
-	unsigned short	r7;		/*                                  */
-	unsigned short	bytes_per_sec;	/* bytes/sector -vendorflaw conversn*/
-	unsigned short	r8;		/*                                  */
-	unsigned short	rpm;		/* disk revolutions per minute      */
-	unsigned long	r9;		/*                                  */
-	unsigned long	r10;		/*                                  */
-	unsigned long	r11;		/*                                  */
+	unsigned long	drs;		/* drive status (see DRS_ below) */
+	unsigned long	r1;
+	unsigned long	r2;
+	unsigned long	r3;
+	unsigned short	max_cyl;	/* max logical cylinder address */
+	unsigned short	max_head;	/* max logical head address */
+	unsigned short	r4;
+	unsigned short	max_sector;	/* max logical sector address */
+	unsigned short	def_cyl;	/* definition track cylinder address */
+	unsigned short	def_cyl_count;	/* definition track cylinder count */
+	unsigned short	diag_cyl;	/* diagnostic track cylinder address */
+	unsigned short	diag_cyl_count;	/* diagnostic track cylinder count */
+	unsigned short	max_phys_cyl;	/* max physical cylinder address */
+	unsigned short	max_phys_head;	/* max physical head address */
+	unsigned short	r5;
+	unsigned short	max_phys_sector;/* max physical sector address */
+	unsigned short	r6;
+	unsigned short	id;		/* drive id (drive model) */
+	unsigned short	r7;
+	unsigned short	bytes_per_sec;	/* bytes/sector -vendorflaw conversn */
+	unsigned short	r8;
+	unsigned short	rpm;		/* disk revolutions per minute */
+	unsigned long	r9;
+	unsigned long	r10;
+	unsigned long	r11;
 } drive_stat_type;
 
-					/* defines for drive_stat drs word  */
-#define DRS_FAULT	0x00000080	/* drive is reporting a fault       */
-#define DRS_RESERVED	0x00000040	/* drive is reserved by other port  */
-#define DRS_WRITE_PROT	0x00000020	/* drive is write protected         */
-#define DRS_ON_CYLINDER	0x00000002	/* drive heads are not moving now   */
-#define DRS_ONLINE	0x00000001	/* drive is available for operation */
+					/* defines for drive_stat drs word */
+#define	DRS_FAULT	0x00000080	/* drive is reporting a fault */
+#define	DRS_RESERVED	0x00000040	/* drive is reserved by other port */
+#define	DRS_WRITE_PROT	0x00000020	/* drive is write protected */
+#define	DRS_ON_CYLINDER	0x00000002	/* drive heads are not moving now */
+#define	DRS_ONLINE	0x00000001	/* drive is available for operation */
 
 /*
  * hdc controller table. It contains information specific to each controller.
  */
 
 typedef struct {
-	int		ctlr;		/* controller number (0-15)         */
+	int		ctlr;		/* controller number (0-15) */
 	hdc_regs_type	*registers;	/* base address of hdc io registers */
-	mcb_type	*forw_active;	/* doubly linked list of            */
-	mcb_type	*back_active;	/* .. active mcb's                  */
-	mcb_type	*forw_free;	/* doubly linked list of            */
-	mcb_type	*back_free;	/* .. free mcb's                    */
-	mcb_type	*forw_wait;	/* doubly linked list of            */
-	mcb_type	*back_wait;	/* .. waiting mcb's                 */
-	hdc_mid_type	mid;		/* the module id is read to here    */
-	long		master_phaddr;	/* physical address of master mcb   */
-	master_mcb_type master_mcb;	/* the master mcb for this hdc      */
-	mcb_type	mcbs[HDC_MAXMCBS];/* pool of mcb's for this hdc     */
+	mcb_type	*forw_active;	/* doubly linked list of */
+	mcb_type	*back_active;	/* .. active mcb's */
+	mcb_type	*forw_free;	/* doubly linked list of */
+	mcb_type	*back_free;	/* .. free mcb's */
+	mcb_type	*forw_wait;	/* doubly linked list of */
+	mcb_type	*back_wait;	/* .. waiting mcb's */
+	hdc_mid_type	mid;		/* the module id is read to here */
+	long		master_phaddr;	/* physical address of master mcb */
+	master_mcb_type master_mcb;	/* the master mcb for this hdc */
+	mcb_type	mcbs[HDC_MAXMCBS];/* pool of mcb's for this hdc */
 } hdc_ctlr_type;
 
 /*
@@ -246,27 +246,27 @@ typedef struct {
  */
 
 typedef struct {
-	par_tab		partition[GB_MAXPART]; /* partition definitions     */
-	int		ctlr;		/* the controller number (0-15)     */
-	int		slave;		/* the slave number (0-4)           */
-	int		unit;		/* the unit number (0-31)           */
-	int		id;		/* identifies the disk model        */
-	int		spc;		/* sectors per cylinder             */
-	int		cylinders;	/* number of logical cylinders      */
-	int		heads;		/* number of logical heads          */
-	int		sectors;	/* number of logical sectors/track  */
-	int		phys_cylinders;	/* number of physical cylinders     */
-	int		phys_heads;	/* number of physical heads         */
+	par_tab	partition[GB_MAXPART];	/* partition definitions */
+	int		ctlr;		/* the controller number (0-15) */
+	int		slave;		/* the slave number (0-4) */
+	int		unit;		/* the unit number (0-31) */
+	int		id;		/* identifies the disk model */
+	int		spc;		/* sectors per cylinder */
+	int		cylinders;	/* number of logical cylinders */
+	int		heads;		/* number of logical heads */
+	int		sectors;	/* number of logical sectors/track */
+	int		phys_cylinders;	/* number of physical cylinders */
+	int		phys_heads;	/* number of physical heads */
 	int		phys_sectors;	/* number of physical sectors/track */
-	int		def_cyl;	/* logical cylinder of drive def    */
-	int		def_cyl_count;	/* number of logical def cylinders  */
-	int		diag_cyl;	/* logical cylinder of diag area    */
+	int		def_cyl;	/* logical cylinder of drive def */
+	int		def_cyl_count;	/* number of logical def cylinders */
+	int		diag_cyl;	/* logical cylinder of diag area */
 	int		diag_cyl_count;	/* number of logical diag cylinders */
-	int		rpm;		/* disk rpm                         */
-	int		bytes_per_sec;	/* bytes/sector -vendorflaw conversn*/
-	int		format;		/* TRUE= format program is using dsk*/
-	mcb_type	phio_mcb;	/* mcb for handler physical io      */
-	struct buf	phio_buf;	/* buf for handler physical io      */
-	unsigned long	phio_data[HDC_PHIO_SIZE]; /* data for physical io   */
-	struct buf	raw_buf;	/* buf structure for raw i/o        */
+	int		rpm;		/* disk rpm */
+	int		bytes_per_sec;	/* bytes/sector -vendorflaw conversn */
+	int		format;		/* TRUE= format program is using dsk */
+	mcb_type	phio_mcb;	/* mcb for handler physical io */
+	struct buf	phio_buf;	/* buf for handler physical io */
+	unsigned long	phio_data[HDC_PHIO_SIZE]; /* data for physical io */
+	struct buf	raw_buf;	/* buf structure for raw i/o */
 } hdc_unit_type;
