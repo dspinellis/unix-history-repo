@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)atrun.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)atrun.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -172,10 +172,10 @@ char *spoolfile;
 	 * Grab the 4-line header out of the spoolfile.
 	 */
 	if (
-	    (fscanf(infile,"# owner: %127s%*[^\n]\n",owner) != 1) ||
-	    (fscanf(infile,"# jobname: %127s%*[^\n]\n",jobname) != 1) ||
-	    (fscanf(infile,"# shell: %3s%*[^\n]\n",shell) != 1) ||
-	    (fscanf(infile,"# notify by mail: %3s%*[^\n]\n",mailvar) != 1)
+	    (fscanf(infile,"# owner: %127s\n",owner) != 1) ||
+	    (fscanf(infile,"# jobname: %127s\n",jobname) != 1) ||
+	    (fscanf(infile,"# shell: %3s\n",shell) != 1) ||
+	    (fscanf(infile,"# notify by mail: %3s\n",mailvar) != 1)
 	    ) {
 		fprintf(stderr, "%s: bad spool header\n", spoolfile);
 		(void) unlink(spoolfile);
