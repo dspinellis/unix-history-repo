@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)hexsyntax.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)hexsyntax.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -39,7 +39,7 @@ newsyntax(argc, argvp)
 			break;
 		case 'd':
 			add("\"%07.7_Ax\n\"");
-			add("\"%07.7_ax \" 8/2 \"%05u \" \"\\n\"");
+			add("\"%07.7_ax \" 8/2 \"  %05u \" \"\\n\"");
 			break;
 		case 'e':
 			add(optarg);
@@ -56,7 +56,7 @@ newsyntax(argc, argvp)
 			break;
 		case 'o':
 			add("\"%07.7_Ax\n\"");
-			add("\"%07.7_ax \" 8/2 \"%06o \" \"\\n\"");
+			add("\"%07.7_ax \" 8/2 \" %06o \" \"\\n\"");
 			break;
 		case 's':
 			if ((skip = strtol(optarg, &p, 0)) < 0) {
@@ -81,7 +81,7 @@ newsyntax(argc, argvp)
 			break;
 		case 'x':
 			add("\"%07.7_Ax\n\"");
-			add("\"%07.7_ax \" 8/2 \"%04x \" \"\\n\"");
+			add("\"%07.7_ax \" 8/2 \"   %04x \" \"\\n\"");
 			break;
 		case '?':
 			usage();
