@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if_sl.c	7.22 (Berkeley) 4/20/91
- *	$Id: if_sl.c,v 1.10 1994/03/22 01:16:06 ache Exp $
+ *	$Id: if_sl.c,v 1.11 1994/05/17 22:30:56 jkh Exp $
  */
 
 /*
@@ -65,7 +65,7 @@
  * interrupts and network activity; thus, splimp must be >= spltty.
  */
 
-/* $Id: if_sl.c,v 1.10 1994/03/22 01:16:06 ache Exp $ */
+/* $Id: if_sl.c,v 1.11 1994/05/17 22:30:56 jkh Exp $ */
 /* from if_sl.c,v 1.11 84/10/04 12:54:47 rick Exp */
 
 #include "sl.h"
@@ -170,8 +170,10 @@
 #ifndef SLRMTU
 #define	SLRMTU		296	/* for good latency */
 #endif
-#else
+#else	/* (not) experimental */
+#ifndef SLMTU
 #define SLMTU		296
+#endif
 #define SLRMTU		SLMTU
 #endif
 
