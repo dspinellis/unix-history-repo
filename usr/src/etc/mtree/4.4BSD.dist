@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.8 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.9 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -1595,22 +1595,22 @@ lock              mode=0777
 
 
 # ./var/games
-games            gname=games mode=0775
+games            uname=games gname=games mode=0775
 
 # ./var/games/hackdir
-hackdir          gname=games mode=0775
+hackdir          uname=games gname=games mode=0775
 # ./var/games/hackdir
 ..
 
 
 # ./var/games/larn
-larn             gname=games mode=0775
+larn             uname=games gname=games mode=0775
 # ./var/games/larn
 ..
 
 
 # ./var/games/phantasia
-phantasia        gname=games mode=0775
+phantasia        uname=games gname=games mode=0775
 # ./var/games/phantasia
 ..
 
