@@ -1,4 +1,4 @@
-/*	ip_icmp.c	6.4	84/01/31	*/
+/*	ip_icmp.c	6.5	84/03/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -112,7 +112,8 @@ icmp_input(m)
 	register struct icmp *icp;
 	register struct ip *ip = mtod(m, struct ip *);
 	int icmplen = ip->ip_len, hlen = ip->ip_hl << 2;
-	int (*ctlfunc)(), code, i;
+	register int i;
+	int (*ctlfunc)(), code;
 	extern u_char ip_protox[];
 
 	/*
@@ -127,17 +128,18 @@ icmp_input(m)
 		icmpstat.icps_tooshort++;
 		goto free;
 	}
-	if ((m->m_off > MMAXOFF || m->m_len < icmplen)
-	   && (m = m_pullup(m, icmplen)) == 0) {
+	/* THIS LENGTH CHECK STILL MISSES ANY IP OPTIONS IN ICMP_IP */
+	i = MIN(icmplen, ICMP_ADVLENMIN + hlen);
+ 	if ((m->m_off > MMAXOFF || m->m_len < i) &&
+ 		(m = m_pullup(m, i)) == 0)  {
 		icmpstat.icps_tooshort++;
 		return;
 	}
+ 	ip = mtod(m, struct ip *);
 	m->m_len -= hlen;
 	m->m_off += hlen;
 	icp = mtod(m, struct icmp *);
-	i = icp->icmp_cksum;
-	icp->icmp_cksum = 0;
-	if (i != in_cksum(m, icmplen)) {
+	if (in_cksum(m, icmplen)) {
 		icmpstat.icps_checksum++;
 		goto free;
 	}
