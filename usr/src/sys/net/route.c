@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.c	7.21 (Berkeley) %G%
+ *	@(#)route.c	7.22 (Berkeley) %G%
  */
 #include "param.h"
 #include "systm.h"
