@@ -1,9 +1,15 @@
 #
 # Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# All rights reserved.
 #
-#	@(#)Makefile	1.6	(ucb.elefunt)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific written prior permission. This software
+# is provided ``as is'' without express or implied warranty.
+#
+#	@(#)Makefile	1.7 (Berkeley) %G%
 #
 # This high quality math library is intended to run on either a VAX in
 # D_floating format or a machine that conforms to the IEEE standard 754
@@ -23,6 +29,7 @@
 #
 CFLAGS=	-O -D${MACHINE}
 LIBC=	/lib/libc.a
+SUBDIR=	vax tahoe national common ieee
 #
 # Files comprising the standard Math library;
 # actually there are more under ${MACHINE}/ subdirectory.
@@ -52,33 +59,29 @@ libm.a libm_p.a: ${OBJS} more.${MACHINE}
 	ar cru libm.a ${OBJS}
 
 more.ieee: FRC
-	cd common; make "CFLAGS=${CFLAGS}"
-	cd ieee; make "CFLAGS=${CFLAGS}"
+	for i in common ieee; do (cd $$i; make ${MFLAGS}); done
 
 more.national: FRC
-	cd common; make "CFLAGS=${CFLAGS}"
-	cd national; make "CFLAGS=${CFLAGS}"
+	for i in common national; do (cd $$i; make ${MFLAGS}); done
 
 more.tahoe: FRC
-	cd common; make "CFLAGS=${CFLAGS}"
-	cd tahoe; make "CFLAGS=${CFLAGS}"
+	for i in common tahoe; do (cd $$i; make ${MFLAGS}); done
 
 more.vax: FRC
 	cd vax; make "CFLAGS=${CFLAGS}"
 
 clean: FRC
-	rm -f ${OBJS} core libm.a libm_p.a common/*.o ieee/*.o national/*.o tahoe/*.o vax/*.o profiled/*.o
+	rm -f ${OBJS} core libm.a libm_p.a
+	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 
 depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
+	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} depend); done
 
 install: FRC
-	-rm -f ${DESTDIR}/usr/lib/libnm.a ${DESTDIR}/usr/lib/libnm_p.a
 	install -o bin -g bin -m 644 libm.a ${DESTDIR}/usr/lib/libm.a
-#	ln ${DESTDIR}/usr/lib/libm.a ${DESTDIR}/usr/lib/libnm.a
 	ranlib ${DESTDIR}/usr/lib/libm.a
 	install -o bin -g bin -m 644 libm_p.a ${DESTDIR}/usr/lib/libm_p.a
-#	ln ${DESTDIR}/usr/lib/libm_p.a ${DESTDIR}/usr/lib/libnm_p.a
 	ranlib ${DESTDIR}/usr/lib/libm_p.a
 
 lint: FRC
@@ -86,6 +89,7 @@ lint: FRC
 
 tags: FRC
 	ctags ${SRCS}
+	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} tags); done
 
 FRC:
 
@@ -96,22 +100,22 @@ acosh.o: acosh.c
 asincos.o: asincos.c
 asinh.o: asinh.c
 atan.o: atan.c
-atanh.o: atanh.c
+atanh.o: atanh.c /usr/include/errno.h
 cosh.o: cosh.c
 erf.o: erf.c
 exp.o: exp.c
 exp__E.o: exp__E.c
 expm1.o: expm1.c
 floor.o: floor.c
-lgamma.o: lgamma.c /usr/include/math.h
-j0.o: j0.c /usr/include/math.h
-j1.o: j1.c /usr/include/math.h
-jn.o: jn.c /usr/include/math.h
-log.o: log.c
+lgamma.o: lgamma.c /usr/include/math.h /usr/include/errno.h
+j0.o: j0.c /usr/include/math.h /usr/include/errno.h
+j1.o: j1.c /usr/include/math.h /usr/include/errno.h
+jn.o: jn.c /usr/include/math.h /usr/include/errno.h
+log.o: log.c /usr/include/errno.h
 log10.o: log10.c
-log1p.o: log1p.c
+log1p.o: log1p.c /usr/include/errno.h
 log__L.o: log__L.c
-pow.o: pow.c
+pow.o: pow.c /usr/include/errno.h
 sinh.o: sinh.c
 tanh.o: tanh.c
 
