@@ -1,0 +1,17 @@
+Things that still need attention:
+
+   *	Make implementation changes necessary to allow multiple processes
+	to use the mmalloc managed region simultaneously.  This requires,
+	at the minimum, some sort of cooperative locking that ensures that
+	only one process at a time is changing any of the mmalloc managed
+	data structures (its ok for the mmalloc managed data regions to be
+	changed at any time since we don't care about their contents).
+
+   *	In order to support multiple processes using the mmalloc managed
+	region, the malloc descriptor needs to be broken into two parts,
+	one part which is specific to the given process and is maintained
+	separately on a per process basis, and another part which is common
+	to all processes.  As an example, the file descriptor is specific
+	to a given process, as are the morecore and abortfunc pointers.
+	However magic[], the version number, the flags field, etc are
+	common to all processes.
