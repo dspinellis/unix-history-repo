@@ -8,17 +8,19 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.2 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.3 (Berkeley) %G%')
 
 MAILER(local)dnl
 
 ifdef(`_OLD_SENDMAIL_',
 `define(`_SET_96_', 6)dnl
-define(`_SET_97_', 7)dnl',
+define(`_SET_97_', 7)dnl
+define(`_SET_98_', 8)dnl',
 `# level 4 config file format
 V4
 define(`_SET_96_', 96)dnl
-define(`_SET_97_', 97)dnl')
+define(`_SET_97_', 97)dnl
+define(`_SET_98_', 98)dnl')
 
 ##################
 #   local info   #
@@ -271,6 +273,9 @@ ifdef(`confFALLBACK_MX',
 	CONCAT(OV, confFALLBACK_MX),
 	#OVfall.back.host.net)
 
+# if we are the best MX host for a site, try it directly instead of config err
+CONCAT(Ow, confTRY_NULL_MX_LIST)
+
 # load average at which we just queue messages
 CONCAT(Ox, confQUEUE_LA)
 
@@ -484,9 +489,12 @@ R$*:;<@>		$#error $@ USAGE $: "list:; syntax illegal for recipient addresses"
 
 ifdef(`_MAILER_smtp_',
 `# handle numeric address spec
-R$* < @ [ $+ ] > $*	$: $1 < @ $[ [$2] $] > $3	numeric internet addr
-R$* < @ [ $+ ] > $*	$#smtp $@ [$2] $: $1 @ [$2] $3	numeric internet spec',
-`dnl')
+ifdef(`_NO_CANONIFY_',
+`R$* < @ [ $+ ] > $*	$: $1 < @ $[ [$2] $] > $3	numeric internet addr',
+	`dnl')
+R$* < @ [ $+ ] > $*	$: $>_SET_98_ $1 < @ [ $2 ] > $3	numeric internet spec
+R$* < @ [ $+ ] > $*	$#smtp $@ [$2] $: $1 @ [$2] $3	still numeric: send',
+	`dnl')
 
 # now delete the local info -- note $=O to find characters that cause forwarding
 R$* < @ > $*		$@ $>_SET_97_ $1			user@ => user
@@ -509,7 +517,9 @@ R$+ < $+ @ $+ >		$#relay $@ $3 $: $1 $2		yep ....
 R$+ < $+ @ >		$#local $: $1			nope, local address',
 `R$+ < $+ @ $+ >		$#local $: $1			yep ....
 R$+ < $+ @ >		$#local $: @ $1			nope, local address')')
-undivert(3)dnl
+
+# handle local hacks
+R$*			$: $>_SET_98_ $1
 undivert(4)dnl
 
 ifdef(`_NO_UUCP_', `dnl',
@@ -532,7 +542,7 @@ ifdef(`CSNET_RELAY',
 `R$*<@$+.CSNET>$*	$#smtp $@ $C $: $1 @ $2 . CSNET $3	user@host.CSNET',
 	`dnl')
 ifdef(`_MAILER_fax_',
-`R$+ < @ $+ .FAX >	$#fax $@ $2 $: $1			user@host.FAX',
+`R$+ < @ $+ .FAX >	$#fax $@ $2 $: $1		user@host.FAX',
 `ifdef(`FAX_RELAY',
 `R$*<@$+.FAX>$*		$#smtp $@ $F $: $1 @ $2 . FAX $3		user@host.FAX',
 	`dnl')')
@@ -542,8 +552,8 @@ ifdef(`UUCP_RELAY',
 R$*<@$*.UUCP>$*		$#smtp $@ $Y $: @ $Y : $1 @ $2.UUCP $3	uucp mail',
 `ifdef(`_MAILER_uucp_',
 `# forward other UUCP traffic straight to UUCP
-R< @ $+ .UUCP > : $+	$#uucp $@ $1 $: $2			@host.UUCP:...
-R$+ < @ $+ .UUCP >	$#uucp $@ $2 $: $1			user@host.UUCP',
+R< @ $+ .UUCP > : $+	$#uucp $@ $1 $: $2		@host.UUCP:...
+R$+ < @ $+ .UUCP >	$#uucp $@ $2 $: $1		user@host.UUCP',
 	`dnl')')
 
 ifdef(`_MAILER_USENET_', `
@@ -557,9 +567,9 @@ R$* < @ $* > $*		$#smtp $@ $2 $: $1 @ $2 $3		user@host.domain')')
 ifdef(`SMART_HOST', `
 # pass names that still have a host to a smarthost
 R$* < @ $* > $*		$: < $S > $1 < @ $2 > $3	glue on smarthost name
-R<$-:$+> $* < @$* > $*	$# $1 $@ $2 $: $3 @ $4 $5	if non-null, use it
-R<$+> $* < @$* > $*	$#suucp $@ $1 $: $2 @ $3 $4	if non-null, use it
-R<> $* < @ $* > $*	$1 < @ $2 > $3			else strip off gunk',
+R< $- : $+ > $*		$# $1 $@ $2 $: $3		if non-null, use it
+R< $+ > $*		$#suucp $@ $1 $: $2		if non-null, use it
+R<> $*			$: $1				else strip off gunk',
 
 `ifdef(`_LOCAL_RULES_', `
 # reject messages that have host names we do not understand
@@ -603,10 +613,10 @@ ifdef(`_MAILER_smtp_',
 ifdef(`MAILER_TABLE',
 `
 
-###########################################################################
-###  Ruleset 90 -- try domain part of mailertable entry 		###
-###		   (new sendmail only)					###
-###########################################################################
+###################################################################
+###  Ruleset 90 -- try domain part of mailertable entry 	###
+###		   (new sendmail only)				###
+###################################################################
 
 S90
 R<$- . $+ > $*		$: < $(mailertable .$2 $) > $3	lookup
@@ -614,6 +624,13 @@ R<$- : $+ > $*		$# $1 $@ $2 $: $3		check -- resolved?
 R< . $+ > $*		$@ $>90 <$1> $2			no -- strip & try again
 R<$*> $*		$@ $2				no match',
 `dnl')
+
+###################################################################
+###  Ruleset _SET_98_ -- local part of ruleset zero (can be null)	###
+###################################################################
+
+S`'_SET_98_
+undivert(3)dnl
 #
 ######################################################################
 ######################################################################
