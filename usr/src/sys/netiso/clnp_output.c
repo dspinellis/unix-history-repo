@@ -26,14 +26,12 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_output.c,v 5.0 89/02/08 12:00:15 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_output.c,v $ */
-/*	@(#)clnp_output.c	7.4 (Berkeley) %G% */
+/*	@(#)clnp_output.c	7.5 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_output.c,v 5.0 89/02/08 12:00:15 hagens Exp $";
 #endif lint
 
-#ifdef ISO
-#include "types.h"
 #include "param.h"
 #include "mbuf.h"
 #include "domain.h"
@@ -297,6 +295,7 @@ int					flags;		/* flags */
 			IFDEBUG(D_OUTPUT)
 				printf("clnp_output: packet dropped - flags unsupported\n");
 			ENDDEBUG
+			INCSTAT(cns_odropped);
 			m_freem(m0);
 			return(EINVAL);
 		}
@@ -309,6 +308,7 @@ int					flags;		/* flags */
 			(dst->isoa_len == 0) ||
 			(dst->isoa_len > sizeof(struct iso_addr))) {
 			m_freem(m0);
+			INCSTAT(cns_odropped);
 			return(ENAMETOOLONG);
 		}
 
@@ -318,9 +318,10 @@ int					flags;		/* flags */
 		MGETHDR(m, M_DONTWAIT, MT_HEADER);
 		if (m == 0) {
 			m_freem(m0);
+			INCSTAT(cns_odropped);
 			return(ENOBUFS);
 		}
-
+		INCSTAT(cns_sent);
 		m->m_next = m0;
 		clnp = mtod(m, struct clnp_fixed *);
 		clcp->clc_segoff = 0;
@@ -449,7 +450,6 @@ int					flags;		/* flags */
 			}
 		}
 	}
-	INCSTAT(cns_sent);
 	/*
 	 *	If small enough for interface, send directly
 	 *	Fill in segmentation part of hdr if using the full protocol
@@ -490,19 +490,20 @@ int					flags;		/* flags */
 		/*
 		 * Too large for interface; fragment if possible.
 		 */
-		error = clnp_fragment(clcp->clc_ifa->ia_ifp, m, clcp->clc_firsthop, total_len, 
-			clcp->clc_segoff, flags);
+		error = clnp_fragment(clcp->clc_ifa->ia_ifp, m, clcp->clc_firsthop,
+									total_len, clcp->clc_segoff, flags);
 		goto done;
 	}
 bad:
 	m_freem(m);
-
 done:
-	return(error);
+	if (error) {
+		clnp_stat.cns_sent--;
+		clnp_stat.cns_odropped++;
+	}
+	return (error);
 }
 
 int clnp_ctloutput()
 {
 }
-
-#endif ISO

@@ -1,4 +1,5 @@
-/*********************************************************** Copyright IBM Corporation 1987
+/***********************************************************
+				Copyright IBM Corporation 1987
 
                       All Rights Reserved
 
@@ -25,14 +26,11 @@ SOFTWARE.
  */
 /* $Header: clnp_raw.c,v 4.2 88/06/29 14:58:56 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/clnp_raw.c,v $ */
-/*	@(#)clnp_raw.c	7.4 (Berkeley) %G% */
+/*	@(#)clnp_raw.c	7.5 (Berkeley) %G% */
 #ifndef lint
 static char *rcsid = "$Header: clnp_raw.c,v 4.2 88/06/29 14:58:56 hagens Exp $";
 #endif lint
 
-#ifdef ISO
-
-#include "types.h"
 #include "param.h"
 #include "mbuf.h"
 #include "domain.h"
@@ -86,8 +84,11 @@ int					hdrlen; /* length (in bytes) of clnp header */
 
 	rclnp_src.siso_addr = *src;
 	rclnp_dst.siso_addr = *dst;
-	raw_input(m, &rclnp_proto, (struct sockaddr *)&rclnp_src,
-		(struct sockaddr *)&rclnp_dst);
+	if (raw_input(m, &rclnp_proto, (struct sockaddr *)&rclnp_src,
+		(struct sockaddr *)&rclnp_dst) == 0) {
+			clnp_stat.cns_delivered--;
+			clnp_stat.cns_noproto++;
+	}
 }
 
 /*
@@ -326,4 +327,3 @@ clnp_usrreq(so, req, m, nam, rights, control)
 		free((caddr_t)rp, M_PCB);
 	return (error);
 }
-#endif	ISO

@@ -26,15 +26,12 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_er.c,v 5.1 89/02/09 16:20:18 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_er.c,v $ */
-/*	@(#)clnp_er.c	7.4 (Berkeley) %G% */
+/*	@(#)clnp_er.c	7.5 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_er.c,v 5.1 89/02/09 16:20:18 hagens Exp $";
 #endif lint
 
-#ifdef ISO
-
-#include "types.h"
 #include "param.h"
 #include "mbuf.h"
 #include "domain.h"
@@ -49,6 +46,7 @@ static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_er.c,v 5.1 89/02/09 
 #include "iso.h"
 #include "iso_var.h"
 #include "iso_pcb.h"
+#define CLNP_ER_CODES
 #include "clnp.h"
 #include "clnp_stat.h"
 #include "argo_debug.h"
@@ -87,59 +85,46 @@ u_char			reason;	/* reason code of er */
 			clnp_iso_addrp(src), reason);
 	ENDDEBUG
 
-	INCSTAT(cns_errcvd);
-
+	INCSTAT(cns_er_inhist[clnp_er_index(reason)]);
 	switch (reason) {
 		case GEN_NOREAS:
 		case GEN_PROTOERR:
-			INCSTAT(er_protoerr);
 			break;
 		case GEN_BADCSUM:		
 			cmd = PRC_PARAMPROB;
-			INCSTAT(er_badcsum);
 			break;
 		case GEN_CONGEST:		
 			cmd = PRC_QUENCH;
-			INCSTAT(er_congest);
 			break;
 		case GEN_HDRSYNTAX:		
 			cmd = PRC_PARAMPROB;
-			INCSTAT(er_protoerr);
 			break;
 		case GEN_SEGNEEDED:		
 			cmd = PRC_UNREACH_NEEDFRAG; 
-			INCSTAT(er_segneeded);
 			break;
 		case GEN_INCOMPLETE:	
 			cmd = PRC_PARAMPROB; 		
-			INCSTAT(er_reassfail);
 			break;
 		case GEN_DUPOPT:		
 			cmd = PRC_PARAMPROB;		
-			INCSTAT(er_protoerr);
 			break;
 		case ADDR_DESTUNREACH:	
 			cmd = PRC_UNREACH_HOST; 	
-			INCSTAT(er_dstunreach);
 			break;
 		case ADDR_DESTUNKNOWN:	
 			cmd = PRC_UNREACH_PROTOCOL; 
-			INCSTAT(er_dstunreach);
 			break;
 		case SRCRT_UNSPECERR:
 		case SRCRT_SYNTAX:
 		case SRCRT_UNKNOWNADDR:
 		case SRCRT_BADPATH:
 			cmd = PRC_UNREACH_SRCFAIL;
-			INCSTAT(er_srcrterr);
 			break;
 		case TTL_EXPTRANSIT:	
 			cmd = PRC_TIMXCEED_INTRANS;	
-			INCSTAT(er_ttlexpired);
 			break;
 		case TTL_EXPREASS:		
 			cmd = PRC_TIMXCEED_REASS;	
-			INCSTAT(er_ttlexpired);
 			break;
 		case DISC_UNSUPPOPT:
 		case DISC_UNSUPPVERS:
@@ -147,11 +132,9 @@ u_char			reason;	/* reason code of er */
 		case DISC_UNSUPPSRCRT:
 		case DISC_UNSUPPRECRT:
 			cmd = PRC_PARAMPROB; 
-			INCSTAT(er_unsupported); 
 			break;
 		case REASS_INTERFERE:	
 			cmd = PRC_TIMXCEED_REASS;
-			INCSTAT(er_reassfail);
 			break;
 	}
 
@@ -336,6 +319,7 @@ char					reason;	/* reason for discard */
 		m_adj(m0, -(total_len - ifp->if_mtu));
 	
 	/* send packet */
+	INCSTAT(cns_er_outhist[clnp_er_index(reason)]);
 	(void) (*ifp->if_output)(ifp, m0, first_hop);
 	goto done;
 
@@ -347,4 +331,15 @@ done:
 	if (route.ro_rt != NULL)
 		RTFREE(route.ro_rt);
 }
-#endif	ISO
+
+clnp_er_index(p)
+u_char p;
+{
+	register u_char *cp = clnp_er_codes + CLNP_ERRORS;
+	while (cp > clnp_er_codes) {
+		cp--;
+		if (*cp == p)
+			return (cp - clnp_er_codes);
+	}
+	return (CLNP_ERRORS + 1);
+}

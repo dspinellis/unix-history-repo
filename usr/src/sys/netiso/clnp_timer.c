@@ -26,15 +26,12 @@ SOFTWARE.
  */
 /* $Header: clnp_timer.c,v 4.2 88/06/29 14:59:05 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/clnp_timer.c,v $ */
-/*	@(#)clnp_timer.c	7.3 (Berkeley) %G% */
+/*	@(#)clnp_timer.c	7.4 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: clnp_timer.c,v 4.2 88/06/29 14:59:05 hagens Exp $";
 #endif lint
 
-#ifdef ISO
-
-#include "types.h"
 #include "param.h"
 #include "mbuf.h"
 #include "domain.h"
@@ -76,11 +73,13 @@ register struct clnp_fragl	*cfh;	/* fragment header to delete */
 	cf = cfh->cfl_frags;
 	while (cf != NULL) {
 		struct clnp_frag	*cf_next = cf->cfr_next;
+		INCSTAT(cns_fragdropped);
 		m_freem(cf->cfr_data);
 		cf = cf_next;
 	}
 
 	/* free the copy of the header */
+	INCSTAT(cns_fragdropped);
 	m_freem(cfh->cfl_orighdr);
 
 	if (clnp_frags == cfh) {
@@ -122,6 +121,7 @@ clnp_slowtimo()
 	while (cfh != NULL) {
 		if (--cfh->cfl_ttl == 0) {
 			cfh = clnp_freefrags(cfh);
+			INCSTAT(cns_fragtimeout);
 		} else {
 			cfh = cfh->cfl_next;
 		}
@@ -148,5 +148,3 @@ clnp_drain()
 	while (cfh != NULL)
 		cfh = clnp_freefrags(cfh);
 }
-
-#endif ISO
