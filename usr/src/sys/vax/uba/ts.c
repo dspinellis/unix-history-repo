@@ -1,4 +1,4 @@
-/*	ts.c	6.2	84/08/29	*/
+/*	ts.c	6.3	84/11/27	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -764,6 +764,7 @@ tsreset(uban)
 				um->um_tab.b_actl->b_forw = dp;
 			um->um_tab.b_actl = dp;
 		}
+		ts_softc[ts11].sc_mapped = 0;
 		(void) tsinit(ts11);
 		tsstart(um);
 	}
