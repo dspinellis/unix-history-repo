@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)freopen.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)freopen.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -56,7 +56,7 @@ freopen(file, mode, fp)
 	} else {
 		/* flush the stream; ANSI doesn't require this. */
 		if (fp->_flags & __SWR)
-			(void) fflush(fp);
+			(void) __sflush(fp);
 		/* if close is NULL, closing is a no-op, hence pointless */
 		isopen = fp->_close != NULL;
 		if ((wantfd = fp->_file) < 0 && isopen) {
