@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)malloc.h	7.16 (Berkeley) %G%
+ *	@(#)malloc.h	7.17 (Berkeley) %G%
  */
 
 #define KMEMSTATS
@@ -50,6 +50,44 @@
 #define	M_SHM		29	/* SVID compatible shared memory segments */
 #define M_TEMP		49	/* misc temporary data buffers */
 #define M_LAST		50
+
+#define INITKMEMNAMES { \
+	"free",		/* 0 M_FREE */ \
+	"mbuf",		/* 1 M_MBUF */ \
+	"devbuf",	/* 2 M_DEVBUF */ \
+	"socket",	/* 3 M_SOCKET */ \
+	"pcb",		/* 4 M_PCB */ \
+	"routetbl",	/* 5 M_RTABLE */ \
+	"hosttbl",	/* 6 M_HTABLE */ \
+	"fragtbl",	/* 7 M_FTABLE */ \
+	"zombie",	/* 8 M_ZOMBIE */ \
+	"ifaddr",	/* 9 M_IFADDR */ \
+	"soopts",	/* 10 M_SOOPTS */ \
+	"soname",	/* 11 M_SONAME */ \
+	"namei",	/* 12 M_NAMEI */ \
+	"gprof",	/* 13 M_GPROF */ \
+	"ioctlops",	/* 14 M_IOCTLOPS */ \
+	"superblk",	/* 15 M_SUPERBLK */ \
+	"cred",		/* 16 M_CRED */ \
+	"pgrp",		/* 17 M_PGRP */ \
+	"session",	/* 18 M_SESSION */ \
+	"iov",		/* 19 M_IOV */ \
+	"mount",	/* 20 M_MOUNT */ \
+	"fhandle",	/* 21 M_FHANDLE */ \
+	"NFS req",	/* 22 M_NFSREQ */ \
+	"NFS mount",	/* 23 M_NFSMNT */ \
+	"vnodes",	/* 24 M_VNODE */ \
+	"namecache",	/* 25 M_CACHE */ \
+	"UFS quota",	/* 26 M_DQUOT */ \
+	"UFS mount",	/* 27 M_UFSMNT */ \
+	"mapmem",	/* 28 M_MAPMEM */ \
+	"shm",		/* 29 M_SHM */ \
+	0, 0, 0, 0, \
+	0, 0, 0, 0, 0, \
+	0, 0, 0, 0, 0, \
+	0, 0, 0, 0, 0, \
+	"temp",		/* 49 M_TEMP */ \
+}
 
 struct kmemstats {
 	long	ks_inuse;	/* # of packets of this type currently in use */
