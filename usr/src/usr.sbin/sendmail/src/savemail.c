@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.72 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.73 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -314,12 +314,23 @@ savemail(e, sendbody)
 				break;
 			}
 
-			/* we have a home directory; open dead.letter */
+			/* we have a home directory; write dead.letter */
 			define('z', p, e);
 			expand("\201z/dead.letter", buf, sizeof buf, e);
 			sfflags = SFF_NOSLINK|SFF_CREAT|SFF_REGONLY|SFF_RUNASREALUID;
 			e->e_to = buf;
-			goto writefile;
+			if (mailfile(buf, NULL, sfflags, e) == EX_OK)
+			{
+				bool oldverb = Verbose;
+
+				Verbose = TRUE;
+				message("Saved message in %s", buf);
+				Verbose = oldverb;
+				state = ESM_DONE;
+				break;
+			}
+			state = ESM_MAIL;
+			break;
 
 		  case ESM_USRTMP:
 			/*
@@ -342,15 +353,11 @@ savemail(e, sendbody)
 			strcat(buf, "dead.letter");
 			sfflags = SFF_NOSLINK|SFF_CREAT|SFF_REGONLY;
 
-  writefile:
-			if (!writable(buf, q, sfflags) ||
+			if (!writable(buf, NULL, sfflags) ||
 			    (fp = safefopen(buf, O_WRONLY|O_CREAT|O_APPEND,
 					    FileMode, sfflags)) == NULL)
 			{
-				if (state == ESM_USRTMP)
-					state = ESM_PANIC;
-				else
-					state = ESM_MAIL;
+				state = ESM_PANIC;
 				break;
 			}
 
@@ -374,10 +381,7 @@ savemail(e, sendbody)
 				Verbose = oldverb;
 				state = ESM_DONE;
 			}
-			else if (state == ESM_USRTMP)
-				state = ESM_PANIC;
-			else
-				state = ESM_MAIL;
+			state = ESM_PANIC;
 			(void) xfclose(fp, "savemail", buf);
 			break;
 

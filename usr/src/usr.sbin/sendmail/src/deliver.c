@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.154 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.155 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -915,7 +915,7 @@ deliver(e, firstto)
 
 		if (strcmp(m->m_mailer, "[FILE]") == 0)
 		{
-			rcode = mailfile(user, ctladdr, e);
+			rcode = mailfile(user, ctladdr, SFF_CREAT, e);
 			giveresponse(rcode, m, NULL, ctladdr, xstart, e);
 			e->e_nsent++;
 			if (rcode == EX_OK)
@@ -2536,6 +2536,8 @@ endofmessage:
 **		filename -- the name of the file to send to.
 **		ctladdr -- the controlling address header -- includes
 **			the userid/groupid to be when sending.
+**		sfflags -- flags for opening.
+**		e -- the current envelope.
 **
 **	Returns:
 **		The exit code associated with the operation.
@@ -2545,9 +2547,10 @@ endofmessage:
 */
 
 int
-mailfile(filename, ctladdr, e)
+mailfile(filename, ctladdr, sfflags, e)
 	char *filename;
 	ADDRESS *ctladdr;
+	int sfflags;
 	register ENVELOPE *e;
 {
 	register FILE *f;
@@ -2589,6 +2592,8 @@ mailfile(filename, ctladdr, e)
 		(void) setsignal(SIGHUP, SIG_DFL);
 		(void) setsignal(SIGTERM, SIG_DFL);
 		(void) umask(OldUmask);
+		e->e_to = filename;
+		ExitStat = EX_OK;
 
 #ifdef HASLSTAT
 		if ((SafeFileEnv != NULL ? lstat(filename, &stb)
@@ -2610,7 +2615,7 @@ mailfile(filename, ctladdr, e)
 		errno = 0;
 		ExitStat = EX_OK;
 
-		if (ctladdr != NULL)
+		if (ctladdr != NULL || bitset(SFF_RUNASREALUID, sfflags))
 		{
 			/* ignore setuid and setgid bits */
 			mode &= ~(S_ISGID|S_ISUID);
@@ -2646,42 +2651,66 @@ mailfile(filename, ctladdr, e)
 		if (chdir("/") < 0)
 			syserr("mailfile: cannot chdir(/)");
 
-		if (!bitset(S_ISGID, mode) || setgid(stb.st_gid) < 0)
+		/* select a new user to run as */
+		if (!bitset(SFF_RUNASREALUID, sfflags))
 		{
-			if (ctladdr != NULL && ctladdr->q_uid != 0)
-				(void) initgroups(ctladdr->q_ruser ?
-					ctladdr->q_ruser : ctladdr->q_user,
-					ctladdr->q_gid);
-			else if (FileMailer != NULL && FileMailer->m_gid != 0)
-				(void) initgroups(DefUser, FileMailer->m_gid);
-			else
-				(void) initgroups(DefUser, DefGid);
-		}
-		if (!bitset(S_ISUID, mode) || setuid(stb.st_uid) < 0)
-		{
-			if (ctladdr != NULL && ctladdr->q_uid != 0)
-				(void) setuid(ctladdr->q_uid);
+			if (bitset(S_ISUID, mode))
+			{
+				RealUserName = NULL;
+				RealUid = stb.st_uid;
+			}
+			else if (ctladdr != NULL && ctladdr->q_uid != 0)
+			{
+				if (ctladdr->q_ruser != NULL)
+					RealUserName = ctladdr->q_ruser;
+				else
+					RealUserName = ctladdr->q_user;
+				RealUid = ctladdr->q_uid;
+			}
 			else if (FileMailer != NULL && FileMailer->m_uid != 0)
-				(void) setuid(FileMailer->m_uid);
+			{
+				RealUserName = DefUser;
+				RealUid = FileMailer->m_uid;
+			}
 			else
-				(void) setuid(DefUid);
+			{
+				RealUserName = DefUser;
+				RealUid = DefUid;
+			}
+
+			/* select a new group to run as */
+			if (bitset(S_ISGID, mode))
+				RealGid = stb.st_gid;
+			else if (ctladdr != NULL && ctladdr->q_uid != 0)
+				RealGid = ctladdr->q_gid;
+			else if (FileMailer != NULL && FileMailer->m_gid != 0)
+				RealGid = FileMailer->m_gid;
+			else
+				RealGid = DefGid;
 		}
-		FileName = filename;
-		LineNumber = 0;
-		f = dfopen(filename, oflags, FileMode);
+
+		/* last ditch */
+		if (!bitset(SFF_ROOTOK, sfflags))
+		{
+			if (RealUid == 0)
+				RealUid = DefUid;
+			if (RealGid == 0)
+				RealGid = DefGid;
+		}
+
+		/* now set the group and user ids */
+		if (RealUserName != NULL)
+			(void) initgroups(RealUserName, RealGid);
+		else
+			(void) setgid(RealGid);
+		(void) setuid(RealUid);
+
+		sfflags |= SFF_NOPATHCHECK;
+		sfflags &= ~SFF_OPENASROOT;
+		f = safefopen(filename, oflags, FileMode, sfflags);
 		if (f == NULL)
 		{
 			message("554 cannot open: %s", errstring(errno));
-			exit(EX_CANTCREAT);
-		}
-		if (fstat(fileno(f), &fsb) < 0 ||
-		    (!bitset(O_CREAT, oflags) &&
-		     (stb.st_nlink != fsb.st_nlink ||
-		      stb.st_dev != fsb.st_dev ||
-		      stb.st_ino != fsb.st_ino ||
-		      stb.st_uid != fsb.st_uid)))
-		{
-			message("554 cannot write: file changed after open");
 			exit(EX_CANTCREAT);
 		}
 
