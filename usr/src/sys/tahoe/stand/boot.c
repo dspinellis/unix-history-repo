@@ -1,4 +1,4 @@
-/*	boot.c	1.6	87/04/02	*/
+/*	boot.c	1.7	88/03/04	*/
 
 #include "../machine/mtpr.h"
 
@@ -19,18 +19,16 @@
 
 #define	DEV_DFLT	1		/* vd/dk */
 
-#define	UNIX	"/vmunix"
 char line[100];
 
-int	retry = 0;
 extern	unsigned opendev;
 extern	unsigned bootdev;
 
 main()
 {
 	register char *cp;		/* skip r12 */
-	register unsigned howto, devtype;	/* howto=r11, devtype=r10 */
-	int io, type;
+	register u_int howto, devtype;	/* howto=r11, devtype=r10 */
+	int io, retry, type;
 
 #ifdef lint
 	howto = 0; devtype = 0;
@@ -44,13 +42,13 @@ main()
 #else
 	if ((howto & RB_ASKNAME) == 0) {
 		type = (devtype >> B_TYPESHIFT) & B_TYPEMASK;
-		if ((unsigned)type < ndevs && devsw[type].dv_name[0])
+		if ((unsigned)type < ndevs && devsw[type].dv_name)
 			strcpy(line, UNIX);
 		else
 			howto |= RB_SINGLE|RB_ASKNAME;
 	}
 #endif
-	for (;;) {
+	for (retry = 0;;) {
 		if (howto & RB_ASKNAME) {
 			printf(": ");
 			gets(line);
