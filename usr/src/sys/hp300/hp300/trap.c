@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.14.1.3 (Berkeley) %G%
+ *	@(#)trap.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
