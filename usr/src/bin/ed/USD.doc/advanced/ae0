@@ -1,13 +1,18 @@
-.\"	@(#)ae0	5.1 (Berkeley) %G%
+.\"	@(#)ae0	6.1 (Berkeley) %G%
 .\"
+.nr P1 1
+.EH 'USD:13-%''Advanced Editing on \s-2UNIX\s+2'
+.OH 'Advanced Editing on \s-2UNIX\s+2''USD:13-%'
 .....TM 76-1273-8 39199 39199-11
-.RP
+.\".RP
 .TL
-Advanced Editing on UNIX
+Advanced Editing on \s-2UNIX\s+2
 .AU "MH 2C518" 6021
 Brian W. Kernighan
 .AI
 .MH
+.AU
+(Updated for 4.3BSD by Mark Seiden)
 .AB
 This paper is meant to help
 secretaries, typists and programmers
