@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getopt.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)getopt.c	4.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -13,15 +13,15 @@ static char sccsid[] = "@(#)getopt.c	4.1 (Berkeley) %G%";
 /*
  * get option letter from argument vector
  */
-int	opterr = 1,		/* useless, never set or used */
+int	opterr = 1,		/* if error message should be printed */
 	optind = 1,		/* index into parent argv vector */
 	optopt;			/* character checked for validity */
 char	*optarg;		/* argument associated with option */
 
 #define BADCH	(int)'?'
 #define EMSG	""
-#define tell(s)	fputs(*nargv,stderr);fputs(s,stderr); \
-		fputc(optopt,stderr);fputc('\n',stderr);return(BADCH);
+#define tell(s)	if (opterr) {fputs(*nargv,stderr);fputs(s,stderr); \
+		fputc(optopt,stderr);fputc('\n',stderr);return(BADCH);}
 
 getopt(nargc,nargv,ostr)
 int	nargc;
