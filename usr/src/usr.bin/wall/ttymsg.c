@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttymsg.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttymsg.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -22,17 +22,18 @@ static char sccsid[] = "@(#)ttymsg.c	5.8 (Berkeley) %G%";
 #include <stdlib.h>
 
 /*
- * Display the contents of a uio structure on a terminal.  Used by wall(1)
- * and syslogd(8).  Forks and finishes in child if write would block, waiting
- * at most five minutes.  Returns pointer to error string on unexpected error;
- * string is not newline-terminated.  Various "normal" errors are ignored
- * (exclusive-use, lack of permission, etc.).
+ * Display the contents of a uio structure on a terminal.  Used by wall(1),
+ * syslogd(8), and talk(1).  Forks and finishes in child if write would block, 
+ * waiting up to tmout seconds.  Returns pointer to error string on unexpected 
+ * error; string is not newline-terminated.  Various "normal" errors are 
+ * ignored (exclusive-use, lack of permission, etc.).
  */
 char *
-ttymsg(iov, iovcnt, line)
+ttymsg(iov, iovcnt, line, tmout)
 	struct iovec *iov;
 	int iovcnt;
 	char *line;
+	int tmout;
 {
 	static char device[MAXNAMLEN] = _PATH_DEV;
 	static char errbuf[1024];
@@ -99,11 +100,11 @@ ttymsg(iov, iovcnt, line)
 				return (NULL);
 			}
 			forked++;
-			/* wait at most 5 minutes */
+			/* wait at most tmout seconds */
 			(void) signal(SIGALRM, SIG_DFL);
 			(void) signal(SIGTERM, SIG_DFL); /* XXX */
 			(void) sigsetmask(0);
-			(void) alarm((u_int)(60 * 5));
+			(void) alarm((u_int)tmout);
 			(void) fcntl(fd, O_NONBLOCK, &off);
 			continue;
 		} 
