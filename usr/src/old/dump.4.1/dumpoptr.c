@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumpoptr.c	1.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumpoptr.c	1.4 (Berkeley) %G%";
 #include "dump.h"
 
 /*
@@ -147,7 +147,7 @@ broadcast(message)
 	}
 
 	if (!notify || gp == 0)
-		return;
+		exit(0);
 	clock = time(0);
 	localclock = localtime(&clock);
 

@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)tape.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)tape.c	1.2 (Berkeley) %G%";
 #include "dump.h"
 
 char	tblock[NTREC][BSIZE];
@@ -62,7 +62,7 @@ loop:
 		if (query("Do you want to restart?")){
 			msg("This tape will rewind.  After it is rewound,\n");
 			msg("replace the faulty tape with a new one;\n");
-			msg("this dump volumne will be rewritten.\n");
+			msg("this dump volume will be rewritten.\n");
 			/*
 			 *	Temporarily change the tapeno identification
 			 */
@@ -248,7 +248,7 @@ sig_ign_parent()
 
 dumpabort()
 {
-	msg("The ENTIRE dump is aborted.  NO second chances (tough luck sucker).\n");
+	msg("The ENTIRE dump is aborted.\n");
 	Exit(X_ABORT);
 }
 
@@ -257,33 +257,5 @@ Exit(status)
 #ifdef TDEBUG
 	msg("pid = %d exits with status %d\n", getpid(), status);
 #endif TDEBUG
-	henryexit(status);
-}
-
-#ifdef TDEBUG
-exit(status)
-	/*ARGSUSED*/
-{
-	fflush(stdout);
-	fprintf(stderr, "Somebody called exit: halt executed\n");
-	fflush(stderr);
-	abort();
-}
-
-_exit(status)
-	/*ARGSUSED*/
-{
-	fflush(stdout);
-	fprintf(stderr, "Somebody called _exit: halt executed\n");
-	fflush(stderr);
-	abort();
-}
-#endif TDEBUG
-
-henryexit(status)
-	/* ARGSUSED */
-{
-	_cleanup();
-	asm("	chmk	$1");
-	asm("halt");
+	exit(status);
 }
