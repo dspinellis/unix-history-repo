@@ -3,14 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_clock.c	7.7 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "dkstat.h"
 #include "callout.h"
-#include "user.h"
+#include "syscontext.h"
 #include "kernel.h"
 #include "proc.h"
 #include "vm.h"
@@ -430,18 +430,22 @@ hzto(tv)
 	return (ticks);
 }
 
-profil()
-{
-	register struct a {
+/* ARGSUSED */
+profil(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		short	*bufbase;
 		unsigned bufsize;
 		unsigned pcoffset;
 		unsigned pcscale;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	register struct uprof *upp = &u.u_prof;
 
 	upp->pr_base = uap->bufbase;
 	upp->pr_size = uap->bufsize;
 	upp->pr_off = uap->pcoffset;
 	upp->pr_scale = uap->pcscale;
+	RETURN (0);
 }
