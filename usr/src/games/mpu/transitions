@@ -1,0 +1,212 @@
+{*** TRANSITIONS ***}
+
+road1(ACTION) = ($setv n s e w ne nw se sw u d)
+		($hit .ME gard1 gard5 road2 road3 gard2 gard3 gard6 gard7 0 0)
+		($miss 0        0  0    0       0       0  0    0    cg cg);
+
+road2(ACTION) = ($hit .ME gard2 gard6 road7 road1 gard2 gard1 gard6 gard5 0 0)
+		($miss 0        0  0    0       0       0  0    0    cg cg);
+
+road3(ACTION) = ($hit .ME gard3 gard7 road1 road8 gard1 gard3 gard5 gard7 0 0)
+		($miss 0        0  0        entr8   0   0  0    0    cg cg);
+
+road4(ACTION) = ($hit .ME farm1 road7 frst1 gard2 frst1 gard2 frst1 gard2 0 0)
+		($miss 0        0  0    0       0       0  0    0    cg cg);
+
+road5(ACTION) = ($hit .ME road7 road6 frst1 gard6 frst1 gard6 frst1 gard6 0 0)
+		($miss 0        0  0    0       0       0  0    0    cg cg);
+
+road6(ACTION) = ($hit .ME road5 town1 frst1 gard6 frst1 gard6 frst1 gard6 0 0)
+		($miss 0        0  0    0       0       0  0    0    cg cg);
+
+road7(ACTION) = ($hit .ME road4 road5 frst1 road2 frst1 gard2 frst1 gard6 0 0)
+		($miss 0        0  0    0       0       0  0    0    cg cg);
+
+road8(ACTION) = ($miss tress tress east8 west8 cg cg cg cg cg cg);
+
+east8 = ( ($eq @HWY8 0) : ($move .ME road3)
+      { ELSE } :        (dump8 ($cont road8))
+			($setg HWY8 ($minus @HWY8 1))
+			(get8 ($cont roadx))
+			(Slook 0 ($loc .ME))
+			($setg LOOKP FALSE)
+		);
+
+west8 =
+			(dump8 ($cont road8))
+			($setg HWY8 ($plus @HWY8 1))
+			(get8 ($cont roadx))
+			(Slook 0 ($loc .ME))
+			($setg LOOKP FALSE);
+
+dump8 = (($link %1) : (dump8 ($link %1)))       { start at bottom }
+	(($ne %1 .ME) :                 { Everything else leaves }
+		($setp %1 RDLOC @HWY8)  { Retain its location on HWY 8 }
+		($move %1 roadx)        { Put it in the box }
+	);
+
+get8 =  ( %1 :
+		(get8 ($link %1))
+		(($eq ($prop %1 RDLOC) @HWY8) :
+			($move %1 road8)
+		)
+	);
+
+entr8 =         (dump8 ($cont road8))
+		($setg HWY8 0)
+		(get8 ($cont roadx));
+
+
+
+
+
+
+gard1(ACTION) = ($hit .ME gard4 road1 gard2 gard3 0 0 0 0 0 0 )
+		($miss     0    0       0   0     cg cg cg cg cg cg);
+
+gard2(ACTION) = ($hit .ME gard4 road2 gard2 gard1 0 0 0 0 0 0 )
+		($miss     0     0      0       0 cg cg cg cg cg cg);
+
+gard3(ACTION) = ($hit .ME gard4 road3 gard1 gard3 0 0 0 0 0 0 )
+		($miss    0     0      0        0 cg cg cg cg cg cg);
+
+gard4(ACTION) = ($hit .ME gard4 gard1 gard2 gard3 0 0 0 0 0 0 )
+		($miss    0     0       0       0 cg cg cg cg cg cg);
+
+
+gard5(ACTION) = ($hit .ME road1 gard8 gard6 gard7 0 0 0 0 0 0 )
+		($miss     0    0       0   0     cg cg cg cg cg cg);
+
+gard6(ACTION) = ($hit .ME road2 gard8 gard6 gard5 0 0 0 0 0 0 )
+		($miss    0     0       0       0 cg cg cg cg cg cg);
+
+gard7(ACTION) = ($hit .ME road3 gard8 gard5 gard7 0 0 0 0 0 0 )
+		($miss     0    0       0       0 cg cg cg cg cg cg);
+
+gard8(ACTION) = ($hit .ME gard5 gard8 gard6 gard7 0 0 0 0 0 0 )
+		($miss     0      0     0       0 cg cg cg cg cg cg);
+
+
+
+
+frst1(ACTION) = ($hit .ME frst3 frst1 frst2 frst2 0 0 0 0 0 0)
+		($miss       0    0     0       0 cg cg cg cg cg cg);
+
+frst2(ACTION) = ($hit .ME frst1 frst2 frst3 frst1 0 0 0 0 0 0)
+		($miss       0    0     0       0 cg cg cg cg cg cg);
+
+frst3(ACTION) = ($hit .ME frst1 frst3 frst2 frst2 0 0 0 0 0 0)
+		($miss       0    0     0       0 cg cg cg cg cg cg);
+
+frst4(ACTION) = ($hit .ME frst4 frst2 frst1 road7 0 0 0 0 0 0)
+		($miss       0   0      0    0    cg cg cg cg cg cg);
+
+
+farm1 (ACTION) =($hit .ME farm2 road4 farm3 farm4 farm3 farm4 0 0 0 0)
+		($miss     0     0      0       0  0     0    cg cg cg cg);
+
+farm2 (ACTION) = ($hit .ME farm6 farm1 farm7 0 0 0 0 0 farm7 0)
+		 ($miss     0    0       0  cg cg cg cg cg 0 cg);
+
+farm3 (ACTION) = ($hit .ME farm5 farm1 frst1 0 0 farm5 0 farm1 0 0)
+		 ($miss     0    0      0  cg cg   0  cg   0  cg cg);
+
+farm4 (ACTION) = ($hit .ME farm5 farm1 0 gard4  farm5 0 farm1 0  0 0)
+		 ($miss     0     0   cg   0     0   cg   0  cg cg cg);
+
+farm5 (ACTION) = ($hit .ME 0  0 farm3 farm4 0 0 farm3 farm4 0 0)
+		 ($miss    cg cg   0   0  cg cg   0    0  cg  cg);
+
+farm6 (ACTION) = ($hit .ME 0 farm2 0 0 0 0 0 0 0 0)
+		 ($miss   cg 0 cg cg cg cg cg cg cg cg );
+
+farm7 (ACTION) =
+		 ($hit .ME 0 0 farm2 0 0 0 0 0 0 farm2)
+		 ($miss   cg cg 0 PanL cg cg cg cg cg PanL);
+
+
+town1 (ACTION) =($hit .ME road6 town2 town3 town4 0  0  0  0  0  0)
+		($miss       0    0    0        0 cg cg cg cg cg cg);
+
+town2 (ACTION) =($hit .ME town1   0   town5 town6 0  0  0  0  0  0)
+		($miss       0    cg   0        0 cg cg cg cg cg cg);
+
+town3 (ACTION) =($hit .ME    0    0    0    town1 0  0  0  0  0  0)
+		($miss      cg   cg   cg        0 cg cg cg cg cg cg);
+
+town4 (ACTION) =($hit .ME    0    0  town1      0 0  0  0  0  0  0)
+		($miss      cg   cg    0       cg cg cg cg cg cg cg);
+
+town5 (ACTION) =($hit .ME    0    0    0    town2 0  0  0  0  0  0)
+		($miss      cg   cg    cg     0   cg cg cg cg cg cg)
+		(TWN5x);
+
+town6 (ACTION) =($hit .ME    0    0  town2      0 0  0  0  0  0  0)
+		($miss      cg   cg    0       cg cg cg cg cg cg cg);
+
+
+cel01 (ACTION) = ($hit .ME cel02  0    0  cel04 0  0  0  0  farm7 0)
+		 ($miss     0     ny  cg    0   cg cg cg cg   0   cg);
+
+cel02 (ACTION) = ($hit .ME cel05 cel01  0    0  0  0  0  0    0   0)
+		 ($miss     0     0     ny  cg cg cg cg cg   cg   cg);
+
+cel03 (ACTION) = ($hit .ME  0   cel05   0 cel13 cel09 0  0  0    0   cel09)
+		 ($miss     cg    0     cg  0     0   cg cg cg   cg    0);
+
+cel04 (ACTION) = ($hit .ME  cel10   0    cel01 cel08 0  0  0  0    0  cel10)
+		 ($miss      0      cg     0     0   cg cg cg cg   cg   0 );
+
+
+MV56=($setg Cel6x 5);
+MV76=($setg Cel6x 7);
+MV67=( ($and ($ne @Cel6x 7)
+	     ($prop dragon AWAKE)): ($say
+"The ice dragon blocks your attempt to cross!\n\n")
+		:         ($move .ME cel07) );
+
+MV65=( ($and ($ne @Cel6x 5)
+	     ($prop dragon AWAKE)): ($say
+"The ice dragon blocks your attempt to leave!\n")
+		:         ($move .ME cel05) );
+
+
+cel05 (ACTION) = ($hit .ME cel03 cel02  0    0 cel06  0  0  0    0   0)
+		 ($miss      0    0     cg  cg MV56   ny cg cg   cg   cg);
+
+cel06 (ACTION) = ($hit .ME  0     0      0     0    0  0  0  0    0   0)
+		 ($miss     cg    cg    MV67 MV65  cg cg cg cg   cg   cg)
+		(($eq ($loc .ME) cel06) {still here}:
+			($setg LOOKP TRUE)
+		)
+		  ;
+
+cel07 (ACTION) = ($hit .ME  0     0      0   cel06  0  0  0  0    0   0)
+		 ($miss     cg    cg     cg  MV76  cg cg cg cg   cg   cg);
+
+cel08 (ACTION) = ($hit .ME  0     0    cel04   0    0  0  0  0    0   0)
+		 ($miss     cg    cg     0    ny   cg cg cg cg   cg   cg);
+
+cel09 (ACTION) = ($hit .ME   0     0     0     0     0  0  0  0   0   0)
+		 ($miss     ny     cg   cg    cg    cg cg cg cg cg   cg);
+
+cel10 (ACTION) = ($hit .ME   0   cel04   0     0     0  0  0  0   0  cel11)
+		 ($miss     cg     0    cg    ny    cg cg cg cg cg    0);
+
+cel11 (ACTION) = ($hit .ME   0     0  cel12    0     0  0  0  0   0   0)
+		 ($miss     ny     cg   0     cg    cg cg cg cg cg   cg);
+
+cel12 (ACTION) = ($hit .ME  cel11  0     0     0     0  0  0  0   0   0)
+		 ($miss      0     cg   ny    cg    cg cg cg cg cg   cg);
+
+cel13 (ACTION) = (($eq ($verb) down):
+			(($prop cel13 HOLED):
+				($say "You plunge into the icy waters!\n")
+				($move .ME cel14)
+				($exit 0)
+			)
+		  )
+		($hit .ME  0   0   cel03   0   0  0  0  0   0  0)
+		($miss    cg  cg    0     ny  cg  cg cg cg cg cg);
+
+
