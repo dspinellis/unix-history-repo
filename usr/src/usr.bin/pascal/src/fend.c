@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.15 %G%";
+static char sccsid[] = "@(#)fend.c 1.16 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -115,6 +115,16 @@ funcend(fp, bundle, endline)
 	 * put out the procedure entry code
 	 */
 	if ( fp -> class == PROG ) {
+		/*
+		 *	If there is a label declaration in the main routine
+		 *	then there may be a non-local goto to it that does
+		 *	not appear in this module. We have to assume that
+		 *	such a reference may occur and generate code to
+		 *	prepare for it.
+		 */
+	    if ( parts[ cbn ] & LPRT ) {
+		parts[ cbn ] |= ( NONLOCALVAR | NONLOCALGOTO );
+	    }
 	    putprintf( "	.text" , 0 );
 	    putprintf( "	.align	1" , 0 );
 	    putprintf( "	.globl	_main" , 0 );
@@ -203,7 +213,8 @@ funcend(fp, bundle, endline)
 	    putprintf( "	.text" , 0 );
 	}
 	    /*
-	     *	if there are nested procedures we must save the display.
+	     *	if there are nested procedures that access our variables
+	     *	we must save the display.
 	     */
 	if ( parts[ cbn ] & NONLOCALVAR ) {
 		/*
@@ -244,10 +255,9 @@ funcend(fp, bundle, endline)
 	    putdot( filename , line );
 	}
 	    /*
-	     *  set up goto vector if potential non-local goto to this frame
+	     *  set up goto vector if non-local goto to this frame
 	     */
-	if ( ( cbn < 2 && ( parts[ cbn ] & LPRT ) ) ||
-	    ( parts[ cbn ] & NONLOCALGOTO ) != 0 ) {
+	if ( parts[ cbn ] & NONLOCALGOTO ) {
 	    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 		    , "_setjmp" );
 	    putLV( 0 , cbn , GOTOENVOFFSET , NLOCAL , P2PTR|P2STRTY );
