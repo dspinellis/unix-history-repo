@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	7.12 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -538,21 +538,23 @@ trimthenstep6:
 		}
 	}
 
+	/*
+	 * If new data is received on a connection after the
+	 * user processes are gone, then RST the other end.
+	 */
+	if ((so->so_state & SS_NOFDREF) &&
+	    tp->t_state > TCPS_CLOSE_WAIT && ti->ti_len) {
+		tp = tcp_close(tp);
+		tcpstat.tcps_rcvafterclose++;
+		goto dropwithreset;
+	}
+
 	if (tp->rcv_wnd == 0) {
 		/*
 		 * If window is closed can only take segments at
 		 * window edge, and have to drop data and PUSH from
 		 * incoming segments.
-		 *
-		 * If new data is received on a connection after the
-		 * user processes are gone, then RST the other end.
 		 */
-		if ((so->so_state & SS_NOFDREF) &&
-		    tp->t_state > TCPS_CLOSE_WAIT && ti->ti_len) {
-			tp = tcp_close(tp);
-			tcpstat.tcps_rcvafterclose++;
-			goto dropwithreset;
-		}
 		if (tp->rcv_nxt != ti->ti_seq) {
 			tcpstat.tcps_rcvpackafterwin++;
 			tcpstat.tcps_rcvbyteafterwin += ti->ti_len;
