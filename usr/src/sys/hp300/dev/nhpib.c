@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nhpib.c	7.7 (Berkeley) %G%
+ *	@(#)nhpib.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -313,13 +313,18 @@ nhpibppwatch(arg)
 {
 	register struct hpib_softc *hs;
 	register int unit;
+	extern int cold;
 
 	unit = (int)arg;
 	hs = &hpib_softc[unit];
 	if ((hs->sc_flags & HPIBF_PPOLL) == 0)
 		return;
+again:
 	if (nhpibppoll(unit) & (0x80 >> hs->sc_sq.dq_forw->dq_slave))
        		((struct nhpibdevice *)hs->sc_hc->hp_addr)->hpib_mim = MIS_BO;
+	else if (cold)
+		/* timeouts not working yet */
+		goto again;
 	else
 		timeout(nhpibppwatch, (void *)unit, 1);
 }
