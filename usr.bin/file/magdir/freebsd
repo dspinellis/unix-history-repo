@@ -1,5 +1,15 @@
 # the following are for 386BSD/FreeBSD
 
-0	long		0410		pure executable
-0	long		0413		demand paged executable
->16	long		>0		not stripped
+0	long			0410		pure executable
+0	long			0413		demand paged executable
+>16	long			>0		not stripped
+0	byte			0x80		BSD/i386 shared image
+0	belong&077777777	041400413	BSD/i386 demand paged
+>0	byte			&0x80
+>>20	long			<4096		shared library
+>>20	long			=4096		dynamically linked executable
+>>20	long			>4096		dynamically linked executable
+>0	byte			^0x80		executable
+>16	long			>0		not stripped
+
+
