@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)functab.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)functab.c	5.2 (Berkeley) %G%";
 #endif not lint
 /*
  * This file contains the implementation of a table for going
@@ -54,7 +54,6 @@ SYM *f;
 SYM *whatblock(addr)
 ADDRESS addr;
 {
-	register SYM *p;
 	register int i, j, k;
 	ADDRESS a;
 
