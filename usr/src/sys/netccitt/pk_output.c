@@ -12,7 +12,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_output.c	8.1 (Berkeley) %G%
+ *	@(#)pk_output.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -168,7 +168,7 @@ struct pklcd *lcp;
 {
 	register struct mbuf *m, *n;
 	struct socket *so = lcp -> lcd_so;
-	register struct sockbuf *sb = & (so ? so -> so_snd : lcp -> lcd_sb);
+	register struct sockbuf *sb = (so ? &so -> so_snd : &lcp -> lcd_sb);
 
 	if (lcp -> lcd_template) {
 		m = lcp -> lcd_template;
