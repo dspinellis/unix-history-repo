@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.2 90/07/14$
  *
- *	@(#)locore.s	7.8 (Berkeley) %G%
+ *	@(#)locore.s	7.9 (Berkeley) %G%
  */
 
 #include "assym.s"
@@ -462,15 +462,19 @@ _lev6intr:
 	subql	#1,timebomb		| decrement
 	jne	Lnobomb			| not ready to go off
 	moveml	sp@+,#0x0303		| temporarily restore regs
-	jra	Luseours		| go die
+	jra	Lbomb			| go die
 Lnobomb:
 	cmpl	#_kstack+NBPG,sp	| are we still in stack pages?
 	jcc	Lstackok		| yes, continue normally
+	tstl	_curproc		| if !curproc, could have swtch_exit'ed,
+	jeq	Lstackok		|     might be on tmpstk
 	tstl	_panicstr		| have we paniced?
 	jne	Lstackok		| yes, do not re-panic
 	lea	tmpstk,sp		| no, switch to tmpstk
-Luseours:
 	moveml	#0xFFFF,sp@-		| push all registers
+	movl	#Lstkrip,sp@-		| push panic message
+	jbsr	_printf			| preview
+	addql	#4,sp
 	movl	sp,a0			| remember this spot
 	movl	#256,sp@-		| longword count
 	movl	a0,sp@-			| and reg pointer
@@ -478,9 +482,19 @@ Luseours:
 	addql	#8,sp			| pop params
 	movl	#Lstkrip,sp@-		| push panic message
 	jbsr	_panic			| ES and D
+Lbomb:
+	moveml	#0xFFFF,sp@-		| push all registers
+	movl	sp,a0			| remember this spot
+	movl	#256,sp@-		| longword count
+	movl	a0,sp@-			| and reg pointer
+	jbsr	_regdump		| dump core
+	addql	#8,sp			| pop params
+	movl	#Lbomrip,sp@-		| push panic message
+	jbsr	_panic			| ES and D
 Lstkrip:
 	.asciz	"k-stack overflow"
-	.even
+Lbomrip:
+	.asciz	"timebomb"
 Lstackok:
 #endif
 	CLKADDR(a0)
@@ -1551,14 +1565,17 @@ _masterpaddr:
 pcbflag:
 	.byte	0		| copy of pcb_flags low byte
 	.align	2
-	.comm	_nullpcb,SIZEOF_PCB
+	.comm	nullpcb,SIZEOF_PCB
 	.text
 
 /*
  * At exit of a process, do a swtch for the last time.
+ * The mapping of the pcb at p->p_addr has already been deleted,
+ * and the memory for the pcb+stack has been freed.
+ * The ipl is high enough to prevent the memory from being reallocated.
  */
 ENTRY(swtch_exit)
-	movl	#_nullpcb,_masterpaddr
+	movl	#nullpcb,_masterpaddr	| save state into garbage pcb
 	lea	tmpstk,sp		| goto a tmp stack
 	jra	_swtch
 
@@ -1638,21 +1655,20 @@ Lsw2:
 	 * Save state of previous process in its pcb.
 	 */
 	movl	_masterpaddr,a1
-	movl	usp,a0			| grab USP
-	movl	a0,a1@(PCB_USP)		| and save it
 	moveml	#0xFCFC,a1@(PCB_REGS)	| save non-scratch registers
+	movl	usp,a2			| grab USP (a2 has been saved)
+	movl	a2,a1@(PCB_USP)		| and save it
 	movl	_CMAP2,a1@(PCB_CMAP2)	| save temporary map PTE
 #ifdef FPCOPROC
-	lea	a1@(PCB_FPCTX),a0	| pointer to FP save area
-	fsave	a0@			| save FP state
-	tstb	a0@			| null state frame?
+	lea	a1@(PCB_FPCTX),a2	| pointer to FP save area
+	fsave	a2@			| save FP state
+	tstb	a2@			| null state frame?
 	jeq	Lswnofpsave		| yes, all done
-	fmovem	fp0-fp7,a0@(216)	| save FP general registers
-	fmovem	fpcr/fpsr/fpi,a0@(312)	| save FP control registers
+	fmovem	fp0-fp7,a2@(216)	| save FP general registers
+	fmovem	fpcr/fpsr/fpi,a2@(312)	| save FP control registers
 Lswnofpsave:
 #endif
 
-	movl	_curproc,a0
 #ifdef DIAGNOSTIC
 	tstl	a0@(P_WCHAN)
 	jne	Lbadsw
@@ -1663,12 +1679,10 @@ Lswnofpsave:
 	movl	a0@(P_ADDR),a1
 	movl	a1,_masterpaddr
 	movb	a1@(PCB_FLAGS+1),pcbflag | copy of pcb_flags low byte
-	movl	a0@(P_VMSPACE),a0	| map = p->p_vmspace
-	tstl	a0			| map == VM_MAP_NULL? ???
-	jeq	Lswnochg		| yes, skip
-	movl	a0@(PMAP),a0		| pmap = map->pmap
-	tstl	a0			| pmap == PMAP_NULL? ???
-	jeq	Lswnochg		| yes, skip
+
+	/* see if pmap_activate needs to be called; should remove this */
+	movl	a0@(P_VMSPACE),a0	| vmspace = p->p_vmspace
+	lea	a0@(VM_PMAP),a0		| pmap = &vmspace.vm_pmap
 	tstl	a0@(PM_STCHG)		| pmap->st_changed?
 	jeq	Lswnochg		| no, skip
 	pea	a1@			| push pcb (at p_addr)
@@ -1684,7 +1698,9 @@ Lswnochg:
  * maybe we should just flush the whole thing?
  */
 #ifdef PROFTIMER
+#ifdef notdef
 	movw	#SPL6,sr		| protect against clock interrupts
+#endif
 	bclr	#0,_profon		| clear user profiling bit, was set?
 	jeq	Lskipoff		| no, clock off or doing kernel only
 #ifdef GPROF
@@ -1701,18 +1717,19 @@ Lskipoff:
 	lsrl	d1,d0			| convert p_addr to page number
 	lsll	#2,d0			| and now to Systab offset
 	addl	_Sysmap,d0		| add Systab base to get PTE addr
+#ifdef notdef
 	movw	#PSL_HIGHIPL,sr		| go crit while changing PTEs
+#endif
 	lea	tmpstk,sp		| now goto a tmp stack for NMI
 	movl	d0,a0			| address of new context
-	movl	_Umap,a1		| address of PTEs for kstack
+	movl	_Umap,a2		| address of PTEs for kstack
 	moveq	#UPAGES-1,d0		| sizeof kstack
 Lres1:
 	movl	a0@+,d1			| get PTE
 	andl	#~PG_PROT,d1		| mask out old protection
 	orl	#PG_RW+PG_V,d1		| ensure valid and writable
-	movl	d1,a1@+			| load it up
+	movl	d1,a2@+			| load it up
 	dbf	d0,Lres1		| til done
-	movl	_masterpaddr,a1		| reload pcb pointer
 	movl	#CACHE_CLR,d0
 	movc	d0,cacr			| invalidate cache(s)
 #if defined(HP330) || defined(HP360) || defined(HP370)
@@ -1748,13 +1765,6 @@ Lnocache1:
 	movl	a1@(PCB_USTP),a0@(MMUUSTP) | context switch
 #endif
 Lcxswdone:
-#if defined(HP330)
-	jeq	Lnot68851b		| if set need to flush user TLB
-	tstl	_mmutype		| 68851 PMMU?
-	jle	Lnot68851b		| no, skip
-	pflushs	#0,#4			| user PT changed, flush user TLB
-Lnot68851b:
-#endif
 	movl	a1@(PCB_CMAP2),_CMAP2	| reload tmp map
 	moveml	a1@(PCB_REGS),#0xFCFC	| and registers
 	movl	a1@(PCB_USP),a0
@@ -1783,23 +1793,11 @@ Lskipon:
 Lresfprest:
 	frestore a0@			| restore state
 #endif
-	tstl	a1@(PCB_SSWAP)		| do an alternate return?
-	jne	Lres3			| yes, do non-local goto
 	movw	a1@(PCB_PS),sr		| no, restore PS
-	rts
-
 	/*
-	 * simulate longjmp returning from savectx;
-	 * that frame wasn't active when this stack was copied,
-	 * although savectx's caller's stack was active,
-	 * and savectx will have saved sp while it was active.
-	 * Construct fake frame from which to "return".
+	 * For savectx to work correctly, we need to "return" a non-zero
+	 * value; d0 was set above, so do nothing.
 	 */
-Lres3:
-	movl	a1@(PCB_SSWAP),sp@	| alternate return pc; fake call frame
-	clrl	a1@(PCB_SSWAP)		| clear flag
-	movw	a1@(PCB_PS),sr		| restore PS
-	moveq	#1,d0			| return 1
 	rts
 
 /*
@@ -1825,7 +1823,10 @@ Lsvnofpsave:
 #endif
 	tstl	sp@(8)			| altreturn?
 	jeq	Lsavedone
-	movl	sp@,a1@(PCB_SSWAP)	| alternate return address
+	movl	sp,d0			| relocate current sp relative to a1
+	subl	#_kstack,d0		|   (sp is relative to kstack):
+	addl	d0,a1			|   a1 += sp - kstack;
+	movl	sp@,a1@			| write return pc at (relocated) sp@
 Lsavedone:
 	moveq	#0,d0			| return 0
 	rts
@@ -2275,16 +2276,6 @@ ENTRY(spl0)
 	moveq	#0,d0
 	movw	sr,d0			| get old SR for return
 	movw	#PSL_LOWIPL,sr		| restore new SR
-	jra	Lsplsir
-
-ENTRY(splx)
-	moveq	#0,d0
-	movw	sr,d0			| get current SR for return
-	movw	sp@(6),d1		| get new value
-	movw	d1,sr			| restore new SR
-	andw	#PSL_IPL7,d1		| mask all but PSL_IPL
-	jne	Lspldone		| non-zero, all done
-Lsplsir:
 	tstb	_ssir			| software interrupt pending?
 	jeq	Lspldone		| no, all done
 	subql	#4,sp			| make room for RTE frame
@@ -2293,55 +2284,6 @@ Lsplsir:
 	movw	#PSL_LOWIPL,sp@		| and new SR
 	jra	Lgotsir			| go handle it
 Lspldone:
-	rts
-
-ALTENTRY(splsoftclock, _spl1)
-ALTENTRY(splnet, _spl1)
-ENTRY(spl1)
-	moveq	#0,d0
-	movw	sr,d0
-	movw	#SPL1,sr
-	rts
-
-ENTRY(spl2)
-	moveq	#0,d0
-	movw	sr,d0
-	movw	#SPL2,sr
-	rts
-
-ENTRY(spl3)
-	moveq	#0,d0
-	movw	sr,d0
-	movw	#SPL3,sr
-	rts
-
-ENTRY(spl4)
-	moveq	#0,d0
-	movw	sr,d0
-	movw	#SPL4,sr
-	rts
-
-ALTENTRY(splimp, _spl5)
-ALTENTRY(splbio, _spl5)
-ALTENTRY(spltty, _spl5)
-ENTRY(spl5)
-	moveq	#0,d0
-	movw	sr,d0
-	movw	#SPL5,sr
-	rts
-
-ALTENTRY(splclock, _spl6)
-ENTRY(spl6)
-	moveq	#0,d0
-	movw	sr,d0
-	movw	#SPL6,sr
-	rts
-
-ALTENTRY(splhigh, _spl7)
-ENTRY(spl7)
-	moveq	#0,d0
-	movw	sr,d0
-	movw	#PSL_HIGHIPL,sr
 	rts
 
 #ifdef GPROF
