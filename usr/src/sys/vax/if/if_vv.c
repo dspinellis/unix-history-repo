@@ -1,4 +1,4 @@
-/*	if_vv.c	4.3	82/06/13	*/
+/*	if_vv.c	4.4	82/06/15	*/
 
 /*
  * Proteon 10 Meg Ring Driver.
@@ -171,6 +171,7 @@ vvinit(unit)
 	if (if_ubainit(&vs->vs_ifuba, ui->ui_ubanum,
 	    sizeof (struct vv_header), (int)btoc(VVMTU)) == 0) { 
 		printf("vv%d: can't initialize\n", unit);
+		vs->vs_ifuba.if_flags &= ~IFF_UP;
 		return;
 	}
 	addr = (struct vvreg *)ui->ui_addr;
@@ -235,6 +236,7 @@ retry:
 				printf("vv%d: can't initialize\n", unit);
 				printf("vvinit loopwait: icsr = %b\n",
 					0xffff&(addr->vvicsr),VV_IBITS);
+				vs->vs_ifuba.if_flags &= ~IFF_UP;
 				return;
 			}
 		}
@@ -288,6 +290,7 @@ retry:
 	addr->vviwc = -(sizeof (struct vv_header) + VVMTU) >> 1;
 	addr->vvicsr = VV_IEN | VV_CONF | VV_DEN | VV_ENB;
 	vs->vs_oactive = 1;
+	vs->vs_ifuba.if_flags |= IFF_UP;
 	vvxint(unit);
 	splx(s);
 	if_rtinit(&vs->vs_if, RTF_UP);
