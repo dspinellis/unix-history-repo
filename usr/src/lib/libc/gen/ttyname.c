@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ttyname.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttyname.c	5.13 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -65,12 +65,12 @@ __oldttyname(fd, sb)
 	register struct dirent *dirp;
 	register DIR *dp;
 	struct stat dsb;
-	char *rval, *strcpy();
+	char *strcpy();
 
 	if ((dp = opendir(_PATH_DEV)) == NULL)
 		return(NULL);
 
-	for (rval = NULL; dirp = readdir(dp);) {
+	while (dirp = readdir(dp)) {
 		if (dirp->d_fileno != sb->st_ino)
 			continue;
 		bcopy(dirp->d_name, buf + sizeof(_PATH_DEV) - 1,
@@ -79,9 +79,8 @@ __oldttyname(fd, sb)
 		    sb->st_ino != dsb.st_ino)
 			continue;
 		(void)closedir(dp);
-		rval = buf;
-		break;
+		return(buf);
 	}
 	(void)closedir(dp);
-	return(rval);
+	return(NULL);
 }
