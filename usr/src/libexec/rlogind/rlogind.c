@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983, 1988 The Regents of the University of California.
+ * Copyright (c) 1983, 1988, 1989 The Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -17,12 +17,12 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983, 1988 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1988, 1989 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -142,7 +142,7 @@ main(argc, argv)
 #ifdef	KERBEROS
 	if (use_kerberos && vacuous) {
 		usage();
-		fatal("only one of -k and -v allowed\n");
+		fatal("only one of -k and -v allowed");
 	}
 #endif
 	fromlen = sizeof (from);
@@ -180,7 +180,7 @@ doit(f, fromp)
 	if(c != 0)
 		exit(1);
 #ifdef	KERBEROS
-	if(vacuous)
+	if (vacuous)
 		fatal(f, "Remote host requires Kerberos authentication");
 #endif
 
@@ -224,7 +224,7 @@ doit(f, fromp)
 		else if (retval > 0)
 			fatal(f, krb_err_txt[retval]);
 		else if(!hostok)
-			fatal(f, "krlogind: Host address mismatch.\r\n");
+			fatal(f, "krlogind: Host address mismatch.");
 	} else
 #endif
 	{
@@ -305,15 +305,7 @@ gotpty:
 	if (t < 0)
 		fatalperror(f, line);
 	setup_term(t);
-#ifdef DEBUG
-	{
-		int tt = open("/dev/tty", O_RDWR);
-		if (tt > 0) {
-			(void)ioctl(tt, TIOCNOTTY, 0);
-			(void)close(tt);
-		}
-	}
-#endif
+
 	pid = fork();
 	if (pid < 0)
 		fatalperror(f, "");
@@ -594,8 +586,9 @@ setup_term(fd)
 {
 	register char *cp = index(term+ENVSIZE, '/');
 	char *speed;
-
 	struct termios tt;
+
+#ifndef notyet
 	tcgetattr(fd, &tt);
 	if (cp) {
 		*cp++ = '\0';
@@ -606,18 +599,20 @@ setup_term(fd)
 		cfsetspeed(&tt, atoi(speed));
 	}
 
-
-	tt.c_iflag = BRKINT|ICRNL|IXON|ISTRIP|IEXTEN|IMAXBEL;
-	tt.c_oflag = OPOST|ONLCR|OXTABS;
-	tt.c_lflag = ISIG|ICANON|ECHO;
+	tt.c_iflag = TTYDEF_IFLAG;
+	tt.c_oflag = TTYDEF_OFLAG;
+	tt.c_lflag = TTYDEF_LFLAG;
 	tcsetattr(fd, TCSADFLUSH, &tt);
-#ifdef	notdef
-	{
-		struct	sgttyb	b;
-		(void) ioctl(fd, TIOCGETP, &b);
-		b.sg_flags = ECHO|CRMOD|ANYP;
-		b.sg_ispeed = b.sg_ospeed = atoi(speed);
-		(void) ioctl(fd, TIOCSETP, &b);
+#else
+	if (cp) {
+		*cp++ = '\0';
+		speed = cp;
+		cp = index(speed, '/');
+		if (cp)
+			*cp++ = '\0';
+		tcgetattr(fd, &tt);
+		cfsetspeed(&tt, atoi(speed));
+		tcsetattr(fd, TCSADFLUSH, &tt);
 	}
 #endif
 
