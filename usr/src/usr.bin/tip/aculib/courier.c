@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)courier.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)courier.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #define write cour_write
@@ -310,8 +310,6 @@ verbose_read()
 /*
  * Code stolen from /usr/src/lib/libc/gen/sleep.c
  */
-#include <sys/time.h>
-
 #define mask(s) (1<<((s)-1))
 #define setvec(vec, a) \
         vec.sv_handler = a; vec.sv_mask = vec.sv_onstack = 0
