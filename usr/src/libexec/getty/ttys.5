@@ -1,4 +1,4 @@
-.\"	@(#)ttys.5	6.2 (Berkeley) %G%
+.\"	@(#)ttys.5	6.3 (Berkeley) %G%
 .\"
 .TH TTYS 5  ""
 .AT 3
@@ -16,7 +16,8 @@ There is one line in the
 .I ttys
 file per special file.
 Fields are separated by tabs and/or spaces.
-A field of more than one word should be enclosed in double quotes.
+Some fields may contain more than one word and should be enclosed
+in double quotes.
 Blank lines and comments can appear anywhere in the file; comments
 are delimited by `#' and new line. Unspecified fields default to
 the empty string or zero as appropriate.
@@ -29,7 +30,7 @@ and calling
 .IR login (1).
 It can be, however, any command you wish, for example
 the start up for a window system terminal emulator or some other
-daemon process.
+daemon process, and can contain multiple words if quoted.
 The third field is the type of terminal normally connected to that
 tty line, as found in the
 .IR termcap (5)
@@ -47,7 +48,7 @@ the strings `on' and `off' specify whether
 should execute the command
 given in the second field,
 while `secure' in addition to `on' allows root to login on
-this line.  Note that these these flag strings should not be quoted.
+this line.  These flag fields should not be quoted.
 The string `window=' is followed by a quoted command
 string which
 .I init
