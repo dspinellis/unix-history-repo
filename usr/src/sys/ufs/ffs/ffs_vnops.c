@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.96 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.97 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -62,7 +62,7 @@ struct vnodeopv_entry_desc ffs_vnodeop_entries[] = {
 	{ &vop_readdir_desc, ufs_readdir },		/* readdir */
 	{ &vop_readlink_desc, ufs_readlink },		/* readlink */
 	{ &vop_abortop_desc, ufs_abortop },		/* abortop */
-	{ &vop_inactive_desc, ffs_inactive },		/* inactive */
+	{ &vop_inactive_desc, ufs_inactive },		/* inactive */
 	{ &vop_reclaim_desc, ufs_reclaim },		/* reclaim */
 	{ &vop_lock_desc, ufs_lock },			/* lock */
 	{ &vop_unlock_desc, ufs_unlock },		/* unlock */
@@ -109,7 +109,7 @@ struct vnodeopv_entry_desc ffs_specop_entries[] = {
 	{ &vop_readdir_desc, spec_readdir },		/* readdir */
 	{ &vop_readlink_desc, spec_readlink },		/* readlink */
 	{ &vop_abortop_desc, spec_abortop },		/* abortop */
-	{ &vop_inactive_desc, ffs_inactive },		/* inactive */
+	{ &vop_inactive_desc, ufs_inactive },		/* inactive */
 	{ &vop_reclaim_desc, ufs_reclaim },		/* reclaim */
 	{ &vop_lock_desc, ufs_lock },			/* lock */
 	{ &vop_unlock_desc, ufs_unlock },		/* unlock */
@@ -157,7 +157,7 @@ struct vnodeopv_entry_desc ffs_fifoop_entries[] = {
 	{ &vop_readdir_desc, fifo_readdir },		/* readdir */
 	{ &vop_readlink_desc, fifo_readlink },		/* readlink */
 	{ &vop_abortop_desc, fifo_abortop },		/* abortop */
-	{ &vop_inactive_desc, ffs_inactive },		/* inactive */
+	{ &vop_inactive_desc, ufs_inactive },		/* inactive */
 	{ &vop_reclaim_desc, ufs_reclaim },		/* reclaim */
 	{ &vop_lock_desc, ufs_lock },			/* lock */
 	{ &vop_unlock_desc, ufs_unlock },		/* unlock */
@@ -416,59 +416,4 @@ loop:
 	splx(s);
 	tv = time;
 	return (VOP_UPDATE(ap->a_vp, &tv, &tv, ap->a_waitfor == MNT_WAIT));
-}
-
-/*
- * Last reference to an inode, write the inode out and if necessary,
- * truncate and deallocate the file.
- */
-int
-ffs_inactive(ap)
-	struct vop_inactive_args /* {
-		struct vnode *a_vp;
-	} */ *ap;
-{
-	register struct vnode *vp = ap->a_vp;
-	register struct inode *ip = VTOI(vp);
-	struct timeval tv;
-	int mode, error;
-	extern int prtactive;
-
-	if (prtactive && vp->v_usecount != 0)
-		vprint("ffs_inactive: pushing active", vp);
-
-	/* Get rid of inodes related to stale file handles. */
-	if (ip->i_mode == 0) {
-		if ((vp->v_flag & VXLOCK) == 0)
-			vgone(vp);
-		return (0);
-	}
-
-	error = 0;
-	ILOCK(ip);
-	if (ip->i_nlink <= 0 && (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
-#ifdef QUOTA
-		if (!getinoquota(ip))
-			(void)chkiq(ip, -1, NOCRED, 0);
-#endif
-		error = VOP_TRUNCATE(vp, (off_t)0, 0, NOCRED, NULL);
-		mode = ip->i_mode;
-		ip->i_mode = 0;
-		ip->i_rdev = 0;
-		ip->i_flag |= IUPD|ICHG;
-		VOP_VFREE(vp, ip->i_number, mode);
-	}
-	if (ip->i_flag&(IUPD|IACC|ICHG|IMOD)) {
-		tv = time;
-		VOP_UPDATE(vp, &tv, &tv, 0);
-	}
-	IUNLOCK(ip);
-	ip->i_flag = 0;
-	/*
-	 * If we are done with the inode, reclaim it
-	 * so that it can be reused immediately.
-	 */
-	if (vp->v_usecount == 0 && ip->i_mode == 0)
-		vgone(vp);
-	return (error);
 }
