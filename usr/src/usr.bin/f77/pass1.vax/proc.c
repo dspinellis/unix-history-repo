@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -15,8 +15,12 @@ static char sccsid[] = "@(#)proc.c	5.1 (Berkeley) %G%";
  *
  * University of Utah CS Dept modification history:
  *
- * $Header: proc.c,v 3.10 85/03/08 23:13:06 donn Exp $
+ * $Header: proc.c,v 3.11 85/06/04 03:45:29 donn Exp $
  * $Log:	proc.c,v $
+ * Revision 3.11  85/06/04  03:45:29  donn
+ * Changed retval() to recognize that a function declaration might have
+ * bombed out earlier, leaving an error node behind...
+ * 
  * Revision 3.10  85/03/08  23:13:06  donn
  * Finally figured out why function calls and array elements are not legal
  * dummy array dimension declarator elements.  Hacked safedim() to stop 'em.
@@ -420,6 +424,9 @@ switch(t)
 		p->vtype = t;
 		putforce(t, p);
 		break;
+
+	case TYERROR:
+		return;		/* someone else already complained */
 
 	default:
 		badtype("retval", t);

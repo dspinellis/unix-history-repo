@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)optim.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)optim.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,6 +16,10 @@ static char sccsid[] = "@(#)optim.c	5.1 (Berkeley) %G%";
  * UCSD Chemistry modification history:
  *
  * $Log:	optim.c,v $
+ * Revision 2.12  85/06/08  22:57:01  donn
+ * Prevent core dumps -- bug in optinsert was causing lastslot to be wrong
+ * when a slot was inserted at the end of the buffer.
+ * 
  * Revision 2.11  85/03/18  08:05:05  donn
  * Prevent warnings about implicit conversions.
  * 
@@ -444,7 +448,8 @@ new->next = currslot;
 if (currslot)
 	currslot->prev = new;
 new->lineno = -1;	/* who knows what the line number should be ??!! */
-lastslot = savelast;
+if (currslot)
+	lastslot = savelast;
 return (new);
 }
 
