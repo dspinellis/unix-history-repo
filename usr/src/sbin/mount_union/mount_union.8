@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mount_union.8	8.3 (Berkeley) %G%
+.\"	@(#)mount_union.8	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MOUNT_UNION 8
@@ -41,9 +41,9 @@ layer.
 .Nm mount_union
 is setuid root and can be used by any user.
 To enforce filesystem security, the user must be superuser or else
-have write permission on the mounted on directory.
+have write permission on the mounted-on directory.
 .Pp
-Filenames are looked up firstly in the upper layer and then in the
+Filenames are looked up in the upper layer and then in the
 lower layer.
 If a directory is found in the lower layer, and there is no entry
 in the upper layer, then a
@@ -82,15 +82,15 @@ individual filesystems.
 The union operation applies recursively down the directory tree
 now rooted at
 .Ar uniondir .
+Thus any filesystems which are mounted under
+.Ar uniondir
+will take part in the union operation.
 This differs from the
 .Em union
 option to
 .Xr mount 8
 which only applies the union operation to the mount point itself,
 and then only for lookups.
-This also means that any filesystems which are mounted under
-.Ar uniondir
-will take part in the union operation.
 .Sh OPTIONS
 The options are:
 .Bl -tag -width indent
@@ -150,6 +150,7 @@ Note that the files in the lower layer remain
 accessible via
 .Pa /sys .
 .Sh SEE ALSO
+.Xr intro 2 ,
 .Xr mount 2 ,
 .Xr unmount 2 ,
 .Xr fstab 5 ,
