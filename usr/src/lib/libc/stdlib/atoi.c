@@ -1,4 +1,4 @@
-/* @(#)atoi.c	4.2 (Berkeley) 1/11/81 */
+/* @(#)atoi.c	4.3 (Berkeley) 81/02/28 */
 atoi(p)
 register char *p;
 {
