@@ -1,4 +1,4 @@
-/*	if_dmc.h	6.1	83/07/29	*/
+/*	if_dmc.h	6.2	84/09/26	*/
 
 /*
  * DMC-11 Interface
@@ -24,7 +24,7 @@ struct dmcdevice {
 #define	sel4	un.w[2]
 #define	sel6	un.w[3]
 
-#define	DMCMTU	(2048)
+#define	DMCMTU	(1024)
 
 #define	RDYSCAN	16	/* loop delay for RDYI after RQI */
 
@@ -38,10 +38,12 @@ struct dmcdevice {
 #define	DMC_RQI		0040		/* port request bit */
 #define	DMC_IEI		0100		/* enable input interrupts */
 #define	DMC_RDYI	0200		/* port ready */
+#define	DMC0BITS	"\10\8RDI\7IEI\6RQI"
 
 /* defines for bsel1 */
 #define	DMC_MCLR	0100		/* DMC11 Master Clear */
 #define	DMC_RUN		0200		/* clock running */
+#define	DMC1BITS	"\10\8RUN\7MCLR"
 
 /* defines for bsel2 */
 #define	DMC_BACCO	0
@@ -50,6 +52,7 @@ struct dmcdevice {
 #define	DMC_OUR		4		/* read block */
 #define	DMC_IEO		0100		/* enable output interrupts */
 #define	DMC_RDYO	0200		/* port available */
+#define	DMC2BITS	"\10\8RDO\7IEO"
 
 /* defines for CNTLI mode */
 #define	DMC_HDPLX	02000		/* half duplex DDCMP operation */
@@ -63,4 +66,17 @@ struct dmcdevice {
 
 /* defines for CNTLO */
 #define	DMC_CNTMASK	01777
-#define	DMC_FATAL	01620
+
+#define	DMC_DATACK	01
+#define	DMC_TIMEOUT	02
+#define	DMC_NOBUFS	04
+#define	DMC_MAINTREC	010
+#define	DMC_LOSTDATA	020
+#define	DMC_DISCONN	0100
+#define	DMC_START	0200
+#define	DMC_NEXMEM	0400
+#define	DMC_ERROR	01000
+
+#define	DMC_FATAL (DMC_ERROR|DMC_NEXMEM|DMC_START|DMC_LOSTDATA|DMC_MAINTREC)
+#define	CNTLO_BITS	\
+   "\10\12ERROR\11NEXMEM\10START\7DISC\5LSTDATA\4MAINT\3NOBUF\2TIMEO\1DATACK"
