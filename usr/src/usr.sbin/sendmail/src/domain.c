@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	5.32 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	5.33 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	5.32 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	5.33 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -49,8 +49,8 @@ getmxrr(host, mxhosts, localhost, rcode)
 	if (n < 0)
 	{
 		if (tTd(8, 1))
-			printf("getmxrr: res_search failed (errno=%d, h_errno=%d)\n",
-			    errno, h_errno);
+			printf("getmxrr: res_search(%s) failed (errno=%d, h_errno=%d)\n",
+			    (host == NULL) ? "<NULL>" : host, errno, h_errno);
 		switch (h_errno)
 		{
 		  case NO_DATA:
