@@ -1,5 +1,5 @@
 /*
-char id_wrtfmt[] = "@(#)wrtfmt.c	1.5";
+char id_wrtfmt[] = "@(#)wrtfmt.c	1.6";
  *
  * formatted write routines
  */
@@ -56,12 +56,14 @@ w_ned(p,ptr) char *ptr; struct syl *p;
 		return(OK);
 	case TL:
 		cursor -= p->p1;
+		if ((recpos + cursor) < 0) cursor = -recpos;	/* ANSI req'd */
 		tab = YES;
 		return(OK);
 	case TR:
 	case X:
 		cursor += p->p1;
-		tab = (p->op == TR);
+		/* tab = (p->op == TR); this would implement destructive X */
+		tab = YES;
 		return(OK);
 	case APOS:
 		return(wrt_AP(p->p1));
@@ -166,13 +168,19 @@ deleted		PUT('0')
 /* added */	for(i=0;i<e;i++) PUT('0')
 		return(OK);
 	}
-	dd = d + scale;
+	if (scale > 0) {	/* insane ANSI requirement */
+		dd = d + 1;
+		d = dd - scale;
+	} else
+		dd = d + scale;
+	if (dd <= 0 || d < 0) goto E_badfield;
 	s=ecvt( (len==sizeof(float)?(double)p->pf:p->pd) ,dd,&dp,&sign);
 	delta = 3+e;
 	if(sign||cplus) delta++;
 	pad=w-(delta+d)-(scale>0? scale:0);
-	if(pad<0)
-	{	for(i=0;i<w;i++) PUT('*')
+	if(pad<0) {
+E_badfield:
+		for(i=0;i<w;i++) PUT('*')
 		return(OK);
 	}
 	for(i=0;i<(pad-(scale<=0?1:0));i++) PUT(' ')
