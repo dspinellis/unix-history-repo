@@ -1,9 +1,9 @@
-.\" Copyright (c) 1989, 1990, 1993
+.\" Copyright (c) 1989, 1990, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)finger.1	8.2 (Berkeley) %G%
+.\"	@(#)finger.1	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FINGER 1
@@ -124,6 +124,11 @@ style.
 The
 .Fl l
 option is the only option that may be passed to a remote machine.
+.Sh FILES
+.Bl -tag -width /var/log/lastlog -compact
+.It Pa /var/log/lastlog
+last login data base
+.El
 .Sh SEE ALSO
 .Xr chpass 1 ,
 .Xr w 1 ,

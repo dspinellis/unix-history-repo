@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)login.1	8.1 (Berkeley) %G%
+.\"	@(#)login.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LOGIN 1
@@ -99,6 +99,8 @@ message-of-the-day
 disallows logins
 .It Pa /var/run/utmp
 current logins
+.It Pa /var/log/lastlog
+last login account records
 .It Pa /var/log/wtmp
 login account records
 .It Pa /var/mail/user
