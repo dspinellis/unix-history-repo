@@ -1,4 +1,4 @@
-/*	ip_input.c	6.8	84/12/20	*/
+/*	ip_input.c	6.9	85/03/18	*/
 
 #include "param.h"
 #include "systm.h"
@@ -16,6 +16,7 @@
 #include "in.h"
 #include "in_pcb.h"
 #include "in_systm.h"
+#include "in_var.h"
 #include "ip.h"
 #include "ip_var.h"
 #include "ip_icmp.h"
@@ -23,7 +24,7 @@
 
 u_char	ip_protox[IPPROTO_MAX];
 int	ipqmaxlen = IFQ_MAXLEN;
-struct	ifnet *ifinet;			/* first inet interface */
+struct	in_ifaddr *in_ifaddr;			/* first inet address */
 
 /*
  * IP initialization: fill in IP protocol switch table.
@@ -47,7 +48,6 @@ ip_init()
 	ipq.next = ipq.prev = &ipq;
 	ip_id = time.tv_sec & 0xffff;
 	ipintrq.ifq_maxlen = ipqmaxlen;
-	ifinet = if_ifwithaf(AF_INET);
 }
 
 u_char	ipcksum = 1;
@@ -66,6 +66,7 @@ ipintr()
 	struct mbuf *m0;
 	register int i;
 	register struct ipq *fp;
+	register struct in_ifaddr *ia;
 	int hlen, s;
 
 next:
@@ -84,7 +85,12 @@ next:
 		goto next;
 	}
 	ip = mtod(m, struct ip *);
-	if ((hlen = ip->ip_hl << 2) > m->m_len) {
+	hlen = ip->ip_hl << 2;
+	if (hlen < 10) {	/* minimum header length */
+		ipstat.ips_badhlen++;
+		goto next;
+	}
+	if (hlen > m->m_len) {
 		if ((m = m_pullup(m, hlen)) == 0) {
 			ipstat.ips_badhlen++;
 			goto next;
@@ -145,27 +151,29 @@ next:
 		goto next;
 
 	/*
-	 * Fast check on the first internet
-	 * interface in the list.
+	 * Check our list of addresses, to see if the packet is for us.
 	 */
-	if (ifinet) {
-		struct sockaddr_in *sin;
+	for (ia = in_ifaddr; ia; ia = ia->ia_next) {
+#define	satosin(sa)	((struct sockaddr_in *)(sa))
 
-		sin = (struct sockaddr_in *)&ifinet->if_addr;
-		if (sin->sin_addr.s_addr == ip->ip_dst.s_addr)
-			goto ours;
-		sin = (struct sockaddr_in *)&ifinet->if_broadaddr;
-		if ((ifinet->if_flags & IFF_BROADCAST) &&
-		    sin->sin_addr.s_addr == ip->ip_dst.s_addr)
-			goto ours;
+		if (IA_SIN(ia)->sin_addr.s_addr == ip->ip_dst.s_addr)
+			break;
+		if ((ia->ia_ifp->if_flags & IFF_BROADCAST) &&
+		    satosin(&ia->ia_broadaddr)->sin_addr.s_addr ==
+			ip->ip_dst.s_addr)
+			    break;
+		/*
+		 * Look for all-0's host part (old broadcast addr).
+		 */
+		if ((ia->ia_ifp->if_flags & IFF_BROADCAST) &&
+		    ia->ia_subnet == ntohl(ip->ip_dst.s_addr))
+			break;
 	}
-	ipaddr.sin_addr = ip->ip_dst;
-	if (if_ifwithaddr((struct sockaddr *)&ipaddr) == 0) {
+	if (ia == (struct in_ifaddr *)0) {
 		ip_forward(ip);
 		goto next;
 	}
 
-ours:
 	/*
 	 * Look for queue of fragments
 	 * of this datagram.
@@ -438,7 +446,7 @@ ip_dooptions(ip)
 	int opt, optlen, cnt, code, type;
 	struct in_addr *sin;
 	register struct ip_timestamp *ipt;
-	register struct ifnet *ifp;
+	register struct ifaddr *ifa;
 	struct in_addr t;
 
 	cp = (u_char *)(ip + 1);
@@ -474,9 +482,9 @@ ip_dooptions(ip)
 				break;
 			sin = (struct in_addr *)(cp + cp[2]);
 			ipaddr.sin_addr = *sin;
-			ifp = if_ifwithaddr((struct sockaddr *)&ipaddr);
+			ifa = ifa_ifwithaddr((struct sockaddr *)&ipaddr);
 			type = ICMP_UNREACH, code = ICMP_UNREACH_SRCFAIL;
-			if (ifp == 0) {
+			if (ifa == 0) {
 				if (opt == IPOPT_SSRR)
 					goto bad;
 				break;
@@ -487,7 +495,7 @@ ip_dooptions(ip)
 				break;
 			ip->ip_dst = sin[1];
 			if (opt == IPOPT_SSRR &&
-			    if_ifonnetof(in_netof(ip->ip_dst)) == 0)
+			    in_iaonnetof(in_netof(ip->ip_dst)) == 0)
 				goto bad;
 			break;
 
@@ -511,14 +519,14 @@ ip_dooptions(ip)
 			case IPOPT_TS_TSANDADDR:
 				if (ipt->ipt_ptr + 8 > ipt->ipt_len)
 					goto bad;
-				if (ifinet == 0)
+				if (in_ifaddr == 0)
 					goto bad;	/* ??? */
-				*sin++ = ((struct sockaddr_in *)&ifinet->if_addr)->sin_addr;
+				*sin++ = IA_SIN(in_ifaddr)->sin_addr;
 				break;
 
 			case IPOPT_TS_PRESPEC:
 				ipaddr.sin_addr = *sin;
-				if (if_ifwithaddr((struct sockaddr *)&ipaddr) == 0)
+				if (ifa_ifwithaddr((struct sockaddr *)&ipaddr) == 0)
 					continue;
 				if (ipt->ipt_ptr + 8 > ipt->ipt_len)
 					goto bad;
@@ -605,7 +613,7 @@ int	ipprintfs = 0;
 int	ipforwarding = 1;
 /*
  * Forward a packet.  If some error occurs return the sender
- * and icmp packet.  Note we can't always generate a meaningful
+ * an icmp packet.  Note we can't always generate a meaningful
  * icmp message because icmp doesn't have a large enough repetoire
  * of codes and types.
  */
@@ -613,11 +621,12 @@ ip_forward(ip)
 	register struct ip *ip;
 {
 	register int error, type, code;
-	struct mbuf *mopt, *mcopy;
+	struct mbuf *mcopy;
 
 	if (ipprintfs)
 		printf("forward: src %x dst %x ttl %x\n", ip->ip_src,
 			ip->ip_dst, ip->ip_ttl);
+	ip->ip_id = htons(ip->ip_id);
 	if (ipforwarding == 0) {
 		/* can't tell difference between net and host */
 		type = ICMP_UNREACH, code = ICMP_UNREACH_NET;
@@ -628,20 +637,15 @@ ip_forward(ip)
 		goto sendicmp;
 	}
 	ip->ip_ttl -= IPTTLDEC;
-	mopt = m_get(M_DONTWAIT, MT_DATA);
-	if (mopt == NULL) {
-		m_freem(dtom(ip));
-		return;
-	}
 
 	/*
 	 * Save at most 64 bytes of the packet in case
 	 * we need to generate an ICMP message to the src.
 	 */
 	mcopy = m_copy(dtom(ip), 0, imin(ip->ip_len, 64));
-	ip_stripoptions(ip, mopt);
 
-	error = ip_output(dtom(ip), mopt, (struct route *)0, IP_FORWARDING);
+	error = ip_output(dtom(ip), (struct mbuf *)0, (struct route *)0,
+		IP_FORWARDING);
 	if (error == 0) {
 		if (mcopy)
 			m_freem(mcopy);
