@@ -1,6 +1,13 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)pcs.c	5.5 (Berkeley) %G%";
-#endif
+static char sccsid[] = "@(#)pcs.c	5.6 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * adb - subprocess control
