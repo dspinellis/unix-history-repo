@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.59		%G%);
+SCCSID(@(#)main.c	3.60		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -727,6 +727,7 @@ setsender(from)
 	char *realname;
 	char cfbuf[40];
 	bool nofullname;
+	extern char *macvalue();
 
 	/*
 	**  Figure out the real user executing us.
@@ -784,6 +785,10 @@ setsender(from)
 	(void) expand("$z/.mailcf", cfbuf, &cfbuf[sizeof cfbuf - 1]);
 	if (!nofullname && safefile(cfbuf, getruid(), S_IREAD))
 		readcf(cfbuf, FALSE);
+
+	/* if the user has given fullname already, don't redefine */
+	if (FullName == NULL)
+		FullName = macvalue('x');
 
 	/* extract full name from passwd file */
 	if (!nofullname && (FullName == NULL || FullName[0] == '\0') &&
