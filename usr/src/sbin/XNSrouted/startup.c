@@ -9,17 +9,21 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Routing Table Management Daemon
  */
 #include "defs.h"
+
+#include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/sysctl.h>
+
 #include <net/if.h>
 #include <net/if_dl.h>
+
 #include <nlist.h>
 #include <stdlib.h>
 
