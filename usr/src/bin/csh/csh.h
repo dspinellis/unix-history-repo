@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)csh.h	5.23 (Berkeley) %G%
+ *	@(#)csh.h	5.24 (Berkeley) %G%
  */
 
 /*
@@ -209,7 +209,12 @@ struct Ain {
 #define A_SEEK	0		/* Alias seek */
 #define F_SEEK	1		/* File seek */
 #define E_SEEK	2		/* Eval seek */
-    off_t f_seek;
+    union {
+	off_t _f_seek;
+	Char* _c_seek;
+    } fc;
+#define f_seek fc._f_seek
+#define c_seek fc._c_seek
     Char **a_seek;
 } ;
 extern int aret;		/* What was the last character returned */
