@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)find.1	6.21 (Berkeley) %G%
+.\"     @(#)find.1	6.22 (Berkeley) %G%
 .\"
 .Vx
 .Vx
@@ -16,20 +16,25 @@
 .Sh SYNOPSIS
 .Nm find
 .Op Fl drsXx
-.Op Ar path
+.Op Ar file
 .Ar expression
 .Nm find
-.Op Fl drsx
-.Op Fl f Ar path
+.Op Fl drsXx
+.Op Fl f Ar file
 .Ar expression
 .Sh DESCRIPTION
 .Nm Find
 recursively descends the directory tree for each
-.Ar path
+.Ar file
 listed, evaluating an
 .Ar expression
 (composed of the ``primaries'' and ``operands'' listed below) in terms
 of each file in the tree.
+.Pp
+If
+.Ar file
+is a symbolic link referencing an existing file, the directory tree
+referenced by the link is descended instead of the link itself.
 .Pp
 The options are as follows:
 .Pp
