@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.9 %G%";
+static char sccsid[] = "@(#)interp.c 1.10 %G%";
 
 #include <math.h>
 #include "whoami.h"
@@ -1292,47 +1292,31 @@ interpreter(base)
 			push2((short)(TEOLN(popaddr())));
 			continue;
 		case O_WRITEC:
-			pc.cp++;
 			if (_runtst) {
 				WRITEC(curfile);
-				popsp((long)(sizeof(long)+sizeof(FILE *)));
+				popsp((long)(*pc.cp++));
 				continue;
 			}
-#ifdef VAX
 			fputc();
-#else
-			WRITEC(curfile);
-#endif VAX
-			popsp((long)(sizeof(long)+sizeof(FILE *)));
+			popsp((long)(*pc.cp++));
 			continue;
 		case O_WRITES:
-			pc.cp++;
 			if (_runtst) {
 				WRITES(curfile);
-				popsp((long)(2*sizeof(char *)+2*sizeof(long)));
+				popsp((long)(*pc.cp++));
 				continue;
 			}
-#ifdef VAX
 			fwrite();
-#else
-			WRITES(curfile);
-#endif VAX
-			popsp((long)(2*sizeof(char *)+2*sizeof(long)));
+			popsp((long)(*pc.cp++));
 			continue;
 		case O_WRITEF:
 			if (_runtst) {
 				WRITEF(curfile);
-				popsp((long)(((*pc.cp++ - 2) * sizeof(long)) +
-					2 * sizeof(char *)));
+				popsp((long)(*pc.cp++));
 				continue;
 			}
-#ifdef VAX
 			fprintf();
-#else
-			WRITEF(curfile);
-#endif VAX
-			popsp((long)(((*pc.cp++ - 2) * sizeof(long)) +
-				2 * sizeof(char *)));
+			popsp((long)(*pc.cp++));
 			continue;
 		case O_WRITLN:
 			pc.cp++;
