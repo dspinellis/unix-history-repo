@@ -1,4 +1,4 @@
-/*	uipc_socket.c	6.2	83/09/28	*/
+/*	uipc_socket.c	6.2	83/09/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -280,6 +280,7 @@ sosend(so, nam, uio, flags, rights)
 	register struct mbuf *m, **mp = &top;
 	register int space;
 	int len, error = 0, s, dontroute;
+	struct sockbuf sendtempbuf;
 
 	if (sosendallatonce(so) && uio->uio_resid > so->so_snd.sb_hiwat)
 		return (EMSGSIZE);
@@ -343,6 +344,12 @@ again:
 		}
 	}
 	splx(s);
+	/*
+	 * Temporary kludge-- don't want to update so_snd in this loop
+	 * (will be done when sent), but need to recalculate
+	 * space on each iteration.  For now, copy so_snd into a tmp.
+	 */
+	sendtempbuf = so->so_snd;
 	while (uio->uio_resid > 0 && space > 0) {
 		register struct iovec *iov = uio->uio_iov;
 
@@ -377,8 +384,10 @@ nopages:
 		mp = &m->m_next;
 		if (flags & MSG_OOB)
 			space -= len;
-		else
-			space = sbspace(&so->so_snd);
+		else {
+			sballoc(&sendtempbuf, m);
+			space = sbspace(&sendtempbuf);
+		}
 	}
 	goto again;
 
