@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.17 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -304,8 +304,14 @@ main(argc, argv)
 			t.c_cflag |= CS8;
 			goto next;
 		}
+		if (eq("cbreak", *argv)) {
+			t.c_iflag |  BRKINT|IXON|IMAXBEL;
+			t.c_oflag |= OPOST;
+			t.c_lflag |= ISIG|IEXTEN;
+			t.c_lflag &= ~ICANON;
+		}
 		if (eq("cooked", *argv) || eq("-raw", *argv) ||
-		    eq("sane", *argv)) {
+		    eq("sane", *argv) || eq("-cbreak", *argv)) {
 			t.c_cflag = TTYDEF_CFLAG | (t.c_cflag & CLOCAL);
 			t.c_iflag = TTYDEF_IFLAG;
 			t.c_iflag |= ICRNL;
