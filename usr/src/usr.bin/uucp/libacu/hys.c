@@ -1,10 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)hys.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)hys.c	4.7 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
 
-#ifdef HAYES
 #ifdef USR2400
 #define DROPDTR
 /*
@@ -122,18 +121,22 @@ int toneflag;
 				*cp = '\0';
 			DEBUG(4,"\nGOT: %s", cbuf);
 			alarm(MAXMSGTIME);
-		} while (strncmp(cbuf, "RING", 4) == 0 && nrings++ < 5);
+		} while ((strncmp(cbuf, "RING", 4) == 0 ||
+			 strncmp(cbuf, "RRING", 5) == 0) && nrings++ < 5);
 		if (strncmp(cbuf, "CONNECT", 7) != 0) {
 			logent(cbuf, _FAILED);
 			strcpy(devSel, dev->D_line);
 			hyscls(dh);
 			return CF_DIAL;
 		}
+#undef DONTRESETBAUDRATE
+#ifndef DONTRESETBAUDRATE
 		i = atoi(&cbuf[8]);
 		if (i > 0 && i != dev->D_speed) {	
 			DEBUG(4,"Baudrate reset to %d\n", i);
 			fixline(dh, i);
 		}
+#endif /* DONTRESETBAUDRATE */
 
 	}
 	if (dh < 0) {
@@ -179,13 +182,15 @@ int fd;
 		write(fd, "+++", 3);
 #endif
 		sleep(3);
-		write(fd, "ATZ\r", 4);
+		write(fd, "ATH\r", 4);
+/*
 		if (expect("OK",fd) != 0)
 			logent(devSel, "HSM did not respond to ATZ");
-		write(fd, "ATH\r", 4);
+*/
+		sleep(1);
+		write(fd, "ATZ\r", 4);
 		sleep(1);
 		close(fd);
 		delock(devSel);
 	}
 }
-#endif HAYES
