@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass4.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass4.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -30,6 +30,7 @@ pass4()
 {
 	register ino_t inumber;
 	register struct zlncnt *zlnp;
+	struct dinode *dp;
 	struct inodesc idesc;
 	int n;
 
@@ -63,6 +64,12 @@ pass4()
 			break;
 
 		case DCLEAR:
+			dp = ginode(inumber);
+			if (dp->di_size == 0) {
+				clri(&idesc, "ZERO LENGTH", 1);
+				break;
+			}
+			/* fall through */
 		case FCLEAR:
 			clri(&idesc, "BAD/DUP", 1);
 			break;
