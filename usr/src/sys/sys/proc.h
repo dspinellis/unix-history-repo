@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.17 (Berkeley) %G%
+ *	@(#)proc.h	7.18 (Berkeley) %G%
  */
 
 /*
@@ -52,7 +52,7 @@ struct	proc {
 	char	p_time;		/* resident time for scheduling */
 	char	p_nice;		/* nice for cpu usage */
 	char	p_slptime;	/* time since last block */
-	char	p_cursig;
+	u_char	p_dupfd;	/* sideways return value from fdopen XXX */
 	int	p_sig;		/* signals pending to this process */
 	int	p_sigmask;	/* current signal mask */
 	int	p_sigignore;	/* signals being ignored */
@@ -65,7 +65,7 @@ struct	proc {
 	gid_t	p_svgid;	/* saved effective group id */
 	pid_t	p_pid;		/* unique process id */
 	pid_t	p_ppid;		/* process id of parent */
-	u_short	p_xstat;	/* Exit status for wait */
+	u_short	p_xstat;	/* Exit status for wait; also stop signal */
 	struct	rusage *p_ru;	/* exit information */
 	short	p_poip;		/* page outs in progress */
 	short	p_szpt;		/* copy of page table size */
