@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)adduser.8	6.1 (Berkeley) %G%
+.\"	@(#)adduser.8	6.2 (Berkeley) %G%
 .\"
 .TH ADDUSER 8 ""
 .UC 4
@@ -49,23 +49,26 @@ program if necessary to allow different information to be encoded in
 this field.  The UCB version of finger knows several things particular
 to Berkeley \- that phone extensions start \*(lq2\-\*(rq, that offices ending
 in \*(lqE\*(rq are in Evans Hall and that offices ending in \*(lqC\*(rq are
-in Cory Hall.
+in Cory Hall. The 
+.IR chfn (1)
+program allows users to change this information.
 .PP
 The final two fields give a login directory and a login shell name.
-Traditionally, user files live on a file system which has the machines
-single letter
-.IR net (1)
-address as the first of two characters.  Thus on the Berkeley CS Department
-VAX, whose Berknet address is ``csvax'' abbreviated ``v'' the user file
-systems are mounted on ``/va'', ``/vb'', etc.
-On each such filesystem there are subdirectories there for each group
-of users, i.e.: \*(lq/va/staff\*(rq and \*(lq/vb/prof\*(rq.
+Traditionally, user files live on a file system different from /usr.
+Typically the user file systems are mounted on a directories in the root
+named sequentially starting from from the beginning of the alphabet,
+eg /a, /b, /c, etc.
+On each such file system there are subdirectories there for each group
+of users, i.e.: \*(lq/a/staff\*(rq and \*(lq/b/prof\*(rq.
 This is not strictly necessary but keeps the number of files in the
 top level directories reasonably small.
 .PP
 The login shell will default to \*(lq/bin/sh\*(rq if none is given.
 Most users at Berkeley choose \*(lq/bin/csh\*(rq so this is usually
-specified here.
+specified here. The 
+.IR chsh (1)
+program allows users to change their login shell to one of the
+shells in the approved list given in /etc/shells.
 .PP
 It is useful to give new users some help in getting started, supplying
 them with a few skeletal files such as
