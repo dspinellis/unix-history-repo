@@ -1,25 +1,13 @@
 Physical Memory Layout:
-Symbol		Address		PTD			Usage
-
-btext		00000000
-etext		X
-bdata
-edata
-bbss
-ebss
-bsym
-esym
-
-
 
 Virtual Memory Layout:
 Symbol		Address		PTD			Usage
 
-		FD800000	PPDROFF		3F6
 USRSTACK	FDBFE000
 VM_END_USER_ADDRESS
 		FDBFE000
 _PTmap		FDC00000	PDRPDROFF	3F7	Page dir
+_PTmap		FDC00000 = PDRPDROFF << PD_SHIFT
 _PTD		FDFF7000
 _PTDpde		FDFF7FDC = _PTD + (_PTmap >> PD_SHIFT) * 4))
 _APTDpde	FDFF7FF8 = _PTD + (_APTmap >> PD_SHIFT) * 4))
@@ -29,9 +17,26 @@ KERNBASE	FE000000	SYSPDROFF	3F8	Kernel Virtual Space
 		FEBFFFFF				End of Kernel
 +KERNSIZE	FEC00000
 _APTmap		FF800000	APDRPDROFF	3FE AKA PDTPDTI
+_APTmap		FF800000 = APDRPDROFF << PD_SHIFT
 		FF800000	PPTEOFF		3FE
 _APTD		FFBFE000 = _APTmap + ((_APTmap >> PD_SHIFT) * NBPG)
 _APTmapend	FFC00000
 
 
-$Id: vm_layout.doc,v 1.1 1993/10/11 03:54:01 rgrimes Exp $
+Page Table Directories, and how they relate to the vm address space
+Note: PTDI stands for Page Table Directory Index.
+
+PTDI	Address		pmap.h
+--------------------------------------------------------------------------------
+3FF	FFC00000	LASTPTDI
+3FE	FF800000	APTDPTDI
+3FD	FF400000	.
+3FC	FF000000	.
+3FB	FEC00000	RSVD_PTDI
+3FA	FE800000	KPTDI_LAST
+3F9	FE400000	.
+3F8	FE000000	KPTDI_FIRST
+3F7	FDC00000	PTDPTDI
+3F6	FD800000	UPTDI
+
+$Id: vm_layout.doc,v 1.2 1993/10/12 06:29:40 rgrimes Exp $
