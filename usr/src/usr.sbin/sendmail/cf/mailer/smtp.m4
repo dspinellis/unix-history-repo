@@ -14,7 +14,7 @@ POPDIVERT
 ###   SMTP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)smtp.m4	8.4 (Berkeley) %G%')
+VERSIONID(`@(#)smtp.m4	8.5 (Berkeley) %G%')
 
 Msmtp,		P=[IPC], F=CONCAT(mDFMuX, SMTP_MAILER_FLAGS), S=11, R=ifdef(`_ALL_MASQUERADE_', `11', `21'), E=\r\n,
 		ifdef(`_OLD_SENDMAIL_',, `L=990, ')A=IPC $h
@@ -61,10 +61,12 @@ R< @ $+ > $*		$@ < @ $1 > $2			resolve <route-addr>
 
 # output fake domains as user%fake@relay
 ifdef(`BITNET_RELAY',
-`R$+ <@ $+ . BITNET >	$: $1 % $2 .BITNET < @ $B >	user@host.BITNET',
+`R$+ <@ $+ . BITNET >	$: $1 % $2 .BITNET < @ $B >	user@host.BITNET
+R$+.BITNET <@ $+:$+ >	$: $1 .BITNET < @ $3 >		strip mailer: part',
 	`dnl')
 ifdef(`CSNET_RELAY',
-`R$+ <@ $+ . CSNET >	$: $1 % $2 .CSNET < @ $C >	user@host.CSNET',
+`R$+ <@ $+ . CSNET >	$: $1 % $2 .CSNET < @ $C >	user@host.CSNET
+R$+.CSNET <@ $+:$+ >	$: $1 .CSNET < @ $3 >		strip mailer: part',
 	`dnl')
 ifdef(`_NO_UUCP_', `dnl',
 `R$+ <@ $+ . UUCP >	$: $2 ! $1 < @ $j >		user@host.UUCP')
