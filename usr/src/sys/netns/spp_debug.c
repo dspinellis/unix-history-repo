@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1984, 1985, 1986 Regents of the University of California.
+ * Copyright (c) 1984, 1985, 1986, 1987 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)spp_debug.c	7.1 (Berkeley) %G%
+ *	@(#)spp_debug.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -134,7 +134,7 @@ spp_trace(act, ostate, sp, si, req)
 		return;
 #ifndef lint
 #define p3(f)  { printf("%s = %x, ", "f", sp->s_/**/f); }
-	printf("\t"); p3(rack);p3(ralo);p3(snt);p3(flags); printf("\n");
+	printf("\t"); p3(rack);p3(ralo);p3(smax);p3(flags); printf("\n");
 #endif
 #endif
 }
