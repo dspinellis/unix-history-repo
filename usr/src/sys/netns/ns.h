@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns.h	6.3 (Berkeley) %G%
+ *	@(#)ns.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -76,9 +76,9 @@ struct ns_addr {
  * Socket address, Xerox style
  */
 struct sockaddr_ns {
-	short		sns_family;
+	u_short		sns_family;
 	struct ns_addr	sns_addr;
-	char		sns_zero[4];
+	char		sns_zero[2];
 };
 #define sns_port sns_addr.x_port
 
