@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.30 (Berkeley) %G%
+#	@(#)Makefile.inc	5.31 (Berkeley) %G%
 
 # machine-independent gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen
@@ -10,7 +10,7 @@ SRCS+=	alarm.c assert.c clock.c closedir.c crypt.c ctermid.c ctime.c \
 	getpwent.c getttyent.c getusershell.c glob.c initgroups.c isatty.c \
 	isctype.c isinf.c mktemp.c nice.c nlist.c opendir.c pause.c \
 	popen.c psignal.c raise.c readdir.c rewinddir.c scandir.c \
-	seekdir.c setjmperr.c setmode.c setrgid.c setruid.c siginterrupt.c \
+	seekdir.c setjmperr.c setmode.c siginterrupt.c \
 	siglist.c signal.c sigsetops.c sleep.c syslog.c telldir.c \
 	termios.c time.c times.c timezone.c ttyname.c ttyslot.c ualarm.c \
 	unvis.c usleep.c utime.c valloc.c vis.c wait.c wait3.c waitpid.c
@@ -70,8 +70,6 @@ MLINKS+=scandir.3 alphasort.3
 MLINKS+=setjmp.3 _longjmp.3 setjmp.3 _setjmp.3 setjmp.3 longjmp.3 \
 	setjmp.3 longjmperr.3 setjmp.3 longjmperror.3
 MLINKS+=setmode.3 getmode.3
-MLINKS+=setuid.3 setegid.3 setuid.3 seteuid.3 setuid.3 setgid.3 \
-	setuid.3 setrgid.3 setuid.3 setruid.3
 MLINKS+=sigsetops.3 sigemptyset.3 sigsetops.3 sigfillset.3 \
 	sigsetops.3 sigaddset.3 sigsetops.3 sigdelset.3 \
 	sigsetops.3 sigismember.3
