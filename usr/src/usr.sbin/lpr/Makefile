@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 # makefile for line printer spooling system
 #
@@ -61,10 +61,10 @@ FILTERS:
 	cd filters; make ${MFLAGS}
 
 install: all
-	install -s -g ${SPGRP} -m 6711 lpd ${DESTDIR}/${LIBDIR}/lpd
-	install -s -g ${SPGRP} -m 6711 lpr ${DESTDIR}/${BINDIR}/lpr
-	install -s -g ${SPGRP} -m 6711 lpq ${DESTDIR}/${BINDIR}/lpq
-	install -s -g ${SPGRP} -m 6711 lprm ${DESTDIR}/${BINDIR}/lprm
+	install -s -o ${ROOT} -g ${SPGRP} -m 6711 lpd ${DESTDIR}/${LIBDIR}/lpd
+	install -s -o ${ROOT} -g ${SPGRP} -m 6711 lpr ${DESTDIR}/${BINDIR}/lpr
+	install -s -o ${ROOT} -g ${SPGRP} -m 6711 lpq ${DESTDIR}/${BINDIR}/lpq
+	install -s -o ${ROOT} -g ${SPGRP} -m 6711 lprm ${DESTDIR}/${BINDIR}/lprm
 	install -s -g ${SPGRP} -m 2711 lpc ${DESTDIR}/etc/lpc
 	install -s lptest ${DESTDIR}/${BINDIR}/lptest
 	install -s pac ${DESTDIR}/etc/pac
