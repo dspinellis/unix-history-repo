@@ -1,4 +1,4 @@
-/*	main.c	1.7	82/10/25	*/
+/*	main.c	1.8	82/12/09	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -14,8 +14,12 @@ main(argc, argv)
 	char **argv;
 {
 
+	if (argc > 1 && eq("-p", argv[1])) {
+		profiling++;
+		argc--, argv++;
+	}
 	if (argc != 2) {
-		fprintf(stderr, "usage: config sysname\n");
+		fprintf(stderr, "usage: config [ -p ] sysname\n");
 		exit(1);
 	}
 	PREFIX = argv[1];

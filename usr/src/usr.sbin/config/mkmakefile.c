@@ -1,4 +1,4 @@
-/*	mkmakefile.c	1.21	82/10/25	*/
+/*	mkmakefile.c	1.22	82/12/09	*/
 
 /*
  * Build the makefile for the system, from
@@ -148,9 +148,9 @@ makefile()
 			fprintf(stderr,
 			    "Unknown %% construct in generic makefile: %s",
 			    line);
-		(void) fclose(ifp);
-		(void) fclose(ofp);
 	}
+	(void) fclose(ifp);
+	(void) fclose(ofp);
 }
 
 /*
@@ -172,7 +172,7 @@ read_files()
 openit:
 	fp = fopen(fname, "r");
 	if (fp == 0) {
-		perror("../conf/files");
+		perror(fname);
 		exit(1);
 	}
 next:
@@ -207,7 +207,7 @@ next:
 	if (eq(wd, "standard"))
 		goto checkdev;
 	if (!eq(wd, "optional")) {
-		printf("%s: %s must be optional or standard",
+		printf("%s: %s must be optional or standard\n",
 		    fname, this);
 		exit(1);
 	}
@@ -216,8 +216,10 @@ nextopt:
 	if (wd == 0)
 		goto doneopt;
 	devorprof = wd;
-	if (eq(wd, "device-driver") || eq(wd, "profiling-routine"))
+	if (eq(wd, "device-driver") || eq(wd, "profiling-routine")) {
+		next_word(fp, wd);
 		goto save;
+	}
 	nreqs++;
 	if (needs == 0)
 		needs = ns(wd);
@@ -251,6 +253,8 @@ save:
 		    fname, this);
 		exit(1);
 	}
+	if (eq(devorprof, "profiling-routine") && profiling == 0)
+		goto next;
 	tp = new_fent();
 	tp->f_fn = this;
 	if (eq(devorprof, "device-driver"))
@@ -400,7 +404,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			fprintf(f, "\t${CC} -I. -c -S %s ../%sc\n", COPTS, np);
 			fprintf(f, "\tex - %ss < ${CRT0.EX}\n", tp);
 			fprintf(f,
-		  "\t/lib/cpp %ss | sed -f ../conf/asm.sed | ${AS} -o %so\n",
+		  "\t/lib/cpp %ss | sed -f ../vax/asm.sed | ${AS} -o %so\n",
 			  tp, tp);
 			fprintf(f, "\trm -f %ss\n\n", tp);
 			break;
@@ -410,6 +414,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			    "config: don't know how to profile kernel on sun\n");
 			break;
 		}
+		break;
 
 	default:
 		printf("Don't know rules for %s", np);

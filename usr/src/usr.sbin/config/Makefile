@@ -1,14 +1,14 @@
 #
-#	Makefile	1.7	82/10/25
+#	Makefile	1.8	82/12/09
 #
 CFILES=	y.tab.c main.c lex.yy.c mkioconf.c mkmakefile.c mkubglue.c mkheaders.c
-OFILES=	y.tab.o main.o lex.yy.o mkioconf.o mkmakefile.o mkubglue.o mkheaders.o
+OBJS=	y.tab.o main.o lex.yy.o mkioconf.o mkmakefile.o mkubglue.o mkheaders.o
 
-CFLAGS=
+CFLAGS=-O
 LDFLAGS=-ll
 
-config: ${OFILES}
-	${CC} ${OFILES} -o config ${LDFLAGS}
+config: ${OBJS}
+	${CC} ${OBJS} -o config ${LDFLAGS}
 
 lex.yy.c: config.l
 	lex config.l
