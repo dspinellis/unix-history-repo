@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo.h	7.1 (Berkeley) %G%
+ *	@(#)fifo.h	7.2 (Berkeley) %G%
  */
 
 #ifdef FIFO
@@ -151,4 +151,33 @@ int	fifo_advlock __P((
 		int op,
 		struct flock *fl,
 		int flags));
+#define fifo_blkatoff ((int (*) __P(( \
+		struct vnode *vp, \
+		off_t offset, \
+		char **res, \
+		struct buf **bpp))) fifo_badop)
+#define fifo_vget ((int (*) __P(( \
+		struct mount *mp, \
+		ino_t ino, \
+		struct vnode **vpp))) fifo_badop)
+#define fifo_valloc ((int (*) __P(( \
+		struct vnode *pvp, \
+		int mode, \
+		struct ucred *cred, \
+		struct vnode **vpp))) fifo_badop)
+#define fifo_vfree ((void (*) __P(( \
+		struct vnode *pvp, \
+		ino_t ino, \
+		int mode))) fifo_badop)
+#define fifo_truncate ((int (*) __P(( \
+		struct vnode *vp, \
+		u_long length, \
+		int flags))) nullop)
+#define fifo_update ((int (*) __P(( \
+		struct vnode *vp, \
+		struct timeval *ta, \
+		struct timeval *tm, \
+		int waitfor))) nullop)
+#define fifo_bwrite ((int (*) __P(( \
+		struct buf *bp))) nullop)
 #endif /* FIFO */
