@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.19 82/03/29 */
+/* tcp_timer.c 4.20 82/04/04 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -102,7 +102,10 @@ COUNT(TCP_CANCELTIMERS);
 		tp->t_timer[i] = 0;
 }
 
-int	tcprexmtprint;
+float	tcp_backoff[TCP_MAXRXTSHIFT] =
+    { 1.0, 1.2, 1.4, 1.7, 2.0, 3.0, 5.0, 8.0, 16.0, 32.0 };
+int	tcprexmtprint = 0;
+int	tcpexprexmtbackoff = 0;
 /*
  * TCP timer processing.
  */
@@ -136,9 +139,16 @@ COUNT(TCP_TIMERS);
 		}
 		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 		    (int)tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
-		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
-		    tp->t_timer[TCPT_REXMT] << tp->t_rxtshift,
-		    TCPTV_MIN, TCPTV_MAX);
+		if (tcpexprexmtbackoff) {
+			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
+			    tp->t_timer[TCPT_REXMT] << tp->t_rxtshift,
+			    TCPTV_MIN, TCPTV_MAX);
+		} else {
+			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
+			    tp->t_timer[TCPT_REXMT] *
+			        tcp_backoff[tp->t_rxtshift - 1],
+			    TCPTV_MIN, TCPTV_MAX);
+		}
 if (tcprexmtprint)
 printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]);
 		tp->snd_nxt = tp->snd_una;
