@@ -85,7 +85,17 @@ main(argc, argv)
 	char buf[BUFSIZ], cmd[16];
 	struct servent *sp;
 
+#ifdef	KERBEROS
+	sp = getservbyname("kshell", "tcp");
+	if(sp == NULL) {
+		use_kerberos = 0;
+		old_warning("kshell service unknown");
+		sp = getservbyname("kshell", "tcp");
+	}
+#else
 	sp = getservbyname("shell", "tcp");
+#endif
+
 	if (sp == NULL) {
 		fprintf(stderr, "rcp: shell/tcp: unknown service\n");
 		exit(1);
@@ -233,6 +243,12 @@ try_again:
 					    if((rem < 0) && errno == ECONNREFUSED) {
 						    use_kerberos = 0;
 						    old_warning("remote host doesn't support Kerberos");
+						    sp = getservbyname("shell", "tcp");
+						    if(sp == NULL) {
+							fprintf(stderr, "unknown service shell/tcp\n");
+							exit(1);
+						    }
+						    port = sp->s_port;
 						    goto try_again;
 					    }
 					} else {
@@ -317,6 +333,12 @@ one_more_time:
 				    if((rem < 0) && errno == ECONNREFUSED) {
 					use_kerberos = 0;
 					old_warning("remote host doesn't suport Kerberos");
+					sp = getservbyname("shell", "tcp");
+					if(sp == NULL) {
+						fprintf(stderr, "unknown service shell/tcp\n");
+						exit(1);
+					}
+					port = sp->s_port;
 					goto one_more_time;
 				    }
 				} else {
@@ -830,7 +852,12 @@ error(fmt, a1, a2, a3, a4, a5)
 
 usage()
 {
+#ifdef	KERBEROS
+	fputs("usage: rcp [-k realm] [-x] [-p] f1 f2;\n", stderr);
+	fputs("   or: rcp [-k realm] [-x] [-rp] f1 ... fn d2\n", stderr);
+#else
 	fputs("usage: rcp [-p] f1 f2; or: rcp [-rp] f1 ... fn d2\n", stderr);
+#endif
 	exit(1);
 }
 
@@ -838,6 +865,6 @@ usage()
 old_warning(str)
 	char	*str;
 {
-	fprintf(stderr,"Warning: %s, using standard rcp", str);
+	fprintf(stderr,"Warning: %s, using standard rcp\n", str);
 }
 #endif
