@@ -56,11 +56,6 @@ nextstore()
 {
     struct storage_descriptor sd;
 
-    if (api_exch_incommand(EXCH_HEREIS) == -1) {
-	fprintf(stderr, "Bad data from other side.\n");
-	fprintf(stderr, "(Encountered at %s, %s.)\n", __FILE__, __LINE__);
-	return -1;
-    }
     if (api_exch_intype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
 	storage_length = 0;
 	return -1;
@@ -73,10 +68,14 @@ nextstore()
 	storage_length = 0;
 	return -1;
     }
-    if (api_exch_intype(EXCH_TYPE_BYTES, storage_length, (char *)storage) == -1) {
-	storage_length = 0;
-	return -1;
+    if (storage_length != 0) {
+	if (api_exch_intype(EXCH_TYPE_BYTES, storage_length, (char *)storage)
+							    == -1) {
+	    storage_length = 0;
+	    return -1;
+	}
     }
+    return 0;
 }
 
 
@@ -173,12 +172,14 @@ doassociate()
     if (strcmp(crypt(buffer, pwent->pw_passwd), pwent->pw_passwd) == 0) {
 	if (api_exch_outcommand(EXCH_ASSOCIATED) == -1) {
 	    return -1;
+	} else {
+	    return 1;
 	}
     } else {
 	doreject("Invalid password");
 	sleep(10);		/* Don't let us do too many of these */
+	return 0;
     }
-    return 0;
 }
 
 
@@ -208,9 +209,12 @@ freestorage()
 	kill_connection();
 	return;
     }
-    if (api_exch_outtype(EXCH_TYPE_BYTES, storage_length, (char *)storage) == -1) {
-	kill_connection();
-	return;
+    if (storage_length != 0) {
+	if (api_exch_outtype(EXCH_TYPE_BYTES, storage_length, (char *)storage)
+								== -1) {
+	    kill_connection();
+	    return;
+	}
     }
 }
 
@@ -229,18 +233,22 @@ getstorage(address, length)
 			__FILE__, __LINE__);
 	quit();
     }
-    if (storage_must_send == 0) {
-	return;
-    }
     storage_must_send = 0;
     if (api_exch_outcommand(EXCH_GIMME) == -1) {
 	kill_connection();
 	return -1;
     }
+    storage_location = address;
+    storage_length = length;
     sd.location = htonl(storage_location);
     sd.length = htons(storage_length);
     if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
 	kill_connection();
+	return -1;
+    }
+    if (api_exch_incommand(EXCH_HEREIS) == -1) {
+	fprintf(stderr, "Bad data from other side.\n");
+	fprintf(stderr, "(Encountered at %s, %s.)\n", __FILE__, __LINE__);
 	return -1;
     }
     if (nextstore() == -1) {
@@ -410,10 +418,10 @@ shell_continue()
     case CONNECTED:
 	if (api_exch_incommand(EXCH_REQUEST) == -1) {
 	    kill_connection();
-	} else if (api_exch_intype(EXCH_TYPE_BYTES, sizeof inputRegs,
+	} else if (api_exch_intype(EXCH_TYPE_REGS, sizeof inputRegs,
 				(char *)&inputRegs) == -1) {
 	    kill_connection();
-	} else if (api_exch_intype(EXCH_TYPE_BYTES, sizeof inputSregs,
+	} else if (api_exch_intype(EXCH_TYPE_SREGS, sizeof inputSregs,
 				(char *)&inputSregs) == -1) {
 	    kill_connection();
 	} else if (nextstore() == -1) {
@@ -423,10 +431,10 @@ shell_continue()
 	    freestorage();			/* Send any storage back */
 	    if (api_exch_outcommand(EXCH_REPLY) == -1) {
 		kill_connection();
-	    } else if (api_exch_outtype(EXCH_TYPE_BYTES, sizeof inputRegs,
+	    } else if (api_exch_outtype(EXCH_TYPE_REGS, sizeof inputRegs,
 				(char *)&inputRegs) == -1) {
 		kill_connection();
-	    } else if (api_exch_outtype(EXCH_TYPE_BYTES, sizeof inputSregs,
+	    } else if (api_exch_outtype(EXCH_TYPE_SREGS, sizeof inputSregs,
 				(char *)&inputSregs) == -1) {
 		kill_connection();
 	    }
@@ -451,10 +459,10 @@ child_died()
 	    if (sock != -1) {
 		(void) close(sock);
 		sock = -1;
-		printf("[Hit return to continue]");
-		fflush(stdout);
-		(void) gets(inputbuffer);
 	    }
+	    printf("[Hit return to continue]");
+	    fflush(stdout);
+	    (void) gets(inputbuffer);
 	    setconnmode();
 	    ConnectScreen();	/* Turn screen on (if need be) */
 	    (void) close(serversock);
