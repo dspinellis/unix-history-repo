@@ -1,0 +1,34 @@
+#
+# Configuration file for UC Berkeley ARPAVAX
+#
+cpu		"VAX780"
+cpu		"VAX750"
+cpu		"VAX7ZZ"
+options		TRACE
+ident		BERT
+timezone	8 dst
+maxusers	24
+
+config	hpup	vmunix
+config	up	upvmunix
+config	rk	rkvmunix
+
+controller	mba0	at nexus ?
+controller	uba0	at nexus ?
+disk		hp0	at mba? drive 0
+pseudo-device	pty
+pseudo-device	bk
+controller	hk0	at uba0 csr 0177440 		vector rkintr
+disk		rk0	at hk0 drive 0
+disk		rk1	at hk0 drive 1
+controller	tm0	at uba0 csr 0172520		vector tmintr
+tape		te0	at tm0 drive 0
+controller	sc0	at uba0 csr 0176700 		vector upintr
+disk		up0	at sc0 drive 0
+device	 	dh0	at uba0 csr 0160020		vector dhrint dhxint
+device	 	dh1	at uba0 csr 0160040		vector dhrint dhxint
+device	 	dh2	at uba0 csr 0160060		vector dhrint dhxint
+device		dm0	at uba0 csr 0170500		vector dmintr
+device		dm1	at uba0 csr 0170520		vector dmintr
+device		dm2	at uba0 csr 0170520		vector dmintr
+device		dz0	at uba0 csr 0160100 flags 0xc0	vector dzrint dzxint
