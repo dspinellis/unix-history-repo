@@ -5,8 +5,13 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)shar.sh	5.1 (Berkeley) %G%
+#	@(#)shar.sh	5.2 (Berkeley) %G%
 #
+
+if [ $# -eq 0 ]; then
+	echo 'usage: shar file ...'
+	exit 1
+fi
 
 cat << EOF
 # This is a shell archive.  Save it in a file, remove anything before
@@ -39,3 +44,5 @@ do
 done
 echo exit
 echo ""
+
+exit 0
