@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)date.1	6.2 (Berkeley) %G%
+.\"	@(#)date.1	6.3 (Berkeley) %G%
 .\"
 .TH DATE 1 ""
 .UC 4
@@ -10,7 +10,7 @@
 date \- print and set the date
 .SH SYNOPSIS
 .B date
-.RB "[ -u ] [ yymmddhhmm [ " . "ss ] ]"
+.RB "[ -n ] [ -u ] [ yymmddhhmm [ " . "ss ] ]"
 .SH DESCRIPTION
 If no arguments are given, the current date and time are printed.
 Providing an argument will set the desired date.
@@ -48,7 +48,9 @@ If
 .I timed(8)
 is running to synchronize the clocks of machines in a local
 area network, \fIdate\fP sets the time globally on all those
-machines.
+machines unless the
+.B \-n
+option is given.
 .SH FILES
 /usr/adm/wtmp to record time-setting.
 In /usr/adm/messages, \fIdate\fP records the name of the user
