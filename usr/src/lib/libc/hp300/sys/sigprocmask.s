@@ -10,11 +10,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)sigprocmask.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)sigprocmask.s	5.2 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 #include "SYS.h"
 
+	.even
 err:
 	jmp	cerror
 
