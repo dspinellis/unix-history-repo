@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cat.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)cat.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -122,7 +122,7 @@ cook_buf(fp)
 		if (prev == '\n') {
 			if (ch == '\n') {
 				if (sflag) {
-					if (!gobble && putc(ch, stdout) == EOF)
+					if (!gobble && putchar(ch) == EOF)
 						break;
 					gobble = 1;
 					continue;
@@ -141,31 +141,29 @@ cook_buf(fp)
 		gobble = 0;
 		if (ch == '\n') {
 			if (eflag)
-				if (putc('$', stdout) == EOF)
+				if (putchar('$') == EOF)
 					break;
 		} else if (ch == '\t') {
 			if (tflag) {
-				if (putc('^', stdout) == EOF ||
-				    putc('I', stdout) == EOF)
+				if (putchar('^') == EOF || putchar('I') == EOF)
 					break;
 				continue;
 			}
 		} else if (vflag) {
-			if (ch > 0177) {
-				if (putc('M', stdout) == EOF ||
-				    putc('-', stdout) == EOF)
+			if (!isascii(ch)) {
+				if (putchar('M') == EOF || putchar('-') == EOF)
 					break;
-				ch &= 0177;
+				ch = toascii(ch);
 			}
 			if (iscntrl(ch)) {
-				if (putc('^', stdout) == EOF ||
-				    putc(ch == '\177' ? '?' :
-				    ch | 0100, stdout) == EOF)
+				if (putchar('^') == EOF ||
+				    putchar(ch == '\177' ? '?' :
+				    ch | 0100) == EOF)
 					break;
 				continue;
 			}
 		}
-		if (putc(ch, stdout) == EOF)
+		if (putchar(ch) == EOF)
 			break;
 	}
 	if (ferror(fp)) {
