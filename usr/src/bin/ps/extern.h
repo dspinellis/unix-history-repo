@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	8.1 (Berkeley) %G%
+ *	@(#)extern.h	8.2 (Berkeley) %G%
  */
 
 struct kinfo;
@@ -12,6 +12,9 @@ struct nlist;
 struct var;
 struct varent;
 
+extern fixpt_t ccpu;
+extern int eval, fscale, mempages, nlistread, rawcpu;
+extern int sumrusage, termwidth, totwidth;
 extern VAR var[];
 extern VARENT *vhead;
 

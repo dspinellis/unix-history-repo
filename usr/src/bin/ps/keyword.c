@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)keyword.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)keyword.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -237,15 +237,14 @@ VAR var[] = {
 void
 showkey()
 {
-	extern int termwidth;
-	register VAR *v;
-	register int i, len;
-	register char *p, *sep;
+	VAR *v;
+	int i;
+	char *p, *sep;
 
 	i = 0;
 	sep = "";
 	for (v = var; *(p = v->name); ++v) {
-		len = strlen(p);
+		int len = strlen(p);
 		if (termwidth && (i += len + 1) > termwidth) {
 			i = len;
 			sep = "\n";
@@ -261,12 +260,13 @@ parsefmt(p)
 	char *p;
 {
 	static struct varent *vtail;
-	register VAR *v;
-	register char *cp;
-	register struct varent *vent;
 
 #define	FMTSEP	" \t,\n"
 	while (p && *p) {
+		char *cp;
+		VAR *v;
+		struct varent *vent;
+
 		while ((cp = strsep(&p, FMTSEP)) != NULL && *cp == '\0')
 			/* void */;
 		if (!(v = findvar(cp)))
@@ -290,7 +290,6 @@ static VAR *
 findvar(p)
 	char *p;
 {
-	extern int eval;
 	VAR *v, key;
 	char *hp;
 	int vcmp();
@@ -310,7 +309,7 @@ findvar(p)
 			eval = 1;
 		}
 		parsefmt(v->alias);
-		return((VAR *)NULL);
+		return ((VAR *)NULL);
 	}
 	if (!v) {
 		warnx("%s: keyword not found", p);
@@ -318,12 +317,12 @@ findvar(p)
 	}
 	if (hp)
 		v->header = hp;
-	return(v);
+	return (v);
 }
 
 static int
 vcmp(a, b)
         const void *a, *b;
 {
-        return(strcmp(((VAR *)a)->name, ((VAR *)b)->name));
+        return (strcmp(((VAR *)a)->name, ((VAR *)b)->name));
 }

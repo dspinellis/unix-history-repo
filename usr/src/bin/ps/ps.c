@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -78,13 +78,14 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	register struct kinfo_proc *kp;
-	register struct varent *vent;
-	int nentries;
-	register int i;
+	struct kinfo_proc *kp;
+	struct varent *vent;
 	struct winsize ws;
 	dev_t ttydev;
-	int all, ch, flag, fmt, lineno, pid, prtheader, uid, wflag, what, xflg;
+	pid_t pid;
+	uid_t uid;
+	int all, ch, flag, i, fmt, lineno, nentries;
+	int prtheader, wflag, what, xflg;
 	char *nlistf, *memf, *swapf, errbuf[256];
 
 	if ((ioctl(STDOUT_FILENO, TIOCGWINSZ, (char *)&ws) == -1 &&
@@ -99,7 +100,8 @@ main(argc, argv)
 		argv[1] = kludge_oldps_options(argv[1]);
 
 	all = fmt = prtheader = wflag = xflg = 0;
-	pid = uid = -1;
+	pid = -1;
+	uid = (uid_t) -1;
 	ttydev = NODEV;
 	memf = nlistf = swapf = NULL;
 	while ((ch = getopt(argc, argv,
@@ -153,7 +155,7 @@ main(argc, argv)
 			fmt = 1;
 			break;
 		case 'p':
-			pid = atoi(optarg);
+			pid = atol(optarg);
 			xflg = 1;
 			break;
 		case 'r':
@@ -252,7 +254,7 @@ main(argc, argv)
 	/*
 	 * get proc list
 	 */
-	if (uid != -1) {
+	if (uid != (uid_t) -1) {
 		what = KERN_PROC_UID;
 		flag = uid;
 	} else if (ttydev != NODEV) {
@@ -308,9 +310,9 @@ main(argc, argv)
 static void
 scanvars()
 {
-	register struct varent *vent;
-	register VAR *v;
-	register int i;
+	struct varent *vent;
+	VAR *v;
+	int i;
 
 	for (vent = vhead; vent; vent = vent->next) {
 		v = vent->var;
@@ -333,7 +335,7 @@ fmt(fn, ki, comm, maxlen)
 	char *comm;
 	int maxlen;
 {
-	register char *s;
+	char *s;
 
 	if ((s =
 	    fmt_argv((*fn)(kd, ki->ki_p, termwidth), comm, maxlen)) == NULL)
@@ -345,12 +347,12 @@ static void
 saveuser(ki)
 	KINFO *ki;
 {
-	register struct usave *usp = &ki->ki_u;
 	struct pstats pstats;
-	extern char *fmt_argv();
+	struct usave *usp;
 
+	usp = &ki->ki_u;
 	if (kvm_read(kd, (u_long)&KI_PROC(ki)->p_addr->u_stats,
-		     (char *)&pstats, sizeof(pstats)) == sizeof(pstats)) {
+	    (char *)&pstats, sizeof(pstats)) == sizeof(pstats)) {
 		/*
 		 * The u-area might be swapped out, and we can't get
 		 * at it because we have a crashdump and no swap.
@@ -462,7 +464,11 @@ kludge_oldps_options(s)
 static void
 usage()
 {
+
 	(void)fprintf(stderr,
-"usage: ps [-aChjlmrSTuvwx] [-O|o fmt] [-p pid] [-t tty]\n\t  [-M core] [-N system] [-W swap]\n       ps [-L]\n");
+	    "usage:\t%s\n\t   %s\n\t%s\n",
+	    "ps [-aChjlmrSTuvwx] [-O|o fmt] [-p pid] [-t tty]",
+	    "[-M core] [-N system] [-W swap]",
+	    "ps [-L]");
 	exit(1);
 }
