@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)lastcomm.c	4.12 (Berkeley) %G%";
+static char *sccsid = "@(#)lastcomm.c	4.13 (Berkeley) %G%";
 #endif
 
 /*
@@ -47,8 +47,7 @@ main(argc, argv)
 		acp = buf + (cc / sizeof (buf[0])) - 1;
 		for (; acp >= buf; acp--) {
 			register char *cp;
-			time_t x =
-			    expand(acp->ac_utime) + expand(acp->ac_stime);
+			time_t x;
 
 			acp->ac_comm[10] = '\0';
 			if (*acp->ac_comm == '\0')
@@ -56,8 +55,9 @@ main(argc, argv)
 			for (cp = acp->ac_comm; *cp; cp++)
 				if (iscntrl(*cp))
 					*cp = '?';
-			if (!ok(argc, argv, acp) && argc != 1)
+			if (argc > 1 && !ok(argc, argv, acp))
 				continue;
+			x = expand(acp->ac_utime) + expand(acp->ac_stime);
 			printf("%-*s %s %-*s %-*s %6.2f secs %.16s\n",
 				fldsiz(acct, ac_comm), acp->ac_comm,
 				flagbits(acp->ac_flag),
