@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)machdep.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)machdep.c	5.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -367,10 +367,10 @@ printstack(locals, nback)
 #endif
 #ifdef RLOCALS
 			adbprintf("\
-fp: 516tsp:  %?s%?R%32tpc:  %?s%?R%48tr0:  %R\n\
-r1: 516tr2:  532tr3:  548tr4:  %R\n\
-r5: 516tr6:  532tr7:  548tr8:  %R\n\
-r9: 516tr10: 532tr11: 548tr12: %R\n",
+fp: %R\%16tsp:  %?s%?R%32tpc:  %?s%?R%48tr0:  %R\n\
+r1: %R\%16tr2:  %R\%32tr3:  %R\%48tr4:  %R\n\
+r5: %R\%16tr6:  %R\%32tr7:  %R\%48tr8:  %R\n\
+r9: %R\%16tr10: %R\%32tr11: %R\%48tr12: %R\n",
 #define q(s) s == UNKNOWN, unknown, s != UNKNOWN, s
 			    cur.a_fp, q(sp), q(cur.a_pc), regs[0],
 #undef q
