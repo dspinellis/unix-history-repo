@@ -1,4 +1,4 @@
-/*	conf.c	4.19	%G%	*/
+/*	conf.c	4.20	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -286,11 +286,6 @@ struct	linesw linesw[] =
  
 int	nldisp = 4;
  
-struct	buf	buf[NBUF];
-struct	file	file[NFILE];
-struct	inode	inode[NINODE];
-struct	text	text[NTEXT];
-struct	proc	proc[NPROC];
 struct	buf	bfreelist[BQUEUES];	/* buffer chain headers */
 struct	buf	bswlist;	/* free list of swap headers */
 struct	buf	*bclnlist;	/* header for list of cleaned pages */
