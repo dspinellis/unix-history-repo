@@ -24,12 +24,12 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: clnp_input.c,v 4.4 88/09/08 08:38:15 hagens Exp $ */
-/* $Source: /usr/argo/sys/netiso/RCS/clnp_input.c,v $ */
-/*	@(#)clnp_input.c	7.2 (Berkeley) %G% */
+/* $Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $ */
+/* $Source: /var/src/sys/netiso/RCS/clnp_input.c,v $ */
+/*	@(#)clnp_input.c	7.3 (Berkeley) %G% */
 
 #ifndef lint
-static char *rcsid = "$Header: clnp_input.c,v 4.4 88/09/08 08:38:15 hagens Exp $";
+static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $";
 #endif lint
 
 #include "../h/types.h"
@@ -234,16 +234,17 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	int							seg_len;/* length of packet data&hdr in bytes */
 	struct clnp_optidx			oidx, *oidxp = NULL;	/* option index */
 	extern int 					iso_systype;	/* used by ESIS config resp */
+	int							need_afrin = 0; 
+										/* true if congestion experienced */
+										/* which means you need afrin nose */
+										/* spray. How clever! */
 
 	IFDEBUG(D_INPUT)
 		printf(
-		"clnp_input: proccessing dg; First mbuf m_len %d, m_type x%x, data:\n", 
-			m->m_len, m->m_type);
+		   "clnp_input: proccessing dg; First mbuf m_len %d, m_type x%x, %s\n", 
+			m->m_len, m->m_type, IS_CLUSTER(m) ? "cluster" : "normal");
 	ENDDEBUG
-	IFDEBUG(D_DUMPIN)
-		printf("clnp_input: first mbuf:\n");
-		dump_buf(mtod(m, caddr_t), m->m_len);
-	ENDDEBUG
+	need_afrin = 0;
 
 	/*
 	 *	If no iso addresses have been set, there is nothing
@@ -257,6 +258,19 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	INCSTAT(cns_total);
 	clnp = mtod(m, struct clnp_fixed *);
 
+	IFDEBUG(D_DUMPIN)
+		struct mbuf *mhead;
+		int			total_len = 0;
+		printf("clnp_input: clnp header:\n");
+		dump_buf(mtod(m, caddr_t), clnp->cnf_hdr_len);
+		printf("clnp_input: mbuf chain:\n");
+		for (mhead = m; mhead != NULL; mhead=mhead->m_next) {
+			printf("m x%x, len %d\n", mhead, mhead->m_len);
+			total_len += mhead->m_len;
+		}
+		printf("clnp_input: total length of mbuf chain %d:\n", total_len);
+	ENDDEBUG
+
 	/*
 	 *	Compute checksum (if necessary) and drop packet if
 	 *	checksum does not match
@@ -264,20 +278,20 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	if (CKSUM_REQUIRED(clnp) && iso_check_csum(m, clnp->cnf_hdr_len)) {
 		INCSTAT(cns_badcsum);
 		clnp_discard(m, GEN_BADCSUM);
-		return;
+		return 0;
 	}
 
 	if (clnp->cnf_vers != ISO8473_V1) {
 		INCSTAT(cns_badvers);
 		clnp_discard(m, DISC_UNSUPPVERS);
-		return;
+		return 0;
 	}
 
 
  	/* check mbuf data length: clnp_data_ck will free mbuf upon error */
 	CTOH(clnp->cnf_seglen_msb, clnp->cnf_seglen_lsb, seg_len);
 	if ((m = clnp_data_ck(m, seg_len)) == 0)
-		return;
+		return 0;
 	
 	clnp = mtod(m, struct clnp_fixed *);
 	hend = (caddr_t)clnp + clnp->cnf_hdr_len;
@@ -294,13 +308,13 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	if (hoff == (caddr_t)0) {
 		INCSTAT(cns_badaddr);
 		clnp_discard(m, GEN_INCOMPLETE);
-		return;
+		return 0;
 	}
 	CLNP_EXTRACT_ADDR(src, hoff, hend);
 	if (hoff == (caddr_t)0) {
 		INCSTAT(cns_badaddr);
 		clnp_discard(m, GEN_INCOMPLETE);
-		return;
+		return 0;
 	}
 
 	IFDEBUG(D_INPUT)
@@ -316,7 +330,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		if (hoff + sizeof(struct clnp_segment) > hend) {
 			INCSTAT(cns_noseg);
 			clnp_discard(m, GEN_INCOMPLETE);
-			return;
+			return 0;
 		} else {
 			(void) bcopy(hoff, (caddr_t)&seg_part, sizeof(struct clnp_segment));
 			/* make sure segmentation fields are in host order */
@@ -349,13 +363,26 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 			(clnp->cnf_type != CLNP_ER))
 			errcode = DISC_UNSUPPOPT;
 
+#ifdef	DECBIT
+		/* check if the congestion experienced bit is set */
+		if (oidxp->cni_qos_formatp) {
+			caddr_t	qosp = CLNP_OFFTOOPT(m, oidxp->cni_qos_formatp);
+			u_char	qos = *qosp;
+
+			need_afrin = ((qos & (CLNPOVAL_GLOBAL|CLNPOVAL_CONGESTED)) ==
+				(CLNPOVAL_GLOBAL|CLNPOVAL_CONGESTED));
+			if (need_afrin)
+				INCSTAT(cns_congest_rcvd);
+		}
+#endif	DECBIT
+
 		if (errcode != 0) {
 			clnp_discard(m, (char)errcode);
 			IFDEBUG(D_INPUT)
 				printf("clnp_input: dropped (err x%x) due to bad options\n",
 					errcode);
 			ENDDEBUG
-			return;
+			return 0;
 		}
 	}
 	
@@ -367,7 +394,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 			printf("clnp_input: forwarding packet not for us\n");
 		ENDDEBUG
  		clnp_forward(m, seg_len, &dst, oidxp, seg_off, shp);
-		return;
+		return 0;
 	}
 
 	/*
@@ -398,13 +425,12 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 			m = m0;
 			clnp = mtod(m, struct clnp_fixed *);
 		} else {
-			return;
+			return 0;
 		}
 	}
 	
 	/*
 	 *	give the packet to the higher layer
-	 *	TODO: how do we tell TP that congestion bit is on in QOS option?
 	 *
 	 *	Note: the total length of packet
 	 *	is the total length field of the segmentation part,
@@ -425,6 +451,14 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		break;
 
 	case CLNP_DT:
+ 		if (need_afrin) {
+ 			/* NOTE: do this before TP gets the packet so tp ack can use info*/
+ 			IFDEBUG(D_INPUT)
+ 				printf("clnp_input: Calling tpclnp_ctlinput(%s)\n",
+ 					clnp_iso_addrp(&src));
+ 			ENDDEBUG
+ 			tpclnp_ctlinput1(PRC_QUENCH2, &src);
+ 		}
 		(*isosw[clnp_protox[ISOPROTO_TP]].pr_input)(m, &src, &dst,
 			clnp->cnf_hdr_len);
 		break;
@@ -464,9 +498,4 @@ struct snpa_hdr	*shp;	/* subnetwork header */
  		break;
 	}
 }
-
-int clnp_ctlinput()
-{
-}
-
 #endif ISO
