@@ -12,28 +12,31 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * rcp
  */
 #include <sys/param.h>
-#include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
-#include <sys/dir.h>
-#include <sys/signal.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <pwd.h>
 #include <netdb.h>
 #include <errno.h>
-#include <string.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 #include "pathnames.h"
 
@@ -46,12 +49,11 @@ int	use_kerberos = 1;
 CREDENTIALS 	cred;
 Key_schedule	schedule;
 extern	char	*krb_realmofhost();
-#define	OPTIONS	"dfkprt"
+#define	OPTIONS	"dfk:prt"
 #else
 #define	OPTIONS "dfprt"
 #endif
 
-extern int errno;
 struct passwd *pwd;
 u_short	port;
 uid_t	userid;
@@ -66,16 +68,17 @@ typedef struct _buf {
 	char	*buf;
 } BUF;
 
+void lostconn();
+
 main(argc, argv)
 	int argc;
 	char **argv;
 {
 	extern int optind;
+	extern char *optarg;
 	struct servent *sp;
 	int ch, fflag, tflag;
 	char *targ, *shell, *colon();
-	struct passwd *getpwuid();
-	int lostconn();
 
 	fflag = tflag = 0;
 	while ((ch = getopt(argc, argv, OPTIONS)) != EOF)
@@ -89,7 +92,7 @@ main(argc, argv)
 			break;
 #ifdef	KERBEROS
 		case 'k':
-			strncpy(dst_realm_buf, ++argv, REALM_SZ);
+			strncpy(dst_realm_buf, optarg, REALM_SZ);
 			dest_realm = dst_realm_buf;
 			break;
 #endif
@@ -119,8 +122,8 @@ main(argc, argv)
 	if (sp == NULL) {
 		char	msgbuf[64];
 		use_kerberos = 0;
-		(void) sprintf(msgbuf, "can't get entry for %s/tcp service",
-			shell);
+		(void)snprintf(msgbuf, sizeof(msgbuf),
+		    "can't get entry for %s/tcp service", shell);
 		old_warning(msgbuf);
 		sp = getservbyname(shell = "shell", "tcp");
 	}
@@ -161,12 +164,14 @@ main(argc, argv)
 	rem = -1;
 	/* command to be executed on remote system using "rsh" */
 #ifdef	KERBEROS
-	(void)sprintf(cmd, "rcp%s%s%s%s", iamrecursive ? " -r" : "",
+	(void)snprintf(cmd, sizeof(cmd),
+	    "rcp%s%s%s%s", iamrecursive ? " -r" : "",
 	    "",
 	    pflag ? " -p" : "", targetshouldbedirectory ? " -d" : "");
 #else
-	(void)sprintf(cmd, "rcp%s%s%s", iamrecursive ? " -r" : "",
-	    pflag ? " -p" : "", targetshouldbedirectory ? " -d" : "");
+	(void)snprintf(cmd, sizeof(cmd), "rcp%s%s%s",
+	    iamrecursive ? " -r" : "", pflag ? " -p" : "",
+	    targetshouldbedirectory ? " -d" : "");
 #endif
 
 	(void)signal(SIGPIPE, lostconn);
@@ -186,7 +191,7 @@ toremote(targ, argc, argv)
 	int argc;
 	char **argv;
 {
-	int i, tos;
+	int i, len, tos;
 	char *bp, *host, *src, *suser, *thost, *tuser;
 	char *colon();
 
@@ -214,12 +219,11 @@ toremote(targ, argc, argv)
 			if (*src == 0)
 				src = ".";
 			host = index(argv[i], '@');
-			if (!(bp = malloc(strlen(_PATH_RSH) +
-				    strlen(argv[i]) + strlen(src) +
-				    (tuser ? strlen(tuser) : 0) +
-				    strlen(thost) +
-				    strlen(targ) + CMDNEEDS + 20)))
-					nospace();
+			len = strlen(_PATH_RSH) + strlen(argv[i]) +
+			    strlen(src) + (tuser ? strlen(tuser) : 0) +
+			    strlen(thost) + strlen(targ) + CMDNEEDS + 20;
+			if (!(bp = malloc(len)))
+				nospace();
 			if (host) {
 				*host++ = 0;
 				suser = argv[i];
@@ -227,13 +231,14 @@ toremote(targ, argc, argv)
 					suser = pwd->pw_name;
 				else if (!okname(suser))
 					continue;
-				(void)sprintf(bp,
+				(void)snprintf(bp, len,
 				    "%s %s -l %s -n %s %s '%s%s%s:%s'",
 				    _PATH_RSH, host, suser, cmd, src,
 				    tuser ? tuser : "", tuser ? "@" : "",
 				    thost, targ);
 			} else
-				(void)sprintf(bp, "%s %s -n %s %s '%s%s%s:%s'",
+				(void)snprintf(bp, len,
+				    "%s %s -n %s %s '%s%s%s:%s'",
 				    _PATH_RSH, argv[i], cmd, src,
 				    tuser ? tuser : "", tuser ? "@" : "",
 				    thost, targ);
@@ -241,10 +246,10 @@ toremote(targ, argc, argv)
 			(void)free(bp);
 		} else {			/* local to remote */
 			if (rem == -1) {
-				if (!(bp = malloc(strlen(targ) +
-				    CMDNEEDS + 20)))
+				len = strlen(targ) + CMDNEEDS + 20;
+				if (!(bp = malloc(len)))
 					nospace();
-				(void)sprintf(bp, "%s -t %s", cmd, targ);
+				(void)snprintf(bp, len, "%s -t %s", cmd, targ);
 				host = thost;
 #ifdef KERBEROS
 				if (use_kerberos)
@@ -276,16 +281,17 @@ tolocal(argc, argv)
 	int argc;
 	char **argv;
 {
-	int i, tos;
+	int i, len, tos;
 	char *bp, *host, *src, *suser;
 	char *colon();
 
 	for (i = 0; i < argc - 1; i++) {
 		if (!(src = colon(argv[i]))) {	/* local to local */
-			if (!(bp = malloc(strlen(_PATH_CP) +
-			    strlen(argv[i]) + strlen(argv[argc - 1]) + 20)))
+			len = strlen(_PATH_CP) + strlen(argv[i]) +
+			    strlen(argv[argc - 1]) + 20;
+			if (!(bp = malloc(len)))
 				nospace();
-			(void)sprintf(bp, "%s%s%s %s %s", _PATH_CP,
+			(void)snprintf(bp, len, "%s%s%s %s %s", _PATH_CP,
 			    iamrecursive ? " -r" : "", pflag ? " -p" : "",
 			    argv[i], argv[argc - 1]);
 			(void)susystem(bp);
@@ -307,9 +313,10 @@ tolocal(argc, argv)
 			host = argv[i];
 			suser = pwd->pw_name;
 		}
-		if (!(bp = malloc(strlen(src) + CMDNEEDS + 20)))
+		len = strlen(src) + CMDNEEDS + 20;
+		if (!(bp = malloc(len)))
 			nospace();
-		(void)sprintf(bp, "%s -f %s", cmd, src);
+		(void)snprintf(bp, len, "%s -f %s", cmd, src);
 #ifdef KERBEROS
 		if (use_kerberos)
 			rem = kerberos(&host, bp, pwd->pw_name, suser);
@@ -446,16 +453,16 @@ notreg:			(void)close(f);
 			 * Make it compatible with possible future
 			 * versions expecting microseconds.
 			 */
-			(void)sprintf(buf, "T%ld 0 %ld 0\n", stb.st_mtime,
-			    stb.st_atime);
+			(void)snprintf(buf, sizeof(buf),
+			    "T%ld 0 %ld 0\n", stb.st_mtime, stb.st_atime);
 			(void)write(rem, buf, (int)strlen(buf));
 			if (response() < 0) {
 				(void)close(f);
 				continue;
 			}
 		}
-		(void)sprintf(buf, "C%04o %ld %s\n", stb.st_mode&07777,
-		    stb.st_size, last);
+		(void)snprintf(buf, sizeof(buf),
+		    "C%04o %ld %s\n", stb.st_mode&07777, stb.st_size, last);
 		(void)write(rem, buf, (int)strlen(buf));
 		if (response() < 0) {
 			(void)close(f);
@@ -487,11 +494,11 @@ rsource(name, statp)
 	char *name;
 	struct stat *statp;
 {
-	DIR *d;
-	struct direct *dp;
+	DIR *dirp;
+	struct dirent *dp;
 	char *last, *vect[1], path[MAXPATHLEN];
 
-	if (!(d = opendir(name))) {
+	if (!(dirp = opendir(name))) {
 		error("rcp: %s: %s\n", name, strerror(errno));
 		return;
 	}
@@ -501,21 +508,22 @@ rsource(name, statp)
 	else
 		last++;
 	if (pflag) {
-		(void)sprintf(path, "T%ld 0 %ld 0\n", statp->st_mtime,
-		    statp->st_atime);
+		(void)snprintf(path, sizeof(path),
+		    "T%ld 0 %ld 0\n", statp->st_mtime, statp->st_atime);
 		(void)write(rem, path, (int)strlen(path));
 		if (response() < 0) {
-			closedir(d);
+			closedir(dirp);
 			return;
 		}
 	}
-	(void)sprintf(path, "D%04o %d %s\n", statp->st_mode&07777, 0, last);
+	(void)snprintf(path, sizeof(path),
+	    "D%04o %d %s\n", statp->st_mode&07777, 0, last);
 	(void)write(rem, path, (int)strlen(path));
 	if (response() < 0) {
-		closedir(d);
+		closedir(dirp);
 		return;
 	}
-	while (dp = readdir(d)) {
+	while (dp = readdir(dirp)) {
 		if (dp->d_ino == 0)
 			continue;
 		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
@@ -524,11 +532,11 @@ rsource(name, statp)
 			error("%s/%s: name too long.\n", name, dp->d_name);
 			continue;
 		}
-		(void)sprintf(path, "%s/%s", name, dp->d_name);
+		(void)snprintf(path, sizeof(path), "%s/%s", name, dp->d_name);
 		vect[0] = path;
 		source(1, vect);
 	}
-	closedir(d);
+	closedir(dirp);
 	(void)write(rem, "E\n", 2);
 	(void)response();
 }
@@ -566,6 +574,7 @@ response()
 	/*NOTREACHED*/
 }
 
+void
 lostconn()
 {
 	if (!iamremote)
@@ -693,7 +702,7 @@ sink(argc, argv)
 				if (!(namebuf = malloc(need)))
 					error("out of memory\n");
 			}
-			(void)sprintf(namebuf, "%s%s%s", targ,
+			(void)snprintf(namebuf, need, "%s%s%s", targ,
 			    *targ ? "/" : "", cp);
 			np = namebuf;
 		}
