@@ -4,12 +4,12 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	5.13 (Berkeley) %G%
+.\"	@(#)op.me	5.14 (Berkeley) %G%
 .\"
 .\" eqn % | troff -me
 .\"if n .ls 2
 .\".he 'Sendmail Installation and Operation Guide''%'
-.\".fo 'Version 5.13''Last Mod %G%'
+.\".fo 'Version 5.14''Last Mod %G%'
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
 .oh 'Sendmail Installation and Operation Guide''SMM:07-%'
 .nr si 3n
@@ -40,7 +40,7 @@ Eric Allman
 University of California, Berkeley
 Mammoth Project
 .sp
-Version 5.13
+Version 5.14
 .sp
 For Sendmail Version 5.61
 .)l
@@ -1343,6 +1343,35 @@ Several messages that are basically only of interest
 when debugging.
 .ip 16
 Verbose information regarding the queue.
+.sh 2 "Wildcard MX Records"
+.pp
+Normally, when
+.i sendmail
+is looking up host names from the name server,
+it uses the querytype of
+.q ANY .
+This finds CNAME, A, and MX records,
+and causes the local name server to cache all records it finds,
+thus improving performance.
+.pp
+However, if your site has wildcard MX records, this can cause problems.
+For example, suppose your site has a record directing
+.q "*.HiTech.COM"
+to
+.q "gateway.HiTech.COM" .
+When the resolver looks for (e.g.)
+.q "mammoth.Berkeley.EDU" ,
+it starts by appending the local domain name (in this case,
+.q "HiTech.COM" ),
+thus looking for
+.q "mammoth.Berkeley.EDU.HiTech.COM"
+\*- which of course matches
+.q "*.HiTech.COM" .
+To prevent this,
+set the
+.b w
+option, which asserts that you have wildcard records,
+and sendmail must use a less efficient lookup.
 .sh 2 "File Modes"
 .pp
 There are a number of files
@@ -3090,6 +3119,15 @@ Thus, you should
 set this option if you do not run the name server.
 .ip i
 Ignore dots in incoming messages.
+.ip k\fIN\fP
+Checkpoints the queue every
+.i N
+(default 10)
+addresses sent.
+If your system crashes during delivery to a large list,
+this prevents retransmission to any but the last
+.I N
+recipients.
 .ip L\fIn\fP
 Set the default log level to
 .i n .
@@ -3184,6 +3222,13 @@ flag in the mailer definition
 will run as this user.
 .ip v
 Run in verbose mode.
+.ip w
+Asserts that this domain (might) have wildcard MX records
+in the name server database.
+These wildcards can
+.q capture
+names that are directed outward
+and forward them back to your own site.
 .ip x\fILA\fP
 When the system load average exceeds
 .i LA ,
@@ -3890,7 +3935,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 5.13
+.\"Version 5.14
 .\".ce 0
 .pn 2
 .bp
