@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -52,6 +52,10 @@ main(argc, argv)
 				argc--;
 			}
 			printf("Alternate super block location: %d\n", bflag);
+			break;
+
+		case 'c':
+			cvtflag++;
 			break;
 
 		case 'd':
