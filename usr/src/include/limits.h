@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)limits.h	5.8 (Berkeley) %G%
+ *	@(#)limits.h	5.9 (Berkeley) %G%
  */
+
+#ifndef _LIMITS_H_
+#define	_LIMITS_H_
 
 #define	_POSIX_ARG_MAX		4096
 #define	_POSIX_CHILD_MAX	6
@@ -29,3 +32,5 @@
 
 #include <machine/limits.h>
 #include <sys/syslimits.h>
+
+#endif /* !_LIMITS_H_ */

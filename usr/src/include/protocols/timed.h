@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)timed.h	1.9 (Berkeley) %G%
+ *	@(#)timed.h	1.10 (Berkeley) %G%
  */
+
+#ifndef	_TIMED_H_
+#define	_TIMED_H_
 
 /*
  * Time Synchronization Protocol
@@ -66,3 +69,5 @@ char *tsptype[TSPTYPENUMBER] =
   "DATE", "DATEREQ", "DATEACK", "TRACEON", "TRACEOFF", "MSITE", "MSITEREQ",
   "TEST", "SETDATE", "SETDATEREQ", "LOOP" };
 #endif
+
+#endif /* !_TIMED_H_ */

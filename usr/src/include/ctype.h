@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ctype.h	5.2 (Berkeley) %G%
+ *	@(#)ctype.h	5.3 (Berkeley) %G%
  */
+
+#ifndef _CTYPE_H_
+#define _CTYPE_H_
 
 #define	_U	0x01
 #define	_L	0x02
@@ -33,3 +36,5 @@ extern char	_ctype_[];
 #define	toupper(c)	((c) - 'a' + 'A')
 #define	tolower(c)	((c) - 'A' + 'a')
 #define	toascii(c)	((c) & 0177)
+
+#endif /* !_CTYPE_H_ */

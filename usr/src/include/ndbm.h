@@ -7,8 +7,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ndbm.h	5.5 (Berkeley) %G%
+ *	@(#)ndbm.h	5.6 (Berkeley) %G%
  */
+
+#ifndef _NDBM_H_
+#define	_NDBM_H_
 
 #include <sys/cdefs.h>
 #include <db.h>
@@ -43,3 +46,5 @@ datum	 dbm_nextkey __P((DBM *));
 DBM	*dbm_open __P((const char *, int, int));
 int	 dbm_store __P((DBM *, datum, datum, int));
 __END_DECLS
+
+#endif /* !_NDBM_H_ */

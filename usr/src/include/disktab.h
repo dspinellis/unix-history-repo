@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)disktab.h	5.4 (Berkeley) %G%
+ *	@(#)disktab.h	5.5 (Berkeley) %G%
  */
+
+#ifndef	_DISKTAB_H_
+#define	_DISKTAB_H_
 
 /*
  * Disk description table, see disktab(5)
@@ -30,3 +33,5 @@ struct	disktab {
 };
 
 struct	disktab *getdiskbyname();
+
+#endif /* !_DISKTAB_H_ */

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)memory.h	5.5 (Berkeley) %G%
+ *	@(#)memory.h	5.6 (Berkeley) %G%
  */
 
 #include <string.h>

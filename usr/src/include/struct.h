@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)struct.h	5.1 (Berkeley) %G%
+ *	@(#)struct.h	5.2 (Berkeley) %G%
  */
+
+#ifndef _STRUCT_H_
+#define	_STRUCT_H_
 
 /* Offset of the field in the structure. */
 #define	fldoff(name, field) \
@@ -18,3 +21,5 @@
 /* Address of the structure from a field. */
 #define	strbase(name, addr, field) \
 	((struct name *)((char *)(addr) - fldoff(name, field)))
+
+#endif /* !_STRUCT_H_ */

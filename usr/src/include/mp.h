@@ -3,8 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mp.h	5.2 (Berkeley) %G%
+ *	@(#)mp.h	5.3 (Berkeley) %G%
  */
+
+#ifndef _MP_H_
+#define	_MP_H_
 
 #define MINT struct mint
 MINT
@@ -39,3 +42,5 @@ extern xv_oid;
 #else
 #define VOID
 #endif
+
+#endif /* !_MP_H_ */

@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)talkd.h	5.6 (Berkeley) %G%
+ *	@(#)talkd.h	5.7 (Berkeley) %G%
  */
+
+#ifndef _TALKD_H_
+#define	_TALKD_H_
 
 /*
  * This describes the protocol used by the talk server and clients.
@@ -81,3 +84,5 @@ typedef struct {
 #define MAX_LIFE	60	/* max time daemon saves invitations */
 /* RING_WAIT should be 10's of seconds less than MAX_LIFE */
 #define RING_WAIT	30	/* time to wait before resending invitation */
+
+#endif /* !_TALKD_H_ */

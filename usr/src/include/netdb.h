@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)netdb.h	5.14 (Berkeley) %G%
+ *	@(#)netdb.h	5.15 (Berkeley) %G%
  */
+
+#ifndef _NETDB_H_
+#define _NETDB_H_
 
 #define	_PATH_HEQUIV	"/etc/hosts.equiv"
 #define	_PATH_HOSTS	"/etc/hosts"
@@ -87,3 +90,5 @@ void		setnetent __P((int));
 void		setprotoent __P((int));
 void		setservent __P((int));
 __END_DECLS
+
+#endif /* !_NETDB_H_ */

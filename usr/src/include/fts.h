@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fts.h	5.13 (Berkeley) %G%
+ *	@(#)fts.h	5.14 (Berkeley) %G%
  */
+
+#ifndef	_FTS_H_
+#define	_FTS_H_
 
 typedef struct {
 	struct _ftsent *fts_cur;	/* current node */
@@ -82,3 +85,5 @@ FTS	*fts_open
 FTSENT	*fts_read __P((FTS *));
 int	 fts_set __P((FTS *, FTSENT *, int));
 __END_DECLS
+
+#endif /* !_FTS_H_ */

@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)paths.h	5.13 (Berkeley) %G%
+ *	@(#)paths.h	5.14 (Berkeley) %G%
  */
+
+#ifndef _PATHS_H_
+#define	_PATHS_H_
 
 /* Default search path. */
 #define	_PATH_DEFPATH	"/bin:/usr/bin:"
@@ -31,3 +34,5 @@
 #define	_PATH_TMP	"/tmp/"
 #define	_PATH_VARRUN	"/var/run/"
 #define	_PATH_VARTMP	"/var/tmp/"
+
+#endif /* !_PATHS_H_ */
