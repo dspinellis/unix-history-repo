@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.90		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.91		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -405,16 +405,16 @@ EXTERN bool	HoldErrs;	/* only output errors to transcript */
 EXTERN bool	ArpaMode;	/* set if running arpanet protocol */
 EXTERN bool	NoConnect;	/* don't connect to non-local mailers */
 EXTERN bool	FatalErrors;	/* set if fatal errors during processing */
-extern bool	SuperSafe;	/* be extra careful, despite cost [conf.c] */
-extern time_t	TimeOut;	/* time until timeout [conf.c] */
+EXTERN bool	SuperSafe;	/* be extra careful, even if expensive */
+EXTERN time_t	TimeOut;	/* time until timeout */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */
 EXTERN FILE	*TempFile;	/* mail temp file */
 EXTERN FILE	*Xscript;	/* mail transcript file */
 EXTERN int	RealUid;	/* when Daemon, real uid of caller */
 EXTERN int	RealGid;	/* when Daemon, real gid of caller */
-extern int	DefUid;		/* default uid to run as [conf.c] */
-extern int	DefGid;		/* default gid to run as [conf.c] */
+EXTERN int	DefUid;		/* default uid to run as */
+EXTERN int	DefGid;		/* default gid to run as */
 EXTERN int	OldUmask;	/* umask when sendmail starts up */
 EXTERN int	Errors;		/* set if errors (local to single pass) */
 EXTERN int	ExitStat;	/* exit status code */
@@ -422,19 +422,20 @@ EXTERN int	HopCount;	/* hop count */
 EXTERN int	AliasLevel;	/* depth of aliasing */
 EXTERN int	MotherPid;	/* proc id of parent process */
 EXTERN int	LineNumber;	/* line number in current input */
+EXTERN int	ReadTimeout;	/* timeout on reads */
+EXTERN int	LogLevel;	/* level of logging to perform */
 EXTERN time_t	QueueIntvl;	/* intervals between running the queue */
 EXTERN char	*HostName;	/* name of this host for SMTP messages */
 EXTERN char	*Transcript;	/* the transcript file name */
-extern char	*XcriptFile;	/* template for Transcript [conf.c] */
-extern char	*AliasFile;	/* location of alias file [conf.c] */
-extern char	*ConfFile;	/* location of configuration file [conf.c] */
-extern char	*StatFile;	/* location of statistics summary [conf.c] */
-extern char	*QueueDir;	/* location of queue directory [conf.c] */
-extern char	Arpa_Info[];	/* the reply code for Arpanet info [conf.c] */
+EXTERN char	*AliasFile;	/* location of alias file */
+EXTERN char	*HelpFile;	/* location of SMTP help file */
+EXTERN char	*StatFile;	/* location of statistics summary */
+EXTERN char	*QueueDir;	/* location of queue directory */
 EXTERN jmp_buf	TopFrame;	/* branch-to-top-of-loop-on-error frame */
 EXTERN bool	QuickAbort;	/*  .... but only if we want a quick abort */
-extern int	ReadTimeout;	/* timeout on reads [conf.c] */
-extern int	LogLevel;	/* level of logging to perform [conf.c] */
+extern char	*XcriptFile;	/* template for Transcript [conf.c] */
+extern char	*ConfFile;	/* location of configuration file [conf.c] */
+extern char	Arpa_Info[];	/* the reply code for Arpanet info [conf.c] */
 /*
 **  Trace information
 */

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.34		%G%);
+SCCSID(@(#)readcf.c	3.35		%G%);
 
 /*
 **  READCF -- read control file.
@@ -195,7 +195,7 @@ readcf(cfname, safe)
 			break;
 
 		  case 'O':		/* set option */
-			setoption(buf[1], &buf[2]);
+			setoption(buf[1], &buf[2], safe, FALSE);
 			break;
 
 		  case 'P':		/* set precedence */
@@ -516,6 +516,9 @@ mfdecode(flags, f)
 **	Parameters:
 **		opt -- option name.
 **		val -- option value (as a text string).
+**		safe -- if set, this came from a system configuration file.
+**		sticky -- if set, don't let other setoptions override
+**			this value.
 **
 **	Returns:
 **		none.
@@ -524,14 +527,19 @@ mfdecode(flags, f)
 **		Sets options as implied by the arguments.
 */
 
-setoption(opt, val)
+static int	StickyOpt[128 / sizeof (int)];
+
+setoption(opt, val, safe, sticky)
 	char opt;
 	char *val;
+	bool safe;
+	bool sticky;
 {
 	time_t tval;
 	int ival;
 	bool bval;
-	extern char *HelpFile;			/* defined in conf.c */
+	int smask;
+	int sindex;
 	extern bool atobool();
 
 # ifdef DEBUG
@@ -540,15 +548,38 @@ setoption(opt, val)
 # endif DEBUG
 
 	/*
-	**  First encode this option as appropriate.
+	**  See if this option is preset for us.
+	*/
+
+	sindex = opt;
+	smask = 1 << (sindex % sizeof (int));
+	sindex /= sizeof (int);
+	if (bitset(smask, StickyOpt[sindex]))
+	{
+# ifdef DEBUG
+		if (tTd(37, 2))
+			printf("(ignored)\n");
+# endif DEBUG
+		return;
+	}
+	if (sticky)
+		StickyOpt[sindex] |= smask;
+
+	if (getruid() == 0)
+		safe = TRUE;
+
+	/*
+	**  Encode this option as appropriate.
 	*/
 
 	if (index("rT", opt) != NULL)
 		tval = convtime(val);
 	else if (index("gLu", opt) != NULL)
 		ival = atoi(val);
-	else if (index("s", opt) != NULL)
+	else if (index("cfimosv", opt) != NULL)
 		bval = atobool(val);
+	else if (index("be", opt) != NULL)
+		/* do nothing */ ;
 	else if (val[0] == '\0')
 		val = "";
 	else
@@ -562,22 +593,109 @@ setoption(opt, val)
 	{
 	  case 'A':		/* set default alias file */
 		AliasFile = val;
+		if (AliasFile[0] == '\0')
+			AliasFile = "aliases";
+		break;
+
+	  case 'b':		/* operations mode */
+		Mode = *val;
+		switch (Mode)
+		{
+		  case MD_DAEMON:	/* run as a daemon */
+#ifdef DAEMON
+			ArpaMode = Smtp = TRUE;
+#else DAEMON
+			syserr("Daemon mode not implemented");
+#endif DAEMON
+			break;
+
+		  case '\0':	/* default: do full delivery */
+			Mode = MD_DEFAULT;
+			/* fall through....... */
+
+		  case MD_DELIVER:	/* do everything (default) */
+		  case MD_FORK:		/* fork after verification */
+		  case MD_QUEUE:	/* queue only */
+		  case MD_VERIFY:	/* verify only */
+			break;
+
+		  default:
+			syserr("Unknown operation mode -b%c", Mode);
+			exit(EX_USAGE);
+		}
+		break;
+
+	  case 'c':		/* don't connect to "expensive" mailers */
+		NoConnect = bval;
+		break;
+
+	  case 'e':		/* set error processing mode */
+		switch (*val)
+		{
+		  case 'p':	/* print errors normally */
+			break;	/* (default) */
+
+		  case 'q':	/* be silent about it */
+			(void) freopen("/dev/null", "w", stdout);
+			break;
+
+		  case 'm':	/* mail back */
+			MailBack = TRUE;
+			HoldErrs = TRUE;
+			break;
+
+		  case 'e':	/* do berknet error processing */
+			BerkNet = TRUE;
+			HoldErrs = TRUE;
+			break;
+
+		  case 'w':	/* write back (or mail) */
+			WriteBack = TRUE;
+			HoldErrs = TRUE;
+			break;
+		}
+		break;
+
+	  case 'f':		/* save Unix-style From lines on front */
+		SaveFrom = bval;
 		break;
 
 	  case 'g':		/* default gid */
+		if (!safe)
+			goto syntax;
 		DefGid = ival;
 		break;
 
 	  case 'H':		/* help file */
 		HelpFile = val;
+		if (HelpFile[0] == '\0')
+			HelpFile = "sendmail.hf";
+		break;
+
+	  case 'i':		/* ignore dot lines in message */
+		IgnrDot = bval;
 		break;
 
 	  case 'L':		/* log level */
 		LogLevel = ival;
 		break;
 
+	  case 'M':		/* define macro */
+		define(val[0], &val[1]);
+		break;
+
+	  case 'm':		/* send to me too */
+		MeToo = bval;
+		break;
+
+	  case 'o':		/* assume old style headers */
+		CurEnv->e_oldstyle = bval;
+		break;
+
 	  case 'Q':		/* queue directory */
 		QueueDir = val;
+		if (QueueDir[0] == '\0')
+			QueueDir = "mqueue";
 		break;
 
 	  case 'r':		/* read timeout */
@@ -586,6 +704,8 @@ setoption(opt, val)
 
 	  case 'S':		/* status file */
 		StatFile = val;
+		if (StatFile[0] == '\0')
+			StatFile = "sendmail.st";
 		break;
 
 	  case 's':		/* be super safe, even if expensive */
@@ -607,11 +727,15 @@ setoption(opt, val)
 		break;
 
 	  case 'u':		/* set default uid */
+		if (!safe)
+			goto syntax;
 		DefUid = ival;
 		break;
 
-	  case 'X':		/* transcript file template */
-		XcriptFile = val;
+	  case 'v':		/* run in verbose mode */
+		Verbose = bval;
+		if (Verbose)
+			NoConnect = FALSE;
 		break;
 
 	  default:

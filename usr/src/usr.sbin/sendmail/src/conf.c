@@ -17,10 +17,6 @@
 **		HdrInfo -- a table describing well-known header fields.
 **			Each entry has the field name and some flags,
 **			which are described in sendmail.h.
-**		StdTimezone -- name of local timezone in standard time
-**			(V6 only).
-**		DstTimezone -- name of local timezone in daylight savings
-**			time (V6 only).
 **
 **	Notes:
 **		I have tried to put almost all the reasonable
@@ -36,7 +32,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.58		%G%);
+SCCSID(@(#)conf.c	3.59		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -102,39 +98,8 @@ char	Arpa_Usrerr[] =		"554";	/* some (fatal) user error */
 **  Location of system files/databases/etc.
 */
 
-char	*AliasFile =	"/usr/lib/aliases";	/* alias file */
 char	*ConfFile =	"/usr/lib/sendmail.cf";	/* runtime configuration */
-char	*StatFile =	"/usr/lib/sendmail.st";	/* statistics summary */
-char	*HelpFile =	"/usr/lib/sendmail.hf";	/* help file */
-# ifdef QUEUE
-char	*QueueDir =	"/usr/spool/mqueue";	/* queue of saved mail */
-# else QUEUE
-char	*QueueDir =	"/tmp";			/* location of temp files */
-# endif QUEUE
 char	*XcriptFile =	"/tmp/mailxXXXXXX";	/* template for transcript */
-
-
-/*
-**  Other configuration.
-*/
-
-int	DefUid =	1;		/* the uid to execute mailers as */
-int	DefGid =	1;		/* ditto for gid */
-time_t	TimeOut =	3*24*60*60L;	/* default timeout for queue files */
-int	ReadTimeout =	10*60;		/* timeout on external reads */
-int	LogLevel =	9;		/* default logging level */
-bool	SuperSafe =	TRUE;		/* always create qf file */
-
-
-
-/*
-**  V6 system configuration.
-*/
-
-# ifdef V6
-char	*StdTimezone =	"PST";		/* std time timezone */
-char	*DstTimezone =	"PDT";		/* daylight time timezone */
-# endif V6
 
 # ifdef V6
 /*

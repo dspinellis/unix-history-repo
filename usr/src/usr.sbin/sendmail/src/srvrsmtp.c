@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.32		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.33		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.32		%G%);
+SCCSID(@(#)srvrsmtp.c	3.33		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -388,10 +388,8 @@ help(topic)
 	int len;
 	char buf[MAXLINE];
 	bool noinfo;
-	extern char *HelpFile;
 
-	hf = fopen(HelpFile, "r");
-	if (hf == NULL)
+	if (HelpFile == NULL || (hf = fopen(HelpFile, "r")) == NULL)
 	{
 		/* no help */
 		message("502", "HELP not implemented");

@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.117		%G%);
+SCCSID(@(#)main.c	3.118		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -178,46 +178,46 @@ main(argc, argv)
 	openxscrpt();
 	errno = 0;
 	from = NULL;
-	CurEnv->e_oldstyle = TRUE;
-	NoConnect = TRUE;
 	initmacros();
-
-	/*
-	**  Do initial configuration.
-	**	This involves deciding what our configuration file will
-	**	be and then running it.  Later we will parse the rest of
-	**	the arguments, some of which may override the configuration
-	**	file.
-	**		Notice the problem here: user configuration files
-	**		will override the command line options.  Ugh.
-	*/
-
-	if (argc > 1 && (p = *++argv)[0] == '-')
-	{
-		/* trim off special leading parameters */
-		if (p[1] == 'C')
-		{
-			/* set configuration file */
-			ConfFile = &p[2];
-			if (ConfFile[0] == '\0')
-				ConfFile = "sendmail.cf";
-			safecf = FALSE;
-		}
-	}
-
-	/* now run the system configuration file */
-	readcf(ConfFile, safecf);
 
 	/*
 	** Crack argv.
 	*/
 
-	for (; --argc > 0 && (p = *argv)[0] == '-'; argv++)
+	while (--argc > 0 && (p = *++argv)[0] == '-')
 	{
 		switch (p[1])
 		{
-		  case 'r':	/* obsolete -f flag */
+		  case 'a':	/* arpanet format */
+			ArpaMode = TRUE;
+			if (p[2] == 's')
+			{
+				/* running smtp */
+# ifdef SMTP
+				Smtp = TRUE;
+# else SMTP
+				syserr("I don't speak SMTP");
+# endif SMTP
+			}
+			break;
+
+		  case 'C':	/* select configuration file */
+			ConfFile = &p[2];
+			if (ConfFile[0] == '\0')
+				ConfFile = "sendmail.cf";
+			break;
+
+# ifdef DEBUG
+		  case 'd':	/* debug */
+			tTsetup(tTdvect, sizeof tTdvect, "0-99.1");
+			tTflag(&p[2]);
+			setbuf(stdout, (char *) NULL);
+			printf("Version %s\n", Version);
+			break;
+# endif DEBUG
+
 		  case 'f':	/* from address */
+		  case 'r':	/* obsolete -f flag */
 			p += 2;
 			if (*p == '\0')
 			{
@@ -270,148 +270,19 @@ main(argc, argv)
 			HopCount = atoi(p);
 			break;
 
-		  case 'e':	/* error message disposition */
-			switch (p[2])
-			{
-			  case 'p':	/* print errors normally */
-				break;	/* (default) */
-
-			  case 'q':	/* be silent about it */
-				(void) freopen("/dev/null", "w", stdout);
-				break;
-
-			  case 'm':	/* mail back */
-				MailBack = TRUE;
-				HoldErrs = TRUE;
-				break;
-
-			  case 'e':	/* do berknet error processing */
-				BerkNet = TRUE;
-				HoldErrs = TRUE;
-				break;
-
-			  case 'w':	/* write back (or mail) */
-				WriteBack = TRUE;
-				HoldErrs = TRUE;
-				break;
-			}
-			break;
-
-# ifdef DEBUG
-		  case 'd':	/* debug */
-			tTsetup(tTdvect, sizeof tTdvect, "0-99.1");
-			tTflag(&p[2]);
-			setbuf(stdout, (char *) NULL);
-			printf("Version %s\n", Version);
-			break;
-
-		  case 'M':	/* redefine internal macro */
-			define(p[2], &p[3]);
-			break;
-# endif DEBUG
-
-		  case 'L':	/* logging */
-			LogLevel = atoi(&p[2]);
-			break;
-
-		  case 'C':	/* select configuration file */
-			break;
-
-		  case 'A':	/* select alias file */
-			if (p[2] == '\0')
-				AliasFile = "aliases";
-			else
-				AliasFile = &p[2];
-			break;
-
-		  case 'Q':	/* select queue dir */
-			if (p[2] == '\0')
-				QueueDir = "mqueue";
-			else
-				QueueDir = &p[2];
-			break;
-
-		  case 'T':	/* set timeout interval */
-			TimeOut = convtime(&p[2]);
-			break;
-		
-		  case 'n':	/* don't alias */
-			NoAlias = TRUE;
-			break;
-
 # ifdef DBM
 		  case 'I':	/* initialize alias DBM file */
 			aliasinit = TRUE;
 			Verbose = TRUE;
 			break;
 # endif DBM
-
-		  case 'm':	/* send to me too */
-			MeToo = TRUE;
-			break;
-
-		  case 'i':	/* don't let dot stop me */
-			IgnrDot = TRUE;
-			break;
-
-		  case 'a':	/* arpanet format */
-			ArpaMode = TRUE;
-			if (p[2] == 's')
-			{
-				/* running smtp */
-# ifdef SMTP
-				Smtp = TRUE;
-# else SMTP
-				syserr("I don't speak SMTP");
-# endif SMTP
-			}
-			break;
-
-# ifdef QUEUE
-		  case 'c':	/* connect to non-local mailers */
-			NoConnect = FALSE;
-			break;
-# endif QUEUE
 		
-		  case 's':	/* save From lines in headers */
-			SaveFrom = TRUE;
+		  case 'n':	/* don't alias */
+			NoAlias = TRUE;
 			break;
 
-		  case 'v':	/* give blow-by-blow description */
-			Verbose = TRUE;
-			NoConnect = FALSE;
-			break;
-
-		  case 't':	/* read recipients from message */
-			GrabTo = TRUE;
-			break;
-
-		  case 'b':	/* operations mode */
-			Mode = p[2];
-			switch (Mode)
-			{
-			  case MD_DAEMON:	/* run as a daemon */
-#ifdef DAEMON
-				ArpaMode = Smtp = TRUE;
-#else DAEMON
-				syserr("Daemon mode not implemented");
-#endif DAEMON
-				break;
-
-			  case '\0':	/* default: do full delivery */
-				Mode = MD_DEFAULT;
-				/* fall through....... */
-
-			  case MD_DELIVER:	/* do everything (default) */
-			  case MD_FORK:		/* fork after verification */
-			  case MD_QUEUE:	/* queue only */
-			  case MD_VERIFY:	/* verify only */
-				break;
-
-			  default:
-				syserr("Unknown operation mode -b%c", Mode);
-				exit(EX_USAGE);
-			}
+		  case 'o':	/* set option */
+			setoption(p[2], &p[3], FALSE, TRUE);
 			break;
 
 		  case 'q':	/* run queue files at intervals */
@@ -423,14 +294,23 @@ main(argc, argv)
 # endif QUEUE
 			break;
 
-		  case 'o':	/* take new-style headers (with commas) */
-			CurEnv->e_oldstyle = FALSE;
+		  case 't':	/* read recipients from message */
+			GrabTo = TRUE;
 			break;
 
-		  default:
-			/* at Eric Schmidt's suggestion, this will not be an error....
-			syserr("Unknown flag %s", p);
-			... seems that upward compatibility will be easier. */
+			/* compatibility flags */
+		  case 'b':	/* operations mode */
+		  case 'c':	/* connect to non-local mailers */
+		  case 'e':	/* error message disposition */
+		  case 'i':	/* don't let dot stop me */
+		  case 'm':	/* send to me too */
+		  case 'T':	/* set timeout interval */
+		  case 'v':	/* give blow-by-blow description */
+			setoption(p[1], &p[2], FALSE, TRUE);
+			break;
+
+		  case 's':	/* save From lines in headers */
+			setoption('f', &p[2], FALSE, TRUE);
 			break;
 		}
 	}
@@ -445,6 +325,7 @@ main(argc, argv)
 	if (LogLevel > 10)
 		syslog(LOG_DEBUG, "entered, uid=%d, pid=%d", getuid(), getpid());
 # endif LOG
+	readcf(ConfFile, safecf);
 
 	/* our name for SMTP codes */
 	expand("$j", jbuf, &jbuf[sizeof jbuf - 1], CurEnv);
