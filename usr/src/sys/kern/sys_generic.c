@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.1	82/07/15	*/
+/*	sys_generic.c	5.2	82/07/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,6 +16,12 @@
 #include "../h/cmap.h"
 #include "../h/vlimit.h"
 #include "../h/fs.h"
+#ifdef MUSH
+#include "../h/quota.h"
+#include "../h/share.h"
+#else
+#define	CHARGE(nothing)
+#endif
 
 /*
  * Read system call.
@@ -215,7 +221,9 @@ readi(ip)
 	ip->i_flag |= IACC;
 	type = ip->i_mode&IFMT;
 	if (type == IFCHR) {
+		register c = u.u_count;
 		(*cdevsw[major(dev)].d_read)(dev);
+		CHARGE(sc_tio * (c - u.u_count));
 		return;
 	}
 	if (type != IFBLK) {
@@ -309,6 +317,7 @@ writei(ip)
 	type = ip->i_mode & IFMT;
 	if (type == IFCHR) {
 		ip->i_flag |= IUPD|ICHG;
+		CHARGE(sc_tio * u.u_count);
 		(*cdevsw[major(dev)].d_write)(dev);
 		return;
 	}
