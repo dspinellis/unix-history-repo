@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)execve.2	6.9 (Berkeley) %G%
+.\"     @(#)execve.2	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt EXECVE 2
@@ -105,9 +105,15 @@ of the new process image file.
 If the set-group-ID mode bit of the new process image file is set,
 the effective group ID of the new process image is set to the group ID
 of the new process image file.
+(The effective group ID is the first element of the group list.)
 The real user ID, real group ID and
-supplementary group IDs of the new process image remain the same as the calling
+other group IDs of the new process image remain the same as the calling
 process image.
+After any set-user-ID and set-group-ID processing,
+the effective user ID is recorded as the saved set-user-ID,
+and the effective group ID is recorded as the saved set-group-ID.
+These values may be used in changing the effective IDs later (see
+.XR setuid 2 ) .
 .Pp
 The new process also inherits the following attributes from
 the calling process:
