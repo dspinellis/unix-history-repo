@@ -1,4 +1,4 @@
-#	@(#)gettytab	5.12 (Berkeley) %G%
+#	@(#)gettytab	5.13 (Berkeley) %G%
 #
 # Most of the table entries here are just copies of the old getty table,
 # it is by no means certain, or even likely, that any of them are optimal
@@ -63,8 +63,9 @@ D2400|d2400|Fast-Dial-2400:\
 	:nx=D300:tc=1200-baud:
 5|D300|Fast-Dial-300:\
 	:nx=D2400:tc=300-baud:
+
 #
-#telebit
+#telebit (19200)
 #
 t19200:\
 	:nx=t2400:tc=19200-baud:
@@ -72,6 +73,17 @@ t2400:\
 	:nx=t1200:tc=2400-baud:
 t1200:\
 	:nx=t19200:tc=1200-baud:
+
+#
+#telebit (9600)
+#
+t9600:\
+	:nx=t2400a:tc=19200-baud:
+t2400a:\
+	:nx=t1200a:tc=2400-baud:
+t1200a:\
+	:nx=t9600:tc=1200-baud:
+
 #
 # Odd special case terminals
 #
