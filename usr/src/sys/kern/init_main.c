@@ -1,4 +1,4 @@
-/*	init_main.c	4.29	82/04/19	*/
+/*	init_main.c	4.30	82/05/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -194,6 +194,20 @@ iinit()
 		bp->b_flags |= B_LOCKED;
 		brelse(bp);
 	}
+	clkinit(fp->fs_time);
+	bootime = time;
+}
+
+/*
+ * Initialize hash links for buffers.
+ */
+bhinit()
+{
+	register int i;
+	register struct bufhd *bp;
+
+	for (bp = bufhash, i = 0; i < BUFHSZ; i++, bp++)
+		bp->b_forw = bp->b_back = (struct buf *)bp;
 }
 
 /*
