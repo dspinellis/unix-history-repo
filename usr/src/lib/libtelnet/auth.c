@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)auth.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)auth.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -260,7 +260,7 @@ auth_onoff(type, on)
 	Authenticator *ap;
 
 	if (!strcasecmp(type, "?") || !strcasecmp(type, "help")) {
-                printf("auth %s 'type'\n", on ? "enable" : "disable");
+		printf("auth %s 'type'\n", on ? "enable" : "disable");
 		printf("Where 'type' is one of:\n");
 		printf("\t%s\n", AUTHTYPE_NAME(0));
 		mask = 0;
@@ -393,7 +393,7 @@ auth_send(data, cnt)
 		auth_send_cnt = cnt > sizeof(_auth_send_data)
 					? sizeof(_auth_send_data)
 					: cnt;
-		bcopy((void *)data, (void *)_auth_send_data, auth_send_cnt);
+		memmove((void *)_auth_send_data, (void *)data, auth_send_cnt);
 		auth_send_data = _auth_send_data;
 	} else {
 		/*
@@ -444,7 +444,7 @@ auth_send(data, cnt)
 	 *  We requested strong authentication, however no mechanisms worked.
 	 *  Therefore, exit on client end.
 	 */
-	printf("Unable to securely authenticate user ... exit\n"); 
+	printf("Unable to securely authenticate user ... exit\n");
 	exit(0);
 #endif /* KANNAN */
 }
@@ -519,7 +519,7 @@ auth_name(data, cnt)
 					Name, cnt, sizeof(savename)-1);
 		return;
 	}
-	bcopy((void *)data, (void *)savename, cnt);
+	memmove((void *)savename, (void *)data, cnt);
 	savename[cnt] = '\0';	/* Null terminate */
 	if (auth_debug_mode)
 		printf(">>>%s: Got NAME [%s]\r\n", Name, savename);

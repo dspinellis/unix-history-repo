@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)enc_des.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)enc_des.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef	ENCRYPTION
@@ -117,7 +117,7 @@ ofb64_init(server)
 fb64_init(fbp)
 	register struct fb *fbp;
 {
-	bzero((void *)fbp, sizeof(*fbp));
+	memset((void *)fbp, 0, sizeof(*fbp));
 	fbp->state[0] = fbp->state[1] = FAILED;
 	fbp->fb_feed[0] = IAC;
 	fbp->fb_feed[1] = SB;
@@ -348,7 +348,7 @@ fb64_reply(data, cnt, fbp)
 		break;
 
 	case FB64_IV_BAD:
-		bzero(fbp->temp_feed, sizeof(Block));
+		memset(fbp->temp_feed, 0, sizeof(Block));
 		fb64_stream_iv(fbp->temp_feed, &fbp->streams[DIR_ENCRYPT-1]);
 		state = FAILED;
 		break;
@@ -396,7 +396,7 @@ fb64_session(key, server, fbp)
 				key ? key->type : -1, SK_DES);
 		return;
 	}
-	bcopy((void *)key->data, (void *)fbp->krbdes_key, sizeof(Block));
+	memmove((void *)fbp->krbdes_key, (void *)key->data, sizeof(Block));
 
 	fb64_stream_key(fbp->krbdes_key, &fbp->streams[DIR_ENCRYPT-1]);
 	fb64_stream_key(fbp->krbdes_key, &fbp->streams[DIR_DECRYPT-1]);
@@ -523,8 +523,8 @@ fb64_stream_iv(seed, stp)
 	register struct stinfo *stp;
 {
 
-	bcopy((void *)seed, (void *)stp->str_iv, sizeof(Block));
-	bcopy((void *)seed, (void *)stp->str_output, sizeof(Block));
+	memmove((void *)stp->str_iv, (void *)seed, sizeof(Block));
+	memmove((void *)stp->str_output, (void *)seed, sizeof(Block));
 
 	des_key_sched(stp->str_ikey, stp->str_sched);
 
@@ -536,10 +536,10 @@ fb64_stream_key(key, stp)
 	Block key;
 	register struct stinfo *stp;
 {
-	bcopy((void *)key, (void *)stp->str_ikey, sizeof(Block));
+	memmove((void *)stp->str_ikey, (void *)key, sizeof(Block));
 	des_key_sched(key, stp->str_sched);
 
-	bcopy((void *)stp->str_iv, (void *)stp->str_output, sizeof(Block));
+	memmove((void *)stp->str_output, (void *)stp->str_iv, sizeof(Block));
 
 	stp->str_index = sizeof(Block);
 }
@@ -554,7 +554,7 @@ fb64_stream_key(key, stp)
  *  INPUT --(--------->(+)+---> DATA
  *          |             |
  *	    +-------------+
- *         
+ *
  *
  * Given:
  *	iV: Initial vector, 64 bits (8 bytes) long.
@@ -579,7 +579,7 @@ cfb64_encrypt(s, c)
 		if (index == sizeof(Block)) {
 			Block b;
 			des_ecb_encrypt(stp->str_output, b, stp->str_sched, 1);
-			bcopy((void *)b, (void *)stp->str_feed, sizeof(Block));
+			memmove((void *)stp->str_feed, (void *)b, sizeof(Block));
 			index = 0;
 		}
 
@@ -613,9 +613,9 @@ cfb64_decrypt(data)
 	if (index == sizeof(Block)) {
 		Block b;
 		des_ecb_encrypt(stp->str_output, b, stp->str_sched, 1);
-		bcopy((void *)b, (void *)stp->str_feed, sizeof(Block));
+		memmove((void *)stp->str_feed, (void *)b, sizeof(Block));
 		stp->str_index = 1;	/* Next time will be 1 */
-		index = 0;		/* But now use 0 */ 
+		index = 0;		/* But now use 0 */
 	}
 
 	/* On decryption we store (data) which is cypher. */
@@ -655,7 +655,7 @@ ofb64_encrypt(s, c)
 		if (index == sizeof(Block)) {
 			Block b;
 			des_ecb_encrypt(stp->str_feed, b, stp->str_sched, 1);
-			bcopy((void *)b, (void *)stp->str_feed, sizeof(Block));
+			memmove((void *)stp->str_feed, (void *)b, sizeof(Block));
 			index = 0;
 		}
 		*s++ ^= stp->str_feed[index];
@@ -686,9 +686,9 @@ ofb64_decrypt(data)
 	if (index == sizeof(Block)) {
 		Block b;
 		des_ecb_encrypt(stp->str_feed, b, stp->str_sched, 1);
-		bcopy((void *)b, (void *)stp->str_feed, sizeof(Block));
+		memmove((void *)stp->str_feed, (void *)b, sizeof(Block));
 		stp->str_index = 1;	/* Next time will be 1 */
-		index = 0;		/* But now use 0 */ 
+		index = 0;		/* But now use 0 */
 	}
 
 	return(data ^ stp->str_feed[index]);

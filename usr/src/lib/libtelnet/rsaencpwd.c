@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rsaencpwd.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rsaencpwd.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -94,32 +94,32 @@ Data(ap, type, d, c)
 	void *d;
 	int c;
 {
-        unsigned char *p = str_data + 4;
+	unsigned char *p = str_data + 4;
 	unsigned char *cd = (unsigned char *)d;
 
 	if (c == -1)
 		c = strlen((char *)cd);
 
-        if (0) {
-                printf("%s:%d: [%d] (%d)",
-                        str_data[3] == TELQUAL_IS ? ">>>IS" : ">>>REPLY",
-                        str_data[3],
-                        type, c);
-                printd(d, c);
-                printf("\r\n");
-        }
+	if (0) {
+		printf("%s:%d: [%d] (%d)",
+			str_data[3] == TELQUAL_IS ? ">>>IS" : ">>>REPLY",
+			str_data[3],
+			type, c);
+		printd(d, c);
+		printf("\r\n");
+	}
 	*p++ = ap->type;
 	*p++ = ap->way;
 	if (type != NULL) *p++ = type;
-        while (c-- > 0) {
-                if ((*p++ = *cd++) == IAC)
-                        *p++ = IAC;
-        }
-        *p++ = IAC;
-        *p++ = SE;
+	while (c-- > 0) {
+		if ((*p++ = *cd++) == IAC)
+			*p++ = IAC;
+	}
+	*p++ = IAC;
+	*p++ = SE;
 	if (str_data[3] == TELQUAL_IS)
 		printsub('>', &str_data[2], p - (&str_data[2]));
-        return(net_write(str_data, p - str_data));
+	return(net_write(str_data, p - str_data));
 }
 
 	int
@@ -132,9 +132,9 @@ rsaencpwd_init(ap, server)
 
 	if (server) {
 		str_data[3] = TELQUAL_REPLY;
-		bzero(key_file, sizeof(key_file));
+		memset(key_file, 0, sizeof(key_file));
 		gethostname(lhostname, sizeof(lhostname));
-		if ((cp = index(lhostname, '.')) != 0)  *cp = '\0';
+		if ((cp = strchr(lhostname, '.')) != 0)  *cp = '\0';
 		strcpy(key_file, "/etc/.");
 		strcat(key_file, lhostname);
 		strcat(key_file, "_privkey");
@@ -184,7 +184,7 @@ rsaencpwd_is(ap, data, cnt)
 	cnt--;
 	switch (*data++) {
 	case RSA_ENCPWD_AUTH:
-		bcopy((void *)data, (void *)auth.dat, auth.length = cnt);
+		memmove((void *)auth.dat, (void *)data, auth.length = cnt);
 
 		if ((fp=fopen(key_file, "r"))==NULL) {
 		  Data(ap, RSA_ENCPWD_REJECT, (void *)"Auth failed", -1);
@@ -268,17 +268,17 @@ rsaencpwd_is(ap, data, cnt)
 		  ptr +=NumEncodeLengthOctets(chalkey_len);
 		  *ptr++ = 0x04;  /* OCTET STRING */
 		  *ptr++ = challenge_len;
-		  bcopy(challenge, ptr, challenge_len);
+		  memmove(ptr, challenge, challenge_len);
 		  ptr += challenge_len;
 		  *ptr++ = 0x04;  /* OCTET STRING */
 		  EncodeLength(ptr, i);
 		  ptr += NumEncodeLengthOctets(i);
-		  bcopy(key, ptr, i);
+		  memmove(ptr, key, i);
 		  chalkey_len = 1+NumEncodeLengthOctets(chalkey_len)+chalkey_len;
 		  Data(ap, RSA_ENCPWD_CHALLENGEKEY, (void *)chalkey, chalkey_len);
 		}
 		break;
-		
+
 	default:
 		Data(ap, RSA_ENCPWD_REJECT, 0, 0);
 		break;
@@ -296,8 +296,8 @@ rsaencpwd_reply(ap, data, cnt)
 	KTEXT_ST token;
 	Block enckey;
 	int r, pubkey_len;
-	char        randchal[CHAL_SZ], *cp;
-	char        chalkey[160], pubkey[128], *ptr;
+	char	randchal[CHAL_SZ], *cp;
+	char	chalkey[160], pubkey[128], *ptr;
 
 	if (cnt-- < 1)
 		return;
@@ -319,25 +319,25 @@ rsaencpwd_reply(ap, data, cnt)
 		 * Verify that the response to the challenge is correct.
 		 */
 
-		bcopy((void *)data, (void *)chalkey, cnt);
+		memmove((void *)chalkey, (void *)data, cnt);
 		ptr = (char *) &chalkey[0];
 		ptr += DecodeHeaderLength(chalkey);
 		if (*ptr != 0x04) {
-                  return;
-                }
+		  return;
+		}
 		*ptr++;
 		challenge_len = DecodeValueLength(ptr);
 		ptr += NumEncodeLengthOctets(challenge_len);
-		bcopy(ptr, challenge, challenge_len);
+		memmove(challenge, ptr, challenge_len);
 		ptr += challenge_len;
 		if (*ptr != 0x04) {
-                  return;
-                }
-                *ptr++;
+		  return;
+		}
+		*ptr++;
 		pubkey_len = DecodeValueLength(ptr);
 		ptr += NumEncodeLengthOctets(pubkey_len);
-		bcopy(ptr, pubkey, pubkey_len);
-		bzero(user_passwd, sizeof(user_passwd));
+		memmove(pubkey, ptr, pubkey_len);
+		memset(user_passwd, 0, sizeof(user_passwd));
 		local_des_read_pw_string(user_passwd, sizeof(user_passwd)-1, "Password: ", 0);
 		UserPassword = user_passwd;
 		Challenge = challenge;
