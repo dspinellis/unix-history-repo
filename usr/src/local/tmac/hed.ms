@@ -1,5 +1,5 @@
 .	\" letter HEad
-.	\" @(#)hed.ms	1.2 %G%
+.	\" @(#)hed.ms	1.3 %G%
 .de HE
 .nr xx \\n(.d
 .nr xy \\n(.u
@@ -8,29 +8,33 @@
 \0
 .nr xw \\n(.s
 .nf
-.ie "\*(.T"ip" \{\
-.	ft R \}
-.ie "\*(.T"psc" \{\
-.	ft R \}
-.el \{\
-.	ft cr\}
 .ps 12
 .vs 0.14i
 .in 0
-.ie "\*(.T"va" \{\
+.ie "\*(.T"ip" \{\
+.	po 0.4i
+.	sp |0.5i
+.	ft R \}
+.el .ie "\*(.T"psc" \{\
+.	po 0.85i
+.	sp |0.7i
+.	ft R \}
+.el .ie "\*(.T"va" \{\
 .	po 0.1i
-.	sp |0.3i\}
+.	sp |0.3i
+.	ft cr\}
 .el \{\
 .	po 0.4i
-.	sp |0.5i\}
+.	sp |0.5i
+.	ft cr\}
 UNIVERSITY OF CALIFORNIA, BERKELEY
 .sp 0.3i-1v
 .ie "\*(.T"psc" \{\
-\l'11.5c' \h'|13.7c'\l'4.2c'
+\l'11.3c' \h'|13.5c'\l'4.2c'
 .br
-\s6BERKELEY    \(bu    DAVIS    \(bu    IRVINE    \(bu    LOS  ANGELES    \(bu    RIVERSIDE    \(bu    SAN  DIEGO    \(bu    SAN  FRANCISCO \h'|11.55c' \z\(uc \h'|14c' SANTA  BARBARA    \(bu    SANTA  CRUZ\s10
+\s6\|BERKELEY    \(bu    DAVIS    \(bu    IRVINE    \(bu    LOS  ANGELES    \(bu    RIVERSIDE    \(bu    SAN  DIEGO    \(bu    SAN  FRANCISCO \h'|11.35c' \z\(uc \h'|13.85c' SANTA  BARBARA    \(bu    SANTA  CRUZ\s10
 .sp -0.2c
-\l'11.5c' \h'|13.7c'\l'4.2c'\s7 \}
+\l'11.3c' \h'|13.5c'\l'4.2c'\s7 \}
 .el \{\
 .ps 7
 \D't 0.013i'\D'l 4.5i 0'\h'0.83i'\D'l 1.85i 0'
