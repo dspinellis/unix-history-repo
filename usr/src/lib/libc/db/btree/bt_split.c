@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_split.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_split.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -23,12 +23,12 @@ static char sccsid[] = "@(#)bt_split.c	5.8 (Berkeley) %G%";
 
 #include "btree.h"
 
+static int	 bt_broot __P((BTREE *, PAGE *, PAGE *, PAGE *));
+static PAGE	*bt_page __P((BTREE *, PAGE *, PAGE **, PAGE **, int *));
 static int	 bt_preserve __P((BTREE *, pgno_t));
 static PAGE	*bt_psplit __P((BTREE *, PAGE *, PAGE *, PAGE *, int *));
-static PAGE	*bt_page __P((BTREE *, PAGE *, PAGE **, PAGE **, int *));
 static PAGE	*bt_root __P((BTREE *, PAGE *, PAGE **, PAGE **, int *));
 static int	 bt_rroot __P((BTREE *, PAGE *, PAGE *, PAGE *));
-static int	 bt_broot __P((BTREE *, PAGE *, PAGE *, PAGE *));
 static recno_t	 rec_total __P((PAGE *));
 
 #ifdef STATISTICS
@@ -40,7 +40,7 @@ u_long	bt_rootsplit, bt_split, bt_sortsplit, bt_pfxsaved;
  *
  * Parameters:
  *	t:	tree
- *	h:	page to split
+ *	sp:	page to split
  *	key:	key to insert
  *	data:	data to insert
  *	flags:	BIGKEY/BIGDATA flags
@@ -51,9 +51,9 @@ u_long	bt_rootsplit, bt_split, bt_sortsplit, bt_pfxsaved;
  *	RET_ERROR, RET_SUCCESS
  */
 int
-__bt_split(t, h, key, data, flags, nbytes, skip)
+__bt_split(t, sp, key, data, flags, nbytes, skip)
 	BTREE *t;
-	PAGE *h;
+	PAGE *sp;
 	const DBT *key, *data;
 	u_long flags;
 	size_t nbytes;
@@ -63,7 +63,7 @@ __bt_split(t, h, key, data, flags, nbytes, skip)
 	BLEAF *bl;
 	DBT a, b;
 	EPGNO *parent;
-	PAGE *l, *r, *lchild, *rchild;
+	PAGE *h, *l, *r, *lchild, *rchild;
 	index_t nxtindex;
 	size_t nksize;
 	int nosplit;
@@ -71,18 +71,18 @@ __bt_split(t, h, key, data, flags, nbytes, skip)
 
 	/*
 	 * Split the page into two pages, l and r.  The split routines return
-	 * a pointer to the page into which the key should be inserted and skip
-	 * set to the offset which should be used.  Additionally, l and r are
-	 * pinned.
+	 * a pointer to the page into which the key should be inserted and with
+	 * skip set to the offset which should be used.  Additionally, l and r
+	 * are pinned.
 	 */
-	h = h->pgno == P_ROOT ?
-	    bt_root(t, h, &l, &r, &skip) : bt_page(t, h, &l, &r, &skip);
+	h = sp->pgno == P_ROOT ?
+	    bt_root(t, sp, &l, &r, &skip) : bt_page(t, sp, &l, &r, &skip);
 	if (h == NULL)
 		return (RET_ERROR);
 
 	/*
-	 * Grab the space and insert the [rb]leaf structure.  Always a [rb]leaf
-	 * structure since key inserts always cause a leaf page to split first.
+	 * Insert the new key/data pair into the leaf page.  (Key inserts
+	 * always cause a leaf page to split first.)
 	 */
 	h->linp[skip] = h->upper -= nbytes;
 	dest = (char *)h + h->upper;
@@ -90,6 +90,12 @@ __bt_split(t, h, key, data, flags, nbytes, skip)
 		WR_RLEAF(dest, data, flags)
 	else
 		WR_BLEAF(dest, key, data, flags)
+
+	/* If the root page was split, make it look right. */
+	if (sp->pgno == P_ROOT &&
+	    (ISSET(t, BTF_RECNO) ?
+	    bt_rroot(t, sp, l, r) : bt_broot(t, sp, l, r)) == RET_ERROR)
+		goto err2;
 
 	/*
 	 * Now we walk the parent page stack -- a LIFO stack of the pages that
@@ -188,6 +194,7 @@ prefix:				nksize = t->bt_pfx(&a, &b);
 
 		/* Split the parent page if necessary or shift the indices. */
 		if (h->upper - h->lower < nbytes + sizeof(index_t)) {
+			sp = h;
 			h = h->pgno == P_ROOT ?
 			    bt_root(t, h, &l, &r, &skip) :
 			    bt_page(t, h, &l, &r, &skip);
@@ -250,6 +257,13 @@ prefix:				nksize = t->bt_pfx(&a, &b);
 			mpool_put(t->bt_mp, h, MPOOL_DIRTY);
 			break;
 		}
+
+		/* If the root page was split, make it look right. */
+		if (sp->pgno == P_ROOT &&
+		    (ISSET(t, BTF_RECNO) ?
+		    bt_rroot(t, sp, l, r) : bt_broot(t, sp, l, r)) == RET_ERROR)
+			goto err1;
+
 		mpool_put(t->bt_mp, lchild, MPOOL_DIRTY);
 		mpool_put(t->bt_mp, rchild, MPOOL_DIRTY);
 	}
@@ -366,7 +380,7 @@ bt_page(t, h, lp, rp, skip)
 	tp = bt_psplit(t, h, l, r, skip);
 
 	/* Move the new left page onto the old left page. */
-	bcopy(l, h, t->bt_psize);
+	memmove(h, l, t->bt_psize);
 	if (tp == l)
 		tp = h;
 	free(l);
@@ -418,22 +432,19 @@ bt_root(t, h, lp, rp, skip)
 	/* Split the root page. */
 	tp = bt_psplit(t, h, l, r, skip);
 
-	/* Make the root page look right. */
-	if ((ISSET(t, BTF_RECNO) ?
-	    bt_rroot(t, h, l, r) : bt_broot(t, h, l, r)) == RET_ERROR)
-		return (NULL);
-
 	*lp = l;
 	*rp = r;
 	return (tp);
 }
 
 /*
- * BT_RROOT -- Fix up the recno root page after the split.
+ * BT_RROOT -- Fix up the recno root page after it has been split.
  *
  * Parameters:
  *	t:	tree
  *	h:	root page
+ *	l:	left page
+ *	r:	right page
  *
  * Returns:
  *	RET_ERROR, RET_SUCCESS
@@ -467,11 +478,13 @@ bt_rroot(t, h, l, r)
 }
 
 /*
- * BT_BROOT -- Fix up the btree root page after the split.
+ * BT_BROOT -- Fix up the btree root page after it has been split.
  *
  * Parameters:
  *	t:	tree
  *	h:	root page
+ *	l:	left page
+ *	r:	right page
  *
  * Returns:
  *	RET_ERROR, RET_SUCCESS
@@ -492,10 +505,7 @@ bt_broot(t, h, l, r)
 	 * a leaf page) to the new root page.
 	 *
 	 * The btree comparison code guarantees that the left-most key on any
-	 * level of the tree is never used, so it doesn't need to be filled
-	 * in.  (This is not just convenience -- if the insert index is 0, we
-	 * don't *have* a key to fill in.)  The right key is available because
-	 * the split code guarantees not to split on the skipped index.
+	 * level of the tree is never used, so it doesn't need to be filled in.
 	 */
 	nbytes = NBINTERNAL(0);
 	h->linp[0] = h->upper = t->bt_psize - nbytes;
@@ -530,6 +540,8 @@ bt_broot(t, h, l, r)
 	default:
 		abort();
 	}
+
+	/* There are two keys on the page. */
 	h->lower = BTDATAOFF + 2 * sizeof(index_t);
 
 	/* Unpin the root page, set to btree internal page. */
@@ -548,7 +560,7 @@ bt_broot(t, h, l, r)
  *	h:	page to be split
  *	l:	page to put lower half of data
  *	r:	page to put upper half of data
- *	skip:	pointer to index to leave open
+ *	pskip:	pointer to index to leave open
  *
  * Returns:
  *	Pointer to page in which to insert.
@@ -571,8 +583,7 @@ bt_psplit(t, h, l, r, pskip)
 
 	/*
 	 * Split the data to the left and right pages. Leave the skip index
-	 * open and guarantee that the split doesn't happen on that index (the
-	 * right key must be available for the parent page).  Additionally,
+	 * open.  Additionally,
 	 * make some effort not to split on an overflow key.  This makes it
 	 * faster to process internal pages and can save space since overflow
 	 * keys used by internal pages are never deleted.
@@ -613,11 +624,10 @@ bt_psplit(t, h, l, r, pskip)
 
 		/* There's no empirical justification for the '3'. */
 		if (half < nbytes) {
-			if (skip != off + 1)
-				if (!isbigkey || bigkeycnt == 3)
-					break;
-				else
-					++bigkeycnt;
+			if (!isbigkey || bigkeycnt == 3)
+				break;
+			else
+				++bigkeycnt;
 		} else
 			half -= nbytes;
 	}
