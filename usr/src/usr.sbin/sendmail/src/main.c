@@ -1,10 +1,10 @@
 # define  _DEFINE
 # include <signal.h>
-# include <sys/ioctl.h>
+# include <sgtty.h>
 # include "sendmail.h"
 # include <sys/file.h>
 
-SCCSID(@(#)main.c	4.10		%G%);
+SCCSID(@(#)main.c	4.11		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -41,7 +41,7 @@ SCCSID(@(#)main.c	4.10		%G%);
 
 
 
-int		NextMailer = 0;	/* "free" index into Mailer struct */
+int		NextMailer;	/* "free" index into Mailer struct */
 char		*FullName;	/* sender's full name */
 ENVELOPE	BlankEnvelope;	/* a "blank" envelope */
 ENVELOPE	MainEnvelope;	/* the envelope around the basic letter */

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	4.6.1.1		%G%);
+SCCSID(@(#)parseaddr.c	4.7		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -692,6 +692,11 @@ rewrite(pvp, ruleset)
 
 			/* substitute from LHS */
 			m = &mlist[rp[1] - '1'];
+			if (m >= mlp)
+			{
+				syserr("rewrite: ruleset %d: replacement out of bounds", ruleset);
+				return;
+			}
 # ifdef DEBUG
 			if (tTd(21, 15))
 			{

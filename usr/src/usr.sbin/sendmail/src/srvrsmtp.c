@@ -3,10 +3,10 @@
 # include <signal.h>
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	4.8		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	4.9		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	4.8		%G%);
+SCCSID(@(#)srvrsmtp.c	4.9		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -282,7 +282,7 @@ smtp()
 			if (rcps != 1)
 			{
 				HoldErrs = TRUE;
-				ErrorMode == EM_MAIL;
+				ErrorMode = EM_MAIL;
 			}
 			CurEnv->e_flags &= ~EF_FATALERRS;
 			CurEnv->e_xfp = freopen(queuename(CurEnv, 'x'), "w", CurEnv->e_xfp);
