@@ -1,4 +1,4 @@
-/*	dmf.c	6.3	84/08/30	*/
+/*	dmf.c	6.4	84/12/20	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -313,7 +313,8 @@ dmfioctl(dev, cmd, data, flag)
 		return (error);
 	error = ttioctl(tp, cmd, data, flag);
 	if (error >= 0) {
-		if (cmd == TIOCSETP || cmd == TIOCSETN)
+		if (cmd == TIOCSETP || cmd == TIOCSETN || cmd == TIOCLBIS ||
+		    cmd == TIOCLBIC || cmd == TIOCLSET)
 			dmfparam(unit);
 		return (error);
 	}

@@ -1,4 +1,4 @@
-/*	dh.c	6.5	84/08/30	*/
+/*	dh.c	6.6	84/12/20	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -343,7 +343,8 @@ dhioctl(dev, cmd, data, flag)
 		return (error);
 	error = ttioctl(tp, cmd, data, flag);
 	if (error >= 0) {
-		if (cmd == TIOCSETP || cmd == TIOCSETN)
+		if (cmd == TIOCSETP || cmd == TIOCSETN || cmd == TIOCLBIS ||
+		    cmd == TIOCLBIC || cmd == TIOCLSET)
 			dhparam(unit);
 		return (error);
 	}
