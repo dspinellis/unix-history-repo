@@ -1,3 +1,5 @@
+/*	@(#)if_sl.c	5.2 (Berkeley) %G% */
+
 /*
  * Serial Line interface
  *
@@ -12,10 +14,11 @@
  * Some things done here could obviously be done in a better way,
  * but they were done this way to minimize the number of files
  * that had to be changed to accomodate this device.
- * A lot of this code belongs in the tty driver.
  *
  * Pounded on heavily by Chris Torek (chris@mimsy.umd.edu, umcp-cs!chris).
  * N.B.: this belongs in netinet, not vaxif, the way it stands now.
+ * Should have a link-layer type designation, but wouldn't be
+ * backwards-compatible.
  *
  * Converted to 4.3BSD Beta by Chris Torek.
  */
