@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.18 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.19 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.18 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.19 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -29,7 +29,7 @@ typedef union
 	char	qb2[PACKETSZ];
 } querybuf;
 
-static char	hostbuf[MAXMXHOSTS*PACKETSZ];
+static char	MXHostBuf[MAXMXHOSTS*PACKETSZ];
 
 #ifndef MAXDNSRCH
 #define MAXDNSRCH	6	/* number of possible domains to search */
@@ -60,7 +60,9 @@ static char	hostbuf[MAXMXHOSTS*PACKETSZ];
 */
 
 getmxrr(host, mxhosts, localhost, rcode)
-	char *host, **mxhosts, *localhost;
+	char *host;
+	char **mxhosts;
+	char *localhost;
 	int *rcode;
 {
 	extern int h_errno;
@@ -135,8 +137,8 @@ getmxrr(host, mxhosts, localhost, rcode)
 			goto punt;
 	nmx = 0;
 	seenlocal = FALSE;
-	buflen = sizeof(hostbuf) - 1;
-	bp = hostbuf;
+	buflen = sizeof(MXHostBuf) - 1;
+	bp = MXHostBuf;
 	ancount = ntohs(hp->ancount);
 	while (--ancount >= 0 && cp < eom && nmx < MAXMXHOSTS - 1)
 	{
@@ -183,8 +185,8 @@ getmxrr(host, mxhosts, localhost, rcode)
 	if (nmx == 0)
 	{
 punt:
-		mxhosts[0] = strcpy(hostbuf, host);
-		bp = &hostbuf[strlen(hostbuf)];
+		mxhosts[0] = strcpy(MXHostBuf, host);
+		bp = &MXHostBuf[strlen(MXHostBuf)];
 		if (bp[-1] != '.')
 		{
 			*bp++ = '.';
