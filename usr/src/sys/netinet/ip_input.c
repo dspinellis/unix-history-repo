@@ -1,4 +1,4 @@
-/*	ip_input.c	6.1	83/08/16	*/
+/*	ip_input.c	6.2	84/04/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -462,8 +462,11 @@ ip_dooptions(ip)
 			break;
 		if (opt == IPOPT_NOP)
 			optlen = 1;
-		else
+		else {
 			optlen = cp[1];
+			if (optlen <= 0)
+				break;
+		}
 		switch (opt) {
 
 		default:
