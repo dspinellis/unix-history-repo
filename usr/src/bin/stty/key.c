@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)key.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)key.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -50,7 +50,7 @@ static struct key {
 	"dec",		f_dec,		0,
 	"everything",	f_everything,	0,
 	"extproc",	f_extproc,	F_OFFOK,
-	"ispeed",	f_ispeed,	0,
+	"ispeed",	f_ispeed,	F_NEEDARG,
 	"new",		f_tty,		0,
 	"nl",		f_nl,		F_OFFOK,
 	"old",		f_tty,		0,
