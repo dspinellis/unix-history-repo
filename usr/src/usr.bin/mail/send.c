@@ -12,7 +12,7 @@
  * Mail to others.
  */
 
-static char *SccsId = "@(#)send.c	2.6 %G%";
+static char *SccsId = "@(#)send.c	2.7 %G%";
 
 /*
  * Send message described by the passed pointer to the
@@ -68,11 +68,14 @@ send(mailp, obuf, doign)
 				goto writeit;
 			}
 			/*
-			 * If this line is a continuation
-			 * of a previous header field, just echo it.
+			 * If this line is a continuation (via space or tab)
+			 * of a previous header field, just echo it
+			 * (unless the field should be ignored).
 			 */
-			if (isspace(line[0]) && infld)
+			if (infld && (isspace(line[0]) || line[0] == '\t')) {
+				if (doign && isign(field)) continue;
 				goto writeit;
+			}
 			infld = 0;
 			/*
 			 * If we are no longer looking at real
