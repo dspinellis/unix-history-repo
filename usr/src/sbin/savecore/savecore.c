@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -40,7 +40,11 @@ static char sccsid[] = "@(#)savecore.c	5.22 (Berkeley) %G%";
 #ifdef tahoe
 #define ok(number) ((number)&~0xc0000000)
 #else
+#ifdef i386
+#define ok(number) ((number)&~0xfe000000)
+#else
 #define ok(number) (number)
+#endif
 #endif
 #endif
 
