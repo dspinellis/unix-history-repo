@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)send.2	6.7 (Berkeley) %G%
+.\"     @(#)send.2	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SEND 2
@@ -67,10 +67,9 @@ send more data.
 The
 .Fa flags
 parameter may include one or more of the following:
-.Pp
 .Bd -literal
-#define	MSG_OOB		0x1	/* process out-of-band data */
-#define	MSG_DONTROUTE	0x4	/* bypass routing, use direct interface */
+#define	MSG_OOB        0x1  /* process out-of-band data */
+#define	MSG_DONTROUTE  0x4  /* bypass routing, use direct interface */
 .Ed
 .Pp
 The flag
