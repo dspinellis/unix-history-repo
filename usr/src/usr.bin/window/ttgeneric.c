@@ -1,13 +1,14 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttgeneric.c	3.4 83/08/15";
+static	char *sccsid = "@(#)ttgeneric.c	3.5 83/08/15";
 #endif
 
 #include "ww.h"
+#include "tt.h"
 
 char gen_frame[16] = {
 	' ', '|', '-', '+',
 	'|', '|', '+', '+',
-	'-', '|', '-', '+',
+	'-', '+', '-', '+',
 	'+', '+', '+', '+'
 };
 
@@ -228,20 +229,16 @@ out:
 
 gen_init()
 {
-}
-
-gen_reset()
-{
 	if (gen_VS)
 		ps(gen_VS);
-	if (gen_HO)
-		ps(gen_HO);
+	if (gen_CL)
+		ps(gen_CL);
 	gen_col = gen_row = 0;
 	gen_insert = 0;
 	gen_modes = 0;
 }
 
-gen_cleanup()
+gen_end()
 {
 	gen_setmodes(0);
 	gen_setinsert(0);
@@ -363,8 +360,7 @@ tt_generic()
 		tt.tt_ncol--;
 	tt.tt_nrow = gen_LI;
 	tt.tt_init = gen_init;
-	tt.tt_reset = gen_reset;
-	tt.tt_cleanup = gen_cleanup;
+	tt.tt_end = gen_end;
 	tt.tt_setmodes = gen_setmodes;
 	tt.tt_blank = gen_blank;
 	tt.tt_write = gen_write;
