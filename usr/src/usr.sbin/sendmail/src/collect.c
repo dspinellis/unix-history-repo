@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.14.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -42,6 +42,7 @@ collect(smtpmode, e)
 	bool ignrdot = smtpmode ? FALSE : IgnrDot;
 	char buf[MAXFIELD], buf2[MAXFIELD];
 	register char *workbuf, *freebuf;
+	register int workbuflen;
 	extern char *hvalue();
 	extern bool isheader(), flusheol();
 
@@ -95,11 +96,6 @@ collect(smtpmode, e)
 	freebuf = buf2;		/* `freebuf' can be used for read-ahead */
 	for (;;)
 	{
-		char *curbuf;
-		int curbuffree;
-		register int curbuflen;
-		char *p;
-
 		/* first, see if the header is over */
 		if (!isheader(workbuf))
 		{
@@ -114,16 +110,11 @@ collect(smtpmode, e)
 		/* it's okay to toss '\n' now (flusheol() needed it) */
 		fixcrlf(workbuf, TRUE);
 
-		curbuf = workbuf;
-		curbuflen = strlen(curbuf);
-		curbuffree = MAXFIELD - curbuflen;
-		p = curbuf + curbuflen;
+		workbuflen = strlen(workbuf);
 
 		/* get the rest of this field */
 		for (;;)
 		{
-			int clen;
-
 			if (sfgets(freebuf, MAXFIELD, InChannel) == NULL)
 				goto readerr;
 
@@ -134,30 +125,26 @@ collect(smtpmode, e)
 			if (!flusheol(freebuf, InChannel))
 				goto readerr;
 
-			fixcrlf(freebuf, TRUE);
-			clen = strlen(freebuf);
-
-			/* if insufficient room, dynamically allocate buffer */
-			if (clen >= curbuffree)
+			/* yes; append line to `workbuf' if there's room */
+			if (workbuflen < MAXFIELD-3)
 			{
-				/* reallocate buffer */
-				int nbuflen = ((p - curbuf) + clen) * 2;
-				char *nbuf = xalloc(nbuflen);
+				register char *p = workbuf + workbuflen;
+				register char *q = freebuf;
 
-				p = nbuf + (p - curbuf);
-				curbuffree = nbuflen - (p - workbuf) - clen;
-				bcopy(curbuf, nbuf, p - curbuf);
-				if (curbuf != buf && curbuf != buf2)
-					free(curbuf);
-				curbuf = nbuf;
+				/* we have room for more of this field */
+				fixcrlf(freebuf, TRUE);
+				*p++ = '\n';
+				workbuflen++;
+				while(*q != '\0' && workbuflen < MAXFIELD-1)
+				{
+					*p++ = *q++;
+					workbuflen++;
+				}
+				*p = '\0';
 			}
-			bcopy(freebuf, p, clen);
-			p += clen;
-			curbuffree -= clen;
 		}
-		*p++ = '\0';
 
-		e->e_msgsize += curbuflen;
+		e->e_msgsize += workbuflen;
 
 		/*
 		**  The working buffer now becomes the free buffer, since
@@ -181,15 +168,8 @@ collect(smtpmode, e)
 		**  Snarf header away.
 		*/
 
-		if (bitset(H_EOH, chompheader(curbuf, FALSE, e)))
+		if (bitset(H_EOH, chompheader(freebuf, FALSE, e)))
 			break;
-
-		/*
-		**  If the buffer was dynamically allocated, free it.
-		*/
-
-		if (curbuf != buf && curbuf != buf2)
-			free(curbuf);
 	}
 
 	if (tTd(30, 1))
@@ -310,16 +290,22 @@ flusheol(buf, fp)
 	char *buf;
 	FILE *fp;
 {
-	char junkbuf[MAXLINE], *sfgets();
 	register char *p = buf;
+	bool printmsg = TRUE;
+	char junkbuf[MAXLINE];
+	extern char *sfgets();
 
-	while (strchr(p, '\n') == NULL) {
-		if (sfgets(junkbuf,MAXLINE,fp) == NULL)
-			return(FALSE);
+	while (strchr(p, '\n') == NULL)
+	{
+		if (printmsg)
+			usrerr("header line too long");
+		printmsg = FALSE;
+		if (sfgets(junkbuf, MAXLINE, fp) == NULL)
+			return (FALSE);
 		p = junkbuf;
 	}
 
-	return(TRUE);
+	return (TRUE);
 }
 /*
 **  TFERROR -- signal error on writing the temporary file.
