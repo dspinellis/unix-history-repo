@@ -1,0 +1,53 @@
+.nr _0 \n(c.
+.de ac
+.ll 8.9i
+.nr $s 0.5i
+.if !\\n($T \
+.	po 1.0i
+.ie "\\$2"*" \
+\{\
+.	nr hm 0.375i
+.	nr tm 1.125i
+.	pl 14.25i
+.	nr bm 1.5i
+.	de $h ..
+.	tl ''%''
+...
+.	rm $f
+.\}
+.el \
+\{\
+.	nr hm 0
+.	nr tm 0
+.	pl 15i
+.	nr bm 3i
+.	nr fm 0.9i
+.	de $f ..
+.	ti 0
+\h'|0.5i'\\\\n%\h'|1.25i'\\$2\h'|3i'\\$1
+.	br
+...
+.	rm $h
+.\}
+.bp
+.rs
+.sp 0.75i
+.rm ac
+..
+.if t .tm Line \n(c. -- macro .ac will not work in TROFF -- request ignored.
+.if t .rm ac
+.de +c			\" *** begin chapter
+.if \\n(?A \
+\{\
+.	nr ch 0 1
+.	pn 1
+.	ep
+.	af % 1
+.	bp
+.\}
+.nr ?A 0
+.sp 1i
+.if \\n(.$ \
+.	$c "\\$1"
+..
+.nr c. \n(_0
