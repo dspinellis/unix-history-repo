@@ -1,4 +1,4 @@
-/*	defs.h	4.7	82/06/08	*/
+/*	defs.h	4.8	82/06/09	*/
 
 /*
  * Internal data structure definitions for
@@ -59,6 +59,7 @@ struct rt_entry {
 #define	RTS_ADDRT	0x4		/* add command pending */
 #define	RTS_PASSIVE	0x8		/* don't send to router */
 #define	RTS_INTERFACE	0x10		/* route is for an interface */
+#define	RTS_GLOBAL	0x20		/* entry is non-local, don't lose it */
 
 struct	rthash nethash[ROUTEHASHSIZ], hosthash[ROUTEHASHSIZ];
 struct	rt_entry *rtlookup(), *rtfind();

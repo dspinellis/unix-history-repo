@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)af.c	4.2 %G%";
+static char sccsid[] = "@(#)af.c	4.3 %G%";
 #endif
 
 #include <sys/types.h>
@@ -36,7 +36,11 @@ inet_hash(sin, hp)
 {
 
 	hp->afh_nethash = sin->sin_addr.s_net;
-	hp->afh_hosthash = ntohl(sin->sin_addr.s_addr);
+	hp->afh_hosthash = sin->sin_addr.s_addr;
+#if vax || pdp11
+	hp->afh_hosthash = ntohl(hp->afh_hosthash);
+#endif
+	hp->afh_hosthash &= 0x7fffffff;
 }
 
 inet_netmatch(sin1, sin2)
@@ -52,8 +56,11 @@ inet_netmatch(sin1, sin2)
 inet_portmatch(sin)
 	struct sockaddr_in *sin;
 {
-	int port = ntohs(sin->sin_port);
-
+	int port = sin->sin_port;
+	
+#if vax || pdp11
+	port = ntohs(port);
+#endif
 	return (port == IPPORT_ROUTESERVER);
 }
 
@@ -63,26 +70,33 @@ inet_portmatch(sin)
 inet_portcheck(sin)
 	struct sockaddr_in *sin;
 {
-	int port = ntohs(sin->sin_port);
+	int port = sin->sin_port;
 
+#if vax || pdp11
+	port = ntohs(port);
+#endif
 	return (port <= IPPORT_RESERVED);
 }
 
 /*
  * Internet output routine.
  */
-inet_output(sin, size)
+inet_output(s, sin, size)
+	int s;
 	struct sockaddr_in *sin;
 	int size;
 {
-	extern int s;
 	extern char packet[MAXPACKETSIZE];
 	struct sockaddr_in dst;
 
 	dst = *sin;
 	sin = &dst;
-	if (sin->sin_port == 0)
-		sin->sin_port = htons(IPPORT_ROUTESERVER);
+	if (sin->sin_port == 0) {
+		sin->sin_port = IPPORT_ROUTESERVER;
+#if vax || pdp11
+		sin->sin_port = htons(sin->sin_port);
+#endif
+	}
 	if (send(s, sin, packet, size) < 0)
 		perror("send");
 }
@@ -125,10 +139,12 @@ null_netmatch(a1, a2)
 }
 
 /*ARGSUSED*/
-null_output(a1, n)
+null_output(s, a1, n)
+	int s;
 	struct sockaddr *a1;
 	int n;
 {
+
 	;
 }
 
@@ -136,6 +152,7 @@ null_output(a1, n)
 null_portmatch(a1)
 	struct sockaddr *a1;
 {
+
 	return (0);
 }
 
@@ -143,6 +160,7 @@ null_portmatch(a1)
 null_portcheck(a1)
 	struct sockaddr *a1;
 {
+
 	return (0);
 }
 
@@ -150,6 +168,7 @@ null_portcheck(a1)
 null_checkhost(a1)
 	struct sockaddr *a1;
 {
+
 	return (0);
 }
 
@@ -157,5 +176,6 @@ null_checkhost(a1)
 null_canon(a1)
 	struct sockaddr *a1;
 {
+
 	;
 }

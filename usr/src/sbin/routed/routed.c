@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.13 %G%";
+static char sccsid[] = "@(#)routed.c	4.14 82/06/09";
 #endif
 
 /*
@@ -37,22 +37,26 @@ struct	sockaddr_in myaddr = { AF_INET, IPPORT_ROUTESERVER };
 int	s;
 int	snoroute;		/* socket with no routing */
 int	kmem = -1;
-int	supplier;		/* process should supply updates */
+int	supplier = -1;		/* process should supply updates */
 int	install = 1;		/* if 1 call kernel */
-int	lookforinterfaces = 1;
-int	performnlist = 1;
-int	timeval;
+int	timeval = -TIMER_RATE;
 int	timer();
 int	cleanup();
+
+#define tprintf if (trace) printf
 int	trace = 0;
 FILE	*ftrace;
 
-char	packet[MAXPACKETSIZE];
+char	packet[MAXPACKETSIZE+1];
+struct	rip *msg = (struct rip *)packet;
 
 struct in_addr if_makeaddr();
 struct ifnet *if_ifwithaddr(), *if_ifwithnet();
 extern char *malloc();
 extern int errno, exit();
+char	**argv0;
+
+int	sndmsg(), supply();
 
 main(argc, argv)
 	int argc;
@@ -61,6 +65,7 @@ main(argc, argv)
 	int cc;
 	struct sockaddr from;
 	
+	argv0 = argv;
 #ifndef DEBUG
 	if (fork())
 		exit(0);
@@ -98,24 +103,37 @@ again2:
 		sleep(30);
 		goto again2;
 	}
-	rtinit();
-	getinterfaces();
-	request();
-
 	argv++, argc--;
-	while (argc > 0) {
-		if (strcmp(*argv, "-s") == 0)
+	while (argc > 0 && **argv == '-') {
+		if (!strcmp(*argv, "-s") == 0) {
 			supplier = 1;
-		else if (strcmp(*argv, "-q") == 0)
+			argv++, argc--;
+			continue;
+		}
+		if (!strcmp(*argv, "-q") == 0) {
 			supplier = 0;
-		argv++, argc--;
+			argv++, argc--;
+			continue;
+		}
+		goto usage;
 	}
+	if (argc > 0) {
+usage:
+		fprintf(stderr, "usage: routed [ -s ]\n");
+		exit(1);
+	}
+	rtinit();
+	ifinit();
+	if (supplier < 0)
+		supplier = 0;
+	gwkludge();
+	msg->rip_cmd = RIPCMD_REQUEST;
+	msg->rip_nets[0].rip_dst.sa_family = AF_UNSPEC;
+	msg->rip_nets[0].rip_metric = HOPCNT_INFINITY;
+	toall(sendmsg);
 	sigset(SIGALRM, timer);
 	timer();
 
-	/*
-	 * Listen for routing packets
-	 */
 	for (;;) {
 		cc = receive(s, &from, packet, sizeof (packet));
 		if (cc <= 0) {
@@ -129,236 +147,94 @@ again2:
 	}
 }
 
-/*
- * Timer routine:
- *
- * o handle timers on table entries,
- * o invalidate entries which haven't been updated in a while,
- * o delete entries which are too old,
- * o if we're an internetwork router, supply routing updates
- *   periodically
- */
-timer()
+rtinit()
 {
 	register struct rthash *rh;
-	register struct rt_entry *rt;
-	struct rthash *base = hosthash;
-	int doinghost = 1;
 
-	if (trace)
-		printf(">>> time %d >>>\n", timeval);
-again:
-	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++) {
-		rt = rh->rt_forw;
-		for (; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
-
-			/*
-			 * If the host is indicated to be
-			 * "hidden" (i.e. it's one we got
-			 * from the initialization file),
-			 * don't time out it's entry.
-			 */
-			if ((rt->rt_state & RTS_PASSIVE) == 0)
-				rt->rt_timer += TIMER_RATE;
-			log("", rt);
-
-			/*
-			 * If the entry should be deleted
-			 * attempt to do so and reclaim space.
-			 */
-			if (rt->rt_timer >= GARBAGE_TIME ||
-			  (rt->rt_state & RTS_DELRT)) {
-				rt = rt->rt_back;
-				rtdelete(rt->rt_forw);
-				continue;
-			}
-
-			/*
-			 * If we haven't heard from the router
-			 * in a long time indicate the route is
-			 * hard to reach.
-			 */
-			if (rt->rt_timer >= EXPIRE_TIME)
-				rt->rt_metric = HOPCNT_INFINITY;
-
-			/*
-			 * If a change or addition is to be made
-			 * and this isn't time to broadcast an
-			 * update, then broadcast the change.
-			 */
-			if ((rt->rt_state & (RTS_CHGRT|RTS_ADDRT)) &&
-			    supplier &&
-			    (timeval + TIMER_RATE) % SUPPLY_INTERVAL)
-				broadcast(rt);
-
-			if (rt->rt_state & RTS_CHGRT) {
-				struct rtentry oldroute;
-
-				oldroute = rt->rt_rt;
-				rt->rt_router = rt->rt_newrouter;
-				if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
-					perror("SIOCADDRT");
-				if (ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
-					perror("SIOCDELRT");
-				rt->rt_state &= ~RTS_CHGRT;
-			}
-			if (rt->rt_state & RTS_ADDRT) {
-				if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
-					perror("SIOCADDRT");
-				rt->rt_state &= ~RTS_ADDRT;
-			}
-		}
-	}
-	if (doinghost) {
-		doinghost = 0;
-		base = nethash;
-		goto again;
-	}
-	timeval += TIMER_RATE;
-	if (lookforinterfaces && (timeval % CHECK_INTERVAL) == 0)
-		getinterfaces();
-	if (supplier && (timeval % SUPPLY_INTERVAL) == 0)
-		supplyall();
-	if (trace)
-		printf("<<< time %d <<<\n", timeval);
-	alarm(TIMER_RATE);
+	for (rh = nethash; rh < &nethash[ROUTEHASHSIZ]; rh++)
+		rh->rt_forw = rh->rt_back = (struct rt_entry *)rh;
+	for (rh = hosthash; rh < &hosthash[ROUTEHASHSIZ]; rh++)
+		rh->rt_forw = rh->rt_back = (struct rt_entry *)rh;
 }
 
 struct	ifnet *ifnet;
-/*
- * Find the network interfaces attached to this machine.
- * The info is used to:
- *
- * (1) initialize the routing tables, as done by the kernel.
- * (2) ignore incoming packets we send.
- * (3) figure out broadcast capability and addresses.
- * (4) figure out if we're an internetwork gateway.
- *
- * We don't handle anything but Internet addresses.
- *
- * Note: this routine may be called periodically to
- * scan for new interfaces.  In fact, the timer routine
- * does so based on the flag lookforinterfaces.  The
- * flag performnlist is set whenever something odd occurs
- * while scanning the kernel; this is likely to occur
- * if /vmunix isn't up to date (e.g. someone booted /ovmunix).
- */
-getinterfaces()
-{
-	struct ifnet *ifp;
-	struct ifnet ifstruct, *next;
-	struct sockaddr_in net;
-	register struct sockaddr *dst;
-	int nets;
 
-	if (performnlist) {
-		nlist("/vmunix", nl);
-		if (nl[N_IFNET].n_value == 0) {
-			performnlist++;
-			printf("ifnet: not in namelist\n");
-			return;
-		}
-		performnlist = 0;
+ifinit()
+{
+	struct ifnet *ifp, *next;
+	register struct sockaddr *dst;
+	int uniquemultihostinterfaces = 0;
+
+	nlist("/vmunix", nl);
+	if (nl[N_IFNET].n_value == 0) {
+		printf("ifnet: not in namelist\n");
+		goto bad;
 	}
+	kmem = open("/dev/kmem", 0);
 	if (kmem < 0) {
-		kmem = open("/dev/kmem", 0);
-		if (kmem < 0) {
-			perror("/dev/kmem");
-			return;
-		}
+		perror("/dev/kmem");
+		goto bad;
 	}
 	if (lseek(kmem, (long)nl[N_IFNET].n_value, 0) == -1 ||
-	    read(kmem, (char *)&ifp, sizeof (ifp)) != sizeof (ifp)) {
-		performnlist = 1;
-		return;
+	    read(kmem, (char *)&next, sizeof (next)) != sizeof (next)) {
+		printf("ifnet: error reading kmem\n");
+		goto bad;
 	}
-	bzero((char *)&net, sizeof (net));
-	net.sin_family = AF_INET;
-	lookforinterfaces = 0;
-	nets = 0;
-	while (ifp) {
-		if (lseek(kmem, (long)ifp, 0) == -1 ||
-		  read(kmem, (char *)&ifstruct, sizeof (ifstruct)) !=
-		  sizeof (ifstruct)) {
-			perror("read");
-			lookforinterfaces = performnlist = 1;
-			break;
-		}
-		ifp = &ifstruct;
-		if ((ifp->if_flags & IFF_UP) == 0) {
-			lookforinterfaces = 1;
-	skip:
-			ifp = ifp->if_next;
-			continue;
-		}
-		if (ifp->if_addr.sa_family != AF_INET)
-			goto skip;
-		/* ignore software loopback networks. */
-		if (ifp->if_net == LOOPBACKNET)
-			goto skip;
-		/* check if we already know about this one */
-		if (if_ifwithaddr(&ifstruct.if_addr)) {
-			nets++;
-			goto skip;
-		}
+	while (next) {
 		ifp = (struct ifnet *)malloc(sizeof (struct ifnet));
 		if (ifp == 0) {
 			printf("routed: out of memory\n");
 			break;
 		}
-		bcopy((char *)&ifstruct, (char *)ifp, sizeof (struct ifnet));
-
-		/*
-		 * Count the # of directly connected networks
-		 * and point to point links which aren't looped
-		 * back to ourself.  This is used below to
-		 * decide if we should be a routing "supplier".
-		 */
-		if ((ifp->if_flags & IFF_POINTOPOINT) == 0 ||
-		    if_ifwithaddr(&ifp->if_dstaddr) == 0)
-			nets++;
-
-		if (ifp->if_flags & IFF_POINTOPOINT)
-			dst = &ifp->if_dstaddr;
-		else {
-			net.sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
-			dst = (struct sockaddr *)&net;
+		if (lseek(kmem, (long)next, 0) == -1 ||
+		    read(kmem, (char *)ifp, sizeof (*ifp)) != sizeof (*ifp)) {
+			perror("read");
+			goto bad;
 		}
 		next = ifp->if_next;
+		if (ifp->if_addr.sa_family != AF_INET)
+			continue;
+		if (ifp->if_net == LOOPBACKNET)
+			continue;
+		if ((ifp->if_flags & IFF_POINTOPOINT) == 0 ||
+		    if_ifwithaddr(&ifp->if_dstaddr) == 0)
+			uniquemultihostinterfaces++;
 		ifp->if_next = ifnet;
 		ifnet = ifp;
-		if (rtlookup(dst) == 0) {
-			struct rt_entry *rt;
-
-			rtadd(dst, &ifp->if_addr, 0);
-			rt = rtlookup(dst);
-			if (rt)
-				rt->rt_state |= RTS_INTERFACE;
-		}
-		ifp = next;
+		addrouteforif(ifp);
 	}
-	supplier = nets > 1;
-	getothers();
+	if (uniquemultihostinterfaces > 1 && supplier < 0)
+		supplier = 1;
+	return;
+bad:
+	sleep(60);
+	execv("/etc/routed", argv0);
+	_exit(0177);
 }
 
-/*
- * Look in a file for any gateways we should configure
- * outside the directly connected ones.  This is a kludge,
- * but until we can find out about gateways on the "other side"
- * of the ARPANET using GGP, it's a must.
- *
- * File format is one entry per line, 
- *	destination gateway flags	(all hex #'s)
- *
- * We don't really know the distance to the gateway, so we
- * assume it's a neighbor.
- */
-getothers()
+addrouteforif(ifp)
+	struct ifnet *ifp;
+{
+	struct sockaddr_in net;
+	struct sockaddr *dst;
+
+	if (ifp->if_flags & IFF_POINTOPOINT)
+		dst = &ifp->if_dstaddr;
+	else {
+		bzero((char *)&net, sizeof (net));
+		net.sin_family = AF_INET;
+		net.sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
+		dst = (struct sockaddr *)&net;
+	}
+	rtadd(dst, &ifp->if_addr, 0, RTS_INTERFACE);
+}
+
+gwkludge()
 {
 	struct sockaddr_in dst, gate;
 	FILE *fp;
 	struct rt_entry *rt;
-	char flags[132];
+	char flags[BUFSIZ];
 
 	fp = fopen("/etc/gateways", "r");
 	if (fp == NULL)
@@ -367,56 +243,85 @@ getothers()
 	bzero((char *)&gate, sizeof (gate));
 	dst.sin_family = AF_INET;
 	gate.sin_family = AF_INET;
-	flags[0] = '\0';
-	while (fscanf(fp, "dst %x gateway %x %s\n", &dst.sin_addr.s_addr, 
-	   &gate.sin_addr.s_addr, flags) != EOF) {
-		if (rt = rtlookup((struct sockaddr *)&dst)) {
-			flags[0] = '\0';
-			continue;
-		}
-		rtadd((struct sockaddr *)&dst,(struct sockaddr *)&gate,1);
-		rt = rtlookup(&dst);
-		if (strcmp(flags, "passive") == 0)
-			rt->rt_state |= RTS_PASSIVE;
-		flags[0] = '\0';
+	for (;;) {
+		if (fscanf(fp, "dst %x gateway %x\n", &dst.sin_addr.s_addr, 
+		   &gate.sin_addr.s_addr, flags) == EOF)
+			break;
+		rtadd((struct sockaddr *)&dst, (struct sockaddr *)&gate, 1,
+		    RTS_GLOBAL|(!strcmp(flags, "passive") ? RTS_PASSIVE : 0));
 	}
 	fclose(fp);
 }
 
-/*
- * Send a request message to all directly
- * connected hosts and networks.
- */
-request()
+timer()
 {
-	register struct rip *msg = (struct rip *)packet;
+	register struct rthash *rh;
+	register struct rt_entry *rt;
+	struct rthash *base = hosthash;
+	int doinghost = 1, state;
 
-	msg->rip_cmd = RIPCMD_REQUEST;
-	msg->rip_nets[0].rip_dst.sa_family = AF_UNSPEC;
-	msg->rip_nets[0].rip_metric = HOPCNT_INFINITY;
-	sendall();
+	timeval += TIMER_RATE;
+	tprintf(">>> time %d >>>\n", timeval);
+again:
+	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++) {
+		rt = rh->rt_forw;
+		for (; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
+			if (!(rt->rt_state & RTS_GLOBAL))
+				rt->rt_timer += TIMER_RATE;
+			log("", rt);
+			if (rt->rt_timer >= EXPIRE_TIME)
+				rt->rt_metric = HOPCNT_INFINITY;
+			if ((rt->rt_state & RTS_DELRT) ||
+			    rt->rt_timer >= GARBAGE_TIME) {
+				if (rt->rt_state&(RTS_INTERFACE|RTS_GLOBAL)) {
+					if (rt->rt_timer > 9999)
+						rt->rt_timer = 9999;
+					continue;
+				}
+				rt = rt->rt_back;
+				rtdelete(rt->rt_forw);
+				continue;
+			}
+			state = rt->rt_state;
+			if (rt->rt_state & RTS_ADDRT) {
+				if (ioctl(s, SIOCADDRT,(char *)&rt->rt_rt) < 0)
+					perror("SIOCADDRT");
+				rt->rt_state &= ~RTS_ADDRT;
+			}
+			if (rt->rt_state & RTS_CHGRT) {
+				struct rtentry oldroute;
+
+				oldroute = rt->rt_rt;
+				rt->rt_router = rt->rt_newrouter;
+				if (ioctl(s, SIOCADDRT,(char *)&rt->rt_rt) < 0)
+					perror("SIOCADDRT");
+				if (ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
+					perror("SIOCDELRT");
+				rt->rt_state &= ~RTS_CHGRT;
+			}
+			if (supplier && (state & (RTS_CHGRT|RTS_ADDRT))) {
+				log("broadcast", rt);
+				msg->rip_cmd = RIPCMD_RESPONSE;
+				msg->rip_nets[0].rip_dst = rt->rt_dst;
+				msg->rip_nets[0].rip_metric =
+				    min(rt->rt_metric+1, HOPCNT_INFINITY);
+				sendmsgtoall();
+			}
+		}
+	}
+	if (doinghost) {
+		doinghost = 0;
+		base = nethash;
+		goto again;
+	}
+	if (supplier && (timeval % SUPPLY_INTERVAL) == 0)
+		toall(supply);
+	tprintf("<<< time %d <<<\n", timeval);
+	alarm(TIMER_RATE);
 }
 
-/*
- * Broadcast a new, or modified, routing table entry
- * to all directly connected hosts and networks.
- */
-broadcast(entry)
-	struct rt_entry *entry;
-{
-	struct rip *msg = (struct rip *)packet;
-
-	log("broadcast", entry);
-	msg->rip_cmd = RIPCMD_RESPONSE;
-	msg->rip_nets[0].rip_dst = entry->rt_dst;
-	msg->rip_nets[0].rip_metric = min(entry->rt_metric+1, HOPCNT_INFINITY);
-	sendall();
-}
-
-/*
- * Send "packet" to all neighbors.
- */
-sendall()
+toall(f)
+	int (*f)();
 {
 	register struct rthash *rh;
 	register struct rt_entry *rt;
@@ -433,8 +338,7 @@ again:
 			dst = &rt->rt_ifp->if_broadaddr;
 		else
 			dst = &rt->rt_router;
-		(*afswitch[dst->sa_family].af_output)
-			(s, dst, sizeof (struct rip));
+		(*f)(rt, dst);
 	}
 	if (doinghost) {
 		base = nethash;
@@ -443,65 +347,33 @@ again:
 	}
 }
 
-/*
- * Supply all directly connected neighbors with the
- * current state of the routing tables.
- */
-supplyall()
-{
+sendmsg(rt, dst)
 	register struct rt_entry *rt;
-	register struct rthash *rh;
-	register struct sockaddr *dst;
-	struct rthash *base = hosthash;
-	int doinghost = 1;
+	struct sockaddr *dst;
+{
 
-again:
-	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++)
-	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
-		if ((rt->rt_state&RTS_PASSIVE) ||
-		    (!(rt->rt_state&RTS_INTERFACE) && rt->rt_metric > 0))
-			continue;
-		if (rt->rt_ifp && (rt->rt_ifp->if_flags & IFF_BROADCAST))
-			dst = &rt->rt_ifp->if_broadaddr;
-		else
-			dst = &rt->rt_router;
-		log("supply", rt);
-		supply(rt->rt_state&RTS_INTERFACE ? snoroute : s, dst);
-	}
-	if (doinghost) {
-		base = nethash;
-		doinghost = 0;
-		goto again;
-	}
+	(*afswitch[dst->sa_family].af_output)(s, dst, sizeof (struct rip));
 }
 
-/*
- * Supply routing information to target "sa".
- */
-supply(s, sa)
-	int s;
+supply(rt, sa)
+	register struct rt_entry *rt;
 	struct sockaddr *sa;
 {
-	struct rip *msg = (struct rip *)packet;
 	struct netinfo *n = msg->rip_nets;
 	register struct rthash *rh;
-	register struct rt_entry *rt;
 	struct rthash *base = hosthash;
 	int doinghost = 1, size;
 	int (*output)() = afswitch[sa->sa_family].af_output;
+	int sto = (rt->rt_state&RTS_INTERFACE) ? snoroute : s;
 
+	log("supply", rt);
 	msg->rip_cmd = RIPCMD_RESPONSE;
 again:
 	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++)
 	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
-
-		/*
-		 * Flush packet out if not enough room for
-		 * another routing table entry.
-		 */
 		size = (char *)n - packet;
 		if (size > MAXPACKETSIZE - sizeof (struct netinfo)) {
-			(*output)(s, sa, size);
+			(*output)(sto, sa, size);
 			n = msg->rip_nets;
 		}
 		n->rip_dst = rt->rt_dst;
@@ -514,7 +386,7 @@ again:
 		goto again;
 	}
 	if (n != msg->rip_nets)
-		(*output)(s, sa, (char *)n - packet);
+		(*output)(sto, sa, (char *)n - packet);
 }
 
 /*
@@ -524,7 +396,6 @@ rip_respond(from, size)
 	struct sockaddr *from;
 	int size;
 {
-	register struct rip *msg = (struct rip *)packet;
 	struct netinfo *np = msg->rip_nets;
 	struct rt_entry *rt;
 	int newsize = 0;
@@ -558,9 +429,10 @@ rip_input(from, size)
 	struct sockaddr *from;
 	int size;
 {
-	register struct rip *msg = (struct rip *)packet;
 	struct rt_entry *rt;
 	struct netinfo *n;
+	struct ifnet *ifp;
+	time_t t;
 
 	switch (msg->rip_cmd) {
 
@@ -572,102 +444,25 @@ rip_input(from, size)
 		return;
 
 	case RIPCMD_TRACEON:
+		if ((*afswitch[from->sa_family].af_portcheck)(from) == 0)
+			return;
+		if (trace)
+			return;
+		packet[size] = '\0';
+		ftrace = fopen(msg->rip_tracefile, "a");
+		if (ftrace == NULL)
+			return;
+		(void) dup2(fileno(ftrace), 1);
+		(void) dup2(fileno(ftrace), 2);
+		trace = 1;
+		t = time(0);
+		printf("*** Tracing turned on at %.24s ***\n", ctime(&t));
+		return;
+
 	case RIPCMD_TRACEOFF:
 		/* verify message came from a priviledged port */
 		if ((*afswitch[from->sa_family].af_portcheck)(from) == 0)
 			return;
-		tracecmd(msg->rip_cmd, msg, size);
-		return;
-
-	case RIPCMD_RESPONSE:
-		/* verify message came from a router */
-		if ((*afswitch[from->sa_family].af_portmatch)(from) == 0)
-			return;
-		break;
-	}
-
-	/*
-	 * Process updates.
-	 * Extraneous information like Internet ports
-	 * must first be purged from the sender's address for
-	 * pattern matching below.
-	 */
-	(*afswitch[from->sa_family].af_canon)(from);
-	if (trace)
-		printf("input from %x\n",
-			((struct sockaddr_in *)from)->sin_addr);
-	/*
-	 * If response packet is from ourselves, use it only
-	 * to reset timer on entry.  Otherwise, we'd believe
-	 * it as gospel (since it comes from the router) and
-	 * unknowingly update the metric to show the outgoing
-	 * cost (higher than our real cost).  I guess the protocol
-	 * spec doesn't address this because Xerox Ethernets
-	 * don't hear their own broadcasts?
-	 */
-	if (if_ifwithaddr(from)) {
-		rt = rtfind(from);
-		if (rt)
-			rt->rt_timer = 0;
-		return;
-	}
-	size -= 4 * sizeof (char);
-	n = msg->rip_nets;
-	for (; size > 0; size -= sizeof (struct netinfo), n++) {
-		if (size < sizeof (struct netinfo))
-			break;
-		if (trace)
-			printf("dst %x hc %d...",
-				((struct sockaddr_in *)&n->rip_dst)->sin_addr,
-				n->rip_metric);
-		rt = rtlookup(&n->rip_dst);
-
-		/*
-		 * Unknown entry, add it to the tables only if
-		 * its interesting.
-		 */
-		if (rt == 0) {
-			if (n->rip_metric < HOPCNT_INFINITY)
-				rtadd(&n->rip_dst, from, n->rip_metric);
-			if (trace)
-				printf("new\n");
-			continue;
-		}
-
-		if (trace)
-			printf("ours: gate %x hc %d timer %d\n",
-			  ((struct sockaddr_in *)&rt->rt_router)->sin_addr,
-			  rt->rt_metric, rt->rt_timer);
-		/*
-		 * Update the entry if one of the following is true:
-		 *
-		 * (1) The update came directly from the gateway.
-		 * (2) A shorter path is provided.
-		 * (3) The entry hasn't been updated in a while
-		 *     and a path of equivalent cost is offered
-		 *     (with the cost finite).
-		 */
-		if (equal(from, &rt->rt_router) ||
-		    rt->rt_metric > n->rip_metric ||
-		    (rt->rt_timer > (EXPIRE_TIME/2) &&
-		    rt->rt_metric == n->rip_metric &&
-		    rt->rt_metric < HOPCNT_INFINITY)) {
-			rtchange(rt, from, n->rip_metric);
-			rt->rt_timer = 0;
-		}
-	}
-}
-
-/*
- * Handle tracing requests.
- */
-tracecmd(cmd, msg, size)
-	int cmd, size;
-	struct rip *msg;
-{
-	time_t t;
-
-	if (cmd == RIPCMD_TRACEOFF) {
 		if (!trace)
 			return;
 		t = time(0);
@@ -678,33 +473,59 @@ tracecmd(cmd, msg, size)
 		(void) close(1), (void) close(2);
 		trace = 0;
 		return;
+
+	case RIPCMD_RESPONSE:
+		/* verify message came from a router */
+		if ((*afswitch[from->sa_family].af_portmatch)(from) == 0)
+			return;
+		(*afswitch[from->sa_family].af_canon)(from);
+		tprintf("input from %x\n",
+		    ((struct sockaddr_in *)from)->sin_addr);
+		/* are we talking to ourselves? */
+		ifp = if_ifwithaddr(from);
+		if (ifp) {
+			rt = rtfind(from);
+			if (rt)
+				rt->rt_timer = 0;
+			else
+				addrouteforif(ifp);
+			return;
+		}
+		size -= 4 * sizeof (char);
+		n = msg->rip_nets;
+		for (; size > 0; size -= sizeof (struct netinfo), n++) {
+			if (size < sizeof (struct netinfo))
+				break;
+			if (n->rip_metric >= HOPCNT_INFINITY)
+				continue;
+			tprintf("dst %x hc %d...",
+			    ((struct sockaddr_in *)&n->rip_dst)->sin_addr,
+			    n->rip_metric);
+			rt = rtlookup(&n->rip_dst);
+			if (rt == 0) {
+				rtadd(&n->rip_dst, from, n->rip_metric, 0);
+				tprintf("new\n");
+				continue;
+			}
+			tprintf("ours: gate %x hc %d timer %d\n",
+			  ((struct sockaddr_in *)&rt->rt_router)->sin_addr,
+			  rt->rt_metric, rt->rt_timer);
+			/*
+			 * update if from gateway, shorter, or getting stale
+			 * and equivalent.
+			 */
+			if (equal(from, &rt->rt_router) ||
+			    n->rip_metric < rt->rt_metric ||
+			    (rt->rt_timer > (EXPIRE_TIME/2) &&
+			    rt->rt_metric == n->rip_metric)) {
+				rtchange(rt, from, n->rip_metric);
+				rt->rt_timer = 0;
+			}
+		}
+		return;
 	}
-	if (trace)
-		return;
-	packet[size] = '\0';
-	ftrace = fopen(msg->rip_tracefile, "a");
-	if (ftrace == NULL)
-		return;
-	(void) dup2(fileno(ftrace), 1);
-	(void) dup2(fileno(ftrace), 2);
-	trace = 1;
-	t = time(0);
-	printf("*** Tracing turned on at %.24s ***\n", ctime(&t));
 }
 
-rtinit()
-{
-	register struct rthash *rh;
-
-	for (rh = nethash; rh < &nethash[ROUTEHASHSIZ]; rh++)
-		rh->rt_forw = rh->rt_back = (struct rt_entry *)rh;
-	for (rh = hosthash; rh < &hosthash[ROUTEHASHSIZ]; rh++)
-		rh->rt_forw = rh->rt_back = (struct rt_entry *)rh;
-}
-
-/*
- * Lookup an entry to the appropriate dstination.
- */
 struct rt_entry *
 rtlookup(dst)
 	struct sockaddr *dst;
@@ -736,12 +557,6 @@ again:
 	return (0);
 }
 
-/*
- * Find an entry based on address "dst", as the kernel
- * does in selecting routes.  This means we look first
- * for a point to point link, settling for a route to
- * the destination network if the former fails.
- */
 struct rt_entry *
 rtfind(dst)
 	struct sockaddr *dst;
@@ -782,12 +597,9 @@ again:
 	return (0);
 }
 
-/*
- * Add a new entry.
- */
-rtadd(dst, gate, metric)
+rtadd(dst, gate, metric, iflags)
 	struct sockaddr *dst, *gate;
-	short metric;
+	int metric, iflags;
 {
 	struct afhash h;
 	register struct rt_entry *rt;
@@ -813,7 +625,7 @@ rtadd(dst, gate, metric)
 	rt->rt_router = *gate;
 	rt->rt_metric = metric;
 	rt->rt_timer = 0;
-	rt->rt_flags = RTF_UP | flags;
+	rt->rt_flags = RTF_UP | flags | iflags;
 	rt->rt_state = 0;
 	rt->rt_ifp = if_ifwithnet(&rt->rt_router);
 	if (metric)
@@ -824,10 +636,6 @@ rtadd(dst, gate, metric)
 		rt->rt_state |= RTS_ADDRT;
 }
 
-/*
- * Look to see if a change to an existing entry
- * is warranted; if so, make it.
- */
 rtchange(rt, gate, metric)
 	struct rt_entry *rt;
 	struct sockaddr *gate;
@@ -852,12 +660,10 @@ rtchange(rt, gate, metric)
 		rt->rt_state |= RTS_CHGRT;
 }
 
-/*
- * Delete a routing table entry.
- */
 rtdelete(rt)
 	struct rt_entry *rt;
 {
+
 	log("delete", rt);
 	if (install && ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
 		perror("SIOCDELRT");
@@ -887,6 +693,7 @@ log(operation, rt)
 		{ RTS_CHGRT,	"CHANGE" },
 		{ RTS_PASSIVE,	"PASSIVE" },
 		{ RTS_INTERFACE,"INTERFACE" },
+		{ RTS_GLOBAL,	"GLOBAL" },
 		{ 0 }
 	};
 	register struct bits *p;
@@ -924,9 +731,6 @@ log(operation, rt)
 	putchar('\n');
 }
 
-/*
- * Find the interface with address "addr".
- */
 struct ifnet *
 if_ifwithaddr(addr)
 	struct sockaddr *addr;
@@ -948,11 +752,6 @@ if_ifwithaddr(addr)
 #undef same
 }
 
-/*
- * Find the interface with network imbedded in
- * the sockaddr "addr".  Must use per-af routine
- * look for match.
- */
 struct ifnet *
 if_ifwithnet(addr)
 	register struct sockaddr *addr;
@@ -973,9 +772,6 @@ if_ifwithnet(addr)
 	return (ifp);
 }
 
-/*
- * Formulate an Internet address.
- */
 struct in_addr
 if_makeaddr(net, host)
 	int net, host;
