@@ -1,0 +1,22 @@
+#
+#	"%W%	%G%";
+#
+#  standard alphabetic format, abbreviated, includes
+#  only %W information for knowing where to find it.
+#
+I bibinc.shortnames
+SAD-2
+CAD-2
+F
+.so \*(l]/bmac.std
+.de s[   \" start reference
+.nh		\" no hyphenation
+.IP [\\*([F] 7n
+..
+.de e[   \" end reference
+.if !"\\*([W"" [W: \\*([W]
+.if !"\\*([K"" \s-2[K: \\*([K]\s+2
+.if !"\\*([X"" \s-2[X: \\*([X]\s+2
+.[-
+.hy 14  \" fully restricted hyphenation allowed
+..
