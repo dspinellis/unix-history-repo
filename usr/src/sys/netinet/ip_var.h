@@ -1,4 +1,4 @@
-/*	ip_var.h	4.7	82/12/28	*/
+/*	ip_var.h	4.8	83/02/05	*/
 
 /*
  * Overlay for ip header used by other protocols (tcp, udp).
@@ -61,6 +61,5 @@ struct	ipstat {
 #ifdef KERNEL
 struct	ipstat	ipstat;
 struct	ipq	ipq;			/* ip reass. queue */
-struct	ipq	*ip_freef();
 u_short	ip_id;				/* ip packet ctr, for ids */
 #endif
