@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.10	%G%";
+static char SccsId[] = "@(#)recipient.c	3.11	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -28,8 +28,15 @@ sendto(list, copyf)
 {
 	register char *p;
 	bool more;		/* set if more addresses to send to */
+	ADDRESS *al;		/* list of addresses to send to */
+
+# ifdef DEBUG
+	if (Debug > 1)
+		printf("sendto: %s\n", list);
+# endif DEBUG
 
 	more = TRUE;
+	al = NULL;
 	for (p = list; more; )
 	{
 		register char *q;
@@ -46,14 +53,27 @@ sendto(list, copyf)
 		*--p = '\0';
 		if (more)
 			p++;
+		if (*q == '\0')
+			continue;
 
 		/* parse the address */
 		if ((a = parse(q, (ADDRESS *) NULL, copyf)) == NULL)
 			continue;
 
-		/* arrange to send to this person */
+		/* put it on the local send list */
+		a->q_next = al;
+		al = a;
+	}
+
+	/* arrange to send to everyone on the local send list */
+	while (al != NULL)
+	{
+		register ADDRESS *a = al;
+
+		al = a->q_next;
 		recipient(a);
 	}
+
 	To = NULL;
 }
 /*
@@ -129,7 +149,7 @@ recipient(a)
 				printf("(%s in sendq)\n", a->q_paddr);
 # endif DEBUG
 			if (Verbose && !bitset(QDONTSEND, a->q_flags))
-				message(Arpa_Info, "duplicate supressed");
+				message(Arpa_Info, "duplicate suppressed");
 			return;
 		}
 	}
@@ -253,4 +273,44 @@ include(fname, msg)
 	}
 
 	(void) fclose(fp);
+}
+/*
+**  SENDTOARGV -- send to an argument vector.
+**
+**	Parameters:
+**		argv -- argument vector to send to.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		puts all addresses on the argument vector onto the
+**			send queue.
+*/
+
+sendtoargv(argv)
+	register char **argv;
+{
+	register char *p;
+	extern bool sameword();
+
+	while ((p = *argv++) != NULL)
+	{
+		if (argv[0] != NULL && argv[1] != NULL && sameword(argv[0], "at"))
+		{
+			char nbuf[MAXNAME];
+
+			if (strlen(p) + strlen(argv[1]) + 2 > sizeof nbuf)
+				usrerr("address overflow");
+			else
+			{
+				(void) strcpy(nbuf, p);
+				(void) strcat(nbuf, "@");
+				(void) strcat(nbuf, argv[1]);
+				p = newstr(nbuf);
+				argv += 2;
+			}
+		}
+		sendto(p, 0);
+	}
 }

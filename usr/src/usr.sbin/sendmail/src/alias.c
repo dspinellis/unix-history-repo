@@ -4,9 +4,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-static char SccsId[] = "@(#)alias.c	3.19	%G%	(with DBM)";
+static char SccsId[] = "@(#)alias.c	3.20	%G%	(with DBM)";
 # else DBM
-static char SccsId[] = "@(#)alias.c	3.19	%G%	(without DBM)";
+static char SccsId[] = "@(#)alias.c	3.20	%G%	(without DBM)";
 # endif DBM
 
 /*
@@ -140,11 +140,52 @@ initaliases(aliasfile, init)
 	char *aliasfile;
 	bool init;
 {
+	char buf[MAXNAME];
+	struct stat stb;
+	time_t modtime;
+
+	/*
+	**  See if the DBM version of the file is out of date with
+	**  the text version.  If so, go into 'init' mode automatically.
+	**	This only happens if our effective userid owns the DBM
+	**	version or if the mode of the database is 777 -- this
+	**	is an attempt to avoid protection problems.  Note the
+	**	unpalatable hack to see if the stat succeeded.
+	*/
+
+	if (stat(aliasfile, &stb) < 0)
+		return;
+# ifdef DBM
+	modtime = stb.st_mtime;
+	(void) strcpy(buf, aliasfile);
+	(void) strcat(buf, ".pag");
+	stb.st_ino = 0;
+	if ((stat(buf, &stb) < 0 || stb.st_mtime < modtime) && !init)
+	{
+		if (stb.st_ino != 0 &&
+		    ((stb.st_mode & 0777) == 0777 || stb.st_uid == geteuid()))
+		{
+			init = TRUE;
+			if (Verbose)
+				message(Arpa_Info, "rebuilding alias database");
+		}
+		else
+		{
+			message(Arpa_Info, "Warning: alias database out of date");
+		}
+	}
+# endif DBM
+
+	/*
+	**  If initializing, create the new files.
+	**	We should lock the alias file here to prevent other
+	**	instantiations of sendmail from reading an incomplete
+	**	file -- or worse yet, doing a concurrent initialize.
+	*/
+
 # ifdef DBM
 	if (init)
 	{
-		char buf[MAXNAME];
-
 		(void) strcpy(buf, aliasfile);
 		(void) strcat(buf, ".dir");
 		if (close(creat(buf, DBMMODE)) < 0)
@@ -160,6 +201,12 @@ initaliases(aliasfile, init)
 			return;
 		}
 	}
+
+	/*
+	**  Open and, if necessary, load the DBM file.
+	**	If running without DBM, load the symbol table.
+	*/
+
 	dbminit(aliasfile);
 	if (init)
 		readaliases(aliasfile, TRUE);
@@ -199,6 +246,7 @@ readaliases(aliasfile, init)
 	FILE *af;
 	int lineno;
 	register STAB *s;
+	int naliases, bytes, longest;
 
 	if ((af = fopen(aliasfile, "r")) == NULL)
 	{
@@ -216,9 +264,12 @@ readaliases(aliasfile, init)
 	*/
 
 	lineno = 0;
+	naliases = bytes = longest = 0;
 	skipping = FALSE;
 	while (fgets(line, sizeof (line), af) != NULL)
 	{
+		int lhssize, rhssize;
+
 		lineno++;
 		switch (line[0])
 		{
@@ -283,6 +334,8 @@ readaliases(aliasfile, init)
 						p++;
 					c = *p;
 					*p++ = '\0';
+					if (c == '\n')
+						c = '\0';
 					if (*p2 == '\0')
 					{
 						p[-1] = c;
@@ -320,14 +373,17 @@ readaliases(aliasfile, init)
 		**  Insert alias into symbol table or DBM file
 		*/
 
+		lhssize = strlen(al.q_user) + 1;
+		rhssize = strlen(rhs) + 1;
+
 # ifdef DBM
 		if (init)
 		{
 			DATUM key, content;
 
-			key.dsize = strlen(al.q_user) + 1;
+			key.dsize = lhssize;
 			key.dptr = al.q_user;
-			content.dsize = strlen(rhs) + 1;
+			content.dsize = rhssize;
 			content.dptr = rhs;
 			store(key, content);
 		}
@@ -337,8 +393,18 @@ readaliases(aliasfile, init)
 			s = stab(al.q_user, ST_ALIAS, ST_ENTER);
 			s->s_alias = newstr(rhs);
 		}
+
+		/* statistics */
+		naliases++;
+		bytes += lhssize + rhssize;
+		if (rhssize > longest)
+			longest = rhssize;
 	}
 	(void) fclose(af);
+	To = NULL;
+	if (Verbose)
+		message(Arpa_Info, "%d aliases, longest %d bytes, %d bytes total",
+			naliases, longest, bytes);
 }
 /*
 **  FORWARD -- Try to forward mail
