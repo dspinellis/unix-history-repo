@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_extern.h	7.3 (Berkeley) %G%
+ *	@(#)vm_extern.h	7.4 (Berkeley) %G%
  */
 
 struct buf;
@@ -75,14 +75,14 @@ int		 vm_fault __P((vm_map_t, vm_offset_t, vm_prot_t, boolean_t));
 void		 vm_fault_copy_entry __P((vm_map_t,
 		    vm_map_t, vm_map_entry_t, vm_map_entry_t));
 void		 vm_fault_unwire __P((vm_map_t, vm_offset_t, vm_offset_t));
-void		 vm_fault_wire __P((vm_map_t, vm_offset_t, vm_offset_t));
+int		 vm_fault_wire __P((vm_map_t, vm_offset_t, vm_offset_t));
 int		 vm_fork __P((struct proc *, struct proc *, int));
 int		 vm_inherit __P((vm_map_t,
 		    vm_offset_t, vm_size_t, vm_inherit_t));
 void		 vm_init_limits __P((struct proc *));
 void		 vm_mem_init __P((void));
-int		 vm_mmap __P((vm_map_t, vm_offset_t *,
-		    vm_size_t, vm_prot_t, int, caddr_t, vm_offset_t));
+int		 vm_mmap __P((vm_map_t, vm_offset_t *, vm_size_t,
+		    vm_prot_t, vm_prot_t, int, caddr_t, vm_offset_t));
 vm_offset_t	 vm_move __P((vm_map_t,
 		    vm_offset_t, vm_map_t, vm_offset_t, boolean_t));
 int		 vm_protect __P((vm_map_t,
