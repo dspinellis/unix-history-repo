@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)glob.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.15 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -267,7 +267,7 @@ glob2(pathbuf, pathend, pattern, pglob)
 	for (anymeta = 0;;) {
 		if (*pattern == EOS) {		/* End of pattern? */
 			*pathend = EOS;
-			if (g_stat(pathbuf, &sb))
+			if (g_lstat(pathbuf, &sb))
 				return(0);
 		
 			if (((pglob->gl_flags & GLOB_MARK) &&
