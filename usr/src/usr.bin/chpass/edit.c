@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)edit.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)edit.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -33,12 +33,7 @@ edit(pw)
 		pw_edit(1);
 		if (stat(tempname, &end))
 			pw_error(tempname, 1, 1);
-		/*
-		 * Some editors O_TRUNC the file when they write it out.  This
-		 * can result in an empty file with a changed modified time if
-		 * the file system is out of space.
-		 */
-		if (end.st_size == 0 || begin.st_mtime == end.st_mtime) {
+		if (begin.st_mtime == end.st_mtime) {
 			(void)fprintf(stderr, "chpass: no changes made\n");
 			pw_error(NULL, 0, 0);
 		}
@@ -109,12 +104,19 @@ verify(pw)
 {
 	register ENTRY *ep;
 	register char *p;
+	struct stat sb;
 	FILE *fp;
 	int len;
 	char buf[LINE_MAX];
 
 	if (!(fp = fopen(tempname, "r")))
 		pw_error(tempname, 1, 1);
+	if (fstat(fileno(fp), &sb))
+		pw_error(tempname, 1, 1);
+	if (sb.st_size == 0) {
+		(void)fprintf(stderr, "chpass: corrupted temporary file.\n");
+		goto bad;
+	}
 	while (fgets(buf, sizeof(buf), fp)) {
 		if (!buf[0] || buf[0] == '#')
 			continue;
