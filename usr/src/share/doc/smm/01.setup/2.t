@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.24 (Berkeley) %G%
+.\"	@(#)2.t	6.25 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -1503,12 +1503,16 @@ you will start by creating and mounting it:
 .LP
 First you will extract the kernel source:
 .DS
+.TS
+lw(2i) l.
 \fB#\fP \fIcd /usr/src\fP
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
+(this should only be done on Exabyte distributions)
 \fB#\fP \fItar xpbf 40 /dev/nr\*(Mt0\fP	(extract the kernel sources)
 (this takes about 15-30 minutes)
+.TE
 .DE
-.PP
+.LP
 The next tar file contains the sources for the utilities.
 It is extracted as follows:
 .DS
@@ -1533,6 +1537,7 @@ It is extracted as follows:
 lw(2i) l.
 \fB#\fP \fIcd /usr/src\fP
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
+(this should only be done on Exabyte distributions)
 \fB#\fP \fItar xpbf 40 /dev/rmt12\fP 	(extract the contributed software source)
 (this takes about 30-60 minutes)
 .TE
@@ -1546,10 +1551,13 @@ sources for X11R5 in
 format.  As distributed, X11R5 should be placed in
 .Pn /usr/src/X11R5 .
 .DS
+.TS
+lw(2i) l.
 \fB#\fP \fIcd /usr/src\fP
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 \fB#\fP \fItar xpbf 40 /dev/nr\*(Mt0\fP	(extract the X11R5 source)
 (this takes about 30-60 minutes)
+.TE
 .DE
 Many of the X11 utilities search using the path
 .Pn /usr/X11 ,
