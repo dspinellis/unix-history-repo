@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1133,7 +1133,7 @@ stab_map_open(map, mode)
 	af = fopen(map->map_file, "r");
 	if (af == NULL)
 		return FALSE;
-	readaliases(map, af, TRUE);
+	readaliases(map, af, FALSE, FALSE);
 
 	if (fstat(fileno(af), &st) >= 0)
 		map->map_mtime = st.st_mtime;
