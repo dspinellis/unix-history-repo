@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	5.12 (Berkeley) %G%
+ *	@(#)time.h	5.13 (Berkeley) %G%
  */
 
 #ifndef _TIME_H_
@@ -16,19 +16,19 @@
 #define	NULL	0
 #endif
 
-#ifdef	_CLOCK_T_
-typedef	_CLOCK_T_	clock_t;
-#undef	_CLOCK_T_
+#ifdef	_BSD_CLOCK_T_
+typedef	_BSD_CLOCK_T_	clock_t;
+#undef	_BSD_CLOCK_T_
 #endif
 
-#ifdef	_TIME_T_
-typedef	_TIME_T_	time_t;
-#undef	_TIME_T_
+#ifdef	_BSD_TIME_T_
+typedef	_BSD_TIME_T_	time_t;
+#undef	_BSD_TIME_T_
 #endif
 
-#ifdef	_SIZE_T_
-typedef	_SIZE_T_	size_t;
-#undef	_SIZE_T_
+#ifdef	_BSD_SIZE_T_
+typedef	_BSD_SIZE_T_	size_t;
+#undef	_BSD_SIZE_T_
 #endif
 
 struct tm {

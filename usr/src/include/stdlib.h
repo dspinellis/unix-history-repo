@@ -4,21 +4,21 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	5.17 (Berkeley) %G%
+ *	@(#)stdlib.h	5.18 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
 #define _STDLIB_H_
 #include <sys/types.h>
 
-#ifdef	_SIZE_T_
-typedef	_SIZE_T_	size_t;
-#undef	_SIZE_T_
+#ifdef	_BSD_SIZE_T_
+typedef	_BSD_SIZE_T_	size_t;
+#undef	_BSD_SIZE_T_
 #endif
 
-#ifdef	_WCHAR_T_
-typedef	_WCHAR_T_	wchar_t;
-#undef	_WCHAR_T_
+#ifdef	_BSD_WCHAR_T_
+typedef	_BSD_WCHAR_T_	wchar_t;
+#undef	_BSD_WCHAR_T_
 #endif
 
 typedef struct {

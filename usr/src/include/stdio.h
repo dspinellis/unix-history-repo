@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdio.h	5.20 (Berkeley) %G%
+ *	@(#)stdio.h	5.21 (Berkeley) %G%
  */
 
 #ifndef	_STDIO_H_
@@ -17,9 +17,9 @@
 #include <sys/cdefs.h>
 
 #include <machine/ansi.h>
-#ifdef	_SIZE_T_
-typedef	_SIZE_T_	size_t;
-#undef	_SIZE_T_
+#ifdef	_BSD_SIZE_T_
+typedef	_BSD_SIZE_T_	size_t;
+#undef	_BSD_SIZE_T_
 #endif
 
 #ifndef NULL
@@ -210,9 +210,9 @@ int	 sscanf __P((char *, const char *, ...));
 FILE	*tmpfile __P((void));
 char	*tmpnam __P((char *));
 int	 ungetc __P((int, FILE *));
-int	 vfprintf __P((FILE *, const char *, _VA_LIST_));
-int	 vprintf __P((const char *, _VA_LIST_));
-int	 vsprintf __P((char *, const char *, _VA_LIST_));
+int	 vfprintf __P((FILE *, const char *, _BSD_VA_LIST_));
+int	 vprintf __P((const char *, _BSD_VA_LIST_));
+int	 vsprintf __P((char *, const char *, _BSD_VA_LIST_));
 __END_DECLS
 
 /*
@@ -244,9 +244,9 @@ void	 setbuffer __P((FILE *, char *, int));
 int	 setlinebuf __P((FILE *));
 char	*tempnam __P((const char *, const char *));
 int	 snprintf __P((char *, size_t, const char *, ...));
-int	 vsnprintf __P((char *, size_t, const char *, _VA_LIST_));
-int	 vscanf __P((const char *, _VA_LIST_));
-int	 vsscanf __P((const char *, const char *, _VA_LIST_));
+int	 vsnprintf __P((char *, size_t, const char *, _BSD_VA_LIST_));
+int	 vscanf __P((const char *, _BSD_VA_LIST_));
+int	 vsscanf __P((const char *, const char *, _BSD_VA_LIST_));
 __END_DECLS
 
 /*
@@ -275,7 +275,7 @@ __END_DECLS
  */
 __BEGIN_DECLS
 int	__srget __P((FILE *));
-int	__svfscanf __P((FILE *, const char *, _VA_LIST_));
+int	__svfscanf __P((FILE *, const char *, _BSD_VA_LIST_));
 int	__swbuf __P((int, FILE *));
 __END_DECLS
 
