@@ -1,12 +1,12 @@
 #!/bin/sh -
 #
-#	@(#)weekly	5.8 (Berkeley) %G%
+#	@(#)weekly	5.9 (Berkeley) %G%
 #
 
 PATH=/bin:/sbin:/usr/sbin:/usr/bin:/usr/libexec
 export PATH
 
-host=`hostname | sed -e 's/\..*//'`
+host=`hostname -s`
 echo "Subject: $host weekly run output"
 
 #echo ""
