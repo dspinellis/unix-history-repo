@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	4.9 83/02/09";
+static char sccsid[] = "@(#)rlogin.c	4.10 83/03/03";
 #endif
 
 #include <sys/types.h>
@@ -283,7 +283,9 @@ reader()
 	  ioctl(rem, SIOCSPGRP, (char *)&pid); }
 	for (;;) {
 		cnt = read(rem, rb, sizeof (rb));
-		if (cnt <= 0) {
+		if (cnt == 0)
+			break;
+		if (cnt < 0) {
 			if (errno == EINTR)
 				continue;
 			break;
