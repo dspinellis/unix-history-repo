@@ -37,12 +37,13 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00064
+ * CURRENT PATCH LEVEL:         3       00117
  * --------------------         -----   ----------------------
  *
  * 06 Aug 92	Pace Willisson		Allow VGA memory to be mapped
  * 28 Nov 92	Frank MacLachlan	Aligned addresses and data
  *					on 32bit boundaries.
+ * 25 Mar 93	Kevin Lahey		Add syscall counter for vmstat
  */
 
 
@@ -1584,6 +1585,7 @@ IDTVEC(syscall)
 	movw	$0x10,%ax	# switch to kernel segments
 	movw	%ax,%ds
 	movw	%ax,%es
+	incl	_cnt+V_SYSCALL  # kml 3/25/93
 	call	_syscall
 	call	_spl0
 	movw	__udatasel,%ax	# switch back to user segments

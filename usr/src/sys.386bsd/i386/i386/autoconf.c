@@ -34,8 +34,17 @@
  * SUCH DAMAGE.
  *
  *	@(#)autoconf.c	7.1 (Berkeley) 5/9/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00117
+ * --------------------         -----   ----------------------
+ *
+ * 09 Apr 93	???(From sun-lamp)	Fix to report sd when Julians
+ *					scsi code is used, allow you to swap
+ *					root floppies during a boot
  */
-static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/i386/RCS/autoconf.c,v 1.2 92/01/21 14:21:31 william Exp Locker: root $";
+static char rcsid[] = "$Header: /b/source/CVS/src/sys.386bsd/i386/i386/autoconf.c,v 1.3 1993/04/10 21:58:52 cgd Exp $";
 
 /*
  * Setup the system to run on the current machine.
@@ -124,12 +133,17 @@ extern int Maxmem;
 #define	DOSWAP			/* change swdevt and dumpdev */
 u_long	bootdev = 0;		/* should be dev_t, but not until 32 bits */
 
+#include "sd.h"
 static	char devname[][2] = {
 	'w','d',	/* 0 = wd */
 	's','w',	/* 1 = sw */
 	'f','d',	/* 2 = fd */
 	'w','t',	/* 3 = wt */
+#if NSD < 1
 	'a','s',	/* 4 = as */
+#else
+	's','d',	/* 4 = sd -- new SCSI system */
+#endif
 };
 
 #define	PARTITIONMASK	0x7
@@ -165,6 +179,13 @@ setroot()
 	 */
 	if (rootdev == orootdev)
 		return;
+	if (devname[majdev][0] == 'f' && devname[majdev][1] == 'd') {
+		printf("");
+		printf("* insert the floppy you want to have mounted as\n");
+		printf("* root, and hit any key to continue booting:\n");
+		cngetc();
+		printf("");
+	}
 	printf("changing root device to %c%c%d%c\n",
 		devname[majdev][0], devname[majdev][1],
 		mindev >> PARTITIONSHIFT, part + 'a');

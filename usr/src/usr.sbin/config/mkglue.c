@@ -29,6 +29,15 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00117
+ * --------------------         -----   ----------------------
+ *
+ * 26 Mar 93	Rodney W. Grimes	Added interrupt counters for vmstat,
+ * 					also false and stray counter names.
+ *
  */
 
 #ifndef lint
@@ -395,5 +404,44 @@ VEC(clk)\n\
 			}
 		}
 	}
+
+	/*
+	 * This is to output the names of the interrupts for vmstat
+	 * added by rgrimes@agora.rain.com (Rodney W. Grimes) 10/30/1992
+	 * Added false and stray interrupt counter names 3/25/93 rwgrimes
+	 */
+	fprintf(fp,"\
+/* These are the names of the interupt vector counters */\n\n\
+	.text\n\
+	.globl	_intrnames,_eintrnames\n\
+_intrnames:\n\
+	.asciz	\"false7\"\n\
+	.asciz	\"false15\"\n\
+	.asciz	\"stray\"\n\
+	.asciz	\"clk\"\n");
+	
+	count=0;
+	for (dp = dtab; dp != 0; dp = dp->d_next) {
+		mp = dp->d_conn;
+		if (mp != 0 && /* mp != (struct device *)-1 &&*/
+		    eq(mp->d_name, "isa")) {
+			struct idlst *id, *id2;
+
+			for (id = dp->d_vec; id; id = id->id_next) {
+				for (id2 = dp->d_vec; id2; id2 = id2->id_next) {
+					if (id2 == id) {
+						if(dp->d_irq == -1) continue;
+						fprintf(fp,"\t.asciz\t\"%s%d\"\n",
+							dp->d_name, dp->d_unit);
+						count++;
+						break;
+					}
+					if (!strcmp(id->id, id2->id))
+						break;
+				}
+			}
+		}
+	}
+	fprintf(fp,"_eintrnames:\n\n\n");
 	(void) fclose(fp);
 }
