@@ -1,9 +1,12 @@
 #	from: @(#)Makefile	5.6 (Berkeley) 5/22/91
-#	$Id: Makefile,v 1.9 1994/03/09 17:12:57 nate Exp $
+#	$Id: Makefile,v 1.10 1994/06/03 05:35:04 jkh Exp $
 
 CFLAGS+=	-DLIBC_SCCS -DDYNAMIC
 OBJS=		crt0.o gcrt0.o c++rt0.o
 CLEANFILES+=	gmon.o moncrt0.o core a.out
+.if defined(STARTUP_LOCALE)
+CFLAGS+=	-DSTARTUP_LOCALE
+.endif
 
 all: ${OBJS}
 
