@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -179,7 +179,7 @@ pass1check(idesc)
 
 	if ((anyout = chkrange(blkno, idesc->id_numfrags)) != 0) {
 		blkerror(idesc->id_number, "BAD", blkno);
-		if (++badblk >= MAXBAD) {
+		if (badblk++ >= MAXBAD) {
 			pwarn("EXCESSIVE BAD BLKS I=%lu",
 				idesc->id_number);
 			if (preen)
@@ -197,7 +197,7 @@ pass1check(idesc)
 			setbmap(blkno);
 		} else {
 			blkerror(idesc->id_number, "DUP", blkno);
-			if (++dupblk >= MAXDUP) {
+			if (dupblk++ >= MAXDUP) {
 				pwarn("EXCESSIVE DUP BLKS I=%lu",
 					idesc->id_number);
 				if (preen)
