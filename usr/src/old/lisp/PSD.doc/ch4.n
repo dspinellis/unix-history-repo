@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ch4.n	6.1 (Berkeley) %G%
+.\"	@(#)ch4.n	6.2 (Berkeley) %G%
 .\"
 ." $Header: ch4.n,v 1.4 83/07/27 15:11:44 layer Exp $
 .pp
@@ -896,7 +896,7 @@ All sublists should have the same length.
 .lp
 Readers may find the following summary table useful in remembering
 the differences between the six mapping functions:
-
+.(b
 .TS
 box;
 c | c s s.
@@ -917,7 +917,7 @@ elements of list	mapc	mapcar	mapcan
 
 sublists	map	maplist	mapcon
 .TE
-.sp 2v
+.)b
 .Lf mfunction "t_entry 's_disc"
 .Re
 a lisp object of type binary composed of t_entry and s_disc.

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ch2.n	6.1 (Berkeley) %G%
+.\"	@(#)ch2.n	6.2 (Berkeley) %G%
 .\"
 .\" $Header: ch2.n,v 1.7 83/07/30 14:42:38 layer Exp $
 .Lc Data\ Structure\ Access 2
@@ -487,6 +487,7 @@ important reason that
 .i signp
 is used.
 The permitted values for s_test and what they mean are given in this table.
+.(b
 .TS
 center box;
 l l .
@@ -500,6 +501,7 @@ n	g_val \(!= 0
 ge	g_val \(>= 0
 g	g_val > 0
 .TE
+.)b
 .Lf eq "'g_arg1 'g_arg2"
 .Re
 t if g_arg1 and g_arg2 are the exact same lisp object.
