@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)namei.h	7.18 (Berkeley) %G%
+ *	@(#)namei.h	7.19 (Berkeley) %G%
  */
 
 #ifndef _NAMEI_H_
@@ -59,6 +59,7 @@ struct nameidata {
 		char	*cn_nameptr;	/* pointer to looked up name */
 		long	cn_namelen;	/* length of looked up component */
 		u_long	cn_hash;	/* hash value of looked up name */
+		long	cn_consume;	/* chars to consume in lookup() */
 	} ni_cnd;
 };
 

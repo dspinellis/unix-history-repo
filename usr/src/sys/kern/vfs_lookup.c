@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.40 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.41 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -251,6 +251,7 @@ dirloop:
 	 * the name set the SAVENAME flag. When done, they assume
 	 * responsibility for freeing the pathname buffer.
 	 */
+	cnp->cn_consume = 0;
 	cnp->cn_hash = 0;
 	for (cp = cnp->cn_nameptr; *cp != 0 && *cp != '/'; cp++)
 		cnp->cn_hash += (unsigned char)*cp;
@@ -366,6 +367,17 @@ dirloop:
 #ifdef NAMEI_DIAGNOSTIC
 	printf("found\n");
 #endif
+
+	/*
+	 * Take into account any additional components consumed by
+	 * the underlying filesystem.
+	 */
+	if (cnp->cn_consume > 0) {
+		cnp->cn_nameptr += cnp->cn_consume;
+		ndp->ni_next += cnp->cn_consume;
+		ndp->ni_pathlen -= cnp->cn_consume;
+		cnp->cn_consume = 0;
+	}
 
 	dp = ndp->ni_vp;
 	/*
