@@ -1,4 +1,4 @@
-/*	ufs_inode.c	4.29	82/10/19	*/
+/*	ufs_inode.c	4.30	82/10/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -399,8 +399,10 @@ itrunc(ip, length)
 #ifndef QUOTA
 		fre(ip, bn, (off_t)blksize(fs, ip, i));
 #else
-		fre(ip, bn, size = (off_t)blksize(fs, ip, i));
-		cnt += size / DEV_BSIZE;
+		{ int size;
+		  fre(ip, bn, size = (off_t)blksize(fs, ip, i));
+		  cnt += size / DEV_BSIZE;
+		}
 #endif
 	}
 	ip->i_size = 0;
