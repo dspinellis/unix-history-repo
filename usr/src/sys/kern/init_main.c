@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)init_main.c	7.51 (Berkeley) %G%
+ *	@(#)init_main.c	7.52 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -30,8 +30,13 @@
 
 #include "vm/vm.h"
 
+#ifdef HPFPLIB
+char	copyright[] =
+"Copyright (c) 1982,1986,1989,1991 The Regents of the University of California.\nCopyright (c) 1992 Hewlett-Packard Company\nCopyright (c) 1992 Motorola Inc.\nAll rights reserved.\n\n";
+#else
 char	copyright[] =
 "Copyright (c) 1982,1986,1989,1991 The Regents of the University of California.\nAll rights reserved.\n\n";
+#endif
 
 /*
  * Components of process 0;
