@@ -1,4 +1,4 @@
-#	Makefile	4.5	83/07/22
+#	Makefile	4.6	83/07/27
 #
 # Make a 750/730 tu58 cassette
 # 
@@ -30,7 +30,7 @@ cassette: copy.750 drtest.750
 	cd ../mdec; make ${MFLAGS} tuboot
 
 install: cassette ../mdec/tuboot
-	dd if=cassette of=${CASSETTE} bs=2k
+	dd if=cassette of=${CASSETTE} bs=2k conv=sync
 	dd if=../mdec/tuboot of=${CASSETTE} bs=512 count=2
 
 # build a 730 boot cassette from a DEC console cassette
