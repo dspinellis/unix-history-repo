@@ -41,7 +41,7 @@
  * rknier 940331 Added fast transfer code 
  * rknier 940407 Added assembler coded data transfers 
  *
- * $Id: seagate.c,v 1.2 1994/06/13 00:43:26 sean Exp $
+ * $Id: seagate.c,v 1.2 1994/06/13 02:49:12 sean Exp $
  */
 
 /*
@@ -874,7 +874,7 @@ sea_get_scb(unit, flags)
 #ifdef SEADEBUG2
 	printf("(5");
 #endif
-	sleep(&sea->free_scb, PRIBIO);
+	tsleep(&sea->free_scb, PRIBIO, "seascb", 0);
       }
     }
   }
