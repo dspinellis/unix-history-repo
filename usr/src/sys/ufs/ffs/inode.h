@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	7.33 (Berkeley) %G%
+ *	@(#)inode.h	7.34 (Berkeley) %G%
  */
 
 #include <ufs/ufs/dinode.h>
@@ -57,11 +57,11 @@ struct inode {
 	doff_t	i_offset;	/* offset of free space in directory */
 	ino_t	i_ino;		/* inode number of found directory */
 	u_long	i_reclen;	/* size of found directory entry */
+	long	i_spare[11];	/* spares to round up to 128 bytes */
 	/*
 	 * the on-disk dinode itself.
 	 */
-	struct	dinode i_din;	/* the on-disk dinode */
-	long	i_spare[11];	/* spares to round up to 256 bytes */
+	struct	dinode i_din;	/* 128 bytes of the on-disk dinode */
 };
 
 #define	i_mode		i_din.di_mode
