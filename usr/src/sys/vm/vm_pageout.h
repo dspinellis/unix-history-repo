@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pageout.h	7.5 (Berkeley) %G%
+ *	@(#)vm_pageout.h	7.6 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -62,3 +62,7 @@ simple_lock_data_t	vm_pages_needed_lock;
 			thread_sleep((int)&cnt.v_free_count, \
 				&vm_pages_needed_lock, FALSE); \
 			}
+#ifdef KERNEL
+void		 vm_pageout __P((void));
+void		 vm_pageout_scan __P((void));
+#endif
