@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -68,12 +68,12 @@ static char sccsid[] = "@(#)fstat.c	5.11 (Berkeley) %G%";
 #define	WD	-1
 
 typedef struct devs {
-	struct devs	*next;
-	dev_t	dev;
-	int	inum;
-	char	*name;
+	struct devs *next;
+	dev_t dev;
+	int inum;
+	char *name;
 } DEVS;
-DEVS	*devs;
+DEVS *devs;
 
 static struct nlist nl[] = {
 	{ "_proc" },
@@ -87,24 +87,24 @@ static struct nlist nl[] = {
 	{ "" },
 };
 
-struct proc	*mproc;
-struct pte	*Usrptma, *usrpt;
+struct proc *mproc;
+struct pte *Usrptma, *usrpt;
 
 union {
-	struct	user user;
-	char	upages[UPAGES][NBPG];
+	struct user user;
+	char upages[UPAGES][NBPG];
 } user;
 
-extern int	errno;
-static int	fflg, vflg;
-static int	kmem, mem, nproc, swap;
-static char	*uname;
+extern int errno;
+static int fflg, vflg;
+static int kmem, mem, nproc, swap;
+static char *uname;
 
-off_t	lseek();
+off_t lseek();
 
 main(argc, argv)
-	int	argc;
-	char	**argv;
+	int argc;
+	char **argv;
 {
 	extern char *optarg;
 	extern int optind;
@@ -241,7 +241,7 @@ getu()
 static
 dotext()
 {
-	struct text	text;
+	struct text text;
 
 	(void)lseek(kmem, (off_t)mproc->p_textp, L_SET);
 	if (read(kmem, (char *) &text, sizeof(text)) != sizeof(text)) {
@@ -255,7 +255,7 @@ dotext()
 static
 itrans(ftype, g, fno)
 	int ftype, fno;
-	struct inode	*g;		/* if ftype is inode */
+	struct inode *g;		/* if ftype is inode */
 {
 	struct inode inode;
 	dev_t idev;
