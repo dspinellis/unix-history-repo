@@ -1,4 +1,4 @@
-/*	va.c	4.11	81/11/18	*/
+/*	va.c	4.12	82/04/01	*/
 
 #include "va.h"
 #if NVA > 0
@@ -338,5 +338,10 @@ vareset(uban)
 		sc->sc_wc = -(sc->sc_bp->b_bcount/2);
 		vastart(sc->sc_bp->b_dev);
 	}
+}
+
+vaselect()
+{
+	return (1);
 }
 #endif
