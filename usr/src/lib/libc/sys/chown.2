@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chown.2	6.3 (Berkeley) %G%
+.\"	@(#)chown.2	6.4 (Berkeley) %G%
 .\"
 .TH CHOWN 2 ""
 .UC 4
@@ -75,8 +75,7 @@ Search permission is denied for a component of the path prefix.
 Too many symbolic links were encountered in translating the pathname.
 .TP 15
 [EPERM]
-The effective user ID does not match the owner of the file and
-the effective user ID is not the super-user.
+The effective user ID is not the super-user.
 .TP 15
 [EROFS]
 The named file resides on a read-only file system.
@@ -84,6 +83,9 @@ The named file resides on a read-only file system.
 [EFAULT]
 .I Path
 points outside the process's allocated address space.
+.TP 15
+[EIO]
+An I/O error occurred while reading from or writing to the file system.
 .PP
 .I Fchown
 will fail if:
@@ -96,7 +98,13 @@ does not refer to a valid descriptor.
 .I Fd
 refers to a socket, not a file.
 .TP 15
+[EPERM]
+The effective user ID is not the super-user.
+.TP 15
 [EROFS]
 The named file resides on a read-only file system.
+.TP 15
+[EIO]
+An I/O error occurred while reading from or writing to the file system.
 .SH "SEE ALSO"
 chmod(2), flock(2)

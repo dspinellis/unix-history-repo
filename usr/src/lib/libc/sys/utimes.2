@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)utimes.2	6.3 (Berkeley) %G%
+.\"	@(#)utimes.2	6.4 (Berkeley) %G%
 .\"
 .TH UTIMES 2 ""
 .UC 4
@@ -63,16 +63,14 @@ The process is not super-user and not the owner of the file.
 [EACCES]
 Search permission is denied for a component of the path prefix.
 .TP 15
-[EACCES]
-The effective user ID is not super-user and not the
-owner of the file and write access to the file
-is denied.
-.TP 15
 [EROFS]
 The file system containing the file is mounted read-only.
 .TP 15
 [EFAULT]
-.I Tvp
-points outside the process's allocated address space.
+.I File
+or \fItvp\fP points outside the process's allocated address space.
+.TP 15
+[EIO]
+An I/O error occurred while reading or writing the affected inode.
 .SH SEE ALSO
 stat(2)

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getitimer.2	6.1 (Berkeley) %G%
+.\"	@(#)getitimer.2	6.2 (Berkeley) %G%
 .\"
 .TH GETITIMER 2 ""
 .UC 5
@@ -113,10 +113,10 @@ in the global variable \fIerrno\fP.
 The possible errors are:
 .TP 15
 [EFAULT]
-The \fIvalue\fP structure specified a bad address.
+The \fIvalue\fP parameter specified a bad address.
 .TP 15
 [EINVAL]
-A \fIvalue\fP structure specified a time was too large
+A \fIvalue\fP parameter specified a time was too large
 to be handled.
 .SH "SEE ALSO"
 sigvec(2), gettimeofday(2)

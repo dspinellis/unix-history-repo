@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)execve.2	6.3 (Berkeley) %G%
+.\"	@(#)execve.2	6.4 (Berkeley) %G%
 .\"
 .TH EXECVE 2 ""
 .UC 4
@@ -196,6 +196,9 @@ the size values in its header.
 [EFAULT]
 \fIPath\fP\|, \fIargv\fP\|, or \fIenvp\fP point
 to an illegal address.
+.TP 15
+[EIO]
+An I/O error occurred while reading from the file system.
 .SH CAVEATS
 If a program is
 .I setuid

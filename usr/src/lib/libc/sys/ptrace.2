@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ptrace.2	6.2 (Berkeley) %G%
+.\"	@(#)ptrace.2	6.3 (Berkeley) %G%
 .\"
 .TH PTRACE 2 ""
 .UC 4
@@ -180,16 +180,16 @@ then a \-1 is returned and the global variable \fIerrno\fP is
 set to indicate the error.
 .SH "ERRORS
 .TP 15
-[EINVAL]
+[EIO]
 The request code is invalid.
 .TP 15
-[EINVAL]
+[ESRCH]
 The specified process does not exist.
 .TP 15
-[EINVAL]
+[EIO]
 The given signal number is invalid.
 .TP 15
-[EFAULT]
+[EIO]
 The specified address is out of bounds.
 .TP 15
 [EPERM]

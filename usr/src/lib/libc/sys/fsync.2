@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fsync.2	6.2 (Berkeley) %G%
+.\"	@(#)fsync.2	6.3 (Berkeley) %G%
 .\"
 .TH FSYNC 2 ""
 .UC 5
@@ -36,5 +36,8 @@ The \fIfsync\fP fails if:
 .TP 15
 [EINVAL]
 \fIFd\fP refers to a socket, not to a file.
+.TP 15
+[EIO]
+An I/O error occurred while reading from or writing to the file system.
 .SH "SEE ALSO"
 sync(2), sync(8), update(8)

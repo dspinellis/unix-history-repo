@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fork.2	6.1 (Berkeley) %G%
+.\"	@(#)fork.2	6.2 (Berkeley) %G%
 .\"
 .TH FORK 2 ""
 .UC
@@ -61,5 +61,8 @@ number of processes under execution would be exceeded.
 [EAGAIN]
 The system-imposed limit {KID_MAX} on the total number of
 processes under execution by a single user would be exceeded.
+.TP 15
+[ENOMEM]
+There is insufficient swap space for the new process.
 .SH "SEE ALSO"
 execve(2), wait(2)

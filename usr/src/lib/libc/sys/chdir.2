@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chdir.2	6.2 (Berkeley) %G%
+.\"	@(#)chdir.2	6.3 (Berkeley) %G%
 .\"
 .TH CHDIR 2 ""
 .UC 4
@@ -57,5 +57,8 @@ the path name.
 [EFAULT]
 .I Path
 points outside the process's allocated address space.
+.TP 15
+[EIO]
+An I/O error occurred while reading from or writing to the file system.
 .SH "SEE ALSO"
 chroot(2)

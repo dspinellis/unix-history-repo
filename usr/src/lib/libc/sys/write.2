@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)write.2	6.2 (Berkeley) %G%
+.\"	@(#)write.2	6.3 (Berkeley) %G%
 .\"
 .TH WRITE 2 ""
 .UC 4
@@ -87,5 +87,16 @@ file size limit or the maximum file size.
 [EFAULT]
 Part of \fIiov\fP or data to be written to the file
 points outside the process's allocated address space.
+.TP 15
+[ENOSPC]
+There is no free space remaining on the file system
+containing the file.
+.TP 15
+[EDQUOT]
+The user's quota of disk blocks on the file system
+containing the file has been exhausted.
+.TP 15
+[EIO]
+An I/O error occurred while reading from or writing to the file system.
 .SH "SEE ALSO"
 lseek(2), open(2), pipe(2)
