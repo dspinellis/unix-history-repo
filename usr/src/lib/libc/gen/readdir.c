@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)readdir.c 4.1 %G%";
+static char sccsid[] = "@(#)readdir.c 4.2 %G%";
 
 #include <sys/types.h>
 #include <ndir.h>
@@ -42,6 +42,7 @@ readdir(dirp)
 			continue;
 		dir.d_ino = dp->d_ino;
 		strncpy(dir.d_name, dp->d_name, ODIRSIZ);
+		dir.d_name[ODIRSIZ] = '\0'; /* insure null termination */
 		dir.d_namlen = strlen(dir.d_name);
 		dir.d_reclen = DIRSIZ(&dir);
 		return (&dir);
