@@ -14,14 +14,14 @@ Included in this release are the patches from the patch kit version
 
 There are portions of NetBSD that has been intergraged into FreeBSD
 as well.  We would like to thank all the contributors to NetBSD for
-thier work.
+their work.
 
 Hardware Contributors:
 
 A special thanks to Robert Bruce and Jack Velte of Walnut Creek CDROM
 for providing a 486/DX2-66 EISA/VL system that is being used for the
 development work.  It would have been impossible to do this release
-with out there support.
+with out their support.
 
 FreeBSD core:
 Andrew Moore <alm@netcom.com>
