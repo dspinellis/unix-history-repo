@@ -49,6 +49,8 @@ main(argc, argv)
     int     iflag, rflag, vflag, lflag, lifetime, k_errno;
     register char *cp;
     register i;
+    extern int krb_debug;
+    krb_debug = 1;
 
     *inst = *realm = '\0';
     iflag = rflag = vflag = lflag = 0;
