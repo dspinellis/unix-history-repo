@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex.c	8.1.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ex.h"
@@ -258,12 +258,6 @@ main(ac, av)
 				defwind = 10*defwind + *cp - '0';
 			break;
 
-#ifdef CRYPT
-		case 'x':
-			/* -x: encrypted mode */
-			xflag = 1;
-			break;
-#endif
 
 		default:
 			smerror("Unknown option %s\n", av[0]);
@@ -282,12 +276,6 @@ main(ac, av)
 		ac--, av++;
 	}
 
-#ifdef CRYPT
-	if(xflag){
-		key = getpass(KEYPROMPT);
-		kflag = crinit(key, perm);
-	}
-#endif
 
 	/*
 	 * If we are doing a recover and no filename
@@ -480,12 +468,6 @@ init()
 	for (i = 0; i <= 'z'-'a'+1; i++)
 		names[i] = 1;
 	anymarks = 0;
-#ifdef CRYPT
-        if(xflag) {
-                xtflag = 1;
-                makekey(key, tperm);
-        }
-#endif
 }
 
 /*
