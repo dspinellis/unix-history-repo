@@ -4,11 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_pcb.c	7.15 (Berkeley) %G%
+ *	@(#)in_pcb.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
+#include "proc.h"
 #include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"
@@ -335,11 +336,15 @@ in_losing(inp)
 	struct inpcb *inp;
 {
 	register struct rtentry *rt;
+	struct rt_addrinfo info;
 
 	if ((rt = inp->inp_route.ro_rt)) {
-		rt_missmsg(RTM_LOSING, &inp->inp_route.ro_dst,
-			    rt->rt_gateway, (struct sockaddr *)rt_mask(rt),
-			    (struct sockaddr *)0, rt->rt_flags, 0);
+		bzero((caddr_t)&info, sizeof(info));
+		info.rti_info[RTAX_DST] =
+			(struct sockaddr *)&inp->inp_route.ro_dst;
+		info.rti_info[RTAX_GATEWAY] = rt->rt_gateway;
+		info.rti_info[RTAX_NETMASK] = rt_mask(rt);
+		rt_missmsg(RTM_LOSING, &info, rt->rt_flags, 0);
 		if (rt->rt_flags & RTF_DYNAMIC)
 			(void) rtrequest(RTM_DELETE, rt_key(rt),
 				rt->rt_gateway, rt_mask(rt), rt->rt_flags, 
