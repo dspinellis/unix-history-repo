@@ -1,4 +1,4 @@
-.\"	@(#)Cover.rel2	1.1 (Berkeley) %G%
+.\"	@(#)Cover.rel2	1.2 (Berkeley) %G%
 .\" use psroff -ms -Plz Cover.rel2
 .\"
 .so HEADERS
@@ -70,6 +70,8 @@ first validating the code.
 .PP
 This software distribution is only available on two 6250bpi 1/2''
 9-track tapes or one 8mm Exabyte cassette.
+A complete set of the Usenix/O'Reilly 4.4BSD manuals will
+accompany your distribution media.
 The 4.4BSD-Lite Release 2 distribution contains source
 for the following architectures:
 .IP \(bu
@@ -123,7 +125,7 @@ we must receive from your organization the
 following material before the distribution can be sent:
 .IP \(bu
 \fBTwo\fR original signed and executed copies of
-the Berkeley License Agreement (3/95) between your company
+the Berkeley License Agreement (3/95) for 4.4BSD-Lite between your company
 or institution and The Regents of the University of California
 along with Exhibit A properly filled out.
 For Foreign licensees, there is an Addendum to
@@ -168,8 +170,9 @@ All the above material must be sent to:
 Pauline Schwartz, Distribution Coordinator
 Computer Systems Research Group
 Computer Science Division, EECS
+317 Soda Hall
 University of California
-Berkeley, California 94720
+Berkeley, California 94720-1776
 .DE
 Once all these items have been received and are in proper order,
 the distribution will be sent to the technical address listed on the
