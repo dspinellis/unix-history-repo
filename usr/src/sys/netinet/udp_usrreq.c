@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.47	83/05/12	*/
+/*	udp_usrreq.c	4.48	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -105,7 +105,8 @@ udp_input(m0)
 	udp_in.sin_addr = ui->ui_src;
 	m->m_len -= sizeof (struct udpiphdr);
 	m->m_off += sizeof (struct udpiphdr);
-	if (sbappendaddr(&inp->inp_socket->so_rcv, (struct sockaddr *)&udp_in, m) == 0)
+	if (sbappendaddr(&inp->inp_socket->so_rcv, (struct sockaddr *)&udp_in,
+	    m, (struct mbuf *)0) == 0)
 		goto bad;
 	sorwakeup(inp->inp_socket);
 	return;
@@ -204,14 +205,18 @@ udp_output(inp, m0)
 }
 
 /*ARGSUSED*/
-udp_usrreq(so, req, m, nam)
+udp_usrreq(so, req, m, nam, rights)
 	struct socket *so;
 	int req;
-	struct mbuf *m, *nam;
+	struct mbuf *m, *nam, *rights;
 {
 	struct inpcb *inp = sotoinpcb(so);
 	int error = 0;
 
+	if (rights && rights->m_len) {
+		error = EINVAL;
+		goto release;
+	}
 	if (inp == NULL && req != PRU_ATTACH) {
 		error = EINVAL;
 		goto release;
@@ -313,7 +318,6 @@ udp_usrreq(so, req, m, nam)
 
 	default:
 		printf("request %d\n", req);
-		panic("udp_usrreq");
 
 	case PRU_RCVD:
 	case PRU_CONTROL:
