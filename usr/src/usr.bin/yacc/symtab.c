@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)symtab.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -64,6 +64,7 @@ char *name;
     bp->link = 0;
     bp->next = 0;
     bp->name = MALLOC(strlen(name) + 1);
+    if (bp->name == 0) no_space();
     bp->tag = 0;
     bp->value = UNDEFINED;
     bp->index = 0;
@@ -107,7 +108,8 @@ create_symbol_table()
     register int i;
     register bucket *bp;
 
-    symbol_table = (bucket **) MALLOC(TABLE_SIZE*sizeof(bucket));
+    symbol_table = (bucket **) MALLOC(TABLE_SIZE*sizeof(bucket *));
+    if (symbol_table == 0) no_space();
     for (i = 0; i < TABLE_SIZE; i++)
 	symbol_table[i] = 0;
 

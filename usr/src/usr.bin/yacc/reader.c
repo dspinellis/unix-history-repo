@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)reader.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)reader.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -394,7 +394,13 @@ loop:
 	if (c == '/')
 	{
 	    putc('*', f);
-	    while ((c = *++cptr) != '\n') putc(c, f);
+	    while ((c = *++cptr) != '\n')
+	    {
+		if (c == '*' && cptr[1] == '/')
+		    fprintf(f, "* ");
+		else
+		    putc(c, f);
+	    }
 	    fprintf(f, "*/");
 	    goto next_line;
 	}
@@ -487,7 +493,6 @@ loop:
 	if (--depth == 0)
 	{
 	    fprintf(text_file, " YYSTYPE;\n");
-	    if (dflag) fprintf(text_file, " YYSTYPE;\n");
 	    FREE(u_line);
 	    return;
 	}
@@ -536,8 +541,16 @@ loop:
 	    if (dflag) putc('*', union_file);
 	    while ((c = *++cptr) != '\n')
 	    {
-		putc(c, text_file);
-		if (dflag) putc(c, union_file);
+		if (c == '*' && cptr[1] == '/')
+		{
+		    fprintf(text_file, "* ");
+		    if (dflag) fprintf(union_file, "* ");
+		}
+		else
+		{
+		    putc(c, text_file);
+		    if (dflag) putc(c, union_file);
+		}
 	    }
 	    fprintf(text_file, "*/\n");
 	    if (dflag) fprintf(union_file, "*/\n");
@@ -551,16 +564,17 @@ loop:
 
 	    putc('*', text_file);
 	    if (dflag) putc('*', union_file);
+	    ++cptr;
 	    for (;;)
 	    {
-		c = *++cptr;
+		c = *cptr++;
 		putc(c, text_file);
 		if (dflag) putc(c, union_file);
-		if (c == '*' && cptr[1] == '/')
+		if (c == '*' && *cptr == '/')
 		{
 		    putc('/', text_file);
 		    if (dflag) putc('/', union_file);
-		    cptr += 2;
+		    ++cptr;
 		    FREE(c_line);
 		    goto loop;
 		}
@@ -1365,7 +1379,13 @@ loop:
 	if (c == '/')
 	{
 	    putc('*', f);
-	    while ((c = *++cptr) != '\n') putc(c, f);
+	    while ((c = *++cptr) != '\n')
+	    {
+		if (c == '*' && cptr[1] == '/')
+		    fprintf(f, "* ");
+		else
+		    putc(c, f);
+	    }
 	    fprintf(f, "*/\n");
 	    goto next_line;
 	}
@@ -1376,14 +1396,15 @@ loop:
 	    char *c_cptr = c_line + (cptr - line - 1);
 
 	    putc('*', f);
+	    ++cptr;
 	    for (;;)
 	    {
-		c = *++cptr;
+		c = *cptr++;
 		putc(c, f);
-		if (c == '*' && cptr[1] == '/')
+		if (c == '*' && *cptr == '/')
 		{
 		    putc('/', f);
-		    cptr += 2;
+		    ++cptr;
 		    FREE(c_line);
 		    goto loop;
 		}

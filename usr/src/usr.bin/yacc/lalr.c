@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lalr.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)lalr.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -441,7 +441,8 @@ build_relations()
   new_includes = transpose(includes, ngotos);
 
   for (i = 0; i < ngotos; i++)
-    FREE(includes[i]);
+    if (includes[i])
+      FREE(includes[i]);
 
   FREE(includes);
 
@@ -547,7 +548,7 @@ compute_lookaheads()
 {
   register int i, n;
   register unsigned *fp1, *fp2, *fp3;
-  register shorts *sp;
+  register shorts *sp, *next;
   register unsigned *rowp;
 
   rowp = LA;
@@ -566,8 +567,11 @@ compute_lookaheads()
     }
 
   for (i = 0; i < n; i++)
-    for (sp = lookback[i]; sp; sp = sp->next)
-      FREE(sp);
+    for (sp = lookback[i]; sp; sp = next)
+      {
+        next = sp->next;
+        FREE(sp);
+      }
 
   FREE(lookback);
   FREE(F);

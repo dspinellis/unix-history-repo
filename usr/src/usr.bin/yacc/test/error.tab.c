@@ -1,33 +1,30 @@
 #ifndef lint
-char yysccsid[] = "@(#)yaccpar	1.1 (Berkeley) 12/10/89";
+char yysccsid[] = "@(#)yaccpar	1.3 (Berkeley) 01/21/90";
 #endif
 #define YYERRCODE 256
-#ifndef YYCONST
-#define YYCONST /* const */
-#endif
-YYCONST short yylhs[] = {                                -1,
+short yylhs[] = {                                        -1,
     0,
 };
-YYCONST short yylen[] = {                                 2,
+short yylen[] = {                                         2,
     1,
 };
-YYCONST short yydefred[] = {                              0,
+short yydefred[] = {                                      0,
     1,    0,
 };
-YYCONST short yydgoto[] = {                               2,
+short yydgoto[] = {                                       2,
 };
-YYCONST short yysindex[] = {                           -256,
+short yysindex[] = {                                   -256,
     0,    0,
 };
-YYCONST short yyrindex[] = {                              0,
+short yyrindex[] = {                                      0,
     0,    0,
 };
-YYCONST short yygindex[] = {                              0,
+short yygindex[] = {                                      0,
 };
-#define	YYTABLESIZE		0
-YYCONST short yytable[] = {                               1,
+#define YYTABLESIZE 0
+short yytable[] = {                                       1,
 };
-YYCONST short yycheck[] = {                             256,
+short yycheck[] = {                                     256,
 };
 #define YYFINAL 2
 #ifndef YYDEBUG
@@ -35,10 +32,10 @@ YYCONST short yycheck[] = {                             256,
 #endif
 #define YYMAXTOKEN 0
 #if YYDEBUG
-YYCONST char *yyname[] = {
+char *yyname[] = {
 "end-of-file",
 };
-YYCONST char *yyrule[] = {
+char *yyrule[] = {
 "$accept : S",
 "S : error",
 };
@@ -66,6 +63,12 @@ YYSTYPE yylval;
 #define yystacksize YYSTACKSIZE
 short yyss[YYSTACKSIZE];
 YYSTYPE yyvs[YYSTACKSIZE];
+#line 4 "error.y"
+main(){printf("yyparse() = %d\n",yyparse());}
+yylex(){return-1;}
+yyerror(s)char*s;{printf("%s\n",s);}
+#line 70 "error.tab.c"
+#define YYABORT goto yyabort
 #define YYACCEPT goto yyaccept
 #define YYERROR goto yyerrlab
 int
@@ -135,8 +138,14 @@ yyloop:
         goto yyreduce;
     }
     if (yyerrflag) goto yyinrecovery;
+#ifdef lint
+    goto yynewerror;
+#endif
 yynewerror:
     yyerror("syntax error");
+#ifdef lint
+    goto yyerrlab;
+#endif
 yyerrlab:
     ++yynerrs;
 yyinrecovery:

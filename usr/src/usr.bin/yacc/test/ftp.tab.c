@@ -1,5 +1,5 @@
 #ifndef lint
-char yysccsid[] = "@(#)yaccpar	1.1 (Berkeley) 12/10/89";
+char yysccsid[] = "@(#)yaccpar	1.3 (Berkeley) 01/21/90";
 #endif
 #define A 257
 #define B 258
@@ -114,10 +114,7 @@ char	*fromname;
 
 char	*index();
 #line 116 "ftp.tab.c"
-#ifndef YYCONST
-#define YYCONST /* const */
-#endif
-YYCONST short yylhs[] = {                                -1,
+short yylhs[] = {                                        -1,
     0,    0,    0,    1,    1,    1,    1,    1,    1,    1,
     1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
     1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -127,7 +124,7 @@ YYCONST short yylhs[] = {                                -1,
     6,    6,    6,    7,    7,    7,    8,    8,    8,   10,
    14,   11,    9,
 };
-YYCONST short yylen[] = {                                 2,
+short yylen[] = {                                         2,
     0,    2,    2,    4,    4,    4,    2,    4,    4,    4,
     4,    8,    5,    5,    5,    3,    5,    3,    5,    5,
     2,    5,    4,    2,    3,    5,    2,    4,    2,    5,
@@ -137,7 +134,7 @@ YYCONST short yylen[] = {                                 2,
     1,    3,    2,    1,    1,    1,    1,    1,    1,    1,
     1,    1,    0,
 };
-YYCONST short yydefred[] = {                              1,
+short yydefred[] = {                                      1,
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
    73,   73,   73,    0,   73,    0,    0,   73,   73,   73,
    73,    0,    0,    0,    0,   73,   73,   73,   73,   73,
@@ -159,11 +156,11 @@ YYCONST short yydefred[] = {                              1,
     0,   35,   72,    0,   40,    0,    0,    0,   37,    0,
     0,   12,    0,    0,   38,    0,    0,    0,   52,
 };
-YYCONST short yydgoto[] = {                               1,
+short yydgoto[] = {                                       1,
    34,   35,   71,   73,   75,   80,   84,   88,   45,   95,
   184,  125,  157,   96,
 };
-YYCONST short yysindex[] = {                              0,
+short yysindex[] = {                                      0,
  -224, -247, -239, -236, -232, -222, -204, -200, -181, -177,
     0,    0,    0, -166,    0, -161, -199,    0,    0,    0,
     0, -160, -159, -264, -158,    0,    0,    0,    0,    0,
@@ -185,7 +182,7 @@ YYCONST short yysindex[] = {                              0,
   -97,    0,    0,  -95,    0,  -96,  -94,  -92,    0, -152,
   -93,    0,  -91,  -90,    0,  -88,  -87,  -86,    0,
 };
-YYCONST short yyrindex[] = {                              0,
+short yyrindex[] = {                                      0,
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
     0,    0,  -83,    0,    0,    0,    0,    0,    0,    0,
@@ -207,12 +204,12 @@ YYCONST short yyrindex[] = {                              0,
     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
     0,    0,    0,    0,    0,    0,    0,    0,    0,
 };
-YYCONST short yygindex[] = {                              0,
+short yygindex[] = {                                      0,
     0,    0,    0,    0,    0,    0,    0,    0,   16,  -89,
   -25,   35,   47,    0,
 };
-#define	YYTABLESIZE		190
-YYCONST short yytable[] = {                             129,
+#define YYTABLESIZE 190
+short yytable[] = {                                     129,
   130,  131,  104,  134,   59,   60,   76,  136,  137,   77,
   138,   78,   79,  105,  106,  107,   98,   99,  146,  123,
   148,  149,   36,  124,  150,  151,  152,   46,   47,   37,
@@ -233,7 +230,7 @@ YYCONST short yytable[] = {                             129,
   183,  185,  190,  187,  189,  188,  191,  192,  195,  194,
   196,    0,    0,  198,  197,   73,  199,   49,   56,   58,
 };
-YYCONST short yycheck[] = {                              89,
+short yycheck[] = {                                      89,
    90,   91,  305,   93,  269,  270,  257,   97,   98,  260,
   100,  262,  263,  316,  317,  318,  269,  270,  108,  269,
   110,  111,  270,  273,  114,  115,  116,   12,   13,  269,
@@ -260,7 +257,7 @@ YYCONST short yycheck[] = {                              89,
 #endif
 #define YYMAXTOKEN 319
 #if YYDEBUG
-YYCONST char *yyname[] = {
+char *yyname[] = {
 "end-of-file",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -274,7 +271,7 @@ YYCONST char *yyname[] = {
 "DELE","CWD","LIST","NLST","SITE","STAT","HELP","NOOP","MKD","RMD","PWD","CDUP",
 "STOU","SMNT","SYST","SIZE","MDTM","UMASK","IDLE","CHMOD","LEXERR",
 };
-YYCONST char *yyrule[] = {
+char *yyrule[] = {
 "$accept : cmd_list",
 "cmd_list :",
 "cmd_list : cmd_list cmd",
@@ -898,7 +895,8 @@ char *filename;
 		reply(504, "SIZE not implemented for Type %c.", "?AEIL"[type]);
 	}
 }
-#line 901 "ftp.tab.c"
+#line 898 "ftp.tab.c"
+#define YYABORT goto yyabort
 #define YYACCEPT goto yyaccept
 #define YYERROR goto yyerrlab
 int
@@ -968,8 +966,14 @@ yyloop:
         goto yyreduce;
     }
     if (yyerrflag) goto yyinrecovery;
+#ifdef lint
+    goto yynewerror;
+#endif
 yynewerror:
     yyerror("syntax error");
+#ifdef lint
+    goto yyerrlab;
+#endif
 yyerrlab:
     ++yynerrs;
 yyinrecovery:
@@ -1621,10 +1625,10 @@ case 70:
 #line 600 "ftp.y"
  {
 		/*
-	 * Problem: this production is used for all pathname
-	 * processing, but only gives a 550 error reply.
-	 * This is a valid reply in some cases but not in others.
-	 */
+		 * Problem: this production is used for all pathname
+		 * processing, but only gives a 550 error reply.
+		 * This is a valid reply in some cases but not in others.
+		 */
 		if (logged_in && yyvsp[0] && strncmp((char *) yyvsp[0], "~", 1) == 0) {
 			*(char **)&(yyval ) = *glob((char *) yyvsp[0]);
 			if (globerr != NULL) {
@@ -1642,9 +1646,9 @@ case 72:
 		register int ret, dec, multby, digit;
 
 		/*
-	 * Convert a number that was read as decimal number
-	 * to what it would be if it had been read as octal.
-	 */
+		 * Convert a number that was read as decimal number
+		 * to what it would be if it had been read as octal.
+		 */
 		dec = yyvsp[0];
 		multby = 1;
 		ret = 0;
@@ -1672,7 +1676,7 @@ case 73:
 		}
 	}
 break;
-#line 1675 "ftp.tab.c"
+#line 1679 "ftp.tab.c"
     }
     yyssp -= yym;
     yystate = *yyssp;

@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -48,7 +48,6 @@ output()
     free_reductions();
     output_defines();
     output_stored_text();
-    output_yyconst();
     output_rule_data();
     output_yydefred();
     output_actions();
@@ -63,21 +62,13 @@ output()
 }
 
 
-output_yyconst()
-{
-    outline += 3;
-    fprintf(output_file, "#ifndef YYCONST\n#define YYCONST /* const */\n\
-#endif\n");
-}
-
-
 output_rule_data()
 {
     register int i;
     register int j;
 
   
-    fprintf(output_file, "YYCONST short yylhs[] = {%34d,",
+    fprintf(output_file, "short yylhs[] = {%42d,",
 	    symbol_value[start_symbol]);
 
     j = 10;
@@ -97,7 +88,7 @@ output_rule_data()
     outline += 2;
     fprintf(output_file, "\n};\n");
 
-    fprintf(output_file, "YYCONST short yylen[] = {%34d,", 2);
+    fprintf(output_file, "short yylen[] = {%42d,", 2);
 
     j = 10;
     for (i = 3; i < nrules; i++)
@@ -122,7 +113,7 @@ output_yydefred()
 {
     register int i, j;
 
-    fprintf(output_file, "YYCONST short yydefred[] = {%31d,",
+    fprintf(output_file, "short yydefred[] = {%39d,",
 	    (defred[0] ? defred[0] - 2 : 0));
 
     j = 10;
@@ -264,7 +255,7 @@ goto_actions()
     state_count = NEW2(nstates, short);
 
     k = default_goto(start_symbol + 1);
-    fprintf(output_file, "YYCONST short yydgoto[] = {%32d,", k);
+    fprintf(output_file, "short yydgoto[] = {%40d,", k);
     save_column(start_symbol + 1, k);
 
     j = 10;
@@ -437,8 +428,10 @@ pack_table()
 
     for (i = 0; i < nvectors; i++)
     {
-	FREE(froms[i]);
-	FREE(tos[i]);
+	if (froms[i])
+	    FREE(froms[i]);
+	if (tos[i])
+	    FREE(tos[i]);
     }
 
     FREE(froms);
@@ -586,7 +579,7 @@ output_base()
 {
     register int i, j;
 
-    fprintf(output_file, "YYCONST short yysindex[] = {%31d,", base[0]);
+    fprintf(output_file, "short yysindex[] = {%39d,", base[0]);
 
     j = 10;
     for (i = 1; i < nstates; i++)
@@ -604,7 +597,7 @@ output_base()
     }
 
     outline += 2;
-    fprintf(output_file, "\n};\nYYCONST short yyrindex[] = {%31d,",
+    fprintf(output_file, "\n};\nshort yyrindex[] = {%39d,",
 	    base[nstates]);
 
     j = 10;
@@ -623,7 +616,7 @@ output_base()
     }
 
     outline += 2;
-    fprintf(output_file, "\n};\nYYCONST short yygindex[] = {%31d,",
+    fprintf(output_file, "\n};\nshort yygindex[] = {%39d,",
 	    base[2*nstates]);
 
     j = 10;
@@ -654,8 +647,8 @@ output_table()
     register int j;
 
     ++outline;
-    fprintf(output_file, "#define\tYYTABLESIZE\t\t%d\n", high);
-    fprintf(output_file, "YYCONST short yytable[] = {%32d,", table[0]);
+    fprintf(output_file, "#define YYTABLESIZE %d\n", high);
+    fprintf(output_file, "short yytable[] = {%40d,", table[0]);
 
     j = 10;
     for (i = 1; i <= high; i++)
@@ -684,7 +677,7 @@ output_check()
     register int i;
     register int j;
 
-    fprintf(output_file, "YYCONST short yycheck[] = {%32d,", check[0]);
+    fprintf(output_file, "short yycheck[] = {%40d,", check[0]);
 
     j = 10;
     for (i = 1; i <= high; i++)
@@ -836,7 +829,7 @@ output_debug()
     ++outline;
     fprintf(output_file, "#define YYMAXTOKEN %d\n", max);
 
-    symnam = (char **) MALLOC(max*sizeof(char *));
+    symnam = (char **) MALLOC((max+1)*sizeof(char *));
     if (symnam == 0) no_space();
     for (i = 0; i < max; ++i)
 	symnam[i] = 0;
@@ -845,7 +838,7 @@ output_debug()
     symnam[0] = "end-of-file";
 
     ++outline;
-    fprintf(output_file, "#if YYDEBUG\nYYCONST char *yyname[] = {");
+    fprintf(output_file, "#if YYDEBUG\nchar *yyname[] = {");
     j = 80;
     for (i = 0; i <= max; ++i)
     {
@@ -978,7 +971,7 @@ output_debug()
     FREE(symnam);
 
     ++outline;
-    fprintf(output_file, "YYCONST char *yyrule[] = {\n");
+    fprintf(output_file, "char *yyrule[] = {\n");
     for (i = 2; i < nrules; ++i)
     {
 	fprintf(output_file, "\"%s :", symbol_name[rlhs[i]]);
@@ -1035,7 +1028,7 @@ output_debug()
 
 output_stype()
 {
-    if (!unionized)
+    if (!unionized && ntags == 0)
     {
 	outline += 3;
 	fprintf(output_file, "#ifndef YYSTYPE\ntypedef int YYSTYPE;\n#endif\n");
@@ -1133,34 +1126,39 @@ output_semantic_actions()
 
 free_itemsets()
 {
-  register core *cp;
+    register core *cp, *next;
 
-  FREE(state_table);
-
-  for (cp = first_state; cp; cp = cp->next)
-    FREE(cp);
+    FREE(state_table);
+    for (cp = first_state; cp; cp = next)
+    {
+	next = cp->next;
+	FREE(cp);
+    }
 }
-
 
 
 free_shifts()
 {
-  register shifts *sp;
+    register shifts *sp, *next;
 
-  FREE(shift_table);
-
-  for (sp = first_shift; sp; sp = sp->next)
-    FREE(sp);
+    FREE(shift_table);
+    for (sp = first_shift; sp; sp = next)
+    {
+	next = sp->next;
+	FREE(sp);
+    }
 }
 
 
 
 free_reductions()
 {
-  register reductions *rp;
+    register reductions *rp, *next;
 
-  FREE(reduction_table);
-
-  for (rp = first_reduction; rp; rp = rp->next)
-    FREE(rp);
+    FREE(reduction_table);
+    for (rp = first_reduction; rp; rp = next)
+    {
+	next = rp->next;
+	FREE(rp);
+    }
 }
