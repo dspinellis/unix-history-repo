@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kdb.c	7.6 (Berkeley) %G%
+ *	@(#)kdb.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -519,7 +519,7 @@ try_another:
 
 /*
  * Attach a found slave.  Make sure the watchdog timer is running.
- * If this disk is being profiled, fill in the `mspw' value (used by
+ * If this disk is being profiled, fill in the `wpms' value (used by
  * what?).  Set up the inverting pointer, and attempt to bring the
  * drive on line.
  */
@@ -532,7 +532,7 @@ kdbattach(ui)
 		kdbwstart++;
 	}
 	if (ui->ui_dk >= 0)
-		dk_mspw[ui->ui_dk] = 1.0 / (60 * 31 * 256);	/* approx */
+		dk_wpms[ui->ui_dk] = (60 * 31 * 256);	/* approx */
 	kdbip[ui->ui_ctlr][ui->ui_slave] = ui;
 	(void) kdb_bringonline(ui, 1);
 	/* should we get its status too? */

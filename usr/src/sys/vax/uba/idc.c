@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	7.7 (Berkeley) %G%
+ *	@(#)idc.c	7.8 (Berkeley) %G%
  */
 
 #include "rb.h"
@@ -191,9 +191,9 @@ idcattach(ui)
 	}
 	if (ui->ui_dk >= 0)
 		if (ui->ui_type)
-			dk_mspw[ui->ui_dk] = 1.0 / (60 * NRB80SECT * 256);
+			dk_wpms[ui->ui_dk] = (60 * NRB80SECT * 256);
 		else
-			dk_mspw[ui->ui_dk] = 1.0 / (60 * NRB02SECT * 128);
+			dk_wpms[ui->ui_dk] = (60 * NRB02SECT * 128);
 	idccyl[ui->ui_unit].dar_dar = -1;
 	ui->ui_flags = 0;
 }

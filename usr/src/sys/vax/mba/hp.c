@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.16 (Berkeley) %G%
+ *	@(#)hp.c	7.17 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -334,7 +334,7 @@ hpinit(dev, flags)
 			sc->sc_mlsize >>= 2;
 		if (mi->mi_dk >= 0) {
 			trt = (hpaddr->hpmr & HPMR_TRT) >> 8;
-			dk_mspw[mi->mi_dk] = 1.0 / (1<<(20-trt));
+			dk_wpms[mi->mi_dk] = (1<<(20-trt));
 		}
 		mi->mi_type = MBDT_ML11A;
 		lp->d_partitions[0].p_size = sc->sc_mlsize;
@@ -361,8 +361,8 @@ hpinit(dev, flags)
 	 * Seconds per word = (60 / rpm) / (nsectors * secsize/2)
 	 */
 	if (mi->mi_dk >= 0 && lp->d_rpm)
-		dk_mspw[mi->mi_dk] = 120.0 /
-		    (lp->d_rpm * lp->d_nsectors * lp->d_secsize);
+		dk_wpms[mi->mi_dk] =
+		    (lp->d_rpm * lp->d_nsectors * lp->d_secsize) / 120;
 	/*
 	 * Read bad sector table into memory.
 	 */

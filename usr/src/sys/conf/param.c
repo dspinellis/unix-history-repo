@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)param.c	7.5 (Berkeley) %G%
+ *	@(#)param.c	7.6 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -69,6 +69,7 @@ int     nmbclusters = NMBCLUSTERS;
 int	nquota = (MAXUSERS * 9) / 7 + 3;
 int	ndquot = NINODE + (MAXUSERS * NMOUNT) / 4;
 #endif
+int	fscale = FSCALE;	/* kernel uses `FSCALE', user uses `fscale' */
 
 /*
  * These are initialized at bootstrap time

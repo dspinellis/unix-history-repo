@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vm_meter.c	7.5 (Berkeley) %G%
+ *	@(#)vm_meter.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -48,7 +48,7 @@ int	kltxt = KLTXT;
 int	klout = KLOUT;
 int	multprog = -1;		/* so we don't count process 2 */
 
-double	avenrun[3];		/* load average, of runnable procs */
+fixpt_t	averunnable[3];		/* load average, of runnable procs */
 
 /*
  * The main loop of the scheduling (swapping) process.
@@ -113,8 +113,9 @@ loop:
 	 *	   memory is less than desirable.
 	 */
 	if (kmapwnt ||
-	    (avenrun[0] >= 2 && imax(avefree, avefree30) < desfree &&
-	    (rate.v_pgin + rate.v_pgout > maxpgio || avefree < minfree))) {
+	    (averunnable[0] >= 2 * FSCALE &&
+	     imax(avefree, avefree30) < desfree &&
+	     (rate.v_pgin + rate.v_pgout > maxpgio || avefree < minfree))) {
 		desperate = 1;
 		goto hardswap;
 	}
@@ -439,17 +440,17 @@ active:
 	total.t_rm += total.t_rmtxt;
 	total.t_arm += total.t_armtxt;
 	total.t_free = avefree;
-	loadav(avenrun, nrun);
+	loadav(averunnable, nrun);
 }
 
 /*
  * Constants for averages over 1, 5, and 15 minutes
  * when sampling at 5 second intervals.
  */
-double	cexp[3] = {
-	0.9200444146293232,	/* exp(-1/12) */
-	0.9834714538216174,	/* exp(-1/60) */
-	0.9944598480048967,	/* exp(-1/180) */
+fixpt_t	cexp[3] = {
+	0.9200444146293232 * FSCALE,	/* exp(-1/12) */
+	0.9834714538216174 * FSCALE,	/* exp(-1/60) */
+	0.9944598480048967 * FSCALE,	/* exp(-1/180) */
 };
 
 /*
@@ -457,11 +458,16 @@ double	cexp[3] = {
  * 1, 5 and 15 minute intervals.
  */
 loadav(avg, n)
-	register double *avg;
+	register fixpt_t *avg;
 	int n;
 {
 	register int i;
 
 	for (i = 0; i < 3; i++)
-		avg[i] = cexp[i] * avg[i] + n * (1.0 - cexp[i]);
+		avg[i] = (cexp[i] * avg[i] + n * FSCALE * (FSCALE - cexp[i]))
+		         >> FSHIFT;
+#ifdef COMPAT_43
+	for (i = 0; i < 3; i++)
+		avenrun[i] = (double) averunnable[i] / FSCALE;
+#endif /* COMPAT_43 */
 }

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rl.c	7.7 (Berkeley) %G%
+ *	@(#)rl.c	7.8 (Berkeley) %G%
  */
 
 #include "rl.h"
@@ -166,7 +166,7 @@ rlattach(ui)
 	}
 	/* Initialize iostat values */
 	if (ui->ui_dk >= 0)
-		dk_mspw[ui->ui_dk] = .000003906;   /* 16bit transfer time? */
+		dk_wpms[ui->ui_dk] = 256016;   /* 16bit transfer time? */
 	rlip[ui->ui_ctlr][ui->ui_slave] = ui;
 	rl_softc[ui->ui_ctlr].rl_ndrive++;
 	rladdr = (struct rldevice *)ui->ui_addr;

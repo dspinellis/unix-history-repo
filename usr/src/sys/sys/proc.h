@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.5 (Berkeley) %G%
+ *	@(#)proc.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -71,7 +71,7 @@ struct	proc {
 	struct	pte *p_p0br;	/* page table base P0BR */
 	struct	proc *p_xlink;	/* linked list of procs sharing same text */
 	short	p_cpticks;	/* ticks of cpu time */
-	float	p_pctcpu;	/* %cpu for this process during p_time */
+	fixpt_t	p_pctcpu;	/* %cpu for this process during p_time */
 	short	p_ndx;		/* proc index for memall (because of vfork) */
 	short	p_idhash;	/* hashed based on p_pid for kill+exit+... */
 	struct	proc *p_pptr;	/* pointer to process structure of parent */

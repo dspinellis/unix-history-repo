@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	7.7 (Berkeley) %G%
+ *	@(#)up.c	7.8 (Berkeley) %G%
  */
 
 #include "up.h"
@@ -208,7 +208,7 @@ upattach(ui)
 		upwstart++;
 	}
 	if (ui->ui_dk >= 0)
-		dk_mspw[ui->ui_dk] = .0000020345;
+		dk_wpms[ui->ui_dk] = 491521;
 	upip[ui->ui_ctlr][ui->ui_slave] = ui;
 	up_softc[ui->ui_ctlr].sc_ndrive++;
 	ui->ui_type = upmaptype(ui);

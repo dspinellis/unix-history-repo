@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rk.c	7.6 (Berkeley) %G%
+ *	@(#)rk.c	7.7 (Berkeley) %G%
  */
 
 #include "rk.h"
@@ -164,7 +164,7 @@ rkattach(ui)
 		rkwstart++;
 	}
 	if (ui->ui_dk >= 0)
-		dk_mspw[ui->ui_dk] = 1.0 / (60 * NRKSECT * 256);
+		dk_wpms[ui->ui_dk] = (60 * NRKSECT * 256);
 	rkip[ui->ui_ctlr][ui->ui_slave] = ui;
 	rk_softc[ui->ui_ctlr].sc_ndrive++;
 	rkcyl[ui->ui_unit] = -1;
