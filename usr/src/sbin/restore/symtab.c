@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	3.16	(Berkeley)	85/01/18";
+static char sccsid[] = "@(#)symtab.c	3.17	(Berkeley)	85/03/24";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -386,6 +386,7 @@ struct symtableheader {
 	time_t	dumptime;
 	time_t	dumpdate;
 	ino_t	maxino;
+	long	ntrec;
 };
 
 /*
@@ -463,6 +464,7 @@ dumpsymtable(filename, checkpt)
 	hdr.stringsize = stroff;
 	hdr.dumptime = dumptime;
 	hdr.dumpdate = dumpdate;
+	hdr.ntrec = ntrec;
 	(void) fwrite((char *)&hdr, sizeof(struct symtableheader), 1, fd);
 	if (ferror(fd)) {
 		perror("fwrite");
@@ -536,6 +538,8 @@ initsymtable(filename)
 		curfile.action = SKIP;
 		dumptime = hdr.dumptime;
 		dumpdate = hdr.dumpdate;
+		if (!bflag)
+			newtapebuf(hdr.ntrec);
 		getvol(hdr.volno);
 		break;
 	default:
