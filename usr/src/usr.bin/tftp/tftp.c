@@ -1,4 +1,4 @@
-/*	tftp.c	4.4	82/11/15	*/
+/*	tftp.c	4.5	83/05/11	*/
 
 /*
  * TFTP User Program -- Protocol Machines
@@ -8,12 +8,12 @@
 
 #include <netinet/in.h>
 
+#include <arpa/tftp.h>
+
 #include <signal.h>
 #include <stdio.h>
 #include <errno.h>
 #include <setjmp.h>
-
-#include "tftp.h"
 
 extern	int errno;
 extern	struct sockaddr_in sin;
