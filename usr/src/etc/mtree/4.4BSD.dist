@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.19 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.20 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -790,9 +790,9 @@ smm
 # ./usr/share/doc/smm/02.config
 ..
 
-# ./usr/share/doc/smm/03.kdebug
-03.kdebug
-# ./usr/share/doc/smm/03.kdebug
+# ./usr/share/doc/smm/03.fsck
+03.fsck
+# ./usr/share/doc/smm/03.fsck
 ..
 
 # ./usr/share/doc/smm/04.quotas
@@ -800,94 +800,74 @@ smm
 # ./usr/share/doc/smm/04.quotas
 ..
 
-# ./usr/share/doc/smm/05.fsck
-05.fsck
-# ./usr/share/doc/smm/05.fsck
+# ./usr/share/doc/smm/05.fastfs
+05.fastfs
+# ./usr/share/doc/smm/05.fastfs
 ..
 
-# ./usr/share/doc/smm/06.lpd
-06.lpd
-# ./usr/share/doc/smm/06.lpd
+# ./usr/share/doc/smm/06.nfs
+06.nfs
+# ./usr/share/doc/smm/06.nfs
 ..
 
-# ./usr/share/doc/smm/07.sendmailop
-07.sendmailop
-# ./usr/share/doc/smm/07.sendmailop
+# ./usr/share/doc/smm/07.lpd
+07.lpd
+# ./usr/share/doc/smm/07.lpd
 ..
 
-# ./usr/share/doc/smm/08.timedop
-08.timedop
-# ./usr/share/doc/smm/08.timedop
+# ./usr/share/doc/smm/08.sendmailop
+08.sendmailop
+# ./usr/share/doc/smm/08.sendmailop
 ..
 
-# ./usr/share/doc/smm/09.uucpimpl
-09.uucpimpl
-# ./usr/share/doc/smm/09.uucpimpl
+# ./usr/share/doc/smm/09.sendmail
+09.sendmail
+# ./usr/share/doc/smm/09.sendmail
 ..
 
-# ./usr/share/doc/smm/10.newsop
-10.newsop
-# ./usr/share/doc/smm/10.newsop
+# ./usr/share/doc/smm/10.named
+10.named
+# ./usr/share/doc/smm/10.named
 ..
 
-# ./usr/share/doc/smm/11.named
-11.named
-# ./usr/share/doc/smm/11.named
+# ./usr/share/doc/smm/11.timedop
+11.timedop
+# ./usr/share/doc/smm/11.timedop
 ..
 
-# ./usr/share/doc/smm/12.uchanges
-12.uchanges
-# ./usr/share/doc/smm/12.uchanges
+# ./usr/share/doc/smm/12.timed
+12.timed
+# ./usr/share/doc/smm/12.timed
 ..
 
-# ./usr/share/doc/smm/13.kchanges
-13.kchanges
-# ./usr/share/doc/smm/13.kchanges
+# ./usr/share/doc/smm/13.net
+13.net
+# ./usr/share/doc/smm/13.net
 ..
 
-# ./usr/share/doc/smm/14.fastfs
-14.fastfs
-# ./usr/share/doc/smm/14.fastfs
+# ./usr/share/doc/smm/14.uucpimpl
+14.uucpimpl
+# ./usr/share/doc/smm/14.uucpimpl
 ..
 
-# ./usr/share/doc/smm/15.net
-15.net
-# ./usr/share/doc/smm/15.net
+# ./usr/share/doc/smm/15.uucpnet
+15.uucpnet
+# ./usr/share/doc/smm/15.uucpnet
 ..
 
-# ./usr/share/doc/smm/16.sendmail
-16.sendmail
-# ./usr/share/doc/smm/16.sendmail
+# ./usr/share/doc/smm/16.security
+16.security
+# ./usr/share/doc/smm/16.security
 ..
 
-# ./usr/share/doc/smm/17.security
-17.security
-# ./usr/share/doc/smm/17.security
+# ./usr/share/doc/smm/17.password
+17.password
+# ./usr/share/doc/smm/17.password
 ..
 
-# ./usr/share/doc/smm/18.password
-18.password
-# ./usr/share/doc/smm/18.password
-..
-
-# ./usr/share/doc/smm/19.porttour
-19.porttour
-# ./usr/share/doc/smm/19.porttour
-..
-
-# ./usr/share/doc/smm/20.termdesc
-20.termdesc
-# ./usr/share/doc/smm/20.termdesc
-..
-
-# ./usr/share/doc/smm/21.uucpnet
-21.uucpnet
-# ./usr/share/doc/smm/21.uucpnet
-..
-
-# ./usr/share/doc/smm/22.timed
-22.timed
-# ./usr/share/doc/smm/22.timed
+# ./usr/share/doc/smm/18.termdesc
+18.termdesc
+# ./usr/share/doc/smm/18.termdesc
 ..
 
 # ./usr/share/doc/smm
