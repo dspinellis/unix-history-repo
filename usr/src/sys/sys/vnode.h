@@ -4,10 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.32 (Berkeley) %G%
+ *	@(#)vnode.h	7.33 (Berkeley) %G%
  */
 
+#ifndef KERNEL
 #include <machine/endian.h>
+#endif
 
 /*
  * The vnode is the focus of all file activity in UNIX.
@@ -54,7 +56,7 @@ struct vnode {
 	union {
 		struct mount	*vu_mountedhere;/* ptr to mounted vfs (VDIR) */
 		struct socket	*vu_socket;	/* unix ipc (VSOCK) */
-		caddr_t		vu_vmdata;	/* private data for vm */
+		caddr_t		vu_vmdata;	/* private data for vm (VREG) */
 		struct specinfo	*vu_specinfo;	/* device (VCHR, VBLK) */
 		struct fifoinfo	*vu_fifoinfo;	/* fifo (VFIFO) */
 	} v_un;
@@ -77,94 +79,6 @@ struct vnode {
 #define	VXWANT		0x0200	/* process is waiting for vnode */
 #define	VBWAIT		0x0400	/* waiting for output to complete */
 #define	VALIASED	0x0800	/* vnode has an alias */
-
-/*
- * Operations on vnodes.
- */
-struct vnodeops {
-	int	(*vn_lookup)(		/* ndp */ );
-	int	(*vn_create)(		/* ndp, fflags, vap, cred */ );
-	int	(*vn_mknod)(		/* ndp, vap, cred */ );
-	int	(*vn_open)(		/* vp, fflags, cred */ );
-	int	(*vn_close)(		/* vp, fflags, cred */ );
-	int	(*vn_access)(		/* vp, fflags, cred */ );
-	int	(*vn_getattr)(		/* vp, vap, cred */ );
-	int	(*vn_setattr)(		/* vp, vap, cred */ );
-
-	int	(*vn_read)(		/* vp, uiop, offp, ioflag, cred */ );
-	int	(*vn_write)(		/* vp, uiop, offp, ioflag, cred */ );
-	int	(*vn_ioctl)(		/* vp, com, data, fflag, cred */ );
-	int	(*vn_select)(		/* vp, which, cred */ );
-	int	(*vn_mmap)(		/* vp, ..., cred */ );
-	int	(*vn_fsync)(		/* vp, fflags, cred */ );
-	int	(*vn_seek)(		/* vp, (old)offp, off, whence */ );
-
-	int	(*vn_remove)(		/* ndp */ );
-	int	(*vn_link)(		/* vp, ndp */ );
-	int	(*vn_rename)(		/* ndp, ndp */ );
-	int	(*vn_mkdir)(		/* ndp, vap */ );
-	int	(*vn_rmdir)(		/* ndp */ );
-	int	(*vn_symlink)(		/* ndp, vap, nm */ );
-	int	(*vn_readdir)(		/* vp, uiop, cred, eofflagp */ );
-	int	(*vn_readlink)(		/* vp, uiop, cred */ );
-
-	int	(*vn_abortop)(		/* ndp */ );
-	int	(*vn_inactive)(		/* vp */ );
-	int	(*vn_reclaim)(		/* vp */ );
-	int	(*vn_lock)(		/* vp */ );
-	int	(*vn_unlock)(		/* vp */ );
-
-	int	(*vn_bmap)(		/* vp, bn, vpp, bnp */ );
-	int	(*vn_strategy)(		/* bp */ );
-
-	int	(*vn_print)(		/* vp */ );
-	int	(*vn_islocked)(		/* vp */ );
-	int	(*vn_advlock)(		/* vp, proc, op, lck, flg */ );
-};
-
-/* Macros to call the vnode ops */
-#define	VOP_LOOKUP(v,n)		(*((v)->v_op->vn_lookup))((v),(n))
-#define	VOP_CREATE(n,a)		(*((n)->ni_dvp->v_op->vn_create))((n),(a))
-#define	VOP_MKNOD(n,a,c)	(*((n)->ni_dvp->v_op->vn_mknod))((n),(a),(c))
-#define	VOP_OPEN(v,f,c)		(*((v)->v_op->vn_open))((v),(f),(c))
-#define	VOP_CLOSE(v,f,c)	(*((v)->v_op->vn_close))((v),(f),(c))
-#define	VOP_ACCESS(v,f,c)	(*((v)->v_op->vn_access))((v),(f),(c))
-#define	VOP_GETATTR(v,a,c)	(*((v)->v_op->vn_getattr))((v),(a),(c))
-#define	VOP_SETATTR(v,a,c)	(*((v)->v_op->vn_setattr))((v),(a),(c))
-#define	VOP_READ(v,u,i,c)	(*((v)->v_op->vn_read))((v),(u),(i),(c))
-#define	VOP_WRITE(v,u,i,c)	(*((v)->v_op->vn_write))((v),(u),(i),(c))
-#define	VOP_IOCTL(v,o,d,f,c)	(*((v)->v_op->vn_ioctl))((v),(o),(d),(f),(c))
-#define	VOP_SELECT(v,w,f,c)	(*((v)->v_op->vn_select))((v),(w),(f),(c))
-#define	VOP_MMAP(v,c)		(*((v)->v_op->vn_mmap))((v),(c))
-#define	VOP_FSYNC(v,f,c,w)	(*((v)->v_op->vn_fsync))((v),(f),(c),(w))
-#define	VOP_SEEK(v,p,o,w)	(*((v)->v_op->vn_seek))((v),(p),(o),(w))
-#define	VOP_REMOVE(n)		(*((n)->ni_dvp->v_op->vn_remove))(n)
-#define	VOP_LINK(v,n)		(*((n)->ni_dvp->v_op->vn_link))((v),(n))
-#define	VOP_RENAME(s,t)		(*((s)->ni_dvp->v_op->vn_rename))((s),(t))
-#define	VOP_MKDIR(n,a)		(*((n)->ni_dvp->v_op->vn_mkdir))((n),(a))
-#define	VOP_RMDIR(n)		(*((n)->ni_dvp->v_op->vn_rmdir))(n)
-#define	VOP_SYMLINK(n,a,m)	(*((n)->ni_dvp->v_op->vn_symlink))((n),(a),(m))
-#define	VOP_READDIR(v,u,c,e)	(*((v)->v_op->vn_readdir))((v),(u),(c),(e))
-#define	VOP_READLINK(v,u,c)	(*((v)->v_op->vn_readlink))((v),(u),(c))
-#define	VOP_ABORTOP(n)		(*((n)->ni_dvp->v_op->vn_abortop))(n)
-#define	VOP_INACTIVE(v)		(*((v)->v_op->vn_inactive))(v)
-#define	VOP_RECLAIM(v)		(*((v)->v_op->vn_reclaim))(v)
-#define	VOP_LOCK(v)		(*((v)->v_op->vn_lock))(v)
-#define	VOP_UNLOCK(v)		(*((v)->v_op->vn_unlock))(v)
-#define	VOP_BMAP(v,s,p,n)	(*((v)->v_op->vn_bmap))((v),(s),(p),(n))
-#define	VOP_STRATEGY(b)		(*((b)->b_vp->v_op->vn_strategy))(b)
-#define	VOP_PRINT(v)		(*((v)->v_op->vn_print))(v)
-#define	VOP_ISLOCKED(v)		(*((v)->v_op->vn_islocked))(v)
-#define	VOP_ADVLOCK(v,p,o,l,f)	(*((v)->v_op->vn_advlock))((v),(p),(o),(l),(f))
-
-/*
- * flags for ioflag
- */
-#define IO_UNIT		0x01		/* do I/O as atomic unit */
-#define IO_APPEND	0x02		/* append write to end */
-#define IO_SYNC		0x04		/* do I/O synchronously */
-#define	IO_NODELOCKED	0x08		/* underlying node already locked */
-#define	IO_NDELAY	0x10		/* FNDELAY flag set in file table */
 
 /*
  * Vnode attributes.  A field value of VNOVAL
@@ -202,6 +116,196 @@ struct vattr {
 #endif
 
 /*
+ * Operations on vnodes.
+ */
+struct file;
+struct flock;
+struct nameidata;
+struct vnodeops {
+	int	(*vn_lookup)__P((
+			struct vnode *vp,
+			struct nameidata *ndp,
+			struct proc *p));
+	int	(*vn_create)__P((
+			struct nameidata *ndp,
+			struct vattr *vap,
+			struct proc *p));
+	int	(*vn_mknod)__P((
+			struct nameidata *ndp,
+			struct vattr *vap,
+			struct ucred *cred,
+			struct proc *p));
+	int	(*vn_open)__P((
+			struct vnode *vp,
+			int mode,
+			struct ucred *cred,
+			struct proc *p));
+	int	(*vn_close)__P((
+			struct vnode *vp,
+			int fflag,
+			struct ucred *cred,
+			struct proc *p));
+	int	(*vn_access)__P((
+			struct vnode *vp,
+			int mode,
+			struct ucred *cred,
+			struct proc *p));
+	int	(*vn_getattr)__P((
+			struct vnode *vp,
+			struct vattr *vap,
+			struct ucred *cred,
+			struct proc *p));
+	int	(*vn_setattr)__P((
+			struct vnode *vp,
+			struct vattr *vap,
+			struct ucred *cred,
+			struct proc *p));
+	int	(*vn_read)__P((
+			struct vnode *vp,
+			struct uio *uio,
+			int ioflag,
+			struct ucred *cred));
+	int	(*vn_write)__P((
+			struct vnode *vp,
+			struct uio *uio,
+			int ioflag,
+			struct ucred *cred));
+	int	(*vn_ioctl)__P((
+			struct vnode *vp,
+			int command,
+			caddr_t data,
+			int fflag,
+			struct ucred *cred,
+			struct proc *p));
+	int	(*vn_select)__P((
+			struct vnode *vp,
+			int which,
+			int fflags,
+			struct ucred *cred,
+			struct proc *p));
+	int	(*vn_mmap)__P((
+			struct vnode *vp,
+			int fflags,
+			struct ucred *cred,
+			struct proc *p));
+	int	(*vn_fsync)__P((
+			struct vnode *vp,
+			int fflags,
+			struct ucred *cred,
+			int waitfor,
+			struct proc *p));
+	int	(*vn_seek)__P((
+			struct vnode *vp,
+			off_t oldoff,
+			off_t newoff,
+			struct ucred *cred));
+	int	(*vn_remove)__P((
+			struct nameidata *ndp,
+			struct proc *p));
+	int	(*vn_link)__P((
+			struct vnode *vp,
+			struct nameidata *ndp,
+			struct proc *p));
+	int	(*vn_rename)__P((
+			struct nameidata *fndp,
+			struct nameidata *tdnp,
+			struct proc *p));
+	int	(*vn_mkdir)__P((
+			struct nameidata *ndp,
+			struct vattr *vap,
+			struct proc *p));
+	int	(*vn_rmdir)__P((
+			struct nameidata *ndp,
+			struct proc *p));
+	int	(*vn_symlink)__P((
+			struct nameidata *ndp,
+			struct vattr *vap,
+			char *target,
+			struct proc *p));
+	int	(*vn_readdir)__P((
+			struct vnode *vp,
+			struct uio *uio,
+			struct ucred *cred,
+			int *eofflagp));
+	int	(*vn_readlink)__P((
+			struct vnode *vp,
+			struct uio *uio,
+			struct ucred *cred));
+	int	(*vn_abortop)__P((
+			struct nameidata *ndp));
+	int	(*vn_inactive)__P((
+			struct vnode *vp,
+			struct proc *p));
+	int	(*vn_reclaim)__P((
+			struct vnode *vp));
+	int	(*vn_lock)__P((
+			struct vnode *vp));
+	int	(*vn_unlock)__P((
+			struct vnode *vp));
+	int	(*vn_bmap)__P((
+			struct vnode *vp,
+			daddr_t bn,
+			struct vnode **vpp,
+			daddr_t *bnp));
+	int	(*vn_strategy)__P((
+			struct buf *bp));
+	int	(*vn_print)__P((
+			struct vnode *vp));
+	int	(*vn_islocked)__P((
+			struct vnode *vp));
+	int	(*vn_advlock)__P((
+			struct vnode *vp,
+			caddr_t id,
+			int op,
+			struct flock *fl,
+			int flags));
+};
+
+/* Macros to call the vnode ops */
+#define	VOP_LOOKUP(v,n,p)	(*((v)->v_op->vn_lookup))(v,n,p)
+#define	VOP_CREATE(n,a,p)	(*((n)->ni_dvp->v_op->vn_create))(n,a,p)
+#define	VOP_MKNOD(n,a,c,p)	(*((n)->ni_dvp->v_op->vn_mknod))(n,a,c,p)
+#define	VOP_OPEN(v,f,c,p)	(*((v)->v_op->vn_open))(v,f,c,p)
+#define	VOP_CLOSE(v,f,c,p)	(*((v)->v_op->vn_close))(v,f,c,p)
+#define	VOP_ACCESS(v,f,c,p)	(*((v)->v_op->vn_access))(v,f,c,p)
+#define	VOP_GETATTR(v,a,c,p)	(*((v)->v_op->vn_getattr))(v,a,c,p)
+#define	VOP_SETATTR(v,a,c,p)	(*((v)->v_op->vn_setattr))(v,a,c,p)
+#define	VOP_READ(v,u,i,c)	(*((v)->v_op->vn_read))(v,u,i,c)
+#define	VOP_WRITE(v,u,i,c)	(*((v)->v_op->vn_write))(v,u,i,c)
+#define	VOP_IOCTL(v,o,d,f,c,p)	(*((v)->v_op->vn_ioctl))(v,o,d,f,c,p)
+#define	VOP_SELECT(v,w,f,c,p)	(*((v)->v_op->vn_select))(v,w,f,c,p)
+#define	VOP_MMAP(v,c,p)		(*((v)->v_op->vn_mmap))(v,c,p)
+#define	VOP_FSYNC(v,f,c,w,p)	(*((v)->v_op->vn_fsync))(v,f,c,w,p)
+#define	VOP_SEEK(v,p,o,w)	(*((v)->v_op->vn_seek))(v,p,o,w)
+#define	VOP_REMOVE(n,p)		(*((n)->ni_dvp->v_op->vn_remove))(n,p)
+#define	VOP_LINK(v,n,p)		(*((n)->ni_dvp->v_op->vn_link))(v,n,p)
+#define	VOP_RENAME(s,t,p)	(*((s)->ni_dvp->v_op->vn_rename))(s,t,p)
+#define	VOP_MKDIR(n,a,p)	(*((n)->ni_dvp->v_op->vn_mkdir))(n,a,p)
+#define	VOP_RMDIR(n,p)		(*((n)->ni_dvp->v_op->vn_rmdir))(n,p)
+#define	VOP_SYMLINK(n,a,m,p)	(*((n)->ni_dvp->v_op->vn_symlink))(n,a,m,p)
+#define	VOP_READDIR(v,u,c,e)	(*((v)->v_op->vn_readdir))(v,u,c,e)
+#define	VOP_READLINK(v,u,c)	(*((v)->v_op->vn_readlink))(v,u,c)
+#define	VOP_ABORTOP(n)		(*((n)->ni_dvp->v_op->vn_abortop))(n)
+#define	VOP_INACTIVE(v,p)	(*((v)->v_op->vn_inactive))(v,p)
+#define	VOP_RECLAIM(v)		(*((v)->v_op->vn_reclaim))(v)
+#define	VOP_LOCK(v)		(*((v)->v_op->vn_lock))(v)
+#define	VOP_UNLOCK(v)		(*((v)->v_op->vn_unlock))(v)
+#define	VOP_BMAP(v,s,p,n)	(*((v)->v_op->vn_bmap))(v,s,p,n)
+#define	VOP_STRATEGY(b)		(*((b)->b_vp->v_op->vn_strategy))(b)
+#define	VOP_PRINT(v)		(*((v)->v_op->vn_print))(v)
+#define	VOP_ISLOCKED(v)		(*((v)->v_op->vn_islocked))(v)
+#define	VOP_ADVLOCK(v,p,o,l,f)	(*((v)->v_op->vn_advlock))(v,p,o,l,f)
+
+/*
+ * flags for ioflag
+ */
+#define IO_UNIT		0x01		/* do I/O as atomic unit */
+#define IO_APPEND	0x02		/* append write to end */
+#define IO_SYNC		0x04		/* do I/O synchronously */
+#define	IO_NODELOCKED	0x08		/* underlying node already locked */
+#define	IO_NDELAY	0x10		/* FNDELAY flag set in file table */
+
+/*
  *  Modes. Some values same as Ixxx entries from inode.h for now
  */
 #define	VSUID	04000		/* set user id on execution */
@@ -220,20 +324,63 @@ struct vattr {
 /*
  * public vnode manipulation functions
  */
-extern int vn_open();			/* open vnode */
-extern int vn_rdwr();			/* read or write vnode */
-extern int vn_close();			/* close vnode */
-extern void vattr_null();		/* set attributes to null */
-extern int getnewvnode();		/* allocate a new vnode */
-extern int bdevvp();			/* allocate a new special dev vnode */
-extern struct vnode *checkalias();	/* check for special device aliases */
-extern int vcount();			/* total references to a device */
-extern int vget();			/* get first reference to a vnode */
-extern void vref();			/* increase reference to a vnode */
-extern void vput();			/* unlock and release vnode */
-extern void vrele();			/* release vnode */
-extern void vgone();			/* completely recycle vnode */
-extern void vgoneall();			/* recycle vnode and all its aliases */
+int 	vn_open __P((			/* open vnode */
+		struct nameidata *ndp,
+		struct proc *p,
+		int fmode,
+		int cmode));
+int 	vn_rdwr __P((			/* read or write vnode */
+		enum uio_rw rw,
+		struct vnode *vp,
+		caddr_t base,
+		int len,
+		off_t offset,
+		enum uio_seg segflg,
+		int ioflg,
+		struct ucred *cred,
+		int *aresid,
+		struct proc *p));
+int	vn_read __P((			/* read a vnode into a uio structure */
+		struct file *fp,
+		struct uio *uio,
+		struct ucred *cred));
+int	vn_write __P((			/* write a vnode from a uio structure */
+		struct file *fp,
+		struct uio *uio,
+		struct ucred *cred));
+int	vn_ioctl __P((			/* do an ioctl operation on a vnode */
+		struct file *fp,
+		int com,
+		caddr_t data,
+		struct proc *p));
+int	vn_select __P((			/* do a select operation on a vnode */
+		struct file *fp,
+		int which,
+		struct proc *p));
+int 	vn_close __P((			/* close vnode */
+		struct file *fp,
+		struct proc *p));
+int 	getnewvnode __P((		/* allocate a new vnode */
+		enum vtagtype tag,
+		struct mount *mp,
+		struct vnodeops *vops,
+		struct vnode **vpp));
+int 	bdevvp __P((			/* allocate a new special dev vnode */
+		int dev,		/* XXX should be type dev_t, not int */
+		struct vnode **vpp));
+struct 	vnode *checkalias __P((		/* check for special device aliases */
+		struct vnode *vp,
+		int nvp_rdev,		/* XXX should be type dev_t, not int */
+		struct mount *mp));
+void 	vattr_null __P((		/* set attributes to null */
+		struct vattr *vap));
+int 	vcount __P((struct vnode *vp));	/* total references to a device */
+int 	vget __P((struct vnode *vp));	/* get first reference to a vnode */
+void 	vref __P((struct vnode *vp));	/* increase reference to a vnode */
+void 	vput __P((struct vnode *vp));	/* unlock and release vnode */
+void 	vrele __P((struct vnode *vp));	/* release vnode */
+void 	vgone __P((struct vnode *vp));	/* completely recycle vnode */
+void 	vgoneall __P((struct vnode *vp));/* recycle vnode and all its aliases */
 
 /*
  * Flags to various vnode functions.
