@@ -13,7 +13,7 @@
 %left STAR PLUS QUEST
 
 %{
-static char *sccsid = "@(#)old.egrep.y	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)old.egrep.y	4.3 (Berkeley) %G%";
 #include <stdio.h>
 
 #define MAXLIN 350
@@ -51,6 +51,7 @@ int	nflag;
 int	hflag	= 1;
 int	sflag;
 int	vflag;
+int	retcode = 0;
 int	nfile;
 int	blkno;
 long	tln;
@@ -491,7 +492,7 @@ out:
 		execute(*argv);
 		argv++;
 	}
-	exit(nsucc == 0);
+	exit(retcode != 0 ? retcode : nsucc == 0);
 }
 
 execute(file)
@@ -506,7 +507,8 @@ char *file;
 	if (file) {
 		if ((f = open(file, 0)) < 0) {
 			fprintf(stderr, "egrep: can't open %s\n", file);
-			exit(2);
+			retcode = 2;
+			return;
 		}
 	}
 	else f = 0;
