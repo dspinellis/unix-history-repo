@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)uuxqt.8	6.2 (Berkeley) %G%
+.\"	@(#)uuxqt.8	6.3 (Berkeley) %G%
 .\"
 .TH UUXQT 8 ""
 .UC 6
@@ -35,17 +35,17 @@ for debugging, it may also be run manually by the \s-1UUCP\s+1 administrator.
 .PP
 .I Uuxqt
 runs in its own subdirectory,
-.IR /usr/spool/uucp/XTMP .
+.IR /var/spool/uucp/XTMP .
 It copies intermediate files to this directory when necessary.
 .SH FILES
-.ta \w'/usr/spool/uucp/LCK/LCK.XQT   'u
+.ta \w'/var/spool/uucp/LCK/LCK.XQT   'u
 .nf
 /usr/lib/uucp/L.cmds	Remote command permissions list
 /usr/lib/uucp/USERFILE	Remote directory tree permissions list
-/usr/spool/uucp/LOGFILE	UUCP system activity log
-/usr/spool/uucp/LCK/LCK.XQT	\fIUuxqt\fP lock file
-/usr/spool/uucp/X./	Incoming execution file directory
-/usr/spool/uucp/XTMP	\fIUuxqt\fP running directory
+/var/spool/uucp/LOGFILE	UUCP system activity log
+/var/spool/uucp/LCK/LCK.XQT	\fIUuxqt\fP lock file
+/var/spool/uucp/X./	Incoming execution file directory
+/var/spool/uucp/XTMP	\fIUuxqt\fP running directory
 .fi
 .SH SEE ALSO
 uucp(1), uux(1), L.cmds(5), USERFILE(5), uucico(8)
