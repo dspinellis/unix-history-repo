@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strcasecmp.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)strcasecmp.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -59,7 +59,7 @@ strcasecmp(s1, s2)
 	return(cm[*s1] - cm[*--s2]);
 }
 
-strcasencmp(s1, s2, n)
+strncasecmp(s1, s2, n)
 	register char *s1, *s2;
 	register int n;
 {
