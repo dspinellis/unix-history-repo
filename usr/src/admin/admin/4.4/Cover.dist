@@ -1,4 +1,4 @@
-.\"	@(#)Cover.dist	1.4 (Berkeley) %G%
+.\"	@(#)Cover.dist	1.5 (Berkeley) %G%
 .\"
 .\" use -ms
 .\"
@@ -8,17 +8,14 @@
 .LP
 Dear Colleague:
 .sp
-.PP
+.LP
 Thank-you for ordering 4.4BSD!
 .PP
 The 4.4BSD distribution contains the ``User Reference Manual'' (URM),
+the ``User Supplementary Documents'' (USD),
 the ``Programmer Reference Manual'' (PRM),
+the ``Programmer Supplementary Documents'' (PSD),
 and the ``System Manager's Manual'' (SMM).
-We have not reproduced the ``User Supplementary Documents'' (USD)
-and the ``Programmer Supplementary Documents'' (PSD).
-However, source for these manuals is contained on the
-distribution tape in \f(CW/usr/src/share/doc/usd\fP
-and \f(CW/usr/src/share/doc/psd\fP respectively.
 The distribution includes complete sources for the
 Sun Microsystems SPARCstation, DEC 3100/5000, HP 9000/300, Omron Luna,
 Sony NEWS, and 386/486-based PC architectures
