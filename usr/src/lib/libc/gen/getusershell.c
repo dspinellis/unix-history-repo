@@ -22,8 +22,8 @@ static char sccsid[] = "@(#)getusershell.c	5.4 (Berkeley) %G%";
 static char *okshells[] =
     { "/bin/sh", "/bin/csh", 0 };
 
-static int inprogress;
 static char **shells, *strings;
+static char **curshell = NULL;
 extern char **initshells();
 
 /*
@@ -33,13 +33,12 @@ char *
 getusershell()
 {
 	char *ret;
-	static char **shells;
 
-	if (!inprogress)
-		shells = initshells();
-	ret = *shells;
-	if (*shells != NULL)
-		shells++;
+	if (curshell == NULL)
+		curshell = initshells();
+	ret = *curshell;
+	if (ret != NULL)
+		curshell++;
 	return (ret);
 }
 
@@ -52,13 +51,13 @@ endusershell()
 	if (strings != NULL)
 		free(strings);
 	strings = NULL;
-	inprogress = 0;
+	curshell = NULL;
 }
 
 setusershell()
 {
 
-	shells = initshells();
+	curshell = initshells();
 }
 
 static char **
@@ -69,7 +68,6 @@ initshells()
 	struct stat statb;
 	extern char *malloc(), *calloc();
 
-	inprogress = 1;
 	if (shells != NULL)
 		free((char *)shells);
 	shells = NULL;
@@ -96,11 +94,9 @@ initshells()
 	sp = shells;
 	cp = strings;
 	while (fgets(cp, MAXPATHLEN + 1, fp) != NULL) {
-		if (*cp == '#')
-			continue;
-		while (*cp != '/' && *cp != '\0')
+		while (*cp != '#' && *cp != '/' && *cp != '\0')
 			cp++;
-		if (*cp == '\0')
+		if (*cp == '#' || *cp == '\0')
 			continue;
 		*sp++ = cp;
 		while (!isspace(*cp) && *cp != '#' && *cp != '\0')
