@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vdreg.h	7.2 (Berkeley) %G%
+ *	@(#)vdreg.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -79,6 +79,9 @@ struct vddevice {
 #define	STA_DF	0x8		/* drive fault */
 #define	STA_WP	0x10		/* write protected */
 #define	STA_US	0x20		/* unit selected */
+#define	STA_TYPE	0x300	/* drive type: */
+#define	STA_SMD		0x000		/* SMD */
+#define	STA_ESDI	0x100		/* ESDI */
 
 /*
  * Interupt Control Field definitions.
@@ -103,11 +106,12 @@ struct vddevice {
 #define	CCF_STS	0x1		/* sectors per track selectable */
 #define	CCF_EAV	0x2		/* enable auto vector */
 #define	CCF_ERR	0x4		/* enable reset register */
-#define CCF_DER 0x8		/* disable error recovery */
+#define CCF_RFE 0x8		/* recovery flag enable */
 #define	CCF_XMD	0x60		/* xmd transfer mode (bus size) */
 #define	  XMD_8BIT  0x20	/*   do only 8 bit transfers */
 #define	  XMD_16BIT 0x40	/*   do only 16 bit transfers */
 #define	  XMD_32BIT 0x60	/*   do only 32 bit transfers */
+#define	CCF_DIU	0x80		/* disable initial update of DCB @cmd start */
 #define	CCF_BSZ	0x300		/* burst size */
 #define	  BSZ_16WRD 0x000	/*   16 word transfer burst */
 #define	  BSZ_12WRD 0x100	/*   12 word transfer burst */
@@ -252,7 +256,7 @@ struct treset {
 /* ident trailer */
 struct trid {
 	long	name;
-	long	id;
+	long	rev;
 	long	date;
 };
 
@@ -268,7 +272,7 @@ struct dcb {
 	char	devselect;	/* drive selection */
 	char	trailcnt;	/* trailer Word Count */
 	long	err_memadr;	/* error memory address */
-	char	err_code;	/* error codes for SMD/E */
+	u_char	err_code;	/* error codes for SMD/E */
 	char	fill2;		/* not used */
 	short	err_wcount;	/* error word count */
 	char	err_trk;	/* error track/sector */
@@ -296,7 +300,7 @@ struct skdcb {
 	char	devselect;	/* drive selection */
 	char	trailcnt;	/* trailer Word Count */
 	long	err_memadr;	/* error memory address */
-	char	err_code;	/* error codes for SMD/E */
+	u_char	err_code;	/* error codes for SMD/E */
 	char	fill2;		/* not used */
 	short	err_wcount;	/* error word count */
 	char	err_trk;	/* error track/sector */
