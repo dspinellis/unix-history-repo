@@ -9,13 +9,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)abs.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)abs.s	5.2 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 #include "DEFS.h"
 
 ENTRY(abs)
-	movl	4(sp),%eax
+	movl	4(%esp),%eax
 	cmpl	$0,%eax
 	jge	1f
 	negl	%eax
