@@ -28,7 +28,7 @@ VPATH=	../rlogin/kcmd:../rlogin/des
 all: rsh
 
 rsh: ${LIBC} ${OBJS}
-	${CC} -o $@ ${CFLAGS} $@.c ${OBJS} -lkrb -ldes
+	${CC} -o $@ ${CFLAGS} ${OBJS} -lkrb -ldes
 
 clean:
 	rm -f core rsh ${OBJS}
