@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)environ.7	6.1 (Berkeley) %G%
+.\"	@(#)environ.7	6.2 (Berkeley) %G%
 .\"
 .TH ENVIRON 7 ""
 .UC 5
@@ -82,11 +82,5 @@ It is unwise to conflict with certain
 variables that are frequently exported by `.profile' files:
 MAIL, PS1, PS2, IFS.
 .SH SEE ALSO
-csh(1),
-ex(1),
-login(1),
-sh(1),
-execve(2),
-system(3),
-termcap(3X),
-termcap(5)
+csh(1), ex(1), login(1), sh(1), execve(2), execle(3),
+system(3), termcap(3), termcap(5)
