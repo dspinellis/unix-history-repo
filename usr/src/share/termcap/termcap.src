@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.53 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.54 (Berkeley) %G%
 #	John Kunze, Berkeley
 #	Craig Leres, Berkeley
 #
@@ -1771,7 +1771,7 @@ dp|vt100-np|vt100 with no padding (for psl games):\
 	:cl=\E[H\E[2J:sr=\EM:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
 	:md=\E[1m:mr=\E[7m:mb=\E[5m:me=\E[m:tc=vt100:
-d0|vt100|vt100-am|vt100am|dec vt100:\
+d0|vt100|vt100-am|vt100am|dec-vt100|dec vt100:\
 	:do=^J:co#80:li#24:cl=50\E[;H\E[2J:sf=2*\ED:\
 	:le=^H:bs:am:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:\
 	:ce=3\E[K:cd=50\E[J:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:\
