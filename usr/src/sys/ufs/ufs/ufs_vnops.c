@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.117 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.112.1.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1666,7 +1666,9 @@ ufs_islocked(ap)
  * Calculate the logical to physical mapping if not done already,
  * then call the device strategy routine.
  */
-int checkblk = 0;
+#include <sys/sysctl.h>
+int checkblk = 1;
+struct ctldebug debug10 = { "checkblk", &checkblk };
 int
 ufs_strategy(ap)
 	struct vop_strategy_args /* {
@@ -1698,9 +1700,11 @@ ufs_strategy(ap)
 		/* If this is a clustered block, check sub-blocks as well */
 		if (bp->b_saveaddr) {
 			struct buf *tbp;
-			struct cluster_save *b_save = bp->b_saveaddr;
+			struct cluster_save *b_save;
 			int i;
 			daddr_t bn;
+
+			b_save = (struct cluster_save *)bp->b_saveaddr;
 			for (i = 0; i < b_save->bs_nchildren; i++) {
 				tbp = b_save->bs_children[i];
 				if ((tbp->b_flags & B_XXX) == 0 &&
