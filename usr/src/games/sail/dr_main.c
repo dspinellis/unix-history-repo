@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dr_main.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)dr_main.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "driver.h"
@@ -22,7 +22,7 @@ dr_main()
 	(void) signal(SIGQUIT, SIG_IGN);
 	(void) signal(SIGTSTP, SIG_IGN);
 	if (issetuid)
-		(void) setruid(geteuid());
+		(void) setuid(geteuid());
 	if (game < 0 || game >= NSCENE) {
 		fprintf(stderr, "DRIVER: Bad game number %d\n", game);
 		exit(1);
