@@ -1,0 +1,101 @@
+.pa 1
+.he '6/15/72''LOGIN, LOGOUT (VII)'
+.ti 0
+NAME		logging in and logging out
+.sp
+.ti 0
+SYNOPSIS	--
+.sp
+.ti 0
+DESCRIPTION	UNIX
+must be called from an appropriate terminal.
+UNIX supports ASCII terminals typified by the Teletype M37,
+the GE Terminet 300, the Memorex 1240, and various
+graphical terminals on the one hand, and IBM 2741-type
+terminals on the other.
+
+Not all installations support
+all these terminals.
+Often the M33/35 Teletype is supported instead
+of the 2741.
+Depending on the hardware installed, most
+terminals operating at 110, 134.5, 150, or 300 baud can
+be accommodated.
+
+To use UNIX,
+it is also necessary to have
+a valid UNIX user ID and (if desired) password.  These
+may be obtained, together with the telephone number, from the system administrators.
+
+The same telephone number
+serves terminals operating at all the standard speeds.
+The discussion below applies when the standard
+speeds of 134.5 (2741's)
+150 (TTY 37's) and 300 (Terminet 300's)
+are available.
+
+When a connection is established via a 150-baud terminal
+(e.g. TTY 37) UNIX types out "login:"; you respond with
+your user name, and, if requested, with a password.
+(The printer is turned off while you type the
+password.)
+If the login was successful, the "@" character
+is typed by the Shell to indicate
+login is complete and commands may be issued.
+A message of the day may be typed if there are any announcements.
+Also, if there is a file called "mailbox", you are notified
+that someone has sent you mail.
+(See the mail____ command.)
+
+From a 300-baud terminal, the procedure is slightly different.
+Such terminals often have a full-duplex switch, which should
+be turned on (or conversely, half-duplex should be turned off).
+When a connection with UNIX is established, a few garbage
+characters are typed (these are the "login:" message at the wrong speed).
+You should depress the "break" key;
+this is a speed-independent signal to UNIX that a 300-baud
+terminal is in use.  It will type "login:" (at the correct speed
+this time) and from then on the procedure is the same as described
+above.
+
+From a 2741, no message will appear.
+After the telephone connection is established,
+press the "ATTN" button.
+UNIX should type "login:" as described above.
+If the greeting does not appear after a few seconds,
+hang up and try again; something has gone wrong.
+If a password is required,
+the printer cannot be turned off, so it will appear on the paper
+when you type it.
+
+For more information, consult
+getty(VII), which discusses the login sequence in more
+detail, and tty0(IV), which discusses typewriter I/O.
+
+Logging out is simple by comparison (in fact, sometimes too simple).
+Simply generate an end-of-file at Shell level by using
+the EOT character; the "login:" message will appear again to
+indicate that you may log in again.
+
+It is also possible to log out simply by hanging up the terminal;
+this simulates an end-of-file on the typewriter.
+.sp
+.ti 0
+FILES		/etc/motd
+may contain a message-of-the-day.
+.sp
+.ti 0
+SEE ALSO	init(VII), getty(VII), tty0(IV)
+.sp
+.ti 0
+DIAGNOSTICS	--
+.sp
+.ti 0
+BUGS		Hanging up
+on programs which never read
+the typewriter or which ignore end-of-files
+is very dangerous; in the worst cases,
+the programs can only be halted by restarting the system.
+.sp
+.ti 0
+OWNER		ken, dmr
