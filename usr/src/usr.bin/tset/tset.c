@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tset.c	1.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)tset.c	1.10 (Berkeley) %G%";
 #endif
 
 /*
@@ -1423,7 +1423,7 @@ setdelay(cap, dtab, bits, flags)
 char		*cap;
 struct delay	dtab[];
 int		bits;
-int		*flags;
+short		*flags;
 {
 	register int	i;
 	register struct delay	*p;
