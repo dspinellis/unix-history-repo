@@ -14,12 +14,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sysctl.c	7.4 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "user.h"
 #include "proc.h"
+#include "text.h"
 #include "kinfo.h"
 #include "vm.h"
 #include "ioctl.h"
@@ -31,7 +32,7 @@
 extern int kinfo_doproc(), kinfo_rtable();
 struct kinfo_lock kinfo_lock;
 
-getkinfo()
+getkerninfo()
 {
 	register struct a {
 		int	op;
@@ -39,19 +40,14 @@ getkinfo()
 		int	*size;
 		int	arg;
 	} *uap = (struct a *)u.u_ap;
-	int wanted, (*server)(), error = 0;
+
 	int	bufsize,	/* max size of users buffer */
 		copysize, 	/* size copied */
-		needed,	
-		locked;
+		needed,	locked, (*server)(), error = 0;
 
-	while (kinfo_lock.kl_lock) {
-		kinfo_lock.kl_want++;
-		sleep(&kinfo_lock, PRIBIO+1);
-		kinfo_lock.kl_want--;
-		kinfo_lock.kl_locked++;
-	}
-	kinfo_lock.kl_lock++;
+	if (error = copyin((caddr_t)uap->size,
+				(caddr_t)&bufsize, sizeof (bufsize)))
+		goto bad;
 
 	switch (ki_type(uap->op)) {
 
@@ -64,15 +60,21 @@ getkinfo()
 		break;
 
 	default:
-		snderr(EINVAL);
+		error = EINVAL;
+		goto bad;
 	}
+	while (kinfo_lock.kl_lock) {
+		kinfo_lock.kl_want++;
+		sleep(&kinfo_lock, PRIBIO+1);
+		kinfo_lock.kl_want--;
+		kinfo_lock.kl_locked++;
+	}
+	kinfo_lock.kl_lock++;
+
 	if (error = (*server)(uap->op, NULL, NULL, uap->arg, &needed))
 		goto release;
 	if (uap->where == NULL || uap->size == NULL)
 		goto release;  /* only want estimate of bufsize */
-	if (error = copyin((caddr_t)uap->size,
-				(caddr_t)&bufsize, sizeof (bufsize)))
-		goto release;
 	locked = copysize = MIN(needed, bufsize);
 	if (!useracc(uap->where, copysize, B_WRITE))
 		snderr(EFAULT);
@@ -93,6 +95,7 @@ release:
 	kinfo_lock.kl_lock--;
 	if (kinfo_lock.kl_want)
 		wakeup(&kinfo_lock);
+bad:
 	if (error)
 		u.u_error = error;
 	else
@@ -107,7 +110,7 @@ release:
 int kinfo_proc_userfailed;
 int kinfo_proc_wefailed;
 
-kinfo_doprocs(op, where, acopysize, arg, aneeded)
+kinfo_doproc(op, where, acopysize, arg, aneeded)
 	char *where;
 	int *acopysize, *aneeded;
 {
@@ -163,22 +166,35 @@ again:
 			break;
 		}
 		if (where != NULL && buflen >= sizeof (struct kinfo_proc)) {
+			register struct text *txt;
+
 			if (error = copyout((caddr_t)p, dp, 
 			    sizeof (struct proc)))
 				return (error);
 			dp += sizeof (struct proc);
-			eproc.kp_paddr = p;
-			eproc.kp_sess = p->p_pgrp->pg_session;
-			eproc.kp_pgid = p->p_pgrp->pg_id;
-			eproc.kp_jobc = p->p_pgrp->pg_jobc;
+			eproc.e_paddr = p;
+			eproc.e_sess = p->p_pgrp->pg_session;
+			eproc.e_pgid = p->p_pgrp->pg_id;
+			eproc.e_jobc = p->p_pgrp->pg_jobc;
 			tp = p->p_pgrp->pg_session->s_ttyp;
 			if ((p->p_flag&SCTTY) && tp != NULL) {
-				eproc.kp_tdev = tp->t_dev;
-				eproc.kp_tpgid = tp->t_pgrp ? 
+				eproc.e_tdev = tp->t_dev;
+				eproc.e_tpgid = tp->t_pgrp ? 
 					tp->t_pgrp->pg_id : -1;
-				eproc.kp_tsess = tp->t_session;
+				eproc.e_tsess = tp->t_session;
 			} else
-				eproc.kp_tdev = NODEV;
+				eproc.e_tdev = NODEV;
+			if (p->p_wmesg)
+				strncpy(eproc.e_wmesg, p->p_wmesg, WMESGLEN);
+			if (txt = p->p_textp) {
+				eproc.e_xsize = txt->x_size;
+				eproc.e_xrssize = txt->x_rssize;
+				eproc.e_xccount = txt->x_ccount;
+				eproc.e_xswrss = txt->x_swrss;
+			} else {
+				eproc.e_xsize = eproc.e_xrssize =
+				  eproc.e_xccount =  eproc.e_xswrss = 0;
+			}
 			if (error = copyout((caddr_t)&eproc, dp, 
 			    sizeof (eproc)))
 				return (error);
