@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.5	81/11/21	*/
+/*	uipc_socket2.c	4.6	81/11/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -148,7 +148,7 @@ sbreserve(sb, cc)
 	struct sockbuf *sb;
 {
 
-	if (m_reserve(cc) == 0)
+	if (m_reserve((cc*2)/MSIZE) == 0)
 		return (0);
 	sb->sb_hiwat = cc;
 	sb->sb_mbmax = (cc*2)/MSIZE;
@@ -163,7 +163,7 @@ sbrelease(sb)
 {
 
 	sbflush(sb);
-	m_release(sb->sb_hiwat);
+	m_release(sb->sb_mbmax);
 	sb->sb_hiwat = sb->sb_mbmax = 0;
 }
 

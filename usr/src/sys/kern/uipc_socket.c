@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.10	81/11/21	*/
+/*	uipc_socket.c	4.11	81/11/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -341,13 +341,13 @@ restart:
 
 #define	rcverr(errno)	{ error = errno; splx(s); goto release; }
 	if (so->so_rcv.sb_cc == 0) {
-		if ((so->so_state & SS_ISCONNECTED) == 0 &&
-		    (so->so_proto->pr_flags & PR_CONNREQUIRED))
-			rcverr(ENOTCONN);
 		if (so->so_state & SS_CANTRCVMORE) {
 			splx(s);
 			goto release;
 		}
+		if ((so->so_state & SS_ISCONNECTED) == 0 &&
+		    (so->so_proto->pr_flags & PR_CONNREQUIRED))
+			rcverr(ENOTCONN);
 		if (so->so_options & SO_NBIO)
 			rcverr (EWOULDBLOCK);
 		sbunlock(&so->so_rcv);

@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.14	81/11/21	*/
+/*	uipc_mbuf.c	1.15	81/11/21	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -11,10 +11,9 @@
 #include "../net/inet_systm.h"		/* XXX */
 #include "../h/vm.h"
 
-m_reserve(cc)
-	int cc;
+m_reserve(mbufs)
+	int mbufs;
 {
-	int mbufs = cc / MSIZE;
 
 	if (mbstat.m_lowat + mbufs > NMBPAGES * NMBPG - 32) 
 		return (0);
@@ -23,10 +22,9 @@ m_reserve(cc)
 	return (1);
 }
 
-m_release(cc)
-	int cc;
+m_release(mbufs)
+	int mbufs;
 {
-	int mbufs = cc / MSIZE;
 
 	mbstat.m_lowat -= mbufs;
 	mbstat.m_hiwat = 2 * mbstat.m_lowat;
