@@ -1,0 +1,130 @@
+.\" 
+.\" Copyright (c) 1988,1992 The University of Utah and
+.\" the Center for Software Science (CSS).  All rights reserved.
+.\"
+.\" Permission to use, copy, modify and distribute this software is hereby
+.\" granted provided that (1) source code retains these copyright, permission,
+.\" and disclaimer notices, and (2) redistributions including binaries
+.\" reproduce the notices in supporting documentation, and (3) all advertising
+.\" materials mentioning features or use of this software display the following
+.\" acknowledgement: ``This product includes software developed by the Center
+.\" for Software Science at the University of Utah.''
+.\"
+.\" THE UNIVERSITY OF UTAH AND CSS ALLOW FREE USE OF THIS SOFTWARE IN ITS "AS
+.\" IS" CONDITION.  THE UNIVERSITY OF UTAH AND CSS DISCLAIM ANY LIABILITY OF
+.\" ANY KIND FOR ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
+.\"
+.\" CSS requests users of this software to return to css-dist@cs.utah.edu any
+.\" improvements that they make and grant CSS redistribution rights.
+.\"
+.\" 	Utah $Hdr: rbootd.man 3.1 92/07/06$
+.\"	Author: Jeff Forys, University of Utah CSS
+.\"
+.TH RBOOTD 8 "July 2, 1992"
+.UU
+.SH NAME
+rbootd \- HP remote boot server
+.SH SYNOPSIS
+.B rbootd
+[\-a] [\-i intf] [\-d] [ConfigFile]
+.SH DESCRIPTION
+.I Rbootd
+services boot requests from Hewlett-Packard workstations over a
+local area network.
+All boot files must reside in the boot file directory; further, if a
+client supplies path information in its boot request, it will be
+silently stripped away before processing.
+By default,
+.I rbootd
+only responds to requests from machines listed in its configuration
+file.
+.PP
+.I Rbootd
+supports the following command line options:
+.TP
+.B \-a
+Respond to boot requests from any machine.  With this option,
+the configuration file is ignored.
+.TP
+.B \-i intf
+Service boot requests on specified interface.  If unspecified,
+.I rbootd
+searches the system interface list for the lowest numbered,
+configured ``up'' interface (excluding loopback).  Ties are
+broken by choosing the earliest match.
+.TP
+.B \-d
+Run server in debug mode.  Packets sent and
+received are displayed to the terminal.
+.TP
+.B ConfigFile
+Specify a different configuration file.
+.PP
+The configuration file consists of ascii text where each line describes
+a particular machine.  A line must start with a machines'
+.I ethernet address
+followed by an optional list of
+.I boot file names.
+An ethernet address is specified in hexadecimal with each of its six
+octets separated by a colon.  The boot file names come from the boot
+file directory.
+The ethernet address and boot file(s) must be separated
+by white-space and/or commas.  A pound sign causes the remainder of
+a line to be ignored.  Here is a sample configuration file:
+.in +4
+.nf
+
+.ta \w'08:00:09:01:C6:75  'u +\w'SYSHPBSD,SYSHPUX  'u +\w'# jaguar (either)'u
+#
+# ethernet addr	boot file(s)	comments
+#
+08:00:09:0:66:ad	SYSHPBSD	# snake (4.3BSD)
+08:00:09:0:59:5b		# vandy (anything)
+8::9:1:C6:75	SYSHPBSD,SYSHPUX	# jaguar (either)
+.DT
+.fi
+.in
+.PP
+.I Rbootd
+logs status and error messages via
+.I syslog.
+A startup message is always logged, and in the case of fatal
+errors (or deadly signals) a message is logged announcing the
+server's termination.  In general, a non-fatal error is handled
+by ignoring the event that caused it (e.g. an invalid Ethernet
+address in the config file causes that line to be invalidated).
+.PP
+The following signals have the specified effect when sent to
+the server process using the kill(1) command.
+.IP SIGHUP
+Drop all active connections and reconfigure.
+.IP SIGUSR1
+Turn on debugging, do nothing if already on.  (SIGEMT on older systems
+without SIGUSR1)
+.IP SIGUSR2
+Turn off debugging, do nothing if already off.  (SIGFPE on older systems
+without SIGUSR2)
+.SH "FILES"
+.PD 0
+.TP 22
+/etc/rbootd.conf
+configuration file
+.TP
+/usr/libexec/rbootd
+directory containing boot files
+.TP
+/var/run/rbootd.pid
+process id
+.TP
+/usr/tmp/rbootd.dbg
+debug output
+.PD
+.SH "SEE ALSO"
+kill(1), socket(2), signal(3), syslog(3), rmp(4)
+.SH "AUTHOR"
+Jeff Forys, University of Utah CSS
+.SH "BUGS"
+.TP 2
+\-
+If multiple servers are started on the same interface, each will receive
+and respond to the same boot packets.
