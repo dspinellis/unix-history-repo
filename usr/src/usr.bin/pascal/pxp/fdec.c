@@ -1,6 +1,6 @@
-static	char *sccsid = "@(#)fdec.c	1.1 (Berkeley) %G%";
 /* Copyright (c) 1979 Regents of the University of California */
 #
+static	char *sccsid = "@(#)fdec.c	1.2 (Berkeley) %G%";
 /*
  * pxp - Pascal execution profiler
  *
@@ -234,4 +234,37 @@ ppsname(fp)
 	ppsep(" { ");
 	ppid(fp);
 	ppsep(" }");
+}
+
+/*
+ * Segend is called at the end of a routine segment (a separately
+ * compiled segment that is not the main program). Since pxp only works
+ * with a single pascal file, this routine should never be called.
+ */
+segend()
+{
+
+	error("Missing program statement and program body");
+}
+
+/*
+ * External declaration i.e. the second line of
+ *
+ *	procedure fum(var i: integer);
+ *	    external;
+ */
+struct nl *
+funcext(fp)
+	struct nl *fp;
+{
+
+	baroff();
+	ppgoin(DECL);
+	ppnl();
+	indent();
+	ppkw("external");
+	ppsep(";");
+	ppgoout(DECL);
+	baron();
+	return (fp);
 }
