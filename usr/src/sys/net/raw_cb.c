@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)raw_cb.c	7.4 (Berkeley) %G%
+ *	@(#)raw_cb.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -51,9 +51,9 @@ raw_attach(so, proto)
 	m = m_getclr(M_DONTWAIT, MT_PCB);
 	if (m == 0)
 		return (ENOBUFS);
-	if (sbreserve(&so->so_snd, RAWSNDQ) == 0)
+	if (sbreserve(&so->so_snd, (u_long) RAWSNDQ) == 0)
 		goto bad;
-	if (sbreserve(&so->so_rcv, RAWRCVQ) == 0)
+	if (sbreserve(&so->so_rcv, (u_long) RAWRCVQ) == 0)
 		goto bad2;
 	rp = mtod(m, struct rawcb *);
 	rp->rcb_socket = so;
