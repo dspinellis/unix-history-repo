@@ -91,6 +91,7 @@ ufs/lfs/lfs_debug.c	optional lfs
 ufs/lfs/lfs_inode.c	optional lfs
 ufs/lfs/lfs_segment.c	optional lfs
 ufs/lfs/lfs_subr.c	optional lfs
+ufs/lfs/lfs_syscalls.c	optional lfs
 ufs/lfs/lfs_vfsops.c	optional lfs
 ufs/lfs/lfs_vnops.c	optional lfs
 ufs/mfs/mfs_vfsops.c	optional mfs
