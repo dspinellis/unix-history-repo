@@ -90,7 +90,6 @@ setterm(type)
 	static char __ttytype[1024];
 	register int unknown;
 	struct winsize win;
-	long myspeed;
 	char *p;
 
 #ifdef DEBUG
@@ -155,8 +154,7 @@ setterm(type)
 
 	PC = _PC ? _PC[0] : 0;
 
-	myspeed = baudrate();
-	switch(myspeed) {
+	switch(baudrate()) {
 		case B0: ospeed = 0; break;
 		case B50: ospeed = 1; break;
 		case B75: ospeed = 2; break;
