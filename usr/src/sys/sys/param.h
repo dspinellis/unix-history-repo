@@ -1,12 +1,12 @@
-/*	param.h	3.11	%G%	*/
+/*	param.h	3.12	%G%	*/
 
 /*
  * tunable variables
  *
- * NB: NBUF is well known in locore.s
+ * NB: NBUF must be less than MAXNBUF in locore.s.
  */
 
-#define	NBUF	62		/* size of buffer cache */
+#define	NBUF	128		/* size of buffer cache */
 #define	NINODE	400		/* number of in core inodes */
 #define	NFILE	350		/* number of in core file structures */
 #define	NMOUNT	15		/* number of mountable file systems */
