@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)exec.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -154,13 +154,15 @@ execvp(name, argv)
 {
 	register char *p;
 	int eacces, etxtbsy;
-	char *cur, *path, buf[MAXPATHLEN];
+	char *bp, *cur, *path, buf[MAXPATHLEN];
 
 	/* If it's an absolute or relative path name, it's easy. */
 	if (index(name, '/')) {
-		(void)execve(name, argv, environ);
-		return(-1);
+		bp = (char *)name;
+		cur = path = NULL;
+		goto retry;
 	}
+	bp = buf;
 
 	/* Get the path we're searching. */
 	if (!(path = getenv("PATH")))
@@ -177,7 +179,7 @@ execvp(name, argv)
 			p = ".";
 		(void)snprintf(buf, sizeof(buf), "%s/%s", p, name);
 
-retry:		(void)execve(buf, argv, environ);
+retry:		(void)execve(bp, argv, environ);
 		switch(errno) {
 		case EACCES:
 			eacces = 1;
@@ -190,9 +192,9 @@ retry:		(void)execve(buf, argv, environ);
 
 			for (cnt = 0, ap = (char **)argv; *ap; ++ap, ++cnt);
 			if (ap = malloc((cnt + 2) * sizeof(char *))) {
-				bcopy(argv, ap + 2, cnt * sizeof(char *));
+				bcopy(argv + 1, ap + 2, cnt * sizeof(char *));
 				ap[0] = "sh";
-				ap[1] = buf;
+				ap[1] = bp;
 				(void)execve(_PATH_BSHELL, ap, environ);
 				free(ap);
 			}
@@ -210,6 +212,7 @@ retry:		(void)execve(buf, argv, environ);
 		errno = EACCES;
 	else if (!errno)
 		errno = ENOENT;
-done:	free(path);
+done:	if (path)
+		free(path);
 	return(-1);
 }
