@@ -13,9 +13,12 @@
 
 #define	SKEYFILE	"/kerberos/update.key%s"
 #define	KBUFSIZ		(sizeof(struct keyfile_data))
+#define	CRYPT		0x00
+#define	CLEAR		0x01
 
 char	*progname;
 struct	sockaddr_in	sin;
+char	msgbuf[BUFSIZ];
 
 int	die();
 
@@ -31,7 +34,7 @@ char	**argv;
 	struct	keyfile_data	*kfile;
 	static struct rlimit rl = { 0, 0 };
 
-	openlog("krbupdated", LOG_CONS | LOG_PID, LOG_AUTH);
+	openlog("registerd", LOG_PID, LOG_AUTH);
 
 	progname = argv[0];
 
@@ -58,15 +61,19 @@ char	**argv;
 	(void) sprintf(keyfile, SKEYFILE, inet_ntoa(sin.sin_addr));
 	if((kf = open(keyfile, O_RDONLY)) < 0) {
 		syslog(LOG_ERR, "error opening Kerberos update keyfile (%s): %m", keyfile);
-		send_packet("couldn't open session key file for your host");
+		(void) sprintf(msgbuf, "couldn't open session keyfile for your host");
+		send_packet(msgbuf, CLEAR);
 		exit(1);
 	}
 
 	if(read(kf, keybuf, KBUFSIZ) != KBUFSIZ) {
 		syslog(LOG_ERR, "wrong read size of Kerberos update keyfile");
-		send_packet("couldn't read session key file for your host");
+		(void) sprintf(msgbuf, "couldn't read session key from your host's keyfile");
+		send_packet(msgbuf, CLEAR);
 		exit(1);
 	}
+	(void) sprintf(msgbuf, "GOTKEY");
+	send_packet(msgbuf, CLEAR);
 	kfile = (struct keyfile_data *) keybuf;
 	key_sched(kfile->kf_key, schedule);
 	des_set_key(kfile->kf_key, schedule);
@@ -89,13 +96,14 @@ char	**argv;
 		syslog(LOG_ERR, "couldn't read command code on Kerberos update");
 	}
 
-syslog(LOG_DEBUG,"read comm code and did append (%d)", retval);
-
-	code = (u_char) retval;
-	if(code != KSUCCESS)
-		send_packet(krb_err_txt[code]);
-	else
-		send_packet("Update complete.");
+	code = (u_char) retval; 
+	if(code != KSUCCESS) {
+		(void) sprintf(msgbuf, "%s", krb_err_txt[code]);
+		send_packet(msgbuf,CRYPT);
+	} else {
+		(void) sprintf(msgbuf, "Update complete.");
+		send_packet(msgbuf, CRYPT);
+	}
 	cleanup();
 	close(0);
 	exit(0);
@@ -203,14 +211,26 @@ do_append()
 
 }
 
-send_packet(msg)
+send_packet(msg,flag)
 	char	*msg;
+	int	flag;
 {
 	int	len = strlen(msg);
 	msg[len++] = '\n';
 	msg[len] = '\0';
-	if(des_write(0, msg, len) != len)
-		syslog(LOG_ERR, "couldn't write reply message");
+	if (len > sizeof(msgbuf)) {
+		syslog(LOG_ERR, "send_packet: invalid msg size");
+		return;
+	}
+	if (flag == CRYPT) {
+		if (des_write(0, msg, len) != len)
+			syslog(LOG_ERR, "couldn't write reply message");
+	} else if (flag == CLEAR) {
+		if (write(0, msg, len) != len)
+			syslog(LOG_ERR, "couldn't write reply message");
+	} else
+			syslog(LOG_ERR, "send_packet: invalid flag (%d)", flag);
+
 }
 
 net_get_principal(pname, iname, keyp)
