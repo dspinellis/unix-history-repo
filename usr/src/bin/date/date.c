@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)date.c	4.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	4.20 (Berkeley) 3/24/87";
 #endif not lint
 
 /*
@@ -49,7 +49,6 @@ main(argc,argv)
 {
 	extern int	optind;
 	extern char	*optarg;
-	static char	usage[] = "usage: date [-n] [-u] [yymmddhhmm[.ss]]\n";
 	struct timezone	tz;
 	char	*ap,			/* time string */
 		*tzn;			/* time zone */
@@ -61,10 +60,9 @@ main(argc,argv)
 	uid_t	getuid();
 	char	*username, *getlogin();
 
-	openlog("date", LOG_ODELAY, LOG_AUTH);
-
 	nflag = uflag = 0;
-	while ((ch = getopt(argc,argv,"nu")) != EOF)
+	tz.tz_dsttime = tz.tz_minuteswest = 0;
+	while ((ch = getopt(argc,argv,"d:nut:")) != EOF)
 		switch((char)ch) {
 		case 'd':
 			tz.tz_dsttime = atoi(optarg) ? 1 : 0;
@@ -72,21 +70,24 @@ main(argc,argv)
 		case 'n':
 			nflag = 1;
 			break;
-		case 't':
-			tz.tz_minuteswest = atoi(optarg);
-			break;
 		case 'u':
 			uflag = 1;
 			break;
+		case 't':	/* error check; we can't allow "PST" */
+			if (isdigit(*optarg)) {
+				tz.tz_minuteswest = atoi(optarg);
+				break;
+			}
+			/*FALLTHROUGH*/
 		default:
-			fputs(usage,stderr);
+			usage();
 			exit(1);
 		}
 	argc -= optind;
 	argv += optind;
 
 	if (argc > 1) {
-		fputs(usage,stderr);
+		usage();
 		exit(1);
 	}
 
@@ -105,15 +106,9 @@ main(argc,argv)
 	if (!argc)
 		goto display;
 
-	if (getuid()) {
-		fputs("You are not superuser: date not set.\n",stderr);
-		retval = 1;
-		goto display;
-	}
-
 	wtmp[0].ut_time = tv.tv_sec;
 	if (gtime(*argv)) {
-		fprintf(stderr,usage);
+		usage();
 		retval = 1;
 		goto display;
 	}
@@ -143,7 +138,7 @@ main(argc,argv)
 	username = getlogin();
 	if (!username || *username == '\0')	/* single-user or no tty */
 		username = "root";
-	syslog(LOG_NOTICE,"set by %s",username);
+	syslog(LOG_AUTH | LOG_NOTICE,"date set by %s",username);
 
 display:
 	if (gettimeofday(&tv,(struct timezone *)0)) {
@@ -370,4 +365,9 @@ bad:
 	(void)close(s);
 	retval = 2;
 	return (0);
+}
+
+usage()
+{
+	fputs("usage: date [-nu] [-d dst] [-t minutes_west] [yymmddhhmm[.ss]]\n",stderr);
 }
