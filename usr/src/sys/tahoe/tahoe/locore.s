@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.12 (Berkeley) %G%
+ *	@(#)locore.s	7.13 (Berkeley) %G%
  */
 
 #include "../tahoe/mtpr.h"
@@ -625,7 +625,7 @@ _/**/mname:	.globl	_/**/mname;		\
 	 * It is expanded as necessary by the special features
 	 * that use it.
 	 */
-	SYSMAP(kmempt	,kmembase	,300*CLSIZE 	)
+	SYSMAP(kmempt	,kmembase	,1000*CLSIZE 	)
 #ifdef	GPROF
 				ADDMAP( 600*CLSIZE	)
 #endif

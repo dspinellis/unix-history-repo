@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.22 (Berkeley) %G%
+ *	@(#)locore.s	7.23 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -887,7 +887,7 @@ _/**/mname:	.globl	_/**/mname;		\
 	 * XXX: NEED way to compute kmem size from maxusers,
 	 * device complement
 	 */
-	SYSMAP(kmempt	,kmembase	,300*CLSIZE 	)
+	SYSMAP(kmempt	,kmembase	,1000*CLSIZE 	)
 #ifdef	GPROF
 				ADDMAP( 600*CLSIZE	)
 #endif
