@@ -2,19 +2,22 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mount.2	4.1 (Berkeley) %G%
+.\"	@(#)mount.2	5.1 (Berkeley) %G%
 .\"
-.TH MOUNT 2 
+.TH MOUNT 2 "27 July 1983"
 .UC 4
 .SH NAME
 mount, umount \- mount or remove file system
 .SH SYNOPSIS
 .nf
-.B mount(special, name, rwflag)
-.B char *special, *name;
+.ft B
+mount(special, name, rwflag)
+char *special, *name;
+int rwflag;
 .PP
-.B umount(special)
-.B char *special;
+.ft B
+umount(special)
+char *special;
 .fi
 .SH DESCRIPTION
 .I Mount
@@ -35,8 +38,7 @@ containing the appropriate path names.
 .I Name
 must exist already. 
 .I Name
-must be a directory (unless the root of the mounted file system
-is not a directory).
+must be a directory.
 Its old contents
 are inaccessible while the file system
 is mounted.
@@ -57,19 +59,17 @@ announces to the system that the
 .I special
 file is no longer to contain a removable file system.
 The associated file reverts to its ordinary interpretation.
-.SH "SEE ALSO"
-mount(8)
-.SH DIAGNOSTICS
+.SH "RETURN VALUE
 .I Mount
-returns 0 if the action occurred; \-1 if
+returns 0 if the action occurred, \-1 if
 .I special
-is inaccessible or not an appropriate file; if
+is inaccessible or not an appropriate file, if
 .I name
-does not exist; if
+does not exist, if
 .I special
-is already mounted; if
+is already mounted, if
 .I name
-is in use; or if
+is in use, or if
 there are already too many
 file systems mounted.
 .PP
@@ -79,17 +79,87 @@ if the special file is inaccessible or
 does not have a mounted file system,
 or if there are active files in the mounted 
 file system.
-.SH BUGS
-If a file containing holes
-(unallocated blocks)
-is read, even on a file system mounted read-only,
-the system will attempt to fill in the holes
-by writing on the device.
-.SH "ASSEMBLER (PDP-11)"
-(mount = 21.)
-.br
-.B sys  mount; special; name; rwflag
+.SH ERRORS
+.I Mount
+will fail when one of the following occurs:
+.TP 15
+[NODEV]
+The caller is not the super-user.
+.TP 15
+[NODEV]
+.I Special
+does not exist.
+.TP 15
+[ENOTBLK]
+.I Special
+is not a block device.
+.TP 15
+[ENXIO]
+The major device number of 
+.I special
+is out of range (this indicates no device driver exists
+for the associated hardware).
+.TP 15
+[EPERM]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENOTDIR]
+A component of the path prefix in
+.I name
+is not a directory.
+.TP 15
+[EROFS]
+.I Name
+resides on a read-only file system.
+.TP 15
+[EBUSY]
+.I Name
+is not a directory, or another process currently
+holds a reference to it.
+.TP 15
+[EBUSY]
+No space remains in the mount table.
+.TP 15
+[EBUSY]
+The super block for the file system had a bad magic
+number or an out of range block size.
+.TP 15
+[EBUSY]
+Not enough memory was available to read the cylinder
+group information for the file system.
+.TP 15
+[EBUSY]
+An i/o error occurred while reading the super block or
+cylinder group information.
 .PP
-(umount = 22.)
-.br
-.B sys  umount; special
+.I Umount
+may fail with one of the following errors:
+.TP 15
+[NODEV]
+The caller is not the super-user.
+.TP 15
+[NODEV]
+.I Special
+does not exist.
+.TP 15
+[ENOTBLK]
+.I Special
+is not a block device.
+.TP 15
+[ENXIO]
+The major device number of 
+.I special
+is out of range (this indicates no device driver exists
+for the associated hardware).
+.TP 15
+[EINVAL]
+The requested device is not in the mount table.
+.TP 15
+[EBUSY]
+A process is holding a reference to a file located
+on the file system.
+.SH "SEE ALSO"
+mount(8), umount(8)
+.SH BUGS
+The error codes are in a state of disarray; too many errors
+appear to the caller as one value.
