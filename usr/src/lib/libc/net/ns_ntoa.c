@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ns_ntoa.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ns_ntoa.c	6.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -18,26 +18,31 @@ struct ns_addr addr;
 {
 	static char obuf[40];
 	char *spectHex();
-	u_long net;
+	union { union ns_net net_e; u_long long_e; } net;
 	u_short port = htons(addr.x_port);
 	register char *cp;
 	char *cp2;
 	register u_char *up = addr.x_host.c_host;
 	u_char *uplim = up + 6;
 
-	* (union ns_net *) &net = addr.x_net;
-	net = ntohl(net);
-	sprintf(obuf, "%lx", net);
+	net.net_e = addr.x_net;
+	sprintf(obuf, "%lx", ntohl(net.long_e));
 	cp = spectHex(obuf);
 	cp2 = cp + 1;
 	while (*up==0 && up < uplim) up++;
-	if (up == uplim) return (obuf);
-	sprintf(cp, ".%x", *up++);
-	while (up < uplim) {
-		while (*cp) cp++;
-		sprintf(cp, "%02x", *up++);
+	if (up == uplim) {
+		if (port) {
+			sprintf(cp, ".0");
+			cp += 2;
+		}
+	} else {
+		sprintf(cp, ".%x", *up++);
+		while (up < uplim) {
+			while (*cp) cp++;
+			sprintf(cp, "%02x", *up++);
+		}
+		cp = spectHex(cp2);
 	}
-	cp = spectHex(cp2);
 	if (port) {
 		sprintf(cp, ".%x", port);
 		spectHex(cp + 1);
