@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)mkpasswd.c	4.2 (Berkeley) 83/12/20";
+static	char *sccsid = "@(#)mkpasswd.c	4.3 (Berkeley) 84/01/25";
 #endif
 
 #include <sys/file.h>
@@ -8,10 +8,16 @@ static	char *sccsid = "@(#)mkpasswd.c	4.2 (Berkeley) 83/12/20";
 #include <ndbm.h>
 
 char	buf[BUFSIZ];
+char	line[BUFSIZ+1];
+char	EMPTY[] = "";
+struct	passwd passwd;
+
+struct	passwd *fgetpwent();
 
 main(argc, argv)
 	char *argv[];
 {
+	FILE *pwf;
 	DBM *dp;
 	datum key, content;
 	register char *cp, *tp;
@@ -26,16 +32,20 @@ main(argc, argv)
 		fprintf(stderr, "usage: mkpasswd [ -v ] file\n");
 		exit(1);
 	}
+	if ((pwf = fopen(argv[1], "r" )) == NULL) {
+		fprintf(stderr, "mkpasswd: ");
+		perror(argv[1]);
+		exit(1);
+	}
 	umask(0);
 	dp = ndbmopen(argv[1], O_WRONLY|O_CREAT|O_EXCL, 0644);
 	if (dp == NULL) {
-		fprintf(stderr, "dbminit failed: ");
+		fprintf(stderr, "mkpasswd: ");
 		perror(argv[1]);
 		exit(1);
 	}
 	dp->db_maxbno = 0;
-	setpwent();
-	while (pwd = getpwent()) {
+	while (pwd = fgetpwent(pwf)) {
 		cp = buf;
 #define	COMPACT(e)	tp = pwd->pw_/**/e; while (*cp++ = *tp++);
 		COMPACT(name);
@@ -61,7 +71,45 @@ main(argc, argv)
 		if (cp - buf > maxlen)
 			maxlen = cp - buf;
 	}
-	endpwent();
 	printf("%d password entries, maximum length %d\n", entries, maxlen);
 	exit(0);
+}
+
+static char *
+pwskip(p)
+register char *p;
+{
+	while( *p && *p != ':' )
+		++p;
+	if( *p ) *p++ = 0;
+	return(p);
+}
+
+struct passwd *
+fgetpwent(pwf)
+	FILE *pwf;
+{
+	register char *p;
+
+	p = fgets(line, BUFSIZ, pwf);
+	if (p==NULL)
+		return(0);
+	passwd.pw_name = p;
+	p = pwskip(p);
+	passwd.pw_passwd = p;
+	p = pwskip(p);
+	passwd.pw_uid = atoi(p);
+	p = pwskip(p);
+	passwd.pw_gid = atoi(p);
+	passwd.pw_quota = 0;
+	passwd.pw_comment = EMPTY;
+	p = pwskip(p);
+	passwd.pw_gecos = p;
+	p = pwskip(p);
+	passwd.pw_dir = p;
+	p = pwskip(p);
+	passwd.pw_shell = p;
+	while(*p && *p != '\n') p++;
+	*p = '\0';
+	return(&passwd);
 }
