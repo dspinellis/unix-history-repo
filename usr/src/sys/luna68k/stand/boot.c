@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)boot.c	7.1 (Berkeley) %G%
+ *	@(#)boot.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -26,7 +26,7 @@
 extern struct KernInter	*kiff;
 
 int howto;
-int devtype = MAKEBOOTDEV(4, 0, 0, 6, 0);
+int devtype = MAKEBOOTDEV(4, 0, 6, 0, 0);
 
 char *copyunix();
 
@@ -69,6 +69,40 @@ how_to_boot(argc, argv)
 }
 
 int
+get_boot_device(s)
+	char *s;
+{
+	register int unit = 0;
+	register int part = 0;
+	register char *p = s;
+
+	while (*p != '(') {
+		if (*p == '\0')
+			goto error;
+		p++;
+	}
+
+	while (*++p != ',') {
+		if (*p == '\0')
+			goto error;
+		if (*p >= '0' && *p <= '9')
+			unit = (unit * 10) + (*p - '0');
+	}
+
+	while (*++p != ')') {
+		if (*p == '\0')
+			goto error;
+		if (*p >= '0' && *p <= '9')
+			part = (part * 10) + (*p - '0');
+	}
+
+	return(MAKEBOOTDEV(4, 0, (6 - unit), unit, part));
+
+error:
+	return(MAKEBOOTDEV(4, 0, 6, 0, 0));
+}
+
+int
 boot(argc, argv)
 	int   argc;
 	char *argv[];
@@ -80,6 +114,8 @@ boot(argc, argv)
 		line = default_file;
 	else
 		line = argv[1];
+
+	devtype = get_boot_device(line);
 
 	printf("Booting %s\n", line);
 
