@@ -1,4 +1,4 @@
-/*	if_ether.c	6.4	84/03/22	*/
+/*	if_ether.c	6.5	84/07/08	*/
 
 /*
  * Ethernet address resolution protocol.
@@ -154,7 +154,12 @@ arpresolve(ac, m, destip, desten)
 	    (loif.if_flags & IFF_UP)) {
 		sin.sin_family = AF_INET;
 		sin.sin_addr = *destip;
-		return (looutput(&loif, m, (struct sockaddr *)&sin));
+		(void) looutput(&loif, m, (struct sockaddr *)&sin);
+		/*
+		 * We really don't want to indicate failure,
+		 * but the packet has already been sent and freed.
+		 */
+		return (0);
 	}
 	s = splimp();
 	ARPTAB_LOOK(at, destip->s_addr);
