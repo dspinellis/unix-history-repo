@@ -1,6 +1,6 @@
 %{
 #ifndef lint
-static	char *sccsid = "@(#)gram.y	4.12 (Berkeley) 85/02/04";
+static	char *sccsid = "@(#)gram.y	4.13 (Berkeley) 85/04/03";
 #endif
 
 #include "defs.h"
@@ -130,7 +130,7 @@ cmd:		  INSTALL options opt_namelist SM = {
 			for (nl = $2; nl != NULL; nl = nl->n_next)
 				if ((cp = re_comp(nl->n_name)) != NULL)
 					yyerror(cp);
-			$1->sc_args = $2;
+			$1->sc_args = expand($2, E_VARS);
 			$$ = $1;
 		}
 		| SPECIAL opt_namelist STRING SM = {
