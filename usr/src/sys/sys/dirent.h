@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dirent.h	8.2 (Berkeley) %G%
+ *	@(#)dirent.h	8.3 (Berkeley) %G%
  */
 
 /*
@@ -42,6 +42,7 @@ struct dirent {
 #define	DT_REG		 8
 #define	DT_LNK		10
 #define	DT_SOCK		12
+#define	DT_WHT		14
 
 /*
  * Convert between stat structure types and directory types.
