@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.6 (Berkeley) %G%
+.\"	@(#)op.me	6.7 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.6
+Version 6.7
 .sp
 For Sendmail Version 6.11
 .)l
@@ -2238,6 +2238,7 @@ f	The sender (from) address
 g	The sender address relative to the recipient
 h	The recipient host
 i	The queue id
+k	The UUCP node name (from the uname system call)
 m	The domain part of the \fIgethostname\fP return value
 p	Sendmail's pid
 r	Protocol used to receive the message
@@ -5333,7 +5334,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.6
+.\"Version 6.7
 .\".ce 0
 .pn 2
 .bp
