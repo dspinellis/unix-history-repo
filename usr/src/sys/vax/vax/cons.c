@@ -1,17 +1,14 @@
-/*	cons.c	4.18	82/10/17	*/
+/*	cons.c	4.19	82/12/05	*/
 
 /*
- * Vax console driver and floppy interface
- *
- * Note:
- *	We avoid use the ready bit in txcs because it doesn't
- *	work on an 11/750 with an rdm plugged in.
+ * VAX console driver (and floppy interface)
  */
 #include "../h/param.h"
 #include "../h/conf.h"
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/proc.h"
+#include "../h/ioctl.h"
 #include "../h/tty.h"
 #include "../h/systm.h"
 #include "../h/uio.h"
@@ -164,9 +161,9 @@ cnstart(tp)
 	if (consdone == 0)
 		return;
 	c = getc(&tp->t_outq);
-	if (tp->t_flags&RAW || tp->t_local&LLITOUT)
+	if (tp->t_flags&(RAW|LITOUT))
 		mtpr(TXDB, c&0xff);
-	else if (c<=0177)
+	else if (c <= 0177)
 		mtpr(TXDB, (c | (partab[c]&0200))&0xff);
 	else {
 		timeout(ttrstrt, (caddr_t)tp, (c&0177));
@@ -175,7 +172,7 @@ cnstart(tp)
 	}
 	consdone = 0;
 	tp->t_state |= TS_BUSY;
-    out:
+out:
 	splx(s);
 }
 
