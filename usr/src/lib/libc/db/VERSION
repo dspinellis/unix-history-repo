@@ -1,4 +1,4 @@
-#	@(#)VERSION	8.2 (Berkeley) %G%
+#	@(#)VERSION	8.3 (Berkeley) %G%
 
 This is version 1.7 of the Berkeley DB code.
 
@@ -13,6 +13,11 @@ Email questions may be addressed to Keith Bostic at
 bostic@cs.berkeley.edu.
 
 ============================================
+1.7 -> 1.71	16 Sep 1993
+	btree/recno:
+		Fix bug in internal search routines that caused
+		return of invalid pointers.
+
 1.6 -> 1.7	07 Sep 1993
 	hash:	Fixed big key overflow bugs.
 	test:	Portability hacks, rewrite test script, Makefile.
