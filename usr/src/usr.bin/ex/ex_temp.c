@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_temp.c	4.2 %G%";
+static char *sccsid = "@(#)ex_temp.c	4.3 %G%";
 #include "ex.h"
 #include "ex_temp.h"
 #include "ex_vis.h"
@@ -167,32 +167,41 @@ getblock(atl, iof)
 	if (iof == READ) {
 		if (hitin2 == 0) {
 			if (ichang2) {
+#ifdef CRYPT
 				if(xtflag)
 					crblock(tperm, ibuff2, CRSIZE, (long)0);
+#endif
 				blkio(iblock2, ibuff2, write);
 			}
 			ichang2 = 0;
 			iblock2 = bno;
 			blkio(bno, ibuff2, read);
+#ifdef CRYPT
 			if(xtflag)
 				crblock(tperm, ibuff2, CRSIZE, (long)0);
+#endif
 			hitin2 = 1;
 			return (ibuff2 + off);
 		}
 		hitin2 = 0;
 		if (ichanged) {
+#ifdef CRYPT
 			if(xtflag)
 				crblock(tperm, ibuff, CRSIZE, (long)0);
+#endif
 			blkio(iblock, ibuff, write);
 		}
 		ichanged = 0;
 		iblock = bno;
 		blkio(bno, ibuff, read);
+#ifdef CRYPT
 		if(xtflag)
 			crblock(tperm, ibuff, CRSIZE, (long)0);
+#endif
 		return (ibuff + off);
 	}
 	if (oblock >= 0) {
+#ifdef CRYPT
 		if(xtflag) {
 			/*
 			 * Encrypt block before writing, so some devious
@@ -206,6 +215,7 @@ getblock(atl, iof)
 			crblock(tperm, crbuf, CRSIZE, (long)0);
 			blkio(oblock, crbuf, write);
 		} else
+#endif
 			blkio(oblock, obuff, write);
 	}
 	oblock = bno;
@@ -662,6 +672,7 @@ int buflen;
  * Encryption routines.  These are essentially unmodified from ed.
  */
 
+#ifdef CRYPT
 /*
  * crblock: encrypt/decrypt a block of text.
  * buf is the buffer through which the text is both input and
@@ -801,3 +812,4 @@ char *buffer;
 	close(pf[1]);
 	/* end of nonportable part */
 }
+#endif

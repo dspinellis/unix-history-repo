@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* sccs id:	@(#)ex.h	4.2 %G%  */
+/* sccs id:	@(#)ex.h	4.3 %G%  */
 #ifdef V6
 #include <retrofit.h>
 #endif
@@ -297,6 +297,7 @@ line	*undadot;		/* If we saved all lines, dot reverts here */
 #define	UNDNONE		3
 #define	UNDPUT		4
 
+#ifdef CRYPT
 /*
  * Various miscellaneous flags and buffers needed by the encryption routines.
  */
@@ -310,6 +311,7 @@ char	tperm[768];
 char	*key;
 char	crbuf[CRSIZE];
 char	*getpass();
+#endif
 
 /*
  * Function type definitions
