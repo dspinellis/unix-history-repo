@@ -1,0 +1,13 @@
+20 Aug 80
+Robert Henry, UCB
+
+All alignments on a double word boundary (via .align 3) converted
+to .align 2, as that is all that the assembler guarantees.
+(NB: Floating point values can be aligned on any boundary...)
+
+A bug in exp.s attempted to relocate an immediate floating
+point constant; this makes no sense.
+	movd	$huge, r0
+changed to
+	movd	huge, r0
+which is what they wanted anyway
