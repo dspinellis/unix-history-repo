@@ -1,4 +1,4 @@
-/*	ffs_inode.c	4.32	83/02/05	*/
+/*	ffs_inode.c	4.33	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -18,7 +18,7 @@
 #if	((INOHSZ&(INOHSZ-1)) == 0)
 #define	INOHASH(dev,ino)	(((dev)+(ino))&(INOHSZ-1))
 #else
-#define	INOHASH(dev,ino)	(((dev)+(ino))%INOHSZ)
+#define	INOHASH(dev,ino)	(((unsigned)((dev)+(ino)))%INOHSZ)
 #endif
 
 union ihead {				/* inode LRU cache, Chris Maltby */
