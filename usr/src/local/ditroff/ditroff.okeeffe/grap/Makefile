@@ -1,5 +1,5 @@
 #
-# grap Makefile @(#)Makefile	1.1 (CWI) 85/10/25
+# grap Makefile @(#)Makefile	1.2 (CWI) 85/10/25
 #
 DEST =
 BIN = /usr/local
@@ -9,7 +9,7 @@ OFILES = main.o input.o print.o frame.o for.o coord.o ticks.o plot.o label.o mis
 CFILES = main.c input.c print.c frame.c for.c coord.c ticks.c plot.c label.c misc.c
 SRCFILES = grap.y grapl.l grap.h $(CFILES)
 
-all:	grap
+all:	grap grap.defines
 
 grap:	grap.o grapl.o $(OFILES) grap.h 
 	$(CC) -o grap $(CFLAGS) grap.o grapl.o $(OFILES) -lm
@@ -27,7 +27,7 @@ prevy.tab.h:	y.tab.h
 
 install: grap
 	install -s grap $(DEST)$(BIN)/grap
-	install -c -m 644 $(DEST)/usr/local/lib/grap
+	install -c -m 644 grap.defines $(DEST)/usr/local/lib/grap/grap.defines
 
 clean:
 	rm -rf grap *.o y.tab.h
