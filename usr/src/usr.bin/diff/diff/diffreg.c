@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.3 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.4 %G%";
 
 #include "diff.h"
 /*
@@ -151,7 +151,7 @@ diffreg()
 				goto notsame;
 	}
 notsame:
-	if (!ascii(fileno(f1)) || !ascii(fileno(f2))) {
+	if (!asciifile(f1) || !asciifile(f2)) {
 		printf("Binary files %s and %s differ\n", file1, file2);
 		fclose(f1);
 		fclose(f2);
@@ -249,7 +249,6 @@ prepare(i, fd)
 	register struct line *p;
 	register j,h;
 
-	input[i] = fd;
 	fseek(fd, (long)0, 0);
 	p = (struct line *)talloc(3*sizeof(line));
 	for(j=0; h=readhash(fd);) {
@@ -401,8 +400,15 @@ check()
 	int jackpot;
 	long ctold, ctnew;
 	char c,d;
-	input[0] = fopen(file1,"r");
-	input[1] = fopen(file2,"r");
+
+	if ((input[0] = fopen(file1,"r")) == NULL) {
+		perror(file1);
+		done();
+	}
+	if ((input[1] = fopen(file2,"r")) == NULL) {
+		perror(file2);
+		done();
+	}
 	j = 1;
 	ixold[0] = ixnew[0] = 0;
 	jackpot = 0;
@@ -507,7 +513,11 @@ int *b;
 skipline(f)
 {
 	register i;
-	for(i=1;getc(input[f])!='\n';i++) ;
+	char c;
+
+	for(i=1;(c=getc(input[f]))!='\n';i++)
+		if (c < 0)
+			return(i);
 	return(i);
 }
 
@@ -751,4 +761,28 @@ FILE *f;
 	}
 	sum = low(sum) + high(sum);
 	return((short)low(sum) + (short)high(sum));
+}
+
+#include <a.out.h>
+
+asciifile(f)
+	FILE *f;
+{
+	char buf[BUFSIZ];
+	register int cnt;
+	register char *cp;
+
+	fseek(f, (long)0, 0);
+	cnt = fread(buf, BUFSIZ, 1, f);
+	if (cnt >= sizeof (struct exec)) {
+		struct exec hdr;
+		hdr = *(struct exec *)buf;
+		if (!N_BADMAG(hdr))
+			return (0);
+	}
+	cp = buf;
+	while (--cnt >= 0)
+		if (*cp++ & 0200)
+			return (0);
+	return (1);
 }
