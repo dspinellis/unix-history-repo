@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-/*	@(#)timed.h	1.5	(Berkeley)	%G%	*/
+/*	@(#)timed.h	1.6	(Berkeley)	%G%	*/
 
 /*
  * Time Synchronization Protocol
@@ -16,7 +16,7 @@
 struct tsp {
 	u_char	tsp_type;
 	u_char	tsp_vers;
-	short	tsp_seq;
+	u_short	tsp_seq;
 	union {
 		struct timeval tspu_time;
 		char tspu_hopcnt;
