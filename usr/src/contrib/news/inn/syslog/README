@@ -1,0 +1,41 @@
+$Revision: 1.3 $
+
+InterNetNews uses the "three-arg" version of syslog.  That version is
+standard with many systems (4.3BSD, SunOS4.x, etc).  Some vendors have
+not yet upgraded, however.  The principal difference between the two
+versions is that the current syslog divides reports up into "facilities."
+For example, news reports can be filed separately from mail or login
+report.
+
+If your system is running the older version of syslog, you should complain
+to your vendor.  I also encourage you to bring up the syslog that is included
+in this directory and replace what is running on your system.  The sources
+are from the freely-redistributable BSD sources, and the syslog.conf file
+matches the old actions pretty closely.
+
+If you can't replace the syslog on your machine, you can run two syslog
+daemons for awhile.  Edit syslog.c and syslogd.c so that
+    #define _PATH_LOGNAME "/dev/log"
+points to something like "/dev/newsyslog".  In syslogd.c you should also
+do the following
+	#define NO_INET_SOCKET
+this will prevent the new syslog daemon from listening on the Internet
+port (the old syslog daemon is presumably doing that).  You should also do
+	#undef _PATH_KLOG
+which will tell the daemon to not try to read Unix kernel log messages.
+Change
+    #define _PATH_LOGCONF "/etc/syslog.conf"
+    #define _PATH_LOGPID "/etc/syslog.pid"
+to something like "/etc/newsyslog.conf" and "/etc/newsyslog.pid"
+
+Finally, install the new syslogd and make sure that it is started at
+system boot time.
+
+Good luck.  I haven't tried this -- I replaced the daemon on my machines --
+but it should work without too many problems.
+
+On machines without Unix-domain sockets you can just add this line to
+the top of syslog.c:
+	#define INET_SYSLOG
+and add syslog to the INN library as exlained in the installation manual.
+	/rich $alz
