@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tisrc.c	7.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tisrc.c	7.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -35,8 +35,13 @@ static char sccsid[] = "@(#)tisrc.c	7.5 (Berkeley) %G%";
 
 
 #define dbprintf if(verbose)printf
-#define try(a,b,c) {x = (a b);dbprintf("%s%s returns %d\n",c,"a",x);\
-		    if (x < 0) {perror("a"); exit(1);}}
+#ifdef __STDC__
+#define try(a,b,c) {x = (a b); dbprintf("%s%s returns %d\n",c,#a,x);\
+		if (x<0) {perror(#a); exit(1);}}
+#else
+#define try(a,b,c) {x = (a b); dbprintf("%s%s returns %d\n",c,"a",x);\
+		if (x<0) {perror("a");exit(1);}}
+#endif
 
 struct	iso_addr eon = {20, 0x47, 0, 6, 3, 0, 0, 0, 25 /*EGP for Berkeley*/};
 struct	iso_addr *iso_addr();
@@ -44,12 +49,12 @@ struct  sockaddr_iso to_s = { sizeof(to_s), AF_ISO }, *to = &to_s;
 struct  sockaddr_iso old_s = { sizeof(to_s), AF_ISO }, *old = &old_s;
 struct	tp_conn_param tp_params;
 fd_set	readfds, writefds, exceptfds;
-long size, count = 10;
+long size, count = 0;
 int verbose = 1, selectp, type = SOCK_SEQPACKET, nobuffs, errno, playtag = 0;
-int verify = 0, dgramp = 0, debug = 0, tp0mode = 1;
+int echop = 0, dgramp = 0, debug = 0, tp0mode = 0, dumpnodata  = 0;
 short portnumber = 3000;
 char your_it[] = "You're it!";
-char *Servername, *conndata, data_msg[2048];
+char *Servername, *conndata, data_msg[8192];
 char Serverbuf[128];
 char name[128];
 struct iovec iov[1] = {data_msg};
@@ -99,6 +104,8 @@ char *argv[];
 			iov->iov_len = size;
 		} else if(strcmp(*av,"stream")==0) {
 			type = SOCK_STREAM;
+		} else if (strcmp(*av, "echo")==0) {
+			echop++;
 		} else if (strcmp(*av,"eon") == 0) {
 			unsigned long l, inet_addr();
 
@@ -145,26 +152,27 @@ tisrc() {
 		if (conndata)
 			doconndata(s);
 		try(connect, (s, (struct sockaddr *) to, to->siso_len), "");
+		recv_cdata(s);
 	}
 	if (selectp) {
 		FD_ZERO(&writefds); FD_SET(s, &writefds);
 		select(1, &writefds, 0, 0, 0);
 	}
-	while (count-- > 0) {
+	do {
 		if (size <= 0 && get_record(&flags) == EOF)
 			exit(0);
 		n = put_record(s, flags);
 		if (n < iov->iov_len) {
-			if (n==-1 && errno == 55) {
+			if (n == -1 && errno == 55) {
 				nobuffs++;
-				count++;
+				if (count) ++count;
 				continue;
 			}
 			fprintf(stderr, "wrote %d < %d, count %d,",
 						n, iov->iov_len, count);
 			perror("due to");
 		}
-	}
+	} while (count == 0 || --count >= 1);
 	if (playtag) {
 		printf("Tag time!\n");
 		iov->iov_base = your_it;
@@ -179,13 +187,83 @@ tisrc() {
 		printf("looped %d times waiting for bufs\n", nobuffs);
 	}
 }
+
+recv_cdata(s)
+int s;
+{
+	int x;
+	iov->iov_len = 0;
+	msg.msg_controllen = sizeof(cm);
+	msg.msg_control = (char *)&cm;
+	try(recvmsg,(s, &msg, 0), "confirm data?");
+	if (msg.msg_controllen)
+		dumpit("", (u_short *)&cm, msg.msg_controllen);
+	msg.msg_control = 0;
+	msg.msg_controllen = 0;
+}
+
 int localsize;
 char dupbuf[4096];
+
+struct savebuf {
+	struct savebuf *s_next;
+	struct savebuf *s_prev;
+	int	s_n;
+	int	s_flags;
+} savebuf = {&savebuf, &savebuf};
+
+void
+savedata(n, flags)
+int n;
+{
+	register struct savebuf *s = (struct savebuf *)malloc(n + sizeof *s);
+	if (s == 0)
+		return;
+	insque(s, savebuf.s_prev);
+	s->s_n = n;
+	s->s_flags = flags;
+	bcopy(iov->iov_base, (char *)(s + 1), n);
+}
+
+checkback(s)
+int s;
+{
+	int n, nn;
+	register struct savebuf *s = savebuf.s_next, *t;
+	register char *cp = data_msg;
+	while (s != &savebuf) {
+		nn = s->s_n;
+		do {
+			msg.msg_flags = 0;
+			iov->iov_len = nn;
+			iov->iov_base = cp;
+			n = recvmsg(s, &msg, s->s_flags);
+			cp += n;
+			nn -= n;
+		} while (dgramp == 0 && nn > 0 && !(msg.msg_flags & MSG_EOR));
+		iov->iov_base = data_msg;
+		if (dgramp) {
+			if (msg.msg_namelen)
+				dumpit("from: ", to, msg.msg_namelen);
+			msg.msg_namelen = old->siso_len;
+		}
+		n = s->s_n - nn;
+		dbprintf("echoed %d", n);
+		if (nn)
+			dbprintf(" instead of %d", s->s_n);
+		if (bcmp((char *)(s + 1), data_msg, n))
+			dbprintf(", with mismatched data");
+		if (nn && (msg.msg_flags & MSG_EOR))
+			dbprintf(" and with %d unchecked after EOR", nn);
+		dbprintf("\n");
+		t = s; s = s->s_next; remque(t); free((char *)t);
+	}
+}
+
 
 put_record(s, flags)
 int s, flags;
 {
-	int fd, buflen;
 	char *buf;
 	int x, saved_x;
 
@@ -202,28 +280,16 @@ int s, flags;
 			dumpit("data: ", data_msg, localsize);
 		}
 	}
-	if (verify) {
-		buflen = iov->iov_len;
-		bcopy(iov->iov_base, dupbuf, buflen);
-	}
+	if (echop)
+		savedata(iov->iov_len, flags);
 	if (dgramp) {
 		msg.msg_name = (caddr_t)to;
 		msg.msg_namelen = to->siso_len;
 	}
 	try(sendmsg, (s, &msg, flags), " put_record ");
 	saved_x = x;
-	while (verify && buflen > 0) {
-		iov->iov_len = buflen;
-		iov->iov_base = dupbuf;
-		try(recvmsg, (s, &msg, flags), " put_record ");
-		if (dgramp) {
-			if (msg.msg_namelen)
-				dumpit("from: ", to, msg.msg_namelen);
-			msg.msg_namelen = old->siso_len;
-		}
-		printf("verify got %d\n", x);
-		buflen -= x;
-	}
+	if (echop && (flags & MSG_EOR))
+		checkback(s);
 	bcopy(old, to, old->siso_len);
 	msg.msg_control = 0;
 	return (saved_x);
@@ -234,7 +300,7 @@ char *what; unsigned short *where; int n;
 	unsigned short *s = where;
 	unsigned short *z = where + (n+1)/2;
 	int count = 0;
-	if (verbose == 0)
+	if (dumpnodata)
 		return;
 	printf(what);
 	while(s < z) {
