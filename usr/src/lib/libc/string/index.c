@@ -6,9 +6,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)index.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)index.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/cdefs.h>
 #include <string.h>
 #include <stddef.h>
 
@@ -18,11 +19,11 @@ strchr(p, ch)
 #else
 index(p, ch)
 #endif
-	register char *p, ch;
+	register const char *p, ch;
 {
 	for (;; ++p) {
 		if (*p == ch)
-			return(p);
+			return((char *)p);
 		if (!*p)
 			return((char *)NULL);
 	}
