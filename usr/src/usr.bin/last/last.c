@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1987, 1993
+ * Copyright (c) 1987, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1987, 1993\n\
+"@(#) Copyright (c) 1987, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)last.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)last.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -132,8 +132,8 @@ main(argc, argv)
 void
 wtmp()
 {
-	register struct utmp	*bp;		/* current structure */
-	register TTY	*T;			/* tty list entry */
+	struct utmp	*bp;			/* current structure */
+	TTY	*T;				/* tty list entry */
 	struct stat	stb;			/* stat of file for size */
 	long	bl, delta;			/* time difference */
 	int	bytes, wfd;
@@ -246,10 +246,10 @@ wtmp()
  */
 int
 want(bp, check)
-	register struct utmp *bp;
+	struct utmp *bp;
 	int check;
 {
-	register ARG *step;
+	ARG *step;
 
 	if (check)
 		/*
@@ -262,24 +262,24 @@ want(bp, check)
 		else if (!strncmp(bp->ut_line, "uucp", sizeof("uucp") - 1))
 			bp->ut_line[4] = '\0';
 	if (!arglist)
-		return(YES);
+		return (YES);
 
 	for (step = arglist; step; step = step->next)
 		switch(step->type) {
 		case HOST_TYPE:
 			if (!strncasecmp(step->name, bp->ut_host, UT_HOSTSIZE))
-				return(YES);
+				return (YES);
 			break;
 		case TTY_TYPE:
 			if (!strncmp(step->name, bp->ut_line, UT_LINESIZE))
-				return(YES);
+				return (YES);
 			break;
 		case USER_TYPE:
 			if (!strncmp(step->name, bp->ut_name, UT_NAMESIZE))
-				return(YES);
+				return (YES);
 			break;
 	}
-	return(NO);
+	return (NO);
 }
 
 /*
@@ -291,12 +291,10 @@ addarg(type, arg)
 	int type;
 	char *arg;
 {
-	register ARG *cur;
+	ARG *cur;
 
-	if (!(cur = (ARG *)malloc((u_int)sizeof(ARG)))) {
-		fputs("last: malloc failure.\n", stderr);
-		exit(1);
-	}
+	if (!(cur = (ARG *)malloc((u_int)sizeof(ARG))))
+		err(1, "malloc failure");
 	cur->next = arglist;
 	cur->type = type;
 	cur->name = arg;
@@ -311,16 +309,14 @@ TTY *
 addtty(ttyname)
 	char *ttyname;
 {
-	register TTY *cur;
+	TTY *cur;
 
-	if (!(cur = (TTY *)malloc((u_int)sizeof(TTY)))) {
-		fputs("last: malloc failure.\n", stderr);
-		exit(1);
-	}
+	if (!(cur = (TTY *)malloc((u_int)sizeof(TTY))))
+		err(1, "malloc failure");
 	cur->next = ttylist;
 	cur->logout = currentout;
-	bcopy(ttyname, cur->tty, UT_LINESIZE);
-	return(ttylist = cur);
+	memmove(cur->tty, ttyname, UT_LINESIZE);
+	return (ttylist = cur);
 }
 
 /*
@@ -337,13 +333,13 @@ hostconv(arg)
 	static char *hostdot, name[MAXHOSTNAMELEN];
 	char *argdot;
 
-	if (!(argdot = index(arg, '.')))
+	if (!(argdot = strchr(arg, '.')))
 		return;
 	if (first) {
 		first = 0;
 		if (gethostname(name, sizeof(name)))
 			err(1, "gethostname");
-		hostdot = index(name, '.');
+		hostdot = strchr(name, '.');
 	}
 	if (hostdot && !strcasecmp(hostdot, argdot))
 		*argdot = '\0';
@@ -365,21 +361,19 @@ ttyconv(arg)
 	 */
 	if (strlen(arg) == 2) {
 		/* either 6 for "ttyxx" or 8 for "console" */
-		if (!(mval = malloc((u_int)8))) {
-			fputs("last: malloc failure.\n", stderr);
-			exit(1);
-		}
+		if (!(mval = malloc((u_int)8)))
+			err(1, "malloc failure");
 		if (!strcmp(arg, "co"))
 			(void)strcpy(mval, "console");
 		else {
 			(void)strcpy(mval, "tty");
 			(void)strcpy(mval + 3, arg);
 		}
-		return(mval);
+		return (mval);
 	}
 	if (!strncmp(arg, _PATH_DEV, sizeof(_PATH_DEV) - 1))
-		return(arg + 5);
-	return(arg);
+		return (arg + 5);
+	return (arg);
 }
 
 /*
