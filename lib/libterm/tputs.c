@@ -44,8 +44,9 @@ static char sccsid[] = "@(#)tputs.c	5.3 (Berkeley) 6/1/90";
  * baud returns a 7, there are 33.3 milliseconds per char at 300 baud.
  */
 static
-short	tmspc10[] = {
-	0, 2000, 1333, 909, 743, 666, 500, 333, 166, 83, 55, 41, 20, 10, 5
+short   tmspc10[] = {
+	0, 2000, 1333, 909, 743, 666, 500, 333, 166, 83, 55, 41, 20, 10, 5,
+	3, 2, 1
 };
 
 short	ospeed;
