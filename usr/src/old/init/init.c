@@ -1,8 +1,8 @@
-static char *sccsid = "@(#)init.c	4.1 (Berkeley) %G%";
 #include <signal.h>
 #include <sys/types.h>
 #include <utmp.h>
 #include <setjmp.h>
+#include <sys/reboot.h>
 
 #define	LINSIZ	sizeof(wtmp.ut_line)
 #define	TABSIZ	100
@@ -12,7 +12,7 @@ static char *sccsid = "@(#)init.c	4.1 (Berkeley) %G%";
 #define SCMPN(a, b)	strncmp(a, b, sizeof(a))
 
 char	shell[]	= "/bin/sh";
-char	getty[]	 = "/etc/getty.vm";
+char	getty[]	 = "/etc/getty";
 char	minus[]	= "-";
 char	runc[]	= "/etc/rc";
 char	ifile[]	= "/etc/ttys";
@@ -47,6 +47,10 @@ long	lseek();
 
 main()
 {
+	register int r11;		/* passed thru from boot */
+	int howto, oldhowto;
+
+	howto = r11;
 	setjmp(sjbuf);
 	signal(SIGTERM, reset);
 	signal(SIGSTOP, SIG_IGN);
@@ -54,9 +58,13 @@ main()
 	signal(SIGTTIN, SIG_IGN);
 	signal(SIGTTOU, SIG_IGN);
 	for(EVER) {
+		oldhowto = howto;
+		howto = RB_SINGLE;
 		shutdown();
-		single();
-		runcom();
+		if (oldhowto & RB_SINGLE)
+			single();
+		if (runcom(oldhowto) == 0) 
+			continue;
 		merge();
 		multiple();
 	}
@@ -107,20 +115,27 @@ single()
 		;
 }
 
-runcom()
+runcom(oldhowto)
+	int oldhowto;
 {
 	register pid, f;
+	int status;
 
 	pid = fork();
 	if(pid == 0) {
 		open("/", 0);
 		dup(0);
 		dup(0);
-		execl(shell, shell, runc, (char *)0);
-		exit(0);
+		if (oldhowto & RB_SINGLE)
+			execl(shell, shell, runc, (char *)0);
+		else
+			execl(shell, shell, runc, "autoboot", (char *)0);
+		exit(1);
 	}
-	while(wait((int *)0) != pid)
+	while(wait(&status) != pid)
 		;
+	if(status)
+		return(0);
 	f = open(wtmpf, 1);
 	if (f >= 0) {
 		lseek(f, 0L, 2);
@@ -130,6 +145,7 @@ runcom()
 		write(f, (char *)&wtmp, sizeof(wtmp));
 		close(f);
 	}
+	return(1);
 }
 
 setmerge()
