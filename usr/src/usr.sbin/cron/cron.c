@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)cron.c	4.10 (Berkeley) %G%";
+static char *sccsid = "@(#)cron.c	4.11 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -20,12 +20,18 @@ static char *sccsid = "@(#)cron.c	4.10 (Berkeley) %G%";
 #define CRONTAB "/usr/lib/crontab"
 #endif
 
+#ifndef CRONTABLOC
+#define CRONTABLOC  "/usr/lib/crontab.local"
+#endif
+
 #define	EXACT	100
 #define	ANY	101
 #define	LIST	102
 #define	RANGE	103
 #define	EOS	104
+
 char	crontab[]	= CRONTAB;
+char	loc_crontab[]   = CRONTABLOC;
 time_t	itime;
 struct	tm *loct;
 struct	tm *localtime();
@@ -34,6 +40,7 @@ char	*realloc();
 int	reapchild();
 int	flag;
 char	*list;
+char	*listend;
 unsigned listsize;
 
 main()
@@ -41,6 +48,7 @@ main()
 	register char *cp;
 	char *cmp();
 	time_t filetime = 0;
+	time_t lfiletime = 0;
 
 	if (fork())
 		exit(0);
@@ -56,14 +64,33 @@ main()
 	itime -= localtime(&itime)->tm_sec;
 
 	for (;; itime+=60, slp()) {
-		struct stat cstat;
-
-		if (stat(crontab, &cstat) == -1)
-			continue;
-		if (cstat.st_mtime > filetime) {
+		struct stat cstat, lcstat;
+		int newcron, newloc;
+		
+		newcron = 0;
+		if (stat(crontab, &cstat) < 0)
+		    cstat.st_mtime = 1;
+		if (cstat.st_mtime != filetime) {
 			filetime = cstat.st_mtime;
-			init();
+			newcron++;
 		}
+
+		newloc  = 0;
+		if (stat(loc_crontab, &lcstat) < 0)
+		    lcstat.st_mtime = 1;
+		if (lcstat.st_mtime != lfiletime) {
+			lfiletime = lcstat.st_mtime;
+			newloc++;
+		}
+
+		if (newcron || newloc) {
+			init();
+			append(crontab);
+			append(loc_crontab);
+			*listend++ = EOS;
+			*listend++ = EOS;
+		}
+
 		loct = localtime(&itime);
 		loct->tm_mon++;		 /* 1-12 for month */
 		if (loct->tm_wday == 0)
@@ -164,26 +191,36 @@ char *s;
 
 init()
 {
+	/*
+	 * Don't free in case was longer than LISTS.  Trades off
+	 * the rare case of crontab shrinking vs. the common case of
+	 * extra realloc's needed in append() for a large crontab.
+	 */
+	if (list == 0) {
+		list = malloc(LISTS);
+		listsize = LISTS;
+	}
+	listend = list;
+}
+
+append(fn)
+char *fn;
+{
 	register i, c;
 	register char *cp;
 	register char *ocp;
 	register int n;
 
-	freopen(crontab, "r", stdin);
-	if (list) {
-		list = realloc(list, LISTS);
-	} else
-		list = malloc(LISTS);
-	listsize = LISTS;
-	cp = list;
-
+	if (freopen(fn, "r", stdin) == NULL)
+		return;
+	cp = listend;
 loop:
 	if(cp > list+listsize-MAXLIN) {
-		char *olist;
+		int length = cp - list;
+
 		listsize += LISTS;
-		olist = list;
 		list = realloc(list, listsize);
-		cp = list + (cp - olist);
+		cp = list + length;
 	}
 	ocp = cp;
 	for(i=0;; i++) {
@@ -252,9 +289,8 @@ ignore:
 	cp = ocp;
 	while(c != '\n') {
 		if(c == EOF) {
-			*cp++ = EOS;
-			*cp++ = EOS;
 			fclose(stdin);
+			listend = cp;
 			return;
 		}
 		c = getchar();
