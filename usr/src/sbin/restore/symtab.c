@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	3.9	(Berkeley)	83/03/27";
+static char sccsid[] = "@(#)symtab.c	3.10	(Berkeley)	83/05/03";
 #endif
 
 /*
@@ -491,7 +491,8 @@ initsymtable(filename)
 			calloc((unsigned)entrytblsize, sizeof(struct entry *));
 		if (entry == (struct entry **)NIL)
 			panic("no memory for entry table\n");
-		(void)addentry(".", ROOTINO, NODE);
+		ep = addentry(".", ROOTINO, NODE);
+		ep->e_flags |= NEW;
 		return;
 	}
 	if ((fd = open(filename, 0)) < 0) {
