@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xargs.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)xargs.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -100,8 +100,12 @@ main(argc, argv)
 	for (;;)
 		switch(ch = getchar()) {
 		case EOF:
-			if (p == bp)			/* empty line */
+			if (p == bp)		/* nothing to display */
 				exit(0);
+			if (mark == p) {	/* nothing since last arg end */
+				run(prog, xargs);
+				exit(0);
+			}
 			goto addarg;
 		case ' ':
 		case '\t':
