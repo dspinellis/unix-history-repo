@@ -7,18 +7,18 @@
  * fmt -- format the concatenation of input files or standard input
  * onto standard output.  Designed for use with Mail ~|
  *
- * Syntax: fmt [ name ... ]
+ * Syntax: fmt [ -width ] [ name ... ]
  * Author: Kurt Shoens (UCB) 12/7/78
  */
 
-static char *SccsId = "@(#)fmt.c	1.2 %G%";
+static char *SccsId = "@(#)fmt.c	1.3 %G%";
 
-#define	LENGTH	72		/* Max line length in output */
 #define	NOSTR	((char *) 0)	/* Null string pointer for lint */
 
 int	pfx;			/* Current leading blank count */
 int	lineno;			/* Current input line */
 int	mark;			/* Last place we saw a head line */
+int	width = 72;		/* Width that we will not exceed */
 
 char	*calloc();		/* for lint . . . */
 char	*headnames[] = {"To", "Subject", "Cc", 0};
@@ -34,26 +34,42 @@ main(argc, argv)
 {
 	register FILE *fi;
 	register int errs = 0;
+	char sobuf[BUFSIZ];
+	register char *cp;
+	int nofile;
 
 	setout();
 	lineno = 1;
 	mark = -10;
-	setbuf(stdout, calloc(1, BUFSIZ));
+	setbuf(stdout, sobuf);
 	if (argc < 2) {
-		setbuf(stdin, calloc(1, BUFSIZ));
+single:
 		fmt(stdin);
 		oflush();
 		exit(0);
 	}
+	nofile = 1;
 	while (--argc) {
-		if ((fi = fopen(*++argv, "r")) == NULL) {
-			perror(*argv);
+		cp = *++argv;
+		if (*cp == '-') {
+			width = atoi(cp+1);
+			if (width <= 0 || width >= BUFSIZ-2) {
+				fprintf(stderr, "fmt:  bad width: %d\n", width);
+				exit(1);
+			}
+			continue;
+		}
+		nofile = 0;
+		if ((fi = fopen(cp, "r")) == NULL) {
+			perror(cp);
 			errs++;
 			continue;
 		}
 		fmt(fi);
 		fclose(fi);
 	}
+	if (nofile)
+		goto single;
 	oflush();
 	exit(errs);
 }
@@ -270,7 +286,7 @@ pack(word)
 		leadin();
 	t = strlen(word);
 	s = outp-outbuf;
-	if (t+s <= LENGTH) {
+	if (t+s <= width) {
 		
 		/*
 		 * In like flint!
