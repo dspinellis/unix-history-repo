@@ -176,6 +176,8 @@ pow_P(x, y) double x, y;
 	struct Double s, t, log__D();
 	double  exp__D(), huge = 1e300, tiny = 1e-300;
 
+	if (x == zero)
+		return ((y>zero)? x : one/x);
 	if (x == 1)
 		return (one);
 	if (y >= 7e18)		/* infinity */
