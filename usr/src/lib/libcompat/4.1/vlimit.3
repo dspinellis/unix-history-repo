@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vlimit.3	4.1 (Berkeley) %G%
+.\"	@(#)vlimit.3	5.1 (Berkeley) %G%
 .\"
-.TH VLIMIT 2V
+.TH VLIMIT 3C "18 July 1983"
 .UC 4
 .SH NAME
 vlimit \- control maximum system resource consumption
@@ -13,6 +13,10 @@ vlimit \- control maximum system resource consumption
 .PP
 .B vlimit(resource, value)
 .SH DESCRIPTION
+.ft B
+This facility is superseded by getrlimit(2).
+.ft R
+.PP
 Limits the consumption by the current process and each process
 it creates to not individually exceed 
 .I value
@@ -24,30 +28,30 @@ is specified as \-1, then the current limit is returned and the
 limit is unchanged.
 The resources which are currently controllable are:
 .TP 15
-.B LIM_NORAISE
+LIM_NORAISE
 A pseudo-limit; if set non-zero then the limits may not be raised.
 Only the super-user may remove the \fInoraise\fR restriction.
 .TP 15
-.B LIM_CPU
+LIM_CPU
 the maximum
 number of cpu-seconds to be used by each process
 .TP 15
-.B LIM_FSIZE
+LIM_FSIZE
 the largest single file which can be created
 .TP 15
-.B LIM_DATA
+LIM_DATA
 the maximum growth of the data+stack region via
 .IR sbrk (2)
 beyond the end of the program text
 .TP 15
-.B LIM_STACK
+LIM_STACK
 the maximum
 size of the automatically-extended stack region
 .TP 15
-.B LIM_CORE
+LIM_CORE
 the size of the largest core dump that will be created.
 .TP 15
-.B LIM_MAXRSS
+LIM_MAXRSS
 a soft limit for the amount of physical memory (in bytes) to be given
 to the program.  If memory is tight, the system will prefer to take memory
 from processes which are exceeding their declared LIM_MAXRSS.
