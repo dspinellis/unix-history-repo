@@ -3,9 +3,9 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
-SCCSID = @(#)Makefile 5.1 %G%
+SCCSID = @(#)Makefile 5.2 %G%
 INSTALL = ${DESTDIR}/usr/ucb
 INSTALLIB = ${DESTDIR}/usr/lib
 SRCDIR=	../src
@@ -14,7 +14,7 @@ NM = nm -go
 RM = rm -f
 CFLAGS = -O -I${SRCDIR}
 
-PROGS =	pc pix pmerge pc3
+PROGS =	pc pix pmerge
 FILES =	pcexterns.o how_pc how_pi how_pix how_pxp
 
 all: pix px_header pc pc2 pc3 pmerge pcexterns.o
@@ -24,6 +24,7 @@ install: all pxref.p
 	install -m 644 temp ${INSTALLIB}/${PX_HEADER}
 	for i in ${PROGS}; do (install $$i ${INSTALL}/$$i ); done
 	for i in ${FILES}; do (install -m 644 -c $$i ${INSTALLIB}/$$i ); done
+	install pc3 ${INSTALLIB}/pc3
 	cd pc2; make install
 	-pc -w pxref.p
 	install a.out ${INSTALL}/pxref
