@@ -1,4 +1,4 @@
-/*	macdefs.h	1.5	87/12/10	*/
+/*	macdefs.h	1.6	88/04/24	*/
 
 #ifndef _MACDEFS_
 #define _MACDEFS_
@@ -37,6 +37,7 @@
 #define LABFMT	"L%d"		/* format for printing labels */
 
 typedef	long	CONSZ;		/* size in which constants are converted */
+typedef	unsigned long	U_CONSZ;/* unsigned version of the above */
 typedef	long	OFFSZ;		/* size in which offsets are kept */
 
 #define CCTRANS(x) x		/* character set macro */

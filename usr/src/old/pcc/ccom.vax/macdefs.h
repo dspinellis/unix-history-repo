@@ -1,4 +1,4 @@
-/*	macdefs.h	4.4	87/12/11	*/
+/*	macdefs.h	4.5	88/04/24	*/
 
 #ifndef _MACDEFS_
 #define	_MACDEFS_
@@ -33,6 +33,7 @@
 #define ALSTACK		32 
 
 typedef	long	CONSZ;		/* size in which constants are converted */
+typedef	unsigned long	U_CONSZ;/* unsigned version of the above */
 typedef	long	OFFSZ;		/* size in which offsets are kept */
 
 #define CONFMT	"%ld"		/* format for printing constants */
