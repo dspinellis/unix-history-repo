@@ -1125,17 +1125,17 @@ static char *gcc_exec_prefix;
 #endif
 
 #ifndef STANDARD_EXEC_PREFIX
-#define STANDARD_EXEC_PREFIX "/usr/local/lib/gcc-lib/"
+#define STANDARD_EXEC_PREFIX "/usr/libexec/"
 #endif /* !defined STANDARD_EXEC_PREFIX */
 
 static char *standard_exec_prefix = STANDARD_EXEC_PREFIX;
-static char *standard_exec_prefix_1 = "/usr/lib/gcc/";
+static char *standard_exec_prefix_1 = "";
 #ifdef MD_EXEC_PREFIX
 static char *md_exec_prefix = MD_EXEC_PREFIX;
 #endif
 
 #ifndef STANDARD_STARTFILE_PREFIX
-#define STANDARD_STARTFILE_PREFIX "/usr/local/lib/"
+#define STANDARD_STARTFILE_PREFIX "/usr/lib/"
 #endif /* !defined STANDARD_STARTFILE_PREFIX */
 
 #ifdef MD_STARTFILE_PREFIX
@@ -1149,7 +1149,7 @@ static char *standard_startfile_prefix_1 = "/lib/";
 static char *standard_startfile_prefix_2 = "/usr/lib/";
 
 #ifndef TOOLDIR_BASE_PREFIX
-#define TOOLDIR_BASE_PREFIX "/usr/local/"
+#define TOOLDIR_BASE_PREFIX ""
 #endif
 static char *tooldir_base_prefix = TOOLDIR_BASE_PREFIX;
 static char *tooldir_prefix;
