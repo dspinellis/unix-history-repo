@@ -94,8 +94,8 @@ cfsetspeed(t, speed)
 cfmakeraw(t)
 	struct termios *t;
 {
-	t->c_iflag &= ~(IGNBRK|BRKINT|PARMRK|INLCR|IGNCR|ICRNL|IXON|IEXTEN);
+	t->c_iflag &= ~(IGNBRK|BRKINT|PARMRK|INLCR|IGNCR|ICRNL|IXON);
 	t->c_oflag &= ~(ONLCR|OXTABS);
-	t->c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG);
+	t->c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
 	/* set MIN/TIME */
 }
