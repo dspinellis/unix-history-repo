@@ -3,12 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	7.9 (Berkeley) %G%
+ *	@(#)sys_process.c	7.10 (Berkeley) %G%
  */
 
 #define IPCREG
 #include "param.h"
-#include "user.h"
+#include "syscontext.h"
 #include "proc.h"
 #include "vnode.h"
 #include "text.h"
@@ -43,27 +43,26 @@ struct {
 /*
  * sys-trace system call.
  */
-ptrace()
-{
-	register struct proc *p;
-	register struct a {
+ptrace(curp, uap, retval)
+	struct proc *curp;
+	register struct args {
 		int	req;
 		int	pid;
 		int	*addr;
 		int	data;
 	} *uap;
+	int *retval;
+{
+	register struct proc *p;
 
-	uap = (struct a *)u.u_ap;
 	if (uap->req <= 0) {
-		u.u_procp->p_flag |= STRC;
-		return;
+		curp->p_flag |= STRC;
+		RETURN (0);
 	}
 	p = pfind(uap->pid);
-	if (p == 0 || p->p_stat != SSTOP || p->p_ppid != u.u_procp->p_pid ||
-	    !(p->p_flag & STRC)) {
-		u.u_error = ESRCH;
-		return;
-	}
+	if (p == 0 || p->p_stat != SSTOP || p->p_ppid != curp->p_pid ||
+	    !(p->p_flag & STRC))
+		RETURN (ESRCH);
 	while (ipc.ip_lock)
 		sleep((caddr_t)&ipc, IPCPRI);
 	ipc.ip_lock = p->p_pid;
@@ -76,11 +75,12 @@ ptrace()
 			setrun(p);
 		sleep((caddr_t)&ipc, IPCPRI);
 	}
-	u.u_r.r_val1 = ipc.ip_data;
-	if (ipc.ip_req < 0)
-		u.u_error = EIO;
+	*retval = ipc.ip_data;
 	ipc.ip_lock = 0;
 	wakeup((caddr_t)&ipc);
+	if (ipc.ip_req < 0)
+		RETURN (EIO);
+	RETURN (0);
 }
 
 #define	PHYSOFF(p, o) \

@@ -3,23 +3,24 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_acct.c	7.10 (Berkeley) %G%
+ *	@(#)kern_acct.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "time.h"
 #include "proc.h"
-#include "user.h"
+#include "ioctl.h"
+#include "termios.h"
+#include "tty.h"
+#undef RETURN
+#include "syscontext.h"
 #include "vnode.h"
 #include "mount.h"
 #include "kernel.h"
 #include "acct.h"
 #include "uio.h"
 #include "syslog.h"
-#include "ioctl.h"
-#include "termios.h"
-#include "tty.h"
 
 /*
  * Values associated with enabling and disabling accounting
@@ -37,18 +38,22 @@ struct	vnode *savacctp;
 /*
  * Perform process accounting functions.
  */
-sysacct()
+/* ARGSUSED */
+sysacct(p, uap, retval)
+	struct proc *p;
+	struct args {
+		char	*fname;
+	} *uap;
+	int *retval;
 {
 	register struct vnode *vp;
-	register struct a {
-		char	*fname;
-	} *uap = (struct a *)u.u_ap;
 	register struct nameidata *ndp = &u.u_nd;
 	extern int acctwatch();
 	struct vnode *oacctp;
+	int error;
 
-	if (u.u_error = suser(u.u_cred, &u.u_acflag))
-		return;
+	if (error = suser(u.u_cred, &u.u_acflag))
+		RETURN (error);
 	if (savacctp) {
 		acctp = savacctp;
 		savacctp = NULL;
@@ -59,29 +64,28 @@ sysacct()
 			vrele(vp);
 			untimeout(acctwatch, (caddr_t)&chk);
 		}
-		return;
+		RETURN (0);
 	}
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	if (u.u_error = namei(ndp))
-		return;
+	if (error = namei(ndp))
+		RETURN (error);
 	vp = ndp->ni_vp;
 	if (vp->v_type != VREG) {
-		u.u_error = EACCES;
 		vrele(vp);
-		return;
+		RETURN (EACCES);
 	}
 	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
-		u.u_error = EROFS;
 		vrele(vp);
-		return;
+		RETURN (EROFS);
 	}
 	oacctp = acctp;
 	acctp = vp;
 	if (oacctp)
 		vrele(oacctp);
 	acctwatch(&chk);
+	RETURN (0);
 }
 
 /*
@@ -116,7 +120,8 @@ acctwatch(resettime)
 /*
  * On exit, write a record on the accounting file.
  */
-acct()
+acct(p)
+	register struct proc *p;
 {
 	register struct rusage *ru;
 	struct vnode *vp;
@@ -124,10 +129,9 @@ acct()
 	int i, s;
 	struct acct acctbuf;
 	register struct acct *ap = &acctbuf;
-	register struct proc *p = u.u_procp;
 
 	if ((vp = acctp) == NULL)
-		return;
+		return (0);
 	bcopy(p->p_comm, ap->ac_comm, sizeof(ap->ac_comm));
 	ru = &u.u_ru;
 	s = splclock();
@@ -140,8 +144,8 @@ acct()
 	timevalsub(&t, &u.u_start);
 	ap->ac_etime = compress(t.tv_sec, t.tv_usec);
 	ap->ac_btime = u.u_start.tv_sec;
-	ap->ac_uid = u.u_procp->p_ruid;
-	ap->ac_gid = u.u_procp->p_rgid;
+	ap->ac_uid = p->p_ruid;
+	ap->ac_gid = p->p_rgid;
 	t = st;
 	timevaladd(&t, &ut);
 	if (i = t.tv_sec * hz + t.tv_usec / tick)
@@ -155,8 +159,8 @@ acct()
 	else
 		ap->ac_tty = NODEV;
 	ap->ac_flag = u.u_acflag;
-	u.u_error = vn_rdwr(UIO_WRITE, vp, (caddr_t)ap, sizeof (acctbuf),
-		(off_t)0, UIO_SYSSPACE, IO_UNIT|IO_APPEND, u.u_cred, (int *)0);
+	return (vn_rdwr(UIO_WRITE, vp, (caddr_t)ap, sizeof (acctbuf),
+		(off_t)0, UIO_SYSSPACE, IO_UNIT|IO_APPEND, u.u_cred, (int *)0));
 }
 
 /*
