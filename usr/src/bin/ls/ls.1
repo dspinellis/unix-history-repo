@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ls.1	6.4 (Berkeley) %G%
+.\"	@(#)ls.1	6.5 (Berkeley) %G%
 .\"
 .TH LS 1 ""
 .UC
@@ -180,21 +180,19 @@ if the file is executable;
 .B  \-
 if the indicated permission is not granted.
 .PP
-The group-execute permission character is given
-as
-.B s
-if the file has the set-group-id bit set;
-likewise the user-execute permission character is given
-as
-.B s
-if the file has the set-user-id bit set.
+The group-execute permission character is given as \fBs\fP if the file has
+the set-group-id bit set; likewise the user-execute permission character is
+given as \fBs\fP if the file has the set-user-id bit set.  These are given
+as \fBS\fP (capitalized) if the corresponding execute permission is NOT
+set.
 .PP
 The last character of the mode (normally `x' or `\-') is 
 .B t
 if the 1000 bit of the mode is on.
 See
 .IR  chmod (1)
-for the meaning of this mode.
+for the meaning of this mode.  This is given as \fBT\fP (capitalized) if the
+corresponding execute permission is NOT set.
 .PP
 When the sizes of the files in a directory
 are listed, a total count of blocks,
