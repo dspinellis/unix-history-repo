@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwcursor.c	3.5 83/12/02";
+static	char *sccsid = "@(#)wwcursor.c	3.6 83/12/06";
 #endif
 
 #include "ww.h"
@@ -33,4 +33,24 @@ register struct ww *w;
 			wwtouched[w->ww_cur.r] |= WWU_TOUCHED;
 		}
 	}
+}
+
+wwsetcursormodes(new)
+register new;
+{
+	register i;
+	register struct ww *w;
+	register old = wwcursormodes;
+
+	new &= wwavailmodes;
+	if (new == wwcursormodes)
+		return;
+	for (i = 0; i < NWW; i++)
+		if (wwindex[i] != 0 && (w = wwindex[i])->ww_hascursor) {
+			wwcursor(w, 0);
+			wwcursormodes = new;
+			wwcursor(w, 1);
+			wwcursormodes = old;
+		}
+	wwcursormodes = new;
 }
