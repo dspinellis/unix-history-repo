@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd.c	3.10 84/01/12";
+static	char *sccsid = "@(#)lcmd.c	3.11 84/01/13";
 #endif
 
 #include "defs.h"
@@ -64,7 +64,7 @@ char *name;
 dosource(filename)
 char *filename;
 {
-	if (cx_setfile(filename) < 0)
+	if (cx_beginfile(filename) < 0)
 		return -1;
 	p_start();
 	err_end();
@@ -75,7 +75,7 @@ char *filename;
 dolongcmd(buffer)
 char *buffer;
 {
-	if (cx_setbuf(buffer) < 0)
+	if (cx_beginbuf(buffer) < 0)
 		return -1;
 	p_start();
 	err_end();

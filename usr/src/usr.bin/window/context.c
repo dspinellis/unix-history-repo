@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)context.c	3.3 83/12/07";
+static	char *sccsid = "@(#)context.c	3.4 84/01/13";
 #endif
 
 #include <stdio.h>
@@ -43,7 +43,7 @@ cx_free()
 		cx.x_type = 0;
 }
 
-cx_setfile(filename)
+cx_beginfile(filename)
 char *filename;
 {
 	if (cx_alloc() < 0)
@@ -57,7 +57,7 @@ char *filename;
 	cx.x_bol = 1;
 	cx.x_lineno = 0;
 	cx.x_errwin = 0;
-	cx.x_noerrwin = 0;
+	cx.x_noerr = 0;
 	return 0;
 bad:
 	if (cx.x_filename != 0)
@@ -66,7 +66,7 @@ bad:
 	return -1;
 }
 
-cx_setbuf(buf)
+cx_beginbuf(buf)
 char *buf;
 {
 	if (cx_alloc() < 0)
