@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -35,6 +35,7 @@ static char sccsid[] = "@(#)route.c	5.15 (Berkeley) %G%";
 #include <netns/ns.h>
 
 #include <netdb.h>
+#include <sys/kinfo.h>
 
 extern	int kmem;
 extern	int nflag;
@@ -121,11 +122,14 @@ static union {
 } pt_u;
 static struct rtentry rtentry;
 
+int NewTree = 0;
 treestuff(rtree)
 off_t rtree;
 {
 	struct radix_node_head *rnh, head;
 	    
+	if (NewTree)
+		return(ntreestuff());
 	for (kget(rtree, rnh); rnh; rnh = head.rnh_next) {
 		kget(rnh, head);
 		if (head.rnh_af == 0) {
@@ -137,6 +141,18 @@ off_t rtree;
 			p_tree(head.rnh_treetop, 1);
 		}
 	}
+}
+
+struct sockaddr *
+kgetsa(dst)
+register struct sockaddr *dst;
+{
+	kget(dst, pt_u.u_sa);
+	if (pt_u.u_sa.sa_len > sizeof (pt_u.u_sa)) {
+		klseek(kmem, (off_t)dst, 0);
+		read(kmem, pt_u.u_data, pt_u.u_sa.sa_len);
+	}
+	return (&pt_u.u_sa);
 }
 
 p_tree(rn, do_rtent)
@@ -155,13 +171,8 @@ again:
 			kget(rn, rtentry);
 			p_rtentry(&rtentry);
 		} else {
-			kget(rnode.rn_key, pt_u);
-			printf("(%d) ",pt_u.u_sa.sa_family);
-			if ((len = pt_u.u_sa.sa_len) == 0 || len > MAXKEYLEN)
-				len = MAXKEYLEN;
-			s = pt_u.u_data + 1;
-			for (slim = s + ((len - 1)/2); s < slim; s++)
-				printf("%x ", *s);
+			p_sockaddr(kgetsa((struct sockaddr *)rnode.rn_key),
+				    0, "%-44.44s ");
 			putchar('\n');
 		}
 		if (rn = rnode.rn_dupedkey)
@@ -172,61 +183,126 @@ again:
 	}
 }
 
-struct sockaddr *
-kgetsa(dst)
-register struct sockaddr *dst;
+ntreestuff()
 {
-	kget(dst, pt_u.u_sa);
-	if (pt_u.u_sa.sa_len > sizeof (pt_u.u_sa)) {
-		klseek(kmem, (off_t)dst, 0);
-		read(kmem, pt_u.u_data, pt_u.u_sa.sa_len);
+	int needed;
+	char *buf, *next, *lim;
+	register struct rt_msghdr *rtm;
+
+	if ((needed = getkerninfo(KINFO_RT_DUMP, 0, 0, 0)) < 0)
+		{ perror("route-getkerninfo-estimate"); exit(1);}
+	if ((buf = malloc(needed)) == 0)
+		{ printf("out of space\n");; exit(1);}
+	if (getkerninfo(KINFO_RT_DUMP, buf, &needed, 0) < 0)
+		{ perror("actual retrieval of routing table"); exit(1);}
+	lim  = buf + needed;
+	for (next = buf; next < lim; next += rtm->rtm_msglen) {
+		rtm = (struct rt_msghdr *)next;
+		np_rtentry(rtm);
 	}
-	return (&pt_u.u_sa);
+}
+
+np_rtentry(rtm)
+register struct rt_msghdr *rtm;
+{
+	register struct sockaddr *sa = (struct sockaddr *)(rtm + 1);
+	static int masks_done, old_af, banner_printed;
+	int af = 0, interesting = RTF_UP | RTF_GATEWAY | RTF_HOST;
+
+#ifdef notdef
+	/* for the moment, netmasks are skipped over */
+	if (!banner_printed) {
+		printf("Netmasks:\n");
+		banner_printed = 1;
+	}
+	if (masks_done == 0) {
+		if (rtm->rtm_addrs != RTA_DST ) {
+			masks_done = 1;
+			af = sa->sa_family;
+		}
+	} else
+#endif
+		af = sa->sa_family;
+	if (af != old_af) {
+		printf("\nRoute Tree for Protocol Family %d:\n", af);
+		old_af = af;
+	}
+	if (rtm->rtm_addrs == RTA_DST)
+		p_sockaddr(sa, 0, "%-36.36s ");
+	else {
+		p_sockaddr(sa, rtm->rtm_flags, "%-16.16s ");
+		if (sa->sa_len == 0)
+			sa->sa_len = sizeof(long);
+		sa = (struct sockaddr *)(sa->sa_len + (char *)sa);
+		p_sockaddr(sa, 0, "%-18.18s ");
+	}
+	p_flags(rtm->rtm_flags & interesting, "%-6.6s ");
+	putchar('\n');
+}
+
+p_sockaddr(sa, flags, format)
+struct sockaddr *sa;
+int flags;
+char *format;
+{
+	char workbuf[128], *cp, *cplim;
+	register char *cpout;
+
+	switch(sa->sa_family) {
+	case AF_INET:
+	    {
+		register struct sockaddr_in *sin = (struct sockaddr_in *)sa;
+
+		cp = (sin->sin_addr.s_addr == 0) ? "default" :
+		      ((flags & RTF_HOST) ?
+			routename(sin->sin_addr) : netname(sin->sin_addr, 0L));
+	    }
+		break;
+
+	case AF_NS:
+		cp = ns_print((struct sockaddr_ns *)sa);
+		break;
+
+	default:
+	    {
+		register u_short *s = ((u_short *)sa->sa_data),
+				*slim = ((sa->sa_len + 1)/2) + s;
+
+		cp = workbuf;
+		cplim = cp + sizeof(workbuf) - 6;
+		cp += sprintf(cp, "(%d)", sa->sa_family);
+		while (s < slim && cp < cplim)
+			cp += sprintf(cp, "%x ", *s++);
+		cp = workbuf;
+	    }
+	}
+	printf(format, cp);
+}
+
+p_flags(f, format)
+register int f;
+char *format;
+{
+	char name[33], *flags;
+	register struct bits *p = bits;
+	for (flags = name; p->b_mask; p++)
+		if (p->b_mask & f)
+			*flags++ = p->b_val;
+	*flags = '\0';
+	printf(format, name);
 }
 
 p_rtentry(rt)
 register struct rtentry *rt;
 {
-	char name[16], *flags;
-	register struct bits *p;
-	register struct sockaddr_in *sin;
+	char name[16];
+	register struct sockaddr *sa;
 	struct ifnet ifnet;
 
-	sin = (struct sockaddr_in *)kgetsa(rt_key(rt));
-	switch(sin->sin_family) {
-	case AF_INET:
-		printf("%-16.16s ",
-		    (sin->sin_addr.s_addr == 0) ? "default" :
-		    (rt->rt_flags & RTF_HOST) ?
-		    routename(sin->sin_addr) :
-			netname(sin->sin_addr, 0L));
-		sin = (struct sockaddr_in *)kgetsa(rt->rt_gateway);
-		printf("%-18.18s ", routename(sin->sin_addr));
-		break;
-	case AF_NS:
-		printf("%-16s ",
-		    ns_print((struct sockaddr_ns *)sin));
-		printf("%-18s ",
-		    ns_print((struct sockaddr_ns *)kgetsa(rt->rt_gateway)));
-		break;
-	default:
-		{
-		u_short *s = (u_short *)pt_u.u_sa.sa_data;
-		printf("(%d)%x %x %x %x %x %x %x ",
-		    sin->sin_family,
-		    s[0], s[1], s[2], s[3], s[4], s[5], s[6]);
-		(void) kgetsa(rt->rt_gateway);
-		printf("(%d)%x %x %x %x %x %x %x ",
-		    sin->sin_family,
-		    s[0], s[1], s[2], s[3], s[4], s[5], s[6]);
-		}
-	}
-	for (flags = name, p = bits; p->b_mask; p++)
-		if (p->b_mask & rt->rt_flags)
-			*flags++ = p->b_val;
-	*flags = '\0';
-	printf("%-6.6s %6d %8d ", name,
-		rt->rt_refcnt, rt->rt_use);
+	p_sockaddr(kgetsa(rt_key(rt)), rt->rt_flags, "%-16.16s ");
+	p_sockaddr(kgetsa(rt->rt_gateway), 0, "%-18.18s ");;
+	p_flags(rt->rt_flags, "%-6.6s ");
+	printf("%6d %8d ", rt->rt_refcnt, rt->rt_use);
 	if (rt->rt_ifp == 0) {
 		putchar('\n');
 		return;
@@ -245,41 +321,10 @@ register struct ortentry *rt;
 	register struct sockaddr_in *sin;
 	struct ifnet ifnet;
 
-	switch(rt->rt_dst.sa_family) {
-	case AF_INET:
-		sin = (struct sockaddr_in *)&rt->rt_dst;
-		printf("%-16.16s ",
-		    (sin->sin_addr.s_addr == 0) ? "default" :
-		    (rt->rt_flags & RTF_HOST) ?
-		    routename(sin->sin_addr) :
-			netname(sin->sin_addr, 0L));
-		sin = (struct sockaddr_in *)&rt->rt_gateway;
-		printf("%-18.18s ", routename(sin->sin_addr));
-		break;
-	case AF_NS:
-		printf("%-16s ",
-		    ns_print((struct sockaddr_ns *)&rt->rt_dst));
-		printf("%-18s ",
-		    ns_print((struct sockaddr_ns *)&rt->rt_gateway));
-		break;
-	default:
-		{
-		u_short *s = (u_short *)rt->rt_dst.sa_data;
-		printf("(%d)%x %x %x %x %x %x %x ",
-		    rt->rt_dst.sa_family,
-		    s[0], s[1], s[2], s[3], s[4], s[5], s[6]);
-		s = (u_short *)rt->rt_gateway.sa_data;
-		printf("(%d)%x %x %x %x %x %x %x ",
-		    rt->rt_gateway.sa_family,
-		    s[0], s[1], s[2], s[3], s[4], s[5], s[6]);
-		}
-	}
-	for (flags = name, p = bits; p->b_mask; p++)
-		if (p->b_mask & rt->rt_flags)
-			*flags++ = p->b_val;
-	*flags = '\0';
-	printf("%-6.6s %6d %8d ", name,
-		rt->rt_refcnt, rt->rt_use);
+	p_sockaddr(&rt->rt_dst, rt->rt_flags, "%-16.16s ");
+	p_sockaddr(&rt->rt_gateway, 0, "%-18.18s ");
+	p_flags(rt->rt_flags, "%-6.6s ");
+	printf("%6d %8d ", rt->rt_refcnt, rt->rt_use);
 	if (rt->rt_ifp == 0) {
 		putchar('\n');
 		return;
