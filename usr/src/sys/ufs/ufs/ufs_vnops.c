@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	8.10 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	8.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
