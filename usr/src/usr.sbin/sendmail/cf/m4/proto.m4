@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.33 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.34 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -374,13 +374,6 @@ S6
 R$* < @ $=w > $*		$: $1 < @ $j . > $3		no domain at all
 R$* < @ $=w . UUCP > $*		$: $1 < @ $j . > $3		.UUCP domain
 undivert(2)dnl
-
-# hide non-local unqualified addresses behind sending domain
-R$* < @ $&s > $*		$: $1 < @ $&s @ > $2		avoid loops
-R$* < @ $- > $*			$: $1 < @ $2 @ $&r > $3		append protocol
-R$* < @ $+ @ > $*		$: $1 < @ $2 > $3		local mail
-R< @ $- @ $+ > $*		$@ $>6 < @ $&s > : @ $1 $3	route-addr
-R$* < @ $- @ $+ >		$@ $>6 $1 % $2 < @ $&s >	non-route-addr
 
 ifdef(`UUCP_RELAY',
 `# pass UUCP addresses straight through
