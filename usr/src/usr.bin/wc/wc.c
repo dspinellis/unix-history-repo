@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)wc.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)wc.c	4.4 (Berkeley) %G%";
 /* wc line and word count */
 
 #include <stdio.h>
@@ -164,7 +164,7 @@ long num;
 	if (verbose)
 		printf("%ld\t", num);
 	else
-		printf("%7ld", num);
+		printf(" %7ld", num);
 }
 
 prttime(secs)
@@ -191,5 +191,8 @@ long secs;
 	} else {
 		units = "se";
 	}
-	printf("%4.1f %2s\t", t, units);
+	if (verbose)
+		printf("%4.1f %2s\t", t, units);
+	else
+		printf(" %4.1f %2s", t, units);
 }
