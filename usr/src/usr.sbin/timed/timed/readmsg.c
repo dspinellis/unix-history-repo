@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readmsg.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)readmsg.c	1.3 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -242,6 +242,7 @@ slaveack()
 	case TSP_REFUSE:
 	case TSP_TRACEON:
 	case TSP_TRACEOFF:
+	case TSP_QUIT:
 		resp = msgin;
 		resp.tsp_type = TSP_ACK;
 		resp.tsp_vers = TSPVERSION;
