@@ -1,4 +1,4 @@
-/*	vfs_bio.c	4.35	82/08/13	*/
+/*	vfs_bio.c	4.36	82/09/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -33,7 +33,7 @@ bread(dev, blkno, size)
 	bp->b_flags |= B_READ;
 	(*bdevsw[major(dev)].d_strategy)(bp);
 	trace(TR_BREADMISS, dev, blkno);
-	u.u_vm.vm_inblk++;		/* pay for read */
+	u.u_ru.ru_inblock++;		/* pay for read */
 	biowait(bp);
 	return(bp);
 }
@@ -62,7 +62,7 @@ breada(dev, blkno, size, rablkno, rasize)
 			bp->b_flags |= B_READ;
 			(*bdevsw[major(dev)].d_strategy)(bp);
 			trace(TR_BREADMISS, dev, blkno);
-			u.u_vm.vm_inblk++;		/* pay for read */
+			u.u_ru.ru_inblock++;		/* pay for read */
 		} else
 			trace(TR_BREADHIT, dev, blkno);
 	}
@@ -80,7 +80,7 @@ breada(dev, blkno, size, rablkno, rasize)
 			rabp->b_flags |= B_READ|B_ASYNC;
 			(*bdevsw[major(dev)].d_strategy)(rabp);
 			trace(TR_BREADMISSRA, dev, rablock);
-			u.u_vm.vm_inblk++;		/* pay in advance */
+			u.u_ru.ru_inblock++;		/* pay in advance */
 		}
 	}
 
@@ -107,7 +107,7 @@ bwrite(bp)
 	flag = bp->b_flags;
 	bp->b_flags &= ~(B_READ | B_DONE | B_ERROR | B_DELWRI | B_AGE);
 	if ((flag&B_DELWRI) == 0)
-		u.u_vm.vm_oublk++;		/* noone paid yet */
+		u.u_ru.ru_oublock++;		/* noone paid yet */
 	trace(TR_BWRITE, bp->b_dev, bp->b_blkno);
 if (bioprintfs)
 printf("write %x blk %d count %d\n", bp->b_dev, bp->b_blkno, bp->b_bcount);
@@ -143,7 +143,7 @@ bdwrite(bp)
 	register int flags;
 
 	if ((bp->b_flags&B_DELWRI) == 0)
-		u.u_vm.vm_oublk++;		/* noone paid yet */
+		u.u_ru.ru_oublock++;		/* noone paid yet */
 	flags = bdevsw[major(bp->b_dev)].d_flags;
 	if(flags & B_TAPE)
 		bawrite(bp);
