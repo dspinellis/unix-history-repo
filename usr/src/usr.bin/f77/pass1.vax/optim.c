@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)optim.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)optim.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,6 +16,14 @@ static char sccsid[] = "@(#)optim.c	5.2 (Berkeley) %G%";
  * UCSD Chemistry modification history:
  *
  * $Log:	optim.c,v $
+ * Revision 5.2  86/03/04  17:47:08  donn
+ * Change buffcat() and buffct1() analogously to putcat and putct1() --
+ * ensure that memoffset is evaluated before vleng.  Take care not to
+ * screw up and return something other than an expression.
+ * 
+ * Revision 5.1  85/08/10  03:48:42  donn
+ * 4.3 alpha
+ * 
  * Revision 2.12  85/06/08  22:57:01  donn
  * Prevent core dumps -- bug in optinsert was causing lastslot to be wrong
  * when a slot was inserted at the end of the buffer.
@@ -542,7 +550,7 @@ tagptr p;
 {
 Addrp t;
 expptr q;
-expptr buffmnmx(), buffpower();
+expptr buffmnmx(), buffpower(), buffcat();
 
 if (!p)
 	return (ENULL);
@@ -567,10 +575,9 @@ switch (p->tag)
 				t = mktemp (TYCHAR, ICON(lencat(p)));
 			cat:
 				q = (expptr) cpexpr (p->exprblock.vleng);
-				buffcat (cpexpr(t),p);
-				frexpr (t->vleng);
-				t->vleng = q;
-				p = (tagptr) t;
+				p = (tagptr) buffcat (t, p);
+				frexpr (p->headblock.vleng);
+				p->headblock.vleng = q;
 				break;
 			case OPMIN:
 			case OPMAX:
@@ -619,22 +626,25 @@ return ((expptr) p);
  *  local version of routine putcat in putpcc.c, called by expand
  */
 
-LOCAL buffcat(lhs, rhs)
+LOCAL expptr buffcat(lhs, rhs)
 register Addrp lhs;
 register expptr rhs;
 {
 int n;
 Addrp lp, cp;
+expptr ep, buffct1();
 
 n = ncat(rhs);
 lp = (Addrp) mkaltmpn(n, TYLENG, PNULL);
 cp = (Addrp) mkaltmpn(n, TYADDR, PNULL);
 
 n = 0;
-buffct1(rhs, lp, cp, &n);
+ep = buffct1(rhs, lp, cp, &n);
 
-optbuff (SKCALL, call4(TYSUBR, "s_cat", lhs, cp, lp, mkconv(TYLONG, ICON(n))),
-	0, 0);
+ep = mkexpr(OPCOMMA, ep,
+	call4(TYSUBR, "s_cat", lhs, cp, lp, mkconv(TYLONG, ICON(n))));
+
+return (ep);
 }
 
 
@@ -643,32 +653,34 @@ optbuff (SKCALL, call4(TYSUBR, "s_cat", lhs, cp, lp, mkconv(TYLONG, ICON(n))),
  *  local version of routine putct1 in putpcc.c, called by expand
  */
 
-LOCAL buffct1(q, lp, cp, ip)
+LOCAL expptr buffct1(q, lp, cp, ip)
 register expptr q;
 register Addrp lp, cp;
 int *ip;
 {
 int i;
 Addrp lp1, cp1;
+expptr eleft, eright;
 
 if(q->tag==TEXPR && q->exprblock.opcode==OPCONCAT)
 	{
-	buffct1(q->exprblock.leftp, lp, cp, ip);
-	buffct1(q->exprblock.rightp, lp, cp, ip);
+	eleft = buffct1(q->exprblock.leftp, lp, cp, ip);
+	eright = buffct1(q->exprblock.rightp, lp, cp, ip);
 	frexpr(q->exprblock.vleng);
 	free( (charptr) q );
 	}
 else
 	{
 	i = (*ip)++;
-	lp1 = (Addrp) cpexpr(lp);
-	lp1->memoffset = mkexpr(OPPLUS,lp1->memoffset, ICON(i*SZLENG));
 	cp1 = (Addrp) cpexpr(cp);
 	cp1->memoffset = mkexpr(OPPLUS, cp1->memoffset, ICON(i*SZADDR));
-	optbuff (SKEQ, (mkexpr(OPASSIGN, lp1, cpexpr(q->headblock.vleng))),
-		0,0);
-	optbuff (SKEQ, (mkexpr(OPASSIGN, cp1, addrof(expand (q)))), 0, 0);
+	lp1 = (Addrp) cpexpr(lp);
+	lp1->memoffset = mkexpr(OPPLUS, lp1->memoffset, ICON(i*SZLENG));
+	eleft = mkexpr(OPASSIGN, cp1, addrof(expand(cpexpr(q))));
+	eright = mkexpr(OPASSIGN, lp1, cpexpr(q->headblock.vleng));
+	frexpr(q);
 	}
+return (mkexpr(OPCOMMA, eleft, eright));
 }
 
 
