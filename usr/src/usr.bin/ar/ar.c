@@ -1,4 +1,6 @@
-static	char sccsid[] = "@(#)ar.c 4.2 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)ar.c 4.3 %G%";
+#endif
 /*
  * ar - portable (ascii) format version
  */
@@ -8,15 +10,14 @@ static	char sccsid[] = "@(#)ar.c 4.2 %G%";
 #include <ar.h>
 #include <signal.h>
 
-typedef	unsigned short ushort;
 struct	stat	stbuf;
 struct	ar_hdr	arbuf;
 struct	lar_hdr {
 	char	lar_name[16];
 	long	lar_date;
-	ushort	lar_uid;
-	ushort	lar_gid;
-	ushort	lar_mode;
+	u_short	lar_uid;
+	u_short	lar_gid;
+	u_short	lar_mode;
 	long	lar_size;
 } larbuf;
 
