@@ -1,5 +1,5 @@
 /*
-char id_util[] = "@(#)util.c	1.5";
+char id_util[] = "@(#)util.c	1.6";
  *
  * utility routines
  */
@@ -8,8 +8,9 @@ char id_util[] = "@(#)util.c	1.5";
 #include <sys/stat.h>
 #include "fio.h"
 
+extern short	ccntrl_, blzero_;
 
-ini_std(u,F,w,i66) FILE *F;
+ini_std(u,F,w) FILE *F;
 {	unit *p;
 	p = &units[u];
 	p->ufd = F;
@@ -18,7 +19,8 @@ ini_std(u,F,w,i66) FILE *F;
 	p->ufmt = YES;
 	p->uwrt = (w==WRITE)? YES : NO;
 	p->uscrtch = p->uend = NO;
-	p->ublnk = p->uprnt = (i66!=0)? YES : NO;
+	p->ublnk = blzero_;
+	p->uprnt = ccntrl_;
 	p->url = 0;
 	p->uinode = finode(F);
 }
