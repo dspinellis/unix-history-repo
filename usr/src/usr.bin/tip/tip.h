@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 1989 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  *
  * %sccs.include.redist.c%
  *
- *      @(#)tip.h	5.8 (Berkeley) %G%
+ *      @(#)tip.h	8.1 (Berkeley) %G%
  */
 
 /*
