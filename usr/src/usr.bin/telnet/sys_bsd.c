@@ -576,7 +576,7 @@ int poll;		/* If 0, then block until something to do */
 	    c = 0;
 	} else {
 	    /* EOF detection for line mode!!!! */
-	    if (c == 0 && MODE_LOCAL_CHARS(globalmode)) {
+	    if ((c == 0) && MODE_LOCAL_CHARS(globalmode) && isatty(tin)) {
 			/* must be an EOF... */
 		*ttyiring.supply = termEofChar;
 		c = 1;
