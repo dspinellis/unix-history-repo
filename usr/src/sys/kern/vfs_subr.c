@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.47 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.48 (Berkeley) %G%
  */
 
 /*
@@ -94,7 +94,6 @@ vfs_busy(mp)
  * Free a busy filesystem.
  * Panic if filesystem is not busy.
  */
-void
 vfs_unbusy(mp)
 	register struct mount *mp;
 {
@@ -234,7 +233,8 @@ getnewvnode(tag, mp, vops, vpp)
 	register struct vnode *vp, *vq;
 
 	if (numvnodes < desiredvnodes) {
-		vp = (struct vnode *)malloc(sizeof *vp, M_VNODE, M_WAITOK);
+		vp = (struct vnode *)malloc((u_long)sizeof *vp,
+		    M_VNODE, M_WAITOK);
 		bzero((char *)vp, sizeof *vp);
 		numvnodes++;
 	} else {
@@ -574,7 +574,7 @@ loop:
  */
 void vclean(vp, flags)
 	register struct vnode *vp;
-	long flags;
+	int flags;
 {
 	struct vnodeops *origops;
 	int active;
@@ -862,14 +862,15 @@ int kinfo_vgetfailed;
  * Dump vnode list (via kinfo).
  * Copyout address of vnode followed by vnode.
  */
+/* ARGSUSED */
 kinfo_vnode(op, where, acopysize, arg, aneeded)
+	int op;
 	char *where;
-	int *acopysize, *aneeded;
+	int *acopysize, arg, *aneeded;
 {
 	register struct mount *mp = rootfs;
 	struct mount *omp;
 	struct vnode *vp;
-	register needed = 0;
 	register char *bp = where, *savebp;
 	char *ewhere = where + *acopysize;
 	int error;
