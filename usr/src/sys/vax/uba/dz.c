@@ -1,4 +1,4 @@
-/*	dz.c	3.13	%G%	*/
+/*	dz.c	3.14	%G%	*/
 
 /*
  *  DZ-11 Driver
@@ -29,11 +29,12 @@
 #define	spl5	spl6
  
 #define DZADDR  (UBA0_DEV + 0160100)
-#ifdef ERNIE
-#define NDZ 	(3*8)
+#ifdef DISTRIB
+#define	NDZ11	1
 #else
-#define	NDZ	(8)
+#define NDZ11	3
 #endif
+#define NDZ 	(NDZ11*8)
  
 #define BITS7	020
 #define BITS8	030
@@ -82,7 +83,7 @@ struct pdma dzpdma[] = {
 	(struct device *)(DZADDR), NULL, NULL, (int)&dz_tty[5], dzxint,
 	(struct device *)(DZADDR), NULL, NULL, (int)&dz_tty[6], dzxint,
 	(struct device *)(DZADDR), NULL, NULL, (int)&dz_tty[7], dzxint,
-#ifdef ERNIE
+#if NDZ >= 2
 	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[8], dzxint,
 	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[9], dzxint,
 	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[10], dzxint,
@@ -91,6 +92,8 @@ struct pdma dzpdma[] = {
 	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[13], dzxint,
 	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[14], dzxint,
 	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[15], dzxint,
+#endif
+#if NDZ >= 3
 	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[16], dzxint,
 	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[17], dzxint,
 	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[18], dzxint,
@@ -99,6 +102,16 @@ struct pdma dzpdma[] = {
 	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[21], dzxint,
 	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[22], dzxint,
 	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[23], dzxint,
+#endif
+#if NDZ >= 4
+	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[24], dzxint,
+	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[25], dzxint,
+	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[26], dzxint,
+	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[27], dzxint,
+	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[28], dzxint,
+	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[29], dzxint,
+	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[30], dzxint,
+	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[31], dzxint,
 #endif
 };
 char	dz_timer;
@@ -234,6 +247,7 @@ caddr_t addr;
 dev_t dev;
 {
 	register struct tty *tp;
+	static char dz_brk[NDZ11];
  
 	tp = &dz_tty[minor(dev)];
 	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
@@ -244,10 +258,12 @@ dev_t dev;
 			dzparam(minor(dev));
 	} else switch(cmd) {
 	case TIOCSBRK:
-		((struct device *)(tp->t_addr))->dzbrk |= 1 << (dev&07);
+		((struct pdma *)(tp->t_addr))->p_addr->dzbrk =
+			(dz_brk[minor(dev)>>3] |= 1 << (dev&07));
 		break;
 	case TIOCCBRK:
-		((struct device *)(tp->t_addr))->dzbrk &= ~(1 << (dev&07));
+		((struct pdma *)(tp->t_addr))->p_addr->dzbrk =
+			(dz_brk[minor(dev)>>3] &= ~(1 << (dev&07)));
 		break;
 	case TIOCSDTR:
 		dzmodem(minor(dev), ON);
@@ -275,12 +291,23 @@ dzparam(dev)
 		return;
 	}
 	lpr = (dz_speeds[tp->t_ispeed]<<8) | (dev & 07);
+#ifndef IIASA
 	if (tp->t_flags & RAW)
 		lpr |= BITS8;
 	else
 		lpr |= (BITS7|PENABLE);
 	if ((tp->t_flags & EVENP) == 0)
 		lpr |= OPAR;
+#else IIASA
+	if ((tp->t_flags & (EVENP|ODDP)) == (EVENP|ODDP))
+		lpr |= BITS8;
+	else if (tp->t_flags & EVENP)
+		lpr |= (BITS7|PENABLE);
+	else if (tp->t_flags & ODDP)
+		lpr |= (BITS7|OPAR|PENABLE);
+	else
+		lpr |= BITS7;
+#endif IIASA
 	if (tp->t_ispeed == 3)
 		lpr |= TWOSB; 			/* 110 baud: 2 stop bits */
 	dzaddr->dzlpr = lpr;
@@ -403,10 +430,9 @@ dzscan()
 				tp->t_state |= CARR_ON;
 			}
 		} else {
-			if ((tp->t_state & CARR_ON)) {
+			if ((tp->t_state&CARR_ON) && (tp->t_local&LNOHANG) == 0) {
 				/* carrier lost */
-				if (tp->t_state&ISOPEN &&
-				    (tp->t_local&LNOHANG) == 0) {
+				if (tp->t_state&ISOPEN) {
 					gsignal(tp->t_pgrp, SIGHUP);
 					gsignal(tp->t_pgrp, SIGCONT);
 					dzaddr->dzdtr &= ~bit;
