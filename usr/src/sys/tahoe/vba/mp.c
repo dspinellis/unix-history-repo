@@ -1,4 +1,4 @@
-/*	mp.c	1.3	88/03/05	*/
+/*	mp.c	1.4	88/04/14	*/
 
 #include "mp.h"
 #if NMP > 0
@@ -365,9 +365,8 @@ mpparam(unit)
 	asp = &ms->ms_async[port][mp->mp_on?mp->mp_on-1:MPINSET-1];
 	asp->ap_xon = tp->t_startc;
 	asp->ap_xoff = tp->t_stopc;
-	asp->ap_xena =
-	    (tp->t_flags & (RAW|TANDEM)) == TANDEM ? MPA_ENA : MPA_DIS;
-	asp->ap_xany = (tp->t_flags & DECCTQ ? MPA_DIS : MPA_ENA);
+	asp->ap_xena = ((tp->t_flags & RAW) ? MPA_DIS : MPA_ENA);
+	asp->ap_xany = ((tp->t_flags & DECCTQ) ? MPA_DIS : MPA_ENA);
 #ifdef notnow
 	if (tp->t_flags & (RAW|LITOUT|PASS8)) {
 #endif
