@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.38 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.39 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -20,6 +20,8 @@ V4')
 #   local info   #
 ##################
 
+CP.
+
 Cwlocalhost
 ifdef(`USE_CW_FILE',
 `# file containing names of hosts for which we receive email
@@ -28,21 +30,25 @@ CONCAT(`Fw', confCW_FILE)', `dnl')
 ifdef(`UUCP_RELAY',
 `# UUCP relay host
 CONCAT(DY, UUCP_RELAY)
+CPUUCP
 
 ')dnl
 ifdef(`BITNET_RELAY',
 `#  BITNET relay host
 CONCAT(DB, BITNET_RELAY)
+CPBITNET
 
 ')dnl
 ifdef(`CSNET_RELAY',
 `# CSNET relay host
 CONCAT(DC, CSNET_RELAY)
+CPCSNET
 
 ')dnl
 ifdef(`FAX_RELAY',
 `# FAX relay host
 CONCAT(DF, FAX_RELAY)
+CPFAX
 
 ')dnl
 ifdef(`SMART_HOST',
@@ -402,7 +408,7 @@ ifdef(`_OLD_SENDMAIL_',
 ')
 ifdef(`_NO_CANONIFY_', `dnl',
 `# pass to name server to make hostname canonical
-R$* < @ $* $~. > $*		$: $1 < @ $[ $2 $3 $] > $4
+R$* < @ $* $~P > $*		$: $1 < @ $[ $2 $3 $] > $4
 ')
 # handle possible alternate names
 R$* < @ $=w . $m . > $*		$: $1 < @ $j . > $3
