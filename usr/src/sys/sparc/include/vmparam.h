@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vmparam.h	7.3 (Berkeley) %G%
+ *	@(#)vmparam.h	7.4 (Berkeley) %G%
  *
- * from: $Header: vmparam.h,v 1.7 92/11/26 02:04:49 torek Exp $
+ * from: $Header: vmparam.h,v 1.8 93/05/25 09:52:16 torek Exp $
  */
 
 /*
@@ -33,13 +33,13 @@
  * Virtual memory related constants, all in bytes
  */
 #ifndef MAXTSIZ
-#define	MAXTSIZ		(6*1024*1024)		/* max text size */
+#define	MAXTSIZ		(8*1024*1024)		/* max text size */
 #endif
 #ifndef DFLDSIZ
-#define	DFLDSIZ		(8*1024*1024)		/* initial data size limit */
+#define	DFLDSIZ		(16*1024*1024)		/* initial data size limit */
 #endif
 #ifndef MAXDSIZ
-#define	MAXDSIZ		(16*1024*1024)		/* max data size */
+#define	MAXDSIZ		(64*1024*1024)		/* max data size */
 #endif
 #ifndef	DFLSSIZ
 #define	DFLSSIZ		(512*1024)		/* initial stack size limit */
