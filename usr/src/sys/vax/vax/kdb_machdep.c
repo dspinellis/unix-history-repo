@@ -1,4 +1,4 @@
-/*	@(#)kdb_machdep.c	7.6 (Berkeley) %G%	*/
+/*	@(#)kdb_machdep.c	7.7 (Berkeley) %G%	*/
 
 #include "param.h"
 #include "conf.h"
@@ -22,6 +22,8 @@
 #define	KDBSPACE	1024	/* 1K of memory for breakpoint table */
 static	char kdbbuf[KDBSPACE];
 static	char *kdbend = kdbbuf;
+int	kdb_escape;		/* allow kdb to be entered on console escape */
+int	kdb_panic;		/* allow kdb to be entered on panic/trap */
 
 extern 	int (*v_putc)();
 extern 	int (*v_getc)();
@@ -66,6 +68,17 @@ kdb_init()
 			printf("kdb_init: bad bootesym %x, calculated %x\n",
 			    bootesym, strtab + strsize);
 	}
+	/*
+	 * Transfer control to the debugger when magic console sequence
+	 * is typed only if the system was booted with RB_KDB and the trap
+	 * enable flag (RB_NOYSNC) set.
+	 */
+	if ((boothowto&(RB_KDB|RB_NOSYNC)) == (RB_KDB|RB_NOSYNC))
+		kdb_escape = 1;
+
+	if (boothowto&RB_KDB)
+		kdb_panic = 1;
+
 	/*
 	 * If boot flags indicate, force entry into the debugger.
 	 */
@@ -125,7 +138,7 @@ kdb_trap(apsl)
 	register int *apsl;
 {
 	register int *locr0, type;
-	int code, retval;
+	int code, retval, kstack = 0;
 	static int prevtype = -1, prevcode;
 	extern char *trap_type[];
 	extern int TRAP_TYPES;
@@ -167,7 +180,7 @@ kdb_trap(apsl)
 			return (1);
 		}
 		splx(s);
-		printf("(from kernel stack)\n");
+		kstack++;
 	}
 	getpcb(locr0);
 	/*
@@ -175,7 +188,7 @@ kdb_trap(apsl)
 	 * polling in the console device driver.
 	 */
 	(*v_poll)(kdbactive = 1);
-	retval = kdb(type, code, noproc ? (struct proc *)0 : u.u_procp);
+	retval = kdb(type, code, noproc ? (struct proc *)0 : u.u_procp, kstack);
 	(*v_poll)(kdbactive = 0);
 	setpcb(locr0);
 	return (retval);
