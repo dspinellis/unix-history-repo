@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_output.c	6.9 (Berkeley) %G%
+ *	@(#)tcp_output.c	6.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -326,9 +326,11 @@ noopt:
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
 	if (so->so_options & SO_DONTROUTE)
 		error =
-		   ip_output(m, tp->t_ipopt, (struct route *)0, IP_ROUTETOIF);
+		   ip_output(m, tp->t_inpcb->inp_options, (struct route *)0,
+			IP_ROUTETOIF);
 	else
-		error = ip_output(m, tp->t_ipopt, &tp->t_inpcb->inp_route, 0);
+		error = ip_output(m, tp->t_inpcb->inp_options,
+		    &tp->t_inpcb->inp_route, 0);
 	if (error)
 		return (error);
 
