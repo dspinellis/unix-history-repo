@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)setjmp.3	6.9 (Berkeley) %G%
+.\"     @(#)setjmp.3	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SETJMP 3
@@ -69,12 +69,12 @@ and
 and
 .Fn longjmp
 combinations may be used in the same program, however, individual
-calls may not, i.e. the
+calls may not, e.g. the
 .Fa env
 argument to
-.Fn sigsetjmp
+.Fn setjmp
 may not be passed to
-.Fn longjmp .
+.Fn siglongjmp .
 .Pp
 The
 .Fn longjmp
@@ -138,3 +138,9 @@ and
 .Fn longjmp
 functions conform to
 .St -ansiC .
+The
+.Fn sigsetjmp
+and
+.Fn siglongjmp
+functions conform to
+.St -p1003.1-88 .
