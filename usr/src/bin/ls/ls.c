@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ls.c	4.9 83/05/09";
+static	char *sccsid = "@(#)ls.c	4.10 83/05/10";
 #endif
 
 /*
@@ -604,9 +604,11 @@ struct	utmp utmp;
 #define	NMAX	(sizeof (utmp.ut_name))
 
 char	names[NUID][NMAX+1];
-char	groups[NGID][NMAX+1];
 char	outrangename[NMAX+1];
 int	outrangeuid = -1;
+char	groups[NGID][NMAX+1];
+char	outrangegroup[NMAX+1];
+int	outrangegid = -1;
 
 char *
 getname(uid)
@@ -666,13 +668,34 @@ getgroup(gid)
 
 	if (gid >= 0 && gid < NGID && groups[gid][0])
 		return (&groups[gid][0]);
-	if (init == 2)
+	if (gid >= 0 && gid == outrangegid)
+		return (outrangegroup);
+	if (init == 2) {
+		if (gid < NGID)
+			return (0);
+		setgrent();
+		while (gr = getgrent()) {
+			if (gr->gr_gid != gid)
+				continue;
+			outrangegid = gr->gr_gid;
+			strncpy(outrangegroup, gr->gr_name, NGID);
+			endgrent();
+			return (outrangegroup);
+		}
+		endgrent();
 		return (0);
+	}
 	if (init == 0)
 		setgrent(), init = 1;
 	while (gr = getgrent()) {
-		if (gr->gr_gid < 0 || gr->gr_gid >= NGID)
+		if (gr->gr_gid < 0 || gr->gr_gid >= NGID) {
+			if (gr->gr_gid == gid) {
+				outrangegid = gr->gr_gid;
+				strncpy(outrangegroup, gr->gr_name, NGID);
+				return (outrangegroup);
+			}
 			continue;
+		}
 		if (groups[gr->gr_gid][0])
 			continue;
 		strncpy(groups[gr->gr_gid], gr->gr_name, NMAX);
