@@ -1,4 +1,4 @@
-.\"     @(#)J.t	1.1     89/02/23
+.\"     @(#)J.t	1.2     89/02/23
 .LP
 \fB\s+4J. References\fP\s-4
 .sp
@@ -68,16 +68,28 @@ M. Lepp and M. Karels, ``Exterior Gateway Protocol, Version 3, Revisions
 and Extensions to EGP,'' IDEA009, Internet Engineering Task Force working
 document, 1988.
 .sp
+.IP McKusick84
+M. McKusick, W. Joy, S. Leffler, R. Fabry,
+``A Fast File System for UNIX'',
+\fIACM Transactions on Computer Systems 2\fP, 3.
+pp 181-197, August 1984.
+.sp
 .IP McKusick85
 McKusick, M.K., M. Karels, S. Leffler,
 ``Performance Improvements and Functional Enhancements in 4.3BSD,''
 \fIUsenix Conference Proceedings\fP, pp. 519-531, June, 1985.
 .sp
 .IP McKusick86
-McKusick, M., M. Karels,
+McKusick, M., Karels, M.,
 ``A New Virtual Memory Implementation for Berkeley UNIX,''
 \fIProceedings of the European UNIX Users Group Meeting\fP,
 Manchester, England, pp. 451-460, September 1986.
+.sp
+.IP McKusick88
+McKusick, M., Karels, M.,
+``Design of a General Purpose Memory Allocator for the 4.3BSD UNIX Kernel'',
+\fIProceedings of the San Francisco Usenix Conference\fP,
+pp 295-304, June 1988.
 .sp
 .IP Rifkin86
 Rifkin, A.P., M.P. Forbes, R.L. Hamilton, M. Sabrio, S. Shah, K. Yueh,
