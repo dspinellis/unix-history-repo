@@ -1,7 +1,7 @@
 .nr DR 1	\" this is a draft copy
 .nr si 3n
 .he 'SENDMAIL''%'
-.fo 'Version 3.21'DRAFT'Last Mod %G%'
+.fo 'Version 3.22'DRAFT'Last Mod %G%'
 .ls 2
 .+c
 .(l C
@@ -64,7 +64,7 @@ but usernames can be assigned locally to each host.
 In an internet,
 multiple networks with different characterstics
 and managements
-must communicate
+must communicate.
 In particular,
 the syntax and semantics of resource identification change.
 Certain special cases can be handled trivially
@@ -333,7 +333,7 @@ for communicating with the process.
 All recipients are sent in the argument vector,
 and the message is sent on the standard input.
 Anything that the mailer prints
-is simply connected and sent back to the user
+is simply collected and sent back to the user
 if there were any problems.
 The exit status from the mailer is collected
 after the message is sent,
@@ -345,7 +345,8 @@ The SMTP protocol
 can be used to run an interactive lock-step interface
 with the mailer.
 A subprocess is still created,
-but no recipients are passed to the mailer.
+but no recipients are passed to the mailer
+via the argument list.
 Instead, they are passed one at a time
 in commands sent to the processes standard input.
 Anything appearing on the standard output
@@ -384,7 +385,7 @@ If
 .i sendmail
 is called using one of the two subprocess techniques,
 the arguments
-are first scanned,
+are first scanned
 and flag arguments processed.
 Recipient addresses are then collected,
 either from the command line
@@ -499,96 +500,6 @@ of each mailer),
 and address rewriting rules
 (a limited production system to rewrite addresses
 which is used to parse and rewrite the addresses).
-.sh 3 Macros
-.pp
-Macros can be used in three ways.
-Certain macros transmit
-unstructured textual information
-into the mail system,
-such as the name
-.i sendmail
-will use to identify itself in error messages.
-Other macros transmit information from
-.i sendmail
-to the configuration file
-for use in creating other fields
-(such as argument vectors to mailers);
-e.g., the name of the sender,
-and the host and user
-of the recipient.
-Other macros are unused internally,
-and can be used as shorthand in the configuration file.
-.sh 3 "Header declarations"
-.pp
-Header declarations inform
-.i sendmail
-of the format of known header lines.
-Knowledge of a few header lines
-is built into
-.i sendmail ,
-such as the
-.q From:
-and
-.q Date:
-lines.
-.pp
-Most configured headers
-will be automatically inserted
-in the outgoing message
-if they don't exist in the incoming message.
-Certain headers are suppressed by some mailers.
-.sh 3 "Mailer declarations"
-.pp
-Mailer declarations tell
-.i sendmail
-of the various mailers available to it.
-The definition specifies the internal name of the mailer,
-the pathname of the program to call,
-some flags associated with the mailer,
-and an argument vector to be used on the call;
-this vector is macro expanded before use.
-.sh 3 "Address rewriting rules"
-.pp
-The heart of address parsing in
-.i sendmail
-is a set of rewriting rules.
-These are an ordered list of pattern-replacement rules,
-(somewhat like a production system,
-except that order is critical),
-which are applied to each address.
-The address is rewritten textually until it is either rewritten
-into a special canonical form
-(i.e.,
-a (mailer, host, user)
-3-tuple,
-such as {arpanet, usc-isif, postel}
-representing the address
-.q "postel@usc-isif" ),
-or it falls off the end.
-When a pattern matches,
-the rule is reapplied until it fails.
-.pp
-The configuration file also supports the editing of addresses
-into different formats.
-For example,
-an address of the form:
-.(b
-ucsfcgl!tef
-.)b
-might be mapped into:
-.(b
-tef@ucsfcgl.UUCP
-.)b
-to conform to the domain syntax.
-Translations can also be done in the other direction.
-.sh 3 "Option setting"
-.pp
-There are a number of options that can be set
-from the configuration file.
-These include the pathnames of various support files,
-timeouts,
-default modes,
-etc.
 .sh 1 "USAGE AND IMPLEMENTATION"
 .sh 2 "Arguments"
 .pp
@@ -885,6 +796,102 @@ exists in the sender's home directory,
 that file is read as a configuration file
 after the system configuration file.
 The primary use of this is to add header lines.
+.pp
+The configuration file encodes macro definitions,
+header definitions,
+mailer definitions,
+rewriting rules,
+and options.
+.sh 3 Macros
+.pp
+Macros can be used in three ways.
+Certain macros transmit
+unstructured textual information
+into the mail system,
+such as the name
+.i sendmail
+will use to identify itself in error messages.
+Other macros transmit information from
+.i sendmail
+to the configuration file
+for use in creating other fields
+(such as argument vectors to mailers);
+e.g., the name of the sender,
+and the host and user
+of the recipient.
+Other macros are unused internally,
+and can be used as shorthand in the configuration file.
+.sh 3 "Header declarations"
+.pp
+Header declarations inform
+.i sendmail
+of the format of known header lines.
+Knowledge of a few header lines
+is built into
+.i sendmail ,
+such as the
+.q From:
+and
+.q Date:
+lines.
+.pp
+Most configured headers
+will be automatically inserted
+in the outgoing message
+if they don't exist in the incoming message.
+Certain headers are suppressed by some mailers.
+.sh 3 "Mailer declarations"
+.pp
+Mailer declarations tell
+.i sendmail
+of the various mailers available to it.
+The definition specifies the internal name of the mailer,
+the pathname of the program to call,
+some flags associated with the mailer,
+and an argument vector to be used on the call;
+this vector is macro expanded before use.
+.sh 3 "Address rewriting rules"
+.pp
+The heart of address parsing in
+.i sendmail
+is a set of rewriting rules.
+These are an ordered list of pattern-replacement rules,
+(somewhat like a production system,
+except that order is critical),
+which are applied to each address.
+The address is rewritten textually until it is either rewritten
+into a special canonical form
+(i.e.,
+a (mailer, host, user)
+3-tuple,
+such as {arpanet, usc-isif, postel}
+representing the address
+.q "postel@usc-isif" ),
+or it falls off the end.
+When a pattern matches,
+the rule is reapplied until it fails.
+.pp
+The configuration file also supports the editing of addresses
+into different formats.
+For example,
+an address of the form:
+.(b
+ucsfcgl!tef
+.)b
+might be mapped into:
+.(b
+tef@ucsfcgl.UUCP
+.)b
+to conform to the domain syntax.
+Translations can also be done in the other direction.
+.sh 3 "Option setting"
+.pp
+There are a number of options that can be set
+from the configuration file.
+These include the pathnames of various support files,
+timeouts,
+default modes,
+etc.
 .sh 1 "COMPARISON WITH OTHER MAILERS"
 .sh 2 "Delivermail"
 .pp
