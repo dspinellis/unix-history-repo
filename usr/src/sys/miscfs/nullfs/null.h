@@ -33,15 +33,15 @@ struct null_node {
 	struct vnode	*null_vnode;	/* Back pointer to vnode/null_node */
 };
 
-extern int make_null_node __P((struct mount *mp, struct vnode **vpp));
+extern int null_node_create __P((struct mount *mp, struct vnode *target, struct vnode **vpp));
 
 #define	MOUNTTONULLMOUNT(mp) ((struct null_mount *)((mp)->mnt_data))
 #define	VTONULL(vp) ((struct null_node *)(vp)->v_data)
 #ifdef NULLFS_DIAGNOSTIC
 extern struct vnode *null_checkvp __P((struct vnode *vp, char *fil, int lno));
-#define	NULLTOLOWERVP(vp) null_checkvp(vp, __FILE__, __LINE__)
+#define	NULLVPTOLOWERVP(vp) null_checkvp((vp), __FILE__, __LINE__)
 #else
-#define	NULLTOLOWERVP(vp) (VTONULLNODE(vp)->null_lowervp)
+#define	NULLVPTOLOWERVP(vp) (VTONULL(vp)->null_lowervp)
 #endif
 
 extern int (**null_vnodeop_p)();

@@ -3,12 +3,12 @@
  * All rights reserved.
  *
  * This code is derived from the null layer of
- * John Heidemann of the UCLA Ficus project and
- * the Jan-Simon Pendry's loopback file system.
+ * John Heidemann from the UCLA Ficus project and
+ * Jan-Simon Pendry's loopback file system.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vnops.c	1.3 (Berkeley) %G%
+ *	@(#)null_vnops.c	1.4 (Berkeley) %G%
  *
  * Ancestors:
  *	@(#)lofs_vnops.c	1.2 (Berkeley) 6/18/92
@@ -24,7 +24,7 @@
  * name space under a new name.  In this respect, it is
  * similar to the loopback file system.  It differs from
  * the loopback fs in two respects:  it is implemented using
- * a bypass operation, and it's "null-nodes" stack above
+ * a bypass operation, and it's "null-node"s stack above
  * all lower-layer vnodes, not just over directory vnodes.
  *
  * The null layer is the minimum file system layer,
@@ -37,8 +37,20 @@
  * they can handle freeing null-layer specific data.
  * Vop_print is not bypassed for debugging.
  *
+ *
+ * INVOKING OPERATIONS ON LOWER LAYERS
+ *
  * NEEDSWORK: Describe methods to invoke operations on the lower layer
  * (bypass vs. VOP).
+ *
+ *
+ * CREATING NEW FILESYSTEM LAYERS
+ *
+ * One of the easiest ways to construct new file system layers is to make
+ * a copy of the null layer, rename all files and variables, and
+ * then begin modifing the copy.  Sed can be used to easily rename
+ * all variables.
+ *
  */
 
 #include <sys/param.h>
@@ -51,7 +63,7 @@
 #include <sys/namei.h>
 #include <sys/malloc.h>
 #include <sys/buf.h>
-#include <lofs/lofs.h>
+#include <nullfs/null.h>
 
 
 int null_bug_bypass = 0;   /* for debugging: enables bypass printf'ing */
@@ -83,15 +95,16 @@ int null_bug_bypass = 0;   /* for debugging: enables bypass printf'ing */
  */ 
 int
 null_bypass(ap)
-	struct nvop_generic_args *ap;
+	struct vop_generic_args *ap;
 {
-	register int this_vp_p;
+	extern int (**null_vnodeop_p)();  /* not extern, really "forward" */
+	register struct vnode **this_vp_p;
 	int error;
 	struct vnode *old_vps[VDESC_MAX_VPS];
 	struct vnode **vps_p[VDESC_MAX_VPS];
 	struct vnode ***vppp;
 	struct vnodeop_desc *descp = ap->a_desc;
-	int maps, reles, i;
+	int reles, i;
 
 	if (null_bug_bypass)
 		printf ("null_bypass: %s\n", descp->vdesc_name);
@@ -110,19 +123,25 @@ null_bypass(ap)
 	 * Later, we'll invoke the operation based on
 	 * the first mapped vnode's operation vector.
 	 */
-	maps = descp->vdesc_flags;
-	reles = descp->vdesc_rele_flags;
-	for (i=0; i<VDESC_MAX_VPS; maps>>=1, reles>>=1, i++) {
+	reles = descp->vdesc_flags;
+	for (i=0; i<VDESC_MAX_VPS; reles>>=1, i++) {
 		if (descp->vdesc_vp_offsets[i]==VDESC_NO_OFFSET)
 			break;   /* bail out at end of list */
-		if (maps & 1)   /* skip vps that aren't to be mapped */
-			continue;
 		vps_p[i] = this_vp_p = 
 			VOPARG_OFFSETTO(struct vnode**,descp->vdesc_vp_offsets[i],ap);
-		old_vps[i] = *this_vp_p;
-		*(vps_p[i]) = NULLTOLOWERVP(VTONULLNODE(*this_vp_p));
-		if (reles & 1)
-			VREF(*this_vp_p);
+		/*
+		 * We're not guaranteed that any but the first vnode
+		 * are of our type.  Check for and don't map any
+		 * that aren't.
+		 */
+		if ((*this_vp_p)->v_op != null_vnodeop_p) {
+			old_vps[i] = NULL;
+		} else {
+			old_vps[i] = *this_vp_p;
+			*(vps_p[i]) = NULLVPTOLOWERVP(*this_vp_p);
+			if (reles & 1)
+				VREF(*this_vp_p);
+		};
 			
 	};
 
@@ -137,16 +156,15 @@ null_bypass(ap)
 	 * by restoring vnodes in the argument structure
 	 * to their original value.
 	 */
-	maps = descp->vdesc_flags;
-	reles = descp->vdesc_rele_flags;
-	for (i=0; i<VDESC_MAX_VPS; maps>>=1, i++) {
+	reles = descp->vdesc_flags;
+	for (i=0; i<VDESC_MAX_VPS; reles>>=1, i++) {
 		if (descp->vdesc_vp_offsets[i]==VDESC_NO_OFFSET)
 			break;   /* bail out at end of list */
-		if (maps & 1)   /* skip vps that aren't to be mapped */
-			continue;
-		*(vps_p[i]) = old_vps[i];
-		if (reles & 1)
-			vrele(*(vps_p[i]));
+		if (old_vps[i]) {
+			*(vps_p[i]) = old_vps[i];
+			if (reles & 1)
+				vrele(*(vps_p[i]));
+		};
 	};
 
 	/*
@@ -157,7 +175,7 @@ null_bypass(ap)
 	    !error) {
 		vppp=VOPARG_OFFSETTO(struct vnode***,
 				 descp->vdesc_vpp_offset,ap);
-		error = make_null_node(old_vps[0]->v_mount, **vppp, *vppp);
+		error = null_node_create(old_vps[0]->v_mount, **vppp, *vppp);
 	};
 
 	return (error);
@@ -169,7 +187,7 @@ null_bypass(ap)
  */
 int
 null_getattr(ap)
-	struct nvop_getattr_args *ap;
+	struct vop_getattr_args *ap;
 {
 	int error;
 	if (error=null_bypass(ap))
@@ -180,192 +198,12 @@ null_getattr(ap)
 }
 
 
-#if 0
-null_rename (ap)
-	struct vop_rename_args *ap;
-{
-	USES_VOP_RENAME;
-	struct vnode *fvp, *tvp;
-	struct vnode *tdvp;
-#if 0
-	struct vnode *fsvp, *tsvp;
-#endif
-	int error;
-
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_rename(fdvp = %x->%x)\n", ap->a_fdvp, NULLTOLOWERVP(ap->a_fdvp));
-	/*printf("null_rename(tdvp = %x->%x)\n", tndp->ni_dvp, NULLTOLOWERVP(tndp->ni_dvp));*/
-#endif
-
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_rename - switch source dvp\n");
-#endif
-	/*
-	 * Switch source directory to point to lofsed vnode
-	 */
-	PUSHREF(fdvp, ap->a_fdvp);
-	VREF(ap->a_fdvp);
-
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_rename - switch source vp\n");
-#endif
-	/*
-	 * And source object if it is lofsed...
-	 */
-	fvp = ap->a_fvp;
-	if (fvp && fvp->v_op == null_vnodeop_p) {
-		ap->a_fvp = NULLTOLOWERVP(fvp);
-		VREF(ap->a_fvp);
-	} else {
-		fvp = 0;
-	}
-
-#if 0
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_rename - switch source start vp\n");
-#endif
-	/*
-	 * And source startdir object if it is lofsed...
-	 */
-	fsvp = fndp->ni_startdir;
-	if (fsvp && fsvp->v_op == null_vnodeop_p) {
-		fndp->ni_startdir = NULLTOLOWERVP(fsvp);
-		VREF(fndp->ni_startdir);
-	} else {
-		fsvp = 0;
-	}
-#endif
-
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_rename - switch target dvp\n");
-#endif
-	/*
- 	 * Switch target directory to point to lofsed vnode
-	 */
-	tdvp = ap->a_tdvp;
-	if (tdvp && tdvp->v_op == null_vnodeop_p) {
-		ap->a_tdvp = NULLTOLOWERVP(tdvp);
-		VREF(ap->a_tdvp);
-	} else {
-		tdvp = 0;
-	}
-
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_rename - switch target vp\n");
-#endif
-	/*
-	 * And target object if it is lofsed...
-	 */
-	tvp = ap->a_tvp;
-	if (tvp && tvp->v_op == null_vnodeop_p) {
-		ap->a_tvp = NULLTOLOWERVP(tvp);
-		VREF(ap->a_tvp);
-	} else {
-		tvp = 0;
-	}
-
-#if 0
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_rename - switch target start vp\n");
-#endif
-	/*
-	 * And target startdir object if it is lofsed...
-	 */
-	tsvp = tndp->ni_startdir;
-	if (tsvp && tsvp->v_op == null_vnodeop_p) {
-		tndp->ni_startdir = NULLTOLOWERVP(fsvp);
-		VREF(tndp->ni_startdir);
-	} else {
-		tsvp = 0;
-	}
-#endif
-
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_rename - VOP_RENAME(%x, %x, %x, %x)\n",
-		ap->a_fdvp, ap->a_fvp, ap->a_tdvp, ap->a_tvp);
-	vprint("ap->a_fdvp", ap->a_fdvp);
-	vprint("ap->a_fvp", ap->a_fvp);
-	vprint("ap->a_tdvp", ap->a_tdvp);
-	if (ap->a_tvp) vprint("ap->a_tvp", ap->a_tvp);
-	DELAY(16000000);
-#endif
-
-	error = VOP_RENAME(ap->a_fdvp, ap->a_fvp, ap->a_fcnp, ap->a_tdvp, ap->a_tvp, ap->a_tcnp);
-
-	/*
-	 * Put everything back...
-	 */
- 
-#if 0
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_rename - restore target startdir\n");
-#endif
-
-	if (tsvp) {
-		if (tndp->ni_startdir)
-			vrele(tndp->ni_startdir);
-		tndp->ni_startdir = tsvp;
-	}
-#endif
-
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_rename - restore target vp\n");
-#endif
-
-	if (tvp) {
-		ap->a_tvp = tvp;
-		vrele(ap->a_tvp);
-	}
-
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_rename - restore target dvp\n");
-#endif
-
-	if (tdvp) {
-		ap->a_tdvp = tdvp;
-		vrele(ap->a_tdvp);
-	}
-
-#if 0
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_rename - restore source startdir\n");
-#endif
-
-	if (fsvp) {
-		if (fndp->ni_startdir)
-			vrele(fndp->ni_startdir);
-		fndp->ni_startdir = fsvp;
-	}
-#endif
-
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_rename - restore source vp\n");
-#endif
-
-
-	if (fvp) {
-		ap->a_fvp = fvp;
-		vrele(ap->a_fvp);
-	}
-
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_rename - restore source dvp\n");
-#endif
-
-	POP(fdvp, ap->a_fdvp);
-	vrele(ap->a_fdvp);
-
-	return (error);
-}
-#endif
-
-
 int
 null_inactive (ap)
 	struct vop_inactive_args *ap;
 {
 #ifdef NULLFS_DIAGNOSTIC
-	printf("null_inactive(ap->a_vp = %x->%x)\n", ap->a_vp, NULLTOLOWERVP(ap->a_vp));
+	printf("null_inactive(ap->a_vp = %x->%x)\n", ap->a_vp, NULLVPTOLOWERVP(ap->a_vp));
 #endif
 	/*
 	 * Do nothing (and _don't_ bypass).
@@ -384,13 +222,12 @@ null_inactive (ap)
 null_reclaim (ap)
 	struct vop_reclaim_args *ap;
 {
-	USES_VOP_RECLAIM;
 	struct vnode *targetvp;
 #ifdef NULLFS_DIAGNOSTIC
-	printf("null_reclaim(ap->a_vp = %x->%x)\n", ap->a_vp, NULLTOLOWERVP(ap->a_vp));
+	printf("null_reclaim(ap->a_vp = %x->%x)\n", ap->a_vp, NULLVPTOLOWERVP(ap->a_vp));
 #endif
-	remque(VTONULLNODE(ap->a_vp));   /* NEEDSWORK: What? */
-	vrele (NULLTOLOWERVP(ap->a_vp));   /* release lower layer */
+	remque(VTONULL(ap->a_vp));	     /* NEEDSWORK: What? */
+	vrele (NULLVPTOLOWERVP(ap->a_vp));   /* release lower layer */
 	FREE(ap->a_vp->v_data, M_TEMP);
 	ap->a_vp->v_data = 0;
 	return (0);
@@ -399,23 +236,21 @@ null_reclaim (ap)
 null_bmap (ap)
 	struct vop_bmap_args *ap;
 {
-	USES_VOP_BMAP;
 #ifdef NULLFS_DIAGNOSTIC
-	printf("null_bmap(ap->a_vp = %x->%x)\n", ap->a_vp, NULLTOLOWERVP(ap->a_vp));
+	printf("null_bmap(ap->a_vp = %x->%x)\n", ap->a_vp, NULLVPTOLOWERVP(ap->a_vp));
 #endif
 
-	return VOP_BMAP(NULLTOLOWERVP(ap->a_vp), ap->a_bn, ap->a_vpp, ap->a_bnp);
+	return VOP_BMAP(NULLVPTOLOWERVP(ap->a_vp), ap->a_bn, ap->a_vpp, ap->a_bnp);
 }
 
 null_strategy (ap)
 	struct vop_strategy_args *ap;
 {
-	USES_VOP_STRATEGY;
 	int error;
 	struct vnode *savedvp;
 
 #ifdef NULLFS_DIAGNOSTIC
-	printf("null_strategy(vp = %x->%x)\n", ap->a_bp->b_vp, NULLTOLOWERVP(ap->a_bp->b_vp));
+	printf("null_strategy(vp = %x->%x)\n", ap->a_bp->b_vp, NULLVPTOLOWERVP(ap->a_bp->b_vp));
 #endif
 
 	savedvp = ap->a_bp->b_vp;
@@ -433,7 +268,7 @@ null_print (ap)
 	struct vop_print_args *ap;
 {
 	register struct vnode *vp = ap->a_vp;
-	printf ("tag VT_NULLFS, vp=%x, lowervp=%x\n", vp, NULLTOLOWERVP(vp));
+	printf ("tag VT_NULLFS, vp=%x, lowervp=%x\n", vp, NULLVPTOLOWERVP(vp));
 	return 0;
 }
 
@@ -447,7 +282,7 @@ null_print (ap)
  *
  */
 int (**null_vnodeop_p)();
-struct vnodeopv_entry_desc lofs_vnodeop_entries[] = {
+struct vnodeopv_entry_desc null_vnodeop_entries[] = {
 	{ &vop_default_desc, null_bypass },
 
 	{ &vop_getattr_desc, null_getattr },
@@ -460,5 +295,5 @@ struct vnodeopv_entry_desc lofs_vnodeop_entries[] = {
 
 	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
 };
-struct vnodeopv_desc lofs_vnodeop_opv_desc =
-	{ &null_vnodeop_p, lofs_vnodeop_entries };
+struct vnodeopv_desc null_vnodeop_opv_desc =
+	{ &null_vnodeop_p, null_vnodeop_entries };
