@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.12 %G%"
+SCCSID = "@(#)Makefile 1.13 %G%"
 
 CFLAGS = -O
 
@@ -12,7 +12,7 @@ RM = /bin/rm -f
 RANLIB= ranlib
 AR= /bin/ar
 
-CMDS =	ACTFILE.c ADDT.c ARGV.c ASRT.c BUFF.c CARD.c CHR.c CLCK.c \
+CMDS =	ACTFILE.c ADDT.c ARGV.c ASRT.c BUFF.c CARD.c CASERNG.c CHR.c CLCK.c \
 	CTTOT.c DATE.c DEFNAME.c DISPOSE.c EXPO.c FCALL.c FLUSH.c \
 	FNIL.c FRTN.c FSAV.c GET.c GOTO.s HALT.c IN.c INCT.c LINO.c \
 	LLIMIT.c LN.c MAX.c MULT.c NAM.c NEW.c NEWZ.c NIL.c PACK.c \
@@ -30,7 +30,7 @@ EXTN =	APPEND.c SEEK.c TELL.c
 
 HDRS =	whoami.h h00vars.h
 
-OBJS =	ACTFILE.o ADDT.o ARGV.o ASRT.o BUFF.o CARD.o CHR.o CLCK.o\
+OBJS =	ACTFILE.o ADDT.o ARGV.o ASRT.o BUFF.o CARD.o CASERNG.o CHR.o CLCK.o\
 	CTTOT.o DATE.o DEFNAME.o DISPOSE.o EXPO.o FCALL.o FLUSH.o\
 	FNIL.o FRTN.o FSAV.o GET.o GOTO.o HALT.o IN.o INCT.o LINO.o \
 	LLIMIT.o LN.o MAX.o MULT.o NAM.o NEW.o NEWZ.o NIL.o PACK.o\
