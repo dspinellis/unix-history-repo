@@ -1,93 +1,68 @@
 #ifndef lint
-static char *sccsid = "@(#)lastcomm.c	4.5 (Berkeley) 83/04/04";
+static char *sccsid = "@(#)lastcomm.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
  * last command
  */
-#include <stdio.h>
 #include <sys/param.h>
 #include <sys/acct.h>
-#include <sys/dir.h>
-#include <signal.h>
+#include <sys/file.h>
+
+#include <stdio.h>
 #include <pwd.h>
 #include <stat.h>
 #include <utmp.h>
 #include <struct.h>
 #include <ctype.h>
 
-#define N_USER		4000		/* highest alloc user # */
-#define N_DEVS		43		/* hash value for device names */
-#define NDEVS		500		/* max number of file names in /dev */
+struct	acct buf[DEV_BSIZE / sizeof (struct acct)];
 
-struct	acct acct_buff[BUFSIZ / sizeof (struct acct)];
-char	user_list[N_USER][fldsiz(utmp, ut_name) + 1];
-
-struct	devhash {
-	dev_t	dev_dev;
-	char	dev_name [fldsiz(utmp, ut_line) + 1];
-	struct	devhash * dev_nxt;
-};
-struct	devhash *dev_hash[N_DEVS];
-struct	devhash *dev_chain ;
-#define HASH(d)	(((int) d) % N_DEVS)
-
-time_t	expand ();
+time_t	expand();
 char	*flagbits();
-char	*ttyname();
-
-struct	passwd *passwd, *getpwent ();
-struct stat stat_buff;
+char	*getname();
+char	*getdev();
 
 main(argc, argv)
 	char *argv[];
 {
-	char acct_desc, *p;
-	long i, j, i_block, n_blocks, n_byte, n_entry, x;
+	register int bn, cc;
 	register struct acct *acp;
+	int fd;
+	struct stat sb;
 
-	/*
-	 * Set up user names
-	 */
-	while (passwd = getpwent())
-		if (user_list[passwd->pw_uid][0] == 0)
-			strcpy(user_list[passwd->pw_uid], passwd->pw_name);
-	/*
-	 * Find dev numbers corresponding to names in /dev
-	 */
-	setupdevs();
-	acct_desc = open("/usr/adm/acct", 0);
-	if (acct_desc < 0) {
+	fd = open("/usr/adm/acct", O_RDONLY);
+	if (fd < 0) {
 		perror("/usr/adm/acct");
 		exit(1);
 	}
-	fstat(acct_desc, &stat_buff);
-	n_blocks = (stat_buff.st_size + BUFSIZ - 1) / BUFSIZ;
+	fstat(fd, &sb);
+	for (bn = btodb(sb.st_size) - 1; bn >= 0; bn--) {
+		lseek(fd, bn * DEV_BSIZE, L_SET);
+		cc = read(fd, buf, DEV_BSIZE);
+		if (cc < 0) {
+			perror("read");
+			break;
+		}
+		acp = buf + (cc / sizeof (buf[0])) - 1;
+		for (; acp >= buf; acp--) {
+			register char *cp;
+			time_t x =
+			    expand(acp->ac_utime) + expand(acp->ac_stime);
 
-	/*
-	 * Read one block's worth
-	 */
-	for (i_block = n_blocks - 1; i_block >= 0; i_block--) {
-		lseek(acct_desc, i_block * BUFSIZ, 0);
-		n_byte = read(acct_desc, acct_buff, BUFSIZ);
-		n_entry = n_byte / sizeof acct_buff[0];
-		for (acp = acct_buff + n_entry - 1; acp >= acct_buff; acp--) {
-			if (*user_list[acp->ac_uid] == '\0')
-				continue;
-			x = expand(acp->ac_utime) + expand(acp->ac_stime);
 			acp->ac_comm[10] = '\0';
 			if (*acp->ac_comm == '\0')
 				strcpy(acp->ac_comm, "?");
-			for (p = acp->ac_comm; *p; p++)
-				if (iscntrl(*p))
-					*p = '?';
+			for (cp = acp->ac_comm; *cp; cp++)
+				if (iscntrl(*cp))
+					*cp = '?';
 			if (!ok(argc, argv, acp) && argc != 1)
 				continue;
 			printf("%-*s %s %-*s %-*s %4d sec%s %.16s\n",
 				fldsiz(acct, ac_comm), acp->ac_comm,
 				flagbits(acp->ac_flag),
-				fldsiz(utmp, ut_name), user_list[acp->ac_uid],
-				fldsiz(utmp, ut_line), ttyname(acp->ac_tty),
+				fldsiz(utmp, ut_name), getname(acp->ac_uid),
+				fldsiz(utmp, ut_line), getdev(acp->ac_tty),
 				x, x > 1 || x == 0 ? "s" : " ",
 				ctime(&acp->ac_btime));
 		}
@@ -126,6 +101,94 @@ flagbits(f)
 	return (flags);
 }
 
+ok(argc, argv, acp)
+	register int argc;
+	register char *argv[];
+	register struct acct *acp;
+{
+	register int j;
+
+	for (j = 1; j < argc; j++)
+		if (strcmp(getname(acp->ac_uid), argv[j]) &&
+		    strcmp(getdev(acp->ac_tty), argv[j]) &&
+		    strcmp(acp->ac_comm, argv[j]))
+			break;
+	return (j == argc);
+}
+
+/* should be done with nameserver or database */
+
+struct	utmp utmp;
+
+#define NUID	2048
+#define	NMAX	(sizeof (utmp.ut_name))
+
+char	names[NUID][NMAX+1];
+char	outrangename[NMAX+1];
+int	outrangeuid = -1;
+
+char *
+getname(uid)
+{
+	register struct passwd *pw;
+	static init;
+	struct passwd *getpwent();
+
+	if (uid >= 0 && uid < NUID && names[uid][0])
+		return (&names[uid][0]);
+	if (uid >= 0 && uid == outrangeuid)
+		return (outrangename);
+	if (init == 2) {
+		if (uid < NUID)
+			return (0);
+		setpwent();
+		while (pw = getpwent()) {
+			if (pw->pw_uid != uid)
+				continue;
+			outrangeuid = pw->pw_uid;
+			strncpy(outrangename, pw->pw_name, NUID);
+			endpwent();
+			return (outrangename);
+		}
+		endpwent();
+		return (0);
+	}
+	if (init == 0)
+		setpwent(), init = 1;
+	while (pw = getpwent()) {
+		if (pw->pw_uid < 0 || pw->pw_uid >= NUID) {
+			if (pw->pw_uid == uid) {
+				outrangeuid = pw->pw_uid;
+				strncpy(outrangename, pw->pw_name, NUID);
+				return (outrangename);
+			}
+			continue;
+		}
+		if (names[pw->pw_uid][0])
+			continue;
+		strncpy(names[pw->pw_uid], pw->pw_name, NMAX);
+		if (pw->pw_uid == uid)
+			return (&names[uid][0]);
+	}
+	init = 2;
+	endpwent();
+	return (0);
+}
+
+#include <sys/dir.h>
+
+#define N_DEVS		43		/* hash value for device names */
+#define NDEVS		500		/* max number of file names in /dev */
+
+struct	devhash {
+	dev_t	dev_dev;
+	char	dev_name [fldsiz(utmp, ut_line) + 1];
+	struct	devhash * dev_nxt;
+};
+struct	devhash *dev_hash[N_DEVS];
+struct	devhash *dev_chain;
+#define HASH(d)	(((int) d) % N_DEVS)
+
 setupdevs()
 {
 	register DIR * fd;
@@ -137,18 +200,16 @@ setupdevs()
 		perror("/dev");
 		return;
 	}
-	if ((hashtab = (struct devhash *)malloc(NDEVS * sizeof(struct devhash)))
-	    == (struct devhash *) 0) {
+	hashtab = (struct devhash *)malloc(NDEVS * sizeof(struct devhash));
+	if (hashtab == (struct devhash *)0) {
 		fprintf(stderr, "No mem for dev table\n");
 		return;
 	}
 	while (dp = readdir(fd)) {
 		if (dp->d_ino == 0)
 			continue;
-#ifdef	MELB
 		if (dp->d_name[0] != 't' && strcmp(dp->d_name, "console"))
 			continue;
-#endif
 		strncpy(hashtab->dev_name, dp->d_name, fldsiz(utmp, ut_line));
 		hashtab->dev_name[fldsiz(utmp, ut_line)] = 0;
 		hashtab->dev_nxt = dev_chain;
@@ -161,7 +222,7 @@ setupdevs()
 }
 
 char *
-ttyname(dev)
+getdev(dev)
 	dev_t dev;
 {
 	register struct devhash *hp, *nhp;
@@ -169,11 +230,16 @@ ttyname(dev)
 	char name[fldsiz(devhash, dev_name) + 6];
 	static dev_t lastdev = (dev_t) -1;
 	static char *lastname;
+	int init = 0;
 
 	if (dev == NODEV)
 		return ("__");
 	if (dev == lastdev)
 		return (lastname);
+	if (!init) {
+		setupdevs();
+		init++;
+	}
 	for (hp = dev_hash[HASH(dev)]; hp; hp = hp->dev_nxt)
 		if (hp->dev_dev == dev) {
 			lastdev = dev;
@@ -198,19 +264,4 @@ ttyname(dev)
 	}
 	dev_chain = (struct devhash *) 0;
 	return ("??");
-}
-
-ok(argc, argv, acp)
-	register int argc;
-	register char *argv[];
-	register struct acct *acp;
-{
-	register int j;
-
-	for (j = 1; j < argc; j++)
-		if (strcmp(user_list[acp->ac_uid], argv[j]) &&
-		    strcmp(ttyname(acp->ac_tty), argv[j]) &&
-		    strcmp(acp->ac_comm, argv[j]))
-			break;
-	return (j == argc);
 }
