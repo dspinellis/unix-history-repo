@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	6.6	84/11/27	*/
+/*	uipc_syscalls.c	6.7	85/05/27	*/
 
 #include "param.h"
 #include "systm.h"
@@ -688,8 +688,10 @@ pipe()
 	wf->f_data = (caddr_t)wso;
 	u.u_r.r_val2 = u.u_r.r_val1;
 	u.u_r.r_val1 = r;
-	if (piconnect(wso, rso) == 0)
+	if (u.u_error = unp_connect2(wso, (struct mbuf *)0, rso))
 		goto free4;
+	wso->so_state |= SS_CANTRCVMORE;
+	rso->so_state |= SS_CANTSENDMORE;
 	return;
 free4:
 	wf->f_count = 0;
