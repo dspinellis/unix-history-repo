@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ext.h	5.9 (Berkeley) %G%
+ *	@(#)ext.h	5.10 (Berkeley) %G%
  */
 
 /*
@@ -130,7 +130,9 @@ extern void
 extern int
 	end_slc P((unsigned char **)),
 	getnpty P((void)),
-	getpty P((void)),
+#ifndef convex
+	getpty P((int *)),
+#endif convex
 	login_tty P((int)),
 	spcset P((int, cc_t *, cc_t **)),
 	stilloob P((int)),
@@ -163,11 +165,11 @@ extern void
 	wontoption P((int)),
 	writenet P((unsigned char *, int));
 
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 extern void	(*encrypt_output) P((unsigned char *, int));
 extern int	(*decrypt_input) P((int));
 extern char	*nclearto;
-#endif
+#endif	/* ENCRYPTION */
 
 
 /*

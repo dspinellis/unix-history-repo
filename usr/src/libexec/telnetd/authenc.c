@@ -6,10 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)authenc.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)authenc.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
-#if	defined(ENCRYPTION) || defined(AUTHENTICATION)
+#if	defined(AUTHENTICATION) || defined(ENCRYPTION)
 #include "telnetd.h"
 #include <libtelnet/misc.h>
 
@@ -29,13 +29,13 @@ net_write(str, len)
 	void
 net_encrypt()
 {
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	char *s = (nclearto > nbackp) ? nclearto : nbackp;
 	if (s < nfrontp && encrypt_output) {
 		(*encrypt_output)((unsigned char *)s, nfrontp - s);
 	}
 	nclearto = nfrontp;
-#endif
+#endif /* ENCRYPTION */
 }
 
 	int
@@ -62,4 +62,4 @@ telnet_gets(prompt, result, length, echo)
 {
 	return((char *)0);
 }
-#endif
+#endif	/* defined(AUTHENTICATION) || defined(ENCRYPTION) */

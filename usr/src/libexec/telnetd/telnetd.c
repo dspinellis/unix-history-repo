@@ -12,20 +12,37 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.51 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.52 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
 #include "pathnames.h"
 
+#if	defined(_SC_CRAY_SECURE_SYS) && !defined(SCM_SECURITY)
+/*
+ * UNICOS 6.0/6.1 do not have SCM_SECURITY defined, so we can
+ * use it to tell us to turn off all the socket security code,
+ * since that is only used in UNICOS 7.0 and later.
+ */
+# undef _SC_CRAY_SECURE_SYS
+#endif
+
 #if	defined(_SC_CRAY_SECURE_SYS)
 #include <sys/sysv.h>
 #include <sys/secdev.h>
+# ifdef SO_SEC_MULTI		/* 8.0 code */
+#include <sys/secparm.h>
+#include <sys/usrv.h>
+# endif /* SO_SEC_MULTI */
 int	secflag;
 char	tty_dev[16];
 struct	secdev dv;
 struct	sysv sysv;
+# ifdef SO_SEC_MULTI		/* 8.0 code */
+struct	socksec ss;
+# else /* SO_SEC_MULTI */	/* 7.0 code */
 struct	socket_security ss;
+# endif /* SO_SEC_MULTI */
 #endif	/* _SC_CRAY_SECURE_SYS */
 
 #if	defined(AUTHENTICATION)
@@ -84,6 +101,40 @@ char *progname;
 
 extern void usage P((void));
 
+/*
+ * The string to pass to getopt().  We do it this way so
+ * that only the actual options that we support will be
+ * passed off to getopt().
+ */
+char valid_opts[] = {
+	'd', ':', 'h', 'k', 'n', 'S', ':', 'u', ':', 'U',
+#ifdef	AUTHENTICATION
+	'a', ':', 'X', ':',
+#endif
+#ifdef BFTPDAEMON
+	'B',
+#endif
+#ifdef DIAGNOSTICS
+	'D', ':',
+#endif
+#ifdef	ENCRYPTION
+	'e', ':',
+#endif
+#if	defined(CRAY) && defined(NEWINIT)
+	'I', ':',
+#endif
+#ifdef	LINEMODE
+	'l',
+#endif
+#ifdef CRAY
+	'r', ':',
+#endif
+#ifdef	SecurID
+	's',
+#endif
+	'\0'
+};
+
 main(argc, argv)
 	char *argv[];
 {
@@ -99,9 +150,9 @@ main(argc, argv)
 	pfrontp = pbackp = ptyobuf;
 	netip = netibuf;
 	nfrontp = nbackp = netobuf;
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	nclearto = 0;
-#endif
+#endif	/* ENCRYPTION */
 
 	progname = *argv;
 
@@ -113,7 +164,7 @@ main(argc, argv)
 	highpty = getnpty();
 #endif /* CRAY */
 
-	while ((ch = getopt(argc, argv, "d:a:e:klhnr:u:UI:D:B:sS:a:X:")) != EOF) {
+	while ((ch = getopt(argc, argv, valid_opts)) != EOF) {
 		switch(ch) {
 
 #ifdef	AUTHENTICATION
@@ -288,7 +339,7 @@ main(argc, argv)
 #endif	/* AUTHENTICATION */
 
 		default:
-			fprintf(stderr, "telnetd: %s: unknown option\n", ch);
+			fprintf(stderr, "telnetd: %c: unknown option\n", ch);
 			/* FALLTHROUGH */
 		case '?':
 			usage();
@@ -365,10 +416,14 @@ main(argc, argv)
 	secflag = sysconf(_SC_CRAY_SECURE_SYS);
 
 	/*
-	 *      Get socket's security label 
+	 *	Get socket's security label
 	 */
 	if (secflag)  {
-		int sz = sizeof(ss);
+		int szss = sizeof(ss);
+#ifdef SO_SEC_MULTI			/* 8.0 code */
+		int sock_multi;
+		int szi = sizeof(int);
+#endif /* SO_SEC_MULTI */
 
 		bzero((char *)&dv, sizeof(dv));
 
@@ -378,18 +433,39 @@ main(argc, argv)
 		}
 
 		/*
-		 *      Get socket security label and set device values
-		 *         {security label to be set on ttyp device}
+		 *	Get socket security label and set device values
+		 *	   {security label to be set on ttyp device}
 		 */
+#ifdef SO_SEC_MULTI			/* 8.0 code */
+		if ((getsockopt(0, SOL_SOCKET, SO_SECURITY,
+			       (char *)&ss, &szss) < 0) ||
+		    (getsockopt(0, SOL_SOCKET, SO_SEC_MULTI,
+				(char *)&sock_multi, &szi) < 0)) {
+			perror("getsockopt");
+			exit(1);
+		} else {
+			dv.dv_actlvl = ss.ss_actlabel.lt_level;
+			dv.dv_actcmp = ss.ss_actlabel.lt_compart;
+			if (!sock_multi) {
+				dv.dv_minlvl = dv.dv_maxlvl = dv.dv_actlvl;
+				dv.dv_valcmp = dv.dv_actcmp;
+			} else {
+				dv.dv_minlvl = ss.ss_minlabel.lt_level;
+				dv.dv_maxlvl = ss.ss_maxlabel.lt_level;
+				dv.dv_valcmp = ss.ss_maxlabel.lt_compart;
+			}
+			dv.dv_devflg = 0;
+		}
+#else /* SO_SEC_MULTI */		/* 7.0 code */
 		if (getsockopt(0, SOL_SOCKET, SO_SECURITY,
-				(char *)&ss, &sz) >= 0) {
-
+				(char *)&ss, &szss) >= 0) {
 			dv.dv_actlvl = ss.ss_slevel;
 			dv.dv_actcmp = ss.ss_compart;
 			dv.dv_minlvl = ss.ss_minlvl;
 			dv.dv_maxlvl = ss.ss_maxlvl;
 			dv.dv_valcmp = ss.ss_maxcmp;
 		}
+#endif /* SO_SEC_MULTI */
 	}
 #endif	/* _SC_CRAY_SECURE_SYS */
 
@@ -432,7 +508,7 @@ usage()
 {
 	fprintf(stderr, "Usage: telnetd");
 #ifdef	AUTHENTICATION
-	fprintf(stderr, " [-a (debug|other|user|valid|off)]\n\t");
+	fprintf(stderr, " [-a (debug|other|user|valid|off|none)]\n\t");
 #endif
 #ifdef BFTPDAEMON
 	fprintf(stderr, " [-B]");
@@ -448,6 +524,9 @@ usage()
 #if	defined(CRAY) && defined(NEWINIT)
 	fprintf(stderr, " [-Iinitid]");
 #endif
+#if	defined(LINEMODE) && defined(KLUDGELINEMODE)
+	fprintf(stderr, " [-k]");
+#endif
 #ifdef LINEMODE
 	fprintf(stderr, " [-l]");
 #endif
@@ -455,8 +534,12 @@ usage()
 #ifdef	CRAY
 	fprintf(stderr, " [-r[lowpty]-[highpty]]");
 #endif
+	fprintf(stderr, "\n\t");
 #ifdef	SecurID
 	fprintf(stderr, " [-s]");
+#endif
+#ifdef	HAS_GETTOS
+	fprintf(stderr, " [-S tos]");
 #endif
 #ifdef	AUTHENTICATION
 	fprintf(stderr, " [-X auth-type]");
@@ -494,24 +577,24 @@ getterminaltype(name)
     }
 #endif
 
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
     send_will(TELOPT_ENCRYPT, 1);
-#endif
+#endif	/* ENCRYPTION */
     send_do(TELOPT_TTYPE, 1);
     send_do(TELOPT_TSPEED, 1);
     send_do(TELOPT_XDISPLOC, 1);
     send_do(TELOPT_ENVIRON, 1);
     while (
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	   his_do_dont_is_changing(TELOPT_ENCRYPT) ||
-#endif
+#endif	/* ENCRYPTION */
 	   his_will_wont_is_changing(TELOPT_TTYPE) ||
 	   his_will_wont_is_changing(TELOPT_TSPEED) ||
 	   his_will_wont_is_changing(TELOPT_XDISPLOC) ||
 	   his_will_wont_is_changing(TELOPT_ENVIRON)) {
 	ttloop();
     }
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
     /*
      * Wait for the negotiation of what type of encryption we can
      * send with.  If autoencrypt is not set, this will just return.
@@ -519,7 +602,7 @@ getterminaltype(name)
     if (his_state_is_will(TELOPT_ENCRYPT)) {
 	encrypt_wait();
     }
-#endif
+#endif	/* ENCRYPTION */
     if (his_state_is_will(TELOPT_TSPEED)) {
 	static char sbbuf[] = { IAC, SB, TELOPT_TSPEED, TELQUAL_SEND, IAC, SE };
 
@@ -661,13 +744,14 @@ doit(who)
 	int t;
 	struct hostent *hp;
 	int level;
+	int ptynum;
 	char user_name[256];
 
 	/*
 	 * Find an available pty to use.
 	 */
 #ifndef	convex
-	pty = getpty();
+	pty = getpty(&ptynum);
 	if (pty < 0)
 		fatal(net, "All network ports in use");
 #else
@@ -691,9 +775,14 @@ doit(who)
 	 *	set ttyp line security label 
 	 */
 	if (secflag) {
-		extern char *myline;
-		if (setdevs(myline, &dv) < 0)
-			fatal(net, "cannot set pty security");
+		char slave_dev[16];
+
+		sprintf(tty_dev, "/dev/pty/%03d", ptynum);
+		if (setdevs(tty_dev, &dv) < 0)
+		 	fatal(net, "cannot set pty security");
+		sprintf(slave_dev, "/dev/ttyp%03d", ptynum);
+		if (setdevs(slave_dev, &dv) < 0)
+		 	fatal(net, "cannot set tty security");
 	}
 #endif	/* _SC_CRAY_SECURE_SYS */
 
@@ -738,6 +827,15 @@ doit(who)
 	 */
 #ifndef	convex
 	startslave(host, level, user_name);
+
+#if	defined(_SC_CRAY_SECURE_SYS)
+	if (secflag) {
+		if (setulvl(dv.dv_actlvl) < 0)
+			fatal(net,"cannot setulvl()");
+		if (setucmp(dv.dv_actcmp) < 0)
+			fatal(net, "cannot setucmp()");
+	}
+#endif	/* _SC_CRAY_SECURE_SYS */
 
 	telnet(net, pty);  /* begin server processing */
 #else
