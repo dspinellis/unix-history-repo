@@ -6,16 +6,18 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpwent.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpwent.c	5.16 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <fcntl.h>
 #include <pwd.h>
 #include <ndbm.h>
-#include <unistd.h>
-#include <syslog.h>
 #include <utmp.h>
+#include <errno.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
 #include <limits.h>
 
 static struct passwd _pw_passwd;	/* password structure */
@@ -23,7 +25,7 @@ static DBM *_pw_db;			/* password database */
 static int _pw_keynum;			/* key counter */
 static int _pw_stayopen;		/* keep fd's open */
 static int _pw_euid;
-static __hashpw(), __initdb();
+static int __hashpw(), __initdb();
 
 struct passwd *
 getpwent()
@@ -52,7 +54,7 @@ getpwent()
 
 struct passwd *
 getpwnam(name)
-	char *name;
+	const char *name;
 {
 	datum key;
 	int len, rval;
@@ -77,8 +79,12 @@ getpwnam(name)
 }
 
 struct passwd *
+#ifdef __STDC__
+getpwuid(uid_t uid)
+#else
 getpwuid(uid)
 	int uid;
+#endif
 {
 	datum key;
 	int rval;
@@ -101,6 +107,7 @@ getpwuid(uid)
 	return(rval ? &_pw_passwd : (struct passwd *)NULL);
 }
 
+int
 setpassent(stayopen)
 	int stayopen;
 {
@@ -109,6 +116,7 @@ setpassent(stayopen)
 	return(1);
 }
 
+int
 setpwent()
 {
 	_pw_keynum = 0;
@@ -136,9 +144,12 @@ __initdb()
 	if (_pw_db = dbm_open(p, O_RDONLY, 0))
 		return(1);
 	if (!warned) {
-		openlog("getpwent", LOG_CONS|LOG_PERROR);
-		syslog(LOG_ALERT, "%s: %m", p);
-		closelog();
+		(void)write(STDERR_FILENO, "getpwent: ", 10);
+		(void)write(STDERR_FILENO, p, strlen(p));
+		(void)write(STDERR_FILENO, ": ", 2);
+		p = strerror(errno);
+		(void)write(STDERR_FILENO, p, strlen(p));
+		(void)write(STDERR_FILENO, "\n", 1);
 		warned = 1;
 	}
 	return(0);
