@@ -25,21 +25,21 @@ GEN=	gencodes.c genconfig.c genflags.c genemit.c genextract.c \
 	genpeep.c genrecog.c genoutput.c
 
 $(CINSN):	md rtl.o obstack.o $(GEN)
-	$(CC) $(CFLAGS) $(.CURDIR)/../../gcc/cc1/gencodes.c \
+	$(CC) $(CFLAGS) $(.CURDIR)/../../gcc1/cc1/gencodes.c \
 			rtl.o obstack.o -o gen; ./gen md > insn-codes.h
-	$(CC) $(CFLAGS) $(.CURDIR)/../../gcc/cc1/genconfig.c \
+	$(CC) $(CFLAGS) $(.CURDIR)/../../gcc1/cc1/genconfig.c \
 			rtl.o obstack.o -o gen; ./gen md > insn-config.h
-	$(CC) $(CFLAGS) $(.CURDIR)/../../gcc/cc1/genflags.c \
+	$(CC) $(CFLAGS) $(.CURDIR)/../../gcc1/cc1/genflags.c \
 			rtl.o obstack.o -o gen; ./gen md > insn-flags.h
-	$(CC) $(CFLAGS) $(.CURDIR)/../../gcc/cc1/genemit.c \
+	$(CC) $(CFLAGS) $(.CURDIR)/../../gcc1/cc1/genemit.c \
 			rtl.o obstack.o -o gen; ./gen md > insn-emit.c
-	$(CC) $(CFLAGS) $(.CURDIR)/../../gcc/cc1/genextract.c \
+	$(CC) $(CFLAGS) $(.CURDIR)/../../gcc1/cc1/genextract.c \
 			rtl.o obstack.o -o gen; ./gen md > insn-extract.c
-	$(CC) $(CFLAGS) $(.CURDIR)/../../gcc/cc1/genpeep.c \
+	$(CC) $(CFLAGS) $(.CURDIR)/../../gcc1/cc1/genpeep.c \
 			rtl.o obstack.o -o gen; ./gen md > insn-peep.c
-	$(CC) $(CFLAGS) $(.CURDIR)/../../gcc/cc1/genrecog.c \
+	$(CC) $(CFLAGS) $(.CURDIR)/../../gcc1/cc1/genrecog.c \
 			rtl.o obstack.o -o gen; ./gen md > insn-recog.c
-	$(CC) $(CFLAGS) $(.CURDIR)/../../gcc/cc1/genoutput.c \
+	$(CC) $(CFLAGS) $(.CURDIR)/../../gcc1/cc1/genoutput.c \
 			rtl.o obstack.o -o gen; ./gen md > insn-output.c
 	rm -f gen
 
