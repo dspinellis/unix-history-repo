@@ -7,7 +7,7 @@
 **  All rights reserved.  The Berkeley software License Agreement
 **  specifies the terms and conditions for redistribution.
 **
-**	@(#)conf.h	5.1 (Berkeley) %G%
+**	@(#)conf.h	5.2 (Berkeley) %G%
 */
 
 /*
@@ -21,8 +21,8 @@
 **	There shouldn't be much need to change these....
 */
 
-# define MAXLINE	512		/* max line length */
-# define MAXNAME	128		/* max length of a name */
+# define MAXLINE	1024		/* max line length */
+# define MAXNAME	256		/* max length of a name */
 # define MAXFIELD	2500		/* max total length of a hdr field */
 # define MAXPV		40		/* max # of parms to mailers */
 # define MAXHOP		30		/* max value of HopCount */
