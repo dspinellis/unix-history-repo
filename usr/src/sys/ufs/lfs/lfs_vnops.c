@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.95 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.96 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -198,14 +198,13 @@ lfs_read(ap)
 	struct buf *bp1, *bp2;
 	daddr_t lbn, bn, rablock;
 	off_t diff;
-	int error = 0, lock_on_enter, size;
+	int type, error = 0, lock_on_enter, size;
 	long n, on;
 
+	type = ip->i_mode & IFMT;
 #ifdef DIAGNOSTIC
-	int type;
 	if (uio->uio_rw != UIO_READ)
 		panic("lfs_read mode");
-	type = ip->i_mode & IFMT;
 	if (type != IFDIR && type != IFREG && type != IFLNK)
 		panic("lfs_read type");
 	if (type == IFLNK && (int)ip->i_size < vp->v_mount->mnt_maxsymlinklen)
@@ -237,7 +236,7 @@ lfs_read(ap)
 		if (vp->v_lastr + 1 == lbn &&
 		    lblktosize(fs, rablock) < ip->i_size)
 			error = breadn(ITOV(ip), lbn, size, &rablock,
-				&size, 1, NOCRED, &bp1);
+			    &size, 1, NOCRED, &bp1);
 		else
 			error = bread(ITOV(ip), lbn, size, NOCRED, &bp1);
 /*
@@ -251,7 +250,8 @@ lfs_read(ap)
 		if (error)
 			break;
 		error = uiomove(bp2->b_un.b_addr + on, (int)n, uio);
-		if (n + on == fs->lfs_bsize || uio->uio_offset == ip->i_size)
+		if (type == IFREG &&
+		    n + on == fs->lfs_bsize || uio->uio_offset == ip->i_size)
 			bp2->b_flags |= B_AGE;
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
 	if (bp2)
