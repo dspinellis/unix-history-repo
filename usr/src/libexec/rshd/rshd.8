@@ -1,4 +1,4 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1989 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" Redistribution and use in source and binary forms are permitted
@@ -13,14 +13,14 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)rshd.8	6.8 (Berkeley) %G%
+.\"	@(#)rshd.8	6.9 (Berkeley) %G%
 .\"
 .TH RSHD 8 ""
 .UC 5
 .SH NAME
 rshd \- remote shell server
 .SH SYNOPSIS
-.B rshd [-ln]
+.B rshd [-aln]
 .SH DESCRIPTION
 .I Rshd
 is the server for the 
@@ -38,7 +38,7 @@ When a service request is received the following protocol
 is initiated:
 .IP 1)
 The server checks the client's source port.
-If the port is not in the range 0-1023, the server
+If the port is not in the range 512-1023, the server
 aborts the connection.
 .IP 2)
 The server reads characters from the socket up
@@ -51,7 +51,7 @@ stream to be used for the
 .BR stderr .
 A second connection is then created to the specified
 port on the client's machine.  The source port of this
-second connection is also in the range 0-1023.
+second connection is also in the range 512-1023.
 .IP 4)
 The server checks the client's source address
 and requests the corresponding host name (see
@@ -61,6 +61,15 @@ and
 .IR named (8)).
 If the hostname cannot be determined,
 the dot-notation representation of the host address is used.
+If the hostname is in the same domain as the server (according to
+the last two components of the domain name),
+or if the
+.B \-a
+option is given,
+the addresses for the hostname are requested,
+verifying that the name and address correspond.
+If address verification fails, the connection is aborted
+with the message, ``Host address mismatch.''
 .IP 5)
 A null terminated user name of at most 16 characters
 is retrieved on the initial socket.  This user name
@@ -84,7 +93,7 @@ then validates the user using
 .IR ruserok (3),
 which uses the file ``/etc/hosts.equiv'' and the ``.rhosts''
 file found in the user's home directory.  The
-.I -l
+.B \-l
 option prevents
 .IR ruserok (3)
 from doing any validation based on the user's ``.rhosts'' file,
@@ -146,7 +155,7 @@ The pipe needed for the
 .BR stderr ,
 wasn't created.
 .PP
-.B ``Try again.''
+.B ``Can't fork; try again.''
 .br
 A
 .I fork
@@ -168,4 +177,4 @@ insecure, but is useful in an ``open'' environment.
 A facility to allow all data exchanges to be encrypted should be
 present.
 .PP
-A more extensible protocol should be used.
+A more extensible protocol (such as Telnet) should be used.

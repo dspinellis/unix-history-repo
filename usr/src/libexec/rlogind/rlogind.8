@@ -1,4 +1,4 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1989 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" Redistribution and use in source and binary forms are permitted
@@ -13,16 +13,16 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)rlogind.8	6.9 (Berkeley) %G%
+.\"	@(#)rlogind.8	6.10 (Berkeley) %G%
 .\"
 .TH RLOGIND 8 ""
 .UC 5
 .SH NAME
 rlogind \- remote login server
 .SH SYNOPSIS
-.B /etc/rlogind
+.B rlogind
 [
-.B \-ln
+.B \-aln
 ]
 .SH DESCRIPTION
 .I Rlogind
@@ -44,12 +44,20 @@ aborts the connection.
 .IP 2)
 The server checks the client's source address
 and requests the corresponding host name (see
-.IR gethostbyaddr (3),
+IR gethostbyaddr (3),
 .IR hosts (5)
 and
 .IR named (8)).
 If the hostname cannot be determined,
 the dot-notation representation of the host address is used.
+If the hostname is in the same domain as the server (according to
+the last two components of the domain name),
+or if the
+.B \-a
+option is given,
+the addresses for the hostname are requested,
+verifying that the name and address correspond.
+Normal authentication is bypassed if the address verification fails.
 .PP
 Once the source port and address have been checked, 
 .I rlogind
@@ -71,7 +79,7 @@ program, invoked with the
 option if authentication has succeeded.
 If automatic authentication fails, the user is
 prompted to log in as if on a standard terminal line.  The
-.I -l
+.B \-l
 option prevents any authentication based on the user's
 ``.rhosts'' file, unless the user is logging in as the superuser.
 .PP
@@ -96,23 +104,20 @@ option is present.
 The use of keepalive messages allows sessions to be timed out
 if the client crashes or becomes unreachable.
 .SH DIAGNOSTICS
-All diagnostic messages are returned on the connection
-associated with the
-.BR stderr ,
+All initial diagnostic messages are indicated
+by a leading byte with a value of 1,
 after which any network connections are closed.
-An error is indicated by a leading byte with a value of 1.
+If there are no errors before
+.I login
+is invoked, a null byte is returned as in indication of success.
 .PP
 .B ``Try again.''
 .br
 A
 .I fork
 by the server failed.
-.PP
-.B ``/bin/sh: ...''
-.br
-The user's login shell could not be started.
 .SH "SEE ALSO"
-ruserok(3), rshd(8)
+login(1), ruserok(3), rshd(8)
 .SH BUGS
 The authentication procedure used here assumes the integrity
 of each client machine and the connecting medium.  This is
