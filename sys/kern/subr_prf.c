@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)subr_prf.c	7.30 (Berkeley) 6/29/91
- *	$Id$
+ *	$Id: subr_prf.c,v 1.4 1993/10/16 15:24:42 rgrimes Exp $
  */
 
 #include "param.h"
@@ -65,7 +65,7 @@
 
 struct	tty *constty;			/* pointer to console "window" tty */
 
-#if defined(KADB) || defined(PANICWAIT)
+#if defined(KADB)
 extern	cngetc();			/* standard console getc */
 #endif
 #ifdef KADB
@@ -130,15 +130,6 @@ panic(msg)
 #include "ddb.h"
 #if NDDB > 0
 	Debugger ();
-#else
-#ifdef PANICWAIT
-	printf("hit any key to boot/dump...\n>");
-	cngetc();
-#endif /* PANICWAIT */
-#ifdef PANICDELAY
-	printf("Waiting 20 secs....\n");
-	DELAY(20000000);
-#endif /* PANICDELAY */
 #endif
 	boot(bootopt);
 }

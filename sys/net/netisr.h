@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)netisr.h	7.8 (Berkeley) 5/7/91
- *	$Id: netisr.h,v 1.2 1993/10/16 17:43:27 rgrimes Exp $
+ *	$Id: netisr.h,v 1.3 1993/11/07 17:47:02 wollman Exp $
  */
 
 #ifndef _NET_NETISR_H_
@@ -71,16 +71,8 @@
 
 #undef	schednetisr
 #define	schednetisr(anisr)	{\
-	if(netisr == 0) { \
-		softem++; \
-	} \
 	netisr |= 1<<(anisr); \
 }
-#ifndef LOCORE
-#ifdef KERNEL
-extern int	softem;	
-#endif
-#endif
 #endif /* i386 */
 
 #ifndef LOCORE

@@ -1,6 +1,6 @@
 /*
  *	from: debug.h, part of Bruce Evans interrupt code
- *	$Id$
+ *	$Id: debug.h,v 1.2 1993/10/16 13:45:48 rgrimes Exp $
  */
 
 #define	SHOW_A_LOT_NOT
@@ -83,9 +83,3 @@ bdb_/**/name/**/_ljmp: ; \
 #define	SHOW_STI	COUNT_EVENT(_intrcnt_show, 4)
 
 #endif /* SHOW_A_LOT */
-
-	.data
-	.globl	_bdb_exists
-_bdb_exists:
-	.long	0
-	.text
