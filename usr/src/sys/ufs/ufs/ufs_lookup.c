@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_lookup.c	6.26 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	6.27 (Berkeley) %G%
  */
 
 #include "param.h"
