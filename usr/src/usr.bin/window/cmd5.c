@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd5.c	1.2 83/07/22";
+static	char *sccsid = "@(#)cmd5.c	1.3 83/07/22";
 #endif
 
 #include "defs.h"
@@ -89,6 +89,7 @@ char *filename;
 		errwin = 0;
 	}
 bad:
+	fclose(f);
 	return 0;
 }
 
