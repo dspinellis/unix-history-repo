@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.50 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.51 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -701,12 +701,12 @@ doit(who)
 	hp = gethostbyaddr((char *)&who->sin_addr, sizeof (struct in_addr),
 		who->sin_family);
 
-	if (hp &&
-	    (strlen(hp->h_name) <= ((utmp_len < 0) ? -utmp_len : utmp_len))) {
-		host = hp->h_name;
-	} else if (registerd_host_only) {
+	if (hp == NULL && registerd_host_only) {
 		fatal(net, "Couldn't resolve your address into a host name.\r\n\
          Please contact your net administrator");
+	} else if (hp &&
+	    (strlen(hp->h_name) <= ((utmp_len < 0) ? -utmp_len : utmp_len))) {
+		host = hp->h_name;
 	} else {
 		host = inet_ntoa(who->sin_addr);
 	}
