@@ -1,4 +1,4 @@
-/*	cgram.y	4.21	87/12/09	*/
+/*	cgram.y	4.22	87/12/09	*/
 
 /*
  * Grammar for the C compiler.
@@ -718,8 +718,8 @@ term:		   term INCOP
 			    $$->in.op = FREE;
 			    $$ = $$->in.right;
 			    }
-		|  SIZEOF LP cast_type RP  %prec SIZEOF
-			={  $$ = doszof( $3 ); }
+		|  pushsizeof LP cast_type RP  %prec SIZEOF
+			={  $$ = doszof( $3 ); --nsizeof; }
 		|  term LB e RB
 			={  $$ = buildtree( UNARY MUL, buildtree( PLUS, $1, $3 ), NIL ); }
 		|  funct_idn  RP
