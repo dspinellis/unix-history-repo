@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exec.c	7.14 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -378,7 +378,7 @@ badarg:
 
 	for (nc = u.u_lastfile; nc >= 0; --nc) {
 		if (u.u_pofile[nc] & UF_EXCLOSE) {
-			closef(u.u_ofile[nc]);
+			(void) closef(u.u_ofile[nc]);
 			u.u_ofile[nc] = NULL;
 			u.u_pofile[nc] = 0;
 		}
