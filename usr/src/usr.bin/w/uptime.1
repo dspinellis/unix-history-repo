@@ -3,23 +3,23 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)uptime.1	6.2 (Berkeley) %G%
+.\"     @(#)uptime.1	6.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt UPTIME 1
 .Os BSD 3
 .Sh NAME
 .Nm uptime
-.Nd show how long system has been up
+.Nd show how long system has been running
 .Sh SYNOPSIS
 .Nm uptime
 .Sh DESCRIPTION
-Uptime prints the current time, the length of time the system has been up,
-and the average number of jobs in the run queue over the last 1, 5 and
-15 minutes.
-It is, essentially, the first line of a
-.Xr w 1
-command.
+The 
+.Nm uptime
+utiliity
+displays the current time, the length of time the system has been up,
+the number of users, and the load average of the system over the last
+1, 5, and 15 minutes.
 .Sh FILES
 .Bl -tag -width /vmunix
 .It Pa /vmunix
