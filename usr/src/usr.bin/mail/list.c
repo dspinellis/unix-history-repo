@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)list.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)list.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -474,7 +474,7 @@ scan(sp)
 	int quotec;
 
 	if (regretp >= 0) {
-		strcpy(lexstring, stringstack[regretp]);
+		strcpy(lexstring, string_stack[regretp]);
 		lexnumber = numberstack[regretp];
 		return(regretstack[regretp--]);
 	}
@@ -573,7 +573,7 @@ regret(token)
 		panic("Too many regrets");
 	regretstack[regretp] = token;
 	lexstring[STRINGLEN-1] = '\0';
-	stringstack[regretp] = savestr(lexstring);
+	string_stack[regretp] = savestr(lexstring);
 	numberstack[regretp] = lexnumber;
 }
 
