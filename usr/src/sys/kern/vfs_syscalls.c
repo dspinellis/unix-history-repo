@@ -49,6 +49,7 @@ mount(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_UNLOCK;
 	register struct vnode *vp;
 	register struct mount *mp;
 	int error, flag;
@@ -429,6 +430,9 @@ fchdir(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_ACCESS;
+	USES_VOP_LOCK;
+	USES_VOP_UNLOCK;
 	register struct filedesc *fdp = p->p_fd;
 	register struct vnode *vp;
 	struct file *fp;
@@ -507,6 +511,8 @@ chdirec(ndp, p)
 	register struct nameidata *ndp;
 	struct proc *p;
 {
+	USES_VOP_ACCESS;
+	USES_VOP_UNLOCK;
 	struct vnode *vp;
 	int error;
 
@@ -537,6 +543,8 @@ open(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_ADVLOCK;
+	USES_VOP_UNLOCK;
 	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
 	register struct vnode *vp;
@@ -635,6 +643,8 @@ mknod(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_ABORTOP;
+	USES_VOP_MKNOD;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
@@ -698,6 +708,8 @@ mkfifo(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_ABORTOP;
+	USES_VOP_MKNOD;
 	struct vattr vattr;
 	int error;
 	struct nameidata nd;
@@ -737,6 +749,8 @@ link(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_ABORTOP;
+	USES_VOP_LINK;
 	register struct vnode *vp, *xp;
 	int error;
 	struct nameidata nd;
@@ -794,6 +808,8 @@ symlink(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_ABORTOP;
+	USES_VOP_SYMLINK;
 	struct vattr vattr;
 	char *target;
 	int error;
@@ -837,6 +853,8 @@ unlink(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_ABORTOP;
+	USES_VOP_REMOVE;
 	register struct vnode *vp;
 	int error;
 	struct nameidata nd;
@@ -916,6 +934,7 @@ qseek(p, uap, retval)
 	} *uap;
 	off_t *retval;
 {
+	USES_VOP_GETATTR;
 	struct ucred *cred = p->p_ucred;
 	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
@@ -963,6 +982,7 @@ saccess(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_ACCESS;
 	register struct ucred *cred = p->p_ucred;
 	register struct vnode *vp;
 	int error, mode, svuid, svgid;
@@ -1156,6 +1176,7 @@ readlink(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_READLINK;
 	register struct vnode *vp;
 	struct iovec aiov;
 	struct uio auio;
@@ -1200,6 +1221,7 @@ chflags(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_SETATTR;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
@@ -1234,6 +1256,9 @@ fchflags(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_LOCK;
+	USES_VOP_SETATTR;
+	USES_VOP_UNLOCK;
 	struct vattr vattr;
 	struct vnode *vp;
 	struct file *fp;
@@ -1268,6 +1293,7 @@ chmod(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_SETATTR;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
@@ -1302,6 +1328,9 @@ fchmod(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_LOCK;
+	USES_VOP_SETATTR;
+	USES_VOP_UNLOCK;
 	struct vattr vattr;
 	struct vnode *vp;
 	struct file *fp;
@@ -1337,6 +1366,7 @@ chown(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_SETATTR;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
@@ -1373,6 +1403,9 @@ fchown(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_LOCK;
+	USES_VOP_SETATTR;
+	USES_VOP_UNLOCK;
 	struct vattr vattr;
 	struct vnode *vp;
 	struct file *fp;
@@ -1408,6 +1441,7 @@ utimes(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_SETATTR;
 	register struct vnode *vp;
 	struct timeval tv[2];
 	struct vattr vattr;
@@ -1492,6 +1526,8 @@ qtruncate(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_ACCESS;
+	USES_VOP_SETATTR;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
@@ -1529,6 +1565,9 @@ fqtruncate(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_LOCK;
+	USES_VOP_SETATTR;
+	USES_VOP_UNLOCK;
 	struct vattr vattr;
 	struct vnode *vp;
 	struct file *fp;
@@ -1566,6 +1605,9 @@ fsync(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_FSYNC;
+	USES_VOP_LOCK;
+	USES_VOP_UNLOCK;
 	register struct vnode *vp;
 	struct file *fp;
 	int error;
@@ -1594,6 +1636,8 @@ rename(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_ABORTOP;
+	USES_VOP_RENAME;
 	register struct vnode *tvp, *fvp, *tdvp;
 	struct nameidata fromnd, tond;
 	int error;
@@ -1689,6 +1733,8 @@ mkdir(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_ABORTOP;
+	USES_VOP_MKDIR;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;
@@ -1731,6 +1777,8 @@ rmdir(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_ABORTOP;
+	USES_VOP_RMDIR;
 	register struct vnode *vp;
 	int error;
 	struct nameidata nd;
@@ -1786,6 +1834,9 @@ getdirentries(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_LOCK;
+	USES_VOP_READDIR;
+	USES_VOP_UNLOCK;
 	register struct vnode *vp;
 	struct file *fp;
 	struct uio auio;
@@ -1850,6 +1901,7 @@ revoke(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_GETATTR;
 	register struct vnode *vp;
 	struct vattr vattr;
 	int error;

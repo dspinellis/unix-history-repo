@@ -47,6 +47,9 @@ lfs_markv(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_BMAP;
+	USES_VOP_BWRITE;
+	USES_VOP_VGET;
 	BLOCK_INFO *blkp;
 	IFILE *ifp;
 	INODE_INFO *inop;
@@ -103,7 +106,7 @@ lfs_markv(p, uap, retval)
 		 * earlier than the segment in which the block was found then
 		 * they have to be valid, skip other checks.
 		 */
-		if (lfs_vget(mntp, blkp->bi_inode, &vp))
+		if (LFS_VGET(mntp, blkp->bi_inode, &vp))
 			continue;
 		ip = VTOI(vp);
 
@@ -112,7 +115,7 @@ lfs_markv(p, uap, retval)
 		 * block has been replaced.
 		 */
 		if (ip->i_mtime.tv_sec > blkp->bi_segcreate &&
-		    (lfs_bmap(vp, blkp->bi_lbn, NULL, &daddr) ||
+		    (VOP_BMAP(vp, blkp->bi_lbn, NULL, &daddr) ||
 		    daddr != blkp->bi_daddr)) {
 			vput(vp);
 			continue;
@@ -127,7 +130,7 @@ lfs_markv(p, uap, retval)
 			free(start, M_SEGMENT);
 			return (error);
 		}
-		lfs_bwrite(bp);
+		VOP_BWRITE(bp);
 	}
 	free(start, M_SEGMENT);
 
@@ -152,7 +155,7 @@ lfs_markv(p, uap, retval)
 		 * lfs_vget that takes the copy and uses it instead of reading
 		 * from disk, if it's not already in the cache.
 		 */
-		if (!lfs_vget(mntp, inop->ii_inode, &vp)) {
+		if (!LFS_VGET(mntp, inop->ii_inode, &vp)) {
 			VTOI(vp)->i_flag |= IMOD;
 			vput(vp);
 		}	
@@ -179,6 +182,8 @@ lfs_bmapv(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_BMAP;
+	USES_VOP_VGET;
 	BLOCK_INFO *blkp;
 	struct mount *mntp;
 	struct vnode *vp;
@@ -203,10 +208,10 @@ lfs_bmapv(p, uap, retval)
 	}
 
 	for (step = cnt; step--; ++blkp) {
-		if (lfs_vget(mntp, blkp->bi_inode, &vp))
+		if (LFS_VGET(mntp, blkp->bi_inode, &vp))
 			daddr = LFS_UNUSED_DADDR;
 		else {
-			if (lfs_bmap(vp, blkp->bi_lbn, NULL, &daddr))
+			if (VOP_BMAP(vp, blkp->bi_lbn, NULL, &daddr))
 				daddr = LFS_UNUSED_DADDR;
 			vput(vp);
 		}

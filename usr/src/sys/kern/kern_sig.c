@@ -1054,6 +1054,9 @@ sigexit(p, sig)
 coredump(p)
 	register struct proc *p;
 {
+	USES_VOP_GETATTR;
+	USES_VOP_SETATTR;
+	USES_VOP_UNLOCK;
 	register struct vnode *vp;
 	register struct pcred *pcred = p->p_cred;
 	register struct ucred *cred = pcred->pc_ucred;

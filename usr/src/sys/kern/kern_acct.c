@@ -54,6 +54,7 @@ sysacct(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	USES_VOP_UNLOCK;
 	register struct vnode *vp;
 	extern int acctwatch();
 	struct vnode *oacctp;

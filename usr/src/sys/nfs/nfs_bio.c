@@ -41,6 +41,7 @@ nfs_bioread(vp, uio, ioflag, cred)
 	int ioflag;
 	struct ucred *cred;
 {
+	USES_VOP_GETATTR;
 	register struct nfsnode *np = VTONFS(vp);
 	register int biosize;
 	struct buf *bp;
@@ -80,7 +81,7 @@ nfs_bioread(vp, uio, ioflag, cred)
 	 * NB: This implies that cache data can be read when up to
 	 * NFS_ATTRTIMEO seconds out of date. If you find that you need current
 	 * attributes this could be forced by setting n_attrstamp to 0 before
-	 * the nfs_getattr() call.
+	 * the VOP_GETATTR() call.
 	 */
 	if ((nmp->nm_flag & NFSMNT_NQNFS) == 0 && vp->v_type != VLNK) {
 		if (np->n_flag & NMODIFIED) {
@@ -90,11 +91,11 @@ nfs_bioread(vp, uio, ioflag, cred)
 				vinvalbuf(vp, TRUE);
 			np->n_attrstamp = 0;
 			np->n_direofoffset = 0;
-			if (error = nfs_getattr(vp, &vattr, cred, uio->uio_procp))
+			if (error = VOP_GETATTR(vp, &vattr, cred, uio->uio_procp))
 				return (error);
 			np->n_mtime = vattr.va_mtime.tv_sec;
 		} else {
-			if (error = nfs_getattr(vp, &vattr, cred, uio->uio_procp))
+			if (error = VOP_GETATTR(vp, &vattr, cred, uio->uio_procp))
 				return (error);
 			if (np->n_mtime != vattr.va_mtime.tv_sec) {
 				np->n_direofoffset = 0;
@@ -265,12 +266,14 @@ again:
 /*
  * Vnode op for write using bio
  */
-nfs_write(vp, uio, ioflag, cred)
-	register struct vnode *vp;
-	register struct uio *uio;
-	int ioflag;
-	struct ucred *cred;
+nfs_write (ap)
+	struct vop_write_args *ap;
+#define vp (ap->a_vp)
+#define uio (ap->a_uio)
+#define ioflag (ap->a_ioflag)
+#define cred (ap->a_cred)
 {
+	USES_VOP_GETATTR;
 	register int biosize;
 	struct proc *p = uio->uio_procp;
 	struct buf *bp;
@@ -295,7 +298,7 @@ nfs_write(vp, uio, ioflag, cred)
 		}
 		if (ioflag & IO_APPEND) {
 			np->n_attrstamp = 0;
-			if (error = nfs_getattr(vp, &vattr, cred, p))
+			if (error = VOP_GETATTR(vp, &vattr, cred, p))
 				return (error);
 			uio->uio_offset = np->n_size;
 		}
@@ -428,3 +431,7 @@ again:
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
 	return (error);
 }
+#undef vp
+#undef uio
+#undef ioflag
+#undef cred

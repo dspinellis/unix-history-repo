@@ -44,10 +44,11 @@ lfs_init()
  * Detection and handling of mount points must be done by the calling routine.
  */
 int
-lfs_vget(mntp, ino, vpp)
-	struct mount *mntp;
-	ino_t ino;
-	struct vnode **vpp;
+lfs_vget (ap)
+	struct vop_vget_args *ap;
+#define mntp (ap->a_mp)
+#define ino (ap->a_ino)
+#define vpp (ap->a_vpp)
 {
 	register struct lfs *fs;
 	register struct inode *ip;
@@ -127,7 +128,7 @@ lfs_vget(mntp, ino, vpp)
 	 * Initialize the vnode from the inode, check for aliases.  In all
 	 * cases re-init ip, the underlying vnode/inode may have changed.
 	 */
-	if (error = ufs_vinit(mntp, &lfs_specops, LFS_FIFOOPS, &vp)) {
+	if (error = ufs_vinit(mntp, lfs_specop_p, LFS_FIFOOPS, &vp)) {
 		ufs_iput(ip);
 		*vpp = NULL;
 		return (error);
@@ -140,6 +141,9 @@ lfs_vget(mntp, ino, vpp)
 	*vpp = vp;
 	return (0);
 }
+#undef mntp
+#undef ino
+#undef vpp
 
 /* Search a block for a specific dinode. */
 static struct dinode *
@@ -162,10 +166,12 @@ lfs_ifind(fs, ino, dip)
 }
 
 int
-lfs_update(vp, ta, tm, waitfor)
-	register struct vnode *vp;
-	struct timeval *ta, *tm;
-        int waitfor;
+lfs_update (ap)
+	struct vop_update_args *ap;
+#define vp (ap->a_vp)
+#define ta (ap->a_ta)
+#define tm (ap->a_tm)
+#define waitfor (ap->a_waitfor)
 {
 	struct inode *ip;
 
@@ -190,6 +196,10 @@ lfs_update(vp, ta, tm, waitfor)
 	/* Push back the vnode and any dirty blocks it may have. */
 	return (waitfor ? lfs_vflush(vp) : 0);
 }
+#undef vp
+#undef ta
+#undef tm
+#undef waitfor
 
 /* Update segment usage information when removing a block. */
 #define UPDATE_SEGUSE \
@@ -217,12 +227,14 @@ lfs_update(vp, ta, tm, waitfor)
  */
 /* ARGSUSED */
 int
-lfs_truncate(vp, length, flags, cred)
-	struct vnode *vp;
-	off_t length;
-	int flags;
-	struct ucred *cred;
+lfs_truncate (ap)
+	struct vop_truncate_args *ap;
+#define vp (ap->a_vp)
+#define length (ap->a_length)
+#define flags (ap->a_flags)
+#define cred (ap->a_cred)
 {
+	USES_VOP_UPDATE;
 	register INDIR *inp;
 	register int i;
 	register daddr_t *daddrp;
@@ -254,7 +266,7 @@ lfs_truncate(vp, length, flags, cred)
 	/* If length is larger than the file, just update the times. */
 	if (ip->i_size <= length) {
 		ip->i_flag |= ICHG|IUPD;
-		return (lfs_update(vp, &time, &time, 1));
+		return (VOP_UPDATE(vp, &time, &time, 1));
 	}
 
 	/*
@@ -376,6 +388,10 @@ lfs_truncate(vp, length, flags, cred)
 		ip->i_blocks = 0;
 	ip->i_flag |= ICHG|IUPD;
 	(void)vinvalbuf(vp, length > 0); 
-	error = lfs_update(vp, &time, &time, MNT_WAIT);
+	error = VOP_UPDATE(vp, &time, &time, MNT_WAIT);
 	return (0);
 }
+#undef vp
+#undef length
+#undef flags
+#undef cred

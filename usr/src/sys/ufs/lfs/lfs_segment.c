@@ -165,6 +165,7 @@ lfs_segwrite(mp, do_ckp)
 	struct mount *mp;
 	int do_ckp;			/* Do a checkpoint. */
 {
+	USES_VOP_ISLOCKED;
 	struct inode *ip;
 	struct lfs *fs;
 	struct segment *sp;
@@ -498,6 +499,7 @@ lfs_updatemeta(fs, sp, vp, lbp, bpp, nblocks)
 	struct buf **bpp;
 	int nblocks;
 {
+	USES_VOP_BWRITE;
 	SEGUSE *sup;
 	struct buf *bp;
 	INDIR a[NIADDR], *ap;
@@ -540,7 +542,7 @@ lfs_updatemeta(fs, sp, vp, lbp, bpp, nblocks)
 				panic("lfs_updatemeta: bread bno %d",
 				    ap->in_lbn);
 			bp->b_un.b_daddr[ap->in_off] = off;
-			lfs_bwrite(bp);
+			VOP_BWRITE(bp);
 		}
 
 		/* Update segment usage information. */

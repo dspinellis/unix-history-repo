@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.88 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.89 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -62,11 +62,12 @@ union _qcvt {
  * Create a regular file
  */
 int
-ufs_create(dvp, vpp, cnp, vap)
-	struct vnode *dvp;
-	struct vnode **vpp;
-	struct componentname *cnp;
-	struct vattr *vap;
+ufs_create (ap)
+	struct vop_create_args *ap;
+#define dvp (ap->a_dvp)
+#define vpp (ap->a_vpp)
+#define cnp (ap->a_cnp)
+#define vap (ap->a_vap)
 {
 	int error;
 
@@ -75,17 +76,22 @@ ufs_create(dvp, vpp, cnp, vap)
 		return (error);
 	return (0);
 }
+#undef dvp
+#undef vpp
+#undef cnp
+#undef vap
 
 /*
  * Mknod vnode call
  */
 /* ARGSUSED */
 int
-ufs_mknod(dvp, vpp, cnp, vap)
-	struct vnode *dvp;
-	struct vnode **vpp;
-	struct componentname *cnp;
-	struct vattr *vap;
+ufs_mknod (ap)
+	struct vop_mknod_args *ap;
+#define dvp (ap->a_dvp)
+#define vpp (ap->a_vpp)
+#define cnp (ap->a_cnp)
+#define vap (ap->a_vap)
 {
 	register struct inode *ip;
 	int error;
@@ -113,6 +119,10 @@ ufs_mknod(dvp, vpp, cnp, vap)
 	*vpp = 0;
 	return (0);
 }
+#undef dvp
+#undef vpp
+#undef cnp
+#undef vap
 
 /*
  * Open called.
@@ -121,15 +131,20 @@ ufs_mknod(dvp, vpp, cnp, vap)
  */
 /* ARGSUSED */
 int
-ufs_open(vp, mode, cred, p)
-	struct vnode *vp;
-	int mode;
-	struct ucred *cred;
-	struct proc *p;
+ufs_open (ap)
+	struct vop_open_args *ap;
+#define vp (ap->a_vp)
+#define mode (ap->a_mode)
+#define cred (ap->a_cred)
+#define p (ap->a_p)
 {
 
 	return (0);
 }
+#undef vp
+#undef mode
+#undef cred
+#undef p
 
 /*
  * Close called
@@ -138,11 +153,12 @@ ufs_open(vp, mode, cred, p)
  */
 /* ARGSUSED */
 int
-ufs_close(vp, fflag, cred, p)
-	struct vnode *vp;
-	int fflag;
-	struct ucred *cred;
-	struct proc *p;
+ufs_close (ap)
+	struct vop_close_args *ap;
+#define vp (ap->a_vp)
+#define fflag (ap->a_fflag)
+#define cred (ap->a_cred)
+#define p (ap->a_p)
 {
 	register struct inode *ip;
 
@@ -151,6 +167,10 @@ ufs_close(vp, fflag, cred, p)
 		ITIMES(ip, &time, &time);
 	return (0);
 }
+#undef vp
+#undef fflag
+#undef cred
+#undef p
 
 /*
  * Check mode permission on inode pointer. Mode is READ, WRITE or EXEC.
@@ -158,12 +178,14 @@ ufs_close(vp, fflag, cred, p)
  * super user is granted all permissions.
  */
 int
-ufs_access(vp, mode, cred, p)
-	struct vnode *vp;
-	register int mode;
-	struct ucred *cred;
-	struct proc *p;
+ufs_access (ap)
+	struct vop_access_args *ap;
+#define vp (ap->a_vp)
+#define mode (ap->a_mode)
+#define cred (ap->a_cred)
+#define p (ap->a_p)
 {
+	USES_VOP_ISLOCKED;
 	register struct inode *ip = VTOI(vp);
 	register gid_t *gp;
 	int i, error;
@@ -207,14 +229,19 @@ found:
 		return (0);
 	return (EACCES);
 }
+#undef vp
+#undef mode
+#undef cred
+#undef p
 
 /* ARGSUSED */
 int
-ufs_getattr(vp, vap, cred, p)
-	struct vnode *vp;
-	register struct vattr *vap;
-	struct ucred *cred;
-	struct proc *p;
+ufs_getattr (ap)
+	struct vop_getattr_args *ap;
+#define vp (ap->a_vp)
+#define vap (ap->a_vap)
+#define cred (ap->a_cred)
+#define p (ap->a_p)
 {
 	register struct inode *ip;
 
@@ -256,17 +283,24 @@ ufs_getattr(vp, vap, cred, p)
 	vap->va_filerev = ip->i_modrev;
 	return (0);
 }
+#undef vp
+#undef vap
+#undef cred
+#undef p
 
 /*
  * Set attribute vnode op. called from several syscalls
  */
 int
-ufs_setattr(vp, vap, cred, p)
-	register struct vnode *vp;
-	register struct vattr *vap;
-	register struct ucred *cred;
-	struct proc *p;
+ufs_setattr (ap)
+	struct vop_setattr_args *ap;
+#define vp (ap->a_vp)
+#define vap (ap->a_vap)
+#define cred (ap->a_cred)
+#define p (ap->a_p)
 {
+	USES_VOP_TRUNCATE;
+	USES_VOP_UPDATE;
 	register struct inode *ip;
 	int error;
 
@@ -321,6 +355,10 @@ ufs_setattr(vp, vap, cred, p)
 	}
 	return (error);
 }
+#undef vp
+#undef vap
+#undef cred
+#undef p
 
 /*
  * Change the mode on a file.
@@ -462,25 +500,34 @@ good:
 
 /* ARGSUSED */
 int
-ufs_ioctl(vp, com, data, fflag, cred, p)
-	struct vnode *vp;
-	int com;
-	caddr_t data;
-	int fflag;
-	struct ucred *cred;
-	struct proc *p;
+ufs_ioctl (ap)
+	struct vop_ioctl_args *ap;
+#define vp (ap->a_vp)
+#define com (ap->a_command)
+#define data (ap->a_data)
+#define fflag (ap->a_fflag)
+#define cred (ap->a_cred)
+#define p (ap->a_p)
 {
 
 	return (ENOTTY);
 }
+#undef vp
+#undef com
+#undef data
+#undef fflag
+#undef cred
+#undef p
 
 /* ARGSUSED */
 int
-ufs_select(vp, which, fflags, cred, p)
-	struct vnode *vp;
-	int which, fflags;
-	struct ucred *cred;
-	struct proc *p;
+ufs_select (ap)
+	struct vop_select_args *ap;
+#define vp (ap->a_vp)
+#define which (ap->a_which)
+#define fflags (ap->a_fflags)
+#define cred (ap->a_cred)
+#define p (ap->a_p)
 {
 
 	/*
@@ -488,6 +535,11 @@ ufs_select(vp, which, fflags, cred, p)
 	 */
 	return (1);
 }
+#undef vp
+#undef which
+#undef fflags
+#undef cred
+#undef p
 
 /*
  * Mmap a file
@@ -496,15 +548,20 @@ ufs_select(vp, which, fflags, cred, p)
  */
 /* ARGSUSED */
 int
-ufs_mmap(vp, fflags, cred, p)
-	struct vnode *vp;
-	int fflags;
-	struct ucred *cred;
-	struct proc *p;
+ufs_mmap (ap)
+	struct vop_mmap_args *ap;
+#define vp (ap->a_vp)
+#define fflags (ap->a_fflags)
+#define cred (ap->a_cred)
+#define p (ap->a_p)
 {
 
 	return (EINVAL);
 }
+#undef vp
+#undef fflags
+#undef cred
+#undef p
 
 /*
  * Seek on a file
@@ -513,14 +570,20 @@ ufs_mmap(vp, fflags, cred, p)
  */
 /* ARGSUSED */
 int
-ufs_seek(vp, oldoff, newoff, cred)
-	struct vnode *vp;
-	off_t oldoff, newoff;
-	struct ucred *cred;
+ufs_seek (ap)
+	struct vop_seek_args *ap;
+#define vp (ap->a_vp)
+#define oldoff (ap->a_oldoff)
+#define newoff (ap->a_newoff)
+#define cred (ap->a_cred)
 {
 
 	return (0);
 }
+#undef vp
+#undef oldoff
+#undef newoff
+#undef cred
 
 /*
  * ufs remove
@@ -528,9 +591,11 @@ ufs_seek(vp, oldoff, newoff, cred)
  * in unlinking directories.
  */
 int
-ufs_remove(dvp, vp, cnp)
-	struct vnode *dvp, *vp;
-	struct componentname *cnp;
+ufs_remove (ap)
+	struct vop_remove_args *ap;
+#define dvp (ap->a_dvp)
+#define vp (ap->a_vp)
+#define cnp (ap->a_cnp)
 {
 	register struct inode *ip, *dp;
 	int error;
@@ -549,16 +614,21 @@ ufs_remove(dvp, vp, cnp)
 	ufs_iput(dp);
 	return (error);
 }
+#undef dvp
+#undef vp
+#undef cnp
 
 /*
  * link vnode call
  */
 int
-ufs_link(tdvp, vp, cnp)
-	struct vnode *tdvp;
-	register struct vnode *vp;   /* source vnode */
-	struct componentname *cnp;
+ufs_link (ap)
+	struct vop_link_args *ap;
+#define tdvp (ap->a_vp)
+#define vp (ap->a_tdvp)
+#define cnp (ap->a_cnp)
 {
+	USES_VOP_UPDATE;
 	register struct inode *ip;
 	int error;
 
@@ -588,6 +658,9 @@ ufs_link(tdvp, vp, cnp)
 	}
 	return (error);
 }
+#undef tdvp
+#undef vp
+#undef cnp
 
 
 
@@ -600,6 +673,9 @@ relookup(dvp, vpp, cnp)
 	struct vnode *dvp, **vpp;
 	struct componentname *cnp;
 {
+	USES_VOP_LOCK;
+	USES_VOP_LOOKUP;
+	USES_VOP_UNLOCK;
 	register struct vnode *dp = 0;	/* the directory we are searching */
 	struct vnode *tdp;		/* saved dp */
 	struct mount *mp;		/* mount table entry */
@@ -770,12 +846,21 @@ bad:
  *    directory.
  */
 int
-ufs_rename(fdvp, fvp, fcnp, tdvp, tvp, tcnp)
-	struct vnode *fdvp, *fvp;
-	struct componentname *fcnp;
-	struct vnode *tdvp, *tvp;
-	struct componentname *tcnp;
+ufs_rename (ap)
+	struct vop_rename_args *ap;
+#define fdvp (ap->a_fdvp)
+#define fvp (ap->a_fvp)
+#define fcnp (ap->a_fcnp)
+#define tdvp (ap->a_tdvp)
+#define tvp (ap->a_tvp)
+#define tcnp (ap->a_tcnp)
 {
+	USES_VOP_ABORTOP;
+	USES_VOP_ACCESS;
+	USES_VOP_LOCK;
+	USES_VOP_TRUNCATE;
+	USES_VOP_UNLOCK;
+	USES_VOP_UPDATE;
 	register struct inode *ip, *xp, *dp;
 	struct dirtemplate dirbuf;
 	int doingdirectory = 0, oldparent = 0, newparent = 0;
@@ -860,7 +945,7 @@ ufs_rename(fdvp, fvp, fcnp, tdvp, tvp, tcnp)
 		newparent = dp->i_number;
 	if (doingdirectory && newparent) {
 		VOP_LOCK(fvp);
-		error = ufs_access(fvp, VWRITE, tcnp->cn_cred, tcnp->cn_proc);
+		error = VOP_ACCESS(fvp, VWRITE, tcnp->cn_cred, tcnp->cn_proc);
 		VOP_UNLOCK(fvp);
 		if (error)
 			goto bad;
@@ -1079,6 +1164,12 @@ out:
 	vrele(ITOV(ip));
 	return (error);
 }
+#undef fdvp
+#undef fvp
+#undef fcnp
+#undef tdvp
+#undef tvp
+#undef tcnp
 
 /*
  * A virgin directory (no blushing please).
@@ -1092,12 +1183,17 @@ static struct dirtemplate mastertemplate = {
  * Mkdir system call
  */
 int
-ufs_mkdir(dvp, vpp, cnp, vap)
-	struct vnode *dvp;
-	struct vnode **vpp;
-	struct componentname *cnp;
-	struct vattr *vap;
+ufs_mkdir (ap)
+	struct vop_mkdir_args *ap;
+#define dvp (ap->a_dvp)
+#define vpp (ap->a_vpp)
+#define cnp (ap->a_cnp)
+#define vap (ap->a_vap)
 {
+	USES_VOP_TRUNCATE;
+	USES_VOP_UPDATE;
+	USES_VOP_VALLOC;
+	USES_VOP_VFREE;
 	register struct inode *ip, *dp;
 	struct vnode *tvp;
 	struct dirtemplate dirtemplate;
@@ -1195,16 +1291,22 @@ bad:
 	ufs_iput(dp);
 	return (error);
 }
+#undef dvp
+#undef vpp
+#undef cnp
+#undef vap
 
 /*
  * Rmdir system call.
  */
 int
-ufs_rmdir(dvp, vp, cnp)
-	struct vnode *dvp;
-	struct vnode *vp;
-	struct componentname *cnp;
+ufs_rmdir (ap)
+	struct vop_rmdir_args *ap;
+#define dvp (ap->a_dvp)
+#define vp (ap->a_vp)
+#define cnp (ap->a_cnp)
 {
+	USES_VOP_TRUNCATE;
 	register struct inode *ip, *dp;
 	int error;
 
@@ -1263,17 +1365,21 @@ out:
 	ufs_iput(ip);
 	return (error);
 }
+#undef dvp
+#undef vp
+#undef cnp
 
 /*
  * symlink -- make a symbolic link
  */
 int
-ufs_symlink(dvp, vpp, cnp, vap, target)
-	struct vnode *dvp;
-	struct vnode **vpp;
-	struct componentname *cnp;
-	struct vattr *vap;
-	char *target;
+ufs_symlink (ap)
+	struct vop_symlink_args *ap;
+#define dvp (ap->a_dvp)
+#define vpp (ap->a_vpp)
+#define cnp (ap->a_cnp)
+#define vap (ap->a_vap)
+#define target (ap->a_target)
 {
 	int error;
 
@@ -1285,6 +1391,11 @@ ufs_symlink(dvp, vpp, cnp, vap, target)
 	vput(*vpp);
 	return (error);
 }
+#undef dvp
+#undef vpp
+#undef cnp
+#undef vap
+#undef target
 
 /*
  * Vnode op for reading directories.
@@ -1296,12 +1407,14 @@ ufs_symlink(dvp, vpp, cnp, vap, target)
  * by <sys/dirent.h>.
  */
 int
-ufs_readdir(vp, uio, cred, eofflagp)
-	struct vnode *vp;
-	register struct uio *uio;
-	struct ucred *cred;
-	int *eofflagp;
+ufs_readdir (ap)
+	struct vop_readdir_args *ap;
+#define vp (ap->a_vp)
+#define uio (ap->a_uio)
+#define cred (ap->a_cred)
+#define eofflagp (ap->a_eofflagp)
 {
+	USES_VOP_READ;
 	int count, lost, error;
 
 	count = uio->uio_resid;
@@ -1319,19 +1432,28 @@ ufs_readdir(vp, uio, cred, eofflagp)
 		*eofflagp = 0;
 	return (error);
 }
+#undef vp
+#undef uio
+#undef cred
+#undef eofflagp
 
 /*
  * Return target name of a symbolic link
  */
 int
-ufs_readlink(vp, uiop, cred)
-	struct vnode *vp;
-	struct uio *uiop;
-	struct ucred *cred;
+ufs_readlink (ap)
+	struct vop_readlink_args *ap;
+#define vp (ap->a_vp)
+#define uiop (ap->a_uio)
+#define cred (ap->a_cred)
 {
+	USES_VOP_READ;
 
 	return (VOP_READ(vp, uiop, 0, cred));
 }
+#undef vp
+#undef uiop
+#undef cred
 
 /*
  * Ufs abort op, called after namei() when a CREATE/DELETE isn't actually
@@ -1339,34 +1461,40 @@ ufs_readlink(vp, uiop, cred)
  */
 /* ARGSUSED */
 int
-ufs_abortop(dvp, cnp)
-	struct vnode *dvp;
-	struct componentname *cnp;
+ufs_abortop (ap)
+	struct vop_abortop_args *ap;
+#define dvp (ap->a_dvp)
+#define cnp (ap->a_cnp)
 {
 	if ((cnp->cn_flags & (HASBUF | SAVESTART)) == HASBUF)
 		FREE(cnp->cn_pnbuf, M_NAMEI);
 	return (0);
 }
+#undef dvp
+#undef cnp
 
 /*
  * Lock an inode.
  */
 int
-ufs_lock(vp)
-	struct vnode *vp;
+ufs_lock (ap)
+	struct vop_lock_args *ap;
+#define vp (ap->a_vp)
 {
 	register struct inode *ip = VTOI(vp);
 
 	ILOCK(ip);
 	return (0);
 }
+#undef vp
 
 /*
  * Unlock an inode.
  */
 int
-ufs_unlock(vp)
-	struct vnode *vp;
+ufs_unlock (ap)
+	struct vop_unlock_args *ap;
+#define vp (ap->a_vp)
 {
 	register struct inode *ip = VTOI(vp);
 
@@ -1375,28 +1503,33 @@ ufs_unlock(vp)
 	IUNLOCK(ip);
 	return (0);
 }
+#undef vp
 
 /*
  * Check for a locked inode.
  */
 int
-ufs_islocked(vp)
-	struct vnode *vp;
+ufs_islocked (ap)
+	struct vop_islocked_args *ap;
+#define vp (ap->a_vp)
 {
 
 	if (VTOI(vp)->i_flag & ILOCKED)
 		return (1);
 	return (0);
 }
+#undef vp
 
 /*
  * Calculate the logical to physical mapping if not done already,
  * then call the device strategy routine.
  */
 int
-ufs_strategy(bp)
-	register struct buf *bp;
+ufs_strategy (ap)
+	struct vop_strategy_args *ap;
+#define bp (ap->a_bp)
 {
+	USES_VOP_BMAP;
 	register struct inode *ip;
 	struct vnode *vp;
 	int error;
@@ -1424,13 +1557,15 @@ ufs_strategy(bp)
 	(vp->v_op->vop_strategy)(bp);
 	return (0);
 }
+#undef bp
 
 /*
  * Print out the contents of an inode.
  */
 int
-ufs_print(vp)
-	struct vnode *vp;
+ufs_print (ap)
+	struct vop_print_args *ap;
+#define vp (ap->a_vp)
 {
 	register struct inode *ip = VTOI(vp);
 
@@ -1449,42 +1584,63 @@ ufs_print(vp)
 	printf("\n");
 	return (0);
 }
+#undef vp
 
 /*
  * Read wrapper for special devices.
  */
 int
-ufsspec_read(vp, uio, ioflag, cred)
-	struct vnode *vp;
-	struct uio *uio;
-	int ioflag;
-	struct ucred *cred;
+ufsspec_read (ap)
+	struct vop_read_args *ap;
+#define vp (ap->a_vp)
+#define uio (ap->a_uio)
+#define ioflag (ap->a_ioflag)
+#define cred (ap->a_cred)
 {
 
 	/*
 	 * Set access flag.
 	 */
 	VTOI(vp)->i_flag |= IACC;
+/*
+ * NEEDSWORK: direct function call (ufsspec != spec).
+ * <	return (spec_read(vp, uio, ioflag, cred));>
+ * as <	return (VOP_READ(vp, uio, ioflag, cred));>
+ */
 	return (spec_read(vp, uio, ioflag, cred));
 }
+#undef vp
+#undef uio
+#undef ioflag
+#undef cred
 
 /*
  * Write wrapper for special devices.
  */
 int
-ufsspec_write(vp, uio, ioflag, cred)
-	struct vnode *vp;
-	struct uio *uio;
-	int ioflag;
-	struct ucred *cred;
+ufsspec_write (ap)
+	struct vop_write_args *ap;
+#define vp (ap->a_vp)
+#define uio (ap->a_uio)
+#define ioflag (ap->a_ioflag)
+#define cred (ap->a_cred)
 {
 
 	/*
 	 * Set update and change flags.
 	 */
 	VTOI(vp)->i_flag |= IUPD|ICHG;
+/*
+ * NEEDSWORK: direct function call (ufsspec != spec).
+ * <	return (spec_write(vp, uio, ioflag, cred));>
+ * as <	return (VOP_WRITE(vp, uio, ioflag, cred));>
+ */
 	return (spec_write(vp, uio, ioflag, cred));
 }
+#undef vp
+#undef uio
+#undef ioflag
+#undef cred
 
 /*
  * Close wrapper for special devices.
@@ -1492,85 +1648,126 @@ ufsspec_write(vp, uio, ioflag, cred)
  * Update the times on the inode then do device close.
  */
 int
-ufsspec_close(vp, fflag, cred, p)
-	struct vnode *vp;
-	int fflag;
-	struct ucred *cred;
-	struct proc *p;
+ufsspec_close (ap)
+	struct vop_close_args *ap;
+#define vp (ap->a_vp)
+#define fflag (ap->a_fflag)
+#define cred (ap->a_cred)
+#define p (ap->a_p)
 {
 	register struct inode *ip = VTOI(vp);
 
 	if (vp->v_usecount > 1 && !(ip->i_flag & ILOCKED))
 		ITIMES(ip, &time, &time);
+/*
+ * NEEDSWORK: direct function call (ufsspec != spec).
+ * <	return (spec_close(vp, fflag, cred, p));>
+ * as <	return (VOP_CLOSE(vp, fflag, cred, p));>
+ */
 	return (spec_close(vp, fflag, cred, p));
 }
+#undef vp
+#undef fflag
+#undef cred
+#undef p
 
 #ifdef FIFO
 /*
  * Read wrapper for fifo's
  */
 int
-ufsfifo_read(vp, uio, ioflag, cred)
-	struct vnode *vp;
-	struct uio *uio;
-	int ioflag;
-	struct ucred *cred;
+ufsfifo_read (ap)
+	struct vop_read_args *ap;
+#define vp (ap->a_vp)
+#define uio (ap->a_uio)
+#define ioflag (ap->a_ioflag)
+#define cred (ap->a_cred)
 {
 
 	/*
 	 * Set access flag.
 	 */
 	VTOI(vp)->i_flag |= IACC;
+/*
+ * NEEDSWORK: direct function call (ufsfifo != fifo).
+ * <	return (fifo_read(vp, uio, ioflag, cred));>
+ * as <	return (VOP_READ(vp, uio, ioflag, cred));>
+ */
 	return (fifo_read(vp, uio, ioflag, cred));
 }
+#undef vp
+#undef uio
+#undef ioflag
+#undef cred
 
 /*
  * Write wrapper for fifo's.
  */
 int
-ufsfifo_write(vp, uio, ioflag, cred)
-	struct vnode *vp;
-	struct uio *uio;
-	int ioflag;
-	struct ucred *cred;
+ufsfifo_write (ap)
+	struct vop_write_args *ap;
+#define vp (ap->a_vp)
+#define uio (ap->a_uio)
+#define ioflag (ap->a_ioflag)
+#define cred (ap->a_cred)
 {
 
 	/*
 	 * Set update and change flags.
 	 */
 	VTOI(vp)->i_flag |= IUPD|ICHG;
+/*
+ * NEEDSWORK: direct function call (ufsfifo != fifo).
+ * <	return (fifo_write(vp, uio, ioflag, cred));>
+ * as <	return (VOP_WRITE(vp, uio, ioflag, cred));>
+ */
 	return (fifo_write(vp, uio, ioflag, cred));
 }
+#undef vp
+#undef uio
+#undef ioflag
+#undef cred
 
 /*
  * Close wrapper for fifo's.
  *
  * Update the times on the inode then do device close.
  */
-ufsfifo_close(vp, fflag, cred, p)
-	struct vnode *vp;
-	int fflag;
-	struct ucred *cred;
-	struct proc *p;
+ufsfifo_close (ap)
+	struct vop_close_args *ap;
+#define vp (ap->a_vp)
+#define fflag (ap->a_fflag)
+#define cred (ap->a_cred)
+#define p (ap->a_p)
 {
 	register struct inode *ip = VTOI(vp);
 
 	if (vp->v_usecount > 1 && !(ip->i_flag & ILOCKED))
 		ITIMES(ip, &time, &time);
+/*
+ * NEEDSWORK: direct function call (ufsfifo != fifo).
+ * <	return (fifo_close(vp, fflag, cred, p));>
+ * as <	return (VOP_CLOSE(vp, fflag, cred, p));>
+ */
 	return (fifo_close(vp, fflag, cred, p));
 }
+#undef vp
+#undef fflag
+#undef cred
+#undef p
 #endif /* FIFO */
 
 /*
  * Advisory record locking support
  */
 int
-ufs_advlock(vp, id, op, fl, flags)
-	struct vnode *vp;
-	caddr_t id;
-	int op;
-	register struct flock *fl;
-	int flags;
+ufs_advlock (ap)
+	struct vop_advlock_args *ap;
+#define vp (ap->a_vp)
+#define id (ap->a_id)
+#define op (ap->a_op)
+#define fl (ap->a_fl)
+#define flags (ap->a_flags)
 {
 	register struct inode *ip = VTOI(vp);
 	register struct lockf *lock;
@@ -1648,6 +1845,11 @@ ufs_advlock(vp, id, op, fl, flags)
 	}
 	/* NOTREACHED */
 }
+#undef vp
+#undef id
+#undef op
+#undef fl
+#undef flags
 
 /*
  * Initialize the vnode associated with a new inode, handle aliased
@@ -1662,7 +1864,7 @@ ufs_vinit(mntp, specops, fifoops, vpp)
 {
 	struct inode *ip, *nip;
 	struct vnode *vp, *nvp;
-	extern struct vnodeops spec_vnodeops;
+	extern int (**spec_vnodeop_p)();
 
 	vp = *vpp;
 	ip = VTOI(vp);
@@ -1678,7 +1880,7 @@ ufs_vinit(mntp, specops, fifoops, vpp)
 			IUNLOCK(ip);
 			nvp->v_data = vp->v_data;
 			vp->v_data = NULL;
-			vp->v_op = &spec_vnodeops;
+			vp->v_op = spec_vnodeop_p;
 			vrele(vp);
 			vgone(vp);
 			/*
@@ -1718,6 +1920,9 @@ ufs_makeinode(mode, dvp, vpp, cnp)
 	struct vnode **vpp;
 	struct componentname *cnp;
 {
+	USES_VOP_UPDATE;
+	USES_VOP_VALLOC;
+	USES_VOP_VFREE;
 	register struct inode *ip, *pdir;
 	struct vnode *tvp;
 	int error;

@@ -27,148 +27,35 @@ struct mfsnode {
 #define MFSTOV(mfsp)	((mfsp)->mfs_vnode)
 
 /* Prototypes for MFS operations on vnodes. */
-#define mfs_lookup ((int (*) __P(( \
-		struct vnode *dvp, \
-		struct vnode **vpp, \
-		struct componentname *cnp))) mfs_badop)
-#define mfs_create ((int (*) __P(( \
-		struct vnode *dvp, \
- 		struct vnode **vpp, \
-		struct componentname *cnp, \
-		struct vattr *vap))) mfs_badop)
-#define mfs_mknod ((int (*) __P(( \
-		struct vnode *dvp, \
-		struct vnode **vpp, \
-		struct componentname *cnp, \
-		struct vattr *vap))) mfs_badop)
-#define mfs_access ((int (*) __P(( \
-		struct vnode *vp, \
-		int mode, \
-		struct ucred *cred, \
-		struct proc *p))) mfs_badop)
-#define mfs_getattr ((int (*) __P(( \
-		struct vnode *vp, \
-		struct vattr *vap, \
-		struct ucred *cred, \
-		struct proc *p))) mfs_badop)
-#define mfs_setattr ((int (*) __P(( \
-		struct vnode *vp, \
-		struct vattr *vap, \
-		struct ucred *cred, \
-		struct proc *p))) mfs_badop)
-#define mfs_read ((int (*) __P(( \
-		struct vnode *vp, \
-		struct uio *uio, \
-		int ioflag, \
-		struct ucred *cred))) mfs_badop)
-#define mfs_write ((int (*) __P(( \
-		struct vnode *vp, \
-		struct uio *uio, \
-		int ioflag, \
-		struct ucred *cred))) mfs_badop)
-#define mfs_select ((int (*) __P(( \
-		struct vnode *vp, \
-		int which, \
-		int fflags, \
-		struct ucred *cred, \
-		struct proc *p))) mfs_badop)
-#define mfs_mmap ((int (*) __P(( \
-		struct vnode *vp, \
-		int fflags, \
-		struct ucred *cred, \
-		struct proc *p))) mfs_badop)
-#define mfs_fsync ((int (*) __P(( \
-		struct vnode *vp, \
-		int fflags, \
-		struct ucred *cred, \
-		int waitfor, \
-		struct proc *p))) mfs_badop)
-#define mfs_seek ((int (*) __P(( \
-		struct vnode *vp, \
-		off_t oldoff, \
-		off_t newoff, \
-		struct ucred *cred))) mfs_badop)
-#define mfs_remove ((int (*) __P(( \
-		struct vnode *dvp, \
-	        struct vnode *vp, \
-		struct componentname *cnp))) mfs_badop)
-#define mfs_link ((int (*) __P(( \
-		register struct vnode *vp, \
-		struct vnode *tdvp, \
-		struct componentname *cnp))) mfs_badop)
-#define mfs_rename ((int (*) __P(( \
-		struct vnode *fdvp, \
-	        struct vnode *fvp, \
-		struct componentname *fcnp, \
-		struct vnode *tdvp, \
-		struct vnode *tvp, \
-		struct componentname *tcnp))) mfs_badop)
-#define mfs_mkdir ((int (*) __P(( \
-		struct vnode *dvp, \
-		struct vnode **vpp, \
-		struct componentname *cnp, \
-		struct vattr *vap))) mfs_badop)
-#define mfs_rmdir ((int (*) __P(( \
-		struct vnode *dvp, \
-		struct vnode *vp, \
-		struct componentname *cnp))) mfs_badop)
-#define mfs_symlink ((int (*) __P(( \
-		struct vnode *dvp, \
-		struct vnode **vpp, \
-		struct componentname *cnp, \
-		struct vattr *vap, \
-		char *target))) mfs_badop)
-#define mfs_readdir ((int (*) __P(( \
-		struct vnode *vp, \
-		struct uio *uio, \
-		struct ucred *cred, \
-		int *eofflagp))) mfs_badop)
-#define mfs_readlink ((int (*) __P(( \
-		struct vnode *vp, \
-		struct uio *uio, \
-		struct ucred *cred))) mfs_badop)
-#define mfs_abortop ((int (*) __P(( \
-		struct vnode *dvp, \
-		struct componentname *cnp))) mfs_badop)
-#define mfs_lock ((int (*) __P(( \
-		struct vnode *vp))) nullop)
-#define mfs_unlock ((int (*) __P(( \
-		struct vnode *vp))) nullop)
-#define mfs_islocked ((int (*) __P(( \
-		struct vnode *vp))) nullop)
-#define mfs_advlock ((int (*) __P(( \
-		struct vnode *vp, \
-		caddr_t id, \
-		int op, \
-		struct flock *fl, \
-		int flags))) mfs_badop)
-#define mfs_blkatoff ((int (*) __P(( \
-		struct vnode *vp, \
-		off_t offset, \
-		char **res, \
-		struct buf **bpp))) mfs_badop)
-#define mfs_vget ((int (*) __P(( \
-		struct mount *mp, \
-		ino_t ino, \
-		struct vnode **vpp))) mfs_badop)
-#define mfs_valloc ((int (*) __P(( \
-		struct vnode *pvp, \
-		int mode, \
-		struct ucred *cred, \
-		struct vnode **vpp))) mfs_badop)
-#define mfs_vfree ((void (*) __P(( \
-		struct vnode *pvp, \
-		ino_t ino, \
-		int mode))) mfs_badop)
-#define mfs_truncate ((int (*) __P(( \
-		struct vnode *vp, \
-		off_t length, \
-		int flags, \
-		struct ucred *cred))) mfs_badop)
-#define mfs_update ((int (*) __P(( \
-		struct vnode *vp, \
-		struct timeval *ta, \
-		struct timeval *tm, \
-		int waitfor))) nullop)
-#define mfs_bwrite ((int (*) __P(( \
-		struct buf *bp))) nullop)
+#define mfs_lookup ((int (*) __P((struct  vop_lookup_args *)))mfs_badop)
+#define mfs_create ((int (*) __P((struct  vop_create_args *)))mfs_badop)
+#define mfs_mknod ((int (*) __P((struct  vop_mknod_args *)))mfs_badop)
+#define mfs_access ((int (*) __P((struct  vop_access_args *)))mfs_badop)
+#define mfs_getattr ((int (*) __P((struct  vop_getattr_args *)))mfs_badop)
+#define mfs_setattr ((int (*) __P((struct  vop_setattr_args *)))mfs_badop)
+#define mfs_read ((int (*) __P((struct  vop_read_args *)))mfs_badop)
+#define mfs_write ((int (*) __P((struct  vop_write_args *)))mfs_badop)
+#define mfs_select ((int (*) __P((struct  vop_select_args *)))mfs_badop)
+#define mfs_mmap ((int (*) __P((struct  vop_mmap_args *)))mfs_badop)
+#define mfs_fsync ((int (*) __P((struct  vop_fsync_args *)))mfs_badop)
+#define mfs_seek ((int (*) __P((struct  vop_seek_args *)))mfs_badop)
+#define mfs_remove ((int (*) __P((struct  vop_remove_args *)))mfs_badop)
+#define mfs_link ((int (*) __P((struct  vop_link_args *)))mfs_badop)
+#define mfs_rename ((int (*) __P((struct  vop_rename_args *)))mfs_badop)
+#define mfs_mkdir ((int (*) __P((struct  vop_mkdir_args *)))mfs_badop)
+#define mfs_rmdir ((int (*) __P((struct  vop_rmdir_args *)))mfs_badop)
+#define mfs_symlink ((int (*) __P((struct  vop_symlink_args *)))mfs_badop)
+#define mfs_readdir ((int (*) __P((struct  vop_readdir_args *)))mfs_badop)
+#define mfs_readlink ((int (*) __P((struct  vop_readlink_args *)))mfs_badop)
+#define mfs_abortop ((int (*) __P((struct  vop_abortop_args *)))mfs_badop)
+#define mfs_lock ((int (*) __P((struct  vop_lock_args *)))nullop)
+#define mfs_unlock ((int (*) __P((struct  vop_unlock_args *)))nullop)
+#define mfs_islocked ((int (*) __P((struct  vop_islocked_args *)))nullop)
+#define mfs_advlock ((int (*) __P((struct  vop_advlock_args *)))mfs_badop)
+#define mfs_blkatoff ((int (*) __P((struct  vop_blkatoff_args *)))mfs_badop)
+#define mfs_vget ((int (*) __P((struct  vop_vget_args *)))mfs_badop)
+#define mfs_valloc ((int (*) __P((struct  vop_valloc_args *)))mfs_badop)
+#define mfs_vfree ((int (*) __P((struct  vop_vfree_args *)))mfs_badop)
+#define mfs_truncate ((int (*) __P((struct  vop_truncate_args *)))mfs_badop)
+#define mfs_update ((int (*) __P((struct  vop_update_args *)))nullop)
+#define mfs_bwrite ((int (*) __P((struct  vop_bwrite_args *)))nullop)

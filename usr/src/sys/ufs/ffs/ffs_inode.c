@@ -44,10 +44,11 @@ ffs_init()
  * return the inode locked. Detection and handling of mount
  * points must be done by the calling routine.
  */
-ffs_vget(mntp, ino, vpp)
-	struct mount *mntp;
-	ino_t ino;
-	struct vnode **vpp;
+ffs_vget (ap)
+	struct vop_vget_args *ap;
+#define mntp (ap->a_mp)
+#define ino (ap->a_ino)
+#define vpp (ap->a_vpp)
 {
 	register struct fs *fs;
 	register struct inode *ip;
@@ -65,7 +66,7 @@ ffs_vget(mntp, ino, vpp)
 		return (0);
 
 	/* Allocate a new vnode/inode. */
-	if (error = getnewvnode(VT_UFS, mntp, &ffs_vnodeops, &vp)) {
+	if (error = getnewvnode(VT_UFS, mntp, ffs_vnodeop_p, &vp)) {
 		*vpp = NULL;
 		return (error);
 	}
@@ -120,7 +121,7 @@ ffs_vget(mntp, ino, vpp)
 	 * Initialize the vnode from the inode, check for aliases.
 	 * Note that the underlying vnode may have changed.
 	 */
-	if (error = ufs_vinit(mntp, &ffs_specops, FFS_FIFOOPS, &vp)) {
+	if (error = ufs_vinit(mntp, ffs_specop_p, FFS_FIFOOPS, &vp)) {
 		ufs_iput(ip);
 		*vpp = NULL;
 		return (error);
@@ -151,6 +152,9 @@ ffs_vget(mntp, ino, vpp)
 	*vpp = vp;
 	return (0);
 }
+#undef mntp
+#undef ino
+#undef vpp
 
 /*
  * Update the access, modified, and inode change times as specified
@@ -162,10 +166,12 @@ ffs_vget(mntp, ino, vpp)
  * then wait for the disk write of the inode to complete.
  */
 int
-ffs_update(vp, ta, tm, waitfor)
-	register struct vnode *vp;
-	struct timeval *ta, *tm;
-	int waitfor;
+ffs_update (ap)
+	struct vop_update_args *ap;
+#define vp (ap->a_vp)
+#define ta (ap->a_ta)
+#define tm (ap->a_tm)
+#define waitfor (ap->a_waitfor)
 {
 	struct buf *bp;
 	struct inode *ip;
@@ -208,6 +214,10 @@ ffs_update(vp, ta, tm, waitfor)
 		return (0);
 	}
 }
+#undef vp
+#undef ta
+#undef tm
+#undef waitfor
 
 #define	SINGLE	0	/* index of single indirect block */
 #define	DOUBLE	1	/* index of double indirect block */
@@ -218,12 +228,14 @@ ffs_update(vp, ta, tm, waitfor)
  *
  * NB: triple indirect blocks are untested.
  */
-ffs_truncate(ovp, length, flags, cred)
-	register struct vnode *ovp;
-	off_t length;
-	int flags;
-	struct ucred *cred;
+ffs_truncate (ap)
+	struct vop_truncate_args *ap;
+#define ovp (ap->a_vp)
+#define length (ap->a_length)
+#define flags (ap->a_flags)
+#define cred (ap->a_cred)
 {
+	USES_VOP_UPDATE;
 	register daddr_t lastblock;
 	register struct inode *oip;
 	daddr_t bn, lbn, lastiblock[NIADDR];
@@ -241,7 +253,7 @@ ffs_truncate(ovp, length, flags, cred)
 	oip = VTOI(ovp);
 	if (oip->i_size <= length) {
 		oip->i_flag |= ICHG|IUPD;
-		error = ffs_update(ovp, &time, &time, 1);
+		error = VOP_UPDATE(ovp, &time, &time, 1);
 		return (error);
 	}
 	/*
@@ -305,7 +317,7 @@ ffs_truncate(ovp, length, flags, cred)
 		oip->i_db[i] = 0;
 	oip->i_flag |= ICHG|IUPD;
 	vinvalbuf(ovp, (length > 0));
-	allerror = ffs_update(ovp, &time, &time, MNT_WAIT);
+	allerror = VOP_UPDATE(ovp, &time, &time, MNT_WAIT);
 
 	/*
 	 * Indirect blocks first.
@@ -393,6 +405,10 @@ done:
 #endif
 	return (allerror);
 }
+#undef ovp
+#undef length
+#undef flags
+#undef cred
 
 /*
  * Release blocks associated with the inode ip and stored in the indirect

@@ -285,12 +285,15 @@ nospace:
  *   2) quadradically rehash into other cylinder groups, until an
  *      available inode is located.
  */
-ffs_valloc(pvp, mode, cred, vpp)
-	register struct vnode *pvp;
-	int mode;
-	struct ucred *cred;
-	struct vnode **vpp;
+ffs_valloc (ap)
+	struct vop_valloc_args *ap;
+#define pvp (ap->a_pvp)
+#define mode (ap->a_mode)
+#define cred (ap->a_cred)
+#define vpp (ap->a_vpp)
 {
+	USES_VOP_VFREE;
+	USES_VOP_VGET;
 	register struct inode *pip;
 	register struct fs *fs;
 	register struct inode *ip;
@@ -313,9 +316,9 @@ ffs_valloc(pvp, mode, cred, vpp)
 	ino = (ino_t)ffs_hashalloc(pip, cg, (long)ipref, mode, ffs_ialloccg);
 	if (ino == 0)
 		goto noinodes;
-	error = ffs_vget(pvp->v_mount, ino, vpp);
+	error = FFS_VGET(pvp->v_mount, ino, vpp);
 	if (error) {
-		ffs_vfree(pvp, ino, mode);
+		VOP_VFREE(pvp, ino, mode);
 		return (error);
 	}
 	ip = VTOI(*vpp);
@@ -342,6 +345,10 @@ noinodes:
 	uprintf("\n%s: create/symlink failed, no inodes free\n", fs->fs_fsmnt);
 	return (ENOSPC);
 }
+#undef pvp
+#undef mode
+#undef cred
+#undef vpp
 
 /*
  * Find a cylinder to place a directory.
@@ -993,10 +1000,11 @@ ffs_blkfree(ip, bno, size)
  * The specified inode is placed back in the free map.
  */
 void
-ffs_vfree(pvp, ino, mode)
-	struct vnode *pvp;
-	ino_t ino;
-	int mode;
+ffs_vfree (ap)
+	struct vop_vfree_args *ap;
+#define pvp (ap->a_pvp)
+#define ino (ap->a_ino)
+#define mode (ap->a_mode)
 {
 	register struct fs *fs;
 	register struct cg *cgp;
@@ -1048,6 +1056,9 @@ ffs_vfree(pvp, ino, mode)
 	fs->fs_fmod = 1;
 	bdwrite(bp);
 }
+#undef pvp
+#undef ino
+#undef mode
 
 /*
  * Find a block of the specified size in the specified cylinder group.

@@ -94,7 +94,7 @@ nfs_nget(mntp, fhp, npp)
 {
 	register struct nfsnode *np;
 	register struct vnode *vp;
-	extern struct vnodeops nfsv2_vnodeops;
+	extern int (**nfsv2_vnodeop_p)();
 	struct vnode *nvp;
 	union nhead *nh;
 	int error;
@@ -111,7 +111,7 @@ loop:
 		*npp = np;
 		return(0);
 	}
-	if (error = getnewvnode(VT_NFS, mntp, &nfsv2_vnodeops, &nvp)) {
+	if (error = getnewvnode(VT_NFS, mntp, nfsv2_vnodeop_p, &nvp)) {
 		*npp = 0;
 		return (error);
 	}
@@ -140,9 +140,10 @@ loop:
 	return (0);
 }
 
-nfs_inactive(vp, p)
-	struct vnode *vp;
-	struct proc *p;
+nfs_inactive (ap)
+	struct vop_inactive_args *ap;
+#define vp (ap->a_vp)
+#define p (ap->a_p)
 {
 	register struct nfsnode *np;
 	register struct sillyrename *sp;
@@ -167,12 +168,15 @@ nfs_inactive(vp, p)
 	np->n_flag &= NMODIFIED;
 	return (0);
 }
+#undef vp
+#undef p
 
 /*
  * Reclaim an nfsnode so that it can be used for other purposes.
  */
-nfs_reclaim(vp)
-	register struct vnode *vp;
+nfs_reclaim (ap)
+	struct vop_reclaim_args *ap;
+#define vp (ap->a_vp)
 {
 	register struct nfsnode *np = VTONFS(vp);
 	register struct nfsmount *nmp = VFSTONFS(vp->v_mount);
@@ -203,36 +207,43 @@ nfs_reclaim(vp)
 	vp->v_data = (void *)0;
 	return (0);
 }
+#undef vp
 
 /*
  * Lock an nfsnode
  */
-nfs_lock(vp)
-	struct vnode *vp;
+nfs_lock (ap)
+	struct vop_lock_args *ap;
+#define vp (ap->a_vp)
 {
 
 	return (0);
 }
+#undef vp
 
 /*
  * Unlock an nfsnode
  */
-nfs_unlock(vp)
-	struct vnode *vp;
+nfs_unlock (ap)
+	struct vop_unlock_args *ap;
+#define vp (ap->a_vp)
 {
 
 	return (0);
 }
+#undef vp
 
 /*
  * Check for a locked nfsnode
  */
-nfs_islocked(vp)
-	struct vnode *vp;
+nfs_islocked (ap)
+	struct vop_islocked_args *ap;
+#define vp (ap->a_vp)
 {
 
 	return (0);
 }
+#undef vp
 
 /*
  * Nfs abort op, called after namei() when a CREATE/DELETE isn't actually
@@ -240,12 +251,15 @@ nfs_islocked(vp)
  */
 /* ARGSUSED */
 int
-nfs_abortop(dvp, cnp)
-	struct vnode *dvp;
-	struct componentname *cnp;
+nfs_abortop (ap)
+	struct vop_abortop_args *ap;
+#define dvp (ap->a_dvp)
+#define cnp (ap->a_cnp)
 {
 
 	if ((cnp->cn_flags & (HASBUF | SAVESTART)) == HASBUF)
 		FREE(cnp->cn_pnbuf, M_NAMEI);
 	return (0);
 }
+#undef dvp
+#undef cnp

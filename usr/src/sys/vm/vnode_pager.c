@@ -86,6 +86,7 @@ vnode_pager_alloc(handle, size, prot)
 	vm_size_t size;
 	vm_prot_t prot;
 {
+	USES_VOP_GETATTR;
 	register vm_pager_t pager;
 	register vn_pager_t vnp;
 	vm_object_t object;
@@ -168,6 +169,7 @@ static void
 vnode_pager_dealloc(pager)
 	vm_pager_t pager;
 {
+	USES_VOP_FSYNC;
 	register vn_pager_t vnp = (vn_pager_t)pager->pg_data;
 	register struct vnode *vp;
 	struct proc *p = curproc;		/* XXX */
@@ -231,6 +233,7 @@ vnode_pager_haspage(pager, offset)
 	vm_pager_t pager;
 	vm_offset_t offset;
 {
+	USES_VOP_BMAP;
 	register vn_pager_t vnp = (vn_pager_t)pager->pg_data;
 	daddr_t bn;
 	int err;
@@ -366,6 +369,9 @@ boolean_t
 vnode_pager_uncache(vp)
 	register struct vnode *vp;
 {
+	USES_VOP_ISLOCKED;
+	USES_VOP_LOCK;
+	USES_VOP_UNLOCK;
 	register vm_object_t object;
 	boolean_t uncached, locked;
 	vm_pager_t pager;
@@ -406,6 +412,8 @@ vnode_pager_io(vnp, m, rw)
 	vm_page_t m;
 	enum uio_rw rw;
 {
+	USES_VOP_READ;
+	USES_VOP_WRITE;
 	struct uio auio;
 	struct iovec aiov;
 	vm_offset_t kva, foff;
