@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.15	82/02/01	*/
+/*	uipc_proto.c	4.16	82/02/15	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -39,7 +39,15 @@ int	rip_usrreq(),rip_slowtimo();
  */
 #include "imp.h"
 #if NIMP > 0
-int	imp_usrreq(),imp_output(),imp_ctlinput();
+int	rimp_usrreq(),rimp_output(),rimp_ctlinput();
+#endif
+
+/*
+ * PUP-I protocol family: raw interface
+ */
+#include "pup.h"
+#if NPUP > 0
+int	rpup_usrreq(),rpup_output(),rpup_ctlinput();
 #endif
 
 /*
@@ -101,8 +109,16 @@ struct protosw protosw[] = {
 #if NIMP > 0
 ,
 { SOCK_RAW,	PF_IMPLINK,	0,		PR_ATOMIC|PR_ADDR,
-  0,		imp_output,	imp_ctlinput,	0,
-  imp_usrreq,
+  0,		rimp_output,	rimp_ctlinput,	0,
+  rimp_usrreq,
+  0,		0,		0,		0,
+}
+#endif
+#if NPUP > 0
+,
+{ SOCK_RAW,	PF_PUP,		0,		PR_ATOMIC|PR_ADDR,
+  0,		rpup_output,	rpup_ctlinput,	0,
+  rpup_usrreq,
   0,		0,		0,		0,
 }
 #endif
