@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	2.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	2.3 (Berkeley) %G%";
 #endif not lint
 
 #include "timedc.h"
@@ -21,11 +21,11 @@ char	tracinghelp[] =		"turns tracing on or off";
 
 struct cmd cmdtab[] = {
 	{ "clockdiff",	clockdiffhelp,	clockdiff,	0 },
+	{ "election",	testinghelp,	testing,	1 },
 	{ "help",	helphelp,	help,		0 },
 	{ "msite",	msitehelp,	msite,		0 },
 	{ "quit",	quithelp,	quit,		0 },
-	{ "testing",	testinghelp,	testing,	1 },
-	{ "tracing",	tracinghelp,	tracing,	1 },
+	{ "trace",	tracinghelp,	tracing,	1 },
 	{ "?",		helphelp,	help,		0 },
 };
 
