@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.32 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.33 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.32 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.33 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -79,6 +79,8 @@ smtpinit(m, mci, e)
 
 	SmtpError[0] = '\0';
 	CurHostName = mci->mci_host;		/* XXX UGLY XXX */
+	if (CurHostName == NULL)
+		CurHostName = MyHostName;
 	SmtpNeedIntro = TRUE;
 	switch (mci->mci_state)
 	{
