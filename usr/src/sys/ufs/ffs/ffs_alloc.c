@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)ffs_alloc.c	7.6 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -933,7 +933,8 @@ blkfree(ip, bno, size)
 		/*
 		 * if a complete block has been reassembled, account for it
 		 */
-		if (isblock(fs, cg_blksfree(cgp), fragstoblks(fs, bbase))) {
+		if (isblock(fs, cg_blksfree(cgp),
+		    (daddr_t)fragstoblks(fs, bbase))) {
 			cgp->cg_cs.cs_nffree -= fs->fs_frag;
 			fs->fs_cstotal.cs_nffree -= fs->fs_frag;
 			fs->fs_cs(fs, cg).cs_nffree -= fs->fs_frag;
@@ -1030,15 +1031,15 @@ mapsearch(fs, cgp, bpref, allocsiz)
 	else
 		start = cgp->cg_frotor / NBBY;
 	len = howmany(fs->fs_fpg, NBBY) - start;
-	loc = scanc((unsigned)len, (caddr_t)&cg_blksfree(cgp)[start],
-		(caddr_t)fragtbl[fs->fs_frag],
-		(int)(1 << (allocsiz - 1 + (fs->fs_frag % NBBY))));
+	loc = scanc((unsigned)len, (u_char *)&cg_blksfree(cgp)[start],
+		(u_char *)fragtbl[fs->fs_frag],
+		(u_char)(1 << (allocsiz - 1 + (fs->fs_frag % NBBY))));
 	if (loc == 0) {
 		len = start + 1;
 		start = 0;
-		loc = scanc((unsigned)len, (caddr_t)&cg_blksfree(cgp)[0],
-			(caddr_t)fragtbl[fs->fs_frag],
-			(int)(1 << (allocsiz - 1 + (fs->fs_frag % NBBY))));
+		loc = scanc((unsigned)len, (u_char *)&cg_blksfree(cgp)[0],
+			(u_char *)fragtbl[fs->fs_frag],
+			(u_char)(1 << (allocsiz - 1 + (fs->fs_frag % NBBY))));
 		if (loc == 0) {
 			printf("start = %d, len = %d, fs = %s\n",
 			    start, len, fs->fs_fsmnt);
