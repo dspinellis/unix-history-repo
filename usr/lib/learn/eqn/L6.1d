@@ -1,0 +1,18 @@
+#print
+Do the inputs
+
+Let $x sub i$ and $y sub i$ be $>= z sub i$.
+
+and
+
+Let $x sub i$ and $y sub i$ be $>=$ $z sub i$.
+
+produce the same output?
+Answer yes or no.
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+7.1a

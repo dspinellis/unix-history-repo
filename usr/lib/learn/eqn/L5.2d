@@ -1,0 +1,31 @@
+#once #create message
+.ND
+.EQ
+delim $$
+.EN
+.LP
+Modify "Example" so it produces this output, then
+type "ready".
+.pl 1
+#once #create Ref
+.LP
+.EQ
+{partial e sup {-{x sup 2 + y sup 2} over 2}} over
+{partial x} ~=~ f(x)
+.EN
+.pl 1
+#once #create Example
+.LP
+.EQ
+xxxx
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$term %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log
+#next
+5.1e 10

@@ -1,0 +1,21 @@
+#print
+.LP
+The "right" part of a left-right construction can be
+omitted if it is not used; just leave that part out.
+The main thing to watch out for is that now you will
+need braces to enclose the entire construction, "left" and all -
+otherwise neqn will not know where to stop in
+figuring out how high the thing is.
+
+For example, will
+  left "{" a + b over c over d
+produce the same output as
+   { left "{" a } + b over c over d
+Answer yes or no after experimenting.
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+12.1e 10

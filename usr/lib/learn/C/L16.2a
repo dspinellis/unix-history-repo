@@ -1,0 +1,54 @@
+#print
+Write a program which reads a file with lines of up
+to 200 characters and shortens them to 60 characters
+by throwing away any characters past the first 60.
+Compile and test it; then type "ready".
+#once #create Ref
+hoboken harrison newark roseville avenue grove street
+east orange brick church orange highland avenue east orange 
+mountain station south orange maplewood millburn short hills
+summit chatham madison convent station morristown summit cha
+new providence murray hill berkeley heights
+
+gillette stirling millingon lyons basking ridgexxxxxxxxxxxxx
+bernardsville far hills peapack gladstone
+#once #create badin
+hoboken harrison newark roseville avenue grove street
+east orange brick church orange highland avenue east orange brick church orange highland avenue east orange brick church orange highland avenue
+mountain station south orange maplewood millburn short hills
+summit chatham madison convent station morristown summit chatham madison convent station morristown summit chatham madison convent station morristown
+new providence murray hill berkeley heights
+
+gillette stirling millingon lyons basking ridgexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+bernardsville far hills peapack gladstone
+#user
+a.out <badin >xxx
+#cmp Ref xxx
+#succeed
+/*	one way to do this */
+ #include <stdio.h>
+
+main()
+{
+	char line[61];
+	int c, k;
+
+	k = 0;
+	while ((c = getchar()) != EOF) {
+		if (c == '\n') {
+			line[k] = 0;
+			printf("%s\n", line);
+			k = 0;
+		}
+		else if (k < 60)
+			line[k++] = c;
+	}
+}
+
+/* Note that this version works regardless of
+how long the lines are.  If you use getline,
+is the same thing true??
+ */
+#log
+#next
+16.2b 10
