@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ix.c	7.2 (Berkeley) %G%
+ *	@(#)if_ix.c	7.3 (Berkeley) %G%
  */
 
 #include "np.h"
@@ -188,7 +188,7 @@ ix_DoReq(mp, rp, cmd, addr, len, rpb, routine)
 	if (routine == 0) {
 		NpAddReq(mp->reqtab, rp);	/* Queue onto active list */
 		while (!(rp->flags & REQDONE)) {
-			pri = spl4();
+			pri = spl5();
 			NpAddCQE(ep, &mp->shmemp->devcq, mp);
 			sleep((caddr_t)rp, PZERO - 1);
 			splx(pri);
@@ -205,7 +205,7 @@ ix_DoReq(mp, rp, cmd, addr, len, rpb, routine)
 		}
 		NpRemReq(rp);			/* Clear request */
 	} else {
-		pri = spl4();
+		pri = spl5();
 		NpAddCQE(ep, &mp->shmemp->devcq, mp);
 		splx(pri);
 	}
@@ -358,7 +358,7 @@ ixreset(unit, uban, softp)
 	ix_softc[unit].ix_flags &= mask;
 }
 
-int ix_MacLoop = 1;
+int ix_MacLoop = 0;
 
 /*
  * Initialization of interface; clear recorded pending
@@ -494,6 +494,7 @@ dev_t dev;
 	IF_DEQUEUE(&ix->ix_if.if_snd, m);
 	if (m == 0) {
 		if (ix->ix_flags & IXF_STATPENDING) {
+			ix->ix_flags &= ~IXF_STATPENDING;
 			ix->ix_flags |= IXF_OACTIVE;
 			rpb[0] = 2;
 			rpb[1] = ix->ix_aid;
@@ -731,7 +732,7 @@ setup:
 
 	ix->ix_flags |= IXF_RCVPENDING;
 
-	s = spl4();
+	s = spl5();
 	NpAddCQE(ep, &mp->shmemp->devcq, mp); /* Add CQE to device's queue */
 	splx(s);
 }
