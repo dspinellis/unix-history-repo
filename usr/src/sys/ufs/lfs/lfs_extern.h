@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_extern.h	7.2 (Berkeley) %G%
+ *	@(#)lfs_extern.h	7.3 (Berkeley) %G%
  */
 
 struct fid;
@@ -54,3 +54,10 @@ int	lfs_umountdebug __P((struct mount *));
 int	lfs_vinvalbuf __P((struct vnode *));
 #endif
 __END_DECLS
+extern struct vnodeops lfs_vnodeops, lfs_specops;
+#ifdef FIFO
+extern struct vnodeops lfs_fifoops;
+#define LFS_FIFOOPS &lfs_fifoops
+#else
+#define LFS_FIFOOPS NULL
+#endif
