@@ -1,10 +1,9 @@
-# include "useful.h"
+# include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)macro.c	3.10		%G%);
+SCCSID(@(#)macro.c	3.11		%G%);
 
 char	*Macro[128];
-extern int	Debug;
 
 /*
 **  EXPAND -- macro expand a string using $x escapes.
@@ -28,52 +27,55 @@ expand(s, buf, buflim)
 	register char *buf;
 	char *buflim;
 {
-	register char *bp;
+	register char *q;
+	char xbuf[BUFSIZ];
+	register char *xp = xbuf;
 	bool skipping;		/* set if conditionally skipping output */
+	bool gotone = FALSE;	/* set if any expansion done */
 
 # ifdef DEBUG
 	if (Debug > 3)
-		printf("expand(%s)\n", s);
+	{
+		printf("expand(");
+		xputs(s);
+		printf(")\n");
+	}
 # endif DEBUG
 
 	skipping = FALSE;
-	for (bp = buf; *s != '\0'; s++)
+	for (; *s != '\0'; s++)
 	{
-		register char *q;
+		char c;
 
 		/*
-		**  Check for non-ordinary (special?) character --
-		**  always escaped with dollar sign.
+		**  Check for non-ordinary (special?) character.
 		**	'q' will be the interpolated quantity.
 		*/
 
 		q = NULL;
-		if (*s == '$')
+		c = *s;
+		switch (c)
 		{
-			char c;
-
+		  case CONDIF:		/* see if var set */
 			c = *++s;
-			switch (c)
-			{
-			  case '?':	/* see if var set */
-				c = *++s;
-				skipping = Macro[c] == NULL;
-				break;
+			skipping = Macro[c] == NULL;
+			continue;
 
-			  case '|':	/* else */
-				skipping = !skipping;
-				break;
+		  case CONDELSE:	/* change state of skipping */
+			skipping = !skipping;
+			continue;
 
-			  case '.':	/* end if */
-				skipping = FALSE;
-				break;
+		  case CONDFI:		/* stop skipping */
+			skipping = FALSE;
+			continue;
 
-			  default:
-				q = Macro[c & 0177];
-				break;
-			}
+		  case '$':		/* macro interpolation */
+			c = *++s;
+			q = Macro[c & 0177];
 			if (q == NULL && c != '$')
 				continue;
+			gotone = TRUE;
+			break;
 		}
 
 		/*
@@ -82,19 +84,39 @@ expand(s, buf, buflim)
 
 		if (skipping)
 			continue;
-		if (q != NULL)
-			bp = expand(q, bp, buflim);
-		else if (bp < buflim - 1)
-			*bp++ = *s;
+		while (xp < &xbuf[sizeof xbuf])
+		{
+			if (q == NULL)
+			{
+				*xp++ = c;
+				break;
+			}
+			if (*q == NULL)
+				break;
+			*xp++ = *q++;
+		}
 	}
-	*bp = '\0';
+	*xp = '\0';
 
 # ifdef DEBUG
 	if (Debug > 3)
-		printf("expand ==> '%s'\n", buf);
+	{
+		printf("expand ==> '");
+		xputs(xbuf);
+		printf("'\n");
+	}
 # endif DEBUG
 
-	return (bp);
+	/* recurse as appropriate */
+	if (gotone)
+		return (expand(xbuf, buf, buflim));
+
+	/* copy results out */
+	for (q = buf, xp = xbuf; xp != '\0' && q < buflim-1; )
+		*q++ = *xp++;
+	*q = '\0';
+
+	return (q);
 }
 /*
 **  DEFINE -- define a macro.
@@ -158,7 +180,11 @@ define(n, v)
 {
 # ifdef DEBUG
 	if (Debug > 3)
-		printf("define(%c as %s)\n", n, v);
+	{
+		printf("define(%c as ", n);
+		xputs(v);
+		printf(")\n");
+	}
 # endif DEBUG
 	Macro[n & 0177] = v;
 }

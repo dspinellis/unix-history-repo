@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.68		%G%);
+SCCSID(@(#)main.c	3.69		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -945,25 +945,43 @@ initsys()
 **		initializes several macros to be themselves.
 */
 
-char	*MetaMacros[] =
+struct metamac
 {
-	/* $0 .... are rewrite replacement */
-	"$$0",	"$$1",	"$$2",	"$$3",	"$$4",
-	"$$5",	"$$6",	"$$7",	"$$8",	"$$9",
+	char	metaname;
+	char	metaval;
+};
 
+struct metamac	MetaMacros[] =
+{
 	/* these are important on the LHS */
-	"$$+",	"$$-",	"$$=",
+	'+',	MATCHANY,	'-',	MATCHONE,	'=',	MATCHCLASS,
 
 	/* these are RHS metasymbols */
-	"$$#",	"$$@",	"$$:",
+	'#',	CANONNET,	'@',	CANONHOST,	':',	CANONUSER,
 
-	NULL
+	/* and finally the conditional operations */
+	'?',	CONDIF,		'|',	CONDELSE,	'.',	CONDFI,
+
+	'\0'
 };
 
 initmacros()
 {
-	register char **pp;
+	register struct metamac *m;
+	char buf[5];
+	register int c;
 
-	for (pp = MetaMacros; *pp != NULL; pp++)
-		define((*pp)[2], *pp);
+	for (m = MetaMacros; m->metaname != '\0'; m++)
+	{
+		buf[0] = m->metaval;
+		buf[1] = '\0';
+		define(m->metaname, newstr(buf));
+	}
+	buf[0] = MATCHREPL;
+	buf[2] = '\0';
+	for (c = '0'; c <= '9'; c++)
+	{
+		buf[1] = c;
+		define(c, newstr(buf));
+	}
 }

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.38		%G%);
+SCCSID(@(#)parseaddr.c	3.39		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -172,7 +172,7 @@ parse(addr, a, copyf)
 # define EOTOK		3
 # define QSTRING	4
 # define SPACE		5
-# define DOLLAR		6
+# define ONEMORE	6
 # define GETONE		7
 # define MACRO		8
 
@@ -228,10 +228,7 @@ prescan(addr, delim)
 				break;
 			}
 
-			if (c == '$' && delim == '\t')
-				nstate = DOLLAR;
-			else
-				nstate = toktype(c);
+			nstate = toktype(c);
 			switch (state)
 			{
 			  case QSTRING:		/* in quoted string */
@@ -265,50 +262,8 @@ prescan(addr, delim)
 				state = nstate;
 				break;
 
-			  case DOLLAR:		/* $- etc. */
-				state = OPER;
-				if (isascii(c) && isdigit(c))
-				{
-					/* replacement */
-					c = MATCHREPL;
-					state = GETONE;
-					p--;
-					break;
-				}
-				switch (c)
-				{
-				  case '$':		/* literal $ */
-					break;
-
-				  case '+':		/* match anything */
-					c = MATCHANY;
-					break;
-
-				  case '-':		/* match one token */
-					c = MATCHONE;
-					break;
-
-				  case '=':		/* match one token of class */
-					c = MATCHCLASS;
-					state = GETONE;
-					break;
-
-				  case '#':		/* canonical net name */
-					c = CANONNET;
-					break;
-
-				  case '@':		/* canonical host name */
-					c = CANONHOST;
-					break;
-
-				  case ':':		/* canonical user name */
-					c = CANONUSER;
-					break;
-
-				  default:
-					state = MACRO;
-					break;
-				}
+			  case ONEMORE:		/* $- etc. */
+				state = GETONE;
 				break;
 
 			  default:
@@ -317,8 +272,6 @@ prescan(addr, delim)
 
 			if (state == EOTOK || state == SPACE)
 				break;
-			if (state == DOLLAR)
-				continue;
 
 			/* squirrel it away */
 			if (q >= &buf[sizeof buf - 5])
@@ -326,22 +279,10 @@ prescan(addr, delim)
 				usrerr("Address too long");
 				return (NULL);
 			}
-			if (state == MACRO)
-			{
-				char mbuf[3];
-
-				mbuf[0] = '$';
-				mbuf[1] = c;
-				mbuf[2] = '\0';
-				(void) expand(mbuf, q, &buf[sizeof buf - 5]);
-				q += strlen(q);
-				state = EOTOK;
-				break;
-			}
 			*q++ = c;
 
 			/* decide whether this represents end of token */
-			if (state == OPER)
+			if (state == OPER || state == GETONE)
 				break;
 		}
 		if (c == '\0' || c == delim)
@@ -451,6 +392,8 @@ toktype(c)
 		(void) expand("$o", buf, &buf[sizeof buf - 1]);
 		strcat(buf, DELIMCHARS);
 	}
+	if (c == MATCHCLASS || c == MATCHREPL)
+		return (ONEMORE);
 	if (!isascii(c))
 		return (ATOM);
 	if (isspace(c))
