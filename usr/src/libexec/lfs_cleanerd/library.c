@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)library.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)library.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -110,7 +110,7 @@ reread_fs_info(fsp, use_mmap)
 	int i;
 	
 	if (statfs(fsp->fi_statfsp->f_mntonname, fsp->fi_statfsp))
-		err(0, "reread_fs_info: statfs failed");
+		err(1, "reread_fs_info: statfs failed");
 	get_ifile (fsp, use_mmap);
 }
 
