@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_6.c	1.1 83/10/28";
+static	char *sccsid = "@(#)pl_6.c	1.2 83/10/28";
 #endif
 
 #include "player.h"
@@ -32,7 +32,6 @@ repair()
 	}
 	repaired = 1;
 	if (++*repairs >= 3) {
-		*repairs = 0;
 		switch (c) {
 		case 'h':
 			if (ptr->hull < ptr->guns/4)
@@ -69,9 +68,15 @@ repair()
 				c = 0;
 			break;
 		}
-		if (!c)
+		if (!c) {
 			Signal("Repairs completed.", (struct ship *)0);
+			*repairs = 2;
+		} else {
+			*repairs = 0;
+			draw_stat();
+		}
 	}
+	draw_slot();
 }
 
 turned()
