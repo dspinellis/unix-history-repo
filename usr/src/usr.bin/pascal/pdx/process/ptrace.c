@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)ptrace.c 1.3 %G%";
+static char sccsid[] = "@(#)ptrace.c 1.4 %G%";
 
 /*
  * routines for tracing the execution of a process
@@ -12,7 +12,7 @@ static char sccsid[] = "@(#)ptrace.c 1.3 %G%";
 #include "defs.h"
 #include <signal.h>
 #include <sys/param.h>
-#include <sys/reg.h>
+#include <machine/reg.h>
 #include "process.h"
 #include "object.h"
 #include "process.rep"
