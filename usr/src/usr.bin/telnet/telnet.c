@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	4.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.22 (Berkeley) %G%";
 #endif
 
 /*
@@ -657,6 +657,12 @@ dooption(option)
 
 	case TELOPT_TM:
 		fmt = wont;
+		break;
+
+	case TELOPT_ECHO:
+		(void) mode(2);
+		fmt = will;
+		hisopts[option] = 0;
 		break;
 
 	case TELOPT_SGA:
