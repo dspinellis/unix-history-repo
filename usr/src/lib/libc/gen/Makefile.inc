@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.6 (Berkeley) %G%
+#	@(#)Makefile.inc	5.7 (Berkeley) %G%
 
 # gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
@@ -41,7 +41,7 @@ SRCS+=	udiv.s urem.s
 
 MAN3+=	alarm.0 clock.0 crypt.0 ctime.0 ctype.0 directory.0 execvp.0 \
 	fnmatch.0 frexp.0 fts.0 getdiskbyname.0 getfsent.0 \
-	getgrent.0 getlogin.0 getmntinfo.0 getopt.0 getpass.0 getpwent.0 \
+	getgrent.0 getmntinfo.0 getopt.0 getpass.0 getpwent.0 \
 	getttyent.0 getusershell.0 getwd.0 glob.0 initgroups.0 insque.0 \
 	mktemp.0 ndbm.0 nice.0 nlist.0 pause.0 perror.0 popen.0 psignal.0 \
 	random.0 regex.0 regexp.0 scandir.0 setjmp.0 setmode.0 setuid.0 \
