@@ -1,11 +1,11 @@
-/*	dmap.h	6.1	83/07/29	*/
+/*	dmap.h	6.2	85/03/07	*/
 
 /*
  * Definitions for the mapping of vitual swap
  * space to the physical swap area - the disk map.
  */
 
-#define	NDMAP 		16	/* size of the swap area map */
+#define	NDMAP 		38	/* size of the swap area map */
 
 struct	dmap
 {
