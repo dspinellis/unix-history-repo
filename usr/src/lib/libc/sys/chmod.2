@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chmod.2	6.3 (Berkeley) %G%
+.\"	@(#)chmod.2	6.4 (Berkeley) %G%
 .\"
 .TH CHMOD 2 ""
 .UC 4
@@ -34,7 +34,7 @@ combination of the following:
 .RS
  04000 set user ID on execution
  02000 set group ID on execution
- 01000 save text image after execution
+ 01000 `sticky bit' (see below)
  00400 read by owner
  00200 write by owner
  00100 execute (search on directory) by owner
@@ -43,11 +43,16 @@ combination of the following:
 .RE
 .PP
 If an executable file is set up for sharing (this is the default)
-then mode 1000 prevents the system from
+then mode 01000 (the `sticky bit') prevents the system from
 abandoning the swap-space image of the program-text portion
-of the file when its last user
-terminates.
-Ability to set this bit is restricted to the super-user.
+of the file when its last user terminates.
+Ability to set this bit on executable files is restricted to the super-user.
+.PP
+If mode 01000 (the `sticky bit') is set on a directory,
+an unprivileged user may not delete or rename
+files of other users in that directory.
+For more details of the properties of the sticky bit, see
+.IR sticky (8).
 .PP
 Only the owner of a file (or the super-user) may change the mode.
 .PP
@@ -115,4 +120,4 @@ The file resides on a read-only file system.
 [EIO]
 An I/O error occurred while reading from or writing to the file system.
 .SH "SEE ALSO"
-open(2), chown(2)
+chmod(1), open(2), chown(2), stat(2), sticky(8)
