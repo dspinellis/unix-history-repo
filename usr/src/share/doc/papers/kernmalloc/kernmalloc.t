@@ -1,4 +1,4 @@
-.\"	@(#)kernmalloc.t	1.3	(Copyright 1988 M. K. McKusick)	88/04/21
+.\"	@(#)kernmalloc.t	1.4	(Copyright 1988 M. K. McKusick)	88/04/21
 .\" reference a system routine name
 .de RN
 \fI\\$1\fP\^()\\$2
@@ -273,14 +273,24 @@ protection against memory starvation.\(dg
 one subsystem within the kernel hangs if it is something like the
 network on a diskless workstation.
 .FE
+.KF
+.DS B
+.so usage.tbl
+.DE
+.ce
+Figure 1 \- One day memory usage on a Berkeley timesharing machine.
+.KE
 .PP
-In profiling studies of the kernel, we found that most of its
+Figure 1 shows the memory usage of the kernel over a one day period
+on a general timesharing machine at Berkeley.
+The figure demonstrates that most
 allocations are for small objects.
 Large allocations occur infrequently, 
 and are typically for long-lived objects
 such as buffers to hold the superblock for
 a mounted file system.
-Thus a memory allocator only needs to be fast for small pieces of memory.
+Thus, a memory allocator only needs to be
+fast for small pieces of memory.
 .H 1 "Implementation of the Kernel Memory Allocator
 .PP
 In reviewing the available memory allocators,
@@ -341,6 +351,10 @@ kernel address arena set aside for dynamic allocations.
 Thus a request for a five kilobyte piece of memory will use exactly
 five pages of memory rather than eight kilobytes as with
 the power-of-two allocation strategy.
+When a large piece of memory is freed,
+the memory pages are returned to the free memory pool
+and the address space is returned to the kernel address arena
+where it is coalesced with adjacent free pieces.
 .PP
 Another technique to improve both the efficiency of memory utilization
 and the speed of allocation
@@ -359,7 +373,7 @@ require a power-of-two-sized block.
 Therefore,
 instead of storing the size of each piece of memory with the piece itself,
 the size information is associated with the memory page.
-Figure 1 shows how the kernel determines
+Figure 2 shows how the kernel determines
 the size of a piece of memory that is being freed,
 by calculating the page in which it resides,
 and looking up the size associated with that page.
@@ -368,7 +382,7 @@ and looking up the size associated with that page.
 .so alloc.fig
 .DE
 .ce
-Figure 1 \- Calculation of allocation size.
+Figure 2 \- Calculation of allocation size.
 .KE
 Eliminating the cost of the overhead per piece improved utilization
 far more than expected.
@@ -453,7 +467,7 @@ that particular size would acquire a large amount of memory
 that would then not be available for other future requests.
 .PP
 In practice, we do not find that the free lists become too large.
-However, we have been investigating ways to handles such problems
+However, we have been investigating ways to handle such problems
 if they occur in the future.
 Our current investigations involve a routine
 that can run as part of the idle loop that would sort the elements
