@@ -12,7 +12,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	8.1 (Berkeley) %G%
+ *	@(#)trap.c	7.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -371,7 +371,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 		}
 #endif
 		switch (code) {
-		case SYS_indir:
+		case SYS_syscall:
 			/*
 			 * Code is first argument, followed by actual args.
 			 */
@@ -384,7 +384,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 			}
 #endif
 			if (code >= numsys)
-				callp = &systab[SYS_indir]; /* (illegal) */
+				callp = &systab[SYS_syscall]; /* (illegal) */
 			else
 				callp = &systab[code];
 			i = callp->sy_narg;
@@ -409,14 +409,14 @@ trap(statusReg, causeReg, vadr, pc, args)
 			}
 			break;
 
-		case SYS___indir:
+		case SYS___syscall:
 			/*
-			 * Like indir, but code is a quad, so as to maintain
+			 * Like syscall, but code is a quad, so as to maintain
 			 * quad alignment for the rest of the arguments.
 			 */
 			code = locr0[A0 + _QUAD_LOWWORD];
 			if (code >= numsys)
-				callp = &systab[SYS_indir]; /* (illegal) */
+				callp = &systab[SYS_syscall]; /* (illegal) */
 			else
 				callp = &systab[code];
 			i = callp->sy_narg;
@@ -442,7 +442,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 
 		default:
 			if (code >= numsys)
-				callp = &systab[SYS_indir]; /* (illegal) */
+				callp = &systab[SYS_syscall]; /* (illegal) */
 			else
 				callp = &systab[code];
 			i = callp->sy_narg;
