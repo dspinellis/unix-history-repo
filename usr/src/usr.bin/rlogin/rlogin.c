@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	4.11 83/03/31";
+static char sccsid[] = "@(#)rlogin.c	4.12 83/04/30";
 #endif
 
 #include <sys/types.h>
@@ -110,7 +110,7 @@ another:
 	/*NOTREACHED*/
 usage:
 	fprintf(stderr,
-	    "usage: rlogin host [ -ex ] [ -l username ]\n");
+	    "usage: rlogin host [ -ex ] [ -l username ] [ -8 ]\n");
 	exit(1);
 }
 
@@ -120,6 +120,7 @@ int	child;
 int	catchild();
 
 int	defflags;
+int	tabflag;
 struct	ttychars deftc;
 struct	ttychars notc = {
 	-1,	-1,	-1,	-1,	-1,
@@ -132,6 +133,7 @@ doit()
 	int exit();
 
 	ioctl(0, TIOCGET, (char *)&defflags);
+	tabflag = defflags & TBDELAY;
 	defflags &= ECHO | CRMOD;
 	ioctl(0, TIOCCGET, (char *)&deftc);
 	notc.tc_startc = deftc.tc_startc;
@@ -148,12 +150,13 @@ doit()
 	mode(1);
 	if (child == 0) {
 		reader();
-		prf("\007Lost connection.");
+		sleep(1);
+		prf("\007Connection closed.");
 		exit(3);
 	}
 	sigset(SIGCHLD, catchild);
 	writer();
-	prf("Disconnected.");
+	prf("Closed connection.");
 	done();
 }
 
@@ -231,8 +234,6 @@ top:
 			if (eight == 0)
 				c &= 0177;
 		} else {
-			if (c == 0177)
-				c = deftc.tc_kill;
 			if (c == '\r' || c == '\n') {
 				char cmdc = b[1];
 
@@ -263,7 +264,7 @@ top:
 			if (p < b)
 				goto top;
 		}
-		if (c == deftc.tc_kill || c == 0177 || c == deftc.tc_eofc ||
+		if (c == deftc.tc_kill || c == deftc.tc_eofc ||
 		    c == '\r' || c == '\n')
 			goto top;
 		if (p >= &b[sizeof b])
@@ -332,14 +333,17 @@ mode(f)
 	switch (f) {
 
 	case 0:
-		flags &= ~CBREAK;
-		flags |= defflags;
+		flags &= ~(CBREAK|RAW|TBDELAY);
+		flags |= defflags|tabflag;
 		tc = &deftc;
 		break;
 
 	case 1:
-		flags |= CBREAK;
+		flags |= (eight ? RAW : CBREAK);
 		flags &= ~defflags;
+		/* preserve tab delays, but turn off XTABS */
+		if ((flags & TBDELAY) == XTABS)
+			flags &= ~TBDELAY;
 		tc = &notc;
 		break;
 
@@ -361,6 +365,6 @@ prf(f, a1, a2, a3)
 lostpeer()
 {
 	sigignore(SIGPIPE);
-	prf("\007Lost connection");
+	prf("\007Connection closed.");
 	done();
 }
