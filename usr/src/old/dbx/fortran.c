@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fortran.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fortran.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: fortran.c,v 1.5 84/12/26 10:39:37 linton Exp $";
@@ -310,9 +310,19 @@ Symbol s;
 			}
 			break;
 
+		    case 2*sizeof(double):
+			d2 = pop(double);
+			d1 = pop(double);
+			printf("(");
+			prtreal(d1);
+			printf(",");
+			prtreal(d2);
+			printf(")");
+			break;
+		
 		    default:
 			panic("bad size \"%d\" for real",
-                                  t->symvalue.rangev.lower);
+                                  s->symvalue.rangev.lower);
 			break;
 		}
 	    } else {
