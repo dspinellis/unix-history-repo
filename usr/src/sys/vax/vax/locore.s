@@ -1,4 +1,4 @@
-/*	locore.s	4.64	82/04/11	*/
+/*	locore.s	4.65	82/05/26	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -187,7 +187,7 @@ SCBVEC(netintr):
 #endif
 	POPR
 	rei
-#if defined(VAX750) || defined(VAX7ZZ)
+#if defined(VAX750) || defined(VAX730)
 SCBVEC(consdin):
 	PUSHR; calls $0,_turintr; POPR; incl _cnt+V_INTR; rei
 SCBVEC(consdout):
@@ -531,9 +531,9 @@ _badaddr:
 0:
 	.word	8f-0b		# 1 is 780
 	.word	5f-0b		# 2 is 750
-	.word	5f-0b		# 3 is 7ZZ
+	.word	5f-0b		# 3 is 730
 5:
-#if defined(VAX750) || defined(VAX7ZZ)
+#if defined(VAX750) || defined(VAX730)
 	mtpr	$0xf,$MCESR
 #endif
 	brb	1f

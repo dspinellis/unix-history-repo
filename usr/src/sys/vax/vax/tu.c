@@ -1,18 +1,16 @@
-/*	tu.c	82/01/17	4.4	*/
+/*	tu.c	82/05/26	4.5	*/
 
-#if defined(VAX750) || defined(VAX7ZZ)
+#if defined(VAX750) || defined(VAX730)
 /*
  * TU58 DECtape II device driver
  *
- * Bill Shannon - DEC - 01/12/81
- *
- * This driver controls the console TU58s on a VAX-11/750 or VAX-11/7ZZ.
+ * This driver controls the console TU58s on a VAX-11/750 or VAX-11/730.
  * It could be easily modified for a Unibus TU58.  The TU58
  * is treated as a block device (only).  Error detection and
  * recovery is almost non-existant.  It is assumed that the
  * TU58 will follow the RSP protocol exactly, very few protocol
  * errors are checked for.  It is assumed that the 750 uses standard
- * RSP while the 7ZZ uses Modified RSP (MRSP).  At the time when 750's
+ * RSP while the 730 uses Modified RSP (MRSP).  At the time when 750's
  * are converted to MRSP (by replacing EPROMS in the TU58), the tests
  * based on MRSP can be removed.
  */

@@ -1,4 +1,4 @@
-/*	machdep.c	4.53	82/05/19	*/
+/*	machdep.c	4.54	82/05/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -406,9 +406,9 @@ memenable()
 			M750_ENA(mcr);
 			break;
 #endif
-#if VAX7ZZ
-		case VAX_7ZZ:
-			M7ZZ_ENA(mcr);
+#if VAX730
+		case VAX_730:
+			M730_ENA(mcr);
 			break;
 #endif
 		}
@@ -449,14 +449,14 @@ memerr()
 			}
 			break;
 #endif
-#if VAX7ZZ
-		case VAX_7ZZ:
-			if (M7ZZ_ERR(mcr)) {
+#if VAX730
+		case VAX_730:
+			if (M730_ERR(mcr)) {
 				struct mcr amcr;
 				amcr.mc_reg[0] = mcr->mc_reg[0];
 				printf("mcr%d: soft ecc addr %x syn %x\n",
-				    m, M7ZZ_ADDR(&amcr), M7ZZ_SYN(&amcr));
-				M7ZZ_INH(mcr);
+				    m, M730_ADDR(&amcr), M730_SYN(&amcr));
+				M730_INH(mcr);
 			}
 			break;
 #endif
@@ -536,7 +536,7 @@ boot(paniced, arghowto)
 		}
 		tocons(TXDB_BOOT);
 	}
-#if defined(VAX750) || defined(VAX7ZZ)
+#if defined(VAX750) || defined(VAX730)
 	if (cpu != VAX_780)
 		{ asm("movl r11,r5"); }		/* boot flags go in r5 */
 #endif
@@ -602,9 +602,9 @@ char *mc780[] = {
 	"ib rds",	"ib rd timo",	0,		"ib cache par"
 };
 #endif
-#if VAX7ZZ
-#define	NMC7ZZ	12
-char *mc7ZZ[] = {
+#if VAX730
+#define	NMC730	12
+char *mc730[] = {
 	"tb par",	"bad retry",	"bad intr id",	"cant write ptem",
 	"unkn mcr err",	"iib rd err",	"nxm ref",	"cp rds",
 	"unalgn ioref",	"nonlw ioref",	"bad ioaddr",	"unalgn ubaddr",
@@ -644,7 +644,7 @@ struct mc750frame {
 	int	mc5_pc;			/* trapped pc */
 	int	mc5_psl;		/* trapped psl */
 };
-struct mc7ZZframe {
+struct mc730frame {
 	int	mc3_bcnt;		/* byte count == 0xc */
 	int	mc3_summary;		/* summary parameter */
 	int	mc3_parm[2];		/* parameter 1 and 2 */
@@ -670,10 +670,10 @@ machinecheck(cmcf)
 		    (type&0xf0) ? " abort" : " fault"); 
 		break;
 #endif
-#if VAX7ZZ
-	case VAX_7ZZ:
-		if (type < NMC7ZZ)
-			printf("%s", mc7ZZ[type]);
+#if VAX730
+	case VAX_730:
+		if (type < NMC730)
+			printf("%s", mc730[type]);
 		printf("\n");
 		break;
 #endif
@@ -710,9 +710,9 @@ machinecheck(cmcf)
 		break;
 		}
 #endif
-#if VAX7ZZ
-	case VAX_7ZZ: {
-		register struct mc7ZZframe *mcf = (struct mc7ZZframe *)cmcf;
+#if VAX730
+	case VAX_730: {
+		register struct mc730frame *mcf = (struct mc730frame *)cmcf;
 		printf("params %x,%x pc %x psl %x mcesr %x\n",
 		    mcf->mc3_parm[0], mcf->mc3_parm[1],
 		    mcf->mc3_pc, mcf->mc3_psl, mfpr(MCESR));
