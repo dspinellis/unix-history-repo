@@ -2,15 +2,15 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)hier.7	4.1 (Berkeley) %G%
+.\"	@(#)hier.7	5.1 (Berkeley) %G%
 .\"
-.TH HIER 7
+.TH HIER 7 "1 February 1983"
 .UC 4
 .SH NAME
 hier \- file system hierarchy
 .SH DESCRIPTION
-The following outline gives a quick tour through
-a representative directory hierarchy.
+The following outline gives a quick tour through a representative
+directory hierarchy.
 .na
 .nh
 .IP /
@@ -20,20 +20,24 @@ root
 the kernel binary (UNIX itself)
 .IP /lost+found
 directory for connecting detached files for
-.IR fsck (5)
+.IR fsck (8)
 .IP /dev/
 devices (4)
 .RS
+.IP MAKEDEV
+shell script to create special files
+.IP MAKEDEV.local
+site specific part of MAKEDEV
 .IP console
 main console,
 .IR tty (4)
 .IP tty*
 terminals,
 .IR tty (4)
-.IP rp*
+.IP hp*
 disks,
 .IR hp (4)
-.IP rrp*
+.IP rhp*
 raw disks,
 .IR hp (4)
 .IP up*
@@ -47,8 +51,7 @@ utility programs, cf /usr/bin/ (1)
 .IP as
 assembler
 .IP cc
-C compiler executive,
-cf /lib/ccom, /lib/cpp, /lib/c2
+C compiler executive, cf /lib/ccom, /lib/cpp, /lib/c2
 .IP csh
 C shell
 .IP ...
@@ -68,8 +71,7 @@ C code improver
 .IP ...
 .RE
 .IP /etc/
-essential data and maintenance utilities;
-sect (8)
+essential data and maintenance utilities; sect (8)
 .RS
 .IP dump
 dump program
@@ -96,8 +98,30 @@ mounted file table,
 dump history,
 .IR dump (8)
 .IP fstab
-file system configurtion table
+file system configuration table
 .IR fstab (5)
+.IP disktab
+disk characteristics and partition tables,
+.IR disktab (5)
+.IP hosts
+host name to network address mapping file,
+.IR hosts (5)
+.IP networks
+network name to network number mapping file,
+.IR networks (5)
+.IP protocols
+protocol name to protocol number mapping file,
+.IR protocols (5)
+.IP services
+network services definition file,
+.IR services (5)
+.IP remote
+names and description of remote hosts for 
+.IR tip (1C),
+.IR remote (5)
+.IP phones
+private phone numbers for remote hosts, as described in
+.IR phones (5)
 .IP ttys
 properties of terminals,
 .IR ttys (5)
@@ -107,17 +131,88 @@ part of
 .IR getty (8)
 .IP init
 the parent of all processes,
-.IR init.vm (8)
+.IR init (8)
 .IP rc
 shell program to bring the system up
+.IP rc.local
+site dependent portion of 
+.I rc
 .IP cron
 the clock daemon,
 .IR cron (8)
 .IP mount
 .IR mount (8)
-.IP wall
-.IR wall (8)
 .IP ...
+.RE
+.IP /sys/
+system source
+.RS
+.IP h/
+header (include) files
+.RS
+.IP acct.h
+.IR acct (5)
+.IP stat.h
+.IR stat (2)
+.IP ...
+.RE
+.IP sys/
+machine independent system source 
+.RS
+.IP init_main.c
+.IP uipc_socket.c
+.IP ufs_syscalls.c
+.IP ...
+.RE
+.IP conf/
+site configuration files
+.RS
+.IP GENERIC
+.IP ...
+.RE
+.IP net/
+general network source
+.IP netinet/
+DARPA Internet network source
+.IP netimp/
+network code related to use of an IMP
+.RS
+.IP if_imp.c
+.IP if_imphost.c
+.IP if_imphost.h
+.IP ...
+.RE
+.IP vax/
+source specific to the VAX
+.RS
+.IP locore.s
+.IP machdep.c
+.IP ...
+.RE
+.IP vaxuba/
+device drivers for hardware which resides on the UNIBUS
+.RS
+.IP uba.c
+.IP dh.c
+.IP up.c
+.IP ...
+.RE
+.IP vaxmba/
+device drivers for hardware which resides on the MASBUS
+.RS
+.IP mba.c
+.IP hp.c
+.IP ht.c
+.IP ...
+.RE
+.IP vaxif
+network interface drivers for the VAX
+.RS
+.IP if_en.c
+.IP if_ec.c
+.IP if_vv.c
+.IP ...
+.RE
 .RE
 .IP /tmp/
 temporary files, usually on a fast device, cf /usr/tmp/
@@ -151,7 +246,7 @@ line printer accounting
 varian and versatec accounting
 .IR vpr (1),
 .IR vtroff (1),
-.IR vpac (1)
+.IR pac (8)
 .RE
 .RE
 .IP /usr\t/bin
@@ -165,7 +260,7 @@ used by
 .IR sort (1)
 .IP raster
 used by
-.IR plot (1)
+.IR plot (1G)
 .RE
 .IP dict/
 word lists, etc.
@@ -206,12 +301,17 @@ object file layout,
 .IR a.out (5)
 .IP stdio.h
 standard I/O,
-.IR stdio (3)
+.IR intro (3S)
 .IP math.h
 (3M)
 .IP ...
 .IP sys/
-system-defined layouts, cf /usr/sys/h
+system-defined layouts, cf /sys/h
+.IP net/
+symbolic link to sys/net
+.IP machine/
+symbolic link to sys/machine
+.IP ...
 .RE
 .IP lib/
 object libraries and stuff, to keep /lib/ small
@@ -260,7 +360,7 @@ Times Bold
 .RE
 .IP uucp/
 programs and data for
-.IR uucp (1)
+.IR uucp (1C)
 .RS
 .IP L.sys
 remote system names and numbers
@@ -342,7 +442,7 @@ is working
 .RE
 .IP uucp/
 work files and staging area for 
-.IR uucp (1)
+.IR uucp (1C)
 .RS
 .IP LOGFILE
 summary log
@@ -368,12 +468,15 @@ like
 .IR mail /
 .IP uucp/
 work files and staging area for 
-.IR uucp (1)
+.IR uucp (1C)
 .RS
 .IP LOGFILE
 summary log
 .IP LOG.*
 log file for one transaction
+.IP mqueue/
+mail queue for 
+.IR sendmail (8)
 .RE
 .RE
 .TP
@@ -387,7 +490,7 @@ is the user's login name
 .BR . profile
 set environment for
 .IR sh (1),
-.IR environ (5)
+.IR environ (7)
 .TP
 .BR . project
 what you are doing (used by (
@@ -408,8 +511,7 @@ what your short-term plans are (used by
 )
 .TP
 .BR . netrc
-startup file for
-.IR net (1)
+startup file for various network programs
 .TP
 .BR . msgsrc
 startup file for
@@ -440,8 +542,8 @@ C manual
 .IP
 source programs for utilities, etc.
 .RS
-.IP cmd/
-source of commands
+.IP bin/
+source of commands in /bin
 .RS
 .IP as/
 assembler
@@ -449,6 +551,10 @@ assembler
 source for
 .IR ar (1)
 .IP ...
+.RE
+.IP usr.bin/
+source for commands in /usr/bin
+.RS
 .IP troff/
 source for
 .I nroff
@@ -472,13 +578,16 @@ DASI 300
 .IP ...
 .RE
 .RE
+.IP ucb
+source for programs in /usr/ucb
 .IP games/
 source for /usr/games
-.IP libc/
-source for functions in /lib/libc.a
+.IP lib/
+source for programs and archives in /lib
 .RS
-.IP crt/
-C runtime support
+.IP libc/
+C runtime library
+.RS
 .IP csu/
 startup and wrapup routines needed with every C program
 .RS
@@ -492,8 +601,9 @@ modified startup for
 system calls (2)
 .RS
 .IP access.s
-.IP alarm.s
+.IP brk.s
 .IP ...
+.RE
 .RE
 .IP stdio/
 standard I/O functions (3S)
@@ -508,6 +618,12 @@ other functions in (3)
 .IP abs.c
 .IP ...
 .RE
+.IP net/
+network functions in (3N)
+.RS
+.IP gethostbyname.c
+.IP ...
+.RE
 .RE
 .IP local/
 source which isn't normally distributed
@@ -515,28 +631,6 @@ source which isn't normally distributed
 source for new versions of commands and library routines
 .IP old/
 source for old versions of commands and library routines
-.IP sys/
-system source
-.RS
-.IP h/
-header (include) files
-.RS
-.IP acct.h
-.IR acct (5)
-.IP stat.h
-.IR stat (2)
-.IP ...
-.RE
-.IP sys/
-system source proper
-.RS
-.IP main.c
-.IP pipe.c
-.IP sysent.c
-system entry points
-.RE
-.RE
-.RE
 .IP ucb/
 binaries of programs developed at UCB
 .RS
@@ -562,6 +656,14 @@ visual editor
 .RE
 .ad
 .SH SEE ALSO
-ls(1), apropos(1), whatis(1), whereis(1), finger(1), which (1), ncheck(8), find(1), grep(1)
+ls(1),
+apropos(1),
+whatis(1),
+whereis(1),
+finger(1),
+which(1),
+ncheck(8),
+find(1),
+grep(1)
 .SH BUGS
 The position of files is subject to change without notice.
