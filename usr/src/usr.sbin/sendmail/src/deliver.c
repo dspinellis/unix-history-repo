@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.75		%G%);
+SCCSID(@(#)deliver.c	3.76		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -647,7 +647,11 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 
 		if (!clever)
 			syserr("non-clever IPC");
-		i = makeconnection(pvp[1], pmfile, prfile);
+		if (pvp[2] != NULL)
+			i = atoi(pvp[2]);
+		else
+			i = 0;
+		i = makeconnection(pvp[1], i, pmfile, prfile);
 		if (i != EX_OK)
 		{
 			ExitStat = i;
