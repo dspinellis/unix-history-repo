@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_table.h	7.6 (Berkeley) %G%
+ *	@(#)tuba_table.h	7.7 (Berkeley) %G%
  */
 
 struct tuba_cache {
@@ -14,15 +14,17 @@ struct tuba_cache {
 	int	tc_flags;
 #define TCF_PERM	1
 	int	tc_index;
-	u_short	tc_sum_in;			/* for inbound cksum */
-	u_short	tc_sum_out;			/* for outbound cksum */
+	u_short	tc_sum;				/* cksum of nsap inc. length */
+	u_short	tc_ssum;			/* swab(tc_sum) */
+	u_short	tc_sum_d;			/* o.c. diff sum - index */
+	u_short	tc_ssum_d;			/* o.c. diff ssum - index */
 	struct	sockaddr_iso tc_siso;		/* for responding */
-	char	tc_EID[7];			/* what counts for lookups */
 };
 
 #define ADDCARRY(x)  (x >= 65535 ? x -= 65535 : x)
 #define REDUCE(a, b) { union { u_short s[2]; long l;} l_util; long x; \
-	l_util.l = (b); x = l_util.s[0] + l_util.s[1]; ADDCARRY(x); a = x;}
+	l_util.l = (b); x = l_util.s[0] + l_util.s[1]; ADDCARRY(x); \
+	if (x == 0) x = 0xffff; a = x;}
 
 #ifdef KERNEL
 extern int	tuba_table_size;
