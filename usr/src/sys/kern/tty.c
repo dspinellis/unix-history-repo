@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.c	7.50 (Berkeley) %G%
+ *	@(#)tty.c	7.51 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -252,11 +252,14 @@ ttstart(tp)
 		(*tp->t_oproc)(tp);
 }
 
-ttrstrt(tp)				/* XXX */
-	struct tty *tp;
+void
+ttrstrt(tp0)
+	void *tp0;
 {
+	struct tty *tp;
 	int s;
 
+	tp = (struct tty *)tp0;
 #ifdef DIAGNOSTIC
 	if (tp == 0)
 		panic("ttrstrt");
@@ -401,7 +404,7 @@ ttioctl(tp, com, data, flag)
 
 	/* return number of characters immediately available */
 	case FIONREAD:
-		*(off_t *)data = ttnread(tp);
+		*(int *)data = ttnread(tp);
 		break;
 
 	case TIOCOUTQ:
@@ -1219,7 +1222,6 @@ ttycheckoutq(tp, wait)
 	int wait;
 {
 	int hiwat, s, oldsig;
-	extern int wakeup();
 
 	hiwat = tp->t_hiwat;
 	s = spltty();
@@ -1231,7 +1233,8 @@ ttycheckoutq(tp, wait)
 				splx(s);
 				return (0);
 			}
-			timeout(wakeup, (caddr_t)&tp->t_outq, hz);
+			timeout((void (*)__P((void *)))wakeup,
+			    (void *)&tp->t_outq, hz);
 			tp->t_state |= TS_ASLEEP;
 			sleep((caddr_t)&tp->t_outq, PZERO - 1);
 		}
@@ -1671,16 +1674,7 @@ ttyinfo(tp)
 		    pick->p_stat == SRUN ? "running" :
 		    pick->p_wmesg ? pick->p_wmesg : "iowait");
 
-		/*
-		 * Lock out clock if process is running; get user/system
-		 * cpu time.
-		 */
-		if (curproc == pick)
-			tmp = splclock();
-		utime = pick->p_utime;
-		stime = pick->p_stime;
-		if (curproc == pick)
-			splx(tmp);
+		calcru(pick, &utime, &stime, NULL);
 
 		/* Print user time. */
 		ttyprintf(tp, "%d.%02du ",
