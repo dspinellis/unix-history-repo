@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.62	83/08/06	*/
+/*	vfs_syscalls.c	6.1	83/08/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
