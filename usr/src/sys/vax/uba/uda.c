@@ -1,4 +1,4 @@
-/*	uda.c	4.20	83/02/23	*/
+/*	uda.c	4.21	83/05/12	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -10,7 +10,6 @@
  *
  * TO DO:
  *	write dump code
- *	test on 750
  */
 #include "../machine/pte.h"
 
@@ -36,12 +35,6 @@
 #define	NCMD	(1<<NCMDL2)
 
 #include "../vaxuba/udareg.h"
-
-int udadebug;
-#define	printd	if(udadebug&1)printf
-
-int udaerror = 0;	/* set to cause hex dump of error log packets */
-
 #include "../vax/mscp.h"
 
 struct uda_softc {
@@ -76,6 +69,7 @@ struct size {
 	daddr_t	nblocks;
 	daddr_t	blkoff;
 } ra_sizes[8] ={
+#ifdef notdef
 	15884,	0,		/* A=blk 0 thru 15883 */
 	33440,	15884,		/* B=blk 15884 thru 49323 */
 	-1,	0,		/* C=blk 0 thru end */
@@ -84,8 +78,22 @@ struct size {
 	-1,	412490,		/* F=blk 412490 thru end */
 	82080,	49324,		/* G=blk 49324 thru 131403 */
 	-1,	131404,		/* H=blk 131404 thru end */
+} ra81_sizes[8] = {
+#endif
+	15884,	0,		/* A=cyl 0 thru 22 */
+	66880,	16422,		/* B=cyl 23 thru 116 */
+	-1,	0,		/* C=cyl 0 thru end */
+	15884,	375564,		/* D=cyl 526 thru 548 */
+	307200,	391986,		/* E=cyl 549 thru 979 */
+	-1,	699720,		/* F=cyl 980 thru end */
+	-1,	375564,		/* G=cyl 526 thru end */
+	291346,	83538,		/* H=cyl 117 thru 525 */
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
+
+int	udaerror = 0;			/* causes hex dump of packets */
+int	udadebug = 0;
+#define	printd	if (udadebug) printf
 
 daddr_t	radsize[NRA];			/* disk size, from ONLINE end packet */
 
@@ -114,7 +122,7 @@ udprobe(reg, ctlr)
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec; reg = reg;
-	udintr(0);
+	udread(0); udwrite(0); udreset(0); udintr(0);
 #endif
 	/* SHOULD CHECK THAT IT REALLY IS A UDA */
 	br = 0x15;
@@ -276,12 +284,13 @@ udstrategy(bp)
 	}
 	if (um->um_tab.b_active == 0) {
 #if defined(VAX750)
-		if (cpu == VAX_750) {
+		if (cpu == VAX_750
+		    && udwtab[um->um_ctlr].av_forw == &udwtab[um->um_ctlr]) {
 			if (um->um_ubinfo != 0)
-				printf("uda: ubinfo %x\n",um->um_ubinfo);
+				printf("udastrat: ubinfo 0x%x\n",um->um_ubinfo);
 			else
 				um->um_ubinfo =
-				uballoc(um->um_ubanum, (caddr_t)0, 0,
+				   uballoc(um->um_ubanum, (caddr_t)0, 0,
 					UBA_NEEDBDP);
 		}
 #endif
@@ -314,12 +323,6 @@ loop:
 		 * Release uneeded UBA resources and return
 		 */
 		um->um_tab.b_active = 0;
-#if defined(VAX750)
-		if (cpu == VAX_750) {
-			if (um->um_ubinfo != 0)
-				ubarelse(um->um_ubanum, &um->um_ubinfo);
-		}
-#endif
 		return (0);
 	}
 	if ((bp = dp->b_actf) == NULL) {
@@ -629,6 +632,8 @@ udrsp(um, ud, sc, i)
 			ui->ui_flags = 1;	/* mark it online */
 			radsize[ui->ui_unit] = (daddr_t)mp->mscp_untsize;
 			printd("uda: unit %d online\n", mp->mscp_unit);
+/*** New for ***/       printf("uda%d: online, size=%d\n",
+/*** debugging **/              mp->mscp_unit, (daddr_t)mp->mscp_untsize);
 		} else {
 			harderr(dp->b_actf, "ra");
 			printf("OFFLINE\n");
@@ -655,6 +660,15 @@ udrsp(um, ud, sc, i)
 		 */
 		bp->av_back->av_forw = bp->av_forw;
 		bp->av_forw->av_back = bp->av_back;
+#if defined(VAX750)
+		if (cpu == VAX_750
+		    && udwtab[um->um_ctlr].av_forw == &udwtab[um->um_ctlr]) {
+			if (um->um_ubinfo == 0)
+				printf("udintr: um_ubinfo == 0\n");
+			else
+				ubarelse(um->um_ubanum, &um->um_ubinfo);
+		}
+#endif
 		dp = &udutab[ui->ui_unit];
 		if (ui->ui_dk >= 0)
 			if (--dp->b_qsize == 0)
@@ -679,6 +693,12 @@ udrsp(um, ud, sc, i)
 				um->um_tab.b_actl = dp;
 				dp->b_active = 1;
 			}
+#if defined(VAX750)
+			if (cpu == VAX750 && um->um_ubinfo == 0)
+				um->um_ubinfo =
+				   uballoc(um->um_ubanum, (caddr_t)0, 0,
+					UBA_NEEDBDP);
+#endif
 			return;
 		}
 		if (st != M_ST_SUCC) {
@@ -724,12 +744,13 @@ uderror(um, mp)
 		break;
 
 	case M_FM_DISKTRN:
-		printf("disk transfer error, unit %d\n", mp->mslg_unit);
+		printf("disk transfer error, unit %d, grp 0x%x, hdr 0x%x\n",
+			mp->mslg_unit, mp->mslg_group, mp->mslg_hdr);
 		break;
 
 	case M_FM_SDI:
-		printf("SDI error, unit %d, event 0%o\n", mp->mslg_unit,
-			mp->mslg_event);
+		printf("SDI error, unit %d, event 0%o, hdr 0x%x\n",
+			mp->mslg_unit, mp->mslg_event, mp->mslg_hdr);
 		break;
 
 	case M_FM_SMLDSK:
