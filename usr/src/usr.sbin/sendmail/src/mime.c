@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -292,12 +292,22 @@ mime8to7(mci, header, e, boundary)
 				if (c2 == ' ' || c2 == '\t')
 				{
 					fputc('=', mci->mci_out);
-					fputs(mci->mci_mailer->m_eol, mci->mci_out);
+					fputc(Base16Code[(c2 >> 4) & 0x0f],
+								mci->mci_out);
+					fputc(Base16Code[c2 & 0x0f],
+								mci->mci_out);
+					fputs(mci->mci_mailer->m_eol,
+								mci->mci_out);
 				}
 				fputs(mci->mci_mailer->m_eol, mci->mci_out);
 				linelen = 0;
 				c2 = c1;
 				continue;
+			}
+			if (c2 == ' ' || c2 == '\t')
+			{
+				fputc(c2, mci->mci_out);
+				linelen++;
 			}
 			if (linelen > 72)
 			{
@@ -319,12 +329,19 @@ mime8to7(mci, header, e, boundary)
 				fputc(Base16Code[c1 & 0x0f], mci->mci_out);
 				linelen += 3;
 			}
-			else
+			else if (c1 != ' ' && c1 != '\t')
 			{
 				fputc(c1, mci->mci_out);
 				linelen++;
 			}
 			c2 = c1;
+		}
+
+		/* output any saved character */
+		if (c2 == ' ' || c2 == '\t')
+		{
+			fputc(c2, mci->mci_out);
+			linelen++;
 		}
 	}
 	if (linelen > 0)
