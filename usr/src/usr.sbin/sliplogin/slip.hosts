@@ -1,10 +1,11 @@
-#	@(#)slip.hosts	5.1 (Berkeley) %G%
+#	@(#)slip.hosts	5.2 (Berkeley) %G%
 #
-# login	local-addr	remote-addr	mask		opt1	opt2 
-#						(normal,compress,noicmp)	
+# login		local-addr	remote-addr	mask		opt1	opt2
+#						(normal,compress,noicmp)
 #
-Shavoc	okeeffe         havoc		0xffffff00	normal
-Soxford	okeeffe		oxford-gw	0xffffff00	compress
-Schez	okeeffe		chez		0xffffff00	compress
-Smjk	okeeffe		pissaro		0xffffff00	compress
-Smjk2	okeeffe		pissaro		0xffffff00	compress
+Schez		vangogh		chez		0xffffff00	compress
+Sjun		vangogh		128.32.130.36	0xffffff00	normal
+Sleconte	vangogh		leconte		0xffffff00	compress
+Sleeb		vangogh		leeb		0xffffff00	compress
+Smjk		vangogh		pissaro-sl	0xffffff00	compress
+Soxford		vangogh		oxford		0xffffff00	compress
