@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	TELOPTS
@@ -177,10 +177,12 @@ printoption(direction, cmd, option)
 		} else
 		    fprintf(NetTrace, "%s %d %d", direction, cmd, option);
 	}
-	if (NetTrace == stdout)
+	if (NetTrace == stdout) {
 	    fprintf(NetTrace, "\r\n");
-	else
+	    fflush(NetTrace);
+	} else {
 	    fprintf(NetTrace, "\n");
+	}
 	return;
 }
 
@@ -302,7 +304,9 @@ printsub(direction, pointer, length)
 	    length -= 2;
 	}
 	if (length < 1) {
-	    fprintf(NetTrace, "(Empty suboption???)");
+	    fprintf(NetTrace, "(Empty suboption??\?)");
+	    if (NetTrace == stdout)
+		fflush(NetTrace);
 	    return;
 	}
 	switch (pointer[0]) {
@@ -324,7 +328,7 @@ printsub(direction, pointer, length)
 	case TELOPT_TSPEED:
 	    fprintf(NetTrace, "TERMINAL-SPEED");
 	    if (length < 2) {
-		fprintf(NetTrace, " (empty suboption???)");
+		fprintf(NetTrace, " (empty suboption??\?)");
 		break;
 	    }
 	    switch (pointer[1]) {
@@ -346,7 +350,7 @@ printsub(direction, pointer, length)
 	case TELOPT_LFLOW:
 	    fprintf(NetTrace, "TOGGLE-FLOW-CONTROL");
 	    if (length < 2) {
-		fprintf(NetTrace, " (empty suboption???)");
+		fprintf(NetTrace, " (empty suboption??\?)");
 		break;
 	    }
 	    switch (pointer[1]) {
@@ -368,7 +372,7 @@ printsub(direction, pointer, length)
 	case TELOPT_NAWS:
 	    fprintf(NetTrace, "NAWS");
 	    if (length < 2) {
-		fprintf(NetTrace, " (empty suboption???)");
+		fprintf(NetTrace, " (empty suboption??\?)");
 		break;
 	    }
 	    if (length == 2) {
@@ -393,7 +397,7 @@ printsub(direction, pointer, length)
 	case TELOPT_AUTHENTICATION:
 	    fprintf(NetTrace, "AUTHENTICATION");
 	    if (length < 2) {
-		fprintf(NetTrace, " (empty suboption???)");
+		fprintf(NetTrace, " (empty suboption??\?)");
 		break;
 	    }
 	    switch (pointer[1]) {
@@ -406,7 +410,7 @@ printsub(direction, pointer, length)
 		else
 		    fprintf(NetTrace, "%d ", pointer[2]);
 		if (length < 3) {
-		    fprintf(NetTrace, "(partial suboption???)");
+		    fprintf(NetTrace, "(partial suboption??\?)");
 		    break;
 		}
 		fprintf(NetTrace, "%s|%s",
@@ -428,7 +432,7 @@ printsub(direction, pointer, length)
 		    else
 			fprintf(NetTrace, "%d ", pointer[i]);
 		    if (++i >= length) {
-			fprintf(NetTrace, "(partial suboption???)");
+			fprintf(NetTrace, "(partial suboption??\?)");
 			break;
 		    }
 		    fprintf(NetTrace, "%s|%s ",
@@ -460,7 +464,7 @@ printsub(direction, pointer, length)
 	case TELOPT_ENCRYPT:
 	    fprintf(NetTrace, "ENCRYPT");
 	    if (length < 2) {
-		fprintf(NetTrace, " (empty suboption???)");
+		fprintf(NetTrace, " (empty suboption??\?)");
 		break;
 	    }
 	    switch (pointer[1]) {
@@ -485,7 +489,7 @@ printsub(direction, pointer, length)
 		fprintf(NetTrace, " %s ", (pointer[1] == ENCRYPT_IS) ?
 							"IS" : "REPLY");
 		if (length < 3) {
-		    fprintf(NetTrace, " (partial suboption???)");
+		    fprintf(NetTrace, " (partial suboption??\?)");
 		    break;
 		}
 		if (ENCTYPE_NAME_OK(pointer[2]))
@@ -530,7 +534,7 @@ printsub(direction, pointer, length)
 	case TELOPT_LINEMODE:
 	    fprintf(NetTrace, "LINEMODE ");
 	    if (length < 2) {
-		fprintf(NetTrace, " (empty suboption???)");
+		fprintf(NetTrace, " (empty suboption??\?)");
 		break;
 	    }
 	    switch (pointer[1]) {
@@ -547,7 +551,7 @@ printsub(direction, pointer, length)
 		fprintf(NetTrace, "DONT ");
 	    common:
 		if (length < 3) {
-		    fprintf(NetTrace, "(no option???)");
+		    fprintf(NetTrace, "(no option??\?)");
 		    break;
 		}
 		switch (pointer[2]) {
@@ -600,7 +604,7 @@ printsub(direction, pointer, length)
 	    case LM_MODE:
 		fprintf(NetTrace, "MODE ");
 		if (length < 3) {
-		    fprintf(NetTrace, "(no mode???)");
+		    fprintf(NetTrace, "(no mode??\?)");
 		    break;
 		}
 		{
@@ -721,8 +725,14 @@ printsub(direction, pointer, length)
 	    }
 	    break;
 
-	case TELOPT_ENVIRON:
-	    fprintf(NetTrace, "ENVIRON ");
+	case TELOPT_NEW_ENVIRON:
+	    fprintf(NetTrace, "NEW-ENVIRON ");
+#ifdef	OLD_ENVIRON
+	    goto env_common1;
+	case TELOPT_OLD_ENVIRON:
+	    fprintf(NetTrace, "OLD-ENVIRON");
+	env_common1:
+#endif
 	    switch (pointer[1]) {
 	    case TELQUAL_IS:
 		fprintf(NetTrace, "IS ");
@@ -735,28 +745,40 @@ printsub(direction, pointer, length)
 	    env_common:
 		{
 		    register int noquote = 2;
-#ifdef	ENV_HACK
-		    extern int env_var, env_value;
+#if defined(ENV_HACK) && defined(OLD_ENVIRON)
+		    extern int old_env_var, old_env_value;
 #endif
 		    for (i = 2; i < length; i++ ) {
 			switch (pointer[i]) {
-			case ENV_VAR:
-#ifdef	ENV_HACK
-			    if (env_var == ENV_VALUE)
-				fprintf(NetTrace, "\" (VALUE) " + noquote);
-			    else
-#endif
-			    fprintf(NetTrace, "\" VAR " + noquote);
+			case NEW_ENV_VALUE:
+#ifdef OLD_ENVIRON
+		     /*	case NEW_ENV_OVAR: */
+			    if (pointer[0] == TELOPT_OLD_ENVIRON) {
+# ifdef	ENV_HACK
+				if (old_env_var == OLD_ENV_VALUE)
+				    fprintf(NetTrace, "\" (VALUE) " + noquote);
+				else
+# endif
+				    fprintf(NetTrace, "\" VAR " + noquote);
+			    } else
+#endif /* OLD_ENVIRON */
+				fprintf(NetTrace, "\" VALUE " + noquote);
 			    noquote = 2;
 			    break;
 
-			case ENV_VALUE:
-#ifdef	ENV_HACK
-			    if (env_value == ENV_VAR)
-				fprintf(NetTrace, "\" (VAR) " + noquote);
-			    else
-#endif
-			    fprintf(NetTrace, "\" VALUE " + noquote);
+			case NEW_ENV_VAR:
+#ifdef OLD_ENVIRON
+		     /* case OLD_ENV_VALUE: */
+			    if (pointer[0] == TELOPT_OLD_ENVIRON) {
+# ifdef	ENV_HACK
+				if (old_env_value == OLD_ENV_VAR)
+				    fprintf(NetTrace, "\" (VAR) " + noquote);
+				else
+# endif
+				    fprintf(NetTrace, "\" VALUE " + noquote);
+			    } else
+#endif /* OLD_ENVIRON */
+				fprintf(NetTrace, "\" VAR " + noquote);
 			    noquote = 2;
 			    break;
 
@@ -808,6 +830,8 @@ printsub(direction, pointer, length)
 	    else
 		fprintf(NetTrace, "\n");
 	}
+	if (NetTrace == stdout)
+	    fflush(NetTrace);
     }
 }
 
