@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.14	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.15	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -38,7 +38,7 @@ savemail()
 	extern char *ttypath();
 	static int exclusive;
 
-	if (exclusive++ || TempFile == NULL)
+	if (exclusive++)
 		return;
 
 	/*
@@ -163,7 +163,7 @@ savemail()
 		p = NULL;
 # endif
 	}
-	if (p != NULL)
+	if (p != NULL && TempFile != NULL)
 	{
 		/* we have a home directory; open dead.letter */
 		message(Arpa_Info, "Saving message in dead.letter");
@@ -219,9 +219,14 @@ errhdr(fp)
 	fprintf(fp, "\n   ----- Transcript of session follows -----\n");
 	while (fgets(buf, sizeof buf, xfile) != NULL)
 		fputs(buf, fp);
-	fprintf(fp, "\n   ----- Unsent message follows -----\n");
-	(void) fflush(fp);
-	putmessage(fp, Mailer[1]);
+	if (TempFile != NULL)
+	{
+		fprintf(fp, "\n   ----- Unsent message follows -----\n");
+		(void) fflush(fp);
+		putmessage(fp, Mailer[1]);
+	}
+	else
+		fprintf(fp, "\n  ----- No message was collected -----\n\n");
 	(void) fclose(xfile);
 	if (errno != 0)
 		syserr("errhdr: I/O error");
