@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	4.2 %G%";
+static char sccsid[] = "@(#)startup.c	4.3 %G%";
 #endif
 
 /*
@@ -218,12 +218,13 @@ getnetorhostname(type, name, sin)
 		struct netent *np = getnetbyname(name);
 		int n;
 
-		if (np->n_addrtype != AF_INET)
-			return (0);
 		if (np == 0)
 			n = inet_network(name);
-		else
+		else {
+			if (np->n_addrtype != AF_INET)
+				return (0);
 			n = np->n_net;
+		}
 		sin->sin_family = AF_INET;
 		sin->sin_addr = inet_makeaddr(n, INADDR_ANY);
 		return (1);
@@ -231,12 +232,13 @@ getnetorhostname(type, name, sin)
 	if (strcmp(type, "host") == 0) {
 		struct hostent *hp = gethostbyname(name);
 
-		if (hp->h_addrtype != AF_INET)
-			return (0);
 		if (hp == 0)
 			sin->sin_addr.s_addr = inet_addr(name);
-		else
+		else {
+			if (hp->h_addrtype != AF_INET)
+				return (0);
 			bcopy(hp->h_addr, &sin->sin_addr, hp->h_length);
+		}
 		sin->sin_family = AF_INET;
 		return (1);
 	}
