@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)indent.1	6.3 (Berkeley) %G%
+.\"	@(#)indent.1	6.4 (Berkeley) %G%
 .\"
 .TH INDENT 1 ""
 .UC 5
@@ -16,8 +16,7 @@ indent \- indent and format C program source
 [\ \fB\-bap\fR\ |\ \fB\-nbap\fR\ ]
 [\ \fB\-bbb\fR\ |\ \fB\-nbbb\fR\ ]
 [\ \fB\-bc\fR\ |\ \fB\-nbc\fR\ ]
-[\ \fB\-bl\fR\ ]
-[\ \fB\-br\fR\ ]
+[\ \fB\-bl\fR\ |\ \fB\-br\fR\ ]
 [\ \fB\-c\fIn\fR\ ]
 [\ \fB\-cd\fIn\fR\ ]
 [\ \fB\-cdb\fR\ |\ \fB\-ncdb\fR\ ]
@@ -26,14 +25,17 @@ indent \- indent and format C program source
 [\ \fB\-cli\fIn\fR\ ]
 [\ \fB\-d\fIn\fR\ ]
 [\ \fB\-di\fIn\fR\ ]
+[\ \fB\-dj\fR\ |\ \fB\-ndj\fR\ ]
+[\ \fB\-ei\fR\ |\ \fB\-nei\fR\ ]
 [\ \fB\-fc1\fR\ |\ \fB\-nfc1\fR\ ]
 [\ \fB\-i\fIn\fR\ ]
 [\ \fB\-ip\fR\ |\ \fB\-nip\fR\ ]
 [\ \fB\-l\fIn\fR\ ]
 [\ \fB\-lc\fIn\fR\ ]
 [\ \fB\-lp\fR\ |\ \fB\-nlp\fR\ ]
-[\ \fB\-pcs\fR\ |\ \fB\-npcs\fR\ ]
 [\ \fB\-npro\fR\ ]
+[\ \fB\-pcs\fR\ |\ \fB\-npcs\fR\ ]
+[\ \fB\-ps\fR\ |\ \fB\-nps\fR\ ]
 [\ \fB\-psl\fR\ |\ \fB\-npsl\fR\ ]
 [\ \fB\-sc\fR\ |\ \fB\-nsc\fR\ ]
 [\ \fB\-sob\fR\ |\ \fB\-nsob\fR\ ]
@@ -76,18 +78,18 @@ checks to make sure it is different from
 The options listed below control the formatting style imposed by
 .IR indent .
 .TP 15
-.BR \-bap , \-nbap
-If
-.B \-bap
-is specified, a blank line is forced after every procedure body.  Default:
-.B \-nbap.
-.TP 15
 .BR \-bad , \-nbad
 If
 .B \-bad
 is specified, a blank line is forced after every block of
 declarations.  Default:  
 .BR \-nbad .
+.TP 15
+.BR \-bap , \-nbap
+If
+.B \-bap
+is specified, a blank line is forced after every procedure body.  Default:
+.B \-nbap.
 .TP 15
 .BR \-bbb , \-nbbb
 If
@@ -271,6 +273,11 @@ Causes the profile files, `./.indent.pro' and `~/.indent.pro', to be ignored.
 If true (\fB\-pcs\fR) all procedure calls will have a space inserted between
 the name and the `('.  The default is 
 .BR \-npcs .
+.TP 15
+.BR \-ps , \-nps
+If true (\fB\-ps\fR) the pointer following operator `\->' will be
+surrounded by spaces on either side.  The default is
+.BR \-nps .
 .TP 15
 .BR \-psl , \-npsl
 If true (\fB\-psl\fR) the names of procedures being defined are placed in
