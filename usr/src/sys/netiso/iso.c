@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso.c	7.12 (Berkeley) %G%
+ *	@(#)iso.c	7.13 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -76,8 +76,8 @@ int ether_output(), llc_rtrequest();
  *
  * RETURNS:			nothing
  *
- * SIDE EFFECTS:	1) zeros the maptab table.
- *					2) initializes the routing table.
+ * SIDE EFFECTS:	1) initializes the routing table.
+ *
  *
  * NOTES:			
  */
@@ -88,7 +88,7 @@ iso_init()
 
 	if (iso_init_done == 0) {
 		iso_init_done++;
-		rn_inithead(&iso_rnhead, 40, AF_ISO);
+		rn_inithead(&iso_rnhead, 48, AF_ISO);
 	}
 }
 
@@ -635,6 +635,8 @@ iso_ifinit(ifp, ia, siso, scrub)
 	else {
 		rt_maskedcopy(ia->ia_ifa.ifa_addr, ia->ia_ifa.ifa_dstaddr,
 			ia->ia_ifa.ifa_netmask);
+		ia->ia_dstaddr.siso_nlen =
+			min(ia->ia_addr.siso_nlen, (ia->ia_sockmask.siso_len - 6));
 		error = rtinit(&(ia->ia_ifa), (int)RTM_ADD, RTF_UP);
 	}
 	ia->ia_addr.siso_tlen = nsellength;
