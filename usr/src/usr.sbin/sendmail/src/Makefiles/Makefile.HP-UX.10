@@ -8,10 +8,11 @@
 #  This has been tested on HP-UX 10.x.  Changes for 10.0 contributed
 #  by John Beck of Hewlett-Packard.
 #
-#	@(#)Makefile.HP-UX.10	8.3 (Berkeley) %G%
+#	@(#)Makefile.HP-UX.10	8.4 (Berkeley) %G%
 #
 
-CC=	cc -Aa -D_HPUX_SOURCE
+# if running the unbundled compiler, uncomment the following
+#CC=	cc -Ae
 
 # use O=-O (usual) or O=-g (debugging)
 # +O is OK on 7xx, and 300xx at 9.0
