@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.53		%G%);
+SCCSID(@(#)readcf.c	3.54		%G%);
 
 /*
 **  READCF -- read control file.
@@ -330,6 +330,7 @@ makemailer(line, safe)
 	extern char **makeargv();
 	extern char *munchstring();
 	extern char *DelimChar;
+	extern long atol();
 
 	/* allocate a mailer and set up defaults */
 	m = (struct mailer *) xalloc(sizeof *m);
@@ -399,6 +400,10 @@ makemailer(line, safe)
 
 		  case 'A':		/* argument vector */
 			m->m_argv = makeargv(p);
+			break;
+
+		  case 'M':		/* maximum message size */
+			m->m_maxsize = atol(p);
 			break;
 		}
 
