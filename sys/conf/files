@@ -1,4 +1,4 @@
-# $Id: files,v 1.7 1993/10/16 16:31:52 rgrimes Exp $
+# $Id: files,v 1.8 1993/11/07 07:38:25 wollman Exp $
 #
 ddb/db_access.c		optional ddb
 ddb/db_aout.c		optional ddb
@@ -178,6 +178,8 @@ netns/ns_pcb.c		optional ns
 netns/ns_proto.c	optional ns
 netns/spp_debug.c	optional ns
 netns/spp_usrreq.c	optional ns
+netrmp/rmp.c		optional rmp
+netrmp/rmp_proto.c	optional rmp
 nfs/nfs_bio.c		optional nfs
 nfs/nfs_node.c		optional nfs
 nfs/nfs_serv.c		optional nfs
