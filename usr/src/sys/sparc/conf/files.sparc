@@ -1,4 +1,4 @@
-#	@(#)files.sparc	8.2 (Berkeley) %G%
+#	@(#)files.sparc	8.3 (Berkeley) %G%
 #
 # sparc-specific configuration info
 
@@ -53,7 +53,11 @@ major { sd = 7 }
 file	sparc/dev/cons.c
 file	sparc/dev/event.c
 file	sparc/dev/fb.c
-file	sparc/dev/kbd.c
+# The console keyboard driver is not really optional, but we want
+# a pseudo-device style `attach' call, and this is the easiest way
+# to obtain one.  If one is not declared, the kernel will fail to link.
+pseudo-device	kbd
+file	sparc/dev/kbd.c			kbd
 file	sparc/dev/ms.c
 
 file	sparc/fpu/fpu.c
