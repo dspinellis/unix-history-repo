@@ -3,12 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.7 (Berkeley) %G%
+ *	@(#)machdep.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
+/* #include "user.h" */
+#include "syscontext.h"
 #include "kernel.h"
 #include "map.h"
 #include "vm.h"
@@ -82,6 +83,7 @@ startup(firstaddr)
 	msgbufmapped = 1;
 #ifdef KADB
 	kdb_init();			/* startup kernel debugger */
+	(void) cnopen(makedev(0, 1), 0);	/* open console XXX */
 #endif
 	/*
 	 * Good {morning,afternoon,evening,night}.
@@ -388,22 +390,18 @@ sigreturn()
 	register int *regs = u.u_ar0;
 
 	scp = ((struct a *)(u.u_ap))->sigcntxp;
-	if (useracc((caddr_t)scp, sizeof (*scp), 0) == 0) {
-		u.u_error = EINVAL;
-		return;
-	}
+	if (useracc((caddr_t)scp, sizeof (*scp), 0) == 0)
+		RETURN (EINVAL);
 	if ((scp->sc_ps & (PSL_MBZ|PSL_IPL|PSL_IS)) != 0 ||
-	    (scp->sc_ps & (PSL_PRVMOD|PSL_CURMOD)) != (PSL_PRVMOD|PSL_CURMOD)) {
-		u.u_error = EINVAL;
-		return;
-	}
-	u.u_eosys = JUSTRETURN;
+	    (scp->sc_ps & (PSL_PRVMOD|PSL_CURMOD)) != (PSL_PRVMOD|PSL_CURMOD))
+		RETURN (EINVAL);
 	u.u_onstack = scp->sc_onstack & 01;
 	u.u_procp->p_sigmask = scp->sc_mask &~ sigcantmask;
 	regs[FP] = scp->sc_fp;
 	regs[SP] = scp->sc_sp;
 	regs[PC] = scp->sc_pc;
 	regs[PS] = scp->sc_ps;
+	RETURN (EJUSTRETURN);
 }
 
 int	waittime = -1;
