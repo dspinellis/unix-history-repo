@@ -1,8 +1,55 @@
 #ifndef lint
-    static	char *sccsid = "@(#)arcs.c	1.2 (Berkeley) %G%";
+    static	char *sccsid = "@(#)arcs.c	1.3 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
+
+    /*
+     *	add (or just increment) an arc
+     */
+addarc( parentp , childp , count )
+    nltype	*parentp;
+    nltype	*childp;
+    long	count;
+{
+    arctype		*malloc();
+    arctype		*arcp;
+
+#   ifdef DEBUG
+	if ( debug & TALLYDEBUG ) {
+	    printf( "[addarc] %d arcs from %s to %s\n" ,
+		    count , parentp -> name , childp -> name );
+	}
+#   endif DEBUG
+    arcp = arclookup( parentp , childp );
+    if ( arcp != 0 ) {
+	    /*
+	     *	a hit:  just increment the count.
+	     */
+#	ifdef DEBUG
+	    if ( debug & TALLYDEBUG ) {
+		printf( "[tally] hit %d += %d\n" ,
+			arcp -> arc_count , count );
+	    }
+#	endif DEBUG
+	arcp -> arc_count += count;
+	return;
+    }
+    arcp = malloc( sizeof *arcp );
+    arcp -> arc_parentp = parentp;
+    arcp -> arc_childp = childp;
+    arcp -> arc_count = count;
+	/*
+	 *	prepend this child to the children of this parent
+	 */
+    arcp -> arc_childlist = parentp -> children;
+    parentp -> children = arcp;
+	/*
+	 *	prepend this parent to the parents of this child
+	 */
+    arcp -> arc_parentlist = childp -> parents;
+    childp -> parents = arcp;
+}
 
 topcmp( npp1 , npp2 )
     nltype	**npp1;
@@ -61,6 +108,9 @@ doarcs()
 	    parentp -> selfcalls = arcp -> arc_count;
 	} else {
 	    parentp -> selfcalls = 0;
+	}
+	if ( cflag ) {
+	    findcalls( parentp , parentp -> value , (parentp+1) -> value );
 	}
 	parentp -> toporder = 0;
 	parentp -> cycleno = 0;

@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)gprof.c	1.2 (Berkeley) %G%";
+    static	char *sccsid = "@(#)gprof.c	1.3 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -23,6 +23,8 @@ main(argc, argv)
 #	    endif DEBUG
 	} else if ( **argv == 'z' ) {
 	    zflg++;
+	} else if ( **argv == 'c' ) {
+	    cflag++;
 	}
 	argv++;
     }
@@ -144,6 +146,7 @@ putprofheader()
 
 /*
  * Set up string and symbol tables from a.out.
+ *	and optionally the text space.
  * On return symbol table is sorted by value.
  */
 getnfile()
@@ -162,6 +165,7 @@ getnfile()
     }
     getstrtab(nfile);
     getsymtab(nfile);
+    gettextspace( nfile );
     qsort(nl, nname, sizeof(nltype), valcmp);
     fclose(nfile);
 #   ifdef DEBUG
@@ -260,6 +264,32 @@ getsymtab(nfile)
 }
 
     /*
+     *	read in the text space of an a.out file
+     */
+gettextspace( nfile )
+    FILE	*nfile;
+{
+    unsigned char	*malloc();
+    
+    if ( cflag == 0 ) {
+	return;
+    }
+    textspace = malloc( xbuf.a_text );
+    if ( textspace == 0 ) {
+	fprintf( stderr , "gprof: ran out room for %d bytes of text space:  " );
+	fprintf( stderr , "can't do -c\n" , xbuf.a_text );
+	return;
+    }
+    (void) fseek( nfile , N_TXTOFF( xbuf ) , 0 );
+    if ( fread( textspace , 1 , xbuf.a_text , nfile ) != xbuf.a_text ) {
+	fprintf( stderr , "couldn't read text space:  " );
+	fprintf( stderr , "can't do -c\n" , xbuf.a_text );
+	free( textspace );
+	textspace = 0;
+	return;
+    }
+}
+    /*
      *	information from a gmon.out file is in two parts:
      *	an array of sampling hits within pc ranges,
      *	and the arcs.
@@ -314,8 +344,6 @@ tally( rawp )
 {
     nltype		*parentp;
     nltype		*childp;
-    arctype		*arcp;
-    arctype		*malloc();
 
     parentp = nllookup( rawp -> raw_frompc );
     childp = nllookup( rawp -> raw_selfpc );
@@ -326,34 +354,7 @@ tally( rawp )
 		    parentp -> name , childp -> name , rawp -> raw_count );
 	}
 #   endif DEBUG
-    arcp = arclookup( parentp , childp );
-    if ( arcp != 0 ) {
-	    /*
-	     *	a hit:  just increment the count.
-	     */
-#	ifdef DEBUG
-	    if ( debug & TALLYDEBUG ) {
-		printf( "[tally] hit %d += %d\n" ,
-			arcp -> arc_count , rawp -> raw_count );
-	    }
-#	endif DEBUG
-	arcp -> arc_count += rawp -> raw_count;
-	return;
-    }
-    arcp = malloc( sizeof *arcp );
-    arcp -> arc_parentp = parentp;
-    arcp -> arc_childp = childp;
-    arcp -> arc_count = rawp -> raw_count;
-	/*
-	 *	prepend this child to the children of this parent
-	 */
-    arcp -> arc_childlist = parentp -> children;
-    parentp -> children = arcp;
-	/*
-	 *	prepend this parent to the parents of this child
-	 */
-    arcp -> arc_parentlist = childp -> parents;
-    childp -> parents = arcp;
+    addarc( parentp , childp , rawp -> raw_count );
 }
 
 valcmp(p1, p2)
