@@ -1,4 +1,4 @@
-/* @(#)fwrite.c	4.3 (Berkeley) %G% */
+/* @(#)fwrite.c	4.4 (Berkeley) %G% */
 #include	<stdio.h>
 
 fwrite(ptr, size, count, iop)
@@ -10,11 +10,12 @@ fwrite(ptr, size, count, iop)
 
 	s = size * count;
 	if (iop->_flag & _IOLBF)
-		while (--s >= 0) {
+		while (s > 0) {
 			if (--iop->_cnt > -iop->_bufsiz && *ptr != '\n')
 				*iop->_ptr++ = *ptr++;
 			else if (_flsbuf(*(unsigned char *)ptr++, iop) == EOF)
 				break;
+			s--;
 		}
 	else while (s > 0) {
 		if (iop->_cnt < s) {
