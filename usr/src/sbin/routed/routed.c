@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.11 %G%";
+static char sccsid[] = "@(#)routed.c	4.12 %G%";
 #endif
 
 /*
@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)routed.c	4.11 %G%";
 #include <stdio.h>
 #include <nlist.h>
 #include <signal.h>
+#include <time.h>
 #include "rip.h"
 #include "router.h"
 
@@ -44,6 +45,7 @@ int	timeval;
 int	timer();
 int	cleanup();
 int	trace = 0;
+FILE	*ftrace;
 
 char	packet[MAXPACKETSIZE];
 
@@ -59,16 +61,25 @@ main(argc, argv)
 	int cc;
 	struct sockaddr from;
 	
-	{   int t = open("/dev/tty", 2);
-	    if (t >= 0) {
-		ioctl(t, TIOCNOTTY, 0);
-		close(t);
-	    }
+#ifndef DEBUG
+	if (fork())
+		exit(0);
+	for (cc = 0; cc < 10; cc++)
+		(void) close(cc);
+	(void) open("/", 0);
+	(void) dup2(0, 1);
+	(void) dup2(0, 2);
+	{ int t = open("/dev/tty", 2);
+	  if (t >= 0) {
+		ioctl(t, TIOCNOTTY, (char *)0);
+		(void) close(t);
+	  }
 	}
+#endif
 	if (trace) {
-		(void) freopen("/etc/routerlog", "a", stdout);
-		(void) dup2(fileno(stdout), 2);
-		setbuf(stdout, NULL);
+		ftrace = fopen("/etc/routerlog", "w");
+		dup2(fileno(ftrace), 1);
+		dup2(fileno(ftrace), 2);
 	}
 #ifdef vax || pdp11
 	myaddr.sin_port = htons(myaddr.sin_port);
@@ -537,8 +548,16 @@ rip_input(from, size)
 		rip_respond(from, size);
 		return;
 
-	case RIPCMD_RESPONSE:
+	case RIPCMD_TRACEON:
+	case RIPCMD_TRACEOFF:
 		/* verify message came from a priviledged port */
+		if ((*afswitch[from->sa_family].af_portcheck)(from) == 0)
+			return;
+		tracecmd(msg->rip_cmd, msg, size);
+		return;
+
+	case RIPCMD_RESPONSE:
+		/* verify message came from a router */
 		if ((*afswitch[from->sa_family].af_portmatch)(from) == 0)
 			return;
 		break;
@@ -614,6 +633,40 @@ rip_input(from, size)
 			rt->rt_timer = 0;
 		}
 	}
+}
+
+/*
+ * Handle tracing requests.
+ */
+tracecmd(cmd, msg, size)
+	int cmd, size;
+	struct rip *msg;
+{
+	time_t t;
+
+	if (cmd == RIPCMD_TRACEOFF) {
+		if (!trace)
+			return;
+		t = time(0);
+		printf("*** Tracing turned off at %.24s ***\n", ctime(&t));
+		fflush(stdout), fflush(stderr);
+		if (ftrace)
+			fclose(ftrace);
+		(void) close(1), (void) close(2);
+		trace = 0;
+		return;
+	}
+	if (trace)
+		return;
+	packet[size] = '\0';
+	ftrace = fopen(msg->rip_tracefile, "a");
+	if (ftrace == NULL)
+		return;
+	(void) dup2(fileno(ftrace), 1);
+	(void) dup2(fileno(ftrace), 2);
+	trace = 1;
+	t = time(0);
+	printf("*** Tracing turned on at %.24s ***\n", ctime(&t));
 }
 
 rtinit()
