@@ -1,29 +1,25 @@
+#	Makefile	2.15	83/08/18
 #
-# Unix version 7.
+# Berkeley Mail
 #
-# Sccs Id = "@(#)Makefile	2.14 %G%";
-#
-
-CFLAGS=-O -DVMUNIX -DV7
-XSTR=/usr/ucb/xstr
-DESTDIR=/
-CTAGS=/usr/ucb/ctags -w
-VPRINT=/usr/ucb/print
-CGRAF=/ja/rigel/rigel/bin/cgraf
-CGRAPH=/ja/rigel/rigel/bin/cgraph
+CFLAGS=	-O -DVMUNIX -DV7
+XSTR=	/usr/ucb/xstr
+DESTDIR=
+CTAGS=	/usr/ucb/ctags -w
+VPRINT=	/usr/ucb/print
+CGRAF=	/ja/rigel/rigel/bin/cgraf
+CGRAPH=	/ja/rigel/rigel/bin/cgraph
 NMKINDEX=/ja/rigel/rigel/bin/nmkindex
 DIRTCLOD=/ja/rigel/rigel/bin/dirtclod
 LIBES=
-ED=-ed
-AS=-as
-RM=-rm
-OBJS=version.o aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o \
+ED=	-ed
+AS=	-as
+RM=	-rm
+OBJS=	version.o aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o \
 	config.o edit.o fio.o \
-
-SRCS=aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c config.c edit.c fio.c \
-
-HDRS=rcv.h configdefs.h def.h glob.h v7.local.h local.h
-
+SRCS=	aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c config.c edit.c fio.c \
+HDRS=	rcv.h configdefs.h def.h glob.h v7.local.h local.h
+ALL=	Mail fmt
 S = $(SRCS) $(HDRS)
 
 #
@@ -35,6 +31,8 @@ S = $(SRCS) $(HDRS)
 	mv x.o $*.o
 	@$(RM) -f x.c
 
+all:	${ALL}
+
 Mail:	$S $(OBJS)
 	$(RM) -f Mail
 	@echo Loading ...
@@ -44,7 +42,7 @@ Mail:	$S $(OBJS)
 mail.g:	$(SRCS)
 	$(CGRAF) $(SRCS) > mail.g
 
-install:	Mail fmt
+install: all
 	install -s Mail ${DESTDIR}/usr/ucb/Mail
 	cp misc/Mail.help* ${DESTDIR}/usr/lib
 	install -s fmt ${DESTDIR}/usr/ucb/fmt
