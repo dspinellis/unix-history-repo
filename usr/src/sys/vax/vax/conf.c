@@ -1,4 +1,4 @@
-/*	conf.c	3.5	%G%	*/
+/*	conf.c	3.6	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -126,10 +126,17 @@ struct	linesw linesw[] =
  
 int	nldisp = 3;
 dev_t	rootdev	= makedev(0, 0);
-dev_t	swapdev	= makedev(0, 1);
+dev_t	swapdev	= makedev(0, 1);	/* WRONG (eventually) */
 dev_t	pipedev	= makedev(0, 0);
 daddr_t swplo = 1;		/* (swplo-1) % CLSIZE must be 0 */
 int	nswap = 33439;
+
+struct	swdevt swdevt[] =
+{
+	makedev(0, 1),	0,
+	0,		0,
+};
+int	nswdev = 1;
  
 struct	buf	buf[NBUF];
 struct	file	file[NFILE];
