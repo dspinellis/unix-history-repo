@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.31 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.31.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -353,6 +353,7 @@ dirloop:
 		if (ndp->ni_nameiop & SAVESTART) {
 			ndp->ni_startdir = ndp->ni_dvp;
 			VREF(ndp->ni_startdir);
+			p->p_spare[1]++;
 		}
 		return (0);
 	}
@@ -418,6 +419,7 @@ nextname:
 	}
 	if (ndp->ni_nameiop & SAVESTART) {
 		ndp->ni_startdir = ndp->ni_dvp;
+		p->p_spare[1]++;
 		VREF(ndp->ni_startdir);
 	}
 	if (!wantparent)
