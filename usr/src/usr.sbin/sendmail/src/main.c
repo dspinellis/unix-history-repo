@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.24	%G%";
+static char	SccsId[] = "@(#)main.c	3.25	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -132,7 +132,6 @@ int	HopCount;	/* hop count */
 int	ExitStat;	/* the exit status byte */
 HDR	*Header;	/* header list */
 long	CurTime;	/* current time */
-char	FromLine[80];	/* holds From line (UNIX style header) */
 int	NextMailer = 0;	/* "free" index into Mailer struct */
 struct mailer	*Mailer[MAXMAILERS+1];	/* definition of mailers */
 
@@ -190,9 +189,49 @@ main(argc, argv)
 # endif DEBUGFILE
 # endif
 	errno = 0;
+
+	/*
+	**  Initialize and define basic system macros.
+	**	Collect should be called first, so that the time
+	**	corresponds to the time that the messages starts
+	**	getting sent, rather than when it is first composed.
+	*/
+
 	from = NULL;
 	cfname = CONFFILE;
 	aliasname = ALIASFILE;
+
+	/* process id */
+	(void) sprintf(pbuf, "%d", getpid());
+	define('p', pbuf);
+
+	/* hop count */
+	(void) sprintf(cbuf, "%d", HopCount);
+	define('c', cbuf);
+
+	/* time as integer, unix time, arpa time */
+	(void) time(&CurTime);
+	(void) sprintf(tbuf, "%ld", &CurTime);
+	define('t', tbuf);
+	(void) strcpy(dbuf, ctime(&CurTime));
+	*index(dbuf, '\n') = '\0';
+	define('d', dbuf);
+	p =  newstr(arpadate(dbuf));
+	define('a', p);
+	define('b', p);
+
+	/* version */
+	define('v', Version);
+
+	/* tty name */
+	p = ttyname(2);
+	if (p != NULL)
+	{
+		if (rindex(p, '/') != NULL)
+			p = rindex(p, '/') + 1;
+		strcpy(ybuf, p);
+		define('y', ybuf);
+	}
 
 	/*
 	** Crack argv.
@@ -354,41 +393,8 @@ main(argc, argv)
 	}
 
 	/*
-	**  Read control file and initialize system macros.
-	**	Collect should be called first, so that the time
-	**	corresponds to the time that the messages starts
-	**	getting sent, rather than when it is first composed.
+	**  Read control file.
 	*/
-
-	/* process id */
-	(void) sprintf(pbuf, "%d", getpid());
-	define('p', pbuf);
-
-	/* hop count */
-	(void) sprintf(cbuf, "%d", HopCount);
-	define('c', cbuf);
-
-	/* time as integer, unix time, arpa time */
-	(void) time(&CurTime);
-	(void) sprintf(tbuf, "%ld", &CurTime);
-	define('t', tbuf);
-	(void) strcpy(dbuf, ctime(&CurTime));
-	*index(dbuf, '\n') = '\0';
-	define('d', dbuf);
-	define('a', arpadate(dbuf));
-
-	/* version */
-	define('v', Version);
-
-	/* tty name */
-	p = ttyname(2);
-	if (p != NULL)
-	{
-		if (rindex(p, '/') != NULL)
-			p = rindex(p, '/') + 1;
-		strcpy(ybuf, p);
-		define('y', ybuf);
-	}
 
 	readcf(cfname);
 
@@ -554,7 +560,6 @@ main(argc, argv)
 
 	collect();
 
-	(void) expand("$l", FromLine, &FromLine[sizeof FromLine - 1]);
 # ifdef DEBUG
 	if (Debug)
 		printf("From person = \"%s\"\n", From.q_paddr);
