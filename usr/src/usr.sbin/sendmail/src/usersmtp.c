@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.8		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.9		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.8		%G%);
+SCCSID(@(#)usersmtp.c	3.9		%G%);
 
 /*
 **  SMTPINIT -- initialize SMTP.
@@ -31,6 +31,7 @@ SCCSID(@(#)usersmtp.c	3.8		%G%);
 static FILE	*SmtpOut;	/* output file */
 static FILE	*SmtpIn;	/* input file */
 static int	SmtpPid;	/* pid of mailer */
+static int	SmtpErrstat;	/* error status if open fails */
 
 smtpinit(m, pvp, ctladdr)
 	struct mailer *m;
@@ -44,7 +45,18 @@ smtpinit(m, pvp, ctladdr)
 	**  Open the connection to the mailer.
 	*/
 
+	SmtpIn = SmtpOut = NULL;
 	SmtpPid = openmailer(m, pvp, ctladdr, TRUE, &SmtpOut, &SmtpIn);
+	if (SmtpPid < 0)
+	{
+		SmtpErrstat = ExitStat;
+# ifdef DEBUG
+		if (Debug > 0)
+			printf("smtpinit: cannot open: Errstat %d errno %d\n",
+			   SmtpErrstat, errno);
+# endif DEBUG
+		return (ExitStat);
+	}
 
 	/*
 	**  Get the greeting message.
@@ -100,6 +112,9 @@ smtprcpt(to)
 {
 	register int r;
 
+	if (SmtpPid < 0)
+		return (SmtpErrstat);
+
 	smtpmessage("RCPT To:<%s>", to->q_user);
 
 	r = reply();
@@ -130,6 +145,9 @@ smtpfinish(m, editfcn)
 	int (*editfcn)();
 {
 	register int r;
+
+	if (SmtpPid < 0)
+		return (SmtpErrstat);
 
 	/*
 	**  Send the data.
@@ -169,11 +187,18 @@ smtpquit(name)
 {
 	register int i;
 
-	smtpmessage("QUIT");
-	(void) reply();
-	(void) fclose(SmtpIn);
-	(void) fclose(SmtpOut);
-	i = endmailer(SmtpPid, name);
+	if (SmtpPid < 0)
+	{
+		i = SmtpErrstat;
+	}
+	else
+	{
+		smtpmessage("QUIT");
+		(void) reply();
+		(void) fclose(SmtpIn);
+		(void) fclose(SmtpOut);
+		i = endmailer(SmtpPid, name);
+	}
 	giveresponse(i, TRUE, LocalMailer);
 }
 /*
