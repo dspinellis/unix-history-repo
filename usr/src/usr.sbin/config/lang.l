@@ -1,5 +1,5 @@
 %{
-/*	lang.l	1.5	81/03/06	*/
+/*	lang.l	1.6	81/03/31	*/
 
 #include <ctype.h>
 #include "y.tab.h"
@@ -23,6 +23,7 @@ struct kt {
 	"pseudo-device", PSEUDO_DEVICE, "flags", FLAGS, "trace", TRACE,
 	"disk", DISK, "tape", DEVICE, "slave", SLAVE, "at", AT,
 	"hz", HZ, "timezone", TIMEZONE, "dst", DST, "maxusers", MAXUSERS,
+	"master", MASTER,
 	0,0,
 };
 %}
@@ -77,6 +78,7 @@ WORD	[A-Za-z_][-A-Za-z_]*
 ^#.*		{	/* Ignored (comment) */;	}
 [ \t]*		{	/* Ignored (white space) */;	}
 ";"		{	return SEMICOLON;		}
+","		{	return COMMA;			}
 %%
 /*
  * kw_lookup
