@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_pty.c	7.20 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.21 (Berkeley) %G%
  */
 
 /*
@@ -90,7 +90,7 @@ ptsopen(dev, flag, devtype, p)
 		tp->t_state |= TS_CARR_ON;
 	while ((tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
-		if (flag&FNDELAY)
+		if (flag&FNONBLOCK)
 			break;
 		if (error = ttysleep(tp, (caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
 		    ttopen, 0))

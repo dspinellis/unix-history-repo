@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_generic.c	7.29 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -387,9 +387,9 @@ ioctl(p, uap, retval)
 
 	case FIONBIO:
 		if (tmp = *(int *)data)
-			fp->f_flag |= FNDELAY;
+			fp->f_flag |= FNONBLOCK;
 		else
-			fp->f_flag &= ~FNDELAY;
+			fp->f_flag &= ~FNONBLOCK;
 		error = (*fp->f_ops->fo_ioctl)(fp, FIONBIO, (caddr_t)&tmp, p);
 		break;
 
