@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -65,11 +65,11 @@ install:
 clean:
 	rm -f a.out core *.s *.o errs
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
-	rm -f ${STD} ${NSTD} expr.c
+	rm -f ${STD} ${NSTD} expr.c cp mv
 
 depend:
 	cat </dev/null >x.c
-	for i in ${STD} ${NSTD} ${KMEM} ${SETUID}; do \
+	for i in ${STD} ${NSTD} ${KMEM} ${SETUID} cp mv; do \
 		(echo $$i: $$i.c >>makedep; \
 		/bin/grep '^#[ 	]*include' x.c $$i.c | sed \
 			-e 's,<\(.*\)>,"/usr/include/\1",' \
@@ -398,6 +398,20 @@ su: /usr/include/syslog.h
 su: /usr/include/sys/types.h
 su: /usr/include/sys/time.h
 su: /usr/include/sys/resource.h
+cp: cp.c
+cp: /usr/include/stdio.h
+cp: /usr/include/sys/param.h
+cp: /usr/include/sys/stat.h
+cp: /usr/include/sys/dir.h
+cp: /usr/include/sys/time.h
+mv: mv.c
+mv: /usr/include/sys/param.h
+mv: /usr/include/sys/stat.h
+mv: /usr/include/sys/time.h
+mv: /usr/include/stdio.h
+mv: /usr/include/sys/dir.h
+mv: /usr/include/errno.h
+mv: /usr/include/signal.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above
