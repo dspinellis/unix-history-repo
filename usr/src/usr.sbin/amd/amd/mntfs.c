@@ -1,5 +1,5 @@
 /*
- * $Id: mntfs.c,v 5.2 90/06/23 22:19:40 jsp Rel $
+ * $Id: mntfs.c,v 5.2.1.4 91/03/17 17:46:40 jsp Alpha $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mntfs.c	5.1 (Berkeley) %G%
+ *	@(#)mntfs.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
@@ -21,6 +21,7 @@ qelem mfhead = { &mfhead, &mfhead };
 
 int mntfs_allocated;
 
+#ifdef notdef
 /*
  * This is the default attributes field which
  * is copied into every new node to be created.
@@ -44,39 +45,47 @@ static struct fattr gen_fattr = {
 	{ 0, 0 },			/* mtime */
 	{ 0, 0 },			/* ctime */
 };
+#endif /* notdef */
 
 mntfs *dup_mntfs(mf)
 mntfs *mf;
 {
 	if (mf->mf_refc == 0) {
-		untimeout(mf->mf_cid);
+		if (mf->mf_cid)
+			untimeout(mf->mf_cid);
 		mf->mf_cid = 0;
+#ifdef notdef
 		mf->mf_error = -1;
 		mf->mf_flags &= ~MFF_ERROR;
+#endif
 	}
 	mf->mf_refc++;
 	return mf;
 }
 
-static init_mntfs(mf, ops, mo, mp, info, opts)
+static int init_mntfs P((mntfs *mf, am_ops *ops, am_opts *mo, char *mp, char *info, char *auto_opts, char *mopts));
+static int init_mntfs(mf, ops, mo, mp, info, auto_opts, mopts)
 mntfs *mf;
 am_ops *ops;
 am_opts *mo;
 char *mp;
 char *info;
-char *opts;
+char *auto_opts;
+char *mopts;
 {
 	mf->mf_ops = ops;
 	mf->mf_fo = mo;
 	mf->mf_mount = strdup(mp);
 	mf->mf_info = strdup(info);
-	mf->mf_opts = strdup(opts);
+	mf->mf_auto = strdup(auto_opts);
+	mf->mf_mopts = strdup(mopts);
 	mf->mf_refc = 1;
 	mf->mf_flags = 0;
 	mf->mf_error = -1;
 	mf->mf_cid = 0;
 	mf->mf_private = 0;
 	mf->mf_prfree = 0;
+#ifdef notdef
 	mf->mf_attr.status = NFS_OK;
 	mf->mf_fattr = gen_fattr;
 	mf->mf_fattr.fsid = 42;
@@ -84,6 +93,7 @@ char *opts;
 	mf->mf_fattr.atime.seconds = clocktime();
 	mf->mf_fattr.atime.useconds = 0;
 	mf->mf_fattr.mtime = mf->mf_fattr.ctime = mf->mf_fattr.atime;
+#endif
 
 	if (ops->ffserver)
 		mf->mf_server = (*ops->ffserver)(mf);
@@ -91,27 +101,31 @@ char *opts;
 		mf->mf_server = 0;
 }
 
-static mntfs *alloc_mntfs(ops, mo, mp, info, opts)
+static mntfs *alloc_mntfs P((am_ops *ops, am_opts *mo, char *mp, char *info, char *auto_opts, char *mopts));
+static mntfs *alloc_mntfs(ops, mo, mp, info, auto_opts, mopts)
 am_ops *ops;
 am_opts *mo;
 char *mp;
 char *info;
-char *opts;
+char *auto_opts;
+char *mopts;
 {
 	mntfs *mf = ALLOC(mntfs);
-	init_mntfs(mf, ops, mo, mp, info, opts);
+	init_mntfs(mf, ops, mo, mp, info, auto_opts, mopts);
 	ins_que(&mf->mf_q, &mfhead);
 	mntfs_allocated++;
 
 	return mf;
 }
 
-mntfs *find_mntfs(ops, mo, mp, info, opts)
+mntfs *find_mntfs P((am_ops *ops, am_opts *mo, char *mp, char *info, char *auto_opts, char *mopts));
+mntfs *find_mntfs(ops, mo, mp, info, auto_opts, mopts)
 am_ops *ops;
 am_opts *mo;
 char *mp;
 char *info;
-char *opts;
+char *auto_opts;
+char *mopts;
 {
 	mntfs *mf;
 
@@ -143,7 +157,7 @@ char *opts;
 				/*
 				 * Restart a previously mounted filesystem.
 				 */
-				mntfs *mf2 = alloc_mntfs(&ifs_ops, mo, mp, info, opts);
+				mntfs *mf2 = alloc_mntfs(&ifs_ops, mo, mp, info, auto_opts, mopts);
 #ifdef DEBUG
 				dlog("Restarting filesystem %s", mf->mf_mount);
 #endif /* DEBUG */
@@ -157,8 +171,15 @@ char *opts;
 			mf->mf_fo = mo;
 			if (!(mf->mf_flags & (MFF_MOUNTED|MFF_MOUNTING|MFF_UNMOUNTING))) {
 				fserver *fs;
-				mf->mf_opts = strealloc(mf->mf_opts, opts);
+				mf->mf_flags &= ~MFF_ERROR;
+				mf->mf_error = -1;
+				mf->mf_auto = strealloc(mf->mf_auto, auto_opts);
+				mf->mf_mopts = strealloc(mf->mf_mopts, mopts);
 				mf->mf_info = strealloc(mf->mf_info, info);
+				if (mf->mf_private && mf->mf_prfree) {
+					(*mf->mf_prfree)(mf->mf_private);
+					mf->mf_private = 0;
+				}
 				fs = ops->ffserver ? (*ops->ffserver)(mf) : (fserver *) 0;
 				if (mf->mf_server)
 					free_srvr(mf->mf_server);
@@ -168,12 +189,12 @@ char *opts;
 		}
 	}
 
-	return alloc_mntfs(ops, mo, mp, info, opts);
+	return alloc_mntfs(ops, mo, mp, info, auto_opts, mopts);
 }
 
 mntfs *new_mntfs()
 {
-	return alloc_mntfs(&efs_ops, (am_opts *) 0, "//nil//", ".", "");
+	return alloc_mntfs(&efs_ops, (am_opts *) 0, "//nil//", ".", "", "");
 }
 
 static void uninit_mntfs(mf, rmd)
@@ -181,7 +202,8 @@ mntfs *mf;
 int rmd;
 {
 	if (mf->mf_mount) free((voidp) mf->mf_mount);
-	if (mf->mf_opts) free((voidp) mf->mf_opts);
+	if (mf->mf_auto) free((voidp) mf->mf_auto);
+	if (mf->mf_mopts) free((voidp) mf->mf_mopts);
 	if (mf->mf_info) free((voidp) mf->mf_info);
 	if (mf->mf_private && mf->mf_prfree)
 		(*mf->mf_prfree)(mf->mf_private);
@@ -273,13 +295,15 @@ mntfs *mf;
 	}
 }
 
-mntfs *realloc_mntfs(mf, ops, mo, mp, info, opts)
+mntfs *realloc_mntfs P((mntfs *mf, am_ops *ops, am_opts *mo, char *mp, char *info, char *auto_opts, char *mopts));
+mntfs *realloc_mntfs(mf, ops, mo, mp, info, auto_opts, mopts)
 mntfs *mf;
 am_ops *ops;
 am_opts *mo;
 char *mp;
 char *info;
-char *opts;
+char *auto_opts;
+char *mopts;
 {
 	mntfs *mf2;
 	if (mf->mf_refc == 1 && mf->mf_ops == &ifs_ops && STREQ(mf->mf_mount, mp)) {
@@ -289,7 +313,7 @@ char *opts;
 		 */
 		return mf;
 	}
-	mf2 = find_mntfs(ops, mo, mp, info, opts);
+	mf2 = find_mntfs(ops, mo, mp, info, auto_opts, mopts);
 	free_mntfs(mf);
 	return mf2;
 }

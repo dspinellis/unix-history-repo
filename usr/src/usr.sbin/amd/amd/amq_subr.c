@@ -1,5 +1,5 @@
 /*
- * $Id: amq_subr.c,v 5.2 90/06/23 22:19:20 jsp Rel $
+ * $Id: amq_subr.c,v 5.2.1.4 91/03/17 17:48:23 jsp Alpha $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)amq_subr.c	5.1 (Berkeley) %G%
+ *	@(#)amq_subr.c	5.2 (Berkeley) %G%
  */
 /*
  * Auxilliary routines for amq tool
@@ -19,7 +19,7 @@
 
 #include "am.h"
 #include "amq.h"
-
+#include <ctype.h>
 #include <sys/param.h>
 
 /*ARGSUSED*/
@@ -87,25 +87,9 @@ struct svc_req *rqstp;
 {
 	static amq_mount_tree_list aml;
 
-#ifdef oldcode
-	static am_node **mvec;
-	int i;
-	int n = 0;
-
-	mvec = (struct am_node **)
-		xrealloc(mvec, (1+last_used_map) * sizeof(am_node *));
-	for (i = last_used_map; i >= 0; --i) {
-		am_node *mp = exported_ap[i];
-		if (mp && (mp->am_flags & AMF_ROOT))
-			mvec[n++] = mp;
-	}
-
-	aml.amq_mount_tree_list_val = (amq_mount_tree_p *) mvec;
-	aml.amq_mount_tree_list_len = n;
-#else
 	aml.amq_mount_tree_list_val = (amq_mount_tree_p *) &exported_ap[0];
 	aml.amq_mount_tree_list_len = 1;	/* XXX */
-#endif /* oldcode */
+
 	return &aml;
 }
 
@@ -147,6 +131,8 @@ struct svc_req *rqstp;
 		if (amd_state == Run) {
 			plog(XLOG_INFO, "amq says flush cache");
 			do_mapc_reload = 0;
+			flush_nfs_fhandle_cache((fserver *) 0);
+			flush_srvr_nfs_cache();
 		}
 		break;
 	}
@@ -160,6 +146,78 @@ struct svc_req *rqstp;
 {
 extern qelem mfhead;
 	return (amq_mount_info_list *) &mfhead;	/* XXX */
+}
+
+static int ok_security(rqstp)
+struct svc_req *rqstp;
+{
+	struct sockaddr_in *sin;
+
+	sin = svc_getcaller(rqstp->rq_xprt);
+	if (ntohs(sin->sin_port) >= 1024 ||
+	    !(sin->sin_addr.s_addr == htonl(0x7f000001) ||
+	      sin->sin_addr.s_addr == myipaddr.s_addr)) {
+		char dq[20];
+		plog(XLOG_INFO, "AMQ request from %s.%d DENIED",
+		     inet_dquad(dq, sin->sin_addr.s_addr),
+		     ntohs(sin->sin_port));
+		return(0);
+	}
+	return(1);
+}
+
+int *
+amqproc_mount_1(argp, rqstp)
+voidp argp;
+struct svc_req *rqstp;
+{
+	static int rc;
+	char *s = *(amq_string *) argp;
+	char *cp;
+
+	plog(XLOG_INFO, "amq requested mount of %s", s);
+	/*
+	 * Minimalist security check.
+	 */
+	if (!ok_security(rqstp)) {
+		rc = EACCES;
+		return &rc;
+	}
+
+	/*
+	 * Find end of key
+	 */
+	for (cp = (char *) s; *cp&&(!isascii(*cp)||!isspace(*cp)); cp++)
+		;
+
+	if (!*cp) {
+		plog(XLOG_INFO, "amqproc_mount: Invalid arguments");
+		rc = EINVAL;
+		return &rc;
+	}
+	*cp++ = '\0';
+
+	/*
+	 * Find start of value
+	 */
+	while (*cp && isascii(*cp) && isspace(*cp))
+		cp++;
+
+	root_newmap(s, cp, (char *) 0);
+	rc = mount_auto_node(s, (voidp) root_node);
+	if (rc < 0)
+		return 0;
+	return &rc;
+}
+
+amq_string *
+amqproc_getvers_1(argp, rqstp)
+voidp argp;
+struct svc_req *rqstp;
+{
+static amq_string res;
+	res = version;
+	return &res;
 }
 
 /*
@@ -194,7 +252,7 @@ xdr_amq_setopt(xdrs, objp)
  * More XDR routines  - Should be used for OUTPUT ONLY.
  */
 bool_t
-xdr_amq_mount_tree(xdrs, objp)
+xdr_amq_mount_tree_node(xdrs, objp)
 	XDR *xdrs;
 	amq_mount_tree *objp;
 {
@@ -233,10 +291,43 @@ xdr_amq_mount_tree(xdrs, objp)
 	if (!xdr_int(xdrs, &mp->am_stats.s_statfs)) {
 		return (FALSE);
 	}
-	if (!xdr_pointer(xdrs, (char **)&mp->am_osib, sizeof(amq_mount_tree), xdr_amq_mount_tree)) {
+	return (TRUE);
+}
+
+bool_t
+xdr_amq_mount_subtree(xdrs, objp)
+	XDR *xdrs;
+	amq_mount_tree *objp;
+{
+	am_node *mp = (am_node *) objp;
+
+	if (!xdr_amq_mount_tree_node(xdrs, objp)) {
 		return (FALSE);
 	}
-	if (!xdr_pointer(xdrs, (char **)&mp->am_child, sizeof(amq_mount_tree), xdr_amq_mount_tree)) {
+	if (!xdr_pointer(xdrs, (char **)&mp->am_osib, sizeof(amq_mount_tree), xdr_amq_mount_subtree)) {
+		return (FALSE);
+	}
+	if (!xdr_pointer(xdrs, (char **)&mp->am_child, sizeof(amq_mount_tree), xdr_amq_mount_subtree)) {
+		return (FALSE);
+	}
+	return (TRUE);
+}
+
+bool_t
+xdr_amq_mount_tree(xdrs, objp)
+	XDR *xdrs;
+	amq_mount_tree *objp;
+{
+	am_node *mp = (am_node *) objp;
+	am_node *mnil = 0;
+
+	if (!xdr_amq_mount_tree_node(xdrs, objp)) {
+		return (FALSE);
+	}
+	if (!xdr_pointer(xdrs, (char **)&mnil, sizeof(amq_mount_tree), xdr_amq_mount_subtree)) {
+		return (FALSE);
+	}
+	if (!xdr_pointer(xdrs, (char **)&mp->am_child, sizeof(amq_mount_tree), xdr_amq_mount_subtree)) {
 		return (FALSE);
 	}
 	return (TRUE);
@@ -289,6 +380,7 @@ xdr_amq_mount_tree_list(xdrs, objp)
 	return (TRUE);
 }
 
+bool_t
 xdr_amq_mount_info_qelem(xdrs, qhead)
 	XDR *xdrs;
 	qelem *qhead;

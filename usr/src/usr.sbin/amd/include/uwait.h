@@ -1,5 +1,5 @@
 /*
- * $Id: uwait.h,v 5.2 90/06/23 22:20:31 jsp Rel $
+ * $Id: uwait.h,v 5.2.1.1 90/10/21 22:30:35 jsp Exp $
  *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
@@ -11,10 +11,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uwait.h	5.1 (Berkeley) %G%
+ *	@(#)uwait.h	5.2 (Berkeley) %G%
  */
 
-#if defined(mc68k) || defined(mc68000) || defined(mc68020) || defined(sparc) || defined(hp9000s300)
+#if defined(mc68k) || defined(mc68000) || defined(mc68020) || defined(sparc) || defined(hp9000s300) || defined(hp9000s800)
 #define BITS_BIGENDIAN
 #endif
 #if defined(vax) || defined(i386)

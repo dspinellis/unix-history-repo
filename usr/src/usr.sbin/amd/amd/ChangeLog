@@ -1,3 +1,318 @@
+Sun Mar 17 12:05:27 1991  Jan-Simon Pendry  (jsp at forest)
+
+	* Release 5.3 Alpha 11.
+
+	* (amq.8) Updated.
+
+	* (amq.c) Added new -v option which displays the version number of
+	the target Amd.  Also added support to Amd and reworked newvers
+	script.  Got rid of rcs_info.c.
+
+	* (mk-amd-map.c) Changed name of remove function to avoid clash
+	with ANSI C.
+
+	* (wire.c) Fixed to work with new 4.4BSD sockaddr's.
+
+	* Changed const to Const everywhere and added new define in config.h.
+
+	* (mk-amd-map.c) New -p option which just writes the output to
+	stdout.  Useful for making NIS or Hesiod maps.
+
+	* (amdref) Small updates and clarifications.
+
+Sat Mar 16 20:35:17 1991  Jan-Simon Pendry  (jsp at forest)
+
+	* (amq_subr.c) Flush request now flushes all internal caches.
+
+	* (amq_subr.c) Changed xdr_amq_mount_tree to return only the
+	required sub-tree.
+
+	* (ifs_ops.c) Added missing return 0; to ifs_mount.
+
+Sat Mar  9 19:31:25 1991  Jan-Simon Pendry  (jsp at forest)
+
+	* (get_args.c) Output the primary network interface information
+	with the -v option.
+
+	* (mapc.c) Fixed spurious warning about "root" map not supporting
+	cache mode "all".  Added new (unnamed) cache mode MAPC_ROOT.
+
+	* (info_nis.c) Fixed order number testing which was the cause of a
+	loop.
+
+Sun Mar  3 17:57:03 1991  Jan-Simon Pendry  (jsp at forest)
+
+	* Release 5.3 Alpha 10.
+
+	* Introduced new inet_dquad routine which prints IP addresses in
+	dotted quad format.  The C library routine is not used because it
+	uses a static buffer and it takes a structure argument on some
+	machines and unsigned longs on others.  This confuses the hell out
+	of some compilers and causes SEGVs.
+
+	* task_notify becomes do_task_notify to avoid clash with Mach.
+
+	* (mntfs.c) In realloc_mntfs, the private data field wasn't being
+	cleared out when the mntfs object was being re-used.  This meant
+	that the data might be used for the wrong mount, so causing
+	various obscure errors.
+
+	* (info_file.c) Reworked to provide support for map cache "sync"
+	option.
+
+	* (mapc.c) Added new "sync" option to map cache.  This ensures
+	that the cached data doesn't become stale wrt the source.
+	Currently this isn't implemented for passwd and hesiod maps.
+
+Wed Feb 27 11:38:07 1991  Jan-Simon Pendry  (jsp at forest)
+
+	* (afs_ops.c) Fixed pid put in fs_hostname for toplvl mount.
+
+Sun Feb 24 19:37:55 1991  Jan-Simon Pendry  (jsp at forest)
+
+	* (wire.c) New module which determines the name of the primary
+	attached network.  This could be used to determine which
+	server to use.
+
+	* (srvr_nfs.c) Changed mount daemon port mapping caching.  This is
+	now much more eager to recompute the mapping than before.  Will
+	also now work even if pinging is switched off (for example "tcp").
+
+	* (info_nis.c) Added back old NIS reload code to allow NIS maps to
+	support "regexp" caching.
+
+	* (mapc.c) Added support for "regexp" caching.  This is a type of
+	map cache where the entries are all REs to be matched against the
+	requested key.  This implies "all" since all the keys must be
+	loaded for the search to work.
+
+Sat Feb 23 15:32:43 1991  Jan-Simon Pendry  (jsp at forest)
+
+	* (afs_ops.c) Avoid spurious error messages about discarding a
+	retry mntfs.
+
+	* (amq_subr.c) Removed inet_ntoa call due to disagreement between
+	gcc and libc about 4 byte structure passing.
+
+	* (xutil.c) Changed way initial logging is done to make command
+	line more usable.  Default logging flags are set statically and
+	can then be modified by -x options.  At the end an additional call
+	to switch_option is made to initialise xlog_level_init.
+
+	* (umount_fs.c) ENOENT now treated the same as EINVAL.  If the
+	filesystem gets removed and the mountpoint deleted then just
+	assume the filesystem isn't there - which it isn't.
+
+	* (host_ops.c) Now copes with unmount failures by attempting to
+	remount the filesystems which had been unmounted.
+
+	* (host_ops.c) Added check during fhandle collection to detect
+	duplicate entries in the export list (from Stefan Petri).
+
+	* (nfsx_ops.c) Reworked to correctly keep track of what is and
+	isn't mounted.
+
+Sun Jan 27 16:58:02 1991  Jan-Simon Pendry  (jsp at achilles)
+
+	* (misc-next.h) Added missing NeXT config file.
+
+	* Merged Harris HCX/UX support from Chris Metcalf.
+
+	* (ifs_ops.c) added ifs_fmount entry point to keep nfsx_ops happy.
+
+Sun Jan 13 18:19:19 1991  Jan-Simon Pendry  (jsp at beauty)
+
+	* (nfsx_ops.c) play with opt_fs field to make sure it is unique.
+
+Fri Dec 21 15:35:45 1990  Jan-Simon Pendry  (jsp at forest)
+
+	* Release 5.3 Alpha 9.  This is still not Beta!
+
+	* (host_ops.c) use normalized hostname in mtab entries, from
+	Chris Metcalf.
+
+	* (map.c) enum ftype -> ftype, from Andrew Findlay.
+
+Mon Dec 17 01:11:25 1990  Jan-Simon Pendry  (jsp at beauty)
+
+	* (amdref.texinfo) merged in fsinfo documentation from Nick.
+
+Sat Dec 15 15:39:07 1990  Jan-Simon Pendry  (jsp at beauty)
+
+	* (clock.c) minor tweaks to messages.
+
+	* (sfs_ops.c) make the opt_fs field unique, rather than always
+	".", but make sure it still begins with a "." to avoid a clash
+	with any other existing mounts.
+
+	* (amd.c) changed way local IP address is obtained to avoid using
+	a call to the name server.  It was observed that if the power to
+	the building goes and everything reboots simultaneously then there
+	would be a good chance that the nameserver would not recover
+	before Amd on another machine required it.  This happened :-)  Now
+	use the RPC get_myaddress call.
+
+	* (info_hes.c) added hesiod_reload code from Bruce Cole.
+	Optionally compiled when HAS_HESIOD_RELOAD is defined.
+
+	* (amq_subr.c) fix "security" check.
+
+	* (amq.c) make sure a privileged port is allocated.  In fact
+	RPC3.9 and newer make this guarentee but older versions don't so
+	we do it here.
+
+Sun Dec  2 21:30:07 1990  Jan-Simon Pendry  (jsp at achilles)
+
+	* (afs_ops.c) fixed problem with pointer pre-increment.
+
+Mon Nov 19 00:31:28 1990  Jan-Simon Pendry  (jsp at achilles)
+
+	* (nfs_ops.c) saved filehandle with mntfs structure.  this allows
+	nfsx unmounts to be undone even if the filehandle cache has lost
+	the entry.  all of this is bogus and deserves a rewrite...
+
+Sun Nov 18 22:55:43 1990  Jan-Simon Pendry  (jsp at achilles)
+
+	* (nfsx_ops.c) now handles mounts of root filesystem correctly.
+
+	* (afs_ops.c) fixed dfs_ops definition to call toplvl_mounted when
+	done, so making sure that a map cache reference is set up.
+
+Sun Nov 11 21:09:34 1990  Jan-Simon Pendry  (jsp at achilles)
+
+	* (fsinfo/wr_fstab.c) has per-ostype fstab rules.
+
+	* (fsinfo/fsi_lex.l) now works correctly with flex.
+
+Mon Nov  5 00:08:30 1990  Jan-Simon Pendry  (jsp at achilles)
+
+	* Release 5.3 Alpha 8.  No more new features from now to 5.3Rel.
+	Call next one Beta.
+
+	* (amdref.texinfo) more updates.
+
+	* (info_union.c) reload routine now adds a wildcard pointing to
+	the last named directory so that new files get created correctly.
+
+Sun Nov  4 22:02:50 1990  Jan-Simon Pendry  (jsp at achilles)
+
+	* (os-u4_0.h) Ultrix 4.0 support merged.
+
+	* (os-utek.h) Utek 4.0 support merged.
+
+	* (amdref.texinfo) fixed & updated.
+
+	* (nfsx_ops.c) reworked string munging to prevent ..//.. strings
+	from occuring.
+
+	* (util.c) am_mounted now correctly updates the am_node for
+	duplicate mounts.
+
+	* (afs_ops.c) added union fstype.  derived from "toplvl" except it
+	causes all the filesystems to be mounted.  cannot be used for
+	filesystem types whose mounts may be defered (eg nfs) since it
+	doesn't retry the mounts.
+
+	* (info_union.c) map type for union fstype support.  currently
+	can't handle being given automounted filesystems - causes a
+	deadlock.
+
+Sun Oct 21 22:56:16 1990  Jan-Simon Pendry  (jsp at achilles)
+
+	* (fsinfo/*) finally integrated the fsinfo package.  currently no
+	documentation or man page.  this is a pre-req to getting mmd up.
+
+Sun Oct 14 20:02:11 1990  Jan-Simon Pendry  (jsp at achilles)
+
+	* (amdref.texinfo) reworking of documentation continues.
+
+	* (clock.c) reschedule_timeouts() now called in the event that the
+	system clock goes backwards.  this is possible during the average
+	bootstrap juggling act with timed/xntpd etc.  especially useful if
+	your machines TOY clock gets way ahead of time.
+
+Sat Oct  6 19:57:55 1990  Jan-Simon Pendry  (jsp at achilles)
+
+	* (map.c) when expanding the filehandle for a server which is
+	down, don't update the ttl on the original node unless a new node
+	gets allocated.  this should give the original mount a chance to
+	go away as soon as the server comes back.
+
+	* (arch, os-type) Updated.
+
+	* (nfs_ops.c) Added "noconn", "spongy" and "compress" mount
+	options for 4.4 BSD.
+
+Sun Sep 30 18:37:54 1990  Jan-Simon Pendry  (jsp at beauty)
+
+	* Release 5.3 Alpha 6.
+
+	* (util.c) domain_strip now doesn't leave partial domains behind.
+	if it can't strip the complete domain it leaves the string untouched.
+
+	* (restart.c) remember to initialise opt_opts field from mtab.
+
+	* (nfs_ops.c) supports "nocto" option for SunOS4.1.
+
+	* (os-irix.h) new SGI Iris port.
+
+	* (os-next.h) new NeXT port.
+
+	* (os-dgux.h) new DG/UX port.
+
+	* (many) fixed problem where mf_opts was being used for two
+	different purposes.  Now have two fields.
+
+	* (mapc.c) error map prints error message whenever used.
+
+	* (mapc.c) wildcard code rewritten.
+
+	* (util.c) slpit into two parts - some code now in xutil.c.  This
+	is used by mmd (not yet shipped).
+
+Sun Aug 19 19:58:16 1990  Jan-Simon Pendry  (jsp at achilles)
+
+	* (srvr_nfs.c) reduce verbosity of "nfs server yoyo is ok" messages.
+
+	* (opts.c) fix deslashification in expand.
+
+	* (nfs_start.c) amq registering done just before the server kicks
+	in.  running amd with nothing to do leaves the portmapper in peace.
+
+	* (mapc.c) bootstrap code abstracted to allow AMQ_MOUNT entry point.
+
+	* (nfsx_ops.c) new filesystem type, supporting groups of nfs
+	mounts.  needs abstracting to allow groups of (*) mounts.
+
+	* (am.h, *_ops.c) am_ops structure changed; corresponding changes
+	in the filesystem implemention source.  Change was to allow nfsx
+	filesystem implementation.
+
+	* (amd.c) hostname defaults to "localhost" startup code re-ordered
+	so that logging still works in case things go wrong early.
+
+	* (am_ops.c) new routine to print list of available fs types; used
+	by the -v option.
+
+	* (info_file.c) bug fix to make reloads work correctly.
+
+	* (mtab_file.c) does locking on single write, to avoid trashing
+	mount table when a mount and unmount are done at the same time.
+
+	* (mount_fs.c) automount hack removed since afs_ops no longer
+	needs it.
+
+	* (afs_ops.c) split "auto" into several other filesystem types.
+	Now much cleaner.
+
+	* (amq.c) new -M option.
+
+	* (amq_subr.c) support for AMQ_MOUNT added.
+
+	* (amq.x) new AMQ_MOUNT RPC call allows mount map entries to be
+	passed in at run-time.  Automount points can now be added
+	dynamically, but not yet deleted.
+
 Sat Jun 23 22:12:48 1990  Jan-Simon Pendry  (jsp at beauty)
 
 	* Release 5.2 for Berkeley.
@@ -517,7 +832,7 @@ Wed Jul 19 16:14:52 1989  Jan-Simon Pendry  (jsp at achilles)
 
 	* (nfs_ops.c) now implements a non-blocking rpc library.
 	Everything in nfs_ops was changed to use it.  This should
-	not be in this file and will be moved later. 
+	not be in this file and will be moved later.
 
 	* (map.c) if a mount point times out and it is deferred then
 	issue a wakeup so that it can be retried.
@@ -614,7 +929,7 @@ Tue Jun  6 16:39:15 1989  Jan-Simon Pendry  (jsp at achilles)
 
 	* (get_args.c, am.c) added new -r (restart) option.  Restart of
 	mounted filesystems is only done if this option is specified.
-	Should *not* be specified in /etc/rc.local of course.
+	[Should *not* be specified in /etc/rc.local of course. - wrong]
 
 	* (yp_master.c) make the enumeration error message more verbose
 	when debugging is enabled.
@@ -626,7 +941,7 @@ Tue Jun  6 16:39:15 1989  Jan-Simon Pendry  (jsp at achilles)
 
 	* (opts.c) make sure opt_key and opt_path are set to a zero
 	length string unless otherwise specified.  Previously they
-	were are source of dangling pointers.
+	were a source of dangling pointers.
 
 	* (nfs_ops.c) make sure that the allocated nfs_private identifiers
 	are unique even when some filesystem are being restarted.  This mean

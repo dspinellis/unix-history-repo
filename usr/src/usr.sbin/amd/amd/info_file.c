@@ -1,5 +1,5 @@
 /*
- * $Id: info_file.c,v 5.2 90/06/23 22:19:29 jsp Rel $
+ * $Id: info_file.c,v 5.2.1.2 91/03/03 20:39:34 jsp Alpha $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)info_file.c	5.1 (Berkeley) %G%
+ *	@(#)info_file.c	5.2 (Berkeley) %G%
  */
 
 /*
@@ -26,6 +26,7 @@
 
 #define	MAX_LINE_LEN	2048
 
+static int read_line P((char *buf, int size, FILE *fp));
 static int read_line(buf, size, fp)
 char *buf;
 int size;
@@ -61,6 +62,7 @@ FILE *fp;
 /*
  * Try to locate a key in a file
  */
+static int search_or_reload_file P((FILE *fp, char *map, char *key, char **val, mnt_map *m, void (*fn)(mnt_map *m, char*, char*)));
 static int search_or_reload_file(fp, map, key, val, m, fn)
 FILE *fp;
 char *map;
@@ -121,7 +123,7 @@ void (*fn) P((mnt_map*, char*, char*));
 		if (*cp)
 			*cp++ = '\0';
 
-		if ((*key == *kp && strcmp(key, kp) == 0) || fn) {
+		if (fn || (*key == *kp && strcmp(key, kp) == 0)) {
 			while (*cp && isascii(*cp) && isspace(*cp))
 				cp++;
 			if (*cp) {
@@ -129,13 +131,14 @@ void (*fn) P((mnt_map*, char*, char*));
 				 * Return a copy of the data
 				 */
 				char *dc = strdup(cp);
-				if (fn)
-					(*fn)(m, kp, dc);
-				else
+				if (fn) {
+					(*fn)(m, strdup(kp), dc);
+				} else {
 					*val = dc;
 #ifdef DEBUG
-				dlog("%s returns %s", key, dc);
+					dlog("%s returns %s", key, dc);
 #endif /* DEBUG */
+				}
 				if (!fn)
 					return 0;
 			} else {
@@ -159,10 +162,28 @@ again:
 	return fn ? 0 : ENOENT;
 }
 
-int file_init(map)
+static FILE *file_open P((char *map, time_t *tp));
+static FILE *file_open(map, tp)
 char *map;
+time_t *tp;
 {
 	FILE *mapf = fopen(map, "r");
+	if (mapf && tp) {
+		struct stat stb;
+		if (fstat(fileno(mapf), &stb) < 0)
+			*tp = clocktime();
+		else
+			*tp = stb.st_mtime;
+	}
+	return mapf;
+}
+
+int file_init P((char *map, time_t *tp));
+int file_init(map, tp)
+char *map;
+time_t *tp;
+{
+	FILE *mapf = file_open(map, tp);
 	if (mapf) {
 		(void) fclose(mapf);
 		return 0;
@@ -170,12 +191,13 @@ char *map;
 	return errno;
 }
 
+int file_reload P((mnt_map *m, char *map, void (*fn)()));
 int file_reload(m, map, fn)
 mnt_map *m;
 char *map;
 void (*fn)();
 {
-	FILE *mapf = fopen(map, "r");
+	FILE *mapf = file_open(map, (time_t *) 0);
 	if (mapf) {
 		int error = search_or_reload_file(mapf, map, 0, 0, m, fn);
 		(void) fclose(mapf);
@@ -185,6 +207,7 @@ void (*fn)();
 	return errno;
 }
 
+int file_search P((mnt_map *m, char *map, char *key, char **pval, time_t *tp));
 int file_search(m, map, key, pval, tp)
 mnt_map *m;
 char *map;
@@ -192,19 +215,32 @@ char *key;
 char **pval;
 time_t *tp;
 {
-	FILE *mapf = fopen(map, "r");
+	time_t t;
+	FILE *mapf = file_open(map, &t);
 	if (mapf) {
-		struct stat stb;
 		int error;
-		error = fstat(fileno(mapf), &stb);
-		if (!error && *tp < stb.st_mtime) {
-			*tp = stb.st_mtime;
+		if (*tp < t) {
+			*tp = t;
 			error = -1;
 		} else {
 			error = search_or_reload_file(mapf, map, key, pval, 0, 0);
 		}
 		(void) fclose(mapf);
 		return error;
+	}
+
+	return errno;
+}
+
+int file_mtime P((char *map, time_t *tp));
+int file_mtime(map, tp)
+char *map;
+time_t *tp;
+{
+	FILE *mapf = file_open(map, tp);
+	if (mapf) {
+		(void) fclose(mapf);
+		return 0;
 	}
 
 	return errno;

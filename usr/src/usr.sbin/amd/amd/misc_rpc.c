@@ -1,5 +1,5 @@
 /*
- * $Id: misc_rpc.c,v 5.2 90/06/23 22:19:38 jsp Rel $
+ * $Id: misc_rpc.c,v 5.2.1.2 90/11/04 23:17:21 jsp Exp $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)misc_rpc.c	5.1 (Berkeley) %G%
+ *	@(#)misc_rpc.c	5.2 (Berkeley) %G%
  */
 
 /*
@@ -130,12 +130,12 @@ AUTH *auth;
 }
 
 
-#ifdef MISC_RPC
 /*
  * Early RPC seems to be missing these..
  * Extracted from the RPC 3.9 sources as indicated
  */
 
+#ifdef NEED_XDR_POINTER
 /* @(#)xdr_reference.c	1.1 87/11/04 3.9 RPCSRC */
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
@@ -206,7 +206,9 @@ xdr_pointer(xdrs,objpp,obj_size,xdr_obj)
 	}
 	return (xdr_reference(xdrs,objpp,obj_size,xdr_obj));
 }
+#endif /* NEED_XDR_POINTER */
 
+#ifdef NEED_CLNT_SPERRNO
 /* @(#)clnt_perror.c	1.1 87/11/04 3.9 RPCSRC */
 /*
  * Sun RPC is a product of Sun Microsystems, Inc. and is provided for
@@ -299,5 +301,5 @@ clnt_sperrno(stat)
 	return ("RPC: (unknown error code)");
 }
 
-#endif /* MISC_RPC */
+#endif /* NEED_CLNT_SPERRNO */
 

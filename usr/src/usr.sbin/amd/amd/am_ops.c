@@ -1,5 +1,5 @@
 /*
- * $Id: am_ops.c,v 5.2 90/06/23 22:19:19 jsp Rel $
+ * $Id: am_ops.c,v 5.2.1.3 91/03/03 20:37:39 jsp Alpha $
  *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)am_ops.c	5.1 (Berkeley) %G%
+ *	@(#)am_ops.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
@@ -19,27 +19,47 @@
 static am_ops *vops[] = {
 #ifdef HAS_UFS
 	&ufs_ops,
-#endif /* HAS_UFS */
+#endif
 #ifdef HAS_NFS
 	&nfs_ops,
-#endif /* HAS_NFS */
+#endif
+#ifdef HAS_NFSX
+	&nfsx_ops,
+#endif
 #ifdef HAS_HOST
 	&host_ops,
-#endif /* HAS_HOST */
+#endif
 #ifdef HAS_SFS
 	&sfs_ops,
-#endif /* HAS_SFS */
+#endif
 #ifdef HAS_LOFS
 	&lofs_ops,
-#endif /* HAS_LOFS */
+#endif
 #ifdef HAS_PFS
 	&pfs_ops,
-#endif /* HAS_PFS */
-	&afs_ops,	/* These three should be last ... */
+#endif
+#ifdef HAS_UNION_FS
+	&union_ops,
+#endif
+	&afs_ops,	/* These four should be last ... */
 	&dfs_ops,	/* ... */
-	&efs_ops,	/* ... in the order afs; dfs; efs */
+	&toplvl_ops,	/* ... */
+	&efs_ops,	/* ... in the order afs; dfs; toplvl; efs */
 	0
 };
+
+void ops_showfstypes P((FILE *fp));
+void ops_showfstypes(fp)
+FILE *fp;
+{
+	struct am_ops **ap;
+	char *sep = "";
+
+	for (ap = vops; *ap; ap++) {
+		fprintf(fp, "%s%s", sep, (*ap)->fs_type);
+		sep = ", ";
+	}
+}
 
 #ifdef SUNOS4_COMPAT
 /*
@@ -85,7 +105,7 @@ char *map;
 	if (!eval_fs_opts(fo, key, g_key, path, keym, map)) {
 		rop = &efs_ops;
 	} else if (fo->opt_type == 0) {
-		plog(XLOG_USER, "No fs type specified (somewhere!)");
+		plog(XLOG_USER, "No fs type specified (key = \"%s\", map = \"%s\")", keym, map);
 		rop = &efs_ops;
 	} else {
 		/*
@@ -113,12 +133,15 @@ char *map;
 	/*
 	 * Check the filesystem is happy
 	 */
-	if ((*rop->fs_match)(fo))
+	if (fo->fs_mtab)
+		free((voidp) fo->fs_mtab);
+
+	if (fo->fs_mtab = (*rop->fs_match)(fo))
 		return rop;
 
 	/*
 	 * Return error file system
 	 */
-	(void) (*efs_ops.fs_match)(fo);
+	fo->fs_mtab = (*efs_ops.fs_match)(fo);
 	return &efs_ops;
 }

@@ -8,9 +8,9 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)amd.8	5.2 (Berkeley) %G%
+.\"     @(#)amd.8	5.3 (Berkeley) %G%
 .\"
-.Dd 
+.Dd March 17, 1991
 .Dt AMD 8
 .Os
 .Sh NAME
@@ -50,16 +50,6 @@ Filesystems are automatically unmounted when they
 appear to be quiescent.
 .Pp
 .Nm Amd
-has been designed as a value-added replacement
-for the SunOS 4
-.Xr automount 8
-program.
-Considerable design effort has been expended in making
-.Nm amd
-robust in the face of
-.Tn NFS
-servers going down.
-.Nm Amd
 operates by attaching itself as an
 .Tn NFS
 server to each of the specified
@@ -67,7 +57,7 @@ server to each of the specified
 Lookups within the specified directories
 are handled by
 .Nm amd ,
-which uses the map contained in
+which uses the map defined by
 .Ar mapname
 to determine how to resolve the lookup.
 Generally, this will be a host name, some filesystem information
@@ -97,13 +87,9 @@ is the string
 .Em syslog ,
 the log messages will be sent to the system log daemon by
 .Xr syslog 3 .
-This is only available on certain systems (e.g.
-.Em not
-.Tn HP-UX
-and early versions of Ultrix).
 .It Fl n
 Normalize hostnames.
-The name refered to by ${rhost} are normalized relative to the
+The name refered to by ${rhost} is normalized relative to the
 host database before being used.  The effect is to translate
 aliases into ``official'' names.
 .It Fl p
@@ -133,10 +119,6 @@ Useful defaults are supplied if either or both
 values are missing.
 .It Fl v
 Version.  Displays version and configuration information on standard error.
-If you send a bug report, this should be used to determine
-which version of
-.Nm amd
-you are using.
 .It Fl w Ar interval
 Specify an
 .Ar interval ,
@@ -145,14 +127,17 @@ filesystems that have exceeded their cached times.
 The default is 2 minutes.
 .It Fl y Ar domain
 Specify an alternative
-.Tn YP
+.Tn NIS
 domain from which to fetch the
-.Tn YP
+.Tn NIS
 maps.
 The default is the system domain name.
+This option is ignored if
+.Tn NIS
+support is not available.
 .It Fl x Ar options
 Specify run-time logging options.  The options are a comma separated
-list chosen from: fatal, error, user, warn, info, all.
+list chosen from: fatal, error, user, warn, info, map, stats, all.
 .It Fl D Ar option
 Select from a variety of debug options.  Prefixing an
 option with the strings
@@ -179,9 +164,9 @@ Some care may be required when creating a mount map.
 .Pp
 Symbolic links on an
 .Tn NFS
-filesystem are incredibly inefficient.
-Their interpolations are not cached by the kernel and each time a symbolic
-link is
+filesystem can be incredibly inefficient.
+In most implementations of NFS, their interpolations are not cached by
+the kernel and each time a symbolic link is
 encountered during a
 .Em lookuppn
 translation it costs an
@@ -189,7 +174,7 @@ translation it costs an
 call to the
 .Tn NFS
 server.
-It would appear that a large improvement in real-time
+A large improvement in real-time
 performance could be gained by adding a cache somewhere.
 Replacing
 .Xr symlinks 2
@@ -208,12 +193,11 @@ the features.
 .Xr umount 8 ,
 .Xr mtab 5 ,
 .Rs
-.%T Amd \- An Automounter
+.%T Amd \- The 4.4 BSD Automounter
 .Re
 .Sh AUTHOR
 .An Jan-Simon Pendry
 <jsp@doc.ic.ac.uk>, Department of Computing, Imperial College, London, UK.
 .Sh HISTORY
-The
-.Nm
+.Nm Amd
 .At

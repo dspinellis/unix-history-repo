@@ -1,5 +1,5 @@
 /*
- * $Id: map.c,v 5.2 90/06/23 22:19:35 jsp Rel $
+ * $Id: map.c,v 5.2.1.5 91/03/17 17:47:23 jsp Alpha $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)map.c	5.1 (Berkeley) %G%
+ *	@(#)map.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
@@ -32,15 +32,73 @@
 static unsigned int am_gen = 2;	/* Initial generation number */
 #define new_gen() (am_gen++)
 
-struct am_node *exported_ap[NEXP_AP];
+am_node **exported_ap = (am_node **) 0;
+int exported_ap_size = 0;
 int first_free_map = 0;		/* First available free slot */
 int last_used_map = -1;		/* Last unavailable used slot */
 static int timeout_mp_id;	/* Id from last call to timeout */
 
 /*
+ * This is the default attributes field which
+ * is copied into every new node to be created.
+ * The individual filesystem fs_init() routines
+ * patch the copy to represent the particular
+ * details for the relevant filesystem type
+ */
+static struct fattr gen_fattr = {
+	NFLNK,				/* type */
+	NFSMODE_LNK | 0777,		/* mode */
+	1,				/* nlink */
+	0,				/* uid */
+	0,				/* gid */
+	0,				/* size */
+	4096,				/* blocksize */
+	0,				/* rdev */
+	1,				/* blocks */
+	0,				/* fsid */
+	0,				/* fileid */
+	{ 0, 0 },			/* atime */
+	{ 0, 0 },			/* mtime */
+	{ 0, 0 },			/* ctime */
+};
+
+/*
+ * Resize exported_ap map
+ */
+static int exported_ap_realloc_map P((int nsize));
+static int exported_ap_realloc_map(nsize)
+int nsize;
+{
+#ifdef notdef
+	/*
+	 * If a second realloc occasionally causes Amd to die
+	 * in then include this check.
+	 */
+	if (exported_ap_size != 0)	/* XXX */
+		return 0;
+#endif
+
+	/*
+	 * this shouldn't happen, but...
+	 */
+	if (nsize < 0 || nsize == exported_ap_size)
+		return 0;
+
+	exported_ap = (am_node **) xrealloc((voidp) exported_ap, nsize * sizeof(am_node*));
+
+	if (nsize > exported_ap_size)
+		bzero((char*) (exported_ap+exported_ap_size),
+			(nsize - exported_ap_size) * sizeof(am_node*));
+	exported_ap_size = nsize;
+
+	return 1;
+}
+
+	
+/*
  * The root of the mount tree.
  */
-static am_node *root_node;
+am_node *root_node;
 
 /*
  * Allocate a new mount slot and create
@@ -48,15 +106,16 @@ static am_node *root_node;
  * Fills in the map number of the node,
  * but leaves everything else uninitialised.
  */
-struct am_node *exported_ap_alloc(P_void)
+am_node *exported_ap_alloc(P_void)
 {
-	struct am_node *mp, **mpp;
+	am_node *mp, **mpp;
 
 	/*
-	 * First check if there are any slots left
+	 * First check if there are any slots left, realloc if needed
 	 */
-	if (first_free_map >= NEXP_AP)
-		return 0;
+	if (first_free_map >= exported_ap_size)
+		if (!exported_ap_realloc_map(exported_ap_size + NEXP_AP))
+			return 0;
 
 	/*
 	 * Grab the next free slot
@@ -70,11 +129,17 @@ struct am_node *exported_ap_alloc(P_void)
 	/*
 	 * Update free pointer
 	 */
-	while (first_free_map < NEXP_AP && exported_ap[first_free_map])
+	while (first_free_map < exported_ap_size && exported_ap[first_free_map])
 		first_free_map++;
 
 	if (first_free_map > last_used_map)
 		last_used_map = first_free_map - 1;
+
+	/*
+	 * Shrink exported_ap if reasonable
+	 */
+	if (last_used_map < exported_ap_size - (NEXP_AP + NEXP_AP_MARGIN))
+		exported_ap_realloc_map(exported_ap_size - NEXP_AP);
 
 #ifdef DEBUG
 	/*dlog("alloc_exp: last_used_map = %d, first_free_map = %d\n",
@@ -87,8 +152,9 @@ struct am_node *exported_ap_alloc(P_void)
 /*
  * Free a mount slot
  */
+void exported_ap_free P((am_node *mp));
 void exported_ap_free(mp)
-struct am_node *mp;
+am_node *mp;
 {
 	/*
 	 * Sanity check
@@ -119,7 +185,7 @@ struct am_node *mp;
 	/*
 	 * Free the mount node
 	 */
-	free(mp);
+	free((voidp) mp);
 }
 
 /*
@@ -186,8 +252,32 @@ am_node *mp;
 	mp->am_timeo_w = 0;
 
 	mp->am_ttl = clocktime();
-	mp->am_mnt->mf_fattr.atime.seconds = mp->am_ttl;
+	mp->am_fattr.atime.seconds = mp->am_ttl;
 	mp->am_ttl += mp->am_timeo;	/* sun's -tl option */
+}
+
+void mk_fattr P((am_node *mp, ftype vntype));
+void mk_fattr(mp, vntype)
+am_node *mp;
+ftype vntype;
+{
+	switch (vntype) {
+	case NFDIR:
+		mp->am_fattr.type = NFDIR;
+		mp->am_fattr.mode = NFSMODE_DIR | 0555;
+		mp->am_fattr.nlink = 2;
+		mp->am_fattr.size = 512;
+		break;
+	case NFLNK:
+		mp->am_fattr.type = NFLNK;
+		mp->am_fattr.mode = NFSMODE_LNK | 0777;
+		mp->am_fattr.nlink = 1;
+		mp->am_fattr.size = 0;
+		break;
+	default:
+		plog(XLOG_FATAL, "Unknown fattr type %d - ignored", vntype);
+		break;
+	}
 }
 
 /*
@@ -215,8 +305,16 @@ char *dir;
 	/*mp->am_pref = 0;*/
 
 	mp->am_timeo = am_timeo;
+	mp->am_attr.status = NFS_OK;
+	mp->am_fattr = gen_fattr;
+	mp->am_fattr.fsid = 42;
+	mp->am_fattr.fileid = 0;
+	mp->am_fattr.atime.seconds = clocktime();
+	mp->am_fattr.atime.useconds = 0;
+	mp->am_fattr.mtime = mp->am_fattr.ctime = mp->am_fattr.atime;
+
 	new_ttl(mp);
-	mp->am_stats.s_mtime = mp->am_mnt->mf_fattr.atime.seconds;
+	mp->am_stats.s_mtime = mp->am_fattr.atime.seconds;
 	/*mp->am_private = 0;*/
 }
 
@@ -241,8 +339,6 @@ am_node *mp;
 	if (mp->am_mnt)
 		free_mntfs(mp->am_mnt);
 
-	if (mp->am_flags & AMF_MKPATH)
-		rmdirs(mp->am_path);
 	exported_ap_free(mp);
 }
 
@@ -271,7 +367,7 @@ int c_or_d;
 	 * Make sure the index is valid before
 	 * exported_ap is referenced.
 	 */
-	if (fp->fhh_id < 0 || fp->fhh_id >= NEXP_AP)
+	if (fp->fhh_id < 0 || fp->fhh_id >= exported_ap_size)
 		goto drop;
 
 	/*
@@ -301,15 +397,17 @@ int c_or_d;
 		 */
 		if (ap->am_mnt && FSRV_ISDOWN(ap->am_mnt->mf_server) && ap->am_parent) {
 			int error;
+			am_node *orig_ap = ap;
 #ifdef DEBUG
-			dlog("fh_to_mp3: %s (%s) is hung:- call lookup", ap->am_path, ap->am_mnt->mf_info);
+			dlog("fh_to_mp3: %s (%s) is hung:- call lookup",
+					orig_ap->am_path, orig_ap->am_mnt->mf_info);
 #endif /* DEBUG */
 			/*
-			 * Update last access to original node.  This
-			 * avoids timing it out and so sending ESTALE
-			 * back to the kernel.
+			 * Update modify time of parent node.
+			 * With any luck the kernel will re-stat
+			 * the child node and get new information.
 			 */
-			new_ttl(ap);
+			orig_ap->am_fattr.mtime.seconds = clocktime();
 
 			/*
 			 * Call the parent's lookup routine for an object
@@ -319,8 +417,8 @@ int c_or_d;
 			 * to the caller.
 			 */
 			if (c_or_d == VLOOK_CREATE) {
-				ap = (*ap->am_parent->am_mnt->mf_ops->lookuppn)(ap->am_parent,
-						ap->am_name, &error, c_or_d);
+				ap = (*orig_ap->am_parent->am_mnt->mf_ops->lookuppn)(orig_ap->am_parent,
+						orig_ap->am_name, &error, c_or_d);
 			} else {
 				ap = 0;
 				error = ESTALE;
@@ -331,6 +429,14 @@ int c_or_d;
 				*rp = error;
 				return 0;
 			}
+			/*
+			 * Update last access to original node.  This
+			 * avoids timing it out and so sending ESTALE
+			 * back to the kernel.
+			 * XXX - Not sure we need this anymore (jsp, 90/10/6).
+			 */
+			new_ttl(orig_ap);
+
 		}
 		/*
 		 * Disallow references to objects being unmounted, unless
@@ -405,6 +511,7 @@ struct nfs_fh *fhp;
 	 */
 }
 
+static am_node *find_ap2 P((char *dir, am_node *mp));
 static am_node *find_ap2(dir, mp)
 char *dir;
 am_node *mp;
@@ -433,6 +540,7 @@ am_node *mp;
  * automount path or, if the node is
  * mounted, the mount location.
  */
+am_node *find_ap P((char *dir));
 am_node *find_ap(dir)
 char *dir;
 {
@@ -451,6 +559,24 @@ char *dir;
 }
 
 /*
+ * Find the mount node corresponding
+ * to the mntfs structure.
+ */
+am_node *find_mf P((mntfs *mf));
+am_node *find_mf(mf)
+mntfs *mf;
+{
+	int i;
+
+	for (i = last_used_map; i >= 0; --i) {
+		am_node *mp = exported_ap[i];
+		if (mp && mp->am_mnt == mf)
+			return mp;
+	}
+	return 0;
+}
+
+/*
  * Get the filehandle for a particular named directory.
  * This is used during the bootstrap to tell the kernel
  * the filehandles of the initial automount points.
@@ -462,6 +588,16 @@ char *dir;
 	am_node *mp = root_ap(dir, TRUE);
 	if (mp) {
 		mp_to_fh(mp, &nfh);
+		/*
+		 * Patch up PID to match main server...
+		 */
+		if (!foreground) {
+			long pid = getppid();
+			((struct am_fh *) &nfh)->fhh_pid = pid;
+#ifdef DEBUG
+			dlog("root_fh substitutes pid %d", pid);
+#endif
+		}
 		return &nfh;
 	}
 
@@ -487,49 +623,69 @@ int path;
  * Mount a top level automount node
  * by calling lookup in the parent
  * (root) node which will cause the
- * automount node to be automounted (!)
+ * automount node to be automounted.
  */
-static void mount_auto_node(dir)
+int mount_auto_node P((char *dir, voidp arg));
+int mount_auto_node(dir, arg)
 char *dir;
+voidp arg;
 {
 	int error = 0;
-	(void) afs_ops.lookuppn(root_node, dir, &error, VLOOK_CREATE);
-	if (error) {
+	(void) afs_ops.lookuppn((am_node *) arg, dir, &error, VLOOK_CREATE);
+	if (error > 0) {
 		errno = error; /* XXX */
-		plog(XLOG_ERROR, "Could not start server on %s: %m", dir);
+		plog(XLOG_ERROR, "Could not mount %s: %m", dir);
 	}
+	return error;
 }
 
 /*
  * Cause all the top-level mount nodes
  * to be automounted
  */
+int mount_exported P((void));
 int mount_exported()
 {
 	/*
 	 * Iterate over all the nodes to be started
 	 */
-	return root_keyiter(mount_auto_node);
+	return root_keyiter((void (*)P((char*,void*))) mount_auto_node, root_node);
 }
 
 /*
  * Construct top-level node
  */
+void make_root_node P((void));
 void make_root_node()
 {
 	mntfs *root_mnt;
 	char *rootmap = ROOT_MAP;
 	root_node = exported_ap_alloc();
 
+	/*
+	 * Allocate a new map
+	 */
 	init_map(root_node, "");
-	root_mnt = find_mntfs(&afs_ops, (am_opts *) 0, "", rootmap, "");
-	root_mnt->mf_mount = strealloc(root_mnt->mf_mount, pid_fsname);
-	root_mnt->mf_private = (voidp) mapc_find(rootmap, "");
-	root_mnt->mf_prfree = mapc_free;
+	/*
+	 * Allocate a new mounted filesystem
+	 */
+	root_mnt = find_mntfs(&root_ops, (am_opts *) 0, "", rootmap, "", "");
+	/*
+	 * Replace the initial null reference
+	 */
 	free_mntfs(root_node->am_mnt);
 	root_node->am_mnt = root_mnt;
-	root_node->am_flags |= AMF_NOTIMEOUT;
-	root_mnt->mf_error = 0;
+
+	/*
+	 * Initialise the root
+	 */
+	if (root_mnt->mf_ops->fs_init)
+		(*root_mnt->mf_ops->fs_init)(root_mnt);
+
+	/*
+	 * Mount the root
+	 */
+	root_mnt->mf_error = (*root_mnt->mf_ops->mount_fs)(root_node);
 }
 
 /*
@@ -554,14 +710,13 @@ void umount_exported(P_void)
 				 */
 				continue;
 			}
-			if (mf && mf->mf_ops == &dfs_ops) {
+			if (mf && !(mf->mf_ops->fs_flags & FS_DIRECTORY)) {
 				/*
 				 * When shutting down this had better
 				 * look like a directory, otherwise it
 				 * can't be unmounted!
 				 */
-				mf->mf_fattr.type = NFDIR;
-				mf->mf_fattr.mode = NFSMODE_DIR | 0555;
+				mk_fattr(mp, NFDIR);
 			}
 			if ((--immediate_abort < 0 && !(mp->am_flags & AMF_ROOT) && mp->am_parent) ||
 			    (mf->mf_flags & MFF_RESTART)) {
@@ -625,6 +780,7 @@ am_node *mp;
 }
 
 #ifdef FLUSH_KERNEL_NAME_CACHE
+static void flush_kernel_name_cache P((am_node*));
 static void flush_kernel_name_cache(mp)
 am_node *mp;
 {
@@ -718,7 +874,7 @@ voidp closure;
 
 	if (term) {
 		plog(XLOG_ERROR, "unmount for %s got signal %d", mp->am_path, term);
-#ifdef DEBUG
+#if defined(DEBUG) && defined(SIGTRAP)
 		/*
 		 * dbx likes to put a trap on exit().
 		 * Pretend it succeeded for now...

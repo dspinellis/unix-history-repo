@@ -1,5 +1,5 @@
 /*
- * $Id: info_ndbm.c,v 5.2 90/06/23 22:19:31 jsp Rel $
+ * $Id: info_ndbm.c,v 5.2.1.2 91/03/03 20:39:40 jsp Alpha $
  *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)info_ndbm.c	5.1 (Berkeley) %G%
+ *	@(#)info_ndbm.c	5.2 (Berkeley) %G%
  */
 
 /*
@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+static int search_ndbm P((DBM *db, char *key, char **val));
 static int search_ndbm(db, key, val)
 DBM *db;
 char *key;
@@ -42,6 +43,7 @@ char **val;
 	return ENOENT;
 }
 
+int ndbm_search P((mnt_map *m, char *map, char *key, char **pval, time_t *tp));
 int ndbm_search(m, map, key, pval, tp)
 mnt_map *m;
 char *map;
@@ -69,13 +71,21 @@ time_t *tp;
 	return errno;
 }
 
-int ndbm_init(map)
+int ndbm_init P((char *map, time_t *tp));
+int ndbm_init(map, tp)
 char *map;
+time_t *tp;
 {
 	DBM *db;
 
 	db = dbm_open(map, O_RDONLY, 0);
 	if (db) {
+		struct stat stb;
+
+		if (fstat(dbm_pagfno(db), &stb) < 0)
+			*tp = clocktime();
+		else
+			*tp = stb.st_mtime;
 		dbm_close(db);
 		return 0;
 	}

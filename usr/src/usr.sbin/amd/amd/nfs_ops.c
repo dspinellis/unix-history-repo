@@ -1,5 +1,5 @@
 /*
- * $Id: nfs_ops.c,v 5.2 90/06/23 22:19:45 jsp Rel $
+ * $Id: nfs_ops.c,v 5.2.1.4 91/03/17 17:45:55 jsp Alpha $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_ops.c	5.1 (Berkeley) %G%
+ *	@(#)nfs_ops.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
@@ -160,7 +160,7 @@ fserver *fs;
 {
 	fh_cache *fp;
 	ITER(fp, fh_cache, &fh_head) {
-		if (fp->fh_fs == fs) {
+		if (fp->fh_fs == fs || fs == 0) {
 			fp->fh_sin.sin_port = (u_short) 0;
 			fp->fh_error = -1;
 		}
@@ -353,9 +353,10 @@ voidp wchan;
  * remote hostname.
  * Local filesystem defaults to remote and vice-versa.
  */
-static int nfs_match(fo)
+static char *nfs_match(fo)
 am_opts *fo;
 {
+	char *xmtab;
 	if (fo->opt_fs && !fo->opt_rfs)
 		fo->opt_rfs = fo->opt_fs;
 	if (!fo->opt_rfs) {
@@ -369,15 +370,14 @@ am_opts *fo;
 	/*
 	 * Determine magic cookie to put in mtab
 	 */
-	fo->fs_mtab = (char *) xrealloc(fo->fs_mtab, strlen(fo->opt_rhost) +
-				strlen(fo->opt_rfs) + 2);
-	sprintf(fo->fs_mtab, "%s:%s", fo->opt_rhost, fo->opt_rfs);
+	xmtab = (char *) xmalloc(strlen(fo->opt_rhost) + strlen(fo->opt_rfs) + 2);
+	sprintf(xmtab, "%s:%s", fo->opt_rhost, fo->opt_rfs);
 #ifdef DEBUG
 	dlog("NFS: mounting remote server \"%s\", remote fs \"%s\" on \"%s\"",
 		fo->opt_rhost, fo->opt_rfs, fo->opt_fs);
 #endif /* DEBUG */
 
-	return TRUE;
+	return xmtab;
 }
 
 /*
@@ -386,17 +386,27 @@ am_opts *fo;
 static int nfs_init(mf)
 mntfs *mf;
 {
-	int error;
-	char *colon = strchr(mf->mf_info, ':');
-	if (colon == 0)
-		return ENOENT;
+	if (!mf->mf_private) {
+		int error;
+		struct fhstatus fhs;
+	
+		char *colon = strchr(mf->mf_info, ':');
+		if (colon == 0)
+			return ENOENT;
 
-	error = prime_nfs_fhandle_cache(colon+1, mf->mf_server, (struct fhstatus *) 0, (voidp) mf);
+		error = prime_nfs_fhandle_cache(colon+1, mf->mf_server, &fhs, (voidp) mf);
+		if (!error) {
+			mf->mf_private = (voidp) ALLOC(fhstatus);
+			mf->mf_prfree = (void (*)()) free;
+			bcopy((voidp) &fhs, mf->mf_private, sizeof(fhs));
+		}
+		return error;
+	}
 
-	return error;
+	return 0;
 }
 
-mount_nfs_fh(fhp, dir, fs_name, opts, mf)
+int mount_nfs_fh(fhp, dir, fs_name, opts, mf)
 struct fhstatus *fhp;
 char *dir;
 char *fs_name;
@@ -407,7 +417,7 @@ mntfs *mf;
 	struct mntent mnt;
 	int retry;
 	char *colon;
-	char *path;
+	/*char *path;*/
 	char host[MAXHOSTNAMELEN + MAXPATHLEN + 2];
 	fserver *fs = mf->mf_server;
 	int flags;
@@ -431,7 +441,7 @@ mntfs *mf;
 #ifndef NFS_ARGS_NEEDS_PATH
 	*colon = ':';
 #endif /* NFS_ARGS_NEEDS_PATH */
-	path = colon + 1;
+	/*path = colon + 1;*/
 
 	bzero((voidp) &nfs_args, sizeof(nfs_args));
 
@@ -499,6 +509,16 @@ mntfs *mf;
 	if (hasmntopt(&mnt, MNTOPT_SOFT) != NULL)
 		nfs_args.flags |= NFSMNT_SOFT;
 
+#ifdef NFSMNT_SPONGY
+	if (hasmntopt(&mnt, "spongy") != NULL) {
+		nfs_args.flags |= NFSMNT_SPONGY;
+		if (nfs_args.flags & NFSMNT_SOFT) {
+			plog(XLOG_USER, "Mount opts soft and spongy are incompatible - soft ignored");
+			nfs_args.flags &= ~NFSMNT_SOFT;
+		}
+	}
+#endif /* MNTOPT_SPONGY */
+
 #ifdef MNTOPT_INTR
 	if (hasmntopt(&mnt, MNTOPT_INTR) != NULL)
 		nfs_args.flags |= NFSMNT_INT;
@@ -509,6 +529,16 @@ mntfs *mf;
 		nfs_args.flags |= NFSMNT_NODEVS;
 #endif /* MNTOPT_NODEVS */
 
+#ifdef MNTOPT_COMPRESS
+	if (hasmntopt(&mnt, "compress") != NULL)
+		nfs_args.flags |= NFSMNT_COMPRESS;
+#endif /* MNTOPT_COMPRESS */
+
+#ifdef MNTOPT_NOCONN
+	if (hasmntopt(&mnt, "noconn") != NULL)
+		nfs_args.flags |= NFSMNT_NOCONN;
+#endif /* MNTOPT_NOCONN */
+
 #ifdef NFSMNT_PGTHRESH
 	if (nfs_args.pg_thresh = hasmntval(&mnt, "pgthresh"))
 		nfs_args.flags |= NFSMNT_PGTHRESH;
@@ -517,6 +547,11 @@ mntfs *mf;
 	NFS_SA_DREF(nfs_args, fs->fs_ip);
 
 	flags = compute_mount_flags(&mnt);
+
+#ifdef NFSMNT_NOCTO
+	if (hasmntopt(&mnt, "nocto") != NULL)
+		nfs_args.flags |= NFSMNT_NOCTO;
+#endif /* NFSMNT_NOCTO */
 
 #ifdef HAS_TCP_NFS
 	if (hasmntopt(&mnt, "tcp") != NULL)
@@ -544,12 +579,13 @@ mntfs *mf;
 	return mount_fs(&mnt, flags, (caddr_t) &nfs_args, retry, type);
 }
 
-static mount_nfs(dir, fs_name, opts, mf)
+static int mount_nfs(dir, fs_name, opts, mf)
 char *dir;
 char *fs_name;
 char *opts;
 mntfs *mf;
 {
+#ifdef notdef
 	int error;
 	struct fhstatus fhs;
 	char *colon;
@@ -566,15 +602,21 @@ mntfs *mf;
 		return error;
 
 	return mount_nfs_fh(&fhs, dir, fs_name, opts, mf);
+#endif
+	if (!mf->mf_private) {
+		plog(XLOG_ERROR, "Missing filehandle for %s", fs_name);
+		return EINVAL;
+	}
+
+	return mount_nfs_fh((struct fhstatus *) mf->mf_private, dir, fs_name, opts, mf);
 }
 
-static int nfs_mount(mp)
-am_node *mp;
+static int nfs_fmount(mf)
+mntfs *mf;
 {
-	mntfs *mf = mp->am_mnt;
+	int error;
 
-	int error = mount_nfs(mf->mf_mount, mf->mf_info,
-			mf->mf_fo->opt_opts, mf);
+	error = mount_nfs(mf->mf_mount, mf->mf_info, mf->mf_mopts, mf);
 
 #ifdef DEBUG
 	if (error) {
@@ -585,11 +627,9 @@ am_node *mp;
 	return error;
 }
 
-static int nfs_umount(mp)
-am_node *mp;
+static int nfs_fumount(mf)
+mntfs *mf;
 {
-	mntfs *mf = mp->am_mnt;
-
 	int error = UMOUNT_FS(mf->mf_mount);
 	if (error)
 		return error;
@@ -654,8 +694,10 @@ am_ops nfs_ops = {
 	"nfs",
 	nfs_match,
 	nfs_init,
-	nfs_mount,
-	nfs_umount,
+	auto_fmount,
+	nfs_fmount,
+	auto_fumount,
+	nfs_fumount,
 	efs_lookuppn,
 	efs_readdir,
 	0, /* nfs_readlink */

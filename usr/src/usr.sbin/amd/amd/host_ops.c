@@ -1,5 +1,5 @@
 /*
- * $Id: host_ops.c,v 5.2 90/06/23 22:19:26 jsp Rel $
+ * $Id: host_ops.c,v 5.2.1.3 91/03/03 20:42:25 jsp Alpha $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)host_ops.c	5.1 (Berkeley) %G%
+ *	@(#)host_ops.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
@@ -22,7 +22,11 @@
 #include <sys/stat.h>
 
 /*
- * NFS host file system
+ * NFS host file system.
+ * Mounts all exported filesystems from a given host.
+ * This has now degenerated into a mess but will not
+ * be rewritten.  Amd 6 will support the abstractions
+ * needed to make this work correctly.
  */
 
 /*
@@ -38,9 +42,20 @@
 #define HOST_MKDIRS
 
 /*
+ * Determine the mount point
+ */
+#define MAKE_MNTPT(mntpt, ex, mf) { \
+			if (strcmp((ex)->ex_dir, "/") == 0) \
+				strcpy((mntpt), (mf)->mf_mount); \
+			else \
+				sprintf((mntpt), "%s%s", (mf)->mf_mount, (ex)->ex_dir); \
+}
+
+/*
  * Execute needs the same as NFS plus a helper command
  */
-static int host_match(fo)
+static char *host_match P((am_opts *fo));
+static char *host_match(fo)
 am_opts *fo;
 {
 #ifdef HOST_EXEC
@@ -56,10 +71,8 @@ am_opts *fo;
 	if (!fo->opt_rfs)
 		fo->opt_rfs = "/";
 
-	if (!(*nfs_ops.fs_match)(fo))
-		return FALSE;
-
-	return TRUE;
+	
+	return (*nfs_ops.fs_match)(fo);
 }
 
 static int host_init(mf)
@@ -92,6 +105,7 @@ caddr_t args_ptr;
 	return ((*xdr_args)(&xdr, args_ptr));
 }
 
+static int do_mount P((fhstatus *fhp, char *dir, char *fs_name, char *opts, mntfs *mf));
 static int do_mount(fhp, dir, fs_name, opts, mf)
 fhstatus *fhp;
 char *dir;
@@ -114,7 +128,8 @@ mntfs *mf;
 	return mount_nfs_fh(fhp, dir, fs_name, opts, mf);
 }
 
-static sortfun(a, b)
+static int sortfun P((exports *a, exports *b));
+static int sortfun(a, b)
 exports *a,*b;
 {
 	return strcmp((*a)->ex_dir, (*b)->ex_dir);
@@ -123,6 +138,7 @@ exports *a,*b;
 /*
  * Get filehandle
  */
+static int fetch_fhandle P((CLIENT *client, char *dir, fhstatus *fhp));
 static int fetch_fhandle(client, dir, fhp)
 CLIENT *client;
 char *dir;
@@ -165,30 +181,59 @@ fhstatus *fhp;
 }
 
 /*
+ * Scan mount table to see if something already mounted
+ */
+static int already_mounted P((mntlist *mlist, char*dir));
+static int already_mounted(mlist, dir)
+mntlist *mlist;
+char *dir;
+{
+	mntlist *ml;
+
+	for (ml = mlist; ml; ml = ml->mnext)
+		if (strcmp(ml->mnt->mnt_dir, dir) == 0)
+			return 1;
+	return 0;
+}
+
+/*
  * Mount the export tree from a host
  */
-static int host_mount(mp)
-am_node *mp;
+static int host_fmount P((mntfs *mf));
+static int host_fmount(mf)
+mntfs *mf;
 {
 	struct timeval tv2;
 	CLIENT *client;
 	enum clnt_stat clnt_stat;
 	int n_export;
-	int j;
+	int j, k;
 	exports exlist = 0, ex;
 	exports *ep = 0;
 	fhstatus *fp = 0;
-	mntfs *mf = mp->am_mnt;
 	char *host = mf->mf_server->fs_host;
 	int error = 0;
 	struct sockaddr_in sin;
 	int sock = RPC_ANYSOCK;
 	int ok = FALSE;
-	
+	mntlist *mlist;
+	char fs_name[MAXPATHLEN], *rfs_dir;
+	char mntpt[MAXPATHLEN];
+
 #ifdef HOST_RPC_UDP
 	struct timeval tv;
 	tv.tv_sec = 10; tv.tv_usec = 0;
 #endif /* HOST_RPC_UDP */
+
+	/*
+	 * Read the mount list
+	 */
+	mlist = read_mtab(mf->mf_mount);
+
+	/*
+	 * Unlock the mount list
+	 */
+	unlock_mntlist();
 
 	/*
 	 * Take a copy of the server address
@@ -251,11 +296,16 @@ am_node *mp;
 
 	/*
 	 * Allocate an array of pointers into the list
-	 * so that they can be sorted.
+	 * so that they can be sorted.  If the filesystem
+	 * is already mounted then ignore it.
 	 */
 	ep = (exports *) xmalloc(n_export * sizeof(exports));
-	for (j = 0, ex = exlist; ex; ex = ex->ex_next, j++)
-		ep[j] = ex;
+	for (j = 0, ex = exlist; ex; ex = ex->ex_next) {
+		MAKE_MNTPT(mntpt, ex, mf);
+		if (!already_mounted(mlist, mntpt))
+			ep[j++] = ex;
+	}
+	n_export = j;
 
 	/*
 	 * Sort into order.
@@ -275,9 +325,18 @@ am_node *mp;
 	 * If a fetch fails then just zero out the array
 	 * reference but discard the error.
 	 */
-	for (j = 0; j < n_export; j++) {
-		if (error = fetch_fhandle(client, ep[j]->ex_dir, &fp[j]))
+	for (j = k = 0; j < n_export; j++) {
+		/* Check and avoid a duplicated export entry */
+		if (j > k && ep[k] && strcmp(ep[j]->ex_dir, ep[k]->ex_dir) == 0) {
+#ifdef DEBUG
+			dlog("avoiding dup fhandle requested for %s", ep[j]->ex_dir);
+#endif
 			ep[j] = 0;
+		} else {
+			k = j;
+			if (error = fetch_fhandle(client, ep[j]->ex_dir, &fp[j]))
+				ep[j] = 0;
+		}
 	}
 
 	/*
@@ -286,18 +345,19 @@ am_node *mp;
 	 * error code 0 at the end.  If they all fail then return
 	 * the last error code.
 	 */
+	strncpy(fs_name, mf->mf_info, sizeof(fs_name));
+	if ((rfs_dir = strchr(fs_name, ':')) == (char *) 0) {
+		plog(XLOG_FATAL, "host_fmount: mf_info has no colon");
+		error = EINVAL;
+		goto out;
+	}
+	++rfs_dir;
 	for (j = 0; j < n_export; j++) {
 		ex = ep[j];
 		if (ex) {
-			char fs_name[MAXPATHLEN];
-			char mntpt[MAXPATHLEN];
-			sprintf(fs_name, "%s:%s", host, ex->ex_dir);
-			if (strcmp(ex->ex_dir, "/") == 0)
-				strcpy(mntpt, mf->mf_mount);
-			else
-				sprintf(mntpt, "%s%s", mf->mf_mount, ex->ex_dir);
-			error = do_mount(&fp[j], mntpt, fs_name, mf->mf_fo->opt_opts, mf);
-			if (!error)
+			strcpy(rfs_dir, ex->ex_dir);
+			MAKE_MNTPT(mntpt, ex, mf);
+			if (do_mount(&fp[j], mntpt, fs_name, mf->mf_mopts, mf) == 0)
 				ok = TRUE;
 		}
 	}
@@ -306,6 +366,7 @@ am_node *mp;
 	 * Clean up and exit
 	 */
 out:
+	discard_mntlist(mlist);
 	if (ep)
 		free(ep);
 	if (fp)
@@ -325,6 +386,7 @@ out:
  * TODO:
  * Does not work if pref is "/".
  */
+static int directory_prefix P((char *pref, char *dir));
 static int directory_prefix(pref, dir)
 char *pref;
 char *dir;
@@ -340,10 +402,10 @@ char *dir;
 /*
  * Unmount a mount tree
  */
-static int host_umount(mp)
-am_node *mp;
+static int host_fumount P((mntfs *mf));
+static int host_fumount(mf)
+mntfs *mf;
 {
-	mntfs *mf = mp->am_mnt;
 	mntlist *ml, *mprev;
 	int xerror = 0;
 
@@ -373,7 +435,7 @@ am_node *mp;
 	/*
 	 * Unmount all filesystems...
 	 */
-	for (ml = mlist; ml; ml = ml->mnext) {
+	for (ml = mlist; ml && !xerror; ml = ml->mnext) {
 		char *dir = ml->mnt->mnt_dir;
 		if (directory_prefix(mf->mf_mount, dir)) {
 			int error;
@@ -407,11 +469,22 @@ am_node *mp;
 	 */
 	discard_mntlist(mlist);
 
+	/*
+	 * Try to remount, except when we are shutting down.
+	 */
+	if (xerror && amd_state != Finishing) {
+		xerror = host_fmount(mf);
+		if (!xerror) {
+			plog(XLOG_INFO, "Remounted host %s", mf->mf_info);
+			xerror = EBUSY;
+		}
+	}
 	return xerror;
 }
 
 #else /* HOST_EXEC */
 
+static int host_exec P((char*op, char*host, char*fs, char*opts));
 static int host_exec(op, host, fs, opts)
 char *op;
 char *host;
@@ -472,14 +545,16 @@ char *opts;
 	return error;
 }
 
+static int host_mount P((am_node *mp));
 static int host_mount(mp)
 am_node *mp;
 {
 	mntfs *mf = mp->am_mnt;
 
-	return host_exec("mount", mf->mf_server->fs_host, mf->mf_mount, mf->mf_fo->opt_opts);
+	return host_exec("mount", mf->mf_server->fs_host, mf->mf_mount, mf->mf_opts);
 }
 
+static int host_umount P((am_node *mp));
 static int host_umount(mp)
 am_node *mp;
 {
@@ -497,8 +572,10 @@ am_ops host_ops = {
 	"host",
 	host_match,
 	host_init,
-	host_mount,
-	host_umount,
+	auto_fmount,
+	host_fmount,
+	auto_fumount,
+	host_fumount,
 	efs_lookuppn,
 	efs_readdir,
 	0, /* host_readlink */

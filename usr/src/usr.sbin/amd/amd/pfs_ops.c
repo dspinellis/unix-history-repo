@@ -1,5 +1,5 @@
 /*
- * $Id: pfs_ops.c,v 5.2 90/06/23 22:19:53 jsp Rel $
+ * $Id: pfs_ops.c,v 5.2.1.1 90/10/21 22:29:36 jsp Exp $
  *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pfs_ops.c	5.1 (Berkeley) %G%
+ *	@(#)pfs_ops.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
@@ -25,18 +25,16 @@
 /*
  * Execute needs a mount and unmount command.
  */
-static int pfs_match(fo)
+static char *pfs_match(fo)
 am_opts *fo;
 {
 	char *prog;
 	if (!fo->opt_mount || !fo->opt_unmount) {
 		plog(XLOG_USER, "program: no mount/unmount specified");
-		return FALSE;
+		return 0;
 	}
 	prog = strchr(fo->opt_mount, ' ');
-	if (fo->fs_mtab = strealloc(fo->fs_mtab, prog ? prog+1 : fo->opt_mount))
-		return TRUE;
-	return FALSE;
+	return strdup(prog ? prog+1 : fo->opt_mount);
 }
 
 static int pfs_init(mf)
@@ -63,7 +61,7 @@ char *info;
 	info = strdup(info);
 	if (info == 0)
 		return ENOBUFS;
-	xivec = strsplit(info, '\'');
+	xivec = strsplit(info, ' ', '\'');
 	/*
 	 * Put stdout to stderr
 	 */
@@ -101,27 +99,23 @@ char *info;
 	/*
 	 * Free allocate memory
 	 */
-	free(info);
-	free(xivec);
+	free((voidp) info);
+	free((voidp) xivec);
 	/*
 	 * Return error
 	 */
 	return error;
 }
 
-static int pfs_mount(mp)
-am_node *mp;
+static int pfs_fmount(mf)
+mntfs *mf;
 {
-	mntfs *mf = mp->am_mnt;
-
 	return pfs_exec(mf->mf_fo->opt_mount);
 }
 
-static int pfs_umount(mp)
-am_node *mp;
+static int pfs_fumount(mf)
+mntfs *mf;
 {
-	mntfs *mf = mp->am_mnt;
-
 	return pfs_exec((char *) mf->mf_private);
 }
 
@@ -132,8 +126,10 @@ am_ops pfs_ops = {
 	"program",
 	pfs_match,
 	pfs_init,
-	pfs_mount,
-	pfs_umount,
+	auto_fmount,
+	pfs_fmount,
+	auto_fumount,
+	pfs_fumount,
 	efs_lookuppn,
 	efs_readdir,
 	0, /* pfs_readlink */

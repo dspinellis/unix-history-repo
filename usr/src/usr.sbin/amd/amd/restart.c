@@ -1,5 +1,5 @@
 /*
- * $Id: restart.c,v 5.2 90/06/23 22:19:55 jsp Rel $
+ * $Id: restart.c,v 5.2.1.2 90/11/04 23:17:27 jsp Exp $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)restart.c	5.1 (Berkeley) %G%
+ *	@(#)restart.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
@@ -103,20 +103,22 @@ void restart()
 				me->mnt_fsname = str3cat(me->mnt_fsname, mo.opt_rhost, ":", "/");
 			}
 			mo.opt_fs = me->mnt_dir;
+			mo.opt_opts = me->mnt_opts;
 
 			/*
 			 * Make a new mounted filesystem
 			 */
 			mf = find_mntfs(fs_ops, &mo, me->mnt_dir,
-				me->mnt_fsname, me->mnt_opts);
+				me->mnt_fsname, "", me->mnt_opts);
 			if (mf->mf_refc == 1) {
 				mf->mf_flags |= MFF_RESTART|MFF_MOUNTED;
 				mf->mf_error = 0;	/* Already mounted correctly */
+				mf->mf_fo = 0;
 				/*
 				 * If the restarted type is a link then
 				 * don't time out.
 				 */
-				if (fs_ops == &sfs_ops)
+				if (fs_ops == &sfs_ops || fs_ops == &ufs_ops)
 					mf->mf_flags |= MFF_RSTKEEP;
 				if (fs_ops->fs_init) {
 					/*

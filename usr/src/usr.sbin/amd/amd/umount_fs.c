@@ -1,5 +1,5 @@
 /*
- * $Id: umount_fs.c,v 5.2 90/06/23 22:20:04 jsp Rel $
+ * $Id: umount_fs.c,v 5.2.1.2 91/03/03 20:34:23 jsp Alpha $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umount_fs.c	5.1 (Berkeley) %G%
+ *	@(#)umount_fs.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
@@ -20,6 +20,7 @@
 
 #include <sys/mount.h>		/* For MNT_NOFORCE */
 
+int umount_fs P((char *fs_name));
 int umount_fs(fs_name)
 char *fs_name;
 {
@@ -33,12 +34,9 @@ eintr:
 	switch (error) {
 	case EINVAL:
 	case ENOTBLK:
+	case ENOENT:
 		plog(XLOG_WARNING, "unmount: %s is not mounted", fs_name);
 		error = 0;	/* Not really an error */
-		break;
-
-	case ENOENT:
-		plog(XLOG_ERROR, "mount point %s: %m", fs_name);
 		break;
 
 	case EINTR:

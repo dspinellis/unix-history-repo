@@ -1,5 +1,5 @@
 /*
- * $Id: get_args.c,v 5.2 90/06/23 22:19:24 jsp Rel $
+ * $Id: get_args.c,v 5.2.1.4 91/03/17 17:48:02 jsp Alpha $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)get_args.c	5.1 (Berkeley) %G%
+ *	@(#)get_args.c	5.2 (Berkeley) %G%
  */
 
 /*
@@ -41,35 +41,10 @@ char *domain;			/* YP domain */
 #ifdef UPDATE_MTAB
 char *mtab;
 #endif /* UPDATE_MTAB */
-FILE *logfp = stderr;		/* Log errors to stderr initially */
-#ifdef HAS_SYSLOG
-int syslogging;
-#endif /* HAS_SYSLOG */
 int afs_timeo = -1;
 int afs_retrans = -1;
 int am_timeo = AM_TTL;
 int am_timeo_w = AM_TTL_W;
-int xlog_level = 0;
-int xlog_level_init = ~0;
-
-/*
- * List of log options
- */
-static struct opt_tab xlog_opt[] = {
-	{ "all", XLOG_ALL },		/* All messages */
-#ifdef DEBUG
-	{ "debug", XLOG_DEBUG },	/* Debug messages */
-#endif /* DEBUG */
-	{ "error", XLOG_ERROR },	/* Non-fatal system errors */
-	{ "fatal", XLOG_FATAL },	/* Fatal errors */
-	{ "info", XLOG_INFO },		/* Information */
-	{ "map", XLOG_MAP },		/* Map errors */
-	{ "stats", XLOG_STATS },	/* Additional statistical information */
-	{ "user", XLOG_USER },		/* Non-fatal user errors */
-	{ "warn", XLOG_WARNING },	/* Warnings */
-	{ "warning", XLOG_WARNING },	/* Warnings */
-	{ 0, 0 }
-};
 
 #ifdef DEBUG
 /*
@@ -91,170 +66,16 @@ static struct opt_tab dbg_opt[] = {
 int debug_flags = D_AMQ			/* Register AMQ */
 		 |D_DAEMON		/* Enter daemon mode */
 		 ;
-#endif /* DEBUG */
 
-void show_opts(ch, opts)
-int ch;
-struct opt_tab *opts;
-{
-	/*
-	 * Display current debug options
-	 */
-	int i;
-	int s = '{';
-	fprintf(stderr, "\t[-%c {no}", ch);
-	for (i = 0; opts[i].opt; i++) {
-		fprintf(stderr, "%c%s", s, opts[i].opt);
-		s = ',';
-	}
-	fputs("}]\n", stderr);
-}
-
-static int option(s, optb, flags)
-char *s;
-struct opt_tab *optb;
-int *flags;
-{
-	char *p = s;
-	int errs = 0;
-
-	while (p && *p) {
-		int neg;
-		char *opt;
-		struct opt_tab *dp;
-
-		s = p;
-		p = strchr(p, ',');
-		if (p)
-			*p = '\0';
-
-		if (s[0] == 'n' && s[1] == 'o') {
-			opt = s + 2;
-			neg = 1;
-		} else {
-			opt = s;
-			neg = 0;
-		}
-
-		/*
-		 * Scan the array of debug options to find the
-		 * corresponding flag value.  If it is found
-		 * then set (or clear) the flag (depending on
-		 * whether the option was prefixed with "no").
-		 */
-		for (dp = optb; dp->opt; dp++) {
-			if (strcmp(opt, dp->opt) == 0) {
-				if (neg)
-					*flags &= ~dp->flag;
-				else
-					*flags |= dp->flag;
-				break;
-			}
-		}
-
-		if (dp->opt == 0) {
-			/*
-			 * This will log to stderr when parsing the command line
-			 * since any -l option will not yet have taken effect.
-			 */
-			plog(XLOG_USER, "option \"%s\" not recognised", s);
-			errs++;
-		}
-		/*
-		 * Put the comma back
-		 */
-		if (p)
-			*p++ = ',';
-	}
-
-	return errs;
-}
-
-/*
- * Switch on/off logging options
- */
-int switch_option(opt)
-char *opt;
-{
-	int xl = xlog_level;
-	int rc = option(opt, xlog_opt, &xl);
-	if (rc) {
-		rc = EINVAL;
-	} else {
-		/*
-		 * Keep track of initial log level, and
-		 * don't allow options to be turned off.
-		 */
-		if (xlog_level_init == ~0)
-			xlog_level_init = xl;
-		else
-			xl |= xlog_level_init;
-		xlog_level = xl;
-	}
-	return rc;
-}
-
-#ifdef DEBUG
 /*
  * Switch on/off debug options
  */
 int debug_option(opt)
 char *opt;
 {
-	return option(opt, dbg_opt, &debug_flags);
+	return cmdoption(opt, dbg_opt, &debug_flags);
 }
 #endif /* DEBUG */
-
-/*
- * Change current logfile
- */
-int switch_to_logfile(logfile)
-char *logfile;
-{
-	FILE *new_logfp = stderr;
-
-	if (logfile) {
-#ifdef HAS_SYSLOG
-		syslogging = 0;
-#endif /* HAS_SYSLOG */
-		if (strcmp(logfile, "/dev/stderr") == 0)
-			new_logfp = stderr;
-		else if (strcmp(logfile, "syslog") == 0) {
-#ifdef HAS_SYSLOG
-			syslogging = 1;
-			new_logfp = stderr;
-#ifdef LOG_CONS
-			openlog(progname, LOG_PID|LOG_CONS|LOG_NOWAIT,
-				LOG_DAEMON);
-#else
-			/* 4.2 compat mode - XXX */
-			openlog(progname, LOG_PID);
-#endif /* LOG_CONS */
-#else
-			plog(XLOG_WARNING, "syslog option not supported, logging unchanged");
-#endif /* HAS_SYSLOG */
-		} else {
-			(void) umask(orig_umask);
-			new_logfp = fopen(logfile, "a");
-			umask(0);
-		}
-	}
-
-	/*
-	 * If we couldn't open a new file, then continue using the old.
-	 */
-	if (!new_logfp && logfile) {
-		plog(XLOG_USER, "%s: Can't open logfile: %m", logfile);
-		return 1;
-	}
-	/*
-	 * Close the previous file
-	 */
-	if (logfp && logfp != stderr)
-		(void) fclose(logfp);
-	logfp = new_logfp;
-	return 0;
-}
 
 void get_args(c, v)
 int c;
@@ -264,21 +85,6 @@ char *v[];
 	int usage = 0;
 	char *logfile = 0;
 	char *sub_domain = 0;
-
-#if defined(DEBUG) && defined(PARANOID)
-	gargv = v;
-	progname = v[0];		/* Use argv[0] to try to solve Piete's problem */
-#else
-	if (v[0]) {
-		progname = strrchr(v[0], '/');
-		if (progname && progname[1])
-			progname++;
-		else
-			progname = v[0];
-	}
-#endif /* defined(DEBUG) && defined(PARANOID) */
-	if (!progname)
-		progname = "amd";
 
 	while ((opt_ch = getopt(c, v, "mnprva:c:d:h:k:l:t:w:x:y:C:D:")) != EOF)
 	switch (opt_ch) {
@@ -349,17 +155,13 @@ char *v[];
 		break;
 
 	case 'v':
-		{ char buf[256];
-		  show_rcs_info(version, buf);
-		  fputs(buf, stderr);
-		}
-		fprintf(stderr,
-			" for a%s %s running %s (%s-endian)\n",
-					strchr("aeiou", arch[0]) ? "n" : "",
-					arch, op_sys, endian);
+		fprintf(stderr, "%s%s (%s-endian).\n", copyright, version, endian);
 		fputs("Map support for: ", stderr);
 		mapc_showtypes(stderr);
+		fputs(".\nFS: ", stderr);
+		ops_showfstypes(stderr);
 		fputs(".\n", stderr);
+		fprintf(stderr, "Primary network is %s.\n", wire);
 		exit(0);
 		break;
 
@@ -398,11 +200,8 @@ char *v[];
 		break;
 	}
 
-	if (xlog_level == 0) {
-		/* Take copy to avoid writable-strings problem */
-		char *dfstr = strdup(XLOG_DEFSTR);
-		usage += switch_option(dfstr);
-		free((voidp) dfstr);
+	if (xlog_level_init == ~0) {
+		(void) switch_option("");
 #ifdef DEBUG
 		usage += switch_option("debug");
 #endif /* DEBUG */

@@ -1,5 +1,5 @@
 /*
- * $Id: srvr_afs.c,v 5.2 90/06/23 22:20:00 jsp Rel $
+ * $Id: srvr_afs.c,v 5.2.1.1 90/10/21 22:29:44 jsp Exp $
  *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)srvr_afs.c	5.1 (Berkeley) %G%
+ *	@(#)srvr_afs.c	5.2 (Berkeley) %G%
  */
 
 /*
