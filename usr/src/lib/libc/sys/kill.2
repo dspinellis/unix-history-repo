@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)kill.2	6.4 (Berkeley) %G%
+.\"	@(#)kill.2	6.5 (Berkeley) %G%
 .\"
 .TH KILL 2 ""
 .UC 4
@@ -31,7 +31,7 @@ The sending and receiving processes must
 have the same effective user ID, otherwise
 this call is restricted to the super-user.
 A single exception is the signal SIGCONT, which may always be sent
-to any child or grandchild of the current process.
+to any descendant of the current process.
 .PP
 If the process number is 0,
 the signal is sent to all processes in the
@@ -48,6 +48,7 @@ and the user is not the super-user,
 the signal is broadcast universally to
 all processes with the same uid as the user
 except the process sending the signal.
+No error is returned if any process could be signaled.
 .PP
 For compatibility with System V,
 if the process number is negative but not \-1,
@@ -73,8 +74,14 @@ occur:
 [ESRCH]
 No process can be found corresponding to that specified by \fIpid\fP.
 .TP 15
+[ESRCH]
+The process id was given as 0
+but the sending process does not have a process group.
+.TP 15
 [EPERM]
 The sending process is not the super-user and its effective
 user id does not match the effective user-id of the receiving process.
+When signaling a process group, this error was returned if any members
+of the group could not be signaled.
 .SH "SEE ALSO"
 getpid(2), getpgrp(2), killpg(2), sigvec(2)

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gettimeofday.2	6.6 (Berkeley) %G%
+.\"	@(#)gettimeofday.2	6.7 (Berkeley) %G%
 .\"
 .TH GETTIMEOFDAY 2 ""
 .UC 4
@@ -33,6 +33,8 @@ call, and set with the
 call.
 The time is expressed
 in seconds and microseconds since midnight (0 hour), January 1, 1970.
+The resolution of the system clock is hardware dependent,
+and the time may be updated continuously or in ``ticks.''
 If
 .I tzp
 is zero, the time zone information will not be returned or set.
@@ -83,10 +85,3 @@ An argument address referenced invalid memory.
 A user other than the super-user attempted to set the time.
 .SH "SEE ALSO"
 date(1), adjtime(2), ctime(3), timed(8)
-.SH BUGS
-Time is never correct enough to believe the microsecond
-values, although the
-.IR timed (8)
-mechanism does enable
-clusters of systems to synchronize their clocks
-to within a few milliseconds.
