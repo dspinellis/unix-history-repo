@@ -3,7 +3,7 @@
 # include <sys/stat.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.23	%G%";
+static char SccsId[] = "@(#)recipient.c	3.24	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -35,14 +35,19 @@ sendto(list, copyf, ctladdr)
 	bool more;		/* set if more addresses to send to */
 	ADDRESS *al;		/* list of addresses to send to */
 	bool firstone;		/* set on first address sent */
+	bool selfref;		/* set if this list includes ctladdr */
 
 # ifdef DEBUG
 	if (Debug > 1)
-		printf("sendto: %s\n", list);
+	{
+		printf("sendto: %s\n   ctladdr=", list);
+		printaddr(ctladdr, FALSE);
+	}
 # endif DEBUG
 
 	more = TRUE;
 	firstone = TRUE;
+	selfref = FALSE;
 	al = NULL;
 	for (p = list; more; )
 	{
@@ -66,16 +71,25 @@ sendto(list, copyf, ctladdr)
 		/* parse the address */
 		if ((a = parse(q, (ADDRESS *) NULL, copyf)) == NULL)
 			continue;
-
-		/* put it on the local send list */
 		a->q_next = al;
 		a->q_alias = ctladdr;
+
+		/* see if this should be marked as a primary address */
 		if (ctladdr == NULL ||
 		    (firstone && !more && bitset(QPRIMARY, ctladdr->q_flags)))
 			a->q_flags |= QPRIMARY;
-		al = a;
+
+		/* put on send queue or suppress self-reference */
+		if (ctladdr != NULL && sameaddr(ctladdr, a, FALSE))
+			selfref = TRUE;
+		else
+			al = a;
 		firstone = FALSE;
 	}
+
+	/* if this alias doesn't include itself, delete ctladdr */
+	if (!selfref && ctladdr != NULL)
+		ctladdr->q_flags |= QDONTSEND;
 
 	/* arrange to send to everyone on the local send list */
 	while (al != NULL)
@@ -116,7 +130,10 @@ recipient(a)
 	errno = 0;
 # ifdef DEBUG
 	if (Debug)
-		printf("recipient(%s)\n", To);
+	{
+		printf("\nrecipient: ");
+		printaddr(a, FALSE);
+	}
 # endif DEBUG
 
 	/* break aliasing loops */
@@ -160,7 +177,10 @@ recipient(a)
 		{
 # ifdef DEBUG
 			if (Debug)
-				printf("(%s in sendq)\n", a->q_paddr);
+			{
+				printf("%s in sendq: ", a->q_paddr);
+				printaddr(q, FALSE);
+			}
 # endif DEBUG
 			if (Verbose && !bitset(QDONTSEND, a->q_flags))
 				message(Arpa_Info, "duplicate suppressed");
