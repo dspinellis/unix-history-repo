@@ -5,7 +5,7 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#	@(#)Makefile.dist	8.6 (Berkeley) %G%
+#	@(#)Makefile.dist	8.7 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -84,7 +84,7 @@ install: install-sendmail install-docs
 
 install-sendmail: sendmail
 	install -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} sendmail ${BINDIR}
-	for i in ${LINKS}; do ; rm -f $$i; ln -s ${BINDIR}/sendmail $$i; done
+	for i in ${LINKS}; do rm -f $$i; ln -s ${BINDIR}/sendmail $$i; done
 	install -c -o ${BINOWN} -g ${BINGRP} -m 666 /dev/null \
 	    ${STDIR}/sendmail.st
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 sendmail.hf ${HFDIR}
