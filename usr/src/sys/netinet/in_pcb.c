@@ -1,4 +1,4 @@
-/*	in_pcb.c	6.3	84/10/19	*/
+/*	in_pcb.c	6.4	84/11/14	*/
 
 #include "param.h"
 #include "systm.h"
@@ -215,15 +215,14 @@ in_setpeeraddr(inp, nam)
 }
 
 /*
- * Pass an error to all internet connections
- * associated with address sin.  Call the
- * protocol specific routine to clean up the
- * mess afterwards.
+ * Pass some notification to all connections of a protocol
+ * associated with address dst.  Call the
+ * protocol specific routine to handle each connection.
  */
-in_pcbnotify(head, dst, errno, abort)
+in_pcbnotify(head, dst, errno, notify)
 	struct inpcb *head;
 	register struct in_addr *dst;
-	int errno, (*abort)();
+	int errno, (*notify)();
 {
 	register struct inpcb *inp, *oinp;
 	int s = splimp();
@@ -236,12 +235,31 @@ in_pcbnotify(head, dst, errno, abort)
 		}
 		if (inp->inp_socket == 0)
 			goto next;
-		inp->inp_socket->so_error = errno;
+		if (errno) 
+			inp->inp_socket->so_error = errno;
 		oinp = inp;
 		inp = inp->inp_next;
-		(*abort)(oinp);
+		(*notify)(oinp);
 	}
 	splx(s);
+}
+
+/*
+ * After a routing change, flush old routing
+ * and allocate a (hopefully) better one.
+ */
+in_rtchange(inp)
+	struct inpcb *inp;
+{
+	if (inp->inp_route.ro_rt) {
+		rtfree(inp->inp_route.ro_rt);
+		inp->inp_route.ro_rt = 0;
+		/*
+		 * A new route can be allocated the next time
+		 * output is attempted.
+		 */
+	}
+	/* SHOULD NOTIFY HIGHER-LEVEL PROTOCOLS */
 }
 
 struct inpcb *
