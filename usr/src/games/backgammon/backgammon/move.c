@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)move.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "back.h"
@@ -25,8 +25,8 @@ struct BOARD  {				/* structure of game position */
 	struct BOARD	*b_next;		/* forward queue pointer */
 };
 
-struct BOARD *freeq = -1;
-struct BOARD *checkq = -1;
+struct BOARD *freeq = 0;
+struct BOARD *checkq = 0;
 struct BOARD *bsave();
 struct BOARD *nextfree();
 
@@ -228,9 +228,9 @@ struct BOARD	*new;					/* item to insert */
 	register struct BOARD	*p = checkq;		/* queue pointer */
 	register int		result;			/* comparison result */
 
-	if (p == -1)  {				/* check if queue empty */
+	if (p == 0)  {				/* check if queue empty */
 		checkq = p = new;
-		p->b_next = -1;
+		p->b_next = 0;
 		return;
 	}
 
@@ -246,7 +246,7 @@ struct BOARD	*new;					/* item to insert */
 		return;
 	}
 
-	while (p->b_next != -1)  {		/* traverse queue */
+	while (p->b_next != 0)  {		/* traverse queue */
 		result = bcomp (new,p->b_next);
 		if (result < 0)  {			/* found place */
 			new->b_next = p->b_next;
@@ -262,7 +262,7 @@ struct BOARD	*new;					/* item to insert */
 	}
 						/* place at end of queue */
 	p->b_next = new;
-	new->b_next = -1;
+	new->b_next = 0;
 }
 
 bcomp (a,b)
@@ -315,13 +315,13 @@ struct BOARD *
 nextfree ()  {
 	struct BOARD	*new;
 
-	if (freeq == -1)  {
+	if (freeq == 0)  {
 		new = calloc (1,sizeof (struct BOARD));
 		if (new == 0)  {
 			writel ("\nOut of memory\n");
 			getout();
 		}
-		new->b_next = -1;
+		new->b_next = 0;
 		return (new);
 	}
 
@@ -346,7 +346,7 @@ pickmove ()  {
 		makefree (checkq);
 		checkq = next;
 		movcmp();
-	} while (checkq != -1);
+	} while (checkq != 0);
 
 	bcopy (now);
 }
