@@ -6,7 +6,7 @@
  */
 
 /*
- * Sccs ID @(#)configdefs.h	1.1 %G%
+ * Sccs ID @(#)configdefs.h	1.2 %G%
  */
 
 /*
@@ -46,9 +46,9 @@ struct netmach {
 /*
  * Data structure for table mapping network characters to network types.
  */
-struct nettypetab {
+struct ntypetab {
 	char	nt_char;		/* Actual character separator */
-	int	nt_type;		/* Type bit code */
+	int	nt_bcode;		/* Type bit code */
 };
 
 /*
@@ -66,7 +66,7 @@ struct nettypetab {
  * Table for mapping a network code to its type -- IMPLICIT routing or
  * IMPLICIT routing.
  */
-struct netkindtab {
+struct nkindtab {
 	int	nk_type;		/* Its bit code */
 	int	nk_kind;		/* Whether explicit or implicit */
 };
@@ -86,8 +86,8 @@ struct netorder {
  */
 #ifndef CONFIGFILE
 extern struct netmach netmach[1];
-extern struct nettypetab nettypetab[1];
-extern struct netkindtab netkindtab[1];
+extern struct ntypetab ntypetab[1];
+extern struct nkindtab nkindtab[1];
 extern struct netorder netorder[1];
 extern char *metanet;
 #endif
