@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ni.c	2.2 (CWI) 86/08/15";
+static char sccsid[] = "@(#)ni.c	2.3 (CWI) 89/08/14";
 #endif lint
 #include "tdef.h"
 
@@ -14,9 +14,9 @@ char	devname[20] = "37";
 
 #else
 
-char	termtab[NS] = "/usr/local/lib/ditroff/font";	/* rest added in ptinit() */
-char	fontfile[NS] = "/usr/local/lib/ditroff/font";	/* rest added in casefp() */
-char	devname[20]	 = "har";	/* default typesetter */
+char	termtab[NS] = "/usr/local/lib/font";	/* rest added in ptinit() */
+char	fontfile[NS] = "/usr/local/lib/font";	/* rest added in casefp() */
+char	devname[20]	 = "psc";	/* default typesetter */
 
 #endif
 char	obuf[OBUFSZ];	/* characters collected here for typesetter output */
@@ -43,7 +43,7 @@ struct numtab numtab[NN] = {
 int	pto = 10000;
 int	pfrom = 1;
 int	print = 1;
-char	nextf[NS] = "/usr/local/lib/ditroff/tmac/tmac.";
+char	nextf[NS] = "/usr/lib/tmac/tmac.";
 #ifndef NROFF
 int	oldbits = -1;
 #endif

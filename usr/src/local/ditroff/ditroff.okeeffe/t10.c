@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)t10.c	2.3 (CWI) 88/03/18";
+static char sccsid[] = "@(#)t10.c	2.4 (CWI) 89/08/14";
 #endif lint
 #include "tdef.h"
 #include <sgtty.h>
@@ -28,6 +28,10 @@ int	Unitwidth;
 int	nfonts;
 int	nsizes;
 int	nchtab;
+#ifndef 0
+int	nstips;
+tchar	*stiplab;
+#endif
 
 /* these characters are used as various signals or values
 /* in miscellaneous places.
@@ -80,6 +84,11 @@ ptinit()
 	nfonts = dev.nfonts;
 	nsizes = dev.nsizes;
 	nchtab = dev.nchtab;
+#ifndef 0
+	nstips = dev.spare1;
+			/* "unsigned" so very large files will work properly */
+	stiplab = (tchar *) setbrk((nstips + 1) * sizeof(tchar));
+#endif
 	filebase = setbrk(dev.filesize + 2 * EXTRAFONT);	/* enough room for whole file */
 	read(fin, filebase, dev.filesize);	/* all at once */
 	pstab = (short *) filebase;
@@ -105,9 +114,17 @@ ptinit()
 		 * skip also fcode, if there
 		 * See remarks in dev.h and makedev.c
 		 */
+#ifdef 0
 		if(fontbase[i]->fonttab == 1)
 			p += nw * sizeof(short);
+#endif
 	}
+#ifndef 0
+	for (i = 1; i <= nstips; i++) {		/* make stipple names tchars */
+		stiplab[i] = PAIR(*p, *(p+1));
+		while (*(p++));
+	}
+#endif
 	fontbase[0] = (struct Font *) p;	/* the last shall be first */
 	fontbase[0]->nwfont = MAXCHARS;
 	fontab[0] = p + sizeof (struct Font);
