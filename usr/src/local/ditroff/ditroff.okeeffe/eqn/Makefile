@@ -1,11 +1,11 @@
 
 #
-#	Makefile	(CWI)	1.1	85/03/01
+#	Makefile	(CWI)	1.2	85/03/12
 #
 CFLAGS= -O
 YFLAGS= -d
 DESTDIR=
-BINDIR=/usr/local
+BINDIR=/usr/local/.code
 OBJECTS= diacrit.o eqnbox.o font.o fromto.o funny.o glob.o integral.o \
  io.o lex.o lookup.o mark.o matrix.o move.o over.o paren.o \
  pile.o shift.o size.o sqrt.o text.o e.o
@@ -23,7 +23,7 @@ e.def:	y.tab.h
 ${OBJECTS}:	e.h e.def
 
 install: all
-	install -s dieqn ${DESTDIR}${BINNDIR}/dieqn
+	install -s dieqn ${DESTDIR}${BINDIR}/dieqn
 	install -c -m 644 dieqn.1 ${DESTDIR}/usr/man/manl/dieqn.1
 
 clean:
