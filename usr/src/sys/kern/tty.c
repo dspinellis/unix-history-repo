@@ -1,4 +1,4 @@
-/*	tty.c	6.6	83/09/28	*/
+/*	tty.c	6.7	83/10/01	*/
 
 #include "../machine/reg.h"
 
