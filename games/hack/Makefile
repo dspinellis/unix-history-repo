@@ -21,7 +21,7 @@ HIDEGAME=hidegame
 CLEANFILES= hack.onames.h makedefs
 
 hack.onames.h: makedefs def.objects.h
-	makedefs ${.CURDIR}/def.objects.h > hack.onames.h
+	./makedefs ${.CURDIR}/def.objects.h > hack.onames.h
 
 makedefs: makedefs.c
 	${CC} ${CFLAGS} -o ${.TARGET} ${.CURDIR}/${.PREFIX}.c
