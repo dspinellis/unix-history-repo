@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.13 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -491,7 +491,7 @@ setsignal(sig, handler)
 	int sig;
 	setsig_t handler;
 {
-#ifdef SYS5SIGNALS
+#if defined(SYS5SIGNALS) || defined(BSD4_3)
 	return signal(sig, handler);
 #else
 	struct sigaction n, o;
@@ -903,41 +903,6 @@ reapchild()
 # endif
 }
 /*
-**  SETENV -- set environment variable
-**
-**	Putenv is more modern, but this is a simpler interface
-**
-**	Parameters:
-**		name -- the name of the envariable.
-**		value -- the value of that envariable.
-**		overwrite -- if set, overwrite existing value
-**			(this is assumed to be set).
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		The environment is updated.
-*/
-
-#ifndef HASSETENV
-
-setenv(name, value, overwrite)
-	char *name;
-	char *value;
-	int overwrite;
-{
-	register char *p;
-
-	p = xalloc(strlen(name) + strlen(value) + 2);
-	strcpy(p, name);
-	strcat(p, "=");
-	strcat(p, value);
-	putenv(p);
-}
-
-#endif
-/*
 **  UNSETENV -- remove a variable from the environment
 **
 **	Not needed on newer systems.
@@ -1132,7 +1097,7 @@ setsid __P ((void))
 
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)getopt.c	4.3 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
+#endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
 
@@ -1296,7 +1261,7 @@ enoughspace(msize)
 #  else
 	struct statfs fs;
 #   define FSBLOCKSIZE	fs.f_bsize
-#   if defined(_SCO_UNIX_)
+#   if defined(_SCO_unix_)
 #    define f_bavail f_bfree
 #   endif
 #  endif

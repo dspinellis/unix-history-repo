@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.17 (Berkeley) %G%
+ *	@(#)conf.h	8.18 (Berkeley) %G%
  */
 
 /*
@@ -140,6 +140,11 @@
 #  define _PATH_UNIX	"/kernel/unix"
 #  ifndef _PATH_SENDMAILCF
 #   define _PATH_SENDMAILCF	"/etc/mail/sendmail.cf"
+#  endif
+#  ifndef _PATH_SENDMAILFC
+#   define _PATH_SENDMAILFC	"/etc/mail/sendmail.fc"
+#  endif
+#  ifndef _PATH_SENDMAILPID
 #   define _PATH_SENDMAILPID	"/etc/mail/sendmail.pid"
 #  endif
 
@@ -159,7 +164,6 @@
 #ifdef ultrix
 # define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASSETREUID	1	/* has setreuid(2) call */
-# define HASSETENV	1	/* has setenv(3) call */
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 /* # define HASFLOCK	1	/* has flock(2) call */
@@ -173,13 +177,11 @@
 */
 
 #ifdef __osf__
-# define HASSETENV	1	/* has setenv(3) call */
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 /* # define HASFLOCK	1	/* has flock(2) call */
 # define LA_TYPE	LA_INT
-# define LA_AVENRUN	"avenrun"
 #endif
 
 /*
@@ -192,6 +194,15 @@
 # define sleep		sleepX
 # define LA_TYPE	LA_ZERO
 typedef int		pid_t;
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/etc/sendmail/sendmail.cf"
+# endif
+# ifndef _PATH_SENDMAILFC
+#  define _PATH_SENDMAILFC	"/etc/sendmail/sendmail.fc"
+# endif
+# ifndef _PATH_SENDMAILPID
+#  define _PATH_SENDMAILPID	"/etc/sendmail/sendmail.pid"
+# endif
 #endif
 
 /*
@@ -199,8 +210,12 @@ typedef int		pid_t;
 */
 
 #ifdef BSD4_4
+# define HASUNSETENV	1	/* has unsetenv(3) call */
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
+# ifndef LA_TYPE
+#  define LA_TYPE	LA_SUBR
+# endif
 #endif
 
 /*
@@ -259,7 +274,6 @@ typedef int		pid_t;
 */
 
 #ifdef RISCOS
-# define HASSETENV	1	/* has setenv(3) call */
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 /* # define HASFLOCK	1	/* has flock(2) call */
 # define LA_TYPE	LA_INT
@@ -277,15 +291,10 @@ typedef int		pid_t;
 
 /* general BSD defines */
 #ifdef BSD
-# define HASSETENV	1	/* has setenv(3) call */
-# define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASGETDTABLESIZE 1	/* has getdtablesize(2) call */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(2) call */
 # define HASFLOCK	1	/* has flock(2) call */
-# ifndef LA_TYPE
-#  define LA_TYPE	LA_SUBR
-# endif
 #endif
 
 /* general System V defines */
@@ -437,7 +446,9 @@ struct utsname
 
 #ifdef HASFLOCK
 # include <sys/file.h>
-#else
+#endif
+
+#ifndef LOCK_SH
 # define LOCK_SH	0x01	/* shared lock */
 # define LOCK_EX	0x02	/* exclusive lock */
 # define LOCK_NB	0x04	/* non-blocking lock */
