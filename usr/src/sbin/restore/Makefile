@@ -1,44 +1,94 @@
 #
-# Copyright (c) 1983 Regents of the University of California.
+# Copyright (c) 1987 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5	(Berkeley)	%G%
 #
-DESTDIR=
-CFLAGS= -O
-FILES=	main.c interactive.c restore.c dirs.c symtab.c tape.c utilities.c
-OBJS=	main.o interactive.o restore.o dirs.o symtab.o utilities.o
+VPATH=	../dump:
+CFLAGS=	-O
+LIBC=	/lib/libc.a
+SRCS=	main.c interactive.c restore.c dirs.c symtab.c tape.c utilities.c \
+	../dump/dumprmt.c
+OBJS=	main.o interactive.o restore.o dirs.o symtab.o utilities.o tape.o
+ROBJS=	main.o interactive.o restore.o dirs.o symtab.o utilities.o rtape.o \
+	dumprmt.o
 
 all: restore rrestore
 
-restore: ${OBJS} tape.o
-	cc ${LDFLAGS} ${CFLAGS} -o restore ${OBJS} tape.o
+restore: ${OBJS} ${LIBC}
+	${CC} ${CFLAGS} -o $@ ${OBJS}
 
-rrestore: ${OBJS} rtape.o dumprmt.o
-	cc ${LDFLAGS} -o rrestore ${OBJS} rtape.o dumprmt.o
+rrestore: ${ROBJS} ${LIBC}
+	${CC} ${CFLAGS} -o $@ ${ROBJS}
 
-rtape.o: tape.c
-	cp tape.c rtape.c
-	cc ${CFLAGS} -c -DRRESTORE rtape.c
-	rm -f rtape.c
+rtape.o: ${LIBC} tape.c
+	${CC} ${CFLAGS} -c -DRRESTORE tape.c -o rtape.o
 
-dumprmt.o: ../dump/dumprmt.c
-	cc ${CFLAGS} -c ../dump/dumprmt.c
+clean: FRC
+	rm -f ${ROBJS} ${OBJS} core restore rrestore
 
-install: rrestore restore
-	install -s restore ${DESTDIR}/etc/restore
-	install -s -m 4755 rrestore ${DESTDIR}/etc/rrestore
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS}
 
-clean:
-	rm -f restore rrestore *.o errs a.out core
+install: FRC
+	install -s -o bin -g bin -m 755 restore ${DESTDIR}/etc/restore
+	install -s -o root -g bin -m 4755 rrestore ${DESTDIR}/etc/rrestore
 
-depend:
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
 
-lint:
-	lint ${FILES}
+tags: FRC
+	ctags ${SRCS}
 
-print:
-	@pr /usr/include/protocols/dumprestore.h restore.h ${FILES}
+FRC:
 
-${OBJS}: restore.h
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+main.o: main.c restore.h /usr/include/stdio.h /usr/include/sys/param.h
+main.o: /usr/include/sys/types.h /usr/include/signal.h
+main.o: /usr/include/machine/machparam.h /usr/include/sys/inode.h
+main.o: /usr/include/sys/fs.h /usr/include/sys/dir.h
+main.o: /usr/include/protocols/dumprestore.h /usr/include/signal.h
+interactive.o: interactive.c restore.h /usr/include/stdio.h
+interactive.o: /usr/include/sys/param.h /usr/include/sys/types.h
+interactive.o: /usr/include/signal.h /usr/include/machine/machparam.h
+interactive.o: /usr/include/sys/inode.h /usr/include/sys/fs.h
+interactive.o: /usr/include/sys/dir.h /usr/include/protocols/dumprestore.h
+interactive.o: /usr/include/setjmp.h
+restore.o: restore.c restore.h /usr/include/stdio.h /usr/include/sys/param.h
+restore.o: /usr/include/sys/types.h /usr/include/signal.h
+restore.o: /usr/include/machine/machparam.h /usr/include/sys/inode.h
+restore.o: /usr/include/sys/fs.h /usr/include/sys/dir.h
+dirs.o: dirs.c restore.h /usr/include/stdio.h /usr/include/sys/param.h
+dirs.o: /usr/include/sys/types.h /usr/include/signal.h
+dirs.o: /usr/include/machine/machparam.h /usr/include/sys/inode.h
+dirs.o: /usr/include/sys/fs.h /usr/include/sys/dir.h
+dirs.o: /usr/include/protocols/dumprestore.h /usr/include/sys/file.h
+symtab.o: symtab.c restore.h /usr/include/stdio.h /usr/include/sys/param.h
+symtab.o: /usr/include/sys/types.h /usr/include/signal.h
+symtab.o: /usr/include/machine/machparam.h /usr/include/sys/inode.h
+symtab.o: /usr/include/sys/fs.h /usr/include/sys/dir.h /usr/include/sys/stat.h
+tape.o: tape.c restore.h /usr/include/stdio.h /usr/include/sys/param.h
+tape.o: /usr/include/sys/types.h /usr/include/signal.h
+tape.o: /usr/include/machine/machparam.h /usr/include/sys/inode.h
+tape.o: /usr/include/sys/fs.h /usr/include/sys/dir.h
+tape.o: /usr/include/protocols/dumprestore.h /usr/include/sys/ioctl.h
+tape.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+tape.o: /usr/include/sys/mtio.h /usr/include/sys/file.h /usr/include/setjmp.h
+tape.o: /usr/include/sys/stat.h
+utilities.o: utilities.c restore.h /usr/include/stdio.h
+utilities.o: /usr/include/sys/param.h /usr/include/sys/types.h
+utilities.o: /usr/include/signal.h /usr/include/machine/machparam.h
+utilities.o: /usr/include/sys/inode.h /usr/include/sys/fs.h
+utilities.o: /usr/include/sys/dir.h
+dumprmt.o: ../dump/dumprmt.c /usr/include/sys/param.h /usr/include/sys/types.h
+dumprmt.o: /usr/include/signal.h /usr/include/machine/machparam.h
+dumprmt.o: /usr/include/sys/mtio.h /usr/include/sys/ioctl.h
+dumprmt.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+dumprmt.o: /usr/include/sys/socket.h /usr/include/sys/inode.h
+dumprmt.o: /usr/include/netinet/in.h /usr/include/stdio.h /usr/include/pwd.h
+dumprmt.o: /usr/include/netdb.h /usr/include/protocols/dumprestore.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY

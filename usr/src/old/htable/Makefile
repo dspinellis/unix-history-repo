@@ -1,38 +1,49 @@
 #
-# Copyright (c) 1980 Regents of the University of California.
+# Copyright (c) 1987 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4	(Berkeley)	%G%
 #
 CFLAGS=	-O
-DESTDIR=
-ALL=	htable
+LIBC=	/lib/libc.a
+SRCS=	htable.c parse.c scan.c
+OBJS=	htable.o parse.o scan.o
 
-all:	${ALL}
+all: htable
 
-htable:	htable.o parse.o scan.o
-	${CC} htable.o parse.o scan.o -o htable
-
-htable.o: htable.c htable.h
-	${CC} ${CFLAGS} -c htable.c
-
-scan.o:	scan.c htable.h y.tab.h
-
-parse.o: parse.c htable.h
-
-scan.c:	scan.l
-
-parse.c: parse.y
+htable: ${OBJS} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJS}
 
 y.tab.h:
-	${YACC} -d parse.y
-	rm y.tab.c
+	yacc -d parse.y
+	rm -f y.tab.c
 
-clean:
-	rm -f ${ALL} *.o *.s parse.c scan.c y.tab.h errs
+clean: FRC
+	rm -f ${OBJS} core htable parse.c scan.c y.tab.h
 
-install:
-	install -s htable ${DESTDIR}/etc/htable
+depend: ${SRCS} y.tab.h FRC
+	mkdep ${CFLAGS} ${SRCS}
 
-depend:
+install: FRC
+	install -s -o bin -g bin -m 755 htable ${DESTDIR}/etc/htable
+
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
+
+tags: FRC
+	ctags ${SRCS}
+
+FRC:
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+htable.o: htable.c /usr/include/stdio.h /usr/include/ctype.h
+htable.o: /usr/include/errno.h /usr/include/netdb.h htable.h
+htable.o: /usr/include/sys/types.h /usr/include/sys/socket.h
+htable.o: /usr/include/netinet/in.h
+parse.o: parse.c htable.h /usr/include/sys/types.h /usr/include/stdio.h
+scan.o: scan.c /usr/include/stdio.h y.tab.h htable.h /usr/include/sys/types.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
