@@ -4,7 +4,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)clock.c	7.4 (Berkeley) %G%
+ *	@(#)clock.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -93,15 +93,17 @@ inittodr(base)
 
 /*
  * Reset the TODR based on the time value; used when the TODR
- * has a preposterous value and also when the time is reset
- * by the stime system call.  Also called when the TODR goes past
- * TODRZERO + 100*(SECYEAR+2*SECDAY) (e.g. on Jan 2 just after midnight)
- * to wrap the TODR around.
+ * has a preposterous value, when the time is changed, and when rebooting.
+ * Also called when the TODR goes past TODRZERO + 100*(SECYEAR+2*SECDAY)
+ * (e.g. on Jan 2 just after midnight) to wrap the TODR around.
+ * Avoid doing this if we haven't figured out the time yet
+ * (e.g., when crashing during autoconfig).
  */
 resettodr()
 {
 
-	(*cpuops->cpu_clock->clkwrite)();
+	if (time.tv_sec)
+		(*cpuops->cpu_clock->clkwrite)();
 }
 
 /*
