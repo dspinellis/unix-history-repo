@@ -1,0 +1,67 @@
+HOME=/; export HOME
+if [ $1x = autobootx ]
+then
+	echo Automatic reboot in progress... >/dev/console
+	date >/dev/console
+	/etc/fsck -p >/dev/console
+	case $? in
+	0)
+		date >/dev/console
+		;;
+	4)
+		/etc/reboot -n
+		;;
+	8)
+		echo "Automatic reboot failed... help!" >/dev/console
+		exit 1
+		;;
+	12)
+		echo "Reboot interrupted" >/dev/console
+		exit 1
+		;;
+	*)
+		echo "Unknown error in reboot" > /dev/console
+		exit 1
+		;;
+	esac
+else
+	date >/dev/console
+fi
+rm -f /etc/nologin
+: should fix up the password lock file here if present
+cp /dev/null /etc/mtab
+chmod 666 /etc/motd
+/etc/swapon -a							>/dev/console
+/etc/mount -a							>/dev/console
+				echo preserving editor files 	>/dev/console
+(cd /tmp; /usr/lib/ex3.6preserve -a)
+				echo clearing /tmp 		>/dev/console
+(cd /tmp; rm -f *)
+				echo -n starting daemons:	>/dev/console
+/etc/update;			echo -n ' update'		>/dev/console
+/etc/cron;			echo -n ' cron'			>/dev/console
+/etc/accton /usr/adm/acct;	echo -n ' accounting'		>/dev/console
+if [ -d /usr/net/bin ]; then
+	sh /usr/net/bin/start &	
+				echo -n ' network'		>/dev/console
+fi
+/etc/comsat;			echo -n ' mail'			>/dev/console
+if [ -f /dev/cul0 ]; then
+	/usr/lib/dnd > /usr/adm/dndbug
+				echo -n ' dialer'		>/dev/console
+fi
+cd /usr/spool
+rm -f uucp/LCK.*
+if [ -f /dev/lp ]; then
+	rm -f lpd/lock; /usr/lib/lpd; echo -n ' printer'	>/dev/console
+fi
+if [ -f /dev/vpd ]; then
+	rm -f vpd/lock; /usr/lib/vpd; echo -n ' versatec'	>/dev/console
+fi
+if [ -f /dev/vad ]; then
+	rm -f vad/lock;	/usr/lib/vad; echo -n ' varian'		>/dev/console
+fi
+				echo '.'			>/dev/console
+				date				>/dev/console
+/etc/savecore /ra/sys_crash 2>&1 > /dev/console
+exit 0
