@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.15 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -248,7 +248,6 @@ getnewvnode(tag, mp, vops, vpp)
 	cache_purge(vp);
 	vp->v_tag = tag;
 	vp->v_op = vops;
-	vp->v_mount = mp;
 	insmntque(vp, mp);
 	VREF(vp);
 	*vpp = vp;
@@ -275,6 +274,7 @@ insmntque(vp, mp)
 	/*
 	 * Insert into list of vnodes for the new mount point, if available.
 	 */
+	vp->v_mount = mp;
 	if (mp == NULL) {
 		vp->v_mountf = NULL;
 		vp->v_mountb = NULL;
@@ -359,8 +359,9 @@ loop:
 	}
 	if (vp == NULL || vp->v_tag != VT_NON) {
 		if (vp != NULL) {
-			vp->v_flag |= VALIASED;
 			nvp->v_flag |= VALIASED;
+			vp->v_flag |= VALIASED;
+			vput(vp);
 		}
 		MALLOC(nvp->v_specinfo, struct specinfo *,
 			sizeof(struct specinfo), M_VNODE, M_WAITOK);
