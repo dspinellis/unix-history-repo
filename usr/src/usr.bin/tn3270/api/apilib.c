@@ -20,10 +20,11 @@ static int
  * Only certain routines need this (supervisor services come to mind).
  */
 
-int
-api_issue_regs(ah, al, bh, bl, cx, dx, parms, regs, sregs)
+static int
+api_issue_regs(ah, al, bh, bl, cx, dx, parms, length, regs, sregs)
 int		ah, al, bh, bl, cx, dx;
 char 		*parms;
+int		length;
 union REGS 	*regs;
 struct SREGS 	*sregs;
 {
@@ -42,7 +43,7 @@ struct SREGS 	*sregs;
     int86x(API_INTERRUPT_NUMBER, regs, regs, sregs);
 #endif	/* defined(MSDOS) */
 #if	defined(unix)
-    api_exch_api(regs, sregs);
+    api_exch_api(regs, sregs, parms, length);
 #endif	/* defined(unix) */
 
     if (regs->h.cl != 0) {
@@ -59,8 +60,8 @@ struct SREGS 	*sregs;
  * registers.  Most routines use this.
  */
 
-int
-api_issue(ah, al, bh, bl, cx, dx, parms)
+static int
+api_issue(ah, al, bh, bl, cx, dx, parms, length)
 int
     ah,
     al,
@@ -69,11 +70,12 @@ int
     cx,
     dx;
 char *parms;
+int length;				/* Length of parms */
 {
     union REGS regs;
     struct SREGS sregs;
 
-    return api_issue_regs(ah, al, bh, bl, cx, dx, parms, &regs, &sregs);
+    return api_issue_regs(ah, al, bh, bl, cx, dx, parms, length, &regs, &sregs);
 }
 
 /*
@@ -97,7 +99,7 @@ char *name;
 	}
     }
 
-    if (api_issue_regs(NAME_RESOLUTION, 0, 0, 0, 0, 0, &parms, &regs, &sregs)
+    if (api_issue_regs(NAME_RESOLUTION, 0, 0, 0, 0, 0, &parms, sizeof parms, &regs, &sregs)
 		    == -1) {
 	return -1;
     } else {
@@ -113,7 +115,7 @@ api_query_session_id(parms)
 QuerySessionIdParms *parms;
 {
     if (api_issue(0x09, QUERY_SESSION_ID, 0x80, 0x20, 0,
-					gate_sessmgr, (char *)parms) == -1) {
+					gate_sessmgr, (char *)parms, sizeof *parms) == -1) {
 	api_fcn_errno = 0;
 	api_fcn_fcn_id = 0;
 	return -1;
@@ -131,7 +133,7 @@ api_query_session_parameters(parms)
 QuerySessionParametersParms *parms;
 {
     if (api_issue(0x09, QUERY_SESSION_PARAMETERS, 0x80, 0x20, 0,
-					gate_sessmgr, (char *)parms) == -1) {
+			    gate_sessmgr, (char *)parms, sizeof *parms) == -1) {
 	api_fcn_errno = 0;
 	api_fcn_fcn_id = 0;
 	return -1;
@@ -148,7 +150,7 @@ api_query_session_cursor(parms)
 QuerySessionCursorParms *parms;
 {
     if (api_issue(0x09, QUERY_SESSION_CURSOR, 0x80, 0x20, 0xff,
-					gate_sessmgr, (char *)parms) == -1) {
+			gate_sessmgr, (char *)parms, sizeof *parms) == -1) {
 	api_fcn_errno = 0;
 	api_fcn_fcn_id = 0;
 	return -1;
@@ -169,7 +171,7 @@ api_connect_to_keyboard(parms)
 ConnectToKeyboardParms *parms;
 {
     if (api_issue(0x09, CONNECT_TO_KEYBOARD, 0x80, 0x20, 0,
-					gate_keyboard, (char *)parms) == -1) {
+			gate_keyboard, (char *)parms, sizeof *parms) == -1) {
 	api_fcn_errno = 0;
 	api_fcn_fcn_id = 0;
 	return -1;
@@ -187,7 +189,7 @@ api_disconnect_from_keyboard(parms)
 DisconnectFromKeyboardParms *parms;
 {
     if (api_issue(0x09, DISCONNECT_FROM_KEYBOARD, 0x80, 0x20, 0,
-					gate_keyboard, (char *)parms) == -1) {
+			gate_keyboard, (char *)parms, sizeof *parms) == -1) {
 	api_fcn_errno = 0;
 	api_fcn_fcn_id = 0;
 	return -1;
@@ -205,7 +207,7 @@ api_write_keystroke(parms)
 WriteKeystrokeParms *parms;
 {
     if (api_issue(0x09, WRITE_KEYSTROKE, 0x80, 0x20, 0,
-					gate_keyboard, (char *)parms) == -1) {
+			gate_keyboard, (char *)parms, sizeof *parms) == -1) {
 	api_fcn_errno = 0;
 	api_fcn_fcn_id = 0;
 	return -1;
@@ -223,7 +225,7 @@ api_disable_input(parms)
 DisableInputParms *parms;
 {
     if (api_issue(0x09, DISABLE_INPUT, 0x80, 0x20, 0,
-					gate_keyboard, (char *)parms) == -1) {
+			gate_keyboard, (char *)parms, sizeof *parms) == -1) {
 	api_fcn_errno = 0;
 	api_fcn_fcn_id = 0;
 	return -1;
@@ -240,7 +242,7 @@ api_enable_input(parms)
 EnableInputParms *parms;
 {
     if (api_issue(0x09, ENABLE_INPUT, 0x80, 0x20, 0,
-					gate_keyboard, (char *)parms) == -1) {
+			gate_keyboard, (char *)parms, sizeof *parms) == -1) {
 	api_fcn_errno = 0;
 	api_fcn_fcn_id = 0;
 	return -1;
@@ -261,7 +263,7 @@ api_copy_string(parms)
 CopyStringParms *parms;
 {
     if (api_issue(0x09, COPY_STRING, 0x80, 0x20, 0xff,
-					    gate_copy, (char *)parms) == -1) {
+			    gate_copy, (char *)parms, sizeof *parms) == -1) {
 	api_fcn_errno = 0;
 	api_fcn_fcn_id = 0;
 	return -1;
@@ -282,7 +284,7 @@ api_read_oia_group(parms)
 ReadOiaGroupParms *parms;
 {
     if (api_issue(0x09, READ_OIA_GROUP, 0x80, 0x20, 0xff,
-					    gate_oiam, (char *)parms) == -1) {
+			    gate_oiam, (char *)parms, sizeof *parms) == -1) {
 	api_fcn_errno = 0;
 	api_fcn_fcn_id = 0;
 	return -1;

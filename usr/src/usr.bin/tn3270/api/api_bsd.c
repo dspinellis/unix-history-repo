@@ -149,9 +149,11 @@ char	*string;		/* if non-zero, where to connect to */
 }
 
 
-api_exch_api(regs, sregs)
+api_exch_api(regs, sregs, parms, length)
 union REGS *regs;
 struct SREGS *sregs;
+char *parms;
+int length;
 {
     struct storage_descriptor sd;
     int i;
@@ -165,8 +167,12 @@ struct SREGS *sregs;
     if (api_exch_outtype(EXCH_TYPE_SREGS, sizeof *sregs, (char *)sregs) == -1) {
 	return -1;
     }
-    sd.length = 0;
+    sd.length = htons(length);
+    sd.location = htonl(parms);
     if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
+	return -1;
+    }
+    if (api_exch_outtype(EXCH_TYPE_BYTES, length, parms) == -1) {
 	return -1;
     }
     while ((i = api_exch_nextcommand()) != EXCH_CMD_REPLY) {
