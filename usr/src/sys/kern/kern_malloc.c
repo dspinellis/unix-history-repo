@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_malloc.c	7.15 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -36,12 +36,6 @@ long malloc_reentered;
 #define IN { if (malloc_reentered) panic("malloc reentered");\
 			else malloc_reentered = 1;}
 #define OUT (malloc_reentered = 0)
-
-struct {
-	int	nomap;
-	int	atlimit;
-	int	freemem;
-} KFail;
 
 /*
  * Allocate a block of memory
@@ -71,7 +65,6 @@ again:
 #ifdef KMEMSTATS
 	while (ksp->ks_memuse >= ksp->ks_limit) {
 		if (flags & M_NOWAIT) {
-			KFail.atlimit++;
 			OUT;
 			splx(s);
 			return (0);
@@ -90,7 +83,6 @@ again:
 			allocsize = 1 << indx;
 		npg = clrnd(btoc(allocsize));
 		if ((flags & M_NOWAIT) && freemem < npg) {
-			KFail.freemem++;
 			OUT;
 			splx(s);
 			return (0);
@@ -98,7 +90,6 @@ again:
 		alloc = rmalloc(kmemmap, npg);
 		if (alloc == 0) {
 			if (flags & M_NOWAIT) {
-				KFail.nomap++;
 				OUT;
 				splx(s);
 				return (0);
