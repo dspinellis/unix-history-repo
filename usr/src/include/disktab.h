@@ -1,10 +1,9 @@
-/*	@(#)disktab.h	4.1 (Berkeley) %G%	*/
+/*	@(#)disktab.h	4.2 (Berkeley) %G%	*/
 
 /*
  * Disk description table, see disktab(5)
  */
 #define	DISKTAB		"/etc/disktab"
-#define	DISKNMLG	32
 
 struct	disktab {
 	char	*d_name;		/* drive name */
