@@ -1,4 +1,4 @@
-/*	lfs_inode.c	6.11	84/08/29	*/
+/*	lfs_inode.c	6.12	85/02/11	*/
 
 #include "param.h"
 #include "systm.h"
@@ -369,18 +369,21 @@ iupdat(ip, ta, tm, waitfor)
  * NB: triple indirect blocks are untested.
  */
 itrunc(oip, length)
-	struct inode *oip;
+	register struct inode *oip;
 	u_long length;
 {
-	register i;
 	register daddr_t lastblock;
 	daddr_t bn, lastiblock[NIADDR];
 	register struct fs *fs;
 	register struct inode *ip;
+	struct buf *bp;
+	int offset, lbn, osize, size, error, count, level, s;
+	long nblocks, blocksreleased = 0;
+	register int i;
+	dev_t dev;
 	struct inode tip;
-	long blocksreleased = 0, nblocks;
-	long indirtrunc();
-	int level;
+	extern long indirtrunc();
+	extern struct cmap *mfind();
 
 	if (oip->i_size <= length) {
 		oip->i_flag |= ICHG|IUPD;
@@ -400,15 +403,50 @@ itrunc(oip, length)
 	lastiblock[TRIPLE] = lastiblock[DOUBLE] - NINDIR(fs) * NINDIR(fs);
 	nblocks = btodb(fs->fs_bsize);
 	/*
-	 * Update size of file and block pointers
+	 * Update the size of the file. If the file is not being
+	 * truncated to a block boundry, the contents of the
+	 * partial block following the end of the file must be
+	 * zero'ed in case it ever become accessable again because
+	 * of subsequent file growth.
+	 */
+	osize = oip->i_size;
+	offset = blkoff(fs, length);
+	if (offset == 0) {
+		oip->i_size = length;
+	} else {
+		lbn = lblkno(fs, length);
+		bn = fsbtodb(fs, bmap(oip, lbn, B_WRITE, offset));
+		if (u.u_error || (long)bn < 0)
+			return;
+		oip->i_size = length;
+		size = blksize(fs, oip, lbn);
+		count = howmany(size, DEV_BSIZE);
+		dev = oip->i_dev;
+		s = splimp();
+		for (i = 0; i < count; i += CLSIZE)
+			if (mfind(dev, bn + i))
+				munhash(dev, bn + i);
+		splx(s);
+		bp = bread(dev, bn, size);
+		if (bp->b_flags & B_ERROR) {
+			u.u_error = EIO;
+			oip->i_size = osize;
+			brelse(bp);
+			return;
+		}
+		bzero(bp->b_un.b_addr + offset, size - offset);
+		bdwrite(bp);
+	}
+	/*
+	 * Update file and block pointers
 	 * on disk before we start freeing blocks.
 	 * If we crash before free'ing blocks below,
 	 * the blocks will be returned to the free list.
 	 * lastiblock values are also normalized to -1
 	 * for calls to indirtrunc below.
-	 * (? fsck doesn't check validity of pointers in indirect blocks)
 	 */
 	tip = *oip;
+	tip.i_size = osize;
 	for (level = TRIPLE; level >= SINGLE; level--)
 		if (lastiblock[level] < 0) {
 			oip->i_ib[level] = 0;
@@ -416,14 +454,13 @@ itrunc(oip, length)
 		}
 	for (i = NDADDR - 1; i > lastblock; i--)
 		oip->i_db[i] = 0;
-	oip->i_size = length;
 	oip->i_flag |= ICHG|IUPD;
-	iupdat(oip, &time, &time, 1);
-	ip = &tip;
+	syncip(oip);
 
 	/*
 	 * Indirect blocks first.
 	 */
+	ip = &tip;
 	for (level = TRIPLE; level >= SINGLE; level--) {
 		bn = ip->i_ib[level];
 		if (bn != 0) {
