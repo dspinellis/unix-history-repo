@@ -1,4 +1,4 @@
-#	@(#)NEWS3400	7.5 (Berkeley) %G%
+#	@(#)NEWS3400	7.6 (Berkeley) %G%
 #
 # NWS-3400
 #
@@ -10,7 +10,6 @@ maxusers	32
 
 options		DEBUG
 options		DIAGNOSTIC
-#options	KADB
 options		QUOTA
 options		FIFO
 options		FFS
@@ -75,3 +74,4 @@ pseudo-device	ether
 
 pseudo-device	bm
 pseudo-device	"nwb253"
+#pseudo-device	"nwb251"

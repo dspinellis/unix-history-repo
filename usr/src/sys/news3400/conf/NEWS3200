@@ -1,4 +1,4 @@
-#	@(#)NEWS3200	7.5 (Berkeley) %G%
+#	@(#)NEWS3200	7.6 (Berkeley) %G%
 #
 # NWS-3200
 #
@@ -9,17 +9,19 @@ timezone	8 dst
 maxusers	32
 
 options		DEBUG
-options		INET
-#options		NS
-#options		KADB
-#options		QUOTA
+options		DIAGNOSTIC
+options		QUOTA
 options		FIFO
 options		FFS
 options		NFS
 options		MFS
-options		DIAGNOSTIC
+options		LOFS
+options		KERNFS
+options		FDESC
+options		INET
+options		MULTICAST
+options		MROUTING
 options		KTRACE
-#options		NSIP
 options		"TCP_COMPAT_42"
 options		"COMPAT_43"
 options		SWAPPAGER,VNODEPAGER,DEVPAGER
@@ -34,13 +36,11 @@ options		SWAPPAGER,VNODEPAGER,DEVPAGER
 #
 options		CPU_SINGLE
 options		COMPAT_NEWSOS
-options		"PARK2_BUG"
 options		"NEWS3200"
 options		"news3200"
-options		BUGFIX
-options		FILE_BUGFIX
 
-config		vmunix	root on sd0f swap on sd0b and sd1b
+config		vmunix root on sd0a swap on sd0b and sd1b
+config		vmunix_0f root on sd0f swap on sd0b and sd1b
 
 #
 # nexus
@@ -59,7 +59,7 @@ master	sdc5	at hb0					priority 5
 master	sdc6	at hb0					priority 6
 
 disk		sd0	at sdc0 drive 0
-#disk		sd1	at sdc1 drive 0
+disk		sd1	at sdc1 drive 0
 
 device		en0	at hb0					priority 16
 device		kb0	at hb0					priority 36
