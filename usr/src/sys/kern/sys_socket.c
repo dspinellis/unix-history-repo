@@ -1,4 +1,4 @@
-/*	sys_socket.c	4.3	83/06/12	*/
+/*	sys_socket.c	4.4	83/06/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -46,59 +46,43 @@ soo_ioctl(fp, cmd, data)
 			so->so_state |= SS_NBIO;
 		else
 			so->so_state &= ~SS_NBIO;
-		break;
+		return (0);
 
 	case FIOASYNC:
 		if (*(int *)data)
 			so->so_state |= SS_ASYNC;
 		else
 			so->so_state &= ~SS_ASYNC;
-		break;
+		return (0);
 
 	case FIONREAD:
 		*(int *)data = so->so_rcv.sb_cc;
-		break;
+		return (0);
 
 	case SIOCSPGRP:
 		so->so_pgrp = *(int *)data;
-		break;
+		return (0);
 
 	case SIOCGPGRP:
 		*(int *)data = so->so_pgrp;
-		break;
+		return (0);
 
 	case SIOCATMARK:
 		*(int *)data = (so->so_state&SS_RCVATMARK) != 0;
-		break;
-
-	/* routing table update calls */
-	case SIOCADDRT:
-	case SIOCDELRT:
-		if (!suser())
-			return (u.u_error);
-		return (rtrequest(cmd, (struct rtentry *)data));
-
-	/* interface parameter requests */
-	case SIOCSIFADDR:
-	case SIOCSIFFLAGS:
-	case SIOCSIFDSTADDR:
-		if (!suser())
-			return (u.u_error);
-		return (ifrequest(cmd, data));
-
-	case SIOCGIFADDR:
-	case SIOCGIFFLAGS:
-	case SIOCGIFDSTADDR:
-		return (ifrequest(cmd, data));
-
-	case SIOCGIFCONF:
-		return (ifconf(cmd, data));
-
-	/* type/protocol specific ioctls */
-	default:
-		return (ENOTTY);		/* XXX */
+		return (0);
 	}
-	return (0);
+	/*
+	 * Interface/routing/protocol specific ioctls:
+	 * interface and routing ioctls should have a
+	 * different entry since a socket's unnecessary
+	 */
+#define	cmdbyte(x)	(((x) >> 8) & 0xff)
+	if (cmdbyte(cmd) == 'i')
+		return (ifioctl(cmd, data));
+	if (cmdbyte(cmd) == 'r')
+		return (rtioctl(cmd, data));
+	return ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL, 
+	    (struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0));
 }
 
 soo_select(fp, which)

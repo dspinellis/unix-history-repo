@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	1.10	83/05/27	*/
+/*	uipc_usrreq.c	1.11	83/06/12	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -193,8 +193,7 @@ uipc_usrreq(so, req, m, nam, rights)
 
 /* SOME AS YET UNIMPLEMENTED HOOKS */
 	case PRU_CONTROL:
-		error = EOPNOTSUPP;
-		break;
+		return (EOPNOTSUPP);
 
 	case PRU_SENSE:
 		error = EOPNOTSUPP;

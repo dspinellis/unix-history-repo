@@ -1,4 +1,4 @@
-/*	ioctl.h	4.32	83/05/27	*/
+/*	ioctl.h	4.33	83/06/12	*/
 /*
  * Ioctl definitions
  */
@@ -203,13 +203,15 @@ struct ltchars {
 #define	SIOCATMARK	_IOR(s,  7, int)		/* at oob mark? */
 #define	SIOCSPGRP	_IOW(s,  8, int)		/* set process group */
 #define	SIOCGPGRP	_IOR(s,  9, int)		/* get process group */
-#define	SIOCADDRT	_IOW(s, 10, struct rtentry)	/* add route */
-#define	SIOCDELRT	_IOW(s, 11, struct rtentry)	/* delete route */
-#define	SIOCSIFADDR	_IOW(s, 12, struct ifreq)	/* set ifnet address */
-#define	SIOCGIFADDR	_IOWR(s,13, struct ifreq)	/* get ifnet address */
-#define	SIOCSIFDSTADDR	_IOW(s, 14, struct ifreq)	/* set p-p address */
-#define	SIOCGIFDSTADDR	_IOWR(s,15, struct ifreq)	/* get p-p address */
-#define	SIOCSIFFLAGS	_IOW(s, 16, struct ifreq)	/* set ifnet flags */
-#define	SIOCGIFFLAGS	_IOWR(s,17, struct ifreq)	/* get ifnet flags */
-#define	SIOCGIFCONF	_IOWR(s,20, struct ifconf)	/* get ifnet list */
+
+#define	SIOCADDRT	_IOW(r, 10, struct rtentry)	/* add route */
+#define	SIOCDELRT	_IOW(r, 11, struct rtentry)	/* delete route */
+
+#define	SIOCSIFADDR	_IOW(i, 12, struct ifreq)	/* set ifnet address */
+#define	SIOCGIFADDR	_IOWR(i,13, struct ifreq)	/* get ifnet address */
+#define	SIOCSIFDSTADDR	_IOW(i, 14, struct ifreq)	/* set p-p address */
+#define	SIOCGIFDSTADDR	_IOWR(i,15, struct ifreq)	/* get p-p address */
+#define	SIOCSIFFLAGS	_IOW(i, 16, struct ifreq)	/* set ifnet flags */
+#define	SIOCGIFFLAGS	_IOWR(i,17, struct ifreq)	/* get ifnet flags */
+#define	SIOCGIFCONF	_IOWR(i,20, struct ifconf)	/* get ifnet list */
 #endif
