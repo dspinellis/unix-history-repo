@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)kill.2	6.1 (Berkeley) %G%
+.\"	@(#)kill.2	6.2 (Berkeley) %G%
 .\"
 .TH KILL 2 ""
 .UC 4
@@ -38,10 +38,23 @@ the signal is sent to all other processes in the
 sender's process group; this is a variant of
 .IR killpg (2).
 .PP
-If the process number is \-1, and the user is the super-user,
+If the process number is \-1,
+and the user is the super-user,
 the signal is broadcast universally
 except to system processes
 and the process sending the signal.
+If the process number is \-1,
+and the user is not the super-user,
+the signal is broadcast universally to
+all processes with the same uid as the user
+except the process sending the signal.
+.PP
+For compatibility with System V,
+a negative process number that is not -1,
+is sent to all processes whose process group ID
+is equal to the absolute value of the process number.
+This is a variant of
+.IR killpg (2).
 .PP
 Processes may send signals to themselves.
 .SH "RETURN VALUE
