@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.25		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.26		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.25		%G%);
+SCCSID(@(#)queue.c	3.26		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -453,7 +453,8 @@ dowork(w)
 		openxscrpt();
 		initsys();
 		readqf(w->w_name);
-		sendall(CurEnv, FALSE);
+		if (!FatalErrors)
+			sendall(CurEnv, FALSE);
 # ifdef DEBUG
 		if (Debug > 2)
 			printf("CurTime=%ld, TimeOut=%ld\n", CurTime, TimeOut);
