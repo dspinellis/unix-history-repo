@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)title.urm	8.3 (Berkeley) %G%
+.\"	@(#)title.urm	8.4 (Berkeley) %G%
 .\"
 .af % i
 .EH ''''
@@ -19,29 +19,70 @@
 .ce 2
 UNIX User's Reference Manual
 (URM)
-.nr PS 14
-.nr VS 16
+.nr LL 5.5i
+.nr PO 1.5i
+.bp
+\&
+.sp |1.5i
+.nr PS 11
+.nr VS 13
 .LP
+The USENIX Association,
+the UNIX and Advanced Computing Systems professional and technical organization,
+is a not-for-profit membership association of individuals and
+institutions with an interest in UNIX and UNIX-like systems,
+and, by extension, C++, X windows, and other programming tools.
+It is dedicated to:
+.IP \(bu
+fostering innovation and communicating research and technological devlopments,
+.IP \(bu
+sharing ideas and experience relevant to UNIX,
+UNIX-related, and advanced computing systems, and
+.IP \(bu
+providing a neutral forum for the exercise of critical
+thought and airing of technical issues.
+.LP
+USENIX publishes a journal (\fBComputing Systems\fP),
+Conference and Workshop Proceedings, and a Book Series.
+.nr LL 6i
+.nr PO 1i
+.bp
+\&
+.sp |2.75i
+.nr PS 18
+.nr VS 22
+.LP
+.ft B
+.ce 2
+UNIX User's Reference Manual
+(URM)
 .sp |4i
-.ce 1
+.ce 2
 4.4 Berkeley Software Distribution
-.sp |5.75i
-.ft R
-.nr PS 12
+(June, 1993)
+.sp 3
+.nr PS 15
+.nr VS 18
 .LP
-.ce
-June, 1993
-.sp |8.2i
-.ce 5
+.ce 2
 Computer Systems Research Group
-Computer Science Division
-Department of Electrical Engineering and Computer Science
-University of California
-Berkeley, California  94720
+University of California, Berkeley
+.sp |8.2i
+.nr PS 12
+.nr VS 15
+.LP
+.ce 4
+A USENIX Association Book
+The MIT Press
+Cambridge, Massachusetts
+London, England
 .bp
 .hy 0
 .nr PS 9
 .nr VS 11
+.LP
+First Printing, 1993
+.sp 1
 .LP
 Copyright 1979, 1980, 1983, 1986, 1993
 The Regents of the University of California.  All rights reserved.
