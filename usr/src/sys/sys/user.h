@@ -1,4 +1,4 @@
-/*	user.h	4.9	81/11/29	*/
+/*	user.h	4.10	82/02/15	*/
 
 #ifdef KERNEL
 #include "../h/pcb.h"
@@ -35,6 +35,8 @@ struct	user
 	char	u_error;		/* return error code */
 	short	u_uid;			/* effective user id */
 	short	u_gid;			/* effective group id */
+	int	u_grps[NGRPS/(sizeof(int)*8)];
+					/* group bit array */
 	short	u_ruid;			/* real user id */
 	short	u_rgid;			/* real group id */
 	struct	proc *u_procp;		/* pointer to proc structure */
