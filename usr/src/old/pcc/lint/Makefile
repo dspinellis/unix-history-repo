@@ -1,8 +1,12 @@
 #
-#	@(#)Makefile	1.13	(Berkeley)	%G%
+#	@(#)Makefile	1.14	(Berkeley)	%G%
 #
 M=/usr/src/lib/mip
-P=/usr/src/lib/pcc
+#ifdef vax
+#P=/usr/src/lib/pcc.vax
+#else
+P=/usr/src/lib/pcc.tahoe
+#endif
 CFLAGS=-O
 LINTLIBS=llib-port.ln llib-lc.ln llib-lcurses.ln llib-ldbm.ln llib-lm.ln \
 	llib-lmp.ln llib-lplot.ln llib-ltermcap.ln
@@ -13,9 +17,9 @@ SRCS=	$M/cgram.y $M/common.c $M/optim.c $M/pftn.c $M/scan.c $M/trees.c \
 all:	lpass1 lpass2 ${LINTLIBS}
 
 lpass1: cgram.o rodata.o comm1.o optim.o pftn.o scan.o trees.o xdefs.o \
-	lint.o hash.o
+	lint.o hash.o rel.o
 	${CC} ${CFLAGS} cgram.o rodata.o comm1.o optim.o pftn.o scan.o \
-		trees.o xdefs.o lint.o hash.o -o lpass1
+		trees.o xdefs.o lint.o hash.o rel.o -o lpass1
 
 cgram.o: $M/manifest.h $M/pass1.h pcclocal.h macdefs.h cgram.c
 	$(CC) -c $(CFLAGS) -I$M -I. cgram.c
@@ -24,7 +28,7 @@ rodata.o: rodata.c
 	$(CC) -c $(CFLAGS) -R rodata.c
 
 comm1.o: $M/manifest.h $M/pass1.h pcclocal.h $M/common.c macdefs.h
-	ln $M/common.c comm1.c
+	ln -s $M/common.c comm1.c
 	$(CC) -c $(CFLAGS) -I$M -I. -DPASS1COMMON comm1.c
 	rm -f comm1.c
 
@@ -42,6 +46,9 @@ trees.o: $M/manifest.h macdefs.h $M/pass1.h pcclocal.h $M/trees.c
 
 xdefs.o: $M/manifest.h $M/pass1.h pcclocal.h macdefs.h $M/xdefs.c
 	$(CC) -c $(CFLAGS) -I$M -I. $M/xdefs.c
+
+rel.o:	$P/rel.c
+	${CC} -c ${CFLAGS} $P/rel.c
 
 rodata.c cgram.c: $M/cgram.y pcctokens
 	cat pcctokens $M/cgram.y > gram.in
