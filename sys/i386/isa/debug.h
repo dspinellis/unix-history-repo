@@ -1,4 +1,7 @@
-/* debug.h */
+/*
+ *	from: debug.h, part of Bruce Evans interrupt code
+ *	$Id$
+ */
 
 #define	SHOW_A_LOT_NOT
 

@@ -30,19 +30,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)com.c	7.5 (Berkeley) 5/16/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         4       00079
- * --------------------         -----   ----------------------
- *
- * 23 Sep 92	Rodney W. Grimes	Fix SILO overflow on 16550 UARTS
- * 30 Aug 92	Poul-Henning Kamp	Stabilize SLIP on lossy lines/UARTS
- * 09 Aug 92	Christoph Robitschko	Correct minor number on com ports
- * 10 Feb 93	Jordan K. Hubbard	Added select code
+ *	from: @(#)com.c	7.5 (Berkeley) 5/16/91
+ *	$Id$
  */
-static char rcsid[] = "$Header: /freefall/a/cvs/386BSD/src/sys/i386/isa/com.c,v 1.3 1993/08/11 13:16:52 root Exp $";
 
 #include "com.h"
 #if NCOM > 0
