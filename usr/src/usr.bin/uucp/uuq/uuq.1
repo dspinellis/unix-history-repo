@@ -1,0 +1,62 @@
+.\"	@(#)uuq.1	6.1 (Berkeley) %G%
+.\"
+.TH UUQ 1C ""
+.UC 6
+.SH NAME
+uuq \- examine or manipulate the uucp queue
+.SH SYNOPSIS
+.B uuq
+[\fB-l\fP] [\fB-h] [\fB-s\fPsystem] [\fB-u\fPuser] [\fB-d\fPjobno] [\fB-r\fPsdir] [\fB-b\fPbaudrate]
+.SH DESCRIPTION
+.I Uuq
+is used to examine (and possibly delete) entries in the uucp queue.
+.PP
+When listing jobs,
+.I uuq
+uses a format reminiscent of ls.
+For the long format,
+information for each job listed includes:
+job number, number of files to transfer, user who
+spooled the job, number of bytes to send, type of command requested
+(S for sending files, R for receiving files, X for remote uucp),
+and file or command desired.
+.PP
+Several options are available:
+.TP 10
+.B \-h
+Print only the summary lines for each system.  Summary lines give system
+name, number of jobs for the system, and total number of bytes to send.
+.TP 10
+.B \-l
+Specifies a long format listing.  The default is to list only the
+job numbers sorted across the page.
+.TP10
+.BI \-s system
+Limit output to jobs for systems whose system names begin with \fIsystem\fP.
+.TP 10
+.BI \-u user
+Limit output to jobs for users whose login names begin with \fIuser\fP.
+.TP 10
+.BI \-d jobno
+Delete job number \fIjobno\fP (as obtained from a previous uuq command) from
+the uucp queue.
+.TP 10
+.BI \-r sdir
+Look for files in the spooling directory \fIsdir\fP instead of the default
+directory.
+.TP 10
+.BI \-b baudrate
+Use \fIbaudrate\fP to compute the transfer time instead of the default
+800 baud.
+.SH FILES
+/usr/spool/uucp/C.* \- command files
+.br
+/usr/spool/uucp/D.* \- data files
+.SH SEE ALSO
+uucp(1C), uux(1C), uulog(1C)
+.SH BUGS
+No information is available on work requested by the remote machine.
+.br
+The user who requests a remote uucp command is unknown.
+.br
+uuq -l can be horrendously slow.
