@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	8.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -69,7 +69,7 @@ vsyslog(pri, fmt, ap)
 	va_list ap;
 {
 	register int cnt;
-	register char *p;
+	register char ch, *p, *t;
 	time_t now;
 	int fd, saved_errno;
 	char *stdp, tbuf[2048], fmt_cpy[1024];
@@ -88,49 +88,41 @@ vsyslog(pri, fmt, ap)
 
 	saved_errno = errno;
 
-	/* set default facility if none specified */
+	/* Set default facility if none specified. */
 	if ((pri & LOG_FACMASK) == 0)
 		pri |= LogFacility;
 
-	/* build the message */
+	/* Build the message. */
 	(void)time(&now);
 	p = tbuf + sprintf(tbuf, "<%d>", pri);
 	p += strftime(p, sizeof (tbuf) - (p - tbuf), "%h %e %T ",
 	    localtime(&now));
 	if (LogStat & LOG_PERROR)
 		stdp = p;
-	if (!LogTag)
+	if (LogTag == NULL)
 		LogTag = __progname;
-	if (LogTag) {
-		(void)strcpy(p, LogTag);
-		for (; *p; ++p);
-	}
+	if (LogTag != NULL)
+		p += sprintf(p, "%s", LogTag);
 	if (LogStat & LOG_PID)
 		p += sprintf(p, "[%d]", getpid());
-	if (LogTag) {
+	if (LogTag != NULL) {
 		*p++ = ':';
 		*p++ = ' ';
 	}
 
-	/* substitute error message for %m */
-	{
-		register char ch, *t1, *t2;
-
-		for (t1 = fmt_cpy; ch = *fmt; ++fmt)
-			if (ch == '%' && fmt[1] == 'm') {
-				++fmt;
-				for (t2 = strerror(saved_errno);
-				    *t1 = *t2++; ++t1);
-			}
-			else
-				*t1++ = ch;
-		*t1 = '\0';
-	}
+	/* Substitute error message for %m. */
+	for (t = fmt_cpy; ch = *fmt; ++fmt)
+		if (ch == '%' && fmt[1] == 'm') {
+			++fmt;
+			t += sprintf(t, "%s", strerror(saved_errno));
+		} else
+			*t++ = ch;
+	*t = '\0';
 
 	p += vsprintf(p, fmt_cpy, ap);
 	cnt = p - tbuf;
 
-	/* output to stderr if requested */
+	/* Output to stderr if requested. */
 	if (LogStat & LOG_PERROR) {
 		struct iovec iov[2];
 		register struct iovec *v = iov;
@@ -143,14 +135,10 @@ vsyslog(pri, fmt, ap)
 		(void)writev(STDERR_FILENO, iov, 2);
 	}
 
-	/* get connected, output the message to the local logger */
+	/* Get connected, output the message to the local logger. */
 	if (!connected)
 		openlog(LogTag, LogStat | LOG_NDELAY, 0);
 	if (send(LogFile, tbuf, cnt, 0) >= 0)
-		return;
-
-	/* see if should attempt the console */
-	if (!(LogStat&LOG_CONS))
 		return;
 
 	/*
@@ -158,7 +146,8 @@ vsyslog(pri, fmt, ap)
 	 * if console blocks everything will.  Make sure the error reported
 	 * is the one from the syslogd failure.
 	 */
-	if ((fd = open(_PATH_CONSOLE, O_WRONLY, 0)) >= 0) {
+	if (LogStat & LOG_CONS &&
+	    (fd = open(_PATH_CONSOLE, O_WRONLY, 0)) >= 0) {
 		(void)strcat(tbuf, "\r\n");
 		cnt += 2;
 		p = index(tbuf, '>') + 1;
