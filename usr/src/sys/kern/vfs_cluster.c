@@ -6,7 +6,7 @@
  * Use and redistribution is subject to the Berkeley Software License
  * Agreement and your Software Agreement with AT&T (Western Electric).
  *
- *	@(#)vfs_cluster.c	7.59 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.59.1.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -18,6 +18,8 @@
 #include <sys/resourcevar.h>
 #include <sys/malloc.h>
 #include <libkern/libkern.h>
+#include <ufs/ufs/quota.h>
+#include <ufs/ufs/inode.h>
 
 /*
  * Definitions for the buffer hash lists.
@@ -455,6 +457,15 @@ cluster_rbuild(vp, filesize, bp, lbn, blkno, size, run, flags)
 		tbp = getblk(vp, lbn + i, 0, 0, 0);
 		tbp->b_bcount = tbp->b_bufsize = size;
 		tbp->b_blkno = bn;
+		{
+			daddr_t temp;
+			VOP_BMAP(tbp->b_vp, tbp->b_lblkno, NULL, &temp, NULL);
+			if (temp != bn) {
+				printf("Block: %d Assigned address: %x Bmap address: %x\n",
+					    tbp->b_lblkno, tbp->b_blkno, temp);
+				panic("cluster_rbuild: wrong disk address");
+			}
+		}
 		tbp->b_flags |= flags | B_READ | B_ASYNC;
 		++b_save->bs_nchildren;
 		b_save->bs_children[i - 1] = tbp;
@@ -502,14 +513,35 @@ cluster_callback(bp)
 	struct buf **tbp;
 	long bsize;
 	caddr_t cp;
+	daddr_t	daddr;
 	b_save = (struct cluster_save *)(bp->b_saveaddr);
 	bp->b_saveaddr = b_save->bs_saveaddr;
 
 	cp = bp->b_un.b_addr + b_save->bs_bufsize;
+	daddr = bp->b_blkno + b_save->bs_bufsize / DEV_BSIZE;
 	for (tbp = b_save->bs_children; b_save->bs_nchildren--; ++tbp) {
 		pagemove(cp, (*tbp)->b_un.b_addr, (*tbp)->b_bufsize);
 		cp += (*tbp)->b_bufsize;
 		bp->b_bufsize -= (*tbp)->b_bufsize;
+		if ((*tbp)->b_blkno != daddr) {
+			struct inode *ip;
+			printf("cluster_callback: bad disk address:\n");
+			printf("Clustered Block: %d DiskAddr: %x bytes left: %d\n",
+			    bp->b_lblkno, bp->b_blkno, bp->b_bufsize);
+			printf("\toriginal size: %d flags: %x\n", bp->b_bcount,
+			    bp->b_flags);
+			printf("Child Block: %d DiskAddr: %x bytes: %d\n",
+			    (*tbp)->b_lblkno, (*tbp)->b_blkno,
+			    (*tbp)->b_bufsize);
+			ip = VTOI((*tbp)->b_vp);
+			printf("daddr: %x i_size %qd\n", daddr, ip->i_size);
+			if ((*tbp)->b_lblkno < NDADDR)
+				printf("Child block pointer from inode: %x\n",
+				    ip->i_din.di_db[(*tbp)->b_lblkno]);
+			spl0();
+			panic ("cluster_callback: bad disk address");
+		}
+		daddr += (*tbp)->b_bufsize / DEV_BSIZE;
 		biodone(*tbp);
 	}
 #ifdef DIAGNOSTIC
@@ -1112,20 +1144,40 @@ getnewbuf(slpflag, slptimeo)
 	register struct queue_entry *dp;
 	register struct ucred *cred;
 	int s;
+	struct buf *abp;
+	static int losecnt = 0;
 
 loop:
 	s = splbio();
-	for (dp = &bufqueues[BQ_AGE]; dp > bufqueues; dp--)
-		if (dp->qe_next)
-			break;
+	abp = NULL;
+	for (dp = &bufqueues[BQ_AGE]; dp > bufqueues; dp--) {
+		for (bp = dp->qe_next; bp; bp = bp->b_freelist.qe_next) {
+			if (abp == NULL)
+				abp = bp;
+			if ((bp->b_flags & B_DELWRI) &&
+			    bp->b_vp && VOP_ISLOCKED(bp->b_vp))
+				continue;
+			goto found;
+		}
+	}
 	if (dp == bufqueues) {		/* no free blocks */
+		if (abp) {
+			bp = abp;
+			bp->b_flags |= B_XXX;
+			if (losecnt++ < 20) {
+				vprint("skipping blkno check", bp->b_vp);
+				printf("\tlblkno %d, blkno %d\n",
+				   bp->b_lblkno, bp->b_blkno);
+			}
+			goto found;
+		}
 		needbuffer = 1;
 		(void) tsleep((caddr_t)&needbuffer, slpflag | (PRIBIO + 1),
 			"getnewbuf", slptimeo);
 		splx(s);
 		return (NULL);
 	}
-	bp = dp->qe_next;
+found:
 	bremfree(bp);
 	bp->b_flags |= B_BUSY;
 	splx(s);
