@@ -1,6 +1,6 @@
-.\"	@(#)getlogin.3	4.1 (Berkeley) %G%
+.\"	@(#)getlogin.3	5.1 (Berkeley) %G%
 .\"
-.TH GETLOGIN 3 
+.TH GETLOGIN 3  "19 January 1983"
 .AT 3
 .SH NAME
 getlogin \- get login name
@@ -8,36 +8,25 @@ getlogin \- get login name
 .B char *getlogin()
 .SH DESCRIPTION
 .I Getlogin
-returns a pointer to
-the login name
-as found in
+returns a pointer to the login name as found in
 .IR /etc/utmp .
-It may be used
-in conjunction
-with
+It may be used in conjunction with
 .I getpwnam
-to locate the correct
-password file entry
-when the same userid
-is shared by several
-login names.
+to locate the correct password file entry when the same userid
+is shared by several login names.
 .PP
 If
 .I getlogin
-is called within a process
-that is not attached to a
+is called within a process that is not attached to a
 typewriter, it returns NULL.
-The correct procedure
-for determining the login name
-is to first call
+The correct procedure for determining the login name is to first call
 .I getlogin
-and if it fails,
-to call
-.IR getpwuid .
+and if it fails, to call
+.IR getpw ( getuid ()).
 .SH FILES
 /etc/utmp
 .SH "SEE ALSO"
-getpwent(3), getgrent(3), utmp(5)
+getpwent(3), getgrent(3), utmp(5), getpw(3)
 .SH DIAGNOSTICS
 Returns NULL (0) if name not found.
 .SH BUGS
