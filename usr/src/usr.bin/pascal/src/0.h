@@ -241,10 +241,7 @@ struct	nl {
 #endif PC
 	struct	nl *type;
 	struct	nl *chain, *nl_next;
-	int	*ptr[4];
-#ifdef PI
-	int	entloc;
-#endif PI
+	int	value[5];
 #	ifdef PTREE
 	    pPointer	inTree;
 #	endif PTREE
@@ -282,7 +279,10 @@ struct {
 #endif
 	struct	nl *type;
 	struct	nl *chain, *nl_next;
-	int	value[5];
+	int	*ptr[4];
+#ifdef PI
+	int	entloc;
+#endif PI
 };
 
 /*
@@ -314,7 +314,10 @@ struct {
 #define NL_OFFS	0
 
 #define	NL_CNTR	1
+#define NL_NLSTRT 2
+#define	NL_LINENO 3
 #define	NL_FVAR	3
+#define	NL_FCHAIN 4
 
 #define NL_GOLEV 2
 #define NL_GOLINE 3
