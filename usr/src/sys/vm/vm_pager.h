@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pager.h	8.2 (Berkeley) %G%
+ *	@(#)vm_pager.h	8.3 (Berkeley) %G%
  */
 
 /*
@@ -20,12 +20,14 @@
 #ifndef	_VM_PAGER_
 #define	_VM_PAGER_
 
+TAILQ_HEAD(pagerlst, pager_struct);
+
 struct	pager_struct {
-	queue_head_t	pg_list;	/* links for list management */
-	caddr_t		pg_handle;	/* external handle (vp, dev, fp) */
-	int		pg_type;	/* type of pager */
-	struct pagerops	*pg_ops;	/* pager operations */
-	void		*pg_data;	/* private pager data */
+	TAILQ_ENTRY(pager_struct) pg_list;	/* links for list management */
+	caddr_t			  pg_handle;	/* ext. handle (vp, dev, fp) */
+	int			  pg_type;	/* type of pager */
+	struct pagerops		  *pg_ops;	/* pager operations */
+	void			  *pg_data;	/* private pager data */
 };
 
 /* pager types */
@@ -78,7 +80,7 @@ void		 vm_pager_deallocate __P((vm_pager_t));
 int		 vm_pager_get __P((vm_pager_t, vm_page_t, boolean_t));
 boolean_t	 vm_pager_has_page __P((vm_pager_t, vm_offset_t));
 void		 vm_pager_init __P((void));
-vm_pager_t	 vm_pager_lookup __P((queue_head_t *, caddr_t));
+vm_pager_t	 vm_pager_lookup __P((struct pagerlst *, caddr_t));
 vm_offset_t	 vm_pager_map_page __P((vm_page_t));
 int		 vm_pager_put __P((vm_pager_t, vm_page_t, boolean_t));
 void		 vm_pager_sync __P((void));
