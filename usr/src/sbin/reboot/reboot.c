@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)reboot.c	4.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)reboot.c	4.5 (Berkeley) %G%";
 /*
  * Reboot
  */
@@ -124,6 +124,8 @@ log_entry()
 	time(&now);
 	tm = localtime(&now);
 	fp = fopen(SHUTDOWNLOG, "a");
+	if (fp == 0)
+		return;
 	fseek(fp, 0L, 2);
 	fprintf(fp, "%02d:%02d  %s %s %2d, %4d.  Halted for reboot.\n", tm->tm_hour,
 		tm->tm_min, days[tm->tm_wday], months[tm->tm_mon],
