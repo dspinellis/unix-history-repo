@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)param.h	7.19 (Berkeley) %G%
+ *	@(#)param.h	7.20 (Berkeley) %G%
  */
 
 /*
@@ -144,6 +144,6 @@ int	cpuspeed;
 #define	DELAY(n)	{ register int N = cpuspeed * (n); while (--N > 0); }
 #endif
 
-#else KERNEL
+#else
 #define	DELAY(n)	{ register int N = (n); while (--N > 0); }
-#endif KERNEL
+#endif

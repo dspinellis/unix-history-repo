@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.h	5.5 (Berkeley) %G%
+ *	@(#)param.h	5.6 (Berkeley) %G%
  */
 
 /*
@@ -116,6 +116,6 @@ int	cpuspeed;
 #endif
 #define	DELAY(n)	{ register int N = cpuspeed * (n); while (--N > 0); }
 
-#else KERNEL
+#else
 #define	DELAY(n)	{ register int N = (n); while (--N > 0); }
-#endif KERNEL
+#endif
