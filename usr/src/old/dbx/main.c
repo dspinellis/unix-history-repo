@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)main.c 1.4 %G%";
+static char sccsid[] = "@(#)main.c 1.5 %G%";
 
 /*
  * Debugger main routine.
@@ -11,10 +11,12 @@ static char sccsid[] = "@(#)main.c 1.4 %G%";
 #include <signal.h>
 #include <errno.h>
 #include "main.h"
+#include "symbols.h"
 #include "scanner.h"
 #include "process.h"
 #include "source.h"
 #include "object.h"
+#include "mappings.h"
 
 #ifndef public
 
@@ -113,7 +115,11 @@ public init()
     readobj(objname);
     printf("\n");
     fflush(stdout);
-    curfunc = program;
+    if (coredump) {
+	curfunc = whatblock(pc);
+    } else {
+	curfunc = program;
+    }
     bpinit();
     f = fopen(initfile, "r");
     if (f != nil) {
