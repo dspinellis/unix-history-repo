@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -139,7 +139,10 @@ pass1()
 				}
 			}
 			if ((dp->di_mode & IFMT) == IFDIR) {
-				statemap[inumber] = DSTATE;
+				if (dp->di_size == 0)
+					statemap[inumber] = DCLEAR;
+				else
+					statemap[inumber] = DSTATE;
 				cacheino(dp, inumber);
 			} else
 				statemap[inumber] = FSTATE;
