@@ -4,7 +4,8 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
-#define	_PATH_INDEX	"/usr/share/games/quiz.db/index"
+#define	_PATH_PAGER	"/usr/bin/more"
+#define	_PATH_QUIZIDX	"/usr/share/games/quiz.db/index"
