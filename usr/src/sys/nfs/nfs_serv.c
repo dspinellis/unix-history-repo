@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.11 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -987,7 +987,7 @@ out:
  * - mallocs what it thinks is enough to read
  *	count rounded up to a multiple of DIRBLKSIZ <= MAX_READDIR
  * - calls VOP_READDIR()
- * - loops arround building the reply
+ * - loops around building the reply
  *	if the output generated exceeds count break out of loop
  *	The nfsm_clget macro is used here so that the reply will be packed
  *	tightly in mbuf clusters.
@@ -1093,19 +1093,28 @@ again:
 			return (0);
 		}
 	}
-	cpos = rbuf+on;
-	cend = rbuf+siz;
-	dp = (struct direct *)cpos;
+
 	/*
 	 * Check for degenerate cases of nothing useful read.
-	 * If so  go try again
+	 * If so go try again
 	 */
-	if (cpos >= cend || (dp->d_ino == 0 && (cpos+dp->d_reclen) >= cend)) {
+	cpos = rbuf + on;
+	cend = rbuf + siz;
+	dp = (struct direct *)cpos;
+	while (cpos < cend && dp->d_ino == 0) {
+		cpos += dp->d_reclen;
+		dp = (struct direct *)cpos;
+	}
+	if (cpos >= cend) {
 		toff = off;
 		siz = fullsiz;
 		on = 0;
 		goto again;
 	}
+
+	cpos = rbuf + on;
+	cend = rbuf + siz;
+	dp = (struct direct *)cpos;
 	vrele(vp);
 	len = 3*NFSX_UNSIGNED;	/* paranoia, probably can be 0 */
 	bp = be = (caddr_t)0;
