@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.59 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.60 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1540,34 +1540,10 @@ nisplus_getcanonname(name, hbsize, statp)
 	char *vp;
 	auto int vsize;
 	int buflen;
-	char buf1[MAXLINE + NIS_MAXNAMELEN];
-	static char *nis_path = NULL;
-	static char nis_path_buf[MAXLINE];
+	char buf[MAXLINE + NIS_MAXNAMELEN];
 	nis_result *result;
 	char *p;
 	int len;
-
-	if (nis_path == NULL)
-	{
-		char *ptr;
-		char pathbuf[MAXLINE];
-
-		strcpy(buf1, macvalue('m', CurEnv));
-		strcat(buf1, ".");
-		/* try the host tabe in $m */
-		if (hosts_table_ok(buf1))
-			strcpy(pathbuf, buf1);
-		else
-			strcpy(pathbuf, "$");
-
-		nis_path = nis_path_buf;
-		sprintf(nis_path, "NIS_PATH=%s", pathbuf);
-	}
-
-	if (nis_path[0] != '\0')
-		putenv(nis_path);
-	else
-		syslog(LOG_WARNING, "no NIS+ path defined");
 
 	shorten_hostname(name);
 
@@ -1575,13 +1551,13 @@ nisplus_getcanonname(name, hbsize, statp)
 	if (p == NULL)
 	{
 		/* single token */
-		sprintf(buf1, "[name=%s],hosts.org_dir", name);
+		sprintf(buf, "[name=%s],hosts.org_dir", name);
 	}
 	else if (p[1] != '\0')
 	{
 		/* multi token -- take only first token in name buf */
 		*p = '\0';
-		sprintf(buf1, "[name=%s],hosts.org_dir.%s", name, &p[1]);
+		sprintf(buf, "[name=%s],hosts.org_dir.%s", name, &p[1]);
 	}
 	else
 	{
@@ -1591,13 +1567,10 @@ nisplus_getcanonname(name, hbsize, statp)
 
 	if (tTd(38, 20))
 		printf("\nnisplus_getcanoname(%s), qbuf=%s\n%s\n",
-			 name, buf1, nis_path);
+			 name, buf, nis_path);
 
-	result = nis_list(buf1, EXPAND_NAME|FOLLOW_LINKS|FOLLOW_PATH,
+	result = nis_list(buf, EXPAND_NAME|FOLLOW_LINKS|FOLLOW_PATH,
 		NULL, NULL);
-
-	/* unset NIS_PATH, just in case */
-	unsetenv("NIS_PATH");
 
 	if (result->status == NIS_SUCCESS)
 	{

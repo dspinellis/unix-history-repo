@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.107 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.108 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -241,6 +241,9 @@ main(argc, argv, envp)
 	environ = (char **) xalloc(sizeof (char *) * i);
 	for (i = 0; envp[i] != NULL; i++)
 		environ[i] = newstr(envp[i]);
+
+	/* and prime the child environment */
+	setuserenv("AGENT", "sendmail");
 
 	/*
 	**  Save start and extent of argv for setproctitle.
@@ -732,14 +735,9 @@ main(argc, argv, envp)
 			setbitn(M_RUNASRCPT, FileMailer->m_flags);
 
 		/* propogate some envariables into children */
-		setuserenv("AGENT", "sendmail");
 		setuserenv("ISP", NULL);
 		setuserenv("SYSTYPE", NULL);
 	}
-
-	/* guarantee non-empty environment to children */
-	if (UserEnviron[0] == NULL)
-		setuserenv("AGENT", "sendmail");
 
 	/* MIME Content-Types that cannot be transfer encoded */
 	setclass('n', "multipart/signed");
