@@ -1,4 +1,4 @@
-/*	rk.c	4.51	82/12/17	*/
+/*	rk.c	4.52	83/02/10	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -82,10 +82,8 @@ struct	uba_driver hkdriver =
  { rkprobe, rkslave, rkattach, rkdgo, rkstd, "rk", rkdinfo, "hk", rkminfo, 1 };
 struct	buf rkutab[NRK];
 short	rkcyl[NRK];
-#ifndef NOBADSECT
 struct	dkbad rkbad[NRK];
 struct	buf brkbuf[NRK];
-#endif
 
 struct	rkst {
 	short	nsect;
@@ -244,14 +242,11 @@ rkustart(ui)
 	rkwait(rkaddr);
 	if ((rkaddr->rkds & RKDS_VV) == 0 || ui->ui_flags == 0) {
 		/* SHOULD WARN SYSTEM THAT THIS HAPPENED */
-#ifndef NOBADSECT
 		struct rkst *st = &rkst[ui->ui_type];
 		struct buf *bbp = &brkbuf[ui->ui_unit];
-#endif
 
 		rkaddr->rkcs1 = rktypes[ui->ui_type]|RK_PACK|RK_GO;
 		ui->ui_flags = 1;
-#ifndef NOBADSECT
 		bbp->b_flags = B_READ|B_BUSY;
 		bbp->b_dev = bp->b_dev;
 		bbp->b_bcount = 512;
@@ -261,7 +256,6 @@ rkustart(ui)
 		dp->b_actf = bbp;
 		bbp->av_forw = bp;
 		bp = bbp;
-#endif
 		rkwait(rkaddr);
 	}
 	if (dp->b_active)
@@ -393,11 +387,9 @@ rkintr(rk11)
 		bp = dp->b_actf;
 		ui = rkdinfo[dkunit(bp)];
 		dk_busy &= ~(1 << ui->ui_dk);
-#ifndef NOBADSECT
 		if (bp->b_flags&B_BAD)
 			if (rkecc(ui, CONT))
 				return;
-#endif
 		if (rkaddr->rkcs1 & RK_CERR) {
 			int recal;
 			u_short ds = rkaddr->rkds;
@@ -423,11 +415,9 @@ hard:
 				bp->b_flags |= B_ERROR;
 				sc->sc_recal = 0;
 			} else if (er & RKER_BSE) {
-#ifndef NOBADSECT
 				if (rkecc(ui, BSE))
 					return;
 				else
-#endif
 					goto hard;
 			} else {
 				if ((er & (RKER_DCK|RKER_ECH)) == RKER_DCK) {
@@ -557,11 +547,9 @@ rkecc(ui, flag)
 	int reg, npf, o, cmd, ubaddr;
 	int bn, cn, tn, sn;
 
-#ifndef NOBADSECT
 	if (flag == CONT)
 		npf = bp->b_error;
 	else
-#endif
 		npf = btop((rk->rkwc * sizeof(short)) + bp->b_bcount);
 	reg = btop(um->um_ubinfo&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
@@ -606,7 +594,6 @@ rkecc(ui, flag)
 		break;
 		}
 
-#ifndef NOBADSECT
 	case BSE:
 #ifdef RKBDEBUG
 		if (rkbdebug)
@@ -640,7 +627,6 @@ rkecc(ui, flag)
 			return (0);
 		}
 		break;
-#endif
 	}
 	rk->rkcs1 = RK_CCLR;
 	rk->rkcs2 = ui->ui_slave;
