@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.38 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.39 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -588,6 +588,40 @@ out:
 	else
 		error = VOP_MKNOD(ndp, &vattr, ndp->ni_cred);
 	RETURN (error);
+}
+
+/*
+ * Mkfifo system call
+ */
+mkfifo(scp)
+	register struct syscontext *scp;
+{
+	register struct a {
+		char	*fname;
+		int	fmode;
+	} *uap = (struct a *)scp->sc_ap;
+	register struct nameidata *ndp = &scp->sc_nd;
+	struct vattr vattr;
+	int error;
+
+#ifndef FIFO
+	RETURN (EOPNOTSUPP);
+#else
+	ndp->ni_nameiop = CREATE | LOCKPARENT;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->fname;
+	if (error = namei(ndp))
+		RETURN (error);
+	if (ndp->ni_vp != NULL) {
+		VOP_ABORTOP(ndp);
+		RETURN (EEXIST);
+	} else {
+		vattr_null(&vattr);
+		vattr.va_type = VFIFO;
+		vattr.va_mode = (uap->fmode & 07777) &~ scp->sc_cmask;
+	}
+	RETURN (VOP_MKNOD(ndp, &vattr, ndp->ni_cred));
+#endif /* FIFO */
 }
 
 /*
