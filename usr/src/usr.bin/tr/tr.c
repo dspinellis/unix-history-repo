@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tr.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tr.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -159,15 +159,13 @@ main(argc, argv)
 	/* If string2 runs out of characters, use the last one specified. */
 	if (sflag)
 		while (next(&s1)) {
-			ch = s2.lastch;
-			string1[s1.lastch] = ch;
+			string1[s1.lastch] = ch = s2.lastch;
 			string2[ch] = 1;
 			(void)next(&s2);
 		}
 	else
 		while (next(&s1)) {
-			ch = s2.lastch;
-			string1[s1.lastch] = ch;
+			string1[s1.lastch] = ch = s2.lastch;
 			(void)next(&s2);
 		}
 
