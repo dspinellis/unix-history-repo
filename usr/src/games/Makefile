@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) 11/17/86
 #
 DESTDIR=
 CFLAGS=	-O
@@ -30,7 +30,7 @@ NSTD=	canfield primes rain worm worms
 LISP=	doctor
 
 all:	${SUBDIR} ${STD} ${NSTD}
-	cd games.`machine`; make ${MFLAGS}
+	cd games.${MACHINE}; make ${MFLAGS}
 
 ${SUBDIR}: FRC
 	cd $@; make ${MFLAGS}
@@ -50,13 +50,13 @@ install:
 	-if [ ! -f ${DESTDIR}/usr/games/lib/cfscores ]; then \
 		cat >${DESTDIR}/usr/games/lib/cfscores </dev/null; \
 		chmod 777 ${DESTDIR}/usr/games/lib/cfscores; fi
-	cd games.`machine`; make ${MFLAGS} DESTDIR=${DESTDIR} install
+	cd games.${MACHINE}; make ${MFLAGS} DESTDIR=${DESTDIR} install
 
 clean:
 	rm -f a.out core *.s *.o
 	-for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 	rm -f ${STD} ${NSTD}
-	cd games.`machine`; make ${MFLAGS} DESTDIR=${DESTDIR} clean
+	cd games.${MACHINE}; make ${MFLAGS} DESTDIR=${DESTDIR} clean
 
 depend:
 	for i in ${STD} ${NSTD}; do \
