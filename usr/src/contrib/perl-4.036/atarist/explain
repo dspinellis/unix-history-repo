@@ -1,0 +1,77 @@
+Here is a brief explaination of the diffs in perl.diffs. If anything
+is unclear please just ask:
+
+General:
+  Many of the  #ifdef MSDOS where required for the atari too. In order
+to avoid cluttering up the source, upfront in perl.h we #define
+MSDOS_OR_ATARI if either defined(MSDOS) or defined(atarist).
+
+ Some of the diffs that i felt were universally applicable are not protected
+with #ifdef's. In the explainations below i has indicated all such
+changes.
+
+perl.h:
+  -- define MSDOS_OR_ATARI if appro.
+  -- typedef size_t - assume its there in <stddef.h> if STANDARD_C otherwise
+     typedef it to unsigned int (i would have ideally liked unsigned long,
+     but we get into trouble with half-assed headers from sun etc)
+(this change not protected with a #ifdef since hopefully its universally appli)
+
+  -- make the type of STRLEN size_t for all systems
+(this change not protected with a #ifdef since hopefully its universally appli)
+
+  -- more #ifdef MSDOS -> #ifdef MSDOS_OR_ATARI changes.
+
+arg.h:
+  -- in the atari headers we already have O_PIPE. Change all instances of
+     O_PIPE to PERL_O_PIPE. All such changes protected with #ifdef atarist.
+
+handy.h:
+  -- make MEM_SIZE size_t like STRLEN.
+(this change not protected with a #ifdef since hopefully its universally appli)
+
+doarg.c:
+  -- accomodate the large number of args needed for the atari syscall().
+  -- do the 9 thru 14 arg versions of syscall for the atarist.
+
+doio.c:
+  -- mode[] needed to be  initialized.
+(this change not protected with a #ifdef since hopefully its universally appli)
+
+  -- you may find this strange, we do not define STDSTDIO, because even
+     though we have the "standard" field in FILE, the semantics are
+     different. However, some contexts will work correctly, and there
+     you will see #if defined(STDSTDIO) || defined(atarist)
+
+  -- more #ifdef MSDOS -> #ifdef MSDOS_OR_ATARI changes.
+
+eval.c:
+  -- more #ifdef MSDOS -> #ifdef MSDOS_OR_ATARI changes.
+
+malloc.c::
+  -- instead of bashfully using ints to hold sizes use MEM_SIZE.
+     adjust some casts and printf format specifiers due to this.
+     (atarigcc can run in two modes, with 16 or 32 bit ints, so...)
+(this change not protected with a #ifdef since hopefully its universally appli)
+
+  -- atarist changes sometimes ||'ed with I286 as appro.
+
+perl.c:
+  -- more #ifdef MSDOS -> #ifdef MSDOS_OR_ATARI changes.
+
+regcomp.c:
+  -- like O_PIPE the atarist headers already has META defined. Change all
+     instances of META to PERL_META. All such changes protected with
+     #ifdef atarist.
+
+str.c:
+  -- more #ifdef MSDOS -> #ifdef MSDOS_OR_ATARI changes.
+
+token.c::
+  -- META -> PERL_META renaming for atari
+
+util.c::
+  -- more adjustments for memory sizes being MEM_SIZE instead of int.
+  -- more #ifdef MSDOS -> #ifdef MSDOS_OR_ATARI changes.
+
+++jrb  bammi@cadence.com

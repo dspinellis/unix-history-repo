@@ -1,0 +1,30 @@
+#!/usr/bin/perl
+
+# $Header: scan_passwd,v 4.0 91/03/20 01:13:18 lwall Locked $
+
+# This scans passwd file for security holes.
+
+open(Pass,'/etc/passwd') || die "Can't open passwd file: $!\n";
+# $dotriv = (`date` =~ /^Mon/);
+$dotriv = 1;
+
+while (<Pass>) {
+    ($login,$pass,$uid,$gid,$gcos,$home,$shell) = split(/:/);
+    if ($shell eq '') {
+	print "Short: $_";
+    }
+    next if /^[+]/;
+    if ($pass eq '') {
+	if (index(":sync:lpq:+:", ":$login:") < 0) {
+	    print "No pass: $login\t$gcos\n";
+	}
+    }
+    elsif ($dotriv && crypt($login,substr($pass,0,2)) eq $pass) {
+	print "Trivial: $login\t$gcos\n";
+    }
+    if ($uid == 0) {
+	if ($login !~ /^.?root$/ && $pass ne '*') {
+	    print "Extra root: $_";
+	}
+    }
+}

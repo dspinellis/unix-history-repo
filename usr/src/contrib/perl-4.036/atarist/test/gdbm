@@ -1,0 +1,28 @@
+die "cant create dbmtest" unless dbmopen(%keys, "dbmtest", 0666);
+
+print "Writing...\n";
+
+foreach (0..100) {
+    $keys{"$_"} = $_;
+}
+
+print "Done\n";
+
+dbmclose (%keys);
+
+die "cant read dbmtest" unless dbmopen(%rkeys, "dbmtest", undef);
+
+$i = 0;
+print "Reading...\n";
+while (($key, $val) = each %rkeys)
+{
+  if ($keys{$key} != $val)
+  {
+     print 'Incorrect val ', $key, ' = ', $val, ' expecting ', $keys{$key}, "\n";
+     $i = $i + 1;
+  }
+}
+print "Done\n";
+dbmclose (%keys);
+print $i, " Error(s)\n";
+unlink "dbmtest";
