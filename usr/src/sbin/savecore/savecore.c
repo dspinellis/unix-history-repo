@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -91,6 +91,7 @@ off_t	lseek();
 off_t	Lseek();
 int	Verbose;
 int	force;
+int	clear;
 extern	int errno;
 
 main(argc, argv)
@@ -109,6 +110,10 @@ main(argc, argv)
 
 		case 'v':
 			Verbose++;
+			break;
+
+		case 'c':
+			clear++;
 			break;
 
 		default:
@@ -209,13 +214,13 @@ read_kmem()
 	 */
 	for (i = 0; cursyms[i] != -1; i++)
 		if (current_nl[cursyms[i]].n_value == 0) {
-			log(LOG_ERR, "/vmunix: %s not in namelist",
+			log(LOG_ERR, "/vmunix: %s not in namelist\n",
 			    current_nl[cursyms[i]].n_name);
 			exit(1);
 		}
 	for (i = 0; dumpsyms[i] != -1; i++)
 		if (dump_nl[dumpsyms[i]].n_value == 0) {
-			log(LOG_ERR, "%s: %s not in namelist", dump_sys,
+			log(LOG_ERR, "%s: %s not in namelist\n", dump_sys,
 			    dump_nl[dumpsyms[i]].n_name);
 			exit(1);
 		}
@@ -230,7 +235,7 @@ read_kmem()
 	ddname = find_dev(dumpdev, S_IFBLK);
 	fp = fdopen(kmem, "r");
 	if (fp == NULL) {
-		log(LOG_ERR, "Couldn't fdopen kmem");
+		log(LOG_ERR, "Couldn't fdopen kmem\n");
 		exit(1);
 	}
 	if (system)
@@ -253,10 +258,11 @@ check_kmem()
 	fseek(fp, (off_t)(dumplo+ok(dump_nl[X_VERSION].n_value)), L_SET);
 	fgets(core_vers, sizeof (core_vers), fp);
 	fclose(fp);
-	if (!eq(vers, core_vers) && system == 0)
-		log(LOG_WARNING,
-		   "Warning: vmunix version mismatch:\n\t%sand\n\t%s",
-		   vers, core_vers);
+	if (!eq(vers, core_vers) && system == 0) {
+		log(LOG_WARNING, "Warning: vmunix version mismatch:\n");
+		log(LOG_WARNING, "\t%s\n", vers);
+		log(LOG_WARNING, "and\t%s\n", core_vers);
+	}
 	fp = fopen(ddname, "r");
 	fseek(fp, (off_t)(dumplo + ok(dump_nl[X_PANICSTR].n_value)), L_SET);
 	fread((char *)&panicstr, sizeof (panicstr), 1, fp);
@@ -322,12 +328,12 @@ check_space()
 	close(dfd);
  	spacefree = freespace(&fs, fs.fs_minfree) * fs.fs_fsize / 1024;
  	if (spacefree < read_number("minfree")) {
-		log(LOG_WARNING, "Dump omitted, not enough space on device");
+		log(LOG_WARNING, "Dump omitted, not enough space on device\n");
 		return (0);
 	}
 	if (freespace(&fs, fs.fs_minfree) < 0)
 		log(LOG_WARNING,
-		    "Dump performed, but free space threshold crossed");
+		    "Dump performed, but free space threshold crossed\n");
 	return (1);
 }
 
@@ -380,7 +386,7 @@ save_core()
 		n = Read(ifd, cp,
 		    (dumpsize > BUFPAGES ? BUFPAGES : dumpsize) * NBPG);
 		if (n == 0) {
-			log(LOG_WARNING, "WARNING: vmcore may be incomplete");
+			log(LOG_WARNING, "WARNING: vmcore may be incomplete\n");
 			break;
 		}
 		Write(ofd, cp, n);
