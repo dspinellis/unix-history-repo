@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)conf.c	7.12 (Berkeley) %G%
+ *      @(#)conf.c	7.13 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -235,15 +235,6 @@ cdev_decl(dcm);
 
 cdev_decl(cd);
 
-#include "clock.h"
-cdev_decl(clock);
-/* open, close, ioctl, map -- XXX should be a map device */
-#define	cdev_clock_init(c,n) { \
-	dev_init(c,n,open), dev_init(c,n,close), (dev_type_read((*))) nullop, \
-	(dev_type_write((*))) nullop, dev_init(c,n,ioctl), \
-	(dev_type_stop((*))) enodev, (dev_type_reset((*))) nullop, 0, \
-	(dev_type_select((*))) nullop, dev_init(c,n,map), 0 }
-
 cdev_decl(vn);
 /* open, read, write, ioctl -- XXX should be a disk */
 #define	cdev_vn_init(c,n) { \
@@ -290,7 +281,7 @@ struct cdevsw	cdevsw[] =
 	cdev_tty_init(NDCM,dcm),	/* 15: 4-port serial */
 	cdev_notdef(),			/* 16 */
 	cdev_disk_init(NCD,cd),		/* 17: concatenated disk */
-	cdev_clock_init(NCLOCK,clock),	/* 18: mapped clock */
+	cdev_notdef(),			/* 18 */
 	cdev_vn_init(NVN,vn),		/* 19: vnode disk */
 	cdev_tape_init(NST,st),		/* 20: exabyte tape */
 	cdev_fd_init(1,fd),		/* 21: file descriptor pseudo-dev */
