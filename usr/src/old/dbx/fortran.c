@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)fortran.c	5.1	%G%";
+static char sccsid[] = "@(#)fortran.c	5.2	%G%";
 /*
  * FORTRAN dependent symbol routines.
  */
@@ -302,9 +302,19 @@ Symbol s;
 			}
 			break;
 
+		    case 2*sizeof(double):
+			d2 = pop(double);
+			d1 = pop(double);
+			printf("(");
+			prtreal(d1);
+			printf(",");
+			prtreal(d2);
+			printf(")");
+			break;
+		
 		    default:
 			panic("bad size \"%d\" for real",
-                                  t->symvalue.rangev.lower);
+                                  s->symvalue.rangev.lower);
 			break;
 		}
 	    } else {
