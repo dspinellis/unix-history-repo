@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	6.2	83/09/08	*/
+/*	uipc_usrreq.c	6.3	84/02/15	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -229,7 +229,7 @@ release:
 
 /* SHOULD BE PIPSIZ and 0 */
 int	unp_sendspace = 1024*2;
-int	unp_recvspace = 1024*2;
+int	unp_recvspace = 1024*2 + sizeof(struct sockaddr);
 
 unp_attach(so)
 	struct socket *so;
@@ -435,9 +435,15 @@ unp_drop(unp, errno)
 	struct unpcb *unp;
 	int errno;
 {
+	struct socket *so = unp->unp_socket;
 
-	unp->unp_socket->so_error = errno;
+	so->so_error = errno;
 	unp_disconnect(unp);
+	if (so->so_head) {
+		so->so_pcb = (caddr_t) 0;
+		(void) m_free(dtom(unp));
+		sofree(so);
+	}
 }
 
 #ifdef notdef
