@@ -1,4 +1,4 @@
-/*	hpmaptype.c	4.6	83/03/01	*/
+/*	hpmaptype.c	4.7	83/03/03	*/
 
 /*
  * RP??/RM?? drive type mapping routine.
@@ -52,12 +52,11 @@ struct st hpst[] = {
 #define	HPDT_CAP	10
 	32,	16,	32*16,	1024,	capricorn_off,	/* Ampex capricorn */
 #define	HPDT_EAGLE	11
-	48,	20,	43*20,	842,	eagle_off,	/* Fuji Eagle */
+	48,	20,	48*20,	842,	eagle_off,	/* Fuji Eagle */
 #define	HPDT_RM02	12
 	1,	1,	1,	1,	0,		/* rm02 - not used */
 #define	HPDT_9300	13
 	32,	19,	32*19,	815,	rm05_off,	/* Ampex 9300 */
-
 };
 
 #define	MASKREG(reg)	((reg)&0xffff)
