@@ -1,4 +1,4 @@
-#	Makefile	4.19	86/05/25
+#	Makefile	4.20	86/06/06
 #
 DESTDIR=
 CFLAGS=	-O
@@ -6,7 +6,7 @@ CFLAGS=	-O
 # Programs that live in subdirectories, and have makefiles of their own.
 #
 SUBDIR=	ansi apl bib courier cpm dsh help hyper icon jove kermit mh \
-	mkmf np100 patch rcs spms sunrpc tac tools
+	mkmf np100 patch rcs sunrpc tac tools
 #
 # Default programs that are installed
 #
@@ -15,7 +15,8 @@ STDINST=bib jove mh patch rcs
 # Special purpose software that requires custom installation,
 # or may not be needed by all sites
 #
-OPTDIR=	B dipress mmdf news notes pathalias rn sumacc umodem xns X
+OPTDIR=	B dipress emacs enet mmdf news nnpt notes pathalias rn \
+	spms sumacc umodem xns X
 
 all:	${SUBDIR}
 
