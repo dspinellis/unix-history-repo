@@ -72,6 +72,7 @@ sys/ufs_efs.c		optional efs device-driver
 sys/ufs_fio.c		standard
 sys/ufs_inode.c		standard
 sys/ufs_nami.c		standard
+sys/ufs_nd.c		optional nd device-driver
 sys/ufs_subr.c		standard
 sys/ufs_syscalls.c	standard
 sys/ufs_tables.c	standard
