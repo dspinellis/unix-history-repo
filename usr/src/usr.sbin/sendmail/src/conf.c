@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.118 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.119 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -879,6 +879,10 @@ init_md(argc, argv)
 
 #include <nlist.h>
 
+#ifdef IRIX64
+# define nlist		nlist64
+#endif
+
 #ifndef LA_AVENRUN
 # ifdef SYSTEM5
 #  define LA_AVENRUN	"avenrun"
@@ -990,6 +994,9 @@ int getla()
 
 	dg_sys_info((long *)&load_info,
 		DG_SYS_INFO_LOAD_INFO_TYPE, DG_SYS_INFO_LOAD_VERSION_0);
+
+        if (tTd(3, 1))
+                printf("getla: %d\n", (int) (load_info.one_minute + 0.5));
 
 	return((int) (load_info.one_minute + 0.5));
 }
