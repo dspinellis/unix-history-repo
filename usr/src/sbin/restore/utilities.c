@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.16	(Berkeley)	83/12/30";
+static char sccsid[] = "@(#)utilities.c	3.17	(Berkeley)	85/01/14";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -342,7 +342,8 @@ reply(question)
 		(void) fflush(stderr);
 		c = getc(terminal);
 		while (c != '\n' && getc(terminal) != '\n')
-			/* void */;
+			if (feof(terminal))
+				done(1);
 	} while (c != 'y' && c != 'n');
 	if (c == 'y')
 		return (GOOD);
