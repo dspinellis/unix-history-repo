@@ -1,0 +1,44 @@
+KVM_GETVFSBYNAME(3)         BSD Programmer's Manual        KVM_GETVFSBYNAME(3)
+
+NNAAMMEE
+     kkvvmm__ggeettvvffssbbyynnaammee - get information about a filesystem
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//mmoouunntt..hh>>
+     ##iinncclluuddee <<kkvvmm..hh>>
+
+     _i_n_t
+     kkvvmm__ggeettvvffssbbyynnaammee(_c_o_n_s_t _c_h_a_r _*_n_a_m_e, _s_t_r_u_c_t _v_f_s_c_o_n_f _*_v_f_c);
+
+DDEESSCCRRIIPPTTIIOONN
+     The kkvvmm__ggeettvvffssbbyynnaammee() function provides access to information about a
+     filesystem module that is configured in the kernel.  If successful, the
+     requested filesystem _v_f_s_c_o_n_f is returned in the location pointed to by
+     vvffcc. The fields in a ``struct vfsconf'' are defined as follows:
+
+     vfc_name      the name of the filesystem
+     vfc_index     the filesystem type number assigned by the kernel
+     vfc_refcount  the number of active mount points using the filesystem
+     vfc_flags     flag bits that are used to initialize a new mount point us-
+                   ing the filesystem
+
+RREETTUURRNN VVAALLUUEESS
+     If the call to ggeettvvffssbbyynnaammee is successful, 0 is returned.  Otherwise -1
+     is returned and _e_r_r_n_o is set appropriately.
+
+EERRRROORRSS
+     The following errors may be reported:
+
+     [EFAULT]      The _v_f_c pointer contains an invalid address.
+
+     [ENOENT]      The _n_a_m_e specifies a filesystem that is unknown or not con-
+                   figured in the kernel.
+
+SSEEEE AALLSSOO
+     sysctl(1),  mount(2),  sysctl(3),  mount(8)
+
+HHIISSTTOORRYY
+     A variant of the ggeettvvffssbbyynnaammee() function first appeared in FreeBSD 2.0.
+
+4.4BSD                           April 3, 1995                               1
