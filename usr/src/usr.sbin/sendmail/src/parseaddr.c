@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.78		%G%);
+SCCSID(@(#)parseaddr.c	3.79		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -62,7 +62,7 @@ parseaddr(addr, a, copyf)
 		printf("\n--parseaddr(%s)\n", addr);
 # endif DEBUG
 
-	pvp = prescan(addr, ',');
+	pvp = prescan(addr, bitset(EF_OLDSTYLE, CurEnv->e_flags) ? ' ' : ',');
 	if (pvp == NULL)
 		return (NULL);
 
@@ -311,6 +311,8 @@ prescan(addr, delim)
 				}
 				anglecnt--;
 			}
+			else if (delim == ' ' && isspace(c))
+				c = ' ';
 			else if (c == ':' && !CurEnv->e_oldstyle)
 			{
 				/* consume characters until a semicolon */
