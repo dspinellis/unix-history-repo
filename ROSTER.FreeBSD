@@ -64,6 +64,7 @@ ports/lynx              Serge V.Vakulenko       vak@cronyx.msk.su
 ports/mprof		Jeffrey Hsu		hsu@freefall.cdrom.com
 ports/mtools		Steven Wallace		swallace@freefall.cdrom.com
 ports/netaudio		Jeffrey Hsu		hsu@freefall.cdrom.com
+ports/nethack           Sean Vickery            seanv@cs.uq.edu.au
 ports/pcvt              J"org Wunsch            joerg_wunsch@uriah.sax.de
 ports/pkg_install       Jordan Hubbard          jkh@freefall.cdrom.com
 ports/point             Jordan Hubbard          jkh@freefall.cdrom.com
