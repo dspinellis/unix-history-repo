@@ -1,0 +1,23 @@
+chdir /usr/source/s3
+cc -c ctime.c
+ar r /lib/liba.a ctime.o
+rm ctime.o
+chdir /usr/source/s1
+cc -s -n date.c
+cp a.out /bin/date
+cc -s -n dump.c
+cp a.out /bin/dump
+cc -s -n ls.c
+cp a.out /bin/ls
+rm a.out
+chdir /usr/source/s2
+cc -s -n mail.c
+cp a.out /bin/mail
+cc -s -n pr.c
+cp a.out /bin/pr
+as tp?.s
+ld -s a.out -l -lc
+cp a.out /bin/tp
+cc -s -n who.c
+cp a.out /bin/who
+rm a.out
