@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_debug.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.29 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -191,7 +191,7 @@ p_rr(cp, msg, file)
 {
 	int type, class, dlen, n, c;
 	struct in_addr inaddr;
-	char *cp1, cp2;
+	char *cp1, *cp2;
 
 	if ((cp = p_cdname(cp, msg, file)) == NULL)
 		return (NULL);			/* compression error */
