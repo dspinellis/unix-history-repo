@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.85	83/01/04	*/
+/*	tcp_input.c	1.86	83/01/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -364,7 +364,8 @@ trimthenstep6:
 	 * If data is received on a connection after the
 	 * user processes are gone, then RST the other end.
 	 */
-	if ((so->so_state & SS_NOFDREF) && ti->ti_len) {
+	if (so->so_state & SS_NOFDREF && tp->t_state > TCPS_CLOSE_WAIT &&
+	    ti->ti_len) {
 		tcp_close(tp);
 		tp = 0;
 		goto dropwithreset;
