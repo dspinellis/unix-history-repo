@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.5.t	8.3 (Berkeley) %G%
+.\"	@(#)1.5.t	8.4 (Berkeley) %G%
 .\"
 .Sh 2 Descriptors
 .Sh 3 "The reference table
@@ -194,7 +194,7 @@ Much better semantics, and faster locking are provided
 by the
 .Fn flock
 system call (see section
-.Xr 2.2.8 ).
+.Xr 2.2.7 ).
 The
 .Fn fcntl
 and
