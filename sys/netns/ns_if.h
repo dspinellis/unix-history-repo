@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ns_if.h	7.6 (Berkeley) 6/28/90
+ *	from: @(#)ns_if.h	7.6 (Berkeley) 6/28/90
+ *	$Id$
  */
 
 /*
