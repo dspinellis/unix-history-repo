@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)suff.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)suff.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -682,7 +682,7 @@ Suff_AddSuffix (str)
 
     ln = Lst_Find (sufflist, (ClientData)str, SuffSuffHasNameP);
     if (ln == NILLNODE) {
-	s = (Suff *) malloc (sizeof (Suff));
+	s = (Suff *) emalloc (sizeof (Suff));
 
 	s->name =   	strdup (str);
 	s->nameLen = 	strlen (s->name);
@@ -891,7 +891,7 @@ SuffAddSrc (s, ls)
 	 * structure for a file with no suffix attached. Two birds, and all
 	 * that...
 	 */
-	s2 = (Src *) malloc (sizeof (Src));
+	s2 = (Src *) emalloc (sizeof (Src));
 	s2->file =  	strdup(targ->pref);
 	s2->pref =  	targ->pref;
 	s2->parent = 	targ;
@@ -901,8 +901,8 @@ SuffAddSrc (s, ls)
 	targ->children += 1;
 	(void)Lst_AtEnd (ls->l, (ClientData)s2);
     }
-    s2 = (Src *) malloc (sizeof (Src));
-    s2->file = 	    Str_Concat (targ->pref, s->name, 0);
+    s2 = (Src *) emalloc (sizeof (Src));
+    s2->file = 	    str_concat (targ->pref, s->name, 0);
     s2->pref =	    targ->pref;
     s2->parent =    targ;
     s2->node = 	    NILGNODE;
@@ -1082,7 +1082,7 @@ SuffFindCmds (targ)
 		     * source node's name so Suff_FindDeps can free it
 		     * again (ick)), and return the new structure.
 		     */
-		    ret = (Src *)malloc (sizeof(Src));
+		    ret = (Src *)emalloc (sizeof(Src));
 		    ret->file = strdup(s->name);
 		    ret->pref = targ->pref;
 		    ret->suff = suff;
@@ -1162,7 +1162,7 @@ SuffExpandChildren(cgn, pgn)
 		/*
 		 * Break the result into a vector of strings whose nodes
 		 * we can find, then add those nodes to the members list.
-		 * Unfortunately, we can't use Str_BreakString b/c it
+		 * Unfortunately, we can't use brk_string b/c it
 		 * doesn't understand about variable specifications with
 		 * spaces in them...
 		 */
@@ -1404,7 +1404,7 @@ SuffApplyTransform(tGn, sGn, t, s)
     /*
      * Locate the transformation rule itself
      */
-    tname = Str_Concat(s->name, t->name, 0);
+    tname = str_concat(s->name, t->name, 0);
     ln = Lst_Find(transforms, (ClientData)tname, SuffGNHasNameP);
     free(tname);
 
@@ -1661,7 +1661,7 @@ SuffFindNormalDeps(gn)
 	    /*
 	     * Allocate a Src structure to which things can be transformed
 	     */
-	    targ = (Src *)malloc(sizeof(Src));
+	    targ = (Src *)emalloc(sizeof(Src));
 	    targ->file = strdup(gn->name);
 	    targ->suff = (Suff *)Lst_Datum(ln);
 	    targ->node = gn;
@@ -1672,7 +1672,7 @@ SuffFindNormalDeps(gn)
 	     * the length of the suffix from the end of the name.
 	     */
 	    prefLen = (eoname - targ->suff->nameLen) - sopref;
-	    targ->pref = malloc(prefLen + 1);
+	    targ->pref = emalloc(prefLen + 1);
 	    bcopy(sopref, targ->pref, prefLen);
 	    targ->pref[prefLen] = '\0';
 
@@ -1701,7 +1701,7 @@ SuffFindNormalDeps(gn)
 	    printf("\tNo known suffix on %s. Using .NULL suffix\n", gn->name);
 	}
 	
-	targ = (Src *)malloc(sizeof(Src));
+	targ = (Src *)emalloc(sizeof(Src));
 	targ->file = strdup(gn->name);
 	targ->suff = suffNull;
 	targ->node = gn;
@@ -2060,7 +2060,7 @@ Suff_Init ()
      * actually go on the suffix list or everyone will think that's its
      * suffix.
      */
-    emptySuff = suffNull = (Suff *) malloc (sizeof (Suff));
+    emptySuff = suffNull = (Suff *) emalloc (sizeof (Suff));
 
     suffNull->name =   	    strdup ("");
     suffNull->nameLen =     0;
