@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_log.c	7.12 (Berkeley) %G%
+ *	@(#)subr_log.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@
 
 struct logsoftc {
 	int	sc_state;		/* see above for possibilities */
-	struct	proc *sc_selp;		/* process waiting on select call */
+	struct	selinfo sc_selp;	/* process waiting on select call */
 	int	sc_pgid;		/* process/group for async I/O */
 } logsoftc;
 
@@ -65,9 +65,9 @@ logclose(dev, flag, mode, p)
 	int flag, mode;
 	struct proc *p;
 {
+
 	log_open = 0;
 	logsoftc.sc_state = 0;
-	logsoftc.sc_selp = 0;
 }
 
 /*ARGSUSED*/
@@ -130,7 +130,7 @@ logselect(dev, rw, p)
 			splx(s);
 			return (1);
 		}
-		logsoftc.sc_selp = p;
+		selrecord(p, &logsoftc.sc_selp);
 		break;
 	}
 	splx(s);
@@ -143,10 +143,7 @@ logwakeup()
 
 	if (!log_open)
 		return;
-	if (logsoftc.sc_selp) {
-		selwakeup(logsoftc.sc_selp, 0);
-		logsoftc.sc_selp = 0;
-	}
+	selwakeup(&logsoftc.sc_selp);
 	if (logsoftc.sc_state & LOG_ASYNC) {
 		if (logsoftc.sc_pgid < 0)
 			gsignal(-logsoftc.sc_pgid, SIGIO); 
