@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)snake.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)snake.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -234,8 +234,8 @@ mainloop()
 		if (!fast) flushi();
 		lastc = c;
 		switch (c){
-		case CTRL(z):
-		case CTRL(c):
+		case CTRL('z'):
+		case CTRL('c'):
 			suspend();
 			continue;
 		case EOT:
@@ -265,7 +265,7 @@ mainloop()
 			putpad(KS);
 			putpad(TI);
 			point(&cursor,0,lcnt-1);
-		case CTRL(l):
+		case CTRL('l'):
 			setup();
 			winnings(cashvalue);
 			continue;
@@ -340,7 +340,7 @@ mainloop()
 						pchar(&you,ME);
 				}
 				break;
-			case CTRL(p):
+			case CTRL('p'):
 			case 'e':
 			case 'k':
 			case 'i':
@@ -353,7 +353,7 @@ mainloop()
 						pchar(&you,ME);
 				}
 				break;
-			case CTRL(n):
+			case CTRL('n'):
 			case 'c':
 			case 'j':
 			case LF:
