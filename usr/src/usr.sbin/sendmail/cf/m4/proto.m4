@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.25 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.26 (Berkeley) %G%)
 
 MAILER(local)dnl
 
@@ -94,7 +94,7 @@ include(`../m4/boilerplate.m4')
 S3
 
 # handle "from:<>" special case
-R$*<>$*			$@@				turn into magic token
+R$* < > $*		$@ @				turn into magic token
 
 # basic textual canonicalization -- note RFC733 heuristic here
 R$*<$*<$*<$+>$*>$*>$*	$4				3-level <> nesting
@@ -102,29 +102,29 @@ R$*<$*<$+>$*>$*		$3				2-level <> nesting
 R$*<$+>$*		$2				basic RFC821/822 parsing
 
 # make sure <@a,@b,@c:user@d> syntax is easy to parse -- undone later
-R@$+,$+			@$1:$2				change all "," to ":"
+R@ $+ , $+		@ $1 : $2			change all "," to ":"
 
 # localize and dispose of route-based addresses
-R@$+:$+			$@$>6<@$1>:$2			handle <route-addr>
+R@ $+ : $+		$@ $>6 < @$1 > : $2		handle <route-addr>
 
 # find focus for list syntax
-R$+:$*;@$+		$@$>6$1:$2;<@$3>		list syntax
-R$+:$*;			$@$1:$2;			list syntax
+R $+ : $* ; @ $+	$@ $>6 $1 : $2 ; < @ $3 >	list syntax
+R $+ : $* ;		$@ $1 : $2;			list syntax
 
 # find focus for @ syntax addresses
-R$+@$+			$:$1<@$2>			focus on domain
-R$+<$+@$+>		$1$2<@$3>			move gaze right
-R$+<@$+>		$@$>6$1<@$2>			already canonical
+R$+ @ $+		$: $1 < @ $2 >			focus on domain
+R$+ < $+ @ $+ >		$1 $2 < @ $3 >			move gaze right
+R$+ < @ $+ >		$@ $>6 $1 < @ $2 >		already canonical
 
 # convert old-style addresses to a domain-based address
-R$-!$+			$@$>6$2<@$1.UUCP>		resolve uucp names
-R$+.$-!$+		$@$>6$3<@$1.$2>			domain uucps
-R$+!$+			$@$>6$2<@$1.UUCP>		uucp subdomains
+R$- ! $+		$@ $>6 $2 < @ $1 .UUCP >	resolve uucp names
+R$+ . $- ! $+		$@ $>6 $3 < @ $1 . $2 >		domain uucps
+R$+ ! $+		$@ $>6 $2 < @ $1 .UUCP >	uucp subdomains
 
 # if we have % signs, take the rightmost one
-R$*%$*			$1@$2				First make them all @s.
-R$*@$*@$*		$1%$2@$3			Undo all but the last.
-R$*@$*			$@$>6$1<@$2>			Insert < > and finish
+R$* % $*		$1 @ $2				First make them all @s.
+R$* @ $* @ $*		$1 % $2 @ $3			Undo all but the last.
+R$* @ $*		$@ $>6 $1 < @ $2 >		Insert < > and finish
 
 # else we must be a local name
 
@@ -139,29 +139,29 @@ S6
 
 # handle special cases for local names
 R$* < @ $=w > $*		$: $1 < @ $j . > $3		no domain at all
-R$* < @ $=w .UUCP> $*		$: $1 < @ $j . > $3		.UUCP domain
+R$* < @ $=w . UUCP > $*		$: $1 < @ $j . > $3		.UUCP domain
 undivert(2)dnl
 
 ifdef(`UUCP_RELAY',
 `# pass UUCP addresses straight through
-R$* < @ $+ . UUCP > $*		$@ $1 < @ $2 .UUCP > $3',
+R$* < @ $+ . UUCP > $*		$@ $1 < @ $2 . UUCP > $3',
 `# if really UUCP, handle it immediately
 ifdef(`_CLASS_U_',
-`R$* < @ $=U . UUCP > $*		$@ $1 < @ $2 .UUCP > $3', `dnl')
+`R$* < @ $=U . UUCP > $*	$@ $1 < @ $2 . UUCP > $3', `dnl')
 ifdef(`_CLASS_V_',
-`R$* < @ $=V . UUCP > $*		$@ $1 < @ $2 .UUCP > $3', `dnl')
+`R$* < @ $=V . UUCP > $*	$@ $1 < @ $2 . UUCP > $3', `dnl')
 ifdef(`_CLASS_W_',
-`R$* < @ $=W . UUCP > $*		$@ $1 < @ $2 .UUCP > $3', `dnl')
+`R$* < @ $=W . UUCP > $*	$@ $1 < @ $2 . UUCP > $3', `dnl')
 ifdef(`_CLASS_X_',
-`R$* < @ $=X . UUCP > $*		$@ $1 < @ $2 .UUCP > $3', `dnl')
+`R$* < @ $=X . UUCP > $*	$@ $1 < @ $2 . UUCP > $3', `dnl')
 ifdef(`_CLASS_Y_',
-`R$* < @ $=Y . UUCP > $*		$@ $1 < @ $2 .UUCP > $3', `dnl')
+`R$* < @ $=Y . UUCP > $*	$@ $1 < @ $2 . UUCP > $3', `dnl')
 
 # try UUCP traffic as a local address
-R$* < @ $+ .UUCP > $*			$: $1 < @ $[ $2 $] .UUCP > $3
+R$* < @ $+ . UUCP > $*		$: $1 < @ $[ $2 $] . UUCP > $3
 ifdef(`_OLD_SENDMAIL_',
-`R$* < @ $+ . $+ .UUCP > $*		$@ $1 < @ $2 . $3 > $4',
-`R$* < @ $+ . .UUCP > $*		$@ $1 < @ $2 . > $3')')
+`R$* < @ $+ . $+ . UUCP > $*		$@ $1 < @ $2 . $3 . > $4',
+`R$* < @ $+ . . UUCP > $*		$@ $1 < @ $2 . > $3')')
 
 # pass to name server to make hostname canonical
 R$* < @ $* $~. > $*		$: $1 < @ $[ $2 $3 $] > $4
@@ -217,11 +217,11 @@ R$*			$@ $>0 $1
 
 S0
 
-# handle numeric address spec
+ifdef(`_MAILER_smtp_',
+`# handle numeric address spec
 R$* < @ [ $+ ] > $*	$: $1 < @ $[ [$2] $] > $3	numeric internet addr
-R$* < @ [ $+ ] > $*	$#smtp $@ [$2] $: $1 @ [$2] $3	numeric internet spec
-
-#R@			$#error$:Invalid address	handle <> form
+R$* < @ [ $+ ] > $*	$#smtp $@ [$2] $: $1 @ [$2] $3	numeric internet spec',
+`dnl')dnl
 
 # now delete the local info -- note $=O to find characters that cause forwarding
 R< @ $j . > : $*	$@ $>7 $1			@here:... -> ...
@@ -234,7 +234,7 @@ ifdef(`_OLD_SENDMAIL_',
 undivert(3)dnl
 undivert(4)dnl
 
-# resolve remotely connected UUCP links
+# resolve remotely connected UUCP links (if any)
 ifdef(`_CLASS_V_',
 `R$* < @ $=V . UUCP > $*		$#smtp $@ $V $: <@ $V> : $1 @ $2.UUCP $3',
 	`dnl')
@@ -256,14 +256,16 @@ ifdef(`CSNET_RELAY',
 ifdef(`UUCP_RELAY',
 `# forward non-local UUCP traffic to our UUCP relay
 R$*<@$*.UUCP>$*		$#smtp $@ $Y $: <@ $Y> : $1 @ $2.UUCP $3	uucp mail',
-`ifdef(`_UUCP_LINKED_',
+`ifdef(`_MAILER_uucp_',
 `# forward other UUCP traffic straight to UUCP
 R< @ $+ .UUCP > : $+	$#uucp $@ $1 $: $1:$2			@host.UUCP:...
 R$+ < @ $+ .UUCP >	$#uucp $@ $2 $: $1			user@host.UUCP',
 	`dnl')')
 
-# deal with other remote names
+ifdef(`_MAILER_smtp_',
+`# deal with other remote names
 R$* < @ $* > $*		$#smtp $@ $2 $: $1 < @ $2 > $3		user@host.domain
+', `dnl')
 
 ifdef(`_OLD_SENDMAIL_',
 `# forward remaining names to local relay, if any
@@ -275,14 +277,17 @@ R$+ < @ $+ >		$#smtp $@ $2 $: $1		deliver to relay',
 R$=L			$#local $: @ $1			special local names
 R$+			$#local $: $1			regular local names
 
-#
-# special rewriting after aliases have been expanded
-#
+###########################################################################
+###   Ruleset 5 -- special rewriting after aliases have been expanded   ###
+###		   (new sendmail only)					###
+###########################################################################
 
 S5
 
-R$+			$: $1 < @ $R >
-R$+ < @ $+ >		$#smtp $@ $2 $: $1 < @ $2 >	send to relay')
+ifdef(`_MAILER_smtp_',
+`R$+			$: $1 < @ $R >
+R$+ < @ $+ >		$#smtp $@ $2 $: $1 < @ $2 >	send to relay')',
+`dnl')
 #
 ######################################################################
 ######################################################################
