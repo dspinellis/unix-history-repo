@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.5 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -24,6 +24,21 @@
 #include <sys/buf.h>
 #include <sys/queue.h>
 #include <miscfs/union/union.h>
+
+#define FIXUP(un) { \
+	if (((un)->un_flags & UN_ULOCK) == 0) { \
+		union_fixup(un); \
+	} \
+}
+
+static void
+union_fixup(un)
+	struct union_node *un;
+{
+
+	VOP_LOCK(un->un_uppervp);
+	un->un_flags |= UN_ULOCK;
+}
 
 static int
 union_lookup1(udvp, dvp, vpp, cnp)
@@ -121,6 +136,7 @@ union_lookup(ap)
 	int lockparent = cnp->cn_flags & LOCKPARENT;
 	int rdonly = cnp->cn_flags & RDONLY;
 	struct union_mount *um = MOUNTTOUNIONMOUNT(dvp->v_mount);
+	struct ucred *saved_cred;
 
 	cnp->cn_flags |= LOCKPARENT;
 
@@ -136,6 +152,7 @@ union_lookup(ap)
 	 * on and just return that vnode.
 	 */
 	if (upperdvp) {
+		FIXUP(dun);
 		uerror = union_lookup1(um->um_uppervp, upperdvp,
 					&uppervp, cnp);
 		/*if (uppervp == upperdvp)
@@ -169,8 +186,14 @@ union_lookup(ap)
 		 */
 		nameiop = cnp->cn_nameiop;
 		cnp->cn_nameiop = LOOKUP;
+		if (um->um_op == UNMNT_BELOW) {
+			saved_cred = cnp->cn_cred;
+			cnp->cn_cred = um->um_cred;
+		}
 		lerror = union_lookup1(um->um_lowervp, lowerdvp,
 				&lowervp, cnp);
+		if (um->um_op == UNMNT_BELOW)
+			cnp->cn_cred = saved_cred;
 		cnp->cn_nameiop = nameiop;
 
 		if (lowervp != lowerdvp)
@@ -282,6 +305,8 @@ union_create(ap)
 		int error;
 		struct vnode *vp;
 
+		FIXUP(un);
+
 		VREF(dvp);
 		un->un_flags |= UN_KLOCK;
 		vput(ap->a_dvp);
@@ -321,6 +346,8 @@ union_mknod(ap)
 	if (dvp) {
 		int error;
 		struct vnode *vp;
+
+		FIXUP(un);
 
 		VREF(dvp);
 		un->un_flags |= UN_KLOCK;
@@ -421,9 +448,11 @@ union_open(ap)
 					VOP_UNLOCK(tvp);
 				}
 
+#ifdef UNION_DIAGNOSTIC
 				if (!error)
 					uprintf("union: copied up %s\n",
 								un->un_path);
+#endif
 			}
 
 			un->un_flags &= ~UN_ULOCK;
@@ -461,6 +490,8 @@ union_open(ap)
 
 		return (error);
 	}
+
+	FIXUP(un);
 
 	error = VOP_OPEN(tvp, mode, cred, p);
 
@@ -515,16 +546,25 @@ union_access(ap)
 	int error = EACCES;
 	struct vnode *vp;
 
+	if (vp = un->un_uppervp) {
+		FIXUP(un);
+		return (VOP_ACCESS(vp, ap->a_mode, ap->a_cred, ap->a_p));
+	}
+
 	if (vp = un->un_lowervp) {
 		VOP_LOCK(vp);
 		error = VOP_ACCESS(vp, ap->a_mode, ap->a_cred, ap->a_p);
+		if (error == 0) {
+			struct union_mount *um = MOUNTTOUNIONMOUNT(vp->v_mount);
+
+			if (um->um_op == UNMNT_BELOW)
+				error = VOP_ACCESS(vp, ap->a_mode,
+						um->um_cred, ap->a_p);
+		}
 		VOP_UNLOCK(vp);
 		if (error)
 			return (error);
 	}
-
-	if (vp = un->un_uppervp)
-		error = VOP_ACCESS(vp, ap->a_mode, ap->a_cred, ap->a_p);
 
 	return (error);
 }
@@ -561,6 +601,7 @@ union_getattr(ap)
 
 	vp = un->un_uppervp;
 	if (vp != NULLVP) {
+		FIXUP(un);
 		error = VOP_GETATTR(vp, vap, ap->a_cred, ap->a_p);
 		if (error)
 			return (error);
@@ -631,6 +672,7 @@ union_setattr(ap)
 	 * otherwise return read-only filesystem error.
 	 */
 	if (un->un_uppervp != NULLVP) {
+		FIXUP(un);
 		error = VOP_SETATTR(un->un_uppervp, ap->a_vap,
 					ap->a_cred, ap->a_p);
 	} else {
@@ -655,6 +697,8 @@ union_read(ap)
 
 	if (dolock)
 		VOP_LOCK(vp);
+	else
+		FIXUP(VTOUNION(ap->a_vp));
 	error = VOP_READ(vp, ap->a_uio, ap->a_ioflag, ap->a_cred);
 	if (dolock)
 		VOP_UNLOCK(vp);
@@ -677,6 +721,8 @@ union_write(ap)
 
 	if (dolock)
 		VOP_LOCK(vp);
+	else
+		FIXUP(VTOUNION(ap->a_vp));
 	error = VOP_WRITE(vp, ap->a_uio, ap->a_ioflag, ap->a_cred);
 	if (dolock)
 		VOP_UNLOCK(vp);
@@ -746,6 +792,8 @@ union_fsync(ap)
 
 		if (dolock)
 			VOP_LOCK(targetvp);
+		else
+			FIXUP(VTOUNION(ap->a_vp));
 		error = VOP_FSYNC(targetvp, ap->a_cred,
 					ap->a_waitfor, ap->a_p);
 		if (dolock)
@@ -784,9 +832,11 @@ union_remove(ap)
 		struct vnode *dvp = dun->un_uppervp;
 		struct vnode *vp = un->un_uppervp;
 
+		FIXUP(dun);
 		VREF(dvp);
 		dun->un_flags |= UN_KLOCK;
 		vput(ap->a_dvp);
+		FIXUP(un);
 		VREF(vp);
 		un->un_flags |= UN_KLOCK;
 		vput(ap->a_vp);
@@ -826,9 +876,11 @@ union_link(ap)
 		struct vnode *dvp = dun->un_uppervp;
 		struct vnode *vp = un->un_uppervp;
 
+		FIXUP(dun);
 		VREF(dvp);
 		dun->un_flags |= UN_KLOCK;
 		vput(ap->a_vp);
+		FIXUP(un);
 		VREF(vp);
 		vrele(ap->a_tdvp);
 
@@ -871,6 +923,7 @@ union_rename(ap)
 			goto bad;
 		}
 
+		FIXUP(un);
 		fdvp = un->un_uppervp;
 		VREF(fdvp);
 		vrele(ap->a_fdvp);
@@ -883,6 +936,7 @@ union_rename(ap)
 			goto bad;
 		}
 
+		FIXUP(un);
 		fvp = un->un_uppervp;
 		VREF(fvp);
 		vrele(ap->a_fvp);
@@ -942,6 +996,7 @@ union_mkdir(ap)
 		int error;
 		struct vnode *vp;
 
+		FIXUP(un);
 		VREF(dvp);
 		un->un_flags |= UN_KLOCK;
 		vput(ap->a_dvp);
@@ -982,9 +1037,11 @@ union_rmdir(ap)
 		struct vnode *dvp = dun->un_uppervp;
 		struct vnode *vp = un->un_uppervp;
 
+		FIXUP(dun);
 		VREF(dvp);
 		dun->un_flags |= UN_KLOCK;
 		vput(ap->a_dvp);
+		FIXUP(un);
 		VREF(vp);
 		un->un_flags |= UN_KLOCK;
 		vput(ap->a_vp);
@@ -1026,6 +1083,7 @@ union_symlink(ap)
 		struct vnode *vp;
 		struct mount *mp = ap->a_dvp->v_mount;
 
+		FIXUP(un);
 		VREF(dvp);
 		un->un_flags |= UN_KLOCK;
 		vput(ap->a_dvp);
@@ -1058,8 +1116,10 @@ union_readdir(ap)
 	int error = 0;
 	struct union_node *un = VTOUNION(ap->a_vp);
 
-	if (un->un_uppervp)
+	if (un->un_uppervp) {
+		FIXUP(un);
 		error = VOP_READDIR(un->un_uppervp, ap->a_uio, ap->a_cred);
+	}
 
 	return (error);
 }
@@ -1078,6 +1138,8 @@ union_readlink(ap)
 
 	if (dolock)
 		VOP_LOCK(vp);
+	else
+		FIXUP(VTOUNION(ap->a_vp));
 	error = VOP_READLINK(vp, ap->a_uio, ap->a_cred);
 	if (dolock)
 		VOP_UNLOCK(vp);
@@ -1098,8 +1160,12 @@ union_abortop(ap)
 	int islocked = un->un_flags & UN_LOCKED;
 	int dolock = (vp == LOWERVP(ap->a_dvp));
 
-	if (islocked && dolock)
-		VOP_LOCK(vp);
+	if (islocked) {
+		if (dolock)
+			VOP_LOCK(vp);
+		else
+			FIXUP(VTOUNION(ap->a_dvp));
+	}
 	error = VOP_ABORTOP(vp, ap->a_cnp);
 	if (islocked && dolock)
 		VOP_UNLOCK(vp);
@@ -1246,6 +1312,8 @@ union_bmap(ap)
 
 	if (dolock)
 		VOP_LOCK(vp);
+	else
+		FIXUP(VTOUNION(ap->a_vp));
 	error = VOP_BMAP(vp, ap->a_bn, ap->a_vpp, ap->a_bnp, ap->a_runp);
 	if (dolock)
 		VOP_UNLOCK(vp);
@@ -1290,6 +1358,8 @@ union_pathconf(ap)
 
 	if (dolock)
 		VOP_LOCK(vp);
+	else
+		FIXUP(VTOUNION(ap->a_vp));
 	error = VOP_PATHCONF(vp, ap->a_name, ap->a_retval);
 	if (dolock)
 		VOP_UNLOCK(vp);
