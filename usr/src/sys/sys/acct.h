@@ -22,5 +22,11 @@ struct	acct
 	char	ac_flag;		/* Accounting flag */
 };
 
-#define	AFORK	01		/* has executed fork, but no exec */
-#define	ASU	02		/* used super-user privileges */
+#define	AFORK	0001		/* has executed fork, but no exec */
+#define	ASU	0002		/* used super-user privileges */
+#define	ACOMPAT	0004		/* used compatibility mode */
+#define	ACORE	0010		/* dumped core */
+#define	AXSIG	0020		/* killed by a signal */
+
+#define	ACCTLO	30		/* acctg off when space < this */
+#define	ACCTHI	100		/* acctg resumes at this level */
