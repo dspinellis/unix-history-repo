@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	5.16 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -50,8 +50,11 @@ __rec_open(fname, flags, mode, openinfo)
 			goto einval;
 		btopeninfo.flags = 0;
 		btopeninfo.cachesize = openinfo->cachesize;
+		btopeninfo.maxkeypage = 0;
+		btopeninfo.minkeypage = 0;
 		btopeninfo.psize = 0;
 		btopeninfo.compare = NULL;
+		btopeninfo.prefix = NULL;
 		btopeninfo.lorder = openinfo->lorder;
 		dbp = __bt_open(NULL, O_RDWR, S_IRUSR | S_IWUSR, &btopeninfo);
 	} else
@@ -88,14 +91,12 @@ __rec_open(fname, flags, mode, openinfo)
 	 * In 4.4BSD stat(2) returns true for ISSOCK on pipes.  Until
 	 * then, this is fairly close.  Pipes are read-only.
 	 */
-	if (fname != NULL)
+	if (fname != NULL) {
 		if (lseek(rfd, (off_t)0, SEEK_CUR) == -1 && errno == ESPIPE) {
-			switch(flags & O_ACCMODE) {
+			switch (flags & O_ACCMODE) {
 			case O_RDONLY:
 				SET(t, BTF_RDONLY);
 				break;
-			case O_RDWR:
-			case O_WRONLY:
 			default:
 				goto einval;
 			}
@@ -105,17 +106,16 @@ slow:			if ((t->bt_rfp = fdopen(rfd, "r")) == NULL)
 			t->bt_irec =
 			    ISSET(t, BTF_FIXEDLEN) ? __rec_fpipe : __rec_vpipe;
 		} else {
-			switch(flags & O_ACCMODE) {
+			switch (flags & O_ACCMODE) {
 			case O_RDONLY:
 				SET(t, BTF_RDONLY);
 				break;
 			case O_RDWR:
 				break;
-			case O_WRONLY:
 			default:
 				goto einval;
 			}
-				
+
 			if (fstat(rfd, &sb))
 				goto err;
 			if (sb.st_size > (off_t)SIZE_T_MAX) {
@@ -137,6 +137,7 @@ slow:			if ((t->bt_rfp = fdopen(rfd, "r")) == NULL)
 				SET(t, BTF_MEMMAPPED);
 			}
 		}
+	}
 
 	/* Use the recno routines. */
 	dbp->close = __rec_close;
