@@ -1,4 +1,4 @@
-.\" Copyright (c) 1990, 1993
+.\" Copyright (c) 1990, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)stty.1	8.2 (Berkeley) %G%
+.\"     @(#)stty.1	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STTY 1
@@ -299,10 +299,12 @@ terminal output.
 .It Cm altwerase Pq Fl altwerase
 Use (do not use) an alternate word erase algorithm when processing
 .Dv WERASE
-characters.  This alternate algorithm considers sequences of
-alphameric/underscores as words.  It also skips the first preceding character
-in its classification (as a convenience since the one preceding character
-could have been erased with simply an
+characters.
+This alternate algorithm considers sequences of
+alphanumeric/underscores as words.
+It also skips the first preceding character in its classification
+(as a convenience since the one preceding character could have been
+erased with simply an
 .Dv ERASE
 character.)
 .It Cm mdmbuf Pq Fl mdmbuf
