@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.34 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -343,6 +343,7 @@ recipient(a, sendq, e)
 						e->e_id, a->q_user, errstring(ret));
 #endif
 				a->q_flags |= QQUEUEUP;
+				a->q_flags &= ~QDONTSEND;
 				usrerr("451 Cannot open %s: %s",
 					a->q_user, errstring(ret));
 			}
