@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986 Regents of the University of California.
  *
  * Redistribution and use in source and binary forms are permitted
  * provided that the above copyright notice and this paragraph are
@@ -12,9 +11,7 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
- *
- *	@(#)uipc_usrreq.c	7.2.1.1 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -27,8 +24,7 @@
 #include "socketvar.h"
 #include "unpcb.h"
 #include "un.h"
-#include "vnode.h"
-#include "mount.h"
+#include "inode.h"
 #include "file.h"
 #include "stat.h"
 
@@ -40,8 +36,8 @@
  *	rethink name space problems
  *	need a proper out-of-band
  */
-struct	sockaddr sun_noname = { AF_UNIX };
-ino_t	unp_vno;			/* prototype for fake vnode numbers */
+struct	sockaddr sun_noname = { sizeof(sun_noname), AF_UNIX };
+ino_t	unp_ino;			/* prototype for fake inode numbers */
 
 /*ARGSUSED*/
 uipc_usrreq(so, req, m, nam, rights)
@@ -82,7 +78,7 @@ uipc_usrreq(so, req, m, nam, rights)
 		break;
 
 	case PRU_LISTEN:
-		if (unp->unp_vnode == 0)
+		if (unp->unp_inode == 0)
 			error = EINVAL;
 		break;
 
@@ -237,9 +233,9 @@ uipc_usrreq(so, req, m, nam, rights)
 			((struct stat *) m)->st_blksize += so2->so_rcv.sb_cc;
 		}
 		((struct stat *) m)->st_dev = NODEV;
-		if (unp->unp_vno == 0)
-			unp->unp_vno = unp_vno++;
-		((struct stat *) m)->st_ino = unp->unp_vno;
+		if (unp->unp_ino == 0)
+			unp->unp_ino = unp_ino++;
+		((struct stat *) m)->st_ino = unp->unp_ino;
 		return (0);
 
 	case PRU_RCVOOB:
@@ -250,6 +246,12 @@ uipc_usrreq(so, req, m, nam, rights)
 		break;
 
 	case PRU_SOCKADDR:
+		if (unp->unp_addr) {
+			nam->m_len = unp->unp_addr->m_len;
+			bcopy(mtod(unp->unp_addr, caddr_t),
+			    mtod(nam, caddr_t), (unsigned)nam->m_len);
+		} else
+			nam->m_len = 0;
 		break;
 
 	case PRU_PEERADDR:
@@ -257,7 +259,8 @@ uipc_usrreq(so, req, m, nam, rights)
 			nam->m_len = unp->unp_conn->unp_addr->m_len;
 			bcopy(mtod(unp->unp_conn->unp_addr, caddr_t),
 			    mtod(nam, caddr_t), (unsigned)nam->m_len);
-		}
+		} else
+			nam->m_len = 0;
 		break;
 
 	case PRU_SLOWTIMO:
@@ -281,10 +284,10 @@ release:
  * be large enough for at least one max-size datagram plus address.
  */
 #define	PIPSIZ	4096
-int	unpst_sendspace = PIPSIZ;
-int	unpst_recvspace = PIPSIZ;
-int	unpdg_sendspace = 2*1024;	/* really max datagram size */
-int	unpdg_recvspace = 4*1024;
+u_long	unpst_sendspace = PIPSIZ;
+u_long	unpst_recvspace = PIPSIZ;
+u_long	unpdg_sendspace = 2*1024;	/* really max datagram size */
+u_long	unpdg_recvspace = 4*1024;
 
 int	unp_rights;			/* file descriptors in flight */
 
@@ -295,18 +298,20 @@ unp_attach(so)
 	register struct unpcb *unp;
 	int error;
 	
-	switch (so->so_type) {
+	if (so->so_snd.sb_hiwat == 0 || so->so_rcv.sb_hiwat == 0) {
+		switch (so->so_type) {
 
-	case SOCK_STREAM:
-		error = soreserve(so, unpst_sendspace, unpst_recvspace);
-		break;
+		case SOCK_STREAM:
+			error = soreserve(so, unpst_sendspace, unpst_recvspace);
+			break;
 
-	case SOCK_DGRAM:
-		error = soreserve(so, unpdg_sendspace, unpdg_recvspace);
-		break;
+		case SOCK_DGRAM:
+			error = soreserve(so, unpdg_sendspace, unpdg_recvspace);
+			break;
+		}
+		if (error)
+			return (error);
 	}
-	if (error)
-		return (error);
 	m = m_getclr(M_DONTWAIT, MT_PCB);
 	if (m == NULL)
 		return (ENOBUFS);
@@ -320,10 +325,10 @@ unp_detach(unp)
 	register struct unpcb *unp;
 {
 	
-	if (unp->unp_vnode) {
-		unp->unp_vnode->v_socket = 0;
-		vrele(unp->unp_vnode);
-		unp->unp_vnode = 0;
+	if (unp->unp_inode) {
+		unp->unp_inode->i_socket = 0;
+		irele(unp->unp_inode);
+		unp->unp_inode = 0;
 	}
 	if (unp->unp_conn)
 		unp_disconnect(unp);
@@ -342,35 +347,40 @@ unp_bind(unp, nam)
 	struct mbuf *nam;
 {
 	struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
-	register struct vnode *vp;
+	register struct inode *ip;
 	register struct nameidata *ndp = &u.u_nd;
-	struct vattr vattr;
 	int error;
 
 	ndp->ni_dirp = soun->sun_path;
-	if (unp->unp_vnode != NULL || nam->m_len == MLEN)
+	if (unp->unp_vnode != NULL)
 		return (EINVAL);
-	*(mtod(nam, caddr_t) + nam->m_len) = 0;
+	if (nam->m_len == MLEN) {
+		if (*(mtod(nam, caddr_t) + nam->m_len - 1) != 0)
+			return (EINVAL);
+	} else
+		*(mtod(nam, caddr_t) + nam->m_len) = 0;
 /* SHOULD BE ABLE TO ADOPT EXISTING AND wakeup() ALA FIFO's */
-	ndp->ni_nameiop = CREATE | FOLLOW | LOCKPARENT;
+	ndp->ni_nameiop = CREATE | FOLLOW;
 	ndp->ni_segflg = UIO_SYSSPACE;
-	if (error = namei(ndp))
-		return (error);
-	vp = ndp->ni_vp;
-	if (vp != NULL) {
-		vop_abortop(ndp);
+	ip = namei(ndp);
+	if (ip) {
+		iput(ip);
 		return (EADDRINUSE);
 	}
-	vattr_null(&vattr);
-	vattr.va_type = VSOCK;
-	vattr.va_mode = 0777;
-	if (error = vop_create(ndp, &vattr))
+	if (error = u.u_error) {
+		u.u_error = 0;			/* XXX */
 		return (error);
-	vp = ndp->ni_vp;
-	vp->v_socket = unp->unp_socket;
-	unp->unp_vnode = vp;
+	}
+	ip = maknode(IFSOCK | 0777, ndp);
+	if (ip == NULL) {
+		error = u.u_error;		/* XXX */
+		u.u_error = 0;			/* XXX */
+		return (error);
+	}
+	ip->i_socket = unp->unp_socket;
+	unp->unp_inode = ip;
 	unp->unp_addr = m_copy(nam, 0, (int)M_COPYALL);
-	vop_unlock(vp);
+	iunlock(ip);			/* but keep reference */
 	return (0);
 }
 
@@ -379,27 +389,36 @@ unp_connect(so, nam)
 	struct mbuf *nam;
 {
 	register struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
-	register struct vnode *vp;
-	int error;
-	register struct socket *so2;
+	register struct inode *ip;
+	register struct socket *so2, *so3;
 	register struct nameidata *ndp = &u.u_nd;
+	struct unpcb *unp2, *unp3;
+	int error;
 
 	ndp->ni_dirp = soun->sun_path;
-	if (nam->m_len + (nam->m_off - MMINOFF) == MLEN)
-		return (EMSGSIZE);
-	*(mtod(nam, caddr_t) + nam->m_len) = 0;
+	if (nam->m_data + nam->m_len == &nam->m_dat[MLEN]) {	/* XXX */
+		if (*(mtod(nam, caddr_t) + nam->m_len - 1) != 0)
+			return (EMSGSIZE);
+	} else
+		*(mtod(nam, caddr_t) + nam->m_len) = 0;
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_SYSSPACE;
-	if (error = namei(ndp))
-		return (error);
-	vp = ndp->ni_vp;
-	if (error = vn_access(vp, VWRITE, u.u_cred))
+	ip = namei(ndp);
+	if (ip == 0) {
+		error = u.u_error;
+		u.u_error = 0;
+		return (error);		/* XXX */
+	}
+	if (access(ip, IWRITE)) {
+		error = u.u_error;
+		u.u_error = 0; 		/* XXX */
 		goto bad;
-	if (vp->v_type != VSOCK) {
+	}
+	if ((ip->i_mode&IFMT) != IFSOCK) {
 		error = ENOTSOCK;
 		goto bad;
 	}
-	so2 = vp->v_socket;
+	so2 = ip->i_socket;
 	if (so2 == 0) {
 		error = ECONNREFUSED;
 		goto bad;
@@ -408,15 +427,22 @@ unp_connect(so, nam)
 		error = EPROTOTYPE;
 		goto bad;
 	}
-	if (so->so_proto->pr_flags & PR_CONNREQUIRED &&
-	    ((so2->so_options&SO_ACCEPTCONN) == 0 ||
-	     (so2 = sonewconn(so2)) == 0)) {
-		error = ECONNREFUSED;
-		goto bad;
+	if (so->so_proto->pr_flags & PR_CONNREQUIRED) {
+		if ((so2->so_options & SO_ACCEPTCONN) == 0 ||
+		    (so3 = sonewconn(so2)) == 0) {
+			error = ECONNREFUSED;
+			goto bad;
+		}
+		unp2 = sotounpcb(so2);
+		unp3 = sotounpcb(so3);
+		if (unp2->unp_addr)
+			unp3->unp_addr =
+				  m_copy(unp2->unp_addr, 0, (int)M_COPYALL);
+		so2 = so3;
 	}
 	error = unp_connect2(so, so2);
 bad:
-	vrele(vp);
+	iput(ip);
 	return (error);
 }
 
@@ -544,7 +570,8 @@ unp_externalize(rights)
 		return (EMSGSIZE);
 	}
 	for (i = 0; i < newfds; i++) {
-		if (ufalloc(0, &f))
+		f = ufalloc(0);
+		if (f < 0)
 			panic("unp_externalize");
 		fp = *rp;
 		u.u_ofile[f] = fp;
@@ -608,9 +635,9 @@ restart:
 					continue;
 				fp->f_flag |= FMARK;
 			}
-			if (fp->f_type != DTYPE_SOCKET)
+			if (fp->f_type != DTYPE_SOCKET ||
+			    (so = (struct socket *)fp->f_data) == 0)
 				continue;
-			so = (struct socket *)fp->f_data;
 			if (so->so_proto->pr_domain != &unixdomain ||
 			    (so->so_proto->pr_flags&PR_RIGHTS) == 0)
 				continue;
