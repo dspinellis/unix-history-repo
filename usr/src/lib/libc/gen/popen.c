@@ -9,11 +9,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)popen.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <sys/wait.h>
+#include <sys/socket.h>
 
 #include <signal.h>
 #include <errno.h>
@@ -35,20 +36,22 @@ popen(command, type)
 {
 	struct pid *cur;
 	FILE *iop;
-	int pdes[2], pid;
+	int pdes[2], pid, twoway;
 
-	if (*type != 'r' && *type != 'w' || type[1]) {
-		errno = EINVAL;
-		return (NULL);
+	if (strchr(type, '+')) {
+		twoway = 1;
+		type = "r+";
+		if (socketpair(AF_UNIX, SOCK_STREAM, 0, pdes) < 0)
+			return (NULL);
+	} else  {
+		twoway = 0;
+		if (*type != 'r' && *type != 'w' || type[1] ||
+		    (pipe(pdes) < 0))
+			return (NULL);
 	}
 
 	if ((cur = malloc(sizeof(struct pid))) == NULL)
 		return (NULL);
-
-	if (pipe(pdes) < 0) {
-		(void)free(cur);
-		return (NULL);
-	}
 
 	switch (pid = vfork()) {
 	case -1:			/* Error. */
@@ -62,8 +65,11 @@ popen(command, type)
 			if (pdes[1] != STDOUT_FILENO) {
 				(void)dup2(pdes[1], STDOUT_FILENO);
 				(void)close(pdes[1]);
+				pdes[1] = STDOUT_FILENO;
 			}
 			(void) close(pdes[0]);
+			if (twoway && (pdes[1] != STDIN_FILENO))
+				(void)dup2(pdes[1], STDIN_FILENO);
 		} else {
 			if (pdes[0] != STDIN_FILENO) {
 				(void)dup2(pdes[0], STDIN_FILENO);
