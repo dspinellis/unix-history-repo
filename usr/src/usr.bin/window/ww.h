@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.1 83/08/11	
+ *	@(#)ww.h	3.2 83/08/12	
  */
 
 #include <stdio.h>
@@ -19,27 +19,6 @@ struct ww_pos {
 	int r;			/* row */
 	int c;			/* column */
 };
-
-union ww_char {
-	short c_w;		/* as a word */
-	struct {
-		char C_c;	/* the character part */
-		char C_m;	/* the mode part */
-	} c_un;
-};
-#define c_c c_un.C_c
-#define c_m c_un.C_m
-
-#define WWC_CMASK	0x00ff
-#define WWC_MMASK	0xff00
-#define WWC_MSHIFT	8
-
-	/* c_m bits */
-#define WWM_REV		0x01	/* reverse video */
-#define WWM_BLK		0x02	/* blinking */
-#define WWM_UL		0x04	/* underlined */
-#define WWM_GLS		0x10	/* window only, glass, i.e. transparent */
-#define WWM_COV		0x20	/* window only, covered */
 
 struct ww {
 	struct ww *ww_forw;	/* doubly linked list, for overlapping info */
@@ -62,19 +41,13 @@ struct ww {
 	int ww_pty;		/* file descriptor of pty */
 	int ww_tty;		/* . . . tty */
 	int ww_pid;		/* pid of process, if WWS_HASPROC true */
-	char ww_ttyname[11];	/* /dev/ttyp? */
+	char ww_ttyname[11];	/* "/dev/ttyp?" */
 	/* below are things for the user */
 	char ww_hasframe :1;	/* frame it */
 	char ww_center :1;	/* center the label */
 	int ww_id;		/* the user id */
 	char *ww_label;		/* the user supplied label */
 };
-
-	/* ww_state values */
-#define WWS_INITIAL	0	/* just opened */
-#define WWS_HASPROC	1	/* forked, in parent */
-#define WWS_INCHILD	2	/* forked, in child */
-#define WWS_DEAD	3	/* child died */
 
 struct ww_tty {
 	struct sgttyb ww_sgttyb;
@@ -85,40 +58,84 @@ struct ww_tty {
 	int ww_pgrp;
 };
 
+union ww_char {
+	short c_w;		/* as a word */
+	struct {
+		char C_c;	/* the character part */
+		char C_m;	/* the mode part */
+	} c_un;
+};
+#define c_c c_un.C_c
+#define c_m c_un.C_m
+
+	/* parts of ww_char */
+#define WWC_CMASK	0x00ff
+#define WWC_MMASK	0xff00
+#define WWC_MSHIFT	8
+
+	/* c_m bits */
+#define WWM_REV		0x01	/* reverse video */
+#define WWM_BLK		0x02	/* blinking */
+#define WWM_UL		0x04	/* underlined */
+#define WWM_GLS		0x10	/* window only, glass, i.e. transparent */
+#define WWM_COV		0x20	/* window only, covered */
+
+	/* ww_state values */
+#define WWS_INITIAL	0	/* just opened */
+#define WWS_HASPROC	1	/* forked, in parent */
+#define WWS_INCHILD	2	/* forked, in child */
+#define WWS_DEAD	3	/* child died */
+
 	/* flags to wwopen() */
 #define WWO_PTY		0x01		/* want pty */
 #define WWO_REVERSE	0x02		/* make it all reverse video */
 #define WWO_GLASS	0x04		/* make it all glass */
 
-struct ww wwhead;
-struct ww *wwindex[NWW + 1];
-struct ww wwnobody;
+	/* flags for wwfmap */
+#define WWF_U		0x01
+#define WWF_R		0x02
+#define WWF_D		0x04
+#define WWF_L		0x08
+#define WWF_MASK	(WWF_U|WWF_R|WWF_D|WWF_L)
+#define WWF_LABEL	0x40
+#define WWF_TOP		0x80
+
+	/* special ww_index value */
 #define WWX_NOBODY	NWW
 
-struct ww_tty wwoldtty, wwnewtty, wwwintty;
+struct ww wwhead;
+struct ww *wwindex[NWW + 1];		/* last location is for wwnobody */
+struct ww wwnobody;
 
-char *wwterm;
-char wwtermcap[1024];
-char wwkeys[512];
+struct ww_tty wwoldtty;		/* the old (saved) terminal settings */
+struct ww_tty wwnewtty;		/* the new (current) terminal settings */
+struct ww_tty wwwintty;		/* the terminal settings for windows */
+char *wwterm;			/* the terminal name */
+char wwtermcap[1024];		/* place for the termcap */
+char wwkeys[512];		/* termcap fields for the function keys */
+
 int wwnrow, wwncol;		/* the screen size */
-int wwcursorrow, wwcursorcol;	/* the terminal cursor position */
-int wwdtablesize;
+int wwdtablesize;		/* result of getdtablesize() call */
 char **wwsmap;			/* the screen map */
-union ww_char **wwns;
-union ww_char **wwos;
-int wwbaud;
-int wwbaudmap[];
+char **wwfmap;			/* the frame map */
+union ww_char **wwos;		/* the old (current) screen */
+union ww_char **wwns;		/* the new (desired) screen */
+int wwbaudmap[];		/* maps stty() baud rate code into number */
+int wwbaud;			/* wwbaudmap[wwoldtty.ww_sgttyb.sg_ospeed] */
+int wwcursorrow, wwcursorcol;	/* where we want the cursor to be */
 
 	/* statistics */
 int wwnwrite;
 int wwnwritec;
 
+	/* quicky macros */
 #define wwcurrow(w)	((w)->ww_cur.r + (w)->ww_w.t)
 #define wwcurcol(w)	((w)->ww_cur.c + (w)->ww_w.l)
 #define wwsetcursor(r,c) (wwcursorrow = (r), wwcursorcol = (c))
 #define wwcurtowin(w)	wwsetcursor(wwcurrow(w), wwcurcol(w))
 #define wwbell()	putchar(CTRL(g))
 
+	/* our functions */
 struct ww *wwopen();
 struct ww *wwfind();
 int wwchild();
@@ -126,6 +143,7 @@ int wwsuspend();
 char *unctrl();
 char **wwalloc();
 
+	/* c library functions */
 char *malloc();
 char *calloc();
 char *getenv();
