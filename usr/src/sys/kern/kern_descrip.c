@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.16	82/10/23	*/
+/*	kern_descrip.c	5.17	82/10/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -102,6 +102,10 @@ dup2()
 	if (uap->i == uap->j)
 		return;
 	if (u.u_ofile[uap->j]) {
+#ifdef SUNMMAP
+		if (u.u_pofile[uap->j] & UF_MAPPED)
+			munmapfd(uap->j);
+#endif
 		closef(u.u_ofile[uap->j], 0, u.u_pofile[uap->j]);
 		if (u.u_error)
 			return;
@@ -136,6 +140,10 @@ close()
 	fp = getf(uap->i);
 	if (fp == 0)
 		return;
+#ifdef SUNMMAP
+	if (u.u_pofile[uap->i] & UF_MAPPED)
+		munmapfd(uap->i);
+#endif
 	closef(fp, 0, u.u_pofile[uap->i]);
 	/* WHAT IF u.u_error ? */
 	u.u_ofile[uap->i] = NULL;
