@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -25,7 +25,9 @@ static char sccsid[] = "@(#)newfs.c	5.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <disktab.h>
 
+#ifdef vax
 #define	BOOTDIR	"/usr/mdec"	/* directory for boot blocks */
+#endif
 
 int	Nflag;			/* run mkfs without writing file system */
 int	verbose;		/* show mkfs line before exec */
@@ -325,6 +327,7 @@ next:
 installboot(dev, type)
 	char *dev, *type;
 {
+#ifdef BOOTDIR
 	int fd;
 	char bootblock[MAXPATHLEN], standalonecode[MAXPATHLEN];
 	char bootimage[BBSIZE];
@@ -366,6 +369,7 @@ installboot(dev, type)
 		exit(2);
 	}
 	close(fd);
+#endif
 }
 
 /*VARARGS*/
