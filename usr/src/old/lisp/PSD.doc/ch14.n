@@ -1,0 +1,99 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)ch14.n	4.1 (Berkeley) %G%
+.\"
+.Lc The\ LISP\ Stepper 14
+.sh 2 Simple\ Use\ Of\ Stepping 14
+.Lf step "s_arg1..."
+.No
+The LISP "stepping" package is intended to give the LISP programmer
+a facility analogous to the Instruction Step mode of running a
+machine language program.  
+The user interface is through the function (fexpr) step, which sets
+switches to put the LISP interpreter in and out of "stepping" mode.
+The most common \fIstep\fP invocations follow.  These invocations are 
+usually typed at the top-level, and will take effect
+immediately (i.e. the next S-expression typed in will be evaluated in stepping
+mode).
+.Eb
+\fI(step t)\fP				; Turn on stepping mode.
+\fI(step nil)\fP			; Turn off stepping mode.
+.Ee
+.Se
+In stepping mode, the LISP evaluator will print out each S-exp to
+be evaluated before evaluation, and the returned value after evaluation,
+calling itself recursively to display the stepped evaluation of each
+argument, if the S-exp is a function call.  In stepping mode, the
+evaluator will wait after displaying each S-exp before evaluation
+for a command character from the console.
+.Eb
+\fISTEP COMMAND SUMMARY\fP
+
+<return>			Continue stepping recursively.
+
+c				Show returned value from this level
+				only, and continue stepping upward.
+
+e				Only step interpreted code.
+
+g				Turn off stepping mode. (but continue
+				evaluation without stepping).
+
+n <number>			Step through <number> evaluations without 
+				stopping
+
+p				Redisplay current form in full
+				(i.e. rebind prinlevel and prinlength to nil)
+
+b				Get breakpoint
+
+q				Quit
+
+d				Call debug
+.Ee
+.sh 2 Advanced\ Features
+.sh 3 Selectively\ Turning\ On\ Stepping.
+
+If
+       \fI(step foo1 foo2 ...)\fP
+
+is typed at top level, stepping will not commence
+immediately, but rather when the evaluator first encounters an S-expression
+whose car is one of \fIfoo1, foo2\fP, etc.  This form will then display
+at the console, and the evaluator will be in stepping mode waiting
+for a command character.
+.pp
+Normally the stepper intercepts calls to \fIfuncall\fP and \fIeval\fP.
+When \fIfuncall\fP is intercepted, the arguments to the function
+have already been evaluated but when \fIeval\fP is intercepted, the
+arguments have not been evaluated.  To differentiate the two cases, 
+when printing the form in evaluation, the stepper preceeded intercepted
+calls to 
+.i funcall
+with "f:".
+Calls to \fIfuncall\fP are normally caused by compiled lisp code calling
+other functions, whereas calls to \fIeval\fP 
+usually occur when lisp code is interpreted.
+To step only calls to eval use:
+	\fI(step e)\fP
+
+.sh 3 Stepping\ With\ Breakpoints.
+.pp
+For the moment, step is turned off inside of error breaks, but not by
+the break function.  Upon exiting the error, step is reenabled.
+However, executing \fI(step nil)\fP inside a error loop will turn off
+stepping globally, i.e. within the error loop, and after return has
+be made from the loop.
+.sh 2 Overhead\ of\ Stepping.
+.pp
+If stepping mode has been turned off by \fI(step nil)\fP, 
+the execution overhead
+of having the stepping packing in your LISP is identically nil.
+If one stops stepping by typing "g", every call to eval
+incurs a small overhead--several machine instructions, corresponding
+to the compiled code for a simple cond and one function pushdown.
+Running with \fI(step foo1 foo2 ...)\fP can be more expensive, since a
+member of the car of the current form into the list \fI(foo1 foo2 ...)\fP
+is required at each call to eval.
