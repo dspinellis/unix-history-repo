@@ -1,4 +1,4 @@
-/*	@(#)if_ex.c	6.1 (Berkeley) %G% */
+/*	@(#)if_ex.c	6.2 (Berkeley) %G% */
 /*	from @(#)if_ex.c	1.4 (Excelan)	84/10/11 */
 
 #include "ex.h"
@@ -12,30 +12,33 @@
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/buf.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/vmmac.h"
-#include "../h/ioctl.h"
-#include "../h/errno.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "buf.h"
+#include "protosw.h"
+#include "socket.h"
+#include "vmmac.h"
+#include "ioctl.h"
+#include "errno.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
+#include "../netinet/in_var.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netinet/if_ether.h"
+#ifdef PUP
 #include "../netpup/pup.h"
+#endif
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
-#include "../vaxif/if_exreg.h"
-#include "../vaxif/if_uba.h"
+#include "if_exreg.h"
+#include "if_uba.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
 
@@ -66,12 +69,12 @@ struct ex_msg *exgetcbuf();
  * efficiently.
  */
 struct	ex_softc {
-#ifdef DEBUG
-	int	xs_wait;
-#endif
 	struct	arpcom xs_ac;		/* Ethernet common part */
 #define	xs_if	xs_ac.ac_if		/* network-visible interface */
 #define	xs_addr	xs_ac.ac_enaddr		/* hardware Ethernet address */
+#ifdef DEBUG
+	int	xs_wait;
+#endif
 	struct	ifuba xs_ifuba;		/* UNIBUS resources */
 	int	xs_flags;		/* private flags */
 #define	EX_XPENDING	1		/* xmit rqst pending on EXOS */
@@ -157,7 +160,6 @@ exattach(ui)
 	register struct ex_softc *xs = &ex_softc[ui->ui_unit];
 	register struct ifnet *ifp = &xs->xs_if;
 	register struct exdevice *addr = (struct exdevice *)ui->ui_addr;
-	struct sockaddr_in *sin;
 	register struct ex_msg *bp;
 
 	ifp->if_unit = ui->ui_unit;
@@ -190,13 +192,11 @@ exattach(ui)
 	bcopy((caddr_t)bp->mb_na.na_addrs, (caddr_t)xs->xs_addr,
 	    sizeof (xs->xs_addr));
 
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = arpmyaddr((struct arpcom *)0);
 	ifp->if_init = exinit;
 	ifp->if_output = exoutput;
 	ifp->if_ioctl = exioctl;
 	ifp->if_reset = exreset;
+	ifp->if_flags = IFF_BROADCAST;
 	xs->xs_ifuba.ifu_flags = UBA_CANTWAIT;
 	if_attach(ifp);
 badconf:
@@ -216,6 +216,7 @@ exreset(unit, uban)
 	    ui->ui_ubanum != uban)
 		return;
 	printf(" ex%d", unit);
+	ex_softc[unit].xs_if.if_flags &= ~IFF_RUNNING;
 	exinit(unit);
 }
 
@@ -232,16 +233,15 @@ exinit(unit)
 	register struct uba_device *ui = exinfo[unit];
 	register struct exdevice *addr = (struct exdevice *)ui->ui_addr;
 	register struct ifnet *ifp = &xs->xs_if;
-	register struct sockaddr_in *sin;
 	register struct ex_msg *bp;
 	int s;
 
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	if (sin->sin_addr.s_addr == 0)		/* address still unknown */
+	/* not yet, if address still unknown */
+	if (ifp->if_addrlist == (struct ifaddr *)0)
 		return;
 
 	if (ifp->if_flags & IFF_RUNNING)
-		goto justarp;
+		return;
 	if (if_ubainit(&xs->xs_ifuba, ui->ui_ubanum,
 	    sizeof (struct ether_header),
 	    (int)btoc(EXMAXRBUF-sizeof(struct ether_header))) == 0) { 
@@ -274,12 +274,8 @@ exinit(unit)
 	s = splimp();	/* are interrupts always disabled here, anyway? */
 	exhangrcv(unit);			/* hang receive request */
 	exstart(unit);				/* start transmits */
-	xs->xs_if.if_flags |= IFF_UP|IFF_RUNNING;
+	xs->xs_if.if_flags |= IFF_RUNNING;
 	splx(s);
-justarp:
-	if_rtinit(&xs->xs_if, RTF_UP);
-	arpattach(&xs->xs_ac);
-	arpwhohas(&xs->xs_ac, &sin->sin_addr);
 }
 
 /*
@@ -546,15 +542,15 @@ exrecv(unit, bp)
 	eh = (struct ether_header *)(xs->xs_ifuba.ifu_r.ifrw_addr);
 
 	/*
-	 * Deal with trailer protocol: if type is PUP trailer
+	 * Deal with trailer protocol: if type is trailer
 	 * get true type from first 16-bit word past data.
 	 * Remember that type was trailer by setting off.
 	 */
 	eh->ether_type = ntohs((u_short)eh->ether_type);
 #define	exdataaddr(eh, off, type)	((type)(((caddr_t)((eh)+1)+(off))))
-	if (eh->ether_type >= ETHERPUP_TRAIL &&
-	    eh->ether_type < ETHERPUP_TRAIL+ETHERPUP_NTRAILER) {
-		off = (eh->ether_type - ETHERPUP_TRAIL) * 512;
+	if (eh->ether_type >= ETHERTYPE_TRAIL &&
+	    eh->ether_type < ETHERTYPE_TRAIL+ETHERTYPE_NTRAILER) {
+		off = (eh->ether_type - ETHERTYPE_TRAIL) * 512;
 		if (off >= ETHERMTU)
 			return;		/* sanity */
 		eh->ether_type = ntohs(*exdataaddr(eh, off, u_short *));
@@ -583,12 +579,12 @@ exrecv(unit, bp)
 	switch (eh->ether_type) {
 
 #ifdef INET
-	case ETHERPUP_IPTYPE:
+	case ETHERTYPE_IP:
 		schednetisr(NETISR_IP);	/* is this necessary */
 		inq = &ipintrq;
 		break;
 
-	case ETHERPUP_ARPTYPE:
+	case ETHERTYPE_ARP:
 		arpinput(&xs->xs_ac, m);
 		return;
 #endif
@@ -657,14 +653,14 @@ exoutput(ifp, m0, dst)
 		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
 		if (off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
-			type = ETHERPUP_TRAIL + (off>>9);
+			type = ETHERTYPE_TRAIL + (off>>9);
 			m->m_off -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = htons((u_short)ETHERPUP_IPTYPE);
+			*mtod(m, u_short *) = htons((u_short)ETHERTYPE_IP);
 			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
 			goto gottrailertype;
 		}
-		type = ETHERPUP_IPTYPE;
+		type = ETHERTYPE_IP;
 		off = 0;
 		goto gottype;
 #endif
@@ -789,16 +785,22 @@ exioctl(ifp, cmd, data)
 	int cmd;
 	caddr_t data;
 {
-	register struct ifreq *ifr = (struct ifreq *)data;
+	register struct ifaddr *ifa = (struct ifaddr *)data;
 	int s = splimp(), error = 0;
 
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, -1);	/* delete previous route */
-		exsetaddr(ifp, (struct sockaddr_in *)&ifr->ifr_addr);
-		exinit(ifp->if_unit);
+                ifp->if_flags |= IFF_UP;
+                ecinit(ifp->if_unit);
+
+                switch (ifa->ifa_addr.sa_family) {
+		case AF_INET:
+			((struct arpcom *)ifp)->ac_ipaddr =
+				IA_SIN(ifa)->sin_addr;
+			arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
+			break;
+		}
 		break;
 
 	default:
@@ -806,17 +808,4 @@ exioctl(ifp, cmd, data)
 	}
 	splx(s);
 	return (error);
-}
-
-exsetaddr(ifp, sin)
-	register struct ifnet *ifp;
-	register struct sockaddr_in *sin;
-{
-	ifp->if_addr = *(struct sockaddr *)sin;
-	ifp->if_net = in_netof(sin->sin_addr);
-	ifp->if_host[0] = in_lnaof(sin->sin_addr);
-	sin = (struct sockaddr_in *)&ifp->if_broadaddr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
-	ifp->if_flags |= IFF_BROADCAST;
 }

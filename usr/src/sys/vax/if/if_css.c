@@ -1,4 +1,4 @@
-/*      if_css.c     6.2     84/08/29     */
+/*      if_css.c     6.3     85/06/03     */
 
 #include "css.h"
 
@@ -156,6 +156,7 @@ cssreset(unit, uban)
                 return;
         printf(" css%d", unit);
         sc = &css_softc[unit];
+	sc->css_if->if_flags &= ~IFF_RUNNING;
         /* must go through IMP to allow it to set state */
         (*sc->css_if->if_init)(unit);
 }
@@ -191,6 +192,7 @@ cssinit(unit)
 		ui->ui_alive = 0;
 		return(0);
         }
+	sc->css_if->if_flags |= IFF_RUNNING;
         addr = (struct cssdevice *)ui->ui_addr;
 
         /* reset the imp interface. */
