@@ -9,10 +9,11 @@ divert(-1)
 
 #
 #  This the prototype for a "null client" -- that is, a client that
-#  does nothing except forward all mail to a mail hub.
+#  does nothing except forward all mail to a mail hub.  IT IS NOT
+#  USABLE AS IS!!!
 #
 #  To use this, you MUST use the nullclient feature with the name of
-#  the mail hub as its argument.  You MAY also define an OSTYPE to
+#  the mail hub as its argument.  You MUST also define an OSTYPE to
 #  define the location of the queue directories and the like.
 #  In addition, you MAY select the nocanonify feature.  This causes
 #  addresses to be sent unqualified via the SMTP connection; normally
@@ -22,6 +23,7 @@ divert(-1)
 #
 
 include(`../m4/cf.m4')
-VERSIONID(`@(#)clientproto.mc	8.3 (Berkeley) %G%')
+VERSIONID(`@(#)clientproto.mc	8.4 (Berkeley) %G%')
 
+OSTYPE(unknown)
 FEATURE(nullclient, mailhost.$m)

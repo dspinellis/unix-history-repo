@@ -7,8 +7,17 @@ divert(-1)
 # %sccs.include.redist.sh%
 #
 
+#
+#  This is a Berkeley-specific configuration file for a specific
+#  machine in the Computer Science Division at Berkeley, and should
+#  not be used elsewhere.   It is provided on the sendmail distribution
+#  as a sample only.
+#
+#  This file is for the primary CS Division mail server.
+#
+
 include(`../m4/cf.m4')
-VERSIONID(`@(#)mail.cs.mc	8.4 (Berkeley) %G%')
+VERSIONID(`@(#)mail.cs.mc	8.5 (Berkeley) %G%')
 OSTYPE(ultrix4.1)dnl
 DOMAIN(Berkeley)dnl
 MASQUERADE_AS(CS.Berkeley.EDU)dnl

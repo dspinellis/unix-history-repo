@@ -7,10 +7,20 @@ divert(-1)
 # %sccs.include.redist.sh%
 #
 
+#
+#  This machine has been decommissioned at Berkeley, and hence should
+#  not be considered to be tested.  This file is provided as an example
+#  only, of how you might set up a fairly complex configuration.
+#  Ucbvax was our main relay (both SMTP and UUCP) for many years.
+#  At this point I recommend using `FEATURE(mailertable)' instead of
+#  `SITECONFIG' for routing of UUCP within your domain.
+#
+
 include(`../m4/cf.m4')
-VERSIONID(`@(#)ucbvax.mc	8.2 (Berkeley) %G%')
+VERSIONID(`@(#)ucbvax.mc	8.3 (Berkeley) %G%')
 OSTYPE(bsd4.3)
-DOMAIN(cs.hidden)
+DOMAIN(CS.Berkeley.EDU)
+MASQUERADE_AS(CS.Berkeley.EDU)
 FEATURE(use_cw_file)
 MAILER(local)
 MAILER(smtp)
