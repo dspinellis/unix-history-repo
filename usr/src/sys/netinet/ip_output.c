@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)ip_output.c	7.9 (Berkeley) %G%
+ *	@(#)ip_output.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -232,8 +232,8 @@ ip_output(m0, opt, ro, flags)
 	 * and updating header, then send each fragment (in order).
 	 */
 	m_adj(m0, hlen + firstlen - ip->ip_len);
-	ip->ip_len = hlen + firstlen;
-	ip->ip_off |= IP_MF;
+	ip->ip_len = htons((u_short)(hlen + firstlen));
+	ip->ip_off = htons((u_short)(ip->ip_off | IP_MF));
 	ip->ip_sum = 0;
 	ip->ip_sum = in_cksum(m0, hlen);
 sendorfree:
