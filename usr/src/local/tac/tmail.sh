@@ -1,8 +1,9 @@
 #! /bin/sh
-#	@(#)tmail.sh	1.1 %G%
+#	@(#)tmail.sh	1.2 %G%
 # Print out mail backwards.
 # Author: Jay Lepreau, Univ of Utah
 #
+PATH=/usr/new:/bin:/usr/bin:/usr/ucb
 case $# in
 	0) file=/usr/spool/mail/$USER
 	   ;;
@@ -13,7 +14,7 @@ case $# in
 	   	file=$1
 	   fi
 	   ;;
-	*) echo "Usage: $0 [ username ] [ mboxfile ]"
+	*) echo "Usage: `basename $0` [ username ] [ mboxfile ]"
 	   exit 1
 	   ;;
 esac	
