@@ -12,8 +12,8 @@
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
 
 SRCS+=	alarm.c clock.c closedir.c crypt.c ctermid.c ctime.c ctype_.c \
-	difftime.c disklabel.c errlst.c exec.c fnmatch.c frexp.c fstab.c \
-	fts.c getcwd.c getgrent.c getlogin.c getmntinfo.c getpass.c \
+	difftime.c disklabel.c err.c errlst.c exec.c fnmatch.c frexp.c \
+	fstab.c fts.c getcwd.c getgrent.c getlogin.c getmntinfo.c getpass.c \
 	getpwent.c getsubopt.c getttyent.c getusershell.c glob.c initgroups.c \
 	isatty.c isctype.c isinf.c mktemp.c nice.c nlist.c opendir.c \
 	pause.c popen.c psignal.c raise.c readdir.c \
@@ -46,7 +46,7 @@ SRCS+=	_setjmp.s alloca.s fabs.s ldexp.s modf.s setjmp.s
 SRCS+=	udiv.s urem.s
 .endif
 
-MAN3+=	alarm.0 clock.0 crypt.0 ctermid.0 ctime.0 ctype.0 directory.0 \
+MAN3+=	alarm.0 clock.0 crypt.0 ctermid.0 ctime.0 ctype.0 directory.0 err.0\
 	exec.0 fnmatch.0 frexp.0 fts.0 getcwd.0 getdiskbyname.0 getfsent.0 \
 	getgrent.0 getmntinfo.0 getpass.0 getpwent.0 getsubopt.0 \
 	getttyent.0 getusershell.0 glob.0 initgroups.0 isalnum.0 \
@@ -64,6 +64,8 @@ MLINKS+=ctime.3 asctime.3 ctime.3 difftime.3 ctime.3 gmtime.3 \
 MLINKS+=directory.3 closedir.3 directory.3 dirfd.3 directory.3 opendir.3 \
 	directory.3 readdir.3 directory.3 rewinddir.3 directory.3 seekdir.3 \
 	directory.3 telldir.3
+MLINKS+=err.3 verr.3 err.3 errx.3 err.3 verrx.3 err.3 warn.3 err.3 vwarn.3 \
+	err.3 warnx.3 err.3 vwarnx.3
 MLINKS+=exec.3 execl.3 exec.3 execle.3 exec.3 execlp.3 exec.3 execv.3 \
 	exec.3 execvp.3
 MLINKS+=isinf.3 isnan.3
