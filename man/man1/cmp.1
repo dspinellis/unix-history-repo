@@ -1,0 +1,30 @@
+.pa 1
+.he 'CMP (I)'1/15/73'CMP (I)'
+.ti 0
+NAME		cmp -- compare two files
+.sp
+.ti 0
+SYNOPSIS	cmp___ file918 file928
+.sp
+.ti 0
+DESCRIPTION	The two files are
+compared for identical contents.
+Discrepancies are noted
+by giving the offset and the differing words,
+all in octal.
+.sp
+.ti 0
+FILES		--
+.sp
+.ti 0
+SEE ALSO	proof(I)
+.sp
+.ti 0
+DIAGNOSTICS	Messages
+are given for inability to open either argument, premature
+EOF on either argument, and incorrect usage.
+.sp
+.ti 0
+BUGS		If
+the shorter of the two files is of odd length,
+cmp acts as if a null byte had been appended to it.
