@@ -27,7 +27,7 @@ NOOBJ=	noobj
 # source (``symlinks''), or a separate copy (``copies''); (latter useful
 # in environments where it's not possible to keep /sys publicly readable)
 # SHARED=	copies
-SHARED=	symlinks
+SHARED?=	symlinks
 
 install: ${SHARED}
 	@echo installing ${FILES}
@@ -69,11 +69,17 @@ copies:
 		rm -rf ${DESTDIR}/usr/include/$$i; \
 		cd /sys; \
 		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
+		chown -R ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/$$i; \
+		chmod -R 444 ${DESTDIR}/usr/include/$$i; \
+		chmod 755 ${DESTDIR}/usr/include/$$i; \
 	done
 	rm -rf ${DESTDIR}/usr/include/machine
 	mkdir ${DESTDIR}/usr/include/machine
 	cd /sys/${MACHINE}/include; \
-	tar cf - *.h | (cd ${DESTDIR}/usr/include/machine; tar xpfB -); \
+	tar cf - *.h | (cd ${DESTDIR}/usr/include/machine; tar xpfB -);
+	chown -R ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/machine;
+	chmod -R 444 ${DESTDIR}/usr/include/machine;
+	chmod 755 ${DESTDIR}/usr/include/machine;
 
 symlinks:
 	@echo symlinks: ${LDIRS}
