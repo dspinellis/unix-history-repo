@@ -12,15 +12,10 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
-#if	defined(unix)
-#include <strings.h>
-#else	/* defined(unix) */
-#include <string.h>
-#endif	/* defined(unix) */
 
 #include "ring.h"
 #include "externs.h"
@@ -29,7 +24,7 @@ static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
 /*
  * Initialize variables.
  */
-void
+    void
 tninit()
 {
     init_terminal();
@@ -45,7 +40,35 @@ tninit()
 #endif
 }
 
-int	autologin;
+	void
+usage()
+{
+	fprintf(stderr, "Usage: %s %s%s%s%s\n",
+	    prompt,
+#ifdef	AUTHENTICATE
+	    " [-8] [-E] [-K] [-L] [-X atype] [-a] [-d] [-e char] [-k realm]",
+	    "\n\t[-l user] [-n tracefile] ",
+#else
+	    " [-8] [-E] [-L] [-a] [-d] [-e char] [-l user] [-n tracefile]",
+	    "\n\t",
+#endif
+#if defined(TN3270) && defined(unix)
+# ifdef AUTHENTICATE
+	    "[-noasynch] [-noasynctty] [-noasyncnet]\n\t[-r] [-t transcom] ",
+# else
+	    "[-noasynch] [-noasynctty] [-noasyncnet] [-r] [-t transcom]\n\t",
+# endif
+#else
+	    "[-r] ",
+#endif
+#ifdef	ENCRYPT
+	    "[-x] [host-name [port]]"
+#else
+	    "[host-name [port]]"
+#endif
+	);
+	exit(1);
+}
 
 /*
  * main.  Parse arguments, invoke the protocol or command parser.
@@ -74,9 +97,31 @@ main(argc, argv)
 		prompt = argv[0];
 
 	user = NULL;
-	autologin = 0;
-	while ((ch = getopt(argc, argv, "ade:l:n:")) != EOF) {
+
+	rlogin = (strncmp(prompt, "rlog", 4) == 0) ? '~' : _POSIX_VDISABLE;
+	autologin = -1;
+
+	while ((ch = getopt(argc, argv, "8EKLX:ade:k:l:n:rt:x")) != EOF) {
 		switch(ch) {
+		case '8':
+			eight = 3;	/* binary output and input */
+			break;
+		case 'E':
+			rlogin = escape = _POSIX_VDISABLE;
+			break;
+		case 'K':
+#ifdef	AUTHENTICATE
+			autologin = 0;
+#endif
+			break;
+		case 'L':
+			eight |= 2;	/* binary output only */
+			break;
+		case 'X':
+#ifdef	AUTHENTICATE
+			auth_disable_name(optarg);
+#endif
+			break;
 		case 'a':
 			autologin = 1;
 			break;
@@ -85,6 +130,19 @@ main(argc, argv)
 			break;
 		case 'e':
 			set_escape_char(optarg);
+			break;
+		case 'k':
+#if defined(AUTHENTICATE) && defined(KRB4)
+		    {
+			extern char *dest_realm, dst_realm_buf[], dst_realm_sz;
+			dest_realm = dst_realm_buf;
+			(void)strncpy(dest_realm, optarg, dst_realm_sz);
+		    }
+#else
+			fprintf(stderr,
+			   "%s: Warning: -k ignored, no Kerberos V4 support.\n",
+								prompt);
+#endif
 			break;
 		case 'l':
 			autologin = 1;
@@ -106,18 +164,37 @@ main(argc, argv)
 #endif	/* defined(TN3270) && defined(unix) */
 				SetNetTrace(optarg);
 			break;
-#if defined(TN3270) && defined(unix)
+		case 'r':
+			rlogin = '~';
+			break;
 		case 't':
+#if defined(TN3270) && defined(unix)
 			transcom = tline;
 			(void)strcpy(transcom, optarg);
-			break;
+#else
+			fprintf(stderr,
+			   "%s: Warning: -t ignored, no TN3270 support.\n",
+								prompt);
 #endif
+			break;
+		case 'x':
+#ifdef	ENCRYPT
+			encrypt_auto();
+#else
+			fprintf(stderr,
+			    "%s: Warning: -x ignored, no ENCRYPT support.\n",
+								prompt);
+#endif
+			break;
 		case '?':
 		default:
 			usage();
 			/* NOTREACHED */
 		}
 	}
+	if (autologin == -1)
+		autologin = (rlogin == _POSIX_VDISABLE) ? 0 : 1;
+
 	argc -= optind;
 	argv += optind;
 
@@ -152,11 +229,4 @@ main(argc, argv)
 #endif
 			command(1, 0, 0);
 	}
-}
-
-usage()
-{
-	fprintf(stderr, "usage: %s [-a] [ [-l user] host-name [port] ]\n",
-	    prompt);
-	exit(1);
 }

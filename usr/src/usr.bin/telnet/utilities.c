@@ -6,11 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	TELOPTS
 #define	TELCMDS
+#define	SLC_NAMES
 #include <arpa/telnet.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -36,9 +37,9 @@ int	prettydump;
  *	Upcase (in place) the argument.
  */
 
-void
+    void
 upcase(argument)
-register char *argument;
+    register char *argument;
 {
     register int c;
 
@@ -56,13 +57,9 @@ register char *argument;
  * Compensate for differences in 4.2 and 4.3 systems.
  */
 
-int
+    int
 SetSockOpt(fd, level, option, yesno)
-int
-	fd,
-	level,
-	option,
-	yesno;
+    int fd, level, option, yesno;
 {
 #ifndef	NOT43
     return setsockopt(fd, level, option,
@@ -83,33 +80,33 @@ int
 
 unsigned char NetTraceFile[256] = "(standard output)";
 
-void
+    void
 SetNetTrace(file)
-register char *file;
+    register char *file;
 {
     if (NetTrace && NetTrace != stdout)
 	fclose(NetTrace);
     if (file  && (strcmp(file, "-") != 0)) {
 	NetTrace = fopen(file, "w");
 	if (NetTrace) {
-	    strcpy(NetTraceFile, file);
+	    strcpy((char *)NetTraceFile, file);
 	    return;
 	}
 	fprintf(stderr, "Cannot open %s.\n", file);
     }
     NetTrace = stdout;
-    strcpy(NetTraceFile, "(standard output)");
+    strcpy((char *)NetTraceFile, "(standard output)");
 }
 
-void
+    void
 Dump(direction, buffer, length)
-char	direction;
-char	*buffer;
-int	length;
+    char direction;
+    unsigned char *buffer;
+    int length;
 {
 #   define BYTES_PER_LINE	32
 #   define min(x,y)	((x<y)? x:y)
-    char *pThis;
+    unsigned char *pThis;
     int offset;
     extern pettydump;
 
@@ -153,20 +150,33 @@ int	length;
 }
 
 
-void
-printoption(direction, fmt, option)
-	char *direction, *fmt;
-	int option;
+	void
+printoption(direction, cmd, option)
+	char *direction;
+	int cmd, option;
 {
 	if (!showoptions)
 		return;
-	fprintf(NetTrace, "%s ", direction);
-	if (TELOPT_OK(option))
-		fprintf(NetTrace, "%s %s", fmt, TELOPT(option));
-	else if (TELCMD_OK(option))
-		fprintf(NetTrace, "%s %s", fmt, TELCMD(option));
-	else
-		fprintf(NetTrace, "%s %d", fmt, option);
+	if (cmd == IAC) {
+		if (TELCMD_OK(option))
+		    fprintf(NetTrace, "%s IAC %s", direction, TELCMD(option));
+		else
+		    fprintf(NetTrace, "%s IAC %d", direction, option);
+	} else {
+		register char *fmt;
+		fmt = (cmd == WILL) ? "WILL" : (cmd == WONT) ? "WONT" :
+			(cmd == DO) ? "DO" : (cmd == DONT) ? "DONT" : 0;
+		if (fmt) {
+		    fprintf(NetTrace, "%s %s ", direction, fmt);
+		    if (TELOPT_OK(option))
+			fprintf(NetTrace, "%s", TELOPT(option));
+		    else if (option == TELOPT_EXOPL)
+			fprintf(NetTrace, "EXOPL");
+		    else
+			fprintf(NetTrace, "%d", option);
+		} else
+		    fprintf(NetTrace, "%s %d %d", direction, cmd, option);
+	}
 	if (NetTrace == stdout)
 	    fprintf(NetTrace, "\r\n");
 	else
@@ -174,6 +184,7 @@ printoption(direction, fmt, option)
 	return;
 }
 
+    void
 optionstatus()
 {
     register int i;
@@ -250,24 +261,21 @@ optionstatus()
 
 }
 
-char *slcnames[] = { SLC_NAMES };
-
-#ifdef	KERBEROS
-static char *authtypes[3] = { "NONE", "PRIVATE", "KERBEROS" };
-#endif
-
-void
+    void
 printsub(direction, pointer, length)
-char	direction;		/* '<' or '>' */
-unsigned char	*pointer;	/* where suboption data sits */
-int	length;			/* length of suboption data */
+    char direction;	/* '<' or '>' */
+    unsigned char *pointer;	/* where suboption data sits */
+    int		  length;	/* length of suboption data */
 {
     register int i;
+    char buf[256];
+    extern int want_status_response;
 
-    if (showoptions) {
+    if (showoptions || direction == 0 ||
+	(want_status_response && (pointer[0] == TELOPT_STATUS))) {
 	if (direction) {
-	    fprintf(NetTrace, "%s suboption ",
-				(direction == '<')? "Received":"Sent");
+	    fprintf(NetTrace, "%s IAC SB ",
+				(direction == '<')? "RCVD":"SENT");
 	    if (length >= 3) {
 		register int j;
 
@@ -377,50 +385,126 @@ int	length;			/* length of suboption data */
 		fprintf(NetTrace, " ?%d?", pointer[i]);
 	    break;
 
-#ifdef	KERBEROS
+#if	defined(AUTHENTICATE)
 	case TELOPT_AUTHENTICATION:
-	    fprintf(NetTrace, "Authentication information ");
+	    fprintf(NetTrace, "AUTHENTICATION");
+	    if (length < 2) {
+		fprintf(NetTrace, " (empty suboption???)");
+		break;
+	    }
 	    switch (pointer[1]) {
+	    case TELQUAL_REPLY:
 	    case TELQUAL_IS:
-		switch (pointer[2]) {
-		case TELQUAL_AUTHTYPE_NONE:
-		case TELQUAL_AUTHTYPE_PRIVATE:
-		case TELQUAL_AUTHTYPE_KERBEROS:
-
-			fprintf(NetTrace, "is type %s\r\n", authtypes[pointer[2]]);
-			break;
-		default:
-			fprintf(NetTrace, "is type unknown\r\n");
-			break;
+		fprintf(NetTrace, " %s ", (pointer[1] == TELQUAL_IS) ?
+							"IS" : "REPLY");
+		if (AUTHTYPE_NAME_OK(pointer[2]))
+		    fprintf(NetTrace, "%s ", AUTHTYPE_NAME(pointer[2]));
+		else
+		    fprintf(NetTrace, "%d ", pointer[2]);
+		if (length < 3) {
+		    fprintf(NetTrace, "(partial suboption???)");
+		    break;
 		}
+		fprintf(NetTrace, "%s|%s",
+			(pointer[3] & AUTH_WHO_MASK == AUTH_WHO_CLIENT) ?
+			"CLIENT" : "SERVER",
+			(pointer[3] & AUTH_HOW_MASK == AUTH_HOW_MUTUAL) ?
+			"MUTUAL" : "ONE-WAY");
+
+		auth_printsub(&pointer[1], length - 1, buf, sizeof(buf));
+		fprintf(NetTrace, "%s", buf);
+		break;
 
 	    case TELQUAL_SEND:
-	    {
-		int	idx = 2;
-		fprintf(NetTrace, "- request to send, types");
-		for (idx = 2; idx < length - 1; idx++)
-			switch (pointer[idx]) {
-			case TELQUAL_AUTHTYPE_NONE:
-			case TELQUAL_AUTHTYPE_PRIVATE:
-			case TELQUAL_AUTHTYPE_KERBEROS:
-				fprintf(NetTrace, " %s",
-					authtypes[pointer[idx]]);
-					break;
-			default:
-				fprintf(NetTrace, " <unknown %u>",
-					pointer[idx]);
-				break;
-			}
-		fprintf(NetTrace, "\r\n");
-	    }
+		i = 2;
+		fprintf(NetTrace, " SEND ");
+		while (i < length) {
+		    if (AUTHTYPE_NAME_OK(pointer[i]))
+			fprintf(NetTrace, "%s ", AUTHTYPE_NAME(pointer[i]));
+		    else
+			fprintf(NetTrace, "%d ", pointer[i]);
+		    if (++i >= length) {
+			fprintf(NetTrace, "(partial suboption???)");
+			break;
+		    }
+		    fprintf(NetTrace, "%s|%s ",
+			(pointer[i] & AUTH_WHO_MASK == AUTH_WHO_CLIENT) ?
+							"CLIENT" : "SERVER",
+			(pointer[i] & AUTH_HOW_MASK == AUTH_HOW_MUTUAL) ?
+							"MUTUAL" : "ONE-WAY");
+		    ++i;
+		}
 		break;
 
 	    default:
-		fprintf(NetTrace, " - unknown qualifier %d (0x%x).\r\n",
-			pointer[1], pointer[1]);
+		    for (i = 2; i < length; i++)
+			fprintf(NetTrace, " ?%d?", pointer[i]);
+		    break;
 	    }
 	    break;
-#endif /* KERBEROS */
+#endif
+
+#if	defined(ENCRYPT)
+	case TELOPT_ENCRYPT:
+	    fprintf(NetTrace, "ENCRYPT");
+	    if (length < 2) {
+		fprintf(NetTrace, " (empty suboption???)");
+		break;
+	    }
+	    switch (pointer[1]) {
+	    case ENCRYPT_START:
+		fprintf(NetTrace, " START");
+		break;
+
+	    case ENCRYPT_END:
+		fprintf(NetTrace, " END");
+		break;
+
+	    case ENCRYPT_REQSTART:
+		fprintf(NetTrace, " REQUEST-START");
+		break;
+
+	    case ENCRYPT_REQEND:
+		fprintf(NetTrace, " REQUEST-END");
+		break;
+
+	    case ENCRYPT_IS:
+	    case ENCRYPT_REPLY:
+		fprintf(NetTrace, " %s ", (pointer[1] == ENCRYPT_IS) ?
+							"IS" : "REPLY");
+		if (length < 3) {
+		    fprintf(NetTrace, " (partial suboption???)");
+		    break;
+		}
+		if (ENCTYPE_NAME_OK(pointer[2]))
+		    fprintf(NetTrace, "%s ", ENCTYPE_NAME(pointer[2]));
+		else
+		    fprintf(NetTrace, " %d (unknown)", pointer[2]);
+
+		encrypt_printsub(&pointer[1], length - 1, buf, sizeof(buf));
+		fprintf(NetTrace, "%s", buf);
+		break;
+
+	    case ENCRYPT_SUPPORT:
+		i = 2;
+		fprintf(NetTrace, " SUPPORT ");
+		while (i < length) {
+		    if (ENCTYPE_NAME_OK(pointer[i]))
+			fprintf(NetTrace, "%s ", ENCTYPE_NAME(pointer[i]));
+		    else
+			fprintf(NetTrace, "%d ", pointer[i]);
+		    i++;
+		}
+		break;
+
+	    default:
+		fprintf(NetTrace, "%d (unknown)", pointer[1]);
+		for (i = 2; i < length; i++)
+		    fprintf(NetTrace, " %d", pointer[i]);
+		break;
+	    }
+	    break;
+#endif
 
 	case TELOPT_LINEMODE:
 	    fprintf(NetTrace, "LINEMODE ");
@@ -462,8 +546,8 @@ int	length;			/* length of suboption data */
 	    case LM_SLC:
 		fprintf(NetTrace, "SLC");
 		for (i = 2; i < length - 2; i += 3) {
-		    if (pointer[i+SLC_FUNC] <= NSLC)
-			fprintf(NetTrace, " %s", slcnames[pointer[i+SLC_FUNC]]);
+		    if (SLC_NAME_OK(pointer[i+SLC_FUNC]))
+			fprintf(NetTrace, " %s", SLC_NAME(pointer[i+SLC_FUNC]));
 		    else
 			fprintf(NetTrace, " %d", pointer[i+SLC_FUNC]);
 		    switch (pointer[i+SLC_FLAGS]&SLC_LEVELBITS) {
@@ -508,7 +592,7 @@ int	length;			/* length of suboption data */
 			pointer[2]&MODE_ACK ? "|ACK" : "");
 		    fprintf(NetTrace, "%s", tbuf[1] ? &tbuf[1] : "0");
 		}
-		if (pointer[2]&~(MODE_EDIT|MODE_TRAPSIG|MODE_ACK))
+		if (pointer[2]&~(MODE_MASK))
 		    fprintf(NetTrace, " (0x%x)", pointer[2]);
 		for (i = 3; i < length; i++)
 		    fprintf(NetTrace, " ?0x%x?", pointer[i]);
@@ -536,6 +620,8 @@ int	length;			/* length of suboption data */
 		    fprintf(NetTrace, " ?%d?", pointer[i]);
 		break;
 	    case TELQUAL_IS:
+		if (--want_status_response < 0)
+		    want_status_response = 0;
 		if (NetTrace == stdout)
 		    fprintf(NetTrace, " IS\r\n");
 		else
@@ -671,8 +757,11 @@ int	length;			/* length of suboption data */
 	    break;
 
 	default:
-	    fprintf(NetTrace, "Unknown option ");
-	    for (i = 0; i < length; i++)
+	    if (TELOPT_OK(pointer[0]))
+		fprintf(NetTrace, "%s (unknown)", TELOPT(pointer[0]));
+	    else
+		fprintf(NetTrace, "%d (unknown)", pointer[i]);
+	    for (i = 1; i < length; i++)
 		fprintf(NetTrace, " %d", pointer[i]);
 	    break;
 	}
@@ -690,7 +779,7 @@ int	length;			/* length of suboption data */
  *			way to the kernel (thus the select).
  */
 
-void
+    void
 EmptyTerminal()
 {
 #if	defined(unix)
@@ -717,7 +806,7 @@ EmptyTerminal()
     }
 }
 
-void
+    void
 SetForExit()
 {
     setconnmode(0);
@@ -744,18 +833,18 @@ SetForExit()
     setcommandmode();
 }
 
-void
+    void
 Exit(returnCode)
-int returnCode;
+    int returnCode;
 {
     SetForExit();
     exit(returnCode);
 }
 
-void
+    void
 ExitString(string, returnCode)
-char *string;
-int returnCode;
+    char *string;
+    int returnCode;
 {
     SetForExit();
     fwrite(string, 1, strlen(string), stderr);
