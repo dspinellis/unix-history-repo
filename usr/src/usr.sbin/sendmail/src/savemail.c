@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.36		%G%);
+SCCSID(@(#)savemail.c	3.37		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -198,6 +198,16 @@ returntosender(msg, sendbody)
 {
 	char buf[MAXNAME];
 	extern errhdr();
+
+# ifdef DEBUG
+	if (Debug > 0)
+	{
+		printf("Return To Sender: msg=\"%s\", depth=%d, CurEnv=%x,\n",
+		       msg, returndepth, CurEnv);
+		printf("\treturnto=");
+		printaddr(returnto, FALSE);
+	}
+# endif DEBUG
 
 	if (++returndepth >= MAXRETURNS)
 	{
