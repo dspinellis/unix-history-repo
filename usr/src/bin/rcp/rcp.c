@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -151,12 +151,12 @@ main(argc, argv)
 						suser = pwd->pw_name;
 					else if (!okname(suser))
 						continue;
-		(void) sprintf(buf, "rsh %s -l %s -n %s %s '%s%s%s:%s'",
+		(void) sprintf(buf, "/usr/ucb/rsh %s -l %s -n %s %s '%s%s%s:%s'",
 					    host, suser, cmd, src, tuser,
 					    tuser ? "@" : "",
 					    thost, targ);
 				} else
-		(void) sprintf(buf, "rsh %s -n %s %s '%s%s%s:%s'",
+		(void) sprintf(buf, "/usr/ucb/rsh %s -n %s %s '%s%s%s:%s'",
 					    argv[i], cmd, src, tuser,
 					    tuser ? "@" : "",
 					    thost, targ);
