@@ -15,15 +15,21 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)mkdep.sh	5.16 (Berkeley) %G%
+#	@(#)mkdep.sh	5.17 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/usr/ucb
 export PATH
 
 D=.depend			# default dependency file is .depend
+append=0
 
 while :
 	do case "$1" in
+		# -a appends to the depend file
+		-a)
+			append=1
+			shift ;;
+
 		# -f allows you to select a makefile name
 		-f)
 			D=$2
@@ -73,5 +79,10 @@ END {
 	print rec
 }' > $TMP
 
-mv $TMP $D
+if [ $append = 1 ]; then
+	cat $TMP >> $D
+	rm -f $TMP
+else
+	mv $TMP $D
+fi
 exit 0
