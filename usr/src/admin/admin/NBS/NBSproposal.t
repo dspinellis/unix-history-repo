@@ -1,11 +1,11 @@
-.\"	@(#)NBSproposal.t	1.1	88/02/25
+.\"	@(#)NBSproposal.t	1.2	88/02/26
 .\" *troff -ms
 .rm CM
 .sp 2
 .ce 100
-\fB\s+2Proposal for a Prototype ISO Implementation
-for Berkeley UNIX\s-2\fP
-.ds DT ""
+\fB\s+2Proposal for a Prototype OSI Network
+Implementation for Berkeley UNIX\s-2\fP
+.ds DT "
 \fBDRAFT of \*(DT\fP
 .ce 0
 .sp 2
@@ -27,17 +27,17 @@ The Computer Systems Research Group at Berkeley
 has now embarked on a new development phase to
 update other old parts of the system.
 There are three main areas of work.
-The first is to develop an ISO protocol suite and to integrate
+The first is to develop an OSI network protocol suite and to integrate
 existing ISO applications into Berkeley UNIX.
 The second is to refine the TCP/IP networking to improve
-its performance on slow lossy networks.
+its performance and limit congestion on slow and/or lossy networks.
 The third is to provide a standard interface to file systems
 so that multiple local and remote file systems can be supported,
 much as multiple networking protocols are supported by 4.3BSD.
 .PP
 We are planning to implement prototypes for each of these
 three main areas of work over the period of this proposal.
-We plan to do a test release at the end of the proposal period
+We plan to do an informal release at the end of the proposal period
 to interested developers.
 After incorporating feedback and refinements from the testers,
 the work will appear in the next full Berkeley release that typically
@@ -54,19 +54,26 @@ Our goal is to apply leading edge research ideas into a stable
 and reliable implementation that solves current problems in
 operating systems research.
 .NH 2
-ISO protocol development
+OSI network protocol development
 .PP
 The network architecture of 4.2BSD was designed to accommodate
 multiple network protocol families and address formats,
-and an ISO implementation should fit this framework without difficulty.
-Our proposal is to integrate OSI transport class 4,
-the OSI internet protocol,
-and device drivers for X.25 and 802.3, and 802.5 into Berkeley Unix;
-to receive from Northrop (or any other party)
-an updated ISO Development Environment (ISODE) featuring
-international standard (IS) versions of utilities and
-incorporate this into the Berkeley Software Distribution.
-Of course, this presumes participating in
+and an implementation of the ISO OSI network protocols
+should fit this framework without much difficulty.
+The outline of the proposal is to
+implement the OSI connectionless internet protocol (CLNP),
+and device drivers for X.25, 802.3, and possibly 802.5 interfaces, and
+to integrate these with an OSI transport class 4 (TP-4) implementation.
+We will receive an updated ISO Development Environment (ISODE)
+from Northrop (or any other party)
+featuring International Standard (IS) versions of utilities, and
+incorporate these into the Berkeley Software Distribution.
+ISODE implements the session and presentation layers of the OSI protocol suite,
+and will include an implementation of the file transfer protocol FTAM.
+If possible, an X.400 implementation now being done at University College,
+London and the University of Nottingham will also be available for testing
+and distribution.
+This work will include participation in
 interoperability tests with vendors and users on OSINET.
 .LP
 The tasks to be done include: 
@@ -74,34 +81,34 @@ The tasks to be done include:
 We will incorporate an updated University of
 Wisconsin TP-4 to match GOSIP requirements.
 The University of Wisconsin developed a transport class 4
-implementation for the BSD 4.2 kernel under contract to Mitre.
+implementation for the 4.2BSD kernel under contract to Mitre.
 This implementation must be updated to reflect NBS
-workshop agreements, GOSIP, and BSD 4.3 requirements.
+workshop agreements, GOSIP, and 4.3BSD requirements.
 We expect that the University of Wisconsin will do this job.
-We at UCB will make this TP-4 run over an OSI IP,
+We will make this TP-4 operate with an OSI IP,
 as the original implementation was built to run over the DoD IP.
 .IP 2)
 A kernel version of the OSI IP and ES-IS protocols must be produced.
-We at UCB will implement the kernel version of these protocols.
+We will implement the kernel version of these protocols.
 .IP 3)
-A POSIX network interface needs to be specified.
-We at UCB will define a network interface between the kernel level
-network services and the using programs (e.g., ISODE).
-A proposal will be made to the IEEE 1003 committee to establish
-a group to develop a POSIX network interface.
-The UCB defined interface will be submitted as a proposed standard.
-The exact makeup of the committee is not yet agreed,
-but representatives from the NBS,
-Northrup, DoD, UCB, and Mitre are candidates.
-Also the work of drafting the proposed standard has not been assigned.
-.IP 4)
 The required device drivers need to be integrated into BSD kernel.
-4.3BSD has existing device drivers for many ethernet devices and
-has, or will soon, an X.25 device driver.
-These device drivers will need to be integrated
+4.3BSD has existing device drivers for many ethernet devices, and
+has, or will soon have, an X.25 device driver.
+These device drivers must be integrated
 into the kernel OSI protocol implementations.
 If other device drivers are required for token ring networks,
 then additional work will be required.
+.IP 4)
+A POSIX (IEEE standard) network interface needs to be specified.
+We will define a network interface between the kernel level
+network services and the user-level programs (e.g., ISODE).
+A proposal will be made to the IEEE P1003 committee to establish
+a group to develop a POSIX network interface.
+The UCB-defined interface will be submitted as a proposed standard.
+The exact makeup of the committee is not yet agreed,
+but representatives from the NBS,
+Northrop, DoD, UCB, and Mitre are candidates.
+Also, the work of drafting the proposed standard has not been assigned.
 .IP 5)
 The existing OSINET interoperability test network is available so 
 that the interoperability of the ISODE and BSD kernel protocols
@@ -110,17 +117,18 @@ Testing is crucial because an openly available version of GOSIP protocols
 that does not interoperate with DEC, IBM, SUN, ICL, HIS, and other
 major vendors would be embarrassing.
 To allow testing of the integrated pieces the most desirable
-approach is to provide Northrup and UCB access to OSINET.
+approach is to provide access to OSINET at UCB.
 A second approach is to do the interoperability testing at
 the site of an existing OSINET member, such as the NBS.
-Northrup and UCB can join the OSINET directly by installing
+UCB can join the OSINET directly by installing
 ACCUNET X.25 circuits or an OSI IP level router can be
 provided between the ARPANET and the OSINET.
 .IP 6)
-We at UCB will accept responsibility for integrating the BSD kernel code,
+We will accept responsibility for integrating the UNIX kernel code,
 the POSIX mapping library, and any related code.
-We will also incorporate the ISODE in the BSD as a user provided program.
-The release cycle for BSD is about once every 24 months.
+We will also incorporate ISODE into the Berkeley Software Distribution
+as user-contributed software.
+The release cycle for 4BSD is about once every 24 months.
 We will target a test release version of the system one year after the 
 project is started.
 .NH 2
@@ -128,7 +136,7 @@ Improvements to the TCP/IP Networking Protocols
 .PP
 The Internet and the Berkeley collection of local-area networks
 have both grown at high rates in the last year.
-The Bay Area Regional Research Network (BARRNet)
+The Bay Area Regional Research Network (BARRNet),
 connecting several UC campuses, Stanford and NASA-Ames
 has recently become operational, increasing the complexity
 of the network connectivity.
@@ -139,7 +147,34 @@ to keep accommodating the current topology,
 and are participating in the development of new routing algorithms
 and protocols.
 .PP
-<Mike - more on tuning>
+Recent work in collaboration with Van Jacobson of the Lawrence Berkeley
+Laboratory has led to the design and implementation of several new algorithms
+for TCP that improve throughput on both local and long-haul networks
+while reducing unnecessary retransmission.
+The improvement is especially striking when connections must traverse
+slow and/or lossy networks.
+The new algorithms include ``slow-start,''
+a technique for opening the TCP flow control window slowly
+and using the returning stream of acknowledgements as a clock
+to drive the connection at the highest speed tolerated by the intervening
+network.
+A modification of this technique allows the sender to dynamically modify
+the send window size to adjust to changing network conditions.
+In addition, the round-trip timer has been modified to estimate the variance
+in round-trip time, thus allowing earlier retransmission of lost packets
+with less spurious retransmission due to increasing network delay.
+Along with a scheme proposed by Phil Karn of Bellcore,
+these changes reduce unnecessary retransmission over difficult paths
+such as Satnet by nearly two orders of magnitude
+while improving throughput dramatically.
+.PP
+The current TCP implementation is now being readied
+for more widespread distribution via the network.
+We will continue to refine the TCP and IP implementations during the term
+covered by this proposal, using the ARPANET, BARRNet, the NSF network
+and local campus nets as testbeds, in preparation for the next 4BSD release.
+In addition, we will incorporate applicable algorithms from this work
+into the TP-4 protocol implementation.
 .NH 2
 Toward a Compatible File System Interface
 .PP
@@ -148,7 +183,7 @@ area of distributed file systems.
 As with networking protocols,
 there is no single distributed file system
 that provides enough speed and functionality for all problems.
-It is frequently necessary to support several different distributed
+It is frequently necessary to support several different remote
 file system protocols, just as it is necessary to run several 
 different network protocols.
 .PP
@@ -162,7 +197,7 @@ AT&T's File System Switch (FSS) [Rifkin86],
 the LOCUS distributed file system [Walker85],
 and Masscomp's extended file system [Cole85].
 Other remote file systems have been implemented in research or
-university groups for internal use \-
+university groups for internal use\-
 notably the network file system in the Eighth Edition UNIX
 system [Weinberger84] and two different file systems used at Carnegie Mellon
 University [Satyanarayanan85].
@@ -195,12 +230,12 @@ each of the existing implementations.
 This proposal and the rationale underlying its development
 have been presented to major software vendors as an early step
 toward convergence on a compatible file system interface.
-Briefly, the proposal adopts the 4.3BSD calling convention for name lookup,
+Briefly, the proposal adopts the 4.3BSD calling convention for file name lookup
 but otherwise is closely related to Sun's VFS [Karels86].
 .PP
 A prototype implementation is now being developed.
 We expect that this work will be finished in time for a release at the
-end of this proposed contract.
+end of the period covered by this proposal.
 .NH 2
 Work since the release of 4.3BSD
 .PP
@@ -225,12 +260,18 @@ types of disk controllers on the VAX.
 A utility was written to create and maintain the disk information,
 and other user-level programs that use such information now obtain
 it from the disk label.
+The use of this facility has allowed improvements in the file system's
+knowledge of irregular disk geometries such as track-to-track skew.
 .PP
-We have been heavily involved in formulating the IEEE 1003.1 POSIX standard.
-Part of this work has involved developing prototypes of the new
+In recent months we have been heavily involved in the development
+the IEEE P1003.1 POSIX standard for portable operating system interfaces.
+We have participated actively in the incorporation and improvement
+of the job control and signal facilities first developed in Berkeley UNIX
+systems.
+Part of the current work has involved developing prototypes of the new
 interfaces to get feedback on their strengths and weaknesses.
 We expect that we will be able to provide POSIX compliant
-interfaces in BSD shortly after the standard is promulgated.
+interfaces in Berkeley UNIX shortly after the standard is finalized.
 The major areas that we have prototyped include the POSIX terminal driver, 
 POSIX job control, and POSIX group and user identifier semantics.
 .br
