@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	4.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)bugfiler.c	4.15 (Berkeley) %G%";
 #endif
 
 /*
@@ -484,7 +484,8 @@ chkindex(hp)
 file(fname, folder)
 	char *fname, *folder;
 {
-	register char *cp, n;
+	register char *cp;
+	register int n;
 	char msgname[MAXNAMLEN*2+2];
 	struct stat stbuf;
 	DIR *dirp;
