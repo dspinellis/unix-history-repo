@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)SYS.h	5.1 (Berkeley) %G%
+ *	@(#)SYS.h	5.2 (Berkeley) %G%
  */
 
 #include <sys/syscall.h>
@@ -30,7 +30,7 @@
 #else
 #define	ENTRY(x)	.globl _/**/x; .even; _/**/x:
 #endif PROF
-#define	SYSCALL(x)	err: jmp cerror; ENTRY(x); movl #SYS_/**/x,d0; \
+#define	SYSCALL(x)	.even; err: jmp cerror; ENTRY(x); movl #SYS_/**/x,d0; \
 			trap #0; jcs err
 #define	PSEUDO(x,y)	ENTRY(x); movl #SYS_/**/y,d0; trap #0;
 
