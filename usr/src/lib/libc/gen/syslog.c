@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.30 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -49,11 +49,13 @@ vsyslog(pri, fmt, ap)
 	int fd, saved_errno;
 	char tbuf[2048], fmt_cpy[1024], *stdp, *ctime();
 
-	saved_errno = errno;
+	/* check for invalid bits or no priority set */
+	if (!LOG_PRI(pri) || (pri &~ (LOG_PRIMASK|LOG_FACMASK))) {
+		errno = EINVAL;
+		return(-1);
+	}
 
-	/* discard if invalid bits or no priority set */
-	if (!LOG_PRI(pri) || (pri &~ (LOG_PRIMASK|LOG_FACMASK)))
-		return(0);
+	saved_errno = errno;
 
 	/* set default facility if none specified */
 	if ((pri & LOG_FACMASK) == 0)

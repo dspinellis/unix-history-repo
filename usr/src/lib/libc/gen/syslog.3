@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)syslog.3	6.14 (Berkeley) %G%
+.\"	@(#)syslog.3	6.15 (Berkeley) %G%
 .\"
 .TH SYSLOG 3 ""
 .UC 5
@@ -238,7 +238,13 @@ routines
 .IR connect (2),
 .IR send (2) ,
 and
-.IR socket (2).
+.IR socket (2), 
+or the following:
+.TP
+[EINVAL]
+The
+.I priority
+parameter was invalid.
 .PP
 The routine
 .I openlog
