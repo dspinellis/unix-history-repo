@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)ln.1	6.11 (Berkeley) %G%
+.\"	@(#)ln.1	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LN 1
@@ -92,14 +92,26 @@ makes links in
 to all the named source files.
 The links made will have the same name as the files being linked to.
 .Sh SYMBOLIC LINK HANDLING
-There are two issues involved in symbolic link handling.
-The first issue is whether or not the utility or system call operates
-on the symbolic link itself or if it operates on the object to which
-the symbolic link refers.
-The following rules summarize the conventions of symbolic link handling
-in the system.
-Operating on the object referenced by the symbolic link or indirecting
-through symbolic links to directories is termed ``following'' the link.
+.Pp
+Due to the fact that a symbolic link and its referenced object coexist 
+in the file system
+name space, confusion can arise in distinguishing between the link itself
+and the referenced object.  Traditionally, utilities and system calls
+have adopted their own link following conventions in an ad-hoc fashion.
+Rules for more a uniform approach are outlined here.
+.Pp
+Symbolic links are handled either by operating on the link itself, or by
+operating on the object referenced by the link.  In the latter case,
+an application or system call is said to ``follow'' the link.  Symbolic
+links may reference other symbolic links, in which case links are
+dereferenced until an atomic object is found.  Cycles are avoided by
+placing an upper limit on the number of links that may be followed.
+An error results if this limit is exceeded.
+.Pp
+There are three domains for which symbolic link policy is established:
+system calls that take file name arguments,
+utilities that take file name arguments, and
+utilities that traverse file hierarchies.
 .Pp
 The system calls that do not follow symbolic links are
 .Xr lstat 2 ,
@@ -114,7 +126,7 @@ The utilities that do not follow symbolic links are
 and
 .Xr rm 1 .
 For compatibility with historic systems, the 
-.Xr ls
+.Xr ls 1
 utility follows symbolic links listed on the command line, unless the
 .Fl F ,
 .Fl d
@@ -124,20 +136,16 @@ options are specified.
 However, if the
 .Fl L
 option is specified,
-.Xr ls
+.Xr ls 1
 always follows symbolic links.
 All other utilities follow symbolic links.
 .Pp
-The second issue in symbolic link handling is traversal of a file hierarchy.
-There are two ways for file hierarchy oriented utilities to traverse a
-file hierarchy.
-The first is a physical traversal, where the utility does not indirect
-through symbolic links to directories.
-The second is a logical traversal, where the utility does indirect
-through symbolic links to directories.
+Another issue in symbolic link handling is traversal of a file hierarchy.
+File hierarchies can be traversed either ``logically'', by following
+symbolic links that point to directories, or ``physically'', by not
+following such links.  
 .Pp
-The utilities that work with file hierarchies, either optionally or by
-default, are
+The following utilities can perform traversals:
 .Xr chflags 1 ,
 .Xr chgrp 1 ,
 .Xr chmod 1 ,
