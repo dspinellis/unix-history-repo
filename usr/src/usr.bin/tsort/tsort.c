@@ -1,207 +1,377 @@
-static char *sccsid = "@(#)tsort.c	4.3 (Berkeley) %G%";
-/*	topological sort
- *	input is sequence of pairs of items (blank-free strings)
- *	nonidentical pair is a directed edge in graph
- *	identical pair merely indicates presence of node
- *	output is ordered list of items consistent with
- *	the partial ordering specified by the graph
-*/
+/*
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Michael Rendell of Memorial University of Newfoundland.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1989 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)tsort.c	5.1 (Berkeley) %G%";
+#endif /* not lint */
+
+#include <sys/types.h>
+#include <errno.h>
 #include <stdio.h>
+#include <ctype.h>
+#include <strings.h>
 
-/*	the nodelist always has an empty element at the end to
- *	make it easy to grow in natural order
- *	states of the "live" field:*/
-#define DEAD 0	/* already printed*/
-#define LIVE 1	/* not yet printed*/
-#define VISITED 2	/*used only in findloop()*/
+/*
+ *  Topological sort.  Input is a list of pairs of strings seperated by
+ *  white space (spaces, tabs, and/or newlines); strings are written to
+ *  standard output in sorted order, one per line.
+ *
+ *  usage:
+ *     tsort [inputfile]
+ *  If no input file is specified, standard input is read.
+ *
+ *  Should be compatable with AT&T tsort HOWEVER the output is not identical
+ *  (i.e. for most graphs there is more than one sorted order, and this tsort
+ *  usually generates a different one then the AT&T tsort).  Also, cycle
+ *  reporting seems to be more accurate in this version (the AT&T tsort
+ *  sometimes says a node is in a cycle when it isn't).
+ *
+ *  Michael Rendell, michael@stretch.cs.mun.ca - Feb 26, '90
+ */
+#define	HASHSIZE	53		/* doesn't need to be big */
+#define	NF_MARK		0x1		/* marker for cycle detection */
+#define	NF_ACYCLIC	0x2		/* this node is cycle free */
 
-struct nodelist {
-	struct nodelist *nextnode;
-	struct predlist *inedges;
-	char *name;
-	int live;
-} firstnode = {NULL, NULL, NULL, DEAD};
+typedef struct node_str NODE;
 
-/*	a predecessor list tells all the immediate
- *	predecessors of a given node
-*/
-struct predlist {
-	struct predlist *nextpred;
-	struct nodelist *pred;
+struct node_str {
+	char *n_name;			/* name of this node */
+	NODE **n_prevp;			/* pointer to previous node's n_next */
+	NODE *n_next;			/* next node in graph */
+	NODE *n_hash;			/* next node in hash table */
+	int n_narcs;			/* number of arcs in n_arcs[] */
+	int n_arcsize;			/* size of n_arcs[] array */
+	NODE **n_arcs;			/* array of arcs to other nodes */
+	int n_refcnt;			/* # of arcs pointing to this node */
+	int n_flags;			/* NF_* */
 };
 
-struct nodelist *index();
-struct nodelist *findloop();
-struct nodelist *mark();
-char *malloc();
-char *empty = "";
+typedef struct _buf {
+	char *b_buf;
+	int b_bsize;
+} BUF;
 
-/*	the first for loop reads in the graph,
- *	the second prints out the ordering
-*/
-main(argc,argv)
-char **argv;
+NODE *add_node(), *find_node();
+void add_arc(), no_memory(), remove_node(), tsort();
+char *grow_buf(), *malloc();
+
+extern int errno;
+NODE *graph;
+NODE *hashtable[HASHSIZE];
+NODE **cycle_buf;
+NODE **longest_cycle;
+
+main(argc, argv)
+	int argc;
+	char **argv;
 {
-	register struct predlist *t;
-	FILE *input = stdin;
-	register struct nodelist *i, *j;
-	int x;
-	char precedes[50], follows[50];
-	if(argc>1) {
-		input = fopen(argv[1],"r");
-		if(input==NULL)
-			error("cannot open ", argv[1]);
+	register BUF *b;
+	register int c, n;
+	FILE *fp;
+	int bsize, nused;
+	BUF bufs[2];
+
+	if (argc < 2)
+		fp = stdin;
+	else if (argc == 2) {
+		(void)fprintf(stderr, "usage: tsort [ inputfile ]\n");
+		exit(1);
+	} else if (!(fp = fopen(argv[1], "r"))) {
+		(void)fprintf(stderr, "tsort: %s.\n", strerror(errno));
+		exit(1);
 	}
-	for(;;) {
-		x = fscanf(input,"%s%s",precedes, follows);
-		if(x==EOF)
+
+	for (b = bufs, n = 2; --n >= 0; b++)
+		b->b_buf = grow_buf((char *)NULL, b->b_bsize = 1024);
+
+	/* parse input and build the graph */
+	for (n = 0, c = getc(fp);;) {
+		while (c != EOF && isspace(c))
+			c = getc(fp);
+		if (c == EOF)
 			break;
-		if(x!=2)
-			error("odd data",empty);
-		i = index(precedes);
-		j = index(follows);
-		if(i==j||present(i,j)) 
-			continue;
-		t = (struct predlist *)malloc(sizeof(struct predlist));
-		t->nextpred = j->inedges;
-		t->pred = i;
-		j->inedges = t;
-	}
-	for(;;) {
-		x = 0;	/*anything LIVE on this sweep?*/
-		for(i= &firstnode; i->nextnode!=NULL; i=i->nextnode) {
-			if(i->live==LIVE) {
-				x = 1;
-				if(!anypred(i))
-					break;
+
+		nused = 0;
+		b = &bufs[n];
+		bsize = b->b_bsize;
+		do {
+			b->b_buf[nused++] = c;
+			if (nused == bsize) {
+				bsize *= 2;
+				b->b_buf = grow_buf(b->b_buf, bsize);
 			}
-		}
-		if(x==0)
-			break;
-		if(i->nextnode==NULL)
-			i = findloop();
-		printf("%s\n",i->name);
-		i->live = DEAD;
+			c = getc(fp);
+		} while (c != EOF && !isspace(c));
+
+		b->b_buf[nused] = '\0';
+		b->b_bsize = bsize;
+		if (n)
+			add_arc(bufs[0].b_buf, bufs[1].b_buf);
+		n = !n;
 	}
+	(void)fclose(fp);
+	if (n) {
+		(void)fprintf(stderr, "tsort: odd data count.\n");
+		exit(1);
+	}
+
+	/* do the sort */
+	tsort();
 	exit(0);
 }
 
-/*	is i present on j's predecessor list?
-*/
-present(i,j)
-struct nodelist *i, *j;
+/* double the size of oldbuf and return a pointer to the new buffer. */
+char *
+grow_buf(bp, size)
+	char *bp;
+	int size;
 {
-	register struct predlist *t;
-	for(t=j->inedges; t!=NULL; t=t->nextpred)
-		if(t->pred==i)
-			return(1);
-	return(0);
+	char *realloc();
+
+	if (!(bp = realloc(bp, (u_int)size)))
+		no_memory();
+	return(bp);
 }
 
-/*	is there any live predecessor for i?
-*/
-anypred(i)
-struct nodelist *i;
+/*
+ * add an arc from node s1 to node s2 in the graph.  If s1 or s2 are not in
+ * the graph, then add them.
+ */
+void
+add_arc(s1, s2)
+	char *s1, *s2;
 {
-	register struct predlist *t;
-	for(t=i->inedges; t!=NULL; t=t->nextpred)
-		if(t->pred->live==LIVE)
-			return(1);
-	return(0);
-}
+	register NODE *n1;
+	NODE *n2;
+	int bsize;
 
-/*	turn a string into a node pointer
-*/
-struct nodelist *
-index(s)
-register char *s;
-{
-	register struct nodelist *i;
-	register char *t;
-	for(i= &firstnode; i->nextnode!=NULL; i=i->nextnode)
-		if(cmp(s,i->name))
-			return(i);
-	for(t=s; *t; t++) ;
-	t = malloc((unsigned)(t+1-s));
-	i->nextnode = (struct nodelist *)malloc(sizeof(struct nodelist));
-	if(i->nextnode==NULL||t==NULL)
-		error("too many items",empty);
-	i->name = t;
-	i->live = LIVE;
-	i->nextnode->nextnode = NULL;
-	i->nextnode->inedges = NULL;
-	i->nextnode->live = DEAD;
-	while(*t++ = *s++);
-	return(i);
-}
+	n1 = find_node(s1);
+	if (!n1)
+		n1 = add_node(s1);
 
-cmp(s,t)
-register char *s, *t;
-{
-	while(*s==*t) {
-		if(*s==0)
-			return(1);
-		s++;
-		t++;
+	if (!strcmp(s1, s2))
+		return;
+
+	n2 = find_node(s2);
+	if (!n2)
+		n2 = add_node(s2);
+
+	/*
+	 * could check to see if this arc is here already, but it isn't
+	 * worth the bother -- there usually isn't and it doesn't hurt if
+	 * there is (I think :-).
+	 */
+	if (n1->n_narcs == n1->n_arcsize) {
+		if (!n1->n_arcsize)
+			n1->n_arcsize = 10;
+		bsize = n1->n_arcsize * sizeof(*n1->n_arcs) * 2;
+		n1->n_arcs = (NODE **)grow_buf((char *)n1->n_arcs, bsize);
+		n1->n_arcsize = bsize / sizeof(*n1->n_arcs);
 	}
-	return(0);
+	n1->n_arcs[n1->n_narcs++] = n2;
+	++n2->n_refcnt;
 }
 
-error(s,t)
-char *s, *t;
+hash_string(s)
+	char *s;
 {
-	note(s,t);
-	exit(1);
+	register int hash, i;
+
+	for (hash = 0, i = 1; *s; s++, i++)
+		hash += *s * i;
+	return(hash % HASHSIZE);
 }
 
-note(s,t)
-char *s,*t;
+/*
+ * find a node in the graph and return a pointer to it - returns null if not
+ * found.
+ */
+NODE *
+find_node(name)
+	char *name;
 {
-	fprintf(stderr,"tsort: %s%s\n",s,t);
+	register NODE *n;
+
+	for (n = hashtable[hash_string(name)]; n; n = n->n_hash)
+		if (!strcmp(n->n_name, name))
+			return(n);
+	return((NODE *)NULL);
 }
 
-/*	given that there is a cycle, find some
- *	node in it
-*/
-struct nodelist *
-findloop()
+/* Add a node to the graph and return a pointer to it. */
+NODE *
+add_node(name)
+	char *name;
 {
-	register struct nodelist *i, *j;
-	for(i= &firstnode; i->nextnode!=NULL; i=i->nextnode)
-		if(i->live==LIVE)
+	register NODE *n;
+	int hash;
+
+	if (!(n = (NODE *)malloc(sizeof(NODE))) || !(n->n_name = strdup(name)))
+		no_memory();
+
+	n->n_narcs = 0;
+	n->n_arcsize = 0;
+	n->n_arcs = (NODE **)NULL;
+	n->n_refcnt = 0;
+	n->n_flags = 0;
+
+	/* add to linked list */
+	if (n->n_next = graph)
+		graph->n_prevp = &n->n_next;
+	n->n_prevp = &graph;
+	graph = n;
+
+	/* add to hash table */
+	hash = hash_string(name);
+	n->n_hash = hashtable[hash];
+	hashtable[hash] = n;
+	return(n);
+}
+
+/* do topological sort on graph */
+void
+tsort()
+{
+	register NODE *n, *next;
+	register int cnt;
+
+	while (graph) {
+		/*
+		 * keep getting rid of simple cases until there are none left,
+		 * if there are any nodes still in the graph, then there is
+		 * a cycle in it.
+		 */
+		do {
+			for (cnt = 0, n = graph; n; n = next) {
+				next = n->n_next;
+				if (n->n_refcnt == 0) {
+					remove_node(n);
+					++cnt;
+				}
+			}
+		} while (graph && cnt);
+
+		if (!graph)
 			break;
-	note("cycle in data",empty);
-	i = mark(i);
-	if(i==NULL)
-		error("program error",empty);
-	for(j= &firstnode; j->nextnode!=NULL; j=j->nextnode)
-		if(j->live==VISITED)
-			j->live = LIVE;
-	return(i);
-}
 
-/*	depth-first search of LIVE predecessors
- *	to find some element of a cycle;
- *	VISITED is a temporary state recording the
- *	visits of the search
-*/
-struct nodelist *
-mark(i)
-register struct nodelist *i;
-{
-	register struct nodelist *j;
-	register struct predlist *t;
-	if(i->live==DEAD)
-		return(NULL);
-	if(i->live==VISITED)
-		return(i);
-	i->live = VISITED;
-	for(t=i->inedges; t!=NULL; t=t->nextpred) {
-		j = mark(t->pred);
-		if(j!=NULL) {
-			note(i->name,empty);
-			return(j);
+		if (!cycle_buf) {
+			/*
+			 * allocate space for two cycle logs - one to be used
+			 * as scratch space, the other to save the longest
+			 * cycle.
+			 */
+			for (cnt = 0, n = graph; n; n = n->n_next)
+				++cnt;
+			cycle_buf =
+			    (NODE **)malloc((u_int)sizeof(NODE *) * cnt);
+			longest_cycle =
+			    (NODE **)malloc((u_int)sizeof(NODE *) * cnt);
+			if (!cycle_buf || !longest_cycle)
+				no_memory();
+		}
+		for (n = graph; n; n = n->n_next)
+			if (!(n->n_flags & NF_ACYCLIC)) {
+				if (cnt = find_cycle(n, n, 0, 0)) {
+					register int i;
+
+					(void)fprintf(stderr,
+					    "tsort: cycle in data.\n");
+					for (i = 0; i < cnt; i++)
+						(void)fprintf(stderr,
+				"tsort: %s.\n", longest_cycle[i]->n_name);
+					remove_node(n);
+					break;
+				} else
+					/* to avoid further checks */
+					n->n_flags  = NF_ACYCLIC;
+			}
+
+		if (!n) {
+			(void)fprintf(stderr,
+			    "tsort: internal error -- could not find cycle.\n");
+			exit(1);
 		}
 	}
-	return(NULL);
+}
+
+/* print node and remove from graph (does not actually free node) */
+void
+remove_node(n)
+	register NODE *n;
+{
+	register NODE **np;
+	register int i;
+
+	(void)printf("%s\n", n->n_name);
+	for (np = n->n_arcs, i = n->n_narcs; --i >= 0; np++)
+		--(*np)->n_refcnt;
+	n->n_narcs = 0;
+	*n->n_prevp = n->n_next;
+	if (n->n_next)
+		n->n_next->n_prevp = n->n_prevp;
+}
+
+/* look for the longest cycle from node from to node to. */
+find_cycle(from, to, longest_len, depth)
+	NODE *from, *to;
+	int depth, longest_len;
+{
+	register NODE **np;
+	register int i, len;
+
+	/*
+	 * avoid infinite loops and ignore portions of the graph known
+	 * to be acyclic
+	 */
+	if (from->n_flags & (NF_MARK|NF_ACYCLIC))
+		return(0);
+	from->n_flags = NF_MARK;
+
+	for (np = from->n_arcs, i = from->n_narcs; --i >= 0; np++) {
+		cycle_buf[depth] = *np;
+		if (*np == to) {
+			if (depth + 1 > longest_len) {
+				longest_len = depth + 1;
+				(void)memcpy((char *)longest_cycle,
+				    (char *)cycle_buf,
+				    longest_len * sizeof(NODE *));
+			}
+		} else {
+			len = find_cycle(*np, to, longest_len, depth + 1);
+			if (len > longest_len)
+				longest_len = len;
+		}
+	}
+	from->n_flags &= ~NF_MARK;
+	return(longest_len);
+}
+
+void
+no_memory()
+{
+	(void)fprintf(stderr, "tsort: %s.\n", strerror(ENOMEM));
+	exit(1);
 }
