@@ -1,16 +1,16 @@
 #ifndef lint
-static char *sccsid = "@(#)cp.c	4.4 82/04/28";
+static char *sccsid = "@(#)cp.c	4.5 82/05/07";
 #endif
 
 /*
  * cp
  */
 #include <stdio.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
-#include <ndir.h>
+#include <dir.h>
 
-#define	BSIZE	1024
+#define	BSIZE	8192
 
 int	iflag;
 int	rflag;
