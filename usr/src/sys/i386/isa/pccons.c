@@ -5,13 +5,15 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
+ * Added support for ibmpc term type and improved keyboard support. -Don Ahn
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)pccons.c	5.7 (Berkeley) %G%
+ *	@(#)pccons.c	5.8 (Berkeley) %G%
  */
 
 /*
- * code to work keyboard & display for console
+ * code to work keyboard & display for PC-style console
  */
 #include "param.h"
 #include "conf.h"
@@ -26,22 +28,23 @@
 #include "kernel.h"
 #include "syslog.h"
 #include "i386/isa/icu.h"
+#include "i386/i386/cons.h"
 
-struct	tty cons;
+struct	tty pccons;
 
-struct	consoftc {
+struct	pcconsoftc {
 	char	cs_flags;
 #define	CSF_ACTIVE	0x1	/* timeout active */
 #define	CSF_POLLING	0x2	/* polling for input */
 	char	cs_lastc;	/* last char sent */
 	int	cs_timo;	/* timeouts since interrupt */
 	u_long	cs_wedgecnt;	/* times restarted */
-} consoftc;
+} pcconsoftc;
 
-int cnprobe(), cnattach();
+int pcprobe(), pcattach();
 
-struct	isa_driver cndriver = {
-	cnprobe, cnattach, "cn",
+struct	isa_driver pcdriver = {
+	pcprobe, pcattach, "pc",
 };
 
 #define	COL		80
@@ -58,13 +61,36 @@ static unsigned int addr_6845 = MONO_BASE;
 u_short *Crtat = (u_short *)MONO_BUF;
 static openf;
 
-int	cnstart();
-int	cnparam();
+/*
+ * We check the console periodically to make sure
+ * that it hasn't wedged.  Unfortunately, if an XOFF
+ * is typed on the console, that can't be distinguished
+ * from more catastrophic failure.
+ */
+#define	CN_TIMERVAL	(hz)		/* frequency at which to check cons */
+#define	CN_TIMO		(2*60)		/* intervals to allow for output char */
+
+int	pcstart();
+int	pcparam();
 int	ttrstrt();
 char	partab[];
+
+/*
+ * Wait for CP to accept last CP command sent
+ * before setting up next command.
+ */
+#define	waitforlast(timo) { \
+	if (pclast) { \
+		(timo) = 10000; \
+		do \
+			uncache((char *)&pclast->cp_unit); \
+		while ((pclast->cp_unit&CPTAKE) == 0 && --(timo)); \
+	} \
+}
+
 u_char inb();
 
-cnprobe(dev)
+pcprobe(dev)
 struct isa_device *dev;
 {
 	u_char c;
@@ -90,7 +116,7 @@ struct isa_device *dev;
 	return 1;
 }
 
-cnattach(dev)
+pcattach(dev)
 struct isa_device *dev;
 {
 	u_short *cp = Crtat + (CGA_BUF-MONO_BUF)/CHR;
@@ -112,9 +138,9 @@ struct isa_device *dev;
 
 /* ARGSUSED */
 #ifdef __STDC__
-cnopen(dev_t dev, int flag, int mode, struct proc *p)
+pcopen(dev_t dev, int flag, int mode, struct proc *p)
 #else
-cnopen(dev, flag, mode, p)
+pcopen(dev, flag, mode, p)
 	dev_t dev;
 	int flag, mode;
 	struct proc *p;
@@ -122,9 +148,9 @@ cnopen(dev, flag, mode, p)
 {
 	register struct tty *tp;
 
-	tp = &cons;
-	tp->t_oproc = cnstart;
-	tp->t_param = cnparam;
+	tp = &pccons;
+	tp->t_oproc = pcstart;
+	tp->t_param = pcparam;
 	tp->t_dev = dev;
 	openf++;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
@@ -135,7 +161,7 @@ cnopen(dev, flag, mode, p)
 		tp->t_cflag = TTYDEF_CFLAG;
 		tp->t_lflag = TTYDEF_LFLAG;
 		tp->t_ispeed = tp->t_ospeed = TTYDEF_SPEED;
-		cnparam(tp, &tp->t_termios);
+		pcparam(tp, &tp->t_termios);
 		ttsetwater(tp);
 	} else if (tp->t_state&TS_XCLUDE && p->p_ucred->cr_uid != 0)
 		return (EBUSY);
@@ -143,28 +169,28 @@ cnopen(dev, flag, mode, p)
 	return ((*linesw[tp->t_line].l_open)(dev, tp));
 }
 
-cnclose(dev, flag)
+pcclose(dev, flag)
 	dev_t dev;
 {
-	(*linesw[cons.t_line].l_close)(&cons);
-	ttyclose(&cons);
+	(*linesw[pccons.t_line].l_close)(&pccons);
+	ttyclose(&pccons);
 	return(0);
 }
 
 /*ARGSUSED*/
-cnread(dev, uio, flag)
+pcread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
-	return ((*linesw[cons.t_line].l_read)(&cons, uio, flag));
+	return ((*linesw[pccons.t_line].l_read)(&pccons, uio, flag));
 }
 
 /*ARGSUSED*/
-cnwrite(dev, uio, flag)
+pcwrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
-	return ((*linesw[cons.t_line].l_write)(&cons, uio, flag));
+	return ((*linesw[pccons.t_line].l_write)(&pccons, uio, flag));
 }
 
 /*
@@ -172,27 +198,27 @@ cnwrite(dev, uio, flag)
  * the console processor wants to give us a character.
  * Catch the character, and see who it goes to.
  */
-cnrint(dev, irq, cpl)
+pcrint(dev, irq, cpl)
 	dev_t dev;
 {
 	int c;
 
 	c = sgetc(1);
 	if (c&0x100) return;
-	if (consoftc.cs_flags&CSF_POLLING)
+	if (pcconsoftc.cs_flags&CSF_POLLING)
 		return;
 #ifdef KDB
-	if (kdbrintr(c, &cons))
+	if (kdbrintr(c, &pccons))
 		return;
 #endif
-	(*linesw[cons.t_line].l_rint)(c&0xff, &cons);
+	(*linesw[pccons.t_line].l_rint)(c&0xff, &pccons);
 }
 
-cnioctl(dev, cmd, data, flag)
+pcioctl(dev, cmd, data, flag)
 	dev_t dev;
 	caddr_t data;
 {
-	register struct tty *tp = &cons;
+	register struct tty *tp = &pccons;
 	register error;
  
 	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
@@ -204,28 +230,28 @@ cnioctl(dev, cmd, data, flag)
 	return (ENOTTY);
 }
 
-extern int	consintr ;
+int	pcconsintr = 1;
 /*
  * Got a console transmission interrupt -
  * the console processor wants another character.
  */
-cnxint(dev)
+pcxint(dev)
 	dev_t dev;
 {
 	register struct tty *tp;
 	register int unit;
 
-	if (!consintr)
+	if (!pcconsintr)
 		return;
-	cons.t_state &= ~TS_BUSY;
-	consoftc.cs_timo = 0;
-	if (cons.t_line)
-		(*linesw[cons.t_line].l_start)(&cons);
+	pccons.t_state &= ~TS_BUSY;
+	pcconsoftc.cs_timo = 0;
+	if (pccons.t_line)
+		(*linesw[pccons.t_line].l_start)(&pccons);
 	else
-		cnstart(&cons);
+		pcstart(&pccons);
 }
 
-cnstart(tp)
+pcstart(tp)
 	register struct tty *tp;
 {
 	register c, s;
@@ -256,23 +282,55 @@ out:
 	splx(s);
 }
 
+pccnprobe(cp)
+	struct consdev *cp;
+{
+	int maj;
+	extern int pcopen();
+
+	/* locate the major number */
+	for (maj = 0; maj < nchrdev; maj++)
+		if (cdevsw[maj].d_open == pcopen)
+			break;
+
+	/* initialize required fields */
+	cp->cn_dev = makedev(maj, 0);
+	cp->cn_tp = &pccons;
+	cp->cn_pri = CN_INTERNAL;
+}
+
+/* ARGSUSED */
+pccninit(cp)
+	struct consdev *cp;
+{
+	/*
+	 * For now, don't screw with it.
+	 */
+	/* crtat = 0; */
+}
+
 static __color;
 
-cnputc(c)
+/* ARGSUSED */
+pccnputc(dev, c)
+	dev_t dev;
 	char c;
-{	int clr;
-	clr = __color;
-	if (clr == 0) clr = 0x30;
-	else clr |= 0x60;
+{
+	int clr = __color;
+
+	if (clr == 0)
+		clr = 0x30;
+	else
+		clr |= 0x60;
 	if (c == '\n')
-		sput('\r',clr);
+		sput('\r', clr);
 	sput(c, clr);
 }
 
 /*
  * Print a character on console.
  */
-cnputchar(c, tp)
+pcputchar(c, tp)
 	char c;
 	register struct tty *tp;
 {
@@ -281,18 +339,20 @@ cnputchar(c, tp)
 }
 
 
-cngetc()
+/* ARGSUSED */
+pccngetc(dev)
+	dev_t dev;
 {
 	register int c, s;
 
-	s = spltty();		/* block cnrint while we poll */
+	s = spltty();		/* block pcrint while we poll */
 	c = sgetc(0);
 	if (c == '\r') c = '\n';
 	splx(s);
 	return (c);
 }
 
-cngetchar(tp)
+pcgetchar(tp)
 	register struct tty *tp;
 {
 	int c;
@@ -304,7 +364,7 @@ cngetchar(tp)
 /*
  * Set line parameters
  */
-cnparam(tp, t)
+pcparam(tp, t)
 	register struct tty *tp;
 	register struct termios *t;
 {
@@ -321,7 +381,7 @@ cnparam(tp, t)
 /*
  * Turn input polling on/off (used by debugger).
  */
-cnpoll(onoff)
+pcpoll(onoff)
 	int onoff;
 {
 }
@@ -537,7 +597,7 @@ u_char c, ca;
 #define	FUNC		0x0100	/* function key */
 #define	SCROLL		0x0200	/* scroll lock key */
 
-unsigned	__debug = 0xffe;
+unsigned	__debug = 0xffe; /*0xffe */;
 u_short action[] = {
 0,     ASCII, ASCII, ASCII, ASCII, ASCII, ASCII, ASCII,		/* scan  0- 7 */
 ASCII, ASCII, ASCII, ASCII, ASCII, ASCII, ASCII, ASCII,		/* scan  8-15 */
@@ -715,12 +775,12 @@ getchar()
 	register delay;
 	int x;
 
-	consoftc.cs_flags |= CSF_POLLING;
+	pcconsoftc.cs_flags |= CSF_POLLING;
 	x=splhigh();
 	sput('>',0x6);
 	/*while (1) {*/
 		thechar = (char) sgetc(0);
-		consoftc.cs_flags &= ~CSF_POLLING;
+		pcconsoftc.cs_flags &= ~CSF_POLLING;
 		splx(x);
 		switch (thechar) {
 		    default: if (thechar >= ' ')
