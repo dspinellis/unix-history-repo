@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.32.1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -51,6 +51,7 @@ static char sccsid[] = "@(#)login.c	5.32.1.3 (Berkeley) %G%";
 #include <setjmp.h>
 #include <stdio.h>
 #include <strings.h>
+#include <tzfile.h>
 #include "pathnames.h"
 
 #define	TTYGRPNAME	"tty"		/* name of group to own ttys */
@@ -133,7 +134,7 @@ main(argc, argv)
 			break;
 		case 'h':
 			if (getuid()) {
-				fprintf(stderr,
+				(void)fprintf(stderr,
 				    "login: -h for super-user only.\n");
 				exit(1);
 			}
@@ -176,7 +177,8 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
-			fprintf(stderr, "usage: login [-fp] [username]\n");
+			(void)fprintf(stderr,
+			    "usage: login [-fp] [username]\n");
 			exit(1);
 		}
 	argc -= optind;
@@ -276,7 +278,7 @@ main(argc, argv)
 		if (pwd && !strcmp(p, pwd->pw_passwd))
 			break;
 
-		printf("Login incorrect\n");
+		(void)printf("Login incorrect\n");
 		failures++;
 		/* we allow 10 tries, but after 3 we start backing off */
 		if (++cnt > 3) {
@@ -302,18 +304,18 @@ main(argc, argv)
 			    hostname);
 		else
 			syslog(LOG_NOTICE, "ROOT LOGIN REFUSED ON %s", tty);
-		printf("Login incorrect\n");
+		(void)printf("Login incorrect\n");
 		sleepexit(1);
 	}
 
 	if (quota(Q_SETUID, pwd->pw_uid, 0, 0) < 0 && errno != EINVAL) {
 		switch(errno) {
 		case EUSERS:
-			fprintf(stderr,
+			(void)fprintf(stderr,
 		"Too many users logged on already.\nTry again later.\n");
 			break;
 		case EPROCLIM:
-			fprintf(stderr,
+			(void)fprintf(stderr,
 			    "You have too many processes running.\n");
 			break;
 		default:
@@ -323,11 +325,11 @@ main(argc, argv)
 	}
 
 	if (chdir(pwd->pw_dir) < 0) {
-		printf("No directory %s!\n", pwd->pw_dir);
+		(void)printf("No directory %s!\n", pwd->pw_dir);
 		if (chdir("/"))
 			exit(0);
 		pwd->pw_dir = "/";
-		printf("Logging in with home = \"/\".\n");
+		(void)printf("Logging in with home = \"/\".\n");
 	}
 
 #define	TWOWEEKS	(14*24*60*60)
@@ -359,23 +361,23 @@ main(argc, argv)
 		(void)gettimeofday(&tp, (struct timezone *)NULL);
 	if (pwd->pw_change)
 		if (tp.tv_sec >= pwd->pw_change) {
-			printf("Sorry -- your password has expired.\n");
+			(void)printf("Sorry -- your password has expired.\n");
 			sleepexit(1);
 		}
 		else if (tp.tv_sec - pwd->pw_change < TWOWEEKS && !quietlog) {
 			ttp = localtime(&pwd->pw_change);
-			printf("Warning: your password expires on %s %d, 19%d\n",
-			    months[ttp->tm_mon], ttp->tm_mday, ttp->tm_year);
+			(void)printf("Warning: your password expires on %s %d, %d\n",
+			    months[ttp->tm_mon], ttp->tm_mday, TM_YEAR_BASE + ttp->tm_year);
 		}
 	if (pwd->pw_expire)
 		if (tp.tv_sec >= pwd->pw_expire) {
-			printf("Sorry -- your account has expired.\n");
+			(void)printf("Sorry -- your account has expired.\n");
 			sleepexit(1);
 		}
 		else if (tp.tv_sec - pwd->pw_expire < TWOWEEKS && !quietlog) {
 			ttp = localtime(&pwd->pw_expire);
-			printf("Warning: your account expires on %s %d, 19%d\n",
-			    months[ttp->tm_mon], ttp->tm_mday, ttp->tm_year);
+			(void)printf("Warning: your account expires on %s %d, %d\n",
+			    months[ttp->tm_mon], ttp->tm_mday, TM_YEAR_BASE + ttp->tm_year);
 		}
 
 	/* nothing else left to fail -- really log in */
@@ -407,7 +409,6 @@ main(argc, argv)
 	initgroups(username, pwd->pw_gid);
 
 	quota(Q_DOWARN, pwd->pw_uid, (dev_t)-1, 0);
-	(void)setuid(pwd->pw_uid);
 
 	if (*pwd->pw_shell == '\0')
 		pwd->pw_shell = _PATH_BSHELL;
@@ -443,7 +444,7 @@ main(argc, argv)
 		motd();
 		(void)sprintf(tbuf, "%s/%s", _PATH_MAILDIR, pwd->pw_name);
 		if (stat(tbuf, &st) == 0 && st.st_size != 0)
-			printf("You have %smail.\n",
+			(void)printf("You have %smail.\n",
 			    (st.st_mtime > st.st_atime) ? "new " : "");
 	}
 
@@ -455,9 +456,12 @@ main(argc, argv)
 	tbuf[0] = '-';
 	strcpy(tbuf + 1, (p = rindex(pwd->pw_shell, '/')) ?
 	    p + 1 : pwd->pw_shell);
+
+	/* discard permissions last so can't get killed and drop core */
+	(void)setuid(pwd->pw_uid);
+
 	execlp(pwd->pw_shell, tbuf, 0);
-	fprintf(stderr, "login: no shell: ");
-	perror(pwd->pw_shell);
+	(void)fprintf(stderr, "login: no shell: %s.\n", strerror(errno));
 	exit(0);
 }
 
@@ -468,7 +472,7 @@ getloginname()
 	static char nbuf[UT_NAMESIZE + 1];
 
 	for (;;) {
-		printf("login: ");
+		(void)printf("login: ");
 		for (p = nbuf; (ch = getchar()) != '\n'; ) {
 			if (ch == EOF) {
 				badlogin(username);
@@ -479,7 +483,7 @@ getloginname()
 		}
 		if (p > nbuf)
 			if (nbuf[0] == '-')
-				fprintf(stderr,
+				(void)fprintf(stderr,
 				    "login names may not start with '-'.\n");
 			else {
 				*p = '\0';
@@ -491,7 +495,7 @@ getloginname()
 
 timedout()
 {
-	fprintf(stderr, "Login timed out after %d seconds\n", timeout);
+	(void)fprintf(stderr, "Login timed out after %d seconds\n", timeout);
 	exit(0);
 }
 
@@ -551,13 +555,13 @@ dolastlog(quiet)
 		if (!quiet) {
 			if (read(fd, (char *)&ll, sizeof(ll)) == sizeof(ll) &&
 			    ll.ll_time != 0) {
-				printf("Last login: %.*s ",
+				(void)printf("Last login: %.*s ",
 				    24-5, (char *)ctime(&ll.ll_time));
 				if (*ll.ll_host != '\0')
-					printf("from %.*s\n",
+					(void)printf("from %.*s\n",
 					    sizeof(ll.ll_host), ll.ll_host);
 				else
-					printf("on %.*s\n",
+					(void)printf("on %.*s\n",
 					    sizeof(ll.ll_line), ll.ll_line);
 			}
 			(void)lseek(fd, (off_t)pwd->pw_uid * sizeof(ll), L_SET);
@@ -607,7 +611,7 @@ getstr(buf, cnt, err)
 		if (read(0, &ch, sizeof(ch)) != sizeof(ch))
 			exit(1);
 		if (--cnt < 0) {
-			fprintf(stderr, "%s too long\r\n", err);
+			(void)fprintf(stderr, "%s too long\r\n", err);
 			sleepexit(1);
 		}
 		*buf++ = ch;
