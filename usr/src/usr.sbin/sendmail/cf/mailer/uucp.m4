@@ -6,18 +6,20 @@ PUSHDIVERT(-1)
 #
 # %sccs.include.redist.sh%
 #
+
+ifdef(`UUCP_MAILER_PATH',, `define(`UUCP_MAILER_PATH', /usr/bin/uux)')
 POPDIVERT
 #####################################
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	6.3 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	6.4 (Berkeley) %G%')
 
-Msuucp,	P=ifdef(`UUCP_MAILER', `UUCP_MAILER', /usr/bin/uux), F=mDFMhuU, S=12, R=22, M=100000
-	A=uux - -r -z -a$f -gC $h!rmail ($u)
+Msuucp,		P=UUCP_MAILER_PATH, F=mDFMhuU, S=12, R=22, M=100000
+		A=uux - -r -z -a$f -gC $h!rmail ($u)
 
-Muucp,	P=ifdef(`UUCP_MAILER', `UUCP_MAILER', /usr/bin/uux), F=DFMhuU, S=12, R=22, M=100000
-	A=uux - -r -z -a$f -gC $h!rmail ($u)
+Muucp,		P=UUCP_MAILER_PATH, F=DFMhuU, S=12, R=22, M=100000
+		A=uux - -r -z -a$f -gC $h!rmail ($u)
 
 # sender rewriting
 S12

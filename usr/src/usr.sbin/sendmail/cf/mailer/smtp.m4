@@ -13,7 +13,8 @@ POPDIVERT
 
 VERSIONID(`@(#)smtp.m4	6.2 (Berkeley) %G%')
 
-Msmtp,	P=[IPC], F=mDFMueXLC, S=11, R=21, A=IPC $h, E=\r\n
+Msmtp,		P=[IPC], F=mDFMueXLC, S=11, R=21, E=\r\n,
+		A=IPC $h
 
 S11
 
