@@ -17,12 +17,12 @@
 
 # ifndef QUEUE
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.5 (Berkeley) %G%	(no queueing)";
+static char	SccsId[] = "@(#)queue.c	5.6 (Berkeley) %G%	(no queueing)";
 # endif not lint
 # else QUEUE
 
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.5 (Berkeley) %G%";
+static char	SccsId[] = "@(#)queue.c	5.6 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -257,6 +257,23 @@ queueup(e, queueall, announce)
 runqueue(forkflag)
 	bool forkflag;
 {
+	extern bool shouldqueue();
+
+	/*
+	**  If no work will ever be selected, don't even bother reading
+	**  the queue.
+	*/
+
+	if (shouldqueue(-100000000L))
+	{
+		if (Verbose)
+			printf("Skipping queue run -- load average too high\n");
+
+		if (forkflag)
+			return;
+		finis();
+	}
+
 	/*
 	**  See if we want to go off and do other useful work.
 	*/
@@ -428,6 +445,12 @@ orderq(doall)
 			}
 		}
 		(void) fclose(cf);
+
+		if (!doall && shouldqueue(wlist[wn].w_pri))
+		{
+			/* don't even bother sorting this job in */
+			wn--;
+		}
 	}
 	(void) closedir(f);
 	wn++;
