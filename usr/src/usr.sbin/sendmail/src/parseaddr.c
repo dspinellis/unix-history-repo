@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.44 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -66,7 +66,7 @@ char	*DelimChar;		/* set to point to the delimiter */
 */
 
 /* following delimiters are inherent to the internal algorithms */
-# define DELIMCHARS	"\201()<>,;\\\"\r\n"	/* word delimiters */
+# define DELIMCHARS	"()<>,;\"\r\n"	/* default word delimiters */
 
 ADDRESS *
 parseaddr(addr, a, copyf, delim, delimptr, e)
@@ -401,7 +401,7 @@ prescan(addr, delim, pvpbuf, delimptr)
 		for (;;)
 		{
 			/* store away any old lookahead character */
-			if (c != NOCHAR)
+			if (c != NOCHAR && !bslashmode)
 			{
 				/* see if there is room */
 				if (q >= &pvpbuf[PSBUFSIZE - 5])
@@ -470,8 +470,6 @@ prescan(addr, delim, pvpbuf, delimptr)
 			if (c == '\\')
 			{
 				bslashmode = TRUE;
-				c = NOCHAR;
-				continue;
 			}
 			if (state == QST)
 			{
