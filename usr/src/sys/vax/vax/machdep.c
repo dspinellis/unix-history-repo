@@ -3,12 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.27 (Berkeley) %G%
+ *	@(#)machdep.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
+#include "syscontext.h"
 #include "kernel.h"
 #include "malloc.h"
 #include "map.h"
@@ -43,8 +43,6 @@
 
 #include "../vaxuba/ubavar.h"
 #include "../vaxuba/ubareg.h"
-
-#define RETURN(value)   { u.u_error = (value); return; }
 
 /*
  * Declare these as initialized data so we can patch them.
