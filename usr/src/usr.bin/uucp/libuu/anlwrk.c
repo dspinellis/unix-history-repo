@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)anlwrk.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)anlwrk.c	5.7	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -61,7 +61,8 @@ register char *file, **wvec;
 			bnp = rindex(file, '/');
 			sprintf(rqstr, "%s/%s", CORRUPT, bnp ? bnp + 1 : file);
 			xmv(file, rqstr);
-			assert("CMD FILE UNREADABLE", subfile(file), 0);
+			syslog(LOG_WARNING, "fopen(%s) failed: %m",
+				subfile(file));
 			unlink(subfile(file));
 			return 0;
 		}
@@ -187,13 +188,12 @@ register char *dir, *pre;
  *
  */
 /* LOCAL only */
-int
 pcompar(p1, p2)
 register char *p1, *p2;
 {
 	register int rc;
 
-	/* assert: strlen(p1) and strlen(p2) are >= 5 */
+	/* strlen(p1) and strlen(p2) are >= 5 */
 	p1 += strlen(p1)-5;
 	p2 += strlen(p2)-5;
 	/* check 'grade' */
