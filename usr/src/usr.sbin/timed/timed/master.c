@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)master.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)master.c	1.3 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -58,7 +58,7 @@ master()
 	char *strcpy();
 	struct tsp *readmsg();
 	struct tsp *answer, *acksend();
-	char *olddate;
+	char olddate[32];
 
 #ifdef MEASURE
 	fi = "/usr/adm/timed.masterlog";
@@ -118,7 +118,11 @@ loop:
 		case TSP_DATE:
 			saveaddr = from;
 			msg->tsp_time.tv_usec = 0;
-			olddate = date();
+			/*
+			 * the following line is necessary due to syslog
+			 * calling ctime() which clobbers the static buffer
+			 */
+			(void)strcpy(olddate, date());
 			(void)gettimeofday(&time, &tzone);
 			time.tv_sec += msg->tsp_time.tv_sec;
 			time.tv_sec++;
@@ -147,7 +151,11 @@ loop:
 			if (hp[ind].seq !=  msg->tsp_seq) {
 				hp[ind].seq = msg->tsp_seq;
 				msg->tsp_time.tv_usec = 0;
-				olddate = date();
+				/*
+				 * the following line is necessary due to syslog
+				 * calling ctime() which clobbers the static buffer
+				 */
+				(void)strcpy(olddate, date());
 				(void)gettimeofday(&time, &tzone);
 				time.tv_sec += msg->tsp_time.tv_sec;
 				time.tv_sec++;
