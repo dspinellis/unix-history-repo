@@ -2,31 +2,28 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)nlist.3	4.1 (Berkeley) %G%
+.\"	@(#)nlist.3	5.1 (Berkeley) %G%
 .\"
-.TH NLIST 3 
+.TH NLIST 3  "19 January 1983"
 .UC 4
 .SH NAME
 nlist \- get entries from name list
 .SH SYNOPSIS
 .nf
 .B #include <nlist.h>
+.PP
 .B nlist(filename, nl)
 .B char *filename;
 .B struct nlist nl[];
 .fi
 .SH DESCRIPTION
 .I Nlist
-examines the name list in
-the given executable output file
-and selectively extracts a
-list of values.
-The name list consists of
-an array of structures containing names,
+examines the name list in the given executable output file
+and selectively extracts a list of values.
+The name list consists of an array of structures containing names,
 types and values.
 The list is terminated with a null name.
-Each name is looked up in the name list of
-the file.
+Each name is looked up in the name list of the file.
 If the name is found, the type and value of the
 name are inserted in the next two fields.
 If the name is not found, both entries are set to 0.
@@ -34,23 +31,11 @@ See
 .IR a.out (5)
 for the structure declaration.
 .PP
-This subroutine is useful for
-examining the system name list kept in
-the file
+This subroutine is useful for examining the system name list kept in the file
 .BR /vmunix .
-In this way programs can obtain system addresses
-that are up to date.
+In this way programs can obtain system addresses that are up to date.
 .SH "SEE ALSO"
 a.out(5)
 .SH DIAGNOSTICS
-All
-type entries are set to 0 if the file cannot be found
+All type entries are set to 0 if the file cannot be found
 or if it is not a valid namelist.
-.SH BUGS
-On other versions of UNIX you must include <a.out.h> rather than <nlist.h>;
-this is unfortunate, but
-.I <a.out.h>
-can't be used on the
-VAX because it contains a
-.B union
-which can't be initialized.
