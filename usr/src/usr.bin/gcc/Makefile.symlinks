@@ -1,0 +1,24 @@
+#	@(#)Makefile.symlinks	6.1 (Berkeley) 1/29/91
+#
+# Generate machine-dependent symlinks for GCC compiles.
+# Similar to config.gcc but (1) puts symlinks in the obj directory and
+# (2) knows that it's running on BSD.
+#
+
+tm.h config.h md aux-output.c:
+	case $(MACHINE) in \
+	vax)	T=tm-vax.h C=xm-vax.h M=vax.md O=out-vax.c;; \
+	tahoe)	T=tm-tahoe.h C=xm-tahoe.h M=tahoe.md O=out-tahoe.c;; \
+	hp300)	T=tm-hp9k3bsd.h C=xm-m68k.h M=m68k.md O=out-m68k.c;; \
+	i386)	T=tm-i386b.h C=xm-i386.h M=i386.md O=out-i386.c;; \
+	*)	echo $(MACHINE)': unsupported GCC platform'; exit 1;; \
+	esac; \
+	D=$(.CURDIR)/../cc1/config; \
+	ln -s $$D/$$T tm.h; \
+	ln -s $$D/$$C config.h; \
+	ln -s $$D/$$M md; \
+	ln -s $$D/$$O aux-output.c
+
+$(OBJS): tm.h config.h md aux-output.c
+
+CLEANFILES+=	tm.h config.h md aux-output.c
