@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_output.c	7.21 (Berkeley) %G%
+ *	@(#)ip_output.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -52,8 +52,10 @@ ip_output(m0, opt, ro, flags)
 	struct sockaddr_in *dst;
 	struct in_ifaddr *ia;
 
-if ((m->m_flags & M_PKTHDR) == 0)
-panic("ip_output no HDR");
+#ifdef	DIAGNOSTIC
+	if ((m->m_flags & M_PKTHDR) == 0)
+		panic("ip_output no HDR");
+#endif
 	if (opt) {
 		m = ip_insertoptions(m, opt, &len);
 		hlen = len;
@@ -356,8 +358,12 @@ ip_ctloutput(op, so, level, optname, mp)
 	case PRCO_SETOPT:
 		switch (optname) {
 		case IP_OPTIONS:
+#ifdef notyet
 		case IP_RETOPTS:
 			return (ip_pcbopts(optname, &inp->inp_options, m));
+#else
+			return (ip_pcbopts(&inp->inp_options, m));
+#endif
 
 		case IP_TOS:
 		case IP_TTL:
@@ -368,7 +374,7 @@ ip_ctloutput(op, so, level, optname, mp)
 				error = EINVAL;
 			else {
 				optval = *mtod(m, int *);
-				switch (op) {
+				switch (optname) {
 
 				case IP_TOS:
 					inp->inp_ip.ip_tos = optval;
@@ -410,6 +416,7 @@ ip_ctloutput(op, so, level, optname, mp)
 	case PRCO_GETOPT:
 		switch (optname) {
 		case IP_OPTIONS:
+		case IP_RETOPTS:
 			*mp = m = m_get(M_WAIT, MT_SOOPTS);
 			if (inp->inp_options) {
 				m->m_len = inp->inp_options->m_len;
@@ -426,7 +433,7 @@ ip_ctloutput(op, so, level, optname, mp)
 		case IP_RECVDSTADDR:
 			*mp = m = m_get(M_WAIT, MT_SOOPTS);
 			m->m_len = sizeof(int);
-			switch (op) {
+			switch (optname) {
 
 			case IP_TOS:
 				optval = inp->inp_ip.ip_tos;
@@ -467,7 +474,12 @@ ip_ctloutput(op, so, level, optname, mp)
  * Store in mbuf with pointer in pcbopt, adding pseudo-option
  * with destination address if source routed.
  */
+#ifdef notyet
+ip_pcbopts(optname, pcbopt, m)
+	int optname;
+#else
 ip_pcbopts(pcbopt, m)
+#endif
 	struct mbuf **pcbopt;
 	register struct mbuf *m;
 {
