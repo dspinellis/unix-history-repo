@@ -311,11 +311,11 @@ putScp(os)
     if (isproc(s)) {
 	ps("'FN ");
 	ps(pname);
+        ps("\n");
 	if (psptr < PSMAX) {
 	    ++psptr;
 	    strncpy (pstack[psptr], pname, PNAMELEN);
 	    pstack[psptr][PNAMELEN] = NULL;
-	    ps("\n");
 	    plstack[psptr] = blklevel;
 	}
     } 
