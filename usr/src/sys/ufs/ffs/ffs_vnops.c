@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.55 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.56 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -859,6 +859,7 @@ ufs_link(vp, ndp)
 		error = direnter(ip, ndp);
 	if (ndp->ni_dvp != vp)
 		IUNLOCK(ip);
+	vput(ndp->ni_dvp);
 	if (error) {
 		ip->i_nlink--;
 		ip->i_flag |= ICHG;
@@ -1001,8 +1002,14 @@ ufs_rename(fndp, tndp)
 			if (error = iupdat(dp, &time, &time, 1))
 				goto bad;
 		}
-		if (error = direnter(ip, tndp))
-			goto out;
+		if (error = direnter(ip, tndp)) {
+			if (doingdirectory && newparent) {
+				dp->i_nlink--;
+				dp->i_flag |= ICHG;
+				(void) iupdat(dp, &time, &time, 1);
+			}
+			goto bad;
+		}
 	} else {
 		if (xp->i_dev != dp->i_dev || xp->i_dev != ip->i_dev)
 			panic("rename: EXDEV");
@@ -1233,7 +1240,8 @@ ufs_mkdir(ndp, vap)
 	 */
 	dp->i_nlink++;
 	dp->i_flag |= ICHG;
-	error = iupdat(dp, &time, &time, 1);
+	if (error = iupdat(dp, &time, &time, 1))
+		goto bad;
 
 	/*
 	 * Initialize directory with "."
@@ -1261,13 +1269,12 @@ ufs_mkdir(ndp, vap)
 	 * install the entry for it in
 	 * the parent directory.
 	 */
-	error = direnter(ip, ndp);
-	dp = NULL;
-	if (error) {
+	if (error = direnter(ip, ndp)) {
 		ndp->ni_nameiop &= ~(MODMASK | OPMASK);
-		ndp->ni_nameiop |= LOOKUP | NOCACHE;
+		ndp->ni_nameiop |= LOOKUP | LOCKLEAF | NOCACHE;
 		error = namei(ndp);
 		if (!error) {
+			iput(dp);
 			dp = VTOI(ndp->ni_vp);
 			dp->i_nlink--;
 			dp->i_flag |= ICHG;
@@ -1285,8 +1292,7 @@ bad:
 		iput(ip);
 	} else
 		ndp->ni_vp = ITOV(ip);
-	if (dp)
-		iput(dp);
+	iput(dp);
 	return (error);
 }
 
@@ -1717,10 +1723,9 @@ maknode(mode, ndp, ipp)
 	 */
 	if (error = iupdat(ip, &time, &time, 1))
 		goto bad;
-	if (error = direnter(ip, ndp)) {
-		pdir = NULL;
+	if (error = direnter(ip, ndp))
 		goto bad;
-	}
+	iput(pdir);
 	*ipp = ip;
 	return (0);
 
@@ -1729,8 +1734,7 @@ bad:
 	 * Write error occurred trying to update the inode
 	 * or the directory so must deallocate the inode.
 	 */
-	if (pdir)
-		iput(pdir);
+	iput(pdir);
 	ip->i_nlink = 0;
 	ip->i_flag |= ICHG;
 	iput(ip);
