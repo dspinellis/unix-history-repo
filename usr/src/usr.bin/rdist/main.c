@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -24,8 +24,9 @@ static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
  */
 
 char	*distfile = NULL;
-char	tmpfile[] = _PATH_TMP;
-char	*tmpname = &tmpfile[5];
+#define _RDIST_TMP	"/rdistXXXXXX"
+char	tempfile[sizeof _PATH_TMP + sizeof _RDIST_TMP + 1];
+char	*tempname;
 
 int	debug;		/* debugging flag */
 int	nflag;		/* NOP flag, just print commands without executing */
@@ -62,6 +63,12 @@ main(argc, argv)
 	strcpy(homedir, pw->pw_dir);
 	groupid = pw->pw_gid;
 	gethostname(host, sizeof(host));
+	strcpy(tempfile, _PATH_TMP);
+	strcat(tempfile, _RDIST_TMP);
+	if ((tempname = rindex(tempfile, '/')) != 0)
+		tempname++;
+	else
+		tempname = tempfile;
 
 	while (--argc > 0) {
 		if ((arg = *++argv)[0] != '-')
@@ -153,7 +160,7 @@ main(argc, argv)
 	*hp = NULL;
 
 	setreuid(0, userid);
-	mktemp(tmpfile);
+	mktemp(tempfile);
 
 	if (iamremote) {
 		server();
