@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)process.c 1.3 %G%";
+static char sccsid[] = "@(#)process.c 1.4 %G%";
 
 /*
  * Process management.
@@ -439,14 +439,11 @@ public printstatus()
 	    printerror();
 	} else if (isbperr() and isstopped) {
 	    printf("stopped ");
+	    printloc();
+	    putchar('\n');
 	    if (curline > 0) {
-		printsrcpos();
-		putchar('\n');
 		printlines(curline, curline);
 	    } else {
-		printf("in ");
-		printwhich(stdout, curfunc);
-		printf(" at 0x%x\n", pc);
 		printinst(pc, pc);
 	    }
 	    erecover();
@@ -456,6 +453,22 @@ public printstatus()
 	    isstopped = true;
 	    printerror();
 	}
+    }
+}
+
+/*
+ * Print out the current location in the debuggee.
+ */
+
+public printloc()
+{
+    printf("in ");
+    printname(stdout, curfunc);
+    putchar(' ');
+    if (curline > 0) {
+	printsrcpos();
+    } else {
+	printf("at 0x%x", pc);
     }
 }
 
@@ -654,35 +667,43 @@ String infile;
 String outfile;
 {
     int status;
-    File in, out;
 
     if (p->pid != 0) {          	/* child already running? */
 	ptrace(PKILL, p->pid, 0, 0);    /* ... kill it! */
     }
     psigtrace(p, SIGTRAP, true);
-    if ((p->pid = fork()) == -1) {
+    if ((p->pid = vfork()) == -1) {
 	panic("can't fork");
     }
     if (ischild(p->pid)) {
+	Fileid in, out;
+
 	traceme();
 	if (infile != nil) {
-	    in = fopen(infile, "r");
-	    if (in == nil) {
-		printf("can't read %s\n", infile);
-		exit(1);
+	    in = open(infile, 0);
+	    if (in == -1) {
+		write(2, "can't read ", 11);
+		write(2, infile, strlen(infile));
+		write(2, "\n", 1);
+		_exit(1);
 	    }
-	    fswap(0, fileno(in));
+	    fswap(0, in);
 	}
 	if (outfile != nil) {
-	    out = fopen(outfile, "w");
-	    if (out == nil) {
-		printf("can't write %s\n", outfile);
-		exit(1);
+	    out = creat(outfile, 0666);
+	    if (out == -1) {
+		write(2, "can't write ", 12);
+		write(2, outfile, strlen(outfile));
+		write(2, "\n", 1);
+		_exit(1);
 	    }
-	    fswap(1, fileno(out));
+	    fswap(1, out);
 	}
 	execvp(argv[0], argv);
-	panic("can't exec %s", argv[0]);
+	write(2, "can't exec ", 11);
+	write(2, argv[0], strlen(argv[0]));
+	write(2, "\n", 1);
+	_exit(1);
     }
     pwait(p->pid, &status);
     getinfo(p, status);
