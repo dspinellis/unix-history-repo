@@ -1,4 +1,4 @@
-/*	dz.c	4.31	81/11/18	*/
+/*	dz.c	4.32	82/01/14	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -153,21 +153,21 @@ dzopen(dev, flag)
 	tp = &dz_tty[unit];
 	tp->t_addr = (caddr_t)&dzpdma[unit];
 	tp->t_oproc = dzstart;
-	tp->t_state |= WOPEN;
-	if ((tp->t_state & ISOPEN) == 0) {
+	tp->t_state |= TS_WOPEN;
+	if ((tp->t_state & TS_ISOPEN) == 0) {
 		ttychars(tp);
 		tp->t_ospeed = tp->t_ispeed = B300;
 		tp->t_flags = ODDP|EVENP|ECHO;
-		/* tp->t_state |= HUPCLS; */
+		/* tp->t_state |= TS_HUPCLS; */
 		dzparam(unit);
-	} else if (tp->t_state&XCLUDE && u.u_uid != 0) {
+	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0) {
 		u.u_error = EBUSY;
 		return;
 	}
 	dzmodem(unit, DZ_ON);
 	(void) spl5();
-	while ((tp->t_state & CARR_ON) == 0) {
-		tp->t_state |= WOPEN;
+	while ((tp->t_state & TS_CARR_ON) == 0) {
+		tp->t_state |= TS_WOPEN;
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	}
 	(void) spl0();
@@ -188,7 +188,7 @@ dzclose(dev, flag)
 	(*linesw[tp->t_line].l_close)(tp);
 	((struct pdma *)(tp->t_addr))->p_addr->dzbrk =
 	    (dz_brk[dz] &= ~(1 << (unit&07)));
-	if (tp->t_state & HUPCLS)
+	if (tp->t_state & TS_HUPCLS)
 		dzmodem(unit, DZ_OFF);
 	ttyclose(tp);
 }
@@ -231,7 +231,7 @@ dzrint(dz)
 		tp = tp0 + ((c>>8)&07);
 		if (tp >= &dz_tty[dz_cnt])
 			continue;
-		if ((tp->t_state & ISOPEN) == 0) {
+		if ((tp->t_state & TS_ISOPEN) == 0) {
 			wakeup((caddr_t)&tp->t_rawq);
 			continue;
 		}
@@ -330,16 +330,16 @@ dzxint(tp)
  
 	s = spl5();		/* block pdma interrupts */
 	dp = (struct pdma *)tp->t_addr;
-	tp->t_state &= ~BUSY;
-	if (tp->t_state & FLUSH)
-		tp->t_state &= ~FLUSH;
+	tp->t_state &= ~TS_BUSY;
+	if (tp->t_state & TS_FLUSH)
+		tp->t_state &= ~TS_FLUSH;
 	else
 		ndflush(&tp->t_outq, dp->p_mem-tp->t_outq.c_cf);
 	if (tp->t_line)
 		(*linesw[tp->t_line].l_start)(tp);
 	else
 		dzstart(tp);
-	if (tp->t_outq.c_cc == 0 || (tp->t_state&BUSY)==0)
+	if (tp->t_outq.c_cc == 0 || (tp->t_state&TS_BUSY)==0)
 		dp->p_addr->dztcr &= ~(1 << (minor(tp->t_dev)&07));
 	splx(s);
 }
@@ -355,11 +355,18 @@ dzstart(tp)
 	dp = (struct pdma *)tp->t_addr;
 	dzaddr = dp->p_addr;
 	s = spl5();
-	if (tp->t_state & (TIMEOUT|BUSY|TTSTOP))
+	if (tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
 		goto out;
-	if (tp->t_state&ASLEEP && tp->t_outq.c_cc <= TTLOWAT(tp)) {
-		tp->t_state &= ~ASLEEP;
-		wakeup((caddr_t)&tp->t_outq);
+	if (tp->t_outq.c_cc <= TTLOWAT(tp)) {
+		if (tp->t_state&TS_ASLEEP) {
+			tp->t_state &= ~TS_ASLEEP;
+			wakeup((caddr_t)&tp->t_outq);
+		}
+		if (tp->t_wsel) {
+			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
+			tp->t_wsel = 0;
+			tp->t_state &= ~TS_WCOLL;
+		}
 	}
 	if (tp->t_outq.c_cc == 0)
 		goto out;
@@ -370,11 +377,11 @@ dzstart(tp)
 		if (cc == 0) {
 			cc = getc(&tp->t_outq);
 			timeout(ttrstrt, (caddr_t)tp, (cc&0x7f) + 6);
-			tp->t_state |= TIMEOUT;
+			tp->t_state |= TS_TIMEOUT;
 			goto out;
 		}
 	}
-	tp->t_state |= BUSY;
+	tp->t_state |= TS_BUSY;
 	dp->p_end = dp->p_mem = tp->t_outq.c_cf;
 	dp->p_end += cc;
 	dzaddr->dztcr |= 1 << (minor(tp->t_dev) & 07);	/* force intr */
@@ -394,10 +401,10 @@ dzstop(tp, flag)
 
 	dp = (struct pdma *)tp->t_addr;
 	s = spl5();
-	if (tp->t_state & BUSY) {
+	if (tp->t_state & TS_BUSY) {
 		dp->p_end = dp->p_mem;
-		if ((tp->t_state&TTSTOP)==0)
-			tp->t_state |= FLUSH;
+		if ((tp->t_state&TS_TTSTOP)==0)
+			tp->t_state |= TS_FLUSH;
 	}
 	splx(s);
 }
@@ -431,21 +438,21 @@ dzscan()
 		bit = 1<<(i&07);
 		if ((dzsoftCAR[i>>3]&bit) || (dzaddr->dzmsr&bit)) {
 			/* carrier present */
-			if ((tp->t_state & CARR_ON) == 0) {
+			if ((tp->t_state & TS_CARR_ON) == 0) {
 				wakeup((caddr_t)&tp->t_rawq);
-				tp->t_state |= CARR_ON;
+				tp->t_state |= TS_CARR_ON;
 			}
 		} else {
-			if ((tp->t_state&CARR_ON) &&
+			if ((tp->t_state&TS_CARR_ON) &&
 			    (tp->t_local&LNOHANG)==0) {
 				/* carrier lost */
-				if (tp->t_state&ISOPEN) {
+				if (tp->t_state&TS_ISOPEN) {
 					gsignal(tp->t_pgrp, SIGHUP);
 					gsignal(tp->t_pgrp, SIGCONT);
 					dzaddr->dzdtr &= ~bit;
 					flushtty(tp, FREAD|FWRITE);
 				}
-				tp->t_state &= ~CARR_ON;
+				tp->t_state &= ~TS_CARR_ON;
 			}
 		}
 	}
@@ -478,10 +485,10 @@ dzreset(uban)
 		if (unit%8 == 0)
 			printf(" dz%d", unit>>3);
 		tp = &dz_tty[unit];
-		if (tp->t_state & (ISOPEN|WOPEN)) {
+		if (tp->t_state & (TS_ISOPEN|TS_WOPEN)) {
 			dzparam(unit);
 			dzmodem(unit, DZ_ON);
-			tp->t_state &= ~BUSY;
+			tp->t_state &= ~TS_BUSY;
 			dzstart(tp);
 		}
 	}

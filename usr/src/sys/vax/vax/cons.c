@@ -1,4 +1,4 @@
-/*	cons.c	4.11	81/10/11	*/
+/*	cons.c	4.12	82/01/14	*/
 
 /*
  * Vax console driver and floppy interface
@@ -30,12 +30,12 @@ dev_t dev;
 
 	tp = &cons;
 	tp->t_oproc = cnstart;
-	if ((tp->t_state&ISOPEN) == 0) {
+	if ((tp->t_state&TS_ISOPEN) == 0) {
 		ttychars(tp);
-		tp->t_state = ISOPEN|CARR_ON;
+		tp->t_state = TS_ISOPEN|TS_CARR_ON;
 		tp->t_flags = EVENP|ECHO|XTABS|CRMOD;
 	}
-	if (tp->t_state&XCLUDE && u.u_uid != 0) {
+	if (tp->t_state&TS_XCLUDE && u.u_uid != 0) {
 		u.u_error = EBUSY;
 		return;
 	}
@@ -129,13 +129,13 @@ dev_t dev;
 
 	consdone++;
 	tp = &cons;
-	tp->t_state &= ~BUSY;
+	tp->t_state &= ~TS_BUSY;
 	if (tp->t_line)
 		(*linesw[tp->t_line].l_start)(tp);
 	else
 		cnstart(tp);
 #if VAX780
-	if (cpu==VAX_780 && (tp->t_state & BUSY) == 0)
+	if (cpu==VAX_780 && (tp->t_state & TS_BUSY) == 0)
 		conxfl();
 #endif
 }
@@ -147,11 +147,18 @@ register struct tty *tp;
 	register s;
 
 	s = spl5();
-	if (tp->t_state & (TIMEOUT|BUSY|TTSTOP))
+	if (tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
 		goto out;
-	if (tp->t_state&ASLEEP && tp->t_outq.c_cc <= TTLOWAT(tp)) {
-		tp->t_state &= ~ASLEEP;
-		wakeup((caddr_t)&tp->t_outq);
+	if (tp->t_outq.c_cc <= TTLOWAT(tp)) {
+		if (tp->t_state&TS_ASLEEP) {
+			tp->t_state &= ~TS_ASLEEP;
+			wakeup((caddr_t)&tp->t_outq);
+		}
+		if (tp->t_wsel) {
+			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
+			tp->t_wsel = 0;
+			tp->t_state &= ~TS_WCOLL;
+		}
 	}
 	if (tp->t_outq.c_cc == 0)
 		goto out;
@@ -164,11 +171,11 @@ register struct tty *tp;
 		mtpr(TXDB, (c | (partab[c]&0200))&0xff);
 	else {
 		timeout(ttrstrt, (caddr_t)tp, (c&0177));
-		tp->t_state |= TIMEOUT;
+		tp->t_state |= TS_TIMEOUT;
 		goto out;
 	}
 	consdone = 0;
-	tp->t_state |= BUSY;
+	tp->t_state |= TS_BUSY;
     out:
 	splx(s);
 }

@@ -1,4 +1,4 @@
-/*	dh.c	4.40	81/11/18	*/
+/*	dh.c	4.41	82/01/14	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -228,14 +228,14 @@ dhopen(dev, flag)
 		return;
 	}
 	tp = &dh11[unit];
-	if (tp->t_state&XCLUDE && u.u_uid!=0) {
+	if (tp->t_state&TS_XCLUDE && u.u_uid!=0) {
 		u.u_error = EBUSY;
 		return;
 	}
 	addr = (struct dhdevice *)ui->ui_addr;
 	tp->t_addr = (caddr_t)addr;
 	tp->t_oproc = dhstart;
-	tp->t_state |= WOPEN;
+	tp->t_state |= TS_WOPEN;
 	/*
 	 * While setting up state for this uba and this dh,
 	 * block uba resets which can clear the state.
@@ -257,7 +257,7 @@ dhopen(dev, flag)
 	/*
 	 * If this is first open, initialze tty state to default.
 	 */
-	if ((tp->t_state&ISOPEN) == 0) {
+	if ((tp->t_state&TS_ISOPEN) == 0) {
 		ttychars(tp);
 		if (tp->t_ispeed == 0) {
 			tp->t_ispeed = B300;
@@ -288,7 +288,7 @@ dhclose(dev, flag)
 	tp = &dh11[unit];
 	(*linesw[tp->t_line].l_close)(tp);
 	((struct dhdevice *)(tp->t_addr))->dhbreak &= ~(1<<(unit&017));
-	if (tp->t_state&HUPCLS || (tp->t_state&ISOPEN)==0)
+	if (tp->t_state&TS_HUPCLS || (tp->t_state&TS_ISOPEN)==0)
 		dmctl(unit, DML_OFF, DMSET);
 	ttyclose(tp);
 }
@@ -335,7 +335,7 @@ dhrint(dh)
 	 */
 	while ((c = addr->dhrcr) < 0) {
 		tp = tp0 + ((c>>8)&0xf);
-		if ((tp->t_state&ISOPEN)==0) {
+		if ((tp->t_state&TS_ISOPEN)==0) {
 			wakeup((caddr_t)tp);
 			continue;
 		}
@@ -423,7 +423,7 @@ dhparam(unit)
 	s = spl5();
 	addr->un.dhcsrl = (unit&0xf) | DH_IE;
 	if ((tp->t_ispeed)==0) {
-		tp->t_state |= HUPCLS;
+		tp->t_state |= TS_HUPCLS;
 		dmctl(unit, DML_OFF, DMSET);
 		return;
 	}
@@ -472,9 +472,9 @@ dhxint(dh)
 			*sbar &= ~ttybit;
 			bar &= ~ttybit;
 			tp = &dh11[unit];
-			tp->t_state &= ~BUSY;
-			if (tp->t_state&FLUSH)
-				tp->t_state &= ~FLUSH;
+			tp->t_state &= ~TS_BUSY;
+			if (tp->t_state&TS_FLUSH)
+				tp->t_state &= ~TS_FLUSH;
 			else {
 				addr->un.dhcsrl = (unit&017)|DH_IE;
 				/*
@@ -516,15 +516,22 @@ dhstart(tp)
 	/*
 	 * If it's currently active, or delaying, no need to do anything.
 	 */
-	if (tp->t_state&(TIMEOUT|BUSY|TTSTOP))
+	if (tp->t_state&(TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
 		goto out;
 	/*
 	 * If there are sleepers, and output has drained below low
 	 * water mark, wake up the sleepers.
 	 */
-	if ((tp->t_state&ASLEEP) && tp->t_outq.c_cc<=TTLOWAT(tp)) {
-		tp->t_state &= ~ASLEEP;
-		wakeup((caddr_t)&tp->t_outq);
+	if (tp->t_outq.c_cc<=TTLOWAT(tp)) {
+		if (tp->t_state&TS_ASLEEP) {
+			tp->t_state &= ~TS_ASLEEP;
+			wakeup((caddr_t)&tp->t_outq);
+		}
+		if (tp->t_wsel) {
+			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
+			tp->t_wsel = 0;
+			tp->t_state &= ~TS_WCOLL;
+		}
 	}
 	/*
 	 * Now restart transmission unless the output queue is
@@ -542,7 +549,7 @@ dhstart(tp)
 		if (nch == 0) {
 			nch = getc(&tp->t_outq);
 			timeout(ttrstrt, (caddr_t)tp, (nch&0x7f)+6);
-			tp->t_state |= TIMEOUT;
+			tp->t_state |= TS_TIMEOUT;
 			goto out;
 		}
 	}
@@ -563,7 +570,7 @@ dhstart(tp)
 		addr->dhbcr = -nch;
 		addr->dhbar |= word;
 		}
-		tp->t_state |= BUSY;
+		tp->t_state |= TS_BUSY;
 	}
 out:
 	splx(s);
@@ -584,7 +591,7 @@ dhstop(tp, flag)
 	 * Block input/output interrupts while messing with state.
 	 */
 	s = spl5();
-	if (tp->t_state & BUSY) {
+	if (tp->t_state & TS_BUSY) {
 		/*
 		 * Device is transmitting; stop output
 		 * by selecting the line and setting the byte
@@ -593,8 +600,8 @@ dhstop(tp, flag)
 		 */
 		unit = minor(tp->t_dev);
 		addr->un.dhcsrl = (unit&017) | DH_IE;
-		if ((tp->t_state&TTSTOP)==0)
-			tp->t_state |= FLUSH;
+		if ((tp->t_state&TS_TTSTOP)==0)
+			tp->t_state |= TS_FLUSH;
 		addr->dhbcr = -1;
 	}
 	splx(s);
@@ -630,10 +637,10 @@ dhreset(uban)
 		unit = dh * 16;
 		for (i = 0; i < 16; i++) {
 			tp = &dh11[unit];
-			if (tp->t_state & (ISOPEN|WOPEN)) {
+			if (tp->t_state & (TS_ISOPEN|TS_WOPEN)) {
 				dhparam(unit);
 				dmctl(unit, DML_ON, DMSET);
-				tp->t_state &= ~BUSY;
+				tp->t_state &= ~TS_BUSY;
 				dhstart(tp);
 			}
 			unit++;
@@ -673,7 +680,7 @@ dmopen(dev)
 	unit &= 0xf;
 	if (dm >= NDH || (ui = dminfo[dm]) == 0 || ui->ui_alive == 0 ||
 	    (dhsoftCAR[dm]&(1<<unit))) {
-		tp->t_state |= CARR_ON;
+		tp->t_state |= TS_CARR_ON;
 		return;
 	}
 	addr = (struct dmdevice *)ui->ui_addr;
@@ -684,9 +691,9 @@ dmopen(dev)
 	addr->dmcsr = unit;
 	addr->dmlstat = DML_ON;
 	if (addr->dmlstat&DML_CAR)
-		tp->t_state |= CARR_ON;
+		tp->t_state |= TS_CARR_ON;
 	addr->dmcsr = DM_IE|DM_SE;
-	while ((tp->t_state&CARR_ON)==0)
+	while ((tp->t_state&TS_CARR_ON)==0)
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	splx(s);
 }
@@ -746,26 +753,26 @@ dmintr(dm)
 		if (addr->dmcsr&DM_CF) {
 			tp = &dh11[(dm<<4)+(addr->dmcsr&0xf)];
 			wakeup((caddr_t)&tp->t_rawq);
-			if ((tp->t_state&WOPEN)==0 &&
+			if ((tp->t_state&TS_WOPEN)==0 &&
 			    (tp->t_local&LMDMBUF)) {
 				if (addr->dmlstat & DML_CAR) {
-					tp->t_state &= ~TTSTOP;
+					tp->t_state &= ~TS_TTSTOP;
 					ttstart(tp);
-				} else if ((tp->t_state&TTSTOP) == 0) {
-					tp->t_state |= TTSTOP;
+				} else if ((tp->t_state&TS_TTSTOP) == 0) {
+					tp->t_state |= TS_TTSTOP;
 					dhstop(tp, 0);
 				}
 			} else if ((addr->dmlstat&DML_CAR)==0) {
-				if ((tp->t_state&WOPEN)==0 &&
+				if ((tp->t_state&TS_WOPEN)==0 &&
 				    (tp->t_local&LNOHANG)==0) {
 					gsignal(tp->t_pgrp, SIGHUP);
 					gsignal(tp->t_pgrp, SIGCONT);
 					addr->dmlstat = 0;
 					flushtty(tp, FREAD|FWRITE);
 				}
-				tp->t_state &= ~CARR_ON;
+				tp->t_state &= ~TS_CARR_ON;
 			} else
-				tp->t_state |= CARR_ON;
+				tp->t_state |= TS_CARR_ON;
 		}
 		addr->dmcsr = DM_IE|DM_SE;
 	}
