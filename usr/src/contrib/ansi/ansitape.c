@@ -564,7 +564,7 @@ writevol(tapename,tape)
 	char *tapename;
 {
 	char buf[81];
-	sprintf(buf,"VOL1%-6.6s %26.26sD%%C%10.10s1%28.28s3",tapename," "," "," ");
+	sprintf(buf,"VOL1%-6.6s %26.26sD%cC%10.10s1%28.28s3",tapename," ",'%'," "," ");
 	write(tape,buf,80);
 	if(vflag) {
 		fprintf(stdout," tape labeled %-6.6s\n",tapename);
