@@ -1,11 +1,14 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)pccdefs.h	5.1 (Berkeley) %G%
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)pccdefs.h	5.2 (Berkeley) %G%
  */
 
+#define P2BAD -1
+#define P2BAD -1
 #define P2BAD -1
 #define P2NAME 2
 #define P2ICON 4

@@ -1,9 +1,10 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)conv.h	5.1 (Berkeley) %G%
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)conv.h	5.2 (Berkeley) %G%
  */
 
 #if (HERE != VAX || TARGET != VAX)
