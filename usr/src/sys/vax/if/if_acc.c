@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)if_acc.c	7.3 (Berkeley) %G%
+ *	@(#)if_acc.c	7.4 (Berkeley) %G%
  */
 
 #include "acc.h"
@@ -102,12 +102,13 @@ accprobe(reg)
  * the back pointers to common data structures.
  */
 accattach(ui)
-	struct uba_device *ui;
+	register struct uba_device *ui;
 {
 	register struct acc_softc *sc = &acc_softc[ui->ui_unit];
 	register struct impcb *ip;
 
-	if ((sc->acc_imp = impattach(ui, accreset)) == 0)
+	if ((sc->acc_imp = impattach(ui->ui_driver->ud_dname, ui->ui_unit,
+	    accreset)) == 0)
 		return;
 	ip = &sc->acc_imp->imp_cb;
 	ip->ic_init = accinit;
@@ -135,6 +136,7 @@ accreset(unit, uban)
 	printf(" acc%d", unit);
 	sc = &acc_softc[unit];
 	sc->acc_imp->imp_if.if_flags &= ~IFF_RUNNING;
+	accoflush(unit);
 	/* must go through IMP to allow it to set state */
 	(*sc->acc_imp->imp_if.if_init)(sc->acc_imp->imp_if.if_unit);
 }
@@ -169,7 +171,6 @@ accinit(unit)
 	    if_ubainit(&sc->acc_ifuba, ui->ui_ubanum, 0,
 	     (int)btoc(IMP_RCVBUF)) == 0) {
 		printf("acc%d: can't initialize\n", unit);
-		ui->ui_alive = 0;
 		sc->acc_imp->imp_if.if_flags &= ~(IFF_UP | IFF_RUNNING);
 		return (0);
 	}
@@ -239,7 +240,20 @@ accdown(unit)
         addr->ocsr = ACC_RESET;
 	DELAY(5000);
 	addr->ocsr = OUT_BBACK;		/* reset host master ready */
+	accoflush(unit);
 	return (1);
+}
+
+accoflush(unit)
+	int unit;
+{
+	register struct acc_softc *sc = &acc_softc[unit];
+
+	sc->acc_imp->imp_cb.ic_oactive = 0;
+	if (sc->acc_ifuba.ifu_xtofree) {
+		m_freem(sc->acc_ifuba.ifu_xtofree);
+		sc->acc_ifuba.ifu_xtofree = 0;
+	}
 }
 
 /*

@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)if_css.c	7.3 (Berkeley) %G%
+ *	@(#)if_css.c	7.4 (Berkeley) %G%
  */
 
 #include "css.h"
@@ -129,12 +129,13 @@ cssprobe(reg)
  * the back pointers to common data structures.
  */
 cssattach(ui)
-        struct uba_device *ui;
+        register struct uba_device *ui;
 {
         register struct css_softc *sc = &css_softc[ui->ui_unit];
         register struct impcb *ip;
 
-        if ((sc->css_imp = impattach(ui, cssreset)) == 0)
+        if ((sc->css_imp = impattach(ui->ui_driver->ud_dname, ui->ui_unit,
+	    cssreset)) == 0)
                 return;
 	ip = &sc->css_imp->imp_cb;
         ip->ic_init = cssinit;
@@ -162,6 +163,7 @@ cssreset(unit, uban)
         printf(" css%d", unit);
         sc = &css_softc[unit];
 	sc->css_imp->imp_if.if_flags &= ~IFF_RUNNING;
+	cssoflush(unit);
         /* must go through IMP to allow it to set state */
         (*sc->css_imp->imp_if.if_init)(sc->css_imp->imp_if.if_unit);
 }
@@ -262,18 +264,28 @@ cssdown(unit)
 	int unit;
 {
         register struct cssdevice *addr;
-	int x;
 
 	addr = (struct cssdevice *)(cssinfo[unit]->ui_addr);
         /* reset the imp interface. */
-        x = spl5();
         addr->css_icsr = CSS_CLR;
         addr->css_ocsr = CSS_CLR;
 	DELAY(100);
 	addr->css_icsr = 0;
 	addr->css_ocsr = 0;
-        splx(x);
+	cssoflush(unit);
 	return (1);
+}
+
+cssoflush(unit)
+	int unit;
+{
+	register struct acc_softc *sc = &acc_softc[unit];
+
+	sc->acc_imp->imp_cb.ic_oactive = 0;
+	if (sc->acc_ifuba.ifu_xtofree) {
+		m_freem(sc->acc_ifuba.ifu_xtofree);
+		sc->acc_ifuba.ifu_xtofree = 0;
+	}
 }
 
 /*
