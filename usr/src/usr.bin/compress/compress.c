@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -166,13 +166,13 @@ compress(in, out, bits)
 	struct timeval times[2];
 	FILE *ifp, *ofp;
 	quad_t origsize;
-	int exists, ireg, oreg;
+	int exists, isreg, oreg;
 	u_char buf[1024];
 
 	exists = !stat(out, &sb);
 	if (!force && exists && S_ISREG(sb.st_mode) && !permission(out))
 		return;
-	oreg = !exists || S_ISREG(sb.st_mode);
+	isreg = oreg = !exists || S_ISREG(sb.st_mode);
 
 	ifp = ofp = NULL;
 	if ((ifp = fopen(in, "r")) == NULL) {
@@ -183,8 +183,9 @@ compress(in, out, bits)
 		err(0, "%s: %s", in, strerror(errno));
 		goto err;
 	}
-	ireg = S_ISREG(sb.st_mode);
-	if (ireg) {
+	if (!S_ISREG(sb.st_mode))
+		isreg = 0;
+	if (isreg) {
 		origsize = sb.st_size;
 		times[0].tv_sec = sb.st_atimespec.ts_sec;
 		times[0].tv_usec = sb.st_atimespec.ts_nsec / 1000;
@@ -214,34 +215,35 @@ compress(in, out, bits)
 	}
 	ofp = NULL;
 
-	if (oreg) {
+	if (isreg) {
 		if (stat(out, &sb)) {
 			err(0, "%s: %s", out, strerror(errno));
 			goto err;
 		}
-		if (!force && ireg && sb.st_size >= origsize) {
+
+		if (!force && sb.st_size >= origsize) {
 			if (verbose)
 		(void)printf("%s: file would grow; left unmodified\n", in);
 			if (unlink(out))
 				err(0, "%s: %s", out, strerror(errno));
 			goto err;
 		}
-	}
 
-	if (ireg && unlink(in))
-		err(0, "%s: %s", in, strerror(errno));
+		if (unlink(in))
+			err(0, "%s: %s", in, strerror(errno));
 
-	if (oreg && utimes(out, times))
-		err(0, "%s: %s", in, strerror(errno));
+		if (utimes(out, times))
+			err(0, "%s: %s", in, strerror(errno));
 
-	if (ireg && oreg && verbose) {
-		(void)printf("%s: ", out);
-		if (origsize > sb.st_size)
-			(void)printf("%.0f%% compression\n",
-			    ((float)sb.st_size / origsize) * 100.0);
-		else
-			(void)printf("%.0f%% expansion\n",
-			    ((float)origsize / sb.st_size) * 100.0);
+		if (verbose) {
+			(void)printf("%s: ", out);
+			if (origsize > sb.st_size)
+				(void)printf("%.0f%% compression\n",
+				    ((float)sb.st_size / origsize) * 100.0);
+			else
+				(void)printf("%.0f%% expansion\n",
+				    ((float)origsize / sb.st_size) * 100.0);
+		}
 	}
 	return;
 
@@ -263,11 +265,11 @@ decompress(in, out, bits)
 	struct stat sb;
 	struct timeval times[2];
 	FILE *ifp, *ofp;
-	int ireg, oreg;
+	int isreg, oreg;
 	u_char buf[1024];
 
-	oreg = stat(out, &sb) == 0 && S_ISREG(sb.st_mode);
-	if (!force && oreg && !permission(out))
+	isreg = oreg = !stat(out, &sb) && S_ISREG(sb.st_mode);
+	if (!force && isreg && !permission(out))
 		return;
 
 	ifp = ofp = NULL;
@@ -284,8 +286,9 @@ decompress(in, out, bits)
 		err(0, "%s: %s", in, strerror(errno));
 		goto err;
 	}
-	ireg = S_ISREG(sb.st_mode);
-	if (ireg) {
+	if (!S_ISREG(sb.st_mode))
+		isreg = 0;
+	if (isreg) {
 		times[0].tv_sec = sb.st_atimespec.ts_sec;
 		times[0].tv_usec = sb.st_atimespec.ts_nsec / 1000;
 		times[1].tv_sec = sb.st_mtimespec.ts_sec;
@@ -309,12 +312,12 @@ decompress(in, out, bits)
 		goto err;
 	}
 
-	if (ireg && unlink(in))
-		err(0, "%s: %s", in, strerror(errno));
-
-	if (oreg && utimes(out, times))
-		err(0, "%s: %s", in, strerror(errno));
-
+	if (isreg) {
+		if (unlink(in))
+			err(0, "%s: %s", in, strerror(errno));
+		if (utimes(out, times))
+			err(0, "%s: %s", in, strerror(errno));
+	}
 	return;
 
 err:	if (ofp) {
