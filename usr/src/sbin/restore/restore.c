@@ -1,28 +1,39 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.5	(Berkeley)	83/03/05";
+static char sccsid[] = "@(#)restore.c	3.7	(Berkeley)	83/03/08";
 #endif
 
 #include "restore.h"
 
+static struct entry *removelist;	/* list of nodes to be deleted */
+
 /*
- *	Mark entries to be removed.
+ *	Remove unneeded leaves from the old tree.
+ *	Remove directories from the lookup chains.
  */
-markremove()
+removeoldleaves()
 {
 	register struct entry *ep;
-	register int i;
+	register ino_t i;
 
 	vprintf(stdout, "Mark entries to be removed.\n");
-	for (i = ROOTINO; i < maxino; i++) {
+	for (i = ROOTINO + 1; i < maxino; i++) {
 		ep = lookupino(i);
 		if (ep == NIL)
 			continue;
-		if (BIT(i, clrimap)) {
-			for ( ; ep != NIL; ep = ep->e_links) {
-				ep->e_flags |= REMOVE;
-				dprintf(stdout, "%s: REMOVE\n", myname(ep));
+		if (BIT(i, clrimap))
+			continue;
+		for ( ; ep != NIL; ep = ep->e_links) {
+			dprintf(stdout, "%s: REMOVE\n", myname(ep));
+			if (ep->e_type == LEAF) {
+				removeleaf(ep);
+				freeentry(ep);
+			} else {
+				mktempname(ep);
+				deleteino(ep->e_ino);
+				ep->e_next = removelist;
+				removelist = ep;
 			}
 		}
 	}
@@ -41,7 +52,7 @@ listfile(name, ino, type)
 	if (BIT(ino, dumpmap) == 0) {
 		return;
 	}
-	vprintf(stdout, "%s\t", type == LEAF ? "leaf" : "dir");
+	vprintf(stdout, "%s", type == LEAF ? "leaf" : "dir ");
 	fprintf(stdout, "%10d\t%s\n", ino, name);
 }
 
@@ -65,7 +76,7 @@ addfile(name, ino, type)
 		sprintf(buf, "./%u", ino);
 		name = buf;
 		if (type == NODE) {
-			genliteraldir(name, ino);
+			(void) genliteraldir(name, ino);
 			return;
 		}
 	}
@@ -87,17 +98,16 @@ addfile(name, ino, type)
 }
 
 /*
- *	For each directory entry, determine which category it falls
- *	into as follows:
+ *	For each directory entry on the incremental tape, determine which
+ *	category it falls into as follows:
  *	KEEP - entries that are to be left alone.
  *	NEW - new entries to be added.
- *	RENAME - entries whose name is to be changed.
  *	EXTRACT - files that must be updated with new contents.
- *	CHANGE - REMOVE followed by EXTRACT.
- *	RENUMBER - same as CHANGE, but not reusing same inode number.
+ *	LINK - new links to be added.
+ *	Renames are done at the same time.
  */
 void
-markfile(name, ino, type)
+nodeupdates(name, ino, type)
 	char *name;
 	ino_t ino;
 	int type;
@@ -136,9 +146,9 @@ markfile(name, ino, type)
 				break;
 			}
 	}
-	if ((key & (INOFND|NAMEFND) == (INOFND|NAMEFND)) && ip != np) {
-		if ((np->e_flags & REMOVE) == 0)
-			panic("%s: not on remove list\n", name);
+	if (((key & (INOFND|NAMEFND)) == (INOFND|NAMEFND)) && ip != np) {
+		mktempname(np);
+		dprintf(stdout, "[%s] %s: mktempname\n", keyval, name);
 		np = NIL;
 		key &= ~NAMEFND;
 	}
@@ -148,67 +158,83 @@ markfile(name, ino, type)
 	  (((key & INOFND) && ip->e_type != type) ||
 	   ((key & NAMEFND) && np->e_type != type))) {
 		key |= MODECHG;
-		strcat(keybuf, "|MODECHG");
+		(void) strcat(keybuf, "|MODECHG");
 	}
 	switch (key) {
 
 	case INOFND|NAMEFND:
-		if (ip->e_flags & RENAME) {
-			ip->e_flags &= ~RENAME;
-			ep = addentry(ip->e_newname, ip->e_ino,
-			    ip->e_type|LINK);
-			dprintf(stdout, "[%s] %s: RENAME become LINK\n", keyval,
-			    ip->e_newname);
-			np->e_flags |= NEW;
-			free(ip->e_newname);
-			ip->e_newname = NULL;
-		}
 		ip->e_flags |= KEEP;
 		dprintf(stdout, "[%s] %s: KEEP\n", keyval, name);
 		break;
 
 	case ONTAPE:
 		ep = addentry(name, ino, type);
-		ep->e_flags |= NEW;
-		dprintf(stdout, "[%s] %s: NEW\n", keyval, name);
+		if (type == NODE)
+			newnode(ep);
+		else
+			ep->e_flags |= NEW;
+		ep->e_flags |= KEEP;
+		dprintf(stdout, "[%s] %s: KEEP|NEW\n", keyval, name);
 		break;
 
 	case ONTAPE|INOFND:
-		ip->e_flags |= EXTRACT;
+		if (type == LEAF)
+			ip->e_flags |= EXTRACT;
 		dprintf(stdout, "[%s] %s: EXTRACT\n", keyval, name);
 		/* fall through */
 	case INOFND:
-		if (ip->e_flags & (KEEP|NEW|EXTRACT)) {
-			ep = addentry(name, ip->e_ino, ip->e_type|LINK);
+		if (ip->e_flags & KEEP) {
+			if (ip->e_type == NODE)
+				panic("%s linked to directory %s\n",
+				    name, myname(ip));
+			ep = addentry(name, ino, type|LINK);
 			ep->e_flags |= NEW;
-			dprintf(stdout, "[%s] %s: NEW\n", keyval, name);
+			dprintf(stdout, "[%s] %s: LINK\n", keyval, name);
 			break;
 		}
-		ip->e_newname = savename(name);
-		ip->e_flags |= RENAME;
+		renameit(myname(ip), name);
+		moveentry(ip, name);
+		ip->e_flags |= KEEP;
 		dprintf(stdout, "[%s] %s: RENAME\n", keyval, name);
 		break;
 
 	case ONTAPE|NAMEFND:
-		if ((np->e_flags & REMOVE) == 0)
-			panic("[%s] %s: not on remove list\n", keyval, name);
-		renumber(np, ino);
+	case ONTAPE|NAMEFND|MODECHG:
+		mktempname(np);
+		np = addentry(name, ino, type);
+		if (type == NODE)
+			newnode(np);
 		/* fall through */
 	case ONTAPE|INOFND|NAMEFND:
-		np->e_flags |= EXTRACT;
-		dprintf(stdout, "[%s] %s: EXTRACT\n", keyval, name);
+		if (type == LEAF)
+			np->e_flags |= EXTRACT;
+		np->e_flags |= KEEP;
+		dprintf(stdout, "[%s] %s: KEEP|EXTRACT\n", keyval, name);
 		break;
 
-	case ONTAPE|NAMEFND|MODECHG:
-		renumber(np, ino);
-		ip = np;
-		/* fall through */
 	case ONTAPE|INOFND|MODECHG:
 	case ONTAPE|INOFND|NAMEFND|MODECHG:
-		if ((ip->e_flags & REMOVE) == 0)
-			panic("[%s] %s: not on remove list\n", keyval, name);
-		ip->e_flags |= CHANGE;
-		dprintf(stdout, "[%s] %s: CHANGE\n", keyval, name);
+		if (ip->e_flags & KEEP) {
+			badentry(ip, "cannot KEEP and change modes");
+			break;
+		}
+		if (ip->e_type == LEAF) {
+			/* changing from leaf to node */
+			removeleaf(ip);
+			freeentry(ip);
+			ip = addentry(name, ino, type);
+			newnode(ip);
+		} else {
+			/* changing from node to leaf */
+			mktempname(ip);
+			deleteino(ip->e_ino);
+			ip->e_next = removelist;
+			removelist = ip;
+			ip = addentry(name, ino, type);
+			ip->e_flags |= NEW;
+		}
+		ip->e_flags |= KEEP;
+		dprintf(stdout, "[%s] %s: KEEP|NEW\n", keyval, name);
 		break;
 
 	case INOFND|NAMEFND|MODECHG:
@@ -228,12 +254,12 @@ markfile(name, ino, type)
 }
 
 /*
- *	Find unreferenced names.
+ *	Find unreferenced link names.
  */
-findunref()
+findunreflinks()
 {
 	register struct entry *ep, *np;
-	register int i;
+	register ino_t i;
 
 	vprintf(stdout, "Find unreferenced names.\n");
 	for (i = ROOTINO; i < maxino; i++) {
@@ -242,135 +268,12 @@ findunref()
 			continue;
 		for (np = ep->e_entries; np != NIL; np = np->e_sibling) {
 			if (np->e_flags == 0) {
-				np->e_flags |= REMOVE;
-				dprintf(stdout, "%s: REMOVE\n", myname(np));
+				dprintf(stdout,
+				    "%s: remove unreferenced name\n",
+				    myname(np));
+				removeleaf(np);
+				freeentry(np);
 			}
-		}
-	}
-}
-
-/*
- *	Remove old leaves.
- */
-removeleaves()
-{
-	register struct entry *ep;
-	register int i;
-
-	vprintf(stdout, "Remove old leaves.\n");
-	for (i = ROOTINO; i < maxino; i++) {
-		for (ep = lookupino(i); ep != NIL; ep = ep->e_links) {
-			if (ep->e_type != LEAF || (ep->e_flags & REMOVE) == 0)
-				continue;
-			removeleaf(ep);
-			ep->e_flags &= ~REMOVE;
-			if ((ep->e_flags & (CHANGE|EXTRACT)) == 0)
-				freeentry(ep);
-		}
-	}
-}
-			
-/*
- *	Rename nodes (directories).
- */
-renamenodes()
-{
-	register struct entry *ep, *np, *pp;
-	register int i;
-	char oldname[MAXPATHLEN];
-
-	vprintf(stdout, "Rename nodes (directories).\n");
-	for (i = ROOTINO; i < maxino; i++) {
-		np = lookupino(i);
-		if (np == NIL || np->e_type != NODE ||
-		    (np->e_flags & RENAME) == 0)
-			continue;
-		strcpy(oldname, myname(np));
-		if (np->e_newname == NULL) {
-			badentry(np, "no new name");
-			continue;
-		}
-		np->e_flags &= ~RENAME;
-		if (strcmp(oldname, np->e_newname) == 0)
-			continue;
-		ep = lookupname(np->e_newname);
-		if (ep != NIL) {
-			if (ep->e_flags & TMPNODE) {
-				movecontents(ep, np);
-				removenode(ep);
-				freeentry(ep);
-			} else {
-				mktempname(ep);
-			}
-		} else {
-			pp = pathcheck(np->e_newname, TMPNODE);
-			if (pp == np) {
-				mktempname(np);
-				strcpy(oldname, myname(np));
-				pp = pathcheck(np->e_newname, TMPNODE);
-				if (pp == np)
-					badentry(np, "mktempname failed");
-			}
-		}
-		renameit(oldname, np->e_newname);
-		moveentry(np, np->e_newname);
-	}
-}
-
-/*
- *	Create new nodes (directories).
- */
-createnodes()
-{
-	register struct entry *ep;
-	register int i;
-
-	vprintf(stdout, "Create new nodes (directories).\n");
-	for (i = ROOTINO; i < maxino; i++) {
-		ep = lookupino(i);
-		if (ep == NIL || ep->e_type == LEAF ||
-		    ((ep->e_flags & (EXTRACT|CHANGE|NEW)) == 0))
-			continue;
-		if (ep->e_flags & (CHANGE|NEW)) {
-			if (ep->e_flags & REMOVE)
-				badentry(ep, "bad REMOVE flag");
-			newnode(ep);
-			ep->e_flags &= ~(CHANGE|NEW);
-			continue;
-		}
-		if (ep->e_flags & REMOVE) {
-			if (ep->e_flags & RENUMBER)
-				ep->e_flags &= ~REMOVE;
-			else
-				badentry(ep, "REMOVE without RENUMBER flag");
-			if (ep->e_flags & (TMPNODE|TMPNAME))
-				badentry(ep, "creating TMPNODE or TMPNAME");
-			ep->e_flags &= ~EXTRACT;
-		}
-	}
-}
-
-/*
- *	Rename leaves.
- */
-renameleaves()
-{
-	register struct entry *ep, *np;
-	register int i;
-
-	vprintf(stdout, "Rename leaves.\n");
-	for (i = ROOTINO; i < maxino; i++) {
-		for (ep = lookupino(i); ep != NIL; ep = ep->e_links) {
-			if ((ep->e_flags & RENAME) == 0)
-				continue;
-			if (ep->e_type == NODE)
-				badentry(ep, "too late to RENAME directory");
-			ep->e_flags &= ~RENAME;
-			np = lookupname(ep->e_newname);
-			if (np != NIL)
-				mktempname(np);
-			renameit(myname(ep), ep->e_newname);
-			moveentry(ep, ep->e_newname);
 		}
 	}
 }
@@ -378,21 +281,28 @@ renameleaves()
 /*
  *	Remove old nodes (directories).
  */
-removenodes()
+removeoldnodes()
 {
-	register struct entry *ep;
-	register int i;
+	register struct entry *ep, **prev;
+	long change;
 
 	vprintf(stdout, "Remove old nodes (directories).\n");
-	for (i = ROOTINO; i < maxino; i++) {
-		ep = lookupino(i);
-		if (ep == NIL || (ep->e_flags & REMOVE) == 0)
-			continue;
-		removenode(ep);
-		ep->e_flags &= ~REMOVE;
-		if ((ep->e_flags & (CHANGE|EXTRACT)) == 0)
+	do	{
+		change = 0;
+		prev = &removelist;
+		for (ep = removelist; ep != NIL; ep = *prev) {
+			if (ep->e_entries != NIL) {
+				prev = &ep->e_next;
+				continue;
+			}
+			*prev = ep->e_next;
+			removenode(ep);
 			freeentry(ep);
-	}
+			change++;
+		}
+	} while (change);
+	for (ep = removelist; ep != NIL; ep = ep->e_next)
+		badentry(ep, "cannot remove, non-empty");
 }
 
 /*
@@ -405,21 +315,23 @@ createleaves(symtabfile)
 	ino_t first;
 	long curvol;
 
-	if (command == 'R')
+	if (command == 'R') {
 		vprintf(stdout, "Continue extraction of new leaves\n");
-	else
+	} else {
 		vprintf(stdout, "Extract new leaves.\n");
-	dumpsymtable(symtabfile, volno);
+		dumpsymtable(symtabfile, volno);
+	}
 	first = lowerbnd(ROOTINO);
 	curvol = volno;
 	while (curfile.ino < maxino) {
+		first = lowerbnd(first);
 		while (first < curfile.ino) {
 			ep = lookupino(first);
 			if (ep == NIL)
 				panic("%d: bad first\n", first);
 			fprintf(stderr, "%s: not found on tape\n", myname(ep));
-			ep->e_flags &= ~(NEW|EXTRACT|CHANGE);
-			first = lowerbnd(first + 1);
+			ep->e_flags &= ~(NEW|EXTRACT);
+			first = lowerbnd(first);
 		}
 		if (first != curfile.ino)
 			panic("expected next file %d, got %d\n",
@@ -427,12 +339,17 @@ createleaves(symtabfile)
 		ep = lookupino(curfile.ino);
 		if (ep == NIL)
 			panic("unknown file on tape\n");
-		if ((ep->e_flags & (NEW|EXTRACT|CHANGE)) == 0)
+		if ((ep->e_flags & (NEW|EXTRACT)) == 0)
 			badentry(ep, "unexpected file on tape");
-		ep->e_flags &= ~(NEW|EXTRACT|CHANGE);
+		if ((ep->e_flags & EXTRACT) != 0) {
+			removeleaf(ep);
+			ep->e_flags &= ~REMOVED;
+		}
 		extractfile(myname(ep));
+		ep->e_flags &= ~(NEW|EXTRACT);
 		if (curvol != volno) {
 			dumpsymtable(symtabfile, volno);
+			skipmaps();
 			curvol = volno;
 		}
 	}
@@ -528,7 +445,7 @@ createfiles()
 createlinks()
 {
 	register struct entry *np, *ep;
-	register long i;
+	register ino_t i;
 	char name[BUFSIZ];
 
 	vprintf(stdout, "Add links\n");
@@ -537,7 +454,7 @@ createlinks()
 		if (ep == NIL)
 			continue;
 		for (np = ep->e_links; np != NIL; np = np->e_links) {
-			strcpy(name, myname(ep));
+			(void) strcpy(name, myname(ep));
 			if (ep->e_type == NODE) {
 				vprintf(stdout, "changing hard link to directory to a symbolic link:");
 				linkit(name, myname(np), SYMLINK);
@@ -555,7 +472,7 @@ createlinks()
 checkrestore()
 {
 	register struct entry *ep;
-	register long i;
+	register ino_t i;
 
 	vprintf(stdout, "Check the symbol table.\n");
 	for (i = ROOTINO; i < maxino; i++) {

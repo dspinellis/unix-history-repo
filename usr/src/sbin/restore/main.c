@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.5	(Berkeley)	83/03/05";
+static char sccsid[] = "@(#)main.c	3.7	(Berkeley)	83/03/08";
 #endif
 
 /*
@@ -28,13 +28,12 @@ int	cvtflag = 0, dflag = 0, vflag = 0, yflag = 0;
 int	hflag = 1, mflag = 1;
 char	command = '\0';
 long	dumpnum = 1;
-long	volno = 1;
+long	volno = 0;
 char	*dumpmap;
 char	*clrimap;
 ino_t	maxino;
 time_t	dumptime;
 time_t	dumpdate;
-struct	entry **entry;
 
 main(argc, argv)
 	int argc;
@@ -50,9 +49,9 @@ main(argc, argv)
 	extern int onintr();
 
 	if (signal(SIGINT, onintr) == SIG_IGN)
-		signal(SIGINT, SIG_IGN);
+		(void) signal(SIGINT, SIG_IGN);
 	if (signal(SIGTERM, onintr) == SIG_IGN)
-		signal(SIGTERM, SIG_IGN);
+		(void) signal(SIGTERM, SIG_IGN);
 	setlinebuf(stderr);
 	if (argc < 2) {
 usage:
@@ -155,11 +154,7 @@ usage:
 	case 'x':
 		setup();
 		extractdirs(dirmodefile);
-		entry = (struct entry **)
-			calloc((int)maxino, sizeof(struct entry *));
-		if (entry == (struct entry **)NIL)
-			panic("no memory for entry table\n");
-		(void)addentry(".", ROOTINO, NODE);
+		initsymtable((char *)0);
 		while (argc--) {
 			canon(*argv++, name);
 			if ((ino = psearch(name)) == 0 ||
@@ -168,7 +163,7 @@ usage:
 				continue;
 			}
 			if (mflag)
-				pathcheck(name, NULL);
+				pathcheck(name);
 			if (hflag)
 				treescan(name, ino, addfile);
 			else
@@ -184,26 +179,27 @@ usage:
 	case 'r':
 		setup();
 		if (dumptime > 0) {
+			/*
+			 * This is an incremental dump tape.
+			 */
+			vprintf(stdout, "Begin incremental restore\n");
 			initsymtable(symtbl);
+			extractdirs(dirmodefile);
+			removeoldleaves();
+			vprintf(stdout, "Calculate node updates.\n");
+			treescan(".", ROOTINO, nodeupdates);
+			findunreflinks();
+			removeoldnodes();
 		} else {
-			entry = (struct entry **)
-				calloc((int)maxino, sizeof(struct entry *));
-			if (entry == (struct entry **)NIL)
-				panic("no memory for entry table\n");
-			(void)addentry(".", ROOTINO, NODE);
+			/*
+			 * This is a level zero dump tape.
+			 */
+			vprintf(stdout, "Begin level 0 restore\n");
+			initsymtable((char *)0);
+			extractdirs(dirmodefile);
+			vprintf(stdout, "Calculate extraction list.\n");
+			treescan(".", ROOTINO, nodeupdates);
 		}
-		extractdirs(dirmodefile);
-		markremove();
-		if ((ino = psearch(".")) == 0 || BIT(ino, dumpmap) == 0)
-			panic("Root directory is not on tape\n");
-		vprintf(stdout, "Calculate extraction list.\n");
-		treescan(".", ino, markfile);
-		findunref();
-		removeleaves();
-		renamenodes();
-		createnodes();
-		renameleaves();
-		removenodes();
 		createleaves(symtbl);
 		createlinks();
 		setdirmodes(dirmodefile);
