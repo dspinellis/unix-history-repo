@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ucmpdi2.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ucmpdi2.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include "quad.h"
@@ -20,7 +20,8 @@ static char sccsid[] = "@(#)ucmpdi2.c	5.4 (Berkeley) %G%";
  * Neither a nor b are considered signed.
  */
 int
-__ucmpdi2(u_quad a, u_quad b)
+__ucmpdi2(a, b)
+	u_quad_t a, b;
 {
 	union uu aa, bb;
 
