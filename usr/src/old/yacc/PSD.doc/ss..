@@ -1,9 +1,9 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)ss..	6.2 (Berkeley) %G%
+.\"	@(#)ss..	6.3 (Berkeley) %G%
 .\"
-.EH 'PS1:15-%''Yacc: Yet Another Compiler-Compiler'
-.OH 'Yacc: Yet Another Compiler-Compiler''PS1:15-%'
+.EH 'PSD:15-%''Yacc: Yet Another Compiler-Compiler'
+.OH 'Yacc: Yet Another Compiler-Compiler''PSD:15-%'
 .\".RP
 .ND "July 31, 1978"
 .TL

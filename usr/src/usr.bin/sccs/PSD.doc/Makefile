@@ -1,10 +1,10 @@
-#	@(#)Makefile	6.2 (Berkeley) %G%
+#	@(#)Makefile	6.3 (Berkeley) %G%
 
-DIR=	ps1/14.sccs
+DIR=	psd/14.sccs
 SRCS=	sccs.me
 MACROS=	-me
 
-paper.${PRINTER}: ${SRCS}
+paper.ps: ${SRCS}
 	${ROFF} ${SRCS} > ${.TARGET}
 
 .include <bsd.doc.mk>
