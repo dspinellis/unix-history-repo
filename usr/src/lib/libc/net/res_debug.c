@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)res_debug.c	5.34 (Berkeley) %G%
+ *	@(#)res_debug.c	5.35 (Berkeley) %G%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_debug.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.35 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -19,6 +19,8 @@ static char sccsid[] = "@(#)res_debug.c	5.34 (Berkeley) %G%";
 #include <stdio.h>
 #include <string.h>
 
+void __fp_query();
+char *__p_class(), *__p_type();
 static char *p_cdname(), *p_rr(), *p_time();
 
 char *_res_opcodes[] = {
@@ -62,8 +64,6 @@ char *_res_resultcodes[] = {
 __p_query(msg)
 	char *msg;
 {
-	void __fp_query();
-
 	__fp_query(msg,stdout);
 }
 
