@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_io.c	7.17.1.1 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_io.c	7.18 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -15,6 +15,7 @@ static char *sccsid = "@(#)ex_io.c	7.17.1.1 (Berkeley) %G%";
 #include "ex_vis.h"
 #include <sys/file.h>
 #include <sys/exec.h>
+#include "pathnames.h"
 
 /*
  * File input/output, source, preserve and recover
@@ -283,11 +284,16 @@ glob(gp)
 	if (pid == 0) {
 		int oerrno;
 
+		if (genbuf) {
+			register char *ccp = genbuf;
+			while (*ccp)
+				*ccp++ &= TRIM;
+		}
 		close(1);
 		dup(pvec[1]);
 		close(pvec[0]);
 		close(2);	/* so errors don't mess up the screen */
-		ignore(open("/dev/null", 1));
+		ignore(open(_PATH_DEVNULL, 1));
 		execl(svalue(SHELL), "sh", "-c", genbuf, 0);
 		oerrno = errno;
 		close(1);
@@ -402,7 +408,7 @@ rop(c)
 	case S_IFCHR:
 		if (isatty(io))
 			error(" Teletype");
-		if (samei(&stbuf, "/dev/null"))
+		if (samei(&stbuf, _PATH_DEVNULL))
 			break;
 		error(" Character special file");
 
@@ -410,6 +416,10 @@ rop(c)
 		error(" Directory");
 
 	case S_IFREG:
+#ifdef CRYPT
+		if (xflag)
+			break;
+#endif
 		i = read(io, (char *)&head, sizeof(head));
 		(void)lseek(io, 0L, L_SET);
 		if (i != sizeof(head))
@@ -681,9 +691,9 @@ bool dofname;	/* if 1 call filename, else use savedfile */
 			if (nonexist)
 				break;
 			if ((stbuf.st_mode & S_IFMT) == S_IFCHR) {
-				if (samei(&stbuf, "/dev/null"))
+				if (samei(&stbuf, _PATH_DEVNULL))
 					break;
-				if (samei(&stbuf, "/dev/tty"))
+				if (samei(&stbuf, _PATH_TTY))
 					break;
 			}
 			io = open(file, 1);
@@ -825,6 +835,18 @@ getfile()
 				}
 				return (EOF);
 			}
+#ifdef CRYPT
+			if (kflag) {
+				fp = genbuf;
+				while(fp < &genbuf[ninbuf]) {
+					if (*fp++ & 0200) {
+						crblock(perm, genbuf, ninbuf+1,
+	cntch);
+						break;
+					}
+				}
+			}
+#endif
 			fp = genbuf;
 			cntch += ninbuf+1;
 		}
@@ -882,6 +904,10 @@ int isfilter;
 		for (;;) {
 			if (--nib < 0) {
 				nib = fp - genbuf;
+#ifdef CRYPT
+                		if(kflag && !isfilter)
+                                        crblock(perm, genbuf, nib, cntch);
+#endif
 				if (write(io, genbuf, nib) != nib) {
 					wrerror();
 				}
@@ -896,6 +922,10 @@ int isfilter;
 		}
 	} while (a1 <= addr2);
 	nib = fp - genbuf;
+#ifdef CRYPT
+	if(kflag && !isfilter)
+		crblock(perm, genbuf, nib, cntch);
+#endif
 	if (write(io, genbuf, nib) != nib) {
 		wrerror();
 	}
