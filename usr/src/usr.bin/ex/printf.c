@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printf.c	7.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)printf.c	7.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -14,7 +14,11 @@ static char sccsid[] = "@(#)printf.c	7.5 (Berkeley) %G%";
 static char *printf_id = "@(#) printf.c:2.2 6/5/79";
 #endif /* not lint */
 
+#if __STDC__
+#include <stdarg.h>
+#else
 #include <varargs.h>
+#endif
  
 /*
  * This version of printf is compatible with the Version 7 C
@@ -34,11 +38,16 @@ static int width, sign, fill;
 char *_p_dconv();
 
 /* VARARGS */
-ex_printf(va_alist)
+#if __STDC__
+ex_printf(const char *fmt0, ...)
+#else
+ex_printf(fmt0, va_alist)
+	char *fmt0;
 	va_dcl
+#endif
 {
-	va_list ap;
 	register char *fmt;
+	va_list ap;
 	char fcode;
 	int prec;
 	int length,mask1,nbits,n;
@@ -47,8 +56,12 @@ ex_printf(va_alist)
 	char *ptr;
 	char buf[134];
 
+#if __STDC__
+	va_start(ap, fmt0);
+#else
 	va_start(ap);
-	fmt = va_arg(ap,char *);
+#endif
+	fmt = (char *)fmt0;
 	for (;;) {
 		/* process format string first */
 		while ((fcode = *fmt++)!='%') {
