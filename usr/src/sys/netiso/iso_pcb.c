@@ -27,9 +27,11 @@ SOFTWARE.
 /*
  * $Header: iso_pcb.c,v 4.5 88/06/29 14:59:56 hagens Exp $
  * $Source: /usr/argo/sys/netiso/RCS/iso_pcb.c,v $
+ *	@(#)iso_pcb.c	7.4 (Berkeley) %G%
  *
  * Iso address family net-layer(s) pcb stuff. NEH 1/29/87
  */
+
 #ifndef lint
 static char *rcsid = "$Header: iso_pcb.c,v 4.5 88/06/29 14:59:56 hagens Exp $";
 #endif
@@ -244,6 +246,17 @@ iso_pcbconnect(isop, nam)
 		return EINVAL; 
 	if (siso->siso_family != AF_ISO)
 		return EAFNOSUPPORT;
+	if (siso->siso_nlen == 0) {
+		if (ia = iso_ifaddr) {
+			int nlen = ia->ia_addr.siso_nlen;
+			ovbcopy(TSEL(siso), nlen + TSEL(siso),
+				siso->siso_tsuffixlen + siso->siso_ssuffixlen);
+			bcopy((caddr_t)&ia->ia_addr.siso_addr,
+				  (caddr_t)&siso->siso_addr, nlen + 1);
+			/* includes siso->siso_nlen = nlen; */
+		} else
+			return EADDRNOTAVAIL;
+	}
 	/*
 	 * Local zero means either not bound, or bound to a TSEL, but no
 	 * particular local interface.  So, if we want to send somebody
