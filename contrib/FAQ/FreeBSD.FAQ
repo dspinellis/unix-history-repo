@@ -5,7 +5,7 @@
    Please mail all suggestions and additions to FreeBSD-FAQ@freefall.cdrom.com
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.7 1994/04/19 10:33:39 jkh Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.8 1994/04/19 18:08:21 jkh Exp $
 
 
 Table of Contents
@@ -172,6 +172,40 @@ memory out, install, and then see about upgrading to FreeBSD-current
 or FreeBSD 1.2 (when it comes out) so that you can put it back.
 
 
+1.0.6:	DES encryption software can not be exported from the United
+	States.  If I live outside the US, how can I encrypt passwords?
+
+Since the DES encryption algorithm, which is used by passwd(1) and
+friends to encrypt passwords cannot legally be exported from the US,
+non-US users should not download this software from US ftp sites.
+
+There is however a replacement libcrypt available, based on sources
+written in Australia by David Burren.  This code is now available on
+some non-US FreeBSD mirror sites.  Sources for the unencumbered 
+librypt, and binaries of the programs which use it, can be obtained
+from the following ftp sites:
+	South Africa:	braae.ru.ac.za:/pub/FreeBSD/securedist/
+			owl.und.ac.za (currently uncertain)
+	Iceland:	ftp.veda.is:/pub/crypt/FreeBSD/
+
+The non-US securedist can be used as a direct replacement for the
+encumbered US securedist.  This securedist package is installed the
+same way as the US package (see installation notes for details).
+If you are going to install DES encryption, you should do so as soon
+as possible, before installing other software.
+
+Non-US users should please not download any encryption software from
+the USA.  This can get the maintainers of the sites from which the
+software is downloaded into severe legal difficulties.
+
+A non-US distribution of Kerberos is also being developed, and current
+versions can generally be obtained by anonymous ftp from braae.ru.ac.za.
+
+There is also a mailing list for the discussion of non-US encryption
+software.  For maore information, send an email message with a single
+line saying "help" in the body of your message to majordomo@braae.ru.ac.za.
+
+
 
 
 2.0 Hardware compatibility
@@ -181,8 +215,8 @@ or FreeBSD 1.2 (when it comes out) so that you can put it back.
 
 FreeBSD supports ST-506 (sometimes called ``MFM''), RLL, and ESDI
 drives, which are usually connected to WD-1002, WD-1003, or WD-1006
-controllers (although clones should also work).  FreeBSD also IDE and
-SCSI hard drives.
+controllers (although clones should also work).  FreeBSD also supports
+IDE and SCSI hard drives.
 
 
 2.0.2:	What SCSI controllers are supported?
