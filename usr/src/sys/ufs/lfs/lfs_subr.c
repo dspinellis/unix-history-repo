@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_subr.c	7.6 (Berkeley) %G%
+ *	@(#)lfs_subr.c	7.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -88,8 +88,6 @@ lfs_itod(fs, ino)
 #endif
 	/* Translate an inode number to a disk address. */
 	LFS_IENTRY(ifp, fs, ino, bp);
-	if (ifp->if_daddr == LFS_UNUSED_DADDR)
-		panic("lfs_itod: unused disk address");
 	iaddr = ifp->if_daddr;
 	brelse(bp);
 	return (iaddr);
