@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.75 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.76 (Berkeley) %G%
  */
 
 /*
@@ -810,9 +810,12 @@ void vclean(vp, flags)
 	register struct vnode *vp;
 	int flags;
 {
-	USES_VOP_INACTIVE;
 	USES_VOP_LOCK;
-	struct vnodeops *origops;
+	USES_VOP_UNLOCK;
+	USES_VOP_CLOSE;
+	USES_VOP_INACTIVE;
+	USES_VOP_RECLAIM;
+	int (**origops)();
 	int active;
 	struct proc *p = curproc;	/* XXX */
 
@@ -852,23 +855,41 @@ void vclean(vp, flags)
 	 * If purging an active vnode, it must be unlocked, closed,
 	 * and deactivated before being reclaimed.
 	 */
-/* NEEDSWORK: Following line has potential by-hand ops invocation */
-	(*(origops->vop_unlock))(vp);
+	vop_unlock_a.a_desc = VDESC(vop_unlock);
+	vop_unlock_a.a_vp = vp;
+	VOCALL(origops,VOFFSET(vop_unlock),&vop_unlock_a);
 	if (active) {
-		if (flags & DOCLOSE)
-/* NEEDSWORK: Following line has potential by-hand ops invocation */
-			(*(origops->vop_close))(vp, IO_NDELAY, NOCRED, p);
-/* NEEDSWORK: Following line has potential by-hand ops invocation */
-		(*(origops->vop_inactive))(vp, p);
+		/*
+		 * Note: these next two calls imply
+		 * that vop_close and vop_inactive implementations
+		 * cannot count on the ops vector being correctly
+		 * set.
+		 */
+		if (flags & DOCLOSE) {
+			vop_close_a.a_desc = VDESC(vop_close);
+			vop_close_a.a_vp = vp;
+			vop_close_a.a_fflag = IO_NDELAY;
+			vop_close_a.a_p = p;
+			VOCALL(origops,VOFFSET(vop_close),&vop_close_a);
+		};
+		vop_inactive_a.a_desc = VDESC(vop_inactive);
+		vop_inactive_a.a_vp = vp;
+		vop_inactive_a.a_p = p;
+		VOCALL(origops,VOFFSET(vop_inactive),&vop_inactive_a);
 	}
 	/*
 	 * Reclaim the vnode.
 	 */
-/* NEEDSWORK: Following line has potential by-hand ops invocation */
-	if ((*(origops->vop_reclaim))(vp))
+	/*
+	 * Emulate VOP_RECLAIM.
+	 */
+	vop_reclaim_a.a_desc = VDESC(vop_reclaim);
+	vop_reclaim_a.a_vp = vp;
+	if (VOCALL(origops,VOFFSET(vop_reclaim),&vop_reclaim_a))
 		panic("vclean: cannot reclaim");
 	if (active)
 		vrele(vp);
+
 	/*
 	 * Done with purge, notify sleepers in vget of the grim news.
 	 */
