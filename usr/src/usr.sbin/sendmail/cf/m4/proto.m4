@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.18 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.19 (Berkeley) %G%)
 
 MAILER(local)dnl
 
@@ -161,7 +161,7 @@ ifdef(`_CLASS_Y_',
 R$* < @ $+ .UUCP > $*			$: $1 < @ $[ $2 $] .UUCP > $3
 ifdef(`_OLD_SENDMAIL_',
 `R$* < @ $+ . $+ .UUCP > $*		$@ $1 < @ $2 . $3 > $4',
-`R$* < @ $+ . .UUCP > $*		$@ $1 < @ $2 . > $3')
+`R$* < @ $+ . .UUCP > $*		$@ $1 < @ $2 . > $3')')
 
 # pass to name server to make hostname canonical
 R$* < @ $* $~. > $*		$: $1 < @ $[ $2 $3 $] > $4
