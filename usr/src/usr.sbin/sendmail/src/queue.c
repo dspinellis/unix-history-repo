@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.13 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.14 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.13 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.14 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -1140,7 +1140,7 @@ printqueue()
 	**  Check for permission to print the queue
 	*/
 
-	if (bitset(PRIV_RESTRMAILQ, PrivacyFlags) && RealUid != 0)
+	if (bitset(PRIV_RESTRICTMAILQ, PrivacyFlags) && RealUid != 0)
 	{
 		struct stat st;
 # ifdef NGROUPS
