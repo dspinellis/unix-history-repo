@@ -1,4 +1,4 @@
-.\"	@(#)letter.tosun	1.1	90/06/03
+.\"	@(#)letter.tosun	1.2	90/07/01
 .if n \{\
 .ND
 .rm CH
@@ -6,8 +6,8 @@
 .nr LL 7i
 .ad l
 .\}
-.so HEADERS
-.HE D
+.\".so HEADERS
+.\".HE D
 .nr PS 11
 .nr VS 13
 .nr LL 6i
@@ -16,14 +16,14 @@
 .ps 11p
 .nf
 .ti 4.5i
-May 21, 1990
+June 4, 1990
 .LP
 .nf
-Ms. Claire Le Donne
-Manager, Campus Software Office
-295 Evans Hall
+Ms. Claire LeDonne
+Technology Licensing Office
+2320 Shattuck Avenue
 University of California at Berkeley
-Berkeley, CA 94720
+Berkeley, CA 94704
 .sp
 Peter M. C. Choy
 Deputy General Counsel
@@ -36,12 +36,13 @@ Mountain View, CA 94043-1100
 Dear Mr. Choy,
 .PP
 I have discussed the issues raised in your letter of April 16, 1990
-with Dr. Marshall Kirk McKusick who heads the operating
+with Dr. Marshall Kirk McKusick, who heads the operating
 system and networking research for the \s-1UNIX\s0 project in the Computer
 Science Division of the University of California, Berkeley, known as
 the Computer Systems Research Group (\s-1CSRG\s0).
 Dr. McKusick informs me that he has been personally involved in
-coordinating the development of \s-1NFS\s0 for \s-1BSD\s0.
+coordinating the development of \s-1NFS\s0
+for the Berkeley Software Distribution, \s-1BSD\s0.
 .PP
 The group is well aware of the issues of code contamination,
 as they have had to deal with it for years.
@@ -65,15 +66,14 @@ have a Sun source license.
 .PP
 If I can be of any further assistance in clarifying these issues,
 please feel free to contact me.
-If you would like to get a current copy of our \s-1NFS\s0 code,
-we can work out a method to make it available to you.
 .sp 2
 .in +1.5i
 Sincerely,
 .sp .65i
-Claire Le Donne
+Claire LeDonne
 .in -1.5i
 .sp 2
 .nf
 cc:	Dr. Marshall Kirk McKusick, Mike Karels
+	CSRG
 .fi
