@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.7 (Berkeley) %G%
+ *	@(#)pathnames.h	5.8 (Berkeley) %G%
  */
 
 #include <paths.h>
@@ -22,7 +22,7 @@
 #define	_PATH_EX	"/usr/bin/ex"
 #define	_PATH_HELP	"/usr/share/misc/Mail.help"
 #define	_PATH_TILDE	"/usr/share/misc/Mail.tildehelp"
-#define	_PATH_MAIL_LOG	"/usr/adm/maillog"
+#define	_PATH_MAIL_LOG	"/var/log/maillog"
 #define	_PATH_MASTER_RC	"/usr/share/misc/Mail.rc"
 #define	_PATH_MBOX	"/var/spool/mail/"
 #define	_PATH_MORE	"/usr/bin/more"
