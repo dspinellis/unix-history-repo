@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)puman4.n	8.1 (Berkeley) %G%
+.\"	@(#)puman4.n	8.2 (Berkeley) %G%
 .\"
 .if !\n(xx \{\
 .so tmac.p \}
@@ -464,6 +464,7 @@ will be `obj', the first `/etc/motd', etc.
 .PP
 Pascal does not provide variable size arrays, nor does it allow
 character strings of varying length.
+ne 1i
 For this reason,
 .I argv
 is a procedure and has the syntax
