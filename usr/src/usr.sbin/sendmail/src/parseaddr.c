@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.35 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -240,7 +240,7 @@ allocaddr(a, flags, paddr)
 	char *paddr;
 {
 	if (tTd(24, 4))
-		printf("allocaddr(flags=%o, paddr=%s)\n", flags, paddr);
+		printf("allocaddr(flags=%x, paddr=%s)\n", flags, paddr);
 
 	a->q_paddr = paddr;
 
@@ -1243,7 +1243,7 @@ buildaddr(tv, a, flags, e)
 
 	if (tTd(24, 5))
 	{
-		printf("buildaddr, flags=%o, tv=", flags);
+		printf("buildaddr, flags=%x, tv=", flags);
 		printav(tv);
 	}
 
@@ -1583,7 +1583,7 @@ printaddr(a, follow)
 		       a->q_paddr, m->m_mno, m->m_name,
 		       a->q_host == NULL ? "<null>" : a->q_host, a->q_user,
 		       a->q_ruser == NULL ? "<null>" : a->q_ruser);
-		printf("\tnext=%x, flags=%o, alias %x, uid %d, gid %d\n",
+		printf("\tnext=%x, flags=%x, alias %x, uid %d, gid %d\n",
 		       a->q_next, a->q_flags, a->q_alias, a->q_uid, a->q_gid);
 		printf("\towner=%s, home=\"%s\", fullname=\"%s\"\n",
 		       a->q_owner == NULL ? "(none)" : a->q_owner,
