@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty_pty.c	7.21 (Berkeley) 5/30/91
- *	$Id: tty_pty.c,v 1.6 1993/12/19 00:51:41 wollman Exp $
+ *	$Id: tty_pty.c,v 1.7 1994/01/26 20:42:35 davidg Exp $
  */
 
 /*
@@ -291,7 +291,7 @@ ptcclose(dev)
 
 	tp = &pt_tty[minor(dev)];
 	(void)(*linesw[tp->t_line].l_modem)(tp, 0);
-	tp->t_state &= ~TS_CARR_ON;
+	tp->t_state = 0;
 	tp->t_oproc = 0;		/* mark closed */
 	tp->t_session = 0;
 
