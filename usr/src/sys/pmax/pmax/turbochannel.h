@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)turbochannel.h	7.2 (Berkeley) %G%
+ *	@(#)turbochannel.h	7.3 (Berkeley) %G%
  */
 
 /* 
@@ -105,4 +105,4 @@ typedef struct {
 extern	tc_option_t	tc_slot_info[];
 
 extern	void (*tc_slot_hand_fill) __P((tc_option_t *));
-#endif KERNEL
+#endif /* KERNEL */

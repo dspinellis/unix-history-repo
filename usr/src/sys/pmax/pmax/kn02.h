@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kn02.h	7.1 (Berkeley) %G%
+ *	@(#)kn02.h	7.2 (Berkeley) %G%
  */
 
 /* 
@@ -224,4 +224,4 @@
 #define KN02_ECC_VLDHI		0x80000000	/* info valid for  "	*/
 
 
-#endif	MIPS_KN02_H
+#endif	/* MIPS_KN02_H */

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kn01.h	7.1 (Berkeley) %G%
+ *	@(#)kn01.h	7.2 (Berkeley) %G%
  */
 
 /* 
@@ -169,4 +169,4 @@
 #define KN01_ERR_ADDRESS	0x07ffffff	/* phys address mask ? */
 
 
-#endif	MIPS_KN01_H
+#endif	/* MIPS_KN01_H */
