@@ -9,14 +9,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)crc.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)crc.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <unistd.h>
 
-u_long crctab[] = {
-	0x7fffffff,
+static u_long crctab[] = {
+	0x0,
 	0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
 	0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4, 0xe0d5e91e,
 	0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91,
@@ -78,29 +78,29 @@ u_long crctab[] = {
  *	of bytes read.  It returns 0 on success and 1 on failure.  Errno is
  *	set on failure.
  */
+int
 crc(fd, cval, clen)
 	register int fd;
 	u_long *cval, *clen;
 {
-	register int i, nr, step;
 	register u_char *p;
-	register u_long crc, total;
-	u_char buf[8192];
+	register int nr;
+	register u_long crc, len;
+	u_char buf[16 * 1024];
 
-	crc = step = total = 0;
+	crc = len = 0;
 	while ((nr = read(fd, buf, sizeof(buf))) > 0)
-		for (total += nr, p = buf; nr--; ++p) {
-			if (!(i = crc >> 24 ^ *p)) {
-				i = step++;
-				if (step >= sizeof(crctab)/sizeof(crctab[0]))
-					step = 0;
-			}
-			crc = (crc << 8) ^ crctab[i];
-		}
+		for (len += nr, p = buf; nr--; ++p)
+			crc = crc << 8 ^ crctab[crc >> 24 ^ *p];
 	if (nr < 0)
 		return(1);
 
-	*cval = crc & 0xffffffff;		/* Mask to 32 bits. */
-	*clen = total;
+	*clen = len;
+
+	/* Include the length of the file. */
+	for (; len != 0; len >>= 8)
+		crc = crc << 8 ^ crctab[crc >> 24 ^ len & 0xff];
+
+	*cval = ~crc;
 	return(0);
 }
