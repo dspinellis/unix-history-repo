@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -14,27 +14,31 @@ static char sccsid[] = "@(#)print.c	5.13 (Berkeley) %G%";
 #include <sys/resource.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
-#include <math.h>
-#include <nlist.h>
-#include <tzfile.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <string.h>
-#include "ps.h"
 
 #ifdef SPPWAIT
 #define NEWVM
 #endif
 
 #ifdef NEWVM
-#include <vm/vm.h>
 #include <sys/ucred.h>
-#include <sys/kinfo_proc.h>
+#include <sys/sysctl.h>
+#include <vm/vm.h>
 #else
 #include <machine/pte.h>
 #include <sys/vmparam.h>
 #include <sys/vm.h>
 #endif
+
+#include <err.h>
+#include <math.h>
+#include <nlist.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <tzfile.h>
+
+#include "ps.h"
 
 static void printval __P((char*, struct var *));
 
@@ -225,11 +229,12 @@ uname(k, ve)
 
 	v = ve->var;
 #ifndef NEWVM
-	(void)printf("%-*s", v->width, user_from_uid(KI_PROC(k)->p_uid, 0));
-#else /* NEWVM */
-	(void)printf("%-*s", v->width,
-		user_from_uid(KI_EPROC(k)->e_ucred.cr_uid, 0));
-#endif /* NEWVM */
+	(void)printf("%-*s",
+	    (int)v->width, user_from_uid(KI_PROC(k)->p_uid, 0));
+#else
+	(void)printf("%-*s",
+	    (int)v->width, user_from_uid(KI_EPROC(k)->e_ucred.cr_uid, 0));
+#endif
 }
 
 void
@@ -241,11 +246,12 @@ runame(k, ve)
 
 	v = ve->var;
 #ifndef NEWVM
-	(void)printf("%-*s", v->width, user_from_uid(KI_PROC(k)->p_ruid, 0));
-#else /* NEWVM */
-	(void)printf("%-*s", v->width,
-		user_from_uid(KI_EPROC(k)->e_pcred.p_ruid, 0));
-#endif /* NEWVM */
+	(void)printf("%-*s",
+	    (int)v->width, user_from_uid(KI_PROC(k)->p_ruid, 0));
+#else
+	(void)printf("%-*s",
+	    (int)v->width, user_from_uid(KI_EPROC(k)->e_pcred.p_ruid, 0));
+#endif
 }
 
 void
@@ -698,6 +704,6 @@ printval(bp, v)
 		(void)printf(ofmt, v->width, *(u_long *)bp &~ KERNBASE);
 		break;
 	default:
-		err("unknown type %d", v->type);
+		errx(1, "unknown type %d", v->type);
 	}
 }
