@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.28 89/09/25$
  *
- *	@(#)trap.c	7.1 (Berkeley) %G%
+ *	@(#)trap.c	7.2 (Berkeley) %G%
  */
 
 #include "cpu.h"
@@ -130,6 +130,7 @@ copyfault:
 	 * The user has most likely trashed the RTE or FP state info
 	 * in the stack frame of a signal handler.
 	 */
+		type |= USER;
 		printf("pid %d: kernel %s exception\n", u.u_procp->p_pid,
 		       type==T_COPERR ? "coprocessor" : "format");
 		u.u_signal[SIGILL] = SIG_DFL;
@@ -137,9 +138,9 @@ copyfault:
 		p->p_sigignore &= ~i;
 		p->p_sigcatch &= ~i;
 		p->p_sigmask &= ~i;
+		i = SIGILL;
 		ucode = frame.f_format;	/* XXX was ILL_RESAD_FAULT */
-		psignal(u.u_procp, SIGILL);
-		goto out;
+		break;
 
 #ifdef FPCOPROC
 	case T_COPERR+USER:	/* user coprocessor violation */
@@ -487,8 +488,8 @@ copyfault:
 		return;
 out:
 	p = u.u_procp;
-	if (p->p_cursig || ISSIG(p))
-		psig();
+	if (i = CURSIG(p))
+		psig(i);
 	p->p_pri = p->p_usrpri;
 	if (runrun) {
 		/*
@@ -503,8 +504,8 @@ out:
 		setrq(p);
 		u.u_ru.ru_nivcsw++;
 		swtch();
-		if (ISSIG(p))
-			psig();
+		if (i = CURSIG(p))
+			psig(i);
 	}
 	if (u.u_prof.pr_scale) {
 		int ticks;
@@ -535,9 +536,9 @@ syscall(code, frame)
 	register caddr_t params;
 	register int i;
 	register struct sysent *callp;
-	register struct proc *p;
+	register struct proc *p = u.u_procp;
 	register struct user *up;
-	int opc, numsys;
+	int error, opc, numsys;
 	struct timeval syst;
 	struct sysent *systab;
 #ifdef HPUXCOMPAT
@@ -545,15 +546,7 @@ syscall(code, frame)
 	extern int hpuxnsysent, notimp();
 #endif
 
-	/*
-	 * We assign &u to a local variable for GCC.  This ensures that
-	 * we can explicitly reload it after the call to qsetjmp below.
-	 * If we don't do this, GCC may itself have assigned &u to a
-	 * register variable which will not be properly reloaded, since
-	 * GCC knows nothing of the funky semantics of qsetjmp.
-	 */
-	up = &u;
-
+	up = &u;		/* this should probably be deleted */
 	cnt.v_syscall++;
 	syst = up->u_ru.ru_stime;
 	if (!USERMODE(frame.f_sr))
@@ -564,30 +557,27 @@ syscall(code, frame)
 	systab = sysent;
 	numsys = nsysent;
 #ifdef HPUXCOMPAT
-	if (up->u_procp->p_flag & SHPUX) {
+	if (p->p_flag & SHPUX) {
 		systab = hpuxsysent;
 		numsys = hpuxnsysent;
 	}
 #endif
 	params = (caddr_t)frame.f_regs[SP] + NBPW;
-	/*
-	 * We use entry 0 instead of 63 to signify an invalid syscall because
-	 * HPUX uses 63 and 0 works just as well for our purposes.
-	 */
-	if (code == 0) {
-		i = fuword(params);
+	if (code == 0) {			/* indir */
+		code = fuword(params);
 		params += NBPW;
-		callp = ((unsigned)i >= numsys) ? &systab[0] : &systab[i];
-	} else
-		callp = (code >= numsys) ? &systab[0] : &systab[code];
-	p = up->u_procp;
+	}
+	if (code >= numsys)
+		callp = &systab[0];		/* indir (illegal) */
+	else
+		callp = &systab[code];
 	if ((i = callp->sy_narg * sizeof (int)) &&
-	    (up->u_error = copyin(params, (caddr_t)up->u_arg, (u_int)i))) {
+	    (error = copyin(params, (caddr_t)up->u_arg, (u_int)i))) {
 #ifdef HPUXCOMPAT
 		if (p->p_flag & SHPUX)
-			up->u_error = bsdtohpuxerrno(up->u_error);
+			error = bsdtohpuxerrno(error);
 #endif
-		frame.f_regs[D0] = (u_char) up->u_error;
+		frame.f_regs[D0] = (u_char) error;
 		frame.f_sr |= PSL_C;	/* carry bit */
 #ifdef KTRACE
                 if (KTRPOINT(p, KTR_SYSCALL))
@@ -601,59 +591,48 @@ syscall(code, frame)
 #endif
 	up->u_r.r_val1 = 0;
 	up->u_r.r_val2 = frame.f_regs[D0];
-	/*
-	 * qsetjmp only saves a6/a7.  This speeds things up in the common
-	 * case (where saved values are never used).  There is a side effect
-	 * however.  Namely, if we do return via longjmp() we must restore
-	 * our own register variables.
-	 */
-	if (qsetjmp(&up->u_qsave)) {
-		up = &u;
-		if (up->u_error == 0 && up->u_eosys != RESTARTSYS)
-			up->u_error = EINTR;
 #ifdef HPUXCOMPAT
-		/* there are some HPUX calls where we change u_ap */
-		if (up->u_ap != up->u_arg) {
-			up->u_ap = up->u_arg;
-			printf("syscall(%d): u_ap changed\n", code);
-		}
+	/* debug kludge */
+	if (callp->sy_call == notimp)
+		error = notimp(code, callp->sy_narg);
+	else
 #endif
-	} else {
-		up->u_eosys = NORMALRETURN;
-#ifdef HPUXCOMPAT
-		/* debug kludge */
-		if (callp->sy_call == notimp)
-			notimp(code, callp->sy_narg);
-		else
-#endif
-		(*(callp->sy_call))(up);
-	}
-	/*
-	 * Need to reinit p for two reason.  One, it is a register var
-	 * and is not saved in the qsetjmp so a EINTR return will leave
-	 * it with garbage.  Two, even on a normal return, it will be
-	 * wrong for the child process of a fork (it will point to the
-	 * parent).
-	 */
-	p = up->u_procp;
-	if (up->u_eosys == NORMALRETURN) {
-		if (up->u_error) {
+	error = (*(callp->sy_call))(up);
+	error = u.u_error;		/* XXX */
+	if (error == ERESTART)
+		frame.f_pc = opc;
+	else if (error != EJUSTRETURN) {
+		if (error) {
 #ifdef HPUXCOMPAT
 			if (p->p_flag & SHPUX)
-				up->u_error = bsdtohpuxerrno(up->u_error);
+				error = bsdtohpuxerrno(error);
 #endif
-			frame.f_regs[D0] = (u_char) up->u_error;
+			frame.f_regs[D0] = (u_char) error;
 			frame.f_sr |= PSL_C;	/* carry bit */
+#ifdef HPUXCOMPAT
+			/* there are some HPUX calls where we change u_ap */
+			/* is this still needed? */
+			if (up->u_ap != up->u_arg) {
+				up->u_ap = up->u_arg;
+				printf("syscall(%d): u_ap changed\n", code);
+			}
+#endif
 		} else {
 			frame.f_regs[D0] = up->u_r.r_val1;
 			frame.f_regs[D1] = up->u_r.r_val2;
 			frame.f_sr &= ~PSL_C;
 		}
-	} else if (up->u_eosys == RESTARTSYS)
-		frame.f_pc = opc;
-	/* else if (up->u_eosys == JUSTRETURN) */
+	}
+	/* else if (error == EJUSTRETURN) */
 		/* nothing to do */
+
 done:
+	/*
+	 * Reinitialize proc pointer `p' as it may be different
+	 * if this is a child returning from fork syscall.
+	 */
+	p = up->u_procp;
+#ifdef I_DONT_UNDERSTAND		/* XXX XXX */
 	/*
 	 * The check for sigreturn (code 103) ensures that we don't
 	 * attempt to set up a call to a signal handler (sendsig) before
@@ -664,6 +643,10 @@ done:
 	 */
 	if (code != 103 && (p->p_cursig || ISSIG(p)))
 		psig();
+#else
+	if (i = CURSIG(p))
+		psig(i);
+#endif
 	p->p_pri = p->p_usrpri;
 	if (runrun) {
 		/*
@@ -678,6 +661,8 @@ done:
 		setrq(p);
 		up->u_ru.ru_nivcsw++;
 		swtch();
+		if (i = CURSIG(p))
+			psig(i);
 	}
 	if (up->u_prof.pr_scale) {
 		int ticks;
