@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	7.40 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.41 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -141,15 +141,6 @@ exit(p, rv)
 		vrele(p->p_tracep);
 #endif
 	/*
-	 * Clear curproc after we've done all operations
-	 * that could block, and before tearing down
-	 * the rest of the process state.
-	 */
-	curproc = NULL;
-	if (--p->p_limit->p_refcnt == 0)
-		FREE(p->p_limit, M_SUBPROC);
-
-	/*
 	 * Remove proc from allproc queue and pidhash chain.
 	 * Place onto zombproc.  Unlink from parent's child list.
 	 */
@@ -160,6 +151,7 @@ exit(p, rv)
 	p->p_prev = &zombproc;
 	zombproc = p;
 	p->p_stat = SZOMB;
+
 	for (pp = &pidhash[PIDHASH(p->p_pid)]; *pp; pp = &(*pp)->p_hash)
 		if (*pp == p) {
 			*pp = p->p_hash;
@@ -211,6 +203,20 @@ done:
 	/* move this to cpu_exit */
 	p->p_addr->u_pcb.pcb_savacc.faddr = (float *)NULL;
 #endif
+	/*
+	 * Clear curproc after we've done all operations
+	 * that could block, and before tearing down the rest
+	 * of the process state that might be used from clock, etc.
+	 * Also, can't clear curproc while we're still runnable,
+	 * as we're not on a run queue (we are current, just not
+	 * a proper proc any longer!).
+	 *
+	 * Other substructures are freed from wait().
+	 */
+	curproc = NULL;
+	if (--p->p_limit->p_refcnt == 0)
+		FREE(p->p_limit, M_SUBPROC);
+
 	/*
 	 * Finally, call machine-dependent code to release the remaining
 	 * resources including address space, the kernel stack and pcb.
