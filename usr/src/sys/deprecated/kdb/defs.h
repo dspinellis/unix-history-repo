@@ -1,4 +1,4 @@
-/*	defs.h	7.1	86/11/20	*/
+/*	defs.h	7.2	86/11/20	*/
 
 /*
  * adb - string table version; common definitions
@@ -40,19 +40,20 @@ struct	pcb kdbpcb;		/* must go before redef.h */
 #define BKPTSET	1
 #define BKPTEXEC 2
 
+/*
+ * setexit/reset tokens..
+ */
+#define	ERROR	1
+#define	NEXT	6
 #define	SINGLE	7
 #define	CONTIN	8
 
-#define MAXCOM	64
-#define MAXARG	32
 #define LINSIZ	256
 #define MAXOFF	1024
 #define MAXPOS	80
 #define MAXLIN	256
 #define QUOTE	0200
 
-#define TRUE	 (-1)
-#define FALSE	0
 #define LOBYTE	0377
 #define STRIP	0177
 
@@ -72,6 +73,7 @@ typedef	struct bkpt {
 	short	count;
 	short	initcnt;
 	short	flag;
+#define MAXCOM	64
 	char	comm[MAXCOM];
 	struct	bkpt *nxtbkpt;
 } BKPT, *BKPTR;
