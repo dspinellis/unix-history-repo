@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tftpd.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftpd.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 
@@ -57,15 +57,69 @@ main()
 {
 	register struct tftphdr *tp;
 	register int n;
+	int on = 1;
 
 	openlog("tftpd", LOG_PID, LOG_DAEMON);
-	alarm(10);
+	if (ioctl(0, FIONBIO, &on) < 0) {
+		syslog(LOG_ERR, "ioctl(FIONBIO): %m\n");
+		exit(1);
+	}
 	fromlen = sizeof (from);
 	n = recvfrom(0, buf, sizeof (buf), 0,
 	    (caddr_t)&from, &fromlen);
 	if (n < 0) {
-		perror("tftpd: recvfrom");
+		syslog(LOG_ERR, "recvfrom: %m\n");
 		exit(1);
+	}
+	/*
+	 * Now that we have read the message out of the UDP
+	 * socket, we fork and exit.  Thus, inetd will go back
+	 * to listening to the tftp port, and the next request
+	 * to come in will start up a new instance of tftpd.
+	 *
+	 * We do this so that inetd can run tftpd in "wait" mode.
+	 * The problem with tftpd running in "nowait" mode is that
+	 * inetd may get one or more successful "selects" on the
+	 * tftp port before we do our receive, so more than one
+	 * instance of tftpd may be started up.  Worse, if tftpd
+	 * break before doing the above "recvfrom", inetd would
+	 * spawn endless instances, clogging the system.
+	 */
+	{
+		int pid;
+		int i, j;
+
+		for (i = 1; i < 20; i++) {
+		    pid = fork();
+		    if (pid < 0) {
+				sleep(i);
+				/*
+				 * flush out to most recently sent request.
+				 *
+				 * This may drop some request, but those
+				 * will be resent by the clients when
+				 * they timeout.  The positive effect of
+				 * this flush is to (try to) prevent more
+				 * than one tftpd being started up to service
+				 * a single request from a single client.
+				 */
+				j = sizeof from;
+				i = recvfrom(0, buf, sizeof (buf), 0,
+				    (caddr_t)&from, &j);
+				if (i > 0) {
+					n = i;
+					fromlen = j;
+				}
+		    } else {
+				break;
+		    }
+		}
+		if (pid < 0) {
+			syslog(LOG_ERR, "fork: %m\n");
+			exit(1);
+		} else if (pid != 0) {
+			exit(0);
+		}
 	}
 	from.sin_family = AF_INET;
 	alarm(0);
@@ -73,15 +127,15 @@ main()
 	close(1);
 	peer = socket(AF_INET, SOCK_DGRAM, 0);
 	if (peer < 0) {
-		syslog(LOG_ERR, "socket: %m");
+		syslog(LOG_ERR, "socket: %m\n");
 		exit(1);
 	}
 	if (bind(peer, (caddr_t)&sin, sizeof (sin)) < 0) {
-		syslog(LOG_ERR, "bind: %m");
+		syslog(LOG_ERR, "bind: %m\n");
 		exit(1);
 	}
 	if (connect(peer, (caddr_t)&from, sizeof(from)) < 0) {
-		syslog(LOG_ERR, "connect: %m");
+		syslog(LOG_ERR, "connect: %m\n");
 		exit(1);
 	}
 	tp = (struct tftphdr *)buf;
@@ -236,7 +290,7 @@ sendfile(pf)
 
 send_data:
 		if (send(peer, dp, size + 4, 0) != size + 4) {
-			perror("tftpd: write");
+			syslog(LOG_ERR, "tftpd: write: %m\n");
 			goto abort;
 		}
 		read_ahead(file, pf->f_convert);
@@ -245,7 +299,7 @@ send_data:
 			n = recv(peer, ackbuf, sizeof (ackbuf), 0);
 			alarm(0);
 			if (n < 0) {
-				perror("tftpd: read");
+				syslog(LOG_ERR, "tftpd: read: %m\n");
 				goto abort;
 			}
 			ap->th_opcode = ntohs((u_short)ap->th_opcode);
@@ -299,7 +353,7 @@ recvfile(pf)
 		(void) setjmp(timeoutbuf);
 send_ack:
 		if (send(peer, ackbuf, 4, 0) != 4) {
-			perror("tftpd: write");
+			syslog(LOG_ERR, "tftpd: write: %m\n");
 			goto abort;
 		}
 		write_behind(file, pf->f_convert);
@@ -308,7 +362,7 @@ send_ack:
 			n = recv(peer, dp, PKTSIZE, 0);
 			alarm(0);
 			if (n < 0) {            /* really? */
-				perror("tftpd: read");
+				syslog(LOG_ERR, "tftpd: read: %m\n");
 				goto abort;
 			}
 			dp->th_opcode = ntohs((u_short)dp->th_opcode);
@@ -397,5 +451,5 @@ nak(error)
 	tp->th_msg[length] = '\0';
 	length += 5;
 	if (send(peer, buf, length, 0) != length)
-		perror("nak");
+		syslog(LOG_ERR, "nak: %m\n");
 }
