@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.3c	5.1 (Berkeley) %G%
+.\"	@(#)intro.3c	6.1 (Berkeley) %G%
 .\"
-.TH INTRO 3C "18 July 1983"
+.TH INTRO 3C ""
 .UC 5
 .SH NAME
 intro \- introduction to compatibility library functions
