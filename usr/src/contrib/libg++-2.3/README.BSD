@@ -1,0 +1,9 @@
+Notes for BSD build:
+
+The exisiting Makefile is a simple makefile that will build libg++ without
+much problems.
+
+Makefile.GNU is the original gnu Makefile.
+
+It is *highly* advisable that you use the bsd Makefile since it is simpler and
+doesn't have all the (unexpected) side effects that the gnu Makefile causes.
