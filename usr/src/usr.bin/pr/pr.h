@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 1991 Keith Muller.
- * Copyright (c) 1991 The Regents of the University of California.
+ * Copyright (c) 1993 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)pr.h	5.1 (Berkeley) %G%
+ *      @(#)pr.h	5.2 (Berkeley) %G%
  */
 
 /*
