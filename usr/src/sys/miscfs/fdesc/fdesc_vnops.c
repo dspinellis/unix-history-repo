@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	7.1 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	7.2 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.7 1992/05/30 10:05:34 jsp Exp jsp $
  */
@@ -100,7 +100,6 @@ fdesc_lookup(ap)
 		goto bad;
 	MALLOC(fvp->v_data, void *, sizeof(struct fdescnode), M_TEMP, M_WAITOK);
 	VTOFDESC(fvp)->f_fd = fd;
-	/*VTOFDESC(fvp)->f_isroot = 0;*/
 	*vpp = fvp;
 #ifdef FDESC_DIAGNOSTIC
 	printf("fdesc_lookup: newvp = %x\n", fvp);
@@ -455,7 +454,7 @@ fdesc_nullop()
 #define fdesc_mkdir ((int (*) __P((struct  vop_mkdir_args *)))fdesc_enotsupp)
 #define fdesc_rmdir ((int (*) __P((struct  vop_rmdir_args *)))fdesc_enotsupp)
 #define fdesc_symlink ((int (*) __P((struct vop_symlink_args *)))fdesc_enotsupp)
-#define fdesc_readlink
+#define fdesc_readlink \
 	((int (*) __P((struct  vop_readlink_args *)))fdesc_enotsupp)
 #define fdesc_abortop ((int (*) __P((struct  vop_abortop_args *)))nullop)
 #define fdesc_lock ((int (*) __P((struct  vop_lock_args *)))nullop)
@@ -464,7 +463,7 @@ fdesc_nullop()
 #define fdesc_strategy ((int (*) __P((struct  vop_strategy_args *)))fdesc_badop)
 #define fdesc_islocked ((int (*) __P((struct  vop_islocked_args *)))nullop)
 #define fdesc_advlock ((int (*) __P((struct vop_advlock_args *)))fdesc_enotsupp)
-#define fdesc_blkatoff
+#define fdesc_blkatoff \
 	((int (*) __P((struct  vop_blkatoff_args *)))fdesc_enotsupp)
 #define fdesc_vget ((int (*) __P((struct  vop_vget_args *)))fdesc_enotsupp)
 #define fdesc_valloc ((int(*) __P(( \
@@ -472,7 +471,7 @@ fdesc_nullop()
 		int mode, \
 		struct ucred *cred, \
 		struct vnode **vpp))) fdesc_enotsupp)
-#define fdesc_truncate
+#define fdesc_truncate \
 	((int (*) __P((struct  vop_truncate_args *)))fdesc_enotsupp)
 #define fdesc_update ((int (*) __P((struct  vop_update_args *)))fdesc_enotsupp)
 #define fdesc_bwrite ((int (*) __P((struct  vop_bwrite_args *)))fdesc_enotsupp)

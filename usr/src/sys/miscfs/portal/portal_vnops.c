@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal_vnops.c	7.1 (Berkeley) %G%
+ *	@(#)portal_vnops.c	7.2 (Berkeley) %G%
  *
  * $Id: portal_vnops.c,v 1.4 1992/05/30 10:05:24 jsp Exp jsp $
  */
@@ -663,27 +663,27 @@ portal_nullop()
 #define portal_rename ((int (*) __P((struct vop_rename_args *)))portal_enotsupp)
 #define portal_mkdir ((int (*) __P((struct  vop_mkdir_args *)))portal_enotsupp)
 #define portal_rmdir ((int (*) __P((struct  vop_rmdir_args *)))portal_enotsupp)
-#define portal_symlink
+#define portal_symlink \
 	((int (*) __P((struct  vop_symlink_args *)))portal_enotsupp)
-#define portal_readlink
+#define portal_readlink \
 	((int (*) __P((struct  vop_readlink_args *)))portal_enotsupp)
 #define portal_abortop ((int (*) __P((struct  vop_abortop_args *)))nullop)
 #define portal_lock ((int (*) __P((struct  vop_lock_args *)))nullop)
 #define portal_unlock ((int (*) __P((struct  vop_unlock_args *)))nullop)
 #define portal_bmap ((int (*) __P((struct  vop_bmap_args *)))portal_badop)
-#define portal_strategy
+#define portal_strategy \
 	((int (*) __P((struct  vop_strategy_args *)))portal_badop)
 #define portal_islocked ((int (*) __P((struct  vop_islocked_args *)))nullop)
-#define portal_advlock
+#define portal_advlock \
 	((int (*) __P((struct  vop_advlock_args *)))portal_enotsupp)
-#define portal_blkatoff
+#define portal_blkatoff \
 	((int (*) __P((struct  vop_blkatoff_args *)))portal_enotsupp)
 #define portal_valloc ((int(*) __P(( \
 		struct vnode *pvp, \
 		int mode, \
 		struct ucred *cred, \
 		struct vnode **vpp))) portal_enotsupp)
-#define portal_truncate
+#define portal_truncate \
 	((int (*) __P((struct  vop_truncate_args *)))portal_enotsupp)
 #define portal_update ((int (*) __P((struct vop_update_args *)))portal_enotsupp)
 #define portal_bwrite ((int (*) __P((struct vop_bwrite_args *)))portal_enotsupp)
