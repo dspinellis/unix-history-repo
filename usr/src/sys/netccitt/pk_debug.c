@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_debug.c	7.4 (Berkeley) %G%
+ *	@(#)pk_debug.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -39,20 +39,20 @@ char   *pk_name[] = {
 	"Restart",	"Restart-Conf",	"Invalid"
 };
 
-pk_trace (xcp, xp, dir)
+pk_trace (xcp, m, dir)
 struct x25config *xcp;
-struct x25_packet *xp;
+register struct mbuf *m;
 char *dir;
 {
 	register char *s;
-	register struct mbuf *m;
+	struct x25_packet *xp = mtod(m, struct x25_packet *);
 	register int i, len = 0, cnt = 0;
 
 	if (xcp -> xc_ptrace == 0)
 		return;
 
 	i = pk_decode (xp) / MAXSTATES;
-	for (m = dtom (xp); m; m = m -> m_next) {
+	for (; m; m = m -> m_next) {
 		len = len + m -> m_len;
 		++cnt;
 	}
