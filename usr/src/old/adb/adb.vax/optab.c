@@ -1,36 +1,22 @@
+#ifndef lint
+static	char optab_sccsid[] = "@(#)optab.c 4.3 %G%";
+#endif not lint
+#ifdef ADB
 #include "defs.h"
-static	char sccsid[] = "@(#)optab.c 4.2 %G%";
-/*
- * Argument access types
- */
-#define ACCA	(8<<3)	/* address only */
-#define ACCR	(1<<3)	/* read */
-#define ACCW	(2<<3)	/* write */
-#define ACCM	(3<<3)	/* modify */
-#define ACCB	(4<<3)	/* branch displacement */
-#define ACCI	(5<<3)	/* XFC code */
+#endif ADB
+#ifdef SDB
+#include "defs.h"
+#endif SDB
 
-/*
- * Argument data types
- */
-#define TYPB	0	/* byte */
-#define TYPW	1	/* word */
-#define TYPL	2	/* long */
-#define TYPQ	3	/* quad */
-#define TYPF	4	/* floating */
-#define TYPD	5	/* double floating */
+#undef INSTTAB
 
+#include "instrs.h"
 
-TYPE	struct optab	*OPTAB;
-struct optab {
-	char *iname;
-	char val;
-	char nargs;
-	char argtype[6];
-} optab[] = {
-#define OP(a,b,c,d,e,f,g,h,i) {a,b,c,d,e,f,g,h,i}
-#include "instrs"
+struct insttab insttab[] = {
+#include "instrs.adb"
 0};
+#include "assizetab.c"
+#undef ADB
 
 #define SYSTAB struct systab
 SYSTAB {
@@ -116,5 +102,31 @@ STRING	fltimm[] = {
 "64.0", "72.0", "80.0", "88.0", "96.0", "104.0", "112.0", "120.0"
 };
 
-char *fmtr = {"%r"};
-char *fmtR = {"%R"};
+#ifdef SDB
+REGLIST reglist [] = {
+		"p1lr", P1LR,
+		"p1br",P1BR,
+		"p0lr", P0LR,
+		"p0br",P0BR,
+		"ksp",KSP,
+		"esp",ESP,
+		"ssp",SSP,
+		"psl", PSL,
+		"pc", PC,
+		"usp",USP,
+		"fp", FP,
+		"ap", AP,
+		"r11", R11,
+		"r10", R10,
+		"r9", R9,
+		"r8", R8,
+		"r7", R7,
+		"r6", R6,
+		"r5", R5,
+		"r4", R4,
+		"r3", R3,
+		"r2", R2,
+		"r1", R1,
+		"r0", R0,
+};
+#endif SDB
