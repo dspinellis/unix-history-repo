@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setterm.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)setterm.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -60,10 +60,10 @@ short	ospeed = -1;
 
 gettmode() {
 
-	if (gtty(_tty_ch, &_tty) < 0)
+	if (ioctl(_tty_ch, TIOCGETP, &_tty) < 0)
 		return;
 	savetty();
-	if (stty(_tty_ch, &_tty) < 0)
+	if (ioctl(_tty_ch, TIOCSETP, &_tty) < 0)
 		_tty.sg_flags = _res_flg;
 	ospeed = _tty.sg_ospeed;
 	_res_flg = _tty.sg_flags;
@@ -71,7 +71,7 @@ gettmode() {
 	GT = ((_tty.sg_flags & XTABS) == 0);
 	NONL = ((_tty.sg_flags & CRMOD) == 0);
 	_tty.sg_flags &= ~XTABS;
-	stty(_tty_ch, &_tty);
+	ioctl(_tty_ch, TIOCSETP, &_tty);
 # ifdef DEBUG
 	fprintf(outf, "GETTMODE: UPPERCASE = %s\n", UPPERCASE ? "TRUE":"FALSE");
 	fprintf(outf, "GETTMODE: GT = %s\n", GT ? "TRUE" : "FALSE");
