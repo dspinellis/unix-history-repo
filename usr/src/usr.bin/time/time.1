@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)time.1	4.1 (Berkeley) %G%
+.\"	@(#)time.1	5.1 (Berkeley) %G%
 .\"
-.TH TIME 1 
+.TH TIME 1  "18 January 1983"
 .UC 4
 .SH NAME
 time \- time a command
@@ -28,12 +28,12 @@ The times are printed on the diagnostic output stream.
 .PP
 .I Time
 is built in to
-.I csh(1),
+.IR csh (1),
 using a different output format.
 .SH BUGS
 Elapsed time is accurate to the second,
 while the CPU times are measured
-to the 60th second.
+to the 100th second.
 Thus the sum of the CPU times can be up to a second larger
 than the elapsed time.
 .PP
