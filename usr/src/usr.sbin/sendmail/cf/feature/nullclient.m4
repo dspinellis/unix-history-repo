@@ -21,7 +21,7 @@ POPDIVERT
 #  sendmail.
 #
 
-VERSIONID(`@(#)nullclient.m4	8.2 (Berkeley) %G%')
+VERSIONID(`@(#)nullclient.m4	8.3 (Berkeley) %G%')
 
 PUSHDIVERT(7)
 ############################################
@@ -31,5 +31,6 @@ PUSHDIVERT(7)
 ifdef(`confRELAY_MAILER',,
 	`define(`confRELAY_MAILER', `nullclient')')dnl
 
-Mnullclient,	P=[IPC], F=CONCAT(mDFMuXa, SMTP_MAILER_FLAGS), A=IPC $h
+Mnullclient,	P=[IPC], F=CONCAT(mDFMuXa, SMTP_MAILER_FLAGS),ifdef(`SMTP_MAILER_MAX', ` M=SMTP_MAILER_MAX,')
+		A=IPC $h
 POPDIVERT
