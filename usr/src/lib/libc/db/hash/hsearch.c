@@ -9,12 +9,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hsearch.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)hsearch.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <fcntl.h>
 #include <string.h>
+#define	__DBINTERFACE_PRIVATE
 #include <db.h>
 #include "search.h"
 
