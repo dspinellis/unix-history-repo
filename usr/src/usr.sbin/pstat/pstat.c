@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)pstat.c	4.26 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.27 (Berkeley) %G%";
 #endif
 /*
  * Print system stuff
@@ -379,14 +379,14 @@ dotty()
 	struct tty dz_tty[128];
 	int ndz;
 	register struct tty *tp;
-	register char *mesg;
+	static char mesg[] =
+	" # RAW CAN OUT     MODE     ADDR DEL COL     STATE  PGRP DISC\n";
 
 	printf("1 cons\n");
 	if (kflg)
 		nl[SKL].n_value = clear(nl[SKL].n_value);
 	lseek(fc, (long)nl[SKL].n_value, 0);
 	read(fc, dz_tty, sizeof(dz_tty[0]));
-	mesg = " # RAW CAN OUT   MODE    ADDR   DEL COL  STATE   PGRP DISC\n";
 	printf(mesg);
 	ttyprt(&dz_tty[0], 0);
 	if (nl[SNDZ].n_type == 0)
@@ -400,6 +400,7 @@ dotty()
 	printf("%d dz lines\n", ndz);
 	lseek(fc, (long)nl[SDZ].n_value, 0);
 	read(fc, dz_tty, ndz * sizeof (struct tty));
+	printf(mesg);
 	for (tp = dz_tty; tp < &dz_tty[ndz]; tp++)
 		ttyprt(tp, tp - dz_tty);
 dh:
@@ -414,6 +415,7 @@ dh:
 	printf("%d dh lines\n", ndz);
 	lseek(fc, (long)nl[SDH].n_value, 0);
 	read(fc, dz_tty, ndz * sizeof(struct tty));
+	printf(mesg);
 	for (tp = dz_tty; tp < &dz_tty[ndz]; tp++)
 		ttyprt(tp, tp - dz_tty);
 dmf:
@@ -428,6 +430,7 @@ dmf:
 	printf("%d dmf lines\n", ndz);
 	lseek(fc, (long)nl[SDMF].n_value, 0);
 	read(fc, dz_tty, ndz * sizeof(struct tty));
+	printf(mesg);
 	for (tp = dz_tty; tp < &dz_tty[ndz]; tp++)
 		ttyprt(tp, tp - dz_tty);
 pty:
@@ -439,6 +442,7 @@ pty:
 	printf("32 pty lines\n");
 	lseek(fc, (long)nl[SPTY].n_value, 0);
 	read(fc, dz_tty, 32*sizeof(struct tty));
+	printf(mesg);
 	for (tp = dz_tty; tp < &dz_tty[32]; tp++)
 		ttyprt(tp, tp - dz_tty);
 }
@@ -462,34 +466,46 @@ struct tty *atp;
 */
 
 	default:
-		printf("%4d", tp->t_rawq.c_cc);
-		printf("%4d", tp->t_canq.c_cc);
+		printf("%4d%4d", tp->t_rawq.c_cc, tp->t_canq.c_cc);
 	}
-	printf("%4d", tp->t_outq.c_cc);
-	printf("%8.1x", tp->t_flags);
-	printf(" %8.1x", tp->t_addr);
-	printf("%3d", tp->t_delct);
-	printf("%4d ", tp->t_col);
+	printf("%4d %8x %8x%4d%4d", tp->t_outq.c_cc, tp->t_flags,
+		tp->t_addr, tp->t_delct, tp->t_col);
 	putf(tp->t_state&TS_TIMEOUT, 'T');
 	putf(tp->t_state&TS_WOPEN, 'W');
 	putf(tp->t_state&TS_ISOPEN, 'O');
+	putf(tp->t_state&TS_FLUSH, 'F');
 	putf(tp->t_state&TS_CARR_ON, 'C');
 	putf(tp->t_state&TS_BUSY, 'B');
 	putf(tp->t_state&TS_ASLEEP, 'A');
 	putf(tp->t_state&TS_XCLUDE, 'X');
+	putf(tp->t_state&TS_TTSTOP, 'S');
 	putf(tp->t_state&TS_HUPCLS, 'H');
 	printf("%6d", tp->t_pgrp);
 	switch (tp->t_line) {
 
+	case OTTYDISC:
+		printf("\n");
+		break;
+
 	case NTTYDISC:
-		printf(" ntty");
+		printf(" ntty\n");
 		break;
 
 	case NETLDISC:
-		printf(" net");
+		printf(" net\n");
 		break;
+
+	case TABLDISC:
+		printf(" tab\n");
+		break;
+
+	case NTABLDISC:
+		printf(" ntab\n");
+		break;
+
+	default:
+		printf(" %d\n", tp->t_line);
 	}
-	printf("\n");
 }
 
 dousr()
