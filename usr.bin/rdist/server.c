@@ -32,7 +32,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)server.c	5.15 (Berkeley) 3/1/91";
+/*static char sccsid[] = "from: @(#)server.c	5.15 (Berkeley) 3/1/91";*/
+static char rcsid[] = "$Id";
 #endif /* not lint */
 
 #include "defs.h"
@@ -1061,15 +1062,11 @@ chog(file, owner, group, mode)
 		gid = -1;
 	}
 ok:
-	if (userid)
-		setreuid(userid, 0);
 	if (chown(file, uid, gid) < 0 ||
 	    (mode & 07000) && chmod(file, mode) < 0) {
 		note("%s: chown or chmod failed: file %s:  %s",
 			     host, file, strerror(errno));
 	}
-	if (userid)
-		setreuid(0, userid);
 	return(0);
 }
 
