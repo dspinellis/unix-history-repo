@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.24 (Berkeley) %G%
+ *	@(#)locore.s	7.25 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -25,6 +25,7 @@
 #include "../vaxuba/ubareg.h"
 
 #include "dz.h"
+#include "dp.h"
 #include "uu.h"
 #include "ps.h"
 #include "mba.h"
@@ -385,6 +386,9 @@ SCBVEC(netintr):
 #ifdef ISO
 	bbcc	$NETISR_ISO,_netisr,1f; calls $0,_clnlintr; 1:
 #endif
+#ifdef ISO
+	bbcc	$NETISR_CCITT,_netisr,1f; calls $0,_hdintr; 1:
+#endif
 	POPR
 	incl	_cnt+V_SOFT
 	rei
@@ -476,6 +480,83 @@ dzpcall:
 	calls	$1,*(r0)		# call interrupt rtn
 	movl	(sp)+,r3
 	brb 	dzploop			# check for another line
+#endif
+
+#if NDP > 0
+/*
+ * DPV-11 pseudo dma routine:
+ *	r0 - controller number
+ */
+	.align	1
+	.globl	dprdma
+	.globl	dpxdma
+dprdma:
+	mull3	$2*20,r0,r3
+	movab	_dppdma+20(r3),r3	# pdma structure base
+	movl	(r3),r1			# device register address
+	movw	(r1),r2			# get dprcsr
+	bitw	$0x400,r2		# Attention on?
+	bneq	dprcall			# yes	
+	bitw	$0x80,r2		# Data Ready?
+	beql	dprcall			# no	
+	movl	4(r3),r4
+	cmpl	r4,8(r3)		# p_mem < p_end ?
+	bgequ	dprcall			# no, go call dprint
+	movb	2(r1),(r4)+		# *p_mem++ = dptbuf
+	movl	r4,4(r3)		# put back adjusted count
+					# Since we've been interrupted
+	#bitw	$0x4,4(r1)		# check if we can send
+	#beql	dpprei			# no, return
+	#subl2	$20,r3			# point to send pdma
+	#movl	4(r3),r4		# check if
+	#cmpl	r4,8(r3)		# p_mem < p_end ?
+	#bgequ	dpxcall			# no, go call dpxint
+	#tstw	6(r1)			# get dptdsr, sender starved ?
+	#blss	dpxcall			# yes, go call dpxint
+	#movb	(r4)+,6(r1)		# dptbuf = *p_mem++
+	#movl	r4,4(r3)		# put back adjusted count
+dpprei:
+	POPR
+	incl	_cnt+V_PDMA
+	rei
+dprcall:
+	movw	r2,12(r3)
+dpxcall:
+	pushl	r1			# push csr address
+	pushl	r3			# push pdma address
+	pushl	r0			# push unit number
+	calls	$3,*16(r3)		# call interrupt rtn
+	brb	dpprei
+	.globl	dpxdma
+dpxdma:
+	mull3	$2*20,r0,r3
+	movab	_dppdma(r3),r3		# pdma structure base
+	movl	(r3),r1			# device register address
+dpxcheck:
+	movl	4(r3),r4
+	cmpl	r4,8(r3)		# p_mem < p_end ?
+	bgequ	dpxcall			# no, go call dpxint
+	bitw	$0x4,4(r1)		# ok to send
+	beql	dpxcall			# no, go call dpxint
+	tstw	6(r1)			# get dptdsr, sender starved ?
+	blss	dpxcall			# yes, go call dpxint
+	movb	(r4)+,6(r1)		# dptbuf = *p_mem++
+	movl	r4,4(r3)		# put back adjusted count
+	bitw	$0x4,4(r1)	# check if board has a full tummy
+	bneq	dpprei		# still hungry, don't increment
+	incl	12(r3)		# positive indication we did everything
+	#addl2	$20,r3			# check if input ready
+	#movw	(r1),r2			# get dprcsr
+	#bitw	$0x400,r2		# Attention on?
+	#bneq	dprcall			# yes	
+	#bitw	$0x80,r2		# Data Ready?
+	#beql	dpprei			# no, just return
+	#movl	4(r3),r4
+	#cmpl	r4,8(r3)		# p_mem < p_end ?
+	#bgequ	dprcall			# no, go call dprint
+	#movb	2(r1),(r4)+		# dptbuf = *p_mem++
+	#movl	r4,4(r3)		# put back adjusted count
+	brb	dpprei
 #endif
 
 #if NUU > 0 && defined(UUDMA)
