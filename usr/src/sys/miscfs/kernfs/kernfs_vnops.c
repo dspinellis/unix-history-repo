@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vnops.c	7.2 (Berkeley) %G%
+ *	@(#)kernfs_vnops.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -203,6 +203,8 @@ kernfs_lookup(ap)
 		VOP_LOCK(rootvp);
 		return (0);
 	}
+
+	error = ENOENT;
 
 	for (i = 0; i < nkern_targets; i++) {
 		struct kern_target *kt = &kern_targets[i];
