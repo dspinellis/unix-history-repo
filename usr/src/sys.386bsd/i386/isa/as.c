@@ -52,6 +52,15 @@
  * Please send patches and names other perpherials that work to
  * pace@blitz.com.  If you have trouble that you can't fix, please
  * wait for the next release before contacting me.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00088
+ * --------------------         -----   ----------------------
+ *
+ * 23 Oct 92	Joerg Lohse		changed ccb opcode for compatibility
+ *					with Adaptec AHA-1542A
+ * 27 Feb 93	James da Silva		Tapedrive fixes. 
  */
 
 #include "as.h"
@@ -429,11 +438,6 @@ int flag;
 		}
 	}
 	
-	if (as->tape &&  dev_part(dev)) {
-		error = EIO;
-		goto done;
-	}
-
 	as->scsi_cdb_len = 10;
 	bzero(cdb, 10);
 	cdb[0] = 0x25;  /* SCSI_READCAPACITY */
@@ -554,7 +558,7 @@ dev_t dev;
 		
 		bp = geteblk (DEV_BSIZE);
 
-             if (0 && (flag & FWRITE) != 0) {
+             if ((flag & FWRITE) != 0) {
                              /* presume user will use tape again */
                      as->scsi_cdb_len = 6;
                      cdb = as->scsi_cdb;
@@ -889,6 +893,8 @@ printf("total %d nblocks %d ", total, nblocks);
 	n = 0;
 	sp = as->scatter_list;
 	nscatter = 0;
+	if (as->tape && as->bs == 1)
+		total = bp->b_bcount;
 	while (n < total && nscatter < NSCATTER) {
 		thistime = page_size - ((vm_offset_t)p - trunc_page (p));
 
@@ -925,9 +931,9 @@ printf("total %d nblocks %d ", total, nblocks);
 	bzero ((caddr_t)ccb, sizeof *ccb); 
 
 	if (nscatter)
-		ccb->ccb_opcode = 4; /* scatter cmd, return resid */
+		ccb->ccb_opcode = 2; /* scatter cmd, return resid */
 	else
-		ccb->ccb_opcode = 3;
+		ccb->ccb_opcode = 0;
 	target = dev_target (bp->b_dev);
 	ccb->ccb_addr_and_control = target << 5;
 	if (bp->b_bcount != 0)
@@ -1237,11 +1243,13 @@ int val;
 		printf ("\n");
 	}
 
-	bp->b_resid = (ccb->ccb_data_len_msb << 16)
-		| (ccb->ccb_data_len_mid << 8)
-			| ccb->ccb_data_len_lsb;
-	if (bp != as->scsi_bp && bp->b_resid != 0)
-		printf ("scsi resid = %d\n", bp->b_resid);
+	/* this assignment mixed sizes of controller commands
+           and data to read/write.
+ 	bp->b_resid = (ccb->ccb_data_len_msb << 16)
+ 		| (ccb->ccb_data_len_mid << 8)
+ 			| ccb->ccb_data_len_lsb;
+        */
+	bp->b_resid = 0;
 
  next:
 	asdone (as, 1);
