@@ -1,4 +1,4 @@
-/*	tty_conf.c	6.1	83/07/29	*/
+/*	tty_conf.c	6.2	83/09/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -24,7 +24,7 @@ int	tbopen(),tbclose(),tbread(),tbinput(),tbioctl();
 
 struct	linesw linesw[] =
 {
-	ttyopen, nodev, ttread, ttwrite, nullioctl,
+	ttyopen, nulldev, ttread, ttwrite, nullioctl,
 	ttyinput, nodev, nulldev, ttstart, nulldev,
 #if NBK > 0
 	bkopen, bkclose, bkread, ttwrite, bkioctl,
