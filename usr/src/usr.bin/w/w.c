@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -281,7 +281,15 @@ main(argc, argv)
 				continue;
 			jobtime += pr[i].w_time + pr[i].w_ctime;
 			proctime += pr[i].w_time;
-			if (debug) {
+			/* 
+			 * Meaning of debug fields following proc name is:
+			 * & by itself: ignoring both SIGINT and QUIT.
+			 *		(==> this proc is not a candidate.)
+			 * & <i> <q>:   i is SIGINT status, q is quit.
+			 *		0 == DFL, 1 == IGN, 2 == caught.
+			 * *:		proc pgrp == tty pgrp.
+			 */
+			 if (debug) {
 				printf("\t\t%d\t%s", pr[i].w_pid, pr[i].w_args);
 				if ((j=pr[i].w_igintr) > 0)
 					if (j==IGINT)
@@ -472,7 +480,7 @@ readpr()
 		lseek(kmem, (int)(aproc + pn), 0);
 		read(kmem, &mproc, sizeof mproc);
 		/* decide if it's an interesting process */
-		if (mproc.p_stat==0 || mproc.p_pgrp==0)
+		if (mproc.p_stat==0 || mproc.p_stat==SZOMB || mproc.p_pgrp==0)
 			continue;
 		/* find & read in the user structure */
 		if ((mproc.p_flag & SLOAD) == 0) {
