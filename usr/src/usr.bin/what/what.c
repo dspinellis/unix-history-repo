@@ -1,66 +1,71 @@
 /*
  * Copyright (c) 1980, 1988 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1980, 1988 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)what.c	5.1 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)what.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <stdio.h>
 
 /*
  * what
  */
-
-char	*infile = "Standard input";
-
+/* ARGSUSED */
 main(argc, argv)
 	int argc;
-	char *argv[];
+	char **argv;
 {
-
-	argc--, argv++;
-	do {
-		if (argc > 0) {
-			if (freopen(argv[0], "r", stdin) == NULL) {
-				perror(argv[0]);
-				exit(1);
-			}
-			infile = argv[0];
-			printf("%s\n", infile);
-			argc--, argv++;
+	if (!*++argv) 
+		search();
+	else do {
+		if (!freopen(*argv, "r", stdin)) {
+			perror(*argv);
+			exit(1);
 		}
-		fseek(stdin, (long) 0, 0);
-		find();
-	} while (argc > 0);
+		printf("%s\n", *argv);
+		search();
+	} while(*++argv);
 	exit(0);
 }
 
-find()
+static
+search()
 {
-	static char buf[BUFSIZ];
-	register char *cp;
-	register int c, cc;
-	register char *pat;
+	register int c;
 
-contin:
-	while ((c = getchar()) != EOF)
-		if (c == '@') {
-			for (pat = "(#)"; *pat; pat++)
-				if ((c = getchar()) != *pat)
-					goto contin;
-			putchar('\t');
-			while ((c = getchar()) != EOF && c && c != '"' &&
-			    c != '>' && c != '\n')
-				putchar(c);
-			putchar('\n');
-		}
+	while ((c = getchar()) != EOF) {
+		if (c != '@') 
+			continue;
+		if ((c = getchar()) != '(')
+			continue;
+		if ((c = getchar()) != '#')
+			continue;
+		if ((c = getchar()) != ')')
+			continue;
+		putchar('\t');
+		while ((c = getchar()) != EOF && c && c != '"' &&
+		    c != '>' && c != '\n')
+			putchar(c);
+		putchar('\n');
+	}
 }
