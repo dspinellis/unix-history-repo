@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tmac.an	4.1 (Berkeley) %G%
+.\"	@(#)tmac.an	5.1 (Berkeley) %G%
 .\"
 '	# month name
 .if "\nd"0" .nr m \n(mo-1
@@ -36,7 +36,10 @@
 .de UC
 .if t \{\
 .	ie "\\$1"" .ds ]W 3rd Berkeley Distribution
-.	el .ds ]W \\$1th Berkeley Distribution
+.	el \{\
+.		ie "\\$1"4" .ds ]W \\$1th Berkeley Distribution
+.		el .ds ]W \\$2 \\$1 BSD
+.	\}
 .\}
 ..
 '	# reset the basic page layout
@@ -104,7 +107,8 @@
 .if t .nr IN .5i
 .nr LL \\n(.l
 .ds ]H \\$1\|(\|\\$2\|)
-.ds ]D UNIX Programmer's Manual
+.ie "\\$5"" .ds ]D UNIX Programmer's Manual
+.el .ds ]D \\$5
 .wh 0 }H
 .if t .wh -1i }F
 .if n .wh -1.167i }F
@@ -118,7 +122,10 @@
 .if n .na
 .mk ka
 .if !'\\n(ka'-1' .bp
-.if t .ds ]W 7th Edition
+.if t \{\
+.	ie "\\$4""  .ds ]W 7th Edition
+.	el .ds ]W \\$4
+.\}
 ..
 '	# section heading
 .de SH
