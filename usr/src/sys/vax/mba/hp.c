@@ -1,4 +1,4 @@
-/*	hp.c	4.50	82/06/26	*/
+/*	hp.c	4.50	82/06/27	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -307,7 +307,7 @@ hpattach(mi, slave)
 	case HPDT_RM02:
 		hpaddr->hpcs1 = HP_NOP;
 		hpaddr->hphr = HPHR_MAXTRAK;
-		if (hpaddr->hphr == 15) {
+		if ((hpaddr->hphr&0xffff) == 15) {
 			printf("hp%d: capricorn\n", mi->mi_unit);
 			mi->mi_type = HPDT_CAPRICORN;
 		}
