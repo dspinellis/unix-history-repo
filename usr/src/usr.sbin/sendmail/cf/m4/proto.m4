@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.30 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.31 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -145,7 +145,7 @@ O7`'confSEVEN_BIT_INPUT
 Oa`'confALIAS_WAIT
 
 # location of alias file
-OA`'ifdef(`ALIAS_FILE', ALIAS_FILE, /etc/aliases)
+OA`'ifdef(`ALIAS_FILE', `ALIAS_FILE', /etc/aliases)
 
 # minimum number of free blocks on filesystem
 Ob`'confMIN_FREE_BLOCKS
@@ -417,9 +417,9 @@ R$* < @ localhost > $*		$: $1 < @ $j . > $2		no domain at all
 R$* < @ localhost . $m > $*	$: $1 < @ $j . > $2		local domain
 ifdef(`_NO_UUCP_', `dnl',
 `R$* < @ localhost . UUCP > $*	$: $1 < @ $j . > $2		.UUCP domain')
-R$* < @ [ $+ ] > $*		$: $1 < @ [[ $2 ]] > $3		catch [a.b.c.d]
-R$* < @ [ $=w ] > $*		$: $1 < @ $j . > $3		self-literal
-R$* < @ [[ $+ ]] > $*		$: $1 < @ [ $2 ] > $3		strip dbl [[]]
+R$* < @ [ $+ ] > $*		$: $1 < @@ [ $2 ] > $3		mark [a.b.c.d]
+R$* < @@ $=w > $*		$: $1 < @ $j . > $3		self-literal
+R$* < @@ $+ > $*		$: $1 < @ $2 > $3		strip dbl @@
 ifdef(`DOMAIN_TABLE', `
 # look up unqualified domains in the domain table
 R$* < @ $- > $*			$: $1 < @ $(domaintable $2 $) > $3',
