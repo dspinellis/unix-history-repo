@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	6.5 (Berkeley) %G%
+#	@(#)Makefile	6.6 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -33,7 +33,7 @@ vplotf: ${LIBC} chrtab.c
 	${CC} -O -o $@ vplotf.c chrtab.c
 
 clean:
-	rm -f ${OBJS} core ${ALL}
+	rm -f ${OBJS} core ${ALL} vplotf
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
