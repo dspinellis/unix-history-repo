@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.30		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.31		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.30		%G%);
+SCCSID(@(#)usersmtp.c	3.31		%G%);
 
 
 
@@ -20,11 +20,11 @@ SCCSID(@(#)usersmtp.c	3.30		%G%);
 #define REPLYCLASS(r)	(((r) / 10) % 10)	/* second digit of reply code */
 #define SMTPCLOSING	421			/* "Service Shutting Down" */
 
-static char	SmtpReplyBuffer[MAXLINE];	/* buffer for replies */
-static FILE	*SmtpOut;			/* output file */
-static FILE	*SmtpIn;			/* input file */
-static int	SmtpPid;			/* pid of mailer */
-static bool	SmtpClosing;			/* set on a forced close */
+char	SmtpReplyBuffer[MAXLINE];	/* buffer for replies */
+FILE	*SmtpOut;			/* output file */
+FILE	*SmtpIn;			/* input file */
+int	SmtpPid;			/* pid of mailer */
+bool	SmtpClosing;			/* set on a forced close */
 /*
 **  SMTPINIT -- initialize SMTP.
 **
@@ -288,13 +288,16 @@ reply()
 		/* actually do the read */
 		if (CurEnv->e_xfp != NULL)
 			(void) fflush(CurEnv->e_xfp);	/* for debugging */
-		if (!SmtpClosing)
-		{
-			p = sfgets(SmtpReplyBuffer, sizeof SmtpReplyBuffer, SmtpIn);
-			if (p == NULL)
-				return (-1);
-			fixcrlf(SmtpReplyBuffer, TRUE);
-		}
+
+		/* if we are in the process of closing just give the code */
+		if (SmtpClosing)
+			return (SMTPCLOSING);
+
+		/* get the line from the other side */
+		p = sfgets(SmtpReplyBuffer, sizeof SmtpReplyBuffer, SmtpIn);
+		if (p == NULL)
+			return (-1);
+		fixcrlf(SmtpReplyBuffer, TRUE);
 
 		/* log the input in the transcript for future error returns */
 		if (Verbose && !HoldErrs)
@@ -314,8 +317,9 @@ reply()
 			continue;
 
 		/* reply code 421 is "Service Shutting Down" */
-		if (r == SMTPCLOSING && !SmtpClosing)
+		if (r == SMTPCLOSING)
 		{
+			/* send the quit protocol */
 			smtpquit("SMTP Shutdown");
 			SmtpClosing = TRUE;
 		}
