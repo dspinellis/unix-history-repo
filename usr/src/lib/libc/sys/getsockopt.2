@@ -1,0 +1,98 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)getsockopt.2	5.1 (Berkeley) %G%
+.\"
+.TH GETSOCKOPT 2 "7 July 1983"
+.UC 5
+.SH NAME
+getsockopt, setsockopt \- get and set options on sockets
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/socket.h>
+.PP
+.ft B
+getsockopt(s, level, optname, optval, optlen)
+int s, level, optname;
+char *optval;
+int *optlen;
+.sp
+setsockopt(s, level, optname, optval, optlen)
+int s, level, optname;
+char *optval;
+int optlen;
+.fi
+.SH DESCRIPTION
+.I Getsockopt
+and
+.I setsockopt
+manipulate
+.I options
+associated with a socket.  Options may exist at multiple
+protocol levels; they are always present at the uppermost
+``socket'' level.
+.PP
+When manipulating socket options the level at which the
+option resides and the name of the option must be specified.
+To manipulate options at the ``socket'' level,
+.I level
+is specified as SOL_SOCKET.  To manipulate options at any
+other level the protocol number of the appropriate protocol
+controlling the option is supplied.  For example,
+to indicate an option is to be interpreted by the TCP protocol,
+.I level
+should be set to the protocol number of TCP; see
+.IR getprotoent (3N).
+.PP
+The parameters
+.I optval
+and
+.I optlen
+are used to access option values for
+.IR setsockopt .
+For
+.I getsockopt
+they identify a buffer in which the value for the
+requested option(s) are to be returned.  For
+.IR getsockopt ,
+.I optlen
+is a value-result parameter, initially containing the
+size of the buffer pointed to by
+.IR optval ,
+and modified on return to indicate the actual size of
+the value returned.  If no option value is
+to be supplied or returned,
+.I optval
+may be supplied as 0.
+.PP
+.I Optname
+and any specified options are passed uninterpreted to the appropriate
+protocol module for interpretation.
+The include file
+.RI < sys/socket.h >
+contains definitions for ``socket'' level options; see
+.IR socket (2).
+Options at other protocol levels vary in format and
+name, consult the appropriate entries in (4P).  
+.SH "RETURN VALUE"
+A 0 is returned if the call succeeds, \-1 if it fails.
+.SH ERRORS
+The call succeeds unless:
+.TP 20
+[EBADF]
+The argument \fIs\fP is not a valid descriptor.
+.TP 20
+[ENOTSOCK]
+The argument \fIs\fP is a file, not a socket.
+.TP 20
+[ENOPROTOOPT]
+The option is unknown.
+.TP 20
+[EFAULT]
+The options are not in a valid part of the
+process address space.
+.SH "SEE ALSO"
+socket(2), getprotoent(3N)
