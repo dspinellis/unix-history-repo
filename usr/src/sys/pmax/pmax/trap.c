@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.7 (Berkeley) %G%
+ *	@(#)trap.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,6 +19,7 @@
 #include "proc.h"
 #include "kernel.h"
 #include "signalvar.h"
+#include "syscall.h"
 #include "user.h"
 #include "buf.h"
 #ifdef KTRACE
@@ -409,10 +410,14 @@ trap(statusReg, causeReg, vadr, pc, args)
 		}
 #endif
 		code = locr0[V0];
-		if (code == 0) {			/* indir */
+		switch (code) {
+		case SYS_indir:
+			/*
+			 * Code is first argument, followed by actual args.
+			 */
 			code = locr0[A0];
 			if (code >= numsys)
-				callp = &systab[0];	/* indir (illegal) */
+				callp = &systab[SYS_indir]; /* (illegal) */
 			else
 				callp = &systab[code];
 			i = callp->sy_narg;
@@ -421,7 +426,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 			args.i[2] = locr0[A3];
 			if (i > 3) {
 				i = copyin((caddr_t)(locr0[SP] +
-						3 * sizeof(int)),
+						4 * sizeof(int)),
 					(caddr_t)&args.i[3],
 					(u_int)(i - 3) * sizeof(int));
 				if (i) {
@@ -435,9 +440,42 @@ trap(statusReg, causeReg, vadr, pc, args)
 					goto done;
 				}
 			}
-		} else {
+			break;
+
+		case SYS___indir:
+			/*
+			 * Like indir, but code is a quad, so as to maintain
+			 * quad alignment for the rest of the arguments.
+			 */
+			code = locr0[A0 + _QUAD_LOWWORD];
 			if (code >= numsys)
-				callp = &systab[0];	/* indir (illegal) */
+				callp = &systab[SYS_indir]; /* (illegal) */
+			else
+				callp = &systab[code];
+			i = callp->sy_narg;
+			args.i[0] = locr0[A2];
+			args.i[1] = locr0[A3];
+			if (i > 2) {
+				i = copyin((caddr_t)(locr0[SP] +
+						4 * sizeof(int)),
+					(caddr_t)&args.i[2],
+					(u_int)(i - 2) * sizeof(int));
+				if (i) {
+					locr0[V0] = i;
+					locr0[A3] = 1;
+#ifdef KTRACE
+					if (KTRPOINT(p, KTR_SYSCALL))
+						ktrsyscall(p->p_tracep, code,
+							callp->sy_narg, args.i);
+#endif
+					goto done;
+				}
+			}
+			break;
+
+		default:
+			if (code >= numsys)
+				callp = &systab[SYS_indir]; /* (illegal) */
 			else
 				callp = &systab[code];
 			i = callp->sy_narg;
@@ -495,20 +533,24 @@ trap(statusReg, causeReg, vadr, pc, args)
 		splx(s);
 		}
 #endif
-		if (i == ERESTART)
+		switch (i) {
+		case 0:
+			locr0[V0] = rval[0];
+			locr0[V1] = rval[1];
+			locr0[A3] = 0;
+			break;
+
+		case ERESTART:
 			locr0[PC] = pc;
-		else if (i != EJUSTRETURN) {
-			if (i) {
-				locr0[V0] = i;
-				locr0[A3] = 1;
-			} else {
-				locr0[V0] = rval[0];
-				locr0[V1] = rval[1];
-				locr0[A3] = 0;
-			}
+			break;
+
+		case EJUSTRETURN:
+			break;	/* nothing to do */
+
+		default:
+			locr0[V0] = i;
+			locr0[A3] = 1;
 		}
-		/* else if (i == EJUSTRETURN) */
-			/* nothing to do */
 	done:
 #ifdef KTRACE
 		if (KTRPOINT(p, KTR_SYSRET))
