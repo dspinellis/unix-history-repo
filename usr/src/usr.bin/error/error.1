@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)error.1	4.1 (Berkeley) %G%
+.\"	@(#)error.1	5.1 (Berkeley) %G%
 .\"
-.TH ERROR 1
+.TH ERROR 1 "18 January 1983"
 .UC 4
 .SH NAME
 error \- analyze and disperse compiler error messages
@@ -43,7 +43,7 @@ language processor produced each error message,
 determines the source file and line number to which the error message refers,
 determines if the error message is to be ignored or not,
 and inserts the (possibly slightly modified) error message into
-the source file as a comment on the line preceeding to which the
+the source file as a comment on the line preceding to which the
 line the error message refers.
 Error messages which can't be categorized by language processor
 or content are not inserted into any file,
@@ -181,7 +181,7 @@ Other error messages are consumed entirely by
 or are written to the standard output.
 .I Error
 inserts the error messages into the source file on the line
-preceeding the line the language processor found in error.
+preceding the line the language processor found in error.
 Each error message is turned into a one line comment for the
 language,
 and is internally flagged
@@ -199,8 +199,9 @@ For poorly formatted source programs in free format languages,
 such as C or Pascal,
 it is possible to insert a comment into another comment,
 which can wreak havoc with a future compilation.
-To avoid this, format the source program so there are no
-language statements on the same line as the end of a comment.
+To avoid this, programs with comments and source
+on the same line should be formatted
+so that language statements appear before comments.
 .PP
 Options available with
 .I error
@@ -220,7 +221,7 @@ A ``y'' or ``n'' to the question is necessary to continue.
 Absence of the
 .B \-q
 option implies that all referenced files
-(except those refering to discarded error messages)
+(except those referring to discarded error messages)
 are to be touched.
 .TP 5
 .B \-v
@@ -239,8 +240,8 @@ from standard places.
 .TP 5
 .B \-t
 Take the following argument as a suffix list.
-Files whose suffices do not appear in the suffix list are not touched.
-The suffix list is dot seperated, and ``*'' wildcards work.
+Files whose suffixes do not appear in the suffix list are not touched.
+The suffix list is dot separated, and ``*'' wildcards work.
 Thus the suffix list:
 .IP
 \&     ".c.y.foo*.h"
