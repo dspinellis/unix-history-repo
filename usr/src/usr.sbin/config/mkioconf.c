@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -723,7 +723,7 @@ pmax_ioconf()
 		fprintf(fp, "extern struct driver %sdriver;\n", dp->d_name);
 	}
 	fprintf(fp, "\nstruct pmax_ctlr pmax_cinit[] = {\n");
-	fprintf(fp, "/*\tdriver,\t\tunit,\taddr,\t\tflags */\n");
+	fprintf(fp, "/*\tdriver,\t\tunit,\taddr,\t\tpri,\tflags */\n");
 	for (dp = dtab; dp != 0; dp = dp->d_next) {
 		if (dp->d_type != CONTROLLER && dp->d_type != MASTER)
 			continue;
@@ -740,8 +740,9 @@ pmax_ioconf()
 		if (dp->d_unit == UNKNOWN || dp->d_unit == QUES)
 			dp->d_unit = 0;
 		fprintf(fp,
-			"\t{ &%sdriver,\t%d,\tC 0x%x,\t0x%x },\n",
-			dp->d_name, dp->d_unit, dp->d_addr, dp->d_flags);
+			"\t{ &%sdriver,\t%d,\tC 0x%x,\t%d,\t0x%x },\n",
+			dp->d_name, dp->d_unit, dp->d_addr, dp->d_pri,
+			dp->d_flags);
 	}
 	fprintf(fp, "\t0\n};\n");
 
@@ -754,8 +755,9 @@ pmax_ioconf()
 		    dp->d_type == PSEUDO_DEVICE)
 			continue;
 		mp = dp->d_conn;
-		if (mp == 0 || !eq(mp->d_name, "sii")) {
-			printf("%s%s: devices must be attached to a SCSI (sii) controller\n",
+		if (mp == 0 ||
+		    !eq(mp->d_name, "asc") && !eq(mp->d_name, "sii")) {
+			printf("%s%s: devices must be attached to a SCSI (asc or sii) controller\n",
 				dp->d_name, wnum(dp->d_unit));
 			continue;
 		}
