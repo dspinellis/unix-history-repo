@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.39 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.40 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.39 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.40 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -571,7 +571,6 @@ char *
 getauthinfo(fd)
 	int fd;
 {
-	SOCKADDR fa;
 	int falen;
 	register char *p;
 #if IDENTPROTO
@@ -586,9 +585,9 @@ getauthinfo(fd)
 	extern char *hostnamebyanyaddr();
 	extern char RealUserName[];			/* main.c */
 
-	falen = sizeof fa;
-	if (getpeername(fd, &fa.sa, &falen) < 0 || falen <= 0 ||
-	    fa.sa.sa_family == 0)
+	falen = sizeof RealHostAddr;
+	if (getpeername(fd, &RealHostAddr.sa, &falen) < 0 || falen <= 0 ||
+	    RealHostAddr.sa.sa_family == 0)
 	{
 		(void) sprintf(hbuf, "%s@localhost", RealUserName);
 		if (tTd(9, 1))
@@ -596,12 +595,18 @@ getauthinfo(fd)
 		return hbuf;
 	}
 
+	if (RealHostName == NULL)
+	{
+		/* translate that to a host name */
+		RealHostName = newstr(hostnamebyanyaddr(&RealHostAddr));
+	}
+
 #if IDENTPROTO
 	if (TimeOuts.to_ident == 0)
 		goto noident;
 
 	lalen = sizeof la;
-	if (fa.sa.sa_family != AF_INET ||
+	if (RealHostAddr.sa.sa_family != AF_INET ||
 	    getsockname(fd, &la.sa, &lalen) < 0 || lalen <= 0 ||
 	    la.sa.sa_family != AF_INET)
 	{
@@ -611,7 +616,7 @@ getauthinfo(fd)
 
 	/* create ident query */
 	(void) sprintf(hbuf, "%d,%d\r\n",
-		ntohs(fa.sin.sin_port), ntohs(la.sin.sin_port));
+		ntohs(RealHostAddr.sin.sin_port), ntohs(la.sin.sin_port));
 
 	/* create local address */
 	la.sin.sin_port = 0;
@@ -619,9 +624,9 @@ getauthinfo(fd)
 	/* create foreign address */
 	sp = getservbyname("auth", "tcp");
 	if (sp != NULL)
-		fa.sin.sin_port = sp->s_port;
+		RealHostAddr.sin.sin_port = sp->s_port;
 	else
-		fa.sin.sin_port = htons(113);
+		RealHostAddr.sin.sin_port = htons(113);
 
 	s = -1;
 	if (setjmp(CtxAuthTimeout) != 0)
@@ -642,7 +647,7 @@ getauthinfo(fd)
 		goto noident;
 	}
 	if (bind(s, &la.sa, sizeof la.sin) < 0 ||
-	    connect(s, &fa.sa, sizeof fa.sin) < 0)
+	    connect(s, &RealHostAddr.sa, sizeof RealHostAddr.sin) < 0)
 	{
 		goto closeident;
 	}
