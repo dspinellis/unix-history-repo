@@ -9,10 +9,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rol.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rol.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
+
+#include <db.h>
+#include <regex.h>
+#include <setjmp.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "ed.h"
+#include "extern.h"
 
 /*
  * After the command check the rest of the line to see nothing illegal
@@ -22,39 +31,37 @@ static char sccsid[] = "@(#)rol.c	5.1 (Berkeley) %G%";
  * function after the command that called this function finishes
  * successfully.
  */
-
 int
 rol(inputt, errnum)
-
-FILE *inputt;
-int *errnum;
-
+	FILE *inputt;
+	int *errnum;
 {
+	ss = getc(inputt);
+	printsfx = 0;
 
-  ss = getc(inputt);
-  printsfx = 0;
-  /* only one of the suffix is allowed */
-  if (ss == 'p')
-    printsfx = 1;
-  else if (ss == 'n')
-    printsfx = 2;
-  else if (ss == 'l')
-    printsfx = 4;
-  else
-    ungetc(ss, inputt);
+	/* Only one of the suffix is allowed. */
+	if (ss == 'p')
+		printsfx = 1;
+	else
+		if (ss == 'n')
+			printsfx = 2;
+		else
+			if (ss == 'l')
+				printsfx = 4;
+			else
+				ungetc(ss, inputt);
 
-  while (1)
-     {
-       ss = getc(inputt);
-       if ((ss != ' ') && (ss != '\n') && (ss != EOF))
-         {
-           *errnum = -1;
-           strcpy(help_msg, "illegal command option");
-           return(1);
-         }
-       if ((ss == '\n') || (ss == EOF))
-         break;
-     }
+	for (;;) {
+		ss = getc(inputt);
+		if ((ss != ' ') && (ss != '\n') && (ss != EOF)) {
+			*errnum = -1;
+			strcpy(help_msg, "illegal command option");
+			return (1);
+		}
+		if ((ss == '\n') || (ss == EOF))
+			break;
+	}
 
-return(0); /* rest-of-line was okay */
-} /* end-rol */
+	/* Rest-of-line was okay. */
+	return (0);
+}

@@ -9,10 +9,20 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)bang.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bang.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
+
+#include <db.h>
+#include <regex.h>
+#include <setjmp.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "ed.h"
+#include "extern.h"
 
 /*
  * Execute a command in sh (and always sh). For those wondering the
@@ -21,61 +31,53 @@ static char sccsid[] = "@(#)bang.c	5.1 (Berkeley) %G%";
 
 void
 bang(inputt, errnum)
-
-FILE *inputt;
-int *errnum;
-
+	FILE *inputt;
+	int *errnum;
 {
-  static char l_shellcmd[FILENAME_LEN]; /* static for "!!" */
-  int l_cnt=0, l_esc=0;
-  static int l_cnt_last_pos; /* for "!!", offset in _static_ l_shellcmd */
+	static int l_cnt_last_pos;		/* "!!", l_shellcmd offset */
+	static char l_shellcmd[FILENAME_LEN];	/* "!!" */
+	int l_cnt = 0, l_esc = 0;
 
-  while (1)
-       {
-         if (sigint_flag)
-           SIGINT_ACTION;
-         ss = getchar();
-         if ((ss == '\\') && (l_esc == 0))
-           {
-             ss = getchar();
-             l_esc = 1;
-           }
-         else
-           l_esc = 0;
-         if ((ss == '\n') || (ss == EOF))
-           {
-             if (l_cnt==0)
-               {
-                 strcpy(help_msg, "no shell command given");
-                 *errnum = -1;
-                 ungetc('\n', inputt);
-                 return;
-               }
-             l_shellcmd[l_cnt] = '\0';
-             break;
-           }
-         else if ((ss == '!') && (l_esc == 0))
-           l_cnt = l_cnt_last_pos;
-         else if ((ss == '%') && (l_esc == 0))
-           {
-             l_shellcmd[l_cnt] = '\0';
-             strcat(l_shellcmd, filename_current);
-             l_cnt = l_cnt + strlen(filename_current);
-           }
-         else
-           l_shellcmd[l_cnt++] = ss;
-         if (l_cnt >= FILENAME_LEN)
-           {
-             strcpy(help_msg, "shell command too long");
-             *errnum = -1;
-             ungetc('\n', inputt);
-             return;
-           }
-       } /* end-while(1) */
+	for (;;) {
+		if (sigint_flag)
+			SIGINT_ACTION;
+		ss = getchar();
+		if ((ss == '\\') && (l_esc == 0)) {
+			ss = getchar();
+			l_esc = 1;
+		} else
+			l_esc = 0;
+		if ((ss == '\n') || (ss == EOF)) {
+			if (l_cnt == 0) {
+				strcpy(help_msg, "no shell command given");
+				*errnum = -1;
+				ungetc('\n', inputt);
+				return;
+			}
+			l_shellcmd[l_cnt] = '\0';
+			break;
+		} else
+			if ((ss == '!') && (l_esc == 0))
+				l_cnt = l_cnt_last_pos;
+			else
+				if ((ss == '%') && (l_esc == 0)) {
+					l_shellcmd[l_cnt] = '\0';
+					strcat(l_shellcmd, filename_current);
+					l_cnt =
+					    l_cnt + strlen(filename_current);
+				} else
+					l_shellcmd[l_cnt++] = ss;
+		if (l_cnt >= FILENAME_LEN) {
+			strcpy(help_msg, "shell command too long");
+			*errnum = -1;
+			ungetc('\n', inputt);
+			return;
+		}
+	}
 
-  system(l_shellcmd);
-  if (explain_flag != 0)  /* for the -s option */
-    printf("!\n");
-  l_cnt_last_pos = l_cnt;
-  *errnum = 0;
-} /* end-bang */
+	system(l_shellcmd);
+	if (explain_flag != 0)	/* for the -s option */
+		printf("!\n");
+	l_cnt_last_pos = l_cnt;
+	*errnum = 0;
+}

@@ -9,10 +9,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)get_line.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)get_line.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
+
+#include <db.h>
+#include <regex.h>
+#include <setjmp.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "ed.h"
+#include "extern.h"
 
 /*
  * Get the specified line from the buffer. Note that in the buffer
@@ -33,49 +42,21 @@ static char sccsid[] = "@(#)get_line.c	5.1 (Berkeley) %G%";
  * I've been told the newer BSD STDIO has fixed this, but don't
  * currently have a copy.
  */
-
 int file_loc=0;
-extern int file_loc;
 
 /* Get a particular line of length len from ed's buffer and place it in
  * 'text', the standard repository for the "current" line.
  */
-
 void
 get_line(loc, len)
-
-#ifdef STDIO
-long loc;
-#endif
-#ifdef DBI
-recno_t loc;
-#endif
-#ifdef MEMORY
-char *loc;
-#endif
-int len;
-
+	recno_t loc;
+	int len;
 {
-#ifdef STDIO
+	DBT db_key, db_data;
 
-  if (file_loc != loc)
-    fseek(fhtmp, loc, 0);
-  file_seek = 1;
-  file_loc = loc + fread(text, sizeof(char), len, fhtmp);
-#endif
-
-#ifdef DBI
-  DBT db_key, db_data;
-
-  (db_key.data) = &loc;
-  (db_key.size) = sizeof(recno_t);
-  (dbhtmp->get)(dbhtmp, &db_key, &db_data, (u_int)0);
-  strcpy(text, db_data.data);
-#endif
-
-#ifdef MEMORY
-  tmp = (char *)loc;
-  bcopy(loc, text, len);
-#endif
-  text[len] = '\0';
-} /* end-get_line */
+	(db_key.data) = &loc;
+	(db_key.size) = sizeof(recno_t);
+	(dbhtmp->get) (dbhtmp, &db_key, &db_data, (u_int) 0);
+	strcpy(text, db_data.data);
+	text[len] = '\0';
+}

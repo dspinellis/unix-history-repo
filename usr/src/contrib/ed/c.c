@@ -9,10 +9,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)c.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)c.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
+
+#include <db.h>
+#include <regex.h>
+#include <setjmp.h>
+#include <stdio.h>
+
 #include "ed.h"
+#include "extern.h"
 
 /*
  * This deletes the range of lines specified and then sets up things
@@ -21,36 +29,33 @@ static char sccsid[] = "@(#)c.c	5.1 (Berkeley) %G%";
 
 void
 c(inputt, errnum)
-
-FILE *inputt;
-int *errnum;
-
+	FILE *inputt;
+	int *errnum;
 {
+	if (start_default && End_default)
+		start = End = current;
+	else
+		if (start_default)
+			start = End;
+	if (start == NULL) {
+		*errnum = -1;
+		return;
+	}
+	start_default = End_default = 0;
 
-  if (start_default && End_default)
-    start = End = current;
-  else if (start_default)
-    start = End;
-  if (start == NULL)
-    {
-      *errnum = -1;
-      return;
-    }
-  start_default = End_default = 0;
+	/* first delete the lines */
+	d(inputt, errnum);
+	if (*errnum < 0)
+		return;
+	*errnum = 0;
 
-  /* first delete the lines */
-  d(inputt, errnum);
-  if (*errnum < 0)
-      return;
-  *errnum = 0;
-
-  if ((current != NULL) && (current != bottom))
-    current = current->above;
-  if (sigint_flag)
-    SIGINT_ACTION;
-  add_flag = 1;
-  start_default = End_default = 1;
-  /* now get the "change" lines */
-  input_lines(inputt, errnum);
-  add_flag = 0;
-} /* end-c */
+	if ((current != NULL) && (current != bottom))
+		current = current->above;
+	if (sigint_flag)
+		SIGINT_ACTION;
+	add_flag = 1;
+	start_default = End_default = 1;
+	/* now get the "change" lines */
+	input_lines(inputt, errnum);
+	add_flag = 0;
+}
