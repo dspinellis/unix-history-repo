@@ -1,0 +1,124 @@
+This is a *NON official* patch to GNU tar 1.11.1 to support gzip. With
+this patch, tar -cz invokes gzip, tar -cZ invokes compress. You can
+use tar -xz to extract both compressed and gzip'ed tar files.
+For example you can transfer files from one machine to another
+in a compressed form using:
+
+  tar cfz - files | rsh machine 'tar xvpfz -'
+
+tar and gzip are available on all GNU archive sites, such as
+prep.ai.mit.edu:/pub/gnu and its mirrors.
+
+Jean-loup Gailly
+jloup@chorus.fr
+
+diff -c bak/buffer.c ./buffer.c
+*** bak/buffer.c	Mon Sep 14 22:56:39 1992
+--- ./buffer.c	Mon Dec 28 19:07:52 1992
+***************
+*** 452,459 ****
+  		}
+  	}
+  		/* So we should exec compress (-d) */
+! 	if(ar_reading)
+  		execlp("compress", "compress", "-d", (char *)0);
+  	else
+  		execlp("compress", "compress", (char *)0);
+  	msg_perror("can't exec compress");
+--- 452,463 ----
+  		}
+  	}
+  		/* So we should exec compress (-d) */
+! 	if(ar_reading) {
+! 		execlp("gzip", "gzip", "-d", (char *)0);
+! 		/* Try uncompress if gunzip fails */
+  		execlp("compress", "compress", "-d", (char *)0);
++ 	} else if (f_zip)
++ 		execlp("gzip", "gzip", "-8", (char *)0);
+  	else
+  		execlp("compress", "compress", (char *)0);
+  	msg_perror("can't exec compress");
+diff -c bak/tar.c ./tar.c
+*** bak/tar.c	Mon Sep 14 23:31:38 1992
+--- ./tar.c	Mon Dec 28 19:14:29 1992
+***************
+*** 158,163 ****
+--- 158,164 ----
+  	{"ignore-zeros",	0,	&f_ignorez,		1},
+  	{"keep-old-files",	0,	0,			'k'},
+  	{"uncompress",		0,	&f_compress,		1},
++         {"unzip",		0,	0,			'z'},
+  	{"same-permissions",	0,	&f_use_protection,	1},
+  	{"preserve-permissions",0,	&f_use_protection,	1},
+  	{"modification-time",	0,	&f_modified,		1},
+***************
+*** 183,188 ****
+--- 184,190 ----
+  	{"old-archive",		0,	0,			'o'},
+  	{"portability",		0,	0,			'o'},
+  	{"compress",		0,	&f_compress,		1},
++         {"zip",			0,	0,			'z'},
+  	{"compress-block",	0,	&f_compress,		2},
+  	{"sparse",		0,	&f_sparse_files,	1},
+  	{"tape-length",		1,	0,			'L'},
+***************
+*** 609,615 ****
+  			add_exclude_file(optarg);
+  			break;
+  
+! 		case 'z':		/* Easy to type */
+  		case 'Z':		/* Like the filename extension .Z */
+  			f_compress++;
+  			break;
+--- 611,621 ----
+  			add_exclude_file(optarg);
+  			break;
+  
+! 		case 'z':		/* Like the filename extension .z */
+! 			f_zip++;
+! 			f_compress++;
+! 			break;
+! 
+  		case 'Z':		/* Like the filename extension .Z */
+  			f_compress++;
+  			break;
+***************
+*** 716,722 ****
+  -W, --verify		attempt to verify the archive after writing it\n\
+  --exclude FILE		exclude file FILE\n\
+  -X, --exclude-from FILE	exclude files listed in FILE\n\
+! -z, -Z, --compress,\n\
+      --uncompress      	filter the archive through compress\n\
+  -[0-7][lmh]		specify drive and density\n\
+  ", stdout);
+--- 722,729 ----
+  -W, --verify		attempt to verify the archive after writing it\n\
+  --exclude FILE		exclude file FILE\n\
+  -X, --exclude-from FILE	exclude files listed in FILE\n\
+! -z, --zip, --unzip	filter the archive through gzip\n\
+! -Z, --compress,\n\
+      --uncompress      	filter the archive through compress\n\
+  -[0-7][lmh]		specify drive and density\n\
+  ", stdout);
+diff -c bak/tar.h ./tar.h
+*** bak/tar.h	Tue Sep  8 21:45:34 1992
+--- ./tar.h	Mon Dec 28 19:06:40 1992
+***************
+*** 224,231 ****
+  TAR_EXTERN int  f_verify;		/* -W */
+  			/* CMD_EXTRACT     -x */
+  TAR_EXTERN int  f_exclude;		/* -X */
+! TAR_EXTERN int 	f_compress;		/* -z */
+! 					/* -Z */
+  TAR_EXTERN int	f_do_chown;		/* --do-chown */
+  TAR_EXTERN int  f_totals;		/* --totals */
+  TAR_EXTERN int	f_remove_files;		/* --remove-files */
+--- 224,231 ----
+  TAR_EXTERN int  f_verify;		/* -W */
+  			/* CMD_EXTRACT     -x */
+  TAR_EXTERN int  f_exclude;		/* -X */
+! TAR_EXTERN int 	f_zip;			/* -z */
+! TAR_EXTERN int 	f_compress;		/* -Z */
+  TAR_EXTERN int	f_do_chown;		/* --do-chown */
+  TAR_EXTERN int  f_totals;		/* --totals */
+  TAR_EXTERN int	f_remove_files;		/* --remove-files */
