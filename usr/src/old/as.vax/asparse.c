@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asparse.c 4.9 %G%";
+static char sccsid[] = "@(#)asparse.c 4.10 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -1034,6 +1034,15 @@ inttoktype funnyreg(val, regnoback)	/*what the read head will sit on*/
 	*regnoback = locxp->e_xvalue;
 	return(val);
 } 
+/*
+ *	Shift over error
+ */
+shiftoerror(token)
+	int	token;
+{
+	char	*tok_to_name();
+	yyerror("%s expected", tok_to_name(token));
+}
 
 /*VARARGS1*/
 yyerror(s, a1, a2,a3,a4,a5)
