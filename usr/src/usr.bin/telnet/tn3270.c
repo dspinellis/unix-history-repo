@@ -75,13 +75,7 @@ inputAvailable()
 void
 outputPurge()
 {
-    int tmp = flushout;
-
-    flushout = 1;
-
-    ttyflush();
-
-    flushout = tmp;
+    ttyflush(1);
 }
 
 
@@ -113,14 +107,14 @@ register int	count;			/* how much to send */
 
     while (count) {
 	if (tfrontp >= ttyobuf+sizeof ttyobuf) {
-	    ttyflush();
+	    ttyflush(0);
 	    while (tfrontp >= ttyobuf+sizeof ttyobuf) {
 #if	defined(unix)
 		FD_SET(tout, &o);
 		(void) select(tout+1, (fd_set *) 0, &o, (fd_set *) 0,
 						(struct timeval *) 0);
 #endif	/* defined(unix) */
-		ttyflush();
+		ttyflush(0);
 	    }
 	}
 	*tfrontp++ = *buffer++;
@@ -151,7 +145,7 @@ EmptyTerminal()
 #endif	/* defined(unix) */
     } else {
 	while (tfrontp != tbackp) {
-	    ttyflush();
+	    ttyflush(0);
 #if	defined(unix)
 	    FD_SET(tout, &o);
 	    (void) select(tout+1, (int *) 0, &o, (int *) 0,

@@ -34,16 +34,17 @@ init_terminal()
 
 
 int
-ttyflush()
+ttyflush(drop)
+int drop;
 {
     int n;
 
     if ((n = tfrontp - tbackp) > 0) {
-	if (!(SYNCHing||flushout)) {
-	    n = TerminalWrite(tout, tbackp, n);
-	} else {
+	if (drop) {
 	    TerminalFlushOutput();
 	    /* we leave 'n' alone! */
+	} else {
+	    n = TerminalWrite(tout, tbackp, n);
 	}
     }
     if (n >= 0) {
