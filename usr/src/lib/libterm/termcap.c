@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)termcap.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)termcap.c	4.2 (Berkeley) %G%";
 #endif
 
 #define	BUFSIZ		1024
@@ -137,7 +137,7 @@ tnchktc()
 		return(1);
 	strcpy(tcname,p+3);
 	q = tcname;
-	while (q && *q != ':')
+	while (*q && *q != ':')
 		q++;
 	*q = 0;
 	if (++hopcount > MAXHOP) {
