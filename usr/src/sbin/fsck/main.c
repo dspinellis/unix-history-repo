@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)main.c	2.6	(Berkeley)	%G%";
+static	char sccsid[] = "@(#)main.c	2.7	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -1064,7 +1064,7 @@ struct dirstuff {
 	int blkno;
 	int blksiz;
 	ino_t number;
-	int fix;
+	enum {DONTKNOW, NOFIX, FIX} fix;
 };
 
 dirscan(blk, nf)
@@ -1086,7 +1086,7 @@ dirscan(blk, nf)
 	dirp.blksiz = blksiz;
 	if (dirp.number != dnum) {
 		dirp.number = dnum;
-		dirp.fix = 0;
+		dirp.fix = DONTKNOW;
 	}
 	for (dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
 		dsize = dp->d_reclen;
@@ -1128,16 +1128,16 @@ readdir(dirp)
 			break;
 		dirp->loc += DIRBLKSIZ;
 		filsize -= DIRBLKSIZ;
-		if (dirp->fix == 0) {
+		if (dirp->fix == DONTKNOW) {
 			pwarn("DIRECTORY %D CORRUPTED", dirp->number);
-			dirp->fix = 1;
+			dirp->fix = NOFIX;
 			if (preen) {
 				printf(" (SALVAGED)\n");
-				dirp->fix = 2;
+				dirp->fix = FIX;
 			} else if (reply("SALVAGE") != 0)
-				dirp->fix = 2;
+				dirp->fix = FIX;
 		}
-		if (dirp->fix < 2)
+		if (dirp->fix != FIX)
 			continue;
 		dp->d_reclen = DIRBLKSIZ;
 		dp->d_ino = 0;
@@ -1158,16 +1158,16 @@ readdir(dirp)
 		size = DIRBLKSIZ - (dirp->loc % DIRBLKSIZ);
 		dirp->loc += size;
 		filsize -= size;
-		if (dirp->fix == 0) {
+		if (dirp->fix == DONTKNOW) {
 			pwarn("DIRECTORY %D CORRUPTED", dirp->number);
-			dirp->fix = 1;
+			dirp->fix = NOFIX;
 			if (preen) {
 				printf(" (SALVAGED)\n");
-				dirp->fix = 2;
+				dirp->fix = FIX;
 			} else if (reply("SALVAGE") != 0)
-				dirp->fix = 2;
+				dirp->fix = FIX;
 		}
-		if (dirp->fix > 2) {
+		if (dirp->fix == FIX) {
 			dp->d_reclen += size;
 			dirty(&fileblk);
 		}
