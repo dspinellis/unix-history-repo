@@ -1,4 +1,4 @@
-/*	if_en.c	4.18	81/12/09	*/
+/*	if_en.c	4.19	81/12/09	*/
 
 #include "en.h"
 
@@ -194,10 +194,7 @@ COUNT(ENSTART);
 		return;
 	}
 	dest = mtod(m, struct en_header *)->en_dhost;
-printf("if_wubaput m=%x\n", m);
 	es->es_olen = if_wubaput(&es->es_ifuba, m);
-printf("wubaput to %x len %d\n", es->es_ifuba.ifu_w.ifrw_addr, es->es_olen);
-asm("halt");
 
 	/*
 	 * Ethernet cannot take back-to-back packets (no
@@ -236,7 +233,6 @@ enxint(unit)
 	register struct endevice *addr;
 COUNT(ENXINT);
 
-printf("enxint\n");
 	if (es->es_oactive == 0)
 		return;
 	addr = (struct endevice *)ui->ui_addr;
@@ -269,7 +265,6 @@ encollide(unit)
 	register struct en_softc *es = &en_softc[unit];
 COUNT(ENCOLLIDE);
 
-printf("encollide\n");
 	es->es_if.if_collisions++;
 	if (es->es_oactive == 0)
 		return;
@@ -313,7 +308,6 @@ enrint(unit)
 	int off;
 COUNT(ENRINT);
 
-printf("enrint\n");
 	es->es_if.if_ipackets++;
 
 	/*
@@ -333,7 +327,6 @@ printf("enrint\n");
 	 * Remember that type was trailer by setting off.
 	 */
 	en = (struct en_header *)(es->es_ifuba.ifu_r.ifrw_addr);
-printf("en %x, en->en_type %d\n", en, en->en_type);
 #define	endataaddr(en, off, type)	((type)(((caddr_t)((en)+1)+(off))))
 	if (en->en_type >= ENPUP_TRAIL &&
 	    en->en_type < ENPUP_TRAIL+ENPUP_NTRAILER) {
@@ -344,7 +337,6 @@ printf("en %x, en->en_type %d\n", en, en->en_type);
 	} else
 		off = 0;
 
-printf("off %d\n", off);
 	/*
 	 * Attempt to infer packet length from type;
 	 * can't deal with packet if can't infer length.
@@ -417,7 +409,6 @@ enoutput(ifp, m0, pf)
 
 		dest = ip->ip_dst.s_addr >> 24;
 		off = ntohs(ip->ip_len) - m->m_len;
-printf("PF_INET enoutput off %d m->m_off %d m->m_len %d\n", off, m->m_off, m->m_len);
 		if (off > 0 && (off & 0x1ff) == 0 && m->m_off >= MMINOFF + 2) {
 			type = ENPUP_TRAIL + (off>>9);
 			m->m_off -= 2;
@@ -449,8 +440,6 @@ gottrailertype:
 	m0->m_next = 0;
 	m0 = m;
 
-printf("m %x after trailer futz\n", m);
-asm("halt");
 gottype:
 	/*
 	 * Add local net header.  If no space in first mbuf,
@@ -480,8 +469,6 @@ gottype:
 	 * not yet active.
 	 */
 	s = splimp();
-printf("queueing %x\n", m);
-asm("halt");
 	IF_ENQUEUE(&ifp->if_snd, m);
 	splx(s);
 	if (en_softc[ifp->if_unit].es_oactive == 0)
