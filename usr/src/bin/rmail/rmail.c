@@ -11,7 +11,7 @@
 # include <sysexits.h>
 # include "useful.h"
 
-SCCSID(@(#)rmail.c	3.9	(Berkeley)	%G%);
+SCCSID(@(#)rmail.c	3.10	(Berkeley)	%G%);
 
 extern FILE *popen();
 extern char *index();
@@ -92,7 +92,7 @@ main(argc, argv)
 			printf("ufrom='%s', sys='%s', from now '%s'\n", uf, sys, from);
 #endif
 	}
-	strcat(from, ufrom);
+	strcat(from, uf);
 
 	(void) sprintf(cmd, "%s -em -f%s", MAILER, from);
 	while (*++argv != NULL)
