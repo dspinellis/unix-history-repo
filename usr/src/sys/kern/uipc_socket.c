@@ -4,10 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	7.28 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.27.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
+#include "user.h"
 #include "proc.h"
 #include "file.h"
 #include "malloc.h"
@@ -17,7 +18,7 @@
 #include "protosw.h"
 #include "socket.h"
 #include "socketvar.h"
-#include "resourcevar.h"
+#include "time.h"
 
 /*
  * Socket operation routines.
@@ -25,6 +26,11 @@
  * sys_socket.c or from a system process, and
  * implement the semantics of socket operations by
  * switching out to the protocol specific routines.
+ *
+ * TODO:
+ *	test socketpair
+ *	clean up async
+ *	out-of-band is a kludge
  */
 /*ARGSUSED*/
 socreate(dom, aso, type, proto)
@@ -32,7 +38,6 @@ socreate(dom, aso, type, proto)
 	register int type;
 	int proto;
 {
-	struct proc *p = curproc;		/* XXX */
 	register struct protosw *prp;
 	register struct socket *so;
 	register int error;
@@ -48,7 +53,7 @@ socreate(dom, aso, type, proto)
 	MALLOC(so, struct socket *, sizeof(*so), M_SOCKET, M_WAIT);
 	bzero((caddr_t)so, sizeof(*so));
 	so->so_type = type;
-	if (p->p_ucred->cr_uid == 0)
+	if (u.u_uid == 0)
 		so->so_state = SS_PRIV;
 	so->so_proto = prp;
 	error =
@@ -281,7 +286,6 @@ sosend(so, addr, uio, top, control, flags)
 	struct mbuf *control;
 	int flags;
 {
-	struct proc *p = curproc;		/* XXX */
 	struct mbuf **mp;
 	register struct mbuf *m;
 	register long space, len, resid;
@@ -295,7 +299,7 @@ sosend(so, addr, uio, top, control, flags)
 	dontroute =
 	    (flags & MSG_DONTROUTE) && (so->so_options & SO_DONTROUTE) == 0 &&
 	    (so->so_proto->pr_flags & PR_ATOMIC);
-	p->p_stats->p_ru.ru_msgsnd++;
+	u.u_ru.ru_msgsnd++;
 	if (control)
 		clen = control->m_len;
 #define	snderr(errno)	{ error = errno; splx(s); goto release; }
@@ -447,7 +451,6 @@ soreceive(so, paddr, uio, mp0, controlp, flagsp)
 	struct mbuf **controlp;
 	int *flagsp;
 {
-	struct proc *p = curproc;		/* XXX */
 	register struct mbuf *m, **mp;
 	register int flags, len, error, s, offset;
 	struct protosw *pr = so->so_proto;
@@ -503,8 +506,10 @@ restart:
 	 */
 	while (m == 0 || so->so_rcv.sb_cc < uio->uio_resid &&
 	    (so->so_rcv.sb_cc < so->so_rcv.sb_lowat ||
-	    ((flags & MSG_WAITALL) && uio->uio_resid <= so->so_rcv.sb_hiwat)) &&
-	    m->m_nextpkt == 0) {
+	    ((flags & MSG_WAITALL) && uio->uio_resid <= so->so_rcv.sb_hiwat)))
+		if (m && (m->m_nextpkt || (m->m_flags & M_EOR) ||
+		          m->m_type == MT_OOBDATA || m->m_type == MT_CONTROL))
+			break;
 #ifdef DIAGNOSTIC
 		if (m == 0 && so->so_rcv.sb_cc)
 			panic("receive 1");
@@ -523,11 +528,6 @@ restart:
 			else
 				goto release;
 		}
-		for (; m; m = m->m_next)
-			if (m->m_type == MT_OOBDATA  || (m->m_flags & M_EOR)) {
-				m = so->so_rcv.sb_mb;
-				goto dontblock;
-			}
 		if ((so->so_state & (SS_ISCONNECTED|SS_ISCONNECTING)) == 0 &&
 		    (so->so_proto->pr_flags & PR_CONNREQUIRED)) {
 			error = ENOTCONN;
@@ -546,9 +546,9 @@ restart:
 			return (error);
 		goto restart;
 	}
-dontblock:
-	p->p_stats->p_ru.ru_msgrcv++;
+	u.u_ru.ru_msgrcv++;
 	nextrecord = m->m_nextpkt;
+	record_eor = m->m_flags & M_EOR;
 	if (pr->pr_flags & PR_ADDR) {
 #ifdef DIAGNOSTIC
 		if (m->m_type != MT_SONAME)
@@ -635,8 +635,6 @@ dontblock:
 		} else
 			uio->uio_resid -= len;
 		if (len == m->m_len - moff) {
-			if (m->m_flags & M_EOR)
-				flags |= MSG_EOR;
 			if (flags & MSG_PEEK) {
 				m = m->m_next;
 				moff = 0;
@@ -676,8 +674,10 @@ dontblock:
 			} else
 				offset += len;
 		}
-		if (flags & MSG_EOR)
+		if (m == 0 && record_eor) {
+			flags |= record_eor;
 			break;
+		}
 		/*
 		 * If the MSG_WAITALL flag is set (for non-atomic socket),
 		 * we must not quit until "uio->uio_resid == 0" or an error
@@ -686,7 +686,7 @@ dontblock:
 		 * Keep sockbuf locked against other readers.
 		 */
 		while (flags & MSG_WAITALL && m == 0 && uio->uio_resid > 0 &&
-		    !sosendallatonce(so)) {
+		   !(flags & MSG_OOB) && !sosendallatonce(so)) {
 			if (so->so_error || so->so_state & SS_CANTRCVMORE)
 				break;
 			error = sbwait(&so->so_rcv);
@@ -695,8 +695,10 @@ dontblock:
 				splx(s);
 				return (0);
 			}
-			if (m = so->so_rcv.sb_mb)
+			if (m = so->so_rcv.sb_mb) {
 				nextrecord = m->m_nextpkt;
+				record_eor |= m->m_flags & M_EOR;
+			}
 		}
 	}
 	if ((flags & MSG_PEEK) == 0) {
