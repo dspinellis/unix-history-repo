@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)ps.c	4.13 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.10+ (Berkeley) 7/2/81";
 /*
  * ps; VAX 4BSD version
  */
@@ -274,7 +274,7 @@ main(argc, argv)
 		else if (sp->ap->a_pid == 2)
 			printf(" pagedaemon");
 		else if (sp->ap->a_pid == 3 && sp->ap->a_flag & SSYS)
-			printf(" net input");
+			printf(" ip input");
 		else
 			printf(" %.*s", twidth - cmdstart - 2, sp->ap->a_cmdp);
 		printf("\n");
@@ -476,6 +476,8 @@ maybetty()
 trymem:
 		if (cp[0] == 'm' && cp[1] == 'e' && cp[2] == 'm' && cp[3] == 0)
 			return (0);
+		if (cp[0] == 'm' && cp[1] == 't')
+			return (0);
 		break;
 
 	case 'n':
@@ -553,7 +555,8 @@ gettty()
 	/* ick */
 	for (dp = allttys; dp; dp = dp->next) {
 		if (dp->ttyd == -1) {
-			if (stat(dp->name, &stb) == 0)
+			if (stat(dp->name, &stb) == 0 &&
+			   (stb.st_mode&S_IFMT)==S_IFCHR)
 				dp->ttyd = stb.st_rdev;
 			else
 				dp->ttyd = -2;
