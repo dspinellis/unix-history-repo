@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.26 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -77,6 +77,11 @@ __hash_open(file, flags, mode, info)
 	DB *dbp;
 	int bpages, hdrsize, new_table, nsegs, save_errno;
 
+	if (flags & O_WRONLY) {
+		errno = EINVAL;
+		return (NULL);
+	}
+
 	if (!(hashp = calloc(1, sizeof(HTAB))))
 		return (NULL);
 	hashp->fp = -1;
@@ -87,9 +92,7 @@ __hash_open(file, flags, mode, info)
 	 * we can check accesses.
 	 */
 	hashp->flags = flags = flags & (O_CREAT | O_EXCL | O_EXLOCK | 
-	    O_RDONLY | O_RDWR | O_SHLOCK | O_TRUNC | O_WRONLY);
-	if (flags & O_WRONLY)
-		flags = (flags & ~O_WRONLY) | O_RDWR;
+	    O_RDONLY | O_RDWR | O_SHLOCK | O_TRUNC);
 
 	new_table = 0;
 	if (!file || (flags & O_TRUNC) ||
@@ -158,7 +161,7 @@ __hash_open(file, flags, mode, info)
 		__buf_init(DEF_BUFSIZE);
 
 	hashp->new_file = new_table;
-	hashp->save_file = file && (hashp->flags & (O_WRONLY | O_RDWR));
+	hashp->save_file = file && (hashp->flags & O_RDWR);
 	hashp->cbucket = -1;
 	if (!(dbp = malloc(sizeof(DB)))) {
 		save_errno = errno;
@@ -465,10 +468,6 @@ hash_get(dbp, key, data, flag)
 		return (ERROR);
 	}
 	hashp = (HTAB *)dbp->internal;
-	if (hashp->flags & O_WRONLY) {
-		hashp->errno = errno = EPERM;
-		return (ERROR);
-	}
 	return (hash_access(HASH_GET, (DBT *)key, data));
 }
 
@@ -650,10 +649,6 @@ hash_seq(dbp, key, data, flag)
 		return (ERROR);
 	}
 	hashp = (HTAB *)dbp->internal;
-	if (hashp->flags & O_WRONLY) {
-		hashp->errno = errno = EPERM;
-		return (ERROR);
-	}
 #ifdef HASH_STATISTICS
 	hash_accesses++;
 #endif
