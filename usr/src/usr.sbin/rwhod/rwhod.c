@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -86,7 +86,6 @@ main()
 	struct sockaddr_in from;
 	char path[64];
 	int addr, on = 1;
-	struct hostent *hp;
 	char *cp;
 	extern char *index();
 
@@ -146,12 +145,6 @@ main()
 		syslog(LOG_ERR, "setsockopt SO_BROADCAST: %m");
 		exit(1);
 	}
-	hp = gethostbyname(myname);
-	if (hp == NULL) {
-		syslog(LOG_ERR, "%s: don't know my own name", myname);
-		exit(1);
-	}
-	sin.sin_family = hp->h_addrtype;
 	sin.sin_port = sp->s_port;
 	if (bind(s, &sin, sizeof (sin)) < 0) {
 		syslog(LOG_ERR, "bind: %m");
