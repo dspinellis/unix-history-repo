@@ -46,6 +46,14 @@ struct	uba_driver endriver =
 
 int	eninit(),enoutput(),enreset(),enioctl();
 
+#ifdef notdef
+/*
+ * If you need to byte swap IP's in the system, define
+ * this and do a SIOCSIFFLAGS at boot time.
+ */
+#define	ENF_SWABIPS	0x100
+#endif
+
 /*
  * Ethernet software status per interface.
  *
@@ -209,6 +217,24 @@ enstart(dev)
 	}
 	dest = mtod(m, struct en_header *)->en_dhost;
 	es->es_olen = if_wubaput(&es->es_ifuba, m);
+#ifdef ENF_SWABIPS
+	/*
+	 * The Xerox interface does word at a time DMA, so
+	 * someone must do byte swapping of user data if high
+	 * and low ender machines are to communicate.  It doesn't
+	 * belong here, but certain people depend on it, so...
+	 *
+	 * Should swab everybody, but this is a kludge anyway.
+	 */
+	if (es->es_if.if_flags & ENF_SWABIPS) {
+		register struct en_header *en;
+
+		en = (struct en_header *)es->es_ifuba.ifu_w.ifrw_addr;
+		if (en->en_type == ENTYPE_IP)
+			enswab((caddr_t)(en + 1), (caddr_t)(en + 1),
+			    es->es_olen - sizeof (struct en_header) + 1);
+	}
+#endif
 
 	/*
 	 * Ethernet cannot take back-to-back packets (no
@@ -378,6 +404,10 @@ enrint(unit)
 		off = 0;
 	if (len == 0)
 		goto setup;
+#ifdef ENF_SWABIPS
+	if (es->es_if.if_flags & ENF_SWABIPS && en->en_type == ENTYPE_IP)
+		enswab((caddr_t)(en + 1), (caddr_t)(en + 1), len);
+#endif
 	/*
 	 * Pull packet off interface.  Off is nonzero if packet
 	 * has trailing header; if_rubaget will then force this header
@@ -596,3 +626,27 @@ ensetaddr(ifp, sin)
 	sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
 	ifp->if_flags |= IFF_BROADCAST;
 }
+
+#ifdef ENF_SWABIPS
+/*
+ * Swab bytes
+ * Jeffrey Mogul, Stanford
+ */
+enswab(from, to, n)
+	register caddr_t *from, *to;
+	register int n;
+{
+	register unsigned long temp;
+	
+	n >>= 1; n++;
+#define	STEP	temp = *from++,*to++ = *from++,*to++ = temp
+	/* round to multiple of 8 */
+	while ((--n) & 07)
+		STEP;
+	n >>= 3;
+	while (--n >= 0) {
+		STEP; STEP; STEP; STEP;
+		STEP; STEP; STEP; STEP;
+	}
+}
+#endif
