@@ -637,13 +637,19 @@ query(name)
 {
 	struct stat stb;
 
-	if (catname)
+	if (catname) {
+		if (tp - target + 1 + strlen(name) + 1 > sizeof(target)) {
+			errno = EINVAL;
+			goto err;
+		}
 		(void) sprintf(tp, "/%s", name);
+	}
 
 	if (lstat(target, &stb) < 0) {
 		if (errno == ENOENT)
 			(void) write(rem, "N\n", 2);
 		else
+	err:
 			error("%s:%s: %s\n", host, target, strerror(errno));
 		*tp = '\0';
 		return;
