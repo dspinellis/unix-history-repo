@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ch.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ch.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -63,9 +63,6 @@ extern int ispipe;
 extern int autobuf;
 extern int cbufs;
 extern int sigs;
-#if LOGFILE
-extern int logfile;
-#endif
 
 /*
  * Current position in file.
@@ -176,14 +173,6 @@ fch_get()
 	if (ispipe)
 		last_piped_pos += n;
 
-#if LOGFILE
-	/*
-	 * If we have a log file, write the new data to it.
-	 */
-	if (logfile >= 0 && n > 0)
-		write(logfile, &bp->data[bp->datasize], n);
-#endif
-
 	bp->datasize += n;
 
 	/*
@@ -234,58 +223,6 @@ fch_get()
 
 	return (bp->data[ch_offset]);
 }
-
-#if LOGFILE
-/*
- * Close the logfile.
- * If we haven't read all of standard input into it, do that now.
- */
-	public void
-end_logfile()
-{
-	static int tried = 0;
-
-	if (logfile < 0)
-		return;
-	if (!tried && ch_fsize == NULL_POSITION)
-	{
-		tried = 1;
-		ierror("finishing logfile");
-		while (ch_forw_get() != EOI)
-			if (sigs)
-				break;
-	}
-	close(logfile);
-	logfile = -1;
-}
-
-/*
- * Start a log file AFTER less has already been running.
- * Invoked from the - command; see toggle_option().
- * Write all the existing buffered data to the log file.
- */
-	public void
-sync_logfile()
-{
-	register struct buf *bp;
-	register int n;
-	long block;
-	long last_block;
-
-	last_block = (last_piped_pos + BUFSIZ - 1) / BUFSIZ;
-	for (block = 0;  block <= last_block;  block++)
-		for (bp = buf_head;  bp != END_OF_CHAIN;  bp = bp->next)
-			if (bp->block == block)
-			{
-				n = bp->datasize;
-				if (bp->data[n-1] == EOI)
-					n--;
-				write(logfile, bp->data, n);
-				break;
-			}
-}
-
-#endif
 
 /*
  * Determine if a specific block is currently in one of the buffers.
