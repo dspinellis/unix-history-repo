@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)cron.c	4.8 (Berkeley) %G%";
+static char *sccsid = "@(#)cron.c	4.9 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -8,21 +8,30 @@ static char *sccsid = "@(#)cron.c	4.8 (Berkeley) %G%";
 #include <signal.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
+#include <sys/ioctl.h>
+#include <sys/file.h>
+#include <pwd.h>
 
 #define	LISTS	(2*BUFSIZ)
 #define	MAXLIN	BUFSIZ
+
+#ifndef CRONTAB
+#define CRONTAB "/usr/lib/crontab"
+#endif
 
 #define	EXACT	100
 #define	ANY	101
 #define	LIST	102
 #define	RANGE	103
 #define	EOS	104
-char	crontab[]	= "/usr/lib/crontab";
+char	crontab[]	= CRONTAB;
 time_t	itime;
 struct	tm *loct;
 struct	tm *localtime();
 char	*malloc();
 char	*realloc();
+int	reapchild();
 int	flag;
 char	*list;
 unsigned listsize;
@@ -33,19 +42,18 @@ main()
 	char *cmp();
 	time_t filetime = 0;
 
-     /*	setuid(1); */
 	if (fork())
 		exit(0);
 	chdir("/");
-	freopen(crontab, "r", stdin);
 	freopen("/", "r", stdout);
 	freopen("/", "r", stderr);
+	untty();
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
+	signal(SIGCHLD, reapchild);
 	time(&itime);
 	itime -= localtime(&itime)->tm_sec;
-	fclose(stdin);
 
 	for (;; itime+=60, slp()) {
 		struct stat cstat;
@@ -132,15 +140,25 @@ ex(s)
 char *s;
 {
 	int st;
+	register struct passwd *pwd;
+	char user[BUFSIZ];
+	char *c = user;
 
 	if(fork()) {
-		wait(&st);
 		return;
 	}
-	if(fork())
-		exit(0);
+
+	while(*s != ' ' && *s != '\t')
+		*c++ = *s++;
+	*c = '\0';
+	if ((pwd = getpwnam(user)) == NULL) {
+		exit(1);
+	}
+	(void) setgid(pwd->pw_gid);
+	initgroups(pwd->pw_name, pwd->pw_gid);
+	(void) setuid(pwd->pw_uid);
 	freopen("/", "r", stdin);
-	execl("/bin/sh", "sh", "-c", s, 0);
+	execl("/bin/sh", "sh", "-c", ++s, 0);
 	exit(0);
 }
 
@@ -256,7 +274,26 @@ register c;
 		c = getchar();
 	}
 	ungetc(c, stdin);
-	if (n>100)
+	if (n>=100)
 		return(-1);
 	return(n);
+}
+
+reapchild()
+{
+	union wait status;
+
+	while(wait3(&status, WNOHANG, 0) > 0)
+		;
+}
+
+untty()
+{
+	int i;
+
+	i = open("/dev/tty", O_RDWR);
+	if (i >= 0) {
+		ioctl(i, TIOCNOTTY, (char *)0);
+		(void) close(i);
+	}
 }
