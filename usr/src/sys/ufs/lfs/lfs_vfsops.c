@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	8.4 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -78,8 +78,9 @@ lfs_mount(mp, path, data, ndp, p)
 		return (error);
 
 	/* Until LFS can do NFS right.		XXX */
-	if (args.exflags & MNT_EXPORTED)
+	if (args.export.ex_flags & MNT_EXPORTED)
 		return (EINVAL);
+
 	/*
 	 * If updating, check whether changing from read-only to
 	 * read/write; if there is no device name, that's all we do.
@@ -99,17 +100,7 @@ lfs_mount(mp, path, data, ndp, p)
 			/*
 			 * Process export requests.
 			 */
-			if (args.exflags & MNT_EXPORTED) {
-				if (error = ufs_hang_addrlist(mp, &args))
-					return (error);
-				mp->mnt_flag |= MNT_EXPORTED;
-			}
-			if (args.exflags & MNT_DELEXPORT) {
-				ufs_free_addrlist(ump);
-				mp->mnt_flag &=
-				    ~(MNT_EXPORTED | MNT_DEFEXPORTED);
-			}
-			return (0);
+			return (vfs_export(mp, &ump->um_export, &args.export));
 		}
 	}
 	/*
@@ -189,7 +180,7 @@ lfs_mountfs(devvp, mp, p)
 	 * (except for root, which might share swap device for miniroot).
 	 * Flush out any old buffers remaining from a previous use.
 	 */
-	if (error = ufs_mountedon(devvp))
+	if (error = vfs_mountedon(devvp))
 		return (error);
 	if (vcount(devvp) > 1 && devvp != rootvp)
 		return (EBUSY);
