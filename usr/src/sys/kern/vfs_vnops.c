@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.12	81/08/12	*/
+/*	vfs_vnops.c	4.13	81/10/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -80,7 +80,6 @@ register struct file *fp;
 	switch (mode) {
 
 	case IFCHR:
-	case IFMPC:
 		cfunc = cdevsw[major(dev)].d_close;
 		break;
 
@@ -91,32 +90,29 @@ register struct file *fp;
 		for (mp = mount; mp < &mount[NMOUNT]; mp++)
 			if (mp->m_bufp != NULL && mp->m_dev == dev)
 				return;
-	case IFMPB:
 		cfunc = bdevsw[major(dev)].d_close;
 		break;
 	default:
 		return;
 	}
 
-	if ((flag & FMP) == 0) {
-		for(fp=file; fp < fileNFILE; fp++) {
+	for(fp=file; fp < fileNFILE; fp++) {
 #ifdef BBNNET
 			if (fp->f_flag & FNET)
 				continue;
 #endif
-			if (fp->f_count && (ip = fp->f_inode) &&
-			    ip->i_un.i_rdev == dev &&
-			    (ip->i_mode&IFMT) == mode)
-				return;
-		}
-		if (mode == IFBLK) {
-			/*
-			 * on last close of a block device (that isn't mounted)
-			 * we must invalidate any in core blocks
-			 */
-			bflush(dev);
-			binval(dev);
-		}
+		if (fp->f_count && (ip = fp->f_inode) &&
+		    ip->i_un.i_rdev == dev &&
+		    (ip->i_mode&IFMT) == mode)
+			return;
+	}
+	if (mode == IFBLK) {
+		/*
+		 * on last close of a block device (that isn't mounted)
+		 * we must invalidate any in core blocks
+		 */
+		bflush(dev);
+		binval(dev);
 	}
 	(*cfunc)(dev, flag, fp);
 }
@@ -137,14 +133,12 @@ register struct inode *ip;
 	switch(ip->i_mode&IFMT) {
 
 	case IFCHR:
-	case IFMPC:
 		if(maj >= nchrdev)
 			goto bad;
 		(*cdevsw[maj].d_open)(dev, rw);
 		break;
 
 	case IFBLK:
-	case IFMPB:
 		if(maj >= nblkdev)
 			goto bad;
 		(*bdevsw[maj].d_open)(dev, rw);

@@ -1,7 +1,9 @@
-/*	tty_tty.c	4.3	81/03/09	*/
+/*	tty_tty.c	4.4	81/10/11	*/
 
 /*
  * Indirect driver for controlling tty.
+ *
+ * THIS IS GARBAGE: MUST SOON BE DONE WITH struct inode * IN PROC TABLE.
  */
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -54,4 +56,14 @@ caddr_t addr;
 		return;
 	}
 	(*cdevsw[major(u.u_ttyd)].d_ioctl)(u.u_ttyd, cmd, addr, flag);
+}
+
+syselect(dev, flag)
+{
+
+	if (u.u_procp->p_flag&SDETACH) {
+		u.u_error = ENXIO;
+		return;
+	}
+	(*cdevsw[major(u.u_ttyd)].d_select)(dev, flag);
 }

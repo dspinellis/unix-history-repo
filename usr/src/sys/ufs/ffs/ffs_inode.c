@@ -1,4 +1,4 @@
-/*	ffs_inode.c	4.5	81/04/28	*/
+/*	ffs_inode.c	4.6	81/10/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -241,8 +241,7 @@ int waitfor;
 			*p1++ = *p2++;
 			*p1++ = *p2++;
 			*p1++ = *p2++;
-			if(*p2++ != 0 && (ip->i_mode&IFMT)!=IFMPC
-			   && (ip->i_mode&IFMT)!=IFMPB)
+			if(*p2++ != 0)
 				printf("iaddress > 2^24\n");
 		}
 		if(ip->i_flag&IACC)
