@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.31	83/07/25	*/
+/*	raw_usrreq.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"

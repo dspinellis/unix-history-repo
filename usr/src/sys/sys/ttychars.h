@@ -1,4 +1,4 @@
-/*	ttychars.h	4.6	83/07/01	*/
+/*	ttychars.h	6.1	83/07/29	*/
 
 /*
  * User visible structures and constants

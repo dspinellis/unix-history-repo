@@ -1,4 +1,4 @@
-/*	un.h	5.3	83/06/13	*/
+/*	un.h	6.1	83/07/29	*/
 
 /*
  * Definitions for UNIX IPC domain.

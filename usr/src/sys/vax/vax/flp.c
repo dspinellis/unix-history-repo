@@ -1,4 +1,4 @@
-/*	flp.c	4.11	82/10/21	*/
+/*	flp.c	6.1	83/07/29	*/
 
 #if VAX780
 #include "../h/param.h"

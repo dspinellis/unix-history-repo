@@ -1,4 +1,4 @@
-/*	kern_time.c	5.16	83/06/10	*/
+/*	kern_time.c	6.1	83/07/29	*/
 
 #include "../machine/reg.h"
 

@@ -1,4 +1,4 @@
-/*	vcmd.h	4.4	83/04/05	*/
+/*	vcmd.h	6.1	83/07/29	*/
 
 #ifndef _IOCTL_
 #include <sys/ioctl.h>

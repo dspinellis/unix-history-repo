@@ -1,4 +1,4 @@
-/*	namei.h	4.2	82/11/13	*/
+/*	namei.h	6.1	83/07/29	*/
 
 struct namidata {
 	int	ni_offset;

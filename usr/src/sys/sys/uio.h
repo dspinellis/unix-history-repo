@@ -1,4 +1,4 @@
-/*	uio.h	4.1	82/09/04	*/
+/*	uio.h	6.1	83/07/29	*/
 
 struct iovec {
 	caddr_t	iov_base;

@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.26	83/05/21	*/
+/*	kern_synch.c	6.1	83/07/29	*/
 
 #include "../machine/pte.h"
 

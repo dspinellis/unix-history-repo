@@ -1,4 +1,4 @@
-/*	route.h	4.10	83/05/30	*/
+/*	route.h	6.1	83/07/29	*/
 
 /*
  * Kernel resident routing tables.

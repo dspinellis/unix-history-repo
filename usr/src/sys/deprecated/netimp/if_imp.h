@@ -1,4 +1,4 @@
-/*	if_imp.h	4.6	82/03/19	*/
+/*	if_imp.h	6.1	83/07/29	*/
 
 /*
  * Structure of IMP 1822 long leader.

@@ -1,4 +1,4 @@
-/*	quota.h	4.6	83/05/27	*/
+/*	quota.h	6.1	83/07/29	*/
 
 /*
  * MELBOURNE DISC QUOTAS

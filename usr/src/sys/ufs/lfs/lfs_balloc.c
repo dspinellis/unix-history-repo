@@ -1,4 +1,4 @@
-/*	lfs_balloc.c	5.4	83/03/15	*/
+/*	lfs_balloc.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

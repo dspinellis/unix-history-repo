@@ -1,4 +1,4 @@
-/*	pup.c	4.5	83/05/30	*/
+/*	pup.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"

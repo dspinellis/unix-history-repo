@@ -1,4 +1,4 @@
-/*	kern_prot.c	5.17	83/05/27	*/
+/*	kern_prot.c	6.1	83/07/29	*/
 
 /*
  * System calls related to processes and protection

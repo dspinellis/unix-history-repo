@@ -1,4 +1,4 @@
-/*	inode.h	4.24	83/07/01	*/
+/*	inode.h	6.1	83/07/29	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.

@@ -1,4 +1,4 @@
-/*	kern_fork.c	4.3	83/06/14	*/
+/*	kern_fork.c	6.1	83/07/29	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"

@@ -1,4 +1,4 @@
-/*	tcp_timer.h	4.9	82/12/20	*/
+/*	tcp_timer.h	6.1	83/07/29	*/
 
 /*
  * Definitions of the TCP timers.  These timers are counted

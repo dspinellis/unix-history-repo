@@ -1,4 +1,4 @@
-/*	netisr.h	4.4	83/07/06	*/
+/*	netisr.h	6.1	83/07/29	*/
 
 /*
  * The networking code runs off software interrupts.

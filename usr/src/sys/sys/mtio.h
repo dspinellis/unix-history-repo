@@ -1,4 +1,4 @@
-/*	mtio.h	4.10	83/01/17	*/
+/*	mtio.h	6.1	83/07/29	*/
 
 /*
  * Structures and definitions for mag tape io control commands

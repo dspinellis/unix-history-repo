@@ -1,4 +1,4 @@
-/*	frame.h	4.1	83/02/10	*/
+/*	frame.h	6.1	83/07/29	*/
 
 /*
  * Definition of the vax calls/callg frame.

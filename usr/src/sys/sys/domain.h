@@ -1,4 +1,4 @@
-/*	domain.h	5.2	82/08/01	*/
+/*	domain.h	6.1	83/07/29	*/
 
 /*
  * Structure per communications domain.

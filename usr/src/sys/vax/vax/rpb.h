@@ -1,4 +1,4 @@
-/*	rpb.h	4.3	81/05/01	*/
+/*	rpb.h	6.1	83/07/29	*/
 
 /*
  * The restart parameter block, which is a page in (very) low

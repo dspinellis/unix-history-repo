@@ -1,4 +1,4 @@
-/*	protosw.h	4.18	83/07/25	*/
+/*	protosw.h	6.1	83/07/29	*/
 
 /*
  * Protocol switch table.

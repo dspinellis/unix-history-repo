@@ -1,4 +1,4 @@
-/*	gmon.h	4.2	83/01/15	*/
+/*	gmon.h	6.1	83/07/29	*/
 
 struct phdr {
     char	*lpc;

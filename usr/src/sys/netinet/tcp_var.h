@@ -1,4 +1,4 @@
-/*	tcp_var.h	4.18	83/01/17	*/
+/*	tcp_var.h	6.1	83/07/29	*/
 
 /*
  * Kernel variables for tcp.

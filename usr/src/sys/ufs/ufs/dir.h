@@ -1,4 +1,4 @@
-/*	dir.h	4.5	82/11/13	*/
+/*	dir.h	6.1	83/07/29	*/
 
 /*
  * A directory consists of some number of blocks of DIRBLKSIZ

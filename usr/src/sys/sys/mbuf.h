@@ -1,4 +1,4 @@
-/*	mbuf.h	4.18	83/03/25	*/
+/*	mbuf.h	6.1	83/07/29	*/
 
 /*
  * Constants related to memory allocator.

@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.23	83/06/24	*/
+/*	kern_sig.c	6.1	83/07/29	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"

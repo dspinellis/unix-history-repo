@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	1.16	83/07/25	*/
+/*	uipc_usrreq.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"

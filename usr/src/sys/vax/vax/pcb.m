@@ -1,4 +1,4 @@
-/* 	pcb.m	4.3	81/02/23	*/
+/* 	pcb.m	6.1	83/07/29	*/
 
 /*
  * VAX process control block

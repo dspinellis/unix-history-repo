@@ -1,4 +1,4 @@
-/*	tty_conf.c	4.3	83/05/27	*/
+/*	tty_conf.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

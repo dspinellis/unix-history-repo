@@ -1,4 +1,4 @@
-/*	in_systm.h	4.14	82/10/09	*/
+/*	in_systm.h	6.1	83/07/29	*/
 
 /*
  * Miscellaneous internetwork

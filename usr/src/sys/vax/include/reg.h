@@ -1,4 +1,4 @@
-/*	reg.h	4.2	81/02/19	*/
+/*	reg.h	6.1	83/07/29	*/
 /*
  * Location of the users' stored
  * registers relative to R0.

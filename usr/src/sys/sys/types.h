@@ -1,4 +1,4 @@
-/*	types.h	4.11	83/07/01	*/
+/*	types.h	6.1	83/07/29	*/
 
 /*
  * Basic system types and major/minor device constructing/busting macros.

@@ -1,4 +1,4 @@
-/*	tcp_fsm.h	4.12	81/12/21	*/
+/*	tcp_fsm.h	6.1	83/07/29	*/
 
 /*
  * TCP FSM state definitions.

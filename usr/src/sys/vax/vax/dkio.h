@@ -1,4 +1,4 @@
-/*	dkio.h	4.2	82/08/01	*/
+/*	dkio.h	6.1	83/07/29	*/
 /*
  * Structures and definitions for disk io control commands
  *

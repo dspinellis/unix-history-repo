@@ -1,4 +1,4 @@
-/*	wait.h	4.1	83/02/10	*/
+/*	wait.h	6.1	83/07/29	*/
 
 /*
  * This file holds definitions relevent to the wait system call.

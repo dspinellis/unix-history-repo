@@ -1,4 +1,4 @@
-/*	socket.h	4.27	83/05/27	*/
+/*	socket.h	6.1	83/07/29	*/
 
 /*
  * Definitions related to sockets: types, address families, options.

@@ -1,4 +1,4 @@
-/*	mscp.h	4.3	82/11/13	*/
+/*	mscp.h	6.1	83/07/29	*/
 /*
  * Definitions for the Mass Storage Control Protocol
  */

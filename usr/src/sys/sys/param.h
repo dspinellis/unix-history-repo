@@ -1,4 +1,4 @@
-/*	param.h	4.35	83/06/10	*/
+/*	param.h	6.1	83/07/29	*/
 
 /*
  * Machine type dependent parameters.

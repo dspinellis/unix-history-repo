@@ -1,4 +1,4 @@
-/*	time.h	4.4	83/07/09	*/
+/*	time.h	6.1	83/07/29	*/
 
 /*
  * Structure returned by gettimeofday(2) system call,

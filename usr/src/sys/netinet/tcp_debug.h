@@ -1,4 +1,4 @@
-/*	tcp_debug.h	4.2	82/03/24	*/
+/*	tcp_debug.h	6.1	83/07/29	*/
 
 struct	tcp_debug {
 	n_time	td_time;

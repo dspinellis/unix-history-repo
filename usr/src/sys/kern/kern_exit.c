@@ -1,4 +1,4 @@
-/*	kern_exit.c	4.6	83/07/01	*/
+/*	kern_exit.c	6.1	83/07/29	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"

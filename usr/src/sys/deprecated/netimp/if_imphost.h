@@ -1,4 +1,4 @@
-/*	if_imphost.h	4.6	82/04/25	*/
+/*	if_imphost.h	6.1	83/07/29	*/
 
 /*
  * Host structure used with IMP's.

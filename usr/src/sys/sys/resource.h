@@ -1,4 +1,4 @@
-/*	resource.h	4.1	83/02/10	*/
+/*	resource.h	6.1	83/07/29	*/
 
 /*
  * Process priority specifications to get/setpriority.

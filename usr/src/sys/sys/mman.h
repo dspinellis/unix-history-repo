@@ -1,4 +1,4 @@
-/*	mman.h	4.2	82/09/04	*/
+/*	mman.h	6.1	83/07/29	*/
 
 /* protections are chosen from these bits, or-ed together */
 #define	PROT_READ	0x1		/* pages can be read */

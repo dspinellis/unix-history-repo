@@ -1,4 +1,4 @@
-/*	unpcb.h	5.3	82/11/13	*/
+/*	unpcb.h	6.1	83/07/29	*/
 
 /*
  * Protocol control block for an active

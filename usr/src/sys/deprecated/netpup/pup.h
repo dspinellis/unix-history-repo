@@ -1,4 +1,4 @@
-/*	pup.h	4.6	83/05/30	*/
+/*	pup.h	6.1	83/07/29	*/
 
 struct	pupport {
 	u_char	pup_net;

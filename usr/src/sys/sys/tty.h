@@ -1,4 +1,4 @@
-/*	tty.h	4.13	82/12/19	*/
+/*	tty.h	6.1	83/07/29	*/
 
 #ifdef KERNEL
 #include "../h/ttychars.h"

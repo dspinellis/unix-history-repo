@@ -1,4 +1,4 @@
-/*	raw_ip.c	4.19	83/06/30	*/
+/*	raw_ip.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"

@@ -1,4 +1,4 @@
-/*	raw_pup.c	4.20	83/06/30	*/
+/*	raw_pup.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"

@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	4.48	83/07/01	*/
+/*	vfs_cluster.c	6.1	83/07/29	*/
 
 #include "../machine/pte.h"
 

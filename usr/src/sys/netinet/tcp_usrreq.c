@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.81	83/07/25	*/
+/*	tcp_usrreq.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
