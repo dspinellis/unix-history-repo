@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)last.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)last.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -227,6 +227,8 @@ int	check;
 		else
 			C = NULL;
 	}
+	else
+		C = NULL;
 	for (indx = sargs;*indx;++indx)
 		if (nameq(*indx,bp->ut_name) || lineq(*indx,bp->ut_line) || hosteq(*indx,bp->ut_host)) {
 			if (C)
