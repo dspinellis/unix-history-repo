@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -37,6 +37,7 @@ static char sccsid[] = "@(#)pstat.c	5.6 (Berkeley) %G%";
 #include <sys/vm.h>
 #include <nlist.h>
 #include <machine/pte.h>
+#include <stdio.h>
 
 char	*fcore	= "/dev/kmem";
 char	*fmem	= "/dev/mem";
@@ -123,6 +124,8 @@ int	allflg;
 int	kflg;
 struct	pte *Usrptma;
 struct	pte *usrpt;
+u_long	getw();
+off_t	mkphys();
 
 main(argc, argv)
 char **argv;
@@ -186,8 +189,10 @@ char **argv;
 			exit(1);
 		}
 	}
-	if (argc>1)
+	if (argc>1) {
 		fcore = fmem = argv[1];
+		kflg++;
+	}
 	if ((fc = open(fcore, 0)) < 0) {
 		printf("Can't find %s\n", fcore);
 		exit(1);
@@ -243,7 +248,16 @@ doinode()
 	ninode = getw(nl[SNINODE].n_value);
 	xinode = (struct inode *)calloc(ninode, sizeof (struct inode));
 	ainode = (struct inode *)getw(nl[SINODE].n_value);
-	lseek(fc, mkphys((int)ainode), 0);
+	if (ninode < 0 || ninode > 10000) {
+		fprintf(stderr, "number of inodes is preposterous (%d)\n",
+			ninode);
+		return;
+	}
+	if (xinode == NULL) {
+		fprintf(stderr, "can't allocate memory for inode table\n");
+		return;
+	}
+	lseek(fc, mkphys((off_t)ainode), 0);
 	read(fc, xinode, ninode * sizeof(struct inode));
 	for (ip = xinode; ip < &xinode[ninode]; ip++)
 		if (ip->i_count)
@@ -285,17 +299,16 @@ printf("   LOC      FLAGS    CNT DEVICE  RDC WRC  INO  MODE  NLK UID   SIZE/DEV\
 	free(xinode);
 }
 
+u_long
 getw(loc)
 	off_t loc;
 {
-	int word;
+	u_long word;
 
 	if (kflg)
 		loc &= 0x7fffffff;
 	lseek(fc, loc, 0);
 	read(fc, &word, sizeof (word));
-	if (kflg)
-		word &= 0x7fffffff;
 	return (word);
 }
 
@@ -312,23 +325,36 @@ dotext()
 	register struct text *xp;
 	int ntext;
 	struct text *xtext, *atext;
-	int ntx;
+	int ntx, ntxca;
 
-	ntx = 0;
+	ntx = ntxca = 0;
 	ntext = getw(nl[SNTEXT].n_value);
 	xtext = (struct text *)calloc(ntext, sizeof (struct text));
 	atext = (struct text *)getw(nl[STEXT].n_value);
-	lseek(fc, mkphys((int)atext), 0);
-	read(fc, xtext, ntext * sizeof (struct text));
-	for (xp = xtext; xp < &xtext[ntext]; xp++)
-		if (xp->x_iptr!=NULL)
-			ntx++;
-	if (totflg) {
-		printf("%3d/%3d texts\n", ntx, ntext);
+	if (ntext < 0 || ntext > 10000) {
+		fprintf(stderr, "number of texts is preposterous (%d)\n",
+			ntext);
 		return;
 	}
-	printf("%d/%d active texts\n", ntx, ntext);
-	printf("   LOC   FLAGS DADDR      CADDR  RSS SIZE      IPTR  CNT CCNT\n");
+	if (xtext == NULL) {
+		fprintf(stderr, "can't allocate memory for text table\n");
+		return;
+	}
+	lseek(fc, mkphys((off_t)atext), 0);
+	read(fc, xtext, ntext * sizeof (struct text));
+	for (xp = xtext; xp < &xtext[ntext]; xp++) {
+		if (xp->x_iptr != NULL)
+			ntxca++;
+		if (xp->x_count != 0)
+			ntx++;
+	}
+	if (totflg) {
+		printf("%3d/%3d texts active, %3d used\n", ntx, ntext, ntxca);
+		return;
+	}
+	printf("%d/%d active texts, %d used\n", ntx, ntext, ntxca);
+	printf("\
+   LOC   FLAGS DADDR     CADDR  RSS SIZE     IPTR   CNT CCNT      FORW     BACK\n");
 	for (xp = xtext; xp < &xtext[ntext]; xp++) {
 		if (xp->x_iptr == NULL)
 			continue;
@@ -341,12 +367,14 @@ dotext()
 		putf(xp->x_flag&XLOCK, 'K');
 		putf(xp->x_flag&XWANT, 'w');
 		printf("%5x", xp->x_daddr[0]);
-		printf("%11x", xp->x_caddr);
+		printf("%10x", xp->x_caddr);
 		printf("%5d", xp->x_rssize);
 		printf("%5d", xp->x_size);
 		printf("%10.1x", xp->x_iptr);
 		printf("%5d", xp->x_count&0377);
 		printf("%5d", xp->x_ccount);
+		printf("%10x", xp->x_forw);
+		printf("%9x", xp->x_back);
 		printf("\n");
 	}
 	free(xtext);
@@ -363,7 +391,16 @@ doproc()
 	nproc = getw(nl[SNPROC].n_value);
 	xproc = (struct proc *)calloc(nproc, sizeof (struct proc));
 	aproc = (struct proc *)getw(nl[SPROC].n_value);
-	lseek(fc, mkphys((int)aproc), 0);
+	if (nproc < 0 || nproc > 10000) {
+		fprintf(stderr, "number of procs is preposterous (%d)\n",
+			nproc);
+		return;
+	}
+	if (xproc == NULL) {
+		fprintf(stderr, "can't allocate memory for proc table\n");
+		return;
+	}
+	lseek(fc, mkphys((off_t)aproc), 0);
 	read(fc, xproc, nproc * sizeof (struct proc));
 	np = 0;
 	for (pp=xproc; pp < &xproc[nproc]; pp++)
@@ -408,6 +445,7 @@ doproc()
 		printf(" %7x", clear(pp->p_textp));
 		printf("\n");
 	}
+	free(xproc);
 }
 
 static char mesg[] =
@@ -671,7 +709,16 @@ dofile()
 	nfile = getw(nl[SNFILE].n_value);
 	xfile = (struct file *)calloc(nfile, sizeof (struct file));
 	afile = (struct file *)getw(nl[SFIL].n_value);
-	lseek(fc, (mkphys((int)afile)), 0);
+	if (nfile < 0 || nfile > 10000) {
+		fprintf(stderr, "number of files is preposterous (%d)\n",
+			nfile);
+		return;
+	}
+	if (xfile == NULL) {
+		fprintf(stderr, "can't allocate memory for file table\n");
+		return;
+	}
+	lseek(fc, mkphys((off_t)afile), 0);
 	read(fc, xfile, nfile * sizeof (struct file));
 	for (fp=xfile; fp < &xfile[nfile]; fp++)
 		if (fp->f_count)
@@ -704,6 +751,7 @@ dofile()
 		else
 			printf("  %ld\n", fp->f_offset);
 	}
+	free(xfile);
 }
 
 int dmmin, dmmax, nswdev;
@@ -725,20 +773,41 @@ doswap()
 	int i, j;
 
 	nproc = getw(nl[SNPROC].n_value);
-	proc = (struct proc *)calloc(nproc, sizeof (struct proc));
 	ntext = getw(nl[SNTEXT].n_value);
+	if (nproc < 0 || nproc > 10000 || ntext < 0 || ntext > 10000) {
+		fprintf(stderr, "number of procs/texts is preposterous (%d, %d)\n",
+			nproc, ntext);
+		return;
+	}
+	proc = (struct proc *)calloc(nproc, sizeof (struct proc));
+	if (proc == NULL) {
+		fprintf(stderr, "can't allocate memory for proc table\n");
+		exit(1);
+	}
 	xtext = (struct text *)calloc(ntext, sizeof (struct text));
+	if (xtext == NULL) {
+		fprintf(stderr, "can't allocate memory for text table\n");
+		exit(1);
+	}
 	nswapmap = getw(nl[SNSWAPMAP].n_value);
 	swapmap = (struct map *)calloc(nswapmap, sizeof (struct map));
+	if (swapmap == NULL) {
+		fprintf(stderr, "can't allocate memory for swapmap\n");
+		exit(1);
+	}
 	nswdev = getw(nl[SNSWDEV].n_value);
 	swdevt = (struct swdevt *)calloc(nswdev, sizeof (struct swdevt));
-	lseek(fc, nl[SSWDEVT].n_value, L_SET);
+	if (swdevt == NULL) {
+		fprintf(stderr, "can't allocate memory for swdevt table\n");
+		exit(1);
+	}
+	lseek(fc, mkphys((off_t)nl[SSWDEVT].n_value), L_SET);
 	read(fc, swdevt, nswdev * sizeof (struct swdevt));
-	lseek(fc, getw(nl[SPROC].n_value), 0);
+	lseek(fc, mkphys((off_t)getw(nl[SPROC].n_value)), 0);
 	read(fc, proc, nproc * sizeof (struct proc));
-	lseek(fc, getw(nl[STEXT].n_value), 0);
+	lseek(fc, mkphys((off_t)getw(nl[STEXT].n_value)), 0);
 	read(fc, xtext, ntext * sizeof (struct text));
-	lseek(fc, getw(nl[SWAPMAP].n_value), 0);
+	lseek(fc, mkphys((off_t)getw(nl[SWAPMAP].n_value)), 0);
 	read(fc, swapmap, nswapmap * sizeof (struct map));
 	swapmap->m_name = "swap";
 	swapmap->m_limit = (struct mapent *)&swapmap[nswapmap];
@@ -1013,9 +1082,11 @@ badrmfree:
  * We return the phys addr by simulating kernel vm (/dev/kmem)
  * when we are reading a crash dump.
  */
+off_t
 mkphys(addr)
+	off_t addr;
 {
-	register o;
+	register off_t o;
 
 	if (!kflg)
 		return(addr);
