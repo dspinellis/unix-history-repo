@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)user.h	7.19 (Berkeley) %G%
+ *	@(#)user.h	7.20 (Berkeley) %G%
  */
 
 #include <machine/pcb.h>
