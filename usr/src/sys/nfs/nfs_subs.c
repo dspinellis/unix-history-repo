@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.18 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.19 (Berkeley) %G%
  */
 
 /*
@@ -616,6 +616,14 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	np = VTONFS(vp);
 	if (vp->v_type == VNON) {
 		vp->v_type = type;
+		if (vp->v_type == VFIFO) {
+#ifdef FIFO
+			extern struct vnodeops fifo_nfsv2nodeops;
+			vp->v_op = &fifo_nfsv2nodeops;
+#else
+			return (EOPNOTSUPP);
+#endif /* FIFO */
+		}
 		if (vp->v_type == VCHR || vp->v_type == VBLK) {
 			vp->v_op = &spec_nfsv2nodeops;
 			if (nvp = checkalias(vp, rdev, vp->v_mount)) {
@@ -635,7 +643,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 				 * Discard unneeded vnode and update actual one
 				 */
 				vput(vp);
-				*vpp = nvp;
+				*vpp = vp = nvp;
 			}
 		}
 		np->n_mtime = mtime.tv_sec;
