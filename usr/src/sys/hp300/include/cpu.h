@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: cpu.h 1.16 91/03/25$
  *
- *	@(#)cpu.h	7.11 (Berkeley) %G%
+ *	@(#)cpu.h	7.12 (Berkeley) %G%
  */
 
 /*
@@ -30,10 +30,10 @@
 	(p)->p_md.md_regs[SP] = ap
 
 /*
- * Arguments to hardclock, softclock and gatherstats encapsulate the
- * previous machine state in an opaque clockframe.  One the hp300, we
- * use what the hardware pushes on an interrupt (but we pad the sr to
- * a longword boundary).
+ * Arguments to hardclock and gatherstats encapsulate the previous
+ * machine state in an opaque clockframe.  One the hp300, we use
+ * what the hardware pushes on an interrupt (but we pad the sr to a
+ * longword boundary).
  */
 struct clockframe {
 	u_short	pad;		/* pad to get stack aligned */
