@@ -29,15 +29,15 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.14 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.15 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.14 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.15 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.14 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.15 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.14 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.15 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -52,6 +52,7 @@ static char sccsid[] = "@(#)alias.c	6.14 (Berkeley) %G% (without NEWDB or NDBM)"
 **		a -- address to alias.
 **		sendq -- a pointer to the head of the send queue
 **			to put the aliases in.
+**		e -- the current envelope.
 **
 **	Returns:
 **		none
@@ -145,6 +146,8 @@ alias(a, sendq, e)
 		printf("%s (%s, %s) aliased to %s\n",
 		    a->q_paddr, a->q_host, a->q_user, p);
 	message(Arpa_Info, "aliased to %s", p);
+	if (bitset(EF_VRFYONLY, e->e_flags))
+		return;
 #ifdef LOG
 	if (LogLevel > 9)
 		syslog(LOG_INFO, "%s: alias %s => %s", e->e_id, a->q_paddr, p);

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.14 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -718,6 +718,13 @@ include(fname, forwarding, ctladdr, sendq, e)
 	}
 
 	clrevent(ev);
+
+	if (bitset(EF_VRFYONLY, e->e_flags))
+	{
+		/* don't do any more now */
+		fclose(fp);
+		return 0;
+	}
 
 	/* read the file -- each line is a comma-separated list. */
 	FileName = fname;
