@@ -5,7 +5,7 @@
  * symbolic debugging information into the object file.
  */
 
-static char *sccsid ="@(#)stab.c	1.1 (Berkeley) %G%";
+static char *sccsid ="@(#)stab.c	1.2 (Berkeley) %G%";
 
 #include "mfile1"
 
@@ -36,6 +36,12 @@ extern char *malloc();
 int stabLCSYM;
 
 /*
+ * Flag for producing either sdb or dbx symbol information.
+ */
+
+Boolean oldway = false;
+
+/*
  * Generate debugging info for a parameter.
  * The offset isn't known when it is first entered into the symbol table
  * since the types are read later.
@@ -44,7 +50,9 @@ int stabLCSYM;
 fixarg(p)
 struct symtab *p;
 {
-    if (gdebug) {
+    if (oldway) {
+	old_fixarg(p);
+    } else if (gdebug) {
 	printf("\t.stabs\t\"%s:p", p->sname);
 	gentype(p);
 	printf("\",0x%x,0,%d,%d\n", N_PSYM, bsize(p), bytes(argoff));
@@ -64,7 +72,9 @@ struct symtab *sym;
     Boolean ignore;
     static Boolean firsttime = true;
 
-    if (gdebug) {
+    if (oldway) {
+	old_outstab(sym);
+    } else if (gdebug) {
 	if (firsttime) {
 	    firsttime = false;
 	    inittypes();
@@ -482,7 +492,9 @@ int szindex, paramindex;
     register struct symtab *p;
     register int i, t, strindex;
 
-    if (gdebug) {
+    if (oldway) {
+	/* do nothing */;
+    } else if (gdebug) {
 	i = dimtab[szindex + 3];
 	p = &stab[i];
 	if (p->sname != nil) {
@@ -507,7 +519,13 @@ int type;
 {
     register int i;
     register char c;
-    if (!gdebug) return;
+
+    if (!gdebug) {
+	return;
+    } else if (oldway) {
+	old_pstab(name, type);
+	return;
+    }
     /* locctr(PROG);  /* .stabs must appear in .text for c2 */
 #ifdef ASSTRINGS
     if ( name[0] == '\0')
@@ -532,7 +550,12 @@ pstabdot(type, value)
 int type;
 int value;
 {
-    if ( ! gdebug) return;
+    if ( ! gdebug) {
+	return;
+    } else if (oldway) {
+	old_pstabdot(type, value);
+	return;
+    }
     /* locctr(PROG);  /* .stabs must appear in .text for c2 */
     printf("\t.stabd\t");
     printf("0%o,0,0%o\n",type, value);
@@ -549,7 +572,12 @@ psline()
     register char *cp, *cq;
     register int i;
     
-    if (!gdebug) return;
+    if (!gdebug) {
+	return;
+    } else if (oldway) {
+	old_psline();
+	return;
+    }
 
     cq = ititle;
     cp = ftitle;
@@ -594,7 +622,12 @@ eq: if (lineno == lastlineno) return;
 plcstab(level)
 int level;
 {
-    if (!gdebug) return;
+    if (!gdebug) {
+	return;
+    } else if (oldway) {
+	old_plcstab(level);
+	return;
+    }
 #ifdef STABDOT
     pstabdot(N_LBRAC, level);
 #else
@@ -607,7 +640,12 @@ int level;
 prcstab(level)
 int level;
 {
-    if (!gdebug) return;
+    if (!gdebug) {
+	return;
+    } else if (oldway) {
+	old_prcstab(level);
+	return;
+    }
 #ifdef STABDOT
     pstabdot(N_RBRAC, level);
 #else
@@ -623,10 +661,229 @@ char *sname;
     register struct symtab *p;
 
     if (gdebug) {
-	p = &stab[lookup(sname, 0)];
-	printf("\t.stabs\t\"%s:", p->sname);
-	putchar((p->sclass == STATIC) ? 'f' : 'F');
-	gentype(p);
-	geninfo(p);
+	if (oldway) {
+	    old_pfstab(sname);
+	} else {
+	    p = &stab[lookup(sname, 0)];
+	    printf("\t.stabs\t\"%s:", p->sname);
+	    putchar((p->sclass == STATIC) ? 'f' : 'F');
+	    gentype(p);
+	    geninfo(p);
+	}
     }
+}
+
+/*
+ * Old way of doing things.
+ */
+
+private old_fixarg(p)
+struct symtab *p; {
+	if (gdebug) {
+		old_pstab(p->sname, N_PSYM);
+		if (gdebug) printf("0,%d,%d\n", p->stype, argoff/SZCHAR);
+		old_poffs(p);
+	}
+}
+
+private old_outstab(p)
+struct symtab *p; {
+	register TWORD ptype;
+	register char *pname;
+	register char pclass;
+	register int poffset;
+
+	if (!gdebug) return;
+
+	ptype = p->stype;
+	pname = p->sname;
+	pclass = p->sclass;
+	poffset = p->offset;
+
+	if (ISFTN(ptype)) {
+		return;
+	}
+	
+	switch (pclass) {
+	
+	case AUTO:
+		old_pstab(pname, N_LSYM);
+		printf("0,%d,%d\n", ptype, (-poffset)/SZCHAR);
+		old_poffs(p);
+		return;
+	
+	case EXTDEF:
+	case EXTERN:
+		old_pstab(pname, N_GSYM);
+		printf("0,%d,0\n", ptype);
+		old_poffs(p);
+		return;
+			
+	case STATIC:
+#ifdef LCOMM
+		/* stabLCSYM is 1 during nidcl so we can get stab type right */
+		old_pstab(pname, stabLCSYM ? N_LCSYM : N_STSYM);
+#else
+		old_pstab(pname, N_STSYM);
+#endif
+		if (p->slevel > 1) {
+			printf("0,%d,L%d\n", ptype, poffset);
+		} else {
+			printf("0,%d,%s\n", ptype, exname(pname));
+		}
+		old_poffs(p);
+		return;
+	
+	case REGISTER:
+		old_pstab(pname, N_RSYM);
+		printf("0,%d,%d\n", ptype, poffset);
+		old_poffs(p);
+		return;
+	
+	case MOS:
+	case MOU:
+		old_pstab(pname, N_SSYM);
+		printf("0,%d,%d\n", ptype, poffset/SZCHAR);
+		old_poffs(p);
+		return;
+	
+	case PARAM:
+		/* parameter stab entries are processed in dclargs() */
+		return;
+	
+	default:
+#ifndef FLEXNAMES
+		if (ddebug) printf("	No .stab for %.8s\n", pname);
+#else
+		if (ddebug) printf("	No .stab for %s\n", pname);
+#endif
+		
+	}
+}
+
+private old_pstab(name, type)
+char *name;
+int type; {
+	register int i;
+	register char c;
+	if (!gdebug) return;
+	/* locctr(PROG);  /* .stabs must appear in .text for c2 */
+#ifdef ASSTRINGS
+	if ( name[0] == '\0')
+		printf("\t.stabn\t");
+	else
+#ifndef FLEXNAMES
+		printf("\t.stabs\t\"%.8s\", ", name);
+#else
+		printf("\t.stabs\t\"%s\", ", name);
+#endif
+#else
+	printf("	.stab	");
+	for(i=0; i<8; i++) 
+		if (c = name[i]) printf("'%c,", c);
+		else printf("0,");
+#endif
+	printf("0%o,", type);
+}
+
+#ifdef STABDOT
+private old_pstabdot(type, value)
+	int	type;
+	int	value;
+{
+	if ( ! gdebug) return;
+	/* locctr(PROG);  /* .stabs must appear in .text for c2 */
+	printf("\t.stabd\t");
+	printf("0%o,0,0%o\n",type, value);
+}
+#endif
+
+private old_poffs(p)
+register struct symtab *p; {
+	int s;
+	if (!gdebug) return;
+	if ((s = dimtab[p->sizoff]/SZCHAR) > 1) {
+		old_pstab(p->sname, N_LENG);
+		printf("1,0,%d\n", s);
+	}
+}
+
+private old_psline() {
+	static int lastlineno;
+	register char *cp, *cq;
+	register int i;
+	
+	if (!gdebug) return;
+
+	cq = ititle;
+	cp = ftitle;
+
+	while ( *cq ) if ( *cp++ != *cq++ ) goto neq;
+	if ( *cp == '\0' ) goto eq;
+	
+neq:	for (i=0; i<100; i++)
+		ititle[i] = '\0';
+	cp = ftitle;
+	cq = ititle;
+	while ( *cp )  
+		*cq++ = *cp++;
+	*cq = '\0';
+	*--cq = '\0';
+#ifndef FLEXNAMES
+	for ( cp = ititle+1; *(cp-1); cp += 8 ) {
+		old_pstab(cp, N_SOL);
+		if (gdebug) printf("0,0,LL%d\n", labelno);
+		}
+#else
+	old_pstab(ititle+1, N_SOL);
+	if (gdebug) printf("0,0,LL%d\n", labelno);
+#endif
+	*cq = '"';
+	printf("LL%d:\n", labelno++);
+
+eq:	if (lineno == lastlineno) return;
+	lastlineno = lineno;
+
+	if (fdefflag) {
+#ifdef STABDOT
+		old_pstabdot(N_SLINE, lineno);
+#else
+		old_pstab(NULLNAME, N_SLINE);
+		printf("0,%d,LL%d\n", lineno, labelno);
+		printf("LL%d:\n", labelno++);
+#endif
+		}
+	}
+	
+private old_plcstab(level) {
+	if (!gdebug) return;
+#ifdef STABDOT
+	old_pstabdot(N_LBRAC, level);
+#else
+	old_pstab(NULLNAME, N_LBRAC);
+	printf("0,%d,LL%d\n", level, labelno);
+	printf("LL%d:\n", labelno++);
+#endif
+	}
+	
+private old_prcstab(level) {
+	if (!gdebug) return;
+#ifdef STABDOT
+	pstabdot(N_RBRAC, level);
+#else
+	pstab(NULLNAME, N_RBRAC);
+	printf("0,%d,LL%d\n", level, labelno);
+	printf("LL%d:\n", labelno++);
+#endif
+	}
+	
+private old_pfstab(sname) 
+char *sname; {
+	if (!gdebug) return;
+	pstab(sname, N_FUN);
+#ifndef FLEXNAMES
+	printf("0,%d,_%.7s\n", lineno, sname);
+#else
+	printf("0,%d,_%s\n", lineno, sname);
+#endif
 }
