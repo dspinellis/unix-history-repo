@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-static char SccsId[] = "@(#)recipient.c	3.29	%G%";
+static char SccsId[] = "@(#)recipient.c	3.30	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -15,6 +15,10 @@ static char SccsId[] = "@(#)recipient.c	3.29	%G%";
 **		copyf -- the copy flag; passed to parse.
 **		ctladdr -- the address template for the person to
 **			send to -- effective uid/gid are important.
+**			This is typically the alias that caused this
+**			expansion.
+**		sendq -- a pointer to the head of a queue to put
+**			these people into.
 **
 **	Returns:
 **		none
@@ -25,7 +29,7 @@ static char SccsId[] = "@(#)recipient.c	3.29	%G%";
 
 # define MAXRCRSN	10
 
-sendto(list, copyf, ctladdr)
+sendto(list, copyf, ctladdr, sendq)
 	char *list;
 	int copyf;
 	ADDRESS *ctladdr;
@@ -96,7 +100,7 @@ sendto(list, copyf, ctladdr)
 		register ADDRESS *a = al;
 
 		al = a->q_next;
-		recipient(a);
+		recipient(a, sendq);
 
 		/* arrange to inherit full name */
 		if (a->q_fullname == NULL && ctladdr != NULL)
@@ -112,6 +116,9 @@ sendto(list, copyf, ctladdr)
 **
 **	Parameters:
 **		a -- the (preparsed) address header for the recipient.
+**		sendq -- a pointer to the head of a queue to put the
+**			recipient in.  Duplicate supression is done
+**			in this queue.
 **
 **	Returns:
 **		none.
@@ -120,8 +127,9 @@ sendto(list, copyf, ctladdr)
 **		none.
 */
 
-recipient(a)
+recipient(a, sendq)
 	register ADDRESS *a;
+	register ADDRESS **sendq;
 {
 	register ADDRESS *q;
 	ADDRESS **pq;
@@ -177,7 +185,7 @@ recipient(a)
 	**	[Please note: the emphasis is on "hack."]
 	*/
 
-	for (pq = &m->m_sendq; (q = *pq) != NULL; pq = &q->q_next)
+	for (pq = sendq; (q = *pq) != NULL; pq = &q->q_next)
 	{
 		if (!ForceMail && sameaddr(q, a, FALSE))
 		{
@@ -217,11 +225,11 @@ recipient(a)
 			{
 				if (Verbose)
 					message(Arpa_Info, "including file %s", &a->q_user[9]);
-				include(&a->q_user[9], " sending", a);
+				include(&a->q_user[9], " sending", a, sendq);
 			}
 		}
 		else
-			alias(a);
+			alias(a, sendq);
 	}
 
 	/*
@@ -293,7 +301,7 @@ recipient(a)
 				if (nbuf[0] != '\0')
 					a->q_fullname = newstr(nbuf);
 				if (!quoted)
-					forward(a);
+					forward(a, sendq);
 			}
 		}
 	}
@@ -413,6 +421,8 @@ writable(s)
 **		ctladdr -- address template to use to fill in these
 **			addresses -- effective user/group id are
 **			the important things.
+**		sendq -- a pointer to the head of the send queue
+**			to put these addresses in.
 **
 **	Returns:
 **		none.
@@ -422,10 +432,11 @@ writable(s)
 **		listed in that file.
 */
 
-include(fname, msg, ctladdr)
+include(fname, msg, ctladdr, sendq)
 	char *fname;
 	char *msg;
 	ADDRESS *ctladdr;
+	ADDRESS **sendq;
 {
 	char buf[MAXLINE];
 	register FILE *fp;
@@ -461,7 +472,7 @@ include(fname, msg, ctladdr)
 		if (Verbose)
 			message(Arpa_Info, "%s to %s", msg, buf);
 		AliasLevel++;
-		sendto(buf, 1, ctladdr);
+		sendto(buf, 1, ctladdr, sendq);
 		AliasLevel--;
 	}
 
@@ -504,7 +515,7 @@ sendtoargv(argv)
 				argv += 2;
 			}
 		}
-		sendto(p, 0, (ADDRESS *) NULL);
+		sendto(p, 0, (ADDRESS *) NULL, &SendQueue);
 	}
 }
 /*

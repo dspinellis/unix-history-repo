@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] =	"@(#)srvrsmtp.c	3.9	%G%";
+static char	SccsId[] =	"@(#)srvrsmtp.c	3.10	%G%";
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -34,6 +34,7 @@ struct cmd
 # define CMDQUIT	9	/* quit -- close connection and die */
 # define CMDMRSQ	10	/* mrsq -- for old mtp compat only */
 # define CMDHELO	11	/* helo -- be polite */
+# define CMDDBGSHOWQ	12	/* showq -- show send queue (DEBUG) */
 
 static struct cmd	CmdTab[] =
 {
@@ -48,6 +49,9 @@ static struct cmd	CmdTab[] =
 	"quit",		CMDQUIT,
 	"mrsq",		CMDMRSQ,
 	"helo",		CMDHELO,
+# ifdef DEBUG
+	"showq",	CMDDBGSHOWQ,
+# endif DEBUG
 	NULL,		CMDERROR,
 };
 
@@ -61,9 +65,10 @@ smtp()
 	extern bool sameword();
 	bool hasmail;			/* mail command received */
 	int rcps;			/* number of recipients */
-	bool hasdata;			/* has mail data */
+	auto ADDRESS *vrfyqueue;
+	ADDRESS *prev;
 
-	hasmail = hasdata = FALSE;
+	hasmail = FALSE;
 	rcps = 0;
 	message("220", "%s Sendmail at your service", HostName);
 	for (;;)
@@ -140,7 +145,7 @@ smtp()
 				Errors++;
 				break;
 			}
-			sendto(p, 1, (ADDRESS *) NULL);
+			sendto(p, 1, (ADDRESS *) NULL, &SendQueue);
 			if (Errors == 0)
 			{
 				message("250", "Recipient ok");
@@ -186,7 +191,32 @@ smtp()
 			finis();
 
 		  case CMDVRFY:		/* vrfy -- verify address */
-			message("502", "Command not implemented");
+			vrfyqueue = NULL;
+			sendto(p, 1, (ADDRESS *) NULL, &vrfyqueue);
+			while (vrfyqueue != NULL)
+			{
+				register ADDRESS *a = vrfyqueue->q_next;
+				char *code;
+
+				while (a != NULL && bitset(QDONTSEND, a->q_flags))
+					a = a->q_next;
+
+				if (!bitset(QDONTSEND, vrfyqueue->q_flags))
+				{
+					if (a != NULL)
+						code = "250-";
+					else
+						code = "250";
+					if (vrfyqueue->q_fullname == NULL)
+						message(code, "<%s>", vrfyqueue->q_paddr);
+					else
+						message(code, "%s <%s>",
+						    vrfyqueue->q_fullname, vrfyqueue->q_paddr);
+				}
+				else if (a == NULL)
+					message("554", "Self destructive alias loop");
+				vrfyqueue = a;
+			}
 			break;
 
 		  case CMDHELP:		/* help -- give user info */
@@ -225,6 +255,13 @@ smtp()
 				message("504", "Scheme unknown");
 			}
 			break;
+
+# ifdef DEBUG
+		  case CMDDBGSHOWQ:	/* show queues */
+			printf("SendQueue=");
+			printaddr(SendQueue, TRUE);
+			break;
+# endif DEBUG
 
 		  case CMDERROR:	/* unknown command */
 			message("500", "Command unrecognized");

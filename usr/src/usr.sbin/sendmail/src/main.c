@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.53.1.1	%G%";
+static char	SccsId[] = "@(#)main.c	3.54	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -129,7 +129,6 @@ main(argc, argv)
 	extern bool safefile();
 	STAB *st;
 	extern time_t convtime();
-	extern ADDRESS *recipient();
 
 	argv[argc] = NULL;
 	InChannel = stdin;
@@ -493,7 +492,7 @@ main(argc, argv)
 
 	From.q_flags |= QDONTSEND;
 	if (!MeToo)
-		(void) recipient(&From);
+		recipient(&From, &SendQueue);
 	To = NULL;
 
 	/*
@@ -758,7 +757,7 @@ setsender(from)
 	{
 		char nbuf[MAXNAME];
 
-		fullname(pw, nbuf);
+		buildfname(pw->pw_gecos, realname, nbuf);
 		if (nbuf[0] != '\0')
 			FullName = newstr(nbuf);
 	}

@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)headers.c	3.10.1.1	%G%";
+static char	SccsId[] = "@(#)headers.c	3.11	%G%";
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -33,7 +33,6 @@ chompheader(line, def)
 	struct hdrinfo *hi;
 	u_long mopts;
 	extern u_long mfencode();
-	extern ADDRESS *sendto();
 
 	/* strip off trailing newline */
 	p = rindex(line, '\n');
@@ -116,7 +115,7 @@ chompheader(line, def)
 		free(h->h_value);
 	h->h_value = newstr(fvalue);
 	if (!def && GrabTo && bitset(H_ADDR, h->h_flags))
-		(void) sendto(h->h_value, 0, (ADDRESS *) NULL, 0);
+		sendto(h->h_value, 0, (ADDRESS *) NULL, &SendQueue);
 
 	return (h->h_flags);
 }
