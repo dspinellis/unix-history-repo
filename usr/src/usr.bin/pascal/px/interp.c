@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)interp.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)interp.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <math.h>
@@ -50,7 +50,7 @@ struct iorechd	_err = {
 	&_errwin,		/* fileptr */
 	0,			/* lcount  */
 	0x7fffffff,		/* llimit  */
-	&_iob[2],		/* fbuf    */
+	stderr,			/* fbuf    */
 	FILNIL,			/* fchain  */
 	STDLVL,			/* flev    */
 	"Message file",		/* pfname  */
@@ -62,7 +62,7 @@ struct iorechd	output = {
 	&_outwin,		/* fileptr */
 	0,			/* lcount  */
 	0x7fffffff,		/* llimit  */
-	&_iob[1],		/* fbuf    */
+	stdout,			/* fbuf    */
 	ERR,			/* fchain  */
 	STDLVL,			/* flev    */
 	"standard output",	/* pfname  */
@@ -74,7 +74,7 @@ struct iorechd	input = {
 	&_inwin,		/* fileptr */
 	0,			/* lcount  */
 	0x7fffffff,		/* llimit  */
-	&_iob[0],		/* fbuf    */
+	stdin,			/* fbuf    */
 	OUTPUT,			/* fchain  */
 	STDLVL,			/* flev    */
 	"standard input",	/* pfname  */
