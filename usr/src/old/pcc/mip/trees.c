@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.18 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.19 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -778,6 +778,7 @@ chkpun(p) register NODE *p; {
 	register NODE *q;
 	register t1, t2;
 	register d1, d2;
+	int ref1, ref2;
 
 	t1 = p->in.left->in.type;
 	t2 = p->in.right->in.type;
@@ -795,16 +796,18 @@ chkpun(p) register NODE *p; {
 		if ( t2 == ENUMTY ) t2 = INT;
 		}
 
-	if( ISPTR(t1) || ISARY(t1) ) q = p->in.right;
-	else q = p->in.left;
+	ref1 = ISPTR(t1) || ISARY(t1);
+	ref2 = ISPTR(t2) || ISARY(t2);
 
-	if( !ISPTR(q->in.type) && !ISARY(q->in.type) ){
+	if( ref1 ^ ref2 ){
+		if( ref1 ) q = p->in.right;
+		else q = p->in.left;
 		if( q->in.op != ICON || q->tn.lval != 0 ){
 			werror( "illegal combination of pointer and integer, op %s",
 				opst[p->in.op] );
 			}
 		}
-	else {
+	else if( ref1 ){
 		if( t1 == t2 ) {
 			if( p->in.left->fn.csiz != p->in.right->fn.csiz ) {
 				werror( "illegal structure pointer combination" );
@@ -1358,10 +1361,12 @@ opact( p )  NODE *p; {
 	case UNARY MUL:
 		{  return( OTHER ); }
 	case UNARY MINUS:
+		if( mt1 & MENU ) return( 0 );
 		if( mt1 & MDBI ) return( TYPL );
 		break;
 
 	case COMPL:
+		if( mt1 & MENU ) return( 0 );
 		if( mt1 & MINT ) return( TYPL );
 		break;
 
@@ -1404,8 +1409,8 @@ opact( p )  NODE *p; {
 	case LE:
 	case GT:
 	case GE:
-		if( (mt1&MENU)||(mt2&MENU) ) return( PTMATCH+PUN+NCVT );
-		if( mt12 & MDBI ) return( TYMATCH+CVTO );
+		if( mt12 & MENU ) return( TYMATCH+NCVT+PUN );
+		if( mt12 & MDBI ) return( TYMATCH+NCVT+CVTO );
 		else if( mt12 & MPTR ) return( PTMATCH+PUN );
 		else if( mt12 & MPTI ) return( PTMATCH+PUN );
 		else break;
@@ -1422,8 +1427,8 @@ opact( p )  NODE *p; {
 		return( TYPL );
 
 	case COLON:
-		if( mt12 & MENU ) return( NCVT+PUN+PTMATCH );
-		else if( mt12 & MDBI ) return( TYMATCH );
+		if( mt12 & MENU ) return( NCVT+PUN+TYMATCH );
+		else if( mt12 & MDBI ) return( NCVT+TYMATCH );
 		else if( mt12 & MPTR ) return( TYPL+PTMATCH+PUN );
 		else if( (mt1&MINT) && (mt2&MPTR) ) return( TYPR+PUN );
 		else if( (mt1&MPTR) && (mt2&MINT) ) return( TYPL+PUN );
@@ -1433,10 +1438,10 @@ opact( p )  NODE *p; {
 	case ASSIGN:
 	case RETURN:
 		if( mt12 & MSTR ) return( LVAL+NCVT+TYPL+OTHER );
-		else if( (mt1&MENU)||(mt2&MENU) ) return( LVAL+NCVT+TYPL+PTMATCH+PUN );
+		else if( mt12 & MENU ) return( LVAL+NCVT+TYPL+TYMATCH+PUN );
 	case CAST:
 		if(o==CAST && mt1==0)return(TYPL+TYMATCH);
-		else if( mt12 & MDBI ) return( TYPL+LVAL+TYMATCH );
+		else if( mt12 & MDBI ) return( TYPL+LVAL+NCVT+TYMATCH );
 		else if( mt2 == 0 &&
 		        ( p->in.right->in.op == CALL ||
 			  p->in.right->in.op == UNARY CALL)) break;
