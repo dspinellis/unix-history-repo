@@ -1,4 +1,4 @@
-/*	vp.c	4.23	83/02/10	*/
+/*	vp.c	4.24	83/03/10	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -18,6 +18,7 @@
 #include "../h/buf.h"
 #include "../h/systm.h"
 #include "../h/map.h"
+#include "../h/ioctl.h"
 #include "../h/vcmd.h"
 #include "../h/uio.h"
 #include "../h/kernel.h"
