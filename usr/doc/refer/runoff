@@ -1,0 +1,2 @@
+refer -p biblio refer.bib | vtroff -mx
+# refer.mac should be typed on a 12 pitch Daisy wheel printer
