@@ -3,16 +3,16 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.1 (Berkeley) %G%
+#	@(#)Makefile	6.2 (Berkeley) %G%
 #
 SRCS=	ref.me
 DEVICE=	dp
 TROFF=	ditroff -P${DEVICE}
 
-paper:	ref.me
+paper:	ref.${DEVICE}
 	lpr -P${DEVICE} -n ref.${DEVICE}
 
-uchanges: ${SRCS}
+ref.${DEVICE}: ${SRCS}
 	${TROFF} -me -t ${SRCS} > ref.${DEVICE}
 
 clean:
