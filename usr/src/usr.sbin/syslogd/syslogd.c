@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.17 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -155,7 +155,7 @@ main(argc, argv)
 	register int i;
 	register char *p;
 	int funix, finet, inetm, fklog, klogm, len;
-	struct sockaddr_un sun, fromunix;
+	struct sockaddr_un sunx, fromunix;
 	struct sockaddr_in sin, frominet;
 	FILE *fp;
 	char line[MSG_BSIZE + 1];
@@ -217,11 +217,11 @@ main(argc, argv)
 	(void) alarm(MarkInterval * 60 / MARKCOUNT);
 	(void) unlink(LogName);
 
-	sun.sun_family = AF_UNIX;
-	(void) strncpy(sun.sun_path, LogName, sizeof sun.sun_path);
+	sunx.sun_family = AF_UNIX;
+	(void) strncpy(sunx.sun_path, LogName, sizeof sunx.sun_path);
 	funix = socket(AF_UNIX, SOCK_DGRAM, 0);
-	if (funix < 0 || bind(funix, (struct sockaddr *) &sun,
-	    sizeof(sun.sun_family)+strlen(sun.sun_path)) < 0 ||
+	if (funix < 0 || bind(funix, (struct sockaddr *) &sunx,
+	    sizeof(sunx.sun_family)+strlen(sunx.sun_path)) < 0 ||
 	    chmod(LogName, 0666) < 0) {
 		(void) sprintf(line, "cannot create %s", LogName);
 		logerror(line);
@@ -661,7 +661,7 @@ wallmsg(f, iov)
 
 		/* compute the device name */
 		p = "/dev/12345678";
-		strcpyn(&p[5], ut.ut_line, UNAMESZ);
+		strncpy(&p[5], ut.ut_line, UNAMESZ);
 
 		/*
 		 * Might as well fork instead of using nonblocking I/O
