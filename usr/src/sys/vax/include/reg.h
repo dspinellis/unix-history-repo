@@ -1,5 +1,11 @@
-/*	reg.h	6.1	83/07/29	*/
 /*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)reg.h	6.2 (Berkeley) %G%
+ */
+
  * Location of the users' stored
  * registers relative to R0.
  * Usage is u.u_ar0[XX].

@@ -1,4 +1,10 @@
-/*	ufs_inode.c	6.15	85/03/20	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)ufs_inode.c	6.16 (Berkeley) %G%
+ */
 
 #include "param.h"
 #include "systm.h"

@@ -1,4 +1,10 @@
-/*	pte.h	6.4	85/04/18	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)pte.h	6.5 (Berkeley) %G%
+ */
 
 /*
  * VAX page table entry

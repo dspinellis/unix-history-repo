@@ -1,4 +1,10 @@
-/*	dinode.h	6.7	85/01/10	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)dinode.h	6.8 (Berkeley) %G%
+ */
 
 /*
  * The I node is the focus of all file activity in UNIX.

@@ -1,4 +1,10 @@
-/*	namei.h	6.9	85/03/07	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)namei.h	6.10 (Berkeley) %G%
+ */
 
 #ifndef _NAMEI_
 #define	_NAMEI_

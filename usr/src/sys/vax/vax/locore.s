@@ -1,4 +1,10 @@
-/*	locore.s	6.25	85/04/28	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)locore.s	6.26 (Berkeley) %G%
+ */
 
 #include "psl.h"
 #include "pte.h"

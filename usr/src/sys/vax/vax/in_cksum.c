@@ -1,4 +1,10 @@
-/*	in_cksum.c	6.3	85/05/01	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)in_cksum.c	6.4 (Berkeley) %G%
+ */
 
 #include "types.h"
 #include "mbuf.h"

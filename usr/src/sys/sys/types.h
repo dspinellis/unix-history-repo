@@ -1,4 +1,10 @@
-/*	types.h	6.3	85/03/07	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)types.h	6.4 (Berkeley) %G%
+ */
 
 #ifndef _TYPES_
 #define	_TYPES_

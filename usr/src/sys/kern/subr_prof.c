@@ -1,4 +1,10 @@
-/*	subr_prof.c	6.4	84/08/29	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)subr_prof.c	6.5 (Berkeley) %G%
+ */
 
 /* last integrated from: gmon.c	4.10 (Berkeley) 1/14/83 */
 
