@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -1125,6 +1125,7 @@ static Command cmdtab2[] = {
  * Call routine with argc, argv set from args (terminated by 0).
  */
 
+/*VARARGS1*/
 static
 call(va_alist)
 va_dcl
