@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.45 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.46 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -263,7 +263,7 @@ ffs_truncate(ovp, length, flags)
 			return (error);
 		oip->i_size = length;
 		size = blksize(fs, oip, lbn);
-		(void) vnode_pager_uncache(ITOV(oip));
+		(void) vnode_pager_uncache(ovp);
 		bzero(bp->b_un.b_addr + offset, (unsigned)(size - offset));
 		allocbuf(bp, size);
 		if (flags & IO_SYNC)
@@ -287,7 +287,7 @@ ffs_truncate(ovp, length, flags)
 	for (i = NDADDR - 1; i > lastblock; i--)
 		oip->i_db[i] = 0;
 	oip->i_flag |= ICHG|IUPD;
-	vinvalbuf(ITOV(oip), (length > 0));
+	vinvalbuf(ovp, (length > 0));
 	allerror = ffs_update(ovp, &time, &time, MNT_WAIT);
 
 	/*
