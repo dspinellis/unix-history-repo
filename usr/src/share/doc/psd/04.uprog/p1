@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)p1	6.2 (Berkeley) %G%
+.\"	@(#)p1	8.1 (Berkeley) %G%
 .\"
 .if n .ls 2
 .if t .tr |\(or
