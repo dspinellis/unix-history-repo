@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.10 (Berkeley) %G%
+#	@(#)Makefile	4.11 (Berkeley) %G%
 #
 # The system has two monitoring schemes, utilizing either ``prof''
 # or ``gprof''. DFLMON determines the default profiler; mon.o
@@ -58,7 +58,6 @@ tags:
 	for i in ${ALL}; do \
 		(cd $$i; make ${MFLAGS} TAGSFILE=../${TAGSFILE} tags); \
 	done
-	sort -u +0 -1 tags -o tags
 
 clean:
 	for i in ${MACHINE}/csu ${ALL}; do (cd $$i; make ${MFLAGS} clean); done
