@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_log.c	7.13 (Berkeley) %G%
+ *	@(#)subr_log.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -68,6 +68,7 @@ logclose(dev, flag, mode, p)
 
 	log_open = 0;
 	logsoftc.sc_state = 0;
+	return (0);
 }
 
 /*ARGSUSED*/
