@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)0.h	5.1 (Berkeley) %G%
+ *	@(#)0.h	5.2 (Berkeley) %G%
  */
 
 #define DEBUG
@@ -14,6 +14,7 @@
 
 #include	<stdio.h>
 #include	<sys/types.h>
+#undef roundup
 
 typedef enum {FALSE, TRUE} bool;
 
