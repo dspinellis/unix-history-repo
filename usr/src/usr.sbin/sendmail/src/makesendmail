@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#       @(#)makesendmail	8.14 (Berkeley) %G%
+#       @(#)makesendmail	8.15 (Berkeley) %G%
 #
 
 #
@@ -64,20 +64,20 @@ then
 fi
 
 # now try to find a reasonable object directory
-if [ -r obj.$os.$arch.$rel ]; then
-	obj=obj.$os.$arch.$rel
-elif [ -r obj.$os.$arch.$rbase.x ]; then
-	obj=obj.$os.$arch.$rbase.x
+if [ -r obj.$os.$rel.$arch ]; then
+	obj=obj.$os.$rel.$arch
+elif [ -r obj.$os.$rbase.x.$arch ]; then
+	obj=obj.$os.$rbase.x.$arch
 elif [ -r obj.$os.$rel ]; then
 	obj=obj.$os.$rel
 elif [ -r obj.$os.$rbase.x ]; then
 	obj=obj.$os.$rbase.x
 elif [ -r obj.$os.$arch ]; then
 	obj=obj.$os.$arch
-elif [ -r obj.$arch.$rel ]; then
-	obj=obj.$arch.$rel
-elif [ -r obj.$arch.$rbase.x ]; then
-	obj=obj.$arch.$rbase.x
+elif [ -r obj.$rel.$arch ]; then
+	obj=obj.$rel.$arch
+elif [ -r obj.$rbase.x.$arch ]; then
+	obj=obj.$rbase.x.$arch
 elif [ -r obj.$os ]; then
 	obj=obj.$os
 elif [ -r obj.$arch ]; then
@@ -86,21 +86,21 @@ elif [ -r obj.$rel ]; then
 	obj=obj.$rel
 else
 	# no existing obj directory -- try to create one if Makefile found
-	obj=obj.$os.$arch.$rel
-	if [ -r Makefiles/Makefile.$os.$arch.$rel ]; then
-		makefile=Makefile.$os.$arch.$rel
-	elif [ -r Makefiles/Makefile.$os.$arch.$rbase.x ]; then
-		makefile=Makefile.$os.$arch.$rbase.x
+	obj=obj.$os.$rel.$arch
+	if [ -r Makefiles/Makefile.$os.$rel.$arch ]; then
+		makefile=Makefile.$os.$rel.$arch
+	elif [ -r Makefiles/Makefile.$os.$rbase.x.$arch ]; then
+		makefile=Makefile.$os.$rbase.x.$arch
 	elif [ -r Makefiles/Makefile.$os.$rel ]; then
 		makefile=Makefile.$os.$rel
 	elif [ -r Makefiles/Makefile.$os.$rbase.x ]; then
 		makefile=Makefile.$os.$rbase.x
 	elif [ -r Makefiles/Makefile.$os.$arch ]; then
 		makefile=Makefile.$os.$arch
-	elif [ -r Makefiles/Makefile.$arch.$rel ]; then
-		makefile=Makefile.$arch.$rel
-	elif [ -r Makefiles/Makefile.$arch.$rbase.x ]; then
-		makefile=Makefile.$arch.$rbase.x
+	elif [ -r Makefiles/Makefile.$rel.$arch ]; then
+		makefile=Makefile.$rel.$arch
+	elif [ -r Makefiles/Makefile.$rbase.x.$arch ]; then
+		makefile=Makefile.$rbase.x.$arch
 	elif [ -r Makefiles/Makefile.$os ]; then
 		makefile=Makefile.$os
 	elif [ -r Makefiles/Makefile.$arch ]; then
