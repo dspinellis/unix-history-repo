@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.25 1993/11/13 20:12:52 paul Exp $
+#	$Id: Makefile,v 1.26 1993/11/27 16:12:55 paul Exp $
 #
 
 SUBDIR=
@@ -130,10 +130,7 @@ libraries:
 	@echo "--------------------------------------------------------------"
 	@echo
 .if defined(CLOBBER)
-	rm -rf ${DESTDIR}/usr/lib
-	mkdir ${DESTDIR}/usr/lib
-	chown -R bin.bin ${DESTDIR}/usr/lib
-	chmod 755 ${DESTDIR}/usr/lib
+	find ${DESTDIR}/usr/lib \! -name '*.s[ao].*' -a \! -type d | xargs -n30 rm -rf
 .endif
 	cd ${.CURDIR}/lib;		make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/gcc2/libgcc;	make depend all install ${CLEANDIR} obj
