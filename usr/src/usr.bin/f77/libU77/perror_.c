@@ -1,5 +1,5 @@
 /*
-char id_perror[] = "@(#)perror_.c	1.1";
+char id_perror[] = "@(#)perror_.c	1.2";
  *
  * write a standard error message to the standard error output
  *
@@ -22,8 +22,9 @@ extern unit units[];
 perror_(s, len)
 char *s; long len;
 {
-	char buf[40];
-	char *mesg = s + len;
+	unit	*lu;
+	char	buf[40];
+	char	*mesg = s + len;
 
 	while (len > 0 && *--mesg == ' ')
 		len--;
@@ -36,7 +37,10 @@ char *s; long len;
 		sprintf(buf, "%d: unknown error number", errno);
 		mesg = buf;
 	}
+	lu = &units[STDERR];
+	if (!lu->uwrt)
+		nowwriting(lu);
 	while (len-- > 0)
-		putc(*s++, units[STDERR].ufd);
-	fprintf(units[STDERR].ufd, ": %s\n", mesg);
+		putc(*s++, lu->ufd);
+	fprintf(lu->ufd, ": %s\n", mesg);
 }
