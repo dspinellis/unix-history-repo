@@ -1,4 +1,4 @@
-/*	cgram.y	4.7	87/04/23	*/
+/*	cgram.y	4.8	87/05/01	*/
 
 /*
  * Grammar for the C compiler.
@@ -585,10 +585,16 @@ switchpart:	   SWITCH  LP  e  RP
 			    case INT:	case UNSIGNED:
 			    case MOE:	case ENUMTY:
 				    break;
+			    case FLOAT:	case DOUBLE:
+				    if (pflag)
+					werror("switch (double) muffed by 4.[12]bsd");
+				    /*FALLTHROUGH*/
 			    default:
 				werror("switch expression not type int");
 				q = makety( q, INT, q->fn.cdim, q->fn.csiz );
 				}
+			    if (hflag && q->in.op == ICON)
+				werror( "constant in switch" );
 			    ecomp( buildtree( FORCE, q, NIL ) );
 			    branch( $$ = getlab() );
 			    swstart();
