@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.28 %G%";
+static char sccsid[] = "@(#)interp.c 1.29 %G%";
 
 #include <math.h>
 #include <signal.h>
@@ -491,13 +491,13 @@ interpreter(base)
 			pc.cp++;
 			tl = pop2();
 			tl1 = pop2();
-			push2(tl & tl1);
+			push2(tl1 & tl);
 			continue;
 		case O_OR:
 			pc.cp++;
 			tl = pop2();
 			tl1 = pop2();
-			push2(tl | tl1);
+			push2(tl1 | tl);
 			continue;
 		case O_NOT:
 			pc.cp++;
@@ -826,25 +826,25 @@ interpreter(base)
 			pc.cp++;
 			td = pop8();
 			td1 = pop8();
-			push8(td + td1);
+			push8(td1 + td);
 			continue;
 		case O_SUB8:
 			pc.cp++;
 			td = pop8();
 			td1 = pop8();
-			push8(td - td1);
+			push8(td1 - td);
 			continue;
 		case O_MUL8:
 			pc.cp++;
 			td = pop8();
 			td1 = pop8();
-			push8(td * td1);
+			push8(td1 * td);
 			continue;
 		case O_DVD8:
 			pc.cp++;
 			td = pop8();
 			td1 = pop8();
-			push8(td / td1);
+			push8(td1 / td);
 			continue;
 		case O_STOI:
 			pc.cp++;
@@ -896,9 +896,9 @@ interpreter(base)
 			continue;
 		case O_DVD48:
 			pc.cp++;
-			td1 = pop4();
-			td = pop8();
-			push8(td / td1);
+			td = pop4();
+			td1 = pop8();
+			push8(td1 / td);
 			continue;
 		case O_DVD82:
 			pc.cp++;
