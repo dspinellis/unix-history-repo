@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)login.c.1	4.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)login.c.1	4.8 (Berkeley) %G%";
 /*
  * login [ name ]
  */
@@ -158,9 +158,9 @@ bad:
 		close(f);
 	}
 	if(chdir(pwd->pw_dir) < 0) {
-	    printf("Logging with home=/tmp\n");
-	    pwd->pw_dir = "/tmp";
-	    if(chdir("/tmp") < 0) {
+	    printf("Logging with home=/\n");
+	    pwd->pw_dir = "/";
+	    if(chdir("/") < 0) {
 		printf("No directory\n");
 		goto loop;
 	    }
