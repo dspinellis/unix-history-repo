@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)nullrelay.m4	8.2 (Berkeley) %G%')
+VERSIONID(`@(#)nullrelay.m4	8.3 (Berkeley) %G%')
 
 #
 #  This configuration applies only to relay-only hosts.  They send
@@ -158,7 +158,7 @@ OT`'confMESSAGE_TIMEOUT
 #  if defined but null, use TZ envariable passed in
 #  if defined and non-null, use that info
 ifelse(confTIME_ZONE, `USE_SYSTEM', `#Ot',
-	confTIME_ZONE, `USE_TZ', `',
+	confTIME_ZONE, `USE_TZ', `Ot',
 	`Ot`'confTIME_ZONE')
 
 # default UID
