@@ -37,9 +37,12 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00004
+ * CURRENT PATCH LEVEL:         2       00021
  * --------------------         -----   ----------------------
  *
+ * 31 Jul 92	Christoph Robitschko	Fixed second disk recognition,
+ *					bzero of malloced memory for warm
+ *					boot problem.
  * 19 Aug 92    Frank Maclachlan	Fixed bug when first sector of a
  *					multisector read is in bad144 table.
  */
@@ -67,6 +70,8 @@
 #include "i386/isa/wdreg.h"
 #include "syslog.h"
 #include "vm/vm.h"
+
+#define _NWD  (NWD - 1)       /* One is for the controller XXX 31 Jul 92*/
 
 #define	RETRIES		5	/* number of retries before giving up */
 #define	MAXTRANSFER	32	/* max size of transfer in page clusters */
@@ -121,11 +126,11 @@ struct	disk {
 	struct	dkbad	dk_bad;	/* bad sector table */
 };
 
-struct	disk	*wddrives[NWD];		/* table of units */
+struct	disk	*wddrives[_NWD];		/* table of units */
 struct	buf	wdtab;
-struct	buf	wdutab[NWD];		/* head of queue per drive */
-struct	buf	rwdbuf[NWD];		/* buffers for raw IO */
-long	wdxfer[NWD];			/* count of transfers */
+struct	buf	wdutab[_NWD];		/* head of queue per drive */
+struct	buf	rwdbuf[_NWD];		/* buffers for raw IO */
+long	wdxfer[_NWD];			/* count of transfers */
 #ifdef	WDDEBUG
 int	wddebug;
 #endif
@@ -151,12 +156,13 @@ wdprobe(struct isa_device *dvp)
 	struct disk *du;
 	int wdc;
 
-	if (unit > NWD)
+	if (unit >= _NWD)				/* 31 Jul 92*/
 		return(0);
 
 	if ((du = wddrives[unit]) == 0) {
 		du = wddrives[unit] = (struct disk *)
 			malloc (sizeof(struct disk), M_TEMP, M_NOWAIT);
+		bzero (du, sizeof(struct disk));	/* 31 Jul 92*/
 		du->dk_unit = unit;
 	}
 
@@ -194,33 +200,46 @@ nodevice:
 int
 wdattach(struct isa_device *dvp)
 {
-	int unit = dvp->id_unit;
-	struct disk *du = wddrives[unit];
+	int unit;
+/*	int unit = dvp->id_unit;*/
 
-	if(wdgetctlr(unit, du) == 0)  {
-		int i, blank;
-		char c;
-
-		printf(" <");
-		for (i = blank = 0 ; i < sizeof(du->dk_params.wdp_model); i++) {
-			char c = du->dk_params.wdp_model[i];
-
-			if (blank && c == ' ') continue;
-			if (blank && c != ' ') {
-				printf(" %c", c);
-				blank = 0;
-				continue;
-			} 
-			if (c == ' ')
-				blank = 1;
-			else
-				printf("%c", c);
+	for (unit=0; unit< _NWD; unit++) {
+		struct disk *du;
+		if ((du = wddrives[unit]) == 0) {
+			du = wddrives[unit] = (struct disk *)
+				malloc (sizeof(struct disk), M_TEMP, M_NOWAIT);
+			bzero (du, sizeof(struct disk));
+			du->dk_unit = unit;
+			du->dk_port = dvp->id_iobase;
 		}
-		printf(">");
+
+		/* print out description of drive, suppressing multiple blanks*/
+		if(wdgetctlr(unit, du) == 0)  {
+			int i, blank;
+			char c;
+			printf(" %d:<", unit);
+			for (i = blank = 0 ; i < sizeof(du->dk_params.wdp_model); i++) {
+				char c = du->dk_params.wdp_model[i];
+
+				if (blank && c == ' ') continue;
+				if (blank && c != ' ') {
+					printf(" %c", c);
+					blank = 0;
+					continue;
+				}
+				if (c == ' ')
+					blank = 1;
+				else
+					printf("%c", c);
+			}
+			printf(">");
+			du->dk_unit = unit;
+		}
+		else {
+			free(du, M_TEMP);
+			wddrives[unit] = 0;
+		}
 	}
-/* check for index pulses from each drive. if present, report and
-   allocate a bios drive position to it, which will be used by read disklabel */
-	du->dk_unit = unit;
 	return(1);
 }
 
@@ -241,7 +260,8 @@ wdstrategy(register struct buf *bp)
 	int	s;
 
 	/* valid unit, controller, and request?  */
-	if (unit >= NWD || bp->b_blkno < 0 || (du = wddrives[unit]) == 0) {
+	if (unit >= _NWD || bp->b_blkno < 0 || (du = wddrives[unit]) == 0) {
+
 		bp->b_error = EINVAL;
 		bp->b_flags |= B_ERROR;
 		goto done;
@@ -650,14 +670,9 @@ wdopen(dev_t dev, int flags, int fmt, struct proc *p)
 	char *msg;
 
 	unit = wdunit(dev);
-	if (unit >= NWD) return (ENXIO) ;
+	if (unit >= _NWD) return (ENXIO) ;
 
 	du = wddrives[unit];
-	if (du == 0 && (unit&1) && wddrives[unit&~1]) {			/*XXX*/
-		du = wddrives[unit] = (struct disk *)			/*XXX*/
-			malloc (sizeof(struct disk), M_TEMP, M_NOWAIT);	/*XXX*/
-		du->dk_port = wddrives[unit&~1]->dk_port;		/*XXX*/
-	}								/*XXX*/
 	if (du == 0) return (ENXIO) ;
 
 	if ((du->dk_flags & DKFL_BSDLABEL) == 0) {
@@ -1097,7 +1112,7 @@ wdsize(dev_t dev)
 	int unit = wdunit(dev), part = wdpart(dev), val;
 	struct disk *du;
 
-	if (unit >= NWD)
+	if (unit >= _NWD)	/* 31 Jul 92*/
 		return(-1);
 
 	du = wddrives[unit];
@@ -1137,7 +1152,7 @@ wddump(dev_t dev)			/* dump core after a system crash */
 	unit = wdunit(dev);		/* eventually support floppies? */
 	part = wdpart(dev);		/* file system */
 	/* check for acceptable drive number */
-	if (unit >= NWD) return(ENXIO);
+	if (unit >= _NWD) return(ENXIO);		/* 31 Jul 92*/
 
 	du = wddrives[unit];
 	if (du == 0) return(ENXIO);
