@@ -1,4 +1,4 @@
-/*	sed.h	4.2	87/09/16	*/
+/*	sed.h	4.3	87/12/21	*/
 
 /*
  * sed -- stream  editor
@@ -31,8 +31,8 @@
 #define NBRA	9
 
 FILE	*fin;
-union reptr	*abuf[ABUFSIZE];
-union reptr **aptr;
+struct reptr	*abuf[ABUFSIZE];
+struct reptr **aptr;
 char	*lastre;
 char	ibuf[BUFSIZ];
 char	*cbp;
@@ -46,7 +46,7 @@ char	*reend;
 char	*lbend;
 char	*hend;
 char	*lcomend;
-union reptr	*ptrend;
+struct reptr	*ptrend;
 int	eflag;
 int	dolflag;
 int	sflag;
@@ -100,31 +100,22 @@ char	*cp;
 char	*reend;
 char	*lbend;
 
-union	reptr {
-	struct reptr1 {
-		char	*ad1;
-		char	*ad2;
-		char	*re1;
-		char	*rhs;
-		FILE	*fcode;
-		char	command;
-		char	gfl;
-		char	pfl;
-		char	inar;
-		char	negfl;
-	} A;
-	struct reptr2 {
-		char	*ad1;
-		char	*ad2;
-		union reptr	*lb1;
-		char	*rhs;
-		FILE	*fcode;
-		char	command;
-		char	gfl;
-		char	pfl;
-		char	inar;
-		char	negfl;
-	} B;
+struct	reptr {
+	char	*ad1;
+	char	*ad2;
+	union {
+		char	*real_re1;
+		struct reptr	*real_lb1;
+	} re_lb;
+#define	re1	re_lb.real_re1
+#define	lb1	re_lb.real_lb1
+	char	*rhs;
+	FILE	*fcode;
+	char	command;
+	char	gfl;
+	char	pfl;
+	char	inar;
+	char	negfl;
 } ptrspace[PTRSIZE], *rep;
 
 
@@ -132,8 +123,8 @@ char	respace[RESIZE];
 
 struct label {
 	char	asc[9];
-	union reptr	*chain;
-	union reptr	*address;
+	struct reptr	*chain;
+	struct reptr	*address;
 } ltab[LABSIZE];
 
 struct label	*lab;
@@ -147,9 +138,9 @@ char	**eargv;
 
 extern	char	bittab[];
 
-union reptr	**cmpend[DEPTH];
+struct reptr	**cmpend[DEPTH];
 int	depth;
-union reptr	*pending;
+struct reptr	*pending;
 char	*badp;
 char	bad;
 char	*compile();

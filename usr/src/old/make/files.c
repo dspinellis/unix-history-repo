@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)files.c	4.16 (Berkeley) 87/11/15";
+static	char *sccsid = "@(#)files.c	4.17 (Berkeley) 87/12/21";
 #include <fcntl.h>
 
 /* UNIX DEPENDENT PROCEDURES */
@@ -582,6 +582,7 @@ register char *name;
 	register char *p;
 	register struct varblock *cp;
 	struct stat buf;
+	struct varblock *varptr();
 
 	for (p = name; *p; p++) 
 		if(*p == '/') return(name);
