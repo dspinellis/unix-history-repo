@@ -1,4 +1,4 @@
-/*	pup.h	4.4	82/03/13	*/
+/*	pup.h	4.5	82/04/10	*/
 
 /*
  * PUP port addressing.
@@ -40,4 +40,4 @@ struct sockaddr_pup {
 
 #define	sp_net		spup_addr.pp_net
 #define	sp_host		spup_addr.pp_host
-#define	sp_socket	spup_addr.pp_port
+#define	sp_socket	spup_addr.pp_socket
