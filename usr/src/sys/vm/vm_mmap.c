@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.3 90/01/21$
  *
- *	@(#)vm_mmap.c	7.1 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -21,6 +21,7 @@
 #include "param.h"
 #include "systm.h"
 #include "user.h"
+#include "filedesc.h"
 #include "proc.h"
 #include "vnode.h"
 #include "specdev.h"
@@ -78,7 +79,7 @@ sstk(p, uap, retval)
 }
 
 smmap(p, uap, retval)
-	register struct proc *p;
+	struct proc *p;
 	register struct args {
 		caddr_t	addr;
 		int	len;
@@ -89,7 +90,8 @@ smmap(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	struct file *fp;
+	register struct filedesc *fdp = p->p_fd;
+	register struct file *fp;
 	struct vnode *vp;
 	vm_offset_t addr;
 	vm_size_t size;
@@ -126,8 +128,8 @@ smmap(p, uap, retval)
 	 * Mapping file or named anonymous, get fp for validation
 	 */
 	if (mtype == MAP_FILE || uap->fd != -1) {
-		if ((unsigned)uap->fd >= NOFILE ||
-		    (fp = u.u_ofile[uap->fd]) == NULL)
+		if (((unsigned)uap->fd) >= fdp->fd_maxfiles ||
+		    (fp = OFILE(fdp, uap->fd)) == NULL)
 			return(EBADF);
 	}
 	/*
@@ -286,7 +288,7 @@ munmapfd(fd)
 	/*
 	 * XXX -- should vm_deallocate any regions mapped to this file
 	 */
-	u.u_pofile[fd] &= ~UF_MAPPED;
+	OFILEFLAGS(u.u_procp->p_fd, fd) &= ~UF_MAPPED;
 }
 
 mprotect(p, uap, retval)
