@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mail.1	8.5 (Berkeley) %G%
+.\"	@(#)mail.1	8.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAIL 1
@@ -873,6 +873,9 @@ Suppresses the printing of the version when first invoked.
 If this option is set, then a message-list specifier in the form ``/x:y''
 will expand to all messages containing the substring ``y'' in the header
 field ``x''.  The string search is case insensitive.
+The form ``/To:y'' is a special case, and will expand
+to all messages containing the substring ``y'' in the ``To'', ``Cc''
+or ``Bcc'' header fields.
 .It Ar verbose
 Setting the option
 .Ar verbose
