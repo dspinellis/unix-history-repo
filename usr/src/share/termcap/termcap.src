@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.83 (Berkeley) %G%
+#	@(#)termcap.src	5.84 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -3176,6 +3176,8 @@ pc|ibmpc|ibm pc PC/IX:\
 	:li#24:co#80:am:bs:bw:eo:\
 	:cd=\E[J:ce=\E[K:cl=\Ec:cm=\E[%i%2;%2H:do=\E[B:ho=\E[;H:\
 	:nd=\E[C:up=\E[A:so=\E[7m:se=\E[0m:us=\E[4m:ue=\E[0m:
+pc3|ibmpc3|IBM PC 386BSD Console:\
+        :li#25:tc=pc:
 zk|ibmx|ibmpcx|IBM PC xenix console display:\
 	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=^L:cm=\E[%d;%dH:co#80:\
 	:dc=\E[P:dl=\E[M:do=\E[B:ei=:ho=\E[H:ic=\E[@:im=:li#25:\
