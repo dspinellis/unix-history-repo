@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)save.c	1.3 %G%";
+static char sccsid[] = "@(#)save.c	1.4 %G%";
 #endif
 
 #include "externs.h"
@@ -29,6 +29,8 @@ restore()
 	fread(&WEIGHT, sizeof WEIGHT, 1, fp);
 	fread(&CUMBER, sizeof CUMBER, 1, fp);
 	fread(&clock, sizeof clock, 1, fp);
+	fread(&tmp, sizeof tmp, 1, fp);
+	location = tmp ? dayfile : nightfile;
 	for (n = 1; n <= NUMOFROOMS; n++) {
 		fread(location[n].link, sizeof location[n].link, 1, fp);
 		fread(location[n].objects, sizeof location[n].objects, 1, fp);
@@ -40,8 +42,6 @@ restore()
 	fread(&direction, sizeof direction, 1, fp);
 	fread(&position, sizeof position, 1, fp);
 	fread(&time, sizeof time, 1, fp);
-	fread(&tmp, sizeof tmp, 1, fp);
-	location = tmp ? dayfile : nightfile;
 	fread(&fuel, sizeof fuel, 1, fp);
 	fread(&torps, sizeof torps, 1, fp);
 	fread(&carrying, sizeof carrying, 1, fp);
@@ -83,6 +83,8 @@ save()
 	fwrite(&WEIGHT, sizeof WEIGHT, 1, fp);
 	fwrite(&CUMBER, sizeof CUMBER, 1, fp);
 	fwrite(&clock, sizeof clock, 1, fp);
+	tmp = location == dayfile;
+	fwrite(&tmp, sizeof tmp, 1, fp);
 	for (n = 1; n <= NUMOFROOMS; n++) {
 		fwrite(location[n].link, sizeof location[n].link, 1, fp);
 		fwrite(location[n].objects, sizeof location[n].objects, 1, fp);
@@ -94,8 +96,6 @@ save()
 	fwrite(&direction, sizeof direction, 1, fp);
 	fwrite(&position, sizeof position, 1, fp);
 	fwrite(&time, sizeof time, 1, fp);
-	tmp = location == dayfile;
-	fwrite(&tmp, sizeof tmp, 1, fp);
 	fwrite(&fuel, sizeof fuel, 1, fp);
 	fwrite(&torps, sizeof torps, 1, fp);
 	fwrite(&carrying, sizeof carrying, 1, fp);
