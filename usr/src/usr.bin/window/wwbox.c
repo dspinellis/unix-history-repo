@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwbox.c	3.1 83/08/18";
+static	char *sccsid = "@(#)wwbox.c	3.2 83/08/19";
 #endif
 
 #include "ww.h"
@@ -15,22 +15,16 @@ int nr, nc;
 
 	r1 = r + nr - 1;
 	c1 = c + nc - 1;
-	wwframec(w, r, c, WWF_D|WWF_R, 0);
+	wwframec(w, r, c, WWF_D|WWF_R);
 	for (i = c + 1; i < c1; i++)
-		wwframec(w, r, i, WWF_L|WWF_R, 0);
-	wwframec(w, r, i, WWF_L|WWF_D, 0);
+		wwframec(w, r, i, WWF_L|WWF_R);
+	wwframec(w, r, i, WWF_L|WWF_D);
 	for (i = r + 1; i < r1; i++)
-		wwframec(w, i, c1, WWF_U|WWF_D, 0);
-	wwframec(w, i, c1, WWF_U|WWF_L, 0);
+		wwframec(w, i, c1, WWF_U|WWF_D);
+	wwframec(w, i, c1, WWF_U|WWF_L);
 	for (i = c1 - 1; i > c; i--)
-		wwframec(w, r1, i, WWF_R|WWF_L, 0);
-	wwframec(w, r1, i, WWF_R|WWF_U, 0);
+		wwframec(w, r1, i, WWF_R|WWF_L);
+	wwframec(w, r1, i, WWF_R|WWF_U);
 	for (i = r1 - 1; i > r; i--)
-		wwframec(w, i, c, WWF_D|WWF_U, 0);
-}
-
-wwunbox(w)
-struct ww *w;
-{
-	wwunframe1(w, 0);
+		wwframec(w, i, c, WWF_D|WWF_U);
 }

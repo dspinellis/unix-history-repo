@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.9 83/08/19		*/
+/*	@(#)ww.h	3.10 83/08/19		*/
 
 #include <stdio.h>
 #include <sgtty.h>
@@ -65,8 +65,7 @@ union ww_char {
 #define WW_HASPROC	1
 #define WW_INCHILD	2
 #define WW_DEAD		3
-
-	/* flags for wwfmap */
+	/* flags for ww_fmap */
 #define WWF_U		0x01
 #define WWF_R		0x02
 #define WWF_D		0x04
@@ -74,6 +73,12 @@ union ww_char {
 #define WWF_MASK	(WWF_U|WWF_R|WWF_D|WWF_L)
 #define WWF_LABEL	0x40
 #define WWF_TOP		0x80
+
+	/* flags to wwopen() */
+#define WWO_PTY		0x01		/* want pty */
+#define WWO_REVERSE	0x02		/* make it all reverse video */
+#define WWO_GLASS	0x04		/* make it all glass */
+#define WWO_FRAME	0x08		/* this is a frame window */
 
 	/* special ww_index value */
 #define WWX_NOBODY	NWW
