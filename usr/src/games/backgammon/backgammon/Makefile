@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.10	{Berkeley}	%G%
+#	@(#)Makefile	5.11	{Berkeley}	%G%
 #
 LIBC=	/lib/libc.a
 LIBS=	-ltermlib
@@ -20,7 +20,7 @@ TSRCS=	allow.c board.c check.c data.c fancy.c init.c odds.c one.c save.c \
 TOBJS=	allow.o board.o check.o data.o fancy.o init.o odds.o one.o save.o \
 	subs.o table.o teach.o ttext1.o ttext2.o tutor.o
 
-all: backgammon teachgammon backgammon.doc
+all: backgammon teachgammon
 
 # Backgammon program
 backgammon: ${BOBJS} ${LIBC}
@@ -30,12 +30,8 @@ backgammon: ${BOBJS} ${LIBC}
 teachgammon: ${TOBJS} ${LIBC}
 	${CC} -o $@ ${TOBJS} ${LIBS}
 
-# Documentation
-backgammon.doc: backgammon.src
-	nroff -man -Tcrt backgammon.src > backgammon.doc
-
 clean: FRC
-	rm -f ${TOBJS} ${BOBJS} core teachgammon backgammon backgammon.doc
+	rm -f ${TOBJS} ${BOBJS} core teachgammon backgammon
 
 depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
