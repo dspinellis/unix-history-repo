@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.21		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.22		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.21		%G%);
+SCCSID(@(#)queue.c	3.22		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -485,6 +485,7 @@ dowork(w)
 		**		can recover on interrupt.
 		*/
 
+		(void) alarm(0);
 		FatalErrors = FALSE;
 		QueueRun = TRUE;
 		MailBack = TRUE;
@@ -578,7 +579,8 @@ readqf(cf)
 	**  Read and process the file.
 	*/
 
-	message(Arpa_Info, "Running %s", cf);
+	if (Verbose)
+		printf("\nRunning %s\n", cf);
 	while (fgets(buf, sizeof buf, f) != NULL)
 	{
 		fixcrlf(buf, TRUE);

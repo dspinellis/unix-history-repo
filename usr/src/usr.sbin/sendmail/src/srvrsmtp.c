@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.20.1.1		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.21		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.20.1.1		%G%);
+SCCSID(@(#)srvrsmtp.c	3.21		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -86,12 +86,28 @@ smtp()
 	(void) close(1);
 	(void) dup(fileno(OutChannel));
 	message("220", "%s Sendmail version %s at your service", HostName, Version);
+	(void) signal(SIGALRM, tick);
 	for (;;)
 	{
+		/* setup for the read */
 		CurEnv->e_to = NULL;
 		Errors = 0;
 		(void) fflush(stdout);
-		if (fgets(inp, sizeof inp, InChannel) == NULL)
+
+		/* arrange a timeout */
+		if (setjmp(TickFrame) != 0)
+		{
+			message("421", "%s timed out", HostName);
+			finis();
+		}
+		(void) alarm(ReadTimeout);
+
+		/* read the input line */
+		p = fgets(inp, sizeof inp, InChannel);
+
+		/* clear the timeout and handle errors */
+		(void) alarm(0);
+		if (p == NULL)
 		{
 			/* end of file, just die */
 			message("421", "%s Lost input channel", HostName);

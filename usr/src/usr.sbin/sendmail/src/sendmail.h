@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.74		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.75		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -15,6 +15,7 @@ static char SmailSccsId[] =	"@(#)sendmail.h	3.74		%G%";
 
 # include <stdio.h>
 # include <ctype.h>
+# include <setjmp.h>
 # include "conf.h"
 # include "useful.h"
 
@@ -387,6 +388,8 @@ extern char	*StatFile;	/* location of statistics summary */
 extern char	*QueueDir;	/* location of queue directory */
 EXTERN char	*ControlFile;	/* when queued, name of control file temp */
 EXTERN time_t	CurTime;	/* time of this message */
+EXTERN jmp_buf	TickFrame;	/* frame for clock ticks to jump to */
+extern int	ReadTimeout;	/* timeout on reads before clock ticks */
 
 
 # include	<sysexits.h>

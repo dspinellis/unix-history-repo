@@ -1,12 +1,13 @@
 # include <ctype.h>
+# include <signal.h>
 # include <sysexits.h>
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.12.1.1		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.13		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.12.1.1		%G%);
+SCCSID(@(#)usersmtp.c	3.13		%G%);
 
 /*
 **  SMTPINIT -- initialize SMTP.
@@ -40,6 +41,7 @@ smtpinit(m, pvp, ctladdr)
 {
 	register int r;
 	char buf[MAXNAME];
+	extern tick();
 
 	/*
 	**  Open the connection to the mailer.
@@ -57,6 +59,7 @@ smtpinit(m, pvp, ctladdr)
 # endif DEBUG
 		return (ExitStat);
 	}
+	(void) signal(SIGALRM, tick);
 
 	/*
 	**  Get the greeting message.
@@ -228,22 +231,45 @@ reply()
 	if (Debug)
 		printf("reply\n");
 
-	/* read the input line */
+	/*
+	**  Read the input line, being careful not to hang.
+	*/
+
 	for (;;)
 	{
 		char buf[MAXLINE];
 		register int r;
+		register char *p;
 
-		if (fgets(buf, sizeof buf, SmtpIn) == NULL)
+		/* arrange to time out the read */
+		if (setjmp(TickFrame) != 0)
 			return (-1);
+		(void) alarm(ReadTimeout);
+
+		/* actually do the read */
+		p = fgets(buf, sizeof buf, SmtpIn);
+
+		/* clean up timeout and check for errors */
+		(void) alarm(0);
+		if (p == NULL)
+			return (-1);
+
+		/* log the input in the transcript for future error returns */
 		if (Verbose && !HoldErrs)
 			fputs(buf, stdout);
 		fputs(buf, Xscript);
+
+		/* if continuation is required, we can go on */
 		if (buf[3] == '-' || !isdigit(buf[0]))
 			continue;
+
+		/* decode the reply code */
 		r = atoi(buf);
+
+		/* extra semantics: 0xx codes are "informational" */
 		if (r < 100)
 			continue;
+
 		return (r);
 	}
 }
