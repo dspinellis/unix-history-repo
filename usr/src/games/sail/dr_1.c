@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	2.3 83/11/02";
+static	char *sccsid = "@(#)dr_1.c	2.4 83/11/08";
 #endif
 
 #include "driver.h"
@@ -261,23 +261,24 @@ resolve()
 	foreachship(sp) {
 		if (sp->file->dir == 0)
 			continue;
-		thwart = 2;
 		for (sq = sp + 1; sq < ls; sq++)
 			if (sq->file->dir && meleeing(sp, sq) && meleeing(sq, sp))
 				(void) fightitout(sp, sq, 0);
+		thwart = 2;
 		foreachship(sq) {
 			if (sq->file->dir && meleeing(sq, sp))
 				thwart = fightitout(sp, sq, 1);
 			if (!thwart)
 				break;
 		}
-		foreachship(sq) {
-			if (sq->file->dir && meleeing(sq, sp))
-				unboard(sq, sp, 0);
-			unboard(sp, sq, 0);
-		}
-		unboard(sp, sp, 1);
-		if (thwart == 2)
+		if (!thwart) {
+			foreachship(sq) {
+				if (sq->file->dir && meleeing(sq, sp))
+					unboard(sq, sp, 0);
+				unboard(sp, sq, 0);
+			}
+			unboard(sp, sp, 1);
+		} else if (thwart == 2)
 			unboard(sp, sp, 1);
 	}
 }
