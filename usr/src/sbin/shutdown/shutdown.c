@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)shutdown.c	4.14 (Berkeley) 82/10/23";
+static	char *sccsid = "@(#)shutdown.c	4.15 (Berkeley) 83/01/16";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -13,13 +13,6 @@ static	char *sccsid = "@(#)shutdown.c	4.14 (Berkeley) 82/10/23";
  *	of iminent shutdown of unix
  *	and shut it down automatically
  *	and even reboot or halt the machine if they desire
- *
- *		Ian Johnstone, Sydney, 1977
- *		Robert Elz, Melbourne, 1978
- *		Peter Lamb, Melbourne, 1980
- *		William Joy, Berkeley, 1981
- *		Michael Toy, Berkeley, 1981
- *		Dave Presotto, Berkeley, 1981
  */
 #ifdef DEBUG
 #define LOGFILE "shutdown.log"
