@@ -1,5 +1,5 @@
 #
-#	"@(#)bibinc.fullnames	2.5	%G%";
+#	"@(#)bibinc.fullnames	2.6	%G%";
 # full journal names, and other names
 #
 # journals
@@ -39,27 +39,26 @@ D TOPLAS ACM Transactions on Programming Languages and Systems
 D PROC Proceedings
 D CONF Conference
 D SYMP Symposium
-D ASPLOS82 PROC of the SYMP on Architectural Support for Programming Languages and Operating Systems, SIGPLAN\
+D ASPLOS82 PROC of the SYMP on Architectural Support for Programming Languages and Operating Systems, ACM SIGPLAN\
 %C Palo Alto, CA\
 %D MAR 1982\
 %V 17\
 %N 4
-D CCC79 PROC of the SI\&GPLAN 1979 SYMP on Compiler Construction, SIGPLAN\
+D CCC79 PROC of the ACM SI\&GPLAN 1979 SYMP on Compiler Construction, SIGPLAN\
 %C Denver, CO\
 %D AUG 1979\
 %V 14\
 %N 8
-D CCC82 PROC of the SI\&GPLAN 1982 SYMP on Compiler Construction, SIGPLAN\
+D CCC82 PROC of the ACM SI\&GPLAN 1982 SYMP on Compiler Construction, SIGPLAN\
 %C Boston, MA\
 %D JUN 1982\
 %V 17\
 %N 6
-D CCC84 PROC of the SI\&GPLAN 1984 SYMP on Compiler Construction, SIGPLAN\
+D CCC84 PROC of the ACM SI\&GPLAN 1984 SYMP on Compiler Construction, SIGPLAN\
 %C Montreal, Quebec\
 %D JUN 1984\
-%V 19\
-%N 6
-D PLISS83 PROC SI\&GPLAN 1983 SYMP on Programming Language Issues in Software Systems, SIGPLAN\
+%N (To Appear as issue of SIGPLAN)
+D PLISS83 PROC ACM SI\&GPLAN 1983 SYMP on Programming Language Issues in Software Systems, SIGPLAN\
 %C San Francisco, CA\
 %D JUN 1983\
 %V 18\
@@ -158,6 +157,6 @@ D SUEE Department of Electrical Engineering, Stanford University
 D TUM Technische Universita\*`t Mu\*`nchen
 D UCB University of California, Berkeley
 D UCBCS Computer Science Division, EECS, UCB\
-%C Berkeley, CA
+%C CA
 D UCBERL ERL, EECS, UCB\
-%C Berkeley, CA
+%C CA
