@@ -1,9 +1,20 @@
 #
-# Copyright (c) 1980 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1989 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -15,31 +26,20 @@ all: eyacc
 eyacc: ${LIBC} ${OBJS}
 	${CC} ${CFLAGS} -o $@ -z ${OBJS}
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core eyacc
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 #	install -s -o bin -g bin -m 755 eyacc ${DESTDIR}/usr/ucb/eyacc
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-ey0.o: ey0.c /usr/include/stdio.h
-ey1.o: ey1.c ey.h /usr/include/stdio.h
-ey2.o: ey2.c ey.h /usr/include/stdio.h
-ey3.o: ey3.c ey.h /usr/include/stdio.h
-ey4.o: ey4.c ey.h /usr/include/stdio.h
-ey5.o: ey5.c /usr/include/stdio.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
