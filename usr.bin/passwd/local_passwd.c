@@ -33,7 +33,7 @@
 
 #ifndef lint
 /*static char sccsid[] = "from: @(#)local_passwd.c	5.5 (Berkeley) 5/6/91";*/
-static char rcsid[] = "$Id: local_passwd.c,v 1.4 1994/01/11 19:01:13 nate Exp $";
+static char rcsid[] = "$Id: local_passwd.c,v 1.5 1994/05/14 19:40:57 ache Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -89,7 +89,7 @@ local_passwd(uname)
 	 * having the password databases out of sync with the master pw file.
 	 */
 	if (pw_fastmkdb(pw) < 0) {
-		fprintf(stderr,"%s: WARNING!! Password database mangled, recreating it from scratch\n");
+		fprintf(stderr,"%s: WARNING!! Password database mangled, recreating it from scratch\n", progname);
 #endif
 		if(!pw_mkdb())
 			pw_error((char *)NULL, 0, 1);

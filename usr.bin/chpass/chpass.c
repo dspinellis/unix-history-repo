@@ -180,7 +180,7 @@ main(argc, argv)
 	 * having the password databases out of sync with the master pw file.
 	 */
 	if (pw_fastmkdb(pw) < 0) {
-		fprintf(stderr,"%s: WARNING!! Password database mangled, recreating it from scratch\n");
+		fprintf(stderr,"%s: WARNING!! Password database mangled, recreating it from scratch\n", progname);
 #endif
 		if(!pw_mkdb())
 			pw_error((char *)NULL, 0, 1);
