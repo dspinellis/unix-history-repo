@@ -3,11 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ubareg.h	7.3 (Berkeley) %G%
+ *	@(#)ubareg.h	7.4 (Berkeley) %G%
  */
 
 /*
- * VAX UNIBUS adapter definitions
+ * VAX UNIBUS adapter registers
  */
 
 /*
@@ -49,10 +49,60 @@
 
 #ifndef LOCORE
 /*
+ * DWBUA hardware registers.
+ */
+struct dwbua_regs {
+	int	pad1[456];		/* actually bii regs + pad */
+	int	bua_csr;		/* control and status register */
+	int	bua_offset;		/* vector offset register */
+	int	bua_fubar;		/* failed UNIBUS address register */
+	int	bua_bifar;		/* BI failed address register */
+	int	bua_udiag[5];		/* micro diagnostics (R/O) */
+	int	pad2[3];
+/* dpr[0] is for DDP; dpr's 1 through 5 are for BPD's 1 through 5 */
+	int	bua_dpr[6];		/* data path registers */
+	int	pad3[10];
+	int	bua_bdps[20];		/* buffered data path space *//*???*/
+	int	pad4[8];
+	struct	pte bua_map[UBAPAGES];	/* unibus map registers */
+	int	pad5[UBAIOPAGES];	/* no maps for device address space */
+};
+
+#ifdef DWBUA
+/* bua_csr */
+#define	BUACSR_ERR	0x80000000	/* composite error */
+#define	BUACSR_BIF	0x10000000	/* BI failure */
+#define	BUACSR_SSYNTO	0x08000000	/* slave sync timeout */
+#define	BUACSR_UIE	0x04000000	/* unibus interlock error */
+#define	BUACSR_IVMR	0x02000000	/* invalid map register */
+#define	BUACSR_BADBDP	0x01000000	/* bad BDP select */
+#define	BUACSR_BUAEIE	0x00100000	/* bua error interrupt enable (?) */
+#define	BUACSR_UPI	0x00020000	/* unibus power init */
+#define	BUACSR_UREGDUMP	0x00010000	/* microdiag register dump */
+#define	BUACSR_IERRNO	0x000000ff	/* mask for internal errror number */
+
+/* bua_offset */
+#define	BUAOFFSET_MASK	0x00003e00	/* hence max offset = 15872 */
+
+/* bua_dpr */
+#define	BUADPR_DPSEL	0x00e00000	/* data path select (?) */
+#define	BUADPR_PURGE	0x00000001	/* purge bdp */
+
+/* bua_map -- in particular, those bits that are not in DW780s & DW750s */
+#define	BUAMR_IOADR	0x40000000	/* I/O address space */
+#define	BUAMR_LAE	0x04000000	/* longword access enable */
+	/* I see no reason to use either one, though ... act 6 Aug 1987 */
+
+#define	UBA_PURGEBUA(uba, bdp) \
+	(((struct dwbua_regs *)(uba))->bua_dpr[bdp] |= BUADPR_PURGE)
+#else
+#define	UBA_PURGEBUA(uba, bdp)
+#endif
+
+/*
  * DW780/DW750 hardware registers
  */
-struct uba_regs
-{
+struct uba_regs {
 	int	uba_cnfgr;		/* configuration register */
 	int	uba_cr;			/* control register */
 	int	uba_sr;			/* status register */
@@ -150,9 +200,11 @@ struct uba_regs
  * expansion...
  */
 
-#if DW780 || DW750
+/* THIS IS WRONG, should use pointer to uba_hd */
+#if DWBUA || DW780 || DW750
 #define	UBAPURGE(uba, bdp) { \
 	switch (cpu) { \
+	case VAX_8200: UBA_PURGEBUA(uba, bdp); break; \
 	case VAX_8600: case VAX_780: UBA_PURGE780((uba), (bdp)); break; \
 	case VAX_750: UBA_PURGE750((uba), (bdp)); break; \
 	} \
@@ -167,7 +219,7 @@ struct uba_regs
 #define	UBAMR_MRV	0x80000000	/* map register valid */
 #define	UBAMR_BO	0x02000000	/* byte offset bit */
 #define	UBAMR_DPDB	0x01e00000	/* data path designator field */
-#define	UBAMR_SBIPFN	0x000fffff	/* SBI page address field */
+#define	UBAMR_SBIPFN	0x001fffff	/* SBI page address field */
 
 #define	UBAMR_DPSHIFT	21		/* shift to data path designator */
 
@@ -176,6 +228,7 @@ struct uba_regs
  */
 #define	NBDP8600	15
 #define	NBDP780		15
+#define	NBDPBUA		5
 #define	NBDP750		3
 #define	NBDP730		0
 #define	MAXNBDP		15
@@ -210,6 +263,10 @@ struct uba_regs
 
 #if VAX780
 #define	UMEM780(i)	(0x20100000+(i)*0x40000)
+#endif
+
+#if VAX8200		/* BEWARE, argument is node, not ubanum */
+#define	UMEM8200(i)	(0x20400000+(i)*0x40000)
 #endif
 
 #if VAX8600
