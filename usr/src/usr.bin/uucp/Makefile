@@ -1,4 +1,4 @@
-#	Makefile	5.2	83/07/02
+#	Makefile	5.3	83/07/04
 #
 # This version expects the 4.2BSD directory reading routines to
 # located in libc.a.  If they aren't, augment LIBS.  Also, LIBS
@@ -47,7 +47,7 @@ uuxqt:	uuxqt.o uulib.a
 
 uucico:	cico.o cntrl.o conn.o condevs.o gnsys.o ${IOCTL} ${PKON} uulib.a
 	${CC} -o uucico ${LDFLAGS} cico.o cntrl.o conn.o condevs.o \
-		gnsys.o ${IOCTL} ${PKON} ${LIBS}
+		gnsys.o ${IOCTL} ${PKON} uulib.a ${LIBS}
 
 uulog:	uulog.o uulib.a
 	${CC} -o uulog ${LDFLAGS} uulog.o uulib.a
