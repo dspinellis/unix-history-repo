@@ -1,0 +1,32 @@
+.\" Copyright (c) 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)msync.2	6.1 (Berkeley) %G%
+.\"
+.TH MSYNC 2 ""
+.UC 7
+.SH NAME
+msync \- synchronize a mapped region
+.SH SYNOPSIS
+.nf
+msync(addr, len)
+.B caddr_t addr;
+.B int len;
+.fi
+.SH DESCRIPTION
+.PP
+The \fImsync\fP system call
+writes any modified pages back to the filesystem and updates
+the file modification time.
+If \fIlen\fP is 0, all modified pages within the region containing \fIaddr\fP
+will be flushed;
+if \fIlen\fP is non-zero, only the pages containing \fIaddr\fP and \fIlen\fP
+succeeding locations will be examined.
+Any required synchronization of memory caches
+will also take place at this time.
+Filesystem operations on a file that is mapped for shared modifications
+are unpredictable except after an \fImsync\fP.
+.SH "SEE ALSO"
+msync.2, munmap.2, mprotect.2, madvise.2, mincore.2
