@@ -1,4 +1,4 @@
-/*	dkstat.h	6.1	83/07/29	*/
+/*	dkstat.h	6.2	83/10/08	*/
 
 /*
  * Instrumentation
@@ -14,6 +14,7 @@
 
 #ifdef KERNEL
 long	cp_time[CPUSTATES];
+int	dk_ndrive;
 int	dk_busy;
 long	dk_time[DK_NDRIVE];
 long	dk_seek[DK_NDRIVE];
