@@ -1,21 +1,21 @@
 #
-# Copyright (c) 1980, 1986 Regents of the University of California.
+# Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.1 (Berkeley) %G%
+#	@(#)Makefile	6.13 (Berkeley) 5/15/86
 #
 DESTDIR=/
 INCPATH=-I. -I../h
 CFLAGS=	-O ${INCPATH} -DSTANDALONE ${COPTS} 
-COPTS=	-DVAX780 -DVAX750 -DVAX730 -DVAX8600
+COPTS=	-DCOMPAT_42 -DVAX780 -DVAX750 -DVAX730 -DVAX8600
 730OPTS=-O ${INCPATH} -DSTANDALONE -DVAX730
 RELOC=	70000
 
 SRCS=	sys.c conf.c prf.c machdep.c \
 	autoconf.c hp.c hpmaptype.c ht.c idc.c mba.c mt.c rk.c \
 	rl.c tm.c ts.c up.c upmaptype.c uba.c uda.c ut.c \
-	drtest.c format.c up.old.c hp.old.c ../vax/dkbad.c
+	drtest.c format.c ../vax/dkbad.c
 DUMMIES= bootxx.c confxx.c
 DRIVERS=autoconf.o hp.o hpmaptype.o ht.o idc.o mba.o mt.o \
 	rk.o rl.o tm.o ts.o \
@@ -23,7 +23,7 @@ DRIVERS=autoconf.o hp.o hpmaptype.o ht.o idc.o mba.o mt.o \
 # These drivers don't have ecc correction and bad sector forwarding;
 # they are placed in the file system boot area for 750's.  If your
 # root has bad sectors you can try and squeeze the newer drivers in...
-ODRIVERS=hp.old.o up.old.o
+ODRIVERS=sm_hp.o sm_up.o
 LIBSA=	libsa.a
 
 ALL=	boot tpboot copy tpcopy \
@@ -36,7 +36,7 @@ ${LIBSA}: sys.o conf.o ${DRIVERS} prf.o machdep.o dkbad.o
 	ar crv ${LIBSA} $?
 	ranlib ${LIBSA}
 
-${ODRIVERS} ${DRIVERS}: savax.h
+${DRIVERS}: savax.h
 	cc -c -S ${COPTS} $*.c
 	/lib/c2 -i $*.s | as -o $*.o
 	rm -f $*.s
@@ -133,25 +133,35 @@ drtest:	drtest.o srt0.o confhpup.o ${LIBSA}
 
 # getting booted from disc
 
-boothk: relsrt0.o boothk.o confrk.o smsys.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o boothk.o confrk.o smsys.o ${LIBSA} -lc
+boothk: relsrt0.o boothk.o confrk.o sm_sys.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o boothk.o confrk.o sm_sys.o ${LIBSA} -lc
+	size a.out
 	strip a.out;dd if=a.out of=boothk ibs=32 skip=1;rm -f a.out
+	ls -l boothk
 
-boothp: relsrt0.o boothp.o confhp.o hp.old.o smsys.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o boothp.o confhp.o hp.old.o smsys.o ${LIBSA} -lc
+boothp: relsrt0.o boothp.o confhp.o sm_hp.o sm_sys.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o boothp.o confhp.o sm_hp.o sm_sys.o ${LIBSA} -lc
+	size a.out
 	strip a.out;dd if=a.out of=boothp ibs=32 skip=1;rm -f a.out
+	ls -l boothp
 
-bootup: relsrt0.o bootup.o confup.o up.old.o smsys.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootup.o confup.o up.old.o smsys.o ${LIBSA} -lc
+bootup: relsrt0.o bootup.o confup.o sm_up.o sm_sys.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootup.o confup.o sm_up.o sm_sys.o ${LIBSA} -lc
+	size a.out
 	strip a.out;dd if=a.out of=bootup ibs=32 skip=1;rm -f a.out
+	ls -l bootup
 
-bootra: relsrt0.o bootra.o confra.o smsys.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootra.o confra.o smsys.o ${LIBSA} -lc
+bootra: relsrt0.o bootra.o confra.o sm_sys.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootra.o confra.o sm_sys.o ${LIBSA} -lc
+	size a.out
 	strip a.out;dd if=a.out of=bootra ibs=32 skip=1;rm -f a.out
+	ls -l bootra
 
-bootrl: relsrt0.o bootrl.o confrl.o smsys.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootrl.o confrl.o smsys.o ${LIBSA} -lc
+bootrl: relsrt0.o bootrl.o confrl.o sm_sys.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootrl.o confrl.o sm_sys.o ${LIBSA} -lc
+	size a.out
 	strip a.out;dd if=a.out of=bootrl ibs=32 skip=1;rm -f a.out
+	ls -l bootrl
 
 boothp.o: boothp.c bootxx.o
 boothk.o: boothk.c bootxx.o
@@ -162,11 +172,25 @@ bootrl.o: bootrl.c bootxx.o
 bootxx.o:
 	touch bootxx.o
 
-smsys.o: sys.o
-	-rm -f smsys.c
-	-ln -s sys.c smsys.c
-	cc -c -DSMALL ${CFLAGS} smsys.c
-	-rm -f smsys.c
+sm_hp.o: hp.o
+	-rm -f sm_hp.c
+	-ln -s hp.c sm_hp.c
+	cc -S -DSMALL ${COPTS} sm_hp.c
+	/lib/c2 -i sm_hp.s | as -o sm_hp.o
+	rm -f sm_hp.s sm_hp.c
+
+sm_up.o: up.o
+	-rm -f sm_up.c
+	-ln -s up.c sm_up.c
+	cc -S -DSMALL ${COPTS} sm_up.c
+	/lib/c2 -i sm_up.s | as -o sm_up.o
+	rm -f sm_up.s sm_up.c
+
+sm_sys.o: sys.o
+	-rm -f sm_sys.c
+	-ln -s sys.c sm_sys.c
+	cc -c -DSMALL ${CFLAGS} sm_sys.c
+	-rm -f sm_sys.c
 
 boothk.c: bootxx.c
 	-rm -f boothk.c
@@ -217,7 +241,7 @@ print:
 	@pr *.h *.c
 
 clean:
-	rm -f *.o *.exe *.i errs
+	rm -f *.o *.exe *.i errs sm_*.c
 	rm -f a.out boot cat tpboot tpcopy copy tpformat
 	rm -f boot[a-z]? boot[a-wyz][a-z].c conf[a-wyz][a-z].c
 	rm -f format drtest core sboot bootconf.c
@@ -381,16 +405,6 @@ drtest.o: ./saio.h
 format.o: format.c ./../h/param.h /usr/include/machine/machparam.h
 format.o: ../h/signal.h /usr/include/sys/types.h ./../h/fs.h ./../h/inode.h
 format.o: ./../h/dkbad.h ./../h/vmmac.h ./saio.h ./savax.h
-
-up.old.o: up.old.c ./../machine/pte.h ./../h/param.h
-up.old.o: /usr/include/machine/machparam.h ../h/signal.h
-up.old.o: /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
-up.old.o: ./../vaxuba/upreg.h ./../vaxuba/ubareg.h ./saio.h ./savax.h
-
-hp.old.o: hp.old.c ./../machine/pte.h ./../h/param.h
-hp.old.o: /usr/include/machine/machparam.h ../h/signal.h
-hp.old.o: /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
-hp.old.o: ./../vaxmba/hpreg.h ./../vaxmba/mbareg.h ./saio.h ./savax.h
 
 dkbad.o: ../vax/dkbad.c ../h/param.h /usr/include/machine/machparam.h
 dkbad.o: ../h/signal.h /usr/include/sys/types.h ../h/buf.h ../h/dkbad.h
