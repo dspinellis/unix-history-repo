@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.76 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.77 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -351,13 +351,7 @@ lfs_fsync(vp, fflags, cred, waitfor, p)
 	ip = VTOI(vp);
 	if (fflags & FWRITE)
 		ip->i_flag |= ICHG;
-	/*
-	 * XXX
-	 * Sync the mounted file system associated with the file
-	 * descriptor.
-	 */
-	ITIMES(ip, &time, &time);				/* LFS */
-	return (0);
+	return (lfs_update(vp, &time, &time, waitfor == MNT_WAIT));
 }
 
 /*
