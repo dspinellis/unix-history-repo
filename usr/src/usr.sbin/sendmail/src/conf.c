@@ -27,19 +27,6 @@
 **			-d flag.
 **
 **	Configuration Variables:
-**		ArpaHost -- the arpanet name of the host through
-**			which arpanet mail will be sent.
-**		MyLocName -- the name of the host on a local network.
-**			This is used to disambiguate the contents of
-**			ArpaHost among many hosts who may be sharing
-**			a gateway.
-**		DaemonName -- the name of this agent for use in
-**			error messages, typically "~MAILER~DAEMON~"
-**			at this host on the local net.
-**		ArpaLocal -- a list of local names for this host on
-**			the arpanet.  Only functional if HASARPA set.
-**		UucpLocal -- ditto for the Arpanet.
-**		BerkLocal -- ditto for the Berknet.
 **		Mailer -- a table of mailers known to the system.
 **			The fields are:
 **			- the pathname of the mailer.
@@ -106,18 +93,6 @@
 **			>>>>>>>>>> Entry zero must be for the local
 **			>> NOTE >> mailer and entry one must be for
 **			>>>>>>>>>> the shell.
-**		ParseTab -- a table driving the parsing process.  Each
-**			entry contains:
-**			- a character that will trigger this entry.
-**			- an index into the Mailer table.
-**			- a word of flags, described in postbox.h.
-**			- an argument.  If we have P_MAP, it is the
-**			  character to turn the trigger character into.
-**			  If we have P_MOVE, it is the site to send it
-**			  to, using the mailer specified above.
-**			This table will almost certainly have to be
-**			changed on your site if you have anything more
-**			than the UUCP net.
 **		HdrInfo -- a table describing well-known header fields.
 **			Each entry has the field name and some flags,
 **			which can be:
@@ -131,15 +106,13 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.6	%G%";
+static char SccsId[] = "@(#)conf.c	3.7	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
 
 # ifdef BERKELEY
 
-char	*ArpaHost = "Berkeley";	/* host name of gateway on Arpanet */
-# define BerkHost   MyLocName	/* host name of gateway on Berk net */
 # define NETV6MAIL		/* use /usr/net/bin/v6mail for local delivery */
 
 /* Specific Configurations for Berkeley Machines */
@@ -184,24 +157,10 @@ char	*ArpaHost = "Berkeley";	/* host name of gateway on Arpanet */
 
 # else BERKELEY
 
-char	*ArpaHost = "[unknown]";
-char	*MyLocName = sysname;
 # define HASUUCP		/* default to having UUCP net */
-char	*UucpLocal[] = { sysname, NULL };
-# define BerkMerge	NULL	/* don't merge any berknet sites */
-# define UucpMerge	NULL	/* don't merge any UUCP sites */
 
 # endif BERKELEY
 
-
-
-# ifndef HASARPA
-# define ArpaLocal	NULL
-# endif HASARPA
-
-# ifndef HASUUCP
-# define UucpLocal	NULL
-# endif HASUUCP
 
 
 /* local mail -- must be #0 */
@@ -220,8 +179,8 @@ static struct mailer	LocalMailer =
 # else
 	"/bin/mail",
 # endif
-	M_ROPT|M_NOHOST|M_STRIPQ|M_ARPAFMT,	EX_NOUSER,	NULL,
-	"$f",		NULL,			LocalArgv,
+	"local",	M_ROPT|M_NOHOST|M_STRIPQ|M_ARPAFMT,	EX_NOUSER,
+	"$f",		LocalArgv,
 };
 
 /* pipes through programs -- must be #1 */
@@ -236,8 +195,8 @@ static char	*ProgArgv[] =
 static struct mailer	ProgMailer =
 {
 	"/bin/csh",
-	M_HDR|M_FHDR|M_NOHOST,			EX_UNAVAILABLE,	NULL,
-	"$f",		NULL,			ProgArgv,
+	"prog",		M_HDR|M_FHDR|M_NOHOST,			EX_UNAVAILABLE,
+	"$f",		ProgArgv,
 };
 
 /* local berkeley mail */
@@ -256,8 +215,8 @@ static char	*BerkArgv[] =
 static struct mailer	BerkMailer =
 {
 	"/usr/net/bin/sendberkmail",
-	M_FOPT|M_HDR|M_STRIPQ,			EX_UNAVAILABLE,	BerkLocal,
-	"$B:$f",	BerkMerge,		BerkArgv,
+	"berk",		M_FOPT|M_HDR|M_STRIPQ,			EX_UNAVAILABLE,
+	"$B:$f",	BerkArgv,
 };
 
 /* arpanet mail */
@@ -273,8 +232,8 @@ static char	*ArpaArgv[] =
 static struct mailer	ArpaMailer =
 {
 	"/usr/lib/mailers/arpa",
-	M_STRIPQ|M_ARPAFMT,			0,		ArpaLocal,
-	"$f@$A",	NULL,			ArpaArgv,
+	"arpa",		M_STRIPQ|M_ARPAFMT,			0,
+	"$f@$A",	ArpaArgv,
 };
 
 /* uucp mail (cheat & use Bell's v7 mail) */
@@ -291,8 +250,8 @@ static char	*UucpArgv[] =
 static struct mailer	UucpMailer =
 {
 	"/bin/mail",
-	M_ROPT|M_STRIPQ,			EX_NOUSER,	UucpLocal,
-	"$U!$f",	UucpMerge,		UucpArgv,
+	"uucp",		M_ROPT|M_STRIPQ,			EX_NOUSER,
+	"$U!$f",	UucpArgv,
 };
 
 struct mailer	*Mailer[] =
@@ -302,9 +261,10 @@ struct mailer	*Mailer[] =
 	&BerkMailer,		/* 2 */
 	&ArpaMailer,		/* 3 */
 	&UucpMailer,		/* 4 */
+	NULL
 };
 
-# define NMAILERS	(sizeof Mailer / sizeof Mailer[0])
+# define NMAILERS	((sizeof Mailer / sizeof Mailer[0]) - 1)
 
 # define M_LOCAL	0
 # define M_PROG		1
@@ -317,37 +277,6 @@ ADDRESS		MailList[NMAILERS];
 
 
 
-# ifdef BERKELEY
-struct parsetab ParseTab[] =
-{
-	':',	M_BERK,		P_ONE,				NULL,
-# ifdef HASARPA
-	'@',	M_ARPA,		P_HLAST|P_USR_UPPER,		NULL,
-# else
-	'@',	M_BERK,		P_HLAST|P_USR_UPPER|P_MOVE,	"ing70",
-# endif HASARPA
-	'^',	-1,		P_MAP,				"!",
-# ifdef HASUUCP
-	'!',	M_UUCP,		0,				NULL,
-# else
-	'!',	M_BERK,		P_MOVE,				"csvax",
-# endif HASUUCP
-	'.',	-1,		P_MAP|P_ONE,			":",
-	'\0',	M_LOCAL,	P_MOVE,				"",
-};
-# else BERKELEY
-struct parsetab ParseTab[] =
-{
-# ifdef HASARPA
-	'@',	M_ARPA,		P_HLAST|P_USR_UPPER,		NULL,
-# endif HASARPA
-# ifdef HASUUCP
-	'^',	-1,		P_MAP,				"!",
-	'!',	M_UUCP,		0,				NULL,
-# endif HASUUCP
-	'\0',	M_LOCAL,	P_MOVE,				"",
-};
-# endif BERKELEY
 
 
 /*
@@ -366,29 +295,6 @@ struct hdrinfo	HdrInfo[] =
 	"message",	H_EOH,			NULL,
 	NULL,		0,			NULL,
 };
-/*
-**  INITMACS -- initialize predefined macros.
-**
-**	Parameters:
-**		none.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Macros array gets initialized.
-*/
-
-char	*Macro[26];
-
-# define MACRO(x)	Macro[x - 'A']
-
-initmacs()
-{
-	MACRO('A') = ArpaHost;
-	MACRO('B') = BerkHost;
-	MACRO('U') = UucpHost;
-}
 
 # ifdef V6
 /*
