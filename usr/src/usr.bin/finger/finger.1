@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)finger.1	6.13 (Berkeley) %G%
+.\"	@(#)finger.1	6.14 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FINGER 1
@@ -14,12 +14,12 @@
 .Sh SYNOPSIS
 .Nm finger
 .Op Fl lmsp
-.Op Ar user Op @host ...
+.Op Ar user ...
+.Op Ar user@host ...
 .Sh DESCRIPTION
 The
 .Nm finger
-command has two basic output formats providing essentially the same
-information.
+displays information about the system users.
 .Pp
 Options are:
 .Bl -tag -width flag
@@ -45,6 +45,7 @@ described for the
 .Fl s
 option as well as the user's home directory, home phone number, login
 shell, and the contents of the files
+.Dq Pa .forward ,
 .Dq Pa .plan
 and
 .Dq Pa .project
@@ -73,13 +74,11 @@ the
 option of
 .Nm finger
 from displaying the contents of the
+.Dq Pa .forward ,
 .Dq Pa .plan
 and
 .Dq Pa .project
 files.
-.Pp
-Note that some fields may be missing, in either format, if information
-is not available for them.
 .It Fl m
 Prevent matching of
 .Ar user
@@ -101,6 +100,8 @@ defaults to the
 style output if operands are provided, otherwise to the
 .Fl s
 style.
+Note that some fields may be missing, in either format, if information
+is not available for them.
 .Pp
 If no arguments are specified,
 .Nm finger
@@ -127,7 +128,6 @@ option is the only option that may be passed to a remote machine.
 .Xr chpass 1 ,
 .Xr w 1 ,
 .Xr who 1 ,
-.Xr getpwent 3
 .Sh HISTORY
 The
 .Nm finger
