@@ -1,4 +1,4 @@
-/*	ubareg.h	4.8	81/02/19	*/
+/*	ubareg.h	4.9	81/02/21	*/
 
 /*
  * UNIBUS adaptor
@@ -14,19 +14,19 @@
  */
 struct uba_regs
 {
-	int	uba_cnfgr;
-	int	uba_cr;
-	int	uba_sr;
-	int	uba_dcr;
-	int	uba_fmer;
-	int	uba_fubar;
+	int	uba_cnfgr;		/* configuration register */
+	int	uba_cr;			/* control register */
+	int	uba_sr;			/* status register */
+	int	uba_dcr;		/* diagnostic control register */
+	int	uba_fmer;		/* failed map entry register */
+	int	uba_fubar;		/* failed UNIBUS address register */
 	int	pad1[2];
 	int	uba_brsvr[4];
-	int	uba_brrvr[4];
-	int	uba_dpr[16];
+	int	uba_brrvr[4];		/* receive vector registers */
+	int	uba_dpr[16];		/* buffered data path register */
 	int	pad2[480];
-	struct	pte uba_map[496];
-	int	pad3[16];
+	struct	pte uba_map[496];	/* unibus map register */
+	int	pad3[16];		/* no maps for device address space */
 };
 
 /* UBA control register, UBACR */
@@ -74,10 +74,10 @@ struct uba_regs
 #define	UBA_BUBA	0x0000ffff	/* buffered UNIBUS address */
 #endif
 #if VAX750
-#define	UBA_ERROR	0x20000000
-#define	UBA_NXM		0x40000000
-#define	UBA_UCE		0x20000000
-#define	UBA_PURGE	0x00000001
+#define	UBA_ERROR	0x80000000	/* error occurred */
+#define	UBA_NXM		0x40000000	/* nxm from memory */
+#define	UBA_UCE		0x20000000	/* uncorrectable error */
+#define	UBA_PURGE	0x00000001	/* purge bdp */
 #endif
  
 /* map register, MR */
@@ -124,7 +124,7 @@ struct uba_dinfo {
 	short	ui_type;	/* driver specific type information */
 	caddr_t	ui_physaddr;	/* phys addr, for standalone (dump) code */
 	struct	uba_dinfo *ui_forw;
-/* if the driver isn't also a controller, this is the controller it is on */
+/* if the device isn't also a controller, this is the controller it is on */
 	struct	uba_minfo *ui_mi;
 	struct	uba_hd *ui_hd;
 };
@@ -162,11 +162,10 @@ struct	uba_hd {
  * as well as an array of types which are acceptable to it.
  */
 struct uba_driver {
-	int	(*ud_cntrlr)();		/* see if a driver is really there */
-	int	(*ud_slave)();		/* see if a slave is there; init */
-	int	(*ud_dgo)();		/* routine to stuff driver regs */
-/* dgo is called back by the unibus (usu ubaalloc), when the bus is ready */
-	short	ud_needexcl;		/* need exclusive use of uba (rk07) */
+	int	(*ud_probe)();		/* see if a driver is really there */
+	int	(*ud_slave)();		/* see if a slave is there */
+	int	(*ud_attach)();		/* setup driver for a slave */
+	int	(*ud_dgo)();		/* fill csr/ba to start transfer */
 	u_short	*ud_addr;		/* device csr addresses */
 	char	*ud_dname;		/* name of a device */
 	struct	uba_dinfo **ud_dinfo;	/* backpointers to ubdinit structs */
