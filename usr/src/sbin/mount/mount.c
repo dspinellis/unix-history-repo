@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -202,6 +202,14 @@ main(argc, argv, arge)
 		usage();
 		ret = 1;
 	} else {
+		/*
+		 * If -t flag has not been specified, and spec
+		 * contains either a ':' or a '@' then assume that
+		 * an NFS filesystem is being specified ala Sun.
+		 */
+		if (vfslist == (char **)0 &&
+		    (index(argv[0], ':') || index(argv[0], '@')))
+			mnttype = MOUNT_NFS;
 		ret = mountfs(argv[0], argv[1], updateflg, type, options,
 		    (char *)NULL);
 	}
