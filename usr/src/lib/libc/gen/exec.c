@@ -1,5 +1,5 @@
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)exec.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.4 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -7,20 +7,23 @@ static char sccsid[] = "@(#)exec.c	5.3 (Berkeley) %G%";
  *	execvp(name, argv)	(like execv, but does path search)
  */
 #include <errno.h>
-#define	NULL	0
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 static	char shell[] =	"/bin/sh";
-char	*getenv();
-extern	errno;
 
+int
 execlp(name, argv)
-char *name, *argv;
+const char *name, *argv;
 {
 	return(execvp(name, &argv));
 }
 
+int
 execvp(name, argv)
-char *name, **argv;
+const char *name;
+char * const *argv;
 {
 	char *pathstr;
 	register char *cp;
