@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ruptime.c	4.2 82/04/03";
+static char sccsid[] = "@(#)ruptime.c	4.3 82/04/03";
 #endif
 
 #include <sys/types.h>		/* botch in ndir.h */
@@ -36,6 +36,7 @@ main(argc, argv)
 	register struct hs *hsp = hs;
 	register struct whod *wd;
 	register struct whoent *we;
+	int maxloadav = 0;
 
 	time(&t);
 	argc--, argv++;
@@ -71,6 +72,9 @@ again:
 				wd = (struct whod *)buf;
 				bcopy(buf, hsp->hs_wd, WHDRSIZE);
 				hsp->hs_nusers = 0;
+				for (i = 0; i < 2; i++)
+					if (wd->wd_loadav[i] > maxloadav)
+						maxloadav = wd->wd_loadav[i];
 				we = (struct whoent *)(buf+cc);
 				while (--we >= wd->wd_we)
 					if (aflg || we->we_idle < 3600)
@@ -93,15 +97,18 @@ again:
 			    interval(now - hsp->hs_wd->wd_recvtime, "down"));
 			continue;
 		}
-		printf("%-8.8s%s,  %4d user%s  load %5.2f, %5.2f, %5.2f\n",
+		printf("%-8.8s%s,  %4d user%s  load %*.2f, %*.2f, %*.2f\n",
 		    hsp->hs_wd->wd_hostname,
 		    interval(hsp->hs_wd->wd_sendtime -
 			hsp->hs_wd->wd_bootime, "  up"),
 		    hsp->hs_nusers,
 		    hsp->hs_nusers == 1 ? ", " : "s,",
-		    hsp->hs_wd->wd_loadav[0] / 100.0,
-		    hsp->hs_wd->wd_loadav[1] / 100.0,
-		    hsp->hs_wd->wd_loadav[2] / 100.0);
+		    maxloadav >= 1000 ? 5 : 4,
+			hsp->hs_wd->wd_loadav[0] / 100.0,
+		    maxloadav >= 1000 ? 5 : 4,
+		        hsp->hs_wd->wd_loadav[1] / 100.0,
+		    maxloadav >= 1000 ? 5 : 4,
+		        hsp->hs_wd->wd_loadav[2] / 100.0);
 		cfree(hsp->hs_wd);
 	}
 	exit(0);
