@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_generic.c	8.1 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.39 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -461,7 +461,7 @@ int	selwait, nselcoll;
  * Select system call.
  */
 struct select_args {
-	int	nd;
+	u_int	nd;
 	fd_set	*in, *ou, *ex;
 	struct	timeval *tv;
 };
@@ -472,21 +472,21 @@ select(p, uap, retval)
 {
 	fd_set ibits[3], obits[3];
 	struct timeval atv;
-	int s, ncoll, ni, error = 0, timo;
+	int s, ncoll, error = 0, timo;
+	u_int ni;
 
 	bzero((caddr_t)ibits, sizeof(ibits));
 	bzero((caddr_t)obits, sizeof(obits));
+	if (uap->nd > FD_SETSIZE)
+		return (EINVAL);
 	if (uap->nd > p->p_fd->fd_nfiles)
 		uap->nd = p->p_fd->fd_nfiles;	/* forgiving; slightly wrong */
-	ni = howmany(uap->nd, NFDBITS);
+	ni = howmany(uap->nd, NFDBITS) * sizeof(fd_mask);
 
 #define	getbits(name, x) \
-	if (uap->name) { \
-		error = copyin((caddr_t)uap->name, (caddr_t)&ibits[x], \
-		    (unsigned)(ni * sizeof(fd_mask))); \
-		if (error) \
-			goto done; \
-	}
+	if (uap->name && \
+	    (error = copyin((caddr_t)uap->name, (caddr_t)&ibits[x], ni))) \
+		goto done;
 	getbits(in, 0);
 	getbits(ou, 1);
 	getbits(ex, 2);
@@ -542,13 +542,12 @@ done:
 	if (error == EWOULDBLOCK)
 		error = 0;
 #define	putbits(name, x) \
-	if (uap->name) { \
-		int error2 = copyout((caddr_t)&obits[x], (caddr_t)uap->name, \
-		    (unsigned)(ni * sizeof(fd_mask))); \
-		if (error2) \
-			error = error2; \
-	}
+	if (uap->name && \
+	    (error2 = copyout((caddr_t)&obits[x], (caddr_t)uap->name, ni))) \
+		error = error2;
 	if (error == 0) {
+		int error2;
+
 		putbits(in, 0);
 		putbits(ou, 1);
 		putbits(ex, 2);
