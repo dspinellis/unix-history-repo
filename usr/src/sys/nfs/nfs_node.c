@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.23 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -209,16 +209,6 @@ nfs_reclaim(vp)
 	register struct nfsnode *np = VTONFS(vp);
 	extern int prtactive;
 
-	/*
-	 * Flush out any bio buffer or cmap references
-	 */
-	if (vp->v_type == VREG) {
-		nfs_lock(vp);
-		vinvalbuf(vp, TRUE);
-		nfs_unlock(vp);
-		if (np->n_flag & NPAGEDON)
-			mpurge(vp);
-	}
 	if (prtactive && vp->v_usecount != 0)
 		vprint("nfs_reclaim: pushing active", vp);
 	/*
