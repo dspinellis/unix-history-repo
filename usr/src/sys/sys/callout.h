@@ -4,17 +4,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)callout.h	7.2 (Berkeley) %G%
+ *	@(#)callout.h	7.3 (Berkeley) %G%
  */
 
 struct callout {
-	struct callout *c_next;		/* next callout in queue */
-	caddr_t c_arg;			/* function argument */
-	int (*c_func)();		/* function to call */
-	int c_time;			/* ticks to the event */
+	struct	callout *c_next;		/* next callout in queue */
+	void	*c_arg;				/* function argument */
+	void	(*c_func) __P((void *));	/* function to call */
+	int	c_time;				/* ticks to the event */
 };
 
 #ifdef KERNEL
-struct callout *callfree, *callout, calltodo;
-int ncallout;
+struct	callout *callfree, *callout, calltodo;
+int	ncallout;
 #endif
