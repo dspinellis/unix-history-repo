@@ -1,0 +1,1194 @@
+Info file uucp.info, produced by Makeinfo, -*- Text -*- from input
+file uucp.texi.
+
+   This file documents Taylor UUCP, version 1.03.
+
+   Copyright (C) 1992 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the section entitled "Copying" are included exactly as in the
+original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "Copying" may be included
+in a translation approved by the author instead of in the original
+English.
+
+
+File: uucp.info,  Node: Miscellaneous (sys),  Next: Default sys File Values,  Prev: File Transfer Control,  Up: sys File
+
+Miscellaneous sys File Commands
+-------------------------------
+
+`sequence BOOLEAN'
+     If BOOLEAN is true, then conversation sequencing is automatically
+     used for the remote system, so that if somebody manages to spoof
+     as the remote system, it will be detected the next time the
+     remote system actually calls.  This is false by default.
+
+`command-path STRING'
+     Specifies the path (a list of whitespace separated directories)
+     to be searched to locate commands to execute.  This is only used
+     for commands requested by `uux', not for chat programs.  The
+     default is from `policy.h'.
+
+`commands STRINGS'
+     The list of commands which the remote system is permitted to
+     execute locally.  For example: `commands rnews rmail'.  If the
+     value is `ALL' (case significant), all commands may be executed. 
+     The default is `rnews rmail'.
+
+`free-space NUMBER'
+     Specify the minimum amount of file system space (in bytes) to
+     leave free after receiving a file.  If the incoming file will not
+     fit, it will be rejected.  This will only work when talking to
+     another instance of this package, since older UUCP packages do
+     not provide the file size of incoming files.  There is no
+     provision for reserving space, so it is still possible for
+     multiple `uucico' daemons to use up all available file space; a
+     sufficiently large value for `free-space' will avoid this problem
+     to some extent.  The default is from `policy.h'.  Not all systems
+     may be able to provide the amount of available space.
+
+`pubdir STRING'
+     Specifies the public directory that is used when `~' is specifed
+     in a file transfer or a list of directories.  This essentially
+     overrides the public directory specified in the main
+     configuration file for this system only.  The default is the
+     public directory specified in the main configuration file (which
+     defaults to a value from `policy.h').
+
+`debug STRING ...'
+     Set additional debugging for calls to or from the system.  This
+     may be used to debug a connection with a specific system.  It is
+     particularly useful when debugging incoming calls, since
+     debugging information will be generated whenever the call comes
+     in.  See the `debug' command in the main configuration file
+     (*note Debugging Levels::.) for more details.  The debugging
+     information specified here is in addition to that specified in
+     the main configuration file or on the command line.
+
+`max-remote-debug STRING ...'
+     When the system calls in, it may request that the debugging level
+     be set to a certain value.  This command may be used to put a
+     limit on the debugging level which the system may request, to
+     avoid filling up the disk with debugging information.  Only the
+     debugging types named in the `max-remote-debug' command may be
+     turned on by the remote system.  To prohibit any debugging, use
+     `max-remote-debug none'.  The default is
+     `abnormal,chat,handshake'; to turn off these default entries, you
+     must use `max-remote-debug none' followed by other
+     `max-remote-debug' commands specifying the settings you want.
+
+`timetable STRING STRING'
+     This is actually not specific to a system; it can appear anywhere
+     in the file(s).  In a future release this command will probably
+     be moved to the main configuration file.
+
+     The `timetable' defines a timetable that may be used in
+     subsequently appearing time strings; *Note Time Strings::.  The
+     first string names the timetable entry; the second is a time
+     string.
+
+     The following `timetable' commands are predefined.  The NonPeak
+     timetable is included for compatibility.  It originally described
+     the offpeak hours of Tymnet and Telenet, but both have since
+     changed their schedules.
+
+          timetable Evening Wk1705-0755,Sa,Su
+          timetable Night Wk2305-0755,Sa,Su2305-1655
+          timetable NonPeak Wk1805-0655,Sa,Su
+
+          If this command does not appear, then obviously no additional
+     timetables will be defined.
+
+
+File: uucp.info,  Node: Default sys File Values,  Prev: Miscellaneous (sys),  Up: sys File
+
+Default sys File Values
+-----------------------
+
+   The following are used as default values for all systems; they can
+be considered as appearing before the start of the file.
+
+     timetable Evening Wk1705-0755,Sa,Su
+     timetable Night Wk2305-0755,Sa,Su2305-1655
+     timetable NonPeak Wk1805-0655,Sa,Su
+     time Never
+     chat "" \r\c ogin:-BREAK-ogin:-BREAK-ogin: \L word: \P
+     chat-timeout 10
+     callback n
+     sequence n
+     request y
+     transfer y
+     local-send /
+     remote-send ~
+     local-receive ~
+     remove-receive ~
+     command-path [ from `policy.h' ]
+     commands rnews rmail
+     max-remote-debug abnormal,chat,handshake
+
+
+File: uucp.info,  Node: port File,  Next: dial File,  Prev: sys File,  Up: Configuration Files
+
+The Port Configuration File
+===========================
+
+   The port files may be used to name and describe ports.  The first
+command in each file must be `port'.  All command up to the next
+`port' command then describe that port.  There are different types of
+ports; each type supports its own set of commands.  Each command
+indicates which types of ports support it.  There may be many ports
+with the same name; if a system requests a port by name then each port
+with that name will be tried until an unlocked one is found.
+
+`port STRING'
+     Introduces and names a port.
+
+`type STRING'
+     Define the type of port.  The default is `modem'.  If this command
+     appears, it must immediately follow the `port' command.  The type
+     defines what commands are subsequently allowed.  Currently the
+     types are:
+
+    `modem'
+          For a modem hookup.
+
+    `stdin'
+          For a connection through standard input and standard output,
+          as when `uucico' is run as a login shell.
+
+    `direct'
+          For a direct connection to another system.
+
+    `tcp'
+          For a connection using TCP.
+
+`protocol STRING'
+     Specify a list of protocols to use for this port.  This is just
+     like the corresponding command for a system (*note Protocol
+     Selection::.).  A protocol list for a system takes precedence
+     over a list for a port.
+
+`protocol-parameter CHARACTER STRINGS [ any type ]'
+     The same command as the `protocol-parameter' command used for
+     systems (*note Protocol Selection::.).  This one takes precedence.
+
+`seven-bit BOOLEAN [ any type ]'
+     This is only used during protocol negotiation; if the argument is
+     `true', it forces the selection of a protocol which works across a
+     seven-bit link.  It does not prevent eight bit characters from
+     being transmitted.  The default is `false'.
+
+`reliable BOOLEAN [ any type ]'
+     This is only used during protocol negotiation; if the argument is
+     `false', it forces the selection of a protocol which works across
+     an unreliable communication link.  The default is `true'.  It
+     would be more common to specify this for a dialer rather than a
+     port.
+
+`device STRING [ modem and direct only ]'
+     Names the device associated with this port.  If the device is not
+     named, the port name is taken as the device.  Device names are
+     system dependent, but a Unix example would be `/dev/ttyd0'.
+
+`baud NUMBER [ modem and direct only ]'
+`speed NUMBER [modem and direct only ]'
+     The speed this port runs at.  If a system specifies a speed but
+     no port name, then all ports which match the speed will be tried
+     in order.  If the speed is not specified here and is not
+     specified by the system, the natural speed of the port will be
+     used by default.
+
+`baud-range NUMBER NUMBER [ modem only ]'
+`speed-range NUMBER NUMBER [ modem only ]'
+     Specify a range of speeds this port can run at.  The first number
+     is the minimum speed, the second number is the maximum speed. 
+     These numbers will be used when matching a system which specifies
+     a desired speed.  The simple `speed' (or `baud') command is still
+     used to determine the speed to run at if the system does not
+     specify a speed.  For example, the command `speed-range 300
+     19200' means that the port will match any system which uses a
+     speed from 300 to 19200 baud (and will use the speed specified by
+     the system); this could be combined with `speed 2400', which
+     means that when this port is used with a system that does not
+     specify a speed, the port will be used at 2400 baud.
+
+`carrier BOOLEAN [ modem only ]'
+     The argument indicates whether the port supports carrier.  If it
+     does not, carrier will never be required on this port, regardless
+     of what the modem chat script indicates.  The default is `true'.
+
+`dial-device STRING [ modem only ]'
+     Dialing instructions should be output to the named device, rather
+     than to the normal port device.  The default is to output to the
+     normal port device.
+
+`dialer STRING [ modem only ]'
+     Name a dialer to use.  The information is looked up in the dialer
+     file.  There is no default.  Some sort of dialer information must
+     be specified to call out on a modem.
+
+`dialer STRING ... [ modem only ]'
+     Execute a dialer command.  If a dialer is named (by using the
+     first form of this command, described just above), these commands
+     are ignored.  They may be used to specify dialer information
+     directly in simple situations without needing to go to a separate
+     file.  There is no default.  Some sort of dialer information must
+     be specified to call out on a modem.
+
+`dialer-sequence STRINGS [ modem only ]'
+     Name a sequence of dialers and tokens (phone numbers) to use. 
+     The first argument names a dialer, and the second argument names
+     a token.  The third argument names another dialer, and so on.  If
+     there are an odd number of arguments, the phone number specified
+     with a `phone' command in the system file is used as the final
+     token.  The token is what is used for `\D' or `\T' in the dialer
+     chat script.  If the token in this string is `\D', the system
+     phone number will be used; if it is `\T', the system phone number
+     will be used after undergoing dialcodes translation.  A missing
+     final token is taken as `\D'.
+
+     This command currently does not work if `dial-device' is
+     specified; to handle this correctly will require a more
+     systematic notion of chat scripts.  Moreover, only the `complete'
+     and `abort' chat scripts from the first dialer specified are
+     used, and only the protocol parameters from the first dialer are
+     used.
+
+`lockname STRING [ modem and direct only ]'
+     Give the name to use when locking this port.  On Unix, this is
+     the name of the file that will be created in the lock directory. 
+     It is used as is, so on Unix it should generally start with
+     `LCK..'.  For example, if a single port were named both
+     `/dev/ttycu0' and `/dev/tty0' (perhaps with different
+     characteristics keyed on the minor device number), then the
+     command `lockname LCK..ttycu0' could be used to force the latter
+     to use the same lock file name as the former.
+
+`service STRING [ tcp only ]'
+     Name the TCP port number to use.  This may be a number.  If not,
+     it will be looked up in `/etc/services'.  If this is not
+     specified, the string `uucp' is looked up in `/etc/services'.  If
+     it is not found, port number 540 (the standard UUCP-over-TCP port
+     number) will be used.
+
+
+File: uucp.info,  Node: dial File,  Next: Security,  Prev: port File,  Up: Configuration Files
+
+The Dialer Configuration File
+=============================
+
+   The dialer configuration files define dialers.  The first command in
+each file must be a `dialer' command, which names the dialer. 
+Subsequent commands up to the next `dialer' command are associated
+with the named dialer.
+
+`dialer STRING'
+     Introduces and names a dialer.
+
+`chat STRINGS'
+`chat-timeout NUMBER'
+`chat-fail STRING'
+`chat-seven-bit BOOLEAN'
+`chat-program STRINGS'
+     Specify a chat script to be used to dial the phone.  See *Note
+     Chat Scripts:: for full details on chat scripts.
+
+     Taylor UUCP will sleep for one second between attempts to dial
+     out on a modem.  If your modem requires a longer wait period, you
+     must start your chat script with delays (`\d' in a send string).
+
+     The chat script will be read from and sent to the port specified
+     by the `dial-device' command for the port, if there is one.
+
+     The following escape addition escape sequences may appear in send
+     strings:
+
+    `\D'
+          send phone number without dialcode translation
+
+    `\T'
+          send phone number with dialcode translation
+
+    `\M'
+          do not require carrier
+
+    `\m'
+          require carrier (fail if not present)
+
+          See the description of the dialcodes file (*note Configuration
+     File Names::.) for a description of dialcode translation.  If the
+     port does not support carrier (as set by the `carrier' command in
+     the port file) `\M' and `\m' are ignored.  If both the port and
+     the dialer support carrier (as set by the `carrier' command in
+     the port file and the `carrier' command in the dialer file), then
+     every chat script implicitly begins with `\M' and ends with `\m'.
+      There is no default chat script for dialers.
+
+     The following additional escape sequences may be used in
+     `chat-program':
+
+    `\D'
+          phone number without dialcode translation
+
+    `\T'
+          phone number with dialcode translation
+
+          If the program changes the port in any way (e.g., sets parity) the
+     changes will be preserved during protocol negotiation, but once
+     the protocol is selected it will change the port settings.
+
+`dialtone STRING'
+     A string to output when dialing the phone number which causes the
+     modem to wait for a secondary dial tone.  This is used to
+     translate the `=' character in a phone number.  The default is a
+     comma.
+
+`pause STRING'
+     A string to output when dialing the phone number which causes the
+     modem to wait for 1 second.  This is used to translate the `-'
+     character in a phone number.  The default is a comma.
+
+`carrier BOOLEAN'
+     If the argument is `true', the dialer supports the modem carrier
+     signal.  After the phone number is dialed, `uucico' will require
+     that carrier be on.  One some systems, it will be able to wait
+     for it.  If the argument is `false', carrier will not be
+     required.  The default is `true'.
+
+`carrier-wait NUMBER'
+     If the port is supposed to wait for carrier, this may be used to
+     indicate how many seconds to wait.  The default is 60 seconds. 
+     Only some systems support waiting for carrier.
+
+`dtr-toggle BOOLEAN BOOLEAN'
+     If the first argument is `true', then DTR is toggled before using
+     the modem.  This is only supported on some systems and some
+     ports.  The second BOOLEAN need not be present; if it is, and it
+     is `true', the program will sleep for 1 second after toggling DTR. 
+     The default is not to toggle DTR.
+
+`complete-chat STRINGS'
+`complete-chat-timeout NUMBER'
+`complete-chat-fail STRING'
+`complete-chat-seven-bit BOOLEAN'
+`complete-chat-program STRINGS'
+     These commands define a chat script (*note Chat Scripts::.) which
+     is run when a call is finished normally.  This allows the modem
+     to be reset.  There is no default.  No additional escape
+     sequences may be used.
+
+`complete STRING'
+     This is a simple use of `complete-chat'.  It is equivalent to
+     `complete-chat "" STRING'; this has the effect of sending STRING
+     to the modem when a call finishes normally.
+
+`abort-chat STRINGS'
+`abort-chat-timeout NUMBER'
+`abort-chat-fail STRING'
+`abort-chat-seven-bit BOOLEAN'
+`abort-chat-program STRINGS'
+     These commands define a chat script (*note Chat Scripts::.) to be
+     run when a call is aborted.  They may be used to interrupt and
+     reset the modem.  There is no default.  No additional escape
+     sequences may be used.
+
+`abort STRING'
+     This is a simple use of `abort-chat'.  It is equivalent to
+     `abort-chat "" STRING'; this has the effect of sending STRING to
+     the modem when a call is aborted.
+
+`protocol-parameter CHARACTER STRINGS'
+     Set protocol parameters, just like the `protocol-parameter'
+     command in the system configuration file or the port
+     configuration file; see *Note Protocol Selection::.  These
+     parameters take precedence, then those for the port, then those
+     for the system.
+
+`seven-bit BOOLEAN'
+     This is only used during protocol negotiation; if it is `true', it
+     forces selection of a protocol which works across a seven-bit
+     link.  It does not prevent eight bit characters from being
+     transmitted.  The default is `false'.  It would be more common to
+     specify this for a port than for a dialer.
+
+`reliable BOOLEAN'
+     This is only used during protocol negotiation; if it is `false',
+     it forces selection of a protocol which works across an unreliable
+     communication link.  The default is `true'.
+
+
+File: uucp.info,  Node: Security,  Prev: dial File,  Up: Configuration Files
+
+Security
+========
+
+   This discussion of UUCP security applies only to Unix.  It is a bit
+cursory; suggestions for improvement are solicited.
+
+   UUCP is traditionally not very secure.  Taylor UUCP addresses some
+security issues, but is still far from being a secure system.
+
+   If security is very important to you, then you should not permit any
+external access to your computer, including UUCP.  Any opening to the
+outside world is a potential security risk.
+
+   By default Taylor UUCP provides few mechanisms to secure local
+users of the system from each other.  You can allow increased security
+by putting the owner of the UUCP programs (normally `uucp') into a
+separate group; the use of this is explained in the following
+paragraphs, which refer to this separate group as `uucp-group'.
+
+   When the `uucp' program is invoked to copy a file to a remote
+system, it will by default copy the file into the UUCP spool directory. 
+When the `uux' program is used, the `-C' switch must be used to copy
+the file into the UUCP spool directory.  In any case, once the file
+has been copied into the spool directory, other local users will not
+be able to access it.  In version 1.03 there is a security hole in
+that for the file to be copied it must be readable by `uucp'. 
+Changing the group of the file to `uucp-group' and making it group
+readable will permit UUCP to read it without granting access to other
+users.
+
+   When a file is requested from a remote system, UUCP will only
+permit it to be placed in a directory which is writable by the
+requesting user.  The directory must also be writable by UUCP.  A
+local user can create a directory with a group of `uucp-group' and set
+the mode to permit group write access.  This will allow the file be
+requested without permitting it to be viewed by any other user.
+
+   There is no provision for security for `uucp' requests (as opposed
+to `uux' requests) made by a user on a remote system.  A file sent
+over by a remote request may only be placed in a directory which is
+world writable, and the file will be world readable and writable.  This
+will permit any local user to destroy or replace the contents of the
+file.  A file requested by a remote system must be world readable, and
+the directory it is in must be world readable.  Any local user will be
+able to examine, although not necessarily modify, the file before it is
+sent.
+
+   There are some security holes and race conditions that apply to the
+above discussion which I will not elaborate on.  They are not hidden
+from anybody who reads the source code, but they are somewhat technical
+and difficult (but scarcely impossible) to exploit.  Suffice it to say
+that even under the best of conditions UUCP is not completely secure.
+
+   For many sites, security from remote sites is a more important
+consideration.  Fortunately, Taylor UUCP does provide some support in
+this area.
+
+   The greatest security is provided by always dialing out to the other
+site.  This prevents anybody from pretending to be the other site.  Of
+course, only one side of the connection can do this.
+
+   If remote dialins must be permitted, then it is best if the dialin
+line is used only for UUCP.  If this is the case, then you should
+create a call-in password file (*note Configuration File Names::.) and
+let `uucico' do its own login prompting.  For example, to let remote
+sites log in on a port named `entry' in the port file (*note port
+file::.) you might invoke `uucico -p entry'.  This would cause
+`uucico' to enter an endless loop of login prompts and daemon
+executions.  The advantage of this approach is that even if remote
+users break into the system by guessing or learning the password, they
+will only be able to do whatever `uucico' permits them to do.  They
+will not be able to start a shell on your system.
+
+   If remote users can dial in and log on to your system, then you
+have a security hazard more serious than that posed by UUCP.  But
+then, you probably knew that already.
+
+   Once your system has connected with the remote UUCP, there is a fair
+amount of control you can exercise.  You can use the `remote-send' and
+`remote-receive' commands to control the directories the remote UUCP
+can access.  You can use the `request' command to prevent the remote
+UUCP from making any requests of your system at all; however, if you
+do this it will not even be able to send you mail or news.  If you do
+permit remote requests, you should be careful to restrict what
+commands may be executed at the remote system's request.  The default
+is `rmail' and `rnews', which will suffice for most systems.
+
+   If different remote systems call in and they must be granted
+different privileges (perhaps some systems are within the same
+organization and some are not) then the `called-login' command should
+be used for each system to require that they different login names. 
+Otherwise it would be simple for a remote system to use the `myname'
+command and pretend to be a different system.  The `sequence' command
+can be used to detect when one system pretended to be another, but
+since the sequence numbers must be reset manually after a failed
+handshake this can sometimes be more trouble than it's worth.
+
+
+File: uucp.info,  Node: Protocols,  Next: Hacking,  Prev: Configuration Files,  Up: Top
+
+UUCP protocol internals
+***********************
+
+   This chapter describes how the various UUCP protocols work, and
+discusses some other internal UUCP issues.
+
+   This chapter is quite technical.  You do not need to understand it,
+or even read it, in order to use Taylor UUCP.  It is intended for
+people who are interested in how UUCP code works.
+
+   Most of the discussion covers the protocols used by all UUCP
+packages, not just Taylor UUCP.  Any information specific to Taylor
+UUCP is indicated as such.  There are some pointers to the actual
+functions in the Taylor UUCP source code, for those who are extremely
+interested in actual UUCP implementation.
+
+* Menu:
+
+* Grades::                      UUCP grades
+* Lock Files::                  UUCP lock file format
+* UUCP Protocol::               The common UUCP protocol
+* g Protocol::                  The UUCP `g' protocol
+* f Protocol::                  The UUCP `f' protocol
+* t Protocol::                  The UUCP `t' protocol
+* e Protocol::                  The UUCP `e' protocol
+* x Protocol::                  The UUCP `x' protocol
+* d Protocol::                  The UUCP `d' protocol
+* Capital G Protocol::          The UUCP `G' protocol
+* Documentation References::    Documentation references
+
+
+File: uucp.info,  Node: Grades,  Next: Lock Files,  Prev: Protocols,  Up: Protocols
+
+UUCP Grades
+===========
+
+   Modern UUCP packages support grades for each command.  The grades
+generally range from `A' (the highest) to `Z' followed by `a' to `z'. 
+Taylor UUCP also supports `0' to `9' before `A'.  Some UUCP packages
+may permit any ASCII character as a grade.
+
+   On Unix, these grades are encoded in the name of the command file. 
+A command file name generally has the form
+
+     C.nnnngssss
+
+where NNNN is the remote system name for which the command is queued,
+G is a single character grade, and SSSS is a four character sequence
+number.  For example, a command file created for the system `airs' at
+grade `Z' might be named
+
+     C.airsZ2551
+
+   The remote system name will be truncated to seven characters, to
+ensure that the command file name will fit in the 14 character file
+name limit of the traditional Unix file system.  UUCP packages which
+have no other means of distinguishing which command files are intended
+for which systems thus require all *systems they connect to* to have
+names that are unique in the first seven characters.  Some UUCP
+packages use a variant of this format which truncates the system name
+to six characters.  BNU uses a different spool directory format, which
+allows up to fourteen characters to be used for each system name.  The
+Taylor UUCP spool directory format is configurable.  The new Taylor
+spool directory format permits system names to be as long as file
+names; the maximum length of a file name depends on the particular
+Unix file system being used.
+
+   The sequence number in the command file name may be a decimal
+integer, or it may be a hexadecimal integer, or it may contain any
+alphanumeric character.  Different UUCP packages are different.
+
+   Taylor UUCP creates command files in the function
+`zsysdep_spool_commands'.  The file name is constructed by the
+function `zsfile_name', which knows about all the different types of
+spool directories supported by Taylor UUCP.  The Taylor UUCP sequence
+number can contain any alphanumeric character; the next sequence number
+is determined by the function `fscmd_seq'.
+
+   I do not know how command grades are handled in non-Unix UUCP
+packages.
+
+   Modern UUCP packages allow you to restrict file transfer by grade
+depending on the time of day.  Typically this is done with a line in
+the `Systems' (or `L.sys') file like this:
+
+     airs Any/Z,Any2305-0855 ...
+
+   This allows only grades `Z' and above to be transferred at any
+time.  Lower grades may only be transferred at night.  I believe that
+this grade restriction applies to local commands as well as to remote
+commands, but I am not sure.  It may only apply if the UUCP package
+places the call, not if it is called by the remote system.  Taylor UUCP
+can use the `timegrade' and `call-timegrade' commands (*note When to
+Call::.) to achieve the same effect (and supports the above format
+when reading `Systems' or `L.sys').
+
+   This sort of grade restriction is most useful if you know what
+grades are being used at the remote site.  The default grades used
+depend on the UUCP package.  Generally `uucp' and `uux' have different
+defaults.  A particular grade can be specified with the `-g' option to
+`uucp' or `uux'.  For example, to request execution of rnews on airs
+with grade `d', you might use something like
+
+     uux -gd - airs!rnews <article
+
+   `uunet' queues up mail at grade `Z' and news at grade `d'.  The
+example above would allow mail to be received at any time, but would
+only permit news to be transferred at night.
+
+
+File: uucp.info,  Node: Lock Files,  Next: UUCP Protocol,  Prev: Grades,  Up: Protocols
+
+UUCP Lock File Format
+=====================
+
+   This discussion applies only to Unix.  I have no idea how UUCP locks
+ports on other systems.
+
+   UUCP creates files to lock serial ports and systems.  On most (if
+not all) systems, these same lock files are also used by cu to
+coordinate access to serial ports.  On some systems getty also uses
+these lock files.
+
+   The lock file normally contains the process ID of the locking
+process.  This makes it easy to determine whether a lock is still
+valid.  The algorithm is to create a temporary file and then link it
+to the name that must be locked.  If the link fails because a file
+with that name already exists, the existing file is read to get the
+process ID.  If the process still exists, the lock attempt fails. 
+Otherwise the lock file is deleted and the locking algorithm is
+retried.
+
+   Older UUCP packages put the lock files in the main UUCP spool
+directory, /usr/spool/uucp.  BNU UUCP generally puts the lock files in
+a directory of their own, usually /usr/spool/locks or /etc/locks.
+
+   The original UUCP lock file format encoded the process ID as a four
+byte binary number.  The order of the bytes was host-dependent.  BNU
+UUCP stores the process ID as a ten byte ASCII decimal number, with a
+trailing newline.  For example, if process 1570 holds a lock file, it
+would contain the eleven characters space, space, space, space, space,
+space, one, five, seven, zero, newline.  Some versions of UUCP add a
+second line indicating which program created the lock (uucp, cu, or
+getty).  I have also seen a third type of UUCP lock file which did not
+contain the process ID at all.
+
+   The name of the lock file is generally "LCK.." followed by the base
+name of the device.  For example, to lock /dev/ttyd0 the file
+LCK..ttyd0 would be created.  There are various exceptions.  On SCO
+Unix, the lock file name is always forced to lower case even if the
+device name has upper case letters.  System V Release 4 UUCP forms the
+lock file name using the major and minor device numbers rather than
+the device name (this is pretty sensible if you think about it).
+
+   Taylor UUCP can be configured to use various different types of
+locking.  The actual locking code is in the function `fsdo_lock'.
+
+
+File: uucp.info,  Node: UUCP Protocol,  Next: g Protocol,  Prev: Lock Files,  Up: Protocols
+
+The Common UUCP Protocol
+========================
+
+   The UUCP protocol is a conversation between two UUCP packages.  A
+UUCP conversation consists of three parts: an initial handshake, a
+series of file transfer requests, and a final handshake.
+
+   Before the initial handshake, the caller will usually have logged
+in the called machine and somehow started the UUCP package there.  On
+Unix this is normally done by setting the shell of the login name used
+to `uucico'.
+
+* Menu:
+
+* Initial Handshake::           Initial handshake
+* File Requests::               File requests
+* Final Handshake::             Final handshake
+
+
+File: uucp.info,  Node: Initial Handshake,  Next: File Requests,  Prev: UUCP Protocol,  Up: UUCP Protocol
+
+Initial Handshake
+-----------------
+
+   All messages in the initial handshake begin with a `^P' (a byte
+with the octal value \020) and end with a null byte (\000).
+
+   Taylor UUCP implements the initial handshake for the calling
+machine in `fdo_call', and for the called machine in `faccept_call'.
+
+   The initial handshake goes as follows.  It is begun by the called
+machine.
+
+called: `\020Shere=HOSTNAME\000'
+     The HOSTNAME is the UUCP name of the called machine.  Older UUCP
+     packages do not output it, and simply send `\020Shere\000'.
+
+caller: `\020SHOSTNAME OPTIONS\000'
+     The HOSTNAME is the UUCP name of the calling machine.  The
+     following OPTIONS may appear (or there may be none):
+
+    `-QSEQ'
+          Report sequence number for this conversation.  The sequence
+          number is stored at both sites, and incremented after each
+          call.  If there is a sequence number mismatch, something has
+          gone wrong (somebody may have broken security by pretending
+          to be one of the machines) and the call is denied.  If the
+          sequence number changes on one of the machines, perhaps
+          because of an attempted breakin or because a disk backup was
+          restored, the sequence numbers on the two machines must be
+          reconciled manually.
+
+    `-xLEVEL'
+          Requests the called system to set its debugging level to the
+          specified value.  This is not supported by all systems. 
+          Taylor UUCP currently never generates this switch.  When it
+          sees it, it restricts the value according to
+          `max-remote-debug' (*note Miscellaneous (sys)::.).
+
+    `-pGRADE'
+    `-vgrade=GRADE'
+          Requests the called system to only transfer files of the
+          specified grade or higher.  This is not supported by all
+          systems.  Some systems support `-p', some support
+          `-vgrade='.  Taylor UUCP supports both.
+
+    `-R'
+          Indicates that the calling UUCP understands how to restart
+          failed file transmissions.  Supported only by System V
+          Release 4 UUCP.
+
+    `-ULIMIT'
+          Reports the `ulimit' value of the calling UUCP.  The limit is
+          specified as a base 16 number in C notation (e.g.,
+          `-U0x1000000').  This number is the number of 512 byte
+          blocks in the largest file which the calling UUCP can
+          create.  The called UUCP may not transfer a file larger than
+          this.  Supported by System V Release 4 UUCP.  Taylor UUCP
+          understands this option, but never generates it.
+
+    `-N'
+          Indicates that the calling UUCP understands the Taylor UUCP
+          size limiting extensions.  Supported only by Taylor UUCP.
+
+called: `\020ROK\000'
+     There are actually several possible responses.
+
+    `ROK'
+          The calling UUCP is acceptable, and the handshake proceeds
+          to the protocol negotiation.  Some options may also appear;
+          see below.
+
+    `ROKN'
+          The calling UUCP is acceptable, it specified `-N', and the
+          called UUCP also understands the Taylor UUCP size limiting
+          extensions.  Supported only by Taylor UUCP.
+
+    `RLCK'
+          The called UUCP already has a lock for the calling UUCP,
+          which normally indicates the two machines are already
+          communicating.
+
+    `RCB'
+          The called UUCP will call back.  This may be used to avoid
+          impostors.  Note that only one machine out of each pair
+          should call back, or no conversation will ever begin.
+
+    `RBADSEQ'
+          The call sequence number is wrong (see the `-Q' discussion
+          above).
+
+    `RLOGIN'
+          The calling UUCP is using the wrong login name.
+
+    `RYou are unknown to me'
+          The calling UUCP is not known to the called UUCP, and the
+          called UUCP does not permit connections from unknown systems.
+
+          If the response is `ROK', the following options are supported by
+     System V Release 4 UUCP.
+
+    `-R'
+          The called UUCP knows how to restart failed file
+          transmissions.
+
+    `-ULIMIT'
+          Reports the ulimit value of the called UUCP.  The limit is
+          specified as a base 16 number in C notation.  This number is
+          the number of 512 byte blocks in the largest file which the
+          called UUCP can create.  The calling UUCP may not send a
+          file larger than this.
+
+    `-xLEVEL'
+          I'm told that this is sometimes sent by SVR4 UUCP, but I'm
+          not sure exactly what it means.  It may request the calling
+          UUCP to set its debugging level to the specified value.
+
+          If the response is not `ROK' (or `ROKN') both sides hang up the
+     phone, abandoning the call.
+
+called: `\020PPROTOCOLS\000'
+     The `P' is a literal character.  Note that the called UUCP outputs
+     two strings in a row.  The PROTOCOLS string is a list of UUCP
+     protocols supported by the caller.  Each UUCP protocol has a
+     single character name.  For example, the called UUCP might send
+     `\020Pgf\000'.
+
+caller: `\020UPROTOCOL\000'
+     The `U' is a literal character.  The calling UUCP selects which
+     PROTOCOL to use out of the protocols offered by the called UUCP. 
+     If there are no mutually supported protocols, the calling UUCP
+     sends `\020UN\000' and both sides hang up the phone.  Otherwise
+     the calling UUCP sends something like `\020Ug\000'.
+
+   Most UUCP packages will consider each locally supported protocol in
+turn and select the first one supported by the called UUCP.  With some
+versions of BNU UUCP, this can be modified by giving a list of
+protocols after the device name in the Devices file or the `Systems'
+file.  Taylor UUCP provides the `protocol' command which may be used
+either for a system (*note Protocol Selection::.) or a port (*note
+port file::.).
+
+   After the protocol has been selected and the initial handshake has
+been completed, both sides turn on the selected protocol.  For some
+protocols (notably `g') a further handshake is done at this point.
+
+   Each protocol supports a method for sending a command to the remote
+system.  This method is used to transmit a series of commands between
+the two UUCP packages.  At all times, one package is the master and the
+other is the slave.  Initially, the calling UUCP is the master.
+
+   If a protocol error occurs during the exchange of commands, both
+sides move immediately to the final handshake.
+
+
+File: uucp.info,  Node: File Requests,  Next: Final Handshake,  Prev: Initial Handshake,  Up: UUCP Protocol
+
+File Requests
+-------------
+
+   The master will send one of four commands: `S', `R', `X' or `H'.
+
+   Any file name referred to below is either an absolute pathname
+beginning with `/', a public directory pathname beginning with `~/', a
+pathname relative to a user's home directory beginning with `~USER/',
+or a spool directory file name.  File names in the spool directory are
+not pathnames, but instead are converted to pathnames within the spool
+directory by UUCP.  They always begin with `C.' (for a command file
+created by `uucp' or `uux'), `D.' (for a data file created by `uucp',
+`uux' or by an execution, or received from another system for an
+execution), or `X.' (for an execution file created by `uux' or
+received from another system).
+
+   Taylor UUCP chooses which request to send next in the function
+`fuucp'.  This is also where Taylor UUCP processes incoming commands
+from the remote system.
+
+* Menu:
+
+* S Request::                   S request
+* R Request::                   R request
+* X Request::                   X request
+* H Request::                   H request
+
+
+File: uucp.info,  Node: S Request,  Next: R Request,  Prev: File Requests,  Up: File Requests
+
+S Request
+.........
+
+   master: `S FROM TO USER -OPTIONS TEMP MODE NOTIFY SIZE'
+
+   The `S' and the `-' are literal characters.  This is a request by
+the master to send a file to the slave.  Taylor UUCP handles the `S'
+request in the function `fsend_file'.
+
+FROM
+     The name of the file to send.  If the `C' option does not appear
+     in OPTIONS, the master will actually open and send this file. 
+     Otherwise the file has been copied to the spool directory, where
+     it is named TEMP.  The slave ignores this field unless TO is a
+     directory, in which case the basename of FROM will be used as the
+     file name.  If FROM is a spool directory filename, it must be a
+     data file created for or by an execution, and must begin with
+     `D.'.
+
+TO
+     The name to give the file on the slave.  If this field names a
+     directory the file is placed within that directory with the
+     basename of FROM.  A name ending in `/' is taken to be a
+     directory even if one does not already exist with that name.  If
+     TO begins with `X.', an execution file will be created on the
+     slave.  Otherwise, if TO begins with `D.' it names a data file to
+     be used by some execution file.  Otherwise, TO should not be in
+     the spool directory.
+
+USER
+     The name of the user who requested the transfer.
+
+OPTIONS
+     A list of options to control the transfer.  The following options
+     are defined (all options are single characters):
+
+    `C'
+          The file has been copied to the spool directory (the master
+          should use TEMP rather than FROM).
+
+    `c'
+          The file has not been copied to the spool directory (this is
+          the default).
+
+    `d'
+          The slave should create directories as necessary (this is
+          the default).
+
+    `f'
+          The slave should not create directories if necessary, but
+          should fail the transfer instead.
+
+    `m'
+          The master should send mail to USER when the transfer is
+          complete.
+
+    `n'
+          The slave should send mail to NOTIFY when the transfer is
+          complete.
+
+TEMP
+     If the `C' option appears in OPTIONS, this names the file to be
+     sent.  Otherwise if FROM is in the spool directory, TEMP is the
+     same as FROM.  Otherwise TEMP is a dummy string, normally `D.0'. 
+     After the transfer has been succesfully completed, the master
+     will delete the file TEMP.
+
+MODE
+     This is an octal number giving the mode of the file on the
+     master.  If the file is not in the spool directory, the slave
+     will always create it with mode 0666, except that if (MODE &
+     0111) is not zero (the file is executable), the slave will create
+     the file with mode 0777.  If the file is in the spool directory,
+     some UUCP packages will use the algorithm above and some will
+     always create the file with mode 0600 (Taylor UUCP does the
+     latter).
+
+NOTIFY
+     This field is only used if the `n' option appears in OPTIONS. 
+     Otherwise, it may not appear, or it may be the string `dummy', or
+     it may simply be a pair of double quotes.  If the `n' option is
+     specified, then when the transfer is successfully completed the
+     slave will send mail to NOTIFY, which must be a legal mailing
+     address on the slave.
+
+SIZE
+     This field is only present when doing size negotiation, either
+     with Taylor UUCP or SVR4 UUCP.  It is the size of the file in
+     bytes.  SVR4 UUCP sends the size in base 16 as 0x... while Taylor
+     UUCP sends the size as a decimal integer (a later version of
+     Taylor UUCP will probably change to the SVR4 behaviour).
+
+   The slave then responds with an S command response.  Taylor UUCP
+generates these responses in `freceive_file' and `ftransfer_fail'.
+
+`SY START'
+     The slave is willing to accept the file, and file transfer
+     begins.  The START field will only be present when using SVR4
+     file restart.  It specifies the byte offset into the file at
+     which to start sending.  If this is a new file, START will be 0x0.
+
+`SN2'
+     The slave denies permission to transfer the file.  This can mean
+     that the destination directory may not be accessed, or that no
+     requests are permitted.  It implies that the file transfer will
+     never succeed.
+
+`SN4'
+     The slave is unable to create the necessary temporary file.  This
+     implies that the file transfer might succeed later.
+
+`SN6'
+     This is only used by Taylor UUCP size negotiation.  It means that
+     the slave considers the file too large to transfer at the moment,
+     but it may be possible to transfer it at some other time.
+
+`SN7'
+     This is only used by Taylor UUCP size negotiation.  It means that
+     the slave considers the file too large to ever transfer.
+
+   If the slave responds with `SY', a file transfer begins.  When the
+file transfer is complete, the slave sends a `C' command response. 
+Taylor UUCP generates this confirmation in `fprecfile_confirm' and
+checks it in `fpsendfile_confirm'.
+
+`CY'
+     The file transfer was successful.
+
+`CN5'
+     The temporary file could not be moved into the final location. 
+     This implies that the file transfer will never succeed.
+
+   After the `C' command response has been received (in the `SY' case)
+or immediately (in an `SN' case) the master will send another command.
+
+
+File: uucp.info,  Node: R Request,  Next: X Request,  Prev: S Request,  Up: File Requests
+
+R Request
+.........
+
+   master: `R FROM TO USER -OPTIONS SIZE'
+
+   The `R' and the `-' are literal characters.  This is a request by
+the master to receive a file from the slave.  I do not know how SVR4
+UUCP implements file transfer restart in this case.  Taylor UUCP
+implements the `R' request in `freceive_file'.
+
+FROM
+     This is the name of the file on the slave which the master wishes
+     to receive.  It must not be in the spool directory, and it may
+     not contain any wildcards.
+
+TO
+     This is the name of the file to create on the master.  I do not
+     believe that it can be a directory.  It may only be in the spool
+     directory if this file is being requested to support an execution
+     either on the master or on some system other than the slave.
+
+USER
+     The name of the user who requested the transfer.
+
+OPTIONS
+     A list of options to control the transfer.  The following options
+     are defined (all options are single characters):
+
+    `d'
+          The master should create directories as necessary (this is
+          the default).
+
+    `f'
+          The master should not create directories if necessary, but
+          should fail the transfer instead.
+
+    `m'
+          The master should send mail to USER when the transfer is
+          complete.
+
+SIZE
+     This only appears if Taylor UUCP size negotiation is being used. 
+     It specifies the largest file which the master is prepared to
+     accept (when using SVR4 UUCP, this was specified in the `-U'
+     option during the initial handshake).
+
+   The slave then responds with an `R' command response.  Taylor UUCP
+generates these responses in `fsend_file' and `ftransfer_fail'.
+
+`RY MODE'
+     The slave is willing to send the file, and file transfer begins. 
+     MODE is the octal mode of the file on the slave.  The master uses
+     this to set the mode of the file on the master's system just as
+     the slave does the MODE argument in the send command (*note S
+     Request::.).
+
+`RN2'
+     The slave is not willing to send the file, either because it is
+     not permitted or because the file does not exist.  This implies
+     that the file request will never succeed.
+
+`RN6'
+     This is only used by Taylor UUCP size negotiation.  It means that
+     the file is too large to send, either because of the size limit
+     specifies by the master or because the slave considers it too
+     large.  The file transfer might succeed later, or it might not
+     (this will be cleared up in a later release of Taylor UUCP).
+
+   If the slave responds with `RY', a file transfer begins.  When the
+file transfer is complete, the master sends a `C' command.  The slave
+pretty much ignores this, although it may log it.  Taylor UUCP sends
+this confirmation in `fprecfile_confirm' and checks it in
+`fpsendfile_confirm'.
+
+`CY'
+     The file transfer was successful.
+
+`CN5'
+     The temporary file could not be moved into the final location.
+
+   After the `C' command response has been sent (in the `RY' case) or
+immediately (in an `RN' case) the master will send another command.
+
+
+File: uucp.info,  Node: X Request,  Next: H Request,  Prev: R Request,  Up: File Requests
+
+X Request
+.........
+
+   master: `X FROM TO USER -OPTIONS'
+
+   The `X' and the `-' are literal characters.  This is a request by
+the master to, in essence, execute `uucp' on the slave.  The slave
+should execute `uucp FROM TO'.  Taylor UUCP generates the `X' request
+in `fxcmd' and handles it in `fdo_xcmd'.
+
+FROM
+     This is the name of the file or files on the slave which the
+     master wishes to transfer.  Any wildcards are expanded on the
+     slave.  If the master is requesting that the files be transferred
+     to itself, the request would normally contain wildcard
+     characters, since otherwise an `R' command would suffice.  The
+     master can also use this command to request that the slave
+     transfer files to a third system.
+
+TO
+     This is the name of the file or directory to which the files
+     should be transferred.  This will normally use a UUCP name.  For
+     example, if the master wishes to receive the files itself, it
+     would use `MASTER!PATH'.
+
+USER
+     The name of the user who requested the transfer.
+
+OPTIONS
+     A list of options to control the transfer.  It is not clear
+     which, if any, options are supported by most UUCP packages. 
+     Taylor UUCP ignores the options field.
+
+   The slave then responds with an X command response.  Taylor UUCP
+sends this response in either `fxcmd_confirm' or `ftransfer_fail'.
+
+`XY'
+     The request was accepted, and the appropriate file transfer
+     commands have been queued up for later processing.
+
+`XN'
+     The request was denied.  No particular reason is given.
+
+   In either case, the master will then send another command.
+
+
+File: uucp.info,  Node: H Request,  Prev: X Request,  Up: File Requests
+
+H Request
+.........
+
+   master: `H'
+
+   This is used by the master to hang up the connection.  The slave
+will respond with an `H' command response.  Taylor UUCP processes this
+request in `fhangup_request', `fhangup_reply', and `fgetcmd'.
+
+`HY'
+     The slave agrees to hang up the connection.  In this case the
+     master sends another `HY' command.  In some UUCP packages,
+     including Taylor UUCP, the slave will then send a third `HY'
+     command.  At this point the protocol is shut down, and the final
+     handshake is begun.
+
+`HN'
+     The slave does not agree to hang up.  In this case the master and
+     the slave exchange roles.  The next command will be sent by the
+     former slave, which is the new master.  The roles may be reversed
+     several times during a single connection.
+
+

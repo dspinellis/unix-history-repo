@@ -1,0 +1,98 @@
+Info file uucp.info, produced by Makeinfo, -*- Text -*- from input
+file uucp.texi.
+
+   This file documents Taylor UUCP, version 1.03.
+
+   Copyright (C) 1992 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the section entitled "Copying" are included exactly as in the
+original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "Copying" may be included
+in a translation approved by the author instead of in the original
+English.
+
+Indirect:
+uucp.info-1: 984
+uucp.info-2: 49152
+uucp.info-3: 98532
+uucp.info-4: 148069
+
+Tag Table:
+(Indirect)
+Node: Top986
+Node: Copying5410
+Node: Introduction7937
+Node: Overall Installation14735
+Node: Configuration15321
+Node: Compilation17211
+Node: Testing22098
+Node: Installation27587
+Node: Usage27959
+Node: TCP29382
+Node: Configuration Files32661
+Node: Configuration File Format34119
+Node: Configuration Examples35799
+Node: config File Examples36462
+Node: Leaf Example40328
+Node: Gateway Example43008
+Node: Time Strings47380
+Node: Chat Scripts49154
+Node: config File57228
+Node: Miscellaneous (config)57841
+Node: Configuration File Names60294
+Node: Log File Names64498
+Node: Debugging Levels65766
+Node: sys File68632
+Node: Defaults and Alternates69512
+Node: Naming the System72606
+Node: Calling Out74334
+Node: When to Call74691
+Node: Placing the Call78279
+Node: Logging In81504
+Node: Accepting a Call84766
+Node: Protocol Selection87579
+Node: File Transfer Control93689
+Node: Miscellaneous (sys)98534
+Node: Default sys File Values102756
+Node: port File103508
+Node: dial File110240
+Node: Security115883
+Node: Protocols121151
+Node: Grades122501
+Node: Lock Files126091
+Node: UUCP Protocol128421
+Node: Initial Handshake129139
+Node: File Requests135702
+Node: S Request136896
+Node: R Request142317
+Node: X Request145480
+Node: H Request147195
+Node: Final Handshake148071
+Node: g Protocol148888
+Node: f Protocol159203
+Node: t Protocol162285
+Node: e Protocol163346
+Node: x Protocol164142
+Node: d Protocol164620
+Node: Capital G Protocol165006
+Node: Documentation References165559
+Node: Hacking166526
+Node: System Dependence166894
+Node: Naming Conventions168827
+Node: Patches170994
+Node: Acknowledgements171490
+Node: Index (concepts)177031
+Node: Index (configuration file)180596
+
+End Tag Table
