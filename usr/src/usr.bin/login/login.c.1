@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c.1	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c.1	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -126,7 +126,7 @@ main(argc, argv)
 			}
 			hflag = 1;
 			if (domain && (p = index(optarg, '.')) &&
-			    strcmp(p, domain) == 0)
+			    strcasecmp(p, domain) == 0)
 				*p = 0;
 			hostname = optarg;
 			break;
