@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)put.c 1.19 %G%";
+static char sccsid[] = "@(#)put.c 1.20 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -351,8 +351,12 @@ around:
 		case O_CASE4:
 		longgen:
 			n = (n << 1) - 1;
-			if ( op == O_LRV || op == O_FOR4U || op == O_FOR4D)
+			if ( op == O_LRV || op == O_FOR4U || op == O_FOR4D) {
 				n--;
+#				if defined(ADDR32) && !defined(DEC11)
+				    p[n / 2] <<= 16;
+#				endif
+			}
 #ifdef DEBUG
 			if (opt('k')) {
 				printf("%5d\t%s", lc - HEADER_BYTES, cp+1);
@@ -683,7 +687,7 @@ patchfil(loc, jmploc, words)
 	int words;
 {
 	register i;
-	int val;
+	short val;
 
 	if ( !CGENNING )
 		return;
@@ -702,9 +706,9 @@ patchfil(loc, jmploc, words)
 			    val = jmploc;
 #		endif DEC11
 		i = ((unsigned) loc + 2 - ((unsigned) lc & ~01777))/2;
-		if (i >= 0 && i < 1024)
+		if (i >= 0 && i < 1024) {
 			obuf[i] = val;
-		else {
+		} else {
 			lseek(ofil, (long) loc+2, 0);
 			write(ofil, &val, 2);
 			lseek(ofil, (long) 0, 2);
