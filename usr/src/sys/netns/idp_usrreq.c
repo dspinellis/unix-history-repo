@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)idp_usrreq.c	7.8 (Berkeley) %G%
+ *	@(#)idp_usrreq.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -354,18 +354,18 @@ idp_ctloutput(req, so, level, name, value)
 }
 
 /*ARGSUSED*/
-idp_usrreq(so, req, m, nam, rights)
+idp_usrreq(so, req, m, nam, control)
 	struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *rights;
+	struct mbuf *m, *nam, *control;
 {
 	struct nspcb *nsp = sotonspcb(so);
 	int error = 0;
 
 	if (req == PRU_CONTROL)
                 return (ns_control(so, (int)m, (caddr_t)nam,
-			(struct ifnet *)rights));
-	if (rights && rights->m_len) {
+			(struct ifnet *)control));
+	if (control && control->m_len) {
 		error = EINVAL;
 		goto release;
 	}
@@ -509,15 +509,17 @@ idp_usrreq(so, req, m, nam, rights)
 		panic("idp_usrreq");
 	}
 release:
+	if (control != NULL)
+		m_freem(control);
 	if (m != NULL)
 		m_freem(m);
 	return (error);
 }
 /*ARGSUSED*/
-idp_raw_usrreq(so, req, m, nam, rights)
+idp_raw_usrreq(so, req, m, nam, control)
 	struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *rights;
+	struct mbuf *m, *nam, *control;
 {
 	int error = 0;
 	struct nspcb *nsp = sotonspcb(so);
@@ -542,7 +544,7 @@ idp_raw_usrreq(so, req, m, nam, rights)
 		nsp->nsp_flags = NSP_RAWIN | NSP_RAWOUT;
 		break;
 	default:
-		error = idp_usrreq(so, req, m, nam, rights);
+		error = idp_usrreq(so, req, m, nam, control);
 	}
 	return (error);
 }
