@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.27 (Berkeley) %G%
+ *	@(#)conf.h	8.28 (Berkeley) %G%
  */
 
 /*
@@ -96,7 +96,7 @@
 # define setreuid(r, e)		setresuid(r, e, -1)	
 # define LA_TYPE	LA_FLOAT
 # define _PATH_UNIX	"/hp-ux"
-# undef IDENTPROTO
+# undef IDENTPROTO		/* TCP/IP implementation is broken */
 # endif
 
 
@@ -177,7 +177,7 @@
 # define HASFLOCK	1	/* has flock(2) call */
 # define LA_TYPE	LA_INT
 # define LA_AVENRUN	"avenrun"
-# undef IDENTPROTO
+# undef IDENTPROTO		/* TCP/IP implementation is broken */
 #endif
 
 
@@ -252,6 +252,7 @@ typedef int		pid_t;
 # ifndef _PATH_SENDMAILCF
 #  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
 # endif
+# undef IDENTPROTO		/* TCP/IP implementation is broken */
 #endif
 
 
