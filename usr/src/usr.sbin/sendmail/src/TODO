@@ -1,4 +1,4 @@
-(Version 8.10 of %G%)
+(Version 8.11 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -17,8 +17,9 @@ X ****	Merge Sun changes.  [8.7]
 
 X ****	Macro giving size of the message in bytes.
 
-X ****	Provide a way to turn off all DNS lookup in the I option, e.g.,
-	``OIoff''.  [8.7]
+X ****	Create a "service switch" abstraction that will interface with
+	Sun NSS, Ultrix /etc/svc.conf, etc.  This will allow you to
+	turn off DNS entirely, a la ``OIoff''.  [8.7]
 
 X ****	Should have new mailer flags to override LocalMailer stuff:
 	- M_ALIASABLE (A) -- can use as the LHS of an alias.
@@ -51,6 +52,14 @@ X ****	Add uucp-bang mailer that strips off any domain name from
 	the envelope recipient address first; this is for use in
 	mailer table entries.
 
+X ****	"quote" map (inverse of dequote).  Lets you turn node::user
+	into "node::user"@DECNET.gateway
+
+X ***	Mailer flag that does a "ping" equivalent -- if it fails, wait
+	30 seconds and try again (for dialup PPP connections).  Could
+	just try the connection and then immediately retry on some
+	kinds of failures.
+
 X ***	Create a macro that has message size.
 	Peter Wemm <peter@DIALix.oz.au>
 
@@ -81,6 +90,8 @@ E ***	Eliminate E qf line and e_errorqueue; use e_errorsto a la
 B ***	Fix syslog buffer overflow problems.
 
 X ***	DECNET_RELAY support in configs.
+
+E **	Change "/usr/tmp/dead.letter" to be based on _PATH_VARTMP.
 
 B **	Commas in NAME envariable cause problems (Peter Wan
 	<peter@cc.gatech.edu>).  Merge with suggestions to use
@@ -159,6 +170,8 @@ X **	Automatically drop into MIME mode if you have a full name
 
 X **	-b? flag to read a header and show you what it will look like
 	after all rewriting for an indicated address.
+
+E **	Log $u in logsender() (for=<someaddress>).
 
 X *	Allow $> anywhere in RHS.  John Boeske <jboeske@ualberta.ca>.
 
