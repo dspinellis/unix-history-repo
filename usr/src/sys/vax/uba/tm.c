@@ -1,4 +1,4 @@
-/*	tm.c	4.21	%G%	*/
+/*	tm.c	4.22	%G%	*/
 
 #include "te.h"
 #if NTM > 0
@@ -6,7 +6,10 @@ int	tmgapsdcnt;		/* DEBUG */
 /*
  * TM11/TE10 tape driver
  *
- * THIS DRIVER HAS NOT BEEN TESTED WITH MORE THAN ONE TRANSPORT.
+ * Todo:
+ *	Test driver with more than one slave
+ *	Test reset code
+ *	Do rewinds without hanging in driver
  */
 #define	DELAY(N)		{ register int d = N; while (--d > 0); }
 #include "../h/param.h"
@@ -58,7 +61,9 @@ struct	tm_softc {
 	u_short	sc_erreg;	/* copy of last erreg */
 	u_short	sc_dsreg;	/* copy of last dsreg */
 	short	sc_resid;	/* copy of last bc */
+#ifdef notdef
 	short	sc_lastcmd;	/* last command to handle direction changes */
+#endif
 } tm_softc[NTM];
 
 /*
@@ -154,13 +159,8 @@ tmopen(dev, flag)
 		return;
 	}
 	tmcommand(dev, TM_SENSE, 1);
-	if ((sc->sc_erreg&(TM_SELR|TM_TUR)) != (TM_SELR|TM_TUR)) {
-		uprintf("tape not online\n");
-		u.u_error = EIO;
-		return;
-	}
-	if ((flag&(FREAD|FWRITE)) == FWRITE && sc->sc_erreg&TM_WRL) {
-		uprintf("tape write protected\n");
+	if ((sc->sc_erreg&(TM_SELR|TM_TUR)) != (TM_SELR|TM_TUR) ||
+	    (flag&(FREAD|FWRITE)) == FWRITE && sc->sc_erreg&TM_WRL) {
 		u.u_error = EIO;
 		return;
 	}
@@ -168,8 +168,6 @@ tmopen(dev, flag)
 	sc->sc_blkno = (daddr_t)0;
 	sc->sc_nxrec = INF;
 	sc->sc_lastiow = 0;
-	sc->sc_openf = 1;
-	return;
 }
 
 /*
@@ -370,12 +368,12 @@ loop:
 			cmd |= TM_RCOM;
 		um->um_tab.b_active = SIO;
 		um->um_cmd = cmd;
-/*
+#ifdef notdef
 		if (tmreverseop(sc->sc_lastcmd))
 			while (addr->tmer & TM_SDWN)
 				tmgapsdcnt++;
-*/
 		sc->sc_lastcmd = TM_RCOM;		/* will serve */
+#endif
 		ubago(ui);
 		return;
 	}
@@ -392,12 +390,12 @@ loop:
 		addr->tmbc = dbtofsb(bp->b_blkno) - blkno;
 	}
 dobpcmd:
-/*
+#ifdef notdef
 	if (tmreverseop(sc->sc_lastcmd) != tmreverseop(bp->b_command))
 		while (addr->tmer & TM_SDWN)
 			tmgapsdcnt++;
-*/
 	sc->sc_lastcmd = bp->b_command;
+#endif
 	addr->tmcs = (cmd | bp->b_command);
 	return;
 
@@ -500,10 +498,6 @@ tmintr(tm11)
 		 */
 		if ((addr->tmer&TM_HARD)==0 && state==SIO) {
 			if (++um->um_tab.b_errcnt < 7) {
-/* SHOULD CHECK THAT RECOVERY WORKS IN THIS CASE */
-/* AND THEN ONLY PRINT IF errcnt==7 */
-				if((addr->tmer&TM_SOFT) == TM_NXM)
-					printf("TM UBA late error\n");
 				sc->sc_blkno++;
 				ubadone(um);
 				goto opcont;
@@ -518,9 +512,8 @@ tmintr(tm11)
 		/*
 		 * Couldn't recover error
 		 */
-		harderr(bp);
-		printf("tm%d er=%b\n", dkunit(bp),
-		    sc->sc_erreg, TMEREG_BITS);
+		printf("te%d: hard error bn%d er=%b\n", minor(bp->b_dev)&03,
+		    bp->b_blkno, sc->sc_erreg, TMEREG_BITS);
 		bp->b_flags |= B_ERROR;
 		goto opdone;
 	}
@@ -655,7 +648,6 @@ tmphys(dev)
 tmreset(uban)
 	int uban;
 {
-	int printed = 0;
 	register struct uba_minfo *um;
 	register tm11, unit;
 	register struct uba_dinfo *ui;
@@ -665,11 +657,7 @@ tmreset(uban)
 		if ((um = tmminfo[tm11]) == 0 || um->um_alive == 0 ||
 		   um->um_ubanum != uban)
 			continue;
-		if (printed == 0) {
-			printf(" tm");
-			DELAY(2000000);		/* time to self test */
-			printed = 1;
-		}
+		printf(" tm%d", tm11);
 		um->um_tab.b_active = 0;
 		um->um_tab.b_actf = um->um_tab.b_actl = 0;
 		if (um->um_ubinfo) {
