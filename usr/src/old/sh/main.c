@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.2 %G%";
+static char sccsid[] = "@(#)main.c	4.3 %G%";
 #endif
 
 #
@@ -12,12 +12,12 @@ static char sccsid[] = "@(#)main.c	4.2 %G%";
  */
 
 #include	"defs.h"
-#include	"dup.h"
 #include	"sym.h"
 #include	"timeout.h"
 #include	<sys/types.h>
 #include	<sys/stat.h>
 #include	<sgtty.h>
+#include	<signal.h>
 
 UFD		output = 2;
 LOCAL BOOL	beenhere = FALSE;
@@ -45,7 +45,7 @@ main(c, v)
 	addblok((POS)0);
 
 	/* set names from userenv */
-	getenv();
+	setupenv();
 
 	/* look for restricted */
 /*	IF c>0 ANDF any('r', *v) THEN rflag=0 FI */
@@ -183,7 +183,7 @@ settmp()
 Ldup(fa, fb)
 	REG INT		fa, fb;
 {
-	dup(fa|DUPFLG, fb);
+	dup2(fa, fb);
 	close(fa);
 	ioctl(fb, FIOCLEX, 0);
 }
