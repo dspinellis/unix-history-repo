@@ -1,0 +1,2 @@
+Msleep	sleep.c	/^main(argc, argv)$/
+usage	sleep.c	/^usage()$/

@@ -1,0 +1,10 @@
+Mdf	df.c	/^main(argc, argv)$/
+bread	df.c	/^bread(off, buf, cnt)$/
+checkvfsname	../../sbin/mount/vfslist.c	/^checkvfsname(vfsname, vfslist)$/
+fsbtoblk	df.c	/^#define fsbtoblk(num, fsbs, bs) \\$/
+getmntpt	df.c	/^getmntpt(name)$/
+makevfslist	../../sbin/mount/vfslist.c	/^makevfslist(fslist)$/
+prtstat	df.c	/^prtstat(sfsp, maxwidth)$/
+regetmntinfo	df.c	/^regetmntinfo(mntbufp, mntsize, vfslist)$/
+ufs_df	df.c	/^ufs_df(file, maxwidth)$/
+usage	df.c	/^usage()$/

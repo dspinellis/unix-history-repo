@@ -1,0 +1,9 @@
+ISDOT	rm.c	/^#define ISDOT(a)	((a)[0] == '.' && (!(a)[1] || (a)/
+Mrm	rm.c	/^main(argc, argv)$/
+PASS	rm.c	/^#define	PASS(byte) {							\\$/
+check	rm.c	/^check(path, name, sp)$/
+checkdot	rm.c	/^checkdot(argv)$/
+rm_file	rm.c	/^rm_file(argv)$/
+rm_overwrite	rm.c	/^rm_overwrite(file, sbp)$/
+rm_tree	rm.c	/^rm_tree(argv)$/
+usage	rm.c	/^usage()$/

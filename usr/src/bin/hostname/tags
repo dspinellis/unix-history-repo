@@ -1,0 +1,2 @@
+Mhostname	hostname.c	/^main(argc,argv)$/
+usage	hostname.c	/^usage()$/
