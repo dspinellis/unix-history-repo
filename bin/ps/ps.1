@@ -35,10 +35,10 @@
 .Dt PS 1
 .Os BSD 4
 .Sh NAME
-.Nm \&ps
+.Nm ps
 .Nd process status
 .Sh SYNOPSIS
-.Nm \&ps
+.Nm ps
 .Op Fl aChjlmrSTuvwx
 .Op Fl M Ar core
 .Op Fl N Ar system
@@ -50,7 +50,7 @@
 .Nm ps
 .Op Fl L
 .Sh DESCRIPTION
-.Nm \&Ps
+.Nm Ps
 displays a header line followed by lines containing information about your
 processes that have controlling terminals.
 This information is sorted by process
@@ -154,7 +154,7 @@ is your window size.
 If the
 .Fl w
 option is specified more than once,
-.Nm \&ps
+.Nm ps
 will use as many columns as necessary without regard for your window size.
 .It Fl x
 Display information about processes without controlling terminals.
@@ -325,7 +325,7 @@ When printing using the command keyword, a process that has exited and
 has a parent that has not yet waited for the process (in other words, a zombie)
 is listed as ``<defunct>'', and a process which is blocked while trying
 to exit is listed as ``<exiting>''.
-.Nm \&Ps
+.Nm Ps
 makes an educated guess as to the file name and arguments given when the
 process was created by examining memory or the swap area.
 The method is inherently somewhat unreliable and in any event a process
@@ -498,6 +498,6 @@ default system namelist
 .Xr pstat 8
 .Sh BUGS
 Since
-.Nm \&ps
+.Nm ps
 cannot run faster than the system and is run as any other scheduled
 process, the information it displays can never be exact.
