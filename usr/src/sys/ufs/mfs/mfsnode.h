@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfsnode.h	7.5 (Berkeley) %G%
+ *	@(#)mfsnode.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -121,8 +121,6 @@ struct mfsnode {
 		struct ucred *cred))) mfs_badop)
 #define mfs_abortop ((int (*) __P(( \
 		struct nameidata *ndp))) mfs_badop)
-#define mfs_reclaim ((int (*) __P(( \
-		struct vnode *vp))) nullop)
 #define mfs_lock ((int (*) __P(( \
 		struct vnode *vp))) nullop)
 #define mfs_unlock ((int (*) __P(( \
