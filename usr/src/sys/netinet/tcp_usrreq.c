@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.62	82/09/26	*/
+/*	tcp_usrreq.c	1.63	82/10/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -233,6 +233,7 @@ tcp_usrreq(so, req, m, nam, opt)
 			error = EWOULDBLOCK;
 			break;
 		}
+		m->m_len = 1;
 		*mtod(m, caddr_t) = tp->t_iobc;
 		break;
 
