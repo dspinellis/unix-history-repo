@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)condevs.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)condevs.c	5.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -1268,29 +1268,30 @@ struct Devices *dev;
 		}
 	fixline(dh, dev->D_speed);
 
-/* translate - to % and = to & for VenTel */
+/* translate - to K for Vadic */
 	DEBUG(4, "calling %s -> ", telno);
 	delay = 0;
 	for (i = 0; i < strlen(telno); ++i) {
 		switch(telno[i]) {
 		case '=':	/* await dial tone */
+		case '-':	/* delay */
 		case '<':
 			telno[i] = 'K';
+			delay += 5;
 			break;
 		}
 	}
 	DEBUG(4, "%s\n", telno);
-	sleep(1);
 	for(i = 0; i < 5; ++i) {	/* make 5 tries */
 		/* wake up Vadic */
-		write(dh, "\005\r", 2);
+		sendthem("\005\\d", dh);
 		DEBUG(4, "wanted %s ", "*");
 		ok = expect("*", dh);
 		DEBUG(4, "got %s\n", ok ? "?" : "that");
 		if (ok != 0)
 			continue;
 
-		write(dh, "D\r", 2); /* "D" (enter number) command */
+		sendthem("D\\d", dh);	/* "D" (enter number) command */
 		DEBUG(4, "wanted %s ", "NUMBER?\\r\\n");
 		ok = expect("NUMBER?\r\n", dh);
 		DEBUG(4, "got %s\n", ok ? "?" : "that");
@@ -1298,9 +1299,7 @@ struct Devices *dev;
 			continue;
 
 	/* send telno, send \r */
-		write(dh, telno, strlen(telno));
-		sleep(1);
-		write(dh, "\r", 1);
+		sendthem(telno, dh);
 		ok = expect(telno, dh);
 		if (ok == 0)
 			ok = expect("\r\n", dh);
@@ -1308,7 +1307,7 @@ struct Devices *dev;
 		if (ok != 0)
 			continue;
 
-		write(dh, "\r", 1); /* confirm number */
+		sendthem("", dh); /* confirm number */
 		DEBUG(4, "wanted %s ", "DIALING: ");
 		ok = expect("DIALING: ", dh);
 		DEBUG(4, "got %s\n", ok ? "?" : "that");
@@ -1324,6 +1323,7 @@ struct Devices *dev;
 	}
 
 	if (ok != 0) {
+		sendthem("I\\d", dh);	/* back to idle */
 		if (dh > 2)
 			close(dh);
 		DEBUG(4, "vadDial failed\n", "");
