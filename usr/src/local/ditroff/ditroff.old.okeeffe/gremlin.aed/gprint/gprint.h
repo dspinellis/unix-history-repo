@@ -1,14 +1,32 @@
-/*	gprint.h	1.3	83/03/30
+/* gprint.h	1.4	83/05/13
  *
  * This file contains standard definitions used by the gprint program.
  */
 
-#define Xmax 511
-#define Ymax 483
-#define xorn(x,y) Orientation ? (y) : (x) 
-#define yorn(x,y) Orientation ? (x) : (y) 
-#define mapx(x) (((x) * scale)-orgx)
-#define mapy(y) (((y) * scale)-orgy)
+#define Vxlen		2048		/* varian dimensions */
+#define Vylen		1536
+#define Vbytperlin	264
+
+#define Wxlen		2048		/* versatec dimensions */
+#define Wylen		2048
+#define Wbytperlin	880
+
+#define	MenuSize	116		/* screen dimensions */
+#define HXmin		0
+#define HXmax		511
+#define HYmin		0
+#define HYmax		(511 - MenuSize)
+#define VXmin		MenuSize
+#define VXmax		511
+#define VYmin		0
+#define VYmax		511
+
+						/* translation stuff */
+#define xorn(x,y)	Orientation ? ((y) - VYmin) : ((x) - HXmin)
+#define yorn(x,y)	Orientation ? ((x) - VXmin) : (HYmax - (y))
+#define mapx(x)		(((x) * scale)-orgx)
+#define mapy(y)		(((y) * scale)-orgy)
+
 #define STYLES 6
 #define SIZES 4
 #define FONTS 4
