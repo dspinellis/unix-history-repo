@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uio.h	7.2 (Berkeley) %G%
+ *	@(#)uio.h	7.3 (Berkeley) %G%
  */
 
 #ifndef _UIO_
@@ -41,5 +41,11 @@ enum	uio_rw { UIO_READ, UIO_WRITE };
 #define UIO_USERSPACE	0		/* from user data space */
 #define UIO_SYSSPACE	1		/* from system space */
 #define UIO_USERISPACE	2		/* from user I space */
+
+ /*
+  * Limits
+  */
+#define UIO_MAXIOV	1024		/* max 1K of iov's */
+#define UIO_SMALLIOV	8		/* 8 on stack, else malloc */
 
 #endif /* !_UIO_ */
