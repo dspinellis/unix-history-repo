@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /******************************************************************************
@@ -602,6 +602,7 @@ int	ndx;
     int		clearbytes;
 
     if ( !(ip = (u_long *)malloc (hashp->BSIZE)) ) return (NULL);
+    hashp->exmaps++;
     clearints = ((nbits - 1) >> INT_BYTE_SHIFT) + 1;
     clearbytes = clearints << INT_TO_BYTE;
     memset ((char *)ip, 0, clearbytes );
