@@ -11,7 +11,7 @@ char copyright[] =
 #endif
 
 #ifndef lint
-static char sccsid[] = "@(#)chown.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)chown.c	5.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -104,6 +104,8 @@ isnumber(s)
 {
 	register c;
 
+	if (*s == '\0')
+		return 0;
 	while(c = *s++)
 		if (!isdigit(c))
 			return (0);
