@@ -1,11 +1,11 @@
-.\"	@(#)2.t	1.1	(Copyright 1986 M. K. McKusick)	86/11/25
-.SH
+.\"	@(#)2.t	1.2	(Copyright 1986 M. K. McKusick)	86/11/29
+.NH
 The Future of UNIX at Berkeley
 .PP
 The release of 4.3BSD in April of 1986 addressed many of the 
 performance problems and unfinished interfaces that were
 present in 4.2BSD [Leffler84] [McKusick85].
-We are now embarking on a new development phase to update older
+Berkeley is now embarking on a new development phase to update older
 parts of the system to the current state of the art.
 There are three main areas of work.
 The first is to rewrite the virtual memory system to take
@@ -14,17 +14,17 @@ such as mapped files and shared memory.
 The second is to provide a standard interface to file systems
 to allow multiple local and remote file systems much the way
 multiple networking protocols are supported in 4.3BSD.
-Finally we want to provide more internal flexibility in a
+Finally there is a need to provide more internal flexibility in a
 way similar to the streams paradigm in System V.
-.SH 2
+.NH 2
 A New Virtual Memory Implementation
 .PP
 With the cost per byte of memory approaching that of the cost per byte
 for disks, and with file systems increasingly distant from the host
 machines, a new approach to the implementation of virtual memory is
-necessary. In 4.3BSD the swap space is preallocated which limits the
-maximum virtual memory that can be supported to the size of the swap
-area [Babaoglu79] [Someren84].
+necessary. In 4.3BSD the swap space is preallocated;
+this preallocation limits the maximum virtual memory that can be
+supported to the size of the swap area [Babaoglu79] [Someren84].
 The new system should support virtual memory up to the sum of the
 sizes of physical memory plus swap space (a system may run with no swap
 space if it has no local disk). For systems with a local swap
@@ -57,7 +57,7 @@ the unusual case of trying to lock an already-locked lock or in
 releasing a wanted lock will a system call be required.  The
 interface will allow a user-level implementation of the System V semaphore
 interface on most machines with a much lower runtime cost [McKusick86].
-.SH 2
+.NH 2
 Toward a Compatible Filesystem Interface
 .PP
 As network or remote filesystems have been implemented for UNIX,
@@ -100,7 +100,7 @@ A prototype implementation is now being developed at Berkeley.
 This proposal and the rationale underlying its development
 have been presented to major software vendors as an early step
 toward convergence on a compatible filesystem interface [Karels86].
-.SH 2
+.NH 2
 Changes to the Protocol Layering Interface
 .PP
 The original work on restructuring the internal kernel interfaces
@@ -124,7 +124,7 @@ The simple and elegant stackable line discipline implementation was
 converted to the full production implementation
 of streams in System V Release 3.
 In doing the conversion, many of the pragmatic issues such as handling of
-multiplexed connections were handled.
+multiplexed connections were addressed.
 Unfortunately the complexity of the implementation increased as well.
 .PP
 Because AT&T will not allow the inclusion of streams without also
