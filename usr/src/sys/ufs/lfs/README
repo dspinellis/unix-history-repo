@@ -1,70 +1,93 @@
-#	@(#)README	7.2 (Berkeley) %G%
+#	@(#)README	7.3 (Berkeley) %G%
 
-The disk is laid out in segments.  Each segment is composed of one or more
-groups of:
-	0 or more data blocks
-	0 or more inode blocks
-	A segment summary
+The disk is laid out in segments.  The first segment starts 8K into the
+disk (the first 8K is used for boot information).  Each segment is composed
+of the following:
 
-The data blocks and the inode blocks grow toward the middle of the segment.
+	An optional super block
+	One or more groups of:
+		segment summary
+		0 or more data blocks
+		0 or more inode blocks
 
-________________________________________________________
-|                                            |         |
-|                                            | Segment |
-| Data Blocks  --->        <--- Inode Blocks | Summary |
-|                                            |         |
-|____________________________________________|_________|
+The segment summary and inode/data blocks start after the super block (if
+present), and grow toward the end of the segment.
 
-XXX
-Show how segment summary blocks are chained and where they're stored
-by the segment writing code.
+	_______________________________________________
+	|         |            |         |            |
+	| summary | data/inode | summary | data/inode |
+	|  block  |   blocks   |  block  |   blocks   | ...
+	|_________|____________|_________|____________|
 
-Segment Summary - detail
+The data/inode blocks following a summary block are described by the
+summary block.  In order to permit the segment to be written in any order
+and in a forward direction only, a checksum is calculated across the
+blocks described by the summary.  Additionally, the summary is checksummed
+and timestamped.  Both of these are intended for recovery; the former is
+to make it easy to determine that it *is* a summary block and the latter
+is to make it easy to determine when recovery is finished for partially
+written segments.
 
-_________________________________________
-|                                        |
-|    (SEGSUM) Segment Summary Header     |
-|----------------------------------------|
-|    (FINFO-1)                           |
-|       .        0 or more file info     |
-|       .        structures which        |
-|       .        identify the blocks     |
-|                in the segment.         |
-|    (FINFO-N)                           |
-|________________________________________|
+	Summary block (detail)
+	________________
+	| sum cksum    |
+	| data cksum   |
+	| next segment |
+	| timestamp    |
+	| FINFO count  |
+	| inode count  |
+	|______________|
+	|   FINFO-1    | 0 or more file info structures, identifying the
+	|     .        | blocks in the segment.
+	|     .        |
+	|     .        |
+	|   FINFO-N    |
+	|   inode-N    |
+	|     .        |
+	|     .        |
+	|     .        | 0 or more inode daddr_t's, identifying the inode
+	|   inode-1    | blocks in the segment.
+	|______________|
 
-The file system is described by a super-block which is replicated and occurs
-as the first block of the first segment as well as the first block of several 
-other segments.  (The maximum number of super-blocks is MAXNUMSB).  Each
-super-block maintains a list of the disk addresses of all the super-blocks.
-The super-block maintains a small amount of checkpoint information; enough to
-find the inode for the file which contains the segment usage table and the
-list of IFILE entries.
+Inode blocks are blocks of on-disk inodes in the same format as those in
+the FFS.  They are packed page_size / sizeof(inode) to a block.  Data blocks
+are exactly as in the FFS.  Both inodes and data blocks move around the
+file system at will.
 
-Inodes are packed page_size/sizeof(inode) to a block and move around the file
-system at will.  They are accessed through the ifile (inode number IFILE_NUM)
-which contains 2 data structures:
+The file system is described by a super-block which is replicated and
+occurs as the first block of the first and other segments.  (The maximum
+number of super-blocks is MAXNUMSB).  Each super-block maintains a list
+of the disk addresses of all the super-blocks.  The super-block maintains
+a small amount of checkpoint information, essentially just enough to find
+the inode for the IFILE.
 
-1. Segment Usage Table (struct SEGUSE) -- this keeps track of how much space
-   is available and the last modified time of each segment.  Its size is
-   determined at file system creation time.
+The IFILE is visible in the file system, as inode number IFILE_INUM.  It
+contains information shared between the kernel and various user processes.
 
-2. Ifile Table (struct IFILE) -- an array of IFILE structures which describe
-   the status of each inode in the file system (what its current version is,
-   whether it is currently allocated or not, its last access time, and the
-   disk address of the inode for that inumber). Grows in units of 1 page.  If
-   the disk address is 0, then the inode is not currently allocated and the
-   nextfree field maintains a free list of IFILE entries.
+	Ifile (detail)
+	________________
+	| cleaner info | Cleaner information per file system.  (Page
+	|              | granularity.)
+	|______________|
+	| segment      | Space available and last modified times per
+	| usage table  | segment.  (Page granularity.)
+	|______________|
+	|   IFILE-1    | Per inode status information: current version #,
+	|     .        | if currently allocated, last access time and
+	|     .        | current disk address of containing inode block.
+	|     .        | If current disk address is LFS_UNUSED_DADDR, the
+	|   IFILE-N    | inode is not in use, and it's on the free list.
+	|______________|
 
-The structure of the ifile is as follows:
-_________________________________________________________
-|          |                                             |
-| Segment  |  array of (IFILE structures)                |
-| Usage    |                                             |
-| Table    |                                             |
-| (fixed   |                                             |
-|    size) |                                             |
-|__________|_____________________________________________|
+
+First Segment at Creation Time:
+_____________________________________________________________
+|        |       |         |       |       |       |       |
+| 8K pad | Super | summary | inode | ifile | root  | l + f |
+|        | block |         | block |       | dir   | dir   |
+|________|_______|_________|_______|_______|_______|_______|
+	  ^
+           Segment starts here.
 
 Some differences from the Sprite LFS implementation.
 
@@ -72,14 +95,31 @@ Some differences from the Sprite LFS implementation.
    at fixed locations.  This implementation replicates the super block
    and puts each at a fixed location.  The checkpoint data is divided into
    two parts -- just enough information to find the IFILE is stored in
-   two of the super blocks and is toggled as in the Sprite implementation.
-   The remaining checkpoint information is treated as a regular file, which
-   means that the segment usage table and the ifile meta-data are stored in
-   normal log segments.
+   two of the super blocks, although it is not toggled between them as in
+   the Sprite implementation.  (This was deliberate, to avoid a single
+   point of failure.)  The remaining checkpoint information is treated as
+   a regular file, which means that the cleaner info, the segment usage
+   table and the ifile meta-data are stored in normal log segments.
+   (Tastes great, less filling...)
 
-2. Sprite LFS distinguishes between different types of blocks in the segment.
-   In general, we don't.
+2. The segment layout is radically different in Sprite; this implementation
+   uses something a lot like network framing, where data/inode blocks are
+   written asynchronously, and a checksum is used to validate any set of
+   summary and data/inode blocks.  Sprite writes summary blocks synchronously
+   after the data/inode blocks have been written and the existence of the
+   summary block validates the data/inode blocks.  This permits us to write
+   everything contiguously, even partial segments and their summaries, whereas
+   Sprite is forced to seek (from the end of the data inode to the summary
+   which lives at the end of the segment).  Additionally, writing the summary
+   synchronously should cost about 1/2 a rotation per summary.
 
-3. Sprite LFS traverses the IFILE looking for free blocks.  We maintain a free
-   list threaded through the IFILE entries.
+3. Sprite LFS distinguishes between different types of blocks in the segment.
+   Other than inode blocks and data blocks, we don't.
+
+4. Sprite LFS traverses the IFILE looking for free blocks.  We maintain a
+   free list threaded through the IFILE entries.
+
+5. The cleaner runs in user space, as opposed to kernel space.  It shares
+   information with the kernel by reading/writing the IFILE and through
+   cleaner specific system calls.
 
