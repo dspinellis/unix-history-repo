@@ -1,6 +1,4 @@
 /*
- * $Id: mntfs.c,v 5.2.1.4 91/03/17 17:46:40 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mntfs.c	5.2 (Berkeley) %G%
+ *	@(#)mntfs.c	5.3 (Berkeley) %G%
+ *
+ * $Id: mntfs.c,v 5.2.1.7 91/05/07 22:18:11 jsp Alpha $
+ *
  */
 
 #include "am.h"
@@ -313,6 +314,18 @@ char *mopts;
 		 */
 		return mf;
 	}
+
+	/*
+	 * Re-use the existing mntfs if it is mounted.
+	 * This traps a race in nfsx.
+	 */
+	if (mf->mf_ops != &efs_ops &&
+			(mf->mf_flags & MFF_MOUNTED) &&
+			!FSRV_ISDOWN(mf->mf_server)) {
+		mf->mf_fo = mo;
+		return mf;
+	}
+
 	mf2 = find_mntfs(ops, mo, mp, info, auto_opts, mopts);
 	free_mntfs(mf);
 	return mf2;

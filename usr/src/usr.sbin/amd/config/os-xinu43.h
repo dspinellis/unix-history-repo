@@ -1,9 +1,4 @@
-/* $Id: os-xinu43.h,v 5.2.1.2 90/11/04 23:17:45 jsp Exp $ */
-
 /*
- * mt Xinu 4.3 (MORE/bsd) definitions for Amd (automounter)
- * Should work on both Vax and HP ...
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -14,7 +9,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-xinu43.h	5.2 (Berkeley) %G%
+ *	@(#)os-xinu43.h	5.3 (Berkeley) %G%
+ *
+ * $Id: os-xinu43.h,v 5.2.1.3 91/05/07 22:20:07 jsp Alpha $
+ *
+ * mt Xinu 4.3 (MORE/bsd) definitions for Amd (automounter)
+ * Should work on both Vax and HP ...
  */
 
 /*

@@ -1,6 +1,4 @@
 /*
- * $Id: srvr_nfs.c,v 5.2.1.3 91/03/17 17:44:37 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)srvr_nfs.c	5.2 (Berkeley) %G%
+ *	@(#)srvr_nfs.c	5.3 (Berkeley) %G%
+ *
+ * $Id: srvr_nfs.c,v 5.2.1.6 91/05/07 22:18:36 jsp Alpha $
+ *
  */
 
 /*
@@ -219,11 +220,16 @@ static void recompute_portmap P((fserver *fs));
 static void recompute_portmap(fs)
 fserver *fs;
 {				
-	if (!nfs_auth)
-		nfs_auth = authunix_create_default();
-	if (!nfs_auth) {
+	int error;
+
+	if (nfs_auth)
+		error = 0;
+	else
+		error = make_nfs_auth();
+
+	if (error) {
 		nfs_private *np = (nfs_private *) fs->fs_private;
-		np->np_error = ENOBUFS;
+		np->np_error = error;
 	} else {
 		call_portmap(fs, nfs_auth, MOUNTPROG,
 			MOUNTVERS, (unsigned long) IPPROTO_UDP);
@@ -284,6 +290,7 @@ int done;
 				if (fs->fs_flags & FSF_WANT)
 					wakeup_srvr(fs);
 #endif /* notdef */
+				map_flush_srvr(fs);
 			} else {
 				if (fs->fs_flags & FSF_VALID) {
 #ifdef DEBUG
@@ -364,6 +371,7 @@ fserver *fs;
 	 * If ttl has expired then guess that it is dead
 	 */
 	if (np->np_ttl < clocktime()) {
+		int oflags = fs->fs_flags;
 		if ((fs->fs_flags & FSF_DOWN) == 0) {
 			/*
 			 * Server was up, but is now down.
@@ -387,12 +395,13 @@ fserver *fs;
 			/*
 			 * Known to be down
 			 */
-			fs->fs_flags |= FSF_VALID;
 #ifdef DEBUG
-			srvrlog(fs, "starts down");
+			if ((fs->fs_flags & FSF_VALID) == 0)
+				srvrlog(fs, "starts down");
 #endif
+			fs->fs_flags |= FSF_VALID;
 		}
-		if (fs->fs_flags & FSF_WANT)
+		if (oflags != fs->fs_flags && (fs->fs_flags & FSF_WANT))
 			wakeup_srvr(fs);
 	} else {
 #ifdef DEBUG

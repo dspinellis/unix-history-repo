@@ -1,8 +1,4 @@
-/* $Id: os-aix3.h,v 5.2.1.1 90/10/21 22:30:38 jsp Exp $ */
-
 /*
- * AIX 3.1 definitions for Amd (automounter)
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -13,7 +9,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-aix3.h	5.2 (Berkeley) %G%
+ *	@(#)os-aix3.h	5.3 (Berkeley) %G%
+ *
+ * $Id: os-aix3.h,v 5.2.1.2 91/05/07 22:19:25 jsp Alpha $
+ *
+ * AIX 3.1 definitions for Amd (automounter)
  */
 
 /*

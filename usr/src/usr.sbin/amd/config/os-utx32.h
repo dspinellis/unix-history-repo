@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-utx32.h	5.2 (Berkeley) %G%
+ *	@(#)os-utx32.h	5.3 (Berkeley) %G%
  */
 
 /*

@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
 PROG=	fsinfo
 NOMAN=	true
@@ -6,6 +6,9 @@ SRCS=	fsinfo.c fsi_gram.c fsi_lex.c \
 	fsi_util.c fsi_analyze.c fsi_dict.c \
 	wr_atab.c wr_bparam.c wr_dumpset.c \
 	wr_exportfs.c wr_fstab.c
+CLEANFILES= \
+	fsi_gram.c y.tab.c fsi_gram.h y.tab.h \
+	fsi_lex.c lex.yy.c y.output
 CFLAGS+=-I.
 CFLAGS+=-I${.CURDIR}/../include
 CFLAGS+=-I${.CURDIR}/../config
@@ -21,8 +24,6 @@ fsi_gram.c fsi_gram.h: ../fsinfo/fsi_gram.y
 fsi_lex.c: ../fsinfo/fsi_lex.l
 	${LEX} ${.CURDIR}/fsi_lex.l
 	mv lex.yy.c fsi_lex.c
-
-CLEANFILES = fsi_gram.c y.tab.c fsi_gram.h y.tab.h fsi_lex.c lex.yy.c y.output
 
 .PATH: ${.CURDIR}/../config
 .include "../../Makefile.inc"

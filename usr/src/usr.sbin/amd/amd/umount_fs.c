@@ -1,6 +1,4 @@
 /*
- * $Id: umount_fs.c,v 5.2.1.2 91/03/03 20:34:23 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umount_fs.c	5.2 (Berkeley) %G%
+ *	@(#)umount_fs.c	5.3 (Berkeley) %G%
+ *
+ * $Id: umount_fs.c,v 5.2.1.3 91/05/07 22:18:39 jsp Alpha $
+ *
  */
 
 #include "am.h"

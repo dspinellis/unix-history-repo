@@ -1,9 +1,4 @@
-/* $Id: os-fpx4.h,v 5.2.1.1 90/10/21 22:30:51 jsp Exp $ */
-
 /*
- * Celerity FPX 4.1/2 definitions for Amd (automounter)
- *      from Stephen Pope <scp@grizzly.acl.lanl.gov>
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -14,7 +9,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-fpx4.h	5.2 (Berkeley) %G%
+ *	@(#)os-fpx4.h	5.3 (Berkeley) %G%
+ *
+ * $Id: os-fpx4.h,v 5.2.1.2 91/05/07 22:19:40 jsp Alpha $
+ *
+ * Celerity FPX 4.1/2 definitions for Amd (automounter)
+ *      from Stephen Pope <scp@grizzly.acl.lanl.gov>
  */
 
 /*

@@ -1,6 +1,4 @@
 /*
- * $Id: misc_rpc.c,v 5.2.1.2 90/11/04 23:17:21 jsp Exp $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)misc_rpc.c	5.2 (Berkeley) %G%
+ *	@(#)misc_rpc.c	5.3 (Berkeley) %G%
+ *
+ * $Id: misc_rpc.c,v 5.2.1.3 91/05/07 22:18:10 jsp Alpha $
+ *
  */
 
 /*

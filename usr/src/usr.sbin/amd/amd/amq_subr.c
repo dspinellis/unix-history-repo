@@ -1,6 +1,4 @@
 /*
- * $Id: amq_subr.c,v 5.2.1.4 91/03/17 17:48:23 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)amq_subr.c	5.2 (Berkeley) %G%
+ *	@(#)amq_subr.c	5.3 (Berkeley) %G%
+ *
+ * $Id: amq_subr.c,v 5.2.1.6 91/05/07 22:17:47 jsp Alpha $
+ *
  */
 /*
  * Auxilliary routines for amq tool
@@ -20,7 +21,6 @@
 #include "am.h"
 #include "amq.h"
 #include <ctype.h>
-#include <sys/param.h>
 
 /*ARGSUSED*/
 voidp

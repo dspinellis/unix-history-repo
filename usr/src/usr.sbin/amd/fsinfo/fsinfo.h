@@ -1,6 +1,4 @@
 /*
- * $Id: fsinfo.h,v 5.2.1.4 91/03/17 17:51:29 jsp Alpha $
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fsinfo.h	5.2 (Berkeley) %G%
+ *	@(#)fsinfo.h	5.3 (Berkeley) %G%
+ *
+ * $Id: fsinfo.h,v 5.2.1.5 91/05/07 22:19:15 jsp Alpha $
+ *
  */
 
 /*

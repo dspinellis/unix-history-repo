@@ -1,9 +1,5 @@
 #!/bin/sh -
 #
-# Start amd
-#
-# $Id: amd.start.ex,v 5.2.1.1 90/10/21 22:31:39 jsp Exp $
-#
 # Copyright (c) 1989 Jan-Simon Pendry
 # Copyright (c) 1989 Imperial College of Science, Technology & Medicine
 # Copyright (c) 1989 The Regents of the University of California.
@@ -14,15 +10,19 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)amd.start.ex	5.2 (Berkeley) %G%
+#	@(#)amd.start.ex	5.3 (Berkeley) %G%
 #
-PATH=/usr/local/etc:/bin:/usr/bin:/usr/ucb:$PATH export PATH
+# Start amd
+#
+# $Id: amd.start.ex,v 5.2.1.3 91/05/07 22:20:41 jsp Alpha $
+#
+PATH=/usr/sbin:/bin:/usr/bin:$PATH export PATH
 
 #
 # Either name of logfile or "syslog"
 #
 #LOGFILE=syslog
-LOGFILE=/var/adm/am.log
+LOGFILE=/var/run/amd.log
 
 #
 # Figure out whether domain name is in host name
@@ -48,14 +48,14 @@ syslog)
 	;;
 esac
 
-cd /usr/local/etc
+cd /usr/sbin
 #
 # -r 		restart
 # -d dmn	local domain
 # -w wait	wait between unmount attempts
 # -l log	logfile or "syslog"
 #
-eval nice --4 ./amd -p > /etc/amd.pid -r $dmn -w 240 -l "$LOGFILE" \
-	/homes amd.homes -cache=inc \
-	/home amd.home -cache=inc \
-	/vol amd.vol -cache=inc
+eval nice --4 ./amd -p > /var/run/amd.pid -r $dmn -w 240 -l "$LOGFILE" \
+	/homes amd.homes -cache:=inc \
+	/home amd.home -cache:=inc \
+	/vol amd.vol -cache:=inc

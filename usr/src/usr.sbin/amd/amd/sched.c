@@ -1,6 +1,4 @@
 /*
- * $Id: sched.c,v 5.2.1.3 91/03/17 17:42:03 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sched.c	5.2 (Berkeley) %G%
+ *	@(#)sched.c	5.3 (Berkeley) %G%
+ *
+ * $Id: sched.c,v 5.2.1.5 91/05/07 22:18:32 jsp Alpha $
+ *
  */
 
 /*
@@ -113,9 +114,9 @@ voidp wchan;
 	 * Allocate a new task
 	 */
 	pjob *p = sched_job(cf, ca);
-#ifdef DEBUG
-	/*dlog("sleep(%#x)", wchan);*/
-#endif /* DEBUG */
+#ifdef DEBUG_SLEEP
+	dlog("SLEEP on %#x", wchan);
+#endif
 	p->wchan = wchan;
 	p->pid = 0;
 	bzero((voidp) &p->w, sizeof(p->w));
@@ -133,13 +134,15 @@ void wakeup(wchan)
 voidp wchan;
 {
 	pjob *p, *p2;
-
+#ifdef DEBUG_SLEEP
+	int done = 0;
+#endif
 	if (!foreground)
 		return;
 
-#ifdef DEBUG
+#ifdef DEBUG_SLEEP
 	/*dlog("wakeup(%#x)", wchan);*/
-#endif /* DEBUG */
+#endif
 	/*
 	 * Can't user ITER() here because
 	 * wakeupjob() juggles the list.
@@ -147,9 +150,18 @@ voidp wchan;
 	for (p = FIRST(pjob, &proc_wait_list);
 			p2 = NEXT(pjob, p), p != HEAD(pjob, &proc_wait_list);
 			p = p2) {
-		if (p->wchan == wchan)
+		if (p->wchan == wchan) {
+#ifdef DEBUG_SLEEP
+			done = 1;
+#endif
 			wakeupjob(p);
+		}
 	}
+
+#ifdef DEBUG_SLEEP
+	if (!done)
+		dlog("Nothing SLEEPing on %#x", wchan);
+#endif
 }
 
 void wakeup_task(rc, term, cl)

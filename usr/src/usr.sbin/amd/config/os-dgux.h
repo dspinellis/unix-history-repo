@@ -1,8 +1,4 @@
-/* $Id: os-dgux.h,v 5.2.1.1 90/10/21 22:30:50 jsp Exp $ */
-
 /*
- * dg/ux definitions for Amd (automounter)
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -13,7 +9,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-dgux.h	5.2 (Berkeley) %G%
+ *	@(#)os-dgux.h	5.3 (Berkeley) %G%
+ *
+ * $Id: os-dgux.h,v 5.2.1.2 91/05/07 22:19:39 jsp Alpha $
+ *
+ * dg/ux definitions for Amd (automounter)
  */
 
 /*

@@ -1,6 +1,4 @@
 /*
- * $Id: opts.c,v 5.2.1.5 91/03/17 17:45:34 jsp Alpha $
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -11,12 +9,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)opts.c	5.2 (Berkeley) %G%
+ *	@(#)opts.c	5.3 (Berkeley) %G%
+ *
+ * $Id: opts.c,v 5.2.1.7 91/05/07 22:18:24 jsp Alpha $
+ *
  */
 
 #include "am.h"
 
-extern char *getenv P((char *));
+extern char *getenv P((const char *));
 
 /*
  * static copy of the options with

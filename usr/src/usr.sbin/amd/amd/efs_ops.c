@@ -1,6 +1,4 @@
 /*
- * $Id: efs_ops.c,v 5.2.1.2 90/11/04 23:17:14 jsp Exp $
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)efs_ops.c	5.2 (Berkeley) %G%
+ *	@(#)efs_ops.c	5.3 (Berkeley) %G%
+ *
+ * $Id: efs_ops.c,v 5.2.1.3 91/05/07 22:17:50 jsp Alpha $
+ *
  */
 
 #include "am.h"

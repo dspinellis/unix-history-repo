@@ -1,6 +1,4 @@
 /*
- * $Id: misc-aix3.h,v 5.2.1.1 90/10/21 22:30:39 jsp Exp $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)misc-aix3.h	5.2 (Berkeley) %G%
+ *	@(#)misc-aix3.h	5.3 (Berkeley) %G%
+ *
+ * $Id: misc-aix3.h,v 5.2.1.2 91/05/07 22:19:26 jsp Alpha $
+ *
  */
 
 struct ufs_args {

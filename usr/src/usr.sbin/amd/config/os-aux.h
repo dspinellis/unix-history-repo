@@ -1,9 +1,4 @@
-/* $Id: os-aux.h,v 5.2.1.1 90/10/21 22:30:42 jsp Exp $ */
-
 /*
- * A/UX macII definitions for Amd (automounter)
- * Contributed by Julian Onions <jpo@cs.nott.ac.uk>
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -14,7 +9,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-aux.h	5.2 (Berkeley) %G%
+ *	@(#)os-aux.h	5.3 (Berkeley) %G%
+ *
+ * $Id: os-aux.h,v 5.2.1.2 91/05/07 22:19:31 jsp Alpha $
+ *
+ * A/UX macII definitions for Amd (automounter)
+ * Contributed by Julian Onions <jpo@cs.nott.ac.uk>
  */
 
 /*

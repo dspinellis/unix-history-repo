@@ -1,9 +1,4 @@
-/* $Id: os-riscix.h,v 5.2.1.1 90/10/21 22:31:03 jsp Exp $ */
-
 /*
- * Acorn Archimedes RISC iX definitions for Amd (automounter)
- * Contributed by Piete Brooks.
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -14,7 +9,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-riscix.h	5.2 (Berkeley) %G%
+ *	@(#)os-riscix.h	5.3 (Berkeley) %G%
+ *
+ * $Id: os-riscix.h,v 5.2.1.2 91/05/07 22:19:54 jsp Alpha $
+ *
+ * Acorn Archimedes RISC iX definitions for Amd (automounter)
+ * Contributed by Piete Brooks.
  */
 
 /*

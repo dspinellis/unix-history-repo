@@ -1,6 +1,4 @@
 /*
- * $Id: mtab.c,v 5.2.1.1 90/10/21 22:29:27 jsp Exp $
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mtab.c	5.2 (Berkeley) %G%
+ *	@(#)mtab.c	5.3 (Berkeley) %G%
+ *
+ * $Id: mtab.c,v 5.2.1.2 91/05/07 22:18:15 jsp Alpha $
+ *
  */
 
 #include "am.h"

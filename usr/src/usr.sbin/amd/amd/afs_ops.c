@@ -1,6 +1,4 @@
 /*
- * $Id: afs_ops.c,v 5.2.1.6 91/03/17 17:49:10 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)afs_ops.c	5.2 (Berkeley) %G%
+ *	@(#)afs_ops.c	5.3 (Berkeley) %G%
+ *
+ * $Id: afs_ops.c,v 5.2.1.9 91/05/07 22:17:40 jsp Alpha $
+ *
  */
 
 #include "am.h"
@@ -229,12 +230,6 @@ static int root_mount(mp)
 am_node *mp;
 {
 	mntfs *mf = mp->am_mnt;
-#ifdef notdef
-	/*
-	 * Make sure fattr is set up correctly
-	 */
-	mk_fattr(mp, NFDIR);
-#endif
 
 	mf->mf_mount = strealloc(mf->mf_mount, pid_fsname);
 	mf->mf_private = (voidp) mapc_find(mf->mf_info, "");
@@ -251,13 +246,6 @@ static int afs_mount(mp)
 am_node *mp;
 {
 	mntfs *mf = mp->am_mnt;
-
-#ifdef notdef
-	/*
-	 * Make sure fattr is set up correctly
-	 */
-	mk_fattr(mp, NFDIR);
-#endif
 
 	/*
 	 * Pseudo-directories are used to provide some structure
@@ -352,11 +340,7 @@ am_node *mp;
 #else
 		"%s,%s=%d,%s=%d,%s=%d,%s",
 #endif /* MNTOPT_INTR */
-#ifdef AUTOMOUNT_RO
-		MNTOPT_RO,	/* You don't really want this... */
-#else
 		"rw",
-#endif /* AUTOMOUNT_RO */
 		"port", nfs_port,
 		"timeo", afs_timeo,
 		"retrans", afs_retrans,
@@ -529,6 +513,8 @@ struct continuation {
 	int callout;		/* Callout identifier */
 };
 
+#define	IN_PROGRESS(cp) ((cp)->mp->am_mnt->mf_flags & MFF_MOUNTING)
+
 /*
  * Discard an old continuation
  */
@@ -670,6 +656,8 @@ voidp closure;
 	dlog("Commencing retry for mount of %s", cp->mp->am_path);
 #endif /* DEBUG */
 
+	new_ttl(cp->mp);
+
 	if ((cp->start + ALLOWED_MOUNT_TIME) < clocktime()) {
 		/*
 		 * The entire mount has timed out.
@@ -681,12 +669,13 @@ voidp closure;
 		 */
 		plog(XLOG_INFO, "mount of \"%s\" has timed out", cp->mp->am_path);
 		error = ETIMEDOUT;
-		new_ttl(cp->mp);
 		while (*cp->ivec)
 			cp->ivec++;
 	}
 
-	(void) afs_bgmount(cp, error);
+	if (error || !IN_PROGRESS(cp)) {
+		(void) afs_bgmount(cp, error);
+	}
 	reschedule_timeout_mp();
 }
 
@@ -848,6 +837,7 @@ int mpe;
 		}
 
 #ifdef SUNOS4_COMPAT
+#ifdef nomore
 		/*
 		 * By default, you only get this bit on SunOS4.
 		 * If you want this anyway, then define SUNOS4_COMPAT
@@ -866,6 +856,7 @@ int mpe;
 		if (strchr(*cp->ivec, '=') == 0)
 			p = sunos4_match(&cp->fs_opts, *cp->ivec, cp->def_opts, mp->am_path, cp->key, mp->am_parent->am_mnt->mf_info);
 		else
+#endif
 #endif /* SUNOS4_COMPAT */
 			p = ops_match(&cp->fs_opts, *cp->ivec, cp->def_opts, mp->am_path, cp->key, mp->am_parent->am_mnt->mf_info);
 
@@ -911,6 +902,7 @@ int mpe;
 			} else {
 				mp->am_link = str3cat((char *) 0,
 					mf->mf_fo->opt_fs, "/", link_dir);
+				normalize_slash(mp->am_link);
 			}
 		}
 
@@ -1020,6 +1012,11 @@ int mpe;
 			dlog("foreground mount of \"%s\" ...", mf->mf_info);
 #endif /* DEBUG */
 			this_error = try_mount((voidp) mp);
+			if (this_error < 0) {
+				if (!mf_retry)
+					mf_retry = dup_mntfs(mf);
+				cp->retry = TRUE;
+			}
 		}
 
 		if (this_error >= 0) {
@@ -1072,7 +1069,7 @@ int mpe;
 		return -1;
 	}
 
-	if (hard_error < 0 || this_error != 0)
+	if (hard_error < 0 || this_error == 0)
 		hard_error = this_error;
 
 	/*

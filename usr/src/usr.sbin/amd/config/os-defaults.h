@@ -1,9 +1,4 @@
-/* $Id: os-defaults.h,v 5.2.1.2 91/03/03 20:49:12 jsp Alpha $ */
-
 /*
- * Common OS definitions.  These may be overridden in
- * the OS specific files ("os-foo.h").
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -14,7 +9,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-defaults.h	5.2 (Berkeley) %G%
+ *	@(#)os-defaults.h	5.3 (Berkeley) %G%
+ *
+ * $Id: os-defaults.h,v 5.2.1.4 91/05/07 22:19:38 jsp Alpha $
+ *
+ * Common OS definitions.  These may be overridden in
+ * the OS specific files ("os-foo.h").
  */
 
 /*
@@ -114,4 +114,4 @@
  */
 #define	CHARBITS 0377
 #define STRCSPN
-#define	RE_HDR "re.h"
+#define RE_HDR "re.h"

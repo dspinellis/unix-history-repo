@@ -1,6 +1,4 @@
 /*
- * $Id: mk-amd-map.c,v 5.2.1.2 91/03/17 17:37:27 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mk-amd-map.c	5.3 (Berkeley) %G%
+ *	@(#)mk-amd-map.c	5.4 (Berkeley) %G%
+ *
+ * $Id: mk-amd-map.c,v 5.2.1.4 91/05/07 22:18:47 jsp Alpha $
  */
 
 /*
@@ -27,8 +27,8 @@ char copyright[] = "\
 #endif /* not lint */
 
 #ifndef lint
-static char rcsid[] = "$Id: mk-amd-map.c,v 5.2.1.2 91/03/17 17:37:27 jsp Alpha $";
-static char sccsid[] = "@(#)mk-amd-map.c	5.3 (Berkeley) %G%";
+static char rcsid[] = "$Id: mk-amd-map.c,v 5.2.1.4 91/05/07 22:18:47 jsp Alpha $";
+static char sccsid[] = "@(#)mk-amd-map.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "am.h"
@@ -77,6 +77,7 @@ FILE *fp;
 				int ch;
 				buf += len - 2;
 				size -= len - 2;
+				*buf = '\n'; buf[1] = '\0';
 				/*
 				 * Skip leading white space on next line
 				 */
@@ -204,7 +205,7 @@ char *argv[];
 	char *map;
 	int rc = 0;
 	DBM *mapd;
-	char *maptmp = "dbmXXXXXX";
+	static char maptmp[] = "dbmXXXXXX";
 	char maptpag[16], maptdir[16];
 	char *mappag, *mapdir;
 	int len;
@@ -318,5 +319,4 @@ main()
 	fputs("mk-amd-map: This system does not support hashed database files\n", stderr);
 	exit(1);
 }
- * %sccs.include.redist.c%
 #endif /* HAS_DATABASE */

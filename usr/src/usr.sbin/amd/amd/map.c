@@ -1,6 +1,4 @@
 /*
- * $Id: map.c,v 5.2.1.5 91/03/17 17:47:23 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)map.c	5.2 (Berkeley) %G%
+ *	@(#)map.c	5.3 (Berkeley) %G%
+ *
+ * $Id: map.c,v 5.2.1.7 91/05/07 22:18:05 jsp Alpha $
+ *
  */
 
 #include "am.h"
@@ -617,6 +618,29 @@ int path;
 		return mp;
 
 	return 0;
+}
+
+/*
+ * Timeout all nodes waiting on
+ * a given Fserver.
+ */
+void map_flush_srvr P((fserver *fs));
+void map_flush_srvr(fs)
+fserver *fs;
+{
+	int i;
+	int done = 0;
+
+	for (i = last_used_map; i >= 0; --i) {
+		am_node *mp = exported_ap[i];
+		if (mp && mp->am_mnt && mp->am_mnt->mf_server == fs) {
+			plog(XLOG_INFO, "Flushed %s; dependent on %s", mp->am_path, fs->fs_host);
+			mp->am_ttl = clocktime();
+			done = 1;
+		}
+	}
+	if (done)
+		reschedule_timeout_mp();
 }
 
 /*

@@ -1,7 +1,5 @@
 \input texinfo		@c -*-texinfo-*-
 @c
-@c $Id: amdref.texinfo,v 5.2.1.4 91/03/03 20:15:58 jsp Alpha Locker: jsp $
-@c
 @c Copyright (c) 1989 Jan-Simon Pendry
 @c Copyright (c) 1989 Imperial College of Science, Technology & Medicine
 @c Copyright (c) 1989 The Regents of the University of California.
@@ -10,20 +8,43 @@
 @c This code is derived from software contributed to Berkeley by
 @c Jan-Simon Pendry at Imperial College, London.
 @c
-@c %sccs.include.redist.texinfo%
+@c Redistribution and use in source and binary forms, with or without
+@c modification, are permitted provided that the following conditions
+@c are met:
+@c 1. Redistributions of source code must retain the above copyright
+@c    notice, this list of conditions and the following disclaimer.
+@c 2. Redistributions in binary form must reproduce the above copyright
+@c    notice, this list of conditions and the following disclaimer in the
+@c    documentation and/or other materials provided with the distribution.
+@c 3. All advertising materials mentioning features or use of this software
+@c    must display the following acknowledgement:
+@c      This product includes software developed by the University of
+@c      California, Berkeley and its contributors.
+@c 4. Neither the name of the University nor the names of its contributors
+@c    may be used to endorse or promote products derived from this software
+@c    without specific prior written permission.
 @c
-@c	@(#)amdref.texinfo	1.2 (Berkeley) %G%
+@c THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+@c ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+@c IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+@c ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+@c FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+@c DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+@c OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+@c HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+@c LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+@c OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 @c
-
-@c @setfilename ../info/amd
+@c	@(#)amdref.texinfo	1.3 (Berkeley) %G%
+@c
+@c $Id: amdref.texinfo,v 5.2.1.6 91/05/07 22:20:47 jsp Alpha $
+@c
 @setfilename /usr/local/emacs/info/amd
-@c @smallbook
 @tex
 \overfullrule=0pt
 @end tex
 
 @settitle 4.4 BSD Automounter Reference Manual
-@c
 @titlepage
 @sp 6
 @center @titlefont{Amd}
@@ -41,7 +62,6 @@
 @center Last updated March 1991
 @center Documentation for software revision 5.3 Alpha
 @page
-@c
 Copyright @copyright{} 1989 Jan-Simon Pendry
 @sp -1
 Copyright @copyright{} 1989 Imperial College of Science, Technology & Medicine
@@ -2022,7 +2042,8 @@ separated strings.
 For example:
 
 @example
-pub      type:=nfsx;rhost:=gould;rfs:=/public,/,graphics,usenet
+pub      type:=nfsx;rhost:=gould;\
+		rfs:=/public,/,graphics,usenet;fs:=${autodir}/${rhost}/root
 @end example
 
 The first string defines the root of the tree, and is applied as a
@@ -2033,6 +2054,10 @@ ensure a consistent layout of a tree of mounts.
 
 Here, the @emph{three} filesystems, @samp{/public},
 @samp{/public/graphics} and @samp{/public/usenet}, would be mounted.@refill
+
+A local mount point, @code{$@{fs@}}, @emph{must} be specified.  The
+default local mount point will not work correctly in the general case.
+A suggestion is to use @samp{fs:=$@{autodir@}/$@{rhost@}/root}.@refill
 
 @node     Unix Filesystem, Program Filesystem, Network Filesystem Group, Filesystem Types
 @comment  node-name,  next,  previous,  up
@@ -4124,14 +4149,14 @@ hidden when accessed via the automount point (conventionally @samp{/vol}).
 A mount-map for @samp{/vol} to achieve this would look like:
 
 @example
-/defaults   rfs:=/vol;sublink:=$@{key@};rhost:=fserver;type:=link
+/defaults   sublink:=$@{/key@};rhost:=fserver;type:=link
 tex         type:=auto;fs:=$@{map@};pref:=$@{key@}/
-tex/fonts   host!=fserver;type:=nfs \
-            host==fserver;fs:=/usr/local 
-tex/lib     host!=fserver;type:=nfs \
-            host==fserver;fs:=/usr/local
-tex/bin     -sublink:=$@{key@}/$@{arch2@} host!=fserver;type:=nfs \
-            host:=fserver;fs:=/usr/local
+tex/fonts   host!=fserver;type:=nfs;rfs:=/vol/tex \
+            host==fserver;fs:=/usr/local/tex
+tex/lib     host!=fserver;type:=nfs;rfs:=/vol/tex \
+            host==fserver;fs:=/usr/local/tex
+tex/bin     -sublink:=$@{/key@}/$@{arch@} host!=fserver;type:=nfs;rfs:=/vol/tex \
+            host:=fserver;fs:=/usr/local/tex
 @end example
 
 When @samp{/vol/tex/bin} is referenced, the current machine architecture

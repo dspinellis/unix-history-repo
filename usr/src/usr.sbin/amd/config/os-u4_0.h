@@ -1,9 +1,4 @@
-/* $Id: os-u4_0.h,v 5.2 91/03/03 20:22:45 jsp Alpha $ */
-
 /*
- * Ultrix 4.0 definitions for Amd (automounter)
- *		from Chris Lindblad <cjl@ai.mit.edu>
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -14,13 +9,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-u4_0.h	5.2 (Berkeley) %G%
+ *	@(#)os-u4_0.h	5.3 (Berkeley) %G%
+ *
+ * $Id: os-u4_0.h,v 5.2.1.1 91/05/07 22:20:04 jsp Alpha $
+ *
+ * Ultrix 4.0 definitions for Amd (automounter)
+ *		from Chris Lindblad <cjl@ai.mit.edu>
  */
 
 /*
  * Does the compiler grok void *
  */
-#undef	VOIDP
+#ifdef __STDC__
+#define VOIDP
+#else
+#undef VOIDP
+#endif
 
 /*
  * Which version of the Sun RPC library we are using

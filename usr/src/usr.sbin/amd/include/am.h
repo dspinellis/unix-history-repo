@@ -1,6 +1,4 @@
 /*
- * $Id: am.h,v 5.2.1.5 91/03/17 17:38:03 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)am.h	5.2 (Berkeley) %G%
+ *	@(#)am.h	5.3 (Berkeley) %G%
+ *
+ * $Id: am.h,v 5.2.1.8 91/05/07 22:19:18 jsp Alpha $
+ *
  */
 
 #include "config.h"
@@ -229,8 +230,10 @@ extern char *inet_dquad P((char*, unsigned long));
 extern void init_map P((am_node*, char*));
 extern void insert_am P((am_node*, am_node*));
 extern void ins_que P((qelem*, qelem*));
+extern int make_nfs_auth P((void));
 extern void make_root_node(P_void);
 extern int make_rpc_packet P((char*, int, u_long, struct rpc_msg*, voidp, xdrproc_t, AUTH*));
+extern void map_flush_srvr P((fserver*));
 extern void mapc_add_kv P((mnt_map*, char*, char*));
 extern mnt_map* mapc_find P((char*, char*));
 extern void mapc_free P((mnt_map*));

@@ -1,6 +1,4 @@
 /*
- * $Id: mount_fs.c,v 5.2.1.3 91/03/03 20:43:32 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_fs.c	5.2 (Berkeley) %G%
+ *	@(#)mount_fs.c	5.3 (Berkeley) %G%
+ *
+ * $Id: mount_fs.c,v 5.2.1.4 91/05/07 22:18:13 jsp Alpha $
+ *
  */
 
 #include "am.h"

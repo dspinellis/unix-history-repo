@@ -1,6 +1,4 @@
 /*
- * $Id: nfs_subr.c,v 5.2.1.4 91/03/03 20:46:34 jsp Alpha $
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subr.c	5.2 (Berkeley) %G%
+ *	@(#)nfs_subr.c	5.3 (Berkeley) %G%
+ *
+ * $Id: nfs_subr.c,v 5.2.1.5 91/05/07 22:18:23 jsp Alpha $
+ *
  */
 
 #include "am.h"

@@ -1,6 +1,4 @@
 /*
- * $Id: info_hes.c,v 5.2.1.3 91/03/03 20:39:41 jsp Alpha $
- *
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1989 The Regents of the University of California.
@@ -11,7 +9,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)info_hes.c	5.2 (Berkeley) %G%
+ *	@(#)info_hes.c	5.3 (Berkeley) %G%
+ *
+ * $Id: info_hes.c,v 5.2.1.5 91/05/07 22:17:58 jsp Alpha $
+ *
  */
 
 /*
@@ -72,7 +73,9 @@ time_t *tp;
  * of /defaults in hesiod.home will result in a
  * call to hes_resolve("/defaults", "home.automount");
  */
+#ifdef notdef
 #define MAKE_HES_NAME(dest, src) sprintf(dest, "%s%s", src + HES_PREFLEN, ".automount")
+#endif
 
 /*
  * Do a Hesiod nameserver call.
@@ -87,24 +90,25 @@ char **pval;
 time_t *tp;
 {
 	int error;
-	char hes_map[MAXPATHLEN];
+	char hes_key[MAXPATHLEN];
 	char **rvec;
 #ifdef DEBUG
 	dlog("hesiod_search(m=%x, map=%s, key=%s, pval=%x tp=%x)", m, map, key, pval, tp);
 #endif
-	MAKE_HES_NAME(hes_map, map);
+	/*MAKE_HES_NAME(hes_map, map);*/
+	sprintf(hes_key, "%s.%s", key, map+HES_PREFLEN);
 
 	/*
 	 * Call the resolver
 	 */
 #ifdef DEBUG
-	dlog("hesiod_search: hes_resolve(%s, %s)", key, hes_map);
+	dlog("hesiod_search: hes_resolve(%s, %s)", hes_key, "automount");
 #ifdef HAS_HESIOD_RELOAD
 	if (debug_flags & D_FULL)
 		_res.options |= RES_DEBUG;
 #endif
 #endif
-	rvec = hes_resolve(key, hes_map);
+	rvec = hes_resolve(hes_key, "automount");
 	/*
 	 * If a reply was forthcoming then return
 	 * it (and free subsequent replies)
@@ -153,7 +157,6 @@ mnt_map *m;
 char *map;
 void (*fn)();
 {
-	char hes_map[MAXPATHLEN];
 	char *zone_name, *cp;
 	short domainlen;
 	int status;
@@ -170,8 +173,7 @@ void (*fn)();
 	_res.retrans = 90;
 	hs_map = m;
 	domainlen = strlen(hostdomain);
-	MAKE_HES_NAME(hes_map, map);
-	zone_name = hes_to_bind("", hes_map);
+	zone_name = hes_to_bind(map+HES_PREFLEN, "automount");
 	if (*zone_name == '.')
 		zone_name++;
 	hs_domain = zone_name;
