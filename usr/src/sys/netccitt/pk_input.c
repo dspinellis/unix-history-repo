@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_input.c	7.8 (Berkeley) %G%
+ *	@(#)pk_input.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -314,6 +314,8 @@ struct x25config *xcp;
 			}
 			if (mbit) {
 				lcp -> lcd_cps = m;
+				lcp -> lcd_rxcnt++;
+				pk_flowcontrol(lcp, 0, 1);
 				return;
 			}
 			lcp -> lcd_cps = 0;
@@ -344,8 +346,7 @@ struct x25config *xcp;
 			 * packet has not yet been passed up to the application
 			 * (RR's are normally generated via PRU_RCVD).
 			 */
-			lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_RR);
-			pk_output (lcp);
+			pk_flowcontrol(lcp, 0, 1);
 		} else {
 			sbappendrecord (&so -> so_rcv, m);
 			sorwakeup (so);
@@ -520,7 +521,7 @@ struct x25config *xcp;
 				"packet arrived on unassigned lcn");
 		break;
 	}
-	if (so == 0 && lcp -> lcd_upper &&
+	if (so == 0 && lcp && lcp -> lcd_upper &&
 	    (lcdstate == SENT_CALL || lcdstate == DATA_TRANSFER)) {
 		if (ptype != DATA && ptype != INTERRUPT)
 			MCHTYPE(m, MT_CONTROL);
