@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.145 (Berkeley) %G%
+ *	@(#)conf.h	8.146 (Berkeley) %G%
  */
 
 /*
@@ -1091,6 +1091,130 @@ extern struct group	*getgrent(), *getgrnam(), *getgrgid();
 #endif
 
 
+/*
+**  Sony NEWS-OS 4.2.1R and 6.0.3
+*/
+
+#ifdef sony_news
+# ifndef __svr4
+			/* NEWS-OS 4.2.1R */
+#  ifndef BSD
+#   define BSD			/* has BSD routines */
+#  endif
+#  define HASUNSETENV	1	/* has unsetenv(2) call */
+#  undef HASSETVBUF		/* don't actually have setvbuf(3) */
+#  define WAITUNION	1	/* use "union wait" as wait argument type */
+#  define LA_TYPE	LA_INT
+#  define SFS_TYPE	SFS_VFS /* use <sys/vfs.h> statfs() implementation */
+#  ifndef HASFLOCK
+#   define HASFLOCK	1	/* has flock(2) call */
+#  endif
+#  define setpgid	setpgrp
+#  undef WIFEXITED
+#  undef WEXITSTATUS
+typedef int		pid_t;
+typedef int		(*sigfunc_t)();
+#  define SIGFUNC_DEFINED
+
+# else
+			/* NEWS-OS 6.0.3 with /bin/cc */
+#  define SYSTEM5	1	/* include all the System V defines */
+#  define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
+#  define HASINITGROUPS	1	/* has initgroups(3) call */
+#  define HASSETREUID	1	/* has setreuid(2) call */
+#  define HASSETSID	1	/* has Posix setsid(2) call */
+#  define HASGETUSERSHELL 1	/* DOES have getusershell(3) call in libc */
+#  define LA_TYPE	LA_INT
+#  define SFS_TYPE	SFS_STATVFS	/* use <sys/statvfs.h> statvfs() impl */
+#  define GIDSET_T	gid_t
+#  define setreuid(r, e)	seteuid(e)
+#  undef WIFEXITED
+#  undef WEXITSTATUS
+#  define _PATH_UNIX  "/stand/unix"
+#  ifndef _PATH_SENDMAILCF
+#   define _PATH_SENDMAILCF	"/etc/mail/sendmail.cf"
+#  endif
+#  ifndef _PATH_SENDMAILPID
+#   define _PATH_SENDMAILPID	"/etc/mail/sendmail.pid"
+#  endif
+
+# endif
+#endif
+
+
+/*
+**  Omron LUNA/UNIOS-B 3.0, LUNA2/Mach and LUNA88K Mach
+*/
+
+#ifdef luna
+# ifndef IDENTPROTO
+#  define IDENTPROTO	0	/* TCP/IP implementation is broken */
+# endif
+# ifdef uniosb
+#  define SYS_TIME	1	/* use <sys/time.h> instead of <time.h> */
+#  define NEEDVPRINTF	1	/* need a replacement for vprintf(3) */
+# endif
+# define NEEDGETOPT	1	/* need a replacement for getopt(3) */
+# define WAITUNION	1	/* use "union wait" as wait argument type */
+# ifdef uniosb
+#  define LA_TYPE	LA_INT
+# endif
+# ifdef luna2m
+#  define LA_TYPE	LA_SUBR
+# endif
+# ifdef luna88k
+#  define LA_TYPE	LA_INT
+# endif
+# define SFS_TYPE	SFS_VFS /* use <sys/vfs.h> statfs() implementation */
+# define setpgid	setpgrp
+# undef WIFEXITED
+# undef WEXITSTATUS
+typedef int		pid_t;
+typedef int		(*sigfunc_t)();
+# define SIGFUNC_DEFINED
+extern char	*getenv();
+extern int	errno;
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
+# endif
+#endif
+
+  
+/*
+**  NEC EWS-UX/V 4.2
+**
+**  with /usr/ucb/cc
+*/
+
+#ifdef nec_ews_svr4
+# define SYSTEM5	1	/* include all the System V defines */
+# define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
+# define HASINITGROUPS	1	/* has initgroups(3) call */
+# define HASSETREUID	1	/* has setreuid(2) call */
+# define setreuid(r, e)	seteuid(e)
+# define HASSETSID	1	/* has Posix setsid(2) call */
+# define LA_TYPE	LA_INT
+# define SFS_TYPE	SFS_USTAT	/* use System V ustat(2) syscall */
+# define GIDSET_T	gid_t
+# ifndef HASGETUSERSHELL
+#  define HASGETUSERSHELL	0	/* does not have getusershell(3) call */
+# endif
+# undef WIFEXITED
+# undef WEXITSTATUS
+# ifndef _PATH_UNIX
+#  define _PATH_UNIX		"/unix"
+# endif
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/var/ucblib/sendmail.cf"
+# endif
+# ifndef _PATH_SENDMAILPID
+#  define _PATH_SENDMAILPID	"/var/ucblib/sendmail.pid"
+# endif
+# define NAMELISTMASK	0x7fffffff		/* mask for nlist() values */
+#endif
+
+
+
 /**********************************************************************
 **  End of Per-Operating System defines
 **********************************************************************/
@@ -1409,15 +1533,15 @@ struct utsname
 #endif
 
 #ifndef STDIN_FILENO
-#define STDIN_FILENO	0
+# define STDIN_FILENO	0
 #endif
 
 #ifndef STDOUT_FILENO
-#define STDOUT_FILENO	1
+# define STDOUT_FILENO	1
 #endif
 
 #ifndef STDERR_FILENO
-#define STDERR_FILENO	2
+# define STDERR_FILENO	2
 #endif
 
 #ifndef LOCK_SH
@@ -1425,6 +1549,12 @@ struct utsname
 # define LOCK_EX	0x02	/* exclusive lock */
 # define LOCK_NB	0x04	/* non-blocking lock */
 # define LOCK_UN	0x08	/* unlock */
+#endif
+
+#ifndef SEEK_SET
+# define SEEK_SET	0
+# define SEEK_CUR	1
+# define SEEK_END	2
 #endif
 
 #ifndef SIG_ERR
