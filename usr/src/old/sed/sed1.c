@@ -1,4 +1,4 @@
-/*	sed1.c	4.1	85/04/05	*/
+/*	sed1.c	4.2	85/04/05	*/
 
 #include	<stdio.h>
 #include "sed.h"
@@ -619,6 +619,7 @@ union reptr	*ipc;
 		wcom:
 		case WCOM:
 			fprintf(ipc->fcode, "%s\n", linebuf);
+			fflush(ipc->fcode);
 			break;
 		case XCOM:
 			p1 = linebuf;
