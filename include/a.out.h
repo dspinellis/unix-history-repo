@@ -46,30 +46,44 @@
 #endif
 
 #define N_GETMAGIC(ex) \
-	( (((ex).a_midmag)&0xffff0000) ? (ntohl(((ex).a_midmag))&0xffff) : ((ex).a_midmag))
-#define N_GETMAGIC2(ex) \
-	( (((ex).a_midmag)&0xffff0000) ? (ntohl(((ex).a_midmag))&0xffff) : \
-	(((ex).a_midmag) | 0x10000) )
+	( (ex).a_midmag & 0xffff )
 #define N_GETMID(ex) \
-	( (((ex).a_midmag)&0xffff0000) ? ((ntohl(((ex).a_midmag))>>16)&0x03ff) : MID_ZERO )
+	( (N_GETMAGIC_NET(ex) == ZMAGIC) ? N_GETMID_NET(ex) : \
+	((ex).a_midmag >> 16) & 0x03ff )
 #define N_GETFLAG(ex) \
-	( (((ex).a_midmag)&0xffff0000) ? ((ntohl(((ex).a_midmag))>>26)&0x3f) : 0 )
+	( (N_GETMAGIC_NET(ex) == ZMAGIC) ? N_GETFLAG_NET(ex) : \
+	((ex).a_midmag >> 26) & 0x3f )
 #define N_SETMAGIC(ex,mag,mid,flag) \
+	( (ex).a_midmag = (((flag) & 0x3f) <<26) | (((mid) & 0x03ff) << 16) | \
+	((mag) & 0xffff) )
+
+#define N_GETMAGIC_NET(ex) \
+	(ntohl((ex).a_midmag) & 0xffff)
+#define N_GETMID_NET(ex) \
+	((ntohl((ex).a_midmag) >> 16) & 0x03ff)
+#define N_GETFLAG_NET(ex) \
+	((ntohl((ex).a_midmag) >> 26) & 0x3f)
+#define N_SETMAGIC_NET(ex,mag,mid,flag) \
 	( (ex).a_midmag = htonl( (((flag)&0x3f)<<26) | (((mid)&0x03ff)<<16) | \
 	(((mag)&0xffff)) ) )
 
 #define N_ALIGN(ex,x) \
-	(N_GETMAGIC(ex) == ZMAGIC || N_GETMAGIC(ex) == QMAGIC ? \
+	(N_GETMAGIC(ex) == ZMAGIC || N_GETMAGIC(ex) == QMAGIC || \
+	 N_GETMAGIC_NET(ex) == ZMAGIC || N_GETMAGIC_NET(ex) == QMAGIC ? \
 	 ((x) + __LDPGSZ - 1) & ~(__LDPGSZ - 1) : (x))
 
 /* Valid magic number check. */
 #define	N_BADMAG(ex) \
-	(N_GETMAGIC(ex) != NMAGIC && N_GETMAGIC(ex) != OMAGIC && \
-	   N_GETMAGIC(ex) != ZMAGIC && N_GETMAGIC(ex) != QMAGIC)
+	(N_GETMAGIC(ex) != OMAGIC && N_GETMAGIC(ex) != NMAGIC && \
+	 N_GETMAGIC(ex) != ZMAGIC && N_GETMAGIC(ex) != QMAGIC && \
+	 N_GETMAGIC_NET(ex) != OMAGIC && N_GETMAGIC_NET(ex) != NMAGIC && \
+	 N_GETMAGIC_NET(ex) != ZMAGIC && N_GETMAGIC_NET(ex) != QMAGIC)
 
 
 /* Address of the bottom of the text segment. */
-#define N_TXTADDR(ex)   (N_GETMAGIC2(ex) == (ZMAGIC|0x10000) ? 0 : __LDPGSZ)
+#define N_TXTADDR(ex) \
+	((N_GETMAGIC(ex) == OMAGIC || N_GETMAGIC(ex) == NMAGIC || \
+	N_GETMAGIC(ex) == ZMAGIC) ? 0 : __LDPGSZ)
 
 /* Address of the bottom of the data segment. */
 #define N_DATADDR(ex) \
@@ -77,9 +91,8 @@
 
 /* Text segment offset. */
 #define	N_TXTOFF(ex) \
-	( N_GETMAGIC2(ex)==ZMAGIC || N_GETMAGIC2(ex)==(QMAGIC|0x10000) ? \
-	0 : (N_GETMAGIC2(ex)==(ZMAGIC|0x10000) ? __LDPGSZ : sizeof(struct exec)) ) 
-
+	(N_GETMAGIC(ex) == ZMAGIC ? __LDPGSZ : (N_GETMAGIC(ex) == QMAGIC || \
+	N_GETMAGIC_NET(ex) == ZMAGIC) ? 0 : sizeof(struct exec)) 
 
 /* Data segment offset. */
 #define	N_DATOFF(ex) \
