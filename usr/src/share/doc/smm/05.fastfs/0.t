@@ -1,14 +1,19 @@
-.\" Copyright (c) 1980 Regents of the University of California.
+.\" Copyright (c) 1986 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	5.1 (Berkeley) %G%
+.\"	@(#)0.t	6.1 (Berkeley) %G%
 .\"
+.EH 'SMM:14-%''A Fast File System for \s-2UNIX\s+2'
+.OH 'A Fast File System for \s-2UNIX\s+2''SMM:14-%'
+.EQ
+delim $$
+.EN
 .if n .ND
 .TL
 A Fast File System for UNIX*
 .sp
-Revised July 27, 1983
+Revised February 18, 1984
 .AU
 Marshall Kirk McKusick, William N. Joy\(dg,
 Samuel J. Leffler\(dd, Robert S. Fabry
@@ -23,37 +28,68 @@ Berkeley, CA  94720
 * UNIX is a trademark of Bell Laboratories.
 .FE
 .FS
-\(dgWilliam N. Joy is currently employed by:
+\(dg William N. Joy is currently employed by:
 Sun Microsystems, Inc, 2550 Garcia Avenue, Mountain View, CA 94043
 .FE
 .FS
-\(ddSamuel J. Leffler is currently employed by:
+\(dd Samuel J. Leffler is currently employed by:
 Lucasfilm Ltd., PO Box 2009, San Rafael, CA 94912
 .FE
 .FS
 This work was done under grants from
 the National Science Foundation under grant MCS80-05144,
 and the Defense Advance Research Projects Agency (DoD) under
-Arpa Order No. 4031 monitored by Naval Electronic System Command under
+ARPA Order No. 4031 monitored by Naval Electronic System Command under
 Contract No. N00039-82-C-0235.
 .FE
 A reimplementation of the UNIX file system is described.
 The reimplementation provides substantially higher throughput
-rates by using more flexible allocation policies,
-that allow better locality of reference and that can
+rates by using more flexible allocation policies
+that allow better locality of reference and can
 be adapted to a wide range of peripheral and processor characteristics.
 The new file system clusters data that is sequentially accessed
-and provides two block sizes to allow fast access for large files
+and provides two block sizes to allow fast access to large files
 while not wasting large amounts of space for small files.
 File access rates of up to ten times faster than the traditional
 UNIX file system are experienced.
-Long needed enhancements to the user interface are discussed.
-These include a mechanism to lock files, 
+Long needed enhancements to the programmers'
+interface are discussed.
+These include a mechanism to place advisory locks on files, 
 extensions of the name space across file systems,
-the ability to use arbitrary length file names,
-and provisions for efficient administrative control of resource usage.
+the ability to use long file names,
+and provisions for administrative control of resource usage.
 .AE
 .LP
+.sp 2
+CR Categories and Subject Descriptors:
+D.4.3
+.B "[Operating Systems]":
+File Systems Management \-
+.I "file organization, directory structures, access methods";
+D.4.2
+.B "[Operating Systems]":
+Storage Management \-
+.I "allocation/deallocation strategies, secondary storage devices";
+D.4.8
+.B "[Operating Systems]":
+Performance \-
+.I "measurements, operational analysis";
+H.3.2
+.B "[Information Systems]":
+Information Storage \-
+.I "file organization"
+.sp
+Additional Keywords and Phrases:
+UNIX,
+file system organization,
+file system performance,
+file system design,
+application program interface.
+.sp
+General Terms:
+file system,
+measurement,
+performance.
 .de PT
 .lt \\n(LLu
 .pc %
@@ -65,7 +101,7 @@ and provisions for efficient administrative control of resource usage.
 .ds LH File System
 .ds RH Contents
 .bp 1
-.if t .ds CF July 27, 1983
+.if t .ds CF February 18, 1984
 .if t .ds LF CSRG TR/7
 .if t .ds RF McKusick, et. al.
 .ce
@@ -98,10 +134,6 @@ and provisions for efficient administrative control of resource usage.
 \0.3.     Symbolic links
 \0.4.     Rename
 \0.5.     Quotas
-.LP
-.sp .5v
-.nf
-.B "6.  Software engineering
 .LP
 .sp .5v
 .nf
