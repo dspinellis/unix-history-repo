@@ -49,7 +49,6 @@
 
 #include <sys/syscall.h>
 
-
 #define	SYSCALL(x)					\
 	.globl _machdep_sys_/**/x;		\
 									\
@@ -101,8 +100,23 @@ SYSCALL(close)
  */
 SYSCALL(fcntl)
 
-/* ======================================================================= */
 /* ==========================================================================
+ * machdep_sys_lseek()
+ */
+SYSCALL(lseek)
+
+/* ========================================================================== 
+ * Nonstandard calls used to make the system work
+ *
+ * ==========================================================================
+ * machdep_sys_select()
+ */
+SYSCALL(select)
+
+/* ========================================================================== 
+ * Berkeley socket stuff
+ * 
+ * ==========================================================================
  * machdep_sys_socket()
  */
 SYSCALL(socket)
@@ -146,3 +160,9 @@ SYSCALL(writev)
  * machdep_sys_getpeername()
  */
 SYSCALL(getpeername)
+
+/* ==========================================================================
+ * machdep_sys_getsockname()
+ */
+SYSCALL(getsockname)
+

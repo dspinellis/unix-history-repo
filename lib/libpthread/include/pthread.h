@@ -43,10 +43,12 @@
 #include <pthread/fd.h>
 
 #include <pthread/util.h>
-/* #include <pthread/stdio.h> Because I'm a moron -- proven */
 #include <errno.h>
 
-/* More includes, that need size_t or NULL */
+/* More includes */
+#include <pthread/pthread_once.h>
+
+/* More includes, that need size_t */
 #include <pthread/pthread_attr.h>
 
 enum pthread_state {
@@ -57,30 +59,51 @@ enum pthread_state {
 	PS_FDLW_WAIT,
 	PS_FDR_WAIT,
 	PS_FDW_WAIT,
+    PS_SLEEP_WAIT,
+	PS_JOIN,
 	PS_DEAD
 };
 
+#define PF_DETACHED			0x00000001
+	
 struct pthread {
 	struct machdep_pthread	machdep_data;
-	struct pthread_queue	*queue;
 	enum pthread_state		state;
 	pthread_attr_t			attr;
+
+	/* Other flags */
+	int						flags;
+
+	/* Time until timeout */
+	int 					time_sec;
+	int						time_usec;
+
+	/* Join queue for waiting threads */
+	struct pthread_queue	join_queue;
+
+	/* Queue thread is waiting on, (mutexes, cond. etc.) */
+	struct pthread_queue	*queue;
 
 	/*
 	 * Thread implementations are just multiple queue type implemenations,
 	 * Below are the various link lists currently necessary
 	 * It is possible for a thread to be on multiple, or even all the
 	 * queues at once, much care must be taken during queue manipulation.
+	 *
+     * The pthread structure must be locked before you can even look at
+	 * the link lists.
 	 */ 
+
 	struct pthread			*pll;		/* ALL threads, in any state */
-	/* struct pthread		*rll;		/* Current run queue, before resced */
+	/* struct pthread		*rll;		 Current run queue, before resced */
+	struct pthread			*sll;		/* For sleeping threads */
 	struct pthread			*next;		/* Standard for mutexes, etc ... */
-	struct pthread			*s_next;	/* For sleeping threads */
-	/* struct pthread			*fd_next;	/* For kernel fd operations */
+	/* struct pthread			*fd_next;	 For kernel fd operations */
 
 	int						fd;			/* Used when thread waiting on fd */
 
 	semaphore				lock;
+	void 					*ret;
 	int						error;
 };
 
@@ -102,11 +125,14 @@ extern	struct fd_table_entry 	*fd_table[];
 
 __BEGIN_DECLS
 
+void		pthread_init		__P((void));
 int			pthread_create		__P((pthread_t *, const pthread_attr_t *,
 							   	  void * (*start_routine)(void *), void *));
 void		pthread_exit		__P((void *));
 pthread_t	pthread_self		__P((void));
 int			pthread_equal		__P((pthread_t, pthread_t));
+int			pthread_join		__P((pthread_t, void **));
+int			pthread_detach		__P((pthread_t));
 		
 #if defined(PTHREAD_KERNEL)
 

@@ -6,8 +6,11 @@
 # links.
 
 
-FILES= cond.h copyright.h fd.h fd_pipe.h kernel.h mutex.h posix.h \
-	   pthread.h pthread_attr.h queue.h util.h engine.h
+FILES= cond.h engine.h fd.h fd_pipe.h kernel.h mutex.h posix.h \
+	   pthread.h pthread_attr.h queue.h stdio.h util.h 
+
+# Machine dependent header file
+MFILE= ${.CURDIR}/arch/${MACHINE}/machdep.h
 
 realinstall:
 	if [ ! -d ${DESTDIR}/usr/include/pthread ]; then \
@@ -18,6 +21,8 @@ realinstall:
 		cmp -s $$i ${DESTDIR}/usr/include/pthread/$$i || \
 		    install -c -m 644 $$i ${DESTDIR}/usr/include/$$i; \
 	done
+	cmp -s ${MFILE} ${DESTDIR}/usr/include/pthread/machdep.h || \
+	  install -c -m 644 ${MFILE} ${DESTDIR}/usr/include/pthread/machdep.h
 	rm -rf ${DESTDIR}/usr/include/pthread.h
 	ln -s /usr/include/pthread/pthread.h ${DESTDIR}/usr/include/pthread.h
 	@chown -R ${BINOWN}:${BINGRP} ${DESTDIR}/usr/include/pthread
