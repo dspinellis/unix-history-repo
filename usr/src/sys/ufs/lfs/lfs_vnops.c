@@ -1,4 +1,4 @@
-/*	lfs_vnops.c	4.43	82/12/09	*/
+/*	lfs_vnops.c	4.44	82/12/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -995,7 +995,7 @@ rename()
 		 */
 		if ((xp->i_mode&IFMT) == IFDIR) {
 			if (!dirempty(xp)) {
-				u.u_error = EEXIST;	/* XXX */
+				u.u_error = ENOTEMPTY;
 				goto bad;
 			}
 			if (!doingdirectory) {
