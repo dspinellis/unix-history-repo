@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex.h	7.7 (Berkeley) %G%
+ *	@(#)ex.h	7.7.1.1 (Berkeley) %G%
  */
 
 #ifdef V6
@@ -314,21 +314,6 @@ var	line	*undadot;	/* If we saved all lines, dot reverts here */
 #define	UNDNONE		3
 #define	UNDPUT		4
 
-#ifdef CRYPT
-/*
- * Various miscellaneous flags and buffers needed by the encryption routines.
- */
-#define	KSIZE   9       /* key size for encryption */
-#define	KEYPROMPT       "Key: "
-var	int	xflag;		/* True if we are in encryption mode */
-var	int	xtflag;		/* True if the temp file is being encrypted */
-var	int	kflag;		/* True if the key has been accepted */
-var	char	perm[768];
-var	char	tperm[768];
-var	char	*key;
-var	char	crbuf[CRSIZE];
-char	*getpass();
-#endif
 
 /*
  * Function type definitions
