@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.32	%G%";
+static char	SccsId[] = "@(#)main.c	3.33	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -148,7 +148,6 @@ main(argc, argv)
 	extern char Version[];
 	char *from;
 	typedef int (*fnptr)();
-	char nbuf[MAXLINE];		/* holds full name */
 	struct passwd *pw;
 	extern char *arpadate();
 	extern char *AliasFile;		/* location of alias file */
@@ -166,6 +165,7 @@ main(argc, argv)
 	extern char *ttyname();
 	bool canrename;
 
+	argv[argc] = NULL;
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		(void) signal(SIGINT, finis);
 	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
@@ -354,6 +354,7 @@ main(argc, argv)
 # ifdef DBM
 		  case 'I':	/* initialize alias DBM file */
 			aliasinit = TRUE;
+			Verbose = TRUE;
 			break;
 # endif DBM
 
@@ -482,6 +483,7 @@ main(argc, argv)
 	    pw != NULL && pw->pw_gecos != NULL)
 	{
 		register char *nb;
+		char nbuf[MAXNAME];
 
 		nb = nbuf;
 		p = pw->pw_gecos;
@@ -500,7 +502,7 @@ main(argc, argv)
 		}
 		*nb = '\0';
 		if (ArpaMode == ARPA_NONE && from == NULL && nbuf[0] != '\0')
-			fullname = nbuf;
+			fullname = newstr(nbuf);
 	}
 	if (fullname != NULL && fullname[0] != '\0')
 		define('x', fullname);
@@ -522,69 +524,30 @@ main(argc, argv)
 		syserr("Infinite forwarding loop (%s->%s)", From.q_paddr, *argv);
 
 	/*
-	** Scan argv and deliver the message to everyone.
+	**  Scan argv and deliver the message to everyone.
+	**	Actually, suppress delivery if we are taking To:
+	**	lines from the message.
 	*/
 
 	if (GrabTo)
 		DontSend = TRUE;
-	for (; argc-- > 0; argv++)
-	{
-		p = argv[1];
-		if (argc >= 2 && p[2] == '\0' &&
-		    (p[0] == 'a' || p[0] == 'A') &&
-		    (p[1] == 't' || p[1] == 'T'))
-		{
-			if (strlen(argv[0]) + strlen(argv[2]) + 2 > sizeof nbuf)
-			{
-				usrerr("address overflow");
-				p = argv[0];
-			}
-			else
-			{
-				(void) strcpy(nbuf, argv[0]);
-				(void) strcat(nbuf, "@");
-				(void) strcat(nbuf, argv[2]);
-				p = newstr(nbuf);
-				argv += 2;
-				argc -= 2;
-			}
-		}
-		else
-			p = argv[0];
-		sendto(p, 0);
-	}
+	sendtoargv(argv);
 
 	/* if we have had errors sofar, drop out now */
 	if (Errors > 0 && ExitStat == EX_OK)
 		ExitStat = EX_USAGE;
-	if ((ArpaMode > ARPA_OLD && ExitStat != EX_OK) ||
-	    (verifyonly && !GrabTo))
+	if (ArpaMode > ARPA_OLD && ExitStat != EX_OK)
 		finis();
-
-	/* no errors, tell arpanet to go ahead */
-	To = NULL;
-	if (ArpaMode == ARPA_MAIL)
-	{
-		extern char Arpa_Enter[];
-
-		message(Arpa_Enter, "Enter mail, end with \".\" on a line by itself");
-	}
-	errno = 0;
 
 	/*
 	**  Read the input mail.
 	*/
 
 	DontSend = FALSE;
-	collect();
-
-# ifdef DEBUG
-	if (Debug)
-		printf("From person = \"%s\"\n", From.q_paddr);
-# endif DEBUG
-
-	if (verifyonly && GrabTo)
-		finis();
+	To = NULL;
+	errno = 0;
+	if (!verifyonly || GrabTo)
+		collect();
 
 	/* collect statistics */
 	Stat.stat_nf[From.q_mailer]++;
@@ -595,6 +558,11 @@ main(argc, argv)
 	**  will not be expanded (unless explicitly requested).
 	*/
 
+# ifdef DEBUG
+	if (Debug)
+		printf("From person = \"%s\"\n", From.q_paddr);
+# endif DEBUG
+
 	From.q_flags |= QDONTSEND;
 	if (!MeToo)
 		recipient(&From);
@@ -602,6 +570,7 @@ main(argc, argv)
 
 	/*
 	**  Actually send everything.
+	**	If verifying, just ack.
 	*/
 
 	for (i = 0; Mailer[i] != NULL; i++)
@@ -610,7 +579,19 @@ main(argc, argv)
 
 		for (q = Mailer[i]->m_sendq; q != NULL; q = q->q_next)
 		{
-			(void) deliver(q, (fnptr) NULL);
+			if (verifyonly)
+			{
+				To = q->q_paddr;
+				if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
+				{
+					if (q->q_mailer == MN_LOCAL || q->q_mailer == MN_PROG)
+						message(Arpa_Info, "deliverable");
+					else
+						message(Arpa_Info, "queueable");
+				}
+			}
+			else
+				(void) deliver(q, (fnptr) NULL);
 		}
 	}
 
@@ -635,7 +616,8 @@ main(argc, argv)
 			break;
 		}
 	}
-	poststats(StatFile);
+	if (!verifyonly)
+		poststats(StatFile);
 	finis();
 }
 /*
