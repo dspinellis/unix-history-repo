@@ -84,6 +84,7 @@ readcf(cfname)
 	struct stat statb;
 	char exbuf[MAXLINE];
 	char pvpbuf[MAXLINE + MAXATOM];
+	static char *null_list[1] = { NULL };
 	extern char *munchstring();
 	extern void makemapentry();
 
@@ -295,7 +296,10 @@ readcf(cfname)
 				}
 			}
 			else
+			{
 				syserr("R line: null LHS");
+				rwp->r_lhs = null_list;
+			}
 
 			/* expand and save the RHS */
 			while (*++p == '\t')
@@ -356,7 +360,10 @@ readcf(cfname)
 				}
 			}
 			else
+			{
 				syserr("R line: null RHS");
+				rwp->r_rhs = null_list;
+			}
 			break;
 
 		  case 'S':		/* select rewriting set */
