@@ -1,5 +1,5 @@
 /*
-char id_wrtfmt[] = "@(#)wrtfmt.c	1.4";
+char id_wrtfmt[] = "@(#)wrtfmt.c	1.5";
  *
  * formatted write routines
  */
@@ -27,9 +27,10 @@ w_ed(p,ptr,len) char *ptr; struct syl *p; ftnlen len;
 		return(wrt_AW(ptr,p->p1,len));
 	case D:
 	case DE:
+		return(wrt_E(ptr,p->p1,p->p2,p->p3,len,'d'));
 	case E:
 	case EE:
-		return(wrt_E(ptr,p->p1,p->p2,p->p3,len));
+		return(wrt_E(ptr,p->p1,p->p2,p->p3,len,'e'));
 	case G:
 	case GE:
 		return(wrt_G(ptr,p->p1,p->p2,p->p3,len));
@@ -149,11 +150,11 @@ wrt_AW(p,w,len) char * p; ftnlen len;
 	return(OK);
 }
 
-wrt_E(p,w,d,e,len) ufloat *p; ftnlen len;
-{	char *s,ex[4],expch;
+wrt_E(p,w,d,e,len,expch) ufloat *p; ftnlen len; char expch;
+{	char *s,ex[4];
 	int dd,dp,sign,i,delta,pad,n;
 	char *ecvt();
-	expch=(len==sizeof(float)?'e':'d');
+
 	if((len==sizeof(float)?p->pf:p->pd)==0.0)
 	{
 		wrt_F(p,w-(e+2),d,len);
@@ -233,7 +234,7 @@ zero:			oldscale=scale;
 		}
 		/* falling off the bottom implies E format */
 	}
-	return(wrt_E(p,w,d,e,len));
+	return(wrt_E(p,w,d,e,len,'e'));
 }
 
 wrt_F(p,w,d,len) ufloat *p; ftnlen len;
