@@ -499,7 +499,8 @@ FastScreen()
 		FastScreen();		/* Recurse */
 		return;
 	    } else if (fieldattr) {	/* Should we display? */
-		addch(disp_asc[p->data]);	/* Display translated data */
+			    /* Display translated data */
+		addch(disp_asc[GetTerminalPointer(p)]);
 	    } else {
 		addch(' ');			/* Display a blank */
 	    }
@@ -541,7 +542,7 @@ FastScreen()
 	    } else {
 		if (fieldattr) {	/* Should we display? */
 				/* Display translated data */
-		    *tmp++ = disp_asc[p->data];
+		    *tmp++ = disp_asc[GetTerminalPointer(p)];
 		} else {
 		    *tmp++ = ' ';
 		}
