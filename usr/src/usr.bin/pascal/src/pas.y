@@ -33,7 +33,7 @@
  *	   the same time.
  *
  *	5) Creates the semantic restriction checking routine yyEactr
- *	   by processing action lines containing `@'.
+ *	   by processing action lines containing `@@'.
  *
  * This compiler uses a different version of the yacc parser, a
  * different yyerror which is called yerror, and requires more
@@ -89,7 +89,7 @@
 
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pas.y 1.1 %G%"; */
+/* static	char sccsid[] = "@(#)pas.y 1.2 %G%"; */
 
 /*
  * The following line marks the end of the yacc
@@ -99,7 +99,7 @@
 ##
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pas.y 1.1 %G%";
+static	char sccsid[] = "@(#)pas.y 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -712,7 +712,7 @@ element:
 variable:
 	YID
 		= {
-			@ return (identis(var, VAR));
+			@@ return (identis(var, VAR));
 			$$ = setupvar($1, NIL);
 		  }
 		|
@@ -852,7 +852,7 @@ id_list:
 /*
  * Identifier productions with semantic restrictions
  *
- * For these productions, the character @ signifies
+ * For these productions, the characters @@ signify
  * that the associated C statement is to provide
  * the semantic restriction for this reduction.
  * These lines are made into a procedure yyEactr, similar to
@@ -867,40 +867,40 @@ id_list:
 
 const_id:
 	YID
-		= @ return (identis(var, CONST));
+		= @@ return (identis(var, CONST));
 		;
 type_id:
 	YID
 		= {
-			@ return (identis(var, TYPE));
+			@@ return (identis(var, TYPE));
 			$$ = tree3(T_TYID, lineof(yyline), $1);
 		  }
 		;
 var_id:
 	YID
-		= @ return (identis(var, VAR));
+		= @@ return (identis(var, VAR));
 		;
 array_id:
 	YID
-		= @ return (identis(var, ARRAY));
+		= @@ return (identis(var, ARRAY));
 		;
 ptr_id:
 	YID
-		= @ return (identis(var, PTRFILE));
+		= @@ return (identis(var, PTRFILE));
 		;
 record_id:
 	YID
-		= @ return (identis(var, RECORD));
+		= @@ return (identis(var, RECORD));
 		;
 field_id:
 	YID
-		= @ return (identis(var, FIELD));
+		= @@ return (identis(var, FIELD));
 		;
 proc_id:
 	YID
-		= @ return (identis(var, PROC));
+		= @@ return (identis(var, PROC));
 		;
 func_id:
 	YID
-		= @ return (identis(var, FUNC));
+		= @@ return (identis(var, FUNC));
 		;

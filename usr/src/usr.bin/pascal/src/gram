@@ -1,4 +1,4 @@
-"@(#)gram 1.1 %G%"
+"@(#)gram 1.2 %G%"
 /yyval/s//*&/
 /\*yysterm\[]/,$d
 1;/yyactr/ka
@@ -24,9 +24,9 @@ switch(__np__) {
 default:
 return (1);
 .
-g/case.*@/s/@//\
+g/case.*@@/s/@@//\
 .m$
-g/@/ka\
+g/@@/ka\
 'a;?case?,?case?t$\
 'am$\
 a\
@@ -36,7 +36,7 @@ $a
 }
 }
 .
-1,$s/@//
+1,$s/@@//
 /int nterms/d
 /int nnonter/d
 /int nstate/d
