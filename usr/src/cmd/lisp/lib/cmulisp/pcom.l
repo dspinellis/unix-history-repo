@@ -1,0 +1,13 @@
+(declare (special $outport$))
+(defun pp-comment (i v p)
+	(mapcar '(lambda (c)
+			(terpri $outport$)
+			(terpri $outport$)
+			(print (list 'dc i (car c) (cadr c)) $outport$)
+			(mapcar '(lambda (line)
+					(terpri $outport$)
+					(princ line $outport$)) 
+				(cddr c))
+			(tyo 27 $outport$))
+		(reverse v)))
+  
