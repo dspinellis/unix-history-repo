@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwho.c	4.4 83/05/03";
+static char sccsid[] = "@(#)rwho.c	4.5 83/05/05";
 #endif
 
 #include <sys/param.h>
@@ -21,6 +21,7 @@ struct	myutmp {
 int	nusers;
 
 #define	WHDRSIZE	(sizeof (wd) - sizeof (wd.wd_we))
+#define	RWHODIR		"/usr/spool/rwho"
 
 char	*ctime(), *strcpy();
 int	now;
