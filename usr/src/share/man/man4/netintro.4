@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)netintro.4	6.7 (Berkeley) %G%
+.\"	@(#)netintro.4	6.8 (Berkeley) %G%
 .\"
 .TH NETINTRO 4 ""
 .UC 5
@@ -37,10 +37,10 @@ Documentation in this part of section
 .IR protocols ,
 and
 .IR "network interfaces" .
-Entries describing a protocol family are marked ``4F,''
-while entries describing protocol use are marked ``4P.''
-Hardware support for network interfaces are found
-among the standard ``4'' entries.
+.\" Entries describing a protocol family are marked ``4F,''
+.\" while entries describing protocol use are marked ``4P.''
+.\" Hardware support for network interfaces are found
+.\" among the standard ``4'' entries.
 .PP
 All network protocols are associated with a specific
 .IR "protocol family" .
@@ -120,7 +120,6 @@ struct sockaddr {
 The field sa_len contains the total length of the of the structure,
 which may exceed 16 bytes.
 The following address values for
-The following address values for
 .I sa_family
 are known to the system
 (and additional formats are defined for possible future implementation):
@@ -130,8 +129,8 @@ are known to the system
 #define	AF_UNIX	1	/* local to host (pipes, portals) */
 #define	AF_INET	2	/* internetwork: UDP, TCP, etc. */
 #define	AF_IMPLINK	3	/* arpanet imp addresses */
-#define	AF_PUP	4	/* pup protocols: e.g. BSP */
 #define	AF_NS	6	/* Xerox NS protocols */
+#define	AF_CCITT	10	/* CCITT protocols, X.25 etc */
 #define	AF_HYLINK	15	/* NSC Hyperchannel */
 #define	AF_ISO	18	/* ISO protocols */
 .fi

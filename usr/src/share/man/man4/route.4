@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)route.4	6.1 (Berkeley) %G%
+.\"	@(#)route.4	6.2 (Berkeley) %G%
 .\"
 .TH ROUTE 4 ""
 .UC 5
@@ -41,9 +41,12 @@ to external events, such as recipt of a re-direct, or failure to
 locate a suitable route for a request.
 The message types are described in greater detail below.
 .PP
-Routing database entries come in three flavors: for a specific
-host, for all hosts on a specific network, for any destination
-not matched by entries of the first two types (a wildcard route). 
+Routing database entries come in two flavors: for a specific
+host, or for all hosts on a generic subnetwork (as specified
+by a bit mask and value under the mask.
+The effect of wildcard or default route may be achieved by using
+a mask of all zeros, and there may be hierarchical routes.
+.PP
 When the system is booted and addresses are assigned
 to the network interfaces, each protocol family
 installs a routing table entry for each interface when it is ready for traffic.
@@ -199,12 +202,12 @@ Specfiers for metric values in rmx_locks and rtm_inits are:
 Specifiers for which addresses are present in the messages are:
 
 .ta \w'#define  'u +\w'RTA_GATEWAY  'u +\w'0x80     'u
-#define RTA_DST		0x1	/* \fIdestination sockaddr present\fP */
+#define RTA_DST	0x1	/* \fIdestination sockaddr present\fP */
 #define RTA_GATEWAY	0x2	/* \fIgateway sockaddr present\fP */
 #define RTA_NETMASK	0x4	/* \fInetmask sockaddr present\fP */
 #define RTA_GENMASK	0x8	/* \fIcloning mask sockaddr present\fP */
-#define RTA_IFP		0x10	/* \fIinterface name sockaddr present\fP */
-#define RTA_IFA		0x20	/* \fIinterface addr sockaddr present\fP */
+#define RTA_IFP	0x10	/* \fIinterface name sockaddr present\fP */
+#define RTA_IFA	0x20	/* \fIinterface addr sockaddr present\fP */
 #define RTA_AUTHOR	0x40	/* \fIsockaddr for author of redirect\fP */
 
 .fi
