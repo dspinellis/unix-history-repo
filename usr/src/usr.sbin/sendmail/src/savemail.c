@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.14 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -63,7 +63,6 @@ savemail(e)
 
 	if (exclusive++ || CurEnv->e_class <= PRI_JUNK)
 		return;
-	ForceMail = TRUE;
 	e->e_flags &= ~EF_FATALERRS;
 
 	/*
@@ -193,6 +192,9 @@ savemail(e)
 			**	joe@x, which gives a response, etc.  Also force
 			**	the mail to be delivered even if a version of
 			**	it has already been sent to the sender.
+			**
+			**	Clever technique for computing rpath from
+			**	Eric Wassenaar <e07@nikhef.nl>.
 			*/
 
 			if (state == ESM_MAIL)
@@ -201,13 +203,11 @@ savemail(e)
 				{
 					char *rpath;
 
-					if (strcmp(e->e_returnpath, "<>") != 0)
+					if (e->e_returnpath != e->e_sender)
 						rpath = e->e_returnpath;
-					else if (strcmp(e->e_from.q_paddr, "<>") != 0)
-						rpath = e->e_from.q_paddr;
 					else
-						rpath = NULL;
-					if (rpath != NULL)
+						rpath = e->e_from.q_paddr;
+					if (strcmp(rpath, "<>") != 0)
 						(void) sendtolist(rpath,
 							  (ADDRESS *) NULL,
 							  &e->e_errorqueue, e);
