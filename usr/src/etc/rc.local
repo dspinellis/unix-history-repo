@@ -1,7 +1,7 @@
 #
 # site-specific startup actions, daemons
 #
-#	@(#)rc.local	5.1 (Berkeley) %G%
+#	@(#)rc.local	5.2 (Berkeley) %G%
 #
 
 strings /vmunix | grep UNIX >/tmp/t1
@@ -13,8 +13,8 @@ echo -n			starting local daemons:			>/dev/console
 #if [ -f /usr/sbin/timed ]; then
 #	timed -M &			echo -n ' timed'	>/dev/console
 #fi
-if [ -f /usr/lib/sendmail ]; then
-	(cd /usr/spool/mqueue; rm -f lf*)
-	/usr/lib/sendmail -bd -q30m; echo -n ' sendmail'	>/dev/console
+if [ -f /usr/sbin/sendmail ]; then
+	(cd /var/spool/mqueue; rm -f lf*)
+	/usr/sbin/sendmail -bd -q30m; echo -n ' sendmail'	>/dev/console
 fi
 				echo '.'			>/dev/console
