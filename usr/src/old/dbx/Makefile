@@ -3,8 +3,8 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.12 (Berkeley) %G%
-#	@(#)Makefile	5.12 (Berkeley) %G%
+#	@(#)Makefile	5.13 (Berkeley) %G%
+#	@(#)Makefile	5.13 (Berkeley) %G%
 #
 # make file for debugger "dbx"
 #
@@ -17,7 +17,7 @@
 #
 
 .SUFFIXES:
-.SUFFIXES: .h .c .s .o
+.SUFFIXES: .h .c .s .o .1 .0
 
 AOUT	= tdbx
 DESTDIR	=
@@ -198,11 +198,15 @@ clean:
 	rm -f ${HDR} ${OBJ} y.tab.c y.tab.h \
 	    ${AOUT} mkdate mkdate.o makedefs makedefs.o date.c core
 
+cleandir: clean
+	rm -f dbx.0 tags .depend
+
 cleandefs:
 	rm -f ${HDR} y.tab.h
 
 install:
 	install -s -o bin -g bin -m 755 ${AOUT} ${DESTDIR}${DEST}
+	install -c -o bin -g bin -m 444 dbx.0 ${DESTDIR}/usr/man/cat1
 
 #
 # Create a tar file called "tape" containing relevant files.
