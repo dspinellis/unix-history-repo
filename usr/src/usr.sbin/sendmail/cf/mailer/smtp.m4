@@ -11,7 +11,7 @@ POPDIVERT
 ###   SMTP Mailer specification   ###
 #####################################
 
-VERSIONID(@(#)smtp.m4	2.5 (Berkeley) %G%)
+VERSIONID(@(#)smtp.m4	2.6 (Berkeley) %G%)
 
 Msmtp,	P=[IPC], F=mDFMueXLC, S=11, R=21, A=IPC $h, E=\r\n
 
@@ -22,6 +22,9 @@ R$+			$: $>19 $1
 
 # if already @ qualified, we are done
 R$* < @ $+ > $*		$@ $1 < @ $2 > $3		already qualified
+
+# don't qualify list:; syntax
+R$* :;			$@ $1 :;
 
 # unqualified names (e.g., "eric") "come from" $M
 R$+			$: $1 < @ $M >			user w/o host
@@ -34,6 +37,9 @@ R$+			$: $>19 $1
 
 # if already @ qualified, we are done
 R$* < @ $+ > $*		$@ $1 < @ $2 > $3		already qualified
+
+# don't qualify list:; syntax
+R$* :;			$@ $1 :;
 
 # unqualified names (e.g., "eric") are qualified by local host
 R$+			$: $1 < @ $j >
