@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)egrep.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)egrep.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -146,7 +146,7 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int c;
+	int c, oflag;
 	int errflag = 0;
 
 	args = argv;
@@ -157,10 +157,11 @@ main(argc, argv)
 		progname = argv[0];
 	if (strcmp(progname, "grep") == 0)
 		grepflag++;
-	if (strcmp(progname, "fgrep") == 0)
+	else if (strcmp(progname, "fgrep") == 0)
 		fgrepflag++;
 
-	while ((c = getopt(argc, argv, "bchie:f:lnsvwxy1")) != EOF) {
+	oflag = 0;
+	while ((c = getopt(argc, argv, "bchie:f:lnosvwxy1")) != EOF) {
 		switch (c) {
 
 		case 'f':
@@ -180,6 +181,9 @@ main(argc, argv)
 			continue;
 		case 'h':
 			hflag++;
+			continue;
+		case 'o':
+			oflag++;
 			continue;
 		case '1':	/* Stop at very first match */
 			firstflag++;	/* spead freaks only */
@@ -213,12 +217,12 @@ main(argc, argv)
 	}
 	if (errflag || ((argc <= optind) && !fflag && !eflag)) {
 		if (grepflag)
-oops("usage: grep [-bchilnsvwy] [-e] pattern [file ...]");
+oops("usage: grep [-bchilnosvwy] [-e] pattern [file ...]");
 		else if (fgrepflag)
-oops("usage: fgrep [-bchilnv] {-f patfile | [-e] strings} [file ...]");
+oops("usage: fgrep [-bchilnov] {-f patfile | [-e] strings} [file ...]");
 		else		/* encourage SVID options, though we provide
 				 * others */
-oops("usage: egrep [-bchilnv] {-f patfile | [-e] pattern} [file ...]");
+oops("usage: egrep [-bchilnov] {-f patfile | [-e] pattern} [file ...]");
 	}
 	patind = optind;
 	if (fflag)
@@ -226,7 +230,7 @@ oops("usage: egrep [-bchilnv] {-f patfile | [-e] pattern} [file ...]");
 	else if (!eflag)
 		pattern = argv[optind++];
 
-	if ((argc - optind) <= 1)	/* Filename invisible given < 2 files */
+	if (!oflag && (argc - optind) <= 1)	/* Filename invisible given < 2 files */
 		hflag++;
 	if (pattern[0] == EOS)
 		kernighan(argv);	/* same as it ever was */

@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)old.ucb.grep.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)old.ucb.grep.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -44,6 +44,7 @@ int	cflag;
 int	vflag;
 int	nfile;
 int	hflag;
+int	oflag;
 int	iflag;
 int	lflag;
 int	wflag;
@@ -68,6 +69,10 @@ char **argv;
 
 		case 'b':
 			bflag++;
+			continue;
+
+		case 'o':
+			oflag++;
 			continue;
 
 		case 'h':
@@ -449,7 +454,7 @@ succeed(f)
 		tln++;
 		return;
 	}
-	if (!hflag && nfile > 1)
+	if (oflag || !hflag && nfile > 1)
 		printf("%s:", f);
 	if (bflag)
 		printf("%d:", blkno);
