@@ -21,18 +21,19 @@ static char sccsid[] = "@(#)res_comp.c	6.3 (Berkeley) %G%";
  * 'exp_dn' is a pointer to a buffer of size 'length' for the result.
  * Return size of compressed name or -1 if there was an error.
  */
-dn_expand(msg, comp_dn, exp_dn, length)
+dn_expand(msg, msglen, comp_dn, exp_dn, length)
 	char *msg, *comp_dn, *exp_dn;
-	int length;
+	int length, msglen;
 {
 	register char *cp, *dn;
 	register int n, c;
-	char *eom;
+	char *eom, *eomorig;
 	int len = -1;
 
 	dn = exp_dn;
 	cp = comp_dn;
 	eom = exp_dn + length - 1;
+	eomorig = msg + msglen - 1;
 	/*
 	 * fetch next label in domain name
 	 */
@@ -49,7 +50,7 @@ dn_expand(msg, comp_dn, exp_dn, length)
 			}
 			if (dn+n >= eom)
 				return (-1);
-			while (--n >= 0)
+			while (--n >= 0) {
 				if (isupper(c = *cp++))
 					*dn++ = tolower(c);
 				else {
@@ -60,12 +61,17 @@ dn_expand(msg, comp_dn, exp_dn, length)
 					}
 					*dn++ = c;
 				}
+				if (cp > eomorig)	/* out of range */
+					return(-1);
+			}
 			break;
 
 		case INDIR_MASK:
 			if (len < 0)
 				len = cp - comp_dn + 1;
 			cp = msg + (((n & 0x3f) << 8) | (*cp & 0xff));
+			if (cp < msg || cp > eomorig)	/* out of range */
+				return(-1);
 			break;
 
 		default:

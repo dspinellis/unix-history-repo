@@ -100,7 +100,8 @@ getanswer(msg, msglen, iquery)
 	cp = (char *)&answer + sizeof(HEADER);
 	if (qdcount) {
 		if (iquery) {
-			if ((n = dn_expand((char *)&answer, cp, bp, buflen)) < 0) {
+			if ((n = dn_expand((char *)&answer, eom,
+			     cp, bp, buflen)) < 0) {
 				h_errno = NO_RECOVERY;
 				return (NULL);
 			}
@@ -126,7 +127,7 @@ getanswer(msg, msglen, iquery)
 	host.h_addr_list = h_addr_ptrs;
 	haveanswer = 0;
 	while (--ancount >= 0 && cp < eom) {
-		if ((n = dn_expand((char *)&answer, cp, bp, buflen)) < 0)
+		if ((n = dn_expand((char *)&answer, eom, cp, bp, buflen)) < 0)
 			break;
 		cp += n;
 		type = getshort(cp);
@@ -146,7 +147,7 @@ getanswer(msg, msglen, iquery)
 			continue;
 		}
 		if (type == T_PTR) {
-			if ((n = dn_expand((char *)&answer, cp, bp, buflen)) < 
+			if ((n = dn_expand((char *)&answer, eom, cp, bp, buflen)) < 
 0) {
 				cp += n;
 				continue;

@@ -169,7 +169,7 @@ p_cdname(cp, msg, file)
 	char name[MAXDNAME];
 	int n;
 
-	if ((n = dn_expand(msg, cp, name, sizeof(name))) < 0)
+	if ((n = dn_expand(msg, 512, cp, name, sizeof(name))) < 0)
 		return (NULL);
 	if (name[0] == '\0') {
 		name[0] = '.';
