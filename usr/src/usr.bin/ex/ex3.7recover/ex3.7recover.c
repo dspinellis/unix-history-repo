@@ -8,8 +8,8 @@ static char *sccsid = "@(#)ex3.7recover.c	7.6	%G%";
 #include "ex.h"
 #include "ex_temp.h"
 #include "ex_tty.h"
-#include "local/uparm.h"
 #include <sys/dir.h>
+#include "uparm.h"
 
 char xstr[1];		/* make loader happy */
 short tfile = -1;	/* ditto */
