@@ -1,6 +1,6 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	6.4 (Berkeley) %G%
 
-DIR=	usd/33.rogue
+DIR=	usd/30.rogue
 SRCS=	rogue.me
 MACROS=	-me
 
