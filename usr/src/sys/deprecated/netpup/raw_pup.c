@@ -1,13 +1,11 @@
-/*	raw_pup.c	4.13	82/06/26	*/
+/*	raw_pup.c	4.14	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
 #include "../h/socket.h"
 #include "../h/protosw.h"
 #include "../h/socketvar.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
-#include "../net/pup.h"
+#include "../netpup/pup.h"
 #include "../net/raw_cb.h"
 #include "../net/if.h"
 #include <errno.h>

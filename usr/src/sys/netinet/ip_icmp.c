@@ -1,14 +1,14 @@
-/*	ip_icmp.c	4.18	82/09/12	*/
+/*	ip_icmp.c	4.19	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
-#include "../net/ip.h"
-#include "../net/ip_icmp.h"
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
+#include "../netinet/ip.h"
+#include "../netinet/ip_icmp.h"
 #include <time.h>
 #include "../h/kernel.h"
 

@@ -1,4 +1,4 @@
-/*	raw_ip.c	4.13	82/06/20	*/
+/*	raw_ip.c	4.14	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -6,10 +6,10 @@
 #include "../h/protosw.h"
 #include "../h/socketvar.h"
 #include "../net/if.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
-#include "../net/ip.h"
-#include "../net/ip_var.h"
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
+#include "../netinet/ip.h"
+#include "../netinet/ip_var.h"
 #include "../net/raw_cb.h"
 #include "../net/route.h"
 #include <errno.h>
