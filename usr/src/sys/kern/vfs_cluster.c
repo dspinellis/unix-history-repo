@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_cluster.c	7.31 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,7 +17,9 @@
 #include "ucred.h"
 
 /*
- * Read in (if necessary) the block and return a buffer pointer.
+ * Find the block in the buffer pool.
+ * If the buffer is not present, allocate a new buffer and load
+ * its contents according to the filesystem fill routine.
  */
 bread(vp, blkno, size, cred, bpp)
 	struct vnode *vp;
@@ -38,7 +40,7 @@ bread(vp, blkno, size, cred, bpp)
 #else SECSIZE
 	*bpp = bp = getblk(vp, blkno, size);
 #endif SECSIZE
-	if (bp->b_flags&(B_DONE|B_DELWRI)) {
+	if (bp->b_flags & (B_DONE | B_DELWRI)) {
 		trace(TR_BREADHIT, pack(vp, size), blkno);
 		return (0);
 	}
@@ -56,8 +58,8 @@ bread(vp, blkno, size, cred, bpp)
 }
 
 /*
- * Read in the block, like bread, but also start I/O on the
- * read-ahead block (which is not allocated to the caller)
+ * Operates like bread, but also starts I/O on the specified
+ * read-ahead block.
  */
 breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 	struct vnode *vp;
@@ -73,14 +75,13 @@ breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 
 	bp = NULL;
 	/*
-	 * If the block isn't in core, then allocate
-	 * a buffer and initiate i/o (getblk checks
-	 * for a cache hit).
+	 * If the block is not memory resident,
+	 * allocate a buffer and start I/O.
 	 */
 	if (!incore(vp, blkno)) {
 		*bpp = bp = getblk(vp, blkno, size);
 #endif SECSIZE
-		if ((bp->b_flags&(B_DONE|B_DELWRI)) == 0) {
+		if ((bp->b_flags & (B_DONE | B_DELWRI)) == 0) {
 			bp->b_flags |= B_READ;
 			if (bp->b_bcount > bp->b_bufsize)
 				panic("breada");
@@ -96,17 +97,16 @@ breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 	}
 
 	/*
-	 * If there's a read-ahead block, start i/o
-	 * on it also (as above).
+	 * If there is a read-ahead block, start I/O on it too.
 	 */
 	if (!incore(vp, rablkno)) {
 		rabp = getblk(vp, rablkno, rabsize);
 #endif SECSIZE
-		if (rabp->b_flags & (B_DONE|B_DELWRI)) {
+		if (rabp->b_flags & (B_DONE | B_DELWRI)) {
 			brelse(rabp);
 			trace(TR_BREADHITRA, pack(vp, rabsize), rablkno);
 		} else {
-			rabp->b_flags |= B_READ|B_ASYNC;
+			rabp->b_flags |= B_ASYNC | B_READ;
 			if (rabp->b_bcount > rabp->b_bufsize)
 				panic("breadrabp");
 			if (rabp->b_rcred == NOCRED && cred != NOCRED) {
@@ -120,9 +120,9 @@ breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 	}
 
 	/*
-	 * If block was in core, let bread get it.
-	 * If block wasn't in core, then the read was started
-	 * above, and just wait for it.
+	 * If block was memory resident, let bread get it.
+	 * If block was not memory resident, the read was
+	 * started above, so just wait for the read to complete.
 	 */
 	if (bp == NULL)
 #ifdef SECSIZE
@@ -133,8 +133,8 @@ breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 }
 
 /*
- * Write the buffer, waiting for completion.
- * Then release the buffer.
+ * Synchronous write.
+ * Release buffer on completion.
  */
 bwrite(bp)
 	register struct buf *bp;
@@ -144,7 +144,7 @@ bwrite(bp)
 
 	flag = bp->b_flags;
 	bp->b_flags &= ~(B_READ | B_DONE | B_ERROR | B_DELWRI);
-	if ((flag&B_DELWRI) == 0)
+	if ((flag & B_DELWRI) == 0)
 		u.u_ru.ru_oublock++;		/* noone paid yet */
 	else
 		reassignbuf(bp, bp->b_vp);
@@ -157,11 +157,11 @@ bwrite(bp)
 	VOP_STRATEGY(bp);
 
 	/*
-	 * If the write was synchronous, then await i/o completion.
+	 * If the write was synchronous, then await I/O completion.
 	 * If the write was "delayed", then we put the buffer on
-	 * the q of blocks awaiting i/o completion status.
+	 * the queue of blocks awaiting I/O completion status.
 	 */
-	if ((flag&B_ASYNC) == 0) {
+	if ((flag & B_ASYNC) == 0) {
 		error = biowait(bp);
 		brelse(bp);
 	} else if (flag & B_DELWRI) {
@@ -172,12 +172,15 @@ bwrite(bp)
 }
 
 /*
- * Release the buffer, marking it so that if it is grabbed
- * for another purpose it will be written out before being
- * given up (e.g. when writing a partial block where it is
- * assumed that another write for the same block will soon follow).
- * This can't be done for magtape, since writes must be done
- * in the same order as requested.
+ * Delayed write.
+ *
+ * The buffer is marked dirty, but is not queued for I/O.
+ * This routine should be used when the buffer is expected
+ * to be modified again soon, typically a small write that
+ * partially fills a buffer.
+ *
+ * NB: magnetic tapes cannot be delayed; they must be
+ * written in the order that the writes are requested.
  */
 bdwrite(bp)
 	register struct buf *bp;
@@ -194,39 +197,46 @@ bdwrite(bp)
 	if (bdevsw[major(bp->b_dev)].d_flags & B_TAPE)
 		bawrite(bp);
 	} else {
-		bp->b_flags |= B_DELWRI | B_DONE;
+		bp->b_flags |= (B_DONE | B_DELWRI);
 		brelse(bp);
 	}
 }
 
 /*
- * Release the buffer, start I/O on it, but don't wait for completion.
+ * Asynchronous write.
+ * Start I/O on a buffer, but do not wait for it to complete.
+ * The buffer is released when the I/O completes.
  */
 bawrite(bp)
 	register struct buf *bp;
 {
 
+	/*
+	 * Setting the ASYNC flag causes bwrite to return
+	 * after starting the I/O.
+	 */
 	bp->b_flags |= B_ASYNC;
 	(void) bwrite(bp);
 }
 
 /*
- * Release the buffer, with no I/O implied.
+ * Release a buffer.
+ * Even if the buffer is dirty, no I/O is started.
  */
 brelse(bp)
 	register struct buf *bp;
 {
 	register struct buf *flist;
-	register s;
+	int s;
 
 	trace(TR_BRELSE, pack(bp->b_vp, bp->b_bufsize), bp->b_lblkno);
 	/*
 	 * If a process is waiting for the buffer, or
 	 * is waiting for a free buffer, awaken it.
 	 */
-	if (bp->b_flags&B_WANTED)
+	if (bp->b_flags & B_WANTED)
 		wakeup((caddr_t)bp);
-	if (bfreelist[0].b_flags&B_WANTED) {
+	if (bfreelist[0].b_flags & B_WANTED) {
 		bfreelist[0].b_flags &= ~B_WANTED;
 		wakeup((caddr_t)bfreelist);
 	}
@@ -235,13 +245,12 @@ brelse(bp)
 	 */
 	if ((bp->b_flags & B_ERROR) && (bp->b_flags & B_LOCKED))
 		bp->b_flags &= ~B_ERROR;
-
 	/*
 	 * Disassociate buffers that are no longer valid.
 	 */
-	if (bp->b_flags & (B_NOCACHE|B_ERROR))
+	if (bp->b_flags & (B_NOCACHE | B_ERROR))
 		bp->b_flags |= B_INVAL;
-	if ((bp->b_bufsize <= 0) || (bp->b_flags & (B_ERROR|B_INVAL))) {
+	if ((bp->b_bufsize <= 0) || (bp->b_flags & (B_ERROR | B_INVAL))) {
 		if (bp->b_vp)
 			brelvp(bp);
 		bp->b_flags &= ~B_DELWRI;
@@ -254,7 +263,7 @@ brelse(bp)
 		/* block has no buffer ... put at front of unused buffer list */
 		flist = &bfreelist[BQ_EMPTY];
 		binsheadfree(bp, flist);
-	} else if (bp->b_flags & (B_ERROR|B_INVAL)) {
+	} else if (bp->b_flags & (B_ERROR | B_INVAL)) {
 		/* block has no info ... put at front of most free list */
 		flist = &bfreelist[BQ_AGE];
 		binsheadfree(bp, flist);
@@ -267,13 +276,12 @@ brelse(bp)
 			flist = &bfreelist[BQ_LRU];
 		binstailfree(bp, flist);
 	}
-	bp->b_flags &= ~(B_WANTED|B_BUSY|B_ASYNC|B_AGE|B_NOCACHE);
+	bp->b_flags &= ~(B_WANTED | B_BUSY | B_ASYNC | B_AGE | B_NOCACHE);
 	splx(s);
 }
 
 /*
- * See if the block is associated with some buffer
- * (mainly to avoid getting hung up on a wait in breada)
+ * Check to see if a block is currently memory resident.
  */
 incore(vp, blkno)
 	struct vnode *vp;
@@ -291,34 +299,9 @@ incore(vp, blkno)
 }
 
 /*
- * Return a block if it is in memory.
- */
-baddr(vp, blkno, size, cred, bpp)
-	struct vnode *vp;
-	daddr_t blkno;
-	int size;
-	struct ucred *cred;
-	struct buf **bpp;
-#ifdef SECSIZE
-	long secsize;
-#endif SECSIZE
-{
-
-	if (incore(vp, blkno))
-		return (bread(vp, blkno, size, cred, bpp));
-	*bpp = 0;
-#endif SECSIZE
-	return (0);
-}
-
-/*
- * Assign a buffer for the given block.  If the appropriate
- * block is already associated, return it; otherwise search
- * for the oldest non-busy buffer and reassign it.
- *
- * We use splx here because this routine may be called
- * on the interrupt stack during a dump, and we don't
- * want to lower the ipl back to 0.
+ * Check to see if a block is currently memory resident.
+ * If it is resident, return it. If it is not resident,
+ * allocate a new buffer and assign it to the block.
  */
 struct buf *
 #ifdef SECSIZE
@@ -338,20 +321,20 @@ getblk(vp, blkno, size)
 	if (size > MAXBSIZE)
 		panic("getblk: size too big");
 	/*
-	 * Search the cache for the block.  If we hit, but
-	 * the buffer is in use for i/o, then we wait until
-	 * the i/o has completed.
+	 * Search the cache for the block. If the buffer is found,
+	 * but it is currently locked, the we must wait for it to
+	 * become available.
 	 */
 	dp = BUFHASH(vp, blkno);
 loop:
 	for (bp = dp->b_forw; bp != dp; bp = bp->b_forw) {
 		if (bp->b_lblkno != blkno || bp->b_vp != vp ||
-		    bp->b_flags&B_INVAL)
+		    (bp->b_flags & B_INVAL))
 			continue;
 		s = splbio();
-		if (bp->b_flags&B_BUSY) {
+		if (bp->b_flags & B_BUSY) {
 			bp->b_flags |= B_WANTED;
-			sleep((caddr_t)bp, PRIBIO+1);
+			sleep((caddr_t)bp, PRIBIO + 1);
 			splx(s);
 			goto loop;
 		}
@@ -384,8 +367,8 @@ loop:
 }
 
 /*
- * get an empty block,
- * not assigned to any particular device
+ * Allocate a buffer.
+ * The caller will assign it to a block.
  */
 struct buf *
 geteblk(size)
@@ -412,7 +395,7 @@ geteblk(size)
 
 /*
  * Expand or contract the actual memory allocated to a buffer.
- * If no memory is available, release buffer and take error exit
+ * If no memory is available, release buffer and take error exit.
  */
 allocbuf(tp, size)
 	register struct buf *tp;
@@ -470,7 +453,7 @@ allocbuf(tp, size)
 		if (bp->b_bufsize <= 0) {
 			bremhash(bp);
 			binshash(bp, &bfreelist[BQ_EMPTY]);
-			bp->b_dev = (dev_t)NODEV;
+			bp->b_dev = NODEV;
 			bp->b_error = 0;
 			bp->b_flags |= B_INVAL;
 		}
@@ -500,7 +483,7 @@ loop:
 			break;
 	if (dp == bfreelist) {		/* no free blocks */
 		dp->b_flags |= B_WANTED;
-		sleep((caddr_t)dp, PRIBIO+1);
+		sleep((caddr_t)dp, PRIBIO + 1);
 		splx(s);
 		goto loop;
 	}
@@ -530,8 +513,11 @@ loop:
 }
 
 /*
- * Wait for I/O completion on the buffer; return errors
- * to the user.
+ * Wait for I/O to complete.
+ *
+ * Extract and return any errors associated with the I/O.
+ * If the error flag is set, but no specific error is
+ * given, return EIO.
  */
 biowait(bp)
 	register struct buf *bp;
@@ -542,10 +528,6 @@ biowait(bp)
 	while ((bp->b_flags & B_DONE) == 0)
 		sleep((caddr_t)bp, PRIBIO);
 	splx(s);
-	/*
-	 * Pick up the device's error number and pass it to the user;
-	 * if there is an error but the number is 0 set a generalized code.
-	 */
 	if ((bp->b_flags & B_ERROR) == 0)
 		return (0);
 	if (bp->b_error)
@@ -555,9 +537,9 @@ biowait(bp)
 
 /*
  * Mark I/O complete on a buffer.
- * If someone should be called, e.g. the pageout
- * daemon, do so.  Otherwise, wake up anyone
- * waiting for it.
+ *
+ * If a callback has been requested, e.g. the pageout
+ * daemon, do so. Otherwise, awaken waiting processes.
  */
 biodone(bp)
 	register struct buf *bp;
@@ -584,7 +566,7 @@ biodone(bp)
 		(*bp->b_iodone)(bp);
 		return;
 	}
-	if (bp->b_flags&B_ASYNC)
+	if (bp->b_flags & B_ASYNC)
 		brelse(bp);
 	else {
 		bp->b_flags &= ~B_WANTED;
@@ -640,7 +622,7 @@ loop:
 		/*
 		 * Wait for I/O associated with indirect blocks to complete,
 		 * since there is no way to quickly wait for them below.
-		 * NB - This is really specific to ufs, but is done here
+		 * NB: This is really specific to ufs, but is done here
 		 * as it is easier and quicker.
 		 */
 		if (bp->b_vp == vp || (flags & B_SYNC) == 0) {
@@ -657,7 +639,7 @@ loop:
 	s = splbio();
 	while (vp->v_numoutput) {
 		vp->v_flag |= VBWAIT;
-		sleep((caddr_t)&vp->v_numoutput, PRIBIO+1);
+		sleep((caddr_t)&vp->v_numoutput, PRIBIO + 1);
 	}
 	splx(s);
 	if (vp->v_dirtyblkhd) {
@@ -719,7 +701,7 @@ vinvalbuf(vp, save)
 			s = splbio();
 			if (bp->b_flags & B_BUSY) {
 				bp->b_flags |= B_WANTED;
-				sleep((caddr_t)bp, PRIBIO+1);
+				sleep((caddr_t)bp, PRIBIO + 1);
 				splx(s);
 				break;
 			}
