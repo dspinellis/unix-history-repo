@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)keywords.c 5.1 %G%";
+static char sccsid[] = "@(#)keywords.c 5.2 %G%";
 /*
  * Keywords, variables, and aliases (oh my!).
  */
@@ -243,6 +243,7 @@ String *str;
     } else {
 	*pl = k->value.alias.paramlist;
 	*str = k->value.alias.expansion;
+	b = true;
     }
     return b;
 }
