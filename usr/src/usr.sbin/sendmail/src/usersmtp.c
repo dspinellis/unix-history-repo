@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.30 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.31 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.30 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.31 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -64,6 +64,7 @@ smtpinit(m, mci, e)
 	register int r;
 	register char *p;
 	extern STAB *stab();
+	extern void esmtp_check();
 	extern void helo_options();
 
 	if (tTd(17, 1))
@@ -112,7 +113,7 @@ smtpinit(m, mci, e)
 
 	SmtpPhase = mci->mci_phase = "greeting wait";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
-	r = reply(m, mci, e, TimeOuts.to_initial, NULL);
+	r = reply(m, mci, e, TimeOuts.to_initial, esmtp_check);
 	if (r < 0 || REPLYTYPE(r) != 2)
 		goto tempfail1;
 
@@ -202,6 +203,33 @@ tryhelo:
 	mci->mci_errno = errno;
 	smtpquit(m, mci, e);
 	return;
+}
+/*
+**  ESMTP_CHECK -- check to see if this implementation likes ESMTP protocol
+**
+**
+**	Parameters:
+**		line -- the response line.
+**		m -- the mailer.
+**		mci -- the mailer connection info.
+**		e -- the envelope.
+**
+**	Returns:
+**		none.
+*/
+
+void
+esmtp_check(line, m, mci, e)
+	char *line;
+	MAILER *m;
+	register MCI *mci;
+	ENVELOPE *e;
+{
+	if (strlen(line) < 5)
+		return;
+	line += 4;
+	if (strncmp(line, "ESMTP ", 6) == 0)
+		mci->mci_flags |= MCIF_ESMTP;
 }
 /*
 **  HELO_OPTIONS -- process the options on a HELO line.
