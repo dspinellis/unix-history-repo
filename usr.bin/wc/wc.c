@@ -39,7 +39,7 @@ char copyright[] =
 
 #ifndef lint
 /*static char sccsid[] = "from: @(#)wc.c	5.7 (Berkeley) 3/2/91";*/
-static char rcsid[] = "$Id: wc.c,v 1.8 1993/11/04 05:43:30 jtc Exp $";
+static char rcsid[] = "$Id: wc.c,v 1.2 1993/11/04 19:41:29 jtc Exp $";
 #endif /* not lint */
 
 /* wc line, word and char count */
@@ -179,6 +179,14 @@ cnt(file)
 				if (ifmt == S_IFREG || ifmt == S_IFLNK
 					|| ifmt == S_IFDIR) {
 					charct = sbuf.st_size;
+				} else {
+					while((len = read(fd, buf, MAXBSIZE)) > 0) {
+						charct += len;
+					}
+					if (len == -1) {
+						warn ("%s", file);
+						rval = 1;
+					}
 				}
 			}
 		}
