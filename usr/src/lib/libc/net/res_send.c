@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_send.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -24,6 +24,8 @@ static char sccsid[] = "@(#)res_send.c	6.1 (Berkeley) %G%";
 
 extern int errno;
 
+#define KEEPOPEN (RES_USEVC|RES_STAYOPEN)
+
 res_send(buf, buflen, answer, anslen)
 	char *buf;
 	int buflen;
@@ -31,7 +33,8 @@ res_send(buf, buflen, answer, anslen)
 	int anslen;
 {
 	register int n;
-	int s, retry, v_circuit, resplen, ns;
+	int retry, v_circuit, resplen, ns;
+	static int s = -1;
 	u_short id, len;
 	char *cp;
 	int dsmask;
@@ -49,7 +52,6 @@ res_send(buf, buflen, answer, anslen)
 		if (res_init() == -1) {
 			return(-1);
 		}
-	s = -1;
 	v_circuit = (_res.options & RES_USEVC) || buflen > PACKETSZ;
 	id = hp->id;
 	/*
@@ -66,17 +68,18 @@ res_send(buf, buflen, answer, anslen)
 			/*
 			 * Use virtual circuit.
 			 */
-			if (s < 0)
+			if (s < 0) {
 				s = socket(AF_INET, SOCK_STREAM, 0);
-			if (connect(s, &(_res.nsaddr_list[ns]), 
-			   sizeof(struct sockaddr)) < 0) {
+				if (connect(s, &(_res.nsaddr_list[ns]), 
+				   sizeof(struct sockaddr)) < 0) {
 #ifdef DEBUG
-				if (_res.options & RES_DEBUG)
-					printf("connect failed %d\n", errno);
+					if (_res.options & RES_DEBUG)
+					    printf("connect failed %d\n",errno);
 #endif DEBUG
-				(void) close(s);
-				s = -1;
-				continue;
+					(void) close(s);
+					s = -1;
+					continue;
+				}
 			}
 			/*
 			 * Send length & message
@@ -203,8 +206,18 @@ res_send(buf, buflen, answer, anslen)
 			p_query(answer);
 		}
 #endif DEBUG
-		(void) close(s);
-		return (resplen);
+		/*
+		 * We are going to assume that the first server is preferred
+		 * over the rest (i.e. it is on the local machine) and only
+		 * keep that one open.
+		 */
+		if ((_res.options & KEEPOPEN) == KEEPOPEN && ns == 0) {
+			return (resplen);
+		} else {
+			(void) close(s);
+			s = -1;
+			return (resplen);
+		}
 	   }
 	}
 	(void) close(s);
