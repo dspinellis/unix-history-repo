@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)socket.h	6.6 (Berkeley) %G%
+ *	@(#)socket.h	6.7 (Berkeley) %G%
  */
 
 /*
@@ -69,8 +69,12 @@ struct	linger {
 #define	AF_DATAKIT	9		/* datakit protocols */
 #define	AF_CCITT	10		/* CCITT protocols, X.25 etc */
 #define	AF_SNA		11		/* IBM SNA */
+#define AF_DECnet	12		/* DECnet */
+#define AF_DLI		13		/* Direct data link interface */
+#define AF_LAT		14		/* LAT */
+#define	AF_HYLINK	15		/* NSC Hyperchannel */
 
-#define	AF_MAX		12
+#define	AF_MAX		16
 
 /*
  * Structure used by kernel to store most
@@ -105,8 +109,12 @@ struct sockproto {
 #define	PF_DATAKIT	AF_DATAKIT
 #define	PF_CCITT	AF_CCITT
 #define	PF_SNA		AF_SNA
+#define PF_DECnet	AF_DECnet
+#define PF_DLI		AF_DLI
+#define PF_LAT		AF_LAT
+#define	PF_HYLINK	AF_HYLINK
 
-#define	PF_MAX		12
+#define	PF_MAX		AF_MAX
 
 /*
  * Maximum queue length specifiable by listen.
