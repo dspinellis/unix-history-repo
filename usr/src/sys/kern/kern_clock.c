@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_clock.c	7.3 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,12 +17,12 @@
 #include "vm.h"
 #include "text.h"
 
-#include "../machine/reg.h"
-#include "../machine/psl.h"
+#include "machine/reg.h"
+#include "machine/psl.h"
 
 #if defined(vax) || defined(tahoe)
-#include "../machine/mtpr.h"
-#include "../machine/clock.h"
+#include "machine/mtpr.h"
+#include "machine/clock.h"
 #endif
 
 #ifdef GPROF

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	7.12 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -21,9 +21,9 @@
 #include "tty.h"
 #include "syslog.h"
 
-#include "../machine/mtpr.h"
+#include "machine/mtpr.h"
 #ifdef KADB
-#include "../machine/kdbparam.h"
+#include "machine/kdbparam.h"
 #endif
 
 #define TOCONS	0x1

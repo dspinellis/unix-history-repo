@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.7 (Berkeley) %G%
+ *	@(#)param.h	7.8 (Berkeley) %G%
  */
 
 #define	BSD	198810		/* system version  (year & month) */
@@ -68,7 +68,7 @@
  * Machine type dependent parameters.
  */
 #ifdef KERNEL
-#include "../machine/machparam.h"
+#include "machine/machparam.h"
 #else
 #include <machine/machparam.h>
 #endif
