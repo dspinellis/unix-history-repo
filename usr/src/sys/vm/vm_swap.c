@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_swap.c	7.20 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.21 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -37,6 +37,7 @@ swapinit()
 {
 	register int i;
 	register struct buf *sp = swbuf;
+	register struct proc *p = &proc0;	/* XXX */
 	struct swdevt *swp;
 	int error;
 
@@ -59,7 +60,7 @@ swapinit()
 	nswap *= nswdev;
 	if (bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp))
 		panic("swapvp");
-	if (error = swfree(&proc0, 0)) {
+	if (error = swfree(p, 0)) {
 		printf("swfree errno %d\n", error);	/* XXX */
 		panic("swapinit swfree 0");
 	}
@@ -68,8 +69,11 @@ swapinit()
 	 * Now set up swap buffer headers.
 	 */
 	bswlist.av_forw = sp;
-	for (i = 0; i < nswbuf - 1; i++, sp++)
+	for (i = 0; i < nswbuf - 1; i++, sp++) {
 		sp->av_forw = sp + 1;
+		sp->b_rcred = sp->b_wcred = p->p_ucred;
+	}
+	sp->b_rcred = sp->b_wcred = p->p_ucred;
 	sp->av_forw = NULL;
 }
 
