@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)monthly	5.3 (Berkeley) %G%
+#	@(#)monthly	5.4 (Berkeley) %G%
 #
 
 host=`hostname -s`
@@ -21,3 +21,15 @@ if [ -f wtmp.1 ]; then mv -f wtmp.1 wtmp.2; fi
 if [ -f wtmp.0 ]; then mv -f wtmp.0 wtmp.1; fi
 mv -f wtmp   wtmp.0
 cp /dev/null wtmp
+
+echo ""
+echo "Rotating kerberos files:"
+cd /var/log
+if [ -f kerberos.log.5 ]; then mv -f kerberos.log.5 kerberos.log.6; fi
+if [ -f kerberos.log.4 ]; then mv -f kerberos.log.4 kerberos.log.5; fi
+if [ -f kerberos.log.3 ]; then mv -f kerberos.log.3 kerberos.log.4; fi
+if [ -f kerberos.log.2 ]; then mv -f kerberos.log.2 kerberos.log.3; fi
+if [ -f kerberos.log.1 ]; then mv -f kerberos.log.1 kerberos.log.2; fi
+if [ -f kerberos.log.0 ]; then mv -f kerberos.log.0 kerberos.log.1; fi
+mv -f kerberos.log kerberos.log.0
+cp /dev/null kerberos.log
