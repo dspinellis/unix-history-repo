@@ -1,18 +1,24 @@
 /*
- * Copyright (c) 1983,1988 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1983, 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983,1988 Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1988 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.21 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)syslogd.c	5.22 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  *  syslogd -- log system messages
@@ -922,18 +928,18 @@ init()
 	 */
 	f = NULL;
 	while (fgets(cline, sizeof cline, cf) != NULL) {
-		/* check for end-of-section */
-		if (cline[0] == '\n' || cline[0] == '#')
+		/*
+		 * check for end-of-section, comments, strip off trailing
+		 * spaces and newline character.
+		 */
+		for (p = cline; isspace(*p); ++p);
+		if (*p == NULL || *p == '#')
 			continue;
-
+		for (p = index(cline, '\0'); isspace(*--p););
+		*++p = '\0';
 		f = (struct filed *)calloc(1, sizeof(*f));
 		*nextp = f;
 		nextp = &f->f_next;
-		/* strip off newline character */
-		p = index(cline, '\n');
-		if (p)
-			*p = '\0';
-
 		cfline(cline, f);
 	}
 
@@ -1035,7 +1041,7 @@ cfline(line, f)
 
 	dprintf("cfline(%s)\n", line);
 
-	errno = 0;      /* keep sys_errlist stuff out of logerror messages */
+	errno = 0;	/* keep sys_errlist stuff out of logerror messages */
 
 	/* clear out file entry */
 	bzero((char *) f, sizeof *f);
@@ -1126,6 +1132,7 @@ cfline(line, f)
 	case '/':
 		(void) strcpy(f->f_un.f_fname, p);
 		if ((f->f_file = open(p, O_WRONLY|O_APPEND)) < 0) {
+			f->f_file = F_UNUSED;
 			logerror(p);
 			break;
 		}
