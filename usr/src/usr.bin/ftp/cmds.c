@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -19,7 +19,12 @@ static char sccsid[] = "@(#)cmds.c	4.4 (Berkeley) %G%";
 
 extern	char *globerr;
 extern	char **glob();
+extern	char *home;
 extern	short gflag;
+extern	char *remglob();
+extern	char *getenv();
+extern	char *index();
+extern	char *rindex();
 
 /*
  * Connect to peer server and
@@ -194,28 +199,11 @@ setstruct(argc, argv)
 	printf("We only support %s structure, sorry.\n", structname);
 }
 
-/*
- * Send a single file.
- */
-append(argc, argv)
-	char *argv[];
-{
-
-	return (put1("APPE", argc, argv));
-}
-
 put(argc, argv)
-	char *argv[];
-{
-
-	return (put1("STOR", argc, argv));
-}
-
-put1(cmd, argc, argv)
-	char *cmd;
 	int argc;
 	char *argv[];
 {
+	char *cmd;
 
 	if (argc == 2)
 		argc++, argv[2] = argv[1];
@@ -244,17 +232,17 @@ usage:
 		goto usage;
 	if (!globulize(&argv[1]))
 		return;
+	cmd = (argv[0][0] == 'a') ? "APPE" : "STOR";
 	sendrequest(cmd, argv[1], argv[2]);
 }
 
 /*
- * Send one or more files.
+ * Send multiple files.
  */
 mput(argc, argv)
 	char *argv[];
 {
 	char **cpp, **gargs = NULL;
-	int i;
 
 	if (argc < 2) {
 		strcat(line, " ");
@@ -330,11 +318,11 @@ usage:
 mget(argc, argv)
 	char *argv[];
 {
-	register char *cp;
+	char *cp;
 
 	if (argc < 2) {
 		strcat(line, " ");
-		printf("(remote-directory) ");
+		printf("(remote-files) ");
 		gets(&line[strlen(line)]);
 		makeargv();
 		argc = margc;
@@ -353,14 +341,15 @@ char *
 remglob(argc, argv)
 	char *argv[];
 {
-	char temp[16], *cp;
+	char temp[16];
 	static char buf[MAXPATHLEN];
 	static FILE *ftemp = NULL;
 	static char **args;
 	int oldverbose;
+	char *cp, *mode;
 
 	if (!doglob) {
-		if (argc == NULL)
+		if (args == NULL)
 			args = argv;
 		if ((cp = *++args) == NULL)
 			args = NULL;
@@ -370,13 +359,14 @@ remglob(argc, argv)
 		strcpy(temp, "/tmp/ftpXXXXXX");
 		mktemp(temp);
 		oldverbose = verbose, verbose = 0;
-		recvrequest("NLST", temp, argv[1], "w");
+		for (mode = "w"; *++argv != NULL; mode = "a")
+			recvrequest ("NLST", temp, *argv, mode);
 		verbose = oldverbose;
 		ftemp = fopen(temp, "r");
 		unlink(temp);
 		if (ftemp == NULL) {
 			printf("can't find list of remote files, oops\n");
-			return;
+			return (NULL);
 		}
 	}
 	if (fgets(buf, sizeof (buf), ftemp) == NULL) {
@@ -502,6 +492,7 @@ setglob()
  * Set debugging mode on/off and/or
  * set level of debugging.
  */
+/*VARARGS*/
 setdebug(argc, argv)
 	char *argv[];
 {
@@ -531,10 +522,6 @@ cd(argc, argv)
 	char *argv[];
 {
 
-	if (!connected) {
-		printf("Not connected.\n");
-		return;
-	}
 	if (argc < 2) {
 		strcat(line, " ");
 		printf("(remote-directory) ");
@@ -558,7 +545,6 @@ lcd(argc, argv)
 	char *argv[];
 {
 	char buf[MAXPATHLEN];
-	extern char *home;
 
 	if (argc < 2)
 		argc++, argv[1] = home;
@@ -621,6 +607,7 @@ mdelete(argc, argv)
 		if (confirm(argv[0], cp))
 			(void) command("DELE %s", cp);
 }
+
 /*
  * Rename a remote file.
  */
@@ -662,19 +649,43 @@ usage:
 ls(argc, argv)
 	char *argv[];
 {
-	char *cmd, *mode;
-	int i;
+	char *cmd;
 
 	if (argc < 2)
 		argc++, argv[1] = NULL;
 	if (argc < 3)
 		argc++, argv[2] = "-";
+	if (argc > 3) {
+		printf("usage: %s remote-directory local-file\n", argv[0]);
+		return;
+	}
 	cmd = argv[0][0] == 'l' ? "NLST" : "LIST";
 	if (strcmp(argv[2], "-") && !globulize(&argv[2]))
 		return;
-	mode = argc > 3 ? "a" : "w";
-	for (i = 1; i < argc - 1; i++)
-		recvrequest(cmd, argv[argc - 1], argv[i], mode);
+	recvrequest(cmd, argv[2], argv[1], "w");
+}
+
+/*
+ * Get a directory listing
+ * of multiple remote files.
+ */
+mls(argc, argv)
+	char *argv[];
+{
+	char *cmd, *mode;
+	int i, dest;
+
+	if (argc < 2)
+		argc++, argv[1] = NULL;
+	if (argc < 3)
+		argc++, argv[2] = "-";
+	dest = argc - 1;
+	cmd = argv[0][1] == 'l' ? "NLST" : "LIST";
+	if (strcmp(argv[dest], "-") != 0)
+		if (globulize(&argv[dest]) && confirm("local-file", argv[dest]))
+			return;
+	for (i = 1, mode = "w"; i < dest; i++, mode = "a")
+		recvrequest(cmd, argv[dest], argv[i], mode);
 }
 
 /*
@@ -683,8 +694,66 @@ ls(argc, argv)
 shell(argc, argv)
 	char *argv[];
 {
+	int pid, status, (*old1)(), (*old2)();
+	char shellnam[40], *shell, *namep;
+	char **cpp, **gargs;
 
-	printf("Sorry, this function is unimplemented.\n");
+	old1 = signal (SIGINT, SIG_IGN);
+	old2 = signal (SIGQUIT, SIG_IGN);
+	if ((pid = fork()) == 0) {
+		for (pid = 3; pid < 20; pid++)
+			close(pid);
+		signal(SIGINT, SIG_DFL);
+		signal(SIGQUIT, SIG_DFL);
+		if (argc <= 1) {
+			shell = getenv("SHELL");
+			if (shell == NULL)
+				shell = "/bin/sh";
+			namep = rindex(shell,'/');
+			if (namep == NULL)
+				namep = shell;
+			strcpy(shellnam,"-");
+			strcat(shellnam, ++namep);
+			if (strcmp(namep, "sh") != 0)
+				shellnam[0] = '+';
+			if (debug) {
+				printf ("%s\n", shell);
+				fflush (stdout);
+			}
+			execl(shell, shellnam, 0);
+			perror(shell);
+			exit(1);
+		}
+		cpp = &argv[1];
+		if (argc > 2) {
+			if ((gargs = glob(cpp)) != NULL)
+				cpp = gargs;
+			if (globerr != NULL) {
+				printf("%s\n", globerr);
+				exit(1);
+			}
+		}
+		if (debug) {
+			register char **zip = cpp;
+
+			printf("%s", *zip);
+			while (*++zip != NULL)
+				printf(" %s", *zip);
+			printf("\n");
+			fflush(stdout);
+		}
+		execvp(argv[1], cpp);
+		perror(argv[1]);
+		exit(1);
+	}
+	if (pid > 0)
+		while (wait(&status) != pid)
+			;
+	signal(SIGINT, old1);
+	signal(SIGQUIT, old2);
+	if (pid == -1)
+		perror("Try again later");
+	return (0);
 }
 
 /*
@@ -707,7 +776,7 @@ user(argc, argv)
 	}
 	if (argc > 4) {
 		printf("usage: %s username [password] [account]\n", argv[0]);
-		return;
+		return (0);
 	}
 	n = command("USER %s", argv[1]);
 	if (n == CONTINUE) {
@@ -737,10 +806,7 @@ user(argc, argv)
 /*VARARGS*/
 pwd()
 {
-	if (!connected) {
-		printf("Not connected.\n");
-		return;
-	}
+
 	(void) command("XPWD");
 }
 

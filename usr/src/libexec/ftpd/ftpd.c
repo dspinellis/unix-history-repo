@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	4.19 (Berkeley) %G%";
 #endif
 
 /*
@@ -50,7 +50,7 @@ int	logged_in;
 struct	passwd *pw;
 int	debug;
 int	timeout;
-int	logging = 1;
+int	logging;
 int	guest;
 int	type;
 int	form;
@@ -106,6 +106,10 @@ main(argc, argv)
 			options |= SO_DEBUG;
 			break;
 
+		case 'l':
+			logging = 1;
+			break;
+
 		case 't':
 			timeout = atoi(++cp);
 			goto nextopt;
@@ -124,7 +128,6 @@ nextopt:
 	for (s = 0; s < 10; s++)
 		if (!logging || (s != 2))
 			(void) close(s);
-		(void) close(s);
 	(void) open("/", 0);
 	(void) dup2(0, 1);
 	if (!logging)
@@ -713,7 +716,7 @@ dolog(sin)
 	else
 		remotehost = "UNKNOWNHOST";
 	t = time(0);
-	fprintf(stderr,"FTP: connection from %s at %s", remotehost, ctime(&t));
+	fprintf(stderr,"FTPD: connection from %s at %s", remotehost, ctime(&t));
 	fflush(stderr);
 }
 
@@ -754,7 +757,9 @@ popen(cmd, mode)
 {
 	int p[2], ac;
 	register myside, hisside, pid;
-	char *av[10];
+	char *av[512];
+	char **pop, **popargs = NULL;
+	extern char **glob();
 	register char *cp;
 
 	if (pipe(p) < 0)
@@ -764,6 +769,14 @@ popen(cmd, mode)
 		av[ac++] = cp;
 		cp = nextarg(cp);
 	} while (cp && *cp);
+	av[ac] = (char *)0;
+	if (ac > 1) {
+		popargs = glob(&av[1]);
+		if (popargs == NULL)
+			return (NULL);
+		for (ac = 1, pop = popargs; *pop;) 
+			av[ac++] = *pop++;
+	}
 	av[ac] = (char *)0;
 	myside = tst(p[WTR], p[RDR]);
 	hisside = tst(p[RDR], p[WTR]);
@@ -775,6 +788,8 @@ popen(cmd, mode)
 		execv(av[0], av);
 		_exit(1);
 	}
+	if (popargs != NULL)
+		blkfree(popargs);
 	if (pid == -1)
 		return (NULL);
 	popen_pid[myside] = pid;
