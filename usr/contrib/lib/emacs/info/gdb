@@ -1,0 +1,97 @@
+Info file gdb, produced by texinfo-format-buffer   -*-Text-*-
+from file gdb.texinfo
+
+This file documents the GNU debugger GDB.
+
+Copyright (C) 1988 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+sections entitled "Distribution" and "GDB General Public License" are
+included exactly as in the original, and provided that the entire resulting
+derived work is distributed under the terms of a permission notice
+identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the sections entitled "Distribution" and "GDB General Public
+License" may be included in a translation approved by the author instead
+of in the original English.
+
+
+
+Indirect:
+gdb-1: 1046
+gdb-2: 51753
+gdb-3: 102253
+
+Tag table:
+(Indirect)
+Node: Top1048
+Node: License2804
+Node: Input10543
+Node: Files12494
+Node: File Arguments12950
+Node: File Commands13653
+Node: Options16053
+Node: Mode Options16522
+Node: File Options17775
+Node: Other Arguments18592
+Node: Compilation18959
+Node: Running20717
+Node: Arguments22462
+Node: Environment23198
+Node: Working Directory24906
+Node: Input/Output25586
+Node: Attach26957
+Node: Stopping28383
+Node: Signals29146
+Node: Breakpoints32592
+Node: Set Breaks34294
+Node: Clear Breaks36679
+Node: Disabling38135
+Node: Conditions40574
+Node: Break Commands43777
+Node: Error in Breakpoints47230
+Node: Continuing47909
+Node: Stepping49386
+Node: Stack51755
+Node: Frames53153
+Node: Backtrace55038
+Node: Selection55999
+Node: Frame Info57959
+Node: Source59548
+Node: List60217
+Node: Search63974
+Node: Source Path64640
+Node: Data66639
+Node: Expressions67870
+Node: Variables69118
+Node: Arrays69913
+Node: Formats71164
+Node: Memory72793
+Node: Auto Display77550
+Node: Value History79163
+Node: Convenience Vars80834
+Node: Registers83015
+Node: Symbols85918
+Node: Altering88551
+Node: Assignment88968
+Node: Jumping90146
+Node: Signaling91441
+Node: Returning91934
+Node: Sequences92839
+Node: Define93288
+Node: Command Files94952
+Node: Output96137
+Node: Emacs98046
+Node: Remote100789
+Node: Remote Commands101451
+Node: Commands102255
+Node: Concepts104110
+
+End tag table
