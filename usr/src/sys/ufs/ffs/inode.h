@@ -1,4 +1,4 @@
-/*	inode.h	4.17	82/10/20	*/
+/*	inode.h	4.18	82/10/31	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -115,7 +115,8 @@ struct	inode *namei();
 #define	IFBLK		0060000		/* block special */
 #define	IFREG		0100000		/* regular */
 #define	IFLNK		0120000		/* symbolic link */
-#define	IFPORTAL	0140000		/* portal */
+#define	IFSOCK		0140000		/* socket */
+
 #define	ISUID		04000		/* set user id on execution */
 #define	ISGID		02000		/* set group id on execution */
 #define	ISVTX		01000		/* save swapped text even after use */
