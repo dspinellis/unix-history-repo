@@ -1,0 +1,81 @@
+\"	@(#)profiling.me	1.1 %G%
+.sh 1 "Types of Profiling"
+.pp
+There are a number of different uses for program profiles,
+and each may require different information from the profiles,
+or different presentation of the information.
+We distinguish two broad categories of profiles:
+those that present counts of statement or routine invocations,
+and those that display timing information about statements
+or routines.
+Counts are typically presented in tabular form,
+often in parallel with a listing of the source code.
+Timing information may be similarly presented,
+or may be further processed to attribute the time of each
+statement to its enclosing statement or routine.
+Thus each profiled segment would display two times:
+one for the time used by the segment itself, and another for the
+time inherited from code segments it invokes.
+.pp
+Execution counts are used in a number of different contexts.
+The exact number of times a routine or statement is activated
+can be used to determine if an algorithm is performing as 
+expected.
+Inspection of such counters may reveal algorithms whose
+complexity is unsuited to the task at hand.
+Careful interpretation of counters can often reveal
+improvements to acceptable algorithms.
+Precise examination can uncover subtle errors in an
+algorithm.
+At this level, profiling counters are quite similar to
+debugging statements whose purpose is to show the number of times
+a piece of code is executed.
+Another view of such counters is as boolean values.
+One may be interested that a portion of code has executed at
+all; for exhaustive testing, or to check that one implementation
+of an abstraction completely replaces a previous one.
+.pp
+Execution counts are not necessarily proportional to the amount
+of time required to execute the routine or statement.
+Further, the execution time of a routine will not be the same for
+all calls on the routine.
+In addition, the criteria for establishing actual execution time
+must be decided.
+If a routine implements an abstraction by invoking other abstractions,
+the time spent in the routine will not accurately reflect the
+time required by the abstraction it implements.
+Similarly, if an abstraction is implemented by a number of
+routines the time required by the abstraction will be diffused
+across those routines.
+.pp
+Given the execution time for individual routines,
+\fBgprof\fP accounts to each routine the time spent
+on behalf of it by the routines it invokes.
+This is done by assembling a \fIcall graph\fP with nodes that
+are the routines of the program and directed arcs that represent
+calls from call sites to routines.
+We distinguish among three different call graphs for a program.
+The \fIcomplete call graph\fP incorporates all routines and all
+potential arcs,
+including arcs that represent calls to functional parameters
+or variables.
+This graph contains the other two graphs as subgraphs.
+The \fIstatic call graph\fP includes all routines and all possible arcs
+that are not calls to functional parameters or variables.
+The \fIdynamic call graph\fP includes only those routines and
+arcs traversed by the profiled execution of the program.
+This graph need not include all routines, nor need it include all
+potential arcs between the routines it covers.
+It may, however, include arcs to functional parameters or
+variables that the static call graph may omit.
+The static call graph can be determined from the (static) program text.
+The dynamic call graph is determined only by profiling an
+execution of the program.
+The complete call graph for a monolithic program could be determined
+by data flow analysis techniques.
+The complete call graph for programs that change
+during execution, by modifying themselves or dynamically loading
+or overlaying code, may never be determinable.
+\fBGprof\fP uses both the static call graph and the dynamic call
+graph for a profiled program, but does not search for the complete
+call graph.
