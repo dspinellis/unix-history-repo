@@ -13,10 +13,10 @@ From Prof. Kahan at UC at Berkeley
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log1p.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)log1p.c	1.3 (Berkeley) %G%";
 #endif not lint
 
-/* L(x) 
+/* LOG1P(x) 
  * RETURN THE LOGARITHM OF 1+x
  * DOUBLE PRECISION (VAX D FORMAT 56 bits, IEEE DOUBLE 53 BITS)
  * CODED IN C BY K.C. NG, 1/19/85; 
@@ -59,12 +59,12 @@ static char sccsid[] = "@(#)log1p.c	1.2 (Berkeley) %G%";
  *
  *
  * Special cases:
- *	L(x) is NAN with signal if x < -1; L(NAN) is NAN with no signal;
- *	L(INF) is +INF; L(-1) is -INF with signal;
- *	only L(0)=0 is exact for finite argument.
+ *	log1p(x) is NaN with signal if x < -1; log1p(NaN) is NaN with no signal;
+ *	log1p(INF) is +INF; log1p(-1) is -INF with signal;
+ *	only log1p(0)=0 is exact for finite argument.
  *
  * Accuracy:
- *	L(x) returns the exact log(1+x) nearly rounded. In a test run 
+ *	log1p(x) returns the exact log(1+x) nearly rounded. In a test run 
  *	with 1,536,000 random arguments on a VAX, the maximum observed
  *	error was .846 ulps (units in the last place).
  *
@@ -77,9 +77,6 @@ static char sccsid[] = "@(#)log1p.c	1.2 (Berkeley) %G%";
 
 #ifdef VAX	/* VAX D format */
 #include <errno.h>
-extern errno;
-static long	NaN_[] = {0x8000, 0x0};
-#define NaN	(*(double *) NaN_)
 
 /* double static */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
@@ -91,14 +88,14 @@ static long     sqrt2x[] = { 0x04f340b5, 0xde6533f9};
 #define    ln2hi    (*(double*)ln2hix)
 #define    ln2lo    (*(double*)ln2lox)
 #define    sqrt2    (*(double*)sqrt2x)
-#else		/* IEEE double format */
+#else	/* IEEE double */
 double static
 ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
 ln2lo  =  1.9082149292705877000E-10   , /*Hex  2^-33   *  1.A39EF35793C76 */
 sqrt2  =  1.4142135623730951455E0     ; /*Hex  2^  0   *  1.6A09E667F3BCD */
 #endif
 
-double L(x)
+double log1p(x)
 double x;
 {
 	static double zero=0.0, negone= -1.0, one=1.0, 
@@ -106,7 +103,9 @@ double x;
 	double logb(),copysign(),scalb(),log__L(),z,s,t,c;
 	int k,finite();
 
+#ifndef VAX
 	if(x!=x) return(x);	/* x is NaN */
+#endif
 
 	if(finite(x)) {
 	   if( x > negone ) {
@@ -131,20 +130,23 @@ double x;
 
 	    else {
 #ifdef VAX
-		errno = EDOM;
-		return (NaN);
-#else
+		extern double infnan();
+		if ( x == negone )
+		    return (infnan(-ERANGE));	/* -INF */
+		else
+		    return (infnan(EDOM));	/* NaN */
+#else	/* IEEE double */
 		/* x = -1, return -INF with signal */
 		if ( x == negone ) return( negone/zero );
 
-		/* negative argument for log, return NAN with signal */
+		/* negative argument for log, return NaN with signal */
 	        else return ( zero / zero );
 #endif
 	    }
 	}
     /* end of if (finite(x)) */
 
-    /* log(-INF) is NAN */
+    /* log(-INF) is NaN */
 	else if(x<0) 
 	     return(zero/zero);
 

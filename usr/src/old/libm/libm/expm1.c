@@ -13,10 +13,10 @@ From Prof. Kahan at UC at Berkeley
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)expm1.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)expm1.c	1.2 (Berkeley) %G%";
 #endif not lint
 
-/* E(X)
+/* EXPM1(X)
  * RETURN THE EXPONENTIAL OF X MINUS ONE
  * DOUBLE PRECISION (IEEE 53 BITS, VAX D FORMAT 56 BITS)
  * CODED IN C BY K.C. NG, 1/19/85; 
@@ -36,27 +36,27 @@ static char sccsid[] = "@(#)expm1.c	1.1 (Berkeley) %G%";
  *	                   x = k*ln2 + r,  |r| <= 0.5*ln2 .  
  *	   r will be represented as r := z+c for better accuracy.
  *
- *	2. Compute E(r)=exp(r)-1 by 
+ *	2. Compute EXPM1(r)=exp(r)-1 by 
  *
- *			E(r=z+c) := z + exp__E(z,c)
+ *			EXPM1(r=z+c) := z + exp__E(z,c)
  *
- *	3. E(x) =  2^k * ( E(r) + 1-2^-k ).
+ *	3. EXPM1(x) =  2^k * ( EXPM1(r) + 1-2^-k ).
  *
  * 	Remarks: 
  *	   1. When k=1 and z < -0.25, we use the following formula for
  *	      better accuracy:
- *			E(x) = 2 * ( (z+0.5) + exp__E(z,c) )
+ *			EXPM1(x) = 2 * ( (z+0.5) + exp__E(z,c) )
  *	   2. To avoid rounding error in 1-2^-k where k is large, we use
- *			E(x) = 2^k * { [z+(exp__E(z,c)-2^-k )] + 1 }
+ *			EXPM1(x) = 2^k * { [z+(exp__E(z,c)-2^-k )] + 1 }
  *	      when k>56. 
  *
  * Special cases:
- *	E(INF) is INF, E(NAN) is NAN;
- *	E(-INF)= -1;
- *	for finite argument, only E(0)=0 is exact.
+ *	EXPM1(INF) is INF, EXPM1(NaN) is NaN;
+ *	EXPM1(-INF)= -1;
+ *	for finite argument, only EXPM1(0)=0 is exact.
  *
  * Accuracy:
- *	E(x) returns the exact (exp(x)-1) nearly rounded. In a test run with
+ *	EXPM1(x) returns the exact (exp(x)-1) nearly rounded. In a test run with
  *	1,166,000 random arguments on a VAX, the maximum observed error was
  *	.872 ulps (units of the last place).
  *
@@ -81,7 +81,7 @@ static long    invln2x[] = { 0xaa3b40b8, 0x17f1295c};
 #define    ln2lo    (*(double*)ln2lox)
 #define   lnhuge    (*(double*)lnhugex)
 #define   invln2    (*(double*)invln2x)
-#else		/* IEEE double format */
+#else	/* IEEE double */
 double static
 ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
 ln2lo  =  1.9082149292705877000E-10   , /*Hex  2^-33   *  1.A39EF35793C76 */
@@ -89,7 +89,7 @@ lnhuge =  7.1602103751842355450E2     , /*Hex  2^  9   *  1.6602B15B7ECF2 */
 invln2 =  1.4426950408889633870E0     ; /*Hex  2^  0   *  1.71547652B82FE */
 #endif
 
-double E(x)
+double expm1(x)
 double x;
 {
 	double static one=1.0, half=1.0/2.0; 
@@ -97,10 +97,12 @@ double x;
 	int k,finite();
 #ifdef VAX
 	static prec=56;
-#else  /* IEEE */
+#else	/* IEEE double */
 	static prec=53;
 #endif
-	if(x!=x) return(x);	/* x is NAN */
+#ifndef VAX
+	if(x!=x) return(x);	/* x is NaN */
+#endif
 
 	if( x <= lnhuge ) {
 		if( x >= -40.0 ) {
@@ -133,16 +135,16 @@ double x;
 		/* end of x > lnunfl */
 
 		else 
-		     /* E(-big#) rounded to -1 (inexact) */
+		     /* expm1(-big#) rounded to -1 (inexact) */
 		     if(finite(x))  
 			 { ln2hi+ln2lo; return(-one);}
 
-		     /* E(-INF) is -1 */
+		     /* expm1(-INF) is -1 */
 		     else return(-one);
 	}
 	/* end of x < lnhuge */
 
 	else 
-	/*  E(INF) is INF, E(+big#) overflows to INF */
+	/*  expm1(INF) is INF, expm1(+big#) overflows to INF */
 	    return( finite(x) ?  scalb(one,5000) : x);
 }

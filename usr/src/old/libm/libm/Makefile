@@ -1,7 +1,7 @@
 #
-#	@(#)Makefile	4.6	%G%
+#	@(#)Makefile	4.7	%G%
 #
-SCCSID = "@(#)Makefile 4.6 %G%"
+SCCSID = "@(#)Makefile	4.7 %G%"
 #
 # This high quality math library is intended to run on either a VAX in
 # D_floating format or a machine that conforms to the IEEE standard 754
@@ -19,7 +19,7 @@ SCCSID = "@(#)Makefile 4.6 %G%"
 #		  has similar byte ordering as the NATIONAL 32016 with 32081.
 # IEEE		- for other IEEE machines, we hope.
 #
-MACH=VAX
+MACH = VAX
 
 #
 # invoke object-code optimizer with appropriate MACH definition
@@ -31,16 +31,17 @@ INSTALL=install
 DESTDIR=
 
 #
-# files comprising the standard Math library
+# Files comprising the standard Math library;
+# actually there are more under ${MACH}/ subdirectory.
 #
-SRCS=	E.c L.c acosh.c asinh.c atanh.c atrig.c cosh.c \
-	erf.c exp.c exp__E.c floor.c gamma.c j0.c j1.c jn.c \
-	log.c log10.c log__L.c pow.c sinh.c tanh.c
-FILES=cosh.o sinh.o tanh.o acosh.o asinh.o atanh.o atrig.o \
-E.o L.o exp.o log.o log10.o pow.o exp__E.o log__L.o \
-jn.o j0.o j1.o gamma.o erf.o floor.o
-MORE=\
-${MACH}/atan2.o ${MACH}/cbrt.o ${MACH}/trig.o ${MACH}/cabs.o ${MACH}/support.o
+SRCS =	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c erf.c \
+	exp.c exp__E.c expm1.c floor.c lgama.c j0.c j1.c jn.c \
+	log.c log10.c log1p.c log__L.c pow.c sinh.c tanh.c
+
+FILES =	acosh.o asincos.o asinh.o atan.o atanh.o cosh.o erf.o \
+	exp.o exp__E.o expm1.o floor.o lgama.o j0.o j1.o jn.o \
+	log.o log10.o log1p.o log__L.o pow.o sinh.o tanh.o 
+
 TAGSFILE=tags
 
 .c.o:
@@ -54,10 +55,14 @@ TAGSFILE=tags
 	-ld -x -r $*.o
 	mv a.out $*.o
 
-libm.a libm_p.a : ${FILES}
-	cd ${MACH}; make "MACH=${MACH}" "CFLAGS=${CFLAGS}"
-	cd profiled; ar cru ../libm_p.a ${FILES} ${MORE}
-	ar cru libm.a ${FILES} ${MORE}
+all: libm.a libm_p.a
+
+libm.a libm_p.a: ${FILES} more
+	cd profiled; ar cru ../libm_p.a ${FILES}
+	ar cru libm.a ${FILES}
+
+more:
+	@cd ${MACH}; make "MACH=${MACH}" "CFLAGS=${CFLAGS}"
 
 install: libm.a libm_p.a
 	-rm -f ${DESTDIR}/usr/lib/libnm.a ${DESTDIR}/usr/lib/libnm_p.a
@@ -75,5 +80,4 @@ tags:
 	done
 
 clean:
-	-rm -f *.o ${MACH}/*.o profiled/*.o profiled/${MACH}/*.o \
-	    libm.a libm_p.a tags
+	-rm -f *.o ${MACH}/*.o profiled/*.o libm.a libm_p.a tags
