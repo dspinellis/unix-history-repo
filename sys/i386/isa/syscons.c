@@ -35,7 +35,7 @@
  * SUCH DAMAGE.
  *
  *	from:@(#)syscons.c	1.3 940129
- *	$Id: syscons.c,v 1.45 1994/04/26 09:09:57 sos Exp $
+ *	$Id: syscons.c,v 1.47 1994/05/20 12:23:28 sos Exp $
  *
  */
 
@@ -826,8 +826,10 @@ int pcioctl(dev_t dev, int cmd, caddr_t data, int flag, struct proc *p)
 	case KDSETRAD:		/* set keyboard repeat & delay rates */
 		if (*data & 0x80)
 			return EINVAL;
+		i = spltty();
 		kbd_cmd(KB_SETRAD);
 		kbd_cmd(*data);
+		splx(i);
 		return 0;
 
 	case KDSKBMODE:		/* set keyboard mode */
@@ -2126,6 +2128,7 @@ static u_char *get_fstr(u_int c, u_int *len)
 
 static void update_leds(int which)
 {
+	int s;
   	static u_char xlate_leds[8] = { 0, 4, 2, 6, 1, 5, 3, 7 };
 
 	/* replace CAPS led with ALTGR led for ALTGR keyboards */
@@ -2135,8 +2138,10 @@ static void update_leds(int which)
 		else
 			which &= ~CLKED;
 	}
+	s = spltty();
 	kbd_cmd(KB_SETLEDS);
 	kbd_cmd(xlate_leds[which & LED_MASK]);
+	splx(s);
 }
   
   
