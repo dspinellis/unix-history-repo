@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)coredump.c	1.5 (Berkeley) %G%";
+static	char sccsid[] = "@(#)coredump.c	1.6 (Berkeley) %G%";
 
 /*
  * Deal with the core dump anachronism.
@@ -98,17 +98,6 @@ int *signo;
 
 	default:
 	    fatal("bad magic number 0x%x", hdr.a_magic);
-    }
-    /*
-     * Core dump not from this object file?
-     */
-    if (hdr.a_magic != 0 and up->u_exdata.ux_mag  != 0 and
-      hdr.a_magic != up->u_exdata.ux_mag) {
-	warning("core dump ignored");
-	coredump = false;
-	fclose(corefile);
-	fclose(objfile);
-	start(nil, nil, nil);
     }
 }
 
