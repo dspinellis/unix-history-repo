@@ -1,19 +1,20 @@
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <fts.h>
 #include <stdlib.h>
 #include <string.h>
@@ -706,11 +707,15 @@ mem1:				saved_errno = errno;
 	}
 
 	/*
-	 * If descended after called from fts_children or called from
-	 * fts_read and didn't find anything, get back.  If can't get
-	 * back, done.
+	 * If descended after called from fts_children or after called from
+	 * fts_read and nothing found, get back.  At the root level we use
+	 * the saved fd; if one of fts_open()'s arguments is a relative path
+	 * to an empty directory, we wind up here with no other way back.  If
+	 * can't get back, we're done.
 	 */
-	if (descend && (!nitems || type == BCHILD) && CHDIR(sp, "..")) {
+	if (descend && (type == BCHILD || !nitems) &&
+	    (cur->fts_level == FTS_ROOTLEVEL ?
+	    FCHDIR(sp, sp->fts_rfd) : CHDIR(sp, ".."))) {
 		cur->fts_info = FTS_ERR;
 		SET(FTS_STOP);
 		return (NULL);
