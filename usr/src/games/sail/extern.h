@@ -1,5 +1,5 @@
 /*
- * @(#)extern.h	1.8 83/10/14
+ * @(#)extern.h	1.9 83/10/28
  */
 #include <stdio.h>
 #include <signal.h>
@@ -107,16 +107,19 @@ struct snag {
 	struct ship *toship;
 };
 
-#define NSCENE	31
+#define NSCENE	nscene
 #define NSHIP	10
 #define NBP	3
 
-#define NNATION	5
+#define NNATION	8
 #define N_A	0
 #define N_B	1
 #define N_S	2
 #define N_F	3
 #define N_J	4
+#define N_D	5
+#define N_K	6
+#define N_O	7
 
 struct File {
 	char captain[20];		/* 0 */
@@ -165,7 +168,8 @@ struct scenario {
 	char *name;			/* 14 */
 	struct ship ship[NSHIP];	/* 16 */
 };
-struct scenario scene[NSCENE];
+struct scenario scene[];
+int nscene;
 
 struct shipspecs {
 	char bs;
