@@ -1,0 +1,8 @@
+Mold.bin.grep	old.bin.grep.c	/^main(argc, argv)$/
+advance	old.bin.grep.c	/^advance(lp, ep)$/
+compile	old.bin.grep.c	/^compile(astr)$/
+ecmp	old.bin.grep.c	/^ecmp(a, b, count)$/
+errexit	old.bin.grep.c	/^errexit(s, f)$/
+execute	old.bin.grep.c	/^execute(file)$/
+succeed	old.bin.grep.c	/^succeed(f)$/
+uletter	old.bin.grep.c	/^#define	uletter(c)	(isalpha(c) || (c) == '_')$/

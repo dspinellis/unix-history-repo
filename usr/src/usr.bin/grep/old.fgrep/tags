@@ -1,0 +1,6 @@
+Mold.fgrep	old.fgrep.c	/^main(argc, argv)$/
+cfail	old.fgrep.c	/^cfail() {$/
+cgotofn	old.fgrep.c	/^cgotofn() {$/
+execute	old.fgrep.c	/^execute(file)$/
+getargc	old.fgrep.c	/^getargc()$/
+overflo	old.fgrep.c	/^overflo() {$/

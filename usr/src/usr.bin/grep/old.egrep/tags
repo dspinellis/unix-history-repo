@@ -1,0 +1,19 @@
+Mold.egrep	old.egrep.c	/^main(argc, argv)$/
+add	old.egrep.c	/^add(array, n) int *array; {$/
+cclenter	old.egrep.c	/^cclenter(x) int x; {$/
+cfoll	old.egrep.c	/^cfoll(v) {$/
+cgotofn	old.egrep.c	/^cgotofn() {$/
+cstate	old.egrep.c	/^cstate(v) {$/
+enter	old.egrep.c	/^enter(x) int x; {$/
+execute	old.egrep.c	/^execute(file)$/
+follow	old.egrep.c	/^follow(v) int v; {$/
+member	old.egrep.c	/^member(symb, set, torf) {$/
+nextch	old.egrep.c	/^nextch() {$/
+node	old.egrep.c	/^node(x, l, r) {$/
+notin	old.egrep.c	/^notin(n) {$/
+overflo	old.egrep.c	/^overflo() {$/
+synerror	old.egrep.c	/^synerror() {$/
+unary	old.egrep.c	/^unary(x, d) {$/
+yyerror	old.egrep.c	/^yyerror(s) {$/
+yylex	old.egrep.c	/^yylex() {$/
+yyparse	old.egrep.c	/^yyparse()$/

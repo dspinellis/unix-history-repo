@@ -1,0 +1,27 @@
+Mgraph	graph.c	/^main(argc,argv)$/
+axes	graph.c	/^axes()$/
+axlab	graph.c	/^axlab(c,p)$/
+badarg	graph.c	/^badarg()$/
+conv	graph.c	/^conv(xv,p,ip)$/
+copystring	graph.c	/^copystring(k)$/
+getfloat	graph.c	/^getfloat(p)$/
+getlim	graph.c	/^getlim(p,v)$/
+getstring	graph.c	/^getstring()$/
+ident	graph.c	/^double __pure ident(x)$/
+init	graph.c	/^init(p)$/
+limread	graph.c	/^limread(p, argcp, argvp)$/
+modceil	graph.c	/^modceil(f,t)$/
+modfloor	graph.c	/^modfloor(f,t)$/
+numb	graph.c	/^numb(np, argcp, argvp)$/
+plot	graph.c	/^plot()$/
+readin	graph.c	/^readin()$/
+scale	graph.c	/^scale(p,v)$/
+setlim	graph.c	/^setlim(p)$/
+setlinlim	graph.c	/^setlinlim(lbf,ubf,xlb,xub)$/
+setloglim	graph.c	/^setloglim(lbf,ubf,lb,ub)$/
+setmark	graph.c	/^setmark(xmark,p)$/
+setopt	graph.c	/^setopt(argc,argv)$/
+submark	graph.c	/^submark(xmark,pxn,x,p)$/
+symbol	graph.c	/^symbol(ix,iy,k)$/
+title	graph.c	/^title()$/
+transpose	graph.c	/^transpose()$/
