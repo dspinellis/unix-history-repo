@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)as.h 4.21 %G%
+ *	@(#)as.h 4.22 %G%
  */
 #define	reg	register
 
@@ -465,7 +465,7 @@ struct	biobuf {
 	short	b_nleft;		/* Number free spaces left in b_buf */
 /* Initialize to be less than BUFSIZ initially, to boundary align in file */
 	char	*b_ptr;			/* Next place to stuff characters */
-	char	b_buf[BUFSIZ];		/* The buffer itself */
+	char	*b_buf;			/* Pointer to the buffer */
 	off_t	b_off;			/* Current file offset */
 	struct	biobuf *b_link;		/* Link in chain for bflush() */
 };
@@ -475,6 +475,7 @@ struct	biobuf {
 
 	extern	BFILE	*biobufs;	/* head of the block I/O buffer chain */
 	extern	int	biofd;		/* file descriptor for block I/O file */
+	extern	int	biobufsize;	/* optimal block size for I/O */
 	extern	off_t	boffset;	/* physical position in logical file */
 
 	/*

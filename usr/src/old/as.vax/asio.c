@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asio.c 4.4 %G%";
+static char sccsid[] = "@(#)asio.c 4.5 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -12,6 +12,7 @@ static char sccsid[] = "@(#)asio.c 4.4 %G%";
  *	more than one place in the same file.
  */
 int	biofd;			/* file descriptor for block I/O file */
+int	biobufsize;		/* optimal block size for I/O */
 off_t	boffset;		/* physical position in logical file */
 BFILE	*biobufs;		/* the block I/O buffers */
 
@@ -38,8 +39,8 @@ bopen(bp, off)
 	off_t	off;
 {
 
-	bp->b_ptr = bp->b_buf;
-	bp->b_nleft = BUFSIZ - off % BUFSIZ;
+	bp->b_ptr = bp->b_buf = Calloc(1, biobufsize);
+	bp->b_nleft = biobufsize - (off % biobufsize);
 	bp->b_off = off;
 	bp->b_link = biobufs;
 	biobufs = bp;
@@ -73,10 +74,10 @@ top:
 		cnt -= put;
 		goto top;
 	}
-	if (cnt >= BUFSIZ) {
+	if (cnt >= biobufsize) {
 		if (bp->b_ptr != bp->b_buf)
 			bflush1(bp);
-		put = cnt - cnt % BUFSIZ;
+		put = cnt - cnt % biobufsize;
 		if (boffset != bp->b_off)
 			(void)lseek(biofd, (long)bp->b_off, 0);
 		if (write(biofd, p, put) != put) {
@@ -119,7 +120,7 @@ bflush1(bp)
 	bp->b_off += cnt;
 	boffset = bp->b_off;
 	bp->b_ptr = bp->b_buf;
-	bp->b_nleft = BUFSIZ;
+	bp->b_nleft = biobufsize;
 }
 
 bflushc(bp, c)

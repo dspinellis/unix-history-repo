@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asmain.c 4.14 %G%";
+static char sccsid[] = "@(#)asmain.c 4.15 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -14,7 +14,9 @@ static char sccsid[] = "@(#)asmain.c 4.14 %G%";
 #include "asscan.h"
 #include "asexpr.h"
 
-#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.14"
+#include <sys/stat.h>
+
+#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.15"
 /*
  *	variables to manage reading the assembly source files
  */
@@ -480,6 +482,8 @@ pass1_5()
 
 open_a_out()
 {
+	struct stat stb;
+
 	/*
 	 *	Open up the a.out file now, and get set to build
 	 *	up offsets into it for all of the various text,data
@@ -491,6 +495,8 @@ open_a_out()
 		delexit();
 	}
 	biofd = a_out_file->_file;
+	fstat(biofd, &stb);
+	biobufsize = stb.st_blksize;
 	a_out_off = 0;
 }
 
