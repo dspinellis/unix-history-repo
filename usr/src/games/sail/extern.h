@@ -1,5 +1,5 @@
 /*
- * @(#)extern.h	1.5 83/07/20
+ * @(#)extern.h	1.6 83/10/05
  */
 #include <stdio.h>
 #include <signal.h>
@@ -95,13 +95,13 @@ struct logs {
 };
 
 struct BP {
-	int turnsent;
+	short turnsent;
 	struct ship *toship;
-	int mensent;
+	short mensent;
 };
 
 struct snag {
-	int turnfoul;
+	short turnfoul;
 	struct ship *toship;
 };
 
@@ -118,77 +118,77 @@ struct snag {
 
 struct File {
 	char captain[20];		/* 0 */
-	int points;			/* 20 */
-	int loadL;			/* 22 */
-	int loadR;			/* 24 */
-	int readyL;			/* 26 */
-	int readyR;			/* 28 */
+	short points;			/* 20 */
+	char loadL;			/* 22 */
+	char loadR;			/* 24 */
+	char readyL;			/* 26 */
+	char readyR;			/* 28 */
 	struct BP OBP[NBP];		/* 30 */
 	struct BP DBP[NBP];		/* 48 */
-	int struck;			/* 66 */
+	char struck;			/* 66 */
 	struct ship *captured;		/* 68 */
-	int pcrew;			/* 70 */
+	short pcrew;			/* 70 */
 	char last[10];			/* 72 */
-	int drift;			/* 82 */
+	char drift;			/* 82 */
 	struct snag fouls[NSHIP];	/* 84 */
 	struct snag grapples[NSHIP];	/* 124 */
 	char signal[60];		/* 164 */
-	int RH;				/* 224 */
-	int RG;				/* 226 */
-	int RR;				/* 228 */
-	int FS;				/* 230 */
-	int explode;			/* 232 */
-	int sink;			/* 234 */
-	int dir;
-	int col;
-	int row;
-	int loadwith;
-	int stern;
+	char RH;			/* 224 */
+	char RG;			/* 226 */
+	char RR;			/* 228 */
+	char FS;			/* 230 */
+	char explode;			/* 232 */
+	char sink;			/* 234 */
+	char dir;
+	short col;
+	short row;
+	char loadwith;
+	char stern;
 };
 
 struct ship {
 	char *shipname;			/* 0 */
 	struct shipspecs *specs;	/* 2 */
-	int nationality;		/* 4 */
-	int shiprow;			/* 6 */
-	int shipcol;			/* 8 */
-	int shipdir;			/* 10 */
+	char nationality;		/* 4 */
+	short shiprow;			/* 6 */
+	short shipcol;			/* 8 */
+	char shipdir;			/* 10 */
 	struct File *file;		/* 12 */
 };
 
 struct scenario {
-	int winddir;			/* 0 */
-	int windspeed;			/* 2 */
-	int windchange;			/* 4 */
-	int turn;			/* 6 */
-	int people;			/* 8 */
-	int time;			/* 10 */
-	int vessels;			/* 12 */
+	char winddir;			/* 0 */
+	char windspeed;			/* 2 */
+	char windchange;		/* 4 */
+	short turn;			/* 6 */
+	char people;			/* 8 */
+	char time;			/* 10 */
+	char vessels;			/* 12 */
 	char *name;			/* 14 */
 	struct ship ship[NSHIP];	/* 16 */
 };
 struct scenario scene[NSCENE];
 
 struct shipspecs {
-	int bs;
-	int fs;
-	int ta;
-	int guns;
-	int class;
-	int hull;
-	int qual;
-	int crew1;
-	int crew2;
-	int crew3;
-	int gunL;
-	int gunR;
-	int carL;
-	int carR;
-	int rig1;
-	int rig2;
-	int rig3;
-	int rig4;
-	int pts;
+	char bs;
+	char fs;
+	char ta;
+	short guns;
+	char class;
+	char hull;
+	char qual;
+	char crew1;
+	char crew2;
+	char crew3;
+	char gunL;
+	char gunR;
+	char carL;
+	char carR;
+	char rig1;
+	char rig2;
+	char rig3;
+	char rig4;
+	short pts;
 };
 struct shipspecs specs[];
 
@@ -199,25 +199,21 @@ struct ship *ls;		/* &cc->ship[cc->vessels] */
 #define foreachship(sp)	for ((sp) = cc->ship; (sp) < ls; (sp)++)
 
 struct windeffects {
-	int A, B, C, D;
+	char A, B, C, D;
 };
 struct windeffects WET[7][6];
 
 struct Tables {
-	int H, G, C, R;
+	char H, G, C, R;
 };
 struct Tables RigTable[11][6];
 struct Tables HullTable[11][6];
 
-int AMMO[9][4];
-
-int HDT[9][10];
-
-int HDTrake[9][10];
-
-int QUAL[9][5];
-
-int MT[9][3];
+char AMMO[9][4];
+char HDT[9][10];
+char HDTrake[9][10];
+char QUAL[9][5];
+char MT[9][3];
 
 char *countryname[];
 char *classname[];
@@ -225,7 +221,7 @@ char *directionname[];
 char *qualname[];
 char loadname[];
 
-int rangeofshot[];
+char rangeofshot[];
 
 char dr[], dc[];
 
