@@ -1,0 +1,99 @@
+.\" Copyright (c) 1994
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Jan-Simon Pendry.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)realpath.3	8.1 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt REALPATH 3
+.Os
+.Sh NAME
+.Nm realpath
+.Nd returns the canonicalized absolute pathname
+.Sh SYNOPSIS
+.Fd #include <sys/param.h>
+.Fd #include <stdlib.h>
+.Ft "char *"
+.Fn realpath "const char *pathname" "char resolvedname[MAXPATHLEN]"
+.Sh DESCRIPTION
+The
+.Fn realpath
+function resolves all symbolic links, extra
+.Dq /
+characters and references to
+.Pa /./
+and
+.Pa /../
+in
+.Fa pathname ,
+and copies the resulting absolute pathname into
+the memory referenced by
+.Fa resolvedname .
+The
+.Fa resolvedname
+argument
+.Em must
+refer to a buffer capable of storing at least
+.Dv MAXPATHLEN
+characters.
+.Pp
+The 
+.Fn realpath
+function will resolve both absolute and relative paths
+and return the absolute pathname corresponding to
+.Fa pathname .
+All but the last component of
+.Fa pathname
+must exist when
+.Fn realpath
+is called.
+.Sh "RETURN VALUES"
+The
+.Fn realpath
+function returns
+.Fa resolved_name
+on success.
+If an error occurs,
+.Fn realpath
+returns
+.Dv NULL ,
+and
+.Fa resolved_name
+contains the pathname which caused the problem.
+.Sh ERRORS
+The function
+.Fn realpath
+may fail and set the external variable
+.Va errno
+for any of the errors specified for the library functions
+.Xr chdir 2 ,
+.Xr close 2 ,
+.Xr fchdir 2 ,
+.Xr lstat 2 ,
+.Xr open 2 ,
+.Xr readlink 2
+and
+.Xr getcwd 3 .
+.Sh CAVEATS
+This implementation of
+.Fn realpath
+differs slightly from the Solaris implementation.
+The
+.Bx 4.4
+version always returns absolute pathnames,
+whereas the Solaris implementation will,
+under certain circumstances, return a relative
+.Fa resolved_path
+when given a relative
+.Fa pathname .
+.Sh "SEE ALSO"
+.Xr getcwd 3
+.Sh HISTORY
+The
+.Fn realpath
+function call first appeared in
+.Bx 4.4 -Lite.
