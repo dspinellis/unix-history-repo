@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)object.c 1.10 %G%";
+static char sccsid[] = "@(#)object.c 1.11 %G%";
 
 /*
  * Object code interface, mainly for extraction of symbolic information.
@@ -56,6 +56,8 @@ private Linetab *linep, *prevlinep;
 private Symbol curblock;
 private Symbol blkstack[MAXBLKDEPTH];
 private Integer curlevel;
+private Integer bnum, nesting;
+private Address addrstk[MAXBLKDEPTH];
 
 #define enterblock(b) { \
     blkstack[curlevel] = curblock; \
@@ -127,17 +129,19 @@ String file;
     nlhdr.nsyms = hdr.a_syms / sizeof(nlist);
     nlhdr.nfiles = nlhdr.nsyms;
     nlhdr.nlines = nlhdr.nsyms;
-    lseek(f, (long) N_STROFF(hdr), 0);
-    read(f, &(nlhdr.stringsize), sizeof(nlhdr.stringsize));
-    nlhdr.stringsize -= 4;
-    stringtab = newarr(char, nlhdr.stringsize);
-    read(f, stringtab, nlhdr.stringsize);
-    allocmaps(nlhdr.nfiles, nlhdr.nlines);
-    lseek(f, (long) N_SYMOFF(hdr), 0);
-    readsyms(f);
-    ordfunctab();
-    setnlines();
-    setnfiles();
+    if (nlhdr.nsyms > 0) {
+	lseek(f, (long) N_STROFF(hdr), 0);
+	read(f, &(nlhdr.stringsize), sizeof(nlhdr.stringsize));
+	nlhdr.stringsize -= 4;
+	stringtab = newarr(char, nlhdr.stringsize);
+	read(f, stringtab, nlhdr.stringsize);
+	allocmaps(nlhdr.nfiles, nlhdr.nlines);
+	lseek(f, (long) N_SYMOFF(hdr), 0);
+	readsyms(f);
+	ordfunctab();
+	setnlines();
+	setnfiles();
+    }
     close(f);
 }
 
@@ -169,10 +173,17 @@ Fileid f;
 	     *  This only affects names that follow the sdb N_SO entry with
              *  the .f name. 
              */
-            if(strip_ && *name != '\0' ) {
-                 register char *p, *q;
-                 for(p=name,q=(name+1); *q != '\0'; p=q++);
-                 if (*p == '_')  *p = '\0';
+            if (strip_ and name[0] != '\0' ) {
+		register char *p;
+
+		p = name;
+		while (*p != '\0') {
+		    ++p;
+		}
+		--p;
+		if (*p == '-') {
+		    *p = '\0';
+		}
             }
 
 	} else {
@@ -208,6 +219,9 @@ Fileid f;
 	    check_filename(name);
 	}
     }
+    if (not afterlg) {
+	panic("not linked for debugging, use \"cc -g ...\"");
+    }
     dispose(namelist);
 }
 
@@ -219,6 +233,7 @@ private initsyms()
 {
     curblock = nil;
     curlevel = 0;
+    nesting = 0;
     if (progname == nil) {
 	progname = strdup(objname);
 	if (rindex(progname, '/') != nil) {
@@ -231,8 +246,9 @@ private initsyms()
     program = insert(identname(progname, true));
     program->class = PROG;
     program->symvalue.funcv.beginaddr = 0;
+    program->symvalue.funcv.inline = false;
+    newfunc(program, codeloc(program));
     findbeginning(program);
-    newfunc(program);
     enterblock(program);
     curmodule = program;
     t_boolean = maketype("$boolean", 0L, 1L);
@@ -264,8 +280,8 @@ String name;
 register struct nlist *np;
 {
     register Symbol s;
-    String mname, suffix;
     register Name n, nn;
+    char buf[100];
 
     s = nil;
     if (name == nil) {
@@ -274,11 +290,11 @@ register struct nlist *np;
 	n = identname(name, true);
     }
     switch (np->n_type) {
-
-    /*
-     * Build a symbol for the common; all GSYMS that follow will be chained;
-     * the head of this list is kept in common.offset, the tail in common.chain
-     */
+	/*
+	 * Build a symbol for the FORTRAN common area.  All GSYMS that follow
+	 * will be chained in a list with the head kept in common.offset, and
+	 * the tail in common.chain.
+	 */
 	case N_BCOMM:
  	    if (curcomm) {
 		curcomm->symvalue.common.chain = commchain;
@@ -300,15 +316,18 @@ register struct nlist *np;
 		curcomm = nil;
 	    }
 	    break;
-				   
+
 	case N_LBRAC:
-	    s = symbol_alloc();
-	    s->class = PROC;
-	    enterblock(s);
+	    ++nesting;
+	    addrstk[nesting] = (linep - 1)->addr;
 	    break;
 
 	case N_RBRAC:
-	    exitblock();
+	    if (addrstk[nesting] == NOADDR) {
+		exitblock();
+		newfunc(curblock, (linep - 1)->addr);
+	    }
+	    --nesting;
 	    break;
 
 	case N_SLINE:
@@ -316,51 +335,10 @@ register struct nlist *np;
 	    break;
 
 	/*
-	 * Compilation unit.  C associates scope with filenames
-	 * so we treat them as "modules".  The filename without
-	 * the suffix is used for the module name.
-	 *
-	 * Because there is no explicit "end-of-block" mark in
-	 * the object file, we must exit blocks for the current
-	 * procedure and module.
+	 * Source files.
 	 */
 	case N_SO:
-	    mname = strdup(ident(n));
-	    if (rindex(mname, '/') != nil) {
-		mname = rindex(mname, '/') + 1;
-	    }
-	    suffix = rindex(mname, '.');
-	    curlang = findlanguage(suffix);
-	    if(curlang == findlanguage(".f")) {
-                            strip_ = true;
-            } 
-	    if (suffix != nil) {
-		*suffix = '\0';
-	    }
-	    if (curblock->class != PROG) {
-		exitblock();
-		if (curblock->class != PROG) {
-		    exitblock();
-		}
-	    }
-	    nn = identname(mname, true);
-	    if (curmodule == nil or curmodule->name != nn) {
-		s = insert(nn);
-		s->class = MODULE;
-		s->symvalue.funcv.beginaddr = 0;
-		findbeginning(s);
-	    } else {
-		s = curmodule;
-	    }
-	    s->language = curlang;
-	    enterblock(s);
-	    curmodule = s;
-	    if (program->language == nil) {
-		program->language = curlang;
-	    }
-	    warned = false;
-	    enterfile(ident(n), (Address) np->n_value);
-	    bzero(typetable, sizeof(typetable));
+	    enterSourceModule(n, (Address) np->n_value);
 	    break;
 
 	/*
@@ -381,16 +359,12 @@ register struct nlist *np;
 	case N_PSYM:
 	case N_LSYM:
 	case N_SSYM:
+	case N_LENG:
 	    if (index(name, ':') == nil) {
 		if (not warned) {
 		    warned = true;
-		    /*
-		     * Shouldn't do this if user might be typing.
-		     *
 		    warning("old style symbol information found in \"%s\"",
 			curfilename());
-		     *
-		     */
 		}
 	    } else {
 		entersym(name, np);
@@ -400,18 +374,13 @@ register struct nlist *np;
 	case N_PC:
 	    break;
 
-	case N_LENG:
 	default:
-	    /*
-	     * Should complain out this, obviously the wrong symbol format.
-	     *
+	    printf("warning:  stab entry unrecognized: ");
 	    if (name != nil) {
-		printf("%s, ", name);
+		printf("name %s,", name);
 	    }
-	    printf("ntype %2x, desc %x, value %x\n",
+	    printf("ntype %2x, desc %x, value %x'\n",
 		np->n_type, np->n_desc, np->n_value);
-	     *
-	     */
 	    break;
     }
 }
@@ -432,7 +401,8 @@ register struct nlist *np;
 	n = identname(name, true);
 	if ((np->n_type&N_TYPE) == N_TEXT) {
 	    find(t, n) where
-		t->level == program->level and isblock(t)
+		t->level == program->level and
+		(t->class == PROC or t->class == FUNC)
 	    endfind(t);
 	    if (t == nil) {
 		t = insert(n);
@@ -442,9 +412,10 @@ register struct nlist *np;
 		t->block = curblock;
 		t->level = program->level;
 		t->symvalue.funcv.src = false;
+		t->symvalue.funcv.inline = false;
 	    }
 	    t->symvalue.funcv.beginaddr = np->n_value;
-	    newfunc(t);
+	    newfunc(t, codeloc(t));
 	    findbeginning(t);
 	} else if ((np->n_type&N_TYPE) == N_BSS) {
 	    find(t, n) where
@@ -516,8 +487,9 @@ register struct nlist *np;
 	if ((np->n_type&N_TYPE) == N_TEXT) {
 	    t->class = FUNC;
 	    t->symvalue.funcv.src = false;
+	    t->symvalue.funcv.inline = false;
 	    t->symvalue.funcv.beginaddr = np->n_value;
-	    newfunc(t);
+	    newfunc(t, codeloc(t));
 	    findbeginning(t);
 	} else {
 	    t->class = VAR;
@@ -560,6 +532,88 @@ String name;
 	enterblock(s);
 	curmodule = s;
     }
+}
+
+/*
+ * Check to see if a symbol is about to be defined within an unnamed block.
+ * If this happens, we create a procedure for the unnamed block, make it
+ * "inline" so that tracebacks don't associate an activation record with it,
+ * and enter it into the function table so that it will be detected
+ * by "whatblock".
+ */
+
+private unnamed_block()
+{
+    register Symbol s;
+    static int bnum = 0;
+    char buf[100];
+
+    ++bnum;
+    sprintf(buf, "$b%d", bnum);
+    s = insert(identname(buf, false));
+    s->class = PROG;
+    s->symvalue.funcv.src = false;
+    s->symvalue.funcv.inline = true;
+    s->symvalue.funcv.beginaddr = addrstk[nesting];
+    enterblock(s);
+    newfunc(s, addrstk[nesting]);
+    addrstk[nesting] = NOADDR;
+}
+
+/*
+ * Compilation unit.  C associates scope with filenames
+ * so we treat them as "modules".  The filename without
+ * the suffix is used for the module name.
+ *
+ * Because there is no explicit "end-of-block" mark in
+ * the object file, we must exit blocks for the current
+ * procedure and module.
+ */
+
+private enterSourceModule(n, addr)
+Name n;
+Address addr;
+{
+    register Symbol s;
+    Name nn;
+    String mname, suffix;
+
+    mname = strdup(ident(n));
+    if (rindex(mname, '/') != nil) {
+	mname = rindex(mname, '/') + 1;
+    }
+    suffix = rindex(mname, '.');
+    curlang = findlanguage(suffix);
+    if (curlang == findlanguage(".f")) {
+	strip_ = true;
+    } 
+    if (suffix != nil) {
+	*suffix = '\0';
+    }
+    if (curblock->class != PROG) {
+	exitblock();
+	if (curblock->class != PROG) {
+	    exitblock();
+	}
+    }
+    nn = identname(mname, true);
+    if (curmodule == nil or curmodule->name != nn) {
+	s = insert(nn);
+	s->class = MODULE;
+	s->symvalue.funcv.beginaddr = 0;
+	findbeginning(s);
+    } else {
+	s = curmodule;
+    }
+    s->language = curlang;
+    enterblock(s);
+    curmodule = s;
+    if (program->language == nil) {
+	program->language = curlang;
+    }
+    warned = false;
+    enterfile(ident(n), addr);
+    bzero(typetable, sizeof(typetable));
 }
 
 /*
@@ -613,6 +667,10 @@ struct nlist *np;
     } else {
 	isnew = true;
 	s = insert(n);
+    }
+
+    if (nesting > 0 and addrstk[nesting] != NOADDR) {
+	unnamed_block();
     }
 
     /*
@@ -686,8 +744,9 @@ struct nlist *np;
 	    curparam = s;
 	    if (isnew) {
 		s->symvalue.funcv.src = false;
+		s->symvalue.funcv.inline = false;
 		s->symvalue.funcv.beginaddr = np->n_value;
-		newfunc(s);
+		newfunc(s, codeloc(s));
 		findbeginning(s);
 	    }
 	    break;
