@@ -1,0 +1,15 @@
+contrib		$Id:$
+
+this directory is full of tools and examples that various individual
+contributors have sent in.  most of them are actually in live production
+use somewhere, though they are not of "publication" quality which is 
+why they are here instead of in comp.sources.unix.  most of them are
+not documented other than with comments in the sources.  all of them
+are fairly clever.
+
+use at your own risk.  neither the U C Regents or Digital Equipment
+Corporation asserts compilation copyright on any of the works in this
+directory; copyright, if any, rests with the contributors whose names appear
+in the source files.  no warrantee is expressed or implied by the U C
+Regents or Digital Equipment Corporation.  void where prohibited by law.
+contents may have settled during shipping.
