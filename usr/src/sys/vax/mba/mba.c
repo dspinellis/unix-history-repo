@@ -1,4 +1,4 @@
-/*	mba.c	4.19	81/03/10	*/
+/*	mba.c	4.20	81/05/09	*/
 
 #include "mba.h"
 #if NMBA > 0
@@ -118,6 +118,7 @@ mbstart(mhp)
 	register struct mba_device *mi;
 	struct buf *bp;
 	register struct mba_regs *mbp;
+	register int com;
 
 loop:
 	/*
@@ -151,8 +152,12 @@ loop:
 	 * on disks).
 	 */
 	mhp->mh_active = 1;
-	if (mi->mi_driver->md_start)
-		(*mi->mi_driver->md_start)(mi);
+	if (mi->mi_driver->md_start) {
+		if ((com = (*mi->mi_driver->md_start)(mi)) == 0)
+			com = (bp->b_flags & B_READ) ?
+			    MB_RCOM|MB_GO : MB_WCOM|MB_GO;
+	} else
+		com = (bp->b_flags & B_READ) ? MB_RCOM|MB_GO : MB_WCOM|MB_GO;
 
 	/*
 	 * Setup the massbus control and map registers and start
@@ -162,8 +167,7 @@ loop:
 	mbp->mba_sr = -1;	/* conservative */
 	mbp->mba_var = mbasetup(mi);
 	mbp->mba_bcr = -bp->b_bcount;
-	mi->mi_drv->mbd_cs1 =
-	    (bp->b_flags & B_READ) ? MB_RCOM|MB_GO : MB_WCOM|MB_GO;
+	mi->mi_drv->mbd_cs1 = com;
 	if (mi->mi_dk >= 0) {
 		dk_busy |= 1 << mi->mi_dk;
 		dk_xfer[mi->mi_dk]++;
