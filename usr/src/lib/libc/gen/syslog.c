@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.7 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -28,9 +28,10 @@ static char sccsid[] = "@(#)syslog.c	5.6 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/file.h>
-#include <signal.h>
-#include <syslog.h>
+#include <sys/signal.h>
+#include <sys/syslog.h>
 #include <netdb.h>
+#include <strings.h>
 
 #define	MAXLINE	1024			/* max message size */
 #define NULL	0			/* manifest */
@@ -135,7 +136,7 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 		LogFile = open(ctty, O_WRONLY);
 		alarm(0);
 		strcat(o, "\r");
-		o = outline + index(outline, '>') + 1;
+		o = index(outline, '>') + 1;
 		write(LogFile, outline, c + 1 - (o - outline));
 		close(LogFile);
 		exit(0);
