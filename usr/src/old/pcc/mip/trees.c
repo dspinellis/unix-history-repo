@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.26 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.27 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -1578,7 +1578,7 @@ prtdcon( p ) register NODE *p; {
 	int o = p->in.op, i;
 
 	if( o == DCON || o == FCON ){
-		locctr( DATA );
+		(void) locctr( DATA );
 		defalign( o == DCON ? ALDOUBLE : ALFLOAT );
 		deflab( i = getlab() );
 		if( o == FCON )
@@ -1605,7 +1605,7 @@ ecomp( p ) register NODE *p; {
 		}
 	p = optim(p);
 	walkf( p, prtdcon );
-	locctr( PROG );
+	(void) locctr( PROG );
 	ecode( p );
 	tfree(p);
 	}
@@ -1697,10 +1697,13 @@ p2tree(p) register NODE *p; {
 #endif
 		else if( p->tn.rval >= 0 ){ /* copy name from exname */
 			register char *cp;
-			register i;
 			cp = exname( stab[p->tn.rval].sname );
 #ifndef FLEXNAMES
-			for( i=0; i<NCHNAM; ++i ) p->in.name[i] = *cp++;
+			{
+				register i;
+				for( i=0; i<NCHNAM; ++i )
+					p->in.name[i] = *cp++;
+			}
 #else
 			p->in.name = tstr(cp);
 #endif
