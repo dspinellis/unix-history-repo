@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)var.c 1.9 %G%";
+static char sccsid[] = "@(#)var.c 1.10 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -88,10 +88,7 @@ var(vline, vidl, vtype)
 
 	np = gtype(vtype);
 	line = vline;
-	    /*
-	     * widths are evened out
-	     */
-	w = (lwidth(np) + 1) &~ 1;
+	w = lwidth(np);
 	op = &sizes[cbn];
 	for (; vidl != NIL; vidl = vidl[2]) {
 #		ifdef OBJ
@@ -123,6 +120,7 @@ var(vline, vidl, vtype)
 #		ifdef PC
 		    if ( cbn == 1 ) {
 			putprintf( "	.data" , 0 );
+			putprintf( "	.align	%d" , 0 , dotalign(align(np)));
 			putprintf( "	.comm	" , 1 );
 			putprintf( EXTFORMAT , 1 , vidl[1] );
 			putprintf( ",%d" , 0 , w );
@@ -343,6 +341,30 @@ alignit:
 		    panic( "align" );
 	}
     }
+
+    /*
+     *	given an alignment, return power of two for .align pseudo-op
+     */
+dotalign( alignment )
+    int	alignment;
+{
+    
+    switch ( alignment ) {
+	case A_CHAR:		/*
+				 * also
+				 *	A_STRUCT
+				 */
+		return 0;
+	case A_SHORT:
+		return 1;
+	case A_LONG:		/*
+				 * also
+				 *	A_POINT, A_INT, A_FLOAT, A_DOUBLE,
+				 *	A_STACK, A_FILET, A_SET
+				 */
+		return 2;
+    }
+}
 
 /*
  * Return the width of an element
