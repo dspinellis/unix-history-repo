@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	4.9		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	4.10		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -138,6 +138,7 @@ typedef struct mailer	MAILER;
 # define M_NHDR		'n'	/* don't insert From line */
 # define M_FROMPATH	'p'	/* use reverse-path in MAIL FROM: */
 # define M_ROPT		'r'	/* mailer takes picky -r flag */
+# define M_SECURE_PORT	'R'	/* try to send on a reserved TCP port */
 # define M_STRIPQ	's'	/* strip quote chars from user/host */
 # define M_RESTR	'S'	/* must be daemon to execute */
 # define M_USR_UPPER	'u'	/* preserve user case distinction */
