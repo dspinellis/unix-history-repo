@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -168,13 +168,13 @@ numtest:			if (!*++argv) {
 			manpath = locpath;
 			break;
 		case 'n':					/* new */
-			if (!*argv[1] || !strcmp(*argv, dirlist[S_NEW].name)) {
+			if (!(*argv)[1] || !strcmp(*argv, dirlist[S_NEW].name)) {
 				section = S_NEW;
 				goto strtest;
 			}
 			break;
 		case 'o':					/* old */
-			if (!*argv[1] || !strcmp(*argv, dirlist[S_OLD].name)) {
+			if (!(*argv)[1] || !strcmp(*argv, dirlist[S_OLD].name)) {
 				section = S_OLD;
 strtest:			if (!*++argv) {
 					fprintf(stderr, "man: what do you want from the %s section of the manual?\n", dirlist[section].msg);
