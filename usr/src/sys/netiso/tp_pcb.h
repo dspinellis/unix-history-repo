@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.h	7.21 (Berkeley) %G%
+ *	@(#)tp_pcb.h	7.22 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -292,7 +292,7 @@ u_int	tp_start_win;
 #define CONG_INIT_SAMPLE(pcb) \
 	pcb->tp_cong_sample.cs_received = \
     pcb->tp_cong_sample.cs_ce_set = 0; \
-    pcb->tp_cong_sample.cs_size = MAX(pcb->tp_lcredit, 1) << 1;
+    pcb->tp_cong_sample.cs_size = max(pcb->tp_lcredit, 1) << 1;
 
 #define CONG_UPDATE_SAMPLE(pcb, ce_bit) \
     pcb->tp_cong_sample.cs_received++; \
@@ -303,7 +303,7 @@ u_int	tp_start_win;
         if ((pcb->tp_cong_sample.cs_ce_set << 1) >=  \
                     pcb->tp_cong_sample.cs_size ) { \
             pcb->tp_win_recv -= pcb->tp_win_recv >> 3; /* multiply by .875 */ \
-            pcb->tp_win_recv = MAX(1 << 8, pcb->tp_win_recv); \
+            pcb->tp_win_recv = max(1 << 8, pcb->tp_win_recv); \
         } \
         else { \
             pcb->tp_win_recv += (1 << 8); /* add one to the scaled int */ \
