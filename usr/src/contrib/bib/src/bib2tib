@@ -1,0 +1,5 @@
+#
+# bib2tib file1 file2 ... >outputfile
+# convert macro calls to be surrounded by vertical |bars|
+#
+m4 bib.m4.in $* | sed -e "s/__m4_|/|/g" -e "s/\\&//g"
