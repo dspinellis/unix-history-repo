@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	3.1	%H%	*/
+/*	vfs_lookup.c	3.2	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -27,6 +27,7 @@ int (*func)();
 	register c;
 	register char *cp;
 	struct buf *bp;
+	register struct direct *ep;
 	int i;
 	dev_t d;
 	off_t eo;
@@ -40,7 +41,7 @@ int (*func)();
 	if((c=(*func)()) == '/')
 		if ((dp = u.u_rdir) == NULL)
 			dp = rootdir;
-	VOID iget(dp->i_dev, dp->i_number);
+	(void) iget(dp->i_dev, dp->i_number);
 	while(c == '/')
 		c = (*func)();
 	if(c == '\0' && flag != 0)
@@ -67,7 +68,7 @@ cloop:
 	while (c != '/' && c != '\0' && u.u_error == 0 ) {
 		if (mpxip!=NULL && c=='!')
 			break;
-		if(cp < &u.u_dbuf[DIRSIZ])
+		if (cp < &u.u_dbuf[DIRSIZ])
 			*cp++ = c;
 		c = (*func)();
 	}
@@ -90,7 +91,7 @@ seloop:
 
 	if((dp->i_mode&IFMT) != IFDIR)
 		u.u_error = ENOTDIR;
-	VOID access(dp, IEXEC);
+	(void) access(dp, IEXEC);
 	if(u.u_error)
 		goto out;
 
@@ -142,7 +143,9 @@ eloop:
 			brelse(bp);
 			goto out;
 		}
-	}
+		ep = (struct direct *)bp->b_un.b_addr;
+	} else
+		ep++;
 
 	/*
 	 * Note first empty directory slot
@@ -152,16 +155,14 @@ eloop:
 	 * If they do not match, go back to eloop.
 	 */
 
-	bcopy(bp->b_un.b_addr+(u.u_offset&BMASK), (caddr_t)&u.u_dent,
-		sizeof(struct direct));
 	u.u_offset += sizeof(struct direct);
-	if(u.u_dent.d_ino == 0) {
+	if(ep->d_ino == 0) {
 		if(eo == 0)
 			eo = u.u_offset;
 		goto eloop;
 	}
 	for(i=0; i<DIRSIZ; i++) {
-		if(u.u_dbuf[i] != u.u_dent.d_name[i])
+		if(u.u_dbuf[i] != ep->d_name[i])
 			goto eloop;
 		if(u.u_dbuf[i] == 0)
 			break;
@@ -172,7 +173,7 @@ eloop:
 	 * If there is more pathname, go back to
 	 * cloop, otherwise return.
 	 */
-
+	bcopy((caddr_t)ep, (caddr_t)&u.u_dent, sizeof(struct direct));
 	if(bp != NULL)
 		brelse(bp);
 	if(flag==2 && c=='\0') {
