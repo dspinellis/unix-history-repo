@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysctl.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysctl.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -21,6 +21,7 @@ static char sccsid[] = "@(#)sysctl.c	5.11 (Berkeley) %G%";
 #include <sys/sysctl.h>
 #include <sys/socket.h>
 #include <vm/vm_param.h>
+#include <machine/cpu.h>
 
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
@@ -43,6 +44,9 @@ struct ctlname netname[] = CTL_NET_NAMES;
 struct ctlname hwname[] = CTL_HW_NAMES;
 struct ctlname username[] = CTL_USER_NAMES;
 struct ctlname debugname[CTL_DEBUG_MAXID];
+#ifdef CTL_MACHDEP_NAMES
+struct ctlname machdepname[] = CTL_MACHDEP_NAMES;
+#endif
 char names[BUFSIZ];
 
 struct list {
@@ -58,11 +62,22 @@ struct list secondlevel[] = {
 	{ netname, NET_MAXID },		/* CTL_NET */
 	{ 0, CTL_DEBUG_MAXID },		/* CTL_DEBUG */
 	{ hwname, HW_MAXID },		/* CTL_HW */
+#ifdef CTL_MACHDEP_NAMES
+	{ machdepname, CPU_MAXID },	/* CTL_MACHDEP */
+#else
 	{ 0, 0 },			/* CTL_MACHDEP */
+#endif
 	{ username, USER_MAXID },	/* CTL_USER_NAMES */
 };
 
 int	Aflag, aflag, nflag, wflag;
+
+/*
+ * Variables requiring special processing.
+ */
+#define	CLOCK		0x00000001
+#define	BOOTTIME	0x00000002
+#define	CONSDEV		0x00000004
 
 int
 main(argc, argv)
@@ -145,8 +160,7 @@ parse(string, flags)
 	int flags;
 {
 	int indx, type, state, size, len;
-	int isclockrate = 0;
-	int isboottime = 0;
+	int special = 0;
 	void *newval = 0;
 	int intval, newsize = 0;
 	quad_t quadval;
@@ -222,10 +236,10 @@ parse(string, flags)
 			    "Use ps to view %s information\n", string);
 			return;
 		case KERN_CLOCKRATE:
-			isclockrate = 1;
+			special |= CLOCK;
 			break;
 		case KERN_BOOTTIME:
-			isboottime = 1;
+			special |= BOOTTIME;
 			break;
 		}
 		break;
@@ -267,8 +281,14 @@ parse(string, flags)
 		len = 3;
 		break;
 
-	case CTL_FS:
 	case CTL_MACHDEP:
+#ifdef CPU_CONSDEV
+		if (mib[1] == CPU_CONSDEV)
+			special |= CONSDEV;
+#endif
+		break;
+
+	case CTL_FS:
 	case CTL_USER:
 		break;
 
@@ -317,7 +337,7 @@ parse(string, flags)
 			return;
 		}
 	}
-	if (isclockrate) {
+	if (special & CLOCK) {
 		struct clockinfo *clkp = (struct clockinfo *)buf;
 
 		if (!nflag)
@@ -327,7 +347,7 @@ parse(string, flags)
 		    clkp->hz, clkp->tick, clkp->profhz, clkp->stathz);
 		return;
 	}
-	if (isboottime) {
+	if (special & BOOTTIME) {
 		struct timeval *btp = (struct timeval *)buf;
 
 		if (!nflag)
@@ -335,6 +355,16 @@ parse(string, flags)
 			    ctime(&btp->tv_sec));
 		else
 			fprintf(stdout, "%d\n", btp->tv_sec);
+		return;
+	}
+	if (special & CONSDEV) {
+		dev_t dev = *(dev_t *)buf;
+
+		if (!nflag)
+			fprintf(stdout, "%s = %s\n", string,
+			    devname(dev, S_IFCHR));
+		else
+			fprintf(stdout, "0x%x\n", dev);
 		return;
 	}
 	switch (type) {
