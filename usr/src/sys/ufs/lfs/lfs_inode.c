@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.53 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.54 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -34,25 +34,6 @@ lfs_init()
 	return (ufs_init());
 }
 
-static daddr_t
-lfs_itod(fs, ino)
-	struct lfs *fs;
-	ino_t ino;
-{
-	BUF *bp;
-	IFILE *ifp;
-	daddr_t iaddr;
-
-	/* Translate an inode number to a disk address. */
-	if (ino == LFS_IFILE_INUM)
-		return (fs->lfs_idaddr);
-
-	LFS_IENTRY(ifp, fs, ino, bp);
-	iaddr = ifp->if_daddr;
-	brelse(bp);
-	return (iaddr);
-}
-
 /*
  * Look up an LFS dinode number to find its incore vnode.  If not already
  * in core, read it in from the specified device.  Return the inode locked.
@@ -67,8 +48,10 @@ lfs_vget(mntp, ino, vpp)
 	register struct lfs *fs;
 	register struct inode *ip;
 	struct buf *bp;
+	struct ifile *ifp;
 	struct vnode *vp;
 	struct ufsmount *ump;
+	daddr_t daddr;
 	dev_t dev;
 	int error;
 
@@ -80,11 +63,24 @@ lfs_vget(mntp, ino, vpp)
 	if ((*vpp = ufs_ihashget(dev, ino)) != NULL)
 		return (0);
 
+	/* Translate the inode number to a disk address. */
+	fs = ump->um_lfs;
+	if (ino == LFS_IFILE_INUM)
+		daddr = fs->lfs_idaddr;
+	else {
+		LFS_IENTRY(ifp, fs, ino, bp);
+		daddr = ifp->if_daddr;
+		brelse(bp);
+		if (daddr == LFS_UNUSED_DADDR)
+			return (ENOENT);
+	}
+
 	/* Allocate new vnode/inode. */
 	if (error = lfs_vcreate(mntp, ino, &vp)) {
 		*vpp = NULL;
 		return (error);
 	}
+
 	/*
 	 * Put it onto its hash chain and lock it so that other requests for
 	 * this inode will block if they arrive while we are sleeping waiting
@@ -94,10 +90,17 @@ lfs_vget(mntp, ino, vpp)
 	ip = VTOI(vp);
 	ufs_ihashins(ip);
 
+	/*
+	 * XXX
+	 * This may not need to be here, logically it should go down with
+	 * the i_devvp initialization.
+	 * Ask Kirk.
+	 */
+	ip->i_lfs = ump->um_lfs;
+
 	/* Read in the disk contents for the inode, copy into the inode. */
-	ip->i_lfs = fs = ump->um_lfs;
-	if (error = bread(ump->um_devvp, lfs_itod(fs, ino),
-	    (int)fs->lfs_bsize, NOCRED, &bp)) {
+	if (error =
+	    bread(ump->um_devvp, daddr, (int)fs->lfs_bsize, NOCRED, &bp)) {
 		/*
 		 * The inode does not contain anything useful, so it
 		 * would be misleading to leave it on its hash chain.
