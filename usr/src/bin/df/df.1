@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)df.1	4.1 (Berkeley) %G%
+.\"	@(#)df.1	5.1 (Berkeley) %G%
 .\"
-.TH DF 1
+.TH DF 1 "18 January 1983"
 .UC 4
 .SH NAME
 df \- disk free
@@ -12,12 +12,10 @@ df \- disk free
 .B df
 [
 .B \-i
-] [
-.B \-l
 ] [ filesystem ... ] [ file ... ]
 .SH DESCRIPTION
 .I Df
-prints out the number of free blocks
+prints out the amount of free disk space
 available on the specified
 .I filesystem,
 e.g. ``/dev/rp0a'',
@@ -29,24 +27,12 @@ If no file system is specified,
 the free space on all of
 the normally mounted file systems
 is printed.
-.PP
-The reported numbers are in file system block units; currently each filesystem
-block is 1024 bytes long, twice the size of the blocks reported by
-.IR du (1)
-or
-.IR ls (1)
-with the
-.B \-s
-option.
+The reported numbers are in kilobytes.
 .PP
 Other options are:
 .TP
 .B \-i
 Report also the number of inodes which are used and free.
-.TP
-.B \-l
-examines also the free list, double checking that the
-summary number in the filesystem superblock is correct.
 .SH FILES
 /etc/fstab	list of normally mounted filesystems
 .SH "SEE ALSO"
