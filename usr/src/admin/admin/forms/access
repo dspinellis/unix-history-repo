@@ -31,7 +31,11 @@ I understand that any accounts on source machines at Berkeley that are
 made available to me are to be used only to assist in the development of,
 and for the review of, Berkeley UNIX.  I will not copy any source or
 documentation from a Berkeley machine to any other machine without the
-explicit written or electronic approval of a CSRG staff member.
+explicit written or electronic approval of a CSRG staff member.  I will
+not make any source or documentation from Berkeley UNIX available to
+anyone else without the explicit written or electronic approval of a CSRG
+staff member.
+
 
 
 	(Name)
