@@ -11,10 +11,8 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bad144.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)bad144.c	5.9 (Berkeley) %G%";
 #endif not lint
-
-#ifdef vax
 
 /*
  * bad144
@@ -615,17 +613,3 @@ Perror(op)
 	fprintf(stderr, "bad144: "); perror(op);
 	exit(4);
 }
-
-#else /* !vax */
-
-#include <stdio.h>
-
-main(argc, argv)
-	int	argc;
-	char	**argv;
-{
-	fputs("bad144 is a vax specific program.\n", stderr);
-	exit(1);
-}
-
-#endif /* vax */
