@@ -1,14 +1,22 @@
-#	@(#)README	5.2 (Berkeley) %G%
+#	@(#)README	5.3 (Berkeley) %G%
 
 ------------------------------------------------------------------------------
 
-This version is not completed.  Please contact utashiro@sra.co.jp if
-you have any comment about this code.  Bugfix will be greatly appreciated.
+This Sony RISC workstation support is done as a sub-project in WIDE research
+project.  Sony Corp. contributed device drivers and gave us great
+technical supports.  Kazumasa Utashiro worked mainly for 4.4-alpha porting
+but that work was based on 4.3-Reno port helped by other project members,
+Tadamichi Matsuyama and Hidetoshi Unno.
+
+This version is just a snapshot of developing system and has many
+unimplemented feature and bugs.  I hope this will be more stable in
+final 4.4BSD release.  Please contact utashiro@sra.co.jp if you have any
+comment about this code.  Bugfix will be greatly appreciated.
 
 ------------------------------------------------------------------------------
-I'm using NWS-3200 laptop machine for development.  Only 3200's LCD display
-is supported now.  You can use this kernel on 3400 by serial line console,
-but it is not tested well.
+I've been using NWS-3200 laptop machine for development.  Only 3200's LCD
+display is supported now.  You can use this kernel on 3400 by serial line
+console, but it is not tested well.
 ------------------------------------------------------------------------------
 Config command is not changed to support NEWS because it will be changed
 to support dual processor machine in the future.  Diffs are in CONFIG.DIFF
