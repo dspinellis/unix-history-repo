@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)c21.c	1.6 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)c21.c	1.7 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -571,7 +571,8 @@ bflow(p)
 	int flow= -1;
 	struct node *olduse=0, *olduse1=0;
 
-	if (p->subop==QUAD || p->subop==DOUBLE || (p->subop&0xF0)==DOUBLE<<4)
+	if (p->subop==QUAD || p->subop==DOUBLE || (p->subop&0xF0)==DOUBLE<<4 ||
+	    p->op==EMUL)
 		dblflg |= 1;	/* double dest */
 	if ((p->subop&0xF)==DOUBLE || p->subop==QUAD)
 		dblflg |= 2;	/* double src */
@@ -673,7 +674,6 @@ bflow(p)
 #ifndef EMOD
 		case EDIV:
 #endif EMOD
-		case EMUL:
 		case AOBLEQ: case AOBLSS:
 			break;
 		default:
