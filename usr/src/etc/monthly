@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)monthly	5.9 (Berkeley) %G%
+#	@(#)monthly	8.1 (Berkeley) %G%
 #
 
 host=`hostname`

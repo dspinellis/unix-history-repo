@@ -1,4 +1,4 @@
-#	@(#)gettytab	5.15 (Berkeley) %G%
+#	@(#)gettytab	8.1 (Berkeley) %G%
 #
 # Most of the table entries here are just copies of the old getty table,
 # it is by no means certain, or even likely, that any of them are optimal

@@ -1,4 +1,4 @@
-;	@(#)localhost.rev	5.1 (Berkeley) %G%
+;	@(#)localhost.rev	8.1 (Berkeley) %G%
 
 @	IN	SOA	ucbvax.Berkeley.EDU. rwh.ucbvax.Berkeley.EDU.  (
 				1.4	; Serial

@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)netstart	5.9 (Berkeley) %G%
+#	@(#)netstart	8.1 (Berkeley) %G%
 
 routedflags=-q
 timedflags=YES

@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)security	5.28 (Berkeley) %G%
+#	@(#)security	8.1 (Berkeley) %G%
 #
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin

@@ -1,4 +1,4 @@
-;	@(#)root.cache	5.1 (Berkeley) %G%
+;	@(#)root.cache	8.1 (Berkeley) %G%
 
 ; Initial cache data for root domain servers.
 .			IN	NS	NS.NIC.DDN.MIL.

@@ -1,4 +1,4 @@
-;	@(#)named.boot	5.1 (Berkeley) %G%
+;	@(#)named.boot	8.1 (Berkeley) %G%
 
 ; boot file for secondary name server
 ; Note that there should be one primary entry for each SOA record.
