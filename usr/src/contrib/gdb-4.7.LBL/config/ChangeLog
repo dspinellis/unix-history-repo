@@ -1,0 +1,34 @@
+Thu Oct  1 13:50:48 1992  david d `zoo' zuhn  (zoo at cirdan.cygnus.com)
+
+	* mh-solaris: INSTALL is NOT /usr/ucb/install
+
+Mon Aug 24 14:25:35 1992  Ian Lance Taylor  (ian@cygnus.com)
+
+	* mt-ose68000, mt-ose68k: renamed from mt-OSE*.
+
+Tue Jul 21 02:11:01 1992  D. V. Henkel-Wallace  (gumby@cygnus.com)
+
+	* mt-OSE68k, mt-680000: new configs.
+
+Thu Jul 16 17:12:09 1992  K. Richard Pixley  (rich@rtl.cygnus.com)
+
+	* mh-irix4: merged changes from progressive.
+
+Tue Jun  9 23:29:38 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* Everywhere: Change RANLIB=echo>/dev/null (which confuses
+	some shells - and I don't blame them) to RANLIB=true.
+	* mh-solaris:  Use /usr/ucb/install for INSTALL.
+
+Sun May 31 14:45:23 1992  Mark Eichin  (eichin at cygnus.com)
+
+	* mh-solaris2: Add new configuration for Solaris 2 (sysv, no ranlib)
+
+Fri Apr 10 23:10:08 1992  Fred Fish  (fnf@cygnus.com)
+
+	* mh-ncr3000:  Add new configuration for NCR 3000.
+
+Tue Dec 10 00:10:55 1991  K. Richard Pixley  (rich at rtl.cygnus.com)
+
+	* ChangeLog: fresh changelog.
+
