@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.19 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -106,6 +106,7 @@ mount(scp)
 	mp->m_op = vfssw[uap->type];
 	mp->m_flag = 0;
 	mp->m_exroot = 0;
+	mp->m_mounth = (struct vnode *)0;
 	if (error = vfs_lock(mp)) {
 		free((caddr_t)mp, M_MOUNT);
 		vput(vp);
