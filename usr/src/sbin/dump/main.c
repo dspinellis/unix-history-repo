@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -43,8 +43,8 @@ int	ntrec = NTREC;	/* # tape blocks in each tape record */
 int	cartridge = 0;	/* Assume non-cartridge tape */
 long	dev_bsize = 1;	/* recalculated below */
 long	blocksperfile;	/* output blocks per file */
+char	*host = NULL;	/* remote host (if any) */
 #ifdef RDUMP
-char	*host;
 int	rmthost();
 #endif
 
@@ -62,6 +62,7 @@ main(argc, argv)
 	float fetapes;
 	ino_t maxino;
 
+	spcl.c_date = 0;
 	time(&(spcl.c_date));
 
 	tsize = 0;	/* Default later, based on 'c' option for cart tapes */
@@ -216,20 +217,20 @@ main(argc, argv)
 			tsize = cartridge ? 1700L*120L : 2300L*120L;
 	}
 
+	if (index(tape, ':')) {
+		host = tape;
+		tape = index(host, ':');
+		*tape++ = 0;
 #ifdef RDUMP
-	{ char *index();
-	  host = tape;
-	  tape = index(host, ':');
-	  if (tape == 0) {
-		msg("need keyletter ``f'' and device ``host:tape''\n");
-		exit(1);
-	  }
-	  *tape++ = 0;
-	  if (rmthost(host) == 0)
+		if (rmthost(host) == 0)
+			exit(X_ABORT);
+#else
+		fprintf(stderr, "remote dump not enabled\n");
 		exit(X_ABORT);
+#endif
 	}
 	setuid(getuid());	/* rmthost() is the only reason to be setuid */
-#endif
+
 	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
 		signal(SIGHUP, sighup);
 	if (signal(SIGTRAP, SIG_IGN) != SIG_IGN)
@@ -242,8 +243,6 @@ main(argc, argv)
 		signal(SIGSEGV, sigsegv);
 	if (signal(SIGTERM, SIG_IGN) != SIG_IGN)
 		signal(SIGTERM, sigterm);
-	
-
 	if (signal(SIGINT, interrupt) == SIG_IGN)
 		signal(SIGINT, SIG_IGN);
 
@@ -277,11 +276,10 @@ main(argc, argv)
 	msg("Dumping %s ", disk);
 	if (dt != 0)
 		msgtail("(%s) ", dt->fs_file);
-#ifdef RDUMP
-	msgtail("to %s on host %s\n", tape, host);
-#else
-	msgtail("to %s\n", tape);
-#endif
+	if (host)
+		msgtail("to %s on host %s\n", tape, host);
+	else
+		msgtail("to %s\n", tape);
 
 	if ((diskfd = open(disk, O_RDONLY)) < 0) {
 		msg("Cannot open %s\n", disk);
@@ -363,7 +361,7 @@ main(argc, argv)
 
 	alloctape();			/* Allocate tape buffer */
 
-	startnewtape();
+	startnewtape(1);
 	time(&(tstart_writing));
 	dumpmap(usedinomap, TS_CLRI, maxino);
 
@@ -404,29 +402,17 @@ main(argc, argv)
 	}
 
 	spcl.c_type = TS_END;
-#ifndef RDUMP
 	for (i = 0; i < ntrec; i++)
 		writeheader(maxino);
-#endif
 	if (pipeout)
 		msg("DUMP: %ld tape blocks\n",spcl.c_tapea);
 	else
 		msg("DUMP: %ld tape blocks on %d volumes(s)\n",
 		    spcl.c_tapea, spcl.c_volume);
-	msg("DUMP IS DONE\n");
-
 	putdumptime();
-#ifndef RDUMP
-	if (!pipeout) {
-		close(tapefd);
-		trewind();
-	}
-#else
-	for (i = 0; i < ntrec; i++)
-		writeheader(curino);
 	trewind();
-#endif
 	broadcast("DUMP IS DONE!\7\7\n");
+	msg("DUMP IS DONE\n");
 	Exit(X_FINOK);
 	/* NOTREACHED */
 }
