@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.47 (Berkeley) %G%
+.\"	@(#)op.me	6.48 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.47
+Version 6.48
 .sp
-For Sendmail Version 6.60
+For Sendmail Version 6.62
 .)l
 .sp 2
 .pp
@@ -630,6 +630,14 @@ chmod 644 /etc/sendmail.fc
 In general, freeze files are not worth doing
 unless your disks are much faster than your CPU;
 this is seldom true any more.
+.pp
+If your
+.i sendmail
+was not compiled with
+.sm FROZENCONFIG
+defined, the
+.b \-bz
+flag will be ignored.
 .sh 3 "/etc/rc"
 .pp
 It will be necessary to start up the sendmail daemon when your system reboots.
@@ -667,6 +675,48 @@ causes it to listen on the SMTP port,
 and
 .q \-q30m
 causes it to run the queue every half hour.
+.pp
+Some people use a more complex startup script,
+removing zero length qf files and df files for which there is no qf file.
+For example:
+.(b
+# remove zero length qf files
+for qffile in qf*
+do
+	if [ \-r $qffile ]
+	then
+		if [ ! \-s $qffile ]
+		then
+			echo \-n " <zero: $qffile>" > /dev/console
+			rm \-f $qffile
+		fi
+	fi
+done
+# rename tf files to be qf if the qf does not exist
+for tffile in tf*
+do
+	qffile=`echo $tffile | sed 's/t/q/'`
+	if [ \-r $tffile \-a ! \-f $qffile ]
+	then
+		echo \-n " <recovering: $tffile>" > /dev/console
+		mv $tffile $qffile
+	else
+		echo \-n " <extra: $tffile>" > /dev/console
+		rm \-f $tffile
+	fi
+done
+# remove bogus qf files
+for dffile in df*
+do
+	qffile=`echo $dffile | sed 's/d/q/'`
+	if [ \-r $dffile \-a ! \-f $qffile ]
+	then
+		echo \-n " <incomplete: $dffile>" > /dev/console
+		rm \-f $dffile
+	fi
+done
+fi
+.)b
 .pp
 If you are not running a version of UNIX
 that supports Berkeley TCP/IP,
@@ -3137,10 +3187,11 @@ This is the default if the
 flag is set.
 Note that setting this is not
 sufficient to get full eight bit data passed through
-.i sendmail ;
-the
-.b 8
-option must also be set.
+.i sendmail .
+If the
+.b 7
+option is set, this is essentially always set,
+since the eighth bit was stripped on input.
 .pp
 The mailer with the special name
 .q error
@@ -3757,12 +3808,9 @@ its priority will be decreased by the indicated value.
 In most environments this should be positive,
 since hosts that are down are all too often down for a long time.
 Defaults to 90000.
-.ip 8
-Preserve eight bits of data in the body on input.
-Normally the input is stripped to seven bits as per RFC822.
-See also the
-.b L
-mailer flag.
+.ip 7
+Strip input to seven bits for compatibility with old systems.
+This shouldn't be necessary.
 .lp
 All options can be specified on the command line using the
 \-o flag,
@@ -3770,7 +3818,7 @@ but most will cause
 .i sendmail
 to relinquish its setuid permissions.
 The options that will not cause this are
-b, d, e, E, i, L, m, o, p, r, s, v, C, and 8.
+b, d, e, E, i, L, m, o, p, r, s, v, C, and 7.
 Also, M (define macro) when defining the r or s macros
 is also considered
 .q safe .
@@ -5549,8 +5597,7 @@ Previous versions of
 used the 0200 bit for quoting.
 This version avoids that use.
 However, for compatibility with RFC 822,
-the default is still to strip the eighth bit;
-set option `8' to get full 8-bit clean processing.
+you can set option `7' to get seven bit stripping.
 .pp
 Individual mailers can still produce seven bit out put using the
 `7' mailer flag.
@@ -5767,6 +5814,11 @@ exactly as though it were an MX record.
 The intent is to route internal traffic through internal networks
 without publishing an MX record to the net.
 MX expansion is still done on the individual items.
+.sh 2 "Aliases Extended"
+.pp
+The implementation has been merged with maps.
+Among other things,
+this supports NIS-based aliases.
 .sh 2 "Portability and Security Enhancements"
 .pp
 A number of internal changes have been made to enhance portability.
@@ -6219,7 +6271,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.47
+.\"Version 6.48
 .\".ce 0
 .pn 2
 .bp
