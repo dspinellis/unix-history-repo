@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.45 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.46 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.45 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.46 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -194,8 +194,27 @@ queueup(e, queueall, announce)
 	/* output name of sender */
 	fprintf(tfp, "S%s\n", e->e_from.q_paddr);
 
-	/* output list of recipient addresses */
+	/* output list of error recipients */
 	lastctladdr = NULL;
+	for (q = e->e_errorqueue; q != NULL; q = q->q_next)
+	{
+		if (!bitset(QDONTSEND, q->q_flags))
+		{
+			ADDRESS *ctladdr;
+
+			ctladdr = getctladdr(q);
+			if (ctladdr == NULL && q->q_alias != NULL)
+				ctladdr = nullctladdr;
+			if (ctladdr != lastctladdr)
+			{
+				printctladdr(ctladdr, tfp);
+				lastctladdr = ctladdr;
+			}
+			fprintf(tfp, "E%s\n", q->q_paddr);
+		}
+	}
+
+	/* output list of recipient addresses */
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
 		if (queueall ? !bitset(QDONTSEND|QSENT, q->q_flags) :
@@ -225,25 +244,6 @@ queueup(e, queueall, announce)
 				printf("queueing ");
 				printaddr(q, FALSE);
 			}
-		}
-	}
-
-	/* output list of error recipients */
-	for (q = e->e_errorqueue; q != NULL; q = q->q_next)
-	{
-		if (!bitset(QDONTSEND, q->q_flags))
-		{
-			ADDRESS *ctladdr;
-
-			ctladdr = getctladdr(q);
-			if (ctladdr == NULL && q->q_alias != NULL)
-				ctladdr = nullctladdr;
-			if (ctladdr != lastctladdr)
-			{
-				printctladdr(ctladdr, tfp);
-				lastctladdr = ctladdr;
-			}
-			fprintf(tfp, "E%s\n", q->q_paddr);
 		}
 	}
 
@@ -369,11 +369,15 @@ printctladdr(a, tfp)
 **		runs things in the mail queue.
 */
 
-runqueue(forkflag, e)
+ENVELOPE	QueueEnvelope;		/* the queue run envelope */
+
+runqueue(forkflag)
 	bool forkflag;
-	register ENVELOPE *e;
 {
 	extern bool shouldqueue();
+	register ENVELOPE *e;
+	extern ENVELOPE BlankEnvelope;
+	extern ENVELOPE *newenvelope();
 
 	/*
 	**  If no work will ever be selected, don't even bother reading
@@ -386,10 +390,7 @@ runqueue(forkflag, e)
 	{
 		if (Verbose)
 			printf("Skipping queue run -- load average too high\n");
-
-		if (forkflag)
-			return;
-		finis();
+		return;
 	}
 
 	/*
@@ -428,7 +429,8 @@ runqueue(forkflag, e)
 
 # ifdef LOG
 	if (LogLevel > 11)
-		syslog(LOG_DEBUG, "runqueue %s, pid=%d", QueueDir, getpid());
+		syslog(LOG_DEBUG, "runqueue %s, pid=%d, forkflag=%d",
+			QueueDir, getpid(), forkflag);
 # endif LOG
 
 	/*
@@ -438,6 +440,14 @@ runqueue(forkflag, e)
 # ifdef DAEMON
 	clrdaemon();
 # endif DAEMON
+
+	/*
+	**  Create ourselves an envelope
+	*/
+
+	CurEnv = &QueueEnvelope;
+	e = newenvelope(&QueueEnvelope);
+	e->e_flags = BlankEnvelope.e_flags;
 
 	/*
 	**  Make sure the alias database is open.
@@ -729,7 +739,7 @@ dowork(w, e)
 		ErrorMode = EM_MAIL;
 		e->e_id = &w->w_name[2];
 # ifdef LOG
-		if (LogLevel > 11)
+		if (LogLevel > 12)
 			syslog(LOG_DEBUG, "%s: dowork, pid=%d", e->e_id,
 			       getpid());
 # endif LOG

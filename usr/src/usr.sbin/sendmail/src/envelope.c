@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -85,7 +85,7 @@ dropenvelope(e)
 		printf(" flags=%o\n", e->e_flags);
 	}
 #ifdef LOG
-	if (LogLevel > 10)
+	if (LogLevel > 12)
 		syslog(LOG_DEBUG, "dropenvelope, id=%s, flags=%o, pid=%d",
 				  e->e_id == NULL ? "(none)" : e->e_id,
 				  e->e_flags, getpid());
