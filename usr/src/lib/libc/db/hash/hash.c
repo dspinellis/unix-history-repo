@@ -9,11 +9,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.24 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
+
 #include <fcntl.h>
 #include <errno.h>
 #ifdef DEBUG
@@ -661,36 +662,42 @@ hash_seq(dbp, key, data, flag)
 		hashp->cndx = 1;
 		hashp->cpage = NULL;
 	}
-	if (!(bufp = hashp->cpage)) {
-		for (bucket = hashp->cbucket; bucket <= hashp->MAX_BUCKET;
-		    bucket++, hashp->cndx = 1) {
 
-			bufp = __get_buf(bucket, NULL, 0);
-			if (!bufp)
-				return (ERROR);
-			hashp->cpage = bufp;
-			bp = (u_short *)bufp->page;
-			if (bp[0])
-				break;
-		}
-		hashp->cbucket = bucket;
-		if (hashp->cbucket > hashp->MAX_BUCKET) {
-			hashp->cbucket = -1;
-			return (ABNORMAL);
-		}
-	} else
-		bp = (u_short *)hashp->cpage->page;
+	for (bp = NULL; !bp || !bp[0]; ++hashp->cbucket) {
+		if (!(bufp = hashp->cpage)) {
+			for (bucket = hashp->cbucket;
+			    bucket <= hashp->MAX_BUCKET;
+			    bucket++, hashp->cndx = 1) {
+				bufp = __get_buf(bucket, NULL, 0);
+				if (!bufp)
+					return (ERROR);
+				hashp->cpage = bufp;
+				bp = (u_short *)bufp->page;
+				if (bp[0])
+					break;
+			}
+			hashp->cbucket = bucket;
+			if (hashp->cbucket > hashp->MAX_BUCKET) {
+				hashp->cbucket = -1;
+				return (ABNORMAL);
+			}
+		} else
+			bp = (u_short *)hashp->cpage->page;
 
 #ifdef DEBUG
-	assert(bp);
-	assert(bufp);
+		assert(bp);
+		assert(bufp);
 #endif
-	while (bp[hashp->cndx + 1] == OVFLPAGE) {
-		bufp = hashp->cpage = __get_buf(bp[hashp->cndx], bufp, 0);
-		if (!bufp)
-			return (ERROR);
-		bp = (u_short *)(bufp->page);
-		hashp->cndx = 1;
+		while (bp[hashp->cndx + 1] == OVFLPAGE) {
+			bufp = hashp->cpage =
+			    __get_buf(bp[hashp->cndx], bufp, 0);
+			if (!bufp)
+				return (ERROR);
+			bp = (u_short *)(bufp->page);
+			hashp->cndx = 1;
+		}
+		if (!bp[0])
+			hashp->cpage = NULL;
 	}
 	ndx = hashp->cndx;
 	if (bp[ndx + 1] < REAL_KEY) {
