@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)bpf.c	7.10 (Berkeley) %G%
+ *      @(#)bpf.c	7.11 (Berkeley) %G%
  *
  * static char rcsid[] =
  * "$Header: bpf.c,v 1.33 91/10/27 21:21:58 mccanne Exp $";
@@ -986,7 +986,7 @@ bpf_mcopy(src, dst, len)
 	while (len > 0) {
 		if (m == 0)
 			panic("bpf_mcopy");
-		count = MIN(m->m_len, len);
+		count = min(m->m_len, len);
 		bcopy(mtod(m, caddr_t), (caddr_t)dst, count);
 		m = m->m_next;
 		dst += count;
@@ -1043,7 +1043,7 @@ catchpacket(d, pkt, pktlen, snaplen, cpfn)
 	 * much.  Otherwise, transfer the whole packet (unless
 	 * we hit the buffer size limit).
 	 */
-	totlen = hdrlen + MIN(snaplen, pktlen);
+	totlen = hdrlen + min(snaplen, pktlen);
 	if (totlen > d->bd_bufsize)
 		totlen = d->bd_bufsize;
 

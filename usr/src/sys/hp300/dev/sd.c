@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	7.13 (Berkeley) %G%
+ *	@(#)sd.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -449,7 +449,7 @@ sdlblkstrat(bp, bsize)
 
 		if (boff || resid < bsize) {
 			sdstats[sdunit(bp->b_dev)].sdpartials++;
-			count = MIN(resid, bsize - boff);
+			count = min(resid, bsize - boff);
 			cbp->b_flags = B_BUSY | B_PHYS | B_READ;
 			cbp->b_blkno = bn - btodb(boff);
 			cbp->b_un.b_addr = cbuf;

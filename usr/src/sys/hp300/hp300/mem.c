@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: mem.c 1.14 90/10/12$
  *
- *	@(#)mem.c	7.9 (Berkeley) %G%
+ *	@(#)mem.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -68,8 +68,8 @@ mmrw(dev, uio, flags)
 			    VM_PROT_READ : VM_PROT_WRITE, TRUE);
 			o = (int)uio->uio_offset & PGOFSET;
 			c = (u_int)(NBPG - ((int)iov->iov_base & PGOFSET));
-			c = MIN(c, (u_int)(NBPG - o));
-			c = MIN(c, (u_int)iov->iov_len);
+			c = min(c, (u_int)(NBPG - o));
+			c = min(c, (u_int)iov->iov_len);
 			error = uiomove((caddr_t)&vmmap[o], (int)c, uio);
 			pmap_remove(kernel_pmap, (vm_offset_t)vmmap,
 			    (vm_offset_t)&vmmap[NBPG]);
@@ -77,7 +77,7 @@ mmrw(dev, uio, flags)
 
 /* minor device 1 is kernel memory */
 		case 1:
-			c = MIN(iov->iov_len, MAXPHYS);
+			c = min(iov->iov_len, MAXPHYS);
 			if (!kernacc((caddr_t)uio->uio_offset, c,
 			    uio->uio_rw == UIO_READ ? B_READ : B_WRITE))
 				return (EFAULT);
@@ -101,7 +101,7 @@ mmrw(dev, uio, flags)
 				    malloc(CLBYTES, M_TEMP, M_WAITOK);
 				bzero(zbuf, CLBYTES);
 			}
-			c = MIN(iov->iov_len, CLBYTES);
+			c = min(iov->iov_len, CLBYTES);
 			error = uiomove(zbuf, (int)c, uio);
 			continue;
 
