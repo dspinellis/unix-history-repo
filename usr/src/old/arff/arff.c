@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)arff.c	4.6 (Berkeley) 81/05/18";
+static	char *sccsid = "@(#)arff.c	4.7 (Berkeley) 81/07/08";
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -576,21 +576,20 @@ register char * obuff;
 {
 	long trans();
 	extern floppydes;
-	int temp;
 	rt_init();
 	if(flg['m'-'a']==0)
 		while( (count -= 128) >= 0) {
 			lseek(floppydes, trans(startad), 0);
-			 if ((temp = read(floppydes,obuff,128)) != 128)
-				fprintf(stderr, "arff: read error block %d %d\n",startad/128, temp);
+			 if (read(floppydes,obuff,128) != 128)
+				fprintf(stderr, "arff: read error block %d\n",startad/128);
 			obuff += 128;
 			startad += 128;
 		}
 	else
 		while( (count -= 512) >= 0) {
 			lseek(floppydes,(long) (startad), 0);
-			if ((temp = read(floppydes, obuff, 512)) != 512)
-				fprintf(stderr, "arff: read error block %d %d\n",startad/512, temp);
+			if (read(floppydes, obuff, 512) != 512)
+				fprintf(stderr, "arff: read error block %d\n",startad/512);
 			obuff += 512;
 			startad += 512;
 		}
