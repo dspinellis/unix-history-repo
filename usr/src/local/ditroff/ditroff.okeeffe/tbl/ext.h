@@ -1,4 +1,4 @@
-/*	@(#)ext.h	1.2 (CWI) 85/10/02	*/
+/*	@(#)ext.h	1.3 (CWI) 86/11/13	*/
 /*	t..c	4.2	83/10/13	*/
 
 /* t..c : external declarations */
@@ -8,6 +8,7 @@
 
 extern int nlin, ncol, iline, nclin, nslin, qcol;
 
+extern char oldname[];
 extern int style[MAXHEAD][MAXCOL];
 extern int ctop[MAXHEAD][MAXCOL];
 extern char font[MAXHEAD][MAXCOL][2];

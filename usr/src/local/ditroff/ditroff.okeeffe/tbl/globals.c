@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)globals.c	1.2 (CWI) 85/10/02";
+static char sccsid[] = "@(#)globals.c	1.3 (CWI) 86/11/13";
 #endif lint
 
 
@@ -8,6 +8,7 @@ static char sccsid[] = "@(#)globals.c	1.2 (CWI) 85/10/02";
 #include "defs.h"
 #include <stdio.h>
 
+char oldname[BUFSIZ];	/* for .lf kludge */
 int expflg = 0;
 int ctrflg = 0;
 int boxflg = 0;

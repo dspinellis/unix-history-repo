@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)io.c	1.3 (CWI) 86/11/10";
+static char sccsid[] = "@(#)io.c	1.4 (CWI) 86/11/13";
 #endif lint
 
 
@@ -47,7 +47,6 @@ next:
 	 * Clumsy support for .lf request (jna)
 	 */
 	if(p[0] == '.' && p[1] == 'l' && p[2] == 'f'){
-		char oldname[BUFSIZ];
 		sscanf(p+3, "%d %s", &iline, oldname);
 		printf(".lf %d %s\n", iline, strlen(oldname) ? oldname: ifile);
 		goto next;

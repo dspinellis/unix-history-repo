@@ -1,4 +1,4 @@
-/*	@(#)defs.h	1.2 (CWI) 85/10/02	*/
+/*	@(#)defs.h	1.3 (CWI) 86/11/13	*/
 #define max(a,b)	((a) > (b) ? (a) : (b))
 #define min(a,b)	((a) < (b) ? (a) : (b))
 #define MAXLIN 200
@@ -54,6 +54,7 @@
 #define PYMACS "/usr/lib/tmac.m"
 
 /* devices supported */
+#define DEVPSC	3
 #define DEVVER	2
 #define HARRIS	1
 #define CAT	0
