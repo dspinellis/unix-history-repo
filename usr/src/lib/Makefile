@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -35,8 +35,10 @@ NSTD=
 
 all:	${SUBDIR} ${STD} ${NSTD}
 
-${SUBDIR}: /tmp
+${SUBDIR}: FRC
 	cd $@; make ${MFLAGS}
+
+FRC:
 
 ${STD}:
 	cc ${CFLAGS} -o $@ $@.c
