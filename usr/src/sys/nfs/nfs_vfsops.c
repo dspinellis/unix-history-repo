@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.17 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -160,6 +160,7 @@ mountnfs(argp, mp, saddr, pth, hst)
 	}
 	if (major(tfsid.val[0]) > 127) {
 		error = ENOENT;
+		m_freem(saddr);
 		goto bad;
 	}
 	mp->m_stat.f_fsid.val[0] = tfsid.val[0];
@@ -212,8 +213,10 @@ mountnfs(argp, mp, saddr, pth, hst)
 			nmp->nm_rsize = NFS_MAXDATA;
 	}
 	/* Set up the sockets and per-host congestion */
-	if (error = nfs_connect(nmp, saddr))
+	if (error = nfs_connect(nmp, saddr)) {
+		m_freem(saddr);
 		goto bad;
+	}
 
 	if (error = nfs_statfs(mp, &mp->m_stat))
 		goto bad;
@@ -236,7 +239,6 @@ mountnfs(argp, mp, saddr, pth, hst)
 bad:
 	nfs_disconnect(nmp);
 	FREE(nmp, M_NFSMNT);
-	m_freem(saddr);
 	return (error);
 }
 
