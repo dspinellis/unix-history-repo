@@ -1,6 +1,18 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
 #ifndef lint
-static char *sccsid = "@(#)symorder.c	4.5 (Berkeley) %G%";
-#endif
+char copyright[] =
+"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif not lint
+
+#ifndef lint
+static char sccsid[] = "@(#)symorder.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 /*
  * symorder - reorder symbol table
