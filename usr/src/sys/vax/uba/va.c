@@ -1,4 +1,4 @@
-/*	va.c	4.13.1.1	82/11/27	*/
+/*	va.c	4.13.1.2	82/11/27	*/
 
 #include "va.h"
 #if NVA > 0
@@ -15,6 +15,7 @@
 #include "../h/ubareg.h"
 #include "../h/ubavar.h"
 #include "../h/vcmd.h"
+#include "../h/uio.h"
 
 unsigned minvaph();
 
@@ -43,6 +44,7 @@ struct	vadevice {
 #define	VA_NOTREADY	0000400		/* something besides NPRTIMO */
 #define	VA_DONE		0000200
 #define	VA_IENABLE	0000100		/* interrupt enable */
+#define	VA_DMAGO	0000010		/* DMA go bit */
 #define	VA_SUPPLIESLOW	0000004
 #define	VA_BOTOFFORM	0000002
 #define	VA_BYTEREVERSE	0000001		/* reverse byte order in words */
@@ -89,10 +91,13 @@ vaprobe(reg)
 	vaaddr->vacsl = VA_IENABLE;
 	vaaddr->vaba = 0;
 	vaaddr->vacsh = VAPLOT;
+#ifndef VARIANGOBIT
 	vaaddr->vacsl = 0;
+#endif
 	vaaddr->vawc = -1;
 	DELAY(100000);
 	vaaddr->vacsl = 0;
+	return (sizeof (struct vadevice));
 }
 
 /*ARGSUSED*/
@@ -174,11 +179,16 @@ minvaph(bp)
 }
 
 /*ARGSUSED*/
-vawrite(dev)
+vawrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 
-	physio(vastrategy, &rvabuf[VAUNIT(dev)], dev, B_WRITE, minvaph);
+	if (VAUNIT(dev) > NVA)
+		u.u_error = ENXIO;
+	else
+		physio(vastrategy, &rvabuf[VAUNIT(dev)], dev, B_WRITE,
+		    minvaph, uio);
 }
 
 vawait(dev)
@@ -205,13 +215,17 @@ vastart(dev)
 	if (sc->sc_wc == 0)
 		return;
 	vaaddr->vaba = sc->sc_ubinfo;
+#ifndef VARIANGOBIT
 	vaaddr->vacsl = (sc->sc_ubinfo >> 12) & 0x30;
+#else
+	vaaddr->vacsl = (sc->sc_ubinfo >> 12) & 0x30 | VA_IENABLE | VA_DMAGO;
+#endif
 	vaaddr->vawc = sc->sc_wc;
 }
 
 /*ARGSUSED*/
-vaioctl(dev, cmd, addr, flag)
-	register caddr_t addr;
+vaioctl(dev, cmd, data, flag)
+	register caddr_t data;
 {
 	register int vcmd;
 	register struct va_softc *sc = &va_softc[VAUNIT(dev)];
@@ -219,16 +233,11 @@ vaioctl(dev, cmd, addr, flag)
 	switch (cmd) {
 
 	case VGETSTATE:
-		(void) suword(addr, sc->sc_state);
+		*(int *)data = sc->sc_state;
 		return;
 
 	case VSETSTATE:
-		vcmd = fuword(addr);
-		if (vcmd == -1) {	
-			u.u_error = EFAULT;
-			return;
-		}
-		vacmd(dev, vcmd);
+		vacmd(dev, *(int *)data);
 		return;
 
 	default:
