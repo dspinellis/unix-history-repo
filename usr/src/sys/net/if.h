@@ -1,4 +1,4 @@
-/*	if.h	6.4	84/04/06	*/
+/*	if.h	6.5	84/04/13	*/
 
 /*
  * Structures defining a network interface, providing a packet
@@ -129,11 +129,13 @@ struct	ifreq {
 	union {
 		struct	sockaddr ifru_addr;
 		struct	sockaddr ifru_dstaddr;
+		struct	sockaddr ifru_broadaddr;
 		short	ifru_flags;
 		caddr_t	ifru_data;
 	} ifr_ifru;
 #define	ifr_addr	ifr_ifru.ifru_addr	/* address */
 #define	ifr_dstaddr	ifr_ifru.ifru_dstaddr	/* other end of p-to-p link */
+#define	ifr_broadaddr	ifr_ifru.ifru_broadaddr	/* broadcast address */
 #define	ifr_flags	ifr_ifru.ifru_flags	/* flags */
 #define	ifr_data	ifr_ifru.ifru_data	/* for use by interface */
 };
