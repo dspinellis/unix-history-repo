@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fts.h	5.12 (Berkeley) %G%
+ *	@(#)fts.h	5.13 (Berkeley) %G%
  */
 
 typedef struct {
@@ -44,6 +44,9 @@ typedef struct _ftsent {
 	int fts_cderr;			/* chdir failed -- errno */
 	short fts_pathlen;		/* strlen(fts_path) */
 	short fts_namelen;		/* strlen(fts_name) */
+
+#define	FTS_ROOTPARENTLEVEL	-1
+#define	FTS_ROOTLEVEL		 0
 	short fts_level;		/* depth (-1 to N) */
 
 #define	FTS_D		 1		/* preorder directory */
