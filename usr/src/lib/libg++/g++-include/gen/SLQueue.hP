@@ -1,0 +1,118 @@
+// This may look like C code, but it is really -*- C++ -*-
+/* 
+Copyright (C) 1988 Free Software Foundation
+    written by Doug Lea (dl@rocky.oswego.edu)
+
+This file is part of GNU CC.
+
+GNU CC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY.  No author or distributor
+accepts responsibility to anyone for the consequences of using it
+or for whether it serves any particular purpose or works at all,
+unless he says so in writing.  Refer to the GNU CC General Public
+License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+GNU CC, but only under the conditions described in the
+GNU CC General Public License.   A copy of this license is
+supposed to have been given to you along with GNU CC so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  
+*/
+
+#ifndef _<T>SLQueue_h
+#ifdef __GNUG__
+#pragma once
+#pragma interface
+#endif
+#define _<T>SLQueue_h
+
+#include "<T>.SLList.h"
+#include "<T>.Queue.h"
+
+class <T>SLQueue : public <T>Queue
+{
+  <T>SLList    p;
+
+public:
+               <T>SLQueue();
+               <T>SLQueue(const <T>SLQueue& q);
+               ~<T>SLQueue();
+
+  void          operator = (const <T>SLQueue&);
+
+  void          enq(<T&> item);
+  <T>           deq();
+  <T>&          front();
+  void          del_front();
+
+  void          clear();
+  int           empty();
+  int           full();
+  int           length();
+               
+  int           OK();
+};
+
+#if defined(__OPTIMIZE__) || defined(USE_LIBGXX_INLINES)
+
+inline <T>SLQueue::<T>SLQueue() :p() {}
+inline <T>SLQueue::<T>SLQueue(const <T>SLQueue& q) : p(q.p) {}
+
+inline <T>SLQueue::~<T>SLQueue() {}
+
+inline void <T>SLQueue::enq(<T&>item)
+{
+  p.append(item);
+}
+
+inline <T> <T>SLQueue::deq()
+{
+  return p.remove_front();
+}
+
+inline <T>& <T>SLQueue::front()
+{
+  return p.front();
+}
+
+
+inline void <T>SLQueue::del_front()
+{
+  p.del_front();
+}
+
+inline void <T>SLQueue::operator =(const <T>SLQueue& s)
+{
+  p = s.p;
+}
+
+inline int <T>SLQueue::empty()
+{
+  return p.empty();
+}
+
+inline int <T>SLQueue::full()
+{
+  return 0;
+}
+
+inline int <T>SLQueue::length()
+{
+  return p.length();
+}
+
+inline int <T>SLQueue::OK()
+{
+  return p.OK();
+}
+
+inline void <T>SLQueue::clear()
+{
+  p.clear();
+}
+
+
+#endif
+#endif
