@@ -1,0 +1,18 @@
+.th PFE I 11/1/73
+.sh NAME
+pfe \*- print floating exception
+.sh SYNOPSIS
+.bd pfe
+.sh DESCRIPTION
+.it Pfe
+examines the floating point exception register and
+prints a diagnostic for the last
+floating point exception.
+.sh "SEE ALSO"
+signal (II)
+.sh BUGS
+Since the system does not save the exception register
+in a core image file,
+the message
+refers to the last error encountered by anyone.
+Floating exceptions are therefore volatile.
