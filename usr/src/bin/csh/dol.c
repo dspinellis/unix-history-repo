@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)dol.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)dol.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -558,7 +558,7 @@ Dtestq(c)
 
 /*
  * Form a shell temporary file (in unit 0) from the words
- * of the shell input up to a line the same as "term".
+ * of the shell input up to EOF or a line the same as "term".
  * Unit 0 should have been closed before this call.
  */
 heredoc(term)
@@ -593,11 +593,7 @@ heredoc(term)
 		lbp = lbuf; lcnt = BUFSIZ - 4;
 		for (;;) {
 			c = readc(1);		/* 1 -> Want EOF returns */
-			if (c < 0) {
-				setname(term);
-				bferr("<< terminator not found");
-			}
-			if (c == '\n')
+			if (c < 0 || c == '\n')
 				break;
 			if (c &= TRIM) {
 				*lbp++ = c;
@@ -610,9 +606,9 @@ heredoc(term)
 		*lbp = 0;
 
 		/*
-		 * Compare to terminator -- before expansion
+		 * Check for EOF or compare to terminator -- before expansion
 		 */
-		if (eq(lbuf, term)) {
+		if (c < 0 || eq(lbuf, term)) {
 			(void) write(0, obuf, BUFSIZ - ocnt);
 			(void) lseek(0, (off_t)0, 0);
 			return;
