@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)disklabel.h	7.23 (Berkeley) %G%
+ *	@(#)disklabel.h	7.24 (Berkeley) %G%
  */
 
 /*
@@ -198,6 +198,7 @@ static char *dktypenames[] = {
 #define	FS_OTHER	10		/* in use, but unknown/unsupported */
 #define	FS_HPFS		11		/* OS/2 high-performance file system */
 #define	FS_ISO9660	12		/* ISO 9660, normally CD-ROM */
+#define	FS_BOOT		13		/* partition contains bootstrap */
 
 #ifdef	DKTYPENAMES
 static char *fstypenames[] = {
@@ -214,6 +215,7 @@ static char *fstypenames[] = {
 	"unknown",
 	"HPFS",
 	"ISO9660",
+	"boot",
 	0
 };
 #define FSMAXTYPES	(sizeof(fstypenames) / sizeof(fstypenames[0]) - 1)
