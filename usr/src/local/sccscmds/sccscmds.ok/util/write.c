@@ -1,5 +1,7 @@
 # include "errno.h"
 # include "../hdr/macros.h"
+#include <sys/syscall.h>
+#define	syswrite(a,b,c)	syscall(SYS_write,a,b,c)
 SCCSID(@(#)write	2.1);
 
 /*

@@ -1,4 +1,4 @@
-static char Sccsid[] = "@(#)setsig.c	1.2	%G%";
+static char Sccsid[] = "@(#)setsig.c	1.3	%G%";
 
 # include	"signal.h"
 #undef NSIG
@@ -8,6 +8,8 @@ static char Sccsid[] = "@(#)setsig.c	1.2	%G%";
 #define NSIG 4
 # endif
 # include	"../hdr/macros.h"
+#include <sys/syscall.h>
+#define	syswrite(a,b,c)	syscall(SYS_write,a,b,c)
 
 /*
 	General-purpose signal setting routine.
