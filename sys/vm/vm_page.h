@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.h	7.3 (Berkeley) 4/21/91
- *	$Id: vm_page.h,v 1.8 1994/01/31 04:21:19 davidg Exp $
+ *	$Id: vm_page.h,v 1.9 1994/03/14 21:54:29 davidg Exp $
  */
 
 /*
@@ -71,7 +71,9 @@
 #ifndef	_VM_PAGE_
 #define	_VM_PAGE_
 
+#ifdef KERNEL
 #include <systm.h>
+#endif
 /*
  *	Management of resident (logical) pages.
  *
