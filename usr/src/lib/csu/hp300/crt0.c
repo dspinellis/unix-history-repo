@@ -1,13 +1,13 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
+ * Copyright (c) 1991 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.proprietary.c%
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)crt0.c	5.2 (Berkeley) %G%";
-#endif /* LIBC_SCCS and not lint */
+#ifndef lint
+static char sccsid[] = "@(#)crt0.c	5.3 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  *	C start up routine.
@@ -32,15 +32,12 @@ static char sccsid[] = "@(#)crt0.c	5.2 (Berkeley) %G%";
 char **environ = (char **)0;
 static int fd;
 
-asm("#define _start start");
-asm("#define _eprol eprol");
-
-#ifdef hp300
-asm("#define link .long 0; linkw");	/* Yuk!! */
-#endif
-
 extern	unsigned char	etext;
-extern	unsigned char	eprol;
+extern	unsigned char	eprol asm ("eprol");
+extern			start() asm("start");
+
+asm(".text; orb #0,d0");	/* 32 bits of zero at location 0 */
+
 start()
 {
 	struct kframe {
@@ -52,9 +49,7 @@ start()
 	/*
 	 *	ALL REGISTER VARIABLES!!!
 	 */
-	register int d7;		/* needed for init (this will be
-					   a problem with GCC) */
-	register struct kframe *kfp;	/* PCC a5 */
+	register struct kframe *kfp;	/* r10 */
 	register char **targv;
 	register char **argv;
 	extern int errno;
@@ -63,11 +58,7 @@ start()
 	kfp = 0;
 	initcode = initcode = 0;
 #else not lint
-#ifdef __GNUC__
 	asm("lea a6@(4),%0" : "=r" (kfp));	/* catch it quick */
-#else
-	asm("	lea	a6@(4),a5");	/* catch it quick */
-#endif
 #endif not lint
 	for (argv = targv = &kfp->kargv[0]; *targv++; /* void */)
 		/* void */ ;
@@ -97,25 +88,18 @@ asm("eprol:");
 	errno = 0;
 	exit(main(kfp->kargc, argv, environ));
 }
-asm("#undef link");
-asm("#undef _start");
-asm("#undef _eprol");
 
 #ifdef MCRT0
 /*ARGSUSED*/
 exit(code)
-	register int code;	/* PCC d7 */
+	register int code;
 {
 	monitor(0);
 	_cleanup();
-#ifdef __GNUC__
 	asm("movl %1,sp@-" : "=m" (*(char *)0) : "r" (code));
-#else
-	asm("	movl d7,sp@-");
-#endif
-	asm("	subql #4,sp");
-	asm("	movl #1,d0");
-	asm("	trap #0");
+	asm("subql #4,sp");
+	asm("movl #1,d0");
+	asm("trap #0");
 }
 #endif MCRT0
 
@@ -129,6 +113,6 @@ moncontrol(val)
 {
 
 }
-asm("	.globl	mcount");
-asm("mcount:	rts");
+asm(".globl mcount");
+asm("mcount: rts");
 #endif CRT0
