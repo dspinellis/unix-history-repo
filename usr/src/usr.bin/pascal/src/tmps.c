@@ -1,44 +1,106 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)tmps.c 1.1 %G%";
+static char sccsid[] = "@(#)tmps.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
+#ifdef PC
+#   include "pc.h"
+#endif PC
+
+/*
+ * This routine defines the register allocation strategy
+ * All temporaries are allocated here, and this routines decides
+ * where they are to be put.
+ */
+#ifdef VAX
+#    define MAXREGS 6
+#    define REGSIZ 4
+#    define FIRSTREG 6
+#else
+#ifdef PDP11
+#    define MAXREGS 3
+#    define REGSIZ 2
+#    define FIRSTREG 2
+#else
+#    define MAXREGS 0
+#    define REGSIZ 0
+#    define FIRSTREG 0
+#endif PDP11
+#endif VAX
 
 /*
  * allocate runtime temporary variables
  */
 long
-tmpalloc(size, type, loc)
+tmpalloc(size, type, mode)
 	long size;
 	struct nl *type;
-	int loc;
+	int mode;
 {
-	long offset;
+	register struct om *op = &sizes[ cbn ];
+	register int offset;
 
-	offset = sizes[ cbn ].curtmps.om_off -= size;
-	if ( offset < sizes[ cbn ].om_max ) {
-	    sizes[ cbn ].om_max = offset;
+#	ifdef PC
+	    if (mode == REGOK && size <= REGSIZ &&
+		op->curtmps.reg_off < MAXREGS) {
+		    offset = op->curtmps.reg_off++;
+		    if ( offset > op->reg_max ) {
+			    op->reg_max = offset;
+		    }
+		    /*
+		     * the register number is encoded as an odd negative number
+		     * which can never appear as an address.
+		     */
+		    return -(((offset + FIRSTREG) << 1) + 1);
+	    }
+#	endif PC
+	offset = op->curtmps.om_off -= size;
+	if ( offset < op->om_max ) {
+	        op->om_max = offset;
 	}
 #	ifdef PC
 	    putlbracket( ftnno , -offset );
 #	endif PC
 	return offset;
 }
-
+
 /*
  * deallocate runtime temporary variables
  */
 tmpfree(restore)
-	struct tmps *restore;
+	register struct tmps *restore;
 {
-	long offset;
+	register struct om *op = &sizes[ cbn ];
 
-	offset = restore->om_off;
-	if (offset > sizes[cbn].curtmps.om_off) {
-		sizes[cbn].curtmps.om_off = offset;
+#	ifdef PC
+	    if (restore->reg_off < op->curtmps.reg_off) {
+		    op->curtmps.reg_off = restore->reg_off;
+	    }
+#	endif PC
+	if (restore->om_off > op->curtmps.om_off) {
+		op->curtmps.om_off = restore->om_off;
 #		ifdef PC
-		    putlbracket( ftnno , -offset );
+		    putlbracket( ftnno , -restore->om_off );
 #		endif PC
 	}
 }
+
+#ifdef VAX
+/*
+ * create a save mask for registers which have been used
+ * in this level
+ */
+savmask()
+{
+	short mask;
+	int i;
+
+	mask = RSAVEMASK;
+	if (opt('t'))
+	        mask |= RUNCHECK;
+	for (i = 0; i <= sizes[ cbn ].reg_max; i++)
+		mask |= 1 << (FIRSTREG + i);
+	return mask;
+}
+#endif VAX

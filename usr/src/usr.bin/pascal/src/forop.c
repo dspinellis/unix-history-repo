@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)forop.c 1.4 %G%";
+static char sccsid[] = "@(#)forop.c 1.5 %G%";
 
 #include	"whoami.h"
 #include	"0.h"
@@ -61,8 +61,8 @@ forop( arg )
 	init = ( (int *) arg[2] )[3];
 	term = arg[3];
 	stat = arg[4];
-	if ( lhs[3] != NIL ) {
-	    error("For variable must be unqualified");
+	if (lhs == NIL) {
+nogood:
 	    rvalue( init , NIL , RREQ );
 	    rvalue( term , NIL , RREQ );
 	    statement( stat );
@@ -73,10 +73,20 @@ forop( arg )
 	     */
 	forvar = lookup( lhs[2] );
 	if ( forvar == NIL ) {
-	    rvalue( init , NIL , RREQ );
-	    rvalue( term , NIL , RREQ );
-	    statement( stat );
-	    goto byebye;
+	    goto nogood;
+	}
+	if ( lhs[3] != NIL ) {
+	    error("For variable %s must be unqualified", forvar->symbol);
+	    goto nogood;
+	}
+	if (forvar->class == WITHPTR) {
+	    error("For variable %s cannot be an element of a record", lhs[2]);
+	    goto nogood;
+	}
+	if (opt('s') &&
+	    (bn != cbn || whereis(forvar->value[NL_OFFS]) == PARAMVAR)) {
+	    standard();
+	    error("For variable %s must be declared in the block in which it is used", forvar->symbol);
 	}
 	    /*
 	     * find out the type of the loop variable
@@ -87,24 +97,26 @@ forop( arg )
 	    /*
 	     * mark the forvar so we can't change it during the loop
 	     */
+	if (forvar->value[NL_FORV]) {
+	    error("Can't modify the for variable %s in the range of the loop", forvar->symbol);
+	    forvar = NIL;
+	    goto nogood;
+	}
 	forvar -> value[ NL_FORV ] = 1;
 	if ( fortype == NIL ) {
-	    rvalue( init , NIL , RREQ );
-	    rvalue( term , NIL , RREQ );
-	    statement( stat );
-	    goto byebye;
+	    goto nogood;
 	}
 	if ( isnta( fortype , "bcis" ) ) {
-	    error("For variables cannot be %ss" , nameof( fortype ) );
-	    rvalue( init , NIL , RREQ );
-	    rvalue( term , NIL , RREQ );
-	    statement( stat );
-	    goto byebye;
+	    error("For variable %s cannot be %ss", forvar->symbol, nameof( fortype ) );
+	    goto nogood;
 	}
 	    /*
 	     * allocate space for the initial and termination expressions
 	     */
 	initoff = tmpalloc(sizeof(long), nl+T4INT, REGOK);
+	forvar -> value[ NL_SOFFS ] = forvar -> value[ NL_OFFS ];
+	forvar -> value[ NL_OFFS ] = initoff;
+	forvar -> value[ NL_FORV ] = 3;
 	termoff = tmpalloc(sizeof(long), nl+T4INT, REGOK);
 #	ifdef PC
 		/*
@@ -158,11 +170,18 @@ forop( arg )
 	    putop( P2CBRANCH , P2INT );
 	    putdot( filename , line );
 		/*
+		 * put down the label at the top of the loop
+		 */
+	    again = getlab();
+	    putlab( again );
+		/*
 		 * okay, then we have to execute the body, but first,
 		 * assign the initial expression to the for variable.
 		 * see the note in asgnop1 about why this is an rvalue.
 		 */
+	    forvar -> value[ NL_OFFS ] = forvar -> value[ NL_SOFFS ];
 	    rvalue( lhs , NIL , RREQ );
+	    forvar -> value[ NL_OFFS ] = initoff;
 	    if ( opt( 't' ) ) {
 		precheck( fortype , "_RANG4" , "_RSNG4" );
 	    }
@@ -185,24 +204,26 @@ forop( arg )
 	    after = getlab();
 	    put(2, O_IF, after);
 		/*
+		 * put down the label at the top of the loop
+		 */
+	    again = getlab();
+	    putlab( again );
+		/*
 		 * okay, then we have to execute the body, but first,
 		 * assign the initial expression to the for variable.
 		 */
+	    forvar -> value[ NL_OFFS ] = forvar -> value[ NL_SOFFS ];
 	    lvalue( lhs , NOUSE , LREQ );
 	    put(2, O_RV4 | cbn<<8+INDX, initoff);
 	    rangechk(fortype, nl+T4INT);
 	    gen(O_AS2, O_AS2, width(fortype), sizeof(long));
+	    forvar -> value[ NL_OFFS ] = initoff;
 #	endif OBJ
-	/*
-	 * put down the label at the top of the loop
-	 */
-	again = getlab();
-	putlab( again );
-	putcnt();
 	    /*
 	     * and don't forget ...
 	     */
-	statement( arg[ 4 ] );
+	putcnt();
+	statement( stat );
 	    /*
 	     * wasn't that fun?  do we get to do it again?
 	     *	we don't do it again if ( !( forvar < limit ) )
@@ -282,6 +303,8 @@ forop( arg )
 byebye:
 	noreach = 0;
 	if ( forvar != NIL ) {
+	    if (forvar -> value[ NL_FORV ] > 1)
+		forvar -> value[ NL_OFFS ] = forvar -> value[ NL_SOFFS ];
 	    forvar -> value[ NL_FORV ] = 0;
 	}
 	if ( goc != gocnt ) {

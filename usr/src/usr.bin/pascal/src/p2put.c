@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)p2put.c 1.4 %G%";
+static	char sccsid[] = "@(#)p2put.c 1.5 %G%";
 
     /*
      *	functions to help pi put out
@@ -222,6 +222,10 @@ putRV( name , level , offset , type )
 
 	if ( cgenflg )
 	    return;
+	if (level == cbn && whereis(offset) == REGVAR) {
+	    putleaf( P2REG , 0 , (-offset) >> 1 , type , 0 );
+	    return;
+	}
 	if ( ( level <= 1 ) && ( name != 0 ) ) {
 	    if ( name[0] != '_' ) {
 		    sprintf( extname , EXTFORMAT , name );
@@ -242,6 +246,7 @@ putRV( name , level , offset , type )
      *	special case for
      *	    named globals, whose lvalues are just their names as constants.
      *	    negative offsets, that are offsets from the frame pointer.
+     *	    odd negative numbers are register variables.
      *	    positive offsets, that are offsets from argument pointer.
      */
 putLV( name , level , offset , type )
@@ -249,49 +254,49 @@ putLV( name , level , offset , type )
     int		level;
     int		offset;
     int		type;
-    {
-	char		extname[ BUFSIZ ];
-	char		*printname;
+{
+    char		extname[ BUFSIZ ];
+    char		*printname;
 
-	if ( cgenflg )
-	    return;
-	if ( ( level <= 1 ) && ( name != 0 ) ) {
-	    if ( name[0] != '_' ) {
-		    sprintf( extname , EXTFORMAT , name );
-		    printname = extname;
-	    } else {
-		    printname = name;
-	    }
-	    putleaf( P2ICON , offset , 0 , ADDTYPE( type , P2PTR )
-		    , printname );
-	    return;
-	}
-	if ( level == cbn ) {
-		if ( offset < 0 ) {
-		    putleaf( P2REG , 0 , P2FP , ADDTYPE( type , P2PTR ) , 0 );
-		} else {
-		    putleaf( P2REG , 0 , P2AP , ADDTYPE( type , P2PTR ) , 0 );
-		}
+    if ( cgenflg )
+	return;
+    if ( ( level <= 1 ) && ( name != 0 ) ) {
+	if ( name[0] != '_' ) {
+		sprintf( extname , EXTFORMAT , name );
+		printname = extname;
 	} else {
-		if ( offset < 0 ) {
-			putleaf( P2NAME
-			    , ( level * sizeof(struct dispsave) ) + FP_OFFSET
-			    , 0 , P2PTR | P2CHAR , DISPLAYNAME );
-		} else {
-			putleaf( P2NAME
-			    , ( level * sizeof(struct dispsave) ) + AP_OFFSET
-			    , 0 , P2PTR | P2CHAR , DISPLAYNAME );
-		}
+		printname = name;
 	}
-	if ( offset < 0 ) {
-		putleaf( P2ICON , -offset , 0 , P2INT , 0 );
-		putop( P2MINUS , P2PTR | P2CHAR );
-	} else {
-		putleaf( P2ICON , offset , 0 , P2INT , 0 );
-		putop( P2PLUS , P2PTR | P2CHAR );
-	}
+	putleaf( P2ICON , offset , 0 , ADDTYPE( type , P2PTR )
+		, printname );
 	return;
     }
+    switch(whereis(offset)) {
+	case PARAMVAR:
+	    if ( level == cbn ) {
+		putleaf( P2REG , 0 , P2AP , ADDTYPE( type , P2PTR ) , 0 );
+	    } else {
+		putleaf( P2NAME , (level * sizeof(struct dispsave)) + AP_OFFSET
+		    , 0 , P2PTR | P2CHAR , DISPLAYNAME );
+	    }
+	    putleaf( P2ICON , offset , 0 , P2INT , 0 );
+	    putop( P2PLUS , P2PTR | P2CHAR );
+	    break;
+	case LOCALVAR:
+	    if ( level == cbn ) {
+		putleaf( P2REG , 0 , P2FP , ADDTYPE( type , P2PTR ) , 0 );
+	    } else {
+		putleaf( P2NAME , (level * sizeof(struct dispsave)) + FP_OFFSET
+		    , 0 , P2PTR | P2CHAR , DISPLAYNAME );
+	    }
+	    putleaf( P2ICON , -offset , 0 , P2INT , 0 );
+	    putop( P2MINUS , P2PTR | P2CHAR );
+	    break;
+	case REGVAR:
+	    panic("lval of reg");
+    }
+    return;
+}
 
     /*
      *	put out a floating point constant leaf node
