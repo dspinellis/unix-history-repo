@@ -1,0 +1,436 @@
+.TH INTRO 2 2/13/83
+.de en
+.HP
+\\$1  \\$2  \\$3
+.br
+..
+.SH NAME
+intro \- introduction to system calls and error numbers
+.SH SYNOPSIS
+.B #include <errno.h>
+.SH DESCRIPTION
+This section describes all of the system calls.  Most
+of these calls have one or more error returns.
+An error condition is indicated by an otherwise impossible return
+value.  This is almost always \-1; the individual descriptions
+specify the details.
+.PP
+As with normal arguments, all return codes and values from
+functions are of type integer unless otherwise noted.
+An error number is also made available in the external
+variable \fIerrno\fP, which is not cleared
+on successful calls.
+Thus \fIerrno\fP should be tested only after an error has occured.
+.PP
+The following is a complete list of the errors and their
+names as given in <error.h>.
+.en 0 \h'\w'EIO'u' "Error 0
+Unused.
+.en 1 EPERM "Not owner
+Typically this error indicates
+an attempt to modify a file in some way forbidden
+except to its owner or super-user.
+It is also returned for attempts
+by ordinary users to do things
+allowed only to the super-user.
+.en 2 ENOENT "No such file or directory
+This error occurs when a file name is specified
+and the file should exist but doesn't, or when one
+of the directories in a path name does not exist.
+.en 3 ESRCH "No such process
+The process whose number was given to
+.I kill
+and
+.I ptrace
+does not exist, or is already dead.
+.en 4 EINTR "Interrupted system call
+An asynchronous signal (such as interrupt or quit),
+which the user has elected to catch,
+occurred during a system call.
+If execution is resumed
+after processing the signal,
+it will appear as if the interrupted system call
+returned this error condition.
+.en 5 EIO "I/O error
+Some physical I/O error occurred during a
+.I read
+or
+.IR write .
+This error may in some cases occur
+on a call following the one to which it actually applies.
+.en 6 ENXIO "No such device or address
+I/O on a special file refers to a subdevice which does not
+exist,
+or beyond the limits of the device.
+It may also occur when, for example, an illegal tape drive
+unit number is selected 
+or a disk pack is not loaded on a drive.
+.en 7 E2BIG "Arg list too long
+An argument list longer than 10240 bytes
+is presented to
+.IR exec .
+.en 8 ENOEXEC "Exec format error
+A request is made to execute a file
+which, although it has the appropriate permissions,
+does not start with a valid magic number, see
+.IR a.out (5).
+.en 9 EBADF "Bad file number
+Either a file descriptor refers to no
+open file,
+or a read (resp. write) request is made to
+a file which is open only for writing (resp. reading).
+.en 10 ECHILD "No children
+.I Wait
+and the process has no
+living or unwaited-for children.
+.en 11 EAGAIN "No more processes
+In a
+.I fork,
+the system's process table is full
+or the user is not allowed to create any more
+processes.
+.en 12 ENOMEM "Not enough core
+During an
+.I exec
+or
+.I break,
+a program asks for more core or swap space than the system is
+able to supply.
+A lack of swap space is normally a temporary condition, however
+a lack of core
+is not a temporary condition; the maximum size
+of the text, data, and stack segments is a system parameter.
+.en 13 EACCES "Permission denied
+An attempt was made to access a file in a way forbidden
+by the protection system.
+.en 14 EFAULT "Bad address
+The system encountered a hardware fault in attempting to
+access the arguments of a system call.
+.en 15 ENOTBLK "Block device required
+A plain file was mentioned where a block device was required,
+e.g. in
+.IR mount .
+.en 16 EBUSY "Mount device busy
+An attempt to mount a device that was already mounted or
+an attempt was made to dismount a device
+on which there is an active file
+directory.
+(open file, current directory, mounted-on file, active text segment).
+.en 17 EEXIST "File exists
+An existing file was mentioned in an inappropriate context,
+e.g.
+.IR link .
+.en 18 EXDEV "Cross-device link
+A link to a file on another device
+was attempted.
+.en 19 ENODEV "No such device
+An attempt was made to apply an inappropriate
+system call to a device;
+e.g. read a write-only device.
+.en 20 ENOTDIR "Not a directory
+A non-directory was specified where a directory
+is required,
+for example in a path name or
+as an argument to
+.IR chdir .
+.en 21 EISDIR "Is a directory
+An attempt to write on a directory.
+.en 22 EINVAL "Invalid argument
+Some invalid argument:
+dismounting a non-mounted
+device,
+mentioning an unknown signal in
+.I signal,
+reading or writing a file for which
+.I seek
+has generated a negative pointer.
+Also set by math functions, see 
+.IR intro (3).
+.en 23 ENFILE "File table overflow
+The system's table of open files is full,
+and temporarily no more
+.I opens
+can be accepted.
+.en 24 EMFILE "Too many open files
+Customary configuration limit is 20 per process.
+.en 25 ENOTTY "Not a typewriter
+The file mentioned in an
+.I ioctl
+is not a terminal or one of the other
+devices to which these calls apply.
+.en 26 ETXTBSY "Text file busy
+An attempt to execute a pure-procedure
+program which is currently open for writing
+(or reading!).
+Also an attempt to open for writing a pure-procedure
+program that is being executed.
+.en 27 EFBIG "File too large
+The size of a file exceeded the maximum (about
+.if t 10\u\s-29\s+2\d
+.if n 1.0E9
+bytes).
+.en 28 ENOSPC "No space left on device
+During a
+.I write
+to an ordinary file,
+there is no free space left on the device.
+.en 29 ESPIPE "Illegal seek
+An
+.I lseek
+was issued to a pipe.
+This error may also be issued for
+other non-seekable devices.
+.en 30 EROFS "Read-only file system
+An attempt to modify a file or directory
+was made
+on a device mounted read-only.
+.en 31 EMLINK "Too many links
+An attempt to make more than 32767 hard links to a file.
+.en 32 EPIPE "Broken pipe
+A write on a pipe or socket for which there is no process
+to read the data.
+This condition normally generates a signal;
+the error is returned if the signal is ignored.
+.en 33 EDOM "Math argument
+The argument of a function in the math package (3M)
+is out of the domain of the function.
+.en 34 ERANGE "Result too large
+The value of a function in the math package (3M)
+is unrepresentable within machine precision.
+.en 35 EWOULDBLOCK "Operation would block"
+An operation which would cause a process to block was attempted
+on a object in non-blocking mode (see \fIioctl\fP (2)).
+.en 36 EINPROGRESS "Operation now in progress"
+An operation which takes a long time to complete (such as
+a \fIconnect\fP (2)) was attempted on a non-blocking object (see
+\fIioctl\fP (2)).
+.en 37 EALREADY "Operation already in progress"
+An operation was attempted on a non-blocking object which already
+had an operation in progress.
+.en 38 ENOTSOCK "Socket operation on non-socket"
+Self-explanatory.
+.en 39 EDESTADDRREQ "Destination address required"
+A required address was omitted from an operation on a socket.
+.en 40 EMSGSIZZE "Message too long"
+A message sent on a socket was larger than the internal message buffer.
+.en 41 EPROTOTYPE "Protocol wrong type for socket"
+A protocol was specified which does not support the semantics of the
+socket type requested. For example you cannot use the ARPA Internet
+UDP protocol with type SOCK_STREAM.
+.en 42 ENOPROTOOPT "Protocol not available"
+In this incarnation of the system.
+.en 43 EPROTONOSUPPORT "Protocol not supported"
+In this incarnation of the system.
+.en 44 ESOCKTNOSUPPORT "Socket type not supported"
+In this incarnation of the system.
+.en 45 EOPNOTSUPP "Operation not supported on socket"
+For example, trying to \fIaccept\fP a connection on a datagram socket.
+.en 46 EPFNOSUPPORT "Protocol family not supported"
+In this incarnation of the system.
+.en 47 EAFNOSUPPORT "Address family not supported by protocol family"
+An address incompatible with the requested protocol was used.
+For example, you shouldn't necessarily expect to be able to use PUP
+Internet addresses with ARPA Internet protocols.
+.en 48 EADDRINUSE "Address already in use"
+Only one usage of each address is normally permitted.
+.en 49 EADDRNOTAVAIL "Can't assign requested address"
+Normally results from an attempt to create a socket with an
+address not on this machine.
+.en 50 ENETDOWN "Network is down"
+A socket operation encountered a dead network.
+.en 51 ENETUNREACH "Network is unreachable"
+A socket operation was attempted to an unreachable network.
+.en 52 ENETRESET "Network dropped connection on reset"
+The host you were connected to crashed and rebooted.
+.en 53 ECONNABORTED "Software caused connection abort"
+A connection abort was caused internal to your host machine.
+.en 54 ECONNRESET "Connection reset by peer"
+A connection was forcibly closed by a peer.  This normally
+results from the peer executing a \fIshutdown\fP (2) call.
+.en 55 ENOBUFS "No buffer space available"
+For a socket or a pipe in the buffer pool.
+.en 56 EISCONN "Socket is already connected"
+.en 57 ENOTCONN "Socket is not connected"
+.en 58 ESHUTDOWN "Can't send after socket shutdown"
+.en 59 \fIunused\fP
+.en 60 ETIMEDOUT "Connection timed out"
+Due to failure to initiate properly or because keep-alives failed.
+.en 61 ECONNREFUSED "Connection refused"
+No connection could be made because the target machine actively
+refused it.  This usually results from trying to connect
+to a service which is inactive on the foreign host.
+.en 62 ELOOP "Too many levels of symbolic links"
+A path name lookup involved more than 8 symbolic links.
+.en 63 ENAMETOOLONG "File name too long"
+A component of a path name exceeded 255 characters, or an entire
+path name exceeded 1023 characters.
+.en 64 ENOTEMPTY "Directory not empty"
+A directory with entries other than \*(lq.\*(rq and \*(lq..\*(rq
+was supplied to a remove directory or rename call.
+.SH DEFINITIONS
+.TP 5
+Process ID
+.br
+Each active process in the system is uniquely identified by a positive
+integer called a process ID.  The range of this ID is from 0 to {PROC_MAX}.
+.TP 5
+Parent process ID
+.br
+A new process is created by a currently active process; see
+.IR fork (2).
+The parent process ID of a process is the process ID of its creator.
+.TP 5
+Process Group ID
+.br
+Each active process is a member of a process group that is identified by
+a positive integer called the process group ID.  This is is the process
+ID of the group leader.  This grouping permits the signalling of related
+processes (see \fIkill\fP\|(2)) and the job control mechanisms of
+\fIcsh\fP\|(1).
+.TP 5
+Tty Group ID
+.br
+Each active process can be a member of a terminal group that is identified
+by a positive integer called the tty group ID.  This grouping is used
+to arbitrate between multiple jobs contending for the same terminal;
+see
+.IR csh (1),
+.IR intro (3J)
+and
+.IR tty (4).
+.TP 5
+Real User ID, Real Group ID, and Access Groups
+.br
+Each user allowed on the system is identified by a positive integer
+called a real user ID.
+.IP
+Each user is also a member of a group.  The group is identified
+by a positive integer called the real group ID and is used to
+implement accounting.
+.IP
+Each user is also the member of a number of access groups.
+The access groups allow the user additional access to files.
+.IP
+An active process has a real user ID and real group ID and an
+access group set.  These are initialized from the equivalent attributes
+of the process which created it.
+.TP 5
+Effective User Id and Effective Group Id
+.br
+An active process has an effective user ID and an effective group ID
+that are used to determine file access permissions (see below).
+The effective user ID and effective group ID are equal to the
+process's real user ID and real group ID respectively, unless the
+process or one of its ancestors evolved from a file that
+had the set-user-ID flag or set-group ID flag set; see
+.IR execve (2).
+.TP 5
+Super-user
+.br
+A process is recognized as a
+.I super-user
+process and is granted special privileges if its effective user ID is 0.
+.TP 5
+Special Processes
+.br
+The processes with a process ID's of 0, 1, and 2 are special.
+Proc0 is the scheduler.  Proc1 is the initialization process
+.IR init ,
+and is the ancestor of every other process in the system.
+It is used to control the process structure.
+Proc2 is the paging daemon.
+.TP 5
+Descriptor
+.br
+An integer assigned by the system when a file is referenced
+by
+.IR open (2),
+.IR creat (2),
+.IR dup (2),
+or 
+.IR pipe (2)
+or a socket is referenced by
+.IR socket (2)
+or
+.IR socketpair (2)
+which uniquely idntifies an access path into that file or socket from
+a given process or any of its children.
+.TP 5
+File Name
+.br
+Names consisting of up to {FILENAME_MAX} characters may be used to name
+an ordinary file, special file, or directory.
+.IP
+These characters may be selected from the set of all ASCII character
+excluding 0 (null) and the ASCII code for / (slash).
+.IP
+Note that it is generally unwise to use *, ?, [ or ] as part of
+file names because of the special meaning attached to these characters
+by the shell.
+.TP 5
+Path Name
+.br
+A path name is a null-terminated character string starting with an
+optional slash (/), followed by zero or more directory names separated
+by slashes, optionally followed by a file name.
+The total length of a path name must be less than {PATHNAME_MAX} characters.
+.IP
+If a path name begins with a slash, the path search begins at the
+.I root
+directory.
+Otherwise, the search begins from the current working directory.
+A slash by itself names the root directory.  A null
+pathname refers to the current directory.
+.TP 5
+Directory
+.br
+Directory entries are called links.  By convention, a directory
+contains at least two links, . and .., referred to as
+.I dot
+and
+.I dot-dot
+respectively.  Dot refers to the directory itself and
+dot-dot refers to its parent directory.
+.TP 5
+Root Directory and Current Working Directory
+.br
+Each process has associated with it a concept of a root directory
+and a current working directory for the purpose of resolving path
+name searches.  A process's root directory need not be the root
+directory of the root file system.
+.TP 5
+File Access Permissions
+.br
+Read, write, and execute/search permissions on a file are granted to
+a process if:
+.IP
+The process's effective user ID is super-user.
+.IP
+The process's effective user ID matches the user ID of the owner
+of the file and the appropriate access bit of the owner portion
+of the file mode is set.
+.IP
+The process's effective user ID does not match the user ID of the
+owner of the file, and either the process's group ID matches the group
+of the file, or the group of the file is the process's access group
+set, and the appropriate access bit of the group portion of the
+file name is set.
+.IP
+The process is neither the same user ID as the file nor
+is it the same group as the file, but the appropriate
+access bit of the other bit of the file mode is set.
+.IP
+Otherwise, the corresponding permissions are denied.
+.TP 5
+Sockets and Address Families
+.IP
+An endpoint for messages or stream communications.  Each
+socket has queues for sending and receiving data.
+.IP
+Each instance of the system supports some number of sets of
+communications protocols.  Each protocol set supports addresses
+of a certain format.  An Address Family is the set of addresses
+for a specific group of protocols.  Each socket has an address
+chosen from the address family in which the socket was created.
+.SH SEE ALSO
+intro(3), perror(3)
