@@ -1,4 +1,4 @@
-(Version 8.22 of %G%)
+(Version 8.23 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -32,6 +32,8 @@ X ****	Should have new mailer flags to override LocalMailer stuff:
 	  reasons.)
 	- Need for $@host part of triple and Return-Receipt-To: processing
 	  should also be split apart.
+	- M_RUNASRCPT (?) -- always setuid to the recipient before calling
+	  the mailer.
 	[8.8]
 
 X ****	Mailer flag to enable/disable surrounding route-addrs with
@@ -74,6 +76,15 @@ X ****	Named rulesets.
 E ****	Change collect() handling to use high level timeouts instead
 	of per-line timeouts -- the current mechanism is swamping
 	the machine with system calls.  (Look at KJS code.)
+
+X ****	Add smrsh to release.
+
+E ****	Have returned warning messages (and errors?) include a
+	``Precedence: automatic'' header to make them easier to filter.
+
+E ***	Arrange to run queue jobs as the owner of that queue file.  This
+	probably requires forcing a fork in order to be able to completely
+	restore the uid/gid portably without leaking out root privileges.
 
 E ***	Long term host status -- store host status on disk for sharing
 	between runs.
