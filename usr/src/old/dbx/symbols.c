@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)symbols.c	1.13 (Berkeley) %G%";
+static	char sccsid[] = "@(#)symbols.c	1.14 (Berkeley) %G%";
 
 /*
  * Symbol management.
@@ -1492,7 +1492,7 @@ Name n;
     register Symbol s, p, t, f;
 
     find(s, n)
-	where s->class != FIELD and s->class != TAG and s->class != MODULE
+	where s->class != FIELD and s->class != TAG
     endfind(s);
     if (s == nil) {
 	s = lookup(n);
@@ -1506,8 +1506,7 @@ Name n;
 	p = curfunc;
 	do {
 	    find(t, n) where
-		t->block == p and t->class != FIELD and
-		t->class != TAG and t->class != MODULE
+		t->block == p and t->class != FIELD and t->class != TAG
 	    endfind(t);
 	    p = p->block;
 	} while (t == nil and p != nil);
