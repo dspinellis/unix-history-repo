@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)stab.c	1.4 (Berkeley) %G%";
+static char *sccsid ="@(#)stab.c	1.5 (Berkeley) %G%";
 #endif
 /*
  * Symbolic debugging info interface.
@@ -538,7 +538,8 @@ int szindex, paramindex;
 	/* do nothing */;
     } else if (gdebug) {
 	i = dimtab[szindex + 3];
-	if (i != NILINDEX && (p = &stab[i])->sname != nil) {
+	p = &stab[i];
+	if (p->sname != nil) {
 	    strindex = dimtab[p->sizoff + 1];
 	    typeid = typelookup(p->stype, NILINDEX, FORWARD, i);
 	    if (typeid == nil) {
