@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)talkd.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)talkd.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -55,7 +55,7 @@ main(argc, argv)
 	int cc;
 
 	if (getuid()) {
-		fprintf(stderr, "%s: getuid: not super-user", argv[0]);
+		fprintf(stderr, "%s: getuid: not super-user\n", argv[0]);
 		exit(1);
 	}
 	openlog("talkd", LOG_PID, LOG_DAEMON);
