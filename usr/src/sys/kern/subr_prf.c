@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prf.c	7.23 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -49,7 +49,7 @@ int	(*v_putc)() = cnputc;          	/* routine to putc on virtual console */
 
 static void logpri __P((int level));
 static void putchar __P((int ch, int flags, struct tty *tp));
-static void kprintf __P((const char *fmt, int flags, struct tty *tp, va_list));
+void kprintf __P((const char *fmt, int flags, struct tty *tp, va_list));
 static void kprintn __P((u_long num, int base, int flags, struct tty *tp));
 
 extern	cnputc();			/* standard console putc */
@@ -309,7 +309,7 @@ printf(fmt /*, va_alist */)
  *
  *	kprintf("prefix: %r, other stuff\n", fmt, ap);
  */
-static void
+void
 kprintf(fmt, flags, tp, ap)
 	register const char *fmt;
 	int flags;
@@ -417,7 +417,7 @@ kprintn(ul, base, flags, tp)
 	struct tty *tp;
 {
 					/* hold a long in base 8 */
-	char *p, buf[(sizeof(long) * NBBY >> 3) + 1];
+	char *p, buf[(sizeof(long) * NBBY / 3) + 1];
 
 	p = buf;
 	do {
