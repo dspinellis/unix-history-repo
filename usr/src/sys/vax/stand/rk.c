@@ -22,21 +22,25 @@
 #include "saio.h"
 #include "savax.h"
 
-#define	SECTSIZ 	512	/* sector size in bytes */
+#define	SECTSIZ		512		/* sector size in bytes */
 
-u_short	rkstd[] = { 0777440 };
-struct	disklabel rklabel[MAXNUBA*8];
+#define	MAXCTLR		1		/* all addresses must be specified */
+u_short	rkstd[MAXCTLR] = { 0777440 };
+struct	disklabel rklabel[MAXNUBA][MAXCTLR][8];
 char	lbuf[SECTSIZ];
 
 rkopen(io)
 	register struct iob *io;
 {
-	register struct rkdevice *rkaddr = (struct rkdevice *)ubamem(io->i_unit, rkstd[0]);
-	register struct disklabel *lp = &rklabel[io->i_unit];
+	register struct rkdevice *rkaddr;
+	register struct disklabel *lp;
 	struct iob tio;
 
+	if ((u_int)io->i_ctlr >= MAXCTLR)
+		return (ECTLR);
+	rkaddr = (struct rkdevice *)ubamem(io->i_adapt, rkstd[io->i_ctlr]);
 	if (badaddr((char *)rkaddr, sizeof(short))) {
-		printf("nonexistent device");
+		printf("rk: nonexistent device\n");
 		return (ENXIO);
 	}
 	rkaddr->rkcs2 = RKCS2_SCLR;
@@ -44,6 +48,7 @@ rkopen(io)
 	/*
 	 * Read in the pack label.
 	 */
+	lp = &rklabel[io->i_adapt][io->i_ctlr][io->i_unit];
 	lp->d_nsectors = NRKSECT;
 	lp->d_secpercyl = NRKTRK*NRKSECT;
 	tio = *io;
@@ -52,23 +57,21 @@ rkopen(io)
 	tio.i_cc = SECTSIZ;
 	tio.i_flgs |= F_RDDATA;
 	if (rkstrategy(&tio, READ) != SECTSIZ) {
-		printf("can't read disk label");
+		printf("rk: can't read disk label\n");
 		return (EIO);
 	}
 	*lp = *(struct disklabel *)(lbuf + LABELOFFSET);
 	if (lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC) {
-		printf("hk%d: unlabeled\n", io->i_unit);
+		printf("rk%d: unlabeled\n", io->i_unit);
 #ifdef COMPAT_42
 		rkmaptype(io, lp);
 #else
 		return (ENXIO);
 #endif
 	}
-	if ((unsigned)io->i_boff >= lp->d_npartitions ||
-	    (io->i_boff = lp->d_partitions[io->i_boff].p_offset) == -1) {
-		printf("rk: bad partition");
-		return (EUNIT);
-	}
+	if ((u_int)io->i_part >= lp->d_npartitions ||
+	    (io->i_boff = lp->d_partitions[io->i_part].p_offset) == -1)
+		return (EPART);
 	return (0);
 }
 
@@ -80,8 +83,8 @@ rkmaptype(io, lp)
 	register struct disklabel *lp;
 {
 	register struct partition *pp;
-	register i;
 	register u_long *off = rk_off;
+	register int i;
 
 	lp->d_npartitions = 8;
 	pp = lp->d_partitions;
@@ -93,19 +96,19 @@ rkmaptype(io, lp)
 rkstrategy(io, func)
 	register struct iob *io;
 {
-	register struct rkdevice *rkaddr = (struct rkdevice *)ubamem(io->i_unit, rkstd[0]);
-	int com;
+	register struct rkdevice *rkaddr;
 	register daddr_t bn;
+	int com, ubinfo, errcnt = 0;
 	short cn, sn, tn;
-	int ubinfo, errcnt = 0;
 
+	rkaddr = (struct rkdevice *)ubamem(io->i_adapt, rkstd[io->i_ctlr]);
 retry:
 	ubinfo = ubasetup(io, 1);
 	bn = io->i_bn;
 	cn = bn / (NRKSECT*NRKTRK);
 	sn = bn % NRKSECT;
 	tn = (bn / NRKSECT) % NRKTRK;
-	rkaddr->rkcs2 = UNITTODRIVE(io->i_unit);
+	rkaddr->rkcs2 = io->i_unit;
 	rkaddr->rkcs1 = RK_CDT|RK_PACK|RK_GO;
 	rkwait(rkaddr);
 	rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
@@ -130,11 +133,10 @@ retry:
 		    rkaddr->rker, RKER_BITS);
 		rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
 		rkwait(rkaddr);
-		if (errcnt == 10) {
+		if (errcnt++ == 10) {
 			printf("rk: unrecovered error\n");
 			return (-1);
 		}
-		errcnt++;
 		goto retry;
 	}
 	if (errcnt)
@@ -145,17 +147,5 @@ retry:
 rkwait(rkaddr)
 	register struct rkdevice *rkaddr;
 {
-
-	while ((rkaddr->rkcs1 & RK_CRDY) == 0)
-		;
-}
-
-/*ARGSUSED*/
-rkioctl(io, cmd, arg)
-	struct iob *io;
-	int cmd;
-	caddr_t arg;
-{
-
-	return (ECMD);
+	while ((rkaddr->rkcs1 & RK_CRDY) == 0);
 }
