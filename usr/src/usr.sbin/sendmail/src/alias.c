@@ -4,9 +4,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-static char SccsId[] = "@(#)alias.c	3.13	%G%	(with DBM)";
+static char SccsId[] = "@(#)alias.c	3.14	%G%	(with DBM)";
 # else DBM
-static char SccsId[] = "@(#)alias.c	3.13	%G%	(without DBM)";
+static char SccsId[] = "@(#)alias.c	3.14	%G%	(without DBM)";
 # endif DBM
 
 /*
@@ -106,7 +106,7 @@ alias(a)
 		    a->q_paddr, a->q_host, a->q_user, p);
 # endif
 	if (Verbose)
-		message("050", "aliased to %s", p);
+		message(Arpa_Info, "aliased to %s", p);
 	a->q_flags |= QDONTSEND;
 	AliasLevel++;
 	sendto(p, 1);
@@ -360,7 +360,7 @@ forward(user)
 	if (buf[0] == '\0')
 		return;
 	if (Verbose)
-		message("050", "forwarded to %s", buf);
+		message(Arpa_Info, "forwarded to %s", buf);
 	AliasLevel++;
 	sendto(buf, 1);
 	AliasLevel--;

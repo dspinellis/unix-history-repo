@@ -2,7 +2,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.11	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.12	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -167,7 +167,7 @@ savemail()
 	if (p != NULL)
 	{
 		/* we have a home directory; open dead.letter */
-		message("050", "Saving message in dead.letter");
+		message(Arpa_Info, "Saving message in dead.letter");
 		define('z', p);
 		(void) expand("$z/dead.letter", buf, &buf[sizeof buf - 1]);
 		To = buf;
