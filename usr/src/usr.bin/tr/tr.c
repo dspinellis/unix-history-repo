@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tr.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tr.c	4.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -153,7 +153,6 @@ next(s)
 	STR *s;
 {
 	register int ch;
-	int cnt, val;
 
 	if (s->state == EOS)
 		return(0);
@@ -166,34 +165,39 @@ next(s)
 		s->state = EOS;
 		return(0);
 	}
-	if (ch == '\\') {			/* escape; \nnn is octal # */
-		for (val = cnt = 0; isascii(ch = *s->str) && isdigit(ch)
-		    && cnt++ < 3; ++s->str)
-			val = val * 8 + ch - '0';
-		s->lastch = cnt ? val : ch;
+	if (ch == '\\') {			/* \### */
+		s->lastch = tran(s);
 		return(1);
 	}
 	if (ch == '-') {			/* ranges */
-		if (s->lastch == OOBCH) {	/* "-a" */
-			s->lastch = '-';
-			return(1);
-		}
-		s->endrange = ch = *s->str;
-		if (!ch) {			/* "a-" */
-			s->lastch = '-';
-			return(1);
-		}
+		if (s->lastch == OOBCH)		/* "-a" */
+			goto fail2;
+		if (!(ch = *s->str++))		/* "a-" */
+			goto fail1;
+		if (ch == '\\')			/* \### */
+			ch = tran(s);
 		if (s->lastch > ch) { 		/* "z-a" */
-			s->lastch = '-';
+fail1:			--s->str;
+fail2:			s->lastch = '-';
 			return(1);
 		}
-		++s->str;
 		if (s->lastch == ch)		/* "a-a" */
 			return(next(s));
 		s->state = INRANGE;		/* "a-z" */
-		++s->lastch;
+		s->endrange = ch;
 		return(1);
 	}
 	s->lastch = ch;
 	return(1);
+}
+
+tran(s)
+	register STR *s;
+{
+	register int ch, cnt, val;
+
+	for (val = cnt = 0; isascii(ch = *s->str) && isdigit(ch)
+	    && cnt++ < 3; ++s->str)
+		val = val * 8 + ch - '0';
+	return(cnt ? val : ch);
 }
