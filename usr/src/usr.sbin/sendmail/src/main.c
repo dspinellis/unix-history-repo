@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.96		%G%);
+SCCSID(@(#)main.c	3.97		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -133,7 +133,7 @@ main(argc, argv)
 	typedef int (*fnptr)();
 	register int i;
 	bool safecf = TRUE;		/* this conf file is sys default */
-	char ibuf[30];			/* holds HostName */
+	char jbuf[30];			/* holds HostName */
 	bool queuemode = FALSE;		/* process queue requests */
 	bool aliasinit = FALSE;
 	extern bool safefile();
@@ -413,7 +413,8 @@ main(argc, argv)
 
 	/* our name for SMTP codes */
 	(void) expand("$i", ibuf, &ibuf[sizeof ibuf - 1]);
-	HostName = ibuf;
+	expand("$j", jbuf, &jbuf[sizeof jbuf - 1], CurEnv);
+	HostName = jbuf;
 
 	/* the indices of local and program mailers */
 	st = stab("local", ST_MAILER, ST_FIND);
