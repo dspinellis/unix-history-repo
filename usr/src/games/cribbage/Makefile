@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -23,6 +23,7 @@ HDRS=	cribbage.h deck.h cribcur.h
 SRCS=	extern.c crib.c support.c cards.c score.c io.c
 OBJS=	extern.o crib.o support.o cards.o score.o io.o
 TOBJS=	test.o cards.o score.o io.o extern.o
+MAN=	cribbage.0
 
 all: cribbage crib.instr
 
@@ -35,45 +36,23 @@ test: ${TOBJS} ${LIBC}
 crib.instr: cribbage.n macro
 	nroff cribbage.n > crib.instr
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core crib.instr cribbage test
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -o games -g bin -m 400 crib.instr ${DESTDIR}/usr/games/lib/crib.instr
 	install -s -o games -g bin -m 4700 cribbage ${DESTDIR}/usr/games/hide
 	(cd ${DESTDIR}/usr/games; rm -f cribbage; ln -s dm cribbage; chown games.bin cribbage)
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/games/cat6
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-extern.o: extern.c /usr/include/curses.h /usr/include/stdio.h
-extern.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-extern.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h deck.h
-extern.o: cribbage.h
-crib.o: crib.c /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
-crib.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-crib.o: /usr/include/sys/ttydev.h /usr/include/signal.h deck.h cribbage.h
-crib.o: cribcur.h
-support.o: support.c /usr/include/curses.h /usr/include/stdio.h
-support.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-support.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h deck.h
-support.o: cribbage.h cribcur.h
-cards.o: cards.c /usr/include/stdio.h deck.h
-score.o: score.c /usr/include/stdio.h deck.h cribbage.h
-io.o: io.c /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
-io.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-io.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/signal.h
-io.o: deck.h cribbage.h cribcur.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
