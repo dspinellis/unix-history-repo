@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_cluster.c	7.13 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -692,6 +692,7 @@ bflush(mountp)
 	struct mount *mountp;
 {
 	register struct buf *bp;
+	register struct vnode *vp;
 	register struct buf *flist;
 	int s;
 
@@ -703,7 +704,10 @@ loop:
 				continue;
 			if ((bp->b_flags & B_DELWRI) == 0)
 				continue;
-			if (bp->b_vp && bp->b_vp->v_mount == mountp) {
+			if ((vp = bp->b_vp) == NULL)
+				continue;
+			if (vp->v_mount == mountp ||
+			    (vp->v_type == VBLK && vp->v_mounton == mountp)) {
 				splx(s);
 				notavail(bp);
 				(void) bawrite(bp);
@@ -728,13 +732,17 @@ binval(mountp)
 {
 	register struct buf *bp;
 	register struct bufhd *hp;
+	register struct vnode *vp;
 	int s, dirty = 0;
 #define dp ((struct buf *)hp)
 
 loop:
 	for (hp = bufhash; hp < &bufhash[BUFHSZ]; hp++) {
 		for (bp = dp->b_forw; bp != dp; bp = bp->b_forw) {
-			if (bp->b_vp == NULL || bp->b_vp->v_mount != mountp)
+			if ((vp = bp->b_vp) == NULL)
+				continue;
+			if (vp->v_mount != mountp &&
+			    (vp->v_type != VBLK || vp->v_mounton != mountp))
 				continue;
 			s = splbio();
 			if (bp->b_flags & B_BUSY) {
