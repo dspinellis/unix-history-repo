@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_snpac.c	7.14 (Berkeley) %G%
+ *	@(#)iso_snpac.c	7.15 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -137,59 +137,25 @@ struct sockaddr *sa;
 	struct rtentry *rt2;
 	struct ifnet *ifp = rt->rt_ifp;
 	int addrlen = ifp->if_addrlen;
-	static struct rtentry *recursing = 0;
 #define LLC_SIZE 3 /* XXXXXX do this right later */
 
 	IFDEBUG (D_SNPA)
 		printf("llc_rtrequest(%d, %x, %x)\n", req, rt, sa);
 	ENDDEBUG
-	if (rt->rt_flags & RTF_GATEWAY) {
-		if (recursing) {
-			log(LOG_DEBUG, "llc_rtrequest: gateway route points to same type %x %x\n",
-				recursing, rt);
-		} else switch (req) {
-		case RTM_RESOLVE:
-		case RTM_ADD:
-			recursing = rt;
-			rt->rt_llinfo = (caddr_t)rtalloc1(&gate->sa, 1);
-			recursing = 0;
-			if (rt->rt_rmx.rmx_mtu == 0) {
-				rt->rt_rmx.rmx_mtu =
-				    ((rt2 = (struct rtentry *)rt->rt_llinfo) &&
-					    (rt2->rt_rmx.rmx_mtu)) ?
-				    rt2->rt_rmx.rmx_mtu :
-				    rt->rt_ifp->if_mtu - LLC_SIZE;
-			}
-			return;
-
-		case RTM_DELETE:
-			if (lc)
-				RTFREE((struct rtentry *)lc);
-			rt->rt_llinfo = 0;
-		}
-	} else switch (req) {
+	if (rt->rt_flags & RTF_GATEWAY)
+		return;
+	else switch (req) {
 	case RTM_ADD:
 		/*
 		 * Case 1: This route may come from a route to iface with mask
 		 * or from a default route.
 		 */
 		if (rt->rt_flags & RTF_CLONING) {
-			register struct ifaddr *ifa;
-			register struct sockaddr *sa;
-			for (ifa = ifp->if_addrlist; ifa; ifa->ifa_next)
-				if ((sa = ifa->ifa_addr)->sa_family == AF_LINK) {
-					if (sa->sa_len > gate->sa.sa_len)
-						log(LOG_DEBUG, "llc_rtrequest: cloning address too small\n");
-					else {
-						Bcopy(sa, gate, gate->sa.sa_len);
-						gate->sdl.sdl_alen = 0;
-					}
-					break;
-				}
-			if (ifa == 0)
-				log(LOG_DEBUG, "llc_rtrequest: can't find LL ifaddr for iface\n");
-			break;
+			rt_setgate(rt, rt_key(rt), &blank_dl);
+			return;
 		}
+		if (lc != 0)
+			return; /* happens on a route change */
 		/* FALLTHROUGH */
 	case RTM_RESOLVE:
 		/*
@@ -200,8 +166,6 @@ struct sockaddr *sa;
 			log(LOG_DEBUG, "llc_rtrequest: got non-link non-gateway route\n");
 			break;
 		}
-		if (lc != 0)
-			return; /* happens on a route change */
 		R_Malloc(lc, struct llinfo_llc *, sizeof (*lc));
 		rt->rt_llinfo = (caddr_t)lc;
 		if (lc == 0) {
