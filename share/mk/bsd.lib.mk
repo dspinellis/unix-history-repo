@@ -1,5 +1,5 @@
 #	from: @(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
-#	$Id: bsd.lib.mk,v 1.31 1994/02/27 20:24:25 wollman Exp $
+#	$Id: bsd.lib.mk,v 1.32 1994/04/19 17:15:57 jkh Exp $
 #
 
 .if exists(${.CURDIR}/../Makefile.inc)
@@ -149,6 +149,10 @@ lib${LIB}_p.a:: ${POBJS}
 
 .if defined(DESTDIR)
 LDDESTDIR?=	-L${DESTDIR}/usr/lib
+.endif
+
+.if defined(CPLUSPLUSLIB)
+SOBJS+= /usr/lib/g++rt0.o
 .endif
 
 SOBJS+= ${OBJS:.o=.so}
