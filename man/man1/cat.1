@@ -1,0 +1,44 @@
+.pa 1
+.he 'CAT (I)'1/15/73'CAT (I)'
+.ti 0
+NAME		cat -- concatenate and print
+.sp
+.ti 0
+SYNOPSIS	cat___ file918 ...
+.sp
+.ti 0
+DESCRIPTION	cat___
+reads each file in sequence
+and writes it on the standard output.
+Thus:
+.sp
+.ti +3
+cat___ file____
+.sp
+is about the easiest way to print a file.
+Also:
+.sp
+.ti +3
+cat___ file1_____ file2_____ >file3______
+.sp
+is about the easiest way to concatenate
+files.
+.sp
+If no input file is given cat___ reads from the standard
+input file.
+.sp
+If the argument "-" is encountered, cat reads from
+the standard input file.
+.sp
+.ti 0
+FILES		--
+.sp
+.ti 0
+SEE ALSO	pr(I), cp(I)
+.sp
+.ti 0
+DIAGNOSTICS	none;
+if a file cannot be found it is ignored.
+.sp
+.ti 0
+BUGS		cat x y >x  and  cat x y >y  cause strange results.
