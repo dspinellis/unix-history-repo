@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.43 (Berkeley) %G%
+#	@(#)Makefile.inc	5.44 (Berkeley) %G%
 
 # machine-independent gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen
@@ -9,7 +9,7 @@ SRCS+=	alarm.c assert.c clock.c closedir.c confstr.c crypt.c ctermid.c \
 	getgrent.c getgrouplist.c gethostname.c getloadavg.c getlogin.c \
 	getmntinfo.c getnetgrent.c getpagesize.c getpass.c getpwent.c \
 	getttyent.c getusershell.c glob.c initgroups.c isatty.c isctype.c \
-	isinf.c mktemp.c nice.c nlist.c opendir.c pathconf.c pause.c \
+	isinf.c nice.c nlist.c opendir.c pathconf.c pause.c \
 	popen.c psignal.c pwcache.c raise.c readdir.c rewinddir.c \
 	scandir.c seekdir.c sethostname.c setjmperr.c setmode.c \
 	siginterrupt.c siglist.c signal.c sigsetops.c sleep.c sysconf.c \
