@@ -95,12 +95,16 @@ struct pats language_ptab[] = {
 	cmpc3	r5,(r1),(r3)\n" },
 
 	{ "3,_copyin\n",
-"	jsb	_Copyin\n\
-	addl2	$12,sp\n" },
+"	movl	(sp)+,r1\n\
+	movl	(sp)+,r3\n\
+	movl	(sp)+,r5\n\
+	jsb	_Copyin\n" },
 
 	{ "3,_copyout\n",
-"	jsb	_Copyout\n\
-	addl2	$12,sp\n" },
+"	movl	(sp)+,r1\n\
+	movl	(sp)+,r3\n\
+	movl	(sp)+,r5\n\
+	jsb	_Copyout\n" },
 
 	{ "1,_fubyte\n",
 "	movl	(sp)+,r0\n\
