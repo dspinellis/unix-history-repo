@@ -1,0 +1,66 @@
+
+
+
+H2PH(1)                BSD Reference Manual               H2PH(1)
+
+
+NNAAMMEE
+       h2ph - convert .h C header files to .ph Perl header files
+
+SSYYNNOOPPSSIISS
+       hh22pphh [[hheeaaddeerrffiilleess]]
+
+DDEESSCCRRIIPPTTIIOONN
+       _h_2_p_h  converts  any C header files specified to the corre-
+       sponding Perl header file format.  It is most  easily  run
+       while in /usr/include:
+
+            cd /usr/include; h2ph * sys/*
+
+       If  run with no arguments, filters standard input to stan-
+       dard output.
+
+EENNVVIIRROONNMMEENNTT
+       No environment variables are used.
+
+FFIILLEESS
+       /usr/include/*.h
+       /usr/include/sys/*.h
+       etc.
+
+AAUUTTHHOORR
+       Larry Wall
+
+SSEEEE AALLSSOO
+       perl(1)
+
+DDIIAAGGNNOOSSTTIICCSS
+       The usual warnings if it can't read  or  write  the  files
+       involved.
+
+BBUUGGSS
+       Doesn't construct the %sizeof array for you.
+
+       It doesn't handle all C constructs, but it does attempt to
+       isolate definitions inside evals so that you  can  get  at
+       the definitions that it can translate.
+
+       It's  only  intended  as  a  rough  tool.  You may need to
+       dicker with the files produced.
+
+
+
+
+
+
+
+
+
+
+
+7th Edition               August 8, 1990                        1
+
+
+
+
+
