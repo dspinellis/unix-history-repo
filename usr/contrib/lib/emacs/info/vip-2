@@ -1,0 +1,665 @@
+Info file ../info/vip, produced by Makeinfo, -*- Text -*- from input
+file vip.texinfo.
+
+Distribution
+************
+
+Copyright (C) 1987 Masahiko Sato.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided that
+the entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the same conditions as for
+modified versions.
+
+
+
+File: vip,  Node: Commands in Insert Mode,  Next: Ex Commands,  Prev: Other Vi Commands,  Up: Vi Commands
+
+Insert Mode
+===========
+
+You can enter insert mode by one of the following commands.  In
+addition to these, you will enter insert mode if you give a change
+command with a line command as the motion command.  Insert commands
+are also modifying commands and you can repeat them by the repeat
+command `.' (`vip-repeat').
+
+`i'
+     Enter insert mode at point (`vip-insert').
+
+`I'
+     Enter insert mode at the first non white character on the line
+     (`vip-Insert').
+
+`a'
+     Move point forward by one character and then enter insert mode
+     (`vip-append').
+
+`A'
+     Enter insert mode at end of line (`vip-Append').
+
+`o'
+     Open a new line below the current line and enter insert mode
+     (`vip-open-line').
+
+`O'
+     Open a new line above the current line and enter insert mode
+     (`vip-Open-line').
+
+`C-o'
+     Insert a newline and leave point before it, and then enter
+     insert mode 
+     (`vip-open-line-at-point').
+
+Insert mode is almost like emacs mode.  Only the following 4 keys
+behave differently from emacs mode.
+
+`ESC'
+     This key will take you back to vi mode (`vip-change-mode-to-vi').
+
+`C-h'
+     Delete previous character (`delete-backward-char').
+
+`C-w'
+     Delete previous word (`vip-delete-backward-word').
+
+`C-z'
+     This key simulates ESC key in emacs mode.  For instance, typing
+     `C-z x' in insert mode iw the same as typing `ESC x' in emacs
+     mode (`vip-ESC').
+
+You can also bind `C-h' to `help-command' if you like.  (*Note
+Customizing Key Bindings::, for details.)  Binding `C-h' to
+`help-command' has the effect of making the meaning of `C-h' uniform
+among emacs, vi and insert modes.
+
+When you enter insert mode, VIP records point as the start point of
+insertion, and when you leave insert mode the region between point
+and start point is saved for later use by repeat command etc. 
+Therefore, repeat command will not really repeat insertion if you
+move point by emacs commands while in insert mode.
+
+
+
+File: vip,  Node: Ex Commands,  Next: Ex Command Reference,  Prev: Commands in Insert Mode,  Up: Top
+
+Ex Commands
+***********
+
+In vi mode, you can execute an Ex command EX-COMMAND by typing:
+
+     `: EX-COMMAND RET'
+
+Every Ex command follows the following pattern:
+
+     ADDRESS COMMAND `!' PARAMETERS COUNT FLAGS
+
+where all parts are optional.  For the syntax of "address", the
+reader is referred to the reference manual of Ex.
+
+In the current version of VIP, searching by Ex commands is always
+"magic".  That is, search patterns are always treated as "regular
+expressions".  For example, a typical forward search would be invoked
+by `:/PAT/'.  If you wish to include `/' as part of PAT you must
+preceded it by `\'.  VIP strips off these `\''s before `/' and the
+resulting PAT becomes the actual search pattern.  Emacs provides a
+different and richer class or regular expressions than Vi/Ex, and VIP
+uses Emacs' regular expressions.  See GNU Emacs Manual for details of
+regular expressions.
+
+Several Ex commands can be entered in a line by separating them by a
+pipe character `|'.
+
+* Menu:
+
+* Ex Command Reference::	Explain all the Ex commands available in VIP.
+
+
+
+File: vip,  Node: Ex Command Reference,  Next: Customization,  Prev: Ex Commands,  Up: Ex Commands
+
+Ex Command Reference
+====================
+
+In this section we briefly explain all the Ex commands supported by
+VIP.  Most Ex commands expect ADDRESS as their argument, and they use
+default addresses if they are not explicitly given.  In the
+following, such default addresses will be shown in parentheses.
+
+Most command names can and preferably be given in abbreviated forms. 
+In the following, optional parts of command names will be enclosed in
+brackets.  For example, `co[py]' will mean that copy command can be
+give as `co' or `cop' or `copy'.
+
+If COMMAND is empty, point will move to the beginning of the line
+specified by the ADDRESS.  If ADDRESS is also empty, point will move
+to the beginning of the current line.
+
+Some commands accept "flags" which are one of `p', `l' and `#'.  If
+FLAGS are given, the text affected by the commands will be displayed
+on a temporary window, and you will be asked to hit return to
+continue.  In this way, you can see the text affected by the commands
+before the commands will be executed.  If you hit `C-g' instead of
+RET then the commands will be aborted.  Note that the meaning of
+FLAGS is different in VIP from that in Vi/Ex.
+
+`(.,.) co[py] ADDR FLAGS'
+`(.,.) t ADDR FLAGS'
+     Place a copy of specified lines after ADDR.  If ADDR is `0', it
+     will be placed before the first line.
+
+`(.,.) d[elete] REGISTER COUNT FLAGS'
+     Delete specified lines.  Text will be saved in a named REGISTER
+     if a lower case letter is given, and appended to a register if a
+     capital letter is given.
+
+`e[dit] ! +ADDR FILE'
+`e[x] ! +ADDR FILE'
+`vi[sual] ! +ADDR FILE'
+     Edit a new file FILE in the current window.  The command will
+     abort if current buffer is modified, which you can override by
+     giving `!'.  If `+'ADDR is given, ADDR becomes the current line.
+
+`file'
+     Give information about the current file.
+
+`(1,$) g[lobal] ! /PAT/ CMDS'
+`(1,$) v /PAT/ CMDS'
+     Among specified lines first mark each line which matches the
+     regular expression PAT, and then execute CMDS on each marked line.
+     If `!' is given, CMDS will be executed on each line not matching
+     PAT.  `v' is same as `g!'.
+
+`(.,.+1) j[oin] ! COUNT FLAGS'
+     Join specified lines into a line.  Without `!', a space
+     character will be inserted at each junction.
+
+`(.) k CH'
+`(.) mar[k] CH'
+     Mark specified line by a lower case character CH.  Then the
+     addressing form `''CH will refer to this line.  No white space
+     is required between `k' and CH.  A white space is necessary
+     between `mark' and CH, however.
+
+`map CH RHS'
+     Define a macro for vi mode.  After this command, the character
+     CH will be expanded to RHS in vi mode.
+
+`(.,.) m[ove] ADDR'
+     Move specified lines after ADDR.
+
+`(.) pu[t] REGISTER'
+     Put back previously deleted or yanked text.  If REGISTER is
+     given, the text saved in the register will be put back;
+     otherwise, last deleted or yanked text will be put back.
+
+`q[uit] !'
+     Quit from Emacs.  If modified buffers with associated files
+     exist, you will be asked whether you wish to save each of them. 
+     At this point, you may choose not to quit, by hitting `C-g'.  If
+     `!' is given, exit from Emacs without saving modified buffers.
+
+`(.) r[ead] FILE'
+     Read in the content of the file FILE after the specified line.
+
+`(.) r[ead] ! COMMAND'
+     Read in the output of the shell command COMMAND after the
+     specified line.
+
+`se[t]'
+     Set a variable's value.  *Note Customizing Constants::, for the
+     list of variables you can set.
+
+`sh[ell]'
+     Run a subshell in a window.
+
+`(.,.) s[ubstitute] /PAT/REPL/ OPTIONS COUNT FLAGS'
+`(.,.) & OPTIONS COUNT FLAGS'
+     On each specified line, the first occurrence of string matching
+     regular expression PAT is replaced by replacement pattern REPL. 
+     Option characters are `g' and `c'.  If global option character
+     `g' appears as part of OPTIONS, all occurrences are substituted.
+     If confirm option character `c' appears, you will be asked to
+     give confirmation before each substitution.  If `/PAT/REPL/' is
+     missing, the last substitution is repeated.
+
+`st[op]'
+     Suspend Emacs.
+
+`ta[g] TAG'
+     Find first definition of TAG.  If no TAG is given, previously
+     given TAG is used and next alternate definition is find.  By
+     default, the file `TAGS' in the current directory becomes the
+     "selected tag table".  You can select another tag table by `set'
+     command.  *Note Customizing Constants::, for details.
+
+`und[o]'
+     Undo the last change.
+
+`unm[ap] CH'
+     The macro expansion associated with CH is removed.
+
+`ve[rsion]'
+     Tell the version number of VIP.
+
+`(1,$) w[rite] ! FILE'
+     Write out specified lines into file FILE.  If no FILE is given,
+     text will be written to the file associated to the current
+     buffer.  Unless `!' is given, if FILE is different from the file
+     associated to the current buffer and if the file FILE exists,
+     the command will not be executed.  Unlike Ex, FILE becomes the
+     file associated to the current buffer.
+
+`(1,$) w[rite]>> FILE'
+     Write out specified lines at the end of file FILE.  FILE becomes
+     the file associated to the current buffer.
+
+`(1,$) wq ! FILE'
+     Same as `write' and then `quit'.  If `!' is given, same as
+     `write !' then `quit'.
+
+`(.,.) y[ank] REGISTER COUNT'
+     Save specified lines into register REGISTER.  If no register is
+     specified, text will be saved in an anonymous register.
+
+`ADDR ! COMMAND'
+     Execute shell command COMMAND.  The output will be shown in a
+     new window.  If ADDR is given, specified lines will be used as
+     standard input to COMMAND.
+
+`($) ='
+     Print the line number of the addressed line.
+
+`(.,.) > COUNT FLAGS'
+     Shift specified lines to the right.  The variable
+     `vip-shift-width' (default value is 8) determines the amount of
+     shift.
+
+`(.,.) < COUNT FLAGS'
+     Shift specified lines to the left.  The variable
+     `vip-shift-width' (default value is 8) determines the amount of
+     shift.
+
+`(.,.) ~ OPTIONS COUNT FLAGS'
+     Repeat the previous `substitute' command using previous search
+     pattern as PAT for matching.
+
+The following Ex commands are available in Vi, but not implemented in
+VIP.
+
+     `abbreviate', `list', `next', `print', `preserve', `recover', `rewind', `source',
+     `unabbreviate', `xit', `z'
+
+
+
+File: vip,  Node: Customization,  Next: Customizing Constants,  Prev: Ex Command Reference,  Up: Top
+
+Customization
+*************
+
+If you have a file called `.vip' in your home directory, then it will
+also be loaded when VIP is loaded.  This file is thus useful for
+customizing VIP.
+
+* Menu:
+
+* Customizing Constants::	How to change values of constants.
+* Customizing Key Bindings::	How to change key bindings.
+
+ 
+
+File: vip,  Node: Customizing Constants,  Next: Customizing Key Bindings,  Prev: Customization,  Up: Customization
+
+Customizing Constants
+=====================
+
+An easy way to customize VIP is to change the values of constants
+used in VIP.  Here is the list of the constants used in VIP and their
+default values.
+
+`vip-shift-width 8'
+     The number of columns shifted by `>' and `<' command.
+
+`vip-re-replace nil'
+     If `t' then do regexp replace, if `nil' then do string replace.
+
+`vip-search-wrap-around t'
+     If `t', search wraps around the buffer.
+
+`vip-re-search nil'
+     If `t' then search is reg-exp search, if `nil' then vanilla
+     search.
+
+`vip-case-fold-search nil'
+     If `t' search ignores cases.
+
+`vip-re-query-replace nil'
+     If `t' then do reg-exp replace in query replace.
+
+`vip-open-with-indent nil'
+     If `t' then indent to the previous current line when open a new
+     line by `o' or `O' command.
+
+`vip-tags-file-name "TAGS"'
+     The name of the file used as the tag table.
+
+`vip-help-in-insert-mode nil'
+     If `t' then C-h is bound to `help-command' in insert mode, if
+     `nil' then it sis bound to `delete-backward-char'.
+
+You can reset these constants in VIP by the Ex command `set'.  Or you
+can include a line like this in your `.vip' file:
+
+     (setq vip-case-fold-search t)
+
+
+
+File: vip,  Node: Customizing Key Bindings,  Prev: Customizing Constants,  Up: Customization
+
+Customizing Key Bindings
+========================
+
+VIP uses `vip-command-mode-map' as the "local keymap" for vi mode. 
+For example, in vi mode, SPC is bound to the function `vip-scroll'. 
+But, if you wish to make SPC and some other keys  behave like Vi, you
+can include the following lines in your `.vip' file.
+
+     (define-key vip-command-mode-map "\C-g" 'vip-info-on-file)
+     (define-key vip-command-mode-map "\C-h" 'vip-backward-char)
+     (define-key vip-command-mode-map "\C-m" 'vip-next-line-at-bol)
+     (define-key vip-command-mode-map " " 'vip-forward-char)
+     (define-key vip-command-mode-map "g" 'vip-keyboard-quit)
+     (define-key vip-command-mode-map "s" 'vip-substitute)
+     (define-key vip-command-mode-map "C" 'vip-change-to-eol)
+     (define-key vip-command-mode-map "R" 'vip-change-to-eol)
+     (define-key vip-command-mode-map "S" 'vip-substitute-line)
+     (define-key vip-command-mode-map "X" 'vip-delete-backward-char)
+
+Key Index
+*********
+
+* Menu:
+
+* 000 C-@ (set-mark-command): Other Vi Commands.
+* 001 C-a (vip-beginning-of-line): New Commands.
+* 002 C-b (vip-scroll-back): Viewing the Buffer.
+* 003 C-c (vip-ctl-c): New Commands.
+* 003 C-c (vip-ctl-c): Important Keys.
+* 004 C-d (vip-scroll-up): Viewing the Buffer.
+* 005 C-e (vip-scroll-up-one): Viewing the Buffer.
+* 006 C-f (vip-scroll-back): Viewing the Buffer.
+* 007 C-g (vip-keyboard-quit): New Bindings.
+* 007 C-g (vip-keyboard-quit): Changing.
+* 007 C-g (vip-keyboard-quit): Important Keys.
+* 010 C-h (delete-backward-char) (insert mode): Commands in Insert Mode.
+* 010 C-h (vip-delete-backward-char) (insert mode): Insert Mode.
+* 011 TAB (indent-for-tab-command): Other Vi Commands.
+* 012 LFD (newline-and-indent): Other Vi Commands.
+* 013 C-k (kill-line): Other Vi Commands.
+* 014 C-l (recenter): Important Keys.
+* 014 C-l (recenter): Other Vi Commands.
+* 015 RET (vip-scroll-back): Viewing the Buffer.
+* 015 RET (vip-scroll-back): New Bindings.
+* 016 C-n (vip-next-window): New Commands.
+* 016 C-n (vip-next-window): Buffers and Windows.
+* 016 C-n (vip-next-window): Window Commands.
+* 017 C-o (vip-open-line-at-point): New Commands.
+* 017 C-o (vip-open-line-at-point): Commands in Insert Mode.
+* 020 C-p (previous-line): Other Vi Commands.
+* 021 C-q (quoted-insert): Other Vi Commands.
+* 022 C-r (isearch-backward): Other Vi Commands.
+* 022 C-r (isearch-backward): New Commands.
+* 022 C-r (isearch-backward): Searching and Replacing.
+* 023 C-s (isearch-forward): Other Vi Commands.
+* 023 C-s (isearch-forward): Searching and Replacing.
+* 023 C-s (isearch-forward): New Commands.
+* 024 C-t (transpose-chars): Other Vi Commands.
+* 025 C-u (vip-scroll-down): Viewing the Buffer.
+* 026 C-v (scroll-up): Other Vi Commands.
+* 027 C-w (kill-region): Other Vi Commands.
+* 027 C-w (vip-delete-backward-word) (insert mode): Insert Mode.
+* 027 C-w (vip-delete-backward-word) (insert mode): Commands in Insert Mode.
+* 0300 C-x (vip-ctl-x): Important Keys.
+* 0300 C-x (vip-ctl-x): New Commands.
+* 0301 C-x C-z (suspend-emacs): Modes in VIP.
+* 031 C-y (vip-scroll-down-one): Viewing the Buffer.
+* 032 C-z (vip-ESC) (insert mode): Commands in Insert Mode.
+* 032 C-z (vip-ESC) (insert mode): Insert Mode.
+* 032 C-z (vip-change-mode-to-vi): Modes in VIP.
+* 032 C-z (vip-change-mode-to-vi): Emacs Mode.
+* 033 ESC (vip-ESC): New Commands.
+* 033 ESC (vip-ESC): Important Keys.
+* 033 ESC (vip-change-mode-to-vi) (insert mode): Insert Mode.
+* 033 ESC (vip-change-mode-to-vi) (insert mode): Commands in Insert Mode.
+* 040 SPC (vip-scroll): Viewing the Buffer.
+* 040 SPC (vip-scroll): New Bindings.
+* 041 ! (vip-command-argument): Other Vi Commands.
+* 042 " (vip-command-argument): Delete Commands.
+* 0430 # (vip-command-argument): New Commands.
+* 0431 # C (upcase-region): New Commands.
+* 0432 # c (downcase-region): New Commands.
+* 0432 # g (vip-global-execute): New Commands.
+* 0432 # q (vip-quote-region): New Commands.
+* 0432 # s (spell-region): New Commands.
+* 044 $ (vip-goto-eol): Motion Commands.
+* 045 % (vip-paren-match): Motion Commands.
+* 046 & (vip-nil): Other Vi Commands.
+* 047 ' (vip-goto-mark-and-skip-white): Motion Commands.
+* 050 ( (vip-backward-sentence): Motion Commands.
+* 051 ) (vip-forward-sentence): Motion Commands.
+* 052 * (vip-call-last-kbd-macro): New Commands.
+* 052 * (vip-call-last-kbd-macro): Other Vi Commands.
+* 052 * (vip-call-last-kbd-macro): Misc Commands.
+* 053 + (vip-next-line-at-bol): Motion Commands.
+* 054 , (vip-repeat-find-opposite): Motion Commands.
+* 055 - (vip-previous-line-at-bol): Motion Commands.
+* 056 . (vip-repeat): Repeating and Undoing Modifications.
+* 056 . (vip-repeat): Undoing.
+* 057 / (vip-search-forward): Searching.
+* 057 / (vip-search-forward): Counts.
+* 057 / (vip-search-forward): Searching and Replacing.
+* 060 0 (vip-beginning-of-line): Motion Commands.
+* 061 1 (numeric argument): Numeric Arguments.
+* 062 2 (numeric argument): Numeric Arguments.
+* 063 3 (numeric argument): Numeric Arguments.
+* 064 4 (numeric argument): Numeric Arguments.
+* 065 5 (numeric argument): Numeric Arguments.
+* 066 6 (numeric argument): Numeric Arguments.
+* 067 7 (numeric argument): Numeric Arguments.
+* 068 8 (numeric argument): Numeric Arguments.
+* 069 9 (numeric argument): Numeric Arguments.
+* 072 : (vip-ex): Ex Commands.
+* 073 ; (vip-repeat-find): Motion Commands.
+* 074 < (vip-command-argument): Other Vi Commands.
+* 075 = (vip-command-argument): Other Vi Commands.
+* 076 > (vip-command-argument): Other Vi Commands.
+* 077 ? (vip-search-backward): Searching.
+* 077 ? (vip-search-backward): Counts.
+* 077 ? (vip-search-backward): Searching and Replacing.
+* 100 @ (vip-nil): Other Vi Commands.
+* 101 A (vip-Append): Commands in Insert Mode.
+* 102 B (vip-backward-Word): Motion Commands.
+* 103 C (vip-ctl-c-equivalent): Important Keys.
+* 103 C (vip-ctl-c-equivalent): New Bindings.
+* 104 D (vip-kill-line): Delete Commands.
+* 105 E (vip-end-of-Word): Motion Commands.
+* 106 F (vip-find-char-backward): Motion Commands.
+* 107 G (vip-goto-line): Motion Commands.
+* 110 H (vip-window-top): Motion Commands.
+* 111 I (vip-Insert): Commands in Insert Mode.
+* 112 J (vip-join-lines): Other Vi Commands.
+* 113 K (vip-kill-buffer): Buffer Commands.
+* 113 K (vip-kill-buffer): New Commands.
+* 113 K (vip-kill-buffer): Buffers and Windows.
+* 114 L (vip-window-bottom): Motion Commands.
+* 115 M (vip-window-middle): Motion Commands.
+* 116 N (vip-search-Next): Searching and Replacing.
+* 117 O (vip-Open-line): Counts.
+* 117 O (vip-Open-line): Commands in Insert Mode.
+* 120 P (vip-Put-back): Counts.
+* 120 P (vip-Put-back): Put Back Commands.
+* 121 Q (vip-query-replace): New Commands.
+* 121 Q (vip-query-replace): Searching and Replacing.
+* 122 R (vip-replace-string): New Commands.
+* 122 R (vip-replace-string): Searching and Replacing.
+* 123 S (vip-switch-to-buffer-other-window): New Bindings.
+* 123 S (vip-switch-to-buffer-other-window): Buffer Commands.
+* 123 S (vip-switch-to-buffer-other-window): Buffers and Windows.
+* 124 T (vip-goto-char-backward): Motion Commands.
+* 125 U (vip-nil): Other Vi Commands.
+* 126 V (vip-find-file-other-window): Files.
+* 126 V (vip-find-file-other-window): File Commands.
+* 126 V (vip-find-file-other-window): New Commands.
+* 127 W (vip-forward-Word): Motion Commands.
+* 1300 X (vip-ctl-x-equivalent): Important Keys.
+* 1300 X (vip-ctl-x-equivalent): New Bindings.
+* 1301 X ( (start-kbd-macro): Misc Commands.
+* 1301 X ) (end-kbd-macro): Misc Commands.
+* 1301 X 1 (delete-other-windows): Window Commands.
+* 1301 X 1 (delete-other-windows): Buffers and Windows.
+* 1301 X 2 (split-window-vertically): Buffers and Windows.
+* 1301 X 2 (split-window-vertically): Window Commands.
+* 1301 X 3 (vip-buffer-in-two-windows): Buffers and Windows.
+* 1301 X 3 (vip-buffer-in-two-windows): Window Commands.
+* 1301 X 3 (vip-buffer-in-two-windows): New Bindings.
+* 1302 X B (list-buffers): Buffers and Windows.
+* 1302 X I (insert-file): Files.
+* 1302 X I (insert-file): File Commands.
+* 1302 X S (save-buffer): Files.
+* 1302 X S (save-buffer): Buffer Commands.
+* 1302 X W (write-file): Files.
+* 1302 X W (write-file): File Commands.
+* 1302 X Z (suspend-emacs): Misc Commands.
+* 131 Y (vip-yank-line): Yank Commands.
+* 132 Z Z (save-buffers-kill-emacs): Other Vi Commands.
+* 133 [ (vip-nil): Other Vi Commands.
+* 134 \ (vip-escape-to-emacs): New Commands.
+* 134 \ (vip-escape-to-emacs): Important Keys.
+* 135 ] (vip-nil): Other Vi Commands.
+* 136 ^ (vip-bol-and-skip-white): Motion Commands.
+* 137 _ (vip-nil): Other Vi Commands.
+* 140 ` (vip-goto-mark): Motion Commands.
+* 141 a (vip-append): Commands in Insert Mode.
+* 142 b (vip-backward-word): Motion Commands.
+* 1430 c (vip-command-argument): Change Commands.
+* 1431 c R: Change Commands.
+* 1432 c c: Change Commands.
+* 1432 c r: Change Commands.
+* 1440 d (vip-command-argument): Delete Commands.
+* 1441 d R: Delete Commands.
+* 1442 d d: Delete Commands.
+* 1442 d r: Delete Commands.
+* 145 e (vip-end-of-word): Motion Commands.
+* 146 f (vip-find-char-forward): Motion Commands.
+* 147 g (vip-info-on-file): New Bindings.
+* 147 g (vip-info-on-file): Files.
+* 150 h (vip-backward-char): Motion Commands.
+* 151 i (vip-insert): Commands in Insert Mode.
+* 152 j (vip-next-line): Motion Commands.
+* 153 k (vip-previous-line): Motion Commands.
+* 154 l (vip-forward-char): Motion Commands.
+* 155 m (vip-mark-point): Mark Commands.
+* 155 m (vip-mark-point): Marking.
+* 156 n (vip-search-next): Searching and Replacing.
+* 157 o (vip-open-line): Commands in Insert Mode.
+* 157 o (vip-open-line): Counts.
+* 160 p (vip-put-back): Put Back Commands.
+* 160 p (vip-put-back): Counts.
+* 161 q (vip-nil): Other Vi Commands.
+* 162 r (vip-replace-char): Searching and Replacing.
+* 163 s (vip-switch-to-buffer): Buffer Commands.
+* 163 s (vip-switch-to-buffer): Buffers and Windows.
+* 163 s (vip-switch-to-buffer): New Bindings.
+* 164 t (vip-goto-char-forward): Motion Commands.
+* 165 u (vip-undo): Undoing.
+* 165 u (vip-undo): Repeating and Undoing Modifications.
+* 166 v (vip-find-file): File Commands.
+* 166 v (vip-find-file): Files.
+* 166 v (vip-find-file): New Commands.
+* 167 w (vip-forward-word): Motion Commands.
+* 170 x (vip-delete-char): Delete Commands.
+* 1710 y (vip-command-argument): Yank Commands.
+* 1711 y R: Yank Commands.
+* 1712 y r: Yank Commands.
+* 1712 y y (vip-yank-line): Yank Commands.
+* 1721 z RET (vip-line-to-top): Viewing the Buffer.
+* 1721 z RET (vip-line-to-top): z Command.
+* 1722 z - (vip-line-to-bottom): Viewing the Buffer.
+* 1722 z - (vip-line-to-bottom): z Command.
+* 1722 z . (vip-line-to-middle): z Command.
+* 1722 z . (vip-line-to-middle): Viewing the Buffer.
+* 1723 z H (vip-line-to-top): Viewing the Buffer.
+* 1723 z H (vip-line-to-top): z Command.
+* 1723 z L (vip-line-to-bottom): z Command.
+* 1723 z L (vip-line-to-bottom): Viewing the Buffer.
+* 1723 z M (vip-line-to-middle): z Command.
+* 1723 z M (vip-line-to-middle): Viewing the Buffer.
+* 173 { (vip-backward-paragraph): Motion Commands.
+* 174 | (vip-goto-col): Motion Commands.
+* 175 } (vip-forward-paragraph): Motion Commands.
+* 176 ~ (vip-nil): Other Vi Commands.
+* 177 DEL (vip-delete-backward-char): Delete Commands.
+
+
+ Concept Index
+**************
+
+* Menu:
+
+* address: Ex Commands.
+* buffer: Basic Concepts.
+* buffer: Buffers and Windows.
+* buffer name completion: Buffers and Windows.
+* count: Numeric Arguments.
+* current buffer: Buffers and Windows.
+* default directory: Files.
+* emacs mode: Modes in VIP.
+* end (of buffer): Basic Concepts.
+* expanding (region): Modifying Commands.
+* file name completion: Files.
+* flag: Ex Command Reference.
+* global keymap: Basic Concepts.
+* insert mode: Modes in VIP.
+* keymap: Basic Concepts.
+* line commands: Modifying Commands.
+* local keymap: Customizing Key Bindings.
+* local keymap: Basic Concepts.
+* looking at: Basic Concepts.
+* magic: Ex Commands.
+* mark: Basic Concepts.
+* mark ring: Mark Commands.
+* mode: Basic Concepts.
+* mode line: Modes in VIP.
+* modified (buffer): Buffers and Windows.
+* number register: Put Back Commands.
+* numeric arguments: Numeric Arguments.
+* point: Basic Concepts.
+* point commands: Modifying Commands.
+* region: Basic Concepts.
+* region: Region Commands.
+* regular expression: Ex Commands.
+* regular expression (replacement): Searching and Replacing.
+* regular expression (search): Searching and Replacing.
+* selected buffer: Buffers and Windows.
+* selected tag table: Ex Command Reference.
+* syntax table: Motion Commands.
+* tag: Ex Command Reference.
+* text: Basic Concepts.
+* vanilla (replacement): Searching and Replacing.
+* vi mode: Modes in VIP.
+* visiting (a file): Files.
+* window: Basic Concepts.
+* window: Buffers and Windows.
+* word: Motion Commands.
+* yank: Yank Commands.
+
+
+ 
