@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_input.c	7.14 (Berkeley) %G%
+ *	@(#)ip_input.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -32,13 +32,12 @@
 #include "../net/route.h"
 
 #include "in.h"
-#include "in_pcb.h"
 #include "in_systm.h"
-#include "in_var.h"
 #include "ip.h"
+#include "in_pcb.h"
+#include "in_var.h"
 #include "ip_var.h"
 #include "ip_icmp.h"
-#include "tcp.h"
 
 #ifndef	IPFORWARDING
 #ifdef GATEWAY
@@ -57,18 +56,19 @@ int	ipsendredirects = IPSENDREDIRECTS;
 
 #ifndef	IPFORWARDING
 #ifdef GATEWAY
-#define	IPFORWARDING	1
+#define	IPFORWARDING	1	/* forward IP packets not for us */
 #else /* GATEWAY */
-#define	IPFORWARDING	0
+#define	IPFORWARDING	0	/* don't forward IP packets not for us */
 #endif /* GATEWAY */
 #endif /* IPFORWARDING */
 #ifndef	IPSENDREDIRECTS
 #define	IPSENDREDIRECTS	1
 #endif
-int	ipprintfs = 0;
 int	ipforwarding = IPFORWARDING;
-extern	int in_interfaces;
 int	ipsendredirects = IPSENDREDIRECTS;
+#ifdef DEBUG
+int	ipprintfs = 0;
+#endif
 
 u_char	ip_protox[IPPROTO_MAX];
 int	ipqmaxlen = IFQ_MAXLEN;
@@ -89,6 +89,11 @@ static	struct ip_srcrt {
 	char	srcopt[IPOPT_OFFSET + 1];	/* OPTVAL, OLEN and OFFSET */
 	struct	in_addr route[MAX_IPOPTLEN/sizeof(struct in_addr)];
 } ip_srcrt;
+
+#ifdef GATEWAY
+extern	int if_index;
+u_long	*ip_ifmatrix;
+#endif
 
 /*
  * IP initialization: fill in IP protocol switch table.
@@ -112,6 +117,11 @@ ip_init()
 	ipq.next = ipq.prev = &ipq;
 	ip_id = time.tv_sec & 0xffff;
 	ipintrq.ifq_maxlen = ipqmaxlen;
+#ifdef GATEWAY
+	i = (if_index + 1) * (if_index + 1) * sizeof (u_long);
+	if ((ip_ifmatrix = (u_long *) malloc(i, M_RTABLE, M_WAITOK)) == 0)
+		panic("no memory for ip_ifmatrix");
+#endif
 }
 
 struct	ip *ip_reass();
@@ -120,8 +130,7 @@ struct	route ipforward_rt;
 
 /*
  * Ip input routine.  Checksum and byte swap header.  If fragmented
- * try to reassamble.  If complete and fragment queue exists, discard.
- * Process options.  Pass to next level.
+ * try to reassemble.  Process options.  Pass to next level.
  */
 ipintr()
 {
@@ -150,7 +159,7 @@ panic("ipintr no HDR");
 	if (in_ifaddr == NULL)
 		goto bad;
 	ipstat.ips_total++;
-	if ((m->m_flags & M_EXT || m->m_len < sizeof (struct ip)) &&
+	if (m->m_len < sizeof (struct ip) &&
 	    (m = m_pullup(m, sizeof (struct ip))) == 0) {
 		ipstat.ips_toosmall++;
 		goto next;
@@ -176,13 +185,13 @@ panic("ipintr no HDR");
 	/*
 	 * Convert fields to host representation.
 	 */
-	ip->ip_len = ntohs((u_short)ip->ip_len);
+	NTOHS(ip->ip_len);
 	if (ip->ip_len < hlen) {
 		ipstat.ips_badlen++;
 		goto bad;
 	}
-	ip->ip_id = ntohs(ip->ip_id);
-	ip->ip_off = ntohs((u_short)ip->ip_off);
+	NTOHS(ip->ip_id);
+	NTOHS(ip->ip_off);
 
 	/*
 	 * Check that the amount of data in the buffers
@@ -251,15 +260,11 @@ panic("ipintr no HDR");
 	/*
 	 * Not for us; forward if possible and desirable.
 	 */
-	if (ipforwarding == 0
-#ifndef GATEWAY
-	    || in_interfaces <= 1
-#endif
-	    ) {
+	if (ipforwarding == 0) {
 		ipstat.ips_cantforward++;
 		m_freem(m);
 	} else
-		ip_forward(m);
+		ip_forward(m, 0);
 	goto next;
 
 ours:
@@ -271,6 +276,13 @@ ours:
 	 * but it's not worth the time; just let them time out.)
 	 */
 	if (ip->ip_off &~ IP_DF) {
+		if (m->m_flags & M_EXT) {		/* XXX */
+			if ((m = m_pullup(m, sizeof (struct ip))) == 0) {
+				ipstat.ips_toosmall++;
+				goto next;
+			}
+			ip = mtod(m, struct ip *);
+		}
 		/*
 		 * Look for queue of fragments
 		 * of this datagram.
@@ -546,8 +558,10 @@ struct in_ifaddr *ip_rtaddr();
 
 /*
  * Do option processing on a datagram,
- * possibly discarding it if bad options
- * are encountered.
+ * possibly discarding it if bad options are encountered,
+ * or forwarding it if source-routed.
+ * Returns 1 if packet has been forwarded/freed,
+ * 0 if the packet should be processed further.
  */
 ip_dooptions(m)
 	struct mbuf *m;
@@ -589,7 +603,7 @@ ip_dooptions(m)
 		 * or do nothing if loosely routed.
 		 * Record interface address and bring up next address
 		 * component.  If strictly routed make sure next
-		 * address on directly accessible net.
+		 * address is on directly accessible net.
 		 */
 		case IPOPT_LSRR:
 		case IPOPT_SSRR:
@@ -625,9 +639,14 @@ ip_dooptions(m)
 			 */
 			bcopy((caddr_t)(cp + off), (caddr_t)&ipaddr.sin_addr,
 			    sizeof(ipaddr.sin_addr));
-			if ((opt == IPOPT_SSRR &&
-			    in_iaonnetof(in_netof(ipaddr.sin_addr)) == 0) ||
-			    (ia = ip_rtaddr(ipaddr.sin_addr)) == 0) {
+			if (opt == IPOPT_SSRR) {
+#define	INA	struct in_ifaddr *
+#define	SA	struct sockaddr *
+			    if ((ia = (INA)ifa_ifwithdstaddr((SA)&ipaddr)) == 0)
+				ia = in_iaonnetof(in_netof(ipaddr.sin_addr));
+			} else
+				ia = ip_rtaddr(ipaddr.sin_addr);
+			if (ia == 0) {
 				type = ICMP_UNREACH;
 				code = ICMP_UNREACH_SRCFAIL;
 				goto bad;
@@ -657,9 +676,7 @@ ip_dooptions(m)
 			 * locate outgoing interface; if we're the destination,
 			 * use the incoming interface (should be same).
 			 */
-			if ((ia =
-			   (struct in_ifaddr *)ifa_ifwithaddr(
-			      (struct sockaddr *)&ipaddr)) == 0 &&
+			if ((ia = (INA)ifa_ifwithaddr((SA)&ipaddr)) == 0 &&
 			    (ia = ip_rtaddr(ipaddr.sin_addr)) == 0) {
 				type = ICMP_UNREACH;
 				code = ICMP_UNREACH_HOST;
@@ -702,7 +719,7 @@ ip_dooptions(m)
 					goto bad;
 				bcopy((caddr_t)sin, (caddr_t)&ipaddr.sin_addr,
 				    sizeof(struct in_addr));
-				if (ifa_ifwithaddr((struct sockaddr *)&ipaddr) == 0)
+				if (ifa_ifwithaddr((SA)&ipaddr) == 0)
 					continue;
 				ipt->ipt_ptr += sizeof(struct in_addr);
 				break;
@@ -717,7 +734,7 @@ ip_dooptions(m)
 		}
 	}
 	if (forward) {
-		ip_forward(m);
+		ip_forward(m, 1);
 		return (1);
 	} else
 		return (0);
@@ -735,7 +752,6 @@ ip_rtaddr(dst)
 	 struct in_addr dst;
 {
 	register struct sockaddr_in *sin;
-	register struct in_ifaddr *ia;
 
 	sin = (struct sockaddr_in *) &ipforward_rt.ro_dst;
 
@@ -752,13 +768,7 @@ ip_rtaddr(dst)
 	}
 	if (ipforward_rt.ro_rt == 0)
 		return ((struct in_ifaddr *)0);
-	/*
-	 * Find address associated with outgoing interface.
-	 */
-	for (ia = in_ifaddr; ia; ia = ia->ia_next)
-		if (ia->ia_ifp == ipforward_rt.ro_rt->rt_ifp)
-			break;
-	return (ia);
+	return ((struct in_ifaddr *) ipforward_rt.ro_rt->rt_ifa);
 }
 
 /*
@@ -772,8 +782,10 @@ save_rte(option, dst)
 	unsigned olen;
 
 	olen = option[IPOPT_OLEN];
+#ifdef DEBUG
 	if (ipprintfs)
 		printf("save_rte: olen %d\n", olen);
+#endif
 	if (olen > sizeof(ip_srcrt) - (1 + sizeof(dst)))
 		return;
 	bcopy((caddr_t)option, (caddr_t)ip_srcrt.srcopt, olen);
@@ -811,18 +823,22 @@ ip_srcroute()
 	/* length is (nhops+1)*sizeof(addr) + sizeof(nop + srcrt header) */
 	m->m_len = ip_nhops * sizeof(struct in_addr) + sizeof(struct in_addr) +
 	    OPTSIZ;
+#ifdef DEBUG
 	if (ipprintfs)
 		printf("ip_srcroute: nhops %d mlen %d", ip_nhops, m->m_len);
+#endif
 
 	/*
 	 * First save first hop for return route
 	 */
 	p = &ip_srcrt.route[ip_nhops - 1];
 	*(mtod(m, struct in_addr *)) = *p--;
+#ifdef DEBUG
 	if (ipprintfs)
 		printf(" hops %X", ntohl(*mtod(m, struct in_addr *)));
 	if (ipprintfs)
 		printf(" hops %X", ntohl(*mtod(m, struct in_addr *)));
+#endif
 
 	/*
 	 * Copy option fields and padding (nop) to mbuf.
@@ -839,8 +855,10 @@ ip_srcroute()
 	 * reversing the path (pointers are now aligned).
 	 */
 	while (p >= ip_srcrt.route) {
+#ifdef DEBUG
 		if (ipprintfs)
 			printf(" %X", ntohl(*q));
+#endif
 		*q++ = *p--;
 	}
 	/*
@@ -854,8 +872,10 @@ ip_srcroute()
 	 * Last hop goes to final destination.
 	 */
 	*q = ip_srcrt.dst;
+#ifdef DEBUG
 	if (ipprintfs)
 		printf(" %X\n", ntohl(*q));
+#endif
 	return (m);
 }
 
@@ -890,8 +910,8 @@ ip_stripoptions(m, mopt)
 
 u_char inetctlerrmap[PRC_NCMDS] = {
 	0,		0,		0,		0,
-	0,		0,		EHOSTDOWN,	EHOSTUNREACH,
-	ENETUNREACH,	EHOSTUNREACH,	ECONNREFUSED,	ECONNREFUSED,
+	0,		EMSGSIZE,	EHOSTDOWN,	EHOSTUNREACH,
+	EHOSTUNREACH,	EHOSTUNREACH,	ECONNREFUSED,	ECONNREFUSED,
 	EMSGSIZE,	EHOSTUNREACH,	0,		0,
 	0,		0,		0,		0,
 	ENOPROTOOPT
@@ -903,25 +923,32 @@ u_char inetctlerrmap[PRC_NCMDS] = {
  * icmp message because icmp doesn't have a large enough repertoire
  * of codes and types.
  *
- * If not forwarding (possibly because we have only a single external
- * network), just drop the packet.  This could be confusing if ipforwarding
- * was zero but some routing protocol was advancing us as a gateway
- * to somewhere.  However, we must let the routing protocol deal with that.
+ * If not forwarding, just drop the packet.  This could be confusing
+ * if ipforwarding was zero but some routing protocol was advancing
+ * us as a gateway to somewhere.  However, we must let the routing
+ * protocol deal with that.
+ *
+ * The srcrt parameter indicates whether the packet is being forwarded
+ * via a source route.
  */
-ip_forward(m)
+ip_forward(m, srcrt)
 	struct mbuf *m;
+	int srcrt;
 {
 	register struct ip *ip = mtod(m, struct ip *);
 	register struct ip *ip = mtod(m, struct ip *);
-	register int error, type = 0, code;
 	register struct sockaddr_in *sin;
+	register struct rtentry *rt;
+	int error, type = 0, code;
 	struct mbuf *mcopy;
 	struct in_addr dest;
 
 	dest.s_addr = 0;
+#ifdef DEBUG
 	if (ipprintfs)
 		printf("forward: src %x dst %x ttl %x\n", ip->ip_src,
 			ip->ip_dst, ip->ip_ttl);
+#endif
 	if (m->m_flags & M_BCAST || in_canforward(ip->ip_dst) == 0) {
 		ipstat.ips_cantforward++;
 		m_freem(m);
@@ -929,19 +956,13 @@ ip_forward(m)
 	}
 	ip->ip_id = htons(ip->ip_id);
 	if (ip->ip_ttl <= IPTTLDEC) {
-		type = ICMP_TIMXCEED, code = ICMP_TIMXCEED_INTRANS;
-		goto sendicmp;
+		icmp_error(m, ICMP_TIMXCEED, ICMP_TIMXCEED_INTRANS, dest);
+		return;
 	}
 	ip->ip_ttl -= IPTTLDEC;
 
-	/*
-	 * Save at most 64 bytes of the packet in case
-	 * we need to generate an ICMP message to the src.
-	 */
-	mcopy = m_copy(m, 0, imin((int)ip->ip_len, 64));
-
 	sin = (struct sockaddr_in *)&ipforward_rt.ro_dst;
-	if (ipforward_rt.ro_rt == 0 ||
+	if ((rt = ipforward_rt.ro_rt) == 0 ||
 	    ip->ip_dst.s_addr != sin->sin_addr.s_addr) {
 		if (ipforward_rt.ro_rt) {
 			RTFREE(ipforward_rt.ro_rt);
@@ -952,29 +973,44 @@ ip_forward(m)
 		sin->sin_addr = ip->ip_dst;
 
 		rtalloc(&ipforward_rt);
+		if (ipforward_rt.ro_rt == 0) {
+			icmp_error(m, ICMP_UNREACH, ICMP_UNREACH_HOST, dest);
+			return;
+		}
+		rt = ipforward_rt.ro_rt;
 	}
+
+	/*
+	 * Save at most 64 bytes of the packet in case
+	 * we need to generate an ICMP message to the src.
+	 */
+	mcopy = m_copy(m, 0, imin((int)ip->ip_len, 64));
+
+#ifdef GATEWAY
+	ip_ifmatrix[rt->rt_ifp->if_index +
+	     if_index * m->m_pkthdr.rcvif->if_index]++;
+#endif
 	/*
 	 * If forwarding packet using same interface that it came in on,
 	 * perhaps should send a redirect to sender to shortcut a hop.
 	 * Only send redirect if source is sending directly to us,
 	 * and if packet was not source routed (or has any options).
 	 * Also, don't send redirect if forwarding using a default route
-	 * or a route modfied by a redirect.
+	 * or a route modified by a redirect.
 	 */
 #define	satosin(sa)	((struct sockaddr_in *)(sa))
-	if (ipforward_rt.ro_rt &&
-	    ipforward_rt.ro_rt->rt_ifp == m->m_pkthdr.rcvif &&
-	    (ipforward_rt.ro_rt->rt_flags & (RTF_DYNAMIC|RTF_MODIFIED)) == 0 &&
-	    satosin(rt_key(ipforward_rt.ro_rt))->sin_addr.s_addr != 0 &&
-	    ipsendredirects && ip->ip_hl == (sizeof(struct ip) >> 2)) {
+	if (rt->rt_ifp == m->m_pkthdr.rcvif &&
+	    (rt->rt_flags & (RTF_DYNAMIC|RTF_MODIFIED)) == 0 &&
+	    satosin(rt_key(rt))->sin_addr.s_addr != 0 &&
+	    ipsendredirects && !srcrt) {
 		struct in_ifaddr *ia;
 		u_long src = ntohl(ip->ip_src.s_addr);
 		u_long dst = ntohl(ip->ip_dst.s_addr);
 
 		if ((ia = ifptoia(m->m_pkthdr.rcvif)) &&
 		   (src & ia->ia_subnetmask) == ia->ia_subnet) {
-		    if (ipforward_rt.ro_rt->rt_flags & RTF_GATEWAY)
-			dest = satosin(ipforward_rt.ro_rt->rt_gateway)->sin_addr;
+		    if (rt->rt_flags & RTF_GATEWAY)
+			dest = satosin(rt->rt_gateway)->sin_addr;
 		    else
 			dest = ip->ip_dst;
 		    /*
@@ -983,71 +1019,63 @@ ip_forward(m)
 		     * on the attached net (!), use host redirect.
 		     * (We may be the correct first hop for other subnets.)
 		     */
+#define	RTA(rt)	((struct in_ifaddr *)(rt->rt_ifa))
 		    type = ICMP_REDIRECT;
-		    code = ICMP_REDIRECT_NET;
-		    if ((ipforward_rt.ro_rt->rt_flags & RTF_HOST) ||
-		       (ipforward_rt.ro_rt->rt_flags & RTF_GATEWAY) == 0)
-			code = ICMP_REDIRECT_HOST;
-		    else for (ia = in_ifaddr; ia = ia->ia_next; )
-			if ((dst & ia->ia_netmask) == ia->ia_net) {
-			    if (ia->ia_subnetmask != ia->ia_netmask)
-				    code = ICMP_REDIRECT_HOST;
-			    break;
-			}
+		    if ((rt->rt_flags & RTF_HOST) ||
+		        (rt->rt_flags & RTF_GATEWAY) == 0)
+			    code = ICMP_REDIRECT_HOST;
+		    else if (RTA(rt)->ia_subnetmask != RTA(rt)->ia_netmask &&
+		        (dst & RTA(rt)->ia_netmask) ==  RTA(rt)->ia_net)
+			    code = ICMP_REDIRECT_HOST;
+		    else
+			    code = ICMP_REDIRECT_NET;
+#ifdef DEBUG
 		    if (ipprintfs)
-		        printf("redirect (%d) to %x\n", code, dest);
+		        printf("redirect (%d) to %x\n", code, dest.s_addr);
+#endif
 		}
 	}
 
 	error = ip_output(m, (struct mbuf *)0, &ipforward_rt, IP_FORWARDING);
 	if (error)
 		ipstat.ips_cantforward++;
-	else if (type)
-		ipstat.ips_redirectsent++;
 	else {
-		if (mcopy)
-			m_freem(mcopy);
 		ipstat.ips_forward++;
-		return;
+		if (type)
+			ipstat.ips_redirectsent++;
+		else {
+			if (mcopy)
+				m_freem(mcopy);
+			return;
+		}
 	}
 	if (mcopy == NULL)
 		return;
-	ip = mtod(mcopy, struct ip *);
-	type = ICMP_UNREACH;
 	switch (error) {
 
 	case 0:				/* forwarded, but need redirect */
-		type = ICMP_REDIRECT;
-		/* code set above */
+		/* type, code set above */
 		break;
 
-	case ENETUNREACH:
+	case ENETUNREACH:		/* shouldn't happen, checked above */
+	case EHOSTUNREACH:
 	case ENETDOWN:
-		if (in_localaddr(ip->ip_dst))
-			code = ICMP_UNREACH_HOST;
-		else
-			code = ICMP_UNREACH_NET;
+	case EHOSTDOWN:
+	default:
+		type = ICMP_UNREACH;
+		code = ICMP_UNREACH_HOST;
 		break;
 
 	case EMSGSIZE:
+		type = ICMP_UNREACH;
 		code = ICMP_UNREACH_NEEDFRAG;
 		ipstat.ips_cantfrag++;
-		break;
-
-	case EPERM:
-		code = ICMP_UNREACH_PORT;
 		break;
 
 	case ENOBUFS:
 		type = ICMP_SOURCEQUENCH;
 		code = 0;
 		break;
-
-	case EHOSTDOWN:
-	case EHOSTUNREACH:
-		code = ICMP_UNREACH_HOST;
-		break;
 	}
-sendicmp:
 	icmp_error(mcopy, type, code, dest);
 }
