@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.34 %G%"
+SCCSID = "@(#)Makefile 1.35 %G%"
 
 INSTALLDIR = $(DESTDIR)/usr/lib
 INSTALLNAME = ${INSTALLDIR}/pc0
@@ -107,7 +107,7 @@ clean:
 	${RM} a.out core *.list *.bak
 	${RM} opc pic tags
 
-print:	sources
+print:	${SRCS} ${HDRS} ${OTHERS}
 	@pr makefile READ_ME
 	@ls -ls | pr
 	@cc -o pic pic.c
@@ -124,7 +124,7 @@ install: a.out
 	cp ${INSTALLDIR}/pi ${INSTALLDIR}/pi.bak
 	cp a.out ${INSTALLDIR}/pi
 
-depend:	sources
+depend:	${SRCS} ${HDRS} ${OTHERS}
 	/bin/grep '^#[ 	]*include' *.h \
 		| sed '/<.*>/d' \
 		| sed 's/\(.*\):[^"]*"\([^"]*\)".*/\1: \2/' >makedep
@@ -280,6 +280,7 @@ rec.o: whoami.h
 rec.o: 0.h
 rec.o: tree.h
 rec.o: opcode.h
+rec.o: align.h
 rval.o: whoami.h
 rval.o: 0.h
 rval.o: tree.h
