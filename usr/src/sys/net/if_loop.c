@@ -1,4 +1,4 @@
-/*	if_loop.c	4.17	83/05/15	*/
+/*	if_loop.c	4.18	83/05/27	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -24,6 +24,7 @@
 #endif
 
 #define	LONET	127
+#define	LOHOST	1			/* can't be 0, that's broadcast */
 #define	LOMTU	(1024+512)
 
 struct	ifnet loif;
@@ -37,9 +38,10 @@ loattach()
 	ifp->if_name = "lo";
 	ifp->if_mtu = LOMTU;
 	ifp->if_net = LONET;
+	ifp->if_host[0] = LOHOST;
 	sin = (struct sockaddr_in *)&ifp->if_addr;
 	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net, 0);
+	sin->sin_addr = if_makeaddr(ifp->if_net, LOHOST);
 	ifp->if_flags = IFF_UP;
 	ifp->if_output = looutput;
 	if_attach(ifp);
