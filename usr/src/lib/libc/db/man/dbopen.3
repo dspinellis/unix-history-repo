@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	5.8 (Berkeley) %G%
+.\"	@(#)dbopen.3	5.9 (Berkeley) %G%
 .\"
 .TH DB 3  ""
 .UC 7
@@ -137,14 +137,6 @@ The parameter
 .I flag
 must be set to one of the following values:
 .RS
-.TP
-R_DUP
-If the key already exists in the file, create an entry with a duplicate
-key, i.e. one with the same key and different data as another entry.
-(This implies that keys are not required to be unique.
-Applicable only to the
-.B BTREE
-access method.)
 .TP
 R_IAFTER
 Append the data immediately after the data referenced by
@@ -308,6 +300,8 @@ is as follows:
 .PP
 typedef struct {
 .RS
+u_long flags;
+.br
 u_int psize;
 .br
 u_int cachesize;
@@ -317,6 +311,18 @@ int (*compare)(const void *, const void *);
 } BTREEINFO;
 .PP
 The elements of this structure are defined as follows:
+.TP
+flags
+The flag value is specified by
+.IR or 'ing
+any of the following values:
+.RS
+.TP
+R_DUP
+If the key already exists in the file, create an entry with a duplicate
+key, i.e. one with the same key and different data as another entry.
+(This implies that keys are not required to be unique.)
+.RE
 .TP
 psize
 Page size is the size in bytes of the pages used for nodes in the tree.
@@ -337,7 +343,7 @@ In addition, physical writes are delayed as long as possible, so a moderate
 cache can reduce the number of I/O operations significantly.
 Obviously, using a cache increases the likelihood of corruption or lost data
 if the system crashes while a tree is being modified, however, caching 10
-pages decreases by between two and three orders of magnitude the creation
+pages decreases (by between two and three orders of magnitude) the creation
 time of a large tree.
 .TP
 compare
@@ -370,7 +376,7 @@ tree's page size only (see
 Data structures may reference byte strings of essentially unlimited length.
 .PP
 Searches, insertions, and deletions in a btree will all complete in
-O lg N time.
+O lg N.
 .PP
 Forward sequential scans of a tree are from the least key to the greatest.
 .PP
