@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.42 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -648,16 +648,29 @@ include(fname, forwarding, ctladdr, sendq, e)
 	register EVENT *ev = NULL;
 	int nincludes;
 	int ret;
+	ADDRESS *ca;
+	uid_t uid;
 	char buf[MAXLINE];
 	static int includetimeout();
 
 	if (tTd(27, 2))
 		printf("include(%s)\n", fname);
+	if (tTd(27, 14))
+	{
+		printf("ctladdr ");
+		printaddr(ctladdr, FALSE);
+	}
 
 	/*
 	**  If home directory is remote mounted but server is down,
 	**  this can hang or give errors; use a timeout to avoid this
 	*/
+
+	ca = getctladdr(ctladdr);
+	if (ca == NULL)
+		uid = 0;
+	else
+		uid = ca->q_uid;
 
 	if (setjmp(CtxIncludeTimeout) != 0)
 	{
@@ -668,14 +681,14 @@ include(fname, forwarding, ctladdr, sendq, e)
 	}
 	ev = setevent((time_t) 60, includetimeout, 0);
 
-	/* if forwarding, the input file must be marked safe */
-	if (forwarding && (ret = safefile(fname, ctladdr->q_uid, S_IREAD)) != 0)
+	/* the input file must be marked safe */
+	if ((ret = safefile(fname, uid, S_IREAD)) != 0)
 	{
 		/* don't use this .forward file */
 		clrevent(ev);
 		if (tTd(27, 4))
 			printf("include: not safe (uid=%d): %s\n",
-				ctladdr->q_uid, errstring(ret));
+				uid, errstring(ret));
 		return ret;
 	}
 
@@ -688,7 +701,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 		return ret;
 	}
 
-	if (getctladdr(ctladdr) == NULL)
+	if (ca == NULL)
 	{
 		struct stat st;
 
