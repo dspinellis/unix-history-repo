@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.32 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -23,6 +23,8 @@ static char sccsid[] = "@(#)vfprintf.c	5.31 (Berkeley) %G%";
 #define	MAXEXP		308
 /* 128 bit fraction takes up 39 decimal digits; max reasonable precision */
 #define	MAXFRACT	39
+
+#define	DEFPREC		6
 
 #define	BUF		(MAXEXP+MAXFRACT+1)	/* + decimal point */
 
@@ -58,19 +60,18 @@ _doprnt(fmt0, argp, fp)
 	register char *t;	/* buffer pointer */
 	double _double;		/* double precision arguments %[eEfgG] */
 	u_long _ulong;		/* integer arguments %[diouxX] */
-	int flags;		/* flags as above */
-	int dprec;		/* decimal precision in [diouxX] */
-	int fpprec;		/* `extra' floating precision in [eEfgG] */
-	int width;		/* width from format (%8d), or 0 */
-	int prec;		/* precision from format (%.3d), or -1 */
-	int size;		/* size of converted field or string */
-	int fieldsz;		/* field size expanded by sign, etc */
-	int realsz;		/* field size expanded by decimal precision */
-	char sign;		/* sign prefix (+ - or \0) */
 	int base;		/* base for [diouxX] conversion */
+	int dprec;		/* decimal precision in [diouxX] */
+	int fieldsz;		/* field size expanded by sign, etc */
+	int flags;		/* flags as above */
+	int fpprec;		/* `extra' floating precision in [eEfgG] */
+	int prec;		/* precision from format (%.3d), or -1 */
+	int realsz;		/* field size expanded by decimal precision */
+	int size;		/* size of converted field or string */
+	int width;		/* width from format (%8d), or 0 */
+	char sign;		/* sign prefix (+ - or \0) */
 	char *digs;		/* digits for [diouxX] conversion */
 	char buf[BUF];		/* space for %c, %[diouxX], %[eEfgG] */
-	char *_cvt();		/* handles [eEfgG] formats */
 
 	if (fp->_flag & _IORW) {
 		fp->_flag |= _IOWRT;
@@ -172,6 +173,9 @@ rflag:		switch (*++fmt) {
 			size = 1;
 			sign = '\0';
 			goto pforw;
+		case 'D':
+			flags |= LONGINT;
+			/*FALLTHROUGH*/
 		case 'd':
 		case 'i':
 			ARG();
@@ -197,9 +201,21 @@ rflag:		switch (*++fmt) {
 					fpprec = prec - MAXFRACT;
 				prec = MAXFRACT;
 			}
-			t = buf;
-			size = _cvt(_double, prec, flags, *fmt, &sign,
-				    t, t + sizeof(buf)) - t;
+			else if (prec == -1)
+				prec = DEFPREC;
+			if (_double < 0) {
+				sign = '-';
+				_double = -_double;
+			}
+			/*
+			 * _cvt may have to round up past the "start" of the
+			 * buffer, i.e. ``intf("%.2f", (double)9.999);'';
+			 * if the first char isn't NULL, it did.
+			 */
+			*buf = NULL;
+			size = _cvt(_double, prec, flags, *fmt, buf,
+			    buf + sizeof(buf));
+			t = *buf ? buf : buf + 1;
 			goto pforw;
 		case 'n':
 			if (flags & LONGINT)
@@ -209,6 +225,9 @@ rflag:		switch (*++fmt) {
 			else
 				*va_arg(argp, int *) = cnt;
 			break;
+		case 'O':
+			flags |= LONGINT;
+			/*FALLTHROUGH*/
 		case 'o':
 			ARG();
 			base = 8;
@@ -246,6 +265,9 @@ rflag:		switch (*++fmt) {
 				size = strlen(t);
 			sign = '\0';
 			goto pforw;
+		case 'U':
+			flags |= LONGINT;
+			/*FALLTHROUGH*/
 		case 'u':
 			ARG();
 			base = 10;
@@ -289,22 +311,23 @@ number:			if ((dprec = prec) >= 0)
 
 pforw:
 			/*
-			 * All reasonable formats wind up here.  At this
-			 * point, `t' points to a string which (if not
-			 * flags&LADJUST) should be padded out to `width'
-			 * places.  If flags&ZEROPAD, it should first be
-			 * prefixed by any sign or other prefix; otherwise,
-			 * it should be blank padded before the prefix is
-			 * emitted.  After any left-hand padding and
-			 * prefixing, emit zeroes required by a decimal
-			 * [diouxX] precision, then print the string proper,
-			 * then emit zeroes required by any leftover floating
-			 * precision; finally, if LADJUST, pad with blanks.
+			 * All reasonable formats wind up here.  At this point,
+			 * `t' points to a string which (if not flags&LADJUST)
+			 * should be padded out to `width' places.  If
+			 * flags&ZEROPAD, it should first be prefixed by any
+			 * sign or other prefix; otherwise, it should be blank
+			 * padded before the prefix is emitted.  After any
+			 * left-hand padding and prefixing, emit zeroes
+			 * required by a decimal [diouxX] precision, then print
+			 * the string proper, then emit zeroes required by any
+			 * leftover floating precision; finally, if LADJUST,
+			 * pad with blanks.
 			 */
 
-			/* compute actual size, so we know how much to pad */
-			/* this code is not terribly satisfactory */
-			/* fieldsz excludes decimal prec; realsz includes it */
+			/*
+			 * compute actual size, so we know how much to pad
+			 * fieldsz excludes decimal prec; realsz includes it
+			 */
 			fieldsz = size + fpprec;
 			if (sign)
 				fieldsz++;
@@ -347,7 +370,6 @@ pforw:
 			if (flags & LADJUST)
 				for (n = realsz; n < width; n++)
 					PUTC(' ');
-
 			/* finally, adjust cnt */
 			cnt += width > realsz ? width : realsz;
 			break;
@@ -361,244 +383,271 @@ pforw:
 	/* NOTREACHED */
 }
 
-#define	EFORMAT	0x01
-#define	FFORMAT	0x02
-#define	GFORMAT	0x04
-#define	DEFPREC	6
-
-static char *
-_cvt(number, prec, flags, fmtch, sign, startp, endp)
+static
+_cvt(number, prec, flags, fmtch, startp, endp)
 	double number;
 	register int prec;
 	int flags;
 	u_char fmtch;
-	char *sign, *startp, *endp;
+	char *startp, *endp;
 {
 	register char *p, *t;
-	register int expcnt, format;
 	double fract, integer, tmp, modf();
-	int decpt;
-	char *savep, exponent[MAXEXP];
+	int dotrim, expcnt, gformat;
+	char *exponent(), *eround(), *fround();
 
-	if (prec == -1)
-		prec = DEFPREC;
+	dotrim = expcnt = gformat = 0;
+	fract = modf(number, &integer);
 
-	if (number < 0) {
-		*sign = '-';
-		number = -number;
+	/* get an extra slot for rounding. */
+	t = ++startp;
+
+	/*
+	 * get integer portion of number; put into the end of the buffer; the
+	 * .01 is added for modf(356.0 / 10, &integer) returning .59999999...
+	 */
+	for (p = endp - 1; integer; ++expcnt) {
+		tmp = modf(integer / 10, &integer);
+		*p-- = tochar((int)((tmp + .01) * 10));
 	}
-
 	switch(fmtch) {
+	case 'f':
+		/* reverse integer into beginning of buffer */
+		if (expcnt)
+			for (; ++p < endp; *t++ = *p);
+		else
+			*t++ = '0';
+		/*
+		 * if precision required or alternate flag set, add in a
+		 * decimal point.
+		 */
+		if (prec || flags&ALT)
+			*t++ = '.';
+		/* if requires more precision and some fraction left */
+		if (fract) {
+			if (prec)
+				do {
+					fract = modf(fract * 10, &tmp);
+					*t++ = tochar((int)tmp);
+				} while (--prec && fract);
+			if (fract)
+				startp = fround(startp, t - 1, fract);
+		}
+		for (; prec--; *t++ = '0');
+		break;
 	case 'e':
 	case 'E':
-		format = EFORMAT;
-		break;
-	case 'f':
-		format = FFORMAT;
+eformat:	if (expcnt) {
+			*t++ = *++p;
+			if (prec || flags&ALT)
+				*t++ = '.';
+			/* if requires more precision and some integer left */
+			for (; prec && ++p < endp; --prec)
+				*t++ = *p;
+			/*
+			 * if done precision and more of the integer component,
+			 * round using it; adjust fract so we don't re-round
+			 * later.
+			 */
+			if (!prec && ++p < endp) {
+				startp = eround(startp, t - 1, (double)0,
+				    *p, &expcnt);
+				fract = 0;
+			}
+			/* adjust expcnt for digit in front of decimal */
+			--expcnt;
+		}
+		/* until first fractional digit, decrement exponent */
+		else if (fract) {
+			/* adjust expcnt for digit in front of decimal */
+			for (expcnt = -1;; --expcnt) {
+				fract = modf(fract * 10, &tmp);
+				if (tmp)
+					break;
+			}
+			*t++ = tochar((int)tmp);
+			if (prec || flags&ALT)
+				*t++ = '.';
+		}
+		else {
+			*t++ = '0';
+			if (prec || flags&ALT)
+				*t++ = '.';
+		}
+		/* if requires more precision and some fraction left */
+		if (fract) {
+			if (prec)
+				do {
+					fract = modf(fract * 10, &tmp);
+					*t++ = tochar((int)tmp);
+				} while (--prec && fract);
+			if (fract)
+				startp = eround(startp, t - 1, fract,
+				    (char)0, &expcnt);
+		}
+		/* if requires more precision */
+		for (; prec--; *t++ = '0');
+
+		/* unless alternate flag, trim any g/G format trailing 0's */
+		if (gformat && !(flags&ALT)) {
+			while (t > startp && *--t == '0');
+			if (*t == '.')
+				--t;
+			++t;
+		}
+		t = exponent(t, expcnt, fmtch);
 		break;
 	case 'g':
 	case 'G':
-		format = GFORMAT;
-		fmtch -= 2;
-	}
-
-	/*
-	 * if the alternate flag is set, or, at least one digit of precision
-	 * was requested, add a decimal point, unless it's the g/G format
-	 * in which case we require two digits of precision, as it counts
-	 * precision differently.
-	 */
-	decpt = flags&ALT || prec > (format&GFORMAT ? 1 : 0);
-
-	expcnt = 0;
-	p = endp - 1;
-	fract = modf(number, &integer);
-	if (integer) {
-		/* get integer part of number; count decimal places */
-		for (; integer; ++expcnt) {
-			tmp = modf(integer / 10, &integer);
-			*p-- = tochar((int)((tmp + .03) * 10));
-		}
-
-		/* copy, in reverse order, to start of buffer */
-		t = startp;
-		*t++ = *++p;
-
+		/* a precision of 0 is treated as a precision of 1. */
+		if (!prec)
+			++prec;
 		/*
-		 * if the format is g/G, and the resulting exponent will be
-		 * greater than the precision, use e/E format.  If e/E format,
-		 * put in a decimal point as needed, and decrement precision
-		 * count for each digit after the decimal point.
+		 * ``The style used depends on the value converted; style e
+		 * will be used only if the exponent resulting from the
+		 * conversion is less than -4 or greater than the precision.''
+		 *	-- ANSI X3J11
 		 */
-		if (format&GFORMAT && expcnt - 1 > prec || format&EFORMAT) {
-			if (format&GFORMAT) {
-				format |= EFORMAT;
-
-				/* first digit is precision for g/G format */
-				if (prec)
-					--prec;
-			}
-			if (decpt)
-				*t++ = '.';
-			for (; ++p < endp && prec; --prec, *t++ = *p);
-
-			/* precision ran out, round */
-			if (p < endp) {
-				if (*p > '4') {
-					for (savep = t--;; *t-- = '0') {
-						if (*t == '.')
-							--t;
-						if (++*t <= '9')
-							break;
-					}
-					t = savep;
-				}
-				fract = 0;
-			}
+		if (expcnt > prec || !expcnt && fract && fract < .0001) {
+			/*
+			 * g/G format counts "significant digits, not digits of
+			 * precision; for the e/E format, this just causes an
+			 * off-by-one problem, i.e. g/G considers the digit
+			 * before the decimal point significant and e/E doesn't
+			 * count it as precision.
+			 */
+			--prec;
+			fmtch -= 2;		/* G->E, g->e */
+			gformat = 1;
+			goto eformat;
 		}
 		/*
-		 * g/G in f format; if out of precision, replace digits with
-		 * zeroes, note, have to round first.
+		 * reverse integer into beginning of buffer,
+		 * note, decrement precision
 		 */
-		else if (format&GFORMAT) {
-			for (; ++p < endp && prec; --prec, *t++ = *p);
-			/* precision ran out; round and then add zeroes */
-			if (p < endp) {
-				if (*p > '4') {
-					for (savep = t--; ++*t > '9';
-					    *t-- = '0');
-					t = savep;
-				}
+		if (expcnt)
+			for (; ++p < endp; *t++ = *p, --prec);
+		else
+			*t++ = '0';
+		/*
+		 * if precision required or alternate flag set, add in a
+		 * decimal point.  If no digits yet, add in leading 0.
+		 */
+		if (prec || flags&ALT) {
+			dotrim = 1;
+			*t++ = '.';
+		}
+		else
+			dotrim = 0;
+		/* if requires more precision and some fraction left */
+		if (fract) {
+			if (prec) {
 				do {
-					*t++ = '0';
-				} while (++p < endp);
-				fract = 0;
-			}
-			if (decpt)
-				*t++ = '.';
-		}
-		/* f format */
-		else {
-			for (; ++p < endp; *t++ = *p);
-			if (decpt)
-				*t++ = '.';
-		}
-		p = t;
-	}
-	/*
-	 * if no fraction, the number was zero, and if no precision, can't
-	 * show anything after the decimal point.
-	 */
-	else if (!fract || !prec) {
-		*startp++ = '0';
-		if (decpt && !(format&GFORMAT)) {
-			*startp++ = '.';
-			while (prec-- > 0)
-				*startp++ = '0';
-		}
-		*startp = '\0';
-		return(startp);
-	}
-	/*
-	 * if the format is g/G, and the resulting exponent will be less than
-	 * -4 use e/E format.  If e/E format, compute exponent value.
-	 */
-	else if (format&GFORMAT && fract < .0001 || format&EFORMAT) {
-		format |= EFORMAT;
-		if (fract)
-			for (p = startp; fract;) {
-				fract = modf(fract * 10, &tmp);
-				if (!tmp) {
-					--expcnt;
-					continue;
+					fract = modf(fract * 10, &tmp);
+					*t++ = tochar((int)tmp);
+				} while(!tmp);
+				while (--prec && fract) {
+					fract = modf(fract * 10, &tmp);
+					*t++ = tochar((int)tmp);
 				}
-				*p++ = tochar((int)tmp);
+			}
+			if (fract)
+				startp = fround(startp, t - 1, fract);
+		}
+		/* alternate format, adds 0's for precision, else trim 0's */
+		if (flags&ALT)
+			for (; prec--; *t++ = '0');
+		else if (dotrim) {
+			while (t > startp && *--t == '0');
+			if (*t != '.')
+				++t;
+		}
+	}
+	return(t - startp);
+}
+
+static char *
+fround(start, end, fract)
+	register char *start, *end;
+	double fract;
+{
+	double tmp;
+
+	(void)modf(fract * 10, &tmp);
+	if (tmp > 4)
+		for (;; --end) {
+			if (*end == '.')
+				--end;
+			if (++*end <= '9')
+				break;
+			*end = '0';
+			/* add extra digit to round past buffer beginning */
+			if (end == start) {
+				*--end = '1';
+				--start;
 				break;
 			}
-		else
-			*p++ = '0';
+		}
+	return(start);
+}
 
-		/* g/G format, decrement precision for first digit */
-		if (format&GFORMAT && prec)
-			--prec;
+static char *
+eround(start, end, fract, ch, exp)
+	register char *start, *end;
+	double fract;
+	char ch;
+	int *exp;
+{
+	double tmp;
 
-		/* add decimal after first non-zero digit */
-		if (decpt)
-			*p++ = '.';
-	}
-	/*
-	 * f format or g/G printed as f format; don't worry about decimal
-	 * point, if g/G format doesn't need it, will get stripped later.
-	 */
-	else {
-		p = startp;
-		*p++ = '0';
-		*p++ = '.';
-	}
-
-	/* finish out requested precision */
-	while (fract && prec-- > 0) {
-		fract = modf(fract * 10, &tmp);
-		*p++ = tochar((int)tmp);
-	}
-	while (prec-- > 0)
-		*p++ = '0';
-
-	/*
-	 * if any fractional value left, "round" it back up to the beginning
-	 * of the number, fixing the exponent as necessary, and avoiding the
-	 * decimal point.
-	 */
-	if (fract) {
+	if (fract)
 		(void)modf(fract * 10, &tmp);
-		if (tmp > 4) {
-			for (savep = p--;; *p-- = '0') {
-				if (*p == '.')
-					--p;
-				if (p == startp) {
-					*p = '1';
-					++expcnt;
-					break;
-				}
-				if (++*p <= '9')
-					break;
+	else
+		tmp = todigit(ch);
+	if (tmp > 4)
+		for (;; --end) {
+			if (*end == '.')
+				--end;
+			if (++*end <= '9')
+				break;
+			*end = '0';
+			/* increment exponent to round past buffer beginning */
+			if (end == start) {
+				*end = '1';
+				++*exp;
+				break;
 			}
-			p = savep;
 		}
-	}
+	return(start);
+}
 
-	/*
-	 * if a g/G format and not alternate flag, lose trailing zeroes,
-	 * if e/E or g/G format, and last char is decimal point, lose it.
-	 */
-	if (!(flags&ALT)) {
-		if (format&GFORMAT)
-			for (; p[-1] == '0'; --p);
-		if (format&(GFORMAT|EFORMAT) && p[-1] == '.')
-			--p;
-	}
+static char *
+exponent(p, exp, fmtch)
+	register char *p;
+	register int exp;
+	u_char fmtch;
+{
+	register char *t;
+	char expbuf[MAXEXP];
 
-	/* if an e/E format, add exponent */
-	if (format&EFORMAT) {
-		*p++ = fmtch;
-		if (--expcnt < 0) {
-			expcnt = -expcnt;
-			*p++ = '-';
-		}
-		else
-			*p++ = '+';
-		t = exponent + MAXEXP;
-		if (expcnt > 9) {
-			do {
-				*--t = tochar(expcnt % 10);
-			} while ((expcnt /= 10) > 9);
-			*--t = tochar(expcnt);
-			for (; t < exponent + MAXEXP; *p++ = *t++);
-		}
-		else {
-			*p++ = '0';
-			*p++ = tochar(expcnt);
-		}
+	*p++ = fmtch;
+	if (exp < 0) {
+		exp = -exp;
+		*p++ = '-';
+	}
+	else
+		*p++ = '+';
+	t = expbuf + MAXEXP;
+	if (exp > 9) {
+		do {
+			*--t = tochar(exp % 10);
+		} while ((exp /= 10) > 9);
+		*--t = tochar(exp);
+		for (; t < expbuf + MAXEXP; *p++ = *t++);
+	}
+	else {
+		*p++ = '0';
+		*p++ = tochar(exp);
 	}
 	return(p);
 }
