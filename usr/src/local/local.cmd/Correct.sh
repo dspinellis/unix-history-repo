@@ -18,7 +18,7 @@ if [ ! -t 1 ]
 then
 	exit
 fi
-DICT=/usr/dict/words
+DICT=/usr/share/dict/words
 trap "echo This set of corrections not made.;rm -f $FIXES $QUEST; exit 1"  1 2 15
 for WORD in `cat $1`
 do
