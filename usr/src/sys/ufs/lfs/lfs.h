@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.9 (Berkeley) %G%
+ *	@(#)lfs.h	7.10 (Berkeley) %G%
  */
 
 typedef struct buf	BUF;
@@ -180,7 +180,7 @@ struct segsum {
 	u_long	ss_create;		/* creation time stamp */
 	u_long	ss_nfinfo;		/* number of file info structures */
 	u_long	ss_ninos;		/* number of inodes in summary */
-	/* FINFO's... */
+	/* FINFO's and inode daddr's... */
 };
 
 /* NINDIR is the number of indirects in a file system block. */
