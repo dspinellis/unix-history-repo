@@ -2,15 +2,15 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)su.1	5.1 (Berkeley) %G%
+.\"	@(#)su.1	6.1 (Berkeley) %G%
 .\"
-.TH SU 1 "16 November 1979"
+.TH SU 1 ""
 .UC
 .SH NAME
 su \- substitute user id temporarily
 .SH SYNOPSIS
 .B su
-[ userid ]
+[ \-f ] [ \- ] [ userid ]
 .SH DESCRIPTION
 .I Su
 demands the password of the specified
@@ -20,6 +20,8 @@ changes to that
 .I userid
 and invokes the Shell
 .IR sh (1)
+or
+.IR csh (1)
 without changing the current directory.
 The user environment
 is unchanged except for HOME and SHELL,
@@ -34,8 +36,20 @@ If no
 is specified, `root' is assumed.
 To remind the super-user of his responsibilities,
 the Shell substitutes `#' for its usual prompt.
+.PP
+The
+.B \-f
+option prevents
+.IR csh (1)
+from executing the .cshrc file; thus making
+.I su
+start up faster.
+.PP
+The
+.B \-
+option simulates a full login.
 .SH "SEE ALSO"
-sh(1)
+sh(1), csh(1)
 .SH BUGS
 Local administrative rules cause restrictions to
 be placed on who can
