@@ -1,0 +1,30 @@
+#print
+So far all the equations have been centered, which is what
+"-ms" does unless you tell it differently.
+You can also arrange for equations to be left-adjusted -
+that is, right up against the left margin - by saying
+  .EQ L
+If there is a number, place it _____after the L, separated by a
+space, like this:
+  .EQ L (3a)
+
+Make the equation in "Example" left-justified with
+the number (3.1a) in the right margin and print it
+to make sure everything works.  Then type "ready".
+#once #create Example
+.PP
+This is a tiny little text
+(which you're undoubtedly sick of by now)
+that includes one equation
+or at least it will when you find this line:
+.EQ
+x sup i = y sup i
+.EN
+and convert it into an equation.
+(Naturally I changed it.)
+.pl 1
+#user
+grep '\.EQ  *L  *(3.1a)$' <Example >/dev/null
+#log
+#next
+1.1f 10

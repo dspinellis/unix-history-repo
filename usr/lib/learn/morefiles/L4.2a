@@ -1,0 +1,13 @@
+#print
+Is the command
+  cat <file
+identical to
+  cat file
+Answer yes or no.
+#copyin
+#user
+#uncopyin
+#match yes
+#log
+#next
+4.1b 10
