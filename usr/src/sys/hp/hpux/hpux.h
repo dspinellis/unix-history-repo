@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux.h 1.1 90/07/09$
+ * from: Utah $Hdr: hpux.h 1.18 91/02/09$
  *
- *	@(#)hpux.h	7.3 (Berkeley) %G%
+ *	@(#)hpux.h	7.4 (Berkeley) %G%
  */
 
 #include "hpux_exec.h"
@@ -56,6 +56,9 @@ struct hpuxsgttyb {
 #define	HPUXTIOCSPGRP	_IOW('T', 29, int)
 #define	HPUXTIOCGPGRP	_IOR('T', 30, int)
 #define HPUXTIOCCONS	_IO('t', 104)
+
+/* non-blocking IO--doesn't interfere with O_NDELAY */
+#define HPUXFIOSNBIO	_IOW('f', 126, int)
 
 /* HP-UX stat structure */
 
