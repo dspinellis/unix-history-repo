@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)du.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -52,7 +52,7 @@ main(argc, argv)
 	char **argv;
 {
 	extern int optind, errno;
-	int ch, reset;
+	int ch;
 	char *malloc(), top[MAXPATHLEN + 1];
 
 	listdirs = crossmounts = 1;
@@ -81,9 +81,11 @@ main(argc, argv)
 	else {
 		if (argv[1])
 			(void)getwd(top);
-		for (; *argv; ++argv) {
+		for (;;) {
 			du(*argv);
-			if (argv[1] && index(*argv, '/') && chdir(top)) {
+			if (!*++argv)
+				break;
+			if (chdir(top)) {
 				(void)fprintf(stderr, "du: %s: %s\n",
 				    top, strerror(errno));
 				exit(1);
