@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)setjmp.3	4.1 (Berkeley) %G%
+.\"	@(#)setjmp.3	5.1 (Berkeley) %G%
 .\"
-.TH SETJMP 3
+.TH SETJMP 3 "19 January 1983"
 .UC 4
 .SH NAME
 setjmp, longjmp \- non-local goto
@@ -16,6 +16,12 @@ setjmp, longjmp \- non-local goto
 .B jmp_buf env;
 .PP
 .B longjmp(env, val)
+.B jmp_buf env;
+.PP
+.B _setjmp(env)
+.B jmp_buf env;
+.PP
+.B _longjmp(env, val)
 .B jmp_buf env;
 .fi
 .SH DESCRIPTION
@@ -44,5 +50,22 @@ which must not itself have returned in the interim.
 All accessible data have values as of the time
 .I longjmp
 was called.
+.PP
+.I Setjmp
+and
+.I longjmp
+save and restore the signal mask
+.IR sigmask (2),
+while
+.I _setjmp
+and
+.I _longjmp
+manipulate only the C stack and registers.
 .SH "SEE ALSO"
-signal(2)
+sigvec(2), sigstack(2), signal(3)
+.SH BUGS
+.I Setjmp
+does not save current notion of whether the process is
+executing on the signal stack.  The result is that a
+longjmp to some place on the signal stack leaves the
+signal stack state incorrect.
