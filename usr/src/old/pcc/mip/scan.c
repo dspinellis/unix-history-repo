@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)scan.c	2.4 (Berkeley) %G%";
+static char *sccsid ="@(#)scan.c	2.5 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -80,7 +80,7 @@ mainp1( argc, argv ) int argc; char *argv[]; {  /* control multiple files */
 	extern int ddebug, xdebug, gdebug, adebug;
 	extern unsigned int offsz;
 	int fdef = 0;
-	extern char *release;
+	char *release = "PCC/364r1 vax uts3.0";
 
 	offsz = caloff();
 	for( i=1; i<argc; ++i ){
@@ -337,12 +337,6 @@ lxstr(ct){
 				continue;
 
 			default:
-				if (hflag)
-					uerror("superfluous backslash in string/character constant");
-				/*FALLTHROUGH*/
-			case '\\':
-			case '\"':
-			case '\'':
 				val = c;
 				goto mkcc;
 
@@ -757,6 +751,7 @@ yylex(){
 				yylval.intval = EQ;
 				return( EQUOP );
 
+#ifdef old_assignment_ops
 			case '+':
 				yylval.intval = ASG PLUS;
 				break;
@@ -808,6 +803,7 @@ yylex(){
 					}
 				yylval.intval = ASG RS;
 				break;
+#endif old_assignment_ops
 
 			default:
 				goto onechar;
@@ -930,12 +926,6 @@ lxres() {
 				return( TYPE );
 
 			case AR_RW:
-				{
-					extern int	nsizeof;
-
-					if (p->lxrval == SIZEOF)
-						++nsizeof;
-				}
 				/* ordinary reserved word */
 				return( yylval.intval = p->lxrval );
 
