@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -64,10 +64,11 @@ static char sccsid[] = "@(#)parse.c	5.5 (Berkeley) %G%";
  *	Parse_MainName	    	    Returns a Lst of the main target to create.
  */
 
-#include    <stdio.h>
-#include    <ctype.h>
-#include    "make.h"
-#include    "buf.h"
+#include <varargs.h>
+#include <stdio.h>
+#include <ctype.h>
+#include "make.h"
+#include "buf.h"
 
 /*
  * These values are returned by ParseEOF to tell Parse_File whether to
@@ -224,7 +225,6 @@ ParseFindKeyword (str)
 }
 
 /*-
- *---------------------------------------------------------------------
  * Parse_Error  --
  *	Error message abort function for parsing. Prints out the context
  *	of the error (line number and file) as well as the message with
@@ -235,29 +235,28 @@ ParseFindKeyword (str)
  *
  * Side Effects:
  *	"fatals" is incremented if the level is PARSE_FATAL.
- *---------------------------------------------------------------------
  */
-/* VARARGS1 */
+/* VARARGS */
 void
-Parse_Error (type, fmt, arg1, arg2)
-    int	    	  type;	/* Error type: PARSE_WARNING if just a warning,
-			 * PARSE_FATAL if can't continue (after parsing) */
-    char          *fmt;	/* printf format string */
-    int     	  arg1;	/* First optional argument for the fmt string */
-    int	    	  arg2;	/* Second optional argument for the fmt string */
+Parse_Error(type, va_alist)
+	int type;		/* Error type (PARSE_WARNING, PARSE_FATAL) */
+	va_dcl
 {
-    if ((type != PARSE_WARNING) || !noWarnings) {
-	fprintf (stderr, "\"%s\", line %d: ", fname, lineno);
-	if (type == PARSE_WARNING) {
-	    fprintf (stderr, "Warning: ");
-	}
-	fprintf (stderr, fmt, arg1, arg2);
-	putc ('\n', stderr);
+	va_list ap;
+	char *fmt;
 
-	if (type == PARSE_FATAL) {
-	    fatals += 1;
-	}
-    }
+	if (type == PARSE_WARNING && noWarnings)
+		return;
+	(void)fprintf(stderr, "\"%s\", line %d: ", fname, lineno);
+	if (type == PARSE_WARNING)
+		(void)fprintf(stderr, "Warning: ");
+	fmt = va_arg(ap, char *);
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	(void)fflush(stderr);
+	if (type == PARSE_FATAL)
+		fatals += 1;
 }
 
 /*-
@@ -727,7 +726,7 @@ ParseDoDependency (line)
 			break;
 		    }
 		    case SingleShell:
-			backwards = 1;
+			/* backwards = 1; */
 			break;
 		    case Order:
 			predecessor = NILGNODE;
@@ -1819,7 +1818,6 @@ test_char:
 		break;
 	    case '#':
 		if (!ignComment) {
-		    if (backwards || (lastc != '\\')) {
 			/*
 			 * If the character is a hash mark and it isn't escaped
 			 * (or we're being compatible), the thing is a comment.
@@ -1829,14 +1827,6 @@ test_char:
 			    c = ParseReadc();
 			} while ((c != '\n') && (c != EOF));
 			goto line_read;
-		    } else {
-			/*
-			 * Don't add the backslash. Just let the # get copied
-			 * over.
-			 */
-			lastc = c;
-			continue;
-		    }
 		}
 		break;
 	    case ':':

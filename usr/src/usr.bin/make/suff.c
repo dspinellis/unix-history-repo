@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)suff.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)suff.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -1285,11 +1285,6 @@ SuffExpandChildren(cgn, pgn)
 		printf("suffix is \"%s\"...", s->name);
 	    }
 	    path = s->searchPath;
-	} else if ((suffNull != (Suff *)NULL) && !amMake) {
-	    if (DEBUG(SUFF)) {
-		printf("using .NULL(%s)...", suffNull->name);
-	    }
-	    path = suffNull->searchPath;
 	} else {
 	    /*
 	     * Use default search path
@@ -1626,24 +1621,7 @@ SuffFindNormalDeps(gn)
 
     eoname = gn->name + strlen(gn->name);
 
-    /*
-     * Figure the start of the prefix: if not in System V or Make mode,
-     * we remove any leading components from the target's name so we can
-     * better search for the source.
-     *
-     * XXX: Use leading components in search if not found elsewhere?
-     */
-    if (!sysVmake && !amMake) {
-	char	*cp = rindex(gn->name, '/');
-
-	if (cp != NULL) {
-	    sopref = cp + 1;
-	} else {
-	    sopref = gn->name;
-	}
-    } else {
-	sopref = gn->name;
-    }
+    sopref = gn->name;
     
     /*
      * Begin at the beginning...
