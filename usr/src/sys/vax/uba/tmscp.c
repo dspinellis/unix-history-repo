@@ -1,8 +1,9 @@
- 
+/*	@(#)tmscp.c	5.1 (Berkeley) %G% */
+
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
 #endif lint
- 
+
 
 /************************************************************************
  *									*
@@ -115,21 +116,103 @@ static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
  *	Changes for support of the VAX8600 were merged in.
  *
  */
- 
+
 #include "tms.h"
-#define	TMSCPDEVNUM	(15)		/* entry in bdevsw */
-#if NTMSCP > 0 || defined(BINARY)
- 
-#include "../data/tmscp_data.c"
- 
+#if NTMSCP > 0
+
+#include "../vax/pte.h"
+
+#include "param.h"
+#include "systm.h"
+#include "buf.h"
+#include "conf.h"
+#include "dir.h"
+#include "user.h"
+#include "file.h"
+#include "map.h"
+#include "vm.h"
+#include "ioctl.h"
+#include "syslog.h"
+#include "mtio.h"
+#include "cmap.h"
+#include "uio.h"
+
+#include "../vax/cpu.h"
+#include "../vax/mtpr.h"
+#include "ubareg.h"
+#include "ubavar.h"
+
+#define TENSEC	(1000)
+#define	TMS_PRI	LOG_INFO
+
+#define NRSPL2  3               /* log2 number of response packets */
+#define NCMDL2  3               /* log2 number of command packets */
+#define NRSP    (1<<NRSPL2)
+#define NCMD    (1<<NCMDL2)
+
+#include "tmscpreg.h"
+#include "../vax/tmscp.h"
+
+/* Software state per controller */
+
+struct tmscp_softc {
+	short   sc_state;       /* state of controller */
+	short   sc_mapped;      /* Unibus map allocated for tmscp struct? */
+	int     sc_ubainfo;     /* Unibus mapping info */
+	struct	tmscp *sc_tmscp;   /* Unibus address of tmscp struct */
+	int     sc_ivec;        /* interrupt vector address */
+	short   sc_credits;     /* transfer credits */
+	short   sc_lastcmd;     /* pointer into command ring */
+	short   sc_lastrsp;     /* pointer into response ring */
+} tmscp_softc[NTMSCP];
+
+struct tmscp {
+	struct tmscpca	tmscp_ca;         /* communications area */
+	struct mscp	tmscp_rsp[NRSP];  /* response packets */
+	struct mscp	tmscp_cmd[NCMD];  /* command packets */
+} tmscp[NTMSCP];
+
+/*
+ * Per drive-unit info
+ */
+struct tms_info {
+	daddr_t		tms_dsize;	/* Max user size from online pkt */
+	unsigned	tms_type;	/* Drive type int field  */
+	int		tms_resid;	/* residual from last xfer */
+	u_char		tms_endcode;	/* last command endcode */
+	u_char		tms_flags;	/* last command end flags */
+	unsigned	tms_status;	/* Command status from last command */
+	char		tms_openf;	/* lock against multiple opens */
+	char		tms_lastiow;	/* last op was a write */
+	char		tms_serex;	/* set when serious exception occurs */
+	char		tms_clserex;	/* set when serex being cleared by no-op */
+	short		tms_fmtmenu;	/* the unit's format (density) menu */
+	short		tms_unitflgs;	/* unit flag parameters */
+	short		tms_format;	/* the unit's current format (density) */
+	struct tty	*tms_ttyp;	/* record user's tty for errors */
+} tms_info[NTMS];
+struct uba_ctlr *tmscpminfo[NTMSCP];
+struct uba_device *tmsdinfo[NTMS];
+/* 
+ * ifdef other tmscp devices here if they allow more than 1 unit/controller
+ */
+struct uba_device *tmscpip[NTMSCP][1];
+struct buf rtmsbuf[NTMS];		/* raw i/o buffer */
+struct buf ctmscpbuf[NTMSCP];		/* internal cmd buffer (for ioctls) */
+struct buf tmsutab[NTMS];		/* Drive queue */
+struct buf tmscpwtab[NTMSCP];		/* I/O wait queue, per controller */
+int    tmscpmicro[NTMSCP];		/* to store microcode level */
+short  utoctlr[NTMS];			/* Slave unit to controller mapping */
+					/* filled in by the slave routine */
+
 /* Bits in minor device */
 #define	TMSUNIT(dev)	(minor(dev)&03)
 #define	T_NOREWIND	04
 #define	T_HIDENSITY	010
- 
+
 /* Slave unit to controller mapping */
 #define TMSCPCTLR(dev)	(utoctlr[TMSUNIT(dev)])
- 
+
 /*
  * Internal (ioctl) command codes (these must also be declared in the
  * tmscpioctl routine).  These correspond to ioctls in mtio.h
@@ -148,7 +231,7 @@ static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
 #define TMS_CSE		10		/* clear serious exception */
 #define TMS_LOWDENSITY	11		/* set unit to low density */
 #define TMS_HIDENSITY	12		/* set unit to high density */
- 
+
 /*
  * Controller states
  */
@@ -158,68 +241,64 @@ static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
 #define S_STEP3 3               /* doing step 3 init */
 #define S_SCHAR 4               /* doing "set controller characteristics" */
 #define S_RUN   5               /* running */
- 
+
 int     tmscperror = 0;		/* causes hex dump of packets */
 int	tmscp_cp_wait = 0;	/* Something to wait on for command */
 				/* packets and or credits. */
 int	wakeup();
 extern	int	hz;		/* Should find the right include */
- 
+
 #ifdef	DEBUG
 #define printd if (tmscpdebug) printf
 int tmscpdebug = 1;
 #define	printd10 if(tmscpdebug >= 10) printf
 #endif 
- 
+
 int     tmscpprobe(), tmscpslave(), tmscpattach(), tmscpintr();
 struct  mscp *tmscpgetcp();
- 
+
 #define DRVNAME "tms"
 #define CTRLNAME "tmscp"
- 
+
 u_short tmscpstd[] = { 0174500, 0 };
 struct  uba_driver tmscpdriver =
 { tmscpprobe, tmscpslave, tmscpattach, 0, tmscpstd, DRVNAME, tmsdinfo, CTRLNAME
 , tmscpminfo, 0};
- 
+
 #define b_qsize         b_resid         /* queue size per drive, in tmsutab */
 #define b_ubinfo        b_resid         /* Unibus mapping info, per buffer */
- 
- 
+
+
 /*************************************************************************/
- 
+
 #define DELAYTEN 1000
- 
+
 tmscpprobe(reg, ctlr)
 	caddr_t reg;		/* address of the IP register */
-	int ctlr;		/* index of controller in the tmscp_softc array
- */
+	int ctlr;		/* index of controller in the tmscp_softc array */
 {
 	register int br, cvec;	/* MUST be 1st (r11 & r10): IPL and intr vec */
 	register struct tmscp_softc *sc = &tmscp_softc[ctlr];
 				/* ptr to software controller structure */
-	struct tmscpdevice *tmscpaddr; /* ptr to tmscpdevice struct (IP & SA) *
-/
-	struct uba_ctlr *um;	/* UNUSED ptr to uba_ctlr (controller) struct *
-/
+	struct tmscpdevice *tmscpaddr; /* ptr to tmscpdevice struct (IP & SA) */
+	struct uba_ctlr *um;	/* UNUSED ptr to uba_ctlr (controller) struct */
 	int count;		/* for probe delay time out */
- 
+
 #	ifdef lint
 	br = 0; cvec = br; br = cvec; reg = reg;
 	tmscpreset(0); tmscpintr(0);
 #	endif
- 
+
 	tmscpaddr = (struct tmscpdevice *) reg;
 	/* 
 	 * Set host-settable interrupt vector.
-	 * Assign 0 to the ip register to start the tmscp-device initialization
-.
+	 * Assign 0 to the ip register to start the tmscp-device initialization.
 	 * The device is not really initialized at this point, this is just to
 	 * find out if the device exists.
 	 */
 	sc->sc_ivec = (uba_hd[numuba].uh_lastiv -= 4);
 	tmscpaddr->tmscpip = 0;
- 
+
 	count=0;
 	while(count < DELAYTEN)
 		{	/* wait for at most 10 secs */
@@ -230,24 +309,23 @@ tmscpprobe(reg, ctlr)
 		}
 	if (count == DELAYTEN)
 		return(0);		
- 
-	tmscpaddr->tmscpsa = TMSCP_ERR|(NCMDL2<<11)|(NRSPL2<<8)|TMSCP_IE|(sc->s
-c_ivec/4);
- 
+
+	tmscpaddr->tmscpsa = TMSCP_ERR|(NCMDL2<<11)|(NRSPL2<<8)|TMSCP_IE|(sc->sc_ivec/4);
+
 	count=0;
 	while(count < DELAYTEN)
 		{
-		if((tmscpaddr->tmscpsa & TMSCP_STEP2) != 0)	
+		if((tmscpaddr->tmscpsa & TMSCP_STEP2) != 0)
 			break;
 		DELAY(10000);
 		count = count+1;
 		}
 	if (count == DELAYTEN)
 		return(0);
- 
+
 	return(sizeof (struct tmscpdevice));
 }
- 
+
 /*
  * Try to find a slave (a drive) on the controller.
  * If the controller is not in the run state, call init to initialize it.
@@ -258,11 +336,12 @@ tmscpslave (ui, reg)
 {
 	register struct uba_ctlr *um = tmscpminfo[ui->ui_ctlr];
 	register struct tmscp_softc *sc = &tmscp_softc[ui->ui_ctlr];
+	register struct tms_info *tms = &tms_info[ui->ui_unit];
 	struct   tmscpdevice *tmscpaddr;	/* ptr to IP & SA */
 	struct   mscp *mp;
 	int	 i;			/* Something to write into to start */
 					/* the tmscp polling */
- 
+
 #	ifdef lint
 	ui = ui; reg = reg; i = i;
 #	endif
@@ -291,8 +370,7 @@ tmscpslave (ui, reg)
 #		ifdef DEBUG
 		if (tmscpaddr->tmscpsa & TMSCP_ERR && i)
 	    		{
-	    		printd("tmscp-device: fatal error (%o)\n", tmscpaddr->t
-mscpsa&0xffff);
+	    		printd("tmscp-device: fatal error (%o)\n", tmscpaddr->tmscpsa&0xffff);
 	    		i=0;
 	   		 }
 #		endif	
@@ -309,29 +387,26 @@ mscpsa&0xffff);
 		return(0);
 		}
 	/* Need to determine the drive type for generic driver */
-	mp->mscp_opcode = M_OP_GTUNT;	/* This should give us the device type 
-*/
+	mp->mscp_opcode = M_OP_GTUNT;	/* This should give us the device type */
 	mp->mscp_unit = ui->ui_slave;
 	mp->mscp_cmdref = (long) ui->ui_slave;
-	tms_info[ui->ui_unit].tms_status = 0;	/* set to zero */
+	tms->tms_status = 0;	/* set to zero */
 	tmscpip[ui->ui_ctlr][ui->ui_slave] = ui;
-	*((long *) mp->mscp_dscptr ) |= TMSCP_OWN | TMSCP_INT;/* maybe we shoul
-d poll*/
+	*((long *) mp->mscp_dscptr ) |= TMSCP_OWN | TMSCP_INT;/* maybe we should poll*/
 	i = tmscpaddr->tmscpip;
-	while(!tms_info[ui->ui_unit].tms_status)
+	while(!tms->tms_status)
 		;				/* Wait for some status */
 #	ifdef DEBUG
-	printd("tmscpslave: status = %o\n",tms_info[ui->ui_unit].tms_status & M
-_ST_MASK);
-#	endif	
+	printd("tmscpslave: status = %o\n",tms->tms_status & M_ST_MASK);
+#	endif
 	tmscpip[ui->ui_ctlr][ui->ui_slave] = 0;
-	if(!tms_info[ui->ui_unit].tms_type)	/* packet from a GTUNT */
+	if(!tms->tms_type)			/* packet from a GTUNT */
 		return(0);			/* Failed No such drive */
 	else
 		return(1);			/* Got it and it is there */
 }
- 
- 
+
+
 /* 
  * Set ui flags to zero to show device is not online & set tmscpip.
  * Unit to Controller mapping is set up here.
@@ -340,13 +415,11 @@ _ST_MASK);
 tmscpattach (ui)
 	register struct uba_device *ui;		/* ptr to unibus dev struct */
 {
-	register struct uba_ctlr *um = ui->ui_mi; /* ptr to controller struct *
-/
-	struct tmscpdevice *tmscpaddr = (struct tmscpdevice *) um->um_addr; /* 
-IP & SA */
+	register struct uba_ctlr *um = ui->ui_mi; /* ptr to controller struct */
+	struct tmscpdevice *tmscpaddr = (struct tmscpdevice *) um->um_addr; /* IP & SA */
 	struct mscp *mp;
 	int i;		/* Assign to here to start the tmscp-dev polling */
- 
+
 #	ifdef lint
 	i = i;
 #	endif lint
@@ -362,8 +435,8 @@ IP & SA */
 #	endif	
 	utoctlr[ui->ui_unit] = ui->ui_ctlr;
 }
- 
- 
+
+
 /*
  * TMSCP interrupt routine.
  */
@@ -371,29 +444,27 @@ tmscpintr (d)
 	int d;		/* index to the controller */
 {
 	register struct uba_ctlr *um = tmscpminfo[d];
-	register struct tmscpdevice *tmscpaddr = (struct tmscpdevice *)um->um_a
-ddr;
+	register struct tmscpdevice *tmscpaddr = (struct tmscpdevice *)um->um_addr;
 	struct buf *bp;
 	register int i;
 	register struct tmscp_softc *sc = &tmscp_softc[d];
 	register struct tmscp *tm = &tmscp[d];
 	struct tmscp *ttm;
 	struct mscp *mp;
- 
+
 #	ifdef DEBUG
-	printd10("tmscpintr: state %d, tmscpsa %o\n", sc->sc_state, tmscpaddr->
-tmscpsa);
+	printd10("tmscpintr: state %d, tmscpsa %o\n", sc->sc_state, tmscpaddr->tmscpsa);
 #	endif	
- 
+
 	/*
 	 * How the interrupt is handled depends on the state of the controller.
 	 */
 	switch (sc->sc_state) {
- 
+
 	case S_IDLE:
 		printf("tmscp%d: random interrupt ignored\n", d);
 		return;
- 
+
 	/* Controller was in step 1 last, see if its gone to step 2 */
 	case S_STEP1:
 #		define STEP1MASK 0174377
@@ -413,8 +484,7 @@ tmscpsa);
 		if (i > 149)
 			{
 			sc->sc_state = S_IDLE;
-			printf("failed to initialize, in step1: sa 0x%x", tmscp
-addr->tmscpsa);
+			printf("failed to initialize, in step1: sa 0x%x", tmscpaddr->tmscpsa);
 			wakeup((caddr_t)um);
 			return;
 			}
@@ -422,7 +492,7 @@ addr->tmscpsa);
 			| ((cpu == VAX_780 || cpu == VAX_8600) ? TMSCP_PI : 0);
 		sc->sc_state = S_STEP2;
 		return;
- 
+
 	/* Controller was in step 2 last, see if its gone to step 3 */
 	case S_STEP2:
 #		define STEP2MASK 0174377
@@ -442,16 +512,14 @@ addr->tmscpsa);
 		if (i > 149)
 			{
 			sc->sc_state = S_IDLE;
-			printf("failed to initialize, in step2: sa 0x%x", tmscp
-addr->tmscpsa);
+			printf("failed to initialize, in step2: sa 0x%x", tmscpaddr->tmscpsa);
 			wakeup((caddr_t)um);
 			return;
 			}
-		tmscpaddr->tmscpsa = ((int)&sc->sc_tmscp->tmscp_ca.ca_ringbase)
->>16;
+		tmscpaddr->tmscpsa = ((int)&sc->sc_tmscp->tmscp_ca.ca_ringbase)>>16;
 		sc->sc_state = S_STEP3;
 		return;
- 
+
 	/* Controller was in step 3 last, see if its gone to step 4 */
 	case S_STEP3:
 #		define STEP3MASK 0174000
@@ -471,8 +539,7 @@ addr->tmscpsa);
 		if (i > 149)
 			{
 			sc->sc_state = S_IDLE;
-			printf("failed to initialize, in step3: sa 0x%x", tmscp
-addr->tmscpsa);
+			printf("failed to initialize, in step3: sa 0x%x", tmscpaddr->tmscpsa);
 			wakeup((caddr_t)um);
 			return;
 			}
@@ -490,7 +557,7 @@ addr->tmscpsa);
 		printd("tmscp%d Version %d model %d\n",d,tmscpmicro[d]&0xF,
 			(tmscpmicro[d]>>4) & 0xF);
 #		endif
- 
+
 	    /*
 	     * Initialize the data structures (response and command queues).
 	     */
@@ -498,8 +565,7 @@ addr->tmscpsa);
 	    for (i = 0; i < NRSP; i++)
 		    {
 		    tm->tmscp_ca.ca_rspdsc[i] = TMSCP_OWN | TMSCP_INT | 
-					   (long)&ttm->tmscp_rsp[i].mscp_cmdref
-;
+			   (long)&ttm->tmscp_rsp[i].mscp_cmdref;
 		    tm->tmscp_rsp[i].mscp_dscptr = &tm->tmscp_ca.ca_rspdsc[i];
 		    tm->tmscp_rsp[i].mscp_header.tmscp_msglen = mscp_msglen;
 		    }
@@ -532,29 +598,27 @@ addr->tmscpsa);
 	    *((long *)mp->mscp_dscptr) |= TMSCP_OWN|TMSCP_INT;
 	    i = tmscpaddr->tmscpip;      /* initiate polling */
 	    return;
- 
+
 	case S_SCHAR:
 	case S_RUN:
 		break;
- 
+
 	default:
-	    printf("tmscp%d: interrupt in unknown state %d ignored\n",d,sc->sc_
-state);
+	    printf("tmscp%d: interrupt in unknown state %d ignored\n",d,sc->sc_state);
 	    return;
 	}	/* end switch */
- 
+
 	/*
 	 * The controller state is S_SCHAR or S_RUN
 	 */
- 
+
 	/*
 	 * If the error bit is set in the SA register then print an error
 	 * message and reinitialize the controller.
 	 */
 	if (tmscpaddr->tmscpsa&TMSCP_ERR)
 		{
-		printf("tmscp%d: fatal error (%o)\n", d, tmscpaddr->tmscpsa&0xf
-fff);
+		printf("tmscp%d: fatal error (%o)\n", d, tmscpaddr->tmscpsa&0xffff);
 		tmscpaddr->tmscpip = 0;
 		wakeup((caddr_t)um);
 		}
@@ -580,7 +644,7 @@ fff);
 		tm->tmscp_ca.ca_bdp = 0;
 		tmscpaddr->tmscpsa = 0;      /* signal purge complete */
 		}
- 
+
 	/*
 	 * Check for response ring transition.
 	 */
@@ -597,7 +661,7 @@ fff);
 			}
 		sc->sc_lastrsp = i;
 		}
- 
+
 	/*
 	 * Check for command ring transition.
 	 */
@@ -612,13 +676,13 @@ fff);
 		wakeup(&tmscp_cp_wait);
     	(void) tmscpstart(um);
 }
- 
- 
+
+
 /*
  * Open a tmscp device and set the unit online.  If the controller is not 
  * in the run state, call init to initialize the tmscp controller first.
  */
- 
+
 tmscpopen(dev, flag)
 	dev_t dev;
 	int flag;
@@ -626,6 +690,7 @@ tmscpopen(dev, flag)
 	register int unit;
 	register struct uba_device *ui;
 	register struct tmscp_softc *sc;
+	register struct tms_info *tms;
 	register struct mscp *mp;
 	register struct uba_ctlr *um;
 	struct tmscpdevice *tmscpaddr;
@@ -640,10 +705,14 @@ tmscpopen(dev, flag)
 	printd("tmscpopen unit %d\n",unit);
 	if(tmscpdebug)DELAY(10000);
 #	endif
-	if (unit >= nNTMS || (ui = tmsdinfo[unit]) == 0 || ui->ui_alive == 0
-		|| tms_info[ui->ui_unit].tms_openf)
+	if (unit >= NTMS || (ui = tmsdinfo[unit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
+	tms = &tms_info[ui->ui_unit];
+	if (tms->tms_openf)
+		return (EBUSY);
 	sc = &tmscp_softc[ui->ui_ctlr];
+	tms->tms_openf = 1;
+	tms->tms_ttyp = u.u_ttyp;
 	s = spl5();
 	if (sc->sc_state != S_RUN)
 		{
@@ -662,6 +731,7 @@ tmscpopen(dev, flag)
 		if (sc->sc_state != S_RUN)
 			{
 			(void) splx(s);
+			tms->tms_openf = 0;
 			return (EIO);
 			}
 		}
@@ -684,7 +754,7 @@ tmscpopen(dev, flag)
 		(void) splx(s);
 		mp->mscp_opcode = M_OP_ONLIN;
 		mp->mscp_unit = ui->ui_slave;
-		mp->mscp_cmdref = (long) & tms_info[ui->ui_unit].tms_type;
+		mp->mscp_cmdref = (long) & tms->tms_type;
 					    /* need to sleep on something */
 #		ifdef DEBUG
 		printd("tmscpopen: bring unit %d online\n",ui->ui_unit);
@@ -700,10 +770,11 @@ tmscpopen(dev, flag)
 		timeout(wakeup,(caddr_t) mp->mscp_cmdref,240 * hz);
 		sleep((caddr_t) mp->mscp_cmdref,PSWP+1);
 		}
-	if(ui->ui_flags == 0)
+	if(ui->ui_flags == 0) {
+		tms->tms_openf = 0;
 		return(ENXIO);  /* Didn't go online */
-	tms_info[ui->ui_unit].tms_openf = 1;
-	tms_info[ui->ui_unit].tms_lastiow = 0;
+	}
+	tms->tms_lastiow = 0;
 	/*
 	 * If the high density device is not specified, set unit to low
 	 * density.  This is done as an "internal" ioctl command so
@@ -716,8 +787,8 @@ tmscpopen(dev, flag)
 		tmscpcommand(dev, TMS_HIDENSITY, 1);
 	return (0);
 }
- 
- 
+
+
 /*
  * Close tape device.
  *
@@ -738,16 +809,17 @@ tmscpclose(dev, flag)
 	register flag;
 {
 	register struct tmscp_softc *sc = &tmscp_softc[TMSCPCTLR(dev)];
+	register struct tms_info *tms;
 	register struct uba_device *ui;
- 
+
 	ui = tmsdinfo[TMSUNIT(dev)];
 #	ifdef DEBUG
 	printd("tmscpclose: ctlr =  %d\n",TMSCPCTLR(dev));
 	printd("tmscpclose: unit = %d\n",TMSUNIT(dev));
 	if(tmscpdebug)DELAY(10000);
 #	endif
-	if (flag == FWRITE || (flag&FWRITE) && tms_info[ui->ui_unit].tms_lastio
-w)
+	tms = &tms_info[ui->ui_unit];
+	if (flag == FWRITE || (flag&FWRITE) && tms->tms_lastiow)
 		{
 		/*	   device, command, count */
 		tmscpcommand (dev, TMS_WRITM, 1);
@@ -760,7 +832,7 @@ w)
 		 */
 		tmscpcommand(dev, TMS_REW, 0);
 	else
-		if (tms_info[ui->ui_unit].tms_serex)
+		if (tms->tms_serex)
 			{
 #			ifdef DEBUG
 			printd("tmscpclose: clearing serex\n");
@@ -768,10 +840,10 @@ w)
 #			endif
 			tmscpcommand(dev, TMS_CSE, 1);
 			}
-	tms_info[ui->ui_unit].tms_openf = 0;
+	tms->tms_openf = 0;
 }
- 
- 
+
+
 /*
  * Execute a command on the tape drive a specified number of times.
  * This routine sets up a buffer and calls the strategy routine which
@@ -780,7 +852,7 @@ w)
  * with the command.  The start routine is called by the strategy or the
  * interrupt routine.
  */
- 
+
 tmscpcommand (dev, com, count)
 	register dev_t dev;
 	int com, count;
@@ -789,12 +861,12 @@ tmscpcommand (dev, com, count)
 	register struct buf *bp;
 	register int s;
 	int unit = TMSUNIT(dev);
- 
-	if (unit >= nNTMS)
+
+	if (unit >= NTMS)
 		return (ENXIO);
 	ui = tmsdinfo[unit];
 	bp = &ctmscpbuf[ui->ui_ctlr];
- 
+
 	s = spl5();
 	while (bp->b_flags&B_BUSY)
 		{
@@ -831,7 +903,7 @@ tmscpcommand (dev, com, count)
 		wakeup((caddr_t)bp);
 	bp->b_flags &= B_ERROR;
 }
- 
+
 /*
  * Find an unused command packet
  */
@@ -844,7 +916,7 @@ tmscpgetcp(um)
 	register struct tmscp_softc *sc;
 	register int i;
 	int	s;
- 
+
 	s = spl5();
 	cp = &tmscp[um->um_ctlr].tmscp_ca;
 	sc = &tmscp_softc[um->um_ctlr];
@@ -872,8 +944,8 @@ tmscpgetcp(um)
 	(void) splx(s);
 	return(NULL);
 }
- 
- 
+
+
 /*
  * Initialize a TMSCP device.  Set up UBA mapping registers,
  * initialize data structures, and start hardware
@@ -883,11 +955,10 @@ tmscpinit (d)
 	int d;			/* index to the controller */
 {
 	register struct tmscp_softc *sc;
-	register struct tmscp *t;  /* communications area; cmd & resp packets *
-/
+	register struct tmscp *t;  /* communications area; cmd & resp packets */
 	struct tmscpdevice *tmscpaddr;
 	struct uba_ctlr *um;
- 
+
 	sc = &tmscp_softc[d];
 	um = tmscpminfo[d];
 	um->um_tab.b_active++;
@@ -900,24 +971,21 @@ tmscpinit (d)
 		 * and response packets into Unibus address
 		 * space.
 		 */
-		sc->sc_ubainfo = uballoc(um->um_ubanum, (caddr_t)t, sizeof (str
-uct tmscp), 0);
+		sc->sc_ubainfo = uballoc(um->um_ubanum, (caddr_t)t, sizeof (struct tmscp), 0);
 #		ifdef MVAX
 		if (cpu == MVAX_I)
-			sc->sc_tmscp = (struct tmscp *)(sc->sc_ubainfo & 0x3fff
-ff);
+			sc->sc_tmscp = (struct tmscp *)(sc->sc_ubainfo & 0x3fffff);
 		else
 #		endif MVAX
-			sc->sc_tmscp = (struct tmscp *)(sc->sc_ubainfo & 0x3fff
-f);
+			sc->sc_tmscp = (struct tmscp *)(sc->sc_ubainfo & 0x3ffff);
 		sc->sc_mapped = 1;
 		}
- 
+
 	/*
 	 * Start the hardware initialization sequence.
 	 */
 	tmscpaddr->tmscpip = 0;              /* start initialization */
- 
+
 	while((tmscpaddr->tmscpsa & TMSCP_STEP1) == 0)
 		{
 #		ifdef DEBUG
@@ -927,8 +995,7 @@ f);
 		if(tmscpaddr->tmscpsa & TMSCP_ERR)
 			return(0);	/* CHECK */
 		}
-	tmscpaddr->tmscpsa=TMSCP_ERR|(NCMDL2<<11)|(NRSPL2<<8)|TMSCP_IE|(sc->sc_
-ivec/4);
+	tmscpaddr->tmscpsa=TMSCP_ERR|(NCMDL2<<11)|(NRSPL2<<8)|TMSCP_IE|(sc->sc_ivec/4);
 	/*
 	 * Initialization continues in the interrupt routine.
 	 */
@@ -936,25 +1003,26 @@ ivec/4);
 	sc->sc_credits = 0;
 	return(1);
 }
- 
- 
+
+
 /*
  * Start I/O operation
  * This code is convoluted.  The majority of it was copied from the uda driver.
  */
- 
+
 tmscpstart(um)
 	register struct uba_ctlr *um;
 {
 	register struct buf *bp, *dp;
 	register struct mscp *mp;
 	register struct tmscp_softc *sc;
+	register struct tms_info *tms;
 	register struct uba_device *ui;
 	struct   tmscpdevice *tmscpaddr;
 	struct   tmscp *tm = &tmscp[um->um_ctlr];
 	int i,tempi;
 	char ioctl;		/* flag: set true if its an IOCTL command */
- 
+
 	sc = &tmscp_softc[um->um_ctlr];
 	
     for(;;)
@@ -981,21 +1049,24 @@ tmscpstart(um)
 		}
 	um->um_tab.b_active++;
 	tmscpaddr = (struct tmscpdevice *)um->um_addr;
+	ui = tmsdinfo[(TMSUNIT(bp->b_dev))];
+	tms = &tms_info[ui->ui_unit];
 	if ((tmscpaddr->tmscpsa&TMSCP_ERR) || sc->sc_state != S_RUN)
 		{
-		harderr(bp, "tms");
-		mprintf("tmscp%d: sa 0%o, state %d\n",um->um_ctlr,
+		tprintf(tms->tms_ttyp,
+		    "tms%d: hard error bn%d\n",
+		    minor(bp->b_dev)&03, bp->b_blkno);
+		log(TMS_PRI, "tmscp%d: sa 0%o, state %d\n",um->um_ctlr,
 				tmscpaddr->tmscpsa&0xffff, sc->sc_state);
 		tmscpinit(um->um_ctlr);
 		/* SHOULD REQUEUE OUTSTANDING REQUESTS, LIKE TMSCPRESET */
 		break;
 		}
-	ui = tmsdinfo[(TMSUNIT(bp->b_dev))];
 	/*
 	 * Default is that last command was NOT a write command;
 	 * if a write command is done it will be detected in tmscprsp.
 	 */
-	tms_info[ui->ui_unit].tms_lastiow = 0;
+	tms->tms_lastiow = 0;
 	if (ui->ui_flags == 0)
 		{        /* not online */
 		if ((mp = tmscpgetcp(um)) == NULL)
@@ -1012,26 +1083,20 @@ tmscpstart(um)
 		continue;
 		}
 	switch (cpu) {
- 
+
 	case VAX_8600:
 	case VAX_780:
 		i = UBA_NEEDBDP|UBA_CANTWAIT;
 		break;
-	case VAX_8200:
 	case VAX_750:
 		i = um->um_ubinfo|UBA_HAVEBDP|UBA_CANTWAIT;
 		break;
 	case VAX_730:
 		i = UBA_CANTWAIT;
 		break;
-	case MVAX_I:
-	case MVAX_II:
-		i = UBA_CANTWAIT|UBA_MAPANYWAY;
-		break;
 	}   /* end switch (cpu) */
 	/*
-	 * If command is an ioctl command then set the ioctl flag for later use
-.
+	 * If command is an ioctl command then set the ioctl flag for later use.
 	 * If not (i.e. it is a read or write) then attempt
 	 * to set up a buffer pointer.
 	 */
@@ -1043,27 +1108,24 @@ tmscpstart(um)
 			{
 			if(dp->b_qsize != 0)
 				break; /* When a command completes and */
-				     /* frees a bdp tmscpstart will be called *
-/
+				     /* frees a bdp tmscpstart will be called */
 			if ((mp = tmscpgetcp(um)) == NULL)
 				break;
 #			ifdef DEBUG
-			printd("tmscpstart: GTUNT %d ubasetup = %d\n",ui->ui_un
-it, i);
+			printd("tmscpstart: GTUNT %d ubasetup = %d\n",ui->ui_unit, i);
 			if(tmscpdebug)DELAY(10000);
 #			endif
 			mp->mscp_opcode = M_OP_GTUNT;
 			mp->mscp_unit = ui->ui_slave;
 			*((long *)mp->mscp_dscptr) |= TMSCP_OWN|TMSCP_INT;
 			if (tmscpaddr->tmscpsa&TMSCP_ERR)
-				printf("tmscp%d: fatal error (0%o)\n",um->um_ct
-lr,
+				printf("tmscp%d: fatal error (0%o)\n",um->um_ctlr,
 					    tmscpaddr->tmscpsa&0xffff);
 			i = tmscpaddr->tmscpip;	/* initiate polling */
 			break;
 			}
-#	if defined(VAX750) || defined(VAX8200)
-	if ((cpu == VAX_750) || (cpu == VAX_8200))
+#	if defined(VAX750)
+	if (cpu == VAX_750)
 		tempi = i & 0xfffffff;			/* mask off bdp */
 	else
 #	endif
@@ -1093,7 +1155,7 @@ lr,
 		 * a non-zero value.
 		 */
 		switch (bp->b_resid) {
- 
+
 		case TMS_WRITM:
 			mp->mscp_opcode = M_OP_WRITM;
 			break;
@@ -1124,29 +1186,29 @@ lr,
 			mp->mscp_modifier = M_MD_REWND | M_MD_CLSEX;
 			if (bp->b_bcount == 0)
 				mp->mscp_modifier |= M_MD_IMMED;
-			tms_info[ui->ui_unit].tms_serex = 0;
+			tms->tms_serex = 0;
 			break;
 		case TMS_OFFL:
 			mp->mscp_opcode = M_OP_AVAIL;
 			mp->mscp_modifier = M_MD_UNLOD | M_MD_CLSEX;
-			tms_info[ui->ui_unit].tms_serex = 0;
+			tms->tms_serex = 0;
 			break;
 		case TMS_SENSE:
 			mp->mscp_opcode = M_OP_GTUNT;
 			break;
 		case TMS_CACHE:
 			mp->mscp_opcode = M_OP_STUNT;
-			tms_info[ui->ui_unit].tms_unitflgs |= M_UF_WBKNV;
-			mp->mscp_unitflgs = tms_info[ui->ui_unit].tms_unitflgs;
-			mp->mscp_format = tms_info[ui->ui_unit].tms_format;
+			tms->tms_unitflgs |= M_UF_WBKNV;
+			mp->mscp_unitflgs = tms->tms_unitflgs;
+			mp->mscp_format = tms->tms_format;
 			/* default device dependant parameters */
 			mp->mscp_mediaid = 0;
 			break;
 		case TMS_NOCACHE:
 			mp->mscp_opcode = M_OP_STUNT;
-			tms_info[ui->ui_unit].tms_unitflgs &= ~(M_UF_WBKNV);
-			mp->mscp_unitflgs = tms_info[ui->ui_unit].tms_unitflgs;
-			mp->mscp_format = tms_info[ui->ui_unit].tms_format;
+			tms->tms_unitflgs &= ~(M_UF_WBKNV);
+			mp->mscp_unitflgs = tms->tms_unitflgs;
+			mp->mscp_format = tms->tms_format;
 			/* default device dependant parameters */
 			mp->mscp_mediaid = 0;
 			break;
@@ -1158,35 +1220,31 @@ lr,
 			 */
 			mp->mscp_opcode = M_OP_REPOS;
 			mp->mscp_modifier = M_MD_CLSEX;
-			tms_info[ui->ui_unit].tms_serex = 0;
-			tms_info[ui->ui_unit].tms_clserex = 1;
+			tms->tms_serex = 0;
+			tms->tms_clserex = 1;
 			break;
 		case TMS_LOWDENSITY:
 			/*
 			 * Set the unit to low density
 			 */
 			mp->mscp_opcode = M_OP_STUNT;
-			mp->mscp_unitflgs = tms_info[ui->ui_unit].tms_unitflgs;
-			mp->mscp_mediaid = 0;	/* default device dependant par
-ameters */
-			if ((tms_info[ui->ui_unit].tms_fmtmenu & M_TF_800) != 0
-)
+			mp->mscp_unitflgs = tms->tms_unitflgs;
+			mp->mscp_mediaid = 0;	/* default device dependant parameters */
+			if ((tms->tms_fmtmenu & M_TF_800) != 0)
 				mp->mscp_format = M_TF_800;
 			else
-				mp->mscp_format = M_TF_PE & tms_info[ui->ui_uni
-t].tms_fmtmenu;
-			tms_info[ui->ui_unit].tms_format = mp->mscp_format;
+				mp->mscp_format = M_TF_PE & tms->tms_fmtmenu;
+			tms->tms_format = mp->mscp_format;
 			break;
 		case TMS_HIDENSITY:
 			/*
 			 * Set the unit to high density (format == 0)
 			 */
 			mp->mscp_opcode = M_OP_STUNT;
-			mp->mscp_unitflgs = tms_info[ui->ui_unit].tms_unitflgs;
-			mp->mscp_mediaid = 0;	/* default device dependant par
-ameters */
+			mp->mscp_unitflgs = tms->tms_unitflgs;
+			mp->mscp_mediaid = 0;	/* default device dependant parameters */
 			mp->mscp_format = 0;
-			tms_info[ui->ui_unit].tms_format = 0;
+			tms->tms_format = 0;
 			break;
 		default:
 			printf("Bad ioctl on tms unit %d\n", ui->ui_unit);
@@ -1203,25 +1261,22 @@ ameters */
 		if (cpu == MVAX_I)
 			{
 			mp->mscp_buffer = (i & 0x3ffff) | TMSCP_MAP;
-			mp->mscp_mapbase = (long)&(uba_hd[um->um_ubanum].uh_phy
-suba->uba_map[0]);
+			mp->mscp_mapbase = (long)&(uba_hd[um->um_ubanum].uh_physuba->uba_map[0]);
 			}
 		else
 #		endif MVAX
 			mp->mscp_buffer = (i & 0x3ffff) | (((i>>28)&0xf)<<24);
- 
+
 		bp->b_ubinfo = tempi;			/* save mapping info */
 		}
-	if (tms_info[ui->ui_unit].tms_serex == 2)	/* if tape mark read */
+	if (tms->tms_serex == 2)			/* if tape mark read */
 		{
-		mp->mscp_modifier |= M_MD_CLSEX;	/*  clear serious exc *
-/
-		tms_info[ui->ui_unit].tms_serex = 0;
+		mp->mscp_modifier |= M_MD_CLSEX;	/*  clear serious exc */
+		tms->tms_serex = 0;
 		}
 	*((long *)mp->mscp_dscptr) |= TMSCP_OWN|TMSCP_INT;
 #	ifdef DEBUG
-	printd("tmscpstart: opcode 0%o mod %o unit %d cnt %d\n",mp->mscp_opcode
-,mp->mscp_modifier,mp->mscp_unit,mp->mscp_bytecnt);
+	printd("tmscpstart: opcode 0%o mod %o unit %d cnt %d\n",mp->mscp_opcode,mp->mscp_modifier,mp->mscp_unit,mp->mscp_bytecnt);
 	if(tmscpdebug)DELAY(100000);
 #	endif
 	i = tmscpaddr->tmscpip;              /* initiate polling */
@@ -1247,8 +1302,7 @@ suba->uba_map[0]);
 	dp->av_back = bp;
 	if (tmscpaddr->tmscpsa&TMSCP_ERR)
 		{
-		printf("tmscp%d: fatal error (0%o)\n", um->um_ctlr, tmscpaddr->
-tmscpsa&0xffff);
+		printf("tmscp%d: fatal error (0%o)\n", um->um_ctlr, tmscpaddr->tmscpsa&0xffff);
 		tmscpinit(um->um_ctlr);
 		break;
 		}
@@ -1267,8 +1321,8 @@ tmscpsa&0xffff);
 	    }
     sc->sc_lastrsp = i;
 }
- 
- 
+
+
 /*
  * Process a response packet
  */
@@ -1279,19 +1333,18 @@ tmscprsp(um, tm, sc, i)
 	int i;
 {
 	register struct mscp *mp;
+	register struct tms_info *tms;
 	struct uba_device *ui;
 	struct buf *dp, *bp, nullbp;
 	int st;
- 
+
 	mp = &tm->tmscp_rsp[i];
 	mp->mscp_header.tmscp_msglen = mscp_msglen;
-	sc->sc_credits += mp->mscp_header.tmscp_credits & 0xf;  /* low 4 bits *
-/
+	sc->sc_credits += mp->mscp_header.tmscp_credits & 0xf;  /* low 4 bits */
 	if ((mp->mscp_header.tmscp_credits & 0xf0) > 0x10)	/* Check */
 		return;
 #	ifdef DEBUG
-	printd("tmscprsp, opcode 0%o status 0%o\n",mp->mscp_opcode,mp->mscp_sta
-tus&M_ST_MASK);
+	printd("tmscprsp, opcode 0%o status 0%o\n",mp->mscp_opcode,mp->mscp_status&M_ST_MASK);
 #	endif	
 	/*
 	 * If it's an error log message (datagram),
@@ -1313,8 +1366,7 @@ tus&M_ST_MASK);
 		if (st == M_ST_SUCC)
 			{
 #		  	ifdef DEBUG
-			printd("ctlr has %d credits\n", mp->mscp_header.tmscp_c
-redits & 0xf);
+			printd("ctlr has %d credits\n", mp->mscp_header.tmscp_credits & 0xf);
 			printd("ctlr timeout = %d\n", mp->mscp_cnttmo);
 #			endif
 			sc->sc_state = S_RUN;
@@ -1325,27 +1377,28 @@ redits & 0xf);
 		wakeup((caddr_t)um);
 		return;
 		}
-	if (mp->mscp_unit >= nNTMS)
+	if (mp->mscp_unit >= NTMS)
 		return;
 	if ((ui = tmscpip[um->um_ctlr][mp->mscp_unit]) == 0)
 		return;
+	tms = &tms_info[ui->ui_unit];
 	/*
 	 * Save endcode, endflags, and status for mtioctl get unit status.
 	 * NOTE: Don't do this on Clear serious exception (reposition no-op);
 	 *    which is done on close since this would
 	 *    overwrite the real status we want.
 	 */
-	if (tms_info[ui->ui_unit].tms_clserex != 1)
+	if (tms->tms_clserex != 1)
 		{
-		tms_info[ui->ui_unit].tms_endcode = mp->mscp_opcode;
-		tms_info[ui->ui_unit].tms_flags = mp->mscp_flags;
-		tms_info[ui->ui_unit].tms_status = st;
+		tms->tms_endcode = mp->mscp_opcode;
+		tms->tms_flags = mp->mscp_flags;
+		tms->tms_status = st;
 		}
-	else tms_info[ui->ui_unit].tms_clserex = 0;
- 
+	else tms->tms_clserex = 0;
+
 	switch (mp->mscp_opcode) {
 	case M_OP_ONLIN|M_OP_END:
-		tms_info[ui->ui_unit].tms_type = mp->mscp_mediaid;
+		tms->tms_type = mp->mscp_mediaid;
 		dp = &tmsutab[ui->ui_unit];
 		if (st == M_ST_SUCC)
 			{
@@ -1359,37 +1412,32 @@ redits & 0xf);
 				um->um_tab.b_actl->b_forw = dp;
 			um->um_tab.b_actl = dp;
 			ui->ui_flags = 1;       /* mark it online */
-			tms_info[ui->ui_unit].tms_dsize=(daddr_t)mp->mscp_maxwr
-t;
+			tms->tms_dsize=(daddr_t)mp->mscp_maxwrt;
 #			ifdef DEBUG
 			printd("tmscprsp: unit %d online\n", mp->mscp_unit);
 #			endif			
 			/* 
 			 * This define decodes the Media type identifier
 			 */
-#	        	define F_to_C(x,i)     ( ((x)->mscp_mediaid) >> (i*5+7)
- & 0x1f ? ( ( (((x)->mscp_mediaid) >>( i*5 + 7)) & 0x1f) + 'A' - 1): ' ')
+#	        	define F_to_C(x,i)     ( ((x)->mscp_mediaid) >> (i*5+7) & 0x1f ? ( ( (((x)->mscp_mediaid) >>( i*5 + 7)) & 0x1f) + 'A' - 1): ' ')
 #			ifdef DEBUG
 			printd("tmscprsp: unit %d online %x %c%c %c%c%c%d\n"
 				,mp->mscp_unit, mp->mscp_mediaid ,F_to_C(mp,4)
 				,F_to_C(mp,3), F_to_C(mp,2)
-				,F_to_C(mp,1), F_to_C(mp,0), mp->mscp_mediaid &
- 0x7f);
+				,F_to_C(mp,1), F_to_C(mp,0), mp->mscp_mediaid & 0x7f);
 #			endif				
 			dp->b_active = 1;
 			}	/* end if st == M_ST_SUCC */
 		else 
 			{
 			if(dp->b_actf)
-				harderr(dp->b_actf,"tms");
+				tprintf(tms->tms_ttyp,
+				    "tms%d: hard error bn%d: OFFLINE\n",
+				    minor(bp->b_dev)&03, bp->b_blkno);
 			else
-				{
-				nullbp.b_blkno = 0;
-				nullbp.b_dev = makedev(TMSCPDEVNUM,ui->ui_unit)
-;
-				harderr(&nullbp, "tms" );
-				}
-			printf("OFFLINE\n");
+				tprintf(tms->tms_ttyp,
+				    "tms%d: hard error: OFFLINE\n",
+				    minor(bp->b_dev)&03);
 			while (bp = dp->b_actf)
 				{
 				dp->b_actf = bp->av_forw;
@@ -1409,7 +1457,7 @@ t;
 	 */
 	case M_OP_AVATN:
 		ui->ui_flags = 0;
-		tms_info[ui->ui_unit].tms_type = mp->mscp_mediaid;
+		tms->tms_type = mp->mscp_mediaid;
 		break;
 	case M_OP_END:
 		/*
@@ -1417,10 +1465,8 @@ t;
 		 * The mscp specification states that this would be a protocol
 		 * type error, such as illegal opcodes. The mscp spec. also
 		 * states that parameter error type of invalid commands should
-		 * return the normal end message for the command. This does not
- appear
-		 * to be the case. An invalid logical block number returned an 
-endcode
+		 * return the normal end message for the command. This does not appear
+		 * to be the case. An invalid logical block number returned an endcode
 		 * of 0200 instead of the 0241 (read) that was expected.
 		 */
 			
@@ -1440,7 +1486,7 @@ endcode
 		break;
 	case M_OP_WRITE|M_OP_END:
 		/* mark the last io op as a write */
-		tms_info[ui->ui_unit].tms_lastiow = 1;
+		tms->tms_lastiow = 1;
 	case M_OP_READ|M_OP_END:
 	case M_OP_WRITM|M_OP_END:
 	case M_OP_REPOS|M_OP_END:
@@ -1451,7 +1497,7 @@ endcode
 	 * done with the UNLOAD modifier.  This performs a rewind, followed
 	 * by marking the unit offline.  So mark the unit offline
 	 * software wise as well (ui_flags = 0 and 
-	 * tms_info[ui->ui_unit].tms_openf = 0).
+	 * tms->tms_openf = 0).
 	 */
 	case M_OP_AVAIL|M_OP_END:
 #		ifdef DEBUG
@@ -1459,8 +1505,7 @@ endcode
 #		endif
 		bp = (struct buf *)mp->mscp_cmdref;
 		/*
-		 * Only need to release buffer if the command was read or write
-.
+		 * Only need to release buffer if the command was read or write.
 		 * No ubasetup was done in "tmscpstart" if it was an ioctl cmd.
 		 */
 		if (mp->mscp_opcode == (M_OP_READ|M_OP_END) || 
@@ -1471,18 +1516,16 @@ endcode
 		 */
 		bp->av_back->av_forw = bp->av_forw;
 		bp->av_forw->av_back = bp->av_back;
-#		if defined(VAX750) || defined(VAX8200)
-		if ((cpu == VAX_750) || (cpu == VAX_8200)) { 
-		    if ((tmscpwtab[um->um_ctlr].av_forw == &tmscpwtab[um->um_ct
-lr]) &&
+#		if defined(VAX750)
+		if (cpu == VAX_750) { 
+		    if ((tmscpwtab[um->um_ctlr].av_forw == &tmscpwtab[um->um_ctlr]) &&
 					(um->um_ubinfo != 0)) {
 			ubarelse(um->um_ubanum, &um->um_ubinfo);
 		    }
 		    else {
 			if (mp->mscp_opcode == (M_OP_READ|M_OP_END) ||
 		    	    mp->mscp_opcode == (M_OP_WRITE|M_OP_END))
-				UBAPURGE(uba_hd[um->um_ubanum].uh_uba,(um->um_u
-binfo >>28) & 0x0f);
+				UBAPURGE(uba_hd[um->um_ubanum].uh_uba,(um->um_ubinfo >>28) & 0x0f);
 		    }
 		}
 #		endif
@@ -1491,8 +1534,8 @@ binfo >>28) & 0x0f);
 		if (st == M_ST_OFFLN || st == M_ST_AVLBL)
 			{
 			ui->ui_flags = 0;       /* mark unit offline */
-			tms_info[ui->ui_unit].tms_openf = 0;
-			tms_info[ui->ui_unit].tms_type = mp->mscp_mediaid;
+			tms->tms_openf = 0;
+			tms->tms_type = mp->mscp_mediaid;
 			/*
 			 * Link the buffer onto the front of the drive queue
 			 */
@@ -1512,28 +1555,25 @@ binfo >>28) & 0x0f);
 				um->um_tab.b_actl = dp;
 				dp->b_active = 1;
 				}
-#			if defined(VAX750) || defined(VAX8200)
-			if (((cpu == VAX_750) || (cpu == VAX_8200)) && um->um_u
-binfo == 0)
-				um->um_ubinfo = uballoc(um->um_ubanum, (caddr_t
-)0, 0, UBA_NEEDBDP);
+#			if defined(VAX750)
+			if (cpu == VAX_750 && um->um_ubinfo == 0)
+				um->um_ubinfo = uballoc(um->um_ubanum, (caddr_t)0, 0, UBA_NEEDBDP);
 #			endif
 			return;
 			}
 		if (st != M_ST_SUCC)
 			{
 			if (mp->mscp_flags & M_EF_SEREX)
-				tms_info[ui->ui_unit].tms_serex = 1;
+				tms->tms_serex = 1;
 			if (st != M_ST_TAPEM)
 				{
-				harderr(bp, "tms");
-				errinfo(st);		/* produces more info *
-/
+				tprintf(tms->tms_ttyp,
+				    "tms%d: hard error bn%d\n",
+				    minor(bp->b_dev)&03, bp->b_blkno);
+				errinfo(st);		/* produces more info */
 #				ifdef DEBUG
-				printd("tmscprsp: error; status sub-code = 0%o,
- flags = 0%o\n",
-					(mp->mscp_status & 177740)>>5, mp->mscp
-_flags);
+				printd("tmscprsp: error; status sub-code = 0%o, flags = 0%o\n",
+					(mp->mscp_status & 177740)>>5, mp->mscp_flags);
 #				endif
 				bp->b_flags |= B_ERROR;
 				}
@@ -1542,7 +1582,7 @@ _flags);
 				 * a special value so we can clear the
 				 * serious exception on the next command.
 				 */
-				tms_info[ui->ui_unit].tms_serex = 2;
+				tms->tms_serex = 2;
 			}
 		/*
 		 * The tmscp spec states that controllers do not have to
@@ -1553,15 +1593,14 @@ _flags);
 			bp->b_resid = bp->b_bcount - mp->mscp_bytecnt;
 		else
 			bp->b_resid = 0;
-		tms_info[ui->ui_unit].tms_resid = bp->b_resid;
+		tms->tms_resid = bp->b_resid;
 		iodone(bp);
 		break;
- 
+
 	case M_OP_GTUNT|M_OP_END:
 #		ifdef DEBUG
 		printd("tmscprsp: GTUNT end packet status = 0%o\n",st);
-		printd("tmscprsp: unit %d mediaid %x %c%c %c%c%c%d %x %x t=%d\n
-"
+		printd("tmscprsp: unit %d mediaid %x %c%c %c%c%c%d %x %x t=%d\n"
 		    ,mp->mscp_unit, mp->mscp_mediaid
 		    ,F_to_C(mp,4),F_to_C(mp,3),F_to_C(mp,2)
 		    ,F_to_C(mp,1),F_to_C(mp,0)
@@ -1570,22 +1609,22 @@ _flags);
 		    ,mp->mscp_unitid.val[1]
 		    ,mp->mscp_format);
 #		endif		
-		tms_info[ui->ui_unit].tms_type = mp->mscp_mediaid;
-		tms_info[ui->ui_unit].tms_fmtmenu = mp->mscp_fmtmenu;
-		tms_info[ui->ui_unit].tms_unitflgs = mp->mscp_unitflgs;
+		tms->tms_type = mp->mscp_mediaid;
+		tms->tms_fmtmenu = mp->mscp_fmtmenu;
+		tms->tms_unitflgs = mp->mscp_unitflgs;
 		break;
- 
+
 	default:
 		printf("tmscp unknown packet\n");
 		tmserror(um, (struct mslg *)mp);
 	}	/* end switch mp->mscp_opcode */
 }
- 
- 
+
+
 /* 
  * Give a meaningful error when the mscp_status field returns an error code.
  */
- 
+
 errinfo(st)
 	int st;			/* the status code */
 {
@@ -1640,12 +1679,12 @@ errinfo(st)
 		break;
 	}
 }
- 
- 
+
+
 /*
  * Manage buffers and perform block mode read and write operations.
  */
- 
+
 tmscpstrategy (bp)
 	register struct buf *bp;
 {
@@ -1654,8 +1693,8 @@ tmscpstrategy (bp)
 	register struct buf *dp;
 	register int unit = TMSUNIT(bp->b_dev);
 	int s;
- 
-	if (unit >= nNTMS)
+
+	if (unit >= NTMS)
 		{
 #		ifdef DEBUG
 		printd ("tmscpstrategy: bad unit # %d\n",unit);
@@ -1701,38 +1740,35 @@ tmscpstrategy (bp)
 	 */
 	if (um->um_tab.b_active == 0)
 		{
-#		if defined(VAX750) || defined(VAX8200)
-		if (((cpu == VAX_750) || (cpu == VAX_8200))
-				 && tmscpwtab[um->um_ctlr].av_forw == &tmscpwta
-b[um->um_ctlr])
+#		if defined(VAX750)
+		if (cpu == VAX_750
+				 && tmscpwtab[um->um_ctlr].av_forw == &tmscpwtab[um->um_ctlr])
 			{
 			if (um->um_ubinfo != 0)
-				mprintf("tmscpstrategy: ubinfo 0x%x\n",um->um_u
-binfo);
+				log(TMS_PRI, "tmscpstrategy: ubinfo 0x%x\n",
+				    um->um_ubinfo);
 			else
-				um->um_ubinfo = uballoc(um->um_ubanum, (caddr_t
-)0, 0, UBA_NEEDBDP);
+				um->um_ubinfo = uballoc(um->um_ubanum, (caddr_t)0, 0, UBA_NEEDBDP);
 			}
 #		endif
 #		ifdef DEBUG
-		printd10("tmscpstrategy: Controller not active, starting it\n")
-;
+		printd10("tmscpstrategy: Controller not active, starting it\n");
 #		endif
 		(void) tmscpstart(um);
 		}
 	splx(s);
 	return;
 }
- 
+
 #define DBSIZE 32
- 
+
 #define ca_Rspdsc       ca_rspdsc[0]
 #define ca_Cmddsc       ca_rspdsc[1]
 #define tmscp_Rsp       tmscp_rsp[0]
 #define tmscp_Cmd       tmscp_cmd[0]
- 
+
 struct  tmscp     tmscpd[NTMSCP];
- 
+
 tmscpdump(dev)
 	dev_t dev;
 {
@@ -1745,35 +1781,26 @@ tmscpdump(dev)
 	register struct tmscp *tmscpp;
 	register struct pte *io;
 	register int i;
- 
+
 	unit = minor(dev) & 03;
-	if (unit >= nNTMS)
+	if (unit >= NTMS)
 		return (ENXIO);
 #	define phys(cast, addr) ((cast)((int)addr & 0x7fffffff))
 	ui = phys(struct uba_device *, tmsdinfo[unit]);
 	if (ui->ui_alive == 0)
 		return (ENXIO);
 	uba = phys(struct uba_hd *, ui->ui_hd)->uh_physuba;
-	if (ui->ui_hd->uba_type)
-		buainit(uba);
-	else
-		ubainit(uba);
+	ubainit(uba);
 	tmscpaddr = (struct tmscpdevice *)ui->ui_physaddr;
 	DELAY(2000000);
 	tmscpp = phys(struct tmscp *, &tmscpd[ui->ui_ctlr]);
- 
+
 	num = btoc(sizeof(struct tmscp)) + 1;
 	io = &uba->uba_map[NUBMREG-num];
 	for(i = 0; i<num; i++)
 		*(int *)io++ = UBAMR_MRV|(btop(tmscpp)+i);
-#	ifdef MVAX
-	if( cpu == MVAX_I )
-		tmscp_ubaddr = tmscpp;
-	else
-#	endif MVAX
-		tmscp_ubaddr = (struct tmscp *)(((int)tmscpp & PGOFSET)|((NUBMR
-EG-num)<<9));
- 
+	tmscp_ubaddr = (struct tmscp *)(((int)tmscpp & PGOFSET)|((NUBMREG-num)<<9));
+
 	tmscpaddr->tmscpip = 0;
 	while ((tmscpaddr->tmscpsa & TMSCP_STEP1) == 0)
 		if(tmscpaddr->tmscpsa & TMSCP_ERR) return(EFAULT);
@@ -1783,15 +1810,12 @@ EG-num)<<9));
 	tmscpaddr->tmscpsa = (short)&tmscp_ubaddr->tmscp_ca.ca_ringbase;
 	while ((tmscpaddr->tmscpsa & TMSCP_STEP3) == 0)
 		if(tmscpaddr->tmscpsa & TMSCP_ERR) return(EFAULT);
-	tmscpaddr->tmscpsa = (short)(((int)&tmscp_ubaddr->tmscp_ca.ca_ringbase)
- >> 16);
+	tmscpaddr->tmscpsa = (short)(((int)&tmscp_ubaddr->tmscp_ca.ca_ringbase) >> 16);
 	while ((tmscpaddr->tmscpsa & TMSCP_STEP4) == 0)
 		if(tmscpaddr->tmscpsa & TMSCP_ERR) return(EFAULT);
 	tmscpaddr->tmscpsa = TMSCP_GO;
-	tmscpp->tmscp_ca.ca_Rspdsc = (long)&tmscp_ubaddr->tmscp_Rsp.mscp_cmdref
-;
-	tmscpp->tmscp_ca.ca_Cmddsc = (long)&tmscp_ubaddr->tmscp_Cmd.mscp_cmdref
-;
+	tmscpp->tmscp_ca.ca_Rspdsc = (long)&tmscp_ubaddr->tmscp_Rsp.mscp_cmdref;
+	tmscpp->tmscp_ca.ca_Cmddsc = (long)&tmscp_ubaddr->tmscp_Cmd.mscp_cmdref;
 	tmscpp->tmscp_Cmd.mscp_header.tmscp_vcid = 1;	/* for tape */
 	tmscpp->tmscp_Cmd.mscp_cntflgs = 0;
 	tmscpp->tmscp_Cmd.mscp_version = 0;
@@ -1802,7 +1826,7 @@ EG-num)<<9));
 	if (tmscpcmd(M_OP_ONLIN, tmscpp, tmscpaddr) == 0) {
 		return(EFAULT);
 	}
- 
+
 	num = maxfree;
 	start = 0;
 	while (num > 0)
@@ -1828,23 +1852,23 @@ EG-num)<<9));
 		}
 	return (0);
 }
- 
- 
+
+
 /*
  * Perform a standalone tmscp command.  This routine is only used by tmscpdump.
  */
- 
+
 tmscpcmd(op, tmscpp, tmscpaddr)
 	int op;
 	register struct tmscp *tmscpp;
 	struct tmscpdevice *tmscpaddr;
 {
 	int i;
- 
+
 #	ifdef lint
 	i = i;
 #	endif
- 
+
 	tmscpp->tmscp_Cmd.mscp_opcode = op;
 	tmscpp->tmscp_Rsp.mscp_header.tmscp_msglen = mscp_msglen;
 	tmscpp->tmscp_Cmd.mscp_header.tmscp_msglen = mscp_msglen;
@@ -1865,52 +1889,49 @@ tmscpcmd(op, tmscpp, tmscpaddr)
 	    (tmscpp->tmscp_Rsp.mscp_status&M_ST_MASK) != M_ST_SUCC)
 		{
 		printf("error: com %d opc 0x%x stat 0x%x\ndump ", op,
-			tmscpp->tmscp_Rsp.mscp_opcode, tmscpp->tmscp_Rsp.mscp_s
-tatus);
+			tmscpp->tmscp_Rsp.mscp_opcode, tmscpp->tmscp_Rsp.mscp_status);
 		return(0);
 		}
 	return(1);
 }
- 
- 
+
+
 /*
  * Perform raw read
  */
- 
+
 tmscpread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
 	register int unit = TMSUNIT(dev);
- 
-	if (unit >= nNTMS)
+
+	if (unit >= NTMS)
 		return (ENXIO);
-	return (physio(tmscpstrategy, &rtmsbuf[unit], dev, B_READ, minphys, uio
-));
+	return (physio(tmscpstrategy, &rtmsbuf[unit], dev, B_READ, minphys, uio));
 }
- 
- 
+
+
 /*
  * Perform raw write
  */
- 
+
 tmscpwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
 	register int unit = TMSUNIT(dev);
- 
-	if (unit >= nNTMS)
+
+	if (unit >= NTMS)
 		return (ENXIO);
-	return (physio(tmscpstrategy, &rtmsbuf[unit], dev, B_WRITE, minphys, ui
-o));
+	return (physio(tmscpstrategy, &rtmsbuf[unit], dev, B_WRITE, minphys, uio));
 }
- 
- 
+
+
 /*
  * Catch ioctl commands, and call the "command" routine to do them.
  */
- 
+
 tmscpioctl(dev, cmd, data, flag)
 	dev_t dev;
 	int cmd;
@@ -1921,20 +1942,21 @@ tmscpioctl(dev, cmd, data, flag)
 	register struct buf *bp = &ctmscpbuf[TMSCPCTLR(dev)];
 	register callcount;	/* number of times to call cmd routine */
 	register struct uba_device *ui;
+	register struct tms_info *tms;
 	int fcount;		/* number of files (or records) to space */
 	struct mtop *mtop;	/* mag tape cmd op to perform */
 	struct mtget *mtget;	/* mag tape struct to get info in */
- 
+
 	/* we depend of the values and order of the TMS ioctl codes here */
 	static tmsops[] =
 	 {TMS_WRITM,TMS_FSF,TMS_BSF,TMS_FSR,TMS_BSR,TMS_REW,TMS_OFFL,TMS_SENSE,
 	  TMS_CACHE,TMS_NOCACHE};
- 
+
 	switch (cmd) {
 	case MTIOCTOP:	/* tape operation */
 		mtop = (struct mtop *)data;
 		switch (mtop->mt_op) {
- 
+
 		case MTWEOF:
 			callcount = mtop->mt_count;
 			fcount = 1;
@@ -1952,7 +1974,7 @@ tmscpioctl(dev, cmd, data, flag)
 		default:
 			return (ENXIO);
 		}	/* end switch mtop->mt_op */
- 
+
 		if (callcount <= 0 || fcount <= 0)
 			return (EINVAL);
 		while (--callcount >= 0)
@@ -1965,31 +1987,32 @@ tmscpioctl(dev, cmd, data, flag)
 				break;
 			}
 		return (geterror(bp));
- 
+
 	case MTIOCGET:
 		/*
 		 * Return status info associated with the particular UNIT.
 		 */
 		ui = tmsdinfo[TMSUNIT(dev)];
+		tms = &tms_info[ui->ui_unit];
 		mtget = (struct mtget *)data;
 		mtget->mt_type = MT_ISTMSCP;
-		mtget->mt_dsreg = tms_info[ui->ui_unit].tms_flags << 8;
-		mtget->mt_dsreg |= tms_info[ui->ui_unit].tms_endcode;
-		mtget->mt_erreg = tms_info[ui->ui_unit].tms_status;
-		mtget->mt_resid = tms_info[ui->ui_unit].tms_resid;
+		mtget->mt_dsreg = tms->tms_flags << 8;
+		mtget->mt_dsreg |= tms->tms_endcode;
+		mtget->mt_erreg = tms->tms_status;
+		mtget->mt_resid = tms->tms_resid;
 		break;
- 
+
 	default:
 		return (ENXIO);
 	}
 	return (0);
 }
- 
- 
+
+
 /*
  * Reset (for raw mode use only).
  */
- 
+
 tmscpreset (uban)
 	int uban;
 {
@@ -1999,7 +2022,7 @@ tmscpreset (uban)
 	register int unit;
 	struct buf *nbp;
 	int d;
- 
+
 	for (d = 0; d < NTMSCP; d++)
 		{
 		if ((um = tmscpminfo[d]) == 0 || um->um_ubanum != uban ||
@@ -2010,7 +2033,7 @@ tmscpreset (uban)
 		um->um_tab.b_actf = um->um_tab.b_actl = 0;
 		tmscp_softc[d].sc_state = S_IDLE;
 		tmscp_softc[d].sc_mapped = 0;
-		for (unit = 0; unit < nNTMS; unit++)
+		for (unit = 0; unit < NTMS; unit++)
 			{
 			if ((ui = tmsdinfo[unit]) == 0)
 				continue;
@@ -2050,8 +2073,8 @@ tmscpreset (uban)
 		tmscpinit(d);
 		}
 }
- 
- 
+
+
 /*
  * Process an error log message
  *
@@ -2059,61 +2082,63 @@ tmscpreset (uban)
  * information is printed.  Eventually should
  * send message to an error logger.
  */
- 
+
 tmserror(um, mp)
 	register struct uba_ctlr *um;
 	register struct mslg *mp;
 {
 	register i;
- 
+
 #	ifdef DEBUG
 	printd("tmserror:\n");
 #	endif
 	if(!(mp->mslg_flags & (M_LF_SUCC | M_LF_CONT)))
-		mprintf("tmscp%d: %s error, ", um->um_ctlr,
+		log(TMS_PRI, "tmscp%d: %s error, ", um->um_ctlr,
 		mp->mslg_flags & ( M_LF_SUCC | M_LF_CONT ) ? "soft" : "hard");
- 
+
 	switch (mp->mslg_format) {
- 
+
 	case M_FM_CNTERR:
-		mprintf("controller error, event 0%o\n", mp->mslg_event);
+		log(TMS_PRI, "controller error, event 0%o\n", mp->mslg_event);
 		break;
 	case M_FM_BUSADDR:
-		mprintf("host memory access error, event 0%o, addr 0%o\n",
+		log(TMS_PRI, "host memory access error, event 0%o, addr 0%o\n",
 			mp->mslg_event, mp->mslg_busaddr);
 		break;
 	case M_FM_TAPETRN:
-		mprintf("tape transfer error, unit %d, grp 0x%x, event 0%o\n",
+		log(TMS_PRI, "tape transfer error, unit %d, grp 0x%x, event 0%o\n",
 			mp->mslg_unit, mp->mslg_group, mp->mslg_event);
 		break;
 	case M_FM_STIERR:
-		mprintf("STI error, unit %d, event 0%o\n",
+		log(TMS_PRI, "STI error, unit %d, event 0%o\n",
 			mp->mslg_unit, mp->mslg_event);
+#ifdef notdef
+		/* too painful to do with log() */
 		for(i = 0; i < 62;i++)
 			mprintf("\t0x%x",mp->mslg_stiunsucc[i] & 0xff);
 		mprintf("\n");
+#endif
 		break;
 	case M_FM_STIDEL:
-		mprintf("STI Drive Error Log, unit %d, event 0%o\n",
+		log(TMS_PRI, "STI Drive Error Log, unit %d, event 0%o\n",
 			mp->mslg_unit, mp->mslg_event);
 		break;
 	case M_FM_STIFEL:
-		mprintf("STI Formatter Error Log, unit %d, event 0%o\n",
+		log(TMS_PRI, "STI Formatter Error Log, unit %d, event 0%o\n",
 			mp->mslg_unit, mp->mslg_event);
 		break;
 	default:
-		mprintf("unknown error, unit %d, format 0%o, event 0%o\n",
+		log(TMS_PRI, "unknown error, unit %d, format 0%o, event 0%o\n",
 			mp->mslg_unit, mp->mslg_format, mp->mslg_event);
 	}
- 
+
 	if (tmscperror)
 		{
 		register long *p = (long *)mp;
- 
+
 		for (i = 0; i < mp->mslg_header.tmscp_msglen; i += sizeof(*p))
 			printf("%x ", *p++);
 		printf("\n");
 		}
 }
 #endif
-

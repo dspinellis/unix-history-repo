@@ -1,3 +1,4 @@
+/* @(#)tmscpreg.h	5.1 (Berkeley) %G% */
 
 /*	@(#)tmscpreg.h	1.1	11/2/84	84/09/25	*/
 
@@ -39,14 +40,11 @@ struct tmscpdevice {
 #define	TMSCP_NV		0002000	/* no host settable interrupt vector */
 #define	TMSCP_QB		0001000	/* controller supports Q22 bus */
 #define	TMSCP_DI		0000400	/* controller implements diagnostics */
-#define	TMSCP_OD		0000200	/* port allows odd host addr's in the b
-uffer descriptor */
+#define	TMSCP_OD		0000200	/* port allows odd host addr's in the buffer descriptor */
 #define	TMSCP_IE		0000200	/* interrupt enable */
 #define	TMSCP_MP		0000100	/* port supports address mapping */
-#define	TMSCP_LF		0000002	/* host requests last fail response pac
-ket */
-#define	TMSCP_PI		0000001	/* host requests adapter purge interrup
-ts */
+#define	TMSCP_LF		0000002	/* host requests last fail response packet */
+#define	TMSCP_PI		0000001	/* host requests adapter purge interrupts */
 #define	TMSCP_GO		0000001	/* start operation, after init */
  
  
@@ -68,11 +66,9 @@ struct tmscpca {
  
 #define	TMSCP_OWN	0x80000000	/* port owns this descriptor (else host
  owns it) */
-#define	TMSCP_INT	0x40000000	/* allow interrupt on ring transition *
-/
+#define	TMSCP_INT	0x40000000	/* allow interrupt on ring transition */
  
-#define	TMSCP_MAP	0x80000000	/* modifier for mapped buffer descripto
-rs */
+#define	TMSCP_MAP	0x80000000	/* modifier for mapped buffer descriptors */
  
 /*
  * TMSCP packet info (same as MSCP)
@@ -82,4 +78,3 @@ struct mscp_header {
 	char	tmscp_credits;	/* low 4 bits: credits, high 4 bits: msgtype */
 	char	tmscp_vcid;	/* virtual circuit id (connection id) */
 };
-
