@@ -1,5 +1,5 @@
 # Country Code : City Code : City : Country
-#	@(#)inter.phone	8.1 (Berkeley) %G%
+#	@(#)inter.phone	5.4 (Berkeley) %G%
 20:2:Cairo:Egypt, Arab Rep. of
 20:3:Alexandria:Egypt, Arab Rep. of
 20:66:Port Said:Egypt, Arab Rep. of
@@ -104,7 +104,8 @@
 43:222:Vienna:Austria
 43:316:Graz:Austria
 43:5222:Innsbruck:Austria
-44:1:London, Eng.:United Kingdom
+44:71:London, Eng.:United Kingdom
+44:81:London, Eng.:United Kingdom
 44:203:Coventry, Eng.:United Kingdom
 44:21:Birmingham, Eng.:United Kingdom
 44:222:Cardiff, Wales:United Kingdom
