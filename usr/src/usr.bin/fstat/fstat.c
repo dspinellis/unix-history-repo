@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -53,6 +53,7 @@ static char sccsid[] = "@(#)fstat.c	5.16 (Berkeley) %G%";
 #include <ctype.h>
 #include <nlist.h>
 #include <pwd.h>
+#include <strings.h>
 #include "pathnames.h"
 
 #ifdef	ULTRIX
@@ -67,6 +68,8 @@ static char sccsid[] = "@(#)fstat.c	5.16 (Berkeley) %G%";
 
 #define	TEXT	-2
 #define	WD	-1
+
+#define	VP	if (vflg) (void)printf
 
 typedef struct devs {
 	struct devs *next;
@@ -132,7 +135,8 @@ main(argc, argv)
 			if (uflg++)
 				usage();
 			if (!(passwd = getpwnam(optarg))) {
-				fprintf(stderr, "%s: unknown uid\n", optarg);
+				(void)fprintf(stderr, "%s: unknown uid\n",
+				    optarg);
 				exit(1);
 			}
 			uid = passwd->pw_uid;
@@ -158,7 +162,7 @@ main(argc, argv)
 	openfiles();
 
 	if (nlist(_PATH_UNIX, nl) == -1 || !nl[0].n_type) {
-		fprintf(stderr, "%s: No namelist\n", _PATH_UNIX);
+		(void)fprintf(stderr, "%s: no namelist\n", _PATH_UNIX);
 		exit(1);
 	}
 	Usrptma = (struct pte *)nl[X_USRPTMA].n_value;
@@ -168,13 +172,13 @@ main(argc, argv)
 	(void)lseek(kmem, lgetw((off_t)nl[X_PROC].n_value), L_SET);
 	size = nproc * sizeof(struct proc);
 	if ((mproc = (struct proc *)malloc((u_int)size)) == NULL) {
-		fprintf(stderr, "fstat: out of space.\n");
+		(void)fprintf(stderr, "fstat: out of space.\n");
 		exit(1);
 	}
 	if (read(kmem, (char *)mproc, size) != size)
 		rerr1("proc table", _PATH_KMEM);
 
-	printf("USER\t CMD\t      PID    FD\tDEVICE\tINODE\t  SIZE TYPE%s\n",
+	(void)printf("USER\t CMD\t      PID    FD\tDEVICE\tINODE\t  SIZE TYPE%s\n",
 	    fflg ? " NAME" : "");
 	for (; nproc--; ++mproc) {
 		if (mproc->p_stat == 0)
@@ -210,7 +214,8 @@ getu()
 		(void)lseek(swap, (off_t)dtob(mproc->p_swaddr), L_SET);
 		if (read(swap, (char *)&user.user, sizeof(struct user))
 		    != sizeof(struct user)) {
-			fprintf(stderr, "fstat: can't read u for pid %d from %s\n", mproc->p_pid, _PATH_SWAP);
+			VP("fstat: can't read u for pid %d from %s\n",
+			    mproc->p_pid, _PATH_SWAP);
 			return(0);
 		}
 		return(1);
@@ -218,13 +223,15 @@ getu()
 	pteaddr = &Usrptma[btokmx(mproc->p_p0br) + mproc->p_szpt - 1];
 	(void)lseek(kmem, (off_t)pteaddr, L_SET);
 	if (read(kmem, (char *)&apte, sizeof(apte)) != sizeof(apte)) {
-		printf("fstat: can't read indir pte to get u for pid %d from %s\n", mproc->p_pid, _PATH_SWAP);
+		VP("fstat: can't read indir pte to get u for pid %d from %s\n",
+		    mproc->p_pid, _PATH_SWAP);
 		return(0);
 	}
 	(void)lseek(mem, (off_t)ctob(apte.pg_pfnum+1) - (UPAGES+CLSIZE)
 	    * sizeof(struct pte), L_SET);
 	if (read(mem, (char *)arguutl, sizeof(arguutl)) != sizeof(arguutl)) {
-		printf("fstat: can't read page table for u of pid %d from %s\n", mproc->p_pid, _PATH_KMEM);
+		VP("fstat: can't read page table for u of pid %d from %s\n",
+		    mproc->p_pid, _PATH_KMEM);
 		return(0);
 	}
 	ncl = (sizeof(struct user) + NBPG*CLSIZE - 1) / (NBPG*CLSIZE);
@@ -232,7 +239,9 @@ getu()
 		i = ncl * CLSIZE;
 		(void)lseek(mem, (off_t)ctob(arguutl[CLSIZE+i].pg_pfnum), L_SET);
 		if (read(mem, user.upages[i], CLSIZE*NBPG) != CLSIZE*NBPG) {
-			printf("fstat: can't read page %u of u of pid %d from %s\n", arguutl[CLSIZE+i].pg_pfnum, mproc->p_pid, _PATH_MEM);
+			VP("fstat: can't read page %u of u of pid %d from %s\n",
+			    arguutl[CLSIZE+i].pg_pfnum, mproc->p_pid,
+			    _PATH_MEM);
 			return(0);
 		}
 	}
@@ -266,7 +275,7 @@ itrans(ftype, g, fno)
 	if (g || fflg) {
 		(void)lseek(kmem, (off_t)g, L_SET);
 		if (read(kmem, (char *)&inode, sizeof(inode)) != sizeof(inode)) {
-			rerr2(errno, (int)g, "inode");
+			rerr2((int)g, "inode");
 			return;
 		}
 		idev = inode.i_dev;
@@ -279,50 +288,49 @@ itrans(ftype, g, fno)
 		comm = "pagedaemon";
 	else
 		comm = user.user.u_comm;
-	printf("%-8.8s %-10.10s %5d  ", uname, comm, mproc->p_pid);
+	(void)printf("%-8.8s %-10.10s %5d  ", uname, comm, mproc->p_pid);
 
 	switch(fno) {
 	case WD:
-		printf("  wd"); break;
+		(void)printf("  wd"); break;
 	case TEXT:
-		printf("text"); break;
+		(void)printf("text"); break;
 	default:
-		printf("%4d", fno);
+		(void)printf("%4d", fno);
 	}
 
 	if (g == 0) {
-		printf("* (deallocated)\n");
+		(void)printf("* (deallocated)\n");
 		return;
 	}
 
 	switch(ftype) {
 	case DTYPE_INODE:
-		printf("\t%2d, %2d\t%5lu\t",
-		    major(inode.i_dev),
-		    minor(inode.i_dev), inode.i_number
-		);
+		(void)printf("\t%2d, %2d\t%5lu\t", major(inode.i_dev),
+		    minor(inode.i_dev), inode.i_number);
 		switch(inode.i_mode & IFMT) {
-		case	IFSOCK:
-			printf("     0\t");
+		case IFSOCK:
+			(void)printf("     0\t");
 			break;
-		case	IFCHR:
-			printf("%2d, %2d\t", major(inode.i_rdev), minor(inode.i_rdev));
+		case IFCHR:
+			(void)printf("%2d, %2d\t", major(inode.i_rdev),
+			    minor(inode.i_rdev));
 			break;
 		default:
-			printf("%6ld\t", inode.i_size);
+			(void)printf("%6ld\t", inode.i_size);
 		}
-		printf("%3s %s\n", itype(inode.i_mode), name ? name : "");
+		(void)printf("%3s %s\n", itype(inode.i_mode), name ? name : "");
 		break;
 	case DTYPE_SOCKET:
 		socktrans((struct socket *)g);
 		break;
 #ifdef DTYPE_PORT
 	case DTYPE_PORT:
-		printf("* (fifo / named pipe)\n");
+		(void)printf("* (fifo / named pipe)\n");
 		break;
 #endif
 	default:
-		printf("* (unknown file type)\n");
+		(void)printf("* (unknown file type)\n");
 	}
 }
 
@@ -374,7 +382,7 @@ socktrans(sock)
 	(void)lseek(kmem, (off_t)sock, L_SET);
 	if (read(kmem, (char *)&so, sizeof(struct socket))
 	    != sizeof(struct socket)) {
-		rerr2(errno, (int)sock, "socket");
+		rerr2((int)sock, "socket");
 		return;
 	}
 
@@ -382,7 +390,7 @@ socktrans(sock)
 	(void)lseek(kmem, (off_t)so.so_proto, L_SET);
 	if (read(kmem, (char *)&proto, sizeof(struct protosw))
 	    != sizeof(struct protosw)) {
-		rerr2(errno, (int)so.so_proto, "protosw");
+		rerr2((int)so.so_proto, "protosw");
 		return;
 	}
 
@@ -390,7 +398,7 @@ socktrans(sock)
 	(void)lseek(kmem, (off_t)proto.pr_domain, L_SET);
 	if (read(kmem, (char *)&dom, sizeof(struct domain))
 	    != sizeof(struct domain)) {
-		rerr2(errno, (int)proto.pr_domain, "domain");
+		rerr2((int)proto.pr_domain, "domain");
 		return;
 	}
 
@@ -403,7 +411,7 @@ socktrans(sock)
 	else {
 		(void)lseek(kmem, (off_t)dom.dom_name, L_SET);
 		if ((len = read(kmem, dname, sizeof(dname) - 1)) < 0) {
-			rerr2(errno, (int)dom.dom_name, "char");
+			rerr2((int)dom.dom_name, "char");
 			dname[0] = '\0';
 		}
 		else
@@ -411,9 +419,9 @@ socktrans(sock)
 	}
 
 	if ((u_short)so.so_type > STYPEMAX)
-		printf("* (%s unk%d %x", dname, so.so_type, so.so_state);
+		(void)printf("* (%s unk%d %x", dname, so.so_type, so.so_state);
 	else
-		printf("* (%s %s %x", dname, stypename[so.so_type],
+		(void)printf("* (%s %s %x", dname, stypename[so.so_type],
 		    so.so_state);
 
 	/* 
@@ -435,23 +443,23 @@ socktrans(sock)
 				(void)lseek(kmem, (off_t)so.so_pcb, L_SET);
 				if (read(kmem, (char *)&inpcb, sizeof(struct inpcb))
 				    != sizeof(struct inpcb)){
-					rerr2(errno, (int)so.so_pcb, "inpcb");
+					rerr2((int)so.so_pcb, "inpcb");
 					return;
 				}
-				printf(" %x", (int)inpcb.inp_ppcb);
+				(void)printf(" %x", (int)inpcb.inp_ppcb);
 			}
 		}
 		else if (so.so_pcb)
-			printf(" %x", (int)so.so_pcb);
+			(void)printf(" %x", (int)so.so_pcb);
 		break;
 	case AF_UNIX:
 		/* print address of pcb and connected pcb */
 		if (so.so_pcb) {
-			printf(" %x", (int)so.so_pcb);
+			(void)printf(" %x", (int)so.so_pcb);
 			(void)lseek(kmem, (off_t)so.so_pcb, L_SET);
 			if (read(kmem, (char *)&unpcb, sizeof(struct unpcb))
 			    != sizeof(struct unpcb)){
-				rerr2(errno, (int)so.so_pcb, "unpcb");
+				rerr2((int)so.so_pcb, "unpcb");
 				return;
 			}
 			if (unpcb.unp_conn) {
@@ -464,15 +472,16 @@ socktrans(sock)
 				if (!(so.so_state & SS_CANTSENDMORE))
 					*cp++ = '>';
 				*cp = '\0';
-				printf(" %s %x", shoconn, (int)unpcb.unp_conn);
+				(void)printf(" %s %x", shoconn,
+				    (int)unpcb.unp_conn);
 			}
 		}
 		break;
 	default:
 		/* print protocol number and socket address */
-		printf(" %d %x", proto.pr_protocol, (int)sock);
+		(void)printf(" %d %x", proto.pr_protocol, (int)sock);
 	}
-	printf(")\n");
+	(void)printf(")\n");
 }
 
 /*
@@ -505,10 +514,10 @@ getinetproto(number)
 	case IPPROTO_RAW:
 		cp ="raw"; break;
 	default:
-		printf(" %d", number);
+		(void)printf(" %d", number);
 		return;
 	}
-	printf(" %s", cp);
+	(void)printf(" %s", cp);
 }
 
 static
@@ -556,11 +565,12 @@ getfname(filename)
 	char *malloc();
 
 	if (stat(filename, &statbuf)) {
-		fprintf(stderr, "fstat: %s: %s\n", strerror(errno), filename);
+		(void)fprintf(stderr, "fstat: %s: %s\n", strerror(errno),
+		    filename);
 		return(0);
 	}
 	if ((cur = (DEVS *)malloc(sizeof(DEVS))) == NULL) {
-		fprintf(stderr, "fstat: out of space.\n");
+		(void)fprintf(stderr, "fstat: out of space.\n");
 		exit(1);
 	}
 	cur->next = devs;
@@ -603,18 +613,16 @@ static
 rerr1(what, fromwhat)
 	char *what, *fromwhat;
 {
-	if (vflg)
-		printf("error reading %s from %s", what, fromwhat);
+	VP("error reading %s from %s", what, fromwhat);
 }
 
 static
-rerr2(err, address, what)
-	int err, address;
+rerr2(address, what)
+	int address;
 	char *what;
 {
-	if (vflg)
-		printf("error %d reading %s at %x from %s\n",
-		    errno, what, address, _PATH_KMEM);
+	VP("error %d reading %s at %x from %s\n", errno, what, address,
+	    _PATH_KMEM);
 }
 
 static long
@@ -625,13 +633,14 @@ lgetw(loc)
 
 	(void)lseek(kmem, (off_t)loc, L_SET);
 	if (read(kmem, (char *)&word, sizeof(word)) != sizeof(word))
-		rerr2(errno, (int)loc, "word");
+		rerr2((int)loc, "word");
 	return(word);
 }
 
 static
 usage()
 {
-	fputs("usage: fstat [-u user] [-p pid] [filename ...]\n", stderr);
+	(void)fprintf(stderr,
+	    "usage: fstat [-u user] [-p pid] [filename ...]\n");
 	exit(1);
 }
