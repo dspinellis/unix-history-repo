@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.20 1993/10/29 07:49:55 rgrimes Exp $
+#	$Id: Makefile,v 1.21 1993/11/09 21:41:30 paul Exp $
 #
 
 SUBDIR=
@@ -50,7 +50,7 @@ CLEANDIR=
 CLEANDIR=	cleandir
 .endif
 
-world:	directories cleandist mk includes boostrapld libraries tools mdec
+world:	directories cleandist mk includes bootstrapld libraries tools mdec
 	@echo "--------------------------------------------------------------"
 	@echo " Rebuilding ${DESTDIR} The whole thing"
 	@echo "--------------------------------------------------------------"
@@ -112,14 +112,12 @@ bootstrapld:
 	@echo "--------------------------------------------------------------"
 	@echo " Building new shlib compiler tools"
 	@echo "--------------------------------------------------------------"
-	setenv NOPROFILE
-	setenv NOMAN
 	cd ${.CURDIR}/usr.bin/strip; make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/gas; make depend all install ${CLEANDIR} obj
-	setenv NOPIC
+	NOPIC=nopic
 	cd ${.CURDIR}/gnu/gcc2; make depend all install
 	cd ${.CURDIR}/gnu/ld; make depend all install ${CLEANDIR} obj
-	unsetenv NOPIC
+	NOPIC=
 	cd ${.CURDIR}/gnu/gcc2/libgcc; make all install ${CLEANDIR} obj;
 	cd ${.CURDIR}/lib/libc; make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/lib/csu.i386; make depend all install ${CLEANDIR} obj
