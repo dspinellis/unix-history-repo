@@ -55,10 +55,9 @@
 
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
-/*	lpr.c	4.8	83/02/10	*/
+/*	lpr.c	4.8	83/02/11	*/
 /*
  *      lpr -- off line print
- *              also known as print
  *
  * Allows multiple printers and printers on remote machines by
  * using information from a printer data base.
@@ -81,7 +80,7 @@ int	nact;			/* number of jobs to act on */
 int	tfd;			/* control file descriptor */
 int     mailflg;		/* send mail */
 int	qflag;			/* q job, but don't exec daemon */
-int	prflag;			/* ``pr'' files */
+char	format = 'f';		/* format char for printing files */
 int	rflag;			/* remove files upon completion */	
 int	lflag;			/* link flag */
 char	*person;		/* user name */
@@ -95,8 +94,10 @@ char	*RM;			/* remote machine name if no local printer */
 char	*SD;			/* spool directory */
 int     MX;			/* maximum size in blocks of a print file */
 int	hdr = 1;		/* print header or not (default is yes) */
-int     user;			/* user id */
+int     userid;			/* user id */
 char	*title;			/* pr'ing title */
+char	*fonts[4];		/* troff font names */
+char	*width;			/* width for versatec printing */
 char	host[32];		/* host name */
 char	*class = host;		/* class title on header page */
 char    *jobname;		/* job name on header page */
@@ -112,6 +113,10 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
+	extern char *getlogin();
+	extern struct passwd *getpwuid(), *getpwnam();
+	struct passwd *pw;
+	extern char *itoa();
 	register char *arg;
 	int i, f, out();
 	char *printer = NULL;
@@ -140,7 +145,6 @@ main(argc, argv)
 		signal(SIGTERM, out);
 
 	gethostname(host, sizeof (host));
-	user = getuid();
 	name = argv[0];
 
 	while (argc > 1 && (arg = argv[1])[0] == '-') {
@@ -156,7 +160,7 @@ main(argc, argv)
 			hdr++;
 			if (arg[2])
 				class = &arg[2];
-			else if (argc > 0) {
+			else if (argc > 1) {
 				argc--;
 				class = *++argv;
 			}
@@ -166,7 +170,7 @@ main(argc, argv)
 			hdr++;
 			if (arg[2])
 				jobname = &arg[2];
-			else if (argc > 0) {
+			else if (argc > 1) {
 				argc--;
 				jobname = *++argv;
 			}
@@ -175,14 +179,33 @@ main(argc, argv)
 		case 'T':		/* pr's title line */
 			if (arg[2])
 				title = &arg[2];
-			else if (argc > 0) {
+			else if (argc > 1) {
 				argc--;
 				title = *++argv;
 			}
 			break;
 
-		case 'p':		/* use pr to print files */
-			prflag++;
+		case 'l':		/* literal output */
+		case 'p':		/* print using ``pr'' */
+		case 't':		/* print troff output */
+		case 'c':		/* print cifplot output */
+		case 'v':		/* print vplot output */
+			format = arg[1];
+			break;
+
+		case '4':		/* troff fonts */
+		case '3':
+		case '2':
+		case '1':
+			if (argc > 1) {
+				argc--;
+				fonts[arg[1] - '1'] = *++argv;
+				format = 't';
+			}
+			break;
+
+		case 'w':		/* versatec page width */
+			width = arg+2;
 			break;
 
 		case 'r':		/* remove file when done */
@@ -197,7 +220,7 @@ main(argc, argv)
 			hdr = !hdr;
 			break;
 
-		case 'l':		/* try to link files */
+		case 's':		/* try to link files */
 			lflag++;
 			break;
 
@@ -221,15 +244,43 @@ main(argc, argv)
 		printf("%s: unknown printer\n", name, printer);
 		exit(2);
 	}
+	/*
+	 * Get the identity of the person doing the lpr and initialize the
+	 * control file.
+	 */
+	userid = getuid();
+	if ((person = getlogin()) == NULL) {
+		if ((pw = getpwuid(userid)) == NULL)
+			person = "Unknown User";
+		else
+			person = pw->pw_name;
+	} else if ((pw = getpwnam(person)) != NULL)
+		userid = pw->pw_uid;		/* in case of su */
 	mktemps();
 	tfd = nfile(tfname);
-	if (jobname == NULL) {
-		if (argc == 1)
-			jobname = &cfname[inchar-2];
-		else
-			jobname = argv[1];
+	card('H', host);
+	card('P', person);
+	if (hdr) {
+		if (jobname == NULL) {
+			if (argc == 1)
+				jobname = &cfname[inchar-2];
+			else
+				jobname = argv[1];
+		}
+		card('J', jobname);
+		card('C', class);
+		card('L', person);
 	}
-	ident();
+	if (iflag)
+		card('I', itoa(indent));
+	if (mailflg)
+		card('M', person);
+	if (format == 't')
+		for (i = 0; i < 4; i++)
+			if (fonts[i] != NULL)
+				card('1'+i, fonts[i]);
+	else if ((format == 'f' || format == 'l' || format == 'p') && width)
+		card('W', width);
 
 	if (argc == 1)
 		copy(0, " ");
@@ -238,10 +289,10 @@ main(argc, argv)
 			continue;	/* file unreasonable */
 
 		if (i && lflag && linked(arg)) {
-			if (prflag)
+			if (format == 'p')
 				card('T', title ? title : arg);
-			for (i = 0;i < ncopies; i++)
-				card(prflag ? 'R' : 'F', &dfname[inchar-2]);
+			for (i = 0; i < ncopies; i++)
+				card(format, &dfname[inchar-2]);
 			card('U', &dfname[inchar-2]);
 			card('N', arg);
 			dfname[inchar]++;
@@ -301,10 +352,10 @@ copy(f, n)
 	register int fd, i, nr, nc;
 	char buf[BUFSIZ];
 
-	if (prflag)
+	if (format == 'p')
 		card('T', title ? title : n);
 	for (i = 0; i < ncopies; i++)
-		card(prflag ? 'R' : 'F', &dfname[inchar-2]);
+		card(format, &dfname[inchar-2]);
 	card('U', &dfname[inchar-2]);
 	card('N', n);
 	fd = nfile(dfname);
@@ -383,37 +434,6 @@ card(c, p2)
 }
 
 /*
- * Get the identity of the person doing the lpr and save it in the
- * control file.
- */
-ident()
-{
-	extern char *getlogin();
-	extern struct passwd *getpwuid();
-	struct passwd *pw;
-	extern char *itoa();
-
-	if ((person = getlogin()) == NULL) {
-		if ((pw = getpwuid(user)) == NULL)
-			person = "Unknown User";
-		else
-			person = pw->pw_name;
-	}
-
-	card('H', host);
-	card('P', person);
-	if (hdr) {
-		card('J', jobname);
-		card('C', class);
-		card('L', person);
-	}
-	if (iflag)
-		card('I', itoa(indent));
-	if (mailflg)
-		card('M', person);
-}
-
-/*
  * Create a new file in the spool directory.
  */
 
@@ -429,7 +449,7 @@ nfile(n)
 		printf("%s: cannot create %s\n", name, n);
 		out();
 	}
-	if (chown(n, user, getegid()) < 0) {
+	if (chown(n, userid, -1) < 0) {
 		unlink(n);
 		printf("%s: cannot chown %s\n", name, n);
 		out();
@@ -515,15 +535,16 @@ test(file)
 		register char	*cp = rindex(file, '/');
 
 		if (cp == NULL)
-			file = ".";
-		else
+			fd = access(".", 2);
+		else {
 			*cp = '\0';
-		if (access(file, 2) < 0) {
+			fd = access(file, 2);
 			*cp = '/';
+		}
+		if (fd < 0) {
 			printf("%s: cannot remove %s\n", name, file);
 			return(-1);
 		}
-		*cp = '/';
 	}
 	if (statb.st_mode & 04)
 		return(1);
@@ -592,14 +613,20 @@ mktemps()
 
 	(void) sprintf(buf, "%s/.seq", SD);
 	if ((fp = fopen(buf, "r+")) == NULL) {
-		printf("%s: cannot create %s\n", name, buf);
-		exit(1);
+		if ((fp = fopen(buf, "w")) == NULL) {
+			printf("%s: cannot create %s\n", name, buf);
+			exit(1);
+		}
+		setbuf(fp, buf);
+		n = 0;
 	} else {
 		setbuf(fp, buf);
+#ifdef BSD41C
 		if (flock(fileno(fp), FEXLOCK)) {
 			printf("%s: cannot lock %s\n", name, buf);
 			exit(1);
 		}
+#endif
 		n = 0;
 		while ((c = getc(fp)) >= '0' && c <= '9')
 			n = n * 10 + (c - '0');
