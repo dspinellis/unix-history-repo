@@ -53,7 +53,8 @@ struct sccsprog SccsProg[] =
 	"del",		CMACRO,	0,			"delta/get",
 	"delt",		CMACRO,	0,			"delta/get",
 	"fix",		FIX,	0,			NULL,
-	"clean",	CLEAN,	REALUSER,		NULL,
+	"clean",	CLEAN,	REALUSER,		(char *) TRUE,
+	"info",		CLEAN,	REALUSER,		(char *) FALSE,
 	NULL,		-1,	0,			NULL
 };
 
@@ -166,7 +167,7 @@ command(argv, forkflag)
 		exit(EX_SOFTWARE);
 
 	  case CLEAN:
-		clean();
+		clean((bool) cmd->sccspath);
 		break;
 
 	  default:
@@ -336,7 +337,8 @@ makefile(name)
 **	exists in the current directory is purged.
 **
 **	Parameters:
-**		none.
+**		really -- if TRUE, remove everything.
+**			else, just report status.
 **
 **	Returns:
 **		none.
@@ -345,12 +347,14 @@ makefile(name)
 **		removes files in the current directory.
 */
 
-clean()
+clean(really)
+	bool really;
 {
 	struct direct dir;
 	struct stat stbuf;
 	char buf[100];
-	FILE *dirfd;
+	register FILE *dirfd;
+	register char *basefile;
 
 	dirfd = fopen(SccsPath, "r");
 	if (dirfd == NULL)
@@ -371,15 +375,22 @@ clean()
 		/* got an s. file -- see if the p. file exists */
 		strcpy(buf, SccsPath);
 		strcat(buf, "/p.");
-		buf[strlen(buf) + sizeof dir.d_name - 2] = '\0';
-		strcatn(buf, &dir.d_name[2], sizeof dir.d_name - 2);
+		basefile = &buf[strlen(buf)];
+		basefile[sizeof dir.d_name - 2] = '\0';
+		strcpyn(basefile, &dir.d_name[2], sizeof dir.d_name - 2);
 		if (stat(buf, &stbuf) >= 0)
+		{
+			printf("%s: being editted\n", basefile);
 			continue;
+		}
 		
 		/* the s. file exists and no p. file exists -- unlink the g-file */
-		buf[sizeof dir.d_name - 2] = '\0';
-		strcpyn(buf, &dir.d_name[2], sizeof dir.d_name - 2);
-		unlink(buf);
+		if (really)
+		{
+			strcpyn(buf, &dir.d_name[2], sizeof dir.d_name - 2);
+			buf[sizeof dir.d_name - 2] = '\0';
+			unlink(buf);
+		}
 	}
 
 	fclose(dirfd);
