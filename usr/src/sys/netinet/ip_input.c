@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_input.c	7.21 (Berkeley) %G%
+ *	@(#)ip_input.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -246,6 +246,53 @@ next:
 				goto ours;
 		}
 	}
+#ifdef MULTICAST
+	if (IN_MULTICAST(ntohl(ip->ip_dst.s_addr))) {
+		struct in_multi *inm;
+#ifdef MROUTING
+		extern struct socket *ip_mrouter;
+
+		if (ip_mrouter) {
+			/*
+			 * If we are acting as a multicast router, all
+			 * incoming multicast packets are passed to the
+			 * kernel-level multicast forwarding function.
+			 * The packet is returned (relatively) intact; if
+			 * ip_mforward() returns a non-zero value, the packet
+			 * must be discarded, else it may be accepted below.
+			 *
+			 * (The IP ident field is put in the same byte order
+			 * as expected when ip_mforward() is called from
+			 * ip_output().)
+			 */
+			ip->ip_id = htons(ip->ip_id);
+			if (ip_mforward(m, m->m_pkthdr.rcvif) != 0) {
+				m_freem(m);
+				goto next;
+			}
+			ip->ip_id = ntohs(ip->ip_id);
+
+			/*
+			 * The process-level routing demon needs to receive
+			 * all multicast IGMP packets, whether or not this
+			 * host belongs to their destination groups.
+			 */
+			if (ip->ip_p == IPPROTO_IGMP)
+				goto ours;
+		}
+#endif
+		/*
+		 * See if we belong to the destination multicast group on the
+		 * arrival interface.
+		 */
+		IN_LOOKUP_MULTI(ip->ip_dst, m->m_pkthdr.rcvif, inm);
+		if (inm == NULL) {
+			m_freem(m);
+			goto next;
+		}
+		goto ours;
+	}
+#endif
 	if (ip->ip_dst.s_addr == (u_long)INADDR_BROADCAST)
 		goto ours;
 	if (ip->ip_dst.s_addr == INADDR_ANY)

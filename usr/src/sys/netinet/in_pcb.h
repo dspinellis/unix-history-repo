@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_pcb.h	7.6 (Berkeley) %G%
+ *	@(#)in_pcb.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -29,6 +29,7 @@ struct inpcb {
 	int	inp_flags;		/* generic IP/datagram flags */
 	struct	ip inp_ip;		/* header prototype; should have more */
 	struct	mbuf *inp_options;	/* IP options */
+	struct	ip_moptions *inp_moptions; /* IP multicast options */
 };
 
 /* flags in inp_flags: */
@@ -36,29 +37,12 @@ struct inpcb {
 #define	INP_RECVRETOPTS		0x02	/* receive IP options for reply */
 #define	INP_RECVDSTADDR		0x04	/* receive IP dst address */
 #define	INP_CONTROLOPTS		(INP_RECVOPTS|INP_RECVRETOPTS|INP_RECVDSTADDR)
-
-#ifdef sotorawcb
-/*
- * Common structure pcb for raw internet protocol access.
- * Here are internet specific extensions to the raw control block,
- * and space is allocated to the necessary sockaddrs.
- */
-struct raw_inpcb {
-	struct	rawcb rinp_rcb;	/* common control block prefix */
-	struct	mbuf *rinp_options;	/* IP options */
-	int	rinp_flags;		/* flags, e.g. raw sockopts */
-#define	RINPF_HDRINCL	0x1		/* user supplies entire IP header */
-	struct	sockaddr_in rinp_faddr;	/* foreign address */
-	struct	sockaddr_in rinp_laddr;	/* local address */
-	struct	route rinp_route;	/* placeholder for routing entry */
-};
-#endif
+#define	INP_HDRINCL		0x08	/* user supplies entire IP header */
 
 #define	INPLOOKUP_WILDCARD	1
 #define	INPLOOKUP_SETLOCAL	2
 
 #define	sotoinpcb(so)	((struct inpcb *)(so)->so_pcb)
-#define	sotorawinpcb(so)	((struct raw_inpcb *)(so)->so_pcb)
 
 #ifdef KERNEL
 struct	inpcb *in_pcblookup();

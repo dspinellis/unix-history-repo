@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ether.c	7.23 (Berkeley) %G%
+ *	@(#)if_ether.c	7.24 (Berkeley) %G%
  */
 
 /*
@@ -49,13 +49,17 @@
 int	arpt_prune = (5*60*1);	/* walk list every 5 minutes */
 int	arpt_keep = (20*60);	/* once resolved, good for 20 more minutes */
 int	arpt_down = 20;		/* once declared down, don't send for 20 secs */
-#define RTF_USETRAILERS	RTF_PROTO1
-#define rt_expire rt_rmx.rmx_expire
+#define	rt_expire rt_rmx.rmx_expire
 
-extern struct ifnet loif;
-extern struct timeval time;
-struct llinfo_arp *arplookup(), llinfo_arp = {&llinfo_arp, &llinfo_arp};
-struct ifqueue arpintrq = {0, 0, 0, 50};
+static	void arprequest __P((struct arpcom *, u_long *, u_long *, u_char *));
+static	void arptfree __P((struct llinfo_arp *));
+static	struct llinfo_arp *arplookup __P((u_long, int, int));
+static	void arpcatchme __P(());
+
+extern	struct ifnet loif;
+extern	struct timeval time;
+struct	llinfo_arp llinfo_arp = {&llinfo_arp, &llinfo_arp};
+struct	ifqueue arpintrq = {0, 0, 0, 50};
 int	arp_inuse, arp_allocated, arp_intimer;
 int	arp_maxtries = 5;
 int	useloopback = 1;	/* use loopback interface for local traffic */
@@ -64,6 +68,7 @@ int	arpinit_done = 0;
 /*
  * Timeout routine.  Age arp_tab entries periodically.
  */
+void
 arptimer()
 {
 	int s = splnet();
@@ -80,8 +85,9 @@ arptimer()
 }
 
 /*
- * Parallel to llc_rtrequest. 
+ * Parallel to llc_rtrequest.
  */
+void
 arp_rtrequest(req, rt, sa)
 	int req;
 	register struct rtentry *rt;
@@ -98,11 +104,16 @@ arp_rtrequest(req, rt, sa)
 	if (rt->rt_flags & RTF_GATEWAY)
 		return;
 	switch (req) {
+
 	case RTM_ADD:
-	case RTM_RESOLVE:
+		/*
+		 * XXX: If this is a manually added route to interface
+		 * such as older version of routed or gated might provide,
+		 * restore cloning bit.
+		 */
 		if ((rt->rt_flags & RTF_HOST) == 0 &&
 		    SIN(rt_mask(rt))->sin_addr.s_addr != 0xffffffff)
-			rt->rt_flags |= RTF_CLONING; /* Route to IF? XXX*/
+			rt->rt_flags |= RTF_CLONING;
 		if (rt->rt_flags & RTF_CLONING) {
 			/*
 			 * Case 1: This route should come from a route to iface.
@@ -114,6 +125,14 @@ arp_rtrequest(req, rt, sa)
 			rt->rt_expire = time.tv_sec;
 			break;
 		}
+		/* Announce a new entry if requested. */
+		if (rt->rt_flags & RTF_ANNOUNCE)
+			arprequest((struct arpcom *)rt->rt_ifp,
+			    &SIN(rt_key(rt))->sin_addr.s_addr,
+			    &SIN(rt_key(rt))->sin_addr.s_addr,
+			    (u_char *)LLADDR(SDL(gate)));
+		/*FALLTHROUGH*/
+	case RTM_RESOLVE:
 		if (gate->sa_family != AF_LINK ||
 		    gate->sa_len < sizeof(null_sdl)) {
 			log(LOG_DEBUG, "arp_rtrequest: bad gateway value");
@@ -155,7 +174,7 @@ arp_rtrequest(req, rt, sa)
 				LLADDR(SDL(gate)), SDL(gate)->sdl_alen = 6);
 			if (useloopback)
 				rt->rt_ifp = &loif;
-				
+
 		}
 		break;
 
@@ -178,7 +197,22 @@ arp_rtrequest(req, rt, sa)
 void
 arpwhohas(ac, addr)
 	register struct arpcom *ac;
-	struct in_addr *addr;
+	register struct in_addr *addr;
+{
+	arprequest(ac, &ac->ac_ipaddr.s_addr, &addr->s_addr, ac->ac_enaddr);
+}
+
+/*
+ * Broadcast an ARP request. Caller specifies:
+ *	- arp header source ip address
+ *	- arp header target ip address
+ *	- arp header source ethernet address
+ */
+static void
+arprequest(ac, sip, tip, enaddr)
+	register struct arpcom *ac;
+	register u_long *sip, *tip;
+	register u_char *enaddr;
 {
 	register struct mbuf *m;
 	register struct ether_header *eh;
@@ -201,11 +235,9 @@ arpwhohas(ac, addr)
 	ea->arp_hln = sizeof(ea->arp_sha);	/* hardware address length */
 	ea->arp_pln = sizeof(ea->arp_spa);	/* protocol address length */
 	ea->arp_op = htons(ARPOP_REQUEST);
-	bcopy((caddr_t)ac->ac_enaddr, (caddr_t)ea->arp_sha,
-	   sizeof(ea->arp_sha));
-	bcopy((caddr_t)&ac->ac_ipaddr, (caddr_t)ea->arp_spa,
-	   sizeof(ea->arp_spa));
-	bcopy((caddr_t)addr, (caddr_t)ea->arp_tpa, sizeof(ea->arp_tpa));
+	bcopy((caddr_t)enaddr, (caddr_t)ea->arp_sha, sizeof(ea->arp_sha));
+	bcopy((caddr_t)sip, (caddr_t)ea->arp_spa, sizeof(ea->arp_spa));
+	bcopy((caddr_t)tip, (caddr_t)ea->arp_tpa, sizeof(ea->arp_tpa));
 	sa.sa_family = AF_UNSPEC;
 	sa.sa_len = sizeof(sa);
 	(*ac->ac_if.if_output)(&ac->ac_if, m, &sa, (struct rtentry *)0);
@@ -214,7 +246,7 @@ arpwhohas(ac, addr)
 int	useloopback = 1;	/* use loopback interface for local traffic */
 
 /*
- * Resolve an IP address into an ethernet address.  If success, 
+ * Resolve an IP address into an ethernet address.  If success,
  * desten is filled in.  If there is no entry in arptab,
  * set one up and broadcast a request for the IP address.
  * Hold onto this mbuf and resend it once the address
@@ -223,28 +255,32 @@ int	useloopback = 1;	/* use loopback interface for local traffic */
  * normally; a 0 return indicates that the packet has been
  * taken over here, either now or for later transmission.
  */
-arpresolve(ac, rt, m, dst, desten, usetrailers)
+int
+arpresolve(ac, rt, m, dst, desten)
 	register struct arpcom *ac;
 	register struct rtentry *rt;
 	struct mbuf *m;
 	register struct sockaddr *dst;
 	register u_char *desten;
-	int *usetrailers;
 {
 	register struct llinfo_arp *la;
-	register struct in_ifaddr *ia;
 	struct sockaddr_dl *sdl;
 
-	*usetrailers = 0;
 	if (m->m_flags & M_BCAST) {	/* broadcast */
 		bcopy((caddr_t)etherbroadcastaddr, (caddr_t)desten,
 		    sizeof(etherbroadcastaddr));
 		return (1);
 	}
+#ifdef MULTICAST
+	if (m->m_flags & M_MCAST) {	/* multicast */
+		ETHER_MAP_IP_MULTICAST(&SIN(dst)->sin_addr, desten);
+		return(1);
+	}
+#endif
 	if (rt)
 		la = (struct llinfo_arp *)rt->rt_llinfo;
 	else {
-		if (la = arplookup(SIN(dst)->sin_addr.s_addr, 1, 0)) 
+		if (la = arplookup(SIN(dst)->sin_addr.s_addr, 1, 0))
 			rt = la->la_rt;
 	}
 	if (la == 0 || rt == 0) {
@@ -260,7 +296,6 @@ arpresolve(ac, rt, m, dst, desten, usetrailers)
 	if ((rt->rt_expire == 0 || rt->rt_expire > time.tv_sec) &&
 	    sdl->sdl_family == AF_LINK && sdl->sdl_alen != 0) {
 		bcopy(LLADDR(sdl), desten, sdl->sdl_alen);
-		*usetrailers = rt->rt_flags & RTF_USETRAILERS;
 		return 1;
 	}
 	/*
@@ -292,6 +327,7 @@ arpresolve(ac, rt, m, dst, desten, usetrailers)
  * Common length and type checks are done here,
  * then the protocol-specific routine is called.
  */
+void
 arpintr()
 {
 	register struct mbuf *m;
@@ -326,14 +362,14 @@ arpintr()
  * Algorithm is that given in RFC 826.
  * In addition, a sanity check is performed on the sender
  * protocol address, to catch impersonators.
- * We also handle negotiations for use of trailer protocol:
- * ARP replies for protocol type ETHERTYPE_TRAIL are sent
- * along with IP replies if we want trailers sent to us,
- * and also send them in response to IP replies.
- * This allows either end to announce the desire to receive
+ * We no longer handle negotiations for use of trailer protocol:
+ * Formerly, ARP replied for protocol type ETHERTYPE_TRAIL sent
+ * along with IP replies if we wanted trailers sent to us,
+ * and also sent them in response to IP replies.
+ * This allowed either end to announce the desire to receive
  * trailer packets.
- * We reply to requests for ETHERTYPE_TRAIL protocol as well,
- * but don't normally send requests.
+ * We no longer reply to requests for ETHERTYPE_TRAIL protocol either,
+ * but formerly didn't normally send requests.
  */
 void
 in_arpinput(m)
@@ -349,10 +385,9 @@ in_arpinput(m)
 	struct sockaddr_dl *sdl;
 	struct sockaddr sa;
 	struct in_addr isaddr, itaddr, myaddr;
-	int proto, op, completed = 0, sendtrailers;
+	int op;
 
 	ea = mtod(m, struct ether_arp *);
-	proto = ntohs(ea->arp_pro);
 	op = ntohs(ea->arp_op);
 	bcopy((caddr_t)ea->arp_spa, (caddr_t)&isaddr, sizeof (isaddr));
 	bcopy((caddr_t)ea->arp_tpa, (caddr_t)&itaddr, sizeof (itaddr));
@@ -381,9 +416,7 @@ in_arpinput(m)
 		   "duplicate IP address %x!! sent from ethernet address: %s\n",
 		   ntohl(isaddr.s_addr), ether_sprintf(ea->arp_sha));
 		itaddr = myaddr;
-		if (op == ARPOP_REQUEST)
-			goto reply;
-		goto out;
+		goto reply;
 	}
 	s = splimp();
 	la = arplookup(isaddr.s_addr, itaddr.s_addr == myaddr.s_addr, 0);
@@ -392,7 +425,6 @@ in_arpinput(m)
 		    bcmp((caddr_t)ea->arp_sha, LLADDR(sdl), sdl->sdl_alen))
 			log(LOG_INFO, "arp info overwritten for %x by %s\n",
 			    isaddr.s_addr, ether_sprintf(ea->arp_sha));
-		completed = 1; 
 		bcopy((caddr_t)ea->arp_sha, LLADDR(sdl),
 			    sdl->sdl_alen = sizeof(ea->arp_sha));
 		if (rt->rt_expire)
@@ -406,29 +438,10 @@ in_arpinput(m)
 		}
 	}
 reply:
-	switch (proto) {
-
-	case ETHERTYPE_IPTRAILERS:
-		/* partner says trailers are OK */
-		if (la)
-			la->la_rt->rt_flags |= RTF_USETRAILERS;
-		/*
-		 * Reply to request iff we want trailers.
-		 */
-		if (op != ARPOP_REQUEST || ac->ac_if.if_flags & IFF_NOTRAILERS)
-			goto out;
-		break;
-
-	case ETHERTYPE_IP:
-		/*
-		 * Reply if this is an IP request,
-		 * or if we want to send a trailer response.
-		 * Send the latter only to the IP response
-		 * that completes the current ARP entry.
-		 */
-		if (op != ARPOP_REQUEST &&
-		    (completed == 0 || ac->ac_if.if_flags & IFF_NOTRAILERS))
-			goto out;
+	if (op != ARPOP_REQUEST) {
+	out:
+		m_freem(m);
+		return;
 	}
 	if (itaddr.s_addr == myaddr.s_addr) {
 		/* I am the target */
@@ -436,7 +449,6 @@ reply:
 		    sizeof(ea->arp_sha));
 		bcopy((caddr_t)ac->ac_enaddr, (caddr_t)ea->arp_sha,
 		    sizeof(ea->arp_sha));
-		sendtrailers = !(ac->ac_if.if_flags & IFF_NOTRAILERS);
 	} else {
 		la = arplookup(itaddr.s_addr, 0, SIN_PROXY);
 		if (la == NULL)
@@ -446,25 +458,12 @@ reply:
 		    sizeof(ea->arp_sha));
 		sdl = SDL(rt->rt_gateway);
 		bcopy(LLADDR(sdl), (caddr_t)ea->arp_sha, sizeof(ea->arp_sha));
-		sendtrailers = rt->rt_flags & RTF_USETRAILERS;
 	}
 
-	bcopy((caddr_t)ea->arp_spa, (caddr_t)ea->arp_tpa,
-	    sizeof(ea->arp_spa));
-	bcopy((caddr_t)&itaddr, (caddr_t)ea->arp_spa,
-	    sizeof(ea->arp_spa));
-	ea->arp_op = htons(ARPOP_REPLY); 
-	/*
-	 * If incoming packet was an IP reply,
-	 * we are sending a reply for type IPTRAILERS.
-	 * If we are sending a reply for type IP
-	 * and we want to receive trailers,
-	 * send a trailer reply as well.
-	 */
-	if (op == ARPOP_REPLY)
-		ea->arp_pro = htons(ETHERTYPE_IPTRAILERS);
-	else if (proto == ETHERTYPE_IP && sendtrailers)
-		mcopy = m_copy(m, 0, (int)M_COPYALL);
+	bcopy((caddr_t)ea->arp_spa, (caddr_t)ea->arp_tpa, sizeof(ea->arp_spa));
+	bcopy((caddr_t)&itaddr, (caddr_t)ea->arp_spa, sizeof(ea->arp_spa));
+	ea->arp_op = htons(ARPOP_REPLY);
+	ea->arp_pro = htons(ETHERTYPE_IP); /* let's be sure! */
 	eh = (struct ether_header *)sa.sa_data;
 	bcopy((caddr_t)ea->arp_tha, (caddr_t)eh->ether_dhost,
 	    sizeof(eh->ether_dhost));
@@ -472,21 +471,13 @@ reply:
 	sa.sa_family = AF_UNSPEC;
 	sa.sa_len = sizeof(sa);
 	(*ac->ac_if.if_output)(&ac->ac_if, m, &sa, (struct rtentry *)0);
-	if (mcopy) {
-		ea = mtod(mcopy, struct ether_arp *);
-		ea->arp_pro = htons(ETHERTYPE_IPTRAILERS);
-		(*ac->ac_if.if_output)(&ac->ac_if,
-					mcopy, &sa, (struct rtentry *)0);
-	}
-	return;
-out:
-	m_freem(m);
 	return;
 }
 
 /*
  * Free an arp entry.
  */
+static void
 arptfree(la)
 	register struct llinfo_arp *la;
 {
@@ -504,11 +495,10 @@ arptfree(la)
 	rtrequest(RTM_DELETE, rt_key(rt), (struct sockaddr *)0, rt_mask(rt),
 			0, (struct rtentry **)0);
 }
-int arpdebug = 0;
 /*
  * Lookup or enter a new address in arptab.
  */
-struct llinfo_arp *
+static struct llinfo_arp *
 arplookup(addr, create, proxy)
 	u_long addr;
 	int create, proxy;
@@ -522,18 +512,16 @@ arplookup(addr, create, proxy)
 	if (rt == 0)
 		return (0);
 	rt->rt_refcnt--;
-	if ((rt->rt_flags & RTF_GATEWAY) || !(rt->rt_flags & RTF_LLINFO) ||
-		rt->rt_gateway->sa_family != AF_LINK) {
-		arpcatchme();
-		if (arpdebug)
+	if ((rt->rt_flags & RTF_GATEWAY) || (rt->rt_flags & RTF_LLINFO) == 0 ||
+	    rt->rt_gateway->sa_family != AF_LINK) {
+		if (create)
 			log(LOG_DEBUG, "arptnew failed on %x\n", ntohl(addr));
 		return (0);
 	}
 	return ((struct llinfo_arp *)rt->rt_llinfo);
 }
 
-arpcatchme(){}
-
+int
 arpioctl(cmd, data)
 	int cmd;
 	caddr_t data;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_pcb.c	7.18 (Berkeley) %G%
+ *	@(#)in_pcb.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,6 +26,10 @@
 #include "in_pcb.h"
 #include "in_var.h"
 
+#ifdef MULTICAST
+#include "ip_var.h"
+#endif
+
 struct	in_addr zeroin_addr;
 
 in_pcballoc(so, head)
@@ -35,10 +39,10 @@ in_pcballoc(so, head)
 	struct mbuf *m;
 	register struct inpcb *inp;
 
-	m = m_getclr(M_DONTWAIT, MT_PCB);
-	if (m == NULL)
+	MALLOC(inp, struct inpcb *, sizeof(*inp), M_PCB, M_WAITOK);
+	if (inp == NULL)
 		return (ENOBUFS);
-	inp = mtod(m, struct inpcb *);
+	bzero((caddr_t)inp, sizeof(*inp));
 	inp->inp_head = head;
 	inp->inp_socket = so;
 	insque(inp, head);
@@ -191,6 +195,27 @@ in_pcbconnect(inp, nam)
 			if (ia == 0)
 				return (EADDRNOTAVAIL);
 		}
+#ifdef MULTICAST
+		/*
+		 * If the destination address is multicast and an outgoing
+		 * interface has been set as a multicast option, use the
+		 * address of that interface as our source address.
+		 */
+		if (IN_MULTICAST(ntohl(sin->sin_addr.s_addr)) &&
+		    inp->inp_moptions != NULL) {
+			struct ip_moptions *imo;
+
+			imo = inp->inp_moptions;
+			if (imo->imo_multicast_ifp != NULL) {
+				ifp = imo->imo_multicast_ifp;
+				for (ia = in_ifaddr; ia; ia = ia->ia_next)
+					if (ia->ia_ifp == ifp)
+						break;
+				if (ia == 0)
+					return (EADDRNOTAVAIL);
+			}
+		}
+#endif
 		ifaddr = (struct sockaddr_in *)&ia->ia_addr;
 	}
 	if (in_pcblookup(inp->inp_head,
@@ -231,8 +256,11 @@ in_pcbdetach(inp)
 		(void)m_free(inp->inp_options);
 	if (inp->inp_route.ro_rt)
 		rtfree(inp->inp_route.ro_rt);
+#ifdef MULTICAST
+	ip_freemoptions(inp->inp_moptions);
+#endif
 	remque(inp);
-	(void) m_free(dtom(inp));
+	FREE(inp, M_PCB);
 }
 
 in_setsockaddr(inp, nam)
@@ -395,7 +423,9 @@ in_pcblookup(head, faddr, fport, laddr, lport, flags)
 			else if (inp->inp_laddr.s_addr != laddr.s_addr)
 				continue;
 		} else {
+#ifndef MULTICAST
 			if (laddr.s_addr != INADDR_ANY)
+#endif
 				wildcard++;
 		}
 		if (inp->inp_faddr.s_addr != INADDR_ANY) {
