@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cico.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)cico.c	5.15 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -7,6 +7,7 @@ static char sccsid[] = "@(#)cico.c	5.14 (Berkeley) %G%";
 #include <setjmp.h>
 #ifdef	USG
 #include <termio.h>
+#include <fcntl.h>
 #endif
 #ifndef	USG
 #include <sgtty.h>
@@ -17,6 +18,12 @@ static char sccsid[] = "@(#)cico.c	5.14 (Berkeley) %G%";
 #include <sys/socket.h>
 #endif BSDTCP
 #include <sys/stat.h>
+#ifdef BSD4_2
+#include <sys/time.h>
+#include <fcntl.h>
+#else
+#include <time.h>
+#endif
 #include "uust.h"
 #include "uusub.h"
 
@@ -62,6 +69,8 @@ int Stattype[] = {
 
 int ReverseRole = 0;
 int Role = SLAVE;
+int InitialRole = SLAVE;
+long StartTime;
 int onesys = 0;
 int turntime = 30 * 60;	/* 30 minutes expressed in seconds */
 char *ttyn = NULL;
@@ -69,6 +78,8 @@ extern int LocalOnly;
 extern int errno;
 extern char MaxGrade, DefMaxGrade;
 extern char Myfullname[];
+
+long Bytes_Sent, Bytes_Received;
 
 #ifdef	USG
 struct termio Savettyb;
@@ -220,7 +231,7 @@ register char *argv[];
 		/*
 		 * Determine if we are on TCPIP
 		 */
-		if (isatty(Ifn) < 0) {
+		if (isatty(Ifn) == 0) {
 			IsTcpIp = 1;
 			DEBUG(4, "TCPIP connection -- ioctl-s disabled\n", CNULL);
 		} else
@@ -249,7 +260,7 @@ register char *argv[];
 		sprintf(msg, "here=%s", Myfullname);
 		omsg('S', msg, Ofn);
 		signal(SIGALRM, timeout);
-		alarm(MAXMSGTIME);
+		alarm(IsTcpIp?MAXMSGTIME*4:MAXMSGTIME);
 		if (setjmp(Sjbuf)) {
 			/* timed out */
 			if (!IsTcpIp) {
@@ -292,9 +303,9 @@ register char *argv[];
 		DEBUG(4, "sys-%s\n", Rmtname);
 		/* The versys will also do an alias on the incoming name */
 		if (versys(&Rmtname)) {
-			/* If we don't know them, we won't talk to them... */
 #ifdef	NOSTRANGERS
-			logent(Rmtname, "UNKNOWN HOST");
+			/* If we don't know them, we won't talk to them... */
+			assert("Unknown host:", Rmtname, 0);
 			omsg('R', "You are unknown to me", Ofn);
 			cleanup(0);
 #endif	NOSTRANGERS
@@ -453,11 +464,13 @@ loop:
 		sleep(3);
 	}
 	if (!onesys) {
+		do_connect_accounting();
+		StartTime = 0;
 		ret = gnsys(Rmtname, Spool, CMDPRE);
 		setdebug(DBG_PERM);
 		if (ret == FAIL)
 			cleanup(100);
-		if (ret == SUCCESS)
+		else if (ret == SUCCESS)
 			cleanup(0);
 	} else if (Role == MASTER && callok(Rmtname) != 0) {
 		logent("SYSTEM STATUS", "CAN NOT CALL");
@@ -465,10 +478,13 @@ loop:
 	}
 
 	sprintf(wkpre, "%c.%.*s", CMDPRE, SYSNSIZE, Rmtname);
+	StartTime = 0;
+	Bytes_Sent = Bytes_Received = 0L;
 
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
 	if (Role == MASTER) {
+		extern char LineType[];
 		/* check for /etc/nologin */
 		if (access(NOLOGIN, 0) == 0) {
 			logent(NOLOGIN, "UUCICO SHUTDOWN");
@@ -488,13 +504,13 @@ loop:
 			rmlock(CNULL);
 			sleep(3);
 		}
-		sprintf(msg, "call to %s ", Rmtname);
 		if (mlock(Rmtname) != SUCCESS) {
-			logent(msg, "LOCKED");
+			DEBUG(1, "LOCKED: call to %s\n", Rmtname); 
 			US_SST(us_s_lock);
 			goto next;
 		}
 		Ofn = Ifn = conn(Rmtname);
+		sprintf(msg, "call to %s via %s", Rmtname, LineType);
 		if (Ofn < 0) {
 			if (Ofn != CF_TIME)
 				logent(msg, _FAILED);
@@ -510,6 +526,7 @@ loop:
 			US_SST(us_s_cok);
 			UB_SST(ub_ok);
 		}
+		InitialRole = MASTER;
 #ifdef	TCPIP
 		/*
 		 * Determine if we are on TCPIP
@@ -524,18 +541,19 @@ loop:
 		if (setjmp(Sjbuf))
 			goto next;
 		signal(SIGALRM, timeout);
-		alarm(2 * MAXMSGTIME);
+		alarm(IsTcpIp?MAXMSGTIME*4:MAXMSGTIME*2);
 		for (;;) {
 			ret = imsg(msg, Ifn);
-			if (ret != 0) {
+			if (ret != SUCCESS) {
 				alarm(0);
+				DEBUG(4,"\nimsg failed: errno %d\n", errno);
 				logent("imsg 1", _FAILED);
 				goto Failure;
 			}
 			if (msg[0] == 'S')
 				break;
 		}
-		alarm(MAXMSGTIME);
+		alarm(IsTcpIp?MAXMSGTIME*4:MAXMSGTIME);
 #ifdef GNXSEQ
 		seq = gnxseq(Rmtname);
 #else !GNXSEQ
@@ -595,7 +613,7 @@ loop:
 
 	ttyn = ttyname(Ifn);
 
-	alarm(MAXMSGTIME);
+	alarm(IsTcpIp?MAXMSGTIME*4:MAXMSGTIME);
 	if (ret=setjmp(Sjbuf))
 		goto Failure;
 	ret = startup(Role);
@@ -608,32 +626,44 @@ Failure:
 			"STARTUP FAILED");
 		goto next;
 	} else {
-		if (ttyn != NULL) {
-			char startupmsg[BUFSIZ];
-			extern int linebaudrate;
-			sprintf(startupmsg, "startup %s %d baud", &ttyn[5], 
-				linebaudrate);
-			logent(startupmsg, "OK");
-		} else
-			logent("startup", "OK");
+		char smsg[BUFSIZ], gmsg[10], pmsg[20], bpsmsg[20];
+		extern char UsingProtocol;
+		extern int linebaudrate;
+		if (ttyn != NULL) 
+			sprintf(bpsmsg, " %s %d bps", &ttyn[5], linebaudrate);
+		else
+			bpsmsg[0] = '\0';
+		if (UsingProtocol != 'g')
+			sprintf(pmsg, " %c protocol", UsingProtocol);
+		else
+			pmsg[0] = '\0';
+		if (MaxGrade != '\177')
+			sprintf(gmsg, " grade %c", MaxGrade);
+		else
+			gmsg[0] = '\0';
+		sprintf(smsg, "startup%s%s%s", bpsmsg, pmsg, gmsg);
+		logent(smsg, "OK");
 		US_SST(us_s_gress);
+		StartTime = Now.time;
 		systat(Rmtname, SS_INPROGRESS, "TALKING");
 		ret = cntrl(Role, wkpre);
 		DEBUG(1, "cntrl - %d\n", ret);
 		signal(SIGINT, SIG_IGN);
 		signal(SIGHUP, SIG_IGN);
 		signal(SIGALRM, timeout);
+		sprintf(smsg, "conversation complete %ld sent %ld received",
+			Bytes_Sent, Bytes_Received);
 		if (ret == SUCCESS) {
-			logent("conversation complete", "OK");
+			logent(smsg, "OK");
 			US_SST(us_s_ok);
 			rmstat(Rmtname);
 
 		} else {
-			logent("conversation complete", _FAILED);
+			logent(smsg, _FAILED);
 			US_SST(us_s_cf);
 			systat(Rmtname, SS_FAIL, "CONVERSATION FAILED");
 		}
-		alarm(MAXMSGTIME);
+		alarm(IsTcpIp?MAXMSGTIME*4:MAXMSGTIME);
 		DEBUG(4, "send OO %d,", ret);
 		if (!setjmp(Sjbuf)) {
 			for (;;) {
@@ -648,6 +678,7 @@ Failure:
 		alarm(0);
 		clsacu();
 		rmlock(CNULL);
+	
 	}
 next:
 	if (!onesys) {
@@ -713,7 +744,41 @@ register int code;
 	else
 		DEBUG(1, "exit code %d\n", code);
 	setdebug (DBG_CLEAN);
+	do_connect_accounting();
 	exit(code);
+}
+
+do_connect_accounting()
+{
+	register FILE *fp;
+	struct tm *localtime();
+	register struct tm *tm;
+	int flags;
+
+	if (StartTime == 0)
+		return;
+
+#ifdef DO_CONNECT_ACCOUNTING
+	fp = fopen("/usr/spool/uucp/CONNECT", "a");
+	ASSERT(fp != NULL, "Can't open CONNECT file", Rmtname, errno);
+
+	tm = localtime(&StartTime);
+#ifdef F_SETFL
+	flags = fcntl(fileno(fp), F_GETFL, 0);
+	fcntl(fileno(fp), F_SETFL, flags|O_APPEND);
+#endif
+#ifdef USG
+	fprintf(fp,"%s %d %d%.2d%.2d %.2d%.2d %d %ld %s %ld %ld\n",
+#else /* V7 */
+	fprintf(fp,"%s %d %d%02d%02d %02d%02d %d %ld %s %ld %ld\n",
+#endif /* V7 */
+		Rmtname, InitialRole, tm->tm_year, tm->tm_mon + 1,
+		tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_wday,
+		(Now.time - StartTime + 59) / 60, 
+		ttyn == NULL ? "ttyp0" : &ttyn[5],
+			Bytes_Sent, Bytes_Received);
+	fclose(fp);
+#endif /* DO_CONNECT_ACCOUNTING */
 }
 
 /*
@@ -723,13 +788,16 @@ register int code;
 onintr(inter)
 register int inter;
 {
-	char str[30];
+	char str[BUFSIZ];
 	signal(inter, SIG_IGN);
 	sprintf(str, "SIGNAL %d", inter);
 	logent(str, "CAUGHT");
 	US_SST(us_s_intr);
 	if (*Rmtname && strncmp(Rmtname, Myname, MAXBASENAME))
 		systat(Rmtname, SS_FAIL, str);
+	sprintf(str, "conversation complete %ld sent %ld received",
+		Bytes_Sent, Bytes_Received);
+	logent(str, _FAILED);
 	if (inter == SIGPIPE && !onesys)
 		longjmp(Pipebuf, 1);
 	cleanup(inter);
