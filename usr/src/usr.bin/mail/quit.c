@@ -6,12 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)quit.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)quit.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
-#include <sys/stat.h>
-#include <sys/file.h>
+#include <fcntl.h>
+#include "extern.h"
 
 /*
  * Rcv -- receive mail rationally.
@@ -22,6 +22,7 @@ static char sccsid[] = "@(#)quit.c	5.17 (Berkeley) %G%";
 /*
  * The "quit" command.
  */
+int
 quitcmd()
 {
 	/*
@@ -38,7 +39,7 @@ quitcmd()
  * Save all untouched messages back in the system mailbox.
  * Remove the system mailbox, if none saved there.
  */
-
+void
 quit()
 {
 	int mcount, p, modify, autohold, anystat, holdbit, nohold;
@@ -85,7 +86,7 @@ quit()
 		if (rbuf == NULL || fbuf == NULL)
 			goto newmail;
 #ifdef APPEND
-		fseek(fbuf, mailsize, 0);
+		fseek(fbuf, (long)mailsize, 0);
 		while ((c = getc(fbuf)) != EOF)
 			(void) putc(c, rbuf);
 #else
@@ -300,6 +301,7 @@ newmail:
  * saved.  On any error, just return -1.  Else return 0.
  * Incorporate the any new mail that we found.
  */
+int
 writeback(res)
 	register FILE *res;
 {
@@ -353,6 +355,7 @@ writeback(res)
  * Terminate an editing session by attempting to write out the user's
  * file from the temporary.  Save any new stuff appended to the file.
  */
+void
 edstop()
 {
 	extern char *tmpdir;
@@ -405,7 +408,7 @@ edstop()
 			relsesigs();
 			reset(0);
 		}
-		fseek(ibuf, mailsize, 0);
+		fseek(ibuf, (long)mailsize, 0);
 		while ((c = getc(ibuf)) != EOF)
 			(void) putc(c, obuf);
 		Fclose(ibuf);

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)glob.h	5.20 (Berkeley) %G%
+ *	@(#)glob.h	5.21 (Berkeley) %G%
  */
 
 /*

@@ -6,16 +6,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
-#include <sys/stat.h>
 #include <sys/file.h>
 #include <sys/wait.h>
+
 #include <unistd.h>
 #include <paths.h>
 #include <errno.h>
+#include "extern.h"
 
 /*
  * Mail -- a mail program
@@ -26,6 +27,7 @@ static char sccsid[] = "@(#)fio.c	5.26 (Berkeley) %G%";
 /*
  * Set up the input pointers while copying the mail file into /tmp.
  */
+void
 setptr(ibuf)
 	register FILE *ibuf;
 {
@@ -117,6 +119,7 @@ setptr(ibuf)
  * If a write error occurs, return -1, else the count of
  * characters written, including the newline.
  */
+int
 putline(obuf, linebuf)
 	FILE *obuf;
 	char *linebuf;
@@ -136,9 +139,11 @@ putline(obuf, linebuf)
  * buffer.  Return the number of characters read.  Do not
  * include the newline at the end.
  */
+int
 readline(ibuf, linebuf, linesize)
 	FILE *ibuf;
 	char *linebuf;
+	int linesize;
 {
 	register int n;
 
@@ -161,7 +166,7 @@ setinput(mp)
 {
 
 	fflush(otf);
-	if (fseek(itf, positionof(mp->m_block, mp->m_offset), 0) < 0) {
+	if (fseek(itf, (long)positionof(mp->m_block, mp->m_offset), 0) < 0) {
 		perror("fseek");
 		panic("temporary file seek");
 	}
@@ -172,6 +177,7 @@ setinput(mp)
  * Take the data out of the passed ghost file and toss it into
  * a dynamically allocated message structure.
  */
+void
 makemessage(f)
 	FILE *f;
 {
@@ -184,7 +190,7 @@ makemessage(f)
 	dot = message;
 	size -= sizeof (struct message);
 	fflush(f);
-	(void) lseek(fileno(f), (off_t) sizeof *message, 0);
+	(void) lseek(fileno(f), (off_t)sizeof *message, 0);
 	if (read(fileno(f), (char *) message, size) != size)
 		panic("Message temporary file corrupted");
 	message[msgCount].m_size = 0;
@@ -196,6 +202,7 @@ makemessage(f)
  * Append the passed message descriptor onto the temp file.
  * If the write fails, return 1, else 0
  */
+int
 append(mp, f)
 	struct message *mp;
 	FILE *f;
@@ -206,6 +213,7 @@ append(mp, f)
 /*
  * Delete a file, but only if the file is a plain file.
  */
+int
 rm(name)
 	char *name;
 {
@@ -225,6 +233,7 @@ static int omask;
 /*
  * Hold signals SIGHUP, SIGINT, and SIGQUIT.
  */
+void
 holdsigs()
 {
 
@@ -235,6 +244,7 @@ holdsigs()
 /*
  * Release signals SIGHUP, SIGINT, and SIGQUIT.
  */
+void
 relsesigs()
 {
 
@@ -360,6 +370,7 @@ expand(name)
 /*
  * Determine the current folder directory name.
  */
+int
 getfold(name)
 	char *name;
 {

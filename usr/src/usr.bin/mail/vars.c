@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vars.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)vars.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
+#include "extern.h"
 
 /*
  * Mail -- a mail program
@@ -20,7 +21,7 @@ static char sccsid[] = "@(#)vars.c	5.6 (Berkeley) %G%";
 /*
  * Assign a value to a variable.
  */
-
+void
 assign(name, value)
 	char name[], value[];
 {
@@ -45,7 +46,7 @@ assign(name, value)
  * strings whose value is "" since they are expected to be frequent.
  * Thus, we cannot free same!
  */
-
+void
 vfree(cp)
 	char *cp;
 {
@@ -126,7 +127,7 @@ findgroup(name)
 /*
  * Print a group out on stdout
  */
-
+void
 printgroup(name)
 	char name[];
 {
@@ -147,7 +148,7 @@ printgroup(name)
  * Hash the passed string and return an index into
  * the variable or group hash table.
  */
-
+int
 hash(name)
 	register char *name;
 {

@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)send.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)send.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
+#include "extern.h"
 
 /*
  * Mail -- a mail program
@@ -24,6 +25,7 @@ static char sccsid[] = "@(#)send.c	5.23 (Berkeley) %G%";
  * If doign is given, suppress ignored header fields.
  * prefix is a string to prepend to each output line.
  */
+int
 send(mp, obuf, doign, prefix)
 	register struct message *mp;
 	FILE *obuf;
@@ -199,6 +201,7 @@ send(mp, obuf, doign, prefix)
 /*
  * Output a reasonable looking status field.
  */
+void
 statusput(mp, obuf, prefix)
 	register struct message *mp;
 	FILE *obuf;
@@ -221,6 +224,7 @@ statusput(mp, obuf, prefix)
  * Interface between the argument list and the mail1 routine
  * which does all the dirty work.
  */
+int
 mail(to, cc, bcc, smopts, subject)
 	struct name *to, *cc, *bcc, *smopts;
 	char *subject;
@@ -241,6 +245,7 @@ mail(to, cc, bcc, smopts, subject)
  * Send mail to a bunch of user names.  The interface is through
  * the mail routine below.
  */
+int
 sendmail(str)
 	char *str;
 {
@@ -259,8 +264,10 @@ sendmail(str)
  * Mail a message on standard input to the people indicated
  * in the passed header.  (Internal interface).
  */
+void
 mail1(hp, printheaders)
 	struct header *hp;
+	int printheaders;
 {
 	char *cp;
 	int pid;
@@ -368,6 +375,7 @@ out:
  * Fix the header by glopping all of the expanded names from
  * the distribution list into the appropriate fields.
  */
+void
 fixhead(hp, tolist)
 	struct header *hp;
 	struct name *tolist;
@@ -441,9 +449,11 @@ infix(hp, fi)
  * Dump the to, subject, cc header on the
  * passed file buffer.
  */
+int
 puthead(hp, fo, w)
 	struct header *hp;
 	FILE *fo;
+	int w;
 {
 	register int gotcha;
 
@@ -464,6 +474,7 @@ puthead(hp, fo, w)
 /*
  * Format the given header line to not exceed 72 characters.
  */
+void
 fmt(str, np, fo, comma)
 	char *str;
 	register struct name *np;
@@ -499,6 +510,7 @@ fmt(str, np, fo, comma)
  */
 
 /*ARGSUSED*/
+int
 savemail(name, fi)
 	char name[];
 	register FILE *fi;

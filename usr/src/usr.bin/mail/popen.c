@@ -6,12 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)popen.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
-#include <sys/signal.h>
 #include <sys/wait.h>
+#include "extern.h"
 #define READ 0
 #define WRITE 1
 static int *pid;
@@ -22,6 +22,17 @@ struct fp {
 	struct fp *link;
 };
 static struct fp *fp_head;
+
+struct child {
+	int pid;
+	char done;
+	char free;
+	union wait status;
+	struct child *link;
+};
+static struct child *child;
+static struct child *findchild __P((int));
+static void delchild __P((struct child *));
 
 FILE *
 Fopen(file, mode)
@@ -36,6 +47,7 @@ Fopen(file, mode)
 
 FILE *
 Fdopen(fd, mode)
+	int fd;
 	char *mode;
 {
 	FILE *fp;
@@ -45,6 +57,7 @@ Fdopen(fd, mode)
 	return fp;
 }
 
+int
 Fclose(fp)
 	FILE *fp;
 {
@@ -74,7 +87,8 @@ Popen(cmd, mode)
 		hisside = fd0 = p[READ];
 		fd1 = -1;
 	}
-	if ((pid[myside] = start_command(cmd, 0, fd0, fd1, NOSTR)) < 0) {
+	if ((pid[myside] = start_command(cmd,
+	    0, fd0, fd1, NOSTR, NOSTR, NOSTR)) < 0) {
 		close(p[READ]);
 		close(p[WRITE]);
 		return NULL;
@@ -85,6 +99,7 @@ Popen(cmd, mode)
 	return fp;
 }
 
+int
 Pclose(ptr)
 	FILE *ptr;
 {
@@ -98,6 +113,7 @@ Pclose(ptr)
 	return i;
 }
 
+void
 close_all_files()
 {
 
@@ -108,8 +124,10 @@ close_all_files()
 			(void) Fclose(fp_head->fp);
 }
 
+void
 register_file(fp, pipe)
 	FILE *fp;
+	int pipe;
 {
 	struct fp *fpp;
 
@@ -121,6 +139,7 @@ register_file(fp, pipe)
 	fp_head = fpp;
 }
 
+void
 unregister_file(fp)
 	FILE *fp;
 {
@@ -147,6 +166,7 @@ unregister_file(fp)
  * SIGINT is enabled unless it's in the mask.
  */
 /*VARARGS4*/
+int
 run_command(cmd, mask, infd, outfd, a0, a1, a2)
 	char *cmd;
 	int mask, infd, outfd;
@@ -160,6 +180,7 @@ run_command(cmd, mask, infd, outfd, a0, a1, a2)
 }
 
 /*VARARGS4*/
+int
 start_command(cmd, mask, infd, outfd, a0, a1, a2)
 	char *cmd;
 	int mask, infd, outfd;
@@ -187,6 +208,7 @@ start_command(cmd, mask, infd, outfd, a0, a1, a2)
 	return pid;
 }
 
+void
 prepare_child(mask, infd, outfd)
 	int mask, infd, outfd;
 {
@@ -206,6 +228,7 @@ prepare_child(mask, infd, outfd)
 	(void) sigsetmask(0);
 }
 
+int
 wait_command(pid)
 	int pid;
 {
@@ -217,16 +240,7 @@ wait_command(pid)
 	return 0;
 }
 
-struct child {
-	int pid;
-	char done;
-	char free;
-	union wait status;
-	struct child *link;
-};
-static struct child *child;
-
-struct child *
+static struct child *
 findchild(pid)
 	int pid;
 {
@@ -244,6 +258,7 @@ findchild(pid)
 	return *cpp;
 }
 
+static void
 delchild(cp)
 	register struct child *cp;
 {
@@ -256,7 +271,8 @@ delchild(cp)
 }
 
 void
-sigchild()
+sigchild(signo)
+	int signo;
 {
 	int pid;
 	union wait status;
@@ -279,6 +295,7 @@ union wait wait_status;
 /*
  * Wait for a specific child to die.
  */
+int
 wait_child(pid)
 	int pid;
 {
@@ -296,6 +313,7 @@ wait_child(pid)
 /*
  * Mark a child as don't care.
  */
+void
 free_child(pid)
 	int pid;
 {

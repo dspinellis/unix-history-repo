@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd3.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd3.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
+#include "extern.h"
 
 /*
  * Mail -- a mail program
@@ -21,6 +22,7 @@ static char sccsid[] = "@(#)cmd3.c	5.24 (Berkeley) %G%";
  * Process a shell escape by saving signals, ignoring signals,
  * and forking a sh -c
  */
+int
 shell(str)
 	char *str;
 {
@@ -43,6 +45,7 @@ shell(str)
  * Fork an interactive shell.
  */
 /*ARGSUSED*/
+int
 dosh(str)
 	char *str;
 {
@@ -51,7 +54,7 @@ dosh(str)
 
 	if ((shell = value("SHELL")) == NOSTR)
 		shell = _PATH_CSHELL;
-	(void) run_command(shell, 0, -1, -1, NOSTR);
+	(void) run_command(shell, 0, -1, -1, NOSTR, NOSTR, NOSTR);
 	(void) signal(SIGINT, sigint);
 	putchar('\n');
 	return 0;
@@ -64,6 +67,7 @@ dosh(str)
 
 char	lastbang[128];
 
+int
 bangexp(str)
 	char *str;
 {
@@ -115,6 +119,7 @@ overf:
  * Print out a nice help message from some file or another.
  */
 
+int
 help()
 {
 	register c;
@@ -133,6 +138,7 @@ help()
 /*
  * Change user's working directory.
  */
+int
 schdir(arglist)
 	char **arglist;
 {
@@ -150,6 +156,7 @@ schdir(arglist)
 	return 0;
 }
 
+int
 respond(msgvec)
 	int *msgvec;
 {
@@ -163,6 +170,7 @@ respond(msgvec)
  * Reply to a list of messages.  Extract each name from the
  * message header and send them off to mail1()
  */
+int
 _respond(msgvec)
 	int *msgvec;
 {
@@ -248,7 +256,7 @@ reedit(subj)
  * Preserve the named messages, so that they will be sent
  * back to the system mailbox.
  */
-
+int
 preserve(msgvec)
 	int *msgvec;
 {
@@ -272,6 +280,7 @@ preserve(msgvec)
 /*
  * Mark all given messages as unread.
  */
+int
 unread(msgvec)
 	int	msgvec[];
 {
@@ -288,7 +297,7 @@ unread(msgvec)
 /*
  * Print the size of each message.
  */
-
+int
 messize(msgvec)
 	int *msgvec;
 {
@@ -307,8 +316,9 @@ messize(msgvec)
  * Quit quickly.  If we are sourcing, just pop the input level
  * by returning an error.
  */
-
+int
 rexit(e)
+	int e;
 {
 	if (sourcing)
 		return(1);
@@ -320,7 +330,7 @@ rexit(e)
  * Set or display a variable value.  Syntax is similar to that
  * of csh.
  */
-
+int
 set(arglist)
 	char **arglist;
 {
@@ -367,7 +377,7 @@ set(arglist)
 /*
  * Unset a bunch of variable values.
  */
-
+int
 unset(arglist)
 	char **arglist;
 {
@@ -405,7 +415,7 @@ unset(arglist)
 /*
  * Put add users to a group.
  */
-
+int
 group(argv)
 	char **argv;
 {
@@ -462,7 +472,7 @@ group(argv)
  * Sort the passed string vecotor into ascending dictionary
  * order.
  */
-
+void
 sort(list)
 	char **list;
 {
@@ -473,18 +483,18 @@ sort(list)
 		;
 	if (ap-list < 2)
 		return;
-	qsort((char *)list, ap-list, sizeof *list, diction);
+	qsort(list, ap-list, sizeof(*list), diction);
 }
 
 /*
  * Do a dictionary order comparison of the arguments from
  * qsort.
  */
-
+int
 diction(a, b)
-	register char **a, **b;
+	const void *a, *b;
 {
-	return(strcmp(*a, *b));
+	return(strcmp(*(char **)a, *(char **)b));
 }
 
 /*
@@ -492,7 +502,9 @@ diction(a, b)
  */
 
 /*ARGSUSED*/
+int
 null(e)
+	int e;
 {
 	return 0;
 }
@@ -501,6 +513,7 @@ null(e)
  * Change to another file.  With no argument, print information about
  * the current file.
  */
+int
 file(argv)
 	register char **argv;
 {
@@ -518,6 +531,7 @@ file(argv)
 /*
  * Expand file names like echo
  */
+int
 echo(argv)
 	char **argv;
 {
@@ -536,6 +550,7 @@ echo(argv)
 	return 0;
 }
 
+int
 Respond(msgvec)
 	int *msgvec;
 {
@@ -550,6 +565,7 @@ Respond(msgvec)
  * and not messing around with the To: and Cc: lists as in normal
  * reply.
  */
+int
 _Respond(msgvec)
 	int msgvec[];
 {
@@ -584,7 +600,7 @@ _Respond(msgvec)
  * Conditional commands.  These allow one to parameterize one's
  * .mailrc and do some things if sending, others if receiving.
  */
-
+int
 ifcmd(argv)
 	char **argv;
 {
@@ -616,7 +632,7 @@ ifcmd(argv)
  * Implement 'else'.  This is pretty simple -- we just
  * flip over the conditional flag.
  */
-
+int
 elsecmd()
 {
 
@@ -644,7 +660,7 @@ elsecmd()
 /*
  * End of if statement.  Just set cond back to anything.
  */
-
+int
 endifcmd()
 {
 
@@ -659,6 +675,7 @@ endifcmd()
 /*
  * Set the list of alternate names.
  */
+int
 alternates(namelist)
 	char **namelist;
 {

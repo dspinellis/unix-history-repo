@@ -12,11 +12,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
-#include <sys/stat.h>
+#include <fcntl.h>
+#include "extern.h"
 
 /*
  * Mail -- a mail program
@@ -26,8 +27,10 @@ static char sccsid[] = "@(#)main.c	5.28 (Berkeley) %G%";
 
 jmp_buf	hdrjmp;
 
+int
 main(argc, argv)
-	char **argv;
+	int argc;
+	char *argv[];
 {
 	register int i;
 	struct name *to, *cc, *bcc, *smopts;
@@ -36,8 +39,6 @@ main(argc, argv)
 	char nosrc = 0;
 	void hdrstop();
 	sig_t prevint;
-	extern int getopt(), optind, opterr;
-	extern char *optarg;
 	void sigchild();
 
 	/*
@@ -227,7 +228,8 @@ Usage: mail [-iInv] [-s subject] [-c cc-addr] [-b bcc-addr] to-addr ...\n\
  * Interrupt printing of the headers.
  */
 void
-hdrstop()
+hdrstop(signo)
+	int signo;
 {
 
 	fflush(stdout);
@@ -243,6 +245,7 @@ hdrstop()
  *	If baud rate > 1200, use 24 or ws_row
  * Width is either 80 or ws_col;
  */
+void
 setscreensize()
 {
 	struct sgttyb tbuf;
