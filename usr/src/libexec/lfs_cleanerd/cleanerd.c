@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cleanerd.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cleanerd.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -223,9 +223,7 @@ clean_fs(fsp, cost_func)
 			else if (lfs_segclean (fsp->fi_statfsp->f_fsid,
 			    sp->sl_id) < 0)
 				perror("lfs_segclean failed");
-#ifdef VERBOSE
 			printf("Completed cleaning segment %d\n", sp->sl_id);
-#endif
 		}
 	free(segs);
 }
