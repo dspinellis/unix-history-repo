@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	7.18 (Berkeley) %G%
+ *	@(#)inode.h	7.19 (Berkeley) %G%
  */
 
 #include <ufs/ufs/dinode.h>
@@ -26,6 +26,7 @@ struct inode {
 	struct	vnode *i_devvp;	/* vnode for block I/O */
 	u_long	i_flag;		/* see below */
 	dev_t	i_dev;		/* device where inode resides */
+	short	i_pad;
 	ino_t	i_number;	/* the identity of the inode */
 	union {			/* associated filesystem */
 		struct	fs *fs;		/* FFS */
@@ -37,8 +38,10 @@ struct inode {
 	struct	lockf *i_lockf;	/* head of byte-level lock list */
 	long	i_diroff;	/* offset in dir, where we found last entry */
 	off_t	i_endoff;	/* end of useful stuff in directory */
-	long	i_spare0;
-	long	i_spare1;
+	u_quad	i_modrev;	/* revision level for lease */
+	pid_t	i_lockholder;	/* DEBUG: holder of inode lock */
+	pid_t	i_lockwaiter;	/* DEBUG: latest blocked for inode lock */
+	long	i_spare[16];	/* spares to round up to 256 bytes */
 	struct	dinode i_din;	/* the on-disk dinode */
 };
 
