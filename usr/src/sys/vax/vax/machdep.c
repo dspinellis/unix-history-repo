@@ -1,4 +1,4 @@
-/*	machdep.c	4.75	83/02/11	*/
+/*	machdep.c	4.76	83/02/21	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -556,6 +556,8 @@ tocons(c)
 	mtpr(TXDB, c);
 }
 
+int	dumpmag = 0x8fca0101;	/* magic number for savecore */
+int	dumpsize = 0;		/* also for savecore */
 /*
  * Doadump comes here after turning off memory management and
  * getting on the dump stack, either when called above, or by
@@ -567,6 +569,7 @@ dumpsys()
 	rpb.rp_flag = 1;
 	if ((minor(dumpdev)&07) != 1)
 		return;
+	dumpsize = physmem;
 	printf("\ndumping to dev %x, offset %d\n", dumpdev, dumplo);
 	printf("dump ");
 	switch ((*bdevsw[major(dumpdev)].d_dump)(dumpdev)) {
