@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)wall.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)wall.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -88,7 +88,7 @@ usage:
 		if (!utmp.ut_name[0] ||
 		    !strncmp(utmp.ut_name, IGNOREUSER, sizeof(utmp.ut_name)))
 			continue;
-		if (p = ttymsg(&iov, 1, utmp.ut_line, 1))
+		if (p = ttymsg(&iov, 1, utmp.ut_line))
 			(void)fprintf(stderr, "wall: %s\n", p);
 	}
 	exit(0);
