@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.52 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.53 (Berkeley) %G%
  */
 
 /*
@@ -744,6 +744,12 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 		bcopy((caddr_t)vap, (caddr_t)vaper, sizeof(*vap));
 		if ((np->n_flag & NMODIFIED) && (np->n_size > vap->va_size))
 			vaper->va_size = np->n_size;
+		if (np->n_flag & NCHG) {
+			if (np->n_flag & NACC)
+				vaper->va_atime = np->n_atim;
+			if (np->n_flag & NUPD)
+				vaper->va_mtime = np->n_mtim;
+		}
 	}
 	return (0);
 }
@@ -776,6 +782,12 @@ nfs_getattrcache(vp, vap)
 		vnode_pager_setsize(vp, (u_long)np->n_size);
 	} else if (np->n_size > vap->va_size)
 		vap->va_size = np->n_size;
+	if (np->n_flag & NCHG) {
+		if (np->n_flag & NACC)
+			vap->va_atime = np->n_atim;
+		if (np->n_flag & NUPD)
+			vap->va_mtime = np->n_mtim;
+	}
 	return (0);
 }
 
