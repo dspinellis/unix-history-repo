@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	4.32 (Berkeley) %G%
+#	@(#)Makefile	4.33 (Berkeley) %G%
 #
 # Compatibility routines are kept in directories with a prefixing
 # ``compat'' (so they all sort together).
@@ -45,15 +45,12 @@ DFLMON=		mon.o
 #DEFS=
 DEFS="-DLIBC_SCCS -DSYSLIBC_SCCS"
 
-ALL=	compat-4.1 compat-4.1/compat-4.1.${MACHINE} compat-4.3 \
-	compat-sys5 gen gen/gen.${MACHINE} inet net net/net.${MACHINE} \
-	net/${HOSTLOOKUP} ns stdio stdio/stdio.${MACHINE} \
-	${MACHINE}/csu ${MACHINE}/sys
 SUBDIR=	${ALL} net/hosttable net/named
 ONE=	compat-4.1 compat-4.3 compat-sys5 gen inet net ns stdio
 TWO=	compat-4.1/compat-4.1.${MACHINE} gen/gen.${MACHINE} \
 	net/net.${MACHINE} net/${HOSTLOOKUP} stdio/stdio.${MACHINE} \
-	${MACHINE}/csu ${MACHINE}/sys
+	compat-sys5/compat-sys5.${MACHINE} ${MACHINE}/csu ${MACHINE}/sys
+ALL=	${ONE} ${TWO}
 TAGSFILE=tags
 
 libc.a libc_p.a: mkdir ${ALL} tags
