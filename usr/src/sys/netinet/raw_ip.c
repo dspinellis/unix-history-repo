@@ -1,4 +1,4 @@
-/*	raw_ip.c	6.1	83/07/29	*/
+/*	raw_ip.c	6.2	83/12/15	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -73,6 +73,7 @@ rip_output(m0, so)
 	m->m_len = sizeof(struct ip);
 	m->m_next = m0;
 	ip = mtod(m, struct ip *);
+	ip->ip_off = 0;
 	ip->ip_p = so->so_proto->pr_protocol;
 	ip->ip_len = sizeof(struct ip) + len;
 	if (rp->rcb_flags & RAW_LADDR) {
