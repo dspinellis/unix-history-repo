@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.80 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.81 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1630,6 +1630,11 @@ setoption(opt, val, sticky)
 				p++;
 			if (*p != '\0')
 				*p++ = '\0';
+			if (strcasecmp(q, "HasWildcardMX") == 0)
+			{
+				NoMXforCanon = !clearmode;
+				continue;
+			}
 			for (rfp = ResolverFlags; rfp->rf_name != NULL; rfp++)
 			{
 				if (strcasecmp(q, rfp->rf_name) == 0)
@@ -1643,7 +1648,8 @@ setoption(opt, val, sticky)
 				_res.options |= rfp->rf_bits;
 		}
 		if (tTd(8, 2))
-			printf("_res.options = %x\n", _res.options);
+			printf("_res.options = %x, HasWildcardMX = %d\n",
+				_res.options, !NoMXforCanon);
 #else
 		usrerr("name server (I option) specified but BIND not compiled in");
 #endif
