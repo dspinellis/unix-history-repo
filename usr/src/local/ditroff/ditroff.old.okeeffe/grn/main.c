@@ -1,4 +1,4 @@
-/*	main.c	1.13	(Berkeley) 83/11/30
+/*	main.c	1.14	(Berkeley) 84/01/18
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -71,7 +71,9 @@ extern POINT *PTInit(), *PTMakePoint();
 
 
 #define GREMLIB		"/usr/local/gremlib/"
+#ifndef DEVDIR
 #define DEVDIR		"/usr/lib/font"
+#endif
 #define DEFAULTDEV	"va"
 
 #define MAXINLINE	100		/* input line length */
@@ -82,7 +84,7 @@ extern POINT *PTInit(), *PTMakePoint();
 #define BIG	999999999999.0		/* unweildly large floating number */
 
 
-char	SccsId[] = "main.c	1.13	83/11/30";
+char	SccsId[] = "main.c	1.14	84/01/18";
 
 char	*printer = DEFAULTDEV;	/* device to look up resolution of */
 char	*gremlib = GREMLIB;	/* place to find files after current dir. */
@@ -136,7 +138,7 @@ char	*c1 = inputline;		/* c1, c2, and c3 will be used to */
 char	*c2 = inputline + 1;		/* hunt for lines that begin with */
 char	*c3 = inputline + 2;		/* ".GS" by looking individually */
 char	GScommand[MAXINLINE];		/* put user's ".GS" command line here */
-char	gremlinfile[50];		/* filename to use for a picture */
+char	gremlinfile[MAXINLINE];		/* filename to use for a picture */
 
 char *doinput();
 
@@ -377,7 +379,7 @@ int baseline;
 		    return;
 		}
 		if ((gfp = fopen(gremlinfile, "r")) == NULL) {
-		    char name[100];	/* if the file isn't in the current */
+		    char name[MAXINLINE]; /* if the file isn't in the current */
 					/* directory, try the gremlin library */
 		    sprintf(name, "%s%s", gremlib, gremlinfile);
 		    if ((gfp = fopen(name, "r")) == NULL) {
