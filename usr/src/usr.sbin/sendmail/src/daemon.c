@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.9 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.10 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.9 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.10 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -866,11 +866,7 @@ anynet_ntoa(sap)
 
 #ifdef NETINET
 	if (sap->sa.sa_family == AF_INET)
-	{
-		extern char *inet_ntoa();
-
 		return inet_ntoa(((struct sockaddr_in *) sap)->sin_addr);
-	}
 #endif
 
 	/* unknown family -- just dump bytes */
