@@ -6,12 +6,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)reply.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)reply.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <bug.h>
-#include <sys/file.h>
+#include <sys/param.h>
+#include <fcntl.h>
+#include <dirent.h>
 #include <stdio.h>
+#include <string.h>
+#include "bug.h"
 #include "pathnames.h"
 
 /*
