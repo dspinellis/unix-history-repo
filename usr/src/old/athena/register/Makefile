@@ -17,29 +17,27 @@
 # @(#)Makefile	5.3 (Berkeley) 9/20/88
 #
 
-CDEFS=	-DKERBEROS
-CFLAGS=	-O
+CFLAGS=	-O -DKERBEROS
 LIBC=	/lib/libc.a
-KLIB=	/usr/local/lib/libkrb.a
-DESLIB=	/usr/local/lib/libdes.a
-KDBLIB=	/usr/local/lib/libkrb_dbm.a
-INCDIR=	/usr/include/kerberos
 SRC1=	registerd.c
+OBJ1=	registerd.o
 SRC2=	register.c
+OBJ2=	register.o
 SRC3=	make_keypair.c
+OBJ3=	make_keypair.o
 OBJS=	register.o registerd.o make_keypair.o
 MAN=	register.0 registerd.0 make_keypair.0
 
 all: registerd register make_keypair
 
-registerd: ${SRC1} ${LIBC} ${KLIB} ${DESLIB} registerd.c
-	${CC} -o $@ -I${INCDIR} ${CFLAGS} ${CDEFS} ${SRC1} ../lib/des_rw.o -lutil -lkrb -lkrb_dbm -ldes
+registerd: ${OBJ1} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${SRC1} -lutil -lkdb -lkrb -ldes -lkrb
 
-register: ${SRC2} ${LIBC} ${KLIB} ${DESLIB} register.c
-	${CC} -o $@ -I${INCDIR} ${CFLAGS} ${CDEFS} ${SRC2} ../lib/des_rw.o -lutil -lkrb -ldes
+register: ${OBJ2} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${SRC2} -lutil -lkrb -ldes -lkrb
 
-make_keypair: ${SRC3} ${LIBC} ${KLIB} ${DESLIB} make_keypair.c
-	${CC} -o $@ -I${INCDIR} ${CFLAGS} ${CDEFS} ${SRC3} ../lib/des_rw.o -lutil -lkrb -lkrb_dbm -ldes
+make_keypair: ${OBJ3} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${SRC3} -lutil -lkdb -lkrb -ldes
 
 clean:
 	rm -f ${OBJS} core registerd register make_keypair
@@ -50,9 +48,10 @@ cleandir: clean
 depend: ${SRC1} ${SRC2} ${SRC3}
 	mkdep -p ${CFLAGS} ${SRC1} ${SRC2} ${SRC3}
 
-install: ${MAN}
-	install -s -o bin -g bin -m 755 registerd ${DESTDIR}/etc/registerd
-	install -s -o root -g bin -m 4755 register ${DESTDIR}/usr/local/register
+#install: ${MAN}
+install:
+	install -s -o bin -g bin -m 755 registerd ${DESTDIR}/usr/libexec
+	install -s -o root -g bin -m 4755 register ${DESTDIR}/usr/athena/register
 	install -c -o bin -g bin -m 444 registerd.0 ${DESTDIR}/usr/man/cat8
 	install -c -o bin -g bin -m 444 register.0 ${DESTDIR}/usr/man/cat1
 	install -c -o bin -g bin -m 444 make_keypair.0 ${DESTDIR}/usr/man/cat8
