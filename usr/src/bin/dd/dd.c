@@ -1,4 +1,7 @@
-static char *sccsid = "@(#)dd.c	4.3 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)dd.c	4.4 (Berkeley) %G%";
+#endif
+
 #include <stdio.h>
 #include <signal.h>
 
@@ -242,7 +245,7 @@ char	**argv;
 			}
 		}
 		fprintf(stderr,"bad arg: %s\n", string);
-		exit(0);
+		exit(1);
 	}
 	if(conv == null && cflag&(LCASE|UCASE))
 		conv = cnull;
@@ -252,7 +255,7 @@ char	**argv;
 		ibf = dup(0);
 	if(ibf < 0) {
 		perror(ifile);
-		exit(0);
+		exit(1);
 	}
 	if (ofile)
 		obf = creat(ofile, 0666);
@@ -260,7 +263,7 @@ char	**argv;
 		obf = dup(1);
 	if(obf < 0) {
 		fprintf(stderr,"cannot create: %s\n", ofile);
-		exit(0);
+		exit(1);
 	}
 	if (bs) {
 		ibs = obs = bs;
@@ -269,7 +272,7 @@ char	**argv;
 	}
 	if(ibs == 0 || obs == 0) {
 		fprintf(stderr,"counts: cannot be zero\n");
-		exit(0);
+		exit(1);
 	}
 	ibuf = sbrk(ibs);
 	if (fflag)
@@ -279,7 +282,7 @@ char	**argv;
 	sbrk(64);	/* For good measure */
 	if(ibuf == (char *)-1 || obuf == (char *)-1) {
 		fprintf(stderr, "not enough memory\n");
-		exit(0);
+		exit(1);
 	}
 	ibc = 0;
 	obc = 0;
