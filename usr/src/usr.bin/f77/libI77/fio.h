@@ -3,11 +3,9 @@
  * All rights reserved.
  *
  * %sccs.include.proprietary.c%
+ *
+ *	@(#)fio.h	5.3 (Berkeley) %G%
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)fio.h	5.2 (Berkeley) %G%";
-#endif /* not lint */
 
 /*
  * f77 file i/o common definitions
