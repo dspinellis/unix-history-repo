@@ -8,7 +8,7 @@ char id_fiodefs[] = "@(#)fiodefs.h	1.4";
 #include "f_errno.h"
 
 /* Logical Unit Table Size */
-#define MXUNIT _NFILE
+#define MXUNIT 100
 
 #define GLITCH '\2'	/* special quote for Stu, generated in f77pass1 */
 
