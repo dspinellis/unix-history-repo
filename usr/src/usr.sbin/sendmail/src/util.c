@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.28 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1339,6 +1339,27 @@ dumpfd(fd, printclosed, logit)
 		sprintf(p, "BLK: ");
 		p += strlen(p);
 		goto defprint;
+
+#ifdef S_IFIFO
+	  case S_IFIFO:
+		sprintf(p, "FIFO: ");
+		p += strlen(p);
+		goto defprint;
+#endif
+
+#ifdef S_IFDIR
+	  case S_IFDIR:
+		sprintf(p, "DIR: ");
+		p += strlen(p);
+		goto defprint;
+#endif
+
+#ifdef S_IFLNK
+	  case S_IFLNK:
+		sprintf(p, "LNK: ");
+		p += strlen(p);
+		goto defprint;
+#endif
 
 	  default:
 defprint:
