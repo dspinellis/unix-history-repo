@@ -1,10 +1,11 @@
-/*	dn.c	4.14	82/12/10	*/
+/*	dn.c	4.15	82/12/17	*/
 
 #include "dn.h"
 #if NDN > 0
 /*
  * DN-11 ACU interface
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,7 +13,6 @@
 #include "../h/user.h"
 #include "../h/buf.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../h/conf.h"
 #include "../h/uio.h"
 

@@ -1,4 +1,4 @@
-/*	ffs_subr.c	4.3	82/11/13	*/
+/*	ffs_subr.c	4.4	82/12/17	*/
 
 #ifdef KERNEL
 #include "../h/param.h"
@@ -23,7 +23,6 @@
 #include <sys/dir.h>
 #include <sys/user.h>
 #include <sys/quota.h>
-#include <sys/kernel.h>
 #endif
 
 #ifdef KERNEL
@@ -52,7 +51,7 @@ update()
 	 * of each file system is still in the buffer cache.
 	 */
 	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
-		if (mp->m_bufp == NULL)
+		if (mp->m_bufp == NULL || mp->m_dev == NODEV)
 			continue;
 		fs = mp->m_bufp->b_un.b_fs;
 		if (fs->fs_fmod == 0)

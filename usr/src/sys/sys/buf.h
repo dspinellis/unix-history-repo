@@ -1,4 +1,4 @@
-/*	buf.h	4.18	82/11/13	*/
+/*	buf.h	4.19	82/12/17	*/
 
 /*
  * The header for buffers in the buffer pool and otherwise used
@@ -57,6 +57,7 @@ struct buf
 #define	b_errcnt b_resid		/* while i/o in progress: # retries */
 #define	b_pfcent b_resid		/* garbage: don't ask */
 	struct  proc *b_proc;		/* proc doing physical or swap I/O */
+	int	(*b_iodone)();		/* function called by iodone */
 };
 
 #define	BQUEUES		4		/* number of free buffer queues */
@@ -120,6 +121,7 @@ unsigned minphys();
 #define	B_LOCKED	0x020000	/* locked in core (not reusable) */
 #define	B_HEAD		0x040000	/* a buffer header, not a buffer */
 #define	B_BAD		0x100000	/* bad block revectoring in progress */
+#define	B_CALL		0x200000	/* call b_iodone from iodone */
 
 /*
  * Insq/Remq for the buffer hash lists.
@@ -176,3 +178,22 @@ unsigned minphys();
 	blkclr(bp->b_un.b_addr, bp->b_bcount); \
 	bp->b_resid = 0; \
 }
+
+#ifdef sun
+/*
+ * Declarations for buffer space rmaps
+ */
+struct map *buffermap;
+#define BUFMAPSIZE	256
+
+/*
+ * "Average" size of a buffer
+ * nbuf*AVGBSIZE is total amount of buffer data
+ */
+#define	AVGBSIZE	2048
+
+/*
+ * Unit of buffer space allocation
+ */
+#define	BUFALLOCSIZE	1024
+#endif

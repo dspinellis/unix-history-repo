@@ -1,4 +1,4 @@
-/*	dz.c	4.47	82/12/05	*/
+/*	dz.c	4.48	82/12/17	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -8,6 +8,9 @@
  * This driver mimics dh.c; see it for explanation of common code.
  */
 #include "bk.h"
+
+#include "../machine/pte.h"
+
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/ioctl.h"
@@ -16,7 +19,6 @@
 #include "../h/user.h"
 #include "../h/proc.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/vm.h"
 #include "../h/conf.h"

@@ -1,4 +1,4 @@
-/*	autoconf.c	4.44	82/10/31	*/
+/*	autoconf.c	4.45	82/12/17	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -21,10 +21,11 @@
 
 #include "mba.h"
 
+#include "../machine/pte.h"
+
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/dk.h"
 #include "../h/vm.h"

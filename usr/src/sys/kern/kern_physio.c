@@ -1,4 +1,6 @@
-/*	kern_physio.c	4.36	82/11/02	*/
+/*	kern_physio.c	4.37	82/12/17	*/
+
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -8,7 +10,6 @@
 #include "../h/conf.h"
 #include "../h/proc.h"
 #include "../h/seg.h"
-#include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/trace.h"
 #include "../h/uio.h"
@@ -211,12 +212,14 @@ nextiov:
 		iov->iov_len -= c;
 		uio->uio_resid -= c;
 		uio->uio_offset += c;
-		if (bp->b_flags&B_ERROR)
+		/* temp kludge for tape drives */
+		if (bp->b_resid || bp->b_flags&B_ERROR)
 			break;
 	}
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS);
 	error = geterror(bp);
-	if (error)
+	/* temp kludge for tape drives */
+	if (bp->b_resid || error)
 		return (error);
 	uio->uio_iov++;
 	uio->uio_iovcnt--;

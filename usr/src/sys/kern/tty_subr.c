@@ -1,4 +1,4 @@
-/*	tty_subr.c	4.17	82/11/13	*/
+/*	tty_subr.c	4.18	82/12/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -54,14 +54,13 @@ register struct clist *p;
 	return(c);
 }
 
-#if notdef
 /*
  * copy clist to buffer.
  * return number of bytes moved.
  */
 q_to_b(q, cp, cc)
-register struct clist *q;
-register char *cp;
+	register struct clist *q;
+	register char *cp;
 {
 	register struct cblock *bp;
 	register int s;
@@ -110,7 +109,6 @@ register char *cp;
 	splx(s);
 	return(cp-acp);
 }
-#endif
 
 /*
  * Return count of contiguous characters
@@ -118,10 +116,10 @@ register char *cp;
  * Stop counting if flag&character is non-null.
  */
 ndqb(q, flag)
-register struct clist *q;
+	register struct clist *q;
 {
-register cc;
-int s;
+	register cc;
+	int s;
 
 	s = spl5();
 	if (q->c_cc <= 0) {
@@ -382,36 +380,47 @@ struct clist *from, *to;
 		(void) putc(c, to);
 }
 
-#include "dmc.h"
-#ifdef NDMC > 0
 /*
- * integer (2-byte) get/put
+ * Integer (short) get/put
  * using clists
  */
+typedef	short word_t;
+union chword {
+	word_t	word;
+	struct {
+		char	Ch[sizeof (word_t)];
+	} Cha;
+#define	ch	Cha.Ch
+};
+
 getw(p)
 	register struct clist *p;
 {
-	register int s;
+	register int i;
+	union chword x;
 
-	if (p->c_cc <= 1)
-		return(-1);
-	s = getc(p);
-	return(s | (getc(p)<<8));
+	if (p->c_cc < sizeof (word_t))
+		return (-1);
+	for (i = 0; i < sizeof (word_t); i++)
+		x.ch[i] = getc(p);
+	return (x.word);
 }
 
 putw(c, p)
 	register struct clist *p;
 {
 	register s;
+	register int i;
+	union chword x;
 
 	s = spl5();
 	if (cfreelist==NULL) {
 		splx(s);
 		return(-1);
 	}
-	(void) putc(c, p);
-	(void) putc(c>>8, p);
+	x.word = c;
+	for (i = 0; i < sizeof (word_t); i++)
+		(void) putc(x.ch[i], p);
 	splx(s);
-	return(0);
+	return (0);
 }
-#endif

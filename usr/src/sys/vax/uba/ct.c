@@ -1,4 +1,4 @@
-/*	ct.c	4.11	82/10/17	*/
+/*	ct.c	4.12	82/12/17	*/
 
 #include "ct.h"
 #if NCT > 0
@@ -8,11 +8,11 @@
  * BUGS:
  *	This driver hasn't been tested in 4.1bsd
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/tty.h"
-#include "../h/pte.h"
 #include "../h/map.h"
 #include "../h/buf.h"
 #include "../h/conf.h"

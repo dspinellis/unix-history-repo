@@ -1,4 +1,4 @@
-/*	if_imp.c	4.45	82/12/14	*/
+/*	if_imp.c	4.46	82/12/17	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -8,10 +8,11 @@
  * The IMP-host protocol is handled here, leaving
  * hardware specifics to the lower level interface driver.
  */
+#include "../machine/pte.h"
+
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
-#include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"

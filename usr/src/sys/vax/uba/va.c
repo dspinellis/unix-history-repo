@@ -1,17 +1,18 @@
-/*	va.c	4.18	82/11/28	*/
+/*	va.c	4.19	82/12/17	*/
 
 #include "va.h"
 #if NVA > 0
 /*
  * Varian printer plotter
  */
+#include "../machine/pte.h"
+
 #include "../h/param.h"
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/buf.h"
 #include "../h/systm.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../h/vcmd.h"
 #include "../h/uio.h"
 

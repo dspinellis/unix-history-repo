@@ -1,10 +1,11 @@
-/*	swapgeneric.c	4.4	82/10/17	*/
+/*	swapgeneric.c	4.5	82/12/17	*/
 
 #include "mba.h"
 
+#include "../machine/pte.h"
+
 #include "../h/param.h"
 #include "../h/conf.h"
-#include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/vm.h"
 #include "../h/systm.h"

@@ -1,10 +1,12 @@
-/*	dh.c	4.55	82/12/10	*/
+/*	dh.c	4.56	82/12/17	*/
 
 #include "dh.h"
 #if NDH > 0
 /*
  * DH-11/DM-11 driver
  */
+#include "../machine/pte.h"
+
 #include "bk.h"
 #include "../h/param.h"
 #include "../h/conf.h"
@@ -14,7 +16,6 @@
 #include "../h/ioctl.h"
 #include "../h/tty.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/vm.h"
 

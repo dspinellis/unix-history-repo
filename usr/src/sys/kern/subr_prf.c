@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.24	82/10/31	*/
+/*	subr_prf.c	4.25	82/12/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,6 +10,7 @@
 #include "../h/msgbuf.h"
 #include "../h/dir.h"
 #include "../h/user.h"
+#include "../h/proc.h"
 #include "../h/tty.h"
 
 /*
@@ -176,13 +177,14 @@ panic(s)
 
 	if (panicstr)
 		bootopt |= RB_NOSYNC;
-#ifdef sun
 	else {
+		panicstr = s;
+#ifdef sun
 		asm("movl a6, a5");
 		traceback(a5, a5);
-	}
+		resume(pcbb(u.u_procp));	/* for adb traceback */
 #endif
-	panicstr = s;
+	}
 	printf("panic: %s\n", s);
 	boot(RB_PANIC, bootopt);
 }

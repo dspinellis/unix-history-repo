@@ -1,15 +1,18 @@
-/*	if_vv.c	4.10	82/12/14	*/
+/*	if_vv.c	4.11	82/12/17	*/
 
+#include "vv.h"
+#if NVV > 0
 /*
  * Proteon 10 Meg Ring Driver.
  * This device is called "vv" because its "real name",
  * V2LNI won't work if shortened to the obvious "v2".
  * Hence the subterfuge.
  */
+#include "../machine/pte.h"
+
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
-#include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
@@ -676,3 +679,4 @@ vvprt_hex(s, l)
 		);
 	}
 }
+#endif

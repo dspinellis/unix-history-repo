@@ -1,8 +1,9 @@
 #define	VAX780	1
 #define	VAX750	1
 
+#include "../machine/pte.h"
+
 #include "../h/param.h"
-#include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/vmmeter.h"
 #include "../h/vmparam.h"

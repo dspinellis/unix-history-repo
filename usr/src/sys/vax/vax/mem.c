@@ -1,8 +1,10 @@
-/*	mem.c	4.11	82/12/05	*/
+/*	mem.c	4.12	82/12/17	*/
 
 /*
  * Memory special file
  */
+
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -10,7 +12,6 @@
 #include "../h/conf.h"
 #include "../h/buf.h"
 #include "../h/systm.h"
-#include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/cmap.h"
 #include "../h/uio.h"

@@ -1,4 +1,4 @@
-/*	vp.c	4.21	82/10/17	*/
+/*	vp.c	4.22	82/12/17	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -10,13 +10,14 @@
  *	Set up both print and plot interrupts to go through the same vector
  *	Give the address of the plcsr register in the config specification
  */
+#include "../machine/pte.h"
+
 #include "../h/param.h"
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/buf.h"
 #include "../h/systm.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../h/vcmd.h"
 #include "../h/uio.h"
 

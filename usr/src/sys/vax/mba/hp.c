@@ -1,4 +1,4 @@
-/*	hp.c	4.58	82/11/13	*/
+/*	hp.c	4.59	82/12/17	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -18,6 +18,7 @@ int	hpbdebug;
  *	see if DCLR and/or RELEASE set attention status
  *	print bits of mr && mr2 symbolically
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -27,7 +28,6 @@ int	hpbdebug;
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../vax/mtpr.h"
 #include "../h/vm.h"
 #include "../h/cmap.h"

@@ -1,4 +1,4 @@
-/*	dmf.c	4.15	82/12/05	*/
+/*	dmf.c	4.16	82/12/17	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -15,6 +15,8 @@
  *	optimize for efficient DMA and dynamically
  *	  decide between silo and DMA mode
  */
+#include "../machine/pte.h"
+
 #include "bk.h"
 #include "../h/param.h"
 #include "../h/conf.h"
@@ -23,7 +25,6 @@
 #include "../h/ioctl.h"
 #include "../h/tty.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/vm.h"
 #include "../h/bk.h"

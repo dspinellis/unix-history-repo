@@ -1,4 +1,4 @@
-/*	subr_prof.c	4.2	82/11/13	*/
+/*	subr_prof.c	4.3	82/12/17	*/
 
 #ifdef GPROF
 #include "../h/crt0.h"
@@ -12,7 +12,12 @@ int	profiling = 3;
 u_short	*froms = 0;
 struct	tostruct *tos = 0;
 u_short	tolimit = 0;
+#ifdef vax
 char	*s_lowpc = (char *)0x80000000;
+#endif
+#ifdef sun
+char	*s_lowpc = (char *)0x4000;
+#endif
 extern	char etext;
 char	*s_highpc = &etext;
 u_long	s_textsize = 0;
@@ -69,6 +74,7 @@ kmstartup()
 #endif
 }
 
+#ifdef vax
 /*
  * This routine is massaged so that it may be jsb'ed to
  */
@@ -154,4 +160,5 @@ overflow:
 	printf("mcount: tos overflow\n");
 	goto out;
 }
+#endif
 #endif GPROF

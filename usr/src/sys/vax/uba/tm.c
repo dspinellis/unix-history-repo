@@ -1,4 +1,4 @@
-/*	tm.c	4.59	82/11/26	*/
+/*	tm.c	4.60	82/12/17	*/
 
 #include "te.h"
 #include "ts.h"
@@ -13,6 +13,8 @@
  *	what happens if you offline tape during rewind?
  *	test using file system on tape
  */
+#include "../machine/pte.h"
+
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/buf.h"
@@ -21,7 +23,6 @@
 #include "../h/user.h"
 #include "../h/file.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/ioctl.h"
 #include "../h/mtio.h"

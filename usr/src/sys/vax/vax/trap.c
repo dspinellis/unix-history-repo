@@ -1,4 +1,8 @@
-/*	trap.c	4.25	82/12/09	*/
+/*	trap.c	4.26	82/12/17	*/
+
+#include "../machine/psl.h"
+#include "../machine/reg.h"
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,11 +10,8 @@
 #include "../h/user.h"
 #include "assym.s"
 #include "../h/proc.h"
-#include "../h/reg.h"
 #include "../h/seg.h"
 #include "../vax/trap.h"
-#include "../h/psl.h"
-#include "../h/pte.h"
 #include "../h/acct.h"
 #include "../h/kernel.h"
 #ifdef SYSCALLTRACE

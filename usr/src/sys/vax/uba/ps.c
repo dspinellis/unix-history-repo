@@ -1,4 +1,4 @@
-/*	ps.c	4.8	82/12/05	*/
+/*	ps.c	4.9	82/12/17	*/
 
 /*
  * Evans and Sutherland Picture System 2 driver
@@ -14,10 +14,11 @@
 
 #define EXTERNAL_SYNC
 
+#include "../machine/pte.h"
+
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/ioctl.h"
-#include "../h/pte.h"
 #include "../h/map.h"
 #include "../h/buf.h"
 #include "../h/conf.h"

@@ -1,4 +1,4 @@
-/*	lfs_alloc.c	2.19	82/11/13	*/
+/*	lfs_alloc.c	2.20	82/12/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -508,6 +508,7 @@ alloccg(ip, cg, bpref, size)
 		cgp->cg_cs.cs_nffree += i;
 		fs->fs_cstotal.cs_nffree += i;
 		fs->fs_cs(fs, cg).cs_nffree += i;
+		fs->fs_fmod++;
 		cgp->cg_frsum[i]++;
 		bdwrite(bp);
 		return (bno);
@@ -520,6 +521,7 @@ alloccg(ip, cg, bpref, size)
 	cgp->cg_cs.cs_nffree -= frags;
 	fs->fs_cstotal.cs_nffree -= frags;
 	fs->fs_cs(fs, cg).cs_nffree -= frags;
+	fs->fs_fmod++;
 	cgp->cg_frsum[allocsiz]--;
 	if (frags != allocsiz)
 		cgp->cg_frsum[allocsiz - frags]++;
@@ -876,12 +878,8 @@ mapsearch(fs, cgp, bpref, allocsiz)
 		start = 0;
 		loc = scanc(len, &cgp->cg_free[start], fragtbl[fs->fs_frag],
 			1 << (allocsiz - 1 + (fs->fs_frag % NBBY)));
-		if (loc == 0) {
-			printf("start = %d, len = %d, fs = %s\n",
-			    start, len, fs->fs_fsmnt);
-			panic("alloccg: map corrupted");
+		if (loc == 0)
 			return (-1);
-		}
 	}
 	bno = (start + len - loc) * NBBY;
 	cgp->cg_frotor = bno;

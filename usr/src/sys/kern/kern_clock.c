@@ -1,4 +1,7 @@
-/*	kern_clock.c	4.47	82/12/16	*/
+/*	kern_clock.c	4.48	82/12/17	*/
+
+#include "../machine/reg.h"
+#include "../machine/psl.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -8,17 +11,18 @@
 #include "../h/user.h"
 #include "../h/kernel.h"
 #include "../h/proc.h"
-#include "../h/psl.h"
 #include "../h/vm.h"
 #include "../h/text.h"
-#ifdef vax
-#include "../vax/mtpr.h"
-#endif
 #ifdef MUSH
 #include "../h/quota.h"
 #include "../h/share.h"
 #endif
 
+#ifdef vax
+#include "../vax/mtpr.h"
+#endif
+
+#
 /*
  * Clock handling routines.
  *
@@ -72,6 +76,10 @@ hardclock(regs)
 	register struct proc *p;
 	register int s, cpstate;
 
+#ifdef sun
+	if (USERMODE(ps))		/* aston needs ar0 */
+		u.u_ar0 = &regs.r_r0;
+#endif
 	/*
 	 * Update real-time timeout queue.
 	 * At front of queue are some number of events which are ``due''.
@@ -227,12 +235,10 @@ softclock(pc, ps)
 {
 #endif
 #ifdef sun
-softclock(sirret, regs)
-	caddr_t sirreg;
-	struct regs regs;
+softclock()
 {
-	int ps = regs.r_sr;
-	caddr_t pc = (caddr_t)regs.r_pc;
+	int ps = u.u_ar0[PS];
+	caddr_t pc = (caddr_t)u.u_ar0[PC];
 #endif
 
 	for (;;) {

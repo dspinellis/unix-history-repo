@@ -1,4 +1,4 @@
-/*	kern_resource.c	4.17	82/10/19	*/
+/*	kern_resource.c	4.18	82/12/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -279,7 +279,7 @@ scale60(tvp)
 	return (tvp->tv_sec * 60 + tvp->tv_usec / 16667);
 }
 
-#include <vtimes.h>
+#include "../h/vtimes.h"
 
 ovtimes()
 {

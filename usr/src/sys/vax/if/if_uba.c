@@ -1,10 +1,11 @@
-/*	if_uba.c	4.15	82/12/14	*/
+/*	if_uba.c	4.16	82/12/17	*/
+
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/cmap.h"
 #include "../h/vmmac.h"

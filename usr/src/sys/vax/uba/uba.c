@@ -1,9 +1,10 @@
-/*	uba.c	4.58	82/11/26	*/
+/*	uba.c	4.59	82/12/17	*/
+
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/map.h"
-#include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/vm.h"
 #include "../h/dir.h"

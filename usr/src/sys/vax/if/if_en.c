@@ -1,15 +1,15 @@
-/*	if_en.c	4.74	82/12/14	*/
+/*	if_en.c	4.75	82/12/17	*/
 
 #include "en.h"
 
 /*
  * Xerox prototype (3 Mb) Ethernet interface driver.
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
-#include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"

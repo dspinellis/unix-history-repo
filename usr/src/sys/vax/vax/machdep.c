@@ -1,4 +1,8 @@
-/*	machdep.c	4.71	82/11/13	*/
+/*	machdep.c	4.72	82/12/17	*/
+
+#include "../machine/reg.h"
+#include "../machine/pte.h"
+#include "../machine/psl.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,11 +10,8 @@
 #include "../h/user.h"
 #include "../h/kernel.h"
 #include "../h/map.h"
-#include "../h/reg.h"
-#include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/proc.h"
-#include "../h/psl.h"
 #include "../h/buf.h"
 #include "../h/reboot.h"
 #include "../h/conf.h"

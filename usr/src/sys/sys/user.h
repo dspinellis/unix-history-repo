@@ -1,12 +1,12 @@
-/*	user.h	4.23	82/12/09	*/
+/*	user.h	4.24	82/12/17	*/
 
-#ifdef vax
-#include <vax/pcb.h>
-#endif
-#ifdef sun
-#include <sun/pcb.h>
-#endif
+#ifdef KERNEL
+#include "../machine/pcb.h"
+#include "../h/dmap.h"
+#else
+#include <machine/pcb.h>
 #include <sys/dmap.h>
+#endif
 #include <time.h>
 #include <resource.h>
 /*

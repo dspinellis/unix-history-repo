@@ -1,10 +1,11 @@
-/*	uipc_mbuf.c	1.41	82/12/14	*/
+/*	uipc_mbuf.c	1.42	82/12/17	*/
+
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/proc.h"
-#include "../h/pte.h"
 #include "../h/cmap.h"
 #include "../h/map.h"
 #include "../h/mbuf.h"
@@ -14,9 +15,9 @@
 mbinit()
 {
 
-	if (m_clalloc(4, MPG_MBUFS) == 0)
+	if (m_clalloc(4096/CLBYTES, MPG_MBUFS) == 0)
 		goto bad;
-	if (m_clalloc(32, MPG_CLUSTERS) == 0)
+	if (m_clalloc(8*4096/CLBYTES, MPG_CLUSTERS) == 0)
 		goto bad;
 	return;
 bad:
@@ -40,8 +41,12 @@ m_clalloc(ncl, how)
 	if (mbx == 0)
 		return (0);
 	m = cltom(mbx / CLSIZE);
-	if (memall(&Mbmap[mbx], npg, proc, CSYS) == 0)
+	if (memall(&Mbmap[mbx], npg, proc, CSYS) == 0) {
+		s = splimp();
+		rmfree(mbmap, (long)npg, (long)mbx);
+		splx(s);
 		return (0);
+	}
 	vmaccess(&Mbmap[mbx], (caddr_t)m, npg);
 	switch (how) {
 

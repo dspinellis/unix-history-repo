@@ -1,4 +1,4 @@
-/*	if_acc.c	4.31	82/11/15	*/
+/*	if_acc.c	4.32	82/12/17	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -6,11 +6,11 @@
 /*
  * ACC LH/DH ARPAnet IMP interface driver.
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
-#include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"

@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.21	82/11/13	*/
+/*	if_dmc.c	4.22	82/12/17	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -10,11 +10,11 @@ int dmcdebug = 1;
  * TODO
  *	allow more than one outstanding read or write.
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
-#include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/tty.h"
 #include "../h/protosw.h"
