@@ -1,0 +1,110 @@
+##############################################################################
+#    Instructions to Make, for generation of MH documentation sets
+#
+#	@(MHWARNING)
+##############################################################################
+
+
+##############################################################################
+#	Generation Rules
+##############################################################################
+
+.SUFFIXES:	.cat .dvi .imp
+
+.cat.imp:;	catimp -i $@ $<
+
+.dvi.imp:;	dviimp -i $@ $<
+
+
+######################################################################
+#	Here it is...
+######################################################################
+
+all:	../READ-ME mh-gen.cat MH.cat ADMIN.cat bboards.dvi mh6.dvi \
+	multifarious.dvi mznet.dvi realwork.dvi trusted.dvi tutorial.dvi
+
+doc:	MH.doc ADMIN.doc
+
+imp:	mh-gen.imp MH.imp ADMIN.imp bboards.imp mh6.imp \
+	multifarious.imp mznet.imp realwork.imp trusted.imp tutorial.imp
+
+i-all:	all true
+	lpr -t -J MH-gen mh-gen.cat
+	lpr -t -J MH MH.cat
+	lpr -t -J ADMIN ADMIN.cat
+	lpr -d -J BBoards bboards.dvi
+	lpr -d -J mh6 mh6.dvi
+	lpr -d -J Multifarious multifarious.dvi
+	lpr -d -J MZnet mznet.dvi
+	lpr -d -J Realwork realwork.dvi
+	lpr -d -J Trusted trusted.dvi
+	lpr -d -J Tutorial tutorial.dvi
+
+
+true:;
+
+
+#############################################################
+# Manuals, et. al.
+#############################################################
+
+ADMIN.cat MH.cat \
+ADMIN.doc MH.doc \
+ADMIN.imp MH.imp:	true
+		cd ../doc; make $@
+		cp ../doc/$@ $@
+
+../READ-ME:	../conf/mh-gen.8
+		nroff -man ../conf/mh-gen.8 > read-me.tmp
+		mv read-me.tmp $@
+
+mh-gen.cat:	../conf/mh-gen.8
+		itroff -t -man ../conf/mh-gen.8 > mh-gen.tmp
+		mv mh-gen.tmp $@
+
+bboards.imp \
+bboards.dvi:	true
+		cd ../papers/bboards; make $@
+		cp ../papers/bboards/$@ $@
+
+mh6.imp \
+mh6.dvi:	true
+		cd ../papers/mh6.4; make $@
+		cp ../papers/mh6.4/$@ $@
+
+multifarious.imp \
+multifarious.dvi:	true
+		cd ../papers/multifarious; make $@
+		cp ../papers/multifarious/$@ $@
+
+mznet.imp \
+mznet.dvi:	true
+		cd ../papers/mznet; make $@
+		cp ../papers/mznet/$@ $@
+
+realwork.imp \
+realwork.dvi:	true
+		cd ../papers/realwork; make $@
+		cp ../papers/realwork/$@ $@
+
+trusted.imp \
+trusted.dvi:	true
+		cd ../papers/trusted; make $@
+		cp ../papers/trusted/$@ $@
+
+tutorial.imp \
+tutorial.dvi:	true
+		cd ../papers/tutorial; make $@
+		cp ../papers/tutorial/$@ $@
+
+
+##############################################################################
+#	Miscellaneous tasks
+##############################################################################
+
+distribution:   clean ../READ-ME
+
+clean:		unclean
+		rm -f *.cat *.dvi *.imp *.doc
+
+unclean:;	rm -f *.tmp _* :* core
