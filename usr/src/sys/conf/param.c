@@ -48,7 +48,7 @@ int	ninode = NINODE;
 int	nchsize = NINODE * 11 / 10;
 int	nfile = 16 * (NPROC + 16 + MAXUSERS) / 10 + 32;
 int	ncallout = 16 + NPROC;
-int	nclist = 100 + 16 * MAXUSERS;
+int	nclist = 60 + 12 * MAXUSERS;
 int	nport = NPROC / 2;
 int     nmbclusters = NMBCLUSTERS;
 #ifdef QUOTA
