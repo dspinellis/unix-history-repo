@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	7.27 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -180,7 +180,7 @@ done:
 	ruadd(p->p_ru, &u.u_cru);
 	if (p->p_cptr)		/* only need this if any child is S_ZOMB */
 		wakeup((caddr_t)&proc[1]);
-	fixjobc(p, 0);
+	fixjobc(p, p->p_pgrp, 0);
 	for (q = p->p_cptr; q != NULL; q = nq) {
 		nq = q->p_osptr;
 		if (nq != NULL)

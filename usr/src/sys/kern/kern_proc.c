@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_proc.c	7.11 (Berkeley) %G%
+ *	@(#)kern_proc.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -37,6 +37,7 @@
 inferior(p)
 	register struct proc *p;
 {
+
 	for (; p != u.u_procp; p = p->p_pptr)
 		if (p->p_ppid == 0)
 			return (0);
@@ -81,10 +82,9 @@ pgmv(p, pgid, mksess)
 	pid_t pgid;
 {
 	register struct pgrp *pgrp = pgfind(pgid);
-	register struct proc **pp = &p->p_pgrp->pg_mem;
+	register struct proc **pp;
 	register struct proc *cp;
-	struct pgrp *opgrp;
-	register n;
+	int n;
 
 #ifdef DIAGNOSTIC
 	if (pgrp && mksess)	/* firewalls */
@@ -124,20 +124,25 @@ pgmv(p, pgid, mksess)
 			pgrp->pg_session->s_count++;
 		}
 		pgrp->pg_id = pgid;
-		pgrp->pg_hforw = pgrphash[n=PIDHASH(pgid)];
+		pgrp->pg_hforw = pgrphash[n = PIDHASH(pgid)];
 		pgrphash[n] = pgrp;
 		pgrp->pg_jobc = 0;
 		pgrp->pg_mem = NULL;
 	} else if (pgrp == p->p_pgrp)
 		return;
+
 	/*
-	 * adjust eligibility of affected pgrps to participate in job control
+	 * Adjust eligibility of affected pgrps to participate in job control.
+	 * Increment eligibility counts before decrementing, otherwise we
+	 * could reach 0 spuriously during the first call.
 	 */
-	fixjobc(p, 0);
+	fixjobc(p, pgrp, 1);
+	fixjobc(p, p->p_pgrp, 0);
+
 	/*
 	 * unlink p from old process group
 	 */
-	for (; *pp; pp = &(*pp)->p_pgrpnxt)
+	for (pp = &p->p_pgrp->pg_mem; *pp; pp = &(*pp)->p_pgrpnxt)
 		if (*pp == p) {
 			*pp = p->p_pgrpnxt;
 			goto done;
@@ -145,21 +150,16 @@ pgmv(p, pgid, mksess)
 	panic("pgmv: can't find p on old pgrp");
 done:
 	/*
-	 * link into new one
-	 */
-	p->p_pgrpnxt = pgrp->pg_mem;
-	pgrp->pg_mem = p;
-	opgrp = p->p_pgrp;
-	p->p_pgrp = pgrp;
-	/*
-	 * adjust eligibility of affected pgrps to participate in job control
-	 */
-	fixjobc(p, 1);
-	/*
 	 * delete old if empty
 	 */
-	if (!opgrp->pg_mem)
-		pgdelete(opgrp);
+	if (p->p_pgrp->pg_mem == 0)
+		pgdelete(p->p_pgrp);
+	/*
+	 * link into new one
+	 */
+	p->p_pgrp = pgrp;
+	p->p_pgrpnxt = pgrp->pg_mem;
+	pgrp->pg_mem = p;
 }
 
 /*
@@ -206,59 +206,71 @@ done:
 }
 
 /*
- * Adjust pgrp jobc counter.
- * flag == 0 => p is leaving current state.
- * flag == 1 => p is entering current state.
+ * Adjust pgrp jobc counters when specified process changes process group.
+ * We count the number of processes in each process group that "qualify"
+ * the group for terminal job control (those with a parent in a different
+ * process group of the same session).  If that count reaches zero, the
+ * process group becomes orphaned.  Check both the specified process'
+ * process group and that of its children.
+ * entering == 0 => p is leaving specified group.
+ * entering == 1 => p is entering specified group.
  */
-fixjobc(p, flag)
+fixjobc(p, pgrp, entering)
 	register struct proc *p;
-	register flag;
+	register struct pgrp *pgrp;
+	int entering;
 {
-	register struct pgrp *mypgrp = p->p_pgrp, *hispgrp;
-	register struct session *mysession = mypgrp->pg_session;
-	register struct proc *qp;
+	register struct pgrp *hispgrp;
+	register struct session *mysession = pgrp->pg_session;
 
-	if ((hispgrp = p->p_pptr->p_pgrp) != mypgrp &&
+	/*
+	 * Check p's parent to see whether p qualifies its own process
+	 * group; if so, adjust count for p's process group.
+	 */
+	if ((hispgrp = p->p_pptr->p_pgrp) != pgrp &&
 	    hispgrp->pg_session == mysession)
-		if (flag)
-			mypgrp->pg_jobc++;
-		else if (--mypgrp->pg_jobc == 0) {
-			int deliver = 0;
+		if (entering)
+			pgrp->pg_jobc++;
+		else if (--pgrp->pg_jobc == 0)
+			orphanpg(pgrp);
 
-			sigstopped:
-			for (qp = mypgrp->pg_mem; qp != NULL; 
-			     qp = qp->p_pgrpnxt)
-				if (deliver) {
-					psignal(qp, SIGHUP);
-					psignal(qp, SIGCONT);
-				} else if (qp->p_stat == SSTOP) {
-					deliver++;
-					goto sigstopped;
-				}
-		}
-
-	for (p = p->p_cptr; p != NULL; p = p->p_osptr)
-		if ((hispgrp = p->p_pgrp) != mypgrp &&
+	/*
+	 * Check this process' children to see whether they qualify
+	 * their process groups; if so, adjust counts for children's
+	 * process groups.
+	 */
+	for (p = p->p_cptr; p; p = p->p_osptr)
+		if ((hispgrp = p->p_pgrp) != pgrp &&
 		    hispgrp->pg_session == mysession &&
 		    p->p_stat != SZOMB)
-			if (flag)
+			if (entering)
 				hispgrp->pg_jobc++;
-			else if (--hispgrp->pg_jobc == 0) {
-				int deliver = 0;
-
-				sigstopped2:
-				for (qp = hispgrp->pg_mem; qp != NULL; 
-				     qp = qp->p_pgrpnxt)
-					if (deliver) {
-						psignal(qp, SIGHUP);
-						psignal(qp, SIGCONT);
-					} else if (qp->p_stat == SSTOP) {
-						deliver++;
-						goto sigstopped2;
-					}
-			}
+			else if (--hispgrp->pg_jobc == 0)
+				orphanpg(hispgrp);
 }
-				
+
+/* 
+ * A process group has become orphaned;
+ * if there are any stopped processes in the group,
+ * hang-up all process in that group.
+ */
+static
+orphanpg(pg)
+	struct pgrp *pg;
+{
+	register struct proc *p;
+
+	for (p = pg->pg_mem; p; p = p->p_pgrpnxt) {
+		if (p->p_stat == SSTOP) {
+			for (p = pg->pg_mem; p; p = p->p_pgrpnxt) {
+				psignal(p, SIGHUP);
+				psignal(p, SIGCONT);
+			}
+			return;
+		}
+	}
+}
+
 /*
  * init the process queues
  */
