@@ -1,14 +1,30 @@
-$Id$
+$Id: Changes,v 1.1 1993/12/21 21:41:45 wollman Exp $
 
 This file is intended to keep track of important kernel and user
 changes in FreeBSD between releases.
 
 Since 1.0.2:
 
-- Added XNTPD to contrib section, and (un-compilable) kernel support for
+- Add XNTPD to contrib section, and (un-compilable) kernel support for
   same to /sys/kern.  (wollman)
 
+- Use linker-constructed sets to initialize certain system tables
+  rather than manually enumerating all the options in the source files.
+  This makes certain pseudo-devices and all image activators drop-in at
+  link time, if desired.  (wollman)
+
 - Make all mandatory options ``standard''.  (wollman)
+
+- Re-design execve() system call to allow for multiple ``image activators''
+  which recognize and load various file formats.  Currently only
+  a.out and interpreted formats are recognized.  (davidg)
+
+- Separate all IP-related variables that users might want to modify into
+  netinet/in_var.c.  (wollman)
+
+- Update to latest ADO timezone code, and update some timezone files beyond
+  that.  (wollman, ache, Adam David)
+
 
 Between 1.0.2 and 1.0:
 
