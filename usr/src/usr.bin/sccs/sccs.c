@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)sccs.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)sccs.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 # include <stdio.h>
@@ -69,16 +69,24 @@ static char sccsid[] = "@(#)sccs.c	5.2 (Berkeley) %G%";
 **		get,
 **		delta,
 **		rmdel,
-**		chghist,
+**		cdc,
 **		etc.		Straight out of SCCS; only difference
 **				is that pathnames get modified as
 **				described above.
+**		enter		Front end doing "sccs admin -i<name> <name>"
+**		create		Macro for "enter" followed by "get".
 **		edit		Macro for "get -e".
 **		unedit		Removes a file being edited, knowing
 **				about p-files, etc.
 **		delget		Macro for "delta" followed by "get".
 **		deledit		Macro for "delta" followed by "get -e".
-**		info		Tell what files being edited.
+**		branch		Macro for "get -b -e", followed by "delta
+**				-s -n", followd by "get -e -t -g".
+**		diffs		"diff" the specified version of files
+**				and the checked-out version.
+**		print		Macro for "prs -e" followed by "get -p -m".
+**		tell		List what files are being edited.
+**		info		Print information about files being edited.
 **		clean		Remove all files that can be
 **				regenerated from SCCS files.
 **		check		Like info, but return exit status, for
@@ -172,7 +180,7 @@ struct sccsprog
 struct sccsprog SccsProg[] =
 {
 	"admin",	PROG,	REALUSER,		PROGPATH(admin),
-	"chghist",	PROG,	0,			PROGPATH(rmdel),
+	"cdc",		PROG,	0,			PROGPATH(rmdel),
 	"comb",		PROG,	0,			PROGPATH(comb),
 	"delta",	PROG,	0,			PROGPATH(delta),
 	"get",		PROG,	0,			PROGPATH(get),
@@ -194,7 +202,7 @@ struct sccsprog SccsProg[] =
 	"unedit",	UNEDIT,	NO_SDOT,		NULL,
 	"diffs",	DIFFS,	NO_SDOT|REALUSER,	NULL,
 	"-diff",	DODIFF,	NO_SDOT|REALUSER,	PROGPATH(bdiff),
-	"print",	CMACRO,	0,			"prt -e/get -p -m -s",
+	"print",	CMACRO,	0,			"prs -e/get -p -m -s",
 	"branch",	CMACRO,	NO_SDOT,
 		"get:ixrc -e -b/delta: -s -n -ybranch-place-holder/get:pl -e -t -g",
 	"enter",	ENTER,	NO_SDOT,		NULL,
@@ -228,6 +236,8 @@ bool	Debug;			/* turn on tracing */
 # ifndef V6
 extern char	*getenv();
 # endif V6
+
+extern char	*sys_siglist[];
 
 char *gstrcat(), *strcat();
 char *gstrncat(), *strncat();
@@ -482,7 +492,7 @@ command(argv, forkflag, arg0)
 		break;
 
 	  case FIX:		/* fix a delta */
-		if (strncmp(ap[1], "-r", 2) != 0)
+		if (ap[1]==0 || strncmp(ap[1], "-r", 2)!=0)
 		{
 			usrerr("-r flag needed for fix command");
 			rval = EX_USAGE;
@@ -654,7 +664,12 @@ callprog(progpath, flags, argv, forkflag)
 	bool forkflag;
 {
 	register int i;
+	register int wpid;
 	auto int st;
+	register int sigcode;
+	register int coredumped;
+	register char *sigmsg;
+	auto char sigmsgbuf[10+1];	/* "Signal 127" + terminating '\0' */
 
 # ifdef DEBUG
 	if (Debug)
@@ -686,9 +701,30 @@ callprog(progpath, flags, argv, forkflag)
 		}
 		else if (i > 0)
 		{
-			wait(&st);
-			if ((st & 0377) == 0)
+			while ((wpid = wait(&st)) != -1 && wpid != i)
+				;
+			if ((sigcode = st & 0377) == 0)
 				st = (st >> 8) & 0377;
+			else
+			{
+				coredumped = sigcode & 0200;
+				sigcode &= 0177;
+				if (sigcode != SIGINT && sigcode != SIGPIPE)
+				{
+					if (sigcode < NSIG)
+						sigmsg = sys_siglist[sigcode];
+					else
+					{
+						sprintf(sigmsgbuf, "Signal %d",
+						    sigcode);
+						sigmsg = sigmsgbuf;
+					}
+					fprintf(stderr, "sccs: %s: %s%s", argv[0],
+					    sigmsg,
+					    coredumped ? " - core dumped": "");
+				}
+				st = EX_SOFTWARE;
+			}
 			if (OutFile >= 0)
 			{
 				close(OutFile);
