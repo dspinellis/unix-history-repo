@@ -1,4 +1,4 @@
-/*	if_il.c	4.1	82/05/21	*/
+/*	if_il.c	4.2	82/05/24	*/
 
 #include "il.h"
 #include "imp.h"
@@ -169,7 +169,7 @@ COUNT(ILATTACH);
 	if_attach(&is->is_if);
 #if NIMP == 0
 	if (ui->ui_flags &~ 0xff)
-		illhinit((ui->ui_flags &~ 0xff) | 0x0a);
+		illhinit(&is->is_if, (ui->ui_flags &~ 0xff) | 0x0a);
 #endif
 }
 
@@ -558,7 +558,7 @@ bad:
  */
 
 struct	ifnet illhif;
-int	illhoutput();
+int	looutput();
 
 /*
  * Called by localnet interface to allow logical
@@ -566,7 +566,8 @@ int	illhoutput();
  * be sent locally to this interface, it's purpose
  * is simply to establish the host's arpanet address.
  */
-illhinit(addr)
+illhinit(ilifp, addr)
+	struct ifnet *ilifp;
 	int addr;
 {
 	register struct ifnet *ifp = &illhif;
@@ -579,19 +580,10 @@ COUNT(ILLHINIT);
 	sin->sin_family = AF_INET;
 	sin->sin_addr.s_addr = addr;
 	ifp->if_net = sin->sin_addr.s_net;
-	ifp->if_flags = IFF_UP;
-	ifp->if_output = illhoutput;	/* should never be used */
+	ifp->if_dstaddr = ilifp->if_addr;
+	ifp->if_flags = IFF_UP|IFF_POINTOPOINT;
+	ifp->if_output = looutput;
 	if_attach(ifp);
-}
-
-illhoutput(ifp, m0, dst)
-	struct ifnet *ifp;
-	struct mbuf *m0;
-	struct sockaddr *dst;
-{
-COUNT(ILLHOUTPUT);
-	ifp->if_oerrors++;
-	m_freem(m0);
-	return (0);
+	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_DIRECT);
 }
 #endif

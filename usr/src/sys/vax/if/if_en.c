@@ -1,4 +1,4 @@
-/*	if_en.c	4.59	82/04/24	*/
+/*	if_en.c	4.60	82/05/24	*/
 
 #include "en.h"
 #include "imp.h"
@@ -32,6 +32,7 @@
 #include <errno.h>
 
 #define	ENMTU	(1024+512)
+#define	ENMRU	(1024+512+16)		/* 16 is enough to receive trailer */
 
 int	enprobe(), enattach(), enrint(), enxint(), encollide();
 struct	uba_device *eninfo[NEN];
@@ -123,14 +124,8 @@ COUNT(ENATTACH);
 	if_attach(&es->es_if);
 #if NIMP == 0
 	/* here's one for you john baby.... */
-	if (ui->ui_flags &~ 0xff) {
-		struct in_addr logicaladdr;
-
-		logicaladdr.s_addr = ui->ui_flags;	/* gateway */
-		logicaladdr.s_lh = es->es_if.if_host[0];
-		logicaladdr.s_net = 10;
-		enlhinit(logicaladdr);
-	}
+	if (ui->ui_flags &~ 0xff)
+		enlhinit(&es->es_if, (ui->ui_flags &~ 0xff) | 0x0a);
 #endif
 }
 
@@ -164,7 +159,7 @@ eninit(unit)
 	int s;
 
 	if (if_ubainit(&es->es_ifuba, ui->ui_ubanum,
-	    sizeof (struct en_header), (int)btoc(ENMTU)) == 0) { 
+	    sizeof (struct en_header), (int)btoc(ENMRU)) == 0) { 
 		printf("en%d: can't initialize\n", unit);
 		es->es_if.if_flags &= ~IFF_UP;
 		return;
@@ -178,7 +173,7 @@ eninit(unit)
 	 */
 	s = splimp();
 	addr->en_iba = es->es_ifuba.ifu_r.ifrw_info;
-	addr->en_iwc = -(sizeof (struct en_header) + ENMTU) >> 1;
+	addr->en_iwc = -(sizeof (struct en_header) + ENMRU) >> 1;
 	addr->en_istat = EN_IEN|EN_GO;
 	es->es_oactive = 1;
 	es->es_if.if_flags |= IFF_UP;
@@ -380,16 +375,16 @@ COUNT(ENRINT);
 	resid = addr->en_iwc;
 	if (resid)
 		resid |= 0176000;
-	len = (((sizeof (struct en_header) + ENMTU) >> 1) + resid) << 1;
+	len = (((sizeof (struct en_header) + ENMRU) >> 1) + resid) << 1;
 	len -= sizeof (struct en_header);
-	if (len >= ENMTU)
+	if (len > ENMRU)
 		goto setup;			/* sanity */
 	en = (struct en_header *)(es->es_ifuba.ifu_r.ifrw_addr);
 #define	endataaddr(en, off, type)	((type)(((caddr_t)((en)+1)+(off))))
 	if (en->en_type >= ENPUP_TRAIL &&
 	    en->en_type < ENPUP_TRAIL+ENPUP_NTRAILER) {
 		off = (en->en_type - ENPUP_TRAIL) * 512;
-		if (off >= ENMTU)
+		if (off > ENMTU)
 			goto setup;		/* sanity */
 		en->en_type = *endataaddr(en, off, u_short *);
 		resid = *(endataaddr(en, off+2, u_short *));
@@ -449,7 +444,7 @@ setup:
 	 * Reset for next packet.
 	 */
 	addr->en_iba = es->es_ifuba.ifu_r.ifrw_info;
-	addr->en_iwc = -(sizeof (struct en_header) + ENMTU) >> 1;
+	addr->en_iwc = -(sizeof (struct en_header) + ENMRU) >> 1;
 	addr->en_istat = EN_IEN|EN_GO;
 }
 
@@ -578,15 +573,15 @@ bad:
  */
 
 struct	ifnet enlhif;
-int	enlhoutput();
+int	looutput();
 
 /*
  * Called by localnet interface to allow logical
- * host interface to "attach".  Nothing should ever
- * be sent locally to this interface, it's purpose
+ * host interface to "attach", it's purpose
  * is simply to establish the host's arpanet address.
  */
-enlhinit(addr)
+enlhinit(esifp, addr)
+	struct ifnet *esifp;
 	int addr;
 {
 	register struct ifnet *ifp = &enlhif;
@@ -599,19 +594,10 @@ COUNT(ENLHINIT);
 	sin->sin_family = AF_INET;
 	sin->sin_addr.s_addr = addr;
 	ifp->if_net = sin->sin_addr.s_net;
-	ifp->if_flags = IFF_UP;
-	ifp->if_output = enlhoutput;	/* should never be used */
+	ifp->if_flags = IFF_UP|IFF_POINTOPOINT;
+	ifp->if_dstaddr = esifp->if_addr;
+	ifp->if_output = looutput;
 	if_attach(ifp);
-}
-
-enlhoutput(ifp, m0, dst)
-	struct ifnet *ifp;
-	struct mbuf *m0;
-	struct sockaddr *dst;
-{
-COUNT(ENLHOUTPUT);
-	ifp->if_oerrors++;
-	m_freem(m0);
-	return (0);
+	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_DIRECT);
 }
 #endif

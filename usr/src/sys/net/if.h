@@ -1,4 +1,4 @@
-/*	if.h	4.12	82/03/30	*/
+/*	if.h	4.13	82/05/24	*/
 
 /*
  * Structures defining a network interface, providing a packet
@@ -37,8 +37,13 @@ struct ifnet {
 	short	if_net;			/* network number of interface */
 	short	if_flags;		/* up/down, broadcast, etc. */
 	int	if_host[2];		/* local net host number */
-	struct	sockaddr if_addr;	/* internet address of interface */
-	struct	sockaddr if_broadaddr;	/* broadcast address of interface */
+	struct	sockaddr if_addr;	/* address of interface */
+	union {
+		struct	sockaddr ifu_broadaddr;
+		struct	sockaddr ifu_dstaddr;
+	} if_ifu;
+#define	if_broadaddr	if_ifu.ifu_broadaddr	/* broadcast address */
+#define	if_dstaddr	if_ifu.ifu_dstaddr	/* other end of p-to-p link */
 	struct	ifqueue {
 		struct	mbuf *ifq_head;
 		struct	mbuf *ifq_tail;
@@ -63,7 +68,8 @@ struct ifnet {
 #define	IFF_UP		0x1		/* interface is up */
 #define	IFF_BROADCAST	0x2		/* broadcast address valid */
 #define	IFF_DEBUG	0x4		/* turn on debugging */
-#define	IFF_ROUTE	0x8		/* routine entry installed */
+#define	IFF_ROUTE	0x8		/* routing entry installed */
+#define	IFF_POINTOPOINT	0x10		/* interface is point-to-point link */
 
 /*
  * Output queues (ifp->if_snd) and internetwork datagram level (pup level 1)

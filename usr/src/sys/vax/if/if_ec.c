@@ -1,4 +1,4 @@
-/*	if_ec.c	4.9	82/05/21	*/
+/*	if_ec.c	4.10	82/05/24	*/
 
 #include "ec.h"
 #include "imp.h"
@@ -186,7 +186,7 @@ COUNT(ECATTACH);
 #if NIMP == 0
 	/* here's one for you john baby.... */
 	if (ui->ui_flags &~ 0xff)
-		eclhinit((ui->ui_flags &~ 0xff) | 0x0a);
+		eclhinit(&es->es_if, (ui->ui_flags &~ 0xff) | 0x0a);
 #endif
 }
 
@@ -738,15 +738,15 @@ bad:
  */
 
 struct	ifnet eclhif;
-int	eclhoutput();
+int	looutput();
 
 /*
  * Called by localnet interface to allow logical
- * host interface to "attach".  Nothing should ever
- * be sent locally to this interface, it's purpose
+ * host interface to "attach", it's purpose
  * is simply to establish the host's arpanet address.
  */
-eclhinit(addr)
+eclhinit(ecifp, addr)
+	struct ifnet *ecifp;
 	int addr;
 {
 	register struct ifnet *ifp = &eclhif;
@@ -759,19 +759,10 @@ COUNT(ECLHINIT);
 	sin->sin_family = AF_INET;
 	sin->sin_addr.s_addr = addr;
 	ifp->if_net = sin->sin_addr.s_net;
-	ifp->if_flags = IFF_UP;
-	ifp->if_output = eclhoutput;	/* should never be used */
+	ifp->if_dstaddr = ecifp->if_addr;
+	ifp->if_flags = IFF_UP|IFF_POINTOPOINT;
+	ifp->if_output = looutput;
 	if_attach(ifp);
-}
-
-eclhoutput(ifp, m0, dst)
-	struct ifnet *ifp;
-	struct mbuf *m0;
-	struct sockaddr *dst;
-{
-COUNT(ECLHOUTPUT);
-	ifp->if_oerrors++;
-	m_freem(m0);
-	return (0);
+	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_DIRECT);
 }
 #endif
