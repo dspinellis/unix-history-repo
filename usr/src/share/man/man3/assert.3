@@ -1,6 +1,6 @@
-.\"	@(#)assert.3	4.1 (Berkeley) %G%
+.\"	@(#)assert.3	5.1 (Berkeley) %G%
 .\"
-.TH ASSERT 3X
+.TH ASSERT 3X "19 January 1983"
 .AT 3
 .SH NAME
 assert \- program verification
@@ -16,8 +16,7 @@ is a macro that indicates
 is expected to be true at this point in the program.
 It causes an
 .IR exit (2)
-with a diagnostic comment on the standard output
-when
+with a diagnostic comment on the standard output when
 .I expression
 is false (0).
 Compiling with the 
@@ -36,7 +35,6 @@ line
 .I F
 is the source file and
 .I n
-the source line number
-of the
+the source line number of the
 .I assert
 statement.
