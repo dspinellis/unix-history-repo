@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.6	(Berkeley)	%G%
+#	@(#)Makefile	1.7	(Berkeley)	%G%
 #
 M=/usr/src/lib/mip
 LOAD1=
@@ -66,7 +66,7 @@ lintall:
 install: all SHELL
 	install -s lpass1 ${DESTDIR}/usr/lib/lint/lint1
 	install -s lpass2 ${DESTDIR}/usr/lib/lint/lint2
-	cp llib-* ${DESTDIR}/usr/lib/lint
+	for i in llib-*; do install -c -m 644 $$i ${DESTDIR}/usr/lib/lint; done
 	install -c SHELL ${DESTDIR}/usr/bin/lint
 
 shrink:
