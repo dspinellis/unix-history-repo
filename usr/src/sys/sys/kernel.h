@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernel.h	7.8 (Berkeley) %G%
+ *	@(#)kernel.h	7.9 (Berkeley) %G%
  */
 
 /* Global variables for the kernel. */
@@ -16,9 +16,10 @@ extern char hostname[MAXHOSTNAMELEN];
 extern int hostnamelen;
 
 /* 1.2 */
-extern struct timeval mono_time;
+extern volatile struct timeval mono_time;
 extern struct timeval boottime;
-extern struct timeval time;
+extern struct timeval runtime;
+extern volatile struct timeval time;
 extern struct timezone tz;			/* XXX */
 
 extern int tick;			/* usec per tick (1000000 / hz) */
@@ -26,7 +27,6 @@ extern int hz;				/* system clock's frequency */
 extern int stathz;			/* statistics clock's frequency */
 extern int profhz;			/* profiling clock's frequency */
 extern int lbolt;			/* once a second sleep address */
-extern int realitexpire();
 
 struct loadavg {
 	fixpt_t ldavg[3];
@@ -38,8 +38,6 @@ double	avenrun[3];
 #endif /* COMPAT_43 */
 
 #ifdef GPROF
-extern u_long s_textsize;
 extern int profiling;
 extern u_short *kcount;
-extern char *s_lowpc;
 #endif
