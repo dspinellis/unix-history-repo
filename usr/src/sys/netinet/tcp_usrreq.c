@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.23 81/11/03 */
+/* tcp_usrreq.c 1.24 81/11/04 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -15,6 +15,20 @@
 #endif
 #include "../inet/tcp_fsm.h"
 
+/*
+ * Tcp finite state machine entries for timer and user generated
+ * requests.  These routines raise the ipl to that of the network
+ * to prevent reentry.  In particluar, this requires that the software
+ * clock interrupt have lower priority than the network so that
+ * we can enter the network from timeout routines without improperly
+ * nesting the interrupt stack.
+ */
+
+/*
+ * Tcp protocol timeout routine called once per second.
+ * Updates the timers in all active tcb's and
+ * causes finite state machine actions if timers expire.
+ */
 tcp_timeo()
 {
 	register struct tcb *tp;
@@ -36,6 +50,19 @@ COUNT(TCP_TIMEO);
 	tcp_iss += ISSINCR;		/* increment iss */
 	timeout(tcp_timeo, 0, hz);      /* reschedule every second */
 	splx(s);
+}
+
+/*
+ * Cancel all timers for tcp tp.
+ */
+tcp_tcancel(tp)
+	struct tcb *tp;
+{
+	register u_char *tmp = &tp->t_init;
+	register int i;
+
+	for (i = 0; i < TNTIMERS; i++)
+		*tmp++ = 0;
 }
 
 /*
@@ -73,7 +100,7 @@ COUNT(TCP_USRREQ);
 	 * Passive open.  Create a tcp control block
 	 * and enter listen state.
 	 */
-	case IUOPENA:				/* 2 */
+	case IUOPENA:
 		if (nstate != 0 && nstate != CLOSED)
 			goto bad;
 		tcp_open(tp, PASSIVE);
@@ -84,7 +111,7 @@ COUNT(TCP_USRREQ);
 	 * Active open.  Create a tcp control block,
 	 * send a SYN and enter SYN_SENT state.
 	 */
-	case IUOPENR:				/* 1 */
+	case IUOPENR:
 		if (nstate != 0 && nstate != CLOSED)
 			goto bad;
 		tcp_open(tp, ACTIVE);
@@ -106,7 +133,7 @@ COUNT(TCP_USRREQ);
 		 * delete the tcb.
 		 */
 		case LISTEN:
-		case SYN_SENT:			/* 10 */
+		case SYN_SENT:
 			tcp_close(tp, UCLOSED);
 			nstate = CLOSED;
 			break;
@@ -125,10 +152,10 @@ COUNT(TCP_USRREQ);
 		 *	   (to TIME_WAIT), and then timeout.
 		 * In any case this starts with a transition to FIN_W1 here.
 		 */
-		case SYN_RCVD:			/* 24,25 */
+		case SYN_RCVD:
 		case L_SYN_RCVD:
 		case ESTAB:	
-		case CLOSE_WAIT:		/* 10 */
+		case CLOSE_WAIT:
 			tp->tc_flags |= TC_SND_FIN;
 			tcp_sndctl(tp);
 			tp->tc_flags |= TC_USR_CLOSED;
@@ -158,7 +185,7 @@ COUNT(TCP_USRREQ);
 	 * Timers should expire only on open connections
 	 * not in LISTEN state.
 	 */
-	case ISTIMER:				/* 14,17,34,35,36,37,38 */
+	case ISTIMER:
 		switch (nstate) {
 
 		case 0:
@@ -181,10 +208,10 @@ COUNT(TCP_USRREQ);
 	 * out of the TCP buffers after foreign close) and there
 	 * is no more data, institute a close.
 	 */
-	case IURECV:				/* 42 */
+	case IURECV:
 		if (nstate < ESTAB || nstate == CLOSED)
 			goto bad;
-		tcp_sndwin(tp);		/* send new window */
+		tcp_sndwin(tp);
 		if ((tp->tc_flags&TC_FIN_RCVD) &&
 		    (tp->tc_flags&TC_USR_CLOSED) == 0 &&
 		    rcv_empty(tp))
@@ -201,7 +228,7 @@ COUNT(TCP_USRREQ);
 	 * Allowed only on ESTAB connection and after FIN from
 	 * foreign peer.
 	 */
-	case IUSEND:				/* 40,41 */
+	case IUSEND:
 		switch (nstate) {
 
 		case ESTAB:
@@ -223,7 +250,7 @@ COUNT(TCP_USRREQ);
 	 * then we need to send an RST.  In any case we then 
 	 * enter closed state.
 	 */
-	case IUABORT:				/* 44,45 */
+	case IUABORT:
 		if (nstate == 0 || nstate == CLOSED)
 			break;
 		switch (nstate) {
@@ -251,7 +278,7 @@ COUNT(TCP_USRREQ);
 	 * Network down entry.  Discard the tcb and force
 	 * the state to be closed, ungracefully.
 	 */
-	case INCLEAR:				/* 47 */
+	case INCLEAR:
 		if (nstate == 0 || nstate == CLOSED)
 			break;
 		tcp_close(tp, UNETDWN);
@@ -346,31 +373,23 @@ tcp_close(tp, state)
 COUNT(TCP_CLOSE);
 
 	/*
-	 * Cancel all timers.
-	 * SHOULD LOOP HERE !?!
-	 */
-	tp->t_init = tp->t_rexmt = tp->t_rexmttl = tp->t_persist = 
-	    tp->t_finack = 0;
-
-	/*
-	 * Remque the tcb
+	 * Remove from tcb queue and cancel timers.
 	 */
 	tp->tcb_prev->tcb_next = tp->tcb_next;
 	tp->tcb_next->tcb_prev = tp->tcb_prev;
+	tcp_tcancel(tp);
 
 	/*
-	 * Discard all buffers...
-	 *
-	 * SHOULD COUNT EACH RESOURCE TO 0 AND PANIC IF CONFUSED
+	 * Discard all buffers.
 	 */
 	for (t = tp->t_rcv_next; t != (struct th *)tp; t = t->t_next)
 		m_freem(dtom(t));
-	if (up->uc_rbuf != NULL) {
+	if (up->uc_rbuf) {
 		m_freem(up->uc_rbuf);
 		up->uc_rbuf = NULL;
 	}
 	up->uc_rcc = 0;
-	if (up->uc_sbuf != NULL) {
+	if (up->uc_sbuf) {
 		m_freem(up->uc_sbuf);
 		up->uc_sbuf = NULL;
 	}
@@ -381,47 +400,34 @@ COUNT(TCP_CLOSE);
 	}
 
 	/*
-	 * Free tcp send template.
+	 * Free tcp send template, the tcb itself,
+	 * the routing table entry, and the space we had reserved
+	 * in the meory pool.
 	 */
-	if (up->uc_template) {
-		m_free(dtom(up->uc_template));
-		up->uc_template = 0;
+	if (tp->t_template) {
+		m_free(dtom(tp->t_template));
+		tp->t_template = 0;
 	}
-
-	/*
-	 * Free the tcb
-	 * WOULD THIS BETTER BE DONE AT USER CLOSE?
-	 */
 	wmemfree((caddr_t)tp, 1024);
-	up->uc_tcb = NULL;
-
-	/*
-	 * Lower buffer allocation.
-	 * SHOULD BE A M_ROUTINE CALL.
-	 */
-	mbstat.m_lowat -= up->uc_snd + (up->uc_rhiwat/MSIZE) + 2;
-	mbstat.m_hiwat = 2 * mbstat.m_lowat;
-
-	/*
-	 * Free routing table entry.
-	 */
-	if (up->uc_host != NULL) {
+	up->uc_pcb = 0;
+	if (up->uc_host) {
 		h_free(up->uc_host);
-		up->uc_host = NULL;
+		up->uc_host = 0;
 	}
+	m_release(up->uc_snd + (up->uc_rhiwat/MSIZE) + 2);
 
 	/*
 	 * If user has initiated close (via close call), delete ucb
 	 * entry, otherwise just wakeup so user can issue close call
 	 */
-	if (tp->tc_flags&TC_USR_ABORT)
-        	up->uc_proc = NULL;
-	else
+	if (tp->tc_flags&TC_USR_ABORT)			/* ### */
+        	up->uc_proc = NULL;			/* ### */
+	else						/* ### */
         	to_user(up, state);			/* ### */
 }
 
 /*
- * User routine to send data queue headed by m0 into the protocol.
+ * Send data queue headed by m0 into the protocol.
  */
 tcp_usrsend(tp, m0)
 	register struct tcb *tp;

@@ -1,4 +1,4 @@
-/* if_en.c 4.3 81/11/01 */
+/* if_en.c 4.4 81/11/04 */
 
 #include "en.h"
 /*
@@ -383,7 +383,7 @@ COUNT(ENRINT);
 	hlen = L1822 + sizeof (struct ip);
 	switch (ip->ip_p) {
 
-	case TCPROTO:
+	case IPPROTO_TCP:
 		hlen += ((struct th *)ip)->t_off * 4;
 		break;
 	}

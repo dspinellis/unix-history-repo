@@ -1,4 +1,4 @@
-/* tcp_input.c 1.18 81/11/03 */
+/* tcp_input.c 1.19 81/11/04 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -196,7 +196,7 @@ goodseg:
 			goto done;
 		}
 		tp->t_fport = n->t_src;
-		tp->t_ucb->uc_template = tcp_template(tp);
+		tp->t_template = tcp_template(tp);
 		tcp_ctldat(tp, n, 1);
 		if (tp->tc_flags&TC_FIN_RCVD) {
 			tp->t_finack = T_2ML;			/* 3 */

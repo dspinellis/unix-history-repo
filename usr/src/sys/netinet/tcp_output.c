@@ -1,4 +1,4 @@
-/* tcp_output.c 4.8 81/11/01 */
+/* tcp_output.c 4.9 81/11/04 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -178,7 +178,7 @@ tcp_template(tp)
 	n = mtod(m, struct th *);
 	n->t_next = n->t_prev = 0;
 	n->t_x1 = 0;
-	n->t_pr = TCPROTO;
+	n->t_pr = IPPROTO_TCP;
 	n->t_len = htons(sizeof (struct th) - sizeof (struct ip));
 	n->t_s.s_addr = n_lhost.s_addr;
 	n->t_d.s_addr = h->h_addr.s_addr;
@@ -210,7 +210,7 @@ tcp_output(tp, flags, len, dat)
 #endif
 COUNT(TCP_OUTPUT);
 
-	if ((t = tp->t_ucb->uc_template) == 0)
+	if ((t = tp->t_template) == 0)
 		return (0);
 	MGET(m, 0);
 	if (m == 0)
