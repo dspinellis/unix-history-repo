@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)raw_usrreq.c	7.10 (Berkeley) %G%
+ *	@(#)raw_usrreq.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -27,7 +27,6 @@ raw_init()
 {
 
 	rawcb.rcb_next = rawcb.rcb_prev = &rawcb;
-	rawintrq.ifq_maxlen = IFQ_MAXLEN;
 }
 
 
@@ -276,5 +275,3 @@ release:
 		m_freem(m);
 	return (error);
 }
-
-rawintr() {} /* XXX - referenced by locore.  will soon go away */
