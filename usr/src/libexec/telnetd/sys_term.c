@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_term.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_term.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -1055,13 +1055,26 @@ login_tty(t)
 # ifdef	TIOCSCTTY
 	if (ioctl(t, TIOCSCTTY, (char *)0) < 0)
 		fatalperror(net, "ioctl(sctty)");
+#  if defined(CRAY) && defined(SESS_CTTY)	/* SESS_CTTY is in param.h */
+	/*
+	 * Close the hard fd to /dev/ttypXXX, and re-open through
+	 * the indirect /dev/tty interface.
+	 */
+	close(t);
+	if ((t = open("/dev/tty", O_RDWR)) < 0)
+		fatalperror(net, "open(/dev/tty)");
+#  endif
 # else
 	close(open(line, O_RDWR));
 # endif
-	(void) dup2(t, 0);
-	(void) dup2(t, 1);
-	(void) dup2(t, 2);
-	close(t);
+	if (t != 0)
+		(void) dup2(t, 0);
+	if (t != 1)
+		(void) dup2(t, 1);
+	if (t != 2)
+		(void) dup2(t, 2);
+	if (t > 2)
+		close(t);
 	return(0);
 }
 #endif	/* BSD <= 43 */
