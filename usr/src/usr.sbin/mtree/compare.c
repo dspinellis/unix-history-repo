@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compare.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)compare.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -139,11 +139,18 @@ typeerr:		LABEL;
 		    tab, s->st_size, p->fts_statp->st_size);
 		tab = "\t";
 	}
-	if (s->flags & F_TIME && s->st_mtime != p->fts_statp->st_mtime) {
+	/*
+	 * XXX
+	 * Catches nano-second differences, but doesn't display them.
+	 */
+	if (s->flags & F_TIME &&
+	    s->st_mtimespec.ts_sec != p->fts_statp->st_mtimespec.ts_sec ||
+	    s->st_mtimespec.ts_nsec != p->fts_statp->st_mtimespec.ts_nsec) {
 		LABEL;
 		(void)printf("%smodification time (%.24s, ",
-		    tab, ctime(&s->st_mtime));
-		(void)printf("%.24s)\n", ctime(&p->fts_statp->st_mtime));
+		    tab, ctime(&s->st_mtimespec.ts_sec));
+		(void)printf("%.24s)\n",
+		    ctime(&p->fts_statp->st_mtimespec.ts_sec));
 		tab = "\t";
 	}
 	if (s->flags & F_CKSUM)
