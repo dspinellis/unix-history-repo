@@ -1,20 +1,20 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)m1	8.1 (Berkeley) %G%
+.\"	@(#)m1	6.3 (Berkeley) %G%
 .\"
-.pn8
+.nr p 0 1
 .tr |
 .tr ~|
 .rm mx
 .br
 .ce
-.ftB
-.ps+2
+.ft B
+.ps +2
 .rs
 .\".sp1.0i
 REFERENCE MANUAL
-.ftR
-.ps-2
+.ft R
+.ps -2
 .sp
 .mh
 General Explanation
@@ -182,9 +182,9 @@ then
 .br
 .tr &.
 .x1
-.ftB
+.ft B
 \&.ll  (4.25i\(pl\enxP\(pl3)\(sl2u
-.ftR
+.ft R
 .x2
 will set the line length to 1\(sl2 the sum of 4.25 inches \(pl 2 picas \(pl 30 points.
 .sc
@@ -554,8 +554,8 @@ using \fBtr\fR (\(sc10.5).
 .tr &.
 .sc
 Interrupted text.
-The copying of a input line in \fInofill\f (non-fill) mode can be \fIinterrupted\fR
-by terminating
+The copying of a input line in \fInofill\fR
+(non-fill) mode can be \fIinterrupted\fR by terminating
 the partial line with a \fB\ec\fR.
 The \fInext\fR encountered input text line will be considered to be a continuation
 of the same line of input text.
@@ -575,7 +575,7 @@ the line is output without adjustment.
 Text lines beginning with space characters
 and empty text lines (blank lines) also cause a break.
 .bt
-.lg0
+.lg 0
 \fB&fi\fR	\(fill|on	-	B,E	Fill subsequent output lines.
 .lg
 The register \fB.u\fR is 1 in fill mode and 0 in nofill mode.
