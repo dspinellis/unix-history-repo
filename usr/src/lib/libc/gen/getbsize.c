@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getbsize.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getbsize.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -19,59 +19,63 @@ getbsize(prog, headerlenp, blocksizep)
 	long *blocksizep;
 {
 	static char header[20];
-	long blocksize;
-	char *ep, *p;
+	long n, max, mul, blocksize;
+	char *ep, *p, *form;
 
-#define	Kb	1024
-#define	Mb	1048576
-#define	Gb	1073741824
+#define	KB	(1024L)
+#define	MB	(1024L * 1024L)
+#define	GB	(1024L * 1024L * 1024L)
+#define	MAXB	GB		/* No tera, peta, nor exa. */
+	form = "";
 	if ((p = getenv("BLOCKSIZE")) != NULL && *p != '\0') {
-		blocksize = strtol(p, &ep, 10);
-		switch(*ep) {
+		if ((n = strtol(p, &ep, 10)) < 0)
+			goto underflow;
+		if (n == 0)
+			n = 1;
+		if (*ep && ep[1])
+			goto fmterr;
+		switch (*ep) {
 		case 'G': case 'g':
-			if (ep[1])
-				goto fmterr;
-			if (blocksize > 1)
-				goto overflow;
-			*headerlenp = snprintf(header, sizeof(header),
-			    "%dG-blocks", blocksize);
-			*blocksizep = blocksize * Gb;
-			return (header);
-		case 'M': case 'm':
-			if (ep[1])
-				goto fmterr;
-			*headerlenp = snprintf(header, sizeof(header),
-			    "%dM-blocks", blocksize);
-			*blocksizep = blocksize * Mb;
-			return (header);
+			form = "G";
+			max = MAXB / GB;
+			mul = GB;
+			break;
 		case 'K': case 'k':
-			if (ep[1])
-				goto fmterr;
-			*headerlenp = snprintf(header, sizeof(header),
-			    "%dK-blocks", blocksize);
-			*blocksizep = blocksize * Kb;
-			return (header);
+			form = "K";
+			max = MAXB / KB;
+			mul = KB;
+			break;
+		case 'M': case 'm':
+			form = "M";
+			max = MAXB / MB;
+			mul = MB;
+			break;
 		case '\0':
-			if (blocksize > Gb) {
-overflow:			(void)fprintf(stderr,
-				    "%s: maximum blocksize is 1G\n", prog);
-				blocksize = 512;
-			} else if (blocksize < 512) {
-				(void)fprintf(stderr,
-				    "%s: minimum blocksize is 512\n", prog);
-				blocksize = 512;
-			}
+			max = MAXB;
+			mul = 1;
 			break;
 		default:
 fmterr:			(void)fprintf(stderr,
 			    "%s: %s: unknown blocksize\n", prog, p);
-			blocksize = 512;
+			n = 512;
+			mul = 1;
 			break;
 		}
+		if (n > max) {
+			(void)fprintf(stderr,
+			    "%s: maximum blocksize is %dG\n", prog, MAXB / GB);
+			n = max;
+		}
+		if ((blocksize = n * mul) < 512) {
+underflow:		(void)fprintf(stderr,
+			    "%s: minimum blocksize is 512\n", prog);
+			form = "";
+			blocksize = n = 512;
+		}
 	} else
-		blocksize = 512;
+		blocksize = n = 512;
 
-	*headerlenp = snprintf(header, sizeof(header), "%d-blocks", blocksize);
+	*headerlenp = snprintf(header, sizeof(header), "%d%s-blocks", n, form);
 	*blocksizep = blocksize;
 	return (header);
 }
