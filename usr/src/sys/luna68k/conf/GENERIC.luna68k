@@ -1,4 +1,4 @@
-#	@(#)GENERIC.luna68k	7.1 (Berkeley) %G%
+#	@(#)GENERIC.luna68k	7.2 (Berkeley) %G%
 #
 
 machine		"luna68k"
@@ -27,11 +27,16 @@ options		"COMPAT_42"
 options		KTRACE
 #options	GATEWAY		# slip needs this for packet forwarding
 
+options		SWAPPAGER
+options		VNODEPAGER
+options		DEVPAGER
+
 # OSI stuff:
 #options	ISO
 #options	TPIP
 #options	EON
 
+options		DEBUG
 options		DEBUGPRINT
 
 config		vmunix swap generic
@@ -48,7 +53,3 @@ device		le0	at scode?
 pseudo-device	pty
 pseudo-device	loop
 pseudo-device	ether
-
-pseudo-device	swappager
-pseudo-device	vnodepager
-pseudo-device	devpager
