@@ -1,4 +1,4 @@
-/*	cmds.c	4.3	81/06/02	*/
+/*	cmds.c	4.4	81/06/09	*/
 #include "tip.h"
 /*
  * tip
@@ -595,6 +595,12 @@ variable()
 	if (vtable[SCRIPT].v_access&CHANGED) {
 		vtable[SCRIPT].v_access &= ~CHANGED;
 		setscript();
+		/*
+		 * So that "set record=blah script" doesn't
+		 *  cause two transactions to occur.
+		 */
+		if (vtable[RECORD].v_access&CHANGED)
+			vtable[RECORD].v_access &= ~CHANGED;
 	}
 	if (vtable[RECORD].v_access&CHANGED) {
 		vtable[RECORD].v_access &= ~CHANGED;
