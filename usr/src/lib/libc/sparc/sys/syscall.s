@@ -12,13 +12,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)syscall.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)syscall.s	5.2 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 #include "SYS.h"
 
 ENTRY(syscall)
-	mov	0|SYSCALL_RFLAG, %g1	! 0 == indir
-	add	%o7, 8, %g7
+	mov	0|SYSCALL_G2RFLAG, %g1	! 0 == indir
+	add	%o7, 8, %g2
 	t	ST_SYSCALL
 	ERROR()
