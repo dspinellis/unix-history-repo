@@ -1,15 +1,18 @@
 /*
  * Copyright (c) University of British Columbia, 1984
- * Copyright (c) 1991 The Regents of the University of California.
+ * Copyright (C) Computer Science Department IV, 
+ * 		 University of Erlangen-Nuremberg, Germany, 1992
+ * Copyright (c) 1991, 1992  The Regents of the University of California.
  * All rights reserved.
  *
- * This code is derived from software contributed to Berkeley by
- * the Laboratory for Computation Vision and the Computer Science Department
- * of the University of British Columbia.
+ * This code is derived from software contributed to Berkeley by the
+ * Laboratory for Computation Vision and the Computer Science Department
+ * of the the University of British Columbia and the Computer Science
+ * Department (IV) of the University of Erlangen-Nuremberg, Germany.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_input.c	7.16 (Berkeley) %G%
+ *	@(#)pk_input.c	7.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -22,9 +25,37 @@
 
 #include <net/if.h>
 
+#include <netccitt/dll.h>
 #include <netccitt/x25.h>
 #include <netccitt/pk.h>
 #include <netccitt/pk_var.h>
+#include <netccitt/llc_var.h>
+
+struct pkcb_q pkcb_q = {&pkcb_q, &pkcb_q};
+
+/*
+ * ccittintr() is the generic interrupt handler for HDLC, LLC2, and X.25. This
+ * allows to have kernel running X.25 but no HDLC or LLC2 or both (in case we
+ * employ boards that do all the stuff themselves, e.g. ADAX X.25 or TPS ISDN.)
+ */
+void
+ccittintr()
+{
+	extern struct ifqueue pkintrq;
+	extern struct ifqueue hdintrq;
+	extern struct ifqueue llcintrq;
+
+#ifdef HDLC
+	if (hdintrq.ifq_len)
+		hdintr ();
+#endif
+#ifdef LLC
+	if (llcintrq.ifq_len)
+		llcintr ();
+#endif
+	if (pkintrq.ifq_len)
+		pkintr ();
+}
 
 struct pkcb *
 pk_newlink (ia, llnext)
@@ -51,12 +82,12 @@ caddr_t llnext;
 		return ((struct pkcb *)0);
 	bzero ((caddr_t)pkp, size);
 	pkp -> pk_lloutput = pp -> pr_output;
+	pkp -> pk_llctlinput = (caddr_t (*)())pp -> pr_ctlinput;
 	pkp -> pk_xcp = xcp;
 	pkp -> pk_ia = ia;
 	pkp -> pk_state = DTE_WAITING;
-	pkp -> pk_next = pkcbhead;
 	pkp -> pk_llnext = llnext;
-	pkcbhead = pkp;
+	insque(pkp, &pkcb_q);
 
 	/*
 	 * set defaults
@@ -73,6 +104,68 @@ caddr_t llnext;
 	(void)pk_resize(pkp);
 	return (pkp);
 }
+
+
+pk_dellink (pkp)
+register struct pkcb *pkp;
+{
+	register int i;
+	register struct protosw *pp;
+	
+	/*
+	 * Essentially we have the choice to
+	 * (a) go ahead and let the route be deleted and
+	 *     leave the pkcb associated with that route
+	 *     as it is, i.e. the connections stay open
+	 * (b) do a pk_disconnect() on all channels associated
+	 *     with the route via the pkcb and then proceed.
+	 *
+	 * For the time being we stick with (b)
+	 */
+	
+	for(i = 1; i < pkp->pk_maxlcn; ++i)
+		if (pkp->pk_chan[i])
+			pk_disconnect(pkp->pk_chan[i]);
+
+	/*
+	 * Free the pkcb
+	 */
+
+	/*
+	 * First find the protoswitch to get hold of the link level
+	 * protocol to be notified that the packet level entity is
+	 * dissolving ...
+	 */
+	pp = pffindproto (AF_CCITT, (int)pkp ->pk_xcp -> xc_lproto, 0);
+	if (pp == 0 || pp -> pr_output == 0) {
+		pk_message (0, pkp -> pk_xcp, "link level protosw error");
+		return(EPROTONOSUPPORT);
+	}
+
+	pkp -> pk_refcount--;
+	if (!pkp -> pk_refcount) {
+		struct dll_ctlinfo ctlinfo;
+
+		remque(pkp);
+		if (pkp -> pk_rt -> rt_llinfo == (caddr_t) pkp)
+			pkp -> pk_rt -> rt_llinfo = (caddr_t) NULL;
+		
+		/*
+		 * Tell the link level that the pkcb is dissolving
+		 */
+		if (pp -> pr_ctlinput && pkp -> pk_llnext) {
+			ctlinfo.dlcti_pcb = pkp -> pk_llnext;
+			ctlinfo.dlcti_rt = pkp -> pk_rt;
+			(pp -> pr_ctlinput)(PRC_DISCONNECT_REQUEST, 
+					    pkp -> pk_xcp, &ctlinfo);
+		}
+		free((caddr_t) pkp -> pk_chan, M_IFADDR);
+		free((caddr_t) pkp, M_PCB);
+	}
+
+	return (0);
+}
+
 
 pk_resize (pkp)
 register struct pkcb *pkp;
@@ -116,11 +209,13 @@ register struct pkcb *pkp;
  *  This procedure is called by the link level whenever the link
  *  becomes operational, is reset, or when the link goes down. 
  */
-
-pk_ctlinput (code, pkp)
-register struct pkcb *pkp;
+/*VARARGS*/
+caddr_t
+pk_ctlinput (code, src, addr)
+	struct sockaddr *src;
+	caddr_t addr;
 {
-
+	register struct pkcb *pkp = (struct pkcb *)addr;
 
 	switch (code) {
 	case PRC_LINKUP: 
@@ -136,7 +231,26 @@ register struct pkcb *pkp;
 	case PRC_LINKRESET: 
 		pk_restart (pkp, X25_RESTART_NETWORK_CONGESTION);
 		break;
+		
+	case PRC_CONNECT_INDICATION: {
+		struct rtentry *llrt;
 
+		if ((llrt = rtalloc1(src, 0)) == 0)
+			return 0;
+		else llrt->rt_refcnt--;
+		
+		pkp = (((struct npaidbentry *)llrt->rt_llinfo)->np_rt) ?
+			(struct pkcb *)(((struct npaidbentry *)llrt->rt_llinfo)->np_rt->rt_llinfo) : (struct pkcb *) 0;
+		if (pkp == (struct pkcb *) 0)
+			return 0;
+		pkp->pk_llnext = addr;
+
+		return ((caddr_t) pkp);
+	}
+	case PRC_DISCONNECT_INDICATION:
+		pk_restart (pkp, -1) ;  /* Clear all active circuits */
+		pkp->pk_state = DTE_WAITING;
+		pkp->pk_llnext = (caddr_t) 0;
 	}
 	return (0);
 }
@@ -183,6 +297,9 @@ struct mbuf_cache pk_input_cache = {0 };
  *
  */
 
+#define RESTART_DTE_ORIGINATED(xp) (((xp) -> packet_cause == X25_RESTART_DTE_ORIGINATED) || \
+			    ((xp) -> packet_cause >= X25_RESTART_DTE_ORIGINATED2))
+
 pk_input (m)
 register struct mbuf *m;
 {
@@ -196,6 +313,7 @@ register struct mbuf *m;
 		mbuf_cache(&pk_input_cache, m);
 	if ((m->m_flags & M_PKTHDR) == 0)
 		panic("pkintr");
+
 	if ((pkp = (struct pkcb *)m->m_pkthdr.rcvif) == 0)
 		return;
 	xp = mtod (m, struct x25_packet *);
@@ -391,7 +509,7 @@ register struct mbuf *m;
 		if (so == 0)
 			break;
 		if (lcp -> lcd_flags & X25_MQBIT) {
-			octet t = (xp -> q_bit) ? t = 0x80 : 0;
+			octet t = (X25GBITS(xp -> bits, q_bit)) ? t = 0x80 : 0;
 
 			if (MBIT(xp))
 				t |= 0x40;
@@ -405,7 +523,8 @@ register struct mbuf *m;
 		 * Discard Q-BIT packets if the application
 		 * doesn't want to be informed of M and Q bit status
 		 */
-		if (xp -> q_bit && (lcp -> lcd_flags & X25_MQBIT) == 0) {
+		if (X25GBITS(xp -> bits, q_bit) 
+		    && (lcp -> lcd_flags & X25_MQBIT) == 0) {
 			m_freem (m);
 			/*
 			 * NB.  This is dangerous: sending a RR here can
@@ -543,10 +662,32 @@ register struct mbuf *m;
 	case RESTART + READY: 
 		switch (pkp -> pk_state) {
 		case DTE_SENT_RESTART: 
-			/* Restart collision. */
+			/* 
+			 * Restart collision.
+			 * If case the restart cause is "DTE originated" we
+			 * have a DTE-DTE situation and are trying to resolve
+			 * who is going to play DTE/DCE [ISO 8208:4.2-4.5]
+			 */
+			if (RESTART_DTE_ORIGINATED(xp)) {
+				pk_restart (pkp, X25_RESTART_DTE_ORIGINATED);
+				pk_message (0, pkp -> pk_xcp,
+					    "RESTART collision");
+				if ((pkp -> pk_restartcolls++) > MAXRESTARTCOLLISIONS) {
+					pk_message (0, pkp -> pk_xcp,
+						    "excessive RESTART collisions");
+					pkp -> pk_restartcolls = 0;
+				}
+				break;
+			}
 			pkp -> pk_state = DTE_READY;
+			pkp -> pk_dxerole |= DTE_PLAYDTE;
+			pkp -> pk_dxerole &= ~DTE_PLAYDCE;
 			pk_message (0, pkp -> pk_xcp,
 				"Packet level operational");
+			pk_message (0, pkp -> pk_xcp, 
+				    "Assuming DTE role");
+			if (pkp -> pk_dxerole & DTE_CONNECTPENDING)
+				pk_callcomplete(pkp);
 			break;
 
 		default: 
@@ -555,6 +696,20 @@ register struct mbuf *m;
 			pkp -> pk_chan[0] -> lcd_template = pk_template (0,
 				X25_RESTART_CONFIRM);
 			pk_output (pkp -> pk_chan[0]);
+			pkp -> pk_state = DTE_READY;
+			pkp -> pk_dxerole |= RESTART_DTE_ORIGINATED(xp) ? DTE_PLAYDCE :
+				DTE_PLAYDTE;
+			if (pkp -> pk_dxerole & DTE_PLAYDTE) {
+				pkp -> pk_dxerole &= ~DTE_PLAYDCE;
+				pk_message (0, pkp -> pk_xcp, 
+					    "Assuming DTE role");
+			} else {
+				pkp -> pk_dxerole &= ~DTE_PLAYDTE;
+				pk_message (0, pkp -> pk_xcp, 
+					 "Assuming DCE role");
+			}
+			if (pkp -> pk_dxerole & DTE_CONNECTPENDING)
+				pk_callcomplete(pkp);
 		}
 		break;
 
@@ -566,14 +721,21 @@ register struct mbuf *m;
 		switch (pkp -> pk_state) {
 		case DTE_SENT_RESTART: 
 			pkp -> pk_state = DTE_READY;
+			pkp -> pk_dxerole |= DTE_PLAYDTE;
+			pkp -> pk_dxerole &= ~DTE_PLAYDCE;
 			pk_message (0, pkp -> pk_xcp,
-				"Packet level operational");
+				    "Packet level operational");
+			pk_message (0, pkp-> pk_xcp,
+				    "Assuming DTE role");
+			if (pkp -> pk_dxerole & DTE_CONNECTPENDING)
+				pk_callcomplete(pkp);
 			break;
 
 		default: 
 			/* Restart local procedure error. */
 			pk_restart (pkp, X25_RESTART_LOCAL_PROCEDURE_ERROR);
 			pkp -> pk_state = DTE_SENT_RESTART;
+			pkp -> pk_dxerole &= ~(DTE_PLAYDTE | DTE_PLAYDCE);
 		}
 		break;
 
@@ -646,18 +808,18 @@ register struct x25config *xcp;
 	sa -> x25_len = sizeof (*sa);
 	sa -> x25_family = AF_CCITT;
 	if (iscalling) {
-		cp = a -> address_field + (a -> called_addrlen / 2);
-		count = a -> calling_addrlen;
-		pk_simple_bsd (cp, buf, a -> called_addrlen, count);
+		cp = a -> address_field + (X25GBITS(a -> addrlens, called_addrlen) / 2);
+		count = X25GBITS(a -> addrlens, calling_addrlen);
+		pk_simple_bsd (cp, buf, X25GBITS(a -> addrlens, called_addrlen), count);
 	} else {
-		count = a -> called_addrlen;
+		count = X25GBITS(a -> addrlens, called_addrlen);
 		pk_simple_bsd (a -> address_field, buf, 0, count);
 	}
 	if (xcp -> xc_addr.x25_net && (xcp -> xc_nodnic || xcp ->xc_prepnd0)) {
 		octet dnicname[sizeof(long) * NBBY/3 + 2];
 
-		sprintf ((char *)dnicname, "%d", xcp -> xc_addr.x25_net);
-		prune_dnic (buf, sa -> x25_addr, dnicname, xcp);
+		sprintf ((char *) dnicname, "%d", xcp -> xc_addr.x25_net);
+		prune_dnic ((char *)buf, sa -> x25_addr, dnicname, xcp);
 	} else
 		bcopy ((caddr_t)buf, (caddr_t)sa -> x25_addr, count + 1);
 }
@@ -718,7 +880,7 @@ struct pkcb *pkp;
 	sa = mtod (m, struct sockaddr_x25 *);
 	a = (struct x25_calladdr *) &xp -> packet_data;
 	facp = u = (octet *) (a -> address_field +
-		((a -> called_addrlen + a -> calling_addrlen + 1) / 2));
+		((X25GBITS(a -> addrlens, called_addrlen) + X25GBITS(a -> addrlens, calling_addrlen) + 1) / 2));
 	u += *u + 1;
 	udlen = min (16, ((octet *)xp) + len - u);
 	if (udlen < 0)
@@ -747,7 +909,7 @@ struct pkcb *pkp;
 		 * don't accept incoming calls with the D-Bit on
 		 * unless the server agrees
 		 */
-		if (xp -> d_bit && !(sxp -> x25_opts.op_flags & X25_DBIT)) {
+		if (X25GBITS(xp -> bits, d_bit) && !(sxp -> x25_opts.op_flags & X25_DBIT)) {
 			errstr = "incoming D-Bit mismatch";
 			break;
 		}
@@ -785,9 +947,9 @@ struct pkcb *pkp;
 		lcp -> lcd_craddr = &lcp->lcd_faddr;
 		lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_CALL_ACCEPTED);
 		if (lcp -> lcd_flags & X25_DBIT) {
-			if (xp -> d_bit)
-				mtod(lcp -> lcd_template,
-					struct x25_packet *) -> d_bit = 1;
+			if (X25GBITS(xp -> bits, d_bit))
+				X25SBITS(mtod(lcp -> lcd_template,
+					struct x25_packet *) -> bits, d_bit, 1);
 			else
 				lcp -> lcd_flags &= ~X25_DBIT;
 		}
@@ -844,12 +1006,12 @@ struct mbuf *m;
 	lcp -> lcd_state = DATA_TRANSFER;
 	if (lcp -> lcd_so)
 		soisconnected (lcp -> lcd_so);
-	if ((lcp -> lcd_flags & X25_DBIT) && (xp -> d_bit == 0))
+	if ((lcp -> lcd_flags & X25_DBIT) && (X25GBITS(xp -> bits, d_bit) == 0))
 		lcp -> lcd_flags &= ~X25_DBIT;
 	if (len > 3) {
 		ap = (struct x25_calladdr *) &xp -> packet_data;
-		fcp = (octet *) ap -> address_field + (ap -> calling_addrlen +
-			ap -> called_addrlen + 1) / 2;
+		fcp = (octet *) ap -> address_field + (X25GBITS(ap -> addrlens, calling_addrlen) +
+			X25GBITS(ap -> addrlens, called_addrlen) + 1) / 2;
 		if (fcp + *fcp <= ((octet *)xp) + len)
 			pk_parse_facilities (fcp, lcp -> lcd_ceaddr);
 	}

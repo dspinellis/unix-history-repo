@@ -1,15 +1,18 @@
-/*
- * Copyright (c) University of British Columbia, 1984
- * Copyright (c) 1990 The Regents of the University of California.
+/* 
+ * Copyright (c) Computing Centre, University of British Columbia, 1984
+ * Copyright (C) Computer Science Department IV, 
+ * 		 University of Erlangen-Nuremberg, Germany, 1990, 1992
+ * Copyright (c) 1990, 1992   Regents of the University of California.
  * All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * the Laboratory for Computation Vision and the Computer Science Department
- * of the University of British Columbia.
+ * 
+ * This code is derived from software contributed to Berkeley by the
+ * Laboratory for Computation Vision and the Computer Science Department
+ * of the the University of British Columbia and the Computer Science
+ * Department (IV) of the University of Erlangen-Nuremberg, Germany.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_timer.c	7.6 (Berkeley) %G%
+ *	@(#)pk_timer.c	7.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -42,7 +45,7 @@ pk_timer ()
 	register struct pklcd *lcp, **pp;
 	register int lcns_jammed, cant_restart;
 
-	for (pkp = pkcbhead; pkp; pkp = pkp->pk_next) {
+	FOR_ALL_PKCBS(pkp) {
 		switch (pkp -> pk_state) {
 		case DTE_SENT_RESTART:
 			lcp = pkp -> pk_chan[0];
@@ -50,9 +53,11 @@ pk_timer ()
 			 * If restart failures are common, a link level
 			 * reset should be initiated here.
 			 */
-			if (lcp -> lcd_timer && --lcp -> lcd_timer == 0)
+			if (lcp -> lcd_timer && --lcp -> lcd_timer == 0) {
 				pk_message (0, pkp -> pk_xcp,
 					"packet level restart failed");
+				pkp -> pk_state = DTE_WAITING;
+			}
 			break;
 
 		case DTE_READY:
@@ -79,6 +84,10 @@ pk_timer ()
 
 				case DATA_TRANSFER:	/* lcn active */
 					cant_restart++;
+					break;
+
+				case LCN_ZOMBIE:       /* zombie state */
+					pk_freelcd (lcp);
 					break;
 				}
 			}
