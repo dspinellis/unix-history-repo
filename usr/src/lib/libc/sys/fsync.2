@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fsync.2	6.1 (Berkeley) %G%
+.\"	@(#)fsync.2	6.2 (Berkeley) %G%
 .\"
 .TH FSYNC 2 ""
 .UC 5
@@ -22,7 +22,7 @@ This normally results in all in-core modified copies
 of buffers for the associated file to be written to a disk.
 .PP
 .I Fsync
-should be used by programs which require a file to be
+should be used by programs that require a file to be
 in a known state; for example in building a simple transaction
 facility.
 .SH "RETURN VALUE
