@@ -1,4 +1,4 @@
-/*	getpwnamuid.c	4.4	84/04/26	*/
+/*	getpwnamuid.c	4.5	84/08/28	*/
 
 #include <stdio.h>
 #include <pwd.h>
