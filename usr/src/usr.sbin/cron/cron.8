@@ -1,4 +1,4 @@
-.\"	@(#)cron.8	6.4 (Berkeley) %G%
+.\"	@(#)cron.8	6.5 (Berkeley) %G%
 .\"
 .TH CRON 8 ""
 .AT 3
@@ -72,7 +72,7 @@ an asterisk meaning all legal values
 .in -2m
 .LP
 The sixth field is a user name: the
-command will be run ``as'' that user.
+command will be run with that user's uid and permissions.
 The seventh field consists of all the text
 on a line following the sixth field,
 including spaces and tabs;
