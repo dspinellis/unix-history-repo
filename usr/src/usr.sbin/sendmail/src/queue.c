@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.33		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.34		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.33		%G%);
+SCCSID(@(#)queue.c	3.34		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -31,25 +31,22 @@ SCCSID(@(#)queue.c	3.33		%G%);
 queueup(df)
 	char *df;
 {
-	char cf[MAXNAME];
+	char *tf;
+	char *qf;
 	register FILE *f;
 	register HDR *h;
 	register ADDRESS *q;
-	extern char *mktemp();
 	register int i;
 
 	/*
 	**  Create control file.
 	*/
 
-	(void) mktemp(cf);
-	f = fopen(cf, "w");
-	if (f == NULL)
 	{
-		syserr("queueup: cannot create control file %s", cf);
+		syserr("queueup: cannot create temp file %s", tf);
 		return;
 	}
-	(void) chmod(cf, 0600);
+	(void) chmod(tf, 0600);
 
 # ifdef DEBUG
 	if (tTd(40, 1))
@@ -312,7 +309,7 @@ orderq()
 		register char *p;
 
 		/* is this an interesting entry? */
-		if (d->d_name[0] != 'c' || d->d_name[1] != 'f')
+		if (d->d_name[0] != 'q' || d->d_name[1] != 'f')
 			continue;
 
 		/* yes -- find the control file location */
@@ -453,6 +450,8 @@ dowork(w)
 		FatalErrors = FALSE;
 		QueueRun = TRUE;
 		MailBack = TRUE;
+		CurEnv->e_qf = w->w_name;
+		CurEnv->e_id = &w->w_name[strlen(QueueDir) + 3];
 
 		/* don't use the headers from sendmail.cf... */
 		CurEnv->e_header = NULL;

@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.99		%G%);
+SCCSID(@(#)deliver.c	3.100		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -886,7 +886,8 @@ giveresponse(stat, force, m)
 
 # ifdef LOG
 	if (LogLevel > ((stat == 0 || stat == EX_TEMPFAIL) ? 3 : 2))
-		syslog(LOG_INFO, "%s: to=%s, stat=%s", MsgId, CurEnv->e_to, statmsg);
+		syslog(LOG_INFO, "%s: to=%s, stat=%s", CurEnv->e_id,
+				  CurEnv->e_to, statmsg);
 # endif LOG
 # ifdef QUEUE
 	if (stat != EX_TEMPFAIL)

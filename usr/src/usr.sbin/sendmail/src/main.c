@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.95		%G%);
+SCCSID(@(#)main.c	3.96		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -143,7 +143,6 @@ main(argc, argv)
 	argv[argc] = NULL;
 	InChannel = stdin;
 	OutChannel = stdout;
-	MsgId = "<none>";
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		(void) signal(SIGINT, finis);
 	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
@@ -404,7 +403,8 @@ main(argc, argv)
 	}
 
 	/*
-	**  Read system control file.
+	**  Do basic initialization.
+	**	Read system control file.
 	**	Extract special fields for local use.
 	*/
 
@@ -795,8 +795,6 @@ finis()
 	**	This clause will arrange to return error messages.
 	*/
 
-	if (ControlFile != NULL)
-		CurEnv->e_queueup = TRUE;
 	checkerrors(CurEnv);
 
 	/*
@@ -805,10 +803,7 @@ finis()
 
 	if (Transcript != NULL)
 		xunlink(Transcript);
-	if (CurEnv->e_df != NULL)
-		xunlink(CurEnv->e_df);
-	if (ControlFile != NULL)
-		xunlink(ControlFile);
+	dropenvelope(CurEnv);
 	exit(ExitStat);
 }
 /*

@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.79		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.80		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -383,8 +383,6 @@ extern char	*AliasFile;	/* location of alias file */
 extern char	*ConfFile;	/* location of configuration file */
 extern char	*StatFile;	/* location of statistics summary */
 extern char	*QueueDir;	/* location of queue directory */
-EXTERN char	*ControlFile;	/* when queued, name of control file temp */
-EXTERN char	*MsgId;		/* Message-Id: for this message */
 extern char	Arpa_Info[];	/* the message number for Arpanet info */
 EXTERN time_t	CurTime;	/* time of this message */
 EXTERN jmp_buf	TopFrame;	/* branch-to-top-of-loop-on-error frame */
@@ -418,3 +416,4 @@ extern bool	sameaddr();
 extern FILE	*dfopen();
 extern EVENT	*setevent();
 extern char	*sfgets();
+extern char	*queuename();

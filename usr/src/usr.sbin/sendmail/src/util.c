@@ -6,7 +6,7 @@
 # include <ctype.h>
 # include "sendmail.h"
 
-SCCSID(@(#)util.c	3.24		%G%);
+SCCSID(@(#)util.c	3.25		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -574,7 +574,7 @@ xunlink(f)
 
 # ifdef LOG
 	if (LogLevel > 20)
-		syslog(LOG_DEBUG, "%s: unlink %s\n", MsgId, f);
+		syslog(LOG_DEBUG, "%s: unlink %s\n", CurEnv->e_id, f);
 # endif LOG
 
 	i = unlink(f);
