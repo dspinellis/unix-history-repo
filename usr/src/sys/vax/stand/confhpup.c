@@ -1,84 +1,23 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)confhpup.c	7.2 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)confhpup.c	7.3 (Berkeley) %G%
  */
 
-#include "../machine/pte.h"
-
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
+#include "param.h"
+#include "fs.h"
+#include "inode.h"
 #include "saio.h"
 
-devread(io)
-	register struct iob *io;
-{
-	int cc;
-
-	io->i_flgs |= F_RDDATA;
-	io->i_error = 0;
-	cc = (*devsw[io->i_ino.i_dev].dv_strategy)(io, READ);
-	io->i_flgs &= ~F_TYPEMASK;
-	return (cc);
-}
-
-devwrite(io)
-	register struct iob *io;
-{
-	int cc;
-
-	io->i_flgs |= F_WRDATA;
-	io->i_error = 0;
-	cc = (*devsw[io->i_ino.i_dev].dv_strategy)(io, WRITE);
-	io->i_flgs &= ~F_TYPEMASK;
-	return (cc);
-}
-
-devopen(io)
-	register struct iob *io;
-{
-
-	return (*devsw[io->i_ino.i_dev].dv_open)(io);
-}
-
-devclose(io)
-	register struct iob *io;
-{
-
-	(*devsw[io->i_ino.i_dev].dv_close)(io);
-}
-
-devioctl(io, cmd, arg)
-	register struct iob *io;
-	int cmd;
-	caddr_t arg;
-{
-
-	return ((*devsw[io->i_ino.i_dev].dv_ioctl)(io, cmd, arg));
-}
-
-/*ARGSUSED*/
-nullsys(io)
-	struct iob *io;
-{
-
-	;
-}
-
-/*ARGSUSED*/
-nullioctl(io, cmd, arg)
-	struct iob *io;
-	int cmd;
-	caddr_t arg;
-{
-
-	return (ECMD);
-}
-
-int	nullsys(), nullioctl();
+int	nullsys();
 int	hpstrategy(), hpopen(), hpioctl();
 int	upstrategy(), upopen(), upioctl();
 
