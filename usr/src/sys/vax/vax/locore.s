@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.1 (Berkeley) %G%
+ *	@(#)locore.s	6.38 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -777,6 +777,13 @@ start:
 1:	pushl	$4; pushl r7; calls $2,_badaddr; tstl r0; bneq 9f
 	acbl	$MAXMEM*1024-1,$64*1024,r7,1b
 9:
+#ifdef  VAX630
+/* leave an area for uVAX II console scratch pad at the top */
+	cmpb	_cpu,$VAX_630
+	bneq	1f
+	subl2   $4096,r7
+1:
+#endif
 /* clear memory from kernel bss and pages for proc 0 u. and page table */
 	movab	_edata,r6
 	movab	_end,r5
