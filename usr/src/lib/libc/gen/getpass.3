@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getpass.3	6.4 (Berkeley) %G%
+.\"     @(#)getpass.3	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETPASS 3
@@ -12,6 +12,7 @@
 .Nm getpass
 .Nd get a password
 .Sh SYNOPSIS
+.Fd #include <pwd.h>
 .Fd #include <unistd.h>
 .Ft char *
 .Fn getpass "const char *prompt"
@@ -25,7 +26,9 @@ If this file is not accessible,
 displays the prompt on the standard error output and reads from the standard
 input.
 .Pp
-The password may be up to 128 characters in length; any additional
+The password may be up to _PASSWORD_LEN (currently 128)
+characters in length.
+Any additional
 characters and the terminating newline character are discarded.
 .Pp
 .Nm Getpass
