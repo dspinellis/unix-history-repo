@@ -1,4 +1,4 @@
-/*	dh.c	6.7	85/03/12	*/
+/*	dh.c	6.8	85/06/04	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -763,16 +763,18 @@ dmintr(dm)
 					tp->t_state |= TS_TTSTOP;
 					dhstop(tp, 0);
 				}
-			} else if ((addr->dmlstat&DML_CAR)==0) {
-				if ((tp->t_state&TS_WOPEN)==0 &&
+			} else if ((addr->dmlstat & DML_CAR)==0) {
+				if ((tp->t_state & TS_CARR_ON) &&
 				    (tp->t_flags & NOHANG) == 0 &&
 				    (dhsoftCAR[dm] & (1<<unit)) == 0) {
-					gsignal(tp->t_pgrp, SIGHUP);
-					gsignal(tp->t_pgrp, SIGCONT);
-					addr->dmlstat = 0;
-					ttyflush(tp, FREAD|FWRITE);
+					if (tp->t_state & TS_ISOPEN) {
+						gsignal(tp->t_pgrp, SIGHUP);
+						gsignal(tp->t_pgrp, SIGCONT);
+						addr->dmlstat = 0;
+						ttyflush(tp, FREAD|FWRITE);
+					}
+					tp->t_state &= ~TS_CARR_ON;
 				}
-				tp->t_state &= ~TS_CARR_ON;
 			} else
 				tp->t_state |= TS_CARR_ON;
 		}
