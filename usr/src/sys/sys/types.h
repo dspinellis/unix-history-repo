@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)types.h	7.17 (Berkeley) %G%
+ *	@(#)types.h	7.18 (Berkeley) %G%
  */
 
 #ifndef _TYPES_H_
@@ -53,6 +53,11 @@ typedef	_CLOCK_T_	clock_t;
 #ifdef	_SIZE_T_
 typedef	_SIZE_T_	size_t;
 #undef	_SIZE_T_
+#endif
+
+#ifdef	_SSIZE_T_
+typedef	_SSIZE_T_	ssize_t;
+#undef	_SSIZE_T_
 #endif
 
 #ifdef	_TIME_T_
