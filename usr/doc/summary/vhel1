@@ -1,0 +1,755 @@
+.SH
+B.  Hardware
+.PP
+The
+.UC "UNIX/32V"
+operating system
+runs on
+a DEC VAX-11/780*
+.FS
+*VAX is a Trademark of Digital Equipment Corporation.
+.FE
+with at least the following equipment:
+.IP
+memory: 256K bytes or more.
+.IP
+disk: RP06, RM03, or equivalent.
+.IP
+tape: any 9-track MASSBUS-compatible tape drive.
+.LP
+The following equipment is strongly recommended:
+.IP
+communications controller such as DZ11 or DL11.
+.IP
+full duplex 96-character ASCII terminals.
+.IP
+extra disk for system backup.
+.LP
+The system is normally distributed on 9-track tape.
+The minimum memory and disk space specified is enough to run
+and maintain
+.UC "UNIX/32V,"
+and to keep all source on line.
+More memory will be needed
+to handle
+a large number of users,
+big data bases, diversified complements of devices, or large
+programs.
+The resident code
+occupies 40-55K bytes depending
+on configuration;
+system data also occupies 30-55K bytes.
+.SH
+C.  Software
+.PP
+Most of the programs available as
+.UC "UNIX/32V"
+commands are listed.
+Source code and printed manuals are 
+distributed for all of the listed software
+except games.
+Almost all of the code is written in C.
+Commands are self-contained and do not require extra setup
+information,
+unless specifically noted as ``interactive.''
+Interactive programs can be made to run from a prepared script
+simply by redirecting input.
+Most programs intended for interactive use
+(e.g., the editor) 
+allow for an escape to
+command level (the Shell).
+Most file processing commands
+can also go from standard input to standard output
+(``filters'').
+The piping facility of the Shell may be used
+to connect such filters directly to the input or output
+of other programs.
+.NH
+Basic Software
+.PP
+This
+includes the time-sharing operating
+system with utilities, and a 
+compiler for the programming language C\(emenough
+software to
+write and run new applications
+and to maintain or modify
+.UC "UNIX/32V"
+itself.
+.NH 2
+Operating System
+.sh UNIX
+The basic resident code
+on which everything else depends.
+Supports the system calls, and maintains the file system.
+A general description of
+.UC UNIX
+design
+philosophy and system facilities appeared in
+the Communications of the ACM, July, 1974.
+A more extensive survey is in the Bell System Technical Journal
+for July-August 1978.
+Capabilities include:
+.op
+Reentrant code for user processes.
+.op
+``Group'' access permissions for cooperative projects,
+with overlapping memberships.
+.op
+Alarm-clock timeouts.
+.op
+Timer-interrupt sampling and interprocess monitoring
+for debugging and measurement.
+.OP
+Multiplexed I/O for machine-to-machine communication.
+.sh DEVICES
+All I/O is logically synchronous.
+I/O devices are simply files in the file system.
+Normally, invisible buffering makes all physical
+record structure and device characteristics transparent and exploits the
+hardware's ability to do overlapped I/O.
+Unbuffered physical record
+I/O is available for unusual applications.
+Drivers for these devices are
+available:
+.op
+Asynchronous interfaces: DZ11, DL11.
+Support for most common ASCII terminals.
+.op
+Automatic calling unit interface: DN11.
+.op
+Printer/plotter: Versatek.
+.op
+Magnetic tape: TE16.
+.op
+Pack type disk: RP06, RM03;
+minimum-latency seek scheduling.
+.op
+Physical memory of VAX-11, or mapped memory in resident system.
+.op
+Null device.
+.op
+Recipies are supplied to aid the construction of drivers for:
+.nf
+.in +2
+Asynchronous interface: DH11.
+Synchronous interface: DU11.
+DECtape: TC11.
+Fixed head disk: RS11, RS03 and RS04.
+Cartridge-type disk: RK05.
+Phototypesetter: Graphic Systems System/1 through DR11C.
+.in -2
+.fi
+.sh BOOT
+Procedures to get
+.UC "UNIX/32V"
+started.
+.NH 2
+User Access Control
+.LP
+.sh LOGIN
+Sign on as a new user.
+.op
+Verify password and establish user's 
+individual and group (project) identity.
+.op
+Adapt to characteristics of terminal.
+.op
+Establish working directory.
+.op
+Announce presence of mail (from MAIL).
+.op
+Publish message of the day.
+.op
+Execute user-specified profile.
+.op
+Start command interpreter or other initial program.
+.sh PASSWD
+Change a password.
+.op
+User can change his own password.
+.op
+Passwords are kept encrypted for security.
+.sh NEWGRP
+Change working group (project).
+Protects against unauthorized changes to projects.
+.NH 2
+Terminal Handling
+.LP
+.sh TABS
+Set tab stops appropriately for specified terminal type.
+.sh STTY
+Set up options for optimal control of a terminal.
+In so far as they are deducible from the input, these
+options are set automatically by LOGIN.
+.op
+Half vs. full duplex.
+.op
+Carriage return+line feed vs. newline.
+.op
+Interpretation of tabs.
+.op
+Parity.
+.op
+Mapping of upper case to lower.
+.op
+Raw vs. edited input.
+.op
+Delays for tabs, newlines and carriage returns.
+.NH 2
+File Manipulation
+.LP
+.sh CAT
+Concatenate one or more files onto standard output.
+Particularly used for unadorned printing, for
+inserting data into a pipeline,
+and for buffering output that comes in dribs and drabs.
+Works on any file regardless of contents.
+.sh CP
+Copy one file to another,
+or a set of files to a directory.
+Works on any file regardless of contents.
+.sh PR
+Print files with title, date, and page number on every page.
+.op
+Multicolumn output.
+.op
+Parallel column merge of several files.
+.sh LPR
+Off-line print.
+Spools arbitrary files to the line printer.
+.sh CMP
+Compare two files and report if different.
+.sh TAIL
+Print last
+.I n
+lines of input
+.op
+May print last
+.I n
+characters, or from
+.I n
+lines or characters to end.
+.sh SPLIT
+Split a large file into more manageable pieces.
+Occasionally necessary for editing (ED).
+.sh DD
+Physical file format translator,
+for exchanging data with foreign
+systems, especially IBM 370's.
+.sh SUM
+Sum the words of a file.
+.NH 2
+Manipulation of Directories and File Names
+.LP
+.sh RM
+Remove a file.
+Only the name goes away if any other names are linked to the file.
+.OP
+Step through a directory deleting files interactively.
+.OP
+Delete entire directory hierarchies.
+.sh LN
+``Link'' another name (alias) to an existing file.
+.sh MV
+Move a file or files.
+Used for renaming files.
+.sh CHMOD
+Change permissions on one or more files.
+Executable by files' owner.
+.sh CHOWN
+Change owner of one or more files.
+.sh CHGRP
+Change group (project) to which a file belongs.
+.sh MKDIR
+Make a new directory.
+.sh RMDIR
+Remove a directory.
+.sh CD
+Change working directory.
+.sh FIND
+Prowl the directory
+hierarchy finding
+every file that meets
+specified criteria.
+.op
+Criteria include:
+.in +2
+.nf
+name matches a given pattern,
+creation date in given range,
+date of last use in given range,
+given permissions,
+given owner,
+given special file characteristics,
+boolean combinations of above.
+.in -2
+.fi
+.op
+Any directory may be considered to be the root.
+.op
+Perform specified command on each file found.
+.NH 2
+Running of Programs
+.LP
+.sh SH
+The Shell, or command language interpreter.
+.op
+Supply arguments to and run any executable program.
+.op
+Redirect standard input, standard output, and standard error files.
+.op
+Pipes:
+simultaneous execution with output of one process connected
+to the input of another.
+.OP
+Compose compound commands using:
+.in+2
+if ... then ... else,
+.br
+case switches,
+.br
+while loops,
+.br
+for loops over lists,
+.br
+break, continue and exit,
+.br
+parentheses for grouping.
+.in -2
+.op
+Initiate background processes.
+.op
+Perform Shell programs, i.e., command scripts with
+substitutable arguments.
+.op
+Construct argument lists from all file names
+satisfying specified patterns.
+.OP
+Take special action on traps and interrupts.
+.OP
+User-settable search path for finding commands.
+.OP
+Executes user-settable profile upon login.
+.OP
+Optionally announces presence of mail as it arrives.
+.op
+Provides variables and parameters with default setting.
+.sh TEST
+Tests for use in Shell conditionals.
+.op
+String comparison.
+.op
+File nature and accessibility.
+.op
+Boolean combinations of the above.
+.sh EXPR
+String computations for calculating command arguments.
+.OP
+Integer arithmetic
+.OP
+Pattern matching
+.sh WAIT
+Wait for termination of asynchronously running processes.
+.sh READ
+Read a line from terminal,
+for interactive Shell procedure.
+.sh ECHO
+Print remainder of command line.
+Useful for diagnostics or prompts in Shell programs,
+or for inserting data into a pipeline.
+.sh SLEEP
+Suspend execution for a specified time.
+.sh NOHUP
+Run a command immune to hanging up the terminal.
+.sh NICE
+Run a command in low (or high) priority.
+.sh KILL
+Terminate named processes.
+.sh CRON
+Schedule regular actions at specified times.
+.op
+Actions are arbitrary programs.
+.op
+Times are
+conjunctions of month, day of month, day of week, hour
+and minute.
+Ranges are specifiable for each.
+.sh AT
+Schedule a one-shot action for an arbitrary time.
+.sh TEE
+Pass data between processes and divert a copy into one or more files.
+.NH 2
+Status Inquiries
+.LP
+.sh LS
+List the names of one, several, or all files in one or more directories.
+.op
+Alphabetic or temporal sorting, up or down.
+.op
+Optional information:
+size,
+owner,
+group,
+date last modified,
+date last accessed,
+permissions,
+i-node number.
+.sh FILE
+Try to determine 
+what kind of information is in a file by consulting
+the file system index and by reading the file itself.
+.sh DATE
+Print today's date and time.
+Has considerable knowledge
+of calendric and horological peculiarities.
+.op
+May set
+.UC "UNIX/32V" 's
+idea of date and time.
+.sh DF
+Report amount of free space on file system devices.
+.sh DU
+Print a summary of total space occupied by all files in a hierarchy.
+.sh QUOT
+Print summary of file space usage by user id.
+.sh WHO
+Tell who's on the system.
+.op
+List of presently logged in users,
+ports and times on.
+.op
+Optional history of all logins and logouts.
+.sh PS
+Report on active processes.
+.op
+List your own or everybody's processes.
+.op
+Tell what commands are being executed.
+.op
+Optional status information:
+state and scheduling info,
+priority,
+attached terminal,
+what it's waiting for,
+size.
+.sh IOSTAT
+Print statistics about system I/O activity.
+.sh TTY
+Print name of your terminal.
+.sh PWD
+Print name of your working directory.
+.NH 2
+Backup and Maintenance
+.LP
+.sh MOUNT
+Attach a device containing
+a file system to
+the tree of directories.
+Protects against nonsense arrangements.
+.sh UMOUNT
+Remove the file system contained on a device
+from the tree of directories.
+Protects against removing a busy device.
+.sh MKFS
+Make a new file system on a device.
+.sh MKNOD
+Make an i-node (file system entry) for a special file.
+Special files are
+physical devices,
+virtual devices, physical memory, etc.
+.sh TP
+.sh TAR
+Manage file archives on magnetic tape or DECtape.
+TAR is newer.
+.op
+Collect files into an archive.
+.op
+Update DECtape archive by date.
+.op
+Replace or delete DECtape files.
+.op
+Print table of contents.
+.op
+Retrieve from archive.
+.sh DUMP
+Dump the file system
+stored on a specified device, selectively by date, or indiscriminately.
+.sh RESTOR
+Restore a dumped file system,
+or selectively retrieve parts thereof.
+.sh SU
+Temporarily become the super user with all the rights and privileges
+thereof.
+Requires a password.
+.sh DCHECK
+.sh ICHECK
+.sh NCHECK
+Check consistency of file system.
+.op
+Print gross statistics:
+number of files,
+number of directories,
+number of special files,
+space used,
+space free.
+.op
+Report duplicate use of space.
+.op
+Retrieve lost space.
+.op
+Report inaccessible files.
+.op
+Check consistency of directories.
+.op
+List names of all files.
+.sh CLRI
+Peremptorily expunge a file and its space from a file system.
+Used to repair damaged file systems.
+.sh SYNC
+Force all outstanding I/O on the system to completion.
+Used to shut down gracefully.
+.NH 2
+Accounting
+.LP
+The timing information on which the reports are based can be
+manually cleared or shut off completely.
+.sh AC
+Publish cumulative connect time report.
+.op
+Connect time by user or by day.
+.op
+For all users or for selected users.
+.sh SA
+Publish Shell accounting
+report.
+Gives usage information on each command executed.
+.op
+Number of times used.
+.op
+Total system time, user time and elapsed time.
+.op
+Optional averages and percentages.
+.op
+Sorting on various fields.
+.NH 2
+Communication
+.LP
+.sh MAIL
+Mail a message to one or more users.
+Also used to read and dispose of incoming mail.
+The presence of mail is announced by LOGIN
+and optionally by SH.
+.op
+Each message can be disposed of individually.
+.op
+Messages can be saved in files or forwarded.
+.sh CALENDAR
+Automatic reminder service for events of today and tomorrow.
+.sh WRITE
+Establish direct terminal communication with another user.
+.sh WALL
+Write to all users.
+.sh MESG
+Inhibit receipt of messages from WRITE and WALL.
+.sh CU
+Call up another time-sharing system.
+.OP
+Transparent interface to remote machine.
+.OP
+File transmission.
+.OP
+Take remote input from local file or put remote output
+into local file.
+.OP
+Remote system need not be
+.UC "UNIX/32V" .
+.sh UUCP
+.UC UNIX
+to
+.UC UNIX
+copy.
+.OP
+Automatic queuing until line becomes available
+and remote machine is up.
+.OP
+Copy between two remote machines.
+.op
+Differences, mail, etc., between two machines.
+.NH 2
+Basic Program Development Tools
+.LP
+Some of these utilities are used as integral parts of
+the higher level languages described in section 2.
+.sh AR
+Maintain archives and libraries.
+Combines several files into one for housekeeping efficiency.
+.op
+Create new archive.
+.op
+Update archive by date.
+.op
+Replace or delete files.
+.op
+Print table of contents.
+.op
+Retrieve from archive.
+.sh AS
+Assembler.
+.op
+Creates object program consisting of
+.in+2
+.nf
+code, normally read-only and sharable,
+initialized data or read-write code,
+uninitialized data.
+.in -2
+.fi
+.op
+Relocatable object code is directly executable without
+further transformation.
+.op
+Object code normally includes a symbol table.
+.op
+``Conditional jump'' instructions become
+branches or branches plus jumps depending on distance.
+.sh Library
+The basic run-time library.
+These routines are used freely by all software.
+.op
+Buffered character-by-character I/O.
+.op
+Formatted input and output conversion (SCANF and PRINTF)
+for standard input and output, files, in-memory conversion.
+.op
+Storage allocator.
+.op
+Time conversions.
+.op
+Number conversions.
+.op
+Password encryption.
+.op
+Quicksort.
+.op
+Random number generator.
+.op
+Mathematical function library, including
+trigonometric functions and inverses,
+exponential, logarithm, square root,
+bessel functions.
+.sh ADB
+Interactive debugger.
+.op
+Postmortem dumping.
+.OP
+Examination of arbitrary files, with no limit on size.
+.op
+Interactive breakpoint debugging with the debugger as a separate
+process.
+.OP
+Symbolic reference to local and global variables.
+.op
+Stack trace for C programs.
+.OP
+Output formats:
+.in+2
+.nf
+1-, 2-, or 4-byte integers in octal, decimal, or hex
+.br
+single and double floating point
+.br
+character and string
+.br
+disassembled machine instructions
+.br
+.fi
+.in-2
+.op
+Patching.
+.OP
+Searching for integer, character, or floating patterns.
+.sh OD
+Dump any file.
+Output options include any combination of
+octal or decimal or hex by words,
+octal by bytes,
+ASCII,
+opcodes,
+hexadecimal.
+.op
+Range of dumping is controllable.
+.sh LD
+Link edit.
+Combine relocatable object files.
+Insert required routines from specified libraries.
+.op
+Resulting code is sharable by default.
+.sh LORDER
+Places object file names in proper order for loading,
+so that files depending on others come after them.
+.sh NM
+Print the namelist (symbol table) of an object program.
+Provides control over the style and order of
+names that are printed.
+.sh SIZE
+Report the memory requirements
+of one or more object files.
+.sh STRIP
+Remove the relocation and symbol table information from
+an object file to save space.
+.sh TIME
+Run a command and report timing information on it.
+.sh PROF
+Construct a profile of time spent per routine
+from statistics gathered by time-sampling the
+execution of a program.
+.op
+Subroutine call frequency and average times for C programs.
+.sh MAKE
+Controls creation of large programs.
+Uses a control file specifying source file dependencies
+to make new version;
+uses time last changed to deduce minimum amount of work necessary.
+.op
+Knows about CC, YACC, LEX, etc.
+.NH 2
+UNIX/32V Programmer's Manual
+.LP
+.sh Manual
+Machine-readable version of the
+.UC "UNIX/32V"
+Programmer's Manual.
+.op
+System overview.
+.op
+All commands.
+.op
+All system calls.
+.op
+All subroutines in C and assembler libraries.
+.op
+All devices and other special files.
+.op
+Formats of file system and kinds
+of files known to system software.
+.op
+Boot and maintenance procedures.
+.sh MAN
+Print specified manual section on your terminal.
+.NH 2
+Computer-Aided Instruction
+.LP
+.sh LEARN
+A program for interpreting CAI scripts, plus scripts
+for learning about 
+.UC "UNIX/32V"
+by using it.
+.op
+Scripts for basic files and commands,
+editor,
+advanced files and commands,
+.UC EQN ,
+.UC MS
+macros,
+C programming language.
