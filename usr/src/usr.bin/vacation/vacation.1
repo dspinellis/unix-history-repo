@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)vacation.1	8.1 (Berkeley) %G%
+.\"	@(#)vacation.1	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt VACATION 1
@@ -90,12 +90,9 @@ or
 line is included in the mail headers.
 The people who have sent you messages are maintained as an
 .Xr ndbm 3
-database in the files
-.Pa .vacation.pag
-and
-.Pa .vacation.dir
+database in the file
+.Pa .vacation.db
 in your home directory.
-.Pp
 .Pp
 .Nm Vacation
 expects a file
@@ -105,13 +102,13 @@ sender.  It should be an entire message (including headers).  For
 example, it might contain:
 .Pp
 .Bd -unfilled -offset indent -compact
-From: eric@ucbmonet.Berkeley.EDU (Eric Allman)
+From: eric@CS.Berkeley.EDU (Eric Allman)
 Subject: I am on vacation
 Delivered-By-The-Graces-Of: The Vacation program
 Precedence: bulk
 
 I am on vacation until July 22.  If you have something urgent,
-please contact Joe Kalash <kalash@ucbingres.Berkeley.EDU>.
+please contact Keith Bostic <bostic@CS.Berkeley.EDU>.
 --eric
 .Ed
 .Pp
@@ -133,12 +130,10 @@ are logged in the system log file, using
 .Xr syslog 8 .
 .Sh FILES
 .Bl -tag -width "vacation.dirxxx" -compact
-.It Pa ~/.vacation.dir
+.It Pa ~/.vacation.db
 database file
 .It Pa ~/.vacation.msg
 message to send
-.It Pa ~/.vacation.pag
-database file
 .El
 .Sh SEE ALSO
 .Xr sendmail 8 ,
