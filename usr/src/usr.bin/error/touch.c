@@ -543,9 +543,20 @@ writetouched(overwrite)
 	reg	FILE	*localfile;
 	reg	FILE	*tmpfile;
 		int	botch;
+		int	oktorm;
 
+	botch = 0;
+	oktorm = 1;
 	while((nread = fread(edbuf, 1, sizeof(edbuf), o_touchedfile)) != NULL){
-		fwrite(edbuf, 1, nread, n_touchedfile);
+		if (nread != fwrite(edbuf, 1, nread, n_touchedfile)){
+			/*
+			 *	Catastrophe in temporary area: file system full?
+			 */
+			botch = 1;
+			fprintf(stderr,
+			  "%s: write failure: No errors inserted in \"%s\"\n",
+			  processname, o_name);
+		}
 	}
 	fclose(n_touchedfile);
 	fclose(o_touchedfile);
@@ -553,7 +564,7 @@ writetouched(overwrite)
 	 *	Now, copy the temp file back over the original
 	 *	file, thus preserving links, etc
 	 */
-	if (overwrite){
+	if (botch == 0 && overwrite){
 		botch = 0;
 		localfile = NULL;
 		tmpfile = NULL;
@@ -568,16 +579,17 @@ writetouched(overwrite)
 				processname, n_name);
 			botch++;
 		}
-		if (!botch){
-			while((nread=fread(edbuf, 1, sizeof(edbuf), tmpfile))
-					!= NULL){
-				fwrite(edbuf, 1, nread, localfile);
-			}
-		}
+		if (!botch)
+			oktorm = mustoverwrite(localfile, tmpfile);
 		if (localfile != NULL)
 			fclose(localfile);
 		if (tmpfile != NULL)
 			fclose(tmpfile);
+	}
+	if (oktorm == 0){
+		fprintf(stderr, "%s: Catastrophe: A copy of \"%s\: was saved in \"%s\"\n",
+			processname, o_name, n_name);
+		exit(1);
 	}
 	/*
 	 *	Kiss the temp file good bye
@@ -585,6 +597,57 @@ writetouched(overwrite)
 	unlink(n_name);
 	tempfileopen = FALSE;
 	return(TRUE);
+}
+/*
+ *	return 1 if the tmpfile can be removed after writing it out
+ */
+int mustoverwrite(preciousfile, tmpfile)
+	FILE	*preciousfile;
+	FILE	*tmpfile;
+{
+	int	nread;
+
+	while((nread = fread(edbuf, 1, sizeof(edbuf), tmpfile)) != NULL){
+		if (mustwrite(edbuf, nread, preciousfile) == 0)
+			return(0);
+	}
+	return(1);
+}
+/*
+ *	return 0 on catastrophe
+ */
+mustwrite(base, n, preciousfile)
+	char	*base;
+	int	n;
+	FILE	*preciousfile;
+{
+	int	nwrote;
+
+	if (n <= 0)
+		return(1);
+	nwrote = fwrite(base, 1, n, preciousfile);
+	if (nwrote == n)
+		return(1);
+	perror(processname);
+	switch(inquire(terse
+	    ? "Botch overwriting: retry? "
+	    : "Botch overwriting the source file: retry? ")){
+	case Q_YES:
+	case Q_yes:
+		mustwrite(base + nwrote, n - nwrote, preciousfile);
+		return(1);
+	case Q_NO:
+	case Q_no:
+		switch(inquire("Are you sure? ")){
+		case Q_YES:
+		case Q_yes:
+			return(0);
+		case Q_NO:
+		case Q_no:
+			mustwrite(base + nwrote, n - nwrote, preciousfile);
+			return(1);
+		}
+	}
 }
 
 onintr()
