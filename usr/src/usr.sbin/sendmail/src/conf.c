@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.47 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1365,7 +1365,7 @@ vsprintf(s, fmt, ap)
 #endif
 
 #ifdef HASSTATFS
-# if defined(IRIX) || defined(apollo) || defined(_SCO_unix_) || defined(UMAXV) || defined(DGUX)
+# if defined(IRIX) || defined(apollo) || defined(_SCO_unix_) || defined(UMAXV) || defined(DGUX) || defined(_AIX3)
 #  include <sys/statfs.h>
 # else
 #  if (defined(sun) && !defined(BSD)) || defined(__hpux) || defined(_CONVEX_SOURCE) || defined(NeXT) || defined(_AUX_SOURCE) || defined(MACH386)
