@@ -11,13 +11,14 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
  * rcp
  */
 #include <sys/param.h>
+#include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
@@ -108,14 +109,14 @@ main(argc, argv)
 			exit(errs);
 
 		    default:
-			fprintf(stderr,
-		"Usage: rcp [-p] f1 f2; or: rcp [-rp] f1 ... fn d2\n");
-			exit(1);
+			usage();
 		}
 	}
-	rem = -1;
+	if (argc < 2)
+		usage();
 	if (argc > 2)
 		targetshouldbedirectory = 1;
+	rem = -1;
 	(void) sprintf(cmd, "rcp%s%s%s",
 	    iamrecursive ? " -r" : "", pflag ? " -p" : "", 
 	    targetshouldbedirectory ? " -d" : "");
@@ -603,7 +604,7 @@ sink(argc, argv)
 			}
 			continue;
 		}
-		if ((of = creat(nambuf, mode)) < 0) {
+		if ((of = open(nambuf, O_WRONLY|O_CREAT, mode)) < 0) {
 	bad:
 			error("rcp: %s: %s\n", nambuf, sys_errlist[errno]);
 			continue;
@@ -647,6 +648,9 @@ sink(argc, argv)
 		if (count != 0 && wrerr == 0 &&
 		    write(of, bp->buf, count) != count)
 			wrerr++;
+		if (ftruncate(of, size))
+			error("rcp: can't truncate %s: %s\n",
+			    nambuf, sys_errlist[errno]);
 		(void) close(of);
 		(void) response();
 		if (setimes) {
@@ -706,4 +710,10 @@ error(fmt, a1, a2, a3, a4, a5)
 	(void) write(rem, buf, strlen(buf));
 	if (iamremote == 0)
 		(void) write(2, buf+1, strlen(buf+1));
+}
+
+usage()
+{
+	fputs("usage: rcp [-p] f1 f2; or: rcp [-rp] f1 ... fn d2\n", stderr);
+	exit(1);
 }
