@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)const.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)const.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -62,8 +62,9 @@ Char STRfignore[]	= { 'f', 'i', 'g', 'n', 'o', 'r', 'e', '\0' };
 Char STRfilec[] = { 'f', 'i', 'l', 'e', 'c', '\0' };
 #endif /* FILEC */
 Char STRhistchars[]	= { 'h', 'i', 's', 't', 'c', 'h', 'a', 'r', 's', '\0' };
-Char STRhistfile[]      = { '~', '/', '.', 'h', 'i', 's', 't', 'o', 'r', 
+Char STRtildothist[]    = { '~', '/', '.', 'h', 'i', 's', 't', 'o', 'r', 
 		            'y', '\0' };
+Char STRhistfile[]	= { 'h', 'i', 's', 't', 'f', 'i', 'l', 'e', '\0' };
 Char STRhistory[] 	= { 'h', 'i', 's', 't', 'o', 'r', 'y', '\0' };
 Char STRhome[]          = { 'h', 'o', 'm', 'e', '\0' };
 Char STRignore_symlinks[] = { 'i', 'g', 'n', 'o', 'r', 'e', '_', 's', 'y', 'm',
