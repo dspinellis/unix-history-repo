@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "def.h"
@@ -66,10 +66,10 @@ struct cmd cmdtab[] = {
 	"New",		unread,		MSGLIST,	0,	MMNDEL,
 	"!",		shell,		I|STRLIST,	0,	0,
 	"copy",		copycmd,	M|STRLIST,	0,	0,
-	"chdir",	schdir,		M|STRLIST,	0,	0,
-	"cd",		schdir,		M|STRLIST,	0,	0,
+	"chdir",	schdir,		M|RAWLIST,	0,	1,
+	"cd",		schdir,		M|RAWLIST,	0,	1,
 	"save",		save,		STRLIST,	0,	0,
-	"source",	source,		M|STRLIST,	0,	0,
+	"source",	source,		M|RAWLIST,	1,	1,
 	"set",		set,		M|RAWLIST,	0,	1000,
 	"shell",	dosh,		I|NOLIST,	0,	0,
 	"version",	pversion,	M|NOLIST,	0,	0,
@@ -78,7 +78,7 @@ struct cmd cmdtab[] = {
 	"from",		from,		MSGLIST,	0,	MMNORM,
 	"file",		file,		T|M|RAWLIST,	0,	1,
 	"folder",	file,		T|M|RAWLIST,	0,	1,
-	"folders",	folders,	T|M|RAWLIST,	0,	1,
+	"folders",	folders,	T|M|NOLIST,	0,	0,
 	"?",		help,		M|NOLIST,	0,	0,
 	"z",		scroll,		M|STRLIST,	0,	0,
 	"headers",	headers,	MSGLIST,	0,	MMNDEL,
@@ -90,7 +90,7 @@ struct cmd cmdtab[] = {
 	"respond",	respond,	R|I|MSGLIST,	0,	MMNDEL,
 	"edit",		editor,		I|MSGLIST,	0,	MMNORM,
 	"echo",		echo,		M|RAWLIST,	0,	1000,
-	"quit",		edstop,		NOLIST, 	0,	0,
+	"quit",		edstop,		NOLIST,		0,	0,
 	"list",		pcmdlist,	M|NOLIST,	0,	0,
 	"local",	local,		M|RAWLIST,	0,	1000,
 	"xit",		rexit,		M|NOLIST,	0,	0,

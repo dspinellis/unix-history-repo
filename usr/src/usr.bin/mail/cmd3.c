@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd3.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd3.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -147,24 +147,21 @@ help()
 /*
  * Change user's working directory.
  */
-
-schdir(str)
-	char *str;
+schdir(arglist)
+	char **arglist;
 {
-	register char *cp;
+	char *cp;
 
-	for (cp = str; *cp == ' '; cp++)
-		;
-	if (*cp == '\0')
+	if (*arglist == NOSTR)
 		cp = homedir;
 	else
-		if ((cp = expand(cp)) == NOSTR)
+		if ((cp = expand(*arglist)) == NOSTR)
 			return(1);
 	if (chdir(cp) < 0) {
 		perror(cp);
 		return(1);
 	}
-	return(0);
+	return 0;
 }
 
 respond(msgvec)
