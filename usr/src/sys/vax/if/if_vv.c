@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_vv.c	6.10 (Berkeley) %G%
+ *	@(#)if_vv.c	6.11 (Berkeley) %G%
  */
 
 #include "vv.h"
@@ -974,4 +974,19 @@ vvioctl(ifp, cmd, data)
 	}
 	splx(s);
 	return (error);
+}
+
+/*
+ * vvprt_hdr(s, v) print the local net header in "v"
+ *	with title is "s"
+ */
+vvprt_hdr(s, v)
+	char *s;
+	register struct vv_header *v;
+{
+	printf("%s: dsvti: 0x%x 0x%x 0x%x 0x%x 0x%x\n",
+		s,
+		0xff & (int)(v->vh_dhost), 0xff & (int)(v->vh_shost),
+		0xff & (int)(v->vh_version), 0xff & (int)(v->vh_type),
+		0xffff & (int)(v->vh_info));
 }
