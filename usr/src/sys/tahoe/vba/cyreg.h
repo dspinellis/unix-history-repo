@@ -1,4 +1,24 @@
-/*	cyreg.h	7.6	88/09/09	*/
+/*
+ * Copyright (c) 1988 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)cyreg.h	7.7 (Berkeley) %G%
+ */
 
 /*
  * Tapemaster controller definitions.
@@ -189,9 +209,12 @@ char	*cyerror[] = {
  * Masks defining hard and soft errors (must check against 1<<CYER_code).
  */
 #define	CYMASK(e)	(1 << (e))
-#define	CYBIT(e)	(1<<(CYER_/**/e))
-#define	CYER_HARD	(CYBIT(TIMOUT)|CYBIT(TIMOUT1)|CYBIT(TIMOUT2)|\
-    CYBIT(TIMOUT3)|CYBIT(TIMOUT4)|CYBIT(NXM)|CYBIT(DIAG)|CYBIT(JUMPER)|\
-    CYBIT(STROBE)|CYBIT(PROT)|CYBIT(CKSUM)|CYBIT(HERR)|CYBIT(BLANK))
-#define	CYER_RSOFT	(CYBIT(FIFO)|CYBIT(NOTRDY)|CYBIT(PARITY))
-#define	CYER_WSOFT	(CYBIT(HERR)|CYBIT(FIFO)|CYBIT(NOTRDY)|CYBIT(PARITY))
+#define	CYER_HARD	(CYMASK(CYER_TIMOUT)|CYMASK(CYER_TIMOUT1)|\
+	CYMASK(CYER_TIMOUT2)|CYMASK(CYER_TIMOUT3)|CYMASK(CYER_TIMOUT4)|\
+	CYMASK(CYER_NXM)|CYMASK(CYER_DIAG)|CYMASK(CYER_JUMPER)|\
+	CYMASK(CYER_STROBE)|CYMASK(CYER_PROT)|CYMASK(CYER_CKSUM)|\
+	CYMASK(CYER_HERR)|CYMASK(CYER_BLANK))
+#define	CYER_RSOFT	(CYMASK(CYER_FIFO)|CYMASK(CYER_NOTRDY)|\
+	CYMASK(CYER_PARITY))
+#define	CYER_WSOFT	(CYMASK(CYER_HERR)|CYMASK(CYER_FIFO)|\
+	CYMASK(CYER_NOTRDY)|CYMASK(CYER_PARITY))
