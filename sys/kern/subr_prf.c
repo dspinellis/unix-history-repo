@@ -64,8 +64,10 @@
 
 struct	tty *constty;			/* pointer to console "window" tty */
 
-#ifdef KADB
+#if defined(KADB) || defined(PANICWAIT)
 extern	cngetc();			/* standard console getc */
+#endif
+#ifdef KADB
 int	(*v_getc)() = cngetc;		/* "" getc from virtual console */
 extern	cnpoll();
 int	(*v_poll)() = cnpoll;		/* kdb hook to enable input polling */
@@ -77,21 +79,33 @@ static void  logpri __P((int level));
 static void  putchar __P((int ch, int flags, struct tty *tp));
 static char *ksprintn __P((u_long num, int base, int *len));
 void  kprintf __P((const char *fmt, int flags, struct tty *tp, va_list));
+volatile void boot(int bootopt);
 
 /*
  * Variable panicstr contains argument to first call to panic; used
  * as flag to indicate that the kernel has already called panic.
  */
-char	*panicstr;
+const char	*panicstr;
+
+/*
+ * Message buffer
+ */
+struct msgbuf *msgbufp;
+int msgbufmapped;
 
 /*
  * Panic is called on unresolvable fatal errors.  It prints "panic: mesg",
  * and then reboots.  If we are called twice, then we avoid trying to sync
  * the disks as this often leads to recursive panics.
  */
+#ifdef __STDC__
+volatile void
+panic(const char *msg)
+#else
 void
 panic(msg)
 	char *msg;
+#endif
 {
 	int bootopt = RB_AUTOBOOT | RB_DUMP;
 
@@ -116,7 +130,10 @@ panic(msg)
 #if NDDB > 0
 	Debugger ();
 #else
-/* pg("press key to boot/dump");*/
+#ifdef PANICWAIT
+	printf("hit any key to boot/dump...\n>");
+	cngetc();
+#endif
 #endif
 	boot(bootopt);
 }
@@ -272,7 +289,7 @@ logpri(level)
 	putchar('>', TOLOG, NULL);
 }
 
-void
+int
 #ifdef __STDC__
 addlog(const char *fmt, ...)
 #else
@@ -294,11 +311,12 @@ addlog(fmt /*, va_alist */)
 		va_end(ap);
 	}
 	logwakeup();
+	return (0);
 }
 
 int	consintr = 1;			/* ok to handle console interrupts? */
 
-void
+int
 #ifdef __STDC__
 printf(const char *fmt, ...)
 #else
@@ -317,6 +335,8 @@ printf(fmt /*, va_alist */)
 	if (!panicstr)
 		logwakeup();
 	consintr = savintr;		/* reenable interrupts */
+
+	return 0;	/* for compatibility with libc's printf() */
 }
 
 /*
@@ -362,7 +382,7 @@ kprintf(fmt, flags, tp, ap)
 	struct tty *tp;
 	va_list ap;
 {
-	register char *p;
+	register char *p, *p2;
 	register int ch, n;
 	u_long ul;
 	int base, lflag, tmp, width;
@@ -396,7 +416,7 @@ reswitch:	switch (ch = *(u_char *)fmt++) {
 		case 'b':
 			ul = va_arg(ap, int);
 			p = va_arg(ap, char *);
-			for (p = ksprintn(ul, *p++, NULL); ch = *p--;)
+			for (p2 = ksprintn(ul, *p++, NULL); ch = *p2--;)
 				putchar(ch, flags, tp);
 
 			if (!ul)
@@ -474,7 +494,6 @@ putchar(c, flags, tp)
 	int flags;
 	struct tty *tp;
 {
-	extern int msgbufmapped;
 	register struct msgbuf *mbp;
 
 	if (panicstr)
@@ -505,8 +524,10 @@ putchar(c, flags, tp)
  * Scaled down version of sprintf(3).
  */
 #ifdef __STDC__
+int
 sprintf(char *buf, const char *cfmt, ...)
 #else
+int
 sprintf(buf, cfmt /*, va_alist */)
 	char *buf, *cfmt;
 #endif
