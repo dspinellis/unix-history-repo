@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)mail.1	6.17 (Berkeley) %G%
+.\"     @(#)mail.1	6.18 (Berkeley) %G%
 .\"
 .Vx
 .Vx
@@ -474,11 +474,6 @@ Does not override the
 .Ic delete
 command.
 .Tp Ic ignore
-.Sy N.B.:
-.Ic Ignore
-has been superseded by
-.Ic retain .
-.br
 Add the list of header fields named to the
 .Ar ignored list
 Header fields in the ignore list are not printed
@@ -1056,7 +1051,6 @@ help files
 system initialization file
 .Dp
 .Sh SEE ALSO
-.Xr binmail 1 ,
 .Xr fmt 1 ,
 .Xr newaliases 1 ,
 .Xr vacation 1 ,
