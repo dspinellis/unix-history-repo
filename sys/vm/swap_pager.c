@@ -38,7 +38,7 @@
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  * from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
  *
- * $Id: swap_pager.c,v 1.16 1994/02/09 07:03:06 davidg Exp $
+ * $Id: swap_pager.c,v 1.17 1994/02/10 08:08:36 davidg Exp $
  */
 
 /*
@@ -866,7 +866,7 @@ swap_pager_io(swp, m, count, reqpage, flags)
 		 */
 		failed = 0;
 		for (i = reqpage + 1; i < count; i++) {
-			int *tmpaddr = swap_pager_diskaddr(swp, m[i]->offset + paging_offset,0);
+			int *tmpaddr = swap_pager_diskaddr(swp, m[i]->offset + paging_offset,&valid);
 			if (tmpaddr == 0 || failed || !valid ||
 				*tmpaddr != reqaddr + btodb((i - reqpage) * NBPG) ) {
 				failed = 1;
