@@ -1,0 +1,42 @@
+#
+# ETHERNET MATISSE
+#
+machine		vax
+#cpu		"VAX780"
+cpu		"VAX750"
+#cpu		"VAX730"
+ident		MATISSE
+timezone	8 dst
+maxusers	16
+options		INET
+options		NS
+#options		MRSP
+#options		QUOTA
+
+config		vmunix		root on hp swap on hp0 and hp1
+config		hkvmunix	root on hk
+
+controller	mba0	at nexus ?
+controller	uba0	at nexus ?
+disk		hp0	at mba? drive 0
+disk		hp1	at mba? drive ?
+disk		hp2	at mba? drive ?
+disk		hp3	at mba? drive ?
+controller	sc0	at uba?	csr 0176700		vector upintr
+disk		up0	at sc0 drive 0
+disk		up1	at sc0 drive 1
+disk		up2	at sc0 drive 2
+controller	hk0	at uba? csr 0177440 		vector rkintr
+disk		rk0	at hk0 drive 0
+disk		rk1	at hk0 drive 1
+device		dz0	at uba? csr 0160100 flags 0xff	vector dzrint dzxint
+device		kg0	at uba? csr 0175620 		vector kgclock
+pseudo-device	pty
+pseudo-device	loop
+pseudo-device	ether
+device		en0	at uba0 csr 0161000	vector enxint enrint encollide
+device		ec0	at uba? csr 0164330 flags 0
+						vector ecrint eccollide ecxint
+device		il0	at uba? csr 0164000	vector ilrint ilcint
+device		de0	at uba? csr 0174510	vector deintr
+device		ex0	at uba? csr 0164344	vector excdint
