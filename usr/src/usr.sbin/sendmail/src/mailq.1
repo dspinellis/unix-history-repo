@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)mailq.1	8.1 (Berkeley) %G%
+.\"     @(#)mailq.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAILQ 1
@@ -32,11 +32,11 @@ The following lines show message recipients,
 one per line.
 .Pp
 .Nm Mailq
-is completely equivalent to
-.Pa /usr/sbin/sendmail
-.Fl bp .
-.Ss Parameters
-.Bl -tag -width Fl
+is identical to
+.Dq Li "sendmail -bp" .
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
 .It Fl v
 Print verbose information.
 This adds the priority of the message and
@@ -48,6 +48,11 @@ indicating the ``controlling user'' information;
 this shows who will own any programs that are executed
 on behalf of this message
 and the name of the alias this command expanded from, if any.
+.El
+.Pp
+The
+.Nm mailq
+utility exits 0 on success, and >0 if an error occurs.
 .Sh SEE ALSO
 .Xr sendmail 8
 .Sh HISTORY
