@@ -1,7 +1,7 @@
 .nr DR 1	\" this is a draft copy
 .nr si 3n
 .he 'SENDMAIL''%'
-.fo 'Version 3.22'DRAFT'Last Mod %G%'
+.fo 'Version 3.23'DRAFT'Last Mod %G%'
 .ls 2
 .+c
 .(l C
@@ -23,13 +23,16 @@ ABSTRACT
 .sp \n(psu
 Routing mail through a heterogenous internet presents many new
 problems.  Among the worst of these is that of address mapping.
-Historically, this has been handled on an ad hoc basis.  However,
+Historically, this has been handled on an
+.i "ad hoc"
+basis.  However,
 this approach has become unmanageable as internets grow.
 .sp \n(psu
 Sendmail acts a unified "post office" to which all mail can be
 submitted.  Address interpretation is controlled by a production
 system, which can parse both domain-based addressing and old-style
-ad hoc addresses.
+.i "ad hoc"
+addresses.
 The production system is powerful
 enough to rewrite addresses in the message header to conform to the
 standards of a number of common target networks, including old
@@ -68,7 +71,9 @@ must communicate.
 In particular,
 the syntax and semantics of resource identification change.
 Certain special cases can be handled trivially
-by ad hoc techniques,
+by
+.i "ad hoc"
+techniques,
 such as
 providing network names that appear local to hosts
 on other networks,
@@ -93,7 +98,7 @@ triples.
 Network numbers must be universally agreed upon,
 and hosts can be assigned locally
 on each network.
-The user level presentation was quickly expanded
+The user-level presentation was quickly expanded
 to address domains,
 comprised of a local resource identification
 and a hierarchical domain specification
@@ -108,7 +113,9 @@ organization of the address space.
 .pp
 .i Sendmail
 is intended to help bridge the gap
-between the totally ad hoc world
+between the totally
+.i "ad hoc"
+world
 of networks that know nothing of each other
 and the clean, tightly-coupled world
 of unique network numbers.
@@ -142,7 +149,7 @@ Design goals for
 .i sendmail
 include:
 .np
-Compatibility with the existing mail system,
+Compatibility with the existing mail programs,
 including Bell version 6 mail,
 Bell version 7 mail
 [UNIX80],
@@ -162,29 +169,30 @@ that every message is correctly delivered
 or at least brought to the attention of a human
 for correct disposal;
 no message should ever be completely lost.
-This was considered essential
+This goal was considered essential
 because of the emphasis on mail in our environment.
-This turned out to be one of the hardest goals to satisfy,
+It has turned out to be one of the hardest goals to satisfy,
 especially in the face of the many anomalous message formats
 produced by various ARPANET sites.
 For example,
-certain sites generate incorrect from addresses
-which caused error message loops.
+certain sites generate improperly formated addresses,
+occasionally
+causing error-message loops.
 Some hosts use blanks in names,
-which created problems with
+causing problems with
 UNIX mail programs that assume that an address
 is one word.
 The semantics of some fields
 are interpreted slightly differently
 by different sites.
 In summary,
-the obscure aspects of the ARPANET mail protocol
+the obscure features of the ARPANET mail protocol
 really
 .i are
 used and
 are difficult to support,
 but must be supported.
-But even obeying the standard is insufficient.
+Even obeying the standard is insufficient.
 For example,
 Wharton changed our host name from
 .q BERKELEY
@@ -196,7 +204,7 @@ must be handled gracefully.
 .np
 Existing software to do actual delivery
 should be used whenever possible.
-This resulted as much from political and practical considerations
+This goal derives as much from political and practical considerations
 as technical.
 .np
 Easy expansion to
@@ -205,9 +213,9 @@ including multiple
 connections to a single network type
 (such as with multiple UUCP or Ether nets
 [Metcalfe76]).
-This requires consideration of the contents of an address
-as well as the syntax
-in order to determine the gateway to use.
+This goal requires consideration of the contents of an address
+as well as its syntax
+in order to determine which gateway to use.
 For example,
 the ARPANET is bringing up the
 TCP protocol to replace the old NCP protocol.
@@ -217,8 +225,8 @@ to determine whether to route mail to an NCP gateway
 or a TCP gateway.
 .np
 Configuration should not be compiled into the code.
-A single binary should be able to run as is at any site
-(modulo such basic changes as the CPU type or the operating system).
+A single compiled program should be able to run as is at any site
+(barring such basic changes as the CPU type or the operating system).
 We have found this seemingly unimportant goal
 to be critical in real life.
 Besides the simple problems that occur when any program gets recompiled
@@ -230,23 +238,23 @@ with anything that they will be recompiling anyway.
 .i Sendmail
 must be able to let various groups maintain their own mailing lists,
 and let individuals specify their own forwarding,
-without writing the system alias file.
+without modifying the system alias file.
 .np
-Each user should be able to specify the mailer to execute
-to process mail being delivered for them.
-This allows users who are using specialized mailers
-that want to use a different format to build their environment
+Each user should be able to specify which mailer to execute
+to process mail being delivered for him.
+This feature allows users who are using specialized mailers
+that use a different format to build their environment
 without changing the system,
-and allows specialized functions
+and facilitates specialized functions
 (such as returning an
 .q "I am on vacation"
 message).
 .np
 Network traffic should be minimized
 by batching addresses to a single host where possible,
-without assistance by the user.
+without assistance from the user.
 .pp
-This resulted in an architecture illustrated in figure 1.
+These goals motivated the architecture illustrated in figure 1.
 .(z
 .hl
 .ie t \
@@ -330,10 +338,10 @@ and speaking SMTP over an interprocess(or) channel.
 .pp
 This technique is the standard UNIX method
 for communicating with the process.
-All recipients are sent in the argument vector,
-and the message is sent on the standard input.
+A list of recipients is sent in the argument vector,
+and the message body is sent on the standard input.
 Anything that the mailer prints
-is simply collected and sent back to the user
+is simply collected and sent back to the sender
 if there were any problems.
 The exit status from the mailer is collected
 after the message is sent,
@@ -345,7 +353,7 @@ The SMTP protocol
 can be used to run an interactive lock-step interface
 with the mailer.
 A subprocess is still created,
-but no recipients are passed to the mailer
+but no recipient addresses are passed to the mailer
 via the argument list.
 Instead, they are passed one at a time
 in commands sent to the processes standard input.
@@ -354,17 +362,17 @@ must be a reply code
 in a special format.
 .sh 3 "SMTP over an IPC connection"
 .pp
-This technique is almost like the previous technique,
+This technique is similar to the previous technique,
 except that it uses a 4.2bsd IPC channel
 [ref?].
 This method is exceptionally flexible
 in that the mailer need not reside
 on the same machine.
-This is normally used to connect to a sendmail process
+It is normally used to connect to a sendmail process
 on another machine.
 .sh 2 "Operational Description"
 .pp
-When a client wants to send a message,
+When a sender wants to send a message,
 it issues a request to
 .i sendmail
 using one of the three methods described above.
@@ -374,7 +382,8 @@ In the first phase,
 it collects and stores the message.
 In the second phase,
 message delivery occurs.
-If there were errors during processing,
+If there were errors during processing
+during the second phase,
 .i sendmail
 creates and returns a new message describing the error
 and/or returns an status code
@@ -386,13 +395,14 @@ If
 is called using one of the two subprocess techniques,
 the arguments
 are first scanned
-and flag arguments processed.
+and option specifications are processed.
 Recipient addresses are then collected,
 either from the command line
 or from the SMTP
 RCPT command,
 and a list of recipients is created.
-Aliases are expanded at this step.
+Aliases are expanded at this step,
+including mailing lists.
 As much validation as possible of the addresses
 is done at this step:
 syntax is checked, and local addresses are verified,
@@ -408,10 +418,10 @@ When a name is aliased or forwarded,
 the old name is retained in the list,
 and a flag is set that tells the delivery phase
 to ignore this recipient.
-This list is kept without duplicates,
+This list is kept free from duplicates,
 preventing alias loops
-and eliminating people receiving two copies of a message,
-as might occur if a person were in two groups.
+and duplicate messages deliverd to the same recipient,
+as might occur if a person is in two groups.
 .sh 3 "Message collection"
 .pp
 .i Sendmail
@@ -424,27 +434,27 @@ The header is parsed and stored in memory,
 and the body of the message is saved
 in a temporary file.
 .pp
-The message is still collected even if no addresses were valid
-to simplify program interface.
+To simplify the program interface,
+the message is collected even if no addresses were valid.
 The message will be returned with an error.
 .sh 3 "Message delivery"
 .pp
-For each unique mailer and host in the send list,
+For each unique mailer and host in the recipient list,
 .i sendmail
 calls the appropriate mailer.
 Each mailer invocation sends to all users receiving the message on one host.
-Mailers that only accept one user at a time
+Mailers that only accept one recipient at a time
 are handled properly.
 .pp
 The message is sent to the mailer
 using one of the same three interfaces
 used to submit a message to sendmail.
-Each instantiation of the message is
+Each copy of the message is
 prepended by a customized header.
 The mailer status code is caught and checked,
 and a suitable error message given as appropriate.
 The exit code must conform to a system standard
-or a meaningless message
+or a generic message
 (\c
 .q "Service unavailable" )
 is given.
@@ -456,7 +466,7 @@ indicated that it might be able to handle the mail later,
 will queue the mail and try again later.
 .sh 3 "Return to sender"
 .pp
-If errors occurred during processing,
+If errors occur during processing,
 .i sendmail
 returns the message to the sender for retransmission.
 The letter can be mailed back
@@ -508,7 +518,7 @@ Flags set various processing options.
 Following flag arguments,
 address arguments may be given,
 unless we are running in SMTP mode.
-These follow the syntax in RFC822
+Addresses follow the syntax in RFC822
 [Crocker82]
 for ARPANET
 address formats.
@@ -521,7 +531,7 @@ Anything in angle brackets (\c
 .q "<>" )
 is preferred
 over anything else.
-This implements the ARPANET standard that addresses of the form
+This rule implements the ARPANET standard that addresses of the form
 .(b
 user name <machine-address>
 .)b
@@ -551,7 +561,7 @@ Parentheses, angle brackets, and double quotes
 must be properly balanced and nested.
 The rewriting rules control remaining parsing\**.
 .(f
-\**Disclaimer: some special processing is done
+\**Disclaimer: Some special processing is done
 after rewriting local names; see below.
 .)f
 .sh 2 "Mail to Files and Programs"
@@ -561,7 +571,7 @@ Files provide archival storage of messages,
 useful for project administration and history.
 Programs are useful as recipients in a variety of situations,
 for example,
-as a public repository of systems messages
+to maintain a public repository of systems messages
 (such as the Berkeley
 .i msgs
 program,
@@ -600,14 +610,15 @@ in conjunction with aliasing.
 .sh 3 "Aliasing"
 .pp
 Aliasing maps names to address lists using a system-wide file.
-This file is inverted to speed access.
+This file is indexed to speed access.
 Only names that parse as local
 are allowed as aliases;
-this guarantees a unique key.
+this guarantees a unique key
+(since there are no nicknames for the local host).
 .sh 3 "Forwarding"
 .pp
 After aliasing,
-users that are local and valid
+recipients that are local and valid
 are checked for the existence of a
 .q .forward
 file in their home directory.
@@ -616,9 +627,9 @@ the message is
 .i not
 sent to that user,
 but rather to the list of users in that file.
-The expectation is that this will normally
-be one user only,
-and the use will be for network mail forwarding.
+Often
+this list will contain only one address,
+and the feature will be used for network mail forwarding.
 .pp
 Forwarding also permits a user to specify a private incoming mailer.
 For example,
@@ -654,7 +665,7 @@ It is not necessary to rebuild the alias database
 when a :include: list is changed.
 .sh 2 "Message Collection"
 .pp
-Once all recipients are collected and verified,
+Once all recipient addresses are parsed and verified,
 the message is collected.
 The message comes in two parts:
 a message header and a message body,
@@ -663,11 +674,11 @@ separated by a blank line.
 The header is formatted as a series of lines
 of the form
 .(b
-field-name: field-value
+	field-name: field-value
 .)b
 Field-value can be split across lines by starting the following
 lines with a space or a tab.
-A number of header fields have special internal meaning,
+Some header fields have special internal meaning,
 and have appropriate special processing.
 Other headers are simply passed through.
 Some header fields may be added automatically,
@@ -684,16 +695,15 @@ This extra dot is stripped by the receiver.
 The send queue is ordered by receiving host
 before transmission
 to implement message batching.
-Each address is marked as it is sent,
-so rescanning the list is safe;
-this makes sending to mailers that can only accept one user easy.
+Each address is marked as it is sent
+so rescanning the list is safe.
 An argument list is built as the scan proceeds.
 Mail to files is detected during the scan of the send list.
 The interface to the mailer
 is performed using one of the techniques
 described in section 2.2.
 .pp
-After the interface is created,
+After a connection is established,
 .i sendmail
 makes the per-mailer changes to the header
 and sends the result to the mailer.
@@ -702,7 +712,7 @@ a flag is set to invoke the return-to-sender function
 after all delivery completes.
 .sh 2 "Queued Messages"
 .pp
-If the mailer gave a
+If the mailer returns a
 .q "temporary failure"
 exit status,
 the message is queued.
@@ -730,7 +740,7 @@ Mail coming in from the UUCP network
 is not guaranteed to have a normal header line,
 nor will an argument be passed telling who it is from\**.
 .(f
-\**As a result of this,
+\**As a result,
 it is impossible to verify UUCP sender addresses.
 .)f
 Fortuitously,
@@ -742,7 +752,7 @@ or
 .i sendmail .
 The
 .i rmail
-program has been modified here to do the special-purpose parsing
+program has been modified to do the special-purpose parsing
 necessary to decode UUCP headers
 and turn them into a normal UUCP address;
 this address is then passed to
@@ -782,7 +792,7 @@ library.
 .np
 To change ARPANET reply codes.
 .np
-To add headers requiring special processing.
+To add headers fields requiring special processing.
 .lp
 Adding mailers or changing parsing
 (i.e., rewriting)
@@ -795,7 +805,7 @@ and the file
 exists in the sender's home directory,
 that file is read as a configuration file
 after the system configuration file.
-The primary use of this is to add header lines.
+The primary use of this feature is to add header lines.
 .pp
 The configuration file encodes macro definitions,
 header definitions,
@@ -849,7 +859,7 @@ The definition specifies the internal name of the mailer,
 the pathname of the program to call,
 some flags associated with the mailer,
 and an argument vector to be used on the call;
-this vector is macro expanded before use.
+this vector is macro-expanded before use.
 .sh 3 "Address rewriting rules"
 .pp
 The heart of address parsing in
@@ -886,7 +896,7 @@ to conform to the domain syntax.
 Translations can also be done in the other direction.
 .sh 3 "Option setting"
 .pp
-There are a number of options that can be set
+There are several options that can be set
 from the configuration file.
 These include the pathnames of various support files,
 timeouts,
@@ -901,7 +911,7 @@ is an outgrowth of
 The primary differences are:
 .np
 Configuration information is not compiled in.
-This simplifies many of the problems
+This change simplifies many of the problems
 of moving to other machines.
 It also allows easy debugging of new mailers.
 .np
@@ -956,7 +966,7 @@ is completely compiled into the code\**.
 .(f
 \**Dynamic configuration tables are currently being considered
 for MMDF;
-this would allow the installer to select either compiled
+allowing the installer to select either compiled
 or dynamic tables.
 .)f
 .pp
@@ -995,12 +1005,12 @@ the MPM includes the network interface software
 as part of its domain.
 .pp
 MPM also postulates a duplex channel to the receiver,
-as does MMDF.
-This allows simpler handling of errors
+as does MMDF,
+thus allowing simpler handling of errors
 by the mailer
-than possible in
-.i sendmail ;
-when a message queued by
+than is possible in
+.i sendmail .
+When a message queued by
 .i sendmail
 is sent,
 any errors must be returned to the sender
@@ -1009,13 +1019,13 @@ Both MPM and MMDF mailers
 can return an immediate error response,
 and a single error processor can create an appropriate response.
 .pp
-MPM prefers passing the message as a structured message,
+MPM prefers passing the message as a structured object,
 with type-length-value tuples.
-This implies a much higher degree of cooperation
-between mailers than required by
+Such a convention requires a much higher degree of cooperation
+between mailers than is required by
 .i sendmail .
 MPM also assumes a universally agreed upon internet name space
-(with each address a net-host-user tuple),
+(with each address in the form of a net-host-user tuple),
 which
 .i sendmail
 does not.
@@ -1031,12 +1041,12 @@ has been the lack of a uniform address space,
 as postulated in [Postel79a]
 and [Postel79b].
 .pp
-A nonuniform address space implies that path will be specified
+A nonuniform address space implies that a path will be specified
 in all addresses,
 either explicitly (as part of the address)
 or implicitly
 (as with implied forwarding to gateways).
-This has the unpleasant effect of making replying to messages
+This restriction has the unpleasant effect of making replying to messages
 exceedingly difficult,
 since there is no one
 .q address
@@ -1060,12 +1070,6 @@ optionally generates UNIX-style
 .q From
 lines on the front of messages for some mailers,
 and knows how to parse the same lines on input.
-This can be inconvenient to sites which have abandoned UNIX mail,
-although
-.i sendmail
-still adds and understands ARPANET-style
-.q From:
-lines.
 Also,
 error handling has an option customized for BerkNet.
 .pp
@@ -1082,7 +1086,8 @@ One surprisingly major annoyance in many internet mailers
 is that the location and format of local mail is built in.
 The feeling seems to be that local mail is so common
 that it should be efficient.
-This does not match our experience;
+This feeling is not born out by
+our experience;
 on the contrary,
 the location and format of mailboxes seems to vary widely
 from system to system.
@@ -1097,8 +1102,9 @@ such as forwarding loops
 (two people on vacation whose programs send notes back and forth,
 for instance)
 if these programs are not well written.
-A program should be written to do standard tasks correctly,
-but this does not solve the general case.
+A program could be written to do standard tasks correctly,
+but this would solve the general case.
+.pp
 It might be desirable to implement some form of load limiting.
 I am unaware of any mail system that addresses this problem,
 nor am I aware of any reasonable solution at this time.
@@ -1126,17 +1132,30 @@ to appear as a single host,
 rather than as a collection of hosts,
 and would allow people to move transparently among machines
 without having to change their addresses.
-This would require an automatically updated database
+Such a facility
+would require an automatically updated database
 and some method of resolving conflicts.
-Ideally this would be effective even with multiple managements.
+Ideally this would be effective even without
+all hosts being under
+a single management.
 However,
-it is not clear whether this should be integrated into the
-aliasing feature
+it is not clear whether this feature
+should be integrated into the
+aliasing facility
 or should be considered a
 .q "value added"
 feature outside
 .i sendmail
 itself.
+.pp
+As a more interesting case,
+the CSNET name server
+[ref?]
+provides an facility that goes beyond a single
+tightly-coupled environment.
+Such a facility would normally exist outside of
+.i sendmail
+however.
 .sh 0 "ACKNOWLEDGEMENTS"
 .pp
 Thanks are due to Kurt Shoens for his continual cheerful
@@ -1174,13 +1193,17 @@ when I was myself afraid to take the risk;
 how a person can continue to be so enthusiastic
 in the face of so much bitter reality is beyond me.
 .pp
-Kurt and Kirk McKusick
-read early copies of this paper,
+Kurt,
+Mark,
+Kirk McKusick,
+Marvin Solomon,
+and many others have reviewed this paper,
 giving considerable useful advice.
 .pp
 Special thanks are reserved for Mike Stonebraker at Berkeley
 and Bob Epstein at Britton-Lee,
 who both knowingly allowed me to put so much work into this
+project
 when there were so many other things I really should
 have been working on.
 .+c
