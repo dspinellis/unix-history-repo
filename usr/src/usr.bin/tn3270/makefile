@@ -163,10 +163,10 @@ print:
 tags:	${ALLC} ${ALLH}
 	ctags -t ${ALLC} ${ALLH}
 
-sourcelist:
-	for i in ${ALLSOURCE}; \
+sourcelist:	${ALLSOURCE}
+	@for i in ${ALLSOURCE}; \
 		do (echo ${DIRPATH}/$$i); done
-	for i in ${SUBDIR} ${EXTRADIR}; \
+	@for i in ${SUBDIR} ${EXTRADIR}; \
 		do (cd $$i; make ${MFLAGS} "DIRPATH=${DIRPATH}/$$i" \
 							    sourcelist); done
 
