@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)misc.c	2.1 83/10/31";
+static	char *sccsid = "@(#)misc.c	2.2 84/02/23";
 #endif
 #include "externs.h"
 
@@ -147,40 +147,51 @@ register struct ship *sp;
 	return sp->file->FS ? flag : tolower(flag);
 }
 
-#ifdef notdef
-#define PI 3.1415926535
-
-float contable[8] =
-	{ 1.5708, 0.7854, 0.0, -0.7854, -1.5708, -2.3562, -PI, 2.3562 };
-
-int tantable[40] = {
-	0,100,197,291,381,
-	464,540,610,675,733,
-	785,833,876,915,951,
-	983,1012,1039,1064,1086,
-	1107,1126,1144,1161,1176,
-	1190,1204,1216,1227,1239,
-	1249,1259,1268,1277,1285,
-	1293,1300,1307,1313,1470
-};
-
-double
-arctan(y,x)
-int y,x;
+#include <sys/file.h>
+log(s)
+register struct ship *s;
 {
-	int sx, sy;
-	register int index;
+	FILE *fp;
+	int persons;
+	int n;
+	struct logs log[NLOG];
+	float net;
+	register struct logs *lp;
 
-	sy = y < 0 ? -1 : 1;
-	sx = x < 0 ? -1 : 1;
-	y *= sy;
-	x *= sx;
-	if (!x)
-		return (double) PI/2 * sy;
-	index = 10 * y / x + 0.5;
-	if (index > 39)
-		index = 39;
-	return (double)
-		sy * (sx < 0 ? PI : 0 + sx*((float)tantable[index]/1000));
-}
+	if ((fp = fopen(LOGFILE, "r+")) == NULL)
+		return;
+#ifdef LOCK_EX
+	flock(fileno(fp), LOCK_EX);
 #endif
+	net = (float)s->file->points / s->specs->pts;
+	persons = getw(fp);
+	n = fread((char *)log, sizeof(struct logs), NLOG, fp);
+	for (lp = &log[n]; lp < &log[NLOG]; lp++)
+		lp->l_name[0] = lp->l_uid = lp->l_shipnum
+			= lp->l_gamenum = lp->l_netpoints = 0;
+	rewind(fp);
+	if (persons < 0)
+		(void) putw(1, fp);
+	else
+		(void) putw(persons + 1, fp);
+	for (lp = log; lp < &log[NLOG]; lp++)
+		if (net > (float)lp->l_netpoints
+		    / scene[lp->l_gamenum].ship[lp->l_shipnum].specs->pts) {
+			(void) fwrite((char *)log,
+				sizeof (struct logs), lp - log, fp);
+			(void) strcpy(log[NLOG-1].l_name, s->file->captain);
+			log[NLOG-1].l_uid = getuid();
+			log[NLOG-1].l_shipnum = s->file->index;
+			log[NLOG-1].l_gamenum = game;
+			log[NLOG-1].l_netpoints = s->file->points;
+			(void) fwrite((char *)&log[NLOG-1],
+				sizeof (struct logs), 1, fp);
+			(void) fwrite((char *)lp,
+				sizeof (struct logs), &log[NLOG-1] - lp, fp);
+			break;
+		}
+#ifdef LOCK_EX
+	flock(fileno(fp), LOCK_UN);
+#endif
+	(void) fclose(fp);
+}
