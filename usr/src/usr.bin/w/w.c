@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)w.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)w.c	4.5 (Berkeley) %G%";
 /*
  * w - print system status (who and what)
  *
@@ -444,8 +444,6 @@ readpr()
 		read(kmem, &mproc, sizeof mproc);
 		/* decide if it's an interesting process */
 		if (mproc.p_stat==0 || mproc.p_pgrp==0)
-			continue;
-		if (mproc.p_flag&SDETACH)
 			continue;
 		/* find & read in the user structure */
 		if ((mproc.p_flag & SLOAD) == 0) {
