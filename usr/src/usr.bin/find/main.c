@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -15,15 +15,13 @@ static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #include <fts.h>
 #include "find.h"
 
-int relative;
-
 void
 newsyntax(argc, argvp)
 	int argc;
 	char ***argvp;
 {
+	extern int optind;
 	extern char *optarg;
-	extern int depth, optind;
 	int ch;
 	char **argv, **cur;
 
@@ -31,13 +29,13 @@ newsyntax(argc, argvp)
 	while ((ch = getopt(argc, argv, "df:rsx")) != EOF)
 		switch(ch) {
 		case 'd':
-			depth = 1;
+			isdepth = 1;
 			break;
 		case 'f':
 			*cur++ = optarg;
 			break;
 		case 'r':
-			relative = 1;
+			isrelative = 1;
 			break;
 		case 's':
 			ftsoptions &= ~FTS_PHYSICAL;

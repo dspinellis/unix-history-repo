@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)option.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)option.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -85,7 +85,6 @@ PLAN *
 find_create(argvp)
 	char ***argvp;
 {
-	extern int deprecated;
 	register OPTION *p;
 	OPTION tmp;
 	PLAN *new;
@@ -101,8 +100,8 @@ find_create(argvp)
 
 	p = (OPTION *)bsearch(&tmp, options, sizeof(options)/sizeof(OPTION),
 	    sizeof(OPTION), typecompare);
-	if (!p || deprecated && p->flags&O_NEW ||
-	    !deprecated && p->flags&O_OLD) {
+	if (!p || isdeprecated && p->flags&O_NEW ||
+	    !isdeprecated && p->flags&O_OLD) {
 		(void)fprintf(stderr, "find: unknown option %s.\n", *--argv);
 		exit(1);
 	}

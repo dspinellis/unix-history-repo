@@ -9,11 +9,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/errno.h>
 #include <stdio.h>
 #include "find.h"
  
@@ -95,9 +96,7 @@ emalloc(len)
 
 usage()
 {
-	extern int deprecated;
-
-	if (deprecated)
+	if (isdeprecated)
 		(void)fprintf(stderr, "usage: find path-list expression\n");
 	else
 		(void)fprintf(stderr,
