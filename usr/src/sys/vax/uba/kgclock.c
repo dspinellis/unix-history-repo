@@ -1,4 +1,4 @@
-/*	kgclock.c	6.2	84/08/20	*/
+/*	kgclock.c	6.3	84/08/29	*/
 
 #include "kg.h"
 #if NKG > 0
@@ -8,13 +8,13 @@
 #include "../machine/pte.h"
 #include "../machine/psl.h"
 
-#include "../h/param.h"
-#include "../h/map.h"
-#include "../h/buf.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "map.h"
+#include "buf.h"
+#include "time.h"
+#include "kernel.h"
 
-#include "../vaxuba/ubavar.h"
+#include "ubavar.h"
 
 int	kgprobe(), kgattach();
 struct	uba_device *kginfo[1];

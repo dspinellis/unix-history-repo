@@ -1,24 +1,24 @@
-/*	uba.c	6.1	83/08/21	*/
+/*	uba.c	6.2	84/08/29	*/
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/map.h"
-#include "../h/buf.h"
-#include "../h/vm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/conf.h"
-#include "../h/dk.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "systm.h"
+#include "map.h"
+#include "buf.h"
+#include "vm.h"
+#include "dir.h"
+#include "user.h"
+#include "proc.h"
+#include "conf.h"
+#include "dk.h"
+#include "kernel.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
 #include "../vax/nexus.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/ubavar.h"
+#include "ubareg.h"
+#include "ubavar.h"
 
 #if VAX780
 char	ubasr_bits[] = UBASR_BITS;

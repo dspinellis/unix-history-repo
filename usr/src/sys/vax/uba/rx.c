@@ -1,4 +1,4 @@
-/*	rx.c	6.2	84/07/09	*/
+/*	rx.c	6.3	84/08/29	*/
 
 #include "rx.h"
 #if NFX > 0
@@ -20,22 +20,22 @@
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/buf.h"
-#include "../h/systm.h"
-#include "../h/conf.h"
-#include "../h/errno.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
-#include "../h/uio.h"
-#include "../h/file.h"
+#include "param.h"
+#include "buf.h"
+#include "systm.h"
+#include "conf.h"
+#include "errno.h"
+#include "time.h"
+#include "kernel.h"
+#include "uio.h"
+#include "file.h"
 
 #include "../vax/cpu.h"
 #include "../vax/nexus.h"
 
-#include "../vaxuba/ubavar.h"
-#include "../vaxuba/ubareg.h"
-#include "../vaxuba/rxreg.h"
+#include "ubavar.h"
+#include "ubareg.h"
+#include "rxreg.h"
 
 #define b_cylin	b_resid
 

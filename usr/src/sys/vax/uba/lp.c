@@ -1,4 +1,4 @@
-/*	lp.c	6.3	84/08/22	*/
+/*	lp.c	6.4	84/08/29	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -10,17 +10,17 @@
  */
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/buf.h"
-#include "../h/systm.h"
-#include "../h/map.h"
-#include "../h/uio.h"
-#include "../h/tty.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "dir.h"
+#include "user.h"
+#include "buf.h"
+#include "systm.h"
+#include "map.h"
+#include "uio.h"
+#include "tty.h"
+#include "kernel.h"
 
-#include "../vaxuba/ubavar.h"
+#include "ubavar.h"
 
 #define	LPPRI	(PZERO+8)
 #define	IENABLE	0100
