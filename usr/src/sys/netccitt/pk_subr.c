@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_subr.c	7.13 (Berkeley) %G%
+ *	@(#)pk_subr.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -408,6 +408,10 @@ register struct sockaddr_x25 *sa;
 	return (*pkp -> pk_start) (lcp);
 }
 
+struct bcdinfo {
+	octet *cp;
+	unsigned posn;
+};
 /* 
  *  Build the rest of the CALL REQUEST packet. Fill in calling
  *  address, facilities fields and the user data field.
@@ -421,39 +425,30 @@ register struct x25config *xcp;
 	register struct x25_calladdr *a;
 	register struct mbuf *m = lcp -> lcd_template;
 	register struct x25_packet *xp = mtod (m, struct x25_packet *);
-	unsigned posn = 0;
-	octet *cp;
+	struct bcdinfo b;
 
 	if (lcp -> lcd_flags & X25_DBIT)
 		xp -> d_bit = 1;
 	a = (struct x25_calladdr *) &xp -> packet_data;
-	a -> calling_addrlen = strlen (xcp -> xc_addr.x25_addr);
-	a -> called_addrlen = strlen (sa -> x25_addr);
-	cp = (octet *) a -> address_field;
-	to_bcd (&cp, (int)a -> called_addrlen, sa -> x25_addr, &posn);
-	to_bcd (&cp, (int)a -> calling_addrlen, xcp -> xc_addr.x25_addr, &posn);
-	if (posn & 0x01)
-		*cp++ &= 0xf0;
-	m -> m_pkthdr.len = m -> m_len += cp - (octet *) a;
+	b.cp = (octet *) a -> address_field;
+	b.posn = 0;
+	a -> called_addrlen = to_bcd (&b, sa, xcp);
+	a -> calling_addrlen = to_bcd (&b, &xcp -> xc_addr, xcp);
+	if (b.posn & 0x01)
+		*b.cp++ &= 0xf0;
+	m -> m_pkthdr.len = m -> m_len += b.cp - (octet *) a;
 
 	if (lcp -> lcd_facilities) {
 		m -> m_pkthdr.len += 
-			(m -> m_next = lcp -> lcd_facilities) -> m_len;
+			(m -> m_next = lcp -> lcd_facilities) -> m_pkthdr.len;
 		lcp -> lcd_facilities = 0;
 	} else
-		build_facilities (m, sa, (int)xcp -> xc_type);
+		pk_build_facilities (m, sa, (int)xcp -> xc_type);
 
 	m_copyback (m, m -> m_pkthdr.len, sa -> x25_udlen, sa -> x25_udata);
-#ifdef ANDREW
-	printf ("call: ");
-	for (cp = mtod (m, octet *), posn = 0; posn < m -> m_len; ++posn)
-		printf ("%x ", *cp++);
-	printf ("\n");
-#endif
 }
 
-static
-build_facilities (m, sa, type)
+pk_build_facilities (m, sa, type)
 register struct mbuf *m;
 struct sockaddr_x25 *sa;
 {
@@ -489,17 +484,41 @@ struct sockaddr_x25 *sa;
 	m -> m_pkthdr.len = (m -> m_len += *cp + 1);
 }
 
-to_bcd (a, len, x, posn)
-register octet **a;
-register char *x;
-register int len;
-register unsigned *posn;
+to_bcd (b, sa, xcp)
+register struct bcdinfo *b;
+struct sockaddr_x25 *sa;
+register struct x25config *xcp;
 {
-	while (--len >= 0)
-		if ((*posn)++ & 0x01)
-			*(*a)++ |= *x++ & 0x0F;
+	register char *x = sa -> x25_addr;
+	unsigned start = b -> posn;
+	/*
+	 * The nodnic and prepnd0 stuff looks tedious,
+	 * but it does allow full X.121 addresses to be used,
+	 * which is handy for routing info (& OSI type 37 addresses).
+	 */
+	if (xcp -> xc_addr.x25_net && (xcp -> xc_nodnic || xcp -> xc_prepnd0)) {
+		char dnicname[sizeof(long) * NBBY/3 + 2];
+		register char *p = dnicname;
+
+		sprintf (p, "%d", xcp -> xc_addr.x25_net & 0x7fff);
+		for (; *p; p++) /* *p == 0 means dnic matched */
+			if ((*p ^ *x++) & 0x0f)
+				break;
+		if (*p || xcp -> xc_nodnic == 0)
+			x = sa -> x25_addr;
+		if (*p && xcp -> xc_prepnd0) {
+			if ((b -> posn)++ & 0x01)
+				*(b -> cp)++;
+			else
+				*(b -> cp) = 0;
+		}
+	}
+	while (*x)
+		if ((b -> posn)++ & 0x01)
+			*(b -> cp)++ |= *x++ & 0x0F;
 		else
-			**a = *x++ << 4;
+			*(b -> cp) = *x++ << 4;
+	return ((b -> posn) - start);
 }
 
 /* 
