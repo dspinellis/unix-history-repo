@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "io.c	(CWI)	1.1	85/03/01";
+static char *sccsid = "io.c	(CWI)	1.2	85/03/12";
 #endif
 # include "e.h"
 #define	MAXLINE	3600	/* maximum input line */
@@ -174,6 +174,8 @@ setfile(argc, argv) int argc; char *argv[]; {
 				{res = 432; minsize = 6; ttype = DEVCAT; }
 			else if (strcmp(&svargv[1][2], "har") == 0)
 				{res = 1445; minsize = 4; ttype = DEVHAR; }
+			else if (strcmp(&svargv[1][2], "ver") == 0)
+				{res = 200; minsize = 6; ttype = DEVVER; }
 			else
 				error(FATAL, "unknown typesetter %s", &argv[1][2]);
 			break;
