@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uucp.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucp.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -105,8 +105,11 @@ char *argv[];
 	ASSERT(ret >= 0, "CHDIR FAILED", Spool, ret);
 
 	Uid = getuid();
-	ret = guinfo(Uid, User, Path);
-	ASSERT(ret == 0, "CAN NOT FIND UID", CNULL, Uid);
+	if (guinfo(Uid, User, Path) != SUCCESS) {
+		assert("Can't find username for ", "uid", Uid);
+		DEBUG(1, "Using username", "uucp");
+		strcpy(User, "uucp");
+	}
 	DEBUG(4, "UID %d, ", Uid);
 	DEBUG(4, "User %s,", User);
 	DEBUG(4, "Ename (%s) ", Ename);
@@ -260,6 +263,8 @@ register char *s1, *f1, *s2, *f2;
 			return FAIL;
 		}
 		xcp(file1, file2);
+		/* With odd umask() might not be able to read it himself */
+		(void) chmod(file2, 0666);
 		logent("WORK HERE", "DONE");
 		return SUCCESS;
 	case 1:
