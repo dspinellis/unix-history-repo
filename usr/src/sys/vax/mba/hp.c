@@ -1,4 +1,4 @@
-/*	hp.c	4.16	81/02/27	*/
+/*	hp.c	4.17	81/02/28	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -226,8 +226,8 @@ hpdtint(mi, mbasr)
 
 	while ((hpaddr->hpds & HP_DRY) == 0)	/* shouldn't happen */
 		printf("hp dry not set\n");
-	if (hpaddr->hpds & HP_ERR || mbasr & MBAEBITS)
-		if (++mi->mi_tab.b_errcnt < 28 && (hpaddr->hper1&HP_WLE) == 0) {
+	if (hpaddr->hpds&HP_ERR || mbasr&MBAEBITS)
+		if (++mi->mi_tab.b_errcnt < 28 && (hpaddr->hper1&HP_WLE)==0) {
 			if ((hpaddr->hper1&0xffff) != HP_DCK) {
 				hpaddr->hpcs1 = HP_DCLR|HP_GO;
 				if ((mi->mi_tab.b_errcnt&07) == 4) {
@@ -308,10 +308,6 @@ hpecc(mi)
 	printf("%D ", bp->b_blkno + npf);
 	prdev("ECC", bp->b_dev);
 	mask = rp->hpec2&0xffff;
-	if (mask == 0) {
-		rp->hpof = HP_FMT22;
-		return (0);
-	}
 
 	i = (rp->hpec1&0xffff) - 1;		/* -1 makes 0 origin */
 	bit = i&07;

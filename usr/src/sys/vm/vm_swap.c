@@ -1,4 +1,4 @@
-/*	vm_swap.c	4.2	%G%	*/
+/*	vm_swap.c	4.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -109,12 +109,18 @@ swfree(index)
 		if (vsbase == 0) {
 			/*
 			 * Can't free a block starting at 0 in the swapmap
-			 * but need some space for argmap so use this
+			 * but need some space for argmap so use 1/2 this
 			 * hunk which needs special treatment anyways.
 			 */
 			argdev = swdevt[0].sw_dev;
-			mfree(argmap, blk-CLSIZE, vsbase+CLSIZE);
+			rminit(argmap, blk/2-CLSIZE, CLSIZE,
+			    "argmap", ARGMAPSIZE);
+			/*
+			 * First of all chunks... initialize the swapmap
+			 * the second half of the hunk.
+			 */
+			rminit(swapmap, blk/2, blk/2, "swap", nswapmap);
 		} else
-			mfree(swapmap, blk, vsbase);
+			rmfree(swapmap, blk, vsbase);
 	}
 }

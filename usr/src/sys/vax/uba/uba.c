@@ -1,4 +1,4 @@
-/*	uba.c	4.17	%G%	*/
+/*	uba.c	4.18	%G%	*/
 
 #define	DELAY(N)	{ register int d; d = N; while (--d > 0); }
 
@@ -112,7 +112,7 @@ ubasetup(uban, bp, flags)
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	npf = btoc(bp->b_bcount + o) + 1;
 	a = spl6();
-	while ((reg = malloc(uh->uh_map, npf)) == 0) {
+	while ((reg = rmalloc(uh->uh_map, npf)) == 0) {
 		if (flags & UBA_CANTWAIT)
 			return (0);
 		uh->uh_mrwant++;
@@ -122,7 +122,7 @@ ubasetup(uban, bp, flags)
 	if (flags & UBA_NEEDBDP) {
 		while ((bdp = ffs(uh->uh_bdpfree)) == 0) {
 			if (flags & UBA_CANTWAIT) {
-				mfree(uh->uh_map, npf, reg);
+				rmfree(uh->uh_map, npf, reg);
 				return (0);
 			}
 			uh->uh_bdpwant++;
@@ -235,7 +235,7 @@ ubarelse(uban, amr)
 	npf = (mr >> 18) & 0x3ff;
 	reg = ((mr >> 9) & 0x1ff) + 1;
 	s = spl6();
-	mfree(uh->uh_map, npf, reg);
+	rmfree(uh->uh_map, npf, reg);
 	splx(s);
 
 	/*
@@ -368,6 +368,8 @@ ubawatch()
 	register struct uba_hd *uh;
 	register int uban;
 
+	if (panicstr)
+		return;
 	for (uban = 0; uban < numuba; uban++) {
 		uh = &uba_hd[uban];
 		if (uh->uh_hangcnt)

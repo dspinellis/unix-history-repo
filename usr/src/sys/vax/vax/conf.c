@@ -1,4 +1,4 @@
-/*	conf.c	4.20	%G%	*/
+/*	conf.c	4.21	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -266,7 +266,12 @@ struct cdevsw	cdevsw[] =
 int	ttyopen(),ttread(),nullioctl(),ttstart();
 char	*ttwrite();
 int	ttyinput(),ttyrend();
+
+#include "bk.h"
+#if NBK > 0
 int	bkopen(),bkclose(),bkread(),bkinput(),bkioctl();
+#endif
+
 int	ntyopen(),ntyclose(),ntread();
 char	*ntwrite();
 int	ntyinput(),ntyrend();
@@ -275,8 +280,13 @@ struct	linesw linesw[] =
 {
 	ttyopen, nulldev, ttread, ttwrite, nullioctl,
 	ttyinput, ttyrend, nulldev, nulldev, nulldev,		/* 0 */
+#if NBK > 0
 	bkopen, bkclose, bkread, ttwrite, bkioctl,
 	bkinput, nodev, nulldev, ttstart, nulldev,		/* 1 */
+#else
+	nodev, nodev, nodev, nodev, nodev,
+	nodev, nodev, nodev, nodev, nodev,
+#endif
 	ntyopen, ntyclose, ntread, ntwrite, nullioctl,
 	ntyinput, ntyrend, nulldev, ttstart, nulldev,		/* 2 */
 	mxopen, mxclose, mcread, mcwrite, mxioctl,
