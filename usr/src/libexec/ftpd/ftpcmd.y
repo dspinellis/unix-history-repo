@@ -12,7 +12,7 @@
 %{
 
 #ifndef lint
-static	char sccsid[] = "@(#)ftpcmd.y	5.8 (Berkeley) %G%";
+static	char sccsid[] = "@(#)ftpcmd.y	5.9 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -828,10 +828,8 @@ help(s)
 
 	width = 0, NCMDS = 0;
 	for (c = cmdtab; c->name != NULL; c++) {
-		int len = strlen(c->name);
+		int len = strlen(c->name) + 1;
 
-		if (c->implemented == 0)
-			len++;
 		if (len > width)
 			width = len;
 		NCMDS++;
@@ -855,7 +853,7 @@ help(s)
 					c->implemented ? ' ' : '*');
 				if (c + lines >= &cmdtab[NCMDS])
 					break;
-				w = strlen(c->name);
+				w = strlen(c->name) + 1;
 				while (w < width) {
 					putchar(' ');
 					w++;
