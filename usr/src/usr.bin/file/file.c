@@ -5,12 +5,13 @@ static	char sccsid[] = "@(#)file.c	4.9 (Berkeley) %G%";
  * file - determine type of file
  */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <a.out.h>
 int	errno;
+int	sys_nerr;
 char	*sys_errlist[];
 int in;
 int i  = 0;
@@ -33,15 +34,20 @@ char **argv;
 {
 	FILE *fl;
 	register char *p;
-	char ap[128];
+	char ap[MAXPATHLEN + 1];
 	extern char _sobuf[];
 
+	if (argc < 2) {
+		fprintf(stderr, "usage: %s file ...\n", argv[0]);
+		exit(3);
+	}
+		
 	if (argc>1 && argv[1][0]=='-' && argv[1][1]=='f') {
 		if ((fl = fopen(argv[2], "r")) == NULL) {
 			perror(argv[2]);
 			exit(2);
 		}
-		while ((p = fgets(ap, 128, fl)) != NULL) {
+		while ((p = fgets(ap, sizeof ap, fl)) != NULL) {
 			int l = strlen(p);
 			if (l>0)
 				p[l-1] = '\0';
@@ -61,6 +67,7 @@ char **argv;
 		if (ifile >= 0)
 			close(ifile);
 	}
+	exit(0);
 }
 
 type(file)
@@ -69,37 +76,48 @@ char *file;
 	int j,nl;
 	char ch;
 	struct stat mbuf;
+	char slink[MAXPATHLEN + 1];
 
 	ifile = -1;
 	if (lstat(file, &mbuf) < 0) {
-		printf("%s\n", sys_errlist[errno]);
+		printf("%s\n",
+		(unsigned)errno < sys_nerr? sys_errlist[errno]: "Cannot stat");
 		return;
 	}
 	switch (mbuf.st_mode & S_IFMT) {
 
-	case S_IFCHR:
-		printf("character");
-		goto spcl;
-
 	case S_IFLNK:
-		printf("symbolic link\n");
+		printf("symbolic link");
+		j = readlink(file, slink, sizeof slink - 1);
+		if (j >= 0) {
+			slink[j] = '\0';
+			printf(" to %s", slink);
+		}
+		printf("\n");
 		return;
 
 	case S_IFDIR:
+		if (mbuf.st_mode & S_ISVTX)
+			printf("append-only ");
 		printf("directory\n");
 		return;
 
+	case S_IFCHR:
 	case S_IFBLK:
-		printf("block");
+		printf("%s special (%d/%d)\n",
+			mbuf.st_mode&S_IFMT == S_IFCHR ? "character" : "block",
+			major(mbuf.st_rdev), minor(mbuf.st_rdev));
+		return;
 
-spcl:
-		printf(" special (%d/%d)\n", major(mbuf.st_rdev), minor(mbuf.st_rdev));
+	case S_IFSOCK:
+		printf("socket\n");
 		return;
 	}
 
 	ifile = open(file, 0);
 	if(ifile < 0) {
-		printf("cannot open\n");
+		printf("%s\n",
+		(unsigned)errno < sys_nerr? sys_errlist[errno]: "Cannot read");
 		return;
 	}
 	in = read(ifile, buf, BUFSIZ);
@@ -122,6 +140,12 @@ spcl:
 
 	case 0407:
 exec:
+		if (mbuf.st_mode & S_ISUID)
+			printf("set-uid ");
+		if (mbuf.st_mode & S_ISGID)
+			printf("set-gid ");
+		if (mbuf.st_mode & S_ISVTX)
+			printf("sticky ");
 		printf("executable");
 		if(((int *)buf)[4] != 0) {
 			printf(" not stripped");
@@ -256,9 +280,15 @@ notas:
 		printf("data\n"); 
 		goto out; 
 	}
-	if (mbuf.st_mode&((S_IEXEC)|(S_IEXEC>>3)|(S_IEXEC>>6)))
+	if (mbuf.st_mode&((S_IEXEC)|(S_IEXEC>>3)|(S_IEXEC>>6))) {
+		if (mbuf.st_mode & S_ISUID)
+			printf("set-uid ");
+		if (mbuf.st_mode & S_ISGID)
+			printf("set-gid ");
+		if (mbuf.st_mode & S_ISVTX)
+			printf("sticky ");
 		printf("commands text");
-	else if (troffint(buf, in))
+	} else if (troffint(buf, in))
 		printf("troff intermediate output text");
 	else if (english(buf, in))
 		printf("English text");
