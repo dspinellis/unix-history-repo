@@ -6,7 +6,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	7.8 (Berkeley) %G%
+ *	@(#)ioctl.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -102,7 +102,7 @@ struct ttysize {
 
 #define _IOC(inout,group,num,len) \
 	(inout | ((len & IOCPARM_MASK) << 16) | ((group) << 8) | (num))
-#define	_IO(g,n)	_IOC(IOC_VOID,	0, (g), (n))
+#define	_IO(g,n)	_IOC(IOC_VOID,	(g), (n), 0)
 #define	_IOR(g,n,t)	_IOC(IOC_OUT,	(g), (n), sizeof(t))
 #define	_IOW(g,n,t)	_IOC(IOC_IN,	(g), (n), sizeof(t))
 /* this should be _IORW, but stdio got there first */
@@ -113,8 +113,13 @@ struct ttysize {
 /*
  * tty ioctl commands
  */
+#ifdef USE_OLD_TTY
+#define	TIOCGETD	_IOR('t', 0, int)	/* get line discipline */
+#define	TIOCSETD	_IOW('t', 1, int)	/* set line discipline */
+#else
 #define	TIOCGETDCOMPAT	_IOR('t', 0, int)	/* get line discipline */
 #define	TIOCSETDCOMPAT	_IOW('t', 1, int)	/* set line discipline */
+#endif
 #define	TIOCHPCL	_IO('t', 2)		/* hang up on last close */
 #define	TIOCMODG	_IOR('t', 3, int)	/* get modem control state */
 #define	TIOCMODS	_IOW('t', 4, int)	/* set modem control state */
@@ -195,8 +200,10 @@ struct ttysize {
 #define TCSETA	TIOCSETA
 #define TCSETAW	TIOCSETAW
 #define TCSETAF	TIOCSETAF
+#ifndef USE_OLD_TTY
 #define	TIOCGETD	_IOR('t', 26, int)	/* get line discipline */
 #define	TIOCSETD	_IOW('t', 27, int)	/* set line discipline */
+#endif
 /* locals, from 127 down */
 #define	TIOCLBIS	_IOW('t', 127, int)	/* bis local mode bits */
 #define	TIOCLBIC	_IOW('t', 126, int)	/* bic local mode bits */
@@ -254,9 +261,12 @@ struct ttysize {
 #define	TIOCCONS	_IO('t', 98)		/* become virtual console */
 #define	TIOCSCTTY	_IO('t', 97)		/* become controlling tty */
 
-#define	OTTYDISC	0		/* termios */
-#define	NTTYDISC	0		/* COMPAT_43 */
+#define TTYDISC		0		/* termios tty line discipline */
+#ifdef USE_OLD_TTY
+#define	OTTYDISC	0		/* COMPAT_43 (alias) */
 #define	NETLDISC	1		/* line discip for berk net */
+#define	NTTYDISC	2		/* COMPAT_43 (alias) */
+#endif
 #define	TABLDISC	3		/* tablet discipline */
 #define	SLIPDISC	4		/* serial IP discipline */
 
@@ -299,8 +309,8 @@ struct ttysize {
 #define	SIOCSIFNETMASK	_IOW('i',22, struct ifreq)	/* set net addr mask */
 #define	SIOCGIFMETRIC	_IOWR('i',23, struct ifreq)	/* get IF metric */
 #define	SIOCSIFMETRIC	_IOW('i',24, struct ifreq)	/* set IF metric */
-#define	SIOCDIFADDR	_IOW('i',38, struct ifreq)	/* delete IF addr */
-#define	SIOCAIFADDR	_IOW('i',39, struct ifaliasreq)	/* add/chg IF alias */
+#define	SIOCDIFADDR	_IOW('i',25, struct ifreq)	/* delete IF addr */
+#define	SIOCAIFADDR	_IOW('i',26, struct ifaliasreq)	/* add/chg IF alias */
 
 #define	SIOCSARP	_IOW('i', 30, struct arpreq)	/* set arp entry */
 #define	OSIOCGARP	_IOWR('i',31, struct arpreq)	/* get arp entry */
