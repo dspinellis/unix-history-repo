@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uba.c	6.5 (Berkeley) %G%
+ *	@(#)uba.c	6.6 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -26,7 +26,7 @@
 #include "ubareg.h"
 #include "ubavar.h"
 
-#if VAX780
+#if defined(VAX780) || defined(VAX8600)
 char	ubasr_bits[] = UBASR_BITS;
 #endif
 
@@ -231,7 +231,8 @@ ubarelse(uban, amr)
 	bdp = (mr >> 28) & 0x0f;
 	if (bdp) {
 		switch (cpu) {
-#if VAX780
+#if defined(VAX780) || defined(VAX8600)
+		case VAX_8600:
 		case VAX_780:
 			uh->uh_uba->uba_dpr[bdp] |= UBADPR_BNE;
 			break;
@@ -280,7 +281,8 @@ ubapurge(um)
 	register int bdp = (um->um_ubinfo >> 28) & 0x0f;
 
 	switch (cpu) {
-#if VAX780
+#if defined(VAX780) || defined(VAX8600)
+	case VAX_8600:
 	case VAX_780:
 		uh->uh_uba->uba_dpr[bdp] |= UBADPR_BNE;
 		break;
@@ -299,7 +301,8 @@ ubainitmaps(uhp)
 
 	rminit(uhp->uh_map, (long)NUBMREG, (long)1, "uba", UAMSIZ);
 	switch (cpu) {
-#if VAX780
+#if defined(VAX780) || defined(VAX8600)
+	case VAX_8600:
 	case VAX_780:
 		uhp->uh_bdpfree = (1<<NBDP780) - 1;
 		break;
@@ -363,7 +366,8 @@ ubainit(uba)
 {
 
 	switch (cpu) {
-#if VAX780
+#if defined(VAX780) || defined(VAX8600)
+	case VAX_8600:
 	case VAX_780:
 		uba->uba_cr = UBACR_ADINIT;
 		uba->uba_cr = UBACR_IFS|UBACR_BRIE|UBACR_USEFIE|UBACR_SUEFIE;
@@ -493,13 +497,13 @@ ubameminit(uban)
 			ui->ui_addr = addr;
 		}
 	}
-#if VAX780
+#if defined(VAX780) || defined(VAX8600)
 	/*
 	 * On a 780, throw away any map registers disabled by rounding
 	 * the map disable in the configuration register
 	 * up to the next 8K boundary, or below the last unibus memory.
 	 */
-	if (cpu == VAX_780) {
+	if ((cpu == VAX_780) || (cpu == VAX_8600)) {
 		register i;
 
 		i = btop(((uh->uh_lastmem + 8191) / 8192) * 8192);
@@ -545,7 +549,7 @@ ubamem(uban, addr, npg, doalloc)
 			uh->uh_lastmem = i;
 		else if (doalloc == 0 && i == uh->uh_lastmem)
 			uh->uh_lastmem = addr;
-#if VAX780
+#if defined(VAX780) || defined(VAX8600)
 		/*
 		 * On a 780, set up the map register disable
 		 * field in the configuration register.  Beware
@@ -553,7 +557,7 @@ ubamem(uban, addr, npg, doalloc)
 		 * or in sections other than 8K multiples.
 		 * Ubameminit handles such requests properly, however.
 		 */
-		if (cpu == VAX_780) {
+		if ((cpu == VAX_780) || (cpu == VAX_8600)) {
 			i = uh->uh_uba->uba_cr &~ 0x7c000000;
 			i |= ((uh->uh_lastmem + 8191) / 8192) << 26;
 			uh->uh_uba->uba_cr = i;

@@ -3,12 +3,25 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ubareg.h	6.5 (Berkeley) %G%
+ *	@(#)ubareg.h	6.6 (Berkeley) %G%
  */
 
 /*
  * VAX UNIBUS adapter registers
  */
+
+/*
+ * size of unibus address space in pages
+ */
+#define UBAPAGES 512
+
+/*
+ * Number of UNIBUS map registers.  We can't use the last 8k of UNIBUS
+ * address space for i/o transfers since it is used by the devices,
+ * hence have slightly less than 256K of UNIBUS address space.
+ */
+#define	NUBMREG	496
+
 #ifndef LOCORE
 /*
  * UBA hardware registers
@@ -26,12 +39,12 @@ struct uba_regs
 	int	uba_brrvr[4];		/* receive vector registers */
 	int	uba_dpr[16];		/* buffered data path register */
 	int	pad2[480];
-	struct	pte uba_map[496];	/* unibus map register */
+	struct	pte uba_map[NUBMREG];	/* unibus map register */
 	int	pad3[16];		/* no maps for device address space */
 };
 #endif
 
-#if VAX780
+#if defined(VAX780) || defined(VAX8600)
 /* uba_cnfgr */
 #define	UBACNFGR_UBINIT	0x00040000	/* unibus init asserted */
 #define	UBACNFGR_UBPDN	0x00020000	/* unibus power down */
@@ -77,10 +90,10 @@ struct uba_regs
 /* uba_brrvr[] */
 #define	UBABRRVR_AIRI	0x80000000	/* adapter interrupt request */
 #define	UBABRRVR_DIV	0x0000ffff	/* device interrupt vector field */
-#endif VAX780
+#endif
  
 /* uba_dpr */
-#if VAX780
+#if defined(VAX780) || defined(VAX8600)
 #define	UBADPR_BNE	0x80000000	/* buffer not empty - purge */
 #define	UBADPR_BTE	0x40000000	/* buffer transfer error */
 #define	UBADPR_DPF	0x20000000	/* DP function (RO) */
@@ -88,7 +101,9 @@ struct uba_regs
 #define	UBADPR_BUBA	0x0000ffff	/* buffered UNIBUS address */
 #define	UBA_PURGE780(uba, bdp) \
     ((uba)->uba_dpr[bdp] |= UBADPR_BNE)
-#endif VAX780
+#else
+#define UBA_PURGE780(uba, bdp)
+#endif
 #if VAX750
 #define	UBADPR_ERROR	0x80000000	/* error occurred */
 #define	UBADPR_NXM	0x40000000	/* nxm from memory */
@@ -99,39 +114,30 @@ struct uba_regs
     ((uba)->uba_dpr[bdp] |= (UBADPR_PURGE|UBADPR_NXM|UBADPR_UCE)); \
     DELAY(8); \
 }
-#endif VAX750
- 
+#else
+#define UBA_PURGE750(uba, bdp)
+#endif
+
 /*
  * Macros for fast buffered data path purging in time-critical routines.
  *
  * Too bad C pre-processor doesn't have the power of LISP in macro
  * expansion...
  */
-#if defined(VAX780) && defined(VAX750)
+
+#if defined(VAX8600) || defined(VAX780) || defined(VAX750)
 #define	UBAPURGE(uba, bdp) { \
 	switch (cpu) { \
-	case VAX_780: UBA_PURGE780((uba), (bdp)); break; \
+	case VAX_8600: case VAX_780: UBA_PURGE780((uba), (bdp)); break; \
 	case VAX_750: UBA_PURGE750((uba), (bdp)); break; \
 	} \
 }
 #endif
-#if defined(VAX780) && !defined(VAX750)
-#define	UBAPURGE(uba, bdp) { \
-	if (cpu==VAX_780) { \
-		UBA_PURGE780((uba), (bdp)); \
-	} \
-}
-#endif
-#if !defined(VAX780) && defined(VAX750)
-#define	UBAPURGE(uba, bdp) { \
-	if (cpu==VAX_750) { \
-		UBA_PURGE750((uba), (bdp)); \
-	} \
-}
-#endif
-#if !defined(VAX780) && !defined(VAX750)
+#if !defined(VAX8600) && !defined(VAX780) && !defined(VAX750)
 #define	UBAPURGE(uba, bdp)
 #endif
+
+
 
 /* uba_mr[] */
 #define	UBAMR_MRV	0x80000000	/* map register valid */
@@ -142,39 +148,38 @@ struct uba_regs
 #define	UBAMR_DPSHIFT	21		/* shift to data path designator */
 
 /*
- * Number of UNIBUS map registers.  We can't use the last 8k of UNIBUS
- * address space for i/o transfers since it is used by the devices,
- * hence have slightly less than 256K of UNIBUS address space.
- */
-#define	NUBMREG	496
-
-/*
  * Number of unibus buffered data paths and possible uba's per cpu type.
  */
+#define	NBDP8600	15
 #define	NBDP780	15
 #define	NBDP750	3
 #define	NBDP730	0
 #define	MAXNBDP	15
 
-#define	NUBA780	4
-#define	NUBA750	2
-#define	NUBA730	1
-
 /*
- * Symbolic addresses of UNIBUS memory for UBAs.
+ * Symbolic BUS addresses for UBAs.
  */
+
 #if VAX730
 #define	UMEM730		((u_short *)(0xfc0000))
 #endif
+
 #if VAX750
 #define	UMEM750(i)	((u_short *)(0xfc0000-(i)*0x40000))
 #endif
+
 #if VAX780
 #define	UMEM780(i)	((u_short *)(0x20100000+(i)*0x40000))
 #endif
 
+#if VAX8600
+#define	UMEMA8600(i)	((u_short *)(0x20100000+(i)*0x40000))
+#define	UMEMB8600(i)	((u_short *)(0x22100000+(i)*0x40000))
+#endif
+
 /*
  * Macro to offset a UNIBUS device address, often expressed as
- * something like 0172520 by forcing it into the last 8K of UNIBUS space.
+ * something like 0172520 by forcing it into the last 8K of UNIBUS memory
+ * space.
  */
 #define	ubdevreg(addr)	(0760000|((addr)&017777))

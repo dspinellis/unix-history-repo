@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ubavar.h	6.3 (Berkeley) %G%
+ *	@(#)ubavar.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -53,7 +53,7 @@ struct	uba_hd {
 	short	uh_users;		/* transient bdp use count */
 	short	uh_xclu;		/* an rk07 is using this uba! */
 	int	uh_lastmem;		/* limit of any unibus memory */
-#define	UAMSIZ	25
+#define	UAMSIZ	100
 	struct	map *uh_map;		/* buffered data path regs free */
 };
 
@@ -191,7 +191,7 @@ extern	int (*UNIvec[])();			/* unibus vec for uba0 */
 extern	int (*UNI1vec[])();			/* unibus vec for uba1 */
 #endif
 
-#if VAX780
+#if defined(VAX780) || defined(VAX8600)
 /*
  * On 780's, we must set the scb vectors for the nexus of the
  * UNIbus adaptors to vector to locore unibus adaptor interrupt dispatchers
