@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)split.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)split.c	4.4 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <sys/file.h>
@@ -51,7 +51,7 @@ char	**argv;
 				default:
 					if (!isdigit(argv[cnt][1]) || bytecnt)
 						usage();
-					if ((numlines = atol(argv[cnt] + 2)) <= 0) {
+					if ((numlines = atol(argv[cnt] + 1)) <= 0) {
 						fputs("split: line count must be greater than zero.\n",stderr);
 						usage();
 					}
