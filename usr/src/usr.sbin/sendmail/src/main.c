@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.89 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.90 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -809,6 +809,12 @@ main(argc, argv, envp)
 		if (FileMailer != NULL)
 			setbitn(M_RUNASRCPT, FileMailer->m_flags);
 	}
+
+	/* initialize standard MIME classes */
+	setclass('n', "message/rfc822");
+	setclass('n', "message/partial");
+	setclass('n', "message/external-body");
+	setclass('n', "multipart/signed");
 
 	/* operate in queue directory */
 	if (OpMode != MD_TEST && chdir(QueueDir) < 0)

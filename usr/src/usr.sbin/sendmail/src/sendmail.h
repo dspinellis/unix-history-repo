@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.100 (Berkeley) %G%
+ *	@(#)sendmail.h	8.101 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.100		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.101		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -76,8 +76,8 @@ static char SmailSccsId[] =	"@(#)sendmail.h	8.100		%G%";
 #define BYTEBITS	8	/* number of bits in a byte */
 
 /* internal macros */
-#define _BITWORD(bit)	(bit / (BYTEBITS * sizeof (int)))
-#define _BITBIT(bit)	(1 << (bit % (BYTEBITS * sizeof (int))))
+#define _BITWORD(bit)	((bit) / (BYTEBITS * sizeof (int)))
+#define _BITBIT(bit)	(1 << ((bit) % (BYTEBITS * sizeof (int))))
 
 typedef int	BITMAP[BITMAPBYTES / sizeof (int)];
 
@@ -822,6 +822,14 @@ struct prival
 
 /* flags that are actually specific to safefopen */
 #define SFF_OPENASROOT		0x1000	/* open as root instead of real user */
+
+
+/*
+**  Flags passed to mime8to7.
+*/
+
+#define M87F_OUTER		0	/* outer context */
+#define M87F_NO8BIT		0x0001	/* can't have 8-bit in this section */
 
 
 /*
