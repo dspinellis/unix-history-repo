@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	4.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	4.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -171,18 +171,19 @@ find_execute(plan, paths)
 		exit(1);
 	}
 	while (entry = ftsread(tree)) {
-		switch(entry->info) {
+		switch(entry->fts_info) {
 		case FTS_DNR:
 			(void)fprintf(stderr,
-			    "find: %s: unable to read.\n", entry->path);
+			    "find: %s: unable to read.\n", entry->fts_path);
 			continue;
 		case FTS_DNX:
 			(void)fprintf(stderr,
-			    "find: %s: unable to search.\n", entry->path);
+			    "find: %s: unable to search.\n", entry->fts_path);
 			continue;
 		case FTS_ERR:
 			(void)fprintf(stderr,
-			    "find: %s: %s.\n", entry->path, strerror(errno));
+			    "find: %s: %s.\n", entry->fts_path,
+			    strerror(errno));
 			continue;
 		case FTS_D:
 			if (depth)
@@ -190,7 +191,7 @@ find_execute(plan, paths)
 			break;
 		case FTS_DC:
 			(void)fprintf(stderr,
-			    "find: directory cycle: %s.\n", entry->path);
+			    "find: directory cycle: %s.\n", entry->fts_path);
 			continue;
 		case FTS_DP:
 			if (!depth)
@@ -198,17 +199,17 @@ find_execute(plan, paths)
 		case FTS_NS:
 			if (!(ftsoptions & FTS_NOSTAT)) {
 				(void)fprintf(stderr,
-				    "find: can't stat: %s.\n", entry->path);
+				    "find: can't stat: %s.\n", entry->fts_path);
 				continue;
 			}
 			break;
 		}
 
 		/* always keep curdev up to date, -fstype uses it. */
-		if (xdev && curdev != entry->statb.st_dev &&
+		if (xdev && curdev != entry->fts_statb.st_dev &&
 		    curdev != -1 && ftsset(tree, entry, FTS_SKIP)) {
 			(void)fprintf(stderr, "find: %s: %s.\n",
-			    entry->path, strerror(errno));
+			    entry->fts_path, strerror(errno));
 			exit(1);
 		}
 
@@ -219,7 +220,7 @@ find_execute(plan, paths)
 		 */
 		for (p = plan; p && (p->eval)(p, entry); p = p->next);
 
-		curdev = entry->statb.st_dev;
+		curdev = entry->fts_statb.st_dev;
 	}
 	(void)ftsclose(tree);
 }
