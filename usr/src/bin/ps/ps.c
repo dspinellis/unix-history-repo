@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)ps.c	4.11 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.12 (Berkeley) %G%";
 /*
  * ps; VAX 4BSD version
  */
