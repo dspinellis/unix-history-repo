@@ -1,191 +1,133 @@
 /*-
- * Copyright (c) 1982, 1986, 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ * (c) UNIX System Laboratories, Inc.
+ * All or some portions of this file are derived from material licensed
+ * to the University of California by American Telephone and Telegraph
+ * Co. or Unix System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
  *
  * %sccs.include.redist.c%
  *
- *	from: @(#)tty_subr.c	7.7 (Berkeley) 5/9/91
+ *	from: @(#)tty_subr.c	8.2 (Berkeley) 9/5/93
  */
 
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "clist.h"
+#include <sys/param.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
 
-/*
- * Initialize clists.
- */
-cinit()
+char cwaiting;
+struct cblock *cfree, *cfreelist;
+int cfreecount, nclist;
+
+void
+clist_init()
 {
 
 	/*
 	 * Body deleted.
 	 */
+	return;
 }
 
-/*
- * Get a character from a clist.
- */
-getc(clp)
-	struct clist *clp;
+getc(a1)
+	struct clist *a1;
 {
-	char c;
 
 	/*
 	 * Body deleted.
 	 */
-	return (c);
+	return ((char)0);
 }
 
-/*
- * Copy clist to buffer.
- * Return number of bytes moved.
- */
-q_to_b(clp, cp, count)
-	struct clist *clp;
-	char *cp;
-	int count;
+q_to_b(a1, a2, a3)
+	struct clist *a1;
+	char *a2;
+	int a3;
 {
-	int s, moved = 0;
 
-	if (count <= 0)
-		return (0);
-	s = spltty();
 	/*
 	 * Body deleted.
 	 */
-	splx(s);
-	return (moved);
-}
-
-/*
- * Return count of contiguous characters in clist.
- * Stop counting if flag&character is non-null.
- */
-ndqb(clp, flag)
-	struct clist *clp;
-	int flag;
-{
-	int count = 0;
-	int s;
-
-	s = spltty();
-	/*
-	 * Body deleted.
-	 */
-	splx(s);
-	return (count);
-}
-
-/*
- * Flush count bytes from clist.
- */
-ndflush(clp, count)
-	struct clist *clp;
-	int count;
-{
-	int s;
-
-	s = spltty();
-	/*
-	 * Body deleted.
-	 */
-	splx(s);
-}
-
-/*
- * Put a character into the output queue.
- */
-putc(c, clp)
-	char c;
-	struct clist *clp;
-{
-	int s, error = 0;
-
-	s = spltty();
-	/*
-	 * Body deleted.
-	 */
-	if (error) {
-		splx(s);
-		return (-1);
-	}
-	splx(s);
 	return (0);
 }
 
-/*
- * Copy buffer to clist.
- * Return number of bytes not transfered.
- */
-b_to_q(cp, count, clp)
-	char *cp;
-	int count;
-	struct clist *clp;
+ndqb(a1, a2)
+	struct clist *a1;
+	int a2;
 {
-	int s, resid;
 
-	if (count <= 0)
-		return (0);
-	resid = count;
-	s = spltty();
 	/*
 	 * Body deleted.
 	 */
-	splx(s);
-	return (resid);
+	return (0);
 }
 
-/*
- * Given a non-NULL pointer into the clist return the pointer
- * to the next character in the list or return NULL if no more chars.
- *
- * Callers must not allow getc's to happen between nextc's so that the
- * pointer becomes invalid.  Note that interrupts are NOT masked.
- */
+void
+ndflush(a1, a2)
+	struct clist *a1;
+	int a2;
+{
+
+	/*
+	 * Body deleted.
+	 */
+	return;
+}
+
+putc(a1, a2)
+	char a1;
+	struct clist *a2;
+{
+
+	/*
+	 * Body deleted.
+	 */
+	return (0);
+}
+
+b_to_q(a1, a2, a3)
+	char *a1;
+	int a2;
+	struct clist *a3;
+{
+
+	/*
+	 * Body deleted.
+	 */
+	return (0);
+}
+
 char *
-nextc(clp, cp, count)
-	struct clist *clp;
-	char *cp;
-	int *count;
+nextc(a1, a2, a3)
+	struct clist *a1;
+	char *a2;
+	int *a3;
 {
-	int empty = 0;
 
 	/*
 	 * Body deleted.
 	 */
-	if (!empty)
-		return (cp);
-	return (0);
+	return ((char *)0);
 }
 
-/*
- * Remove the last character in the clist and return it.
- */
-unputc(clp)
-	struct clist *clp;
+unputc(a1)
+	struct clist *a1;
 {
-	char c;
-	int s;
 
-	s = spltty();
 	/*
 	 * Body deleted.
 	 */
-	splx(s);
-	return (c);
+	return ((char)0);
 }
 
-/*
- * Put the chars in the from queue on the end of the to queue.
- */
-catq(from, to)
-	struct clist *from, *to;
+void
+catq(a1, a2)
+	struct clist *a1, *a2;
 {
-	char c;
 
-	while ((c = getc(from)) >= 0)
-		putc(c, to);
+	/*
+	 * Body deleted.
+	 */
+	return;
 }

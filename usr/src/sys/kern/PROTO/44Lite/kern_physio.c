@@ -1,42 +1,30 @@
-/*
- * Copyright (c) 1982, 1986, 1990 Regents of the University of California.
- * All rights reserved.
+/*-
+ * Copyright (c) 1982, 1986, 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ * (c) UNIX System Laboratories, Inc.
+ * All or some portions of this file are derived from material licensed
+ * to the University of California by American Telephone and Telegraph
+ * Co. or Unix System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
  *
  * %sccs.include.redist.c%
  *
- *	from: @(#)kern_physio.c	7.20 (Berkeley) 5/11/91
+ *	from: @(#)kern_physio.c	8.1 (Berkeley) 6/10/93
  */
 
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "conf.h"
-#include "proc.h"
-#include "seg.h"
-#include "trace.h"
-#include "map.h"
-#include "vnode.h"
-#include "specdev.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
+#include <sys/conf.h>
+#include <sys/proc.h>
 
-#ifdef HPUXCOMPAT
-#include "user.h"
-#endif
-
-/*
- * This routine does raw device I/O for a user process.
- *
- * If the user has the proper access privileges, the process is
- * marked 'delayed unlock' and the pages involved in the I/O are
- * faulted and locked. After the completion of the I/O, the pages
- * are unlocked.
- */
-physio(strat, bp, dev, rw, mincnt, uio)
-	int (*strat)(); 
-	register struct buf *bp;
-	dev_t dev;
-	int rw;
-	u_int (*mincnt)();
-	struct uio *uio;
+physio(a1, a2, a3, a4, a5, a6)
+	int (*a1)(); 
+	struct buf *a2;
+	dev_t a3;
+	int a4;
+	u_int (*a5)();
+	struct uio *a6;
 {
 
 	/*
@@ -45,21 +33,15 @@ physio(strat, bp, dev, rw, mincnt, uio)
 	return (EIO);
 }
 
-/*
- * Calculate the maximum size of I/O request that can be requested
- * in a single operation. This limit is necessary to prevent a single
- * process from being able to lock more than a fixed amount of memory
- * in the kernel.
- */
 u_int
-minphys(bp)
-	struct buf *bp;
+minphys(a1)
+	struct buf *a1;
 {
 
 	/*
 	 * Body deleted.
 	 */
-	return;
+	return (0);
 }
 
 /*
