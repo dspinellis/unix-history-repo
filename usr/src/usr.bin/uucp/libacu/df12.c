@@ -1,8 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)df12.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)df12.c	4.3 (Berkeley) %G%";
 #endif
 
-#include "../condevs.h"
+#include "condevs.h"
 
 /*
  *	df12popn(telno, flds, dev) connect to df12 modem (pulse call)

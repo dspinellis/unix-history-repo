@@ -1,8 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)vad.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)vad.c	4.4 (Berkeley) %G%";
 #endif
 
-#include "../condevs.h"
+#include "condevs.h"
 
 /*
  *	vadopn: establish dial-out connection through a Racal-Vadic 3450.
