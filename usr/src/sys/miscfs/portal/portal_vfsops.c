@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal_vfsops.c	1.1 (Berkeley) %G%
+ *	@(#)portal_vfsops.c	1.2 (Berkeley) %G%
  *
  * $Id: portal_vfsops.c,v 1.5 1992/05/30 10:25:27 jsp Exp jsp $
  */
@@ -160,6 +160,7 @@ portal_unmount(mp, mntflags, p)
 	 * ever get anything cached at this level at the
 	 * moment, but who knows...
 	 */
+#if 0
 #ifdef PORTAL_DIAGNOSTIC
 	printf("portal_unmount: calling mntflushbuf\n");
 #endif
@@ -169,6 +170,7 @@ portal_unmount(mp, mntflags, p)
 #endif
 	if (mntinvalbuf(mp, 1))
 		return (EBUSY);
+#endif
 	if (rootvp->v_usecount > 1)
 		return (EBUSY);
 #ifdef PORTAL_DIAGNOSTIC
@@ -217,7 +219,6 @@ portal_root(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
 {
-	USES_VOP_LOCK;
 	struct vnode *vp;
 	int error;
 
@@ -284,6 +285,15 @@ portal_sync(mp, waitfor)
 	return (0);
 }
 
+portal_vget(mp, ino, vpp)
+	struct mount *mp;
+	ino_t ino;
+	struct vnode **vpp;
+{
+
+	return (EOPNOTSUPP);
+}
+
 portal_fhtovp(mp, fhp, vpp)
 	struct mount *mp;
 	struct fid *fhp;
@@ -307,6 +317,7 @@ struct vfsops portal_vfsops = {
 	portal_quotactl,
 	portal_statfs,
 	portal_sync,
+	portal_vget,
 	portal_fhtovp,
 	portal_vptofh,
 	portal_init,
