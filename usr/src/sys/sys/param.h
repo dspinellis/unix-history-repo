@@ -1,4 +1,4 @@
-/*	param.h	6.5	84/08/29	*/
+/*	param.h	6.6	84/12/20	*/
 
 /*
  * Machine type dependent parameters.
@@ -14,14 +14,13 @@
 /*
  * Machine-independent constants
  */
-#define	NMOUNT	15		/* number of mountable file systems */
+#define	NMOUNT	20		/* number of mountable file systems */
 /* NMOUNT must be <= 255 unless c_mdev (cmap.h) is expanded */
 #define	MSWAPX	NMOUNT		/* pseudo mount table index for swapdev */
 #define	MAXUPRC	25		/* max processes per user */
-#define	NOFILE	20		/* max open files per process */
-/* NOFILE MUST NOT BE >= 31; SEE pte.h */
+#define	NOFILE	48		/* max open files per process */
 #define	CANBSIZ	256		/* max size of typewriter line */
-#define	NCARGS	10240		/* # characters in exec arglist */
+#define	NCARGS	20480		/* # characters in exec arglist */
 #define	NGROUPS	8		/* max number groups */
 
 #define	NOGROUP	-1		/* marker for empty group set member */
@@ -40,7 +39,7 @@
 #define	PSLEP	40
 #define	PUSER	50
 
-#define	NZERO	20
+#define	NZERO	0
 
 /*
  * Signals
