@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.h	7.12 (Berkeley) %G%
+ *	@(#)if.h	7.13 (Berkeley) %G%
  */
 
 /*
@@ -105,9 +105,9 @@ struct ifnet {
 #define	IFF_ALLMULTI	0x200		/* receive all multicast packets */
 #define	IFF_OACTIVE	0x400		/* transmission in progress */
 #define	IFF_SIMPLEX	0x800		/* can't hear own transmissions */
-#define	IFF_LLC0	0x1000		/* per link layer defined bit */
-#define	IFF_LLC1	0x2000		/* per link layer defined bit */
-#define	IFF_LLC2	0x4000		/* per link layer defined bit */
+#define	IFF_LINK0	0x1000		/* per link layer defined bit */
+#define	IFF_LINK1	0x2000		/* per link layer defined bit */
+#define	IFF_LINK2	0x4000		/* per link layer defined bit */
 
 /* flags set internally only: */
 #define	IFF_CANTCHANGE \
@@ -166,7 +166,7 @@ struct ifaddr {
 	int	(*ifa_rtrequest)();	/* check or clean routes (+ or -)'d */
 	struct 	rtentry *ifa_rt;	/* ??? for ROUTETOIF */
 	u_short	ifa_flags;		/* mostly rt_flags for cloning */
-	u_short	ifa_llinfolen;		/* extra to malloc for link info */
+	u_short	ifa_refcnt;		/* extra to malloc for link info */
 };
 #define IFA_ROUTE	RTF_UP		/* route installed */
 /*
@@ -218,11 +218,19 @@ struct	ifconf {
 };
 
 #ifdef KERNEL
+#define	IFAFREE(ifa) \
+	if ((ifa)->ifa_refcnt <= 1) \
+		ifafree(ifa); \
+	else \
+		(ifa)->ifa_refcnt--;
+
 #include "../net/if_arp.h"
 struct	ifqueue rawintrq;		/* raw packet input queue */
-struct	ifnet *ifnet;
-struct	ifaddr *ifa_ifwithaddr(), *ifa_ifwithnet();
-struct	ifaddr *ifa_ifwithdstaddr();
+struct	ifnet	*ifnet;
+struct	ifaddr	*ifa_ifwithaddr __P((struct sockaddr *)),
+		*ifa_ifwithnet __P((struct sockaddr *)),
+		*ifa_ifwithdstaddr __P((struct sockaddr *));
+void	ifafree __P((struct ifaddr *));
 #else KERNEL
 #include <net/if_arp.h>
 #endif KERNEL
