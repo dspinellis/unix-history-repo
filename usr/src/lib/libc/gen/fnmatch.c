@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fnmatch.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fnmatch.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -21,6 +21,34 @@ static char sccsid[] = "@(#)fnmatch.c	5.2 (Berkeley) %G%";
 #include <string.h>
 
 #define	EOS	'\0'
+
+static char *
+rangematch(pattern, test)
+	register char *pattern, test;
+{
+	register char c, c2;
+	int negate, ok;
+
+	if (negate = (*pattern == '!'))
+		++pattern;
+
+	/*
+	 * TO DO: quoting
+	 */
+
+	for (ok = 0; (c = *pattern++) != ']';) {
+		if (c == EOS)
+			return(NULL);		/* illegal pattern */
+		if (*pattern == '-' && (c2 = pattern[1]) != EOS && c2 != ']') {
+			if (c <= test && test <= c2)
+				ok = 1;
+			pattern += 2;
+		}
+		else if (c == test)
+			ok = 1;
+	}
+	return(ok == negate ? NULL : pattern);
+}
 
 fnmatch(pattern, string, flags)
 	register char *pattern, *string;
@@ -88,32 +116,4 @@ fnmatch(pattern, string, flags)
 				return(0);
 			break;
 		}
-}
-
-static char *
-rangematch(pattern, test)
-	register char *pattern, test;
-{
-	register char c, c2;
-	int negate, ok;
-
-	if (negate = (*pattern == '!'))
-		++pattern;
-
-	/*
-	 * TO DO: quoting
-	 */
-
-	for (ok = 0; (c = *pattern++) != ']';) {
-		if (c == EOS)
-			return(NULL);		/* illegal pattern */
-		if (*pattern == '-' && (c2 = pattern[1]) != EOS && c2 != ']') {
-			if (c <= test && test <= c2)
-				ok = 1;
-			pattern += 2;
-		}
-		else if (c == test)
-			ok = 1;
-	}
-	return(ok == negate ? NULL : pattern);
 }
