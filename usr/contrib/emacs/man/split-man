@@ -1,0 +1,14 @@
+dviselect -i emacs.dvi -o emacs1.dvi 1-20
+dviselect -i emacs.dvi -o emacs21.dvi 21-40
+dviselect -i emacs.dvi -o emacs41.dvi 41-60
+dviselect -i emacs.dvi -o emacs61.dvi 61-80
+dviselect -i emacs.dvi -o emacs81.dvi 81-100
+dviselect -i emacs.dvi -o emacs101.dvi 101-120
+dviselect -i emacs.dvi -o emacs121.dvi 121-140
+dviselect -i emacs.dvi -o emacs141.dvi 141-160
+dviselect -i emacs.dvi -o emacs161.dvi 161-180
+dviselect -i emacs.dvi -o emacs181.dvi 181-200
+dviselect -i emacs.dvi -o emacs201.dvi 201-220
+dviselect -i emacs.dvi -o emacs221.dvi 221-240
+dviselect -i emacs.dvi -o emacs241.dvi 241-
+dviselect -i emacs.dvi -o emacs0.dvi _20-0
