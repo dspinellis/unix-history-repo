@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -369,6 +369,10 @@ dotimes()
 	printf("%d page ins, %d total time (msec)\n",sum.v_pgin, s.pgintime/10);
 	printf("average: %8.1f msec / page in\n", s.pgintime/(sum.v_pgin*10.0));
 }
+
+#if defined(tahoe)
+#include <tahoe/cpu.h>
+#endif
 
 dosum()
 {
