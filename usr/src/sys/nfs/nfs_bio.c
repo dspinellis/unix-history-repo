@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	8.5 (Berkeley) %G%
+ *	@(#)nfs_bio.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -387,6 +387,11 @@ nfs_write(ap)
 	 */
 	biosize = nmp->nm_rsize;
 	do {
+
+		/*
+		 * XXX make sure we aren't cached in the VM page cache
+		 */
+		(void)vnode_pager_uncache(vp);
 
 		/*
 		 * Check for a valid write lease.
