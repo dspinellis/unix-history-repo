@@ -14,14 +14,14 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)radix.c	7.1 (Berkeley) %G%
+ *	@(#)radix.c	7.2 (Berkeley) %G%
  */
 
 /*
  * Routines to build and maintain radix trees for routing lookups.
  */
 #ifndef RNF_NORMAL
-typedef unsigned char u_char;
+#include "param.h"
 #include "radix.h"
 #endif
 struct radix_node_head *radix_node_head;
@@ -60,7 +60,7 @@ struct radix_mask *rn_mkfreelist;
 struct radix_node *
 rn_search(v, head)
 	struct radix_node *head;
-	register char *v;
+	register caddr_t v;
 {
 	register struct radix_node *x;
 
@@ -80,13 +80,13 @@ static char maskedKey[MAXKEYLEN];
 struct radix_node *
 rn_match(v, head)
 	struct radix_node *head;
-	char *v;
+	caddr_t v;
 {
 	register struct radix_node *t = head, *x;
-	register char *cp = v, *cp2, *cp3;
-	char *cplim, *mstart;
+	register caddr_t cp = v, cp2, cp3;
+	caddr_t cplim, mstart;
 	struct radix_node *saved_t;
-	int off = t->rn_off, vlen = *(u_char *)cp, head_off, matched_off;
+	int off = t->rn_off, vlen = *(u_char *)cp, matched_off;
 
 	/*
 	 * Open code rn_search(v, head) to avoid overhead of extra
@@ -158,7 +158,7 @@ int	rn_saveinfo;
 
 struct radix_node *
 rn_newpair(v, b, nodes)
-	char *v;
+	caddr_t v;
 	struct radix_node nodes[2];
 {
 	register struct radix_node *tt = nodes, *t = tt + 1;
@@ -176,23 +176,23 @@ rn_newpair(v, b, nodes)
 int rn_debug =  1;
 struct radix_node *
 rn_insert(v, head, dupentry, nodes)
-	char *v;
+	caddr_t v;
 	struct radix_node *head;
 	int *dupentry;
 	struct radix_node nodes[2];
 {
 	int head_off = head->rn_off, vlen = (int)*((u_char *)v);
 	register struct radix_node *t = rn_search(v, head);
-	register char *cp = v + head_off;
+	register caddr_t cp = v + head_off;
 	register int b;
 	struct radix_node *tt;
     	/*
 	 *find first bit at which v and t->rn_key differ
 	 */
     {
-	register char *cp2 = t->rn_key + head_off;
+	register caddr_t cp2 = t->rn_key + head_off;
 	register int cmp_res;
-	char *cplim = v + vlen;
+	caddr_t cplim = v + vlen;
 
 	while (cp < cplim)
 		if (*cp2++ != *cp++)
@@ -240,15 +240,15 @@ on1:
 struct radix_node *
 rn_addroute(v, netmask, head, treenodes)
 	struct radix_node *head;
-	char *netmask, *v;
+	caddr_t netmask, v;
 	struct radix_node treenodes[2];
 {
 	register int j;
-	register char *cp;
+	register caddr_t cp;
 	register struct radix_node *t, *x, *tt;
 	short b = 0, b_leaf;
 	int vlen = *(u_char *)v, maskduplicated = 0, mlen, keyduplicated;
-	char *cplim; unsigned char *maskp;
+	caddr_t cplim; unsigned char *maskp;
 	struct radix_mask *m, **mp;
 	struct radix_node *saved_tt;
 
@@ -305,11 +305,11 @@ rn_addroute(v, netmask, head, treenodes)
 	if (netmask == 0)
 		goto on1;
 	if (maskduplicated == 0) {
-		Malloc(x, struct radix_node *, MAXKEYLEN + 2 * sizeof (*x));
+		R_Malloc(x, struct radix_node *, MAXKEYLEN + 2 * sizeof (*x));
 		if (x == 0)
 			return (0);
 		Bzero(x, MAXKEYLEN + 2 * sizeof (*x));
-		cp = (char *)(x + 2);
+		cp = (caddr_t)(x + 2);
 		bcopy(netmask, cp, mlen);
 		netmask = cp;
 		x = rn_insert(netmask, rn_maskhead, &maskduplicated, x);
@@ -407,7 +407,7 @@ on2:
 
 struct radix_node *
 rn_delete(v, netmask, head)
-	char *v, *netmask;
+	caddr_t v, netmask;
 	struct radix_node *head;
 {
 	register struct radix_node *t, *p, *x = head;
@@ -531,17 +531,17 @@ rn_inithead(head, off, af)
 struct radix_node_head **head;
 int off;
 {
-	register struct radix_node_head *hp;
+	register struct radix_node_head *rnh;
 	register struct radix_node *t, *tt, *ttt;
 	if (*head)
 		return (1);
-	Malloc(hp, struct radix_node_head *, sizeof (*hp));
-	if (hp == 0)
+	R_Malloc(rnh, struct radix_node_head *, sizeof (*rnh));
+	if (rnh == 0)
 		return (0);
-	Bzero(hp, sizeof (*hp));
-	*head = hp;
-	t = rn_newpair(rn_zeros, off, hp->rnh_nrt.nrt_nodes);
-	ttt = &(hp->rnh_upper);
+	Bzero(rnh, sizeof (*rnh));
+	*head = rnh;
+	t = rn_newpair(rn_zeros, off, rnh->rnh_nodes);
+	ttt = rnh->rnh_nodes + 2;
 	t->rn_r = ttt;
 	t->rn_p = t;
 	tt = t->rn_l;
@@ -549,20 +549,20 @@ int off;
 	tt->rn_b = -1 - off;
 	*ttt = *tt;
 	ttt->rn_key = rn_ones;
-	hp->rnh_af = af;
-	hp->rnh_treetop = t;
+	rnh->rnh_af = af;
+	rnh->rnh_treetop = t;
 	if (radix_node_head == 0) {
-		char *cp = rn_ones, *cplim = rn_ones + MAXKEYLEN;
+		caddr_t cp = rn_ones, cplim = rn_ones + MAXKEYLEN;
 		while (cp < cplim)
 			*cp++ = -1;
 		if (rn_inithead(&radix_node_head, 0, 0) == 0) {
-			Free(hp);
+			Free(rnh);
 			*head = 0;
 			return (0);
 		}
 	}
-	hp->rnh_next = radix_node_head->rnh_next;
-	if (radix_node_head != hp)
-		radix_node_head->rnh_next = hp;
+	rnh->rnh_next = radix_node_head->rnh_next;
+	if (radix_node_head != rnh)
+		radix_node_head->rnh_next = rnh;
 	return (1);
 }
