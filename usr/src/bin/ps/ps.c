@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ps.c	4.23 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.24 (Berkeley) %G%";
 #endif
 
 /*
@@ -11,7 +11,7 @@ static	char *sccsid = "@(#)ps.c	4.23 (Berkeley) %G%";
 #include <pwd.h>
 #include <sys/param.h>
 #include <sys/tty.h>
-#include <dir.h>
+#include <sys/dir.h>
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <machine/pte.h>
@@ -42,6 +42,10 @@ struct nlist nl[] = {
 #define	X_NPROC		8
 	{ "_ntext" },
 #define	X_NTEXT		9
+	{ "_dmmin" },
+#define	X_DMMIN		10
+	{ "_dmmax" },
+#define	X_DMMAX		11
 	{ "" },
 };
 
@@ -113,6 +117,7 @@ double	ccpu;
 int	ecmx;
 struct	pte *Usrptma, *usrpt;
 int	nproc, ntext;
+int	dmmin, dmmax;
 
 struct	ttys {
 	char	name[MAXNAMLEN+1];
@@ -397,6 +402,8 @@ getkvars(argc, argv)
 			exit(1);
 		}
 	}
+	dmmin = getw(nl[X_DMMIN].n_value);
+	dmmax = getw(nl[X_DMMAX].n_value);
 }
 
 printhdr()
@@ -999,7 +1006,7 @@ vstodb(vsbase, vssize, dmp, dbp, rev)
 	struct dmap *dmp;
 	register struct dblock *dbp;
 {
-	register int blk = DMMIN;
+	register int blk = dmmin;
 	register swblk_t *ip = dmp->dm_map;
 
 	vsbase = ctod(vsbase);
@@ -1008,7 +1015,7 @@ vstodb(vsbase, vssize, dmp, dbp, rev)
 		panic("vstodb");
 	while (vsbase >= blk) {
 		vsbase -= blk;
-		if (blk < DMMAX)
+		if (blk < dmmax)
 			blk *= 2;
 		ip++;
 	}
