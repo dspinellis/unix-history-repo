@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	6.12 (Berkeley) %G%
+ *	@(#)init_main.c	6.13 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -119,6 +119,7 @@ main(firstaddr)
 	domaininit();
 	splx(s);
 	pqinit();
+	xinit();
 	ihinit();
 	bhinit();
 	binit();
