@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -148,7 +148,7 @@ enter_person(pw)
 
 	switch ((*db->get)(db, &key, &data, 0)) {
 	case 0:
-		memcpy(&pn, data.data, sizeof pn);
+		memmove(&pn, data.data, sizeof pn);
 		return (pn);
 	default:
 	case -1:
@@ -189,7 +189,7 @@ find_person(name)
 
 	if ((*db->get)(db, &key, &data, 0))
 		return (NULL);
-	memcpy(&p, data.data, sizeof p);
+	memmove(&p, data.data, sizeof p);
 	return (p);
 }
 
