@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.9	(Berkeley)	%G%
+#	Makefile	4.10	83/07/02
 #
 DESTDIR=
 CFLAGS=	-O
@@ -10,7 +10,7 @@ WORK=	aard ddl mpu
 # Programs that live in subdirectories, and have makefiles of their own.
 #
 SUBDIR=	adventure backgammon boggle compat cribbage doctor fortune \
-	mille monop quiz snake zork hangman
+	mille monop quiz sail snake zork hangman
 
 # Shell scripts that need only be installed and are never removed.
 #
