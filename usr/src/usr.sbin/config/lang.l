@@ -16,7 +16,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lang.l	5.6 (Berkeley) %G%
+ *	@(#)lang.l	5.7 (Berkeley) %G%
  */
 
 #include <ctype.h>
@@ -36,6 +36,9 @@ struct kt {
 	{ "and",	AND },
 	{ "args",	ARGS },
 	{ "at",		AT },
+#if MACHINE_I386
+	{ "bio",	BIO },
+#endif MACHINE_I386
 	{ "config",	CONFIG },
 	{ "controller",	CONTROLLER },
 	{ "cpu",	CPU },
@@ -43,20 +46,34 @@ struct kt {
 	{ "device",	DEVICE },
 	{ "disk",	DISK },
 	{ "drive",	DRIVE },
+#if	MACHINE_I386
+	{ "drq",	DRQ },
+#endif MACHINE_I386
 	{ "dst",	DST },
 	{ "dumps",	DUMPS },
 	{ "flags",	FLAGS },
 	{ "hz",		HZ },
 	{ "ident",	IDENT },
+#if MACHINE_I386
+	{ "iomem",	IOMEM },
+	{ "iosiz",	IOSIZ },
+	{ "irq",	IRQ },
+#endif MACHINE_I386
 	{ "machine",	MACHINE },
 	{ "major",	MAJOR },
 	{ "makeoptions", MAKEOPTIONS },
 	{ "master",	MASTER },
 	{ "maxusers",	MAXUSERS },
 	{ "minor",	MINOR },
+#if MACHINE_I386
+	{ "net",	NET },
+#endif MACHINE_I386
 	{ "nexus",	NEXUS },
 	{ "on",		ON },
 	{ "options",	OPTIONS },
+#if MACHINE_I386
+	{ "port",	PORT },
+#endif MACHINE_I386
 	{ "priority",	PRIORITY },
 	{ "pseudo-device",PSEUDO_DEVICE },
 	{ "root",	ROOT },
@@ -67,6 +84,9 @@ struct kt {
 	{ "slave",	SLAVE },
 	{ "swap",	SWAP },
 	{ "tape",	DEVICE },
+#if MACHINE_I386
+	{ "tty",	TTY },
+#endif MACHINE_I386
 	{ "timezone",	TIMEZONE },
 	{ "trace",	TRACE },
 	{ "vector",	VECTOR },
