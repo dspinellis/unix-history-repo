@@ -1,4 +1,4 @@
-/*	ts.c	4.15	81/05/09	*/
+/*	ts.c	4.16	81/05/10	*/
 
 #include "ts.h"
 #include "te.h"
@@ -211,7 +211,7 @@ tsopen(dev, flag)
 		u.u_error = EIO;
 		return;
 	}
-	if ((flag&(FREAD|FWRITE)) == FWRITE && (sc->sc_sts.s_xs0&TS_WLK))) {
+	if ((flag&(FREAD|FWRITE)) == FWRITE && (sc->sc_sts.s_xs0&TS_WLK)) {
 		uprintf("ts%d: no write ring\n", tsunit);
 		u.u_error = EIO;
 		return;
