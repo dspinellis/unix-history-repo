@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rexecd.c	4.2 82/11/14";
+static char sccsid[] = "@(#)rexecd.c	4.3 82/11/15";
 #endif
 
 #include <sys/ioctl.h>
@@ -141,7 +141,7 @@ doit(f, fromp)
 		if (s < 0)
 			exit(1);
 		(void) alarm(60);
-		fromp->sin_port = ntohs((u_short)fromp->sin_port);
+		fromp->sin_port = ntohs((u_short)port);
 		if (connect(s, fromp, sizeof (*fromp), 0) < 0)
 			exit(1);
 		(void) alarm(0);
