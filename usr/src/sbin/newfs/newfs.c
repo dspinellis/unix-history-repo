@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -344,28 +344,37 @@ main(argc, argv)
 			++mp;
 		}
 	}
-	fsi = open(special, O_RDONLY);
-	if (fsi < 0)
-		fatal("%s: %s", special, strerror(errno));
-	if (fstat(fsi, &st) < 0)
-		fatal("%s: %s", special, strerror(errno));
-	if ((st.st_mode & S_IFMT) != S_IFCHR && !mfs)
-		printf("%s: %s: not a character-special device\n",
-		    progname, special);
-	cp = index(argv[0], '\0') - 1;
-	if (cp == 0 || (*cp < 'a' || *cp > 'h') && !isdigit(*cp))
-		fatal("%s: can't figure out file system partition", argv[0]);
+	if (mfs && disktype != NULL) {
+		lp = (struct disklabel *)getdiskbyname(disktype);
+		if (lp == NULL)
+			fatal("%s: unknown disk type", disktype);
+		pp = &lp->d_partitions[1];
+	} else {
+		fsi = open(special, O_RDONLY);
+		if (fsi < 0)
+			fatal("%s: %s", special, strerror(errno));
+		if (fstat(fsi, &st) < 0)
+			fatal("%s: %s", special, strerror(errno));
+		if ((st.st_mode & S_IFMT) != S_IFCHR && !mfs)
+			printf("%s: %s: not a character-special device\n",
+			    progname, special);
+		cp = index(argv[0], '\0') - 1;
+		if (cp == 0 || (*cp < 'a' || *cp > 'h') && !isdigit(*cp))
+			fatal("%s: can't figure out file system partition",
+			    argv[0]);
 #ifdef COMPAT
-	if (!mfs && disktype == NULL)
-		disktype = argv[1];
+		if (!mfs && disktype == NULL)
+			disktype = argv[1];
 #endif
-	lp = getdisklabel(special, fsi);
-	if (isdigit(*cp))
-		pp = &lp->d_partitions[0];
-	else
-		pp = &lp->d_partitions[*cp - 'a'];
-	if (pp->p_size == 0)
-		fatal("%s: `%c' partition is unavailable", argv[0], *cp);
+		lp = getdisklabel(special, fsi);
+		if (isdigit(*cp))
+			pp = &lp->d_partitions[0];
+		else
+			pp = &lp->d_partitions[*cp - 'a'];
+		if (pp->p_size == 0)
+			fatal("%s: `%c' partition is unavailable",
+			    argv[0], *cp);
+	}
 	if (fssize == 0)
 		fssize = pp->p_size;
 	if (fssize > pp->p_size && !mfs)
