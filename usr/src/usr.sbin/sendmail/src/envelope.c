@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -322,9 +322,10 @@ settime(e)
 			tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min);
 	define('t', tbuf, e);
 	(void) strcpy(dbuf, ctime(&now));
-	*strchr(dbuf, '\n') = '\0';
-	if (macvalue('d', e) == NULL)
-		define('d', dbuf, e);
+	p = strchr(dbuf, '\n');
+	if (p != NULL)
+		*p = '\0';
+	define('d', dbuf, e);
 	p = newstr(arpadate(dbuf));
 	if (macvalue('a', e) == NULL)
 		define('a', p, e);
