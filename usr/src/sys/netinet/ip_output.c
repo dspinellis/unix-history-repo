@@ -3,12 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_output.c	6.8 (Berkeley) %G%
+ *	@(#)ip_output.c	6.9 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "mbuf.h"
 #include "errno.h"
+#include "protosw.h"
 #include "socket.h"
 #include "socketvar.h"
 
@@ -16,6 +17,7 @@
 #include "../net/route.h"
 
 #include "in.h"
+#include "in_pcb.h"
 #include "in_systm.h"
 #include "in_var.h"
 #include "ip.h"
@@ -25,20 +27,28 @@
 #include "../vax/mtpr.h"
 #endif
 
+struct mbuf *ip_insertoptions();
+
+/*
+ * IP output.  The packet in mbuf chain m contains a skeletal IP
+ * header (as ipovly).  The mbuf chain containing the packet will
+ * be freed.  The mbuf opt, if present, will not be freed.
+ */
 ip_output(m, opt, ro, flags)
 	struct mbuf *m;
 	struct mbuf *opt;
 	struct route *ro;
 	int flags;
 {
-	register struct ip *ip = mtod(m, struct ip *);
+	register struct ip *ip;
 	register struct ifnet *ifp;
 	int len, hlen = sizeof (struct ip), off, error = 0;
 	struct route iproute;
 	struct sockaddr_in *dst;
 
-	if (opt)				/* XXX */
-		(void) m_free(opt);		/* XXX */
+	if (opt)
+		m = ip_insertoptions(m, opt, &hlen);
+	ip = mtod(m, struct ip *);
 	/*
 	 * Fill in IP header.
 	 */
@@ -47,7 +57,8 @@ ip_output(m, opt, ro, flags)
 		ip->ip_off &= IP_DF;
 		ip->ip_id = htons(ip_id++);
 		ip->ip_hl = hlen >> 2;
-	}
+	} else
+		hlen = ip->ip_hl << 2;
 
 	/*
 	 * Route packet.
@@ -208,6 +219,48 @@ done:
 }
 
 /*
+ * Insert IP options into preformed packet.
+ * Adjust IP destination as required for IP source routing,
+ * as indicated by a non-zero in_addr at the start of the options.
+ */
+struct mbuf *
+ip_insertoptions(m, opt, phlen)
+	register struct mbuf *m;
+	struct mbuf *opt;
+	int *phlen;
+{
+	register struct ipoption *p = mtod(opt, struct ipoption *);
+	struct mbuf *n;
+	register struct ip *ip = mtod(m, struct ip *);
+	int optlen;
+
+	optlen = opt->m_len - sizeof(p->ipopt_dst);
+	if (p->ipopt_dst.s_addr)
+		ip->ip_dst = p->ipopt_dst;
+	if (m->m_off >= MMAXOFF || MMINOFF + optlen > m->m_off) {
+		MGET(n, M_DONTWAIT, MT_HEADER);
+		if (n == 0)
+			return (m);
+		m->m_len -= sizeof(struct ip);
+		m->m_off += sizeof(struct ip);
+		n->m_next = m;
+		m = n;
+		m->m_off = MMAXOFF - sizeof(struct ip) - optlen;
+		m->m_len = optlen + sizeof(struct ip);
+		bcopy((caddr_t)ip, mtod(m, caddr_t), sizeof(struct ip));
+	} else {
+		m->m_off -= optlen;
+		m->m_len += optlen;
+		ovbcopy((caddr_t)ip, mtod(m, caddr_t), sizeof(struct ip));
+	}
+	ip = mtod(m, struct ip *);
+	bcopy((caddr_t)p->ipopt_list, (caddr_t)(ip + 1), optlen);
+	*phlen = sizeof(struct ip) + optlen;
+	ip->ip_len += optlen;
+	return (m);
+}
+
+/*
  * Copy options from ip to jp.
  * If off is 0 all options are copied
  * otherwise copy selectively.
@@ -229,7 +282,7 @@ ip_optcopy(ip, jp, off)
 		if (opt == IPOPT_NOP)
 			optlen = 1;
 		else
-			optlen = cp[1];
+			optlen = cp[IPOPT_OLEN];
 		if (optlen > cnt)			/* XXX */
 			optlen = cnt;			/* XXX */
 		if (off == 0 || IPOPT_COPIED(opt)) {
@@ -240,4 +293,157 @@ ip_optcopy(ip, jp, off)
 	for (optlen = dp - (u_char *)(jp+1); optlen & 0x3; optlen++)
 		*dp++ = IPOPT_EOL;
 	return (optlen);
+}
+
+/*
+ * IP socket option processing.
+ */
+ip_ctloutput(op, so, level, optname, m)
+	int op;
+	struct socket *so;
+	int level, optname;
+	struct mbuf **m;
+{
+	int error = 0;
+	struct inpcb *inp = sotoinpcb(so);
+
+	if (level != IPPROTO_IP)
+		error = EINVAL;
+	else switch (op) {
+
+	case PRCO_SETOPT:
+		switch (optname) {
+		case IP_OPTIONS:
+			return (ip_pcbopts(inp, *m));
+
+		default:
+			error = EINVAL;
+			break;
+		}
+		break;
+
+	case PRCO_GETOPT:
+		switch (optname) {
+		case IP_OPTIONS:
+			*m = m_get(M_WAIT, MT_SOOPTS);
+			if (inp->inp_options) {
+				(*m)->m_off = inp->inp_options->m_off;
+				(*m)->m_len = inp->inp_options->m_len;
+				bcopy(mtod(inp->inp_options, caddr_t),
+				    mtod(*m, caddr_t), (*m)->m_len);
+			} else
+				(*m)->m_len = 0;
+			break;
+		default:
+			error = EINVAL;
+			break;
+		}
+		break;
+	}
+	if (op == PRCO_SETOPT)
+		m_free(*m);
+	return (error);
+}
+
+/*
+ * Set up IP options in inpcb for insertion in output packets.
+ * Store in mbuf, adding pseudo-option with destination address
+ * if source routed.
+ */
+ip_pcbopts(inp, m)
+	struct inpcb *inp;
+	struct mbuf *m;
+{
+	register cnt, optlen;
+	register u_char *cp;
+	u_char opt;
+
+	/* turn off any old options */
+	if (inp->inp_options)
+		m_free(inp->inp_options);
+	inp->inp_options = 0;
+
+	if (m == (struct mbuf *)0 || m->m_len == 0) {
+		/*
+		 * Only turning off any previous options.
+		 */
+		if (m)
+			m_free(m);
+		return (0);
+	}
+
+#ifndef	vax
+	if (m->m_len % sizeof(long))
+		goto bad;
+#endif
+	/*
+	 * IP first-hop destination address will be stored before
+	 * actual options; move other options back
+	 * and clear it when none present.
+	 */
+#if	MAX_IPOPTLEN >= MMAXOFF - MMINOFF
+	if (m->m_off + m->m_len + sizeof(struct in_addr) > MAX_IPOPTLEN)
+		goto bad;
+#else
+	if (m->m_off + m->m_len + sizeof(struct in_addr) > MMAXOFF)
+		goto bad;
+#endif
+	cnt = m->m_len;
+	m->m_len += sizeof(struct in_addr);
+	cp = mtod(m, u_char *) + sizeof(struct in_addr);
+	ovbcopy(mtod(m, caddr_t), cp, cnt);
+	bzero(mtod(m, caddr_t), sizeof(struct in_addr));
+
+	for (; cnt > 0; cnt -= optlen, cp += optlen) {
+		opt = cp[IPOPT_OPTVAL];
+		if (opt == IPOPT_EOL)
+			break;
+		if (opt == IPOPT_NOP)
+			optlen = 1;
+		else {
+			optlen = cp[IPOPT_OLEN];
+			if (optlen <= IPOPT_OLEN || optlen > cnt)
+				goto bad;
+		}
+		switch (opt) {
+
+		default:
+			break;
+
+		case IPOPT_LSRR:
+		case IPOPT_SSRR:
+			/*
+			 * user process specifies route as:
+			 *	->A->B->C->D
+			 * D must be our final destination (but we can't
+			 * check that since we may not have connected yet).
+			 * A is first hop destination, which doesn't appear in
+			 * actual IP option, but is stored before the options.
+			 */
+			if (optlen < IPOPT_MINOFF - 1 + sizeof(struct in_addr))
+				goto bad;
+			m->m_len -= sizeof(struct in_addr);
+			cnt -= sizeof(struct in_addr);
+			optlen -= sizeof(struct in_addr);
+			cp[IPOPT_OLEN] = optlen;
+			/*
+			 * Move first hop before start of options.
+			 */
+			bcopy(&cp[IPOPT_OFFSET+1], mtod(m, caddr_t),
+			    sizeof(struct in_addr));
+			/*
+			 * Then copy rest of options back
+			 * to close up the deleted entry.
+			 */
+			ovbcopy(&cp[IPOPT_OFFSET+1] + sizeof(struct in_addr),
+			    &cp[IPOPT_OFFSET+1], cnt + sizeof(struct in_addr));
+			break;
+		}
+	}
+	inp->inp_options = m;
+	return (0);
+
+bad:
+	m_free(m);
+	return (EINVAL);
 }
