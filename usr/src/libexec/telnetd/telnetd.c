@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.22 83/06/12";
+static char sccsid[] = "@(#)telnetd.c	4.23 (Berkeley) 83/07/02";
 #endif
 
 /*
@@ -7,6 +7,7 @@ static char sccsid[] = "@(#)telnetd.c	4.22 83/06/12";
  */
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 
 #include <netinet/in.h>
 
@@ -16,7 +17,6 @@ static char sccsid[] = "@(#)telnetd.c	4.22 83/06/12";
 #include <signal.h>
 #include <errno.h>
 #include <sgtty.h>
-#include <wait.h>
 #include <netdb.h>
 #include <getty.h>
 

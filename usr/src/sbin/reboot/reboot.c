@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)reboot.c	4.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)reboot.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -10,7 +10,7 @@ static	char *sccsid = "@(#)reboot.c	4.7 (Berkeley) %G%";
 #include <errno.h>
 #include <signal.h>
 #include <sys/types.h>
-#include <time.h>
+#include <sys/time.h>
 
 #define SHUTDOWNLOG "/usr/adm/shutdownlog"
 

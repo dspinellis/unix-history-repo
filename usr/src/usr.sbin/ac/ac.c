@@ -1,12 +1,14 @@
+#ifndef lint
+static char *sccsid = "@(#)ac.c	4.7 (Berkeley) %G%";
+#endif
 /*
  * ac [ -w wtmp ] [ -d ] [ -p ] [ people ]
  */
-static char *sccsid = "@(#)ac.c	4.6 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
-#include <time.h>
 #include <utmp.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/timeb.h>
 

@@ -1,10 +1,10 @@
 #ifndef lint
-static	char sccsid[] = "@(#)arff.c	4.14 (Berkeley) 83/06/07";
+static	char sccsid[] = "@(#)arff.c	4.15 (Berkeley) 83/07/02";
 #endif
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <time.h>
+#include <sys/time.h>
 #include <signal.h>
 #include <stdio.h>
 
