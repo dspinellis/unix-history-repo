@@ -4,26 +4,57 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_subr.c	7.13 (Berkeley) %G%
+ *	@(#)ffs_subr.c	7.14 (Berkeley) %G%
  */
 
-#ifdef KERNEL
-#include "param.h"
-#include "../ufs/fs.h"
-#else
 #include <sys/param.h>
-#include <ufs/fs.h>
-#endif
+#include <sys/buf.h>
+#include <sys/vnode.h>
 
-extern	int around[9];
-extern	int inside[9];
-extern	u_char *fragtbl[];
+#include <ufs/ufs/quota.h>
+#include <ufs/ufs/inode.h>
+
+#include <ufs/ffs/fs.h>
+#include <ufs/ffs/ffs_extern.h>
+
+/*
+ * Return buffer with the contents of block "offset" from the beginning of
+ * directory "ip".  If "res" is non-zero, fill it in with a pointer to the
+ * remaining space in the directory.
+ */
+int
+ffs_blkatoff(ip, offset, res, bpp)
+	struct inode *ip;
+	off_t offset;
+	char **res;
+	struct buf **bpp;
+{
+	register struct fs *fs;
+	struct buf *bp;
+	daddr_t lbn;
+	int bsize, error;
+
+	fs = ip->i_fs;
+	lbn = lblkno(fs, offset);
+	bsize = blksize(fs, ip, lbn);
+
+	*bpp = NULL;
+	if (error = bread(ITOV(ip), lbn, bsize, NOCRED, &bp)) {
+		brelse(bp);
+		return (error);
+	}
+	if (res)
+		*res = bp->b_un.b_addr + blkoff(fs, offset);
+	*bpp = bp;
+	return (0);
+}
 
 /*
  * Update the frsum fields to reflect addition or deletion 
  * of some frags.
  */
-fragacct(fs, fragmap, fraglist, cnt)
+void
+ffs_fragacct(fs, fragmap, fraglist, cnt)
 	struct fs *fs;
 	int fragmap;
 	long fraglist[];
@@ -53,12 +84,47 @@ fragacct(fs, fragmap, fraglist, cnt)
 	}
 }
 
+#ifdef DIAGNOSTIC
+void
+ffs_checkoverlap(bp, ip)
+	struct buf *bp;
+	struct inode *ip;
+{
+	register struct buf *ebp, *ep;
+	register daddr_t start, last;
+	struct vnode *vp;
+
+	ebp = &buf[nbuf];
+	start = bp->b_blkno;
+	last = start + btodb(bp->b_bcount) - 1;
+	for (ep = buf; ep < ebp; ep++) {
+		if (ep == bp || (ep->b_flags & B_INVAL) ||
+		    ep->b_vp == NULLVP)
+			continue;
+		if (VOP_BMAP(ep->b_vp, (daddr_t)0, &vp, (daddr_t)0))
+			continue;
+		if (vp != ip->i_devvp)
+			continue;
+		/* look for overlap */
+		if (ep->b_bcount == 0 || ep->b_blkno > last ||
+		    ep->b_blkno + btodb(ep->b_bcount) <= start)
+			continue;
+		vprint("Disk overlap", vp);
+		(void)printf("\tstart %d, end %d overlap start %d, end %d\n",
+			start, last, ep->b_blkno,
+			ep->b_blkno + btodb(ep->b_bcount) - 1);
+		panic("Disk buffer overlap");
+	}
+}
+#endif /* DIAGNOSTIC */
+
 /*
  * block operations
  *
  * check if a block is available
  */
-isblock(fs, cp, h)
+int
+ffs_isblock(fs, cp, h)
 	struct fs *fs;
 	unsigned char *cp;
 	daddr_t h;
@@ -78,15 +144,15 @@ isblock(fs, cp, h)
 		mask = 0x01 << (h & 0x7);
 		return ((cp[h >> 3] & mask) == mask);
 	default:
-		panic("isblock");
-		return (NULL);
+		panic("ffs_isblock");
 	}
 }
 
 /*
  * take a block out of the map
  */
-clrblock(fs, cp, h)
+void
+ffs_clrblock(fs, cp, h)
 	struct fs *fs;
 	u_char *cp;
 	daddr_t h;
@@ -106,14 +172,15 @@ clrblock(fs, cp, h)
 		cp[h >> 3] &= ~(0x01 << (h & 0x7));
 		return;
 	default:
-		panic("clrblock");
+		panic("ffs_clrblock");
 	}
 }
 
 /*
  * put a block into the map
  */
-setblock(fs, cp, h)
+void
+ffs_setblock(fs, cp, h)
 	struct fs *fs;
 	unsigned char *cp;
 	daddr_t h;
@@ -134,7 +201,7 @@ setblock(fs, cp, h)
 		cp[h >> 3] |= (0x01 << (h & 0x7));
 		return;
 	default:
-		panic("setblock");
+		panic("ffs_setblock");
 	}
 }
 
@@ -144,6 +211,7 @@ setblock(fs, cp, h)
  * C definitions of special instructions.
  * Normally expanded with inline.
  */
+int
 scanc(size, cp, table, mask)
 	u_int size;
 	register u_char *cp, table[];
@@ -158,6 +226,7 @@ scanc(size, cp, table, mask)
 #endif
 
 #if !defined(vax) && !defined(tahoe) && !defined(hp300)
+int
 skpc(mask, size, cp)
 	register u_char mask;
 	u_int size;
@@ -170,6 +239,7 @@ skpc(mask, size, cp)
 	return (end - cp);
 }
 
+int
 locc(mask, size, cp)
 	register u_char mask;
 	u_int size;
