@@ -1,5 +1,5 @@
 /*
-char id_fmt[] = "@(#)fmt.c	1.4";
+char id_fmt[] = "@(#)fmt.c	1.5";
  *
  * fortran format parser
  */
@@ -60,10 +60,9 @@ char *f_list(s) char *s;
 		if(*s==',') s++;
 		else if(*s==')')
 		{	if(--parenlvl==0)
-			{
 				op_gen(REVERT,revloc,0,0,s);
-			}
-			else	op_gen(GOTO,0,0,0,s);
+			else
+				op_gen(GOTO,0,0,0,s);
 			return(++s);
 		}
 	}
@@ -75,9 +74,16 @@ char *i_tem(s) char *s;
 {	char *t;
 	int n,curloc;
 	if(*s==')') return(s);
-	if(ne_d(s,&t)) return(t);
-	if(e_d(s,&t)) return(t);
+	if ((n=ne_d(s,&t))==FMTOK)
+		return(t);
+	else if (n==FMTERR)
+		return(FMTERR);
+	if ((n=e_d(s,&t))==FMTOK)
+		return(t);
+	else if (n==FMTERR)
+		return(FMTERR);
 	s=gt_num(s,&n);
+	if (n == 0) { fmtptr = s; return(FMTERR); }
 	curloc = op_gen(STACK,n,0,0,s);
 	return(f_s(s,curloc));
 }
@@ -123,7 +129,7 @@ ne_d(s,p) char *s,**p;
 		case 'p': if(sign) n= -n; op_gen(P,n,0,0,s); break;
 #ifndef KOSHER
 		case 'r': if(n<=1)		/*** NOT STANDARD FORTRAN ***/
-			{	fmtptr = s; return(FMTERR); }
+			{	fmtptr = --s; return(FMTERR); }
 			op_gen(R,n,0,0,s); break;
 		case 't': op_gen(T,0,n,0,s); break;	/* NOT STANDARD FORT */
 #endif
@@ -131,7 +137,7 @@ ne_d(s,p) char *s,**p;
 		case 'h': op_gen(H,n,(int)(s+1),0,s);
 			s+=n;
 			break;
-		default: fmtptr = s; return(0);
+		default: fmtptr = s; return(FMTUNKN);
 		}
 		break;
 	case GLITCH:
@@ -147,11 +153,10 @@ ne_d(s,p) char *s,**p;
 			default:  x=T; break;
 		}
 		if(isdigit(*(s+1))) {s=gt_num(s+1,&n); s--;}
-#ifndef KOSHER
-		else n = 0;	/* NOT STANDARD FORTRAN, should be error */
-#endif
 #ifdef KOSHER
-		fmtptr = s; return(FMTERR);
+		else { fmtptr = s; return(FMTERR); }
+#else
+		else n = 0;	/* NOT STANDARD FORTRAN, should be error */
 #endif
 		op_gen(x,n,1,0,s);
 		break;
@@ -161,7 +166,7 @@ ne_d(s,p) char *s,**p;
 	case 'r': op_gen(R,10,1,0,s); break;  /*** NOT STANDARD FORTRAN ***/
 #endif
 
-	default: fmtptr = s; return(0);
+	default: fmtptr = s; return(FMTUNKN);
 	}
 	s++;
 	*p=s;
@@ -173,6 +178,7 @@ e_d(s,p) char *s,**p;
 	char *sv=s;
 	char c;
 	s=gt_num(s,&n);
+	if (n == 0) goto ed_err;
 	op_gen(STACK,n,0,0,s);
 	c = lcase(*s); s++;
 	switch(c)
@@ -181,7 +187,7 @@ e_d(s,p) char *s,**p;
 	case 'e':
 	case 'g':
 		s = gt_num(s, &w);
-		if (w==0) break;
+		if (w==0) goto ed_err;
 		if(*s=='.')
 		{	s++;
 			s=gt_num(s,&d);
@@ -200,18 +206,24 @@ e_d(s,p) char *s,**p;
 		{	e=2;
 			if(c=='e') n=E; else if(c=='d') n=D; else n=G;
 		}
+		if (e==0) goto ed_err;
 		op_gen(n,w,d,e,s);
 		break;
 	case 'l':
 		s = gt_num(s, &w);
-		if (w==0) break;
+		if (w==0) goto ed_err;
 		op_gen(L,w,0,0,s);
 		break;
 	case 'a':
 		skip(s);
-		if(*s>='0' && *s<='9')
+		if(isdigit(*s))
 		{	s=gt_num(s,&w);
-			if(w==0) break;
+#ifdef	KOSHER
+			if (w==0) goto ed_err;
+#else
+			if (w==0) op_gen(A,0,0,0,s);
+			else
+#endif
 			op_gen(AW,w,0,0,s);
 			break;
 		}
@@ -219,7 +231,7 @@ e_d(s,p) char *s,**p;
 		break;
 	case 'f':
 		s = gt_num(s, &w);
-		if (w==0) break;
+		if (w==0) goto ed_err;
 		if(*s=='.')
 		{	s++;
 			s=gt_num(s,&d);
@@ -227,9 +239,13 @@ e_d(s,p) char *s,**p;
 		else d=0;
 		op_gen(F,w,d,0,s);
 		break;
+#ifndef	KOSHER
+	case 'o':	/*** octal format - NOT STANDARD FORTRAN ***/
+	case 'z':	/*** hex   format - NOT STANDARD FORTRAN ***/
+#endif
 	case 'i':
 		s = gt_num(s, &w);
-		if (w==0) break;
+		if (w==0) goto ed_err;
 		if(*s =='.')
 		{
 			s++;
@@ -240,16 +256,29 @@ e_d(s,p) char *s,**p;
 		{	d = 1;
 			x = I;
 		}
+#ifndef KOSHER
+		if (c == 'o')
+			op_gen(R,8,1,0,s);
+		else if (c == 'z')
+			op_gen(R,16,1,0,s);
+#endif
 		op_gen(x,w,d,0,s);
+#ifndef KOSHER
+		if (c == 'o' || c == 'z')
+			op_gen(R,10,1,0,s);
+#endif
 		break;
 	default:
 		pc--;	/* unSTACK */
 		*p = sv;
 		fmtptr = s;
-		return(FMTERR);
+		return(FMTUNKN);
 	}
 	*p = s;
 	return(FMTOK);
+ed_err:
+	fmtptr = --s;
+	return(FMTERR);
 }
 
 op_gen(a,b,c,d,s) char *s;

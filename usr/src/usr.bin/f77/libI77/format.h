@@ -1,5 +1,5 @@
 /*
-char id_format[] = "@(#)format.h	1.1";
+char id_format[] = "@(#)format.h	1.2";
  *
  * format parser definitions
  */
@@ -45,9 +45,9 @@ struct syl
 #define DOLAR	34		/*** NOT STANDARD FORTRAN ***/
 #define SU	35		/*** NOT STANDARD FORTRAN ***/
 
+#define	FMTUNKN	-1
 #define FMTOK	1
 #define FMTERR	0
 
 extern struct syl syl[];
 extern int pc,parenlvl,revloc;
-
