@@ -24,11 +24,11 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: clnp_er.c,v 4.4 88/09/10 18:31:10 hagens Exp $ */
-/* $Source: /usr/argo/sys/netiso/RCS/clnp_er.c,v $ */
+/* $Header: /var/src/sys/netiso/RCS/clnp_er.c,v 5.1 89/02/09 16:20:18 hagens Exp $ */
+/* $Source: /var/src/sys/netiso/RCS/clnp_er.c,v $ */
 
 #ifndef lint
-static char *rcsid = "$Header: clnp_er.c,v 4.4 88/09/10 18:31:10 hagens Exp $";
+static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_er.c,v 5.1 89/02/09 16:20:18 hagens Exp $";
 #endif lint
 
 #ifdef ISO
@@ -163,8 +163,12 @@ char			reason;	/* reason code of er */
 			break;
 	}
 
+	/*
+	 *	tpclnp_ctlinput1 is called directly so that we don't
+	 *	have to build an iso_sockaddr out of src.
+	 */
 	if (cmd >= 0)
-		(*isosw[clnp_protox[ISOPROTO_TP]].pr_ctlinput)(cmd, src);
+		tpclnp_ctlinput1(cmd, src);
 
 	m_freem(m);
 }
@@ -232,7 +236,6 @@ char					reason;	/* reason for discard */
 	caddr_t						hoff, hend;
 	int							total_len;		/* total len of dg */
 	struct mbuf 				*m0;			/* contains er pdu hdr */
-/*	struct clnp_optidx			*oidx;	 index for options on orig pkt */
 
 	IFDEBUG(D_DISCARD)
 		printf("clnp_emit_er: m x%x, hdr len %d\n", m, clnp->cnf_hdr_len);

@@ -24,9 +24,9 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: clnp.h,v 4.3 88/09/12 13:34:40 hagens Exp $ */
-/* $Source: /usr/argo/sys/netiso/RCS/clnp.h,v $ */
-/*	@(#)clnp.h	7.2 (Berkeley) %G% */
+/* $Header: /var/src/sys/netiso/RCS/clnp.h,v 5.1 89/02/09 16:17:22 hagens Exp $ */
+/* $Source: /var/src/sys/netiso/RCS/clnp.h,v $ */
+/*	@(#)clnp.h	7.3 (Berkeley) %G% */
 
 #ifndef BYTE_ORDER
 /*
@@ -43,6 +43,9 @@ SOFTWARE.
 #define	BYTE_ORDER	BIG_ENDIAN	/* mc68000, tahoe, most others */
 #endif
 #endif BYTE_ORDER
+
+/* should be config option but cpp breaks with too many #defines */
+#define	DECBIT
 
 /*
  *	Return true if the mbuf is a cluster mbuf
@@ -178,25 +181,33 @@ struct clnp_optidx {
 
 #define	ER_INVALREAS	0xff	/* code for invalid ER pdu discard reason */
 
+/* given an mbuf and addr of option, return offset from data of mbuf */
+#define CLNP_OPTTOOFF(m, opt)\
+	((u_short) (opts - mtod(m, caddr_t)))
+
+/* given an mbuf and offset of option, return address of option */
+#define CLNP_OFFTOOPT(m, off)\
+	((caddr_t) (mtod(m, caddr_t) + off))
+
 /*	return true iff src route is valid */
 #define	CLNPSRCRT_VALID(oidx)\
 	((oidx) && (oidx->cni_srcrt_s))
 
 /*	return the offset field of the src rt */
 #define CLNPSRCRT_OFF(oidx, options)\
-	(*((u_char *)((caddr_t)options + oidx->cni_srcrt_s + 1)))
+	(*((u_char *)(CLNP_OFFTOOPT(options, oidx->cni_srcrt_s) + 1)))
 
 /*	return the type field of the src rt */
 #define CLNPSRCRT_TYPE(oidx, options)\
-	((u_char)(*((caddr_t)options + oidx->cni_srcrt_s)))
+	((u_char)(*(CLNP_OFFTOOPT(options, oidx->cni_srcrt_s))))
 
 /* return the length of the current address */
 #define CLNPSRCRT_CLEN(oidx, options)\
-	((u_char)(*((caddr_t)options + oidx->cni_srcrt_s + CLNPSRCRT_OFF(oidx, options) - 1)))
+	((u_char)(*(CLNP_OFFTOOPT(options, oidx->cni_srcrt_s) + CLNPSRCRT_OFF(oidx, options) - 1)))
 
 /* return the address of the current address */
 #define CLNPSRCRT_CADDR(oidx, options)\
-	((caddr_t)((caddr_t)options + oidx->cni_srcrt_s + CLNPSRCRT_OFF(oidx, options)))
+	((caddr_t)(CLNP_OFFTOOPT(options, oidx->cni_srcrt_s) + CLNPSRCRT_OFF(oidx, options)))
 
 /* 
  *	return true if the src route has run out of routes
@@ -225,6 +236,11 @@ struct clnp_optidx {
 #define	CLNPOVAL_SRCSPEC	0x40	/* source address specific */
 #define	CLNPOVAL_DSTSPEC	0x80	/* destination address specific */
 #define	CLNPOVAL_GLOBAL		0xc0	/* globally unique */
+
+/* Globally Unique QOS */
+#define	CLNPOVAL_SEQUENCING	0x10	/* sequencing preferred */
+#define CLNPOVAL_CONGESTED	0x08	/* congestion experienced */
+#define CLNPOVAL_LOWDELAY	0x04	/* low transit delay */
 
 #define	CLNPOVAL_PARTRT		0x00	/* partial source routing */
 #define CLNPOVAL_COMPRT		0x01	/* complete source routing */
