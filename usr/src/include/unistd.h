@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	8.11 (Berkeley) %G%
+ *	@(#)unistd.h	8.12 (Berkeley) %G%
  */
 
 #ifndef _UNISTD_H_
@@ -70,6 +70,10 @@ int	 tcsetpgrp __P((int, pid_t));
 char	*ttyname __P((int));
 int	 unlink __P((const char *));
 ssize_t	 write __P((int, const void *, size_t));
+
+extern char *optarg;			/* getopt(3) external variables */
+extern int optind, opterr, optopt;
+int	 getopt __P((int, char * const [], const char *));
 
 #ifndef	_POSIX_SOURCE
 #ifdef	__STDC__
@@ -144,6 +148,9 @@ int	 unwhiteout __P((const char *));
 void	 usleep __P((unsigned int));
 void	*valloc __P((size_t));			/* obsoleted by malloc() */
 pid_t	 vfork __P((void));
+
+extern char *suboptarg;			/* getsubopt(3) external variable */
+int	 getsubopt __P((char **, char * const *, char **));
 #endif /* !_POSIX_SOURCE */
 __END_DECLS
 
