@@ -1,0 +1,1183 @@
+-- ds1.my - DS1-interface objects
+
+-- $Header: /f/osi/snmp/RCS/ds1.my,v 7.2 91/02/22 09:43:03 mrose Interim $
+--
+-- 
+-- $Log:	ds1.my,v $
+-- Revision 7.2  91/02/22  09:43:03  mrose
+-- Interim 6.8
+-- 
+-- Revision 7.1  91/01/11  13:02:23  mrose
+-- update
+-- 
+-- Revision 7.0  90/09/27  10:46:07  mrose
+-- *** empty log message ***
+-- 
+
+--
+--				  NOTICE
+--
+--    Acquisition, use, and distribution of this module and related
+--    materials are subject to the restrictions of a license agreement.
+--    Consult the Preface in the User's Manual for the full terms of
+--    this agreement.
+--
+--
+
+
+
+
+          RFCxxxx-MIB DEFINITIONS ::= BEGIN
+
+          IMPORTS
+                  experimental, Counter
+                          FROM RFC1155-SMI
+                  DisplayString
+                          FROM RFC1158-MIB
+                  OBJECT-TYPE
+                          FROM RFC-oooo;
+
+          --  This MIB module uses the extended OBJECT-TYPE macro as
+          --  defined in [13].
+
+
+          --  this is the MIB module for ds1 objects
+
+          ds1 OBJECT IDENTIFIER ::= { experimental 2 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          -- the DS1 Configuration group
+
+          -- Although the objects in this group are read-only, at the
+          -- agent's discretion they may be made read-write so that the
+          -- management station, when appropriately authorized, may
+          -- change the behavior of the CSU, e.g., to place the device
+          -- into a loopback state or emit a QRSS BER test.
+
+          -- Implementation of this group is mandatory for all systems
+          -- that attach to a ds1.
+
+          ds1ConfigTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF DS1ConfigEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "The DS1 Configuration table."
+              ::= { ds1 1 }
+
+          ds1ConfigEntry OBJECT-TYPE
+              SYNTAX  DS1ConfigEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "An entry in the DS1 Configuration table."
+              INDEX   { ds1CSUIndex }
+              ::= { ds1ConfigTable 1 }
+
+          DS1ConfigEntry ::=
+              SEQUENCE {
+                  ds1CSUIndex
+                      INTEGER,
+                  ds1Index
+                      INTEGER,
+                  ds1TimeElapsed
+                      INTEGER (1..900),
+                  ds1ValidIntervals
+                      INTEGER (0..96),
+                  ds1LineType
+                      INTEGER,
+                  ds1ZeroCoding
+                      INTEGER,
+                  ds1Loopback
+                      INTEGER,
+                  ds1SendCode
+
+
+
+
+
+
+
+                      INTEGER,
+                  ds1YellowAlarm
+                      INTEGER,
+                  ds1RedAlarm
+                      INTEGER,
+                  ds1CircuitIdentifier
+                      DisplayString (SIZE (0..255))
+          }
+
+          ds1CSUIndex OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The index value which uniquely identifies the CSU
+                      to which this entry is applicable."
+              ::= { ds1ConfigEntry 1 }
+
+          ds1Index OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "An index value that uniquely identifies an
+                      interface to a ds1.  The interface identified by a
+                      particular value of this index is the same
+                      interface as identified by the same value an
+                      ifIndex object instance."
+              ::= { ds1ConfigEntry 2 }
+
+          ds1TimeElapsed OBJECT-TYPE
+              SYNTAX  INTEGER (1..900)
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The number of seconds that have elapsed since the
+                      beginning of the current error-measurement period.
+                      Any fraction is rounded up."
+              ::= { ds1ConfigEntry 3 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+          ds1ValidIntervals OBJECT-TYPE
+              SYNTAX  INTEGER (0..96)
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The number of previous intervals for which valid
+                      data was collected.  The value will be 96 unless
+                      the CSU device was brought online within the last
+                      24 hours, in which case the value will be the
+                      number of complete 15 minute intervals the CSU has
+                      been online."
+              ::= { ds1ConfigEntry 4 }
+
+          ds1LineType OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          other(1),
+                          ds1ESF(2),
+                          ds1D4(3),
+                          ds1ANSI-ESF(4),
+                          ds1G704(5),
+                          ds1G704-CRC(6)
+                      }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "This variable indicates the variety of DS1 Line
+                      implementing this circuit.  The type of circuit
+                      affects the number of bits per second that the
+                      circuit can reasonably carry, as well as the
+                      interpretation of the usage and error statistics.
+
+                      The values, in sequence, describe:
+                      TITLE:       SPECIFICATION:
+                      ds1ESF        AT&T Extended SuperFrame DS1 [10]
+                      ds1D4         AT&T D4 format DS1 [16], [17]
+                      ds1ANSI-ESF   ANSI Extended SuperFrame format [14]
+                      ds1G704       CCITT Recommendation G.704 [12]
+                                      (section 2.1.3.2)
+                      ds1G704-CRC   CCITT Recommendation G.704 [12]
+                                      (section 2.1.3.1)
+                      "
+              ::= { ds1ConfigEntry 5 }
+
+
+
+
+
+
+
+
+
+
+          ds1ZeroCoding OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          ds1JammedBit(1),
+                          ds1B8ZS(2),
+                          ds1InvertedHDLC(3),
+                          ds1HDB3(4),
+                          ds1ZBTSI(5)
+                      }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "This variable describes the variety of Zero Code
+                      Suppression used on the link, which in turn
+                      affects a number of its characteristics.
+
+                      ds1JammedBit refers the Jammed bit Zero Encoding,
+                      in which the AT&T specification of at least one
+                      pulse every 8 bit periods is literally implemented
+                      by forcing a pulse in bit 8 of each channel.
+                      Thus, only seven bits per channel, or 1.344 Mbps,
+                      is available for data.
+
+                      ds1B8ZS refers to the use of a specified pattern
+                      of normal bits and bipolar violations which are
+                      used to replace a sequence of eight zero bits (see
+                      [14]).  In this context, all eight bits in a
+                      channel are technically available for data, but
+                      care must be taken with D4 encoded data to avoid
+                      having HDLC Flag streams imitate spurious Yellow
+                      Alarm conditions.  Typically, one bit per frame is
+                      ignored to force flag streams to rotate, thereby
+                      avoiding this error type.  CCITT Recommendation
+                      G.703 [11] may be referred to for further
+                      definition of these.
+
+                      ds1InvertedHDLC refers to the practice, common on
+                      HDLC encoded DS1 data links, of inverting the data
+                      between the serial interface chip and the CSU.
+                      Since HDLC guarantees one zero every 6 bits in the
+                      worst case, while the standards call for (in
+                      effect) at least one pulse every eight, inverted
+                      HDLC enjoys 4/24 one's density on the line, which
+                      may improve the effective clock stability of a DS1
+                      line.  As with B8ZS, all eight bits in a channel
+                      are technically available for data, but care must
+
+
+
+
+
+
+
+                      be taken with D4 encoded data to avoid having HDLC
+                      Flag streams imitate spurious Yellow Alarm
+                      conditions.  Typically, one bit per frame is
+                      ignored to force flag streams to rotate, thereby
+                      avoiding this error type.
+
+                      ANSI Clear Channels may use ds1ZBTSI, or Zero Byte
+                      Time Slot Interchange (see [14]).
+
+                      G.704 links, with or without CRC, use ds1HDB3 (see
+                      [11]).  "
+              ::= { ds1ConfigEntry 6 }
+
+          ds1Loopback OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          ds1NoLoop(1),
+                          ds1LocalLoopbackLocalSide(2),
+                          ds1LocalLoopbackRemoteSide(3),
+                          ds1RemoteLoopbackLocalSide(4),
+                          ds1RemoteLoopbackRemoteSide(5)
+                      }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "This variable represents the loopback state of
+                      the CSU.  Devices supporting read/write access
+                      should return badValue in response to a requested
+                      loopback state that the CSU does not support.  The
+                      values mean:
+
+                      ds1NoLoop
+
+                         Not in the loopback state.  A device that is
+                         not capable of performing a loopback on either
+                         interface shall always return this as it's
+                         value.
+
+                      ds1LocalLoopbackLocalSide
+
+                         Signal received from the local side of the
+                         device is looped back at the local connector
+                         (eg, without involving the CSU).
+
+                      ds1LocalLoopbackRemoteSide
+
+
+
+
+
+
+
+
+                         Signal received from the local side of the
+                         device is looped back at the remote connector
+                         (eg, through the CSU).
+
+                      ds1RemoteLoopbackLocalSide
+
+                         Signal received from the remote side of the
+                         device is looped back at the local connector
+                         (eg, through the CSU).
+
+                      ds1RemoteLoopbackRemoteSide
+
+                         Signal received from the remote side of the
+                         device is looped back at the remote connector
+                         (eg, without involving the CSU)."
+              ::= { ds1ConfigEntry 7 }
+
+          ds1SendCode OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          ds1OtherTest(1),
+                          ds1SendNoCode(2),
+                          ds1SendSetCode(3),
+                          ds1SendResetCode(4),
+                          ds1SendQRSS(5)
+                      }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "This variable indicates what type of code is
+                      being sent across the DS1 circuit by the CSU.  The
+                      values mean:
+
+                      ds1SendNoCode    sending looped or normal data
+                      ds1SendSetCode   sending a loopback request
+                      ds1SendResetCode sending a loopback termination request
+                      ds1SendQRSS      sending the BERT pattern described in
+                                       ANSI T1.403-1989 section 5.6
+                      ds1OtherTest     sending a different BERT/BLERT pattern,
+                                       such as all zeroes, all ones, etc."
+              ::= { ds1ConfigEntry 8 }
+
+          ds1YellowAlarm OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          ds1NoYellowAlarm (1),
+                          ds1YellowAlarm (2)
+
+
+
+
+
+
+
+                      }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "This variable indicates if a Yellow Alarm
+                      condition exists.
+
+                      Note that G.704 interfaces do not support Yellow
+                      Alarms.  Accordingly, such agents should return
+                      the value ds1NoYellowAlarm."
+              ::= { ds1ConfigEntry 9 }
+
+          ds1RedAlarm OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          ds1NoRedAlarm (1),
+                          ds1RedAlarm (2)
+                      }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "This variable indicates if a Red Alarm condition
+                      exists.
+
+                      Note that G.704 interfaces do not support Red
+                      Alarms.  Accordingly, such agents should return
+                      the value ds1NoRedAlarm."
+              ::= { ds1ConfigEntry 10 }
+
+          ds1CircuitIdentifier OBJECT-TYPE
+              SYNTAX  DisplayString (SIZE (0..255))
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "This variable contains the transmission vendor's
+                      circuit identifier, for the purpose of
+                      facilitating troubleshooting."
+              ::= { ds1ConfigEntry 11 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          -- the DS1 Interval group
+
+          -- Implementation of this group is mandatory for all systems
+          -- that attach to a ds1.
+
+          -- It is recognized that some currently deployed CSUs do not
+          -- record the entire set of statistics specified in this
+          -- group.  Accordingly, some agents queried for these objects
+          -- may treat these objects as having an ACCESS clause value
+          -- of not-accessible.
+
+          -- The DS1 Interval Table contains various statistics
+          -- collected by each CSU over the previous 24 hours of
+          -- operation.  The past 24 hours are broken into 96 completed
+          -- 15 minute intervals.
+
+          ds1IntervalTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF DS1IntervalEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "The DS1 Interval table."
+              ::= { ds1 2 }
+
+          ds1IntervalEntry OBJECT-TYPE
+              SYNTAX  DS1IntervalEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "An entry in the DS1 Interval table."
+              INDEX   { ds1IntervalIndex, ds1IntervalNumber }
+              ::= { ds1IntervalTable 1 }
+
+          DS1IntervalEntry ::=
+              SEQUENCE {
+                  ds1IntervalIndex
+                      INTEGER,
+                  ds1IntervalNumber
+                      INTEGER (1..96),
+                  ds1IntervalESs
+                      Counter,
+                  ds1IntervalSESs
+                      Counter,
+                  ds1IntervalSEFSs
+                      Counter,
+
+
+
+
+
+
+
+                  ds1IntervalUASs
+                      Counter,
+                  ds1IntervalCSSs
+                      Counter,
+                  ds1IntervalBPVs
+                      Counter,
+                  ds1IntervalCVs
+                      Counter
+              }
+
+          ds1IntervalIndex OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The index value which uniquely identifies the CSU
+                      to which this entry is applicable.  The interface
+                      identified by a particular value of this index is
+                      the same interface as identified by the same value
+                      an ds1CSUIndex object instance."
+              ::= { ds1IntervalEntry 1 }
+
+          ds1IntervalNumber OBJECT-TYPE
+              SYNTAX  INTEGER (1..96)
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "A number between 1 and 96, where 1 is the most
+                      recently completed 15 minute interval and 96 is
+                      the least recently completed 15 minute interval
+                      (assuming that all 96 intervals are valid)."
+              ::= { ds1IntervalEntry 2 }
+
+          ds1IntervalESs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of Errored
+                      Seconds, as defined by ANSI Draft Standard
+                      T1M1.3/90 - 027R2[15], encountered by a DS1 CSU
+                      during one of the previous 96 fifteen minute
+                      intervals."
+              ::= { ds1IntervalEntry 3 }
+
+
+
+
+
+
+
+
+          ds1IntervalSESs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Severely Errored Seconds, as defined by ANSI Draft
+                      Standard T1M1.3/90 - 027R2[15], encountered by a
+                      DS1 CSU during one of the previous 96 fifteen
+                      minute intervals."
+              ::= { ds1IntervalEntry 4 }
+
+          ds1IntervalSEFSs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Severely Errored Framing Seconds, as defined by
+                      ANSI Draft Standard T1M1.3/90 - 027R2[15],
+                      encountered by a DS1 CSU during one of the
+                      previous 96 fifteen minute intervals."
+              ::= { ds1IntervalEntry 5 }
+
+          ds1IntervalUASs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Unavailable Seconds, as defined by ANSI Draft
+                      Standard T1M1.3/90 - 027R2[15], encountered by a
+                      DS1 CSU during one of the previous 96 fifteen
+                      minute intervals."
+              ::= { ds1IntervalEntry 6 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          ds1IntervalCSSs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Controlled Slip Seconds, as defined by ANSI Draft
+                      Standard T1M1.3/90 - 027R2[15], encountered by a
+                      DS1 CSU during one of the previous 96 fifteen
+                      minute intervals."
+              ::= { ds1IntervalEntry 7 }
+
+          ds1IntervalBPVs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of Bipolar
+                      Violations, as defined by ANSI Draft Standard
+                      T1M1.3/90 - 027R2[15], encountered by a DS1 CSU
+                      during one of the previous 96 fifteen minute
+                      intervals."
+              ::= { ds1IntervalEntry 8 }
+
+          ds1IntervalCVs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of Code
+                      Violation Error Events, as defined by ANSI Draft
+                      Standard T1M1.3/90 - 027R2[15], encountered by a
+                      DS1 CSU during one of the previous 96 fifteen
+                      minute intervals.
+
+                      Note that D4 and G.704 (section 2.1.3.2)
+                      interfaces do not support Code Violation Error
+                      Events.  Accordingly, such agents may treat this
+                      object as having an ACCESS clause value of not-
+                      accessible."
+              ::= { ds1IntervalEntry 9 }
+
+
+
+
+
+
+
+
+
+
+
+          -- the DS1 Current group
+
+          -- Implementation of this group is mandatory for all systems
+          -- that attach to a ds1.
+
+          -- It is recognized that some currently deployed CSUs do not
+          -- record the entire set of statistics specified in this
+          -- group.  Accordingly, some agents queried for these objects
+          -- may treat these objects as having an ACCESS clause value
+          -- of not-accessible.
+
+          -- The DS1 current table contains various statistics being
+          -- collected for the current 15 minute interval.
+
+          ds1CurrentTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF DS1CurrentEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "The DS1 Current table."
+              ::= { ds1 3 }
+
+          ds1CurrentEntry OBJECT-TYPE
+              SYNTAX  DS1CurrentEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "An entry in the DS1 Current table."
+              INDEX   { ds1CurrentIndex }
+              ::= { ds1CurrentTable 1 }
+
+          DS1CurrentEntry ::=
+              SEQUENCE {
+                  ds1CurrentIndex
+                      INTEGER,
+                  ds1CurrentESs
+                      Counter,
+                  ds1CurrentSESs
+                      Counter,
+                  ds1CurrentSEFSs
+                      Counter,
+                  ds1CurrentUASs
+                      Counter,
+                  ds1CurrentCSSs
+                      Counter,
+
+
+
+
+
+
+
+                  ds1CurrentBPVs
+                      Counter,
+                  ds1CurrentCVs
+                      Counter
+              }
+
+          ds1CurrentIndex OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The index value which uniquely identifies the CSU
+                      to which this entry is applicable.  The interface
+                      identified by a particular value of this index is
+                      the same interface as identified by the same value
+                      an ds1CSUIndex object instance."
+              ::= { ds1CurrentEntry 1 }
+
+          ds1CurrentESs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of Errored
+                      Seconds, as defined by ANSI Draft Standard
+                      T1M1.3/90 - 027R2[15], encountered by a DS1 CSU in
+                      the current 15 minute interval."
+              ::= { ds1CurrentEntry 2 }
+
+          ds1CurrentSESs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Severely Errored Seconds, as defined by ANSI Draft
+                      Standard T1M1.3/90 - 027R2[15], encountered by a
+                      DS1 CSU in the current 15 minute interval."
+              ::= { ds1CurrentEntry 3 }
+
+          ds1CurrentSEFSs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+
+
+
+
+
+
+
+                      "The counter associated with the number of
+                      Severely Errored Framing Seconds, as defined by
+                      ANSI Draft Standard T1M1.3/90 - 027R2[15],
+                      encountered by a DS1 CSU in the current 15 minute
+                      interval."
+              ::= { ds1CurrentEntry 4 }
+
+          ds1CurrentUASs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Unavailable Seconds, as defined by ANSI Draft
+                      Standard T1M1.3/90 - 027R2[15], encountered by a
+                      DS1 CSU in the current 15 minute interval."
+              ::= { ds1CurrentEntry 5 }
+
+          ds1CurrentCSSs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Controlled Slip Seconds, as defined by ANSI Draft
+                      Standard T1M1.3/90 - 027R2[15], encountered by a
+                      DS1 CSU in the current 15 minute interval."
+              ::= { ds1CurrentEntry 6 }
+
+          ds1CurrentBPVs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of Bipolar
+                      Violations, as defined by ANSI Draft Standard
+                      T1M1.3/90 - 027R2[15], encountered by a DS1 CSU in
+                      the current 15 minute interval."
+              ::= { ds1CurrentEntry 7 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+          ds1CurrentCVs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of Code
+                      Violation Error Events, as defined by ANSI Draft
+                      Standard T1M1.3/90 - 027R2[15], encountered by a
+                      DS1 CSU in the current 15 minute interval.
+
+                      Note that D4 and G.704 (section 2.1.3.2)
+                      interfaces do not support Code Violation Error
+                      Events.  Accordingly, such agents may treat this
+                      object as having an ACCESS clause value of not-
+                      accessible."
+              ::= { ds1CurrentEntry 8 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          -- the DS1 Total group
+
+          -- Implementation of this group is mandatory for all systems
+          -- that attach to a ds1.
+
+          -- It is recognized that some currently deployed CSUs do not
+          -- record the entire set of statistics specified in this
+          -- group.  Accordingly, some agents queried for these objects
+          -- may treat these objects as having an ACCESS clause value
+          -- of not-accessible.
+
+          -- The DS1 Total Table contains the cumulative sum of the
+          -- various statistics for the 24 hour interval preceding the
+          -- first valid interval in the ds1CurrentTable.
+
+          ds1TotalTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF DS1TotalEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "The DS1 Total table.  24 hour interval."
+              ::= { ds1 4 }
+
+          ds1TotalEntry OBJECT-TYPE
+              SYNTAX  DS1TotalEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "An entry in the DS1 Total table."
+              INDEX   { ds1TotalIndex }
+              ::= { ds1TotalTable 1 }
+
+          DS1TotalEntry ::=
+              SEQUENCE {
+                  ds1TotalIndex
+                      INTEGER,
+                  ds1TotalESs
+                      Counter,
+                  ds1TotalSESs
+                      Counter,
+                  ds1TotalSEFSs
+                      Counter,
+                  ds1TotalUASs
+                      Counter,
+                  ds1TotalCSSs
+
+
+
+
+
+
+
+                      Counter,
+                  ds1TotalBPVs
+                      Counter,
+                  ds1TotalCVs
+                      Counter
+              }
+
+          ds1TotalIndex OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The index value which uniquely identifies the CSU
+                      to which this entry is applicable.  The interface
+                      identified by a particular value of this index is
+                      the same interface as identified by the same value
+                      an ds1CSUIndex object instance."
+              ::= { ds1TotalEntry 1 }
+
+          ds1TotalESs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of Errored
+                      Seconds, as defined by ANSI Draft Standard
+                      T1M1.3/90 - 027R2[15], encountered by a DS1 CSU in
+                      the previous 24 hour interval"
+              ::= { ds1TotalEntry 2 }
+
+          ds1TotalSESs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Severely Errored Seconds, as defined by ANSI Draft
+                      Standard T1M1.3/90 - 027R2[15], encountered by a
+                      DS1 CSU in the previous 24 hour interval."
+              ::= { ds1TotalEntry 3 }
+
+
+
+
+
+
+
+
+
+
+
+
+          ds1TotalSEFSs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Severely Errored Framing Seconds, as defined by
+                      ANSI Draft Standard T1M1.3/90 - 027R2[15],
+                      encountered by a DS1 CSU in the previous 24 hour
+                      interval."
+              ::= { ds1TotalEntry 4 }
+
+          ds1TotalUASs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Unavailable Seconds, as defined by ANSI Draft
+                      Standard T1M1.3/90 - 027R2[15], encountered by a
+                      DS1 CSU in the previous 24 hour interval."
+              ::= { ds1TotalEntry 5 }
+
+          ds1TotalCSSs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of
+                      Controlled Slip Seconds, as defined by ANSI Draft
+                      Standard T1M1.3/90 - 027R2[15], encountered by a
+                      DS1 CSU in the previous 24 hour interval."
+              ::= { ds1TotalEntry 6 }
+
+          ds1TotalBPVs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of Bipolar
+                      Violations, as defined by ANSI Draft Standard
+                      T1M1.3/90 - 027R2[15], encountered by a DS1 CSU in
+                      the previous 24 hour interval."
+              ::= { ds1TotalEntry 7 }
+
+
+
+
+
+
+
+
+          ds1TotalCVs OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The counter associated with the number of Code
+                      Violation Error Events, as defined by ANSI Draft
+                      Standard T1M1.3/90 - 027R2[15], encountered by a
+                      DS1 CSU in the previous 24 hour interval.
+
+                      Note that D4 and G.704 (section 2.1.3.2)
+                      interfaces do not support Code Violation Error
+                      Events.  Accordingly, such agents may treat this
+                      object as having an ACCESS clause value of not-
+                      accessible."
+              ::= { ds1TotalEntry 8 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          -- the DS1 Fractional group
+
+          -- Implementation of this group is mandatory for those
+          -- systems utilizing a fractional DS1 capability
+
+
+          -- The DS1 fractional table contains identifies which DS1
+          -- channels associated with a CSU are being used to support a
+          -- logical interface, i.e., an entry in the interfaces table
+          -- from the Internet-standard MIB.  For Clear Channel
+          -- implementations, exactly one ifTable entry corresponds to
+          -- the CSU being managed.  In this very typical case, the
+          -- variable ds1Index indicates the value of ifIndex which
+          -- corresponds to the interface being supported by a
+          -- particular CSU.
+
+          -- However, for fractional DS1 implementations, the
+          -- correspondent value of ds1Index is 0, and for each DS1
+          -- channel supporting a logical interface, there is an entry
+          -- in the DS1 fractional table which names a value for
+          -- ifIndex.
+          --
+          --      For ds1ESF, ds1D4, and ds1ANSI-ESF, there are 24 legal
+          --      channels, numbered 1 through 24.
+          --
+          --      For G.704, there are 32 legal channels, numbered 1
+          --      through 32.  ds1G704 can carry user data in channels 2
+          --      through 32, channel 1 being an overhead channel.
+          --      ds1G704-CRC can carry user data in channels 2 through
+          --      16 and 18 through 32, channels 1 and 17 being overhead
+          --      channels.
+
+          ds1FracTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF DS1FracEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "The DS1 Fractional table."
+              ::= { ds1 5 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+          ds1FracEntry OBJECT-TYPE
+              SYNTAX  DS1FracEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "An entry in the DS1 Fractional table."
+              INDEX   { ds1FracIndex, ds1FracNumber }
+              ::= { ds1FracTable 1 }
+
+          DS1FracEntry ::=
+              SEQUENCE {
+                  ds1FracIndex
+                      INTEGER,
+                  ds1FracNumber
+                      INTEGER (1..32),
+                  ds1FracIfIndex
+                      INTEGER
+              }
+
+          ds1FracIndex OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The index value which uniquely identifies the CSU
+                      to which this entry is applicable.  The interface
+                      identified by a particular value of this index is
+                      the same interface as identified by the same value
+                      an ds1CSUIndex object instance."
+              ::= { ds1FracEntry 1 }
+
+          ds1FracNumber OBJECT-TYPE
+              SYNTAX  INTEGER (1..32)
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The channel number for this entry."
+              ::= { ds1FracEntry 2 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          ds1FracIfIndex OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "An index value that uniquely identifies an
+                      interface to a ds1.  The interface identified by a
+                      particular value of this index is the same
+                      interface as identified by the same value an
+                      ifIndex object instance."
+              ::= { ds1FracEntry 3 }
+
+          END

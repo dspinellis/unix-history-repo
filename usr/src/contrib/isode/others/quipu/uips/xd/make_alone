@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+# make_alone -  for stand alone version of xd
+
+MANDIR=/usr/local/man;export MANDIR
+
+/bin/make TOPDIR=/usr/local/lib/ BINDIR=/usr/local/bin/ \
+          LDCC=gcc LDFLAGS=-O ETCDIR=/usr/local/lib/isode/ \
+          CFLAGS="-g -I/usr/include/isode" UTILDIR=./ MANOPTS=-bsd42 \
+          CC=cc -f Makefile ${1+"$@"}
+

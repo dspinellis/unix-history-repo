@@ -1,0 +1,47 @@
+
+Version $Header: /f/osi/others/ntp/RCS/READ-ME,v 7.1 91/02/22 09:33:35 mrose Interim $
+
+
+[ README for NTP UDP/OSI based stuff]
+
+At present, this is still not in very good shape. It has no doubt
+several problems particularly in the OSI code. But anyway, it should
+work with minimal fiddling on a sun 3 running 3.x - I haven't tried
+anything else.
+
+To compile, edit the file ntp-config.h to set up you're favourite
+things. I think the current version is ok, but you can play around.
+
+You may need to edit the Makefile to get certain things right too.
+
+Type make, and generate the software.
+
+set up a config file, with lines in it similar to the distributed one.
+Try running it.
+
+I suggest running with something like
+	ntpd -c configfile -D 99	- if you want to see everything
+					thats happening
+	ntpd -c configfile 		- otherwise
+
+Thats about it I think.
+
+See the manuals for other details.
+
+
+TODO:
+	well lots I expect. However, specifically..
+
+	Need an ntpdc analog for querying over ROS. This should be able
+	to return lots of useful info - much more than you can cram into
+	the ntpdc format (i.e. psaps).
+
+	Need to sort out the addressing better.
+
+	tighten up the ASN.1
+
+	Pass static variables across at connect time (e.g. version etc).
+
+	Factor more of the code into protocol specific and common modules.
+
+	Clean it up a bit and get it faster now it works!

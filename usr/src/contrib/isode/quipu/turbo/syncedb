@@ -1,0 +1,55 @@
+#!/bin/sh
+
+PATH=/u/up/tim/bin:$PATH
+verbose=0
+if [ $# -lt 2 -o $# -gt 3 ]; then
+	echo usage: $0 [-v] rootdir edbdbmfile
+	exit 1
+fi
+if [ $1 = "-v" ]; then
+	verbose=1
+	shift
+fi
+if [ $# -ne 2 ]; then
+	echo usage: $0 [-v] rootdir edbdbmfile
+	exit 1
+fi
+
+# lock the entry
+
+DN="`file2dn $1 \"$2\"`"
+MANAGER="c=us@o=university of michigan@cn=manager"
+PASSWORD=stinkbug
+
+if [ $verbose = 1 ]; then
+	echo bind "$MANAGER" -password HIDDEN
+fi
+bind "$MANAGER" -password "$PASSWORD"
+
+if [ $verbose = 1 ]; then
+	echo dsacontrol -lock "$DN"
+fi
+dsacontrol -lock "$DN"
+
+# cat the dbm file
+if [ $verbose = 1 ]; then
+	echo "edbcat $2 >/tmp/edb.$$"
+fi
+edbcat "$2" >/tmp/edb.$$
+catstat=$?
+
+# unlock the entry
+dsacontrol -unlock "$DN"
+unbind
+
+# if that went ok, move the text edb file to EDB
+if [ $catstat = 0 ]; then
+	if [ $verbose = 1 ]; then
+		echo /bin/cp /tmp/edb.$$ "$2"
+	fi
+	/bin/cp /tmp/edb.$$ "$2"
+fi
+if [ $verbose = 1 ]; then
+	echo "/bin/rm -f /tmp/edb.$$"
+fi
+/bin/rm -f /tmp/edb.$$
