@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.12 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.13 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -532,6 +532,24 @@ Mu|sun-e|Sun Microsystems Workstation console hacked for emacs:\
 	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
 	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
 	:al=\E[L:dl=\E[M:dc=\E[P:\
+	:AL=\E[%dL:DL=\E[%dM:
+# From john@ucbrenoir  Tue Sep 24 13:14:44 1985
+Mu|sun-s|Sun Microsystems Workstation window with status line:\
+	:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
+	:am:bs:mi:ms:pt:\
+	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
+	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
+	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
+	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:\
+	:hs:ts=\E]l:fs=\E\\:ds=\E]l\E\\:
+Mu|sun-s-e|Sun Microsystems Workstation window with status hacked for emacs:\
+	:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
+	:am:bs:mi:ms:pt:\
+	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
+	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
+	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
+	:al=\E[L:dl=\E[M:dc=\E[P:\
+	:hs:ts=\E]l:fs=\E\\:ds=\E]l\E\\:\
 	:AL=\E[%dL:DL=\E[%dM:
 M0|sun-48|Sun 48-line window:\
 	:li#48:co#80:tc=sun:
