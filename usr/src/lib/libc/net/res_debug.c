@@ -390,8 +390,6 @@ p_class(class)
 	switch (class) {
 	case C_IN:		/* internet class */
 		return("IN");
-	case C_CS:		/* csnet class */
-		return("CS");
 	case C_ANY:		/* matches any class */
 		return("ANY");
 	default:
