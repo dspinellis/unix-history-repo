@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.41 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -67,6 +67,7 @@ static char sccsid[] = "@(#)rlogind.c	5.40 (Berkeley) %G%";
 #endif
 
 #ifdef	KERBEROS
+#include <kerberosIV/des.h>
 #include <kerberosIV/krb.h>
 #define	SECURE_MESSAGE "This rlogin session is using DES encryption for all transmissions.\r\n"
 
