@@ -1,143 +1,84 @@
-.\" Copyright (c) 1980 Regents of the University of California.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\"	%sccs.include.proprietary.roff%
 .\"
-.\"	@(#)moncontrol.3	6.2 (Berkeley) %G%
+.\"	@(#)moncontrol.3	6.3 (Berkeley) %G%
 .\"
-.TH MONITOR 3  ""
+.TH MONCONTROL 3  ""
 .UC 4
 .SH NAME
-monitor, monstartup, moncontrol \- prepare execution profile
+moncontrol, monstartup \- prepare execution profile
 .SH SYNOPSIS
 .nf
-.B monitor(lowpc, highpc, buffer, bufsize, nfunc)
-.B int (*lowpc)(), (*highpc)();
-.B short buffer[];
+.B moncontrol(mode)
+.B int mode;
 .sp
 .B monstartup(lowpc, highpc)
 .B int (*lowpc)(), (*highpc)();
-.sp
-.B moncontrol(mode)
 .fi
 .SH DESCRIPTION
-There are two different forms of monitoring available:
-An executable program created by:
-.IP  "	cc \-p . . ."
-.LP
-automatically includes calls for the 
-.IR prof (1)
-monitor and includes an initial call to its start-up routine
-.I monstartup
-with default parameters;
-.I monitor
-need not be called explicitly except to gain fine control over profil 
-buffer allocation.
+.PP
 An executable program created by:
 .IP  "	cc \-pg . . ."
 .LP
-automatically includes calls for the
+automatically includes calls to collect statistics for the
 .IR gprof (1)
-monitor.
-.PP
-.I Monstartup
-is a high level interface to
-.IR profil (2).
-.I Lowpc
-and
-.I highpc
-specify the address range that is to be sampled; the lowest address sampled
-is that of
-.I lowpc
-and the highest is just below
-.IR highpc .
-.I Monstartup
-allocates space using 
-.IR sbrk (2)
-and passes it to
-.I monitor
-(see below) to record a histogram of periodically sampled values of
-the program counter, and of counts of calls of certain functions, in the buffer.
-Only calls of functions compiled with the profiling option
-.B \-p
-of
-.IR cc (1)
-are recorded.
-.PP
-To profile the entire program, it is sufficient to use
-.PP
-.nf
-	extern etext();
-	. . .
-	monstartup((int) 2, etext);
-.fi
-.PP
-.I Etext
-lies just above all the program text, see
-.IR end (3).
-.PP
-To stop execution monitoring and write the results on the file
-.I mon.out,
-use
-.PP
-	monitor(0);
-.LP
+call-graph execution profiler.
+In typical operation, profiling begins at program startup
+and ends when the program calls exit.
+When the program exits, the profiling data are written to the file
+.IR gmon.out ,
 then
-.IR prof (1)
+.IR gprof (1)
 can be used to examine the results.
 .PP
 .I Moncontrol
-is used to selectively control profiling within a program.
-This works with either 
-.IR prof (1)
-or
-.IR gprof (1)
-type profiling.
+selectively controls profiling within a program.
 When the program starts, profiling begins.
 To stop the collection of histogram ticks and call counts use
 .IR moncontrol (0);
 to resume the collection of histogram ticks and call counts use
 .IR moncontrol (1).
 This allows the cost of particular operations to be measured.
-Note that an output file will be produced upon program exit
-irregardless of the state of 
+Note that an output file will be produced on program exit
+regardless of the state of 
 .I moncontrol.
 .PP
-.I Monitor
-is a low level interface to
-.IR profil (2).
+Programs that are not loaded with
+.IP  "	cc \-pg . . ."
+.LP
+may selectively collect profiling statistics by calling
+.I monstartup
+with the range of addresses to be profiled.
 .I Lowpc
 and
 .I highpc
-are the addresses of two functions;
-.I buffer
-is the address of a (user supplied) array of
-.I bufsize
-short integers.  At most
-.I nfunc
-call counts can be kept.
-For the results to be significant, especially where there are small, heavily
-used routines, it is suggested that the buffer be no more
-than a few times smaller than the range of locations sampled.
-.I Monitor
-divides the buffer into space to record the histogram
-of program counter samples over the range
+specify the address range that is to be sampled;
+the lowest address sampled is that of
 .I lowpc
-to
-.IR highpc ,
-and space to record call counts of functions compiled with the 
+and the highest is just below
+.IR highpc .
+Only functions in that range that have been compiled with the 
 .B \-p
 option to
-.IR cc (1).
+.IR cc (1)
+will appear in the call graph part of the output;
+however, all functions in that address range will
+have their execution time measured.
+Profiling begins on return from
+.IR monstartup .
 .PP
-To profile the entire program, it is sufficient to use
+To stop execution monitoring and write the results on the file
+.I gmon.out,
+use
 .PP
-.nf
-	extern etext();
-	. . .
-	monitor((int) 2, etext, buf, bufsize, nfunc);
-.fi
+	_mcleanup();
+.LP
+then
+.IR gprof (1)
+can be used to examine the results.
 .SH FILES
-mon.out
+gmon.out
 .SH "SEE ALSO"
-cc(1), prof(1), gprof(1), profil(2), sbrk(2)
+cc(1), gprof(1), profil(2)
