@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_xxx.c	7.5 (Berkeley) %G%
+ *	@(#)subr_xxx.c	7.6 (Berkeley) %G%
  */
 
 #include "errno.h"
@@ -65,14 +65,15 @@ max(a, b)
 ffs(mask)
 	register long mask;
 {
-	register int i;
+	register int bit;
 
-	for(i = 1; i < NSIG; i++) {
-		if (mask & 1)
-			return (i);
+	if (!mask)
+		return(0);
+	for (bit = 1;; ++bit)
+		if (mask&0x01)
+			return(bit);
 		mask >>= 1;
 	}
-	return (0);
 }
 #endif
 
