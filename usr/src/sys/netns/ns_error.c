@@ -1,0 +1,224 @@
+/*	ns_error.c	6.1	85/05/30	*/
+
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "protosw.h"
+#include "socket.h"
+#include "time.h"
+#include "kernel.h"
+
+#include "../net/route.h"
+
+#include "ns.h"
+#include "ns_pcb.h"
+#include "idp.h"
+#include "ns_error.h"
+
+#define NS_ERRPRINTFS
+#ifdef NS_ERRPRINTFS
+/*
+ * NS_ERR routines: error generation, receive packet processing, and
+ * routines to turnaround packets back to the originator, and
+ * host table maintenance routines.
+ */
+int	ns_errprintfs = 0;
+#endif
+
+/*
+ * Generate an error packet of type error
+ * in response to bad packet.
+ */
+
+ns_error(om, type, param)
+	struct mbuf *om;
+	int type;
+{
+	register struct ns_epidp *ep;
+	struct mbuf *m;
+	struct idp *nip;
+	register struct idp *oip = mtod(om, struct idp *);
+	extern int idpcksum;
+
+#ifdef NS_ERRPRINTFS
+	if (ns_errprintfs)
+		printf("ns_err_error(%x, %d, %d)\n", oip, type, param);
+#endif
+	ns_errstat.ns_es_error++;
+	/*
+	 * Make sure that the old IDP packet had 30 bytes of data to return;
+	 * if not, don't bother.  Also don't EVER error if the old
+	 * packet protocol was NS_ERR.
+	 */
+	if (oip->idp_len < sizeof(struct idp)) {
+		ns_errstat.ns_es_oldshort++;
+		goto free;
+	}
+	if (oip->idp_pt == NSPROTO_ERROR) {
+		ns_errstat.ns_es_oldns_err++;
+		goto free;
+	}
+
+	/*
+	 * First, formulate ns_err message
+	 */
+	m = m_get(M_DONTWAIT, MT_HEADER);
+	if (m == NULL)
+		goto free;
+	m->m_len = sizeof(*ep);
+	m->m_off = MMAXOFF - m->m_len;
+	ep = mtod(m, struct ns_epidp *);
+	if ((u_int)type > NS_ERR_TOO_BIG)
+		panic("ns_err_error");
+	ns_errstat.ns_es_outhist[ns_err_x(type)]++;
+	ep->ns_ep_errp.ns_err_num = htons(type);
+	ep->ns_ep_errp.ns_err_param = htons(param);
+	bcopy((caddr_t)oip, (caddr_t)&ep->ns_ep_errp.ns_err_idp, 42);
+	nip = &ep->ns_ep_idp;
+	nip->idp_len = sizeof(*ep);
+	nip->idp_len = htons((u_short)nip->idp_len);
+	nip->idp_pt = NSPROTO_ERROR;
+	nip->idp_tc = 0;
+	nip->idp_dna = oip->idp_sna;
+	nip->idp_sna = oip->idp_dna;
+	if (idpcksum) {
+		nip->idp_sum = 0;
+		nip->idp_sum = ns_cksum(dtom(nip), sizeof(*ep));
+	} else 
+		nip->idp_sum = 0xffff;
+	ns_output(dtom(nip), (struct route *)0, 0);
+
+free:
+	m_freem(dtom(oip));
+}
+
+static struct sockproto ns_errroto = { AF_NS, NSPROTO_ERROR };
+static struct sockaddr_ns ns_errsrc = { AF_NS };
+static struct sockaddr_ns ns_errdst = { AF_NS };
+
+ns_printhost(p)
+register struct ns_addr *p;
+{
+
+	printf("<net:%x%x,host:%x%x%x,port:%x>",
+			p->x_net.s_net[0],
+			p->x_net.s_net[1],
+			p->x_host.s_host[0],
+			p->x_host.s_host[1],
+			p->x_host.s_host[2],
+			p->x_port);
+
+}
+
+/*
+ * Process a received NS_ERR message.
+ */
+ns_err_input(m)
+	struct mbuf *m;
+{
+	register struct ns_errp *ep;
+	register struct ns_epidp *epidp = mtod(m, struct ns_epidp *);
+	register int i;
+	int type, code, param;
+	extern struct ns_addr if_makeaddr();
+
+	/*
+	 * Locate ns_err structure in mbuf, and check
+	 * that not corrupted and of at least minimum length.
+	 */
+#ifdef NS_ERRPRINTFS
+	if (ns_errprintfs) {
+		printf("ns_err_input from ");
+		ns_printhost(&epidp->ns_ep_idp.idp_sna);
+		printf("len %d\n", ntohs(epidp->ns_ep_idp.idp_len));
+	}
+#endif
+	i = sizeof (struct ns_epidp);
+ 	if ((m->m_off > MMAXOFF || m->m_len < i) &&
+ 		(m = m_pullup(m, i)) == 0)  {
+		ns_errstat.ns_es_tooshort++;
+		return;
+	}
+	ep = &(mtod(m, struct ns_epidp *)->ns_ep_errp);
+	type = ntohs(ep->ns_err_num);
+	param = ntohs(ep->ns_err_param);
+
+#ifdef NS_ERRPRINTFS
+	/*
+	 * Message type specific processing.
+	 */
+	if (ns_errprintfs)
+		printf("ns_err_input, type %d param %d\n", type, param);
+#endif
+	if (type >= NS_ERR_TOO_BIG) {
+		goto badcode;
+	}
+	ns_errstat.ns_es_outhist[ns_err_x(type)]++;
+	switch (type) {
+
+	case NS_ERR_UNREACH_HOST:
+		code = PRC_UNREACH_NET;
+		goto deliver;
+
+	case NS_ERR_TOO_OLD:
+		code = PRC_TIMXCEED_INTRANS;
+		goto deliver;
+
+	case NS_ERR_TOO_BIG:
+		code = PRC_MSGSIZE;
+		goto deliver;
+
+	case NS_ERR_FULLUP:
+		code = PRC_QUENCH;
+		goto deliver;
+
+	case NS_ERR_NOSOCK:
+		code = PRC_UNREACH_PORT;
+		goto deliver;
+
+	case NS_ERR_UNSPEC_T:
+	case NS_ERR_BADSUM_T:
+	case NS_ERR_BADSUM:
+	case NS_ERR_UNSPEC:
+		code = PRC_PARAMPROB;
+		goto deliver;
+
+	deliver:
+		/*
+		 * Problem with datagram; advise higher level routines.
+		 */
+#ifdef NS_ERRPRINTFS
+		if (ns_errprintfs)
+			printf("deliver to protocol %d\n",
+				       ep->ns_err_idp.idp_pt);
+#endif
+		switch(ep->ns_err_idp.idp_pt) {
+		case NSPROTO_SPP:
+			spp_ctlinput(code, (caddr_t)ep);
+			break;
+
+		default:
+			idp_ctlinput(code, (caddr_t)ep);
+		}
+		
+		goto free;
+
+	default:
+	badcode:
+		ns_errstat.ns_es_badcode++;
+		goto free;
+
+	}
+free:
+	m_freem(m);
+}
+u_long
+nstime()
+{
+	int s = spl6();
+	u_long t;
+
+	t = (time.tv_sec % (24*60*60)) * 1000 + time.tv_usec / 1000;
+	splx(s);
+	return (htonl(t));
+}
