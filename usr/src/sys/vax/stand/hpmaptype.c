@@ -1,4 +1,4 @@
-/*	hpmaptype.c	4.3	83/02/21	*/
+/*	hpmaptype.c	4.4	83/02/22	*/
 
 /*
  * RP??/RM?? drive type mapping routine.
@@ -78,7 +78,7 @@ hpmaptype(hpaddr, type, unit)
 		 * on a 9766 you lose the last 8 cylinders (argh).
 		 */
 		case SI9766:
-			return (14);
+			return (13);
 
 		case SI9762:
 			return (0);
@@ -87,7 +87,7 @@ hpmaptype(hpaddr, type, unit)
 			return (10);
 
 		case SI9751D:
-			return (12);
+			return (11);
 		}
 		return (type);
 	}
@@ -105,9 +105,7 @@ hpmaptype(hpaddr, type, unit)
 		hpaddr->hphr = HPHR_MAXSECT;
 		ntracks = MASKREG(hpaddr->hphr) + 1;
 		if (ntracks == 48)
-			return (12);	/* 48 sector Eagle */
-		if (ntracks == 43)
-			return (11);	/* 43 sector Eagle */
+			return (11);	/* 48 sector Eagle */
 		printf("RM02 with %d sectors/track?\n", ntracks);
 		return (type);
 	}
