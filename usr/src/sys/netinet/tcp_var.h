@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_var.h	6.5 (Berkeley) %G%
+ *	@(#)tcp_var.h	6.6 (Berkeley) %G%
  */
 
 /*
@@ -23,10 +23,10 @@ struct tcpcb {
 	short	t_maxseg;		/* maximum segment size */
 	char	t_force;		/* 1 if forcing out a byte */
 	u_char	t_flags;
-#define	TF_ACKNOW	0x01			/* ack peer immediately */
-#define	TF_DELACK	0x02			/* ack, but try to delay it */
-#define	TF_DONTKEEP	0x04			/* don't use keep-alives */
-#define	TF_NOOPT	0x08			/* don't use tcp options */
+#define	TF_ACKNOW	0x01		/* ack peer immediately */
+#define	TF_DELACK	0x02		/* ack, but try to delay it */
+#define	TF_NODELAY	0x04		/* don't delay packets to coalesce */
+#define	TF_NOOPT	0x08		/* don't use tcp options */
 	struct	tcpiphdr *t_template;	/* skeletal packet for transmit */
 	struct	inpcb *t_inpcb;		/* back pointer to internet pcb */
 /*
@@ -42,7 +42,7 @@ struct tcpcb {
 	tcp_seq	iss;			/* initial send sequence number */
 	u_short	snd_wnd;		/* send window */
 /* receive sequence variables */
-	short	rcv_wnd;		/* receive window */
+	u_short	rcv_wnd;		/* receive window */
 	tcp_seq	rcv_nxt;		/* receive next */
 	tcp_seq	rcv_up;			/* receive urgent pointer */
 	tcp_seq	irs;			/* initial receive sequence number */
