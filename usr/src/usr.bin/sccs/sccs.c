@@ -12,18 +12,19 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sccs.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)sccs.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
-# include <stdio.h>
-# include <sys/param.h>
-# include <sys/stat.h>
-# include <sys/dir.h>
-# include <errno.h>
-# include <signal.h>
-# include <sysexits.h>
-# include <pwd.h>
-# include "pathnames.h"
+#include <sys/cdefs.h>
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/dir.h>
+#include <signal.h>
+#include <sysexits.h>
+#include <errno.h>
+#include <pwd.h>
+#include <stdio.h>
+#include "pathnames.h"
 
 /*
 **  SCCS.C -- human-oriented front end to the SCCS system.
@@ -176,18 +177,18 @@ struct sccsprog
 */
 
 struct sccsprog SccsProg[] = {
-	"admin",	PROG,	REALUSER,	__CONCAT(_SCCSPATH, "admin"),
-	"cdc",		PROG,	0,		__CONCAT(_SCCSPATH, "rmdel"),
-	"comb",		PROG,	0,		__CONCAT(_SCCSPATH, "comb"),
-	"delta",	PROG,	0,		__CONCAT(_SCCSPATH, "delta"),
-	"get",		PROG,	0,		__CONCAT(_SCCSPATH, "get"),
-	"help",		PROG,	NO_SDOT,	__CONCAT(_SCCSPATH, "help"),
-	"prs",		PROG,	0,		__CONCAT(_SCCSPATH, "prs"),
-	"prt",		PROG,	0,		__CONCAT(_SCCSPATH, "prt"),
-	"rmdel",	PROG,	REALUSER,	__CONCAT(_SCCSPATH, "rmdel"),
-	"val",		PROG,	0,		__CONCAT(_SCCSPATH, "val"),
-	"what",		PROG,	NO_SDOT,	__CONCAT(_SCCSPATH, "what"),
-	"sccsdiff",	SHELL,	REALUSER,	__CONCAT(_SCCSPATH, "sccsdiff"),
+	"admin",	PROG,	REALUSER,	_PATH_SCCSADMIN,
+	"cdc",		PROG,	0,		_PATH_SCCSRMDEL,
+	"comb",		PROG,	0,		_PATH_SCCSCOMB,
+	"delta",	PROG,	0,		_PATH_SCCSDELTA,
+	"get",		PROG,	0,		_PATH_SCCSGET,
+	"help",		PROG,	NO_SDOT,	_PATH_SCCSHELP,
+	"prs",		PROG,	0,		_PATH_SCCSPRS,
+	"prt",		PROG,	0,		_PATH_SCCSPRT,
+	"rmdel",	PROG,	REALUSER,	_PATH_SCCSRMDEL,
+	"val",		PROG,	0,		_PATH_SCCSVAL,
+	"what",		PROG,	NO_SDOT,	_PATH_SCCSWHAT,
+	"sccsdiff",	SHELL,	REALUSER,	_PATH_SCCSDIFF,
 	"edit",		CMACRO,	NO_SDOT,	"get -e",
 	"delget",	CMACRO,	NO_SDOT,	"delta:mysrp/get:ixbeskcl -t",
 	"deledit",	CMACRO,	NO_SDOT,
@@ -205,7 +206,7 @@ struct sccsprog SccsProg[] = {
 	"diffs",	DIFFS,	NO_SDOT|REALUSER,
 						NULL,
 	"-diff",	DODIFF,	NO_SDOT|REALUSER,
-						__CONCAT(_SCCSPATH, "bdiff"),
+						_PATH_SCCSBDIFF,
 	"print",	CMACRO,	0,		"prs -e/get -p -m -s",
 	"branch",	CMACRO,	NO_SDOT,
 	    "get:ixrc -e -b/delta: -s -n -ybranch-place-holder/get:pl -e -t -g",
