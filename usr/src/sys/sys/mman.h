@@ -1,12 +1,4 @@
-/*	mman.h	5.1	82/07/17	*/
-
-#if vax
-#define	PAGESIZE	1024
-#endif
-
-#if sun
-#define	PAGESIZE	2048
-#endif
+/*	mman.h	4.2	82/09/04	*/
 
 /* protections are chosen from these bits, or-ed together */
 #define	PROT_READ	0x1		/* pages can be read */
