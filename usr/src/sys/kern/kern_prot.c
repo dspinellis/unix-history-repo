@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_prot.c	8.2 (Berkeley) %G%
+ *	@(#)kern_prot.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -356,10 +356,10 @@ osetreuid(p, uap, retval)
 	 * back ruid priviledge. So we make sure that we will be able to
 	 * do so, but do not actually set the ruid.
 	 */
-	if (uap->ruid != -1 && uap->ruid != pc->p_ruid &&
+	if (uap->ruid != (uid_t)-1 && uap->ruid != pc->p_ruid &&
 	    uap->ruid != pc->p_svuid)
 		return (EPERM);
-	if (uap->euid == -1)
+	if (uap->euid == (uid_t)-1)
 		return (0);
 	args.euid = uap->euid;
 	return (seteuid(p, &args, retval));
@@ -383,10 +383,10 @@ osetregid(p, uap, retval)
 	 * back rgid priviledge. So we make sure that we will be able to
 	 * do so, but do not actually set the rgid.
 	 */
-	if (uap->rgid != -1 && uap->rgid != pc->p_rgid &&
+	if (uap->rgid != (gid_t)-1 && uap->rgid != pc->p_rgid &&
 	    uap->rgid != pc->p_svgid)
 		return (EPERM);
-	if (uap->egid == -1)
+	if (uap->egid == (gid_t)-1)
 		return (0);
 	args.egid = uap->egid;
 	return (setegid(p, &args, retval));
