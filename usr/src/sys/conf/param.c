@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)param.c	7.8 (Berkeley) %G%
+ *	@(#)param.c	7.9 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -58,8 +58,7 @@ struct	timezone tz = { TIMEZONE, DST };
 int	nproc = NPROC;
 int	ntext = 36 + MAXUSERS;
 #define NVNODE ((NPROC + 16 + MAXUSERS) + 32)
-int	nvnode = NVNODE;
-int	nchsize = NVNODE * 11 / 10;
+int	desiredvnodes = NVNODE;
 int	nfile = 16 * (NPROC + 16 + MAXUSERS) / 10 + 32;
 int	ncallout = 16 + NPROC;
 int	nclist = 60 + 12 * MAXUSERS;
@@ -83,14 +82,12 @@ int	nbuf, nswbuf;
  */
 struct	proc *proc, *procNPROC;
 struct	text *text, *textNTEXT;
-struct	vnode *vnode, *vnodeNVNODE;
 struct	file *file, *fileNFILE;
 struct 	callout *callout;
 struct	cblock *cfree;
 struct	buf *buf, *swbuf;
 char	*buffers;
 struct	cmap *cmap, *ecmap;
-struct	namecache *namecache;
 #ifdef QUOTA
 struct	quota *quota, *quotaNQUOTA;
 struct	dquot *dquot, *dquotNDQUOT;
