@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -200,15 +200,28 @@ prev_file(n)
 }
 
 /*
- * Copy a file directly to standard output.
- * Used if standard output is not a tty.
+ * copy a file directly to standard output; used if stdout is not a tty.
+ * the only processing is to squeeze multiple blank input lines.
  */
 static
 cat_file()
 {
-	register int c;
+	extern int squeeze;
+	register int c, empty;
 
-	while ((c = ch_forw_get()) != EOI)
+	if (squeeze) {
+		empty = 0;
+		while ((c = ch_forw_get()) != EOI)
+			if (c != '\n') {
+				putchr(c);
+				empty = 0;
+			}
+			else if (empty < 2) {
+				putchr(c);
+				++empty;
+			}
+	}
+	else while ((c = ch_forw_get()) != EOI)
 		putchr(c);
 	flush();
 }
