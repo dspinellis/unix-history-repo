@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mpcc.4	6.2 (Berkeley) %G%
+.\"	@(#)mpcc.4	6.3 (Berkeley) %G%
 .\"
 .TH MPCC 4 ""
 .UC 7
@@ -42,3 +42,9 @@ A maximum of 16 MPCC communication controllers can be supported.
 /dev/tty[A-P][0-f,g-v] for 32 port MPCC
 .SH "SEE ALSO"
 tty(7)
+.SH BUGS
+As of the 4.3BSD-tahoe release, only 16 port mpcc's work, and then
+only in async mode.  Attempting to reload firmware on an mpcc with
+active ports may crash the system.  This should be fixed within
+a short period of time; contact the CSRG at University of California,
+Berkeley, for upgrade information.
