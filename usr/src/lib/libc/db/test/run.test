@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)run.test	5.15 (Berkeley) %G%
+#	@(#)run.test	5.16 (Berkeley) %G%
 #
 
 # db regression tests
@@ -30,6 +30,7 @@ main()
 	test10
 	test11
 	test12
+	test13
 	test20
 	rm -f $TMP1 $TMP2 $TMP3
 	exit 0
@@ -462,6 +463,37 @@ test12()
 			exit 1
 		fi
 	done
+}
+
+# Test different byte orders.
+test13()
+{
+	printf "Test 13: btree, hash: differing byte orders\n"
+	sed 50q $DICT > $TMP1
+	for order in 1234 4321; do
+		for type in btree hash; do
+			rm -f byte.file $TMP2 $TMP3
+			for i in `sed 50q $DICT`; do
+				printf "p\nk%s\nd%s\ng\nk%s\n" $i $i $i
+			done > $TMP2
+			$PROG -ilorder=$order -f byte.file -o $TMP3 $type $TMP2
+			if (cmp -s $TMP1 $TMP3) ; then :
+			else
+				printf "test13: %s/%s put failed\n" $type $order
+				exit 1
+			fi
+			for i in `sed 50q $DICT`; do
+				printf "g\nk%s\n" $i
+			done > $TMP2
+			$PROG -ilorder=$order -f byte.file -o $TMP3 $type $TMP2
+			if (cmp -s $TMP1 $TMP3) ; then :
+			else
+				printf "test13: %s/%s get failed\n" $type $order
+				exit 1
+			fi
+		done
+	done
+	rm -f byte.file
 }
 
 # Try a variety of bucketsizes and fill factors for hashing
