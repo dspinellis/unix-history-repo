@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.12 (Berkeley) %G%
+#	@(#)Makefile	7.13 (Berkeley) %G%
 #
 VERSION=3.7
 #
@@ -138,8 +138,8 @@ install: a.out exrecover expreserve
 	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/view
 	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/usr/bin/ex
 	chmod 1755 ${DESTDIR}/${BINDIR}/ex
-	install -s -m 4755 exrecover ${DESTDIR}/${LIBDIR}/ex${VERSION}recover
-	install -s -m 4755 expreserve ${DESTDIR}/${LIBDIR}/ex${VERSION}preserve
+	install -s -o root -m 4755 exrecover ${DESTDIR}/${LIBDIR}/ex${VERSION}recover
+	install -s -o root -m 4755 expreserve ${DESTDIR}/${LIBDIR}/ex${VERSION}preserve
 # The following line normally fails.  This is OK.
 	-mkdir ${DESTDIR}/usr/preserve
 
