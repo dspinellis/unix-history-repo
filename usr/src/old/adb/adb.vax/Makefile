@@ -1,14 +1,15 @@
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 
 PROG=	adb
 SRCS=	access.c command.c expr.c format.c kstack.c machdep.c main.c \
 	opset.c optab.c output.c pcs.c print.c rodata.c setup.c strings.c \
 	sym.c
-ASPATH=	../../../pgrm/as.vax
+ASPATH=	../../../old/as.vax
+SYSPATH=../../../sys.oldvm
 .PATH:	${.CURDIR}/../common_source
 CLEANFILES=instrs.adb
 
-CFLAGS+= -I. -I${.CURDIR} -I${.CURDIR}/../common_source -I${.CURDIR}/${ASPATH}
+CFLAGS+= -I. -I${.CURDIR} -I${.CURDIR}/../common_source -I${.CURDIR}/${ASPATH} -I${.CURDIR}/${SYSPATH}
 
 optab.o: instrs.adb
 
