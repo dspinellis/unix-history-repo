@@ -1,19 +1,19 @@
-/*	ranlib.h	4.2	87/04/06	*/
-
-#define	RANLIBMAG	"__.SYMDEF"
-
-/*
- * Structure of the __.SYMDEF table of contents for an archive.
- * __.SYMDEF begins with a word giving the number of ranlib structures
- * which immediately follow, and then continues with a string
- * table consisting of a word giving the number of bytes of strings
- * which follow and then the strings themselves.
- * The ran_strx fields index the string table whose first byte is numbered 0.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)ranlib.h	5.1 (Berkeley) %G%
  */
-struct	ranlib {
+
+#define	RANLIBMAG	"__.SYMDEF"	/* archive file name */
+#define	RANLIBSKEW	3		/* creation time offset */
+
+struct ranlib {
 	union {
-		off_t	ran_strx;	/* string table index of */
-		char	*ran_name;	/* symbol defined by */
+		off_t ran_strx;		/* string table index */
+		char *ran_name;		/* in memory symbol name */
 	} ran_un;
-	off_t	ran_off;		/* library member at this offset */
+	off_t ran_off;			/* archive file offset */
 };
