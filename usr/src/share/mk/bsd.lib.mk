@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.27 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.28 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -23,7 +23,7 @@ BINMODE?=	555
 .SUFFIXES: .out .o .po .s .c .f .y .l .8 .7 .6 .5 .4 .3 .2 .1 .0
 
 .8.0 .7.0 .6.0 .5.0 .4.0 .3.0 .2.0 .1.0:
-	/usr/old/bin/nroff -mandoc ${.IMPSRC} > ${.TARGET}
+	nroff -man ${.IMPSRC} > ${.TARGET}
 
 .c.o:
 	${CC} ${CFLAGS} -c ${.IMPSRC} 
