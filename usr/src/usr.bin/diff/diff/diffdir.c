@@ -20,6 +20,8 @@ struct dir {
 
 struct	dir *setupdir();
 int	header;
+static int	dirstatus;		/* exit status from diffdir */
+extern int	status;
 char	title[2*BUFSIZ], *etitle;
 
 diffdir(argv)
@@ -75,6 +77,7 @@ diffdir(argv)
 			else if (opt == 0 || opt == 2)
 				only(d1, 1);
 			d1++;
+			dirstatus |= 1;
 		} else if (cmp == 0) {
 			compare(d1);
 			d1++;
@@ -85,6 +88,7 @@ diffdir(argv)
 			else if (opt == 0 || opt == 2)
 				only(d2, 2);
 			d2++;
+			dirstatus |= 1;
 		}
 	}
 	if (lflag) {
@@ -108,6 +112,7 @@ diffdir(argv)
 			calldiff(0);
 		}
 	}
+	status = dirstatus;
 }
 
 setfile(fpp, epp, file)
@@ -161,6 +166,7 @@ only(dp, which)
 	char *efile = which == 1 ? efile1 : efile2;
 
 	printf("Only in %.*s: %s\n", efile - file - 1, file, dp->d_entry);
+	
 }
 
 int	entcmp();
@@ -281,6 +287,7 @@ same:
 		printf("Files %s and %s are identical\n", file1, file2);
 	goto closem;
 notsame:
+	dirstatus |= 1;
 	if (!ascii(f1) || !ascii(f2)) {
 		if (lflag)
 			dp->d_flags |= DIFFER;
@@ -314,7 +321,7 @@ char	*prargs[] = { "pr", "-h", 0, "-f", 0, 0 };
 calldiff(wantpr)
 	char *wantpr;
 {
-	int pid, status, status2, pv[2];
+	int pid, lstatus, lstatus2, pv[2];
 
 	prargs[2] = wantpr;
 	fflush(stdout);
@@ -358,14 +365,15 @@ calldiff(wantpr)
 		close(pv[0]);
 		close(pv[1]);
 	}
-	while (wait(&status) != pid)
+	while (wait(&lstatus) != pid)
 		continue;
-	while (wait(&status2) != -1)
+	while (wait(&lstatus2) != -1)
 		continue;
 /*
-	if ((status >> 8) >= 2)
+	if ((lstatus >> 8) >= 2)
 		done();
 */
+	dirstatus |= lstatus >> 8;
 }
 
 #include <a.out.h>
