@@ -2,6 +2,9 @@
  * Copyright (c) 1988 Regents of the University of California.
  * All rights reserved.
  *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
  * Redistribution and use in source and binary forms are permitted
  * provided that the above copyright notice and this paragraph are
  * duplicated in all such forms and that any documentation,
@@ -14,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ace.c	7.2 (Berkeley) %G%
+ *	@(#)if_ace.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -25,6 +28,7 @@
 
 #include "param.h"
 #include "systm.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "buf.h"
 #include "protosw.h"
@@ -58,7 +62,7 @@
 #include "../tahoeif/if_acereg.h"
 #include "../tahoevba/vbavar.h"
 
-int	aceprobe(), aceattach(), acerint(), acecint();
+int	aceprobe(), aceattach(), acerint(), acecint(), acestart();
 struct	vba_device *aceinfo[NACE];
 long	acestd[] = { 0 };
 struct	vba_driver acedriver =
@@ -142,6 +146,7 @@ aceattach(ui)
 	register struct ifnet *ifp = &is->is_if;
 	register struct acedevice *addr = (struct acedevice *)ui->ui_addr;
 	register short *wp, i;
+	extern enoutput();
 
 	ifp->if_unit = unit;
 	ifp->if_name = "ace";
@@ -168,10 +173,11 @@ aceattach(ui)
 	}
 
 	ifp->if_init = aceinit;
-	ifp->if_output = aceoutput;
+	ifp->if_output = enoutput;
+	ifp->if_start = acestart;
 	ifp->if_ioctl = aceioctl;
 	ifp->if_reset = acereset;
-	ifp->if_flags = IFF_BROADCAST;
+	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
 	if_attach(ifp);
 }
 
@@ -199,13 +205,12 @@ aceinit(unit)
 	register struct ace_softc *is = &ace_softc[unit];
 	register struct vba_device *ui = aceinfo[unit];
 	register struct acedevice *addr;
-	register struct ifnet *ifp = &is->is_if;
 	register short Csr;
 	register int s;
 
-	if (ifp->if_addrlist == (struct ifaddr *)0)
+	if (is->is_if.if_addrlist == (struct ifaddr *)0)
 		return;
-	if ((ifp->if_flags & IFF_RUNNING) == 0) {
+	if ((is->is_if.if_flags & IFF_RUNNING) == 0) {
 		/*
 		 * Reset the controller, initialize the recieve buffers,
 		 * and turn the controller on again and set board online.
@@ -233,7 +238,7 @@ aceinit(unit)
 		splx(s);
 	}
 	if (is->is_if.if_snd.ifq_head)
-		acestart(unit);
+		acestart(&is->is_if);
 }
 
 /*
@@ -241,34 +246,31 @@ aceinit(unit)
  * Get another datagram to send off of the interface queue,
  * and map it to the interface before starting the output.
  */
-acestart(unit)
-	int unit;
+acestart(ifp)
+	register struct ifnet *ifp;
 {
 	register struct tx_segment *txs;
 	register long len;
 	register int s;
-	register struct ace_softc *is = &ace_softc[unit];
 	struct mbuf *m;
 	short retries;
+#define	is ((struct ace_softc *)ifp)
 
-	if (is->is_flags & ACEF_OACTIVE)
-		return;
-	is->is_flags |= ACEF_OACTIVE;
 again:
 	txs = (struct tx_segment*)(is->is_dpm + (is->is_txnext << 11));
 	if (txs->tx_csr & TCS_TBFULL) {
 		is->is_stats.tx_busy++;
-		is->is_flags &= ~ACEF_OACTIVE;
-		return;
+		ifp->if_flags |= IFF_OACTIVE;
+		return (0);
 	}
 	s = splimp();
-	IF_DEQUEUE(&is->is_if.if_snd, m);
+	IF_DEQUEUE(&ifp->if_snd, m);
 	splx(s);
 	if (m == 0) {
-		is->is_flags &= ~ACEF_OACTIVE;
-		return;
+		ifp->if_flags &= ~IFF_OACTIVE;
+		return (0);
 	}
-	len = aceput(unit, txs->tx_data, m);
+	len = aceput(txs->tx_data, m);
 	retries = txs->tx_csr & TCS_RTC;
 	if (retries > 0)
 		acebakoff(is, txs, retries);
@@ -284,11 +286,12 @@ again:
 		len = ETHERMIN + sizeof (struct ether_header);
 	if (++is->is_txnext > SEG_MAX) 
 		is->is_txnext = is->is_segboundry;
-	is->is_if.if_opackets++;
+	ifp->if_opackets++;
 	is->is_xcnt++;
 	len = (len & 0x7fff) | TCS_TBFULL;
 	movow(txs, len);
 	goto again;
+#undef is
 }
 
 /*
@@ -306,7 +309,7 @@ acecint(unit)
 		    unit, is->is_xcnt);
 		is->is_xcnt = 0;
 		if (is->is_if.if_snd.ifq_head)
-			acestart(unit);
+			acestart(&is->is_if);
 		return;
 	}
 	is->is_xcnt--;
@@ -323,7 +326,7 @@ acecint(unit)
 			is->is_eoctr = is->is_segboundry; 
 	} 
 	if (is->is_if.if_snd.ifq_head)
-		acestart(unit);
+		acestart(&is->is_if);
 }
 
 /*
@@ -402,20 +405,11 @@ again:
 	/*
 	 * Pull packet off interface.  Off is nonzero if packet
 	 * has trailing header; aceget will then force this header
-	 * information to be at the front, but we still have to drop
-	 * the type and length which are at the front of any trailer data.
+	 * information to be at the front.
 	 */
 	m = aceget((u_char *)rxseg->rx_data, len, off, &is->is_if);
 	if (m == 0)
 		goto setup;
-	if (off) {
-		struct ifnet *ifp;
-
-		ifp = *(mtod(m, struct ifnet **));
-		m->m_off += 2 * sizeof (u_short);
-		m->m_len -= 2 * sizeof (u_short);
-		*(mtod(m, struct ifnet **)) = ifp;
-	}
 	switch (ace->ether_type) {
 
 #ifdef INET
@@ -453,149 +447,12 @@ setup:
 }
 
 /*
- * Ethernet output routine.
- * Encapsulate a packet of type family for the local net.
- * Use trailer local net encapsulation if enough data in first
- * packet leaves a multiple of 512 bytes of data in remainder.
- */
-aceoutput(ifp, m0, dst)
-	struct ifnet *ifp;
-	struct mbuf *m0;
-	struct sockaddr *dst;
-{
-	register struct ace_softc *is = &ace_softc[ifp->if_unit];
-	register struct mbuf *m = m0;
-	register struct ether_header *ace;
-	register int off;
-	struct mbuf *mcopy = (struct mbuf *)0;
-	int type, s, error, usetrailers;
-	u_char edst[6];
-	struct in_addr idst;
-
-	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
-		error = ENETDOWN;
-		goto bad;
-	}
-	switch (dst->sa_family) {
-
-#ifdef INET
-	case AF_INET:
-		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&is->is_ac, m, &idst, edst, &usetrailers))
-			return (0);	/* if not yet resolved */
-		if (!bcmp((caddr_t)edst, (caddr_t)etherbroadcastaddr,
-		    sizeof (edst)))
-			mcopy = m_copy(m, 0, (int)M_COPYALL);
-		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
-		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
-		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
-			type = ETHERTYPE_TRAIL + (off>>9);
-			m->m_off -= 2 * sizeof (u_short);
-			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = htons((u_short)ETHERTYPE_IP);
-			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
-			goto gottrailertype;
-		}
-		type = ETHERTYPE_IP;
-		off = 0;
-		goto gottype;
-#endif
-#ifdef NS
-	case AF_NS:
- 		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
-		    (caddr_t)edst, sizeof (edst));
-		if (!bcmp((caddr_t)edst, (caddr_t)&ns_broadhost,sizeof(edst)))
-			mcopy = m_copy(m, 0, (int)M_COPYALL);
-		else if (!bcmp((caddr_t)edst, (caddr_t)&ns_thishost,
-		    sizeof(edst)))
-			return(looutput(&loif, m, dst));
-		type = ETHERTYPE_NS;
-		off = 0;
-		goto gottype;
-#endif
-	case AF_UNSPEC:
-		ace = (struct ether_header *)dst->sa_data;
-		bcopy((caddr_t)ace->ether_dhost, (caddr_t)edst, sizeof (edst));
-		type = ace->ether_type;
-		goto gottype;
-
-	default:
-		log(LOG_ERR, "ace%d: can't handle af%d\n",
-		    ifp->if_unit, dst->sa_family);
-		error = EAFNOSUPPORT;
-		goto bad;
-	}
-
-gottrailertype:
-	/*
-	 * Packet to be sent as trailer: move first packet
-	 * (control information) to end of chain.
-	 */
-	while (m->m_next)
-		m = m->m_next;
-	m->m_next = m0;
-	m = m0->m_next;
-	m0->m_next = 0;
-	m0 = m;
-
-gottype:
-	/*
-	 * Add local net header.  If no space in first mbuf,
-	 * allocate another.
-	 */
-	if (m->m_off > MMAXOFF ||
-	    MMINOFF + sizeof (struct ether_header) > m->m_off) { 
-		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == 0) {
-			error = ENOBUFS;
-			goto bad;
-		}
-		m->m_next = m0;
-		m->m_off = MMINOFF;
-		m->m_len = sizeof (struct ether_header);
-	} else {
-		m->m_off -= sizeof (struct ether_header);
-		m->m_len += sizeof (struct ether_header);
-	}
-	ace = mtod(m, struct ether_header *);
-	bcopy((caddr_t)edst, (caddr_t)ace->ether_dhost, sizeof (edst));
-	bcopy((caddr_t)is->is_addr, (caddr_t)ace->ether_shost,
-	    sizeof (is->is_addr));
-	ace->ether_type = htons((u_short)type);
-
-	/*
-	 * Queue message on interface, and start output if interface
-	 * not yet active.
-	 */
-	s = splimp();
-	if (IF_QFULL(&ifp->if_snd)) {
-		IF_DROP(&ifp->if_snd);
-		error = ENOBUFS;
-		goto qfull;
-	}
-	IF_ENQUEUE(&ifp->if_snd, m);
-	splx(s);
-	acestart(ifp->if_unit);
-	return (mcopy ? looutput(&loif, mcopy, dst) : 0);
-qfull:
-	m0 = m;
-	splx(s);
-bad:
-	m_freem(m0);
-	if (mcopy)
-		m_freem(mcopy);
-	return (error);
-}
-
-/*
  * Routine to copy from mbuf chain to transmit buffer on the VERSAbus
  * If packet size is less than the minimum legal size,
  * the buffer is expanded.  We probably should zero out the extra
  * bytes for security, but that would slow things down.
  */
-/*ARGSUSED*/
-aceput(unit, txbuf, m)
-	int unit;
+aceput(txbuf, m)
 	char *txbuf;
 	struct mbuf *m;
 {
@@ -605,13 +462,12 @@ aceput(unit, txbuf, m)
 	register struct mbuf *mp;
 	int total;
 
-	total = 0;
+	total = mp->m_pkthdr.len;
 	bp = (u_char *)txbuf;
 	for (mp = m; (mp); mp = mp->m_next) {
 		len = mp->m_len;
 		if (len == 0)
 			continue;
-		total += len;
 		mcp = mtod(mp, u_char *);
 		if (((int)mcp & 01) && ((int)bp & 01)) {
 			/* source & destination at odd addresses */
@@ -619,14 +475,14 @@ aceput(unit, txbuf, m)
 			--len;
 		}
 		if (len > 1 && (((int)mcp & 01)==0) && (((int)bp & 01)==0)) {
-			register u_int l;
+			int l = len;
 
 			s1 = (short *)bp;
 			s2 = (short *)mcp;
-			l = len >> 1;		/* count # of shorts */
-			while (l-- != 0)
+			len >>= 1;		/* count # of shorts */
+			while (len-- != 0)
 				movow(s1++, *s2++);
-			len &= 1;		/* # remaining bytes */
+			len = l & 1;		/* # remaining bytes */
 			bp = (u_char *)s1;
 			mcp = (u_char *)s2;
 		}
@@ -645,49 +501,62 @@ aceput(unit, txbuf, m)
  */
 /*ARGSUSED*/
 struct mbuf *
-aceget(rxbuf, totlen, off0, ifp)
+aceget(rxbuf, totlen, off, ifp)
 	u_char *rxbuf;
-	int totlen, off0;
+	int totlen, off;
 	struct ifnet *ifp;
 {
 	register u_char *cp, *mcp;
-	register int tlen;
 	register struct mbuf *m;
+	register int tlen;
 	struct mbuf *top = 0, **mp = &top;
-	int len, off = off0;
+	int len;
+	u_char *packet_end;
 
-	cp = rxbuf + sizeof (struct ether_header);
+	rxbuf += sizeof (struct ether_header);
+	cp = rxbuf;
+	packet_end = cp + totlen;
+	if (off) {
+		off += 2 * sizeof(u_short);
+		totlen -= 2 *sizeof(u_short);
+		cp = rxbuf + off;
+	}
+
+	MGETHDR(m, M_DONTWAIT, MT_DATA);
+	if (m == 0)
+		return (0);
+	m->m_pkthdr.rcvif = ifp;
+	m->m_pkthdr.len = totlen;
+	m->m_len = MHLEN;
+
 	while (totlen > 0) {
-		MGET(m, M_DONTWAIT, MT_DATA);
-		if (m == 0)
-			goto bad;
-		if (off) {
-			len = totlen - off;
-			cp = rxbuf + sizeof (struct ether_header) + off;
-		} else
-			len = totlen;
-		if (ifp)
-			len += sizeof(ifp);
-		if (len >= NBPG) {
-			MCLGET(m);
-			if (m->m_len == CLBYTES)
-				m->m_len = len = MIN(len, CLBYTES);
+		if (top) {
+			MGET(m, M_DONTWAIT, MT_DATA);
+			if (m == 0) {
+				m_freem(top);
+				return (0);
+			}
+			m->m_len = MLEN;
+		}
+		len = min(totlen, (packet_end - cp));
+		if (len >= MINCLSIZE) {
+			MCLGET(m, M_DONTWAIT);
+			if (m->m_flags & M_EXT)
+				m->m_len = len = min(len, MCLBYTES);
 			else
-				m->m_len = len = MIN(MLEN, len);
+				len = m->m_len;
 		} else {
-			m->m_len = len = MIN(MLEN, len);
-			m->m_off = MMINOFF;
+			/*
+			 * Place initial small packet/header at end of mbuf.
+			 */
+			if (len < m->m_len) {
+				if (top == 0 && len + max_linkhdr <= m->m_len)
+					m->m_data += max_linkhdr;
+				m->m_len = len;
+			} else
+				len = m->m_len;
 		}
 		mcp = mtod(m, u_char *);
-		if (ifp) {
-			/*
-			 * Prepend interface pointer to first mbuf.
-			 */
-			*(mtod(m, struct ifnet **)) = ifp;
-			mcp += sizeof(ifp);
-			len -= sizeof(ifp);
-			ifp = (struct ifnet *)0;
-		}
 		/*bcopy((caddr_t)cp, (caddr_t)mcp, len);*/
 		/*cp += len; mcp += len;*/
 		tlen = len;
@@ -713,21 +582,11 @@ aceget(rxbuf, totlen, off0, ifp)
 			*mcp++ = *cp++;
 		*mp = m;
 		mp = &m->m_next;
-		if (off == 0) {
-			totlen -= len;
-			continue;
-		}
-		off += len;
-		if (off == totlen) {
-			cp = rxbuf + sizeof (struct ether_header);
-			off = 0;
-			totlen = off0;
-		}
+		totlen -= len;
+		if (cp == packet_end)
+			cp = rxbuf;
 	}
 	return (top);
-bad:
-	m_freem(top);
-	return (0);
 }
 
 /* backoff table masks */
