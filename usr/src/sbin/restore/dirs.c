@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.5	(Berkeley)	83/03/23";
+static char sccsid[] = "@(#)dirs.c	3.6	(Berkeley)	83/03/27";
 #endif
 
 #include "restore.h"
@@ -87,12 +87,12 @@ extractdirs(modefile)
 		ip = curfile.dip;
 		i = ip->di_mode & IFMT;
 		if (i != IFDIR) {
-			fclose(df);
+			(void) fclose(df);
 			dirp = opendir(dirfile);
 			if (dirp == NULL)
 				perror("opendir");
 			if (mf != NULL)
-				fclose(mf);
+				(void) fclose(mf);
 			if ((i = psearch(".")) == 0 || BIT(i, dumpmap) == 0)
 				panic("Root directory is not on tape\n");
 			return;
@@ -288,7 +288,7 @@ putent(dp)
 	if (dirloc + dp->d_reclen > DIRBLKSIZ) {
 		((struct direct *)(dirbuf + prev))->d_reclen =
 		    DIRBLKSIZ - prev;
-		fwrite(dirbuf, 1, DIRBLKSIZ, df);
+		(void) fwrite(dirbuf, 1, DIRBLKSIZ, df);
 		dirloc = 0;
 	}
 	bcopy((char *)dp, dirbuf + dirloc, (long)dp->d_reclen);
@@ -303,7 +303,7 @@ flushent()
 {
 
 	((struct direct *)(dirbuf + prev))->d_reclen = DIRBLKSIZ - prev;
-	fwrite(dirbuf, (int)dirloc, 1, df);
+	(void) fwrite(dirbuf, (int)dirloc, 1, df);
 	seekpt = ftell(df);
 	dirloc = 0;
 }
@@ -318,40 +318,14 @@ dcvt(odp, ndp)
 	strncpy(ndp->d_name, odp->d_name, ODIRSIZ);
 	ndp->d_namlen = strlen(ndp->d_name);
 	ndp->d_reclen = DIRSIZ(ndp);
-	/*
-	 * this quickly calculates if this inode is a directory.
-	 * Currently not maintained.
-	 *
-	itp = inotablookup(odp->d_ino);
-	if (itp != NIL)
-		ndp->d_fmt = IFDIR;
-	 */
-}
-
-/*
- * Open a directory.
- * Modified to allow any random file to be a legal directory.
- */
-DIR *
-opendir(name)
-	char *name;
-{
-	register DIR *dirp;
-
-	dirp = (DIR *)malloc((unsigned)sizeof(DIR));
-	dirp->dd_fd = open(name, 0);
-	if (dirp->dd_fd == -1) {
-		free((char *)dirp);
-		return NULL;
-	}
-	dirp->dd_loc = 0;
-	return dirp;
 }
 
 /*
  * Seek to an entry in a directory.
  * Only values returned by ``telldir'' should be passed to seekdir.
- * Modified to have many directories based in one file.
+ * This routine handles many directories in a single file.
+ * It takes the base of the directory in the file, plus
+ * the desired seek offset into it.
  */
 void
 seekdir(dirp, loc, base)
@@ -418,7 +392,7 @@ setdirmodes(modefile)
 	}
 	clearerr(mf);
 	for (;;) {
-		fread((char *)&node, 1, sizeof(struct modeinfo), mf);
+		(void) fread((char *)&node, 1, sizeof(struct modeinfo), mf);
 		if (feof(mf))
 			break;
 		ep = lookupino(node.ino);
@@ -428,13 +402,13 @@ setdirmodes(modefile)
 			panic("cannot find directory inode %d\n", node.ino);
 		}
 		cp = myname(ep);
-		chown(cp, node.uid, node.gid);
-		chmod(cp, node.mode);
+		(void) chown(cp, node.uid, node.gid);
+		(void) chmod(cp, node.mode);
 		utime(cp, node.timep);
 	}
 	if (ferror(mf))
 		panic("error setting directory modes\n");
-	fclose(mf);
+	(void) fclose(mf);
 	(void) unlink(modefile);
 }
 
@@ -475,8 +449,8 @@ genliteraldir(name, ino)
 			done(1);
 		}
 	}
-	close(dp);
-	close(ofile);
+	(void) close(dp);
+	(void) close(ofile);
 	return (GOOD);
 }
 
@@ -520,7 +494,7 @@ allocinotab(ino, dip, seekpt)
 	node.mode = dip->di_mode;
 	node.uid = dip->di_uid;
 	node.gid = dip->di_gid;
-	fwrite((char *)&node, 1, sizeof(struct modeinfo), mf);
+	(void) fwrite((char *)&node, 1, sizeof(struct modeinfo), mf);
 	return(itp);
 }
 
