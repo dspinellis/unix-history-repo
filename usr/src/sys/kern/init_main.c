@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)init_main.c	7.18 (Berkeley) %G%
+ *	@(#)init_main.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -120,11 +120,11 @@ main(firstaddr)
 	vminit();
 
 	/*
+	 * Initialize the file systems.
+	 *
 	 * Get vnodes for swapdev, argdev, and rootdev.
 	 */
-	vhinit();
-	ihinit();
-	nchinit();
+	vfsinit();
 	if (bdevvp(swapdev, &swapdev_vp) ||
 	    bdevvp(argdev, &argdev_vp) ||
 	    bdevvp(rootdev, &rootvp))
@@ -173,12 +173,6 @@ main(firstaddr)
 	swapinit();
 #ifdef GPROF
 	kmstartup();
-#endif
-#ifdef NFS
-	nfsinit();
-#endif
-#ifdef MFS
-	mfs_init();
 #endif
 
 /* kick off timeout driven events by calling first time */
