@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	4.5 %G%";
+static char sccsid[] = "@(#)newfs.c	4.6 %G%";
 #endif
 
 /*
@@ -12,6 +12,8 @@ static char sccsid[] = "@(#)newfs.c	4.5 %G%";
 #include <stdio.h>
 #include <dir.h>
 #include <disktab.h>
+
+#define	BOOTDIR	"/usr/mdec"	/* directory for boot blocks */
 
 int	verbose;		/* show mkfs line before exec */
 int	fssize;			/* file system size */
@@ -261,8 +263,8 @@ installboot(dev, type)
 	char bootblock[MAXPATHLEN], standalonecode[MAXPATHLEN];
 	char bootimage[BBSIZE];
 
-	sprintf(bootblock, "/sys/mdec/%sboot", type);
-	sprintf(standalonecode, "/sys/stand/boot%s", type);
+	sprintf(bootblock, "%s/%sboot", BOOTDIR, type);
+	sprintf(standalonecode, "%s/boot%s", BOOTDIR, type);
 	if (verbose) {
 		printf("installing boot code\n");
 		printf("sector 0 boot = %s\n", bootblock);
