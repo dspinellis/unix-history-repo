@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	8.7 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -285,6 +285,9 @@ nospace:
  * Note that the error return is not reflected back to the user. Rather
  * the previous block allocation will be used.
  */
+#include <sys/sysctl.h>
+int doasyncfree = 1;
+struct ctldebug debug14 = { "doasyncfree", &doasyncfree };
 int
 ffs_reallocblks(ap)
 	struct vop_reallocblks_args /* {
@@ -386,24 +389,33 @@ ffs_reallocblks(ap)
 	}
 	/*
 	 * Next we must write out the modified inode and indirect blocks.
-	 * The writes are synchronous since the old block values may have
-	 * been written to disk.
+	 * For strict correctness, the writes should be synchronous since
+	 * the old block values may have been written to disk. In practise
+	 * they are almost never written, but if we are concerned about 
+	 * strict correctness, the `doasyncfree' flag should be set to zero.
 	 *
-	 * These writes should be changed to be bdwrites (and the VOP_UPDATE
-	 * dropped) when a flag has been added to the buffers and inodes
-	 * to detect when they have been written. It should be set when the
-	 * cluster is started and cleared whenever the buffer or inode is
-	 * flushed. We can then check below to see if it is set, and do
-	 * the synchronous write only when it has been cleared.
+	 * The test on `doasyncfree' should be changed to test a flag
+	 * that shows whether the associated buffers and inodes have
+	 * been written. The flag should be set when the cluster is
+	 * started and cleared whenever the buffer or inode is flushed.
+	 * We can then check below to see if it is set, and do the
+	 * synchronous write only when it has been cleared.
 	 */
 	if (sbap != &ip->i_db[0]) {
-		bwrite(sbp);
+		if (doasyncfree)
+			bdwrite(sbp);
+		else
+			bwrite(sbp);
 	} else {
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
-		VOP_UPDATE(vp, &time, &time, MNT_WAIT);
+		if (!doasyncfree)
+			VOP_UPDATE(vp, &time, &time, MNT_WAIT);
 	}
 	if (ssize < len)
-		bwrite(ebp);
+		if (doasyncfree)
+			bdwrite(ebp);
+		else
+			bwrite(ebp);
 	/*
 	 * Last, free the old blocks and assign the new blocks to the buffers.
 	 */
