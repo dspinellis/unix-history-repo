@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.2	6.8 (Berkeley) %G%
+.\"	@(#)intro.2	6.9 (Berkeley) %G%
 .\"
 .TH INTRO 2 ""
 .UC 4
@@ -16,8 +16,14 @@ intro \- introduction to system calls and error numbers
 .SH SYNOPSIS
 .B #include <sys/errno.h>
 .SH DESCRIPTION
-This section describes all of the system calls.  Most
-of these calls have one or more error returns.
+This section provides an overview of the system calls,
+their error returns, and other common definitions and concepts.
+.\".LP
+.\".B "System call restart"
+.\".PP
+.\"<more later...>
+.SH DIAGNOSTICS
+Most of these calls have one or more error returns.
 An error condition is indicated by an otherwise impossible return
 value.  This is almost always \-1; the individual descriptions
 specify the details.
