@@ -1,21 +1,25 @@
-.LH
-.in 3i
-
-.in -3i
+.HE
+.de pd
+.ie \\n(.$-1 \\$1 \\$2 \\$3
+.el \\*(DY
+..
+.in 4.1i
+.pd 
+.in
 .sp 2
 .LP
 Dear Colleague:
 .sp
 .PP
 We are happy to send you information about our June 1988
-revision of the Fourth Berkeley Software Distribution
+revision of the Fourth Berkeley Software Distribution,
 hereafter referred to as the ``4.3BSD tahoe'' distribution.
-The purpose of this test release is to provide 4.3BSD support
+The purpose of this release is to provide 4.3BSD support
 for the ``tahoe'' processor and to get feedback on some new
 features and facilities that we expect to include in future
 Berkeley releases.
-This distribution is not a full Berkeley release;
-it is intended for testing and evaluation rather
+This distribution is not a standard Berkeley release;
+it is an interim release intended for testing and evaluation rather
 than production use by naive users.
 The distribution is available
 to users with licenses for the April 1986 4.3BSD release for the VAX\(dg.
@@ -31,58 +35,87 @@ The second purpose is to tell you how to obtain our distribution.
 What is the 4.3BSD Tahoe Release?
 .PP
 The distribution consists of one 6250 BPI or three 1600 BPI magnetic tapes,
-and a copy of ``Installing and Operating on the Tahoe''.
+certain updated manual pages,
+and a copy of ``Installing and Operating 4.3BSD on the Tahoe.''
 The magnetic tape(s) contain copies of source code and documentation
-for both the VAX and the tahoe and binaries for the tahoe.
+for both the VAX and the tahoe, and binaries for the tahoe.
 On the three-tape 1600 BPI set,
 parts of the user-contributed software are shipped
 as compressed archives to save space.
 .PP
 The primary purpose of this release is to provide support
 for the ``tahoe'' processor, the CPU used by
-Computer Consoles Inc (Power 6/32, 632/SX),
-and high end lines of Harris (HCX-7, HCX-9), Unisys (7000/40), and ICL.
-Additional DEC equipment is supported including the 8250 BI-based CPU
-and the QVSS and QDSS display drivers for the uVAX II.
-New device support includes the DEC Delua and the Interlan NP100
-ethernet controllers.
+Computer Consoles, Inc. (CCI Power 6/32, 6/32SX),
+and high end lines of Harris (HCX-7), Unisys (7000/40), and ICL.
+Support for this processor is derived from the 4.2BSD system
+done by CCI.
+Support for new DEC equipment has also been added,
+including support for the 8250 BI-based CPU and the KDB-50 BI disk controller
+from Chris Torek,
+and the QVSS and QDSS display drivers for the MicroVAX II, contributed
+by Digital Equipment Corporation.
+We expect to provide support for both the VAX and the tahoe
+processors in future releases.
 .PP
 The major new software systems include the following features:
 .IP \(bu
-The networking code has been extensively tuned to increase throughput
-and reduce retransmissions.
-The tuning is especially effective for slow, lossy, or congested networks.
+The TCP and IP code is the same as that 
+recently made available via the ARPANET and Usenet.
+Several new algorithms are used in TCP,
+in particular Van Jacobson's slow start and dynamic
+window size selection algorithms and Phil Karn's modification
+to the round-trip timing algorithm.
+These changes increase throughput
+and reduce congestion and retransmission.
+Several fixes were made in the handling of IP options
+and other gateway support.
 .IP \(bu
 The file system has been generalized to remove the limits on the
 maximum number of inodes per cylinder group, cylinders per cylinder
 group, and number of distinguished rotational positions.
-The kernel and file system utilities fully operate on both
+The kernel and file system utilities operate normally on both
 new and old format file systems;
 old kernels treat the new file systems as read-only.
+This change allows better utilization of newer disks with larger numbers
+of sectors per cylinder.
 .IP \(bu
-The system has full support for disk labels.
+The system has full support for disk labels
+that contain disk geometry information and partition layout on each disk.
+Labels are used on disks using the
+.B hp
+or
+.B uda
+drivers on the VAX (hp or ra disks)
+and all supported disks on the tahoe.
 The utility to read and write disk labels can be used with
-the system running multiuser.
+the system running multiuser;
+the labels are used and updated as appropriate by \fInewfs\fP, \fIbad144\fP,
+the kernel and the bootstrap programs.
 Basic file system parameters are stored in the label
-so that ``fsck'' can compute alternate superblocks.
+so that \fIfsck\fP can locate alternate superblocks.
+The filesystem and \fInewfs\fP use additional information about
+the disk geometry that is now available, such as track-to-track skew.
 .IP \(bu
-A new general purpose dynamic memory allocator has been written
+A new general-purpose dynamic memory allocator has been written
 that can be used by all the kernel subsystems.
 The design of this allocator takes advantage of known memory usage
-patterns in the UNIX kernel and a hybrid strategy that is time-efficient
+patterns in the UNIX kernel, using a hybrid strategy that is time-efficient
 for small allocations and space-efficient for large allocations.
-This allocator replaces the multiple memory allocation interfaces
+This allocator replaces most of the previous memory allocation interfaces
 with a single easy-to-program interface,
 results in more efficient use of global memory by eliminating
 partitioned and specialized memory pools,
 and is quick enough that no performance loss is observed
-relative to the current implementations.
+relative to the previous implementations.
 Most of the kernel memory allocation is now done using this allocator.
 .IP \(bu
 The source code has been reorganized to ease support of multiple
 machine types.
 .IP \(bu
-Numerous bug fixes and enhancements have been made.
+Numerous bug fixes and enhancements have been made throughout the system,
+including new versions of the nameserver \fInamed\fP and the routing daemon
+\fIrouted\fP.
+Several years' backlog of bug fixes have been applied.
 .IP \(bu
 We have started a process of identifying the code in the 4.3BSD distribution
 that is not derived from AT&T code.
@@ -92,23 +125,23 @@ retained and that due credit for its origin is given to
 The Regents of the University of California.
 Over 1000 files have been identified in this distribution.
 .SH
-How to obtain 4.3BSD for the Tahoe
+How to obtain the 4.3BSD tahoe release
 .PP
 This section should be read by existing licensees as well as new licensees.
 All previous 4.3BSD licensees will be able to receive
 the 4.3BSD tahoe release by simply executing the steps outlined below.
 4.2BSD licensees who have not yet upgraded to 4.3BSD will be required
-to do so as well as follow the steps outlined below for the
+to do so as well as following the steps outlined below for the
 tahoe distribution.
 For further information on ordering the standard 4.3BSD distribution,
 contact our distribution office at the address given below.
 .PP
 Because we are a research and development organization and not a commercial
-organization, we make our research results available for a fee,
+organization, we make our research results available for a fee
 which covers only our costs for the distribution.
 We distribute only the whole system
 and cannot send individual pieces of the system.
-Because the software is distributed `As Is' and is partially derived
+Because the software is distributed ``As Is'' and is partially derived
 from licensed material, we are required 
 to have a formal license arrangement with each
 organization to which we distribute. 
@@ -242,14 +275,14 @@ If You Have Read Everything and Still Need Help
 If you have questions about the licensing process after reading
 this letter, you may call Pauline Schwartz at (415) 642-7780,
 write to her, or contact her via electronic mail at
-pauline@berkeley.edu. or ucbvax!pauline. 
+pauline@Berkeley.EDU. or ucbvax!pauline. 
 She will not be able to answer technical questions.
 .sp 2
 .ti +2.5i
 Sincerely yours,
 .sp 3
 .ti +2.5i
-Professor Domenico Ferrari 
+Mike Karels
 .br
 .ti +2.5i
 Computer Systems Research Group
