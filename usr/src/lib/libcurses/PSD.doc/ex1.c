@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)ex1.c	1.3 (Berkeley) %G%
+.\"     @(#)ex1.c	8.1 (Berkeley) %G%
 .\"
 #include <sys/types.h>
 #include <curses.h>
