@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
  *
- *	@(#)sysv_shm.c	7.12 (Berkeley) %G%
+ *	@(#)sysv_shm.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -24,17 +24,15 @@
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "kernel.h"
 #include "proc.h"
 #include "shm.h"
 #include "malloc.h"
 #include "mman.h"
-#include "../vm/vm_param.h"
-#include "../vm/vm_map.h"
-#include "../vm/vm_kern.h"
-#include "../vm/vm_inherit.h"
-#include "../vm/vm_pager.h"
+#include "vm/vm.h"
+#include "vm/vm_kern.h"
+#include "vm/vm_inherit.h"
+#include "vm/vm_pager.h"
 
 #ifdef HPUXCOMPAT
 #include "hp300/hpux/hpux.h"
