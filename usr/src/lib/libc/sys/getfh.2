@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)getfh.2	6.4 (Berkeley) %G%
+.\"	@(#)getfh.2	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETFH 2
@@ -15,7 +15,7 @@
 .Fd #include <sys/types.h>
 .Fd #include <sys/mount.h>
 .Ft int
-.Fn getfh "char *path" "struct fhandle_t *fhp"
+.Fn getfh "char *path" "fhandle_t *fhp"
 .Sh DESCRIPTION
 .Fn Getfh
 returns a file handle for the specified file or directory
