@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -212,14 +212,36 @@ savemail(e)
 			**	joe@x, which gives a response, etc.  Also force
 			**	the mail to be delivered even if a version of
 			**	it has already been sent to the sender.
+			**
+			**  If this is a configuration or local software
+			**	error, send to the local postmaster as well,
+			**	since the originator can't do anything
+			**	about it anyway.  Note that this is a full
+			**	copy of the message (intentionally) so that
+			**	the Postmaster can forward things along.
 			*/
 
+			if (ExitStat == EX_CONFIG || ExitStat == EX_SOFTWARE)
+			{
+				(void) sendtolist("postmaster",
+					  (ADDRESS *) NULL,
+					  &e->e_errorqueue, e);
+			}
 			if (strcmp(e->e_from.q_paddr, "<>") != 0)
+			{
 				(void) sendtolist(e->e_from.q_paddr,
 					  (ADDRESS *) NULL,
 					  &e->e_errorqueue, e);
+			}
 
-			/* deliver a cc: to the postmaster if desired */
+			/*
+			**  Deliver a non-delivery report to the
+			**  Postmaster-designate (not necessarily
+			**  Postmaster).  This does not include the
+			**  body of the message, for privacy reasons.
+			**  You really shouldn't need this.
+			*/
+
 			if (PostMasterCopy != NULL)
 			{
 				auto ADDRESS *rlist = NULL;
@@ -230,6 +252,7 @@ savemail(e)
 				(void) returntosender(e->e_message,
 						      rlist, FALSE, e);
 			}
+
 			q = e->e_errorqueue;
 			if (q == NULL)
 			{
