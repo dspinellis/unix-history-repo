@@ -1,23 +1,35 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1983 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+"@(#) Copyright (c) 1983 The Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rwho.c	5.2 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)rwho.c	5.3 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/param.h>
-#include <stdio.h>
 #include <sys/dir.h>
+#include <sys/file.h>
 #include <protocols/rwhod.h>
+#include <stdio.h>
 
 DIR	*dirp;
 
@@ -25,7 +37,7 @@ struct	whod wd;
 int	utmpcmp();
 #define	NUSERS	1000
 struct	myutmp {
-	char	myhost[32];
+	char	myhost[MAXHOSTNAMELEN];
 	int	myidle;
 	struct	outmp myutmp;
 } myutmp[NUSERS];
@@ -39,44 +51,44 @@ int	nusers;
 #define	down(w,now)	((now) - (w)->wd_recvtime > 11 * 60)
 
 char	*ctime(), *strcpy();
-int	now;
+time_t	now;
 int	aflg;
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
+	extern char *optarg;
+	extern int optind;
+	int ch;
 	struct direct *dp;
 	int cc, width;
 	register struct whod *w = &wd;
 	register struct whoent *we;
 	register struct myutmp *mp;
 	int f, n, i;
+	time_t time();
 
-	argc--, argv++;
-again:
-	if (argc > 0 && !strcmp(argv[0], "-a")) {
-		argc--, argv++;
-		aflg++;
-		goto again;
-	}
-	(void) time(&now);
-	if (chdir(RWHODIR) < 0) {
-		perror(RWHODIR);
-		exit(1);
-	}
-	dirp = opendir(".");
-	if (dirp == NULL) {
+	while ((ch = getopt(argc, argv, "a")) != EOF)
+		switch((char)ch) {
+		case 'a':
+			aflg = 1;
+			break;
+		case '?':
+		default:
+			fprintf(stderr, "usage: rwho [-a]\n");
+			exit(1);
+		}
+	if (chdir(RWHODIR) || (dirp = opendir(".")) == NULL) {
 		perror(RWHODIR);
 		exit(1);
 	}
 	mp = myutmp;
+	(void)time(&now);
 	while (dp = readdir(dirp)) {
-		if (dp->d_ino == 0)
+		if (dp->d_ino == 0 || strncmp(dp->d_name, "whod.", 5))
 			continue;
-		if (strncmp(dp->d_name, "whod.", 5))
-			continue;
-		f = open(dp->d_name, 0);
+		f = open(dp->d_name, O_RDONLY);
 		if (f < 0)
 			continue;
 		cc = read(f, (char *)&wd, sizeof (struct whod));
