@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	8.7 (Berkeley) %G%
+ *	@(#)kern_sig.c	8.8 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -614,6 +614,7 @@ trapsignal(p, signum, code)
 		p->p_sigmask |= ps->ps_catchmask[signum] | mask;
 	} else {
 		ps->ps_code = code;	/* XXX for core dump/debugger */
+		ps->ps_sig = signum;	/* XXX to verify code */
 		psignal(p, signum);
 	}
 }
@@ -864,8 +865,17 @@ issignal(p)
 			/*
 			 * If traced, always stop, and stay
 			 * stopped until released by the parent.
+			 *
+			 * Note that we must clear the pending signal
+			 * before we call trace_req since that routine
+			 * might cause a fault, calling tsleep and
+			 * leading us back here again with the same signal.
+			 * Then we would be deadlocked because the tracer
+			 * would still be blocked on the ipc struct from
+			 * the initial request.
 			 */
 			p->p_xstat = signum;
+			p->p_siglist &= ~mask;
 			psignal(p->p_pptr, SIGCHLD);
 			do {
 				stop(p);
@@ -873,19 +883,10 @@ issignal(p)
 			} while (!trace_req(p) && p->p_flag & P_TRACED);
 
 			/*
-			 * If the traced bit got turned off, go back up
-			 * to the top to rescan signals.  This ensures
-			 * that p_sig* and ps_sigact are consistent.
-			 */
-			if ((p->p_flag & P_TRACED) == 0)
-				continue;
-
-			/*
 			 * If parent wants us to take the signal,
 			 * then it will leave it in p->p_xstat;
 			 * otherwise we just look for signals again.
 			 */
-			p->p_siglist &= ~mask;	/* clear the old signal */
 			signum = p->p_xstat;
 			if (signum == 0)
 				continue;
@@ -897,6 +898,14 @@ issignal(p)
 			mask = sigmask(signum);
 			p->p_siglist |= mask;
 			if (p->p_sigmask & mask)
+				continue;
+
+			/*
+			 * If the traced bit got turned off, go back up
+			 * to the top to rescan signals.  This ensures
+			 * that p_sig* and ps_sigact are consistent.
+			 */
+			if ((p->p_flag & P_TRACED) == 0)
 				continue;
 		}
 
@@ -1051,6 +1060,7 @@ postsig(signum)
 		} else {
 			code = ps->ps_code;
 			ps->ps_code = 0;
+			ps->ps_sig = 0;
 		}
 		sendsig(action, signum, returnmask, code);
 	}
