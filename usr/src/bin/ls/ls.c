@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ls.c	4.4 82/03/27";
+static	char *sccsid = "@(#)ls.c	4.5 82/03/31";
 #endif
 
 /*
@@ -37,7 +37,7 @@ struct subdirs {
 } *subdirs;
 
 int	aflg, dflg, gflg, lflg, sflg, tflg, uflg, iflg, fflg, cflg, rflg = 1;
-int	qflg, Aflg, Fflg, Rflg, Cflg, hflg;
+int	qflg, Aflg, Cflg, Fflg, Lflg, Rflg;
 
 int	usetabs;
 
@@ -110,8 +110,8 @@ main(argc, argv)
 			iflg++; break;
 		case 'f':
 			fflg++; break;
-		case 'h':
-			hflg++; break;
+		case 'L':
+			Lflg++; break;
 		case 'F':
 		        Fflg++; break;
 		case 'R':
@@ -270,7 +270,7 @@ gstat(fp, file, statarg, pnkb)
 	char *file;
 	int statarg, *pnkb;
 {
-	int (*statf)() = hflg ? lstat : stat;
+	int (*statf)() = Lflg ? stat : lstat;
 	char buf[BUFSIZ]; int cc;
 	static struct afile azerofile;
 
