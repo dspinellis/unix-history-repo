@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-common	5.8 (Berkeley) %G%
+.\"     @(#)doc-common	5.9 (Berkeley) %G%
 .\"
 .\"     %beginstrip%
 .nr %A 1
@@ -151,7 +151,7 @@
 .de Os
 .ds oS Null
 .if "\\$1"" \{\
-.	ds oS 4.4BSD PRERELEASE
+.	ds oS 4.4BSD
 .\}
 .if "\\$2"" \{\
 .	ds aa Non-Null
@@ -178,7 +178,7 @@
 .	if "\\$2"4.3R" .ds oS 4.3-Reno Berkeley Distribution
 .	if "\\$2"4.3t" .ds oS 4.3-Tahoe Berkeley Distribution
 .	if "\\$2"4.3r" .ds oS 4.3-Reno Berkeley Distribution
-.	if "\\$2"4.4"  .ds oS 4.4BSD PRERELEASE
+.	if "\\$2"4.4"  .ds oS 4.4BSD
 .\}
 .if "\\*(oS"Null" .ds oS \0\\$1
 .if "\\*(aa"Non-Null" .as oS \0\\$2
