@@ -7,6 +7,12 @@ Country		Site/Directory/Maintainer
 Australia	minnie.cs.adfa.oz.au:/BSD/FreeBSD-1.1-RELEASE
 		<wkt@cs.adfa.oz.au>
 
+Australia	ftp.physics.su.oz.au:/FreeBSD
+		David Dawes <dawes@physics.su.oz.au>
+
+Australia	ftp.une.edu.au:/pub/FreeBSD
+		Gordon Smith <Gordon.Smith@une.edu.au>
+
 Austria		ftp.tu-graz.ac.at:/pub/FreeBSD	
 		<ftp@ftp.tu-graz.ac.at>
 
@@ -50,4 +56,4 @@ USA		wuarchive.wustl.edu:/systems/unix/FreeBSD
 		<archives@wugate.wustl.edu>
 
 
-$Id: MIRROR.SITES,v 1.14 1994/05/14 04:41:41 sean Exp $
+$Id: MIRROR.SITES,v 1.15 1994/05/16 06:57:09 sean Exp $
