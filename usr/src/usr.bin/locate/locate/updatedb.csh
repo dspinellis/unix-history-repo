@@ -8,7 +8,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)updatedb.csh	8.1 (Berkeley) %G%
+#	@(#)updatedb.csh	8.2 (Berkeley) %G%
 #
 
 set SRCHPATHS = "/"			# directories to be put in the database
@@ -32,11 +32,11 @@ set errs = $TMPDIR/locate.errs.$$
 # find ${SRCHPATHS} -print | \
 find ${SRCHPATHS} \! -fstype local -prune -or -print | \
 	tr '/' '\001' | \
-	(sort -T /var/tmp -f; echo $status > $errs) | tr '\001' '/' > $filelist
+	(sort -T $TMPDIR -f; echo $status > $errs) | tr '\001' '/' > $filelist
 
 $LIBDIR/locate.bigram < $filelist | \
-	(sort -T /var/tmp; echo $status >> $errs) | \
-	uniq -c | sort -T /var/tmp -nr | \
+	(sort -T /$TMPDIR; echo $status >> $errs) | \
+	uniq -c | sort -T /$TMPDIR -nr | \
 	awk '{ if (NR <= 128) print $2 }' | tr -d '\012' > $bigrams
 
 # code the file list
@@ -48,31 +48,3 @@ else
 	chmod 644 $FCODES
 	rm $bigrams $filelist $errs
 endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
