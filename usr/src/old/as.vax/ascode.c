@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)ascode.c 4.11 %G%";
+static char sccsid[] = "@(#)ascode.c 4.12 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -251,7 +251,7 @@ PASS2:
 			if (argtype == A_BB) {
 				ap->a_areg1 = argtype = 
 					xp->e_xvalue - (dotp->e_xvalue + 1);
-				if (xp->e_xtype & XXTRN)
+				if ((xp->e_xtype & XTYPE) == XUNDEF)
 					yywarning("%s: destination label is external",
 						FETCHNAME(ITABFETCH(opcode)));
 				if (!ISBYTE(argtype))
@@ -263,7 +263,7 @@ PASS2:
 			if (argtype == A_BW) {
 				ap->a_areg1 = argtype = xp->e_xvalue
 					-= dotp->e_xvalue + 2;
-				if (xp->e_xtype & XXTRN)
+				if ((xp->e_xtype & XTYPE) == XUNDEF)
 					yywarning("%s: destination label is external",
 						FETCHNAME(ITABFETCH(opcode)));
 				xp->e_xtype = XABS;
