@@ -1,4 +1,4 @@
-/*	cpudata.c	4.3	81/04/03	*/
+/*	cpudata.c	4.4	81/04/09	*/
 
 #include "../h/param.h"
 #include "../h/pte.h"
@@ -32,17 +32,18 @@ caddr_t	umaddr7ZZ[1] = {
 };
 #endif
 
-#if VAX750
 /*
  * Information to patch around the stupidity of configuration
  * registers not returning types on some of the processors.
  */
+#if VAX750
 short	nexty750[NNEX750] = {
 	NEX_MEM16,	NEX_MEM16,	NEX_MEM16,	NEX_MEM16,
 	NEX_MBA,	NEX_MBA,	NEX_MBA,	NEX_MBA,
 	NEX_UBA0,	NEX_UBA1,	NEX_ANY,	NEX_ANY,
 	NEX_ANY,	NEX_ANY,	NEX_ANY,	NEX_ANY
 };
+#if VAX7ZZ
 short	nexty7ZZ[NNEX7ZZ] = {
 	NEX_MEM16,	NEX_ANY,	NEX_ANY,	NEX_ANY,
 	NEX_ANY,	NEX_ANY,	NEX_ANY,	NEX_ANY,
