@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)tmac.andoc	1.1 (Berkeley) %G%
+.\"     @(#)tmac.andoc	5.1 (Berkeley) %G%
 .\"
 .de Dd
 .rm Dd
