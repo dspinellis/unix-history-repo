@@ -1,0 +1,88 @@
+cc -E -O cards.c | xstr -c -
+cc -c -O x.c
+"cards.c", line 139: warning: struct/union or struct/union pointer required
+"cards.c", line 142: warning: struct/union or struct/union pointer required
+mv x.o cards.o
+cc -E -O execute.c | xstr -c -
+cc -c -O x.c
+mv x.o execute.o
+cc -E -O getinp.c | xstr -c -
+cc -c -O x.c
+mv x.o getinp.o
+cc -E -O houses.c | xstr -c -
+cc -c -O x.c
+"houses.c", line 26: warning: struct/union or struct/union pointer required
+"houses.c", line 27: warning: struct/union or struct/union pointer required
+"houses.c", line 32: warning: struct/union or struct/union pointer required
+"houses.c", line 34: warning: struct/union or struct/union pointer required
+"houses.c", line 81: warning: illegal pointer combination
+"houses.c", line 112: warning: struct/union or struct/union pointer required
+"houses.c", line 132: warning: struct/union or struct/union pointer required
+"houses.c", line 133: warning: struct/union or struct/union pointer required
+"houses.c", line 138: warning: struct/union or struct/union pointer required
+"houses.c", line 140: warning: struct/union or struct/union pointer required
+"houses.c", line 179: warning: illegal pointer combination
+"houses.c", line 211: warning: struct/union or struct/union pointer required
+"houses.c", line 224: warning: struct/union or struct/union pointer required
+"houses.c", line 227: warning: struct/union or struct/union pointer required
+mv x.o houses.o
+cc -E -O jail.c | xstr -c -
+cc -c -O x.c
+mv x.o jail.o
+cc -E -O misc.c | xstr -c -
+cc -c -O x.c
+"misc.c", line 145: warning: struct/union or struct/union pointer required
+"misc.c", line 148: warning: struct/union or struct/union pointer required
+"misc.c", line 202: warning: struct/union or struct/union pointer required
+"misc.c", line 216: warning: struct/union or struct/union pointer required
+mv x.o misc.o
+cc -E -O morg.c | xstr -c -
+cc -c -O x.c
+"morg.c", line 71: warning: struct/union or struct/union pointer required
+"morg.c", line 72: warning: struct/union or struct/union pointer required
+"morg.c", line 91: warning: struct/union or struct/union pointer required
+"morg.c", line 130: warning: struct/union or struct/union pointer required
+"morg.c", line 147: warning: struct/union or struct/union pointer required
+mv x.o morg.o
+cc -E -O print.c | xstr -c -
+cc -c -O x.c
+"print.c", line 63: warning: illegal pointer combination
+"print.c", line 122: warning: struct/union or struct/union pointer required
+mv x.o print.o
+cc -E -O prop.c | xstr -c -
+cc -c -O x.c
+"prop.c", line 28: warning: illegal combination of pointer and integer, op =
+"prop.c", line 60: warning: struct/union or struct/union pointer required
+"prop.c", line 166: warning: struct/union or struct/union pointer required
+"prop.c", line 167: warning: struct/union or struct/union pointer required
+"prop.c", line 168: warning: struct/union or struct/union pointer required
+mv x.o prop.o
+cc -E -O rent.c | xstr -c -
+cc -c -O x.c
+"rent.c", line 15: warning: struct/union or struct/union pointer required
+"rent.c", line 21: warning: illegal pointer combination
+mv x.o rent.o
+cc -E -O roll.c | xstr -c -
+cc -c -O x.c
+mv x.o roll.o
+cc -E -O spec.c | xstr -c -
+cc -c -O x.c
+mv x.o spec.o
+cc -E -O strcmp.c | xstr -c -
+cc -c -O x.c
+mv x.o strcmp.o
+cc -E -O trade.c | xstr -c -
+cc -c -O x.c
+"trade.c", line 244: warning: struct/union or struct/union pointer required
+"trade.c", line 245: warning: illegal member use: type
+"trade.c", line 246: warning: struct/union or struct/union pointer required
+"trade.c", line 247: warning: struct/union or struct/union pointer required
+mv x.o trade.o
+xstr
+cc -S xs.c
+ed - < :rofix xs.s
+as -o strings.o xs.s
+rm -f xs.s xs.c
+cc -o monop -n monop.o cards.o execute.o getinp.o houses.o jail.o misc.o morg.o  print.o prop.o rent.o roll.o spec.o strcmp.o trade.o strings.o 
+./initdeck
+Make: Cannot load ./initdeck.  Stop.
