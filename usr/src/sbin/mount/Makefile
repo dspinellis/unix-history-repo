@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.3 (Berkeley) %G%
+# @(#)Makefile	5.4 (Berkeley) %G%
 #
 
 CFLAGS=	-O -DNFS
@@ -40,6 +40,9 @@ depend: ${SRCS}
 install: ${MAN}
 	install -s -o bin -g bin -m 755 mount ${DESTDIR}/sbin
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
+	rm -f ${DESTDIR}/usr/man/cat8/umount.0
+	ln ${DESTDIR}/usr/man/cat8/mount.0 ${DESTDIR}/usr/man/cat8/umount.0
+
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
