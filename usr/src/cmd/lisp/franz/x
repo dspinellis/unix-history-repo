@@ -1,0 +1,2 @@
+{ }
+END { printf "hello\n" > "t1" }
