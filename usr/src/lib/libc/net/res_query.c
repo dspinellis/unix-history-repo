@@ -3,15 +3,20 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_query.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_query.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -139,8 +144,15 @@ res_search(name, class, type, answer, anslen)
 	if (n == 0 && (cp = hostalias(name)))
 		return (res_query(cp, class, type, answer, anslen));
 
-	if ((n == 0 || *--cp != '.') && (_res.options & RES_DEFNAMES))
-	    for (domain = _res.dnsrch; *domain; domain++) {
+	/*
+	 * We do at least one level of search if
+	 *	- there is no dot and RES_DEFNAME is set, or
+	 *	- there is at least one dot, there is no trailing dot,
+	 *	  and RES_DNSRCH is set.
+	 */
+	if ((n == 0 && _res.options & RES_DEFNAMES) ||
+	   (n != 0 && *--cp != '.' && _res.options & RES_DNSRCH))
+	     for (domain = _res.dnsrch; *domain; domain++) {
 		ret = res_querydomain(name, *domain, class, type,
 		    answer, anslen);
 		if (ret > 0)
@@ -153,8 +165,8 @@ res_search(name, class, type, answer, anslen)
 		 * On a NO_DATA error, keep trying, otherwise
 		 * a wildcard entry of another type could keep us
 		 * from finding this entry higher in the domain.
-		 * If we get some other error (non-authoritative negative
-		 * answer or server failure), then stop searching up,
+		 * If we get some other error (negative answer or
+		 * server failure), then stop searching up,
 		 * but try the input name below in case it's fully-qualified.
 		 */
 		if (errno == ECONNREFUSED) {
@@ -170,10 +182,13 @@ res_search(name, class, type, answer, anslen)
 	/*
 	 * If the search/default failed, try the name as fully-qualified,
 	 * but only if it contained at least one dot (even trailing).
+	 * This is purely a heuristic; we assume that any reasonable query
+	 * about a top-level domain (for servers, SOA, etc) will not use
+	 * res_search.
 	 */
-	if (n)
-		return (res_querydomain(name, (char *)NULL, class, type,
-		    answer, anslen));
+	if (n && (ret = res_querydomain(name, (char *)NULL, class, type,
+	    answer, anslen)) > 0)
+		return (ret);
 	if (got_nodata)
 		h_errno = NO_DATA;
 	return (-1);
