@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)vacation.c	5.3 (Berkeley) %G%";
+static char	SccsId[] = "@(#)vacation.c	4.1.1.1 (Berkeley) %G%";
 #endif not lint
 
 # include <sys/types.h>
@@ -48,15 +48,13 @@ typedef int	bool;
 # define FALSE		0
 
 # define MAXLINE	256	/* max size of a line */
-# define MAXNAME	128	/* max size of one name */
 
 # define ONEWEEK	(60L*60L*24L*7L)
 
 time_t	Timeout = ONEWEEK;	/* timeout between notices per user */
 
-struct dbrec
-{
-	long	sentdate;
+struct dbrec {
+	time_t	sentdate;
 };
 
 typedef struct
@@ -79,6 +77,7 @@ main(argc, argv)
 	struct passwd *pw;
 	char *homedir;
 	char *myname;
+	char *shortfrom;
 	char buf[MAXLINE];
 	extern struct passwd *getpwnam();
 	extern char *newstr();
@@ -128,13 +127,17 @@ main(argc, argv)
 	dbminit(buf);
 
 	/* read message from standard input (just from line) */
-	from = getfrom();
+	from = getfrom(&shortfrom);
+#ifdef VDEBUG
+	printf("from='%s'\nshortfrom='%s'\n", from, shortfrom);
+	exit(0);
+#endif
 
 	/* check if junk mail or this person is already informed */
 	if (!junkmail(from) && !knows(from))
 	{
 		/* mark this person as knowing */
-		setknows(from);
+		setknows(shortfrom);
 
 		/* send the message back */
 		(void) strcpy(buf, homedir);
@@ -163,10 +166,12 @@ main(argc, argv)
 */
 
 char *
-getfrom()
+getfrom(shortp)
+char **shortp;
 {
 	static char line[MAXLINE];
-	register char *p;
+	register char *p, *start, *at, *bang;
+	char saveat;
 	extern char *index();
 
 	/* read the from line */
@@ -178,7 +183,8 @@ getfrom()
 	}
 
 	/* find the end of the sender address and terminate it */
-	p = index(&line[5], ' ');
+	start = &line[5];
+	p = index(start, ' ');
 	if (p == NULL)
 	{
 		usrerr("Funny From line '%s'", line);
@@ -186,8 +192,37 @@ getfrom()
 	}
 	*p = '\0';
 
+	/*
+	 * Strip all but the rightmost UUCP host
+	 * to prevent loops due to forwarding.
+	 * Start searching leftward from the leftmost '@'.
+	 *	a!b!c!d yields a short name of c!d
+	 *	a!b!c!d@e yields a short name of c!d@e
+	 *	e@a!b!c yields the same short name
+	 */
+#ifdef VDEBUG
+printf("start='%s'\n", start);
+#endif
+	*shortp = start;			/* assume whole addr */
+	if ((at = index(start, '@')) == NULL)	/* leftmost '@' */
+		at = p;				/* if none, use end of addr */
+	saveat = *at;
+	*at = '\0';
+	if ((bang = rindex(start, '!')) != NULL) {	/* rightmost '!' */
+		char *bang2;
+
+		*bang = '\0';
+		if ((bang2 = rindex(start, '!')) != NULL) /* 2nd rightmost '!' */
+			*shortp = bang2 + 1;		/* move past ! */
+		*bang = '!';
+	}
+	*at = saveat;
+#ifdef VDEBUG
+printf("place='%s'\n", *shortp);
+#endif
+
 	/* return the sender address */
-	return (&line[5]);
+	return start;
 }
 /*
 **  JUNKMAIL -- read the header and tell us if this is junk/bulk mail.
@@ -274,25 +309,30 @@ junkmail(from)
 
 bool
 knows(user)
-	char *user;
+char *user;
 {
 	DATUM k, d;
-	long now;
+	struct dbrec ldbrec;
 	auto long then;
 
-	time(&now);
 	k.dptr = user;
 	k.dsize = strlen(user) + 1;
 	d = fetch(k);
 	if (d.dptr == NULL)
-		return (FALSE);
-	
-	/* be careful on 68k's and others with alignment restrictions */
-	bcopy((char *) &((struct dbrec *) d.dptr)->sentdate, (char *) &then, sizeof then);
-	if (then + Timeout < now)
-		return (FALSE);
-	return (TRUE);
+		return FALSE;
+	bcopy(d.dptr, (char *)&ldbrec, sizeof ldbrec);	/* realign data */
+	return ldbrec.sentdate + Timeout >= time((time_t *)0);
 }
+
+#ifndef VMUNIX
+bcopy(from, to, size)
+register char *to, *from;
+register unsigned size;
+{
+	while (size-- > 0)
+		*to++ = *from++;
+}
+#endif
 /*
 **  SETKNOWS -- set that this user knows about the vacation.
 **
@@ -400,6 +440,7 @@ initialize()
 **		none.
 */
 
+/* VARARGS 1 */
 usrerr(f, p)
 	char *f;
 	char *p;
@@ -422,6 +463,7 @@ usrerr(f, p)
 **		none.
 */
 
+/* VARARGS 1 */
 syserr(f, p)
 	char *f;
 	char *p;
@@ -451,14 +493,14 @@ newstr(s)
 	char *p;
 	extern char *malloc();
 
-	p = malloc(strlen(s) + 1);
+	p = malloc((unsigned)strlen(s) + 1);
 	if (p == NULL)
 	{
 		syserr("newstr: cannot alloc memory");
 		exit(EX_OSERR);
 	}
 	strcpy(p, s);
-	return (p);
+	return p;
 }
 /*
 **  SAMEWORD -- return TRUE if the words are the same
