@@ -1,16 +1,43 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
+ * Copyright (c) 1990-1991 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from the Stanford/CMU enet packet filter,
  * (net/enet.c) distributed as part of 4.3BSD, and code contributed
- * to Berkeley by Steven McCanne of Lawrence Berkeley Laboratory.
+ * to Berkeley by Steven McCanne and Van Jacobson both of Lawrence 
+ * Berkeley Laboratory.
  *
- * %sccs.include.redist.c%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *      This product includes software developed by the University of
+ *      California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- *	@(#)bpf.h	7.1 (Berkeley) %G%
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  *
- * @(#) $Header: bpf.h,v 1.20 91/04/24 22:06:24 mccanne Locked $ (LBL)
+ *      @(#)bpf.h       7.1 (Berkeley) 5/7/91
+ *
+ * @(#) $Header: bpf.h,v 1.24 91/10/27 21:22:32 mccanne Exp $ (LBL)
  */
 
 /*
@@ -46,9 +73,9 @@ struct bpf_stat {
  * header files.  If your using gcc, we assume that you
  * have run fixincludes so the latter set should work.
  */
-#if defined(sun) && !defined(__GNUC__)
-#define	BIOCGFLEN	_IOR(B,101, u_int)
+#if (defined(sun) || defined(ibm032)) && !defined(__GNUC__)
 #define	BIOCGBLEN	_IOR(B,102, u_int)
+#define	BIOCSBLEN	_IOWR(B,102, u_int)
 #define	BIOCSETF	_IOW(B,103, struct bpf_program)
 #define	BIOCFLUSH	_IO(B,104)
 #define BIOCPROMISC	_IO(B,105)
@@ -60,8 +87,8 @@ struct bpf_stat {
 #define BIOCGSTATS	_IOR(B,111, struct bpf_stat)
 #define BIOCIMMEDIATE	_IOW(B,112, u_int)
 #else
-#define	BIOCGFLEN	_IOR('B',101, u_int)
 #define	BIOCGBLEN	_IOR('B',102, u_int)
+#define	BIOCSBLEN	_IOWR('B',102, u_int)
 #define	BIOCSETF	_IOW('B',103, struct bpf_program)
 #define	BIOCFLUSH	_IO('B',104)
 #define BIOCPROMISC	_IO('B',105)
@@ -97,6 +124,7 @@ struct bpf_hdr {
  * Data-link level type codes.
  * Currently, only DLT_EN10MB and DLT_SLIP are supported.
  */
+#define DLT_NULL	0	/* no link-layer encapsulation */
 #define DLT_EN10MB	1	/* Ethernet (10Mb) */
 #define DLT_EN3MB	2	/* Experimental Ethernet (3Mb) */
 #define DLT_AX25	3	/* Amateur Radio AX.25 */
@@ -191,3 +219,4 @@ extern void bpf_mtap();
  * Number of scratch memory words (for BPF_LD|BPF_MEM and BPF_ST).
  */
 #define BPF_MEMWORDS 16
+
