@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.99 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.100 (Berkeley) %G%
  */
 
 /*
@@ -251,8 +251,12 @@ nfs_access(ap)
 	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 
 	/*
-	 * There is no way to check accessibility via. ordinary nfs, so if
-	 * access isn't allowed they will get burned later.
+	 * For nqnfs, do an access rpc, otherwise you are stuck emulating
+	 * ufs_access() locally using the vattr. This may not be correct,
+	 * since the server may apply other access criteria such as
+	 * client uid-->server uid mapping that we do not know about, but
+	 * this is better than just returning anything that is lying about
+	 * in the cache.
 	 */
 	if (VFSTONFS(vp->v_mount)->nm_flag & NFSMNT_NQNFS) {
 		nfsstats.rpccnt[NQNFSPROC_ACCESS]++;
@@ -275,7 +279,7 @@ nfs_access(ap)
 		nfsm_reqdone;
 		return (error);
 	} else
-		return (0);
+		return (nfsspec_access(ap));
 }
 
 /*
@@ -2354,9 +2358,7 @@ nfsspec_access(ap)
 found:
 		;
 	}
-	if ((vap->va_mode & mode) != 0)
-		return (0);
-	return (EACCES);
+	return ((vap->va_mode & mode) == mode ? 0 : EACCES);
 }
 
 /*
