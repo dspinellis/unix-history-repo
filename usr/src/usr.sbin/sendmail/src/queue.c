@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.13.1.1		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.14		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.13.1.1		%G%);
+SCCSID(@(#)queue.c	3.14		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -477,6 +477,7 @@ dowork(w)
 		*/
 
 		QueueRun = TRUE;
+		MailBack = TRUE;
 		(void) strcpy(buf, QueueDir);
 		(void) strcat(buf, "/tfXXXXXX");
 		(void) mktemp(buf);
@@ -587,10 +588,10 @@ readqf(cf)
 			break;
 
 		  case 'D':		/* data file name */
-			InFileName = newstr(&buf[1]);
-			TempFile = fopen(InFileName, "r");
+			CurEnv->e_df = newstr(&buf[1]);
+			TempFile = fopen(CurEnv->e_df, "r");
 			if (TempFile == NULL)
-				syserr("readqf: cannot open %s", InFileName);
+				syserr("readqf: cannot open %s", CurEnv->e_df);
 			break;
 
 		  case 'T':		/* timeout */
@@ -639,6 +640,7 @@ timeout(w)
 	if (Debug > 0)
 		printf("timeout(%s)\n", w->w_name);
 # endif DEBUG
+	message(Arpa_Info, "Message has timed out");
 
 	/* return message to sender */
 	(void) returntosender("Cannot send mail for three days",

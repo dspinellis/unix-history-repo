@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.29.1.1		%G%);
+SCCSID(@(#)savemail.c	3.30		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -68,13 +68,16 @@ savemail()
 	**	Fundamentally, this is the mailback case except that
 	**	it returns an OK exit status (assuming the return
 	**	worked).
+	**  Also, if the from address is not local, mail it back.
 	*/
 
 	if (BerkNet)
 	{
 		ExitStat = EX_OK;
-		MailBack++;
+		MailBack = TRUE;
 	}
+	if (!bitset(M_LOCAL, CurEnv->e_from.q_mailer->m_flags))
+		MailBack = TRUE;
 
 	/*
 	**  If writing back, do it.
@@ -89,7 +92,7 @@ savemail()
 		p = ttypath();
 		if (p == NULL || freopen(p, "w", stdout) == NULL)
 		{
-			MailBack++;
+			MailBack = TRUE;
 			errno = 0;
 		}
 		else
@@ -204,7 +207,7 @@ returntosender(msg, returnto, sendbody)
 	extern ENVELOPE *newenvelope();
 	ENVELOPE errenvelope;
 
-	NoAlias++;
+	NoAlias = TRUE;
 	SendBody = sendbody;
 	ee = newenvelope(&errenvelope);
 	ee->e_puthdr = putheader;

@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.79.1.1		%G%);
+SCCSID(@(#)deliver.c	3.80		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -350,6 +350,7 @@ deliver(firstto)
 		if (clever)
 			smtpquit(pv[0]);
 # endif SMTP
+		define('g', NULL);
 		return (0);
 	}
 
@@ -404,6 +405,7 @@ deliver(firstto)
 # endif QUEUE
 
 	errno = 0;
+	define('g', NULL);
 	return (i);
 }
 /*

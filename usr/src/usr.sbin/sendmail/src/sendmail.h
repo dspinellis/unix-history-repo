@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.69		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.70		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -363,7 +363,6 @@ EXTERN int	HopCount;	/* hop count */
 EXTERN int	AliasLevel;	/* depth of aliasing */
 EXTERN time_t	QueueIntvl;	/* intervals between running the queue */
 EXTERN char	*HostName;	/* name of this host for SMTP messages */
-EXTERN char	*InFileName;	/* input file name */
 EXTERN char	*Transcript;	/* the transcript file name */
 extern char	*XcriptFile;	/* template for Transcript */
 extern char	*AliasFile;	/* location of alias file */
