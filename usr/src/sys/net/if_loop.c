@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_loop.c	7.4 (Berkeley) %G%
+ *	@(#)if_loop.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -63,33 +63,31 @@ loattach()
 	if_attach(ifp);
 }
 
-looutput(ifp, m0, dst)
+struct mbuf *Loop_Sanity;
+
+looutput(ifp, m, dst)
 	struct ifnet *ifp;
-	register struct mbuf *m0;
+	register struct mbuf *m;
 	struct sockaddr *dst;
 {
 	int s;
 	register struct ifqueue *ifq;
-	struct mbuf *m;
 
-	/*
-	 * Place interface pointer before the data
-	 * for the receiving protocol.
-	 */
-	if (m0->m_off <= MMAXOFF &&
-	    m0->m_off >= MMINOFF + sizeof(struct ifnet *)) {
-		m0->m_off -= sizeof(struct ifnet *);
-		m0->m_len += sizeof(struct ifnet *);
-	} else {
-		MGET(m, M_DONTWAIT, MT_HEADER);
-		if (m == (struct mbuf *)0)
-			return (ENOBUFS);
-		m->m_off = MMINOFF;
-		m->m_len = sizeof(struct ifnet *);
-		m->m_next = m0;
-		m0 = m;
-	}
-	*(mtod(m0, struct ifnet **)) = ifp;
+	if ((m->m_flags & M_PKTHDR) == 0)
+		panic("looutput no HDR");
+	m->m_pkthdr.rcvif = ifp;
+
+{struct mbuf *mm; int mlen = 0;
+for (mm = m; m; m = m->m_next) /* XXX debugging code -- sklwoer */
+    mlen += m->m_len;
+m = mm;
+if (mlen != m->m_pkthdr.len) {
+	if (Loop_Sanity)
+		m_freem(Loop_Sanity);
+	Loop_Sanity = m_copy(m, 0, M_COPYALL);
+}
+}
+
 	s = splimp();
 	ifp->if_opackets++;
 	switch (dst->sa_family) {
@@ -99,11 +97,11 @@ looutput(ifp, m0, dst)
 		ifq = &ipintrq;
 		if (IF_QFULL(ifq)) {
 			IF_DROP(ifq);
-			m_freem(m0);
+			m_freem(m);
 			splx(s);
 			return (ENOBUFS);
 		}
-		IF_ENQUEUE(ifq, m0);
+		IF_ENQUEUE(ifq, m);
 		schednetisr(NETISR_IP);
 		break;
 #endif
@@ -112,11 +110,11 @@ looutput(ifp, m0, dst)
 		ifq = &nsintrq;
 		if (IF_QFULL(ifq)) {
 			IF_DROP(ifq);
-			m_freem(m0);
+			m_freem(m);
 			splx(s);
 			return (ENOBUFS);
 		}
-		IF_ENQUEUE(ifq, m0);
+		IF_ENQUEUE(ifq, m);
 		schednetisr(NETISR_NS);
 		break;
 #endif
@@ -124,7 +122,7 @@ looutput(ifp, m0, dst)
 		splx(s);
 		printf("lo%d: can't handle af%d\n", ifp->if_unit,
 			dst->sa_family);
-		m_freem(m0);
+		m_freem(m);
 		return (EAFNOSUPPORT);
 	}
 	ifp->if_ipackets++;

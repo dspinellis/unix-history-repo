@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)route.c	7.4 (Berkeley) %G%
+ *	@(#)route.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -312,7 +312,6 @@ rtrequest(req, entry)
 		}
 		m->m_next = *mfirst;
 		*mfirst = m;
-		m->m_off = MMINOFF;
 		m->m_len = sizeof (struct rtentry);
 		rt = mtod(m, struct rtentry *);
 		rt->rt_hash = hash;

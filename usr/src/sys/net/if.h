@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if.h	7.3 (Berkeley) %G%
+ *	@(#)if.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -64,7 +64,9 @@ struct ifnet {
 	} if_snd;			/* output queue */
 /* procedure handles */
 	int	(*if_init)();		/* init routine */
-	int	(*if_output)();		/* output routine */
+	int	(*if_output)();		/* output routine (enqueue) */
+	int	(*if_start)();		/* initiate output routine */
+	int	(*if_done)();		/* output complete routine */
 	int	(*if_ioctl)();		/* ioctl routine */
 	int	(*if_reset)();		/* bus reset routine */
 	int	(*if_watchdog)();	/* timer routine */
@@ -89,8 +91,11 @@ struct ifnet {
 /* next two not supported now, but reserved: */
 #define	IFF_PROMISC	0x100		/* receive all packets */
 #define	IFF_ALLMULTI	0x200		/* receive all multicast packets */
+#define	IFF_OACTIVE	0x400		/* transmission in progress */
+#define	IFF_SIMPLEX	0x800		/* can't hear own transmissions */
+
 /* flags set internally only: */
-#define	IFF_CANTCHANGE	(IFF_BROADCAST | IFF_POINTOPOINT | IFF_RUNNING)
+#define	IFF_CANTCHANGE	(IFF_BROADCAST|IFF_POINTOPOINT|IFF_RUNNING|IFF_OACTIVE)
 
 /*
  * Output queues (ifp->if_snd) and internetwork datagram level (pup level 1)
@@ -115,32 +120,6 @@ struct ifnet {
 		(ifq)->ifq_tail = (m); \
 	(ifq)->ifq_head = (m); \
 	(ifq)->ifq_len++; \
-}
-/*
- * Packets destined for level-1 protocol input routines
- * have a pointer to the receiving interface prepended to the data.
- * IF_DEQUEUEIF extracts and returns this pointer when dequeueing the packet.
- * IF_ADJ should be used otherwise to adjust for its presence.
- */
-#define	IF_ADJ(m) { \
-	(m)->m_off += sizeof(struct ifnet *); \
-	(m)->m_len -= sizeof(struct ifnet *); \
-	if ((m)->m_len == 0) { \
-		struct mbuf *n; \
-		MFREE((m), n); \
-		(m) = n; \
-	} \
-}
-#define	IF_DEQUEUEIF(ifq, m, ifp) { \
-	(m) = (ifq)->ifq_head; \
-	if (m) { \
-		if (((ifq)->ifq_head = (m)->m_act) == 0) \
-			(ifq)->ifq_tail = 0; \
-		(m)->m_act = 0; \
-		(ifq)->ifq_len--; \
-		(ifp) = *(mtod((m), struct ifnet **)); \
-		IF_ADJ(m); \
-	} \
 }
 #define	IF_DEQUEUE(ifq, m) { \
 	(m) = (ifq)->ifq_head; \
