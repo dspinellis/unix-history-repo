@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_log.c	7.6 (Berkeley) %G%
+ *	@(#)subr_log.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -20,14 +20,13 @@
 
 #define LOG_RDPRI	(PZERO + 1)
 
-#define LOG_NBIO	0x02
 #define LOG_ASYNC	0x04
 #define LOG_RDWAIT	0x08
 
 struct logsoftc {
 	int	sc_state;		/* see above for possibilities */
 	struct	proc *sc_selp;		/* process waiting on select call */
-	struct	pgrp *sc_pgrp;		/* process group for async I/O */
+	int	sc_pgid;		/* process/group for async I/O */
 } logsoftc;
 
 int	log_open;			/* also used in log() */
@@ -40,8 +39,7 @@ logopen(dev)
 	if (log_open)
 		return (EBUSY);
 	log_open = 1;
-	logsoftc.sc_selp = 0;
-	logsoftc.sc_pgrp = u.u_procp->p_pgrp;
+	logsoftc.sc_pgid = u.u_procp->p_pid;	/* signal process only */
 	/*
 	 * Potential race here with putchar() but since putchar should be
 	 * called by autoconf, msg_magic should be initialized by the time
@@ -65,13 +63,13 @@ logclose(dev, flag)
 	log_open = 0;
 	logsoftc.sc_state = 0;
 	logsoftc.sc_selp = 0;
-	logsoftc.sc_pgrp = NULL;
 }
 
 /*ARGSUSED*/
-logread(dev, uio)
+logread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
+	int flag;
 {
 	register long l;
 	register int s;
@@ -79,7 +77,7 @@ logread(dev, uio)
 
 	s = splhigh();
 	while (msgbuf.msg_bufr == msgbuf.msg_bufx) {
-		if (logsoftc.sc_state & LOG_NBIO) {
+		if (flag & IO_NDELAY) {
 			splx(s);
 			return (EWOULDBLOCK);
 		}
@@ -134,6 +132,7 @@ logselect(dev, rw)
 
 logwakeup()
 {
+	struct proc *p;
 
 	if (!log_open)
 		return;
@@ -141,8 +140,12 @@ logwakeup()
 		selwakeup(logsoftc.sc_selp, 0);
 		logsoftc.sc_selp = 0;
 	}
-	if (logsoftc.sc_state & LOG_ASYNC)
-		pgsignal(logsoftc.sc_pgrp, SIGIO, 0); 
+	if (logsoftc.sc_state & LOG_ASYNC) {
+		if (logsoftc.sc_pgid < 0)
+			gsignal(logsoftc.sc_pgid, SIGIO); 
+		else if (p = pfind(logsoftc.sc_pgid))
+			psignal(p, SIGIO);
+	}
 	if (logsoftc.sc_state & LOG_RDWAIT) {
 		wakeup((caddr_t)&msgbuf);
 		logsoftc.sc_state &= ~LOG_RDWAIT;
@@ -150,7 +153,7 @@ logwakeup()
 }
 
 /*ARGSUSED*/
-logioctl(com, data, flag)
+logioctl(dev, com, data, flag)
 	caddr_t data;
 {
 	long l;
@@ -169,10 +172,6 @@ logioctl(com, data, flag)
 		break;
 
 	case FIONBIO:
-		if (*(int *)data)
-			logsoftc.sc_state |= LOG_NBIO;
-		else
-			logsoftc.sc_state &= ~LOG_NBIO;
 		break;
 
 	case FIOASYNC:
@@ -182,15 +181,12 @@ logioctl(com, data, flag)
 			logsoftc.sc_state &= ~LOG_ASYNC;
 		break;
 
-#ifdef notdef	/* XXX remove -- a single open device doesn't need this */
-	case TIOCSPGRP: {
+	case TIOCSPGRP:
 		logsoftc.sc_pgid = *(int *)data;
 		break;
-	}
-#endif
 
 	case TIOCGPGRP:
-		*(int *)data = logsoftc.sc_pgrp->pg_id;
+		*(int *)data = logsoftc.sc_pgid;
 		break;
 
 	default:
