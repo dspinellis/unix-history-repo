@@ -1,4 +1,4 @@
-/*	tcp_input.c	6.2	83/11/04	*/
+/*	tcp_input.c	6.3	84/03/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -314,6 +314,16 @@ trimthenstep6:
 	}
 
 	/*
+	 * If data is received on a connection after the
+	 * user processes are gone, then RST the other end.
+	 */
+	if ((so->so_state & SS_NOFDREF) && tp->t_state > TCPS_CLOSE_WAIT &&
+	    ti->ti_len) {
+		tp = tcp_close(tp);
+		goto dropwithreset;
+	}
+
+	/*
 	 * States other than LISTEN or SYN_SENT.
 	 * First check that at least some bytes of segment are within 
 	 * receive window.
@@ -374,16 +384,6 @@ trimthenstep6:
 			ti->ti_len -= todrop;
 			ti->ti_flags &= ~(TH_PUSH|TH_FIN);
 		}
-	}
-
-	/*
-	 * If data is received on a connection after the
-	 * user processes are gone, then RST the other end.
-	 */
-	if ((so->so_state & SS_NOFDREF) && tp->t_state > TCPS_CLOSE_WAIT &&
-	    ti->ti_len) {
-		tp = tcp_close(tp);
-		goto dropwithreset;
 	}
 
 	/*
