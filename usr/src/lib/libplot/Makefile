@@ -1,33 +1,33 @@
-#	Makefile	4.3	83/07/09
+#	Makefile	4.4	83/07/09
 #
-ALL=	libplot.a libt4014.a libt300.a libt300s.a libt450.a libvt0.a
+ALL=	libplot libt4014 libt300 libt300s libt450 libvt0
 
 all:	${ALL}
 
-libplot.a: FRC
+libplot: FRC
 	cd plot; make ${MFLAGS}
 
-libt4014.a: FRC
+libt4014: FRC
 	cd t4014; make ${MFLAGS}
 
-libt300.a: FRC
+libt300: FRC
 	cd t300; make ${MFLAGS}
 
-libt300s.a: FRC
+libt300s: FRC
 	cd t300s; make ${MFLAGS}
 
-libt450.a: FRC
+libt450: FRC
 	cd t450; make ${MFLAGS}
 
-libvt0.a: FRC
+libvt0: FRC
 	cd vt0; make ${MFLAGS}
 
 FRC:
 
 install: all
 	for i in ${ALL}; do \
-		install -m 644 $$i ${DESTDIR}/usr/lib/$$i; \
-		ranlib ${DESTDIR}/usr/lib/$$i; \
+		install -m 644 $$i ${DESTDIR}/usr/lib/$$i.a; \
+		ranlib ${DESTDIR}/usr/lib/$$i.a; \
 	done
 
 clean:
