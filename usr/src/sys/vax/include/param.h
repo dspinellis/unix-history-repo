@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)param.h	7.21 (Berkeley) %G%
+ *	@(#)param.h	7.22 (Berkeley) %G%
  */
 
 /*
@@ -17,7 +17,8 @@
  * data types (int, long, ...).   The result is u_int and must be cast to
  * any desired pointer type.
  */
-#define	ALIGN(p)	(((u_int)(p) + 3) &~ 3)
+#define	ALIGNBYTES	3
+#define	ALIGN(p)	(((u_int)(p) + ALIGNBYTES) &~ ALIGNBYTES)
 
 #define	KERNBASE	0x80000000	/* start of kernel virtual */
 #define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
