@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern__physio.c,v 1.4 1993/11/25 01:32:47 wollman Exp $
+ *	$Id: kern__physio.c,v 1.5 1993/12/19 00:51:19 wollman Exp $
  */
 
 #include "param.h"
@@ -65,27 +65,23 @@
 
 int
 rawread(dev, uio)
-	dev_t dev; 
-	struct uio *uio;
+	dev_t dev; struct uio *uio;
 {
-	return (uioapply(physio,
-			 (caddr_t)cdevsw[major(dev)].d_strategy, 
-			 (caddr_t)(u_long)dev, uio));
+	return (uioapply(physio, (caddr_t) cdevsw[major(dev)].d_strategy,
+				 (caddr_t) (u_long) dev, uio));
 }
 
 int
 rawwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
+	dev_t dev; struct uio *uio;
 {
-	return (uioapply(physio, 
-			 (caddr_t)cdevsw[major(dev)].d_strategy, 
-			 (caddr_t)(u_long)dev, uio));
+	return (uioapply(physio, (caddr_t) cdevsw[major(dev)].d_strategy,
+				(caddr_t) (u_long) dev, uio));
 }
 
-int
-physio(strat, dev, bp, off, rw, base, len, p)
-	d_strategy_t *strat;
+
+int physio(strat, dev, bp, off, rw, base, len, p)
+	d_strategy_t strat; 
 	dev_t dev;
 	struct buf *bp;
 	int rw, off;
@@ -93,20 +89,39 @@ physio(strat, dev, bp, off, rw, base, len, p)
 	int *len;
 	struct proc *p;
 {
-	int amttodo = *len, error, amtdone;
+	int amttodo = *len;
+	int error, amtdone;
 	vm_prot_t ftype;
-	static zero;
+	vm_offset_t v, lastv;
 	caddr_t adr;
+	int oldflags;
+	int s;
+	
 	int bp_alloc = (bp == 0);
+
+/*
+ * keep the process from being swapped
+ */
+	oldflags = p->p_flag;
+	p->p_flag |= SPHYSIO;
 
 	rw = rw == UIO_READ ? B_READ : 0;
 
 	/* create and build a buffer header for a transfer */
 
 	if (bp_alloc) {
-		bp = (struct buf *)malloc(sizeof(*bp), M_TEMP, M_NOWAIT);
+		bp = (struct buf *)getpbuf();
 		bzero((char *)bp, sizeof(*bp));			/* 09 Sep 92*/
+	} else {
+		s = splbio();
+		while( bp->b_flags & B_BUSY) {
+			bp->b_flags |= B_WANTED;
+			tsleep((caddr_t)bp, PRIBIO, "physbw", 0);
+		}
+		bp->b_flags |= B_BUSY;
+		splx(s);
 	}
+
 	bp->b_flags = B_BUSY | B_PHYS | rw;
 	bp->b_proc = p;
 	bp->b_dev = dev;
@@ -123,14 +138,12 @@ physio(strat, dev, bp, off, rw, base, len, p)
 
 		/* first, check if accessible */
 		if (rw == B_READ && !useracc(base, bp->b_bcount, B_WRITE)) {
-			if (bp_alloc)
-				free(bp, M_TEMP);
-			return (EFAULT);
+			error = EFAULT;
+			goto errrtn;
 		}
 		if (rw == B_WRITE && !useracc(base, bp->b_bcount, B_READ)) {
-			if (bp_alloc)
-				free(bp, M_TEMP);
-			return (EFAULT);
+			error = EFAULT;
+			goto errrtn;
 		}
 
 		/* update referenced and dirty bits, handle copy objects */
@@ -138,11 +151,28 @@ physio(strat, dev, bp, off, rw, base, len, p)
 			ftype = VM_PROT_READ | VM_PROT_WRITE;
 		else
 			ftype = VM_PROT_READ;
-/* 09 Sep 92*/	for (adr = (caddr_t)trunc_page(base); adr < base + bp->b_bcount;
+
+		lastv = 0;
+		for (adr = (caddr_t)trunc_page(base); adr < base + bp->b_bcount;
 			adr += NBPG) {
-			vm_fault(&curproc->p_vmspace->vm_map,
-				 (vm_offset_t)adr, ftype, FALSE);
-			*(int *) adr += zero;
+	
+/*
+ * make sure that the pde is valid and wired
+ */
+			v = trunc_page(((vm_offset_t)vtopte( adr)));
+			if( v != lastv) {
+				vm_map_pageable(&p->p_vmspace->vm_map, v,
+					round_page(v+1), FALSE);
+				lastv = v;
+			}
+
+/*
+ * do the vm_fault if needed
+ */
+			if( ftype & VM_PROT_WRITE)
+				*(volatile int *) adr += 0;
+			else
+				*(volatile int *) adr;
 		}
 
 		/* lock in core */
@@ -153,6 +183,22 @@ physio(strat, dev, bp, off, rw, base, len, p)
 
 		/* unlock */
 		vsunlock (base, bp->b_bcount, 0);
+
+		lastv = 0;
+
+/*
+ * unwire the pde
+ */
+		for (adr = (caddr_t)trunc_page(base); adr < base + bp->b_bcount;
+			adr += NBPG) {
+			v = trunc_page(((vm_offset_t)vtopte( adr)));
+			if( v != lastv) {
+				vm_map_pageable(&p->p_vmspace->vm_map, v, round_page(v+1), TRUE);
+				lastv = v;
+			}
+		}
+			
+
 		amtdone = bp->b_bcount - bp->b_resid;
 		amttodo -= amtdone;
 		base += amtdone;
@@ -160,8 +206,20 @@ physio(strat, dev, bp, off, rw, base, len, p)
 	} while (amttodo && (bp->b_flags & B_ERROR) == 0 && amtdone > 0);
 
 	error = bp->b_error;
-	if (bp_alloc)
-		free(bp, M_TEMP);
+errrtn:
+	if (bp_alloc) {
+		relpbuf(bp);
+	} else {
+		bp->b_flags &= ~B_BUSY;
+		wakeup((caddr_t)bp);
+	}
 	*len = amttodo;
+
+/*
+ * allow the process to be swapped
+ */
+	p->p_flag &= ~SPHYSIO;
+	p->p_flag |= (oldflags & SPHYSIO);
+
 	return (error);
 }

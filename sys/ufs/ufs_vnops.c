@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_vnops.c	7.64 (Berkeley) 5/16/91
- *	$Id: ufs_vnops.c,v 1.9 1993/12/19 00:55:49 wollman Exp $
+ *	$Id: ufs_vnops.c,v 1.10 1993/12/19 23:23:38 wollman Exp $
  */
 
 #include "param.h"
@@ -591,7 +591,9 @@ ufs_write(vp, uio, ioflag, cred)
 	if (ioflag & IO_SYNC)
 		flags = B_SYNC;
 
-	(void) vnode_pager_uncache(vp);
+	if ((ioflag & IO_PAGER) == 0)
+		(void) vnode_pager_uncache(vp);
+
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
 		on = blkoff(fs, uio->uio_offset);

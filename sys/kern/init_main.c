@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)init_main.c	7.41 (Berkeley) 5/15/91
- *	$Id: init_main.c,v 1.12 1993/12/20 19:31:16 wollman Exp $
+ *	$Id: init_main.c,v 1.13 1993/12/23 09:28:22 davidg Exp $
  */
 
 #include "param.h"
@@ -115,7 +115,7 @@ main()
 	register struct proc *p;
 	register struct filedesc0 *fdp;
 	int s, rval[2];
-	char *cp;
+	const char *cp;
 
 	/*
 	 * Initialize curproc before any possible traps/probes
@@ -283,22 +283,20 @@ main()
 	 * XXX probably should go elsewhere.
 	 */
 	bzero(utsname.sysname, sizeof(utsname.sysname));
-	for (cp = version, i= 0;
-	     *cp && *cp != ' ' && i <= sizeof(utsname.sysname);
-	     )
-	  utsname.sysname[i++] = *cp++;
+	for (cp = version, i= 0; *cp && *cp != ' ' && i <= sizeof(utsname.sysname);)
+		utsname.sysname[i++] = *cp++;
 	bzero(utsname.release, sizeof(utsname.release));
 	for (cp++, i= 0; *cp && *cp != ' ' && i <= sizeof(utsname.release);)
-	  utsname.release[i++] = *cp++;
+		utsname.release[i++] = *cp++;
 	bzero(utsname.version, sizeof(utsname.version));
 	for (; *cp != '('; cp++);
 	for (cp++, i= 0; *cp && *cp != ')' && i <= sizeof(utsname.version);)
-	  utsname.version[i++] = *cp++;
+		utsname.version[i++] = *cp++;
 	for (; *cp != '#'; cp++);
 	if(i <= sizeof(utsname.version))
-	  utsname.version[i++] = '#';
+		utsname.version[i++] = '#';
 	for (cp++; *cp && *cp != ':' && i <= sizeof(utsname.version);)
-	  utsname.version[i++] = *cp++;
+		utsname.version[i++] = *cp++;
 	strncpy(utsname.machine, MACHINE, sizeof(utsname.machine));
 	utsname.machine[sizeof(utsname.machine)-1] = '\0';
 

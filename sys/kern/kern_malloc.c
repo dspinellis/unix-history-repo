@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_malloc.c	7.25 (Berkeley) 5/8/91
- *	$Id: kern_malloc.c,v 1.4 1993/11/22 07:44:32 jkh Exp $
+ *	$Id: kern_malloc.c,v 1.5 1993/11/25 01:33:02 wollman Exp $
  */
 
 #include "param.h"
@@ -237,7 +237,7 @@ kmeminit()
 #if	(MAXALLOCSAVE < CLBYTES-1)
 #  error "kmeminit: MAXALLOCSAVE too small"
 #endif
-	npg = VM_KMEM_SIZE/ NBPG;
+	npg = (VM_KMEM_SIZE + VM_MBUF_SIZE) / NBPG;
 	kmemusage = (struct kmemusage *) kmem_alloc(kernel_map,
 		(vm_size_t)(npg * sizeof(struct kmemusage)));
 	kmem_map = kmem_suballoc(kernel_map, (vm_offset_t *)&kmembase,

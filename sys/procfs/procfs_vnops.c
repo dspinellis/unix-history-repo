@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: procfs_vnops.c,v 1.3 1993/12/31 17:42:57 davidg Exp $
+ *	$Id: procfs_vnops.c,v 1.4 1994/01/06 14:58:29 davidg Exp $
  */
 
 /*
@@ -124,10 +124,8 @@ pfs_open(vp, mode, cred, p)
 	if (mode & FWRITE)
 		pfsp->pfs_flags = (mode & (FWRITE|O_EXCL));
 
-#ifdef FULLSWAP
 	procp->p_vmspace->vm_refcnt++;
 	pfsp->pfs_vs = procp->p_vmspace;
-#endif
 	return 0;
 }
 
@@ -151,9 +149,7 @@ pfs_close(vp, flag, cred, p)
 	if ((flag & FWRITE) && (pfsp->pfs_flags & O_EXCL))
 		pfsp->pfs_flags &= ~(FWRITE|O_EXCL);
 
-#ifdef FULLSWAP
 	vmspace_free(pfsp->pfs_vs);
-#endif
 	return (0);
 }
 

@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: procfs_subr.c,v 1.2 1993/12/19 00:54:35 wollman Exp $
+ *	$Id: procfs_subr.c,v 1.3 1993/12/26 10:40:22 davidg Exp $
  */
 #include "param.h"
 #include "systm.h"
@@ -278,12 +278,10 @@ pfs_doio(vp, uio, ioflag, cred)
 
 		/* printf("rw: offset: %d, n: %d, resid: %d\n", 
 			uio->uio_offset, n, uio->uio_resid); */
-#ifdef FULLSWAP
 		if (procp->p_vmspace != pfsp->pfs_vs) {
 			error = EFAULT;
 			break;
 		}
-#endif
 
 		map = &procp->p_vmspace->vm_map;
 
@@ -294,6 +292,7 @@ pfs_doio(vp, uio, ioflag, cred)
  * in the process address space for versions of the kernel where the
  * UPAGES do not exist in the process map.  
  */
+#if 0
 #ifndef FULLSWAP
 		if( offset >= USRSTACK) {
 			caddr_t paddr;
@@ -305,6 +304,7 @@ pfs_doio(vp, uio, ioflag, cred)
 			error = uiomove(paddr + (offset - USRSTACK), (int)n, uio);
 			continue;
 		}
+#endif
 #endif
 
 		/* make sure that the offset exists in the procs map */

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode.h	7.39 (Berkeley) 6/27/91
- *	$Id: vnode.h,v 1.7 1993/12/19 00:55:31 wollman Exp $
+ *	$Id: vnode.h,v 1.8 1993/12/19 22:54:04 alm Exp $
  */
 
 #ifndef _SYS_VNODE_H_
@@ -265,6 +265,7 @@ struct vnodeops {
 #define	IO_SYNC		0x04		/* do I/O synchronously */
 #define	IO_NODELOCKED	0x08		/* underlying node already locked */
 #define	IO_NDELAY	0x10		/* FNDELAY flag set in file table */
+#define IO_PAGER	0x20		/* I/O requested from pager */
 
 /*
  *  Modes. Some values same as Ixxx entries from inode.h for now
