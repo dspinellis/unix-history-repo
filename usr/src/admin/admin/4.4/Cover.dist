@@ -1,4 +1,4 @@
-.\"	@(#)Cover.dist	1.1 (Berkeley) %G%
+.\"	@(#)Cover.dist	1.2 (Berkeley) %G%
 .\"
 .\" use -ms
 .\"
@@ -10,49 +10,48 @@
 Dear Colleague:
 .sp
 .PP
-Thank-you for ordering 4.4BSD.
-Your distribution contains the ``User Reference Manual'' (URM),
+Thank-you for ordering 4.4BSD!
+.PP
+The 4.4BSD distribution contains the ``User Reference Manual'' (URM),
 the ``Programmer Reference Manual'' (PRM),
 and the ``System Manager's Manual'' (SMM).
-Because of a shortage of time and resources, we have not
-been able to reproduce the ``User Supplementary Documents'' (USD)
-and the ``Programmer Supplementary Documents'' (PSD);
-however, the sources for these manuals is contained on the
+We have not reproduced the ``User Supplementary Documents'' (USD)
+and the ``Programmer Supplementary Documents'' (PSD), however,
+source for these manuals is contained on the
 distribution tape in \f(CW/usr/src/share/doc/usd\fP
 and \f(CW/usr/src/share/doc/psd\fP respectively.
-Your distribution also includes
-a tape containing complete sources for all architectures
-and binaries for the architecture that you have selected.
+The distribution includes complete sources for the SPARC,
+MIPS and HP 68K architectures and binaries for the one architecture
+that you have selected.
+.PP
 Before attempting to install your tape, you should carefully read
 the document ``Installing and Operating 4.4BSD'';
 it is the first document (after the manual pages) in the
 ``System Manager's Manual'' (SMM:1).
-.PP
 Unlike past releases, we have not provided a separate document
 detailing the changes between 4.3BSD and 4.4BSD.
 Instead, we have provided a summary of the changes in
 section 3.5 of the ``Installing and Operating 4.4BSD'' document (SMM:1).
-For an overview of the system, you should read the
+For a general overview of the system, you should read the
 introduction at the beginning of the ``User Reference Manual'' (URM).
 .PP
 This distribution is intended to be used on production systems;
 it has been run extensively at several test sites and has
 proven to be stable and reliable.
-However, because of the shutdown of the CSRG,
-there will not be anyone available at Berkeley to assist
+However, because of the termination of the CSRG,
+there will probably not be anyone available at Berkeley to assist
 with technical problems,
 so it should not be used by sites without enough local
 expertise to find and fix any problems that are encountered.
-If you have problems with an incomplete distribution or
-difficulty in reading the tape(s),
-you may call Pauline Schwartz at (510) 642-7780,
-write to her, or contact her via electronic mail at pauline@CS.Berkeley.EDU.
-She will \fBnot\fP be able to answer technical or installation questions.
+If you have problems with the distribution itself or
+encounter difficulties in reading the tape(s),
+please contact Pauline Schwartz at +1-510-642-7780,
+or via electronic mail at bsd-dist@CS.Berkeley.EDU.
+Technical or installation questions may also be addressed to the
+above electronic mail address, however, it is unknown for how long
+anyone with the technical expertise to answer such questions will be
+available.
 .PP
-Be sure to read and abide by the due credit
-requirements listed in your license agreement
-if you plan to redistribute or use code from
-this distribution in released products.
 We have attempted to make the system as compliant with the
 POSIX 1003.1 and 1003.2 standards as was possible at the time
 of its release.
@@ -60,6 +59,10 @@ We have not been able to run it through any of the
 verification test suites, thus,
 you should not claim conformance with either standard without
 first validing the code.
+.PP
+If you redistribute or use code from this distribution in your own
+products, please remember that due credit to the University is required
+by the license agreement and the source code copyright notice.
 .sp 2
 .ti +2.5i
 Sincerely yours,
@@ -68,7 +71,7 @@ Sincerely yours,
 Marshall Kirk McKusick
 .br
 .ti +2.5i
-Research Computer Scientist
+Keith Bostic
 .br
 .ti +2.5i
 Computer Systems Research Group
