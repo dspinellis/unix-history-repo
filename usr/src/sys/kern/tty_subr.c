@@ -1,4 +1,4 @@
-/*	tty_subr.c	4.7	%G%	*/
+/*	tty_subr.c	4.8	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -53,31 +53,6 @@ register struct clist *p;
 	splx(s);
 	return(c);
 }
-
-#if HAVTR > 0
-trgetc(p)
-register struct clist *p;
-{
-	register struct cblock *bp;
-	register int c, s;
-
-	if (p->c_cc <= 0) {
-		c = -1;
-		p->c_cc = 0;
-		p->c_cf = NULL;
-	} else {
-		c = *p->c_cf++ & 0377;
-		if (--p->c_cc<=0) {
-			p->c_cf = NULL;
-		} else if (((int)p->c_cf & CROUND) == 0) {
-			bp = (struct cblock *)(p->c_cf);
-			bp--;
-			p->c_cf = bp->c_next->c_info;
-		}
-	}
-	return(c);
-}
-#endif
 
 /*
  * copy clist to buffer.
@@ -134,42 +109,6 @@ register char *cp;
 	splx(s);
 	return(cp-acp);
 }
-
-#if HAVTR > 0
-/*
- * Traverse a clist copying its contents to a buffer.
- * q->cc and q->cf are updated with the current position
- * in the list, but bytes are not released to the freelist.
- */
-trq_to_b(q, cp, cc)
-register struct clist *q;
-register char *cp;
-register cc;
-{
-	register struct cblock *bp;
-	char *acp;
-
-	if (cc <= 0)
-		return(0);
-	if (q->c_cc <= 0)
-		return(0);
-
-	acp = cp;
-	cc++;
-	while (--cc) {
-		*cp++ = *q->c_cf++;
-		if (((int)q->c_cf & CROUND) == 0) {
-			bp = (struct cblock *)(q->c_cf);
-			bp--;
-			q->c_cf = bp->c_next->c_info;
-		}
-		if (--q->c_cc <= 0)
-			break;
-	}
-	return(cp-acp);
-}
-#endif
-
 
 /*
  * Return count of contiguous characters
@@ -390,36 +329,6 @@ register s;
 	return(f);
 }
 
-#ifdef UCBIPC
-char *
-nb_to_q(cp, cc, q)
-register char *cp;
-register struct clist *q;
-register cc;
-{
-char *f;
-register s;
-
-	s = spl6();
-	if (cc > cfreecount) {
-		f = NULL;
-		goto out;
-	}
-	if (q->c_cc==0) {
-		b_to_q(cp, cc, q);
-		f = q->c_cf;
-	} else {
-		(void) putc(*cp++, q);
-		f = q->c_cl;
-		f--;
-		b_to_q(cp, --cc, q);
-	}
-out:
-	splx(s);
-	return(f);
-}
-#endif
-
 /*
  * Given a non-NULL pointter into the list (like c_cf which
  * always points to a real character if non-NULL) return the pointer
@@ -512,19 +421,6 @@ register struct clist *p;
 	s = getc(p);
 	return(s | (getc(p)<<8));
 }
-
-#if HAVTR > 0
-trgetw(p)
-register struct clist *p;
-{
-	register int w;
-
-	if (p->c_cc <=1)
-		return(-1);
-	w = trgetc(p);
-	return(w | (trgetc(p)<<8));
-}
-#endif
 
 putw(c, p)
 register struct clist *p;
