@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.c	7.20 (Berkeley) %G%
+ *	@(#)route.c	7.21 (Berkeley) %G%
  */
 #include "param.h"
 #include "systm.h"
@@ -24,7 +24,9 @@
 #include "../netinet/in.h"
 #include "../netinet/in_var.h"
 
+#ifdef NS
 #include "../netns/ns.h"
+#endif
 #include "machine/mtpr.h"
 #include "netisr.h"
 
@@ -41,7 +43,9 @@ struct radix_node *rn_match(), *rn_delete(), *rn_addroute();
 rtinitheads()
 {
 	if (rtinits_done == 0 &&
+#ifdef NS
 	    rn_inithead(&ns_rnhead, 16, AF_NS) &&
+#endif
 	    rn_inithead(&in_rnhead, 32, AF_INET))
 		rtinits_done = 1;
 }
