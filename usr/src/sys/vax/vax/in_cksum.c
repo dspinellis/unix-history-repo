@@ -1,4 +1,4 @@
-/* in_cksum.c 1.3 81/10/18 */
+/* in_cksum.c 1.4 81/10/20 */
 
 #include <sys/types.h>
 #include "../bbnnet/net.h"
@@ -19,8 +19,9 @@ cksum(m, len)
 	register struct mbuf *m;
 	register int len;
 {
-	register u_short *w;		/* known to be r9 */
+	register long *l;		/* known to be r9 */
 	register int sum = 0;		/* known to be r8 */
+	register u_short *w;		/* known to be r7 */
 	register int mlen = 0;
 COUNT(CKSUM);
 
@@ -37,18 +38,25 @@ COUNT(CKSUM);
 		if (len < mlen)
 			mlen = len;
 		len -= mlen;
+		l = (long *)w;
 		while ((mlen -= 32) >= 0) {
-#define ADD		asm("movzwl (r9)+,r0; addl2 r0,r8");
+			asm("clrl r0");		/* clears carry */
+#undef ADD
+#define ADD		asm("adwc (r9)+,r8;");
 			ADD; ADD; ADD; ADD; ADD; ADD; ADD; ADD;
-			ADD; ADD; ADD; ADD; ADD; ADD; ADD; ADD;
+			asm("adwc $0,r8");
 		}
 		mlen += 32;
 		while ((mlen -= 8) >= 0) {
-			ADD; ADD; ADD; ADD;
+			asm("clrl r0");
+			ADD; ADD;
+			asm("adwc $0,r8");
 		}
 		mlen += 8;
+		sum = ((sum >> 16) & 0xffff) + (sum & 0xffff);
+		w = (u_short *)l;
 		while ((mlen -= 2) >= 0) {
-			ADD;
+			asm("movzwl (r7)+,r0; addl2 r0,r8");
 		}
 		if (mlen == -1)
 			sum += *(u_char *)w;
@@ -67,11 +75,3 @@ COUNT(CKSUM);
 done:
 	return(~(sum + (sum >> 16)) & 0xffff);
 }
-
-/*
- * These routines are implemented as inline expansions
- * and are mentioned here for reference only
- *
- *	htons and ntohs		do byte reverse of a 16 bit integer
- *	htonl and ntohl		do byte reverse of a 32 bit integer
- */
