@@ -32,7 +32,7 @@ dumprtape.o: dumptape.o
 	${CC} -c -DRDUMP ${CFLAGS} ${.CURDIR}/dumptape.c -o ${.TARGET}
 
 afterinstall:
-	install ${STRIP} -o root -g ${BINGRP} -m 6555 rdump \
+	install ${COPY} ${STRIP} -o root -g ${BINGRP} -m 6555 rdump \
 	    ${DESTDIR}${BINDIR}
 
 .include <bsd.prog.mk>
