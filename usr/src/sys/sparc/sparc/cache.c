@@ -13,13 +13,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cache.c	7.4 (Berkeley) %G%
+ *	@(#)cache.c	7.5 (Berkeley) %G%
  *
- * from: $Header: cache.c,v 1.7 92/11/26 03:04:46 torek Exp $ (LBL)
+ * from: $Header: cache.c,v 1.8 93/04/27 14:33:36 torek Exp $ (LBL)
  */
 
 /*
  * Cache routines.
+ *
+ * TODO:
+ *	- fill in hardware assist for context and segment flush
+ *	- rework range flush
  */
 
 #include <sys/param.h>
@@ -31,6 +35,7 @@
 #include <sparc/sparc/cache.h>
 
 enum vactype vactype;
+struct cachestats cachestats;
 
 /*
  * Enable the cache.
@@ -39,14 +44,17 @@ enum vactype vactype;
 void
 cache_enable()
 {
-	register int i;
+	register int i, lim, ls;
 
-	for (i = AC_CACHETAGS; i < AC_CACHETAGS + 4096 * 4; i += 4)
+	i = AC_CACHETAGS;
+	lim = i + cacheinfo.c_totalsize;
+	ls = cacheinfo.c_linesize;
+	for (; i < lim; i += ls)
 		sta(i, ASI_CONTROL, 0);
 
-	vactype = VAC_WRITETHROUGH;		/* XXX must be set per cpu */
 	stba(AC_SYSENABLE, ASI_CONTROL,
 	    lduba(AC_SYSENABLE, ASI_CONTROL) | SYSEN_CACHE);
+	cacheinfo.c_enabled = 1;
 	printf("cache enabled\n");
 }
 
@@ -55,16 +63,18 @@ cache_enable()
  * Flush the current context from the cache.
  *
  * This is done by writing to each cache line in the `flush context'
- * address space.  Cache lines are 16 bytes, hence the declaration of `p'.
+ * address space.
  */
 void
 cache_flush_context()
 {
-	register int i;
-	register char (*p)[16];
+	register int i, ls;
+	register char *p;
 
-	p = 0;
-	for (i = 0x1000; --i >= 0; p++)
+	cachestats.cs_ncxflush++;
+	ls = cacheinfo.c_linesize;
+	i = cacheinfo.c_totalsize >> cacheinfo.c_l2linesize;
+	for (p = 0; --i >= 0; p += ls)
 		sta(p, ASI_FLUSHCTX, 0);
 }
 
@@ -79,11 +89,13 @@ void
 cache_flush_segment(vseg)
 	register int vseg;
 {
-	register int i;
-	register char (*p)[16];
+	register int i, ls;
+	register char *p;
 
-	p = (char (*)[16])VSTOVA(vseg);
-	for (i = 0x1000; --i >= 0; p++)
+	cachestats.cs_nsgflush++;
+	ls = cacheinfo.c_linesize;
+	i = cacheinfo.c_totalsize >> cacheinfo.c_l2linesize;
+	for (p = (char *)VSTOVA(vseg); --i >= 0; p += ls)
 		sta(p, ASI_FLUSHSEG, 0);
 }
 
@@ -96,12 +108,19 @@ void
 cache_flush_page(va)
 	int va;
 {
-	register int i;
-	register char (*p)[16];
+	register int i, ls;
+	register char *p;
 
-	p = (char (*)[16])va;
-	for (i = NBPG >> 4; --i >= 0; p++)
-		sta(p, ASI_FLUSHPG, 0);
+	cachestats.cs_npgflush++;
+	p = (char *)va;
+	if (cacheinfo.c_hwflush)
+		sta(p, ASI_HWFLUSHPG, 0);
+	else {
+		ls = cacheinfo.c_linesize;
+		i = NBPG >> cacheinfo.c_l2linesize;
+		for (; --i >= 0; p += ls)
+			sta(p, ASI_FLUSHPG, 0);
+	}
 }
 
 /*
@@ -116,8 +135,8 @@ cache_flush(base, len)
 	caddr_t base;
 	register u_int len;
 {
-	register int i, baseoff;
-	register char (*p)[16];
+	register int i, ls, baseoff;
+	register char *p;
 
 	/*
 	 * Figure out how much must be flushed.
@@ -133,27 +152,43 @@ cache_flush(base, len)
 	 * ending address (rather than rounding to whole pages and
 	 * segments), but I did not want to debug that now and it is
 	 * not clear it would help much.
+	 *
+	 * (XXX the magic number 16 is now wrong, must review policy)
 	 */
 	baseoff = (int)base & PGOFSET;
 	i = (baseoff + len + PGOFSET) >> PGSHIFT;
+
+	cachestats.cs_nraflush++;
+#ifdef notyet
+	cachestats.cs_ra[min(i, MAXCACHERANGE)]++;
+#endif
+
+	ls = cacheinfo.c_linesize;
 	if (i <= 15) {
 		/* cache_flush_page, for i pages */
-		p = (char (*)[16])((int)base & ~baseoff);
-		for (i <<= PGSHIFT - 4; --i >= 0; p++)
-			sta(p, ASI_FLUSHPG, 0);
+		p = (char *)((int)base & ~baseoff);
+		if (cacheinfo.c_hwflush) {
+			for (; --i >= 0; p += NBPG)
+				sta(p, ASI_HWFLUSHPG, 0);
+		} else {
+			i <<= PGSHIFT - cacheinfo.c_l2linesize;
+			for (; --i >= 0; p += ls)
+				sta(p, ASI_FLUSHPG, 0);
+		}
 		return;
 	}
 	baseoff = (u_int)base & SGOFSET;
 	i = (baseoff + len + SGOFSET) >> SGSHIFT;
 	if (i == 1) {
 		/* cache_flush_segment */
-		p = (char (*)[16])((int)base & ~baseoff);
-		for (i = 0x1000; --i >= 0; p++)
+		p = (char *)((int)base & ~baseoff);
+		i = cacheinfo.c_totalsize >> cacheinfo.c_l2linesize;
+		for (; --i >= 0; p += ls)
 			sta(p, ASI_FLUSHSEG, 0);
 		return;
 	}
 	/* cache_flush_context */
-	p = 0;
-	for (i = 0x1000; --i >= 0; p++)
+	i = cacheinfo.c_totalsize >> cacheinfo.c_l2linesize;
+	for (p = 0; --i >= 0; p += ls)
 		sta(p, ASI_FLUSHCTX, 0);
 }
