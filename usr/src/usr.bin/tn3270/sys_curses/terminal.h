@@ -13,7 +13,7 @@
 
 #define TermAttributes(x)	(TermIsStartField(x)? GetTerminal(x)&0xff : \
 				    GetTerminal(WhereTermAttrByte(x))&0xff)
-#define TermIsStartField(x)	(GetTerminal(x)&ATTR_MASK)
+#define TermIsStartField(x)	((GetTerminal(x)&ATTR_MASK) == ATTR_MASK)
 #define TermNewField(p,a)	SetTerminal(p, (a)|ATTR_MASK)
 #define TermDeleteField(p)	SetTerminal(p, 0)
 #define TermIsNonDisplay(x)	\
