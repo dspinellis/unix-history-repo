@@ -1,4 +1,4 @@
-/*	hp.c	4.54	82/09/12	*/
+/*	hp.c	4.55	82/10/10	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -28,9 +28,7 @@ int	hpbdebug;
 #include "../h/user.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/mbareg.h"
-#include "../h/mbavar.h"
-#include "../h/mtpr.h"
+#include "../vax/mtpr.h"
 #include "../h/vm.h"
 #include "../h/cmap.h"
 #include "../h/dkbad.h"
@@ -38,7 +36,9 @@ int	hpbdebug;
 #include "../h/dkio.h"
 #include "../h/uio.h"
 
-#include "../h/hpreg.h"
+#include "../vaxmba/mbareg.h"
+#include "../vaxmba/mbavar.h"
+#include "../vaxmba/hpreg.h"
 
 /* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
 struct	size {

@@ -1,4 +1,4 @@
-/*	mba.c	4.28	82/08/22	*/
+/*	mba.c	4.29	82/10/10	*/
 
 #include "mba.h"
 #if NMBA > 0
@@ -15,10 +15,11 @@
 #include "../h/proc.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/mbareg.h"
-#include "../h/mbavar.h"
-#include "../h/mtpr.h"
+#include "../vax/mtpr.h"
 #include "../h/vm.h"
+
+#include "../vaxmba/mbareg.h"
+#include "../vaxmba/mbavar.h"
 
 char	mbsr_bits[] = MBSR_BITS;
 /*

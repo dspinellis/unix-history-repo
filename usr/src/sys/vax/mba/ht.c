@@ -1,4 +1,4 @@
-/*	ht.c	4.28	82/09/12	*/
+/*	ht.c	4.29	82/10/10	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -20,15 +20,15 @@
 #include "../h/user.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/mbareg.h"
-#include "../h/mbavar.h"
 #include "../h/ioctl.h"
 #include "../h/mtio.h"
 #include "../h/cmap.h"
-#include "../h/cpu.h"
 #include "../h/uio.h"
 
-#include "../h/htreg.h"
+#include "../vax/cpu.h"
+#include "../vaxmba/mbareg.h"
+#include "../vaxmba/mbavar.h"
+#include "../vaxmba/htreg.h"
 
 struct	buf	rhtbuf[NHT];
 struct	buf	chtbuf[NHT];
