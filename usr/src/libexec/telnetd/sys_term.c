@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_term.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_term.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -123,7 +123,9 @@ struct termbuf {
 #  endif
 # endif /* TCSANOW */
 struct termios termbuf, termbuf2;	/* pty control structure */
+# ifdef  STREAMSPTY
 int ttyfd = -1;
+# endif
 #endif	/* USE_TERMIO */
 
 /*
@@ -148,7 +150,11 @@ init_termbuf()
 	(void) ioctl(pty, TIOCGSTATE, (char *)&termbuf.state);
 # endif
 #else
+# ifdef  STREAMSPTY
 	(void) tcgetattr(ttyfd, &termbuf);
+# else
+	(void) tcgetattr(pty, &termbuf);
+# endif
 #endif
 	termbuf2 = termbuf;
 }
@@ -184,7 +190,11 @@ set_termbuf()
 		(void) ioctl(pty, TIOCLSET, (char *)&termbuf.lflags);
 #else	/* USE_TERMIO */
 	if (bcmp((char *)&termbuf, (char *)&termbuf2, sizeof(termbuf)))
+# ifdef  STREAMSPTY
 		(void) tcsetattr(ttyfd, TCSANOW, &termbuf);
+# else
+		(void) tcsetattr(pty, TCSANOW, &termbuf);
+# endif
 # if	defined(CRAY2) && defined(UNICOS5)
 	needtermstat = 1;
 # endif
@@ -986,10 +996,10 @@ getptyslave()
 	if (t < 0)
 		fatalperror(net, line);
 
+#ifdef  STREAMSPTY
 #ifdef	USE_TERMIO
 	ttyfd = t;
 #endif
-#ifdef  STREAMSPTY
 	if (ioctl(t, I_PUSH, "ptem") < 0) 
 		fatal(net, "I_PUSH ptem");
 	if (ioctl(t, I_PUSH, "ldterm") < 0)
