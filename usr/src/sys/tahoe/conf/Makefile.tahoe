@@ -1,4 +1,4 @@
-#	@(#)Makefile.tahoe	1.3 (Berkeley) %G%
+#	@(#)Makefile.tahoe	1.4 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -54,10 +54,10 @@ ${INLINE}: ${INDIR}/libcpats.c ${INDIR}/machdep.c
 ${INLINE}: ${INDIR}/machpats.c ${INDIR}/main.c
 	cd ${INDIR}; make
 
-locore.o: assym.s ../tahoe/scb.s ../tahoe/locore.s \
+locore.o: assym.s ../tahoe/scb.s vbvec.s ../tahoe/locore.s \
     vbglue.s ../tahoe/mtpr.h ../tahoe/trap.h ../tahoe/psl.h \
     ../tahoe/pte.h ../tahoe/cp.h ../tahoe/mem.h
-	cat assym.s ../tahoe/scb.s ../tahoe/locore.s \
+	cat assym.s ../tahoe/scb.s vbvec.s ../tahoe/locore.s \
 	    vbglue.s > locore.c
 	${CC} -E -I. -DLOCORE ${COPTS} locore.c > locore.i
 	@echo 'as -o locore.o locore.i'
