@@ -1,4 +1,4 @@
-/*	dz.c	3.5	%H%	*/
+/*	dz.c	3.6	%H%	*/
 
 /*
  *  DZ-11 Driver
@@ -204,7 +204,11 @@ dzrint(dev)
 				if (tp->t_flags & RAW)
 					c = 0;		/* null for getty */
 				else
-					c = 0177;	/* DEL = interrupt */
+#ifdef IIASA
+					continue;
+#else
+					c = 0177;	/* tun.t_intrc? */
+#endif
 			if (c&OVERRUN)
 				printf("o");
 			if (c&PERROR)	
@@ -212,12 +216,10 @@ dzrint(dev)
 				if (((tp->t_flags & (EVENP|ODDP)) == EVENP)
 				  || ((tp->t_flags & (EVENP|ODDP)) == ODDP))
 					continue;
-#ifdef BERKNET
 			if (tp->t_line == NETLDISC) {
 				c &= 0177;
-				NETINPUT(c, tp);
+				BKINPUT(c, tp);
 			} else
-#endif
 				(*linesw[tp->t_line].l_rint)(c, tp);
 		}
 	}
@@ -238,8 +240,22 @@ dev_t dev;
 	if (ttioccomm(cmd, tp, addr, dev)) {
 		if (cmd==TIOCSETP || cmd==TIOCSETN)
 			dzparam(minor(dev));
-	} else
+	} else switch(cmd) {
+	case TIOCSBRK:
+		((struct device *)(tp->t_addr))->dzbrk |= 1 << (dev&07);
+		break;
+	case TIOCCBRK:
+		((struct device *)(tp->t_addr))->dzbrk &= ~(1 << (dev&07));
+		break;
+	case TIOCSDTR:
+		dzmodem(dev, ON);
+		break;
+	case TIOCCDTR:
+		dzmodem(dev, OFF);
+		break;
+	default:
 		u.u_error = ENOTTY;
+	}
 }
  
 dzparam(dev)
@@ -387,11 +403,14 @@ dzscan()
 		} else {
 			if ((tp->t_state & CARR_ON)) {
 				/* carrier lost */
-				signal(tp->t_pgrp, SIGHUP);
-				dzaddr->dzdtr &= ~bit;
-				flushtty(tp);
+				if (tp->t_state&ISOPEN &&
+				    (tp->t_local&LNOHANG) == 0) {
+					gsignal(tp->t_pgrp, SIGHUP);
+					dzaddr->dzdtr &= ~bit;
+					flushtty(tp);
+				}
+				tp->t_state &= ~CARR_ON;
 			}
-			tp->t_state &= ~CARR_ON;
 		}
 	}
 	timeout(dzscan, (caddr_t)0, 2*HZ);
