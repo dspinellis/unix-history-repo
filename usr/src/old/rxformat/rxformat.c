@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rxformat.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rxformat.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -30,8 +30,9 @@ main(argc, argv)
 	char *argv[];
 {
 	int fd, idens = 0, filarg = 1;
+	int i, c;
 
-	if (argc < 2)
+	if (argc < 2 || argc > 3)
 		usage();
 	if (argc == 3) { 
 		if (strncmp(argv[1],"-d",2) != 0)
@@ -40,28 +41,35 @@ main(argc, argv)
 		filarg++;
 	}
 	devname[8] = argv[filarg][7];
-	if ((fd = open(devname, O_RDWR)) < NULL) {
+	if ((fd = open(devname, O_RDWR)) < 0) {
 		perror(devname);
-		exit (0);
+		exit(1);
 	}
-	printf("Format %s to", argv[filarg]);
-	if (idens)
-		printf(" double density (y/n) ?");
-	else
-		printf(" single density (y/n) ?");
-	if (getchar() != 'y')
-		exit (0);
+	if (isatty(fileno(stdin))) {
+		printf("Format %s to %s density (y/n)? ",
+			argv[filarg], idens ? "double" : "single");
+		i = c = getchar();
+		while (c != '\n' && c != EOF)
+			c = getchar();
+		if (i != 'y')
+			exit(0);
+	} else
+		printf("Formatting %s to %s density\n",
+			argv[filarg], idens ? "double" : "single");
 	/* 
 	 * Change the ioctl command when dkio.h has
 	 * been finished.
 	 */
-	if (ioctl(fd, RXIOC_FORMAT, &idens) != NULL)
+	if (ioctl(fd, RXIOC_FORMAT, &idens) == 0)
+		exit(0);
+	else {
 		perror(devname);
-	close (fd);
+		exit(1);
+	}
 }
 
 usage()
 {
 	fprintf(stderr, "usage: rxformat [-d] /dev/rx?\n");
-	exit (0);
+	exit(1);
 }
