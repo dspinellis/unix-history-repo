@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.41	81/12/19	*/
+/*	tcp_input.c	1.42	81/12/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,17 +13,19 @@
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 #include "../net/tcp.h"
-#define TCPSTATES
 #include "../net/tcp_fsm.h"
 #include "../net/tcp_seq.h"
 #include "../net/tcp_timer.h"
 #include "../net/tcp_var.h"
 #include "../net/tcpip.h"
+#include "../net/tcp_debug.h"
 #include "../errno.h"
 
 int	tcpcksum = 1;
 struct	sockaddr_in tcp_in = { AF_INET };
+struct	tcpiphdr tcp_saveti;
 
+struct	tcpcb *tcp_newtcpcb();
 /*
  * TCP input routine, follows pages 65-76 of the
  * protocol specification dated September, 1981 very closely.
@@ -39,6 +41,7 @@ tcp_input(m0)
 	register int tiflags;
 	struct socket *so;
 	int todrop, acked;
+	short ostate;
 
 COUNT(TCP_INPUT);
 	/*
@@ -118,6 +121,11 @@ COUNT(TCP_INPUT);
 	if (tp == 0)
 		goto dropwithreset;
 	so = inp->inp_socket;
+	if (so->so_options & SO_DEBUG) {
+		ostate = tp->t_state;
+		tcp_saveti = *ti;
+	}
+		
 
 	/*
 	 * Segment received on connection.
@@ -191,7 +199,7 @@ COUNT(TCP_INPUT);
 			goto dropwithreset;
 		if (tiflags & TH_RST) {
 			if (tiflags & TH_ACK)
-				tcp_drop(tp, ECONNRESET);
+				tcp_drop(tp, ECONNREFUSED);
 			goto drop;
 		}
 		if ((tiflags & TH_SYN) == 0)
@@ -300,14 +308,15 @@ trimthenstep6:
 	 *	Close the tcb.
 	 */
 	if (tiflags&TH_RST) switch (tp->t_state) {
-		
+
 	case TCPS_SYN_RECEIVED:
 		if (inp->inp_socket->so_options & SO_ACCEPTCONN) {
-			tp->t_state = TCPS_LISTEN;
-			tp->t_timer[TCPT_KEEP] = 0;
+			/* a miniature tcp_close, but invisible to user */
 			(void) m_free(dtom(tp->t_template));
-			tp->t_template = 0;
-			in_pcbdisconnect(inp);
+			(void) m_free(dtom(tp));
+			inp->inp_ppcb = 0;
+			tp = tcp_newtcpcb(inp);
+			tp->t_state = TCPS_LISTEN;
 			goto drop;
 		}
 		tcp_drop(tp, ECONNREFUSED);
@@ -564,6 +573,8 @@ step6:
 			break;
 		}
 	}
+	if (so->so_options & SO_DEBUG)
+		tcp_trace(TA_INPUT, ostate, tp, &tcp_saveti, 0);
 
 	/*
 	 * Return any desired output.
@@ -602,6 +613,7 @@ drop:
 	 * Drop space held by incoming segment and return.
 	 */
 	m_freem(m);
+	return;
 }
 
 /*
