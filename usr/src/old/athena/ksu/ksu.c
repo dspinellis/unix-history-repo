@@ -41,7 +41,7 @@ char copyright[] =
 static char sccsid[] = "@(#)su.c	5.11 (Berkeley) 12/7/88";
 #endif /* not lint */
 
-#include <mit-copyright.h>
+#include <kerberos/mit-copyright.h>
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -49,7 +49,7 @@ static char sccsid[] = "@(#)su.c	5.11 (Berkeley) 12/7/88";
 #include <stdio.h>
 #include <pwd.h>
 #include <grp.h>
-#include <krb.h>
+#include <kerberos/krb.h>
 #include <netdb.h>
 #include <sys/ioctl.h>
 
