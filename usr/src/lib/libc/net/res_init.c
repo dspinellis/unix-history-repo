@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_init.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_init.c	6.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -99,16 +99,11 @@ res_init()
                     _res.nsaddr_list[n].sin_addr.s_addr = INADDR_ANY;
                     _res.nsaddr_list[n].sin_family = AF_INET;
                     _res.nsaddr_list[n].sin_port = htons(NAMESERVER_PORT);
-#ifdef DEBUG
-                if ( _res.options & RES_DEBUG )
-                    printf("Server #%d address = %s\n", n+1,
-                         inet_ntoa(_res.nsaddr_list[n].sin_addr.s_addr));
-#endif DEBUG
                     if ( ++n >= MAXNS) { 
                        n = MAXNS;
 #ifdef DEBUG
                        if ( _res.options & RES_DEBUG )
-                          printf("MAXNS reached\n");
+                          printf("MAXNS reached, reading resolv.conf\n");
 #endif DEBUG
                 }
                 continue;
