@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fs.h	8.6 (Berkeley) %G%
+ *	@(#)fs.h	8.7 (Berkeley) %G%
  */
 
 /*
@@ -209,7 +209,7 @@ struct fs {
 	quad_t	fs_qfmask;		/* ~fs_fmask - for use with quad size */
 	long	fs_state;		/* validate fs_clean field */
 	long	fs_postblformat;	/* format of positional layout tables */
-	long	fs_nrpos;		/* number of rotaional positions */
+	long	fs_nrpos;		/* number of rotational positions */
 	long	fs_postbloff;		/* (short) rotation block list head */
 	long	fs_rotbloff;		/* (u_char) blocks for each rotation */
 	long	fs_magic;		/* magic number */
