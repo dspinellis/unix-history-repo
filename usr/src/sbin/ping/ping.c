@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1987 Regents of the University of California.
+ * Copyright (c) 1987, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -17,12 +17,12 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1987 Regents of the University of California.\n\
+"@(#) Copyright (c) 1987, 1988 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ping.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)ping.c	4.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -84,6 +84,7 @@ char hnamebuf[MAXHOSTNAMELEN];
 char *inet_ntoa();
 
 int npackets;
+int burst = 1;
 int ntransmitted = 0;		/* sequence # for outbound packets = #sent */
 int ident;
 
@@ -248,7 +249,7 @@ pinger()
 {
 	static u_char outpack[MAXPACKET];
 	register struct icmp *icp = (struct icmp *) outpack;
-	int i, cc;
+	int i, cc, n;
 	register struct timeval *tp = (struct timeval *) &outpack[8];
 	register u_char *datap = &outpack[8+sizeof(struct timeval)];
 
@@ -270,13 +271,15 @@ pinger()
 	icp->icmp_cksum = in_cksum( icp, cc );
 
 	/* cc = sendto(s, msg, len, flags, to, tolen) */
-	i = sendto( s, outpack, cc, 0, &whereto, sizeof(struct sockaddr) );
+	for (n = 0; n < burst; n++) {
+		i = sendto(s, outpack, cc, 0, &whereto, sizeof(whereto));
 
-	if( i < 0 || i != cc )  {
-		if( i<0 )  perror("sendto");
-		printf("ping: wrote %s %d chars, ret=%d\n",
-			hostname, cc, i );
-		fflush(stdout);
+		if( i < 0 || i != cc )  {
+			if( i<0 )  perror("sendto");
+			printf("ping: wrote %s %d chars, ret=%d\n",
+				hostname, cc, i );
+			fflush(stdout);
+		}
 	}
 }
 
@@ -456,9 +459,14 @@ finish()
 	printf("\n----%s PING Statistics----\n", hostname );
 	printf("%d packets transmitted, ", ntransmitted );
 	printf("%d packets received, ", nreceived );
-	if (ntransmitted)
-	    printf("%d%% packet loss",
-		(int) (((ntransmitted-nreceived)*100) / ntransmitted ) );
+	if (ntransmitted) {
+		if (nreceived <= ntransmitted)
+		    printf("%d%% packet loss",
+			(int) (((ntransmitted-nreceived)*100) / ntransmitted));
+		else
+		    printf("%.2f responses per request",
+			(float) nreceived / (float) ntransmitted);
+	}
 	printf("\n");
 	if (nreceived && timing)
 	    printf("round-trip (ms)  min/avg/max = %d/%d/%d\n",
