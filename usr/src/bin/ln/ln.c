@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)ln.c 4.7 %G%";
+static	char sccsid[] = "@(#)ln.c 4.8 %G%";
 /*
  * ln
  */
