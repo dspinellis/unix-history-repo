@@ -1,4 +1,4 @@
-/*	machdep.c	1.10	87/02/16	*/
+/*	machdep.c	1.11	87/02/21	*/
 
 #include "param.h"
 #include "systm.h"
@@ -445,6 +445,7 @@ boot(paniced, arghowto)
 			printf("- i/o timeout, giving up...");
 		}
 		printf("done\n");
+		DELAY(10000);			/* wait for printf to finish */
 	}
 	mtpr(IPL, 0x1f);			/* extreme priority */
 	devtype = major(rootdev);
