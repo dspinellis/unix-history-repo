@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sel_subs.h	1.1 (Berkeley) %G%
+ *	@(#)sel_subs.h	1.2 (Berkeley) %G%
  */
 
 /*
@@ -32,13 +32,16 @@ typedef struct grpt {
  * data structure for storing user supplied time ranges (-T option)
  */
 
-#define ATOI2(s)       ((((s)[0] - '0') * 10) + ((s)[1] - '0'))
+#define ATOI2(s)	((((s)[0] - '0') * 10) + ((s)[1] - '0'))
 
 typedef struct time_rng {
 	time_t		low_time;	/* lower inclusive time limit */
 	time_t		high_time;	/* higher inclusive time limit */
-	int		flags;		/* option flags */
-#define	HASLOW		0x1		/* has lower time limit */
-#define HASHIGH		0x2		/* has higher time limit */
+	int		flgs;		/* option flags */
+#define	HASLOW		0x01		/* has lower time limit */
+#define HASHIGH		0x02		/* has higher time limit */
+#define CMPMTME		0x04		/* compare file modification time */
+#define CMPCTME		0x08		/* compare inode change time */
+#define CMPBOTH	(CMPMTME|CMPCTME)	/* compare inode and mod time */
 	struct time_rng	*fow;		/* next pattern */
 } TIME_RNG;
