@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)c.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)c.c	5.1.1.1 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: c.c,v 1.5 84/12/26 10:38:23 linton Exp $";
@@ -450,8 +450,7 @@ Symbol s;
 	    if (isbitfield(s)) {
 		i = 0;
 		popn(size(s), &i);
-		i >>= (s->symvalue.field.offset mod BITSPERBYTE);
-		i &= ((1 << s->symvalue.field.length) - 1);
+		i = extractfield(i, s);
 		t = rtype(s->type);
 		if (t->class == SCAL) {
 		    printEnum(i, t);
