@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	4.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)bugfiler.c	4.13 (Berkeley) %G%";
 #endif
 
 /*
@@ -139,6 +139,7 @@ main(argc, argv)
 #define H_HDR 04
 #define H_FND 010
 
+#define FROM &headers[0]
 #define FROM_I headers[0].h_info
 #define SUBJECT_I headers[1].h_info
 #define INDEX &headers[2]
@@ -177,7 +178,7 @@ process()
 	register char *cp;
 	register int c;
 	char *info;
-	int state, tmp;
+	int state, tmp, no_reply = 0;
 	FILE *tfp, *fs;
 
 	/*
@@ -313,11 +314,17 @@ process()
 				continue;
 			}
 			strcpy(hp->h_info, info);
+			if (hp == FROM && chkfrom(hp) < 0)
+				no_reply = 1;
 			if (hp == INDEX)
 				chkindex(hp);
 		}
 	}
 	fclose(tfp);
+	if (no_reply) {
+		unlink(tmpname);
+		exit(0);
+	}
 	/*
 	 * Verify all the required pieces of information
 	 * are present.
@@ -385,6 +392,24 @@ findheader(name, state)
 		return(hp);
 	}
 	return(NULL);
+}
+
+/*
+ * Check the FROM line to eliminate loops.
+ */
+
+chkfrom(hp)
+	struct header *hp;
+{
+	register char *cp1, *cp2;
+	register char c;
+
+	if (debug)
+		printf("chkindex(%s)\n", hp->h_info);
+
+	if (substr(hp->h_info, "MAILER-DAEMON"))
+		return(-1);
+	return(0);
 }
 
 /*
