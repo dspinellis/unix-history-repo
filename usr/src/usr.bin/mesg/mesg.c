@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mesg.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mesg.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -23,8 +23,8 @@ static char sccsid[] = "@(#)mesg.c	5.1 (Berkeley) %G%";
 #include <stdlib.h>
 #include <string.h>
 
-static void err __P((const char *fmt, ...));
-static void usage __P((void));
+void err __P((const char *fmt, ...));
+void usage __P((void));
 
 int
 main(argc, argv)
@@ -72,7 +72,7 @@ main(argc, argv)
 	/* NOTREACHED */
 }
 
-static void
+void
 usage()
 {
 	(void)fprintf(stderr, "usage: mesg [y | n]\n");
