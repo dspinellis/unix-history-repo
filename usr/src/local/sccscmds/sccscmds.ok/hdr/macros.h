@@ -18,7 +18,7 @@ struct stat Statbuf;
 #define xfcreat(file,mode) fdopen(xcreat(file,mode),"w")
 #define remove(file) xunlink(file)
 
-#define SCCSID(arg) static char Sccsid[] "arg"
+#define SCCSID(arg) static char Sccsid[] = "arg"
 
 #define USXALLOC()
 
