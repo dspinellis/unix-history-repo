@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)table.c	1.29 (Berkeley) %G%";
+static char *sccsid ="@(#)table.c	1.30 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -687,6 +687,21 @@ OPFLOAT,	INAREG|INTAREG|FORCC,
 	SAREG|AWD,	TFLOAT,
 		NAREG|NASL|NASR,	RESC1|RESCC,
 		"	OF3	AR,AL,TA1\n",
+#endif
+
+#ifdef FORT
+/* perform some implicit conversions XXX SHOULD FIX f77 FRONT END */
+OPFLOAT,	INAREG|INTAREG|FORCC,
+	SAREG|AWD,	TFLOAT,
+	SAREG|AWD,	TDOUBLE,
+		NAREG|NASL,	RESC1|RESCC,
+		"	cvtfd	AL,A1\n	OD2	AR,A1\n",
+
+OPFLOAT,	INAREG|INTAREG|FORCC,
+	SAREG|AWD,	TDOUBLE,
+	SAREG|AWD,	TFLOAT,
+		NAREG|NASR,	RESC1|RESCC,
+		"	cvtfd	AR,A1\n	OD3	A1,AL,A1\n",
 #endif
 
 	/* Default actions for hard trees ... */
