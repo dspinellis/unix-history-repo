@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf.c 1.31 91/01/21$
  *
- *	@(#)grf.c	7.9 (Berkeley) %G%
+ *	@(#)grf.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -44,8 +44,8 @@
 #include "vm/vm_page.h"
 #include "vm/vm_pager.h"
 
-#include "specdev.h"
 #include "vnode.h"
+#include "specdev.h"
 #include "mman.h"
 
 #include "ite.h"
