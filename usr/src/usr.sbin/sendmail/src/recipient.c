@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.83 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.84 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -925,7 +925,7 @@ include(fname, forwarding, ctladdr, sendq, aliaslevel, e)
 				sfflags |= SFF_NOPATHCHECK;
 		}
 	}
-#endif                   
+#endif
 
 	if (tTd(27, 9))
 		printf("include: new uid = %d/%d\n", getuid(), geteuid());
@@ -1183,4 +1183,91 @@ getctladdr(a)
 	while (a != NULL && !bitset(QGOODUID, a->q_flags))
 		a = a->q_alias;
 	return (a);
+}
+/*
+**  SELF_REFERENCE -- check to see if an address references itself
+**
+**	The check is done through a chain of aliases.  If it is part of
+**	a loop, break the loop at the "best" address, that is, the one
+**	that exists as a real user.
+**
+**	This is to handle the case of:
+**		Andrew.Chang:	awc
+**		awc:		Andrew.Chang@mail.server.
+**	which is a problem only on mail.server.
+**
+**	Parameters:
+**		a -- the address to check.
+**		e -- the current envelope.
+**
+**	Returns:
+**		The address that should be retained.
+*/
+
+ADDRESS *
+self_reference(a, e)
+	ADDRESS *a;
+	ENVELOPE *e;
+{
+	ADDRESS *b;		/* top entry in self ref loop */
+	ADDRESS *c;		/* entry that point to a real mail box */
+
+	if (tTd(27, 1))
+		printf("self_reference(%s)\n", a->q_paddr);
+
+	for (b = a->q_alias; b != NULL; b = b->q_alias)
+	{
+		if (sameaddr(a, b))
+			break;
+	}
+
+	if (b == NULL)
+	{
+		if (tTd(27, 1))
+			printf("\t... no self ref\n");
+		return NULL;
+	}
+
+	/*
+	**  Pick the first address that resolved to a real mail box
+	**  i.e has a pw entry.  The returned value will be marked
+	**  QSELFREF in recipient(), which in turn will disable alias()
+	**  from marking it QDONTSEND, which mean it will be used
+	**  as a deliverable address.
+	**
+	**  The 2 key thing to note here are:
+	**	1) we are in a recursive call sequence:
+	**		alias->sentolist->recipient->alias
+	**	2) normally, when we return back to alias(), the address
+	**	   will be marked QDONTSEND, since alias() assumes the
+	**	   expanded form will be used instead of the current address.
+	**	   This behaviour is turned off if the address is marked
+	**	   QSELFREF We set QSELFREF when we return to recipient().
+	*/
+
+	c = a;
+	while (c != NULL)
+	{
+		if (bitnset(M_HASPWENT, c->q_mailer->m_flags))
+		{
+			if (tTd(27, 2))
+				printf("\t... getpwnam(%s)... ", c->q_user);
+			if (sm_getpwnam(c->q_user) != NULL)
+			{
+				if (tTd(27, 2))
+					printf("found\n");
+
+				/* ought to cache results here */
+				return c;
+			}
+			if (tTd(27, 2))
+				printf("failed\n");
+		}
+		c = c->q_alias;
+	}
+
+	if (tTd(27, 1))
+		printf("\t... cannot break loop for \"%s\"\n", a->q_paddr);
+
+	return NULL;
 }
