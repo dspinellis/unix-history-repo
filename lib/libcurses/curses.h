@@ -351,6 +351,7 @@ int	 __mvcur __P((int, int, int, int, int));
 void	 __restore_stophandler __P((void));
 void	 __set_stophandler __P((void));
 void	 __set_subwin __P((WINDOW *, WINDOW *));
+void     __set_scroll_region __P((int, int));
 void	 __startwin __P((void));
 void	 __stop_signal_handler __P((int));
 void	 __swflags __P((WINDOW *));
@@ -369,6 +370,7 @@ extern int	 __endwin;
 extern int	 __pfast;
 extern int	 __rawmode;
 extern int	 __noqch;
+extern int       __usecs;
 
 int      tputs __P((char *, int, void (*)(int)));
 

@@ -101,7 +101,7 @@ wrefresh(win)
 #endif
 
 #ifndef NOQCH
-	if ((win->flags & __FULLWIN) && !curwin) {
+	if ((win->flags & __FULLLINE) && !curwin) {
 		/*
 		 * Invoke quickch() only if more than a quarter of the lines
 		 * in the window are dirty.
@@ -109,7 +109,8 @@ wrefresh(win)
 		for (wy = 0, dnum = 0; wy < win->maxy; wy++)
 			if (win->lines[wy]->flags & (__ISDIRTY | __FORCEPAINT))
 				dnum++;
-		if (!__noqch && dnum > (int) win->maxy / 4)
+		/* __noqch already checked in __FULLLINE */
+		if (dnum > (int) win->maxy / 4)
 			quickch(win);
 	}
 #endif
@@ -683,41 +684,70 @@ scrolln(win, starts, startw, curs, bot, top)
 	ox = curscr->curx;
 	n = starts - startw;
 
-	if (n > 0) {
-		__mvcur(oy, ox, top, 0, 1);
-		/* Scroll up the block */
-		if (DL)
-			tputs(__tscroll(DL, n), 0, __cputchar);
-		else
-			for(i = 0; i < n; i++)
-				tputs(dl, 0, __cputchar);
+	if (!__usecs) {         /* Use insert/delete line */
+		if (n > 0) {
+			__mvcur(oy, ox, top, 0, 1);
+			/* Scroll up the block */
+			if (DL && (!dl || n > 1))
+				tputs(__tscroll(DL, n), 0, __cputchar);
+			else
+				for(i = 0; i < n; i++)
+					tputs(dl, 0, __cputchar);
 
-		/* 
-		 * Push down the bottom region.
-		 */
-		__mvcur(top, 0, bot - n + 1, 0, 1);
-		if (AL) 
-			tputs(__tscroll(AL, n), 0, __cputchar);
-		else
-			for(i = 0; i < n; i++)
-				tputs(al, 0, __cputchar);
-		__mvcur(bot - n + 1, 0, oy, ox, 1);
-	} else {
-		/* Preserve the bottom lines */
-		__mvcur(oy, ox, bot + n + 1, 0, 1);	/* n < 0 */
-		if (DL)
-			tputs(__tscroll(DL, -n), 0, __cputchar);
-		else
-		       	for(i = n; i < 0; i++)
-				tputs(dl, 0, __cputchar);
-		__mvcur(bot + n + 1, 0, top, 0, 1);
+			/*
+			 * Push down the bottom region.
+			 */
+			__mvcur(top, 0, bot - n + 1, 0, 1);
+			if (AL && (!al || n > 1))
+				tputs(__tscroll(AL, n), 0, __cputchar);
+			else
+				for(i = 0; i < n; i++)
+					tputs(al, 0, __cputchar);
+			__mvcur(bot - n + 1, 0, oy, ox, 1);
+		} else {
+			/* Preserve the bottom lines */
+			__mvcur(oy, ox, bot + n + 1, 0, 1);     /* n < 0 */
+			if (DL && (!dl || -n > 1))
+				tputs(__tscroll(DL, -n), 0, __cputchar);
+			else
+				for(i = n; i < 0; i++)
+					tputs(dl, 0, __cputchar);
+			__mvcur(bot + n + 1, 0, top, 0, 1);
 
-		/* Scroll the block down */
-		if (AL) 
-			tputs(__tscroll(AL, -n), 0, __cputchar);
-		else
-			for(i = n; i < 0; i++)
-				tputs(al, 0, __cputchar);
-		__mvcur(top, 0, oy, ox, 1);
-	}		
+			/* Scroll the block down */
+			if (AL && (!al || -n > 1))
+				tputs(__tscroll(AL, -n), 0, __cputchar);
+			else
+				for(i = n; i < 0; i++)
+					tputs(al, 0, __cputchar);
+			__mvcur(top, 0, oy, ox, 1);
+		}
+	} else {        /* Use change scroll region */
+		if (bot != curscr->maxy - 1 || top != 0)
+			__set_scroll_region(top, bot);
+		if (n > 0) {
+			__mvcur(oy, ox, bot, 0, 1);
+			/* Scroll up the block */
+			if (SF && n > 1)
+				tputs(__tscroll(SF, n), 0, __cputchar);
+			else
+				for(i = 0; i < n; i++)
+					if (NL && __pfast)
+						tputs(NL, 0, __cputchar);
+					else
+						putchar('\n');
+			__mvcur(bot, 0, oy, ox, 1);
+		} else {
+			__mvcur(oy, ox, top, 0, 1);
+			/* Scroll the block down */
+			if (SR && (!sr || -n > 1))
+				tputs(__tscroll(SR, -n), 0, __cputchar);
+			else
+				for(i = n; i < 0; i++)
+					tputs(sr, 0, __cputchar);
+			__mvcur(top, 0, oy, ox, 1);
+		}
+		if (bot != curscr->maxy - 1 || top != 0)
+			__set_scroll_region(0, curscr->maxy - 1);
+	}
 }

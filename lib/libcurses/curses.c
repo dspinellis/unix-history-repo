@@ -46,6 +46,10 @@ int	__noqch = 0;			/*
 					 * insert/delete line capabilities 
 					 * for quick change on refresh.
 					 */
+int     __usecs = 0;                    /*
+					 * Use change scroll region, if
+					 * no insert/delete capabilities
+					 */
 char	AM, BS, CA, DA, EO, HC, IN, MI, MS, NC, NS, OS, PC,
 	UL, XB, XN, XT, XS, XX;
 char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *CS, *DC, *DL,

@@ -237,7 +237,7 @@ __swflags(win)
 	if (win->begx + win->maxx == COLS) {
 		win->flags |= __ENDLINE;
 		if (win->begx == 0) {
-			if (AL && DL)
+			if (!__noqch)
 				win->flags |= __FULLLINE;
 			if (win->maxy == LINES && win->begy == 0)
 				win->flags |= __FULLWIN;

@@ -213,6 +213,15 @@ nonl()
 }
 
 void
+__set_scroll_region(top, bot)
+int top, bot;
+{
+	tputs(SC, 0, __cputchar);
+	tputs(tgoto(CS, bot, top), 0, __cputchar);
+	tputs(RC, 0, __cputchar);
+}
+
+void
 __startwin()
 {
 	(void)fflush(stdout);
@@ -220,6 +229,8 @@ __startwin()
 
 	tputs(TI, 0, __cputchar);
 	tputs(VS, 0, __cputchar);
+	if (curscr != NULL && __usecs)
+		__set_scroll_region(0, curscr->maxy - 1);
 }
 
 int
@@ -232,6 +243,8 @@ endwin()
 			tputs(SE, 0, __cputchar);
 			curscr->flags &= ~__WSTANDOUT;
 		}
+		if (__usecs)
+			__set_scroll_region(0, curscr->maxy - 1);
 		__mvcur(curscr->cury, curscr->cury, curscr->maxy - 1, 0, 0);
 	}
 

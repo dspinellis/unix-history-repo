@@ -152,7 +152,10 @@ setterm(type)
 	aoftspace = tspace;
 	ttytype = longname(genbuf, __ttytype);
 
-	if ((!AL && !al) || (!DL && !dl))
+	if (!NS && SC && RC && CS && (sr || SR))
+		__usecs = 1;
+
+	if ((!AL && !al || !DL && !dl) && !__usecs)
 		__noqch = 1;
 
 	return (unknown ? ERR : OK);
