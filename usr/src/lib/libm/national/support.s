@@ -1,4 +1,4 @@
-; @(#)support.s	1.3 (ucb.elefunt) %G%
+; @(#)support.s	5.1 (ucb.elefunt) %G%
 ; 
 ; IEEE recommended functions
 ; 

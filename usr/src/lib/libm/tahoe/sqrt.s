@@ -13,7 +13,7 @@
 	.data
 	.align	2
 _sccsid:
-.asciz	"@(#)sqrt.s	1.3	(ucb.elefunt)	%G%"
+.asciz	"@(#)sqrt.s	5.1	(ucb.elefunt)	%G%"
 
 /*
  * double sqrt(arg)   revised August 15,1982
