@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vn.c 1.1 91/04/30$
  *
- *	@(#)vn.c	7.8 (Berkeley) %G%
+ *	@(#)vn.c	7.9 (Berkeley) %G%
  */
 
 /*

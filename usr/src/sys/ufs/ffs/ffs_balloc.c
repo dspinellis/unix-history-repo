@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_balloc.c	7.18 (Berkeley) %G%
+ *	@(#)ffs_balloc.c	7.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>
