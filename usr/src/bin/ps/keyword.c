@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)keyword.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)keyword.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -65,7 +65,7 @@ VAR var[] = {
 	{"blocked", "", "sigmask"},
 	{"caught", "", "sigcatch"},
 	{"command", "COMMAND", NULL, COMM|LJUST|USER, command, 16},
-	{"cpu", "CPU", NULL, 0, pvar, 3, POFF(p_cpu), ULONG, "d"},
+	{"cpu", "CPU", NULL, 0, pvar, 3, POFF(p_estcpu), ULONG, "d"},
 	{"cputime", "", "time"},
 	{"f", "F", NULL, 0, pvar, 7, POFF(p_flag), LONG, "x"},
 	{"flags", "", "f"},
@@ -103,7 +103,7 @@ VAR var[] = {
 	{"pmem", "", "%mem"},
 	{"ppid", "PPID", NULL, 0, evar, PIDLEN, EOFF(e_ppid), LONG, PIDFMT},
 	{"pri", "PRI", NULL, 0, pri, 3},
-	{"re", "RE", NULL, 0, pvar, 3, POFF(p_time), ULONG, "d"},
+	{"re", "RE", NULL, 0, pvar, 3, POFF(p_swtime), ULONG, "d"},
 	{"rgid", "RGID", NULL, 0, evar, UIDLEN, EOFF(e_pcred.p_rgid),
 		ULONG, UIDFMT},
 	{"rlink", "RLINK", NULL, 0, pvar, 8, POFF(p_rlink), KPTR, "x"},
@@ -114,7 +114,7 @@ VAR var[] = {
 		ULONG, UIDFMT},
 	{"ruser", "RUSER", NULL, LJUST, runame, USERLEN},
 	{"sess", "SESS", NULL, 0, evar, 6, EOFF(e_sess), KPTR, "x"},
-	{"sig", "PENDING", NULL, 0, pvar, 8, POFF(p_sig), LONG, "x"},
+	{"sig", "PENDING", NULL, 0, pvar, 8, POFF(p_siglist), LONG, "x"},
 	{"sigcatch", "CAUGHT", NULL, 0, pvar, 8, POFF(p_sigcatch), LONG, "x"},
 	{"sigignore", "IGNORED",
 		NULL, 0, pvar, 8, POFF(p_sigignore), LONG, "x"},
@@ -190,7 +190,7 @@ VAR var[] = {
 	{"poip", "POIP", NULL, 0, pvar, 4, POFF(p_poip), SHORT, "d"},
 	{"ppid", "PPID", NULL, 0, pvar, PIDLEN, POFF(p_ppid), LONG, PIDFMT},
 	{"pri", "PRI", NULL, 0, pri, 3},
-	{"re", "RE", NULL, 0, pvar, 3, POFF(p_time), ULONG, "d"},
+	{"re", "RE", NULL, 0, pvar, 3, POFF(p_swtime), ULONG, "d"},
 	{"rgid", "RGID", NULL, 0, pvar, UIDLEN, POFF(p_rgid), USHORT, UIDFMT},
 	{"rlink", "RLINK", NULL, 0, pvar, 8, POFF(p_rlink), KPTR, "x"},
 	{"rss", "RSS", NULL, 0, p_rssize, 4},
