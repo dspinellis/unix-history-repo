@@ -1,4 +1,4 @@
-/*	main.c	1.23	(Berkeley)	85/08/05
+/*	main.c	1.24	(Berkeley)	86/04/14
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -53,6 +53,9 @@
  *					  The operand for these two commands is
  *					  a floating-point number in units of
  *					  inches
+ *		        oldstipplemap  -  use the old-style stipple mapping.
+ *					  THE FOLLOWING COMMANDS ARE IGNORED
+ *					  UNLESS OLDSTIPPLEMAP IS SPECIFIED.
  *     l1, l2, l3, l4, l5, l6, l7, l8  -  set association between stipples
  *					  (1 - 8) and the stipple font file
  *					  index.  Valid cifplot indices are
@@ -168,6 +171,7 @@ char	*c3 = inputline + 2;		/* ".GS" by looking individually */
 char	GScommand[MAXINLINE];		/* put user's ".GS" command line here */
 char	gremlinfile[MAXINLINE];		/* filename to use for a picture */
 int	SUNFILE = FALSE;		/* TRUE if SUN gremlin file */
+int	oldstipmap = FALSE;		/* TRUE if old-style stipple mapping */
 
 char *doinput();
 
@@ -658,6 +662,10 @@ char *line;
 	stipplecommand:	/* stipple */
 	    stipple = malloc(strlen(str2) + 1);
 	    strcpy(stipple, str2);
+	    break;
+
+	case 'o':	/* oldstipplemap */
+	    oldstipmap = TRUE;
 	    break;
 
 	case 't':	/* thick */
