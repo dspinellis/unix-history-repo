@@ -17,10 +17,10 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
  * Modified by Paul Mackerras (paulus@cs.anu.edu.au)
- * PPP_MRU added, PPP_MTU changed to 296 (default only), added sc_outm.
+ * Added PPP_MRU, sc_outm, sc_fastq, sc_bpf.
  *
  *	$Id$
- *	From: if_ppp.h,v 1.3 1993/08/09 02:37:32 paulus Exp
+ *	From: if_ppp.h,v 1.4 1993/08/29 11:22:37 paulus Exp $
  */
 
 /*
@@ -31,6 +31,9 @@ struct ppp_header {
 	u_char	ph_control;	/* Control Field */
 	u_short	ph_protocol;	/* Protocol Field */
 };
+
+#define PPP_HEADER_LEN	4	/* octets, must == sizeof(struct ppp_header) */
+#define PPP_FCS_LEN	2	/* octets for FCS */
 
 #define	PPP_ALLSTATIONS	0xff	/* All-Stations broadcast address */
 #define	PPP_UI		0x03	/* Unnumbered Information */
@@ -54,8 +57,9 @@ struct ppp_header {
 #define PPP_GOODFCS	0xf0b8	/* Good final FCS value */
 #define PPP_FCS(fcs, c)	(((fcs) >> 8) ^ fcstab[((fcs) ^ (c)) & 0xff])
 
-#define	PPP_MTU		296	/* Default MTU (size of Info field) */
+#define	PPP_MTU		1500	/* Default MTU (size of Info field) */
 #define PPP_MRU		1500	/* Default MRU (max receive unit) */
+#define PPP_MAXMRU	65000	/* Largest MRU we allow */
 #define	PPP_HIWAT	400	/* Don't start a new packet if HIWAT on que */
 
 struct ppp_softc {
@@ -67,22 +71,33 @@ struct ppp_softc {
 	struct	mbuf *sc_mc;	/* pointer to current input mbuf */
 	char	*sc_mp;		/* pointer to next char in input mbuf */
 	short	sc_ilen;	/* length of input-packet-so-far */
-	u_short	sc_fcs;		/* FCS so far */
+	u_short	sc_fcs;		/* FCS so far (input) */
+	u_short	sc_outfcs;	/* FCS so far for output packet */
+	short	sc_mru;		/* max receive unit */
 	u_long	sc_asyncmap;	/* async control character map */
+	u_long	sc_rasyncmap;	/* receive async control char map */
 	struct	ifqueue sc_inq;	/* TTY side input queue */
+	struct	ifqueue sc_fastq; /* IP interactive output packet queue */
 #ifdef	VJC
 	struct	slcompress sc_comp; /* vjc control buffer */
 #endif
 	u_int	sc_bytessent;
 	u_int	sc_bytesrcvd;
+	caddr_t	sc_bpf;
 };
 
 /* flags */
+#define SC_COMP_PROT	0x00000001	/* protocol compression (output) */
+#define SC_COMP_AC	0x00000002	/* header compression (output) */
+#define	SC_COMP_TCP	0x00000004	/* TCP (VJ) compression (output) */
+#define SC_NO_TCP_CCID	0x00000008	/* disable VJ connection-id comp. */
+#define SC_REJ_COMP_AC	0x00000010	/* reject adrs/ctrl comp. on input */
+#define SC_REJ_COMP_TCP	0x00000020	/* reject TCP (VJ) comp. on input */
+#define	SC_MASK		0x0000ffff	/* bits that user can change */
+
+/* state bits */
 #define	SC_ESCAPED	0x00010000	/* saw a PPP_ESCAPE */
 #define	SC_FLUSH	0x00020000	/* flush input until next PPP_FLAG */
-#define SC_COMP_PROT	0x00000001	/* protocol compression */
-#define SC_COMP_AC	0x00000002	/* header compression */
-#define	SC_COMP_TCP	0x00000004	/* TCP traffic (VJ) compression */
 
 #define t_sc T_LINEP
 
@@ -92,6 +107,10 @@ struct ppp_softc {
 #define	PPPIOCGASYNCMAP	_IOR('t', 88, int)	/* get async map */
 #define	PPPIOCSASYNCMAP	_IOW('t', 87, int)	/* set async map */
 #define	PPPIOCGUNIT	_IOR('t', 86, int)	/* get ppp unit number */
+#define	PPPIOCGRASYNCMAP _IOR('t', 85, int)	/* get receive async map */
+#define	PPPIOCSRASYNCMAP _IOW('t', 84, int)	/* set receive async map */
+#define	PPPIOCGMRU	_IOR('t', 83, int)	/* get max receive unit */
+#define	PPPIOCSMRU	_IOW('t', 82, int)	/* set max receive unit */
 
 /* old copies of PPP may have defined this */
 #if !defined(ifr_mtu)
