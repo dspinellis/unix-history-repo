@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lprint.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)lprint.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -38,20 +38,13 @@ static char sccsid[] = "@(#)lprint.c	5.1 (Berkeley) %G%";
 
 lflag_print()
 {
-	extern PERSON *head;
 	extern int pplan;
 	register PERSON *pn;
 
-	for (pn = head;;) {
-		if (pn->info == PRINTED) {
-			if (!(pn = pn->next))
-				break;
-			continue;
-		}
+	for (pn = phead;;) {
 		lprint(pn);
 		if (!pplan) {
-			(void)show_text(pn->dir, _PATH_PROJECT,
-			    "Project:");
+			(void)show_text(pn->dir, _PATH_PROJECT, "Project:");
 			if (!show_text(pn->dir, _PATH_PLAN, "Plan:"))
 				(void)printf("No Plan.\n");
 		}
@@ -66,7 +59,7 @@ lprint(pn)
 {
 	extern time_t now;
 	register struct tm *delta;
-	register PERSON *p;
+	register WHERE *w;
 	register int cpr, len, maxlen;
 	int oddfield;
 	time_t time();
@@ -116,34 +109,33 @@ lprint(pn)
 		putchar('\n');
 
 	/*
-	 * long format con't: if logged in
+	 * long format con't: * if logged in
 	 *	terminal
 	 *	idle time
 	 *	if messages allowed
 	 *	where logged in from
+	 * if not logged in
+	 *	when last logged in
 	 */
-	if (pn->info == LOGGEDIN) {
-		/* find out longest device name for this user for formatting */
-		for (maxlen = -1, p = pn; p; p = p->next)
-			if (!strcmp(p->name, pn->name) &&
-			    (len = strlen(p->tty)) > maxlen)
-				maxlen = len;
-		/* find rest of entries for user */
-		for (p = pn; p; p = p->next) {
-			if (strcmp(p->name, pn->name))
-				continue;
-			p->info = PRINTED;
+	/* find out longest device name for this user for formatting */
+	for (w = pn->whead; w != NULL; w = w->next)
+		if ((len = strlen(w->tty)) > maxlen)
+			maxlen = len;
+	/* find rest of entries for user */
+	for (w = pn->whead; w != NULL; w = w->next) {
+		switch (w->info) {
+		case LOGGEDIN:
 			cpr = printf("On since %16.16s on %s",
-			    ctime(&p->loginat), p->tty);
+			    ctime(&w->loginat), w->tty);
 			/*
 			 * idle time is tough; if have one, print a comma,
 			 * then spaces to pad out the device name, then the
 			 * idle time.  Follow with a comma if a remote login.
 			 */
-			delta = gmtime(&p->idletime);
+			delta = gmtime(&w->idletime);
 			if (delta->tm_yday || delta->tm_hour || delta->tm_min) {
 				cpr += printf("%-*s idle ",
-				    maxlen - strlen(p->tty) + 1, ",");
+				    maxlen - strlen(w->tty) + 1, ",");
 				if (delta->tm_yday > 0) {
 					cpr += printf("%d day%s ",
 					   delta->tm_yday,
@@ -151,40 +143,32 @@ lprint(pn)
 				}
 				cpr += printf("%d:%02d",
 				    delta->tm_hour, delta->tm_min);
-				if (*p->host) {
+				if (*w->host) {
 					putchar(',');
 					++cpr;
 				}
 			}
-			if (!p->writable)
+			if (!w->writable)
 				cpr += printf(" (messages off)");
-			if (*p->host) {
-				if (LINE_LEN < (cpr + 6 +
-				    strlen(p->host))) {
-					(void)printf("\n   ");
-				}
-				(void)printf(" from %s", p->host);
+			break;
+		case LASTLOG:
+			if (w->loginat == 0) {
+				(void)printf("Never logged in.");
+				break;
 			}
-			(void)putchar('\n');
+			t = ctime(&w->loginat);
+			if (now - w->loginat > SECSPERDAY * DAYSPERNYEAR / 2)
+				cpr = printf("Last login %10.10s, %4.4s on %s",
+				    t, t + 20, w->tty);
+			else
+				cpr = printf("Last login %16.16s on %s",
+					t, w->tty);
+			break;
 		}
-	}
-	/*
-	 * long format con't: if not logged in
-	 *	when last logged in
-	 */
-	else if (!pn->loginat)
-		(void)printf("Never logged in.\n");
-	else {
-		t = ctime(&pn->loginat);
-		if (now - pn->loginat > SECSPERDAY * DAYSPERNYEAR / 2)
-			cpr = printf("Last login %10.10s, %4.4s on %s",
-			    t, t + 20, pn->tty);
-		else
-			cpr = printf("Last login %16.16s on %s", t, pn->tty);
-		if (*pn->host) {
-			if (LINE_LEN < (cpr + 6 + strlen(pn->host)))
+		if (*w->host) {
+			if (LINE_LEN < (cpr + 6 + strlen(w->host)))
 				(void)printf("\n   ");
-			(void)printf(" from %s", pn->host);
+			(void)printf(" from %s", w->host);
 		}
 		putchar('\n');
 	}
