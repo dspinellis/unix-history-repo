@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tftp.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftp.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Many bug fixes are from Jim Guyton <guyton@rand-unix> */
@@ -42,9 +42,9 @@ int	timeout;
 jmp_buf	toplevel;
 jmp_buf	timeoutbuf;
 
+void
 timer()
 {
-
 	timeout += rexmtval;
 	if (timeout >= maxtimeout) {
 		printf("Transfer timed out.\n");
@@ -95,7 +95,8 @@ sendfile(fd, name, mode)
 send_data:
 		if (trace)
 			tpacket("sent", dp, size + 4);
-		n = sendto(f, dp, size + 4, 0, (caddr_t)&sin, sizeof (sin));
+		n = sendto(f, dp, size + 4, 0,
+		    (struct sockaddr *)&sin, sizeof (sin));
 		if (n != size + 4) {
 			perror("tftp: sendto");
 			goto abort;
@@ -106,7 +107,7 @@ send_data:
 			do {
 				fromlen = sizeof (from);
 				n = recvfrom(f, ackbuf, sizeof (ackbuf), 0,
-				    (caddr_t)&from, &fromlen);
+				    (struct sockaddr *)&from, &fromlen);
 			} while (n <= 0);
 			alarm(0);
 			if (n < 0) {
@@ -193,7 +194,7 @@ recvfile(fd, name, mode)
 send_ack:
 		if (trace)
 			tpacket("sent", ap, size);
-		if (sendto(f, ackbuf, size, 0, (caddr_t)&sin,
+		if (sendto(f, ackbuf, size, 0, (struct sockaddr *)&sin,
 		    sizeof (sin)) != size) {
 			alarm(0);
 			perror("tftp: sendto");
@@ -205,7 +206,7 @@ send_ack:
 			do  {
 				fromlen = sizeof (from);
 				n = recvfrom(f, dp, PKTSIZE, 0,
-				    (caddr_t)&from, &fromlen);
+				    (struct sockaddr *)&from, &fromlen);
 			} while (n <= 0);
 			alarm(0);
 			if (n < 0) {
@@ -252,7 +253,7 @@ send_ack:
 abort:                                          /* ok to ack, since user */
 	ap->th_opcode = htons((u_short)ACK);    /* has seen err msg */
 	ap->th_block = htons((u_short)block);
-	(void) sendto(f, ackbuf, 4, 0, &sin, sizeof (sin));
+	(void) sendto(f, ackbuf, 4, 0, (struct sockaddr *)&sin, sizeof (sin));
 	write_behind(file, convert);            /* flush last buffer */
 	fclose(file);
 	stopclock();
@@ -321,7 +322,8 @@ nak(error)
 	length = strlen(pe->e_msg) + 4;
 	if (trace)
 		tpacket("sent", tp, length);
-	if (sendto(f, ackbuf, length, 0, &sin, sizeof (sin)) != length)
+	if (sendto(f, ackbuf, length, 0, (struct sockaddr *)&sin,
+	    sizeof (sin)) != length)
 		perror("nak");
 }
 
