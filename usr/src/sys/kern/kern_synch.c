@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_synch.c	8.3 (Berkeley) %G%
+ *	@(#)kern_synch.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -39,21 +39,21 @@ roundrobin(arg)
 }
 
 /*
- * constants for digital decay and forget
- *	90% of (p_cpu) usage in 5*loadav time
+ * Constants for digital decay and forget:
+ *	90% of (p_estcpu) usage in 5 * loadav time
  *	95% of (p_pctcpu) usage in 60 seconds (load insensitive)
  *          Note that, as ps(1) mentions, this can let percentages
  *          total over 100% (I've seen 137.9% for 3 processes).
  *
- * Note that hardclock updates p_cpu and p_cpticks independently.
+ * Note that hardclock updates p_estcpu and p_cpticks independently.
  *
- * We wish to decay away 90% of p_cpu in (5 * loadavg) seconds.
+ * We wish to decay away 90% of p_estcpu in (5 * loadavg) seconds.
  * That is, the system wants to compute a value of decay such
  * that the following for loop:
  * 	for (i = 0; i < (5 * loadavg); i++)
- * 		p_cpu *= decay;
+ * 		p_estcpu *= decay;
  * will compute
- * 	p_cpu *= 0.1;
+ * 	p_estcpu *= 0.1;
  * for all values of loadavg:
  *
  * Mathematically this loop can be expressed by saying:
@@ -137,13 +137,13 @@ schedcpu(arg)
 	register unsigned int newcpu;
 
 	wakeup((caddr_t)&lbolt);
-	for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
+	for (p = (struct proc *)allproc; p != NULL; p = p->p_next) {
 		/*
 		 * Increment time in/out of memory and sleep time
 		 * (if sleeping).  We ignore overflow; with 16-bit int's
 		 * (remember them?) overflow takes 45 days.
 		 */
-		p->p_time++;
+		p->p_swtime++;
 		if (p->p_stat == SSLEEP || p->p_stat == SSTOP)
 			p->p_slptime++;
 		p->p_pctcpu = (p->p_pctcpu * ccpu) >> FSHIFT;
@@ -167,20 +167,20 @@ schedcpu(arg)
 			(p->p_cpticks * FSCALE / hz)) >> FSHIFT;
 #endif
 		p->p_cpticks = 0;
-		newcpu = (u_int) decay_cpu(loadfac, p->p_cpu) + p->p_nice;
-		p->p_cpu = min(newcpu, UCHAR_MAX);
+		newcpu = (u_int) decay_cpu(loadfac, p->p_estcpu) + p->p_nice;
+		p->p_estcpu = min(newcpu, UCHAR_MAX);
 		resetpriority(p);
-		if (p->p_pri >= PUSER) {
+		if (p->p_priority >= PUSER) {
 #define	PPQ	(128 / NQS)		/* priorities per queue */
 			if ((p != curproc) &&
 			    p->p_stat == SRUN &&
-			    (p->p_flag & SLOAD) &&
-			    (p->p_pri / PPQ) != (p->p_usrpri / PPQ)) {
+			    (p->p_flag & P_INMEM) &&
+			    (p->p_priority / PPQ) != (p->p_usrpri / PPQ)) {
 				remrq(p);
-				p->p_pri = p->p_usrpri;
+				p->p_priority = p->p_usrpri;
 				setrunqueue(p);
 			} else
-				p->p_pri = p->p_usrpri;
+				p->p_priority = p->p_usrpri;
 		}
 		splx(s);
 	}
@@ -192,33 +192,33 @@ schedcpu(arg)
 
 /*
  * Recalculate the priority of a process after it has slept for a while.
- * For all load averages >= 1 and max p_cpu of 255, sleeping for at least
- * six times the loadfactor will decay p_cpu to zero.
+ * For all load averages >= 1 and max p_estcpu of 255, sleeping for at
+ * least six times the loadfactor will decay p_estcpu to zero.
  */
 void
 updatepri(p)
 	register struct proc *p;
 {
-	register unsigned int newcpu = p->p_cpu;
+	register unsigned int newcpu = p->p_estcpu;
 	register fixpt_t loadfac = loadfactor(averunnable.ldavg[0]);
 
 	if (p->p_slptime > 5 * loadfac)
-		p->p_cpu = 0;
+		p->p_estcpu = 0;
 	else {
 		p->p_slptime--;	/* the first time was done in schedcpu */
 		while (newcpu && --p->p_slptime)
 			newcpu = (int) decay_cpu(loadfac, newcpu);
-		p->p_cpu = min(newcpu, UCHAR_MAX);
+		p->p_estcpu = min(newcpu, UCHAR_MAX);
 	}
 	resetpriority(p);
 }
 
-#define SQSIZE 0100	/* Must be power of 2 */
-#define HASH(x)	(( (int) x >> 5) & (SQSIZE-1))
+#define TABLESIZE	64		/* Must be power of 2. */
+#define LOOKUP(x)	((int)x & (TABLESIZE - 1))
 struct slpque {
 	struct proc *sq_head;
 	struct proc **sq_tailp;
-} slpque[SQSIZE];
+} slpque[TABLESIZE];
 
 /*
  * During autoconfiguration or after a panic, a sleep will simply
@@ -272,19 +272,19 @@ tsleep(ident, priority, wmesg, timo)
 		return (0);
 	}
 #ifdef DIAGNOSTIC
-	if (ident == NULL || p->p_stat != SRUN || p->p_rlink)
+	if (ident == NULL || p->p_stat != SRUN || p->p_back)
 		panic("tsleep");
 #endif
 	p->p_wchan = ident;
 	p->p_wmesg = wmesg;
 	p->p_slptime = 0;
-	p->p_pri = priority & PRIMASK;
-	qp = &slpque[HASH(ident)];
+	p->p_priority = priority & PRIMASK;
+	qp = &slpque[LOOKUP(ident)];
 	if (qp->sq_head == 0)
 		qp->sq_head = p;
 	else
 		*qp->sq_tailp = p;
-	*(qp->sq_tailp = &p->p_link) = 0;
+	*(qp->sq_tailp = &p->p_forw) = 0;
 	if (timo)
 		timeout(endtsleep, (void *)p, timo);
 	/*
@@ -297,7 +297,7 @@ tsleep(ident, priority, wmesg, timo)
 	 * stopped, p->p_wchan will be 0 upon return from CURSIG.
 	 */
 	if (catch) {
-		p->p_flag |= SSINTR;
+		p->p_flag |= P_SINTR;
 		if (sig = CURSIG(p)) {
 			if (p->p_wchan)
 				unsleep(p);
@@ -312,13 +312,13 @@ tsleep(ident, priority, wmesg, timo)
 		sig = 0;
 	p->p_stat = SSLEEP;
 	p->p_stats->p_ru.ru_nvcsw++;
-	swtch();
+	mi_switch();
 resume:
 	curpriority = p->p_usrpri;
 	splx(s);
-	p->p_flag &= ~SSINTR;
-	if (p->p_flag & STIMO) {
-		p->p_flag &= ~STIMO;
+	p->p_flag &= ~P_SINTR;
+	if (p->p_flag & P_TIMEOUT) {
+		p->p_flag &= ~P_TIMEOUT;
 		if (sig == 0) {
 #ifdef KTRACE
 			if (KTRPOINT(p, KTR_CSW))
@@ -364,7 +364,7 @@ endtsleep(arg)
 			setrunnable(p);
 		else
 			unsleep(p);
-		p->p_flag |= STIMO;
+		p->p_flag |= P_TIMEOUT;
 	}
 	splx(s);
 }
@@ -402,26 +402,26 @@ sleep(ident, priority)
 		return;
 	}
 #ifdef DIAGNOSTIC
-	if (ident == NULL || p->p_stat != SRUN || p->p_rlink)
+	if (ident == NULL || p->p_stat != SRUN || p->p_back)
 		panic("sleep");
 #endif
 	p->p_wchan = ident;
 	p->p_wmesg = NULL;
 	p->p_slptime = 0;
-	p->p_pri = priority;
-	qp = &slpque[HASH(ident)];
+	p->p_priority = priority;
+	qp = &slpque[LOOKUP(ident)];
 	if (qp->sq_head == 0)
 		qp->sq_head = p;
 	else
 		*qp->sq_tailp = p;
-	*(qp->sq_tailp = &p->p_link) = 0;
+	*(qp->sq_tailp = &p->p_forw) = 0;
 	p->p_stat = SSLEEP;
 	p->p_stats->p_ru.ru_nvcsw++;
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_CSW))
 		ktrcsw(p->p_tracep, 1, 0);
 #endif
-	swtch();
+	mi_switch();
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_CSW))
 		ktrcsw(p->p_tracep, 0, 0);
@@ -443,11 +443,11 @@ unsleep(p)
 
 	s = splhigh();
 	if (p->p_wchan) {
-		hp = &(qp = &slpque[HASH(p->p_wchan)])->sq_head;
+		hp = &(qp = &slpque[LOOKUP(p->p_wchan)])->sq_head;
 		while (*hp != p)
-			hp = &(*hp)->p_link;
-		*hp = p->p_link;
-		if (qp->sq_tailp == &p->p_link)
+			hp = &(*hp)->p_forw;
+		*hp = p->p_forw;
+		if (qp->sq_tailp == &p->p_forw)
 			qp->sq_tailp = hp;
 		p->p_wchan = 0;
 	}
@@ -466,17 +466,17 @@ wakeup(ident)
 	int s;
 
 	s = splhigh();
-	qp = &slpque[HASH(ident)];
+	qp = &slpque[LOOKUP(ident)];
 restart:
 	for (q = &qp->sq_head; p = *q; ) {
 #ifdef DIAGNOSTIC
-		if (p->p_rlink || p->p_stat != SSLEEP && p->p_stat != SSTOP)
+		if (p->p_back || p->p_stat != SSLEEP && p->p_stat != SSTOP)
 			panic("wakeup");
 #endif
 		if (p->p_wchan == ident) {
 			p->p_wchan = 0;
-			*q = p->p_link;
-			if (qp->sq_tailp == &p->p_link)
+			*q = p->p_forw;
+			if (qp->sq_tailp == &p->p_forw)
 				qp->sq_tailp = q;
 			if (p->p_stat == SSLEEP) {
 				/* OPTIMIZED EXPANSION OF setrunnable(p); */
@@ -484,13 +484,14 @@ restart:
 					updatepri(p);
 				p->p_slptime = 0;
 				p->p_stat = SRUN;
-				if (p->p_flag & SLOAD)
+				if (p->p_flag & P_INMEM)
 					setrunqueue(p);
 				/*
 				 * Since curpriority is a user priority,
-				 * p->p_pri is always better than curpriority.
+				 * p->p_priority is always better than
+				 * curpriority.
 				 */
-				if ((p->p_flag&SLOAD) == 0)
+				if ((p->p_flag & P_INMEM) == 0)
 					wakeup((caddr_t)&proc0);
 				else
 					need_resched();
@@ -498,17 +499,17 @@ restart:
 				goto restart;
 			}
 		} else
-			q = &p->p_link;
+			q = &p->p_forw;
 	}
 	splx(s);
 }
 
 /*
- * The machine independent parts of swtch().
+ * The machine independent parts of mi_switch().
  * Must be called at splstatclock() or higher.
  */
 void
-swtch()
+mi_switch()
 {
 	register struct proc *p = curproc;	/* XXX */
 	register struct rlimit *rlim;
@@ -556,7 +557,7 @@ swtch()
 	 * Pick a new current process and record its start time.
 	 */
 	cnt.v_swtch++;
-	cpu_swtch(p);
+	cpu_switch(p);
 	microtime(&runtime);
 }
 
@@ -599,15 +600,15 @@ setrunnable(p)
 		break;
 	}
 	p->p_stat = SRUN;
-	if (p->p_flag & SLOAD)
+	if (p->p_flag & P_INMEM)
 		setrunqueue(p);
 	splx(s);
 	if (p->p_slptime > 1)
 		updatepri(p);
 	p->p_slptime = 0;
-	if ((p->p_flag&SLOAD) == 0)
+	if ((p->p_flag & P_INMEM) == 0)
 		wakeup((caddr_t)&proc0);
-	else if (p->p_pri < curpriority)
+	else if (p->p_priority < curpriority)
 		need_resched();
 }
 
@@ -622,7 +623,7 @@ resetpriority(p)
 {
 	register unsigned int newpriority;
 
-	newpriority = PUSER + p->p_cpu / 4 + 2 * p->p_nice;
+	newpriority = PUSER + p->p_estcpu / 4 + 2 * p->p_nice;
 	newpriority = min(newpriority, MAXPRI);
 	p->p_usrpri = newpriority;
 	if (newpriority < curpriority)

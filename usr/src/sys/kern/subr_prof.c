@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prof.c	8.2 (Berkeley) %G%
+ *	@(#)subr_prof.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -211,8 +211,8 @@ addupc_task(p, pc, ticks)
 	register u_int i;
 	u_short v;
 
-	/* testing SPROFIL may be unnecessary, but is certainly safe */
-	if ((p->p_flag & SPROFIL) == 0 || ticks == 0)
+	/* Testing P_PROFIL may be unnecessary, but is certainly safe. */
+	if ((p->p_flag & P_PROFIL) == 0 || ticks == 0)
 		return;
 
 	prof = &p->p_stats->p_prof;

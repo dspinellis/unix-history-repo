@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	8.3 (Berkeley) %G%
+ *	@(#)trap.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -669,8 +669,8 @@ out:
 	 */
 	/* take pending signals */
 	while ((i = CURSIG(p)) != 0)
-		psig(i);
-	p->p_pri = p->p_usrpri;
+		postsig(i);
+	p->p_priority = p->p_usrpri;
 	astpending = 0;
 	if (want_resched) {
 		int s;
@@ -680,28 +680,28 @@ out:
 		 * our priority without moving us from one queue to another
 		 * (since the running process is not on a queue.)
 		 * If that happened after we put ourselves on the run queue
-		 * but before we swtch()'ed, we might not be on the queue
+		 * but before we switched, we might not be on the queue
 		 * indicated by our priority.
 		 */
 		s = splstatclock();
 		setrunqueue(p);
 		p->p_stats->p_ru.ru_nivcsw++;
-		swtch();
+		mi_switch();
 		splx(s);
 		while ((i = CURSIG(p)) != 0)
-			psig(i);
+			postsig(i);
 	}
 
 	/*
 	 * If profiling, charge system time to the trapped pc.
 	 */
-	if (p->p_flag & SPROFIL) {
+	if (p->p_flag & P_PROFIL) {
 		extern int psratio;
 
 		addupc_task(p, pc, (int)(p->p_sticks - sticks) * psratio);
 	}
 
-	curpriority = p->p_pri;
+	curpriority = p->p_priority;
 	return (pc);
 }
 
@@ -1199,11 +1199,11 @@ softintr(statusReg, pc)
 	cnt.v_soft++;
 	/* take pending signals */
 	while ((sig = CURSIG(p)) != 0)
-		psig(sig);
-	p->p_pri = p->p_usrpri;
+		postsig(sig);
+	p->p_priority = p->p_usrpri;
 	astpending = 0;
-	if (p->p_flag & SOWEUPC) {
-		p->p_flag &= ~SOWEUPC;
+	if (p->p_flag & P_OWEUPC) {
+		p->p_flag &= ~P_OWEUPC;
 		ADDUPROF(p);
 	}
 	if (want_resched) {
@@ -1214,18 +1214,18 @@ softintr(statusReg, pc)
 		 * our priority without moving us from one queue to another
 		 * (since the running process is not on a queue.)
 		 * If that happened after we put ourselves on the run queue
-		 * but before we swtch()'ed, we might not be on the queue
+		 * but before we switched, we might not be on the queue
 		 * indicated by our priority.
 		 */
 		s = splstatclock();
 		setrunqueue(p);
 		p->p_stats->p_ru.ru_nivcsw++;
-		swtch();
+		mi_switch();
 		splx(s);
 		while ((sig = CURSIG(p)) != 0)
-			psig(sig);
+			postsig(sig);
 	}
-	curpriority = p->p_pri;
+	curpriority = p->p_priority;
 }
 
 #ifdef DEBUG

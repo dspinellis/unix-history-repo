@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.37 92/12/20$
  *
- *	@(#)trap.c	8.3 (Berkeley) %G%
+ *	@(#)trap.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -120,30 +120,30 @@ again:
 #endif
 	/* take pending signals */
 	while ((sig = CURSIG(p)) != 0)
-		psig(sig);
-	p->p_pri = p->p_usrpri;
+		postsig(sig);
+	p->p_priority = p->p_usrpri;
 	if (want_resched) {
 		/*
 		 * Since we are curproc, clock will normally just change
 		 * our priority without moving us from one queue to another
 		 * (since the running process is not on a queue.)
 		 * If that happened after we put ourselves on the run queue
-		 * but before we swtch()'ed, we might not be on the queue
+		 * but before we mi_switch()'ed, we might not be on the queue
 		 * indicated by our priority.
 		 */
 		s = splstatclock();
 		setrunqueue(p);
 		p->p_stats->p_ru.ru_nivcsw++;
-		swtch();
+		mi_switch();
 		splx(s);
 		while ((sig = CURSIG(p)) != 0)
-			psig(sig);
+			postsig(sig);
 	}
 
 	/*
 	 * If profiling, charge system time to the trapped pc.
 	 */
-	if (p->p_flag & SPROFIL) {
+	if (p->p_flag & P_PROFIL) {
 		extern int psratio;
 
 		addupc_task(p, fp->f_pc,
@@ -175,7 +175,7 @@ again:
 		}
 	}
 #endif
-	curpriority = p->p_pri;
+	curpriority = p->p_priority;
 }
 
 /*
@@ -408,8 +408,8 @@ copyfault:
 			return;
 		}
 		spl0();
-		if (p->p_flag & SOWEUPC) {
-			p->p_flag &= ~SOWEUPC;
+		if (p->p_flag & P_OWEUPC) {
+			p->p_flag &= ~P_OWEUPC;
 			ADDUPROF(p);
 		}
 		goto out;

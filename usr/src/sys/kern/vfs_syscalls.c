@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.2 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -665,28 +665,28 @@ mknod(p, uap, retval)
 	if (error = namei(&nd))
 		return (error);
 	vp = nd.ni_vp;
-	if (vp != NULL) {
+	if (vp != NULL)
 		error = EEXIST;
-		goto out;
+	else {
+		VATTR_NULL(&vattr);
+		vattr.va_mode = (uap->mode & ALLPERMS) &~ p->p_fd->fd_cmask;
+		vattr.va_rdev = uap->dev;
+
+		switch (uap->mode & S_IFMT) {
+		case S_IFMT:	/* used by badsect to flag bad sectors */
+			vattr.va_type = VBAD;
+			break;
+		case S_IFCHR:
+			vattr.va_type = VCHR;
+			break;
+		case S_IFBLK:
+			vattr.va_type = VBLK;
+			break;
+		default:
+			error = EINVAL;
+			break;
+		}
 	}
-	VATTR_NULL(&vattr);
-	switch (uap->mode & S_IFMT) {
-	case S_IFMT:	/* used by badsect to flag bad sectors */
-		vattr.va_type = VBAD;
-		break;
-	case S_IFCHR:
-		vattr.va_type = VCHR;
-		break;
-	case S_IFBLK:
-		vattr.va_type = VBLK;
-		break;
-	default:
-		error = EINVAL;
-		goto out;
-	}
-	vattr.va_mode = (uap->mode & ALLPERMS) &~ p->p_fd->fd_cmask;
-	vattr.va_rdev = uap->dev;
-out:
 	if (!error) {
 		LEASE_CHECK(nd.ni_dvp, p, p->p_ucred, LEASE_WRITE);
 		error = VOP_MKNOD(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, &vattr);
@@ -765,30 +765,32 @@ link(p, uap, retval)
 	if (error = namei(&nd))
 		return (error);
 	vp = nd.ni_vp;
-	if (vp->v_type == VDIR &&
-	    (error = suser(p->p_ucred, &p->p_acflag)))
-		goto out;
-	nd.ni_cnd.cn_nameiop = CREATE;
-	nd.ni_cnd.cn_flags = LOCKPARENT;
-	nd.ni_dirp = uap->link;
-	if (error = namei(&nd))
-		goto out;
-	if (nd.ni_vp != NULL)
-		error = EEXIST;
-	if (!error) {
-		LEASE_CHECK(nd.ni_dvp, p, p->p_ucred, LEASE_WRITE);
-		LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
-		error = VOP_LINK(nd.ni_dvp, vp, &nd.ni_cnd);
-	} else {
-		VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
-		if (nd.ni_dvp == nd.ni_vp)
-			vrele(nd.ni_dvp);
-		else
-			vput(nd.ni_dvp);
-		if (nd.ni_vp)
-			vrele(nd.ni_vp);
+	if (vp->v_type != VDIR ||
+	    (error = suser(p->p_ucred, &p->p_acflag)) == 0) {
+		nd.ni_cnd.cn_nameiop = CREATE;
+		nd.ni_cnd.cn_flags = LOCKPARENT;
+		nd.ni_dirp = uap->link;
+		if ((error = namei(&nd)) == 0) {
+			if (nd.ni_vp != NULL)
+				error = EEXIST;
+			if (!error) {
+				LEASE_CHECK(nd.ni_dvp,
+				    p, p->p_ucred, LEASE_WRITE);
+				LEASE_CHECK(vp,
+				    p, p->p_ucred, LEASE_WRITE);
+				error = VOP_LINK(nd.ni_dvp, vp, &nd.ni_cnd);
+			} else {
+				VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
+				if (nd.ni_dvp == nd.ni_vp)
+					vrele(nd.ni_dvp);
+				else
+					vput(nd.ni_dvp);
+				if (nd.ni_vp)
+					vrele(nd.ni_vp);
+			}
+		}
 	}
-out:	vrele(vp);
+	vrele(vp);
 	CHECKREFS("link");
 	return (error);
 }
@@ -861,18 +863,19 @@ unlink(p, uap, retval)
 	vp = nd.ni_vp;
 	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 	VOP_LOCK(vp);
-	if (vp->v_type == VDIR &&
-	    (error = suser(p->p_ucred, &p->p_acflag)))
-		goto out;
-	/*
-	 * The root of a mounted filesystem cannot be deleted.
-	 */
-	if (vp->v_flag & VROOT)
-		error = EBUSY;
-	else
-		(void)vnode_pager_uncache(vp);
 
-out:	if (!error) {
+	if (vp->v_type != VDIR ||
+	    (error = suser(p->p_ucred, &p->p_acflag)) == 0) {
+		/*
+		 * The root of a mounted filesystem cannot be deleted.
+		 */
+		if (vp->v_flag & VROOT)
+			error = EBUSY;
+		else
+			(void)vnode_pager_uncache(vp);
+	}
+
+	if (!error) {
 		LEASE_CHECK(nd.ni_dvp, p, p->p_ucred, LEASE_WRITE);
 		error = VOP_REMOVE(nd.ni_dvp, nd.ni_vp, &nd.ni_cnd);
 	} else {
@@ -973,11 +976,11 @@ access(p, uap, retval)
 {
 	register struct ucred *cred = p->p_ucred;
 	register struct vnode *vp;
-	int error, flags, saved_uid, saved_gid;
+	int error, flags, t_gid, t_uid;
 	struct nameidata nd;
 
-	saved_uid = cred->cr_uid;
-	saved_gid = cred->cr_groups[0];
+	t_uid = cred->cr_uid;
+	t_gid = cred->cr_groups[0];
 	cred->cr_uid = p->p_cred->p_ruid;
 	cred->cr_groups[0] = p->p_cred->p_rgid;
 	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
@@ -999,8 +1002,8 @@ access(p, uap, retval)
 	}
 	vput(vp);
 out1:
-	cred->cr_uid = saved_uid;
-	cred->cr_groups[0] = saved_gid;
+	cred->cr_uid = t_uid;
+	cred->cr_groups[0] = t_gid;
 	return (error);
 }
 

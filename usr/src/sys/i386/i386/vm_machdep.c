@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_machdep.c	8.1 (Berkeley) %G%
+ *	@(#)vm_machdep.c	8.2 (Berkeley) %G%
  *	Utah $Hdr: vm_machdep.c 1.16.1.1 89/06/23$
  */
 
@@ -49,7 +49,7 @@ cpu_fork(p1, p2)
 	 * part of the stack.  The stack and pcb need to agree;
 	 * this is tricky, as the final pcb is constructed by savectx,
 	 * but its frame isn't yet on the stack when the stack is copied.
-	 * swtch compensates for this when the child eventually runs.
+	 * mi_switch compensates for this when the child eventually runs.
 	 * This should be done differently, with a single call
 	 * that copies and updates the pcb+stack,
 	 * replacing the bcopy and savectx.
@@ -101,16 +101,16 @@ extern struct proc *npxproc;
  * and any remaining machine-dependent resources, including the
  * memory for the user structure and kernel stack.
  *
- * Next, we assign a dummy context to be written over by swtch,
+ * Next, we assign a dummy context to be written over by mi_switch,
  * calling it to send this process off to oblivion.
- * [The nullpcb allows us to minimize cost in swtch() by not having
+ * [The nullpcb allows us to minimize cost in mi_switch() by not having
  * a special case].
  */
-struct proc *swtch_to_inactive();
+struct proc *switch_to_inactive();
 cpu_exit(p)
 	register struct proc *p;
 {
-	static struct pcb nullpcb;	/* pcb to overwrite on last swtch */
+	static struct pcb nullpcb;	/* pcb to overwrite on last switch */
 
 #if NNPX > 0
 	/* free cporcessor (if we have it) */
@@ -118,14 +118,14 @@ cpu_exit(p)
 #endif
 
 	/* move to inactive space and stack, passing arg accross */
-	p = swtch_to_inactive(p);
+	p = switch_to_inactive(p);
 
 	/* drop per-process resources */
 	vmspace_free(p->p_vmspace);
 	kmem_free(kernel_map, (vm_offset_t)p->p_addr, ctob(UPAGES));
 
 	p->p_addr = (struct user *) &nullpcb;
-	swtch();
+	mi_switch();
 	/* NOTREACHED */
 }
 #else
@@ -139,7 +139,7 @@ cpu_exit(p)
 #endif
 
 	curproc = p;
-	swtch();
+	mi_switch();
 }
 
 cpu_wait(p) struct proc *p; {

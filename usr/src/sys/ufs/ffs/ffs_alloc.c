@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	8.2 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -33,7 +33,7 @@ static daddr_t	ffs_fragextend __P((struct inode *, int, long, int, int));
 static void	ffs_fserr __P((struct fs *, u_int, char *));
 static u_long	ffs_hashalloc
 		    __P((struct inode *, int, long, int, u_long (*)()));
-static ino_t	ffs_ialloccg __P((struct inode *, int, daddr_t, int));
+static ino_t	ffs_nodealloccg __P((struct inode *, int, daddr_t, int));
 static daddr_t	ffs_mapsearch __P((struct fs *, struct cg *, daddr_t, int));
 
 /*
@@ -89,14 +89,14 @@ ffs_alloc(ip, lbn, bpref, size, cred, bnp)
 	if (bpref >= fs->fs_size)
 		bpref = 0;
 	if (bpref == 0)
-		cg = itog(fs, ip->i_number);
+		cg = ino_to_cg(fs, ip->i_number);
 	else
 		cg = dtog(fs, bpref);
 	bno = (daddr_t)ffs_hashalloc(ip, cg, (long)bpref, size,
 	    (u_long (*)())ffs_alloccg);
 	if (bno > 0) {
 		ip->i_blocks += btodb(size);
-		ip->i_flag |= IUPDATE | ICHANGE;
+		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		*bnp = bno;
 		return (0);
 	}
@@ -174,7 +174,7 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 		if (bp->b_blkno != fsbtodb(fs, bno))
 			panic("bad blockno");
 		ip->i_blocks += btodb(nsize - osize);
-		ip->i_flag |= IUPDATE | ICHANGE;
+		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		allocbuf(bp, nsize);
 		bp->b_flags |= B_DONE;
 		bzero((char *)bp->b_data + osize, (u_int)nsize - osize);
@@ -248,7 +248,7 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 			ffs_blkfree(ip, bno + numfrags(fs, nsize),
 			    (long)(request - nsize));
 		ip->i_blocks += btodb(nsize - osize);
-		ip->i_flag |= IUPDATE | ICHANGE;
+		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		allocbuf(bp, nsize);
 		bp->b_flags |= B_DONE;
 		bzero((char *)bp->b_data + osize, (u_int)nsize - osize);
@@ -314,8 +314,8 @@ ffs_valloc(ap)
 		ipref = pip->i_number;
 	if (ipref >= fs->fs_ncg * fs->fs_ipg)
 		ipref = 0;
-	cg = itog(fs, ipref);
-	ino = (ino_t)ffs_hashalloc(pip, cg, (long)ipref, mode, ffs_ialloccg);
+	cg = ino_to_cg(fs, ipref);
+	ino = (ino_t)ffs_hashalloc(pip, cg, (long)ipref, mode, ffs_nodealloccg);
 	if (ino == 0)
 		goto noinodes;
 	error = VFS_VGET(pvp->v_mount, ino, ap->a_vpp);
@@ -414,7 +414,7 @@ ffs_blkpref(ip, lbn, indx, bap)
 	fs = ip->i_fs;
 	if (indx % fs->fs_maxbpg == 0 || bap[indx - 1] == 0) {
 		if (lbn < NDADDR) {
-			cg = itog(fs, ip->i_number);
+			cg = ino_to_cg(fs, ip->i_number);
 			return (fs->fs_fpg * cg + fs->fs_frag);
 		}
 		/*
@@ -422,7 +422,8 @@ ffs_blkpref(ip, lbn, indx, bap)
 		 * unused data blocks.
 		 */
 		if (indx == 0 || bap[indx - 1] == 0)
-			startcg = itog(fs, ip->i_number) + lbn / fs->fs_maxbpg;
+			startcg =
+			    ino_to_cg(fs, ip->i_number) + lbn / fs->fs_maxbpg;
 		else
 			startcg = dtog(fs, bap[indx - 1]) + 1;
 		startcg %= fs->fs_ncg;
@@ -595,7 +596,7 @@ ffs_fragextend(ip, cg, bprev, osize, nsize)
 /*
  * Determine whether a block can be allocated.
  *
- * Check to see if a block of the apprpriate size is available,
+ * Check to see if a block of the appropriate size is available,
  * and if it is, allocate it.
  */
 static daddr_t
@@ -809,7 +810,7 @@ gotit:
  *      inode in the specified cylinder group.
  */
 static ino_t
-ffs_ialloccg(ip, cg, ipref, mode)
+ffs_nodealloccg(ip, cg, ipref, mode)
 	struct inode *ip;
 	int cg;
 	daddr_t ipref;
@@ -855,7 +856,7 @@ ffs_ialloccg(ip, cg, ipref, mode)
 		if (loc == 0) {
 			printf("cg = %s, irotor = %d, fs = %s\n",
 			    cg, cgp->cg_irotor, fs->fs_fsmnt);
-			panic("ffs_ialloccg: map corrupted");
+			panic("ffs_nodealloccg: map corrupted");
 			/* NOTREACHED */
 		}
 	}
@@ -869,7 +870,7 @@ ffs_ialloccg(ip, cg, ipref, mode)
 		}
 	}
 	printf("fs = %s\n", fs->fs_fsmnt);
-	panic("ffs_ialloccg: block not in map");
+	panic("ffs_nodealloccg: block not in map");
 	/* NOTREACHED */
 gotit:
 	setbit(cg_inosused(cgp), ipref);
@@ -1019,7 +1020,7 @@ ffs_vfree(ap)
 	if ((u_int)ino >= fs->fs_ipg * fs->fs_ncg)
 		panic("ifree: range: dev = 0x%x, ino = %d, fs = %s\n",
 		    pip->i_dev, ino, fs->fs_fsmnt);
-	cg = itog(fs, ino);
+	cg = ino_to_cg(fs, ino);
 #ifdef SECSIZE
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize,
 	    fs->fs_dbsize);

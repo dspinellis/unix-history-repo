@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	8.2 (Berkeley) %G%
+ *	@(#)lfs_segment.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -162,7 +162,8 @@ loop:	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
 		 * the IFILE.
 		 */
 		ip = VTOI(vp);
-		if ((ip->i_flag & (IMODIFIED | IACCESS | IUPDATE | ICHANGE) ||
+		if ((ip->i_flag &
+		    (IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE) ||
 		    vp->v_dirtyblkhd.le_next != NULL) &&
 		    ip->i_number != LFS_IFILE_INUM) {
 			if (vp->v_dirtyblkhd.le_next != NULL)
@@ -352,7 +353,7 @@ lfs_writeinode(fs, sp, ip)
 	int error, i, ndx;
 	int redo_ifile = 0;
 
-	if (!(ip->i_flag & (IMODIFIED | IACCESS | IUPDATE | ICHANGE)))
+	if (!(ip->i_flag & (IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE)))
 		return(0);
 
 	/* Allocate a new inode block if necessary. */
@@ -382,10 +383,10 @@ lfs_writeinode(fs, sp, ip)
 	}
 
 	/* Update the inode times and copy the inode onto the inode page. */
-	if (ip->i_flag & IMODIFIED)
+	if (ip->i_flag & IN_MODIFIED)
 		--fs->lfs_uinodes;
 	ITIMES(ip, &time, &time);
-	ip->i_flag &= ~(IMODIFIED | IACCESS | IUPDATE | ICHANGE);
+	ip->i_flag &= ~(IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE);
 	bp = sp->ibp;
 	((struct dinode *)bp->b_data)[sp->ninodes % INOPB(fs)] = ip->i_din;
 	/* Increment inode count in segment summary block. */

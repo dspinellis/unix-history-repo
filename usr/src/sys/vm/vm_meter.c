@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_meter.c	8.1 (Berkeley) %G%
+ *	@(#)vm_meter.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -51,10 +51,10 @@ loadav(avg)
 	register int i, nrun;
 	register struct proc *p;
 
-	for (nrun = 0, p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
+	for (nrun = 0, p = (struct proc *)allproc; p != NULL; p = p->p_next) {
 		switch (p->p_stat) {
 		case SSLEEP:
-			if (p->p_pri > PZERO || p->p_slptime != 0)
+			if (p->p_priority > PZERO || p->p_slptime != 0)
 				continue;
 			/* fall through */
 		case SRUN:
@@ -128,8 +128,8 @@ vmtotal(totalp)
 	/*
 	 * Calculate process statistics.
 	 */
-	for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
-		if (p->p_flag & SSYS)
+	for (p = (struct proc *)allproc; p != NULL; p = p->p_next) {
+		if (p->p_flag & P_SYSTEM)
 			continue;
 		switch (p->p_stat) {
 		case 0:
@@ -137,8 +137,8 @@ vmtotal(totalp)
 
 		case SSLEEP:
 		case SSTOP:
-			if (p->p_flag & SLOAD) {
-				if (p->p_pri <= PZERO)
+			if (p->p_flag & P_INMEM) {
+				if (p->p_priority <= PZERO)
 					totalp->t_dw++;
 				else if (p->p_slptime < maxslp)
 					totalp->t_sl++;
@@ -150,7 +150,7 @@ vmtotal(totalp)
 
 		case SRUN:
 		case SIDL:
-			if (p->p_flag & SLOAD)
+			if (p->p_flag & P_INMEM)
 				totalp->t_rq++;
 			else
 				totalp->t_sw++;

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.20 (Berkeley) %G%
+ *	@(#)locore.s	7.21 (Berkeley) %G%
  */
 
 #include "tahoe/include/mtpr.h"
@@ -1348,7 +1348,7 @@ setsav:	.space	14*4
  * _whichqs tells which of the 32 queues _qs have processes in
  * them.  Setrunqueue puts processes into queues, remrq removes
  * them from queues.  The running process is on no queue, other
- * processes are on a queue related to p->p_pri, divided by 4
+ * processes are on a queue related to p->p_priority, divided by 4
  * actually to shrink the 0-127 range of priorities into the 32 available
  * queues.
  */
@@ -1360,12 +1360,12 @@ setsav:	.space	14*4
  */
 ENTRY(setrunqueue, 0)
 	movl	4(fp),r0
-	tstl	P_RLINK(r0)		## firewall: p->p_rlink must be 0
+	tstl	P_BACK(r0)		## firewall: p->p_back must be 0
 	beql	set1			##
 	pushab	set3			##
 	callf	$8,_panic		##
 set1:
-	movzbl	P_PRI(r0),r1		# put on queue which is p->p_pri / 4
+	movzbl	P_PRIORITY(r0),r1	# put on p->p_pri / 4 queue
 	shar	$2,r1,r1
 	shal	$1,r1,r2
 	moval	_qs[r2],r2
@@ -1383,7 +1383,7 @@ set3:	.asciz	"setrunqueue"
  */
 ENTRY(remrq, 0)
 	movl	4(fp),r0
-	movzbl	P_PRI(r0),r1
+	movzbl	P_PRIORITY(r0),r1
 	shar	$2,r1,r1
 	bbs	r1,_whichqs,rem1
 	pushab	rem3			# it wasn't recorded to be on its q
@@ -1395,7 +1395,7 @@ rem1:
 	mcoml	r1,r1
 	andl2	r1,_whichqs		# mark queue empty
 rem2:
-	clrl	P_RLINK(r0)		## for firewall checking
+	clrl	P_BACK(r0)		## for firewall checking
 	ret
 
 rem3:	.asciz	"remrq"
@@ -1411,10 +1411,10 @@ rem3:	.asciz	"remrq"
 _masterpaddr: .long	0
 
 	.text
-sw0:	.asciz	"swtch"
+sw0:	.asciz	"Xswitch"
 
 /*
- * When no processes are on the runq, swtch branches to idle
+ * When no processes are on the runq, Xswitch branches to idle
  * to wait for something to come ready.
  */
 	.globl  Idle
@@ -1432,9 +1432,9 @@ badsw:	pushab	sw0
 
 	.align	2
 /*
- * swtch(), using fancy tahoe instructions
+ * Xswitch(), using fancy tahoe instructions
  */
-ENTRY(swtch, 0)
+ENTRY(Xswitch, 0)
 	movl	(fp),fp			# prepare for rei
 	movl	(sp),4(sp)		# saved pc
 	tstl	(sp)+
@@ -1462,7 +1462,7 @@ sw2:
 	cmpb	P_STAT(r2),$SRUN	##
 	bneq	badsw			##
 #endif
-	clrl	P_RLINK(r2)		##
+	clrl	P_BACK(r2)		##
 	movl	*P_ADDR(r2),r0
 #ifdef notdef
 	cmpl	r0,_masterpaddr		# resume of current proc is easy

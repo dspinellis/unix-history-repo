@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	8.3 (Berkeley) %G%
+ *	@(#)trap.c	8.4 (Berkeley) %G%
  *
  * from: $Header: trap.c,v 1.34 93/05/28 04:34:50 torek Exp $
  */
@@ -135,12 +135,12 @@ userret(struct proc *p, int pc, u_quad_t oticks)
 
 	/* take pending signals */
 	while ((sig = CURSIG(p)) != 0)
-		psig(sig);
-	p->p_pri = p->p_usrpri;
+		postsig(sig);
+	p->p_priority = p->p_usrpri;
 	if (want_ast) {
 		want_ast = 0;
-		if (p->p_flag & SOWEUPC) {
-			p->p_flag &= ~SOWEUPC;
+		if (p->p_flag & P_OWEUPC) {
+			p->p_flag &= ~P_OWEUPC;
 			ADDUPROF(p);
 		}
 	}
@@ -150,25 +150,25 @@ userret(struct proc *p, int pc, u_quad_t oticks)
 		 * our priority without moving us from one queue to another
 		 * (since the running process is not on a queue.)
 		 * If that happened after we put ourselves on the run queue
-		 * but before we swtch()'ed, we might not be on the queue
+		 * but before we switched, we might not be on the queue
 		 * indicated by our priority.
 		 */
 		(void) splstatclock();
 		setrunqueue(p);
 		p->p_stats->p_ru.ru_nivcsw++;
-		swtch();
+		mi_switch();
 		(void) spl0();
 		while ((sig = CURSIG(p)) != 0)
-			psig(sig);
+			postsig(sig);
 	}
 
 	/*
 	 * If profiling, charge recent system time to the trapped pc.
 	 */
-	if (p->p_flag & SPROFIL)
+	if (p->p_flag & P_PROFIL)
 		addupc_task(p, pc, (int)(p->p_sticks - oticks));
 
-	curpriority = p->p_pri;
+	curpriority = p->p_priority;
 }
 
 /*

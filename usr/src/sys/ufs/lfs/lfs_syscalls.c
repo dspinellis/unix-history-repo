@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	8.2 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -417,13 +417,13 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 		if ((*vpp)->v_flag & VXLOCK)
 			printf ("Cleaned vnode VXLOCKED\n");
 		ip = VTOI(*vpp);
-		if (ip->i_flags & ILOCKED)
-			printf ("Cleaned vnode ILOCKED\n");
-		if (!(ip->i_flag & IMODIFIED)) {
+		if (ip->i_flags & IN_LOCKED)
+			printf("cleaned vnode locked\n");
+		if (!(ip->i_flag & IN_MODIFIED)) {
 			++ump->um_lfs->lfs_uinodes;
-			ip->i_flag |= IMODIFIED;
+			ip->i_flag |= IN_MODIFIED;
 		}
-		ip->i_flag |= IMODIFIED;
+		ip->i_flag |= IN_MODIFIED;
 		return (0);
 	}
 
@@ -476,7 +476,7 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 	}
 
 	/* Inode was just read from user space or disk, make sure it's locked */
-	ip->i_flag |= ILOCKED;
+	ip->i_flag |= IN_LOCKED;
 
 	/*
 	 * Initialize the vnode from the inode, check for aliases.  In all
@@ -491,7 +491,7 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 	 * Finish inode initialization now that aliasing has been resolved.
 	 */
 	ip->i_devvp = ump->um_devvp;
-	ip->i_flag |= IMODIFIED;
+	ip->i_flag |= IN_MODIFIED;
 	++ump->um_lfs->lfs_uinodes;
 	VREF(ip->i_devvp);
 	*vpp = vp;

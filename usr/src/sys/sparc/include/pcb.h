@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pcb.h	8.1 (Berkeley) %G%
+ *	@(#)pcb.h	8.2 (Berkeley) %G%
  *
  * from: $Header: pcb.h,v 1.6 92/11/26 02:04:39 torek Exp $
  */
@@ -61,9 +61,9 @@
  * trap returns, and it can never persist across entry to user code.
  */
 struct pcb {
-	int	pcb_sp;		/* sp (%o6) when swtch() was called */
-	int	pcb_pc;		/* pc (%o7) when swtch() was called */
-	int	pcb_psr;	/* %psr when swtch() was called */
+	int	pcb_sp;		/* sp (%o6) when switch() was called */
+	int	pcb_pc;		/* pc (%o7) when switch() was called */
+	int	pcb_psr;	/* %psr when switch() was called */
 
 	caddr_t	pcb_onfault;	/* for copyin/out */
 

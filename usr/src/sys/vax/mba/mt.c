@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)mt.c	7.10 (Berkeley) %G%
+ *	@(#)mt.c	7.11 (Berkeley) %G%
  */
 
 #include "mu.h"
@@ -201,8 +201,8 @@ mtopen(dev, flag)
 	sc->sc_flags = 0;
 	sc->sc_blks = 0;
 	sc->sc_softerrs = 0;
-	sc->sc_ctty = (caddr_t)(u.u_procp->p_flag&SCTTY ? 
-			u.u_procp->p_session->s_ttyp : 0);
+	sc->sc_ctty = (caddr_t)(u.u_procp->p_flag & P_CONTROLT ? 
+	    u.u_procp->p_session->s_ttyp : 0);
 	return (0);
 }
 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	8.1 (Berkeley) %G%
+ *	@(#)genassym.c	8.2 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -28,11 +28,11 @@ main()
 	/*
 	 * struct proc
 	 */
-	printf("#define\tP_LINK %d\n", &p->p_link);
-	printf("#define\tP_RLINK %d\n", &p->p_rlink);
+	printf("#define\tP_FORW %d\n", &p->p_forw);
+	printf("#define\tP_BACK %d\n", &p->p_back);
 	printf("#define\tP_ADDR %d\n", &p->p_addr);
 	printf("#define\tP_UPTE %d\n", p->p_md.md_upte);
-	printf("#define\tP_PRI %d\n", &p->p_pri);
+	printf("#define\tP_PRIORITY %d\n", &p->p_priority);
 	printf("#define\tP_STAT %d\n", &p->p_stat);
 	printf("#define\tP_PID %d\n", &p->p_pid);
 	printf("#define\tP_WCHAN %d\n", &p->p_wchan);

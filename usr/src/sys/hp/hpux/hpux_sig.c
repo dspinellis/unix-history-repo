@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_sig.c 1.4 92/01/20$
  *
- *	@(#)hpux_sig.c	8.1 (Berkeley) %G%
+ *	@(#)hpux_sig.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -241,7 +241,7 @@ hpuxsigpending(p, uap, retval)
 {
 	hpuxsigset_t sigset;
 
-	sigset.sigset[0] = bsdtohpuxmask(p->p_sig);
+	sigset.sigset[0] = bsdtohpuxmask(p->p_siglist);
 	return (copyout((caddr_t)&sigset, (caddr_t)uap->set, sizeof(sigset)));
 }
 
@@ -302,7 +302,7 @@ hpuxsigaction(p, uap, retval)
 		if (p->p_flag & SOUSIG)
 			sa->sa_flags |= HPUXSA_RESETHAND;	/* XXX */
 #endif
-		if (p->p_flag & SNOCLDSTOP)
+		if (p->p_flag & P_NOCLDSTOP)
 			sa->sa_flags |= HPUXSA_NOCLDSTOP;
 		if (copyout((caddr_t)sa, (caddr_t)uap->osa, sizeof (action)))
 			return (EFAULT);

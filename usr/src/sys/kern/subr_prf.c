@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prf.c	8.1 (Berkeley) %G%
+ *	@(#)subr_prf.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -126,7 +126,7 @@ uprintf(fmt, va_alist)
 	register struct proc *p = curproc;
 	va_list ap;
 
-	if (p->p_flag & SCTTY && p->p_session->s_ttyvp) {
+	if (p->p_flag & P_CONTROLT && p->p_session->s_ttyvp) {
 		va_start(ap, fmt);
 		kprintf(fmt, TOTTY, p->p_session->s_ttyp, ap);
 		va_end(ap);
@@ -138,7 +138,7 @@ tprintf_open(p)
 	register struct proc *p;
 {
 
-	if (p->p_flag & SCTTY && p->p_session->s_ttyvp) {
+	if (p->p_flag & P_CONTROLT && p->p_session->s_ttyvp) {
 		SESSHOLD(p->p_session);
 		return ((tpr_t) p->p_session);
 	}

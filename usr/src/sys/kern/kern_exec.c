@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	8.2 (Berkeley) %G%
+ *	@(#)kern_exec.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -109,7 +109,7 @@ execve(p, uap, retval)
   again:
 	if (error = VOP_ACCESS(vp, VEXEC, cred, p))
 		goto bad;
-	if ((p->p_flag & STRC) && (error = VOP_ACCESS(vp, VREAD, cred, p)))
+	if ((p->p_flag & P_TRACED) && (error = VOP_ACCESS(vp, VREAD, cred, p)))
 		goto bad;
 	if (vp->v_type != VREG ||
 	    (vattr.va_mode & (VEXEC|(VEXEC>>3)|(VEXEC>>6))) == 0) {
@@ -565,10 +565,10 @@ getxfile(p, vp, ep, paged, ssize, uid, gid)
 	}
 	/*
 	 * If parent is waiting for us to exec or exit,
-	 * SPPWAIT will be set; clear it and wakeup parent.
+	 * P_PPWAIT will be set; clear it and wakeup parent.
 	 */
-	if (p->p_flag & SPPWAIT) {
-		p->p_flag &= ~SPPWAIT;
+	if (p->p_flag & P_PPWAIT) {
+		p->p_flag &= ~P_PPWAIT;
 		wakeup((caddr_t) p->p_pptr);
 	}
 #if defined(HP380) || defined(LUNA2)
@@ -596,7 +596,7 @@ getxfile(p, vp, ep, paged, ssize, uid, gid)
 	 */
 	p->p_md.md_flags |= MDP_ULTRIX;
 #endif
-	p->p_flag |= SEXEC;
+	p->p_flag |= P_EXEC;
 #ifndef COFF
 	addr = VM_MIN_ADDRESS;
 	if (vm_allocate(&vm->vm_map, &addr, xts + ctob(ds), FALSE)) {
@@ -694,15 +694,15 @@ getxfile(p, vp, ep, paged, ssize, uid, gid)
 	if (error) {
 badmap:
 		killproc(p, "VM allocation in exec");
-		p->p_flag |= SKEEP;
+		p->p_flag |= P_NOSWAP;
 		return(error);
 	}
 
 	/*
 	 * set SUID/SGID protections, if no tracing
 	 */
-	p->p_flag &= ~SUGID;
-	if ((p->p_flag & STRC) == 0) {
+	p->p_flag &= ~P_SUGID;
+	if ((p->p_flag & P_TRACED) == 0) {
 		if (uid != cred->cr_uid || gid != cred->cr_gid) {
 			p->p_ucred = cred = crcopy(cred);
 			/*
@@ -716,7 +716,7 @@ badmap:
 			}
 			cred->cr_uid = uid;
 			cred->cr_gid = gid;
-			p->p_flag |= SUGID;
+			p->p_flag |= P_SUGID;
 		}
 	} else
 		psignal(p, SIGTRAP);
@@ -725,7 +725,7 @@ badmap:
 	vm->vm_tsize = btoc(xts);
 	vm->vm_dsize = ds;
 	vm->vm_ssize = btoc(ssize);
-	if (p->p_flag & SPROFIL)
+	if (p->p_flag & P_PROFIL)
 		stopprofclock(p);
 #if defined(tahoe)
 	/* move this when tahoe cpu_exec is created */

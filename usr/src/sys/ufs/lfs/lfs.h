@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	8.2 (Berkeley) %G%
+ *	@(#)lfs.h	8.3 (Berkeley) %G%
  */
 
 #define	LFS_LABELPAD	8192		/* LFS label size */
@@ -40,7 +40,7 @@ struct segusage {
 };
 
 #define	SEGUPB(fs)	(1 << (fs)->lfs_sushift)
-#define	SEGTABSIZE_SU(fs) \
+#define	SEGTABSIZE_SU(fs)						\
 	(((fs)->lfs_nseg + SEGUPB(fs) - 1) >> (fs)->lfs_sushift)
 
 /* On-disk file information.  One per file with data blocks in the segment. */
@@ -171,7 +171,7 @@ typedef struct _cleanerinfo {
 	u_long	dirty;			/* K: number of dirty segments */
 } CLEANERINFO;
 
-#define	CLEANSIZE_SU(fs) \
+#define	CLEANSIZE_SU(fs)						\
 	((sizeof(CLEANERINFO) + (fs)->lfs_bsize - 1) >> (fs)->lfs_bshift)
 
 /*
@@ -208,43 +208,44 @@ struct segsum {
 #define	dbtofsb(fs, b)		((b) >> (fs)->lfs_fsbtodb)
 #define	lblkno(fs, loc)		((loc) >> (fs)->lfs_bshift)
 #define	lblktosize(fs, blk)	((blk) << (fs)->lfs_bshift)
-#define numfrags(fs, loc)	/* calculates (loc / fs->fs_fsize) */ \
+#define numfrags(fs, loc)	/* calculates (loc / fs->fs_fsize) */	\
 	((loc) >> (fs)->lfs_bshift)
 
-#define	datosn(fs, daddr)	/* disk address to segment number */ \
+#define	datosn(fs, daddr)	/* disk address to segment number */	\
 	(((daddr) - (fs)->lfs_sboffs[0]) / fsbtodb((fs), (fs)->lfs_ssize))
-#define sntoda(fs, sn) 		/* segment number to disk address */ \
-	((daddr_t)((sn) * ((fs)->lfs_ssize << (fs)->lfs_fsbtodb) + \
+#define sntoda(fs, sn) 		/* segment number to disk address */	\
+	((daddr_t)((sn) * ((fs)->lfs_ssize << (fs)->lfs_fsbtodb) +	\
 	    (fs)->lfs_sboffs[0]))
 
 /* Read in the block with the cleaner info from the ifile. */
-#define LFS_CLEANERINFO(CP, F, BP) { \
-	VTOI((F)->lfs_ivnode)->i_flag |= IACCESS; \
-	if (bread((F)->lfs_ivnode, (daddr_t)0, (F)->lfs_bsize, NOCRED, &(BP))) \
-		panic("lfs: ifile read"); \
-	(CP) = (CLEANERINFO *)(BP)->b_data; \
+#define LFS_CLEANERINFO(CP, F, BP) {					\
+	VTOI((F)->lfs_ivnode)->i_flag |= IN_ACCESS;			\
+	if (bread((F)->lfs_ivnode,					\
+	    (daddr_t)0, (F)->lfs_bsize, NOCRED, &(BP)))			\
+		panic("lfs: ifile read");				\
+	(CP) = (CLEANERINFO *)(BP)->b_data;				\
 }
 
 /* Read in the block with a specific inode from the ifile. */
-#define	LFS_IENTRY(IP, F, IN, BP) { \
-	int _e; \
-	VTOI((F)->lfs_ivnode)->i_flag |= IACCESS; \
-	if (_e = bread((F)->lfs_ivnode, \
-	    (IN) / (F)->lfs_ifpb + (F)->lfs_cleansz + (F)->lfs_segtabsz, \
-	    (F)->lfs_bsize, NOCRED, &(BP))) \
-		panic("lfs: ifile read %d", _e); \
-	(IP) = (IFILE *)(BP)->b_data + (IN) % (F)->lfs_ifpb; \
+#define	LFS_IENTRY(IP, F, IN, BP) {					\
+	int _e;								\
+	VTOI((F)->lfs_ivnode)->i_flag |= IN_ACCESS;			\
+	if (_e = bread((F)->lfs_ivnode,					\
+	    (IN) / (F)->lfs_ifpb + (F)->lfs_cleansz + (F)->lfs_segtabsz,\
+	    (F)->lfs_bsize, NOCRED, &(BP)))				\
+		panic("lfs: ifile read %d", _e);			\
+	(IP) = (IFILE *)(BP)->b_data + (IN) % (F)->lfs_ifpb;		\
 }
 
 /* Read in the block with a specific segment usage entry from the ifile. */
-#define	LFS_SEGENTRY(SP, F, IN, BP) { \
-	int _e; \
-	VTOI((F)->lfs_ivnode)->i_flag |= IACCESS; \
-	if (_e = bread((F)->lfs_ivnode, \
-	    ((IN) >> (F)->lfs_sushift) + (F)->lfs_cleansz, \
-	    (F)->lfs_bsize, NOCRED, &(BP))) \
-		panic("lfs: ifile read: %d", _e); \
-	(SP) = (SEGUSE *)(BP)->b_data + ((IN) & (F)->lfs_sepb - 1); \
+#define	LFS_SEGENTRY(SP, F, IN, BP) {					\
+	int _e;								\
+	VTOI((F)->lfs_ivnode)->i_flag |= IN_ACCESS;			\
+	if (_e = bread((F)->lfs_ivnode,					\
+	    ((IN) >> (F)->lfs_sushift) + (F)->lfs_cleansz,		\
+	    (F)->lfs_bsize, NOCRED, &(BP)))				\
+		panic("lfs: ifile read: %d", _e);			\
+	(SP) = (SEGUSE *)(BP)->b_data + ((IN) & (F)->lfs_sepb - 1);	\
 }
 
 /* 
@@ -255,11 +256,12 @@ struct segsum {
  */
 #define LFS_FITS(fs, db)						\
 	((long)((db + ((fs)->lfs_uinodes + INOPB((fs))) / INOPB((fs)) +	\
-	fsbtodb(fs, 1) + LFS_SUMMARY_SIZE / DEV_BSIZE + (fs)->lfs_segtabsz))\
-	< (fs)->lfs_avail)
+	fsbtodb(fs, 1) + LFS_SUMMARY_SIZE / DEV_BSIZE +			\
+	(fs)->lfs_segtabsz)) < (fs)->lfs_avail)
 
 /* Determine if a buffer belongs to the ifile */
 #define IS_IFILE(bp)	(VTOI(bp->b_vp)->i_number == LFS_IFILE_INUM)
+
 /*
  * Structures used by lfs_bmapv and lfs_markv to communicate information
  * about inodes and data blocks.
@@ -294,14 +296,14 @@ struct segment {
 	u_long	seg_flags;		/* run-time flags for this segment */
 };
 
-#define ISSPACE(F, BB, C) \
-	(((C)->cr_uid == 0 && (F)->lfs_bfree >= (BB)) || \
+#define ISSPACE(F, BB, C)						\
+	(((C)->cr_uid == 0 && (F)->lfs_bfree >= (BB)) ||		\
 	((C)->cr_uid != 0 && IS_FREESPACE(F, BB)))
 
-#define IS_FREESPACE(F, BB) \
+#define IS_FREESPACE(F, BB)						\
 	((F)->lfs_bfree > ((F)->lfs_dsize * (F)->lfs_minfree / 100 + (BB)))
 
-#define ISSPACE_XXX(F, BB) \
+#define ISSPACE_XXX(F, BB)						\
 	((F)->lfs_bfree >= (BB))
 
 #define DOSTATS
@@ -323,4 +325,3 @@ struct lfs_stats {
 };
 extern struct lfs_stats lfs_stats;
 #endif
-

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_clock.c	8.2 (Berkeley) %G%
+ *	@(#)kern_clock.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -334,8 +334,8 @@ startprofclock(p)
 {
 	int s;
 
-	if ((p->p_flag & SPROFIL) == 0) {
-		p->p_flag |= SPROFIL;
+	if ((p->p_flag & P_PROFIL) == 0) {
+		p->p_flag |= P_PROFIL;
 		if (++profprocs == 1 && stathz != 0) {
 			s = splstatclock();
 			psdiv = pscnt = psratio;
@@ -354,8 +354,8 @@ stopprofclock(p)
 {
 	int s;
 
-	if (p->p_flag & SPROFIL) {
-		p->p_flag &= ~SPROFIL;
+	if (p->p_flag & P_PROFIL) {
+		p->p_flag &= ~P_PROFIL;
 		if (--profprocs == 0 && stathz != 0) {
 			s = splstatclock();
 			psdiv = pscnt = 1;
@@ -383,7 +383,7 @@ statclock(frame)
 
 	if (CLKF_USERMODE(frame)) {
 		p = curproc;
-		if (p->p_flag & SPROFIL)
+		if (p->p_flag & P_PROFIL)
 			addupc_intr(p, CLKF_PC(frame), 1);
 		if (--pscnt > 0)
 			return;
@@ -450,28 +450,26 @@ statclock(frame)
 			dk_time[i]++;
 
 	/*
-	 * We adjust the priority of the current process.
-	 * The priority of a process gets worse as it accumulates
-	 * CPU time.  The cpu usage estimator (p_cpu) is increased here
-	 * and the formula for computing priorities (in kern_synch.c)
-	 * will compute a different value each time the p_cpu increases
-	 * by 4.  The cpu usage estimator ramps up quite quickly when
-	 * the process is running (linearly), and decays away
-	 * exponentially, at a rate which is proportionally slower
-	 * when the system is busy.  The basic principal is that the
-	 * system will 90% forget that a process used a lot of CPU
-	 * time in 5*loadav seconds.  This causes the system to favor
-	 * processes which haven't run much recently, and to
-	 * round-robin among other processes.
+	 * We adjust the priority of the current process.  The priority of
+	 * a process gets worse as it accumulates CPU time.  The cpu usage
+	 * estimator (p_estcpu) is increased here.  The formula for computing
+	 * priorities (in kern_synch.c) will compute a different value each
+	 * time p_estcpu increases by 4.  The cpu usage estimator ramps up
+	 * quite quickly when the process is running (linearly), and decays
+	 * away exponentially, at a rate which is proportionally slower when
+	 * the system is busy.  The basic principal is that the system will
+	 * 90% forget that the process used a lot of CPU time in 5 * loadav
+	 * seconds.  This causes the system to favor processes which haven't
+	 * run much recently, and to round-robin among other processes.
 	 */
 	if (p != NULL) {
 		p->p_cpticks++;
-		if (++p->p_cpu == 0)
-			p->p_cpu--;
-		if ((p->p_cpu & 3) == 0) {
+		if (++p->p_estcpu == 0)
+			p->p_estcpu--;
+		if ((p->p_estcpu & 3) == 0) {
 			resetpriority(p);
-			if (p->p_pri >= PUSER)
-				p->p_pri = p->p_usrpri;
+			if (p->p_priority >= PUSER)
+				p->p_priority = p->p_usrpri;
 		}
 	}
 }

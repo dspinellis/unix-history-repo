@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_disksubr.c	8.3 (Berkeley) %G%
+ *	@(#)ufs_disksubr.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -17,7 +17,7 @@
  * Seek sort for disks.  We depend on the driver which calls us using b_resid
  * as the current cylinder number.
  *
- * The argument dp structure holds a b_actf activity chain pointer on which we
+ * The argument ap structure holds a b_actf activity chain pointer on which we
  * keep two queues, sorted in ascending cylinder order.  The first queue holds
  * those requests which are positioned after the current cylinder (in the first
  * request); the second holds requests which came in after their cylinder number
@@ -37,15 +37,15 @@
 #define	b_cylinder	b_resid
 
 void
-disksort(dp, bp)
-	register struct buf *dp, *bp;
+disksort(ap, bp)
+	register struct buf *ap, *bp;
 {
 	register struct buf *bq;
 
 	/* If the queue is empty, then it's easy. */
-	if (dp->b_actf == NULL) {
+	if (ap->b_actf == NULL) {
 		bp->b_actf = NULL;
-		dp->b_actf = bp;
+		ap->b_actf = bp;
 		return;
 	}
 
@@ -53,7 +53,7 @@ disksort(dp, bp)
 	 * If we lie after the first (currently active) request, then we
 	 * must locate the second request list and add ourselves to it.
 	 */
-	bq = dp->b_actf;
+	bq = ap->b_actf;
 	if (bp->b_cylinder < bq->b_cylinder) {
 		while (bq->b_actf) {
 			/*

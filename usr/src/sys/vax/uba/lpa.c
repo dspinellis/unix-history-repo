@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lpa.c	7.5 (Berkeley) %G%
+ *	@(#)lpa.c	7.6 (Berkeley) %G%
  */
 
 #include "lpa.h"
@@ -255,7 +255,7 @@ TRACER("SLEEP\n");
 		(void) splclock();
 		vsunlock(sc->sc_ubuffer.b_un.b_addr, sc->sc_ubuffer.b_bcount,
 			(sc->sc_device)? B_READ : B_WRITE);
-		u.u_procp->p_flag &= ~SPHYSIO;
+		u.u_procp->p_flag &= ~P_PHYSIO;
 		(void) spl0();
 	}
 	if (sc->sc_ubaustat) {
@@ -416,7 +416,7 @@ TRACER("USER BUFFER FAULT\n");
 	}
 	sc->sc_ubuffer.b_flags = B_PHYS | B_BUSY | i;
 	sc->sc_ubuffer.b_proc = u.u_procp;
-	u.u_procp->p_flag |= SPHYSIO;
+	u.u_procp->p_flag |= P_PHYSIO;
 	vslock(sc->sc_ubuffer.b_un.b_addr, sc->sc_ubuffer.b_bcount);
 	sc->sc_ubabuf = ubasetup(ui->ui_ubanum, &sc->sc_ubuffer, 0);
 	v = sc->sc_ubabuf;

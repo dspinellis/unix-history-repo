@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.c	8.3 (Berkeley) %G%
+ *	@(#)tty.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -238,7 +238,7 @@ ttyinput(c, tp)
 	 * In tandem mode, check high water mark.
 	 */
 	if ((tp->t_state&TS_TYPEN) == 0 && (iflag&ISTRIP))
-		c &= ~0x80;
+		CLR(c, 0x80);
 
 	/*
 	 * Extensions to POSIX input modes which aren't controlled
@@ -389,7 +389,7 @@ ttyoutput(c, tp)
 	 * get it wrong.  If tab expansion needs to be done, let it happen
 	 * externally.
 	 */
-	c &= TTY_CHARMASK;
+	CLR(c, ~TTY_CHARMASK);
 	if (c == '\t' &&
 	    ISSET(oflag, OXTABS) && !ISSET(tp->t_lflag, EXTPROC)) {
 		c = 8 - (tp->t_column & 7);
@@ -405,16 +405,20 @@ ttyoutput(c, tp)
 	}
 	if (c == CEOT && ISSET(oflag, ONOEOT))
 		return (-1);
-	tk_nout++;
-	tp->t_outcc++;
+
 #ifdef notdef
 	/*
 	 * Newline translation: if ONLCR is set,
 	 * translate newline into "\r\n".
 	 */
-#endif
-	if ((tp->t_lflag&FLUSHO) == 0 && putc(c, &tp->t_outq))
-		return (c);
+	if (c == '\n' && ISSET(tp->t_oflag, ONLCR)) {
+		tk_nout++;
+		tp->t_outcc++;
+		if (putc('\r', &tp->t_outq))
+			return (c);
+	}
+	tk_nout++;
+	tp->t_outcc++;
 	if (!ISSET(tp->t_lflag, FLUSHO) && putc(c, &tp->t_outq))
 		return (c);
 
@@ -442,26 +446,26 @@ ttyoutput(c, tp)
 }
 
 /*
- * Common code for ioctls on all tty devices.  Called after line-discipline
- * specific ioctl has been called to do discipline-specific functions and/or
- * reject any of these ioctl commands.
+ * Ioctls for all tty devices.  Called after line-discipline specific ioctl
+ * has been called to do discipline-specific functions and/or reject any
+ * of these ioctl commands.
  */
 /* ARGSUSED */
 int
-ttioctl(tp, com, data, flag)
+ttioctl(tp, cmd, data, flag)
 	register struct tty *tp;
-	int com, flag;
+	int cmd, flag;
 	void *data;
 {
 	extern struct tty *constty;	/* Temporary virtual console. */
-	extern int nldisp;
+	extern int nlinesw;
 	register struct proc *p;
 	int s, error;
 
 	p = curproc;			/* XXX */
 
 	/* If the ioctl involves modification, hang if in the background. */
-	switch (com) {
+	switch (cmd) {
 	case  TIOCFLUSH:
 	case  TIOCSETA:
 	case  TIOCSETD:
@@ -483,7 +487,7 @@ ttioctl(tp, com, data, flag)
 	case  TIOCSLTC:
 #endif
 		while (isbackground(curproc, tp) &&
-		    p->p_pgrp->pg_jobc && (p->p_flag & SPPWAIT) == 0 &&
+		    p->p_pgrp->pg_jobc && (p->p_flag & P_PPWAIT) == 0 &&
 		    (p->p_sigignore & sigmask(SIGTTOU)) == 0 &&
 		    (p->p_sigmask & sigmask(SIGTTOU)) == 0) {
 			pgsignal(p->p_pgrp, SIGTTOU, 1);
@@ -494,7 +498,7 @@ ttioctl(tp, com, data, flag)
 		break;
 	}
 
-	switch (com) {			/* Process the ioctl. */
+	switch (cmd) {			/* Process the ioctl. */
 	case FIOASYNC:			/* set/clear async i/o */
 		s = spltty();
 		if (*(int *)data)
@@ -561,7 +565,7 @@ ttioctl(tp, com, data, flag)
 #ifdef TIOCHPCL
 	case TIOCHPCL:			/* hang up on last close */
 		s = spltty();
-		tp->t_cflag |= HUPCL;
+		SET(tp->t_cflag, HUPCL);
 		splx(s);
 		break;
 #endif
@@ -579,12 +583,12 @@ ttioctl(tp, com, data, flag)
 		register struct termios *t = (struct termios *)data;
 
 		s = spltty();
-		if (com == TIOCSETAW || com == TIOCSETAF) {
+		if (cmd == TIOCSETAW || cmd == TIOCSETAF) {
 			if (error = ttywait(tp)) {
 				splx(s);
 				return (error);
 			}
-			if (com == TIOCSETAF)
+			if (cmd == TIOCSETAF)
 				ttyflush(tp, FREAD);
 		}
 		if (!ISSET(t->c_cflag, CIGNORE)) {
@@ -608,11 +612,11 @@ ttioctl(tp, com, data, flag)
 			}
 			ttsetwater(tp);
 		}
-		if (com != TIOCSETAF) {
+		if (cmd != TIOCSETAF) {
 			if (ISSET(t->c_lflag, ICANON) !=
 			    ISSET(tp->t_lflag, ICANON))
 				if (ISSET(t->c_lflag, ICANON)) {
-					tp->t_lflag |= PENDIN;
+					SET(tp->t_lflag, PENDIN);
 					ttwakeup(tp);
 				} else {
 					struct clist tq;
@@ -641,7 +645,7 @@ ttioctl(tp, com, data, flag)
 		register int t = *(int *)data;
 		dev_t device = tp->t_dev;
 
-		if ((u_int)t >= nldisp)
+		if ((u_int)t >= nlinesw)
 			return (ENXIO);
 		if (t != tp->t_line) {
 			s = spltty();
@@ -695,7 +699,7 @@ ttioctl(tp, com, data, flag)
 		tp->t_session = p->p_session;
 		tp->t_pgrp = p->p_pgrp;
 		p->p_session->s_ttyp = tp;
-		p->p_flag |= SCTTY;
+		p->p_flag |= P_CONTROLT;
 		break;
 	case TIOCSPGRP: {		/* set pgrp of tty */
 		register struct pgrp *pgrp = pgfind(*(int *)data);
@@ -716,7 +720,7 @@ ttioctl(tp, com, data, flag)
 		break;
 	default:
 #if defined(COMPAT_43) || defined(COMPAT_SUNOS)
-		return (ttcompat(tp, com, data, flag));
+		return (ttcompat(tp, cmd, data, flag));
 #else
 		return (-1);
 #endif
@@ -1051,7 +1055,7 @@ loop:	lflag = tp->t_lflag;
 	if (isbackground(p, tp)) {
 		if ((p->p_sigignore & sigmask(SIGTTIN)) ||
 		   (p->p_sigmask & sigmask(SIGTTIN)) ||
-		    p->p_flag & SPPWAIT || p->p_pgrp->pg_jobc == 0)
+		    p->p_flag & P_PPWAIT || p->p_pgrp->pg_jobc == 0)
 			return (EIO);
 		pgsignal(p->p_pgrp, SIGTTIN, 1);
 		if (error = ttysleep(tp, &lbolt, TTIPRI | PCATCH, ttybg, 0))
@@ -1166,11 +1170,11 @@ ttycheckoutq(tp, wait)
 
 	hiwat = tp->t_hiwat;
 	s = spltty();
-	oldsig = wait ? curproc->p_sig : 0;
+	oldsig = wait ? curproc->p_siglist : 0;
 	if (tp->t_outq.c_cc > hiwat + 200)
 		while (tp->t_outq.c_cc > hiwat) {
 			ttstart(tp);
-			if (wait == 0 || curproc->p_sig != oldsig) {
+			if (wait == 0 || curproc->p_siglist != oldsig) {
 				splx(s);
 				return (0);
 			}
@@ -1228,7 +1232,7 @@ loop:
 	 */
 	p = curproc;
 	if (isbackground(p, tp) &&
-	    ISSET(tp->t_lflag, TOSTOP) && (p->p_flag & SPPWAIT) == 0 &&
+	    ISSET(tp->t_lflag, TOSTOP) && (p->p_flag & P_PPWAIT) == 0 &&
 	    (p->p_sigignore & sigmask(SIGTTOU)) == 0 &&
 	    (p->p_sigmask & sigmask(SIGTTOU)) == 0 &&
 	     p->p_pgrp->pg_jobc) {
@@ -1385,48 +1389,54 @@ ttyrub(c, tp)
 		/* if tab or newline was escaped  - XXX - not 8bit */
 		if (c == ('\t' | TTY_QUOTE) || c == ('\n' | TTY_QUOTE))
 			ttyrubo(tp, 2);
-		else switch (CCLASS(c &= TTY_CHARMASK)) {
-		case ORDINARY:
-#ifdef notdef
-			ttyrubo(tp, 1);
-			break;
-		case BACKSPACE:
-		case CONTROL:
-		case NEWLINE:
-			if (tp->t_lflag&ECHOCTL)
-				ttyrubo(tp, 2);
-			break;
-		case TAB:
-			if (tp->t_rocount < tp->t_rawq.c_cc) {
-				ttyretype(tp);
-				return;
-			}
-			s = spltty();
-			savecol = tp->t_column;
-			tp->t_lflag |= FLUSHO;
-			tp->t_column = tp->t_rocol;
-			cp = tp->t_rawq.c_cf;
-				tabc = *cp;	/* XXX FIX NEXTC */
-			for (; cp; cp = nextc(&tp->t_rawq, cp, &tabc))
-				ttyecho(tabc, tp);
-			CLR(tp->t_lflag, FLUSHO);
-			CLR(tp->t_state, TS_CNTTB);
-			splx(s);
+		else {
+			CLR(c, ~TTY_CHARMASK);
+			switch (CCLASS(c)) {
+			case ORDINARY:
+				ttyrubo(tp, 1);
+				break;
+			case BACKSPACE:
+			case CONTROL:
+			case NEWLINE:
+			case RETURN:
+			case VTAB:
+				if (ISSET(tp->t_lflag, ECHOCTL))
+					ttyrubo(tp, 2);
+				break;
+			case TAB:
+				if (tp->t_rocount < tp->t_rawq.c_cc) {
+					ttyretype(tp);
+					return;
+				}
+				s = spltty();
+				savecol = tp->t_column;
+				SET(tp->t_state, TS_CNTTB);
+				SET(tp->t_lflag, FLUSHO);
+				tp->t_column = tp->t_rocol;
+				cp = tp->t_rawq.c_cf;
+				if (cp)
+					tabc = *cp;	/* XXX FIX NEXTC */
+				for (; cp; cp = nextc(&tp->t_rawq, cp, &tabc))
+					ttyecho(tabc, tp);
+				CLR(tp->t_lflag, FLUSHO);
+				CLR(tp->t_state, TS_CNTTB);
+				splx(s);
 
-			/* savecol will now be length of the tab. */
-			savecol -= tp->t_column;
-			tp->t_column += savecol;
-			if (savecol > 8)
-				savecol = 8;		/* overflow screw */
-			while (--savecol >= 0)
-				(void)ttyoutput('\b', tp);
-			break;
-		default:			/* XXX */
+				/* savecol will now be length of the tab. */
+				savecol -= tp->t_column;
+				tp->t_column += savecol;
+				if (savecol > 8)
+					savecol = 8;	/* overflow screw */
+				while (--savecol >= 0)
+					(void)ttyoutput('\b', tp);
+				break;
+			default:			/* XXX */
 #define	PANICSTR	"ttyrub: would panic c = %d, val = %d\n"
-			(void)printf(PANICSTR, c, CCLASS(c));
+				(void)printf(PANICSTR, c, CCLASS(c));
 #ifdef notdef
-			panic(PANICSTR, c, CCLASS(c));
+				panic(PANICSTR, c, CCLASS(c));
 #endif
+			}
 		}
 	} else if (ISSET(tp->t_lflag, ECHOPRT)) {
 		if (!ISSET(tp->t_state, TS_ERASE)) {
@@ -1506,10 +1516,10 @@ ttyecho(c, tp)
 	if ((tp->t_lflag&ECHO) == 0 && !(tp->t_lflag&ECHONL && c == '\n'))
 		return;
 	if (ISSET(tp->t_lflag, ECHOCTL) &&
-	    ((c & TTY_CHARMASK) <= 037 && c != '\t' && c != '\n' ||
-	    (c & TTY_CHARMASK) == 0177)) {
+	    (ISSET(c, TTY_CHARMASK) <= 037 && c != '\t' && c != '\n' ||
+	    ISSET(c, TTY_CHARMASK) == 0177)) {
 		(void)ttyoutput('^', tp);
-		c &= TTY_CHARMASK;
+		CLR(c, ~TTY_CHARMASK);
 		if (c == 0177)
 			c = '?';
 		else
@@ -1628,23 +1638,20 @@ ttyinfo(tp)
  *
  * The algorithm for picking the "interesting" process is thus:
  *
- *	1) (Only foreground processes are eligable - implied)
- *	2) Runnable processes are favored over anything
- *	   else.  The runner with the highest cpu
- *	   utilization is picked (p_cpu).  Ties are
+ *	1) Only foreground processes are eligible - implied.
+ *	2) Runnable processes are favored over anything else.  The runner
+ *	   with the highest cpu utilization is picked (p_estcpu).  Ties are
  *	   broken by picking the highest pid.
- *	3  Next, the sleeper with the shortest sleep
- *	   time is favored.  With ties, we pick out
- *	   just "short-term" sleepers (SSINTR == 0).
- *	   Further ties are broken by picking the highest
- *	   pid.
- *
+ *	3) The sleeper with the shortest sleep time is next.  With ties,
+ *	   we pick out just "short-term" sleepers (P_SINTR == 0).
+ *	4) Further ties are broken by picking the highest pid.
  */
-#define isrun(p)	(((p)->p_stat == SRUN) || ((p)->p_stat == SIDL))
+#define ISRUN(p)	(((p)->p_stat == SRUN) || ((p)->p_stat == SIDL))
 #define TESTAB(a, b)    ((a)<<1 | (b))
 #define ONLYA   2
 #define ONLYB   1
 #define BOTH    3
+
 static int
 proc_compare(p1, p2)
 	register struct proc *p1, *p2;
@@ -1655,7 +1662,7 @@ proc_compare(p1, p2)
 	/*
 	 * see if at least one of them is runnable
 	 */
-	switch (TESTAB(isrun(p1), isrun(p2))) {
+	switch (TESTAB(ISRUN(p1), ISRUN(p2))) {
 	case ONLYA:
 		return (0);
 	case ONLYB:
@@ -1664,9 +1671,9 @@ proc_compare(p1, p2)
 		/*
 		 * tie - favor one with highest recent cpu utilization
 		 */
-		if (p2->p_cpu > p1->p_cpu)
+		if (p2->p_estcpu > p1->p_estcpu)
 			return (1);
-		if (p1->p_cpu > p2->p_cpu)
+		if (p1->p_estcpu > p2->p_estcpu)
 			return (0);
 		return (p2->p_pid > p1->p_pid);	/* tie - return highest pid */
 	}
@@ -1691,9 +1698,9 @@ proc_compare(p1, p2)
 	/*
 	 * favor one sleeping in a non-interruptible sleep
 	 */
-	if (p1->p_flag & SSINTR && (p2->p_flag & SSINTR) == 0)
+	if (p1->p_flag & P_SINTR && (p2->p_flag & P_SINTR) == 0)
 		return (1);
-	if (p2->p_flag & SSINTR && (p1->p_flag & SSINTR) == 0)
+	if (p2->p_flag & P_SINTR && (p1->p_flag & P_SINTR) == 0)
 		return (0);
 	return (p2->p_pid > p1->p_pid);		/* tie - return highest pid */
 }

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	8.2 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -149,7 +149,7 @@ lfs_vcreate(mp, ino, vpp)
 	(*vpp)->v_data = ip;
 	ip->i_vnode = *vpp;
 	ip->i_devvp = ump->um_devvp;
-	ip->i_flag = IMODIFIED;
+	ip->i_flag = IN_MODIFIED;
 	ip->i_dev = ump->um_dev;
 	ip->i_number = ip->i_din.di_inumber = ino;
 ip->i_din.di_spare[0] = 0xdeadbeef;
@@ -191,9 +191,10 @@ lfs_vfree(ap)
 	ip = VTOI(ap->a_pvp);
 	fs = ip->i_lfs;
 	ino = ip->i_number;
-	if (ip->i_flag & IMODIFIED) {
+	if (ip->i_flag & IN_MODIFIED) {
 		--fs->lfs_uinodes;
-		ip->i_flag &= ~(IMODIFIED | IACCESS | IUPDATE | ICHANGE);
+		ip->i_flag &=
+		    ~(IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE);
 	}
 	/*
 	 * Set the ifile's inode entry to unused, increment its version number

@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sun_misc.c	8.1 (Berkeley) %G%
+ *	@(#)sun_misc.c	8.2 (Berkeley) %G%
  *
  * from: $Header: sun_misc.c,v 1.16 93/04/07 02:46:27 torek Exp $
  */
@@ -196,9 +196,10 @@ sun_sigpending(p, uap, retval)
 	struct sun_sigpending_args *uap;
 	int *retval;
 {
-	int mask = p->p_sig & p->p_sigmask;
+	int mask;
 
-	return (copyout((caddr_t)&mask, (caddr_t)uap->mask, sizeof(int)));
+	mask = p->p_siglist & p->p_sigmask;
+	return (copyout(&mask, uap->mask, sizeof(int)));
 }
 
 /*

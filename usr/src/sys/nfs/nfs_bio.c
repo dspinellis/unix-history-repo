@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	8.2 (Berkeley) %G%
+ *	@(#)nfs_bio.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -700,7 +700,7 @@ nfs_doio(bp, cr, p)
 			  np->n_mtime != np->n_vattr.va_mtime.ts_sec))) {
 			uprintf("Process killed due to text file modification\n");
 			psignal(p, SIGKILL);
-			p->p_flag |= SKEEP;
+			p->p_flag |= P_NOSWAP;
 		}
 		break;
 	    case VLNK:

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_tty.c	8.1 (Berkeley) %G%
+ *	@(#)tty_tty.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -19,7 +19,7 @@
 #include <sys/vnode.h>
 #include <sys/file.h>
 
-#define cttyvp(p) ((p)->p_flag&SCTTY ? (p)->p_session->s_ttyvp : NULL)
+#define cttyvp(p) ((p)->p_flag & P_CONTROLT ? (p)->p_session->s_ttyvp : NULL)
 
 /*ARGSUSED*/
 cttyopen(dev, flag, mode, p)
@@ -99,7 +99,7 @@ cttyioctl(dev, cmd, addr, flag, p)
 		return (EIO);
 	if (cmd == TIOCNOTTY) {
 		if (!SESS_LEADER(p)) {
-			p->p_flag &= ~SCTTY;
+			p->p_flag &= ~P_CONTROLT;
 			return (0);
 		} else
 			return (EINVAL);

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.2 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -233,7 +233,6 @@ ffs_reload(mountp, cred, p)
 {
 	register struct vnode *vp, *nvp, *devvp;
 	struct inode *ip;
-	struct dinode *dp;
 	struct csum *space;
 	struct buf *bp;
 	struct fs *fs;
@@ -302,14 +301,14 @@ loop:
 		 * Step 6: re-read inode data for all active vnodes.
 		 */
 		ip = VTOI(vp);
-		if (error = bread(devvp, fsbtodb(fs, itod(fs, ip->i_number)),
+		if (error =
+		    bread(devvp, fsbtodb(fs, ino_to_fsba(fs, ip->i_number)),
 		    (int)fs->fs_bsize, NOCRED, &bp)) {
 			vput(vp);
 			return (error);
 		}
-		dp = (struct dinode *)bp->b_data;
-		dp += itoo(fs, ip->i_number);
-		ip->i_din = *dp;
+		ip->i_din = *((struct dinode *)bp->b_data +
+		    ino_to_fsbo(fs, ip->i_number));
 		brelse(bp);
 		vput(vp);
 		if (vp->v_mount != mountp)
@@ -631,7 +630,7 @@ loop:
 			continue;
 		ip = VTOI(vp);
 		if ((ip->i_flag &
-		    (IMODIFIED | IACCESS | IUPDATE | ICHANGE)) == 0 &&
+		    (IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE)) == 0 &&
 		    vp->v_dirtyblkhd.le_next == NULL)
 			continue;
 		if (vget(vp))
@@ -652,11 +651,10 @@ loop:
 }
 
 /*
- * Look up a FFS dinode number to find its incore vnode.
- * If it is not in core, read it in from the specified device.
- * If it is in core, wait for the lock bit to clear, then
- * return the inode locked. Detection and handling of mount
- * points must be done by the calling routine.
+ * Look up a FFS dinode number to find its incore vnode, otherwise read it
+ * in from disk.  If it is in core, wait for the lock bit to clear, then
+ * return the inode locked.  Detection and handling of mount points must be
+ * done by the calling routine.
  */
 int
 ffs_vget(mp, ino, vpp)
@@ -668,7 +666,6 @@ ffs_vget(mp, ino, vpp)
 	register struct inode *ip;
 	struct ufsmount *ump;
 	struct buf *bp;
-	struct dinode *dp;
 	struct vnode *vp;
 	union ihead *ih;
 	dev_t dev;
@@ -705,7 +702,7 @@ ffs_vget(mp, ino, vpp)
 	ufs_ihashins(ip);
 
 	/* Read in the disk contents for the inode, copy into the inode. */
-	if (error = bread(ump->um_devvp, fsbtodb(fs, itod(fs, ino)),
+	if (error = bread(ump->um_devvp, fsbtodb(fs, ino_to_fsba(fs, ino)),
 	    (int)fs->fs_bsize, NOCRED, &bp)) {
 		/*
 		 * The inode does not contain anything useful, so it would
@@ -718,9 +715,7 @@ ffs_vget(mp, ino, vpp)
 		*vpp = NULL;
 		return (error);
 	}
-	dp = (struct dinode *)bp->b_data;
-	dp += itoo(fs, ino);
-	ip->i_din = *dp;
+	ip->i_din = *((struct dinode *)bp->b_data + ino_to_fsbo(fs, ino));
 	brelse(bp);
 
 	/*
@@ -746,7 +741,7 @@ ffs_vget(mp, ino, vpp)
 			nextgennumber = time.tv_sec;
 		ip->i_gen = nextgennumber;
 		if ((vp->v_mount->mnt_flag & MNT_RDONLY) == 0)
-			ip->i_flag |= IMODIFIED;
+			ip->i_flag |= IN_MODIFIED;
 	}
 	/*
 	 * Ensure that uid and gid are correct. This is a temporary

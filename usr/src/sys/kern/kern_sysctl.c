@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	8.1 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -546,7 +546,7 @@ sysctl_doproc(name, namelen, where, sizep)
 	p = (struct proc *)allproc;
 	doingzomb = 0;
 again:
-	for (; p != NULL; p = p->p_nxt) {
+	for (; p != NULL; p = p->p_next) {
 		/*
 		 * Skip embryonic processes.
 		 */
@@ -571,7 +571,7 @@ again:
 			break;
 
 		case KERN_PROC_TTY:
-			if ((p->p_flag&SCTTY) == 0 ||
+			if ((p->p_flag & P_CONTROLT) == 0 ||
 			    p->p_session->s_ttyp == NULL ||
 			    p->p_session->s_ttyp->t_dev != (dev_t)name[1])
 				continue;
@@ -655,7 +655,7 @@ fill_eproc(p, ep)
 		ep->e_ppid = 0;
 	ep->e_pgid = p->p_pgrp->pg_id;
 	ep->e_jobc = p->p_pgrp->pg_jobc;
-	if ((p->p_flag&SCTTY) &&
+	if ((p->p_flag & P_CONTROLT) &&
 	     (tp = ep->e_sess->s_ttyp)) {
 		ep->e_tdev = tp->t_dev;
 		ep->e_tpgid = tp->t_pgrp ? tp->t_pgrp->pg_id : NO_PID;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	8.2 (Berkeley) %G%
+ *	@(#)inode.h	8.3 (Berkeley) %G%
  */
 
 #include <ufs/ufs/dinode.h>
@@ -80,16 +80,16 @@ struct inode {
 #define	i_uid		i_din.di_uid
 
 /* These flags are kept in i_flag. */
-#define	IACCESS		0x0001		/* Access time update request. */
-#define	ICHANGE		0x0002		/* Inode change time update request. */
-#define	IEXLOCK		0x0004		/* File has exclusive lock. */
-#define	ILOCKED		0x0008		/* Inode lock. */
-#define	ILWAIT		0x0010		/* Process waiting on file lock. */
-#define	IMODIFIED	0x0020		/* Inode has been modified. */
-#define	IRENAME		0x0040		/* Inode is being renamed. */
-#define	ISHLOCK		0x0080		/* File has shared lock. */
-#define	IUPDATE		0x0100		/* Modification time update request. */
-#define	IWANT		0x0200		/* Inode is wanted by a process. */
+#define	IN_ACCESS	0x0001		/* Access time update request. */
+#define	IN_CHANGE	0x0002		/* Inode change time update request. */
+#define	IN_EXLOCK	0x0004		/* File has exclusive lock. */
+#define	IN_LOCKED	0x0008		/* Inode lock. */
+#define	IN_LWAIT	0x0010		/* Process waiting on file lock. */
+#define	IN_MODIFIED	0x0020		/* Inode has been modified. */
+#define	IN_RENAME	0x0040		/* Inode is being renamed. */
+#define	IN_SHLOCK	0x0080		/* File has shared lock. */
+#define	IN_UPDATE	0x0100		/* Modification time update request. */
+#define	IN_WANTED	0x0200		/* Inode is wanted by a process. */
 
 #ifdef KERNEL
 /*
@@ -107,17 +107,17 @@ struct indir {
 #define ITOV(ip)	((ip)->i_vnode)
 
 #define	ITIMES(ip, t1, t2) {						\
-	if ((ip)->i_flag & (IUPDATE | IACCESS | ICHANGE)) {		\
-		(ip)->i_flag |= IMODIFIED;				\
-		if ((ip)->i_flag & IACCESS)				\
+	if ((ip)->i_flag & (IN_ACCESS | IN_CHANGE | IN_UPDATE)) {	\
+		(ip)->i_flag |= IN_MODIFIED;				\
+		if ((ip)->i_flag & IN_ACCESS)				\
 			(ip)->i_atime.ts_sec = (t1)->tv_sec;		\
-		if ((ip)->i_flag & IUPDATE) {				\
+		if ((ip)->i_flag & IN_UPDATE) {				\
 			(ip)->i_mtime.ts_sec = (t2)->tv_sec;		\
 			(ip)->i_modrev++;				\
 		}							\
-		if ((ip)->i_flag & ICHANGE)				\
+		if ((ip)->i_flag & IN_CHANGE)				\
 			(ip)->i_ctime.ts_sec = time.tv_sec;		\
-		(ip)->i_flag &= ~(IACCESS | IUPDATE | ICHANGE);		\
+		(ip)->i_flag &= ~(IN_ACCESS | IN_CHANGE | IN_UPDATE);	\
 	}								\
 }
 

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.32 (Berkeley) %G%
+ *	@(#)locore.s	7.33 (Berkeley) %G%
  */
 
 #include "vax/include/psl.h"
@@ -1604,8 +1604,8 @@ setsav:	.space	10*4
  * The following primitives manipulate the run queues.  _whichqs tells which
  * of the 32 queues _qs have processes in them.  Setrunqueue puts processes
  * into queues, Remrq removes them from queues.  The running process is on
- * no queue, other processes are on a queue related to p->p_pri, divided by 4
- * actually to shrink the 0-127 range of priorities into the 32 available
+ * no queue, other processes are on a queue related to p->p_priority, divided
+ * by 4 actually to shrink the 0-127 range of priorities into the 32 available
  * queues.
  */
 
@@ -1616,12 +1616,12 @@ setsav:	.space	10*4
  */
 	.align	1
 JSBENTRY(Setrunqueue, R0)
-	tstl	P_RLINK(r0)		## firewall: p->p_rlink must be 0
+	tstl	P_BACK(r0)		## firewall: p->p_back must be 0
 	beql	set1			##
 	pushab	set3			##
 	calls	$1,_panic		##
 set1:
-	movzbl	P_PRI(r0),r1		# put on queue which is p->p_pri / 4
+	movzbl	P_PRIORITY(r0),r1	# put on p->p_priority / 4 queue
 	ashl	$-2,r1,r1
 	movaq	_qs[r1],r2
 	insque	(r0),*4(r2)		# at end of queue
@@ -1638,7 +1638,7 @@ set3:	.asciz	"setrunqueue"
  */
 	.align	1
 JSBENTRY(Remrq, R0)
-	movzbl	P_PRI(r0),r1
+	movzbl	P_PRIORITY(r0),r1
 	ashl	$-2,r1,r1
 	bbsc	r1,_whichqs,rem1
 	pushab	rem3			# it wasn't recorded to be on its q
@@ -1648,7 +1648,7 @@ rem1:
 	beql	rem2
 	bbss	r1,_whichqs,rem2
 rem2:
-	clrl	P_RLINK(r0)		## for firewall checking
+	clrl	P_BACK(r0)		## for firewall checking
 	rsb
 
 rem3:	.asciz	"remrq"
@@ -1664,7 +1664,7 @@ _masterpaddr:
 	.long	0
 
 	.text
-sw0:	.asciz	"swtch"
+sw0:	.asciz	"Xswitch"
 
 /*
  * When no processes are on the runq, Swtch branches to idle
@@ -1707,7 +1707,7 @@ sw2:
 	cmpb	P_STAT(r2),$SRUN	##
 	bneq	badsw			##
 #endif
-	clrl	P_RLINK(r2)		##
+	clrl	P_BACK(r2)		##
 	movl	*P_ADDR(r2),r0
 #ifdef notdef
 	cmpl	r0,_masterpaddr		# resume of current proc is easy

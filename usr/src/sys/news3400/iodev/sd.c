@@ -9,7 +9,7 @@
  *
  * from: $Hdr: sd.c,v 4.300 91/06/27 20:42:56 root Rel41 $ SONY
  *
- *	@(#)sd.c	8.1 (Berkeley) %G%
+ *	@(#)sd.c	8.2 (Berkeley) %G%
  */
 #define	dkblock(bp)	bp->b_blkno
 
@@ -1413,7 +1413,7 @@ sdcmd(dev, usc)
 				error = EFAULT;
 				goto done;
 			}
-			curproc->p_flag |= SPHYSIO;
+			curproc->p_flag |= P_PHYSIO;
 			vslock(point, cnt);
 			bp->b_flags |= B_PHYS;
 		}
@@ -1436,7 +1436,7 @@ sdcmd(dev, usc)
 
 	if ((cnt > 0) && (point < (u_char *)KERNBASE)) {
 		vsunlock(point, cnt, B_READ);
-		curproc->p_flag &= ~SPHYSIO;
+		curproc->p_flag &= ~P_PHYSIO;
 	}
 	if ((bp->b_flags & B_ERROR) == 0)
 		error = 0;

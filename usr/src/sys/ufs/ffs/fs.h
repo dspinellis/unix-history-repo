@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fs.h	8.1 (Berkeley) %G%
+ *	@(#)fs.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -315,12 +315,12 @@ struct	ocg {
  * They calc file system addresses of cylinder group data structures.
  */
 #define	cgbase(fs, c)	((daddr_t)((fs)->fs_fpg * (c)))
-#define cgstart(fs, c) \
-	(cgbase(fs, c) + (fs)->fs_cgoffset * ((c) & ~((fs)->fs_cgmask)))
+#define	cgdmin(fs, c)	(cgstart(fs, c) + (fs)->fs_dblkno)	/* 1st data */
+#define	cgimin(fs, c)	(cgstart(fs, c) + (fs)->fs_iblkno)	/* inode blk */
 #define	cgsblock(fs, c)	(cgstart(fs, c) + (fs)->fs_sblkno)	/* super blk */
 #define	cgtod(fs, c)	(cgstart(fs, c) + (fs)->fs_cblkno)	/* cg block */
-#define	cgimin(fs, c)	(cgstart(fs, c) + (fs)->fs_iblkno)	/* inode blk */
-#define	cgdmin(fs, c)	(cgstart(fs, c) + (fs)->fs_dblkno)	/* 1st data */
+#define cgstart(fs, c)							\
+	(cgbase(fs, c) + (fs)->fs_cgoffset * ((c) & ~((fs)->fs_cgmask)))
 
 /*
  * Macros for handling inode numbers:
@@ -328,11 +328,11 @@ struct	ocg {
  *     inode number to cylinder group number.
  *     inode number to file system block address.
  */
-#define	itoo(fs, x)	((x) % INOPB(fs))
-#define	itog(fs, x)	((x) / (fs)->fs_ipg)
-#define	itod(fs, x) \
-	((daddr_t)(cgimin(fs, itog(fs, x)) + \
-	(blkstofrags((fs), (((x) % (fs)->fs_ipg) / INOPB(fs))))))
+#define	ino_to_cg(fs, x)	((x) / (fs)->fs_ipg)
+#define	ino_to_fsba(fs, x)						\
+	((daddr_t)(cgimin(fs, ino_to_cg(fs, x)) +			\
+	    (blkstofrags((fs), (((x) % (fs)->fs_ipg) / INOPB(fs))))))
+#define	ino_to_fsbo(fs, x)	((x) % INOPB(fs))
 
 /*
  * Give cylinder group number for a file system block.

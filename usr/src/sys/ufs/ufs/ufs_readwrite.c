@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_readwrite.c	8.2 (Berkeley) %G%
+ *	@(#)ufs_readwrite.c	8.3 (Berkeley) %G%
  */
 
 #ifdef LFS_READWRITE
@@ -125,7 +125,7 @@ READ(ap)
 	}
 	if (bp != NULL)
 		brelse(bp);
-	ip->i_flag |= IACCESS;
+	ip->i_flag |= IN_ACCESS;
 	return (error);
 }
 
@@ -246,7 +246,7 @@ WRITE(ap)
 #endif
 		if (error || xfersize == 0)
 			break;
-		ip->i_flag |= IUPDATE | ICHANGE;
+		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 	}
 	/*
 	 * If we successfully wrote any data, and we are not the superuser

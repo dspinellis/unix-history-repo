@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	8.3 (Berkeley) %G%
+ *	@(#)proc.h	8.4 (Berkeley) %G%
  */
 
 #ifndef _PROC_H_
@@ -47,9 +47,9 @@ struct	pgrp {
  * is running.
  */
 struct	proc {
-	struct	proc *p_link;		/* Doubly-linked run/sleep queue. */
-	struct	proc *p_rlink;
-	struct	proc *p_nxt;		/* Linked list of active procs */
+	struct	proc *p_forw;		/* Doubly-linked run/sleep queue. */
+	struct	proc *p_back;
+	struct	proc *p_next;		/* Linked list of active procs */
 	struct	proc **p_prev;		/*    and zombies. */
 
 	/* substructures: */
@@ -81,12 +81,12 @@ struct	proc {
 	int	p_dupfd;	 /* Sideways return value from fdopen. XXX */
 
 	/* scheduling */
-	u_int	p_cpu;		 /* Time averaged value of p_cpticks. */
+	u_int	p_estcpu;	 /* Time averaged value of p_cpticks. */
 	int	p_cpticks;	 /* Ticks of cpu time. */
-	fixpt_t	p_pctcpu;	 /* %cpu for this process during p_time */
+	fixpt_t	p_pctcpu;	 /* %cpu for this process during p_swtime */
 	void	*p_wchan;	 /* Sleep address. */
 	char	*p_wmesg;	 /* Reason for sleep. */
-	u_int	p_time;		 /* Time swapped in or out. */
+	u_int	p_swtime;	 /* Time swapped in or out. */
 	u_int	p_slptime;	 /* Time since last blocked. */
 
 	struct	itimerval p_realtimer;	/* Alarm timer. */
@@ -98,7 +98,7 @@ struct	proc {
 	int	p_traceflag;		/* Kernel trace points. */
 	struct	vnode *p_tracep;	/* Trace to vnode. */
 
-	int	p_sig;			/* Signals arrived but not delivered. */
+	int	p_siglist;		/* Signals arrived but not delivered. */
 
 	long	p_spare[6];		/* pad to 256, avoid shifting eproc. */
 
@@ -111,7 +111,7 @@ struct	proc {
 	sigset_t p_sigignore;	/* Signals being ignored. */
 	sigset_t p_sigcatch;	/* Signals being caught by user. */
 
-	u_char	p_pri;		/* Process priority. */
+	u_char	p_priority;	/* Process priority. */
 	u_char	p_usrpri;	/* User-priority based on p_cpu and p_nice. */
 	char	p_nice;		/* Process "nice" value. */
 	char	p_comm[MAXCOMLEN+1];
@@ -141,29 +141,28 @@ struct	proc {
 #define	SZOMB	5		/* Awaiting collection by parent. */
 
 /* These flags are kept in p_flags. */
-#define	SADVLCK	0x0000001	/* Process may hold a POSIX advisory lock. */
-#define	SCTTY	0x0000002	/* Has a controlling terminal. */
-#define	SLOAD	0x0000004	/* Loaded into memory. */
-#define	SNOCLDSTOP 0x0000008	/* No SIGCHLD when children stop. */
-#define	SPPWAIT	0x0000010	/* Parent is waiting for child to exec/exit. */
-#define	SPROFIL	0x0000020	/* Has started profiling. */
-#define	SSEL	0x0000040	/* Selecting; wakeup/waiting danger. */
-#define	SSINTR	0x0000080	/* Sleep is interruptible. */
-#define	SSYS	0x0000100	/* System proc: no sigs, stats or swapping. */
-#define	STIMO	0x0000200	/* Timing out during sleep. */
-#define	STRC	0x0000400	/* Process being debugged. */
-#define	SUGID	0x0000800	/* Had set id privileges since last exec. */
-#define	SWEXIT	0x0001000	/* Working on exiting. */
-#define	SWTED	0x0002000	/* Process being debugged. */
-#define SEXEC	0x0004000	/* Process called exec. */
+#define	P_ADVLOCK	0x00001	/* Process may hold a POSIX advisory lock. */
+#define	P_CONTROLT	0x00002	/* Has a controlling terminal. */
+#define	P_INMEM		0x00004	/* Loaded into memory. */
+#define	P_NOCLDSTOP	0x00008	/* No SIGCHLD when children stop. */
+#define	P_PPWAIT	0x00010	/* Parent is waiting for child to exec/exit. */
+#define	P_PROFIL	0x00020	/* Has started profiling. */
+#define	P_SELECT	0x00040	/* Selecting; wakeup/waiting danger. */
+#define	P_SINTR		0x00080	/* Sleep is interruptible. */
+#define	P_SYSTEM	0x00100	/* System proc: no sigs, stats or swapping. */
+#define	P_TIMEOUT	0x00200	/* Timing out during sleep. */
+#define	P_TRACED	0x00400	/* Debugged process being traced. */
+#define	P_SUGID		0x00800	/* Had set id privileges since last exec. */
+#define	P_WEXIT		0x01000	/* Working on exiting. */
+#define	P_WAITED	0x02000	/* Process being debugged. */
+#define P_EXEC		0x04000	/* Process called exec. */
 
-/* The following three should probably be changed into a hold count. */
-#define	SKEEP	0x0008000	/* Another flag to prevent swap out. */
-#define	SLOCK	0x0010000	/* Process being swapped out. */
-#define	SPHYSIO	0x0020000	/* Doing physical I/O. */
+/* Should probably be changed into a hold count. */
+#define	P_NOSWAP	0x08000	/* Another flag to prevent swap out. */
+#define	P_PHYSIO	0x10000	/* Doing physical I/O. */
 
-/* The following should be moved to machine-dependent areas. */
-#define	SOWEUPC	0x0040000	/* Owe process an addupc() call at next ast. */
+/* Should be moved to machine-dependent areas. */
+#define	P_OWEUPC	0x20000	/* Owe process an addupc() call at next ast. */
 
 /*
  * MOVE TO ucred.h?
@@ -218,14 +217,13 @@ struct	prochd {
 struct proc *pfind __P((pid_t));	/* Find process by id. */
 struct pgrp *pgfind __P((pid_t));	/* Find process group by id. */
 
-int	tsleep __P((void *chan, int pri, char *wmesg, int timo));
+void	mi_switch __P((void));
 void	resetpriority __P((struct proc *));
 void	setrunnable __P((struct proc *));
 void	setrunqueue __P((struct proc *));
 void	sleep __P((void *chan, int pri));
-void	swtch __P((void));
+int	tsleep __P((void *chan, int pri, char *wmesg, int timo));
 void	unsleep __P((struct proc *));
 void	wakeup __P((void *chan));
 #endif	/* KERNEL */
-
 #endif	/* !_PROC_H_ */

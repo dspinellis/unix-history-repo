@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)np.c	7.10 (Berkeley) %G%
+ *	@(#)np.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -2093,7 +2093,7 @@ int	count;
 	rp->buf.b_bcount = count;
 	rp->buf.b_proc = rp->procp;
 		
-	rp->procp->p_flag |= SPHYSIO;
+	rp->procp->p_flag |= P_PHYSIO;
 	if(NpDebug & DEBENTRY)
 		printf("vslock\n");
 	vslock(addr,count);
@@ -2122,7 +2122,7 @@ struct npreq *rp;
 	ubarelse(mp->devp->ui_ubanum,&rp->mapbase);
 	rp->mapbase = 0;
 	vsunlock(rp->virtmem,rp->bytecnt,B_READ);
-	rp->procp->p_flag &= ~SPHYSIO;
+	rp->procp->p_flag &= ~P_PHYSIO;
 
 	if(NpDebug & DEBENTRY)
 		printf("NpUnMapMem...\n");
