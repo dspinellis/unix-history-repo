@@ -1,20 +1,67 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)tput.1	6.1 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.TH CLEAR 1 ""
-.UC
+.\"	@(#)tput.1	6.2 (Berkeley) %G%
+.\"
+.TH TPUT 1 ""
+.UC 7
 .SH NAME
-clear \- clear terminal screen
+tput \- terminal capability interface
 .SH SYNOPSIS
-.B clear
+.ft B
+tput [ -T term ] attribute
+.ft R
 .SH DESCRIPTION
-.I Clear
-clears your screen if this is possible.
-It looks in the environment for the terminal type and then in
-.I /etc/termcap
-to figure out how to clear the screen.
-.SH FILES
-/etc/termcap	terminal capability data base
+.I Tput
+makes terminal-dependent information available to users or shell
+applications.
+The options are as follows:
+.TP
+\-T
+The terminal name as specified in the
+.I termcap
+database, for example, ``vt100'' or ``xterm''.
+If not specified,
+.I tput
+retrieves the ``TERM'' variable from the environment.
+.PP
+The following special attributes are available:
+.TP
+clear
+.br
+Clear the screen (the
+.I termcap
+``cl'' sequence).
+.TP
+init
+.br
+Initialize the terminal (the
+.I termcap
+``is'' sequence).
+.TP
+reset
+.br
+Reset the terminal (the
+.I termcap
+``rs'' sequence).
+.SH "SEE ALSO"
+termcap(3), termcap(5)
+.SH BUGS
+.I Tput
+doesn't have the power available in the System V version of the
+program.
+This is due to the limited interface in the current version of
+.IR termcap (3).
+This will be fixed in the near future.
