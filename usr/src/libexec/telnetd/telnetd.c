@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.21 83/05/24";
+static char sccsid[] = "@(#)telnetd.c	4.22 83/06/12";
 #endif
 
 /*
@@ -103,7 +103,7 @@ again:
 		perror("telnetd: bind");
 		sleep(5);
 	}
-	sigset(SIGCHLD, reapchild);
+	signal(SIGCHLD, reapchild);
 	listen(s, 10);
 	for (;;) {
 		struct sockaddr_in from;
@@ -232,7 +232,7 @@ telnet(f, p)
 	ioctl(f, FIONBIO, &on);
 	ioctl(p, FIONBIO, &on);
 	signal(SIGTSTP, SIG_IGN);
-	sigset(SIGCHLD, cleanup);
+	signal(SIGCHLD, cleanup);
 
 	/*
 	 * Request to do remote echo.

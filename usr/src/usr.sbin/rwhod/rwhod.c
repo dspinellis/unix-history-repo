@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.14 (Berkeley) 83/06/02";
+static char sccsid[] = "@(#)rwhod.c	4.15 (Berkeley) 83/06/12";
 #endif
 
 #include <sys/types.h>
@@ -130,7 +130,7 @@ main()
 	}
 	if (!configure(s))
 		exit(1);
-	sigset(SIGALRM, onalrm);
+	signal(SIGALRM, onalrm);
 	onalrm();
 	for (;;) {
 		struct whod wd;
