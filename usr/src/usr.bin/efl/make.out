@@ -1,0 +1,18 @@
+cc -O -w -c gram.c
+cc -O -w -c mk.c
+cc -O -w -c misc.c
+cc -O -w -c alloc.c
+cc -O -w -c print.c
+cc -O -w -c simple.c
+cc -O -w -c exec.c
+cc -O -w -c temp.c
+cc -O -w -c io.c
+cc -O -w -c error.c
+cc -O -w -c pass2.c
+cc -O -w -c icfile.c
+cc -O -w -c free.c
+cc -O -w -c dclgen.c
+cc -O -w -c namgen.c
+LOAD
+text	data	bss	dec	hex
+61440	30720	59388	151548	24ffc
