@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.26		%G%);
+SCCSID(@(#)savemail.c	3.27		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -113,7 +113,7 @@ savemail()
 
 	if (MailBack)
 	{
-		if (returntosender("Unable to deliver mail") == 0)
+		if (returntosender("Unable to deliver mail", TRUE) == 0)
 			return;
 	}
 
@@ -167,6 +167,8 @@ savemail()
 **
 **	Parameters:
 **		msg -- the explanatory message.
+**		sendbody -- if TRUE, also send back the body of the
+**			message; otherwise just send the header.
 **
 **	Returns:
 **		zero -- if everything went ok.
@@ -178,18 +180,20 @@ savemail()
 */
 
 static char	*ErrorMessage;
+static bool	SendBody;
 
-returntosender(msg)
+returntosender(msg, sendbody)
 	char *msg;
+	bool sendbody;
 {
 	ADDRESS to_addr;
 	char buf[MAXNAME];
 	register int i;
 	extern errhdr();
 
-	(void) freopen("/dev/null", "w", stdout);
 	NoAlias++;
 	ErrorMessage = msg;
+	SendBody = sendbody;
 
 	/* fake up an address header for the from person */
 	bmove((char *) &From, (char *) &to_addr, sizeof to_addr);
@@ -201,8 +205,17 @@ returntosender(msg)
 		return (-1);
 	}
 	to_addr.q_next = NULL;
+	to_addr.q_flags &= ~QDONTSEND;
 	i = deliver(&to_addr, errhdr);
 	bmove((char *) &to_addr, (char *) &From, sizeof From);
+
+	/* if From was queued up, put in on SendQueue */
+	if (bitset(QQUEUEUP, From.q_flags))
+	{
+		From.q_next = SendQueue;
+		SendQueue = &From;
+	}
+
 	if (i != 0)
 	{
 		syserr("Can't return mail to %s", From.q_paddr);
@@ -301,9 +314,18 @@ errhdr(fp, m, xdot)
 		fprintf(fp, "\n   ----- Return message suppressed -----\n\n");
 	else if (TempFile != NULL)
 	{
-		fprintf(fp, "\n   ----- Unsent message follows -----\n");
-		(void) fflush(fp);
-		putmessage(fp, Mailer[1], xdot);
+		if (SendBody)
+		{
+			fprintf(fp, "\n   ----- Unsent message follows -----\n");
+			(void) fflush(fp);
+			putmessage(fp, Mailer[1], xdot);
+		}
+		else
+		{
+			fprintf(fp, "\n  ----- Message header follows -----\n");
+			(void) fflush(fp);
+			putheader(fp, Mailer[1]);
+		}
 	}
 	else
 		fprintf(fp, "\n  ----- No message was collected -----\n\n");

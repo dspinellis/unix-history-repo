@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.34		%G%);
+SCCSID(@(#)collect.c	3.35		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -212,6 +212,7 @@ maketemp(from)
 	**	Examples are who is the from person & the date.
 	*/
 
+	/* message priority */
 	if (!QueueRun)
 	{
 		/* adjust total priority by message priority */
@@ -220,6 +221,11 @@ maketemp(from)
 		if (p != NULL)
 			MsgPriority -= priencode(p) * WKPRIFACT;
 	}
+
+	/* special handling */
+	p = hvalue("special-handling");
+	if (p != NULL)
+		spechandling(p);
 
 	/* from person */
 	xfrom = hvalue("sender");
@@ -409,4 +415,77 @@ priencode(p)
 			break;
 	}
 	return (pl->pri_val);
+}
+/*
+**  SPECHANDLE -- do special handling
+**
+**	Parameters:
+**		p -- pointer to list of special handling words.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Sets flags as indicated by p.
+*/
+
+struct handling
+{
+	char	*han_name;		/* word to get this magic */
+	int	han_what;		/* what to do, see below */
+};
+
+/* modes for han_what */
+# define	HAN_NONE	0	/* nothing special */
+# define	HAN_RRECEIPT	1	/* give return receipt */
+
+struct handling	Handling[] =
+{
+	"return-receipt-requested",	HAN_RRECEIPT,
+	NULL,				HAN_NONE
+};
+
+spechandling(p)
+	register char *p;
+{
+	register char *w;
+	register struct handling *h;
+	extern bool sameword();
+
+	while (*p != '\0')
+	{
+		/* collect a word to compare to */
+		while (*p != '\0' && (*p == ',' || isspace(*p)))
+			p++;
+		if (*p == '\0')
+			break;
+		w = p;
+		while (*p != '\0' && *p != ',' && !isspace(*p))
+			p++;
+		if (*p != '\0')
+			*p++ = '\0';
+
+		/* scan the special handling table */
+		for (h = Handling; h->han_name != NULL; h++)
+			if (sameword(h->han_name, w))
+				break;
+
+		/* see if we can do anything interesting */
+		switch (h->han_what)
+		{
+		  case HAN_NONE:	/* nothing to be done */
+			break;
+
+		  case HAN_RRECEIPT:	/* give return receipt */
+			RetReceipt = TRUE;
+# ifdef DEBUG
+			if (Debug > 2)
+				printf(">>> Return receipt requested\n");
+# endif DEBUG
+			break;
+
+		  default:
+			syserr("spechandling: handling %d (%s)", h->han_what, w);
+		}
+	}
 }

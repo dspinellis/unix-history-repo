@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.66		%G%);
+SCCSID(@(#)main.c	3.67		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -699,9 +699,14 @@ setfrom(from, realname)
 finis()
 {
 # ifdef DEBUG
-	if (Debug > 2)
-		printf("\n====finis: stat %d\n", ExitStat);
+	if (Debug > 0)
+		printf("\n====finis: stat %d SendReceipt %d\n", ExitStat,
+		     SendReceipt);
 # endif DEBUG
+
+	/* send back return receipts as requested */
+	if (SendReceipt && ExitStat == EX_OK)
+		returntosender("Return receipt", FALSE);
 
 	/* mail back the transcript on errors */
 	if (ExitStat != EX_OK)
