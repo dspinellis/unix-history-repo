@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)prim.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)prim.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -47,9 +47,7 @@ extern int linenums;
 extern int plusoption;
 extern char *line;
 extern char *first_cmd;
-#if TAGS
 extern int tagoption;
-#endif
 
 /*
  * Sound the bell to indicate he is trying to move past end of file.
@@ -202,10 +200,7 @@ forw(n, pos, force, only_last)
 		 * and it is not appropriate to squish in that case.
 		 */
 		if (first_time && line == NULL && !top_scroll && 
-#if TAGS
-		    !tagoption &&
-#endif
-		    !plusoption)
+		    !tagoption && !plusoption)
 		{
 			squished = 1;
 			continue;
