@@ -4,15 +4,20 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_cksum.c	5.2 (Berkeley) %G%
+ *	@(#)lfs_cksum.c	5.3 (Berkeley) %G%
  */
 
-#ifdef LOGFS
-#include <sys/types.h>
+#include <sys/param.h>
+
+#include <lfs/lfs.h>
+#include <lfs/lfs_extern.h>
 
 /*
  * Simple, general purpose, fast checksum.  Data must be short-aligned.
  * Returns a u_long in case we ever want to do something more rigorous.
+ *
+ * XXX
+ * Use the TCP/IP checksum instead.
  */
 u_long
 cksum(str, len)
@@ -26,4 +31,3 @@ cksum(str, len)
 		sum ^= *((u_short *)str)++;
 	return (sum);
 }
-#endif /* LOGFS */

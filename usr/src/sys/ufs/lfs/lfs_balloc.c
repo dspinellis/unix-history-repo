@@ -4,34 +4,29 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	7.17 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.18 (Berkeley) %G%
  */
 
-#ifdef LOGFS
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "time.h"
-#include "resource.h"
-#include "resourcevar.h"
-#include "proc.h"
-#include "file.h"
-#include "vnode.h"
-#include "mount.h"
-#include "specdev.h"
+#include <sys/param.h>
+#include <sys/buf.h>
+#include <sys/proc.h>
+#include <sys/vnode.h>
+#include <sys/mount.h>
+#include <sys/resourcevar.h>
+#include <sys/specdev.h>
+#include <sys/trace.h>
 
-#include "../ufs/quota.h"
-#include "../ufs/inode.h"
-#include "../ufs/ufsmount.h"
-#include "trace.h"
-#include "lfs.h"
-#include "lfs_extern.h"
+#include <ufs/quota.h>
+#include <ufs/inode.h>
+#include <ufs/ufsmount.h>
+
+#include <lfs/lfs.h>
+#include <lfs/lfs_extern.h>
 
 /*
- * Bmap converts a the logical block number of a file
- * to its physical block number on the disk. The conversion
- * is done by using the logical block number to index into
- * the array of block pointers described by the dinode.
+ * Bmap converts a the logical block number of a file to its physical block
+ * number on the disk. The conversion is done by using the logical block
+ * number to index into the array of block pointers described by the dinode.
  */
 int
 lfs_bmap(ip, bn, bnp)
@@ -39,7 +34,7 @@ lfs_bmap(ip, bn, bnp)
 	register daddr_t bn;
 	daddr_t	*bnp;
 {
-	register LFS *fs;					/* LFS */
+	register LFS *fs;
 	register daddr_t nb;
 	struct vnode *devvp, *vp;
 	struct buf *bp;
@@ -49,26 +44,26 @@ lfs_bmap(ip, bn, bnp)
 	int error;
 
 printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
-	fs = ip->i_lfs;						/* LFS */
+	fs = ip->i_lfs;
 
 	/*
-	 * We access all blocks in the cache, even indirect blocks by means of
-	 * a logical address. Indirect blocks (single, double, triple) all have
-	 * negative block numbers. The first NDADDR blocks are direct blocks,
-	 * the first NIADDR negative blocks are the indirect block pointers.
-	 * The single, double and triple indirect blocks in the inode
-	 * are addressed: -1, -2 and -3 respectively.  
-	 * XXX we don't handle triple indirect at all.
+	 * We access all blocks in the cache, even indirect blocks by means
+	 * of a logical address. Indirect blocks (single, double, triple) all
+	 * have negative block numbers. The first NDADDR blocks are direct
+	 * blocks, the first NIADDR negative blocks are the indirect block
+	 * pointers.  The single, double and triple indirect blocks in the
+	 * inode * are addressed: -1, -2 and -3 respectively.  
+	 *
+	 * XXX
+	 * We don't handle triple indirect at all.
+	 *
+	 * XXX
+	 * This panic shouldn't be here???
 	 */
-	if (bn < 0) {
-		/* Shouldn't be here -- we don't think */
-		printf("lfs_bmap: NEGATIVE indirect block number %d\n", bn);
-		panic("negative indirect block number");
-	}
+	if (bn < 0)
+		panic("lfs_bmap: negative indirect block number %d", bn);
 
-	/*
-	 * The first NDADDR blocks are direct blocks
-	 */
+	/* The first NDADDR blocks are direct blocks. */
 	if (bn < NDADDR) {
 		nb = ip->i_db[bn];
 		if (nb == 0) {
@@ -78,9 +73,8 @@ printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
 		*bnp = nb;
 		return (0);
 	}
-	/*
-	 * Determine the number of levels of indirection.
-	 */
+
+	/* Determine the number of levels of indirection. */
 	sh = 1;
 	bn -= NDADDR;
 	lbn_ind = 0;
@@ -93,10 +87,8 @@ printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
 	}
 	if (j == 0)
 		return (EFBIG);
-	/*
-	 * Fetch through the indirect blocks.
-	 */
 
+	/* Fetch through the indirect blocks. */
 	vp = ITOV(ip);
 	devvp = VFSTOUFS(vp->v_mount)->um_devvp;
 	for (off = NIADDR - j, bap = ip->i_ib; j <= NIADDR; j++) {
@@ -132,4 +124,3 @@ printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
 	*bnp = daddr;
 	return (0);
 }
-#endif /* LOGFS */
