@@ -8,7 +8,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mount_fdesc.8	5.2 (Berkeley) %G%
+.\"	@(#)mount_fdesc.8	5.3 (Berkeley) %G%
 .\"
 .\"
 .Dd 
@@ -16,11 +16,11 @@
 .Os BSD 4.4
 .Sh NAME
 .Nm mount_fdesc
-.Nd mount the /dev/fd file system
+.Nd mount the file-descriptor file system
 .Sh SYNOPSIS
 .Nm mount_fdesc
 .Op Fl F Ar fsoptions
-.Pa /dev/fd
+.Pa fdesc
 .Pa mount_point
 .Sh DESCRIPTION
 The
@@ -28,12 +28,25 @@ The
 command attaches an instance of the per-process file descriptor
 namespace to the global filesystem namespace.
 The conventional mount point is
-.Pa /dev/fd .
+.Pa /dev
+and the filesystem should be union mounted in order to augment,
+rather than replace, the existing entries in
+.Pa /dev .
 This command is normally executed by
 .Xr mount 8
 at boot time.
 .Pp
-The contents of the mount point appear as a list of numbered files
+The contents of the mount point are
+.Pa fd ,
+.Pa stderr ,
+.Pa stdin ,
+.Pa stdout 
+and
+.Pa tty .
+.Pp
+.Pa fd
+is a directory whose contents
+appear as a list of numbered files
 which correspond to the open files of the process reading the
 directory.
 The files
@@ -55,12 +68,15 @@ fd = fcntl(0, F_DUPFD, 0);
 .Pp
 are equivalent.
 .Pp
-Opening the files
+The files
 .Pa /dev/stdin ,
 .Pa /dev/stdout
 and
 .Pa /dev/stderr
-is equivalent to the following calls:
+appear as symlinks to the relevant entry in the
+.Pa /dev/fd
+sub-directory.
+Opening them is equivalent to the following calls:
 .Bd -literal -offset indent
 fd = fcntl(STDIN_FILENO,  F_DUPFD, 0);
 fd = fcntl(STDOUT_FILENO, F_DUPFD, 0);
@@ -75,12 +91,19 @@ call other than
 and
 .Dv O_RDWR
 are ignored.
+.Pp
+The
+.Pa /dev/tty
+entry is an indirect reference to the current process's controlling terminal.
+It appears as a named pipe (FIFO) but behaves in exactly the same way as
+the real controlling terminal device.
 .Sh FILES
 .Bl -tag -width /dev/stderr -compact
 .It Pa /dev/fd/#
 .It Pa /dev/stdin
 .It Pa /dev/stdout
 .It Pa /dev/stderr
+.It Pa /dev/tty
 .El
 .Sh SEE ALSO
 .Xr mount 2 ,
@@ -92,7 +115,9 @@ No
 .Pa .
 and
 .Pa ..
-entries appear when listing the contents of the mount point.
+entries appear when listing the contents of the
+.Pa /dev/fd
+directory.
 This makes sense in the context of this filesystem, but is inconsistent
 with usual filesystem conventions.
 However, it is still possible to refer to both
