@@ -1,5 +1,5 @@
 /*
- * @(#)help.c	1.1	%G%
+ * @(#)help.c	1.2	%G%
  *
  * Routines to provide help screens for the SUN Gremlin picture editor.
  *
@@ -458,7 +458,7 @@ filecabinet_help()
 
 
 static char boxinc_HELP[] = "\
-Two points must be specified which define a rectangular area\n\
+Two points must be placed that define a rectangular area\n\
 (the endpoints of the diagonal of the rectangle).\n\
 \n\
 With the left mouse button, all elements contained within the\n\
@@ -808,7 +808,7 @@ first and the last points are not the same, that line\n\
 segment will be added automatically.  With the left mouse\n\
 button, a filled polygon will be added to the display in the\n\
 current stipple style.  If a border is to be drawn, this\n\
-will be added in the current brush style.\n\
+will be added in the current line style.\n\
 \n\
 The middle mouse button is used to modify curves, vectors and\n\
 other polygons in the current set to be polygons of the\n\
@@ -830,7 +830,8 @@ static char textsw_HELP[] = "\
 Command arguments (when required) are entered here from the\n\
 keyboard.  Arguments must be entered before the command is\n\
 selected.  Simple editing commands (backspace, line and word\n\
-delete) can be used to modify the argument.\n\
+delete) can be used to modify the argument.  The middle mouse\n\
+button is used to display the previous text string.\n\
 \n\
 The quick form of the TEXT command is invoked by pressing\n\
 RETURN after entering a string to be displayed in the picture.\n\

@@ -1,5 +1,5 @@
 /*
- * @(#)main.c	1.1	%G%
+ * @(#)main.c	1.2	%G%
  *
  * Main program for the SUN Gremlin picture editor.
  *
@@ -67,6 +67,7 @@ extern SHOWPOINTS;
 extern char *Editfile;
 extern CP();
 extern LGQuit();
+extern nop();
 
 /* imports from short.c */
 
@@ -112,8 +113,10 @@ int SEQ = 0;
 int CHANGED = FALSE;
 int SEARCH = TRUE;
 int SymbolicLines = 0;
-int newfileformat = 0;
+int newfileformat = 1;			/* 1=sungremlinfile, 0=gremlinfile */
 int TOOLINSTALLED = 0;
+int (*lastcommand)();			/* last command's routine pointer */
+int lasttext = FALSE;			/* TRUE if last command uses text */
 
 float PX, PY;				/* user point coordinate */
 float Lastx, Lasty;			/* last user point coordinate */
@@ -131,7 +134,7 @@ static alrm_sighandler();
 int SUN_XORIGIN = 0;			/* top left corner in gremlin coords */
 int SUN_YORIGIN = 511;
 	
-static char SccsId [] = "@(#)main.c	1.1   (Berkeley)      %G%";
+static char SccsId [] = "@(#)main.c	1.2   (Berkeley)      %G%";
 
 /* imports from menu.c */
 
@@ -171,6 +174,12 @@ struct cursor main_cursor  =  {
 
 static struct cursor menu_cursor = {
     3, 3, PIX_SRC^PIX_DST, &diamond_pr
+};
+
+static struct icon gremlin_icon = {
+    TOOL_ICONWIDTH, TOOL_ICONHEIGHT, NULL,
+    {0, 0, TOOL_ICONWIDTH, TOOL_ICONHEIGHT},
+    &gremlin_icon_pr, {0, 0, 0, 0}, NULL, NULL, 0
 };
 
 /* tool window stuff */
@@ -242,7 +251,7 @@ char *argv[];
 
     file = "";
     gremlinrc = "";
-    usage = "usage: gremlin -s <.gremlinrc> [file]\n";
+    usage = "usage: gremlin [-o] [-s <.gremlinrc>] [file]\n";
 
     while (--argc > 0) {
 	arg = *++argv;
@@ -260,8 +269,8 @@ char *argv[];
 		    }
 		    gremlinrc = arg;
 		    break;
-		case '+':
-		    newfileformat = 1;
+		case 'o':
+		    newfileformat = 0;
 		    break;
 		default:
 		    printf("%s", usage);
@@ -272,7 +281,7 @@ char *argv[];
 
     strcpy(namestripe, version);
     tool = tool_create(namestripe, TOOL_NAMESTRIPE, (struct rect *) NULL, 
-			(struct icon *) NULL);
+			&gremlin_icon /*(struct icon *) NULL*/);
     if (tool == (struct tool *) NULL)
 	exit(1);
 
@@ -362,6 +371,8 @@ init_tool()
  */
 fix_tool_size()
 {
+    struct rect icon_rect;
+
     if (wmgr_iswindowopen(tool_fd)) 
 	win_getrect(tool_fd, &tool_size);
     else
@@ -381,10 +392,20 @@ fix_tool_size()
     if (rect_bottom(&tool_size) >= 700)
 	tool_size.r_top -= rect_bottom(&tool_size) - 699;
 
-    if (wmgr_iswindowopen(tool_fd))
+    /* land icon near upper left corner */
+    icon_rect.r_left = 0;
+    icon_rect.r_top = 64;
+    icon_rect.r_width = 64;
+    icon_rect.r_height = 64;
+
+    if (wmgr_iswindowopen(tool_fd)) {
 	win_setrect(tool_fd, &tool_size);
-    else
+	win_setsavedrect(tool_fd, &icon_rect);
+    }
+    else {
+	win_setrect(tool_fd, &icon_rect);
 	win_setsavedrect(tool_fd, &tool_size);
+    }
 }
 
 
@@ -540,7 +561,8 @@ init_pix()
  * and handles it slightly differently if no write has occurred
  * since the last change to the picture.
  * WARNING: this routine depends upon menu_display() returning
- * mi->mi_data = 2 for the QUIT menuitem.
+ * mi->mi_data = 2 for the QUIT menuitem and
+ * mi->mi_data = 1 for the REDISPLAY menuitem.
  */
 static
 tool_selected(nullsw, ibits, obits, ebits, timer)
@@ -583,8 +605,11 @@ struct timeval **timer;
 	    if (mi == (struct menuitem *) NULL)
 		break;
 
-	    if ((int) mi->mi_data == 2) 	/* QUIT !! */
-		LGQuit("");
+	    if (((int) mi->mi_data == 1)		/* REDISPLAY !! */
+			    && wmgr_iswindowopen(tool_fd))
+		SHUpdate();
+	    else if ((int) mi->mi_data == 2) 		/* QUIT !! */
+		LGQuit();
 	    else
 		wmgr_handletoolmenuitem(wmgr_toolmenu, mi, tool_fd, rootfd);
 
@@ -614,8 +639,10 @@ struct timeval **timer;
 	    check_cset();
 	    break;
 	case MS_LEFT:
+	    text_left(&ie);
+	    break;
 	case MS_MIDDLE:
-	    nop();
+	    text_middle(&ie);
 	    break;
 	case MS_RIGHT:
 	    text_right(&ie);
@@ -668,7 +695,8 @@ struct timeval **timer;
 	    break;
 	default:
 	    if ((ie.ie_code <= ASCII_LAST) && (ie.ie_code >= ASCII_FIRST)) {
-		shcmd[0] = ie.ie_code;
+		if ((shcmd[0] = ie.ie_code) != '.')
+		    lasttext = FALSE;
 		shcmd[1] = '\0';
 		SHCommand(shcmd);
 	    }
@@ -711,7 +739,8 @@ struct timeval **timer;
 	    break;
 	default:
 	    if ((ie.ie_code <= ASCII_LAST) && (ie.ie_code >= ASCII_FIRST)) {
-		shcmd[0] = ie.ie_code;
+		if ((shcmd[0] = ie.ie_code) != '.')
+		    lasttext = FALSE;
 		shcmd[1] = '\0';
 		SHCommand(shcmd);
 	    }
@@ -816,6 +845,7 @@ char *gremlinrc;
 
     unlist = unback = NULL;			/* undo pointers */
     make_arrowhead();				/* for > command */
+    lastcommand = nop;				/* no last command yet */
 
     STgremlinrc(gremlinrc);			/* .gremlinrc processing */
     GRFontInit();	       /* must be called after CSIZE & CFONT set */
@@ -881,7 +911,7 @@ make_arrowhead()
  */
 check_cset()
 {
-    if (FLASH_READY) {
+    if (FLASH_READY /*&& wmgr_iswindowopen(tool_fd) */) {
 	GRCurrentSet();				/* XOR current set */
 
 	if (CsetOn) {				/* set off period */
