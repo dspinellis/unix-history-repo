@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile 1.16 %G%
+SCCSID = @(#)Makefile 1.17 %G%
 INSTALL = ${DESTDIR}/usr/ucb
 INSTALLIB = ${DESTDIR}/usr/lib
 SRCDIR=	../src
@@ -17,7 +17,7 @@ install: all pxref.p
 	install temp ${INSTALLIB}/${PX_HEADER}
 	for i in ${PROGS}; do (install $$i ${INSTALL}/$$i ); done
 	for i in ${FILES}; do (install $$i ${INSTALLIB}/$$i ); done
-	cd ${INSTALLIB}; chmod 744 how* pcexterns.o ${PX_HEADER}
+	cd ${INSTALLIB}; chmod 644 how* pcexterns.o ${PX_HEADER}
 	strip ${INSTALLIB}/pc2
 	strip ${INSTALLIB}/pc3
 	cd ${INSTALLIB}; chmod 555 pc2 pc3
