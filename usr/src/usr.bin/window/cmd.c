@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmd.c	3.31 %G%";
+static char sccsid[] = "@(#)cmd.c	3.32 %G%";
 #endif
 
 #include "defs.h"
@@ -116,27 +116,10 @@ docmd()
 				wwscroll(selwin, - selwin->ww_w.nr);
 				break;
 			case ctrl(s):
-				if (selwin->ww_pty < 0)
-					break;
-				if (selwin->ww_ispty) {
-					(void) ioctl(selwin->ww_pty, TIOCSTOP,
-						(char *)0);
-					selwin->ww_stopped = 1;
-				} else
-					(void) write(selwin->ww_pty,
-						&wwwintty.ww_tchars.t_stopc, 1);
+				stopwin(selwin);
 				break;
 			case ctrl(q):
-				if (selwin->ww_pty < 0)
-					break;
-				if (selwin->ww_ispty) {
-					(void) ioctl(selwin->ww_pty, TIOCSTART,
-						(char *)0);
-					selwin->ww_stopped = 0;
-				} else
-					(void) write(selwin->ww_pty,
-						&wwwintty.ww_tchars.t_startc,
-						1);
+				startwin(selwin);
 				break;
 			case ctrl(l):
 				wwredraw();

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)win.c	3.11 %G%";
+static char sccsid[] = "@(#)win.c	3.12 %G%";
 #endif
 
 #include "defs.h"
@@ -220,6 +220,22 @@ register struct ww *w;
 			col = 3;
 		wwlabel(w, framewin, col, w->ww_label, mode);
 	}
+}
+
+stopwin(w)
+	register struct ww *w;
+{
+	w->ww_stopped = 1;
+	if (w->ww_pty >= 0 && w->ww_ispty)
+		(void) ioctl(w->ww_pty, TIOCSTOP, (char *)0);
+}
+
+startwin(w)
+	register struct ww *w;
+{
+	w->ww_stopped = 0;
+	if (w->ww_pty >= 0 && w->ww_ispty)
+		(void) ioctl(w->ww_pty, TIOCSTART, (char *)0);
 }
 
 waitnl(w)
