@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbtest.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbtest.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -110,10 +110,13 @@ main(argc, argv)
 				infop = setinfo(type, p);
 
 	/* Open the DB. */
-#define	BACKINGFILE	"/tmp/__dbtest"
 	if (fname == NULL) {
-		fname = BACKINGFILE;
-		(void)unlink(BACKINGFILE);
+		p = getenv("TMPDIR");
+		if (p == NULL)
+			p = "/var/tmp";
+		(void)sprintf(buf, "%s/__dbtest", p);
+		fname = buf;
+		(void)unlink(buf);
 	}
 	if ((dbp = dbopen(fname,
 	    O_CREAT | O_RDWR, S_IRUSR | S_IWUSR, type, infop)) == NULL)
