@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.25	82/11/05	*/
+/*	ip_icmp.c	4.25	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -104,7 +104,8 @@ icmp_input(m)
 {
 	register struct icmp *icp;
 	register struct ip *ip = mtod(m, struct ip *);
-	int icmplen = ip->ip_len, hlen = ip->ip_hl << 2, i, (*ctlfunc)();
+	int icmplen = ip->ip_len, hlen = ip->ip_hl << 2;
+	int i, (*ctlfunc)(), type;
 	extern u_char ip_protox[];
 
 	/*
@@ -148,8 +149,9 @@ icmp_input(m)
 			goto free;
 		if (icmpprintfs)
 			printf("deliver to protocol %d\n", icp->icmp_ip.ip_p);
+		type = i == ICMP_PARAMPROB ? 0 : icp->icmp_code;
 		if (ctlfunc = inetsw[ip_protox[icp->icmp_ip.ip_p]].pr_ctlinput)
-			(*ctlfunc)(icmpmap[i] + icp->icmp_code, (caddr_t)icp);
+			(*ctlfunc)(icmpmap[i] + type, (caddr_t)icp);
 		goto free;
 
 	case ICMP_ECHO:
@@ -184,6 +186,7 @@ icmp_input(m)
 	}
 reflect:
 	icmp_reflect(ip);
+	return;
 free:
 	m_freem(dtom(ip));
 }
@@ -203,8 +206,6 @@ icmp_reflect(ip)
 	icmp_send(ip);
 }
 
-int	generateicmpmsgs = 1;
-
 /*
  * Send an icmp packet back to the ip level,
  * after supplying a checksum.
@@ -212,12 +213,12 @@ int	generateicmpmsgs = 1;
 icmp_send(ip)
 	struct ip *ip;
 {
-	register int hlen = ip->ip_hl << 2;
+	register int hlen;
 	register struct icmp *icp;
-	register struct mbuf *m = dtom(ip);
+	register struct mbuf *m;
 
-	if (!generateicmpmsgs)
-		return;
+	m = dtom(ip);
+	hlen = ip->ip_hl << 2;
 	icp = mtod(m, struct icmp *);
 	icp->icmp_cksum = 0;
 	icp->icmp_cksum = in_cksum(m, ip->ip_len - hlen);

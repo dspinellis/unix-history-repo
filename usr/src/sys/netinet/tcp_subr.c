@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.34	82/10/30	*/
+/*	tcp_subr.c	4.35	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -123,13 +123,13 @@ tcp_respond(tp, ti, ack, seq, flags)
 	}
 	ti->ti_next = ti->ti_prev = 0;
 	ti->ti_x1 = 0;
-	ti->ti_len = htons(sizeof (struct tcphdr) + tlen);
+	ti->ti_len = htons((u_short)(sizeof (struct tcphdr) + tlen));
 	ti->ti_seq = htonl(seq);
 	ti->ti_ack = htonl(ack);
 	ti->ti_x2 = 0;
 	ti->ti_off = sizeof (struct tcphdr) >> 2;
 	ti->ti_flags = flags;
-	ti->ti_win = htons(win);
+	ti->ti_win = htons((u_short)win);
 	ti->ti_urp = 0;
 	ti->ti_sum = in_cksum(m, sizeof (struct tcpiphdr) + tlen);
 	((struct ip *)ti)->ip_len = sizeof (struct tcpiphdr) + tlen;

@@ -1,4 +1,4 @@
-/*	ip_var.h	4.5	81/12/02	*/
+/*	ip_var.h	4.6	82/11/13	*/
 
 /*
  * Overlay for ip header used by other protocols (tcp, udp).
@@ -30,6 +30,8 @@ struct ipq {
 
 /*
  * Ip header, when holding a fragment.
+ *
+ * Note: ipf_next must be at same offset as ipq_next above
  */
 struct	ipasfrag {
 	u_char	ip_hl:4,
