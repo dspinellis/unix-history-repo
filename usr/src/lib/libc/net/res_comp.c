@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_comp.c	6.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_comp.c	6.21 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -183,12 +183,12 @@ dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr)
  * Skip over a compressed domain name. Return the size or -1.
  */
 __dn_skipname(comp_dn, eom)
-	u_char *comp_dn, *eom;
+	const u_char *comp_dn, *eom;
 {
 	register u_char *cp;
 	register int n;
 
-	cp = comp_dn;
+	cp = (u_char *)comp_dn;
 	while (cp < eom && (n = *cp++)) {
 		/*
 		 * check for indirection
@@ -298,14 +298,20 @@ _getlong(msgp)
 	return (u | *p);
 }
 
+void
+#ifdef __STDC__
+__putshort(register u_short s, register u_char *msgp)
+#else
 __putshort(s, msgp)
 	register u_short s;
 	register u_char *msgp;
+#endif
 {
 	msgp[1] = s;
 	msgp[0] = s >> 8;
 }
 
+void
 __putlong(l, msgp)
 	register u_long l;
 	register u_char *msgp;

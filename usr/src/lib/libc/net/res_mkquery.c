@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_mkquery.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_mkquery.c	6.16 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -69,9 +69,9 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 			return (-1);
 		cp += n;
 		buflen -= n;
-		__putshort(type, cp);
+		__putshort(type, (u_char *)cp);
 		cp += sizeof(u_short);
-		__putshort(class, cp);
+		__putshort(class, (u_char *)cp);
 		cp += sizeof(u_short);
 		hp->qdcount = htons(1);
 		if (op == QUERY || data == NULL)
@@ -85,13 +85,13 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 			return (-1);
 		cp += n;
 		buflen -= n;
-		__putshort(T_NULL, cp);
+		__putshort(T_NULL, (u_char *)cp);
 		cp += sizeof(u_short);
-		__putshort(class, cp);
+		__putshort(class, (u_char *)cp);
 		cp += sizeof(u_short);
-		__putlong(0, cp);
+		__putlong(0, (u_char *)cp);
 		cp += sizeof(u_long);
-		__putshort(0, cp);
+		__putshort(0, (u_char *)cp);
 		cp += sizeof(u_short);
 		hp->arcount = htons(1);
 		break;
@@ -103,13 +103,13 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 		if (buflen < 1 + RRFIXEDSZ + datalen)
 			return (-1);
 		*cp++ = '\0';	/* no domain name */
-		__putshort(type, cp);
+		__putshort(type, (u_char *)cp);
 		cp += sizeof(u_short);
-		__putshort(class, cp);
+		__putshort(class, (u_char *)cp);
 		cp += sizeof(u_short);
-		__putlong(0, cp);
+		__putlong(0, (u_char *)cp);
 		cp += sizeof(u_long);
-		__putshort(datalen, cp);
+		__putshort(datalen, (u_char *)cp);
 		cp += sizeof(u_short);
 		if (datalen) {
 			bcopy(data, cp, datalen);
