@@ -1,11 +1,11 @@
 pmax/pmax/autoconf.c		standard
 pmax/pmax/clock.c		standard
 pmax/pmax/conf.c		standard
-pmax/pmax/cons.c		standard
+pmax/pmax/cons.c		standard device-driver
 pmax/pmax/fp.s			standard
 netinet/in_cksum.c		optional inet
 pmax/pmax/kadb.c		optional kadb
-pmax/pmax/machdep.c		standard config-dependent
+pmax/pmax/machdep.c		standard config-dependent device-driver
 pmax/pmax/mem.c			standard
 netns/ns_cksum.c		optional ns
 pmax/pmax/pmap.c		standard
@@ -16,13 +16,14 @@ pmax/dev/scsi.c			standard
 pmax/dev/asc.c			optional asc device-driver
 pmax/dev/dc.c			optional dc device-driver
 pmax/dev/if_le.c		optional le
-pmax/dev/pm.c			optional pm
+pmax/dev/pm.c			optional pm device-driver
 pmax/dev/cfb.c			optional cfb
 pmax/dev/rz.c			optional rz
 pmax/dev/sii.c			optional sii device-driver
 pmax/dev/tz.c			optional tz
-pmax/dev/vn.c			optional vn
 pmax/ultrix/ultrix_compat.c	optional ultrixcompat
 pmax/ultrix/ultrix_syscalls.c	optional ultrixcompat
 pmax/ultrix/ultrix_sysent.c	optional ultrixcompat
+dev/cd.c			optional cd
+dev/vn.c			optional vn
 thisisfor_in_proto.c		optional hy
