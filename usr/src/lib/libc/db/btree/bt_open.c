@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.20 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -112,6 +112,7 @@ __bt_open(fname, flags, mode, openinfo)
 			goto einval;
 	} else {
 		b.compare = __bt_defcmp;
+		b.cachesize = 0;
 		b.flags = 0;
 		b.lorder = BYTE_ORDER;
 		b.minkeypage = DEFMINKEYPAGE;
