@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)atexit.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)atexit.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stddef.h>
@@ -28,10 +28,11 @@ atexit(fn)
 
 	if ((p = __atexit) == NULL)
 		__atexit = p = &__atexit0;
-	if (p->ind >= ATEXIT_SIZE) {
+	else if (p->ind >= ATEXIT_SIZE) {
 		if ((p = malloc(sizeof(*p))) == NULL)
 			return (-1);
-		__atexit->next = p;
+		p->ind = 0;
+		p->next = __atexit;
 		__atexit = p;
 	}
 	p->fns[p->ind++] = fn;
