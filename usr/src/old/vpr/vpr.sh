@@ -1,9 +1,9 @@
 #
-#	@(#)vpr.sh	1.3	(Berkeley)	%G%
+#	@(#)vpr.sh	1.4	(Berkeley)	%G%
 #
 # vpr.sh - Use on machines without raster plotters
 #
-set remote = ucbvax
+set remote = ucbernie
 set execdir = /usr/ucb
 if ($remote != `hostname`) then
 	set cmd = "/usr/ucb/rsh $remote $execdir"
