@@ -1,4 +1,4 @@
-/*	lp.c	4.4	%G%	*/
+/*	lp.c	4.6	12/31/80	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -46,10 +46,8 @@ struct {
 	struct	buf *inbuf;
 } lp11;
 #define	flags	lpio.lp_flags
-#define	ejline	lpio.lp_ejline
 #define	indent	lpio.lp_indent
 #define	maxcol	lpio.lp_maxcol
-#define	skpline	lpio.lp_skpline
 
 /* bits for state */
 #define	OPEN		1	/* device is open */
@@ -71,10 +69,8 @@ lpopen(dev, flag)
 	lp11.state |= OPEN;
 	lp11.inbuf = geteblk();
 	lp11.flags = LPFLAGS;
-	lp11.ejline = EJLINE;
 	lp11.indent = INDENT;
 	lp11.maxcol = MAXCOL;
-	lp11.skpline = SKPLINE;
 	spl4();
 	if ((lp11.state&TOUT) == 0) {
 		lp11.state |= TOUT;
@@ -88,10 +84,9 @@ lpopen(dev, flag)
 lpclose(dev, flag)
 {
 
+	lpcanon('\f');
 	brelse(lp11.inbuf);
 	lp11.state &= ~OPEN;
-	lpcanon('\r');
-	lpoutput('\f');
 }
 
 lpwrite()
@@ -157,20 +152,18 @@ register c;
 		logcol = lp11.indent + ((logcol-lp11.indent+8) & ~7);
 		break;
 
-	case '\n':
-		if (lp11.physline >= lp11.ejline && (lp11.flags & SKIPFOLD))
-			c = '\f';
-		/* fall through */
-
 	case '\f':
-		if (lp11.physline == 0 && physcol == 0 && (lp11.flags & SKIPFOLD))
+		if (lp11.physline == 0 && physcol == 0)
 			break;
-		physcol = 0;
+		/* fall into ... */
+
+	case '\n':
 		lpoutput(c);
 		if (c == '\f')
 			lp11.physline = 0;
 		else
 			lp11.physline++;
+		physcol = 0;
 		/* fall into ... */
 
 	case '\r':
@@ -186,12 +179,6 @@ register c;
 		break;
 
 	default:
-		if (lp11.physline == 0 && (lp11.flags & SKIPFOLD)) {
-			int i;
-			lp11.physline = lp11.skpline;
-			for (i = 0; i < lp11.skpline; i++)
-				lpoutput('\n');
-		}
 		if (logcol < physcol) {
 			lpoutput('\r');
 			physcol = 0;
@@ -312,3 +299,4 @@ lpreset()
 	printf("lp ");
 	LPADDR->lpsr |= IENABLE;
 }
+
