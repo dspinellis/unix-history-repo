@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)defs.h	5.2 (Berkeley) %G%
+ *	@(#)defs.h	5.3 (Berkeley) %G%
  */
 
 #include <assert.h>
@@ -36,8 +36,6 @@
 /*  BITS_PER_WORD is the number of bits in a C unsigned	*/
 /*  WORDSIZE computes the number of words needed to	*/
 /*	store n bits					*/
-/*  ROWSIZE computes the number of chars needed to	*/
-/*	store enough words to represent n bits		*/
 /*  BIT returns the value of the n-th bit starting	*/
 /*	from r (0-indexed)				*/
 /*  SETBIT sets the n-th bit starting from r		*/
@@ -48,7 +46,6 @@
 #define MAXTABLE	32500
 #define BITS_PER_WORD	32
 #define	WORDSIZE(n)	(((n)+(BITS_PER_WORD-1))/BITS_PER_WORD)
-#define	ROWSIZE(n)	(sizeof(unsigned)*WORDSIZE(n))
 #define	BIT(r, n)	((((r)[(n) >> 5]) >> ((n) & 31)) & 1)
 #define	SETBIT(r, n)	((r)[(n) >> 5] |= (1 << ((n) & 31)))
 
