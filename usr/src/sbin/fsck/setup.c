@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -87,6 +87,24 @@ setup(dev)
 		{ badsb("NCYL DOES NOT JIVE WITH NCG*CPG"); return (0); }
 	if (sblock.fs_sbsize > SBSIZE)
 		{ badsb("SIZE PREPOSTEROUSLY LARGE"); return (0); }
+	/*
+	 * Check and potentially fix certain fields in the super block.
+	 */
+	if (sblock.fs_optim != FS_OPTTIME && sblock.fs_optim != FS_OPTSPACE) {
+		pfatal("UNDEFINED OPTIMIZATION IN SUPERBLOCK");
+		if (reply("SET TO DEFAULT") == 1) {
+			sblock.fs_optim = FS_OPTTIME;
+			sbdirty();
+		}
+	}
+	if ((sblock.fs_minfree < 0 || sblock.fs_minfree > 99)) {
+		pfatal("IMPOSSIBLE MINFREE=%d IN SUPERBLOCK",
+			sblock.fs_minfree);
+		if (reply("SET TO DEFAULT") == 1) {
+			sblock.fs_minfree = 10;
+			sbdirty();
+		}
+	}
 	/*
 	 * Set all possible fields that could differ, then do check
 	 * of whole super block against an alternate super block.
