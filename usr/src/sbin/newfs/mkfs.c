@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	1.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	1.6 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -456,7 +456,7 @@ struct inode *par;
 		}
 		while((i=read(f, db, BSIZE)) > 0) {
 			in.i_size += i;
-			newblk(&dbc, db, &ibc, ib, BSIZE);
+			newblk(&dbc, db, &ibc, ib, ibc < NDADDR ? i : BSIZE, 0);
 		}
 		close(f);
 		break;
@@ -490,19 +490,18 @@ struct inode *par;
 			getstr();
 			if(string[0]=='$' && string[1]=='\0')
 				break;
-			if (in.i_size >= FSIZE) {
+			if (in.i_size >= BSIZE * NDADDR) {
 				printf("can't handle direct of > %d entries\n",
-				    NDIRECT/FRAG);
+				    NDIRECT * NDADDR);
 				exit(1);
 			}
 			entry(ino+1, string, &dbc, db, &ibc, ib);
 			in.i_size += sizeof(struct direct);
 			cfile(&in);
 		}
+		newblk(&dbc, db, &ibc, ib, roundup(dbc, FSIZE), IFDIR);
 		break;
 	}
-	if(dbc != 0)
-		newblk(&dbc, db, &ibc, ib, roundup(dbc,BSIZE));
 	iput(&in, &ibc, ib);
 }
 
@@ -600,8 +599,9 @@ char *bf;
 }
 
 daddr_t
-alloc(size)
-int size;
+alloc(size, mode)
+	int size;
+	int mode;
 {
 	int c, i, s, frag;
 	daddr_t d;
@@ -622,6 +622,10 @@ goth:
 	acg.cg_nbfree--;
 	sblock.fs_nbfree--;
 	fscs[0].cs_nbfree--;
+	if (mode & IFDIR) {
+		acg.cg_ndir++;
+		fscs[0].cs_ndir++;
+	}
 	s = d * NSPF;
 	acg.cg_b[s/sblock.fs_spc][s%sblock.fs_nsect*NRPOS/sblock.fs_nsect]--;
 	if (size != BSIZE) {
@@ -645,6 +649,8 @@ daddr_t *ib;
 	struct direct *dp;
 	int i;
 
+	if (*adbc == NDIRECT)
+		newblk(adbc, db, aibc, ib, BSIZE, 0);
 	dp = (struct direct *)db;
 	dp += *adbc;
 	(*adbc)++;
@@ -654,20 +660,19 @@ daddr_t *ib;
 	for(i=0; i<DIRSIZ; i++)
 		if((dp->d_name[i] = str[i]) == 0)
 			break;
-	if(*adbc >= NDIRECT)
-		newblk(adbc, db, aibc, ib, BSIZE);
 }
 
-newblk(adbc, db, aibc, ib, size)
-int *adbc, *aibc;
-char *db;
-daddr_t *ib;
-int size;
+newblk(adbc, db, aibc, ib, size, mode)
+	int *adbc, *aibc;
+	char *db;
+	daddr_t *ib;
+	int size;
+	int mode;
 {
 	int i;
 	daddr_t bno;
 
-	bno = alloc(size);
+	bno = alloc(size, mode);
 	wtfs(bno, size, db);
 	for(i=0; i<size; i++)
 		db[i] = 0;
@@ -726,7 +731,7 @@ daddr_t *ib;
 		ip->i_db[i] = ib[i];
 	}
 	if(*aibc >= NDADDR) {
-		ip->i_ib[0] = alloc(BSIZE);
+		ip->i_ib[0] = alloc(BSIZE, 0);
 		for(i=0; i<NINDIR-NDADDR; i++) {
 			ib[i] = ib[i+NDADDR];
 			ib[i+NDADDR] = (daddr_t)0;
