@@ -1,4 +1,4 @@
-/*	machdep.c	6.1	83/08/20	*/
+/*	machdep.c	6.2	83/10/02	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -598,21 +598,21 @@ boot(paniced, arghowto)
 		update();
 		printf("syncing disks... ");
 #ifdef notdef
+		DELAY(10000000);
+#else
 		{ register struct buf *bp;
 		  int iter, nbusy;
 
-		  for (iter = 0; iter < 10; iter++) {
+		  for (iter = 0; iter < 20; iter++) {
 			nbusy = 0;
 			for (bp = &buf[nbuf]; --bp >= buf; )
-				if (bp->b_flags & B_BUSY)
+				if ((bp->b_flags & (B_BUSY|B_INVAL)) == B_BUSY)
 					nbusy++;
 			if (nbusy == 0)
 				break;
 			printf("%d ", nbusy);
 		  }
 		}
-#else
-		DELAY(10000000);
 #endif
 		printf("done\n");
 	}
