@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.14 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.15 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -51,6 +51,28 @@ defid( q, class ) register NODE *q; register int class; {
 
 	if( idp < 0 ) cerror( "tyreduce" );
 	p = &stab[idp];
+#ifdef LINT
+	if (pflag) {
+		register int	i;
+
+#ifndef FLEXNAMES
+		for (i = 0; i < 8; ++i)
+#else /* FLEXNAMES */
+		for (i = 0; ; ++i)
+#endif /* FLEXNAMES */
+			if (p->sname[i] == '\0')
+				break;
+			else if (p->sname[i] == '$') {
+#ifndef FLEXNAMES
+				werror( "nonportable identifier (uses $): %.8s",
+#else /* FLEXNAMES */
+				werror( "nonportable identifier (uses $): %s",
+#endif /* FLEXNAMES */
+					p->sname);
+				break;
+			}
+	}
+#endif /* LINT */
 
 # ifndef BUG1
 	if( ddebug ){
