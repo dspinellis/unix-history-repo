@@ -1,4 +1,4 @@
-/* tcp_input.c 1.26 81/11/20 */
+/* tcp_input.c 1.27 81/11/22 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -70,14 +70,14 @@ COUNT(TCP_INPUT);
 	 * Get ip and tcp header together in first mbuf.
 	 */
 	m = m0;
-	ti = mtod(m, struct tcpiphdr *);
-	if (ti->ti_len > sizeof (struct ip))
-		ip_stripoptions((struct ip *)ti, (char *)0);
 	if (m->m_len < sizeof (struct tcpiphdr) &&
 	    m_pullup(m, sizeof (struct tcpiphdr)) == 0) {
 		tcpstat.tcps_hdrops++;
 		goto bad;
 	}
+	ti = mtod(m, struct tcpiphdr *);
+	if (ti->ti_len > sizeof (struct ip))
+		ip_stripoptions((struct ip *)ti, (char *)0);
 
 	/*
 	 * Checksum extended tcp header and data.
