@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -272,7 +272,7 @@ rearg:	while((c = getopt(argc, argv, OPTFLAGS)) != EOF) {
 		if (Parse_IsVar(*argv))
 			Parse_DoVar(*argv, VAR_CMD);
 		else {
-			if (!*argv[0] || *argv[0] == '-' && !*argv[1])
+			if (!*argv[0] || *argv[0] == '-' && !(*argv)[1])
 				Punt("illegal (null) argument.");
 			if (**argv == '-') {
 				optind = 0;
