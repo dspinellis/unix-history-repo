@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.24 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.25 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.24 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.25 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -281,7 +281,7 @@ helo_options(line, m, mci, e)
 	}
 	else if (strcasecmp(line, "expn") == 0)
 		mci->mci_flags |= MCIF_EXPN;
-	else if (strcasecmp(line, "dsn") == 0)
+	else if (strcasecmp(line, "x-dsn-0") == 0)
 		mci->mci_flags |= MCIF_DSN;
 }
 /*
@@ -300,6 +300,7 @@ smtpmailfrom(m, mci, e)
 {
 	int r;
 	char *bufp;
+	char *bodytype;
 	char buf[MAXNAME];
 	char optbuf[MAXLINE];
 
@@ -312,20 +313,36 @@ smtpmailfrom(m, mci, e)
 	else
 		strcpy(optbuf, "");
 
-	if (e->e_bodytype != NULL)
+	bodytype = e->e_bodytype;
+	if (bitset(MCIF_8BITMIME, mci->mci_flags))
 	{
-		if (bitset(MCIF_8BITMIME, mci->mci_flags))
+		if (bodytype == NULL &&
+		    bitset(MM_MIME8BIT, MimeMode) &&
+		    bitset(EF_HAS8BIT, e->e_flags) &&
+		    !bitnset(M_8BITS, m->m_flags))
+			bodytype = "8BITMIME";
+		if (bodytype != NULL)
 		{
 			strcat(optbuf, " BODY=");
-			strcat(optbuf, e->e_bodytype);
+			strcat(optbuf, bodytype);
 		}
-		else if (!bitset(MM_CVTMIME, MimeMode) &&
-			 strcasecmp(e->e_bodytype, "7bit") != 0)
-		{
-			/* cannot just send a 7-bit version */
-			usrerr("%s does not support 8BITMIME", mci->mci_host);
-			return EX_DATAERR;
-		}
+	}
+	else if (bitnset(M_8BITS, m->m_flags))
+	{
+		/* just pass it through */
+	}
+	else if (bitset(MM_CVTMIME, MimeMode) &&
+		 (e->e_bodytype == NULL ? !bitset(MM_PASS8BIT, MimeMode)
+					: strcasecmp(e->e_bodytype, "7bit") != 0))
+	{
+		/* must convert from 8bit MIME format to 7bit encoded */
+		mci->mci_flags |= MCIF_CVT8TO7;
+	}
+	else if (!bitset(MM_PASS8BIT, MimeMode))
+	{
+		/* cannot just send a 8-bit version */
+		usrerr("%s does not support 8BITMIME", mci->mci_host);
+		return EX_DATAERR;
 	}
 
 	if (e->e_envid != NULL && bitset(MCIF_DSN, mci->mci_flags))
@@ -581,15 +598,6 @@ smtpdata(m, mci, e)
 	/*
 	**  Output the actual message.
 	*/
-
-	if (!bitset(MCIF_8BITMIME, mci->mci_flags) &&
-	    !bitnset(M_8BITS, m->m_flags) &&
-	    e->e_bodytype != NULL &&
-	    strcasecmp(e->e_bodytype, "7bit") != 0)
-	{
-		/* must convert from 8bit MIME format to 7bit encoded */
-		mci->mci_flags |= MCIF_CVT8TO7;
-	}
 
 	(*e->e_puthdr)(mci, e->e_header, e);
 	(*e->e_putbody)(mci, e, NULL);

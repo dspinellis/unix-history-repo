@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.38 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -1026,6 +1026,20 @@ putheader(mci, h, e)
 			(void) strcat(obuf, p);
 			putline(obuf, mci);
 		}
+	}
+
+	/*
+	**  If we are converting this to a MIME message, add the
+	**  MIME-Version: header.
+	*/
+
+	if (bitset(MM_MIME8BIT, MimeMode) &&
+	    bitset(EF_HAS8BIT, e->e_flags) &&
+	    !bitnset(M_8BITS, mci->mci_mailer->m_flags) &&
+	    !bitset(MCIF_CVT8TO7, mci->mci_flags) &&
+	    hvalue("MIME-Version", e->e_header) == NULL)
+	{
+		putline("MIME-Version: 1.0", mci);
 	}
 }
 /*
