@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_object.c,v 1.19 1994/01/31 04:20:52 davidg Exp $
+ *	$Id: vm_object.c,v 1.20 1994/02/09 07:03:08 davidg Exp $
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -341,6 +341,7 @@ vm_object_terminate(object)
 	 *        so the pageout daemon can't get any more to page
 	 *        out at rundown.
 	 */
+#if 0
 	p = (vm_page_t) queue_first(&object->memq);
 	while (!queue_end(&object->memq, (queue_entry_t) p)) {
 		vm_page_t next = (vm_page_t) queue_next(&p->listq);
@@ -371,6 +372,7 @@ vm_object_terminate(object)
 		vm_page_unlock_queues();
 		p = next;
 	}
+#endif
 
 	/*
 	 *	Wait until the pageout daemon is through
