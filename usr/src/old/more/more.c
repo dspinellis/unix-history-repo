@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)more.c	4.7 (Berkeley) 82/12/14";
+static	char *sccsid = "@(#)more.c	4.8 (Berkeley) 83/02/09";
 
 /*
 ** more.c - General purpose tty output filter and file perusal program
@@ -1306,10 +1306,11 @@ initterm ()
     char	clearbuf[100];
     char	*clearptr, *padstr;
     int		ldisc;
+    char	*term;
 
     setbuf(stdout, obuf);
     if (!(no_tty = gtty(1, &otty))) {
-	if (tgetent(buf, getenv("TERM")) <= 0) {
+	if ((term = getenv("TERM")) || tgetent(buf, term) <= 0) {
 	    dumb++; ul_opt = 0;
 	}
 	else {
@@ -1351,7 +1352,7 @@ initterm ()
 	    if (padstr = tgetstr("pc", &clearptr))
 		PC = *padstr;
 	    Home = tgetstr("ho",&clearptr);
-	    if (*Home == '\0')
+	    if (Home == 0 || *Home == '\0')
 	    {
 		if ((cursorm = tgetstr("cm", &clearptr)) != NULL) {
 		    strcpy(cursorhome, tgoto(cursorm, 0, 0));
