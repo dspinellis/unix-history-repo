@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.7 (Berkeley) %G%
+ *	@(#)extern.h	5.8 (Berkeley) %G%
  */
 
 int	 __bt_close __P((DB *));
@@ -14,6 +14,7 @@ int	 __bt_defcmp __P((const DBT *, const DBT *));
 int	 __bt_defpfx __P((const DBT *, const DBT *));
 int	 __bt_delete __P((const DB *, const DBT *, u_int));
 int	 __bt_dleaf __P((BTREE *, PAGE *, int));
+int	 __bt_fd __P((const DB *));
 EPG	*__bt_first __P((BTREE *, const DBT *, int *));
 int	 __bt_free __P((BTREE *, PAGE *));
 int	 __bt_get __P((const DB *, const DBT *, DBT *, u_int));
