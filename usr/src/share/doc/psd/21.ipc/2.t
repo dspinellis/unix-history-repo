@@ -1,9 +1,9 @@
-.\" Copyright (c) 1986 The Regents of the University of California.
+.\" Copyright (c) 1986, 1993 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	5.1 (Berkeley) %G%
+.\"	@(#)2.t	5.2 (Berkeley) %G%
 .\"
 .\".ds RH "Basics
 .bp
@@ -34,19 +34,20 @@ exchange data only with
 sockets in the same domain (it may be possible to cross domain
 boundaries, but only if some translation process is
 performed).  The
-4.3BSD IPC facilities support three separate communication domains:
+4.4BSD IPC facilities support four separate communication domains:
 the UNIX domain, for on-system communication;
 the Internet domain, which is used by
 processes which communicate
-using the the DARPA standard communication protocols;
-and the NS domain, which is used by processes which
+using the Internet standard communication protocols;
+the NS domain, which is used by processes which
 communicate using the Xerox standard communication
-protocols*.
+protocols*;
 .FS
 * See \fIInternet Transport Protocols\fP, Xerox System Integration
 Standard (XSIS)028112 for more information.  This document is
 almost a necessity for one trying to write NS applications.
 .FE
+and the ISO OSI protocols, which are not documented in this tutorial.
 The underlying communication
 facilities provided by these domains have a significant influence
 on the internal system implementation as well as the interface to
@@ -239,11 +240,11 @@ struct sockaddr_un addr;
 strcpy(addr.sun_path, "/tmp/foo");
 addr.sun_family = AF_UNIX;
 bind(s, (struct sockaddr *) &addr, strlen(addr.sun_path) +
-    sizeof (addr.sun_family));
+    sizeof (addr.sun_len) + sizeof (addr.sun_family));
 .DE
 Note that in determining the size of a UNIX domain address null
 bytes are not counted, which is why \fIstrlen\fP is used.  In
-the current implementation of UNIX domain IPC under 4.3BSD,
+the current implementation of UNIX domain IPC,
 the file name
 referred to in \fIaddr.sun_path\fP is created as a socket
 in the system file space.

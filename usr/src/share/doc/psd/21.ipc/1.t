@@ -1,11 +1,11 @@
-.\" Copyright (c) 1986 The Regents of the University of California.
+.\" Copyright (c) 1986, 1993 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.t	5.1 (Berkeley) %G%
+.\"	@(#)1.t	5.2 (Berkeley) %G%
 .\"
-.\".ds LH "4.3BSD IPC Primer
+.\".ds LH "4.4BSD IPC Primer
 .\".ds RH Introduction
 .\".ds RF "Leffler/Fabry/Joy
 .\".ds LF "\*(DY
@@ -27,14 +27,12 @@ more than two years of discussion and research.  The facilities
 provided in 4.2BSD incorporated many of the ideas from current
 research, while trying to maintain the UNIX philosophy of
 simplicity and conciseness.
-The current release of Berkeley UNIX, 4.3BSD,
-completes some of the IPC facilities
-and provides an upward-compatible interface.
-It is hoped that the interprocess communication
-facilities included in 4.3BSD will establish a
-standard for UNIX.  From the response to the design,
-it appears many organizations carrying out
-work with UNIX are adopting it.
+The 4.3BSD release of Berkeley UNIX
+improved upon some of the IPC facilities
+while providing an upward-compatible interface.
+4.4BSD adds support for ISO protocols and IP multicasting.
+The BSD interprocess communication
+facilities have become a defacto standard for UNIX.
 .PP
 UNIX has previously been very weak in the area of interprocess
 communication.  Prior to the 4BSD facilities, the only
@@ -51,8 +49,8 @@ Earlier attempts at extending the IPC facilities of UNIX have
 met with mixed reaction.  The majority of the problems have
 been related to the fact that these facilities have been tied to
 the UNIX file system, either through naming or implementation.
-Consequently, the IPC facilities provided in 4.3BSD have been
-designed as a totally independent subsystem.  The 4.3BSD IPC
+Consequently, the IPC facilities provided in 4.2BSD were
+designed as a totally independent subsystem.  The BSD IPC
 allows processes to rendezvous in many ways. 
 Processes may rendezvous through a UNIX file system-like
 name space (a space where all names are path names)
@@ -68,7 +66,7 @@ more use is made of these facilities they will be refined;
 only time will tell.
 .PP
 This document provides a high-level description
-of the IPC facilities in 4.3BSD and their use.
+of the IPC facilities in 4.4BSD and their use.
 It is designed to complement the manual pages for the IPC primitives
 by examples of their use.
 The remainder of this document is organized in four sections.  
