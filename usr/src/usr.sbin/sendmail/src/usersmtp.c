@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.14 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.15 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.14 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.15 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -35,6 +35,10 @@ char	SmtpMsgBuffer[MAXLINE];		/* buffer for commands */
 char	SmtpReplyBuffer[MAXLINE];	/* buffer for replies */
 char	SmtpError[MAXLINE] = "";	/* save failure error messages */
 int	SmtpPid;			/* pid of mailer */
+
+#ifdef __STDC__
+extern	smtpmessage(char *f, MAILER *m, MCI *mci, ...);
+#endif
 /*
 **  SMTPINIT -- initialize SMTP.
 **
