@@ -1,0 +1,3 @@
+6110	CREATE GLOBAL: Relation %0 already exists at site %1~
+6600	Aggregates on distributed relations not yet implemented.~
+6601	Multi-variable distributed queries not yet implemented.~

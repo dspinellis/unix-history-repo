@@ -1,0 +1,74 @@
+7-c-1+q+2:010023
+relation:-c-20
+relid	c12
+relowner	c2
+relspec	i1
+relindxd	i1
+relstat2	i2
+relstat	i2
+relsave	i4
+reltups	i4
+relatts	i2
+relwid	i2
+relprim	i4
+relfree	i4
+relstamp	i4
+
+attribute:-c-20
+attrelid	c12
+attowner	c2
+attid	i2
+attname	c12
+attoff	i2
+attfrmt	c1
+attfrml	i1
+attxtra	i1
+
+indexes:-c-20
+irelidp	c12
+iownerp	c2
+irelidi	c12
+irelspeci	i1
+idom1	i1
+idom2	i1
+idom3	i1
+idom4	i1
+idom5	i1
+idom6	i1
+
+tree:000423-c-20
+treerelid	c12
+treeowner	c2
+treeid	i2
+treeseq	i2
+treetype	i1
+treexxxx	i1
+treetree	c100
+
+protect:-c-20
+prorelid	c12
+prorelown	c2
+propermid	i2
+prouser	c2
+proterm	c8
+proresvar	i1
+proopset	i1
+protodbgn	i2
+protodend	i2
+prodowbgn	i1
+prodowend	i1
+prodomset1	i4
+prodomset2	i4
+prodomset3	i4
+prodomset4	i4
+protree	i2
+
+integrities:-c-20
+intrelid	c12
+intrelowner	c2
+inttree	i2
+intdomset1	i4
+intdomset2	i4
+intdomset3	i4
+intdomset4	i4
+intresvar	i1

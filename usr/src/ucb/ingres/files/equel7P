@@ -1,0 +1,92 @@
+DB:$P/bin
+DS:$P/source
+
+*
+*  Process 1 -- parser
+*
+P1:$B/parser:PARSER:|0:0014:P
+
+***** local definitions
+* parser
+L3:1:0:0
+
+***** remote definitions
+R0:0:|1:|0:0006:0
+R2:0:b:g:0007:1:14:16:22:23
+R3:0:b:g:0000
+R4:0:b:g:0000:5:6:7:8:9:10:11:13:26
+
+*
+*  Process 2 -- query modification
+*
+P2:$B/sysdump:QRYMOD:b:0014:Q
+
+***** local definitions
+* qrymod
+L1:0:0:2
+* define
+L14:0:1:0
+* view
+L16:0:2:0
+* permit
+L22:0:3:0
+* integrity
+L23:0:4:0
+
+***** remote definitions
+R1:0:g:b:0006
+* decomposition
+R3:0:c:f:0007:2
+R4:0:c:f:0000
+
+
+*
+*  Process 3 -- decomp & one variable query processor
+*
+P3:$B/decomp:DECOMP:c:0014:D
+
+***** local definitions
+* decomp
+L2:0:0:0
+
+***** remote definitions
+R0:0:|2:?:0004:0
+R1:0:f:c:0000
+R2:0:f:c:0006
+R4:0:d:e:0007:6:7:9:10:17:18
+
+*
+*  Process 4 -- data base utilities
+*
+P4:$B/alldbu:DBU:d:0014:Z
+
+***** local definitions
+* copy
+L5:0:6:0
+* create
+L6:0:0:0
+* destroy
+L7:0:1:0
+* help
+L8:0:4:0
+* index
+L9:0:9:0
+* modify
+L10:0:8:0
+* print
+L11:0:3:0
+* save
+L13:0:7:0
+* update
+L17:0:2:0
+* resetrel
+L18:0:5:0
+* display
+L19:0:10:0
+* remqm
+L26:0:12:0
+
+***** remote definitions
+R1:0:e:d:0000
+R2:0:e:d:0000
+R3:0:e:d:0006

@@ -1,0 +1,52 @@
+.../files
+
+This directory contains the support files needed for INGRES to
+run.  The critical ones are:
+
+dayfile7
+	The dayfile printed by the tty monitor when INGRES starts
+	up.
+dbtmplt7
+	The file that describes the database, used by creatdb.
+equel7
+	The process table used by INGRES when called from an EQUEL
+	program.
+error7_0
+error7_1
+error7_2
+error7_3
+error7_4
+error7_5
+error7_6
+	The files containing the text of error messages.
+proctab7
+	The process table used by INGRES when it is invoked normally.
+procx7
+	The process talbe used by INGRES when it is invoked
+	as "ingresx".
+startup
+	A file executed by the monitor at startup, typically
+	defining a few basic macros.
+usage
+	A file printed if the parameters to INGRES are wrong.
+	This can be as terse or as verbose as necessary, given the
+	sophistication of your users.
+users
+	A list of valid INGRES users, their internal code, and
+	their capabilities.  More below.
+
+Every user on your system who is going to use INGRES \must/ be
+included in the "users" file.  This file looks much like the
+/etc/passwd file, with fields separated by colons, etc.  The
+first, third, and fourth fields are the login name, user id,
+and group ids respectively, exactly like the /etc/passwd file.
+The second field is that user's internal code, which is always
+exactly two printable characters.  There is also an octal field
+that describes capabilities; the principle capability is the
+000001 bit which allows that person to create databases.
+
+Users that are not entered into the users file WILL NOT be
+able to use INGRES.
+
+This file can be set up for everyone on your system by using
+the "usersetup" command.

@@ -1,0 +1,7 @@
+/*	@(#)startup	7.2	4/26/81	*/
+{define; {editor}; /usr/bin/ex}
+{define; {shell}; /bin/csh}
+{define; {continuetrap}; {ifsame; @{tuplecount}; {tuplecount};; {ifsame; @{tuplecount}; 1; {type (1 tuple)}; {type @({tuplecount} tuples)}}}}
+{define; {begintrap}; {remove; {tuplecount}}}
+\v
+\r

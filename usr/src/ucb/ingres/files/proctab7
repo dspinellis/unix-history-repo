@@ -1,0 +1,61 @@
+*****	@(#)proctab7V	1.1	2/5/81	*****
+DB:$P/bin
+DS:$P/source
+
+*
+*  Process 0 -- terminal monitor
+*
+P0:$B/monitor:MONITOR:h:0003:M
+
+***** local definitions
+* monitor
+L0:0:0:0
+
+***** remote definitions
+R1:0:a:b:0007:1
+
+*
+*  Process 1 -- vaxingres
+*
+P1:$B/vaxingres:INGRES:a:0014:P
+
+***** local definitions
+* parser
+L3:1:0:0
+* qrymod
+L1:0:1:2
+* view
+L16:0:2:0
+* integrity
+L23:0:3:0
+* permit
+L22:0:4:0
+* decomp
+L2:0:5:0
+* copy
+L5:0:12:0
+* create
+L6:0:6:0
+* destroy
+L7:0:7:0
+* help
+L8:0:10:0
+* index
+L9:0:15:0
+* modify
+L10:0:14:0
+* print
+L11:0:9:0
+* save
+L13:0:13:0
+* update
+L17:0:8:0
+* resetrel
+L18:0:11:0
+* display
+L19:0:16:0
+* remqm
+L26:0:18:0
+
+***** remote definitions
+R0:0:b:a:0006:0
