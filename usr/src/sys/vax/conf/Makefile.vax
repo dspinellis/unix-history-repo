@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.vax	6.21 (Berkeley) %G%
+#	@(#)Makefile.vax	6.22 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -95,8 +95,7 @@ assym.s: ../h/param.h ../machine/pte.h ../h/buf.h ../h/vmparam.h \
 	cc ${INCLUDES} ${IDENT} ${PARAM} ../vax/genassym.c
 	./a.out >assym.s; rm -f a.out
 
-depend: 
-	-if [ ! -f assym.s ]; then touch assym.s; fi
+depend:	assym.s
 	${CC} -M ${COPTS} ${CFILES} | \
 	sed -e ':loop' \
 	    -e 's/\.\.\/[^ /]*\/\.\./../' \
