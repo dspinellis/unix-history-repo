@@ -6,10 +6,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)sethostent.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)sethostent.c	6.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
 #include <netdb.h>
