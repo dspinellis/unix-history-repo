@@ -1,7 +1,7 @@
-/*	signalsim.c	4.2	83/06/10	*/
+/*	signalsim.c	4.3	83/07/02	*/
 
 /*
- * Backwards compatible signal.
+ * Almost backwards compatible signal.
  */
 #include <signal.h>
 
