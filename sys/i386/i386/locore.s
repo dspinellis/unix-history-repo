@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)locore.s	7.3 (Berkeley) 5/13/91
- *	$Id: locore.s,v 1.17 1994/06/06 14:02:35 davidg Exp $
+ *	$Id: locore.s,v 1.18 1994/06/07 23:53:22 phk Exp $
  */
 
 /*
@@ -152,7 +152,8 @@ NON_GPROF_ENTRY(btext)
 	 * ( if we want to hold onto /boot, it's physical %esp up to _end)
 	 */
 
- 1:	movl	4(%esp),%eax
+ 1:
+	movl	4(%esp),%eax
 	movl	%eax,_boothowto-KERNBASE
 	movl	8(%esp),%eax
 	movl	%eax,_bootdev-KERNBASE
@@ -170,14 +171,12 @@ NON_GPROF_ENTRY(btext)
 	movsb
 #endif
 
-	/* Find out our CPU type. */
-
-	/* First, clear the alignment check and identification flags. */
-	pushfl
-	popl	%eax
-	andl	$~(PSL_AC|PSL_ID),%eax
+	/* don't trust what the BIOS gives for eflags */
+	movl	$PSL_MBO,%eax
 	pushl	%eax
 	popfl
+
+	/* Find out our CPU type. */
 
 	/* Try to toggle alignment check flag; does not exist on 386. */
 	pushfl
