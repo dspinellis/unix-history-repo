@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -268,9 +268,7 @@ void
 #if __STDC__
 Parse_Error(int type, const char *fmt, ...)
 #else
-Parse_Error(type, fmt, va_alist)
-	int type;
-	char *fmt;
+Parse_Error(va_alist)
 	va_dcl
 #endif
 {
@@ -278,8 +276,14 @@ Parse_Error(type, fmt, va_alist)
 #if __STDC__
 	va_start(ap, fmt);
 #else
+	int type;		/* Error type (PARSE_WARNING, PARSE_FATAL) */
+	char *fmt;
+
 	va_start(ap);
+	type = va_arg(ap, int);
+	fmt = va_arg(ap, char *);
 #endif
+
 	(void)fprintf(stderr, "\"%s\", line %d: ", fname, lineno);
 	if (type == PARSE_WARNING)
 		(void)fprintf(stderr, "warning: ");
@@ -1195,12 +1199,20 @@ Parse_DoVar (line, ctxt)
 				 * assignment. This reduces error checks */
     GNode   	    *ctxt;    	/* Context in which to do the assignment */
 {
-    register char   *cp;	/* pointer into line */
+    char   	    *cp;	/* pointer into line */
     enum {
 	VAR_SUBST, VAR_APPEND, VAR_SHELL, VAR_NORMAL
     }	    	    type;   	/* Type of assignment */
     char            *opc;	/* ptr to operator character to 
 				 * null-terminate the variable name */
+    /*  
+     * Avoid clobbered variable warnings by forcing the compiler
+     * to ``unregister'' variables
+     */ 
+#if __GNUC__
+    (void) &cp; 
+    (void) &line; 
+#endif 
 
     /*
      * Skip to variable name
@@ -1290,7 +1302,13 @@ Parse_DoVar (line, ctxt)
 	Boolean	freeCmd;    	/* TRUE if the command needs to be freed, i.e.
 				 * if any variable expansion was performed */
 
-
+	/*  
+	 * Avoid clobbered variable warnings by forcing the compiler
+	 * to ``unregister'' variables
+	 */ 
+#if __GNUC__
+	(void) &freeCmd;
+#endif 
 	/*
 	 * Set up arguments for shell
 	 */
@@ -2050,8 +2068,8 @@ ParseReadLine ()
 	} else if (c == '\n') {
 	    lineno++;
 	} else if (c == '#') {
-		ParseUnreadc(c);
-		break;
+	    ParseUnreadc(c);
+	    break;
 	} else {
 	    /*
 	     * Anything else breaks out without doing anything
