@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ftp_var.h"
@@ -159,7 +159,7 @@ login(host)
 	char *host;
 {
 	char tmp[80];
-	char *user, *pass, *acct, *getlogin(), *mygetpass();
+	char *user, *pass, *acct, *getlogin(), *getpass();
 	int n, aflag = 0;
 
 	user = pass = acct = 0;
@@ -188,12 +188,12 @@ login(host)
 	n = command("USER %s", user);
 	if (n == CONTINUE) {
 		if (pass == NULL)
-			pass = mygetpass("Password:");
+			pass = getpass("Password:");
 		n = command("PASS %s", pass);
 	}
 	if (n == CONTINUE) {
 		aflag++;
-		acct = mygetpass("Account:");
+		acct = getpass("Account:");
 		n = command("ACCT %s", acct);
 	}
 	if (n != COMPLETE) {
@@ -380,8 +380,8 @@ abortsend()
 sendrequest(cmd, local, remote)
 	char *cmd, *local, *remote;
 {
-	FILE *fin, *dout = 0, *mypopen();
-	int (*closefunc)(), mypclose(), fclose(), (*oldintr)(), (*oldintp)();
+	FILE *fin, *dout = 0, *popen();
+	int (*closefunc)(), pclose(), fclose(), (*oldintr)(), (*oldintp)();
 	int abortsend();
 	char buf[BUFSIZ];
 	long bytes = 0, hashbytes = sizeof (buf);
@@ -416,7 +416,7 @@ sendrequest(cmd, local, remote)
 		fin = stdin;
 	else if (*local == '|') {
 		oldintp = signal(SIGPIPE,SIG_IGN);
-		fin = mypopen(local + 1, "r");
+		fin = popen(local + 1, "r");
 		if (fin == NULL) {
 			perror(local + 1);
 			(void) signal(SIGINT, oldintr);
@@ -424,7 +424,7 @@ sendrequest(cmd, local, remote)
 			code = -1;
 			return;
 		}
-		closefunc = mypclose;
+		closefunc = pclose;
 	} else {
 		fin = fopen(local, "r");
 		if (fin == NULL) {
@@ -572,8 +572,8 @@ abortrecv()
 recvrequest(cmd, local, remote, mode)
 	char *cmd, *local, *remote, *mode;
 {
-	FILE *fout, *din = 0, *mypopen();
-	int (*closefunc)(), mypclose(), fclose(), (*oldintr)(), (*oldintp)(); 
+	FILE *fout, *din = 0, *popen();
+	int (*closefunc)(), pclose(), fclose(), (*oldintr)(), (*oldintp)(); 
 	int abortrecv(), oldverbose, oldtype = 0, tcrflag, nfnd;
 	char buf[BUFSIZ], *gunique(), msg;
 	long bytes = 0, hashbytes = sizeof (buf);
@@ -709,12 +709,12 @@ recvrequest(cmd, local, remote, mode)
 		fout = stdout;
 	else if (*local == '|') {
 		oldintp = signal(SIGPIPE, SIG_IGN);
-		fout = mypopen(local + 1, "w");
+		fout = popen(local + 1, "w");
 		if (fout == NULL) {
 			perror(local+1);
 			goto abort;
 		}
-		closefunc = mypclose;
+		closefunc = pclose;
 	}
 	else {
 		fout = fopen(local, mode);
