@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.h	7.15 (Berkeley) %G%
+ *	@(#)route.h	7.16 (Berkeley) %G%
  */
 
 /*
@@ -38,6 +38,7 @@ struct rt_metrics {
 	u_long	rmx_ssthresh;	/* outbound gateway buffer limit */
 	u_long	rmx_rtt;	/* estimated round trip time */
 	u_long	rmx_rttvar;	/* estimated rtt variance */
+	u_long	rmx_pksent;	/* packets sent using this route */
 };
 
 /*
@@ -123,23 +124,17 @@ struct rt_msghdr {
 	u_char	rtm_version;	/* future binary compatability */
 	u_char	rtm_type;	/* message type */
 	u_short	rtm_index;	/* index for associated ifp */
-	pid_t	rtm_pid;	/* identify sender */
+	int	rtm_flags;	/* flags, incl. kern & message, e.g. DONE */
 	int	rtm_addrs;	/* bitmask identifying sockaddrs in msg */
+	pid_t	rtm_pid;	/* identify sender */
 	int	rtm_seq;	/* for sender to identify action */
 	int	rtm_errno;	/* why failed */
-	int	rtm_flags;	/* flags, incl. kern & message, e.g. DONE */
 	int	rtm_use;	/* from rtentry */
 	u_long	rtm_inits;	/* which metrics we are initializing */
 	struct	rt_metrics rtm_rmx; /* metrics themselves */
 };
 
-struct route_cb {
-	int	ip_count;
-	int	ns_count;
-	int	iso_count;
-	int	any_count;
-};
-#define RTM_VERSION	2	/* Up the ante and ignore older versions */
+#define RTM_VERSION	3	/* Up the ante and ignore older versions */
 
 #define RTM_ADD		0x1	/* Add Route */
 #define RTM_DELETE	0x2	/* Delete Route */
@@ -152,6 +147,9 @@ struct route_cb {
 #define RTM_OLDADD	0x9	/* caused by SIOCADDRT */
 #define RTM_OLDDEL	0xa	/* caused by SIOCDELRT */
 #define RTM_RESOLVE	0xb	/* req to resolve dst to LL addr */
+#define RTM_NEWADDR	0xc	/* address being added to iface */
+#define RTM_DELADDR	0xd	/* address being removed from iface */
+#define RTM_IFINFO	0xe	/* iface going up/down etc. */
 
 #define RTV_MTU		0x1	/* init or lock _mtu */
 #define RTV_HOPCOUNT	0x2	/* init or lock _hopcount */
@@ -162,6 +160,9 @@ struct route_cb {
 #define RTV_RTT		0x40	/* init or lock _rtt */
 #define RTV_RTTVAR	0x80	/* init or lock _rttvar */
 
+/*
+ * Bitmask values for rtm_addr.
+ */
 #define RTA_DST		0x1	/* destination sockaddr present */
 #define RTA_GATEWAY	0x2	/* gateway sockaddr present */
 #define RTA_NETMASK	0x4	/* netmask sockaddr present */
@@ -169,10 +170,32 @@ struct route_cb {
 #define RTA_IFP		0x10	/* interface name sockaddr present */
 #define RTA_IFA		0x20	/* interface addr sockaddr present */
 #define RTA_AUTHOR	0x40	/* sockaddr for author of redirect */
+#define RTA_BRD		0x80	/* for NEWADDR, broadcast or p-p dest addr */
 
-#ifdef KERNEL
-struct route_cb route_cb;
-#endif
+/*
+ * Index offsets for sockaddr array for alternate internal encoding.
+ */
+#define RTAX_DST	0	/* destination sockaddr present */
+#define RTAX_GATEWAY	1	/* gateway sockaddr present */
+#define RTAX_NETMASK	2	/* netmask sockaddr present */
+#define RTAX_GENMASK	3	/* cloning mask sockaddr present */
+#define RTAX_IFP	4	/* interface name sockaddr present */
+#define RTAX_IFA	5	/* interface addr sockaddr present */
+#define RTAX_AUTHOR	6	/* sockaddr for author of redirect */
+#define RTAX_BRD	7	/* for NEWADDR, broadcast or p-p dest addr */
+#define RTAX_MAX	8	/* size of array to allocate */
+
+struct rt_addrinfo {
+	int	rti_addrs;
+	struct	sockaddr *rti_info[RTAX_MAX];
+};
+
+struct route_cb {
+	int	ip_count;
+	int	ns_count;
+	int	iso_count;
+	int	any_count;
+};
 
 #ifdef KERNEL
 #define	RTFREE(rt) \
@@ -181,18 +204,7 @@ struct route_cb route_cb;
 	else \
 		(rt)->rt_refcnt--;
 
-#ifdef	GATEWAY
-#define	RTHASHSIZ	64
-#else
-#define	RTHASHSIZ	8
-#endif
-#if	(RTHASHSIZ & (RTHASHSIZ - 1)) == 0
-#define RTHASHMOD(h)	((h) & (RTHASHSIZ - 1))
-#else
-#define RTHASHMOD(h)	((h) % RTHASHSIZ)
-#endif
-struct	mbuf *rthost[RTHASHSIZ];
-struct	mbuf *rtnet[RTHASHSIZ];
+struct	route_cb route_cb;
 struct	rtstat	rtstat;
 struct	rtentry *rtalloc1();
 struct	radix_node_head *rt_tables[AF_MAX+1];
