@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	7.9 (Berkeley) %G%
+ *	@(#)sd.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -32,8 +32,8 @@ static char rcsid[] = "$Header: sd.c,v 1.15 91/04/24 11:54:30 mike Exp $";
 #include "scsireg.h"
 #include "vm/vm_param.h"
 #include "vm/lock.h"
-#include "vm/pmap.h"
 #include "vm/vm_prot.h"
+#include "vm/pmap.h"
 
 extern int scsi_test_unit_rdy();
 extern int scsi_request_sense();
