@@ -7,7 +7,7 @@
 
 #ifndef lint
 static char Xsccsid[] = "derived from @(#)rcmd.c 5.17 (Berkeley) 6/27/88";
-static char sccsid[] = "@(#)kcmd.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)kcmd.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -90,7 +90,7 @@ kcmd(sock, ahost, rport, locuser, remuser, cmd, fd2p, ticket, service, realm,
 
 	oldmask = sigblock(sigmask(SIGURG));
 	for (;;) {
-	s = getport(&lport);
+		s = getport(&lport);
 		if (s < 0) {
 			if (errno == EAGAIN)
 				fprintf(stderr,
@@ -115,10 +115,10 @@ kcmd(sock, ahost, rport, locuser, remuser, cmd, fd2p, ticket, service, realm,
 			lport--;
 			continue;
 		}
-	/*
-	 * don't wait very long for Kerberos rcmd.
-	 */
-	if (errno == ECONNREFUSED && timo <= 4) {
+		/*
+		 * don't wait very long for Kerberos rcmd.
+		 */
+		if (errno == ECONNREFUSED && timo <= 4) {
 			/* sleep(timo); don't wait at all here */
 			timo *= 2;
 			continue;
