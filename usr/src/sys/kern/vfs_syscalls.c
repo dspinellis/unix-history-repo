@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.34 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.35 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -322,6 +322,14 @@ unmount(p, uap, retval)
 	    (error = suser(p->p_ucred, &p->p_acflag))) {
 		vput(vp);
 		return (error);
+	}
+
+	/*
+	 * Don't allow unmounting the root file system.
+	 */
+	if (mp->mnt_flag & MNT_ROOTFS) {
+		vput(vp);
+		return (EINVAL);
 	}
 
 	/*
