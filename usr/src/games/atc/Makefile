@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 CFLAGS=	-O -DBSD
 YFLAGS=	-d
@@ -29,7 +29,7 @@ MAN=	atc.0
 all: atc
 
 atc: ${OBJS} ${LIBC}
-	${CC} ${CFLAGS} ${OBJS} ${LIBS} -o $@
+	${CC} ${CFLAGS} ${OBJS} ${LIBS} -o $@ -lcompat
 
 clean:
 	rm -f ${OBJS} core atc grammar.c y.tab.h y.tab.c lex.yy.c lex.c
