@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_subr2.c,v 5.5 88/11/18 17:28:55 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_subr2.c,v $
- *	@(#)tp_subr2.c	7.3 (Berkeley) %G% *
+ *	@(#)tp_subr2.c	7.4 (Berkeley) %G%
  *
  * Some auxiliary routines:
  * 		tp_protocol_error: required by xebec- called when a combo of state,
@@ -185,8 +185,8 @@ tp_indicate(ind, tpcb, error)
 {
 	register struct socket *so = tpcb->tp_sock;
 	IFTRACE(D_INDICATION)
-		tptraceTPCB(TPPTindicate, ind, *(int *)(tpcb->tp_lsuffix), 
-			*(int *)(tpcb->tp_fsuffix), error,so->so_pgid);
+		tptraceTPCB(TPPTindicate, ind, *(u_short *)(tpcb->tp_lsuffix), 
+			*(u_short *)(tpcb->tp_fsuffix), error,so->so_pgid);
 	ENDTRACE
 	IFDEBUG(D_INDICATION)
 		char *ls, *fs;
@@ -305,7 +305,7 @@ tp_quench( tpcb, cmd )
 {
 	IFDEBUG(D_QUENCH)
 		printf("tp_quench tpcb 0x%x ref 0x%x sufx 0x%x\n",
-			tpcb, tpcb->tp_lref, *(int *)(tpcb->tp_lsuffix));
+			tpcb, tpcb->tp_lref, *(u_short *)(tpcb->tp_lsuffix));
 		printf("cong_win 0x%x decbit 0x%x \n",
 			tpcb->tp_cong_win, tpcb->tp_decbit);
 	ENDDEBUG
