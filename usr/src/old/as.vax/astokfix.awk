@@ -1,11 +1,9 @@
 #
 #	Copyright (c) 1982 Regents of the University of California */
-#	@(#)astokfix.awk 4.3 %G%
+#	@(#)astokfix.awk 4.4 %G%
 #
 /AWKFIXESME/{
-	if ($4 == "AWKFIXESME")
-		$4 = count++;
-}
-{
-	print $0;
+	if ($4 == "AWKFIXESME"){
+		print $1 " " $2 " " $3 " " count++;
+	}
 }
