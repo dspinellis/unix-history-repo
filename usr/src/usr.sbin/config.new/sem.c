@@ -13,9 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sem.c	5.1 (Berkeley) %G%
- *
- * from: $Header: sem.c,v 1.5 93/01/12 03:57:11 torek Exp $
+ *	@(#)sem.c	5.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>

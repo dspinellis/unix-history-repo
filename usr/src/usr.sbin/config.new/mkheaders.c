@@ -13,9 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkheaders.c	5.1 (Berkeley) %G%
- *
- * from: $Header: mkheaders.c,v 1.2 93/01/12 03:58:42 torek Exp $
+ *	@(#)mkheaders.c	5.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>

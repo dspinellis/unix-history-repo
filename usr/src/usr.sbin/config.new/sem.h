@@ -13,9 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sem.h	5.1 (Berkeley) %G%
- *
- * from: $Header: sem.h,v 1.5 93/01/12 03:57:14 torek Exp $
+ *	@(#)sem.h	5.2 (Berkeley) %G%
  */
 
 void		enddefs __P((const char *));

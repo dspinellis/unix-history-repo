@@ -13,9 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hash.c	5.1 (Berkeley) %G%
- *
- * from: $Header: hash.c,v 1.2 93/01/12 03:57:57 torek Exp $
+ *	@(#)hash.c	5.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>

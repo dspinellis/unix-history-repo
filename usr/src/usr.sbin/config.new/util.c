@@ -13,9 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)util.c	5.1 (Berkeley) %G%
- *
- * from: $Header: util.c,v 1.3 93/01/12 03:59:55 torek Exp $
+ *	@(#)util.c	5.2 (Berkeley) %G%
  */
 
 #include <ctype.h>
