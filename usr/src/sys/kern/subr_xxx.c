@@ -1,4 +1,4 @@
-/*	subr_xxx.c	4.5	81/03/09	*/
+/*	subr_xxx.c	4.6	81/03/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -166,7 +166,8 @@ register c;
 	return(u.u_count == 0? -1: 0);
 }
 
-#ifdef unneeded
+#include "ct."
+#if NCT > 0
 /*
  * Pick up and return the next character from the user's
  * write call at location u_base;
