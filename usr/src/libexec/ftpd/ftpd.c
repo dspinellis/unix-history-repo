@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.31	(Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.32	(Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -321,9 +321,8 @@ user(name)
 	char *name;
 {
 	register char *cp;
-	FILE *fd;
 	char *shell;
-	char line[BUFSIZ], *getusershell();
+	char *getusershell();
 
 	if (logged_in) {
 		if (guest) {
@@ -335,7 +334,7 @@ user(name)
 
 	guest = 0;
 	if (strcmp(name, "ftp") == 0 || strcmp(name, "anonymous") == 0) {
-		if (!checkuser("ftp") || !checkuser("anonymous"))
+		if (checkuser("ftp") || checkuser("anonymous"))
 			reply(530, "User %s access denied.", name);
 		else if ((pw = sgetpwnam("ftp")) != NULL) {
 			guest = 1;
@@ -352,7 +351,7 @@ user(name)
 			if (strcmp(cp, shell) == 0)
 				break;
 		endusershell();
-		if (cp == NULL) {
+		if (cp == NULL || checkuser(name)) {
 			reply(530, "User %s access denied.", name);
 			if (logging)
 				syslog(LOG_NOTICE,
@@ -360,23 +359,6 @@ user(name)
 				    remotehost, name);
 			pw = (struct passwd *) NULL;
 			return;
-		}
-		if ((fd = fopen(_PATH_FTPUSERS, "r")) != NULL) {
-		    while (fgets(line, sizeof (line), fd) != NULL) {
-			if ((cp = index(line, '\n')) != NULL)
-				*cp = '\0';
-			if (strcmp(line, name) == 0) {
-				reply(530, "User %s access denied.", name);
-				if (logging)
-					syslog(LOG_NOTICE,
-					    "FTP LOGIN REFUSED FROM %s, %s",
-					    remotehost, name);
-				pw = (struct passwd *) NULL;
-				(void) fclose(fd);
-				return;
-			}
-		    }
-		    (void) fclose(fd);
 		}
 	}
 	reply(331, "Password required for %s.", name);
@@ -387,6 +369,27 @@ user(name)
 	 */
 	if (login_attempts)
 		sleep((unsigned) login_attempts);
+}
+
+/*
+ * Check if a user is in the file _PATH_FTPUSERS
+ */
+checkuser(name)
+	char *name;
+{
+	FILE *fd;
+	char line[BUFSIZ], *cp;
+
+	if ((fd = fopen(_PATH_FTPUSERS, "r")) != NULL) {
+		while (fgets(line, sizeof (line), fd) != NULL) {
+			if ((cp = index(line, '\n')) != NULL)
+				*cp = '\0';
+			if (strcmp(line, name) == 0)
+				return (1);
+		}
+		(void) fclose(fd);
+	}
+	return (0);
 }
 
 /*
