@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd3.c	1.3 83/07/22";
+static	char *sccsid = "@(#)cmd3.c	1.4 83/07/28";
 #endif
 
 #include "defs.h"
@@ -51,4 +51,29 @@ register struct ww *w;
 	}
 	if (didit)
 		reframe();
+}
+
+doescape()
+{
+	char buf[2];
+
+	wwputs("New escape character? ", cmdwin);
+	wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
+	while ((*buf = bgetc()) < 0)
+		bread();
+	buf[1] = 0;
+	setescape(buf);
+	wwputs("\r\n", cmdwin);
+}
+
+setescape(esc)
+register char *esc;
+{
+	if (*esc == '^') {
+		if (esc[1] != 0)
+			escapec = esc[1] & 0x1f;
+		else
+			escapec = '^';
+	} else
+		escapec = *esc;
 }
