@@ -1,0 +1,33 @@
+#	@(#)README	5.1 (Berkeley) %G%
+
+The script file consists of lines with a initial character which is
+the "command" for that line.  Legal characters are as follows:
+
+g: do a get command
+	+ must be followed by [kK]
+	+ writes out the retrieved data DBT.
+p: do a put command
+	+ must be followed by [kK][dD]
+r: do a del command
+	+ must be followed by [kK]
+s: do a seq command
+	+ writes out the retrieved key and data DBT's
+f: set the flags for the next command
+	+ no value zero's the flags
+D [file]: data file
+	+ set the current data value to the contents of the file
+d [data]:
+	+ set the current key value to the contents of the line.
+K [file]: key file
+	+ set the current key value to the contents of the file
+k [data]:
+	+ set the current key value to the contents of the line.
+
+Options to dbtest are as follows:
+
+	-i: Use the rest of the argument to set elements in the info
+	    structure.  If the type is btree, then "-i cachesize=10240"
+	    will set BTREEINFO.cachesize to 10240.
+	-o: The rest of the argument is the output file instead of
+	    using stdout.
+	-t: Set the type of access, either "btree", "hash" or "recno".
