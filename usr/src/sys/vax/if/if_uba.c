@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_uba.c	7.8 (Berkeley) %G%
+ *	@(#)if_uba.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -59,7 +59,8 @@ if_ubaminit(ifu, uban, hlen, nmr, ifr, nr, ifw, nw)
 	if (ifr[0].ifrw_addr)
 		cp = ifr[0].ifrw_addr - off;
 	else {
-		cp = (caddr_t)malloc((nr + nw) * nclbytes, M_DEVBUF, M_NOWAIT);
+		cp = (caddr_t)malloc((u_long)((nr + nw) * nclbytes), M_DEVBUF,
+		    M_NOWAIT);
 		if (cp == 0)
 			return (0);
 		p = cp;
