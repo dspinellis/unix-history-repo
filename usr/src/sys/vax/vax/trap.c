@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.8 (Berkeley) %G%
+ *	@(#)trap.c	7.9 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -121,9 +121,7 @@ trap(sp, type, code, pc, psl)
 
 	case T_PAGEFLT:		/* allow page faults in kernel mode */
 	case T_PAGEFLT+USER:	/* page fault */
-		i = u.u_error;
 		pagein(code, 0);
-		u.u_error = i;
 		if (type == T_PAGEFLT)
 			return;
 		goto out;
@@ -192,6 +190,7 @@ syscall(sp, type, code, pc, psl)
 	register struct sysent *callp;
 	register struct proc *p = u.u_procp;
 	int error, opc;
+	int args[8], rval[2];
 	struct timeval syst;
 
 	syst = u.u_ru.ru_stime;
@@ -199,41 +198,34 @@ syscall(sp, type, code, pc, psl)
 		panic("syscall");
 	u.u_ar0 = locr0;
 	params = (caddr_t)locr0[AP] + NBPW;
-	u.u_error = 0;
 	opc = pc - 2;
 	if (code > 63)
 		opc -= 2;
+	if (code == 0) {			/* indir */
+		code = fuword(params);
+		params += NBPW;
+	}
 	if (code >= nsysent)
 		callp = &sysent[0];		/* indir (illegal) */
-	else {
+	else
 		callp = &sysent[code];
-		if (callp == sysent) {		/* indir */
-			i = fuword(params);
-			params += NBPW;
-			if ((unsigned)i >= nsysent)
-				callp = &sysent[0];
-			else
-				callp = &sysent[i];
-		}
-	}
 	if ((i = callp->sy_narg * sizeof (int)) &&
-	    (error = copyin(params, (caddr_t)u.u_arg, (u_int)i)) != 0) {
+	    (error = copyin(params, (caddr_t)args, (u_int)i)) != 0) {
 		locr0[R0] = error;
 		locr0[PS] |= PSL_C;	/* carry bit */
 #ifdef KTRACE
-                if (KTRPOINT(p, KTR_SYSCALL))
-                        ktrsyscall(p->p_tracep, code, callp->sy_narg);
+		if (KTRPOINT(p, KTR_SYSCALL))
+			ktrsyscall(p->p_tracep, code, callp->sy_narg, args);
 #endif
 		goto done;
 	}
 #ifdef KTRACE
-        if (KTRPOINT(p, KTR_SYSCALL))
-                ktrsyscall(p->p_tracep, code, callp->sy_narg);
+	if (KTRPOINT(p, KTR_SYSCALL))
+		ktrsyscall(p->p_tracep, code, callp->sy_narg, args);
 #endif
-	u.u_r.r_val1 = 0;
-	u.u_r.r_val2 = locr0[R1];
-	error = (*callp->sy_call)(u.u_procp, u.u_ap, &u.u_r.r_val1);
-	error = u.u_error;		/* XXX */
+	rval[0] = 0;
+	rval[1] = locr0[R1];
+	error = (*callp->sy_call)(u.u_procp, args, rval);
 	if (error == ERESTART)
 		pc = opc;
 	else if (error != EJUSTRETURN) {
@@ -241,8 +233,8 @@ syscall(sp, type, code, pc, psl)
 			locr0[R0] = error;
 			locr0[PS] |= PSL_C;	/* carry bit */
 		} else {
-			locr0[R0] = u.u_r.r_val1;
-			locr0[R1] = u.u_r.r_val2;
+			locr0[R0] = rval[0];
+			locr0[R1] = rval[1];
 			locr0[PS] &= ~PSL_C;
 		}
 	}
@@ -284,7 +276,7 @@ done:
 	}
 	curpri = p->p_pri;
 #ifdef KTRACE
-        if (KTRPOINT(p, KTR_SYSRET))
-                ktrsysret(p->p_tracep, code);
+	if (KTRPOINT(p, KTR_SYSRET))
+		ktrsysret(p->p_tracep, code, error, rval[0]);
 #endif
 }
