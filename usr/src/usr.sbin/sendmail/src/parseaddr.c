@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.32	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.33	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -728,6 +728,7 @@ buildaddr(tv, a)
 	static char buf[MAXNAME];
 	struct mailer **mp;
 	register struct mailer *m;
+	extern bool sameword();
 
 	if (a == NULL)
 		a = (ADDRESS *) xalloc(sizeof *a);
@@ -741,7 +742,7 @@ buildaddr(tv, a)
 		return (NULL);
 	}
 	tv++;
-	if (strcmp(*tv, "error") == 0)
+	if (sameword(*tv, "error"))
 	{
 		if (**++tv != CANONUSER)
 			syserr("buildaddr: error: no user");
@@ -757,7 +758,7 @@ buildaddr(tv, a)
 	}
 	for (mp = Mailer; (m = *mp++) != NULL; )
 	{
-		if (strcmp(m->m_name, *tv) == 0)
+		if (sameword(m->m_name, *tv))
 			break;
 	}
 	if (m == NULL)
