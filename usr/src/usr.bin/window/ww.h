@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.36 85/04/24		*/
+/*	@(#)ww.h	3.37 86/05/02		*/
 
 /*
  * Copyright (c) 1983 Regents of the University of California,
