@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)xx.c	3.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)xx.c	3.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -28,6 +28,9 @@ xxinit()
 	if (ttinit() < 0)
 		return -1;
 	xxbufsize = tt.tt_nrow * tt.tt_ncol * 2;
+	/* xcinit may choose to change xxbufsize */
+	if (tt.tt_ntoken > 0 && xcinit() < 0)
+		return -1;
 	xxbuf = malloc((unsigned) xxbufsize * sizeof *xxbuf);
 	if (xxbuf == 0) {
 		wwerrno = WWE_NOMEM;
@@ -35,8 +38,6 @@ xxinit()
 	}
 	xxbufp = xxbuf;
 	xxbufe = xxbuf + xxbufsize;
-	if (tt.tt_ntoken > 0 && xcinit() < 0)
-		return -1;
 	return 0;
 }
 
@@ -195,7 +196,7 @@ xxwrite(row, col, p, n, m)
 {
 	register struct xx *xp;
 
-	if (xxbufp + n > xxbufe)
+	if (xxbufp + n + 1 > xxbufe)
 		xxflush(0);
 	xp = xxalloc();
 	xp->cmd = xc_write;
@@ -206,8 +207,7 @@ xxwrite(row, col, p, n, m)
 	xp->buf = xxbufp;
 	bcopy(p, xxbufp, n);
 	xxbufp += n;
-	if (tt.tt_ntoken > 0)
-		xcscan(xp->buf, n, xp->buf - xxbuf);
+	*xxbufp++ = char_sep;
 }
 
 xxreset()
@@ -220,6 +220,4 @@ xxreset()
 	}
 	xx_tail = xx_head = 0;
 	xxbufp = xxbuf;
-	if (tt.tt_ntoken > 0)
-		xcreset();
 }

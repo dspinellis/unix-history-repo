@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)xx.h	3.2 (Berkeley) %G%
+ *	@(#)xx.h	3.3 (Berkeley) %G%
  */
 
 struct xx {
@@ -35,3 +35,5 @@ struct xx *xx_freelist;
 
 char *xxbuf, *xxbufp, *xxbufe;
 int xxbufsize;
+
+#define char_sep '\0'
