@@ -1,0 +1,132 @@
+MSET(1)                     386BSD Reference Manual                    MSET(1)
+
+NNAAMMEE
+     mmsseett - retrieve ASCII to IBM 3270 keyboard map
+
+SSYYNNOOPPSSIISS
+     mmsseett [--ppiicckkyy] [--sshheellll] [_k_e_y_b_o_a_r_d_n_a_m_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     MMsseett retrieves mapping information for the ASCII keyboard to IBM 3270
+     terminal special functions.  Normally, these mappings are found in
+     /_u_s_r/_s_h_a_r_e/_m_i_s_c/_m_a_p_3_2_7_0 (see map3270(5)).  This information is used by
+     the tn3270 command (see tn3270(1)).
+
+     The default mmsseett output can be used to store the mapping information in
+     the process environment in order to avoid scanning mmaapp33227700 each time
+     ttnn33227700 is invoked.  To do this, place the following command in your
+     ._l_o_g_i_n file:
+
+           set noglob; setenv MAP3270 "`mset`"; unset noglob
+
+     If the _k_e_y_b_o_a_r_d_n_a_m_e argument is not supplied, mmsseett attempts to determine
+     the name of the keyboard the user is using, by checking the KEYBD envi-
+     ronment variable.  If the KEYBD environment variable is not set, then
+     mmsseett uses the user's terminal type from the environment variable TERM as
+     the keyboard name.  Normally, mmsseett then uses the file map3270(5) to find
+     the keyboard mapping for that terminal.  However, if the environment
+     variable MAP3270 exists and contains the entry for the specified key-
+     board, then that definition is used.  If the value of MAP3270 begins with
+     a slash (`/') then it is assumed to be the full pathname of an alternate
+     mapping file and that file is searched first.  In any case, if the map-
+     ping for the keyboard is not found in the environment, nor in an alter-
+     nate map file, nor in the standard map file, then the same search is per-
+     formed for an entry for a keyboard with the name _u_n_k_n_o_w_n. If that search
+     also fails, then a default mapping is used.
+
+     The arguments to mmsseett are:
+
+     --ppiicckkyy      When processing the various _m_a_p_3_2_7_0 entries (for the user's
+                 keyboard, and all those encountered before the one for the
+                 user's keyboard), mmsseett normally will not complain about en-
+                 tries for unknown functions (like ``PFX1''; the --ppiicckkyy argu-
+                 ment causes mmsseett to issue warning messages about these un-
+                 known entries.
+
+     --sshheellll      If the _m_a_p_3_2_7_0 entry is longer than the shell's 1024 environ-
+                 mental variable length limit, the default mmsseett output cannot
+                 be used to store the mapping information in the process envi-
+                 ronment to avoid scanning _m_a_p_3_2_7_0 each time ttnn33227700 is in-
+                 voked.  The --sshheellll argument causes mmsseett to generate shell
+                 commands to set the environmental variables MAP3270,
+                 MAP3270A, and so on, breaking up the entry to fit within the
+                 shell environmental variable length limit.  To set these
+                 variables, place the following command in your ._l_o_g_i_n file:
+
+                       mset -shell > tmp ; source tmp ; /bin/rm tmp
+
+     _k_e_y_b_o_a_r_d_n_a_m_e
+                 When searching for the _m_a_p_3_2_7_0 entry that matches the user's
+                 keyboard, mmsseett will use _k_e_y_b_o_a_r_d_n_a_m_e instead of determining
+                 the keyboard name from the KEYBD or TERM environmental vari-
+                 ables.
+
+FFIILLEESS
+
+     /usr/share/misc/map3270  keyboard mapping for known keyboards
+
+SSEEEE AALLSSOO
+     tn3270(1),  map3270(5)
+
+HHIISSTTOORRYY
+     The mmsseett command appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        July 27, 1991                               3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
