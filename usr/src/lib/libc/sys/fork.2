@@ -1,13 +1,13 @@
 .\" Copyright (c) 1980, 1991 Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)fork.2	6.5 (Berkeley) %G%
+.\"	@(#)fork.2	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FORK 2
-.Os BSD 4.0
+.Os BSD 4
 .Sh NAME
 .Nm fork
 .Nd create a new process
@@ -77,5 +77,6 @@ There is insufficient swap space for the new process.
 .Xr wait 2
 .Sh HISTORY
 A
-.Nm
-function call appeared in Version 6 AT&T UNIX.
+.Fn fork 2
+function call appeared in
+.At v6 .
