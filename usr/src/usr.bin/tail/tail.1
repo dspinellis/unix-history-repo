@@ -6,84 +6,103 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tail.1	6.6 (Berkeley) %G%
+.\"	@(#)tail.1	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TAIL 1
 .Os BSD 4
 .Sh NAME
 .Nm tail
-.Nd deliver the last part of a file
+.Nd display the last part of a file
 .Sh SYNOPSIS
 .Nm tail
-.Oo Cm \\*(Pm Ns Ar number
-.Op Ns Cm lbc Op Ns Cm fr
+.Op Fl f Li | Fl r
+.Oo
+.Fl b Ar number |
+.Fl c Ar number |
+.Fl n Ar number
 .Oc
 .Op Ar file
 .Sh DESCRIPTION
 The
 .Nm tail
-utility copies its input file to the standard output
-beginning at a designated place.
-The argument
-.Ar number
-is counted in
-units of blocks, characters or lines (default),
-according to the appended option suffixes
-.Cm b , c
-and
-.Cm l .
-Copying begins at the point in the file indicated by the
-.Cm \\*(Pm Ns Ar number
-option, where
-.Cm + Ns Ar number
-is a positive offset relative to the beginning of the file
-and
-.Cm \&- Ns Ar number
-is a negative offset relative to the end of the file or standard
+utility displays the contents of
+.Ar file
+or, by default, its standard input, to the standard output.
+.Pp
+The display begins at an offset from either the beginning or end
+of the input.
+Offsets may be specified in terms of bytes, lines or 512-byte blocks.
+Numbers having a leading plus (``+'') sign are relative to the beginning
+of the input.
+Numbers having a leading minus (``-'') sign or no explicit sign are
+relative to the end of the input.
+All offsets are 1 based, i.e. ``-c +1'' skips a single byte of the
+input.
+The default offset is ``-n 10'', or 10 lines from the end of the
 input.
 .Pp
-Appended options:
+The options are as follows:
 .Bl -tag -width Ds
-.It Cm b
-The argument
+.It Fl b Ar number
+The offset is
 .Ar number
-refers to blocks.
-.It Cm c
-The argument
+512-byte blocks.
+.It Fl c Ar number
+The offset is
 .Ar number
-refers to characters (bytes).
-.It Cm f
-Specifying
-.Cm f
-causes
+bytes.
+.It Fl f
+The
+.Fl f
+option causes
 .Nm tail
-to not quit at end of file, but rather wait and try to read repeatedly
-in hopes that the file will grow.
-.It Cm l
-The argument
+to not stop when end of file is reached, but rather to wait for additional
+data to be appended to the input.
+The
+.Fl f
+option is ignored on pipes but not on FIFO's.
+.It Fl n Ar number
+The offset is
 .Ar number
-refers to line.
-.It Cm r
-Lines are printed from
-.Ar file
-in reverse order.
-The default for
-.Ar r
-is to print the entire file this way.
+lines.
+.It Fl r
+The
+.Fl r
+option causes the input to be displayed in reverse order, by line.
+Additionally, this option changes the meaning of the
+.Fl b ,
+.Fl c
+and
+.Fl n
+options.
+When the
+.Fl r
+option is specified, these options specify the number of bytes, lines
+or 512-byte blocks to display, instead of the bytes, lines or blocks
+from the beginning or end of the input from which to begin the display.
+The default for the
+.Fl r
+option is to display all of the input.
 .El
 .Pp
 The
 .Nm tail
 utility exits 0 on success, and >0 if an error occurs.
 .Sh SEE ALSO
-.Xr dd 1
-.Sh BUGS
-The behaviour of
+.Xr cat 1 ,
+.Xr head 1 ,
+.Xr sed 1
+.Sh STANDARDS
+The
 .Nm tail
-on binary or special files is unpredictable.
+utility is expected to be a superset of the POSIX 1003.2
+specification.
+In particular, the
+.Fl r
+option is an extension to that standard.
 .Sh HISTORY
 A
-.Nm
+.Nm tail
 command appeared in
 .At v7 .

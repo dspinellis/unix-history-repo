@@ -1,239 +1,241 @@
 /*-
- * Copyright (c) 1980 The Regents of the University of California.
+ * Copyright (c) 1991 The Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.proprietary.c%
+ * This code is derived from software contributed to Berkeley by
+ * Edward Sze-Tyan Wang.
+ *
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tail.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tail.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
-/* tail command 
- *
- *	tail where [file]
- *	where is +/-n[type]
- *	- means n lines before end
- *	+ means nth line from beginning
- *	type 'b' means tail n blocks, not lines
- *	type 'c' means tail n characters
- *	Type 'r' means in lines in reverse order from end
- *	 (for -r, default is entire buffer )
- *	option 'f' means loop endlessly trying to read more
- *		characters after the end of file, on the  assumption
- *		that the file is growing
-*/
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "extern.h"
 
-#include	<stdio.h>
-#include	<ctype.h>
-#include	<sys/types.h>
-#include	<sys/stat.h>
-#include	<sys/file.h>
-#include	<errno.h>
+int fflag, rflag, rval;
+char *fname;
 
-#define LBIN 32769
-#undef	BUFSIZ
-#define	BUFSIZ	8192
-struct	stat	statb;
-int	follow;
-int	piped;
-char bin[LBIN];
-int errno;
+static void obsolete __P((char **));
+static void usage __P((void));
 
-main(argc,argv)
-char **argv;
+main(argc, argv)
+	int argc;
+	char **argv;
 {
-	long n,di;
-	register i,j,k;
-	char	*arg;
-	int partial,bylines,bkwds,fromend,lastnl;
-	char *p;
+	struct stat sb;
+	FILE *fp;
+	long off;
+	enum STYLE style;
+	int ch;
+	char *p, *num;
 
-	arg = argv[1];
-	if(argc<=1 || *arg!='-'&&*arg!='+') {
-		arg = "-10l";
-		argc++;
-		argv--;
-	}
-	fromend = *arg=='-';
-	arg++;
-	if (isdigit(*arg)) {
-		n = 0;
-		while(isdigit(*arg))
-			n = n*10 + *arg++ - '0';
-	} else
-		n = -1;
-	if(!fromend&&n>0)
-		n--;
-	if(argc>2) {
-		(void)close(0);
-		if(open(argv[2],0)!=0) {
-			perror(argv[2]);
-			exit(1);
+	obsolete(argv);
+
+	style = NOTSET;
+	while ((ch = getopt(argc, argv, "b:c:fn:r")) != EOF)
+		switch(ch) {
+		case 'b':
+			if (style)
+				usage();
+			off = strtol(num = optarg, &p, 10) * 512;
+			if (*p)
+				err("illegal offset -- %s", optarg);
+			style = *num == '+' ? FBYTES : RBYTES;
+			break;
+		case 'c':
+			if (style)
+				usage();
+			off = strtol(num = optarg, &p, 10);
+			if (*p)
+				err("illegal offset -- %s", optarg);
+			style = *num == '+' ? FBYTES : RBYTES;
+			break;
+		case 'f':
+			fflag = 1;
+			break;
+		case 'n':
+			if (style)
+				usage();
+			off = strtol(num = optarg, &p, 10);
+			if (*p)
+				err("illegal offset -- %s", optarg);
+			style = *num == '+' ? FLINES : RLINES;
+			break;
+		case 'r':
+			rflag = 1;
+			break;
+		case '?':
+		default:
+			usage();
 		}
-	}
-	(void)lseek(0,(off_t)0,L_INCR);
-	piped = errno==ESPIPE;
-	bylines = -1; bkwds = 0;
-	while(*arg)
-	switch(*arg++) {
+	argc -= optind;
+	argv += optind;
 
-	case 'b':
-		if (n == -1) n = 1;
-		n <<= 9;
-		if(bylines!=-1) goto errcom;
-		bylines=0;
-		break;
-	case 'c':
-		if(bylines!=-1) goto errcom;
-		bylines=0;
-		break;
-	case 'f':
-		follow = 1;
-		break;
-	case 'r':
-		if(n==-1) n = LBIN;
-		bkwds = 1; fromend = 1; bylines = 1;
-		break;
-	case 'l':
-		if(bylines!=-1) goto errcom;
-		bylines = 1;
-		break;
-	default:
-		goto errcom;
+	/*
+	 * Don't permit follow option if displaying in reverse.  An offset
+	 * with an explicit leading minus is meaningless.
+	 */
+	if (rflag) {
+		if (fflag)
+			usage();
+		if (style && *num == '-')
+			err("illegal offset for -r option -- %s", num);
+		if (style == FBYTES)
+			style = RBYTES;
+		if (style == FLINES)
+			style = RLINES;
 	}
-	if (n==-1) n = 10;
-	if(bylines==-1) bylines = 1;
-	if(bkwds) follow=0;
-	if(fromend)
-		goto keep;
 
-			/*seek from beginning */
-
-	if(bylines) {
-		j = 0;
-		while(n-->0) {
-			do {
-				if(j--<=0) {
-					p = bin;
-					j = read(0,p,BUFSIZ);
-					if(j--<=0)
-						fexit();
-				}
-			} while(*p++ != '\n');
-		}
-		(void)write(1,p,j);
-	} else  if(n>0) {
-		if(!piped)
-			(void)fstat(0,&statb);
-		if(piped||(statb.st_mode&S_IFMT)==S_IFCHR)
-			while(n>0) {
-				i = n>BUFSIZ?BUFSIZ:n;
-				i = read(0,bin,i);
-				if(i<=0)
-					fexit();
-				n -= i;
-			}
-		else
-			(void)lseek(0,(off_t)n,L_SET);
-	}
-copy:
-	while((i=read(0,bin,BUFSIZ))>0)
-		(void)write(1,bin,i);
-	fexit();
-
-			/*seek from end*/
-
-keep:
-	if(n <= 0)
-		fexit();
-	if(!piped) {
-		(void)fstat(0,&statb);
-		/* If by lines, back up 1 buffer: else back up as needed */
-		di = bylines?LBIN-1:n;
-		if(statb.st_size > di)
-			(void)lseek(0,(off_t)-di,L_XTND);
-		if(!bylines)
-			goto copy;
-	}
-	partial = 1;
-	for(;;) {
-		i = 0;
-		do {
-			j = read(0,&bin[i],LBIN-i);
-			if(j<=0)
-				goto brka;
-			i += j;
-		} while(i<LBIN);
-		partial = 0;
-	}
-brka:
-	if(!bylines) {
-		k =
-		    n<=i ? i-n:
-		    partial ? 0:
-		    n>=LBIN ? i+1:
-		    i-n+LBIN;
-		k--;
+	if (fname = *argv) {
+		if ((fp = fopen(fname, "r")) == NULL)
+			ierr();
 	} else {
-		if(bkwds && bin[i==0?LBIN-1:i-1]!='\n'){	/* force trailing newline */
-			bin[i]='\n';
-			if(++i>=LBIN) {i = 0; partial = 0;}
+		fp = stdin;
+		fname = "stdin";
+	}
+
+	if (fstat(fileno(fp), &sb))
+		ierr();
+
+	/*
+	 * Determine if input is a pipe.  4.4BSD will set the SOCKET
+	 * bit in the st_mode field for pipes.  Fix this then.
+	 */
+	if (lseek(fileno(fp), 0L, SEEK_CUR) == -1 && errno == ESPIPE) {
+		errno = 0;
+		fflag = 0;		/* POSIX.2 requires this. */
+	}
+
+	/*
+	 * Tail's options are weird.  First, -n10 is the same as -n-10, not
+	 * -n+10.  Second, the number options for the -r option specify the
+	 * number of bytes/chars/lines that get displayed, not the offset from
+	 * the beginning/end of the file.  Finally, the default for -r is the
+	 * entire file, not 10 lines.
+	 */
+	if (!style)
+		if (rflag) {
+			off = 0;
+			style = REVERSE;
+		} else {
+			off = 10;
+			style = RLINES;
 		}
-		k = i;
-		j = 0;
-		do {
-			lastnl = k;
-			do {
-				if(--k<0) {
-					if(partial) {
-						if(bkwds) 
-						    (void)write(1,bin,lastnl+1);
-						goto brkb;
-					}
-					k = LBIN -1;
-				}
-			} while(bin[k]!='\n'&&k!=i);
-			if(bkwds && j>0){
-				if(k<lastnl) (void)write(1,&bin[k+1],lastnl-k);
-				else {
-					(void)write(1,&bin[k+1],LBIN-k-1);
-					(void)write(1,bin,lastnl+1);
-				}
-			}
-		} while(j++<n&&k!=i);
-brkb:
-		if(bkwds) exit(0);
-		if(k==i) do {
-			if(++k>=LBIN)
-				k = 0;
-		} while(bin[k]!='\n'&&k!=i);
-	}
-	if(k<i)
-		(void)write(1,&bin[k+1],i-k-1);
-	else {
-		(void)write(1,&bin[k+1],LBIN-k-1);
-		(void)write(1,bin,i);
-	}
-	fexit();
-errcom:
-	fprintf(stderr, "usage: tail [+_[n][lbc][rf]] [file]\n");
-	exit(2);
+	else if (off < 0)
+		off = -off;
+
+	if (rflag)
+		reverse(fp, style, off, &sb);
+	else
+		forward(fp, style, off, &sb);
+	exit(rval);
 }
 
-fexit()
-{	register int n;
-	if (!follow || piped) exit(0);
-	for (;;)
-	{	sleep(1);
-		while ((n = read (0, bin, BUFSIZ)) > 0)
-			if (write (1, bin, n) < 0)
-				exit(1);
+/*
+ * Convert the obsolete argument form into something that getopt can handle.
+ * This means that anything of the form [+-][0-9][0-9]*[lbc][fr] that isn't
+ * the option argument for a -b, -c or -n option gets converted.
+ */
+static void
+obsolete(argv)
+	char **argv;
+{
+	register char *ap, *p, *t;
+	int len;
+	char *start;
+
+	while (ap = *++argv) {
+		/* Return if "--" or not an option of any form. */
+		if (ap[0] != '-') {
+			if (ap[0] != '+')
+				return;
+		} else if (ap[1] == '-')
+			return;
+
+		switch(*++ap) {
+		/* Old-style option. */
+		case '0': case '1': case '2': case '3': case '4':
+		case '5': case '6': case '7': case '8': case '9':
+
+			/* Malloc space for dash, new option and argument. */
+			len = strlen(*argv);
+			if ((start = p = malloc(len + 3)) == NULL)
+				err("%s", strerror(errno));
+			*p++ = '-';
+
+			/*
+			 * Go to the end of the option argument.  Save off any
+			 * trailing options (-3lf) and translate any trailing
+			 * output style characters.
+			 */
+			t = *argv + len - 1;
+			if (*t == 'f' || *t == 'r')
+				*p++ = *t--;
+			switch(*t) {
+			case 'b':
+				*p++ = 'b';
+				*t = '\0';
+				break;
+			case 'c':
+				*p++ = 'c';
+				*t = '\0';
+				break;
+			case 'l':
+				*t = '\0';
+				/* FALLTHROUGH */
+			case '0': case '1': case '2': case '3': case '4':
+			case '5': case '6': case '7': case '8': case '9':
+				*p++ = 'n';
+				break;
+			default:
+				err("illegal option -- %s", *argv);
+			}
+			*p++ = *argv[0];
+			(void)strcpy(p, ap);
+			*argv = start;
+			continue;
+
+		/*
+		 * Options w/ arguments, skip the argument and continue
+		 * with the next option.
+		 */
+		case 'b':
+		case 'c':
+		case 'n':
+			if (!ap[1])
+				++argv;
+			/* FALLTHROUGH */
+		/* Options w/o arguments, continue with the next option. */
+		case 'f':
+		case 'r':
+			continue;
+
+		/* Illegal option, return and let getopt handle it. */
+		default:
+			return;
+		}
 	}
+}
+
+static void
+usage()
+{
+	(void)fprintf(stderr,
+	    "usage: tail [-f | -r] [-b # | -c # | -n #] [file]\n");
+	exit(1);
 }
