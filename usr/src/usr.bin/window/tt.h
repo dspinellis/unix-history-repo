@@ -1,5 +1,5 @@
 /*
- *	@(#)tt.h	3.3 83/08/15
+ *	@(#)tt.h	3.4 83/08/17
  */
 
 struct tt {
@@ -19,6 +19,7 @@ struct tt {
 	int (*tt_clear)();
 	int tt_nrow;
 	int tt_ncol;
+	char tt_availmodes;
 	char *tt_frame;
 };
 
