@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_1.c	2.3 83/11/02";
+static	char *sccsid = "@(#)pl_1.c	2.4 83/12/09";
 #endif
 
 #include "player.h"
@@ -234,7 +234,9 @@ reprint:
 	}
 
 	initscreen();
+	blockalarm();
 	draw_board();
+	unblockalarm();
 	(void) sprintf(message, "Captain %s assuming command", captain);
 	Write(W_SIGNAL, ms, 1, (int)message, 0, 0, 0);
 	newturn();

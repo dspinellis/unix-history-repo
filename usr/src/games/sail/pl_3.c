@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_3.c	2.1 83/10/31";
+static	char *sccsid = "@(#)pl_3.c	2.2 83/12/09";
 #endif
 
 #include "player.h"
@@ -170,7 +170,9 @@ acceptcombat()
 		Signal("Unable to fire %s broadside",
 			(struct ship *)0, r ? "right" : "left");
 	}
+	blockalarm();
 	draw_stat();
+	unblockalarm();
 }
 
 grapungrap()
