@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ioctl.h	7.14 (Berkeley) %G%
+ *	@(#)ioctl.h	7.15 (Berkeley) %G%
  */
 
 #ifndef	_IOCTL_H_
@@ -33,7 +33,6 @@ struct ttysize {
 #define	TIOCGSIZE	TIOCGWINSZ
 #define	TIOCSSIZE	TIOCSWINSZ
 
-#ifndef _IO
 /*
  * Ioctl's have the command encoded in the lower word, and the size of
  * any in or out parameters in the upper word.  The high 3 bits of the
@@ -58,7 +57,6 @@ struct ttysize {
 #define	_IOW(g,n,t)	_IOC(IOC_IN,	(g), (n), sizeof(t))
 /* this should be _IORW, but stdio got there first */
 #define	_IOWR(g,n,t)	_IOC(IOC_INOUT,	(g), (n), sizeof(t))
-#endif
 
 #define	TIOCMODG	_IOR('t', 3, int)	/* get modem control state */
 #define	TIOCMODS	_IOW('t', 4, int)	/* set modem control state */
