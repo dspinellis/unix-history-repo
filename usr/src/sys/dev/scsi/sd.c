@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	5.4 (Berkeley) %G%
+ *	@(#)sd.c	5.5 (Berkeley) %G%
  *
- * from: $Header: sd.c,v 1.24 92/11/19 04:37:33 torek Exp $
+ * from: $Header: sd.c,v 1.25 93/02/01 19:26:27 torek Exp $
  */
 
 /*
