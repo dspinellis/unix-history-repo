@@ -4,7 +4,11 @@
 # include <signal.h>
 # include <errno.h>
 
-static char	SccsId[] =	"@(#)queue.c	3.6	%G%";
+# ifndef QUEUE
+static char	SccsId[] =	"@(#)queue.c	3.7	%G%	(no queueing)";
+# else QUEUE
+
+static char	SccsId[] =	"@(#)queue.c	3.7	%G%";
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -569,3 +573,5 @@ timeout(w)
 	/* arrange to remove files from queue */
 	QueueUp = FALSE;
 }
+
+# endif QUEUE

@@ -1,6 +1,10 @@
 # include "sendmail.h"
 
-static char	SccsId[] =	"@(#)srvrsmtp.c	3.10	%G%";
+# ifndef SMTP
+static char	SccsId[] =	"@(#)srvrsmtp.c	3.11	%G%	(no SMTP)";
+# else SMTP
+
+static char	SccsId[] =	"@(#)srvrsmtp.c	3.11	%G%";
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -380,3 +384,5 @@ help(topic)
 		message("214", "End of HELP info");
 	(void) fclose(hf);
 }
+
+# endif SMTP

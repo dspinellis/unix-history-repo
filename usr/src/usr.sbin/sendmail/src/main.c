@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.55	%G%";
+static char	SccsId[] = "@(#)main.c	3.56	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -315,7 +315,11 @@ main(argc, argv)
 			if (p[2] == 's')
 			{
 				/* running smtp */
+# ifdef SMTP
 				Smtp = TRUE;
+# else SMTP
+				syserr("I don't speak SMTP");
+# endif SMTP
 			}
 			break;
 		
@@ -336,8 +340,12 @@ main(argc, argv)
 			/* explicit fall-through */
 
 		  case 'q':	/* run queue files at intervals */
+# ifdef QUEUE
 			queuemode = TRUE;
 			QueueIntvl = atoi(&p[1]);
+# else QUEUE
+			syserr("I don't know about queues");
+# endif QUEUE
 			break;
 
 		  default:
@@ -407,6 +415,7 @@ main(argc, argv)
 	if (Daemon)
 		getrequests();
 	
+# ifdef SMTP
 	/*
 	**  If running SMTP protocol, start collecting and executing
 	**  commands.  This will never return.
@@ -416,11 +425,15 @@ main(argc, argv)
 
 	if (Smtp)
 	{
+# ifdef QUEUE
 		if (queuemode)
 			runqueue(TRUE);
+# endif QUEUE
 		smtp();
 	}
+# endif SMTP
 
+# ifdef QUEUE
 	/*
 	**  If collecting stuff from the queue, go start doing that.
 	*/
@@ -430,6 +443,7 @@ main(argc, argv)
 		runqueue(FALSE);
 		finis();
 	}
+# endif QUEUE
 
 	/*
 	**  Set the sender
@@ -635,7 +649,13 @@ finis()
 	if (Transcript != NULL)
 		(void) unlink(Transcript);
 	if (QueueUp)
+	{
+# ifdef QUEUE
 		queueup(InFileName);
+# else QUEUE
+		syserr("finis: trying to queue %s", InFileName);
+# endif QUEUE
+	}
 	else
 		(void) unlink(InFileName);
 	exit(ExitStat);
