@@ -1,4 +1,4 @@
-/*	protosw.h	6.2	83/09/19	*/
+/*	protosw.h	6.3	84/08/21	*/
 
 /*
  * Protocol switch table.
@@ -24,7 +24,7 @@
  */
 struct protosw {
 	short	pr_type;		/* socket type used for */
-	short	pr_family;		/* protocol family */
+	struct	domain *pr_domain;	/* domain protocol a member of */
 	short	pr_protocol;		/* protocol number */
 	short	pr_flags;		/* see below */
 /* protocol-protocol hooks */
