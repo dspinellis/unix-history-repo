@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -582,13 +582,13 @@ fmtlstuff(p)
 
 int	m1[] = { 1, S_IREAD>>0, 'r', '-' };
 int	m2[] = { 1, S_IWRITE>>0, 'w', '-' };
-int	m3[] = { 2, S_ISUID, 's', S_IEXEC>>0, 'x', '-' };
+int	m3[] = { 3, S_ISUID|(S_IEXEC>>0), 's', S_ISUID, 'S', S_IEXEC>>0, 'x', '-' };
 int	m4[] = { 1, S_IREAD>>3, 'r', '-' };
 int	m5[] = { 1, S_IWRITE>>3, 'w', '-' };
-int	m6[] = { 2, S_ISGID, 's', S_IEXEC>>3, 'x', '-' };
+int	m6[] = { 3, S_ISGID|(S_IEXEC>>3), 's', S_ISGID, 'S', S_IEXEC>>3, 'x', '-' };
 int	m7[] = { 1, S_IREAD>>6, 'r', '-' };
 int	m8[] = { 1, S_IWRITE>>6, 'w', '-' };
-int	m9[] = { 2, S_ISVTX, 't', S_IEXEC>>6, 'x', '-' };
+int	m9[] = { 3, S_ISVTX|(S_IEXEC>>6), 't', S_ISVTX, 'T', S_IEXEC>>6, 'x', '-' };
 
 int	*m[] = { m1, m2, m3, m4, m5, m6, m7, m8, m9};
 
@@ -603,9 +603,9 @@ fmtmode(lp, flags)
 		register int *pairp = *mp++;
 		register int n = *pairp++;
 
-		while (--n >= 0 && (flags&*pairp++) == 0)
-			pairp++;
-		*lp++ = *pairp;
+		while (--n >= 0 && (flags&*pairp) != *pairp)
+			pairp += 2;
+		*lp++ = pairp[n>=0];
 	}
 	return (lp);
 }
