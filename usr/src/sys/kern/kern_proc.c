@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.15	%G%	*/
+/*	kern_proc.c	3.16	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -467,6 +467,7 @@ exit(rv)
 		plock(u.u_rdir);
 		iput(u.u_rdir);
 	}
+	u.u_limit[LIM_FSIZE] = INFINITY;
 	acct();
 	vrelpt(u.u_procp);
 	vrelu(u.u_procp, 0);
@@ -684,6 +685,10 @@ sbreak()
 	if (n < 0)
 		n = 0;
 	d = clrnd(n - u.u_dsize);
+	if (u.u_dsize+d > u.u_limit[LIM_DATA]) {
+		u.u_error = ENOMEM;
+		return;
+	}
 	if (chksize(u.u_tsize, u.u_dsize+d, u.u_ssize))
 		return;
 	if (swpexpand(u.u_dsize+d, u.u_ssize, &u.u_dmap, &u.u_smap)==0)
