@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	1.4 %G%";
+static char *SccsId = "@(#)fio.c	1.5 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -62,6 +62,7 @@ setptr(ibuf)
 			msgCount++;
 			this.m_flag = flag;
 			flag = MUSED|MNEW;
+			inhead = 1;
 			this.m_block = blockof(offset);
 			this.m_offset = offsetof(offset);
 			this.m_size = s;
