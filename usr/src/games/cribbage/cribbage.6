@@ -2,22 +2,23 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)cribbage.6	4.1 (Berkeley) %G%
+.\"	@(#)cribbage.6	5.1 (Berkeley) %G%
 .\"
-.TH CRIBBAGE 6
+.TH CRIBBAGE 6 "1 February 1983"
 .UC 4
 .SH NAME
 cribbage \- the card game cribbage
 .SH SYNOPSIS
 .B /usr/games/cribbage
 [
--[r][e][q]
-] name ...
+.B \-req
+]
+.I name ...
 .SH DESCRIPTION
 .I Cribbage
 plays the card game cribbage, with the program playing one hand
 and the user the other.  The program will initially ask the user if
-the rules of the game are needed -- if so, it will print out
+the rules of the game are needed \- if so, it will print out
 the appropriate section from
 .I According to Hoyle
 with
@@ -32,7 +33,7 @@ explanation of the correct score.  (This is especially useful for
 beginning players.)
 .TP
 .B \-q
-Print a shorter form of all messages -- this is only recommended for
+Print a shorter form of all messages \- this is only recommended for
 users who have played the game without specifying this option.
 .TP
 .B \-r
@@ -96,6 +97,6 @@ desired to discard the king of diamonds, any of the following could be typed:
 .SH FILES
 .ta 2i
 /usr/games/cribbage
-.SH AUTHOR
-Earl T. Cohen
-.SH BUGS
+.SH AUTHORS
+Earl T. Cohen wrote the logic.
+Ken Arnold added the screen oriented interface.
