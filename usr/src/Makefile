@@ -1,165 +1,55 @@
-#
-# Copyright (c) 1986, 1988 Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation,
-# advertising materials, and other materials related to such
-# distribution and use acknowledge that the software was developed
-# by the University of California, Berkeley.  The name of the
-# University may not be used to endorse or promote products derived
-# from this software without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-#
-#	@(#)Makefile	4.19 (Berkeley) %G%
-#
-# This makefile is designed to be run in one of two ways:
-#
-#	make build
-#	make installsrc
-# This is the most rigorous way to rebuild the source tree.  `make build'
-# will clean the source tree, install the include files, remake the
-# dependencies, and then compile and install the libraries and the compiler
-# twice before building the rest of the sources.  The `make installsrc'
-# will then install the remaining binaries.
-#
-#	make all
-#	make install
-# The `make all' (the default) will compile everything, and install
-# nothing.  The `make install' will then install everything.
-#
-# C library options: passed to libc makefile.
-# See usr.lib/libc/Makefile for explanation.
-#
-# HOSTLOOKUP must be either named or hosttable.
-# DFLMON must be either mon.o or gmon.o.
-# DEFS may include -DLIBC_SCCS, -DSYSLIBC_SCCS, both, or neither.
-#
-DEFS=		-DLIBC_SCCS
-DFLMON=		mon.o
-LIBCDEFS=	DFLMON=${DFLMON} DEFS="${DEFS}"
+#	@(#)Makefile	4.20 (Berkeley) %G%
 
-# global flags
-# SRC_MFLAGS are used on makes in command source directories,
-# but not in library or compiler directories that will be installed
-# for use in compiling everything else.
-#
-DESTDIR=
-CFLAGS=		-O
-SRC_MFLAGS=	-k
+# skip old
+SUBDIR=	bin games include lib libexec old pgrm sbin share usr.bin usr.sbin
 
-SRCLIB=	lib
-# order is important, old must be first, man must be last; contrib is
-# too big for the current file system
-# bin
-SRC=	old games libexec pgrm sbin share usr.bin usr.sbin local man
-ALL=	${SRCLIB} ${SRC}
+build:
+	${MAKE} cleandir
 
-all: ${ALL}
-
-build: cleandir build1 ${SRC}
-
-${ALL}: FRC
-	@echo; echo +++ compiling $@
-	cd $@; make ${MFLAGS}
-
-build1:
 	@echo +++ installing includes
-	cd include; make ${MFLAGS} DESTDIR=${DESTDIR} install
-	@echo
-	@echo +++ building dependencies
-	@for i in ${ALL}; do \
-		echo; echo +++ dependencies for $$i; \
-		(cd $$i; make ${MFLAGS} depend); \
-	done
-	@echo +++ compiling C compiler
-	cd usr.bin/cpp; make ${MFLAGS}
-	cd usr.libexec/c2; make ${MFLAGS}
-	cd usr.libexec/pcc; make ${MFLAGS}
-	@echo
+	cd include; ${MAKE} depend all install clean
+
 	@echo +++ installing C compiler
-	cd usr.bin/cpp; make ${MFLAGS} install
-	cd usr.libexec/c2; make ${MFLAGS} install
-	cd usr.libexec/pcc; make ${MFLAGS} install
-	@echo
-	@echo +++ compiling C library
-	cd usr.lib/libc; make ${MFLAGS} ${LIBCDEFS}
-	@echo
+	cd pgrm/cpp; ${MAKE} depend all install clean
+	cd libexec/c2.${MACHINE}; ${MAKE} depend all install clean
+	cd libexec/pcc; ${MAKE} depend all install clean
+
 	@echo +++ installing C library
-	cd usr.lib/libc; make ${MFLAGS} DESTDIR=${DESTDIR} install
-	@echo
-	@echo +++ cleaning C compiler
-	cd usr.bin/cpp; make ${MFLAGS} clean
-	cd usr.libexec/c2; make ${MFLAGS} clean
-	cd usr.libexec/pcc; make ${MFLAGS} clean
-	@echo
-	@echo +++ re-compiling C compiler
-	cd usr.bin/cpp; make ${MFLAGS}
-	cd usr.libexec/c2; make ${MFLAGS}
-	cd usr.libexec/pcc; make ${MFLAGS}
-	@echo
+	cd lib/libc; ${MAKE} depend all install clean
+
 	@echo +++ re-installing C compiler
-	cd usr.bin/cpp; make ${MFLAGS} install
-	cd usr.libexec/c2; make ${MFLAGS} install
-	cd usr.libexec/pcc; make ${MFLAGS} install
-	@echo
-	@echo +++ cleaning C library
-	cd usr.lib/libc; make ${MFLAGS} clean
-	@echo
-	@echo +++ compiling all libraries
-	cd usr.lib; make ${MFLAGS} ${LIBCDEFS}
-	@echo
+	cd pgrm/cpp; ${MAKE} all install all
+	cd libexec/c2.${MACHINE}; ${MAKE} all install all
+	cd libexec/pcc; ${MAKE} all install all
+
 	@echo +++ installing all libraries
-	cd usr.lib; make ${MFLAGS} DESTDIR=${DESTDIR} install
-	@echo
+	cd lib; ${MAKE} depend all install all
+	cd lib/libc; rm -f tags; ${MAKE} tags; \
+	    install -c -o ${BINOWN} -g ${BINGRP} -m 444 tags /usr/libdata/tags
+
+	@echo +++ installing C library tags file
+
 	@echo +++ libraries done
-	@echo
+	${MAKE}
 
-installsrc: FRC
-	@for i in ${SRC}; do \
-		echo; \
-		echo +++ installing $$i; \
-		(cd $$i; \
-		    make ${MFLAGS} ${SRC_MFLAGS} DESTDIR=${DESTDIR} install); \
+OBJ=	/usr/obj
+objlinks:
+	-for file in `find ${SUBDIR:S/^/-f /g} name SCCS prune or type dir print`; do \
+		if [ -s $$file/Makefile -a ! -d ${OBJ}/$$file ] ; then \
+			rm -rf ${OBJ}/$$file; \
+			mkdir -p ${OBJ}/$$file > /dev/null 2>&1 ; \
+			rm -f $$file/obj; \
+			ln -s ${OBJ}/$$file $$file/obj; \
+		fi; \
 	done
 
-clean: FRC
-	@for i in ${ALL}; do \
-		echo; \
-		echo +++ cleaning $$i; \
-		(cd $$i; make ${SRC_MFLAGS} clean); \
+shadow:
+	-for file in `find ${SUBDIR:S/^/-f /g} name SCCS prune or type dir print`; do \
+		if [ -s $$file/obj ] ; then \
+			rm -rf ${OBJ}/$$file; \
+			mkdir -p ${OBJ}/$$file > /dev/null 2>&1 ; \
+		fi; \
 	done
 
-cleandir: FRC
-	@for i in include ${ALL}; do \
-		echo; echo '+++ cleaning (cleandir)' $$i; \
-		(cd $$i; make ${SRC_MFLAGS} cleandir); \
-	done
-
-depend: FRC
-	@for i in ${ALL}; do \
-		echo; \
-		echo +++ doing dependencies for $$i; \
-		(cd $$i; make ${SRC_MFLAGS} depend); \
-	done
-
-install: FRC
-	@for i in ${ALL}; do \
-		echo; \
-		echo +++ installing $$i; \
-		(cd $$i; \
-		    make ${MFLAGS} ${SRC_MFLAGS} DESTDIR=${DESTDIR} install); \
-	done
-
-tags: FRC
-	@for i in include lib usr.lib; do \
-		echo; \
-		echo +++ making tags for $$i; \
-		(cd $$i; make ${SRC_MFLAGS} TAGSFILE=../tags tags); \
-	done
-	sort -u +0 -1 -o tags tags
-
-FRC:
+.include <bsd.own.mk>
+.include <bsd.subdir.mk>
