@@ -13,25 +13,25 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rcons_font.c	7.2 (Berkeley) %G%
+ *	@(#)rcons_font.c	7.3 (Berkeley) %G%
  *
  * from: $Header: rcons_font.c,v 1.8 92/06/17 06:23:37 torek Exp $
  */
 
 #ifdef KERNEL
-#include "sys/param.h"
-#include "sys/kernel.h"
-#include "sys/fbio.h"
-#include "sys/device.h"
-#include "machine/fbvar.h"
+#include <sys/param.h>
+#include <sys/kernel.h>
+#include <sys/fbio.h>
+#include <sys/device.h>
+#include <machine/fbvar.h>
 #else
 #include <sys/types.h>
 #include "myfbdevice.h"
 #endif
 
-#include "raster.h"
+#include <sparc/rcons/raster.h>
 
-#include "gallant19.h"
+#include <sparc/rcons/gallant19.h>
 
 void
 rcons_font(fb)

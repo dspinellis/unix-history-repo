@@ -4,29 +4,29 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)udp_usrreq.c	7.25 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.26 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "errno.h"
-#include "stat.h"
+#include <sys/param.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
+#include <sys/stat.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
+#include <net/if.h>
+#include <net/route.h>
 
-#include "in.h"
-#include "in_systm.h"
-#include "ip.h"
-#include "in_pcb.h"
-#include "ip_var.h"
-#include "ip_icmp.h"
-#include "udp.h"
-#include "udp_var.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/in_pcb.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/udp.h>
+#include <netinet/udp_var.h>
 
 struct	inpcb *udp_last_inpcb = &udb;
 

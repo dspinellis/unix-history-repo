@@ -13,25 +13,25 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rcons_kern.c	7.2 (Berkeley) %G%
+ *	@(#)rcons_kern.c	7.3 (Berkeley) %G%
  *
  * from: $Header: rcons_kern.c,v 1.26 92/07/09 08:01:28 torek Exp $
  */
 
-#include "sys/param.h"
-#include "sys/device.h"
-#include "sys/fbio.h"
-#include "sys/kernel.h"
-#include "sys/systm.h"
-#include "sys/ioctl.h"
-#include "sys/tty.h"
+#include <sys/param.h>
+#include <sys/device.h>
+#include <sys/fbio.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
 
-#include "machine/fbvar.h"
-#include "machine/autoconf.h"
+#include <machine/fbvar.h>
+#include <machine/autoconf.h>
 
-#include "../dev/kbd.h"
+#include <sparc/dev/kbd.h>
 
-#include "raster.h"
+#include <sparc/rcons/raster.h>
 
 extern struct tty *fbconstty;
 

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	7.13 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -36,6 +36,7 @@
 #include <sys/buf.h>
 #include <sys/stat.h>
 #include <sys/protosw.h>
+
 #include <netinet/in.h>
 #include <nfs/rpcv2.h>
 #include <nfs/nfsv2.h>

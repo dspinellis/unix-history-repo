@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sun_misc.c	7.3 (Berkeley) %G%
+ *	@(#)sun_misc.c	7.4 (Berkeley) %G%
  *
  * from: $Header: sun_misc.c,v 1.12 92/07/12 13:26:10 torek Exp $
  */
@@ -25,27 +25,27 @@
  * handled here.
  */
 
-#include "param.h"
-#include "proc.h"
-#include "file.h"
-#include "filedesc.h"
-#include "ioctl.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "mman.h"
-#include "mount.h"
-#include "resource.h"
-#include "resourcevar.h"
-#include "signal.h"
-#include "signalvar.h"
-#include "socket.h"
-#include "vnode.h"
-#include "uio.h"
-#include "wait.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/file.h>
+#include <sys/filedesc.h>
+#include <sys/ioctl.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/mman.h>
+#include <sys/mount.h>
+#include <sys/resource.h>
+#include <sys/resourcevar.h>
+#include <sys/signal.h>
+#include <sys/signalvar.h>
+#include <sys/socket.h>
+#include <sys/vnode.h>
+#include <sys/uio.h>
+#include <sys/wait.h>
 
-#include "miscfs/specfs/specdev.h"
+#include <miscfs/specfs/specdev.h>
 
-#include "vm/vm.h"
+#include <vm/vm.h>
 
 struct sun_wait4_args {
 	int	pid;

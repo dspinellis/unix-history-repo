@@ -13,25 +13,25 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_machdep.c	7.2 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.3 (Berkeley) %G%
  *
  * from: $Header: vm_machdep.c,v 1.9 92/06/17 05:22:25 torek Exp $ (LBL)
  */
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/proc.h"
-#include "sys/user.h"
-#include "sys/malloc.h"
-#include "sys/buf.h"
-#include "sys/exec.h"
-#include "sys/vnode.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/malloc.h>
+#include <sys/buf.h>
+#include <sys/exec.h>
+#include <sys/vnode.h>
 
-#include "vm/vm.h"
-#include "vm/vm_kern.h"
+#include <vm/vm.h>
+#include <vm/vm_kern.h>
 
-#include "machine/cpu.h"
-#include "machine/frame.h"
+#include <machine/cpu.h>
+#include <machine/frame.h>
 
 /*
  * Move pages from one kernel virtual address to another.

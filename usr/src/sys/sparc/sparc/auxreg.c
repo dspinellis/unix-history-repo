@@ -13,19 +13,19 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)auxreg.c	7.2 (Berkeley) %G%
+ *	@(#)auxreg.c	7.3 (Berkeley) %G%
  *
  * from: $Header: auxreg.c,v 1.7 92/06/17 05:21:54 torek Exp $ (LBL)
  */
 
-#include "sys/param.h"
-#include "sys/device.h"
-#include "sys/kernel.h"
+#include <sys/param.h>
+#include <sys/device.h>
+#include <sys/kernel.h>
 
-#include "machine/autoconf.h"
+#include <machine/autoconf.h>
 
-#include "vaddrs.h"
-#include "auxreg.h"
+#include <sparc/sparc/vaddrs.h>
+#include <sparc/sparc/auxreg.h>
 
 static void auxregattach __P((struct device *, struct device *, void *));
 struct cfdriver auxregcd =

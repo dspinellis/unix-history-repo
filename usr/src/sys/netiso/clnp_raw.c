@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clnp_raw.c	7.9 (Berkeley) %G%
+ *	@(#)clnp_raw.c	7.10 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -36,26 +36,26 @@ SOFTWARE.
 /* $Header: clnp_raw.c,v 4.2 88/06/29 14:58:56 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/clnp_raw.c,v $ */
 
-#include "param.h"
-#include "mbuf.h"
-#include "domain.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "errno.h"
-#include "time.h"
+#include <sys/param.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
+#include <sys/time.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
-#include "../net/raw_cb.h"
+#include <net/if.h>
+#include <net/route.h>
+#include <net/raw_cb.h>
 
-#include "iso.h"
-#include "iso_pcb.h"
-#include "clnp.h"
-#include "clnp_stat.h"
-#include "argo_debug.h"
+#include <netiso/iso.h>
+#include <netiso/iso_pcb.h>
+#include <netiso/clnp.h>
+#include <netiso/clnp_stat.h>
+#include <netiso/argo_debug.h>
 
-#include "tp_user.h"/* XXX -- defines SOL_NETWORK */
+#include <netiso/tp_user.h>		/* XXX -- defines SOL_NETWORK */
 
 struct sockproto	rclnp_proto	= { PF_ISO, 0 };
 /*

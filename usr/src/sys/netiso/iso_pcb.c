@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_pcb.c	7.12 (Berkeley) %G%
+ *	@(#)iso_pcb.c	7.13 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -42,27 +42,27 @@ SOFTWARE.
 
 #ifdef ISO
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "errno.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
 
-#include "argo_debug.h"
-#include "iso.h"
-#include "clnp.h"
-#include "../netinet/in_systm.h"
-#include "../net/if.h"
-#include "../net/route.h"
-#include "iso_pcb.h"
-#include "iso_var.h"
-#include "protosw.h"
+#include <netiso/argo_debug.h>
+#include <netiso/iso.h>
+#include <netiso/clnp.h>
+#include <netinet/in_systm.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <netiso/iso_pcb.h>
+#include <netiso/iso_var.h>
+#include <sys/protosw.h>
 
 #ifdef TPCONS
-#include "../netccitt/x25.h"
-#include "../netccitt/pk.h"
-#include "../netccitt/pk_var.h"
+#include <netccitt/x25.h>
+#include <netccitt/pk.h>
+#include <netccitt/pk_var.h>
 #endif
 
 #define PCBNULL (struct isopcb *)0

@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fpu_explode.c	7.2 (Berkeley) %G%
+ *	@(#)fpu_explode.c	7.3 (Berkeley) %G%
  *
  * from: $Header: fpu_explode.c,v 1.2 92/06/17 05:41:32 torek Exp $
  */
@@ -23,14 +23,14 @@
  * into our internal format.
  */
 
-#include "sys/types.h"
+#include <sys/types.h>
 
-#include "machine/ieee.h"
-#include "machine/instr.h"
-#include "machine/reg.h"
+#include <machine/ieee.h>
+#include <machine/instr.h>
+#include <machine/reg.h>
 
-#include "fpu_arith.h"
-#include "fpu_emu.h"
+#include <sparc/fpu/fpu_arith.h>
+#include <sparc/fpu/fpu_emu.h>
 
 /*
  * N.B.: in all of the following, we assume the FP format is

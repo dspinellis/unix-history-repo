@@ -4,44 +4,45 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ethersubr.c	7.21 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.22 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "kernel.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "ioctl.h"
-#include "errno.h"
-#include "syslog.h"
-#include "machine/cpu.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <sys/errno.h>
+#include <sys/syslog.h>
 
-#include "if.h"
-#include "netisr.h"
-#include "route.h"
-#include "if_llc.h"
-#include "if_dl.h"
-#include "if_types.h"
+#include <machine/cpu.h>
+
+#include <net/if.h>
+#include <net/netisr.h>
+#include <net/route.h>
+#include <net/if_llc.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
 
 #ifdef INET
-#include "../netinet/in.h"
-#include "../netinet/in_var.h"
+#include <netinet/in.h>
+#include <netinet/in_var.h>
 #endif
-#include "../netinet/if_ether.h"
+#include <netinet/if_ether.h>
 
 #ifdef NS
-#include "../netns/ns.h"
-#include "../netns/ns_if.h"
+#include <netns/ns.h>
+#include <netns/ns_if.h>
 #endif
 
 #ifdef ISO
-#include "../netiso/argo_debug.h"
-#include "../netiso/iso.h"
-#include "../netiso/iso_var.h"
-#include "../netiso/iso_snpac.h"
+#include <netiso/argo_debug.h>
+#include <netiso/iso.h>
+#include <netiso/iso_var.h>
+#include <netiso/iso_snpac.h>
 #endif
 
 u_char	etherbroadcastaddr[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };

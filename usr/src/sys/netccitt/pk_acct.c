@@ -9,25 +9,25 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_acct.c	7.9 (Berkeley) %G%
+ *	@(#)pk_acct.c	7.10 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "namei.h"
-#include "proc.h"
-#include "vnode.h"
-#include "kernel.h"
-#include "file.h"
-#include "socket.h"
-#include "socketvar.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/namei.h>
+#include <sys/proc.h>
+#include <sys/vnode.h>
+#include <sys/kernel.h>
+#include <sys/file.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
 
-#include "../net/if.h"
+#include <net/if.h>
 
-#include "x25.h"
-#include "pk.h"
-#include "pk_var.h"
-#include "x25acct.h"
+#include <netccitt/x25.h>
+#include <netccitt/pk.h>
+#include <netccitt/pk_var.h>
+#include <netccitt/x25acct.h>
 
 
 struct	vnode *pkacctp;

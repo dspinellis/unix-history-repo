@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.41 91/04/06$
  *
- *	@(#)ultrix_compat.c	7.3 (Berkeley) %G%
+ *	@(#)ultrix_compat.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -20,30 +20,30 @@
 
 #ifdef ULTRIXCOMPAT
 
-#include "param.h"
-#include "systm.h"
-#include "signalvar.h"
-#include "kernel.h"
-#include "filedesc.h"
-#include "proc.h"
-#include "buf.h"
-#include "wait.h"
-#include "file.h"
-#include "namei.h"
-#include "vnode.h"
-#include "ioctl.h"
-#include "ptrace.h"
-#include "stat.h"
-#include "syslog.h"
-#include "malloc.h"
-#include "mount.h"
-#include "ipc.h"
-#include "user.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/signalvar.h>
+#include <sys/kernel.h>
+#include <sys/filedesc.h>
+#include <sys/proc.h>
+#include <sys/buf.h>
+#include <sys/wait.h>
+#include <sys/file.h>
+#include <sys/namei.h>
+#include <sys/vnode.h>
+#include <sys/ioctl.h>
+#include <sys/ptrace.h>
+#include <sys/stat.h>
+#include <sys/syslog.h>
+#include <sys/malloc.h>
+#include <sys/mount.h>
+#include <sys/ipc.h>
+#include <sys/user.h>
 
-#include "machine/cpu.h"
-#include "machine/reg.h"
-#include "machine/psl.h"
-#include "machine/vmparam.h"
+#include <machine/cpu.h>
+#include <machine/reg.h>
+#include <machine/psl.h>
+#include <machine/vmparam.h>
 
 #ifdef DEBUG
 int unimpresponse = 0;

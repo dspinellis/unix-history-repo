@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.38 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.39 (Berkeley) %G%
  */
 
 /*
@@ -27,6 +27,7 @@
 #include <sys/socketvar.h>
 #include <sys/syslog.h>
 #include <sys/tprintf.h>
+
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <nfs/rpcv2.h>

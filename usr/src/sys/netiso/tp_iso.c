@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_iso.c	7.13 (Berkeley) %G%
+ *	@(#)tp_iso.c	7.14 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -60,28 +60,28 @@ SOFTWARE.
 
 #ifdef ISO
 
-#include "param.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "domain.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "errno.h"
-#include "time.h"
-#include "protosw.h"
+#include <sys/param.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/domain.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/errno.h>
+#include <sys/time.h>
+#include <sys/protosw.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
+#include <net/if.h>
+#include <net/route.h>
 
-#include "argo_debug.h"
-#include "tp_param.h"
-#include "tp_stat.h"
-#include "tp_pcb.h"
-#include "tp_trace.h"
-#include "tp_stat.h"
-#include "tp_tpdu.h"
-#include "tp_clnp.h"
-#include "cltp_var.h"
+#include <netiso/argo_debug.h>
+#include <netiso/tp_param.h>
+#include <netiso/tp_stat.h>
+#include <netiso/tp_pcb.h>
+#include <netiso/tp_trace.h>
+#include <netiso/tp_stat.h>
+#include <netiso/tp_tpdu.h>
+#include <netiso/tp_clnp.h>
+#include <netiso/cltp_var.h>
 
 /*
  * CALLED FROM:

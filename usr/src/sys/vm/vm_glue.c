@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	7.17 (Berkeley) %G%
+ *	@(#)vm_glue.c	7.18 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -237,7 +237,7 @@ vm_init_limits(p)
 		ptoa(cnt.v_free_count);
 }
 
-#include "../vm/vm_pageout.h"
+#include <vm/vm_pageout.h>
 
 #ifdef DEBUG
 int	enableswap = 1;

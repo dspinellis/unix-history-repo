@@ -9,24 +9,24 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hd_debug.c	7.5 (Berkeley) %G%
+ *	@(#)hd_debug.c	7.6 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "domain.h"
-#include "socket.h"
-#include "protosw.h"
-#include "errno.h"
-#include "time.h"
-#include "kernel.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/socket.h>
+#include <sys/protosw.h>
+#include <sys/errno.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
 
-#include "../net/if.h"
+#include <net/if.h>
 
-#include "hdlc.h"
-#include "hd_var.h"
-#include "x25.h"
+#include <netccitt/hdlc.h>
+#include <netccitt/hd_var.h>
+#include <netccitt/x25.h>
 
 #ifdef HDLCDEBUG
 #define NTRACE		32

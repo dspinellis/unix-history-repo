@@ -13,15 +13,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_cksum.c	7.2 (Berkeley) %G%
+ *	@(#)in_cksum.c	7.3 (Berkeley) %G%
  *
  * from: $Header: in_cksum.c,v 1.6 92/06/17 05:22:04 torek Exp $
  */
 
-#include "param.h"
-#include "mbuf.h"
-#include "netinet/in.h"
-#include "netinet/in_systm.h"
+#include <sys/param.h>
+#include <sys/mbuf.h>
+
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
 
 /*
  * Checksum routine for Internet Protocol family headers.

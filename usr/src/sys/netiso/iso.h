@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso.h	7.6 (Berkeley) %G%
+ *	@(#)iso.h	7.7 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -98,7 +98,7 @@ SOFTWARE.
 
 
 #ifndef IN_CLASSA_NET
-#include "../netinet/in.h"
+#include <netinet/in.h>
 #endif IN_CLASSA_NET
 
 

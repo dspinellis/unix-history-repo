@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_sl.c	7.29 (Berkeley) %G%
+ *	@(#)if_sl.c	7.30 (Berkeley) %G%
  */
 
 /*
@@ -41,35 +41,36 @@
 #include "sl.h"
 #if NSL > 0
 
-#include "param.h"
-#include "proc.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "dk.h"
-#include "socket.h"
-#include "ioctl.h"
-#include "file.h"
-#include "tty.h"
-#include "kernel.h"
-#include "conf.h"
-#include "machine/cpu.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/mbuf.h>
+#include <sys/buf.h>
+#include <sys/dkstat.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <sys/file.h>
+#include <sys/tty.h>
+#include <sys/kernel.h>
+#include <sys/conf.h>
 
-#include "if.h"
-#include "if_types.h"
-#include "netisr.h"
-#include "route.h"
+#include <machine/cpu.h>
+
+#include <net/if.h>
+#include <net/if_types.h>
+#include <net/netisr.h>
+#include <net/route.h>
 
 #if INET
-#include "netinet/in.h"
-#include "netinet/in_systm.h"
-#include "netinet/in_var.h"
-#include "netinet/ip.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
 #else
 Huh? Slip without inet?
 #endif
 
-#include "slcompress.h"
-#include "if_slvar.h"
+#include <net/slcompress.h>
+#include <net/if_slvar.h>
 
 /*
  * SLMAX is a hard limit on input packet size.  To simplify the code

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_usrreq.c	7.26 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.27 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -46,27 +46,27 @@ SOFTWARE.
  * tp_rcvoob() and tp_sendoob() are contained here and called by tp_usrreq().
  */
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "domain.h"
-#include "protosw.h"
-#include "errno.h"
-#include "time.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/errno.h>
+#include <sys/time.h>
 
-#include "tp_param.h"
-#include "tp_timer.h"
-#include "tp_stat.h"
-#include "tp_seq.h"
-#include "tp_ip.h"
-#include "tp_pcb.h"
-#include "argo_debug.h"
-#include "tp_trace.h"
-#include "tp_meas.h"
-#include "iso.h"
-#include "iso_errno.h"
+#include <netiso/tp_param.h>
+#include <netiso/tp_timer.h>
+#include <netiso/tp_stat.h>
+#include <netiso/tp_seq.h>
+#include <netiso/tp_ip.h>
+#include <netiso/tp_pcb.h>
+#include <netiso/argo_debug.h>
+#include <netiso/tp_trace.h>
+#include <netiso/tp_meas.h>
+#include <netiso/iso.h>
+#include <netiso/iso_errno.h>
 
 int tp_attach(), tp_driver(), tp_pcbbind();
 int TNew;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns_ip.c	7.6 (Berkeley) %G%
+ *	@(#)ns_ip.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -12,31 +12,31 @@
  */
 
 #ifdef NSIP
-#include "param.h"
-#include "systm.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "errno.h"
-#include "ioctl.h"
-#include "protosw.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
+#include <sys/ioctl.h>
+#include <sys/protosw.h>
 
-#include "../net/if.h"
-#include "../net/netisr.h"
-#include "../net/route.h"
+#include <net/if.h>
+#include <net/netisr.h>
+#include <net/route.h>
 
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/in_var.h"
-#include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
 
-#include "machine/mtpr.h"
+#include <machine/mtpr.h>
 
-#include "../netns/ns.h"
-#include "../netns/ns_if.h"
-#include "../netns/idp.h"
+#include <netns/ns.h>
+#include <netns/ns_if.h>
+#include <netns/idp.h>
 
 struct ifnet_en {
 	struct ifnet ifen_ifnet;

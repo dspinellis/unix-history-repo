@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr.c	7.19 (Berkeley) %G%
+ *	@(#)tp_subr.c	7.20 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -48,28 +48,27 @@ SOFTWARE.
  * and put incoming packet data into socket buffers (tp_stash()).
  */
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "protosw.h"
-#include "errno.h"
-#include "types.h"
-#include "time.h"
-#include "kernel.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/protosw.h>
+#include <sys/errno.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
 
-#include "tp_ip.h"
-#include "iso.h"
-#include "argo_debug.h"
-#include "tp_timer.h"
-#include "tp_param.h"
-#include "tp_stat.h"
-#include "tp_pcb.h"
-#include "tp_tpdu.h"
-#include "tp_trace.h"
-#include "tp_meas.h"
-#include "tp_seq.h"
+#include <netiso/tp_ip.h>
+#include <netiso/iso.h>
+#include <netiso/argo_debug.h>
+#include <netiso/tp_timer.h>
+#include <netiso/tp_param.h>
+#include <netiso/tp_stat.h>
+#include <netiso/tp_pcb.h>
+#include <netiso/tp_tpdu.h>
+#include <netiso/tp_trace.h>
+#include <netiso/tp_meas.h>
+#include <netiso/tp_seq.h>
 
 int		tp_emit(), tp_sbdrop();
 int		tprexmtthresh = 3;

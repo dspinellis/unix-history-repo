@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sun_disklabel.c	7.2 (Berkeley) %G%
+ *	@(#)sun_disklabel.c	7.3 (Berkeley) %G%
  *
  * from: $Header: sun_disklabel.c,v 1.5 92/06/17 07:04:12 torek Exp $
  */
@@ -22,13 +22,13 @@
  * SunOS disk label code.
  */
 
-#include "sys/param.h"
-#include "sys/disklabel.h"
-#include "sys/device.h"
-#include "sys/disk.h"
-#include "sys/ioctl.h"
+#include <sys/param.h>
+#include <sys/disklabel.h>
+#include <sys/device.h>
+#include <sys/disk.h>
+#include <sys/ioctl.h>
 
-#include "sun_disklabel.h"
+#include <sparc/sunos/sun_disklabel.h>
 
 /*
  * Take a sector (cp) containing a SunOS disk label and set lp to a BSD

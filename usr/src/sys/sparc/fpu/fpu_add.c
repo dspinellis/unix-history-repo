@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fpu_add.c	7.2 (Berkeley) %G%
+ *	@(#)fpu_add.c	7.3 (Berkeley) %G%
  *
  * from: $Header: fpu_add.c,v 1.3 92/06/17 18:11:43 mccanne Exp $
  */
@@ -24,12 +24,12 @@
  * To subtract, negate y and call add.
  */
 
-#include "sys/types.h"
+#include <sys/types.h>
 
-#include "machine/reg.h"
+#include <machine/reg.h>
 
-#include "fpu_arith.h"
-#include "fpu_emu.h"
+#include <sparc/fpu/fpu_arith.h>
+#include <sparc/fpu/fpu_emu.h>
 
 struct fpn *
 fpu_add(fe)

@@ -4,21 +4,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in.c	7.25 (Berkeley) %G%
+ *	@(#)in.c	7.26 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "ioctl.h"
-#include "errno.h"
-#include "malloc.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "in_systm.h"
-#include "net/if.h"
-#include "net/route.h"
-#include "net/af.h"
-#include "in.h"
-#include "in_var.h"
+#include <sys/param.h>
+#include <sys/ioctl.h>
+#include <sys/errno.h>
+#include <sys/malloc.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+
+#include <net/if.h>
+#include <net/route.h>
+#include <net/af.h>
+
+#include <netinet/in_systm.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
 
 #ifdef INET
 /*

@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)zs.c	7.2 (Berkeley) %G%
+ *	@(#)zs.c	7.3 (Berkeley) %G%
  *
  * from: $Header: zs.c,v 1.24 92/06/30 02:24:21 torek Exp $
  */
@@ -28,26 +28,26 @@
  */
 #define	NZS	2		/* XXX */
 
-#include "sys/param.h"
-#include "sys/proc.h"
-#include "sys/device.h"
-#include "sys/conf.h"
-#include "sys/file.h"
-#include "sys/ioctl.h"
-#include "sys/tty.h"
-#include "sys/time.h"
-#include "sys/kernel.h"
-#include "sys/syslog.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/device.h>
+#include <sys/conf.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
+#include <sys/syslog.h>
 
-#include "machine/autoconf.h"
-#include "machine/cpu.h"
+#include <machine/autoconf.h>
+#include <machine/cpu.h>
 
-#include "kbd.h"
-#include "zsreg.h"
-#include "zsvar.h"
+#include <sparc/dev/kbd.h>
+#include <sparc/dev/zsreg.h>
+#include <sparc/dev/zsvar.h>
 
 #ifdef KGDB
-#include "machine/remote-sl.h"
+#include <machine/remote-sl.h>
 #endif
 
 #define	ZSMAJOR	12		/* XXX */

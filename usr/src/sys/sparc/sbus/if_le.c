@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.1 (Berkeley) %G%
+ *	@(#)if_le.c	7.2 (Berkeley) %G%
  *
  * from: $Header: if_le.c,v 1.17 92/07/10 06:45:17 torek Exp $
  */
@@ -19,50 +19,50 @@
  * with VAXen, SUNs, and others that handle and benefit from them.
  * This reasoning is dubious.
  */
-#include "sys/param.h"
-#include "sys/device.h"
-#include "sys/systm.h"
-#include "sys/kernel.h"
-#include "sys/mbuf.h"
-#include "sys/buf.h"
-#include "sys/socket.h"
-#include "sys/syslog.h"
-#include "sys/ioctl.h"
-#include "sys/malloc.h"
-#include "sys/errno.h"
+#include <sys/param.h>
+#include <sys/device.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/mbuf.h>
+#include <sys/buf.h>
+#include <sys/socket.h>
+#include <sys/syslog.h>
+#include <sys/ioctl.h>
+#include <sys/malloc.h>
+#include <sys/errno.h>
 
-#include "../net/if.h"
-#include "../net/netisr.h"
-#include "../net/route.h"
+#include <net/if.h>
+#include <net/netisr.h>
+#include <net/route.h>
 #if NBPFILTER > 0
-#include "sys/select.h"
-#include "../net/bpf.h"
-#include "../net/bpfdesc.h"
+#include <sys/select.h>
+#include <net/bpf.h>
+#include <net/bpfdesc.h>
 #endif
 
 #ifdef INET
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/in_var.h"
-#include "../netinet/ip.h"
-#include "../netinet/if_ether.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
+#include <netinet/if_ether.h>
 #endif
 
 #ifdef NS
-#include "../netns/ns.h"
-#include "../netns/ns_if.h"
+#include <netns/ns.h>
+#include <netns/ns_if.h>
 #endif
 
 #ifdef APPLETALK
-#include "../netddp/atalk.h"
+#include <netddp/atalk.h>
 #endif
 
-#include "machine/autoconf.h"
-#include "machine/cpu.h"
-#include "machine/pmap.h"
+#include <machine/autoconf.h>
+#include <machine/cpu.h>
+#include <machine/pmap.h>
 
-#include "if_lereg.h"
-#include "sbusvar.h"
+#include <sparc/sbus/if_lereg.h>
+#include <sparc/sbus/sbusvar.h>
 
 /* DVMA address to LANCE address -- the Sbus/MMU will resupply the 0xff */
 #define	LANCE_ADDR(x)	((int)(x) & ~0xff000000)

@@ -13,28 +13,28 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)autoconf.c	7.2 (Berkeley) %G%
+ *	@(#)autoconf.c	7.3 (Berkeley) %G%
  *
  * from: $Header: autoconf.c,v 1.23 92/07/10 22:35:23 torek Exp $ (LBL)
  */
 
-#include "sys/param.h"
-#include "sys/map.h"
-#include "sys/buf.h"
-#include "sys/disklabel.h"
-#include "sys/device.h"
-#include "sys/dkstat.h"
-#include "sys/conf.h"
-#include "sys/dmap.h"
-#include "sys/reboot.h"
-#include "sys/socket.h"
-#include "sys/systm.h"
+#include <sys/param.h>
+#include <sys/map.h>
+#include <sys/buf.h>
+#include <sys/disklabel.h>
+#include <sys/device.h>
+#include <sys/dkstat.h>
+#include <sys/conf.h>
+#include <sys/dmap.h>
+#include <sys/reboot.h>
+#include <sys/socket.h>
+#include <sys/systm.h>
 
-#include "net/if.h"
+#include <net/if.h>
 
-#include "machine/autoconf.h"
-#include "machine/bsd_openprom.h"
-#include "machine/cpu.h"
+#include <machine/autoconf.h>
+#include <machine/bsd_openprom.h>
+#include <machine/cpu.h>
 
 #ifndef	FS_NFS		/* XXX */
 #define	FS_NFS	100	/* XXX */

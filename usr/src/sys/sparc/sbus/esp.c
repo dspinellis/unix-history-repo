@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)esp.c	7.3 (Berkeley) %G%
+ *	@(#)esp.c	7.4 (Berkeley) %G%
  *
  * from: $Header: esp.c,v 1.22 92/06/17 06:59:33 torek Exp $ (LBL)
  *
@@ -44,21 +44,21 @@
  * some space.
  */
 
-#include "sys/param.h"
-#include "sys/buf.h"
-#include "sys/device.h"
-#include "sys/malloc.h"
+#include <sys/param.h>
+#include <sys/buf.h>
+#include <sys/device.h>
+#include <sys/malloc.h>
 
-#include "dev/scsi/scsi.h"
-#include "dev/scsi/scsivar.h"
+#include <dev/scsi/scsi.h>
+#include <dev/scsi/scsivar.h>
 
-#include "machine/autoconf.h"
-#include "machine/cpu.h"
+#include <machine/autoconf.h>
+#include <machine/cpu.h>
 
-#include "dmareg.h"
+#include <sparc/sbus/dmareg.h>
 #define ESP_PHASE_NAMES
-#include "espreg.h"
-#include "sbusvar.h"
+#include <sparc/sbus/espreg.h>
+#include <sparc/sbus/sbusvar.h>
 
 #ifdef DEBUG
 int espdebug = 1;

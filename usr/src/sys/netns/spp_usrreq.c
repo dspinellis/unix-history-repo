@@ -4,32 +4,32 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spp_usrreq.c	7.15 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	7.16 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "errno.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
-#include "../netinet/tcp_fsm.h"
+#include <net/if.h>
+#include <net/route.h>
+#include <netinet/tcp_fsm.h>
 
-#include "ns.h"
-#include "ns_pcb.h"
-#include "idp.h"
-#include "idp_var.h"
-#include "ns_error.h"
-#include "sp.h"
-#include "spidp.h"
-#include "spp_timer.h"
-#include "spp_var.h"
-#include "spp_debug.h"
+#include <netns/ns.h>
+#include <netns/ns_pcb.h>
+#include <netns/idp.h>
+#include <netns/idp_var.h>
+#include <netns/ns_error.h>
+#include <netns/sp.h>
+#include <netns/spidp.h>
+#include <netns/spp_timer.h>
+#include <netns/spp_var.h>
+#include <netns/spp_debug.h>
 
 /*
  * SP protocol implementation.

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_imp.c	7.13 (Berkeley) %G%
+ *	@(#)if_imp.c	7.14 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -15,31 +15,32 @@
  * The IMP-host protocol (AHIP) is handled here, leaving
  * hardware specifics to the lower level interface driver.
  */
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "time.h"
-#include "kernel.h"
-#include "errno.h"
-#include "ioctl.h"
-#include "syslog.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/buf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
+#include <sys/errno.h>
+#include <sys/ioctl.h>
+#include <sys/syslog.h>
 
-#include "machine/mtpr.h"
+#include <machine/mtpr.h>
 
-#include "../net/if.h"
-#include "../net/netisr.h"
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/in_var.h"
-#include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
+#include <net/if.h>
+#include <net/netisr.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+
 #define IMPMESSAGES
 /* define IMPLEADERS here to get leader printing code */
-#include "if_imp.h"
-#include "if_imphost.h"
+#include <netimp/if_imp.h>
+#include <netimp/if_imphost.h>
 
 struct	imp_softc imp_softc[NIMP];
 #ifndef lint

@@ -13,24 +13,24 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)intr.c	7.2 (Berkeley) %G%
+ *	@(#)intr.c	7.3 (Berkeley) %G%
  *
  * from: $Header: intr.c,v 1.18 92/07/09 00:47:43 torek Exp $ (LBL)
  */
 
-#include "sys/param.h"
-#include "sys/kernel.h"
+#include <sys/param.h>
+#include <sys/kernel.h>
 
-#include "net/netisr.h"
+#include <net/netisr.h>
 
-#include "machine/cpu.h"
+#include <machine/cpu.h>
 #ifdef DIAGNOSTIC
-#include "machine/instr.h"
+#include <machine/instr.h>
 #endif
-#include "machine/trap.h"
+#include <machine/trap.h>
 
-#include "clockreg.h"
-#include "ctlreg.h"
+#include <sparc/sparc/clockreg.h>
+#include <sparc/sparc/ctlreg.h>
 
 /*
  * Stray interrupt handler.  Clear it if possible.

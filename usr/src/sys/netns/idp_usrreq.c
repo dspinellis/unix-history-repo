@@ -4,27 +4,27 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)idp_usrreq.c	7.11 (Berkeley) %G%
+ *	@(#)idp_usrreq.c	7.12 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "errno.h"
-#include "stat.h"
+#include <sys/param.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
+#include <sys/stat.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
+#include <net/if.h>
+#include <net/route.h>
 
-#include "ns.h"
-#include "ns_pcb.h"
-#include "ns_if.h"
-#include "idp.h"
-#include "idp_var.h"
-#include "ns_error.h"
+#include <netns/ns.h>
+#include <netns/ns_pcb.h>
+#include <netns/ns_if.h>
+#include <netns/idp.h>
+#include <netns/idp_var.h>
+#include <netns/ns_error.h>
 
 /*
  * IDP protocol implementation.

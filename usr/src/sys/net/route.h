@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.h	7.16 (Berkeley) %G%
+ *	@(#)route.h	7.17 (Berkeley) %G%
  */
 
 /*
@@ -58,7 +58,7 @@ struct rt_metrics {
  * gateway rather than the ultimate destination.
  */
 #ifndef RNF_NORMAL
-#include "radix.h"
+#include <net/radix.h>
 #endif
 struct rtentry {
 	struct	radix_node rt_nodes[2];	/* tree glue, and other values */

@@ -7,12 +7,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkboottape.c	7.4 (Berkeley) %G%
+ *	@(#)mkboottape.c	7.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/exec.h>
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,7 +21,7 @@
 #include <fcntl.h>
 #include <string.h>
 
-#include "dec_boot.h"
+#include <pmax/stand/dec_boot.h>
 
 void err __P((const char *, ...));
 void usage __P((void));

@@ -13,17 +13,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.2 (Berkeley) %G%
+ *	@(#)conf.c	7.3 (Berkeley) %G%
  *
  * from: $Header: conf.c,v 1.12 92/06/17 05:22:00 torek Exp $ (LBL)
  */
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/buf.h"
-#include "sys/ioctl.h"
-#include "sys/tty.h"
-#include "sys/conf.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/conf.h>
 
 int	rawread		__P((dev_t, struct uio *, int));
 int	rawwrite	__P((dev_t, struct uio *, int));

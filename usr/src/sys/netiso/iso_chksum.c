@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_chksum.c	7.7 (Berkeley) %G%
+ *	@(#)iso_chksum.c	7.8 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -57,10 +57,10 @@ SOFTWARE.
  */
 
 #ifdef ISO
-#include "argo_debug.h"
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
+#include <netiso/argo_debug.h>
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
 #endif ISO
 
 #ifndef MNULL

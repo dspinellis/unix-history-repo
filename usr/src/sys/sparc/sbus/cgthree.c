@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cgthree.c	7.2 (Berkeley) %G%
+ *	@(#)cgthree.c	7.3 (Berkeley) %G%
  *
  * from: $Header: cgthree.c,v 1.5 92/06/17 06:59:31 torek Exp $
  */
@@ -26,21 +26,21 @@
 
 #include "cgthree.h"
 
-#include "sys/param.h"
-#include "sys/buf.h"
-#include "sys/device.h"
-#include "sys/fbio.h"
-#include "sys/ioctl.h"
-#include "sys/malloc.h"
-#include "sys/mman.h"
-#include "sys/tty.h"
+#include <sys/param.h>
+#include <sys/buf.h>
+#include <sys/device.h>
+#include <sys/fbio.h>
+#include <sys/ioctl.h>
+#include <sys/malloc.h>
+#include <sys/mman.h>
+#include <sys/tty.h>
 
-#include "machine/autoconf.h"
-#include "machine/pmap.h"
-#include "machine/fbvar.h"
+#include <machine/autoconf.h>
+#include <machine/pmap.h>
+#include <machine/fbvar.h>
 
-#include "cgthreereg.h"
-#include "sbusvar.h"
+#include <sparc/sbus/cgthreereg.h>
+#include <sparc/sbus/sbusvar.h>
 
 union colormap {
 	u_char	cm_map[256][3];		/* 256 R/G/B entries */
