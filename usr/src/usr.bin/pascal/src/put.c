@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)put.c 1.11 %G%";
+static char sccsid[] = "@(#)put.c 1.12 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -257,11 +257,6 @@ around:
 #endif
 			word(p[1]);
 			return (oldlc);
-		case O_FCALL:
-			lp = (long *)&p[1];
-			if (*lp == 0)
-				goto longgen;
-			/* and fall through */
 		case O_PUSH:
 			lp = (long *)&p[1];
 			if (*lp == 0)

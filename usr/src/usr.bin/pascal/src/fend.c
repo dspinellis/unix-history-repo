@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.2 %G%";
+static char sccsid[] = "@(#)fend.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -228,30 +228,15 @@ funcend(fp, bundle, endline)
 	     *	and zero them if checking is on
 	     *	by calling blkclr( bytes of locals , starting local address );
 	     */
-	if ( opt( 't' ) ) {
-	    if ( ( -sizes[ cbn ].om_max ) > DPOFF1 ) {
-		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
-			, "_blkclr" );
-		putleaf( P2ICON ,  ( -sizes[ cbn ].om_max ) - DPOFF1
-			, 0 , P2INT , 0 );
-		putLV( 0 , cbn , sizes[ cbn ].om_max , P2CHAR );
-		putop( P2LISTOP , P2INT );
-		putop( P2CALL , P2INT );
-		putdot( filename , line );
-	    }
-		/*
-		 *  check number of longs of arguments
-		 *  this can only be wrong for formal calls.
-		 */
-	    if ( fp -> class != PROG ) {
-		    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2PTR , P2FTN | P2INT ) ,
-			    "_NARGCHK" );
-		    putleaf( P2ICON ,
-			(fp->value[NL_OFFS] - DPOFF2) / sizeof(long) ,
-			0 , P2INT , 0 );
-		    putop( P2CALL , P2INT );
-		    putdot( filename , line );
-	    }
+	if ( opt( 't' ) && ( -sizes[ cbn ].om_max ) > DPOFF1 ) {
+	    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+		    , "_blkclr" );
+	    putleaf( P2ICON ,  ( -sizes[ cbn ].om_max ) - DPOFF1
+		    , 0 , P2INT , 0 );
+	    putLV( 0 , cbn , sizes[ cbn ].om_max , P2CHAR );
+	    putop( P2LISTOP , P2INT );
+	    putop( P2CALL , P2INT );
+	    putdot( filename , line );
 	}
 #endif PC
 	if ( monflg ) {

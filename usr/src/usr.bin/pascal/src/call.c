@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.7 %G%";
+static	char sccsid[] = "@(#)call.c 1.8 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -52,10 +52,7 @@ call(p, argv, porf, psbn)
 	register struct nl *p1, *q;
 	int *r;
 	struct nl	*p_type_class = classify( p -> type );
-
-#	ifdef OBJ
-	    int		cnt;
-#	endif OBJ
+	bool chk = TRUE;
 #	ifdef PC
 	    long	p_p2type = p2type( p );
 	    long	p_type_p2type = p2type( p -> type );
@@ -161,215 +158,139 @@ call(p, argv, porf, psbn)
 	 * arguments to the proc/func.
 	 *	... ( ... args ... ) ...
 	 */
-	if ( p -> class == FUNC || p -> class == PROC ) {
-	    for (p1 = p->chain; p1 != NIL; p1 = p1->chain) {
-		if (argv == NIL) {
-			error("Not enough arguments to %s", p->symbol);
-			return (NIL);
-		}
-		switch (p1->class) {
-		    case REF:
-			    /*
-			     * Var parameter
-			     */
-			    r = argv[1];
-			    if (r != NIL && r[0] != T_VAR) {
-				    error("Expression given (variable required) for var parameter %s of %s", p1->symbol, p->symbol);
-				    break;
-			    }
-			    q = lvalue( (int *) argv[1], MOD , LREQ );
-			    if (q == NIL)
-				    break;
-			    if (q != p1->type) {
-				    error("Parameter type not identical to type of var parameter %s of %s", p1->symbol, p->symbol);
-				    break;
-			    }
-			    break;
-		    case VAR:
-			    /*
-			     * Value parameter
-			     */
-#			ifdef OBJ
-				q = rvalue(argv[1], p1->type , RREQ );
-#			endif OBJ
-#			ifdef PC
-				    /*
-				     * structure arguments require lvalues,
-				     * scalars use rvalue.
-				     */
-				switch( classify( p1 -> type ) ) {
-				    case TFILE:
-				    case TARY:
-				    case TREC:
-				    case TSET:
-				    case TSTR:
-					q = rvalue( argv[1] , p1 -> type , LREQ );
-					break;
-				    case TINT:
-				    case TSCAL:
-				    case TBOOL:
-				    case TCHAR:
-					precheck( p1 -> type , "_RANG4" , "_RSNG4" );
-					q = rvalue( argv[1] , p1 -> type , RREQ );
-					postcheck( p1 -> type );
-					break;
-				    default:
-					q = rvalue( argv[1] , p1 -> type , RREQ );
-					if (  isa( p1 -> type  , "d" )
-					   && isa( q , "i" ) ) {
-					    putop( P2SCONV , P2DOUBLE );
-					}
-					break;
-				}
-#			endif PC
-			    if (q == NIL)
-				    break;
-			    if (incompat(q, p1->type, argv[1])) {
-				    cerror("Expression type clashed with type of value parameter %s of %s", p1->symbol, p->symbol);
-				    break;
-			    }
-#			ifdef OBJ
-				if (isa(p1->type, "bcsi"))
-					rangechk(p1->type, q);
-				if (q->class != STR)
-					convert(q, p1->type);
-#			endif OBJ
-#			ifdef PC
-				switch( classify( p1 -> type ) ) {
-				    case TFILE:
-				    case TARY:
-				    case TREC:
-				    case TSET:
-				    case TSTR:
-					    putstrop( P2STARG
-						, p2type( p1 -> type )
-						, lwidth( p1 -> type )
-						, align( p1 -> type ) );
-				}
-#			endif PC
-			    break;
-		    case FFUNC:
-			    /*
-			     * function parameter
-			     */
-			    q = flvalue( (int *) argv[1] , FFUNC );
-			    if (q == NIL)
-				    break;
-			    if (q != p1->type) {
-				    error("Function type not identical to type of function parameter %s of %s", p1->symbol, p->symbol);
-				    break;
-			    }
-			    break;
-		    case FPROC:
-			    /*
-			     * procedure parameter
-			     */
-			    q = flvalue( (int *) argv[1] , FPROC );
-			    if (q != NIL) {
-				    error("Procedure parameter %s of %s cannot have a type", p1->symbol, p->symbol);
-			    }
-			    break;
-		    default:
-			    panic("call");
-		}
-#	    ifdef PC
-			/*
-			 *	if this is the nth (>1) argument,
-			 *	hang it on the left linear list of arguments
-			 */
-		    if ( noarguments ) {
-			    noarguments = FALSE;
-		    } else {
-			    putop( P2LISTOP , P2INT );
-		    }
-#	    endif PC
-		argv = argv[2];
-	    }
-	    if (argv != NIL) {
-		    error("Too many arguments to %s", p->symbol);
-		    rvlist(argv);
+	for (p1 = plist(p); p1 != NIL; p1 = p1->chain) {
+	    if (argv == NIL) {
+		    error("Not enough arguments to %s", p->symbol);
 		    return (NIL);
 	    }
-	} else if ( p -> class == FFUNC || p -> class == FPROC ) {
-		/*
-		 *	formal routines can only have by-value parameters.
-		 *	this will lose for integer actuals passed to real
-		 *	formals, and strings which people want blank padded.
-		 */
-#	    ifdef OBJ
-		cnt = 0;
-#	    endif OBJ
-	    for ( ; argv != NIL ; argv = argv[2] ) {
-#		ifdef OBJ
-		    q = rvalue(argv[1], NIL, RREQ );
-		    cnt += leven(lwidth(q));
-#		endif OBJ
-#		ifdef PC
+	    switch (p1->class) {
+		case REF:
 			/*
-			 * structure arguments require lvalues,
-			 * scalars use rvalue.
+			 * Var parameter
 			 */
-		    codeoff();
-		    p1 = rvalue( argv[1] , NIL , RREQ );
-		    codeon();
-		    switch( classify( p1 ) ) {
-			case TSTR:
-			    if ( p1 -> class == STR && slenline != line ) {
-				slenline = line;
-				( opt( 's' ) ? (standard()): (warning()) );
-				error("Implementation can't construct equal length strings");
-			    }
-			    /* and fall through */
-			case TFILE:
-			case TARY:
-			case TREC:
-			case TSET:
-			    q = rvalue( argv[1] , p1 , LREQ );
-			    break;
-			case TINT:
-			    if ( floatline != line ) {
-				floatline = line;
-				( opt( 's' ) ? (standard()) : (warning()) );
-				error("Implementation can't coerice integer to real");
-			    }
-			    /* and fall through */
-			case TSCAL:
-			case TBOOL:
-			case TCHAR:
-			default:
-			    q = rvalue( argv[1] , p1 , RREQ );
-			    break;
-		    }
-		    switch( classify( p1 ) ) {
-			case TFILE:
-			case TARY:
-			case TREC:
-			case TSET:
-			case TSTR:
-				putstrop( P2STARG , p2type( p1 ) ,
-				    lwidth( p1 ) , align( p1 ) );
-		    }
+			r = argv[1];
+			if (r != NIL && r[0] != T_VAR) {
+				error("Expression given (variable required) for var parameter %s of %s", p1->symbol, p->symbol);
+				break;
+			}
+			q = lvalue( (int *) argv[1], MOD , LREQ );
+			if (q == NIL) {
+				chk = FALSE;
+				break;
+			}
+			if (q != p1->type) {
+				error("Parameter type not identical to type of var parameter %s of %s", p1->symbol, p->symbol);
+				break;
+			}
+			break;
+		case VAR:
 			/*
-			 *	if this is the nth (>1) argument,
-			 *	hang it on the left linear list of arguments
+			 * Value parameter
 			 */
-		    if ( noarguments ) {
-			    noarguments = FALSE;
-		    } else {
-			    putop( P2LISTOP , P2INT );
-		    }
-#		endif PC
+#			ifdef OBJ
+			    q = rvalue(argv[1], p1->type , RREQ );
+#			endif OBJ
+#			ifdef PC
+				/*
+				 * structure arguments require lvalues,
+				 * scalars use rvalue.
+				 */
+			    switch( classify( p1 -> type ) ) {
+				case TFILE:
+				case TARY:
+				case TREC:
+				case TSET:
+				case TSTR:
+				    q = rvalue( argv[1] , p1 -> type , LREQ );
+				    break;
+				case TINT:
+				case TSCAL:
+				case TBOOL:
+				case TCHAR:
+				    precheck( p1 -> type , "_RANG4" , "_RSNG4" );
+				    q = rvalue( argv[1] , p1 -> type , RREQ );
+				    postcheck( p1 -> type );
+				    break;
+				default:
+				    q = rvalue( argv[1] , p1 -> type , RREQ );
+				    if (  isa( p1 -> type  , "d" )
+				       && isa( q , "i" ) ) {
+					putop( P2SCONV , P2DOUBLE );
+				    }
+				    break;
+			    }
+#			endif PC
+			if (q == NIL) {
+				chk = FALSE;
+				break;
+			}
+			if (incompat(q, p1->type, argv[1])) {
+				cerror("Expression type clashed with type of value parameter %s of %s", p1->symbol, p->symbol);
+				break;
+			}
+#			ifdef OBJ
+			    if (isa(p1->type, "bcsi"))
+				    rangechk(p1->type, q);
+			    if (q->class != STR)
+				    convert(q, p1->type);
+#			endif OBJ
+#			ifdef PC
+			    switch( classify( p1 -> type ) ) {
+				case TFILE:
+				case TARY:
+				case TREC:
+				case TSET:
+				case TSTR:
+					putstrop( P2STARG
+					    , p2type( p1 -> type )
+					    , lwidth( p1 -> type )
+					    , align( p1 -> type ) );
+			    }
+#			endif PC
+			break;
+		case FFUNC:
+			/*
+			 * function parameter
+			 */
+			q = flvalue( (int *) argv[1] , p1 );
+			chk = (chk && fcompat(q, p1));
+			break;
+		case FPROC:
+			/*
+			 * procedure parameter
+			 */
+			q = flvalue( (int *) argv[1] , p1 );
+			chk = (chk && fcompat(q, p1));
+			break;
+		default:
+			panic("call");
 	    }
-	} else {
-	    panic("call class");
+#	    ifdef PC
+		    /*
+		     *	if this is the nth (>1) argument,
+		     *	hang it on the left linear list of arguments
+		     */
+		if ( noarguments ) {
+			noarguments = FALSE;
+		} else {
+			putop( P2LISTOP , P2INT );
+		}
+#	    endif PC
+	    argv = argv[2];
 	}
+	if (argv != NIL) {
+		error("Too many arguments to %s", p->symbol);
+		rvlist(argv);
+		return (NIL);
+	}
+	if (chk == FALSE)
+		return NIL;
 #	ifdef OBJ
 	    if ( p -> class == FFUNC || p -> class == FPROC ) {
 		put(2, PTR_RV | cbn << 8+INDX, (int)p->value[NL_OFFS]);
-		put(2, O_FCALL, (long)cnt);
+		put(1, O_FCALL);
 		put(2, O_FRTN, even(width(p->type)));
 	    } else {
-		/* put(2, O_CALL | psbn << 8+INDX, (long)p->entloc); */
 		put(2, O_CALL | psbn << 8, (long)p->entloc);
 	    }
 #	endif OBJ
@@ -441,4 +362,108 @@ rvlist(al)
 
 	for (; al != NIL; al = al[2])
 		rvalue( (int *) al[1], NLNIL , RREQ );
+}
+
+    /*
+     *	check that two function/procedure namelist entries are compatible
+     */
+bool
+fcompat( formal , actual )
+    struct nl	*formal;
+    struct nl	*actual;
+{
+    register struct nl	*f_chain;
+    register struct nl	*a_chain;
+    bool compat = TRUE;
+
+    if ( formal == NIL || actual == NIL ) {
+	return FALSE;
+    }
+    for (a_chain = plist(actual), f_chain = plist(formal);
+         f_chain != NIL;
+	 f_chain = f_chain->chain, a_chain = a_chain->chain) {
+	if (a_chain == NIL) {
+	    error("%s %s declared on line %d has more arguments than",
+		parnam(formal->class), formal->symbol,
+		linenum(formal));
+	    cerror("%s %s declared on line %d",
+		parnam(actual->class), actual->symbol,
+		linenum(actual));
+	    return FALSE;
+	}
+	if ( a_chain -> class != f_chain -> class ) {
+	    error("%s parameter %s of %s declared on line %d is not identical",
+		parnam(f_chain->class), f_chain->symbol,
+		formal->symbol, linenum(formal));
+	    cerror("with %s parameter %s of %s declared on line %d",
+		parnam(a_chain->class), a_chain->symbol,
+		actual->symbol, linenum(actual));
+	    compat = FALSE;
+	} else if (a_chain->class == FFUNC || a_chain->class == FPROC) {
+	    compat = (compat && fcompat(f_chain, a_chain));
+	}
+	if ((a_chain->class != FPROC && f_chain->class != FPROC) &&
+	    (a_chain->type != f_chain->type)) {
+	    error("Type of %s parameter %s of %s declared on line %d is not identical",
+		parnam(f_chain->class), f_chain->symbol,
+		formal->symbol, linenum(formal));
+	    cerror("to type of %s parameter %s of %s declared on line %d",
+		parnam(a_chain->class), a_chain->symbol,
+		actual->symbol, linenum(actual));
+	    compat = FALSE;
+	}
+    }
+    if (a_chain != NIL) {
+	error("%s %s declared on line %d has fewer arguments than",
+	    parnam(formal->class), formal->symbol,
+	    linenum(formal));
+	cerror("%s %s declared on line %d",
+	    parnam(actual->class), actual->symbol,
+	    linenum(actual));
+	return FALSE;
+    }
+    return compat;
+}
+
+char *
+parnam(nltype)
+    int nltype;
+{
+    switch(nltype) {
+	case REF:
+	    return "var";
+	case VAR:
+	    return "value";
+	case FUNC:
+	case FFUNC:
+	    return "function";
+	case PROC:
+	case FPROC:
+	    return "procedure";
+	default:
+	    return "SNARK";
+    }
+}
+
+plist(p)
+    struct nl *p;
+{
+    switch (p->class) {
+	case FFUNC:
+	case FPROC:
+	    return p->ptr[ NL_FCHAIN ];
+	case PROC:
+	case FUNC:
+	    return p->chain;
+	default:
+	    panic("plist");
+    }
+}
+
+linenum(p)
+    struct nl *p;
+{
+    if (p->class == FUNC)
+	return p->ptr[NL_FVAR]->value[NL_LINENO];
+    return p->value[NL_LINENO];
 }
