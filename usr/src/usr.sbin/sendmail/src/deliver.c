@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.111		%G%);
+SCCSID(@(#)deliver.c	3.112		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -551,9 +551,7 @@ endmailer(pid, name)
 	{
 		errno = 0;
 		i = wait(&st);
-		if (i < 0 && errno == EINTR)
-			continue;
-	} while (i >= 0 && i != pid);
+	} while ((i >= 0 && i != pid) || errno == EINTR);
 	if (i < 0)
 	{
 		syserr("wait");
