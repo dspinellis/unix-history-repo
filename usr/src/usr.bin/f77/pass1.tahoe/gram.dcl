@@ -3,11 +3,9 @@
  * All rights reserved.
  *
  * %sccs.include.proprietary.c%
+ *
+ *	@(#)gram.dcl	5.3 (Berkeley) %G%
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)gram.dcl	5.2 (Berkeley) %G%";
-#endif /* not lint */
 
 /*
  * Grammar for declarations, f77 compiler, 4.2 BSD.
