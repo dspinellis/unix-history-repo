@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcproc.c 1.6 %G%";
+static	char sccsid[] = "@(#)pcproc.c 1.7 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -352,7 +352,7 @@ pcproc(r)
 				    case TCHAR:
 				    case TINT:
 				    case TSCAL:
-					precheck( filetype , "_RANG4"  , "_RSGN4" );
+					precheck( filetype , "_RANG4"  , "_RSNG4" );
 					    /* and fall through */
 				    case TDOUBLE:
 				    case TPTR:
