@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mail.1	6.1 (Berkeley) %G%
+.\"	@(#)mail.1	6.2 (Berkeley) %G%
 .\"
 .TH MAIL 1 ""
 .UC 4
@@ -533,8 +533,13 @@ the inverse of
 (\fBv\fR) Takes a message list and invokes the display editor on each message.
 .TP
 .B write
-(\fBw\fR) A synonym for
-.BR save .
+(\fBw\fR) Similar to
+.BR save ,
+except that
+.I only
+the message body (\fIwithout\fP the header) is saved.
+Extremely useful for such tasks as sending and receiving source
+program text over the message system.
 .TP
 .B xit
 (\fBx\fR) A synonym for
