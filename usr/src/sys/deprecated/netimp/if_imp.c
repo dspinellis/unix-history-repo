@@ -1,4 +1,4 @@
-/*	if_imp.c	4.28	82/04/28	*/
+/*	if_imp.c	4.29	82/04/28	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -199,7 +199,7 @@ COUNT(IMPINPUT);
 	 * appropriate time.
 	 */
 	case IMPTYPE_DOWN:
-		if (sc->imp_state == IMPS_DOINGDOWN)
+		if (sc->imp_state < IMPS_INIT)
 			goto drop;
 		if ((ip->il_link & IMP_DMASK) == 0) {
 			sc->imp_state = IMPS_GOINGDOWN;
