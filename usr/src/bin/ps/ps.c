@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ps.c	4.29 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.30 (Berkeley) %G%";
 #endif
 
 /*
