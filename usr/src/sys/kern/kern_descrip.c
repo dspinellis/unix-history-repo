@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_descrip.c	7.13 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -28,8 +28,6 @@
 #include "socketvar.h"
 #include "stat.h"
 #include "ioctl.h"
-
-#define	p_devtmp	p_logname[11]
 
 /*
  * Descriptor management.
@@ -460,14 +458,14 @@ fdopen(dev, mode, type)
 	struct proc *p = u.u_procp;		/* XXX */
 
 	/*
-	 * XXX Kludge: set p->p_devtmp to contain the value of the
+	 * XXX Kludge: set p->p_dupfd to contain the value of the
 	 * the file descriptor being sought for duplication. The error 
 	 * return ensures that the vnode for this device will be released
 	 * by vn_open. Open will detect this special error and take the
 	 * actions in dupfdopen below. Other callers of vn_open or VOP_OPEN
 	 * will simply report the error.
 	 */
-	p->p_devtmp = minor(dev);
+	p->p_dupfd = minor(dev);
 	return (ENODEV);
 }
 
