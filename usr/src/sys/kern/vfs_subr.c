@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.14 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.15 (Berkeley) %G%
  */
 
 /*
@@ -49,17 +49,17 @@ int	vttoif_tab[9] = {
  * Insq/Remq for the vnode usage lists.
  */
 #define	bufinsvn(bp, dp)	LIST_INSERT_HEAD(dp, bp, b_vnbufs)
-#define	bufremvn(bp) {  \
-	LIST_REMOVE(bp, b_vnbufs); \
-	(bp)->b_vnbufs.le_next = NOLIST; \
+#define	bufremvn(bp) {							\
+	LIST_REMOVE(bp, b_vnbufs);					\
+	(bp)->b_vnbufs.le_next = NOLIST;				\
 }
-
 TAILQ_HEAD(freelst, vnode) vnode_free_list;	/* vnode free list */
 struct mntlist mountlist;			/* mounted filesystem list */
 
 /*
  * Initialize the vnode management data structures.
  */
+void
 vntblinit()
 {
 
@@ -71,13 +71,14 @@ vntblinit()
  * Lock a filesystem.
  * Used to prevent access to it while mounting and unmounting.
  */
+int
 vfs_lock(mp)
 	register struct mount *mp;
 {
 
-	while(mp->mnt_flag & MNT_MLOCK) {
+	while (mp->mnt_flag & MNT_MLOCK) {
 		mp->mnt_flag |= MNT_MWAIT;
-		sleep((caddr_t)mp, PVFS);
+		tsleep((caddr_t)mp, PVFS, "vfslock", 0);
 	}
 	mp->mnt_flag |= MNT_MLOCK;
 	return (0);
@@ -105,13 +106,14 @@ vfs_unlock(mp)
  * Mark a mount point as busy.
  * Used to synchronize access and to delay unmounting.
  */
+int
 vfs_busy(mp)
 	register struct mount *mp;
 {
 
-	while(mp->mnt_flag & MNT_MPBUSY) {
+	while (mp->mnt_flag & MNT_MPBUSY) {
 		mp->mnt_flag |= MNT_MPWANT;
-		sleep((caddr_t)&mp->mnt_flag, PVFS);
+		tsleep((caddr_t)&mp->mnt_flag, PVFS, "vfsbusy", 0);
 	}
 	if (mp->mnt_flag & MNT_UNMOUNT)
 		return (1);
@@ -123,6 +125,7 @@ vfs_busy(mp)
  * Free a busy filesystem.
  * Panic if filesystem is not busy.
  */
+void
 vfs_unbusy(mp)
 	register struct mount *mp;
 {
@@ -183,7 +186,8 @@ static u_short xxxfs_mntid;
 /*
  * Set vnode attributes to VNOVAL
  */
-void vattr_null(vap)
+void
+vattr_null(vap)
 	register struct vattr *vap;
 {
 
@@ -212,6 +216,7 @@ int printcnt = 0;
 /*
  * Return the next vnode from the free list.
  */
+int
 getnewvnode(tag, mp, vops, vpp)
 	enum vtagtype tag;
 	struct mount *mp;
@@ -285,6 +290,7 @@ newnodes++;
 /*
  * Move a vnode from one mount queue to another.
  */
+void
 insmntque(vp, mp)
 	register struct vnode *vp;
 	register struct mount *mp;
@@ -315,6 +321,7 @@ insmntque(vp, mp)
 /*
  * Update outstanding I/O count and do wakeup if requested.
  */
+void
 vwakeup(bp)
 	register struct buf *bp;
 {
@@ -322,12 +329,11 @@ vwakeup(bp)
 
 	bp->b_flags &= ~B_WRITEINPROG;
 	if (vp = bp->b_vp) {
-		vp->v_numoutput--;
-		if (vp->v_numoutput < 0)
+		if (--vp->v_numoutput < 0)
 			panic("vwakeup: neg numoutput");
 		if ((vp->v_flag & VBWAIT) && vp->v_numoutput <= 0) {
 			if (vp->v_numoutput < 0)
-				panic("vwakeup: neg numoutput");
+				panic("vwakeup: neg numoutput 2");
 			vp->v_flag &= ~VBWAIT;
 			wakeup((caddr_t)&vp->v_numoutput);
 		}
@@ -360,7 +366,7 @@ vinvalbuf(vp, flags, cred, p, slpflag, slptimeo)
 		if ((blist = vp->v_cleanblkhd.lh_first) && flags & V_SAVEMETA)
 			while (blist && blist->b_lblkno < 0)
 				blist = blist->b_vnbufs.le_next;
-		if (!blist && (blist = vp->v_dirtyblkhd.lh_first) && 
+		if (!blist && (blist = vp->v_dirtyblkhd.lh_first) &&
 		    (flags & V_SAVEMETA))
 			while (blist && blist->b_lblkno < 0)
 				blist = blist->b_vnbufs.le_next;
@@ -407,6 +413,7 @@ vinvalbuf(vp, flags, cred, p, slpflag, slptimeo)
 /*
  * Associate a buffer with a vnode.
  */
+void
 bgetvp(vp, bp)
 	register struct vnode *vp;
 	register struct buf *bp;
@@ -429,6 +436,7 @@ bgetvp(vp, bp)
 /*
  * Disassociate a buffer from a vnode.
  */
+void
 brelvp(bp)
 	register struct buf *bp;
 {
@@ -451,6 +459,7 @@ brelvp(bp)
  * Used to assign file specific control information
  * (indirect blocks) to the vnode to which they belong.
  */
+void
 reassignbuf(bp, newvp)
 	register struct buf *bp;
 	register struct vnode *newvp;
@@ -482,6 +491,7 @@ reassignbuf(bp, newvp)
  * Used for root filesystem, argdev, and swap areas.
  * Also used for memory file system special devices.
  */
+int
 bdevvp(dev, vpp)
 	dev_t dev;
 	struct vnode **vpp;
@@ -494,7 +504,7 @@ bdevvp(dev, vpp)
 		return (0);
 	error = getnewvnode(VT_NON, (struct mount *)0, spec_vnodeop_p, &nvp);
 	if (error) {
-		*vpp = 0;
+		*vpp = NULLVP;
 		return (error);
 	}
 	vp = nvp;
@@ -575,6 +585,7 @@ loop:
  * indicate that the vnode is no longer usable (possibly having
  * been changed to a new file system type).
  */
+int
 vget(vp, lockflag)
 	register struct vnode *vp;
 	int lockflag;
@@ -594,7 +605,7 @@ vget(vp, lockflag)
 	    (vp->v_usecount == 0 &&
 	     vp->v_freelist.tqe_prev == (struct vnode **)0xdeadb)) {
 		vp->v_flag |= VXWANT;
-		sleep((caddr_t)vp, PINOD);
+		tsleep((caddr_t)vp, PINOD, "vget", 0);
 		return (1);
 	}
 	if (vp->v_usecount == 0) {
@@ -617,7 +628,8 @@ int bug_refs = 0;
 /*
  * Vnode reference, just increment the count
  */
-void vref(vp)
+void
+vref(vp)
 	struct vnode *vp;
 {
 
@@ -637,7 +649,8 @@ void vref(vp)
 /*
  * vput(), just unlock and vrele()
  */
-void vput(vp)
+void
+vput(vp)
 	register struct vnode *vp;
 {
 
@@ -649,7 +662,8 @@ void vput(vp)
  * Vnode release.
  * If count drops to zero, call inactive routine and return to freelist.
  */
-void vrele(vp)
+void
+vrele(vp)
 	register struct vnode *vp;
 {
 
@@ -684,7 +698,8 @@ void vrele(vp)
 /*
  * Page or buffer structure gets a reference.
  */
-void vhold(vp)
+void
+vhold(vp)
 	register struct vnode *vp;
 {
 
@@ -694,7 +709,8 @@ void vhold(vp)
 /*
  * Page or buffer structure frees a reference.
  */
-void holdrele(vp)
+void
+holdrele(vp)
 	register struct vnode *vp;
 {
 
@@ -716,6 +732,7 @@ int busyprt = 0;	/* print out busy vnodes */
 struct ctldebug debug1 = { "busyprt", &busyprt };
 #endif
 
+int
 vflush(mp, skipvp, flags)
 	struct mount *mp;
 	struct vnode *skipvp;
@@ -858,7 +875,8 @@ vclean(vp, flags)
  * Eliminate all activity associated with  the requested vnode
  * and with all vnodes aliased to the requested vnode.
  */
-void vgoneall(vp)
+void
+vgoneall(vp)
 	register struct vnode *vp;
 {
 	register struct vnode *vq;
@@ -870,7 +888,7 @@ void vgoneall(vp)
 		 */
 		if (vp->v_flag & VXLOCK) {
 			vp->v_flag |= VXWANT;
-			sleep((caddr_t)vp, PINOD);
+			tsleep((caddr_t)vp, PINOD, "vgoneall", 0);
 			return;
 		}
 		/*
@@ -901,7 +919,8 @@ void vgoneall(vp)
  * Eliminate all activity associated with a vnode
  * in preparation for reuse.
  */
-void vgone(vp)
+void
+vgone(vp)
 	register struct vnode *vp;
 {
 	register struct vnode *vq;
@@ -913,7 +932,7 @@ void vgone(vp)
 	 */
 	if (vp->v_flag & VXLOCK) {
 		vp->v_flag |= VXWANT;
-		sleep((caddr_t)vp, PINOD);
+		tsleep((caddr_t)vp, PINOD, "vgone", 0);
 		return;
 	}
 	/*
@@ -994,6 +1013,7 @@ void vgone(vp)
 /*
  * Lookup a vnode by device number.
  */
+int
 vfinddev(dev, type, vpp)
 	dev_t dev;
 	enum vtype type;
@@ -1013,6 +1033,7 @@ vfinddev(dev, type, vpp)
 /*
  * Calculate the total number of references to a special device.
  */
+int
 vcount(vp)
 	register struct vnode *vp;
 {
@@ -1087,6 +1108,7 @@ vprint(label, vp)
  * List all of the locked vnodes in the system.
  * Called when debugging the kernel.
  */
+void
 printlockedvnodes()
 {
 	register struct mount *mp;
@@ -1111,6 +1133,7 @@ int kinfo_vgetfailed;
  * Copyout address of vnode followed by vnode.
  */
 /* ARGSUSED */
+int
 sysctl_vnode(where, sizep)
 	char *where;
 	size_t *sizep;
@@ -1276,7 +1299,7 @@ vfs_free_netcred(rn, w)
 	free((caddr_t)rn, M_NETADDR);
 	return (0);
 }
-	
+
 /*
  * Free the net address hash lists that are hanging off the mount points.
  */
