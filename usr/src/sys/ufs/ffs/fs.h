@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	2.1	%G%	*/
+/*	fs.h	2.2	%G%	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -16,7 +16,6 @@
  *
  * For file system fs, the offsets of the various blocks of interest
  * are given in the super block as:
- *	[fs->fs_bblkno]		Boot sector
  *	[fs->fs_sblkno]		Super-block
  *	[fs->fs_cblkno]		Cylinder group block
  *	[fs->fs_iblkno]		Inode blocks
@@ -80,11 +79,11 @@
 
 /*
  * Under current technology, most 300MB disks have 32 sectors and
- * 19 tracks, thus these are the defaults used for fs_nsect and 
+ * 16 tracks, thus these are the defaults used for fs_nsect and 
  * fs_ntrak respectively.
  */
 #define DFLNSECT	32
-#define DFLNTRAK	19
+#define DFLNTRAK	16
 
 /*
  * Cylinder group related limits.
@@ -138,11 +137,11 @@
  * in fs_fsmnt. MAXMNTLEN defines the amount of space allocated in 
  * the super block for this name.
  * The limit on the amount of summary information per file system
- * is defined by MAXCSBUFS. It is currently parameterized for 1Meg
- * cylinders maximum.
+ * is defined by MAXCSBUFS. It is currently parameterized for a
+ * maximum of two million cylinders.
  */
-#define MAXMNTLEN 34
-#define MAXCSBUFS 16
+#define MAXMNTLEN 512
+#define MAXCSBUFS 32
 
 /*
  * Per cylinder group information; summarized in blocks allocated
@@ -167,49 +166,53 @@ struct csum {
 struct	fs
 {
 	long	fs_magic;		/* magic number */
-	daddr_t	fs_bblkno;		/* abs addr of boot-block in filesys */
-	daddr_t	fs_sblkno;		/* abs addr of super-block in filesys */
+	daddr_t	fs_sblkno;		/* addr of super-block in filesys */
 	daddr_t	fs_cblkno;		/* offset of cyl-block in filesys */
 	daddr_t	fs_iblkno;		/* offset of inode-blocks in filesys */
-	daddr_t	fs_dblkno;		/* offset of data-blocks in filesys */
+	daddr_t	fs_dblkno;		/* offset of first data after cg */
+	long	fs_cgoffset;		/* cylinder group offset in cylinder */
+	long	fs_cgmask;		/* used to calc mod fs_ntrak */
 	time_t 	fs_time;    		/* last time written */
 	long	fs_size;		/* number of blocks in fs */
 	long	fs_dsize;		/* number of data blocks in fs */
 	long	fs_ncg;			/* number of cylinder groups */
 	long	fs_bsize;		/* size of basic blocks in fs */
 	long	fs_fsize;		/* size of frag blocks in fs */
-	short	fs_frag;		/* number of frags in a block in fs */
-	short	fs_minfree;		/* minimum percentage of free blocks */
-	short	fs_rotdelay;		/* num of ms for optimal next block */
-	short	fs_rps;			/* disk revolutions per second */
+	long	fs_frag;		/* number of frags in a block in fs */
+	long	fs_minfree;		/* minimum percentage of free blocks */
+	long	fs_rotdelay;		/* num of ms for optimal next block */
+	long	fs_rps;			/* disk revolutions per second */
 	long	fs_bmask;		/* ``blkoff'' calc of blk offsets */
 	long	fs_fmask;		/* ``fragoff'' calc of frag offsets */
-	short	fs_bshift;		/* ``lblkno'' calc of logical blkno */
-	short	fs_fshift;		/* ``numfrags'' calc number of frags */
+	long	fs_bshift;		/* ``lblkno'' calc of logical blkno */
+	long	fs_fshift;		/* ``numfrags'' calc number of frags */
+	long	fs_sparecon[16];	/* reserved for future constants */
 /* sizes determined by number of cylinder groups and their sizes */
 	daddr_t fs_csaddr;		/* blk addr of cyl grp summary area */
 	long	fs_cssize;		/* size of cyl grp summary area */
 	long	fs_cgsize;		/* cylinder group size */
 /* these fields should be derived from the hardware */
-	short	fs_ntrak;		/* tracks per cylinder */
-	short	fs_nsect;		/* sectors per track */
+	long	fs_ntrak;		/* tracks per cylinder */
+	long	fs_nsect;		/* sectors per track */
 	long  	fs_spc;   		/* sectors per cylinder */
 /* this comes from the disk driver partitioning */
 	long	fs_ncyl;   		/* cylinders in file system */
 /* these fields can be computed from the others */
-	short	fs_cpg;			/* cylinders per group */
-	short	fs_ipg;			/* inodes per group */
+	long	fs_cpg;			/* cylinders per group */
+	long	fs_ipg;			/* inodes per group */
 	long	fs_fpg;			/* blocks per group * fs_frag */
 /* this data must be re-computed after crashes */
 	struct	csum fs_cstotal;	/* cylinder summary information */
 /* these fields are cleared at mount time */
 	char   	fs_fmod;    		/* super block modified flag */
+	char   	fs_clean;    		/* file system is clean flag */
 	char   	fs_ronly;   		/* mounted read-only flag */
+	char   	fs_flags;   		/* currently unused flag */
 	char	fs_fsmnt[MAXMNTLEN];	/* name mounted on */
 /* these fields retain the current block allocation info */
 	long	fs_cgrotor;		/* last cg searched */
 	struct	csum *fs_csp[MAXCSBUFS];/* list of fs_cs info buffers */
-	short	fs_cpc;			/* cyl per cycle in postbl */
+	long	fs_cpc;			/* cyl per cycle in postbl */
 	short	fs_postbl[MAXCPG][NRPOS];/* head of blocks for each rotation */
 	u_char	fs_rotbl[1];		/* list of blocks for each rotation */
 /* actually longer */
@@ -276,22 +279,15 @@ struct	cg {
 
 /*
  * Cylinder group macros to locate things in cylinder groups.
- *
- * Cylinder group to disk block address of spare boot block
- * and super block.
- * Note that these are in absolute addresses, and can NOT
- * in general be expressable in terms of file system addresses.
+ * They calc file system addresses of cylinder group data structures.
  */
-#define	cgbblock(fs, c)	(fsbtodb(fs, cgbase(fs, c)) + (fs)->fs_bblkno)
-#define	cgsblock(fs, c)	(fsbtodb(fs, cgbase(fs, c)) + (fs)->fs_sblkno)
-
-/*
- * File system addresses of cylinder group data structures.
- */
-#define	cgbase(fs, c)	((daddr_t)((fs)->fs_fpg * (c)))		/* base addr */
-#define	cgtod(fs, c)	(cgbase(fs, c) + (fs)->fs_cblkno)	/* cg block */
-#define	cgimin(fs, c)	(cgbase(fs, c) + (fs)->fs_iblkno)	/* inode blk */
-#define	cgdmin(fs, c)	(cgbase(fs, c) + (fs)->fs_dblkno)	/* 1st data */
+#define	cgbase(fs, c)	((daddr_t)((fs)->fs_fpg * (c)))
+#define cgstart(fs, c) \
+	(cgbase(fs, c) + (fs)->fs_cgoffset * ((c) & ~((fs)->fs_cgmask)))
+#define	cgsblock(fs, c)	(cgstart(fs, c) + (fs)->fs_sblkno)	/* super blk */
+#define	cgtod(fs, c)	(cgstart(fs, c) + (fs)->fs_cblkno)	/* cg block */
+#define	cgimin(fs, c)	(cgstart(fs, c) + (fs)->fs_iblkno)	/* inode blk */
+#define	cgdmin(fs, c)	(cgstart(fs, c) + (fs)->fs_dblkno)	/* 1st data */
 
 /*
  * Macros for handling inode numbers:
