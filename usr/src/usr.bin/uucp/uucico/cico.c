@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cico.c	5.16	(Berkeley) %G%";
+static char sccsid[] = "@(#)cico.c	5.17	(Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -84,13 +84,20 @@ struct termio Savettyb;
 struct sgttyb Savettyb;
 #endif
 
+#define SETPROCTITLE
+#ifdef SETPROCTITLE
+char	**Argv = NULL;		/* pointer to argument vector */
+char	*LastArgv = NULL;	/* end of argv */
+#endif SETPROCTITLE
+
 /*
  *	this program is used  to place a call to a
  *	remote machine, login, and copy files between the two machines.
  */
-main(argc, argv)
+main(argc, argv, envp)
 int argc;
 char **argv;
+char **envp;
 {
 	register int ret;
 	int seq;
@@ -183,6 +190,15 @@ char **argv;
 
 	if (Debug && Role == MASTER)
 		chkdebug();
+
+#ifdef SETPROCTITLE
+	/*
+	 *  Save start and extent of argv for setproctitle.
+	 */
+
+	Argv = argv;
+	LastArgv = argv[argc - 1] + strlen(argv[argc - 1]);
+#endif SETPROCTITLE
 
 	/* Try to run as uucp */
 	setgid(getegid());
@@ -441,6 +457,7 @@ char **argv;
 			}
 			p = q;
 		}
+		setproctitle("%s: startup", Rmtname);
 		if (callok(Rmtname) == SS_BADSEQ) {
 			logent("BADSEQ", "PREVIOUS");
 			omsg('R', "BADSEQ", Ofn);
@@ -471,6 +488,7 @@ char **argv;
 loop:
 	if(setjmp(Pipebuf)) {	/* come here on SIGPIPE	*/
 		clsacu();
+		logcls();
 		close(Ofn);
 		close(Ifn);
 		Ifn = Ofn = -1;
@@ -484,12 +502,15 @@ loop:
 		reenable();
 #endif DIALINOUT
 		StartTime = 0;
+		setproctitle("looking for work");
 		ret = gnsys(Rmtname, Spool, CMDPRE);
+		setproctitle("%s: startup", Rmtname);
 		setdebug(DBG_PERM);
 		if (ret == FAIL)
 			cleanup(100);
 		else if (ret == SUCCESS)
 			cleanup(0);
+		logcls();
 	} else if (Role == MASTER && callok(Rmtname) != 0) {
 		logent("SYSTEM STATUS", "CAN NOT CALL");
 		cleanup(0);
@@ -527,8 +548,9 @@ loop:
 			US_SST(us_s_lock);
 			goto next;
 		}
+		setproctitle("%s: starting call", Rmtname);
 		Ofn = Ifn = conn(Rmtname);
-		sprintf(msg, "call to %s via %s", Rmtname, LineType);
+		sprintf(msg, "(call to %s via %s)", Rmtname, LineType);
 		if (Ofn < 0) {
 			if (Ofn != CF_TIME)
 				logent(msg, _FAILED);
@@ -628,6 +650,7 @@ loop:
 	DEBUG(1, "Role %s,  ", Role ? "MASTER" : "SLAVE");
 	DEBUG(1, "Ifn - %d, ", Ifn);
 	DEBUG(1, "Loginuser - %s\n", Loginuser);
+	setproctitle("%s: %s", Rmtname, Role ? "MASTER" : "SLAVE");
 
 	ttyn = ttyname(Ifn);
 
@@ -637,7 +660,7 @@ loop:
 	ret = startup(Role);
 	alarm(0);
 	if (ret != SUCCESS) {
-		logent("startup", _FAILED);
+		logent("(startup)", _FAILED);
 Failure:
 		US_SST(us_s_start);
 		systat(Rmtname, SS_FAIL, ret > 0 ? "CONVERSATION FAILED" :
@@ -659,7 +682,7 @@ Failure:
 			sprintf(gmsg, " grade %c", MaxGrade);
 		else
 			gmsg[0] = '\0';
-		sprintf(smsg, "startup%s%s%s", bpsmsg, pmsg, gmsg);
+		sprintf(smsg, "(startup%s%s%s)", bpsmsg, pmsg, gmsg);
 		logent(smsg, "OK");
 		US_SST(us_s_gress);
 		StartTime = Now.time;
@@ -669,7 +692,7 @@ Failure:
 		signal(SIGINT, SIG_IGN);
 		signal(SIGHUP, SIG_IGN);
 		signal(SIGALRM, timeout);
-		sprintf(smsg, "conversation complete %ld sent %ld received",
+		sprintf(smsg, "(conversation complete %ld sent %ld received)",
 			Bytes_Sent, Bytes_Received);
 		if (ret == SUCCESS) {
 			logent(smsg, "OK");
@@ -811,12 +834,12 @@ register int inter;
 {
 	char str[BUFSIZ];
 	signal(inter, SIG_IGN);
-	sprintf(str, "SIGNAL %d", inter);
+	sprintf(str, "(SIGNAL %d)", inter);
 	logent(str, "CAUGHT");
 	US_SST(us_s_intr);
 	if (*Rmtname && strncmp(Rmtname, Myname, MAXBASENAME))
 		systat(Rmtname, SS_FAIL, str);
-	sprintf(str, "conversation complete %ld sent %ld received",
+	sprintf(str, "(conversation complete %ld sent %ld received)",
 		Bytes_Sent, Bytes_Received);
 	logent(str, _FAILED);
 	if (inter == SIGPIPE && !onesys)
@@ -983,4 +1006,37 @@ register char *p;
 	while(*p && *p == ' ')
 		*p++ = 0;
 	return p;
+}
+
+/*
+ * clobber argv so ps will show what we're doing.
+ * stolen from sendmail
+ */
+/*VARARGS1*/
+setproctitle(fmt, a, b, c)
+char *fmt;
+{
+#ifdef SETPROCTITLE
+	register char *p;
+	register int i;
+	extern char **Argv;
+	extern char *LastArgv;
+	char buf[BUFSIZ];
+
+	(void) sprintf(buf, fmt, a, b, c);
+
+	/* make ps print "(sendmail)" */
+	p = Argv[0];
+	*p++ = '-';
+
+	i = strlen(buf);
+	if (i > LastArgv - p - 2) {
+		i = LastArgv - p - 2;
+		buf[i] = '\0';
+	}
+	(void) strcpy(p, buf);
+	p += i;
+	while (p < LastArgv)
+		*p++ = ' ';
+#endif SETPROCTITLE
 }
