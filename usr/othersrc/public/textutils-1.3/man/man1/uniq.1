@@ -1,0 +1,59 @@
+.TH UNIQ 1L \" -*- nroff -*-
+.SH NAME
+uniq \- remove duplicate lines from a sorted file
+.SH SYNOPSIS
+.B uniq
+[\-cdu] [\-f skip-fields] [\-s skip-chars] [\-w check-chars]
+[\-#skip-fields] [+#skip-chars] [\-\-count] [\-\-repeated] [\-\-unique]
+[\-\-skip-fields=skip-fields] [\-\-skip-chars=skip-chars]
+[\-\-check-chars=check-chars] [infile] [outfile]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR uniq .
+.B uniq
+prints the unique lines in a sorted file, discarding all but one of a
+run of matching lines.  It can optionally show only lines that appear
+exactly once, or lines that appear more than once.
+.B uniq
+requires sorted input because it compares only consecutive lines.
+.PP
+If the output file is not specified,
+.B uniq
+writes to the standard output.  If the input file is not specified, it
+reads from the standard input.
+.SS OPTIONS
+.TP
+.I "\-u, \-\-unique"
+Only print unique lines.
+.TP
+.I "\-d, \-\-repeated"
+Only print duplicate lines.
+.TP
+.I "\-c, \-\-count"
+Print the number of times each line occurred along with the line.
+.TP
+.I "\-, \-f, \-\-skip-fields=number"
+In this option, \fInumber\fP is an integer representing the number of
+fields to skip over before checking for uniqueness.  The first
+\fInumber\fP fields, along with any blanks found before \fInumber\fP
+fields is reached, are skipped over and not counted.  Fields are
+defined as a strings of non-space, non-tab characters, that are
+separated from each other by spaces and tabs.
+.TP
+.I "\-\-, \-s, +skip-chars=number"
+In this option, \fInumber\fP is an integer represent the number of
+characters to skip over before checking for uniqueness.  The first
+\fInumber\fP characters, along with any blanks found before
+\fInumber\fP characters is reached, are skipped over and not counted.
+If you use both the field and character skipping options, fields are
+skipped over first.
+.TP
+.I "\-w, +check-chars=number"
+Specify the number of characters to compare in the lines, after
+skipping any specified fields and characters.  Normally the entire
+rest of the lines are compared.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.

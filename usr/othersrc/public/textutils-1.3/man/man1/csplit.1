@@ -1,0 +1,86 @@
+.TH CSPLIT 1L \" -*- nroff -*-
+.SH NAME
+csplit \- split a file into sections determined by context lines
+.SH SYNOPSIS
+.B csplit
+[\-sk] [\-f prefix] [\-n digits] [\-\-prefix=prefix] [\-\-digits=digits]
+[\-\-quiet] [\-\-silent] [\-\-keep-files] file pattern...
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR csplit .
+.B csplit
+creates zero or more output files containing sections of the given
+input
+.IR file ,
+or the standard input if the name `\-' is given.  By default,
+.B csplit
+prints the number of bytes written to each output file after it has
+been created.
+.PP
+The contents of the output files are determined by the
+.I pattern
+arguments.  An error occurs if a pattern argument refers to a
+nonexistent line of the input file, such as if no remaining line
+matches a given regular expression.  The types of pattern arguments
+are:
+.RS
+.TP
+.I line
+.br
+Create an output file containing the current line up to (but not
+including) line \fIline\fP (a positive integer) of the input file.  If
+followed by a repeat count, also create an output file containing the
+next \fIline\fP lines of the input file once for each repeat.
+.TP
+/\fIregexp\fP/[\fIoffset\fP]
+.br
+Create an output file containing the current line up to (but not
+including) the next line of the input file that contains a match for
+\fIregexp\fP.  The optional \fIoffset\fP is a `+' or `\-' followed by
+a positive integer; if it is given, the line that starts the next
+section of the input file is the line that contains the match for
+\fIregexp\fP plus the offset.
+.TP
+%\fIregexp\fP%[\fIoffset\fP]
+.br
+Like the previous type, except that it does not create an output file,
+so that section of the input file is effectively ignored.
+.TP
+{\fIrepeat-count\fP}
+.br
+Repeat the previous pattern \fIrepeat-count\fP (a positive integer)
+additional times.
+.RE
+.PP
+The output file names consist of a prefix followed by a number, so
+that concatenating the output files in sorted order by file name
+produces the original input file, in order.  The default output file
+name prefix is `xx'.
+.PP
+By default, if
+.B csplit
+encounters an error or receives a hangup, interrupt, quit, or
+terminate signal, it removes any output files that it has created so
+far before it exits.
+.SS OPTIONS
+.TP
+.I "\-f, \-\-prefix=prefix"
+Use
+.I prefix
+as the output file name prefix.
+.TP
+.I "\-k, \-\-keep-files"
+Do not remove output files.
+.TP
+.I "\-n, \-\-digits=digits"
+Use output file names containing numbers that are
+.I digits
+digits long instead of the default 2.
+.TP
+.I "\-s, \-\-silent, \-\-quiet"
+Do not print counts of output file sizes.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.

@@ -1,0 +1,119 @@
+.TH NL 1L \" -*- nroff -*-
+.SH NAME
+nl \- number lines of files
+.SH SYNOPSIS
+.B nl
+[\-h header-style] [\-b body-style] [\-f footer-style] [\-p] [\-d cc]
+[\-v start-number] [\-i increment] [\-l lines] [\-s line-separator]
+[\-w line-no-width] [\-n {ln,rn,rz}] [\-\-header-numbering=style]
+[\-\-body-numbering=style] [\-\-footer-numbering=style]
+[\-\-first-page=number] [\-\-page-increment=number] [\-\-no-renumber]
+[\-\-join-blank-lines=number] [\-\-number-separator=string]
+[\-\-number-width=number] [\-\-number-format={ln,rn,rz}]
+[\-\-section-delimiter=cc] [file...]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR nl .
+.B nl
+copies each given file, or the standard input if none are given or
+when a file named `\-' is given, to the standard output, with line
+numbers added to some or all of the lines.
+.PP
+.B nl
+considers its input to be composed of logical pages; by default,
+the line number is reset to 1 at the top of each logical page.
+.B nl
+treats all of the input files as a single document; it does not reset
+line numbers or logical pages between files.
+.PP
+A logical page consists of three sections: header, body, and footer.
+Any of the sections can be empty.  Each can be numbered in a different
+style from the others.
+.PP
+The beginnings of the sections of logical pages are indicated in the
+input file by a line containing nothing except one of the delimeter
+strings shown below:
+.PP
+.nf
+
+\e:\e:\e: start of header
+\e:\e: start of body
+\e: start of footer
+.fi
+.PP
+The two characters from which these strings are made can be changed
+with an option (see below), but the pattern and length of each string
+cannot be changed.
+.PP
+The section delimiter strings are replaced by an empty line on output.
+Any text that comes before the first section delimiter string in the
+input file is considered to be part of a body section, so a file that
+does not contain any section delimiter strings is considered to
+consist of a single body section.
+.SS OPTIONS
+.TP
+.I "\-h, \-\-header-numbering=style"
+See \-\-footer-numbering.
+.TP
+.I "\-b, \-\-body-numbering=style"
+See \-\-footer-numbering.
+.TP
+.I "\-f, \-\-footer-numbering=style"
+Select the numbering style for lines in the footer section of each
+logical page.  When a line is not numbered, the current line number is
+not incremented, but the line number separator character is still
+prepended to the line.  The styles are:
+.RS
+.IP a
+number all lines
+.IP t
+number only nonempty lines (default for body)
+.IP n
+number no lines (default for header and footer)
+.IP p\fIregexp\fP
+number only lines that contain a match for \fIregexp\fP
+.RE
+.TP
+.I "\-p, \-\-no-renumber"
+Do not reset the line number at the start of a logical page.
+.TP
+.I "\-v, \-\-first-page=number"
+Set the initial line number on each logical page to \fInumber\fP
+(default 1).
+.TP
+.I "\-i, \-\-page-increment=number"
+Increment line numbers by \fInumber\fP (default 1).
+.TP
+.I "\-l, \-\-join-blank-lines=number"
+Consider \fInumber\fP (default 1) consecutive empty lines to be one
+logical line for numbering, and only number the last one.  Where fewer
+than \fInumber\fP consecutive empty lines occur, do not number them.
+An empty line is one that contains no characters, not even spaces or tabs.
+.TP
+.I "\-s, \-\-number-separator=string"
+Separate the line number from the text line in the output with
+\fIstring\fP (default is a TAB character).
+.TP
+.I "\-w, \-\-number-width=number"
+Use \fInumber\fP characters for line numbers (default 6).
+.TP
+.I "\-n, \-\-number-format={ln,rn,rz}"
+Select the line numbering format:
+.RS
+.IP ln
+left justified, no leading zeros 
+.IP rn
+right justified, no leading zeros (default)
+.IP rz
+right justified, leading zeros
+.RE
+.TP
+.I "\-d, \-\-section-delimiter=cc"
+Set the two delimeter characters that indicate the beginnings of
+logical page sections; if only one is given, the second remains ':'.
+To enter '\e', use '\e\e'.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.
