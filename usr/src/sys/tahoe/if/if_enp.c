@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_enp.c	7.3 (Berkeley) %G%
+ *	@(#)if_enp.c	7.4 (Berkeley) %G%
  */
 
 #include "enp.h"
@@ -130,9 +130,9 @@ enpattach(ui)
 	ifp->if_init = enpinit;
 	ifp->if_ioctl = enpioctl;
 	ifp->if_output = enoutput;
-	ifp->if_reset = enpreset;
 	ifp->if_start = enpstart;
-	ifp->if_flags = IFF_BROADCAST;
+	ifp->if_reset = enpreset;
+	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
 	if_attach(ifp);
 }
 
@@ -249,13 +249,11 @@ enpread(es, bcbp)
 enpstart(ifp)
 	struct ifnet *ifp;
 {
-	int error = 0;
-	int s = splimp();	
 
 	if (enpput(ifp))
-		error = ENOBUFS;
-	splx(s);	
-	return (error);
+		return (ENOBUFS);
+	else
+		return (0);
 }
 
 /*
@@ -269,16 +267,20 @@ struct ifnet *ifp;
 	register struct mbuf *mp;
 	register u_char *bp;
 	register u_int len;
-	int unit = ifp->if_unit;
-	u_char *mcp;
+	int unit = ifp->if_unit, ret = 1;
 	struct mbuf *m;
 
 	addr = (struct enpdevice *)enpinfo[unit]->ui_addr;
 again:
-	if (ringempty((RING *)&addr->enp_hostfree)) 
-		return (1);	
+	if (ringempty((RING *)&addr->enp_hostfree))  {
+	/*	ifp->if_flags |= IFF_OACTIVE; */
+		return (ret);
+	}
 	IF_DEQUEUE(&ifp->if_snd, m);
-	if (m == 0) return (0);
+	if (m == 0) {
+		ifp->if_flags &= ~IFF_OACTIVE;
+		return (0);
+	}
 	bcbp = (BCB *)ringget((RING *)&addr->enp_hostfree);
 	bcbp->b_len = 0;
 	bp = (u_char *)ENPGETLONG(&bcbp->b_addr);
@@ -286,16 +288,16 @@ again:
 		len = mp->m_len;
 		if (len == 0)
 			continue;
-		mcp = mtod(mp, u_char *);
-		enpcopy(mcp, bp, len);
+		enpcopy(mtod(mp, u_char *), bp, len);
 		bp += len;
 		bcbp->b_len += len;
 	}
-	bcbp->b_len = MAX(ETHERMIN+sizeof (struct ether_header), bcbp->b_len);
+	bcbp->b_len = max(ETHERMIN+sizeof (struct ether_header), bcbp->b_len);
 	bcbp->b_reserved = 0;
 	if (ringput((RING *)&addr->enp_toenp, bcbp) == 1)
 		INTR_ENP(addr);
 	m_freem(m);
+	ret = 0;
 	goto again;
 }
 
@@ -311,7 +313,7 @@ enpget(rxbuf, totlen, off, ifp)
 	int totlen, off;
 	struct ifnet *ifp;
 {
-	register u_char *cp, *mcp;
+	register u_char *cp;
 	register struct mbuf *m;
 	struct mbuf *top = 0, **mp = &top;
 	int len;
@@ -354,14 +356,13 @@ enpget(rxbuf, totlen, off, ifp)
 			 * Place initial small packet/header at end of mbuf.
 			 */
 			if (len < m->m_len) {
-				if (top == 0 && len < max_linkhdr + m->m_len)
+				if (top == 0 && len + max_linkhdr <= m->m_len)
 					m->m_data += max_linkhdr;
 				m->m_len = len;
 			} else
 				len = m->m_len;
 		}
-		mcp = mtod(m, u_char *);
-		enpcopy(cp, mcp, (u_int)len);
+		enpcopy(cp, mtod(m, u_char *), (u_int)len);
 		*mp = m;
 		mp = &m->m_next;
 		totlen -= len;
