@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)gettytab.5	8.1 (Berkeley) %G%
+.\"     @(#)gettytab.5	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETTYTAB 5
@@ -105,6 +105,7 @@ hangup line on last close
 .No "program to exec when name obtained"
 .It "nd	num	0	newline (line-feed) delay"
 .It "nl	bool	false	terminal has (or might have) a newline character"
+.It "np	bool	false	terminal uses no parity (i.e. 8-bit characters)"
 .It "nx	str	default	next table (for auto speed selection)"
 .It "op	bool	false	terminal uses odd parity"
 .It "os	num	unused	output speed"
