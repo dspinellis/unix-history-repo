@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 NOMAN=noman
 NOOBJ=noobj
