@@ -9,15 +9,15 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bsd_audiointr.s	7.3 (Berkeley) %G%
+ *	@(#)bsd_audiointr.s	7.4 (Berkeley) %G%
  *
- * from: $Header: bsd_audiointr.s,v 1.4 92/07/03 23:24:17 mccanne Exp $ (LBL)
+ * from: $Header: bsd_audiointr.s,v 1.6 93/04/20 21:15:08 torek Exp $ (LBL)
  */
-	
+
 #ifndef AUDIO_C_HANDLER
 #ifndef LOCORE
 #define LOCORE
@@ -79,9 +79,9 @@ _audio_trap:
 	! receive incoming data
 	ld	[R_cb + CB_HEAD], R_h
 	ld	[R_cb + CB_TAIL], R_t
-	add	R_t, 1, %l7			! compute next tail ptr
-	and	%l7, MASK, %l7
-	cmp	R_h, %l7
+	inc	R_t
+	and	R_t, MASK, R_t
+	cmp	R_h, R_t
 	bne	2f
 	 nop
 	ld	[R_cb + CB_DROPS], %l7
@@ -99,10 +99,9 @@ _audio_trap:
 	 st	%l7, [R_cb + CB_PDROPS]
 3:
 	ldsb	[R_amd + AMD_BBRB], %l6		! get sample
-	add	R_t, CB_DATA, R_t		! adjust for struct offset
-	stb	%l6, [R_cb + R_t]		! store sample in buffer
-	st	%l7, [R_cb + CB_TAIL]		! update tail
-	mov	%l7, R_t			!   "     "
+	add	R_t, CB_DATA, %l7
+	stb	%l6, [R_cb + %l7]		! store sample in buffer
+	st	R_t, [R_cb + CB_TAIL]		! update tail
 7:
 	ld	[R_cb + CB_THRESH], %l6
 	sub	R_t, R_h, %l7			! enough data?
@@ -132,7 +131,7 @@ _audio_trap:
 	ld	[R_cb + CB_TAIL], R_t
 	cmp	R_h, R_t
 	bne	2f
-	 nop
+	 mov	0x7f, %l6			! write zero if no new data
 	ld	[R_cb + CB_DROPS], %l7
 	inc	%l7
 	ba	4f
@@ -150,10 +149,10 @@ _audio_trap:
 	inc	R_h
 	and	R_h, MASK, R_h			! compute new head ptr
 	st	R_h, [R_cb + CB_HEAD]
-	add	R_h, CB_DATA, R_h		! adjust for struct offset
-	ldsb	[R_cb + R_h], %l6		! load sample from buffer
-	stb	%l6, [R_amd + AMD_BBTB]		! output sample to device
+	add	R_h, CB_DATA, %l7		! adjust for struct offset
+	ldsb	[R_cb + %l7], %l6		! load sample from buffer
 4:
+	stb	%l6, [R_amd + AMD_BBTB]		! output sample to device
 	ld	[R_cb + CB_THRESH], %l6
 	sub	R_t, R_h, %l7			! test if below low water
 	and	%l7, MASK, %l7
