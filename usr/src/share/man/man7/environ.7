@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)environ.7	8.1 (Berkeley) %G%
+.\"	@(#)environ.7	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ENVIRON 7
@@ -101,6 +101,16 @@ Most applications use either
 or
 .Dq /var/tmp .
 Setting this variable will make them use another directory.
+.It Ev TZ
+The timezone to use when displaying dates.
+The normal format is a pathname relative to
+.Dq /usr/share/zoneinfo .
+For example, the command
+.Dq env TZ=US/Pacific date
+displays the current time in California.
+See
+.Xr tzset 3
+for more information.
 .It Ev USER
 The login name of the user.
 .El
