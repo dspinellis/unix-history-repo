@@ -1,0 +1,27 @@
+EQL	expr.c	/^#define EQL(x,y) !strcmp(x,y)$/
+ERROR	expr.c	/^#define ERROR(c)	errxx(c)$/
+GETC	expr.c	/^#define GETC()		(*sp++)$/
+ISTHERE	expr.c	/^#define ISTHERE(c)	(ep[c >> 3] & bittab[c & 07])$/
+Mexpr	expr.c	/^main(argc, argv) char **argv; {$/
+PEEKC	expr.c	/^#define PEEKC()		(*sp)$/
+PLACE	expr.c	/^#define PLACE(c)	ep[c >> 3] |= bittab[c & 07]$/
+RETURN	expr.c	/^#define RETURN(c)	return$/
+UNGETC	expr.c	/^#define UNGETC(c)	(--sp)$/
+advance	expr.c	/^advance(lp, ep)$/
+arith	expr.c	/^char *arith(op, r1, r2) char *r1, *r2; {$/
+compile	expr.c	/^compile(instring, ep, endbuf, seof)$/
+conj	expr.c	/^char *conj(op, r1, r2) char *r1, *r2; {$/
+ecmp	expr.c	/^ecmp(a, b, count)$/
+ematch	expr.c	/^ematch(s, p)$/
+error	expr.c	/^#define error(c)	errxx(c)$/
+errxx	expr.c	/^errxx(c)$/
+getrnge	expr.c	/^getrnge(str)$/
+index	expr.c	/^char *index(s, t) char *s, *t; {$/
+length	expr.c	/^char *length(s) register char *s; {$/
+match	expr.c	/^char *match(s, p)$/
+rel	expr.c	/^char *rel(op, r1, r2) register char *r1, *r2; {$/
+step	expr.c	/^step(p1, p2)$/
+substr	expr.c	/^char *substr(v, s, w) char *v, *s, *w; {$/
+yyerror	expr.c	/^yyerror(s)$/
+yylex	expr.c	/^yylex() {$/
+yyparse	expr.c	/^yyparse()$/
