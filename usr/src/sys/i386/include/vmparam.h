@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vmparam.h	5.8 (Berkeley) %G%
+ *	@(#)vmparam.h	5.9 (Berkeley) %G%
  */
 
 
@@ -27,7 +27,7 @@
  * kernal address space.
  */
 #define	USRTEXT		0
-#define	USRSTACK	0xFDBFD000
+#define	USRSTACK	0xFDBFE000
 #define	BTOPUSRSTACK	(0xFDC00-(UPAGES))	/* btop(USRSTACK) */
 #define	LOWPAGES	0
 #define HIGHPAGES	UPAGES
