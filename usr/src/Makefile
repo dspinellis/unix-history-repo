@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.9	(Berkeley)	%G%
+#	@(#)Makefile	4.10	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -14,20 +14,20 @@ ${LIBDIR} ${SRCDIR}: FRC
 	cd $@; make ${MFLAGS}
 
 build: FRC
-	echo installing /usr/include
+	@echo installing /usr/include
 	cd include; make ${MFLAGS} install
 	cd lib; make ${MFLAGS}
-	echo installing /lib
+	@echo installing /lib
 	cd lib; make ${MFLAGS} install
 	cd usr.lib; make ${MFLAGS}
-	echo installing /usr/lib
+	@echo installing /usr/lib
 	cd usr.lib; make ${MFLAGS} install
 	-for i in ${SRCDIR}; do (cd $$i; make ${MFLAGS}); done
 
 FRC:
 
 install:
-	-for i in ${SUBDIR}; do \
+	-for i in ${LIBDIR} ${SRCDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
 
 installsrc:
