@@ -1,7 +1,7 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 PROG=	fsinfo
-NOMAN=	true
+MAN8=	fsinfo.0
 SRCS=	fsinfo.c fsi_gram.c fsi_lex.c \
 	fsi_util.c fsi_analyze.c fsi_dict.c \
 	wr_atab.c wr_bparam.c wr_dumpset.c \
