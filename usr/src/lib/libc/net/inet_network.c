@@ -5,10 +5,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)inet_network.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet_network.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
+#include <netinet/in.h>
 #include <ctype.h>
 
 /*
@@ -46,16 +47,16 @@ again:
 	}
 	if (*cp == '.') {
 		if (pp >= parts + 4)
-			return (-1);
+			return (INADDR_NONE);
 		*pp++ = val, cp++;
 		goto again;
 	}
 	if (*cp && !isspace(*cp))
-		return (-1);
+		return (INADDR_NONE);
 	*pp++ = val;
 	n = pp - parts;
 	if (n > 4)
-		return (-1);
+		return (INADDR_NONE);
 	for (val = 0, i = 0; i < n; i++) {
 		val <<= 8;
 		val |= parts[i] & 0xff;

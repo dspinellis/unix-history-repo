@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)inet.3	6.4 (Berkeley) %G%
+.\"	@(#)inet.3	6.5 (Berkeley) %G%
 .\"
 .TH INET 3N ""
 .UC 5
@@ -106,7 +106,7 @@ otherwise, the number is interpreted as decimal).
 .SH "SEE ALSO"
 gethostbyname(3N), getnetent(3N), hosts(5), networks(5),
 .SH DIAGNOSTICS
-The value \-1 is returned by
+The constant \fBINADDR_NONE\fP is returned by
 .I inet_addr
 and
 .I inet_network

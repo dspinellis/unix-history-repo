@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)inet_addr.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet_addr.c	5.4 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -61,7 +61,7 @@ again:
 		 *	a.b	(with b treated as 24 bits)
 		 */
 		if (pp >= parts + 4)
-			return (-1);
+			return (INADDR_NONE);
 		*pp++ = val, cp++;
 		goto again;
 	}
@@ -69,7 +69,7 @@ again:
 	 * Check for trailing characters.
 	 */
 	if (*cp && !isspace(*cp))
-		return (-1);
+		return (INADDR_NONE);
 	*pp++ = val;
 	/*
 	 * Concoct the address according to
@@ -97,7 +97,7 @@ again:
 		break;
 
 	default:
-		return (-1);
+		return (INADDR_NONE);
 	}
 	val = htonl(val);
 	return (val);
