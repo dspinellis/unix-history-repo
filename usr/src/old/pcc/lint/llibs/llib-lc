@@ -1,4 +1,4 @@
-/*	llib-lc	1.30	86/02/14	*/
+/*	llib-lc	1.31	86/02/17	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -46,7 +46,7 @@ int	getdtablesize() { return 20 ; }
 gid_t	getegid() { return((gid_t)1); }
 uid_t	geteuid() { return((uid_t)1); }
 gid_t	getgid() { return((gid_t)1); }
-int	getgroups( n, g ) int *n, *g; { return 0; }
+int	getgroups( n, g ) int n, *g; { return 0; }
 long	gethostid() { return 1L; }
 int	gethostname( n, l ) char *n; int l; { return 0 ;}
 int	getitimer( w, v ) struct itimerval *v; { return 0; }
