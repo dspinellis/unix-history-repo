@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_lock.c	8.9 (Berkeley) %G%
+ *	@(#)kern_lock.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -119,24 +119,46 @@ lockstatus(lkp)
  * accepted shared locks and shared-to-exclusive upgrades to go away.
  */
 int
-lockmgr(lkp, flags, interlkp, pid)
+lockmgr(lkp, flags, interlkp, p)
 	__volatile struct lock *lkp;
 	u_int flags;
-	struct simple_lock *interlkp;
-	pid_t pid;
+	struct simplelock *interlkp;
+	struct proc *p;
 {
 	int error;
-	__volatile int extflags;
+	pid_t pid;
+	int extflags;
 
 	error = 0;
+	if (p)
+		pid = p->p_pid;
+	else
+		pid = LK_KERNPROC;
 	simple_lock(&lkp->lk_interlock);
 	if (flags & LK_INTERLOCK)
 		simple_unlock(interlkp);
 	extflags = (flags | lkp->lk_flags) & LK_EXTFLG_MASK;
-	if ((lkp->lk_flags & LK_DRAINED) &&
-	    (((flags & LK_TYPE_MASK) != LK_RELEASE) ||
-	    lkp->lk_lockholder != pid))
-		panic("lockmgr: using decommissioned lock");
+#ifdef DIAGNOSTIC
+	/*
+	 * Once a lock has drained, the LK_DRAINING flag is set and an
+	 * exclusive lock is returned. The only valid operation thereafter
+	 * is a single release of that exclusive lock. This final release
+	 * clears the LK_DRAINING flag and sets the LK_DRAINED flag. Any
+	 * further requests of any sort will result in a panic. The bits
+	 * selected for these two flags are chosen so that they will be set
+	 * in memory that is freed (freed memory is filled with 0xdeadbeef).
+	 */
+	if (lkp->lk_flags & (LK_DRAINING|LK_DRAINED)) {
+		if (lkp->lk_flags & LK_DRAINED)
+			panic("lockmgr: using decommissioned lock");
+		if ((flags & LK_TYPE_MASK) != LK_RELEASE ||
+		    lkp->lk_lockholder != pid)
+			panic("lockmgr: non-release on draining lock: %d\n",
+			    flags & LK_TYPE_MASK);
+		lkp->lk_flags &= ~LK_DRAINING;
+		lkp->lk_flags |= LK_DRAINED;
+	}
+#endif DIAGNOSTIC
 
 	switch (flags & LK_TYPE_MASK) {
 
@@ -300,6 +322,14 @@ lockmgr(lkp, flags, interlkp, pid)
 
 	case LK_DRAIN:
 		/*
+		 * Check that we do not already hold the lock, as it can 
+		 * never drain if we do. Unfortunately, we have no way to
+		 * check for holding a shared lock, but at least we can
+		 * check for an exclusive one.
+		 */
+		if (lkp->lk_lockholder == pid)
+			panic("lockmgr: draining against myself");
+		/*
 		 * If we are just polling, check to see if we will sleep.
 		 */
 		if ((extflags & LK_NOWAIT) && ((lkp->lk_flags &
@@ -323,7 +353,7 @@ lockmgr(lkp, flags, interlkp, pid)
 				return (ENOLCK);
 			simple_lock(&lkp->lk_interlock);
 		}
-		lkp->lk_flags |= LK_DRAINED | LK_HAVE_EXCL;
+		lkp->lk_flags |= LK_DRAINING | LK_HAVE_EXCL;
 		lkp->lk_lockholder = pid;
 		lkp->lk_exclusivecount = 1;
 		break;
@@ -368,7 +398,7 @@ lockmgr_printinfo(lkp)
  */
 void
 simple_lock_init(alp)
-	struct simple_lock *alp;
+	struct simplelock *alp;
 {
 
 	alp->lock_data = 0;
@@ -376,7 +406,7 @@ simple_lock_init(alp)
 
 void
 simple_lock(alp)
-	__volatile struct simple_lock *alp;
+	__volatile struct simplelock *alp;
 {
 
 	if (alp->lock_data == 1)
@@ -386,7 +416,7 @@ simple_lock(alp)
 
 int
 simple_lock_try(alp)
-	__volatile struct simple_lock *alp;
+	__volatile struct simplelock *alp;
 {
 
 	if (alp->lock_data == 1)
@@ -397,7 +427,7 @@ simple_lock_try(alp)
 
 void
 simple_unlock(alp)
-	__volatile struct simple_lock *alp;
+	__volatile struct simplelock *alp;
 {
 
 	if (alp->lock_data == 0)
