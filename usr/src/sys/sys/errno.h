@@ -14,8 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)errno.h	7.8 (Berkeley) %G%
+ *	@(#)errno.h	7.9 (Berkeley) %G%
  */
+
+#ifndef KERNEL
+extern int errno;			/* global error number */
+#endif
 
 #define	EPERM		1		/* Operation not permitted */
 #define	ENOENT		2		/* No such file or directory */
