@@ -1,4 +1,4 @@
-/*	vfs_xxx.c	4.5	83/05/27	*/
+/*	vfs_xxx.c	4.6	83/05/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -116,5 +116,31 @@ ostat1(ip, ub)
 	ds.ost_mtime = (int)ip->i_mtime;
 	ds.ost_ctime = (int)ip->i_ctime;
 	u.u_error = copyout((caddr_t)&ds, (caddr_t)ub, sizeof(ds));
+}
+
+/*
+ * Set IUPD and IACC times on file.
+ * Can't set ICHG.
+ */
+outime()
+{
+	register struct a {
+		char	*fname;
+		time_t	*tptr;
+	} *uap = (struct a *)u.u_ap;
+	register struct inode *ip;
+	time_t tv[2];
+	struct timeval tv0, tv1;
+
+	if ((ip = owner(1)) == NULL)
+		return;
+	u.u_error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv));
+	if (u.u_error == 0) {
+		ip->i_flag |= IACC|IUPD|ICHG;
+		tv0.tv_sec = tv[0]; tv0.tv_usec = 0;
+		tv1.tv_sec = tv[1]; tv1.tv_usec = 0;
+		iupdat(ip, &tv0, &tv1, 0);
+	}
+	iput(ip);
 }
 #endif

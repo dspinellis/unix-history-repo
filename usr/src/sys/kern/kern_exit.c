@@ -1,4 +1,4 @@
-/*	kern_exit.c	4.1	83/05/27	*/
+/*	kern_exit.c	4.2	83/05/31	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -181,27 +181,6 @@ wait()
 		return;
 	(void) copyout((caddr_t)&ru, (caddr_t)rup, sizeof (struct rusage));
 }
-
-#ifndef NOCOMPAT
-#include "../h/vtimes.h"
-
-owait()
-{
-	struct rusage ru;
-	struct vtimes *vtp, avt;
-
-	if ((u.u_ar0[PS] & PSL_ALLCC) != PSL_ALLCC) {
-		u.u_error = wait1(0, (struct rusage *)0);
-		return;
-	}
-	vtp = (struct vtimes *)u.u_ar0[R1];
-	u.u_error = wait1(u.u_ar0[R0], &ru);
-	if (u.u_error)
-		return;
-	getvtimes(&ru, &avt);
-	(void) copyout((caddr_t)&avt, (caddr_t)vtp, sizeof (struct vtimes));
-}
-#endif
 
 /*
  * Wait system call.
