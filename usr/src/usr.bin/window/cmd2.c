@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.19 84/01/12";
+static	char *sccsid = "@(#)cmd2.c	3.20 84/01/13";
 #endif
 
 #include "defs.h"
@@ -56,30 +56,30 @@ c_help()
 	}
 	(void) wwprintf(w, "The escape character is %s, which gets you into command mode.\n\n",
 		unctrl(escapec));
-	help_print(w, "Short commands", help_shortcmd);
-	help_print(w, "Long commands", help_longcmd);
+	if (help_print(w, "Short commands", help_shortcmd) >= 0)
+		(void) help_print(w, "Long commands", help_longcmd);
 	closeiwin(w);
 }
 
 help_print(w, name, list)
 register struct ww *w;
 char *name;
-char **list;
+register char **list;
 {
-	register char **p;
-	char firsttime = 1;
-
-	for (p = list; *p;) {
-		(void) wwprintf(w, "%s:%s\n\n",
-			name, firsttime ? "" : " (continued)");
-		firsttime = 0;
-		while (*p && w->ww_cur.r < w->ww_w.b - 2) {
-			(void) wwputs(*p++, w);
+	(void) wwprintf(w, "%s:\n\n", name);
+	while (*list)
+		switch (more(w, 0)) {
+		case 0:
+			(void) wwputs(*list++, w);
 			(void) wwputc('\n', w);
+			break;
+		case 1:
+			(void) wwprintf(w, "%s: (continue)\n\n", name);
+			break;
+		case 2:
+			return -1;
 		}
-		waitnl(w);
-		(void) wwputs("\033E", w);	/* clear and home cursor */
-	}
+	return more(w, 1) == 2 ? -1 : 0;
 }
 
 #ifndef O_4_1A
@@ -194,11 +194,9 @@ c_list()
 		(void) wwprintf(w, "%c %c %-13s %-.*s\n",
 			wp == selwin ? '*' : ' ',
 			i + '1',
-			wp->ww_state == WWS_HASPROC
-				? "" : "(No process)",
+			wp->ww_state == WWS_HASPROC ? "" : "(No process)",
 			wwncol - 20,
-			wp->ww_label
-				? wp->ww_label : "(No label)");
+			wp->ww_label ? wp->ww_label : "(No label)");
 	}
 	waitnl(w);
 	closeiwin(w);
@@ -243,23 +241,35 @@ char *label;
 }
 
 waitnl(w)
-register struct ww *w;
+struct ww *w;
 {
-	front(w, 0);
-	(void) wwprintf(w, "\033Y%c%c[Type any key to continue] ",
-		w->ww_w.nr - 1 + ' ', ' ');	/* print on last line */
-	wwcurtowin(w);
-	while (bgetc() < 0)
-		bread();
+	(void) waitnl1(w, "[Type any key to continue]");
 }
 
-more(w)
+waitnl1(w, prompt)
 register struct ww *w;
+char *prompt;
 {
-	if (w->ww_cur.r > w->ww_w.b - 3) {
-		waitnl(w);
-		(void) wwputs("\033E", w);
-	}
+	front(w, 0);
+	(void) wwprintf(w, "\033Y%c%c\033p%s\033q ",
+		w->ww_w.nr - 1 + ' ', ' ', prompt);	/* print on last line */
+	wwcurtowin(w);
+	while (bpeekc() < 0)
+		bread();
+	return bgetc();
+}
+
+more(w, flag)
+register struct ww *w;
+char flag;
+{
+	int c;
+
+	if (!flag && w->ww_cur.r < w->ww_w.b - 2)
+		return 0;
+	c = waitnl1(w, "[Type escape to abort, any other key to continue]");
+	(void) wwputs("\033E", w);
+	return c == CTRL([) ? 2 : 1;
 }
 
 closeiwin(w)

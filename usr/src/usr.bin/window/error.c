@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)error.c	3.5 84/01/12";
+static	char *sccsid = "@(#)error.c	3.6 84/01/13";
 #endif
 
 #include "defs.h"
@@ -23,7 +23,7 @@ char *fmt;
 		}
 		return;
 	}
-	if (cx.x_noerrwin)
+	if (cx.x_noerr)
 		return;
 	if ((w = cx.x_errwin) == 0) {
 		char buf[512];
@@ -31,11 +31,14 @@ char *fmt;
 		(void) sprintf(buf, "Errors from %s", cx.x_filename);
 		if ((w = cx.x_errwin = openiwin(ERRLINES, buf)) == 0) {
 			(void) wwputs("Can't open error window.  ", cmdwin);
-			cx.x_noerrwin = 1;
+			cx.x_noerr = 1;
 			return;
 		}
 	}
-	more(w);
+	if (more(w, 0) == 2) {
+		cx.x_noerr = 1;
+		return;
+	}
 	(void) wwprintf(w, "line %d: ", cx.x_lineno);
 	(void) wwprintf(w, fmt, a, b, c, d, e, f, g, h);
 	(void) wwputc('\n', w);
@@ -44,7 +47,8 @@ char *fmt;
 err_end()
 {
 	if (cx.x_errwin != 0) {
-		waitnl(cx.x_errwin);
+		if (!cx.x_noerr)
+			waitnl(cx.x_errwin);
 		closeiwin(cx.x_errwin);
 		cx.x_errwin = 0;
 	}
