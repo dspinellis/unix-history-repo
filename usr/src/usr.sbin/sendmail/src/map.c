@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -18,6 +18,9 @@ static char sccsid[] = "@(#)map.c	5.5 (Berkeley) %G%";
 #endif
 #if defined(HASH_MAP) || defined(BTREE_MAP)
 #include <db.h>
+#endif
+#ifdef NIS_MAP
+#include <rpcsvc/ypclnt.h>
 #endif
 
 
@@ -47,9 +50,12 @@ dbm_map_init(map, mapname, args)
 {
 	DBM *dbm;
 
-	map_parseargs(map, &args, mapname);
+	map_parseargs(map, &args);
 	if (map->map_file == NULL)
+	{
+		syserr("No file name for DBM map %s", mapname);
 		return FALSE;
+	}
 	dbm = dbm_open(map->map_file, O_RDONLY, 0644);
 	if (dbm == NULL)
 	{
@@ -102,7 +108,8 @@ dbm_map_lookup(map, buf, bufsiz, av)
 	val = dbm_fetch(map->map_db, key);
 	if (val.dptr == NULL)
 		return NULL;
-	map_rewrite(val.dptr, val.dsize, buf, bufsiz, av);
+	if (!bitset(MF_MATCHONLY, map->map_flags))
+		map_rewrite(val.dptr, val.dsize, buf, bufsiz, av);
 	return buf;
 }
 
@@ -134,9 +141,12 @@ bt_map_init(map, mapname, args)
 {
 	DB *db;
 
-	map_parseargs(map, &args, mapname);
+	map_parseargs(map, &args);
 	if (map->map_file == NULL)
+	{
+		syserr("No file name for BTREE map %s", mapname);
 		return FALSE;
+	}
 	db = dbopen(map->map_file, O_RDONLY, 0644, DB_BTREE, NULL);
 	if (db == NULL)
 	{
@@ -176,9 +186,12 @@ hash_map_init(map, mapname, args)
 {
 	DB *db;
 
-	map_parseargs(map, &args, mapname);
+	map_parseargs(map, &args);
 	if (map->map_file == NULL)
+	{
+		syserr("No file name for HASH map %s", mapname);
 		return FALSE;
+	}
 	db = dbopen(map->map_file, O_RDONLY, 0644, DB_HASH, NULL);
 	if (db == NULL)
 	{
@@ -235,7 +248,8 @@ db_map_lookup(map, buf, bufsiz, av)
 		key.size++;
 	if (((DB *) map->map_db)->get((DB *) map->map_db, &key, &val, 0) != 0)
 		return NULL;
-	map_rewrite(val.data, val.size, buf, bufsiz, av);
+	if (!bitset(MF_MATCHONLY, map->map_flags))
+		map_rewrite(val.data, val.size, buf, bufsiz, av);
 	return buf;
 }
 
@@ -248,7 +262,6 @@ db_map_lookup(map, buf, bufsiz, av)
 **		pp -- an indirect pointer to the config line.  It will
 **			be replaced with a pointer to the next field
 **			on the line.
-**		mapname -- the name of the map (for errors).
 **
 **	Returns:
 **		none
@@ -257,10 +270,9 @@ db_map_lookup(map, buf, bufsiz, av)
 **		null terminates the filename; stores it in map
 */
 
-map_parseargs(map, pp, mapname)
+map_parseargs(map, pp)
 	MAP *map;
 	char **pp;
-	char *mapname;
 {
 	register char *p = *pp;
 
@@ -284,8 +296,16 @@ map_parseargs(map, pp, mapname)
 			map->map_flags |= MF_NOFOLDCASE;
 			break;
 
+		  case 'm':
+			map->map_flags |= MF_MATCHONLY;
+			break;
+
 		  case 'a':
 			map->map_app = ++p;
+			break;
+
+		  case 'd':
+			map->map_domain = ++p;
 			break;
 		}
 		while (*p != '\0' && !isspace(*p))
@@ -295,12 +315,11 @@ map_parseargs(map, pp, mapname)
 	}
 	if (map->map_app != NULL)
 		map->map_app = newstr(map->map_app);
+	if (map->map_domain != NULL)
+		map->map_domain = newstr(map->map_domain);
 
 	if (*p == '\0')
-	{
-		syserr("No file name for map %s", mapname);
 		return NULL;
-	}
 	map->map_file = p;
 	while (*p != '\0' && !isspace(*p))
 		p++;
@@ -309,6 +328,86 @@ map_parseargs(map, pp, mapname)
 	map->map_file = newstr(map->map_file);
 	*pp = p;
 }
+
+# ifdef NIS_MAP
+
+/*
+**  NIS_MAP_INIT -- initialize DBM map
+**
+**	Parameters:
+**		map -- the pointer to the actual map.
+**		mapname -- the name of the map (for error messages).
+**		args -- a pointer to the config file line arguments.
+**
+**	Returns:
+**		TRUE -- if it could successfully open the map.
+**		FALSE -- otherwise.
+**
+**	Side Effects:
+**		Prints an error if it can't open the map.
+*/
+
+bool
+nis_map_init(map, mapname, args)
+	MAP *map;
+	char *mapname;
+	char *args;
+{
+	/* parse arguments */
+	map_parseargs(map, &args);
+	if (map->map_file == NULL)
+	{
+		syserr("No NIS map name for map %s", mapname);
+		return FALSE;
+	}
+	if (map->map_domain == NULL)
+		yp_get_default_domain(&map->map_domain);
+	return TRUE;
+}
+/*
+**  NIS_MAP_LOOKUP -- look up a datum in a NIS map
+**
+**	Parameters:
+**		map -- the map to look up in.
+**		buf -- a pointer to to the buffer containing the key.
+**			This is a null terminated string.
+**		bufsiz -- the size of buf -- note that this is in general
+**			larger that strlen(buf), and buf can be changed
+**			in place if desired.
+**		av -- arguments from the config file (can be interpolated
+**			into the final result).
+**
+**	Returns:
+**		A pointer to the rewritten result.
+**		NULL if not found in the map.
+*/
+
+char *
+nis_map_lookup(map, buf, bufsiz, av)
+	MAP *map;
+	char buf[];
+	int bufsiz;
+	char **av;
+{
+	char *vp;
+	int *vsize;
+
+	if (!bitset(MF_NOFOLDCASE, map->map_flags))
+	{
+		register char *p;
+
+		for (p = buf; *p != '\0'; p++)
+			if (isupper(*p))
+				*p = tolower(*p);
+	}
+	if (yp_match(map->map_domain, map->map_file, buf, bufsiz, &vp, &vsize) != 0)
+		return NULL;
+	if (!bitset(MF_MATCHONLY, map->map_flags))
+		map_rewrite(vp, vsize, buf, bufsiz, av);
+	return buf;
+}
+
+#endif /* NIS_MAP */
 /*
 **  MAP_REWRITE -- rewrite a database key, interpolating %n indications.
 **
