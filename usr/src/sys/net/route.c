@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.c	7.23 (Berkeley) %G%
+ *	@(#)route.c	7.24 (Berkeley) %G%
  */
 #include "param.h"
 #include "systm.h"
@@ -37,16 +37,17 @@ struct	sockaddr wildcard;	/* zero valued cookie for wildcard searches */
 int	rthashsize = RTHASHSIZ;	/* for netstat, etc. */
 
 static int rtinits_done = 0;
-struct radix_node_head *ns_rnhead, *in_rnhead;
 struct radix_node *rn_match(), *rn_delete(), *rn_addroute();
 
 rtinitheads()
 {
+	extern struct radix_node_head *mask_rnhead;
 	if (rtinits_done == 0 &&
 #ifdef NS
-	    rn_inithead(&ns_rnhead, 16, AF_NS) &&
+	    rn_inithead(&rt_tables[AF_NS], 16) &&
 #endif
-	    rn_inithead(&in_rnhead, 32, AF_INET))
+	    rn_inithead(&rt_tables[AF_INET], 32) &&
+	    (rt_tables[0] = mask_rnhead) != 0)
 		rtinits_done = 1;
 }
 
@@ -66,16 +67,14 @@ rtalloc1(dst, report)
 	register struct sockaddr *dst;
 	int  report;
 {
-	register struct radix_node_head *rnh;
+	register struct radix_node_head *rnh = rt_tables[dst->sa_family];
 	register struct rtentry *rt;
 	register struct radix_node *rn;
 	struct rtentry *newrt = 0;
 	int  s = splnet(), err = 0, msgtype = RTM_MISS;
 
-	for (rnh = radix_node_head; rnh && (dst->sa_family != rnh->rnh_af); )
-		rnh = rnh->rnh_next;
 	if (rnh && rnh->rnh_treetop &&
-	    (rn = rn_match((caddr_t)dst, rnh->rnh_treetop)) &&
+	    (rn = rnh->rnh_match((caddr_t)dst, rnh->rnh_treetop)) &&
 	    ((rn->rn_flags & RNF_ROOT) == 0)) {
 		newrt = rt = (struct rtentry *)rn;
 		if (report && (rt->rt_flags & RTF_CLONING)) {
@@ -327,20 +326,17 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 	register struct radix_node_head *rnh;
 	struct ifaddr *ifa, *ifa_ifwithdstaddr();
 	struct sockaddr *ndst;
-	u_char af = dst->sa_family;
 #define senderr(x) { error = x ; goto bad; }
 
 	if (rtinits_done == 0)
 		rtinitheads();
-	for (rnh = radix_node_head; rnh && (af != rnh->rnh_af); )
-		rnh = rnh->rnh_next;
-	if (rnh == 0)
+	if ((rnh = rt_tables[dst->sa_family]) == 0)
 		senderr(ESRCH);
 	if (flags & RTF_HOST)
 		netmask = 0;
 	switch (req) {
 	case RTM_DELETE:
-		if ((rn = rn_delete((caddr_t)dst, (caddr_t)netmask, 
+		if ((rn = rnh->rnh_delete((caddr_t)dst, (caddr_t)netmask, 
 					rnh->rnh_treetop)) == 0)
 			senderr(ESRCH);
 		if (rn->rn_flags & (RNF_ACTIVE | RNF_ROOT))
@@ -386,7 +382,7 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 			rt_maskedcopy(dst, ndst, netmask);
 		} else
 			Bcopy(dst, ndst, dst->sa_len);
-		rn = rn_addroute((caddr_t)ndst, (caddr_t)netmask,
+		rn = rnh->rnh_add((caddr_t)ndst, (caddr_t)netmask,
 					rnh->rnh_treetop, rt->rt_nodes);
 		if (rn == 0) {
 			if (rt->rt_gwroute)
