@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.15 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -873,7 +873,7 @@ gettty()
 	int x;
 
 	if (u.u_ttyp == 0)
-		return("?");
+		return(" ?");
 	x = u.u_ttyd & 017;
 	for (dp = &allttys[cand[x]]; dp != &allttys[-1];
 	     dp = &allttys[dp->cand]) {
@@ -1179,7 +1179,7 @@ lpr(sp)
 		printf(" %*x", wcwidth, (int)lp->l_wchan&~KERNBASE);
 	else
 		printf(" %*.*s", wcwidth, abs(wcwidth), getchan(lp->l_wchan));
-	printf(" %-3.3s ", state(ap));
+	printf(" %-2.3s ", state(ap));
 	ptty(ap->a_tty);
 	ptime(ap);
 }
@@ -1195,7 +1195,7 @@ ptime(ap)
 	struct asav *ap;
 {
 
-	printf(" %2ld:%02ld", ap->a_cpu / 60, ap->a_cpu % 60);
+	printf(" %3ld:%02ld", ap->a_cpu / 60, ap->a_cpu % 60);
 }
 
 char	*uhdr =
@@ -1218,7 +1218,7 @@ upr(sp)
 	    ap->a_pid, sp->s_un.u_pctcpu, pmem(ap), vmsize, rmsize);
 	putchar(' ');
 	ptty(ap->a_tty);
-	printf(" %-3.3s", state(ap));
+	printf(" %-2.3s", state(ap));
 	ptime(ap);
 }
 
@@ -1232,7 +1232,7 @@ vpr(sp)
 
 	printf("%5u ", ap->a_pid);
 	ptty(ap->a_tty);
-	printf(" %-3.3s", state(ap));
+	printf(" %-2.3s", state(ap));
 	ptime(ap);
 	printf(" %2d %2d %6d %5d %5d",
 	   ap->a_slptime > 99 ? 99 : ap-> a_slptime,
@@ -1258,7 +1258,7 @@ spr(sp)
 	printf("%5u", ap->a_pid);
 	putchar(' ');
 	ptty(ap->a_tty);
-	printf(" %-3.3s", state(ap));
+	printf(" %-2.3s", state(ap));
 	ptime(ap);
 }
 
