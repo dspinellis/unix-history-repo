@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_physio.c	7.26 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.27 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -147,12 +147,12 @@ getswbuf(prio)
 	struct buf *bp;
 
 	s = splbio();
-	while (bswlist.av_forw == NULL) {
+	while (bswlist.b_actf == NULL) {
 		bswlist.b_flags |= B_WANTED;
 		sleep((caddr_t)&bswlist, prio);
 	}
-	bp = bswlist.av_forw;
-	bswlist.av_forw = bp->av_forw;
+	bp = bswlist.b_actf;
+	bswlist.b_actf = bp->b_actf;
 	splx(s);
 	return (bp);
 }
@@ -164,8 +164,8 @@ freeswbuf(bp)
 	int s;
 
 	s = splbio();
-	bp->av_forw = bswlist.av_forw;
-	bswlist.av_forw = bp;
+	bp->b_actf = bswlist.b_actf;
+	bswlist.b_actf = bp;
 	if (bp->b_vp)
 		brelvp(bp);
 	if (bswlist.b_flags & B_WANTED) {

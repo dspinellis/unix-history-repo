@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: st.c 1.11 92/01/21$
  *
- *      @(#)st.c	7.7 (Berkeley) %G%
+ *      @(#)st.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -198,7 +198,10 @@ stinit(hd)
 	register struct hp_device *hd;
 {
 	register struct st_softc *sc = &st_softc[hd->hp_unit];
+	register struct buf *bp;
 
+	for (bp = sttab; bp < &sttab[NST]; bp++)
+		bp->b_actb = &bp->b_actf;
 	sc->sc_hd = hd;
 	sc->sc_punit = stpunit(hd->hp_flags);
 	sc->sc_type = stident(sc, hd);
@@ -699,13 +702,11 @@ ststrategy(bp)
 
 	unit = UNIT(bp->b_dev);
 	dp = &sttab[unit];
-	bp->av_forw = NULL;
+	bp->b_actf = NULL;
 	s = splbio();
-	if (dp->b_actf == NULL)
-		dp->b_actf = bp;
-	else
-		dp->b_actl->av_forw = bp;
-	dp->b_actl = bp;
+	bp->b_actb = dp->b_actb;
+	*dp->b_actb = bp;
+	dp->b_actb = &bp->b_actf;
 	if (dp->b_active == 0) {
 		dp->b_active = 1;
 		stustart(unit);
@@ -815,8 +816,14 @@ stfinish(unit, sc, bp)
 	struct st_softc *sc;
 	struct buf *bp;
 {
+	register struct buf *dp;
+
 	sttab[unit].b_errcnt = 0;
-	sttab[unit].b_actf = bp->b_actf;
+	if (dp = bp->b_actf)
+		dp->b_actb = bp->b_actb;
+	else
+		sttab[unit].b_actb = bp->b_actb;
+	*bp->b_actb = dp;
 	iodone(bp);
 	scsifree(&sc->sc_dq);
 	if (sttab[unit].b_actf)
