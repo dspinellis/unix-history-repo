@@ -8,17 +8,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bmc.c	7.3 (Berkeley) %G%
+ *	@(#)bmc.c	7.4 (Berkeley) %G%
  */
 
 #define	BMC_NOCONSOLE
-#define	BMD
 
-#ifdef	BMD
 #define	BMC_CNPORT	1
-#else
-#define	BMC_CNPORT	0
-#endif
 
 #include "bmc.h"
 #if NBMC > 0
@@ -38,9 +33,7 @@
 #include <luna68k/dev/sioreg.h>
 #include <luna68k/dev/siovar.h>
 
-#ifdef	BMD
 #include "kbdreg.h"
-#endif
 
 extern	struct sio_portc *sio_port_assign();
 
@@ -109,9 +102,7 @@ bmcinit(port)
 
 	printf("bmc%d: port %d, address 0x%x\n", sc->sc_pc->pc_unit, port, sc->sc_pc->pc_addr);
 
-#ifdef	BMD
 	bmdinit();
-#endif
 
 	bmc_config_done = 1;
 	return(1);
@@ -259,7 +250,6 @@ bmcioctl(dev, cmd, data, flag, p)
 /*
  *
  */
-#ifdef BMD
 void
 bmcstart(tp)
 	register struct tty *tp;
@@ -287,12 +277,6 @@ bmcstart(tp)
 	 * Limit the amount of output we do in one burst
 	 * to prevent hogging the CPU.
 	 */
-/*
-	if (cc > iteburst) {
-		hiwat++;
-		cc = iteburst;
-	}
- */
 	while (--cc >= 0) {
 		register int c;
 
@@ -310,48 +294,9 @@ bmcstart(tp)
 		bmdputc(c & sc->sc_mask);
 		spltty();
 	}
-/*
-	if (hiwat) {
-		tp->t_state |= TS_TIMEOUT;
-		timeout(ttrstrt, tp, 1);
-	}
- */
 	tp->t_state &= ~TS_BUSY;
 	splx(s);
 }
-#else
-void
-bmcstart(tp)
-	register struct tty *tp;
-{
-	register struct siodevice *sio;
-	register int rr;
-	int s, unit, c;
- 
-	unit = bmcunit(tp->t_dev);
-	sio = bmc_softc[unit].sc_pc->pc_addr;
-	s = spltty();
-	if (tp->t_state & (TS_TIMEOUT|TS_TTSTOP))
-		goto out;
-	if (tp->t_outq.c_cc <= tp->t_lowat) {
-		if (tp->t_state&TS_ASLEEP) {
-			tp->t_state &= ~TS_ASLEEP;
-			wakeup((caddr_t)&tp->t_outq);
-		}
-		selwakeup(&tp->t_wsel);
-	}
-	if (tp->t_outq.c_cc == 0)
-		goto out;
-	rr = siogetreg(sio);
-	if (rr & RR_TXRDY) {
-		c = getc(&tp->t_outq);
-		tp->t_state |= TS_BUSY;
-		sio->sio_data = c;
-	}
-out:
-	splx(s);
-}
-#endif
 
 bmcparam(tp, t)
 	register struct tty *tp;
@@ -397,7 +342,6 @@ bmcparam(tp, t)
  *  interrupt handling 
  */
 
-#ifdef BMD
 bmcintr(unit)
 	register int unit;
 {
@@ -420,35 +364,6 @@ bmcintr(unit)
 			(*linesw[tp->t_line].l_rint)(code, tp);
 	}
 }
-#else
-bmcintr(unit)
-	register int unit;
-{
-	register struct siodevice *sio = bmc_softc[unit].sc_pc->pc_addr;
-	register u_char code;
-	register struct tty *tp;
-	int s, rr;
-
-	tp = &bmc_tty[unit];
-	rr = siogetreg(sio);
-
-	if (rr & RR_RXRDY) {
-		code = sio->sio_data;
-		if ((tp->t_state & TS_ISOPEN) != 0)
-			(*linesw[tp->t_line].l_rint)(code, tp);
-	}
-
-	if (rr & RR_TXRDY) {
-		sio->sio_cmd = WR0_RSTPEND;
-		tp->t_state &= ~(TS_BUSY|TS_FLUSH);
-		if (tp->t_line)
-			(*linesw[tp->t_line].l_start)(tp);
-		else
-			bmcstart(tp);
-	}
-
-}
-#endif
 
 /*
  * Following are all routines needed for SIO to act as console
@@ -486,9 +401,7 @@ bmccninit(cp)
 	register struct bmc_softc *sc = &bmc_softc[0];
 
 	sioinit((struct siodevice *) SIO_HARDADDR, bmcdefaultrate);
-#ifdef	BMD
 	bmdinit();
-#endif
 
 	/* port assign */
 	sc->sc_pc = sio_port_assign(BMC_CNPORT, bmcmajor, 0, bmcintr);
@@ -501,7 +414,6 @@ bmccngetc(dev)
 {
 	struct bmc_softc *sc = &bmc_softc[bmcunit(dev)];
 	struct sio_portc *pc = sc->sc_pc;
-#ifdef	BMD
 	register int c;
 	register u_char code;
 
@@ -510,9 +422,6 @@ bmccngetc(dev)
 	} while ((c = kbd_decode(code)) & KC_TYPE);
 
 	return(c);
-#else
-	return(sio_imgetc(pc->pc_addr));
-#endif
 }
 
 bmccnputc(dev, c)
@@ -522,10 +431,6 @@ bmccnputc(dev, c)
 	struct bmc_softc *sc = &bmc_softc[bmcunit(dev)];
 	struct sio_portc *pc = sc->sc_pc;
 
-#ifdef BMD
 	bmdputc(c);
-#else
-	sio_imputc(pc->pc_addr, c);
-#endif
 }
 #endif
