@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)grep.1	8.1 (Berkeley) %G%
+.\"	@(#)grep.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GREP 1
@@ -50,9 +50,10 @@ The
 .Nm egrep
 utility
 can handle extended regular expressions and
-embedded <newline>s in pattern
+embedded <newline>s in patterns.
+The
 .Nm fgrep
-is quick but is designed to handle fixed strings.
+utility is quick but can handle only fixed strings.
 A fixed string
 is a string of characters,
 each character
@@ -79,7 +80,7 @@ input.
 Multiple
 .Fl e
 options can be used to specify
-multiple patterns; an input line is selected of it
+multiple patterns; an input line is selected if it
 matches any of the specified patterns.
 .It Fl f Ar pattern_file 
 The pattern is read from the file named by the
@@ -180,7 +181,7 @@ Escape special characters which have meaning to
 the set of {$,.,^,[,],|,?,+,*,(,)}.
 .El
 .Sh EXAMPLES
-To find all occurances of the word patricia in a file:
+To find all occurences of the word patricia in a file:
 .Pp
 .Dl grep patricia myfile
 .Pp
@@ -190,7 +191,7 @@ at the beginning of a line:
 .Pp
 .Dl grep '^\e.Pp'
 .Pp
-The apostrophys assure the entire expression is evaluated by
+The apostrophes assure the entire expression is evaluated by
 .Nm grep
 instead of by the
 users shell.

@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)sh.1	8.1 (Berkeley) %G%
+.\"	@(#)sh.1	8.2 (Berkeley) %G%
 .\"
 .na
 .TH SH 1
@@ -16,16 +16,15 @@ sh \- command interpreter (shell)
 sh [-/+aCefnuvxIimsVEb] [-/+o longname] [arg ...]
 .SH DESCRIPTION
 .LP
-Sh is the standard command interpreter for the system.  The current
-version
-of sh is in the process of being changed to
-conform with the POSIX 1003.2 and 1003.2a specificiations for
+Sh is the standard command interpreter for the system.
+The current version of sh is in the process of being changed to
+conform with the POSIX 1003.2 and 1003.2a specifications for
 the shell.  This version has many features which make it appear
 similar in some respects to the Korn shell, but it is not a Korn
 shell clone (run GNU's bash if you want that).  Only features
-designated by POSIX, plus a few Berkeley extensions, are being 
+designated by POSIX, plus a few Berkeley extensions, are being
 incorporated into this shell.  We expect POSIX conformance by the
-time 4.4 BSD is released.  
+time 4.4 BSD is released.
 This man page is not intended to be a tutorial or a complete
 specification of the shell.
 .sp 2
@@ -33,11 +32,11 @@ specification of the shell.
 .sp
 .LP
 The shell is a command that reads lines from
-either a file or the terminal, interpretes them, and 
-generally executes other commands.  It is the program that is running
+either a file or the terminal, interprets them, and
+generally executes other commands. It is the program that is running
 when a user logs into the system (although a user can select
 a different shell with the chsh(1) command).
-The shell 
+The shell
 implements a language that has flow control contructs,
 a macro facility that provides a variety of features in
 addition to data storage, along with built in history and line
@@ -58,8 +57,8 @@ generally prompts before each command and handles programming
 and command errors differently (as described below).
 When first starting, the shell inspects argument 0, and
 if it begins with a dash '-', the shell is also considered
-a login shell.  This is normally done automatically by the system 
-when the user first logs in. A login shell first reads commands 
+a login shell.  This is normally done automatically by the system
+when the user first logs in. A login shell first reads commands
 from the files /etc/profile and .profile if they exist.
 If the environment variable ENV is set on entry to a shell,
 or is set in the .profile of a login shell, the shell next reads
@@ -101,7 +100,7 @@ from its standard input.
 .LP
 All of the single letter options have a corresponding name
 that can be used as an argument to the '-o' option. The
-set -o name is provided next to the single letter option in 
+set -o name is provided next to the single letter option in
 the description below.
 Specifying a dash ``-'' turns the option on, while using a plus ``+''
 disables the option.
@@ -119,9 +118,9 @@ Don't overwite existing files with ``>''.
 -e    errexit
 If not interactive, exit immediatly if any
 untested command fails.
-The exit status of a command is considered to  be
-explicitly  tested if the command is used to control 
-an if, elif, while, or until; or if the command  is  the  left  
+The exit status of a command is considered to be
+explicitly tested if the command is used to control
+an if, elif, while, or until; or if the command is the left
 hand operand of an ``&&'' or ``||'' operator.
 
 .TP
@@ -173,7 +172,7 @@ Enable the builtin emacs(1) command line editor (disables
 -V if it has been set).
 .TP
 -b    notify
-Enable asychronous notification of background job
+Enable asynchronous notification of background job
 completion.
 (UNIMPLEMENTED for 4.4alpha)
 .LP
@@ -181,7 +180,7 @@ completion.
 .B Lexical Structure
 .sp
 .LP
-The shell reads input in terms of lines from a file and breaks 
+The shell reads input in terms of lines from a file and breaks
 it up into words at whitespace (blanks and tabs), and at
 certain sequences of
 characters that are special to the shell called ``operators''.
@@ -191,7 +190,7 @@ Following is a list of operators:
 .nf
 .sp
 Control operators: &  &&  (  )  ;  ;; | || <newline>
-.sp 
+.sp
 Redirection operator:  <  >  >|  <<  >>  <&  >&  <<-  <>
 .sp
 .fi
@@ -231,7 +230,7 @@ Otherwise it remains literal.
 .sp
 .LP
 Reserved words are words that have special meaning to the
-shell and are recognized at the beginning of a line and 
+shell and are recognized at the beginning of a line and
 after a control operator.  The following are reserved words:
 .nf
 
@@ -270,7 +269,7 @@ used to create lexically obscure code.  This use is discouraged.
 .B Commands
 .sp
 .LP
-The shell interpretes the words it reads according to a
+The shell interprets the words it reads according to a
 language, the specification of which is outside the scope
 of this man page (refer to the BNF in the POSIX 1003.2
 document).  Essentially though, a line is read and if
@@ -348,9 +347,9 @@ Close standard output (or n).
 .TP
 [n]<> file	
 Open file for reading and writing on
-standard input (or n). 
+standard input (or n).
 .LP
-The following redirection is often called a ``here-document''. 
+The following redirection is often called a ``here-document''.
 .nf
 
     [n]<< delimiter
@@ -371,42 +370,44 @@ in the here-doc-text are stripped.
 .B Search and Execution
 .sp
 .LP
-There  are  three  types of commands:  shell functions, builtin commands, and normal programs -- and the
+There are three types of commands: shell functions, builtin commands, and normal programs -- and the
 command is searched for (by name) in that order.  They
 each are executed in a different way.
 .LP
-When a shell function is executed, all of the shell  positional parameters (except $0, which remains unchanged) are
-set to the arguments of the shell  function.   The  variables  which  are  explicitly placed in the environment of
-the command (by placing assignments  to  them  before  the
+When a shell function is executed, all of the shell positional parameters (except $0, which remains unchanged) are
+set to the arguments of the shell function.
+The variables which are explicitly placed in the environment of
+the command (by placing assignments to them before the
 function name) are made local to the function and are set
-to the values given. Then the command given in  the  function
-definition  is  executed.   The  positional parameters are
-restored to their original values when  the  command  completes.
+to the values given. Then the command given in the function
+definition is executed.   The positional parameters are
+restored to their original values when the command completes.
 .LP
 Shell builtins are executed internally to the shell, without spawning a new process.
 .LP
 Otherwise, if the command name doesn't match a function
 or builtin, the command is searched for as a normal
 program in the filesystem (as described in the next section).
-When a normal program is executed, the shell runs the program,  passing  the  arguments and the environment to the
-program. If the program is a shell procedure,  the  shell
-will  interpret the program in a subshell.  The shell will
-reinitialize itself in this case, so that the effect  will
-be  as if a new shell had been invoked to handle the shell
+When a normal program is executed, the shell runs the program,
+passing the arguments and the environment to the
+program. If the program is a shell procedure, the shell
+will interpret the program in a subshell.  The shell will
+reinitialize itself in this case, so that the effect will
+be as if a new shell had been invoked to handle the shell
 procedure, except that the location of commands located in
-the  parent shell will be remembered by the child.  
+the parent shell will be remembered by the child.
 .sp 2
 .B Path Search
 .sp
 .LP
-When locating a command, the shell first looks to  see  if
-it  has a shell function by that name.  Then it looks for a
-builtin  command by that name.
+When locating a command, the shell first looks to see if
+it has a shell function by that name.  Then it looks for a
+builtin command by that name.
 Finally, it searches each
 entry in PATH in turn for the command.
 .LP
-The value of the PATH  variable  should  be  a  series  of
-entries  separated  by  colons.  Each entry consists of a
+The value of the PATH variable should be a series of
+entries separated by colons.  Each entry consists of a
 directory name.
 The current directory
 may be indicated by an empty directory name.
@@ -433,14 +434,14 @@ command.  More generally, a command is one of the following:
 .nf
 
   - simple command
-  
+
   - pipeline
 
   - list or compound-list
 
   - compound command
 
-  - function definition 
+  - function definition
 
 .fi
 .LP
@@ -508,24 +509,26 @@ The format for running a command in background is:
 command1 & [command2 & ...]
 
 .fi
-If the shell is not interactive, the standard input of an 
-asychronous command is set to /dev/null.
+If the shell is not interactive, the standard input of an
+asynchronous command is set to /dev/null.
 .sp 2
 .B Lists -- Generally Speaking
 .sp
 .LP
 A list is a sequence of zero or more commands separated by
-newlines, semicolons, or ampersands, and optionally terminated by one of these  three  characters.
-The  commands  in  a
-list  are executed in the order they are written.  If command is followed by an ampersand,  the  shell  starts  the
-command  and  immediately  proceed  onto the next command;
-otherwise it waits for the  command  to  terminate  before
+newlines, semicolons, or ampersands,
+and optionally terminated by one of these three characters.
+The commands in a
+list are executed in the order they are written.
+If command is followed by an ampersand, the shell starts the
+command and immediately proceed onto the next command;
+otherwise it waits for the command to terminate before
 proceeding to the next one.
 .LP
-``&&''  and  ``||'' are AND-OR list operators.  ``&&'' executes
-the first command, and then executes  the  second  command
-iff  the exit status of the first command is zero.  ``||''
-is similar, but executes the second command iff  the  exit
+``&&'' and ``||'' are AND-OR list operators.  ``&&'' executes
+the first command, and then executes the second command
+iff the exit status of the first command is zero.  ``||''
+is similar, but executes the second command iff the exit
 status of the first command is nonzero.  ``&&'' and ``||''
 both have the same priority.
 .LP
@@ -548,8 +551,8 @@ The syntax of the while command is
     done
 
 .fi
-The two lists are executed repeatedly while the exit  status of the first list is zero.  The until command is similar, but has the word until in place of while
-repeats until the exit status of the first list is  zero.
+The two lists are executed repeatedly while the exit status of the first list is zero.  The until command is similar, but has the word until in place of while
+repeat until the exit status of the first list is zero.
 .LP
 The syntax of the for command is
 .nf
@@ -559,7 +562,7 @@ The syntax of the for command is
     done
 
 .fi
-The  words  are  expanded,  and  then the list is executed
+The words are expanded, and then the list is executed
 repeatedly with the variable set to each word in turn.  do
 and done may be replaced with ``{'' and ``}''.
 .LP
@@ -570,8 +573,8 @@ The syntax of the break and continue command is
     continue [ num ]
 
 .fi
-Break  terminates  the  num  innermost for or while loops.
-Continue continues with the next iteration of  the  innermost loop.  These are implemented as builtin commands.
+Break terminates the num innermost for or while loops.
+Continue continues with the next iteration of the innermost loop.  These are implemented as builtin commands.
 .LP
 The syntax of the case command is
 .nf
@@ -583,7 +586,7 @@ The syntax of the case command is
 
 .fi
 .LP
-The pattern can actually be one or more patterns (see Shell 
+The pattern can actually be one or more patterns (see Shell
 Patterns described later), separated by ``|'' characters.
 
 .LP
@@ -611,14 +614,14 @@ The syntax of a function definition is
 
 .fi
 .LP
-A function definition is an  executable  statement;  when
+A function definition is an executable statement; when
 executed it installs a function named name and returns an
-exit status of zero.   The  command  is  normally  a  list
+exit status of zero.   The command is normally a list
 enclosed between ``{'' and ``}''.
 .LP
-Variables  may  be  declared  to be local to a function by
-using a local command.  This should appear  as  the  first
-staement of a function, and the syntax is
+Variables may be declared to be local to a function by
+using a local command.  This should appear as the first
+statement of a function, and the syntax is
 .nf
 
     local [ variable | - ] ...
@@ -626,19 +629,19 @@ staement of a function, and the syntax is
 .fi
 Local is implemented as a builtin command.
 .LP
-When  a  variable  is  made local, it inherits the initial
-value and exported and readonly flags  from  the variable
-with  the  same name in the surrounding scope, if there is
-one.  Otherwise, the variable  is  initially  unset.   The shell
-uses  dynamic  scoping, so that if you make the variable x
-local to function f, which then calls function  g,  references  to  the  variable x made inside g will refer to the
-variable x declared inside f, not to the global  variable
+When a variable is made local, it inherits the initial
+value and exported and readonly flags from the variable
+with the same name in the surrounding scope, if there is
+one.  Otherwise, the variable is initially unset.   The shell
+uses dynamic scoping, so that if you make the variable x
+local to function f, which then calls function g, references to the variable x made inside g will refer to the
+variable x declared inside f, not to the global variable
 named x.
 .LP
-The  only  special  parameter  than  can be made local is
-``-''.  Making ``-'' local  any  shell  options  that  are
-changed  via  the  set  command  inside the function to be
-restored to  their  original  values  when  the  function
+The only special parameter than can be made local is
+``-''.  Making ``-'' local any shell options that are
+changed via the set command inside the function to be
+restored to their original values when the function
 returns.
 .LP
 The syntax of the return command is
@@ -673,7 +676,7 @@ or a special character as explained below.
 .LP
 A positional parameter is a parameter denoted by a number (n > 0).
 The shell sets these initially to the values of its command
-line arguements that follow the name of the shell script.
+line arguments that follow the name of the shell script.
 The set(1) builtin can also be used to set or reset them.
 .sp 2
 .B Special Parameters
@@ -697,7 +700,7 @@ parameter expands as a separate argument.
 If there are no positional parameters, the
 expansion of @ generates zero arguments, even when @ is
 double-quoted.  What this basically means, for example, is
-if $1 is ``abc'' and $2 is ``def ghi'', then "$@" expands to 
+if $1 is ``abc'' and $2 is ``def ghi'', then "$@" expands to
 the two arguments:
 
 "abc"   "def ghi"
@@ -708,7 +711,7 @@ Expands to the number of positional parameters.
 ?
 Expands to the exit status of the most recent pipeline.
 .TP
-- (Hyphen) 
+- (Hyphen)
 Expands to the current option flags (the single-letter
 option names concatenated into a string) as specified on
 invocation, by the set builtin command, or implicitly
@@ -724,8 +727,8 @@ command executed from the current shell.  For a
 pipeline, the process ID is that of the last command in the
 pipeline.
 .TP
-0 (Zero.)  
-Expands to the name of the shell or shell script.  
+0 (Zero.)
+Expands to the name of the shell or shell script.
 .LP
 .sp 2
 .B Word Expansions
@@ -756,17 +759,17 @@ generated by step (1) unless the IFS variable is null.
 (4)  Quote Removal.
 .LP
 The $ character is used to introduce parameter expansion, command
-substitution, or arithmetic evaluation.  
+substitution, or arithmetic evaluation.
 .sp 2
-.B Tilde Expansion (substituting a users home directory)
+.B Tilde Expansion (substituting a user's home directory)
 .sp	
 .LP
 A word beginning with an unquoted tilde character (~) is
 subjected to tilde expansion.  All the characters up to
-a slash (/) or the end of the word are treated as a username 
-and are replaced with the users home directory.  If the
+a slash (/) or the end of the word are treated as a username
+and are replaced with the user's home directory.  If the
 username is missing (as in ~/foobar), the tilde is replaced
-with the value of the HOME variable (the current users
+with the value of the HOME variable (the current user's
 home directory).
 
 .sp 2
@@ -795,7 +798,7 @@ The value, if any, of parameter is substituted.
 The parameter name or symbol can be enclosed in braces, which are
 optional except for positional parameters with more than one digit or
 when parameter is followed by a character that could be interpreted as
-part of the name.  
+part of the name.
 If a parameter expansion occurs inside
 double-quotes:
 .LP
@@ -806,16 +809,16 @@ expansion.
 expansion, with the exception of @.
 .LP
 In addition, a parameter expansion can be modified by using one of the
-following formats.  
+following formats.
 .sp
 .TP
-${parameter:-word}  
+${parameter:-word}
 Use Default Values.  If parameter is unset or
 null, the expansion of word is
 substituted; otherwise, the value of
 parameter is substituted.
 .TP
-${parameter:=word}  
+${parameter:=word}
 Assign Default Values.  If parameter is unset
 or null, the expansion of word is
 assigned to parameter.  In all cases, the
@@ -846,7 +849,7 @@ of the colon results in a test for a parameter that is only unset.
 .TP
 ${#parameter}
 String Length.  The length in characters of
-the value of parameter. 
+the value of parameter.
 .LP
 The following four varieties of parameter expansion provide for substring
 processing.  In each case, pattern matching notation (see Shell Patterns), rather
@@ -932,7 +935,7 @@ shell expands all tokens in the expression for parameter expansion,
 command substitution, and quote removal.
 .LP
 Next, the shell treats this as an arithmetic expression and
-substitutes the value of the expression.  
+substitutes the value of the expression.
 
 .sp 2
 .B White Space Splitting (Field Splitting)
@@ -951,13 +954,13 @@ substitution into fields.
 .B Pathname Expansion (File Name Generation)
 .sp
 .LP
-Unless the -f flag is set, file name  generation is  performed  after  word  splitting  is complete.  Each word is
+Unless the -f flag is set, file name generation is performed after word splitting is complete.  Each word is
 viewed as a series of patterns, separated by slashes.  The
-process  of  expansion replaces the word with the names of
-all existing files whose names can be formed by  replacing
-each pattern with a string that matches the specified pattern.  
-There are two restrictions on this:  first, a  pattern cannot match a string containing a slash, and second,
-a pattern cannot match a string  starting  with  a  period
+process of expansion replaces the word with the names of
+all existing files whose names can be formed by replacing
+each pattern with a string that matches the specified pattern.
+There are two restrictions on this: first, a pattern cannot match a string containing a slash, and second,
+a pattern cannot match a string starting with a period
 unless the first character of the pattern is a period.
 The next section describes the patterns used for both
 Pathname Expansion and the case(1) command.
@@ -966,37 +969,37 @@ Pathname Expansion and the case(1) command.
 .B Shell Patterns
 .sp
 .LP
-A pattern consists of normal characters, which match themselves,  and  meta-characters.   The  meta-characters  are
-``!'', ``*'', ``?'', and ``[''.  These   characters  lose
-there  special  meanings if they are quoted.  When command
-or variable substitution is performed and the dollar  sign
-or  back quotes  are  not double quoted, the value of the
+A pattern consists of normal characters, which match themselves, and meta-characters.   The meta-characters are
+``!'', ``*'', ``?'', and ``[''.  These  characters lose
+there special meanings if they are quoted.  When command
+or variable substitution is performed and the dollar sign
+or back quotes are not double quoted, the value of the
 variable or the output of the command is scanned for these
 characters and they are turned into meta-characters.
 .LP
-An asterisk (``*'') matches any string of  characters.   A
-question mark  matches   any  single  character. A  left
-bracket (``['') introduces a character class.  The end  of
-the  character class is indicated by a ``]''; if the ``]''
-is missing then the ``[''  matches  a  ``[''  rather  than
-introducing  a character class.  A character class matches
-any of the characters  between  the  square  brackets.   A
-range  of  characters may be specified using a minus sign.
-The character class  may be  complemented  by  making  an
-exclamation  point  the  first  character of the character
+An asterisk (``*'') matches any string of characters.   A
+question mark matches any single character. A left
+bracket (``['') introduces a character class.  The end of
+the character class is indicated by a ``]''; if the ``]''
+is missing then the ``['' matches a ``['' rather than
+introducing a character class.  A character class matches
+any of the characters between the square brackets.   A
+range of characters may be specified using a minus sign.
+The character class may be complemented by making an
+exclamation point the first character of the character
 class.
 .LP
 To include a ``]'' in a character class, make it the first
-character  listed (after the ``!'', if any).  To include a
+character listed (after the ``!'', if any).  To include a
 minus sign, make it the first or last character listed
 
 .sp 2
 .B Builtins
 .sp
 .LP
-This  section lists the builtin commands which
-are builtin because they need to perform  some   operation
-that  can't  be performed by a separate process. In addition to these, there are several  other  commands that may
+This section lists the builtin commands which
+are builtin because they need to perform some  operation
+that can't be performed by a separate process. In addition to these, there are several other commands that may
 be builtin for efficiency (e.g. printf(1), echo(1), test(1),
 etc).
 .TP
@@ -1009,55 +1012,55 @@ names and values of all defined aliases (see unalias).
 .TP
 bg [ job ] ...
 Continue the specified jobs (or the current job if no
-jobs  are  given) in the background.  
+jobs are given) in the background.
 .TP
 command command arg...
 Execute the specified builtin command.  (This is useful when you have a shell function with the same name
 as a builtin command.)
 .TP
 cd [ directory ]
-Switch to the specified  directory  (default  $HOME).
+Switch to the specified directory (default $HOME).
 If the an entry for CDPATH appears in the environment
 of the cd command or the shell variable CDPATH is set
-and the  directory name does not begin with a slash,
-then  the  directories  listed  in  CDPATH  will   be
-searched  for the specified directory.  The format of
-CDPATH is the same as that of PATH. In  an  interactive shell, the cd command will print out the name of
+and the directory name does not begin with a slash,
+then the directories listed in CDPATH will be
+searched for the specified directory.  The format of
+CDPATH is the same as that of PATH. In an interactive shell, the cd command will print out the name of
 the directory that it actually switched to if this is
-different  from  the  name that the user gave.  These
-may be different either because the CDPATH  mechanism
+different from the name that the user gave.  These
+may be different either because the CDPATH mechanism
 was used or because a symbolic link was crossed.
 .TP
 \&. file
-The commands in the specified file are read and executed by the shell. 
+The commands in the specified file are read and executed by the shell.
 .TP
 eval string...
 Concatenate all the arguments with spaces.  Then
 re-parse and execute the command.
 .TP
 exec [ command arg...  ]
-Unless command  is  omitted,  the  shell  process  is
-replaced  with the specified program (which must be a
+Unless command is omitted, the shell process is
+replaced with the specified program (which must be a
 real program, not a shell builtin or function).   Any
-redirections on the exec command are marked as permanent, so that they are not undone when the exec  command finishes.  
+redirections on the exec command are marked as permanent, so that they are not undone when the exec command finishes.
 .TP
 exit [ exitstatus ]
-Terminate the shell process.  If exitstatus is  given
+Terminate the shell process.  If exitstatus is given
 it is used as the exit status of the shell; otherwise
 the exit status of the preceding command is used.
 .TP
 export name...
-The specified names are exported so that  they  will
-appear  in  the  environment  of subsequent commands.
-The only way to un-export a variable is to unset  it.
-The shell allows  the value of a variable to be set at the
+The specified names are exported so that they will
+appear in the environment of subsequent commands.
+The only way to un-export a variable is to unset it.
+The shell allows the value of a variable to be set at the
 same time it is exported by writing
 .nf
 
     export name=value
 
 .fi
-With no arguments the export command lists the  names
+With no arguments the export command lists the names
 of all exported variables.
 .TP
 fc  [-e editor] [first [last]]
@@ -1069,7 +1072,7 @@ The fc builtin lists, or edits and re-executes, commands
 previously entered to an interactive shell.
 .RS +.5i
 .TP 2
--e editor   
+-e editor
 Use the editor named by editor to edit the commands.  The
 editor string is a command name, subject to search via the
 PATH variable.  The value in the FCEDIT variable
@@ -1092,29 +1095,29 @@ Suppress command numbers when listing with -l.
 Reverse the order of the commands listed (with -l) or
 edited (with neither -l nor -s).
 .TP 2
--s  
+-s
 Re-execute the command without invoking an editor.
 .TP 2
 first
 .TP 2
-last        
+last
 Select the commands to list or edit.  The number of
 previous commands that can be accessed are determined
 by the value of the HISTSIZE variable.  The value of first
 or last or both are one of the following:
 .TP 2
-[+]number   
+[+]number
 A positive number representing a command
 number; command numbers can be displayed
 with the -l option.
 .TP 2
--number     
+-number
 A negative decimal number representing the
 command that was executed number of
 commands previously.  For example, -1 is
 the immediately previous command.
 .TP 2
-string      
+string
 A string indicating the most recently
 entered command that begins with that
 string.  If the old=new operand is not also
@@ -1124,16 +1127,16 @@ equal sign.
 .TP
 The following environment variables affect the execution of fc:
 .TP 2
-FCEDIT           
+FCEDIT
 Name of the editor to use.
 .TP 2
-HISTSIZE       
-The number of previous ocmmands that are accessable.
+HISTSIZE
+The number of previous commands that are accessable.
 .RE
 .TP
 fg [ job ]
-Move  the  specified  job  or  the current job to the
-foreground. 
+Move the specified job or the current job to the
+foreground.
 .TP
 getopts optstring var
 The POSIX getopts command.
@@ -1141,107 +1144,108 @@ The POSIX getopts command.
 hash -rv command...
 The shell maintains a hash table which remembers the
 locations of commands.  With no arguments whatsoever,
-the hash  command   prints  out  the contents of this
-table.  Entries which have not been looked  at  since
-the last  cd command are marked with an asterisk; it
+the hash command  prints out the contents of this
+table.  Entries which have not been looked at since
+the last cd command are marked with an asterisk; it
 is possible for these entries to be invalid.
 .sp
-With arguments, the hash command removes  the  specified  commands  from  the hash table (unless they are
-functions)  and  then  locates  them.   With  the  -v
-option,  hash prints the locations of the commands as
+With arguments, the hash command removes the specified commands from the hash table (unless they are
+functions) and then locates them.   With the -v
+option, hash prints the locations of the commands as
 it finds them.  The -r option causes the hash command
-to  delete  all  the entries in the hash table except
+to delete all the entries in the hash table except
 for functions.
 .TP
 jobid [ job ]
-Print the process id's of the processes in  the  job.
-If  the job argument is omitted, use the current job.
+Print the process id's of the processes in the job.
+If the job argument is omitted, use the current job.
 .TP
 jobs
-This command lists out all the  background  processes
+This command lists out all the background processes
 which are children of the current shell process.
 .TP
 pwd
 Print the current directory.  The builtin command may
-differ  from the program of the same name because the
-builtin command remembers what the current  directory
-is  rather than recomputing it each time.  This makes
-it faster.  However,  if  the  current  directory  is
-renamed,  the builtin version of pwd will continue to
+differ from the program of the same name because the
+builtin command remembers what the current directory
+is rather than recomputing it each time.  This makes
+it faster.  However, if the current directory is
+renamed, the builtin version of pwd will continue to
 print the old name for the directory.
 .TP
 read [ -p prompt ] [ -e ] variable...
-The prompt is printed if the -p option  is  specified
+The prompt is printed if the -p option is specified
 and the standard input is a terminal.  Then a line is
-read from the standard input.  The  trailing  newline
-is  deleted from  the  line and the line is split as
+read from the standard input.  The trailing newline
+is deleted from the line and the line is split as
 described in the section on word splitting above, and
-the pieces  are  assigned to the variables in order.
-If there are more pieces than variables, the  remaining pieces  (along  with  the characters in IFS that
-separated them) are assigned to  the  last  variable.
-If  there are more variables than pieces, the remaining variables are assigned the null string.
+the pieces are assigned to the variables in order.
+If there are more pieces than variables, the remaining pieces (along with the characters in IFS that
+separated them) are assigned to the last variable.
+If there are more variables than pieces, the remaining variables are assigned the null string.
 .sp
-The -e option causes any backslashes in the input  to
-be  treated specially.  If a backslash is followed by
-a newline, the backslash  and  the  newline will  be
-deleted.   If  a  backslash is followed by any other
-character, the backslash will be deleted and the following  character  will  be treated as though it were
+The -e option causes any backslashes in the input to
+be treated specially.  If a backslash is followed by
+a newline, the backslash and the newline will be
+deleted.   If a backslash is followed by any other
+character, the backslash will be deleted and the following character will be treated as though it were
 not in IFS, even if it is.
 .TP
 readonly name...
-The specified names are marked as read only, so  that
-they  cannot  be subsequently modified or unset.  The shell
-allows the value of a variable to be set at the  same
+The specified names are marked as read only, so that
+they cannot be subsequently modified or unset.  The shell
+allows the value of a variable to be set at the same
 time it is marked read only by writing
 .TP
 readonly name=value
-With  no  arguments the  readonly   command lists the
+With no arguments the readonly command lists the
 names of all read only variables.
 .TP
 set [ { -options | +options | -- } ] arg...
 The set command performs three different functions.
 .sp
-With no arguments, it lists the values of  all  shell
+With no arguments, it lists the values of all shell
 variables.
 .sp
-If  options are  given, it sets the specified option
+If options are given, it sets the specified option
 flags, or clears them as described in the section
 called ``Argument List Processing''.
 .sp
 The third use of the set command is to set the values
 of the shell's positional parameters to the specified
-args.   To  change  the positional parameters without
-changing any options, use ``--'' as the  first  argument to set.  If no args are present, the set command
+args.   To change the positional parameters without
+changing any options, use ``--'' as the first argument to set.  If no args are present, the set command
 will clear all the positional parameters (equivalent
 to executing ``shift $#''.
 .TP
 setvar variable value
-Assigns  value to variable. (In general it is better
-to write variable=value  rather  than  using  setvar.
-Setvar  is  intended  to  be  used  in functions that
-assign values to variables whose names are passed  as
+Assigns value to variable. (In general it is better
+to write variable=value rather than using setvar.
+Setvar is intended to be used in functions that
+assign values to variables whose names are passed as
 parameters.)
 .TP
 shift [ n ]
-Shift  the  positional  parameters  n times.  A shift
+Shift the positional parameters n times.  A shift
 sets the value of $1 to the value of $2, the value of
-$2  to  the value   of  $3, and so on, decreasing the
-value of $# by one. If  there  are  zero  positional
+$2 to the value of $3, and so on, decreasing the
+value of $# by one. If there are zero positional
 parameters, shifting doesn't do anything.
 .TP
 trap [ action ] signal...
-Cause  the shell to parse and execute action when any
-of the specified signals are received.   The  signals
-are specified  by signal number.  Action may be null
+Cause the shell to parse and execute action when any
+of the specified signals are received. The signals
+are specified by signal number. Action may be null
 or omitted; the former causes the specified signal to
-be  ignored and the latter causes the default action
-to be taken.  When the shell forks off a subshell, it
-resets  trapped  (but  not  ignored)  signals  to the
-default action.  The trap command has  no  effect  on
+be ignored and the latter causes the default action
+to be taken. When the shell forks off a subshell, it
+resets trapped (but not ignored) signals to the
+default action. The trap command has no effect on
 signals that were ignored on entry to the shell.
 .TP
 umask [ mask ]
-Set the  value of umask (see umask(2)) to the specified octal value.  If the argument  is  omitted,  the
+Set the value of umask (see umask(2)) to the specified octal value.
+If the argument is omitted, the
 umask value is printed.
 .TP
 unalias [-a] [name]
@@ -1249,15 +1253,15 @@ If ``name'' is specified, the shell removes that alias.
 If ``-a'' is specified, all aliases are removed.
 .TP
 unset name...
-The specified  variables and functions are unset and
-unexported. If a given name corresponds  to  both   a
-variable  and  a  function, both the variable and the
+The specified variables and functions are unset and
+unexported. If a given name corresponds to both a
+variable and a function, both the variable and the
 function are unset.
 .TP
 wait [ job ]
 Wait for the specified job to complete and return the
-exit  status  of the last process in the job.  If the
-argument is omitted, wait for all  jobs  to complete
+exit status of the last process in the job. If the
+argument is omitted, wait for all jobs to complete
 and the return an exit status of zero.
 .LP
 .sp 2
@@ -1266,12 +1270,12 @@ and the return an exit status of zero.
 .LP
 When sh is being used interactively from a terminal, the current command
 and the command history (see fc in Builtins) can be edited using vi-mode
-command-line editing.  This mode uses commands, described below, similar
+command-line editing. This mode uses commands, described below, similar
 to a subset of those described in the vi man page.
 The command set -o vi enables vi-mode editing and place sh into vi
 insert mode.
 With vi-mode enabled, sh can be switched between insert mode and command
-mode.  The editor is not described in full here, but will be in a later
-document.  It's similar to vi: typing <ESC> will throw you into
-command VI command mode.  Hitting <return> while in command mode
+mode. The editor is not described in full here, but will be in a later
+document. It's similar to vi: typing <ESC> will throw you into
+command VI command mode. Hitting <return> while in command mode
 will pass the line to the shell.

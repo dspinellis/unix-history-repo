@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)hostname.7	8.1 (Berkeley) %G%
+.\"     @(#)hostname.7	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt HOSTNAME 7
@@ -31,7 +31,7 @@ If the name consists of a single component, i.e. contains no dot,
 and if the environment variable
 .Dq Ev HOSTALIASES
 is set to the name of a file,
-that file is searched for an string matching the input hostname.
+that file is searched for any string matching the input hostname.
 The file should consist of lines made up of two white-space separated strings,
 the first of which is the hostname alias,
 and the second of which is the complete hostname

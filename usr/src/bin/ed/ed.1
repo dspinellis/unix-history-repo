@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.proprietary.man%
 .\"
-.\"	@(#)ed.1	6.8.1.1 (Berkeley) %G%
+.\"	@(#)ed.1	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ED 1
@@ -14,6 +14,7 @@
 .Sh SYNOPSIS
 .Nm \&ed
 .Op Fl
+.Op Fl \&x
 .Op Ar file
 .Sh DESCRIPTION
 .Nm \&Ed
@@ -26,7 +27,7 @@ still resides on systems produced
 by a variety of vendors for good reason.
 Because of its
 small size and simplicity,
-.Nm \&ed,
+.Nm \&ed
 is found on the root partition
 .Pq Pa /bin/ed
 for emergency editing when normal system
@@ -60,6 +61,10 @@ buffer so that it can be edited.
 .Pp
 Available options:
 .Bl -tag -width Ds
+.It Fl \&x
+An
+.Cm \&x
+command is simulated first to handle an encrypted file.
 .It Fl
 Suppresses the printing
 of explanatory output
@@ -186,7 +191,7 @@ matched.
 A regular expression of form 1\-8,
 .Ar \&x ,
 followed by a regular expression of form 1\-7,
-.Ar \&y
+.Ar \&y,
 matches a match for
 .Ar \&x
 followed by a match for
@@ -330,14 +335,14 @@ Commands may require zero, one, or two addresses.
 Commands which require no addresses regard the presence
 of an address as an error.
 Commands which accept one or two addresses
-assume default addresses when insufficient are given.
+assume default addresses when insufficient ones are given.
 If more addresses are given than such a command requires,
 the last one or two (depending on what is accepted) are used.
 .Pp
 Addresses are separated from each other typically by a comma
-.Ql \&,
+.Ql \&, .
 They may also be separated by a semicolon
-.Ql \&;
+.Ql \&; .
 In this case the current line
 .Ql \&.
 is set to
@@ -345,7 +350,7 @@ the previous address before the next address is interpreted.
 This feature can be used to determine the starting
 line for forward and backward searches
 .Pf ( Ql \&/ ,
-.Ql \&? )
+.Ql \&? ).
 The second address of any two-address sequence
 must correspond to a line following the line corresponding to the first address.
 The special form
@@ -464,17 +469,12 @@ command, the first step is to mark every line which matches
 the given regular expression.
 Then for every such line, the
 given command list is executed with
-In the global
-command, the first step is to mark every line which matches
-the given regular expression.
-Then for every such line, the
-given command list is executed with
 .Sq Ad \&.
 initially set to that line.
 A single command or the first of multiple commands
 appears on the same line with the global command.
 All lines of a multi-line list except the last line must be ended with
-.Sq Cm \&\e
+.Sq Cm \&\e .
 .Cm \&A ,
 .Cm \&i ,
 and
@@ -737,7 +737,7 @@ When
 runs out of memory
 (at about 8000 lines on any 16 bit mini-computer
 such as the PDP-11)
-This full undo is not possible, and
+this full undo is not possible, and
 .Cm \&u
 can only undo the effect of the most recent
 substitute on the current line.
@@ -806,6 +806,17 @@ except that afterwards a
 command is done,
 exiting the editor
 after the file is written.
+.Pp
+.It \&x
+A key string is demanded from the standard input.
+Later
+.Cm \&r , \&e
+and
+.Cm \&w
+commands will encrypt and decrypt the text
+with this key by the algorithm of
+.Xr crypt  1  .
+An explicitly empty key turns off encryption.
 .Pp
 .It Xo
 .Po Ad \&.+1
@@ -912,7 +923,7 @@ B. W. Kernighan,
 The
 .Nm \&ed
 command appeared in
-.At 6
+.At v6 .
 .Sh DIAGNOSTICS
 .Sq Li name
 for inaccessible file;
@@ -942,5 +953,12 @@ The
 .Cm \&undo
 command causes marks to be lost on affected lines.
 .br
-The special treatment of hangups only works on
+The
+.Cm \&x
+command,
+.Fl \&x
+option,
+and
+special treatment of hangups
+only work on
 .Ux .

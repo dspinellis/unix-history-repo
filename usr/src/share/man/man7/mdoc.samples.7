@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)mdoc.samples.7	8.1 (Berkeley) %G%
+.\"     @(#)mdoc.samples.7	8.2 (Berkeley) %G%
 .\"
 .\" This tutorial sampler invokes every macro in the package several
 .\" times and is guaranteed to give a worst case performance
@@ -66,7 +66,7 @@ It is hoped the consistency gained
 across the manual set will provide easier
 translation to future documentation tools.
 .Pp
-Through out the
+Throughout the
 .Ux
 manual pages, a manual entry
 is simply referred
@@ -82,80 +82,80 @@ outlined as follows:
 .It
 .Tn "TROFF IDIOSYNCRASIES"
 .Bl -tag -width flag -compact -offset indent
-.It Tn "Macro Usage" .
-.It Tn "Passing Space Characters in an Argument" .
-.It Tn "Trailing Blank Space Characters (a warning)" .
-.It Tn "Escaping Special Characters" .
+.It "Macro Usage" .
+.It "Passing Space Characters in an Argument" .
+.It "Trailing Blank Space Characters (a warning)" .
+.It "Escaping Special Characters" .
 .El
 .It
 .Tn "THE ANATOMY OF A MAN PAGE"
 .Bl -tag -width flag -compact -offset indent
-.It Tn "A manual page template" .
+.It "A manual page template" .
 .El
 .It
 .Tn "INTRODUCTION OF TITLE MACROS" .
 .It
 .Tn "INTRODUCTION OF MANUAL AND GENERAL TEXT DOMAINS" .
 .Bl -tag -width flag -compact -offset indent
-.It Tn "What's in a name..." .
-.It Tn "General Syntax" .
+.It "What's in a name..." .
+.It "General Syntax" .
 .El
 .It
 .Tn "MANUAL DOMAIN"
 .Bl -tag -width flag -compact -offset indent
-.It Tn "Addresses" .
-.It Tn "Arguments" .
-.It Tn "Configuration Declarations (section four only)" .
-.It Tn "Command Modifier .
-.It Tn "Defined Variables" .
-.It Tn "Errno's (Section two only)" .
-.It Tn "Environment Variables" .
-.It Tn "Function Argument" .
-.It Tn "Function Declaration" .
-.It Tn "Flags" .
-.It Tn "Functions (library routines)" .
-.It Tn "Function Types" .
-.\" .It Tn "Header File (including source code)" .
-.It Tn "Interactive Commands" .
-.It Tn "Literals" .
-.It Tn "Names" .
-.It Tn "Options" .
-.It Tn "Pathnames" .
-.It Tn "Variables" .
-.It Tn "Cross References" .
+.It "Addresses" .
+.It "Arguments" .
+.It "Configuration Declarations (section four only)" .
+.It "Command Modifier .
+.It "Defined Variables" .
+.It "Errno's (Section two only)" .
+.It "Environment Variables" .
+.It "Function Argument" .
+.It "Function Declaration" .
+.It "Flags" .
+.It "Functions (library routines)" .
+.It "Function Types" .
+.\" .It "Header File (including source code)" .
+.It "Interactive Commands" .
+.It "Literals" .
+.It "Names" .
+.It "Options" .
+.It "Pathnames" .
+.It "Variables" .
+.It "Cross References" .
 .El
 .It
 .Tn "GENERAL TEXT DOMAIN"
 .Bl -tag -width flag -compact -offset indent
-.It Tn "AT&T Macro" .
-.It Tn "BSD Macro" .
-.It Tn "UNIX Macro" .
-.It Tn "Emphasis Macro" .
-.It Tn "Enclosure/Quoting Macros"
+.It "AT&T Macro" .
+.It "BSD Macro" .
+.It "UNIX Macro" .
+.It "Emphasis Macro" .
+.It "Enclosure/Quoting Macros"
 .Bl -tag -width flag -compact -offset indent
-.It Tn "Angle Bracket Quote/Enclosure" .
-.It Tn "Bracket Quotes/Enclosure" .
-.It Tn "Double Quote macro/Enclosure" .
-.It Tn "Parenthesis Quote/Enclosure" .
-.It Tn "Single Quotes/Enclosure" .
-.It Tn "Prefix Macro" .
+.It "Angle Bracket Quote/Enclosure" .
+.It "Bracket Quotes/Enclosure" .
+.It "Double Quote macro/Enclosure" .
+.It "Parenthesis Quote/Enclosure" .
+.It "Single Quotes/Enclosure" .
+.It "Prefix Macro" .
 .El
-.It Tn "Extended  Arguments" .
-.It Tn "No\-Op or Normal Text Macro" .
-.It Tn "No Space Macro" .
-.It Tn "Section Cross References" .
-.It Tn "Symbolic Macro" .
-.It Tn "References and Citations" .
-.It Tn "Trade Names (Acronyms and Type Names)" .
+.It "Extended  Arguments" .
+.It "No\-Op or Normal Text Macro" .
+.It "No Space Macro" .
+.It "Section Cross References" .
+.It "Symbolic Macro" .
+.It "References and Citations" .
+.It "Trade Names (Acronyms and Type Names)" .
 .El
 .It
 .Tn "PAGE STRUCTURE DOMAIN"
 .Bl -tag -width flag -compact -offset indent
-.It Tn "Section Headers" .
-.It Tn "Paragraphs and Line Spacing" .
-.It Tn "Keeps" .
-.It Tn "Displays" .
-.It Tn "Lists and Columns" .
+.It "Section Headers" .
+.It "Paragraphs and Line Spacing" .
+.It "Keeps" .
+.It "Displays" .
+.It "Lists and Columns" .
 .El
 .It
 .Tn "PREDEFINED STRINGS"
@@ -274,7 +274,7 @@ Macros whose argument lists are parsed for callable arguments
 are referred to
 as parsed and macros which may be called from an argument
 list are referred to as callable
-through out this document and in the companion quick reference
+throughout this document and in the companion quick reference
 manual
 .Xr mdoc 7 .
 This is a technical
@@ -574,7 +574,7 @@ command
 .Nm \-mdoc
 macros and third,
 the
-description a command to a user in the verbal sense;
+description of a command to a user in the verbal sense;
 that is, discussion of a command in the text of a man page.
 .Pp
 In the first case,
@@ -894,7 +894,7 @@ macro is parsed and is callable.
 .Ss Environment Variables
 The
 .Ql \&.Ev
-macro specifies a environment variable.
+macro specifies an environment variable.
 .Pp
 .Dl Usage: .Ev argument ... \*(Pu
 .Bl -tag -width ".Ev PRINTER ) ) ," -compact -offset 14n
@@ -980,7 +980,7 @@ For interactive command flags, which
 are not prepended with a dash, the
 .Ql \&.Cm
 (command modifier)
-macro is identical, but with out the dash.
+macro is identical, but without the dash.
 .Pp
 .Dl Usage: .Fl argument ... \*(Pu
 .Bl -tag -width ".Fl \-s \-t \-v" -compact -offset 14n
@@ -1423,7 +1423,7 @@ The terms quoting and enclosure are used
 interchangeably throughout this document.
 Most of the
 one line enclosure macros end
-end in small letter
+in small letter
 .Ql q
 to give a hint of quoting, but there are a few irregularities.
 For each enclosure macro
@@ -2342,9 +2342,9 @@ These list-types collect arguments specified with the
 .Ql \&.It
 macro and create a label which may be
 .Em inset
-into the forth coming text,
+into the forthcoming text,
 .Em hanged
-from the forth coming text,
+from the forthcoming text,
 .Em overhanged
 from above and not indented or
 .Em tagged .
@@ -2368,7 +2368,7 @@ macros are ignored.
 .It Em Hang
 Hanged labels are a matter of taste.
 .It Em Ohang
-Over hanging labels are nice when space is constrained.
+Overhanging labels are nice when space is constrained.
 .It Em Inset
 Inset labels are useful for controlling blocks of
 paragraphs and are valuable for converting
@@ -2389,7 +2389,7 @@ Here is the source text which produced the above example:
 \&.It Em Hang
 \&Hanged labels are a matter of taste.
 \&.It Em Ohang
-\&Over hanging labels are nice when space is constrained.
+\&Overhanging labels are nice when space is constrained.
 \&.It Em Inset
 \&Inset labels are useful for controlling blocks of
 \&paragraphs and are valuable for converting

@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sed.1	8.1 (Berkeley) %G%
+.\"	@(#)sed.1	8.2 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt SED 1
@@ -231,7 +231,7 @@ can be preceded by white space and can be followed by white space.
 The function can be preceded by white space.
 The terminating
 .Dq }
-must be preceded by a newline an optional white space.
+must be preceded by a newline or optional white space.
 .sp
 .Bl -tag -width "XXXXXX" -compact
 .It [2addr] function-list
@@ -368,7 +368,7 @@ An ampersand
 appearing in the replacement is replaced by the string matching the RE.
 The special meaning of
 .Dq &
-in this context can be suppressed by preceding it by backslash.
+in this context can be suppressed by preceding it by a backslash.
 The string
 .Dq \e# ,
 where
