@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)merge.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)merge.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -283,7 +283,7 @@ setup(list1, list2, n, size, cmp)
 			if (sense > 0)
 				reverse (f1, f2-size);
 			f1 = f2;
-			if (f2 < last || cmp(f2, f2 + size) > 0)
+			if (f2 < last || cmp(f2 - size, f2) > 0)
 				p2 = *EVAL(p2) = f2 - list1 + list2;
 			else
 				p2 = *EVAL(p2) = list2 + n*size;
