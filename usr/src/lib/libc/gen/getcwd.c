@@ -1,4 +1,4 @@
-/*	@(#)getcwd.c	4.2	(Berkeley)	%G%	*/
+/*	@(#)getcwd.c	4.3	(Berkeley)	%G%	*/
 
 /*
  * Getwd
@@ -37,16 +37,17 @@ getwd(np)
 		if ((file = opendir(dotdot)) == NULL)
 			prexit("getwd: cannot open ..\n");
 		fstat(file->dd_fd, &dd);
-		chdir(dotdot);
-		if(d.st_dev == dd.st_dev) {
+		if (chdir(dotdot) < 0)
+			prexit("getwd: cannot chdir to ..\n");
+		if (d.st_dev == dd.st_dev) {
 			if(d.st_ino == dd.st_ino)
 				goto done;
 			do
 				if ((dir = readdir(file)) == NULL)
 					prexit("getwd: read error in ..\n");
 			while (dir->d_ino != d.st_ino);
-		}
-		else do {
+		} else
+			do {
 				if ((dir = readdir(file)) == NULL)
 					prexit("getwd: read error in ..\n");
 				stat(dir->d_name, &dd);
@@ -80,7 +81,7 @@ cat()
 }
 
 prexit(cp)
-char *cp;
+	char *cp;
 {
 	write(2, cp, strlen(cp));
 	exit(1);
