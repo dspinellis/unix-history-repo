@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vnops.c	1.7 (Berkeley) %G%
+ *	@(#)null_vnops.c	7.1 (Berkeley) %G%
  *
  * Ancestors:
  *	@(#)lofs_vnops.c	1.2 (Berkeley) 6/18/92
@@ -93,7 +93,7 @@
  *
  * For example, imagine mounting a null layer with
  * "mount_null /usr/include /dev/layer/null".
- * Chainging directory to /dev/layer/null will assign
+ * Changing directory to /dev/layer/null will assign
  * the root null-node (which was created when the null layer was mounted).
  * Now consider opening "sys".  A vop_lookup would be
  * done on the root null-node.  This operation would bypass through
@@ -127,7 +127,7 @@
  * The first approach is to call the aliasing layer's bypass routine.
  * This method is most suitable when you wish to invoke the operation
  * currently being hanldled on the lower layer.  It has the advantage
- * the the bypass routine already must do argument mapping.
+ * that the bypass routine already must do argument mapping.
  * An example of this is null_getattrs in the null layer.
  *
  * A second approach is to directly invoked vnode operations on
@@ -148,7 +148,7 @@
 #include <sys/namei.h>
 #include <sys/malloc.h>
 #include <sys/buf.h>
-#include <nullfs/null.h>
+#include <miscfs/nullfs/null.h>
 
 
 int null_bug_bypass = 0;   /* for debugging: enables bypass printf'ing */
@@ -180,7 +180,10 @@ int null_bug_bypass = 0;   /* for debugging: enables bypass printf'ing */
  */ 
 int
 null_bypass(ap)
-	struct vop_generic_args *ap;
+	struct vop_generic_args /* {
+		struct vnodeop_desc *a_desc;
+		<other random data follows, presumably>
+	} */ *ap;
 {
 	extern int (**null_vnodeop_p)();  /* not extern, really "forward" */
 	register struct vnode **this_vp_p;
@@ -288,20 +291,27 @@ null_bypass(ap)
  */
 int
 null_getattr(ap)
-	struct vop_getattr_args *ap;
+	struct vop_getattr_args /* {
+		struct vnode *a_vp;
+		struct vattr *a_vap;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
 	int error;
 	if (error = null_bypass(ap))
-		return error;
+		return (error);
 	/* Requires that arguments be restored. */
 	ap->a_vap->va_fsid = ap->a_vp->v_mount->mnt_stat.f_fsid.val[0];
-	return 0;
+	return (0);
 }
 
 
 int
-null_inactive (ap)
-	struct vop_inactive_args *ap;
+null_inactive(ap)
+	struct vop_inactive_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 	/*
 	 * Do nothing (and _don't_ bypass).
@@ -315,12 +325,14 @@ null_inactive (ap)
 	 * like they do in the name lookup cache code.
 	 * That's too much work for now.
 	 */
-	return 0;
+	return (0);
 }
 
 int
-null_reclaim (ap)
-	struct vop_reclaim_args *ap;
+null_reclaim(ap)
+	struct vop_reclaim_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 	struct vnode *vp = ap->a_vp;
 	struct null_node *xp = VTONULL(vp);
@@ -336,17 +348,19 @@ null_reclaim (ap)
 	FREE(vp->v_data, M_TEMP);
 	vp->v_data = NULL;
 	vrele (lowervp);
-	return 0;
+	return (0);
 }
 
 
 int
-null_print (ap)
-	struct vop_print_args *ap;
+null_print(ap)
+	struct vop_print_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 	register struct vnode *vp = ap->a_vp;
 	printf ("\ttag VT_NULLFS, vp=%x, lowervp=%x\n", vp, NULLVPTOLOWERVP(vp));
-	return 0;
+	return (0);
 }
 
 
@@ -356,8 +370,10 @@ null_print (ap)
  * This goes away with a merged VM/buffer cache.
  */
 int
-null_strategy (ap)
-	struct vop_strategy_args *ap;
+null_strategy(ap)
+	struct vop_strategy_args /* {
+		struct buf *a_bp;
+	} */ *ap;
 {
 	struct buf *bp = ap->a_bp;
 	int error;
@@ -370,7 +386,7 @@ null_strategy (ap)
 
 	bp->b_vp = savedvp;
 
-	return error;
+	return (error);
 }
 
 
@@ -380,8 +396,10 @@ null_strategy (ap)
  * This goes away with a merged VM/buffer cache.
  */
 int
-null_bwrite (ap)
-	struct vop_bwrite_args *ap;
+null_bwrite(ap)
+	struct vop_bwrite_args /* {
+		struct buf *a_bp;
+	} */ *ap;
 {
 	struct buf *bp = ap->a_bp;
 	int error;
@@ -394,9 +412,8 @@ null_bwrite (ap)
 
 	bp->b_vp = savedvp;
 
-	return error;
+	return (error);
 }
-
 
 /*
  * Global vfs data structures
