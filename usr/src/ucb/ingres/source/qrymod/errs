@@ -1,0 +1,33 @@
+cc -O -I../h -c d_integ.c
+cc -O -I../h -c d_prot.c
+cc -O -I../h -c d_view.c
+cc -O -I../h -c puttree.c
+cc -O -I../h -c qrymod.c
+/usr/include/sys/param.h: 71: NULL redefined
+cc -O -I../h -c integrity.c
+cc -O -I../h -c protect.c
+cc -O -I../h -c view.c
+cc -O -I../h -c trscan.c
+cc -O -I../h -c issue.c
+cc -O -I../h -c norml.c
+cc -O -I../h -c tree.c
+cc -O -I../h -c util.c
+ar rvu qrymodlib d_integ.o d_prot.o d_view.o puttree.o qrymod.o integrity.o protect.o view.o trscan.o issue.o norml.o tree.o util.o
+ar: creating qrymodlib
+a - d_integ.o
+a - d_prot.o
+a - d_view.o
+a - puttree.o
+a - qrymod.o
+a - integrity.o
+a - protect.o
+a - view.o
+a - trscan.o
+a - issue.o
+a - norml.o
+a - tree.o
+a - util.o
+chmod 664 qrymodlib
+ranlib qrymodlib
+cp qrymodlib ../../lib/qrymod
+ranlib ../../lib/qrymod
