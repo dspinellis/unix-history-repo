@@ -1,5 +1,5 @@
 /*
- * "@(#)dump.h	1.2 (Berkeley) %G%"
+ * "@(#)dump.h	1.3 (Berkeley) %G%"
  */
 #define	NI	16
 #define	DIRPB	(BSIZE/sizeof(struct direct))
@@ -11,11 +11,11 @@
 #include "../../h/fs.h"
 #include "../../h/inode.h"
 #include "../../h/dir.h"
+#include "../../h/dumprestor.h"
 #include <utmp.h>
 #include <time.h>
 #include <signal.h>
 int (*signal())();
-#include <dumprestor.h>
 #include <fstab.h>
 
 #define	MWORD(m,i)	(m[(unsigned)(i-1)/MLEN])
