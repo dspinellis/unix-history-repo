@@ -1,4 +1,4 @@
-/*	locore.s	6.2	83/08/12	*/
+/*	locore.s	6.3	83/08/12	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -16,6 +16,7 @@
 #include "dh.h"
 #include "dz.h"
 #include "uu.h"
+#include "ps.h"
 #include "mba.h"
 
 	.set	HIGH,0x1f	# mask for total disable
