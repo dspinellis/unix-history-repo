@@ -7,7 +7,7 @@
 **  All rights reserved.  The Berkeley software License Agreement
 **  specifies the terms and conditions for redistribution.
 **
-**	@(#)sendmail.h	5.5 (Berkeley) %G%
+**	@(#)sendmail.h	5.6 (Berkeley) %G%
 */
 
 /*
@@ -19,7 +19,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.5		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.6		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -445,7 +445,6 @@ EXTERN time_t	ReadTimeout;	/* timeout on reads */
 EXTERN int	LogLevel;	/* level of logging to perform */
 EXTERN int	FileMode;	/* mode on files */
 EXTERN time_t	QueueIntvl;	/* intervals between running the queue */
-EXTERN char	*HostName;	/* name of this host for SMTP messages */
 EXTERN char	*AliasFile;	/* location of alias file */
 EXTERN char	*HelpFile;	/* location of SMTP help file */
 EXTERN char	*StatFile;	/* location of statistics summary */
