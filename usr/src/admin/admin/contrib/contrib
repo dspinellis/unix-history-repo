@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.44 (Berkeley) %G%
+.\"	@(#)contrib	5.45 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -309,6 +309,7 @@ slip(8)	Rick Adams
 spms(1)	Peter J. Nicklin
 strtod(3)	David M. Gay
 swab(3)	Jeffrey Mogul
+sysconf(3)	Sean Eric Fagan
 sysline(1)	J.K. Foderaro
 syslog(3)	Eric Allman
 systat(1)	Bill Reeves
