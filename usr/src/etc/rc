@@ -1,4 +1,4 @@
-#	@(#)rc	5.33 (Berkeley) %G%
+#	@(#)rc	8.1 (Berkeley) %G%
 
 # System startup script run by init on autoboot
 # or after single-user.
