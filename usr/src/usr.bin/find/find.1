@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)find.1	6.4 (Berkeley) %G%
+.\"	@(#)find.1	6.5 (Berkeley) %G%
 .\"
 .TH FIND 1 ""
 .AT 3
@@ -11,12 +11,8 @@ find \- find files
 .SH SYNOPSIS
 .B find
 pathname-list expression
-.br 
-.B find
-pattern
 .SH DESCRIPTION
-In the first form above,
-.I find
+.I Find
 recursively descends
 the directory hierarchy for
 each pathname in the
@@ -40,26 +36,6 @@ and
 means exactly
 .IR n .
 .PP
-The second form rapidly searches a database for all pathnames
-which match
-.IR pattern .
-Usually the database is recomputed
-weekly and contains the pathnames
-of all files which are publicly accessible.
-If escaped, normal shell
-\*(lqglobbing\*(rq characters (`*', `?', `[', and ']')
-may be used in
-.IR pattern ,
-but the matching differs in that no characters
-.RI ( e.g. " `/')"
-have to be matched explicitly.
-As a special case, a simple
-.I pattern
-containing no globbing characters
-is matched as though it were
-.IR *pattern* ;
-if any globbing character appears
-there are no implicit globbing characters.
 .TP 10n
 .BR \-name " filename"
 True if the
@@ -238,11 +214,6 @@ Alternation of primaries
 .I or
 operator).
 .SH EXAMPLES
-.PP
-To find all accessible files whose pathname contains `find':
-.IP
-find find
-.PP
 To typeset all variants of manual pages for `ls':
 .IP 
 vtroff -man `find '*man*/ls.?'`
@@ -253,19 +224,13 @@ To remove all files named
 find / \e( \-name a.out \-o \-name '*.o' \e) \-atime +7 \-exec rm {} \e\;
 .SH FILES
 .nf
-.ta \w'/usr/lib/find/find.codes     'u
+.ta \w'/etc/passwd     'u
 /etc/passwd
 /etc/group
-/usr/lib/find/find.codes	coded pathnames database
 .fi
 .SH "SEE ALSO"
 sh(1), test(1), fs(5)
-.br
-Relevant paper in February, 1983 issue of
-.I ;login:.
 .SH BUGS
-The first form's syntax is painful, and
-the second form's exact semantics is confusing and
-can vary from site to site.
+The syntax is painful.
 .PP
 More than one `-newer' option does not work properly.

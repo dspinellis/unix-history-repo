@@ -1,12 +1,12 @@
 #ifndef	lint
-static char *sccsid = "@(#)find.c	4.23 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.24 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
 #include <stdio.h>
-#include "pathnames.h"
+#include <paths.h>
 
 #define A_DAY	86400L /* a day full of seconds */
 #define EQ(x, y)	(strcmp(x, y)==0)
@@ -52,27 +52,6 @@ long	Blocks;
 char *rindex();
 char *sbrk();
 
-/*
- * SEE ALSO:	code.c, updatedb, bigram.c
- *		Usenix ;login:, Vol 8, No 1, February/March, 1983, p. 8.
- *
- * REVISIONS: 	James A. Woods, Informatics General Corporation,
- *		NASA Ames Research Center, 6/81.
- *
- *		The second form searches a pre-computed filelist
- *		(constructed nightly by /usr/lib/crontab) which is
- *		compressed by updatedb (v.i.z.)  The effect of
- *			find <name>
- *		is similar to
- *			find / +0 -name "*<name>*" -print
- *		but much faster.
- *
- *		8/82 faster yet + incorporation of bigram coding -- jaw
- *
- *		1/83 incorporate glob-style matching -- jaw
- */
-#define	AMES	1
-
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -84,17 +63,11 @@ main(argc, argv)
 	FILE *pwd, *popen();
 #endif
 
-#ifdef  AMES
-	if (argc < 2) {
+	if (argc < 3) {
 		fprintf(stderr,
-			"Usage: find name, or find path-list predicate-list\n");
+			"usage: find path-list predicate-list\n");
 		exit(1);
 	}
-	if (argc == 2) {
-		fastfind(argv[1]);
-		exit(0);
-	}
-#endif
 	time(&Now);
 	setpassent(1);
 	setgroupent(1);
@@ -807,137 +780,6 @@ again:
 	}
 	return f;
 }
-
-#ifdef	AMES
-/*
- * 'fastfind' scans a file list for the full pathname of a file
- * given only a piece of the name.  The list has been processed with
- * with "front-compression" and bigram coding.  Front compression reduces
- * space by a factor of 4-5, bigram coding by a further 20-25%.
- * The codes are:
- *
- *	0-28	likeliest differential counts + offset to make nonnegative 
- *	30	switch code for out-of-range count to follow in next word
- *	128-255 bigram codes (128 most common, as determined by 'updatedb')
- *	32-127  single character (printable) ascii residue (ie, literal)
- *
- * A novel two-tiered string search technique is employed: 
- *
- * First, a metacharacter-free subpattern and partial pathname is
- * matched BACKWARDS to avoid full expansion of the pathname list.
- * The time savings is 40-50% over forward matching, which cannot efficiently
- * handle overlapped search patterns and compressed path residue.
- *
- * Then, the actual shell glob-style regular expression (if in this form)
- * is matched against the candidate pathnames using the slower routines
- * provided in the standard 'find'.
- */
-
-#include "find.h"
-
-#define	YES	1
-#define	NO	0
-
-fastfind ( pathpart )	
-	char pathpart[];
-{
-	register char *p, *s;
-	register int c; 
-	char *q, *index(), *patprep();
-	int count = 0, found = NO, globflag;
-	FILE *fp, *fopen();
-	char *patend, *cutoff;
-	char path[MAXPATHLEN];
-	char bigram1[NBG], bigram2[NBG];
-
-	if ( (fp = fopen ( _PATH_FCODES, "r" )) == NULL ) {
-		perror( _PATH_FCODES );
-		exit ( 1 );
-	}
-	for ( c = 0, p = bigram1, s = bigram2; c < NBG; c++ ) 
-		p[c] = getc ( fp ),  s[c] = getc ( fp );
-
-	p = pathpart;
-	globflag = index ( p, '*' ) || index ( p, '?' ) || index ( p, '[' );
-	patend = patprep ( p );
-
-	for ( c = getc ( fp ); c != EOF; ) {
-
-		count += ( (c == SWITCH) ? getw ( fp ) : c ) - OFFSET;
-
-		for ( p = path + count; (c = getc ( fp )) > SWITCH; )	/* overlay old path */
-			if ( c < PARITY )	
-				*p++ = c;
-			else {			/* bigrams are parity-marked */
-				c &= PARITY-1;
-				*p++ = bigram1[c], *p++ = bigram2[c];
-			}
-		*p-- = NULL;
-		cutoff = ( found ? path : path + count );
-
-		for ( found = NO, s = p; s >= cutoff; s-- ) 
-			if ( *s == *patend ) {		/* fast first char check */
-				for ( p = patend - 1, q = s - 1; *p != NULL; p--, q-- )
-					if ( *q != *p )
-						break;
-				if ( *p == NULL ) {	/* success on fast match */
-					found = YES;
-					if ( globflag == NO || amatch ( path, pathpart ) )
-						puts ( path );
-					break;
-				}
-			}
-	}
-}
-
-/*
-    extract last glob-free subpattern in name for fast pre-match;
-    prepend '\0' for backwards match; return end of new pattern
-*/
-static char globfree[100];
-
-char *
-patprep ( name )
-	char *name;
-{
-	register char *p, *endmark;
-	register char *subp = globfree;
-
-	*subp++ = '\0';
-	p = name + strlen ( name ) - 1;
-	/*
-	   skip trailing metacharacters (and [] ranges)
-	*/
-	for ( ; p >= name; p-- )
-		if ( index ( "*?", *p ) == 0 )
-			break;
-	if ( p < name )
-		p = name;
-	if ( *p == ']' )
-		for ( p--; p >= name; p-- )
-			if ( *p == '[' ) {
-				p--;
-				break;
-			}
-	if ( p < name )
-		p = name;
-	/*
-	   if pattern has only metacharacters,
-	   check every path (force '/' search)
-	*/
-	if ( (p == name) && index ( "?*[]", *p ) != 0 )
-		*subp++ = '/';					
-	else {				
-		for ( endmark = p; p >= name; p-- )
-			if ( index ( "]*?", *p ) != 0 )
-				break;
-		for ( ++p; (p <= endmark) && subp < (globfree + sizeof ( globfree )); )
-			*subp++ = *p++;
-	}
-	*subp = '\0';
-	return ( --subp );
-}
-#endif
 
 /* rest should be done with nameserver or database */
 

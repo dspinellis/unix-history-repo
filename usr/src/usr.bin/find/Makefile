@@ -14,21 +14,21 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.8 (Berkeley) %G%
+#	@(#)Makefile	4.9 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/usr/lib/libc.a
-SRCS=	find.c bigram.c code.c
-OBJS=	find.o bigram.o code.o
+SRCS=	find.c
+OBJS=
 MAN=	find.0
 
-all: find bigram code
+all: find
 
-bigram code find: ${LIBC}
+find: ${LIBC}
 	${CC} ${CFLAGS} -o $@ $@.c
 
 clean:
-	rm -f ${OBJS} core find bigram code
+	rm -f ${OBJS} core find
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
@@ -38,19 +38,10 @@ depend: ${SRCS}
 
 install: ${MAN}
 	install -s -o bin -g bin -m 755 find ${DESTDIR}/usr/bin
-	install -s -o bin -g bin -m 755 code ${DESTDIR}/usr/libexec/find.code
-	install -s -o bin -g bin -m 755 bigram ${DESTDIR}/usr/libexec/find.bigram
-	install -c -o bin -g bin -m 755 updatedb.csh \
-	    ${DESTDIR}/usr/libexec/find.updatedb
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 lint: ${SRCS}
 	lint ${CFLAGS} find.c
-	lint ${CFLAGS} bigram.c
-	lint ${CFLAGS} code.c
 
 tags: ${SRCS}
 	ctags find.c
-	ctags -a bigram.c
-	ctags -a code.c
-	sort -o tags tags
