@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -434,10 +434,10 @@ prompt()
 putf(cp)
 	register char *cp;
 {
-	char *ttyn, *slash;
+	char *slash;
 	char datebuffer[60];
 	extern char editedhost[];
-	extern char *ttyname(), *rindex();
+	extern char *rindex();
 
 	while (*cp) {
 		if (*cp != '%') {
@@ -447,7 +447,6 @@ putf(cp)
 		switch (*++cp) {
 
 		case 't':
-			ttyn = ttyname(0);
 			slash = rindex(ttyn, '/');
 			if (slash == (char *) 0)
 				puts(ttyn);
