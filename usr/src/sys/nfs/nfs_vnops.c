@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	8.14 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	8.15 (Berkeley) %G%
  */
 
 
@@ -696,6 +696,7 @@ nfs_lookup(ap)
 	register struct vnode *dvp = ap->a_dvp;
 	register struct vnode **vpp = ap->a_vpp;
 	register int flags = cnp->cn_flags;
+	register struct proc *p = cnp->cn_proc;
 	register struct vnode *newvp;
 	register u_long *tl;
 	register caddr_t cp;
@@ -730,7 +731,7 @@ nfs_lookup(ap)
 			VREF(newvp);
 			error = 0;
 		} else
-			error = vget(newvp, 1);
+			error = vget(newvp, LK_EXCLUSIVE, p);
 		if (!error) {
 			if (vpid == newvp->v_id) {
 			   if (!VOP_GETATTR(newvp, &vattr, cnp->cn_cred, cnp->cn_proc)

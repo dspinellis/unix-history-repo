@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	8.7 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	8.8 (Berkeley) %G%
  */
 
 
@@ -1022,7 +1022,7 @@ nqnfs_clientd(nmp, cred, ncd, flag, argp, p)
 			vp = NFSTOV(np);
 			vpid = vp->v_id;
 			if (np->n_expiry < time.tv_sec) {
-			   if (vget(vp, 1) == 0) {
+			   if (vget(vp, LK_EXCLUSIVE, p) == 0) {
 			     nmp->nm_inprog = vp;
 			     if (vpid == vp->v_id) {
 				CIRCLEQ_REMOVE(&nmp->nm_timerhead, np, n_timer);
@@ -1047,7 +1047,7 @@ nqnfs_clientd(nmp, cred, ncd, flag, argp, p)
 			} else if ((np->n_expiry - NQ_RENEWAL) < time.tv_sec) {
 			    if ((np->n_flag & (NQNFSWRITE | NQNFSNONCACHE))
 				 == NQNFSWRITE && vp->v_dirtyblkhd.lh_first &&
-				 vget(vp, 1) == 0) {
+				 vget(vp, LK_EXCLUSIVE, p) == 0) {
 				 nmp->nm_inprog = vp;
 				 if (vpid == vp->v_id &&
 				     nqnfs_getlease(vp, ND_WRITE, cred, p)==0)

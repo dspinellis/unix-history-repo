@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	8.10 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	8.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -770,7 +770,7 @@ loop:
 			goto loop;
 		if (VOP_ISLOCKED(vp) || vp->v_dirtyblkhd.lh_first == NULL)
 			continue;
-		if (vget(vp, 1))
+		if (vget(vp, LK_EXCLUSIVE, p))
 			goto loop;
 		error = VOP_FSYNC(vp, cred, waitfor, p);
 		if (error)
