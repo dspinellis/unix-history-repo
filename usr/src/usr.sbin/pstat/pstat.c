@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -22,34 +22,27 @@ static char sccsid[] = "@(#)pstat.c	5.38 (Berkeley) %G%";
 #include <sys/vnode.h>
 #include <sys/map.h>
 #define KERNEL
-#define NFS
 #include <sys/file.h>
-#include <sys/mount.h>
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
+#undef KERNEL
+#define NFS
+#include <sys/mount.h>
+#undef NFS
 #include <sys/stat.h>
-#include <nfs/nfsv2.h>
-#include <nfs/nfs.h>
 #include <nfs/nfsnode.h>
+/* #include <nfs/nfsv2.h> */
+/* #include <nfs/nfs.h> */
 #include <sys/ioctl.h>
 #include <sys/tty.h>
-#undef KERNEL
 #include <sys/conf.h>
 
-#ifdef SPPWAIT
-#define NEWVM
-#endif
-
-#ifndef NEWVM
-#include <sys/vm.h>
-#include <machine/pte.h>
-#include <sys/text.h>
-#endif
-#include <sys/kinfo.h>
+#include <sys/sysctl.h>
 
 #include <nlist.h>
 #include <kvm.h>
 #include <stdio.h>
+#include <limits.h>
 #include "pathnames.h"
 
 #define mask(x)		(x&0377)
@@ -153,8 +146,9 @@ int	allflg;
 int	nflg;
 u_long	getword();
 off_t	mkphys();
+kvm_t	*kd;
 
-#define V(x)	(void *)(x)
+#define V(x)	(u_long)(x)
 
 main(argc, argv)
 	int argc;
@@ -163,6 +157,7 @@ main(argc, argv)
 	extern char *optarg;
 	extern int optind;
 	int ch, ret;
+	char buf[_POSIX2_LINE_MAX];
 
 	while ((ch = getopt(argc, argv, "TafvikptU:sxnu")) != EOF)
 		switch (ch) {
@@ -203,8 +198,7 @@ main(argc, argv)
 			exit(1);
 		case '?':
 		default:
-			fprintf(stderr, "usage: pstat -[Tafiptsx] [-U [pid]] [system] [core]\n");
-			exit(1);
+			usage();
 		}
 	argc -= optind;
 	argv += optind;
@@ -221,15 +215,15 @@ main(argc, argv)
 	if (nlistf != NULL || memf != NULL)
 		setgid(getgid());
 
-	if (kvm_openfiles(nlistf, memf, NULL) == -1) {
-		error("kvm_openfiles: %s", kvm_geterr());
+	if ((kd = kvm_openfiles(nlistf, memf, NULL, O_RDONLY, buf)) == 0) {
+		error("kvm_openfiles: %s", buf);
 		exit(1);
 	}
-	if ((ret = kvm_nlist(nl)) != 0) {
+	if ((ret = kvm_nlist(kd, nl)) != 0) {
 		int i, quit = 0;
 
 		if (ret == -1) {
-			error("kvm_nlist: %s", kvm_geterr());
+			error("kvm_nlist: %s", kvm_geterr(kd));
 			exit(1);
 		}
 		for (i = 0; i <= NLMANDATORY; i++) {
@@ -242,10 +236,8 @@ main(argc, argv)
 		if (quit)
 			exit(1);
 	}
-	if (!(filf | totflg | vnof | prcf | txtf | ttyf | usrf | swpf)) {
-		printf("pstat: one or more of -[aivxptfsU] is required\n");
-		exit(1);
-	}
+	if (!(filf | totflg | vnof | prcf | txtf | ttyf | usrf | swpf))
+		usage();
 	if (filf||totflg)
 		dofile();
 	if (vnof||totflg)
@@ -260,6 +252,14 @@ main(argc, argv)
 		dousr();
 	if (swpf||totflg)
 		doswap();
+}
+
+usage()
+{
+
+	fprintf(stderr,
+	    "usage: pstat -[Tafiptsx] [-U [pid]] [system] [core]\n");
+	exit(1);
 }
 
 struct e_vnode {
@@ -405,13 +405,18 @@ ufs_header()
 ufs_print(vp) 
 	struct vnode *vp;
 {
-	struct inode *ip = VTOI(vp);
+	struct inode inode, *ip = &inode;
 	char flagbuf[16], *flags = flagbuf;
 	register flag;
 	char *name;
 	mode_t type;
 	extern char *devname();
 
+	if (kvm_read(kd, V(VTOI(vp)), &inode, sizeof(struct inode)) != 
+	    sizeof(struct inode)) {
+		error("can't read inode for %x", vp);
+		return;
+	}
 	flag = ip->i_flag;
 	if (flag & ILOCKED)
 		*flags++ = 'L';
@@ -446,7 +451,7 @@ ufs_print(vp)
 		else
 			printf(" %7s", name);
 	else
-		printf(" %7d", ip->i_size);
+		printf(" %7qd", ip->i_size);
 }
 
 nfs_header() 
@@ -457,22 +462,33 @@ nfs_header()
 nfs_print(vp) 
 	struct vnode *vp;
 {
-	struct nfsnode *np = VTONFS(vp);
+	struct nfsnode nfsnode, *np = &nfsnode;
 	char flagbuf[16], *flags = flagbuf;
 	register flag;
 	char *name;
 	mode_t type;
 	extern char *devname();
 
+	if (kvm_read(kd, V(VTONFS(vp)), &nfsnode, sizeof(struct nfsnode)) != 
+	    sizeof(struct nfsnode)) {
+		error("can't read nfsnode for %x", vp);
+		return;
+	}
 	flag = np->n_flag;
-	if (flag & NLOCKED)
-		*flags++ = 'L';
-	if (flag & NWANT)
+	if (flag & NFLUSHWANT)
 		*flags++ = 'W';
+	if (flag & NFLUSHINPROG)
+		*flags++ = 'P';
 	if (flag & NMODIFIED)
 		*flags++ = 'M';
 	if (flag & NWRITEERR)
 		*flags++ = 'E';
+	if (flag & NQNFSNONCACHE)
+		*flags++ = 'X';
+	if (flag & NQNFSWRITE)
+		*flags++ = 'O';
+	if (flag & NQNFSEVICTED)
+		*flags++ = 'G';
 	if (flag == 0)
 		*flags++ = '-';
 	*flags = '\0';
@@ -487,7 +503,7 @@ nfs_print(vp)
 		else
 			printf(" %7s", name);
 	else
-		printf(" %7d", np->n_size);
+		printf(" %7qd", np->n_size);
 }
 	
 /*
@@ -512,7 +528,7 @@ getmnt(maddr)
 		error("out of memory");
 		exit(1);
 	}
-	if (kvm_read(V(maddr), &mt->mount, sizeof(struct mount)) != 
+	if (kvm_read(kd, V(maddr), &mt->mount, sizeof(struct mount)) != 
 	    sizeof(struct mount)) {
 		error("can't read mount table at %x", maddr);
 		return (NULL);
@@ -642,7 +658,8 @@ struct e_vnode *
 loadvnodes(avnodes)
 	int *avnodes;
 {
-	int ret, copysize;
+	int mib[2];
+	size_t copysize;
 	struct e_vnode *vnodebase;
 	struct e_vnode *kinfo_vnodes();
 
@@ -652,18 +669,17 @@ loadvnodes(avnodes)
 		 */
 		return (kinfo_vnodes(avnodes));
 	}
-	if ((ret = getkerninfo(KINFO_VNODE, NULL, NULL, 0)) == -1) {
-		syserror("can't get estimate for kerninfo");
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_VNODE;
+	if (sysctl(mib, 2, NULL, &copysize, NULL, 0) == -1) {
+		syserror("can't get estimate from sysctl");
 		exit(1);
 	}
-	copysize = ret;
-	if ((vnodebase = (struct e_vnode *)malloc(copysize)) 
-	     == NULL) {
+	if ((vnodebase = (struct e_vnode *)malloc(copysize)) == NULL) {
 		error("out of memory");
 		exit(1);
 	}
-	if ((ret = getkerninfo(KINFO_VNODE, vnodebase, &copysize, 0)) 
-	     == -1) {
+	if (sysctl(mib, 2, vnodebase, &copysize, NULL, 0) == -1) {
 		syserror("can't get vnode list");
 		exit(1);
 	}
@@ -700,8 +716,8 @@ kinfo_vnodes(avnodes)
 #define VNODESZ sizeof (struct vnode)
 #define NVAL(indx)	vnl[(indx)].n_value
 
-	if (kvm_nlist(vnl) != 0) {
-		error("nlist vnl: %s", kvm_geterr());
+	if (kvm_nlist(kd, vnl) != 0) {
+		error("nlist vnl: %s", kvm_geterr(kd));
 		exit(1);
 	}
 	numvnodes = getword(NVAL(V_NUMV));
@@ -714,9 +730,9 @@ kinfo_vnodes(avnodes)
 	evbuf = vbuf + (numvnodes + 20) * (VPTRSZ + VNODESZ);
 	mp = rootfs = (struct mount *)getword(NVAL(V_ROOTFS));
 	do {
-		kvm_read(mp, &mount, sizeof(mount));
+		kvm_read(kd, V(mp), &mount, sizeof(mount));
 		for (vp = mount.mnt_mounth; vp; vp = vnode.v_mountf) {
-			kvm_read(vp, &vnode, sizeof (vnode));
+			kvm_read(kd, V(vp), &vnode, sizeof (vnode));
 			if ((bp + VPTRSZ + VNODESZ) > evbuf) {
 				/* XXX - should realloc */
 				fprintf(stderr, "pstat: ran out of room for vnodes\n");
@@ -741,7 +757,7 @@ getword(loc)
 {
 	u_long word;
 
-	kvm_read(V(loc), &word, sizeof (word));
+	kvm_read(kd, V(loc), &word, sizeof (word));
 	return (word);
 }
 
@@ -755,65 +771,8 @@ putf(v, n)
 
 dotext()
 {
-#ifdef NEWVM
-	printf("no text table in this system\n");
-#else
-	register struct text *xp;
-	int ntext;
-	struct text *xtext, *atext;
-	int ntx, ntxca;
 
-	ntx = ntxca = 0;
-	ntext = getword(nl[SNTEXT].n_value);
-	xtext = (struct text *)calloc(ntext, sizeof (struct text));
-	atext = (struct text *)getword(nl[STEXT].n_value);
-	if (ntext < 0 || ntext > 10000) {
-		fprintf(stderr, "number of texts is preposterous (%d)\n",
-			ntext);
-		return;
-	}
-	if (xtext == NULL) {
-		fprintf(stderr, "can't allocate memory for text table\n");
-		return;
-	}
-	kvm_read(atext, xtext, ntext * sizeof (struct text));
-	for (xp = xtext; xp < &xtext[ntext]; xp++) {
-		if (xp->x_vptr != NULL)
-			ntxca++;
-		if (xp->x_count != 0)
-			ntx++;
-	}
-	if (totflg) {
-		printf("%3d/%3d texts active, %3d used\n", ntx, ntext, ntxca);
-		return;
-	}
-	printf("%d/%d active texts, %d used\n", ntx, ntext, ntxca);
-	printf("\
-   LOC   FLAGS DADDR     CADDR  RSS SIZE     VPTR   CNT CCNT      FORW     BACK\n");
-	for (xp = xtext; xp < &xtext[ntext]; xp++) {
-		if (xp->x_vptr == NULL)
-			continue;
-		printf("%8.1x", atext + (xp - xtext));
-		printf(" ");
-		putf(xp->x_flag&XPAGV, 'P');
-		putf(xp->x_flag&XTRC, 'T');
-		putf(xp->x_flag&XWRIT, 'W');
-		putf(xp->x_flag&XLOAD, 'L');
-		putf(xp->x_flag&XLOCK, 'K');
-		putf(xp->x_flag&XWANT, 'w');
-		printf("%5x", xp->x_daddr[0]);
-		printf("%10x", xp->x_caddr);
-		printf("%5d", xp->x_rssize);
-		printf("%5d", xp->x_size);
-		printf("%10.1x", xp->x_vptr);
-		printf("%5d", xp->x_count&0377);
-		printf("%5d", xp->x_ccount);
-		printf("%10x", xp->x_forw);
-		printf("%9x", xp->x_back);
-		printf("\n");
-	}
-	free(xtext);
-#endif
+	printf("no text table in this system\n");
 }
 
 doproc()
@@ -835,7 +794,7 @@ dotty()
 	}
 #ifndef hp300
 	printf("1 cons\n");
-	kvm_read(V(nl[SCONS].n_value), tty, sizeof(*tty));
+	kvm_read(kd, V(nl[SCONS].n_value), tty, sizeof(*tty));
 	printf(mesg);
 	ttyprt(&tty[0], 0);
 #endif
@@ -883,9 +842,9 @@ doqdss()
 	int nqd;
 	register struct tty *tp;
 
-	kvm_read(V(nl[SNQD].n_value), &nqd, sizeof(nqd));
+	kvm_read(kd, V(nl[SNQD].n_value), &nqd, sizeof(nqd));
 	printf("%d qd\n", nqd);
-	kvm_read(V(nl[SQD].n_value), tty, nqd * sizeof(struct tty) * 4);
+	kvm_read(kd, V(nl[SQD].n_value), tty, nqd * sizeof(struct tty) * 4);
 	printf(mesg);
 	for (tp = tty; tp < &tty[nqd * 4]; tp += 4)
 		ttyprt(tp, tp - tty);
@@ -901,7 +860,7 @@ char *name;
 
 	if (tty == (struct tty *)0) 
 		return;
-	kvm_read(V(nl[number].n_value), &ntty, sizeof(ntty));
+	kvm_read(kd, V(nl[number].n_value), &ntty, sizeof(ntty));
 	printf("%d %s %s\n", ntty, name, (ntty == 1) ? "line" :
 	    "lines");
 	if (ntty > ttyspace) {
@@ -911,7 +870,7 @@ char *name;
 			return;
 		}
 	}
-	kvm_read(V(nl[type].n_value), tty, ntty * sizeof(struct tty));
+	kvm_read(kd, V(nl[type].n_value), tty, ntty * sizeof(struct tty));
 	printf(mesg);
 	for (tp = tty; tp < &tty[ntty]; tp++)
 		ttyprt(tp, tp - tty);
@@ -931,8 +890,6 @@ struct {
 	TS_XCLUDE,	'X',
 	TS_TTSTOP,	'S',
 	TS_TBLOCK,	'K',
-	TS_RCOLL,	'R',
-	TS_WCOLL,	'I',	/* running short on letters ! */
 	TS_ASYNC,	'Y',
 	TS_BKSL,	'D',
 	TS_ERASE,	'E',
@@ -968,7 +925,7 @@ struct tty *atp;
 		state[j++] = '-';
 	state[j] = '\0';
 	printf("%-4s %6x", state, (u_long)tp->t_session & ~KERNBASE);
-	if (tp->t_pgrp == NULL || kvm_read(&tp->t_pgrp->pg_id, &pgid, 
+	if (tp->t_pgrp == NULL || kvm_read(kd, V(&tp->t_pgrp->pg_id), &pgid, 
 	    sizeof (pid_t)) != sizeof (pid_t))
 		pgid = 0;
 	printf("%6d ", pgid);
@@ -997,105 +954,8 @@ struct tty *atp;
  */
 dousr()
 {
-#ifdef NEWVM
-	printf("nothing left in user structure in this system\n");
-#else
-	register struct user *up;
-	register i, j, *ip;
-	register struct nameidata *nd;
-	struct proc *p;
-	int ret;
 
-	if ((ret = kvm_getprocs(KINFO_PROC_PID, upid)) != 1) {
-		if (ret == -1)
-			error("kvm_getproc: %s", kvm_geterr());
-		else
-			error("can't locate process %d", upid);
-		return (1);
-	}
-	if ((p = kvm_nextproc()) == NULL) {
-		error("kvm_nextproc: %s", kvm_geterr());
-		return (1);
-	}
-	if ((up = kvm_getu(p)) == NULL) {
-		error("kvm_getu: %s", kvm_geterr());
-		return (1);
-	}
-	nd = &up->u_nd;
-	printf("pcb");
-	ip = (int *)&up->u_pcb;
-	i = 0;
-	while (ip < (int *)((char *)&up->u_pcb + sizeof (struct pcb))) {
-		if (i%4 == 0)
-			putchar('\t');
-		printf("%#10x ", *ip++);
-		if (i%4 == 3)
-			putchar('\n');
-		i++;
-	}
-	if (i%4)
-		putchar('\n');
-	printf("procp\t%#x\n", up->u_procp);
-	printf("ar0\t%#x\n", up->u_ar0);
-	printf("sizes\ttext %d data %d stack %d\n", 
-		up->u_tsize, up->u_dsize, up->u_ssize);
-	printf("ssave");
-	for (i=0; i<sizeof(label_t)/sizeof(int); i++) {
-		if (i%5==0)
-			printf("\t");
-		printf("%#11x", up->u_ssave.val[i]);
-		if (i%5==4)
-			printf("\n");
-	}
-	if (i%5)
-		printf("\n");
-	printf("odsize\t%#x\n", up->u_odsize);
-	printf("ossize\t%#x\n", up->u_ossize);
-	printf("outime\t%d\n", up->u_outime);
-	printf("mmap\t%#x\n", up->u_mmap);
-	printf("sigs");
-	for (i=0; i<NSIG; i++) {
-		if (i % 8 == 0)
-			printf("\t");
-		printf("%#x ", up->u_signal[i]);
-		if (i % 8 == 7)
-			printf("\n");
-	}
-	if (i % 8)
-		printf("\n");
-	printf("sigmask");
-	for (i=0; i<NSIG; i++) {
-		if (i % 8 == 0)
-			printf("\t");
-		printf("%#x ", up->u_sigmask[i]);
-		if (i % 8 == 7)
-			printf("\n");
-	}
-	if (i % 8)
-		printf("\n");
-	printf("sigonstack\t%#x\n", up->u_sigonstack);
-	printf("sigintr\t%#x\n", up->u_sigintr);
-	printf("oldmask\t%#x\n", up->u_oldmask);
-	printf("sigstack\t%#x %#x\n", 
-		up->u_sigstack.ss_sp, up->u_sigstack.ss_onstack);
-	printf("sig\t%#x\n", up->u_sig);
-	printf("code\t%#x\n", up->u_code);
-	printf("start\t%ld secs %ld usecs\n", 
-		up->u_start.tv_sec, up->u_start.tv_usec);
-	printf("acflag\t%#x\n", up->u_acflag);
-	printf("prof\t%#x %#x %#x %#x\n", up->u_prof.pr_base, up->u_prof.pr_size,
-	    up->u_prof.pr_off, up->u_prof.pr_scale);
-	printf("ru\t");
-	ip = (int *)&up->u_ru;
-	for (i = 0; i < sizeof(up->u_ru)/sizeof(int); i++)
-		printf("%ld ", ip[i]);
-	printf("\n");
-	ip = (int *)&up->u_cru;
-	printf("cru\t");
-	for (i = 0; i < sizeof(up->u_cru)/sizeof(int); i++)
-		printf("%ld ", ip[i]);
-	printf("\n");
-#endif
+	printf("nothing left in user structure in this system\n");
 }
 
 oatoi(s)
@@ -1124,15 +984,15 @@ dofile()
 	};
 	static char *dtypes[] = { "???", "inode", "socket" };
 
-	if (kvm_nlist(fnl) != 0) {
+	if (kvm_nlist(kd, fnl) != 0) {
 		error("kvm_nlist: no _nfiles or _maxfiles: %s", 
-			kvm_geterr());
+			kvm_geterr(kd));
 		return;
 	}
-	kvm_read(V(fnl[FNL_MAXFILE].n_value), &maxfile,
+	kvm_read(kd, V(fnl[FNL_MAXFILE].n_value), &maxfile,
 		sizeof (maxfile));
 	if (totflg) {
-		kvm_read(V(fnl[FNL_NFILE].n_value), &nfile, sizeof (nfile));
+		kvm_read(kd, V(fnl[FNL_NFILE].n_value), &nfile, sizeof (nfile));
 		printf("%3d/%3d files\n", nfile, maxfile);
 		return;
 	}
@@ -1150,11 +1010,10 @@ dofile()
 	printf("%d/%d open files\n", nfile, maxfile);
 	printf("   LOC   TYPE    FLG     CNT  MSG    DATA    OFFSET\n");
 	for (; (char *)fp < buf + len; addr = fp->f_filef, fp++) {
+		if ((unsigned)fp->f_type > DTYPE_SOCKET)
+			continue;
 		printf("%x ", addr);
-		if (fp->f_type <= DTYPE_SOCKET)
-			printf("%-8.8s", dtypes[fp->f_type]);
-		else
-			printf("%8d", fp->f_type);
+		printf("%-8.8s", dtypes[fp->f_type]);
 		putf(fp->f_flag&FREAD, 'R');
 		putf(fp->f_flag&FWRITE, 'W');
 		putf(fp->f_flag&FAPPEND, 'A');
@@ -1182,7 +1041,8 @@ getfiles(abuf, alen)
 	int *alen;
 {
 	char *buf;
-	int len;
+	int mib[2];
+	size_t len;
 
 	if (memf != NULL) {
 		/*
@@ -1191,16 +1051,18 @@ getfiles(abuf, alen)
 		error("files on dead kernel, not impl\n");
 		exit(1);
 	}
-	if ((len = getkerninfo(KINFO_FILE, NULL, NULL, 0)) == -1) {
-		syserror("getkerninfo estimate");
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_FILE;
+	if (sysctl(mib, 2, NULL, &len, NULL, 0) == -1) {
+		syserror("sysctl size estimate");
 		return (-1);
 	}
 	if ((buf = (char *)malloc(len)) == NULL) {
 		error("out of memory");
 		return (-1);
 	}
-	if ((len = getkerninfo(KINFO_FILE, buf, &len, 0)) == -1) {
-		syserror("getkerninfo");
+	if (sysctl(mib, 2, buf, &len, NULL, 0) == -1) {
+		syserror("sysctl");
 		return (-1);
 	}
 	*abuf = buf;
@@ -1209,337 +1071,10 @@ getfiles(abuf, alen)
 }
 
 
-#ifdef NEWVM
 doswap()
 {
 	printf("swap statistics not yet supported in this system\n");
 }
-
-#else /* NEWVM */
-int dmmin, dmmax, nswdev;
-
-doswap()
-{
-	struct proc *proc;
-	int nproc;
-	struct text *xtext;
-	int ntext;
-	struct map *swapmap;
-	int nswapmap;
-	struct swdevt *swdevt, *sw;
-	register struct proc *pp;
-	int nswap, used, tused, free, waste;
-	int db, sb;
-	register struct mapent *me;
-	register struct text *xp;
-	int i, j;
-	long rmalloc();
-
-	nproc = getword(nl[SNPROC].n_value);
-	ntext = getword(nl[SNTEXT].n_value);
-	if (nproc < 0 || nproc > 10000 || ntext < 0 || ntext > 10000) {
-		fprintf(stderr, "number of procs/texts is preposterous (%d, %d)\n",
-			nproc, ntext);
-		return;
-	}
-	proc = (struct proc *)calloc(nproc, sizeof (struct proc));
-	if (proc == NULL) {
-		fprintf(stderr, "can't allocate memory for proc table\n");
-		exit(1);
-	}
-	xtext = (struct text *)calloc(ntext, sizeof (struct text));
-	if (xtext == NULL) {
-		fprintf(stderr, "can't allocate memory for text table\n");
-		exit(1);
-	}
-	nswapmap = getword(nl[SNSWAPMAP].n_value);
-	swapmap = (struct map *)calloc(nswapmap, sizeof (struct map));
-	if (swapmap == NULL) {
-		fprintf(stderr, "can't allocate memory for swapmap\n");
-		exit(1);
-	}
-	nswdev = getword(nl[SNSWDEV].n_value);
-	swdevt = (struct swdevt *)calloc(nswdev, sizeof (struct swdevt));
-	if (swdevt == NULL) {
-		fprintf(stderr, "can't allocate memory for swdevt table\n");
-		exit(1);
-	}
-	kvm_read(V(nl[SSWDEVT].n_value), swdevt,
-		nswdev * sizeof (struct swdevt));
-	kvm_read(V(getword(nl[SPROC].n_value)), proc,
-		nproc * sizeof (struct proc));
-	kvm_read(V(getword(nl[STEXT].n_value)), xtext,
-		ntext * sizeof (struct text));
-	kvm_read(V(getword(nl[SWAPMAP].n_value)), swapmap,
-		nswapmap * sizeof (struct map));
-
-	swapmap->m_name = "swap";
-	swapmap->m_limit = (struct mapent *)&swapmap[nswapmap];
-	dmmin = getword(nl[SDMMIN].n_value);
-	dmmax = getword(nl[SDMMAX].n_value);
-	nswap = 0;
-	for (sw = swdevt; sw < &swdevt[nswdev]; sw++)
-		if (sw->sw_freed)
-			nswap += sw->sw_nblks;
-	free = 0;
-	for (me = (struct mapent *)(swapmap+1);
-	    me < (struct mapent *)&swapmap[nswapmap]; me++)
-		free += me->m_size;
-	tused = 0;
-	for (xp = xtext; xp < &xtext[ntext]; xp++)
-		if (xp->x_vptr!=NULL) {
-			tused += ctod(clrnd(xp->x_size));
-			if (xp->x_flag & XPAGV)
-				tused += ctod(clrnd(ctopt(xp->x_size)));
-		}
-	used = tused;
-	waste = 0;
-	for (pp = proc; pp < &proc[nproc]; pp++) {
-		if (pp->p_stat == 0 || pp->p_stat == SZOMB)
-			continue;
-		if (pp->p_flag & SSYS)
-			continue;
-		db = ctod(pp->p_dsize), sb = up(db);
-		used += sb;
-		waste += sb - db;
-		db = ctod(pp->p_ssize), sb = up(db);
-		used += sb;
-		waste += sb - db;
-		if ((pp->p_flag&SLOAD) == 0)
-			used += ctod(vusize(pp));
-	}
-	if (totflg) {
-#define	btok(x)	((x) / (1024 / DEV_BSIZE))
-		printf("%3d/%3d 00k swap\n",
-		    btok(used/100), btok((used+free)/100));
-		return;
-	}
-	printf("%dk used (%dk text), %dk free, %dk wasted, %dk missing\n",
-	    btok(used), btok(tused), btok(free), btok(waste),
-/* a dmmax/2 block goes to argmap */
-	    btok(nswap - dmmax/2 - (used + free)));
-	printf("avail: ");
-	for (i = dmmax; i >= dmmin; i /= 2) {
-		j = 0;
-		while (rmalloc(swapmap, i) != 0)
-			j++;
-		if (j) printf("%d*%dk ", j, btok(i));
-	}
-	free = 0;
-	for (me = (struct mapent *)(swapmap+1);
-	    me < (struct mapent *)&swapmap[nswapmap]; me++)
-		free += me->m_size;
-	printf("%d*1k\n", btok(free));
-}
-
-up(size)
-	register int size;
-{
-	register int i, block;
-
-	i = 0;
-	block = dmmin;
-	while (i < size) {
-		i += block;
-		if (block < dmmax)
-			block *= 2;
-	}
-	return (i);
-}
-
-/*
- * Compute number of pages to be allocated to the u. area
- * and data and stack area page tables, which are stored on the
- * disk immediately after the u. area.
- */
-vusize(p)
-	register struct proc *p;
-{
-	register int tsz = p->p_tsize / NPTEPG;
-
-	/*
-	 * We do not need page table space on the disk for page
-	 * table pages wholly containing text. 
-	 */
-	return (clrnd(UPAGES +
-	    clrnd(ctopt(p->p_tsize+p->p_dsize+p->p_ssize+UPAGES)) - tsz));
-}
-
-/*
- * Allocate 'size' units from the given
- * map. Return the base of the allocated space.
- * In a map, the addresses are increasing and the
- * list is terminated by a 0 size.
- *
- * Algorithm is first-fit.
- *
- * This routine knows about the interleaving of the swapmap
- * and handles that.
- */
-long
-rmalloc(mp, size)
-	register struct map *mp;
-	long size;
-{
-	register struct mapent *ep = (struct mapent *)(mp+1);
-	register int addr;
-	register struct mapent *bp;
-	swblk_t first, rest;
-
-	if (size <= 0 || size > dmmax)
-		return (0);
-	/*
-	 * Search for a piece of the resource map which has enough
-	 * free space to accomodate the request.
-	 */
-	for (bp = ep; bp->m_size; bp++) {
-		if (bp->m_size >= size) {
-			/*
-			 * If allocating from swapmap,
-			 * then have to respect interleaving
-			 * boundaries.
-			 */
-			if (nswdev > 1 &&
-			    (first = dmmax - bp->m_addr%dmmax) < bp->m_size) {
-				if (bp->m_size - first < size)
-					continue;
-				addr = bp->m_addr + first;
-				rest = bp->m_size - first - size;
-				bp->m_size = first;
-				if (rest)
-					rmfree(mp, rest, addr+size);
-				return (addr);
-			}
-			/*
-			 * Allocate from the map.
-			 * If there is no space left of the piece
-			 * we allocated from, move the rest of
-			 * the pieces to the left.
-			 */
-			addr = bp->m_addr;
-			bp->m_addr += size;
-			if ((bp->m_size -= size) == 0) {
-				do {
-					bp++;
-					(bp-1)->m_addr = bp->m_addr;
-				} while ((bp-1)->m_size = bp->m_size);
-			}
-			if (addr % CLSIZE)
-				return (0);
-			return (addr);
-		}
-	}
-	return (0);
-}
-
-/*
- * Free the previously allocated space at addr
- * of size units into the specified map.
- * Sort addr into map and combine on
- * one or both ends if possible.
- */
-rmfree(mp, size, addr)
-	struct map *mp;
-	long size, addr;
-{
-	struct mapent *firstbp;
-	register struct mapent *bp;
-	register int t;
-
-	/*
-	 * Both address and size must be
-	 * positive, or the protocol has broken down.
-	 */
-	if (addr <= 0 || size <= 0)
-		goto badrmfree;
-	/*
-	 * Locate the piece of the map which starts after the
-	 * returned space (or the end of the map).
-	 */
-	firstbp = bp = (struct mapent *)(mp + 1);
-	for (; bp->m_addr <= addr && bp->m_size != 0; bp++)
-		continue;
-	/*
-	 * If the piece on the left abuts us,
-	 * then we should combine with it.
-	 */
-	if (bp > firstbp && (bp-1)->m_addr+(bp-1)->m_size >= addr) {
-		/*
-		 * Check no overlap (internal error).
-		 */
-		if ((bp-1)->m_addr+(bp-1)->m_size > addr)
-			goto badrmfree;
-		/*
-		 * Add into piece on the left by increasing its size.
-		 */
-		(bp-1)->m_size += size;
-		/*
-		 * If the combined piece abuts the piece on
-		 * the right now, compress it in also,
-		 * by shifting the remaining pieces of the map over.
-		 */
-		if (bp->m_addr && addr+size >= bp->m_addr) {
-			if (addr+size > bp->m_addr)
-				goto badrmfree;
-			(bp-1)->m_size += bp->m_size;
-			while (bp->m_size) {
-				bp++;
-				(bp-1)->m_addr = bp->m_addr;
-				(bp-1)->m_size = bp->m_size;
-			}
-		}
-		goto done;
-	}
-	/*
-	 * Don't abut on the left, check for abutting on
-	 * the right.
-	 */
-	if (addr+size >= bp->m_addr && bp->m_size) {
-		if (addr+size > bp->m_addr)
-			goto badrmfree;
-		bp->m_addr -= size;
-		bp->m_size += size;
-		goto done;
-	}
-	/*
-	 * Don't abut at all.  Make a new entry
-	 * and check for map overflow.
-	 */
-	do {
-		t = bp->m_addr;
-		bp->m_addr = addr;
-		addr = t;
-		t = bp->m_size;
-		bp->m_size = size;
-		bp++;
-	} while (size = t);
-	/*
-	 * Segment at bp is to be the delimiter;
-	 * If there is not room for it 
-	 * then the table is too full
-	 * and we must discard something.
-	 */
-	if (bp+1 > mp->m_limit) {
-		/*
-		 * Back bp up to last available segment.
-		 * which contains a segment already and must
-		 * be made into the delimiter.
-		 * Discard second to last entry,
-		 * since it is presumably smaller than the last
-		 * and move the last entry back one.
-		 */
-		bp--;
-		printf("%s: rmap ovflo, lost [%d,%d)\n", mp->m_name,
-		    (bp-1)->m_addr, (bp-1)->m_addr+(bp-1)->m_size);
-		bp[-1] = bp[0];
-		bp[0].m_size = bp[0].m_addr = 0;
-	}
-done:
-	return;
-badrmfree:
-	printf("bad rmfree\n");
-}
-#endif /* NEWVM */
 
 #include <varargs.h>
 
