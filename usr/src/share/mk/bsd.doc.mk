@@ -1,4 +1,4 @@
-#	@(#)bsd.doc.mk	5.5 (Berkeley) %G%
+#	@(#)bsd.doc.mk	5.6 (Berkeley) %G%
 
 PRINTER=psc
 
@@ -7,7 +7,7 @@ EQN?=		deqn -P${PRINTER}
 GREMLIN?=	grn -P${PRINTER}
 GRIND?=		vgrind -f
 INDXBIB?=	indxbib
-PIC?=		pic -P${PRINTER}
+PIC?=		pic
 REFER?=		refer
 ROFF?=		ditroff -t ${MACROS} ${PAGES} -P${PRINTER}
 SOELIM?=	soelim
