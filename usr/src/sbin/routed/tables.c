@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -298,7 +298,7 @@ rtdefault()
 {
 	extern struct sockaddr inet_default;
 
-	rtadd(&inet_default, &inet_default, 0,
+	rtadd(&inet_default, &inet_default, 1,
 		RTS_CHANGED | RTS_PASSIVE | RTS_INTERNAL);
 }
 

@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,7 +33,7 @@ rip_input(from, size)
 	struct interface *if_ifwithdstaddr();
 	int newsize;
 	register struct afswitch *afp;
-	static struct sockaddr badfrom;
+	static struct sockaddr badfrom, badfrom2;
 
 	ifp = 0;
 	TRACE_INPUT(ifp, from, size);
@@ -189,6 +189,18 @@ rip_input(from, size)
 				    "bad host in route from %s (af %d)\n",
 				   (*afswitch[from->sa_family].af_format)(from),
 				   from->sa_family);
+				continue;
+			}
+			if (n->rip_metric == 0 ||
+			    (unsigned) n->rip_metric > HOPCNT_INFINITY) {
+				if (bcmp((char *)from, (char *)&badfrom2,
+				    sizeof(badfrom2)) != 0) {
+					syslog(LOG_ERR,
+					    "bad metric (%d) from %s\n",
+					    n->rip_metric,
+				  (*afswitch[from->sa_family].af_format)(from));
+					badfrom2 = *from;
+				}
 				continue;
 			}
 			/*
