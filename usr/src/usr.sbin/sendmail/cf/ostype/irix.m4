@@ -8,5 +8,8 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)irix.m4	8.2 (Berkeley) %G%')
+VERSIONID(`@(#)irix.m4	8.3 (Berkeley) %G%')
 define(`LOCAL_MAILER_FLAGS', Ehmu)dnl
+define(`QUEUE_DIR', /usr/spool/mqueue)dnl
+define(`ALIAS_FILE', /usr/lib/aliases)dnl
+define(`STATUS_FILE', /usr/lib/sendmail.st)dnl
