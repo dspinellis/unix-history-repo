@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)apropos.1	6.9 (Berkeley) %G%
+.\"     @(#)apropos.1	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt APROPOS 1
@@ -22,63 +22,72 @@ shows which manual pages contain instances of any of the given
 in their title line.
 Each word is considered separately and case of letters is ignored.
 Words which are part of other words are considered; when looking for
-\*(Lqcompile\*(Rq,
+.Dq compile ,
 .Nm apropos
-will also list all instances of \*(Lqcompiler\*(Rq.
+will also list all instances of
+.Dq compiler .
 .Pp
 If the line output by
 .Nm apropos
 starts
-.Li \*(Lqname(section) ...\*(Rq
+.Dq Li name(section) ...
 you can enter
-.Li \*(Lqman section name\*(Rq
+.Dq Li man section name
 to get
 its documentation.
 .Pp
 The options are as follows:
-.Tp Fl M
-Override the list of standard directories where
+.Bl -tag -width Ds
+.It Fl M
+Override the list of standard directories
 .Nm apropos
 searches for a database named
 .Pa whatis.db .
 The supplied
 .Ar path
-must be a colon (\*(Lq:\*(Rq) separated list of directories.
+must be a colon
+.Dq \&:
+separated list of directories.
 This search path may also be set using the environment variable
 .Ev MANPATH .
-.Tp Fl m
-Augment the list of standard directories where
+.It Fl m
+Augment the list of standard directories
 .Nm apropos
 searches for its database.
 The supplied
 .Ar path
-must be a colon (\*(Lq:\*(Rq) separated list of directories.
+must be a colon
+.Dq \&:
+separated list of directories.
 These directories will be searched before the standard directories
 or the directories supplied with the
 .Fl M
 option or the
 .Ev MANPATH
-environmental variable are searched.
+environment variable are searched.
 .Sh ENVIRONMENT
-.Tw MANPATH
-.Tp Ev MANPATH
+.Bl -tag -width MANPATH
+.It Ev MANPATH
 The standard search path used by
 .Xr man 1
 may be overridden by specifying a path in the
 .Ev MANPATH
-environmental variable.
-The format of the path is a colon (\*(Lq:\*(Rq) separated list of directories.
-.Tp
+environment variable.
+The format of the path is a colon
+.Dq \&:
+separated list of directories.
+.El
 .Sh FILES
-.Dw whatis.db
-.Di L
-.Dp Pa whatis.db
+.Bl -tag -width whatis.db -compact
+.It Pa whatis.db
 name of the apropos database
-.Dp
+.El
 .Sh SEE ALSO
 .Xr man 1 ,
 .Xr whatis 1 ,
 .Xr whereis 1
 .Sh HISTORY
-.Nm apropos
-appeared in 3 BSD.
+The
+.Nm
+command appeared in
+.Bx 3.0 .

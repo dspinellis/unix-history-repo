@@ -1,8 +1,9 @@
 .\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
+.\" %sccs.include.redist.man%
 .\"
-.\"     @(#)addbib.1	6.3 (Berkeley) %G%
+.\"     @(#)addbib.1	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Os BSD 4.2
@@ -12,8 +13,8 @@
 .Nd create or extend bibliographic database
 .Sh SYNOPSIS
 .Nm addbib
-.Op Fl p Ar promptfile
 .Op Fl a
+.Op Fl p Ar promptfile
 .Ar database
 .Sh DESCRIPTION
 When this program starts up, answering
@@ -57,12 +58,16 @@ with any system editor (.e.g.
 .Xr edit ,
 .Xr ed ) .
 .Pp
+Options avilable:
+.Bl -tag -width a
+.It Fl a
 The
 .Fl a
 option suppresses prompting for an abstract;
 asking for an abstract is the default.
 Abstracts are ended with a
 .Ql CTRL-d .
+.It Fl p
 The
 .Fl p
 option causes
@@ -72,6 +77,7 @@ to use a new prompting skeleton, defined in
 This file should contain prompt strings, a tab,
 and the key-letters to be written to the
 .Ar database .
+.El
 .Pp
 The most common key-letters and their meanings are given below.
 .Nm Addbib
@@ -79,92 +85,96 @@ insulates you from these key-letters,
 since it gives you prompts in English,
 but if you edit the bibliography file later on,
 you will need to know this information.
-.Dw \&%Y,Z
-.Dp \&%A
+.Pp
+.Bl -tag -width "%Y,Z " -compact -offset indent
+.It \&%A
 Author's name
-.Dp \&%B
+.It \&%B
 Book containing article referenced
-.Dp \&%C
+.It \&%C
 City (place of publication)
-.Dp \&%D
+.It \&%D
 Date of publication
-.Dp \&%E
+.It \&%E
 Editor of book containing article referenced
-.Dp \&%F
+.It \&%F
 Footnote number or label (supplied by
 .Xr refer )
-.Dp \&%G
+.It \&%G
 Government order number
-.Dp \&%H
+.It \&%H
 Header commentary, printed before reference
-.Dp \&%I
+.It \&%I
 Issuer (publisher)
-.Dp \&%J
+.It \&%J
 Journal containing article
-.Dp \&%K
+.It \&%K
 Keywords to use in locating reference
-.Dp \&%L
+.It \&%L
 Label field used by
 .Fl k
 option of
 .Xr refer
-.Dp \&%M
+.It \&%M
 Memorandum label
-.Dp \&%N
+.It \&%N
 Number within volume
-.Dp \&%O
+.It \&%O
 Other commentary, printed at end of reference
-.Dp \&%P
+.It \&%P
 Page number(s)
-.Dp \&%Q
+.It \&%Q
 Corporate or Foreign Author (unreversed)
-.Dp \&%R
+.It \&%R
 Report, paper, or thesis (unpublished)
-.Dp \&%S
+.It \&%S
 Series title
-.Dp \&%T
+.It \&%T
 Title of article or book
-.Dp \&%V
+.It \&%V
 Volume number
-.Dp \&%X
+.It \&%X
 Abstract \(em used by
 .Xr roffbib ,
 not by
 .Xr refer
-.Dp \&%Y,Z
+.It \&%Y,Z
 ignored by
 .Xr refer
-.Dp
+.El
 .Pp
 Except for `A', each field should be given just once.
 Only relevant fields should be supplied.
 .Sh EXAMPLES
-.Dw \&%Y,Z
-.Dp %A
+.Bl -tag -width \&%Y,Z -compact -offset indent
+.It \&%A
 Bill Tuthill
-.Dp %T
+.It \&%T
 Refer \(em A Bibliography System
-.Dp %I
+.It \&%I
 Computing Services
-.Dp %C
+.It \&%C
 Berkeley
-.Dp %D
+.It \&%D
 1982
-.Dp %O
-\s-1UNX\s0 4.3.5.
-.Dp
+.It \&%O
+UNX 4.3.5.
+.El
 .Sh FILES
-.Dw promptfile
-.Di L
-.Dp Pa promptfile
+.Bl -tag -width promptfile -compact
+.It Pa promptfile
 optional file to define prompting
+.El
 .Sh SEE ALSO
 .Xr refer 1 ,
 .Xr sortbib 1 ,
 .Xr roffbib 1 ,
 .Xr indxbib 1 ,
 .Xr lookbib 1
-.Sh HISTORY
-appeared in 4.2 BSD.
 .Sh AUTHORS
-Al Stangenberger, Bill Tuthill
+.An Al Stangenberger, Bill Tuthill
+.Sh HISTORY
+The
+.Nm
+command appeared in 
+.Bx 4.2 .

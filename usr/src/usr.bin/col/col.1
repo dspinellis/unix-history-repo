@@ -6,11 +6,11 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)col.1	6.6 (Berkeley) %G%
+.\"     @(#)col.1	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt COL 1
-.Os BSD 4.4
+.Os
 .Sh NAME
 .Nm col
 .Nd filter reverse line feeds from input
@@ -20,8 +20,8 @@
 .Op Fl l Ar num
 .Sh DESCRIPTION
 .Nm Col
-filters out reverse (and half reverse) line feeds so that the output is
-in the correct order and contains only forward and half forward line
+filters out reverse (and half reverse) line feeds so the output is
+in the correct order with only forward and half forward line
 feeds, and replaces white-space characters with tabs where possible.
 This can be useful in processing the output of
 .Xr nroff 1
@@ -32,55 +32,52 @@ and
 reads from standard input and writes to standard output.
 .Pp
 The options are as follows:
-.Tw Fl
-.Tp Fl b
+.Bl -tag -width "-lnum"
+.It Fl b
 Do not output any backspaces \- print only the last character
 written to each column position.
-.Tp Fl f
+.It Fl f
 Forward half line feeds are permitted (``fine'' mode).
 Normally characters printed on a half line boundary are printed
 on the following line.
-.Tp Fl x
+.It Fl x
 Output multiple spaces instead of tabs.
-.Tp Cx Fl l
-.Cx Ar num
-.Cx
+.It Fl l Ns Ar num
 Buffer at least
 .Ar num
 lines in memory.
 By default, 128 lines are buffered.
-.Tp
+.El
 .Pp
 The control sequences for carriage motion that
 .Nm col
 understands and their decimal values are listed in the following
 table:
 .Pp
-.Dw carriage\ return
-.Di L
-.Dp ESC\-7
+.Bl -tag -width "carriage return" -compact
+.It ESC\-7
 reverse line feed (escape then 7)
-.Dp ESC\-8
+.It ESC\-8
 half reverse line feed (escape then 8)
-.Dp ESC\-9
+.It ESC\-9
 half forward line feed (escape then 9)
-.Dp backspace
+.It backspace
 moves back one column (8); ignored in the first column
-.Dp carriage return
+.It carriage return
 (13)
-.Dp newline
+.It newline
 forward line feed (10); also does carriage return
-.Dp shift in
+.It shift in
 shift to normal character set (15)
-.Dp shift out
+.It shift out
 shift to alternate character set (14)
-.Dp space
+.It space
 moves forward one column (32)
-.Dp tab
+.It tab
 moves forward to next tab stop (9)
-.Dp vertical tab
+.It vertical tab
 reverse line feed (11)
-.Dp
+.El
 .Pp
 All unrecognized control characters and escape sequences are
 discarded.
@@ -100,6 +97,7 @@ will display a warning message.
 A
 .Nm col
 command
-appeared in Version 6 AT&T UNIX.  The BSD
+appeared in Version 6 AT&T UNIX.  The
+.Bx
 .Nm col
 is derived from code written by Michael Rendell.

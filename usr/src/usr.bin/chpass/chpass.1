@@ -3,11 +3,11 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)chpass.1	5.10 (Berkeley) %G%
+.\"     @(#)chpass.1	5.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHPASS 1
-.Os BSD 4.4
+.Os
 .Sh NAME
 .Nm chpass
 .Nd add or change user database information
@@ -27,51 +27,51 @@ The information is formatted and supplied to an editor for changes.
 Only the information that the user is allowed to change is displayed.
 .Pp
 The options are as follows:
-.Tw Ds
-.Tp Fl a
+.Bl -tag -width Ds
+.It Fl a
 The super-user is allowed to directly supply a user database
 entry, in the format specified by
 .Xr passwd 5 ,
 as an argument.
 This argument must be a colon (``:'') separated list of all the
 user database fields, although they may be empty.
-.Tp Fl s
+.It Fl s
 The
 .Fl s
 option attempts to change the user's shell to
 .Ar newsh .
-.Tp
+.El
 .Pp
 Possible display items are as follows:
 .Pp
-.Dw Home\ Directory:
-.Dp Login:
+.Bl -tag -width "Home Directory:" -compact -offset indent
+.It Login:
 user's login name
-.Dp Password:
+.It Password:
 user's encrypted password
-.Dp Uid:
+.It Uid:
 user's id
-.Dp Gid:
+.It Gid:
 user's login group id
-.Dp Change:
+.It Change:
 password change time
-.Dp Expire:
+.It Expire:
 account expiration time
-.Dp Class:
+.It Class:
 user's general classification
-.Dp Home Directory:
+.It Home Directory:
 user's home directory
-.Dp Shell:
+.It Shell:
 user's login shell
-.Dp Full Name:
+.It Full Name:
 user's real name
-.Dp Location:
+.It Location:
 user's normal location
-.Dp Home Phone:
+.It Home Phone:
 user's home phone
-.Dp Office Phone:
+.It Office Phone:
 user's office phone
-.Dp
+.El
 .Pp
 The
 .Ar login
@@ -122,7 +122,7 @@ is the month name (the first three characters are sufficient),
 is the day of the month, and
 .Ar year
 is the year.
-.bp
+.Pp
 The
 .Ar class
 field is currently unused.  In the near future it will be a key to
@@ -172,17 +172,16 @@ update the user database itself.
 Only the user, or the super-user, may edit the information associated
 with the user.
 .Sh FILES
-.Dw /etc/master.passwd
-.Di L
-.Dp Pa /etc/master.passwd
+.Bl -tag -width /etc/master.passwd -compact
+.It Pa /etc/master.passwd
 The user database
-.Dp Pa /etc/passwd
+.It Pa /etc/passwd
 A Version 7 format password file
-.Dp Pa /etc/chpass.XXXXXX
+.It Pa /etc/chpass.XXXXXX
 Temporary copy of the password file
-.Dp Pa /etc/shells
+.It Pa /etc/shells
 The list of approved shells
-.Dp
+.El
 .Sh SEE ALSO
 .Xr login 1 ,
 .Xr finger 1 ,
@@ -191,10 +190,15 @@ The list of approved shells
 .Xr passwd 5 ,
 .Xr pwd_mkdb 8 ,
 .Xr vipw 8
-.Pp
-Robert Morris and Ken Thompson,
-.Ar UNIX Password security
-.Sh HISTORY
-First release 4.3 Reno BSD.
+.Rs
+.%A Robert Morris
+.%A Ken Thompson
+.%T "UNIX Password security"
+.Re
 .Sh BUGS
 User information should (and eventually will) be stored elsewhere.
+.Sh HISTORY
+The
+.Nm
+command appeared in 
+.Bx 4.3 Reno .

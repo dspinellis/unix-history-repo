@@ -1,8 +1,9 @@
 .\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
+.\" %sccs.include.redist.man%
 .\"
-.\"     @(#)apply.1	6.3 (Berkeley) %G%
+.\"     @(#)apply.1	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt APPLY 1
@@ -12,8 +13,8 @@
 .Nd apply a command to a set of arguments
 .Sh SYNOPSIS
 .Nm apply
-.Op Fl ac
-.Op Fl n
+.Op Fl a Ns Ar c
+.Op Fl Ns Ar n
 .Ar command args ...
 .Sh DESCRIPTION
 .Nm Apply
@@ -23,6 +24,10 @@ on each
 argument
 .Ar arg
 in turn.
+.Pp
+Options available are:
+.Bl -tag -width "-ac"
+.It Fl Ns Ar n
 Normally arguments are chosen singly; the optional number
 .Fl n
 specifies the number of arguments to be passed to
@@ -32,18 +37,16 @@ If
 is zero,
 .Ar command
 is run without arguments once for each
-.Ar arg
+.Ar arg .
 Character sequences of the form
-.Cx %
-.Ar d
-.Cx
+.Pf \&% Ar d
 in
 .Ar command ,
 where
 .Ar d
 is a digit from 1 to 9,
 are replaced by the
-.Ar d\'th
+.Ar d Ns \'th
 following unused
 .Ar arg .
 If any such sequences occur,
@@ -55,40 +58,52 @@ is the maximum value of
 .Ar d
 in
 .Ar command .
-The character `%' may be changed by the
+.It Fl a Ns Ar c
+The character
+.Ql %
+may be changed by the
 .Fl a
 option.
-.SH ENVIRONMENT
-.Nm apply
-checks the environment variable
-.Ev SHELL
-to find out which shell to use.
+.El
+.Sh ENVIRONMENT
+The following environment variable is used by
+.Nm apply :
+.Bl -tag -width SHELL
+.It Ev SHELL
+Pathname of shell to use. If this option is not defined,
+a default shell is used.
+.El
 .Sh EXAMPLES
-.Ds
-.Tw apply \-2 cmp a1 b1 a2 b2 ...
-.Tp Li apply echo a*
+.Bl -tag -width apply -compact
+.It Li "apply echo a*"
 is similar to ls(1);
-.Tp Li apply \-2 cmp a1 b1 a2 b2 ...
+.It Li "apply \-2 cmp a1 b1 a2 b2 ..."
 compares the `a' files to the `b' files;
-.Tp Li apply \-0 who 1 2 3 4 5
+.It Li "apply \-0 who 1 2 3 4 5"
 runs who(1) 5 times; and
-.Tp Li apply \(aaln %1 /usr/joe\(aa *
+.It Li "apply \'ln %1 /usr/joe\'" *
 links all files in the current directory to the directory
 .Pa /usr/joe .
-.Tp
-.De
+.El
 .Sh SEE ALSO
 .Xr sh 1
-.Sh HISTORY
-.Nm Apply
-appeared in 4.2BSD.
 .Sh AUTHOR
 Rob Pike
 .Sh BUGS
 Shell metacharacters in
 .Ar command
 may have bizarre effects; it is best to enclose complicated
-commands in single quotes (\(aa\ \(aa).
+commands in single quotes
+.Pq Sq .
 .Pp
-There is no way to pass a literal `%2' if `%' is the
+There is no way to pass a literal
+.Ql %2
+if
+.Ql %
+is the
 argument expansion character.
+.Sh HISTORY
+The
+.Nm
+command appeared in 
+.Bx 4.2 .

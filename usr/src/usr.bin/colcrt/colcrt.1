@@ -3,11 +3,11 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)colcrt.1	6.6 (Berkeley) %G%
+.\"     @(#)colcrt.1	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt COLCRT 1
-.OS BSD 3
+.Os BSD 3
 .Sh NAME
 .Nm colcrt
 .Nd filter nroff output for CRT previewing
@@ -15,7 +15,7 @@
 .Nm colcrt
 .Op Fl
 .Op Fl \&2
-.Ar
+.Op Ar
 .Sh DESCRIPTION
 .Nm Colcrt
 provides virtual half-line and reverse line feed sequences
@@ -24,15 +24,15 @@ is destructive.
 Half-line characters and underlining (changed to dashing `\-')
 are placed on new lines in between the normal output lines.
 .Pp
-.Tw Ds
-.Tp Fl
+Available options:
+.Bl -tag -width Ds
+.It Fl
 Suppress all underlining.
 It is especially useful for previewing
-.Ar allboxed
+.Em allboxed
 tables from
 .Xr tbl 1 .
-.Pp
-.Tp Fl 2
+.It Fl 2
 Causes all half-lines to be printed, effectively double spacing the output.
 Normally, a minimal space output format is used which will suppress empty
 lines.
@@ -41,38 +41,47 @@ The
 .Fl 2
 option is useful for sending output to the line printer when the output
 contains superscripts and subscripts which would otherwise be invisible.
-.Tp
-.Pp
+.El
+.Sh EXAMPLES
 A typical use of
 .Nm colcrt
 would be
-.Pp
-.Dl tbl exum2.n \&| nroff \-ms \&| colcrt \- \&| more
+.Bd -literal
+tbl exum2.n \&| nroff \-ms \&| colcrt \- \&| more
+.Ed
 .Sh SEE ALSO
 .Xr nroff 1 ,
 .Xr troff 1 ,
 .Xr col 1 ,
 .Xr more 1 ,
 .Xr ul 1
-.Sh HISTORY
-Appeared in 3 BSD.
 .Sh BUGS
 Should fold underlines onto blanks even with the
-.Sq Fl
+.Ql Fl
 option so that
 a true underline character would show; if we did this, however,
 .Nm colcrt
 wouldn't get rid of
-.Ar cu'd
+.Ar cu Ns 'd
 underlining
 completely.
 .Pp
 Can't back up more than 102 lines.
 .Pp
 General overstriking is lost;
-as a special case `\&|' overstruck with `\-' or underline becomes `+'.
+as a special case
+.Ql \&|
+overstruck with
+.Ql \-
+or underline becomes
+.Ql \&+ .
 .Pp
 Lines are trimmed to 132 characters.
 .Pp
 Some provision should be made for processing superscripts and subscripts
 in documents which are already double-spaced.
+.Sh HISTORY
+The
+.Nm
+command appeared in 
+.Bx 3.0 .

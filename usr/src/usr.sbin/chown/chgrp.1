@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)chgrp.1	6.5 (Berkeley) %G%
+.\"     @(#)chgrp.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHGRP 1
@@ -24,8 +24,8 @@ operand to the
 ID specified by the group operand.
 .Pp
 Options:
-.Tw Ds
-.Tp Fl R
+.Bl -tag -width Ds
+.It Fl R
 Recursively change file group IDs.
 For each
 .Ar file
@@ -34,21 +34,21 @@ group of the directory and all files in the file
 hierarchy below it.
 When symbolic links are encountered, their group is changed,
 but they are not traversed.
-.Tp Fl f
+.It Fl f
 The force option ignores errors, except for usage errors and doesn't
 query about strange modes (unless user does not have proper permissions).
-.Tp
+.El
 .Pp
 Operands:
-.Tw Ds
-.Tp Ar group
+.Bl -tag -width group
+.It Ar group
 The
 .Ar group
 can be either a group name from the group database, or a numeric
 group ID.
-.Tp Ar file
+.It Ar file
 A pathname of a file whose group ID is to be modified.
-.Tp
+.El
 .Pp
 The user invoking
 must belong
@@ -58,11 +58,10 @@ The
 .Nm chgrp
 utility exits 0 on success, and >0 if an error occurs.
 .Sh FILES
-.Dw /etc/group
-.Di L
-.Dp Pa /etc/group
+.Bl -tag -width /etc/group -compact
+.It Pa /etc/group
 Group ID file
-.Dp
+.El
 .Sh SEE ALSO
 .Xr chown 2 ,
 .Xr chown 8 ,
