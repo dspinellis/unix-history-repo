@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.46 (Berkeley) %G%
+.\"	@(#)op.me	8.47 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.46
+Version 8.47
 .sp
 For Sendmail Version 8.7
 .)l
@@ -307,12 +307,6 @@ they will use
 .q host.domain!user .
 The configuration files can be customized to work around this,
 but it is more complex.
-.pp
-I haven't tested these yet on an isolated LAN environment
-with a single UUCP connection to the outside world.
-If you are in such an environment,
-please send comments to
-sendmail@CS.Berkeley.EDU.
 .pp
 Our configuration files are processed by
 .i m4
@@ -3630,7 +3624,7 @@ Linelimit	The maximum line length in the message body
 Directory	The working directory for the mailer
 Userid	The default user and group id to run as
 Charset	The default character set for 8-bit characters
-Type	The MTS type (used for error messages)
+Type	The MTS type information (used for error messages)
 .)b
 Only the first character of the field name is checked.
 .pp
@@ -4035,14 +4029,20 @@ for the local network mailer,
 not that of the external network mailer.
 .pp
 The Type= field
-sets the MTS-Type:
+sets the type information
 used in MIME error messages
 as defined by
 RFC XXX
 (not yet published).
-It must be a registered value
+It is actually three values separated by slashes:
+the MTA-type (that is, the description of how hosts are named),
+the address type (the description of e-mail addresses),
+and the diagnostic type (the description of error diagnostic codes).
+Each of these must be a registered value
 or begin with
 .q X\- .
+The default is
+.q dns/rfc822/smtp .
 .sh 2 "H \*- Define Header"
 .pp
 The format of the header lines that
@@ -7353,7 +7353,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.46
+.\"Version 8.47
 .\".ce 0
 .bp 2
 .rs
