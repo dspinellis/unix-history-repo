@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.40 (Berkeley) %G%
+#	@(#)Makefile	5.41 (Berkeley) %G%
 
 SUBDIR=	awk compact cpp crypt ed eqn groups hostid lex make more ms od \
-	pr refer roff sed sh sum symorder tar tbl test tmac whereis \
+	pr refer roff sed sh sort sum symorder tar tbl test tmac whereis \
 	which whoami yacc
 
 .if   (${MACHINE} == "hp300")
