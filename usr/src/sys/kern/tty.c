@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.c	7.55 (Berkeley) %G%
+ *	@(#)tty.c	7.56 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -442,7 +442,7 @@ ttioctl(tp, com, data, flag)
 			return (EPERM);
 		if (p->p_ucred->cr_uid && !isctty(p, tp))
 			return (EACCES);
-		(*linesw[tp->t_line].l_rint)(*(char *)data, tp);
+		(*linesw[tp->t_line].l_rint)(*(u_char *)data, tp);
 		break;
 
 	case TIOCGETA: {
