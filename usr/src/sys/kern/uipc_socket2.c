@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	6.1	83/07/29	*/
+/*	uipc_socket2.c	6.2	84/01/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -251,6 +251,28 @@ sbwakeup(sb)
 	if (sb->sb_flags & SB_WAIT) {
 		sb->sb_flags &= ~SB_WAIT;
 		wakeup((caddr_t)&sb->sb_cc);
+	}
+}
+
+/*
+ * Wakeup socket readers and writers.
+ * Do asynchronous notification via SIGIO
+ * if the socket has the SS_ASYNC flag set.
+ */
+sowakeup(so, sb)
+	register struct socket *so;
+	struct sockbuf *sb;
+{
+	register struct proc *p;
+
+	sbwakeup(sb);
+	if (so->so_state & SS_ASYNC) {
+		if (so->so_pgrp == 0)
+			return;
+		else if (so->so_pgrp > 0)
+			gsignal(so->so_pgrp, SIGIO);
+		else if ((p = pfind(-so->so_pgrp)) != 0)
+			psignal(p, SIGIO);
 	}
 }
 
