@@ -1,9 +1,10 @@
-/*
- * Copyright (c) 1979 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1979 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)ey.h	5.2 (Berkeley) %G%
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)ey.h	5.3 (Berkeley) %G%
  */
 
 #include <stdio.h>
