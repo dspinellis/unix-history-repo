@@ -1,4 +1,4 @@
-/*	conf.c	1.3	86/12/18	*/
+/*	conf.c	1.4	87/10/27	*/
 /*	conf.c	6.1	83/07/29	*/
 
 #include "../machine/pte.h"
@@ -72,11 +72,13 @@ noioctl(io, cmd, arg)
 
 int	udstrategy(), udopen();
 int	vdstrategy(), vdopen();
+int	hdstrategy(), hdopen();
 int	cystrategy(), cyopen(), cyclose();
 
 struct devsw devsw[] = {
 	{ "ud",	udstrategy,	udopen,		nullsys,	noioctl },
 	{ "dk",	vdstrategy,	vdopen,		nullsys,	noioctl },
+	{ "hd",	hdstrategy,	hdopen,		nullsys,	noioctl },
 #ifdef notdef
 	{ "xp",	xpstrategy,	xpopen,		nullsys,	noioctl },
 #else
