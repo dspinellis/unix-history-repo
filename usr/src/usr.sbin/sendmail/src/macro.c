@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)macro.c	3.18		%G%);
+SCCSID(@(#)macro.c	3.19		%G%);
 
 char	*Macro[128];
 
@@ -163,6 +163,7 @@ char	*Macro[128];
 **		$t   the current time in seconds since 1/1/1970
 **		$u   to user
 **		$v   version number of sendmail
+**		$w   our host name (if it can be determined)
 **		$x   signature (full name) of from person
 **		$y   the tty id of our terminal
 **		$z   home directory of to person

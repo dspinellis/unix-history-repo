@@ -4,7 +4,7 @@
 # include "sendmail.h"
 # include <sys/file.h>
 
-SCCSID(@(#)main.c	3.151		%G%);
+SCCSID(@(#)main.c	3.152		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -132,6 +132,9 @@ main(argc, argv)
 	errno = 0;
 	from = NULL;
 	initmacros();
+	p = myhostname();
+	if (p != NULL && *p != '\0')
+		define('w', p, CurEnv);
 
 	/*
 	** Crack argv.
