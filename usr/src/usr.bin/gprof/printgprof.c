@@ -367,9 +367,9 @@ sortchildren( parentp )
 	 *	    *prevp	arc before the arc you are comparing.
 	 */
     sorted.arc_childlist = 0;
-    for (   arcp = parentp -> children , detachedp = arcp -> arc_childlist ;
+    for (  (arcp = parentp -> children)&&(detachedp = arcp -> arc_childlist);
 	    arcp ;
-	    arcp = detachedp , detachedp = detachedp -> arc_childlist ) {
+	   (arcp = detachedp)&&(detachedp = detachedp -> arc_childlist)) {
 	    /*
 	     *	consider *arcp as disconnected
 	     *	insert it into sorted
@@ -407,9 +407,9 @@ sortparents( childp )
 	 *	    *prevp	arc before the arc you are comparing.
 	 */
     sorted.arc_parentlist = 0;
-    for (   arcp = childp -> parents , detachedp = arcp -> arc_parentlist ;
+    for (  (arcp = childp -> parents)&&(detachedp = arcp -> arc_parentlist);
 	    arcp ;
-	    arcp = detachedp , detachedp = detachedp -> arc_parentlist ) {
+	   (arcp = detachedp)&&(detachedp = detachedp -> arc_parentlist)) {
 	    /*
 	     *	consider *arcp as disconnected
 	     *	insert it into sorted
@@ -494,9 +494,9 @@ sortmembers( cyclep )
 	 */
     todo = cyclep -> cnext;
     cyclep -> cnext = 0;
-    for (   doing = todo , todo = doing -> cnext ;
+    for (  (doing = todo)&&(todo = doing -> cnext);
 	    doing ;
-	    doing = todo , todo = doing -> cnext ) {
+	   (doing = todo )&&(todo = doing -> cnext )){
 	for ( prev = cyclep ; prev -> cnext ; prev = prev -> cnext ) {
 	    if ( membercmp( doing , prev -> cnext ) == GREATERTHAN ) {
 		break;
