@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.16 83/01/18";
+static char sccsid[] = "@(#)telnetd.c	4.17 83/01/22";
 #endif
 
 /*
@@ -104,7 +104,7 @@ again:
 		perror("telnetd: bind");
 		sleep(5);
 	}
-	signal(SIGCHLD, reapchild);
+	sigset(SIGCHLD, reapchild);
 	listen(s, 10);
 	for (;;) {
 		int s2;
