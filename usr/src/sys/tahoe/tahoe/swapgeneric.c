@@ -1,6 +1,10 @@
-/*	swapgeneric.c	7.1	88/05/21	*/
-
-#include "../machine/pte.h"
+/*
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)swapgeneric.c	1.7 (Berkeley) %G%
+ */
 
 #include "param.h"
 #include "conf.h"
@@ -9,9 +13,11 @@
 #include "systm.h"
 #include "reboot.h"
 
-#include "../tahoe/cpu.h"
-#include "../tahoe/cp.h"
-#include "../tahoe/mtpr.h"
+#include "pte.h"
+#include "cpu.h"
+#include "cp.h"
+#include "mtpr.h"
+
 #include "../tahoevba/vbavar.h"
 
 /*
