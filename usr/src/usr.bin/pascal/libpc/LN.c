@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)LN.c 1.1 %G%";
+static char sccsid[] = "@(#)LN.c 1.2 %G%";
 
 #include "h01errs.h"
 
