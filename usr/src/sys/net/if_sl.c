@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_sl.c	8.7 (Berkeley) %G%
+ *	@(#)if_sl.c	8.8 (Berkeley) %G%
  */
 
 /*
@@ -217,6 +217,7 @@ slopen(dev, tp)
 	register struct sl_softc *sc;
 	register int nsl;
 	int error;
+	int s;
 
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
@@ -231,6 +232,9 @@ slopen(dev, tp)
 			tp->t_sc = (caddr_t)sc;
 			sc->sc_ttyp = tp;
 			sc->sc_if.if_baudrate = tp->t_ospeed;
+			s = spltty();
+			tp->t_state |= TS_ISOPEN | TS_XCLUDE;
+			splx(s);
 			ttyflush(tp, FREAD | FWRITE);
 			return (0);
 		}
@@ -251,6 +255,7 @@ slclose(tp)
 	ttywflush(tp);
 	s = splimp();		/* actually, max(spltty, splnet) */
 	tp->t_line = 0;
+	tp->t_state = 0;
 	sc = (struct sl_softc *)tp->t_sc;
 	if (sc != NULL) {
 		if_down(&sc->sc_if);
@@ -603,7 +608,7 @@ slinput(c, tp)
 	sc = (struct sl_softc *)tp->t_sc;
 	if (sc == NULL)
 		return;
-	if (c & TTY_ERRORMASK || ((tp->t_state & TS_CARR_ON) == 0 &&
+	if ((c & TTY_ERRORMASK) || ((tp->t_state & TS_CARR_ON) == 0 &&
 	    (tp->t_cflag & CLOCAL) == 0)) {
 		sc->sc_flags |= SC_ERROR;
 		return;
