@@ -1,10 +1,11 @@
 # Makefile for the f77 math & startup lib - libF77.a
 
-#	@(#)makefile	1.16	%G%
+#	@(#)makefile	1.17	%G%
 
 DESTDIR =
 LIB = libF77.a
 LPR = lpr
+CFLAGS = -O
 
 # for the CFO 11's
 #LIBDIR = ${DESTDIR}/usr/ucb/lib
@@ -59,7 +60,7 @@ trapov_.o: trapov_.c
 
 # compile, then strip unnecessary symbols
 .c.o :
-	cc -O -c ${OPTIONS} $*.c
+	cc -c ${CFLAGS} ${OPTIONS} $*.c
 	-ld -r -x $*.o
 	mv a.out $*.o
 
@@ -127,7 +128,7 @@ tape:	Makefile
 	@ls man.s.makefile > /dev/null
 	@rm -f man/s.makefile
 	-tar cbf 20 $(TAPE) READ_ME Makefile man complex $(SOURCES) \
-		mkindx.c bit.c subout.c
+		mkindx.c subout.c
 	@ln man.s.makefile man/s.makefile
 	@rm -f man.s.makefile
 
