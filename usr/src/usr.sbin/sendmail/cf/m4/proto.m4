@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.60 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.61 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -531,14 +531,12 @@ R$*			$: $>98 $1
 # short circuit local delivery so forwarded email works
 ifdef(`_STICKY_LOCAL_DOMAIN_',
 `R$+ < @ $=w . >		$: < $H > $1 < @ $2 . >		first try hub
-R< $+ > $+ + $* < $+ >	$#_LOCAL_ $@ $3 $: $2		yep (plussed name) ....
-R< $+ > $+ < $+ >	$#_LOCAL_ $: $2			yep (nonplussed) ....
+R< $+ > $+ < $+ >	$#_LOCAL_ $: $2			yep ....
 R< > $=D . $+ < $+ >	$#_LOCAL_ $: $1 . $2		dotted name?
-R< > $+ + $* < $+ >	$#_LOCAL_ $@ $2 $: $1		plussed name?
+R< > $+ + $* < $+ >	$#_LOCAL_ $: $1 + $2		plussed name?
 R< > $+ < $+ >		$#_LOCAL_ $: @ $1			nope, local address',
 `R$=L < @ $=w . >		$#_LOCAL_ $: @ $1			special local names
-R$+ + $* < @ $=w . >	$#_LOCAL_ $@ $2 $: $1		plussed name
-R$+ < @ $=w . >		$#_LOCAL_ $: $1			nonplussed name')
+R$+ < @ $=w . >		$#_LOCAL_ $: $1			regular local name')
 ifdef(`MAILER_TABLE',
 `
 # not local -- try mailer table lookup
