@@ -1,0 +1,882 @@
+.\"	@(#)cmac1	6.1 (Berkeley) %G%
+.\"
+.if t .nr L 9i
+.if t .nr W 4.5i \"changes page width from default 6i to 4.5i
+.if t .nr O .75i
+.nr N 3 \" Section page numbering
+.so /usr/lib/tmac/tmac.m \"Calls mm macros instead of calling on command line
+.rm  AT AV CS FC MT PM SG NS NE
+.rr A Au C E Ex Fg Tb
+.)K
+.dsUG \fIUNIX System User Reference Manual\fR
+.dsUA \fIUNIX System Administrator Reference Manual\fR
+.dsUP \fIUNIX System Programmer Reference Manual\fR
+.dsU UNIX operating system
+.dsV UNIX System
+.dsW UNIX system
+.if n .ds EM --
+.di XX
+.sp 1P
+.di
+.nr R. \n(dn
+.rm XX
+.nr iN 0
+.nr sL 0
+.de)T
+.if t .ps 8
+.if t .if \\n(sL .ps 12
+.ft B
+.nr;0 \w\\$5
+.if\w\\$6 .nr ;0 +\w'-'u+\w\\$6u
+.if\\n(;0-\\n(:a .nr :a \\n(;0
+.)I \\$1 \\n(H1 \\n(H2 \\n(H3 \\n(H4 \\n(H5 \\n(H6 \\n(H7
+.if\w\\$3-\\*(}3 .nr H\\$1 \w\\$3
+..
+.de)U \" Macro that outputs each line of TOC--modified for ps, font, spacing
+.if t .ps 8
+.ft B
+.if t \{\
+.if!0\\$1-\\n(:b .sp\\n(:cu*.3v \}
+.if n \{\
+.if!0\\$1-\\n(:b .sp\\n(:cu*1v \}
+.)I \\$1 \\*(}0
+.nr;0 \\*(}3
+.)I \\$1 \\*(Ci
+.nr;1 \\*(}3
+.)I \\$1 \\*(}2
+.nr;2 \\*(}3
+.ds}3 \\$5
+.if\\n(.$-5 .ds }3 \\$6\(hy\\$5
+.nr:e \\n(:au-\w\\*(}3u+2n
+.ds}3 \h\\n(:eu\\*(}3
+.ds}y
+.nr;0 -\w\\$3
+.if\\n(;0 .as }y \h\\n(;0u
+.if2-0\\$1 .as }y "\\$3
+.if0\\$1-1 .ds }y "\\$3\\*(}y
+.if!0\\$2 .ds }y
+.ll\\nWu-\\n(:au-3n
+.in\\n(;2u
+.if!0\\$2 .in\\n(;1u
+.in\\n(;1u \" Used to be ti\\n(;1
+.fi
+.di>A
+.if!0\\$1-\\n(:d .if !\\n(:f \\*(}y\\$4\\\\f(BB\\a\\fB\\*(}3
+.if!0\\$1-\\n(:d .if \\n(:f \\*(}y\\$4\\t\\fB\\*(}3
+.if0\\$1-\\n(:d \\*(}y\\$4\\fB\\*(}3
+.br
+\!.br
+.di
+.br
+.ll\\nWu
+.ne\\n(dnu+.5p-1v
+.ta\\nWu-\\n(:au-2n
+.nf
+.in0
+.na
+.>A
+..
+.de uD
+.if t .sp .5
+.if n .sp
+.ft B
+.S 12
+.in +1.5i
+.ti -1.5i
+.di oL
+.fi
+.na
+\\$7\h'|1.5i'\\$4
+.br
+\!.br
+.di
+.br
+.in 0
+.ne \\n(dnu+1v
+.nf
+.oL
+.fi
+.ad b
+.ft R
+.S 10
+..
+.de)L \" Macro that begins each list--modified for spacing
+.if\\n(:g>5 .)D "LB:too many nested lists"
+.if\\n(:g .)A 
+.if!\\n+(:g-1 .ds ]b \\n(.i
+.nr:b \\n(.iu+0\\$1u 
+.nr:c \\n(.iu+0\\$2u 
+.nr:d 0\\$3 
+.nr:e 0\\$4 
+.nr:f 0\\$6 
+.if!\w\\$6 .nr :f 1
+.ds]g \\$5
+.if!\w\\$5 \{.ds ]g \&
+.if\\n(:e .ds ]g 1
+'br\}
+.nr:a 0 1
+.if0\\$4 .af :a \\$5 1
+.if t .if(\\n(:g<=\\n(Ls) .SP 1.5
+.if n .if(\\n(:g<=\\n(Ls) .SP 2
+.fi
+.in\\n(:bu
+.ti\\n(:bu
+..
+.deLI  \" Modified for spacing
+.if!\\n(:g .)D "LI:no lists active" 
+.if(\\n(:g<=\\n(Ls)&(\\n(:f>0) .SP 1
+.in\\n(:bu
+.if(\\n(:f)&(\\n(:D<1) .ne1v+.5p
+.ds}0 \\*(]g
+.if\\n(:e .ds }0 \\n+(:a.
+.if\\n(:e-1 .ds }0 \\n(:a)
+.if\\n(:e-2 .ds }0 (\\n(:a)
+.if\\n(:e-3 .ds }0 [\\n(:a]
+.if\\n(:e-4 .ds }0 <\\n(:a>
+.if\\n(:e-5 .ds }0 {\\n(:a}
+.if\\n(.$-1 .ds }0 \\$1\ \\*(}0
+.if\\n(.$=1 .ds }0 \\$1
+.nr;0 \w\\*(}0
+.nr;1 \\n(:c
+.if\\n(:d .nr ;1 \\n(:bu-\\n(:du-\\n(;0u
+.if!\\n(;1 .nr ;1 0
+.nr;0 \\n(:bu-\\n(;1u-\\n(;0u
+.ti\\n(;1u
+.if!\\n(;0 .nr ;0 \w u
+.if\w\\*(}0 \&\\*(}0\h\\n(;0u\&\c
+..
+.deRP \"Modified to add section-page in toc & $3 to change Rp string
+.if\\n(;R=2 .)D "RP: missing RF"
+.if\\n(;R \{\
+.nr;R 0 
+.if!(0\\$1) .nr :R 0 1 
+.)R
+.ie(0\\$2=2):(0\\$2=3) \{\
+.if\\n(;e \&\c
+'ne8
+.sp1 \}
+.el\{\
+.ie\\n(;e .SK
+.el\{\
+\&\c
+.bp
+'br\} \}
+.if \\n(.$=3 .ds Rp \\$3
+.ce1
+.if \\n(.$<3 .ul
+\\*(Rp
+.if\w\\*(Rp \{\
+.am>C
+.)T 1 1 "" "\\*(Rp" \\nP \\*(cN
+\\..
+'br\}
+.if n .sp 2v
+.if t .sp 1v
+.nf
+.>r
+.br
+.rm>r
+.)R
+.if(0\\$2=0):(0\\$2=2) .SK
+'br\}
+..
+.de)r \"Modified for spacing -- 1.5v instead of .5v in troff--2v in nroff
+.if t \{\
+.if\\n(Ds  .SP 1.5 \}
+.if n \{\
+.if\\n(Ds  .SP 2 \}
+.if(\\n(:0>=\\n(.t)&((\\n(:0<(\\n(.p-\\n(;r-\\n(:m)):\
+(\\n(nl>(\\n(.p-\\n(;r-\\n(:o/2u+\\n(;r))) \{\
+.if\\n(;e \&\c
+.ne\\n(.tu+1v
+.if\\n(:I<2 .)r \}  
+..
+.de)t \"Modified for spacing--same as )r macro
+.br
+.nr!L \\n(!7
+.ls1
+.)r
+.ti\\n(.iu
+.nf
+.if\\n(:t>1 .in -\\n(;iu  
+.rs
+.nr;d 1
+.>0
+.)R
+.nr;d 0
+.ie\\n(:I>1 \{\
+.if\\n(nl>\\n(:J .nr :I 0 \}  
+.el.nr :I 0
+.ls\\n(!L
+.in\\n(;iu
+.if!\\n(;q .nf
+.if n .if\\n(Ds .SP 2
+.if t .if\\n(Ds .SP 1.5
+.nr:J \\n(nl
+..
+.de FG
+.if n \{\
+.ie \\$1>37 .nr s1 37
+.el .nr s1 \\$1 \}
+.if t \{\
+.ie \\$1>39 .nr s1 39
+.el .nr s1 \\$1 \}
+.nr fN +1
+.nr cK 0
+.if '\\$3'C' .nr cK 1
+.if '\\$3'CF' .nr cK 1
+.ie \\n(cK=1 \{\
+.nr sN +1 
+.nr fN -1 \}
+.el \{\
+.ds iD \\$3
+.nr sN 1 \} 
+.nr cK 0
+.if !'\\$3'C' .if !'\\$3'1' .if !'\\$3'CF' \{\
+.:L "\\$1" "\\$2" "\\*(iD-\\n(sN" "\\*(cN-\\n(fN" "\\$4"
+.nr cK 1 \}
+.if \\n(cK=0 .:L "\\$1" "\\$2" "" "\\*(cN-\\n(fN" "\\$4"
+.if \\n(sL=0 \{\
+.nr cK 0
+.if \\$2>27 .nr cK 1
+.if '\\$3'1' .nr cK 2
+.if '\\$3'CF' .nr cK 2
+.ie \\n(cK=1 \{\
+.if \\n(.$=4 .DF
+.if \\n(.$=5 .DS
+.fi
+.ft B
+.ds fM Figure\ \\*(cN-\\n(fN.\ \ 
+.nr mW \w'\\*(fM'
+.nr tW \w'\\$4'
+.nr cK \\n(.l-\\n(mW
+.ie \\n(tW>\\n(cK \{\
+'in +\\n(mWu
+'ti -\\n(mWu \}
+.el 'ce 1000
+.di fT
+.sp 1
+\\*(fM\\$4
+.ft P
+.br
+.di
+.nr fH \\n(dn
+.ie \\n(.i 'in
+.el 'ce 0
+\!.if n .ne 39v
+\!.if t .ne 41v
+\!.rs
+.sp 18P
+.ce 3
+\\*(iD-\\n(sN
+\\$2W X \\$1H
+TURN-PAGE
+.nf
+.fT
+.if n .sp 18P-\\n(fHu
+.if t .sp 21P-\\n(fHu
+\!.SP 1
+.DE \}
+.el .ie \\n(cK=0 \{\
+.if \\n(.$=4 .DF
+.if \\n(.$=5 .DS
+.fi
+.ft B
+.ds fM Figure\ \\*(cN-\\n(fN.\ \ 
+.nr mW \w'\\*(fM'
+.nr tW \w'\\$4'
+.nr cK \\n(.l-\\n(mW
+.ie \\n(tW>\\n(cK \{\
+'in +\\n(mWu
+'ti -\\n(mWu \}
+.el 'ce 1000
+.di fT
+.sp 1
+\\*(fM\\$4
+.ft P
+.br
+.di
+.nr fH \\n(dn
+.ie \\n(.i 'in
+.el 'ce 0
+\!.ne \\n(s1v+\\n(fHu
+\!.if t .if \\n(nl>\\n(<J .if \\n(s1<38 .SP 1
+\!.if n .if \\n(nl>\\n(<J .if \\n(s1<36 .SP 1
+\!.rs
+.sp \\n(s1P/2u-1P
+.ce 2
+\\*(iD-\\n(sN
+\\$2W X \\$1H
+.sp \\n(s1P/2u-1P
+.nf
+.fT
+\!.if \\n(.t>=\\n(R.*8 .SP 1
+\!.if t .ne 8
+\!.SP 1
+.DE \}
+.el \{\
+.fi
+.ft B
+.ds fM Figure\ \\*(cN-\\n(fN.\ \ 
+.nr mW \w'\\*(fM'
+.nr tW \w'\\$4'
+.nr cK \\n(.l-\\n(mW
+.ie \\n(tW>\\n(cK \{\
+'in +\\n(mWu
+'ti -\\n(mWu \}
+.el 'ce 1000
+.sp 1
+\\*(fM\\$4
+.ft P
+.if \\n(.t>=\\n(R.*8 .SP 1
+.if t .ne 8
+.ie \\n(.i 'in
+.el 'ce 0 \}
+\}
+.rr cK s1 mW tW fH
+.rm fT fM
+..
+.de IN
+.if n \{\
+.ie \\$1>39 .nr s1 39
+.el .nr s1 \\$1 \}
+.if t \{\
+.ie \\$1>41 .nr s1 41
+.el .nr s1 \\$1 \}
+.nr iN +1
+.if \\n(.$=3 .DF
+.if \\n(.$=4 .DS
+\!.ne \\n(s1v
+\!.if t .if \\n(nl>\\n(<J .if \\n(s1<40 .SP 1
+\!.if n .if \\n(nl>\\n(<J .if \\n(s1<38 .SP 1
+\!.rs
+.sp \\n(s1P/2u-1P
+.ce 2
+INSERT \\n(iN \\$3
+\\$2W X \\$1H
+.sp \\n(s1P/2u-1P
+\!.if \\n(.t>=\\n(R.*8 .SP 1
+\!.ne 8
+\!.SP 1
+.DE
+.:L "\\$1" "\\$2" "\\$3" "" "INSERT  \\n(iN"
+.rr s1
+..
+.de AS
+.if '\\$1'D' .ds aD Danger
+.if '\\$1'C' .ds aD Caution
+.if '\\$1'W' .ds aD Warning
+.if '\\$1'N' .ds aD Note
+.ie \w'\\$2' .as aD \ \\$2:\ \ 
+.el .as aD :\ \ 
+.if n .in +4
+.if t .in +0.25i
+.if n .ll -4
+.if t .ll -0.25i
+.if n .SP 2
+.if t .SP 2
+.nr pF \\n(.f
+.if n .ft B
+.if t .ft BI
+\\*(aD\c
+.if '\\$1'N' 'ft R
+..
+.de AE
+.br
+.if n .SP 2
+.if t .SP 2
+.ll
+.in
+.ft \\n(pF
+.rr pF
+.rm aD
+..
+.\"	need to set floating display register to 5
+.nr Df 5
+.de )E \"Save heading for TOC
+.ds }3
+.if \\n(:S .ds }3 \\*(cN
+.if \w'\\*(}0' .as }0 \ 
+.am >C
+.)T \\n(;1 \\$1 "\\*(}0" "\\$2" \\nP \\*(}3 "\\*(cD"
+\\..
+..
+.de CE \" Force a toc entry
+.am >C
+.)T \\$1 \\$1 "\\$2" "\\$5" "\\$4" "\\$3"
+\\..
+..
+.PH "''''"	\"remove default page number
+.EF "'\\fB\\\\*(cN-\\\\nP\\fP'''"	\"page # at bottom left of even pages
+.OF "'''\\fB\\\\*(cN-\\\\nP\\fP'"	\"at bottom right of odd pages
+.PF "''''"
+.nr Pt 1	\"paragraph type 1 -- all paragraphs indented
+.nr Pi 0	\"set paragraph indent to zero spaces
+.if t .nr Ps 3
+.if n .nr Ps 2
+.HM 1 A A A A A A	\"set heading mark types
+.nr Ht 1	\"heading type 1 -- no concatenation of heading marks
+.nr Hb 5	\"break after heading levels 1 - 5
+.nr Hs 5	\"output a space after heading levels 1 - 5
+.nr Hc 2
+.nr hC 2
+.nr Ds 1
+.nr Si 4
+.nr Li 4
+.ds HP 14 12 10 10 10 10 10
+.if t .ds HF 3 3 3 4 3 4 3
+.if n .ds HF 3 3 3 2 3 2 3
+.nr Cl 3	\"save levels 1-3 for the table of contents
+.nr cS 3
+.nr Oc 1	\"no default page numbers on TOC
+.if t .ds Ci 0P 0P 2P
+.if n .ds Ci 0n 0n 4n
+.SA 1
+.de HX	\"define user-exit header macro
+.)I \\$1 \\*(HF
+.ds hF \\*(}3
+.)I \\$1 \\*(HP
+.nr hP \\*(}3
+.if !\\n(Hc .nr Hc \\n(hC
+.if \\$1>1 .nr Cl \\n(cS
+.if \\$1=1 .if \\n(sL=0 .ds }0
+.if \\$1=2 .ds }0
+.if \\$1=3 .ds }0
+.if \\$1=4 .ds }0
+.if \\$1=5 .ds }0
+.if \\$1=6 .ds }0
+.if \\$1=7 .ds }0
+.nr ;3 +3v
+.if t .if \\$1=2 .SP 3
+.if n .if \\$1=2 .SP 3
+.if t .if \\$1=3 .SP 2
+.if n .if \\$1=3 .SP 2
+.if t .if \\$1=4 .SP 2
+.if n .if \\$1=4 .SP 2
+.if t .if \\$1=5 .SP 1
+.if n .if \\$1=5 .SP 1
+.if \\$1=1 \{\
+.ds cT \\$3
+.nr cS \\n(Cl
+.if \\n(sL=0 .nr Cl 0
+.ps +4
+.ft B
+.rs
+.sp 14p
+.ce
+\\*(cD
+.sp 2p
+.SP 1P
+.ft P
+.rs
+.ps -4 \}
+.if 0\\$1<=\\n(Hc \{\
+.nr hC \\n(Hc
+.ft \\*(hF
+.nr pS \\n(.s
+.ps \\n(hP
+.if \w\\$3>\\n(.l .nr Hc 0
+.ps \\n(pS
+.ft P \}
+.vs \\n(hP+2 
+..
+.de HZ
+.vs \\n(pS+2
+..
+.de TP
+'sp 2
+'ft B
+'tl \\*(}t
+.if \\nP%2 .if \\nP>1 'tl \\*(}o 
+.if !\\nP%2 'tl \\*(}e
+'ft P
+'sp 2
+.nr <J \\n(nl
+'ns
+..
+.de CH \"Chapter heading macro--use at the start of each chapter(section)
+.ds cH \\$2
+.nr cH 0\\$1
+.ie \\n(cH .ds cN \\n(cH
+.el .ds cN \\$1
+.ie \\n(.$=3 .ds cD \\$3
+.el .ds cD Chapter\ \\*(cN
+.EH "\\$2"
+.OH "\\$2"
+.nr fN 0
+.. 
+.de ES \"Defines end of section macro
+.)w	\"Flush out all leftover floating displays
+.ie \\nP%2 .nr oD 1
+.el .nr oD 0
+.ie !\\n(nl>\\n(<J .nr fL 1
+.el .nr fL 0
+.if \\n(oD .if !\\n(fL \{\
+.bp
+.rs
+.sp 3
+.if n .ft B
+.if t .ft BI
+.ce
+NOTES
+.ft P
+.bp \}
+.if !\\n(oD .if \\n(fL \{\
+.rs
+.sp 3
+.if n .ft B
+.if t .ft BI
+.ce
+NOTES
+.ft P
+.bp \}
+.if !\\n(oD .if !\\n(fL .bp
+.rr oD fL cK
+..
+.so /k3/unx/MACROS/screens/newcursor
+.so /k3/unx/MACROS/screens/cmac1/SC
+.so /k3/unx/MACROS/screens/cmac1/SE
+.so /k3/unx/MACROS/screens/T1
+.so /k3/unx/MACROS/screens/T2
+.so /k3/unx/MACROS/screens/ET
+.de TY \"Macro to define title in TOC
+.EF "''''"
+.OF "''''"
+.ft B
+.sp 2
+.S 12 14
+.ce
+\\*(cD
+.sp 2p
+.sp 1P
+.ie !\w\\*(cT-\\n(.l .ce
+\\*(cT
+.S 10 12
+.sp 2P
+.tl '''PAGE'
+.ft P
+..
+.de cY
+.ft B
+.ps +4
+.ce
+CONTENTS
+.ps -4
+.ft P
+.sp 3P
+..
+.de Ul \"Underline
+\\$1\l'|0\(ul'\\$2
+..
+.de UL \" Ray's Underline macro
+.nr wW \w'\\$1'
+\fB\l'\\n(wWu\(ul'\fR\h'-\\n(wWu'\\$1\\$2
+..
+.de XO
+.tr~~
+\!~\\$1 ... \\*(cN-\\nP
+\\$1
+..
+.de XE
+.tr~~
+\!~\\$1 ... \\*(cN-\\nP
+..
+.de :L
+.am ]L
+.>L "\\$1" "\\$2" "\\$3" "\\$4" "\\$5"
+\\..
+..
+.de IL
+.if n \{\
+.ll 75
+.lt 75
+.po 5
+.ds tG \\$1
+.ds wR \\$2
+.ds eD \\$3
+.af pN 1
+.nr pN 0
+.de :B
+'sp 3
+'nr pN +1
+'ft B
+'tl ''-\\\\n(pN-''
+'ft P
+'sp 2
+'tP
+\\..
+.de tP
+'sp 2
+'ft B
+'tl 'AT&T''DOCUMENT DEVELOPMENT ORGANIZATION'
+'sp 3
+'tl ''LIST OF ILLUSTRATIONS''
+'sp 2
+'nf
+'ta 20R 21L 54R 55L
+\tTGL:\t\\*(tG\tSELECT CODE:\t\\*(sC
+\tWRITER:\t\\*(wR\tISSUE:\t\\*(iS
+\tEDITOR:\t\\*(eD\tRELEASE DATE:\t\\*(rD
+'sp 2
+'ta 2 6 14 25 43 66
+\tH\tW\tID#\tFIG.\tTITLE\tMISC.
+'ft P
+\l'7.5i_'
+\\..
+.bp
+.wh -6 :B
+.nf
+.tP
+.]L \}
+..
+.de >L
+.ll -12
+.in +33
+.ti -33
+.ft B
+.fi
+.di ?L
+\h'|1'\\$1\h'|5'\\$2\h'|9'\\$3\h'|25'\\$4\h'|33'\\$5 
+.br
+.nf
+.ll
+.in
+.ft P
+\l'7.5i_'
+.di
+.nr dH \\n(dnu
+.ne \\n(dHu+1v
+.?L
+.rm ?L
+..
+.de CF
+.ft R
+.if t .ps -2
+.if t .vs -2
+.nf
+.da fN
+.if n .sp 1v
+\\$1\\ \\
+..
+.de TF
+.br
+.di
+.nr fh \\n(fhu+\\n(dnu
+.fi
+.if t .ps
+.if t .vs
+..
+.de CT
+.nr fh 0
+.ev 1
+.ft B
+.if t .ps +2
+.if t .vs +2
+.nf
+.di tL
+..
+.de TT
+.br
+.di
+.nr th \\n(dnu
+.ev
+..
+.de n1
+.ce
+\fBNOTICE\fR
+.sp 1v
+This contains private information owned or
+controlled by AT&T.
+It shall be treated in confidence and may be
+used only for installation, operation and
+maintenance of the equipment with which it
+is furnished and for no other purpose without
+written permission of AT&T.
+.sp 1v
+.ce
+Printed in U.S.A.
+..
+.de n2
+.ce
+.ps +2
+Copyright \(co 19\\\\n(yr AT&T
+.ps -2
+.sp 1v
+.ce
+All Rights Reserved
+.sp 1v
+.ce
+Printed in U.S.A.
+..
+.de n3
+.ce
+\fBNOTICE\fP
+.sp 1v
+This contains private information owned or controlled
+by AT&T.
+This information is of a developmental nature.
+A copyright will be obtained when published in final form.
+It shall be treated in confidence and may be used only
+for the express purpose for which it is distributed
+and for no other purpose without written
+permission of AT&T.
+.sp 1v
+.ce
+Printed in U.S.A.
+..
+.de CP
+.br
+.ds sC \\$1
+.ds iS \\$2
+.ds rD \\$3
+.rm TP
+.rs
+.bp
+.rm )h )b )f
+.wh 0
+.if t .po 0.25i
+.if n .po .5i
+.if t .ll 5.5i
+.if n .ll 7.5i
+.if t .lt 5.5i
+.if n .lt 7.5i
+.in 0
+.rs
+.sp 0.5i
+.tl '''\\fB\\$1\\fR'
+.tl '''\\fBIssue \\$2, \\$3\\fR'
+.ch )b 0
+.ev 2
+.if t .ll 4.5i
+.if t .in 1i
+.if t .ps -2
+.if t .vs -2
+.if n .ll 7i
+.if n .in 0.5i
+.fi
+.ad b
+.di nT
+.ie \\n(.$=3 .n1
+.el .ie t .if \\n(.$=4 .n2
+.el .if \\n(.$=4 .n3
+.di
+.nr nh \\n(dnu
+.ev 0
+.sp |\\n(.pu-\\n(nlu-\\n(fhu-\\n(nhu-\\n(thu/2u
+.nf
+.ce 1000
+.tL
+.br
+.ce 0
+.sp |\\n(.pu-0.5i-\\n(nhu-\\n(fhu
+.nT
+.br
+.if \\n(fh \l'1i'
+.fN
+.br
+..
+.de UC
+.if t \{\
+.S 8 10
+.lt 4.75i
+.ll 4.75i
+.po 1i
+.tr ~
+.bp
+.rs
+.sp 2v
+.tl \\$1\\*(sC, Iss. \\*(iSCOMMENT FORM
+.fi
+.P 0
+Your comments and suggestions are appreciated and
+will help us to provide the best documentation for your use.
+.AL 1 3
+.LI
+How would you rate this document for COMPLETENESS?
+(Please\ Circle)
+.SP
+.if n .ta 8 16 24 32 40 48 56 64
+.if t .ta 1.75i 3.8i
+.tc 
+Excellent	Adequate	Poor
+.tc -
+.br
+.ta 1i 2i 3i 4i
+4	3	2	1	0
+.tc
+.LI
+Identify any information that you feel should be included or removed.
+.SP
+\l'|4.5i'
+.SP
+\l'|4.5i'
+.LI
+How would you rate this document for ACCURACY of information?
+(Please\ Circle)
+.SP
+.ta 1.75i 3.8i
+Excellent	Adequate	Poor
+.tc -
+.br
+.ta 1i 2i 3i 4i
+4	3	2	1	0
+.tc
+.LI
+Specify page and nature of any error(s) found in this document.
+.SP
+\l'|4.5i'
+.SP
+\l'|4.5i'
+.LI
+How would you rate this document for ORGANIZATION of information?
+(Please\ Circle)
+.SP
+.ta 1.75i 3.8i
+Excellent	Adequate	Poor
+.tc -
+.br
+.ta 1i 2i 3i 4i
+4	3	2	1	0
+.tc
+.LI
+Describe any format or packaging problems you have experienced with
+this document.
+.SP
+\l'|4.5i'
+.SP
+\l'|4.5i'
+.LI
+Do you have any general comments or suggestions regarding this
+document?
+.SP
+\l'|4.5i'
+.SP
+\l'|4.5i'
+.LI
+We would like to know a little about your background as a user of
+this document:
+.LE
+.AL A
+.LI
+Your job function \l'|2.5i'
+.SP
+.LI
+Number of years experience with computer hardware:
+operation \l'.4i_' , 
+.br
+maintenance \l'.4i_' .
+.SP
+.LI
+Number of years experience with computer software: 
+user \l'.4i_' , 
+.br
+programmer \l'.4i_' .
+.br
+.LE
+.nf
+.SP
+Your Name \l'2.24i_' Phone No. \l'|4.5i'
+Company \l'|4.5i'
+Address \l'|4.5i'
+City & State \l'2.9i_' Zip Code \l'|4.5i'
+..
