@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dd.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)dd.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -252,24 +252,24 @@ dd_in()
 			++st.in_part;
 		}
 
-		if (ddflags & C_SWAB) {
-			if ((n = in.dbcnt) & 1) {
-				++st.swab;
-				--n;
-			}
-			swab(in.dbp, in.dbp, n);
-		}
-
 		/*
 		 * POSIX states that if bs is set and no other conversions
-		 * are specified, the block is output without buffering as
-		 * it is read.
+		 * than noerror, notrunc or sync are specified, the block
+		 * is output without buffering as it is read.
 		 */
 		if (ddflags & C_BS) {
 			out.dbcnt = in.dbcnt;
 			dd_out(1);
 			in.dbcnt = 0;
 			continue;
+		}
+
+		if (ddflags & C_SWAB) {
+			if ((n = in.dbcnt) & 1) {
+				++st.swab;
+				--n;
+			}
+			swab(in.dbp, in.dbp, n);
 		}
 
 		in.dbp += in.dbrcnt;
