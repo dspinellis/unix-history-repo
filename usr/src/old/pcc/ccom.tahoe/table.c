@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)table.c	1.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)table.c	1.24 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -471,13 +471,13 @@ ASSIGN,	INAREG|FOREFF|FORCC,
 ASSIGN, INAREG|FOREFF|FORCC,
 	SAREG|AWD,	TUNSIGNED,
 	SAREG|AWD,	TFLOAT|TDOUBLE,
-		0,	RLEFT,
+		0,	RLEFT|RESCC,
 		"	ZW\n",
 
 ASSIGN, INAREG|FOREFF|FORCC,
 	SAREG|AWD,	TFLOAT|TDOUBLE,
 	SAREG|AWD,	TUNSIGNED,
-		0,	RLEFT,
+		0,	RLEFT|RESCC,
 		"	ZY\n",
 
 ASSIGN,	INAREG|FOREFF,
@@ -776,7 +776,7 @@ MOD,	INAREG|FOREFF,
 
 /* should only see UNSIGNED lhs here if converted from UCHAR/USHORT lhs */
 /* beware -- the ediv remainder operand must be a register */
-ASG MOD,	INAREG|FOREFF,
+ASG MOD,	INAREG|FOREFF|FORCC,
 	SAREG|AWD,	TINT|TLONG|TUNSIGNED|TULONG,
 	SAREG|AWD,	TINT|TLONG,
 		NAREG|NEVEN,	RLEFT|RESCC,
@@ -995,7 +995,7 @@ ASG OPFLOAT,	INAREG|FOREFF|FORCC,
 		0,	RLEFT|RESCC,
 		"	ldfd	AL\n	OD	AR\n	cvdf\n	stf	TAL\n",
 
-ASG OPFLOAT,	INAREG|FOREFF,
+ASG OPFLOAT,	INAREG|FOREFF|FORCC,
 	SAREG|AWD,	ANYFIXED,
 	SAREG|AWD,	TFLOAT|TDOUBLE,
 		NAREG,	RLEFT|RESCC,	/* usable() knows we may need a reg pair */
