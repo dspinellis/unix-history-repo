@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 The Regents of the University of California.
+ * Copyright (c) 1983, 1989 The Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <paths.h>
@@ -50,7 +50,7 @@ union	{
 	struct	sockaddr_iso siso;
 } so_dst, so_gate, so_mask; 
 int	s;
-int	forcehost, forcenet, doflush, nflag, xnsflag, qflag, Cflag;
+int	forcehost, forcenet, doflush, nflag, xnsflag, qflag, Cflag = 1;
 int	iflag, osiflag, verbose;
 int	pid;
 struct	sockaddr_in sin = { sizeof(sin), AF_INET };
@@ -102,6 +102,9 @@ main(argc, argv)
 			case 'v':
 				verbose++;
 				break;
+
+			case 'N':
+				Cflag = 0; /* Use routing socket */
 			}
 	}
 	pid = getpid();
@@ -524,7 +527,16 @@ newroute(argc, argv)
 		ishost = 0;
 	(void) getaddr(argv[2], &so_gate.sa, 0, &hp, &gateway, 0);
 	if ((Cflag == 0) && argc == 4) {
-		(void) getaddr(argv[3], &so_mask.sa, 0, &hp, &mask, 0);
+		ret = atoi(argv[3]);
+		if (ret == 0) {
+		    printf("old usage of trailing 0, assuming route to if\n");
+		    iflag = 1;
+		} else if (ret > 0 && ret < 10) {
+		    printf("old usage of trailing digit, ");
+		    printf("assuming route via gateway\n");
+		    iflag = 0;
+		} else
+		    (void) getaddr(argv[3], &so_mask.sa, 0, &hp, &mask, 0);
 	}
 	flags = RTF_UP;
 	if (ishost)
