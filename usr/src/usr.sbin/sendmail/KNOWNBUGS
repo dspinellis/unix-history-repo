@@ -1,0 +1,18 @@
+
+
+	     K N O W N   B U G S   I N   S E N D M A I L
+
+			8.1 (%G%)
+
+
+The following are bugs or deficiencies in sendmail that I am aware of
+but which have not been fixed in the current release.  You probably
+want to get the most up to date version of this from FTP.CS.Berkeley.EDU
+in /ucb/sendmail/KNOWNBUGS.
+
+* "SYSERR: openmailer(local): fd 1 not open" message
+
+  File descriptor 1 (standard output) should not be closed during normal
+  processing.  This is checked periodically, and sometimes this condition
+  is found and this message is produced.  Sendmail repairs the problem,
+  and the mail is still delivered, but I still don't know why it happens.
