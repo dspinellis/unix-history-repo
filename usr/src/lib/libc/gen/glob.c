@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)glob.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.18 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -317,18 +317,21 @@ glob3(pathbuf, pathend, pattern, restpattern, pglob)
 	struct dirent *(*readdirfunc)();
 	DIR *dirp;
 	int len, err;
+	char buf[MAXPATHLEN];
 
 	*pathend = EOS;
 	errno = 0;
 	    
-	if (!(dirp = g_opendir(pathbuf, pglob)))
+	if ((dirp = g_opendir(pathbuf, pglob)) == NULL) {
 		/* TODO: don't call for ENOENT or ENOTDIR? */
-		if (pglob->gl_errfunc &&
-		    (*pglob->gl_errfunc)(pathbuf, errno) ||
-		    (pglob->gl_flags & GLOB_ERR))
-			return(GLOB_ABEND);
-		else
-			return(0);
+		if (pglob->gl_errfunc) {
+			g_Ctoc(pathbuf, buf);
+			if (pglob->gl_errfunc(buf, errno) ||
+			    pglob->gl_flags & GLOB_ERR)
+				return (GLOB_ABEND);
+		}
+		return(0);
+	}
 
 	err = 0;
 
@@ -554,13 +557,13 @@ qprintf(s)
 	register Char *p;
 
 	for (p = s; *p; p++)
-		(void)printf("%c", *p & 0xff);
+		(void)printf("%c", CHAR(*p));
 	(void)printf("\n");
 	for (p = s; *p; p++)
 		(void)printf("%c", *p & M_PROTECT ? '"' : ' ');
 	(void)printf("\n");
 	for (p = s; *p; p++)
-		(void)printf("%c", *p & M_META ? '_' : ' ');
+		(void)printf("%c", ismeta(*p) ? '_' : ' ');
 	(void)printf("\n");
 }
 #endif
