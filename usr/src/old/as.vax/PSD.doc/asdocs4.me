@@ -1,6 +1,6 @@
 .\"
 .\"	Copyright (c) 1982 Regents of the University of California
-.\"	@(#)asdocs4.me 1.6 %G%
+.\"	@(#)asdocs4.me 1.7 %G%
 .\"
 .EQ
 delim $$
@@ -30,7 +30,7 @@ are spelled with lower-case rather than upper-case letters.
 .SH 2 "Specifying Displacement Lengths"
 .pp
 Under certain circumstances,
-the following constructs are (optionallly) recognized by
+the following constructs are (optionally) recognized by
 .i as
 to indicate the number of bytes to allocate for
 the displacement used when constructing
@@ -92,7 +92,7 @@ assembled with that displacement,
 even if it will fit into a smaller field,
 or if significance is lost.
 If the length modifier is not present,
-and if the value of the displacment is known exactly in
+and if the value of the displacement is known exactly in
 .i as 's
 first pass,
 then
@@ -242,7 +242,7 @@ if
 or
 .q H
 floating point numbers are used
-and will complain about mixed floating conversions,
+and will complain about mixed floating conversions.
 .SH 1 "Limits"
 .(b
 .TS
@@ -308,12 +308,12 @@ so one must be careful of side effects,
 and the
 .b acbx
 family will be much harder (in the general case)
-because the comparision depends on the sign of the addend operand,
+because the comparison depends on the sign of the addend operand,
 and two operands are used more than once.
 Augmenting
 .i as
 with these extended loop instructions
-will allow the peephole optmizer to produce much better
+will allow the peephole optimizer to produce much better
 loop optimizations,
 since it currently assumes the worst
 case about the size of the loop body.
