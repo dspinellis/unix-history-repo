@@ -1,8 +1,10 @@
-#	@(#)README	5.1 (Berkeley) %G%
+#	@(#)README	5.2 (Berkeley) %G%
 
 The script file consists of lines with a initial character which is
 the "command" for that line.  Legal characters are as follows:
 
+e: echo a string
+	+ writes out the rest of the line into the output file
 g: do a get command
 	+ must be followed by [kK]
 	+ writes out the retrieved data DBT.
@@ -11,7 +13,7 @@ p: do a put command
 r: do a del command
 	+ must be followed by [kK]
 s: do a seq command
-	+ writes out the retrieved key and data DBT's
+	+ writes out the retrieved data DBT.
 f: set the flags for the next command
 	+ no value zero's the flags
 D [file]: data file
