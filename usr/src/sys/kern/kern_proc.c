@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.51	82/12/14	*/
+/*	kern_proc.c	4.52	82/12/16	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -357,6 +357,7 @@ register struct inode *ip;
 
 		for (fp = file; fp < fileNFILE; fp++) {
 			if (fp->f_type == DTYPE_FILE &&
+			    fp->f_count > 0 &&
 			    fp->f_inode == ip && (fp->f_flag&FWRITE)) {
 				u.u_error = ETXTBSY;
 				goto bad;
