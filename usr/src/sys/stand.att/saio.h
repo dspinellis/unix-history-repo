@@ -1,4 +1,4 @@
-/*	saio.h	4.11	%G%	*/
+/*	saio.h	4.12	%G%	*/
 
 /*
  * header file for standalone package
@@ -116,6 +116,7 @@ extern	int errno;	/* just like unix */
 #define SAIODEVDATA	(('d'<<8)|8)	/* get device data */
 #define SAIOSSI		(('d'<<8)|9)	/* set skip sector inhibit */
 #define SAIONOSSI	(('d'<<8)|10)	/* normal skip sector handling */
+#define SAIOSSDEV	(('d'<<8)|11)	/* is device skip sector type? */
 
 /* codes for sector header word 1 */
 #define HDR1_FMT22	0x1000	/* standard 16 bit format */
