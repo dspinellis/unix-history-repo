@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -249,6 +249,8 @@ dmove(i, j)
 	return (i);
     if (j >= 0) {
 	(void) dup2(i, j);
+	if (j != i)
+	    (void) close(i);
 	return (j);
     }
     j = dcopy(i, j);
