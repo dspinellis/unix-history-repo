@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.9 (Berkeley) %G%
+ *	@(#)sendmail.h	6.10 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.9		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.10		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -139,8 +139,10 @@ struct mailer
 	BITMAP	m_flags;	/* status flags, see below */
 	short	m_mno;		/* mailer number internally */
 	char	**m_argv;	/* template argument vector */
-	short	m_s_rwset;	/* rewriting set for sender addresses */
-	short	m_r_rwset;	/* rewriting set for recipient addresses */
+	short	m_sh_rwset;	/* rewrite set: sender header addresses */
+	short	m_se_rwset;	/* rewrite set: sender envelope addresses */
+	short	m_rh_rwset;	/* rewrite set: recipient header addresses */
+	short	m_re_rwset;	/* rewrite set: recipient envelope addresses */
 	char	*m_eol;		/* end of line string */
 	long	m_maxsize;	/* size limit on message to this mailer */
 	int	m_linelimit;	/* max # characters per line */
