@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)option.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)option.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -75,11 +75,6 @@ extern int sc_window;
 extern int ispipe;
 extern char *first_cmd;
 extern char *every_first_cmd;
-#if LOGFILE
-extern char *namelogfile;
-extern int force_logfile;
-extern int logfile;
-#endif
 extern char *tagfile;
 extern char *tagpattern;
 public int tagoption = 0;
@@ -252,43 +247,6 @@ toggle_option(s, do_toggle)
 			(void) tagsearch();
 		}
 		return;
-#if LOGFILE
-	case 'L':
-		/*
-		 * Special case for -l and -L.
-		 */
-		force_logfile = 1;
-		goto case_l;
-	case 'l':
-		force_logfile = 0;
-	case_l:
-		if (*s == '\0')
-		{
-			if (logfile < 0)
-				error("no log file");
-			else
-			{
-				sprintf(message, "log file \"%s\"",
-					namelogfile);
-				error(message);
-			}
-			return;
-		}
-		if (!ispipe)
-		{
-			error("input is not a pipe");
-			return;
-		}
-		if (logfile >= 0)
-		{
-			error("log file is already in use");
-			return;
-		}
-		namelogfile = save(s);
-		use_logfile();
-		sync_logfile();
-		return;
-#endif
 	}
 
 	msg = NULL;
@@ -389,10 +347,6 @@ single_char_option(c)
 		return (0);
 	if (c == 't')
 		return (0);
-#if LOGFILE
-	if (c == 'l' || c == 'L')
-		return (0);
-#endif
 	for (o = option;  o->oletter != '\0';  o++)
 		if (o->oletter == c)
 			return (o->otype & (BOOL|TRIPLE));
@@ -464,15 +418,6 @@ scan_option(s)
 		first_cmd = s;
 		s = optstring(s, c);
 		goto next;
-#if LOGFILE
-	case 'L':
-		force_logfile = 1;
-		/* FALLTHRU */
-	case 'l':
-		namelogfile = s;
-		s = optstring(s, c);
-		goto next;
-#endif
 	case 't':
 	{
 		char *p;

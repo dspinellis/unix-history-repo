@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -56,12 +56,6 @@ extern int	file;
 extern int	quit_at_eof;
 extern int	cbufs;
 extern int	errmsgs;
-
-#if LOGFILE
-public int	logfile = -1;
-public int	force_logfile = 0;
-public char *	namelogfile = NULL;
-#endif
 
 public char *	editor;
 
@@ -142,11 +136,6 @@ edit(filename)
 		free(filename);
 		return;
 	}
-
-#if LOGFILE
-	if (f == 0 && namelogfile != NULL && is_tty)
-		use_logfile();
-#endif
 
 	/*
 	 * We are now committed to using the new file.
@@ -235,74 +224,6 @@ cat_file()
 	while ((c = ch_forw_get()) != EOI)
 		putchr(c);
 	flush();
-}
-
-#if LOGFILE
-
-use_logfile()
-{
-	int exists;
-	int answer;
-	char message[100];
-
-	/*
-	 * If he asked for a log file and we have opened standard input,
-	 * create the log file.  
-	 * We take care not to blindly overwrite an existing file.
-	 */
-	end_logfile();
-
-	/*
-	 * {{ We could use access() here. }}
-	 */
-	exists = open(namelogfile, 0);
-	close(exists);
-	exists = (exists >= 0);
-
-	if (exists && !force_logfile)
-	{
-		static char w[] = "WARNING: log file exists: ";
-		strcpy(message, w);
-		strtcpy(message+sizeof(w)-1, namelogfile,
-			sizeof(message)-sizeof(w));
-		error(message);
-		answer = 'X';	/* Ask the user what to do */
-	} else
-		answer = 'O';	/* Create the log file */
-
-loop:
-	switch (answer)
-	{
-	case 'O': case 'o':
-		logfile = creat(namelogfile, 0644);
-		break;
-	case 'A': case 'a':
-		logfile = open(namelogfile, 1);
-		if (lseek(logfile, (off_t)0, L_XTND) < 0)
-		{
-			close(logfile);
-			logfile = -1;
-		}
-		break;
-	case 'D': case 'd':
-		answer = 0;	/* Don't print an error message */
-		break;
-	case 'q':
-		quit();
-	default:
-		putstr("\n  Overwrite, Append, or Don't log? ");
-		answer = getchr();
-		putstr("\n");
-		flush();
-		goto loop;
-	}
-
-	if (logfile < 0 && answer != 0)
-	{
-		sprintf(message, "Cannot write to \"%s\"", 
-			namelogfile);
-		error(message);
-	}
 }
 
 /*
@@ -463,9 +384,6 @@ quit()
 	 * reset the terminal modes, and exit.
 	 */
 	quitting = 1;
-#if LOGFILE
-	end_logfile();
-#endif
 	lower_left();
 	clear_eol();
 	deinit();
