@@ -1,13 +1,16 @@
 #	Makefile	4.5	85/01/04
 #
 CFLAGS=	-O
-ALL=	tek t300 t300s t450 aedplot bgplot crtplot dumbplot gigiplot \
+ALL=	tek t4013 t300 t300s t450 aedplot bgplot crtplot dumbplot gigiplot \
 	hpplot hp7221plot debug atoplot plottoa
 
 all:	${ALL}
 
 tek:	driver.o
 	cc -o tek  driver.o -l4014 -lm
+
+t4013:	driver.o
+	cc -o t4013  driver.o -l4013 -lm
 
 t300:	driver.o 
 	cc -o t300 driver.o -l300 -lm
@@ -50,6 +53,7 @@ debug: debug.o
 
 install: all
 	install -s tek ${DESTDIR}/usr/bin
+	install -s t4013 ${DESTDIR}/usr/bin
 	install -s t300 ${DESTDIR}/usr/bin
 	install -s t300s ${DESTDIR}/usr/bin
 	install -s t450 ${DESTDIR}/usr/bin
