@@ -16,12 +16,12 @@ static char rcsid_klist_c[] =
 "$Header: klist.c,v 4.11 89/01/23 09:34:58 jtkohl Exp $";
 #endif	lint
 
-#include <mit-copyright.h>
+#include <kerberos/mit-copyright.h>
 #include <stdio.h>
 #include <strings.h>
 #include <sys/file.h>
-#include <krb.h>
-#include <prot.h>
+#include <kerberos/krb.h>
+#include <kerberos/prot.h>
 
 char   *tkt_string();
 char   *short_date();
@@ -190,9 +190,9 @@ char *file;
 	perror(file);
 	exit(1);
     }
-    printf("%-15s %-15s %-10s %s\n","Service","Instance","Realm",
+    printf("%-15s %-15s %-10s      %s\n","Service","Instance","Realm",
 	   "Key Version");
-    printf("------------------------------------------------------\n");
+    printf("-----------------------------------------------------------\n");
 
     /* argh. getst doesn't return error codes, it silently fails */
     while (((count = ok_getst(stab, serv, SNAME_SZ)) > 0)
