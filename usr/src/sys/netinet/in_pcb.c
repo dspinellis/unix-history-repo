@@ -1,4 +1,4 @@
-/*	in_pcb.c	6.5	84/11/27	*/
+/*	in_pcb.c	6.6	85/03/18	*/
 
 #include "param.h"
 #include "systm.h"
@@ -12,6 +12,7 @@
 #include "../net/if.h"
 #include "../net/route.h"
 #include "in_pcb.h"
+#include "in_var.h"
 #include "protosw.h"
 
 struct	in_addr zeroin_addr;
@@ -43,7 +44,7 @@ in_pcbbind(inp, nam)
 	register struct sockaddr_in *sin;
 	u_short lport = 0;
 
-	if (ifnet == 0)
+	if (in_ifaddr == 0)
 		return (EADDRNOTAVAIL);
 	if (inp->inp_lport || inp->inp_laddr.s_addr != INADDR_ANY)
 		return (EINVAL);
@@ -56,7 +57,7 @@ in_pcbbind(inp, nam)
 		int tport = sin->sin_port;
 
 		sin->sin_port = 0;		/* yech... */
-		if (if_ifwithaddr((struct sockaddr *)sin) == 0)
+		if (ifa_ifwithaddr((struct sockaddr *)sin) == 0)
 			return (EADDRNOTAVAIL);
 		sin->sin_port = tport;
 	}
@@ -100,7 +101,7 @@ in_pcbconnect(inp, nam)
 	struct inpcb *inp;
 	struct mbuf *nam;
 {
-	struct ifnet *ifp;
+	struct in_ifaddr *ia;
 	struct sockaddr_in *ifaddr;
 	register struct sockaddr_in *sin = mtod(nam, struct sockaddr_in *);
 
@@ -108,19 +109,27 @@ in_pcbconnect(inp, nam)
 		return (EINVAL);
 	if (sin->sin_family != AF_INET)
 		return (EAFNOSUPPORT);
-	if (sin->sin_addr.s_addr == INADDR_ANY || sin->sin_port == 0)
+	if (sin->sin_port == 0)
 		return (EADDRNOTAVAIL);
+	if (in_ifaddr) {
+#define	satosin(sa)	((struct sockaddr_in *)(sa))
+		if (sin->sin_addr.s_addr == INADDR_ANY)
+		    sin->sin_addr.s_addr = IA_SIN(in_ifaddr)->sin_addr.s_addr;
+		else if (sin->sin_addr.s_addr == INADDR_BROADCAST)
+		    /* SHOULD CHECK FOR BROADCAST CAPABILITY */
+		    sin->sin_addr.s_addr = satosin(&in_ifaddr->ia_broadaddr)->sin_addr.s_addr;
+	}
 	if (inp->inp_laddr.s_addr == INADDR_ANY) {
-		ifp = if_ifonnetof(in_netof(sin->sin_addr));
-		if (ifp == 0) {
+		ia = (struct in_ifaddr *)ifa_ifwithnet(sin);
+		if (ia == (struct in_ifaddr *)0) {
 			register struct route *ro;
+			struct ifnet *ifp;
 
 			/* 
 			 * If route is known or can be allocated now,
 			 * our src addr is taken from the i/f, else punt.
 			 */
 			ro = &inp->inp_route;
-#define	satosin(sa)	((struct sockaddr_in *)(sa))
 			if (ro->ro_rt &&
 			    satosin(&ro->ro_dst)->sin_addr.s_addr !=
 			    sin->sin_addr.s_addr) {
@@ -129,22 +138,26 @@ in_pcbconnect(inp, nam)
 			}
 			if ((ro->ro_rt == (struct rtentry *)0) ||
 			    (ifp = ro->ro_rt->rt_ifp) == (struct ifnet *)0) {
+				struct ifnet *ifp;
+
 				/* No route yet, so try to acquire one */
 				ro->ro_dst.sa_family = AF_INET;
 				((struct sockaddr_in *) &ro->ro_dst)->sin_addr =
 					sin->sin_addr;
 				rtalloc(ro);
 				if (ro->ro_rt == 0)
-					ifp = (struct ifnet *) 0;
+				    ia = (struct in_ifaddr *) 0;
 				else
-					ifp = ro->ro_rt->rt_ifp;
+				    for (ia = in_ifaddr; ia; ia = ia->ia_next)
+					if (ia->ia_ifp == ifp)
+					    break;
 			}
-			if (ifp == 0)
-				ifp = if_ifwithaf(AF_INET);
-			if (ifp == 0)
+			if (ia == 0)
+				ia = in_ifaddr;
+			if (ia == 0)
 				return (EADDRNOTAVAIL);
 		}
-		ifaddr = (struct sockaddr_in *)&ifp->if_addr;
+		ifaddr = (struct sockaddr_in *)&ia->ia_addr;
 	}
 	if (in_pcblookup(inp->inp_head,
 	    sin->sin_addr,
