@@ -1,4 +1,4 @@
-/*	trace.h	4.3	81/03/03	*/
+/*	trace.h	4.4	81/03/09	*/
 
 /*
  * File system buffer tracing points; all trace <dev, bn>
@@ -46,6 +46,16 @@
 
 #define	TRCSIZ		4096
 
+/*
+ * Specifications of the vtrace() system call, which takes one argument.
+ */
+#define	VTRACE		64+51
+
+#define	VTR_DISABLE	0		/* set a trace flag to 0 */
+#define	VTR_ENABLE	1		/* set a trace flag to 1 */
+#define	VTR_VALUE	2		/* return value of a trace flag */
+#define	VTR_UALARM	3		/* set alarm to go off (sig 16) */
+					/* in specified number of hz */
 #ifdef KERNEL
 #ifdef TRACE
 char	traceflags[TR_NFLAGS];
