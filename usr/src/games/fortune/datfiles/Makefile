@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 SRCS=	fortunes fortunes2 startrek zippy
 BLDS=	fortunes.dat fortunes2.dat startrek.dat zippy.dat \
@@ -31,6 +31,6 @@ fortunes-o.dat: fortunes-o
 	${.CURDIR}/../strfile/obj/strfile -rsx fortunes-o ${.TARGET}
 
 fortunes-o: fortunes-o.${TYPE}
-	/usr/games/caesar 13 < ${.CURDIR}/${.ALLSRC} > ${.TARGET}
+	/usr/games/caesar 13 < ${.ALLSRC} > ${.TARGET}
 
 .include <bsd.prog.mk>
