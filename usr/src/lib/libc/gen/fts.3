@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fts.3	5.8 (Berkeley) %G%
+.\"	@(#)fts.3	5.9 (Berkeley) %G%
 .\"
 .TH FTS 3 ""
 .UC 7
@@ -16,26 +16,19 @@ fts \- traverse a file hierarchy
 #include <sys/stat.h>
 #include <fts.h>
 
-FTS *
-fts_open(path_argv, options, compar)
-char *path_argv[];
-int options, (*compar)();
+FTS *fts_open(char * const *path_argv, int options,
+.ti +5
+int *compar(const FTSENT *, const FTSENT *));
 
 FTSENT *
-fts_read(ftsp);
-FTS *ftsp;
+fts_read(FTS *ftsp);
 
 FTSENT *
-fts_children(ftsp)
-FTS *ftsp;
+fts_children(FTS *ftsp);
 
-fts_set(ftsp, f, options)
-FTS *ftsp;
-FTSENT *f;
-int options;
+fts_set(FTS ftsp, FTSENT *f, int options);
 
-fts_close(ftsp)
-FTS *ftsp;
+fts_close(FTS *ftsp);
 .ft R
 .fi
 .SH DESCRIPTION
@@ -43,9 +36,10 @@ The
 .IR fts (3)
 functions are provided for traversing UNIX file hierarchies.
 .PP
-The simple overview is that the function
+The simple overview is that the
 .I fts_open
-returns a ``handle'' on a file hierarchy, which is supplied to the other
+function returns a ``handle'' on a file hierarchy, which is supplied to
+the other
 .I fts
 functions to determine which hierarchy they operate on.
 The function
@@ -92,6 +86,8 @@ typedef struct _ftsent {
 	struct stat fts_statb;			/* stat(2) information */
 } FTSENT;
 .fi
+.\" Makes the output look a lot better.
+.bp
 .PP
 These fields are defined as follows:
 .TP
@@ -120,13 +116,9 @@ values.
 .TP
 FTS_DNR
 A directory which cannot be read.
-Directory readability is checked before directory searchability
-(see FTS_DNX).
-.TP
-FTS_DNX
-A directory which cannot be searched.
-Directory readability is checked before directory searchability
-(see FTS_DNR).
+An error return; the external variable
+.I errno
+will be set to indicate the error.
 .TP
 FTS_DOT
 A file named ``.'' or ``..'' which was not specified as a file name to
@@ -151,8 +143,19 @@ A regular file.
 FTS_NS
 A file for which no
 .IR stat (2)
-information was available (see FTS_NOSTAT).
-In this case the contents of the
+information was available.
+The contents of the
+.I fts_statb
+field are undefined.
+An error return; the external variable
+.I errno
+will be set to indicate the error.
+.TP
+FTS_NSOK
+A file for which no
+.IR stat (2)
+information was requested.
+The contents of the
 .I fts_statb
 field are undefined.
 .TP
@@ -161,17 +164,14 @@ A symbolic link.
 .TP
 FTS_SLNONE
 A symbolic link with a non-existent target.
+The contents of the
+.I fts_statb
+field contain the file characteristic information for the symbolic link
+itself.
 .RE
 .TP
 fts_accpath
-A path for accessing the file.
-This will be the same as
-.I fts_path
-or
-.IR fts_name ,
-depending on whether the
-.I fts
-functions are changing the current working directory or not (see FTS_NOCHDIR).
+A path for accessing the file from the current directory.
 .TP
 fts_path
 The path for the file relative to the root of the traversal.
@@ -306,7 +306,7 @@ allowing the
 .I fts
 functions to set the
 .I fts_info
-field to FTS_NS and leave the contents of the
+field to FTS_NSOK and leave the contents of the
 .I statb
 field undefined.
 .TP
@@ -355,9 +355,9 @@ and
 fields of the FTSENT structures may
 .B never
 be used in this comparison.
-If the option FTS_NOSTAT was specified, or the
+If the 
 .I fts_info
-field was set to FTS_NS, the
+field is set to FTS_NS or FTS_NSOK, the
 .I fts_stab
 field may not either.
 If the
@@ -370,8 +370,8 @@ The
 .I fts_read
 function returns a pointer to an FTSENT structure describing a file in
 the hierarchy.
-Directories (that are readable, searchable and do not cause cycles) are
-visited at least twice, once in pre-order and once in post-order.
+Directories (that are readable and do not cause cycles) are visited at
+least twice, once in pre-order and once in post-order.
 All other files are visited at least once.
 (Hard links between directories that do not cause cycles or symbolic
 links to symbolic links may cause files to be visited more than once,
@@ -387,7 +387,7 @@ If an error unrelated to a file in the hierarchy occurs,
 returns NULL and sets
 .I errno
 appropriately.
-If an error related to the returned file occurs, a pointer to an FTSENT
+If an error related to a returned file occurs, a pointer to an FTSENT
 structure is returned, and
 .I errno
 may or may not have been set (see
@@ -419,24 +419,6 @@ comparison function, if any.
 Repeated calls to
 .I fts_children
 will recreate this linked list.
-.PP
-If the directory returned by
-.I fts_read
-is readable but not searchable (see FTS_DNR and FTS_DNX) the contents
-of the directory may be retrieved using the
-.I fts_children
-function.
-Pathnames to the files may be built as well, as there is guaranteed
-to be sufficient space in the path buffer to construct them as follows:
-.sp
-.nf
-.RS
-char *p;
-for (p = ftsent->fts_path; *p; ++p);
-*p++ = '/';
-bcopy(ftsent->fts_name, p, ftsent->fts_namelen + 1);
-.RE
-.fi
 .PP
 If the FTSENT structure most recently returned by
 .I fts_read
@@ -536,9 +518,13 @@ fields of the structure, when returned by
 .IR fts_read ,
 will reflect the target of the symbolic link instead of the symbolic link
 itself.
-In either case, if the target of the link is a directory, the pre-order
-return, followed by the return of all of its descendants, followed by a
-post-order return, is done.
+In either case, if the target of the symbolic link does not exist the
+fields of the returned structure will be unchanged and the
+.I fts_info
+field will be set to FTS_SLNONE.
+If the target of the link is a directory, the pre-order return, followed
+by the return of all of its descendants, followed by a post-order return,
+is done.
 .TP
 FTS_SKIP
 No descendants of this file are visited.
@@ -588,4 +574,5 @@ find(1), chdir(2), stat(2), qsort(3)
 .SH STANDARDS
 The
 .I fts
-utility is expected to be a superset of the POSIX 1003.1 specification.
+utility is expected to be a superset of the IEEE Std 1003.1 (``POSIX'')
+specification.
