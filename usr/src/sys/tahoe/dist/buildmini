@@ -4,16 +4,17 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)buildmini	1.1 (Berkeley) %G%
+#	@(#)buildmini	1.2 (Berkeley) %G%
 #
 miniroot=dk4a
+minimnt=/mnt
 #
 date
 umount /dev/${miniroot}
 newfs -s 4096 ${miniroot}
 fsck /dev/r${miniroot}
-mount /dev/${miniroot} /mnt
-cd /mnt; sh /sys/tahoedist/get
+mount /dev/${miniroot} ${minimnt}
+cd ${minimnt}; sh /sys/tahoedist/get
 cd /sys/tahoedist; sync
 umount /dev/${miniroot}
 fsck /dev/${miniroot}
