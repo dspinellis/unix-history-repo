@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xargs.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)xargs.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -44,11 +44,12 @@ main(argc, argv)
 	char **av, *argp;
 
 	/*
-	 * POSIX.2 limits the exec line length to ARG_MAX - 2K.  Given that
-	 * the smallest argument is 2 bytes in length, this means that the
-	 * number of arguments is limited to:
+	 * POSIX.2 limits the exec line length to ARG_MAX - 2K.  Running that
+	 * caused some E2BIG errors, so it was changed to ARG_MAX - 4K.  Given
+	 * that the smallest argument is 2 bytes in length, this means that
+	 * the number of arguments is limited to:
 	 *
-	 *	 (ARG_MAX - 2K - LENGTH(utility + arguments)) / 2.
+	 *	 (ARG_MAX - 4K - LENGTH(utility + arguments)) / 2.
 	 *
 	 * We arbitrarily limit the number of arguments to 5000.  This is
 	 * allowed by POSIX.2 as long as the resulting minimum exec line is
@@ -56,7 +57,7 @@ main(argc, argv)
 	 * probably not worthwhile.
 	 */
 	nargs = 5000;
-	nline = ARG_MAX - 2048;
+	nline = ARG_MAX - 4 * 1024;
 	nflag = xflag = 0;
 	while ((ch = getopt(argc, argv, "fn:s:tx")) != EOF)
 		switch(ch) {
