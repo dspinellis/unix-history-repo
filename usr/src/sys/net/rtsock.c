@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.20 (Berkeley) %G%
+ *	@(#)rtsock.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -284,9 +284,9 @@ route_output(m, so)
 			 * Fall into
 			 */
 		case RTM_LOCK:
+			rt->rt_rmx.rmx_locks &= ~(rtm->rtm_inits);
 			rt->rt_rmx.rmx_locks |=
 				(rtm->rtm_inits & rtm->rtm_rmx.rmx_locks);
-			rt->rt_rmx.rmx_locks &= ~(rtm->rtm_inits);
 			break;
 		}
 		goto cleanup;
