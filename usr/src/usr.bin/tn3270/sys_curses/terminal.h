@@ -11,11 +11,11 @@
  * of us, here are some macros to deal with them.
  */
 
-#define TermAttributes(x)	(TermIsStartField(x)? Terminal[x].data&0xff : \
-				    Terminal[WhereTermAttrByte(x)].data&0xff)
-#define TermIsStartField(x)	(Terminal[x].data&ATTR_MASK)
-#define TermNewField(p,a)	(Terminal[p].data = (a)|ATTR_MASK)
-#define TermDeleteField(p)	(Terminal[p].data = 0)
+#define TermAttributes(x)	(TermIsStartField(x)? GetTerminal(x)&0xff : \
+				    GetTerminal(WhereTermAttrByte(x))&0xff)
+#define TermIsStartField(x)	(GetTerminal(x)&ATTR_MASK)
+#define TermNewField(p,a)	SetTerminal(p, (a)|ATTR_MASK)
+#define TermDeleteField(p)	SetTerminal(p, 0)
 #define TermIsNonDisplay(x)	\
 		    ((TermAttributes(x)&ATTR_DSPD_MASK) == ATTR_DSPD_NONDISPLAY)
 #define TermIsHighlighted(x) \
@@ -39,7 +39,8 @@
 			((c != GetTerminal(p)) || NeedToRedisplayFieldsAttr(p,a))
 #define NeedToRedisplay(c,p)	NeedToRedisplayAttr(c,p,FieldAttributes(p))
 
-#define GetTerminal(i)		Terminal[i].data
-#define SetTerminal(i,c)	(Terminal[i].data = c)
-
 #endif	/* defined(SLOWSCREEN) */
+
+#define GetTerminal(i)		GetGeneric(i, Terminal)
+#define GetTerminalPointer(p)	GetGenericPointer(p)
+#define SetTerminal(i,c)	SetGeneric(i,c,Terminal)
