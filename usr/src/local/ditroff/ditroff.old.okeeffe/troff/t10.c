@@ -323,6 +323,14 @@ tchar	*pi;
 			w = 0;
 			hpos += dx;
 			break;
+		case DRAWSTYLE:
+			fprintf(ptid, "D%c %d\n", DRAWSTYLE, dx);
+			w = 0;
+			break;
+		case DRAWTHICK:
+			fprintf(ptid, "D%c %d\n", DRAWTHICK, dx);
+			w = 0;
+			break;
 		case DRAWELLIPSE:
 			fprintf(ptid, "D%c %d %d\n", DRAWELLIPSE, dx, dy);
 			w = 0;
@@ -352,8 +360,9 @@ tchar	*pi;
 			hpos += dx + dx2;
 			vpos += dy + dy2;
 			break;
-		case DRAWWIG:	/* wiggly line */
-			fprintf(ptid, "D%c %d %d", DRAWWIG, dx, dy);
+		case DRAWWIG:	/* wiggly line  -or- */
+		case DRAWCURVE:	/* gremlin-style curve */
+			fprintf(ptid, "D%c %d %d", cbits(pi[1]), dx, dy);
 			w = 0;
 			hpos += dx;
 			vpos += dy;
