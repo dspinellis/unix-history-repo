@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)htable.c	4.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)htable.c	4.12 (Berkeley) %G%";
 #endif
 
 /*
@@ -160,6 +160,8 @@ lower(str)
 	while (*cp) {
 		if (isupper(*cp))
 			*cp = tolower(*cp);
+		if (*cp == '.')
+			break;
 		cp++;
 	}
 	return (str);
