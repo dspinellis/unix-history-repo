@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.8 (Berkeley) 83/01/18";
+static char sccsid[] = "@(#)ftpd.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -254,7 +254,7 @@ retrieve(cmd, name)
 	} else {
 		char line[BUFSIZ];
 
-		sprintf(line, cmd, name);
+		sprintf(line, cmd, name), name = line;
 		fin = popen(line, "r"), closefunc = pclose;
 	}
 	if (fin == NULL) {
@@ -368,19 +368,6 @@ dataconn(name, size, mode)
 		usedefault = 1;
 		return (fdopen(data, mode));
 	}
-	reply(150, "Opening data connection for %s (%s,%d)%s.",
-	    name, ntoa(data_dest.sin_addr.s_addr),
-	    ntohs(data_dest.sin_port), sizebuf);
-	file = getdatasock(mode);
-	if (file == NULL) {
-		reply(425, "Can't create data socket (%s,%d): %s.",
-		    ntoa(data_source.sin_addr),
-		    ntohs(data_source.sin_port),
-		    sys_errlist[errno]);
-		usedefault = 1;
-		return (NULL);
-	}
-	data = fileno(file);
 	/*
 	 * If no PORT command was specified,
 	 * use the default address.
@@ -390,6 +377,18 @@ dataconn(name, size, mode)
 		data_dest.sin_port = htons(ntohs(sp->s_port) - 1);
 	}
 	usedefault = 1;
+	reply(150, "Opening data connection for %s (%s,%d)%s.",
+	    name, ntoa(data_dest.sin_addr.s_addr),
+	    ntohs(data_dest.sin_port), sizebuf);
+	file = getdatasock(mode);
+	if (file == NULL) {
+		reply(425, "Can't create data socket (%s,%d): %s.",
+		    ntoa(data_source.sin_addr),
+		    ntohs(data_source.sin_port),
+		    sys_errlist[errno]);
+		return (NULL);
+	}
+	data = fileno(file);
 	if (connect(data, &data_dest, sizeof (data_dest), 0) < 0) {
 		reply(425, "Can't build data connection: %s.",
 		    sys_errlist[errno]);
