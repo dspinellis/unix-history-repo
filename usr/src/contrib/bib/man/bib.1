@@ -1,3 +1,4 @@
+.\"	"@(#)bib.1	4.3	%G%";
 .TH BIB 1 "28 July 1983"
 .UC 4
 .SH NAME
@@ -22,24 +23,26 @@ Reference databases are created using the \fIinvert\fP utility.
 .PP
 The following options are available.
 Note that standard format styles (see the \-t option) set options automatically.
-Thus if a standard format style is used, the user need not indicate any
+Thus if a standard format style is used the user need not indicate any
 further options for most documents.
 .IP \-aa 8m
 reduce author\*(CQs first names to abbreviations.
 .IP \-ar\fInum\fP
-reverse the first \fInum\fP author\*(CQs names
+reverse the first \fInum\fP author's names.
+If a number is not given all authors names are reversed.
 .IP \-ax
 print authors last names in Caps-Small Caps style.  For example Budd becomes
 B\s-2UDD\s+2.  This style is used by certain ACM publications.
-.IP \-ea 8m
-reduce editor\*(CQs first names to abbreviations.
-.IP \-er\fInum\fP
-reverse the first \fInum\fP editor\*(CQs names
-.IP \-ex
-print editors last names in Caps-Small Caps style.
 .IP \-c\fIstr\fP
 build citations according to the template \fIstr\fP.  See the reference
 format designer\*(CQs guide for more information on templates.
+.IP \-ea
+reduce editors first names to abbreviations.
+.IP \-ex
+print editors last names in Caps-Small Caps style (see \-ax option).
+.IP \-er\fInum\fP
+reverse the first \fInum\fP editors names.  If a number is not given all
+editors names are reversed.
 .IP \-f
 instead of collecting references, dump each
 reference immediately following the line on which the citation is placed
@@ -52,6 +55,7 @@ process the indicated file, such as a file of definitions.
 .IP \-h
 replace citations to three or more adjacent reference items with
 a hyphenated string (eg 2,3,4,5 becomes 2-5).
+This option implies the \-o option.
 .IP \-n\fIstr\fP
 turn off indicated options.  \fIstr\fP must be composed of the letters afhosx.
 .IP \-o
@@ -61,7 +65,9 @@ being printed (default).
 .ns
 .IP  \-p\fIfile\fP
 instead of searching the file INDEX,
-search the indicated reference file before searching the system file.
+search the indicated reference files before searching the system file.
+\fIfiles\fP is a comma separated list of inverted indices, created using
+the \fIinvert\fP utility.
 .IP \-s\fIstr\fP
 sort references according to the template \fIstr\fP.
 .IP "\-t \fItype\fP"
@@ -69,12 +75,13 @@ sort references according to the template \fIstr\fP.
 .IP \-t\fItype\fP
 use the standard macros and switch settings for the indicated style
 to generate citations and references.
-There are a number of standard styles provided.  In addition the user
+There are a number of standard styles provided.  In addition users
 can generate their own style macros.  See the format designers guide for
-more details.
+details.
 .PP
-\fIListrefs\fP formats an entire format file.  Options to \fIlistrefs\fP
-are the same as for \fIbib\fP.  Items in the format file are not sorted.
+\fIListrefs\fP formats an entire reference database file.
+Options to \fIlistrefs\fP
+are the same as for \fIbib\fP.
 .PP
 \fIBib\fP was designed initially for use with the \-ms macros, and
 uses a couple of the \-ms macros (.ip and .lp) in its macro definitions.

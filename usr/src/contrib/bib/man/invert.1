@@ -1,3 +1,4 @@
+.\"	"@(#)invert.1	4.3	%G%";
 .TH INVERT 1 "28 July 1983"
 .UC 4
 .SH NAME
@@ -33,10 +34,9 @@ Each line of input is a retrieval request.
 All records that contain all of the keywords in the retrieval request
 are sent to
 .I stdout.
-If there are no matching references,
-"No references found." is sent to
+If there are no matching references, ``No references found.'' is sent to
 .I stdout.
-.I Lookup
+.I \ Lookup
 first searches in the user's private index (default INDEX)
 and then, if no references are found,
 in the system index (/usr/dict/papers/INDEX).
@@ -81,7 +81,7 @@ E.g. \-p~/index won't work; use \-p\ ~/index.)
 .IP \-s
 Silent.
 Suppress statistics.
-.IP \-%\fIstr\fP
+.IP -%\fIstr\fP
 Ignore lines that begin with %x
 where x is in
 .I str.
@@ -127,10 +127,10 @@ if no references are found.
 .LP
 .I Invert
 produces a one line message of the form,
-"%D\ documents\ \ \ %D distinct\ keys\ \ %D\ key\ occurrences".
+\*(oq%D\ documents\ \ \ %D distinct\ keys\ \ %D\ key\ occurrences\*(cq.
 This can be suppressed with the \-s option.
 .LP
-The message "locate: first key (%s) matched too many refs"
+The message \*(oqlocate: first key (%s) matched too many refs\*(cq
 indicates that the first key matched more references than could be stored
 in memory.
 The simple solution is to use a less frequently occurring key as the first
@@ -140,3 +140,6 @@ No attempt is made to check the compatibility between an index
 and the files indexed.
 The user must create a new index whenever
 the files that are indexed are modified.
+.LP
+Attempting to invert a file containing unprintable characters can
+cause chaos.
