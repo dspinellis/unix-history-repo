@@ -1,4 +1,4 @@
-/*	init_main.c	6.8	85/03/08	*/
+/*	init_main.c	6.9	85/05/27	*/
 
 #include "../machine/pte.h"
 
@@ -38,11 +38,8 @@ int	cmask = CMASK;
  *	hand craft 0th process
  *	call all initialization routines
  *	fork - process 0 to schedule
- *	     - process 2 to page out
  *	     - process 1 execute bootstrap
- *
- * loop at loc 13 (0xd) in user mode -- /etc/init
- *	cannot be executed.
+ *	     - process 2 to page out
  */
 main(firstaddr)
 	int firstaddr;
@@ -79,6 +76,7 @@ main(firstaddr)
 #endif
 	u.u_nd.ni_iovcnt = 1;
 	u.u_cmask = cmask;
+	u.u_lastfile = -1;
 	for (i = 1; i < NGROUPS; i++)
 		u.u_groups[i] = NOGROUP;
 	for (i = 0; i < sizeof(u.u_rlimit)/sizeof(u.u_rlimit[0]); i++)
@@ -102,7 +100,7 @@ main(firstaddr)
 	 * Initialize tables, protocols, and set up well-known inodes.
 	 */
 	mbinit();
-	cinit();			/* needed by dmc-11 driver */
+	cinit();
 #ifdef INET
 #if NLOOP > 0
 	loattach();			/* XXX */
