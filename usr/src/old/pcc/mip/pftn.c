@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)pftn.c	1.3 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.4 (Berkeley) %G%";
 # include "mfile1"
 
 unsigned int offsz;
@@ -1075,7 +1075,9 @@ doinit( p ) register NODE *p; {
 		fincode( p->in.left->fpn.dval, sz );
 		}
 	else {
-		cinit( optim(p), sz );
+		p = optim(p);
+		if( p->in.left->in.op != ICON ) uerror( "illegal initialization" );
+		else cinit( p, sz );
 		}
 
 	gotscal();
