@@ -25,6 +25,8 @@ static	char	sccsid[] = "@(#)inbound.c	3.1  10/29/86";
 #endif	/* ndef lint */
 
 
+#include <stdio.h>
+
 #include "../general.h"
 #include "function.h"
 #include "hostctlr.h"
@@ -319,7 +321,7 @@ char	character;
 
 	    sprintf(buffer, "File %s, line %d:  No room in network buffer!\n",
 				__FILE__, __LINE__);
-	    ExitString(buffer, 1);
+	    ExitString(stderr, buffer, 1);
 	    /*NOTREACHED*/
 	}
     }
@@ -563,7 +565,8 @@ int	count;				/* how much data there is */
 #   define HITNUM() ((shifted? 1:0) + ((alted?1:0)<<1))
 
     if (*buffer >= numberof(hits)) {
-	ExitString("Unknown scancode encountered in DataFrom3270.\n", 1);
+	ExitString(stderr,
+		"Unknown scancode encountered in DataFrom3270.\n", 1);
 	/*NOTREACHED*/
     }
     ctlrfcn = hits[*buffer].hit[HITNUM()].ctlrfcn;
@@ -595,7 +598,7 @@ int	count;				/* how much data there is */
     if (TransparentClock == OutputClock) {
 	while (count) {
 	    if (*buffer >= numberof(hits)) {
-		ExitString(
+		ExitString(stderr,
 			"Unknown scancode encountered in DataFrom3270.\n", 1);
 		/*NOTREACHED*/
 	    }
@@ -631,7 +634,8 @@ int	count;				/* how much data there is */
 
     while (count) {
 	if (*buffer >= numberof(hits)) {
-	    ExitString("Unknown scancode encountered in DataFrom3270.\n", 1);
+	    ExitString(stderr,
+			"Unknown scancode encountered in DataFrom3270.\n", 1);
 	    /*NOTREACHED*/
 	}
 	ctlrfcn = hits[*buffer].hit[HITNUM()].ctlrfcn;
@@ -661,7 +665,8 @@ int	count;				/* how much data there is */
 	    case FCN_BREAK_SHIFT:
 		shifted--;
 		if (shifted < 0) {
-		    ExitString("More BREAK_SHIFT than MAKE_SHIFT.\n", 1);
+		    ExitString(stderr,
+				"More BREAK_SHIFT than MAKE_SHIFT.\n", 1);
 		    /*NOTREACHED*/
 		}
 		break;
@@ -671,7 +676,7 @@ int	count;				/* how much data there is */
 	    case FCN_BREAK_ALT:
 		alted--;
 		if (alted < 0) {
-		    ExitString("More BREAK_ALT than MAKE_ALT.\n", 1);
+		    ExitString(stderr, "More BREAK_ALT than MAKE_ALT.\n", 1);
 		    /*NOTREACHED*/
 		}
 		break;
