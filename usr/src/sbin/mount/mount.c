@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.14 (Berkeley) %G%";
 #endif not lint
 
 #include "pathnames.h"
@@ -83,7 +83,7 @@ main(argc, argv, arge)
 	register int cnt;
 	int all, ch, rval, sfake, i;
 	long mntsize;
-	struct statfs statfsbuf, *mntbuf;
+	struct statfs *mntbuf;
 	char *type, *options = NULL;
 
 	envp = arge;
@@ -147,25 +147,11 @@ main(argc, argv, arge)
 	if (argc == 0) {
 		if (verbose || fake || type)
 			usage();
-		if ((mntsize = getfsstat(0, 0)) < 0) {
-			perror("mount");
+		if ((mntsize = getmntinfo(&mntbuf)) == 0) {
+			fprintf(stderr,
+				"mount: cannot get mount information\n");
 			exit(1);
 		}
-		mntbuf = 0;
-		do {
-			if (mntbuf)
-				free(mntbuf);
-			i = (mntsize + 1) * sizeof(struct statfs);
-			if ((mntbuf = (struct statfs *)malloc(i)) == 0) {
-				fprintf(stderr,
-					"no space for mount table buffer\n");
-				exit(1);
-			}
-			if ((mntsize = getfsstat(mntbuf, i)) < 0) {
-				perror("mount");
-				exit(1);
-			}
-		} while (i == mntsize * sizeof(struct statfs));
 		for (i = 0; i < mntsize; i++)
 			prmount(mntbuf[i].f_mntfromname, mntbuf[i].f_mntonname,
 				mntbuf[i].f_flags);
