@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -215,13 +215,22 @@ find1(rn, rnp)
 struct radix_node *rn, **rnp;
 {
 	struct radix_node rnode;
+	struct nrtentry nrtentry;
+
 	kget(rn, rnode);
 	if (rnode.rn_b < 0) {
 		if (rnode.rn_dupedkey && find1(rnode.rn_dupedkey, rnp))
 			return 1;
 		if ((rnode.rn_flags & RNF_ROOT) == 0) {
-			*rnp = rn;
-			return 1;
+			if ((rnode.rn_flags & RNF_ACTIVE) == 0) {
+				printf("Dead entry in tree: %x\n", rn);
+				exit(1);
+			}
+			kget(rn, nrtentry);
+			if (nrtentry.nrt_rt.rt_flags & RTF_GATEWAY) {
+				*rnp = rn;
+				return 1;
+			}
 		}
 	} else {
 		if (rnode.rn_l && find1(rnode.rn_l, rnp))
