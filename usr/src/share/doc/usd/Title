@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)Title	8.1 (Berkeley) %G%
+.\"	@(#)Title	8.2 (Berkeley) %G%
 .\"
 .ps 18
 .vs 22
@@ -77,7 +77,7 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.\s+1\fP
 .sp 2
-Documents USD:1, 2, 3, 5, 6, 9, 10, 15, 16, 17, 21, 22, 23, 24, 25, 27,
+Documents USD:1, 2, 3, 5, 6, 9, 10, 15, 16, 17, 21, 22, 23, 24, 25, 26, 27,
 and 29 are copyright 1979, AT&T Bell Laboratories, Incorporated.
 Holders of \x'-1p'UNIX\v'-4p'\s-3TM\s0\v'4p'/32V,
 System III, or System V software licenses are
