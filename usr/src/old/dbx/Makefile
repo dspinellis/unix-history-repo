@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.26 (Berkeley) %G%
+#	@(#)Makefile	5.27 (Berkeley) %G%
 # N.B.:
 #    My version of cerror automatically catches certain errors
 # such as out of memory, I/O error.  If you re-make this with
@@ -44,7 +44,12 @@ ops.h: ops.${MACHINE}.h
 date.c: mkdate
 	./mkdate > date.c
 
-${HDRS}: makedefs
+INSTR=	${.CURDIR}/../as.vax/instrs
+instrs.adb: ${INSTR}
+	(echo FLAVOR ADB; cat ${INSTR}) | awk -f ${INSTR} > ${.TARGET}
+
+.depend: ${HDRS} commands.o
+${HDRS}: instrs.adb makedefs
 makedefs: makedefs.c library.o cerror.${MACHINE}.o
 	${CC} ${CFLAGS} \
 	    ${.CURDIR}/makedefs.c library.o cerror.${MACHINE}.o -o $@
