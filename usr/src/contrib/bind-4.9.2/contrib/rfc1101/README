@@ -1,0 +1,57 @@
+This is a implementation of getnetby{addr,name}() and {set,end}hostent()
+that uses the DNS (RFC1101).
+
+We have moved the old versions of getnetby{addr,name}() and
+{set,end}hostent() to _getnetby{addr,name}() and _{set,end}hostent().
+
+Our implementation querys the DNS and falls back to the old functions in
+the case of a negative reply. This is done since, at this moment, few people
+have entered this information in the DNS.
+
+Because of this we have modified the {set,end}netent() functions so now
+they turn on or off the resolver options "RES_STAYOPEN | RES_USEVC"
+(by calling {set,end}hostent() ) AND open the /etc/networks .
+
+We have made a test program (called nettest) that looks for information
+on a network passed in the command line (either by name or by number).
+
+	gnu% ./nettest 192.138.204
+	 Official name: net.mat.uc.pt
+	 Net addr. type: 2
+	 Network :  12618444 ---->   192.138.204
+	 Aliases :
+	gnu% ./nettest 192.138.204.0
+	 Official name: net.mat.uc.pt 
+	 Net addr. type: 2 
+	 Network :  3230321664 ---->   192.138.204.0  
+	 Aliases : 
+	gnu% ./nettest net.mat.uc.pt.
+	 Official name: net.mat.uc.pt
+	 Net addr. type: 2
+	 Network :  12618444 ---->   192.138.204
+	 Aliases :
+	gnu% ./nettest mat.uc.pt
+	 Official name: mat.uc.pt
+	 Net addr. type: 2
+	 Network :  12618444 ---->   192.138.204
+	 Aliases :
+
+The program nettest.local uses the functions in libresolv, that usually
+read /etc/networks.
+
+The Makefile included can also recompile netstat (if you have the
+source to netstat) using these functions.
+
+At this moment this netstat (option -r) is very slow.
+It will be better when named caches negative replys and/or
+more people enter this information in the DNS.
+
+This has been tested in BSD/386 (0.9.4), in SunOS (4.0.3 and 4.1.3)
+and Ultrix 4.2.
+NOTE: These versions never use yellow pages (NIS).
+
+Authors:
+	Carlos Leandro	leandro@mat.uc.pt
+	Rui Salgueiro	rps@mat.uc.pt
+
+Send bugs reports, bug fixes, suggestions, etc... to rfc1101@mat.uc.pt.
