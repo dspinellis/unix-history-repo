@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	7.8 (Berkeley) %G%
+ *	@(#)sys_process.c	7.9 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -143,8 +143,8 @@ procxmt(p)
 		}
 		i = -1;
 		if ((i = suiword((caddr_t)ipc.ip_addr, ipc.ip_data)) < 0) {
-			if (chgprot((caddr_t)ipc.ip_addr, RW) &&
-			    chgprot((caddr_t)ipc.ip_addr+(sizeof(int)-1), RW))
+			if (!chgprot((caddr_t)ipc.ip_addr, RW) &&
+			    !chgprot((caddr_t)ipc.ip_addr+(sizeof(int)-1), RW))
 				i = suiword((caddr_t)ipc.ip_addr, ipc.ip_data);
 			(void) chgprot((caddr_t)ipc.ip_addr, RO);
 			(void) chgprot((caddr_t)ipc.ip_addr+(sizeof(int)-1), RO);
