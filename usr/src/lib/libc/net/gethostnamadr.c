@@ -1,4 +1,4 @@
-/*	gethostnamadr.c	4.9	85/03/25	*/
+/*	gethostnamadr.c	4.10	85/03/28	*/
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -26,10 +26,10 @@ getanswer(msg, msglen, iquery)
 	char *eom, *bp, **ap;
 	int type, class, ancount, buflen;
 
-	n = sendquery(msg, msglen, answer, sizeof(answer));
+	n = res_send(msg, msglen, answer, sizeof(answer));
 	if (n < 0) {
 		if (_res.options & RES_DEBUG)
-			printf("sendquery failed\n");
+			printf("res_send failed\n");
 		return (NULL);
 	}
 	eom = answer + n;
@@ -110,10 +110,11 @@ gethostbyname(name)
 {
 	int n;
 
-	n = mkquery(QUERY, name, C_ANY, T_A, NULL, 0, NULL, hostbuf, sizeof(hostbuf));
+	n = res_mkquery(QUERY, name, C_ANY, T_A, NULL, 0, NULL,
+		hostbuf, sizeof(hostbuf));
 	if (n < 0) {
 		if (_res.options & RES_DEBUG)
-			printf("mkquery failed\n");
+			printf("res_mkquery failed\n");
 		return (NULL);
 	}
 	return (getanswer(hostbuf, n, 0));
@@ -128,10 +129,11 @@ gethostbyaddr(addr, len, type)
 
 	if (type != AF_INET)
 		return (NULL);
-	n = mkquery(IQUERY, NULL, C_IN, T_A, addr, len, NULL, hostbuf, sizeof(hostbuf));
+	n = res_mkquery(IQUERY, NULL, C_IN, T_A, addr, len, NULL,
+		hostbuf, sizeof(hostbuf));
 	if (n < 0) {
 		if (_res.options & RES_DEBUG)
-			printf("mkquery failed\n");
+			printf("res_mkquery failed\n");
 		return (NULL);
 	}
 	return (getanswer(hostbuf, n, 1));

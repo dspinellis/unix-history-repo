@@ -1,4 +1,4 @@
-/*	gethostnamadr.c	4.9	85/03/25	*/
+/*	gethostnamadr.c	4.10	85/03/28	*/
 
 #include <stdio.h>
 #include <netdb.h>
