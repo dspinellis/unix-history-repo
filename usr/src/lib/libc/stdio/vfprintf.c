@@ -69,7 +69,8 @@ _doprnt(fmt0, argp, fp)
 	int realsz;		/* field size expanded by decimal precision */
 	int size;		/* size of converted field or string */
 	int width;		/* width from format (%8d), or 0 */
-	char sign;		/* sign prefix (+ - or \0) */
+	char sign;		/* sign prefix (' ', '+', '-', or \0) */
+	char softsign;		/* temporary negative sign for floats */
 	char *digs;		/* digits for [diouxX] conversion */
 	char buf[BUF];		/* space for %c, %[diouxX], %[eEfgG] */
 
@@ -109,7 +110,13 @@ _doprnt(fmt0, argp, fp)
 
 rflag:		switch (*++fmt) {
 		case ' ':
-			sign = ' ';
+			/*
+			 * ``If the space and + flags both appear, the space
+			 * flag will be ignored.''
+			 *	-- ANSI X3J11
+			 */
+			if (!sign)
+				sign = ' ';
 			goto rflag;
 		case '#':
 			flags |= ALT;
@@ -192,9 +199,8 @@ rflag:		switch (*++fmt) {
 		case 'G':
 			_double = va_arg(argp, double);
 			/*
-			 * don't bother to do unrealistic precision; just
-			 * pad it with zeroes later.  This keeps buffer size
-			 * rational.
+			 * don't do unrealistic precision; just pad it with
+			 * zeroes later, so buffer size stays rational.
 			 */
 			if (prec > MAXFRACT) {
 				if (*fmt != 'g' && *fmt != 'G' || (flags&ALT))
@@ -203,18 +209,26 @@ rflag:		switch (*++fmt) {
 			}
 			else if (prec == -1)
 				prec = DEFPREC;
+			/*
+			 * softsign avoids negative 0 if _double is < 0 and
+			 * no significant digits will be shown
+			 */
 			if (_double < 0) {
-				sign = '-';
+				softsign = '-';
 				_double = -_double;
 			}
+			else
+				softsign = 0;
 			/*
-			 * _cvt may have to round up past the "start" of the
+			 * cvt may have to round up past the "start" of the
 			 * buffer, i.e. ``intf("%.2f", (double)9.999);'';
 			 * if the first char isn't NULL, it did.
 			 */
 			*buf = NULL;
-			size = _cvt(_double, prec, flags, *fmt, buf,
+			size = cvt(_double, prec, flags, &softsign, *fmt, buf,
 			    buf + sizeof(buf));
+			if (softsign)
+				sign = '-';
 			t = *buf ? buf : buf + 1;
 			goto pforw;
 		case 'n':
@@ -384,17 +398,17 @@ pforw:
 }
 
 static
-_cvt(number, prec, flags, fmtch, startp, endp)
+cvt(number, prec, flags, signp, fmtch, startp, endp)
 	double number;
 	register int prec;
 	int flags;
 	u_char fmtch;
-	char *startp, *endp;
+	char *signp, *startp, *endp;
 {
 	register char *p, *t;
 	double fract, integer, tmp, modf();
 	int dotrim, expcnt, gformat;
-	char *exponent(), *eround(), *fround();
+	char *exponent(), *round();
 
 	dotrim = expcnt = gformat = 0;
 	fract = modf(number, &integer);
@@ -431,7 +445,8 @@ _cvt(number, prec, flags, fmtch, startp, endp)
 					*t++ = tochar((int)tmp);
 				} while (--prec && fract);
 			if (fract)
-				startp = fround(startp, t - 1, fract);
+				startp = round(fract, (int *)NULL, startp,
+				    t - 1, (char)0, signp);
 		}
 		for (; prec--; *t++ = '0');
 		break;
@@ -450,9 +465,9 @@ eformat:	if (expcnt) {
 			 * later.
 			 */
 			if (!prec && ++p < endp) {
-				startp = eround(startp, t - 1, (double)0,
-				    *p, &expcnt);
 				fract = 0;
+				startp = round((double)0, &expcnt, startp,
+				    t - 1, *p, signp);
 			}
 			/* adjust expcnt for digit in front of decimal */
 			--expcnt;
@@ -482,8 +497,8 @@ eformat:	if (expcnt) {
 					*t++ = tochar((int)tmp);
 				} while (--prec && fract);
 			if (fract)
-				startp = eround(startp, t - 1, fract,
-				    (char)0, &expcnt);
+				startp = round(fract, &expcnt, startp,
+				    t - 1, (char)0, signp);
 		}
 		/* if requires more precision */
 		for (; prec--; *t++ = '0');
@@ -552,7 +567,8 @@ eformat:	if (expcnt) {
 				}
 			}
 			if (fract)
-				startp = fround(startp, t - 1, fract);
+				startp = round(fract, (int *)NULL, startp,
+				    t - 1, (char)0, signp);
 		}
 		/* alternate format, adds 0's for precision, else trim 0's */
 		if (flags&ALT)
@@ -567,36 +583,11 @@ eformat:	if (expcnt) {
 }
 
 static char *
-fround(start, end, fract)
-	register char *start, *end;
+round(fract, exp, start, end, ch, signp)
 	double fract;
-{
-	double tmp;
-
-	(void)modf(fract * 10, &tmp);
-	if (tmp > 4)
-		for (;; --end) {
-			if (*end == '.')
-				--end;
-			if (++*end <= '9')
-				break;
-			*end = '0';
-			/* add extra digit to round past buffer beginning */
-			if (end == start) {
-				*--end = '1';
-				--start;
-				break;
-			}
-		}
-	return(start);
-}
-
-static char *
-eround(start, end, fract, ch, exp)
-	register char *start, *end;
-	double fract;
-	char ch;
 	int *exp;
+	register char *start, *end;
+	char ch, *signp;
 {
 	double tmp;
 
@@ -611,12 +602,27 @@ eround(start, end, fract, ch, exp)
 			if (++*end <= '9')
 				break;
 			*end = '0';
-			/* increment exponent to round past buffer beginning */
 			if (end == start) {
-				*end = '1';
-				++*exp;
+				if (exp) {	/* e/E; increment exponent */
+					*end = '1';
+					++*exp;
+				}
+				else {		/* f; add extra digit */
+					*--end = '1';
+					--start;
+				}
 				break;
 			}
+		}
+	/* ``"%.3f", (double)-0.0004'' gives you a negative 0. */
+	else if (*signp == '-')
+		for (;; --end) {
+			if (*end == '.')
+				--end;
+			if (*end != '0')
+				break;
+			if (end == start)
+				*signp = 0;
 		}
 	return(start);
 }
