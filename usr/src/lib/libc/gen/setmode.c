@@ -9,12 +9,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setmode.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)setmode.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <stddef.h>
 #ifdef SETMODE_DEBUG
 #include <stdio.h>
 #endif
