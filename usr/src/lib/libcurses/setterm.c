@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setterm.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)setterm.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/ioctl.h>		/* TIOCGWINSZ on old systems. */
@@ -130,9 +130,9 @@ setterm(type)
 
 	/* If no scrolling commands, no quick change. */
 	__noqch =
-	    CS != NULL && HO != NULL &&
-	    (SF != NULL || sf != NULL) && (SR != NULL || sr != NULL) ||
-	    (AL != NULL || al != NULL) && (DL != NULL || dl != NULL);
+	    (CS == NULL || HO == NULL ||
+	    SF == NULL && sf == NULL || SR == NULL && sr == NULL) &&
+	    (AL == NULL && al == NULL || DL == NULL && dl == NULL);
 
 	return (unknown ? ERR : OK);
 }
