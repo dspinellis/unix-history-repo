@@ -1,9 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)uux.c	5.10	(Berkeley) %G%";
+static char sccsid[] = "@(#)uux.c	5.11	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <sys/stat.h>
+#include <sys/errno.h>
 
 #define NOSYSPART 0
 #define HASSYSPART 1
