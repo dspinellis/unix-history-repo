@@ -1,6 +1,6 @@
 .if n .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 3.16'DRAFT'Last Mod %G%'
+.fo 'Version 3.17'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -28,7 +28,7 @@
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.16
+Version 3.17
 .)l
 .sp
 .(l F
@@ -1686,12 +1686,19 @@ be defined to transmit information into
 .i sendmail:
 .(b
 .ta 4n
+e	The SMTP entry message
 j	The \*(lqofficial\*(rq domain name for this site
 l	The format of the UNIX from line
 n	The name of the daemon (for error messages)
 o	The set of "operators" in addresses
 q	default format of sender address
 .)b
+The
+.b $e
+macro is printed out when SMTP starts up.
+The first word must be the
+.b $j
+macro.
 The
 .b $j
 macro
@@ -1725,6 +1732,7 @@ macro specifies how an address should appear in a message
 when it is defaulted.
 For example, on our system these definitions are:
 .(b
+De$j Sendmail $v ready at $b
 DnMAILER-DAEMON
 DlFrom $g  $d
 Do.:%@!^=/
@@ -3651,7 +3659,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.16
+Version 3.17
 .sp 2
 .sz 14
 DRAFT
