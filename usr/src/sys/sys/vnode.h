@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.17 (Berkeley) %G%
+ *	@(#)vnode.h	7.18 (Berkeley) %G%
  */
 
 /*
@@ -57,9 +57,9 @@ struct vnode {
 	struct vnode	**v_freeb;		/* vnode freelist back */
 	struct vnode	*v_mountf;		/* vnode mountlist forward */
 	struct vnode	**v_mountb;		/* vnode mountlist back */
-	struct buf	*v_blockh;		/* logical blocklist head */
-	long		v_spare0;
-	long		v_spare1;
+	struct buf	*v_cleanblkhd;		/* clean blocklist head */
+	struct buf	*v_dirtyblkhd;		/* dirty blocklist head */
+	long		v_numoutput;		/* num of writes in progress */
 	enum vtype	v_type;			/* vnode type */
 	union {
 		struct mount	*vu_mountedhere;/* ptr to mounted vfs (VDIR) */
@@ -78,14 +78,15 @@ struct vnode {
 /*
  * vnode flags.
  */
-#define	VROOT		0x01	/* root of its file system */
-#define	VTEXT		0x02	/* vnode is a pure text prototype */
-#define VXLOCK		0x04	/* vnode is locked to change underlying type */
-#define VXWANT		0x08	/* process is waiting for vnode */
-#define	VEXLOCK		0x10	/* exclusive lock */
-#define	VSHLOCK		0x20	/* shared lock */
-#define	VLWAIT		0x40	/* proc is waiting on shared or excl. lock */
-#define	VALIASED	0x80	/* vnode has an alias */
+#define	VROOT		0x0001	/* root of its file system */
+#define	VTEXT		0x0002	/* vnode is a pure text prototype */
+#define	VXLOCK		0x0004	/* vnode is locked to change underlying type */
+#define	VXWANT		0x0008	/* process is waiting for vnode */
+#define	VEXLOCK		0x0010	/* exclusive lock */
+#define	VSHLOCK		0x0020	/* shared lock */
+#define	VLWAIT		0x0040	/* proc is waiting on shared or excl. lock */
+#define	VALIASED	0x0080	/* vnode has an alias */
+#define	VBWAIT		0x0100	/* waiting for output to complete */
 
 /*
  * Operations on vnodes.
