@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	5.20 (Berkeley) %G%
+.\"	@(#)op.me	5.21 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 5.20
+Version 5.21
 .sp
 For Sendmail Version 5.111
 .)l
@@ -2279,6 +2279,9 @@ where either or both of the
 or
 .i default
 portion may be omitted.
+The
+.i arguments
+may appear more than once.
 The indicated
 .i key
 and
@@ -2292,6 +2295,28 @@ is specified, the
 replaces the input.
 Otherwise, the input is unchanged.
 .pp
+During replacement of either a map value or default
+the string
+.q %\fIn\fP
+(where
+.i n
+is a digit)
+is replaced by the corresponding
+.i argument .
+Argument zero
+is always the original pattern.
+For example, the rule
+.(b
+R$- ! $+	$: $(uucp $1 $@ $2 $: %1 @ %0 . UUCP $)
+.)b
+Looks up the UUCP name in a (user defined) UUCP map;
+if not found it turns it into
+.q ``\&.UUCP'' form.  The database might contain records like:
+.(b
+decvax	%1@%0.DEC.COM
+research	%1@%0.ATT.COM
+.)b
+.pp
 The built in map with both name and class
 .q host
 is the host name canonicalization lookup.
@@ -2304,6 +2329,52 @@ is equivalent to:
 .(b
 $[\fIhostname\fP$]
 .)b
+.pp
+There are three predefined database lookup classes:
+.q dbm ,
+.q btree ,
+and
+.q hash .
+The first requires that sendmail be compiled with the
+.b ndbm
+library;
+the second two require the
+.b db
+library.
+All three accept as arguments the some optional flags
+and a filename.
+Known flags are:
+.ip "\-o"
+Indicates that this map is optional \*- that is,
+if it cannot be opened,
+no error is produced,
+and sendmail will behave as if the map existed but was empty.
+.ip "\-N"
+Normally sendmail does not include the trailing null byte
+on a string as part of the key.
+If this flag is indicated,
+it will be included.
+This is for compatibility with some methods of building the maps.
+.ip "\-a\fIx\fP"
+Append the character
+.i x
+on successful matches.
+For example, the
+.i host
+map appends a dot on successful matches.
+.pp
+The
+.i dbm
+map appends the strings
+.q \&.pag
+and
+.q \&.dir
+to the given filename;
+the other two maps do not.
+.pp
+The program
+.i makemap (8)
+can be used to build any of these three maps.
 .pp
 New classes can be added in the routine
 .b setupmaps
@@ -4798,7 +4869,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 5.20
+.\"Version 5.21
 .\".ce 0
 .pn 2
 .bp
