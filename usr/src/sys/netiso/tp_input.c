@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_input.c,v $
- *	@(#)tp_input.c	7.8 (Berkeley) %G% *
+ *	@(#)tp_input.c	7.9 (Berkeley) %G% *
  *
  * tp_input() gets an mbuf chain from ip.  Actually, not directly
  * from ip, because ip calls a net-level routine that strips off
@@ -380,7 +380,7 @@ tp_input(m, faddr, laddr, cons_channel, dgout_routine, ce_bit)
 	unsigned 				dutype;
 	u_short 				dref, sref, acktime, subseq; /*VAX*/
 	u_char 					preferred_class, class_to_use;
-	u_char					opt, dusize, addlopt;
+	u_char					opt, dusize, addlopt, version;
 #ifdef TP_PERF_MEAS
 	u_char					perf_meas;
 #endif TP_PERF_MEAS
@@ -559,9 +559,13 @@ again:
 
 			case	TPP_vers:
 				/* not in class 0; 1 octet; in CR_TPDU only */
+				/* Iso says if version wrong, use default version????? */
 				CHECK( (vbval(P, u_char) != TP_VERSION ), 
-					E_TP_INV_PVAL, ts_inv_pval, respond,
-					(1 + (caddr_t)&vbptr(P)->tpv_val - P) )
+					E_TP_INV_PVAL, ts_inv_pval, setversion,
+					(1 + (caddr_t)&vbptr(P)->tpv_val - P) );
+			setversion:
+				version = vbval(P, u_char);
+
 				break;
 			case	TPP_acktime:
 				vb_getval(P, u_short, acktime);
@@ -698,6 +702,7 @@ again:
 			tpp.p_xpd_service = (addlopt & TPAO_USE_TXPD) == TPAO_USE_TXPD;
 			tpp.p_use_checksum = (tpp.p_class == TP_CLASS_0)?0:
 				(addlopt & TPAO_NO_CSUM) == 0;
+			tpp.p_version = version;
 #ifdef notdef
 			tpp.p_use_efc = (opt & TPO_USE_EFC) == TPO_USE_EFC;
 			tpp.p_use_nxpd = (addlopt & TPAO_USE_NXPD) == TPAO_USE_NXPD;
