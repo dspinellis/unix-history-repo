@@ -884,3 +884,15 @@ uddump()
 {
 	return(ENXIO);
 }
+ 
+udsize(dev)
+	dev_t dev;
+{
+	int unit = minor(dev) >> 3;
+	struct uba_device *ui;
+
+	if (unit >= NRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0)
+		return (-1);
+	return (ra_sizes[minor(dev) & 07].nblocks);	/* XXX */
+}
+#endif
