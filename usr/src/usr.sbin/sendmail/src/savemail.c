@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.32 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -64,7 +64,6 @@ savemail(e)
 	}
 
 	if (exclusive++ || CurEnv->e_class <= PRI_JUNK)
-		return;
 	e->e_flags &= ~EF_FATALERRS;
 
 	/*
@@ -128,6 +127,18 @@ savemail(e)
 		syserr("554 savemail: bogus errormode x%x\n", e->e_errormode);
 		state = ESM_MAIL;
 		break;
+	}
+
+	/* if this is already an error response, send to postmaster */
+	if (bitset(EF_RESPONSE, e->e_flags))
+	{
+		if (e->e_parent != NULL &&
+		    bitset(EF_RESPONSE, e->e_parent->e_flags))
+		{
+			/* got an error sending a response -- can it */
+			return;
+		}
+		state = ESM_POSTMASTER;
 	}
 
 	while (state != ESM_DONE)
