@@ -1,4 +1,4 @@
-/*	systm.h	4.18	81/10/17	*/
+/*	systm.h	4.19	81/11/16	*/
 
 /*
  * Random set of variables
@@ -84,4 +84,8 @@ extern	int catcher[256];
 char	*panicstr;
 int	wantin;
 int	boothowto;		/* reboot flags, from console subsystem */
-int	select();
+int	selwait;
+
+/* casts to keep lint happy */
+#define	insque(q,p)	_insque((caddr_t)q,(caddr_t)p)
+#define	remque(q)	_remque((caddr_t)q)
