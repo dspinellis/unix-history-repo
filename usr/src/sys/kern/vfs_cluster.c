@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	4.41	82/12/19	*/
+/*	vfs_cluster.c	4.42	83/04/04	*/
 
 #include "../machine/pte.h"
 
@@ -627,7 +627,8 @@ biowait(bp)
 	while ((bp->b_flags&B_DONE)==0)
 		sleep((caddr_t)bp, PRIBIO);
 	splx(s);
-	u.u_error = geterror(bp);
+	if (u.u_error == 0)			/* XXX */
+		u.u_error = geterror(bp);
 }
 
 /*
