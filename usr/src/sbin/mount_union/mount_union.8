@@ -1,12 +1,12 @@
-.\" Copyright (c) 1994 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1994
+.\" The Regents of the University of California.  All rights reserved.
 .\" 
 .\" This code is derived from software donated to Berkeley by
 .\" Jan-Simon Pendry.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mount_union.8	8.4 (Berkeley) %G%
+.\"	@(#)mount_union.8	8.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MOUNT_UNION 8
@@ -16,10 +16,12 @@
 .Nd mount union filesystems
 .Sh SYNOPSIS
 .Nm mount_union
+.Op Fl o Ar options
 .Op Fl above
 .Op Fl below
 .Op Fl replace
-.Ar directory uniondir
+.Ar directory
+.Ar uniondir
 .Sh DESCRIPTION
 The
 .Nm mount_union
@@ -38,10 +40,21 @@ layer and
 becomes the
 .Em lower
 layer.
-.Nm mount_union
-is setuid root and can be used by any user.
-To enforce filesystem security, the user must be superuser or else
-have write permission on the mounted-on directory.
+.Pp
+The options are as follows:
+.Bl -tag -width indent
+.It Fl o
+Options are specified with a
+.Fl o
+flag followed by a comma separated string of options.
+See the
+.Xr mount 8
+man page for possible options and their meanings.
+.El
+.Pp
+To enforce filesystem security, the user mounting the filesystem
+must be superuser or else have write permission on the mounted-on
+directory.
 .Pp
 Filenames are looked up in the upper layer and then in the
 lower layer.
@@ -50,7 +63,9 @@ in the upper layer, then a
 .Em shadow
 directory will be created in the upper layer.
 It will be owned by the user who originally did the union mount,
-with mode 0777 modified by the umask in effect at that time.
+with mode
+.Dq rwxrwxrwx
+(0777) modified by the umask in effect at that time.
 .Pp
 If a file exists in the upper layer then there is no way to access
 a file with the same name in the lower layer.
@@ -154,6 +169,7 @@ accessible via
 .Xr mount 2 ,
 .Xr unmount 2 ,
 .Xr fstab 5 ,
+.Xr mount 8 ,
 .Xr mount_lofs 8 ,
 .Xr mount_null 8
 .Sh BUGS
