@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)calendar.c	4.4 (Berkeley) 83/07/03";
+static	char *sccsid = "@(#)calendar.c	4.5 (Berkeley) 84/05/07";
 /* /usr/lib/calendar produces an egrep -f file
    that will select today's and tomorrow's
    calendar entries, with special weekend provisions
@@ -30,10 +30,10 @@ long t;
 {
 	struct tm *tm;
 	tm = localtime(&t);
-	printf("(^|[ (,;])((%s[^ ]* *|(0%d|%d)/)0*%d)([^0123456789]|$)\n",
+	printf("(^|[ 	(,;])((%s[^ \t]*[ \t]*|(0%d|%d)/)0*%d)([^0123456789]|$)\n",
 		month[tm->tm_mon],
 		tm->tm_mon + 1, tm->tm_mon + 1, tm->tm_mday);
-	printf("(^|[ (,;])((\\* *)0*%d)([^0123456789]|$)\n",
+	printf("(^|[ 	(,;])((\\*[ \t]*)0*%d)([^0123456789]|$)\n",
 		tm->tm_mday);
 }
 
