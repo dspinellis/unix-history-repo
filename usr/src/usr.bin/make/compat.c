@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compat.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)compat.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -142,7 +142,7 @@ CompatRunCommand (cmd, gn)
     cmdStart = Var_Subst (cmd, gn, FALSE);
 
     /*
-     * Str_BreakString will return an argv with a NULL in av[1], thus causing
+     * brk_string will return an argv with a NULL in av[1], thus causing
      * execvp to choke and die horribly. Besides, how can we execute a null
      * command? In any case, we warn the user that the command expanded to
      * nothing (is this the right thing to do?).
@@ -219,10 +219,10 @@ CompatRunCommand (cmd, gn)
 	/*
 	 * No meta-characters, so no need to exec a shell. Break the command
 	 * into words to form an argument vector we can execute.
-	 * Str_BreakString sticks our name in av[0], so we have to
+	 * brk_string sticks our name in av[0], so we have to
 	 * skip over it...
 	 */
-	av = Str_BreakString(cmd, " \t", "\n", &argc);
+	av = brk_string(cmd, &argc);
 	av += 1;
     }
     
@@ -244,14 +244,6 @@ CompatRunCommand (cmd, gn)
 	    (void)execv(av[0], av);
 	}
 	exit(1);
-    } else if (argc != 0) {
-	/*
-	 * If there's a vector that needs freeing (the command was executed
-	 * directly), do so now, being sure to back up the argument vector
-	 * to where it started...
-	 */
-	av -= 1;
-	Str_FreeVec (argc, av);
     }
     
     /*
