@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_physio.c	7.13 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -98,6 +98,9 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, vp, pfcent)
 #ifdef TRACE
 		trace(TR_SWAPIO, vp, bp->b_blkno);
 #endif
+#if defined(hp300)
+		vmapbuf(bp);
+#endif
 		VOP_STRATEGY(bp);
 		/* pageout daemon doesn't wait for pushed pages */
 		if (flag & B_DIRTY) {
@@ -110,6 +113,9 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, vp, pfcent)
 				sleep((caddr_t)bp, PSWP);
 			splx(s);
 		}
+#if defined(hp300)
+		vunmapbuf(bp);
+#endif
 		bp->b_un.b_addr += c;
 		bp->b_flags &= ~B_DONE;
 		if (bp->b_flags & B_ERROR) {
@@ -144,6 +150,9 @@ swdone(bp)
 	bclnlist = bp;
 	if (bswlist.b_flags & B_WANTED)
 		wakeup((caddr_t)&proc[2]);
+#if defined(hp300)
+	vunmapbuf(bp);
+#endif
 	splx(s);
 }
 
@@ -219,6 +228,11 @@ physio(strat, bp, dev, rw, mincnt, uio)
 		}
 		bp->b_error = 0;
 		bp->b_proc = u.u_procp;
+#ifdef HPUXCOMPAT
+		if (ISHPMMADDR(iov->iov_base))
+			bp->b_un.b_addr = (caddr_t)HPMMBASEADDR(iov->iov_base);
+		else
+#endif
 		bp->b_un.b_addr = iov->iov_base;
 		while (iov->iov_len > 0) {
 			bp->b_flags = B_BUSY | B_PHYS | B_RAW | rw;
@@ -229,10 +243,16 @@ physio(strat, bp, dev, rw, mincnt, uio)
 			requested = bp->b_bcount;
 			u.u_procp->p_flag |= SPHYSIO;
 			vslock(a = bp->b_un.b_addr, requested);
+#if defined(hp300)
+			vmapbuf(bp);
+#endif
 			(*strat)(bp);
 			s = splbio();
 			while ((bp->b_flags & B_DONE) == 0)
 				sleep((caddr_t)bp, PRIBIO);
+#if defined(hp300)
+			vunmapbuf(bp);
+#endif
 			vsunlock(a, requested, rw);
 			u.u_procp->p_flag &= ~SPHYSIO;
 			if (bp->b_flags&B_WANTED)	/* rare */
@@ -253,6 +273,9 @@ physio(strat, bp, dev, rw, mincnt, uio)
 		if (done < requested || bp->b_flags & B_ERROR)
 			break;
 	}
+#if defined(hp300)
+	DCIU();
+#endif
 	if (allocbuf)
 		freeswbuf(bp);
 	return (error);
