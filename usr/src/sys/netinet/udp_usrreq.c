@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)udp_usrreq.c	7.32 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.33 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -225,7 +225,7 @@ udp_input(m, iphlen)
 		udpstat.udps_noport++;
 		*ip = save_ip;
 		ip->ip_len += iphlen;
-		icmp_error(m, ICMP_UNREACH, ICMP_UNREACH_PORT);
+		icmp_error(m, ICMP_UNREACH, ICMP_UNREACH_PORT, 0, 0);
 		return;
 	}
 

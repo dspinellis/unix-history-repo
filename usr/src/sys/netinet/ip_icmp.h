@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_icmp.h	7.6 (Berkeley) %G%
+ *	@(#)ip_icmp.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -124,3 +124,7 @@ struct icmp {
 	(type) == ICMP_TSTAMP || (type) == ICMP_TSTAMPREPLY || \
 	(type) == ICMP_IREQ || (type) == ICMP_IREQREPLY || \
 	(type) == ICMP_MASKREQ || (type) == ICMP_MASKREPLY)
+
+#ifdef KERNEL
+void	icmp_error __P((struct mbuf *, int, int, n_long, struct ifnet *));
+#endif
