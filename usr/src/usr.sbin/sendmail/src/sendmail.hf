@@ -1,4 +1,15 @@
-@(#)	sendmail.hf	4.1	%G%
+@(#)	sendmail.hf	4.2	%G%
+cpyr	
+cpyr	Sendmail
+cpyr	Copyright (c) 1983  Eric P. Allman
+cpyr	Berkeley, California
+cpyr	
+cpyr	Copyright (c) 1983 Regents of the University of California.
+cpyr	All rights reserved.  The Berkeley software License Agreement
+cpyr	specifies the terms and conditions for redistribution.
+cpyr	
+cpyr	@(#)sendmail.hf	4.2 (Berkeley) %G%
+cpyr	
 smtp	Commands:
 smtp		HELO	MAIL	RCPT	DATA	RSET
 smtp		NOOP	QUIT	HELP	VRFY	EXPN
