@@ -1,6 +1,6 @@
-#	Makefile.vax	4.9	%G%
+#	Makefile.vax	4.10	%G%
 #
-# Makefile for 4.2 bsd
+# Makefile for 4.2 BSD
 #
 # This makefile is constructed from a machine description:
 #	config machine
@@ -17,6 +17,8 @@
 #
 # -DTRACE	compile in kernel tracing hooks
 # -DQUOTA	compile in file system quotas
+# -DUUDMA	compile in unibus tu58 pseudo-dma code
+# -DSWABIPS	compile in code to byte swap ip packets on 3Mb/s Ethernet
 #
 C2=	/lib/c2
 LD=	/bin/ld
