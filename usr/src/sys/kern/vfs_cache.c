@@ -9,7 +9,7 @@
  *
  * from: vfs_cache.c,v 1.11 1995/03/12 02:01:20 phk Exp $
  *
- *	@(#)vfs_cache.c	8.4 (Berkeley) %G%
+ *	@(#)vfs_cache.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -156,9 +156,13 @@ cache_lookup(dvp, vpp, cnp)
 		return (0);
 	}
 
-	/* We found a "negative" match, ENOENT notifies client of this match */
+	/*
+	 * We found a "negative" match, ENOENT notifies client of this match.
+	 * The nc_vpid field records whether this is a whiteout.
+	 */
 	nchstats.ncs_neghits++;
 	TOUCH(ncp);
+	cnp->cn_flags |= ncp->nc_vpid;
 	return (ENOENT);
 }
 
@@ -207,12 +211,17 @@ cache_enter(dvp, vp, cnp)
 		return;
 	}
 
-	/* fill in cache info, if vp is NULL this is a "negative" cache entry */
+	/*
+	 * Fill in cache info, if vp is NULL this is a "negative" cache entry.
+	 * For negative entries, we have to record whether it is a whiteout.
+	 * the whiteout flag is stored in the nc_vpid field which is
+	 * otherwise unused.
+	 */
 	ncp->nc_vp = vp;
 	if (vp)
 		ncp->nc_vpid = vp->v_id;
 	else
-		ncp->nc_vpid = 0;
+		ncp->nc_vpid = cnp->cn_flags & ISWHITEOUT;
 	ncp->nc_dvp = dvp;
 	ncp->nc_dvpid = dvp->v_id;
 	ncp->nc_nlen = cnp->cn_namelen;
