@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cfb.c	7.3 (Berkeley) %G%
+ *	@(#)cfb.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -78,9 +78,9 @@
 #include <machine/dc7085cons.h>
 #include <machine/pmioctl.h>
 
-#include <mips/dev/device.h>
-#include <mips/dev/cfbreg.h>
-#include <mips/dev/font.c>
+#include <pmax/dev/device.h>
+#include <pmax/dev/cfbreg.h>
+#include <pmax/dev/font.c>
 
 #define MAX_ROW	56
 #define MAX_COL	80
