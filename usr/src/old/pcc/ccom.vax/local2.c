@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.37 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.38 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -1294,6 +1294,23 @@ optim2( p ) register NODE *p; {
 
 	switch( o = p->in.op ) {
 
+	case ASG PLUS:
+	case ASG MINUS:
+	case ASG MUL:
+	case ASG OR:
+		/* simple ASG OPSIMP -- reduce range of constant rhs */
+		l = p->in.left;
+		r = p->in.right;
+		if( tlen(l) < SZINT/SZCHAR &&
+		    r->in.op==ICON && r->in.name[0]==0 ){
+			mask = (1 << tlen(l) * SZCHAR) - 1;
+			if( r->tn.lval & (mask & ~(mask >> 1)) )
+				r->tn.lval |= ~mask;
+			else
+				r->tn.lval &= mask;
+			}
+		break;
+
 	case AND:
 		/* commute L and R to eliminate complements and constants */
 		if( (l = p->in.left)->in.op == ICON && l->in.name[0] == 0 ||
@@ -1301,29 +1318,40 @@ optim2( p ) register NODE *p; {
 			p->in.left = p->in.right;
 			p->in.right = l;
 			}
+		/* fall through */
+
 	case ASG AND:
-		/* change meaning of AND to ~R&L - bic on pdp11 */
+		/* change meaning of AND to ~R&L - bic on pdp11/vax */
 		r = p->in.right;
 		if( r->in.op==ICON && r->in.name[0]==0 ) {
 			/* check for degenerate operations */
 			l = p->in.left;
 			mask = (1 << tlen(l) * SZCHAR) - 1;
-			if( ISUNSIGNED(r->in.type) ) {
-				i = (~r->tn.lval & mask);
+			if( o == ASG AND || ISUNSIGNED(r->in.type) ) {
+				i = ~r->tn.lval & mask;
 				if( i == 0 ) {
+					/* redundant mask */
 					r->in.op = FREE;
 					ncopy(p, l);
 					l->in.op = FREE;
 					break;
 					}
 				else if( i == mask )
+					/* all bits masked off */
 					goto zero;
-				else
-					r->tn.lval = i;
+				r->tn.lval = i;
+				if( tlen(l) < SZINT/SZCHAR ){
+					/* sign extend */
+					if( r->tn.lval & (mask & ~(mask >> 1)) )
+						r->tn.lval |= ~mask;
+					else
+						r->tn.lval &= mask;
+					}
 				break;
 				}
 			else if( r->tn.lval == mask &&
 				 tlen(l) < SZINT/SZCHAR ) {
+				/* use movz instead of bic */
 				r->in.op = SCONV;
 				r->in.left = l;
 				r->in.right = 0;
