@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_input.c	6.10 (Berkeley) %G%
+ *	@(#)ns_input.c	6.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -321,7 +321,7 @@ idp_forward(idp)
 	 * age the packet so we can eat it safely the second time around.
 	 */
 	if (idp->idp_dna.x_host.c_host[0] & 0x1) {
-		struct ns_ifaddr *ia = ns_iaonnetof(idp->idp_dna.x_net);
+		struct ns_ifaddr *ia = ns_iaonnetof(&idp->idp_dna);
 		struct ifnet *ifp;
 		if (ia) {
 			/* I'm gonna hafta eat this packet */
@@ -420,15 +420,46 @@ register struct route *ro;
 {
 	if (ro->ro_rt) {RTFREE(ro->ro_rt);}
 }
-ns_watch_output(m)
+static union ns_net
+ns_zeronet;
+
+ns_watch_output(m, ifp)
 struct mbuf *m;
+struct ifnet *ifp;
 {
 	register struct nspcb *nsp;
+	register struct ifaddr *ia;
 	/*
 	 * Give any raw listeners a crack at the packet
 	 */
 	for (nsp = nsrawpcb.nsp_next; nsp != &nsrawpcb; nsp = nsp->nsp_next) {
-		struct mbuf *m1 = m_copy(m, 0, (int)M_COPYALL);
-		if (m1) idp_input(m1, nsp);
+		struct mbuf *m0 = m_copy(m, 0, (int)M_COPYALL);
+		if (m0) {
+			struct mbuf *m1 = m_get(M_DONTWAIT, MT_DATA);
+
+			if(m1 == NULL)
+				m_freem(m0);
+			else {
+				register struct idp *idp;
+
+				m1->m_off = MMINOFF;
+				m1->m_len = sizeof (*idp);
+				m1->m_next = m0;
+				idp = mtod(m1, struct idp *);
+				idp->idp_sna.x_net = ns_zeronet;
+				idp->idp_sna.x_host = ns_thishost;
+				if (ifp && (ifp->if_flags & IFF_POINTOPOINT))
+				    for(ia = ifp->if_addrlist; ia;
+							ia = ia->ifa_next) {
+					if (ia->ifa_addr.sa_family==AF_NS) {
+					    idp->idp_sna = 
+						satons_addr(ia->ifa_dstaddr);
+					    break;
+					}
+				    }
+				idp->idp_len = 0xffff;
+				idp_input(m1, nsp, ifp);
+			}
+		}
 	}
 }
