@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machparam.h 1.16 92/12/20$
  *
- *	@(#)param.h	8.3 (Berkeley) %G%
+ *	@(#)param.h	8.4 (Berkeley) %G%
  */
 
 /*
@@ -175,6 +175,8 @@ int	cpuspeed;
 	((unsigned)(v) & ~HPMMMASK)
 #endif
 
+#ifndef _SIMPLELOCK_H_
+#define _SIMPLELOCK_H_
 /*
  * A simple spin lock.
  *
@@ -230,3 +232,4 @@ simple_unlock(lkp)
 	lkp->lock_data = 0;
 }
 #endif /* NCPUS > 1 */
+#endif /* !_SIMPLELOCK_H_ */
