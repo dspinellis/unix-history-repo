@@ -1,6 +1,5 @@
-.\"	@(#)t2	5.1 (Berkeley) %G%
+.\"	@(#)t2	6.1 (Berkeley) %G%
 .\"
-.bp
 .SH
 2.0\ Shell\ procedures
 .LP
@@ -448,7 +447,7 @@ in the file \fB.profile,\fP
 in the user's login directory.
 For example,
 .DS
-	\s-1MAIL\s0=/usr/mail/fred
+	\s-1MAIL\s0=/usr/spool/mail/fred
 .DE
 .IP \fB$\s-1HOME\s0\fP 8
 The default argument
@@ -775,7 +774,7 @@ and the current setting of the shell flags is available as \fB$\(mi\|.\fR
 2.10\ The\ man\ command
 .LP
 The following is the \fIman\fP command
-which is used to print sections of the UNIX manual.
+which is used to diplay sections of the UNIX manual on your terminal.
 It is called, for example, as
 .DS
 		man sh
@@ -783,12 +782,12 @@ It is called, for example, as
 		man 2 fork
 .DE
 In the first the manual section for \fIsh\fP
-is printed.
+is displayed..
 Since no section is specified, section 1 is used.
 The second example will typeset (\fB\(mit\fP option)
 the manual section for \fIed.\fP
 The last prints the \fIfork\fP manual page
-from section 2.
+from section 2, which covers system calls.
 .sp 2
 .DS
 	cd /usr/man
