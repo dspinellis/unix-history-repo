@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.21 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.22 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -18,10 +18,11 @@
 #include <sys/proc.h>
 #include <sys/conf.h>
 #include <sys/vnode.h>
-#include <sys/specdev.h>
-#include <sys/fifo.h>
 #include <sys/malloc.h>
 #include <sys/mount.h>
+
+#include <miscfs/specfs/specdev.h>
+#include <miscfs/fifofs/fifo.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
