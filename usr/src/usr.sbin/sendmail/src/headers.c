@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/param.h>
@@ -442,16 +442,10 @@ priencode(p)
 **	identical to what it started with.  However, it does leave
 **	something semantically identical.
 **
-**	The process is kind of strange.  There are a number of
-**	interesting cases:
-**		1.  comment <address> comment	==> comment <$g> comment
-**		2.  address			==> address
-**		3.  address (comment)		==> $g (comment)
-**		4.  (comment) address		==> (comment) $g
-**	And then there are the hard cases....
-**		5.  add (comment) ress		==> $g (comment)
-**		6.  comment <address (comment)>	==> comment <$g (comment)>
-**		7.    .... etc ....
+**	This algorithm has been cleaned up to handle a wider range
+**	of cases -- notably quoted and backslash escaped strings.
+**	This modification makes it substantially better at preserving
+**	the original syntax.
 **
 **	Parameters:
 **		addr -- the address to be cracked.
@@ -472,131 +466,105 @@ crackaddr(addr)
 	register char *addr;
 {
 	register char *p;
-	register int i;
-	static char buf[MAXNAME];
-	char *rhs;
-	bool gotaddr;
+	register char c;
+	int cmtlev;
+	int copylev;
+	bool qmode;
+	bool putgmac = FALSE;
 	register char *bp;
+	static char buf[MAXNAME];
 
 	if (tTd(33, 1))
 		printf("crackaddr(%s)\n", addr);
-
-	(void) strcpy(buf, "");
-	rhs = NULL;
 
 	/* strip leading spaces */
 	while (*addr != '\0' && isspace(*addr))
 		addr++;
 
 	/*
-	**  See if we have anything in angle brackets.  If so, that is
-	**  the address part, and the rest is the comment.
+	**  Start by assuming we have no angle brackets.  This will be
+	**  adjusted later if we find them.
 	*/
 
-	p = index(addr, '<');
-	if (p != NULL)
-	{
-		/* copy the beginning of the addr field to the buffer */
-		*p = '\0';
-		(void) strcpy(buf, addr);
-		(void) strcat(buf, "<");
-		*p++ = '<';
-
-		/* skip spaces */
-		while (isspace(*p))
-			p++;
-
-		/* find the matching right angle bracket */
-		addr = p;
-		for (i = 0; *p != '\0'; p++)
-		{
-			switch (*p)
-			{
-			  case '<':
-				i++;
-				break;
-
-			  case '>':
-				i--;
-				break;
-			}
-			if (i < 0)
-				break;
-		}
-
-		/* p now points to the closing quote (or a null byte) */
-		if (*p != '\0')
-		{
-			/* make rhs point to the extra stuff at the end */
-			rhs = p;
-			*p++ = '\0';
-		}
-	}
-
-	/*
-	**  Now parse the real address part.  "addr" points to the (null
-	**  terminated) version of what we are inerested in; rhs points
-	**  to the extra stuff at the end of the line, if any.
-	*/
-
+	bp = buf;
 	p = addr;
+	copylev = cmtlev = 0;
+	qmode = FALSE;
 
-	/* now strip out comments */
-	bp = &buf[strlen(buf)];
-	gotaddr = FALSE;
-	for (; *p != '\0'; p++)
+	while ((c = *p++) != '\0')
 	{
-		if (*p == '(')
-		{
-			/* copy to matching close paren */
-			*bp++ = *p++;
-			for (i = 0; *p != '\0'; p++)
-			{
-				*bp++ = *p;
-				switch (*p)
-				{
-				  case '(':
-					i++;
-					break;
+		if (copylev > 0 || c == ' ')
+			*bp++ = c;
 
-				  case ')':
-					i--;
-					break;
-				}
-				if (i < 0)
-					break;
+		/* check for backslash escapes */
+		if (c == '\\')
+		{
+			if ((c = *p++) == '\0')
+			{
+				/* too far */
+				p--;
+				goto putg;
+			}
+			if (copylev > 0)
+				*bp++ = c;
+			goto putg;
+		}
+
+		/* check for quoted strings */
+		if (c == '"')
+		{
+			qmode = !qmode;
+			continue;
+		}
+		if (qmode)
+			goto putg;
+
+		/* check for comments */
+		if (c == '(')
+		{
+			cmtlev++;
+			if (copylev++ <= 0)
+				*bp++ = c;
+		}
+		if (cmtlev > 0)
+		{
+			if (c == ')')
+			{
+				cmtlev--;
+				copylev--;
 			}
 			continue;
 		}
 
-		/*
-		**  If this is the first "real" character we have seen,
-		**  then we put the "$g" in the buffer now.
-		*/
-
-		if (isspace(*p))
-			*bp++ = *p;
-		else if (!gotaddr)
+		/* check for angle brackets */
+		if (c == '<')
 		{
-			(void) strcpy(bp, "\001g");
-			bp += 2;
-			gotaddr = TRUE;
+			/* oops -- have to change our mind */
+			bcopy(addr, buf, p - addr);
+			bp = &buf[p - addr];
+			copylev = 0;
+			putgmac = FALSE;
+			continue;
+		}
+
+		if (c == '>')
+		{
+			if (copylev++ <= 0)
+				*bp++ = c;
+			continue;
+		}
+
+		/* must be a real address character */
+	putg:
+		if (copylev <= 0 && !putgmac)
+		{
+			*bp++ = '\001';
+			*bp++ = 'g';
+			putgmac = TRUE;
 		}
 	}
 
-	/* hack, hack.... strip trailing blanks */
-	do
-	{
-		*bp-- = '\0';
-	} while (isspace(*bp));
-	bp++;
-
-	/* put any right hand side back on */
-	if (rhs != NULL)
-	{
-		*rhs = '>';
-		(void) strcpy(bp, rhs);
-	}
+	*bp++ = '\0';
 
 	if (tTd(33, 1))
 		printf("crackaddr=>`%s'\n", buf);
