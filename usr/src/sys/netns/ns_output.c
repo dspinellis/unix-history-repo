@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_output.c	6.3 (Berkeley) %G%
+ *	@(#)ns_output.c	6.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -41,13 +41,13 @@ ns_output(m0, ro, flags)
 	struct sockaddr_ns *dst;
 	extern int idpcksum;
 
-	if(ns_hold_output) {
-		if(ns_lastout) {
+	if (ns_hold_output) {
+		if (ns_lastout) {
 			m_free(ns_lastout);
 		}
 		ns_lastout = m_copy(m0, 0, M_COPYALL);
 	}
-	if(ns_copy_output) {
+	if (ns_copy_output) {
 		ns_watch_output(m0);
 	}
 
@@ -62,6 +62,7 @@ ns_output(m0, ro, flags)
 	if (ro->ro_rt == 0) {
 		dst->sns_family = AF_NS;
 		dst->sns_addr = idp->idp_dna;
+		dst->sns_addr.x_port = 0;
 		/*
 		 * If routing to interface only,
 		 * short circuit routing lookup.
