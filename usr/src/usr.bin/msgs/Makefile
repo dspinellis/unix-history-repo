@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -24,8 +24,8 @@ MAN=	msgs.0
 
 all: msgs
 
-msgs: ${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS} -ltermlib
+msgs: ${LIBC}
+	${CC} -o $@ ${CFLAGS} msgs.c -ltermlib
 
 clean:
 	rm -f ${OBJS} core msgs
@@ -34,7 +34,7 @@ cleandir: clean
 	rm -f ${MAN} tags .depend
 
 depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
+	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
 	install -s -o bin -g bin -m 755 msgs ${DESTDIR}/usr/ucb/msgs
