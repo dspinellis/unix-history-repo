@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.14 (Berkeley) %G%";
 #endif not lint
 
 #include "ftp_var.h"
@@ -14,7 +14,7 @@ static char sccsid[] = "@(#)ftp.c	5.13 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-#include <sys/types.h>
+#include <sys/param.h>
 
 #include <netinet/in.h>
 #include <arpa/ftp.h>
@@ -1019,7 +1019,7 @@ pswitch(flag)
 	int (*oldintr)();
 	static struct comvars {
 		int connect;
-		char name[32];
+		char name[MAXHOSTNAMELEN];
 		struct sockaddr_in mctl;
 		struct sockaddr_in hctl;
 		FILE *in;
@@ -1056,8 +1056,11 @@ pswitch(flag)
 	}
 	ip->connect = connected;
 	connected = op->connect;
-	(void) strncpy(ip->name, hostname, 31);
-	(ip->name)[strlen(ip->name)] = '\0';
+	if (hostname) {
+		(void) strncpy(ip->name, hostname, sizeof(ip->name) - 1);
+		ip->name[strlen(ip->name)] = '\0';
+	} else
+		ip->name[0] = 0;
 	hostname = op->name;
 	ip->hctl = hisctladdr;
 	hisctladdr = op->hctl;
