@@ -1,4 +1,4 @@
-/*	if_hy.c	4.3	83/02/21	*/
+/*	if_hy.c	4.4	83/05/27	*/
 
 #include "hy.h"
 #if NHY > 0
@@ -220,7 +220,6 @@ hyreset(unit, uban)
 	int unit, uban;
 {
 	register struct uba_device *ui = hyinfo[unit];
-	register struct hy_softc *is;
 
 	if (unit >= NHY || ui == 0 || ui->ui_alive == 0 ||
 	  ui->ui_ubanum != uban)
@@ -593,7 +592,7 @@ hyoutput(ifp, m0, dst)
 	hym->hym_mplen = mplen;
 	hym->hym_hdr.hyh_type = dtype;
 	hym->hym_hdr.hyh_off = 0;
-	hym->hym_hdr.hyh_from = htons(ifp->if_host[0]);
+	hym->hym_hdr.hyh_from = htons((u_short)ifp->if_host[0]);
 	hym->hym_hdr.hyh_param = loopback;
 #ifdef HYROUTE
 	if (r->hyr_lasttime.tv_sec != 0) {
@@ -627,7 +626,7 @@ hyoutput(ifp, m0, dst)
 	} else {
 		hym->hym_hdr.hyh_ctl = H_XTRUNKS | H_RTRUNKS;
 		hym->hym_hdr.hyh_access = 0;
-		hym->hym_hdr.hyh_to = htons(dhost);
+		hym->hym_hdr.hyh_to = htons((u_short)dhost);
 	}
 #else
 	hym->hym_hdr.hyh_ctl = H_XTRUNKS | H_RTRUNKS;
@@ -635,7 +634,6 @@ hyoutput(ifp, m0, dst)
 	hym->hym_hdr.hyh_to = htons(dhost);
 #endif
 
-headerexists:
 	if (hym->hym_mplen) {
 		hym->hym_hdr.hyh_ctl |= H_ASSOC;
 #ifdef DEBUG
@@ -781,8 +779,8 @@ actloop:
 				 * Port number is taken from status data
 				 */
 				hystart(ui,
-				  HYF_MARKP0 | (PORTNUM(&is->hy_status) << 2),
-				  0, 0);
+				 (int)(HYF_MARKP0|(PORTNUM(&is->hy_status)<<2)),
+				 0, 0);
 			} else if (rq & RQ_MARKUP) {
 				register struct ifnet *ifp = &is->hy_if;
 				register struct sockaddr_in *sin =
@@ -824,7 +822,7 @@ actloop:
 	}
 
 	case STATSENT:
-		bcopy(is->hy_ifuba.ifu_r.ifrw_addr, &is->hy_status,
+		bcopy(is->hy_ifuba.ifu_r.ifrw_addr, (caddr_t)&is->hy_status,
 		  sizeof (struct hy_status));
 #ifdef DEBUG
 		printD("hy%d: status - %x %x %x %x %x %x %x %x\n",
@@ -934,10 +932,10 @@ actloop:
 			is->hy_ilen = len;
 			is->hy_retry = 0;
 			hystart(ui, HYF_INPUTDATA,
-			  HYMTU-len+sizeof (struct hy_hdr),
-			  is->hy_ifuba.ifu_r.ifrw_info + len);
+			  (int)(HYMTU-len+sizeof (struct hy_hdr)),
+			  (int)(is->hy_ifuba.ifu_r.ifrw_info + len));
 		} else {
-			hyrecvdata(ui, hyh, len);
+			hyrecvdata(ui, hyh, (int)len);
 			is->hy_state = IDLE;
 		}
 		break;
@@ -958,7 +956,7 @@ actloop:
 		if (hy_debug_flag)
 			hyprintdata((char *)hyh + is->hy_ilen, len);
 #endif
-		hyrecvdata(ui, hyh, len + is->hy_ilen);
+		hyrecvdata(ui, hyh, (int)(len + is->hy_ilen));
 		is->hy_state = IDLE;
 		break;
 	}
@@ -1018,7 +1016,6 @@ endintr:
 	printD("hy%d: hyact, exit at \"%s\"\n", ui->ui_unit,
 		hy_state_names[is->hy_state]);
 #endif
-	return (0);
 }
 
 /*
@@ -1208,7 +1205,7 @@ hylog(code, len, ptr)
 		goto out;
 	p = hy_log.hyl_ptr;
 	if (p + len + 2 >= hy_log.hyl_eptr) {
-		bzero(p, hy_log.hyl_eptr - p);
+		bzero((caddr_t)p, (unsigned)(hy_log.hyl_eptr - p));
 		p = &hy_log.hyl_buf[0];
 		if (hy_log.hyl_enable == HYL_CATCH1) {
 			hy_log.hyl_enable = hy_log.hyl_onerr = HYL_CAUGHT1;
@@ -1221,13 +1218,15 @@ hylog(code, len, ptr)
 	}
 	*p++ = code;
 	*p++ = len;
-	bcopy(ptr, p, len);
+	bcopy(ptr, (caddr_t)p, (unsigned)len);
 	hy_log.hyl_ptr = p + len;
 out:
 	splx(s);
 }
 #endif
 
+#ifdef notdef
+/*ARGSUSED*/
 hyioctl(dev, cmd, data, flag)
 	dev_t dev;
 	int cmd;
@@ -1263,4 +1262,5 @@ bad:
 	splx(s);
 	return (error);
 }
+#endif
 #endif

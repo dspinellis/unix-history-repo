@@ -1,4 +1,4 @@
-/*	if_il.c	4.19	83/05/18	*/
+/*	if_il.c	4.20	83/05/27	*/
 
 #include "il.h"
 
@@ -139,17 +139,11 @@ ilattach(ui)
 		is->is_stats.ils_addr[4]&0xff, is->is_stats.ils_addr[5]&0xff,
 		is->is_stats.ils_module, is->is_stats.ils_firmware);
 #endif
-	bcopy(is->is_stats.ils_addr, is->is_addr, sizeof (is->is_addr));
+	bcopy((caddr_t)is->is_stats.ils_addr, (caddr_t)is->is_addr,
+	    sizeof (is->is_addr));
 	sin = (struct sockaddr_in *)&ifp->if_addr;
 	sin->sin_family = AF_INET;
-	if (ui->ui_flags) {
-		int i = ((is->is_addr[3]&0xff)<<16) |
-		    ((is->is_addr[4]&0xff)<<8) |
-		    (is->is_addr[5]&0xff);
-		sin->sin_addr = if_makeaddr(ui->ui_flags, i);
-	} else
-		sin->sin_addr = arpmyaddr();
-
+	sin->sin_addr = arpmyaddr((struct arpcom *)0);
 	ifp->if_init = ilinit;
 	ifp->if_output = iloutput;
 	ifp->if_reset = ilreset;
@@ -508,7 +502,7 @@ iloutput(ifp, m0, dst)
 
 	case AF_UNSPEC:
 		il = (struct ether_header *)dst->sa_data;
-		bcopy(il->ether_dhost, edst, sizeof (edst));
+		bcopy((caddr_t)il->ether_dhost, (caddr_t)edst, sizeof (edst));
 		type = il->ether_type;
 		goto gottype;
 
@@ -552,7 +546,7 @@ gottype:
 	}
 	il = mtod(m, struct ether_header *);
 	il->ether_type = htons((u_short)type);
-	bcopy(edst, il->ether_dhost, sizeof (edst));
+	bcopy((caddr_t)edst, (caddr_t)il->ether_dhost, sizeof (edst));
 	bcopy((caddr_t)is->is_addr, (caddr_t)il->ether_shost, 6);
 
 	/*

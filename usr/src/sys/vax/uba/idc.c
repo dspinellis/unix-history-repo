@@ -1,4 +1,4 @@
-/*	idc.c	4.14	83/05/18	*/
+/*	idc.c	4.15	83/05/27	*/
 
 #include "rb.h"
 #if NIDC > 0
@@ -773,7 +773,7 @@ idcdump(dev)
 	register struct uba_regs *uba;
 	register struct uba_device *ui;
 	struct idcst *st;
-	struct idc_dar dar;
+	union idc_dar dar;
 	int nspg;
 
 	unit = minor(dev) >> 3;
