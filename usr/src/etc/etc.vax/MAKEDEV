@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	4.15	%G%
+#	@(#)MAKEDEV	4.16	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -16,6 +16,7 @@
 #	hk*	unibus rk06 and rk07
 #	up*	other unibus devices (e.g. on Emulex sc-21v controller)
 #	ra*	unibus uda50 w/ ra??
+#	rl*	unibus rl02
 #	rb*	730 idc w/ rb80 and/or rb02
 #	rx*	unibus rx211 floppy disk 
 # Terminal multiplexors:
@@ -25,11 +26,16 @@
 # Pseudo terminals:
 #	pty*	set of 16 master and slave pseudo terminals
 # Printers:
+#	ct*	unibus parallel interface to CAT typesetter
 #	lp*	unibus lp11 parallel interface
 #	va*	unibus varian parallel interface
 #	vp*	unibus versatec parallel interface
 # Call units:
 #	dn*	unibus dn11 and emulations (e.g. Able Quadracall)
+# Special purpose devices:
+#	ik*	unibus interface to ikonas frame buffer
+#	ps*	unibus interface to e&s picture system 2
+#	ad*	unibus interface to data translation a/d converter
 umask 77
 for i
 do
@@ -86,7 +92,7 @@ ht*|tm*|ts*|mt*|ut*)
 	esac
 	;;
 
-hp*|hk*|up*|ra*|rb*)
+hp*|hk*|up*|ra*|rl*|rb*)
 	unit=`expr $i : '..\(.*\)'`
 	case $i in
 	hp*) name=hp; blk=0; chr=4;;
@@ -94,6 +100,7 @@ hp*|hk*|up*|ra*|rb*)
 	up*) name=up; blk=2; chr=13;;
 	ra*) name=ra; blk=9; chr=9;;
 	rb*) name=rb; blk=11; chr=23;;
+	rl*) name=rl; blk=14; chr=32;;
 	esac
 	case $unit in
 	0|1|2|3|4|5|6|7)
@@ -228,16 +235,23 @@ pty*)
 	esac
 	;;
 
-dn*)
-	unit=`expr $i : 'dn\(.*\)'`
+dn*|ik*|ps*|ad*|ct*)
+	unit=`expr $i : '..\(.*\)'`
+	case $i in
+	ct*) name=ct; chr=18;;
+	dn*) name=cu; chr=24;;
+	ps*) name=ps; chr=27;;
+	ad*) name=ad; chr=29;;
+	ik*) name=ik; chr=31;;
+	esac
 	case $unit in
 	0|1|2|3|4|5|6|7)
 		umask 0
-		/etc/mknod cu${unit} c 24 ${unit}
+		/etc/mknod ${name}${unit} c ${chr} ${unit}
 		umask 77
 		;;
 	*)
-		echo bad unit for dn in: $i
+		echo bad unit for ${name} in: $i
 		;;
 	esac
 	;;
