@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)netdb.h	5.6 (Berkeley) %G%
+ *	@(#)netdb.h	5.7 (Berkeley) %G%
  */
 
 /*
@@ -60,4 +60,4 @@ extern  int h_errno;
 #define	HOST_NOT_FOUND	1 /* Authoritive Answer Host not found */
 #define	TRY_AGAIN	2 /* Non-Authoritive Host not found, or SERVERFAIL */
 #define	NO_RECOVERY	3 /* Non recoverable errors, FORMERR, REFUSED, NOTIMP */
-#define NO_ADDRESS	4 /* Valid host name, no address, look for MF record */
+#define NO_ADDRESS	4 /* Valid host name, no address, look for MX record */
