@@ -11,10 +11,11 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.18 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
+#include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <sys/dir.h>
@@ -92,6 +93,8 @@ char *nl_names[] = {
 #define X_CMAP		27
 	"_buffers",
 #define X_BUFFERS	28
+	"_fscale",
+#define X_FSCALE	29
 	""
 };
 
@@ -173,10 +176,10 @@ int	wchancomp();
 int	pscomp();
 int	nswap, maxslp;
 struct	text *atext;
-double	ccpu;
+fixpt_t	ccpu;
 int	ecmx;
 struct	pte *Usrptmap, *usrpt;
-int	nproc, ntext;
+int	nproc, ntext, fscale;
 int	dmmin, dmmax;
 struct	pte *Sysmap;
 int	Syssize;
@@ -651,6 +654,7 @@ getkvars(argc, argv)
 	}
 	dmmin = getw(nl[X_DMMIN].n_value);
 	dmmax = getw(nl[X_DMMAX].n_value);
+	fscale = getw(nl[X_FSCALE].n_value);
 }
 
 /*
@@ -1046,6 +1050,7 @@ pmem(ap)
 	return (100.0 * fracmem);
 }
 
+#define	fxtofl(fixpt)	((double) fixpt / fscale)
 double
 pcpu()
 {
@@ -1055,9 +1060,11 @@ pcpu()
 	if (time == 0 || (mproc->p_flag&SLOAD) == 0)
 		return (0.0);
 	if (rawcpu)
-		return (100.0 * mproc->p_pctcpu);
-	return (100.0 * mproc->p_pctcpu / (1.0 - exp(time * log(ccpu))));
+		return (100.0 * fxtofl(mproc->p_pctcpu));
+	return (100.0 * fxtofl(mproc->p_pctcpu) /
+	        (1.0 - exp(time * log(fxtofl(ccpu)))));
 }
+#undef fxtofl
 
 getu()
 {
