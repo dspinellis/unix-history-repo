@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.1 (Berkeley) %G%
+ *	@(#)extern.h	5.2 (Berkeley) %G%
  */
 
 /* This should be in <termcap.h> instead. */
@@ -21,7 +21,7 @@ extern struct termios mode, oldmode;
 extern int columns, isreset, lines;
 extern int erasechar, intrchar, killchar;
 
-void	 add_mapping __P((char *));
+void	 add_mapping __P((char *, char *));
 void	 cat __P((char *));
 void	 err __P((const char *, ...));
 char	*get_termcap_entry __P((char *, char **));

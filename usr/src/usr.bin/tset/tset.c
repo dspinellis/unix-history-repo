@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tset.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)tset.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -39,6 +39,7 @@ int	killchar;		/* new kill character */
 int	noinit;			/* don't output initialization string */
 int	noset;			/* only report term type */
 int	quiet;			/* don't display ctrl key settings */
+int	showterm;		/* display term on stderr */
 
 int	lines, columns;		/* window size */
 
@@ -70,10 +71,16 @@ main(argc, argv)
 	}
 
 	obsolete(argv);
-	while ((ch = getopt(argc, argv, "-e:Ii:k:m:nQs")) != EOF) {
+	while ((ch = getopt(argc, argv, "-a:d:e:Ii:k:m:np:Qrs")) != EOF) {
 		switch (ch) {
-		case '-':
+		case '-':		/* OBSOLETE: display term only */
 			noset = 1;
+			break;
+		case 'a':		/* OBSOLETE: map identifier to type */
+			add_mapping("arpanet", optarg);
+			break;
+		case 'd':		/* OBSOLETE: map identifier to type */
+			add_mapping("dialup", optarg);
 			break;
 		case 'e':		/* erase character */
 			erasechar = optarg[0] == '^' && optarg[1] != '\0' ?
@@ -94,12 +101,18 @@ main(argc, argv)
 			    optarg[0];
 			break;
 		case 'm':		/* map identifier to type */
-			add_mapping(optarg);
+			add_mapping(NULL, optarg);
 			break;
-		case 'n':		/* Undocumented (obsolete). */
-			break;		/* set newtty driver */
+		case 'n':		/* OBSOLETE: set new tty driver */
+			break;
+		case 'p':		/* OBSOLETE: map identifier to type */
+			add_mapping("plugboard", optarg);
+			break;
 		case 'Q':		/* be quiet */
 			quiet = 1;
+			break;
+		case 'r':		/* display term on stderr */
+			showterm = 1;
 			break;
 		case 's':		/* print commands to set environment */
 			dosetenv = 1;
@@ -140,20 +153,7 @@ main(argc, argv)
 		/* Set the modes if they've changed. */
 		if (memcmp(&mode, &oldmode, sizeof(mode)))
 			tcsetattr(STDERR_FILENO, TCSADRAIN, &mode);
-
-		/*
-		 * If erase, kill and interrupt characters have potentially
-		 * been modified and not -Q, display the changes.
-		 */
-		if (!quiet) {
-			report("Erase", VERASE, CERASE);
-			report("Kill", VKILL, CKILL);
-			report("Interrupt", VINTR, CINTR);
-		}
 	}
-
-	if (!dosetenv && !noset)
-		exit(0);
 
 	/*
 	 * The termcap file generally has a two-character name first in each
@@ -173,10 +173,24 @@ main(argc, argv)
 		}
 	}
 
-	if (noset) {
+	if (noset)
 		(void)printf("%s\n", ttype);
-		exit(0);
+	else {
+		if (showterm)
+			(void)fprintf(stderr, "Terminal type is %s.\n", ttype);
+		/*
+		 * If erase, kill and interrupt characters could have been
+		 * modified and not -Q, display the changes.
+		 */
+		if (!quiet) {
+			report("Erase", VERASE, CERASE);
+			report("Kill", VKILL, CKILL);
+			report("Interrupt", VINTR, CINTR);
+		}
 	}
+
+	if (!dosetenv)
+		exit(0);
 
 	/*
 	 * Figure out what shell we're using.  A hack, we look for a $SHELL
@@ -254,11 +268,11 @@ obsolete(argv)
 		}
 	}
 }
-		
+
 void
 usage()
 {
 	(void)fprintf(stderr,
-"usage: tset [-IQs] [-] [-e ch] [-i ch] [-k ch] [-m mapping] [terminal]\n");
+"usage: tset [-IQrs] [-] [-e ch] [-i ch] [-k ch] [-m mapping] [terminal]\n");
 	exit(1);
 }

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tset.1	6.9 (Berkeley) %G%
+.\"	@(#)tset.1	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TSET 1
@@ -13,7 +13,7 @@
 .Nd terminal initialization
 .Sh SYNOPSIS
 .Nm tset
-.Op Fl IQs
+.Op Fl IQrs
 .Op Fl
 .Op Fl e Ar ch
 .Op Fl i Ar ch
@@ -22,7 +22,7 @@
 .Op Ar terminal
 .br
 .Nm reset
-.Op Fl IQs
+.Op Fl IQrs
 .Op Fl
 .Op Fl e Ar ch
 .Op Fl i Ar ch
@@ -104,6 +104,8 @@ Set the line kill character to
 .It Fl m
 Specify a mapping from a port type to a terminal.
 See below for more information.
+.It Fl r
+Print the terminal type to the standard error output.
 .It Fl s
 Print the sequence of shell commands to initialize the environment variables
 .Ev TERM
@@ -111,7 +113,7 @@ and
 .Ev TERMCAP
 to the standard output.
 .It Fl Q
-Don't display any values for the erase, interrupt and line kill characters. 
+Don't display any values for the erase, interrupt and line kill characters.
 .El
 .Pp
 The arguments for the
@@ -233,7 +235,7 @@ and the baud rate is greater than 9600 baud, a terminal type of
 will be used.
 .Pp
 If no port type is specified, the terminal type will match any port type,
-for example, 
+for example,
 .Dq Li -m dialup:vt100 -m :?xterm
 will cause any dialup port, regardless of baud rate, to match the terminal
 type
@@ -283,23 +285,41 @@ The
 command appeared in
 .Bx 3.0 .
 .Sh COMPATIBILITY
-The historic
+The
 .Fl A ,
-.Fl a ,
-.Fl d ,
 .Fl E ,
 .Fl h ,
-.Fl p ,
-.Fl r ,
 .Fl S ,
 .Fl u
-and 
+and
 .Fl v
 options have been deleted from the
 .Nm tset
 utility.
 None of them were documented in 4.3BSD and all are of limited utility at
 best.
+The
+.Fl a ,
+.Fl d
+and
+.Fl p
+options are similarly not documented or useful, but were retained as they
+appear to be in widespread use.
+It is strongly recommended that any usage of these three options be
+changed to use the
+.Fl m
+option instead.
+The
+.Fl n
+option remains, but has no effect.
+It is still permissible to specify the
+.Fl e ,
+.Fl i
+and
+.Fl k
+options without arguments, although it is strongly recommended that such
+usage be fixed to explicitly specify the character.
+.Pp
 Executing
 .Nm tset
 as
@@ -307,26 +327,13 @@ as
 no longer implies the
 .Fl Q
 option.
-The
-.Fl n
-option remains, but has no effect.
-.Pp
-It is still permissible to specify the
-.Fl e ,
-.Fl i
-and
-.Fl k
-options without arguments, although it is strongly recommended that such
-usage be fixed to conform to
-.Xr getopt 3 .
-Also, some historic implementations of
-.Nm tset
-had an interaction between the
+Also, the interaction between the
 .Fl
-option and the 
+option and the
 .Ar terminal
-argument.
-This is no longer true.
+argument in some historic implementations of
+.Nm tset
+has been removed.
 .Pp
 Finally, the
 .Nm tset

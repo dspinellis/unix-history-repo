@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -42,8 +42,8 @@ MAP *cur, *maplist;
  * The baud rate tests are: >, <, @, =, !
  */
 void
-add_mapping(arg)
-	char *arg;
+add_mapping(port, arg)
+	char *port, *arg;
 {
 	MAP *mapp;
 	char *copy, *p, *termp;
@@ -68,11 +68,7 @@ add_mapping(arg)
 	if (arg == NULL) {			/* [?]term */
 		mapp->type = mapp->porttype;
 		mapp->porttype = NULL;
-#ifdef MAPDEBUG
-		goto mdebug;
-#else
-		return;
-#endif
+		goto done;
 	}
 
 	if (arg == mapp->porttype)		/* [><@=! baud]:term */
@@ -116,7 +112,7 @@ next:	if (*arg == ':') {
 	}
 
 	if (*arg == NULL)			/* Non-optional type. */
-badmopt:	err("illegal -m option format: %s", copy);
+		goto badmopt;
 
 	mapp->type = arg;
 
@@ -128,8 +124,15 @@ badmopt:	err("illegal -m option format: %s", copy);
 	if (mapp->conditional & NOT)
 		mapp->conditional = ~mapp->conditional & (EQ | GT | LT);
 
+	/* If user specified a port with an option flag, set it. */
+done:	if (port) {
+		if (mapp->porttype)
+badmopt:		err("illegal -m option format: %s", copy);
+		mapp->porttype = port;
+	}
+
 #ifdef MAPDEBUG
-mdebug:	(void)printf("port: %s\n", mapp->porttype ? mapp->porttype : "ANY");
+	(void)printf("port: %s\n", mapp->porttype ? mapp->porttype : "ANY");
 	(void)printf("type: %s\n", mapp->type);
 	(void)printf("conditional: ");
 	p = "";
