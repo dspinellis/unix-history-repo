@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)set.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)set.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -636,6 +636,9 @@ exportpath(val)
 			       "Warning: ridiculously long PATH truncated\n");
 		break;
 	    }
+	    if ((**val != '/' || **val == '\0') && (euid == 0 || uid == 0)) 
+		    (void) fprintf(csherr,
+		    "Warning: exported path contains relative components.\n");
 	    (void) Strcat(exppath, *val++);
 	    if (*val == 0 || eq(*val, STRRparen))
 		break;
@@ -795,8 +798,7 @@ x:
 	if (p->v_parent == 0)	/* is it the header? */
 	    return;
 	len = blklen(p->vec);
-	(void) fprintf(cshout, short2str(p->v_name));
-	(void) fputc('\t', cshout);
+	(void) fprintf(cshout, "%s\t", short2str(p->v_name));
 	if (len != 1)
 	    (void) fputc('(', cshout);
 	blkpr(cshout, p->vec);
