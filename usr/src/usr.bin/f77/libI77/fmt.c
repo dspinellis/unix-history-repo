@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)fmt.c	5.1	%G%
+ *	@(#)fmt.c	5.2	%G%
  */
 
 /*
@@ -26,6 +26,10 @@
 #endif
 
 #ifdef vax
+#define SYLMX 300
+#endif
+
+#ifdef tahoe
 #define SYLMX 300
 #endif
 
