@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.26 (Berkeley) %G%
+ *	@(#)tty.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -196,7 +196,7 @@ ttyblock(tp)
 	 * Block further input iff:
 	 * Current input > threshold AND input is available to user program
 	 */
-	if (x >= TTYHOG/2 && 
+	if (x >= TTYHOG/2 && (tp->t_state & TS_TBLOCK) == 0 &&
 	    (!(tp->t_lflag&ICANON)) || (tp->t_canq.c_cc > 0) &&
 	    tp->t_cc[VSTOP] != POSIX_V_DISABLE) {
 		if (putc(tp->t_cc[VSTOP], &tp->t_outq)==0) {
@@ -1759,7 +1759,7 @@ ttyinfo(tp)
 	register char *cp = hostname;
 	int x, s;
 	struct timeval utime, stime;
-#define	pgtok(a)	((a)/(1024/NBPG))
+#define	pgtok(a)	(((a)*NBPG)/1024)
 
 	if (ttycheckoutq(tp,0) == 0) 
 		return;
