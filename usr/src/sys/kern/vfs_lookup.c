@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_lookup.c	7.18 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -85,6 +85,7 @@ namei(ndp)
 	int lockparent;			/* 1 => lockparent flag */
 	int error = 0;
 
+	ndp->ni_dvp = NULL;
 	flag = ndp->ni_nameiop & OPFLAG;
 	wantparent = ndp->ni_nameiop & (LOCKPARENT|WANTPARENT);
 	lockparent = ndp->ni_nameiop & LOCKPARENT;
