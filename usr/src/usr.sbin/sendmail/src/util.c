@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -374,7 +374,10 @@ fullname(pw, buf)
 **
 **	Parameters:
 **		fn -- filename to check.
-**		uid -- uid to compare against.
+**		uid -- user id to compare against.
+**		gid -- group id to compare against.
+**		uname -- user name to compare against (used for group
+**			sets).
 **		mustown -- to be safe, this uid must own the file.
 **		mode -- mode bits that must match.
 **
@@ -386,8 +389,14 @@ fullname(pw, buf)
 **		none.
 */
 
+#include <grp.h>
+
 #ifndef S_IXOTH
 # define S_IXOTH	(S_IEXEC >> 6)
+#endif
+
+#ifndef S_IXGRP
+# define S_IXGRP	(S_IEXEC >> 3)
 #endif
 
 #ifndef S_IXUSR
@@ -395,35 +404,57 @@ fullname(pw, buf)
 #endif
 
 int
-safefile(fn, uid, mustown, mode)
+safefile(fn, uid, gid, uname, mustown, mode)
 	char *fn;
 	uid_t uid;
+	gid_t gid;
+	char *uname;
 	bool mustown;
 	int mode;
 {
 	register char *p;
+	register struct group *gr = NULL;
 	struct stat stbuf;
 
 	if (tTd(54, 4))
-		printf("safefile(%s, %d, %d, %o): ", fn, uid, mustown, mode);
+		printf("safefile(%s, uid=%d, gid=%d, mustown=%d, mode=%o):\n",
+			fn, uid, gid, mustown, mode);
 	errno = 0;
 
 	for (p = fn; (p = strchr(++p, '/')) != NULL; *p = '/')
 	{
 		*p = '\0';
-		if (stat(fn, &stbuf) < 0 ||
-		    !bitset(stbuf.st_uid == uid ? S_IXUSR : S_IXOTH,
-			    stbuf.st_mode))
+		if (stat(fn, &stbuf) < 0)
+			break;
+		if (stbuf.st_uid == uid && !bitset(S_IXUSR, stbuf.st_mode))
+			break;
+		if (stbuf.st_gid == gid && bitset(S_IXGRP, stbuf.st_mode))
+			continue;
+		if (uname != NULL &&
+		    ((gr != NULL && gr->gr_gid == stbuf.st_gid) ||
+		     (gr = getgrgid(stbuf.st_gid)) != NULL))
 		{
-			int ret = errno;
+			register char **gp;
 
-			if (ret == 0)
-				ret = EACCES;
-			if (tTd(54, 4))
-				printf("[dir %s] %s\n", fn, errstring(ret));
-			*p = '/';
-			return ret;
+			for (gp = gr->gr_mem; *gp != NULL; gp++)
+				if (strcmp(*gp, uname) == 0)
+					break;
+			if (*gp != NULL && !bitset(S_IXGRP, stbuf.st_mode))
+				break;
 		}
+		if (!bitset(S_IXOTH, stbuf.st_mode))
+			break;
+	}
+	if (p != NULL)
+	{
+		int ret = errno;
+
+		if (ret == 0)
+			ret = EACCES;
+		if (tTd(54, 4))
+			printf("\t[dir %s] %s\n", fn, errstring(ret));
+		*p = '/';
+		return ret;
 	}
 
 	if (stat(fn, &stbuf) < 0)
@@ -431,7 +462,7 @@ safefile(fn, uid, mustown, mode)
 		int ret = errno;
 
 		if (tTd(54, 4))
-			printf("%s\n", errstring(ret));
+			printf("\t%s\n", errstring(ret));
 
 		errno = 0;
 		return ret;
@@ -439,16 +470,16 @@ safefile(fn, uid, mustown, mode)
 	if (stbuf.st_uid != uid || uid == 0 || !mustown)
 		mode >>= 6;
 	if (tTd(54, 4))
-		printf("[uid %d, stat %o] ", stbuf.st_uid, stbuf.st_mode);
+		printf("\t[uid %d, stat %o] ", stbuf.st_uid, stbuf.st_mode);
 	if ((stbuf.st_uid == uid || uid == 0 || !mustown) &&
 	    (stbuf.st_mode & mode) == mode)
 	{
 		if (tTd(54, 4))
-			printf("OK\n");
+			printf("\tOK\n");
 		return 0;
 	}
 	if (tTd(54, 4))
-		printf("EACCES\n");
+		printf("\tEACCES\n");
 	return EACCES;
 }
 /*
