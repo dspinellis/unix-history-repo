@@ -1,0 +1,56 @@
+.TH MATTRIB 1 local
+.SH NAME
+mattrib \- change MSDOS file attribute flags
+.SH SYNOPSIS
+.B mattrib
+[
+.B -a|+a
+]
+[
+.B -h|+h
+]
+[
+.B -r|+r
+]
+[
+.B -s|+s
+] msdosfile [ msdosfiles... ]
+.SH DESCRIPTION
+.I Mattrib
+will add attribute flags to an MSDOS file (with the '+' operator) or
+remove attribute flags (with the '-' operator).
+.PP
+.I Mattrib
+will allow the following command line options:
+.TP
+.B a
+Archive bit.  Used by some backup programs to indicate a new file.
+.TP
+.B r
+Read-only bit.  Used to indicate a read-only file.  Files with this bit
+set cannot be erased by DEL.  However, 
+.I
+mdel
+is more cunning.
+.TP
+.B s
+System bit.  Used by MSDOS to indicate a operating system file.
+.TP
+.B h
+Hidden bit.  Used to make files hidden from DIR.  However,
+.I
+mdir
+is more cunning.
+.PP
+MSDOS subdirectory names are supported with either the '/' or '\e\'
+separator.  The use of the '\e\' separator or wildcards will require the
+names to be enclosed in quotes to protect them from the shell.
+.PP
+The
+.I mcd
+command may be used to establish the device and the current working
+directory (relative to MSDOS), otherwise the default is A:/.
+.SH SEE ALSO
+mcd(1)
+.SH BUGS
+Most versions of ATTRIB don't allow this many options.

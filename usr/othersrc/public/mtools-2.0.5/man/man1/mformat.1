@@ -1,0 +1,42 @@
+.TH MFORMAT 1 local
+.SH NAME
+mformat \- add an MSDOS filesystem to a low-level formatted diskette.
+.SH SYNOPSIS
+.B mformat
+[
+.B -t
+tracks ] [
+.B -h
+heads ] [
+.B -s
+sectors ] [
+.B -l
+volume label ] drive:
+.SH DESCRIPTION
+.I Mformat
+adds a minimal MSDOS filesystem (boot sector, FAT, and root directory) to
+a diskette that has already been formatted by a Unix low-level format.
+.PP
+The follow options are supported:
+.TP
+.B t
+The number of tracks (not cylinders).
+.TP
+.B h
+The number of heads (sides).
+.TP
+.B s
+The number of sectors per track.
+.TP
+.B l
+An optional volume label.
+.PP
+To format a diskette at a density other than the default, you must supply
+(at least) those command line parameters that are different from the
+default.
+.SH SEE ALSO
+mlabel(1)
+.SH BUGS
+Requires a low-level format utility from Unix.
+.PP
+Doesn't detect (or record) bad block information.

@@ -1,0 +1,37 @@
+.TH MTYPE 1 local
+.SH NAME
+mtype \- display contents of an MSDOS file
+.SH SYNOPSIS
+.B mtype
+[
+.B -ts
+] msdosfile [ msdosfiles... ]
+.SH DESCRIPTION
+.I Mtype
+displays the specified MSDOS file on the screen.
+.PP
+.I Mtype
+will allow the following command line options:
+.TP
+.B t
+Text file viewing.
+.I Mtype
+will translate incoming carriage return/line feeds to line feeds.
+.TP
+.B s
+Strip high bit.
+.I Mtype
+will strip the high bit from the data.
+.PP
+MSDOS subdirectory names are supported with either the '/' or '\e\'
+separator.  The use of the '\e\' separator or wildcards will require the
+names to be enclosed in quotes to protect them from the shell.
+.PP
+The
+.I mcd
+command may be used to establish the device and the current working
+directory (relative to MSDOS), otherwise the default is A:/.
+.SH SEE ALSO
+mcd(1), mread(1)
+.SH BUGS
+Allows multiple arguments, which does not follow the MSDOS convention.
