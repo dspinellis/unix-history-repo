@@ -1,5 +1,5 @@
 /*
-char id_err[] = "@(#)err.c	1.5";
+char id_err[] = "@(#)err.c	1.6";
  *
  * file i/o error and initialization routines
  */
@@ -105,10 +105,10 @@ prnt_ext()
 	if(loc)
 	{	if(loc==1L) rewind(curunit->ufd);
 		else for(;i<12 && last_char(curunit->ufd)!='\n';i++);
-		while(i--) fputc(fgetc(curunit->ufd),stderr);
+		while(i--) ffputc(fgetc(curunit->ufd),stderr);
 	}
 	fputc('|',stderr);
-	for(i=0;i<5 && (ch=fgetc(curunit->ufd)!=EOF);i++) fputc(ch,stderr);
+	for(i=0;i<5 && (ch=fgetc(curunit->ufd))!=EOF;i++) ffputc(ch,stderr);
 	fputc('\n',stderr);
 }
 
@@ -116,9 +116,9 @@ prnt_int()
 {	char *ep;
 	fprintf (stderr,"part of last string: ");
 	ep = icptr - (recpos<12?recpos:12);
-	while (ep<icptr) fputc(*ep++,stderr);
+	while (ep<icptr) ffputc(*ep++,stderr);
 	fputc('|',stderr);
-	while (ep<(icptr+5) && ep<icend) fputc(*ep++,stderr);
+	while (ep<(icptr+5) && ep<icend) ffputc(*ep++,stderr);
 	fputc('\n',stderr);
 }
 
@@ -136,11 +136,24 @@ prnt_fmt(n) int n;
 		fmtptr = fmtbuf - 1;
 	}
 	while(i && *ep)
-	{	fputc((*ep==GLITCH)?'"':*ep,stderr);
+	{	ffputc((*ep==GLITCH)?'"':*ep,stderr);
 		if(ep==fmtptr) fputc('|',stderr);
 		ep++; i--;
 	}
 	fputc('\n',stderr);
+}
+
+ffputc(c, f)
+int	c;
+FILE	*f;
+{
+	c &= 0177;
+	if (c < ' ' || c == 0177)
+	{
+		fputc('^', f);
+		c ^= 0100;
+	}
+	fputc(c, f);
 }
 
 /*initialization routine*/
