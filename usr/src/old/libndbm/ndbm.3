@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ndbm.3	6.6 (Berkeley) %G%
+.\"	@(#)ndbm.3	6.7 (Berkeley) %G%
 .\"
 .TH NDBM 3  ""
 .UC 6
@@ -151,8 +151,10 @@ file blocks for these holes when touched.  These files cannot be copied
 by normal means (cp, cat, tp, tar, ar) without filling in the holes.
 .PP
 .I Dptr
-pointers returned by these subroutines point into static storage
-that is changed by subsequent calls.
+pointers returned by these subroutines point into static storage that is
+changed by subsequent calls.  This storage is not necessarily aligned;
+stored ``longs'', for example, should be copied to a properly aligned
+block of memory before being accessed.
 .PP
 The sum of the sizes of a key/content pair must not exceed
 the internal block size (currently 4096 bytes).
