@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_vv.h	4.8 (Berkeley) %G%
+ *	@(#)if_vv.h	4.9 (Berkeley) %G%
  */
 
 /*
@@ -89,7 +89,7 @@ struct vv_header {
 #define	VV_NIR	0100000		/* Not in Ring */
 
 #define	VVXERR	(VV_NXM|VV_OVR|VV_OPT|VV_BDF)	/* Xmit errs */
-#define	VVRERR	(VV_NXM|VV_OVR|VV_ODB|VV_BDF)	/* Rcv errs */
+#define	VVRERR	(VV_NXM|VV_OVR|VV_ODB|VV_BDF|VV_DPR)	/* Rcv errs */
 #define	VVFE	(VV_NXM|VV_OVR)			/* Fatal errors */
 
 #define VV_IBITS \
