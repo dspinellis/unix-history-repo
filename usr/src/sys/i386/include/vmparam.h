@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)vmparam.h	5.1 (Berkeley) %G%
+ *	@(#)vmparam.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -25,6 +25,7 @@
  * region begins with user text and ends with user data.
  * Immediately after the user structure is the kernal address space.
  */
+
 #define	USRTEXT		0
 #define	USRSTACK	0xFDFFE000	/* Sysbase - UPAGES*NBPG */
 #define	BTOPUSRSTACK	(0xFE000-(UPAGES))	/* btop(USRSTACK) */
@@ -66,6 +67,11 @@
 #define	USRPTSIZE 	(2*NPTEPG)
 
 /*
+ * Size of User Raw I/O map
+ */
+#define	USRIOSIZE 	30
+
+/*
  * The size of the clock loop.
  */
 #define	LOOPPAGES	(maxfree - firstfree)
@@ -96,7 +102,7 @@
  * { wfj 6/16/89: Retail AT memory expansion $800/megabyte, loan of $17
  *   on disk costing $7/mb or $0.18 (in memory still 100:1 in cost!) }
  */
-#define	SAFERSS		32		/* nominal ``small'' resident set size
+#define	SAFERSS		8		/* nominal ``small'' resident set size
 					   protected against replacement */
 
 /*
@@ -170,3 +176,9 @@
 #if CLSIZE == 1
 #define	tbiscl(v)
 #endif
+
+/*
+ * Flush MMU TLB
+ */
+
+#define	tlbflush()	asm(" movl %cr3,%eax; movl %eax,%cr3 " /*, "ax" */)
