@@ -25,8 +25,6 @@ static char sccsid[] = "@(#)xinstall.c	5.6 (Berkeley) %G%";
 
 #define	YES		1			/* yes/true */
 #define	NO		0			/* no/false */
-#define	DEF_GROUP	"staff"			/* default group */
-#define	DEF_OWNER	"root"			/* default owner */
 
 extern int	errno;
 extern char	*sys_errlist[];
@@ -35,7 +33,8 @@ static struct passwd	*pp;
 static struct group	*gp;
 static int	docopy, dostrip,
 		mode = 0755;
-static char	pathbuf[MAXPATHLEN];
+static char	*group, *owner,
+		pathbuf[MAXPATHLEN];
 
 main(argc, argv)
 	int	argc;
@@ -45,10 +44,8 @@ main(argc, argv)
 	extern int	optind;
 	struct stat	from_sb, to_sb;
 	int	ch, no_target;
-	char	*group, *owner, *to_name;
+	char	*to_name;
 
-	group = DEF_GROUP;
-	owner = DEF_OWNER;
 	while ((ch = getopt(argc, argv, "cg:m:o:s")) != EOF)
 		switch((char)ch) {
 		case 'c':
@@ -76,11 +73,11 @@ main(argc, argv)
 		usage();
 
 	/* get group and owner id's */
-	if (!(gp = getgrnam(group))) {
+	if (group && !(gp = getgrnam(group))) {
 		fprintf(stderr, "install: unknown group %s.\n", group);
 		exit(1);
 	}
-	if (!(pp = getpwnam(owner))) {
+	if (owner && !(pp = getpwnam(owner))) {
 		fprintf(stderr, "install: unknown user %s.\n", owner);
 		exit(1);
 	}
@@ -166,7 +163,7 @@ install(from_name, to_name, isdir)
 		fprintf(stderr, "install: fchmod: %s: %s\n", to_name, sys_errlist[errno]);
 		bad();
 	}
-	if (fchown(to_fd, pp->pw_uid, gp->gr_gid)) {
+	if ((group || owner) && fchown(to_fd, owner ? pp->pw_uid : -1, group ? gp->gr_gid : -1)) {
 		fprintf(stderr, "install: fchown: %s: %s\n", to_name, sys_errlist[errno]);
 		bad();
 	}
@@ -187,6 +184,10 @@ install(from_name, to_name, isdir)
 	}
 	else if (rename(from_name, to_name))
 		copy(from_fd, from_name, to_fd, to_name);
+	else if (chmod(to_name, mode)) {
+		fprintf(stderr, "install: chmod: %s: %s\n", to_name, sys_errlist[errno]);
+		bad();
+	}
 	(void)unlink(from_name);
 
 done:	(void)close(from_fd);
@@ -207,6 +208,7 @@ strip(from_fd, from_name, to_fd, to_name)
 	register int	n;
 	EXEC	head;
 	char	buf[MAXBSIZE];
+	off_t	lseek();
 
 	if (read(from_fd, (char *)&head, sizeof(head)) < 0 || N_BADMAG(head)) {
 		fprintf(stderr, "install: %s not in a.out format.\n", from_name);
@@ -238,7 +240,7 @@ strip(from_fd, from_name, to_fd, to_name)
 		}
 	}
 	else {
-		(void)lseek(from_fd, L_SET, 0L);
+		(void)lseek(from_fd, 0L, L_SET);
 		copy(from_fd, from_name, to_fd, to_name);
 	}
 }
