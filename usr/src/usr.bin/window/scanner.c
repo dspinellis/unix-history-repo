@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)scanner.c	3.8 %G%";
+static char sccsid[] = "@(#)scanner.c	3.9 %G%";
 #endif
 
 /*
@@ -191,6 +191,14 @@ loop:
 			break;
 		case ':':
 			cx.x_token = T_COLON;
+			state = -1;
+			break;
+		case '[':
+			cx.x_token = T_LB;
+			state = -1;
+			break;
+		case ']':
+			cx.x_token = T_RB;
 			state = -1;
 			break;
 		default:
