@@ -1,4 +1,4 @@
-/*	protosw.h	4.8	81/12/12	*/
+/*	protosw.h	4.9	81/12/21	*/
 
 /*
  * Protocol switch table.
@@ -7,7 +7,7 @@
  * which is used for protocol-protocol and system-protocol communication.
  *
  * A protocol is called through the pr_init entry before any other.
- * Thereafter it is called every 100ms through the pr_fasttimo entry and
+ * Thereafter it is called every 200ms through the pr_fasttimo entry and
  * every 500ms through the pr_slowtimo for timer based actions.
  * The system will call the pr_drain entry if it is low on space and
  * this should throw away any non-critical data.
@@ -36,13 +36,13 @@ struct protosw {
 	int	(*pr_usrreq)();		/* user request: see list below */
 /* utility hooks */
 	int	(*pr_init)();		/* initialization hook */
-	int	(*pr_fasttimo)();	/* fast timeout (100ms) */
+	int	(*pr_fasttimo)();	/* fast timeout (200ms) */
 	int	(*pr_slowtimo)();	/* slow timeout (500ms) */
 	int	(*pr_drain)();		/* flush any excess space possible */
 };
 
 #define	PR_SLOWHZ	2		/* 2 slow timeouts per second */
-#define	PR_FASTHZ	10		/* 10 fast timeouts per second */
+#define	PR_FASTHZ	5		/* 5 fast timeouts per second */
 
 /*
  * Values for pr_flags
@@ -76,7 +76,7 @@ struct protosw {
 #define	PRU_RCVOOB		11	/* retrieve out of band data */
 #define	PRU_SENDOOB		12	/* send out of band data */
 /* begin for protocols internal use */
-#define	PRU_FASTTIMO		13	/* 100ms timeout */
+#define	PRU_FASTTIMO		13	/* 200ms timeout */
 #define	PRU_SLOWTIMO		14	/* 500ms timeout */
 #define	PRU_PROTORCV		15	/* receive from below */
 #define	PRU_PROTOSEND		16	/* send to below */
