@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.6	82/09/06	*/
+/*	kern_sig.c	5.7	82/09/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -20,6 +20,7 @@
 #include "../h/vm.h"
 #include "../h/acct.h"
 #include "../h/uio.h"
+#include "../h/kernel.h"
 
 /* KILL CODE SHOULDNT KNOW ABOUT PROCESS INTERNALS !?! */
 
@@ -721,33 +722,3 @@ out:
 	iput(ip);
 	return (u.u_error == 0);
 }
-
-/*
- * alarm clock signal
- */
-oalarm()
-{
-	register struct a {
-		int	deltat;
-	} *uap = (struct a *)u.u_ap;
-	register struct proc *p = u.u_procp;
-	int s = spl7();
-
-	timerclear(&p->p_realtimer.it_interval);
-	u.u_r.r_val1 = p->p_realtimer.it_value.tv_sec;
-	p->p_realtimer.it_value.tv_sec = uap->deltat;
-	p->p_realtimer.it_value.tv_usec = 0;
-	splx(s);
-}
-
-/*
- * indefinite wait.
- * no one should wakeup(&u)
- */
-opause()
-{
-
-	for (;;)
-		sleep((caddr_t)&u, PSLEP);
-}
-
