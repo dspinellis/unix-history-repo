@@ -1,4 +1,4 @@
-/*      if_css.c     4.4     82/10/23     */
+/*      if_css.c     4.5     82/10/24     */
 
 #include "css.h"
 
@@ -41,7 +41,7 @@
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
-#include "../vaxif/if_css.h"
+#include "../vaxif/if_cssreg.h"
 #include "../vaxif/if_uba.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
