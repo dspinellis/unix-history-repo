@@ -1,4 +1,4 @@
-/*	manifest	4.1	84/12/03	*/
+/*	manifest	4.2	84/12/03	*/
 
 # include <stdio.h>
 /*	manifest constant file for the lex/yacc interface */
@@ -222,11 +222,7 @@
 
 /*	table sizes	*/
 
-# ifndef FORT
-# define TREESZ 350 /* space for building parse tree */
-# else
 # define TREESZ 1000
-# endif
 
 #ifndef FLEXNAMES
 # define NCHNAM 8  /* number of characters in a name */
