@@ -1,4 +1,4 @@
-/*		lpf.c	4.8	83/03/17
+/*		lpf.c	4.9	83/04/13
  * 	filter which reads the output of nroff and converts lines
  *	with ^H's to overwritten lines.  Thus this works like 'ul'
  *	but is much better: it can handle more than 2 overwrites
@@ -79,7 +79,7 @@ main(argc, argv)
 	
 	while (!done) {
 		col = 0;
-		maxrep = 0;
+		maxrep = -1;
 		linedone = 0;
 		while (!linedone) {
 			switch (ch = getc(p)) {
@@ -91,10 +91,8 @@ main(argc, argv)
 			case '\f':
 				lineno = length;
 			case '\n':
-				if (++lineno >= length) {
-					npages++;
-					lineno = 0;
-				}
+				if (maxrep < 0)
+					maxrep = 0;
 				linedone = 1;
 				break;
 
@@ -156,6 +154,10 @@ main(argc, argv)
 				putc('\r', o);
 			else
 				putc(ch, o);
+			if (++lineno >= length) {
+				npages++;
+				lineno = 0;
+			}
 			maxcol[i] = -1;
 		}
 	}
