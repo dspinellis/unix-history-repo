@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)dumplabel.c	1.1 (UKC) %G%";
+static char *sccsid = "@(#)dumplabel.c	1.2 (UKC) %G%";
 #endif not lint
 /***
 
@@ -42,6 +42,7 @@ char *tape = "/dev/rmt8";
 int	dorew;			/* set if rewind offline on exit */
 int	tapecount;		/* number of tapes dealt with */
 
+char	*index();
 
 main(argc, argv)
 char **argv;
@@ -69,7 +70,10 @@ char **argv;
 					}
 				}
 		} else {
-			storelabelmap(arg);
+			storelabelmap(*argv);
+			if (labfmt && labct)
+				if (index(labfmt, '%') == NULL)
+					fprintf(stderr, "Warning - no format specifier (%%s) found in -l argument\n");
 			for (i = 1; i <= labct; i++)
 				dolabel(i);
 			labct = 0;
@@ -80,7 +84,7 @@ char **argv;
 			labct = 0;
 			dolabel(1);	/* pretend a volume number of 1 */
 		} else
-			printlabel()
+			printlabel();
 	}
 	exit(0);
 }
@@ -111,12 +115,14 @@ storelabelmap(arg)
 	/*
 	 *	Parse the argument looking for a single string
 	 */
-	for (ss = arg; *ss; ss = es, labct++) {
+	for (ss = arg; *ss; ss = es) {
 		es = labskip(ss);
 		lastc = *es;	/* save last character */
 		*es++ = '\0';	/* make the first label into a string */
 		if (labct > LABMAX)
 			labfatal("Too many (> %d) tape labels specified\n", LABMAX);
+		if (*ss == '\0')
+			labfatal("Zero length label found\n");
 		labarg[labct++] = strstore(ss);
 
 		if (lastc == 0)
@@ -134,7 +140,8 @@ storelabelmap(arg)
 			if (*es == '-')
 				labfatal("Range has the format <string>-<string>\n");
 			lastc = *es;
-			*es = '\0';
+			if (lastc)
+				*es++ = '\0';
 			/*
 			 * basic test the source string length must be equal to the
 			 * end string length
@@ -160,27 +167,28 @@ labelrange(startrange, endrange)
 	for (incr = startrange + strlen(startrange) - 1;
 			strcmp(startrange, endrange) != 0; ) {
 		/* start incrementing */
-		for (carry = 0; carry; ) {
+		carry = 0;
+		do {
 			if (isdigit(*incr)) {
 				if (*incr == '9') {
 					*incr = '0';
 					carry = 1;
 				} else
-					*incr++;
+					(*incr)++;
 			} else
 			if (isupper(*incr)) {
 				if (*incr == 'Z') {
 					*incr = 'A';
 					carry = 1;
 				} else
-					*incr++;
+					(*incr)++;
 			} else
 			if (islower(*incr)) {
 				if (*incr == 'z') {
 					*incr = 'a';
 					carry = 1;
 				} else
-					*incr++;
+					(*incr)++;
 			} else
 				labfatal("Problem with label map range spec - can only increment alphanumeric values\n");
 			if (carry) {
@@ -188,7 +196,8 @@ labelrange(startrange, endrange)
 				if (incr < startrange)
 					labfatal("Problem with label map range spec - end of range reached\n");
 			}
-		}
+		} while (carry);
+		
 		if (labct > LABMAX)
 			labfatal("Too many (> %d) tape labels specified\n", LABMAX);
 		labarg[labct++] = strstore(startrange);
@@ -223,16 +232,9 @@ createlabel(volno)
 	int volno;
 {
 	static char buf[LBLSIZE+LBLSIZE];
-	static int lastvol;
 	char volbuf[8];
 	register char *arg;
 	
-	if (userlabel == 0)
-		return ("none");		/* previous behaviour */
-
-	if (volno == lastvol)			/* cache */
-		return(buf);
-	lastvol = volno;
 	
 	if (labfmt == NULL)
 		labfmt = "%s";
@@ -265,8 +267,8 @@ register char *str;
 dolabel(index)
 {	register fd;
 
-	if (tapecount++)
-		askformount(index);
+	tapecount++;
+	askformount(index);
 
 	while ((fd = open(tape, 2)) < 0)
 	{	fprintf(stderr, "Tape open error\n");
@@ -286,7 +288,7 @@ dolabel(index)
  */
 askformount(index)
 {
-	while (query("Mount tape `%s'\nReady to go?", createlabel(index)) != 1);
+	while (query("Mount tape `%s'\nReady to go? ", createlabel(index)) != 1);
 }
 
 /*
@@ -301,44 +303,57 @@ char *arg;
 	char	replybuffer[64];
 	int	back;
 
-	for(;;)
-	{ 
+	for(;;) {
 		fprintf(stdout, question, arg);
 		fflush(stdout);
-		if (fgets(replybuffer, 63, stdin) == NULL)
-		{	if(ferror(stdin))
-			{	clearerr(stdin);
+		if (fgets(replybuffer, 63, stdin) == NULL) {
+			if(ferror(stdin)) {
+				clearerr(stdin);
 				continue;
 			}
 		}
-		else
-		if ((strcmp(replybuffer, "yes\n") == 0) ||
-			    (strcmp(replybuffer, "Yes\n") == 0))
-		{
-			back = 1;
-			goto done;
+		else {
+			qclean(replybuffer);
+			if (strcmp(replybuffer, "yes") == 0 ||
+			    strcmp(replybuffer, "y") == 0) {
+				back = 1;
+				goto done;
+			}
+			else
+			if (strcmp(replybuffer, "no") == 0 ||
+			    strcmp(replybuffer, "n") == 0) {
+				if (query("Abort? "))
+					labfatal("Aborting\n");
+				back = 0;
+				goto done;
+			}
+			else
+				fprintf(stderr, "\"yes\" or \"no\" ONLY!\n");
 		}
-		else
-		if ((strcmp(replybuffer, "no\n") == 0) ||
-			    (strcmp(replybuffer, "No\n") == 0))
-		{
-			if (query("Abort? "))
-				labfatal("Aborting\n");
-			back = 0;
-			goto done;
-		}
-		else
-			fprintf(stderr, "\"Yes\" or \"No\" ONLY!\n");
 	}
     done:
 	return(back);
 }
 
+qclean(ptr)
+	register char *ptr;
+{
+	for (;*ptr; ptr++) {
+		if (isupper(*ptr))
+			*ptr = tolower(*ptr);
+		if (*ptr == '\n') {
+			*ptr = '\0';
+			break;
+		}
+	}
+}
+			
 rewind(fd)
 {
 	struct mtop mtop;
-	if (dorew)
-	{	mtop.mt_op = MTOFFL;
+
+	if (dorew) {
+		mtop.mt_op = MTOFFL;
 		mtop.mt_count = 1;
 		ioctl(fd, MTIOCTOP, &mtop);
 	}
@@ -348,9 +363,10 @@ rewind(fd)
  *	fatal error message routine
  */
 labfatal(fmt, a1, a2, a3, a4, a5)
-char	*fmt;
-int	a1, a2, a3, a4, a5;
-{	fprintf(stderr, fmt, a1, a2, a3, a4, a5);
+	char	*fmt;
+	int	a1, a2, a3, a4, a5;
+{
+	fprintf(stderr, fmt, a1, a2, a3, a4, a5);
 	exit(1);
 }
 
@@ -361,12 +377,12 @@ printlabel()
 {
 	register fd;
 	
-	if ((fd = open(tape, 2)) < 0)
-	{	perror("Tape open error");
+	if ((fd = open(tape, 2)) < 0) {
+		perror("Tape open error");
 		exit(1);
 	}
-	if (read(fd, (char *)&u_spcl, sizeof u_spcl) < 0)
-	{	perror("Tape read");
+	if (read(fd, (char *)&u_spcl, sizeof u_spcl) < 0) {
+		perror("Tape read");
 		exit(1);
 	}
 	printf("%s\n", spcl.c_label);
