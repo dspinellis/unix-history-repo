@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)tmac.an	6.9 (Berkeley) %G%
+.\"	@(#)tmac.an	6.10 (Berkeley) %G%
 .\"
 
 '	DT, PD, SM, and B macros invoked internally.
@@ -92,7 +92,13 @@
 .ps 10
 'sp .5i
 .tl @\\*(]W@\\*(]L@%@
-'bp
+'	# make groff happy
+.ie \n(.g \{\
+.	bp
+.\}
+.el \{\
+'	bp
+.\}
 .ev
 ..
 '	# the cut mark
