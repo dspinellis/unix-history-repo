@@ -1,7 +1,7 @@
-/*	rl.c	4.1	83/02/08	*/
+/*	rl.c	4.2	83/05/14	*/
 
 #include "rl.h"
-#if NHL > 0
+#if NRL > 0
 /*
  * UNIBUS RL02 disk driver
  * (not yet converted to 4.1c)
@@ -110,7 +110,7 @@ rlprobe(reg)
 	((struct rldevice *)reg)->rlcs = RL_IE | RL_NOOP;  /* Enable intrpt */
 	DELAY(10);	/* Ensure interrupt takes place (10 microsec ) */
 	((struct rldevice *)reg)->rlcs &= ~RL_IE;  /* Disable intrpt */
-	return (1);
+	return (sizeof (struct rldevice));
 }
 
 /* Check that drive exists and is functional*/
@@ -181,6 +181,17 @@ rlattach(ui)
 	rl_stat[ui->ui_ctlr].rl_dn = -1;
 }
  
+rlopen(dev)
+	dev_t dev;
+{
+	register int unit = minor(dev) >> 3;
+	register struct uba_device *mi;
+
+	if (unit >= NRL || (ui = rldinfo[unit]) == 0 || ui->ui_alive == 0)
+		return (ENXIO);
+	return (0);
+}
+
 rlstrategy(bp)
 	register struct buf *bp;
 {
@@ -298,7 +309,7 @@ search:
 		dk_busy |= 1<<ui->ui_dk;
 		dk_seek[ui->ui_dk]++;
 	}
-	rlwait( rladdr );
+	rlwait(rladdr);
 
 	/*
 	 * fall through since we are now at the correct cylinder
@@ -365,7 +376,7 @@ loop:
 	/*
 	 * Check that controller is ready
 	 */
-	rlwait( rladdr );
+	rlwait(rladdr);
 
 	/*
 	 * Setup for the transfer, and get in the
@@ -592,33 +603,34 @@ doattn:
 		(void) rlstart(um);
 }
 
-rlwait( rladdr )
-register struct rldevice *rladdr;
+rlwait(rladdr)
+	register struct rldevice *rladdr;
 {
+
 	while ((rladdr->rlcs & RL_CRDY) == 0)
 		continue;         /* Wait */
 }
 
-rlread(dev)
+rlread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NRL)
-		u.u_error = ENXIO;
-	else
-		physio(rlstrategy, &rrlbuf[unit], dev, B_READ, minphys);
+		return (ENXIO);
+	return (physio(rlstrategy, &rrlbuf[unit], dev, B_READ, minphys, uio));
 }
 
-rlwrite(dev)
+rlwrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NRL)
-		u.u_error = ENXIO;
-	else
-		physio(rlstrategy, &rrlbuf[unit], dev, B_WRITE, minphys);
+		return (ENXIO);
+	return (physio(rlstrategy, &rrlbuf[unit], dev, B_WRITE, minphys, uio));
 }
 
 /*
@@ -646,7 +658,7 @@ rlreset(uban)
 		um->um_tab.b_actf = um->um_tab.b_actl = 0;
 		if (um->um_ubinfo) {
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
-			ubadone(um);
+			um->um_ubinfo = 0;
 		}
 
 		/* reset controller */
@@ -654,11 +666,11 @@ rlreset(uban)
 		st->rl_cylnhd = 0;
 		st->rl_bleft = 0;
 		st->rl_bpart = 0;
-		rlwait( rladdr );
+		rlwait(rladdr);
 
 		for (unit = 0; unit < NRL; unit++) {
 			rladdr->rlcs = (unit << 8) | RL_GETSTAT;
-			rlwait( rladdr );
+			rlwait(rladdr);
 
 			/* Determine disk posistion */
 			rladdr->rlcs = (unit << 8) | RL_RHDR;
