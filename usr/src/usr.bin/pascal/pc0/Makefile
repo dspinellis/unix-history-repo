@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.14 %G%"
+SCCSID = "@(#)Makefile 1.15 %G%"
 WHOAMI = pc
 INSTALLNAME = $(DESTDIR)/usr/lib/pc0
 VERSION = 2.0
@@ -181,6 +181,13 @@ flvalue.o: opcode.h
 flvalue.o: objfmt.h
 flvalue.o: pc.h
 flvalue.o: pcops.h
+forop.o: whoami.h
+forop.o: 0.h
+forop.o: opcode.h
+forop.o: tree.h
+forop.o: objfmt.h
+forop.o: pc.h
+forop.o: pcops.h
 flvalue.o: whoami.h
 flvalue.o: 0.h
 flvalue.o: tree.h
@@ -280,9 +287,9 @@ type.o: objfmt.h
 var.o: whoami.h
 var.o: 0.h
 var.o: align.h
+var.o: iorec.h
 var.o: pc.h
 var.o: pcops.h
-var.o: iorec.h
 y.tab.o: whoami.h
 y.tab.o: 0.h
 y.tab.o: yy.h
