@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -70,11 +70,11 @@ u_long  rtm_inits;
 struct	in_addr inet_makeaddr();
 char	*routename(), *netname();
 void	flushroutes(), newroute(), monitor(), sockaddr(), sodump(), bprintf();
-void	print_getmsg(), print_rtmsg(), pmsg_common(), pmsg_addrs();
+void	print_getmsg(), print_rtmsg(), pmsg_common(), pmsg_addrs(), mask_addr();
 int	getaddr(), rtmsg(), x25_makemask();
 extern	char *inet_ntoa(), *iso_ntoa(), *link_ntoa();
 
-void
+__dead void
 usage(cp)
 	char *cp;
 {
@@ -104,13 +104,13 @@ quit(s)
 	((a) > 0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
 #define ADVANCE(x, n) (x += ROUNDUP((n)->sa_len))
 
+int
 main(argc, argv)
 	int argc;
 	char **argv;
 {
 	extern int optind;
 	int ch;
-	char *argvp;
 
 	if (argc < 2)
 		usage((char *)NULL);
@@ -187,8 +187,10 @@ flushroutes(argc, argv)
 	char *buf, *next, *lim;
 	register struct rt_msghdr *rtm;
 
-	if (uid)
+	if (uid) {
+		errno = EACCES;
 		quit("must be root to alter routing table");
+	}
 	shutdown(s, 0); /* Don't want to read back our messages */
 	if (argc > 1) {
 		argv++;
@@ -269,7 +271,7 @@ bad:			usage(*argv);
 		}
 	}
 }
-	
+
 char *
 routename(sa)
 	struct sockaddr *sa;
@@ -444,7 +446,7 @@ set_metric(value, key)
 	char *value;
 	int key;
 {
-	int flag = 0; 
+	int flag = 0;
 	u_long noval, *valp = &noval;
 
 	switch (key) {
@@ -476,8 +478,10 @@ newroute(argc, argv)
 	int key;
 	struct hostent *hp = 0;
 
-	if (uid)
+	if (uid) {
+		errno = EACCES;
 		quit("must be root to alter routing table");
+	}
 	cmd = argv[0];
 	if (*cmd != 'g')
 		shutdown(s, 0); /* Don't want to read back our messages */
@@ -843,6 +847,7 @@ netdone:
 	exit(1);
 }
 
+int
 x25_makemask()
 {
 	register char *cp;
@@ -883,7 +888,7 @@ ns_print(sns)
 		return (mybuf);
 	}
 
-	if (bcmp((char *)ns_bh, (char *)work.x_host.c_host, 6) == 0) 
+	if (bcmp((char *)ns_bh, (char *)work.x_host.c_host, 6) == 0)
 		host = "any";
 	else if (bcmp((char *)ns_nullh, (char *)work.x_host.c_host, 6) == 0)
 		host = "*";
@@ -908,7 +913,7 @@ void
 interfaces()
 {
 	size_t needed;
-	int mib[6], af;
+	int mib[6];
 	char *buf, *lim, *next;
 	register struct rt_msghdr *rtm;
 
@@ -1025,6 +1030,7 @@ rtmsg(cmd, flags)
 	return (0);
 }
 
+void
 mask_addr()
 {
 	int olen = so_mask.sa.sa_len;
@@ -1083,9 +1089,9 @@ char *msgtypes[] = {
 
 char metricnames[] =
 "\011pksent\010rttvar\7rtt\6ssthresh\5sendpipe\4recvpipe\3expire\2hopcount\1mtu";
-char routeflags[] = 
+char routeflags[] =
 "\1UP\2GATEWAY\3HOST\4REJECT\5DYNAMIC\6MODIFIED\7DONE\010MASK_PRESENT\011CLONING\012XRESOLVE\013LLINFO\014STATIC\017PROTO2\020PROTO1";
-char ifnetflags[] = 
+char ifnetflags[] =
 "\1UP\2BROADCAST\3DEBUG\4LOOPBACK\5PTP\6NOTRAILERS\7RUNNING\010NOARP\011PPROMISC\012ALLMULTI\013OACTIVE\014SIMPLEX\015LINK0\016LINK1\017LINK2\020MULTICAST";
 char addrnames[] =
 "\1DST\2GATEWAY\3NETMASK\4GENMASK\5IFP\6IFA\7AUTHOR\010BRD";
@@ -1122,7 +1128,7 @@ print_rtmsg(rtm, msglen)
 		break;
 	default:
 		(void) printf("pid: %d, seq %d, errno %d, flags:",
-			rtm->rtm_pid, rtm->rtm_seq, rtm->rtm_errno); 
+			rtm->rtm_pid, rtm->rtm_seq, rtm->rtm_errno);
 		bprintf(stdout, rtm->rtm_flags, routeflags);
 		pmsg_common(rtm);
 	}
@@ -1244,7 +1250,7 @@ pmsg_addrs(cp, addrs)
 {
 	register struct sockaddr *sa;
 	int i;
-	 
+
 	if (addrs == 0)
 		return;
 	(void) printf("\nsockaddrs: ");
@@ -1354,7 +1360,7 @@ sockaddr(addr, sa)
 			new = *addr - 'a' + 10;
 		} else if ((*addr >= 'A') && (*addr <= 'F')) {
 			new = *addr - 'A' + 10;
-		} else if (*addr == 0) 
+		} else if (*addr == 0)
 			state |= END;
 		else
 			state |= DELIM;
@@ -1375,6 +1381,6 @@ sockaddr(addr, sa)
 			break;
 		}
 		break;
-	} while (cp < cplim); 
+	} while (cp < cplim);
 	sa->sa_len = cp - (char *)sa;
 }
