@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	8.19 (Berkeley) %G%
+ *	@(#)mount.h	8.20 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -261,9 +261,12 @@ int	vfs_export			    /* process mount export info */
 struct	mount *vfs_getvfs __P((fsid_t *));      /* return vfs given fsid */
 struct	netcred *vfs_export_lookup	    /* lookup host in fs export list */
 	  __P((struct mount *, struct netexport *, struct mbuf *));
+void	vfs_getnewfsid __P((struct mount *));   /* create a unique fsid */
 int	vfs_lock __P((struct mount *));     /* lock a vfs */
 int	vfs_mountedon __P((struct vnode *));/* is a vfs mounted on vp */
-void	vfs_getnewfsid __P((struct mount *));   /* create a unique fsid */
+int	vfs_mountroot __P((void));	    /* find and mount root filesystem */
+int	vfs_rootmountalloc		    /* alloc root mount structure */
+	  __P((char *, char *, struct mount **));
 void	vfs_unlock __P((struct mount *));   /* unlock a vfs */
 void	vfs_unmountall __P((void));	    /* unmount all filesystems */
 extern	CIRCLEQ_HEAD(mntlist, mount) mountlist;	/* mounted filesystem list */
