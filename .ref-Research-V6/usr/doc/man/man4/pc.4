@@ -1,0 +1,38 @@
+.th PC IV 10/15/73
+.sh NAME
+pc  \*-  PC-11 paper tape reader/punch
+.sh DESCRIPTION
+.it Ppt
+refers to the PC-11 paper tape reader or punch,
+depending on whether it is read or written.
+.s3
+When
+.it ppt
+is opened for writing, a 100-character leader
+is punched.
+Thereafter each byte written is punched on
+the tape.  No editing of the characters
+is performed.
+When the file is closed, a 100-character trailer is punched.
+.s3
+When
+.it ppt
+is opened for reading, the process
+waits until tape is placed in the reader and the reader
+is on-line.
+Then requests to read cause the characters read
+to be passed back to the program, again without
+any editing.
+This means that several null leader characters
+will usually appear at the beginning of the file.
+Likewise several nulls are likely to appear at the end.
+End-of-file is generated when the tape runs out.
+.s3
+Seek calls for this file are meaningless.
+.sh FILES
+/dev/ppt
+.sh BUGS
+If both the reader and the punch are open simultaneously,
+the trailer is sometimes not punched.
+Sometimes the reader goes into a dead state in which it cannot be
+opened.

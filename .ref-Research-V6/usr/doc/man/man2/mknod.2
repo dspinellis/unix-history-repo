@@ -1,0 +1,42 @@
+.th MKNOD II 8/5/73
+.sh NAME
+mknod \*- make a directory or a special file
+.sh SYNOPSIS
+(mknod = 14.; not in assembler)
+.br
+.ft B
+sys  mknod; name; mode; addr
+.s3
+mknod(name, mode, addr)
+.br
+char *name;
+.ft R
+.sh DESCRIPTION
+.it Mknod
+creates a new file
+whose name is the null-terminated string pointed
+to by
+.it name.
+The mode of the new file
+(including directory and special file bits)
+is initialized from
+.it mode.
+The first physical address of the file
+is initialized from
+.it addr.
+Note that in the case of a directory,
+.it addr
+should be zero.
+In the case of a special file,
+.it addr
+specifies which special file.
+.s3
+.it Mknod
+may be invoked only by the super-user.
+.sh "SEE ALSO"
+mkdir (I), mknod (VIII), fs (V)
+.sh DIAGNOSTICS
+Error bit (c-bit)
+is set if the file already exists
+or if the user is not the super-user.
+From C, a \*-1 value indicates an error.

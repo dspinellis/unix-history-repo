@@ -1,0 +1,395 @@
+.h0 "\na.\n+b User Access Control"
+.sh LOGIN
+Sign on as a new user.
+.op
+Verify password and establish user's 
+individual and group (project) identity.
+.op
+Adapt to characteristics of terminal.
+.op
+Establish working directory.
+.op
+Announce presence of mail (from MAIL).
+.op
+Publish message of the day.
+.op
+Start command interpreter or other initial program.
+.sh PASSWD
+Change a password.
+.op
+User can change his own password.
+.op
+Passwords are kept encrypted for better security.
+.sh NEWGRP
+Change working group (project).
+Protects against changes to unauthorized projects.
+.h0 "\na.\n+b File Manipulation"
+.sh CAT
+Concatenate one or more files onto standard output.
+Particularly used for unadorned printing, for
+inserting data into a pipeline,
+and for buffering output that comes in dribs and drabs.
+.op
+Usable as filter.
+.sh CP
+Copy one file to another.
+Works on any file without distinction as to contents.
+.sh PR
+Print files with title, date, and page number on every page.
+.op
+Multicolumn output.
+.op
+Parallel column merge of several files.
+.op
+Usable as a filter.
+.sh OPR
+Off line print.
+Spools arbitrary files to the line printer.
+.op
+Usable as a filter.
+.sh SPLIT
+Split a large file into more manageable pieces.
+Is occasionally necessary for editing (ED).
+..
+.sh ED
+Interactive context editor.
+Can work on single lines, blocks of lines, or all pattern-selected
+lines in a given range.
+.op
+Finds lines by number or pattern.
+.op
+Random access to lines.
+.op
+Add, delete, change, copy or move lines.
+.op
+Permute or split contents of a line.
+.op
+Replace one or all instances of a pattern within a line.
+.op
+Combine or split files.
+.op
+Escape to Shell (U\s8NIX\s10 command language) during editing.
+.ne3
+.op
+Patterns may include:
+.in +2
+specified characters,
+.br
+don't care characters,
+.br
+choices among characters,
+.br
+repetitions of above,
+.br
+beginning of line,
+.br
+end of line.
+.in -2
+.op
+All operations may be done globally on
+every pattern-selected line in a given range.
+.sh Manual
+Introductory manual for ED.
+.sh DD
+Physical file format translator,
+for exchanging data with foreign
+systems, especially OS/360.
+.sh STTY
+Sets up options for optimal control of a terminal.
+In so far as they are deducible from the input, these
+options are set automatically by LOGIN.
+.op
+Half vs. full duplex.
+.op
+Carriage return+line feed vs. newline.
+.op
+Interpretation of tabs.
+.op
+Parity.
+.op
+Mapping of upper case to lower.
+.op
+Raw vs. edited input.
+.op
+Delays for tabs, newlines and carriage returns.
+.h0 "\na.\n+b Manipulation of Directories and File Names"
+.sh RM
+Remove a file.
+Only the name goes away if any other names are linked to the file.
+.sh LN
+\*(lqLink\*(rq another name (alias) to an existing file.
+.sh MV
+Move a file.
+.op
+Used for renaming files or directories.
+.sh CHMOD
+Change permissions on one or more files.
+Executable by files' owner.
+.sh CHOWN
+Change owner of one or more files.
+.sh CHGRP
+Change group (project) to which a file belongs.
+.sh MKDIR
+Make a new directory.
+.sh RMDIR
+Remove a directory.
+.sh CHDIR
+Change working directory.
+.sh FIND
+Prowl the directory
+hierarchy finding
+every file that meets
+specified criteria.
+.op
+These criteria are understood:
+.in +2
+.nf
+spelling of name matches a given pattern,
+creation date in given range,
+date of last use in given range,
+permissions,
+owner,
+characteristics of device files,
+boolean combinations of above.
+.in -2
+.fi
+.op
+Any directory may be considered to be the root.
+.op
+Specified commands may be performed on every file found.
+.sh DSW
+Interactively step through a directory,
+deleting or keeping files.
+.h0 "\na.\n+b Running of Programs"
+.sh SH
+The Shell, or command language interpreter.
+Provides \*(lqbackground\*(rq and macro capability when
+run with a file of commands as input.
+.br
+.op
+Any executable object file is automatically a command.
+.op
+Redirect standard input or standard output.
+.op
+Operators to compose compound commands:
+.in+2
+`;' for sequential execution,
+.br
+`|' for functional composition with output of one
+command taken directly as input to another running simultaneously,
+.br
+`&' for asynchronous operation,
+.br
+parentheses for grouping.
+.in -2
+.op
+Substitutable arguments.
+.op
+Construction of argument lists from all file names
+satisfying specified patterns.
+.op
+Collects command usage statistics.
+.sh IF
+A conditional statement for Shell programs.
+.op
+String comparison.
+.op
+Querying file accessibility.
+.sh GOTO
+A \*(lqgo-to\*(rq statement for Shell programs.
+.sh WAIT
+Wait for termination of asynchronously running processes.
+.sh EXIT
+Terminate a Shell program.
+Useful with IF.
+.sh ECHO
+Print remainder of command line.
+Useful for diagnostic or prompting data in Shell programs,
+or for inserting data into a pipeline.
+.sh SLEEP
+Suspend execution for a specified time.
+.sh NOHUP
+Run a command immune to hanging up the terminal.
+.sh NICE
+Run a command in low (or high) priority.
+.sh KILL
+Terminate named processes.
+.sh CRON
+A table of actions to be taken at specified times.
+.op
+Actions are arbitrary Shell (SH) scripts.
+.op
+Times are
+conjunctions of month, day of month, day of week, hour
+and minute.
+Ranges are specifiable for each.
+.sh TEE
+Pass data between processes and divert a copy into a file.
+Used as a filter.
+.h0 "\na.\n+b Status Inquiries"
+.sh LS
+List the names of one, several, or all files in one or more directories.
+.op
+Alphabetic or temporal sorting, up or down.
+.op
+Optional information:
+size,
+owner,
+group,
+date last modified,
+date last accessed,
+permissions,
+i-node number.
+.sh FILE
+Tries to determine 
+what kind of information is in a file by consulting
+the file system index and by reading the file itself.
+.sh DATE
+System date routine.
+Has considerable knowledge
+of calendric and horological peculiarities.
+.op
+Print present date, day of week, local time.
+.op
+May set U\s8NIX\s10's idea of date and time.
+.sh DF
+Report amount of free space on file system devices.
+.sh DU
+Print a summary of total space occupied by all files in a hierarchy.
+.sh WHO
+Tell who's on the system.
+.op
+List of presently logged in users,
+ports and times on.
+.op
+Optional history of all logins and logouts.
+.sh PS
+Report on all active processes attached to a terminal.
+.op
+Gives all commands being executed.
+.op
+Can also report on other terminals.
+.op
+Extended status information available:
+.in+2
+.nf
+state and scheduling info,
+priority,
+attached terminal,
+what it's waiting for,
+size.
+.fi
+.in -2
+.fi
+.sh TTY
+Find name of your terminal.
+.sh PWD
+Print name of your working directory.
+.sh PFE
+Print type of last floating exception.
+.h0 "\na.\n+b Backup and Maintenance"
+.sh MOUNT
+Attach a device containing
+a file system to
+the tree of directories.
+Protects against nonsense arrangements.
+.sh UMOUNT
+Remove the file system contained on a device
+from the tree of directories.
+Protects against removing a busy device.
+.sh MKFS
+Make a new file system on a device.
+.sh MKNOD
+Make an i-node (file system entry) for a special file.
+Special files are
+physical devices,
+virtual devices, physical memory, etc.
+.sh TP
+Manage file archives on magnetic tape or DEC tape.
+.op
+Collect files into an archive.
+.op
+Update DECtape archive by date.
+.op
+Replace or delete DECtape files.
+.op
+Table of contents.
+.op
+Retrieve from archive.
+.sh DUMP
+Dump the file system
+stored on a specified device, selectively by date, or indiscriminately.
+.sh RESTOR
+Restore a dumped file system,
+or selectively retrieve parts thereof.
+.sh SU
+Temporarily become the super user with all the rights and privileges
+thereof.
+Requires a password.
+.sh DCHECK
+.sh ICHECK
+.sh NCHECK
+.sp -2
+Check consistency of file system.
+.op
+Gross statistics:
+.in +2
+.nf
+number of files,
+number of directories,
+number of special files,
+spaced used,
+space free.
+.in -2
+.fi
+.op
+Report of duplicate use of space.
+.op
+Retrieval of lost space.
+.op
+Report of inaccessible files.
+.op
+Check consistency of directories.
+.op
+List names of all files.
+.sh CLRI
+Peremptorily expunge a file and its space from a file system.
+Used in putting damaged file systems together again.
+.sh SYNC
+Force all outstanding I/O on the system to completion.
+Used to shut down gracefully.
+.h0 "\na.\n+b Accounting"
+.in0
+.sp
+These routines use floating point.
+The timing information on which the reports are based can be
+manually cleared or shut off completely.
+.sh AC
+Publish cumulative connect time report.
+.op
+Connect time by user or by day.
+.op
+For all users or for selected users.
+.sh SA
+Publish Shell accounting
+report.
+Gives usage information on each command executed.
+.op
+Number of times used.
+.op
+Total system time, user time and elapsed time.
+.op
+Optional averages and percentages.
+.op
+Sorting on various fields.
+.h0 "\na.\n+b Inter-user Communication"
+.sh MAIL
+Mail a message to one or more users.
+Also used to read and dispose of incoming mail.
+The presence of mail is announced by LOGIN.
+.sh WRITE
+Establish direct terminal communication with another user.
+.sh WALL
+Write to all users.
+.sh MESG
+Inhibit receipt of messages from WRITE and WALL.

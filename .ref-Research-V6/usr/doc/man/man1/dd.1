@@ -1,0 +1,118 @@
+.th DD I 5/15/74
+.sh NAME
+dd \*- convert and copy a file
+.sh SYNOPSIS
+.bd dd
+[option=value] ...
+.sh DESCRIPTION
+.it Dd
+copies the specified input file
+to the specified output with
+possible conversions.
+The standard input and output are used by default.
+The input and output block size may be
+specified to take advantage of raw physical I/O.
+.s3
+.ft I
+.lp +15 15
+option	values
+.ft R
+.lp +15 15
+if=	input file name; standard input is default
+.lp +15 15
+of=	output file name; standard output is default
+.lp +15 15
+ibs=	input block size (default 512)
+.lp +15 15
+obs=	output block size (default 512)
+.lp +15 15
+bs=	set both input and output block size,
+superseding
+.it ibs
+and
+.it obs;
+also, if no conversion is specified,
+it is particularly efficient since no copy need be done
+.lp +15 15
+cbs=\fIn\fR	conversion buffer size
+.lp +15 15
+skip=\fIn\fR	skip \fIn\fR input records before starting copy
+.lp +15 15
+count=\fIn\fR	copy only \fIn\fR input records
+.lp +15 15
+conv=ascii	convert EBCDIC to ASCII
+.lp +15 10
+ebcdic	convert ASCII to EBCDIC
+.lp +15 10
+lcase	map alphabetics to lower case
+.lp +15 10
+ucase	map alphabetics to upper case
+.lp +15 10
+swab	swap every pair of bytes
+.lp +15 10
+noerror	do not stop processing on an error
+.lp +15 10
+sync	pad every input record to \fIibs\fR
+.lp +15 10
+.li
+... , ...	several comma-separated conversions
+.i0
+.s3
+.fi
+Where sizes are specified,
+a number of bytes is expected.
+A number may end with
+.bd "k, b"
+or
+.bd w
+to specify multiplication by
+1024, 512, or 2 respectively.
+Also a pair of numbers may be separated by
+.bd x
+to indicate a product.
+.s3
+.it Cbs
+is used only if
+.it ascii
+or
+.it ebcdic
+conversion is specified.
+In the former case
+.it cbs
+characters are placed into the conversion buffer, converted to
+ASCII, and trailing blanks trimmed and new-line added
+before sending the line to the output.
+In the latter case ASCII characters are read into the
+conversion buffer, converted to EBCDIC, and blanks added
+to make up an
+output record of size
+.it cbs.
+.s3
+After completion,
+.it dd
+reports the number of whole and partial input and output
+blocks.
+.s3
+For example, to read an EBCDIC tape blocked ten 80-byte
+EBCDIC card images per record into the ASCII file
+.it x:
+.s3
+dd  if=/dev/rmt0  of=x  ibs=800  cbs=80  conv=ascii,lcase
+.s3
+Note the use of raw magtape.
+.it Dd
+is especially suited to I/O on the raw
+physical devices because it allows reading
+and writing in arbitrary record sizes.
+.sh "SEE ALSO"
+cp (I)
+.sh BUGS
+The ASCII/EBCDIC conversion tables are
+taken
+from the 256 character standard in
+the CACM Nov, 1968.
+It is not clear how this relates to real life.
+.s3
+Newlines are inserted only on conversion to ASCII;
+padding is done only on conversion to EBCDIC.
+There should be separate options.

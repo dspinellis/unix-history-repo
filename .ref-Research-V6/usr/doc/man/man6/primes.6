@@ -1,0 +1,18 @@
+.th PRIMES VI 4/10/75
+.sh NAME
+primes  \*-  print all primes larger than somewhat
+.sh SYNOPSIS
+.bd primes
+.sh DESCRIPTION
+When
+.it primes
+is invoked, it waits for a number to be typed in.
+If you type in a positive
+number less than 2\u\s756\s0\d (about
+.if n 7.2e16)
+.if t 7.2\(mu10\u\s716\s0\d\|)
+it will print all primes greater than or
+equal to this number.
+.sh DIAGNOSTICS
+`Ouch.' for input out of range or for garbage input.
+.sh BUGS

@@ -1,0 +1,526 @@
+.NH
+Pointers
+.PP
+A
+.ul
+pointer
+in C is the address of something.
+It is a rare case indeed when we care what
+the specific address itself is,
+but pointers are a quite common way to get at
+the contents of something.
+The unary operator `&' is used to produce the address of
+an object, if it has one. Thus
+.E1
+	int a, b;
+	b = &a;
+.E2
+puts the address of
+.UL a
+into
+.UL b\*.
+We can't do much with it except print it or pass it
+to some other routine, because we haven't given
+.UL b
+the right kind of declaration.
+But if we declare that
+.UL b
+is indeed a
+.ul
+pointer
+to an integer, we're in good shape:
+.E1
+	int a, \**b, c;
+	b = &a;
+	c = \**b;
+.E2
+.UL b
+contains the address of
+.UL a
+and
+.UL `c 
+.UL =
+.UL \**b'
+means to use the value in
+.UL b
+as an address, i.e., as a pointer.
+The effect is that we get back the contents of 
+.UL a,
+albeit rather indirectly.
+(It's always the case that 
+.UL `\**&x'
+is the same as
+.UL x
+if
+.UL x
+has an address.)
+.PP
+The most frequent use of pointers in C is for walking
+efficiently along arrays.
+In fact,
+in the implementation of an array,
+the array name
+represents the address of the zeroth element of the array,
+so you can't use it on the left side of an expression.
+(You can't change the address of something by assigning to it.)
+If we say
+.E1
+char \**y;
+char x[100];
+.E2
+.UL y
+is of type pointer to character
+(although it doesn't yet point anywhere).
+We can make 
+.UL y
+point to
+an element of
+.UL x
+by either of
+.E1
+y = &x[0];
+y = x;
+.E2
+Since 
+.UL x
+is the address of
+.UL x[0]
+this is legal and consistent.
+.PP
+Now 
+.UL `\**y'
+gives
+.UL x[0]\*.
+More importantly,
+.E1
+\**(y+1)	gives x[1]
+\**(y+i)	gives x[i]
+.E2
+and the sequence
+.E1
+	y = &x[0];
+	y\*+;
+.E2
+leaves 
+.UL y
+pointing at
+.UL x[1]\*.
+.PP
+Let's use pointers
+in a function
+.UL length
+that computes how long a character array is.
+Remember that by convention all character arrays are
+terminated with a `\\0'.
+(And if they aren't, this program will blow up inevitably.)
+The old way:
+.E1
+length(s)
+   char s[ ]; {
+	int n;
+	for( n=0; s[n] != '\\0'; )
+		n\*+;
+	return(n);
+}
+.E2
+Rewriting with pointers gives
+.E1
+length(s)
+   char \**s; {
+	int n;
+	for( n=0; \**s != '\\0'; s\*+ )
+		n\*+;
+	return(n);
+}
+.E2
+You can now see why we have to say what kind of thing
+.UL s
+points to _
+if we're to increment it with
+.UL s\*+
+we have to increment it by the right amount.
+.PP
+The pointer version is more efficient
+(this is almost always true)
+but even more compact is
+.E1
+	for( n=0; \**s\*+ != '\\0'; n\*+ );
+.E2
+The 
+.UL `\**s'
+returns a character;
+the
+.UL `\*+'
+increments the pointer so we'll get the next character
+next time around.
+As you can see, as we make things more efficient,
+we also make them less clear.
+But
+.UL `\**s\*+'
+is an idiom so common
+that you have to know it.
+.PP
+Going a step further,
+here's our function
+.UL strcopy
+that copies a character array
+.UL s
+to another
+.UL t\*.
+.E1
+strcopy(s,t)
+   char \**s, \**t; {
+	while(\**t\*+ = \**s\*+);
+}
+.E2
+We have omitted the test against `\\0',
+because `\\0' is identically zero;
+you will often see the code this way.
+(You 
+.ul
+must
+have a space after the `=':
+see section 25.)
+.PP
+For arguments
+to a function, and there only,
+the declarations
+.E1
+char s[ ];
+char \**s;
+.E2
+are equivalent _ a pointer to a type,
+or an array of unspecified size of that type, are the same thing.
+.PP
+If this all seems mysterious, copy these forms until they become second nature.
+You don't often need anything more complicated.
+.NH
+Function Arguments
+.PP
+Look back at the function
+.UL strcopy
+in the previous section.
+We passed it two string names as arguments, then proceeded
+to clobber both of them by incrementation.
+So how come we don't lose the original strings
+in the function that called
+.UL strcopy?
+.PP
+As we said before,
+C is a ``call by value'' language:
+when you make a function call like
+.UL f(x),
+the
+.ul
+value
+of
+.UL x
+is passed,
+not its address.
+So there's no way to 
+.ul
+alter
+.UL x
+from inside
+.UL f\*.
+If
+.UL x
+is an array
+.UL (char 
+.UL x[10])
+this isn't a problem, because
+.UL x
+.ul
+is
+an address anyway,
+and you're not trying to change it,
+just what it addresses.
+This is why
+.UL strcopy
+works as it does.
+And it's convenient not to have to worry about
+making temporary copies of the input arguments.
+.PP
+But what if
+.UL x
+is a scalar and
+you do want to change it?
+In that case,
+you have to pass the
+.ul
+address
+of
+.UL x
+to
+.UL f,
+and then use it as a pointer.
+Thus for example, to interchange two integers, we must write
+.E1
+flip(x, y)
+   int \**x, \**y; {
+	int temp;
+	temp = \**x;
+	\**x = \**y;
+	\**y = temp;
+}
+.E2
+and to call 
+.UL flip,
+we have to pass the addresses of the variables:
+.E1
+flip (&a, &b);
+.E2
+.NH
+Multiple Levels of Pointers; Program Arguments
+.PP
+When a C program is called,
+the arguments on the command line are made available
+to the main program as an argument count
+.UL argc
+and an array of character strings
+.UL argv
+containing the arguments.
+Manipulating these arguments is one of the most common uses of
+multiple levels of pointers
+(``pointer to pointer to ...'').
+By convention,
+.UL argc
+is greater than zero;
+the first argument
+(in
+.UL argv[0])
+is the command name itself.
+.PP
+Here is a program that simply echoes its arguments.
+.E1
+main(argc, argv)
+   int argc;
+   char \**\**argv; {
+	int i;
+	for( i=1; i < argc; i\*+ )
+		printf("%s ", argv[i]);
+	putchar('\\n');
+}
+.E2
+Step by step:
+.UL main
+is called with two arguments,
+the argument count and the array of arguments.
+.UL argv
+is a pointer to an array,
+whose individual elements are pointers to arrays of characters.
+The zeroth argument is the name of the command itself,
+so we start to print 
+with the first argument, until we've printed them all.
+Each 
+.UL argv[i]
+is a character array, so we use a
+.UL `%s'
+in the
+.UL printf\*.
+.PP
+You will sometimes see the declaration of
+.UL argv
+written as
+.E1
+char \**argv[ ];
+.E2
+which is equivalent.
+But we can't use 
+.UL char 
+.UL argv[ 
+.UL ][
+.UL ],
+because both dimensions are variable and
+there would be no way to figure
+out how big the array is.
+.PP
+Here's a bigger example using
+.UL argc
+and
+.UL argv\*.
+A common convention in C programs is that 
+if the first argument is `\(mi',
+it indicates a flag of some sort.
+For example, suppose we want a program to be callable as
+.E1
+prog -abc arg1 arg2 \*.\*.\*.
+.E2
+where the `\(mi' argument is optional;
+if it is present, it may be followed by any combination of
+a, b, and c.
+.E1
+main(argc, argv)
+   int argc;
+   char \**\**argv; {
+	\*.\*.\*.
+	aflag = bflag = cflag  = 0;
+	if( argc > 1 && argv[1][0] \*= '-' ) {
+		for( i=1; (c=argv[1][i]) != '\\0'; i\*+ )
+			if( c\*='a' )
+				aflag\*+;
+			else if( c\*='b' )
+				bflag\*+;
+			else if( c\*='c' )
+				cflag\*+;
+			else
+				printf("%c?\\n", c);
+		--argc;
+		\*+argv;
+	}
+	\*.\*.\*.
+.E2
+.PP
+There are several things worth noticing about this code.
+First, there is a real need for the left-to-right evaluation
+that && provides;
+we don't want to look at
+.UL argv[1]
+unless we know it's there.
+Second, the statements
+.E1
+	--argc;
+	\*+argv;
+.E2
+let us march along the argument list by one position,
+so we can skip over the flag argument as if it had never existed _
+the rest of the program is independent of
+whether or not there was a flag argument.
+This only works because 
+.UL argv
+is a pointer which can be incremented.
+.NH
+The Switch Statement; Break; Continue
+.PP
+The
+.UL switch
+statement
+can be used to replace the multi-way test
+we used in the last example.
+When the tests are like this:
+.E1
+if( c \*= 'a' ) \*.\*.\*.
+else if( c \*= 'b' ) \*.\*.\*.
+else if( c \*= 'c' ) \*.\*.\*.
+else \*.\*.\*.
+.E2
+testing a value against a series of
+.ul
+constants,
+the
+switch
+statement is often clearer and usually gives better code.
+Use it like this:
+.E1
+switch( c ) {
+
+case 'a':
+	aflag\*+;
+	break;
+case 'b':
+	bflag\*+;
+	break;
+case 'c':
+	cflag\*+;
+	break;
+default:
+	printf("%c?\\n", c);
+	break;
+}
+.E2
+The
+.UL case
+statements label the various actions we want;
+.UL default
+gets done if none of the other cases are satisfied.
+(A
+.UL default
+is optional;
+if it isn't there,
+and none of the cases match,
+you just fall out the bottom.)
+.PP
+The
+.UL break
+statement in this example is new.
+It is there
+because
+the cases are just labels,
+and after you do one of them,
+you
+.ul
+fall through
+to the next unless you take some explicit action to escape.
+This is a mixed blessing.
+On the positive side,
+you can have multiple cases on a single statement;
+we might want to allow both upper and lower case letters in our flag field,
+so we could say
+.E1
+case 'a':  case 'A':	\*.\*.\*.
+.SP
+case 'b':  case 'B':	\*.\*.\*.
+ etc\*.
+.E2
+But what if we just want to get out 
+after doing
+.UL case 
+.UL `a'
+?
+We could get out of a
+.UL case
+of the
+.UL switch
+with a label and a
+.UL goto,
+but this is really ugly.
+The
+.UL break
+statement lets us exit without either
+.UL goto
+or label.
+.E1
+switch( c ) {
+
+case 'a':
+	aflag\*+;
+	break;
+case 'b':
+	bflag\*+;
+	break;
+ \*.\*.\*.
+}
+/\** the break statements get us here directly \**/
+.E2
+The
+.UL break
+statement
+also works in
+.UL for
+and
+.UL while
+statements _
+it causes an immediate exit from the loop.
+.PP
+The
+.UL continue
+statement works
+.ul
+only
+inside
+.UL for's
+and
+.UL while's;
+it causes the next iteration of the loop to be started.
+This means it goes to the increment part of the
+.UL for
+and the test part of the
+.UL while\*.
+We could have used a
+.UL continue
+in our example to get on with the next iteration
+of the
+.UL for,
+but it seems clearer to use
+.UL break
+instead.

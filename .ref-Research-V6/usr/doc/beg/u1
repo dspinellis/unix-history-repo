@@ -1,0 +1,384 @@
+.sp
+.SH
+I.  GETTING STARTED
+.SH
+Logging In
+.PP
+Most of the details about logging in are in the manual
+section
+called
+``How to Get Started''
+(pages
+.ul
+iv-v
+in the 5th Edition).
+Here are a couple of extra warnings.
+.PP
+You must have a 
+.UC UNIX
+login name, which you can get from
+whoever administers your system.
+You also need to know the phone number.
+.UC UNIX
+is capable of dealing with a variety of terminals:
+Terminet 300's; Execuport, TI and similar
+portables;
+video terminals; GSI's; and even the venerable
+Teletype in its various forms.
+But note:
+.UC UNIX
+will not handle IBM 2741 terminals
+and their derivatives
+(e.g., some Anderson-Jacobsons, Novar).
+Furthermore,
+.UC UNIX
+is strongly oriented towards devices with 
+.ul
+lower case.
+If your terminal produces only upper case (e.g., model 33 Teletype),
+life will be so difficult that you should look for another
+terminal.
+.PP
+Be sure to set the switches appropriately on your device:
+speed (if it's variable) to 30 characters per second,
+lower case,
+full duplex, even parity, and any others
+that local wisdom advises.
+Establish a connection using whatever
+magic is needed for your terminal.
+.UC UNIX
+should type ``login:'' at you.
+If it types garbage, you may be at the wrong speed;
+push the `break' or `interrupt' key once.
+If that fails to produce a login message, consult a guru.
+.PP
+When you get a ``login:'' message,
+type your
+login name
+.ul
+in lower case.
+Follow it by a 
+.UC RETURN
+if the terminal has one.
+If a password is required,
+you will be asked for it,
+and (if possible)
+printing will be turned off while you type it,
+again followed by a
+.UC RETURN.
+(On M37 Teletypes always use
+.UC NEWLINE
+or
+.UC LINEFEED
+in place of
+.UC RETURN ).
+.PP
+The culmination of your login efforts is a percent sign ``%''.
+The percent sign means that 
+.UC UNIX
+is ready to accept commands from the terminal.
+(You may also get a message of the day just before the
+percent sign or a notification that you have mail.)
+.SH
+Typing Commands
+.PP
+Once you've seen the percent sign, you can type commands,
+which are
+requests that
+.UC UNIX
+do something.
+Try typing
+.B1
+date
+.B2
+followed by 
+.UC RETURN.
+You should get back something like
+.B1
+Sun Sep 22 10:52:29 EDT 1974
+.B2
+Don't forget the
+.UC RETURN
+after the command,
+or nothing will happen.
+If you think you're being ignored,
+type a
+.UC RETURN ;
+something should happen.
+We won't show the carriage returns,
+but they have to be there.
+.PP
+Another command you might try is
+.C who ,
+which tells you everyone who is currently logged in:
+.B1
+who
+.B2
+gives something like
+.B1
+pjp	ttyf	Sep 22 09:40
+bwk	ttyg	Sep 22 09:48
+mel	ttyh	Sep 22 09:58
+.B2
+The time is when the user logged in.
+.PP
+If you make a mistake typing the command name,
+.UC UNIX
+will tell you.
+For example, if you type
+.B1
+whom
+.B2
+you will be told 
+.B1
+whom: not found
+.B2
+.SH
+Strange Terminal Behavior
+.PP
+Sometimes you can get into a state
+where your terminal acts strangely.
+For example,
+each letter may be typed twice,
+or the
+.UC RETURN
+may not cause a line feed.
+You can often fix this by logging out and logging back in.
+Or you can read the description of the command
+.C stty
+in section I of the manual.
+This will also tell you how to get intelligent treatment of
+tab characters
+(which are much used in
+.UC UNIX )
+if your terminal doesn't have tabs.
+If it does have computer-settable tabs,
+the command
+.C tabs
+will set the stops correctly for you.
+.SH
+Mistakes in Typing
+.PP
+If you make a typing mistake, and see it before the carriage return
+has been typed,
+there are two ways to recover.
+The sharp-character ``#'' erases the last character typed;
+in fact successive uses of ``#'' erase characters back to
+the beginning of the line (but not beyond).
+So if you type badly, you can correct as you go:
+.B1
+dd#atte##e
+.B2
+is the same as ``date''.
+.PP
+The at-sign ``@'' erases all of the characters
+typed so far
+on the current input line,
+so if the line is irretrievably fouled up, type an ``@'' and start over
+(on the same line!).
+.PP
+What if you must enter a sharp or at-sign
+as part of the text?
+If you precede either ``#'' or ``@'' by a backslash ``\\'',
+it loses its erase meaning.
+This implies that to erase a backslash,
+you have to type two sharps or two at-signs.
+The backslash is used extensively in
+.UC UNIX
+to indicate that the following character is in some way special.
+.SH
+Readahead
+.PP
+.UC UNIX
+has full readahead,
+which means that you can type as fast as you want,
+whenever you want,
+even when some command is typing at you.
+If you type during output,
+your input characters will appear intermixed with the output characters,
+but they will be stored away by
+.UC UNIX
+and interpreted in the correct order.
+So you can type two commands one after another without
+waiting for the first to finish or even begin.
+.SH
+Stopping a Program
+.PP
+You can stop most programs by
+typing the character ``DEL''
+(perhaps called ``delete'' or ``rubout'' on your terminal).
+There are exceptions, like the text editor,
+where
+.UC DEL
+stops whatever the program is doing but leaves you in that program.
+You can also just hang up the phone.
+The ``interrupt'' or ``break'' key found on most terminals
+has no effect.
+.SH
+Logging Out
+.PP
+The easiest way to log out is to hang up the phone.
+You can also type
+.B1
+login name-of-new-user
+.B2
+and let someone else use the terminal you were on.
+It is not sufficient just to turn off the terminal.
+.UC UNIX
+has no time-out mechanism, so you'll be
+there forever unless you hang up.
+.SH
+Mail
+.PP
+When you log in, you may sometimes get the message
+.B1
+You have mail.
+.B2
+.UC UNIX
+provides a postal system so you can send and receive letters
+from other users of the system.
+To read your mail,
+issue the command
+.B1
+mail
+.B2
+Your mail will be printed, and then you will be asked
+.B1
+Save?
+.B2
+If you do want to save the mail, type
+.ul 
+y,
+for ``yes'';
+any other response means ``no''.
+.PP
+How do you send mail to someone else?
+Suppose it is to go to ``joe'' (assuming ``joe'' is someone's login name).
+The easiest way is this:
+.B1
+.ne 7
+mail joe
+.I
+now type in the text of the letter
+on as many lines as you like ...
+after the last line of the letter
+type the character ``control-d'',
+that is, hold down ``control'' and type
+a letter ``d''.
+.B2
+.R
+And that's it.
+The ``control-d'' sequence, usually called ``EOT'', is used throughout 
+.UC UNIX
+to mark the end of input from a terminal,
+so you might as well get used to it.
+.PP
+There are other ways to send mail _
+you can send a previously prepared letter,
+and you can mail to a number of people all at once.
+For more details see
+.SE mail (I).
+.PP
+The notation
+.SE mail (I)
+means the command 
+.C mail
+in section (I)
+of the
+.ul
+.UC UNIX
+.ul
+Programmer's Manual.
+.SH
+Writing to other users
+.PP
+At some point in your 
+.UC UNIX 
+career, out of the blue will come a message
+like
+.B1
+Message from joe...
+.B2
+accompanied by a startling beep.
+It means that Joe wants to talk to you,
+but unless you take explicit action you won't be able to talk back.
+To respond,
+type the command
+.B1
+write joe
+.B2
+This establishes a two-way communication path.
+Now whatever Joe types on his terminal will appear on yours
+and vice versa.
+The path is slow, rather like talking to the moon.
+(If you are in the middle of something, you have to
+get to a state where you can type a command.
+Normally, whatever program you are running has to terminate or be terminated.
+If you're editing, you can escape temporarily from the editor _
+read the manual.)
+.PP
+A protocol is needed to keep what you type from getting
+garbled up with what Joe types. 
+Typically it's like this:
+.B1
+.fi
+Joe types ``write smith'' and waits.
+.br
+Smith types ``write joe'' and waits.
+.br
+Joe now types his message
+(as many lines as he likes).
+When he's ready for a reply, he
+signals it by typing (o), which
+stands for ``over''.
+.br
+Now Smith types a reply, also
+terminated by (o).
+.br
+This cycle repeats until
+someone gets tired; he then
+signals his intent to quit with
+(o+o), for ``over
+and out''.
+.br
+To terminate
+the conversation, each side must
+type a ``control-d'' character alone
+on a line. (``Delete'' also works.)
+When the other person types his ``control-d'',
+you will get the message ``EOT'' on your terminal.
+.B2
+.PP
+If you write to someone who isn't logged in,
+or who doesn't want to be disturbed,
+you'll be told.
+If the target is logged in but doesn't answer
+after a decent interval,
+simply type ``control-d''.
+.SH
+On-line Manual
+.PP
+The 
+.UC UNIX
+Programmer's Manual
+is typically kept on-line.
+If you get stuck on something,
+and can't find an expert to assist you,
+you can print on your terminal some manual section that might help.
+It's also useful for getting the most up-to-date
+information on a command.
+To print a manual section, type
+``man section-name''.
+Thus to read up on the 
+.C who
+command,
+type
+.B1
+man who
+.B2
+If the section in question isn't in part I of the manual,
+you have to give the section number as well, as in
+.B1
+man 6 chess
+.B2
+Of course you're out of luck if you can't remember the section name.

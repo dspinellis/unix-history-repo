@@ -1,0 +1,94 @@
+.fp 3 G
+.tr ^\|
+.hc $
+.tr @
+.br
+.po 0
+.tl '-'''
+.po
+.pl 11i
+.ll 6.5i
+.ps 18
+.vs 18p
+.sp 1.4i
+.ce
+C Reference Manual
+.sp 2
+.ps 10
+.vs 11p
+.ce 3
+.ft I
+Dennis M. Ritchie
+.sp .25
+Bell Telephone Laboratories
+Murray Hill, New Jersey 07974
+.ps 10
+.ft R
+.vs 11p
+.sp 3
+.de pg
+.sp .4
+.ti 1
+..
+.de et
+.sp .2
+.ft R
+.ti 1
+..
+.de dp
+.sp .7
+.ne \\$1
+.ft I
+.nf
+..
+.de ed
+.fi
+.sp .7
+.ft R
+..
+.de ul
+.sp 1.5
+.ne 4
+.ft G
+..
+.de ms
+.sp  1
+.ne 4
+..
+.de fo
+'bp
+..
+.de he
+.po 0
+.tl '-'''
+.po
+'sp 0.5i
+.ft I
+.if o .tl '''C  Reference  Manual - %'
+.if e .tl 'C  Reference  Manual - %'''
+.ft
+'sp 0.4i
+..
+.de bG
+.br
+.ft G
+..
+.de eG
+.br
+.ft R
+..
+.de it
+.ft I
+\\$1
+.ft R
+..
+.de bd
+.ft G
+\\$1
+.ft R
+..
+.wh -1i fo
+.wh 0 he
+.ds op \s6\d\fIopt\fP\u\s10
+.ds * \fR\v'.2'*\fP\v'-.2'
+.ds ~ \v'.5'\s14~\s10\v'-.5'

@@ -1,0 +1,282 @@
+.h0 "\\n+a Typesetting"
+.nr b 0 1
+.sp
+.in0
+This software is distributed separately as an enhancement
+to U\s8NIX\s10.
+.h0 "\na.\n+b Formatters"
+.sp
+.in0
+High programming skill is required to
+exploit the formatting capabilities
+of these programs, although unskilled personnel can
+easily be trained to enter documents according to canned
+formats.
+Terminal-oriented and
+typesetter-oriented formatters are sufficiently compatible
+that it is usually possible to define
+interchangeable formats.
+.sh NROFF
+Advanced typesetting for terminals.
+Style similar to ROFF, but capable of much more elaborate
+feats of formatting, at a price in ease of use.
+.op
+All ROFF capabilities available or definable.
+.op
+Completely definable page format keyed to dynamically planted
+\*(lqinterrupts\*(rq at specified lines.
+.op
+Maintains several separately definable typesetting environments (e.g. one for
+body text, one for footnotes, and one for unusually elaborate
+headings).
+.op
+Arbitrary number of output pools can be combined at will.
+.op
+Macros with substitutable arguments, and macros invocable
+in mid-line.
+.op
+Computation and printing of numerical quantities.
+.op
+Conditional execution of macros.
+.op
+Tabular layout facility.
+.op
+Multicolumn output on terminals capable of reverse line feed,
+or through the postprocessor COL.
+.op
+Usable as a filter
+.sh Manual
+Printed manual for NROFF.
+.sh TROFF
+Advanced phototypesetting for the Graphic Systems System/1.
+Provides facilities like NROFF, augmented as follows.
+This Summary was typeset by TROFF.
+.op
+Vocabulary of several 102-character fonts (4 simultaneously)
+in 15 sizes.
+.op
+Positions expressible in inches, centimeters, ems, points,
+machine units
+or arithmetic combinations thereof.
+.op
+Access to character-width computation for unusually difficult
+layout problems.
+.op
+Overstrikes, built-up brackets, horizontal and vertical line drawing.
+.op
+Dynamic relative or absolute positioning and size selection,
+globally or at the character level.
+.op
+Terminal output for rough sampling of the product,
+usually needs a wide platen.
+Not a substitute for NROFF.
+.op
+Usable as a filter.
+.sh Manuals
+Printed manual and tutorial for TROFF.
+.sh EQN
+A mathematical typesetting preprocessor for TROFF.
+Translates easily readable formulas, either in-line or displayed, into 
+detailed typesetting instructions.
+Formulas are written in a style like this:
+.ti10m
+.EQ
+sigma sup 2 ~=~ 1 over N sum from i=1 to N ( x sub i - x bar ) sup 2
+.EN
+.br
+which produces this:
+.sp .1
+.ti 10m
+.EQ
+.nr 99 \n(.s
+.nr 98 \n(.f
+.ps 10
+.ft I
+.ds 11 "\(*s
+.nr 11 \w'\*(11'
+.ps 8
+.ds 12 "\fR2\fP
+.nr 12 \w'\*(12'
+.as 11 \v'-24u'\s8\|\*(12\s10\v'24u'
+.ps 10
+.nr 11 \n(11+\n(12+\w'\s8\|'
+.ds 12 "\|\|
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "\|=\|
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "\|\|
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "\fR1\fP
+.nr 12 \w'\*(12'
+.ds 13 "N
+.nr 13 \w'\*(13'
+.nr 14 \n(12
+.if \n(13-\n(14 .nr 14 \n(13
+.nr 14 \n(14+.4m
+.ds 12 \v'42u'\h'\n(14u-\n(13u/2u'\*(13\
+\h'-\n(13u-\n(12u/2u'\v'-78u'\*(12\
+\h'-\n(14u-\n(12u/2u'\v'18u'\l'\n(14u'\v'18u'
+.nr 12 \n(14
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 \v'.3m'\s16\(*S\s10\v'-.3m'
+.nr 12 \w'\*(12'
+'ps 7
+.ds 13 "i\|=\|\fR1\fP
+.nr 13 \w'\*(13'
+'ps 7
+.ds 14 "N
+.nr 14 \w'\*(14'
+'ps 10
+.nr 15 \n(12
+.if \n(13-\n(15 .nr 15 \n(13
+.if \n(14-\n(15 .nr 15 \n(14
+.ds 15 \v'60u'\h'\n(15u-\n(13u/2u'\s7\*(13\s10\h'-\n(15u-\n(13u/2u'\v'-60u'\
+\h'\n(15u-\n(12u/2u'\*(12\h'\n(15u-\n(12u/2u'\
+\v'-66u'\h'-\n(15u-\n(14u/2u'\s7\*(14\s10\h'\n(15u-\n(14u/2u'\v'66u'\
+
+.as 11 "\*(15
+.nr 11 \w'\*(11'
+.ds 12 "\|\fR(\fP
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "x
+.nr 12 \w'\*(12'
+.ps 8
+.ds 13 "i
+.nr 13 \w'\*(13'
+.as 12 \v'18u'\s8\*(13\|\s10\v'-18u'
+.ps 10
+.nr 12 \n(12+\n(13+\w'\s8\|'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "\|\(mi\|
+.nr 12 \w'\*(12'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "x
+.nr 12 \w'\*(12'
+.nr 12 \w'\*(12'
+.nr 10 0
+.if \n(ct-1 .nr 10 .25m
+.nr 14 .15m
+.if 2-\n(ct .nr 14 .1m
+.ds 13 \v'.15m'\l'\n(12u\(rn'\v'-.15m'
+.nr 13 \w'\*(13'
+.as 12 \h'-\n(12u-\n(13u/2u+\n(14u'\v'0-\n(10u'\*(13\v'\n(10u'\h'-\n(13u+\n(12u/2u-\n(14u'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 12 "\|\fR)\fP
+.nr 12 \w'\*(12'
+.ps 8
+.ds 13 "\fR2\fP
+.nr 13 \w'\*(13'
+.as 12 \v'-24u'\s8\|\*(13\s10\v'24u'
+.ps 10
+.nr 12 \n(12+\n(13+\w'\s8\|'
+.as 11 "\*(12
+.nr 11 \w'\*(11'
+.ds 11 \x'0'\x'0-30u'\fI\s10\*(11\s\n(99\f\n(98\x'42u'
+.if \n(11-\n(.l .tm too-long eqn, file junk, between lines 2-4
+.if 168-\n(.v .ne 168u
+\*(11
+.ps \n(99
+.ft \n(98
+.EN
+.br
+.op
+Automatic calculation of size changes for subscripts, sub-subscripts,
+etc.
+.op
+Full vocabulary of Greek letters, such as `gamma', `GAMMA'.
+.op
+Automatic calculation of large bracket sizes.
+.op
+Vertical \*(lqpiling\*(rq of formulae for matrices, conditional
+alternatives, etc.
+.op
+Integrals, sums, etc. with arbitrarily complex limits.
+.op
+Diacriticals: dots, double dots, hats, bars.
+.op
+Easily learned by nonprogrammers and mathematical typists.
+.op
+Usable as a filter.
+.sh Manual
+Printed manual for EQN.
+.sh NEQN
+A mathematical typesetting preprocessor for NROFF.
+Prepares formulas for display on
+Model 37 Teletypes with half-line functions
+and 128-character font.
+.op
+For Diablo-mechanism terminals, filter output through GSI.
+.op
+Same facilities as EQN within graphical capability of
+terminal.
+.sh TBL
+A preprocessor for NROFF/TROFF
+that translates simple descriptions of table layouts
+and contents into detailed typesetting instructions.
+.op
+Computes column widths.
+.op
+Handles left- and right-justified columns,
+centered columns and decimal-point
+alignment.
+.op
+Places column titles.
+.sh MS
+A standardized manuscript layout
+for use with NROFF/TROFF.
+.op
+Page numbers and draft dates.
+.op
+Cover sheet and title page.
+.op
+Automatically numbered subheads.
+.op
+Footnotes.
+.op
+Single or double column.
+.op
+Paragraphing, display and indentation.
+.op
+Numbered equations.
+.h0 "\na.\n+b U\s8NIX\s10 Programmer's Manual"
+.sh MAN
+Print specified manual section on your terminal.
+.sh Manual
+Machine-readable version of the U\s8NIX\s10 
+Programmer's Manual.
+.op
+System overview.
+.op
+All commands.
+.op
+All system calls.
+.op
+All subroutines in assembler, C and FORTRAN libraries.
+.op
+All devices and other special files.
+.op
+Formats of file system and kinds
+of files known to system software.
+.op
+Boot procedures.
+.sp
+.ti4i
+May, 1975
+.sp
+.in0
+* DEC, PDP and DECtape are registered trademarks of Digital
+Equipment Corporation.
+V\s8\OTRAX\s10 is a registered trademark of
+Vocal Interface Division, Federal Screw Works.

@@ -1,0 +1,290 @@
+.th ROFF I 11/4/74
+.sh NAME
+roff  \*-  format text
+.sh SYNOPSIS
+.bd roff
+[ \fB+\fIn\fR ] [ \fB\*-\fIn\fR ] [
+.bd \*-s
+] [
+.bd \*-h
+] file ...
+.sh DESCRIPTION
+.it Roff
+formats text according to control lines embedded
+in the text in the given files.
+Encountering a nonexistent file terminates printing.
+Incoming interconsole messages are turned off during printing.
+The optional flag arguments mean:
+.s3
+.lp +5 5
+\fB+\fIn\fR	Start printing at the first page with number \fIn\fR.
+.s3
+.lp +5 5
+\fB\*-\fIn\fR	Stop printing at the first page numbered higher
+than \fIn\fR.
+.s3
+.lp +5 5
+\fB\*-s\fR	Stop before each page (including the first)
+to allow paper manipulation;
+resume on receipt of an interrupt signal.
+.s3
+.lp +5 5
+\fB\*-h\fR	Insert tabs in the output stream to replace
+spaces whenever appropriate.
+.s3
+.i0
+.dt
+Input consists of intermixed
+.it "text lines,"
+which contain information to be formatted, and
+.it "request lines,"
+which contain instructions about how to format
+it.
+Request lines begin with a distinguished
+.it "control character,"
+normally a period.
+.s3
+Output lines may be
+.it filled
+as nearly as possible with words without regard to
+input lineation.
+Line
+.it breaks
+may be caused at specified places by
+certain commands, or by the appearance of an
+empty input line or an input line beginning with a space.
+.s3
+The capabilities of
+.it roff
+are specified in the attached Request Summary.
+Numerical values are denoted there by n or +n,
+titles by t, and single characters by c.
+Numbers denoted +n may be signed + or \*-,
+in which case they signify relative changes to
+a quantity, otherwise they signify
+an absolute resetting.
+Missing n fields are ordinarily taken to be 1,
+missing t fields to be empty, and c fields to shut off
+the appropriate special interpretation.
+.s3
+Running titles usually appear at top and bottom of every
+page.
+They are set by requests like
+.s3
+.in +10
+.if t \&.he \(fmpart1\(fmpart2\(fmpart3\(fm
+.if n \&.he 'part1'part2'part3'
+.in -10
+.s3
+Part1 is left justified, part2 is centered,
+and part3 is right justified on the page.
+Any % sign in a title is replaced by the current
+page number.
+Any nonblank may serve as a quote.
+.s3
+ASCII tab characters are replaced in the input by a
+.it "replacement character,"
+normally a space,
+according to the
+column settings given by a .ta command.
+(See .tr for how to convert this character on output.)
+.s3
+Automatic hyphenation of filled output is done
+under control of .hy.
+When a word contains a designated
+.it "hyphenation character,"
+that character disappears from the output and
+hyphens can be introduced into
+the word at the marked places only.
+.sh FILES
+/usr/lib/suftab	suffix hyphenation tables
+.br
+/tmp/rtm?	temporary
+.br
+.sh "SEE ALSO"
+nroff (I), troff (I)
+.sh BUGS
+.it Roff
+is the simplest of the runoff
+programs, but is utterly frozen.
+.bp
+.tc |
+.tr |
+.in 0
+.ce
+REQUEST SUMMARY
+.s3
+.ul
+.if t .ta .75i 1.5i 2.25i
+.if n .ta 9 17 25 33
+Request	Break	Initial	Meaning
+.if t .in2.25i
+.if n .in24
+.na
+.ti 0
+.li
+.ad	yes	yes	Begin adjusting right margins.
+.ti 0
+.li
+.ar	no	arabic	Arabic page numbers.
+.ti 0
+.li
+.br	yes	-	Causes a line break \*- the filling of
+the current line is stopped.
+.ti 0
+.li
+.bl|n	yes	-	Insert of n blank lines, on new page if necessary.
+.ti 0
+.li
+.bp|+n	yes	n=1	Begin new page and number it n; no n means `+1'.
+.ti 0
+.li
+.cc|c	no	c=.	Control character becomes `c'.
+.ti 0
+.li
+.ce|n	yes	-	Center the next n input lines,
+without filling.
+.ti 0
+.li
+.de|xx	no	-	Define parameterless macro 
+to be invoked by request `.xx'
+(definition ends on line beginning `\fB..\fR').
+.ti 0
+.li
+.ds	yes	no	Double space; same as `.ls 2'.
+.ti 0
+.li
+.ef|t	no	t=\*a\*a\*a\*a	Even foot title becomes t.
+.ti 0
+.li
+.eh|t	no	t=\*a\*a\*a\*a	Even head title becomes t.
+.ti 0
+.li
+.fi	yes	yes	Begin filling output lines.
+.ti 0
+.li
+.fo	no	t=\*a\*a\*a\*a	All foot titles are t.
+.ti 0
+.li
+.hc|c	no	none	Hyphenation character becomes `c'.
+.ti 0
+.li
+.he|t	no	t=\*a\*a\*a\*a	All head titles are t.
+.ti 0
+.li
+.hx	no	-	Title lines are suppressed.
+.ti 0
+.li
+.hy|n	no	n=1	Hyphenation is done, if n=1;
+and is not done, if n=0.
+.ti 0
+.li
+.ig	no	-	Ignore input lines through
+a line beginning with `\fB..\fR'.
+.ti 0
+.li
+.in|+n	yes	-	Indent n spaces from left margin.
+.ti 0
+.li
+.ix +n	no	-	Same as `.in' but without break.
+.ti 0
+.li
+.li|n	no	-	Literal, treat next n lines as text.
+.ti 0
+.li
+.ll|+n	no	n=65	Line length including indent is n characters.
+.ti 0
+.li
+.ls|+n	yes	n=1	Line spacing set to n lines per output line.
+.ti 0
+.li
+.m1|n	no	n=2	Put n blank lines between the top
+of page and head title.
+.ti 0
+.li
+.m2|n	no	n=2	n blank lines put between head title
+and beginning of text on page.
+.ti 0
+.li
+.m3|n	no	n=1	n blank lines put between end of
+text and foot title.
+.ti 0
+.li
+.m4|n	no	n=3	n blank lines put between the foot title
+and the bottom of page.
+.ti 0
+.li
+.na	yes	no	Stop adjusting the right margin.
+.ti 0
+.li
+.ne|n	no	-	Begin new page, if n output lines
+cannot fit on present page.
+.ti 0
+.li
+.nn|+n	no	-	The next n output lines are not numbered.
+.ti 0
+.li
+.n1	no	no	Add 5 to page offset;
+number lines in margin from 1 on each page.
+.ti 0
+.li
+.n2|n	no	no	Add 5 to page offset;
+number lines from n;
+stop if n=0.
+.ti 0
+.li
+.ni|+n	no	n=0	Line numbers are indented n.
+.ti 0
+.li
+.nf	yes	no	Stop filling output lines.
+.ti 0
+.li
+.nx|filename	-	Change to input file `filename'.
+.ti 0
+.li
+.of|t	no	t=\*a\*a\*a\*a	Odd foot title becomes t.
+.ti 0
+.li
+.oh|t	no	t=\*a\*a\*a\*a	Odd head title becomes t.
+.ti 0
+.li
+.pa|+n	yes	n=1	Same as `.bp'.
+.ti 0
+.li
+.pl|+n	no	n=66	Total paper length taken to be n lines.
+.ti 0
+.li
+.po|+n	no	n=0	Page offset.
+All lines are preceded by n spaces.
+.ti 0
+.li
+.ro	no	arabic	Roman page numbers.
+.ti 0
+.li
+.sk|n	no	-	Produce n blank pages starting next page.
+.ti 0
+.li
+.sp|n	yes	-	Insert block of n blank lines,
+except at top of page.
+.ti 0
+.li
+.ss	yes	yes	Single space output lines,
+equivalent to `.ls 1'.
+.ti 0
+.li
+.ta|n|n..		-	Pseudotab settings.
+Initial tab settings are columns 9 17 25 ...
+.ti 0
+.li
+.tc|c	no	space	Tab replacement character becomes `c'.
+.ti 0
+.li
+.ti|+n	yes	-	Temporarily indent next output
+line n spaces.
+.ti0
+.li
+.tr|cdef..	no	-	Translate c into d, e into f, etc.
+.ti0
+.li
+.ul|n	no	-	Underline the letters and numbers
+in the next n input lines.

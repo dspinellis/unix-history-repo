@@ -1,0 +1,25 @@
+.th SETGID II 8/5/73
+.sh NAME
+setgid \*- set process group ID
+.sh SYNOPSIS
+(setgid = 46.; not in assembler)
+.br
+(group ID in r0)
+.ft B
+.br
+sys setgid
+.s3
+setgid(gid)
+.ft R
+.sh DESCRIPTION
+The group ID of the current process is set to
+the argument.
+Both the effective and the real group ID are set.
+This call is only permitted to the super-user
+or if the argument is the real group ID.
+.sh "SEE ALSO"
+getgid (II)
+.sh DIAGNOSTICS
+Error bit
+(c-bit) is set as indicated;
+from C, a \*-1 value is returned.

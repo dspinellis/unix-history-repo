@@ -1,0 +1,33 @@
+.th MESG I 3/15/72
+.sh NAME
+mesg  \*-  permit or deny messages
+.sh SYNOPSIS
+.bd mesg
+[
+.bd n
+] [
+.bd y
+]
+.sh DESCRIPTION
+.it Mesg
+with argument
+.bd n
+forbids messages via
+.it write
+by revoking non-user
+write permission on the user's typewriter.
+.it Mesg
+with argument
+.bd y
+reinstates permission.
+All by itself,
+.it mesg
+reverses the current permission.
+In all cases the previous state is reported.
+.sh FILES
+/dev/tty?
+.sh "SEE ALSO"
+write (I)
+.sh DIAGNOSTICS
+`?' if the standard input file is not a typewriter
+.sh BUGS

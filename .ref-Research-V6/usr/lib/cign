@@ -1,0 +1,22 @@
+auto
+break
+case
+char	4
+continue
+default
+do
+double	4
+else
+extern	2
+float	4
+for
+goto
+if
+int	4
+long
+register
+return
+static
+struct	3
+switch
+while

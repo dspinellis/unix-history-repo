@@ -1,0 +1,99 @@
+.th RP IV 2/21/74
+.sh NAME
+rp \*- RP-11/RP03 moving-head disk
+.sh DESCRIPTION
+The files
+.it "rp0 ... rp7"
+refer to sections of RP disk drive 0.
+The files
+.it "rp8 ... rp15"
+refer to drive 1 etc.
+This is done since the size of
+a full RP drive is 81200 blocks and
+internally the system is only capable
+of addressing 65536
+blocks.
+Also since the disk is so large,
+this allows it to be broken up
+into more manageable pieces.
+.s3
+The origin and size of the pseudo-disks on each drive are
+as follows:
+.s3
+.br
+	disk	start	length
+.br
+	0	0	40600
+.br
+	1	40600	40600
+.br
+	2	0	9200
+.br
+	3	72000	9200
+.br
+	4	0	65535
+.br
+	5	15600	65535
+.br
+	6-7	unassigned
+.s3
+It is unwise for all of these files to be present in one installation,
+since there is overlap in addresses and protection becomes
+a sticky matter.
+Here is a suggestion for two useful configurations:
+If the root of the file system is on some other device
+and the RP used as a mounted device,
+then
+.it rp0
+and
+.it rp1,
+which divide the disk into two equal size portions, is a good idea.
+Other things being equal, it is advantageous to have two equal-sized portions
+since one can always be copied onto the other, which is occasionally useful.
+.s3
+If the RP is the only disk and has to
+contain the root and the swap area,
+the root can be put on
+.it rp2
+and a mountable file system on
+.it rp5.
+Then the swap space can be put in the
+unused blocks 9200 to 15600 of
+.it rp0
+(or, equivalently,
+.it rp4).
+This arrangement puts the root file system, the swap area,
+and the i-list of the mounted file system relatively
+near each other and thus tends to
+minimize head movement.
+.s3
+The
+.it rp
+files
+access the disk via the system's normal
+buffering mechanism
+and may be read and written without regard to
+physical disk records.
+There is also a ``raw'' interface
+which provides for direct transmission between the disk
+and the user's read or write buffer.
+A single read or write call results in exactly one I/O operation
+and therefore raw I/O is considerably more efficient when
+many words are transmitted.
+The names of the raw RP files
+begin with
+.it rrp
+and end with a number which selects the same disk
+section as the corresponding
+.it rp
+file.
+.s3
+In raw I/O the buffer must begin on a word boundary,
+and counts should be a multiple of 512 bytes
+(a disk block).
+Likewise
+.it seek
+calls should specify a multiple of 512 bytes.
+.sh FILES
+/dev/rp?, /dev/rrp?
+.sh BUGS

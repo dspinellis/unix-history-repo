@@ -1,0 +1,22 @@
+.bp
+.SH
+References
+.IP 1
+Aho, A.V. and Johnson, S.C., ``LR Parsing'', Computing Surveys,
+Vol 6, No 2, June 1974, pp. 99-124.
+.IP 2
+Aho, A.V., Johnson, S.C., and Ullman, J.D., ``Deterministic Parsing of Ambiguous Grammars'',
+Proceedings of the A.C.M. Symposium on Principles of
+Programming Languages, October 1973, pp. 1-21; to appear in CACM.
+.IP 3
+Aho, A.V. and Ullman, J.D., Theory of Parsing, Translation, and Compiling.
+Volume 1 (1972) and Volume 2 (1973), Prentice-Hall, Englewood Cliffs, N.J.
+.IP 4
+Kernighan, B. W., Ratfor, a Rational Fortran
+.IP 5
+Ryder, B. B., ``The PFORT Verifier,'' Software\-Practice and Experience, Vol 4 (1974), pp 359-377.
+.IP 6
+McIlroy, M. D., A Manual for the TMG Compiler-writing Language
+.IP 7
+Ritchie, D. M., C Reference Manual
+.bp

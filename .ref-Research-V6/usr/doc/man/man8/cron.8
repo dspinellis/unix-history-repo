@@ -1,0 +1,74 @@
+.th CRON VIII 10/25/74
+.sh NAME
+cron \*- clock daemon
+.sh SYNOPSIS
+.bd /etc/cron
+.sh DESCRIPTION
+.it Cron
+executes commands at specified dates and times
+according to the instructions in the file
+/usr/lib/crontab.
+Since
+.it cron
+never exits,
+it should only be executed once.
+This is best done by running
+.it cron
+from the initialization
+process through the file
+/etc/rc;
+see
+.it init
+(VIII).
+.s2
+Crontab
+consists of lines of six fields each.
+The fields are separated by spaces or tabs.
+The first five are integer patterns to
+specify the
+minute (0-59),
+hour (0-23),
+day of the month (1-31),
+month of the year (1-12),
+and day of the week (1-7 with 1=monday).
+Each of these patterns may
+contain a number in the range above;
+two numbers separated by
+a minus
+meaning a range inclusive;
+a list of numbers separated by
+commas meaning any of the numbers;
+or an asterisk meaning all legal values.
+The sixth field is a string
+that is executed by the Shell at the
+specified times.
+A percent character
+in this field is translated to a new-line
+character.
+Only the first line (up to a % or end of line)
+of the command field is executed by the Shell.
+The other lines are made available to the
+command as standard input.
+.s2
+Crontab is examined by
+.it cron
+every hour.
+Thus it could take up to an hour
+for entries to become effective.
+If it receives
+a hangup signal, however, the table is examined immediately;
+so `kill \-1 ...' can be used.
+.sh FILES
+/usr/lib/crontab
+.sh "SEE ALSO"
+init(VIII), sh(I), kill (I)
+.sh DIAGNOSTICS
+None \- illegal lines in
+crontab are ignored.
+.sh BUGS
+A more efficient algorithm could be used.
+The overhead in running
+.it cron
+is about one percent of the
+machine,
+exclusive of any commands executed.

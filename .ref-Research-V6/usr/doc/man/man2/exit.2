@@ -1,0 +1,33 @@
+.th EXIT II 8/5/73
+.sh NAME
+exit \*- terminate process
+.s3
+.sh SYNOPSIS
+(exit = 1.)
+.br
+(status in r0)
+.br
+.ft B
+sys exit
+.s3
+exit(status)
+.br
+int status;
+.ft R
+.sh DESCRIPTION
+.it Exit
+is the normal means of terminating a process.
+.it Exit
+closes all the process's files and notifies the parent process
+if it is executing a
+.it wait.
+The low byte of r0
+(resp. the argument to
+\fIexit\fR)
+is available as status to the parent process.
+.s3
+This call can never return.
+.sh "SEE ALSO"
+wait (II)
+.sh DIAGNOSTICS
+None.

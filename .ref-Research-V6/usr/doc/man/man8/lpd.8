@@ -1,0 +1,31 @@
+.th LPD VIII 6/1/74
+.sh NAME
+lpd \*- line printer daemon
+.sh SYNOPSIS
+.bd /etc/lpd
+.sh DESCRIPTION
+.it Lpd
+is the line printer daemon (spool area handler)
+invoked by
+.it opr.
+It uses the directory
+.it /usr/lpd.
+The file
+.it lock
+in that directory
+is used to prevent two daemons from becoming
+active simultaneously.
+After the daemon has successfully set the lock,
+it scans the directory for files
+beginning with ``df.''
+Lines in each
+.it df
+file specify files to be printed
+in the same way as is done by the data-phone daemon dpd (VIII).
+.sh FILES
+/usr/lpd/*	spool area
+.br
+/dev/lp  	printer
+.sh "SEE ALSO"
+dpd (VIII), opr (I)
+.sh BUGS

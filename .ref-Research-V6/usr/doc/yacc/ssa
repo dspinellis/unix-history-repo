@@ -1,0 +1,134 @@
+.SH
+Appendix A:  A Simple Example
+.PP
+This example gives the complete Yacc specification for a small desk calculator;
+the desk calculator has 26 registers, labeled a through z, and accepts
+arithmetic expressions made up of the operators +, \-, *, /,
+% (mod operator), & (bitwise and), | (bitwise or), and assignment.
+If an expression is an assignment at the top level, the value is not
+printed; otherwise it is.
+As in C, an integer which begins with 0 (zero) is assumed to be octal;
+otherwise, it is assumed to be decimal.
+.PP
+As an example of a Yacc specification, the desk calculator
+does a reasonable job of showing the way that precedences and ambiguities
+are used, as well as showing how simple error recovery operates.
+The major oversimplifications are that the
+lexical analysis phase is much simpler than for most applications, and the
+output is produced immediately, line by line.
+Note the way that decimal and octal integers are read in by the grammar rules;
+frequently, this job is better done by the lexical analyzer.
+.LD
+
+
+%token DIGIT LETTER	/* these are token names */
+%left \'|\'				/* declarations of operator precedences */
+%left \'&\'
+%left \'+\' \'\-\'
+%left \'*\' \'/\' \'%\'
+%left UMINUS			/* supplies precedence for unary minus */
+%{					/* declarations used by the actions */
+	int base;
+	int regs[26];
+%}
+
+%%   /* beginning of rules section */
+
+list :		/* list is the start symbol */
+	|	/* empty */
+	list stat \'\en\' |
+	list error \'\en\' =
+	{
+		yyerrok ;
+	} ;
+
+stat :
+	expr =
+	{
+		printf("%d\en", $1) ;
+	} |
+	LETTER \'=\' expr =
+	{
+		regs[$1] = $3 ;
+	} ;
+
+expr :
+	\'(\' expr \')\' =
+	{
+		$$ = $2 ;
+	} |
+	expr \'+\' expr =
+	{
+		$$ = $1 + $3 ;
+	} |
+	expr \'\-\' expr =
+	{
+		$$ = $1 \- $3 ;
+	} |
+	expr \'*\' expr =
+	{
+		$$ = $1 * $3 ;
+	} |
+	expr \'/\' expr =
+	{
+		$$ = $1 / $3 ;
+	} |
+	expr \'%\' expr =
+	{
+		$$ = $1 % $3 ;
+	} |
+	expr \'&\' expr
+	{
+		$$ = $1 & $3 ;
+	} |
+	expr \'|\' expr
+	{
+		$$ = $1 | $3 ;
+	} |
+	\'\-\' expr  %prec UMINUS
+	{
+		$$ = \- $2 ;
+	} |
+	LETTER
+	{
+		$$ = regs[$1] ;
+	} |
+	number ;
+
+number :
+	DIGIT =
+	{
+		$$ = $1 ;
+		base = 10 ;
+		if( $1 == 0 )
+			base = 8 ;
+	} |
+	number DIGIT =
+	{
+		$$ = base * $1 + $2 ;
+	} ;
+
+%%		/* start of programs */
+
+yylex( ) /* lexaical analysis routine */
+{
+	/* returns LETTER for a lower case letter, yylval = 0 through 25 */
+	/* return DIGIT for a digit, yylval = 0 through 9 */
+	/* all other characters are returned immediately */
+
+	int c ;
+
+	while( (c=getchar( )) == \' \' )
+		;
+	if( c >= \'a\' && c <= \'z\' ) {
+		yylval = c \- \'a\' ;
+		return( LETTER ) ;
+	}
+	if( c >= \'0\' && c <= \'9\' ) {
+		yylval = c \- \'0\' ;
+		return( DIGIT ) ;
+	}
+	return( c ) ;
+}
+.DE
+.bp

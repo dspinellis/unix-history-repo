@@ -1,0 +1,11 @@
+as alloc?.s; mv a.out alloc.o
+as altch.s; mv a.out altch.o
+as bsp.s; mv a.out bsp.o
+as bword.s; mv a.out bword.o
+as getch.s; mv a.out getch.o
+as getwd.s; mv a.out getwd.o
+as length.s; mv a.out length.o
+as rewind.s; mv a.out rewind.o
+as zero.s; mv a.out zero.o
+ar r /lib/libs.a *.o
+rm *.o

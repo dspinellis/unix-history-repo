@@ -1,0 +1,228 @@
+cc -s -O mail.c
+cmp a.out /bin/mail
+cp a.out /bin/mail
+
+cc -s -O mesg.c
+cmp a.out /usr/bin/mesg
+cp a.out /usr/bin/mesg
+
+as mkdir.s
+strip a.out
+cmp a.out /bin/mkdir
+cp a.out /bin/mkdir
+
+cc -s -O mkfs.c
+cmp a.out /etc/mkfs
+cp a.out /etc/mkfs
+
+cc -s -O mknod.c
+cmp a.out /etc/mknod
+cp a.out /etc/mknod
+
+cc -s -O mount.c
+cmp a.out /etc/mount
+cp a.out /etc/mount
+
+cc -s -O mv.c
+cmp a.out /bin/mv
+cp a.out /bin/mv
+
+cc -s -O ncheck.c
+cmp a.out /bin/ncheck
+cp a.out /bin/ncheck
+
+cc -s -O newgrp.c
+cmp a.out /bin/newgrp
+cp a.out /bin/newgrp
+
+cc -s -O nice.c
+cmp a.out /usr/bin/nice
+cp a.out /usr/bin/nice
+
+cc -s -O nm.c
+cmp a.out /bin/nm
+cp a.out /bin/nm
+
+cc -s -O nohup.c
+cmp a.out /usr/bin/nohup
+cp a.out /usr/bin/nohup
+
+cc -s -O od.c
+cmp a.out /bin/od
+cp a.out /bin/od
+
+cc -s -O opr.c
+cmp a.out /bin/opr
+cp a.out /bin/opr
+
+cc -s -O passwd.c
+cmp a.out /bin/passwd
+cp a.out /bin/passwd
+
+as pfe.s
+strip a.out
+cmp a.out /usr/bin/pfe
+cp a.out /usr/bin/pfe
+
+cc -s -O pr.c
+cmp a.out /bin/pr
+cp a.out /bin/pr
+
+cc -s -f -O prof.c
+cmp a.out /usr/bin/prof
+cp a.out /usr/bin/prof
+
+cc -s -O ps.c
+cmp a.out /bin/ps
+cp a.out /bin/ps
+
+cc -s -O ptx.c
+cmp a.out /usr/bin/ptx
+cp a.out /usr/bin/ptx
+
+cc -s -O pwd.c
+cmp a.out /usr/bin/pwd
+cp a.out /usr/bin/pwd
+
+cc -s -O quiz.c
+cmp a.out /usr/bin/quiz
+cp a.out /usr/bin/quiz
+
+cc -s -O rc.c
+cmp a.out /usr/bin/rc
+cp a.out /usr/bin/rc
+
+cc -s -O restor.c
+cmp a.out /bin/restor
+cp a.out /bin/restor
+
+as rew.s
+strip a.out
+cmp a.out /bin/rew
+cp a.out /bin/rew
+
+cc -s -O rm.c
+cmp a.out /bin/rm
+cp a.out /bin/rm
+
+as rmdir.s
+strip a.out
+cmp a.out /bin/rmdir
+cp a.out /bin/rmdir
+
+cc -s -f -O sa.c
+cmp a.out /usr/bin/sa
+cp a.out /usr/bin/sa
+
+cc -s -n -O sh.c
+cmp a.out /bin/sh
+cp a.out /bin/sh
+
+cc -s -O size.c
+cmp a.out /bin/size
+cp a.out /bin/size
+
+cc -s -O sleep.c
+cmp a.out /usr/bin/sleep
+cp a.out /usr/bin/sleep
+
+cc -s -O sort.c
+cmp a.out /bin/sort
+cp a.out /bin/sort
+
+cc -s -O split.c
+cmp a.out /usr/bin/split
+cp a.out /usr/bin/split
+
+as strip.s
+strip a.out
+cmp a.out /bin/strip
+cp a.out /bin/strip
+
+cc -s -O stty.c
+cmp a.out /bin/stty
+cp a.out /bin/stty
+
+cc -s -O su.c
+cmp a.out /bin/su
+cp a.out /bin/su
+
+as sum.s
+strip a.out
+cmp a.out /bin/sum
+cp a.out /bin/sum
+
+cc -s -O sync.c
+cmp a.out /bin/sync
+cp a.out /bin/sync
+
+cc -s -O tbl.c -lp
+cmp a.out /usr/bin/tbl
+cp a.out /usr/bin/tbl
+
+cc -s -O tee.c
+cmp a.out /usr/bin/tee
+cp a.out /usr/bin/tee
+
+as time.s
+strip a.out
+cmp a.out /bin/time
+cp a.out /bin/time
+
+as tp?.s
+ld a.out -lc -l
+cmp a.out /bin/tp
+cp a.out /bin/tp
+
+cc -s -O tr.c
+cmp a.out /usr/bin/tr
+cp a.out /usr/bin/tr
+
+as tty.s
+ld -s a.out -l
+cmp a.out /bin/tty
+cp a.out /bin/tty
+
+cc -s -f -O typo.c
+cmp a.out /usr/bin/typo
+cp a.out /usr/bin/typo
+
+cc -s -O umount.c
+cmp a.out /etc/umount
+cp a.out /etc/umount
+
+cc -s -O uniq.c
+cmp a.out /bin/uniq
+cp a.out /bin/uniq
+
+cc -s -f -O units.c
+cmp a.out /usr/bin/units
+cp a.out /usr/bin/units
+
+as update.s
+strip a.out
+cmp a.out /etc/update
+cp a.out /etc/update
+
+cc -s -O usort.c
+cmp a.out /usr/bin/usort
+cp a.out /usr/bin/usort
+
+cc -s -O wall.c
+cmp a.out /etc/wall
+cp a.out /etc/wall
+
+cc -s -O wc.c
+cmp a.out /usr/bin/wc
+cp a.out /usr/bin/wc
+
+cc -s -O who.c
+cmp a.out /bin/who
+cp a.out /bin/who
+
+as write.s
+ld -s a.out -l
+cmp a.out /bin/write
+cp a.out /bin/write
+
+rm a.out

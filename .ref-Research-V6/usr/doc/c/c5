@@ -1,0 +1,589 @@
+.ul
+10. External definitions
+.et
+A C program consists of a sequence of external definitions.
+External definitions may be given for functions, for
+simple variables, and for arrays.
+They are used both to declare and to reserve storage for
+objects.
+An external definition declares an identifier to
+have storage class \fGextern\fR and
+a specified type.
+The type-specifier (\(sc8.2) may be empty, in which
+case the type is taken to be \fGint\fR.
+.ms
+10.1  External function definitions
+.et
+Function definitions have the form
+.dp 2
+.ta .5i 1i 1.5i 2i 2.5i
+	function-definition:
+		type-specifier\*(op function-declarator function-body
+.ed
+A function declarator is similar to a declarator
+for a ``function returning ...'' except that
+it lists the formal parameters of
+the function being defined.
+.dp 2
+	function-declarator:
+		declarator \fG( \fIparameter-list\*(op \fG)
+
+.ft I
+	parameter-list:
+		identifier
+		identifier \fG,\fI parameter-list
+.ed
+The function-body
+has the form
+.dp 1
+	function-body:
+		type-decl-list function-statement
+.ed
+The purpose of the
+type-decl-list is to give the types of the formal parameters.
+No other identifiers should be declared in this list, and formal
+parameters should be declared only here.
+.pg
+The function-statement
+is just a compound
+statement which may have
+declarations at the start.
+.dp 2
+	function-statement:
+		{ declaration-list\*(op statement-list }
+.ed
+A simple example of a complete function definition is
+.sp .7
+.ne 7
+.nf
+.bG
+	int max^(^a, b, c)
+	int a, b, c;
+	{
+		int m;
+		m = ^(^a^>^b^)? a^:^b^;
+		return^(^m^>^c? m^:^c^)^;
+	}
+.sp .7
+.eG
+.fi
+Here ``int'' is the type-specifier;
+``max(a,@b,@c)'' is the function-declarator;
+``int@a,@b,@c;'' is the type-decl-list for
+the formal
+parameters;
+``{@.^.^.@}'' is the function-statement.
+.pg
+C converts all
+\fGfloat\fR actual parameters
+to \fGdouble\fR, so formal parameters declared \fGfloat\fR
+have their declaration adjusted to read \fGdouble\fR.
+Also, since a reference to an array in any context
+(in particular as an actual parameter)
+is taken to mean
+a pointer to the first element of the array,
+declarations of formal parameters declared ``array of ...''
+are adjusted to read ``pointer to ...''.
+Finally, because neither structures
+nor functions can be passed
+to a function, it is useless to declare
+a formal parameter to be a structure or
+function (pointers to structures or
+functions are of course permitted).
+.pg
+A free \fGreturn\fR statement is supplied at the
+end of each function definition, so
+running off the end
+causes
+control, but no value, to be returned to
+the caller.
+.ms
+10.2  External data definitions
+.et
+An external data definition has the form
+.dp 2
+	data-definition:
+		\fGextern\*(op \fItype-specifier\*(op init-declarator-list\*(op \fG;
+.ed
+The optional
+.ft G
+extern
+.ft R
+specifier is discussed in \(sc 11.2.
+If given, the init-declarator-list is a
+comma-separated list of declarators each of which may be
+followed by an initializer for the declarator.
+.dp 2
+	init-declarator-list:
+		init-declarator
+		init-declarator \fG, \fIinit-declarator-list
+.ed
+.dp 2
+	init-declarator:
+		declarator initializer\*(op
+.ed
+Each initializer represents the initial value for the
+corresponding object
+being defined (and declared).
+.dp 5
+	initializer:
+		constant
+		{ constant-expression-list }
+.ed
+.dp 3
+	constant-expression-list:
+		constant-expression
+		constant-expression \fG,\fI constant-expression-list
+.ed
+Thus an initializer consists of
+a constant-valued expression, or
+comma-separated list of expressions,
+inside braces.
+The braces may be dropped
+when the expression is just a plain
+constant.
+The exact meaning of a constant expression is discussed
+in \(sc15.
+The expression list is used to initialize arrays;
+see below.
+.pg
+The type of the identifier being
+defined
+should be compatible
+with the type of the initializer:
+a \fGdouble\fR constant
+may initialize a \fGfloat\fR or \fGdouble\fR identifier;
+a non-floating-point expression
+may
+initialize an \fGint\fR, \fGchar\fR, or pointer.
+.pg
+An initializer for an array may contain
+a comma-separated list of compile-time expressions.
+The length of the array is taken to be the
+maximum of the number of expressions in the list
+and the square-bracketed constant in the
+array's declarator.
+This constant may be missing,
+in which case 1 is used.
+The expressions initialize successive members of the array
+starting at the origin (subscript 0)
+of the array.
+The acceptable expressions for an array of type
+``array of ...'' are the same as
+those for type ``...''.
+As a special case, a single
+string may be given as the initializer
+for an array of \fGchar\fRs; in this case,
+the characters in the string are taken
+as the initializing values.
+.pg
+Structures can be initialized, but this operation
+is incompletely implemented and machine-dependent.
+Basically the structure is regarded as a sequence
+of words and the initializers are placed into those
+words.
+Structure initialization,
+using a comma-separated list in braces,
+is safe if all the members of the structure
+are integers or pointers but is otherwise ill-advised.
+.pg
+The initial value of any externally-defined
+object not explicitly initialized is guaranteed
+to be 0.
+.ul
+11.  Scope rules
+.et
+A complete C program need not all
+be compiled at the same time: the source text of the
+program
+may be kept in several files, and precompiled
+routines may be loaded from
+libraries.
+Communication among the functions of a program
+may be carried out both through explicit calls
+and through manipulation of external data.
+.pg
+Therefore, there are two kinds of scope to consider:
+first, what may be called the \fIlexical scope\fR
+of an identifier, which is essentially the
+region of a program during which it may
+be used without drawing ``undefined identifier''
+diagnostics;
+and second, the scope
+associated with external identifiers,
+which is characterized by the rule
+that references to the same external
+identifier are references to the same object.
+.ms
+11.1  Lexical scope
+.et
+C is not a block-structured language;
+this may fairly be considered a defect.
+The lexical scope of names declared in external definitions
+extends from their definition through
+the end of the file
+in which they appear.
+The lexical scope of names declared at the head of functions
+(either as formal parameters
+or in the declarations heading the
+statements constituting the function itself)
+is the body of the function.
+.pg
+It is an error to redeclare identifiers already
+declared in the current context,
+unless the new declaration specifies the same type
+and storage class as already possessed by the identifiers.
+.ms
+11.2  Scope of externals
+.et
+If a function declares an identifier to be
+\fGextern\fR,
+then somewhere among the files or libraries
+constituting the complete program
+there must be an external definition
+for the identifier.
+All functions in a given program which refer to the same
+external identifier refer to the same object,
+so care must be taken that the type and extent
+specified in the definition
+are compatible with those specified
+by each function which references the data.
+.pg
+In \s8PDP\s10-11 C,
+it is explicitly permitted for (compatible)
+external definitions of the same identifier
+to be present in several of the
+separately-compiled pieces of a complete program,
+or even twice within the same program file,
+with the important limitation that the identifier
+may be initialized in at most one of the
+definitions.
+In other operating systems, however, the compiler must know
+in just which file the storage
+for the identifier is allocated, and in which file
+the identifier is merely being referred to.
+In the implementations of C for such systems,
+the appearance of the
+.ft G
+extern
+.ft R
+keyword before an external definition
+indicates that storage for the identifiers
+being declared
+will be allocated in another file.
+Thus in a multi-file program,
+an external data definition without
+the
+.ft G
+extern
+.ft R
+specifier must appear in exactly one of the files.
+Any other files which wish to give an external definition
+for the identifier must
+include the
+.ft G
+extern
+.ft R
+in the definition.
+The identifier can be initialized only in the file
+where storage is allocated.
+.pg
+In \s8PDP\s10-11 C none of this nonsense is necessary
+and the
+.ft G
+extern
+.ft R
+specifier is ignored in external definitions.
+.ul
+12.  Compiler control lines
+.et
+When a line of a C program begins
+with the character \fG#\fR, it is interpreted not by
+the compiler itself, but by a preprocessor which is capable
+of replacing instances of given identifiers
+with arbitrary token-strings and of inserting
+named files into the source program.
+In order to cause this preprocessor to be invoked, it
+is necessary that the very first line of the program
+begin with \fG#\fR.
+Since null lines are ignored by the preprocessor,
+this line need contain no other information.
+.ms
+12.1  Token replacement
+.et
+A compiler-control line of the form
+.dp 1
+	\fG# define \fIidentifier token-string
+.ed
+(note: no trailing semicolon)
+causes the preprocessor to replace subsequent instances
+of the identifier with the given string of tokens
+(except within compiler control lines).
+The replacement token-string has comments removed from
+it, and it is surrounded with blanks.
+No rescanning of the replacement string is attempted.
+This facility is most valuable for definition of ``manifest constants'',
+as in
+.sp .7
+.nf
+.bG
+	# define tabsize 100
+	.^.^.
+	int table[tabsize];
+.sp .7
+.eG
+.fi
+.ms
+12.2  File inclusion
+.et
+Large C programs
+often contain many external data definitions.
+Since the lexical scope of external definitions
+extends to the end of the program file,
+it is good practice
+to put all the external definitions for
+data at the start of the
+program file, so that the functions defined within
+the file need not repeat tedious and error-prone
+declarations for each external identifier they use.
+It is also useful to put a heavily used structure definition
+at the start and use its structure tag to declare
+the \fGauto\fR pointers to the structure
+used within functions.
+To further exploit
+this technique when a large C program
+consists of several files, a compiler control line of
+the form
+.dp 1
+	\fG# include "\fIfilename^\fG"
+.ed
+results in the replacement of that
+line by the entire contents of the file
+\fIfilename\fR.
+.pg
+.ul
+13.  Implicit declarations
+.et
+It is not always necessary to specify
+both the storage class and the type
+of identifiers in a declaration.
+Sometimes the storage class is supplied by
+the context: in external definitions,
+and in declarations of formal parameters
+and structure members.
+In a declaration inside a function,
+if a storage class but no type
+is given, the identifier is assumed
+to be \fGint\fR;
+if a type but no storage class is indicated,
+the identifier is assumed to
+be \fGauto\fR.
+An exception to the latter rule is made for
+functions, since \fGauto\fR functions are mean$ing$less
+(C being incapable of compiling code into the stack).
+If the type of an identifier is ``function returning ...'',
+it is implicitly declared to be \fGextern\fR.
+.pg
+In an expression, an identifier
+followed by \fG(\fR and not currently declared
+is contextually
+declared to be ``function returning \fGint\fR''.
+.pg
+Undefined identifiers not followed by \fG(\fR
+are assumed to be labels which
+will be defined later in the function.
+(Since a label is not an lvalue, this accounts
+for the ``Lvalue required'' error
+message
+sometimes noticed when
+an undeclared identifier is used.)
+Naturally, appearance of
+an identifier as a label declares it as such.
+.pg
+For some purposes it is best to consider formal
+parameters as belonging to their own storage class.
+In practice, C treats parameters as if they
+were automatic (except that, as mentioned
+above, formal parameter arrays and \fGfloat\fRs
+are treated specially).
+.ul
+14.  Types revisited
+.et
+This section summarizes the operations
+which can be performed on objects of certain types.
+.ms
+14.1  Structures
+.et
+There are only two things that can be done with
+a structure:
+pick out one of its members (by means of the
+\fG^.^\fR or \fG\(mi>\fR operators); or take its address (by unary \fG&\fR).
+Other operations, such as assigning from or to
+it or passing it as a parameter, draw an
+error message.
+In the future, it is expected that
+these operations, but not necessarily
+others, will be allowed.
+.ms
+14.2  Functions
+.et
+There are only two things that
+can be done with a function:
+call it, or take its address.
+If the name of a function appears in an
+expression not in the function-name position of a call,
+a pointer to the function is generated.
+Thus, to pass one function to another, one
+might say
+.bG
+.sp .7
+.nf
+	int f(^^);
+	...
+	g(^f^);
+.sp .7
+.eG
+.ft R
+Then the definition of \fIg \fRmight read
+.sp .7
+.bG
+	g^(^funcp^)
+	int (\**funcp)^(^^);
+	{
+		.^.^.
+		(\**funcp)^(^^);
+		.^.^.
+	}
+.sp .7
+.eG
+.fi
+Notice that \fIf\fR was declared
+explicitly in the calling routine since its first appearance
+was not followed by \fG(\fR^.
+.ms
+14.3  Arrays, pointers, and subscripting
+.et
+Every time an identifier of array type appears
+in an expression, it is converted into a pointer
+to the first member of the array.
+Because of this conversion, arrays are not
+lvalues.
+By definition, the subscript operator
+\fG[^]\fR is interpreted
+in such a way that
+``E1[E2]'' is identical to
+``\**(^(^E1)^+^(E2^)^)''.
+Because of the conversion rules
+which apply to \fG+\fR, if E1 is an array and E2 an integer,
+then E1[E2] refers to the E2-th member of E1.
+Therefore,
+despite its asymmetric
+appearance, subscripting is a commutative operation.
+.pg
+A consistent rule is followed in the case of
+multi-dimensional arrays.
+If E is an \fIn^\fR-dimensional
+array
+of rank
+.ft I
+i^\(mu^j^\(mu^.^.^.^\(muk,
+.ft R
+then E appearing in an expression is converted to
+a pointer to an (\fIn\fR\(mi1)-dimensional
+array with rank
+.ft I
+j^\(mu^.^.^.^\(muk.
+.ft R
+If the \fG\**\fR operator, either explicitly
+or implicitly as a result of subscripting,
+is applied to this pointer,
+the result is the pointed-to (\fIn\fR\(mi1)-dimensional array,
+which itself is immediately converted into a pointer.
+.pg
+For example, consider
+.sp .7
+.bG
+	int x[3][5];
+.sp .7
+.eG
+Here \fIx\fR is a 3\(mu5 array of integers.
+When \fIx\fR appears in an expression, it is converted
+to a pointer to (the first of three) 5-membered arrays of integers.
+In the expression ``x[^i^]'',
+which is equivalent to ``\**(x+i)'',
+\fIx\fR is first converted to a pointer as described;
+then \fIi\fR is converted to the type of \fIx\fR,
+which involves multiplying \fIi\fR by the
+length the object to which the pointer points,
+namely 5 integer objects.
+The results are added and indirection applied to
+yield an array (of 5 integers) which in turn is converted to
+a pointer to the first of the integers.
+If there is another subscript the same argument applies
+again; this time the result is an integer.
+.pg
+It follows from all this that arrays in C are stored
+row-wise (last subscript varies fastest)
+and that the first subscript in the declaration helps determine
+the amount of storage consumed by an array
+but plays no other part in subscript calculations.
+.ms
+14.4  Labels
+.et
+Labels do not
+have a type of their own; they are
+treated
+as having type ``array of \fGint\fR''.
+Label variables should be declared ``pointer
+to \fGint\fR'';
+before execution of a \fGgoto\fR referring to the
+variable,
+a label (or an expression
+deriving from a label) should be assigned to the
+variable.
+.pg
+Label variables are a bad idea in general;
+the \fGswitch\fR statement makes them
+almost always unnecessary.
+.ul
+15.  Constant expressions
+.et
+In several places C requires expressions which evaluate to
+a constant:
+after
+.ft G
+case,
+.ft R
+as array bounds, and in initializers.
+In the first two cases, the expression can
+involve only integer constants, character constants,
+and
+.ft G
+sizeof
+.ft R
+expressions, possibly
+connected by the binary operators
+.tr ^^
+.dp
+	+   \(mi   \**   /   %   &   \(or   ^   <<   >>
+.ed
+or by the unary operators
+.dp
+	\(mi   \*~
+.ed
+.tr ^\|
+Parentheses can be used for grouping,
+but not for function calls.
+.pg
+A bit more latitude is permitted for initializers;
+besides constant expressions as discussed above,
+one can also apply the unary \fG&\fR
+operator to external scalars,
+and to external arrays subscripted
+with a constant expression.
+The unary \fG&\fR can also
+be applied implicitly
+by appearance of unsubscripted external arrays.
+The rule here is that initializers must
+evaluate either to a constant or to the address
+of an external identifier plus or minus a constant.

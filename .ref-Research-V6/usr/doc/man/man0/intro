@@ -1,0 +1,295 @@
+.lg
+.ll 6i
+.lt 6i
+.ps 10
+.vs 12p
+.de he
+.tl '-'''
+'sp .5i
+'ft R
+.CH
+'ft
+'ps
+'sp .5i
+..
+.de fo
+'ft R
+'ps 10
+'sp .5i
+.CF
+'ft
+'ps
+'bp
+..
+.wh 0 he
+.wh -1i fo
+.de pg
+.sp .5
+..
+.tr |
+.br
+.sp 3i
+.ps 18
+.ft B
+.ce
+UNIX PROGRAMMER'S MANUAL
+.ps 12
+.vs 14p
+.sp 2
+.ft I
+.ce
+Sixth Edition
+.sp 3
+.ce 3
+K. Thompson
+.sp .5
+D. M. Ritchie
+.sp 2
+.ce
+May, 1975
+.sp 2.5i
+.ps 10
+.vs 12p
+.ft R
+.bp
+.sp 3i
+.sp 3i
+.ll 4.7i
+.in 1.5i
+.ft R
+This manual was set
+by a Graphic Systems phototypesetter driven
+by the \fItroff\fR formatting program operating
+under the \s8UNIX\s10 system.
+The text of the manual was
+prepared using the \fIed\fR text editor.
+.br
+.ft R
+.ll 6i
+.in 0
+.bp 1
+.sp 3
+.ce 2
+PREFACE
+to the Sixth Edition
+.sp
+.de CF
+.ro
+.tl ''%''
+.ar
+..
+.sp 2
+We are grateful
+to L. L. Cherry,
+R. C. Haight,
+S. C. Johnson,
+B. W. Kernighan,
+M. E. Lesk,
+and
+E. N. Pinson
+for their
+contributions
+to the system software,
+and to L. E. McMahon for software and for
+his contributions to this manual.
+We are particularly appreciative of the
+invaluable technical, editorial, and administrative
+efforts of
+J. F. Ossanna, M. D. McIlroy, and R. Morris.
+They all contributed greatly to the stock of
+\s8UNIX\s10 software and to this manual.
+Their inventiveness,
+thoughtful criticism,
+and ungrudging support
+increased immeasurably
+not only whatever success the \s8UNIX\s10 system enjoys,
+but also our own enjoyment in its creation.
+.bp
+.sp 2
+.ce
+INTRODUCTION TO THIS MANUAL
+.pg
+.pg
+This manual gives descriptions of the publicly available
+features of \s8UNIX\s10.
+It provides neither a general
+overview \- see ``The \s8UNIX\s10 Time-sharing System''
+(Comm. ACM \fB17\fR 7, July 1974, pp. 365-375)
+for that \-
+nor details of the implementation of the system, which
+remain to be disclosed.
+.pg
+Within the area it surveys, this manual attempts
+to be as complete and timely as possible.
+A conscious
+decision was made to describe each program
+in exactly the state it was in at the time
+its manual section
+was prepared.
+In particular, the
+desire to describe something as it should be, not as it is,
+was resisted.
+Inevitably, this means that
+many sections will soon be out of date.
+.pg
+This manual is divided into
+eight sections:
+.pg
+.nf
+	I.	Commands
+	II.	System calls
+	III.	Subroutines
+	IV.	Special files
+	V.	File formats and conventions
+	VI.	User-maintained programs
+	VII.	User-maintained subroutines
+	VIII.	Maintenance
+.pg
+.fi
+Commands are programs intended to be invoked directly by
+the user, in contradistinction to subroutines, which are
+intended to be called by the user's programs.
+Commands generally reside in directory
+.ft I
+/bin
+.ft R
+(for \fIbin\fR\|ary programs).
+Some programs also reside in
+.ft I
+/\|usr/\|bin,
+.ft R
+to save space in
+\fI/bin.\fR
+These directories are searched automatically by the command interpreter.
+.pg
+System calls are entries into the \s8UNIX\s10 supervisor.
+In assembly language, they are coded with the use
+of the opcode \fIsys\fR, a synonym for the
+\fItrap\fR instruction.
+In this edition,
+the C language interface routines to the system
+calls have been incorporated in section II.
+.pg
+A small assortment
+of subroutines is available;
+they are described in section III.
+The binary form of most of them is kept in
+the system library
+\fI/\|lib/\|liba.a.\fR
+The subroutines available from C and from Fortran are also included;
+they reside in
+\fI/\|lib/\|libc.a\fR
+and
+\fI/\|lib/\|libf.a\fR
+respectively.
+.pg
+The special files section IV discusses the characteristics of
+each system ``file'' which actually refers to an I/O device.
+The names in this
+section refer to the DEC device names for the
+hardware,
+instead of the names of
+the special files themselves.
+.pg
+The file formats and conventions section V documents the structure of particular
+kinds of files; for example, the form of the output of the loader and
+assembler is given.  Excluded are files used by only one command,
+for example the assembler's intermediate files.
+.pg
+User-maintained programs and subroutines (sections VI and VII) are not considered part
+of the \s8UNIX\s10 system, and the principal reason for
+listing them is to indicate their existence without
+necessarily giving a complete description.
+The authors of the individual programs should be consulted
+for more information.
+.pg
+Section VIII discusses commands which are not intended
+for use by the ordinary user,
+in some cases because they disclose information
+in which he is presumably not interested,
+and in others because they perform
+privileged functions.
+.pg
+.pg
+Each section consists of a number of independent
+entries of a page or so each.
+The name of the entry is in the upper corners of its pages,
+its preparation date in the upper middle.
+Entries within each section are
+alphabetized.
+The page numbers of each entry start at 1.
+(The earlier hope for frequent, partial
+updates of the manual is clearly in vain, but
+in any event it is not feasible to
+maintain consecutive page numbering in a document
+like this.)
+.pg
+All entries are based on a common format,
+not all of whose subsections will always appear.
+.pg
+.in .5i
+The \fIname\fR section repeats the entry name and gives
+a very short description of its purpose.
+.pg
+The \fIsynopsis\fR summarizes the use of the
+program being described.
+A few conventions are used, particularly in the
+Commands section:
+.pg
+.in 1i
+\fBBoldface\fR words are considered literals, and
+are typed just as they appear.
+.pg
+Square brackets ( [ ] ) around an argument
+indicate that the argument is optional.
+When an argument is given as ``name'', it always
+refers to a file name.
+.pg
+Ellipses ``.\|.\|.'' are used to show that the previous argument-prototype
+may be repeated.
+.pg
+A final convention is used by the commands themselves.
+An argument beginning with a minus sign ``_''
+is often taken to mean some sort of flag argument
+even if it appears in a position where a file name
+could appear.  Therefore, it is unwise to have files
+whose names begin with ``_''.
+.pg
+.in .5i
+The \fIdescription\fR section discusses in detail the subject at hand.
+.pg
+The \fIfiles\fR section gives the names of files which are
+built into the program.
+.pg
+A
+.ft I
+see also
+.ft R
+section gives pointers to related information.
+.pg
+A \fIdiagnostics\fR
+section discusses
+the diagnostic indications which may be produced.
+Messages which are intended to be self-explanatory
+are not listed.
+.pg
+The \fIbugs\fR section gives
+known bugs and sometimes deficiencies.
+Occasionally also the suggested fix is
+described.
+.pg
+.in 0
+At the beginning of this document is a table of contents,
+organized by section and alphabetically within each section.
+There is also a permuted index derived from the table of contents.
+Within each index entry, the title
+of the writeup to which
+it refers is followed by the appropriate section number in parentheses.
+This fact is important because there is considerable
+name duplication among the sections,
+arising principally from commands which
+exist only to exercise a particular system call.
+.pg
+.pg
+This manual was prepared using the \s8UNIX\s10 text
+editor \fIed\fR and the formatting program \fItroff\fR.

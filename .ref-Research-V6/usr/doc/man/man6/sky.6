@@ -1,0 +1,91 @@
+.th SKY VI 9/22/73
+.sh NAME
+sky \*- obtain ephemerides
+.sh SYNOPSIS
+.bd sky
+[
+.bd \-l
+]
+.sh DESCRIPTION
+.it Sky
+predicts the apparent locations
+of the Sun, the Moon, the planets out to Saturn,
+stars of magnitude at least 2.5,
+and certain other celestial objects.
+.it Sky
+reads the standard input to obtain
+a GMT time typed
+on one line with blanks separating
+year, month number, day, hour, and minute;
+if the year is missing the current year is used.
+If a blank line is typed the current time is used.
+The program prints the
+azimuth, elevation, and magnitude
+of objects which are above the horizon
+at the ephemeris location of Murray Hill
+at the indicated time.
+The `\-l' flag causes it to ask for another location.
+.s3
+Placing a ``1'' input after the minute entry
+causes the program to print out the Greenwich Sidereal
+Time at the indicated moment and
+to print for each body
+its topographic right ascension and
+declination as well as its azimuth and elevation.
+Also, instead of the magnitude,
+the semidiameter of the body, in seconds of arc, is reported.
+.s3
+A ``2'' after the minute entry makes the coordinate system geocentric.
+.s3
+The effects of atmospheric extinction
+on magnitudes
+are not included;
+the brightest magnitudes
+of variable stars are marked with ``*''.
+.s3
+For all bodies, the program takes into account
+precession and nutation of the equinox,
+annual (but not diurnal) aberration, diurnal
+parallax,
+and the proper motion of stars.
+In no case is refraction included.
+.s3
+The program takes into account perturbations
+of the Earth due to the Moon, Venus, Mars, and Jupiter.
+The expected accuracies
+are:
+for the Sun and other stellar bodies
+a few tenths of seconds of arc;
+for the Moon (on which particular care is lavished)
+likewise a few tenths of seconds.
+For the Sun, Moon and stars the accuracy is sufficient
+to predict the circumstances of eclipses and occultations
+to within a few seconds of time.
+The planets may be off by several minutes of arc.
+.s3
+There are lots of special options not described here, which
+do things like
+substituting named star catalogs,
+smoothing nutation and aberration to aid generation of mean places of stars,
+and making conventional adjustments to the Moon to improve
+eclipse predictions.
+.s3
+For the most accurate use of the program it is necessary
+to know that it actually runs in Ephemeris time.
+.sh FILES
+/usr/lib/startab, /usr/lib/moontab
+.sh "SEE ALSO"
+azel (VI)
+.br
+.ft I
+American Ephemeris and Nautical Almanac,
+.ft R
+for the appropriate years;
+also, the
+.ft I
+Explanatory Supplement to the American Ephemeris
+and Nautical Almanac.
+.ft R
+.sh AUTHOR
+R. Morris
+.sh BUGS

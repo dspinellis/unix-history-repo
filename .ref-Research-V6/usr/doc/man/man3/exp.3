@@ -1,0 +1,24 @@
+.th EXP III 4/30/73
+.sh NAME
+exp \*- exponential function
+.sh SYNOPSIS
+.ft B
+jsr	pc,exp
+.s3
+double exp(x)
+.br
+double x;
+.ft R
+.sh DESCRIPTION
+The
+exponential of fr0 is returned in fr0.
+From C, the exponential of \fIx\fR is returned.
+.sh DIAGNOSTICS
+If
+the result is not representable, the
+c-bit is set
+and the largest positive number is returned.
+From C, no diagnostic is available.
+.s3
+Zero is returned if the result would underflow.
+.sh BUGS

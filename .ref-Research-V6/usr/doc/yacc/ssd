@@ -1,0 +1,130 @@
+.SH
+Appendix D: An Example of Bundling
+.PP
+The following program is an example of the technique of
+bundling; this example is discussed in Section 7.
+.LP
+
+
+/* warnings:
+.IP 1.
+This works on Unix; the handling of functions with a
+variable number of arguments is different on different systems.
+.IP 2.
+A number of checks for array bounds have been left out
+to avoid obscuring the basic ideas, but should
+be there in a practical program.
+.PP
+  */
+.LD
+
+
+%token NAME
+
+%right \'=\'
+%left \'+\' \'\-\'
+%left \'*\' \'/\'
+
+%%
+
+lines :
+	= /* empty */
+	{
+		bclear( ) ;
+	} |
+	lines expr \'\en\' =
+	{
+		bprint( $2 ) ;
+		printf( "\en" ) ;
+		bclear( ) ;
+	} |
+	lines error \'\en\' =
+	{
+		bclear( ) ;
+		yyerrok;
+	} ;
+
+expr :
+	expr \'+\' expr =
+	{
+		$$ = bundle( "add(", $1, ",", $3, ")" );
+	} |
+	expr \'\-\' expr =
+	{
+		$$ = bundle( "sub(", $1, ",", $3, ")" );
+	} |
+	expr \'*\' expr =
+	{
+		$$ = bundle( "mul(", $1, ",", $3, ")" );
+	} |
+	expr \'/\' expr =
+	{
+		$$ = bundle( "div(", $1, ",", $3, ")" );
+	} |
+	\'(\' expr \')\' =
+	{
+		$$ = $2;
+	} |
+	NAME \'=\' expr =
+		$$ = bundle( "assign(", $1, ",", $3, ")" );
+	} |
+	NAME ;
+
+%%
+
+#define	nsize 200
+char	names[nsize], *nptr { names };
+
+#define	bsize 500
+int	bspace[bsize], *bptr { bspace };
+
+yylex( )
+{
+	int c;
+
+	c = getchar( );
+	while( c == \' \' )
+		c = getchar( );
+	if( c>=\'a\' && c<=\'z\' ) {
+		yylval = nptr;
+		for( ; c>=\'a\' && c<=\'z\'; c=getchar( ) )
+			*nptr++ = c;
+		ungetc( c );
+		*nptr++ = \'\e0\';
+		return( NAME );
+	}
+	return( c );
+}
+
+bclear( )
+{
+
+
+	nptr = names;
+	bptr = bspace;
+}
+
+bundle( a1,a2,a3,a4,a5 )
+{
+	int i, j, *p, *obp;
+
+	p = &a1;
+	i = nargs( );
+	obp = bptr;
+
+	for( j=0; j<i; ++j )
+		*bptr++ = *p++;
+	*bptr++ = 0;
+	return( obp );
+}
+
+bprint( p )
+int *p;
+{
+
+	if( p>=bspace && p< &bspace[bsize] ) /* bundle */
+		while( *p != 0 )
+			bprint( *p++ );
+	else printf( "%s",  p );
+}
+.DE

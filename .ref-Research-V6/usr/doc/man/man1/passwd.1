@@ -1,0 +1,20 @@
+.th PASSWD I 9/1/72
+.sh NAME
+passwd \*- change login password
+.sh SYNOPSIS
+.bd passwd
+name password
+.sh DESCRIPTION
+The
+.it password
+becomes associated with the given login name.
+This can only be done by corresponding user
+or by the super-user.
+An explicit null argument ("") for the password
+argument removes
+any password.
+.sh FILES
+/etc/passwd
+.sh "SEE ALSO"
+login (I), passwd (V), crypt (III)
+.sh BUGS

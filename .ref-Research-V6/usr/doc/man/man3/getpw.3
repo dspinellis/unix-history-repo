@@ -1,0 +1,26 @@
+.th GETPW III 4/7/73
+.sh NAME
+getpw \*- get name from UID
+.sh SYNOPSIS
+.ft B
+getpw(uid, buf)
+.br
+char *buf;
+.ft R
+.sh DESCRIPTION
+.it Getpw
+searches the password file for
+the (numerical)
+\fIuid\fR, and fills in \fIbuf\fR
+with the corresponding line;
+it returns non-zero if \fIuid\fR could not
+be found.
+The line is null-terminated.
+.sh FILES
+/etc/passwd
+.sh "SEE ALSO"
+passwd (V)
+.sh DIAGNOSTICS
+non-zero
+return on error.
+.sh BUGS

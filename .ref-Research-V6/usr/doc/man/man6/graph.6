@@ -1,0 +1,96 @@
+.th GRAPH VI 2/20/75
+.sh NAME
+graph \*- draw a graph
+.sh SYNOPSIS
+.bd graph
+[ option ] ... | plotter
+.sh DESCRIPTION
+.it Graph
+with no options takes pairs of numbers from the
+standard input as abscissas and
+ordinates of a graph.
+The graph is written on the standard output to be piped
+to the plotter program for a particular device;
+see
+.it plot
+(VI).
+These plotters exist:
+.it gsip,
+for the GSI and other Diablo terminals;
+.it tek,
+for the Tektronix 4014 terminal;
+and
+.it vt0
+for the on-line storage scope.
+.s3
+The following options are recognized,
+each as a separate argument.
+.s3
+.lp +5 5
+\fBa\fR	Supply abscissas automatically (they are missing from
+the input); spacing is given by the next
+argument, or is assumed to be 1 if next argument is not a number.
+A second optional argument is the starting point for the
+automatic abscissa.
+.s3
+.lp +5 5
+\fBc\fR	Place character string given by next argument
+at each point.
+.s3
+.lp +5 5
+\fBd\fR	Omit connections between points. (Disconnect.)
+.s3
+.lp +5 5
+\fBg\fIn\fR	Grid
+style:
+.lp +5 0
+\fIn\fR=0, no grid
+.lp +5 0
+\fIn\fR=1, axes only
+.lp +5 0
+\fIn\fR=2, complete grid (default).
+.s3
+.lp +5 5
+\fBs\fR	Save screen, don't erase before plotting.
+.s3
+.lp +5 5
+\fBx\fR	Next 1 (or 2) arguments are lower (and upper) \fIx\fR limits.
+.s3
+.lp +5 5
+\fBy\fR	Next 1 (or 2) arguments are lower (and upper)
+\fIy\fR limits.
+.s3
+.lp +5 5
+\fBh\fR	Next argument is fraction of space for height
+.s3
+.lp +5 5
+\fBw\fR	Next argument is fraction of space for width.
+.s3
+.lp +5 5
+\fBr\fR	Next argument is fraction of space to move right before plotting.
+.s3
+.lp +5 5
+\fBu\fR	Next argument is fraction of space to move up before plotting.
+.s3
+.i0
+Points are connected by straight line segments in the order
+they appear in input.
+If a specified lower limit exceeds the upper limit, or if
+the automatic increment is negative, the graph is plotted
+upside down.
+Automatic abscissas begin with the lower \fIx\fR limit, or with 0
+if no limit is specified.
+Grid lines and automatically determined limits fall on round
+values, however roundness
+may be subverted by giving an inappropriately rounded
+lower limit.
+Plotting symbols specified by
+.bd c
+are
+placed so that a small initial letter,
+such as + o x, will fall
+approximately on the plotting point.
+.sh "SEE ALSO"
+spline (VI), plot (VI)
+.sh BUGS
+A limit of 1000 points is enforced silently.
