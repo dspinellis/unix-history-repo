@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_sig.c 1.4 92/01/20$
  *
- *	@(#)hpux_sig.c	7.10 (Berkeley) %G%
+ *	@(#)hpux_sig.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -52,13 +52,14 @@ char bsdtohpuxsigmap[NSIG] = {
  * swell foop.  I suspect we can get away with this since I
  * doubt any program of interest mixes the two semantics.
  */
+struct hpuxsigvec_args {
+	int	signo;
+	struct	sigvec *nsv;
+	struct	sigvec *osv;
+};
 hpuxsigvec(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	signo;
-		struct	sigvec *nsv;
-		struct	sigvec *osv;
-	} *uap;
+	register struct hpuxsigvec_args *uap;
 	int *retval;
 {
 	struct sigvec vec;
@@ -106,11 +107,12 @@ hpuxsigvec(p, uap, retval)
 	return (0);
 }
 
+struct hpuxsigblock_args {
+	int	mask;
+};
 hpuxsigblock(p, uap, retval)
 	register struct proc *p;
-	struct args {
-		int	mask;
-	} *uap;
+	struct hpuxsigblock_args *uap;
 	int *retval;
 {
 
@@ -121,11 +123,12 @@ hpuxsigblock(p, uap, retval)
 	return (0);
 }
 
+struct hpuxsigsetmask_args {
+	int	mask;
+};
 hpuxsigsetmask(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	mask;
-	} *uap;
+	struct hpuxsigsetmask_args *uap;
 	int *retval;
 {
 
@@ -136,11 +139,12 @@ hpuxsigsetmask(p, uap, retval)
 	return (0);
 }
 
+struct hpuxsigpause_args {
+	int	mask;
+};
 hpuxsigpause(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	mask;
-	} *uap;
+	struct hpuxsigpause_args *uap;
 	int *retval;
 {
 
@@ -149,12 +153,13 @@ hpuxsigpause(p, uap, retval)
 }
 
 /* not totally correct, but close enuf' */
+struct hpuxkill_args {
+	int	pid;
+	int	signo;
+};
 hpuxkill(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	pid;
-		int	signo;
-	} *uap;
+	struct hpuxkill_args *uap;
 	int *retval;
 {
 
@@ -178,13 +183,14 @@ hpuxkill(p, uap, retval)
  * and return old mask as return value;
  * the library stub does the rest.
  */
+struct hpuxsigprocmask_args {
+	int		how;
+	hpuxsigset_t	*set;
+	hpuxsigset_t	*oset;
+};
 hpuxsigprocmask(p, uap, retval)
 	register struct proc *p;
-	struct args {
-		int		how;
-		hpuxsigset_t	*set;
-		hpuxsigset_t	*oset;
-	} *uap;
+	struct hpuxsigprocmask_args *uap;
 	int *retval;
 {
 	int mask, error = 0;
@@ -224,11 +230,12 @@ hpuxsigprocmask(p, uap, retval)
 	return (error);
 }
 
+struct hpuxsigpending_args {
+	hpuxsigset_t	*set;
+};
 hpuxsigpending(p, uap, retval)
 	register struct proc *p;
-	struct args {
-		hpuxsigset_t	*set;
-	} *uap;
+	struct hpuxsigpending_args *uap;
 	int *retval;
 {
 	hpuxsigset_t sigset;
@@ -237,11 +244,12 @@ hpuxsigpending(p, uap, retval)
 	return (copyout((caddr_t)&sigset, (caddr_t)uap->set, sizeof(sigset)));
 }
 
+struct hpuxsigsuspend_args {
+	hpuxsigset_t	*set;
+};
 hpuxsigsuspend(p, uap, retval)
 	register struct proc *p;
-	struct args {
-		hpuxsigset_t	*set;
-	} *uap;
+	struct hpuxsigsuspend_args *uap;
 	int *retval;
 {
 	register struct sigacts *ps = p->p_sigacts;
@@ -259,13 +267,14 @@ hpuxsigsuspend(p, uap, retval)
 	return (EINTR);
 }
 
+struct hpuxsigaction_args {
+	int	signo;
+	struct	hpuxsigaction *nsa;
+	struct	hpuxsigaction *osa;
+};
 hpuxsigaction(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	signo;
-		struct	hpuxsigaction *nsa;
-		struct	hpuxsigaction *osa;
-	} *uap;
+	register struct hpuxsigaction_args *uap;
 	int *retval;
 {
 	struct hpuxsigaction action;
@@ -324,12 +333,13 @@ hpuxsigaction(p, uap, retval)
 	return (0);
 }
 
+struct ohpuxssig_args {
+	int	signo;
+	sig_t	fun;
+};
 ohpuxssig(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	signo;
-		sig_t	fun;
-	} *uap;
+	struct ohpuxssig_args *uap;
 	int *retval;
 {
 	register int a;
