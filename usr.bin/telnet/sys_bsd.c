@@ -701,6 +701,14 @@ TerminalNewMode(f)
 # define B38400 B19200
 #endif
 
+#ifndef B57600
+# define B57600 B38400
+#endif
+
+#ifndef B115200
+# define B115200 B57600
+#endif
+
 /*
  * This code assumes that the values B0, B50, B75...
  * are in ascending order.  They do not have to be
@@ -715,7 +723,8 @@ struct termspeeds {
 	{ 200,   B200 },   { 300,   B300 },  { 600,   B600 },
 	{ 1200,  B1200 },  { 1800,  B1800 }, { 2400,  B2400 },
 	{ 4800,  B4800 },  { 9600,  B9600 }, { 19200, B19200 },
-	{ 38400, B38400 }, { -1,    B38400 }
+	{ 38400, B38400 }, { 57600, B57600 },{ 115200,B115200},
+	{ -1,    B115200 }
 };
 
     void
