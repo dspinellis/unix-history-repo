@@ -1,6 +1,7 @@
-.\"	@(#)HEADERS	1.2	%G%
+.\"	@(#)HEADERS	1.3	%G%
 .\"
 .\"	.UC -- UCB external letterhead, CSRG address
+.\"	.UC "date" -- add date
 .\"	troff/ditroff, -ms / -me
 .\"	(was called .NH!)
 .\"
@@ -15,7 +16,8 @@
 .sp 1			.\" onto first page
 .rs
 .sp |.5i		.\" trip page-top macro
-.\".ll +10
+.po -.13i
+.ll 7i
 .ps 12
 .ft B
 UNIVERSITY OF CALIFORNIA, BERKELEY
@@ -27,10 +29,10 @@ UNIVERSITY OF CALIFORNIA, BERKELEY
 .br
 .ps 6
 .sp 2.5p
-BERKELEY \\(bu DAVIS \\(bu IRVINE \\(bu 
+\|BERKELEY \\(bu DAVIS \\(bu IRVINE \\(bu 
 LOS\\ ANGELES \\(bu RIVERSIDE \\(bu SAN\\ DIEGO
-\\(bu SAN\\ FRANCISCO \\(bu SANTA\\ BARBARA \\(bu SANTA\\ CRUZ\\p
-.sp -3.5p
+\\(bu SAN\\ FRANCISCO \\(bu SANTA\\ BARBARA \\(bu SANTA\\ CRUZ\|\\p
+.sp -6p
 \l'\\n(.lu'
 .ps
 .vs
@@ -39,14 +41,15 @@ LOS\\ ANGELES \\(bu RIVERSIDE \\(bu SAN\\ DIEGO
 .vs 9p
 .sp
 COMPUTER SYSTEMS RESEARCH GROUP
-COMPUTER SCIENCE DIVISION, EECS\\h'25'\\s0\\s10\\*(td\\s0\\s7
+COMPUTER SCIENCE DIVISION, EECS\\h'|4.1i'\\s0\\s10\\$1\\s0\\s7
 BERKELEY, CALIFORNIA 94720
 (415) 642-7780
 .ps
 .vs
 .fi
 .sp 2
-.\".ll
+.ll
+.po
 .LP
 .lp
 .rs
