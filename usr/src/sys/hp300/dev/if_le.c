@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.4 (Berkeley) %G%
+ *	@(#)if_le.c	7.5 (Berkeley) %G%
  */
 
 #include "le.h"
@@ -312,6 +312,7 @@ lestart(ifp)
 	IF_DEQUEUE(&le->sc_if.if_snd, m);
 	if (m == 0)
 		return (0);
+	len = leput(le->sc_r2->ler2_tbuf[0], m);
 #if NBPFILTER > 0
 	/*
 	 * If bpf is listening on this interface, let it
@@ -320,7 +321,6 @@ lestart(ifp)
 	if (le->sc_bpf)
                 bpf_tap(le->sc_bpf, le->sc_r2->ler2_tbuf[0], len);
 #endif
-	len = leput(le->sc_r2->ler2_tbuf[0], m);
 	tmd = le->sc_r2->ler2_tmd;
 	tmd->tmd3 = 0;
 	tmd->tmd2 = -len;
