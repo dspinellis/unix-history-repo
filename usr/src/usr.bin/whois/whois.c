@@ -1,18 +1,24 @@
 /*
  * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1980 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)whois.c	5.3 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)whois.c	5.4 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -28,24 +34,32 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int s;
+	extern char *optarg;
+	extern int optind;
 	register FILE *sfi, *sfo;
-	register char c;
-	char *host = NICHOST;
+	register int c;
 	struct sockaddr_in sin;
 	struct hostent *hp;
 	struct servent *sp;
+	int ch, s;
+	char *host;
 
-	argc--, argv++;
-	if (argc > 2 && strcmp(*argv, "-h") == 0) {
-		argv++, argc--;
-		host = *argv++;
-		argc--;
-	}
-	if (argc != 1) {
-		fprintf(stderr, "usage: whois [ -h host ] name\n");
-		exit(1);
-	}
+	host = NICHOST;
+	while ((ch = getopt(argc, argv, "h")) != EOF)
+		switch((char)ch) {
+		case 'h':
+			host = optarg;
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+	if (argc != 1)
+		usage();
+
 	hp = gethostbyname(host);
 	if (hp == NULL) {
 		fprintf(stderr, "whois: %s: host unknown\n", host);
@@ -82,7 +96,14 @@ main(argc, argv)
 		exit(1);
 	}
 	fprintf(sfo, "%s\r\n", *argv);
-	fflush(sfo);
+	(void)fflush(sfo);
 	while ((c = getc(sfi)) != EOF)
 		putchar(c);
+}
+
+static
+usage()
+{
+	fprintf(stderr, "usage: whois [-h host] name\n");
+	exit(1);
 }
