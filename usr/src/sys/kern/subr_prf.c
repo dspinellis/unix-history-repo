@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prf.c	7.35 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.36 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -38,12 +38,6 @@
 
 struct	tty *constty;			/* pointer to console "window" tty */
 
-#ifdef KADB
-extern	cngetc();			/* standard console getc */
-int	(*v_getc)() = cngetc;		/* "" getc from virtual console */
-extern	cnpoll();
-int	(*v_poll)() = cnpoll;		/* kdb hook to enable input polling */
-#endif
 extern	cnputc();			/* standard console putc */
 int	(*v_putc)() = cnputc;		/* routine to putc on virtual console */
 
@@ -78,7 +72,7 @@ void
 #ifdef __STDC__
 panic(const char *fmt, ...)
 #else
-panic(fmt /*, va_alist */)
+panic(fmt, va_alist)
 	char *fmt;
 #endif
 {
@@ -99,13 +93,8 @@ panic(fmt /*, va_alist */)
 	kgdb_panic();
 #endif
 #ifdef KADB
-	if (boothowto & RB_KDB) {
-		int s;
-
-		s = splnet();	/* below kdb pri */
-		setsoftkdb();
-		splx(s);
-	}
+	if (boothowto & RB_KDB)
+		kdbpanic();
 #endif
 	boot(bootopt);
 }
