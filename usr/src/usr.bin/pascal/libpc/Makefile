@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.9 %G%"
+SCCSID = "@(#)Makefile 1.10 %G%"
 CFLAGS = -O
 LIB = ${DESTDIR}/usr/lib
 SRCDIR = ${DESTDIR}/usr/ucb
@@ -58,7 +58,7 @@ sources: ${CMDS} ${SYS} ${EXTN} ${HDRS}
 	mv $@ tmp
 	-${LD} -x -r -o $@ tmp
 
-libpc libpc_p: normal ${OBJS} ${SYOBJ} ${EXOBJ}
+libpc libpc_p: ${OBJS} ${SYOBJ} ${EXOBJ}
 	${AR} cru libpc_p ${OBJS} ${SYOBJ} ${EXOBJ}
 	${RANLIB} libpc_p
 	mv normal/* .
@@ -71,14 +71,11 @@ install: libpc libpc_p
 	cp libpc ${LIB}/libpc.a
 	${RANLIB} ${LIB}/libpc.a
 
-normal:
-	mkdir normal
-
 whoami.h:
 	cp ${PASDIR}/whoami.h whoami.h
 
 clean:
-	${RM} libpc *.o a.out lpr tmp core errs
+	${RM} libpc libpc_p *.o a.out lpr tmp core errs
 
 print:
 	ls -l >lst
