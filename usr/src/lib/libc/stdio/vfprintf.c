@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.17 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -193,10 +193,11 @@ rflag:		switch (*++fmt) {
 			goto num;
 		case 'p':
 			/*
-			 * the argument shall be a pointer to void.  The value
-			 * of the pointer is converted to a sequence of
-			 * printable characters, in an implementation-defined
-			 * manner.
+			 * ``The argument shall be a pointer to void.  The
+			 * value of the pointer is converted to a sequence
+			 * of printable characters, in an implementation-
+			 * defined manner.''
+			 *	-- ANSI X3J11
 			 */
 			_ulong = (u_long)va_arg(argp, void *);
 			base = 16;
@@ -204,8 +205,24 @@ rflag:		switch (*++fmt) {
 		case 's':
 			if (!(t = va_arg(argp, char *)))
 				t = "(null)";
-			if ((size = strlen(t)) > prec && prec >= 0)
-				size = prec;
+			if (prec >= 0) {
+				/*
+				 * can't use strlen; can only look for the
+				 * NUL in the first `prec' characters, and
+				 * strlen() will go further.
+				 */
+				char *p, *memchr();
+
+				if (p = memchr(t, 0, prec)) {
+					size = p - t;
+					if (size > prec)
+						size = prec;
+				}
+				else
+					size = prec;
+			}
+			else
+				size = strlen(t);
 pforw:			if (!(flags&LADJUST) && width)
 				for (n = size; n++ < width;)
 					PUTC(padc);
