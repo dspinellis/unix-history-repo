@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_file.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_file.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -33,7 +33,7 @@ static char sccsid[] = "@(#)kvm_file.c	5.2 (Berkeley) %G%";
 #include <vm/vm_param.h>
 #include <vm/swap_pager.h>
 
-#include <sys/kinfo.h>
+#include <sys/sysctl.h>
 
 #include <limits.h>
 #include <ndbm.h>
@@ -97,25 +97,27 @@ kvm_getfiles(kd, op, arg, cnt)
 	int op, arg;
 	int *cnt;
 {
-	int size, st, nfiles;
+	int mib[2], size, st, nfiles;
 	struct file *filehead, *fp, *fplim;
 
 	if (ISALIVE(kd)) {
 		size = 0;
-		st = getkerninfo(op, NULL, &size, arg);
-		if (st <= 0) {
+		mib[0] = CTL_KERN;
+		mib[1] = KERN_FILE;
+		st = sysctl(mib, 2, NULL, &size, NULL, 0);
+		if (st == -1) {
 			_kvm_syserr(kd, kd->program, "kvm_getprocs");
 			return (0);
 		}
 		if (kd->argspc == 0)
-			kd->argspc = (char *)_kvm_malloc(kd, st);
-		else if (kd->arglen < st)
-			kd->argspc = (char *)_kvm_realloc(kd, kd->argspc, st);
+			kd->argspc = (char *)_kvm_malloc(kd, size);
+		else if (kd->arglen < size)
+			kd->argspc = (char *)_kvm_realloc(kd, kd->argspc, size);
 		if (kd->argspc == 0)
 			return (0);
-		size = kd->arglen = st;
-		st = getkerninfo(op, kd->argspc, &size, arg);
-		if (st < sizeof(filehead)) {
+		kd->arglen = size;
+		st = sysctl(mib, 2, kd->argspc, &size, NULL, 0);
+		if (st == -1 || size < sizeof(filehead)) {
 			_kvm_syserr(kd, kd->program, "kvm_getfiles");
 			return (0);
 		}
@@ -144,12 +146,12 @@ kvm_getfiles(kd, op, arg, cnt)
 		}
 		size = sizeof(filehead) + (nfiles + 10) * sizeof(struct file);
 		if (kd->argspc == 0)
-			kd->argspc = (char *)_kvm_malloc(kd, st);
-		else if (kd->arglen < st)
-			kd->argspc = (char *)_kvm_realloc(kd, kd->argspc, st);
+			kd->argspc = (char *)_kvm_malloc(kd, size);
+		else if (kd->arglen < size)
+			kd->argspc = (char *)_kvm_realloc(kd, kd->argspc, size);
 		if (kd->argspc == 0)
 			return (0);
-		size = kd->arglen = st;
+		kd->arglen = size;
 		nfiles = kvm_deadfiles(kd, op, arg, nl[1].n_value, nfiles);
 		if (nfiles == 0)
 			return (0);
