@@ -1,3 +1,6 @@
+Adapted for FreeBSD by Poul-Henning Kamp, phk@login.dkuug.dk.  Only the
+Makefile is modified.
+-----------------------------------------------------------------------
 This directory contains source code for the MD5 message-digest algorithm.
 
 MD5.tar.Z is a compressed tar file of all the other files in this directory.
