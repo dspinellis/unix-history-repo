@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -293,18 +293,15 @@ main(argc, argv)
 
 	special = argv[0];
 	cp = rindex(special, '/');
-	if (cp != 0)
-		special = cp + 1;
-	if (*special == 'r'
-#if defined(vax) || defined(tahoe)
-	    && special[1] != 'a' && special[1] != 'b')
-#endif
-#if defined(hp300)
-	    && special[1] != 'd')
-#endif
-		special++;
-	(void)sprintf(device, "%s/r%s", _PATH_DEV, special);
-	special = device;
+	if (cp == 0) {
+		/*
+		 * No path prefix; try /dev/r%s then /dev/%s.
+		 */
+		(void)sprintf(device, "%sr%s", _PATH_DEV, special);
+		if (stat(device, &st) == -1)
+			(void)sprintf(device, "%s%s", _PATH_DEV, special);
+		special = device;
+	}
 	if (!Nflag) {
 		fso = open(special, O_WRONLY);
 		if (fso < 0)
@@ -317,7 +314,7 @@ main(argc, argv)
 	if (fstat(fsi, &st) < 0)
 		fatal("%s: %s", special, strerror(errno));
 	if ((st.st_mode & S_IFMT) != S_IFCHR)
-		fatal("%s: not a character device", special);
+		printf("%s: not a character device\n", special);
 	cp = index(argv[0], '\0') - 1;
 	if (cp == 0 || (*cp < 'a' || *cp > 'h') && !isdigit(*cp))
 		fatal("%s: can't figure out file system partition", argv[0]);
@@ -404,8 +401,10 @@ main(argc, argv)
 		maxbpg = MAXBLKPG(bsize);
 	headswitch = lp->d_headswitch;
 	trackseek = lp->d_trkseek;
+#ifdef notdef /* label may be 0 if faked up by kernel */
 	bbsize = lp->d_bbsize;
 	sbsize = lp->d_sbsize;
+#endif
 	oldpartition = *pp;
 #ifdef tahoe
 	realsectorsize = sectorsize;
@@ -457,10 +456,13 @@ getdisklabel(s, fd)
 	if (ioctl(fd, DIOCGDINFO, (char *)&lab) < 0) {
 #ifdef COMPAT
 		if (disktype) {
-			struct disklabel *getdiskbyname();
+			struct disklabel *lp, *getdiskbyname();
 
 			unlabeled++;
-			return (getdiskbyname(disktype));
+			lp = getdiskbyname(disktype);
+			if (lp == NULL)
+				fatal("%s: unknown disk type", disktype);
+			return (lp);
 		}
 #endif
 		(void)fprintf(stderr,
@@ -509,7 +511,8 @@ rewritelabel(s, fd, lp)
 		*(struct disklabel *)(blk + LABELOFFSET) = *lp;
 		alt = lp->d_ncylinders * lp->d_secpercyl - lp->d_nsectors;
 		for (i = 1; i < 11 && i < lp->d_nsectors; i += 2) {
-			if (lseek(cfd, (off_t)(alt + i) * lp->d_secsize, L_SET) == -1) {
+			if (lseek(cfd, (off_t)(alt + i) * lp->d_secsize,
+			    L_SET) == -1)
 				fatal("lseek to badsector area: %s",
 				    strerror(errno));
 			if (write(cfd, blk, lp->d_secsize) < lp->d_secsize)
