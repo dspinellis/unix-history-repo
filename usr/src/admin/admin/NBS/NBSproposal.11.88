@@ -1,4 +1,4 @@
-.\"	@(#)NBSproposal.11.88	1.2	88/11/18
+.\"	@(#)NBSproposal.11.88	1.3	88/12/06
 .\" *troff -ms
 .de CO
 .br
@@ -20,33 +20,56 @@ Marshall Kirk McKusick
 Michael J Karels
 Susan L. Graham
 Domenico Ferrari
-.fi
 .sp 2
-.ce 1
-\fISummary\fP
+.NH
+Introduction
 .PP
-The goal of the Computer Systems Research Group at Berkeley
-is to apply leading edge research ideas into a stable
-and reliable implementation that solves current problems in
+This is a proposal for DARPA support of operating system
+and networking research in the UNIX project at UC Berkeley.
+The goal of the project is to apply leading edge research ideas
+into a stable and reliable implementation that solves current problems in
 operating systems research.
-Since the release of 4.3BSD in mid 1986,
-we have been working on five major new areas of research.
+The project also includes incorporation of network protocols and other
+subsystems into the operating system while maintaining a consistent
+interface to the system.
+The resulting system is widely used by other researchers in operating systems
+and network protocols and implementations.
+.PP
+The last major release of Berkeley UNIX,
+in June, 1986, was 4.3BSD.
+.[
+4.3BSD CSRG ???
+.]
+Projects completed since that time have been made available
+in a July, 1988 test release known as the 4.3BSD Tahoe release,
+named for the CCI Power 6/32 processor for which support was added.
+.NH
+Proposed Research
+.PP
+Since the 4.3BSD release,
+we have been working on five major new areas of research:
 .IP 1)
-Develop an OSI network protocol suite and to integrate
+Integration of an OSI network protocol suite and
 existing ISO applications into Berkeley UNIX.
-The network architecture of 4.2BSD was designed to accommodate
+Several protocol layers were originally implemented
+at the University of Wisconsin.
+The network architecture and system interface of 4.2BSD
+was designed to accommodate
 multiple network protocol families and address formats,
-and an implementation of the ISO OSI network protocols
-should fit this framework without much difficulty.
+although some extensions have been required to accommodate
+certain protocol features.
+This work includes development of those interfaces
+and a more flexible kernel routing interface.
 .IP 2)
-Bring the Berkeley UNIX kernel into compliance
-with the P1003.1 POSIX interface recently approved by the IEEE.
+Support for an interface compliant
+with the P1003.1 POSIX standard recently approved by the IEEE.
 Converting the kernel to be POSIX compliant requires
 the completion of several new kernel facilities including
 a new terminal driver and job control facilities.
 .IP 3)
-Refine the TCP/IP networking to improve
-its performance and limit congestion on slow and/or lossy networks.
+Refinement of the network achitecture
+and implementation to improve
+its performance and functionality.
 Since the most recent networking release,
 additional performance experiments have been done by
 Van Jacobson of the Lawrence Berkeley Laboratory;
@@ -61,7 +84,7 @@ adopts the 4.3BSD calling convention for file name lookup
 but otherwise is closely related to Sun's VFS.
 We ultimately hope to support a public domain implementation of Sun's NFS.
 .IP 5)
-The recent invasion of the ARPANET by a quickly reproducing worm
+The recent invasion of the DARPA Internet by a quickly reproducing worm
 highlighted the need for a through review of the access
 safeguards built into the system.
 We are proposing that a complete audit be made of the system
@@ -72,37 +95,44 @@ telnet, login, remote shell, etc.
 .PP
 We are planning to implement prototypes for each of these
 five main areas of work over the period of this proposal.
-We plan to do an informal release during the proposal period
-to interested developers.
+We plan to do an informal release
+to interested developers during the proposal period.
 After incorporating feedback and refinements from the testers,
-the work will appear in the next full Berkeley release that typically
-is made about a year after the test release.
-.br
-.ne 10
-.sp 2
-.NH
-Current UNIX Research at Berkeley
-.PP
-Since the release of 4.3BSD in mid 1986,
-we have begun work on three major new areas of research.
-Our goal is to apply leading edge research ideas into a stable
-and reliable implementation that solves current problems in
-operating systems research.
+the work will appear in the next full Berkeley release, which typically
+is made six months to a year after the test release.
 .NH 2
 OSI Network Protocol Development
 .PP
-.CO sklower "I have wacked on this some"
 The network architecture of 4.2BSD was designed to accommodate
 multiple network protocol families and address formats.
 The current prototype implementation of the ISO OSI network protocols
-make use of all of the existing facilities, but will be aided by
+makes use of all of the existing facilities, but will be aided by
 some architectural changes described below.
-The outline of the proposal is to
-implement the OSI connectionless internet protocol (CLNP),
-and device drivers for X.25, 802.3, and possibly 802.5 interfaces, and
-to integrate these with an OSI transport class 4 (TP-4) implementation.
+.PP
+To this end, we have already changed network buffer layouts,
+allowed variable length network addresses, and contructed a uniform
+hierchical routing lookup algorithm.
+We have made alterations to the socket interface to allow
+transmission of record boundaries,
+distinction between dequeueing connection requests and explicit
+confirmation, and passage of ancillary data such as user connection-
+or disconnection-request data.
+.PP
+At the beginning of the period covered by this proposal,
+we expect to have initial versions of
+the OSI connectionless internet protocol (CLNP),
+an OSI transport class 4 (TP-4) implementation,
+device drivers for 802.2/802.3,
+and the End System to Intermediate System (ES-IS) protocol.
+We will add support for X.25 interfaces using CLNP
+and will then develop a software layer allowing connection-oriented access
+to X.25 as well as packet-switching service.
+We will investigate a more general framework for 802.2-based link-level
+interfaces with more graceful support of ES-IS and related protocols.
+If hardware is available, we will incorporate support for 802.5 and/or
+ProNET-80 token rings.
 We will receive an updated ISO Development Environment (ISODE)
-and incorporate these into the Berkeley Software Distribution.
+and incorporate this into the Berkeley Software Distribution.
 ISODE implements the session and presentation layers of the OSI protocol suite,
 and will include an implementation of the file transfer protocol FTAM.
 If possible, an X.400 implementation now being done at University College,
@@ -111,30 +141,30 @@ and distribution.
 This work will include participation in
 interoperability tests with vendors and users on OSINET.
 .PP
-To this end, we have already changed network buffer layouts,
-allowed variable length network addresses, contructed a uniform
-hierchical routing lookup algorithm.
-We have made alterations to the socket interface to allow
-transmission of record boundaries,
-distinction between dequeueing connection requests and explicit
-confirmation, and passage of ancillary data such as user connection\-
-or disconnection\-request data. 
-.PP
 We are designing additional structures (analogous to the ``Streams''
-concept of Bell Laborities 9th edition UNIX, or system V.3)
+concept of Bell Laboratories 9th Edition UNIX or System V.3)
 which will make uniform the processing of serial data,
 improve communication between protocol layers,
 and provide a more natural framework for
 devices already providing virtual circuit services
 (such as X.25 devices).
-Such structures would also provide a natural setting
-for kernel resident virtual terminal services,
-or the other extreme of direct access to communications-layer devices,
-and would make it easier to tunnel one protocol through another.
+Such structures would provide a natural setting
+for kernel-resident virtual terminal services,
+and would allow direct access to communications-layer devices
+for network monitoring or prototyping of new protocols.
+This layering would also make it easier to tunnel one protocol through another.
 Additional work may be necessary for IP,
-(address resolution protocol -- ARP, in particular) to allow such
+(in particular, address resolution protocol, ARP) to allow such
 revisions.
-.CO karels/sklower "elaborate on this
+.PP
+We have become members of the IEEE 1003.8 group working on a POSIX networking
+interface.
+We intend to introduce a proposal for a high-level protocol-independent
+interface for network services suitable for distributed applications.
+This interface will be based on the UNI interface proposed by Marshall Rose.
+.[
+UNI Rose
+.]
 .NH 2
 Compliance with POSIX 1003
 .PP
@@ -143,49 +173,113 @@ with the P1003.1 POSIX interface recently approved by the IEEE
 requires two major projects and many smaller ones.
 The first major project is the development
 of a completely new terminal driver.
-The new terminal driver must have a binary compatibility interface
+The new terminal driver must have a binary-compatibility interface
 to allow a transition path for programs using the old Berkeley
 terminal driver.
 The other major project is the development of a
 POSIX session and job control implementation.
 Those system utilities that create sessions and manipulate jobs must
 be converted to use the new facilities.
+These two projects are nearly finished, and we are completing
+the conversion of the standard utility programs that are affected
+by this change.
+These facilities will be tested and made available to other groups
+during the period covered by this proposal.
+.PP
 The smaller POSIX related changes that must be made
 include expanded signal functionality,
 restructured directory access routines,
 and new set-user-identifier functionality.
-.CO mckusick "expand on what needs to be done
+Many of these interfaces will be developed as a superset
+of both the POSIX and existing BSD facilities.
+This work will involve coordination with other groups
+intending to support both POSIX and BSD interfaces.
+.PP
+We intend to remain involved with the IEEE P1003.1 committee
+which will work on corrections and extensions to the existing standard.
+We will also continue to work actively with the 1003.2 committee
+developing a shell and utilities POSIX standard.
 .NH 2
-Improvements to the TCP/IP Networking Protocols
+Improvements to the Networking Architecture and Protocols
+.PP
+The networking architecture introduced in 4.2BSD
+provided a framework for multiple networking protocols
+using a single consistent user interface.
+This framework includes three distinct layers: socket, protocols,
+and network link layer.
+This framework has been used for implementations of TCP/IP, Xerox NS,
+the OSI protocols, and local interprocess communication.
+Our experience with this framework and in performance analysis
+of the existing implementations suggest some refinements to the framework
+and its implementation.
+One refinement is the use of structuring techniques similar to those
+of the Stream I/O system, described in section 2.1,
+in some parts of the system, unifying two existing interfaces.
+In addition to providing additional flexibility, careful structuring
+will allow improved pipelining of the network protocols using upcalls.
+.[
+Clark SOSP upcalls
+.]
+Such pipelining has been prototyped by Van Jacobson of the Lawrence
+Berkeley Laboratory, along with a number of caching strategies
+that will also be incorporated.
+In conjunction with this work, it will be necessary to improve
+communication among the levels of the system to improve performance.
+In particular, the transport protocols must influence the way in which
+data are bufferred by higher layers for optimal performance.
+We plan to investigate layering techniques that are both modular
+and efficient, two conflicting goals.
+At the same time, we plan to modify the current buffer management
+to be more portable and to allow efficient use on machines with different
+I/O architectures.
+.PP
+The communication mechanisms between the layers must also be extended
+for robustness of the network: the transport level must be able to notify
+the network and link levels of failures detected by timeouts;
+the link level must be able to inform the network level of failures
+that it detects, and the routing layer needs to use all of this information.
 .PP
 The Internet and the Berkeley collection of local-area networks
 have both grown at high rates in the last year.
 The Bay Area Regional Research Network (BARRNet),
-connecting several UC campuses, Stanford and NASA-Ames
-has recently become operational, increasing the complexity
+connects several UC campuses, Stanford and NASA-Ames with the NSF network,
+increasing the complexity
 of the network connectivity.
 Both Internet and local routing algorithms are showing the strain
 of continued growth.
 We have made several changes in the local routing algorithm
-to keep accommodating the current topology,
+to keep up with the current topology,
 and are participating in the development of new routing algorithms
 and protocols.
-.CO karels "discussion of EGP3, gated, OSPFIGP, ...
+In the period covered by this proposal,
+we expect to merge the current version of the Berkeley routing daemon
+\fIrouted\fP with the multi-protocol daemon \fIgated\fP (which currently
+supports the RIP and EGP protocols), and to update the RIP implementation
+for full conformance with the recent specification.
+.[
+RIP hedrick RFC
+.]
+We also expect to collaborate on an implementation of a new EGP protocol,
+version 3
+.[
+Lepp Karels EGP
+.]
+in a \fIgated\fP framework,
+and may also incorporate or collaborate on an implementation
+of the SPF-based IGP protocol being developed within the Internet Engineering
+Task Force.
+We are continuing our involvement with that group in the evolution of standards
+for the DARPA Internet.
 .PP
-Refine the TCP/IP networking to improve
-its performance and limit congestion on slow and/or lossy networks.
-.CO karels "header prediction, window(?), congestion control - random drops
-.PP
-We are also considering adding VMTP and multicasting
-networking from David Cheriton at Stanford.
-.CO karels "comments or elaboration
+We are also considering adding VMTP and IP multicast support
+from David Cheriton and Steve Deering at Stanford.
 .NH 2
 Toward a Compatible File System Interface
 .PP
 The most critical shortcoming of our current UNIX system is in the
-area of distributed file systems.
+area of remote file access.
 As with networking protocols,
-there is no single distributed file system
+there is no single remote file system
 that provides enough speed and functionality for all problems.
 It is frequently necessary to support several different remote
 file system protocols, just as it is necessary to run several 
@@ -194,24 +288,33 @@ The proposal currently under development
 adopts the 4.3BSD calling convention for file name lookup
 and allows stateful file systems,
 but otherwise is closely related to Sun's virtual file system interface.
+This interface has been advanced (to Sun, DEC, AT&T and others)
+as a potential standard;
+when the implementation has been completed, we intend to explore
+consensus in this area, so that filesystem implementations could
+be as portable as device drivers.
 We do not intend to develop our own remote file system protocol,
-but rather intend to fully support the existing local file system
-semantics and Sun's network file system (NFS).
+but rather intend to support the full semantics of existing file systems,
+including the local UNIX file system
+and Sun's network file system (NFS).
 We are currently negotiating with several groups that have
 developed their own implementations of NFS to convince them to
 contribute their code to Berkeley so that BSD
 will not require a Sun NFS license.
+We currently anticipate receipt of an NFS implementation from Apollo
+that uses a different system interface; if feasible, we will adapt it
+to our file system interface. 
 .NH 2
 System Security Audit
 .PP
 The recent invasion of the ARPANET by a quickly reproducing worm
-highlighted the need for a through review of the access
+highlighted the need for a thorough review of the access
 safeguards built into the system.
 Until now we have taken a passive approach to dealing with
-weaknesses in the system access mechanisms.
-Our current procedure is to wait until we are notified by one of our
-users of a problem or loophole in a system utility.
-Once aware of the problem,
+weaknesses in the system access mechanisms, rather than actively
+searching for possible weaknesses.
+When we are notified of a problem or loophole in a system utility
+by one of our users,
 we have a well defined procedure for fixing the problem and 
 expeditiously disseminating the fix to the BSD mailing list.
 This procedure has proven itself to be effective in
@@ -224,24 +327,60 @@ utilities to find unintended system access mechanisms.
 Once identified, we anticipate that they could be corrected
 through the existing mechanism.
 .PP
+In addition, we have been discussing possible plans for response
+to emergencies such as the recent worm attack with DARPA.
+We believe that a plan such as the proposed Computer Emergency Response
+Team can respond to such attacks effectively, and intend to cooperate
+with such a plan.
+We can provide at least two members for a response team
+and can serve as the primary coordinators for problems involving BSD
+UNIX and networking software.
+.PP
+A group within the Internet Engineering Task Force has been drafting
+a Host Requirements standard for Internet hosts.
+We reviewed this draft recently and joined the working group.
+For the most part, the existing Berkeley TCP/IP and networking application
+software conforms with the draft.
+We propose to review conformance with the Host Requirements standard
+at the same time that we review the robustness of the network software.
+Some additions will have to be made in the kernel network protocols
+at this time as well.
+In particular, support for IP type-of-service options and routing needs
+to be added, and recent proposals for gateway monitoring should be implemented
+and tested.
+.PP
 A major shortcoming of the present system is that authentication
-over the network is based solely on the privileged port mechanism.
+over the network is based solely on the privileged port mechanism
+between trusting hosts and users.
 Although privileged ports can only be created by processes running as root,
 such processes are easy for a workstation user to obtain;
 they simply reboot their workstation single user.
 Thus, a real authentication mechanism is needed.
 At present, we believe that the MIT Kerberos authentication
 server provides the best solution to this problem.
-We propose to further investigate Kerberos as well as other
-authentication mechanisms and then integrating
+We propose to investigate Kerberos further as well as other
+authentication mechanisms and then to integrate
 the best one into Berkeley UNIX.
 Part of this integration would be the addition of the
 authentication mechanism into utilities such as
 telnet, login, remote shell, etc.
-.PP
-We have taken an active involvement in helping
-to define host requirements.
-.CO karels "discuss TOS, gateway disc.
+MIT currently supports the use of Kerberos for authentication
+of rlogin, rsh, certain other servers used at MIT, and the NFS mount
+protocol.
+We propose to add support for telnet (eventually replacing rlogin),
+the X window system, and the mail system within an authentication
+domain (a Kerberos \fIrealm\fP).
+
+The new authentication mechanism would then be fully integrated
+with the system and utilities in future Berkeley software releases.
+Another subject of active work, at MIT and elsewhere, is the interaction
+between servers for different realms.
+The servers for two realms may be mutually authenticated only by
+a manual exchange of keys currently.
+We would like to add a mechanism for a user in two realms to establish
+a (semi-)permanent equivalence between his identities in the two realms.
+Such a facility could greatly reduce the need to transmit passwords
+in the clear over wide-area networks.
 .ne 10
 .sp 2
 .NH
