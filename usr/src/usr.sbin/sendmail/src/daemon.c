@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.7 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.8 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.7 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.8 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -240,6 +240,7 @@ makeconnection(host, port, mci, usesecureport)
 #endif
 	errno = 0;
 	bzero(&CurHostAddr, sizeof CurHostAddr);
+	SmtpPhase = mci->mci_phase = "initial connection";
 	CurHostName = host;
 
 	if (host[0] == '[')
