@@ -13,7 +13,7 @@
 	.data
 	.align	2
 _sccsid:
-.asciz	"@(#)cbrt.s	1.1 (Berkeley) 5/23/85; 1.3 (ucb.elefunt) %G%"
+.asciz	"@(#)cbrt.s	1.1 (Berkeley) 5/23/85; 5.1 (ucb.elefunt) %G%"
 
 # double cbrt(double arg)
 # W. Kahan, 10/13/80. revised 1/13/84 for keeping sign symmetry

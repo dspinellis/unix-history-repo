@@ -13,7 +13,7 @@
 	.data
 	.align	2
 _sccsid:
-.asciz	"@(#)sincos.s	1.1 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%"
+.asciz	"@(#)sincos.s	1.1 (Berkeley) 8/21/85; 5.1 (ucb.elefunt) %G%"
 
 #  This is the implementation of Peter Tang's double precision  
 #  sine and cosine for the VAX using Bob Corbett's argument reduction.
