@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)compress.1	6.11 (Berkeley) %G%
+.\"     @(#)compress.1	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt COMPRESS 1
@@ -33,9 +33,10 @@ reduces the size of the named files using adaptive Lempel-Ziv coding.
 Each
 .Ar file
 is renamed to the same name plus the extension
-.Ar \&.Z ,
-while keeping the same ownership, modes, and access and modification
-times.
+.Dq .Z .
+As many of the modification time, access time, file flags, file mode,
+user ID, and group ID as allowed by permissions are retained in the
+new file.
 If compression would not reduce the size of a
 .Ar file ,
 the file is ignored.
@@ -43,8 +44,12 @@ the file is ignored.
 .Nm Uncompress
 restores the compressed files to their original form, renaming the
 files by deleting the
-.Ar \&.Z
+.Dq .Z
 extension.
+.Pp
+.Nm Zcat
+is an alias for
+.Dq "uncompress -c" .
 .Pp
 If renaming the files would cause files to be overwritten and the standard
 input device is a terminal, the user is prompted (on the standard error
@@ -52,12 +57,11 @@ output) for confirmation.
 If prompting is not possible or confirmation is not received, the files
 are not overwritten.
 .Pp
-.Nm Zcat
-is an alias for
-.Dq "uncompress -c" .
-.Pp
 If no files are specified, the standard input is compressed or uncompressed
 to the standard output.
+If either the input and output files are not regular files, the checks for
+reduction in size and file overwriting are not performed, the input file is
+not removed, and the attributes of the input file are not retained.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
@@ -78,13 +82,7 @@ Print the percentage reduction of each file.
 .El
 .Pp
 .Nm Compress
-uses the modified Lempel-Ziv algorithm popularized in
-"A Technique for High Performance Data Compression",
-Terry A. Welch,
-.Em IEEE Computer ,
-vol. 17,
-.no 6
-(June 1984), pp. 8-19.
+uses a modified Lempel-Ziv algorithm.
 Common substrings in the file are first replaced by 9-bit codes 257 and up.
 When code 512 is reached, the algorithm switches to 10-bit codes and
 continues to use more bits until the
@@ -134,6 +132,14 @@ The
 utility exits 0 on success, and >0 if an error occurs.
 .Sh SEE ALSO
 .Xr zopen 3
+.Rs
+.%A Welch, Terry A.
+.%D June, 1984
+.%T "A Technique for High Performance Data Compression"
+.%J "IEEE Computer"
+.%V 17:6
+.%P pp. 8-19
+.Re
 .Sh HISTORY
 The
 .Nm

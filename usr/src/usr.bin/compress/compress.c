@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -25,11 +25,12 @@ static char sccsid[] = "@(#)compress.c	5.23 (Berkeley) %G%";
 #include <string.h>
 #include <unistd.h>
 
-void	 compress __P((char *, char *, int));
-void	 decompress __P((char *, char *, int));
-void	 err __P((int, const char *, ...));
-int	 permission __P((char *));
-void	 usage __P((int));
+void	compress __P((char *, char *, int));
+void	decompress __P((char *, char *, int));
+void	err __P((int, const char *, ...));
+int	permission __P((char *));
+void	setfile __P((char *, struct stat *));
+void	usage __P((int));
 
 int eval, force, verbose;
 char *progname;
@@ -127,7 +128,8 @@ main(argc, argv)
 			break;
 		case DECOMPRESS:
 			len = strlen(*argv);
-			if ((p = rindex(*argv, '.')) == NULL) {
+			if ((p = rindex(*argv, '.')) == NULL ||
+			    strcmp(p, ".Z")) {
 				if (len > sizeof(newname) - 3) {
 					err(0, "%s: name too long", *argv);
 					break;
@@ -138,9 +140,6 @@ main(argc, argv)
 				newname[len + 2] = '\0';
 				decompress(newname,
 				    cat ? "/dev/stdout" : *argv, bits);
-			} else if (strcmp(p, ".Z")) {
-				err(0, "%s: name missing trailing .Z", *argv);
-				break;
 			} else {
 				if (len - 2 > sizeof(newname) - 1) {
 					err(0, "%s: name too long", *argv);
@@ -162,10 +161,8 @@ compress(in, out, bits)
 	int bits;
 {
 	register int nr;
-	struct stat sb;
-	struct timeval times[2];
+	struct stat isb, sb;
 	FILE *ifp, *ofp;
-	quad_t origsize;
 	int exists, isreg, oreg;
 	u_char buf[1024];
 
@@ -179,19 +176,12 @@ compress(in, out, bits)
 		err(0, "%s: %s", in, strerror(errno));
 		return;
 	}
-	if (stat(in, &sb)) {		/* DON'T FSTAT! */
+	if (stat(in, &isb)) {		/* DON'T FSTAT! */
 		err(0, "%s: %s", in, strerror(errno));
 		goto err;
 	}
-	if (!S_ISREG(sb.st_mode))
+	if (!S_ISREG(isb.st_mode))
 		isreg = 0;
-	if (isreg) {
-		origsize = sb.st_size;
-		times[0].tv_sec = sb.st_atimespec.ts_sec;
-		times[0].tv_usec = sb.st_atimespec.ts_nsec / 1000;
-		times[1].tv_sec = sb.st_mtimespec.ts_sec;
-		times[1].tv_usec = sb.st_mtimespec.ts_nsec / 1000;
-	}
 
 	if ((ofp = zopen(out, "w", bits)) == NULL) {
 		err(0, "%s: %s", out, strerror(errno));
@@ -221,7 +211,7 @@ compress(in, out, bits)
 			goto err;
 		}
 
-		if (!force && sb.st_size >= origsize) {
+		if (!force && sb.st_size >= isb.st_size) {
 			if (verbose)
 		(void)printf("%s: file would grow; left unmodified\n", in);
 			if (unlink(out))
@@ -229,20 +219,19 @@ compress(in, out, bits)
 			goto err;
 		}
 
-		if (unlink(in))
-			err(0, "%s: %s", in, strerror(errno));
+		setfile(out, &isb);
 
-		if (utimes(out, times))
+		if (unlink(in))
 			err(0, "%s: %s", in, strerror(errno));
 
 		if (verbose) {
 			(void)printf("%s: ", out);
-			if (origsize > sb.st_size)
+			if (isb.st_size > sb.st_size)
 				(void)printf("%.0f%% compression\n",
-				    ((float)sb.st_size / origsize) * 100.0);
+				    ((float)sb.st_size / isb.st_size) * 100.0);
 			else
 				(void)printf("%.0f%% expansion\n",
-				    ((float)origsize / sb.st_size) * 100.0);
+				    ((float)isb.st_size / sb.st_size) * 100.0);
 		}
 	}
 	return;
@@ -263,14 +252,14 @@ decompress(in, out, bits)
 {
 	register int nr;
 	struct stat sb;
-	struct timeval times[2];
 	FILE *ifp, *ofp;
-	int isreg, oreg;
+	int exists, isreg, oreg;
 	u_char buf[1024];
 
-	isreg = oreg = !stat(out, &sb) && S_ISREG(sb.st_mode);
-	if (!force && isreg && !permission(out))
+	exists = !stat(out, &sb);
+	if (!force && exists && S_ISREG(sb.st_mode) && !permission(out))
 		return;
+	isreg = oreg = !exists || S_ISREG(sb.st_mode);
 
 	ifp = ofp = NULL;
 	if ((ofp = fopen(out, "w")) == NULL) {
@@ -288,12 +277,6 @@ decompress(in, out, bits)
 	}
 	if (!S_ISREG(sb.st_mode))
 		isreg = 0;
-	if (isreg) {
-		times[0].tv_sec = sb.st_atimespec.ts_sec;
-		times[0].tv_usec = sb.st_atimespec.ts_nsec / 1000;
-		times[1].tv_sec = sb.st_mtimespec.ts_sec;
-		times[1].tv_usec = sb.st_mtimespec.ts_nsec / 1000;
-	}
 
 	while ((nr = fread(buf, 1, sizeof(buf), ifp)) != 0)
 		if (fwrite(buf, 1, nr, ofp) != nr) {
@@ -313,9 +296,9 @@ decompress(in, out, bits)
 	}
 
 	if (isreg) {
+		setfile(out, &sb);
+
 		if (unlink(in))
-			err(0, "%s: %s", in, strerror(errno));
-		if (utimes(out, times))
 			err(0, "%s: %s", in, strerror(errno));
 	}
 	return;
@@ -327,6 +310,38 @@ err:	if (ofp) {
 	}
 	if (ifp)
 		(void)fclose(ifp);
+}
+
+void
+setfile(name, fs)
+	char *name;
+	register struct stat *fs;
+{
+	static struct timeval tv[2];
+
+	fs->st_mode &= S_ISUID|S_ISGID|S_IRWXU|S_IRWXG|S_IRWXO;
+
+	TIMESPEC_TO_TIMEVAL(&tv[0], &fs->st_atimespec);
+	TIMESPEC_TO_TIMEVAL(&tv[1], &fs->st_mtimespec);
+	if (utimes(name, tv))
+		err(0, "utimes: %s: %s", name, strerror(errno));
+
+	/*
+	 * Changing the ownership probably won't succeed, unless we're root
+	 * or POSIX_CHOWN_RESTRICTED is not set.  Set uid/gid before setting
+	 * the mode; current BSD behavior is to remove all setuid bits on
+	 * chown.  If chown fails, lose setuid/setgid bits.
+	 */
+	if (chown(name, fs->st_uid, fs->st_gid)) {
+		if (errno != EPERM)
+			err(0, "chown: %s: %s", name, strerror(errno));
+		fs->st_mode &= ~(S_ISUID|S_ISGID);
+	}
+	if (chmod(name, fs->st_mode))
+		err(0, "chown: %s: %s", name, strerror(errno));
+
+	if (chflags(name, fs->st_flags))
+		err(0, "chflags: %s: %s", name, strerror(errno));
 }
 
 int
