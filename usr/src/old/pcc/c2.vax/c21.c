@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)c21.c 4.24 %G%";
+static	char sccsid[] = "@(#)c21.c 4.25 %G%";
 #endif
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
@@ -543,7 +543,7 @@ mov:
 		else lastrand=regs[RT3];
 		repladdr(p);
 		if (p->op==CALLS || p->op==MOVC3) clearreg();
-		if (p->op==BIT) bitopt(p);
+		/*if (p->op==BIT) bitopt(p);*/
 		ccloc[0]=0; break;
 
 	case CBR:
@@ -763,6 +763,7 @@ ispow2(n) register long n; {/* -1 -> no; else -> log to base 2 */
 	for (;;) {n >>= 1; if (n==0) return(log); ++log; if (n== -1) return(log);}
 }
 
+#ifdef notdef
 bitopt(p) register struct node *p; {
 	/* change "bitx $<power_of_2>,a" followed by JEQ or JNE
 	/* into JBC or JBS.  watch out for I/O registers. (?)
@@ -802,6 +803,7 @@ bitopt(p) register struct node *p; {
 	p->labno = p->forw->labno; delnode(p->forw);
 	p->pop=0;
 }
+#endif
 
 isfield(n) register long n; {/* -1 -> no; else -> position of low bit */
 	register int p; register long t;
