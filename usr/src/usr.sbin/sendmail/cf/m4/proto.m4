@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.19 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.20 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -367,15 +367,17 @@ undivert(9)dnl
 ###########################################
 S3
 
-# handle null input and list syntax (translate to <@> special case)
+# handle null input (translate to <@> special case)
 R$@			$@ <@>
-R$*:;$*			$@ $1 :; <@>
 
 # basic textual canonicalization -- note RFC733 heuristic here
 R$*<$*>$*<$*>$*		$2$3<$4>$5			strip multiple <> <>
 R$*<$*<$+>$*>$*		<$3>$5				2-level <> nesting
 R$*<>$*			$@ <@>				MAIL FROM:<> case
 R$*<$+>$*		$2				basic RFC821/822 parsing
+
+# handle list:; syntax as special case
+R$*:;$*			$@ $1 :; <@>
 
 # make sure <@a,@b,@c:user@d> syntax is easy to parse -- undone later
 R@ $+ , $+		@ $1 : $2			change all "," to ":"
