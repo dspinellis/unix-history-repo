@@ -6,17 +6,18 @@ PUSHDIVERT(-1)
 #
 # %sccs.include.redist.sh%
 #
+ifdef(`SMTP_MAILER_FLAGS',, `define(`SMTP_MAILER_FLAGS', `')')
 POPDIVERT
 #####################################
 ###   SMTP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)smtp.m4	6.8 (Berkeley) %G%')
+VERSIONID(`@(#)smtp.m4	6.9 (Berkeley) %G%')
 
-Msmtp,		P=[IPC], F=mDFMueXLC, S=11, R=21, E=\r\n,
-		A=IPC $h
-Mrelay,		P=[IPC], F=mDFMueXLC, S=11, R=19, E=\r\n,
-		A=IPC $h
+Msmtp,		P=[IPC], F=CONCAT(mDFMueXC, SMTP_MAILER_FLAGS), S=11, R=21, E=\r\n,
+		L=990, A=IPC $h
+Mrelay,		P=[IPC], F=CONCAT(mDFMueXC, SMTP_MAILER_FLAGS), S=11, R=19, E=\r\n,
+		L=990, A=IPC $h
 
 S11
 
