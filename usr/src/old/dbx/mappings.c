@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mappings.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mappings.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: mappings.c,v 1.4 84/12/26 10:40:25 linton Exp $";
@@ -101,8 +101,10 @@ Boolean exact;
     register Lineno r;
     register Address a;
 
-    if (nlhdr.nlines == 0 or addr < linetab[0].addr) {
+    if (nlhdr.nlines == 0) {
 	r = -1;
+    } else if (addr < linetab[0].addr) {
+	r = exact ? -1 : 0;
     } else {
 	i = 0;
 	j = nlhdr.nlines - 1;
