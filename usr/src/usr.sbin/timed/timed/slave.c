@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slave.c	2.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)slave.c	2.14 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -258,7 +258,6 @@ loop:
 			break;
 		case TSP_SETDATE:
 			saveaddr = from;
-			msg->tsp_time.tv_usec = 0;
 			msg->tsp_type = TSP_SETDATEREQ;
 			msg->tsp_vers = TSPVERSION;
 			(void)strcpy(msg->tsp_name, hostname);
@@ -499,8 +498,6 @@ loop:
 			     * we are master on.  There must be two masters
 			     * in this case.
 			     */
-			    if (trace)
-				fprintf(fd, "loop kill %x %x\n", fromnet->my_addr.s_addr, from.sin_addr.s_addr);
 			    if (fromnet->my_addr.s_addr == from.sin_addr.s_addr)
 				break;
 			    for (;;) {
