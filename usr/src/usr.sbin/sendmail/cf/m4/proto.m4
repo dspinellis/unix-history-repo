@@ -8,13 +8,17 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.67 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.68 (Berkeley) %G%')
 
 MAILER(local)dnl
 
 # level 6 config file format
 V6/Berkeley
 divert(-1)
+
+# do some sanity checking
+ifdef(`__OSTYPE__',,
+	`errprint(`*** ERROR: No system type defined (use OSTYPE macro)')')
 
 # pick our default mailers
 ifdef(`confSMTP_MAILER',, `define(`confSMTP_MAILER', `smtp')')
