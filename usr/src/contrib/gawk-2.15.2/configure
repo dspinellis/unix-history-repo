@@ -1,0 +1,36 @@
+#! /bin/sh
+#
+# configure -- produce a config.h from a known configuration
+
+case "$#" in
+1)	;;
+*)	echo "Usage:  $0 system_type" >&2
+	echo "Known systems:  `cd config; echo ;ls -C`" >&2
+	exit 2
+	;;
+esac
+
+if [ -f config/$1 ]; then
+	sh ./mungeconf config/$1 config.in >config.h
+
+	# echo #echo lines to stdout
+	sed -n '/^#echo /s///p' config/$1
+
+	case "$1" in
+	bsd44)	ln -s Makefile.bsd44 Makefile ; exit 0 ;;
+	esac
+
+	sed -n '/^MAKE_.*/s//s,^##&## ,,/p' config/$1 >sedscr
+	if [ -s sedscr ]
+	then
+		sed -f sedscr Makefile.in >Makefile
+	else
+		cp Makefile.in Makefile
+	fi
+	rm -f sedscr
+else
+	echo "\`$1' is not a known configuration."
+	echo "Either construct one based on the examples in the config directory,"
+	echo "or copy config.in to config.h and edit it."
+	exit 1
+fi
