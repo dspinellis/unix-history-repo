@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)htable.h	5.4 (Berkeley) %G%
+ *	@(#)htable.h	5.5 (Berkeley) %G%
  */
 
 #include <sys/types.h>
@@ -42,6 +42,5 @@ struct gateway {
 #define	KW_HOST		3
 
 struct name *newname();
-char *malloc();
 
 char *infile;			/* Input file name */
