@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static	char *sccsid = "@(#)pl_main.c	2.3 85/04/25";
+static	char *sccsid = "@(#)pl_main.c	2.3 85/04/26";
 #endif
 
 #include "player.h"
@@ -25,6 +25,7 @@ pl_main()
 	initialize();
 	Signal("Aye aye, Sir", (struct ship *)0);
 	play();
+	return 0;			/* for lint,  play() never returns */
 }
 
 initialize()
