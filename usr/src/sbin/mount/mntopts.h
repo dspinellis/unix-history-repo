@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mntopts.h	8.3 (Berkeley) %G%
+ *	@(#)mntopts.h	8.4 (Berkeley) %G%
  */
 
 struct mntopt {
@@ -25,14 +25,16 @@ struct mntopt {
 /* Control flags. */
 #define MOPT_FORCE		{ "force",	1, MNT_FORCE }
 #define MOPT_UPDATE		{ "update",	0, MNT_UPDATE }
-
-/* Support for old-style "ro", "rw" flags. */
 #define MOPT_RO			{ "ro",		0, MNT_RDONLY }
 #define MOPT_RW			{ "rw",		1, MNT_RDONLY }
 
+/* This is parsed by mount(8), but is ignored by specific mount_*(8)s. */
+#define MOPT_AUTO		{ "auto",	0, 0 }
+
 #define MOPT_FSTAB_COMPAT						\
 	MOPT_RO,							\
-	MOPT_RW
+	MOPT_RW,							\
+	MOPT_AUTO
 
 /* Standard options which all mounts can understand. */
 #define MOPT_STDOPTS							\
