@@ -1,4 +1,4 @@
-/*	tty_tb.c	6.3	84/08/29	*/
+/*	tty_tb.c	6.4	85/03/19	*/
 
 #include "tb.h"
 #if NTB > 0
@@ -12,7 +12,6 @@
 #include "proc.h"
 #include "inode.h"
 #include "file.h"
-#include "conf.h"
 #include "buf.h"
 #include "uio.h"
 

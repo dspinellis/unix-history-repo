@@ -1,10 +1,9 @@
-/*	lfs_alloc.c	6.12	85/03/12	*/
+/*	lfs_alloc.c	6.13	85/03/19	*/
 
 #include "param.h"
 #include "systm.h"
 #include "mount.h"
 #include "fs.h"
-#include "conf.h"
 #include "buf.h"
 #include "inode.h"
 #include "dir.h"

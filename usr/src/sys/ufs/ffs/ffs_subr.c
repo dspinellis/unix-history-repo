@@ -1,11 +1,10 @@
-/*	ffs_subr.c	6.5	84/08/29	*/
+/*	ffs_subr.c	6.6	85/03/19	*/
 
 #ifdef KERNEL
 #include "param.h"
 #include "systm.h"
 #include "mount.h"
 #include "fs.h"
-#include "conf.h"
 #include "buf.h"
 #include "inode.h"
 #include "dir.h"
@@ -17,7 +16,6 @@
 #include <sys/systm.h>
 #include <sys/mount.h>
 #include <sys/fs.h>
-#include <sys/conf.h>
 #include <sys/buf.h>
 #include <sys/inode.h>
 #include <sys/dir.h>

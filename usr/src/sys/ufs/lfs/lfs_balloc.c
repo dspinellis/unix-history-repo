@@ -1,8 +1,7 @@
-/*	lfs_balloc.c	6.2	84/08/29	*/
+/*	lfs_balloc.c	6.3	85/03/19	*/
 
 #include "param.h"
 #include "systm.h"
-#include "conf.h"
 #include "inode.h"
 #include "dir.h"
 #include "user.h"
