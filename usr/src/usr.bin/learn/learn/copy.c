@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)copy.c	4.3	(Berkeley)	%G%";
+static char sccsid[] = "@(#)copy.c	4.4	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
@@ -49,7 +49,7 @@ FILE *fin;
 			}
 		r = wordb(s, t);	/* t = first token, r = rest */
 		p = action(t);		/* p = token class */
-		if (*p == ONCE) {	/* some actions done only once per script */
+		if (p && *p == ONCE) {	/* some actions done only once per script */
 			if (wrong && !review) {	/* we are on 2nd time */
 				scopy(fin, NULL);
 				continue;
@@ -265,7 +265,8 @@ FILE *fi, *fo;
 				if (c == '\n')
 					break;
 				if (c == EOF)   {
-					fflush(fo);
+					if (fo != NULL)
+						fflush(fo);
 					return;
 				}
 				if (fo != NULL)
@@ -281,7 +282,8 @@ FILE *fi, *fo;
 	}
 	if (c == '#')
 		ungetc(c, fi);
-	fflush(fo);
+	if (fo != NULL)
+		fflush(fo);
 }
 
 cmp(r)	/* compare two files for status; #cmp f1 f2 [ firstnlinesonly ] */
