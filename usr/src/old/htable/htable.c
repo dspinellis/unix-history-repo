@@ -5,7 +5,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)htable.c	5.2 (Berkeley) %G%";
+char copyright[] =
+"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif not lint
+
+#ifndef lint
+static char sccsid[] = "@(#)htable.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
