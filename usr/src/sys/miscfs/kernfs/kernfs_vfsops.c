@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vfsops.c	7.1 (Berkeley) %G%
+ *	@(#)kernfs_vfsops.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -122,7 +122,7 @@ kernfs_unmount(mp, mntflags, p)
 #ifdef KERNFS_DIAGNOSTIC
 	printf("kernfs_unmount: calling mntflushbuf\n");
 #endif
-	mntflushbuf(mp, 0); 
+	mntflushbuf(mp, 0);
 #ifdef KERNFS_DIAGNOSTIC
 	printf("kernfs_unmount: calling mntinvalbuf\n");
 #endif
@@ -139,7 +139,7 @@ kernfs_unmount(mp, mntflags, p)
 
 #ifdef KERNFS_DIAGNOSTIC
 	vprint("kernfs root", rootvp);
-#endif	 
+#endif
 	/*
 	 * Release reference on underlying root vnode
 	 */
@@ -221,7 +221,7 @@ kernfs_sync(mp, waitfor)
 }
 
 /*
- * Fdesc flat namespace lookup.
+ * Kernfs flat namespace lookup.
  * Currently unsupported.
  */
 kernfs_vget(mp, ino, vpp)
