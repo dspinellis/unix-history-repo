@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)dd.c	5.1 (Berkeley) %G%";
+static char *sccsid = "@(#)dd.c	5.2 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -10,6 +10,8 @@ static char *sccsid = "@(#)dd.c	5.1 (Berkeley) %G%";
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define	BIG	2147483647
 #define	LCASE	01
@@ -152,6 +154,8 @@ char	atoibm[] =
 enum ftype { unknown, reg, chr, tape, ispipe } iftype;
 enum ftype checktype();
 
+void stats(), term();
+
 main(argc, argv)
 int	argc;
 char	**argv;
@@ -159,8 +163,7 @@ char	**argv;
 	int (*conv)();
 	register char *ip;
 	register c;
-	int ebcdic(), ibm(), ascii(), null(), cnull(), term(), block(), unblock();
-	int stats();
+	int ebcdic(), ibm(), ascii(), null(), cnull(), block(), unblock();
 	int a;
 
 	conv = null;
@@ -628,6 +631,7 @@ block(cc)
 		null(c);
 }
 
+void
 term()
 {
 
@@ -635,6 +639,7 @@ term()
 	exit(0);
 }
 
+void
 stats()
 {
 

@@ -1,15 +1,21 @@
 #ifndef lint
-static char sccsid[] = "@(#)ed.c	4.13.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ed.c	4.14 (Berkeley) %G%";
 #endif
 
 /*
  * Editor
  */
 #include <sys/param.h>
-#include <sys/signal.h>
+#include <sys/wait.h>
+#include <signal.h>
 #include <sgtty.h>
 #undef CEOF
+#include <fcntl.h>
+#include <time.h>
 #include <setjmp.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include "pathnames.h"
 
 #define	NULL	0
@@ -56,7 +62,6 @@ char	*linebp;
 int	ninbuf;
 int	io;
 int	pflag;
-long	lseek();
 sig_t	oldhup;
 sig_t	oldquit;
 int	vflag	= 1;
@@ -93,16 +98,15 @@ int	*address();
 char	*getline();
 char	*getblock();
 char	*place();
-char	*mktemp();
-char	*malloc();
-char	*realloc();
 jmp_buf	savej;
 
+void onintr(), quit(), onhup();
+
 main(argc, argv)
-char **argv;
+	int argc;
+	char **argv;
 {
 	register char *p1, *p2;
-	extern void onintr(), quit(), onhup();
 	sig_t oldintr;
 
 	oldquit = signal(SIGQUIT, SIG_IGN);
