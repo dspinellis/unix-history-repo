@@ -1,4 +1,4 @@
-/*	cgram.y	4.13	87/12/09	*/
+/*	cgram.y	4.14	87/12/09	*/
 
 /*
  * Grammar for the C compiler.
@@ -357,9 +357,10 @@ optsemi		:	/* VOID */
 		|  SM
 		;
 
-optasgn		:	/* VOID */
-			={  werror( "old-fashioned initialization: use =" ); }
-		|  ASSIGN
+optasgn		:	/* uncomment for old-fashioned initializations */
+			/* /* VOID */
+			/* ={  werror( "old-fashioned initialization: use =" ); }
+		/* | */  ASSIGN
 		;
 
 ibrace		: LC
