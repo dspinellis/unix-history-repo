@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.3 (Berkeley) %G%
+ *	@(#)machdep.c	7.4 (Berkeley) %G%
  */
 
 
@@ -128,7 +128,6 @@ again:
 	    (name) = (type *)v; v = (caddr_t)((name)+(num))
 #define	valloclim(name, type, num, lim) \
 	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
-	valloclim(file, struct file, nfile, fileNFILE);
 	valloc(cfree, struct cblock, nclist);
 	valloc(callout, struct callout, ncallout);
 	valloc(swapmap, struct map, nswapmap = maxproc * 2);
