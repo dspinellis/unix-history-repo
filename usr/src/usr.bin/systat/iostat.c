@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	1.1 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)iostat.c	1.2 (Lucasfilm) %G%";
 #endif
 
 /*
@@ -23,7 +23,7 @@ openiostat()
 	static WINDOW *w = NULL;
 
         if (w == NULL)
-		w = newwin(20, 70, 3, 5);
+		w = newwin(20, 70, 4, 5);
 	return (w);
 }
 
@@ -136,6 +136,9 @@ labeliostat()
 		return;
 	}
 	row = 5;
+	move(row, 0); clrtoeol();
+	mvaddstr(row++, 10,
+            "/0   /10  /20  /30  /40  /50  /60  /70  /80  /90  /100");
 	mvaddstr(row++, 0, "cpu  user|"); clrtoeol();
 	mvaddstr(row++, 0, "     nice|"); clrtoeol();
 	mvaddstr(row++, 0, "   system|"); clrtoeol();
@@ -200,10 +203,10 @@ stats(row, dn)
 		itime += xtime, xtime = 0;
 	if (itime < 0)
 		xtime += itime, itime = 0;
-	wmove(wnd, row++, 5); histogram(words / 512 / etime, 60, 'X');
-	wmove(wnd, row++, 5); histogram(s.dk_xfer[dn] / etime, 60, 'X');
+	wmove(wnd, row++, 5); histogram(words / 512 / etime, 60, 1.0, 'X');
+	wmove(wnd, row++, 5); histogram(s.dk_xfer[dn] / etime, 60, 1.0, 'X');
 	wmove(wnd, row++, 5); histogram(s.dk_seek[dn] ?
-	    itime * 1000. / s.dk_seek[dn] : 0, 60, 'X');
+	    itime * 1000. / s.dk_seek[dn] : 0, 60, 1.0, 'X');
 	return (row);
 }
 
@@ -218,21 +221,22 @@ stat1(row, o)
 		time += s.cp_time[i];
 	if (time == 0.0)
 		time = 1.0;
-	wmove(wnd, row, 5); histogram(100*s.cp_time[o] / time, 60, 'X');
+	wmove(wnd, row, 5); histogram(100*s.cp_time[o] / time, 60, 0.5, 'X');
 }
 
-histogram(val, colwidth, c)
+histogram(val, colwidth, scale, c)
 	double val;
 	int colwidth;
+	double scale;
 	char c;
 {
 	char buf[10];
 	register int k;
-	register int v = (int)(val + 0.5);
+	register int v = (int)(val * scale) + 0.5;
 
 	k = MIN(v, colwidth);
 	if (v > colwidth) {
-		sprintf(buf, " %d", v);
+		sprintf(buf, "%4.1f", v);
 		k -= strlen(buf);
 		while (k--)
 			waddch(wnd, c);
