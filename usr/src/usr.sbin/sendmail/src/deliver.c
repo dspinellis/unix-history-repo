@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.56 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.56.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -47,6 +47,10 @@ sendall(e, mode)
 	int otherowners;
 	register ENVELOPE *ee;
 	ENVELOPE *splitenv = NULL;
+	int pid;
+#ifdef LOCKF
+	struct flock lfd;
+#endif
 
 	/* determine actual delivery mode */
 	if (mode == SM_DEFAULT)
@@ -95,6 +99,140 @@ sendall(e, mode)
 		}
 		e->e_from.q_flags |= QDONTSEND;
 		(void) recipient(&e->e_from, &e->e_sendqueue, e);
+	}
+
+# ifdef QUEUE
+	if ((mode == SM_QUEUE || mode == SM_FORK ||
+	     (mode != SM_VERIFY && SuperSafe)) &&
+	    !bitset(EF_INQUEUE, e->e_flags))
+	{
+		/* be sure everything is instantiated in the queue */
+		queueup(e, TRUE, mode == SM_QUEUE);
+	}
+#endif /* QUEUE */
+
+	switch (mode)
+	{
+	  case SM_VERIFY:
+		Verbose = TRUE;
+		break;
+
+	  case SM_QUEUE:
+  queueonly:
+		e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
+		return;
+
+	  case SM_FORK:
+		if (e->e_xfp != NULL)
+			(void) fflush(e->e_xfp);
+
+# ifdef LOCKF
+		/*
+		**  Since lockf has the interesting semantic that the
+		**  lock is lost when we fork, we have to risk losing
+		**  the lock here by closing before the fork, and then
+		**  trying to get it back in the child.
+		*/
+
+		if (e->e_lockfp != NULL)
+		{
+			(void) xfclose(e->e_lockfp, "sendenvelope", "lockfp");
+			e->e_lockfp = NULL;
+		}
+# endif /* LOCKF */
+
+		pid = fork();
+		if (pid < 0)
+		{
+			goto queueonly;
+		}
+		else if (pid > 0)
+		{
+			/* be sure we leave the temp files to our child */
+			e->e_id = e->e_df = NULL;
+# ifndef LOCKF
+			if (e->e_lockfp != NULL)
+			{
+				(void) xfclose(e->e_lockfp, "sendenvelope", "lockfp");
+				e->e_lockfp = NULL;
+			}
+# endif
+
+			/* close any random open files in the envelope */
+			if (e->e_dfp != NULL)
+			{
+				(void) xfclose(e->e_dfp, "sendenvelope", "dfp");
+				e->e_dfp = NULL;
+			}
+			if (e->e_xfp != NULL)
+			{
+				(void) xfclose(e->e_xfp, "sendenvelope", "xfp");
+				e->e_xfp = NULL;
+			}
+			return;
+		}
+
+		/* double fork to avoid zombies */
+		if (fork() > 0)
+			exit(EX_OK);
+
+		/* be sure we are immune from the terminal */
+		disconnect(FALSE, e);
+
+# ifdef LOCKF
+		/*
+		**  Now try to get our lock back.
+		*/
+
+		lfd.l_type = F_WRLCK;
+		lfd.l_whence = lfd.l_start = lfd.l_len = 0;
+		e->e_lockfp = fopen(queuename(e, 'q'), "r+");
+		if (e->e_lockfp == NULL ||
+		    fcntl(fileno(e->e_lockfp), F_SETLK, &lfd) < 0)
+		{
+			/* oops....  lost it */
+			if (tTd(13, 1))
+				printf("sendenvelope: %s lost lock: lockfp=%x, %s\n",
+					e->e_id, e->e_lockfp, errstring(errno));
+
+# ifdef LOG
+			if (LogLevel > 29)
+				syslog(LOG_NOTICE, "%s: lost lock: %m",
+					e->e_id);
+# endif /* LOG */
+			exit(EX_OK);
+		}
+# endif /* LOCKF */
+
+		/*
+		**  Close any cached connections.
+		**
+		**	We don't send the QUIT protocol because the parent
+		**	still knows about the connection.
+		**
+		**	This should only happen when delivering an error
+		**	message.
+		*/
+
+		mci_flush(FALSE, NULL);
+
+		break;
+	}
+
+	/*
+	**  If we haven't fully expanded aliases, do it now
+	*/
+
+	if (bitset(EF_VRFYONLY, e->e_flags))
+	{
+		e->e_flags &= ~EF_VRFYONLY;
+		for (q = e->e_sendqueue; q != NULL; q = q->q_next)
+		{
+			extern ADDRESS *recipient();
+
+			if (bitset(QVERIFIED, q->q_flags))
+				recipient(q, &e->e_sendqueue, e);
+		}
 	}
 
 	/*
@@ -232,18 +370,6 @@ sendall(e, mode)
 		e->e_errormode = EM_MAIL;
 	}
 
-# ifdef QUEUE
-	if ((mode == SM_QUEUE || mode == SM_FORK ||
-	     (mode != SM_VERIFY && SuperSafe)) &&
-	    !bitset(EF_INQUEUE, e->e_flags))
-	{
-		/* be sure everything is instantiated in the queue */
-		queueup(e, TRUE, mode == SM_QUEUE);
-		for (ee = splitenv; ee != NULL; ee = ee->e_sibling)
-			queueup(ee, TRUE, mode == SM_QUEUE);
-	}
-#endif /* QUEUE */
-
 	if (splitenv != NULL)
 	{
 		if (tTd(13, 1))
@@ -270,121 +396,8 @@ sendenvelope(e, mode)
 	register ENVELOPE *e;
 	char mode;
 {
-	bool oldverbose;
-	int pid;
 	register ADDRESS *q;
-#ifdef LOCKF
-	struct flock lfd;
-#endif
-
-	oldverbose = Verbose;
-	switch (mode)
-	{
-	  case SM_VERIFY:
-		Verbose = TRUE;
-		break;
-
-	  case SM_QUEUE:
-  queueonly:
-		e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
-		return;
-
-	  case SM_FORK:
-		if (e->e_xfp != NULL)
-			(void) fflush(e->e_xfp);
-
-# ifdef LOCKF
-		/*
-		**  Since lockf has the interesting semantic that the
-		**  lock is lost when we fork, we have to risk losing
-		**  the lock here by closing before the fork, and then
-		**  trying to get it back in the child.
-		*/
-
-		if (e->e_lockfp != NULL)
-		{
-			(void) xfclose(e->e_lockfp, "sendenvelope", "lockfp");
-			e->e_lockfp = NULL;
-		}
-# endif /* LOCKF */
-
-		pid = fork();
-		if (pid < 0)
-		{
-			goto queueonly;
-		}
-		else if (pid > 0)
-		{
-			/* be sure we leave the temp files to our child */
-			e->e_id = e->e_df = NULL;
-# ifndef LOCKF
-			if (e->e_lockfp != NULL)
-			{
-				(void) xfclose(e->e_lockfp, "sendenvelope", "lockfp");
-				e->e_lockfp = NULL;
-			}
-# endif
-
-			/* close any random open files in the envelope */
-			if (e->e_dfp != NULL)
-			{
-				(void) xfclose(e->e_dfp, "sendenvelope", "dfp");
-				e->e_dfp = NULL;
-			}
-			if (e->e_xfp != NULL)
-			{
-				(void) xfclose(e->e_xfp, "sendenvelope", "xfp");
-				e->e_xfp = NULL;
-			}
-			return;
-		}
-
-		/* double fork to avoid zombies */
-		if (fork() > 0)
-			exit(EX_OK);
-
-		/* be sure we are immune from the terminal */
-		disconnect(FALSE, e);
-
-# ifdef LOCKF
-		/*
-		**  Now try to get our lock back.
-		*/
-
-		lfd.l_type = F_WRLCK;
-		lfd.l_whence = lfd.l_start = lfd.l_len = 0;
-		e->e_lockfp = fopen(queuename(e, 'q'), "r+");
-		if (e->e_lockfp == NULL ||
-		    fcntl(fileno(e->e_lockfp), F_SETLK, &lfd) < 0)
-		{
-			/* oops....  lost it */
-			if (tTd(13, 1))
-				printf("sendenvelope: %s lost lock: lockfp=%x, %s\n",
-					e->e_id, e->e_lockfp, errstring(errno));
-
-# ifdef LOG
-			if (LogLevel > 29)
-				syslog(LOG_NOTICE, "%s: lost lock: %m",
-					e->e_id);
-# endif /* LOG */
-			exit(EX_OK);
-		}
-# endif /* LOCKF */
-
-		/*
-		**  Close any cached connections.
-		**
-		**	We don't send the QUIT protocol because the parent
-		**	still knows about the connection.
-		**
-		**	This should only happen when delivering an error
-		**	message.
-		*/
-
-		mci_flush(FALSE, NULL);
-
-		break;
-	}
+	bool oldverbose = Verbose;
 
 	/*
 	**  Run through the list and send everything.
