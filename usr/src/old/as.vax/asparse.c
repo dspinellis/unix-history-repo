@@ -1,18 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asparse.c 4.1 %G%";
+static	char sccsid[] = "@(#)asparse.c 4.2 %G%";
 #include <stdio.h>
-#include <sys/types.h>
-#ifdef UNIX
-#  include <a.out.h>
-#endif UNIX
-
-#ifdef VMS
-#  ifdef UNIXDEVEL
-#	include <a.out.h>
-#  else VMSDEVEL
-#  	include <aout.h>
-#  endif
-#endif VMS
 #include "as.h"
 #include "asexpr.h"
 #include "asscan.h"
@@ -98,7 +86,7 @@ int	yyparse()
 
 	while (INTOKSET(val, LINSTBEGIN)){
 		if (val == INT) {
-			int i = ((struct exp *)yylval)->xvalue;
+			int i = ((struct exp *)yylval)->e_xvalue;
 			shift;
 			if (val != COLON)
 				goto nocolon;
@@ -128,43 +116,59 @@ int	yyparse()
 			shiftover(NAME);
 nocolon:
 			if (val != COLON) {
+#ifdef FLEXNAMES
 				yyerror("\"%s\" is not followed by a ':' for a label definition",
-					np->name);
+#else not FLEXNAMES
+				yyerror("\"%.*s\" is not followed by a ':' for a label definition",
+					NCPS,
+#endif not FLEXNAMES
+					np->s_name);
 				goto  errorfix;
 			}
 restlab:
 			shift;
 			flushfield(NBPW/4);
-			if ((np->type&XTYPE)!=XUNDEF) {
-				if(  (np->type&XTYPE)!=dotp->xtype 
-				   || np->value!=dotp->xvalue
+			if ((np->s_type&XTYPE)!=XUNDEF) {
+				if(  (np->s_type&XTYPE)!=dotp->e_xtype 
+				   || np->s_value!=dotp->e_xvalue
 				   || (  (passno==1)
-				       &&(np->index != dotp->xloc)
+				       &&(np->s_index != dotp->e_xloc)
 				      )
 				  ){
 #ifndef DEBUG
-					if (np->name[0] != 'L')
+					if (np->s_name[0] != 'L')
 #endif not DEBUG
 					{
 						if (passno == 1)
-						  yyerror("%.8s redefined", np->name);
+#ifdef FLEXNAMES
+						  yyerror("%s redefined",
+#else not FLEXNAMES
+						  yyerror("%.*s redefined",
+							NCPS,
+#endif not FLEXNAMES 
+							np->s_name);
 						else
-						  yyerror("%.8s redefined: PHASE ERROR, 1st: %d, 2nd: %d",
-						   np->name,
-						   np->value,
-						   dotp->xvalue);
+#ifdef FLEXNAMES
+						  yyerror("%s redefined: PHASE ERROR, 1st: %d, 2nd: %d",
+#else not FLEXNAMES
+						  yyerror("%.*s redefined: PHASE ERROR, 1st: %d, 2nd: %d",
+							NCPS,
+#endif not FLEXNAMES
+							np->s_name,
+							np->s_value,
+							dotp->e_xvalue);
 					}
 				}
 			}
-			np->type &= ~(XTYPE|XFORW);
-			np->type |= dotp->xtype;
-			np->value = dotp->xvalue;
+			np->s_type &= ~(XTYPE|XFORW);
+			np->s_type |= dotp->e_xtype;
+			np->s_value = dotp->e_xvalue;
 			if (passno == 1){
-				np->index = dotp-usedot;
-				if (np->name[0] == 'L'){
+				np->s_index = dotp-usedot;
+				if (np->s_name[0] == 'L'){
 					nlabels++;
 				}
-				np->tag = LABELID;
+				np->s_tag = LABELID;
 			}
 		}	/*end of this being a label*/
 	}	/*end of to consuming all labels, NLs and SEMIS */ 
@@ -206,7 +210,7 @@ restlab:
    case ILINENO:
 	shift;		/*over the ILINENO*/
 	expr(locxp, val);
-	lineno = locxp->xvalue;
+	lineno = locxp->e_xvalue;
 	break;
 
    case ISET: 	/* .set  <name> , <expr> */
@@ -215,12 +219,12 @@ restlab:
 	shiftover(NAME);
 	shiftover(CM);
 	expr(locxp, val);
-	np->type &= (XXTRN|XFORW);
-	np->type |= locxp->xtype&(XTYPE|XFORW);
-	np->value = locxp->xvalue;
+	np->s_type &= (XXTRN|XFORW);
+	np->s_type |= locxp->e_xtype&(XTYPE|XFORW);
+	np->s_value = locxp->e_xvalue;
 	if (passno==1)
-		np->index = locxp->xloc;
-	if ((locxp->xtype&XTYPE) == XUNDEF)
+		np->s_index = locxp->e_xloc;
+	if ((locxp->e_xtype&XTYPE) == XUNDEF)
 		yyerror("Illegal set?");
 	break;
 
@@ -240,18 +244,18 @@ restlab:
 	if (passno == 1){
 		stpt = (struct symtab *)symalloc();
 #ifdef FLEXNAMES
-		stpt->name = np->name;
+		stpt->s_name = np->s_name;
 #else
-		movestr(stpt->name, np->name, NCPS);
+		movestr(stpt->s_name, np->s_name, NCPS);
 #endif
-		np->tag = OBSOLETE;	/*invalidate original */
+		np->s_tag = OBSOLETE;	/*invalidate original */
 		nforgotten++;
 		np = stpt;
-		if (locxp->xtype != XABS) 
+		if (locxp->e_xtype != XABS) 
 			("Illegal lsym");
-		np->value=locxp->xvalue;
-		np->type=XABS;
-		np->tag = ILSYM;
+		np->s_value=locxp->e_xvalue;
+		np->s_type=XABS;
+		np->s_tag = ILSYM;
 	}
 	break;
 
@@ -259,7 +263,7 @@ restlab:
 	shift;
 	np = (struct symtab *)yylval;
 	shiftover(NAME);
-	np->type |= XXTRN;
+	np->s_type |= XXTRN;
 	break;
 
    case IDATA: 	/*.data [ <expr> ] */
@@ -275,7 +279,7 @@ restlab:
 		seg_number = 0;
 		seg_type = -seg_type;
 	} else {
-		if (locxp->xtype != XABS || (seg_number=locxp->xvalue) >= NLOC) {
+		if (locxp->e_xtype != XABS || (seg_number=locxp->e_xvalue) >= NLOC) {
 			yyerror("illegal location counter");
 			seg_number = 0;
 		}
@@ -294,7 +298,7 @@ restlab:
 	if (passno==2) {
 		puchar(vms_obj_ptr,6);		/*  setpl  */
 		puchar(vms_obj_ptr,seg_number);	/* psect # */
-		plong(vms_obj_ptr,dotp->xvalue);/*  offset */
+		plong(vms_obj_ptr,dotp->e_xvalue);/*  offset */
 		puchar(vms_obj_ptr,80);		/*  setrb  */
 		if((vms_obj_ptr-sobuf) > 400){
 			write(objfil,sobuf,vms_obj_ptr-sobuf);
@@ -341,9 +345,9 @@ restlab:
 		if (val == COLON){
 			shiftover(COLON);
 			expr(pval, val);
-			if (locxp->xtype != XABS)
+			if (locxp->e_xtype != XABS)
 			  yyerror("Width not absolute");
-			field_width = locxp->xvalue;
+			field_width = locxp->e_xvalue;
 			locxp = pval;
 			if (bitoff + field_width >
 			  curlen)
@@ -355,7 +359,7 @@ restlab:
 			flushfield(curlen);
 		}
 
-		 if ((locxp->xtype&XTYPE)!=XABS) {
+		 if ((locxp->e_xtype&XTYPE)!=XABS) {
 			if (bitoff)
 				yyerror("Illegal relocation in field");
 			field_width=LEN1;
@@ -364,15 +368,15 @@ restlab:
 			if (curlen==NBPW/2)
 				field_width = LEN2;
 			if (passno == 1){
-				dotp->xvalue += reflen[field_width];
+				dotp->e_xvalue += reflen[field_width];
 			} else {
-				outrel(&locxp->xvalue,
+				outrel(&locxp->e_xvalue,
 					field_width,
-					locxp->xtype,
-					locxp->xname);
+					locxp->e_xtype,
+					locxp->e_xname);
 			}
 		} else {
-			field_value = locxp->xvalue & ( (1L << field_width)-1);
+			field_value = locxp->e_xvalue & ( (1L << field_width)-1);
 			bitfield |= field_value << bitoff;
 			bitoff += field_width;
 		}
@@ -383,16 +387,16 @@ restlab:
 
 	flushfield(curlen);
 	if ( ( curlen == NBPW/4) && bitoff)
-		dotp->xvalue ++;
+		dotp->e_xvalue ++;
 	break;
 	/*end of case IBYTE, IWORD, ILONG, IINT*/
 
    case ISPACE: 	/* .space <expr> */
 	shift;
 	expr(locxp, val);
-	if (locxp->xtype != XABS)
+	if (locxp->e_xtype != XABS)
 		yyerror("Space size not absolute");
-	space_value = locxp->xvalue;
+	space_value = locxp->e_xvalue;
   ospace:
 	flushfield(NBPW/4);
 #ifdef UNIX
@@ -403,7 +407,7 @@ restlab:
 	outs(strbuf[2].str, space_value);
 #endif UNIX
 #ifdef VMS
-	dotp->xvalue += space_value;		/*bump pc*/
+	dotp->e_xvalue += space_value;		/*bump pc*/
 	if (passno==2){
 	  if(*(strbuf[2].str)==0) {
 		puchar(vms_obj_ptr,81);		/* AUGR  */
@@ -422,16 +426,16 @@ restlab:
 		/* fill count bytes with value */
 	shift;
 	expr(locxp, val);
-	if (locxp->xtype != XABS)
+	if (locxp->e_xtype != XABS)
 		yyerror("Fill repetition count not absolute");
-	space_value = locxp->xvalue;
+	space_value = locxp->e_xvalue;
 	shiftover(CM);
 	expr(locxp, val);
-	if (locxp->xtype != XABS)
+	if (locxp->e_xtype != XABS)
 		yyerror("Fill value not absolute");
 	flushfield(NBPW/4);
 	while(space_value-- > 0)
-		outb(locxp->xvalue & 0xFF);
+		outb(locxp->e_xvalue & 0xFF);
 	break;
 #endif UNIX
 
@@ -448,7 +452,7 @@ restlab:
 	while (val ==  STRING){
 		flushfield(NBPW/4);
 		if (bitoff)
-		  dotp->xvalue++;
+		  dotp->e_xvalue++;
 		stringp = (struct strdesc *)yylval;
 #ifdef UNIX
 		outs(stringp->str, stringp->str_lg);
@@ -457,7 +461,7 @@ restlab:
 		{
 			register int i;
 			for (i=0; i < stringp->str_lg; i++){
-			  dotp->xvalue += 1;
+			  dotp->e_xvalue += 1;
 			    if (passno==2){
 				puchar(vms_obj_ptr,-1);
 			  	puchar(vms_obj_ptr,stringp->str[i]);
@@ -484,7 +488,7 @@ restlab:
 			puchar(vms_obj_ptr,-1);
 			puchar(vms_obj_ptr,0);
 		}
-		dotp->xvalue += 1;
+		dotp->e_xvalue += 1;
 #endif VMS
 	}
 	break;
@@ -493,11 +497,11 @@ restlab:
 	shift;
 	expr(locxp, val);
 
-	if (locxp->xtype==XABS)
+	if (locxp->e_xtype==XABS)
 		orgwarn++;
-	else if ((locxp->xtype & ~XXTRN) != dotp->xtype)
+	else if ((locxp->e_xtype & ~XXTRN) != dotp->e_xtype)
 		yyerror("Illegal expression to set origin");
-	space_value = locxp->xvalue - dotp->xvalue;
+	space_value = locxp->e_xvalue - dotp->e_xvalue;
 	if (space_value < 0)
 		yyerror("Backwards 'org'");
 	goto ospace;
@@ -548,7 +552,7 @@ restlab:
 	shift;
 	for (argcnt = 0; argcnt < 8; argcnt++){
 		expr(locxp, val);
-		stpt->name[argcnt] = locxp->xvalue;
+		stpt->s_name[argcnt] = locxp->e_xvalue;
 		xp = explist;
 		shiftover(CM);
 	}
@@ -560,26 +564,26 @@ restlab:
 
   tailstab:
 	expr(locxp, val);
-	if (! (locxp->xvalue & STABTYPS)){
+	if (! (locxp->e_xvalue & STABTYPS)){
 		yyerror("Invalid type in %s",stabname);
 		goto errorfix;
 	}
-	stpt->ptype = locxp->xvalue;
+	stpt->s_ptype = locxp->e_xvalue;
 	shiftover(CM);
 	expr(locxp, val);
-	stpt->other = locxp->xvalue;
+	stpt->s_other = locxp->e_xvalue;
 	shiftover(CM);
 	expr(locxp, val);
-	stpt->desc = locxp->xvalue;
+	stpt->s_desc = locxp->e_xvalue;
 	shiftover(CM);
 	exprisname = 0;
 	expr(locxp, val);
-	p = locxp->xname;
+	p = locxp->e_xname;
 	if (p == NULL) {	/*absolute expr to begin with*/
-		stpt->value = locxp->xvalue;
-		stpt->index = dotp - usedot;
+		stpt->s_value = locxp->e_xvalue;
+		stpt->s_index = dotp - usedot;
 		if (exprisname){
-			switch(stpt->ptype){
+			switch(stpt->s_ptype){
 				case N_GSYM:
 				case N_FNAME:
 				case N_RSYM:
@@ -589,19 +593,19 @@ restlab:
 				case N_BCOMM:
 				case N_ECOMM:
 				case N_LENG:
-					stpt->tag = STABFIXED;
+					stpt->s_tag = STABFIXED;
 					break;
 				default:
-					stpt->tag = STABFLOATING;
+					stpt->s_tag = STABFLOATING;
 					break;
 			}
 		} else
-			stpt->tag = STABFIXED;
+			stpt->s_tag = STABFIXED;
 	}
 	else {		/*really have a name*/
-		stpt->dest = locxp->xname;
-		stpt->index = p->index;
-		stpt->type = p->type | STABFLAG;
+		stpt->s_dest = locxp->e_xname;
+		stpt->s_index = p->s_index;
+		stpt->s_type = p->s_type | STABFLAG;
 		/*
 		 *	We will assign a more accruate
 		 *	guess of locxp's location when
@@ -609,7 +613,7 @@ restlab:
 		 *	The final value of value is
 		 *	given by stabfix()
 		 */
-		stpt->tag = STABFLOATING;
+		stpt->s_tag = STABFLOATING;
 	}
 	/*
 	 *	tokptr now points at one token beyond
@@ -636,17 +640,17 @@ restlab:
 	shift;		/*over the ISTABDOT*/
 	if (passno == 1){
 		expr(locxp, val);
-		if (! (locxp->xvalue & STABTYPS)){
+		if (! (locxp->e_xvalue & STABTYPS)){
 			yyerror("Invalid type in .stabd");
 			goto errorfix;
 		}
-		stpt->ptype = locxp->xvalue;
+		stpt->s_ptype = locxp->e_xvalue;
 		shiftover(CM);
 		expr(locxp, val);
-		stpt->other = locxp->xvalue;
+		stpt->s_other = locxp->e_xvalue;
 		shiftover(CM);
 		expr(locxp, val);
-		stpt->desc = locxp->xvalue;
+		stpt->s_desc = locxp->e_xvalue;
 		/*
 		 *
 		 *	Now, clobber everything but the
@@ -662,9 +666,9 @@ restlab:
 	 *		(ensures they are sorted into right place)/
 	 *	pass 2:	Fix the actual value
 	 */
-	stpt->value = dotp->xvalue;
-	stpt->index = dotp - usedot;
-	stpt->tag = STABFLOATING;	/*although it has no effect in pass 2*/
+	stpt->s_value = dotp->e_xvalue;
+	stpt->s_index = dotp - usedot;
+	stpt->s_tag = STABFLOATING;	/*although it has no effect in pass 2*/
 	break;
 
    case ISTABNONE:	stabname = ".stabn"; goto shortstab;
@@ -694,9 +698,9 @@ restlab:
 #endif
 	}
 #ifndef FLEXNAMES
-	movestr(stpt->name, stringp->str, auxval);
+	movestr(stpt->s_name, stringp->str, auxval);
 #else
-	stpt->name = savestr(stringp->str);
+	stpt->s_name = savestr(stringp->str);
 #endif
 	goto tailstab;
 	break;
@@ -710,17 +714,23 @@ restlab:
 	shiftover(CM);
 	expr(locxp, val);
 
-	if (locxp->xtype != XABS)
+	if (locxp->e_xtype != XABS)
 		yyerror("comm size not absolute");
-	if (passno==1 && (np->type&XTYPE)!=XUNDEF)
-		yyerror("Redefinition of %.8s", np->name);
+	if (passno==1 && (np->s_type&XTYPE)!=XUNDEF)
+#ifdef FLEXNAMES
+		yyerror("Redefinition of %s",
+#else not FLEXNAMES
+		yyerror("Redefinition of %.*s",
+			NCPS,
+#endif not FLEXNAMES
+			np->s_name);
 	if (passno==1) {
-		np->value = locxp->xvalue;
+		np->s_value = locxp->e_xvalue;
 		if (auxval == ICOMM)
-			np->type |= XXTRN;
+			np->s_type |= XXTRN;
 		else {
-			np->type &= ~XTYPE;
-			np->type |= XBSS;
+			np->s_type &= ~XTYPE;
+			np->s_type |= XBSS;
 		}
 	}
 	break;
@@ -765,17 +775,17 @@ restlab:
 				+SAFEEXPRBEG)) ) {
 				ERROR("expression expected");
 			}
-			expr(ap->xp,val);
+			expr(ap->a_xp,val);
 		     overdisp:
 			if ( val == LP || sawsize){
 				shiftover(LP);
 				findreg(regno);
 				shiftover(RP);
-				ap->atype = ADISP;
-				ap->areg1 = regno;
+				ap->a_atype = ADISP;
+				ap->a_areg1 = regno;
 			} else {
-				ap->atype = AEXP;
-				ap->areg1 = 0;
+				ap->a_atype = AEXP;
+				ap->a_areg1 = 0;
 			}
 			goto index;
 
@@ -788,8 +798,8 @@ restlab:
 		   case REG:
 		   case REGOP: 
 			findreg(regno);
-			ap->atype = AREG;
-			ap->areg1 = regno;
+			ap->a_atype = AREG;
+			ap->a_areg1 = regno;
 			break;
 		    
 		   case MUL: 
@@ -819,7 +829,7 @@ restlab:
 			 */
 			if (val != REG && val != REGOP){
 				droppedLP = 1;
-				val = exprparse(val, &(ap->xp));
+				val = exprparse(val, &(ap->a_xp));
 				droppedLP = 0;
 				goto overdisp;
 			}
@@ -827,34 +837,34 @@ restlab:
 			shiftover(RP);
 			if (val == PLUS){
 				shift;
-				ap->atype = AINCR;
+				ap->a_atype = AINCR;
 			} else
-				ap->atype = ABASE;
-			ap->areg1 = regno;
+				ap->a_atype = ABASE;
+			ap->a_areg1 = regno;
 			goto index;
 
 		   case LITOP: 
 		      imm:
 			shift;
 			expr(locxp, val);
-			ap->atype = AIMM;
-			ap->areg1 = 0;
-			ap->xp = locxp;
+			ap->a_atype = AIMM;
+			ap->a_areg1 = 0;
+			ap->a_xp = locxp;
 			goto index;
 
 		   case MP: 
 			shift;	/* -(reg) */
 			findreg(regno);
 			shiftover(RP);
-			ap->atype = ADECR;
-			ap->areg1 = regno;
+			ap->a_atype = ADECR;
+			ap->a_areg1 = regno;
 	  index:			/*look for [reg] */
 			if (val == LB){
 				shift;
 				findreg(regno);
 				shiftover(RB);
 				sawindex = 1;
-				ap->areg2 = regno;
+				ap->a_areg2 = regno;
 			}
 			break;
 
@@ -866,21 +876,21 @@ restlab:
 			 * Make a concession for *(%r)
 			 * meaning *0(%r) 
 			 */
-			if (ap->atype == ABASE) {
-				ap->atype = ADISP;
-				xp->xtype = XABS;
-				xp->xvalue = 0;
-				xp->xloc = 0;
-				ap->xp = xp++;
+			if (ap->a_atype == ABASE) {
+				ap->a_atype = ADISP;
+				xp->e_xtype = XABS;
+				xp->e_xvalue = 0;
+				xp->e_xloc = 0;
+				ap->a_xp = xp++;
 			}
-			ap->atype |= ASTAR;
+			ap->a_atype |= ASTAR;
 			sawmul = 0;
 	    }
 	    if (sawindex){
-		ap->atype |= AINDX;
+		ap->a_atype |= AINDX;
 		sawindex = 0;
 	    }
-	    ap->dispsize = sawsize == 0 ? d124 : sawsize;
+	    ap->a_dispsize = sawsize == 0 ? d124 : sawsize;
 		if (val != CM) break;
 		shiftover(CM);
 	}	/*processing all the arguments*/
@@ -910,7 +920,7 @@ restlab:
 			if (val != FLTNUM) {
 			  ERROR("floating number expected");
 			}
-			dotp->xvalue += curlen;
+			dotp->e_xvalue += curlen;
 #ifdef UNIX
 			if (passno == 2) {
 			  if(curlen == 8)
@@ -991,15 +1001,15 @@ int funnyreg(val, regnoback)		/*what the read head will sit on*/
 
 	expr(locxp, val);	/*and leave the current read head with value*/
 	if ( (passno == 2) &&
-	    (   locxp->xtype & XTYPE != XABS
-	     || locxp->xvalue < 0
-	     || locxp->xvalue >= 16 
+	    (   locxp->e_xtype & XTYPE != XABS
+	     || locxp->e_xvalue < 0
+	     || locxp->e_xvalue >= 16 
 	    )
 	  ){
 		yyerror("Illegal register");
 		return(0);
 	}
-	*regnoback = locxp->xvalue;
+	*regnoback = locxp->e_xvalue;
 	return(val);
 } 
 

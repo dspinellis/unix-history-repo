@@ -1,7 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asjxxx.c 4.1 %G%";
+static	char sccsid[] = "@(#)asjxxx.c 4.2 %G%";
 #include	<stdio.h>
-#include	<sys/types.h>
 #include	"as.h"
 #include	"assyms.h"
 
@@ -42,23 +41,23 @@ ijxout(op,ap,nact)
 		 */
 		putins(op,ap,nact); 
 		jumpfrom = lastjxxx;
-		jumpfrom->tag = JXACTIVE;
-		jumpfrom->jxbump = 0;
+		jumpfrom->s_tag = JXACTIVE;
+		jumpfrom->s_jxbump = 0;
 		if (op == JBR)
-			jumpfrom->jxfear = JBRFSIZE;
+			jumpfrom->s_jxfear = JBRFSIZE;
 		else
-			jumpfrom->jxfear = JXXXFSIZE;
+			jumpfrom->s_jxfear = JXXXFSIZE;
 		if (lastnam == 0)
 			yyerror("jxxx destination not a label");
-		jumpfrom->dest = lastnam;
-		jumpfrom->type = dotp->xtype;	/*only TEXT or DATA*/
-		jumpfrom->index = dotp-usedot;
+		jumpfrom->s_dest = lastnam;
+		jumpfrom->s_type = dotp->e_xtype;	/*only TEXT or DATA*/
+		jumpfrom->s_index = dotp-usedot;
 		/*
 		 *	value ALWAYS (ALWAYS!!!) indexes the next instruction
 		 *	after the jump, even in the jump must be exploded
 		 *	(bumped)
 		 */
-		jumpfrom->value = dotp->xvalue;
+		jumpfrom->s_value = dotp->e_xvalue;
 		njxxx++;
 	} else {/* pass2, resolve */
 		/*
@@ -70,25 +69,25 @@ ijxout(op,ap,nact)
 		register struct arg	*aplast;
 
 		aplast = ap + nact - 1;
-		xp = aplast->xp;
-		if (lastjxxx->tag == JXTUNNEL){
-			lastjxxx->tag = JXINACTIVE;
-			tunnel = lastjxxx->dest;
-			xp->xvalue = tunnel->value	/*index of instruction following*/
+		xp = aplast->a_xp;
+		if (lastjxxx->s_tag == JXTUNNEL){
+			lastjxxx->s_tag = JXINACTIVE;
+			tunnel = lastjxxx->s_dest;
+			xp->e_xvalue = tunnel->s_value	/*index of instruction following*/
 				    - 3			/* size of brw + word*/
-				    + ( ( (tunnel->jxfear == JBRFSIZE) &&
-					  (tunnel->jxbump == 0))?1:0);
+				    + ( ( (tunnel->s_jxfear == JBRFSIZE) &&
+					  (tunnel->s_jxbump == 0))?1:0);
 							/*non bumped branch byteis only 2 back*/
 		}
-		if (lastjxxx->jxbump == 0){	/*wasn't bumped, so is short form*/
+		if (lastjxxx->s_jxbump == 0){	/*wasn't bumped, so is short form*/
 			putins(op, ap, nact);
 		} else {
 			if (op != JBR){	/*branch reverse conditional byte over 
 					  branch unconditional word*/
-				oxvalue = xp->xvalue;
-				xp->xvalue = lastjxxx->value;
+				oxvalue = xp->e_xvalue;
+				xp->e_xvalue = lastjxxx->s_value;
 				putins(op^1, ap, nact);
-				xp->xvalue = oxvalue;
+				xp->e_xvalue = oxvalue;
 			}
 			putins(BRW, aplast, 1);
 		}
@@ -100,16 +99,16 @@ jalign(xp, sp)
 	register struct symtab *sp;
 {
 	register	int	mask;
-	if (xp->xtype != XABS || xp->xvalue < 0 || xp->xvalue > 16) {
+	if (xp->e_xtype != XABS || xp->e_xvalue < 0 || xp->e_xvalue > 16) {
 		yyerror("Illegal `align' argument");
 		return;
 	}
 	flushfield(NBPW/4);
 	if (passno == 1) {
-		sp->tag = JXALIGN;
-		sp->jxfear = (1 << xp->xvalue) - 1;
-		sp->type = dotp->xtype;
-		sp->index = dotp-usedot;
+		sp->s_tag = JXALIGN;
+		sp->s_jxfear = (1 << xp->e_xvalue) - 1;
+		sp->s_type = dotp->e_xtype;
+		sp->s_index = dotp-usedot;
 		/*
 		 *	We guess that the align will take up at least one
 		 *	byte in the code output.  We will correct for this
@@ -123,19 +122,19 @@ jalign(xp, sp)
 		 *	the code stream point to the next byte following
 		 *	the logical entry in the symbol table
 		 */
-		dotp->xvalue += 1;
-		sp->value = dotp->xvalue;
+		dotp->e_xvalue += 1;
+		sp->s_value = dotp->e_xvalue;
 		njxxx++;
 	} else {
-		mask = (1 << xp->xvalue) - 1;
-		while (dotp->xvalue & mask){
+		mask = (1 << xp->e_xvalue) - 1;
+		while (dotp->e_xvalue & mask){
 #ifdef UNIX
 			outb(0);
 #endif UNIX
 #ifdef VMS
 			*vms_obj_ptr++ = -1;
 			*vms_obj_ptr++ = 0;
-			dotp->xvalue += 1;
+			dotp->e_xvalue += 1;
 #endif VMS
 		}
 	}
@@ -189,26 +188,26 @@ jxxxfix()
 		 */
 		tunnel = 0;	/*initially, no tunnel*/
 		SEGITERATE(segno, 0, 0, cojumpfrom, jumpfrom, ubjumpfrom, ++){
-			tag = jumpfrom->tag;
+			tag = jumpfrom->s_tag;
 			if (tag <= IGNOREBOUND)
 				continue;	/*just an ordinary symbol*/
 			if (tag == JXALIGN){
 				tunnel = 0;	/*avoid tunneling across a flex alocation*/
 				continue;	/*we take care of these later*/
 			}
-			if (   jumpfrom->jxfear == JBRFSIZE	/*unconditional*/
+			if (   jumpfrom->s_jxfear == JBRFSIZE	/*unconditional*/
 			    || (   tag == JXINACTIVE		/*inactive bumped*/
-				&& (jumpfrom->jxbump != 0)
+				&& (jumpfrom->s_jxbump != 0)
 			       )
 			   ) tunnel = jumpfrom;
 			if (tag != JXACTIVE)
 				continue;
-			dest = jumpfrom->dest;
-			if (jumpfrom->index != dest->index){
+			dest = jumpfrom->s_dest;
+			if (jumpfrom->s_index != dest->s_index){
 				yyerror("Intersegment jxxx");
 				continue;
 			}
-			displ = dest->value - jumpfrom->value;
+			displ = dest->s_value - jumpfrom->s_value;
 			if (displ < MINBYTE || displ > MAXBYTE) {
 				/*
 				 *	This is an immediate lose!
@@ -222,27 +221,27 @@ jxxxfix()
 				 *	its relative position will be unaffected
 				 *	by future jxxx expansions.
 				 */
-				if (    (jumpfrom->jxfear > JBRFSIZE)
+				if (    (jumpfrom->s_jxfear > JBRFSIZE)
 				     && (tunnel) 
-				     && (tunnel->dest == jumpfrom->dest)	
-				     && (tunnel->index == jumpfrom->index)
-				     && (tunnel->value - jumpfrom->value >=
+				     && (tunnel->s_dest == jumpfrom->s_dest)	
+				     && (tunnel->s_index == jumpfrom->s_index)
+				     && (tunnel->s_value - jumpfrom->s_value >=
 						MINBYTE + JXXXFSIZE)
 				   ) {
 						/*
 						 *	tunnelling is OK
 						 */
-						jumpfrom->dest = tunnel;
+						jumpfrom->s_dest = tunnel;
 						/*
 						 * no bumping needed, this
 						 * is now effectively inactive
 						 * but must be remembered
 						 */
-						jumpfrom->tag = JXTUNNEL;
+						jumpfrom->s_tag = JXTUNNEL;
 #ifdef DEBUG
 						if(debug)
 						printf("Tunnel from %s from line %d\n",
-							jumpfrom->name, lineno);
+							jumpfrom->s_name, lineno);
 #endif
 						continue;
 				} else {	/*tunneling not possible*/
@@ -253,7 +252,7 @@ jxxxfix()
 					 *	as a tunnel
 					 */
 					tunnel = jumpfrom;
-					jumpfrom->tag = JXNOTYET;
+					jumpfrom->s_tag = JXNOTYET;
 					++nchange;
 					continue;
 				}
@@ -264,19 +263,19 @@ jxxxfix()
 			if (displ >= 0) {
 				SEGITERATE(segno, cojumpfrom + 1,0,cointdest,
 						intdest, ubintdest, ++){
-					if (intdest->value > dest->value) 
+					if (intdest->s_value > dest->s_value) 
 						break; /* beyond destination */
-					if (intdest->tag <= JXQUESTIONABLE)
+					if (intdest->s_tag <= JXQUESTIONABLE)
 						continue;	/*frozen solid*/
-					if (intdest->tag == JXALIGN){
-						jumpfrom->jxoveralign = 1;
+					if (intdest->s_tag == JXALIGN){
+						jumpfrom->s_jxoveralign = 1;
 						badjxalign++;
 					}
 					/*
 					 *	we assume the worst case
 					 *	for unfrozen jxxxxes
 					 */
-					displ += intdest->jxfear;
+					displ += intdest->s_jxfear;
 				}
 				if (displ <= MAXBYTE){
 					/*
@@ -284,7 +283,7 @@ jxxxfix()
 					 *	can't hurt us, so forget about
 					 *	this jump
 					 */
-					jumpfrom->tag = JXINACTIVE;
+					jumpfrom->s_tag = JXINACTIVE;
 				} else {
 					stillactives++;
 				}
@@ -294,18 +293,18 @@ jxxxfix()
 			 */
 				SEGITERATE(segno, cojumpfrom - 1,1,cointdest,
 				  intdest, ubintdest, --){
-					if (intdest->value <= dest->value) 
+					if (intdest->s_value <= dest->s_value) 
 						break; /* beyond destination */
-					if (intdest->tag <= JXQUESTIONABLE)
+					if (intdest->s_tag <= JXQUESTIONABLE)
 						continue;	/*frozen solid*/
-					if (intdest->tag == JXALIGN){
-						jumpfrom->jxoveralign = 1;
+					if (intdest->s_tag == JXALIGN){
+						jumpfrom->s_jxoveralign = 1;
 						badjxalign++;
 					}
-					displ -= intdest->jxfear; 
+					displ -= intdest->s_jxfear; 
 				}
 				if (displ >= MINBYTE) {
-					jumpfrom->tag = JXINACTIVE;
+					jumpfrom->s_tag = JXINACTIVE;
 				} else {
 					stillactives++;
 				}
@@ -334,8 +333,8 @@ jxxxfix()
 			if (stillactives){
 				SEGITERATE(segno, 0, 0, cojumpfrom, jumpfrom,
 				    ubjumpfrom, ++){
-					if (jumpfrom->tag == JXACTIVE){
-						jumpfrom->tag =
+					if (jumpfrom->s_tag == JXACTIVE){
+						jumpfrom->s_tag =
 						  badjxalign?JXNOTYET:JXINACTIVE;
 					}
 				}
@@ -348,35 +347,35 @@ jxxxfix()
 			 */
 			SEGITERATE(segno, 0, 0, cojumpfrom, jumpfrom,
 			   ubjumpfrom, ++){
-			    if (jumpfrom->tag == JXALIGN){
+			    if (jumpfrom->s_tag == JXALIGN){
 				/*
 				 *	Predict the true displacement
 				 *	needed, irregardless of the
 				 *	fact that we guessed 1
 				 */
-				displ = (jumpfrom->value - 1) & (unsigned)jumpfrom->jxfear;
+				displ = (jumpfrom->s_value - 1) & (unsigned)jumpfrom->s_jxfear;
 				if (displ == 0){	/*no virtual displacement*/
-					jumpfrom->jxfear = -1;
+					jumpfrom->s_jxfear = -1;
 				} else {
-					jumpfrom->jxfear = (jumpfrom->jxfear + 1) - displ;
+					jumpfrom->s_jxfear = (jumpfrom->s_jxfear + 1) - displ;
 					/*
-					 *	assert jumpfrom->jxfear > 0
+					 *	assert jumpfrom->s_jxfear > 0
 					 */
-					if (jumpfrom->jxfear == 1){
+					if (jumpfrom->s_jxfear == 1){
 						/*our prediction was correct*/
 						continue;
 					}
 					/*
-					 *	assert jumpfrom->jxfear > 1
+					 *	assert jumpfrom->s_jxfear > 1
 					 */
-					jumpfrom->jxfear -= 1;	/*correct guess*/
+					jumpfrom->s_jxfear -= 1;	/*correct guess*/
 				}
 				/*
-				 *	assert jumpfrom->jxfear = -1, +1...2**n-1
+				 *	assert jumpfrom->s_jxfear = -1, +1...2**n-1
 				 */
-				jumpfrom->tag = JXNOTYET;	/*signal*/
+				jumpfrom->s_tag = JXNOTYET;	/*signal*/
 				jxxxbump(segno, cojumpfrom);
-				jumpfrom->tag = JXINACTIVE;
+				jumpfrom->s_tag = JXINACTIVE;
 				/*
 				 *	Assert jxfrom->jxvalue indexes the first
 				 *	code byte after the added bytes, and
@@ -411,20 +410,20 @@ jxxxbump(segno, starthint)
 
 	cum_bump = 0;
 	SEGITERATE(segno, starthint, 0, cosp, sp, ub, ++){
-		tag = sp->tag;
+		tag = sp->s_tag;
 		if (tag == JXNOTYET){
 #ifdef DEBUG
 			if (debug){
-			if (sp->dest != 0)
+			if (sp->s_dest != 0)
 				printf("Explode jump to %s on line %d\n",
-					sp->dest->name, lineno);
+					sp->s_dest->s_name, lineno);
 			else
 				printf("Explode an align!\n");
 			}
 #endif
-			sp->tag = JXINACTIVE;
-			sp->jxbump = 1;
-			cum_bump += sp->jxfear;
+			sp->s_tag = JXINACTIVE;
+			sp->s_jxbump = 1;
+			cum_bump += sp->s_jxfear;
 		}
 		/*
 		 *	Only bump labels and jxxxes. Ignored entries can
@@ -433,7 +432,7 @@ jxxxbump(segno, starthint)
 		 *	pass.
 		 */
 		if (tag >= OKTOBUMP)	/*only bump labels and jxxxes and floating stabs*/
-			sp->value += cum_bump;
+			sp->s_value += cum_bump;
 	}
-	usedot[segno].xvalue += cum_bump;
+	usedot[segno].e_xvalue += cum_bump;
 }

@@ -1,7 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asscan.c 4.2 %G%";
+static	char sccsid[] = "@(#)asscan.c 4.3 %G%";
 #include <stdio.h>
-#include <sys/types.h>
 #include "as.h"
 #include "asscan.h"
 
@@ -129,6 +128,7 @@ closetmpfile()
 #endif DEBUG
 
 extern	int		yylval;		/*global communication with parser*/
+static	int		Lastjxxx;	/*this ONLY shuts up cc; see below*/
 
 toktype yylex()
 {
@@ -150,12 +150,12 @@ toktype yylex()
 				     yyerror("Too many expressions; try simplyfing");
 				else
 				    locxp = xp++;
-				glong(locxp->xvalue, bufptr);
-				locxp->yvalue = 0;
+				glong(locxp->e_xvalue, bufptr);
+				locxp->e_yvalue = 0;
 			  makevalue:
-				locxp->xtype = XABS;
-				locxp->xloc = 0;
-				locxp->xname = NULL;
+				locxp->e_xtype = XABS;
+				locxp->e_xloc = 0;
+				locxp->e_xname = NULL;
 				yylval = (int)locxp;
 				break;
 		case	FLTNUM:	
@@ -170,8 +170,8 @@ toktype yylex()
 				     yyerror("Too many expressions; try simplyfing");
 				else
 				    locxp = xp++;
-				glong(locxp->xvalue, bufptr);
-				glong(locxp->yvalue, bufptr);
+				glong(locxp->e_xvalue, bufptr);
+				glong(locxp->e_yvalue, bufptr);
 				yylval = val = INT;
 				goto makevalue;
 		case	NAME:
@@ -186,7 +186,9 @@ toktype yylex()
 				break;
 		case	IJXXX:
 				gchar(yylval, bufptr);
-				gptr(lastjxxx, bufptr);
+				/* We can't cast Lastjxxx into (int *) here.. */
+				gptr(Lastjxxx, bufptr);
+				lastjxxx = (struct symtab *)Lastjxxx;
 				break;
 		case	ILINESKIP:
 				gint(yylval, bufptr);
@@ -221,20 +223,20 @@ toktype yylex()
 			passno, bufptr -  firsttoken, tok_to_name(val));
 		switch(val){
 		case 	INT:	printf("val %d",
-					((struct exp *)yylval)->xvalue);
+					((struct exp *)yylval)->e_xvalue);
 				break;
 		case	BFINT:	printf("val %d",
-					((struct exp *)yylval)->xvalue);
+					((struct exp *)yylval)->e_xvalue);
 				break;
 		case	QUAD:	printf("val[msd] = 0x%x, val[lsd] = 0x%x.",
-				((struct exp *)yylval)->xvalue,
-				((struct exp *)yylval)->yvalue);
+				((struct exp *)yylval)->e_xvalue,
+				((struct exp *)yylval)->e_yvalue);
 				break;
 		case 	FLTNUM: printf("value %20.17f",
 				((union Double *)yylval)->dvalue);
 				break;
 		case	NAME:	printf("\"%.8s\"",
-					((struct symtab *)yylval)->name);
+					((struct symtab *)yylval)->s_name);
 				break;
 		case	REG:	printf(" r%d",
 					yylval);
@@ -242,7 +244,7 @@ toktype yylex()
 		case	IJXXX:
 		case	INST0:	
 		case	INSTn:	printf("%.8s",
-					itab[0xFF &yylval]->name);
+					itab[0xFF &yylval]->s_name);
 				break;
 		case	STRING:	printf("length %d ",
 					((struct strdesc *)yylval)->str_lg);
@@ -773,10 +775,10 @@ scan_dot_s(bufferbox)
 			val = getchar();
 		ungetc(val);
 	doit:
-		tag = (op = *lookup(1))->tag;
+		tag = (op = *lookup(1))->s_tag;
 		if (tag && tag != LABELID){
-			yylval = ( (struct instab *)op)->opcode;
-			val = op->tag ;
+			yylval = ( (struct instab *)op)->i_opcode;
+			val = op->s_tag ;
 			goto ret;
 		} else {
 			/*

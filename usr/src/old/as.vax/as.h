@@ -1,12 +1,33 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* "@(#)as.h 4.2 %G%" */
+/* "@(#)as.h 4.3 %G%" */
 #ifdef VMS
 # define	vax	1
 # define	VAX	1
 #endif VMS
 
-#define readonly
+#include <sys/types.h>
+#ifdef UNIX
 
+#ifdef FLEXNAMES
+#  include <a.out.h>
+#  include <stab.h>
+#else not FLEXNAMES
+#  include <olda.out.h>
+#  include <stab.h>
+#endif FLEXNAMES
+
+#endif UNIX 
+#ifdef VMS
+
+#ifdef UNIXDEVEL
+#  include <a.out.h>
+#else not UNIXDEVEL
+#  include <aout.h>
+#endif not UNIXDEVEL
+
+#endif VMS
+
+#define readonly
 #define	NINST		300
 
 #define	NEXP		20	/* max number of expr. terms per instruction */
@@ -171,61 +192,100 @@
  *	Symbol table entries are used for both user defined symbols,
  *	and symbol slots generated to create the jxxx jump from
  *	slots.
+ *	Caution: the instructions are stored in a shorter version
+ *	of the struct symtab, using all fields in sym_nm and
+ *	tag.  The fields used in sym_nm are carefully redeclared
+ *	in struct Instab and struct instab (see below).
+ *	If struct nlist gets changed, then Instab and instab may
+ *	have to be changed.
  */
 
-#define symfirstfields	char	*name;	unsigned char tag, type
-
 struct symtab{
-		symfirstfields;
-		short	___hole;
-		char	ptype;		/*tag == NAME*/
-
-#define		jxbump	ptype		/*tag == JX..., how far to expand*/
-
-		char	other;		/*for stab info*/
-
- 		short	desc;		/*tag == NAME*/
-
-#define		jxfear	desc		/*how far needs to be bumped*/
-
-		long	value;		/*address in the segment*/
-		char	jxoveralign;	/*if a JXXX, jumped over an align*/
-		short	index;		/*which segment*/
-		struct	symtab *dest;	/*if JXXX, where going to*/
+		struct	nlist	s_nm;
+		u_char	s_tag;		/* assembler tag */
+		u_char	s_ptype;	/* if tag == NAME */
+		u_char	s_jxoveralign;	/* if a JXXX, jumped over align */
+		short	s_index;	/* which segment */
+		struct	symtab *s_dest;	/* if JXXX, where going to */
 #ifdef DJXXX
-		short	jxline;		/*source line of the jump from*/
+		short	s_jxline;	/* source line of the jump from */
 #endif
 };
+/*
+ *	Redefinitions of the fields in symtab for
+ *	use when the symbol table entry marks a jxxx instruction.
+ */
+#define	s_jxbump	s_ptype		/* tag == JX..., how far to expand */
+#define	s_jxfear	s_desc		/* how far needs to be bumped */
+/*
+ *	Redefinitions of fields in the struct nlist for symbols so that
+ *	one saves typing, and so that they conform 
+ *	with the old naming conventions.
+ */
+#ifdef	FLEXNAMES
+#define	s_name	s_nm.n_un.n_name	/* name pointer */
+#define	s_nmx	s_nm.n_un.n_strx	/* string table index */
+#else 	not FLEXNAMES
+#define	s_name	s_nm.n_name
+#endif
+#define	s_type	s_nm.n_type		/* type of the symbol */
+#define	s_other	s_nm.n_other		/* other information for sdb */
+#define	s_desc	s_nm.n_desc		/* type descriptor */
+#define	s_value	s_nm.n_value		/* value of the symbol, or sdb delta */
 
-struct instab{
-	symfirstfields;
-
-#define		opcode type		/*use the same field as symtab.type*/
-
-	char	nargs;			/*how many arguments*/
-	char	argtype[6];		/*argument type info*/
+struct	instab{
+	struct	nlist	s_nm;		/* instruction name, type (opcode) */
+	u_char	s_tag;			
 };
+/*
+ *	The fields nm.n_desc and nm.n_value total 6 bytes; this is
+ *	just enough for the 6 bytes describing the argument types.
+ *	We use a macro to define access to these 6 bytes, assuming that
+ *	they are allocated adjacently.
+ *	IF THE FORMAT OF STRUCT nlist CHANGES, THESE MAY HAVE TO BE CHANGED.
+ *
+ *	Instab is cleverly declared to look very much the combination of
+ *	a struct symtab and a struct nlist.
+ */
+struct	Instab{
+#ifdef FLEXNAMES
+	char	*I_name;
+#else not FLEXNAMES
+	char	I_name[NCPS];
+#endif
+	u_char	I_opcode;
+	char	I_nargs;
+	char	I_args[6];
+	u_char	I_s_tag;
+};
+/*
+ *	Redefinitions of fields in the struct nlist for instructions so that
+ *	one saves typing, and conforms to the old naming conventions
+ */
+#define	i_opcode	s_nm.n_type	/* use the same field as symtab.type */
+#define	i_nargs		s_nm.n_other	/* number of arguments */
+#define	fetcharg(ptr, n) ((struct Instab *)ptr)->I_args[n]
 
 struct	arg {				/*one argument to an instruction*/
-	char	atype;
-	char	areg1;
-	char	areg2;
-	char	dispsize;		/*usually d124, unless have B^, etc*/
-	struct	exp *xp;
+	char	a_atype;
+	char	a_areg1;
+	char	a_areg2;
+	char	a_dispsize;		/*usually d124, unless have B^, etc*/
+	struct	exp *a_xp;
 };
 
 struct	exp {
-	long	xvalue;		/* MUST be the first field (look at union Double) */
-	long	yvalue;		/* MUST be second field; least sig word of a double */
-	char	xtype;
-	char	xloc;
-	struct	symtab *xname;
+	long	e_xvalue;		/* MUST be the first field (look at union Double) */
+	long	e_yvalue;		/* MUST be second field; least sig word of a double */
+	char	e_xtype;
+	char	e_xloc;
+	struct	symtab *e_xname;
 };
 
-#define doub_MSW xvalue
-#define doub_LSW yvalue
+#define doub_MSW e_xvalue
+#define doub_LSW e_yvalue
 
-union Double {
+union	Double {
 	struct{
 		long	doub_MSW;
 		long	doub_LSW;
@@ -233,7 +293,7 @@ union Double {
 	double	dvalue;
 };
 
-struct Quad {
+struct	Quad {
 	long	quad_low_long;
 	long	quad_high_long;
 };
@@ -274,8 +334,8 @@ struct Quad {
 	extern	struct	symtab	*lastjxxx;	
 
 #ifdef VMS
-	extern char	*vms_obj_ptr;		/* object buffer pointer */
-	extern char	sobuf[];		/* object buffer         */
+	extern	char	*vms_obj_ptr;		/* object buffer pointer */
+	extern	char	sobuf[];		/* object buffer         */
 	extern	int	objfil;			/* VMS object file descriptor */
 #endif VMS
 
@@ -336,7 +396,7 @@ struct Quad {
 	 *	Information about the instructions
 	 */
 	extern	struct	instab	*itab[NINST];	/*maps opcodes to instructions*/
-	extern  readonly struct instab instab[];
+	extern  readonly struct Instab instab[];
 
 	extern	int	curlen;			/*current literal storage size*/
 	extern	int	d124;			/*current pointer storage size*/
@@ -344,9 +404,9 @@ struct Quad {
 	struct	symtab	**lookup();		/*argument in yytext*/
 	struct 	symtab	*symalloc();
 
-#define outb(val) {dotp->xvalue++; if (passno==2) bputc((val), (txtfil));}
+#define outb(val) {dotp->e_xvalue++; if (passno==2) bputc((val), (txtfil));}
 
-#define outs(cp, lg) dotp->xvalue += (lg); if (passno == 2) bwrite((cp), (lg), (txtfil))
+#define outs(cp, lg) dotp->e_xvalue += (lg); if (passno == 2) bwrite((cp), (lg), (txtfil))
 
 /*
  *	Most of the time, the argument to flushfield is a power of two constant,

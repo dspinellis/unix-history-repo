@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* "@(#)assyms.h 4.1 %G%" */
+/* "@(#)assyms.h 4.2 %G%" */
 /*
  *	To speed up walks through symbols defined in a particular
  *	segment, we buil up a table of pointers into the symbol table
@@ -40,9 +40,6 @@ extern	int	hshused;		/*how many hash slots used*/
 struct 	allocbox{
 	struct		allocbox	*nextalloc;
 	struct		symtab		symslots[SYMDALLOP];
-#ifndef	FLEXNAMES
-	char				symnames[SYMDALLOP * NCPS];
-#endif
 };
 
 #ifdef FLEXNAMES

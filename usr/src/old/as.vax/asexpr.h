@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* "@(#)asexpr.h 4.1 %G%" */
+/* "@(#)asexpr.h 4.2 %G%" */
 /*
  *	Definitions to parse tokens
  */
@@ -45,13 +45,13 @@ struct	exp	*yukkyexpr();
 
 extern	char	tokensets[(LASTTOKEN) - (FIRSTTOKEN) + 1];
 
-#define LINSTBEGIN	01	/*SEMI, NL, NAME*/
+#define	LINSTBEGIN	01	/*SEMI, NL, NAME*/
 #define	EBEGOPS		02	/*LP, MINUS, TILDE*/
-#define	YUKKYEXPRBEG	04	/*NAME, INSTn, INST0, REG, DOT*/
+#define	YUKKYEXPRBEG	04	/*NAME, INSTn, INST0, REG, BFINT*/
 #define	SAFEEXPRBEG	010	/*INT, FLTNUM*/
-#define ADDOPS		020	/*PLUS, MINUS*/
+#define	ADDOPS		020	/*PLUS, MINUS*/
 #define	BOOLOPS		040	/*IOR, XOR, AND*/
-#define MULOPS		0100	/*LSH, RSH, MUL, DIV, TILDE*/
+#define	MULOPS		0100	/*LSH, RSH, MUL, DIV, TILDE*/
 
 #define	INTOKSET(val, set)	(tokensets[(val)] & (set) )
 

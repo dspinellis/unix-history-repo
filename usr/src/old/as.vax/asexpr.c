@@ -1,7 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asexpr.c 4.1 %G%";
+static	char sccsid[] = "@(#)asexpr.c 4.2 %G%";
 #include <stdio.h>
-#include <sys/types.h>
 #include "as.h"
 #include "asexpr.h"
 
@@ -57,81 +56,81 @@ combine(op, exp1, exp2)
 	register struct exp *exp1, *exp2;
 {
 	register 	e1_type, e2_type;
-	register	type;
+	register	back_type;
 
 	lastnam=0; 			/* kludge for jxxx instructions */
 
-	e1_type = exp1->xtype&XTYPE;
-	e2_type = exp2->xtype&XTYPE;
+	e1_type = exp1->e_xtype&XTYPE;
+	e2_type = exp2->e_xtype&XTYPE;
 
-	if (exp1->xtype==XXTRN+XUNDEF)
+	if (exp1->e_xtype==XXTRN+XUNDEF)
 		e1_type = XTXRN;
-	if (exp2->xtype==XXTRN+XUNDEF)
+	if (exp2->e_xtype==XXTRN+XUNDEF)
 		e2_type = XTXRN;
 	if (passno==1)
-		if (exp1->xloc!=exp2->xloc && e1_type==e2_type)
+		if (exp1->e_xloc!=exp2->e_xloc && e1_type==e2_type)
 			e1_type = e2_type = XTXRN;	/* error on != loc ctrs */
 	e1_type >>= 1;		/*dispose of the external (XXTRN) bit*/
 	e2_type >>= 1;
 
 	switch (op) {
 	case PLUS:
-		exp1->xvalue += exp2->xvalue;
-		type = pltab[e1_type][e2_type];
+		exp1->e_xvalue += exp2->e_xvalue;
+		back_type = pltab[e1_type][e2_type];
 		break;
 	case MINUS:
-		exp1->xvalue -= exp2->xvalue;
-		type = mintab[e1_type][e2_type];
+		exp1->e_xvalue -= exp2->e_xvalue;
+		back_type = mintab[e1_type][e2_type];
 		break;
 	case IOR:
-		exp1->xvalue |= exp2->xvalue;
+		exp1->e_xvalue |= exp2->e_xvalue;
 		goto comm;
 	case XOR:
-		exp1->xvalue ^= exp2->xvalue;
+		exp1->e_xvalue ^= exp2->e_xvalue;
 		goto comm;
 	case AND:
-		exp1->xvalue &= exp2->xvalue;
+		exp1->e_xvalue &= exp2->e_xvalue;
 		goto comm;
 	case ORNOT:
-		exp1->xvalue |= ~exp2->xvalue;
+		exp1->e_xvalue |= ~exp2->e_xvalue;
 		goto comm;
 	case LSH:
-		exp1->xvalue <<= exp2->xvalue;
+		exp1->e_xvalue <<= exp2->e_xvalue;
 		goto comm;
 	case RSH:
-		exp1->xvalue >>= exp2->xvalue;
+		exp1->e_xvalue >>= exp2->e_xvalue;
 		goto comm;
 	case TILDE:
-		exp1->xvalue |= ~ exp2->xvalue;
+		exp1->e_xvalue |= ~ exp2->e_xvalue;
 		goto comm;
 	case MUL:
-		exp1->xvalue *= exp2->xvalue;
+		exp1->e_xvalue *= exp2->e_xvalue;
 		goto comm;
 	case DIV:
-		if (exp2->xvalue == 0)
+		if (exp2->e_xvalue == 0)
 			yyerror("Divide check");
 		else
-			exp1->xvalue /= exp2->xvalue;
+			exp1->e_xvalue /= exp2->e_xvalue;
 		goto comm;
 	case REGOP:
-		if (exp2->xvalue == 0)
+		if (exp2->e_xvalue == 0)
 			yyerror("Divide check (modulo)");
 		else
-			exp1->xvalue %= exp2->xvalue;
+			exp1->e_xvalue %= exp2->e_xvalue;
 		goto comm;
 	
 	comm:
-		type = othtab[e1_type][e2_type];
+		back_type = othtab[e1_type][e2_type];
 		break;
 	default:
 		yyerror("Internal error: unknown operator");
 	}
 
 	if (e2_type==(XTXRN>>1))
-		exp1->xname = exp2->xname;
-	exp1->xtype = type | (
-			(exp1->xtype|exp2->xtype) & (XFORW|XXTRN) );
-	if (type==ERR)
+		exp1->e_xname = exp2->e_xname;
+	exp1->e_xtype = back_type | (
+			(exp1->e_xtype|exp2->e_xtype) & (XFORW|XXTRN) );
+	if (back_type==ERR)
 		yyerror("Relocation error");
 	return(exp1);
 }
@@ -257,15 +256,15 @@ struct exp *factor()
 		op = val;
 		shift;
 		lexpr = xp++;
-		lexpr->xtype = XABS;
-		lexpr->xvalue = 0;
+		lexpr->e_xtype = XABS;
+		lexpr->e_xvalue = 0;
 		lexpr = combine(op, lexpr, factor());
 	}
 	else {
 		yyerror("Bad expression syntax");
 		lexpr = xp++;
-		lexpr->xtype = XABS;
-		lexpr->xvalue = 0;
+		lexpr->e_xtype = XABS;
+		lexpr->e_xvalue = 0;
 	}
 	return(lexpr);
 }
@@ -282,7 +281,7 @@ struct exp *yukkyexpr(val, np)
 	if (val == NAME || val == BFINT){
 		if (val == BFINT) {
 			int off = 0;
-			yylval = ((struct exp *)np)->xvalue;
+			yylval = ((struct exp *)np)->e_xvalue;
 			if (yylval < 0) {
 				yylval = -yylval;
 				yylval--;
@@ -298,21 +297,21 @@ struct exp *yukkyexpr(val, np)
 			lastnam = (struct symtab *)np;
 		}
 		exprisname++;
-		locxp->xtype = ((struct symtab *)np)->type;
-		if (( ((struct symtab *)np)->type&XTYPE)==XUNDEF) { /*forward*/
-			locxp->xname = (struct symtab *)np;
-			locxp->xvalue = 0;
+		locxp->e_xtype = ((struct symtab *)np)->s_type;
+		if (( ((struct symtab *)np)->s_type&XTYPE)==XUNDEF) { /*forward*/
+			locxp->e_xname = (struct symtab *)np;
+			locxp->e_xvalue = 0;
 			if (passno==1)
-				((struct symtab *)np)->type |= XFORW;
+				((struct symtab *)np)->s_type |= XFORW;
 		} else {	/*otherwise, just get the value*/
-			locxp->xvalue = ((struct symtab *)np)->value;
-			locxp->xname = NULL;
+			locxp->e_xvalue = ((struct symtab *)np)->s_value;
+			locxp->e_xname = NULL;
 		}
 	} else {	/*INSTn or INST0 or REG*/
-		locxp->xtype = XABS;
-		locxp->xvalue = ( (int)np) & 0xFF;
-		locxp->xloc = 0;
-		locxp->xname = NULL;
+		locxp->e_xtype = XABS;
+		locxp->e_xvalue = ( (int)np) & 0xFF;
+		locxp->e_xloc = 0;
+		locxp->e_xname = NULL;
 	}
 
 	return(locxp);

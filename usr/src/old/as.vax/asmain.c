@@ -1,10 +1,8 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asmain.c 4.1 %G%";
+static	char sccsid[] = "@(#)asmain.c 4.2 %G%";
 #include <stdio.h>
 #include <ctype.h>
-#include <sys/types.h>
 #include <signal.h>
-#include <a.out.h>
 
 #include "as.h"
 #include "assyms.h"
@@ -12,11 +10,11 @@ static	char sccsid[] = "@(#)asmain.c 4.1 %G%";
 #include "asscan.h"
 
 #ifdef UNIX
-#define	unix_lang_name "VAX/UNIX Assembler V3.0"
+#define	unix_lang_name "VAX/UNIX Assembler Vasmain.c"
 #endif
 
 #ifdef VMS
-#define vms_lang_name "VAX/VMS C assembler V1.00"
+#define vms_lang_name "VAX/VMS C Assembler V1.00"
 #endif VMS
 
 /*
@@ -317,12 +315,12 @@ zeroorigins()
 	 *	the next for named data segments.
 	 */
 	for (locindex = 0; locindex < NLOC; locindex++){
-		usedot[locindex].xtype = XTEXT;
-		usedot[NLOC + locindex].xtype = XDATA;
-		usedot[locindex].xvalue = 0;
-		usedot[NLOC + locindex].xvalue = 0;
-		usedot[locindex].yvalue = 0;
-		usedot[NLOC + locindex].yvalue = 0;
+		usedot[locindex].e_xtype = XTEXT;
+		usedot[NLOC + locindex].e_xtype = XDATA;
+		usedot[locindex].e_xvalue = 0;
+		usedot[NLOC + locindex].e_xvalue = 0;
+		usedot[locindex].e_yvalue = 0;
+		usedot[NLOC + locindex].e_yvalue = 0;
 	}
 }
 
@@ -432,8 +430,8 @@ roundsegments()
 	 */
 	tsize = 0;
 	for (locindex=0; locindex<NLOC; locindex++) {
-		v = round(usedot[locindex].xvalue, FW);
-		usedot[locindex].xvalue = tsize;
+		v = round(usedot[locindex].e_xvalue, FW);
+		usedot[locindex].e_xvalue = tsize;
 		if ((locindex == 0) || (v != 0) ){
 			usefile[locindex] = (BFILE *)Calloc(1, sizeof(BFILE));
 			bopen(usefile[locindex], a_out_off);
@@ -450,8 +448,8 @@ roundsegments()
 	 */
 	datbase = round(tsize, PAGRND);
 	for (locindex=0; locindex<NLOC; locindex++) {
-		v = round(usedot[NLOC+locindex].xvalue, FW);
-		usedot[NLOC+locindex].xvalue = datbase + dsize;
+		v = round(usedot[NLOC+locindex].e_xvalue, FW);
+		usedot[NLOC+locindex].e_xvalue = datbase + dsize;
 		if (v != 0){
 			usefile[NLOC + locindex] = (BFILE *)Calloc(1,sizeof(BFILE));
 			bopen(usefile[NLOC + locindex], a_out_off);
@@ -540,7 +538,7 @@ fillsegments()
 		if (usefile[locindex]) {
 			txtfil = usefile[locindex];
 			dotp = &usedot[locindex];
-			while (usedot[locindex].xvalue & FW)
+			while (usedot[locindex].e_xvalue & FW)
 				outb(0);
 		}
 	}
