@@ -1,4 +1,4 @@
-/*	tty.h	3.4	%G%	*/
+/*	tty.h	3.5	%G%	*/
 
 #include <sgtty.h>
 #include <sys/ioctl.h>
@@ -98,8 +98,13 @@ struct tty
 #define	CBRK	0377
 
 /* limits */
-#define	TTHIWAT	650
-#define	TTLOWAT	125
+#define	NSPEEDS	16
+#define	TTMASK	15
+#ifdef KERNEL
+short	tthiwat[NSPEEDS], ttlowat[NSPEEDS];
+#define	TTHIWAT(tp)	tthiwat[(tp)->t_ospeed&TTMASK]
+#define	TTLOWAT(tp)	ttlowat[(tp)->t_ospeed&TTMASK]
+#endif
 #define	TTYHOG	256
 
 /* hardware bits */
