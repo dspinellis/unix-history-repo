@@ -1,0 +1,9 @@
+./"addr"16t"cmddone"8t"cmdend"8t"actdev"8t"cmddev"nX4b
++/"pollbuf"n10X
++/"cmdbuf"n10X
++/"pollbp"16t"cmdbp"n2p
++/"queues"n
+.,8$<<hilqueue
+./"devices"n
+.,8$<<hildev
+./"maxdev"8t"kbddev"8t"kbdlang"8t"kbdflags"n4b

@@ -1,0 +1,5 @@
+./"hwaddr"16t"Bhwaddr"16t"type"nXXD
++/"cur"16t"cmd"16t"timo"nD2X
++/"count"n18D
++/"addr"n18X
++,<9-1$<dma
