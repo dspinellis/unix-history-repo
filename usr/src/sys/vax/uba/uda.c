@@ -1,4 +1,4 @@
-/*	uda.c	4.4	82/05/26	*/
+/*	uda.c	4.5	82/05/27	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -31,12 +31,14 @@
 int udadebug;
 #define	printd	if(udadebug&1)printf
 
+int udaerror = 0;	/* set to cause hex dump of error log packets */
+
 /*
  * Parameters for the communications area
  */
 
-#define	NRSPL2	3
-#define	NCMDL2	3
+#define	NRSPL2	3		/* log2 number of response packets */
+#define	NCMDL2	3		/* log2 number of command packets */
 #define	NRSP	(1<<NRSPL2)
 #define	NCMD	(1<<NCMDL2)
 
@@ -78,9 +80,9 @@ struct size {
 	15884,	0,		/* A=blk 0 thru 15883 */
 	33440,	15884,		/* B=blk 15884 thru 49323 */
 	-1,	0,		/* C=blk 0 thru end */
-	0,	0,		/* D reserved for RA81 */
-	0,	0,		/* E reserved for RA81 */
-	0,	0,		/* F reserved for RA81 */
+	15884,	340670,		/* D=blk 340670 thru 356553 */
+	55936,	356554,		/* E=blk 356554 thru 412489 */
+	-1,	412490,		/* F=blk 412490 thru end */
 	82080,	49324,		/* G=blk 49324 thru 131403 */
 	-1,	131404,		/* H=blk 131404 thru end */
 };
@@ -94,7 +96,7 @@ struct	uba_ctlr *udminfo[NUDA];
 struct	uba_device *uddinfo[NRA];
 struct	uba_device *udip[NUDA][8];	/* 8 == max number of drives */
 
-u_short	udstd[] = { 0777550, 0 };
+u_short	udstd[] = { 0772150, 0 };
 struct	uba_driver udadriver =
  { udprobe, udslave, udattach, 0, udstd, "ra", uddinfo, "uda", udminfo, 0 };
 struct	buf rudbuf[NRA];
@@ -448,8 +450,9 @@ udintr(d)
 		return;
 
 	case S_STEP1:
+#define	STEP1MASK	0174377
 #define	STEP1GOOD	(UDA_STEP2|UDA_IE|(NCMDL2<<3)|NRSPL2)
-		if ((udaddr->udasa&(UDA_ERR|STEP1GOOD)) != STEP1GOOD) {
+		if ((udaddr->udasa&STEP1MASK) != STEP1GOOD) {
 			sc->sc_state = S_IDLE;
 			wakeup((caddr_t)um);
 			return;
@@ -460,8 +463,9 @@ udintr(d)
 		return;
 
 	case S_STEP2:
+#define	STEP2MASK	0174377
 #define	STEP2GOOD	(UDA_STEP3|UDA_IE|(sc->sc_ivec/4))
-		if ((udaddr->udasa&(UDA_ERR|STEP2GOOD)) != STEP2GOOD) {
+		if ((udaddr->udasa&STEP2MASK) != STEP2GOOD) {
 			sc->sc_state = S_IDLE;
 			wakeup((caddr_t)um);
 			return;
@@ -471,8 +475,9 @@ udintr(d)
 		return;
 
 	case S_STEP3:
+#define	STEP3MASK	0174000
 #define	STEP3GOOD	UDA_STEP4
-		if ((udaddr->udasa&(UDA_ERR|STEP3GOOD)) != STEP3GOOD) {
+		if ((udaddr->udasa&STEP3MASK) != STEP3GOOD) {
 			sc->sc_state = S_IDLE;
 			wakeup((caddr_t)um);
 			return;
@@ -650,7 +655,7 @@ udrsp(um, ud, sc, i)
 	case M_OP_READ|M_OP_END:
 	case M_OP_WRITE|M_OP_END:
 		bp = (struct buf *)mp->mscp_cmdref;
-		ubarelse(um->um_ubanum, (int *)&bp->b_resid);
+		ubarelse(um->um_ubanum, (int *)&bp->b_ubinfo);
 		/*
 		 * Unlink buffer from I/O wait queue.
 		 */
@@ -712,7 +717,7 @@ uderror(um, mp)
 	register struct uba_ctlr *um;
 	register struct mslg *mp;
 {
-	printf("uda%d:%d: %s error, ", um->um_ctlr, mp->mslg_seqnum,
+	printf("uda%d: %s error, ", um->um_ctlr,
 		mp->mslg_flags&M_LF_SUCC ? "soft" : "hard");
 	switch (mp->mslg_format) {
 	case M_FM_CNTERR:
@@ -725,16 +730,12 @@ uderror(um, mp)
 		break;
 
 	case M_FM_DISKTRN:
-		printf("disk transfer error, unit %d, grp %d, cyl %d, sec %d, ",
-			mp->mslg_unit, mp->mslg_group, mp->mslg_cylinder,
-			mp->mslg_sector);
-		printf("trk %d, lbn %d, retry %d, level %d\n", mp->mslg_track,
-			mp->mslg_lbn, mp->mslg_retry, mp->mslg_level);
+		printf("disk transfer error, unit %d\n", mp->mslg_unit);
 		break;
 
 	case M_FM_SDI:
-		printf("SDI error, unit %d, event 0%o, cyl %d\n", mp->mslg_unit,
-			mp->mslg_event, mp->mslg_cylinder);
+		printf("SDI error, unit %d, event 0%o\n", mp->mslg_unit,
+			mp->mslg_event);
 		break;
 
 	case M_FM_SMLDSK:
@@ -745,6 +746,15 @@ uderror(um, mp)
 	default:
 		printf("unknown error, unit %d, format 0%o, event 0%o\n",
 			mp->mslg_unit, mp->mslg_format, mp->mslg_event);
+	}
+
+	if (udaerror) {
+		register long *p = (long *)mp;
+		register int i;
+
+		for (i = 0; i < mp->mslg_header.uda_msglen; i += sizeof(*p))
+			printf("%x ", *p++);
+		printf("\n");
 	}
 }
 
