@@ -1,4 +1,4 @@
-/*	ip_input.c	1.61	83/01/04	*/
+/*	ip_input.c	1.62	83/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -149,6 +149,20 @@ next:
 		    sin->sin_addr.s_addr == ip->ip_dst.s_addr)
 			goto ours;
 	}
+/* BEGIN GROT */
+#include "nd.h"
+#if NND > 0
+	/*
+	 * Diskless machines don't initially know
+	 * their address, so take packets from them
+	 * if we're acting as a network disk server.
+	 */
+	if (ip->ip_dst.s_addr == INADDR_ANY &&
+	    (in_netof(ip->ip_src) == INADDR_ANY &&
+	     in_lnaof(ip->ip_src) != INADDR_ANY))
+		goto ours;
+#endif
+/* END GROT */
 	ipaddr.sin_addr = ip->ip_dst;
 	if (if_ifwithaddr((struct sockaddr *)&ipaddr) == 0) {
 		ip_forward(ip);
