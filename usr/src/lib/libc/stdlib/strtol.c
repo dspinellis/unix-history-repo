@@ -1,82 +1,100 @@
-/*
- * Copyright (c) 1988 Regents of the University of California.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strtol.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)strtol.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <limits.h>
 #include <ctype.h>
+#include <errno.h>
 
+/*
+ * Convert a string to a long integer.
+ *
+ * Ignores `locale' stuff.  Assumes that the upper and lower case
+ * alphabets and digits are each contiguous.
+ */
 long
-strtol(ascii, endp, base)
-	register char *ascii;
-	char **endp;
+strtol(nptr, endptr, base)
+	char *nptr, **endptr;
 	register int base;
 {
-	register long val;
+	register char *s = nptr;
+	register unsigned long acc;
 	register int c;
-	int negative;
-
-	for (; isascii(*ascii) && isspace(*ascii); ++ascii);
-
-	negative = 0;
-	if (*ascii == '+')
-		++ascii;
-	else if (*ascii == '-') {
-		negative = 1;
-		++ascii;
-	}
+	register unsigned long cutoff;
+	register int neg = 0, any, cutlim;
 
 	/*
-	 * ``If base is positive, but not greater than 36, it is used as
-	 * the base for the conversion.''
-	 *	-- The UNIX System User's Manual, 1986
+	 * Skip white space and pick up leading +/- sign if any.
+	 * If base is 0, allow 0x for hex and 0 for octal, else
+	 * assume decimal; if base is already 16, allow 0x.
 	 */
-	if ((unsigned int)base > 36)
-		base = 10;
-	else if (base == 0)
-		if (*ascii == '0') {
-			++ascii;
-			if (*ascii == 'X' || *ascii == 'x') {
-				++ascii;
-				base = 16;
-			}
-			else
-				base = 8;
-		}
-		else
-			base = 10;
-	else if (base == 16 && *ascii == '0' &&
-	    (*++ascii == 'X' || *ascii == 'x'))
-			++ascii;
+	do {
+		c = *s++;
+	} while (isspace(c));
+	if (c == '-') {
+		neg = 1;
+		c = *s++;
+	} else if (c == '+')
+		c = *s++;
+	if ((base == 0 || base == 16) &&
+	    c == '0' && (*s == 'x' || *s == 'X')) {
+		c = s[1];
+		s += 2;
+		base = 16;
+	}
+	if (base == 0)
+		base = c == '0' ? 8 : 10;
 
-	for (val = 0; isascii(c = *ascii) && isalnum(c); ++ascii) {
+	/*
+	 * Compute the cutoff value between legal numbers and illegal
+	 * numbers.  That is the largest legal value, divided by the
+	 * base.  An input number that is greater than this value, if
+	 * followed by a legal input character, is too big.  One that
+	 * is equal to this value may be valid or not; the limit
+	 * between valid and invalid numbers is then based on the last
+	 * digit.  For instance, if the range for longs is
+	 * [-2147483648..2147483647] and the input base is 10,
+	 * cutoff will be set to 214748364 and cutlim to either
+	 * 7 (neg==0) or 8 (neg==1), meaning that if we have accumulated
+	 * a value > 214748364, or equal but the next digit is > 7 (or 8),
+	 * the number is too big, and we will return a range error.
+	 *
+	 * Set any if any `digits' consumed; make it negative to indicate
+	 * overflow.
+	 */
+	cutoff = neg ? -(unsigned long)LONG_MIN : LONG_MAX;
+	cutlim = cutoff % (unsigned long)base;
+	cutoff /= (unsigned long)base;
+	for (acc = 0, any = 0;; c = *s++) {
 		if (isdigit(c))
 			c -= '0';
-		else {
-			if (isupper(c))
-				c = tolower(c);
-			c = c - 'a' + 10;
-		}
+		else if (isalpha(c))
+			c -= isupper(c) ? 'A' - 10 : 'a' - 10;
+		else
+			break;
 		if (c >= base)
 			break;
-		val = val * base + c;
+		if (any < 0 || acc > cutoff || acc == cutoff && c > cutlim)
+			any = -1;
+		else {
+			any = 1;
+			acc *= base;
+			acc += c;
+		}
 	}
-	if (endp)
-		*endp = ascii;
-	return(negative ? -val : val);
+	if (any < 0) {
+		acc = neg ? LONG_MIN : LONG_MAX;
+		errno = ERANGE;
+	} else if (neg)
+		acc = -acc;
+	if (endptr != 0)
+		*endptr = any ? s - 1 : nptr;
+	return (acc);
 }
