@@ -1,4 +1,4 @@
-/*	%H%	3.21	kern_clock.c	*/
+/*	%H%	3.22	kern_clock.c	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,6 +16,9 @@
 #include "../h/vlimit.h"
 #include "../h/mtpr.h"
 #include "../h/clock.h"
+
+#include "../conf/dh.h"
+#include "../conf/dz.h"
 
 #define	SCHMAG	9/10
 
@@ -116,8 +119,12 @@ out:
 	 * so we can't enter them recursively and transpose characters.
 	 */
 	if (rcnt >= rintvl) {
+#if NDH11 > 0
 		dhtimer();
+#endif
+#if NDZ11 > 0
 		dztimer();
+#endif
 		rcnt = 0;
 	} else
 		rcnt++;
