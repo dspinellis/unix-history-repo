@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 1983 Regents of the University of California,
- * All rights reserved.  Redistribution permitted subject to
- * the terms of the Berkeley Software License Agreement.
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
-static	char *sccsid = "@(#)pl_3.c	2.4 85/04/23";
-#endif
+static char sccsid[] = "@(#)pl_3.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 #include "player.h"
 
