@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)case.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)case.c	1.2 (Berkeley) %G%";
 /* Copyright (c) 1979 Regents of the University of California */
 #
 /*
@@ -13,13 +13,33 @@ static	char *sccsid = "@(#)case.c	1.1 (Berkeley) %G%";
 
 /*
  * Case statement
+ *	r	[0]	T_CASE
+ *		[1]	lineof "case"
+ *		[2]	expression
+ *		[3]	list of cased statements:
+ *			cstat	[0]	T_CSTAT
+ *				[1]	lineof ":"
+ *				[2]	list of constant labels
+ *				[3]	statement
  */
 caseop(r)
 	int *r;
 {
 	register *cl, *cs, i;
 	struct pxcnt scnt;
+#	ifdef RMOTHERS
+	    int *othersp;		/* tree where others is, or NIL */
+	    int hasothers;		/* 1 if others found, else 0 */
+#	endif RMOTHERS
 
+#	ifdef RMOTHERS
+	    if (rmothers) {
+		hasothers = needscaseguard(r,&othersp);
+		if (hasothers) {
+		    precaseguard(r);
+		}
+	    }
+#	endif RMOTHERS
 	savecnt(&scnt);
 	ppkw("case");
 	ppspac();
@@ -83,4 +103,11 @@ caseop(r)
 	ppnl();
 	indent();
 	ppkw("end");
+#	ifdef RMOTHERS
+	    if (rmothers) {
+		if (hasothers) {
+		    postcaseguard(othersp);
+		}
+	    }
+#	endif RMOTHERS
 }
