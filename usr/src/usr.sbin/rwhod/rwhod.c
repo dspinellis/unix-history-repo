@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.21 (Berkeley) 83/11/14";
+static char sccsid[] = "@(#)rwhod.c	4.22 (Berkeley) 84/05/11";
 #endif
 
 #include <sys/types.h>
@@ -381,8 +381,10 @@ configure(s)
 		if (np->n_flags & IFF_BROADCAST) {
 			/* we assume addresses are all the same size */
 			sin = (struct sockaddr_in *)np->n_addr;
-			sin->sin_addr =
-			  inet_makeaddr(inet_netof(sin->sin_addr), INADDR_ANY);
+			sin->sin_addr = inet_makeaddr((np->n_flags & IFF_LOCAL)?
+				inet_subnetof(sin->sin_addr) :
+				inet_netof(sin->sin_addr),
+				INADDR_ANY);
 		}
 		/* gag, wish we could get rid of Internet dependencies */
 		sin = (struct sockaddr_in *)np->n_addr;
@@ -391,6 +393,32 @@ configure(s)
 		neighbors = np;
 	}
 	return (1);
+}
+
+/*
+ * Return the possible subnetwork number from an internet address.
+ * If the address is of the form of a subnet address (most significant
+ * bit of the host part is set), believe the subnet exists.
+ * Otherwise, return the network number.  Any subnet number is only valid
+ * if this is a ``local'' net.
+ */
+inet_subnetof(in)
+	struct in_addr in;
+{
+	register u_long i = ntohl(in.s_addr);
+
+	if (IN_CLASSA(i)) {
+		if (IN_SUBNETA(i))
+			return ((i & IN_CLASSA_SUBNET) >> IN_CLASSA_SUBNSHIFT);
+		else
+			return ((i & IN_CLASSA_NET) >> IN_CLASSA_NSHIFT);
+	} else if (IN_CLASSB(i)) {
+		if (IN_SUBNETB(i))
+			return ((i & IN_CLASSB_SUBNET) >> IN_CLASSB_SUBNSHIFT);
+		else
+			return ((i & IN_CLASSB_NET) >> IN_CLASSB_NSHIFT);
+	} else
+		return ((i & IN_CLASSC_NET) >> IN_CLASSC_NSHIFT);
 }
 
 #ifdef DEBUG
