@@ -1,0 +1,28 @@
+.pa 1
+.he 'EXP (III)'1/15/73'EXP (III)'
+.ti 0
+NAME		exp -- exponential function
+.sp
+.ti 0
+SYNOPSIS	jsr	r5,exp
+.sp
+.ti 0
+DESCRIPTION	The
+exponential of fr0 is returned in fr0.
+.sp
+.ti 0
+FILES		kept in /lib/liba.a
+.sp
+.ti 0
+SEE ALSO	--
+.sp
+.ti 0
+DIAGNOSTICS	If
+the result is not representable, the
+c-bit is set
+and the largest positive number is returned.
+.sp
+Zero is returned if the result would underflow.
+.sp
+.ti 0
+BUGS		---
