@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -774,6 +774,7 @@ main(argc, argv, envp)
 			char *q;
 			auto char *delimptr;
 			extern bool invalidaddr();
+			extern char *crackaddr();
 
 			if (Verbose)
 				printf("> ");
@@ -782,8 +783,20 @@ main(argc, argv, envp)
 				finis();
 			if (!Verbose)
 				printf("> %s", buf);
-			if (buf[0] == '#')
+			switch (buf[0])
+			{
+			  case '#':
 				continue;
+
+#ifdef MAYBENEXTRELEASE
+			  case 'C':		/* try crackaddr */
+			  	q = crackaddr(&buf[1]);
+			  	xputs(q);
+			  	printf("\n");
+			  	continue;
+#endif
+			}
+
 			for (p = buf; isascii(*p) && isspace(*p); p++)
 				continue;
 			q = p;
@@ -795,7 +808,7 @@ main(argc, argv, envp)
 				continue;
 			}
 			*p = '\0';
-			if (invalidaddr(p + 1))
+			if (invalidaddr(p + 1, NULL))
 				continue;
 			do
 			{
