@@ -1,4 +1,4 @@
-.\" Copyright (c) 1983, 1991 The Regents of the University of California.
+.\" Copyright (c) 1983, 1991 Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" Redistribution and use in source and binary forms, with or without
@@ -29,74 +29,91 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"     From: @(#)setregid.2	6.4 (Berkeley) 3/10/91
+.\"     From: @(#)setuid.3	6.4 (Berkeley) 4/19/91
 .\"	$Id$
 .\"
 .Dd March 16, 1994
-.Dt SETREGID 2
+.Dt SETUID 2
 .Os
 .Sh NAME
-.Nm setregid
-.Nd set real and effective group ID
+.Nm setuid ,
+.Nm seteuid ,
+.\" .Nm setruid ,
+.Nm setgid ,
+.Nm setegid ,
+.\" .Nm setrgid
+.Nd set user and group ID
 .Sh SYNOPSIS
-.Fd #include <unistd.h>
+.Fd #include <sys/types.h>
 .Ft int
-.Fn setregid "int rgid" "int egid"
+.Fn setuid "uid_t uid"
+.Ft int
+.Fn seteuid "uid_t euid"
+.\" .Ft int
+.\" .Fn setruid "uid_t ruid"
+.Ft int
+.Fn setgid "gid_t gid"
+.Ft int
+.Fn setegid "gid_t egid"
+.\" .Ft int
+.\" .Fn setrgid "gid_t rgid"
 .Sh DESCRIPTION
-NB: In
-.Fx 1.0.2
-and earlier versions, this function would set the real and effective
-group ID's of the current process according to the arguments.  In
-.Fx 1.1 ,
-we have adopted the behavior of
-.Bx 4.4 .
+The
+.Fn setuid
+function
+.Pq Fn setgid
+sets the real, effective, and saved
+user IDs (group IDs) of the current process
+as specified.
 .Pp
 The
-.Nm
-function is normally used by programs which wish to temporarily
-renounce special privileges they have gained (usually as a result of
-being set-gid executables), by swapping real and effective
-group ID's, so that the renunciation is reversible.
-This can result in a security hole, and does not integrate well with
-the
-.Tn POSIX
-saved group ID.  In
-.Fx 1.1 ,
-the
-.Nm
-function will never actually set the real group ID; however, it will
-check its value to ensure that a future
-.Xr setegid 2
-call with the
-.Fa rgid
-argument will succeed.
+.Fn seteuid
+function
+.Pq Fn setegid
+sets the effective user ID (group ID) of the
+current process.
+.\".Pp
+.\" The
+.\" .Fn setruid
+.\" function
+.\" .Pq Fn setrgid
+.\" sets the real user ID (group ID) of the
+.\" current process.
 .Pp
-If
-.Fa rgid
-or 
-.Fa egid
-is -1, the current ID is filled in by the system.
-The effective group ID is set, if requested, as if
-.Xr setegid 2
-had been called.
+When any of these calls succeed, the
+.Dv SUGID
+process flag is turned on, and remains on until the process calls
+.Xr execve 2 ;
+this flag can be inspected with
+.Xr ps 1 .
 .Sh RETURN VALUES
-Upon successful completion, a value of 0 is returned.  Otherwise,
-a value of -1 is returned and
-.Va errno
-is set to indicate the error.
-.Sh ERRORS
-.Bl -tag -width [EPERM]
-.It Bq Er EPERM
-The current process is not the super-user and a change
-other than changing the effective group-id to the real group-id
-was specified.
-.El
+Upon success, these functions return 0;
+otherwise \-1 is returned.
+.Pp
+If the user is not the super user, and the ID specified is not the
+current real ID, the
+.Nm setuid
+and
+.Nm setgid
+functions return \-1.
+.Pp
+If the user is not the super user, and the ID specfied is neither the
+current real ID nor the saved ID, the
+.Nm seteuid
+and
+.Nm setegid
+functions return \-1.
 .Sh SEE ALSO
-.Xr getgid 2 ,
 .Xr setreuid 2 ,
-.Xr setgid 3
+.Xr setregid 2 ,
+.Xr getuid 2 ,
+.Xr getgid 2 ,
+.Xr execve 2 ,
+.Xr ps 1
 .Sh HISTORY
-The
-.Nm
-function call appeared in
-.Bx 4.2 .
+A
+.Fn setuid
+and
+.Fn setgid
+syscall appeared in 
+.At v6 .
