@@ -6,21 +6,24 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)killpg.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)killpg.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <sys/errno.h>
+#include <signal.h>
+#include <errno.h>
 
 /*
  * Backwards-compatible killpg().
  */
+#if __STDC__
+killpg(pid_t pgid, int sig)
+#else
 killpg(pgid, sig)
 	pid_t pgid;
 	int sig;
+#endif
 {
-	extern int errno;
-
 	if (pgid == 1) {
 		errno = ESRCH;
 		return (-1);
