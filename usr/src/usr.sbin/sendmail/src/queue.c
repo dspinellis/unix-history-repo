@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.24		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.25		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.24		%G%);
+SCCSID(@(#)queue.c	3.25		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -177,11 +177,9 @@ runqueue(forkflag)
 {
 	extern reordersig();
 
-	if (QueueIntvl != 0)
-	{
-		(void) signal(SIGALRM, reordersig);
-		(void) alarm(QueueIntvl);
-	}
+	/*
+	**  See if we want to go off and do other useful work.
+	*/
 
 	if (forkflag)
 	{
@@ -195,33 +193,35 @@ runqueue(forkflag)
 			(void) alarm(0);
 	}
 
+	/*
+	**  Arrange to reorder the queue at polite intervals.
+	*/
+
+	if (QueueIntvl != 0)
+	{
+		(void) signal(SIGALRM, reordersig);
+		(void) alarm(QueueIntvl);
+	}
+
+	/*
+	**  Start making passes through the queue.
+	**	First, read and sort the entire queue.
+	**	Then, process the work in that order.
+	**		But if you take too long, start over.
+	**	There is a race condition at the end -- we could get
+	**		a reorder signal after finishing the queue.
+	**		In this case we will hang for one more queue
+	**		interval -- clearly a botch, but rare and
+	**		relatively innocuous.
+	*/
+
 	for (;;)
 	{
-		/*
-		**  Order the existing work requests.
-		*/
-
+		/* order the existing work requests */
 		orderq();
-
-		if (WorkQ == NULL)
-		{
-			/* no work?  well, maybe later */
-			if (QueueIntvl == 0)
-				break;
-			pause();
-			continue;
-		}
-
 		ReorderQueue = FALSE;
 
-		/*
-		**  Process them once at a time.
-		**	The queue could be reordered while we do this to take
-		**	new requests into account.  If so, the existing job
-		**	will be finished but the next thing taken off WorkQ
-		**	may be something else.
-		*/
-
+		/* process them once at a time */
 		while (WorkQ != NULL)
 		{
 			WORK *w = WorkQ;
@@ -234,8 +234,13 @@ runqueue(forkflag)
 				break;
 		}
 
+		/* if we are just doing one pass, then we are done */
 		if (QueueIntvl == 0)
 			break;
+
+		/* wait for work -- note (harmless) race condition here */
+		if (!ReorderQueue)
+			pause();
 	}
 
 	/* no work to do -- just exit */
