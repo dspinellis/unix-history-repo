@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mv.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)mv.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -23,6 +23,7 @@ static char sccsid[] = "@(#)mv.c	5.12 (Berkeley) %G%";
 #include <sys/wait.h>
 #include <sys/stat.h>
 
+#include <err.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -36,7 +37,6 @@ int fflg, iflg;
 
 int	copy __P((char *, char *));
 int	do_move __P((char *, char *));
-void	err __P((const char *, ...));
 int	fastcopy __P((char *, char *, struct stat *));
 void	usage __P((void));
 
@@ -88,15 +88,15 @@ endarg:	argc -= optind;
 	*endp++ = '/';
 	++baselen;
 	for (exitval = 0; --argc; ++argv) {
-		if ((p = rindex(*argv, '/')) == NULL)
+		if ((p = strrchr(*argv, '/')) == NULL)
 			p = *argv;
 		else
 			++p;
 		if ((baselen + (len = strlen(p))) >= MAXPATHLEN) {
-			err("%s: destination pathname too long", *argv);
+			warnx("%s: destination pathname too long", *argv);
 			exitval = 1;
 		} else {
-			bcopy(p, endp, len + 1);
+			memmove(endp, p, len + 1);
 			exitval |= do_move(*argv, path);
 		}
 	}
@@ -137,7 +137,7 @@ do_move(from, to)
 		return (0);
 
 	if (errno != EXDEV) {
-		err("rename %s to %s: %s", from, to, strerror(errno));
+		warn("rename %s to %s", from, to);
 		return (1);
 	}
 
@@ -146,7 +146,7 @@ do_move(from, to)
 	 * otherwise, use cp and rm.
 	 */
 	if (stat(from, &sb)) {
-		err("%s: %s", from, strerror(errno));
+		warn("%s", from);
 		return (1);
 	}
 	return (S_ISREG(sb.st_mode) ?
@@ -164,41 +164,53 @@ fastcopy(from, to, sbp)
 	register int nread, from_fd, to_fd;
 
 	if ((from_fd = open(from, O_RDONLY, 0)) < 0) {
-		err("%s: %s", from, strerror(errno));
+		warn("%s", from);
 		return (1);
 	}
 	if ((to_fd = open(to, O_CREAT|O_TRUNC|O_WRONLY, sbp->st_mode)) < 0) {
-		err("%s: %s", to, strerror(errno));
+		warn("%s", to);
 		(void)close(from_fd);
 		return (1);
 	}
 	if (!blen && !(bp = malloc(blen = sbp->st_blksize))) {
-		err("%s", strerror(errno));
+		warn(NULL);
 		return (1);
 	}
 	while ((nread = read(from_fd, bp, blen)) > 0)
 		if (write(to_fd, bp, nread) != nread) {
-			err("%s: %s", to, strerror(errno));
+			warn("%s", to);
 			goto err;
 		}
 	if (nread < 0) {
-		err("%s: %s", from, strerror(errno));
-err:		(void)unlink(to);
+		warn("%s", from);
+err:		if (unlink(to))
+			warn("%s: remove", to);
 		(void)close(from_fd);
 		(void)close(to_fd);
 		return (1);
 	}
-	(void)fchown(to_fd, sbp->st_uid, sbp->st_gid);
-	(void)fchmod(to_fd, sbp->st_mode);
-
 	(void)close(from_fd);
-	(void)close(to_fd);
+
+	if (fchown(to_fd, sbp->st_uid, sbp->st_gid))
+		warn("%s: set owner/group", to);
+	if (fchmod(to_fd, sbp->st_mode))
+		warn("%s: set mode", to);
 
 	tval[0].tv_sec = sbp->st_atime;
 	tval[1].tv_sec = sbp->st_mtime;
 	tval[0].tv_usec = tval[1].tv_usec = 0;
-	(void)utimes(to, tval);
-	(void)unlink(from);
+	if (utimes(to, tval))
+		warn("%s: set times", to);
+
+	if (close(to_fd)) {
+		warn("%s", to);
+		return (1);
+	}
+
+	if (unlink(from)) {
+		warn("%s: remove", from);
+		return (1);
+	}
 	return (0);
 }
 
@@ -210,19 +222,41 @@ copy(from, to)
 
 	if (!(pid = vfork())) {
 		execl(_PATH_CP, "mv", "-pR", from, to, NULL);
-		err("%s: %s", _PATH_CP, strerror(errno));
+		warn("%s", _PATH_CP);
 		_exit(1);
 	}
-	(void)waitpid(pid, &status, 0);
-	if (!WIFEXITED(status) || WEXITSTATUS(status))
+	if (waitpid(pid, &status, 0) == -1) {
+		warn("%s: waitpid", _PATH_CP);
 		return (1);
+	}
+	if (!WIFEXITED(status)) {
+		warn("%s: did not terminate normally", _PATH_CP);
+		return (1);
+	}
+	if (WEXITSTATUS(status)) {
+		warn("%s: terminated with %d (non-zero) status",
+		    _PATH_CP, WEXITSTATUS(status));
+		return (1);
+	}
 	if (!(pid = vfork())) {
 		execl(_PATH_RM, "mv", "-rf", from, NULL);
-		err("%s: %s", _PATH_RM, strerror(errno));
+		warn("%s", _PATH_RM);
 		_exit(1);
 	}
-	(void)waitpid(pid, &status, 0);
-	return (!WIFEXITED(status) || WEXITSTATUS(status));
+	if (waitpid(pid, &status, 0) == -1) {
+		warn("%s: waitpid", _PATH_RM);
+		return (1);
+	}
+	if (!WIFEXITED(status)) {
+		warn("%s: did not terminate normally", _PATH_RM);
+		return (1);
+	}
+	if (WEXITSTATUS(status)) {
+		warn("%s: terminated with %d (non-zero) status",
+		    _PATH_RM, WEXITSTATUS(status));
+		return (1);
+	}
+	return (0);
 }
 
 void
@@ -231,31 +265,4 @@ usage()
 	(void)fprintf(stderr,
 "usage: mv [-if] src target;\n   or: mv [-if] src1 ... srcN directory\n");
 	exit(1);
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-err(const char *fmt, ...)
-#else
-err(fmt, va_alist)
-	char *fmt;
-	va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "mv: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
 }
