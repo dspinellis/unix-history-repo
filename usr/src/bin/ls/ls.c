@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.75 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.76 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -267,12 +267,13 @@ traverse(argc, argv, options)
 	ch_options = !f_recursive && options & FTS_NOSTAT ? FTS_NAMEONLY : 0;
 
 	while (p = fts_read(ftsp))
-		switch(p->fts_info) {
+		switch (p->fts_info) {
 		case FTS_DC:
 			warnx("%s: directory causes a cycle", p->fts_name);
 			break;
 		case FTS_DNR:
 		case FTS_ERR:
+			errno = p->fts_errno;
 			warn("%s", p->fts_name);
 			break;
 		case FTS_D:
@@ -340,6 +341,7 @@ display(p, list)
 	maxsize = 0;
 	for (cur = list, entries = 0; cur; cur = cur->fts_link) {
 		if (cur->fts_info == FTS_ERR || cur->fts_info == FTS_NS) {
+			errno = cur->fts_errno;
 			warn("%s", cur->fts_name);
 			cur->fts_number = NO_PRINT;
 			continue;
