@@ -1,4 +1,4 @@
-#	@(#)disktab	4.8 (Berkeley) %G%
+#	@(#)disktab	4.9 (Berkeley) %G%
 # Disk geometry and partition layout tables. 
 # Key:
 #	dt	controller type
