@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	1.6	%G%";
+static char	SccsId[] = "@(#)main.c	1.7	%G%";
 
 /*
 **  DELIVERMAIL -- Deliver mail to a set of destinations
@@ -510,13 +510,14 @@ char *
 maketemp()
 {
 	register FILE *tf;
-	char buf[MAXLINE+1];
+	char buf[MAXFIELD+1];
 	static char fbuf[sizeof buf];
 	extern char *prescan();
 	extern char *matchhdr();
 	register char *p;
-	bool inheader;
+	register bool inheader;
 	bool firstline;
+	char c;
 
 	/*
 	**  Create the temp file name and create the file.
@@ -551,6 +552,19 @@ maketemp()
 	fbuf[0] = '\0';
 	while (fgets(buf, sizeof buf, stdin) != NULL)
 	{
+		if (inheader && isalnum(buf[0]))
+		{
+			/* get the rest of this field */
+			while ((c = getc(stdin)) == ' ' || c == '\t')
+			{
+				p = &buf[strlen(buf)];
+				*p++ = c;
+				if (fgets(p, sizeof buf - (p - buf), stdin) == NULL)
+					break;
+			}
+			ungetc(c, stdin);
+		}
+
 		if (!IgnrDot && buf[0] == '.' && (buf[1] == '\n' || buf[1] == '\0'))
 			break;
 
@@ -565,6 +579,10 @@ maketemp()
 				fprintf(tf, "Message-Id: <%s>\n", MsgId);
 # endif MESSAGEID
 			}
+# ifdef DEBUG
+			if (Debug)
+				printf("EOH\n");
+# endif DEBUG
 		}
 
 		/* Hide UNIX-like From lines */
@@ -584,7 +602,13 @@ maketemp()
 			while (*p != ':' && isspace(*p))
 				p++;
 			if (*p != ':')
+			{
 				inheader = FALSE;
+# ifdef DEBUG
+				if (Debug)
+					printf("EOH?\n");
+# endif DEBUG
+			}
 		}
 
 		if (inheader)

@@ -3,7 +3,7 @@
 **
 **	Most of these are actually allocated in globals.c
 **
-**	@(#)sendmail.h	1.3	%G%
+**	@(#)sendmail.h	1.4	%G%
 */
 
 
@@ -15,6 +15,7 @@
 
 # define MAXLINE	256	/* maximum line length */
 # define MAXNAME	128	/* maximum length of a name */
+# define MAXFIELD	2500	/* maximum total length of a header field */
 # define MAXPV		15	/* maximum # of parms to mailers */
 # define MAXHOP		30	/* maximum value of HopCount */
 
