@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)p3	8.1 (Berkeley) %G%
+.\"	@(#)p3	8.2 (Berkeley) %G%
 .\"
 .NH
 THE STANDARD I/O LIBRARY
@@ -86,6 +86,7 @@ obtained by including
 .UL stdio.h
 is a structure definition called
 .UL FILE .
+.ne 1i
 The only declaration needed for a file pointer
 is exemplified by
 .P1
