@@ -1,4 +1,4 @@
-/*	acutab.c	4.4	81/11/20	*/
+/*	acutab.c	4.5	81/11/29	*/
 #include "tip.h"
 
 extern int df02_dialer(), df03_dialer(), df_disconnect(), df_abort(),

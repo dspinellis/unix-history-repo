@@ -1,9 +1,9 @@
-/*	cmdtab.c	4.3	81/05/31	*/
+/*	cmdtab.c	4.4	81/11/29	*/
 #include "tip.h"
 
 extern int shell(), getfl(), sendfile(), chdirectory(),
 	finish(), help(), pipefile(), consh(), variable(),
-	cu_take(), cu_put(), dollar(), genbrk();
+	cu_take(), cu_put(), dollar(), genbrk(), suspend();
 
 esctable_t etable[] =
 {
@@ -19,6 +19,9 @@ esctable_t etable[] =
 	{ 'c',	NORM,	"change directory",		 chdirectory },
 	{ '.',	NORM,	"exit from tip",		 finish },
 	{CTRL(d),NORM,	"exit from tip",		 finish },
+#ifdef SIGTSTP
+	{CTRL(z),NORM,	"suspend tip",			 suspend },
+#endif
 	{ 's',	NORM,	"set variable",			 variable },
 	{ '?',	NORM,	"get this summary",		 help },
 	{ '#',	NORM,	"send break",			 genbrk },

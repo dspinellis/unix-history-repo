@@ -1,53 +1,11 @@
-/*	tip.c	4.9	81/11/20	*/
-/*
- * tip - Unix link to other systems
- *  tip [-v] [-speed] system-name
- *
- * Uses remote file for system descriptions.
- * Current commands (escapes):
- *
- *	~!	fork a shell on the local machine
- *	~c	change working directory on local machine
- *	~^D	exit tip
- *	~<	fetch file from remote system
- *	~>	send file to remote system
- *	~t	take a file from a remote UNIX (uses cat & echo)
- *	~p	send a file to a remote UNIX (uses cat)
- *	~|	fetch file from remote system and pipe it to
- *		 a local process
- *	~%	fork and wait for a program which inherits file
- *		 descriptors 3 & 4 attached to the remote machine
- *		 (optional by CONNECT define)
- *	~s	set or show variable
- *	~?	give a help summary
- *
- * Samuel J. Leffler	1-18-81
- *
- * sjl			2-11-81
- * add auto-dial stuff for the BIZCOMP
- *
- * sjl			2-14-81
- * cleaned up auto-dialer stuff and added variables
- *
- * sjl			2-19-81
- * handle quit and interrupt during calls
- *
- * sjl			3-8-81
- * made to pass lint
- *
- * sjl			4-11-81
- * mods to handle both FIOCAPACITY and FIONREAD in biz.c
- *
- * sjl			4-17-81
- * added take and put, made piping stuff work
- * honor uucp locks
- * rewrite remote file stuff for DN-11 like acu's and just to clean
- *   it up
- *
- * sjl			6-16-81
- * real working setup for DN-11's
- */
+/*	tip.c	4.10	81/11/29	*/
 
+/*
+ * tip - UNIX link to other systems
+ *  tip [-v] [-speed] system-name
+ * or
+ *  cu phone-number [-s speed] [-l line] [-a acu]
+ */
 #include "tip.h"
 
 /*
@@ -64,7 +22,7 @@ int	disc = OTTYDISC;		/* tip normally runs this way */
 
 int	intprompt();
 int	timeout();
-static int cleanup();
+int	cleanup();
 
 main(argc, argv)
 	char *argv[];
@@ -72,6 +30,12 @@ main(argc, argv)
 	char *system = NOSTR;
 	register int i;
 	char *p;
+
+	if (strcmp(argv[0], "tip")) {
+		cumain(argc, argv);
+		cumode = 1;
+		goto cucommon;
+	}
 
 	if (argc > 4) {
 		fprintf(stderr, "usage: tip [-v] [-speed] [system-name]\n");
@@ -145,9 +109,10 @@ main(argc, argv)
 	}
 	if (!HW)
 		ttysetup(i);
-
+cucommon:
 	/*
-	 * Set up local tty state
+	 * From here down the code is shared with
+	 * the "cu" version of tip.
 	 */
 	ioctl(0, TIOCGETP, (char *)&defarg);
 	ioctl(0, TIOCGETC, (char *)&defchars);
@@ -170,7 +135,7 @@ main(argc, argv)
 	 *	internal data structures (variables)
 	 * so, fork one process for local side and one for remote.
 	 */
-	write(1, "\07connected\r\n", 12);
+	printf(cumode ? "Connected\r\n" : "\07connected\r\n");
 	if (pid = fork())
 		tipin();
 	else
@@ -178,7 +143,6 @@ main(argc, argv)
 	/*NOTREACHED*/
 }
 
-static
 cleanup()
 {
 	delock(uucplock);
@@ -277,18 +241,15 @@ tipin()
 		if ((gch == character(value(ESCAPE))) && bol) {
 			if (!(gch = escape()))
 				continue;
-		} else if (gch == character(value(RAISECHAR))) {
+		} else if (!cumode && gch == character(value(RAISECHAR))) {
 			boolean(value(RAISE)) = !boolean(value(RAISE));
-			printf("%s", ctrl(character(value(RAISECHAR))));
 			continue;
 		} else if (gch == '\r') {
 			bol = 1;
 			write(FD, &gch, 1);
 			continue;
-		} else if (gch == character(value(FORCE))) {
-			printf("%s", ctrl(character(value(FORCE))));
+		} else if (!cumode && gch == character(value(FORCE)))
 			gch = getchar()&0177;
-		}
 		bol = any(gch, value(EOL));
 		if (boolean(value(RAISE)) && islower(gch))
 			toupper(gch);
@@ -415,7 +376,6 @@ help(c)
 /*
  * Set up the "remote" tty's state
  */
-static
 ttysetup(speed)
 {
 #ifdef VMUNIX

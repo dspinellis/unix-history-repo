@@ -1,4 +1,4 @@
-/*	remote.c	4.4	81/11/20	*/
+/*	remote.c	4.5	81/11/29	*/
 # include "tip.h"
 
 /*
@@ -33,13 +33,16 @@ getremcap(host)
 	}
 
 	for (p = capstrings, q = caps; *p != NULL; p++, q++)
-		**q = rgetstr(*p, &bp);
-	if ((BR = rgetnum("br")) < 0)
+		if (**q == NULL)
+			**q = rgetstr(*p, &bp);
+	if (!BR && (BR = rgetnum("br")) < 0)
 		BR = DEFBR;
 	if ((FS = rgetnum("fs")) < 0)
 		FS = DEFFS;
-	DU = rgetflag("du");
-	HW = rgetflag("hw");
+	if (DU < 0)
+		DU = 0;
+	else
+		DU = rgetflag("du");
 	if (DV == NOSTR) {
 		fprintf(stderr, "%s: missing device spec\n", host);
 		exit(3);
@@ -81,7 +84,7 @@ getremote(host)
 	 *   a rotary action to be simulated)
 	 */
 	if (next == NOSTR)
-		return(NOSTR);
+		return (NOSTR);
 	if ((cp = index(next, ',')) == NULL) {
 		DV = next;
 		next = NOSTR;
@@ -90,5 +93,5 @@ getremote(host)
 		DV = next;
 		next = cp;
 	}
-	return(DV);
+	return (DV);
 }

@@ -1,4 +1,4 @@
-/*	biz31.c	4.3	81/11/20	*/
+/*	biz31.c	4.4	81/11/29	*/
 #include "tip.h"
 
 #if BIZ1031
@@ -60,19 +60,19 @@ biz_dialer(num, mod)
 		flush("CONNECTION\r\n\07");
 	if (timeout)
 		biz31_disconnect();	/* insurance */
-	return(connected);
+	return (connected);
 }
 
 biz31w_dialer(num, acu)
 	char *num, *acu;
 {
-	return(biz_dialer(num, "w"));
+	return (biz_dialer(num, "w"));
 }
 
 biz31f_dialer(num, acu)
 	char *num, *acu;
 {
-	return(biz_dialer(num, "f"));
+	return (biz_dialer(num, "f"));
 }
 
 biz31_disconnect()
@@ -94,21 +94,22 @@ echo(s)
 {
 	char c;
 
-	while (c = *s++)
-		switch(c)
-		{
-			case '$':
-				read(FD, &c, 1);
-				s++;
-				break;
-			case '#':
-				c = *s++;
-				write(FD, &c, 1);
-				break;
-			default:
-				write(FD, &c, 1);
-				read(FD, &c, 1);
-		}
+	while (c = *s++) switch (c) {
+
+	case '$':
+		read(FD, &c, 1);
+		s++;
+		break;
+
+	case '#':
+		c = *s++;
+		write(FD, &c, 1);
+		break;
+
+	default:
+		write(FD, &c, 1);
+		read(FD, &c, 1);
+	}
 }
 
 static int
@@ -127,18 +128,17 @@ detect(s)
 
 	signal(SIGALRM, biz31_abort);
 	timeout = 0;
-	while (*s)
-	{
+	while (*s) {
 		alarm(number(value(DIALTIMEOUT)));
 		read(FD, &c, 1);
 		alarm(0);
 		if (timeout)
-			return(0);
+			return (0);
 		if (c != *s++)
-			return(0);
+			return (0);
 	}
 	signal(SIGALRM, SIG_DFL);
-	return(1);
+	return (1);
 }
 
 static int
@@ -149,8 +149,7 @@ flush(s)
 
 	signal(SIGALRM, sigALRM);
 	timeout = 0;
-	while (*s++)
-	{
+	while (*s++) {
 		alarm(10);
 		read(FD, &c, 1);
 		alarm(0);
@@ -159,7 +158,7 @@ flush(s)
 	}
 	signal(SIGALRM, SIG_DFL);
 	timeout = 0;			/* guard against disconnection */
-	return(1);
+	return (1);
 }
 
 /*
@@ -192,7 +191,7 @@ retry:
 		if (chars(b) != 10) {
 	nono:
 			if (already > MAXRETRY)
-				return(0);
+				return (0);
 			write(fd, DISCONNECT, 4);
 			sleep(2);
 			already++;
@@ -203,6 +202,6 @@ retry:
 				goto nono;
 		}
 	}
-	return(1);
+	return (1);
 }
 #endif

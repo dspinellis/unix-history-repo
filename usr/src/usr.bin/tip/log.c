@@ -1,4 +1,4 @@
-/*	log.c	4.2	81/11/20	*/
+/*	log.c	4.3	81/11/29	*/
 #include "tip.h"
 
 #ifdef ACULOG

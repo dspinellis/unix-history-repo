@@ -1,4 +1,4 @@
-/*	value.c	4.2	81/11/20	*/
+/*	value.c	4.3	81/11/29	*/
 #include "tip.h"
 
 #define MIDDLE	35
@@ -57,37 +57,37 @@ vassign(p, v)
 		printf("access denied\r\n");
 		return;
 	}
-	switch(p->v_type&TMASK) {
+	switch (p->v_type&TMASK) {
 
-		case STRING:
-			if (equal(p->v_value, v))
-				return;
-			if (!(p->v_type&(ENVIRON|INIT)))
-				free(p->v_value);
-			if ((p->v_value = malloc(size(v)+1)) == NOSTR) {
-				printf("out of core\r\n");
-				return;
-			}
-			p->v_type &= ~(ENVIRON|INIT);
-			strcpy(p->v_value, v);
-			break;
+	case STRING:
+		if (equal(p->v_value, v))
+			return;
+		if (!(p->v_type&(ENVIRON|INIT)))
+			free(p->v_value);
+		if ((p->v_value = malloc(size(v)+1)) == NOSTR) {
+			printf("out of core\r\n");
+			return;
+		}
+		p->v_type &= ~(ENVIRON|INIT);
+		strcpy(p->v_value, v);
+		break;
 
-		case NUMBER:
-			if (number(p->v_value) == number(v))
-				return;
-			number(p->v_value) = number(v);
-			break;
+	case NUMBER:
+		if (number(p->v_value) == number(v))
+			return;
+		number(p->v_value) = number(v);
+		break;
 
-		case BOOL:
-			if (boolean(p->v_value) == (*v != '!'))
-				return;
-			boolean(p->v_value) = (*v != '!');
-			break;
+	case BOOL:
+		if (boolean(p->v_value) == (*v != '!'))
+			return;
+		boolean(p->v_value) = (*v != '!');
+		break;
 
-		case CHAR:
-			if (character(p->v_value) == *v)
-				return;
-			character(p->v_value) = *v;
+	case CHAR:
+		if (character(p->v_value) == *v)
+			return;
+		character(p->v_value) = *v;
 	}
 	p->v_access |= CHANGED;
 }
@@ -164,37 +164,40 @@ vprint(p)
 		while (col++ < MIDDLE)
 			putchar(' ');
 	col += size(p->v_name);
-	switch(p->v_type&TMASK)
-	{
-		case BOOL:
-			if (boolean(p->v_value) == FALSE) {
-				col++;
-				putchar('!');
-			}
-			printf("%s", p->v_name);
-			break;
-		case STRING:
-			printf("%s=", p->v_name);
+	switch (p->v_type&TMASK) {
+
+	case BOOL:
+		if (boolean(p->v_value) == FALSE) {
 			col++;
-			if (p->v_value) {
-				cp = interp(p->v_value);
-				col += size(cp);
-				printf("%s", cp);
-			}
-			break;
-		case NUMBER:
-			col += 6;
-			printf("%s=%-5d", p->v_name, number(p->v_value));
-			break;
-		case CHAR:
-			printf("%s=", p->v_name);
-			col++;
-			if (p->v_value) {
-				cp = ctrl(character(p->v_value));
-				col += size(cp);
-				printf("%s", cp);
-			}
-			break;
+			putchar('!');
+		}
+		printf("%s", p->v_name);
+		break;
+
+	case STRING:
+		printf("%s=", p->v_name);
+		col++;
+		if (p->v_value) {
+			cp = interp(p->v_value);
+			col += size(cp);
+			printf("%s", cp);
+		}
+		break;
+
+	case NUMBER:
+		col += 6;
+		printf("%s=%-5d", p->v_name, number(p->v_value));
+		break;
+
+	case CHAR:
+		printf("%s=", p->v_name);
+		col++;
+		if (p->v_value) {
+			cp = ctrl(character(p->v_value));
+			col += size(cp);
+			printf("%s", cp);
+		}
+		break;
 	}
 	if (col >= MIDDLE) {
 		col = 0;
@@ -209,10 +212,10 @@ vaccess(mode, rw)
 	register unsigned mode, rw;
 {
 	if (mode & (rw<<PUBLIC))
-		return(1);
+		return (1);
 	if (mode & (rw<<PRIVATE))
-		return(1);
-	return((mode & (rw<<ROOT)) && getuid() == 0);
+		return (1);
+	return ((mode & (rw<<ROOT)) && getuid() == 0);
 }
 
 static value_t *
@@ -223,20 +226,21 @@ vlookup(s)
 
 	for (p = vtable; p->v_name; p++)
 		if (equal(p->v_name, s) || (p->v_abrev && equal(p->v_abrev, s)))
-			return(p);
-	return(NULL);
+			return (p);
+	return (NULL);
 }
 
 char *
 vinterp(s, stop)
 	register char *s;
-char stop;
+	char stop;
 {
 	register char *p = s, c;
 	int num;
 
-	while ((c = *s++) && c != stop) switch(c)
-	{
+	while ((c = *s++) && c != stop)
+		switch (c) {
+
 		case '^':
 			if (*s)
 				*p++ = *s++ - 0100;
@@ -274,7 +278,7 @@ char stop;
 
 		default:
 			*p++ = c;
-	}
+		}
 	*p = '\0';
-	return(c == stop ? s-1 : NULL);
+	return (c == stop ? s-1 : NULL);
 }

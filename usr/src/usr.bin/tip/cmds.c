@@ -1,4 +1,4 @@
-/*	cmds.c	4.6	81/11/20	*/
+/*	cmds.c	4.7	81/11/29	*/
 #include "tip.h"
 /*
  * tip
@@ -258,7 +258,7 @@ transmit(fd, eofchars, command)
 	lcount = 0;
 	lastc = '\0';
 	start_t = time(0);
-	while(1) {
+	while (1) {
 		ccount = 0;
 		do {
 			c = getc(fd);
@@ -275,7 +275,7 @@ transmit(fd, eofchars, command)
 				else if (c == '\t') {
 					if (boolean(value(TABEXPAND))) {
 						send(' ');
-						while((++ccount % 8) != 0)
+						while ((++ccount % 8) != 0)
 							send(' ');
 						continue;
 					}
@@ -630,3 +630,15 @@ genbrk()
 	write(FD, "@", 1);
 #endif
 }
+
+#ifdef SIGTSTP
+/*
+ * Suspend tip
+ */
+suspend()
+{
+	unraw();
+	kill(0, SIGTSTP);
+	raw();
+}
+#endif

@@ -1,4 +1,4 @@
-/*	cu.c	4.1	81/11/29	*/
+/*	cu.c	4.2	81/11/29	*/
 
 #include "tip.h"
 
@@ -30,7 +30,7 @@ cumain(argc, argv)
 	for (; argc > 1; argv++, argc--) {
 		if (argv[1][0] != '-')
 			PN = argv[1];
-		else switch(argv[1][1]) {
+		else switch (argv[1][1]) {
 
 		case 't':
 			HW = 1, DU = -1;

@@ -1,4 +1,4 @@
-/*	uucplock.c	4.2	81/11/20	*/
+/*	uucplock.c	4.3	81/11/29	*/
 /*
  * defs that come from uucp.h
  */
@@ -63,16 +63,16 @@ ulockf(file, atime)
 			time(&ptime);
 			if ((ptime - stbuf.st_ctime) < atime) {
 				/* file not old enough to delete */
-				return(FAIL);
+				return (FAIL);
 			}
 		}
 		ret = unlink(file);
 		ret = onelock(pid, tempfile, file);
 		if (ret != 0)
-			return(FAIL);
+			return (FAIL);
 	}
 	stlock(file);
-	return(0);
+	return (0);
 }
 
 #define MAXLOCKS 10	/* maximum number of lock files */
@@ -124,14 +124,12 @@ rmlock(name)
 	for (i = 0; i < Nlocks; i++) {
 		if (Lockfile[i] == NULL)
 			continue;
-		if (name == NULL
-		|| strcmp(name, Lockfile[i]) == SAME) {
+		if (name == NULL || strcmp(name, Lockfile[i]) == SAME) {
 			unlink(Lockfile[i]);
 			free(Lockfile[i]);
 			Lockfile[i] = NULL;
 		}
 	}
-	return;
 }
 
 /*
@@ -153,30 +151,30 @@ isalock(name)
 {
 	struct stat xstat;
 
-	if(stat(name,&xstat)<0)
-		return(0);
-	if(xstat.st_size!=sizeof(int))
-		return(0);
-	return(1);
+	if (stat(name, &xstat) < 0)
+		return (0);
+	if (xstat.st_size != sizeof(int))
+		return (0);
+	return (1);
 }
 
 static
-onelock(pid,tempfile,name)
-	char *tempfile,*name;
+onelock(pid, tempfile, name)
+	char *tempfile, *name;
 {
 	int fd;
 
-	fd=creat(tempfile,0444);
-	if(fd<0)
-		return(-1);
-	write(fd,(char *) &pid,sizeof(int));
+	fd = creat(tempfile, 0444);
+	if (fd < 0)
+		return (-1);
+	write(fd,(char *)&pid, sizeof(int));
 	close(fd);
-	if(link(tempfile,name)<0) {
+	if (link(tempfile, name) < 0) {
 		unlink(tempfile);
-		return(-1);
+		return (-1);
 	}
 	unlink(tempfile);
-	return(0);
+	return (0);
 }
 
 /***
@@ -207,5 +205,5 @@ mlock(sys)
 {
 	char lname[30];
 	sprintf(lname, "%s.%s", LOCKPRE, sys);
-	return(ulockf(lname, (time_t) SLCKTIME ) < 0 ? FAIL : 0);
+	return (ulockf(lname, (time_t) SLCKTIME ) < 0 ? FAIL : 0);
 }

@@ -1,4 +1,4 @@
-/*	dn11.c	4.10	81/11/20	*/
+/*	dn11.c	4.11	81/11/29	*/
 
 #if DN11
 /*
@@ -30,12 +30,12 @@ dn_dialer(num, acu)
 			printf("line busy...");
 		else
 			printf("acu open error...");
-		return(0);
+		return (0);
 	}
 	if (setjmp(jmpbuf)) {
 		kill(child, SIGKILL);
 		close(dn);
-		return(0);
+		return (0);
 	}
 	signal(SIGALRM, alarmtr);
 	timelim = 5 * strlen(num);
@@ -47,25 +47,13 @@ dn_dialer(num, acu)
 		signal(SIGALRM, SIG_IGN);
 		signal(SIGINT, SIG_IGN);
 		signal(SIGQUIT, SIG_IGN);
-#ifdef DEBUG
-		printf("child: sleep\n");
-#endif
 		sleep(2);
-#ifdef DEBUG
-		printf("child: write\n");
-#endif
 		nw = write(dn, num, lt = strlen(num));
-#ifdef DEBUG
-		printf("child: write finished\n");
-#endif
 		exit(nw != lt);
 	}
 	/*
 	 * open line - will return on carrier
 	 */
-#ifdef DEBUG
-	printf("parent: child %d, open begin\n", child);
-#endif
 	if ((FD = open(DV, 2)) < 0) {
 		if (errno == EIO)
 			printf("lost carrier...");
@@ -74,29 +62,20 @@ dn_dialer(num, acu)
 		alarm(0);
 		kill(child, SIGKILL);
 		close(dn);
-		return(0);
+		return (0);
 	}
 	alarm(0);
-#ifdef DEBUG
-	printf("parent: open finished\n");
-#endif
 	ioctl(dn, TIOCHPCL, 0);
 	signal(SIGALRM, SIG_DFL);
-#ifdef DEBUG
-	printf("parent: wait for child\n");
-#endif
 	while ((nw = wait(&lt)) != child && nw != -1)
-#ifdef DEBUG
-		printf("wait finds child with pid %d\n", nw)
-#endif
 		;
 	fflush(stdout);
 	close(dn);
 	if (lt != 0) {
 		close(FD);
-		return(0);
+		return (0);
 	}
-	return(1);
+	return (1);
 }
 
 alarmtr()

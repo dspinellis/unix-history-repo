@@ -1,4 +1,4 @@
-/*	acu.c	4.4	81/11/20	*/
+/*	acu.c	4.5	81/11/29	*/
 #include "tip.h"
 #include <setjmp.h>
 
@@ -34,7 +34,7 @@ connect()
 	if (!DU) {		/* regular connect message */
 		if (CM != NOSTR)
 			write(FD, cp, size(CM));
-		return(NOSTR);
+		return (NOSTR);
 	}
 	/*
 	 * @ =>'s use data base in PHONES environment variable
@@ -58,7 +58,7 @@ connect()
 		exit(1);
 	}
 	if ((acu = acutype(AT)) == NOACU)
-		return("unknown ACU type");
+		return ("unknown ACU type");
 	if (*cp != '@') {
 		while (*cp) {
 			for (phnum = cp; any(*cp, "0123456789-*="); cp++)
@@ -68,7 +68,7 @@ connect()
 			if (conflag = (*acu->acu_dialer)(phnum, CU)) {
 				logent(value(HOST), phnum, acu->acu_name,
 					"call completed");
-				return(NOSTR);
+				return (NOSTR);
 			} else
 				logent(value(HOST), phnum, acu->acu_name,
 					"no answer");
@@ -77,14 +77,14 @@ connect()
 	} else {
 		if ((fd = fopen(PH, "r")) == NOFILE) {
 			printf("%s: ", PH);
-			return("can't open phone number file");
+			return ("can't open phone number file");
 		}
 		while (fgets(string, sizeof(string), fd) != NOSTR) {
 			for (cp = string; !any(*cp, " \t\n"); cp++)
 				;
 			if (*cp == '\n') {
 				fclose(fd);
-				return("unrecognizable host name");
+				return ("unrecognizable host name");
 			}
 			*cp++ = '\0';
 			if (strcmp(string, value(HOST)))
@@ -93,7 +93,7 @@ connect()
 				cp++;
 			if (*cp == '\n') {
 				fclose(fd);
-				return("missing phone number");
+				return ("missing phone number");
 			}
 			for (phnum = cp; any(*cp, "0123456789-*="); cp++)
 				;
@@ -103,7 +103,7 @@ connect()
 				fclose(fd);
 				logent(value(HOST), phnum, acu->acu_name,
 					"call completed");
-				return(NOSTR);
+				return (NOSTR);
 			} else
 				logent(value(HOST), phnum, acu->acu_name,
 					"no answer");
@@ -113,7 +113,7 @@ connect()
 	}
 	if (!tried)
 		logent(value(HOST), "", acu->acu_name, "missing phone number");
-	return(tried ? "no answer" : "missing phone number");
+	return (tried ? "no answer" : "missing phone number");
 }
 
 disconnect()
@@ -142,6 +142,6 @@ acutype(s)
 
 	for (p = acutable; p->acu_name != '\0'; p++)
 		if (!strcmp(s, p->acu_name))
-			return(p);
-	return(NOACU);
+			return (p);
+	return (NOACU);
 }
