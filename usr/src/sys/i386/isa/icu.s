@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)icu.s	7.5 (Berkeley) %G%
+ *	@(#)icu.s	7.6 (Berkeley) %G%
  */
 
 
@@ -29,42 +29,7 @@ _netmask:	.long	0
 _isa_intr:	.space	16*4
 
 	.text
-/*
- * Handle return from interrupt after device handler finishes
- */
-doreti:
-	cli
-	popl	%ebx			# remove intr number
-	nop
-	popl	%eax			# get previous priority
-	nop
-	# now interrupt frame is a trap frame!
-	movw	%ax,%cx
-	movw	%ax,_cpl
-	orw	_imen,%ax
-	outb	%al,$ IO_ICU1+1		# re-enable intr?
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-
-	# andw	$0xffff,%cx	
-	cmpw	$0,%cx			# returning to zero?
-	je	1f
-
-2:	popl	%es			# nope, going to non-zero level
-	nop
-	popl	%ds
-	nop
-	popal
-	nop
-	addl	$8,%esp
-	iret
-
-1:	cmpl	$0,_netisr		# check for softint s/traps
-	je	2b
-
 #include "../net/netisr.h"
-
-1:
 
 #define DONET(s, c)	; \
 	.globl	c ;  \
@@ -73,9 +38,82 @@ doreti:
 	call	c ; \
 1:
 
-	call	_splnet
-	pushl	%eax
+/*
+ * Handle return from interrupt after device handler finishes
+ *
+ * register usage:
+ *
+ * %ebx is cpl we are going back to
+ * %esi is 0 if returning to kernel mode
+ *
+ * Note that these registers will be preserved though C calls,
+ * such as the network interrupt routines.
+ */
+doreti:
+	cli
+	popl	%ebx			# flush unit number
+	popl	%ebx			# get previous priority
+	# now interrupt frame is a trap frame!
 
+	/* compensate for drivers that return with non-zero cpl */
+	movl	0x34(%esp), %esi /* cs */
+	andl	$3, %esi
+	jz	1f
+
+return_to_user_mode: /* entry point from trap and syscall return */
+
+	/* return cs is for user mode: force 0 cpl */
+	xorl	%ebx,%ebx
+1:
+
+	/* like splx(%ebx), except without special 0 handling */
+	cli
+	movl	%ebx, %eax
+	movw	%ax,_cpl
+	orw	_imen,%ax
+	outb	%al, $ IO_ICU1+1
+	movb	%ah, %al
+	outb	%al, $ IO_ICU2+1
+
+	/* return immediately if previous cpl was non-zero */
+	cmpw	$0, %bx
+	jnz	just_return
+
+	/* do network stuff, if requested, even if returning to kernel mode */
+	cmpl	$0,_netisr
+	jne	donet
+
+	/* if (returning to user mode && astpending), go back to trap
+	 * (check astpending first since it is more likely to be false)
+	 */
+	cmpl	$0,_astpending
+	je	just_return
+
+	testl	%esi, %esi
+	jz	just_return
+
+	/* we need to go back to trap */
+	popl	%es
+	popl	%ds
+	popal
+	addl	$8,%esp
+
+	pushl	$0
+	TRAP (T_ASTFLT)
+	/* this doesn't return here ... instead it goes though
+	 * calltrap in locore.s
+	 */
+
+donet:
+	/* like splnet(), except we know the current pri is 0 */
+	cli
+	movw _netmask, %ax
+	movw %ax,_cpl
+	orw _imen,%ax
+	outb %al, $ IO_ICU1+1
+	movb %ah, %al
+	outb %al, $ IO_ICU2+1
+	sti
 
 	DONET(NETISR_RAW,_rawintr)
 #ifdef INET
@@ -95,45 +133,31 @@ doreti:
 	DONET(NETISR_CCITT,_hdintr)
 #endif
 
-	/* restore interrupt state, but don't turn them on just yet */
-	cli
-	popl	%eax
-	nop
-	movw	%ax,_cpl
-	orw	_imen,%ax
-	outb	%al,$ IO_ICU1+1		# re-enable intr?
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-
 	btrl	$ NETISR_SCLK,_netisr
-	jnb	1f
+	jnb	return_to_user_mode
+
+	/* like splsoftclock */
+	cli
+	movw $0x8000, %ax
+	movw %ax,_cpl
+	orw _imen,%ax
+	outb %al, $ IO_ICU1+1
+	movb %ah, %al
+	outb %al, $ IO_ICU2+1
+	sti
+
 	# back to an interrupt frame for a moment
-	call	_splsoftclock
 	pushl	%eax
 	pushl	$0xff	# dummy intr
 	call	_softclock
-	popl	%eax
-	nop
-	call	_splx
-	popl	%eax
-	nop
+	leal	8(%esp), %esp
+	jmp	return_to_user_mode
 
-	jmp	2f
-
-1:
-	cmpw	$0x1f,13*4(%esp)	# to user?
-	jne	2f			# nope, leave
-	btrl	$ NETISR_AST ,_netisr
-	jnb	2f
-	call	_trap
-
-2:	pop	%es
-	nop
+just_return:
+	pop	%es
 	pop	%ds
-	nop
-	popal
-	nop
-	addl	$8,%esp
+	popa
+	leal	8(%esp),%esp
 	iret
 
 /*
@@ -297,51 +321,51 @@ _splx:
 	.globl	_isa_strayintr
 
 IDTVEC(intr0)
-	INTR(0, _highmask, 0) ; call	_isa_strayintr ; INTREXIT1
+	INTR1(0, _highmask, 0) ; call	_isa_strayintr ; INTREXIT1
 
 IDTVEC(intr1)
-	INTR(1, _highmask, 1) ; call	_isa_strayintr ; INTREXIT1
+	INTR1(1, _highmask, 1) ; call	_isa_strayintr ; INTREXIT1
 
 IDTVEC(intr2)
-	INTR(2, _highmask, 2) ; call	_isa_strayintr ; INTREXIT1
+	INTR1(2, _highmask, 2) ; call	_isa_strayintr ; INTREXIT1
 
 IDTVEC(intr3)
-	INTR(3, _highmask, 3) ; call	_isa_strayintr ; INTREXIT1
+	INTR1(3, _highmask, 3) ; call	_isa_strayintr ; INTREXIT1
 
 IDTVEC(intr4)
-	INTR(4, _highmask, 4) ; call	_isa_strayintr ; INTREXIT1
+	INTR1(4, _highmask, 4) ; call	_isa_strayintr ; INTREXIT1
 
 IDTVEC(intr5)
-	INTR(5, _highmask, 5) ; call	_isa_strayintr ; INTREXIT1
+	INTR1(5, _highmask, 5) ; call	_isa_strayintr ; INTREXIT1
 
 IDTVEC(intr6)
-	INTR(6, _highmask, 6) ; call	_isa_strayintr ; INTREXIT1
+	INTR1(6, _highmask, 6) ; call	_isa_strayintr ; INTREXIT1
 
 IDTVEC(intr7)
-	INTR(7, _highmask, 7) ; call	_isa_strayintr ; INTREXIT1
+	INTR1(7, _highmask, 7) ; call	_isa_strayintr ; INTREXIT1
 
 
 IDTVEC(intr8)
-	INTR(8, _highmask, 8) ; call	_isa_strayintr ; INTREXIT2
+	INTR2(8, _highmask, 8) ; call	_isa_strayintr ; INTREXIT2
 
 IDTVEC(intr9)
-	INTR(9, _highmask, 9) ; call	_isa_strayintr ; INTREXIT2
+	INTR2(9, _highmask, 9) ; call	_isa_strayintr ; INTREXIT2
 
 IDTVEC(intr10)
-	INTR(10, _highmask, 10) ; call	_isa_strayintr ; INTREXIT2
+	INTR2(10, _highmask, 10) ; call	_isa_strayintr ; INTREXIT2
 
 IDTVEC(intr11)
-	INTR(11, _highmask, 11) ; call	_isa_strayintr ; INTREXIT2
+	INTR2(11, _highmask, 11) ; call	_isa_strayintr ; INTREXIT2
 
 IDTVEC(intr12)
-	INTR(12, _highmask, 12) ; call	_isa_strayintr ; INTREXIT2
+	INTR2(12, _highmask, 12) ; call	_isa_strayintr ; INTREXIT2
 
 IDTVEC(intr13)
-	INTR(13, _highmask, 13) ; call	_isa_strayintr ; INTREXIT2
+	INTR2(13, _highmask, 13) ; call	_isa_strayintr ; INTREXIT2
 
 IDTVEC(intr14)
-	INTR(14, _highmask, 14) ; call	_isa_strayintr ; INTREXIT2
+	INTR2(14, _highmask, 14) ; call	_isa_strayintr ; INTREXIT2
 
 IDTVEC(intr15)
-	INTR(15, _highmask, 15) ; call	_isa_strayintr ; INTREXIT2
+	INTR2(15, _highmask, 15) ; call	_isa_strayintr ; INTREXIT2
 
