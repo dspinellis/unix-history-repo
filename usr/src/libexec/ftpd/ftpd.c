@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	4.28 (Berkeley) %G%";
 #endif
 
 /*
@@ -221,7 +221,7 @@ pass(passwd)
 	}
 	if (!guest) {		/* "ftp" is only account allowed no password */
 		xpasswd = crypt(passwd, pw->pw_passwd);
-		if (strcmp(xpasswd, pw->pw_passwd) != 0) {
+		if (*pw->pw_passwd == '\0' || strcmp(xpasswd, pw->pw_passwd)) {
 			reply(530, "Login incorrect.");
 			pw = NULL;
 			return;
