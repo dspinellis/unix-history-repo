@@ -1,0 +1,56 @@
+abort(3) abort: generate a fault.
+abs(3) abs: integer absolute value.
+assert(3x) assert: program verification.
+atof(3) atof, atoi, atol: convert ASCII to numbers.
+crypt(3) crypt, setkey, encrypt: DES encryption.
+ctime(3) ctime, localtime, gmtime, asctime, timezone: convert date and time to ASCII.
+ctype(3) isalpha, isupper, islower, isdigit, isalnum, isspace, ispunct, isprint, iscntrl, isascii: character classification.
+dbm(3x) dbminit, fetch, store, delete, firstkey, nextkey: data base subroutines.
+ecvt(3) ecvt, fcvt, gcvt: output conversion.
+end(3) end, etext, edata: last locations in program.
+exp(3m) exp, log, log10, pow, sqrt: exponential, logarithm, power, square root.
+fclose(3s) fclose, fflush: close or flush a stream.
+ferror(3s) feof, ferror, clearerr, fileno: stream status inquiries.
+floor(3m) fabs, floor, ceil: absolute value, floor, ceiling functions.
+fopen(3s) fopen, freopen, fdopen: open a stream.
+fread(3s) fread, fwrite: buffered binary input/output.
+frexp(3) frexp, ldexp, modf: split into mantissa and exponent.
+fseek(3s) fseek, ftell, rewind: reposition a stream.
+gamma(3m) gamma: log gamma function.
+getarg(3f) getarg, iargc: command arguments to Fortran.
+getc(3s) getc, getchar, fgetc, getw: get character or word from stream.
+getenv(3) getenv: value for environment name.
+getgrent(3) getgrent, getgrgid, getgrnam, setgrent, endgrent: get group file entry.
+getlogin(3) getlogin: get login name.
+getpass(3) getpass: read a password.
+getpw(3) getpw: get name from UID.
+getpwent(3) getpwent, getpwuid, getpwnam, setpwent, endpwent: get password file entry.
+gets(3s) gets, fgets: get a string from a stream.
+hypot(3m) hypot, cabs: euclidean distance.
+intro(3) intro: introduction to library functions.
+j0(3m) j0, j1, jn, y0, y1, yn: bessel functions.
+l3tol(3) l3tol, ltol3: convert between 3-byte integers and long integers.
+malloc(3) malloc, free, realloc, calloc: main memory allocator.
+mktemp(3) mktemp: make a unique file name.
+monitor(3) monitor: prepare execution profile.
+nlist(3) nlist: get entries from name list.
+perror(3) perror, sys_errlist, sys_nerr: system error messages.
+plot(3x) plot: openpl et al.: graphics interface.
+popen(3s) popen, pclose: initiate I/O to/from a process.
+printf(3s) printf, fprintf, sprintf: formatted output conversion.
+putc(3s) putc, putchar, fputc, putw: put character or word on a stream.
+puts(3s) puts, fputs: put a string on a stream.
+qsort(3) qsort: quicker sort.
+rand(3) rand, srand: random number generator.
+scanf(3s) scanf, fscanf, sscanf: formatted input conversion.
+setbuf(3s) setbuf: assign buffering to a stream.
+setjmp(3) setjmp, longjmp: non-local goto.
+sin(3m) sin, cos, tan, asin, acos, atan, atan2: trigonometric functions.
+sinh(3m) sinh, cosh, tanh: hyperbolic functions.
+sleep(3) sleep: suspend execution for interval.
+stdio(3s) stdio: standard buffered input/output package.
+string(3) strcat, strcatn, strcmp, strcmpn, strcpy, strcpyn, strlen, index, rindex: string operations.
+swab(3) swab: swap bytes.
+system(3) system: issue a shell command.
+ttyname(3) ttyname, isatty, ttyslot: find name of a terminal.
+ungetc(3s) ungetc: push character back into input stream.
