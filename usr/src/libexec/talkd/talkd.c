@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)talkd.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)talkd.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -37,6 +37,7 @@ static char sccsid[] = "@(#)talkd.c	5.4 (Berkeley) %G%";
 #include <syslog.h>
 
 #include <protocols/talkd.h>
+#include <paths.h>
 
 CTL_MSG		request;
 CTL_RESPONSE	response;
@@ -67,8 +68,8 @@ main(argc, argv)
 		syslog(LOG_ERR, "gethostname: %m");
 		_exit(1);
 	}
-	if (chdir("/dev") < 0) {
-		syslog(LOG_ERR, "chdir: /dev: %m");
+	if (chdir(_PATH_DEV) < 0) {
+		syslog(LOG_ERR, "chdir: %s: %m", _PATH_DEV);
 		_exit(1);
 	}
 	if (argc > 1 && strcmp(argv[1], "-d") == 0)

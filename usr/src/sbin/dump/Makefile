@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 #	dump.h			header file
 #	dumpitime.c		reads /etc/dumpdates
@@ -64,8 +64,8 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o root -g tty -m 6755 rdump ${DESTDIR}/etc/rdump
-	install -s -o bin -g tty -m 2755 dump ${DESTDIR}/etc/dump
+	install -s -o root -g tty -m 6755 rdump ${DESTDIR}/sbin/rdump
+	install -s -o bin -g tty -m 2755 dump ${DESTDIR}/sbin/dump
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
 
 lint: ${SRCS}

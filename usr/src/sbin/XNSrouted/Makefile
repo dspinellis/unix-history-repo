@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -37,7 +37,7 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 XNSrouted ${DESTDIR}/etc/XNSrouted
+	install -s -o bin -g bin -m 755 XNSrouted ${DESTDIR}/usr/sbin
 	install -c -o bin -g bin -m 444 XNSrouted.0 ${DESTDIR}/usr/man/cat8
 
 lint: ${SRCS}

@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)edquota.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)edquota.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -45,7 +45,7 @@ struct	dquot odq[NMOUNT];
 char	dqf[NMOUNT][MAXPATHLEN + 1];
 char	odqf[NMOUNT][MAXPATHLEN + 1];
 
-char	tmpfil[] = "/tmp/EdP.aXXXXX";
+char	tmpfil[] = _PATH_TMP;
 char	*qfname = "quotas";
 char	*getenv();
 
@@ -148,7 +148,7 @@ editit()
 		setgid(getgid());
 		setuid(getuid());
 		if ((ed = getenv("EDITOR")) == (char *)0)
-			ed = _PATH_EDITOR;
+			ed = _PATH_VI;
 		execlp(ed, ed, tmpfil, 0);
 		perror(ed);
 		exit(1);
@@ -395,7 +395,7 @@ putdiscq(uid, dq, dqf)
 	for (cnt = 0; ++cnt <= NMOUNT && **dqf; dq++, dqf++) {
 		fs = getfsfile(*dqf);
 		if (fs == NULL) {
-			fprintf(stderr, "%s: not in /etc/fstab\n", *dqf);
+			fprintf(stderr, "%s: not in fstab\n", *dqf);
 			continue;
 		}
 		strcat(*dqf, "/");

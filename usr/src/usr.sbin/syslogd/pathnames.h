@@ -14,11 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
-#define	_PATH_CONSOLE	"/dev/console"
+#include <paths.h>
+
 #define	_PATH_KLOG	"/dev/klog"
 #define	_PATH_LOG	"/dev/log"
-#define	_PATH_LOGCONF	"/dev/syslog.conf"
-#define	_PATH_LOGPID	"/dev/syslog.pid"
+#define	_PATH_LOGCONF	"/etc/syslog.conf"
+#define	_PATH_LOGPID	"/var/run/syslog.pid"

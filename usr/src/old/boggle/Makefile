@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -24,7 +24,7 @@ MAN=	boggle.0
 all: boggle bogdict
 
 bogdict: comp sfile
-	sed -f sfile /usr/dict/words | uniq | ./comp >bogdict
+	sed -f sfile /usr/share/dict/words | uniq | ./comp >bogdict
 
 boggle comp: ${LIBC}
 	${CC} -o $@ ${CFLAGS} $@.c

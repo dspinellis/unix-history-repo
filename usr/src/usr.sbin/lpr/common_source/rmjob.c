@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rmjob.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmjob.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -24,6 +24,7 @@ static char sccsid[] = "@(#)rmjob.c	5.4 (Berkeley) %G%";
  */
 
 #include "lp.h"
+#include "pathnames.h"
 
 /*
  * Stuff for handling lprm specifications
@@ -52,11 +53,11 @@ rmjob()
 	else if (i == 0)
 		fatal("unknown printer");
 	if ((SD = pgetstr("sd", &bp)) == NULL)
-		SD = DEFSPOOL;
+		SD = _PATH_DEFSPOOL;
 	if ((LO = pgetstr("lo", &bp)) == NULL)
 		LO = DEFLOCK;
 	if ((LP = pgetstr("lp", &bp)) == NULL)
-		LP = DEFDEVLP;
+		LP = _PATH_DEFDEVLP;
 	if ((RP = pgetstr("rp", &bp)) == NULL)
 		RP = DEFLP;
 	RM = pgetstr("rm", &bp);

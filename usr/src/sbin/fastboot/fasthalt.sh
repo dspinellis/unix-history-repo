@@ -15,7 +15,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)fasthalt.sh	5.1 (Berkeley) %G%
+#	@(#)fasthalt.sh	5.2 (Berkeley) %G%
 #
 cp /dev/null /fastboot
-/etc/halt $*
+/usr/sbin/halt $*

@@ -14,12 +14,12 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-C2=	/lib/c2
-INLINE=	/sys/machine/inline/inline
+C2=	/usr/libexec/c2
+INLINE=	/usr/include/${MACHINE}/inline/inline
 SRCS=	af.c if.c input.c main.c output.c startup.c tables.c timer.c \
 	trace.c inet.c
 OBJS=	af.o if.o input.o main.o output.o startup.o tables.o timer.o \
@@ -52,7 +52,7 @@ depend: ${SRCS}
 	(cd tools; make ${MFLAGS} depend)
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 routed ${DESTDIR}/etc/routed
+	install -s -o bin -g bin -m 755 routed ${DESTDIR}/usr/sbin
 	install -c -o bin -g bin -m 444 routed.0 ${DESTDIR}/usr/man/cat8
 
 lint: ${SRCS}

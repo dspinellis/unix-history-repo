@@ -14,9 +14,10 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
-#define	_PATH_CONSOLE	"/dev/console"
+#include <paths.h>
+
 #define	_PATH_GETTYTAB	"/etc/gettytab"
-#define	_PATH_LOGIN	"/bin/login"
+#define	_PATH_LOGIN	"/usr/bin/login"

@@ -3,15 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dump.h	5.5 (Berkeley) %G%
+ *	@(#)dump.h	5.6 (Berkeley) %G%
  */
 
 #define	NI		16
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
 #define MAXNINDIR	(MAXBSIZE / sizeof(daddr_t))
 
-#include <stdio.h>
-#include <ctype.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/fs.h>
@@ -20,8 +18,10 @@
 #include <sys/dir.h>
 #include <utmp.h>
 #include <sys/time.h>
-#include <signal.h>
+#include <sys/signal.h>
 #include <fstab.h>
+#include <stdio.h>
+#include <ctype.h>
 
 #define	MWORD(m,i)	(m[(unsigned)(i-1)/NBBY])
 #define	MBIT(i)		(1<<((unsigned)(i-1)%NBBY))
@@ -96,8 +96,6 @@ int	interrupt();		/* in case operator bangs on console */
 #define	X_REWRITE	2	/* restart writing from the check point */
 #define	X_ABORT		3	/* abort all of dump; don't attempt checkpointing*/
 
-#define	TAPE	"/dev/rmt8"		/* default tape device */
-#define	DISK	"/dev/rrp1g"		/* default disk */
 #define	OPGRENT	"operator"		/* group entry to notify */
 #define DIALUP	"ttyd"			/* prefix for dialups */
 

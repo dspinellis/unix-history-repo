@@ -16,18 +16,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startdaemon.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)startdaemon.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Tell the printer daemon that there are new files in the spool directory.
  */
 
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <stdio.h>
 #include "lp.local.h"
+#include "pathnames.h"
 
 startdaemon(printer)
 	char *printer;
@@ -42,7 +43,7 @@ startdaemon(printer)
 		return(0);
 	}
 	sun.sun_family = AF_UNIX;
-	strcpy(sun.sun_path, SOCKETNAME);
+	strcpy(sun.sun_path, _PATH_SOCKETNAME);
 	if (connect(s, &sun, strlen(sun.sun_path) + 2) < 0) {
 		perr("connect");
 		(void) close(s);

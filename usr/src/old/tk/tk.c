@@ -1,10 +1,11 @@
-static char *sccsid = "@(#)tk.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)tk.c	4.3 (Berkeley) %G%";
 /*
  * optimize output for Tek 4014
  */
 
+#include <sys/signal.h>
 #include <stdio.h>
-#include <signal.h>
+#include <paths.h>
 
 #define MAXY 3071
 #define LINE 47
@@ -56,7 +57,7 @@ char **argv;
 				}
 				break;
 		}
-	if ((ttyin = fopen("/dev/tty", "r")) != NULL)
+	if ((ttyin = fopen(_PATH_TTY, "r")) != NULL)
 		setbuf(ttyin, (char *)NULL);
 	if (argc) {
 		if (freopen(argv[0], "r", stdin) == NULL) {
@@ -208,10 +209,10 @@ execom()
 		return;
 	}
 	if (isatty(fileno(stdin)) == 0) {
-		if (freopen("/dev/tty", "r", stdin)==NULL)
-			freopen("/dev/null", "r", stdin);
+		if (freopen(_PATH_TTY, "r", stdin)==NULL)
+			freopen(_PATH_DEVNULL, "r", stdin);
 	}
-	execl("/bin/sh", "sh", "-t", 0);
+	execl(_PATH_BSHELL, "sh", "-t", 0);
 }
 
 sendpt(a)

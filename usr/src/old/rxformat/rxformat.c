@@ -11,15 +11,16 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rxformat.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rxformat.c	5.3 (Berkeley) %G%";
 #endif not lint
 
-#include <stdio.h>
 #include <sys/file.h>
-#include <errno.h>
 #include <vaxuba/rxreg.h>
+#include "pathnames.h"
+#include <stdio.h>
+#include <errno.h>
 
-char devname[] = "/dev/rrx?a";
+char devname[] = _PATH_DEVNAME;
 
 /*
  * Format RX02 floppy disks.

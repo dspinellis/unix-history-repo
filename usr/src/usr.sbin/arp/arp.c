@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)arp.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)arp.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -48,8 +48,7 @@ static char sccsid[] = "@(#)arp.c	5.9 (Berkeley) %G%";
 #include <errno.h>
 #include <nlist.h>
 #include <stdio.h>
-
-#include "pathnames.h"
+#include <paths.h>
 
 extern int errno;
 static int kflag;
@@ -73,7 +72,7 @@ main(argc, argv)
 			}
 			else
 				mem = _PATH_KMEM;
-			dump((argc >= 3) ? argv[2] : _PATH_VMUNIX, mem);
+			dump((argc >= 3) ? argv[2] : _PATH_UNIX, mem);
 			exit(0);
 		}
 		case 'd':
@@ -428,7 +427,7 @@ ether_aton(a, n)
 usage()
 {
 	printf("usage: arp hostname\n");
-	printf("       arp -a [/vmunix] [/dev/kmem]\n");
+	printf("       arp -a [kernel] [kernel_memory]\n");
 	printf("       arp -d hostname\n");
 	printf("       arp -s hostname ether_addr [temp] [pub] [trail]\n");
 	printf("       arp -f filename\n");

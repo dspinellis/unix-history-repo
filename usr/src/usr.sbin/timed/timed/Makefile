@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 # optional flags are: MEASURE TESTING DEBUG
 #
@@ -51,8 +51,8 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCDS} ${SRCCS} ${COMMS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 timed ${DESTDIR}/etc/timed
-	install -s -o root -g bin -m 4511 timedc ${DESTDIR}/etc/timedc
+	install -s -o bin -g bin -m 755 timed ${DESTDIR}/usr/sbin/timed
+	install -s -o root -g bin -m 4511 timedc ${DESTDIR}/usr/sbin/timedc
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
 
 lint: ${SRCS}

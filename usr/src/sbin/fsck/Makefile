@@ -14,15 +14,15 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-SRCS=	dir.c inode.c main.c pass1.c pass1b.c pass2.c pass3.c \
-	pass4.c pass5.c setup.c utilities.c /sys/sys/ufs_subr.c \
-	/sys/sys/ufs_tables.c
-LOCOBJS=dir.o inode.o main.o pass1.o pass1b.o pass2.o \
-	pass3.o pass4.o pass5.o setup.o utilities.o
+VPATH=	../../sys/kern
+SRCS=	dir.c inode.c main.c pass1.c pass1b.c pass2.c pass3.c pass4.c \
+	pass5.c setup.c utilities.c ufs_subr.c ufs_tables.c
+LOCOBJS=dir.o inode.o main.o pass1.o pass1b.o pass2.o pass3.o pass4.o \
+	pass5.o setup.o utilities.o
 SYSOBJS=ufs_subr.o ufs_tables.o
 OBJS=	${LOCOBJS} ${SYSOBJS}
 MAN=	fsck.0
@@ -35,12 +35,6 @@ fsck: ${OBJS} ${LIBC}
 ${LOCOBJS}:
 	${CC} ${CFLAGS} -c $*.c
 
-ufs_subr.o:
-	${CC} ${CFLAGS} -c /sys/sys/ufs_subr.c
-
-ufs_tables.o:
-	${CC} ${CFLAGS} -I/usr/include/sys -c /sys/sys/ufs_tables.c
-
 clean:
 	rm -f ${OBJS} fsck core
 
@@ -51,7 +45,7 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 fsck ${DESTDIR}/etc/fsck
+	install -s -o bin -g bin -m 755 fsck ${DESTDIR}/sbin/fsck
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
 
 lint: ${SRCS}

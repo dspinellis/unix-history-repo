@@ -16,12 +16,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
 #include <protocols/dumprestore.h>
 #include <sys/file.h>
+#include "pathnames.h"
 
 /*
  * Symbol table of directories read from tape.
@@ -86,7 +87,7 @@ extractdirs(genmode)
 	int putdir(), null();
 
 	vprintf(stdout, "Extract directories from tape\n");
-	(void) sprintf(dirfile, "/tmp/rstdir%d", dumpdate);
+	(void) sprintf(dirfile, "%s/rstdir%d", _PATH_TMP, dumpdate);
 	df = fopen(dirfile, "w");
 	if (df == 0) {
 		fprintf(stderr,
@@ -96,7 +97,7 @@ extractdirs(genmode)
 		done(1);
 	}
 	if (genmode != 0) {
-		(void) sprintf(modefile, "/tmp/rstmode%d", dumpdate);
+		(void) sprintf(modefile, "%s/rstmode%d", _PATH_TMP, dumpdate);
 		mf = fopen(modefile, "w");
 		if (mf == 0) {
 			fprintf(stderr,
@@ -457,7 +458,7 @@ setdirmodes()
 	char *cp;
 	
 	vprintf(stdout, "Set directory mode, owner, and times.\n");
-	(void) sprintf(modefile, "/tmp/rstmode%d", dumpdate);
+	(void) sprintf(modefile, "%s/rstmode%d", _PATH_TMP, dumpdate);
 	mf = fopen(modefile, "r");
 	if (mf == NULL) {
 		perror("fopen");

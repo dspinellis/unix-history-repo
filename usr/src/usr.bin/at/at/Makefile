@@ -14,13 +14,13 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	atq.c atrm.c at.c atrun.c
 OBJS=	atq.o atrm.o at.o atrun.o
-ATRUNDIR=	/usr/lib
+ATRUNDIR=	/usr/libexec
 SPOOLDIRS=	/usr/spool/at /usr/spool/at/past
 SPOOLFILES=	/usr/spool/at/lasttimedone
 MAN=	at.0 atq.0 atrm.0

@@ -1,18 +1,18 @@
 #ifndef	lint
-static char *sccsid = "@(#)write.c	4.14 %G%";
+static char *sccsid = "@(#)write.c	4.15 %G%";
 #endif
 /*
  * write to another user
  */
 
-#include <stdio.h>
-#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <signal.h>
-#include <utmp.h>
+#include <sys/signal.h>
 #include <sys/time.h>
-#include "pathnames.h"
+#include <utmp.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <paths.h>
 
 #define	NMAX	sizeof(ubuf.ut_name)
 #define	LMAX	sizeof(ubuf.ut_line)

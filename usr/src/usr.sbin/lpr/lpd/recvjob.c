@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recvjob.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)recvjob.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -26,6 +26,7 @@ static char sccsid[] = "@(#)recvjob.c	5.7 (Berkeley) %G%";
 
 #include "lp.h"
 #include <sys/fs.h>
+#include "pathnames.h"
 
 char	*sp = "";
 #define ack()	(void) write(1, sp, 1);
@@ -52,16 +53,16 @@ recvjob()
 	else if (status == 0)
 		frecverr("unknown printer %s", printer);
 	if ((LF = pgetstr("lf", &bp)) == NULL)
-		LF = DEFLOGF;
+		LF = _PATH_CONSOLE;
 	if ((SD = pgetstr("sd", &bp)) == NULL)
-		SD = DEFSPOOL;
+		SD = _PATH_DEFSPOOL;
 	if ((LO = pgetstr("lo", &bp)) == NULL)
 		LO = DEFLOCK;
 
 	(void) close(2);			/* set up log file */
 	if (open(LF, O_WRONLY|O_APPEND, 0664) < 0) {
 		syslog(LOG_ERR, "%s: %m", LF);
-		(void) open("/dev/null", O_WRONLY);
+		(void) open(_PATH_DEVNULL, O_WRONLY);
 	}
 
 	if (chdir(SD) < 0)
@@ -90,13 +91,13 @@ find_dev(dev, type)
 	register dev_t dev;
 	register int type;
 {
-	register DIR *dfd = opendir("/dev");
+	register DIR *dfd = opendir(_PATH_DEV);
 	struct direct *dir;
 	struct stat stb;
 	char devname[MAXNAMLEN+6];
 	char *dp;
 
-	strcpy(devname, "/dev/");
+	strcpy(devname, _PATH_DEV);
 	while ((dir = readdir(dfd))) {
 		strcpy(devname + 5, dir->d_name);
 		if (stat(devname, &stb))

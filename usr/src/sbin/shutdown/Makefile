@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -37,7 +37,7 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o root -g operator -m 4750 shutdown ${DESTDIR}/etc/shutdown
+	install -s -o root -g operator -m 4750 shutdown ${DESTDIR}/sbin
 	install -c -o bin -g bin -m 444 shutdown.0 ${DESTDIR}/usr/man/cat8/shutdown.0
 
 lint: ${SRCS}

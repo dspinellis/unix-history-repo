@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -38,7 +38,7 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g kmem -m 2755 trpt ${DESTDIR}/etc/trpt
+	install -s -o bin -g kmem -m 2755 trpt ${DESTDIR}/usr/sbin
 	install -c -o bin -g bin -m 444 trpt.0 ${DESTDIR}/usr/man/cat8
 
 lint: ${SRCS}

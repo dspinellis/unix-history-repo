@@ -3,10 +3,10 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.7	(Berkeley)	%G%
+#	@(#)Makefile	4.8	(Berkeley)	%G%
 #
 CFLAGS=	-DCOPYCODE -DC2 -O
-ASDIR=	../../../bin/as/as.${MACHINE}
+ASDIR=	../../../usr.bin/as/as.${MACHINE}
 SRCS=	c20.c c21.c c22.c
 OBJS=	c20.o c21.o c22.o
 
@@ -28,7 +28,7 @@ cleandir: clean
 	rm -f ${MAN} tags .depend
 
 install: ${MAN}
-	install -o bin -g bin -m 755 -s c2 ${DESTDIR}/lib/c2
+	install -o bin -g bin -m 755 -s c2 ${DESTDIR}/usr/libexec/c2
 
 tags: ${SRCS}
 	ctags ${SRCS}

@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -200,7 +200,7 @@ main(argc, argv, envp)
 		(void) open("/", O_RDONLY);
 		(void) dup2(0, 1);
 		(void) dup2(0, 2);
-		tmpint = open("/dev/tty", O_RDWR);
+		tmpint = open(_PATH_TTY, O_RDWR);
 		if (tmpint > 0) {
 			ioctl(tmpint, TIOCNOTTY, (char *)0);
 			close(tmpint);
@@ -317,7 +317,7 @@ main(argc, argv, envp)
 		if (pid == 0) {
 			if (debug) {
 				if (dofork &&
-				    (tmpint = open("/dev/tty", O_RDWR)) > 0) {
+				    (tmpint = open(_PATH_TTY, O_RDWR)) > 0) {
 					ioctl(tmpint, TIOCNOTTY, 0);
 					close(tmpint);
 				}

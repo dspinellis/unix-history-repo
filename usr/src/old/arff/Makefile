@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -41,8 +41,8 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 arff ${DESTDIR}/etc/arff
-	install -s -o bin -g bin -m 755 arff ${DESTDIR}/etc/flcopy
+	install -s -o bin -g bin -m 755 arff ${DESTDIR}/usr/sbin
+	install -s -o bin -g bin -m 755 flcopy ${DESTDIR}/usr/sbin
 	install -c -o bin -g bin -m 444 arff.0 ${DESTDIR}/usr/man/cat8/vax
 	rm -f ${DESTDIR}/usr/man/cat8/vax/flcopy.0
 	ln ${DESTDIR}/usr/man/cat8/vax/arff.0 ${DESTDIR}/usr/man/cat8/vax/flcopy.0

@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.13 (Berkeley) %G%
+#	@(#)Makefile	5.14 (Berkeley) %G%
 #
 SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
 	deliver.c domain.c envelope.c err.c headers.c macro.c main.c \
@@ -34,28 +34,28 @@ WHAT=	what
 PRT=	sccs prt
 
 sendmail: ${OBJS} Version.o
-	${CC} ${COPTS} -o $@ Version.o ${OBJS} -ldbm
+	${CC} -o $@ Version.o ${OBJS} -ldbm
 	size sendmail; ls -l sendmail; ${WHAT} < Version.o
 
 dsendmail: ${OBJS} Version.o
-	${CC} ${COPTS} -o sendmail Version.o ${OBJS} -ldbm -lresolv
+	${CC} -g -o sendmail Version.o ${OBJS} -ldbm -lresolv
 	size sendmail; ls -l sendmail; ${WHAT} < Version.o
 
 install: ${MAN}
-	install -c -s -o root -g kmem -m 6755 sendmail ${DESTDIR}/usr/lib
-	install -c -o bin -g bin -m 644 /dev/null ${DESTDIR}/usr/lib/sendmail.fc
-	install -c -o bin -g bin -m 666 /dev/null ${DESTDIR}/usr/lib/sendmail.st
-	install -c -o bin -g bin -m 444 sendmail.hf /usr/lib/sendmail.hf
+	install -c -s -o root -g kmem -m 6755 sendmail ${DESTDIR}/usr/sbin
+	install -c -o bin -g bin -m 644 /dev/null ${DESTDIR}/etc/sendmail.fc
+	install -c -o bin -g bin -m 666 /dev/null ${DESTDIR}/var/log/sendmail.st
+	install -c -o bin -g bin -m 444 sendmail.hf /usr/share/misc
 	install -c -o bin -g bin -m 444 sendmail.0 ${DESTDIR}/usr/man/cat8
 	install -c -o bin -g bin -m 444 aliases.0 ${DESTDIR}/usr/man/cat5
 	install -c -o bin -g bin -m 444 newaliases.0 ${DESTDIR}/usr/man/cat1
-	-mkdir ${DESTDIR}/usr/spool/mqueue
-	chown root.wheel ${DESTDIR}/usr/spool/mqueue
-	chmod 775 ${DESTDIR}/usr/spool/mqueue
-	rm -f ${DESTDIR}/usr/ucb/newaliases
-	ln -s ${DESTDIR}/usr/lib/sendmail ${DESTDIR}/usr/ucb/newaliases
-	rm -f ${DESTDIR}/usr/ucb/mailq
-	ln -s ${DESTDIR}/usr/lib/sendmail ${DESTDIR}/usr/ucb/mailq
+	-mkdir ${DESTDIR}/var/spool/mqueue
+	chown root.wheel ${DESTDIR}/var/spool/mqueue
+	chmod 775 ${DESTDIR}/var/spool/mqueue
+	rm -f ${DESTDIR}/usr/bin/newaliases
+	ln -s ${DESTDIR}/usr/sbin/sendmail ${DESTDIR}/usr/bin/newaliases
+	rm -f ${DESTDIR}/usr/bin/mailq
+	ln -s ${DESTDIR}/usr/sbin/sendmail ${DESTDIR}/usr/bin/mailq
 
 version: newversion ${OBJS} Version.c
 

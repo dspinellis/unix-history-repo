@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)trpt.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)trpt.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <machine/pte.h>
@@ -59,7 +59,7 @@ static char sccsid[] = "@(#)trpt.c	5.7 (Berkeley) %G%";
 #include <stdio.h>
 #include <errno.h>
 #include <nlist.h>
-#include "pathnames.h"
+#include <paths.h>
 
 struct nlist nl[] = {
 #define	N_TCP_DEBUG	0

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -25,6 +25,7 @@ static char sccsid[] = "@(#)cmds.c	5.4 (Berkeley) %G%";
 
 #include "lp.h"
 #include <sys/time.h>
+#include "pathnames.h"
 
 /*
  * kill an existing daemon and disable printing.
@@ -73,7 +74,7 @@ abortpr(dis)
 
 	bp = pbuf;
 	if ((SD = pgetstr("sd", &bp)) == NULL)
-		SD = DEFSPOOL;
+		SD = _PATH_DEFSPOOL;
 	if ((LO = pgetstr("lo", &bp)) == NULL)
 		LO = DEFLOCK;
 	(void) sprintf(line, "%s/%s", SD, LO);
@@ -204,7 +205,7 @@ cleanpr()
 
 	bp = pbuf;
 	if ((SD = pgetstr("sd", &bp)) == NULL)
-		SD = DEFSPOOL;
+		SD = _PATH_DEFSPOOL;
 	printf("%s:\n", printer);
 
 	for (lp = line, cp = SD; *lp++ = *cp++; )
@@ -300,7 +301,7 @@ enablepr()
 
 	bp = pbuf;
 	if ((SD = pgetstr("sd", &bp)) == NULL)
-		SD = DEFSPOOL;
+		SD = _PATH_DEFSPOOL;
 	if ((LO = pgetstr("lo", &bp)) == NULL)
 		LO = DEFLOCK;
 	(void) sprintf(line, "%s/%s", SD, LO);
@@ -363,7 +364,7 @@ disablepr()
 
 	bp = pbuf;
 	if ((SD = pgetstr("sd", &bp)) == NULL)
-		SD = DEFSPOOL;
+		SD = _PATH_DEFSPOOL;
 	if ((LO = pgetstr("lo", &bp)) == NULL)
 		LO = DEFLOCK;
 	(void) sprintf(line, "%s/%s", SD, LO);
@@ -436,7 +437,7 @@ putmsg(argc, argv)
 
 	bp = pbuf;
 	if ((SD = pgetstr("sd", &bp)) == NULL)
-		SD = DEFSPOOL;
+		SD = _PATH_DEFSPOOL;
 	if ((LO = pgetstr("lo", &bp)) == NULL)
 		LO = DEFLOCK;
 	if ((ST = pgetstr("st", &bp)) == NULL)
@@ -585,7 +586,7 @@ startpr(enable)
 
 	bp = pbuf;
 	if ((SD = pgetstr("sd", &bp)) == NULL)
-		SD = DEFSPOOL;
+		SD = _PATH_DEFSPOOL;
 	if ((LO = pgetstr("lo", &bp)) == NULL)
 		LO = DEFLOCK;
 	(void) sprintf(line, "%s/%s", SD, LO);
@@ -653,7 +654,7 @@ prstat()
 
 	bp = pbuf;
 	if ((SD = pgetstr("sd", &bp)) == NULL)
-		SD = DEFSPOOL;
+		SD = _PATH_DEFSPOOL;
 	if ((LO = pgetstr("lo", &bp)) == NULL)
 		LO = DEFLOCK;
 	if ((ST = pgetstr("st", &bp)) == NULL)
@@ -750,7 +751,7 @@ stoppr()
 
 	bp = pbuf;
 	if ((SD = pgetstr("sd", &bp)) == NULL)
-		SD = DEFSPOOL;
+		SD = _PATH_DEFSPOOL;
 	if ((LO = pgetstr("lo", &bp)) == NULL)
 		LO = DEFLOCK;
 	(void) sprintf(line, "%s/%s", SD, LO);
@@ -807,7 +808,7 @@ topq(argc, argv)
 	}
 	bp = pbuf;
 	if ((SD = pgetstr("sd", &bp)) == NULL)
-		SD = DEFSPOOL;
+		SD = _PATH_DEFSPOOL;
 	if ((LO = pgetstr("lo", &bp)) == NULL)
 		LO = DEFLOCK;
 	printf("%s:\n", printer);

@@ -14,13 +14,13 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	main.c init.c subr.c gettytab.c get_date.c
 OBJS=	main.o init.o subr.o gettytab.o get_date.o
-MAN=	getty.0
+MAN=	getty.0 gettytab.0
 
 all: getty
 
@@ -37,9 +37,10 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 getty ${DESTDIR}/etc/getty
+	install -s -o bin -g bin -m 755 getty ${DESTDIR}/usr/libexec
 	install -c -o bin -g bin -m 444 gettytab ${DESTDIR}/etc/gettytab
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
+	install -c -o bin -g bin -m 444 gettytab.0 ${DESTDIR}/usr/man/cat5
+	install -c -o bin -g bin -m 444 getty.0 ${DESTDIR}/usr/man/cat8
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}

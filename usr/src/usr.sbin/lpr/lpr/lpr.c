@@ -79,7 +79,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpr.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpr.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 /*
  *      lpr -- off line print
@@ -98,6 +98,7 @@ static char sccsid[] = "@(#)lpr.c	5.5 (Berkeley) %G%";
 #include <ctype.h>
 #include <syslog.h>
 #include "lp.local.h"
+#include "pathnames.h"
 
 char    *tfname;		/* tmp copy of cf before linking */
 char    *cfname;		/* daemon control files, linked from tf's */
@@ -678,7 +679,7 @@ chkprinter(s)
 	else if (status == 0)
 		fatal("%s: unknown printer", s);
 	if ((SD = pgetstr("sd", &bp)) == NULL)
-		SD = DEFSPOOL;
+		SD = _PATH_DEFSPOOL;
 	if ((LO = pgetstr("lo", &bp)) == NULL)
 		LO = DEFLOCK;
 	RG = pgetstr("rg", &bp);

@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -38,9 +38,8 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 chown ${DESTDIR}/etc
-	rm -f ${DESTDIR}/bin/chgrp
-	ln ${DESTDIR}/etc/chown ${DESTDIR}/bin/chgrp
+	install -c -s -o bin -g bin -m 755 chown ${DESTDIR}/sbin
+	install -s -o bin -g bin -m 755 chown ${DESTDIR}/usr/bin/chgrp
 	install -c -o bin -g bin -m 444 chown.0 ${DESTDIR}/usr/man/cat8
 	install -c -o bin -g bin -m 444 chgrp.0 ${DESTDIR}/usr/man/cat1
 

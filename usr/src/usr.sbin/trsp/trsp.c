@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)trsp.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)trsp.c	6.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -56,7 +56,7 @@ static char sccsid[] = "@(#)trsp.c	6.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <errno.h>
 #include <nlist.h>
-#include "pathnames.h"
+#include <paths.h>
 
 unsigned long	ntime;
 int	sflag;

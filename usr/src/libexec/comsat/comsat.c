@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)comsat.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)comsat.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -165,7 +165,7 @@ notify(utp, offset)
 	register struct utmp *utp;
 	off_t offset;
 {
-	static char tty[20] = "/dev/";
+	static char tty[20] = _PATH_DEV;
 	struct sgttyb gttybuf;
 	FILE *tp;
 	char name[sizeof (utmp[0].ut_name) + 1];

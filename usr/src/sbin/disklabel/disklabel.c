@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.16 (Berkeley) %G%";
 /* from static char sccsid[] = "@(#)disklabel.c	1.2 (Symmetric) 11/28/85"; */
 #endif /* not lint */
 
@@ -80,7 +80,7 @@ char	*bootxx;
 
 char	*dkname;
 char	*specname;
-char	tmpfil[] = "/tmp/EdDk.aXXXXXX";
+char	tmpfil[] = _PATH_TMP;
 
 extern	int errno;
 char	namebuf[BBSIZE], *np = namebuf;
@@ -156,14 +156,14 @@ main(argc, argv)
 
 	dkname = argv[0];
 	if (dkname[0] != '/') {
-		(void)sprintf(np, "/dev/r%s%c", dkname, RAWPARTITION);
+		(void)sprintf(np, "%s/r%s%c", _PATH_DEV, dkname, RAWPARTITION);
 		specname = np;
 		np += strlen(specname) + 1;
 	} else
 		specname = dkname;
 	f = open(specname, op == READ ? O_RDONLY : O_RDWR);
 	if (f < 0 && errno == ENOENT && dkname[0] != '/') {
-		(void)sprintf(specname, "/dev/r%s", dkname);
+		(void)sprintf(specname, "%s/r%s", _PATH_DEV, dkname);
 		np = namebuf + strlen(specname) + 1;
 		f = open(specname, op == READ ? O_RDONLY : O_RDWR);
 	}

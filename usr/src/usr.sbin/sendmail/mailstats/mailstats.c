@@ -24,12 +24,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mailstats.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mailstats.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/file.h>
 #include <sendmail.h>
 #include <mailstats.h>
+#include "pathnames.h"
 
 main(argc, argv)
 	int argc;
@@ -42,7 +43,7 @@ main(argc, argv)
 	int ch, fd;
 	char *sfile, *ctime();
 
-	sfile = "/usr/lib/sendmail.st";
+	sfile = _PATH_MAILSTATS;
 	while ((ch = getopt(argc, argv, "f:")) != EOF)
 		switch((char)ch) {
 		case 'f':

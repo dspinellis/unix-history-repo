@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumprmt.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumprmt.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -16,10 +16,11 @@ static char sccsid[] = "@(#)dumprmt.c	5.5 (Berkeley) %G%";
 
 #include <netinet/in.h>
 
-#include <stdio.h>
-#include <pwd.h>
 #include <netdb.h>
 #include <protocols/dumprestore.h>
+#include <pwd.h>
+#include <stdio.h>
+#include "pathnames.h"
 
 #define	TS_CLOSED	0
 #define	TS_OPEN		1
@@ -67,7 +68,7 @@ rmtgetconn()
 	pw = getpwuid(getuid());
 	if (pw && pw->pw_name)
 		name = pw->pw_name;
-	rmtape = rcmd(&rmtpeer, sp->s_port, name, name, "/etc/rmt", 0);
+	rmtape = rcmd(&rmtpeer, sp->s_port, name, name, _PATH_RMT, 0);
 	size = ntrec * TP_BSIZE;
 	while (size > TP_BSIZE &&
 	    setsockopt(rmtape, SOL_SOCKET, SO_SNDBUF, &size, sizeof (size)) < 0)

@@ -1,19 +1,19 @@
 #ifndef lint
-static	char *sccsid = "@(#)iostat.c	4.15 (Berkeley) 87/01/12";
+static	char *sccsid = "@(#)iostat.c	4.16 (Berkeley) 89/05/11";
 #endif
 
 /*
  * iostat
  */
-#include <stdio.h>
-#include <ctype.h>
-#include <nlist.h>
-#include <signal.h>
-
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/buf.h>
 #include <sys/dkstat.h>
+#include <sys/signal.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <nlist.h>
+#include <paths.h>
 
 struct nlist nl[] = {
 	{ "_dk_busy" },
@@ -92,14 +92,15 @@ main(argc, argv)
 	long t;
 	char *arg, **cp, name[6], buf[BUFSIZ];
 
-	nlist("/vmunix", nl);
+	nlist(_PATH_UNIX, nl);
 	if(nl[X_DK_BUSY].n_type == 0) {
-		printf("dk_busy not found in /vmunix namelist\n");
+		fprintf(stderr, "iostat: dk_busy not found in %s namelist\n",
+		    _PATH_UNIX);
 		exit(1);
 	}
-	mf = open("/dev/kmem", 0);
+	mf = open(_PATH_KMEM, 0);
 	if(mf < 0) {
-		printf("cannot open /dev/kmem\n");
+		fprintf(stderr, "iostat: cannot open %s\n", _PATH_KMEM);
 		exit(1);
 	}
 	iter = 0;

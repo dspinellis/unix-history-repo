@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)badsect.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)badsect.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -35,12 +35,13 @@ static char sccsid[] = "@(#)badsect.c	5.5 (Berkeley) %G%";
  * this program can be used if the driver for the file system in question
  * does not support bad block forwarding.
  */
-#include <stdio.h>
 #include <sys/param.h>
-#include <sys/fs.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
+#include <sys/fs.h>
 #include <sys/inode.h>
+#include <stdio.h>
+#include <paths.h>
 
 union {
 	struct	fs fs;
@@ -79,7 +80,7 @@ main(argc, argv)
 		perror(argv[1]);
 		exit(2);
 	}
-	strcpy(name, "/dev/");
+	strcpy(name, _PATH_DEV);
 	if ((dirp = opendir(name)) == NULL) {
 		perror(name);
 		exit(3);

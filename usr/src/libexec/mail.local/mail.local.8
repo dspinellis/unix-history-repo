@@ -1,18 +1,18 @@
-.\"	@(#)mail.local.8	6.1 (Berkeley) %G%
+.\"	@(#)mail.local.8	6.2 (Berkeley) %G%
 .\"
-.TH BINMAIL 1 ""
+.TH DELIVERMAIL 1 ""
 .AT 3
 .SH NAME
-binmail \- send or receive mail among users
+delivermail \- send or receive mail among users
 .SH SYNOPSIS
-.B /bin/mail
+.B delivermail
 [
 .B +
 ] [
 .B \-i
 ] [ person ] ...
 .br
-.B /bin/mail
+.B delivermail
 .B "[ + ]"
 [
 .B \-i
@@ -24,9 +24,7 @@ file
 Note: This is the old version 7 UNIX system mail program.  The default
 .I mail
 command is described in
-.IR Mail (1),
-and its binary is in the directory
-.IR /usr/ucb .
+.IR Mail (1).
 .PP
 .I mail
 with no argument prints a user's mail, message-by-message,
@@ -99,7 +97,7 @@ is usually a user name recognized by
 To denote a recipient on a remote system, prefix 
 .I person
 by the system name and exclamation mark (see
-.IR uucp (1C)).
+.IR uucp (1)).
 .PP
 The
 .B \-f
@@ -123,7 +121,7 @@ mbox		saved mail
 dead.letter	unmailable text
 .br
 .SH "SEE ALSO"
-Mail(1), write(1), uucp(1C), uux(1C), xsend(1), sendmail(8)
+Mail(1), write(1), uucp(1), uux(1), xsend(1), sendmail(8)
 .SH BUGS
 Race conditions sometimes result in a failure to remove a lock file.
 .PP

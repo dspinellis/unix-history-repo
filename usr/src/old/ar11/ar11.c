@@ -1,10 +1,12 @@
-static char *sccsid = "@(#)ar11.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)ar11.c	4.6 (Berkeley) %G%";
 /* ar11 - archiver for PDP-11 formatted archives */
 
-#include <signal.h>
-#include <stdio.h>
 #include <sys/types.h>
+#include <sys/signal.h>
 #include <sys/stat.h>
+#include <stdio.h>
+#include "pathnames.h"
+
 #define	ARMAG ((short)0177545)
 struct ar_hdr {
 	char	ar_name[14];
@@ -256,7 +258,7 @@ pcmd()
 
 mcmd()
 {
-	static char name2[] = "/tmp/v2XXXXX";
+	static char name2[] = _PATH_TMP2;
 
 	init();
 	if(getaf())
@@ -298,7 +300,7 @@ tcmd()
 
 init()
 {
-	static char name0[] = "/tmp/vXXXXX";
+	static char name0[] = _PATH_TMP0;
 	static short mbuf = fixshort(ARMAG);
 
 	tfnam = mktemp(name0);
@@ -537,7 +539,7 @@ match()
 
 bamatch()
 {
-	static char name1[] = "/tmp/v1XXXXX";
+	static char name1[] = _PATH_TMP1;
 	register f;
 
 	switch(bastate) {

@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)atrm.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)atrm.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -34,11 +34,10 @@ static char sccsid[] = "@(#)atrm.c	5.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <pwd.h>
 #include <ctype.h>
+#include "pathnames.h"
 
 #define SUPERUSER	0			/* is user super-user? */
 #define MAXENTRIES	1000			/* max # of entries allowed */
-#define ATDIR		"/usr/spool/at"		/* spooling area */
-
 
 int user;					/* person requesting removal */
 int fflag = 0;					/* suppress announcements? */
@@ -118,8 +117,8 @@ char **argv;
 	/* 
 	 * Move to spooling area and get user id of person requesting removal.
 	 */
-	if (chdir(ATDIR) == -1) {
-		perror(ATDIR);
+	if (chdir(_PATH_ATDIR) == -1) {
+		perror(_PATH_ATDIR);
 		exit(1);
 	}
 	user = getuid();
@@ -129,7 +128,7 @@ char **argv;
 	 * Get a list of the files in the spooling area.
 	 */
 	if ((numjobs = scandir(".",&namelist,filewanted,alphasort)) < 0) {
-		perror(ATDIR);
+		perror(_PATH_ATDIR);
 		exit(1);
 	}
 

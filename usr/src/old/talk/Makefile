@@ -16,7 +16,7 @@ INCLUDE=talk.h ctl.h talk_ctl.h
 SOURCE= ${DSOURCE} ${TSOURCE}
 CFLAGS= -O 
 
-all:	talk talkd
+all: talk talkd
 
 talkd: ${DOBJECT}
 	cc ${CFLAGS} -o talkd ${DOBJECT}
@@ -29,13 +29,19 @@ ${TOBJECT}: talk.h ctl.h talk_ctl.h
 
 install: talk talkd
 	install -g tty -m 2755 -s talk ${DESTDIR}/usr/old/talk
-	install -s talkd ${DESTDIR}/etc/talkd
+	install -s talkd ${DESTDIR}/usr/libexec/talkd
 
 lint:
 	lint ${DSOURCE}
 
 clean:
 	rm -f *.o talk talkd
+
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SOURCE}
+	mkdep ${SOURCE}
 
 tags:	${SOURCE} ${INCLUDE}
 	ctags ${SOURCE} ${INCLUDE}

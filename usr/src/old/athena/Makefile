@@ -14,15 +14,16 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 DESTDIR=
 
 SUBDIR=	kdestroy kinit klist ksrvtgt ksu
 
 all clean cleandir depend install lint tags: FRC
-	-for i in ${SUBDIR}; do \
-		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} $@); done
+	@-for i in ${SUBDIR}; do \
+		(echo "==> $$i"; \
+		    cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} $@); done
 
 ${SUBDIR}: FRC
 	cd $@; make ${MFLAGS} DESTDIR=${DESTDIR}

@@ -14,11 +14,11 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
 #define	_PATH_FASTBOOT	"/fastboot"
-#define	_PATH_HALT	"/etc/halt"
+#define	_PATH_HALT	"/sbin/halt"
 #define	_PATH_NOLOGIN	"/etc/nologin"
-#define	_PATH_REBOOT	"/etc/reboot"
-#define	_PATH_WALL	"/bin/wall"
+#define	_PATH_REBOOT	"/sbin/reboot"
+#define	_PATH_WALL	"/usr/bin/wall"
