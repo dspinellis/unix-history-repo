@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sub.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)sub.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -157,7 +157,7 @@ bcg1:
 			sigspecial++;
 			free(RE_patt);
 			RE_patt = malloc(sizeof(char) * (l_m_len));
-			bcopy(l_match, RE_patt, l_m_len);
+			memmove(RE_patt, l_match, l_m_len);
 			sigspecial--;
 			if (sigint_flag && (!sigspecial))
 				SIGINT_ACTION;
