@@ -31,12 +31,12 @@ static char sccsid[] = "@(#)date.c	4.16 (Berkeley) %G%";
 struct	timeval tv, now;
 struct	timezone tz;
 char	*ap, *ep, *sp;
-int	uflag;
+int	uflag, nflag;
 
 char	*timezone();
 static	int dmsize[12] =
     { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-static	char *usage = "usage: date [-u] [yymmddhhmm[.ss]]\n";
+static	char *usage = "usage: date [-n] [-u] [yymmddhhmm[.ss]]\n";
 
 struct utmp wtmp[2] = {
 	{ "|", "", "", 0 },
@@ -60,10 +60,24 @@ main(argc, argv)
 	(void) gettimeofday(&tv, &tz);
 	now = tv;
 
-	if (argc > 1 && strcmp(argv[1], "-u") == 0) {
+	while (argc > 1 && argv[1][0] == '-') {
+		while (*++argv[1])
+		    switch ((int)argv[1][0]) {
+
+		    case 'n':
+			nflag++;
+			break;
+
+		    case 'u':
+			uflag++;
+			break;
+
+		    default:
+			printf(usage);
+			exit(1);
+		}
 		argc--;
 		argv++;
-		uflag++;
 	}
 	if (argc > 2) {
 		printf(usage);
@@ -93,7 +107,7 @@ main(argc, argv)
 		if (localtime((time_t *)&tv.tv_sec)->tm_isdst)
 			tv.tv_sec -= 60*60;
 	}
-	if (!settime(tv)) {
+	if (nflag || !settime(tv)) {
 		int wf;
 
 		if (settimeofday(&tv, (struct timezone *)0) < 0) {
