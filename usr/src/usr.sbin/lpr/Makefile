@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.9	(Berkeley)	%G%
+#	@(#)Makefile	4.10	(Berkeley)	%G%
 #
 # makefile for line printer spooling system
 #
@@ -28,10 +28,10 @@ all:	${OBJS}
 lpd:	lpd.o printjob.o recvjob.o displayq.o rmjob.o \
 	startdaemon.o lpdchar.o common.o printcap.o
 	${CC} -o lpd lpd.o printjob.o recvjob.o displayq.o rmjob.o \
-		startdaemon.o lpdchar.o common.o printcap.o -ljobs
+		startdaemon.o lpdchar.o common.o printcap.o
 
 lpr:	lpr.o startdaemon.o common.o printcap.o
-	${CC} -o lpr lpr.o startdaemon.o common.o printcap.o -ljobs
+	${CC} -o lpr lpr.o startdaemon.o common.o printcap.o
 
 lpq:	lpq.o displayq.o common.o printcap.o
 	${CC} -o lpq lpq.o displayq.o common.o printcap.o -ltermcap
@@ -40,7 +40,7 @@ lprm:	lprm.o rmjob.o startdaemon.o common.o printcap.o
 	${CC} -o lprm lprm.o rmjob.o startdaemon.o common.o printcap.o
 
 lpc:	lpc.o cmds.o cmdtab.o startdaemon.o common.o printcap.o
-	${CC} -o lpc lpc.o cmds.o cmdtab.o startdaemon.o common.o printcap.o -ljobs
+	${CC} -o lpc lpc.o cmds.o cmdtab.o startdaemon.o common.o printcap.o
 
 pac:	pac.o printcap.o
 	${CC} -o pac pac.o printcap.o
