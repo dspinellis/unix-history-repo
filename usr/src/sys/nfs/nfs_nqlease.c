@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	8.1 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -999,7 +999,7 @@ nqnfs_clientd(nmp, cred, ncd, flag, argp, p)
 if (vp->v_mount->mnt_stat.f_fsid.val[1] != MOUNT_NFS) panic("trash2");
 			vpid = vp->v_id;
 			if (np->n_expiry < time.tv_sec) {
-			   if (vget(vp) == 0) {
+			   if (vget(vp, 1) == 0) {
 			     nmp->nm_inprog = vp;
 			     if (vpid == vp->v_id) {
 if (vp->v_mount->mnt_stat.f_fsid.val[1] != MOUNT_NFS) panic("trash3");
@@ -1035,8 +1035,8 @@ if (vp->v_mount->mnt_stat.f_fsid.val[1] != MOUNT_NFS) panic("trash3");
 				break;
 			} else if ((np->n_expiry - NQ_RENEWAL) < time.tv_sec) {
 			    if ((np->n_flag & (NQNFSWRITE | NQNFSNONCACHE))
-				 == NQNFSWRITE && vp->v_dirtyblkhd.le_next &&
-				 vget(vp) == 0) {
+				 == NQNFSWRITE && vp->v_dirtyblkhd.lh_first &&
+				 vget(vp, 1) == 0) {
 				 nmp->nm_inprog = vp;
 if (vp->v_mount->mnt_stat.f_fsid.val[1] != MOUNT_NFS) panic("trash4");
 				 if (vpid == vp->v_id &&
@@ -1110,8 +1110,7 @@ lease_updatetime(deltat)
 	 * Search the mount list for all nqnfs mounts and do their timer
 	 * queues.
 	 */
-	mp = rootfs;
-	do {
+	for (mp = mountlist.tqh_first; mp != NULL; mp = mp->mnt_list.tqe_next) {
 		if (mp->mnt_stat.f_fsid.val[1] == MOUNT_NFS) {
 			nmp = VFSTONFS(mp);
 			if (nmp->nm_flag & NFSMNT_NQNFS) {
@@ -1122,8 +1121,7 @@ lease_updatetime(deltat)
 				}
 			}
 		}
-		mp = mp->mnt_next;
-	} while (mp != rootfs);
+	}
 }
 
 /*
