@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sysctl.3	6.2 (Berkeley) %G%
+.\"	@(#)sysctl.3	6.3 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt SYSCTL 2
@@ -20,7 +20,8 @@ The
 .Fn sysctl
 function retrieves kernel state and allows processes with
 appropriate privilege to set kernel state.
-The state to be set is described using a ``MIB'' style name,
+The state to be set is described using a
+``Management Information Base'' (MIB) style name,
 described in a
 .Fa namelen
 length array of integers pointed to by
@@ -30,53 +31,172 @@ The top level names are defined with a CTL_ prefix in
 The next levels down are found in the files given in the ``FILES''
 section of this manual page.
 .Pp
-To retrieve a value,
-.Fa old
-is set to point to a buffer
-into which the requested value is to be placed.
-The length of the buffer is given in the location pointed to by
-.Fa oldlenp .
-The size of the returned value is put in the location pointed to by
-.Fa oldlenp .
-The size of the requested value can be determined by calling 
-.Fn sysctl
-with a NULL parameter for
-.Fa old ;
-the size of the value will be returned in the location pointed to by
-.Fa oldlenp .
+The information is copied into the buffer specified by
+.Fa old .
+The size of the buffer is given by the location specified by
+.Fa oldlenp
+before the call,
+and that location gives the amount of data copied after a successful call.
+If the amount of data available is greater
+than the size of the buffer supplied,
+the call supplies as much data as fits in the buffer provided
+and returns with the error code EINVAL.
 If the old value is not desired,
 .Fa old
 and
 .Fa oldlenp
 can be set to NULL.
 .Pp
+The size of the available data can be determined by calling 
+.Fn sysctl
+with a NULL parameter for
+.Fa old .
+The size of the available data be returned in the location pointed to by
+.Fa oldlenp .
+For some operations, the amount of space may change often;
+the system attempts to round up so that the returned size is
+large enough for a call to return the data shortly thereafter.
+.Pp
 To set a new value,
 .Fa new
 is set to point to a buffer of length
 .Fa newlen
 from which the requested value is to be taken.
-If the setting of a new value is not desired,
+If a new value is not to be set,
 .Fa new
 should be set to NULL and
 .Fa newlen
 set to 0.
 .Pp
-For example, to retrieve the maximum number of processes allowed
-in the system, one would use the follow request:
-.sp
+The information available from
+.Fn sysctl
+consists of integers, strings, and tables.
+The string and integer information is detailed below.
+The changeable column shows whether a process with appropriate
+privilege can change the value.
+Changeable values may be retrieved and set using the 
+.Xr sysctl 1
+utility.
+.Bl -column CTL_KERN/KERN_OSRELEASEXX "integerxx" -offset indent
+.It Sy "Name  " "	Type  " "	Changeable"
+.It Pa CTL_KERN/KERN_OSTYPE No "	string" No "	no"
+.It Pa CTL_KERN/KERN_OSRELEASE No "	string" No "	no"
+.It Pa CTL_KERN/KERN_VERSION No "	string" No "	no"
+.It Pa CTL_KERN/KERN_OSREV No "	integer" No "	no"
+.It Pa CTL_KERN/KERN_POSIX1 No "	integer" No "	no"
+.It Pa CTL_KERN/KERN_MAXPROC No "	integer" No "	yes"
+.It Pa CTL_KERN/KERN_MAXFILES No "	integer" No "	yes"
+.It Pa CTL_KERN/KERN_ARGMAX No "	integer" No "	no"
+.It Pa CTL_KERN/KERN_SECURELVL No "	integer" No "	raise only"
+.It Pa CTL_KERN/KERN_HOSTNAME No "	string" No "	yes"
+.It Pa CTL_KERN/KERN_HOSTID No "	integer" No "	yes"
+.It Pa CTL_HW/HW_MACHINE No "	string" No "	no"
+.It Pa CTL_HW/HW_MODEL No "	string" No "	no"
+.It Pa CTL_HW/HW_NCPU No "	integer" No "	no"
+.It Pa CTL_HW/HW_CPUSPEED No "	integer" No "	no"
+.It Pa CTL_HW/HW_PHYSMEM No "	integer" No "	no"
+.It Pa CTL_HW/HW_USERMEM No "	integer" No "	no"
+.It Pa CTL_HW/HW_PAGESIZE No "	integer" No "	no"
+.El
+.Pp
+For example, the following retrieves the maximum number of processes allowed
+in the system:
 .Bd -literal -offset indent -compact
 int name[2], maxproc;
 size_t len;
-
+.sp
 name[0] = CTL_KERN;
 name[1] = KERN_MAXPROC;
 len = sizeof(maxproc);
 sysctl(name, 2, &maxproc, &len, NULL, 0);
 .Ed
+.Pp
+The tables that can be retrieved from the kernel by
+.Fn sysctl
+are detailed below.
+For most operations, the
+.Fn sysctl
+function returns a consistent snapshot of the data requested.
+(This is not currently true for
+.Dv KERN_VNODE ) .
+The consistency is done by locking the destination buffer into memory
+so that the data may be copied out without blocking.
+Calls are serialized to avoid deadlock.
+The types of data currently available are process information,
+system vnodes, the open file entries, routing table entries,
+virtual memory statistics, load average history,
+and clock rate information.
+The following paragraphs detail how each of these is obtained.
+.Pp
+The entire process table, or a subset of it, may be obtained with
+.Pa CTL_KERN/KERN_PROC/<op>/<arg> .
+An array of
+.Ns ( Fa struct kinfo_proc Ns )
+structures is returned,
+whose size depends on the current number of such objects in the system.
+The values for <op> and <arg> are:
+.Bl -column KERN_PROC_PGRPX "ARG Meaningxx" -offset indent
+.It Sy "OP  " "	ARG Meaning  "
+.It Dv KERN_PROC_ALL No "	none"
+.It Dv KERN_PROC_PID No "	process ID"
+.It Dv KERN_PROC_PGRP No "	process group"
+.It Dv KERN_PROC_TTY No "	tty device"
+.It Dv KERN_PROC_UID No "	user ID"
+.It Dv KERN_PROC_RUID No "	real user ID"
+.El
+.Pp
+The entire vnode table may be obtained with
+.Pa CTL_KERN/KERN_VNODE .
+The returned data consists of an array
+whose size depends on the current number of such objects in the system.
+Each element of the array contains the kernel address of a vnode
+.Ns ( Fa struct vnode * Ns )
+followed by the vnode itself
+.Ns ( Fa struct vnode Ns ) .
+.Pp
+The entire file table may be obtained with
+.Pa CTL_KERN/KERN_FILE .
+The returned data consists of a single
+.Ns ( Fa struct filehead Ns )
+followed by an array of
+.Ns ( Fa struct file Ns ) ,
+whose size depends on the current number of such objects in the system.
+.Pp
+Information about the system clock rate may be obtained with
+.Pa CTL_KERN/KERN_CLOCKRATE .
+The returned data consists of a
+.Ns ( Fa struct clockinfo Ns ) .
+.Pp
+Information about the load average history may be obtained with
+.Pa CTL_VM/VM_LOADAVG .
+The returned data consists of a
+.Ns ( Fa struct loadavg Ns ) .
+.Pp
+Information about the system wide virtual memory statistics
+may be obtained with
+.Pa CTL_VM/VM_METER .
+The returned data consists of a
+.Ns ( Fa struct vmtotal Ns ) .
+.Pp
+The entire routing table or a subset of it may be obtained with
+.Pa CTL_NET/PF_ROUTE/<protocol number>/<address family>/<op>/<arg> .
+The protocol number is currently always zero.
+The address family may be set to zero to select all address families.
+The values for <op> and <arg> are:
+.Bl -column NET_RT_IFLISTX "ARG Meaningxx" -offset indent
+.It Sy "OP  " "	ARG Meaning  "
+.It Dv NET_RT_FLAGS No "	rtflags"
+.It Dv NET_RT_DUMP No "	none"
+.It Dv NET_RT_IFLIST No "	none"
+.El
+The data is returned as a sequence of routing messages (see
+.Xr route 4
+for the header file, format and meaning).
+The length of each message is contained in the message header.
 .Sh RETURN VALUES
 If the call to
 .Fn sysctl
-is successful, the length of the old value is returned.
+is successful, 0 is returned.
 Otherwise \-1 is returned and
 .Va errno
 is set appropriately.
@@ -131,5 +251,6 @@ definitions for second level virtual memory identifiers
 .Sh SEE ALSO
 .Xr sysctl 8
 .Sh HISTORY
+The
 .Fn sysctl
-first appeared in 4.4BSD.
+function first appeared in 4.4BSD.
