@@ -13,7 +13,7 @@
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  * from: hp300/hp300/clock.c	7.19 (Berkeley) 2/18/93
  *
- *	@(#)clock.c	7.8 (Berkeley) %G%
+ *	@(#)clock.c	7.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -155,20 +155,12 @@ resettodr()
 	/* set bb-clock */
 #ifdef LUNA2
 	if (machineid == LUNA_II) {
-#if 1
-		/* not yet */
-		printf("WARNING: not supported resettodr() at LUNA2 yet.\n");
-		return;
-#else
-		/* bbc2->cal_ctl_? |= BBC_WRT; */
 		bbc2->cal_sec = tmptr->tm_sec;
 		bbc2->cal_min = tmptr->tm_min;
 		bbc2->cal_hour =tmptr->tm_hour;
 		bbc2->cal_day = tmptr->tm_mday;
 		bbc2->cal_mon = tmptr->tm_mon;
-		bbc2->cal_year = tmptr->tm_year);
-		/* bbc2->cal_ctl_? &= ~BBC_WRT; */
-#endif
+		bbc2->cal_year = tmptr->tm_year;
 	} else 
 #endif
 	{
@@ -311,4 +303,17 @@ batterychk()
 	}
 	battery_clock = 1;
 	return;
+}
+
+#define	LUNA1_HZ	60
+
+modify_clock_param()
+{
+	extern int	hz, tick, tickadj;
+
+	if (machineid == LUNA_I) {
+		hz = LUNA1_HZ;
+		tick = 1000000 / hz;
+		tickadj = 30000 / (60 * hz);	/* can adjust 30ms in 60s */
+	}
 }
